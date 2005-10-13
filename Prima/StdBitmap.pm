@@ -1,4 +1,4 @@
- #
+#
 #  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
@@ -37,30 +37,30 @@ my %bmCache;
 
 sub load_std_bmp
 {
-   my ( $index, $asIcon, $copy, $imageFile) = @_;
-   my $class = ( $asIcon ? q(Prima::Icon) : q(Prima::Image));
-   return undef if !defined $index || !defined $imageFile || $index < 0;
-   $asIcon = ( $asIcon ? 1 : 0);
-   if ( $copy)
-   {
-      my $i = $class-> create(name => $index);
-      undef $i unless $i-> load( $imageFile, index => $index);
-      return $i;
-   }
-   $bmCache{$imageFile} = {} unless exists $bmCache{$imageFile};
-   my $x = $bmCache{$imageFile};
-   return $x-> {$index}->[$asIcon] if exists $x-> {$index} && defined $x-> {$index}->[$asIcon];
-   $x-> {$index} = [ undef, undef] unless exists $x-> {$index};
-   my $i = $class-> create(name => $index);
-   undef $i unless $i-> load( $imageFile, index => $index);
-   $x-> {$index}->[$asIcon] = $i;
-   return $i;
+	my ( $index, $asIcon, $copy, $imageFile) = @_;
+	my $class = ( $asIcon ? q(Prima::Icon) : q(Prima::Image));
+	return undef if !defined $index || !defined $imageFile || $index < 0;
+	$asIcon = ( $asIcon ? 1 : 0);
+	if ( $copy) {
+		my $i = $class-> create(name => $index);
+		undef $i unless $i-> load( $imageFile, index => $index);
+		return $i;
+	}
+	$bmCache{$imageFile} = {} unless exists $bmCache{$imageFile};
+	my $x = $bmCache{$imageFile};
+	return $x-> {$index}-> [$asIcon] if exists $x-> {$index} && defined $x-> {$index}-> [$asIcon];
+	$x-> {$index} = [ undef, undef] unless exists $x-> {$index};
+	my $i = $class-> create(name => $index);
+	undef $i unless $i-> load( $imageFile, index => $index);
+	$x-> {$index}-> [$asIcon] = $i;
+	return $i;
 }
 
 $sysimage = Prima::Utils::find_image(
-   ((Prima::Application-> get_system_info->{apc} == apc::Win32) ? 'sys/win32/' : '') .
-    "sysimage.gif") 
-    unless defined $sysimage;
+	((Prima::Application-> get_system_info-> {apc} == apc::Win32) ? 'sys/win32/' : '') .
+	"sysimage.gif") 
+	unless defined $sysimage;
+
 sub icon { return load_std_bmp( $_[0], 1, 0, $sysimage); }
 sub image{ return load_std_bmp( $_[0], 0, 0, $sysimage); }
 
@@ -88,8 +88,8 @@ To discriminate, two methods are used, correspondingly C<image> and C<icon>.
 
 =head1 SYNOPSIS
 
-  use Prima::StdBitmap;
-  my $logo = Prima::StdBitmap::icon( sbmp::Logo );
+	use Prima::StdBitmap;
+	my $logo = Prima::StdBitmap::icon( sbmp::Logo );
 
 =head1 API
 
@@ -121,44 +121,44 @@ set to 0 can be used to return non-shared images.
 
 An index value passed to the methods must be one of C<sbmp::> constants:
 
-  sbmp::Logo
-  sbmp::CheckBoxChecked
-  sbmp::CheckBoxCheckedPressed
-  sbmp::CheckBoxUnchecked
-  sbmp::CheckBoxUncheckedPressed
-  sbmp::RadioChecked
-  sbmp::RadioCheckedPressed
-  sbmp::RadioUnchecked
-  sbmp::RadioUncheckedPressed
-  sbmp::Warning
-  sbmp::Information
-  sbmp::Question
-  sbmp::OutlineCollaps
-  sbmp::OutlineExpand
-  sbmp::Error
-  sbmp::SysMenu
-  sbmp::SysMenuPressed
-  sbmp::Max
-  sbmp::MaxPressed
-  sbmp::Min
-  sbmp::MinPressed
-  sbmp::Restore
-  sbmp::RestorePressed
-  sbmp::Close
-  sbmp::ClosePressed
-  sbmp::Hide
-  sbmp::HidePressed
-  sbmp::DriveUnknown
-  sbmp::DriveFloppy
-  sbmp::DriveHDD
-  sbmp::DriveNetwork
-  sbmp::DriveCDROM
-  sbmp::DriveMemory
-  sbmp::GlyphOK
-  sbmp::GlyphCancel
-  sbmp::SFolderOpened
-  sbmp::SFolderClosed
-  sbmp::Last
+	sbmp::Logo
+	sbmp::CheckBoxChecked
+	sbmp::CheckBoxCheckedPressed
+	sbmp::CheckBoxUnchecked
+	sbmp::CheckBoxUncheckedPressed
+	sbmp::RadioChecked
+	sbmp::RadioCheckedPressed
+	sbmp::RadioUnchecked
+	sbmp::RadioUncheckedPressed
+	sbmp::Warning
+	sbmp::Information
+	sbmp::Question
+	sbmp::OutlineCollaps
+	sbmp::OutlineExpand
+	sbmp::Error
+	sbmp::SysMenu
+	sbmp::SysMenuPressed
+	sbmp::Max
+	sbmp::MaxPressed
+	sbmp::Min
+	sbmp::MinPressed
+	sbmp::Restore
+	sbmp::RestorePressed
+	sbmp::Close
+	sbmp::ClosePressed
+	sbmp::Hide
+	sbmp::HidePressed
+	sbmp::DriveUnknown
+	sbmp::DriveFloppy
+	sbmp::DriveHDD
+	sbmp::DriveNetwork
+	sbmp::DriveCDROM
+	sbmp::DriveMemory
+	sbmp::GlyphOK
+	sbmp::GlyphCancel
+	sbmp::SFolderOpened
+	sbmp::SFolderClosed
+	sbmp::Last
 
 =head2 Scalars
 

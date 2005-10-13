@@ -45,34 +45,34 @@ use Prima::Calendar;
 
 my $cal;
 my $w = new Prima::MainWindow(
-    text => "Calendar example",
-    size => [ 200, 200],
-    menuItems => [[ "~Options" => [
-       [ 'locale', 'Use ~locale', 'Ctrl+L', '^L', sub {
-          my ( $self, $mid) = @_;
-          my $newstate;
-          $cal-> useLocale( $newstate = $self-> menu-> toggle( $mid));
-          $cal-> notify(q(Change));
-          return unless $newstate && !$cal-> useLocale;
-          $self-> menu-> uncheck( $mid);
-          Prima::message("Selecting 'locale' failed");
-       }],
-       [ 'Re~set to current date', 'Ctrl+R', '^R', sub {
-          $cal-> date_from_time( localtime( time));
-       }],
-       [ 'monday', '~Monday is the first day of week', sub {
-          my ( $self, $mid) = @_;
-          $cal-> firstDayOfWeek( $self-> menu-> toggle( $mid) ? 1 : 0);
-       }],
-    ]]],
+	text => "Calendar example",
+	size => [ 200, 200],
+	menuItems => [[ "~Options" => [
+		[ 'locale', 'Use ~locale', 'Ctrl+L', '^L', sub {
+			my ( $self, $mid) = @_;
+			my $newstate;
+			$cal-> useLocale( $newstate = $self-> menu-> toggle( $mid));
+			$cal-> notify(q(Change));
+			return unless $newstate && !$cal-> useLocale;
+			$self-> menu-> uncheck( $mid);
+			Prima::message("Selecting 'locale' failed");
+		}],
+		[ 'Re~set to current date', 'Ctrl+R', '^R', sub {
+			$cal-> date_from_time( localtime( time));
+		}],
+		[ 'monday', '~Monday is the first day of week', sub {
+			my ( $self, $mid) = @_;
+			$cal-> firstDayOfWeek( $self-> menu-> toggle( $mid) ? 1 : 0);
+		}],
+	]]],
 );
 
 $cal = $w-> insert( Calendar =>
-   useLocale => 1,
-   onChange  => sub {
-      $w-> text( "Calendar - ".$cal-> date_as_string);
-   },
-   pack => { expand => 1, fill => 'both'},
+	useLocale => 1,
+	onChange  => sub {
+		$w-> text( "Calendar - ".$cal-> date_as_string);
+	},
+	pack => { expand => 1, fill => 'both'},
 );
 
 $w-> menu-> locale-> check if $cal-> useLocale;

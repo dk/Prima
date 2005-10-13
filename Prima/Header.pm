@@ -40,12 +40,12 @@ use constant CaptureBrimWidth => 2;
 
 {
 my %RNT = (
-   %{Prima::Widget->notification_types()},
-   DrawItem    => nt::Action,
-   MeasureItem => nt::Action,
-   MoveItem    => nt::Action,
-   SizeItem    => nt::Action,
-   SizeItems   => nt::Action,
+	%{Prima::Widget-> notification_types()},
+	DrawItem    => nt::Action,
+	MeasureItem => nt::Action,
+	MoveItem    => nt::Action,
+	SizeItem    => nt::Action,
+	SizeItems   => nt::Action,
 );
 
 sub notification_types { return \%RNT; }
@@ -54,497 +54,496 @@ sub notification_types { return \%RNT; }
 
 sub profile_default
 {
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my %prf = (
-      offset      => 0,
-      items       => [],
-      widths      => [],
-      pressed     => -1,
-      clickable   => 1,
-      scalable    => 1,
-      dragable    => 1,
-      minTabWidth => 2,
-      vertical    => 0,
-      selectable  => 0,
-   );
-   @$def{keys %prf} = values %prf;
-   return $def;
+	my $def = $_[ 0]-> SUPER::profile_default;
+	my %prf = (
+		offset      => 0,
+		items       => [],
+		widths      => [],
+		pressed     => -1,
+		clickable   => 1,
+		scalable    => 1,
+		dragable    => 1,
+		minTabWidth => 2,
+		vertical    => 0,
+		selectable  => 0,
+	);
+	@$def{keys %prf} = values %prf;
+	return $def;
 }
 
 sub init
 {
-   my $self = shift;
-   $self->{$_} = 0 for qw(offset count maxWidth clickable scalable minTabWidth vertical dragable);
-   $self->{$_} = -1 for qw(pressed);
-   $self->{widths} = [];
-   $self->{items} = [];
-   my %profile = $self-> SUPER::init(@_);
-   $self->{fontHeight} = $self-> font-> height;
-   $self-> {resetDisabled} = 1;
-   $self-> $_( $profile{$_})
-      for ( qw( vertical minTabWidth items widths offset pressed clickable scalable dragable));
-   if ( scalar @{$profile{widths}} == 0) {
-      $self-> autowidths;
-      $self-> repaint;
-   }
-   return %profile;
+	my $self = shift;
+	$self-> {$_} = 0 for qw(offset count maxWidth clickable scalable minTabWidth vertical dragable);
+	$self-> {$_} = -1 for qw(pressed);
+	$self-> {widths} = [];
+	$self-> {items} = [];
+	my %profile = $self-> SUPER::init(@_);
+	$self-> {fontHeight} = $self-> font-> height;
+	$self-> {resetDisabled} = 1;
+	$self-> $_( $profile{$_})
+		for ( qw( vertical minTabWidth items widths offset pressed clickable scalable dragable));
+	if ( scalar @{$profile{widths}} == 0) {
+		$self-> autowidths;
+		$self-> repaint;
+	}
+	return %profile;
 }
 
 sub on_paint
 {
-   my ( $self, $canvas) = @_;
-   my @size = $canvas-> size;
-   my @c = $self-> enabled ?
-     ( $self-> color, $self-> backColor) :
-     ( $self-> disabledColor, $self-> disabledBackColor);
-   my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
+	my ( $self, $canvas) = @_;
+	my @size = $canvas-> size;
+	my @c = $self-> enabled ?
+	( $self-> color, $self-> backColor) :
+	( $self-> disabledColor, $self-> disabledBackColor);
+	my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
 
-   $self-> rect3d( 0, 0, $size[0]-1, $size[1]-1, 1, @c3d, $c[1]);
-   my $v = $self-> {vertical};
-   my ( $x, $y) = ( - $self-> {offset}, ( $size[1] - $self->{fontHeight}) / 2);
-   my $i;
+	$self-> rect3d( 0, 0, $size[0]-1, $size[1]-1, 1, @c3d, $c[1]);
+	my $v = $self-> {vertical};
+	my ( $x, $y) = ( - $self-> {offset}, ( $size[1] - $self-> {fontHeight}) / 2);
+	my $i;
 
-   my $pressed = $self-> {pressed};
-   @c3d = reverse @c3d if $v;
-   my ( $wx, $cx) = ( $self-> {widths}, $self-> {count});
-   my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(DrawItem));
-   $self-> push_event;
-   my ( $d, $lim) = $v ? ( $x, $size[1]) : ( $x, $size[0]);
-   for ( $i = 0; $i < $cx; $i++) {
-      next unless $$wx[$i];
-      if ( $d + $$wx[$i] + 2 < 1) {
-         $d += $$wx[$i] + 2;
-         next;
-      }
-      my $mx = ( $d + $$wx[$i] + 1 > $lim - 2) ? ($lim - 2) : ($d + $$wx[$i] + 1);
-      $v ?
-         $self-> clipRect( 1, $d < 1 ? 1 : $d, $size[0] - 2, $mx) :
-         $self-> clipRect( $d < 1 ? 1 : $d, 1, $mx, $size[1] - 2);
-      $self-> color( $c[0]);
-      $v ?
-         $notifier->( @notifyParms, $canvas, $i, 1, $d + 1, $size[0] - 2, $mx - 1, $d + 4) :
-         $notifier->( @notifyParms, $canvas, $i, $d + 1, 1, $mx - 1, $size[1] - 2, $y);
-      if ( $i == $pressed) {
-         $self-> color( $c3d[1]);
-         $v ?
-            $self-> line( $size[0] - 2, $d, $size[0] - 2, $d + $$wx[$i]) :
-            $self-> line( $d, $size[1] - 2, $d + $$wx[$i], $size[1] - 2);
-      } else {
-         $self-> color( $c3d[0]);
-      }
-      $v ?
-         $self-> line( 1, $d, $size[0] - 2, $d) :
-         $self-> line( $d, 1, $d, $size[1] - 2);
-      if ( $i == $pressed) {
-         $self-> color( $c3d[0]);
-         $v ?
-            $self-> line( 1, $d, 1, $d + $$wx[$i]) :
-            $self-> line( $d, 1, $d + $$wx[$i], 1);
-      } else {
-         $self-> color( $c3d[1]);
-      }
-      $d += $$wx[$i] + 1;
-      $v ?
-         $self-> line( 1, $d, $size[0] - 2, $d) :
-         $self-> line( $d, 1, $d, $size[1] - 2);
-      last if $d > $lim - 3;
-      $d++;
-   }
-   $self-> pop_event;
+	my $pressed = $self-> {pressed};
+	@c3d = reverse @c3d if $v;
+	my ( $wx, $cx) = ( $self-> {widths}, $self-> {count});
+	my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(DrawItem));
+	$self-> push_event;
+	my ( $d, $lim) = $v ? ( $x, $size[1]) : ( $x, $size[0]);
+	for ( $i = 0; $i < $cx; $i++) {
+		next unless $$wx[$i];
+		if ( $d + $$wx[$i] + 2 < 1) {
+			$d += $$wx[$i] + 2;
+			next;
+		}
+		my $mx = ( $d + $$wx[$i] + 1 > $lim - 2) ? ($lim - 2) : ($d + $$wx[$i] + 1);
+		$v ?
+			$self-> clipRect( 1, $d < 1 ? 1 : $d, $size[0] - 2, $mx) :
+			$self-> clipRect( $d < 1 ? 1 : $d, 1, $mx, $size[1] - 2);
+		$self-> color( $c[0]);
+		$v ?
+			$notifier-> ( @notifyParms, $canvas, $i, 1, $d + 1, $size[0] - 2, $mx - 1, $d + 4) :
+			$notifier-> ( @notifyParms, $canvas, $i, $d + 1, 1, $mx - 1, $size[1] - 2, $y);
+		if ( $i == $pressed) {
+			$self-> color( $c3d[1]);
+			$v ?
+				$self-> line( $size[0] - 2, $d, $size[0] - 2, $d + $$wx[$i]) :
+				$self-> line( $d, $size[1] - 2, $d + $$wx[$i], $size[1] - 2);
+		} else {
+			$self-> color( $c3d[0]);
+		}
+		$v ?
+			$self-> line( 1, $d, $size[0] - 2, $d) :
+			$self-> line( $d, 1, $d, $size[1] - 2);
+		if ( $i == $pressed) {
+			$self-> color( $c3d[0]);
+			$v ?
+				$self-> line( 1, $d, 1, $d + $$wx[$i]) :
+				$self-> line( $d, 1, $d + $$wx[$i], 1);
+		} else {
+			$self-> color( $c3d[1]);
+		}
+		$d += $$wx[$i] + 1;
+		$v ?
+			$self-> line( 1, $d, $size[0] - 2, $d) :
+			$self-> line( $d, 1, $d, $size[1] - 2);
+		last if $d > $lim - 3;
+		$d++;
+	}
+	$self-> pop_event;
 }
 
 sub on_fontchanged
 {
-   my $self = $_[0];
-   $self->{fontHeight} = $self-> font-> height;
+	my $self = $_[0];
+	$self-> {fontHeight} = $self-> font-> height;
 }
 
 sub on_drawitem
 {
-   my ( $self, $canvas, $index, $left, $bottom, $right, $top, $y) = @_;
-   $canvas-> text_out( $self->{items}->[$index], $left, $y);
+	my ( $self, $canvas, $index, $left, $bottom, $right, $top, $y) = @_;
+	$canvas-> text_out( $self-> {items}-> [$index], $left, $y);
 }
 
 sub on_measureitem
 {
-   my ( $self, $index, $result) = @_;
-   $$result = $self-> {vertical} ?
-      $self-> {fontHeight} :
-      $self-> get_text_width( $self->{items}->[$index]);
+	my ( $self, $index, $result) = @_;
+	$$result = $self-> {vertical} ?
+		$self-> {fontHeight} :
+		$self-> get_text_width( $self-> {items}-> [$index]);
 }
 
 sub point2area
 {
-   my ( $self, $x, $y, $useBorders) = @_;
-   my $i;
-   my $pressable = $self-> {clickable} || $self-> {dragable};
-   return if !$self-> {scalable} && !$pressable;
-   my $lim;
-   if ( $self-> {vertical}) {
-      return undef if ( $x < 1 || $x > $self-> width - 1) && !$useBorders;
-      $lim = $y;
-   } else {
-      return undef if ( $y < 1 || $y > $self-> height - 1) && !$useBorders;
-      $lim = $x;
-   }
+	my ( $self, $x, $y, $useBorders) = @_;
+	my $i;
+	my $pressable = $self-> {clickable} || $self-> {dragable};
+	return if !$self-> {scalable} && !$pressable;
+	my $lim;
+	if ( $self-> {vertical}) {
+		return undef if ( $x < 1 || $x > $self-> width - 1) && !$useBorders;
+		$lim = $y;
+	} else {
+		return undef if ( $y < 1 || $y > $self-> height - 1) && !$useBorders;
+		$lim = $x;
+	}
 
-   my $cbw = $self-> {scalable} ? CaptureBrimWidth : 0;
-   my $sx = - $self-> {offset} + 1 + $cbw;
-   my $c = $self-> {count};
-   my $wx = $self-> {widths};
-   for ( $i = 0; $i < $c; $i++) {
-      next unless $$wx[$i];
-      $sx += $$wx[$i] - $cbw * 2;
-      if ( $lim < $sx) {
-         return $pressable ? $i : undef;
-      }
-      $sx += $cbw * 2 + 2;
-      if ( $lim < $sx) {
-         return $self-> {scalable} ? -($i+1) : $i;
-      }
-   }
-   return undef;
+	my $cbw = $self-> {scalable} ? CaptureBrimWidth : 0;
+	my $sx = - $self-> {offset} + 1 + $cbw;
+	my $c = $self-> {count};
+	my $wx = $self-> {widths};
+	for ( $i = 0; $i < $c; $i++) {
+		next unless $$wx[$i];
+		$sx += $$wx[$i] - $cbw * 2;
+		if ( $lim < $sx) {
+			return $pressable ? $i : undef;
+		}
+		$sx += $cbw * 2 + 2;
+		if ( $lim < $sx) {
+			return $self-> {scalable} ? -($i+1) : $i;
+		}
+	}
+	return undef;
 }
 
 sub tab2offset
 {
-   my ( $self, $item) = @_;
-   my $i;
-   my $c = $self-> {count};
-   my $x = 1;
-   for ( $i = 0; $i < $item; $i++) {
-      next unless $self-> {widths}->[$i];
-      $x += $self-> {widths}->[$i] + 2;
-   }
-   return $x;
+	my ( $self, $item) = @_;
+	my $i;
+	my $c = $self-> {count};
+	my $x = 1;
+	for ( $i = 0; $i < $item; $i++) {
+		next unless $self-> {widths}-> [$i];
+		$x += $self-> {widths}-> [$i] + 2;
+	}
+	return $x;
 }
 
 sub tab2rect
 {
-   my ( $self, $id) = @_;
-   my $offset = $self-> tab2offset( $id) - $self-> {offset} - 1;
-   return $self-> {vertical} ?
-      ( 1, $offset, $self-> width - 1, $offset + $self-> {widths}->[$id] + 2) :
-      ( $offset, 1, $offset + $self-> {widths}->[$id] + 2, $self-> height - 1);
+	my ( $self, $id) = @_;
+	my $offset = $self-> tab2offset( $id) - $self-> {offset} - 1;
+	return $self-> {vertical} ?
+		( 1, $offset, $self-> width - 1, $offset + $self-> {widths}-> [$id] + 2) :
+		( $offset, 1, $offset + $self-> {widths}-> [$id] + 2, $self-> height - 1);
 }
 
 sub reset_transaction
 {
-   my $self = $_[0];
-   my $lim = $self-> {vertical} ? $self-> height : $self-> width;
-   $self-> {swidth} = $self-> tab2offset( $self-> {tabId}) - $self-> {offset};
-   $self-> {maxwidth} = $lim - $self-> {swidth} - 2;
-   $self-> {maxwidth} -= $self-> {minTabWidth} if $self-> {tabId} < $self-> {count} - 1;
-   if ( $self-> {swidth} < 0) {
-      $self-> {minwidth} = -$self-> {swidth} - 1;
-      $self-> {minwidth} = $self-> {minTabWidth} if $self-> {minwidth} > $self-> {minTabWidth};
-   } else {
-      $self-> {minwidth} = $self-> {minTabWidth};
-   }
+	my $self = $_[0];
+	my $lim = $self-> {vertical} ? $self-> height : $self-> width;
+	$self-> {swidth} = $self-> tab2offset( $self-> {tabId}) - $self-> {offset};
+	$self-> {maxwidth} = $lim - $self-> {swidth} - 2;
+	$self-> {maxwidth} -= $self-> {minTabWidth} if $self-> {tabId} < $self-> {count} - 1;
+	if ( $self-> {swidth} < 0) {
+		$self-> {minwidth} = -$self-> {swidth} - 1;
+		$self-> {minwidth} = $self-> {minTabWidth} 
+			if $self-> {minwidth} > $self-> {minTabWidth};
+	} else {
+		$self-> {minwidth} = $self-> {minTabWidth};
+	}
 }
 
 sub on_mousedown
 {
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   return unless $btn == mb::Left;
-   return if $self-> {transaction};
-   my $id = $self-> point2area( $x, $y);
-   return unless defined $id;
-   $self-> capture(1);
-   if ( $id < 0) {
-      $self-> {transaction} = 2;
-      $self-> {anchor} = $self-> {vertical} ? $y : $x;
-      $self-> {tabId}  = - $id - 1;
-      $self-> {owidth} = $self-> {widths}->[$self-> {tabId}];
-      $self-> reset_transaction;
-   } else {
-      $self-> {transaction} = 1;
-      $self-> {tabId} = $id;
-      $self-> pressed( $id);
-      $self-> {clickAllowed} = $self-> {clickable};
-      $self-> {anchor} = $self-> {vertical} ? $y : $x;
-      $self-> {anchor} -= $self-> tab2offset( $id) - $self->{offset};
-   }
-   $self-> {pointerPos} = [$self->pointerPos];
-   delete $self-> {pointerSet};
+	my ( $self, $btn, $mod, $x, $y) = @_;
+	return unless $btn == mb::Left;
+	return if $self-> {transaction};
+	my $id = $self-> point2area( $x, $y);
+	return unless defined $id;
+	$self-> capture(1);
+	if ( $id < 0) {
+		$self-> {transaction} = 2;
+		$self-> {anchor} = $self-> {vertical} ? $y : $x;
+		$self-> {tabId}  = - $id - 1;
+		$self-> {owidth} = $self-> {widths}-> [$self-> {tabId}];
+		$self-> reset_transaction;
+	} else {
+		$self-> {transaction} = 1;
+		$self-> {tabId} = $id;
+		$self-> pressed( $id);
+		$self-> {clickAllowed} = $self-> {clickable};
+		$self-> {anchor} = $self-> {vertical} ? $y : $x;
+		$self-> {anchor} -= $self-> tab2offset( $id) - $self-> {offset};
+	}
+	$self-> {pointerPos} = [$self-> pointerPos];
+	delete $self-> {pointerSet};
 }
 
 sub on_mouseup
 {
-   my ( $self, $btn, $mod, $x, $y) = @_;
-   return unless $self-> {transaction};
-   return unless $btn == mb::Left;
-   my $id = $self-> point2area( $x, $y);
+	my ( $self, $btn, $mod, $x, $y) = @_;
+	return unless $self-> {transaction};
+	return unless $btn == mb::Left;
+	my $id = $self-> point2area( $x, $y);
 
-   $self-> capture(0);
-   if ( $self-> {transaction} == 1) {
-      my @a = $self-> tab2rect( $self-> {tabId});
-      if ( $x >= $a[0] && $x < $a[2] && $y >= $a[1] && $y < $a[3]) {
-         $self-> notify(q(Click), $self-> {tabId}) if $self-> {clickAllowed};
-      }
-      $self-> pressed(-1);
-   } else {
-      $self-> recalc_maxwidth;
-   }
-   $self-> {transaction} = undef;
+	$self-> capture(0);
+	if ( $self-> {transaction} == 1) {
+		my @a = $self-> tab2rect( $self-> {tabId});
+		if ( $x >= $a[0] && $x < $a[2] && $y >= $a[1] && $y < $a[3]) {
+			$self-> notify(q(Click), $self-> {tabId}) if $self-> {clickAllowed};
+		}
+		$self-> pressed(-1);
+	} else {
+		$self-> recalc_maxwidth;
+	}
+	$self-> {transaction} = undef;
 }
 
 
 sub on_mousemove
 {
-   my ( $self, $mod, $x, $y) = @_;
-   unless ( $self-> {transaction}) {
-      my $p = $self-> point2area( $x, $y);
-      my $ptr;
-      if ( defined $p && $p < 0) {
-         $ptr = $self->{vertical} ? cr::SizeNS : cr::SizeWE;
-      } elsif ( $self->{dragable} && !$self->{clickable} && defined $p) {
-         $ptr = cr::Move;
-      } else {
-         $ptr = cr::Default;
-      }
-      $self-> pointer( $ptr);
-      return;
-   }
+	my ( $self, $mod, $x, $y) = @_;
+	unless ( $self-> {transaction}) {
+		my $p = $self-> point2area( $x, $y);
+		my $ptr;
+		if ( defined $p && $p < 0) {
+			$ptr = $self-> {vertical} ? cr::SizeNS : cr::SizeWE;
+		} elsif ( $self-> {dragable} && !$self-> {clickable} && defined $p) {
+			$ptr = cr::Move;
+		} else {
+			$ptr = cr::Default;
+		}
+		$self-> pointer( $ptr);
+		return;
+	}
 
-   if ( $self-> {transaction} == 1) {
-      my @a = $self-> tab2rect( $self-> {tabId});
-      $self-> pressed(
-         ( $x >= $a[0] && $x < $a[2] && $y >= $a[1] && $y < $a[3]) ?
-         $self->{tabId} : -1
-      );
-      return unless $self-> {dragable};
-      my @ppos = $self-> pointerPos;
-      if ( $self->{clickable} && !$self->{pointerSet}) {
-         my @p = @{$self-> {pointerPos}};
-         if ( abs( $p[0] - $ppos[0]) > 2 || abs( $p[1] - $ppos[1]) > 2) {
-            $self-> pointer( cr::Move);
-            delete $self-> {pointerPos};
-            $self-> {pointerSet} = 1;
-         }
-      }
-      my @lx = $self-> {vertical} ? @a[1,3] : @a[0,2];
-      my $d  = $self-> {vertical} ? $y : $x;
-      return if $d >= $lx[0] && $d < $lx[1];
-      my $osc = $self-> {scalable}; $self-> {scalable} = 0;
-      my $p = $self-> point2area( $x, $y, 1); # exclude borders
-      $self-> {scalable} = $osc;
-      my $o = $self-> {tabId};
-      return unless defined $p;
-      return if $p == $o;
-      $self-> {clickAllowed} = 0;
-      my $newpos;
-      if ( $self-> {widths}->[$p] > $self-> {widths}->[$o]) {
-         $ppos[$self-> {vertical} ? 1 : 0] +=
-            ( $self-> {widths}->[$p] - $self-> {widths}->[$o]) * (( $p > $o) ? 1 : -1);
-         $newpos = 1;
-      }
+	if ( $self-> {transaction} == 1) {
+		my @a = $self-> tab2rect( $self-> {tabId});
+		$self-> pressed(
+			( $x >= $a[0] && $x < $a[2] && $y >= $a[1] && $y < $a[3]) ?
+			$self-> {tabId} : -1
+		);
+		return unless $self-> {dragable};
+		my @ppos = $self-> pointerPos;
+		if ( $self-> {clickable} && !$self-> {pointerSet}) {
+			my @p = @{$self-> {pointerPos}};
+			if ( abs( $p[0] - $ppos[0]) > 2 || abs( $p[1] - $ppos[1]) > 2) {
+				$self-> pointer( cr::Move);
+				delete $self-> {pointerPos};
+				$self-> {pointerSet} = 1;
+			}
+		}
+		my @lx = $self-> {vertical} ? @a[1,3] : @a[0,2];
+		my $d  = $self-> {vertical} ? $y : $x;
+		return if $d >= $lx[0] && $d < $lx[1];
+		my $osc = $self-> {scalable}; $self-> {scalable} = 0;
+		my $p = $self-> point2area( $x, $y, 1); # exclude borders
+		$self-> {scalable} = $osc;
+		my $o = $self-> {tabId};
+		return unless defined $p;
+		return if $p == $o;
+		$self-> {clickAllowed} = 0;
+		my $newpos;
+		if ( $self-> {widths}-> [$p] > $self-> {widths}-> [$o]) {
+			$ppos[$self-> {vertical} ? 1 : 0] +=
+				( $self-> {widths}-> [$p] - $self-> {widths}-> [$o]) * (( $p > $o) ? 1 : -1);
+			$newpos = 1;
+		}
 
-      splice( @{$self-> {items}}, $p, 0, splice( @{$self-> {items}}, $o, 1));
-      splice( @{$self-> {widths}}, $p, 0, splice( @{$self-> {widths}}, $o, 1));
-      $self-> {tabId} = $p;
-      $self-> repaint;
-      $self-> notify(q(MoveItem), $o, $p);
-      $self-> pointerPos( @ppos) if $newpos;
-   } else {
-      my @sz = $self-> size;
-      my $d = $self-> {vertical} ? $y : $x;
-      my $nw = $self-> {owidth} + $d - $self-> {anchor};
-      $nw = $self-> {maxwidth} if $nw > $self-> {maxwidth};
-      $nw = $self-> {minwidth} if $nw < $self-> {minwidth};
-      $nw = $self-> {minTabWidth} if $nw < $self-> {minTabWidth};
-      my $ow = $self-> {widths}->[$self-> {tabId}];
-      return if $nw == $ow;
-      $self-> {widths}->[$self-> {tabId}] = $nw;
-      my $o  = $self-> {swidth} + $ow;
-      $self-> {maxWidth} += $nw - $ow;
-      $self-> {vertical} ?
-         $self-> scroll(
-             0, $nw - $ow,
-             confineRect => [ 1, $o, $sz[0] - 1, $sz[1] - 1 + abs($nw - $ow)],
-             clipRect    => [ 1, 1, $sz[0]-1, $sz[1]-1],
-         ) : $self-> scroll(
-             $nw - $ow, 0,
-             confineRect => [ $o, 1, $sz[0] - 1 + abs($nw - $ow), $sz[1] - 1],
-             clipRect    => [ 1, 1, $sz[0]-1, $sz[1]-1],
-         );
-      $self-> notify(q(SizeItem), $self->{tabId}, $ow, $nw);
-   }
+		splice( @{$self-> {items}}, $p, 0, splice( @{$self-> {items}}, $o, 1));
+		splice( @{$self-> {widths}}, $p, 0, splice( @{$self-> {widths}}, $o, 1));
+		$self-> {tabId} = $p;
+		$self-> repaint;
+		$self-> notify(q(MoveItem), $o, $p);
+		$self-> pointerPos( @ppos) if $newpos;
+	} else {
+		my @sz = $self-> size;
+		my $d = $self-> {vertical} ? $y : $x;
+		my $nw = $self-> {owidth} + $d - $self-> {anchor};
+		$nw = $self-> {maxwidth} if $nw > $self-> {maxwidth};
+		$nw = $self-> {minwidth} if $nw < $self-> {minwidth};
+		$nw = $self-> {minTabWidth} if $nw < $self-> {minTabWidth};
+		my $ow = $self-> {widths}-> [$self-> {tabId}];
+		return if $nw == $ow;
+		$self-> {widths}-> [$self-> {tabId}] = $nw;
+		my $o  = $self-> {swidth} + $ow;
+		$self-> {maxWidth} += $nw - $ow;
+		$self-> {vertical} ?
+			$self-> scroll(
+				0, $nw - $ow,
+				confineRect => [ 1, $o, $sz[0] - 1, $sz[1] - 1 + abs($nw - $ow)],
+				clipRect    => [ 1, 1, $sz[0]-1, $sz[1]-1],
+			) : $self-> scroll(
+				$nw - $ow, 0,
+				confineRect => [ $o, 1, $sz[0] - 1 + abs($nw - $ow), $sz[1] - 1],
+				clipRect    => [ 1, 1, $sz[0]-1, $sz[1]-1],
+			);
+		$self-> notify(q(SizeItem), $self-> {tabId}, $ow, $nw);
+	}
 }
 
 sub on_mouseclick
 {
-   $_[0]-> clear_event;
-   return unless $_[5];
-   shift->notify(q(MouseDown), @_);
+	$_[0]-> clear_event;
+	return unless $_[5];
+	shift-> notify(q(MouseDown), @_);
 }
 
 
 sub on_click
 {
-#  my ( $self, $index) = @_;
+#	my ( $self, $index) = @_;
 }
-
 
 sub protect
 {
-   die "Prima::Header: Cannot change parameters during transaction\n" if $_[0]-> {transaction};
+	die "Prima::Header: Cannot change parameters during transaction\n" if $_[0]-> {transaction};
 }
 
 sub autowidths
 {
-   my ($self) = @_;
-   my @r = $self->calc_autowidths;
-   $self->{widths} = \@r;
-   $self->recalc_maxwidth;
-   $self->notify(q(SizeItems));
+	my ($self) = @_;
+	my @r = $self-> calc_autowidths;
+	$self-> {widths} = \@r;
+	$self-> recalc_maxwidth;
+	$self-> notify(q(SizeItems));
 }
 
 sub calc_autowidths
 {
-   my $self = $_[0];
-   $self-> protect;
-   my $cx = $self-> {count};
-   my $i;
-   $self-> begin_paint_info;
-   my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureItem));
-   my @r;
-   for ( $i = 0; $i < $cx; $i++) {
-      my $result = 0;
-      $notifier->( @notifyParms, $i, \$result);
-      $result = $self-> {minTabWidth} if $result < $self-> {minTabWidth};
-      push @r, $result;
-      next unless $result;
-   }
-   $self-> end_paint_info;
-   return @r;
+	my $self = $_[0];
+	$self-> protect;
+	my $cx = $self-> {count};
+	my $i;
+	$self-> begin_paint_info;
+	my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureItem));
+	my @r;
+	for ( $i = 0; $i < $cx; $i++) {
+		my $result = 0;
+		$notifier-> ( @notifyParms, $i, \$result);
+		$result = $self-> {minTabWidth} if $result < $self-> {minTabWidth};
+		push @r, $result;
+		next unless $result;
+	}
+	$self-> end_paint_info;
+	return @r;
 }
 
 sub recalc_maxwidth
 {
-   my $self = $_[0];
-   my $mxw = 2;
-   for ( @{$self->{widths}}) {
-      $mxw += $_ + 2 if $_;
-   }
-   $self->{maxWidth} = $mxw;
+	my $self = $_[0];
+	my $mxw = 2;
+	for ( @{$self-> {widths}}) {
+		$mxw += $_ + 2 if $_;
+	}
+	$self-> {maxWidth} = $mxw;
 }
 
 sub offset
 {
-   return $_[0]-> {offset} unless $#_;
-   my ( $self, $offset) = @_;
-   $offset = 0 if $offset < 0;
-   $offset = $self-> {maxWidth} - 5 if $offset >= $self->{maxWidth} - 4;
-   return if $offset == $self-> {offset};
-   $self-> {offset} = $offset;
-   $self-> reset_transaction if $self-> {transaction};
-   $self-> repaint;
+	return $_[0]-> {offset} unless $#_;
+	my ( $self, $offset) = @_;
+	$offset = 0 if $offset < 0;
+	$offset = $self-> {maxWidth} - 5 if $offset >= $self-> {maxWidth} - 4;
+	return if $offset == $self-> {offset};
+	$self-> {offset} = $offset;
+	$self-> reset_transaction if $self-> {transaction};
+	$self-> repaint;
 }
 
 sub clickable
 {
-   return $_[0]-> {clickable} unless $#_;
-   $_[0]-> {clickable} = $_[1];
+	return $_[0]-> {clickable} unless $#_;
+	$_[0]-> {clickable} = $_[1];
 }
 
 sub vertical
 {
-   return $_[0]-> {vertical} unless $#_;
-   return if $_[0]-> {vertical} == $_[1];
-   $_[0]-> protect;
-   $_[0]-> {vertical} = $_[1];
-   $_[0]-> repaint;
+	return $_[0]-> {vertical} unless $#_;
+	return if $_[0]-> {vertical} == $_[1];
+	$_[0]-> protect;
+	$_[0]-> {vertical} = $_[1];
+	$_[0]-> repaint;
 }
 
 sub scalable
 {
-   return $_[0]-> {scalable} unless $#_;
-   $_[0]-> {scalable} = $_[1];
+	return $_[0]-> {scalable} unless $#_;
+	$_[0]-> {scalable} = $_[1];
 }
 
 sub dragable
 {
-   return $_[0]-> {dragable} unless $#_;
-   $_[0]-> {dragable} = $_[1];
+	return $_[0]-> {dragable} unless $#_;
+	$_[0]-> {dragable} = $_[1];
 }
 
 sub minTabWidth
 {
-   return $_[0]-> {minTabWidth} unless $#_;
-   my $changed = 0;
-   my $m = $_[1];
-   $m = 0 if $m < 0;
-   $_[0]-> {minTabWidth} = $m;
-   for (@{$_[0]->{widths}}) {
-      $_ = $m, $changed = 1 if $_ < $m;
-   }
-   $_[0]-> recalc_maxwidth;
-   $_[0]-> notify(q(SizeItems)) if $changed;
+	return $_[0]-> {minTabWidth} unless $#_;
+	my $changed = 0;
+	my $m = $_[1];
+	$m = 0 if $m < 0;
+	$_[0]-> {minTabWidth} = $m;
+	for (@{$_[0]-> {widths}}) {
+		$_ = $m, $changed = 1 if $_ < $m;
+	}
+	$_[0]-> recalc_maxwidth;
+	$_[0]-> notify(q(SizeItems)) if $changed;
 }
-
 
 sub items
 {
-   unless ( $#_) {
-      return wantarray ? @{$_[0]-> {items}} : [@{$_[0]-> {items}}];
-   }
-   my ( $self, @items) = @_;
-   $self-> protect;
-   @items = @{$items[0]} if scalar(@items) == 1 && ref($items[0]) eq 'ARRAY';
-   $self-> {items} = [@items];
-   my $oc = $self-> {count};
-   $self-> {count} = scalar @items;
-   if ( $oc > $self-> {count}) {
-      splice( @{$self-> {widths}}, $self-> {count});
-      $self-> notify(q(SizeItems));
-   } elsif ( $oc < $self-> {count}) {
-      push( @{$self-> {widths}}, (( $self-> {minTabWidth}) x ( $self-> {count} - $oc)));
-      $self-> notify(q(SizeItems));
-   }
-   $self-> recalc_maxwidth;
-   $self-> offset( $self-> offset);
-   $self-> repaint;
+	unless ( $#_) {
+		return wantarray ? @{$_[0]-> {items}} : [@{$_[0]-> {items}}];
+	}
+	my ( $self, @items) = @_;
+	$self-> protect;
+	@items = @{$items[0]} if scalar(@items) == 1 && ref($items[0]) eq 'ARRAY';
+	$self-> {items} = [@items];
+	my $oc = $self-> {count};
+	$self-> {count} = scalar @items;
+	if ( $oc > $self-> {count}) {
+		splice( @{$self-> {widths}}, $self-> {count});
+		$self-> notify(q(SizeItems));
+	} elsif ( $oc < $self-> {count}) {
+		push( @{$self-> {widths}}, (( $self-> {minTabWidth}) x ( $self-> {count} - $oc)));
+		$self-> notify(q(SizeItems));
+	}
+	$self-> recalc_maxwidth;
+	$self-> offset( $self-> offset);
+	$self-> repaint;
 }
 
 sub widths
 {
-   unless ( $#_) {
-      return wantarray ? @{$_[0]-> {widths}} : [@{$_[0]-> {widths}}];
-   }
-   my ( $self, @widths) = @_;
-   $self-> protect;
-   @widths = @{$widths[0]} if scalar(@widths) == 1 && ref($widths[0]) eq 'ARRAY';
-   $self-> {widths} = [@widths];
-   if ( scalar @widths > $self->{count}) {
-      splice( @{$self-> {widths}}, $self-> {count});
-   } elsif ( scalar @widths < $self-> {count}) {
-      push( @{$self-> {widths}}, (( $self-> {minTabWidth}) x ( $self-> {count} - scalar @widths)));
-   }
-   for ( @{$self-> {widths}}) {
-      $_ = $self-> {minTabWidth} if $_ < $self-> {minTabWidth};
-   }
-   $self-> recalc_maxwidth;
-   $self-> offset( $self-> offset);
-   $self-> repaint;
-   $self-> notify(q(SizeItems));
+	unless ( $#_) {
+		return wantarray ? @{$_[0]-> {widths}} : [@{$_[0]-> {widths}}];
+	}
+	my ( $self, @widths) = @_;
+	$self-> protect;
+	@widths = @{$widths[0]} if scalar(@widths) == 1 && ref($widths[0]) eq 'ARRAY';
+	$self-> {widths} = [@widths];
+	if ( scalar @widths > $self-> {count}) {
+		splice( @{$self-> {widths}}, $self-> {count});
+	} elsif ( scalar @widths < $self-> {count}) {
+		push( @{$self-> {widths}}, 
+			(( $self-> {minTabWidth}) x ( $self-> {count} - scalar @widths)));
+	}
+	for ( @{$self-> {widths}}) {
+		$_ = $self-> {minTabWidth} if $_ < $self-> {minTabWidth};
+	}
+	$self-> recalc_maxwidth;
+	$self-> offset( $self-> offset);
+	$self-> repaint;
+	$self-> notify(q(SizeItems));
 }
 
 sub pressed
 {
-   return $_[0]-> {pressed} unless $#_;
-   my ( $self, $pid) = @_;
-   $pid = -1 if $pid < 0 || $pid >= $self-> {count};
-   return if $pid == $self-> {pressed};
-   my $opid = $self-> {pressed};
-   $self-> {pressed} = $pid;
-   if (( $opid < 0) || ( $pid < 0)) {
-      $self-> invalidate_rect( $self-> tab2rect( ( $pid < 0) ? $opid : $pid));
-   } else {
-      $self-> repaint;
-   }
+	return $_[0]-> {pressed} unless $#_;
+	my ( $self, $pid) = @_;
+	$pid = -1 if $pid < 0 || $pid >= $self-> {count};
+	return if $pid == $self-> {pressed};
+	my $opid = $self-> {pressed};
+	$self-> {pressed} = $pid;
+	if (( $opid < 0) || ( $pid < 0)) {
+		$self-> invalidate_rect( $self-> tab2rect( ( $pid < 0) ? $opid : $pid));
+	} else {
+		$self-> repaint;
+	}
 }
-
 
 1;
 

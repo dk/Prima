@@ -1,18 +1,18 @@
 # $Id$
 print "1..15 activate,onActivate,deactivate,onDeactivate,maximize,onWindowState,".
-      "restore from maximized,minimize,restore from minimized,restore max->min->normal,".
-      "user modality,execute,show,hide,close\n";
+		"restore from maximized,minimize,restore from minimized,restore max->min->normal,".
+		"user modality,execute,show,hide,close\n";
 
 my %id;
 my $xw = Prima::Window-> create(
-   size => [ 100, 100],
-   onActivate    => sub { $dong = 1; $id{Activate}   = 1;},
-   onDeactivate  => sub { $dong = 1; $id{Deactivate} = 1;},
-   onExecute     => sub { $dong = 1; $id{Execute}    = 1;},
-   onWindowState => sub { $dong = 1; $id{State}      = 1;},
-   onClose       => sub { $dong = 1; $id{Close}      = 1; $_[0]-> clear_event; },
-   onShow        => sub { $dong = 1; $id{Show}       = 1; },
-   onHide        => sub { $dong = 1; $id{Hide}       = 1; },
+	size => [ 100, 100],
+	onActivate    => sub { $dong = 1; $id{Activate}   = 1;},
+	onDeactivate  => sub { $dong = 1; $id{Deactivate} = 1;},
+	onExecute     => sub { $dong = 1; $id{Execute}    = 1;},
+	onWindowState => sub { $dong = 1; $id{State}      = 1;},
+	onClose       => sub { $dong = 1; $id{Close}      = 1; $_[0]-> clear_event; },
+	onShow        => sub { $dong = 1; $id{Show}       = 1; },
+	onHide        => sub { $dong = 1; $id{Hide}       = 1; },
 );
 
 $w-> focus;
@@ -53,13 +53,13 @@ ok( $xw-> windowState == ws::Normal);
 %id=();
 $dong = 0;
 $xw-> insert( Timer =>
-   timeout => 500,
-   onTick => sub {
-   $_[0]-> stop;
-   $w-> focus;
-   ok( !$w-> selected && $xw-> selected);
-   $xw-> ok;
-   $_[0]-> destroy;
+	timeout => 500,
+	onTick => sub {
+	$_[0]-> stop;
+	$w-> focus;
+	ok( !$w-> selected && $xw-> selected);
+	$xw-> ok;
+	$_[0]-> destroy;
 })-> start;
 my $mr = $xw-> execute;
 ok( $dong && $mr == mb::OK);

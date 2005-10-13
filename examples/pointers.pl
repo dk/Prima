@@ -43,18 +43,18 @@ use Prima qw( StdBitmap Buttons Application);
 
 package UserInit;
 
-my $ph = Prima::Application->get_system_value(sv::YPointer);
+my $ph = Prima::Application-> get_system_value(sv::YPointer);
 my $w = Prima::MainWindow-> create(
-   size    => [ 350, 20 + ($ph+8)*11],
-   left    => 200,
-   text    => 'Pointers',
+	size    => [ 350, 20 + ($ph+8)*11],
+	left    => 200,
+	text    => 'Pointers',
 );
 
 my %grep_out = (
-   'BEGIN' => 1,
-   'END' => 1,
-   'AUTOLOAD' => 1,
-   'constant' => 1
+	'BEGIN' => 1,
+	'END' => 1,
+	'AUTOLOAD' => 1,
+	'constant' => 1
 );
 
 my @a = sort { &{$cr::{$a}}() <=> &{$cr::{$b}}()} grep { !exists $grep_out{$_}} keys %cr::;
@@ -64,60 +64,60 @@ my $i = 1;
 
 for my $c ( @a[0..$#a-1])
 {
-   my $p = eval("cr::$c"); 
-   $w-> pointer( $p);
-   my $b = $w-> insert( Button =>
-      flat => 1,
-      left    => 10 + (($i-1) % 2)*170,
-      width   => 160,
-      height  => $ph + 4,
-      bottom  => $w-> height - int(($i+1)/2) * ($ph+8) - 10,
-      pointer => $p,
-      name    => $c,
-      image   => $w-> pointerIcon,
-      onClick => sub { $::application-> pointer( $_[0]-> pointer); },
-   );
-   $i++;
+	my $p = eval("cr::$c"); 
+	$w-> pointer( $p);
+	my $b = $w-> insert( Button =>
+		flat => 1,
+		left    => 10 + (($i-1) % 2)*170,
+		width   => 160,
+		height  => $ph + 4,
+		bottom  => $w-> height - int(($i+1)/2) * ($ph+8) - 10,
+		pointer => $p,
+		name    => $c,
+		image   => $w-> pointerIcon,
+		onClick => sub { $::application-> pointer( $_[0]-> pointer); },
+	);
+	$i++;
 };
 
 my $ptr = Prima::StdBitmap::icon( sbmp::DriveCDROM);
 
 my @mapset = map {
-   my ($x,$a) = $ptr-> split;
-   my $j = Prima::Icon-> create;
-   $x-> begin_paint;
-   $x-> text_out( $_, 3, 3); 
-   $x-> end_paint;
-   $a-> begin_paint;
-   $a-> text_out( $_, 3, 3); 
-   $a-> end_paint;
-   $j-> combine( $x, $a);
-   $j;
+	my ($x,$a) = $ptr-> split;
+	my $j = Prima::Icon-> create;
+	$x-> begin_paint;
+	$x-> text_out( $_, 3, 3); 
+	$x-> end_paint;
+	$a-> begin_paint;
+	$a-> text_out( $_, 3, 3); 
+	$a-> end_paint;
+	$j-> combine( $x, $a);
+	$j;
 } 1..4;   
 my $mapsetID = 0;
 
 my $b = $w-> insert( SpeedButton =>
-   left    => 10 + (($i-1) % 2)*170,
-   width   => 160,
-   height  => $ph+4,
-   bottom  => $w-> height - int(($i+1)/2) * ($ph+8) - 10,
-   pointer => $ptr,
-   image   => $ptr,
-   text => $a[-1],
-   flat => 1,
-   onClick => sub {
-       $::application-> pointer( $_[0]-> pointer);
-   },
+	left    => 10 + (($i-1) % 2)*170,
+	width   => 160,
+	height  => $ph+4,
+	bottom  => $w-> height - int(($i+1)/2) * ($ph+8) - 10,
+	pointer => $ptr,
+	image   => $ptr,
+	text => $a[-1],
+	flat => 1,
+	onClick => sub {
+		$::application-> pointer( $_[0]-> pointer);
+	},
 );
 
 $b-> insert( Timer => 
-   timeout => 1250, 
-   onTick  => sub {
-      $b-> pointerIcon( $mapset[$mapsetID]);
-      $b-> image( $mapset[$mapsetID]);
-      $mapsetID++;
-      $mapsetID = 0 if $mapsetID >= @mapset;
-   },   
+	timeout => 1250, 
+	onTick  => sub {
+		$b-> pointerIcon( $mapset[$mapsetID]);
+		$b-> image( $mapset[$mapsetID]);
+		$mapsetID++;
+		$mapsetID = 0 if $mapsetID >= @mapset;
+	},   
 )-> start;
 
 $w-> pointer( cr::Default);

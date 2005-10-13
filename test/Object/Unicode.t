@@ -1,10 +1,11 @@
 # $Id$
 
 unless ( $] >= 5.006 && 
-         $::application-> get_system_value( sv::CanUTF8_Output)) {
-   print "1..1 support\n";
-   skip;
-   return 1;
+	$::application-> get_system_value( sv::CanUTF8_Output)
+) {
+	print "1..1 support\n";
+	skip;
+	return 1;
 }
 
 print "1..2 support,wrap utf8 text\n";

@@ -40,125 +40,126 @@ use vars qw(@ISA);
 
 sub profile_default
 {
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my %prf = (
-       text        => 'Printer setup',
-       width       => 309,
-       height      => 143,
-       designScale => [7,16],
-       centered    => 1,
-       visible     => 0,
-   );
-   @$def{keys %prf} = values %prf;
-   return $def;
+	my $def = $_[ 0]-> SUPER::profile_default;
+	my %prf = (
+		text        => 'Printer setup',
+		width       => 309,
+		height      => 143,
+		designScale => [7,16],
+		centered    => 1,
+		visible     => 0,
+	);
+	@$def{keys %prf} = values %prf;
+	return $def;
 }
 
 sub init
 {
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-   my $cb = $self-> insert( ComboBox =>
-       origin => [ 4, 89],
-       style  => cs::DropDownList,
-       name   => 'Printers',
-       size   => [ 299, 20],
-       delegations => ['Change'],
-   );
-   $self-> insert( Button =>
-       origin => [ 208, 4],
-       size => [ 96, 36],
-       text   => 'P~roperties...',
-       name   => 'Properties',
-       delegations => ['Click'],
-   );
-   $self-> insert( Label =>
-       origin => [ 4, 116],
-       size => [ 299, 20],
-       text => '~Printer',
-       focusLink => $cb,
-   );
-   $self-> insert( Label =>
-       origin => [ 3, 50],
-       name => 'Device',
-       size => [ 299, 20],
-       text => '',
-   );
-   $self-> insert( Button =>
-       origin => [ 4, 4],
-       size => [ 96, 36],
-       name => 'OK',
-       text => '~OK',
-       default => 1,
-       delegations => ['Click'],
-   );
-   $self-> insert( Button =>
-       origin => [ 107, 4],
-       size => [ 96, 36],
-       text => 'Cancel',
-       name => 'Cancel',
-       delegations => ['Click'],
-   );
-   return %profile;
+	my $self = shift;
+	my %profile = $self-> SUPER::init(@_);
+	my $cb = $self-> insert( ComboBox =>
+		origin => [ 4, 89],
+		style  => cs::DropDownList,
+		name   => 'Printers',
+		size   => [ 299, 20],
+		delegations => ['Change'],
+	);
+	$self-> insert( Button =>
+		origin => [ 208, 4],
+		size => [ 96, 36],
+		text   => 'P~roperties...',
+		name   => 'Properties',
+		delegations => ['Click'],
+	);
+	$self-> insert( Label =>
+		origin => [ 4, 116],
+		size => [ 299, 20],
+		text => '~Printer',
+		focusLink => $cb,
+	);
+	$self-> insert( Label =>
+		origin => [ 3, 50],
+		name => 'Device',
+		size => [ 299, 20],
+		text => '',
+	);
+	$self-> insert( Button =>
+		origin => [ 4, 4],
+		size => [ 96, 36],
+		name => 'OK',
+		text => '~OK',
+		default => 1,
+		delegations => ['Click'],
+	);
+	$self-> insert( Button =>
+		origin => [ 107, 4],
+		size => [ 96, 36],
+		text => 'Cancel',
+		name => 'Cancel',
+		delegations => ['Click'],
+	);
+	return %profile;
 }
 
 sub on_execute
 {
-   my $self = $_[0];
-   my $oldp = $self-> Printers-> text;
-   my @prs = @{$::application-> get_printer-> printers};
-   unless ( scalar @prs) {
-      $self-> cancel;
-      Prima::message("No printers found");
-      return;
-   }
-   $self-> {list} = [ @prs];
-   my $p = $self-> Printers;
-   my @newprs = @prs;
-   @newprs = map {$_ = $_->{name}} @newprs;
-   my $found = 0;
-   for ( @newprs) {
-      $found = 1, last if $_ eq $oldp;
-   }
-   unless ( $found) {
-      for ( @prs) {
-         $oldp = $_->{name}, last if $_->{defaultPrinter}
-      }
-   }
-   $p-> items( \@newprs ),
-   $p-> text( $oldp);
-   my $i = $p-> List-> focusedItem;
-   $self-> Device-> text( 'Device: ' . $prs[ $i]->{device});
-   $self-> {oldPrinter} = $oldp;
+	my $self = $_[0];
+	my $oldp = $self-> Printers-> text;
+	my @prs = @{$::application-> get_printer-> printers};
+	unless ( scalar @prs) {
+		$self-> cancel;
+		Prima::message("No printers found");
+		return;
+	}
+	$self-> {list} = [ @prs];
+	my $p = $self-> Printers;
+	my @newprs = @prs;
+	@newprs = map {$_ = $_-> {name}} @newprs;
+	my $found = 0;
+	for ( @newprs) {
+		$found = 1, last if $_ eq $oldp;
+	}
+	unless ( $found) {
+		for ( @prs) {
+			$oldp = $_-> {name}, last if $_-> {defaultPrinter}
+		}
+	}
+	$p-> items( \@newprs ),
+	$p-> text( $oldp);
+	my $i = $p-> List-> focusedItem;
+	$self-> Device-> text( 'Device: ' . $prs[ $i]-> {device});
+	$self-> {oldPrinter} = $oldp;
 }
 
 sub Printers_Change
 {
-   my ( $self, $combic) = @_;
-   $::application-> get_printer-> printer( $combic-> text);
-   $self-> Device-> text( 'Device: ' . $self->{list}-> [ $combic-> List-> focusedItem]->{device});
+	my ( $self, $combic) = @_;
+	$::application-> get_printer-> printer( $combic-> text);
+	$self-> Device-> text( 'Device: ' . 
+		$self-> {list}-> [ $combic-> List-> focusedItem]-> {device}
+	);
 }
 
 
 sub Properties_Click
 {
-   $::application-> get_printer-> setup_dialog;
+	$::application-> get_printer-> setup_dialog;
 }
 
 sub OK_Click
 {
-   $_[0]-> ok;
+	$_[0]-> ok;
 }
 
 sub Cancel_Click
 {
-   $::application-> get_printer-> printer( $_[0]-> {oldPrinter});
-   $_[0]-> cancel;
+	$::application-> get_printer-> printer( $_[0]-> {oldPrinter});
+	$_[0]-> cancel;
 }
-
 
 sub execute
 {
-   return $_[0]-> SUPER::execute == mb::OK;
+	return $_[0]-> SUPER::execute == mb::OK;
 }
 
 1;
@@ -187,17 +188,17 @@ selection process.
 
 =head1 SYNOPSIS
 
-   use Prima::PrintDialog;
-   
-   $dlg = Prima::PrintSetupDialog-> create;
-   if ( $dlg-> execute) {
-      my $p = $::application-> get_printer;
-      if ( $p-> begin_doc ) {
-         $p-> text_out( 'Hello world', 10, 10);
-         $p-> end_doc;
-      }
-   }
-   $dlg-> destroy;
+	use Prima::PrintDialog;
+	
+	$dlg = Prima::PrintSetupDialog-> create;
+	if ( $dlg-> execute) {
+		my $p = $::application-> get_printer;
+		if ( $p-> begin_doc ) {
+			$p-> text_out( 'Hello world', 10, 10);
+			$p-> end_doc;
+		}
+	}
+	$dlg-> destroy;
 
 =head1 AUTHOR
 

@@ -37,8 +37,8 @@ use vars qw(@ISA);
 
 sub on_destroy
 {
-   $_[0]-> SUPER::on_destroy;
-   $::application-> close unless @Prima::HelpViewer::helpWindows;
+	$_[0]-> SUPER::on_destroy;
+	$::application-> close unless @Prima::HelpViewer::helpWindows;
 }
 
 package main;
@@ -47,9 +47,9 @@ $Prima::HelpViewer::windowClass = 'SoleHelpViewer';
 
 my $htx = ( @ARGV ? $ARGV[0] : 'Prima' );
 if ( -f $htx) {
-   $htx = "file://$htx";
+	$htx = "file://$htx";
 } else {
-   $htx .= '/' unless $htx =~ /\//;
+	$htx .= '/' unless $htx =~ /\//;
 }
 $::application-> open_help( $htx);
 

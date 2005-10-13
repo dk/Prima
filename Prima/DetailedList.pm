@@ -41,402 +41,405 @@ use vars qw(@ISA);
 
 {
 my %RNT = (
-   %{Prima::ListViewer->notification_types()},
-   Sort => nt::Command,
+	%{Prima::ListViewer-> notification_types()},
+	Sort => nt::Command,
 );
 
 sub notification_types { return \%RNT; }
 }
 
-
 my %hdrProps = (
-   clickable   => 1,
-   scalable    => 1,
-   minTabWidth => 1,
+	clickable   => 1,
+	scalable    => 1,
+	minTabWidth => 1,
 );
 
 for ( keys %hdrProps) {
-   eval <<GENPROC;
-   sub $_ { return shift-> {hdr}-> $_(\@_); }
-   sub Prima::DetailList::DummyHeader::$_ {}
+	eval <<GENPROC;
+sub $_ { return shift-> {hdr}-> $_(\@_); }
+sub Prima::DetailList::DummyHeader::$_ {}
 GENPROC
 }
 
 sub profile_default
 {
-   return {
-      %{Prima::Header->profile_default},
-      %{$_[ 0]-> SUPER::profile_default},
-      headerClass       => 'Prima::Header',
-      headerProfile     => {},
-      headerDelegations => [qw(MoveItem SizeItem SizeItems Click)],
-      multiColumn       => 0,
-      autoWidth         => 0,
-      columns           => 0,
-      widths            => [],
-      headers           => [],
-      mainColumn        => 0,
-   };
+	return {
+		%{Prima::Header-> profile_default},
+		%{$_[ 0]-> SUPER::profile_default},
+		headerClass       => 'Prima::Header',
+		headerProfile     => {},
+		headerDelegations => [qw(MoveItem SizeItem SizeItems Click)],
+		multiColumn       => 0,
+		autoWidth         => 0,
+		columns           => 0,
+		widths            => [],
+		headers           => [],
+		mainColumn        => 0,
+	};
 }
 
 
 sub init
 {
-   my ( $self, %profile) = @_;
-   $self->{noHeader} = 1;
-   $self->{header} = bless {
-      maxWidth => 0,
-   }, q\Prima::DetailList::DummyHeader\;
-   $self-> {$_} = 0 for qw( mainColumn);
-   %profile = $self-> SUPER::init( %profile);
+	my ( $self, %profile) = @_;
+	$self-> {noHeader} = 1;
+	$self-> {header} = bless {
+		maxWidth => 0,
+	}, q\Prima::DetailList::DummyHeader\;
+	$self-> {$_} = 0 for qw( mainColumn);
+	%profile = $self-> SUPER::init( %profile);
 
-   my $hh = $self-> {headerInitHeight};
-   delete $self-> {headerInitHeight};
-   delete $self-> {noHeader};
-   my $bw = $self-> borderWidth;
-   my @sz = $self-> size;
+	my $hh = $self-> {headerInitHeight};
+	delete $self-> {headerInitHeight};
+	delete $self-> {noHeader};
+	my $bw = $self-> borderWidth;
+	my @sz = $self-> size;
 
-   my $hasv = $self-> {vScroll};
+	my $hasv = $self-> {vScroll};
 
-   $self-> {header} = $self-> insert( $profile{headerClass} =>
-      name     => 'Header',
-      origin   => [ $bw, $sz[1] - $bw - $hh],
-      size     => [ $sz[0] - $bw * 2 + 1 - ( $hasv ? $self->{vScrollBar}-> width : 0), $hh],
-      vertical => 0,
-      growMode => gm::Ceiling,
-      items    => $profile{headers},
-      widths   => $profile{widths},
-      delegations => $profile{headerDelegations},
-      (map { $_ => $profile{$_}} keys %hdrProps),
-      %{$profile{headerProfile}},
-   );
-   my $x = $self-> {header}->items;
-   $self-> {umap} = [ 0 .. $#$x];
-   $self-> $_( $profile{$_}) for qw( columns mainColumn);
-   if ( scalar @{$profile{widths}}) {
-      $self-> {itemWidth} = $self-> {header}-> {maxWidth} - 1;
-      $self-> reset_scrolls;
-   } else {
-      $self-> autowidths;
-   }
-   return %profile;
+	$self-> {header} = $self-> insert( $profile{headerClass} =>
+		name     => 'Header',
+		origin   => [ $bw, $sz[1] - $bw - $hh],
+		size     => [ $sz[0] - $bw * 2 + 1 - ( $hasv ? $self-> {vScrollBar}-> width : 0), $hh],
+		vertical => 0,
+		growMode => gm::Ceiling,
+		items    => $profile{headers},
+		widths   => $profile{widths},
+		delegations => $profile{headerDelegations},
+		(map { $_ => $profile{$_}} keys %hdrProps),
+		%{$profile{headerProfile}},
+	);
+
+	my $x = $self-> {header}-> items;
+	$self-> {umap} = [ 0 .. $#$x];
+	$self-> $_( $profile{$_}) for qw( columns mainColumn);
+
+	if ( scalar @{$profile{widths}}) {
+		$self-> {itemWidth} = $self-> {header}-> {maxWidth} - 1;
+		$self-> reset_scrolls;
+	} else {
+		$self-> autowidths;
+	}
+	return %profile;
 }
 
 sub setup_indents
 {
-   $_[0]-> SUPER::setup_indents;
-   $_[0]-> {headerInitHeight} = $_[0]-> font-> height + 8;
-   $_[0]-> {indents}-> [ 3] += $_[0]-> {headerInitHeight};
+	$_[0]-> SUPER::setup_indents;
+	$_[0]-> {headerInitHeight} = $_[0]-> font-> height + 8;
+	$_[0]-> {indents}-> [ 3] += $_[0]-> {headerInitHeight};
 }
 
 
 sub set_v_scroll
 {
-   my ( $self, $s) = @_;
-   $self-> SUPER::set_v_scroll( $s);
-   return if $self->{noHeader};
-   my @a = $self-> get_active_area(2);
-   $self-> {header}-> width( $a[0]);
+	my ( $self, $s) = @_;
+	$self-> SUPER::set_v_scroll( $s);
+	return if $self-> {noHeader};
+	my @a = $self-> get_active_area(2);
+	$self-> {header}-> width( $a[0]);
 }
 
 sub set_offset
 {
-   my ( $self, $o) = @_;
-   $self-> SUPER::set_offset( $o);
-   $self-> { header}-> offset( $self-> {offset}) unless $self-> {noHeader};
+	my ( $self, $o) = @_;
+	$self-> SUPER::set_offset( $o);
+	$self-> { header}-> offset( $self-> {offset}) unless $self-> {noHeader};
 }
 
 sub columns
 {
-   return $_[0]-> {numColumns} unless $#_;
-   my ( $self, $c) = @_;
-   $c = 0 if $c < 0;
-   return if defined $self->{numColumns} && $self->{numColumns} == $c;
-   my $h    = $self-> {header};
-   my @iec  = @{$h-> items};
-   my @umap = @{$self-> {umap}};
-   if ( scalar(@iec) > $c) {
-      splice( @iec, $c);
-      splice( @umap, $c);
-   } elsif ( scalar(@iec) < $c) {
-      push( @umap, (( undef ) x ( $c - scalar @iec)));
-      push( @iec, (( '' ) x ( $c - scalar @iec)));
-      my $i = 0; for ( @umap) { $_ = $i unless defined $_; $i++; }
-   }
-   $self-> {umap} = \@umap;
-   $h-> items( \@iec);
-   $self-> {numColumns} = $c;
-   $self-> repaint;
+	return $_[0]-> {numColumns} unless $#_;
+	my ( $self, $c) = @_;
+	$c = 0 if $c < 0;
+	return if defined $self-> {numColumns} && $self-> {numColumns} == $c;
+	my $h    = $self-> {header};
+	my @iec  = @{$h-> items};
+	my @umap = @{$self-> {umap}};
+	if ( scalar(@iec) > $c) {
+		splice( @iec, $c);
+		splice( @umap, $c);
+	} elsif ( scalar(@iec) < $c) {
+		push( @umap, (( undef ) x ( $c - scalar @iec)));
+		push( @iec, (( '' ) x ( $c - scalar @iec)));
+		my $i = 0; for ( @umap) { $_ = $i unless defined $_; $i++; }
+	}
+	$self-> {umap} = \@umap;
+	$h-> items( \@iec);
+	$self-> {numColumns} = $c;
+	$self-> repaint;
 }
 
 sub autowidths
 {
-   my $self = $_[0];
-   my $i;
-   my @w = @{$self-> widths};
-   my @header_w = $self->{header}->calc_autowidths;
-   for ( $i = 0; $i < $self-> {numColumns}; $i++) {
-      $self-> mainColumn( $i);
-      $self-> recalc_widths;
-      $w[ $i] = $self-> {maxWidth} + 5 if $w[ $i] < $self-> {maxWidth} + 5;
-      $w[$i] = $header_w[$i] if $w[$i] < $header_w[$i];
-   }
-   undef $self-> {widths};
-   $self-> widths( \@w);
+	my $self = $_[0];
+	my $i;
+	my @w = @{$self-> widths};
+	my @header_w = $self-> {header}-> calc_autowidths;
+	for ( $i = 0; $i < $self-> {numColumns}; $i++) {
+		$self-> mainColumn( $i);
+		$self-> recalc_widths;
+		$w[ $i] = $self-> {maxWidth} + 5 
+			if $w[ $i] < $self-> {maxWidth} + 5;
+		$w[$i] = $header_w[$i] if $w[$i] < $header_w[$i];
+	}
+	undef $self-> {widths};
+	$self-> widths( \@w);
 }
 
 sub draw_items
 {
-   my ($self,$canvas) = (shift,shift);
-   my @clrs = (
-      $self-> color,
-      $self-> backColor,
-      $self-> colorIndex( ci::HiliteText),
-      $self-> colorIndex( ci::Hilite)
-   );
-   my @clipRect = $canvas-> clipRect;
-   my $cols   = $self-> {numColumns};
+	my ($self,$canvas) = (shift,shift);
+	my @clrs = (
+		$self-> color,
+		$self-> backColor,
+		$self-> colorIndex( ci::HiliteText),
+		$self-> colorIndex( ci::Hilite)
+	);
+	my @clipRect = $canvas-> clipRect;
+	my $cols   = $self-> {numColumns};
 
-   my $xstart = $self-> {borderWidth} - 1;
-   my ( $i, $ci, $xend);
-   my @widths = @{ $self-> { header}-> widths };
-   my $umap   = $self-> {umap}->[0];
-   my $o = $self-> {offset} ;
+	my $xstart = $self-> {borderWidth} - 1;
+	my ( $i, $ci, $xend);
+	my @widths = @{ $self-> { header}-> widths };
+	my $umap   = $self-> {umap}-> [0];
+	my $o = $self-> {offset} ;
 
-   $xend = $xstart - $o + 2;
-   $xend += $_ + 2 for @widths;
-   $canvas-> clear( $xend, @clipRect[1..3]) if $xend <= $clipRect[2];
+	$xend = $xstart - $o + 2;
+	$xend += $_ + 2 for @widths;
+	$canvas-> clear( $xend, @clipRect[1..3]) if $xend <= $clipRect[2];
 
-   return if $cols == 0;
+	return if $cols == 0;
 
-   my $iref   = \@_;
-   my $rref   = $self-> {items};
-   my $icount = scalar @_;
+	my $iref   = \@_;
+	my $rref   = $self-> {items};
+	my $icount = scalar @_;
 
-   my $drawVeilFoc = -1;
-   my $x0d    = $self->{header}->{maxWidth} - 2;
+	my $drawVeilFoc = -1;
+	my $x0d    = $self-> {header}-> {maxWidth} - 2;
 
-   my @normals;
-   my @selected;
-   my ( $lastNormal, $lastSelected) = (undef, undef);
+	my @normals;
+	my @selected;
+	my ( $lastNormal, $lastSelected) = (undef, undef);
 
-   # sorting items by index
-   $iref = [ sort { $$a[0]<=>$$b[0] } @$iref];
+	# sorting items by index
+	$iref = [ sort { $$a[0]<=>$$b[0] } @$iref];
 
-   # calculating conjoint bars for normals / selected
-   @normals = ();
-   $lastNormal = undef;
+	# calculating conjoint bars for normals / selected
+	@normals = ();
+	$lastNormal = undef;
 
-   for ( $i = 0; $i < $icount; $i++)
-   {
-      my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = @{$$iref[$i]};
-      $drawVeilFoc = $i if $focusedItem;
-      if ( $selected)
-      {
-         if ( defined $lastSelected && ( $y2 + 1 == $lastSelected)) {
-            ${$selected[-1]}[1] = $y;
-         } else {
-            push ( @selected, [ $x, $y, $x + $x0d, $y2]);
-         }
-         $lastSelected = $y;
-      } else {
-         if ( defined $lastNormal && ( $y2 + 1 == $lastNormal)) {
-            ${$normals[-1]}[1] = $y;
-         } else {
-            push ( @normals, [ $x, $y, $x + $x0d, $y2]);
-         }
-         $lastNormal = $y;
-      }
-   }
+	for ( $i = 0; $i < $icount; $i++)
+	{
+		my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = @{$$iref[$i]};
+		$drawVeilFoc = $i if $focusedItem;
+		if ( $selected)
+		{
+			if ( defined $lastSelected && ( $y2 + 1 == $lastSelected)) {
+				${$selected[-1]}[1] = $y;
+			} else {
+				push ( @selected, [ $x, $y, $x + $x0d, $y2]);
+			}
+			$lastSelected = $y;
+		} else {
+			if ( defined $lastNormal && ( $y2 + 1 == $lastNormal)) {
+				${$normals[-1]}[1] = $y;
+			} else {
+				push ( @normals, [ $x, $y, $x + $x0d, $y2]);
+			}
+			$lastNormal = $y;
+		}
+	}
 
-   $canvas-> backColor( $clrs[1]);
-   $canvas-> clear( @$_) for @normals;
-   $canvas-> backColor( $clrs[3]);
-   $canvas-> clear( @$_) for @selected;
+	$canvas-> backColor( $clrs[1]);
+	$canvas-> clear( @$_) for @normals;
+	$canvas-> backColor( $clrs[3]);
+	$canvas-> clear( @$_) for @selected;
 
-   # draw veil
-   if ( $drawVeilFoc >= 0) {
-      my ( $itemIndex, $x, $y, $x2, $y2) = @{$$iref[$drawVeilFoc]};
-      $canvas-> rect_focus( $x + $o, $y, $x + $o + $x0d, $y2);
-   }
+	# draw veil
+	if ( $drawVeilFoc >= 0) {
+		my ( $itemIndex, $x, $y, $x2, $y2) = @{$$iref[$drawVeilFoc]};
+		$canvas-> rect_focus( $x + $o, $y, $x + $o + $x0d, $y2);
+	}
 
-   # texts
-   my $lc = $clrs[0];
-   my $txw = 1;
-   for ( $ci = 0; $ci < $cols; $ci++) {
-      $umap = $self-> {umap}->[$ci];
-      my $wx = $widths[ $ci] + 2;
-      if ( $xstart + $wx - $o >= $clipRect[0]) {
-         $canvas-> clipRect(
-             (( $xstart - $o) < $clipRect[0]) ? $clipRect[0] : $xstart - $o,
-             $clipRect[1],
-             (( $xstart + $wx - $o) > $clipRect[2]) ? $clipRect[2] : $xstart + $wx - $o,
-             $clipRect[3]);
-         for ( $i = 0; $i < $icount; $i++) {
-            my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = @{$$iref[$i]};
-            my $c = $clrs[ $selected ? 2 : 0];
-            $canvas-> color( $c), $lc = $c if $c != $lc;
-            $canvas-> text_out( $rref->[$itemIndex]-> [$umap], $x + $txw, $y);
-         }
-      }
-      $xstart += $wx;
-      $txw    += $wx;
-      last if $xstart - $o >= $clipRect[2];
-   }
+	# texts
+	my $lc = $clrs[0];
+	my $txw = 1;
+	for ( $ci = 0; $ci < $cols; $ci++) {
+		$umap = $self-> {umap}-> [$ci];
+		my $wx = $widths[ $ci] + 2;
+		if ( $xstart + $wx - $o >= $clipRect[0]) {
+			$canvas-> clipRect(
+				(( $xstart - $o) < $clipRect[0]) ? $clipRect[0] : $xstart - $o,
+				$clipRect[1],
+				(( $xstart + $wx - $o) > $clipRect[2]) ? $clipRect[2] : $xstart + $wx - $o,
+				$clipRect[3]);
+			for ( $i = 0; $i < $icount; $i++) {
+				my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = 
+					@{$$iref[$i]};
+				my $c = $clrs[ $selected ? 2 : 0];
+				$canvas-> color( $c), $lc = $c if $c != $lc;
+				$canvas-> text_out( $rref-> [$itemIndex]-> [$umap], $x + $txw, $y);
+			}
+		}
+		$xstart += $wx;
+		$txw    += $wx;
+		last if $xstart - $o >= $clipRect[2];
+	}
 }
 
 sub item2rect
 {
-   my ( $self, $item, @size) = @_;
-   my @a = $self-> get_active_area( 0, @size);
-   my ($i,$ih) = ( $item - $self->{topItem}, $self->{itemHeight});
-   return $a[0], $a[3] - $ih * ( $i + 1), $a[0] + $self->{header}->{maxWidth}, $a[3] - $ih * $i;
+	my ( $self, $item, @size) = @_;
+	my @a = $self-> get_active_area( 0, @size);
+	my ($i,$ih) = ( $item - $self-> {topItem}, $self-> {itemHeight});
+	return $a[0], $a[3] - $ih * ( $i + 1), $a[0] + $self-> {header}-> {maxWidth}, $a[3] - $ih * $i;
 }
 
 sub Header_SizeItem
 {
-   my ( $self, $header, $col, $oldw, $neww) = @_;
-   my $xs = $self-> {borderWidth} - 1 - $self-> {offset};
-   my $i = 0;
-   for ( @{$self-> {header}-> widths}) {
-      last if $col == $i++;
-      $xs += $_ + 2;
-   }
-   $xs += 3 + $oldw;
-   my @sz = $self-> size;
-   my @a = $self-> get_active_area( 0, @sz);
-   $self-> scroll(
-      $neww - $oldw, 0,
-      confineRect => [ $xs, $a[1], $a[2] + abs( $neww - $oldw), $a[3]],
-      clipRect    => \@a,
-   );
-   $self-> {itemWidth} = $self-> {header}-> {maxWidth} - 1;
-   $self-> reset_scrolls if $self-> {hScroll} || $self-> {autoHScroll};
+	my ( $self, $header, $col, $oldw, $neww) = @_;
+	my $xs = $self-> {borderWidth} - 1 - $self-> {offset};
+	my $i = 0;
+	for ( @{$self-> {header}-> widths}) {
+		last if $col == $i++;
+		$xs += $_ + 2;
+	}
+	$xs += 3 + $oldw;
+	my @sz = $self-> size;
+	my @a = $self-> get_active_area( 0, @sz);
+	$self-> scroll(
+		$neww - $oldw, 0,
+		confineRect => [ $xs, $a[1], $a[2] + abs( $neww - $oldw), $a[3]],
+		clipRect    => \@a,
+	);
+	$self-> {itemWidth} = $self-> {header}-> {maxWidth} - 1;
+	$self-> reset_scrolls if $self-> {hScroll} || $self-> {autoHScroll};
 }
 
 sub widths {
-   return shift-> { header}-> widths( @_) unless $#_;
-   my $self = shift;
-   $self-> {header}-> widths( @_);
+	return shift-> { header}-> widths( @_) unless $#_;
+	my $self = shift;
+	$self-> {header}-> widths( @_);
 }
 
 sub headers {
-   return shift-> { header}-> items( @_) unless $#_;
-   my $self = shift;
-   $self-> {header}-> items( @_);
-   my $x = $self-> {header}-> items;
-   $self-> {umap} = [ 0 .. $#$x];
-   $self-> repaint;
+	return shift-> { header}-> items( @_) unless $#_;
+	my $self = shift;
+	$self-> {header}-> items( @_);
+	my $x = $self-> {header}-> items;
+	$self-> {umap} = [ 0 .. $#$x];
+	$self-> repaint;
 }
 
 sub mainColumn
 {
-   return $_[0]-> {mainColumn} unless $#_;
-   my ( $self, $c) = @_;
-   $c = 0 if $c < 0;
-   $c = $self->{numColumns} - 1 if $c >= $self-> {numColumns};
-   $self-> {mainColumn} = $c;
+	return $_[0]-> {mainColumn} unless $#_;
+	my ( $self, $c) = @_;
+	$c = 0 if $c < 0;
+	$c = $self-> {numColumns} - 1 if $c >= $self-> {numColumns};
+	$self-> {mainColumn} = $c;
 }
 
 sub Header_SizeItems
 {
-   $_[0]-> {itemWidth} = $_[0]-> {header}-> {maxWidth} - 1;
-   $_[0]-> reset_scrolls;
-   $_[0]-> repaint;
+	$_[0]-> {itemWidth} = $_[0]-> {header}-> {maxWidth} - 1;
+	$_[0]-> reset_scrolls;
+	$_[0]-> repaint;
 }
 
 sub Header_MoveItem  {
-   my ( $self, $hdr, $o, $p) = @_;
-   splice( @{$self-> {umap}}, $p, 0, splice( @{$self-> {umap}}, $o, 1));
-   $self-> repaint;
+	my ( $self, $hdr, $o, $p) = @_;
+	splice( @{$self-> {umap}}, $p, 0, splice( @{$self-> {umap}}, $o, 1));
+	$self-> repaint;
 }
 
 sub Header_Click
 {
-   my ( $self, $hdr, $id) = @_;
-   $self-> mainColumn( $self-> {umap}->[ $id]);
-   $self-> sort( $self-> {mainColumn});
+	my ( $self, $hdr, $id) = @_;
+	$self-> mainColumn( $self-> {umap}-> [ $id]);
+	$self-> sort( $self-> {mainColumn});
 }
 
 sub get_item_text
 {
-   my ( $self, $index, $sref) = @_;
-   my $c = $self-> {mainColumn};
-   $$sref = $self-> {items}->[$index]-> [ $c];
+	my ( $self, $index, $sref) = @_;
+	my $c = $self-> {mainColumn};
+	$$sref = $self-> {items}-> [$index]-> [ $c];
 }
 
 sub on_fontchanged
 {
-   my $self = $_[0];
-   $self-> setup_indents;
-   $self-> {header}-> set(
-      bottom => $self-> {header}-> top - $self-> {headerInitHeight},
-      height => $self-> {headerInitHeight},
-   );
-   $self-> SUPER::on_fontchanged;
+	my $self = $_[0];
+	$self-> setup_indents;
+	$self-> {header}-> set(
+		bottom => $self-> {header}-> top - $self-> {headerInitHeight},
+		height => $self-> {headerInitHeight},
+	);
+	$self-> SUPER::on_fontchanged;
 }
 
 sub on_measureitem
 {
-   my ( $self, $index, $sref) = @_;
-   my $c = $self-> {mainColumn};
-   $$sref = $self-> get_text_width( $self-> {items}->[$index]-> [ $c]);
+	my ( $self, $index, $sref) = @_;
+	my $c = $self-> {mainColumn};
+	$$sref = $self-> get_text_width( $self-> {items}-> [$index]-> [ $c]);
 }
 
 sub on_stringify
 {
-   my ( $self, $index, $sref) = @_;
-   my $c = $self-> {mainColumn};
-   $$sref = $self-> {items}->[$index]-> [ $c];
+	my ( $self, $index, $sref) = @_;
+	my $c = $self-> {mainColumn};
+	$$sref = $self-> {items}-> [$index]-> [ $c];
 }
 
 sub sort
 {
-   my ( $self, $c) = @_;
-   my $dirSort;
-   if ( defined $c) {
-       return if $c < 0;
-       if ( defined($self-> {lastSortCol}) && ( $self-> {lastSortCol} == $c)) {
-	  $dirSort = $self-> {lastSortDir} = ( $self-> {lastSortDir} ? 0 : 1);
-       } else {
-	  $dirSort = 1;
-	  $self-> {lastSortDir} = 1;
-	  $self-> {lastSortCol} = $c;
-       }
-   }
-   else {
-       $self->{ lastSortCol} = 0 unless defined $self->{ lastSortCol};
-       $c = $self->{ lastSortCol};
-       $self->{ lastSortDir} = 0 unless defined $self->{ lastSortDir};
-       $dirSort = $self->{ lastSortDir};
-   }
-   my $foci = undef;
-   $foci = $self-> {items}->[$self-> {focusedItem}] if $self-> {focusedItem} >= 0;
-   $self-> notify(q(Sort), $c, $dirSort);
-   $self-> repaint;
-   return unless defined $foci;
-   my $i = 0;
-   my $newfoc;
-   for ( @{$self-> {items}}) {
-      $newfoc = $i, last if $_ == $foci;
-      $i++;
-   }
-   $self-> focusedItem( $newfoc) if defined $newfoc;
+	my ( $self, $c) = @_;
+	my $dirSort;
+	if ( defined $c) {
+		return if $c < 0;
+		if ( defined($self-> {lastSortCol}) && ( $self-> {lastSortCol} == $c)) {
+			$dirSort = $self-> {lastSortDir} = ( $self-> {lastSortDir} ? 0 : 1);
+		} else {
+			$dirSort = 1;
+			$self-> {lastSortDir} = 1;
+			$self-> {lastSortCol} = $c;
+		}
+	}
+	else {
+		$self-> { lastSortCol} = 0 unless defined $self-> { lastSortCol};
+		$c = $self-> { lastSortCol};
+		$self-> { lastSortDir} = 0 unless defined $self-> { lastSortDir};
+		$dirSort = $self-> { lastSortDir};
+	}
+	my $foci = undef;
+	$foci = $self-> {items}-> [$self-> {focusedItem}] if $self-> {focusedItem} >= 0;
+	$self-> notify(q(Sort), $c, $dirSort);
+	$self-> repaint;
+	return unless defined $foci;
+	my $i = 0;
+	my $newfoc;
+	for ( @{$self-> {items}}) {
+		$newfoc = $i, last if $_ == $foci;
+		$i++;
+	}
+	$self-> focusedItem( $newfoc) if defined $newfoc;
 }
 
 sub on_sort
 {
-   my ( $self, $col, $dir) = @_;
-   if ( $dir) {
-      $self-> {items} = [
-         sort { $$a[$col] cmp $$b[$col]}
-         @{$self->{items}}];
-   } else {
-      $self-> {items} = [
-         sort { $$b[$col] cmp $$a[$col]}
-         @{$self->{items}}];
-   }
-   $self-> clear_event;
+	my ( $self, $col, $dir) = @_;
+	if ( $dir) {
+		$self-> {items} = [
+			sort { $$a[$col] cmp $$b[$col]}
+			@{$self-> {items}}];
+	} else {
+		$self-> {items} = [
+			sort { $$b[$col] cmp $$a[$col]}
+			@{$self-> {items}}];
+	}
+	$self-> clear_event;
 }
 
 sub itemWidth {$_[0]-> {itemWidth};}
@@ -455,17 +458,17 @@ header widget.
 
 =head1 SYNOPSIS
 
-  use Prima::DetailedList;
+use Prima::DetailedList;
 
-  my $l = $w-> insert( 'Prima::DetailedList', 
-        columns => 2,
-        headers => [ 'Column 1', 'Column 2' ],
-        items => [
-             ['Row 1, Col 1', 'Row 1, Col 2'],
-             ['Row 2, Col 1', 'Row 2, Col 2']
-        ],
-  );
-  $l-> sort(1);
+	my $l = $w-> insert( 'Prima::DetailedList', 
+		columns => 2,
+		headers => [ 'Column 1', 'Column 2' ],
+		items => [
+			['Row 1, Col 1', 'Row 1, Col 2'],
+			['Row 2, Col 1', 'Row 2, Col 2']
+		],
+	);
+	$l-> sort(1);
 
 =head1 DESCRIPTION
 

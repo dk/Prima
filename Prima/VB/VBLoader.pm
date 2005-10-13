@@ -33,237 +33,239 @@ $fileVersion   = '1.2';
 @eventContext  = ('', '');
 
 my %fileVerCompat = (
-   '1'   => '1.0',
-   '1.0' => '1.1',
-   '1.1' => '1.2',
+	'1'   => '1.0',
+	'1.0' => '1.1',
+	'1.1' => '1.2',
 );
 
 sub check_version
 {
-   my $header = $_[0];
-   return (0, 'unknown') unless $header =~ /file=(\d+\.*\d*)/;
-   my $fv = $1;
-   while( $fv ne $fileVersion) {
-      $fv = $fileVerCompat{$fv}, next if exists $fileVerCompat{$fv};
-      return (0, $1);
-   }
-   return (1, $fv);
+	my $header = $_[0];
+	return (0, 'unknown') unless $header =~ /file=(\d+\.*\d*)/;
+	my $fv = $1;
+	while( $fv ne $fileVersion) {
+		$fv = $fileVerCompat{$fv}, next if exists $fileVerCompat{$fv};
+		return (0, $1);
+	}
+	return (1, $fv);
 }
 
 sub GO_SUB
 {
-   if ( $builderActive) {
-      my $x = $_[0];
-      $x =~ s/\n$//s;
-      return $x;
-   }
-   my $x = eval "sub { $_[0] }";
-   if ( $@) {
-      @eventContext = ( $_[1], $_[2]);
-      die $@;
-   }
-   return $x;
+	if ( $builderActive) {
+		my $x = $_[0];
+		$x =~ s/\n$//s;
+		return $x;
+	}
+	my $x = eval "sub { $_[0] }";
+	if ( $@) {
+		@eventContext = ( $_[1], $_[2]);
+		die $@;
+	}
+	return $x;
 }
 
 sub AUTOFORM_REALIZE
 {
-   my ( $seq, $parms) = @_;
-   my %ret = ();
-   my %modules = ();
-   my $main;
-   my $i;
+	my ( $seq, $parms) = @_;
+	my %ret = ();
+	my %modules = ();
+	my $main;
+	my $i;
 
-   my %dep;
-   for ( $i = 0; $i < scalar @$seq; $i+= 2) {
-      $dep{$$seq[$i]} = $$seq[$i + 1];
-   }
+	my %dep;
+	for ( $i = 0; $i < scalar @$seq; $i+= 2) {
+		$dep{$$seq[$i]} = $$seq[$i + 1];
+	}
 
-   for ( keys %dep) {
-      $modules{$dep{$_}->{module}} = 1 if $dep{$_}->{module};
-      $main = $_ if $dep{$_}->{parent};
-   }
-   $form = $main;
-   for ( keys %modules) {
-      my $c = $_;
-      eval("use $c;");
-      die "$@" if $@;
-   }
+	for ( keys %dep) {
+		$modules{$dep{$_}-> {module}} = 1 if $dep{$_}-> {module};
+		$main = $_ if $dep{$_}-> {parent};
+	}
+	$form = $main;
+	for ( keys %modules) {
+		my $c = $_;
+		eval("use $c;");
+		die "$@" if $@;
+	}
 
-   my %owners = ( $main => 0);
-   my %siblings;
-   for ( keys %dep) {
-      next if $_ eq $main;
-      $owners{$_} = exists $parms->{$_}->{owner} ? $parms->{$_}->{owner} :
-         ( exists $dep{$_}->{profile}->{owner} ? $dep{$_}->{profile}->{owner} : $main);
-      delete $dep{$_}->{profile}->{owner};
-   }
+	my %owners = ( $main => 0);
+	my %siblings;
+	for ( keys %dep) {
+		next if $_ eq $main;
+		$owners{$_} = exists $parms-> {$_}-> {owner} ? $parms-> {$_}-> {owner} :
+			( exists $dep{$_}-> {profile}-> {owner} ? $dep{$_}-> {profile}-> {owner} : $main);
+		delete $dep{$_}-> {profile}-> {owner};
+	}
 
-   my @actNames  = qw( onBegin onFormCreate onCreate onChild onChildCreate onEnd);
-   my %actions   = map { $_ => {}} @actNames;
-   my %instances = ();
-   for ( keys %dep) {
-      my $key = $_;
-      my $act = $dep{$_}->{actions};
-      $instances{$_} = {};
-      $instances{$_}-> {extras} = $dep{$_}->{extras} if $dep{$_}->{extras};
+	my @actNames  = qw( onBegin onFormCreate onCreate onChild onChildCreate onEnd);
+	my %actions   = map { $_ => {}} @actNames;
+	my %instances = ();
+	for ( keys %dep) {
+		my $key = $_;
+		my $act = $dep{$_}-> {actions};
+		$instances{$_} = {};
+		$instances{$_}-> {extras} = $dep{$_}-> {extras} if $dep{$_}-> {extras};
 
-      for ( @actNames) {
-         next unless exists $act->{$_};
-         $actions{$_}->{$key} = $act->{$_};
-      }
-   }
+		for ( @actNames) {
+			next unless exists $act-> {$_};
+			$actions{$_}-> {$key} = $act-> {$_};
+		}
+	}
 
-   $actions{onBegin}->{$_}->($_, $instances{$_})
-      for keys %{$actions{onBegin}};
+	$actions{onBegin}-> {$_}-> ($_, $instances{$_})
+		for keys %{$actions{onBegin}};
 
-   for ( @{$dep{$main}->{siblings}}) {
-      if ( exists $dep{$main}->{profile}->{$_}) {
-         $siblings{$main}->{$_} = $dep{$main}->{profile}->{$_};
-         delete $dep{$main}->{profile}->{$_};
-      }
-      if ( exists $parms->{$main}->{$_}) {
-         $siblings{$main}->{$_} = $parms->{$main}->{$_};
-         delete $parms->{$main}->{$_};
-      }
-   }
-   
-   delete $dep{$main}->{profile}->{owner};
-   
-   $dep{$main}-> {code}->() if defined $dep{$main}-> {code} ;
+	for ( @{$dep{$main}-> {siblings}}) {
+		if ( exists $dep{$main}-> {profile}-> {$_}) {
+			$siblings{$main}-> {$_} = $dep{$main}-> {profile}-> {$_};
+			delete $dep{$main}-> {profile}-> {$_};
+		}
+		if ( exists $parms-> {$main}-> {$_}) {
+			$siblings{$main}-> {$_} = $parms-> {$main}-> {$_};
+			delete $parms-> {$main}-> {$_};
+		}
+	}
+	
+	delete $dep{$main}-> {profile}-> {owner};
+	
+	$dep{$main}-> {code}-> () if defined $dep{$main}-> {code} ;
 
-   $ret{$main} = $dep{$main}->{class}-> create(
-      %{$dep{$main}->{profile}},
-      %{$parms->{$main}},
-   );
-   $ret{$main}-> lock;
-   $actions{onFormCreate}->{$_}->($_, $instances{$_}, $ret{$main})
-      for keys %{$actions{onFormCreate}};
-   $actions{onCreate}->{$main}->($main, $instances{$_}, $ret{$main})
-      if $actions{onCreate}->{$main};
+	$ret{$main} = $dep{$main}-> {class}-> create(
+		%{$dep{$main}-> {profile}},
+		%{$parms-> {$main}},
+	);
+	$ret{$main}-> lock;
+	$actions{onFormCreate}-> {$_}-> ($_, $instances{$_}, $ret{$main})
+		for keys %{$actions{onFormCreate}};
+	$actions{onCreate}-> {$main}-> ($main, $instances{$_}, $ret{$main})
+		if $actions{onCreate}-> {$main};
 
-   my $do_layer;
-   $do_layer = sub
-   {
-      my $id = $_[0];
-      my $i;
-      for ( $i = 0; $i < scalar @$seq; $i += 2) {
-         my $name = $$seq[$i];
-         next unless $owners{$name} eq $id;
-         $owners{$name} = $main unless exists $ret{$owners{$name}}; # validating owner entry
+	my $do_layer;
+	$do_layer = sub
+	{
+		my $id = $_[0];
+		my $i;
+		for ( $i = 0; $i < scalar @$seq; $i += 2) {
+			my $name = $$seq[$i];
+			next unless $owners{$name} eq $id;
+			# validating owner entry
+			$owners{$name} = $main unless exists $ret{$owners{$name}}; 
 
-         my $o = $owners{$name};
-         $actions{onChild}->{$o}->($o, $instances{$o}, $ret{$o}, $name)
-            if $actions{onChild}->{$o};
+			my $o = $owners{$name};
+			$actions{onChild}-> {$o}-> ($o, $instances{$o}, $ret{$o}, $name)
+				if $actions{onChild}-> {$o};
 
-         for ( @{$dep{$name}->{siblings}}) {
-            if ( exists $dep{$name}->{profile}->{$_}) {
-               if ( exists $ret{$dep{$name}->{profile}->{$_}}) {
-                  $dep{$name}->{profile}->{$_} = $ret{$dep{$name}->{profile}->{$_}}
-               } else {
-                  $siblings{$name}->{$_} = $dep{$name}->{profile}->{$_};
-                  delete $dep{$name}->{profile}->{$_};
-               }
-            }
-            if ( exists $parms->{$name}->{$_}) {
-               if ( exists $ret{$parms->{$name}->{$_}}) {
-                  $parms-> {$name}->{$_} = $ret{$parms->{$name}->{$_}}
-               } else {
-                  $siblings{$name}->{$_} = $parms->{$name}->{$_};
-                  delete $parms->{$name}->{$_};
-               }
-            }
-         }
-         $ret{$name} = $ret{$o}-> insert(
-            $dep{$name}->{class},
-            %{$dep{$name}->{profile}},
-            %{$parms->{$name}},
-         );
+			for ( @{$dep{$name}-> {siblings}}) {
+				if ( exists $dep{$name}-> {profile}-> {$_}) {
+					if ( exists $ret{$dep{$name}-> {profile}-> {$_}}) {
+						$dep{$name}-> {profile}-> {$_} = 
+							$ret{$dep{$name}-> {profile}-> {$_}}
+					} else {
+						$siblings{$name}-> {$_} = $dep{$name}-> {profile}-> {$_};
+						delete $dep{$name}-> {profile}-> {$_};
+					}
+				}
+				if ( exists $parms-> {$name}-> {$_}) {
+					if ( exists $ret{$parms-> {$name}-> {$_}}) {
+						$parms-> {$name}-> {$_} = $ret{$parms-> {$name}-> {$_}}
+					} else {
+						$siblings{$name}-> {$_} = $parms-> {$name}-> {$_};
+						delete $parms-> {$name}-> {$_};
+					}
+				}
+			}
+			$ret{$name} = $ret{$o}-> insert(
+				$dep{$name}-> {class},
+				%{$dep{$name}-> {profile}},
+				%{$parms-> {$name}},
+			);
 
-         $actions{onCreate}->{$name}->($name, $instances{$name}, $ret{$name})
-            if $actions{onCreate}->{$name};
-         $actions{onChildCreate}->{$o}->($o, $instances{$o}, $ret{$o}, $ret{$name})
-            if $actions{onChildCreate}->{$o};
+			$actions{onCreate}-> {$name}-> ($name, $instances{$name}, $ret{$name})
+				if $actions{onCreate}-> {$name};
+			$actions{onChildCreate}-> {$o}-> ($o, $instances{$o}, $ret{$o}, $ret{$name})
+				if $actions{onChildCreate}-> {$o};
 
-         $do_layer->( $name);
-      }
-   };
-   $do_layer->( $main, \%owners);
+			$do_layer-> ( $name);
+		}
+	};
+	$do_layer-> ( $main, \%owners);
 
-   for ( keys %siblings) {
-      my $data = $siblings{$_};
-      $ret{$_}-> set( map {
-         exists($ret{$data->{$_}}) ? ( $_ => $ret{$data->{$_}}) : ()
-      } keys %$data );
-   }
+	for ( keys %siblings) {
+		my $data = $siblings{$_};
+		$ret{$_}-> set( map {
+			exists($ret{$data-> {$_}}) ? ( $_ => $ret{$data-> {$_}}) : ()
+		} keys %$data );
+	}
 
-   $actions{onEnd}->{$_}->($_, $instances{$_}, $ret{$_})
-      for keys %{$actions{onEnd}};
-   $ret{$main}-> unlock;
+	$actions{onEnd}-> {$_}-> ($_, $instances{$_}, $ret{$_})
+		for keys %{$actions{onEnd}};
+	$ret{$main}-> unlock;
 
-   return %ret;
+	return %ret;
 }
 
 sub AUTOFORM_CREATE
 {
-   my ( $filename, %parms) = @_;
-   my $contents;
-   my @preload_modules;
-   {
-      open F, $filename or die "Cannot open $filename:$!\n";
-      my $first = <F>;
-      die "Corrupted file $filename\n" unless $first =~ /^# VBForm/;
-      my @fvc = check_version( $first);
-      die "Incompatible version ($fvc[1]) of file $filename\n" unless $fvc[0];
-      while (<F>) {
-         $contents = $_, last unless /^#/;
-         next unless /^#\s*\[([^\]]+)\](.*)$/;
-         if ( $1 eq 'preload') { 
-            push( @preload_modules, split( ' ', $2)); 
-         }
-      }
-      local $/;
-      $contents .= <F>;
-      close F;
-   }
+	my ( $filename, %parms) = @_;
+	my $contents;
+	my @preload_modules;
+	{
+		open F, $filename or die "Cannot open $filename:$!\n";
+		my $first = <F>;
+		die "Corrupted file $filename\n" unless $first =~ /^# VBForm/;
+		my @fvc = check_version( $first);
+		die "Incompatible version ($fvc[1]) of file $filename\n" unless $fvc[0];
+		while (<F>) {
+			$contents = $_, last unless /^#/;
+			next unless /^#\s*\[([^\]]+)\](.*)$/;
+			if ( $1 eq 'preload') { 
+				push( @preload_modules, split( ' ', $2)); 
+			}
+		}
+		local $/;
+		$contents .= <F>;
+		close F;
+	}
 
-   for ( @preload_modules) {
-      eval "use $_;";
-      die "$@\n" if $@;
-   }
+	for ( @preload_modules) {
+		eval "use $_;";
+		die "$@\n" if $@;
+	}
 
-   my $sub = eval( $contents);
-   die "$@\n" if $@;
-   my @dep = $sub-> ();
-   return AUTOFORM_REALIZE( \@dep, \%parms);
+	my $sub = eval( $contents);
+	die "$@\n" if $@;
+	my @dep = $sub-> ();
+	return AUTOFORM_REALIZE( \@dep, \%parms);
 }
 
 package Prima; 
 
 sub VBLoad
 {
-   my ( $filename, %parms) = @_;
+	my ( $filename, %parms) = @_;
 
-   if ( $filename =~ /.+\:\:([^\:]+)$/ && $filename !~ /^</ ) { # seemingly a module syntax
-      my @path = split( '::', $filename);
-      my $file = pop @path;
-      my $ret = Prima::Utils::find_image( join('::', @path), $file);
-      $@ = "Cannot find resource: $filename", return undef unless $ret;
-      $filename = $ret;
-   } else {
-      $filename =~ s/^<//;
-   }
+	if ( $filename =~ /.+\:\:([^\:]+)$/ && $filename !~ /^</ ) { # seemingly a module syntax
+		my @path = split( '::', $filename);
+		my $file = pop @path;
+		my $ret = Prima::Utils::find_image( join('::', @path), $file);
+		$@ = "Cannot find resource: $filename", return undef unless $ret;
+		$filename = $ret;
+	} else {
+		$filename =~ s/^<//;
+	}
 
-   my %ret;
-   eval { %ret = Prima::VB::VBLoader::AUTOFORM_CREATE( $filename, %parms); };
-   if ( $@ ) {
-      $@ = "Error in setup resource: $@";
-      return undef;
-   }
-   unless ( $ret{$Prima::VB::VBLoader::form} ) {
-      $@ = "Error in setup resource: form not found";
-      return undef;
-   }
-   return $ret{$Prima::VB::VBLoader::form};
+	my %ret;
+	eval { %ret = Prima::VB::VBLoader::AUTOFORM_CREATE( $filename, %parms); };
+	if ( $@ ) {
+		$@ = "Error in setup resource: $@";
+		return undef;
+	}
+	unless ( $ret{$Prima::VB::VBLoader::form} ) {
+		$@ = "Error in setup resource: form not found";
+		return undef;
+	}
+	return $ret{$Prima::VB::VBLoader::form};
 }
 
 # onBegin       ( name, instance)
@@ -293,20 +295,20 @@ window with all children is returned.
 
 The simple way to use the loader is as that:
 
-     use Prima qw(Application);
-     use Prima::VB::VBLoader;
-     Prima::VBLoad( './your_resource.fm',
-        Form1 => { centered => 1 },
-     )-> execute;
+	use Prima qw(Application);
+	use Prima::VB::VBLoader;
+	Prima::VBLoad( './your_resource.fm',
+		Form1 => { centered => 1 },
+	)-> execute;
 
 A more complicated but more proof code can be met in the toolkit:
 
-     use Prima qw(Application);
-     eval "use Prima::VB::VBLoader"; die "$@\n" if $@;
-     $form = Prima::VBLoad( $fi,
-       'Form1'     => { visible => 0, centered => 1},
-     );
-     die "$@\n" unless $form;
+	use Prima qw(Application);
+	eval "use Prima::VB::VBLoader"; die "$@\n" if $@;
+	$form = Prima::VBLoad( $fi,
+		'Form1'     => { visible => 0, centered => 1},
+	);
+	die "$@\n" unless $form;
 
 All form widgets can be supplied with custom parameters, all together combined
 in a hash of hashes and passed as the second parameter to C<VBLoad()> function.
@@ -315,26 +317,26 @@ C<Form1> widget, which is default name of a form window created by Visual
 Builder. All other widgets are accessible by their names in a similar fashion;
 after the creation, the widget hierarchy can be accessed in the standard way:
 
-     $form = Prima::VBLoad( $fi,
-        ....
-	'StartButton' => {
-	   onMouseOver => sub { die "No start buttons here\n" },
-	}
-     );
-     ...
-     $form-> StartButton-> hide;
+	$form = Prima::VBLoad( $fi,
+		....
+		'StartButton' => {
+			onMouseOver => sub { die "No start buttons here\n" },
+		}
+	);
+	...
+	$form-> StartButton-> hide;
 
 In case a form is to be included not from a fm file but from other data source,
 L<AUTOFORM_REALIZE> call can be used to transform perl array into set of
 widgets:
-      
-      $form = AUTOFORM_REALIZE( [ Form1 => {
-         class   => 'Prima::Window',
-         parent  => 1,
-         profile => {
-            name => 'Form1',
-            size => [ 330, 421],
-         }], {});
+		
+	$form = AUTOFORM_REALIZE( [ Form1 => {
+		class   => 'Prima::Window',
+		parent  => 1,
+		profile => {
+			name => 'Form1',
+			size => [ 330, 421],
+		}], {});
 
 Real-life examples are met across the toolkit; for instance,
 F<Prima/PS/setup.fm> dialog is used by C<Prima::PS::Setup>.
@@ -394,12 +396,12 @@ A wrapper around C<AUTOFORM_CREATE>, exported in C<Prima>
 namespace. FILENAME can be specified either as a file system
 path name, or as a relative module name. In a way,
 
-   Prima::VBLoad( 'Module::form.fm' )
+	Prima::VBLoad( 'Module::form.fm' )
 
 and
- 
-   Prima::VBLoad( 
-      Prima::Utils::find_image( 'Module' 'form.fm'))
+
+	Prima::VBLoad( 
+		Prima::Utils::find_image( 'Module' 'form.fm'))
 
 are identical. If the procedure finds that FILENAME is a relative
 module name, it calls C<Prima::Utils::find_image> automatically. To
@@ -467,36 +469,36 @@ call without special manipulations, and kept as plain text.  The file begins
 with a header, which is a #-prefixed string, and contains a signature, version
 of file format, and version of the creator of the file:
 
- # VBForm version file=1 builder=0.1
+	# VBForm version file=1 builder=0.1
 
 The header can also contain additional headers, also prefixed with #.  These
 can be used to tell the loader that another perl module is needed to be loaded
 before the parsing; this is useful, for example, if a constant is declared in
 the module.
 
- # [preload] Prima::ComboBox
+	# [preload] Prima::ComboBox
 
 The main part of a file is enclosed in C<sub{}> statement.
 After evaluation, this sub returns array of paired scalars, where
 each first item is a widget name and second item is hash of its parameters
 and other associated data:
 
-  sub
-  {
-     return (
-	'Form1' => {
-		class   => 'Prima::Window',
-		module  => 'Prima::Classes',
-		parent => 1,
-                code   => GO_SUB('init()'),
-		profile => {
-			width => 144,
-			name => 'Form1',
-			origin => [ 490, 412],
-			size => [ 144, 100],
-	}},
-     );
-  }
+	sub
+	{
+		return (
+			'Form1' => {
+				class   => 'Prima::Window',
+				module  => 'Prima::Classes',
+				parent => 1,
+				code   => GO_SUB('init()'),
+				profile => {
+					width => 144,
+					name => 'Form1',
+					origin => [ 490, 412],
+					size => [ 144, 100],
+			}},
+		);
+	}
 
 The hash has several predefined keys:
 

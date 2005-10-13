@@ -10,9 +10,9 @@ buffered => 0,
 cursorSize => [ 30, 30],
 cursorVisible => 1,
 onPaint => sub {
-   $_[0]-> on_paint( $_[1]);
-   $dong = 1;
-   @rcrect = $_[0]-> clipRect;
+	$_[0]-> on_paint( $_[1]);
+	$dong = 1;
+	@rcrect = $_[0]-> clipRect;
 });
 ok( $dong || &__wait);
 $dong = 0;
@@ -33,29 +33,29 @@ ok( $rcrect[0] == 0 && $rcrect[1] == 0 && $rcrect[2] == 1 && $rcrect[3] == 1);
 
 $ww-> buffered(1);
 $ww-> set( onPaint => sub {
-   my $x = $_[1];
-   $_[0]-> on_paint( $x);
-   $x-> pixel( 0,0,cl::White);
-   my $white = $x-> pixel(0,0);
-   $x-> pixel( 0,0,cl::Black);
-   ok( $x-> pixel(0,0) == 0);
-   $x-> color( cl::White);
-   $x-> bar( 0, 0, 7, 7);
-   $x-> color( cl::Black);
-   $x-> clipRect( 2, 2, 3, 3);
-   $x-> bar( 1, 1, 2, 2);
-   $x-> clipRect( 0, 0, $x-> size);
-   ok( $x-> pixel( 2,2) == 0 && $x-> pixel( 1,1) == $white);
+	my $x = $_[1];
+	$_[0]-> on_paint( $x);
+	$x-> pixel( 0,0,cl::White);
+	my $white = $x-> pixel(0,0);
+	$x-> pixel( 0,0,cl::Black);
+	ok( $x-> pixel(0,0) == 0);
+	$x-> color( cl::White);
+	$x-> bar( 0, 0, 7, 7);
+	$x-> color( cl::Black);
+	$x-> clipRect( 2, 2, 3, 3);
+	$x-> bar( 1, 1, 2, 2);
+	$x-> clipRect( 0, 0, $x-> size);
+	ok( $x-> pixel( 2,2) == 0 && $x-> pixel( 1,1) == $white);
 
-   $x-> color( cl::White);
-   $x-> bar( 0, 0, 7, 7);
-   $x-> color( cl::Black);
-   $x-> translate( -1, 1);
-   $x-> bar( 2, 2, 3, 3);
-   $x-> translate( 0, 0);
-   ok( $x-> pixel( 1,4) == 0 &&
-       $x-> pixel( 3,2) == $white
-   );
+	$x-> color( cl::White);
+	$x-> bar( 0, 0, 7, 7);
+	$x-> color( cl::Black);
+	$x-> translate( -1, 1);
+	$x-> bar( 2, 2, 3, 3);
+	$x-> translate( 0, 0);
+	ok( $x-> pixel( 1,4) == 0 &&
+		$x-> pixel( 3,2) == $white
+	);
 });
 $ww-> repaint;
 $ww-> update_view;

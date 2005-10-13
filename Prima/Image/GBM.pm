@@ -38,15 +38,15 @@ use vars qw(@ISA);
 
 sub profile_default
 {
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my %prf = ( text     => 'LBM/IFF filter',);
-   @$def{keys %prf} = values %prf;
-   return $def;
+	my $def = $_[ 0]-> SUPER::profile_default;
+	my %prf = ( text     => 'LBM/IFF filter',);
+	@$def{keys %prf} = values %prf;
+	return $def;
 }
 
 sub save_dialog
 {
-   return Prima::Image::GBM::lbm-> create;
+	return Prima::Image::GBM::lbm-> create;
 }
 
 package Prima::Image::GBM::gif;
@@ -55,44 +55,44 @@ use vars qw(@ISA);
 
 sub profile_default
 {
-   my $def = $_[ 0]-> SUPER::profile_default;
-   my %prf = ( text     => 'Gif89a filter',);
-   @$def{keys %prf} = values %prf;
-   return $def;
+	my $def = $_[ 0]-> SUPER::profile_default;
+	my %prf = ( text     => 'Gif89a filter',);
+	@$def{keys %prf} = values %prf;
+	return $def;
 }
 
 sub init
 {
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-   $self-> insert( qq(Prima::CheckBox) => 
-       origin => [ 143, 167],
-       name => 'Interlaced',
-       size => [ 100, 36],
-       text => '~Interlaced',
-   );
-   return %profile;
+	my $self = shift;
+	my %profile = $self-> SUPER::init(@_);
+	$self-> insert( qq(Prima::CheckBox) => 
+		origin => [ 143, 167],
+		name => 'Interlaced',
+		size => [ 100, 36],
+		text => '~Interlaced',
+	);
+	return %profile;
 }
 
 sub on_change
 {
-   my ( $self, $codec, $image) = @_;
-   $self-> SUPER::on_change( $codec, $image);
-   return unless $image;
-   $self-> Interlaced-> checked( exists( $image-> {extras}-> {interlaced}) ? 
-      $image-> {extras}-> {interlaced} : $codec-> {saveInput}-> {interlaced});
+	my ( $self, $codec, $image) = @_;
+	$self-> SUPER::on_change( $codec, $image);
+	return unless $image;
+	$self-> Interlaced-> checked( exists( $image-> {extras}-> {interlaced}) ? 
+		$image-> {extras}-> {interlaced} : $codec-> {saveInput}-> {interlaced});
 }
 
 sub OK_Click
 {
-   my $self = shift;
-   $self-> {image}-> {extras}-> {interlaced} = $self-> Interlaced-> checked;
-   $self-> SUPER::OK_Click(@_);
+	my $self = shift;
+	$self-> {image}-> {extras}-> {interlaced} = $self-> Interlaced-> checked;
+	$self-> SUPER::OK_Click(@_);
 }
 
 sub save_dialog
 {
-   return Prima::Image::GBM::gif-> create;
+	return Prima::Image::GBM::gif-> create;
 }
 
 1;

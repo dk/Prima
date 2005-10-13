@@ -50,15 +50,15 @@ $::application-> icon( Prima::StdBitmap::icon(0));
 
 my $x = Prima::PS::Printer-> create;
 my %z = %{$x-> {data}};
-my %p = %{$x-> {data}->{devParms}};
+my %p = %{$x-> {data}-> {devParms}};
 $x-> setup_dialog;
 
 for ( keys %z) {
-   next if $_ eq 'devParms';
-#   print "$_:$z{$_} => $x->{data}->{$_}\n";
+	next if $_ eq 'devParms';
+#	print "$_:$z{$_} => $x->{data}->{$_}\n";
 }
 for ( keys %p) {
-#   print "$_:$p{$_} => $x->{data}->{devParms}->{$_}\n";
+#	print "$_:$p{$_} => $x->{data}->{devParms}->{$_}\n";
 }
 
 $x-> begin_doc;

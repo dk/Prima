@@ -2,8 +2,8 @@
 print "1..7 create,runtime,horizontal,vertical,hidden,event,reparent\n";
 
 my $ww = $w-> insert( Widget =>
-   origin    => [ 10, 10],
-   growMode  => gm::GrowLoX,
+	origin    => [ 10, 10],
+	growMode  => gm::GrowLoX,
 );
 
 ok( $ww-> left == 10 && $ww-> bottom == 10);

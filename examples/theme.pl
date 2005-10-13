@@ -39,7 +39,7 @@ Theme selector
 Demonstrates usage of Prima::Themes, stores selected theme
 in rc file. Other programs can use the selection by running
 
-  perl -MPrima::Themes program
+perl -MPrima::Themes program
 
 =cut
 
@@ -47,8 +47,8 @@ my ( $w, $c, $playground, $t);
 
 sub test
 {
-   $t-> destroy if $t;
-   my @themes;	
+	$t-> destroy if $t;
+	my @themes;	
 	if (  $c-> count) {
 		for ( 0 .. $c-> count - 1) { 
 			push @themes, $c-> get_item_text($_) if $c-> button($_);
@@ -106,22 +106,22 @@ sub test
 $w = Prima::MainWindow-> create(
 	text => 'Theme selector',
 	menuItems => [
-	  [ 'Options' => [
-	     [ 'Save configuration' => sub { 
-		     Prima::message( Prima::Themes::save_rc() ? "Saved ok, restart to reload" : "Error saving:$!");
-		  } ],
-	  ]],
+		[ 'Options' => [
+			[ 'Save configuration' => sub { 
+				Prima::message( Prima::Themes::save_rc() ? "Saved ok, restart to reload" : "Error saving:$!");
+			} ],
+		]],
 	],
 );
 
 for (@INC) {
-        next unless -d "$_/Prima/themes";
-		  next unless opendir D, "$_/Prima/themes";
-		  for ( readdir D) { 
-			next unless m/^(.*)\.pm$/;
-			eval "use Prima::themes::$1";
-		  }
-		  closedir D;
+	next unless -d "$_/Prima/themes";
+	next unless opendir D, "$_/Prima/themes";
+	for ( readdir D) { 
+		next unless m/^(.*)\.pm$/;
+		eval "use Prima::themes::$1";
+	}
+	closedir D;
 }
 
 my @list = Prima::Themes::list;

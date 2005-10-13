@@ -7,12 +7,12 @@ my $ww = $w-> insert( 'Widget' => origin => [ 10, 10],);
 $dong = 0;
 
 $ww-> set(
-   onEnter   => sub { $dong = 1; },
-   onLeave   => sub { $dong = 1; },
-   onShow    => sub { $dong = 1; },
-   onHide    => sub { $dong = 1; },
-   onEnable  => sub { $dong = 1; },
-   onDisable => sub { $dong = 1; }
+	onEnter   => sub { $dong = 1; },
+	onLeave   => sub { $dong = 1; },
+	onShow    => sub { $dong = 1; },
+	onHide    => sub { $dong = 1; },
+	onEnable  => sub { $dong = 1; },
+	onDisable => sub { $dong = 1; }
 );
 
 

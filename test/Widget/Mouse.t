@@ -4,12 +4,12 @@ print "1..9 send,post,mouse up,mouse move,click,doubleclick,capture,positioning,
 $dong = 0;
 my @keydata = ();
 my $c = $w-> insert( Widget =>
-   onCreate  => \&__dong,
-   onDestroy => \&__dong,
-   onMouseDown  => sub { $dong = 1; push( @keydata, [@_]); },
-   onMouseUp    => sub { $dong = 1; },
-   onMouseMove  => sub { $dong = 1; },
-   onMouseClick => sub { $dong = 1; push( @keydata, [@_]);},
+	onCreate  => \&__dong,
+	onDestroy => \&__dong,
+	onMouseDown  => sub { $dong = 1; push( @keydata, [@_]); },
+	onMouseUp    => sub { $dong = 1; },
+	onMouseMove  => sub { $dong = 1; },
+	onMouseClick => sub { $dong = 1; push( @keydata, [@_]);},
 );
 
 $c-> mouse_event( cm::MouseDown, mb::Left, 0, 1, 2, 0, 0);

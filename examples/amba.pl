@@ -62,229 +62,236 @@ $d =~ s/([s-z])/q(f)x(ord($1)-ord('s'))/ge;
 $d =~ s/(..)/chr hex qq(0x$1)/ge;
 #
 my @images = map { Prima::Image-> create(
-   width    => 40,
-   height   => 40,
-   type     => im::BW,
-   data     => $_,
-   lineSize => 5,
+	width    => 40,
+	height   => 40,
+	type     => im::BW,
+	data     => $_,
+	lineSize => 5,
 )-> bitmap } grep { length } split "(.{200})", $d;
 
 # figures mnemonic names ( incorrect :)
 my %figs = (
-  'K' => [0,0],
-  'B1' => [0,1],
-  'B2' => [0,2],
-  'Q'  => [0,3],
-  'T1' => [0,4],
-  'T2' => [0,5],
-  'R1' => [0,6],
-  'R2' => [0,7],
+	'K' => [0,0],
+	'B1' => [0,1],
+	'B2' => [0,2],
+	'Q'  => [0,3],
+	'T1' => [0,4],
+	'T2' => [0,5],
+	'R1' => [0,6],
+	'R2' => [0,7],
 );
 
 my %images = (
-  'K'  => $images[1],
-  'B1' => $images[0], 
-  'B2' => $images[0], 
-  'Q'  => $images[3], 
-  'T1' => $images[4], 
-  'T2' => $images[4], 
-  'R1' => $images[2], 
-  'R2' => $images[2], 
+	'K'  => $images[1],
+	'B1' => $images[0], 
+	'B2' => $images[0], 
+	'Q'  => $images[3], 
+	'T1' => $images[4], 
+	'T2' => $images[4], 
+	'R1' => $images[2], 
+	'R2' => $images[2], 
 );
 
 # colors shade the degree of fugure coverage
 my @colors = (
-   0x808080,
-   0x707070,
-   0x606060,
-   0x505050,
-   0x404040,
-   0x303030,
-   0x202020,
-   0x101010,
-   0x000000,
+	0x808080,
+	0x707070,
+	0x606060,
+	0x505050,
+	0x404040,
+	0x303030,
+	0x202020,
+	0x101010,
+	0x000000,
 );
 
-my @pointer= map { $::application-> get_system_value( $_ )} sv::XPointer, sv::YPointer;
+my @pointer= map { 
+	$::application-> get_system_value( $_ )
+} sv::XPointer, sv::YPointer;
 $pointer[$_] = ( $pointer[$_] - 40 ) / 2 for 0,1;
 
 my $w = Prima::MainWindow-> create(
-   name => 'Chess puzzle',
-   size => [ 360, 360],
-   font => { style => fs::Bold, size => 11,},
-   buffered => 1,
-   menuItems => [
-      ["~Help" => sub{
-          my $txt = 'Chess puzzle. Objective is to put figures so they could reach every cell upon the board';
-          Prima::MsgBox::message( $txt, mb::OK | mb::Cancel, {
-             buttons => { mb::Cancel , {
-                text => '~Solution',
-                onClick => sub {
-                   Prima::MsgBox::message('Use Ctrl + mouse doubleclick on the board ', mb::OK);
-                }
-             }}
-          });
-      }],
-   ],
-   onPaint => sub {
-      my $self = $_[0];
-      my $i;
-      $self-> color( cl::Back);
-      $self-> bar ( 0, 0, $self-> size);
-      $self-> color( cl::Black);
-      for ( $i = 0; $i < 9; $i++) {
-         $self-> line( $i * 40, 0, $i * 40, 40 * 8);
-         $self-> line( 0, $i * 40, 40 * 8, $i * 40);
-      }
-      my @boy = (0) x 64;
-      my @busy = (0) x 64;
-      for ( keys %figs) {
-         my ($x,$y) = @{$figs{$_}};
-         $busy[$y*8+$x] = 1;
-      }
-      my $add = sub {
-         my ($x,$y) = @_;
-         if ( $x >= 0 && $x < 8 && $y >= 0 && $y < 8) {
-            $boy[$y*8+$x] += 1;
-            return !$busy[$y*8+$x];
-         } else {
-            return 0;
-         }
-      };
-      for ( keys %figs) {
-         my ( $x, $y) = @{$figs{$_}};
-         next unless $x >= 0 && $x < 8 && $y >= 0 && $y < 8;
-         if ($_ eq 'K') {
-            $add->($x-1,$y-1);
-            $add->($x-1,$y);
-            $add->($x-1,$y+1);
-            $add->($x,$y-1);
-            $add->($x,$y+1);
-            $add->($x+1,$y-1);
-            $add->($x+1,$y);
-            $add->($x+1,$y+1);
-         } elsif ($_ eq 'Q') {
-            for (1..7) { last unless $add->($x-$_,$y); }
-            for (1..7) { last unless $add->($x+$_,$y); }
-            for (1..7) { last unless $add->($x,$y-$_); }
-            for (1..7) { last unless $add->($x,$y+$_); }
-            for (1..7) { last unless $add->($x-$_,$y-$_); }
-            for (1..7) { last unless $add->($x-$_,$y+$_); }
-            for (1..7) { last unless $add->($x+$_,$y-$_); }
-            for (1..7) { last unless $add->($x+$_,$y+$_); }
-         } elsif (/^T\d$/) {
-            for (1..7) { last unless $add->($x-$_,$y); }
-            for (1..7) { last unless $add->($x+$_,$y); }
-            for (1..7) { last unless $add->($x,$y-$_); }
-            for (1..7) { last unless $add->($x,$y+$_); }
-         } elsif (/^B\d$/) {
-            for (1..7) { last unless $add->($x-$_,$y-$_); }
-            for (1..7) { last unless $add->($x-$_,$y+$_); }
-            for (1..7) { last unless $add->($x+$_,$y-$_); }
-            for (1..7) { last unless $add->($x+$_,$y+$_); }
-         } elsif (/^R\d$/) {
-            $add->($x-1,$y-2);
-            $add->($x-1,$y+2);
-            $add->($x-2,$y-1);
-            $add->($x-2,$y+1);
-            $add->($x+1,$y-2);
-            $add->($x+1,$y+2);
-            $add->($x+2,$y-1);
-            $add->($x+2,$y+1);
-         }
-      }
-      for ( grep $boy[$_], 0..63) {
-         my ( $x, $y) = ($_ % 8, int($_/8));
-         $self-> color( $colors[$boy[$_]] );
-         $self-> bar( $x * 40+1, $y * 40+1, $x * 40+39, $y * 40+39);
-      }
-      
-      for ( keys %figs) {
-         my ( $x, $y) = @{$figs{$_}};
-         $self-> set(
-            color     => cl::White,
-            backColor => cl::Black,
-            rop       => rop::AndPut,
-         );
-         $self-> put_image( $x * 40, $y * 40, $images{$_});
-         $self-> set(
-            color     => cl::Black,
-            backColor => $boy[ $y * 8 + $x] ? cl::LightGreen : cl::Green,
-            rop       => rop::XorPut,
-         );
-         $self-> put_image( $x * 40, $y * 40, $images{$_});
-      }
-   },
-   onMouseDown => sub {
-      my ( $self, $btn, $mod, $x, $y) = @_;
-      return if $self->{cap};
-      $x = int( $x / 40);
-      $y = int( $y / 40);
-      return if $x < 0 || $x > 8 || $y < 0 || $y > 8;
-      my $i = '';
-      for ( keys %figs) {
-         my ( $ax, $ay) = @{$figs{$_}};
-         $i = $_, last if $ax == $x and $ay == $y;
-      }
-      return unless $i;
-      $self-> {cap} = $i;
-      $self-> capture(1);
-      $self-> pointer( cr::Size);
-      my $xx = $self-> pointerIcon;
-      my ( $xor, $and) = $xx-> split;
+	name => 'Chess puzzle',
+	size => [ 360, 360],
+	font => { style => fs::Bold, size => 11,},
+	buffered => 1,
+	menuItems => [
+		["~Help" => sub{
+			Prima::MsgBox::message( 
+				'Chess puzzle. Objective is to put figures so they could reach every cell upon the board',
+				mb::OK | mb::Cancel, {
+				buttons => { mb::Cancel , {
+					text => '~Solution',
+					onClick => sub {
+						Prima::MsgBox::message(
+							'Use Ctrl + mouse doubleclick on the board ', 
+							mb::OK
+						);
+					}
+				}}
+			});
+		}],
+	],
+	onPaint => sub {
+		my $self = $_[0];
+		my $i;
+		$self-> color( cl::Back);
+		$self-> bar ( 0, 0, $self-> size);
+		$self-> color( cl::Black);
+		for ( $i = 0; $i < 9; $i++) {
+			$self-> line( $i * 40, 0, $i * 40, 40 * 8);
+			$self-> line( 0, $i * 40, 40 * 8, $i * 40);
+		}
+		my @boy = (0) x 64;
+		my @busy = (0) x 64;
+		for ( keys %figs) {
+			my ($x,$y) = @{$figs{$_}};
+			$busy[$y*8+$x] = 1;
+		}
+		my $add = sub {
+			my ($x,$y) = @_;
+			if ( $x >= 0 && $x < 8 && $y >= 0 && $y < 8) {
+				$boy[$y*8+$x] += 1;
+				return !$busy[$y*8+$x];
+			} else {
+				return 0;
+			}
+		};
+		for ( keys %figs) {
+			my ( $x, $y) = @{$figs{$_}};
+			next unless $x >= 0 && $x < 8 && $y >= 0 && $y < 8;
+			if ($_ eq 'K') {
+				$add-> ($x-1,$y-1);
+				$add-> ($x-1,$y);
+				$add-> ($x-1,$y+1);
+				$add-> ($x,$y-1);
+				$add-> ($x,$y+1);
+				$add-> ($x+1,$y-1);
+				$add-> ($x+1,$y);
+				$add-> ($x+1,$y+1);
+			} elsif ($_ eq 'Q') {
+				for (1..7) { last unless $add-> ($x-$_,$y); }
+				for (1..7) { last unless $add-> ($x+$_,$y); }
+				for (1..7) { last unless $add-> ($x,$y-$_); }
+				for (1..7) { last unless $add-> ($x,$y+$_); }
+				for (1..7) { last unless $add-> ($x-$_,$y-$_); }
+				for (1..7) { last unless $add-> ($x-$_,$y+$_); }
+				for (1..7) { last unless $add-> ($x+$_,$y-$_); }
+				for (1..7) { last unless $add-> ($x+$_,$y+$_); }
+			} elsif (/^T\d$/) {
+				for (1..7) { last unless $add-> ($x-$_,$y); }
+				for (1..7) { last unless $add-> ($x+$_,$y); }
+				for (1..7) { last unless $add-> ($x,$y-$_); }
+				for (1..7) { last unless $add-> ($x,$y+$_); }
+			} elsif (/^B\d$/) {
+				for (1..7) { last unless $add-> ($x-$_,$y-$_); }
+				for (1..7) { last unless $add-> ($x-$_,$y+$_); }
+				for (1..7) { last unless $add-> ($x+$_,$y-$_); }
+				for (1..7) { last unless $add-> ($x+$_,$y+$_); }
+			} elsif (/^R\d$/) {
+				$add-> ($x-1,$y-2);
+				$add-> ($x-1,$y+2);
+				$add-> ($x-2,$y-1);
+				$add-> ($x-2,$y+1);
+				$add-> ($x+1,$y-2);
+				$add-> ($x+1,$y+2);
+				$add-> ($x+2,$y-1);
+				$add-> ($x+2,$y+1);
+			}
+		}
+		for ( grep $boy[$_], 0..63) {
+			my ( $x, $y) = ($_ % 8, int($_/8));
+			$self-> color( $colors[$boy[$_]] );
+			$self-> bar( $x * 40+1, $y * 40+1, $x * 40+39, $y * 40+39);
+		}
+		
+		for ( keys %figs) {
+			my ( $x, $y) = @{$figs{$_}};
+			$self-> set(
+				color     => cl::White,
+				backColor => cl::Black,
+				rop       => rop::AndPut,
+			);
+			$self-> put_image( $x * 40, $y * 40, $images{$_});
+			$self-> set(
+				color     => cl::Black,
+				backColor => $boy[ $y * 8 + $x] ? cl::LightGreen : cl::Green,
+				rop       => rop::XorPut,
+			);
+			$self-> put_image( $x * 40, $y * 40, $images{$_});
+		}
+	},
+	onMouseDown => sub {
+		my ( $self, $btn, $mod, $x, $y) = @_;
+		return if $self-> {cap};
+		$x = int( $x / 40);
+		$y = int( $y / 40);
+		return if $x < 0 || $x > 8 || $y < 0 || $y > 8;
+		my $i = '';
+		for ( keys %figs) {
+			my ( $ax, $ay) = @{$figs{$_}};
+			$i = $_, last if $ax == $x and $ay == $y;
+		}
+		return unless $i;
+		$self-> {cap} = $i;
+		$self-> capture(1);
+		$self-> pointer( cr::Size);
+		my $xx = $self-> pointerIcon;
+		my ( $xor, $and) = $xx-> split;
 
-      $and-> begin_paint;
-      $and-> rop( rop::NotSrcAnd);
-      $and-> put_image( @pointer, $images{$i});
-      $and-> end_paint;
+		$and-> begin_paint;
+		$and-> rop( rop::NotSrcAnd);
+		$and-> put_image( @pointer, $images{$i});
+		$and-> end_paint;
 
-      $xor-> begin_paint;
-      $xor-> set(
-         color      => cl::Black,
-         backColor  => $::application-> get_system_value( sv::ColorPointer) ? cl::Green : cl::White, 
-         rop        => rop::OrPut,
-      );
-      $xor-> put_image( @pointer, $images{$i});
-      $xor-> end_paint;
+		$xor-> begin_paint;
+		$xor-> set(
+			color      => cl::Black,
+			backColor  => $::application-> get_system_value( sv::ColorPointer) ? 
+					cl::Green : cl::White, 
+			rop        => rop::OrPut,
+		);
+		$xor-> put_image( @pointer, $images{$i});
+		$xor-> end_paint;
 
-      $xx-> combine( $xor, $and);
-      $self-> pointer( $xx);
-   },
-   onMouseUp => sub {
-      my ( $self, $btn, $mod, $x, $y) = @_;
-      return unless $self->{cap};
-      $x = int( $x / 40);
-      $y = int( $y / 40);
-      $self-> capture(0);
-      $self-> pointer( cr::Default);
-      my $fg = $self-> {cap};
-      delete $self-> {cap};
-      return if $x < 0 || $x > 8 || $y < 0 || $y > 8;
-      my $i = '';
-      for ( keys %figs) {
-         my ( $ax, $ay) = @{$figs{$_}};
-         $i = $_, last if $ax == $x and $ay == $y;
-      }
-      return if $i;
-      $figs{$fg} = [ $x, $y];
-      $self-> repaint;
-   },
-   onMouseClick => sub {
-      my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
-      if ( $dbl and ( $mod & km::Ctrl)) {
-        %figs = (
-          'K'  => [2,5],
-          'B1' => [5,5],
-          'B2' => [2,2],
-          'Q'  => [5,2],
-          'T1' => [7,7],
-          'T2' => [0,0],
-          'R1' => [4,4],
-          'R2' => [3,3],
-        );
-        $self-> repaint;
-      }
-   },
+		$xx-> combine( $xor, $and);
+		$self-> pointer( $xx);
+	},
+	onMouseUp => sub {
+		my ( $self, $btn, $mod, $x, $y) = @_;
+		return unless $self-> {cap};
+		$x = int( $x / 40);
+		$y = int( $y / 40);
+		$self-> capture(0);
+		$self-> pointer( cr::Default);
+		my $fg = $self-> {cap};
+		delete $self-> {cap};
+		return if $x < 0 || $x > 8 || $y < 0 || $y > 8;
+		my $i = '';
+		for ( keys %figs) {
+			my ( $ax, $ay) = @{$figs{$_}};
+			$i = $_, last if $ax == $x and $ay == $y;
+		}
+		return if $i;
+		$figs{$fg} = [ $x, $y];
+		$self-> repaint;
+	},
+	onMouseClick => sub {
+		my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
+		if ( $dbl and ( $mod & km::Ctrl)) {
+			%figs = (
+				'K'  => [2,5],
+				'B1' => [5,5],
+				'B2' => [2,2],
+				'Q'  => [5,2],
+				'T1' => [7,7],
+				'T2' => [0,0],
+				'R1' => [4,4],
+				'R2' => [3,3],
+			);
+			$self-> repaint;
+		}
+	},
 );
 
 

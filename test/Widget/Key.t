@@ -4,10 +4,10 @@ print "1..3 send,post,simulation\n";
 $dong = 0;
 my @keydata = ();
 my $c = $w-> insert( Widget =>
-   onCreate  => \&__dong,
-   onDestroy => \&__dong,
-   onKeyDown => sub { $dong = 1; push( @keydata, [@_]); },
-   onKeyUp   => sub { $dong = 1; push( @keydata, [ $_[0]-> get_shift_state, @_])  },
+	onCreate  => \&__dong,
+	onDestroy => \&__dong,
+	onKeyDown => sub { $dong = 1; push( @keydata, [@_]); },
+	onKeyUp   => sub { $dong = 1; push( @keydata, [ $_[0]-> get_shift_state, @_])  },
 );
 
 $c-> key_event( cm::KeyDown, ord(' '), kb::Space, 0, 1, 0);

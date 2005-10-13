@@ -42,98 +42,98 @@ pastes its image into the clipboard.
 use Prima qw(Buttons StdBitmap), Application => { name => 'Buttons sample' };
 
 my $w = Prima::MainWindow-> create(
-  text=> "Handmade buttons",
-  size => [ 300, 200],
-  centered => 1,
-  popupItems => [['Hallo!' => '']],
+text=> "Handmade buttons",
+size => [ 300, 200],
+centered => 1,
+popupItems => [['Hallo!' => '']],
 );
 
 $w-> insert( CheckBox =>
-   origin => [ 10, 150],
-   selectable => 1,
-   text => "~Check box",
-   hint => 'Check box!',
-   popupItems => [['Hallo2!' => '']],
+	origin => [ 10, 150],
+	selectable => 1,
+	text => "~Check box",
+	hint => 'Check box!',
+	popupItems => [['Hallo2!' => '']],
 );
 
 $w-> insert( Radio =>
-   origin => [ 190, 150],
-   selectable => 1,
-   text => "~Radio button",
-   hint => 'Radio!',
+	origin => [ 190, 150],
+	selectable => 1,
+	text => "~Radio button",
+	hint => 'Radio!',
 );
 
 $i = Prima::StdBitmap::icon( sbmp::GlyphCancel);
 $j = Prima::StdBitmap::icon( sbmp::GlyphOK);
 
 $w-> insert( Button =>
-   origin => [ 10, 100],
-   text => "~Default style",
-   default => 1,
-   hint => 'Nice?',
+	origin => [ 10, 100],
+	text => "~Default style",
+	default => 1,
+	hint => 'Nice?',
 );
 
 $w-> insert( Button =>
-   origin  => [ 10, 55],
-   text => "~BitBlt",
-   image   => $i,
-   glyphs  => 2,
-   hint => 'Sly button',
+	origin  => [ 10, 55],
+	text => "~BitBlt",
+	image   => $i,
+	glyphs  => 2,
+	hint => 'Sly button',
 );
 
 
 $w-> insert( Button =>
-   origin  => [ 10, 10],
-   text => "Disab~led",
-   image   => $i,
-   glyphs  => 2,
-   enabled => 0,
-   hint => 'See me?',
+	origin  => [ 10, 10],
+	text => "Disab~led",
+	image   => $i,
+	glyphs  => 2,
+	enabled => 0,
+	hint => 'See me?',
 );
 
 $w-> insert( Button =>
-   origin     => [ 130, 10],
-   text    => "Bits for toolbar",
-   image      => $i,
-   glyphs     => 2,
-   vertical   => 1,
-   height     => 120,
-   imageScale => 3,
-   selectable => 0,
-   flat       => 1,
-   hint       => "Pressing this button copies it\'s image\n into clipboard",
-   onClick    => sub {
-      my $self = $_[0];
-      unless ( $self-> get_shift_state & km::Ctrl) {
-         my $i = Prima::Image-> create(
-            width  => $self-> width,
-            height => $self-> height,
-            font   => $self-> font,
-            type   => im::Byte,
-         );
-         $i-> begin_paint;
-         $self-> notify(q(Paint), $i);
-         $i-> end_paint;
-         $::application-> Clipboard-> image($i);
-      } else {
-         my $i = $::application-> Clipboard-> image;
-         $self-> set(
-            glyphs     => 1,
-            imageScale => 1,
-            image      => $i,
-         ) if $i;
-      }
-   },
+	origin     => [ 130, 10],
+	text    => "Bits for toolbar",
+	image      => $i,
+	glyphs     => 2,
+	vertical   => 1,
+	height     => 120,
+	imageScale => 3,
+	selectable => 0,
+	flat       => 1,
+	hint       => "Pressing this button copies its image\n into clipboard",
+	onClick    => sub {
+		my $self = $_[0];
+		unless ( $self-> get_shift_state & km::Ctrl) {
+			my $i = Prima::Image-> create(
+				width  => $self-> width,
+				height => $self-> height,
+				font   => $self-> font,
+				type   => im::Byte,
+			);
+			$i-> begin_paint;
+			$self-> notify(q(Paint), $i);
+			$i-> end_paint;
+			$::application-> Clipboard-> image($i);
+		} else {
+			my $i = $::application-> Clipboard-> image;
+			$self-> set(
+				glyphs     => 1,
+				imageScale => 1,
+				image      => $i,
+			) if $i;
+		}
+	},
 );
 
 $w-> insert( SpeedButton =>
-   origin     => [ 250, 10],
-   image      => $j,
-   glyphs     => 2,
-   text    => 0,
-   checkable  => 1,
-   holdGlyph  => 1,
-   hint       => 'C\'mon, press me!',
+	origin     => [ 250, 10],
+	image      => $j,
+	glyphs     => 2,
+	text    => 0,
+	checkable  => 1,
+	holdGlyph  => 1,
+	hint       => 'C\'mon, press me!',
 );
 
 

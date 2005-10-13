@@ -9,23 +9,23 @@ use vars qw(@ISA);
 
 sub rect3d
 {
-   my ( $self, $x, $y, $x1, $y1, $width, $lColor, $rColor, $backColor) = @_;
+	my ( $self, $x, $y, $x1, $y1, $width, $lColor, $rColor, $backColor) = @_;
 	my $canvas = $self-> {object};
 	if ( defined $backColor) {
-	   my $c = $canvas-> color;
-      $canvas-> color( $backColor);
+		my $c = $canvas-> color;
+		$canvas-> color( $backColor);
 		$canvas-> bar( $x, $y, $x1, $y1);
-      $canvas-> color( $c);
+		$canvas-> color( $c);
 	}
 	oval3d( $canvas, $x, $y, $x1, $y1, $width, $lColor, $rColor, 40);
 }
 
 sub oval3d
 {
-   my ( $self, $x, $y, $x1, $y1, $width, $lColor, $rColor, $maxd) = @_;
+	my ( $self, $x, $y, $x1, $y1, $width, $lColor, $rColor, $maxd) = @_;
 	( $x1, $x) = ( $x, $x1) if $x > $x1;
 	( $y1, $y) = ( $y, $y1) if $y > $y1;
-   my $bias = int($width / 2);
+	my $bias = int($width / 2);
 	$x += $bias;
 	$y += $bias;
 	$x1 -= $bias;
@@ -43,25 +43,25 @@ sub oval3d
 #  |C    D|
 #  \------/
 # C'        D'
-   my @r = ( 
-	# coordinates of C and B, so A=r[0,3],B=r[2,3],C=r[0,1],D=[2,1]
-	   $x + $r, $y + $r,
+	my @r = ( 
+		# coordinates of C and B, so A=r[0,3],B=r[2,3],C=r[0,1],D=[2,1]
+		$x + $r, $y + $r,
 		$x1 - $r, $y1 - $r,
-	# coordinates of C' and B'
-	   $x, $y,
+		# coordinates of C' and B'
+		$x, $y,
 		$x1, $y1,
 	);
-   my $c = $self-> color;
+	my $c = $self-> color;
 	my $w = $self-> lineWidth;
 	$self-> lineWidth( $width) if $width != $w;
-   $self-> color( $lColor) if $lColor != $c;
+	$self-> color( $lColor) if $lColor != $c;
 	# light color
 	$self-> line( @r[0,7,2,7]) if $r[0] < $r[2];
 	$self-> line( @r[4,1,4,3]) if $r[1] < $r[3];
 	$self-> arc( @r[0,3], $d, $d, 90, 180);
 	$self-> arc( @r[2,3], $d, $d, 45, 90);
 	$self-> arc( @r[0,1], $d, $d, 180, 225);
-   $self-> color( $rColor);
+	$self-> color( $rColor);
 	# dark color
 	$self-> line( @r[0,5,2,5]) if $r[0] < $r[2];
 	$self-> line( @r[6,1,6,3]) if $r[1] < $r[3];
@@ -69,19 +69,19 @@ sub oval3d
 	$self-> arc( @r[2,3], $d, $d, 0, 45);
 	$self-> arc( @r[0,1], $d, $d, 225, 270);
 	# restore pen style
-   $self-> color( $c) if $c != $rColor;
+	$self-> color( $c) if $c != $rColor;
 	$self-> lineWidth( $w) if $width != $w;
 }
 
 my %wrap_paint = (
-  onPaint => sub {
-   $_[0]-> on_paint( Round3D-> new($_[1]));
-}
+	onPaint => sub {
+		$_[0]-> on_paint( Round3D-> new($_[1]));
+	}
 );
 
 Prima::Themes::register( 'Prima::themes::round3d', 'round3d', [ 
-	'Prima::Button' => \%wrap_paint,
-	'Prima::ScrollBar' => \%wrap_paint,
-	'Prima::InputLine' => \%wrap_paint,
-	],
+		'Prima::Button' => \%wrap_paint,
+		'Prima::ScrollBar' => \%wrap_paint,
+		'Prima::InputLine' => \%wrap_paint,
+		],
 );

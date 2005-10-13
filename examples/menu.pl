@@ -68,158 +68,158 @@ use vars qw(@ISA);
 
 sub create_menu
 {
-   my $img = Prima::Image-> create;
-   $0 =~ /^(.*)\\|\/[^\\\/]+$/;
-   $img-> load( "$1/Hand.gif");
-   return [
-      [ "~File" => [
-          [ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!\n";}],   # anonymous sub
-          [ $img => sub {
-             my $img = $_[0]-> menu-> image( $_[1]);
-             my @r = @{$img-> palette};
-             $img-> palette( [reverse @r]);
-             $_[0]->menu->image( $_[1], $img);
-          }],                        # image
-          [],                                       # division line
-          [ "E~xit" => "Exit"    ]    # calling named function of menu owner
-      ]],
-      [ ef => "~Edit" => [                  # example of system commands usage
-         [ "Cop~y"  => sub { $_[0]->foc_action('copy')}  ],     # try these with input line focused
-         [ "Cu~t"   => sub { $_[0]->foc_action('cut')}   ],
-         [ "Pa~ste" => sub { $_[0]->foc_action('paste')} ],
-         [],
-         ["~Kill menu"=>sub{ $_[0]->menuItems(
-            [
-               [ "~Restore all" => sub {
-                  $_[0]->menuItems( $_[0]->create_menu)
-               }],
-               [ "~Incline" => sub {
-                  $_[0]->menu-> insert( $_[0]->create_menu, '', 1);
-               }],
-            ]);
-               }],
-         ["~Duplicate menu"=>sub{ TestWindow->create( menu=>$_[0]->menu)}],
-      ]],
-      [ "~Input line" => [
-         [ "Print ~text" => "Text"],
-         [ "Print ~selected" => "Selected"],
-         [ "Try \"selText\"" => "SelText"],
-         [],
-         [ "Toggle insert mode" => "InsMode"],
-         ["Toggle password mode" => "PassMode"],
-         ["Toggle border existence" => "BorderMode"],
-         [ coexistentor => "Coexistentor"=> ""],
-      ]],
-      [],                             # divisor in main menu opens
-      [ "~Clusters" => [              # right-adjacent part
-        [ "*".checker =>  "Checking Item"   => "Check"     ],
-        [],
-        [ "-".slave   =>  "Disabled state"   => "PrintText"],
-        [ master  =>  "~Enable item above" => "Enable"     ]   # enable/disable and text sample
-      ]]
-   ];
+	my $img = Prima::Image-> create;
+	$0 =~ /^(.*)\\|\/[^\\\/]+$/;
+	$img-> load( "$1/Hand.gif");
+	return [
+		[ "~File" => [
+			[ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!\n";}],   # anonymous sub
+			[ $img => sub {
+				my $img = $_[0]-> menu-> image( $_[1]);
+				my @r = @{$img-> palette};
+				$img-> palette( [reverse @r]);
+				$_[0]-> menu-> image( $_[1], $img);
+			}],                        # image
+			[],                                       # division line
+			[ "E~xit" => "Exit"    ]    # calling named function of menu owner
+		]],
+		[ ef => "~Edit" => [                  # example of system commands usage
+			[ "Cop~y"  => sub { $_[0]-> foc_action('copy')}  ],     # try these with input line focused
+			[ "Cu~t"   => sub { $_[0]-> foc_action('cut')}   ],
+			[ "Pa~ste" => sub { $_[0]-> foc_action('paste')} ],
+			[],
+			["~Kill menu"=>sub{ $_[0]-> menuItems(
+				[
+					[ "~Restore all" => sub {
+						$_[0]-> menuItems( $_[0]-> create_menu)
+					}],
+					[ "~Incline" => sub {
+						$_[0]-> menu-> insert( $_[0]-> create_menu, '', 1);
+					}],
+				]);
+			}],
+			["~Duplicate menu"=>sub{ TestWindow-> create( menu=>$_[0]-> menu)}],
+		]],
+		[ "~Input line" => [
+			[ "Print ~text" => "Text"],
+			[ "Print ~selected" => "Selected"],
+			[ "Try \"selText\"" => "SelText"],
+			[],
+			[ "Toggle insert mode" => "InsMode"],
+			["Toggle password mode" => "PassMode"],
+			["Toggle border existence" => "BorderMode"],
+			[ coexistentor => "Coexistentor"=> ""],
+		]],
+		[],                             # divisor in main menu opens
+		[ "~Clusters" => [              # right-adjacent part
+		[ "*".checker =>  "Checking Item"   => "Check"     ],
+		[],
+		[ "-".slave   =>  "Disabled state"   => "PrintText"],
+		[ master  =>  "~Enable item above" => "Enable"     ]   # enable/disable and text sample
+		]]
+	];
 }
 
 sub foc_action
 {
-   my ( $self, $action) = @_;
-   my $foc = $self-> selectedWidget;
-   return unless $foc and $foc-> alive;
-   my $ref = $foc-> can( $action);
-   $ref->( $foc) if $ref;
+	my ( $self, $action) = @_;
+	my $foc = $self-> selectedWidget;
+	return unless $foc and $foc-> alive;
+	my $ref = $foc-> can( $action);
+	$ref-> ( $foc) if $ref;
 }
 
 sub Exit
 {
-  $::application-> destroy;
+	$::application-> destroy;
 }
 
 sub Check
 {
-   my $menu = $_[ 0]-> menu;
-   $menu-> checked( 'checker', ! $menu-> checked( 'checker'));
+	my $menu = $_[ 0]-> menu;
+	$menu-> checked( 'checker', ! $menu-> checked( 'checker'));
 }
 
 sub PrintText
 {
-   print $_[ 0]-> menu-> slave-> text;
+	print $_[ 0]-> menu-> slave-> text;
 }
 
 sub Enable
 {
-   my $slave  = $_[0]-> menu-> slave;
-   my $master = $_[0]-> menu-> master;
-   if ( $slave-> enabled) {
-      $slave -> text( "Disabled state");
-      $master-> text( "~Enable item above");
-   } else {
-      $slave -> text( "Enabled state");
-      $master-> text( "~Disable item above");
-   }
-   $slave-> enabled( ! $slave-> enabled);
+	my $slave  = $_[0]-> menu-> slave;
+	my $master = $_[0]-> menu-> master;
+	if ( $slave-> enabled) {
+		$slave -> text( "Disabled state");
+		$master-> text( "~Enable item above");
+	} else {
+		$slave -> text( "Enabled state");
+		$master-> text( "~Disable item above");
+	}
+	$slave-> enabled( ! $slave-> enabled);
 }
 
 sub Text
 {
-  print $_[ 0]-> InputLine1-> text;
+	print $_[ 0]-> InputLine1-> text;
 }
 
 sub Selected
 {
-  print $_[ 0]-> InputLine1-> selText;
+	print $_[ 0]-> InputLine1-> selText;
 }
 
 sub SelText
 {
-  $_[ 0]-> InputLine1-> selText ("SEL");
+	$_[ 0]-> InputLine1-> selText ("SEL");
 }
 
 sub InsMode
 {
-  my $e = $_[ 0]-> InputLine1;
-  $e-> insertMode ( !$e-> insertMode);
+	my $e = $_[ 0]-> InputLine1;
+	$e-> insertMode ( !$e-> insertMode);
 }
 
 sub PassMode
 {
-  my $e = $_[ 0]-> InputLine1;
-  $e-> writeOnly ( !$e-> writeOnly);
+	my $e = $_[ 0]-> InputLine1;
+	$e-> writeOnly ( !$e-> writeOnly);
 }
 
 
 sub BorderMode
 {
-  my $e = $_[ 0]-> InputLine1;
-  $e-> borderWidth (( $e-> borderWidth == 1) ? 0 : 1);
+	my $e = $_[ 0]-> InputLine1;
+	$e-> borderWidth (( $e-> borderWidth == 1) ? 0 : 1);
 }
 
 
 package UserInit;
 
 my $w = TestWindow-> create(
-  text   => "Menu and input line example",
-  bottom    => 300,
-  size      => [ 360, 120],
-  menuItems => TestWindow::create_menu,
-  onDestroy => sub {$::application-> close},
+	text      => "Menu and input line example",
+	bottom    => 300,
+	size      => [ 360, 120],
+	menuItems => TestWindow::create_menu,
+	onDestroy => sub {$::application-> close},
 );
 $w-> insert( "InputLine",
-              pack      => { pady => 20, padx => 20, fill => 'x', side => 'bottom'},
-              text      => $w-> text,
-              maxLen    => 200,
-              onChange  => sub {
-                 $_[0]-> owner-> text( $_[0]-> text);
-                 $_[0]-> owner-> Label1-> text( $_[0]-> text);
-                 $_[0]-> owner-> menu-> coexistentor-> text( $_[0]-> text)
-                   if $_[0]-> owner-> menu-> has_item( 'coexistentor');
-              },
-            );
+	pack      => { pady => 20, padx => 20, fill => 'x', side => 'bottom'},
+	text      => $w-> text,
+	maxLen    => 200,
+	onChange  => sub {
+		$_[0]-> owner-> text( $_[0]-> text);
+		$_[0]-> owner-> Label1-> text( $_[0]-> text);
+		$_[0]-> owner-> menu-> coexistentor-> text( $_[0]-> text)
+			if $_[0]-> owner-> menu-> has_item( 'coexistentor');
+	},
+);
 
 $w-> insert( "Label",
-              pack      => { pady => 20, padx => 20, fill => 'both', expand => 1},
-              text   => "Type here something",
-              backColor => cl::Green,
-              valignment => ta::Center,
-              focusLink => $w-> InputLine1,
-           );
+	pack      => { pady => 20, padx => 20, fill => 'both', expand => 1},
+	text   => "Type here something",
+	backColor => cl::Green,
+	valignment => ta::Center,
+	focusLink => $w-> InputLine1,
+);
 run Prima;

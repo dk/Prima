@@ -35,10 +35,10 @@ use Prima::Classes;
 use vars qw($uses);
 
 sub import {
-   shift;
-   my %profile = ( name => q(Prima), @_);
-   $::application ||= Prima::Application-> create( %profile);
-   $uses++;
+	shift;
+	my %profile = ( name => q(Prima), @_);
+	$::application ||= Prima::Application-> create( %profile);
+	$uses++;
 }
 
 1;
@@ -62,16 +62,16 @@ class at a time.
 
 =head1 SYNOPSIS
 
-   use Prima;
-   use Prima::Application;
+	use Prima;
+	use Prima::Application;
 
-      or 
+or 
 
-   use Prima qw(Application);
+	use Prima qw(Application);
 
-   Prima::MainWindow-> create();
+	Prima::MainWindow-> create();
 
-   run Prima;
+	run Prima;
 
 =head1 USAGE
 
@@ -79,14 +79,14 @@ Prima::Application class, and its only instance are
 treated specially throughout the toolkit. The object
 instance is contained in 
 
-  $::application
+	$::application
 
 scalar, defined in I<Prima.pm> module. 
 The application instance must be created whenever
 widget and window, or event loop functionality is
 desired. Usually 
 
-   use Prima::Application;
+	use Prima::Application;
 
 code is enough, but I<$::application> can also
 be assigned explicitly. The 'use' syntax has advantage
@@ -94,7 +94,7 @@ as more resistant to eventual changes in the toolkit design.
 It can also be used in conjunction with custom parameters hash,
 alike the general create() syntax:
 
-   use Prima::Application name => 'Test application', icon => $icon;
+	use Prima::Application name => 'Test application', icon => $icon;
 
 In addition to this functionality Prima::Application
 is also a wrapper to a set of system functions, not
@@ -187,7 +187,7 @@ returned by Prima::Clipboard::get_standard_clipboards.
 
 The default clipboard is named I<Clipboard>, and is accessible via
 
-  my $clipboard = $::application-> Clipboard;
+	my $clipboard = $::application-> Clipboard;
 
 code.
 
@@ -548,21 +548,21 @@ The hash result contains the following keys:
 One of C<apc::XXX> constants, reflecting the platform.
 Currently, the list of the supported platforms is:
 
-   apc::Os2    
-   apc::Win32  
-   apc::Unix   
+	apc::Os2    
+	apc::Win32  
+	apc::Unix   
 
 =item gui  
 
 One of C<gui::XXX> constants, reflecting the graphic
 user interface used in the system:
 
-   gui::Default
-   gui::PM  
-   gui::Windows
-   gui::XLib 
-   gui::OpenLook
-   gui::Motif
+	gui::Default
+	gui::PM  
+	gui::Windows
+	gui::XLib 
+	gui::OpenLook
+	gui::Motif
 
 The meaning of this field is somewhat vague, and
 the field will possibly be deprecated in the future releases.
@@ -599,45 +599,45 @@ The method can be called with a class string instead of an object instance.
 Returns the system integer value, associated with one 
 of C<sv::XXX> constants. The constants are:
 
-   sv::YMenu            - height of menu bar in top-level windows
-   sv::YTitleBar        - height of title bar in top-level windows
-   sv::XIcon            - width and height of main icon dimensions, 
-   sv::YIcon              acceptable by the system
-   sv::XSmallIcon       - width and height of alternate icon dimensions,  
-   sv::YSmallIcon         acceptable by the system 
-   sv::XPointer         - width and height of mouse pointer icon
-   sv::YPointer           acceptable by the system  
-   sv::XScrollbar       - width of the default vertical scrollbar
-   sv::YScrollbar       - height of the default horizontal scrollbar 
-                          ( see get_default_scrollbar_metrics() )
-   sv::XCursor          - width of the system cursor
-                          ( see get_default_cursor_width() )
-   sv::AutoScrollFirst  - the initial and the repetitive 
-   sv::AutoScrollNext     scroll timeouts
-                          ( see get_scroll_rate() )
-   sv::InsertMode       - the system insert mode
-                          ( see insertMode )
-   sv::XbsNone          - widths and heights of the top-level window
-   sv::YbsNone            decorations, correspondingly, with borderStyle
-   sv::XbsSizeable        bs::None, bs::Sizeable, bs::Single, and
-   sv::YbsSizeable        bs::Dialog. 
-   sv::XbsSingle          ( see get_default_window_borders() )
-   sv::YbsSingle
-   sv::XbsDialog
-   sv::YbsDialog
-   sv::MousePresent     - 1 if the mouse is present, 0 otherwise
-   sv::MouseButtons     - number of the mouse buttons
-   sv::WheelPresent     - 1 if the mouse wheel is present, 0 otherwise
-   sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on 
-                          an implicit selection
-   sv::FullDrag         - 1 if the top-level windows are dragged dynamically, 
-                          0 - with marquee mode
-   sv::DblClickDelay    - mouse double-click timeout in milliseconds
-   sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 
-                          0 otherwise
-   sv::ColorPointer     - 1 if system accepts color pointer icons.
-   sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
-   sv::CanUTF8_Output   - 1 if system can output utf8 text
+	sv::YMenu            - height of menu bar in top-level windows
+	sv::YTitleBar        - height of title bar in top-level windows
+	sv::XIcon            - width and height of main icon dimensions, 
+	sv::YIcon              acceptable by the system
+	sv::XSmallIcon       - width and height of alternate icon dimensions,  
+	sv::YSmallIcon         acceptable by the system 
+	sv::XPointer         - width and height of mouse pointer icon
+	sv::YPointer           acceptable by the system  
+	sv::XScrollbar       - width of the default vertical scrollbar
+	sv::YScrollbar       - height of the default horizontal scrollbar 
+								( see get_default_scrollbar_metrics() )
+	sv::XCursor          - width of the system cursor
+								( see get_default_cursor_width() )
+	sv::AutoScrollFirst  - the initial and the repetitive 
+	sv::AutoScrollNext     scroll timeouts
+								( see get_scroll_rate() )
+	sv::InsertMode       - the system insert mode
+								( see insertMode )
+	sv::XbsNone          - widths and heights of the top-level window
+	sv::YbsNone            decorations, correspondingly, with borderStyle
+	sv::XbsSizeable        bs::None, bs::Sizeable, bs::Single, and
+	sv::YbsSizeable        bs::Dialog. 
+	sv::XbsSingle          ( see get_default_window_borders() )
+	sv::YbsSingle
+	sv::XbsDialog
+	sv::YbsDialog
+	sv::MousePresent     - 1 if the mouse is present, 0 otherwise
+	sv::MouseButtons     - number of the mouse buttons
+	sv::WheelPresent     - 1 if the mouse wheel is present, 0 otherwise
+	sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on 
+								an implicit selection
+	sv::FullDrag         - 1 if the top-level windows are dragged dynamically, 
+								0 - with marquee mode
+	sv::DblClickDelay    - mouse double-click timeout in milliseconds
+	sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 
+								0 otherwise
+	sv::ColorPointer     - 1 if system accepts color pointer icons.
+	sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
+	sv::CanUTF8_Output   - 1 if system can output utf8 text
 
 The method can be called with a class string instead of an object instance.
 
@@ -657,7 +657,7 @@ coordinates. If no toolkit widget are found, C<undef> is returned.
 
 The main event loop. Called by 
 
-  run Prima;
+run Prima;
 
 standard code. Returns when the program is about to
 terminate, or if the exception was signaled. In the
@@ -695,9 +695,9 @@ previously locked with C<lock()>.
 An event dispatcher, called from within the event loop.
 If the event loop can be schematized, then in
 
-   while ( application not closed ) {
-      yield
-   }
+	while ( application not closed ) {
+		yield
+	}
 
 draft yield() is the only function, called repeatedly
 within the event loop. yield() cannot be used to

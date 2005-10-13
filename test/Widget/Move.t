@@ -6,16 +6,16 @@ my $dong2 = 0;
 my @mrep;
 my @mrep2;
 my $wx = Prima::Window-> create(
-   size => [ 100, 100],
-   onMove => sub { $dong = 1; shift; @mrep = scalar(@mrep) ? ( @mrep[0,1], @_[2,3]) : @_;  },
-   name => 'TEST',
+	size => [ 100, 100],
+	onMove => sub { $dong = 1; shift; @mrep = scalar(@mrep) ? ( @mrep[0,1], @_[2,3]) : @_;  },
+	name => 'TEST',
 );
 
 
 my $wl = $wx-> insert( 'Prima::Widget' =>
-   clipOwner => 0,
-   growMode  => 0,
-   onMove => sub { $dong2 = 1; __end_wait(); shift; @mrep2 = scalar(@mrep2) ? ( @mrep2[0,1], @_[2,3]) : @_;  },
+	clipOwner => 0,
+	growMode  => 0,
+	onMove => sub { $dong2 = 1; __end_wait(); shift; @mrep2 = scalar(@mrep2) ? ( @mrep2[0,1], @_[2,3]) : @_;  },
 );
 
 my @or = $wx-> origin;
@@ -26,11 +26,11 @@ $wx-> origin( $wx-> left + 1, $wx-> bottom + 1);
 ok(( $dong && $dong2) || &__wait);
 my @nor = $wx-> origin;
 if ( $nor[0] == $or[0] + 1 && $nor[1] == $or[1] + 1) {
-   ok(1);
+	ok(1);
 } elsif ( Prima::Application-> get_system_info->{apc} != apc::Unix) {
-   ok(0);
+	ok(0);
 } else {
-   skip;
+	skip;
 }
 ok( $mrep[2] == $nor[0] && $mrep[3] == $nor[1]);
 my @d = ( $nor[0] - $or[0], $nor[1] - $or[1]);

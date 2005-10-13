@@ -42,10 +42,9 @@ compbinations of Shift,Alt,and Control.
 use Prima 'StdDlg', Application => { name => 'CV' };
 
 my $p = Prima::ColorDialog-> create(
-  value => 0x3030F0,
-  visible => 1,
-  quality => 1,
-  onDestroy => sub {$::application-> close;},
+	value => 0x3030F0,
+	visible => 1,
+	quality => 1,
 );
 
 $p-> execute;

@@ -37,279 +37,319 @@ use strict;
 
 sub profile_default
 {
-   my $font = $_[ 0]-> get_default_font;
-   return {
-      %{$_[ 0]-> SUPER::profile_default},
-      alignment      => ta::Left,
-      autoWidth      => 1,
-      autoHeight     => 0,
-      focusLink      => undef,
-      height         => 4 + $font-> { height},
-      ownerBackColor => 1,
-      selectable     => 0,
-      showAccelChar  => 0,
-      showPartial    => 1,
-      tabStop        => 0,
-      widgetClass    => wc::Label,
-      wordWrap       => 0,
-      valignment     => ta::Top,
-   }
+	my $font = $_[ 0]-> get_default_font;
+	return {
+		%{$_[ 0]-> SUPER::profile_default},
+		alignment      => ta::Left,
+		autoHeight     => 0,
+		autoWidth      => 1,
+		focusLink      => undef,
+		height         => 4 + $font-> { height},
+		ownerBackColor => 1,
+		selectable     => 0,
+		showAccelChar  => 0,
+		showPartial    => 1,
+		tabStop        => 0,
+		valignment     => ta::Top,
+		widgetClass    => wc::Label,
+		wordWrap       => 0,
+	}
 }
 
 
 sub profile_check_in
 {
-   my ( $self, $p, $default) = @_;
-   $p-> { autoWidth} = 0
-      if exists $p->{width}  || exists $p->{size} || exists $p-> {rect} || ( exists $p->{left} && exists $p->{right});
-   $p-> {autoHeight} = 0
-      if exists $p->{height} || exists $p->{size} || exists $p-> {rect} || ( exists $p->{top} && exists $p->{bottom});
-   $self-> SUPER::profile_check_in( $p, $default);
-   my $vertical = exists $p-> {vertical} ? $p-> {vertical} : $default->{ vertical};
+	my ( $self, $p, $default) = @_;
+	$p-> { autoWidth} = 0 if 
+		exists $p-> {width} || 
+		exists $p-> {size} || 
+		exists $p-> {rect} || 
+		( exists $p-> {left} && exists $p-> {right});
+	$p-> {autoHeight} = 0 if 
+		exists $p-> {height} || 
+		exists $p-> {size} || 
+		exists $p-> {rect} || 
+		( exists $p-> {top} && exists $p-> {bottom});
+	$self-> SUPER::profile_check_in( $p, $default);
+	my $vertical = exists $p-> {vertical} ? 
+		$p-> {vertical} : 
+		$default-> { vertical};
 }
 
 
 sub init
 {
-   my $self = shift;
-   my %profile = $self-> SUPER::init(@_);
-   $self-> { alignment}     = $profile{ alignment};
-   $self-> { valignment}    = $profile{ valignment};
-   $self-> { autoHeight}    = $profile{ autoHeight};
-   $self-> { autoWidth}     = $profile{ autoWidth};
-   $self-> { wordWrap}      = $profile{ wordWrap};
-   $self-> { focusLink}     = $profile{ focusLink};
-   $self-> { showAccelChar} = $profile{ showAccelChar};
-   $self-> { showPartial}   = $profile{ showPartial};
-   $self-> check_auto_size;
-   return %profile;
+	my $self = shift;
+	my %profile = $self-> SUPER::init(@_);
+	$self-> { alignment}     = $profile{ alignment};
+	$self-> { valignment}    = $profile{ valignment};
+	$self-> { autoHeight}    = $profile{ autoHeight};
+	$self-> { autoWidth}     = $profile{ autoWidth};
+	$self-> { wordWrap}      = $profile{ wordWrap};
+	$self-> { focusLink}     = $profile{ focusLink};
+	$self-> { showAccelChar} = $profile{ showAccelChar};
+	$self-> { showPartial}   = $profile{ showPartial};
+	$self-> check_auto_size;
+	return %profile;
 }
 
 sub on_paint
 {
-   my ($self,$canvas) = @_;
-   my @size = $canvas-> size;
-   my @clr;
-   if ( $self-> enabled)
-   {
-     if ( $self-> focused) {
-        @clr = ($self-> hiliteColor, $self-> hiliteBackColor);
-     } else { @clr = ($self-> color, $self-> backColor); }
-   } else { @clr = ($self-> disabledColor, $self-> disabledBackColor); }
+	my ($self,$canvas) = @_;
+	my @size = $canvas-> size;
+	my @clr;
+	if ( $self-> enabled) {
+		if ( $self-> focused) {
+			@clr = ($self-> hiliteColor, $self-> hiliteBackColor);
+		} else { 
+			@clr = ($self-> color, $self-> backColor); 
+		}
+	} else { 
+		@clr = ($self-> disabledColor, $self-> disabledBackColor); 
+	}
 
-   unless ( $self-> transparent)
-   {
-      $canvas-> color( $clr[1]);
-      $canvas-> bar(0,0,@size);
-   }
+	unless ( $self-> transparent) {
+		$canvas-> color( $clr[1]);
+		$canvas-> bar(0,0,@size);
+	}
 
-   my $fh = $canvas-> font-> height;
-   my $ta = $self->{alignment};
-   my $wx = $self->{widths};
-   my $ws = $self->{words};
-   my ($starty,$ycommon) = (0, scalar @{$ws} * $fh);
-   if ( $self->{valignment} == ta::Top)       { $starty = $size[1] - $fh;}
-   elsif ( $self->{valignment} == ta::Bottom) { $starty = $ycommon - $fh;}
-   else { $starty = ( $size[1] + $ycommon)/2 - $fh; }
-   my $y   = $starty;
-   my $tl  = $self->{tildeLine};
-   my $i;
-   my $paintLine = !$self->{showAccelChar} && defined($tl) && $tl < scalar @{$ws};
+	my $fh = $canvas-> font-> height;
+	my $ta = $self-> {alignment};
+	my $wx = $self-> {widths};
+	my $ws = $self-> {words};
+	my ($starty,$ycommon) = (0, scalar @{$ws} * $fh);
+	
+	if ( $self-> {valignment} == ta::Top)  { 
+		$starty = $size[1] - $fh;
+	} elsif ( $self-> {valignment} == ta::Bottom) { 
+		$starty = $ycommon - $fh;
+	} else { 
+		$starty = ( $size[1] + $ycommon)/2 - $fh; 
+	}
+	
+	my $y   = $starty;
+	my $tl  = $self-> {tildeLine};
+	my $i;
+	my $paintLine = !$self-> {showAccelChar} && defined($tl) && $tl < scalar @{$ws};
 
-   unless ( $self-> enabled)
-   {
-      $canvas-> color( $self-> light3DColor);
-      for ( $i = 0; $i < scalar @{$ws}; $i++)
-      {
-         my $x = 0;
-         if ( $ta == ta::Center) { $x = ( $size[0] - $$wx[$i]) / 2; }
-         elsif ( $ta == ta::Right) { $x = $size[0] - $$wx[$i]; }
-         $canvas-> text_out( $$ws[$i], $x + 1, $y - 1);
-         $y -= $fh;
-      }
-      $y   = $starty;
-      if ( $paintLine) {
-         my $x = 0;
-         if ( $ta == ta::Center) { $x = ( $size[0] - $$wx[$tl]) / 2; }
-         elsif ( $ta == ta::Right) { $x = $size[0] - $$wx[$tl]; }
-         $canvas-> line( $x + $self->{tildeStart} + 1, $starty - $fh * $tl - 1,
-                         $x + $self->{tildeEnd} + 1,   $starty - $fh * $tl - 1);
-      }
-   }
+	unless ( $self-> enabled) {
+		$canvas-> color( $self-> light3DColor);
+		for ( $i = 0; $i < scalar @{$ws}; $i++) {
+			my $x = 0;
+			if ( $ta == ta::Center) { 	
+				$x = ( $size[0] - $$wx[$i]) / 2; 
+			} elsif ( $ta == ta::Right) { 
+				$x = $size[0] - $$wx[$i]; 
+			}
+			$canvas-> text_out( $$ws[$i], $x + 1, $y - 1);
+			$y -= $fh;
+		}
+		$y   = $starty;
+		if ( $paintLine) {
+			my $x = 0;
+			if ( $ta == ta::Center) { 
+				$x = ( $size[0] - $$wx[$tl]) / 2; 
+			} elsif ( $ta == ta::Right) { 
+				$x = $size[0] - $$wx[$tl]; 
+			}
+			$canvas-> line( 
+				$x + $self-> {tildeStart} + 1, $starty - $fh * $tl - 1,
+				$x + $self-> {tildeEnd} + 1,   $starty - $fh * $tl - 1
+			);
+		}
+	}
 
-   $canvas-> color( $clr[0]);
-   for ( $i = 0; $i < scalar @{$ws}; $i++)
-   {
-      my $x = 0;
-      if ( $ta == ta::Center) { $x = ( $size[0] - $$wx[$i]) / 2; }
-      elsif ( $ta == ta::Right) { $x = $size[0] - $$wx[$i]; }
-      $canvas-> text_out( $$ws[$i], $x, $y);
-      $y -= $fh;
-   }
-   if ( $paintLine) {
-      my $x = 0;
-      if ( $ta == ta::Center) { $x = ( $size[0] - $$wx[$tl]) / 2; }
-      elsif ( $ta == ta::Right) { $x = $size[0] - $$wx[$tl]; }
-      $canvas-> line( $x + $self->{tildeStart}, $starty - $fh * $tl,
-                      $x + $self->{tildeEnd},   $starty - $fh * $tl);
-   }
+	$canvas-> color( $clr[0]);
+	for ( $i = 0; $i < scalar @{$ws}; $i++) {
+		my $x = 0;
+		if ( $ta == ta::Center) { 
+			$x = ( $size[0] - $$wx[$i]) / 2; 
+		} elsif ( $ta == ta::Right) { 
+			$x = $size[0] - $$wx[$i]; 
+		}
+		$canvas-> text_out( $$ws[$i], $x, $y);
+		$y -= $fh;
+	}
+	if ( $paintLine) {
+		my $x = 0;
+		if ( $ta == ta::Center) { $x = ( $size[0] - $$wx[$tl]) / 2; }
+		elsif ( $ta == ta::Right) { $x = $size[0] - $$wx[$tl]; }
+		$canvas-> line( 
+			$x + $self-> {tildeStart}, $starty - $fh * $tl,
+			$x + $self-> {tildeEnd},   $starty - $fh * $tl
+		);
+	}
 }
 
 
 sub text
 {
-   return $_[0]->SUPER::text unless $#_;
-   my $self = $_[0];
-   $self-> SUPER::text( $_[1]);
-   $self-> check_auto_size;
-   $self-> repaint;
+	return $_[0]-> SUPER::text unless $#_;
+	my $self = $_[0];
+	$self-> SUPER::text( $_[1]);
+	$self-> check_auto_size;
+	$self-> repaint;
 }
 
 
 sub on_translateaccel
 {
-   my ( $self, $code, $key, $mod) = @_;
-   if ( !$self-> {showAccelChar} && defined $self->{accel} && ( $key == kb::NoKey) && lc chr $code eq $self-> { accel})
-   {
-      $self-> clear_event;
-      $self-> notify( 'Click');
-   }
+	my ( $self, $code, $key, $mod) = @_;
+	if ( 
+		!$self-> {showAccelChar} && 
+		defined $self-> {accel} && 
+		( $key == kb::NoKey) && 
+		lc chr $code eq $self-> { accel}
+	) {
+		$self-> clear_event;
+		$self-> notify( 'Click');
+	}
 }
 
 sub on_click
 {
-   my ( $self, $f) = ( $_[0], $_[0]->{focusLink});
-   $f-> select if defined $f && $f-> alive && $f-> enabled;
+	my ( $self, $f) = ( $_[0], $_[0]-> {focusLink});
+	$f-> select if defined $f && $f-> alive && $f-> enabled;
 }
 
 sub on_keydown
 {
-   my ( $self, $code, $key, $mod) = @_;
-   if ( defined $self->{accel} && ( $key == kb::NoKey) && lc chr $code eq $self-> { accel})
-   {
-      $self-> notify( 'Click');
-      $self-> clear_event;
-   }
+	my ( $self, $code, $key, $mod) = @_;
+	if ( 
+		defined $self-> {accel} && 
+		( $key == kb::NoKey) && 
+		lc chr $code eq $self-> { accel}
+	) {
+		$self-> notify( 'Click');
+		$self-> clear_event;
+	}
 }
 
 sub on_mousedown
 {
-   my $self = $_[0];
-   $self-> notify( 'Click');
-   $self-> clear_event;
+	my $self = $_[0];
+	$self-> notify( 'Click');
+	$self-> clear_event;
 }
 
 sub on_fontchanged
 {
-   $_[0]-> check_auto_size;
+	$_[0]-> check_auto_size;
 }
 
 sub on_size
 {
-   $_[0]-> reset_lines;
+	$_[0]-> reset_lines;
 }
 
 sub on_enable { $_[0]-> repaint } sub on_disable { $_[0]-> repaint }
 
 sub set_alignment
 {
-   $_[0]->{alignment} = $_[1];
-   $_[0]->repaint;
+	$_[0]-> {alignment} = $_[1];
+	$_[0]-> repaint;
 }
 
 sub set_valignment
 {
-   $_[0]->{valignment} = $_[1];
-   $_[0]->repaint;
+	$_[0]-> {valignment} = $_[1];
+	$_[0]-> repaint;
 }
 
 
 sub reset_lines
 {
-   my $self = $_[0];
-   my @res;
-   my $maxLines = int($self-> height / $self-> font-> height);
-   $maxLines++ if $self->{showPartial} and (($self-> height % $self-> font-> height) > 0);
-   my $opt   = tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::CalcMnemonic|tw::ExpandTabs|tw::CalcTabs;
-   my $width = 1000000;
-   $opt |= tw::CollapseTilde unless $self->{showAccelChar};
-   $width = $self-> width if $self->{wordWrap};
-   my $lines = $self-> text_wrap( $self-> text, $width, $opt);
-   my $lastRef = pop @{$lines};
-   $self->{textLines} = scalar @$lines;
-   for( qw( tildeStart tildeEnd tildeLine)) {$self->{$_} = $lastRef->{$_}}
-   $self-> {accel} = defined($self->{tildeStart}) ? lc( $lastRef->{tildeChar}) : undef;
-   splice( @{$lines}, $maxLines) if scalar @{$lines} > $maxLines;
-   $self-> {words} = $lines;
-   my @len;
-   for ( @{$lines}) { push @len, $self-> get_text_width( $_); }
-   $self-> {widths} = [@len];
-   $self-> repaint;
+	my $self = $_[0];
+	
+	my @res;
+	my $maxLines = int($self-> height / $self-> font-> height);
+	$maxLines++ if $self-> {showPartial} and (($self-> height % $self-> font-> height) > 0);
+	
+	my $opt   = tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::CalcMnemonic|tw::ExpandTabs|tw::CalcTabs;
+	my $width = 1000000;
+	$opt |= tw::CollapseTilde unless $self-> {showAccelChar};
+	$width = $self-> width if $self-> {wordWrap};
+
+	my $lines = $self-> text_wrap( $self-> text, $width, $opt);
+	my $lastRef = pop @{$lines};
+	
+	$self-> {textLines} = scalar @$lines;
+	for( qw( tildeStart tildeEnd tildeLine)) {$self-> {$_} = $lastRef-> {$_}}
+	
+	$self-> {accel} = defined($self-> {tildeStart}) ? lc( $lastRef-> {tildeChar}) : undef;
+	splice( @{$lines}, $maxLines) if scalar @{$lines} > $maxLines;
+	$self-> {words} = $lines;
+
+	my @len;
+	for ( @{$lines}) { push @len, $self-> get_text_width( $_); }
+	$self-> {widths} = [@len];
+
+	$self-> repaint;
 }
 
 sub check_auto_size
 {
-   my $self = $_[0];
-   my $cap = $self-> text;
-   unless ( $self->{wordWrap})
-   {
-      $cap =~ s/~//s unless $self->{showAccelChar};
-      my %sets;
-      $sets{ geomWidth}  = $self-> get_text_width( $cap) + 6 if $self->{autoWidth};
-      $sets{ geomHeight} = $self-> font-> height + 2 if $self->{autoHeight};
-      $self-> set( %sets);
-   }
-   $self-> reset_lines;
-   if ( $self->{wordWrap} && $self->{autoHeight}) {
-      $self-> geomHeight( $self-> font-> height * $self->{textLines} + 2);
-   }
+	my $self = $_[0];
+	my $cap = $self-> text;
+
+	unless ( $self-> {wordWrap}) {
+		$cap =~ s/~//s unless $self-> {showAccelChar};
+		my %sets;
+		$sets{ geomWidth}  = $self-> get_text_width( $cap) + 6 if $self-> {autoWidth};
+		$sets{ geomHeight} = $self-> font-> height + 2 if $self-> {autoHeight};
+		$self-> set( %sets);
+	}
+	$self-> reset_lines;
+	if ( $self-> {wordWrap} && $self-> {autoHeight}) {
+		$self-> geomHeight( $self-> font-> height * $self-> {textLines} + 2);
+	}
 }
 
 sub set_auto_width
 {
-   $_[0]->{autoWidth} = $_[1];
-   $_[0]-> check_auto_size;
+	$_[0]-> {autoWidth} = $_[1];
+	$_[0]-> check_auto_size;
 }
 
 sub set_auto_height
 {
-   $_[0]->{autoHeight} = $_[1];
-   $_[0]-> check_auto_size;
+	$_[0]-> {autoHeight} = $_[1];
+	$_[0]-> check_auto_size;
 }
 
 sub set_word_wrap
 {
-   $_[0]->{wordWrap} = $_[1];
-   $_[0]->repaint;
+	$_[0]-> {wordWrap} = $_[1];
+	$_[0]-> repaint;
 }
 
 sub set_show_accel_char
 {
-   $_[0]->{showAccelChar} = $_[1];
-   $_[0]-> check_auto_size;
+	$_[0]-> {showAccelChar} = $_[1];
+	$_[0]-> check_auto_size;
 }
 
 sub set_show_partial
 {
-   $_[0]->{showPartial} = $_[1];
-   $_[0]-> check_auto_size;
+	$_[0]-> {showPartial} = $_[1];
+	$_[0]-> check_auto_size;
 }
 
 
 sub get_lines
 {
-   return @{$_[0]->{words}};
+	return @{$_[0]-> {words}};
 }
 
 
-sub showAccelChar {($#_)?($_[0]->set_show_accel_char($_[1]))             :return $_[0]->{showAccelChar}}
-sub showPartial   {($#_)?($_[0]->set_show_partial($_[1]))                :return $_[0]->{showPartial}}
-sub focusLink     {($#_)?($_[0]->{focusLink}     = $_[1])                :return $_[0]->{focusLink}    }
-sub alignment     {($#_)?($_[0]->set_alignment(    $_[1]))               :return $_[0]->{alignment}    }
-sub valignment    {($#_)?($_[0]->set_valignment(    $_[1]))              :return $_[0]->{valignment}   }
-sub autoWidth     {($#_)?($_[0]->set_auto_width(   $_[1]))               :return $_[0]->{autoWidth}    }
-sub autoHeight    {($#_)?($_[0]->set_auto_height(  $_[1]))               :return $_[0]->{autoHeight}   }
-sub wordWrap      {($#_)?($_[0]->set_word_wrap(    $_[1]))               :return $_[0]->{wordWrap}     }
+sub showAccelChar {($#_)?($_[0]-> set_show_accel_char($_[1])) :return $_[0]-> {showAccelChar}}
+sub showPartial   {($#_)?($_[0]-> set_show_partial($_[1]))    :return $_[0]-> {showPartial}}
+sub focusLink     {($#_)?($_[0]-> {focusLink}     = $_[1])    :return $_[0]-> {focusLink}    }
+sub alignment     {($#_)?($_[0]-> set_alignment(    $_[1]))   :return $_[0]-> {alignment}    }
+sub valignment    {($#_)?($_[0]-> set_valignment(    $_[1]))  :return $_[0]-> {valignment}   }
+sub autoWidth     {($#_)?($_[0]-> set_auto_width(   $_[1]))   :return $_[0]-> {autoWidth}    }
+sub autoHeight    {($#_)?($_[0]-> set_auto_height(  $_[1]))   :return $_[0]-> {autoHeight}   }
+sub wordWrap      {($#_)?($_[0]-> set_word_wrap(    $_[1]))   :return $_[0]-> {wordWrap}     }
 
 1;
 
@@ -332,11 +372,11 @@ is useful for dialog design.
 
 =head1 SYNOPSIS
 
-   my $label = Prima::Label-> create(
-      text      => 'Enter ~name:',
-      focusLink => $name_inputline,
-      alignment => ta::Center,
-   );
+	my $label = Prima::Label-> create(
+		text      => 'Enter ~name:',
+		focusLink => $name_inputline,
+		alignment => ta::Center,
+	);
 
 =head1 API
 
@@ -348,9 +388,9 @@ is useful for dialog design.
 
 One of the following C<ta::XXX> constants:
 
-   ta::Left
-   ta::Center 
-   ta::Right
+	ta::Left
+	ta::Center 
+	ta::Right
 
 Selects the horizontal text alignment.
 
@@ -418,9 +458,9 @@ Default value: 0
 
 One of the following C<ta::XXX> constants:
 
-   ta::Top
-   ta::Middle or ta::Center
-   ta::Bottom
+	ta::Top
+	ta::Middle or ta::Center
+	ta::Bottom
 
 Selects the vertical text alignment.
 

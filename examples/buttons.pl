@@ -49,79 +49,79 @@ use vars qw(@ISA);
 
 sub on_click
 {
-   #print "User button has been pressed\n";
-   print ".";
+	#print "User button has been pressed\n";
+	print ".";
 }
 
 sub on_paint
 {
-  my ($self,$canvas) = @_;
-  my ($x, $y) = $canvas-> size;
-  my @fcap = ( $canvas-> get_text_width( $self-> text), $canvas-> font->height);
-  $canvas-> color( $self-> pressed ? cl::LightGreen : cl::Green);
-  $canvas-> bar(0, 0, $x - 1 , $y - 1);
-
-  $canvas-> color( $self-> pressed ? cl::Green : cl::LightGreen);
-  $canvas-> line ( 0, 0, 0, $y - 1);
-  $canvas-> line ( 1, 1, 1, $y - 2);
-  $canvas-> line ( 0, $y - 1, $x - 1, $y - 1);
-  $canvas-> line ( 1, $y - 2, $x - 2, $y - 2);
-  $canvas-> color( $self-> pressed ? cl::White : cl::Gray);
-  $canvas-> line ( 0, 0, $x - 1, 0);
-  $canvas-> line ( 1, 1, $x - 2, 1);
-  $canvas-> line ( $x - 1, 0, $x - 1, $y - 1);
-  $canvas-> line ( $x - 2, 1, $x - 2, $y - 2);
-
-  $canvas-> color(cl::Black);
-  $canvas-> text_out ( $self-> text,
-    ($x - $fcap[ 0]) / 2,
-    ($y - $fcap[ 1]) / 2
-  );
-  if ( $self-> default) {
-    $canvas-> linePattern( lp::Dot);
-    $canvas-> rectangle(
-      ($x - $fcap[ 0]) / 2 - 3,
-      ($y - $fcap[ 1]) / 2 - 3,
-      ($x + $fcap[ 0]) / 2 + 3,
-      ($y + $fcap[ 1]) / 2 + 3
-    );
-    $canvas-> linePattern( lp::Solid);
-  }
+	my ($self,$canvas) = @_;
+	my ($x, $y) = $canvas-> size;
+	my @fcap = ( $canvas-> get_text_width( $self-> text), $canvas-> font-> height);
+	$canvas-> color( $self-> pressed ? cl::LightGreen : cl::Green);
+	$canvas-> bar(0, 0, $x - 1 , $y - 1);
+	
+	$canvas-> color( $self-> pressed ? cl::Green : cl::LightGreen);
+	$canvas-> line ( 0, 0, 0, $y - 1);
+	$canvas-> line ( 1, 1, 1, $y - 2);
+	$canvas-> line ( 0, $y - 1, $x - 1, $y - 1);
+	$canvas-> line ( 1, $y - 2, $x - 2, $y - 2);
+	$canvas-> color( $self-> pressed ? cl::White : cl::Gray);
+	$canvas-> line ( 0, 0, $x - 1, 0);
+	$canvas-> line ( 1, 1, $x - 2, 1);
+	$canvas-> line ( $x - 1, 0, $x - 1, $y - 1);
+	$canvas-> line ( $x - 2, 1, $x - 2, $y - 2);
+	
+	$canvas-> color(cl::Black);
+	$canvas-> text_out ( $self-> text,
+		($x - $fcap[ 0]) / 2,
+		($y - $fcap[ 1]) / 2
+	);
+	if ( $self-> default) {
+		$canvas-> linePattern( lp::Dot);
+		$canvas-> rectangle(
+			($x - $fcap[ 0]) / 2 - 3,
+			($y - $fcap[ 1]) / 2 - 3,
+			($x + $fcap[ 0]) / 2 + 3,
+			($y + $fcap[ 1]) / 2 + 3
+		);
+		$canvas-> linePattern( lp::Solid);
+	}
 }
 
 sub clone
 {
-   my ( $self, %profile) = @_;
-   my %d = %{$self-> profile_default};
-   my %readfilter = (
-      x_centered  => 1,   
-      y_centered  => 1,   
-      centered    => 1,   
-      delegations => 1,
-      designScale => 1,
-   );
-   my %hashed = (
-      font      => 1,
-      popupFont => 1,
-      menuFont  => 1,
-   );
-   for ( keys %readfilter) { delete $d{$_}};
-   for ( keys %d) {
-      my @res = $self-> $_();
-      $d{$_} = @res ? ($#res ? (
-         $hashed{$_} ? {@res} : [@res]
-      ) : $res[0]) : undef;
-   }   
-   return ref($self)-> create( %d, %profile);
+	my ( $self, %profile) = @_;
+	my %d = %{$self-> profile_default};
+	my %readfilter = (
+		x_centered  => 1,   
+		y_centered  => 1,   
+		centered    => 1,   
+		delegations => 1,
+		designScale => 1,
+	);
+	my %hashed = (
+		font      => 1,
+		popupFont => 1,
+		menuFont  => 1,
+	);
+	for ( keys %readfilter) { delete $d{$_}};
+	for ( keys %d) {
+		my @res = $self-> $_();
+		$d{$_} = @res ? ($#res ? (
+			$hashed{$_} ? {@res} : [@res]
+		) : $res[0]) : undef;
+	}   
+	return ref($self)-> create( %d, %profile);
 }   
 
 package main;
 
 my $w = Prima::MainWindow-> create(
-   text   => "Button example",
-   centered  => 1,
-   height    => 300,
-   width     => 400,
+	text   => "Button example",
+	centered  => 1,
+	height    => 300,
+	width     => 400,
 );
 $w-> insert( "Button"     , origin => [  50,180], pressed => 1);
 my $l = $w-> insert( "UserButton" , origin => [ 250,180], autoRepeat => 1);

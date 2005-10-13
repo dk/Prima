@@ -49,20 +49,20 @@ package Prima::ColorDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::ColorDialog::AUTOLOAD =~ /::([^:]+)$/;
-   delete ${Prima::ColorDialog::}{AUTOLOAD};
-   eval "use Prima::ColorDialog"; die "$@\n" if $@;
-   shift->$method(@_);
+	my ($method) = $Prima::ColorDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::ColorDialog::}{AUTOLOAD};
+	eval "use Prima::ColorDialog"; die "$@\n" if $@;
+	shift-> $method(@_);
 }
 
 package Prima::FontDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::FontDialog::AUTOLOAD =~ /::([^:]+)$/;
-   delete ${Prima::FontDialog::}{AUTOLOAD};
-   eval "use Prima::FontDialog"; die "$@\n" if $@;
-   shift->$method(@_);
+	my ($method) = $Prima::FontDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::FontDialog::}{AUTOLOAD};
+	eval "use Prima::FontDialog"; die "$@\n" if $@;
+	shift-> $method(@_);
 }
 
 
@@ -70,70 +70,70 @@ package Prima::OpenDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::OpenDialog::AUTOLOAD =~ /::([^:]+)$/;
-   delete ${Prima::OpenDialog::}{AUTOLOAD};
-   delete ${Prima::SaveDialog::}{AUTOLOAD};
-   delete ${Prima::ChDirDialog::}{AUTOLOAD};
-   eval "use Prima::FileDialog"; die "$@\n" if $@;
-   shift->$method(@_);
+	my ($method) = $Prima::OpenDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::OpenDialog::}{AUTOLOAD};
+	delete ${Prima::SaveDialog::}{AUTOLOAD};
+	delete ${Prima::ChDirDialog::}{AUTOLOAD};
+	eval "use Prima::FileDialog"; die "$@\n" if $@;
+	shift-> $method(@_);
 }
 
 package Prima::SaveDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::SaveDialog::AUTOLOAD =~ /::([^:]+)$/;
-   delete ${Prima::OpenDialog::}{AUTOLOAD};
-   delete ${Prima::SaveDialog::}{AUTOLOAD};
-   delete ${Prima::ChDirDialog::}{AUTOLOAD};
-   eval "use Prima::FileDialog"; die "$@\n" if $@;
-   shift->$method(@_);
+	my ($method) = $Prima::SaveDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::OpenDialog::}{AUTOLOAD};
+	delete ${Prima::SaveDialog::}{AUTOLOAD};
+	delete ${Prima::ChDirDialog::}{AUTOLOAD};
+	eval "use Prima::FileDialog"; die "$@\n" if $@;
+	shift-> $method(@_);
 }
 
 package Prima;
 
 my ($openFileDlg, $saveFileDlg);
-   
+	
 my @fileDlgProps = qw( defaultExt fileName filter filterIndex
 directory createPrompt multiSelect noReadOnly noTestFileCreate overwritePrompt
 pathMustExist fileMustExist sorted showDotFiles);
 
 sub open_file
 {
-   my %profile = @_;
-   $openFileDlg = Prima::OpenDialog-> create( 
-      system => exists($profile{system}) ? $profile{system} : 1,
-      onDestroy => sub { undef $openFileDlg},
-   ) unless $openFileDlg;
-   delete $profile{system};
-   my %a = %{$openFileDlg-> profile_default};
-   $openFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
-   return $openFileDlg-> execute;
+	my %profile = @_;
+	$openFileDlg = Prima::OpenDialog-> create( 
+		system => exists($profile{system}) ? $profile{system} : 1,
+		onDestroy => sub { undef $openFileDlg},
+	) unless $openFileDlg;
+	delete $profile{system};
+	my %a = %{$openFileDlg-> profile_default};
+	$openFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
+	return $openFileDlg-> execute;
 }
 
 sub save_file
 {
-   my %profile = @_;
-   $saveFileDlg = Prima::SaveDialog-> create( 
-      system => exists($profile{system}) ? $profile{system} : 1,
-      onDestroy => sub { undef $saveFileDlg},
-   ) unless $saveFileDlg;
-   delete $profile{system};
-   my %a = %{$saveFileDlg-> profile_default};
-   $saveFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
-   return $saveFileDlg-> execute;
+	my %profile = @_;
+	$saveFileDlg = Prima::SaveDialog-> create( 
+		system => exists($profile{system}) ? $profile{system} : 1,
+		onDestroy => sub { undef $saveFileDlg},
+	) unless $saveFileDlg;
+	delete $profile{system};
+	my %a = %{$saveFileDlg-> profile_default};
+	$saveFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
+	return $saveFileDlg-> execute;
 }
 
 package Prima::ChDirDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::ChDirDialog::AUTOLOAD =~ /::([^:]+)$/;
-   delete ${Prima::OpenDialog::}{AUTOLOAD};
-   delete ${Prima::SaveDialog::}{AUTOLOAD};
-   delete ${Prima::ChDirDialog::}{AUTOLOAD};
-   eval "use Prima::FileDialog"; die "$@\n" if $@;
-   shift->$method(@_);
+	my ($method) = $Prima::ChDirDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::OpenDialog::}{AUTOLOAD};
+	delete ${Prima::SaveDialog::}{AUTOLOAD};
+	delete ${Prima::ChDirDialog::}{AUTOLOAD};
+	eval "use Prima::FileDialog"; die "$@\n" if $@;
+	shift-> $method(@_);
 }
 
 package mb;
@@ -144,54 +144,54 @@ package Prima::FindDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::FindDialog::AUTOLOAD =~ /::([^:]+)$/;
-   delete ${Prima::FindDialog::}{AUTOLOAD};
-   delete ${Prima::ReplaceDialog::}{AUTOLOAD};
-   eval "use Prima::EditDialog"; die "$@\n" if $@;
-   shift->$method(@_);
+	my ($method) = $Prima::FindDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::FindDialog::}{AUTOLOAD};
+	delete ${Prima::ReplaceDialog::}{AUTOLOAD};
+	eval "use Prima::EditDialog"; die "$@\n" if $@;
+	shift-> $method(@_);
 }
 
 package Prima::ReplaceDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::ReplaceDialog::AUTOLOAD =~ /::([^:]+)$/;
-   delete ${Prima::FindDialog::}{AUTOLOAD};
-   delete ${Prima::ReplaceDialog::}{AUTOLOAD};
-   eval "use Prima::EditDialog"; die "$@\n" if $@;
-   shift->$method(@_);
+	my ($method) = $Prima::ReplaceDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::FindDialog::}{AUTOLOAD};
+	delete ${Prima::ReplaceDialog::}{AUTOLOAD};
+	eval "use Prima::EditDialog"; die "$@\n" if $@;
+	shift-> $method(@_);
 }
 
 package Prima::PrintSetupDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::PrintSetupDialog::AUTOLOAD =~ /::([^:]+)$/;
-   delete ${Prima::PrintSetupDialog::}{AUTOLOAD};
-   eval "use Prima::PrintDialog"; die "$@\n" if $@;
-   shift->$method(@_);
+	my ($method) = $Prima::PrintSetupDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::PrintSetupDialog::}{AUTOLOAD};
+	eval "use Prima::PrintDialog"; die "$@\n" if $@;
+	shift-> $method(@_);
 }
 
 package Prima::ImageOpenDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::ImageOpenDialog::AUTOLOAD =~ /::([^:]+)$/;
-   delete ${Prima::ImageOpenDialog::}{AUTOLOAD};
-   delete ${Prima::ImageSaveDialog::}{AUTOLOAD};
-   eval "use Prima::ImageDialog"; die "$@\n" if $@;
-   shift->$method(@_);
+	my ($method) = $Prima::ImageOpenDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::ImageOpenDialog::}{AUTOLOAD};
+	delete ${Prima::ImageSaveDialog::}{AUTOLOAD};
+	eval "use Prima::ImageDialog"; die "$@\n" if $@;
+	shift-> $method(@_);
 }
 
 package Prima::ImageSaveDialog;
 
 sub AUTOLOAD
 {
-   my ($method) = $Prima::ImageSaveDialog::AUTOLOAD =~ /::([^:]+)$/;
-   delete ${Prima::ImageOpenDialog::}{AUTOLOAD};
-   delete ${Prima::ImageSaveDialog::}{AUTOLOAD};
-   eval "use Prima::ImageDialog"; die "$@\n" if $@;
-   shift->$method(@_);
+	my ($method) = $Prima::ImageSaveDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::ImageOpenDialog::}{AUTOLOAD};
+	delete ${Prima::ImageSaveDialog::}{AUTOLOAD};
+	eval "use Prima::ImageDialog"; die "$@\n" if $@;
+	shift-> $method(@_);
 }
 
 1;
@@ -211,14 +211,14 @@ no need to C<use> the corresponding module explicitly.
 
 =head1 SYNOPSIS
 
-   use Prima::StdDlg;
-   
-   Prima::FileDialog-> create-> execute;
-   Prima::FontDialog-> create-> execute;
-  
-   # open standard file open dialog
-   my $file = Prima::open_file;
-   print "You've selected: $file\n" if defined $file;
+	use Prima::StdDlg;
+	
+	Prima::FileDialog-> create-> execute;
+	Prima::FontDialog-> create-> execute;
+
+	# open standard file open dialog
+	my $file = Prima::open_file;
+	print "You've selected: $file\n" if defined $file;
 
 =head1 API
 

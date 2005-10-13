@@ -35,81 +35,81 @@ use vars qw($hook $auto_hook %hooks %groups);
 $auto_hook = 1;
 
 %groups = (
-   keyboard   => [qw(KeyDown KeyUp TranslateAccel)],
-   mouse      => [qw(MouseDown MouseUp MouseMove MouseClick MouseEnter MouseLeave MouseWheel)],
-   geometry   => [qw(Size Move ZOrderChanged)],
-   objects    => [qw(ChangeOwner ChildEnter ChildLeave Create Destroy)],
-   focus      => [qw(Leave Enter)],
-   visibility => [qw(Hide Show)],
-   ability    => [qw(Enable Disable)],
-   menu       => [qw(Menu Popup)],
+	keyboard   => [qw(KeyDown KeyUp TranslateAccel)],
+	mouse      => [qw(MouseDown MouseUp MouseMove MouseClick MouseEnter MouseLeave MouseWheel)],
+	geometry   => [qw(Size Move ZOrderChanged)],
+	objects    => [qw(ChangeOwner ChildEnter ChildLeave Create Destroy)],
+	focus      => [qw(Leave Enter)],
+	visibility => [qw(Hide Show)],
+	ability    => [qw(Enable Disable)],
+	menu       => [qw(Menu Popup)],
 );
 
 sub install
 {
-   my ( $sub, %rules) = @_;
-   
-   my @params;
-   if ( defined($rules{param})) {
-      @params = ( ref($rules{param}) eq 'ARRAY') ? @{$rules{param}} : $rules{param};
-   }
-   
-   my @names;
-   if ( defined($rules{event})) {
-      @names = ( ref($rules{event}) eq 'ARRAY') ? @{$rules{event}} : $rules{event};
-   } else {
-      @names = ('*');
-   }
-   @names = map { exists($groups{$_}) ? @{$groups{$_}} : $_} @names;
+	my ( $sub, %rules) = @_;
+	
+	my @params;
+	if ( defined($rules{param})) {
+		@params = ( ref($rules{param}) eq 'ARRAY') ? @{$rules{param}} : $rules{param};
+	}
+	
+	my @names;
+	if ( defined($rules{event})) {
+		@names = ( ref($rules{event}) eq 'ARRAY') ? @{$rules{event}} : $rules{event};
+	} else {
+		@names = ('*');
+	}
+	@names = map { exists($groups{$_}) ? @{$groups{$_}} : $_} @names;
 
-   my @objects;
-   if ( defined($rules{object})) {
-      @objects = ( ref($rules{object}) eq 'ARRAY') ? @{$rules{object}} : $rules{object};
-   } else {
-      @objects = (undef);
-   }
-   
-   for (@names) {
-      $hooks{$_} = [] unless $hooks{$_};
-      my $array = $hooks{$_};
-      for ( @objects) {
-         push @$array, [$sub, $_, $rules{children}, @params];
-      }
-   }
+	my @objects;
+	if ( defined($rules{object})) {
+		@objects = ( ref($rules{object}) eq 'ARRAY') ? @{$rules{object}} : $rules{object};
+	} else {
+		@objects = (undef);
+	}
+	
+	for (@names) {
+		$hooks{$_} = [] unless $hooks{$_};
+		my $array = $hooks{$_};
+		for ( @objects) {
+			push @$array, [$sub, $_, $rules{children}, @params];
+		}
+	}
 
-   Prima::Component-> event_hook( $hook = \&hook_proc) 
-      if $auto_hook && !$hook;
+	Prima::Component-> event_hook( $hook = \&hook_proc) 
+		if $auto_hook && !$hook;
 }
 
 sub deinstall
 {
-   my $sub = $_[0];
-   my $total = 0;
-   for ( keys %hooks) {
-      @{$hooks{$_}} = grep { $$_[0] != $sub } @{$hooks{$_}};
-      $total += @{$hooks{$_}};
-   }
-   Prima::Component-> event_hook( $hook = undef) 
-      if !$total && $hook && $auto_hook;
+	my $sub = $_[0];
+	my $total = 0;
+	for ( keys %hooks) {
+		@{$hooks{$_}} = grep { $$_[0] != $sub } @{$hooks{$_}};
+		$total += @{$hooks{$_}};
+	}
+	Prima::Component-> event_hook( $hook = undef) 
+		if !$total && $hook && $auto_hook;
 }
 
 sub hook_proc
 {
-   my ( $object, $event, @params) = @_;
-   for ( '*', $event) {
-      next unless exists $hooks{$_};
-      for ( @{$hooks{$_}}) {
-         my ( $sub, $sub_object, $sub_children, @sub_params) = @$_;
-	 next if 
-	    defined $sub_object &&
-	    (
-	       (  $sub_children && $sub_object-> is_owner( $object) == 0) ||
-	       ( !$sub_children && $sub_object != $object)
-	    );
-         return 0 unless $sub->( @sub_params, $object, $event, @params);
-      }
-   }
-   return 1;
+	my ( $object, $event, @params) = @_;
+	for ( '*', $event) {
+		next unless exists $hooks{$_};
+		for ( @{$hooks{$_}}) {
+			my ( $sub, $sub_object, $sub_children, @sub_params) = @$_;
+			next if 
+				defined $sub_object &&
+				(
+					(  $sub_children && $sub_object-> is_owner( $object) == 0) ||
+					( !$sub_children && $sub_object != $object)
+				);
+			return 0 unless $sub-> ( @sub_params, $object, $event, @params);
+		}
+	}
+	return 1;
 }
 
 1;
@@ -124,25 +124,25 @@ Prima::EventHook - event filtering
 
 =head1 SYNOPSIS
 
-   use Prima::EventHook;
+	use Prima::EventHook;
 
-   sub hook
-   {
-      my ( $my_param, $object, $event, @params) = @_;
-      ...
-      print "Object $object received event $event\n";
-      ...
-      return 1;
-   }
+	sub hook
+	{
+		my ( $my_param, $object, $event, @params) = @_;
+		...
+		print "Object $object received event $event\n";
+		...
+		return 1;
+	}
 
-   Prima::EventHook::install( \&hook, 
-      param    => $my_param,
-      object   => $my_window, 
-      name     => [qw(Size Move Destroy)],
-      children => 1
-   );
+	Prima::EventHook::install( \&hook, 
+		param    => $my_param,
+		object   => $my_window, 
+		name     => [qw(Size Move Destroy)],
+		children => 1
+	);
 
-   Prima::EventHook::deinstall(\&hook);
+	Prima::EventHook::deinstall(\&hook);
 
 =head1 DESCRIPTION
 
@@ -179,14 +179,14 @@ case it is equal to C<'*'> string, which selects all events to be passed in the
 SUB. A string is either name of an event, or one of pre-defined event groups, 
 declared in C<%groups> package hash. The group names are:
 
-   ability
-   focus
-   geometry
-   keyboard
-   menu
-   mouse  
-   objects
-   visibility
+	ability
+	focus
+	geometry
+	keyboard
+	menu
+	mouse  
+	objects
+	visibility
 
 These contain respective events. See source for detailed description.
 

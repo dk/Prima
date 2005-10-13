@@ -35,21 +35,21 @@ use Prima;
 my $rtfs = (  5, 7, 14, 18) [ int(rand(4)) ] ;
 
 Prima::Application::add_startup_notification( sub {
-   $::application-> font-> size( $rtfs);
+	$::application-> font-> size( $rtfs);
 });
 
 package Prima::Widget;
 
 sub get_default_font
 {
-   return Prima::Drawable-> font_match( { size => $rtfs }, {});
+	return Prima::Drawable-> font_match( { size => $rtfs }, {});
 }
 
 package Prima::Application;
 
 sub get_default_font
 {
-   return Prima::Drawable-> font_match( { size => $rtfs }, {});
+	return Prima::Drawable-> font_match( { size => $rtfs }, {});
 }
 
 
@@ -73,11 +73,11 @@ the module is invoked.
 
 To use the module functionality it is enough to include a typical
 
-   use Prima::Stress;
+	use Prima::Stress;
 
 code, or, if the program is invoked by calling perl, by using
 
-   perl -MPrima::Stress program
+	perl -MPrima::Stress program
 
 syntax. The module does not provide any methods.
 

@@ -2,9 +2,9 @@
 print "1..3 create,runtime sizeMin,reparent sizeMax\n";
 
 my $ww = $w-> insert( Widget =>
-   origin => [ 0, 0],
-   sizeMin => [ 10, 10],
-   sizeMax => [ 200, 200],
+	origin => [ 0, 0],
+	sizeMin => [ 10, 10],
+	sizeMax => [ 200, 200],
 );
 $ww-> size( 100, 100);
 my @sz = $ww-> size;

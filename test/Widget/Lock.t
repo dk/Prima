@@ -4,7 +4,7 @@ print "1..3 child create lock,child unlock,lock conststency\n";
 $dong = 0;
 $w-> lock;
 my $c = $w-> insert( Widget =>
-   onPaint => sub { $dong = 1;}
+	onPaint => sub { $dong = 1;}
 );
 $c-> update_view;
 ok( !$dong);

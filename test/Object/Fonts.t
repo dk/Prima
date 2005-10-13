@@ -4,15 +4,15 @@ print "1..6 height,width,size,direction,pitch,style,text_wrap\n";
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 
 for ( qw( height width size direction)) {
-   my $fx = $x-> font-> $_();
-   $x-> font( $_ => $x-> font-> $_() * 3 + 12);
-   my $fx2 = $x-> font-> $_();
-   if ( $fx2 == $fx) {
-      skip;
-   } else {
-      $x-> font( $_ => $fx);
-      ok( $fx == $x-> font-> $_());
-   }
+	my $fx = $x-> font-> $_();
+	$x-> font( $_ => $x-> font-> $_() * 3 + 12);
+	my $fx2 = $x-> font-> $_();
+	if ( $fx2 == $fx) {
+		skip;
+	} else {
+		$x-> font( $_ => $fx);
+		ok( $fx == $x-> font-> $_());
+	}
 }
 
 my $fx = $x-> font-> pitch;
@@ -27,10 +27,10 @@ $newfx = ~$fx;
 $x-> font( style => $newfx);
 $fx2 = $x-> font-> style;
 if ( $fx2 == $fx) {
-   print "ok # skip";
+	print "ok # skip";
 } else {
-   $x-> font( style => $fx);
-   ok( $fx == $x-> font-> style);
+	$x-> font( style => $fx);
+	ok( $fx == $x-> font-> style);
 }
 
 $x-> font-> height( 16);

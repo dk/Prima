@@ -32,7 +32,7 @@ use Prima::Gencls;
 
 # Main
 unless ( $ARGV[ 0]) {
-  print <<TEXT;
+print <<TEXT;
 Apricot project. Pseudoobject Perl+C Bondage interface parser.
 format  : gencls.pl [ options] filename.cls [ out_directory]
 options :
@@ -44,27 +44,27 @@ options :
    --depend     produces output of dependences of given object only
    --sayparent  produces parent dependency of object only
 TEXT
-  die "\n";
+die "\n";
 }
 
 my $args;
 
 ARGUMENT: while( 1)
 {
-   $_ = $ARGV[0];
-   last unless defined $_;
-   /^--depend$/    && do { $args->{ depend} = 1; next ARGUMENT; };
-   /^--sayparent$/ && do { $args->{ sayparent} = 1; next ARGUMENT; };
-   /^--h$/         && do { $args->{ genH} = 1; next ARGUMENT; };
-   /^--inc$/       && do { $args->{ genInc} = 1; next ARGUMENT; };
-   /^--tml$/       && do { $args->{ genTml} = 1; next ARGUMENT; };
-   /^-O$/          && do { $args->{ optimize} = 1; next ARGUMENT; };
-   /^-I(.*)$/      && do {
-      my $ii = $1;
-      push @{ $args->{ incpath}}, map { m{[\\/]$} ? $_ : "$_/" } split ';', $ii;
-      next ARGUMENT;
-   };
-   last ARGUMENT;
+	$_ = $ARGV[0];
+	last unless defined $_;
+	/^--depend$/    && do { $args->{ depend} = 1; next ARGUMENT; };
+	/^--sayparent$/ && do { $args->{ sayparent} = 1; next ARGUMENT; };
+	/^--h$/         && do { $args->{ genH} = 1; next ARGUMENT; };
+	/^--inc$/       && do { $args->{ genInc} = 1; next ARGUMENT; };
+	/^--tml$/       && do { $args->{ genTml} = 1; next ARGUMENT; };
+	/^-O$/          && do { $args->{ optimize} = 1; next ARGUMENT; };
+	/^-I(.*)$/      && do {
+		my $ii = $1;
+		push @{ $args->{ incpath}}, map { m{[\\/]$} ? $_ : "$_/" } split ';', $ii;
+		next ARGUMENT;
+	};
+	last ARGUMENT;
 } continue { shift @ARGV; }
 die "APC000: insufficient number of parameters" unless $ARGV [0];
 
@@ -73,5 +73,5 @@ $args->{ dirPrefix} = $1 || "";
 $args->{ dirOut} = "$ARGV[ 1]/" if $ARGV[ 1];
 my @ancestors = gencls( $ARGV[ 0], $args);
 if ( @ancestors) {
-    print ( map { "ancestor: $_\n"} @ancestors);
+	print ( map { "ancestor: $_\n"} @ancestors);
 }

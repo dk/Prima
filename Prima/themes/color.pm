@@ -26,40 +26,42 @@ my %strong_selection = (
 );
 
 my %strong_classes = map { $_ => 1 } (
-   wc::Combo,
-   wc::Edit,
-   wc::ListBox,
-   wc::InputLine,
-   wc::Menu,
-   wc::Popup
+	wc::Combo,
+	wc::Edit,
+	wc::ListBox,
+	wc::InputLine,
+	wc::Menu,
+	wc::Popup
 );
 
 my %transparent_classes = map { $_ => 1 } (
-   wc::CheckBox,
-   wc::Radio,
-   wc::Label,
+	wc::CheckBox,
+	wc::Radio,
+	wc::Label,
 );
 
 sub merger
 {
-   my ( $object, $profile, $default, $mask) = @_;
-   my $class = exists ( $profile->{widgetClass}) ? $profile->{widgetClass} : $default->{widgetClass};
-      my %class = (%list, exists($strong_classes{$class}) ? %strong_selection : %weak_selection);
-   $class{hiliteBackColor} = $class{disabledBackColor} = $class{backColor}
-      if $transparent_classes{$class};
-   my ( $r, $g, $b) = (
-       ( $mask >> 16) & 0xFF,
-       ( $mask >> 8) & 0xFF,
-       $mask & 0xFF,
-   );
-   for ( keys %class) {
-      my ( $weak_color, $strong_color) = (( $class{$_} & 0xFF00) >> 8, $class{$_} & 0xFF);
-      $class{$_} = 
-         (( $r ? $strong_color : $weak_color) << 16) |
-         (( $g ? $strong_color : $weak_color) << 8) |
-          ( $b ? $strong_color : $weak_color);
-   }
-   Prima::Themes::merger( $object, $profile, $default, \%class);
+	my ( $object, $profile, $default, $mask) = @_;
+	my $class = exists ( $profile->{widgetClass}) ? 
+		$profile->{widgetClass} : $default->{widgetClass};
+	my %class = (%list, 
+		exists($strong_classes{$class}) ? %strong_selection : %weak_selection);
+	$class{hiliteBackColor} = $class{disabledBackColor} = $class{backColor}
+		if $transparent_classes{$class};
+	my ( $r, $g, $b) = (
+		( $mask >> 16) & 0xFF,
+		( $mask >> 8) & 0xFF,
+		$mask & 0xFF,
+	);
+	for ( keys %class) {
+		my ( $weak_color, $strong_color) = (( $class{$_} & 0xFF00) >> 8, $class{$_} & 0xFF);
+		$class{$_} = 
+			(( $r ? $strong_color : $weak_color) << 16) |
+			(( $g ? $strong_color : $weak_color) << 8) |
+			( $b ? $strong_color : $weak_color);
+	}
+	Prima::Themes::merger( $object, $profile, $default, \%class);
 }
 
 Prima::Themes::register( 'Prima::themes::color', 'cyan',    ['Prima::Widget' => 0x00FFFF], \&merger);

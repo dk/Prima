@@ -37,8 +37,8 @@ sub dl_load_flags { 0x00 }
 $VERSION = '1.18';
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {
-   $::application = 0;
-   return 0;
+	$::application = 0;
+	return 0;
 }
 $::application = undef;
 require Prima::Const;
@@ -46,53 +46,53 @@ require Prima::Classes;
 
 # process @ARGV
 if ( @ARGV) {
-   my %options = Prima::options();
-   for ( my $i = 0; $i < @ARGV; $i++) {
-      if ( $ARGV[$i] =~ m/^--(?:([^\=]+)\=)?(.*)$/) {
-         my ( $option, $value) = ( defined( $1) ? ( $1, $2) : ( $2, undef));
-	 last unless defined($option);
-	 if ( $option eq 'help') {
-            my @options = Prima::options();
-	    printf "   --%-10s - %s\n", shift @options, shift @options
-	       while @options;
-	    exit(0);
-	 }
-	 next unless exists $options{$option};
-	 Prima::options( $option, $value);
-         splice @ARGV, $i--, 1;
-      }
-   }
+	my %options = Prima::options();
+	for ( my $i = 0; $i < @ARGV; $i++) {
+		if ( $ARGV[$i] =~ m/^--(?:([^\=]+)\=)?(.*)$/) {
+			my ( $option, $value) = ( defined( $1) ? ( $1, $2) : ( $2, undef));
+			last unless defined($option);
+			if ( $option eq 'help') {
+				my @options = Prima::options();
+				printf "   --%-10s - %s\n", shift @options, shift @options
+					while @options;
+				exit(0);
+			}
+			next unless exists $options{$option};
+			Prima::options( $option, $value);
+			splice @ARGV, $i--, 1;
+		}
+	}
 }
 Prima::init($VERSION);
 
 sub END
 {
-   &Prima::cleanup() if UNIVERSAL::can('Prima', 'cleanup');
+	&Prima::cleanup() if UNIVERSAL::can('Prima', 'cleanup');
 }
 
 sub run
 {
-   die "Prima was not properly initialized\n" unless $::application;
-   $::application-> go if $::application-> alive;
-   $::application = undef if $::application and not $::application->alive;
+	die "Prima was not properly initialized\n" unless $::application;
+	$::application-> go if $::application-> alive;
+	$::application = undef if $::application and not $::application->alive;
 }
 
 sub import
 {
-   my @module = @_;
-   while (@module) {
-      my $module = shift @module;
-      my %parameters = ();
-      %parameters = %{shift @module} if @module && ref($module[0]) eq 'HASH';
-      next if $module eq 'Prima' || $module eq '';
-      $module = "Prima::$module" unless $module =~ /^Prima::/;
-      $__import = caller;
-      if ( $module) {
-         eval "use $module \%parameters;";
-         die $@ if $@;
-      }
-      $__import = 0;
-   }
+	my @module = @_;
+	while (@module) {
+		my $module = shift @module;
+		my %parameters = ();
+		%parameters = %{shift @module} if @module && ref($module[0]) eq 'HASH';
+		next if $module eq 'Prima' || $module eq '';
+		$module = "Prima::$module" unless $module =~ /^Prima::/;
+		$__import = caller;
+		if ( $module) {
+			eval "use $module \%parameters;";
+			die $@ if $@;
+		}
+		$__import = 0;
+	}
 }
 
 1;
@@ -107,18 +107,18 @@ Prima - a perl graphic toolkit
 
 =head1 SYNOPSIS
 
-  use Prima qw(Application Buttons);
-
-  new Prima::MainWindow(
-      text     => 'Hello world!',
-      size     => [ 200, 200],
-  )-> insert( Button =>
-      centered => 1,
-      text     => 'Hello world!',
-      onClick  => sub { $::application-> close },
-  );
-
-  run Prima;
+	use Prima qw(Application Buttons);
+	
+	new Prima::MainWindow(
+		text     => 'Hello world!',
+		size     => [ 200, 200],
+	)-> insert( Button =>
+		centered => 1,
+		text     => 'Hello world!',
+		onClick  => sub { $::application-> close },
+	);
+	
+	run Prima;
 
 =head1 DESCRIPTION
 
@@ -131,23 +131,23 @@ with the system using Prima library calls.
 
 The core classes form an hierarchy, which is displayed below:
 
-    Prima::Object
-        Prima::Component
-                Prima::AbstractMenu
-                        Prima::AccelTable
-                        Prima::Menu
-                        Prima::Popup
-                Prima::Clipboard
-                Prima::Drawable
-                        Prima::DeviceBitmap
-                        Prima::Printer
-                        Prima::Image
-                                Prima::Icon
-                Prima::File
-                Prima::Timer
-                Prima::Widget
-                        Prima::Application
-                        Prima::Window
+	Prima::Object
+		Prima::Component
+			Prima::AbstractMenu
+				Prima::AccelTable
+				Prima::Menu
+				Prima::Popup
+			Prima::Clipboard
+			Prima::Drawable
+				Prima::DeviceBitmap
+				Prima::Printer
+				Prima::Image
+					Prima::Icon
+			Prima::File
+			Prima::Timer
+			Prima::Widget
+				Prima::Application
+				Prima::Window
 
 The external classes are derived from these; the list of widget classes
 can be found below in L</SEE ALSO>.
@@ -161,24 +161,24 @@ terminates after the button is pressed.
 
 A basic construct for a program written with Prima obviously requires 
 
-  use Prima;
+	use Prima;
 
 code; however, the effective programming requires usage of the other
 modules, for example, C<Prima::Buttons>, which contains set of
 button widgets. C<Prima.pm> module can be
 invoked with a list of such modules, which makes the construction
 
-  use Prima;
-  use Prima::Application;
-  use Prima::Buttons;
-  
+	use Prima;
+	use Prima::Application;
+	use Prima::Buttons;
+
 shorter by using the following scheme:
 
-  use Prima qw(Application Buttons);
+	use Prima qw(Application Buttons);
 
 Another basic issue is the event loop, which is called by
 
-   run Prima;
+	run Prima;
 
 sentence and requires a C<Prima::Application> object to be created beforehand.
 Invoking C<Prima::Application> standard module is one of the possible ways to 
@@ -187,11 +187,11 @@ is finished.
 
 The window is created by invoking 
 
-   new Prima::Window();
+	new Prima::Window();
 
 or
 
-   Prima::Window-> create()
+	Prima::Window-> create()
 
 code with the additional parameters. Actually, all Prima objects are created by such a
 scheme. The class name is passed as the first parameter, and a custom set
@@ -199,11 +199,11 @@ of parameters is passed afterwards. These parameters are usually
 represented in a hash syntax, although actually passed as an array.
 The hash syntax is preferred for the code readability:
 
-   $new_object = new Class(
-     parameter => value,
-     parameter => value,
-     ...
-   );
+	$new_object = new Class(
+		parameter => value,
+		parameter => value,
+		...
+	);
 
 Here, parameters are the class properties names, and differ from class to
 class. Classes often have common properties, primarily due to the
@@ -211,11 +211,11 @@ object inheritance.
 
 In the example, the following properties are set :
 
-   Window::text
-   Window::size
-   Button::text
-   Button::centered
-   Button::onClick
+	Window::text
+	Window::size
+	Button::text
+	Button::centered
+	Button::onClick
 
 Property values can be of any type, given that they are scalar. As depicted
 here, C<::text> property accepts a string, C<::size> - an anonymous array 
@@ -251,7 +251,7 @@ or C<close> method is called.
 Prima applications do not have a portable set of arguments; it depends on the
 particular platform. Run  
 
-   perl -e '$ARGV[0]=q(--help); require Prima'
+	perl -e '$ARGV[0]=q(--help); require Prima'
 
 or any Prima program with C<--help> argument to get the list of supported
 arguments. Programmaticaly, setting and obtaining these options can be done

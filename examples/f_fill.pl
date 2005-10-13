@@ -43,9 +43,9 @@ use strict;
 use Prima qw(Application);
 
 my $i = Prima::Image-> create(
-  preserveType => 1,
-  type => im::BW,
-  font => { size => 100, style => fs::Bold|fs::Italic },
+preserveType => 1,
+type => im::BW,
+font => { size => 100, style => fs::Bold|fs::Italic },
 );
 $i-> begin_paint_info;
 my $textx = $i-> get_text_width( "PRIMA");
@@ -64,23 +64,23 @@ $i-> end_paint;
 
 my @xpal = ();
 for ( 1..32) {
-   my $x = (32-$_) * 8;
-   push(@xpal, $x,$x,$x);
+	my $x = (32-$_) * 8;
+	push(@xpal, $x,$x,$x);
 };
 
 my $w = Prima::MainWindow-> create(
-   size   => [ @is],
-   centered => 1,
-   buffered => 1,
-   palette => [ @xpal],
-   onPaint => sub {
-     my ( $self, $canvas) = @_;
-     $canvas-> color( cl::Back);
-     $canvas-> bar( 0, 0, $canvas-> size);
-     my $xrad = $is[0] / 62;
-     for ( 1..32) {
-        my $x = (32-$_) * 8;
-        $x = ($x<<16)|($x<<8)|$x;
+	size   => [ @is],
+	centered => 1,
+	buffered => 1,
+	palette => [ @xpal],
+	onPaint => sub {
+	my ( $self, $canvas) = @_;
+	$canvas-> color( cl::Back);
+	$canvas-> bar( 0, 0, $canvas-> size);
+	my $xrad = $is[0] / 62;
+	for ( 1..32) {
+		my $x = (32-$_) * 8;
+		$x = ($x<<16)|($x<<8)|$x;
         $canvas-> color($x);
         $canvas-> fill_ellipse($is[0]/2,$is[1]/2, $xrad*(32-$_)*2, $xrad*(32-$_)*2);
      };

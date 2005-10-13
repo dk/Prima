@@ -42,22 +42,26 @@ use Prima;
 use Prima::Application name => 'Generic';
 
 my $w = new Prima::MainWindow(
-    text => "Hello, world!",
-    onPaint   => sub {
-       my ( $self, $canvas) = @_;
-       my $color = $self-> color;
-       $canvas-> color( $self-> backColor);
-       $canvas-> bar( 0, 0, $canvas-> size);
-       $canvas-> color( $color);
-       $canvas-> text_out( $self-> text, 10, 10);
-    },
+	text => "Hello, world!",
+	onClose => sub {
+		$::application-> destroy;
+	},
+
+	onPaint   => sub {
+		my ( $self, $canvas) = @_;
+		my $color = $self-> color;
+		$canvas-> color( $self-> backColor);
+		$canvas-> bar( 0, 0, $canvas-> size);
+		$canvas-> color( $color);
+		$canvas-> text_out( $self-> text, 10, 10);
+	},
 );
 
 $w-> insert( Timer =>
-  timeout => 2000,
-  onTick => sub { 
-     $w-> width( $w-> width - 50);
-  },   
+timeout => 2000,
+onTick => sub { 
+	$w-> width( $w-> width - 50);
+},   
 ) -> start;
 
 run Prima;

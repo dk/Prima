@@ -1,6 +1,6 @@
 # $Id$
 print "1..11 set/get consinstency,onSize message,consistency with onSize,in hidden state,in minimized state,in maximized state,".
-            "virtual size on create set/get consistency,growMode,virtual size restore consistency,reparent check,virtual size runtime consistency\n";
+	"virtual size on create set/get consistency,growMode,virtual size restore consistency,reparent check,virtual size runtime consistency\n";
 
 my @w;
 $w-> restore;
@@ -11,8 +11,8 @@ ok($w[0] == 200 && $w[1] == 200);
 $w-> size( 300, 300);
 @w = $w-> size;
 my $id = $w-> add_notification( Size => sub {
-   my ( $self, $oldx, $oldy, $newx, $newy) = @_;
-   $dong = 1 if ( $newx == $wsave[0] && $newy == $wsave[1] && $oldx == $w[0] && $oldy == $w[1]);
+	my ( $self, $oldx, $oldy, $newx, $newy) = @_;
+	$dong = 1 if ( $newx == $wsave[0] && $newy == $wsave[1] && $oldx == $w[0] && $oldy == $w[1]);
 });
 $dong = 0;
 $w-> size( 200, 200);
@@ -41,8 +41,8 @@ ok($w[0] == 200 && $w[1] == 200);
 
 my @sz1 = $w-> size;
 my $ww = $w-> insert( Widget =>
-  size => [ -2, -2],
-  growMode => gm::Client,
+size => [ -2, -2],
+growMode => gm::Client,
 );
 my @a = $ww-> get_virtual_size;
 ok( $a[0] == -2 && $a[1] == -2);
