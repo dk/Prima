@@ -72,6 +72,7 @@ use vars @ovvars = qw(
 	$DEFFILE
 	$DISTNAME
 	$WANTNOCODECS
+	$WANTNOGIFS
 	$DL_LOAD_FLAGS
 	$DEBUG
 	$WITH_XFT
@@ -911,6 +912,7 @@ sub setup_variables
 	$DEFINES{PRIMA_SUBVERSION} = $ver2;
 	setvar( 'DISTNAME', "Prima-$ver1.$ver2");
 	setvar( 'WANTNOCODECS', 0);
+	setvar( 'WANTNOGIFS', 0);
 	setvar( 'CODEC_PRIGRAPH', 1);
 	@executables = qw(
 		Prima/VB/VB.pl
@@ -1582,11 +1584,16 @@ dependencies, do so and re-run 'install Prima' afterwards.
 NOCODECS
 	}
 
-	unless ( $WANTNOCODECS or grep { m/^(prigraph|ungif)/ } @ACTIVE_CODECS) {
-		print <<UNGIF_WARNING unless defined $USER_VARS{CODEC_PRIGRAPH};
+	unless ( $WANTNOCODECS or $WANTNOGIFS or grep { m/^(prigraph|ungif)/ } @ACTIVE_CODECS) {
+		die <<UNGIF_WARNING;
           
-** Warning: no libungif / libprigraph found, Prima will be unable to 
-load GIF image files.
+** Warning: no libungif / libprigraph found. Use
+
+perl Makefile.PL WANTNOGIFS=1
+
+to ignore this error. Note that in this configuration Prima
+will not be able to work with GIF files. Please follow
+the instructions in README file.
 
 UNGIF_WARNING
 	}
