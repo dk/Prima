@@ -52,6 +52,7 @@ $w-> insert( Prima::CheckList =>
 	pack     => { fill => 'both', expand => 1},
 	items    => [qw( 'SpaceBar' toggles selection 'Enter' toggles checkbox )],
 	multiColumn => 1,
+	vertical => 0,
 	multiSelect => 1,
 	vector   => $v,
 	extendedSelect => 0,

@@ -651,7 +651,8 @@ sub prf_types
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
 		bool    => [qw(autoWidth vScroll hScroll multiSelect extendedSelect
-				autoHeight integralHeight multiColumn autoHScroll autoVScroll)],
+				autoHeight integralWidth integralHeight multiColumn 
+				autoHScroll autoVScroll drawGrid vertical)],
 		uiv     => [qw(itemHeight itemWidth focusedItem borderWidth offset topItem)],
 		color   => [qw(gridColor)],
 		items   => [qw(items selectedItems)],
@@ -680,7 +681,6 @@ sub on_paint
 }
 
 sub prf_items         { $_[0]-> repaint; }
-sub prf_integralHeight{ $_[0]-> repaint; }
 
 package Prima::VB::ListViewer;
 use vars qw(@ISA);

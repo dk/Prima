@@ -101,16 +101,15 @@ sub draw_items
 
 sub draw_text_items
 {
-	my ( $self, $canvas, $first, $last, $x, $y, $textShift, $clipRect) = @_;
-	my $i;
-	for ( $i = $first; $i <= $last; $i++)
-	{
+	my ( $self, $canvas, $first, $last, $step, $x, $y, $textShift, $clipRect) = @_;
+	my ( $i, $j);
+	for ( $i = $first, $j = 1; $i <= $last; $i += $step, $j++) {
 		next if $self-> {widths}-> [$i] + $self-> {offset} + $x + 1 < $clipRect-> [0];
 		$canvas-> text_out( $self-> {items}-> [$i], $x + 2 + $imgSize[0],
-			$y + $textShift - ($i-$first+1) * $self-> {itemHeight} + 1);
+			$y + $textShift - $j * $self-> {itemHeight} + 1);
 		$canvas-> put_image( $x + 1, 
 			$y + int(( $self-> {itemHeight} - $imgSize[1]) / 2) - 
-				($i-$first+1) * $self-> {itemHeight} + 1,
+				$j * $self-> {itemHeight} + 1,
 			$images[ vec($self-> {vector}, $i, 1)],
 		);
 	}
