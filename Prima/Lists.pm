@@ -1,4 +1,4 @@
-##
+#
 #  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
 #  All rights reserved.
 #
@@ -37,13 +37,13 @@ package Prima::Lists;
 #   ListBox
 #   ProtectedListBox
 
-use Carp;
+use strict;
 use Prima::Const;
 use Prima::Classes;
 use Prima::ScrollBar;
-use strict;
 use Prima::StdBitmap;
 use Prima::IntUtils;
+use Prima::Utils;
 use Cwd;
 
 package ci;
@@ -80,11 +80,13 @@ sub profile_default
 		autoVScroll    => 1,
 		borderWidth    => 2,
 		extendedSelect => 0,
+		drawGrid       => 1,
 		dragable       => 0,
 		focusedItem    => -1,
 		gridColor      => cl::Black,
 		hScroll        => 0,
 		integralHeight => 0,
+		integralWidth  => 0,
 		itemHeight     => $def-> {font}-> {height},
 		itemWidth      => $def-> {width} - 2,
 		multiSelect    => 0,
@@ -94,6 +96,7 @@ sub profile_default
 		scaleChildren  => 0,
 		selectable     => 1,
 		selectedItems  => [],
+		vertical       => 1,
 		vScroll        => 1,
 		widgetClass    => wc::ListBox,
 	);
@@ -112,6 +115,16 @@ sub profile_check_in
 	$p-> { autoHeight} = 0 if 
 		exists $p-> { itemHeight} && 
 		!exists $p-> {autoHeight};
+	my $multi_column = exists($p->{multiColumn}) ? 
+		$p->{multiColumn} : $default->{multiColumn};
+	my $vertical = exists($p->{vertical}) ? 
+		$p->{vertical} : $default->{vertical};
+	$p-> { integralHeight} = 1 if
+		! exists $p->{integralHeight} and
+		( not($multi_column) or $vertical);
+	$p-> { integralWidth} = 1 if
+		! exists $p->{integralWidth} and
+		$multi_column and not($vertical);
 	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
 	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
 }
@@ -124,9 +137,9 @@ sub init
 	for ( qw( 
 		autoHScroll autoVScroll scrollTransaction gridColor dx dy hScroll vScroll 
 		itemWidth offset multiColumn count autoHeight multiSelect 
-		extendedSelect borderWidth dragable))
+		extendedSelect borderWidth dragable ))
 		{ $self-> {$_} = 0; }
-	for ( qw( itemHeight integralHeight))
+	for ( qw( drawGrid itemHeight integralWidth integralHeight vertical))
 		{ $self-> {$_} = 1; }
 	$self-> {selectedItems} = {};
 	my %profile = $self-> SUPER::init(@_);
@@ -135,7 +148,8 @@ sub init
 	for ( qw( 
 		autoHScroll autoVScroll gridColor hScroll vScroll offset multiColumn 
 		itemHeight autoHeight itemWidth multiSelect extendedSelect integralHeight 
-		focusedItem topItem selectedItems borderWidth dragable))
+		integralWidth focusedItem topItem selectedItems borderWidth dragable 
+		vertical drawGrid))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> reset;
 	$self-> reset_scrolls;
@@ -159,19 +173,22 @@ sub item2rect
 
 	if ( $self-> {multiColumn}) {
 		$item -= $self-> {topItem};
-		my ($j,$i,$ih,$iw) = (
-			$self-> {rows} ? 
-				int( $item / $self-> {rows} - (
-					( $item < 0) ? 1 : 0)
-				) : -1,
-			$item % ( $self-> {rows} ? $self-> {rows} : 1),
+		my $who = $self-> {vertical} ? 'rows' : 'columns';
+		my ($j,$i,$ih,$iw,$dg) = (
+			$self-> {$who} ? ( 
+				int( $item / $self-> {$who} - (( $item < 0) ? 1 : 0)),
+				$item % $self-> {$who}
+			) : (-1, 1),
 			$self-> {itemHeight},
-			$self-> {itemWidth}
+			$self-> {itemWidth},
+			$self-> {drawGrid}
 		);
+		($i,$j)=($j,$i) unless $self->{vertical};
+
 		return 
-			$a[0] + $j * ( $iw + 1),
+			$a[0] + $j * ( $iw + $dg),
 			$a[3] - $ih * ( $i + 1),
-			$a[0] + $j * ( $iw + 1) + $iw,
+			$a[0] + $j * ( $iw + $dg) + $iw,
 			$a[3] - $ih * ( $i + 1) + $ih;
 	} else {
 		my ($i,$ih) = ( $item - $self-> {topItem}, $self-> {itemHeight});
@@ -188,9 +205,11 @@ sub on_paint
 		$self-> color( $self-> disabledColor);
 		$self-> backColor( $self-> disabledBackColor);
 	}
-	my ( $bw, $ih, $iw, @a) = (
-	$self-> {borderWidth}, $self-> { itemHeight}, $self-> { itemWidth},
-	$self-> get_active_area( 1, @size));
+	my ( $bw, $ih, $iw, $dg, @a) = (
+		$self-> {borderWidth}, $self-> { itemHeight}, 
+		$self-> {itemWidth}, $self-> {drawGrid},
+		$self-> get_active_area( 1, @size)
+	);
 	
 	my $i;
 	my $j;
@@ -201,43 +220,49 @@ sub on_paint
 		$self-> dark3DColor, $self-> light3DColor
 	);
 	
-	if ( defined $self-> {uncover}) {
-		if ( $self-> {multiColumn}) {
-			my $xstart = $a[0] + $self-> {activeColumns} * ( $iw + 1) - 2;
-			$canvas-> clear( $xstart - $iw + 1, $self-> {yedge} + $a[1],
-				(( $xstart > $a[2]) ? $a[2] : $xstart),
-				$self-> {yedge} + $self-> {uncover} - 1) if $xstart > $a[0];
-		} else {
-			$canvas-> clear( @a[0..2], $self-> {uncover} - 1);
-		}
-	}
 
 	if ( $self-> {multiColumn}) {
-		my $xstart = $a[0] + $self-> {activeColumns} * ( $iw + 1);
-		if ( $self-> {activeColumns} < $self-> {columns}) {
-			for ( $i = $self-> {activeColumns}; $i < $self-> {columns}; $i++) {
-				$canvas-> clear(
-					$xstart, $self-> {yedge} + $a[1],
-					( $xstart + $iw - 1 > $a[2]) ? $a[2] : $xstart + $iw - 1,
-					$a[3],
-				);
-				$xstart += $iw + 1;
-			}
-		}
-		
-		$canvas-> clear( @a[0..2], $a[1] + $self-> {yedge} - 1)
-			if $self-> {yedge};
-			
-		my $c = $canvas-> color;
-		$canvas-> color( $self-> {gridColor});
+		my $xstart  = $a[0];
+		my $yend    = $size[1] - $self-> {active_rows} * $ih - 1;
+		my $uncover = $self->{uncover};
+		my $ymiddle = $a[1] + $uncover->{y} + $self->{yedge} - 1
+			if defined($uncover);
 
-		for ( $i = 1; $i < $self-> {columns}; $i++) {
-			$canvas-> line( 
-				$a[0] + $i * ( $iw + 1) - 1, $a[1],
-				$a[0] + $i * ( $iw + 1) - 1, $a[3]
+		for ( $i = 0; $i < $self-> {partial_columns}; $i++) {
+			my $y = (
+				defined($uncover) and 
+				$i >= $uncover->{x} and 
+				$i < $self-> {active_columns}
+			) ? 
+			$ymiddle : 
+			(( $i < $self->{active_columns}) ?
+				$yend : 
+				$a[3]
 			);
+			$canvas-> clear(
+				$xstart, $a[1],
+				( $xstart + $iw - 1 > $a[2]) ? 
+					$a[2] : 
+					$xstart + $iw - 1,
+				$y
+			) if $xstart >= $a[0] and $y >= $a[1];
+			$xstart += $iw + $dg;
 		}
-		$canvas-> color( $c);
+	
+		if ( $self-> {drawGrid}) {
+			my $c = $canvas-> color;
+			$canvas-> color( $self-> {gridColor});
+			for ( $i = 1; $i < 1 + $self-> {whole_columns}; $i++) {
+				$canvas-> line( 
+					$a[0] + $i * ( $iw + $dg) - 1, $a[1],
+					$a[0] + $i * ( $iw + $dg) - 1, $a[3]
+				);
+			}
+			$canvas-> color( $c);
+		}
+	} else {
+		$canvas-> clear( @a[0..2], $a[1] + $self-> {uncover})
+			if defined $self-> {uncover};
 	}
 	
 	my $focusedState = $self-> focused ? ( exists $self-> {unfocState} ? 0 : 1) : 0;
@@ -247,23 +272,27 @@ sub on_paint
 	if ( $self-> {count} > 0 && $locWidth > 0) {
 		$canvas-> clipRect( @a);
 		my @paintArray;
-		my $rows = $self-> {rows} ? $self-> {rows} : 1;
 		my $item = $self-> {topItem};
 		if ( $self-> {multiColumn})
 		{
-			my $rows = $self-> {rows} ? $self-> {rows} : 1;
-			MAIN:for ( $j = 0; $j < $self-> {activeColumns}; $j++)
+			my $di = $self-> {vertical} ? 1 : $self-> {active_columns};
+			MAIN:for ( $j = 0; $j < $self-> {active_columns}; $j++)
 			{
-				for ( $i = 0; $i < $rows; $i++)
+				$item = $self-> {topItem} + $j unless $self-> {vertical};
+				for ( $i = 0; $i < $self-> {active_rows}; $i++)
 				{
-					last MAIN if $item > $self-> {lastItem};
+					if ( $self-> {vertical}) {
+						last MAIN if $item > $self-> {lastItem};
+					} else {
+						last if $item > $self-> {lastItem};
+					}
 					my @itemRect = (
-						$a[0] + $j * ( $iw + 1),
+						$a[0] + $j * ( $iw + $dg),
 						$a[3] - $ih * ( $i + 1) + 1,
-						$a[0] + $j * ( $iw + 1) + $iw,
+						$a[0] + $j * ( $iw + $dg) + $iw,
 						$a[3] - $ih * ( $i + 1) + $ih + 1
 					);
-					$item++, next if 
+					$item += $di, next if 
 						$itemRect[3] < $invalidRect[1] ||
 						$itemRect[1] > $invalidRect[3] ||
 						$itemRect[2] < $invalidRect[0] ||
@@ -274,7 +303,7 @@ sub on_paint
 						(( $self-> {focusedItem} == $item) ? 1 : 0);
 					my $foc = ( $foci == $item) ? $focusedState : 0;
 					$foc = 1 if $item == 0 && $self-> {unfocVeil};
-					
+
 					push( @paintArray, [
 						$item,          # item number
 						$itemRect[0], $itemRect[1],
@@ -282,11 +311,11 @@ sub on_paint
 						$sel, $foc,     # selected and focused states
 						$j              # column
 					]);
-					$item++;
+					$item += $di;
 				}
 			}
 		} else {
-			for ( $i = 0; $i < $self-> {rows} + $self-> {tailVisible}; $i++) {
+			for ( $i = 0; $i < $self-> {rows}; $i++) {
 				last if $item > $self-> {lastItem};
 				my @itemRect = (
 					$a[0], $a[3] - $ih * ( $i + 1) + 1,
@@ -352,20 +381,35 @@ sub on_keydown
 			$mod == 0 || 
 			( $mod & km::Shift && $self-> {multiSelect} && $self-> { extendedSelect})
 		) {
-			my $pgStep  = $self-> {rows} - 1;
+			my $pgStep  = $self-> {whole_rows} - 1;
 			$pgStep = 1 if $pgStep <= 0;
-			my $cols = $self-> {multiColumn} ? $self-> {columns} - $self-> {xTailVisible} : 1;
+			my $cols = $self-> {whole_columns};
 			my $mc = $self-> {multiColumn};
-			if ( $key == kb::Up)   { $newItem--; };
-			if ( $key == kb::Down) { $newItem++; };
-			if ( $key == kb::Left) { $newItem -= $self-> {rows} if $self-> {multiColumn}};
-			if ( $key == kb::Right){ $newItem += $self-> {rows} if $self-> {multiColumn} };
-			if ( $key == kb::Home) { $newItem = $self-> {topItem} };
-			if ( $key == kb::End)  { $newItem = $mc ?
-				$self-> {topItem} + $self-> {rows} * $cols - 1 : 
-				$self-> {topItem} + $pgStep; };
-			if ( $key == kb::PgDn) { $newItem += $mc ? $self-> {rows} * $cols : $pgStep };
-			if ( $key == kb::PgUp) { $newItem -= $mc ? $self-> {rows} * $cols : $pgStep};
+			my $dx = $self-> {vertical} ? $self-> {rows} : 1;
+			my $dy = $self-> {vertical} ? 1 : $self-> {active_columns};
+			if ( $key == kb::Up)   { 
+				$newItem -= $dy; 
+			} elsif ( $key == kb::Down) { 
+				$newItem += $dy; 
+			} elsif ( $key == kb::Left) { 
+				$newItem -= $dx if $mc
+			} elsif ( $key == kb::Right) { 
+				$newItem += $dx if $mc
+			} elsif ( $key == kb::Home) { 
+				$newItem = $self-> {topItem} 
+			} elsif ( $key == kb::End)  { 
+				$newItem = $mc ?
+					$self-> {topItem} + $self-> {whole_rows} * $cols - 1 : 
+					$self-> {topItem} + $pgStep; 
+			} elsif ( $key == kb::PgDn) { 
+				$newItem += $mc ? 
+					$self-> {whole_rows} * $cols : 
+					$pgStep 
+			} elsif ( $key == kb::PgUp) { 
+				$newItem -= $mc ? 
+					$self-> {whole_rows} * $cols : 
+					$pgStep
+			};
 			$doSelect = $mod & km::Shift;
 		}
 
@@ -381,8 +425,7 @@ sub on_keydown
 			if ( $key == kb::PgDn || $key == kb::End)  { $newItem = $self-> {count} - 1};
 			$doSelect = $mod & km::Shift;
 		}
-		if ( $doSelect )
-		{
+		if ( $doSelect ) {
 			my ( $a, $b) = ( 
 				defined $self-> {anchor} ? 
 					$self-> {anchor} : 
@@ -430,36 +473,67 @@ sub on_leave
 sub point2item
 {
 	my ( $self, $x, $y) = @_;
-	my ( $ih, $iw, @a) = ( $self-> {itemHeight}, $self-> {itemWidth}, $self-> get_active_area);
+	my ( $ih, @a) = ( $self-> {itemHeight}, $self-> get_active_area);
 
-	if ( $self-> {multiColumn})
-	{
-		my ( $r, $t, $l, $c) = ( 
-			$self-> {rows}, $self-> {topItem}, $self-> {lastItem}, $self-> {columns}
+	if ( $self-> {multiColumn}) {
+		my ( $r, $t, $l, $c, $ac) = ( 
+			$self-> {active_rows}, $self-> {topItem}, $self-> {lastItem}, 
+			$self-> {whole_columns}, $self-> {active_columns},
 		);
-		$c-- if $self-> {multiColumn} && $self-> {xTailVisible};
-		$x -= $a[0];                          # a[2]???
-		$y -= $a[1] + $self-> {yedge};
-		$x /= $iw + 1;
+		$x -= $a[0]; 
+		$y -= $a[1] + $self-> {yedge} + ( $self-> {rows} - $self->{active_rows} ) * $ih;
+		$x /= $self-> {itemWidth} + $self-> {drawGrid};
 		$y /= $ih;
+		if ( $self->{whole_rows} > 0) {
+			$r -= $self->{rows} - $self->{whole_rows};
+		} else {
+			$y++;
+		}
 		$y = $r - $y;
 		$x = int( $x - (( $x < 0) ? 1 : 0));
 		$y = int( $y - (( $y < 0) ? 1 : 0));
-		
-		return $t - $r                if $y < 0   && $x < 1;
-		return $t + $r * $x,  -1      if $y < 0   && $x >= 0 && $x < $c;
-		return $t + $r * $c           if $y < 0   && $x >= $c;
-		return $l + $y + 1 - (($c && $self-> {xTailVisible} && ( $l < $self-> {count}-1))?$r:0), $self-> {activeColumns} <= $self-> {columns} - $self-> {xTailVisible} ? 0 :$r
-			if $x > $c && $y >= 0 && $y < $r;
-			
-		return $t + $y - $r           if $x < 0   && $y >= 0 && $y < $r;
-		return $l + $r                if $x >= $c - 1 && $y >= $r;
-		return $t + $r * ($x + 1)-1,1 if $y >= $r && $x >= 0 && $x < $c;
-		return $t + $r - 1            if $x < 0   && $y >= $r;
-		return $x * $r + $y + $t;
+		$y = $r if $y > $r;
+	
+		if ( $self-> {vertical}) {
+			return $t - $r                if $y < 0 && $x < 1;
+			return $t + $r * $x,  -1      if $y < 0 && $x >= 0 && $x < $c;
+			return $t + $r * $c           if $y < 0 && $x >= $c;
+			return 
+				$l + $y + 1 - (( $c and $l < $self->{count}-1) ? $r : 0),
+				$ac <= $c ? 0 : $r
+					if $x > $c && $y >= 0 && $y < $r;
+			return $t + $y - $r           if $x < 0 && $y >= 0 && $y < $r;
+			return $l + $r                if $x >= $c - 1 && $y >= $r;
+			return $t + $r * ($x + 1)-1,
+				( $l < $self->{count} -1 ) ? 1 : 0
+				if $y >= $r && $x >= 0 && $x < $c;
+			return $t + $r - 1            if $x < 0 && $y >= $r;
+			return $x * $r + $y + $t;
+		} else {
+			if ( $y >= $r) {
+				$x = 0 if $x < 0;
+				$x = $ac - 1 if $x >= $ac;
+				my $i = $t + $y * $ac + $x;
+				return $i if $i <= $self->{count};
+				return 
+					$t + ($r - 1) * $ac + $x, 
+					( $t + $y * $ac <= $self->{count}) ? 1 : 0
+			}
+			if ( $y < 0) {
+				$x = 0 if $x < 0;
+				$x = $ac - 1 if $x >= $ac;
+				my $i = $t - $ac + $x;
+				return ( $i < 0 && $t == 0) ? $x : $i;
+			}	
+			return $t + $y * $ac, -1 if $x < 0;
+			return $t + ( $y + 1) * $ac - 1, 
+				( $l < $self->{count} -1 ) ? 1 : 0
+				if $x >= $ac;
+			return $t + $y * $ac + $x;
+		}
 	} else {
 		return $self-> {topItem} - 1 if $y >= $a[3];
-		return $self-> {lastItem} + !$self-> {tailVisible} if $y <= $a[1];
+		return $self-> {topItem} + $self-> {rows} if $y <= $a[1];
 		my $h = $a[3];
 
 		my $i = $self-> {topItem};
@@ -561,13 +635,21 @@ sub on_mousemove
 		if (( $b <= $a && $c > $a) || ( $b >= $a && $c < $a)) { 
 			$globSelect = 1
 		} elsif ( $b > $a) {
-			if ( $c < $b) { $self-> add_selection([$c + 1..$b], 1) }
-			elsif ( $c > $b) { $self-> add_selection([$b + 1..$c], 0) }
-			else { $globSelect = 1 }
+			if ( $c < $b) { 
+				$self-> add_selection([$c + 1..$b], 1) 
+			} elsif ( $c > $b) { 
+				$self-> add_selection([$b + 1..$c], 0) 
+			} else { 
+				$globSelect = 1 
+			}
 		} elsif ( $b < $a) {
-			if ( $c < $b) { $self-> add_selection([$c..$b], 0) }
-			elsif ( $c > $b) { $self-> add_selection([$b..$c], 1) }
-			else { $globSelect = 1 }
+			if ( $c < $b) { 
+				$self-> add_selection([$c..$b], 0) 
+			} elsif ( $c > $b) { 
+				$self-> add_selection([$b..$c], 1) 
+			} else { 
+				$globSelect = 1 
+			}
 		} else { 
 			$globSelect = 1 
 		}
@@ -611,10 +693,12 @@ sub on_mousewheel
 	my ( $self, $mod, $x, $y, $z) = @_;
 	
 	$z = int( $z/120);
-	$z *= $self-> {rows} if $mod & km::Ctrl;
+	$z *= $self-> {whole_columns}
+		if $self-> {multiColumn} and not $self->{vertical};
+	$z *= $self-> {whole_rows} if $mod & km::Ctrl;
 	my $newTop = $self-> topItem - $z;
-	my $cols = $self-> {multiColumn} ? $self-> {columns} - $self-> {xTailVisible} : 1;
-	my $maxTop = $self-> {count} - $self-> {rows} * $cols;
+	my $cols = $self-> {whole_columns};
+	my $maxTop = $self-> {count} - $self-> {whole_rows} * $cols;
 	
 	$self-> topItem( $newTop > $maxTop ? $maxTop : $newTop);
 }
@@ -622,8 +706,6 @@ sub on_mousewheel
 sub on_size
 {
 	my $self = $_[0];
-
-	$self-> offset( $self-> offset) if $self-> {multiColumn};
 	$self-> reset;
 	$self-> reset_scrolls;
 }
@@ -632,103 +714,141 @@ sub reset
 {
 	my $self = $_[0];
 	
-	my @a    = $self-> indents;
 	my @size = $self-> get_active_area( 2);
 	my $ih   = $self-> {itemHeight};
 	my $iw   = $self-> {itemWidth};
-	$self-> {rows}  = int( $size[1]/$ih);
-	$self-> {rows}  = 0 if $self-> {rows} < 0;
-	$self-> {yedge} = $size[1] - $self-> {rows} * $ih;
+
+	$self-> {whole_rows}   = int( $size[1] / $ih);
+	$self-> {partial_rows} = ( $size[1] > $self-> {whole_rows} * $ih ) ? 1 : 0;
+	$self-> {whole_rows}   = 0 if $self-> {whole_rows} < 0;
+	$self-> {partial_rows} += $self-> {whole_rows};
+	$self-> {yedge}        = $size[1] - $self-> {whole_rows} * $ih;
+	$self-> {yedge}        = 0 if $self-> {yedge} < 0;
 
 	if ( $self-> {multiColumn}) {
-		$self-> {tailVisible} = 0;
-		$self-> {columns}     = 0;
-		my $w = 0;
-		$self-> {lastItem}      = $self-> {topItem};
-		$self-> {activeColumns} = 0;
 		my $top = $self-> {topItem};
 		my $max = $self-> {count} - 1;
+		my $dg  = $self-> {drawGrid};
+
+		$self-> {whole_columns}   = int( $size[0] / ( $dg + $iw));
+		$self-> {partial_columns} = ( $size[0] > $self-> {whole_columns} * ( $dg + $iw)) 
+						? 1 : 0;
+		$self-> {whole_columns}   = 0 if $self-> {whole_columns} < 0;
+		$self-> {partial_columns} += $self-> {whole_columns};
 		$self-> {uncover} = undef;
-		
-		if ( $self-> {rows} == 0) {
-			$self-> {activeColumns}++, $self-> {columns}++, $w += $iw + 1 
-				while $w < $size[0];
+			
+		$self-> {rows} = $self-> {integralHeight} ? 
+				( $self-> {whole_rows} || $self-> {partial_rows} ) : 
+				$self-> {partial_rows};
+		$self-> {columns} = $self-> {integralWidth} ? 
+				( $self-> {whole_columns} || $self-> {partial_columns} ) : 
+				$self-> {partial_columns};
+
+		my $seen_items = $self->{rows} * $self-> {columns};
+		$self-> {lastItem} = ( $top + $seen_items - 1 > $max) ?
+			$max : $top + $seen_items - 1;
+		$seen_items = $self-> {lastItem} - $top + 1;
+
+		if ( $self-> {vertical} ) {
+			if ( $self-> {rows} > 0) {
+				$self-> {active_rows} = ( $seen_items > $self-> {rows} ) ?
+					$self->{rows} : $seen_items;
+				$self-> {active_columns} = 
+					int( $seen_items / $self-> {rows}) + 
+					(( $seen_items % $self-> {rows}) ? 1 : 0);
+				$seen_items %= $self->{rows};
+				$self-> {uncover} = {
+				  	x => $self-> {active_columns} - 1,
+					y => $ih * ($self-> {whole_rows} - $seen_items)
+				} if $seen_items
+			} else {
+				$self-> {active_columns} = $self-> {active_rows} = 0;
+			}
 		} else {
-			while ( $w <= $size[0]) {
-				$self-> {columns}++;
-				if ( $top + $self-> {rows} - 1 < $max) {
-					$self-> {activeColumns}++;
-					$self-> {lastItem} = $top + $self-> {rows} - 1;
-				} elsif ( $top + $self-> {rows} - 1 == $max) {
-					$self-> {activeColumns}++;
-					$self-> {lastItem} = $max;
-				} elsif ( $top <= $max) {
-					$self-> {lastItem} = $max;
-					$self-> {activeColumns}++;
-					$self-> {uncover} = $ih * ( $self-> {rows} - $max + $top - 1) + $a[1];
-				}
-				$w   += $iw + 1;
-				$top += $self-> {rows};
+			if ( $self-> {columns} > 0) {
+				$self-> {active_columns} = ( $seen_items > $self-> {columns} ) ?
+					$self-> {columns} : $seen_items;
+				$self-> {active_rows} = 	
+					int( $seen_items / $self-> {columns}) + 
+					(int( $seen_items % $self-> {columns}) > 0);
+				$seen_items %= $self->{columns};
+				$self-> {uncover} = {
+				  	x => $seen_items,
+					y => $ih * ($self-> {whole_rows} - $self-> {active_rows} + 1),
+				} if $seen_items
+			} else {
+				$self-> {active_columns} = $self-> {active_rows} = 0;
 			}
 		}
-		$self-> {xTailVisible} = $size[0] + 1 < $self-> {columns} * ( $iw + 1);
+		$self-> {xedge} = $size[0] - $self-> {whole_columns} * ($iw + $dg);
+		$self-> {xedge} = 0 if $self-> {xedge} < 0;
 	} else {
-		$self-> {columns}     = 1;
-		my ($x,$z) = ( $self-> {count} - 1, $self-> {topItem} + $self-> {rows} - 1);
-		$self-> {lastItem} = $x > $z ? $z : $x;
-		$self-> {uncover} = ( $self-> {count} == 0) ? 
-			$size[1] :
-			$size[1] - ( $self-> {lastItem} - $self-> {topItem} + 1) * $ih;
-			
-		$self-> {uncover} += $a[1];
-		$self-> {tailVisible} = 0;
-
-		my $integralHeight = ( $self-> {integralHeight} && ( $self-> {rows} > 0)) ? 1 : 0;
-		if ( 
-			$self-> {count} > 0 && 
-			$self-> {lastItem} < $self-> {count}-1 && 
-			!$integralHeight && 
-			$self-> {yedge} > 0
-		) {
-			$self-> {tailVisible} = 1;
-			$self-> {lastItem}++;
-			$self-> {uncover} = undef;
-		}
-
-		$self-> {uncover} = undef 	
-			if $size[0] <= 0 || $size[1] <= 0;
+		$self-> {$_} = 1 for qw(partial_columns whole_columns active_columns columns);
+		$self-> {xedge} = 0;
+		$self-> {rows} = (
+				$self-> {integralHeight} and 
+				$self-> {whole_rows} > 0
+			) ? 
+				$self-> {whole_rows} :
+				$self-> {partial_rows};
+		my ($max, $last) = ( 
+			$self-> {count} - 1, 
+			$self-> {topItem} + $self-> {rows} - 1
+		);
+		$self-> {lastItem} = $max > $last ? $last : $max;
+		$self-> {active_rows} = $self->{lastItem} - $self-> {topItem} + 1;
+		$self-> {uncover} = $size[1] - $self-> {active_rows} * $ih + 1
+			if $self->{active_rows} < $self-> {partial_rows};
 	}
+	$self-> {uncover} = undef if $size[0] <= 0 or $size[1] <= 0;
 }
 
 sub reset_scrolls
 {
 	my $self = $_[0];
+
+	my $count = $self-> {count};
+	my $cols  = $self-> {whole_columns};
+	my $rows  = $self-> {whole_rows};
+	$cols++ if ( 
+			$self->{whole_columns} == 0 and 
+			$self->{active_columns} > 0
+		) or ( 
+			$self->{partial_columns} > $self->{whole_columns} and 
+			$self->{yedge} > $self-> {itemHeight} * 0.66
+		);
+	$rows++ if ( 
+			$self->{whole_rows} == 0 and 
+			$self->{active_rows} > 0
+		) or ( 
+			$self->{partial_rows} > $self->{whole_rows} and 
+			$self->{xedge} > $self-> {itemWidth} * 0.66
+		);
 	
-	if ( $self-> {scrollTransaction} != 1) {
-		$self-> vScroll( $self-> {columns} * $self-> {rows} < $self-> {count}) 
+	if ( !($self-> {scrollTransaction} & 1)) {
+		$self-> vScroll( $self->{whole_rows} * $self->{whole_columns} < $count) 
 			if $self-> {autoVScroll};
-			
+
 		$self-> {vScrollBar}-> set(
-			max      => $self-> {count} -  $self-> {rows} *
-			( $self-> {multiColumn} ?
-			( $self-> {columns} - $self-> {xTailVisible}) : 1),
-			pageStep => $self-> {rows},
-			whole    => $self-> {count},
-			partial  => $self-> {columns} * $self-> {rows},
+			step     => ( $self-> {multiColumn} and not $self->{vertical}) ? 
+					$self-> {active_columns} : 1,
+			max      => $count - $self->{whole_rows} * $self->{whole_columns},
+			whole    => $count,
+			partial  => $rows * $cols,
 			value    => $self-> {topItem},
+			pageStep => $rows,
 		) if $self-> {vScroll};
 	}
-	if ( $self-> {scrollTransaction} != 2) {
+	if ( !($self-> {scrollTransaction} & 2)) {
 		if ( $self-> {multiColumn}) {
-			$self-> hScroll( $self-> {columns} * $self-> {rows} < $self-> {count}) 
+			$self-> hScroll( $self->{whole_rows} * $self->{whole_columns} < $count) 
 				if $self-> {autoHScroll};
 			$self-> {hScrollBar}-> set(
-				max      => $self-> {count} - 
-					$self-> {rows} * ( $self-> {columns} - $self-> {xTailVisible}),
-				step     => $self-> {rows},
-				pageStep => $self-> {rows} * $self-> {columns},
-				whole    => $self-> {count},
-				partial  => $self-> {columns} * $self-> {rows},
+				max      => $count - $self->{whole_rows} * $self->{whole_columns},
+				step     => $rows,
+				pageStep => $rows * $cols,
+				whole    => $count,
+				partial  => $rows * $cols,
 				value    => $self-> {topItem},
 			) if $self-> {hScroll};
 		} else {
@@ -817,16 +937,17 @@ sub set_focused_item
 	$self-> {focusedItem} = $foc;
 	$self-> selectedItems([$foc]) 
 		if $self-> {multiSelect} && $self-> {extendedSelect} 
-			&& ! exists $self-> {anchor} && $self-> {mouseTransaction} != 2;
+			&& ! exists $self-> {anchor} && 
+				( !defined($self-> {mouseTransaction}) || $self-> {mouseTransaction} != 2);
 	$self-> notify(q(SelectItem), [ $foc], 1) 
 		if $foc >= 0 && !exists $self-> {selectedItems}-> {$foc};
 
 	my $topSet = undef;
 	if ( $foc >= 0) {
-		my $rows = $self-> {rows} ? $self-> {rows} : 1;
 		my $mc   = $self-> {multiColumn};
-		my $cols = $mc ? $self-> {columns} - $self-> {xTailVisible} : 1;
-		$cols++ unless $cols;
+		my $rows = $self-> {whole_rows} || 1;
+		my $cols = $self-> {whole_columns} || 1;
+		( $cols, $rows) = ( $rows, $cols) if $mc and not $self->{vertical};
 		if ( $foc < $self-> {topItem}) {
 			$topSet = $mc ? 
 				$foc - $foc % $rows : 
@@ -859,20 +980,41 @@ sub dragable
 	$_[0]-> {dragable} = $_[1];
 }
 
+sub set_draw_grid
+{
+	my ( $self, $dg) = @_;
+	$dg = ( $dg ? 1 : 0);
+	return if $dg == $self-> {drawGrid};
+
+	$self-> {drawGrid} = $dg;
+	$self-> reset;
+	$self-> reset_scrolls;
+	$self-> repaint;
+}
+
 sub set_grid_color
 {
 	my ( $self, $gc) = @_;
 	return if $gc == $self-> {gridColor};
 	$self-> {gridColor} = $gc;
-	$self-> repaint;
+	$self-> repaint if $self-> {drawGrid};
 }
-
 
 sub set_integral_height
 {
 	my ( $self, $ih) = @_;
-	return if $self-> {multiColumn} || $self-> { integralHeight} == $ih;
-	$self-> { integralHeight} = $ih;
+	return if $self-> {integralHeight} == $ih;
+	$self-> {integralHeight} = $ih;
+	$self-> reset;
+	$self-> reset_scrolls;
+	$self-> repaint;
+}
+
+sub set_integral_width
+{
+	my ( $self, $iw) = @_;
+	return if $self-> {integralWidth} == $iw;
+	$self-> {integralWidth} = $iw;
 	$self-> reset;
 	$self-> reset_scrolls;
 	$self-> repaint;
@@ -944,10 +1086,10 @@ sub set_offset
 	my $dt = $offset - $oldOfs;
 	$self-> reset;
 
-	if ( $self-> {hScroll} && !$self-> {multiColumn} && $self-> {scrollTransaction} != 2) {
-		$self-> {scrollTransaction} = 2;
+	if ( $self-> {hScroll} && !$self-> {multiColumn} && !($self-> {scrollTransaction} & 2)) {
+		$self-> {scrollTransaction} |= 2;
 		$self-> {hScrollBar}-> value( $offset);
-		$self-> {scrollTransaction} = 0;
+		$self-> {scrollTransaction} &= ~2;
 	}
 	
 	$self-> scroll( -$dt, 0, clipRect => \@a);
@@ -1070,61 +1212,88 @@ sub set_top_item
 	$topItem = $self-> {count} - 1 if $topItem >= $self-> {count};
 	$topItem = 0 if $topItem < 0;   # count = 0 case
 	return if $topItem == $self-> {topItem};
+
 	my $oldTop = $self-> {topItem};
 	$self-> {topItem} = $topItem;
 	my ( $ih, $iw, @a) = ( $self-> {itemHeight}, $self-> {itemWidth}, $self-> get_active_area);
 	my $dt = $topItem - $oldTop;
 	$self-> reset;
 	
-	if ( $self-> {scrollTransaction} != 1 && $self-> {vScroll}) {
-		$self-> {scrollTransaction} = 1;
+	if ( !($self-> {scrollTransaction} & 1) && $self-> {vScroll}) {
+		$self-> {scrollTransaction} |= 1;
 		$self-> {vScrollBar}-> value( $topItem);
-		$self-> {scrollTransaction} = 0;
+		$self-> {scrollTransaction} &= ~1;
 	}
 
-	if ( $self-> {scrollTransaction} != 2 && $self-> {hScroll} && $self-> {multiColumn}) {
-		$self-> {scrollTransaction} = 2;
+	if ( !($self-> {scrollTransaction} & 2) && $self-> {hScroll} && $self-> {multiColumn}) {
+		$self-> {scrollTransaction} |= 2;
 		$self-> {hScrollBar}-> value( $topItem);
-		$self-> {scrollTransaction} = 0;
+		$self-> {scrollTransaction} &= ~2;
 	}
+
+	$self-> repaint;
+	return;
 
 	if ( $self-> { multiColumn}) {
-		if (( $self-> {rows} != 0) && ( $dt % $self-> {rows} == 0)) {
-			$self-> scroll( 
-				-( $dt / $self-> {rows}) * ($iw + 1), 0,
-				clipRect => \@a
-			);
-		} else {
+		$iw += $self-> {drawGrid};
+		if ( $self-> {vertical}) {
 			$a[1] += $self-> {yedge};
-			$self-> scroll( 0, $ih * $dt, clipRect => \@a);
-
+			if (( $self-> {rows} != 0) && ( $dt % $self-> {rows} == 0)) {
+				$self-> scroll( 
+					-( $dt / $self-> {rows}) * $iw, 0,
+					clipRect => \@a
+				);
+			} else {
+				$self-> scroll( 0, $ih * $dt, clipRect => \@a);
+			}
+		} else {
+			$a[2] = $a[0] + int(( $a[2] - $a[0] ) / $iw) * $iw;
+			if (( $self-> {whole_columns} != 0) && ( $dt % $self-> {whole_columns} == 0)) {
+				$self-> scroll( 
+					0, ( $dt / $self-> {whole_columns}) * $ih,
+					clipRect => \@a
+				);
+			} else {
+				$self-> scroll(- $iw * $dt, 0, clipRect => \@a);
+			}
 		}
 	} else {
-		$a[1] += $self-> {yedge} if $self-> {integralHeight};
+		$a[1] += $self-> {yedge} 
+			if $self-> {integralHeight} and $self-> {whole_rows} > 0;
 		$self-> scroll( 0, $dt * $ih, clipRect => \@a);
 	}
 	$self-> update_view;
+}
+
+sub set_vertical
+{
+	my ( $self, $vertical) = @_;
+	return if $self-> {vertical} == $vertical;
+	$self-> {vertical} = $vertical;
+	$self-> reset;
+	$self-> reset_scrolls;
+	$self-> repaint;
 }
 
 
 sub VScroll_Change
 {
 	my ( $self, $scr) = @_;
-	return if $self-> {scrollTransaction};
-	$self-> {scrollTransaction} = 1;
+	return if $self-> {scrollTransaction} & 1;
+	$self-> {scrollTransaction} |= 1;
 	$self-> topItem( $scr-> value);
-	$self-> {scrollTransaction} = 0;
+	$self-> {scrollTransaction} &= ~1;
 }
 
 sub HScroll_Change
 {
 	my ( $self, $scr) = @_;
-	return if $self-> {scrollTransaction};
-	$self-> {scrollTransaction} = 2;
+	return if $self-> {scrollTransaction} & 2;
+	$self-> {scrollTransaction} |= 2;
 	$self-> {multiColumn} ?
 		$self-> topItem( $scr-> value) :
 		$self-> offset( $scr-> value);
-	$self-> {scrollTransaction} = 0;
+	$self-> {scrollTransaction} &= ~2;
 }
 
 #sub on_drawitem
@@ -1145,9 +1314,11 @@ sub HScroll_Change
 sub autoHeight    {($#_)?$_[0]-> set_auto_height    ($_[1]):return $_[0]-> {autoHeight}     }
 sub count         {($#_)?$_[0]-> set_count          ($_[1]):return $_[0]-> {count}          }
 sub extendedSelect{($#_)?$_[0]-> set_extended_select($_[1]):return $_[0]-> {extendedSelect} }
+sub drawGrid      {($#_)?$_[0]-> set_draw_grid      ($_[1]):return $_[0]-> {drawGrid}       }
 sub gridColor     {($#_)?$_[0]-> set_grid_color     ($_[1]):return $_[0]-> {gridColor}      }
 sub focusedItem   {($#_)?$_[0]-> set_focused_item   ($_[1]):return $_[0]-> {focusedItem}    }
 sub integralHeight{($#_)?$_[0]-> set_integral_height($_[1]):return $_[0]-> {integralHeight} }
+sub integralWidth {($#_)?$_[0]-> set_integral_width ($_[1]):return $_[0]-> {integralWidth } }
 sub itemHeight    {($#_)?$_[0]-> set_item_height    ($_[1]):return $_[0]-> {itemHeight}     }
 sub itemWidth     {($#_)?$_[0]-> set_item_width     ($_[1]):return $_[0]-> {itemWidth}      }
 sub multiSelect   {($#_)?$_[0]-> set_multi_select   ($_[1]):return $_[0]-> {multiSelect}    }
@@ -1156,6 +1327,7 @@ sub offset        {($#_)?$_[0]-> set_offset         ($_[1]):return $_[0]-> {offs
 sub selectedCount {($#_)?$_[0]-> raise_ro("selectedCount") :return $_[0]-> get_selected_count;}
 sub selectedItems {($#_)?shift-> set_selected_items    (@_):return $_[0]-> get_selected_items;}
 sub topItem       {($#_)?$_[0]-> set_top_item       ($_[1]):return $_[0]-> {topItem}        }
+sub vertical      {($#_)?$_[0]-> set_vertical       ($_[1]):return $_[0]-> {vertical}        }
 
 # section for item text representation 
 
@@ -1190,14 +1362,13 @@ sub on_measureitem
 
 sub draw_text_items
 {
-	my ( $self, $canvas, $first, $last, $x, $y, $textShift, $clipRect) = @_;
-	
-	my $i;
-	for ( $i = $first; $i <= $last; $i++) {
+	my ( $self, $canvas, $first, $last, $step, $x, $y, $textShift, $clipRect) = @_;
+	my ($i,$j);
+	for ( $i = $first, $j = 1; $i <= $last; $i += $step, $j++) {
 		next if $self-> get_item_width( $i) + 
 			$self-> {offset} + $x + 1 < $clipRect-> [0];
 		$canvas-> text_out( $self-> get_item_text( $i), 
-			$x, $y + $textShift - ($i-$first+1) * $self-> {itemHeight} + 1
+			$x, $y + $textShift - $j * $self-> {itemHeight} + 1
 		);
 	}
 }
@@ -1218,6 +1389,8 @@ sub std_draw_text_items
 	my $atY    = ( $self-> {itemHeight} - $canvas-> font-> height) / 2;
 	my $ih     = $self-> {itemHeight};
 	my $offset = $self-> {offset};
+	my $step   = ( $self-> {multiColumn} and !$self-> {vertical}) ? 
+		$self-> {active_columns} : 1;
 
 	my @colContainer;
 	for ( $i = 0; $i < $self-> {columns}; $i++){ 
@@ -1241,8 +1414,7 @@ sub std_draw_text_items
 			if ( $selected) {
 				if ( 
 					defined $lastSelected && 
-					( $y2 + 1 == $lastSelected) &&
-					( ${$selected[-1]}[3] - $lastSelected < 100)
+					( $y2 + 1 == $lastSelected)
 				) {
 					${$selected[-1]}[1] = $y;
 					${$selected[-1]}[5] = $$_[$i]-> [0];
@@ -1289,7 +1461,7 @@ sub std_draw_text_items
 				$lc = $c;
 			}
 		
-			$self-> draw_text_items( $canvas, $first, $last, 
+			$self-> draw_text_items( $canvas, $first, $last, $step,
 				$x, $y2, $atY, \@clipRect);
 		}
 	}
@@ -1780,6 +1952,13 @@ together with left mouse button. If 0, item dragging is disabled.
 
 Default value: 1
 
+=item drawGrid BOOLEAN
+
+If 1, vertical grid lines between columns are drawn with C<gridColor>.
+Actual only in multi-column mode.
+
+Default value: 1
+
 =item extendedSelect BOOLEAN
 
 Regards the way the user selects multiple items and is only actual
@@ -1815,6 +1994,15 @@ If 1, only the items that fit vertically in the widget interiors
 are drawn. If 0, the items that are partially visible are drawn also.
 
 Default value: 0
+
+=item integralWidth BOOLEAN
+
+If 1, only the items that fit horizontally in the widget interiors
+are drawn. If 0, the items that are partially visible are drawn also.
+Actual only in multi-column mode.
+
+Default value: 0
+
 
 =item itemHeight INTEGER
 
@@ -1863,6 +2051,14 @@ A read-only property. Returns number of selected items.
 
 ARRAY is an array of integer indices of selected items.
 
+=item vertical BOOLEAN
+
+Sets seneral direction of items in multi-column mode. If 1, items increase
+down-to-right. Otherwise, right-to-down.
+
+Doesn't have any effect in single-column mode.
+Default value: 1.
+
 =back
 
 =head2 Methods
@@ -1898,10 +2094,10 @@ C<Prima::ListBox> class.
 
 See L<DrawItem> for parameters description.
 
-=item draw_text_items CANVAS, FIRST, LAST, X, Y, OFFSET, CLIP_RECT
+=item draw_text_items CANVAS, FIRST, LAST, STEP, X, Y, OFFSET, CLIP_RECT
 
 Called by C<std_draw_text_items> to draw sequence of text items with 
-indices from FIRST to LAST on CANVAS, starting at point X, Y, and
+indices from FIRST to LAST, by STEP, on CANVAS, starting at point X, Y, and
 incrementing the vertical position with OFFSET. CLIP_RECT is a reference
 to array of four integers with inclusive-inclusive coordinates of the active 
 clipping rectangle.
