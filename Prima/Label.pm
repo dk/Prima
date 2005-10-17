@@ -296,13 +296,11 @@ sub check_auto_size
 		$cap =~ s/~//s unless $self-> {showAccelChar};
 		my %sets;
 		$sets{ geomWidth}  = $self-> get_text_width( $cap) + 6 if $self-> {autoWidth};
-		$sets{ geomHeight} = $self-> font-> height + 2 if $self-> {autoHeight};
+		$sets{ geomHeight} = $self-> font-> height * $self-> {textLines} + 2 
+			if $self-> {autoHeight};
 		$self-> set( %sets);
 	}
 	$self-> reset_lines;
-	if ( $self-> {wordWrap} && $self-> {autoHeight}) {
-		$self-> geomHeight( $self-> font-> height * $self-> {textLines} + 2);
-	}
 }
 
 sub set_auto_width
