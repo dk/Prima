@@ -239,6 +239,17 @@ extern "C" {
    #endif
 #endif
 
+#ifndef PTR2UV
+#define PTR2UV(x) ((UV)(x))
+#endif
+#ifndef PTR2IV
+#define PTR2IV(x) ((IV)(x))
+#endif
+#ifndef INT2PTR
+#define INT2PTR(type,x) ((type)((UV)x))
+#endif
+
+
 #define PERL_CALL_SV_DIE_BUG_AWARE 1
 
 #ifdef PERL_CALL_SV_DIE_BUG_AWARE
