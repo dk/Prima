@@ -1,3 +1,6 @@
+1.19  Add Lists::vertical. Implement scrollable groups and notebooks.
+      Make file and font dialogs resizeable.
+
 1.18  Extend function of listboxes and outlines. Change syntax of Drawable:: text methods. 
 
 1.17  Add Window::onTop. Add =SYNOPSIS sections in selected modules. 
