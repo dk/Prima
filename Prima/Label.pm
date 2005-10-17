@@ -61,15 +61,19 @@ sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
 	$p-> { autoWidth} = 0 if 
+		! exists $p->{autoWidth} and (
 		exists $p-> {width} || 
 		exists $p-> {size} || 
 		exists $p-> {rect} || 
-		( exists $p-> {left} && exists $p-> {right});
+		( exists $p-> {left} && exists $p-> {right})
+	);
 	$p-> {autoHeight} = 0 if 
+		! exists $p-> {autoHeight} and (
 		exists $p-> {height} || 
 		exists $p-> {size} || 
 		exists $p-> {rect} || 
-		( exists $p-> {top} && exists $p-> {bottom});
+		( exists $p-> {top} && exists $p-> {bottom})
+	);
 	$self-> SUPER::profile_check_in( $p, $default);
 	my $vertical = exists $p-> {vertical} ? 
 		$p-> {vertical} : 
@@ -269,6 +273,8 @@ sub reset_lines
 	my $width = 1000000;
 	$opt |= tw::CollapseTilde unless $self-> {showAccelChar};
 	$width = $self-> width if $self-> {wordWrap};
+	
+	$self-> begin_paint_info;
 
 	my $lines = $self-> text_wrap( $self-> text, $width, $opt);
 	my $lastRef = pop @{$lines};
@@ -284,53 +290,78 @@ sub reset_lines
 	for ( @{$lines}) { push @len, $self-> get_text_width( $_); }
 	$self-> {widths} = [@len];
 
-	$self-> repaint;
+	$self-> end_paint_info;
 }
 
 sub check_auto_size
 {
 	my $self = $_[0];
 	my $cap = $self-> text;
+	$cap =~ s/~//s unless $self-> {showAccelChar};
+	my %sets;
 
-	unless ( $self-> {wordWrap}) {
-		$cap =~ s/~//s unless $self-> {showAccelChar};
-		my %sets;
-		$sets{ geomWidth}  = $self-> get_text_width( $cap) + 6 if $self-> {autoWidth};
-		$sets{ geomHeight} = $self-> font-> height * $self-> {textLines} + 2 
+	if ( $self-> {wordWrap}) {
+		if ( $self-> {autoHeight}) {
+			$self-> reset_lines;
+			$self-> geomHeight( $self-> {textLines} * $self-> font-> height + 2);
+		}
+	} else {
+		my @lines = split "\n", $cap;
+		if ( $self-> {autoWidth}) {
+			$self-> begin_paint_info;
+			$sets{geomWidth} = 0;
+			for my $line ( @lines) {
+				my $width = $self-> get_text_width( $line);
+				$sets{geomWidth} = $width if 
+					$sets{geomWidth} < $width;
+			}
+			$sets{geomWidth} += 6;
+			$self-> end_paint_info;
+		}
+		$sets{ geomHeight} = scalar(@lines) * $self-> font-> height  + 2 
 			if $self-> {autoHeight};
 		$self-> set( %sets);
 	}
-	$self-> reset_lines;
 }
 
 sub set_auto_width
 {
-	$_[0]-> {autoWidth} = $_[1];
-	$_[0]-> check_auto_size;
+	my ( $self, $aw) = @_;
+	return if $self-> {autoWidth} == $aw;
+	$self-> {autoWidth} = $aw;
+	$self-> check_auto_size;
 }
 
 sub set_auto_height
 {
-	$_[0]-> {autoHeight} = $_[1];
-	$_[0]-> check_auto_size;
+	my ( $self, $ah) = @_;
+	return if $self-> {autoHeight} == $ah;
+	$self-> {autoHeight} = $ah;
+	$self-> check_auto_size;
 }
 
 sub set_word_wrap
 {
-	$_[0]-> {wordWrap} = $_[1];
-	$_[0]-> repaint;
+	my ( $self, $ww) = @_;
+	return if $self-> {wordWrap} == $ww;
+	$self-> {wordWrap} = $ww;
+	$self-> check_auto_size;
 }
 
 sub set_show_accel_char
 {
-	$_[0]-> {showAccelChar} = $_[1];
-	$_[0]-> check_auto_size;
+	my ( $self, $sac) = @_;
+	return if $self-> {showAccelChar} == $sac;
+	$self-> {showAccelChar} = $sac;
+	$self-> check_auto_size;
 }
 
 sub set_show_partial
 {
-	$_[0]-> {showPartial} = $_[1];
-	$_[0]-> check_auto_size;
+	my ( $self, $sp) = @_;
+	return if $self-> {showPartial} == $sp;
+	$self-> {showPartial} = $sp;
+	$self-> check_auto_size;
 }
 
 
