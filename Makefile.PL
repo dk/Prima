@@ -56,6 +56,7 @@ use vars @ovvars = qw(
 	$PLATFORM
 	$COMPILER
 	$PREFIX
+	$X11BASE
 	$INSTALLSCRIPT
 	$INSTALLSITEARCH
 	$INSTALL_LIB
@@ -86,6 +87,7 @@ use vars @path_expand_ovvars = qw(
 	@LIBS
 	$COMPILER
 	$PREFIX
+	$X11BASE
 	$INSTALLSCRIPT
 	$INSTALLSITEARCH
 	$INSTALL_LIB
@@ -142,7 +144,7 @@ use vars qw(
 	%cache_find_files
 );
 
-my $extramsg = "(see makefile.log for details)";
+my $extramsg = "(see also makefile.log for details)";
 
 sub print_config
 {
@@ -881,6 +883,7 @@ sub setup_variables
 		setvar( 'INSTALL_MAN1', $Config{installman1dir});
 		setvar( 'INSTALL_MAN3', $Config{installman3dir});
 	}
+	setvar( 'X11BASE') if $NeedX11;
 
 	setvar( 'MAKETYPE', lc ( $MAKE = $Config{ make}));
 	# Note that Borland's make utility also named 'make'. But its
@@ -1254,17 +1257,34 @@ temporary_prf_Sv
 sub setup_paths
 {
 	if ( $NeedX11) {
+		# find X11 include files
+		push @INCPATH, "$X11BASE/include" if defined($X11BASE) and -d "$X11BASE/include";
 		for ( 'local/', 'freeware/', 'gnu/', 'opt/') {
 				push @INCPATH, qd( "/usr/${_}include") if -d "/usr/${_}include";
 		}
-		my $incpath = find_header( qd( "X11/Xlib.h"), qd( "/usr/X11R6/include"), qd( "/usr/X11/include"), qd("/usr/X/include"), qd("/usr/openwin/include"));
-		die "Prima needs X11 headers for compilation! Perhaps, you have non-standard path to X11? $extramsg\n" unless defined $incpath;
+		my $incpath = find_header( qd( "X11/Xlib.h"), 
+			qd( "/usr/X11R6/include"), 
+			qd( "/usr/X11/include"), 
+			qd("/usr/X/include"), 
+			qd("/usr/openwin/include")
+		);
+		die "Prima needs X11 headers for compilation! Set X11BASE='/path/to/X' if you have a non-standard path to X. $extramsg\n" 
+			unless defined $incpath;
 		if ( -d $incpath) {
 			print "X11 includes found in $incpath\n";
 			push @INCPATH, $incpath;
 		}
-		my $libpath = find_lib( "X11", '', "/usr/X11R6/lib", "/usr/X11/lib", "usr/X/lib");
-		die "Prima needs X11 libraries for compilation! Perhaps, you have non-standard path to X11?  $extramsg\n" unless defined $libpath;
+
+		# find X11 libraries
+		my $libpath = find_lib( "X11", '', 
+			(defined($X11BASE) ? "$X11BASE/lib" : ()), 
+			"/usr/X11R6/lib", 
+			"/usr/X11/lib",
+			"/usr/X/lib",
+			"/usr/openwin/lib"
+		);
+		die "Prima needs X11 libraries for compilation! Set X11BASE='/path/to/X' if you have a non-standard path to X. $extramsg\n" 
+			unless defined $libpath;
 		if ( -d $libpath) {
 			print "X11 libraries found in $libpath\n";
 			push @LIBPATH, $libpath;
@@ -1361,6 +1381,7 @@ sub setup_xft
 		my @pre_xft_libs = @LIBS;
 
 		my @ft_incpaths = ( "",
+			( defined($X11BASE) ? qd("$X11BASE/include/freetype2") : ()),
 			qd("/usr/include/freetype2"),
 			qd("/usr/X11R6/include/freetype2"),
 			qd("/usr/X11/include/freetype2"),
