@@ -1254,6 +1254,23 @@ temporary_prf_Sv
 );
 }
 
+sub setup_compiler
+{
+	print "Checking if can compile... ";
+	compile('int a;', 1) or die "no $extramsg\n";
+	print "yes\n";
+
+	print "Checking if can link... ";
+	compile( <<EOF, 0) or die "no $extramsg\n";
+int
+main()
+{
+   return 0;
+}
+EOF
+	print "yes\n";
+}
+
 sub setup_paths
 {
 	if ( $NeedX11) {
@@ -2332,6 +2349,7 @@ FOOTER
 =cut
 	process_commandline;
 	setup_variables;
+	setup_compiler;
 	setup_paths;
 	setup_defines;
 	setup_xft;
