@@ -297,7 +297,7 @@ sub init
 	my $xname = $self-> name;
 	my $yname = $xname;
 	my $cnt = 0;
-	$yname = sprintf("%s.%d", $xname, $cnt++) while exists $names{$yname};
+	$yname = sprintf("%s%d", $xname, $cnt++) while exists $names{$yname};
 	$profile{profile}-> {name} = $yname;
 	$self-> init_profiler( \%profile);
 	ObjectInspector::renew_widgets();
