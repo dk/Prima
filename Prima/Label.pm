@@ -301,8 +301,8 @@ sub check_auto_size
 	my %sets;
 
 	if ( $self-> {wordWrap}) {
+		$self-> reset_lines;
 		if ( $self-> {autoHeight}) {
-			$self-> reset_lines;
 			$self-> geomHeight( $self-> {textLines} * $self-> font-> height + 2);
 		}
 	} else {
@@ -321,6 +321,7 @@ sub check_auto_size
 		$sets{ geomHeight} = scalar(@lines) * $self-> font-> height  + 2 
 			if $self-> {autoHeight};
 		$self-> set( %sets);
+		$self-> reset_lines;
 	}
 }
 
