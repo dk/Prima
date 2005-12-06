@@ -711,7 +711,7 @@ sub value
 		my $range = ( $_[0]-> {max} - $_[0]-> {min}) || 1;
 		my $x1 = $i + ($x - $i*2) * $old / $range;
 		my $x2 = $i + ($x - $i*2) * $v   / $range;
-		($x1, $2) = ( $x2, $x1) if $x1 > $x2;
+		($x1, $x2) = ( $x2, $x1) if $x1 > $x2;
 		my $s = $_[0]-> {string};
 		$_[0]-> {value} = $v;
 		$_[0]-> notify(q(Stringify), $v, \$_[0]-> {string});
