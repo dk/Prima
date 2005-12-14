@@ -514,6 +514,22 @@ sub cc_command_line
 	return $ret;
 }
 
+sub quote
+{
+	my @q = @_;
+	if ( $Win32 || $OS2) {
+		return map { 
+			if ( m/[\s\"]/) {
+				s/\"/\"\"/gs;
+				$_ = "\"$_\"";
+			}
+			$_;
+		} @q;
+	} else {
+		return map { s/([\'\\])/\\$1/gs; $_  } @q;
+	}
+}
+
 sub ld_command_line
 {
 	my ( $dstf, $deffile) = (shift,shift);
@@ -524,7 +540,8 @@ sub ld_command_line
 		$ret .= '-L"' . join( ';', @LIBPATH) . '" c0d32.obj ';
 		$ret .= join( ' ', @_);
 	}  else {
-		$ret .= ' ' . join( ' ' , map { $Prima::Config::Config{ldlibpathflag}.$_} @LIBPATH);
+		$ret .= ' ' . join( ' ' , 
+			quote( map { $Prima::Config::Config{ldlibpathflag}.$_} @LIBPATH));
 		$ret .= ' ' . $Prima::Config::Config{ldoutflag} . $dstf;
 		$ret .= ' ' . join( ' ', @_);
 		$ret .= ' ' . join( ' ' , map { $Prima::Config::Config{ldlibflag}.$_} @LIBS);
