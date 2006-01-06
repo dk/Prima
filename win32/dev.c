@@ -1025,6 +1025,379 @@ apc_prn_setup( Handle self)
    return true;
 }
 
+typedef struct _PrnKey
+{
+   long  value;
+   char * name;
+} PrnKey;
+
+static PrnKey ctx_options[] = {
+   { DM_ORIENTATION     , "Orientation" },
+   { DM_PAPERSIZE       , "PaperSize" },
+   { DM_PAPERLENGTH     , "PaperLength" },
+   { DM_PAPERWIDTH      , "PaperWidth" },
+   { DM_SCALE           , "Scale" },
+   { DM_COPIES          , "Copies" },
+   { DM_DEFAULTSOURCE   , "DefaultSource" },
+   { DM_PRINTQUALITY    , "PrintQuality" },
+   { DM_COLOR           , "Color" },
+   { DM_DUPLEX          , "Duplex" },
+   { DM_YRESOLUTION     , "YResolution" },
+   { DM_TTOPTION        , "TTOption" },
+   { DM_COLLATE         , "Collate" },
+   { DM_FORMNAME        , "FormName" }
+};
+
+static PrnKey ctx_orientation[] = {
+   { DMORIENT_PORTRAIT   ,"Portrait" },
+   { DMORIENT_LANDSCAPE  ,"Landscape" }
+};
+
+static PrnKey ctx_papersize[] = {
+   { DMPAPER_LETTER             , "Letter" },
+   { DMPAPER_LETTERSMALL        , "LetterSmall" },
+   { DMPAPER_TABLOID            , "Tabloid" },
+   { DMPAPER_LEDGER             , "Ledger" },
+   { DMPAPER_LEGAL              , "Legal" },
+   { DMPAPER_STATEMENT          , "Statement" },
+   { DMPAPER_EXECUTIVE          , "Executive" },
+   { DMPAPER_A3                 , "A3" },
+   { DMPAPER_A4                 , "A4" },
+   { DMPAPER_A4SMALL            , "A4Small" },
+   { DMPAPER_A5                 , "A5" },
+   { DMPAPER_B4                 , "B4" },
+   { DMPAPER_B5                 , "B5" },
+   { DMPAPER_FOLIO              , "Folio" },
+   { DMPAPER_QUARTO             , "Quarto" },
+   { DMPAPER_10X14              , "10X14" },
+   { DMPAPER_11X17              , "11X17" },
+   { DMPAPER_NOTE               , "Note" },
+   { DMPAPER_ENV_9              , "ENV_9" },
+   { DMPAPER_ENV_10             , "ENV_10" },
+   { DMPAPER_ENV_11             , "ENV_11" },
+   { DMPAPER_ENV_12             , "ENV_12" },
+   { DMPAPER_ENV_14             , "ENV_14" },
+   { DMPAPER_CSHEET             , "CSheet" },
+   { DMPAPER_DSHEET             , "DSheet" },
+   { DMPAPER_ESHEET             , "ESheet" },
+   { DMPAPER_ENV_DL             , "ENV_DL" },
+   { DMPAPER_ENV_C5             , "ENV_C5" },
+   { DMPAPER_ENV_C3             , "ENV_C3" },
+   { DMPAPER_ENV_C4             , "ENV_C4" },
+   { DMPAPER_ENV_C6             , "ENV_C6" },
+   { DMPAPER_ENV_C65            , "ENV_C65" },
+   { DMPAPER_ENV_B4             , "ENV_B4" },
+   { DMPAPER_ENV_B5             , "ENV_B5" },
+   { DMPAPER_ENV_B6             , "ENV_B6" },
+   { DMPAPER_ENV_ITALY          , "ENV_Italy" },
+   { DMPAPER_ENV_MONARCH        , "ENV_Monarch" },
+   { DMPAPER_ENV_PERSONAL       , "ENV_Personal" },
+   { DMPAPER_FANFOLD_US         , "Fanfold_US" },
+   { DMPAPER_FANFOLD_STD_GERMAN , "Fanfold_Std_German" },
+   { DMPAPER_FANFOLD_LGL_GERMAN , "Fanfold_Lgl_German" }
+#if(WINVER >= 0x0400)
+   ,
+   { DMPAPER_ISO_B4             , "ISO_B4" },
+   { DMPAPER_JAPANESE_POSTCARD  , "Japanese_Postcard" },
+   { DMPAPER_9X11               , "9X11" },
+   { DMPAPER_10X11              , "10X11" },
+   { DMPAPER_15X11              , "15X11" },
+   { DMPAPER_ENV_INVITE         , "ENV_Invite" },
+   { DMPAPER_RESERVED_48        , "RESERVED_48" },
+   { DMPAPER_RESERVED_49        , "RESERVED_49" },
+   { DMPAPER_LETTER_EXTRA       , "Letter_Extra" },
+   { DMPAPER_LEGAL_EXTRA        , "Legal_Extra" },
+   { DMPAPER_TABLOID_EXTRA      , "Tabloid_Extra" },
+   { DMPAPER_A4_EXTRA           , "A4_Extra" },
+   { DMPAPER_LETTER_TRANSVERSE  , "Letter_Transverse" },
+   { DMPAPER_A4_TRANSVERSE      , "A4_Transverse" },
+   { DMPAPER_LETTER_EXTRA_TRANSVERSE, "Per_Letter_Extra_Transverse" },
+   { DMPAPER_A_PLUS             , "A_Plus" },
+   { DMPAPER_B_PLUS             , "B_Plus" },
+   { DMPAPER_LETTER_PLUS        , "Letter_Plus" },
+   { DMPAPER_A4_PLUS            , "A4_Plus" },
+   { DMPAPER_A5_TRANSVERSE      , "A5_Transverse" },
+   { DMPAPER_B5_TRANSVERSE      , "B5_Transverse" },
+   { DMPAPER_A3_EXTRA           , "A3_Extra" },
+   { DMPAPER_A5_EXTRA           , "A5_Extra" },
+   { DMPAPER_B5_EXTRA           , "B5_Extra" },
+   { DMPAPER_A2                 , "A2" },
+   { DMPAPER_A3_TRANSVERSE      , "A3_Transverse" },
+   { DMPAPER_A3_EXTRA_TRANSVERSE, "A3_Extra_Transverse" }
+#endif
+};
+
+static PrnKey ctx_defsource[] = {
+   { DMBIN_AUTO              , "Auto" },
+   { DMBIN_CASSETTE          , "Cassette" },
+   { DMBIN_ENVELOPE          , "Envelope" },
+   { DMBIN_ENVMANUAL         , "EnvManual" },
+   { DMBIN_FORMSOURCE        , "FormSource" },
+   { DMBIN_LARGECAPACITY     , "LargeCapacity" },
+   { DMBIN_LARGEFMT          , "LargeFmt" },
+   { DMBIN_LOWER             , "Lower" },
+   { DMBIN_MANUAL            , "Manual" },
+   { DMBIN_MIDDLE            , "Middle" },
+   { DMBIN_ONLYONE           , "OnlyOne" },
+   { DMBIN_TRACTOR           , "Tractor" },
+   { DMBIN_SMALLFMT          , "SmallFmt" },
+   { DMBIN_USER+0            , "User0" },
+   { DMBIN_USER+1            , "User1" },
+   { DMBIN_USER+2            , "User2" },
+   { DMBIN_USER+3            , "User3" },
+   { DMBIN_USER+4            , "User4" }
+};
+
+static PrnKey ctx_quality[] = {
+   { DMRES_HIGH    , "High" },
+   { DMRES_MEDIUM  , "Medium" },
+   { DMRES_LOW     , "Low" },
+   { DMRES_DRAFT   , "Draft" }
+};
+
+static PrnKey ctx_color[] = {
+   { DMCOLOR_COLOR , "Color" },
+   { DMCOLOR_MONOCHROME, "Monochrome" }
+};
+
+static PrnKey ctx_duplex[] = {
+   { DMDUP_SIMPLEX ,   "Simplex" },
+   { DMDUP_HORIZONTAL, "Horizontal" },
+   { DMDUP_VERTICAL,   "Vertical" }
+};
+
+static PrnKey ctx_ttoption[] = {
+   { DMTT_BITMAP,           "Bitmap" },
+   { DMTT_DOWNLOAD,         "Download" },
+#if(WINVER >= 0x0400)
+   { DMTT_DOWNLOAD_OUTLINE, "Download_Outline" },
+#endif
+   { DMTT_SUBDEV,           "SubDev" }
+};
+
+static char *
+ctx_prn_find_string( PrnKey * table, int table_size, long value)
+{
+   int i;
+   for ( i = 0; i < table_size; i++, table++) {
+      if ( table-> value == value) 
+	 return table-> name;
+   }
+   return nil;
+}
+
+#define BADVAL -16384
+
+static long 
+ctx_prn_find_value( PrnKey * table, int table_size, char * name)
+{
+   int i;
+   for ( i = 0; i < table_size; i++, table++) {
+      if ( strcmp( table-> name, name) == 0)
+	 return table-> value;
+   }
+   return BADVAL;
+}
+
+Bool  
+apc_prn_set_option( Handle self, char * option, char * value) 
+{ 
+   long v, num;
+   char * e;
+   LPDEVMODE dev = sys s. prn. ppi. pDevMode;
+
+   objCheck false;
+   if ( !dev) return false;
+
+   v = ctx_prn_find_value( ctx_options, sizeof(ctx_options)/sizeof(PrnKey), option);
+   if ( v == BADVAL) return false;
+
+   /* DM_FORMNAME string is special because it's a literal string */
+   if ( v == DM_FORMNAME) {
+      strncpy( dev-> dmFormName, value, CCHFORMNAME);
+      dev-> dmFormName[CCHFORMNAME] = 0;
+      return true;
+   }
+
+   /* any other setting may be a number */
+   num = strtol( value, &e, 10);
+
+#define LOOKUP_INT(table) \
+   if ( *e) { \
+       /* not a numerical */ \
+       v = ctx_prn_find_value( table, sizeof(table)/sizeof(PrnKey), value); \
+       if ( v == BADVAL) return false; \
+   } else { \
+       v = num;\
+   }
+   
+   switch ( v) {
+   case DM_ORIENTATION:
+      LOOKUP_INT( ctx_orientation);
+      dev-> dmOrientation = v;
+      break;
+   case DM_PAPERSIZE:
+      LOOKUP_INT( ctx_papersize);
+      dev-> dmPaperSize = v;
+      break;
+   case DM_PAPERLENGTH:
+      if (*e) return false;
+      dev-> dmPaperLength = v;
+      break;
+   case DM_PAPERWIDTH:
+      if (*e) return false;
+      dev-> dmPaperWidth = v;
+      break;
+   case DM_SCALE:
+      if (*e) return false;
+      dev-> dmScale = v;
+      break;
+   case DM_COPIES:
+      if (*e) return false;
+      dev-> dmCopies = v;
+      break;
+   case DM_DEFAULTSOURCE:
+      LOOKUP_INT( ctx_defsource);
+      dev-> dmDefaultSource = v;
+      break;
+   case DM_PRINTQUALITY:
+      LOOKUP_INT( ctx_quality);
+      dev-> dmPrintQuality = v;
+      break;
+   case DM_COLOR:
+      LOOKUP_INT( ctx_color);
+      dev-> dmColor = v;
+      break;
+   case DM_DUPLEX:
+      LOOKUP_INT( ctx_duplex);
+      dev-> dmDuplex = v;
+      break;
+   case DM_TTOPTION:
+      LOOKUP_INT( ctx_ttoption);
+      dev-> dmTTOption = v;
+      break;
+   case DM_YRESOLUTION:
+      if (*e) return false;
+      dev-> dmYResolution = v;
+      break;
+   case DM_COLLATE:
+      if (*e) return false;
+      dev-> dmCollate = v;
+      break;
+   default:
+      return false;
+   }
+
+   return true; 
+}
+
+
+Bool 
+apc_prn_get_option( Handle self, char * option, char ** value) 
+{
+   long v;
+   char * c = nil, buf[256];
+   LPDEVMODE dev = sys s. prn. ppi. pDevMode;
+
+   *value = nil;
+   
+   objCheck false;
+   if ( !dev) return false;
+
+   v = ctx_prn_find_value( ctx_options, sizeof(ctx_options)/sizeof(PrnKey), option);
+   if ( v == BADVAL) return false;
+
+#define LOOKUP_STR(table,value) \
+   /* is a defined string? */ \
+   if (( c = ctx_prn_find_string( \
+      table, sizeof(table)/sizeof(PrnKey), value) \
+   ) == nil) { \
+      /* return just a number */ \
+      sprintf( c = buf, "%d", value); \
+   }
+   
+   switch ( v) {
+   case DM_ORIENTATION:
+      LOOKUP_STR( ctx_orientation, dev-> dmOrientation);
+      break;
+   case DM_PAPERSIZE:
+      LOOKUP_STR( ctx_papersize, dev-> dmPaperSize);
+      break;
+   case DM_PAPERLENGTH:
+      sprintf( c = buf, "%d", dev-> dmPaperLength);
+      break;
+   case DM_PAPERWIDTH:
+      sprintf( c = buf, "%d", dev-> dmPaperWidth);
+      break;
+   case DM_SCALE:
+      sprintf( c = buf, "%d", dev-> dmScale);
+      break;
+   case DM_COPIES:
+      sprintf( c = buf, "%d", dev-> dmCopies);
+      break;
+   case DM_DEFAULTSOURCE:
+      LOOKUP_STR( ctx_defsource, dev-> dmDefaultSource);
+      break;
+   case DM_PRINTQUALITY:
+      LOOKUP_STR( ctx_quality, dev-> dmPrintQuality);
+      break;
+   case DM_COLOR:
+      LOOKUP_STR( ctx_color, dev-> dmColor);
+      break;
+   case DM_DUPLEX:
+      LOOKUP_STR( ctx_duplex, dev-> dmDuplex);
+      break;
+   case DM_TTOPTION:
+      LOOKUP_STR( ctx_ttoption, dev-> dmTTOption);
+      break;
+   case DM_YRESOLUTION:
+      sprintf( c = buf, "%d", dev-> dmYResolution);
+      break;
+   case DM_COLLATE:
+      sprintf( c = buf, "%d", dev-> dmCollate);
+      break;
+   case DM_FORMNAME:
+      strncpy( c = buf, dev-> dmFormName, CCHFORMNAME);
+      break;
+   default:
+      return false;
+   }
+
+   if ( c) 
+      *value = duplicate_string( c);
+      
+   return true; 
+}
+
+Bool 
+apc_prn_enum_options( Handle self, int * count, char *** options) 
+{ 
+   LPDEVMODE dev = sys s. prn. ppi. pDevMode;
+   int i, size;
+   PrnKey * table;
+
+   *count = 0;
+   objCheck false;
+   if ( !dev) return false;
+
+   if ( !(*options = malloc( sizeof(char*) * 32)))
+      return false;
+
+   for ( 
+	i = 0, 
+	   size = sizeof( ctx_options) / sizeof( PrnKey),
+	   table = ctx_options;
+	i < size;
+	i++, table++
+       ) {
+       if ( dev-> dmFields & table-> value)
+	  (*options)[(*count)++] = table-> name;
+   }
+
+   return true; 
+}
+
+
 #define apiPrnErr       {                  \
    rc = GetLastError();                    \
    if ( rc != 1223 /* ERROR_CANCELLED */)  \

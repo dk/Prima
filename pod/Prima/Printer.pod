@@ -8,6 +8,7 @@ Prima::Printer - system printing services
 
    my $printer = $::application-> get_printer;
    print "printing to ", $printer->printer, "...\n";
+   $p-> options( Orientation => 'Landscape', PaperSize => 'A4');
    if ( $p-> begin_doc) {
       $p-> bar( 0, 0, 100, 100);
       print "another page...\n";
@@ -168,6 +169,23 @@ array of the font encodings, available for the fonts of NAME font family.
 =item new_page
 
 Finalizes the current page and starts a new blank page.
+
+=item options [ OPTION, [ VALUE, [ ... ]]]
+
+Queries and sets printer-specific setup options, such as orientation, paper
+size, etc. If called without parameters, returns list of options the printer
+supports.  If called with one parameter, treats is as the option name and
+return the corresponsing value. Otherwise, treats parameters as a list of
+key-value pairs, and sets the printer options. Returns number of options that were
+successfully set.
+
+The compatibility between options and values used by different OSes is low here.
+The only fully compatible options are C<Orientation>[C<Portrait|Landscape>],
+C<Color>[C<Color|Monochrome>], C<Copies>[C<integer>], and 
+C<PaperSize>[C<AI<integer>|BI<integer>|Executive|Folio|Ledger|Legal|Letter|Tabloid>].
+The other options are OS-dependant. For win32, consult Microsoft manual on
+DEVMODE structure L<http://msdn.microsoft.com/library/en-us/gdi/prntspol_8nle.asp>; 
+for Prima's own PostScript printer, consult L<Prima::PS::Printer>.
 
 =item printers
 

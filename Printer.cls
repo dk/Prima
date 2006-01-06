@@ -43,6 +43,7 @@ object Prima::Printer( Prima::Drawable)
    method SV*    font_encodings( char * encoding = "");
    method void   init( HV * profile);
    method Bool   new_page();
+   public void   options();
    method SV *   printers();
    method Bool   setup_dialog()                     => apc_prn_setup;
    c_only Bool   validate_owner( Handle * newOwner, HV * profile);

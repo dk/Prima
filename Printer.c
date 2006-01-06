@@ -198,6 +198,66 @@ Printer_resolution( Handle self, Bool set, Point resolution)
    return apc_prn_get_resolution( self);
 }
 
+XS( Printer_options_FROMPERL)
+{
+   dXSARGS;
+   Handle self;
+
+   if ( items == 0)
+      croak ("Invalid usage of Printer.options");
+   SP -= items;
+   self = gimme_the_mate( ST( 0));
+   if ( self == nilHandle)
+      croak( "Illegal object reference passed to Printer.options");
+
+   switch ( items) {
+   case 1: {
+      int i, argc = 0;
+      char ** argv;
+      if ( apc_prn_enum_options( self, &argc, &argv)) {
+         EXTEND( sp, argc);
+         for ( i = 0; i < argc; i++)
+            PUSHs( sv_2mortal( newSVpv( argv[i], 0)));
+         free( argv);
+      }
+      PUTBACK;
+      return;    
+   }
+   case 2: {
+      char *option, *value;
+      option = ( char*) SvPV( ST(1), na);
+      if ( apc_prn_get_option( self, option, &value)) {
+         SPAGAIN;
+         XPUSHs( sv_2mortal( newSVpv( value, 0)));
+      } else {
+         SPAGAIN;
+         XPUSHs( nilSV);
+      }
+      PUTBACK;
+      return;    
+   }
+   default: {
+      int i, success = 0;
+      char *option, *value;
+
+      for ( i = 1; i < items; i+=2) {
+         option = ( char*) SvPV( ST(i), na);
+         value  = (SvOK( ST(i+1)) ? ( char*) SvPV( ST(i+1), na) : nil);
+	 if ( !value) continue;
+         if ( !apc_prn_set_option( self, option, value)) continue;
+	 success++;
+      }
+      
+      SPAGAIN;
+      XPUSHs( sv_2mortal( newSViv( success)));
+      PUTBACK;
+      return;    
+   }}
+   return;
+}
+
+void Printer_options          ( Handle self) { warn("Invalid call of Printer::options"); }
+void Printer_options_REDEFINED( Handle self) { warn("Invalid call of Printer::options"); }
 
 #ifdef __cplusplus
 }

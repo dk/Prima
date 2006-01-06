@@ -3307,6 +3307,15 @@ apc_prn_new_page( Handle self);
 extern Bool
 apc_prn_abort_doc( Handle self);
 
+extern Bool
+apc_prn_enum_options( Handle self, int * count, char *** options);
+
+extern Bool
+apc_prn_get_option( Handle self, char * option, char ** value);
+
+extern Bool
+apc_prn_set_option( Handle self, char * option, char * value);
+
 /* fonts */
 extern PFont
 apc_font_default( PFont font);

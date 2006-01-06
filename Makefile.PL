@@ -1115,6 +1115,9 @@ apc_prn_get_size
 apc_prn_new_page
 apc_prn_select
 apc_prn_setup
+apc_prn_enum_options
+apc_prn_get_option
+apc_prn_set_option
 apc_query_drive_type
 apc_query_drives_map
 apc_register_event

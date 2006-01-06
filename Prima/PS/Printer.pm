@@ -499,6 +499,58 @@ sub spool
 	return 1;
 }
 
+sub options
+{
+	my $self = shift;
+
+	if ( 0 == @_) {
+		return qw(
+			Color Resolution PaperSize Copies Scaling Orientation
+			UseDeviceFonts UseDeviceFontsOnly
+		), keys %{$self->{data}->{devParms}};
+	} elsif ( 1 == @_) {
+		# get value
+		my $v = shift;
+		my $d = $self-> {data};
+		return $d->{devParms}->{$v} if exists $d->{devParms}->{$v};
+
+		if ( $v eq 'Orientation') {
+			return $d->{portrait} ? 'Portrait' : 'Landscape'
+		} elsif ( $v eq 'Color') {
+			return $d->{color} ? 'Color' : 'Monochrome'
+		} else {
+			$v = 'page' if $v eq 'PaperSize';
+			$v = lcfirst $v;
+			return $d-> {$v};
+		}
+	} else {
+		my %newdata;
+		my $successfully_set = 0;
+		while ( @_ ) {
+			# set value
+			my ( $opt, $val) = ( shift, shift);
+			my $d = $self-> {data};
+			if ( exists $d->{devParms}->{$opt}) {
+				$newdata{devParms}->{$opt} = $val;
+			} elsif ( $opt eq 'Orientation') {
+				next unless $val =~ /^(?:(Landscape)|(Portrait))$/;
+				$newdata{portrait} = $2 ? 1 : 0;
+			} elsif ( $opt eq 'Color') {
+				next unless $val =~ /^(?:(Color)|(Monochrome))$/;
+				$newdata{color} = $1 ? 1 : 0;
+			} else {
+				$opt = lcfirst $opt;
+				$opt = 'page' if $opt eq 'PaperSize';
+				next unless exists $d->{$opt};
+				$newdata{$opt} = $val;
+			}
+			$successfully_set++;
+		}
+		$self-> data( \%newdata);
+		return $successfully_set;
+	}
+}
+
 package Prima::PS::File;
 use vars qw(@ISA);
 @ISA=q(Prima::PS::Printer);
@@ -587,3 +639,138 @@ sub command
 }
 
 1;
+
+=pod
+
+=head1 Printer options
+
+Below is the list of options supported by C<options> method:
+
+=over
+
+=item Color STRING
+
+One of : C<Color, Monochrome>
+
+=item Resolution INTEGER
+
+Dots per inch.
+
+=item PageSize STRING
+
+One of: C<AI<integer>, BI<integer>, Executive, Folio, Ledger, Legal, Letter, Tabloid,
+US Common #10 Envelope>.
+
+=item Copies INTEGER
+
+=item Scaling FLOAT
+
+1 is 100%, 1.5 is 150%, etc.
+
+=item Orientation
+
+One of : C<Portrait>, C<Landscape>.
+
+=item UseDeviceFonts BOOLEAN
+
+If 1, use limited set of device fonts in addition to exported bitmap fonts.
+
+=item UseDeviceFontsOnly BOOLEAN
+
+If 1, use limited set of device fonts instead of exported bitmap fonts.
+Its usage may lead to that some document fonts will be mismatched.
+
+=item MediaType STRING
+
+An arbitrary string representing special attributes of the medium other
+than its size, color, and weight. This parameter can be used to identify special
+media such as envelopes, letterheads, or preprinted forms.
+
+=item MediaColor STRING
+
+A string identifying the color of the medium.
+
+=item MediaWeight FLOAT
+
+The weight of the medium in grams per square meter. "Basis weight" or
+or null "ream weight" in pounds can be converted to grams per square meter by
+multiplying by 3.76; for example, 10-pound paper is approximately 37.6
+grams per square meter.
+
+=item MediaClass STRING
+
+(Level 3) An arbitrary string representing attributes of the medium
+that may require special action by the output device, such as the selection
+of a color rendering dictionary. Devices should use the value of this
+parameter to trigger such media-related actions, reserving the MediaType
+parameter (above) for generic attributes requiring no device-specific action.
+The MediaClass entry in the output device dictionary defines the allowable
+values for this parameter on a given device; attempting to set it to an unsupported 
+value will cause a configuration error.
+
+=item InsertSheet BOOLEAN
+
+(Level 3) A flag specifying whether to insert a sheet of some special
+medium directly into the output document. Media coming from a source
+for which this attribute is Yes are sent directly to the output bin without
+passing through the device's usual imaging mechanism (such as the fuser
+assembly on a laser printer). Consequently, nothing painted on the current
+page is actually imaged on the inserted medium.   
+
+=item LeadingEdge BOOLEAN
+
+(Level 3) A value specifying the edge of the input medium that will
+enter the printing engine or imager first and across which data will be imaged.
+Values reflect positions relative to a canonical page in portrait orientation
+(width smaller than height). When duplex printing is enabled, the canonical 
+page orientation refers only to the front (recto) side of the medium.
+
+=item ManualFeed BOOLEAN
+
+Flag indicating whether the input medium is to be fed manually by a human
+operator (Yes) or automatically (No). A Yes value asserts that the
+human operator will manually feed media conforming to the specified attributes
+( MediaColor, MediaWeight, MediaType, MediaClass, and InsertSheet). Thus, those 
+attributes are not used to select from available media sources in the normal way, 
+although their values may be presented to the human operator as an aid in selecting 
+the correct medium. On devices that offer more than one manual feeding mechanism, 
+the attributes may select among them.
+
+=item TraySwitch BOOLEAN
+
+(Level 3)  A flag specifying whether the output device supports
+automatic switching of media sources. When the originally selected source
+runs out of medium, some devices with multiple media sources can switch
+automatically, without human intervention, to an alternate source with the
+same attributes (such as PageSize and MediaColor) as the original.   
+
+=item MediaPosition STRING
+
+(Level 3) The position number of the media source to be used.
+This parameter does not override the normal media selection process
+described in the text, but if specified it will be honored - provided it can
+satisfy the input media request in a manner consistent with normal media
+selection - even if the media source it specifies is not the best available
+match for the requested attributes.
+
+=item DeferredMediaSelection BOOLEAN
+
+(Level 3) A flag determining when to perform media selection.
+If Yes, media will be selected by an independent printing subsystem associated
+with the output device itself.
+
+=item MatchAll BOOLEAN
+
+A flag specifying whether input media request should match to all
+non-null values - MediaColor, MediaWeight etc.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Printer>, L<Prima::Drawable>,
+

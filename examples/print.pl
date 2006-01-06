@@ -83,6 +83,14 @@ sub paint
 	$p-> put_image( 320, 300, $i);
 }
 
+sub set_options
+{
+	my ( $opt, $val) = @_;
+
+	return if $p-> options( $opt, $val);
+	message("Error setting printer option '$opt'");
+}
+
 sub print_sample
 {
 	if ( $w-> ListBox1-> get_items($w-> ListBox1-> focusedItem) eq $display) {
@@ -122,7 +130,7 @@ sub print_sample
 		bottom      => 0,
 		valignment  => ta::Center,
 	);
-
+	
 	paint( $p);
 
 	$p-> end_doc;
@@ -161,6 +169,29 @@ $w = Prima::MainWindow-> create(
 			}],
 			[],
 			['~Refresh list' => \&refresh],
+		]],
+		[ '~Options' => [
+			[ "~Orientation" => [
+				[ '~Landscape' => sub { set_options( Orientation => 'Landscape' ) } ],
+				[ '~Portrait' => sub { set_options( Orientation => 'Portrait' ) } ],
+			]],
+			[ "~Color" => [
+				[ '~Color' => sub { set_options( Color => 'Color' ) } ],
+				[ '~Monochrome' => sub { set_options( Color => 'Monochrome' ) } ],
+			]],
+			[ "~PaperSize" => [
+				[ '~A4' => sub { set_options( PaperSize => 'A4' ) } ],
+				[ '~Letter' => sub { set_options( PaperSize => 'Letter' ) } ],
+			]],
+			[],
+			[ "Print all options" => sub {
+				for my $opt ( $p-> options) {
+					my $val = $p-> options( $opt);
+					$val = "<undefined>" unless defined $val;
+					print "$opt:$val\n";
+				}
+				print "---\n";
+			}]
 		]],
 		['E~xit' => sub {$::application-> close}],
 	],

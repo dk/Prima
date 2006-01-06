@@ -483,3 +483,21 @@ apc_prn_get_handle( Handle self)
 }
 
 
+Bool  
+apc_prn_set_option( Handle self, char * option, char * value) 
+{ 
+    return false; 
+}
+
+Bool apc_prn_get_option( Handle self, char * option, char ** value) 
+{ 
+   *value = nil;
+   return false; 
+}
+
+Bool apc_prn_enum_options( Handle self, int * count, char *** options) 
+{ 
+    *count = 0;
+    return false; 
+}
+
