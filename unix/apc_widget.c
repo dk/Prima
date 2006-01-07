@@ -563,6 +563,9 @@ apc_widget_get_pos( Handle self)
 Bool
 apc_widget_get_shape( Handle self, Handle mask)
 {
+#ifndef HAVE_X11_EXTENSIONS_SHAPE_H
+   return false;
+#else
    DEFXX;
    XRectangle *r, *rc;
    int i, count, ordering;
@@ -587,6 +590,7 @@ apc_widget_get_shape( Handle self, Handle mask)
    XFree( rc);
    CImage(mask)-> end_paint( mask);  
    return true;
+#endif   
 }
 
 Point
@@ -1036,6 +1040,9 @@ apc_widget_set_pos( Handle self, int x, int y)
 Bool
 apc_widget_set_shape( Handle self, Handle mask)
 {
+#ifndef HAVE_X11_EXTENSIONS_SHAPE_H
+   return false;
+#else
    DEFXX;
    PImage img;
    Pixmap px;
@@ -1090,6 +1097,7 @@ apc_widget_set_shape( Handle self, Handle mask)
    XX-> shape_offset. x = 0;
    XX-> shape_offset. y = XX-> size. y + XX-> menuHeight - img-> h;
    return true;
+#endif   
 }
 
 /* Used instead of XUnmapWindow sometimes because when a focused

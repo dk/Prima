@@ -1000,6 +1000,7 @@ prima_window_reset_menu( Handle self, int newMenuHeight)
       else
          XX-> size. y -= newMenuHeight - oh;
       
+#ifdef HAVE_X11_EXTENSIONS_SHAPE_H
      if ( XX-> shape_extent. x != 0 || XX-> shape_extent. y != 0) {
         int ny = XX-> size. y + XX-> menuHeight - XX-> shape_extent. y;
         if ( XX-> shape_offset. y != ny) {
@@ -1007,6 +1008,7 @@ prima_window_reset_menu( Handle self, int newMenuHeight)
            XX-> shape_offset. y = ny;
         }
      }
+#endif     
    }
    return ret;
 }
