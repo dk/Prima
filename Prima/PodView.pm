@@ -85,7 +85,7 @@ use constant M_START       => 3; # start of data, same purpose as BLK_START
 
 # topic layout indices
 use constant T_MODEL_START => 0; # beginning of topic
-use constant T_MODEL_END   => 1; # length of a topic
+use constant T_MODEL_END   => 1; # end of a topic
 use constant T_DESCRIPTION => 2; # topic name
 use constant T_STYLE       => 3; # style of STYLE_XXX
 use constant T_ITEM_DEPTH  => 4; # depth of =item recursion
@@ -149,7 +149,7 @@ sub profile_default
 			fontStyle => fs::Underlined   },  
 		],
 		pageName => '',
-		topicView => 1,
+		topicView => 0,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -168,7 +168,7 @@ sub init
 	$self-> {postBlocks} = {};
 	$self-> {topics}     = [];
 	$self-> {hasIndex}   = 0;
-	$self-> {topicView}  = 1;
+	$self-> {topicView}  = 0;
 	$self-> {lastLinkPointer} = -1;
 	my %profile = $self-> SUPER::init(@_);
 
@@ -306,6 +306,7 @@ sub load_link
 
 	unless ( defined $t) { # page / section / item
 		my ( $page, $section, $item, $lead_slash) = ( '', '', 1, '');
+		my $default_topic = 0;
 
 		if ( $s =~ /^file:\/\/(.*)$/) {
 			$page = $1;
@@ -350,7 +351,7 @@ sub load_link
 		}
 
 		if ( ! defined $t) {
-			$t = -1 if length $page && $self-> {topicView};
+			$t = $default_topic if length $page && $self-> {topicView};
 			my $tid = -1;
 			for ( @{$self-> {topics}}) {
 				$tid++;
@@ -803,40 +804,108 @@ sub close_read
 	$topicView = $self-> {topicView} unless defined $topicView;
 	$self-> add( "\n", STYLE_TEXT, 0); # end
 	$self-> {contents}-> [0]-> references( $self-> {links});
-	my $topic;
-	if ( $topicView) { # generate index list
-		my $secid = 0;
-		my $msecid = scalar(@{$self-> {topics}});
-		if ( $msecid > 0) {
-			my $ofs = $self-> {model}-> [$self-> {topics}-> [0]-> [T_MODEL_START]]-> [M_TEXT_OFFSET];
-			my $firstText = substr( ${$self-> {text}}, 0, ( $ofs > 0) ? $ofs : 0);
-			if ( $firstText =~ /[^\n\s\t]/) { # the 1st lines of text are not =head 
-				unshift @{$self-> {topics}}, [ 
-					0, $self-> {topics}-> [0]-> [T_MODEL_START] - 1,
-					"Preface", STYLE_HEAD_1, 0, 0 
-				];
-				$msecid++;
-			}
-			$self-> add( "Index",  STYLE_HEAD_1, 0);
-			$self-> {hasIndex} = 1;
-			for my $k ( @{$self-> {topics}}) {
-				last if $secid == $msecid; # do not add 'Index' entry
-				my ( $ofs, $end, $text, $style, $depth, $linkStart) = @$k;
-				my $indent = ( $style - STYLE_HEAD_1 + $depth ) * 2;
-				$self-> add("L<$text|topic://$secid>\n", STYLE_TEXT, $indent);
-				$self-> add("\n", STYLE_TEXT, 0);
-				$secid++;
-			}
-			# select index page
-			$topic = $self-> {topics}-> [$msecid];
-		} elsif ( scalar @{$self-> {model}} > 2) { # no =head's, but some info
-		push @{$self-> {topics}}, [ 0, scalar @{$self-> {model}} - 1,
-			"Document", STYLE_HEAD_1, 0, 0 ];
-		} 
-	} 
+
+	my $secid = 0;
+	my $msecid = scalar(@{$self-> {topics}});
+
+	unless ( $msecid) {
+		push @{$self-> {topics}}, [ 
+			0, scalar @{$self-> {model}} - 1,
+			"Document", STYLE_HEAD_1, 0, 0 
+		] if scalar @{$self-> {model}} > 2; # no =head's, but some info
+		goto NO_INDEX;
+	}
+
+	## this code creates the Index section, adds it to the end of text,
+	## and then uses black magic to put it in the front.
+
+	# remember the current end state
+	my $r = $self-> {readState};
+	my @text_ends_at = ( 
+		$r-> {bigofs}, 
+		scalar @{$self->{model}},
+		scalar @{$self->{topics}},
+		scalar @{$self->{links}},
+	);
+
+	# generate index list
+	my $ofs = $self-> {model}-> [$self-> {topics}-> [0]-> [T_MODEL_START]]-> [M_TEXT_OFFSET];
+	my $firstText = substr( ${$self-> {text}}, 0, ( $ofs > 0) ? $ofs : 0);
+	if ( $firstText =~ /[^\n\s\t]/) { # the 1st lines of text are not =head 
+		unshift @{$self-> {topics}}, [ 
+			0, $self-> {topics}-> [0]-> [T_MODEL_START] - 1,
+			"Preface", STYLE_HEAD_1, 0, 0 
+		];
+		$text_ends_at[2]++;
+		$msecid++;
+	}
+	$self-> add( "Index",  STYLE_HEAD_1, 0);
+	$self-> {hasIndex} = 1;
+	for my $k ( @{$self-> {topics}}) {
+		last if $secid == $msecid; # do not add 'Index' entry
+		my ( $ofs, $end, $text, $style, $depth, $linkStart) = @$k;
+		my $indent = ( $style - STYLE_HEAD_1 + $depth ) * 2;
+		$self-> add("L<$text|topic://$secid>\n", STYLE_TEXT, $indent);
+		$self-> add("\n", STYLE_TEXT, 0);
+		$secid++;
+	}
+
 	$self-> _close_topic( STYLE_HEAD_1);
+
+	# remember the state after index is added
+	my @index_ends_at = ( 
+		$r-> {bigofs}, 
+		scalar @{$self->{model}},
+		scalar @{$self->{topics}},
+		scalar @{$self->{links}},
+	);
+
+	# exchange places for index and body
+	my @offsets = map { $index_ends_at[$_] - $text_ends_at[$_] } 0 .. 3;
+	my $m = $self-> {model};
+	# first shift the offsets
+	$$_[M_TEXT_OFFSET] += $offsets[0]      for @$m[0..$text_ends_at[1]-1];
+	$$_[M_TEXT_OFFSET] -= $text_ends_at[0] for @$m[$text_ends_at[1]..$index_ends_at[1]-1];
+	# next reshuffle the model
+	unshift @$m, splice( @$m, $text_ends_at[1]);
+	# text
+	my $t = $self-> {text};
+	my $ts = substr( $$t, $text_ends_at[0]);
+	substr( $$t, $text_ends_at[0]) = '';
+	substr( $$t, 0, 0) = $ts;
+	# topics
+	my $t = $self-> {topics};
+	for ( @$t[0..$text_ends_at[2]-1]) {
+		$$_[T_MODEL_START] += $offsets[1];
+		$$_[T_MODEL_END]   += $offsets[1];
+		$$_[T_LINK_OFFSET] += $offsets[3];
+	}
+	for ( @$t[$text_ends_at[2]..$index_ends_at[2]-1]) {
+		$$_[T_MODEL_START] -= $text_ends_at[1];
+		$$_[T_MODEL_END]   -= $text_ends_at[1];
+		$$_[T_LINK_OFFSET] -= $text_ends_at[3];
+	}
+	unshift @$t, splice( @$t, $text_ends_at[2]);
+	# update the map of blocks that contain OP_LINKs
+	$self-> {postBlocks} = {
+		map { 
+			( $_ >= $text_ends_at[1]) ? 
+			( $_ - $text_ends_at[1] ) :
+			( $_ + $offsets[1] ),
+			1
+		} keys %{$self-> {postBlocks}}
+	};
+	# links
+	my $l = $self-> {links};
+	s/^(topic:\/\/)(\d+)$/$1 . ( $2 + $offsets[2])/e for @$l;
+	unshift @{$self->{links}}, splice( @{$self->{links}}, $text_ends_at[3]);
+
+	# finalize
 	undef $self-> {readState};
 	$self-> {lastLinkPointer} = -1;
+
+	my $topic;
+	$topic = $self-> {topics}-> [$msecid] if $topicView;
 	$self-> select_topic( $topic);
 
 	$self-> notify(q(NewPage));
