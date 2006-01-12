@@ -229,6 +229,7 @@ XS( Printer_options_FROMPERL)
       if ( apc_prn_get_option( self, option, &value)) {
          SPAGAIN;
          XPUSHs( sv_2mortal( newSVpv( value, 0)));
+	 free( value);
       } else {
          SPAGAIN;
          XPUSHs( nilSV);
