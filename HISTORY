@@ -1,3 +1,5 @@
+1.20  Add Printer::options
+
 1.19  Add Lists::vertical. Implement scrollable groups and notebooks.
       Make file and font dialogs resizeable.
 
