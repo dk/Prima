@@ -882,7 +882,7 @@ sub close_read
 	substr( $$t, $text_ends_at[0]) = '';
 	substr( $$t, 0, 0) = $ts;
 	# topics
-	my $t = $self-> {topics};
+	$t = $self-> {topics};
 	for ( @$t[0..$text_ends_at[2]-1]) {
 		$$_[T_MODEL_START] += $offsets[1];
 		$$_[T_MODEL_END]   += $offsets[1];
