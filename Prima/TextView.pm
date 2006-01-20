@@ -71,9 +71,11 @@ use constant X_FLAGS => 3;
 
 # OP_TRANSPOSE - X_FLAGS constants
 use constant X_DIMENSION_PIXEL       => 0;
-use constant X_DIMENSION_FONT_HEIGHT => 1; # used only in formatting
 use constant X_TRANSPOSE             => 0;
-use constant X_EXTEND                => 2;
+use constant X_EXTEND                => 1;
+# formatting flags
+use constant X_DIMENSION_FONT_HEIGHT => 2; # multiply by font height
+use constant X_DIMENSION_POINT       => 4; # multiply by resolution / 72
 
 # block header indices
 use constant  BLK_FLAGS            => 0;
@@ -182,6 +184,7 @@ sub profile_default
 		paneWidth       => 0,
 		paneHeight      => 0,
 		paneSize        => [0,0],
+		resolution      => [ $::application-> resolution ],
 		topLine         => 0,
 		scaleChildren   => 0,
 		selectable      => 1,
@@ -219,11 +222,13 @@ sub init
 	$self-> {colorMap} = [];
 	$self-> {fontPalette} = [];
 	$self-> {blocks} = [];
+	$self-> {resolution} = [];
 	$self-> {defaultFontSize} = $self-> font-> size;
 	$self-> {selection}   = [ -1, -1, -1, -1];
 	$self-> {selectionPaintMode} = 0;
 	$self-> {ymap} = [];
 	$self-> setup_indents;
+	$self-> resolution( @{$profile{resolution}});
 	for ( qw( autoHScroll autoVScroll colorMap fontPalette 
 				hScroll vScroll borderWidth paneWidth paneHeight 
 				offset topLine textRef))
@@ -364,6 +369,14 @@ sub offset
 		$self-> {scrollTransaction} = 0;
 	}
 	$self-> scroll( -$dt, 0, clipRect => [ $self-> get_active_area(0, @sz)]);
+}
+
+sub resolution
+{
+	return @{$_[0]->{resolution}} unless $#_;
+	my ( $self, $x, $y) = @_;
+	die "Invalid resolution\n" if $x <= 0 or $y <= 0;
+	@{$self-> {resolution}} = ( $x, $y);
 }
 
 sub topLine
@@ -667,7 +680,12 @@ sub block_wrap
 				$r[ tb::X_X] *= $f_taint-> {height};
 				$r[ tb::X_Y] *= $f_taint-> {height};
 				$r[ tb::X_FLAGS] &= ~ tb::X_DIMENSION_FONT_HEIGHT;
-			} 
+			}
+			if ( $$b[ $i + tb::X_FLAGS] & tb::X_DIMENSION_POINT) {
+				$r[ tb::X_X] *= $self-> {resolution}-> [0] / 72;
+				$r[ tb::X_Y] *= $self-> {resolution}-> [1] / 72;
+				$r[ tb::X_FLAGS] &= ~tb::X_DIMENSION_POINT;
+			}
 # print "advance block $x $r[tb::X_X]\n";
 			if ( $x + $r[tb::X_X] >= $width) {
 				if ( $wrapmode) {
@@ -930,7 +948,8 @@ sub block_draw
 			}
 			$f_taint = undef;
 		} elsif (( $cmd == tb::OP_TRANSPOSE) && !($$b[ $i + tb::X_FLAGS] & tb::X_EXTEND)) {
-			( $x, $y) = ( $x + $$b[ $i + tb::X_X], $y + $$b[ $i + tb::X_Y]);
+			$x += $$b[ $i + tb::X_X];
+			$y += $$b[ $i + tb::X_Y];
 		} elsif ( $cmd == tb::OP_CODE) {
 			unless ( $f_taint) {
 				$self-> realize_state( $canvas, \@state, tb::REALIZE_FONTS); 
@@ -1755,8 +1774,13 @@ Contains a mark for an empty space. The space is extended to the relative coordi
 so the block extension algorithms take this opcode in the account. If FLAGS does not contain
 C<tb::X_EXTEND>, then in addition to the block expansion, current coordinate is also
 moved to (X,Y). In this regard, C<(OP_TRANSPOSE,0,0,0)> and C<(OP_TRANSPOSE,0,0,X_EXTEND)> are
-identical and are empty operators. A special flag C<X_DIMENSION_FONT_HEIGHT> is only in effect with
-L<block_wrap> function. It indicates that (X,Y) values must be multiplied to the current font height.
+identical and are empty operators. 
+
+There are formatting-only flags,in effect with L<block_wrap> function.
+C<X_DIMENSION_FONT_HEIGHT> indicates that (X,Y) values must be multiplied to
+the current font height.  Another flag C<X_DIMENSION_POINT> does the same but
+multiplies by current value of L<resolution> property divided by 72 (
+basically, treats X and Y not as pixel but point values).
 
 C<OP_TRANSPOSE> can be used for customized graphics, in conjunction with C<OP_CODE>
 to assign a space, so the rendering
