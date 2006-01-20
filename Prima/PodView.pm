@@ -148,8 +148,8 @@ sub profile_default
 			{ color     => COLOR_LINK_FOREGROUND,     # STYLE_LINK
 			fontStyle => fs::Underlined   },  
 		],
-		pageName => '',
-		topicView => 0,
+		pageName   => '',
+		topicView  => 0,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -659,16 +659,20 @@ sub add_formatted
 					next unless $src;
 					$w = $src-> width unless $w;
 					$h = $src-> height unless $h;
+					my @resolution = $self-> resolution;
+					$w *= 72 / $resolution[0];
+					$h *= 72 / $resolution[1];
 					$src-> {stretch} = [$w, $h];
 					$self-> {readState}-> {pod_cutting} = $cut ? 0 : 1
 						if defined $cut;
 
 					my @imgop = (
-								tb::wrap(0),
-								tb::extend( $w, $h),
-								tb::code( \&_imgpaint, $src),
-								tb::moveto( $w, 0),
-								tb::wrap(1));
+						tb::wrap(0),
+						tb::extend( $w, $h, tb::X_DIMENSION_POINT),
+						tb::code( \&_imgpaint, $src),
+						tb::moveto( $w, 0, tb::X_DIMENSION_POINT),
+						tb::wrap(1)
+					);
 
 					if ( @{$self-> {model}}) {
 						push @{$self-> {model}-> [-1]}, @imgop;
@@ -688,11 +692,15 @@ sub add_formatted
 sub _imgpaint
 {
 	my ( $self, $canvas, $block, $state, $x, $y, $img) = @_;
-	$canvas-> stretch_image( $x, $y, @{$img-> {stretch}}, $img);
+	my ( $dx, $dy) = @{$img->{stretch}};
+	my @res = $self-> resolution;
+	$dx *= $res[0] / 72;
+	$dy *= $res[1] / 72;
+	$canvas-> stretch_image( $x, $y, $dx, $dy, $img);
 	if ( $self-> {selectionPaintMode}) {
 		my @save = ( fillPattern => $canvas-> fillPattern, rop => $canvas-> rop);
 		$canvas-> set( fillPattern => fp::Borland, rop => rop::AndPut);
-		$canvas-> bar( $x, $y, $x + $img-> {stretch}-> [0] - 1, $y + $img-> {stretch}-> [1] - 1);
+		$canvas-> bar( $x, $y, $x + $dx - 1, $y + $dy - 1);
 		$canvas-> set( @save);
 	}
 }
