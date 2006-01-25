@@ -625,6 +625,7 @@ prima_init_font_subsystem( char * error_buf)
    prima_font_pp2font( "fixed", nil);
    Fdebug("font: init\n");
    if ( do_default_font) {
+      XrmPutStringResource( &guts.db, "Prima.font", do_default_font);
       prima_font_pp2font( do_default_font, &guts. default_font);
       free( do_default_font);
       do_default_font = nil;
@@ -671,6 +672,7 @@ prima_init_font_subsystem( char * error_buf)
 #define DEBUG_FONT(font) font.height,font.width,font.size,font.name,font.encoding
    Fdebug("default font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_font));
    if ( do_menu_font) {
+      XrmPutStringResource( &guts.db, "Prima.menu_font", do_menu_font);
       prima_font_pp2font( do_menu_font, &guts. default_menu_font);
       free( do_menu_font);
       do_menu_font = nil;
@@ -681,6 +683,7 @@ prima_init_font_subsystem( char * error_buf)
    Fdebug("menu font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_menu_font));
    
    if ( do_widget_font) {
+      XrmPutStringResource( &guts.db, "Prima.widget_font", do_widget_font);
       prima_font_pp2font( do_widget_font, &guts. default_widget_font);
       free( do_widget_font);
       do_widget_font = nil;
@@ -691,6 +694,7 @@ prima_init_font_subsystem( char * error_buf)
    Fdebug("widget font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_widget_font));
    
    if ( do_msg_font) {
+      XrmPutStringResource( &guts.db, "Prima.message_font", do_widget_font);
       prima_font_pp2font( do_msg_font, &guts. default_msg_font);
       free( do_msg_font);
       do_msg_font = nil;
@@ -701,6 +705,7 @@ prima_init_font_subsystem( char * error_buf)
    Fdebug("msg font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_msg_font));
    
    if ( do_caption_font) {
+      XrmPutStringResource( &guts.db, "Prima.caption_font", do_widget_font);
       prima_font_pp2font( do_caption_font, &guts. default_caption_font);
       free( do_caption_font);
       do_caption_font = nil;
