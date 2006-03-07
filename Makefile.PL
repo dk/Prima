@@ -1288,7 +1288,7 @@ sub setup_paths
 			qd("/usr/X/include"), 
 			qd("/usr/openwin/include")
 		);
-		die "Prima needs X11 headers for compilation! Set X11BASE='/path/to/X' if you have a non-standard path to X. $extramsg\n" 
+		die "Prima needs X11 headers for compilation! Set X11BASE='/path/to/X' or INCPATH+='/path/to/X/include' if you have a non-standard path to X. $extramsg\n" 
 			unless defined $incpath;
 		if ( -d $incpath) {
 			print "X11 includes found in $incpath\n";
@@ -1303,7 +1303,7 @@ sub setup_paths
 			"/usr/X/lib",
 			"/usr/openwin/lib"
 		);
-		die "Prima needs X11 libraries for compilation! Set X11BASE='/path/to/X' if you have a non-standard path to X. $extramsg\n" 
+		die "Prima needs X11 libraries for compilation! Set X11BASE='/path/to/X' or LIBPATH+='/path/to/X/lib' if you have a non-standard path to X. $extramsg\n" 
 			unless defined $libpath;
 		if ( -d $libpath) {
 			print "X11 libraries found in $libpath\n";
