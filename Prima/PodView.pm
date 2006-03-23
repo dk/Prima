@@ -908,6 +908,7 @@ sub close_read
 	s/^(topic:\/\/)(\d+)$/$1 . ( $2 + $offsets[2])/e for @$l;
 	unshift @{$self->{links}}, splice( @{$self->{links}}, $text_ends_at[3]);
 
+NO_INDEX:
 	# finalize
 	undef $self-> {readState};
 	$self-> {lastLinkPointer} = -1;
