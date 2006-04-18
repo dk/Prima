@@ -739,11 +739,8 @@ sub setup_variables
 	} elsif ( $CC =~ /^(\S*\/)?cc\b/ ) {
 		$COMPILER = 'cc';
 	} else {
-		print "($CC is unknown, using gcc instead) ";
-		$COMPILER = 'gcc';
-		$CC = 'gcc' unless defined $USER_VARS{CC};
-		$USER_VARS{LD} = 'gcc' unless defined $USER_VARS{LD};
-		$USER_VARS{CFLAGS} = '' unless defined $USER_VARS{CFLAGS};
+		print "($CC is unknown, assuming COMPILER=cc) ";
+		$COMPILER = 'cc';
 	}
 	print "$cc_specs{ $COMPILER}->{ name}\n";
 
