@@ -780,7 +780,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
    os = FcObjectSetBuild( FC_FAMILY, FC_CHARSET, FC_ASPECT, 
         FC_SLANT, FC_WEIGHT, FC_SIZE, FC_PIXEL_SIZE, FC_SPACING,
         FC_FOUNDRY, FC_SCALABLE, FC_DPI,
-        0);
+        (void*) 0);
    s = FcFontList( 0, pat, os);
    FcObjectSetDestroy( os);
    FcPatternDestroy( pat);
