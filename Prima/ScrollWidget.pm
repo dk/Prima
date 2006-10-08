@@ -92,13 +92,12 @@ sub reset_scrolls
 	my ($x, $y) = $self-> get_active_area(2);
 	my ($w, $h) = $self-> limits;
 	my $reread;
-	$self-> {winX} = $x;
-	$self-> {winY} = $y;
+	@{$self}{qw(winX winY)} = ($x, $y);
 
 	if ( $self-> {autoHScroll} and $self->{autoVScroll} and 
 			( $self-> {hScroll} or $self-> {vScroll})
 		) {
-		# avoid the special case when two scrollbars are unncessary, but are present
+		# avoid the special case when two scrollbars are unnecessary, but are present
 		# since they obscure parts of the panel that would have been visible fully,
 		# if not for the scrollbars
 		my $dx = $self->{vScroll} ? $Prima::ScrollBar::stdMetrics[0] : 0;
@@ -106,6 +105,7 @@ sub reset_scrolls
 		if ( $x + $dx >= $w and $y + $dy >= $h) {
 			$self-> hScroll(0) if $self->{hScroll};
 			$self-> vScroll(0) if $self->{vScroll};
+			@{$self}{qw(winX winY)} = $self-> get_active_area(2);
 			$self-> set_deltas( $self->{deltaX}, $self->{deltaY});
 			return;
 		}
@@ -120,7 +120,7 @@ sub reset_scrolls
 	}
 	if ( $self-> {autoVScroll}) {
 		if ( $reread) {
-			($x, $y) = $self-> get_active_area(2);
+			@{$self}{qw(winX winY)} = ($x, $y) = $self-> get_active_area(2);
 			$reread = 0;
 		}
 		my $vs = ( $y < $h) ? 1 : 0;
@@ -130,21 +130,21 @@ sub reset_scrolls
 		}
 	}
 	if ( $reread) {
-		($x, $y) = $self-> get_active_area(2);
+		@{$self}{qw(winX winY)} = ($x, $y) = $self-> get_active_area(2);
 	}
 
 	if ( $self-> {hScroll}) {
 		$self-> {hScrollBar}-> set(
-		max     => $x < $w ? $w - $x : 0,
-		whole   => $w,
-		partial => $x < $w ? $x : $w,
+			max     => $x < $w ? $w - $x : 0,
+			whole   => $w,
+			partial => $x < $w ? $x : $w,
 		);
 	}
 	if ( $self-> {vScroll}) {
 		$self-> {vScrollBar}-> set(
-		max     => $y < $h ? $h - $y : 0,
-		whole   => $h,
-		partial => $y < $h ? $y : $h,
+			max     => $y < $h ? $h - $y : 0,
+			whole   => $h,
+			partial => $y < $h ? $y : $h,
 		);
 	}
 	$self-> set_deltas( $self->{deltaX}, $self->{deltaY});
