@@ -162,6 +162,27 @@ sub on_paint
 	);
 }
 
+sub on_keydown
+{
+	my ( $self, $code, $key, $mod) = @_;
+
+	return unless grep { $key == $_ } (
+		kb::Left, kb::Right, kb::Down, kb::Up
+	);
+
+	my $xstep = int($self-> width  / 5) || 1;
+	my $ystep = int($self-> height / 5) || 1;
+
+	my ( $dx, $dy) = $self-> deltas;
+
+	$dx += $xstep if $key == kb::Right;
+	$dx -= $xstep if $key == kb::Left;
+	$dy += $ystep if $key == kb::Down;
+	$dy -= $ystep if $key == kb::Up;
+
+	$self-> deltas( $dx, $dy);
+}
+
 sub set_alignment
 {
 	$_[0]-> {alignment} = $_[1];
