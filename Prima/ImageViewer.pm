@@ -264,7 +264,7 @@ sub set_zoom
 	my ( $self, $zoom) = @_;
 
 	$zoom = 100 if $zoom > 100;
-	$zoom = 1 if $zoom <= 0.01;
+	$zoom = 0.02 if $zoom < 0.02;
 
 	my $dv = int( 100 * ( $zoom - int( $zoom)) + 0.5);
 	$dv-- if ($dv % 2) and ( $dv % 5);
