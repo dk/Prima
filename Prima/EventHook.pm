@@ -138,7 +138,7 @@ Prima::EventHook - event filtering
 	Prima::EventHook::install( \&hook, 
 		param    => $my_param,
 		object   => $my_window, 
-		name     => [qw(Size Move Destroy)],
+		event    => [qw(Size Move Destroy)],
 		children => 1
 	);
 
@@ -172,9 +172,9 @@ Rules can contain the following keys:
 
 =over
 
-=item name
+=item event
 
-Name is either a string, an array of strings, or C<undef> value.  In the latter
+Event is either a string, an array of strings, or C<undef> value.  In the latter
 case it is equal to C<'*'> string, which selects all events to be passed in the
 SUB. A string is either name of an event, or one of pre-defined event groups, 
 declared in C<%groups> package hash. The group names are:
@@ -190,7 +190,7 @@ declared in C<%groups> package hash. The group names are:
 
 These contain respective events. See source for detailed description.
 
-In case C<'name'> key is an array of strings, each of the strings is
+In case C<'event'> key is an array of strings, each of the strings is
 also name of either an event or a group. In this case, if C<'*'> string
 or event duplicate names are present in the list, SUB is called several
 times which is obviously inefficient.
