@@ -603,8 +603,13 @@ get_view_ex( Handle self, PViewProfile p)
   if ( !p) return;
   p-> capture   = apc_widget_is_captured( self);
   for ( i = 0; i <= ciMaxId; i++) p-> colors[ i] = apc_widget_get_color( self, i);
-  p-> pos       = apc_widget_get_pos( self);
-  p-> size      = apc_widget_get_size( self);
+  if ( sys className == WC_FRAME) {
+     p-> pos       = apc_window_get_client_pos( self);
+     p-> size      = apc_window_get_client_size( self);
+  } else {
+     p-> pos       = apc_widget_get_pos( self);
+     p-> size      = apc_widget_get_size( self);
+  }
   p-> virtSize  = var virtualSize;
   p-> enabled   = apc_widget_is_enabled( self);
   p-> focused   = apc_widget_is_focused( self);
@@ -620,7 +625,11 @@ set_view_ex( Handle self, PViewProfile p)
   apc_widget_set_visible( self, false);
   for ( i = 0; i <= ciMaxId; i++) apc_widget_set_color( self, p-> colors[i], i);
   apc_widget_set_font( self, &var font);
-  apc_widget_set_rect( self, p-> pos. x, p-> pos. y, p-> size.x, p-> size.y);
+  if ( sys className == WC_FRAME) {
+     apc_window_set_client_rect( self, p-> pos. x, p-> pos. y, p-> size.x, p-> size.y);
+  } else {
+     apc_widget_set_rect( self, p-> pos. x, p-> pos. y, p-> size.x, p-> size.y);
+  }
   var virtualSize = p-> virtSize;
   apc_widget_set_enabled( self, p-> enabled);
   if ( p-> focused) apc_widget_set_focused( self);
@@ -755,7 +764,11 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
    {
       int i;
       Handle oldOwner = var owner; var owner = owner;
-      apc_widget_set_rect( self, vprf-> pos. x, vprf-> pos. y, vprf-> size. x, vprf-> size. y);
+      if ( sys className == WC_FRAME) {
+         apc_window_set_client_rect( self, vprf-> pos. x, vprf-> pos. y, vprf-> size. x, vprf-> size. y);
+      } else {
+         apc_widget_set_rect( self, vprf-> pos. x, vprf-> pos. y, vprf-> size. x, vprf-> size. y);
+      }
       var owner = oldOwner;
       for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
       if ( sys className == WC_FRAME)
@@ -872,11 +885,15 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
   if ( usePos) apt_set( aptWinPosDetermined);
   if ( reset)
   {
-     Handle oldOwner = var owner; var owner = owner;
+     Handle oldOwner = var owner; 
+     
+     var owner = owner;
      apc_window_set_window_state( self, windowState);
      var owner = oldOwner;
      set_view_ex( self, &vprf);
      sys s. window = ws;
+     if ( windowState != wsMaximized)
+        GetWindowRect( HANDLE, &wp. rcNormalPosition);
      if ( !SetWindowPlacement( HANDLE, &wp)) apiErr;
      var stage = oStage;
   }
