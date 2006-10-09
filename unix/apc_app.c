@@ -373,6 +373,8 @@ init_x11( char * error_buf )
    gethostname( hostname, 256);
    hostname[255] = '\0';
    XStringListToTextProperty((char **)&hostname, 1, &guts. hostname);
+   
+   guts. net_wm_maximization = prima_wm_net_state_read_maximization( guts. root, NET_SUPPORTED);
 
    if ( do_sync) XSynchronize( DISP, true);
    return true;
