@@ -491,6 +491,7 @@ sub message
 	my ( $self, $message, $error) = @_;
 	my $x;
 	$self-> open_read;
+	$self-> {readState}-> {createIndex} = 0;
 	if ( $error) {
 		$x = $self-> {styles}-> [STYLE_HEAD_1]-> {color};
 		$self-> {styles}-> [STYLE_HEAD_1]-> {color} = cl::Red;
@@ -614,6 +615,8 @@ sub open_read
 
 		topicStack   => [[-1]],
 		ignoreFormat => 0,
+
+		createIndex  => 1,
 	};
 }
 
@@ -812,6 +815,8 @@ sub close_read
 	$topicView = $self-> {topicView} unless defined $topicView;
 	$self-> add( "\n", STYLE_TEXT, 0); # end
 	$self-> {contents}-> [0]-> references( $self-> {links});
+
+	goto NO_INDEX unless $self-> {readState}-> {createIndex};
 
 	my $secid = 0;
 	my $msecid = scalar(@{$self-> {topics}});
