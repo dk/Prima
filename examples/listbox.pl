@@ -57,7 +57,7 @@ sub create_menu
 			["Delete a~ll" => sub{$_[0]-> ListBox1-> delete_items(0..$_[0]-> ListBox1-> count )}],
 			[],
 			["~Print all" => "PrintAll"],
-			["Print ~selected" => sub{foreach ($_[0]-> ListBox1-> selectedItems){print "$_\n"};}],
+			["Print ~selected" => sub{foreach (@{$_[0]-> ListBox1-> selectedItems}){print "$_\n"};}],
 			["Print ~focused" => sub{ print $_[0]-> ListBox1-> focusedItem."\n";}],
 			[],
 			["Toggle ~extended selection"=> sub{$_[0]-> ListBox1-> extendedSelect(!$_[0]-> ListBox1-> extendedSelect)}],
