@@ -1132,12 +1132,12 @@ Image_extract( Handle self, int x, int y, int width, int height)
 void
 Image_map( Handle self, Color color)
 {
-   Byte * d;
+   Byte * d, b[2];
    RGBColor c;   
    int   type = var-> type, height = var-> h, i, ls;
    int   rop[2]; 
    RGBColor r[2];
-   int b[2], bc = 0;
+   int bc = 0;
 
    if ( var-> data == nil) return;
 
@@ -1186,6 +1186,7 @@ Image_map( Handle self, Color color)
          r[i]. r = ~ r[i]. r;
          r[i]. g = ~ r[i]. g;
          r[i]. b = ~ r[i]. b;
+	 b[i]    = ~ b[i];
       }
    }         
 
@@ -1243,7 +1244,7 @@ Image_map( Handle self, Color color)
             case ropNoOper:     
                break;   
             case ropInvert:     
-               data-> r = ~r[z]. r; data-> g = ~r[z]. g; data-> b = ~r[z]. b; break;
+               data-> r = ~data-> r; data-> g = ~data-> g; data-> b = ~data-> b; break;
             default:            
                data-> r = r[z]. r; data-> g = r[z]. g; data-> b = r[z]. b;
             }      
@@ -1276,7 +1277,7 @@ Image_map( Handle self, Color color)
             case ropNoOper:     
                break;   
             case ropInvert:     
-               *data = ~b[z]; break;
+               *data = ~(*data); break;
             default:            
                *data = b[z]; break;
             }      
