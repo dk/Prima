@@ -382,7 +382,7 @@ NOSCALE:
    if ( PImage( dest)-> type == imbpp8) {
       /* equalize palette */
       Byte colorref[256], *s;
-      int i = PImage( src)-> dataSize;
+      int sz, i = PImage( src)-> dataSize;
       if ( !newObject) {
          src = CImage( src)-> dup( src);
          if ( !src) goto EXIT;
@@ -393,6 +393,9 @@ NOSCALE:
          PImage( dest)-> palette, PImage( dest)-> palSize,
          colorref);
       s = PImage( src)-> data;
+      /* identity transform for padded ( 1->xfff, see above ) pixels */
+      for ( sz = PImage( src)-> palSize; sz < 256; sz++) 
+         colorref[sz] = sz;
       while ( i--) {
          *s = colorref[ *s];
          s++;
