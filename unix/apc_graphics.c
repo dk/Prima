@@ -56,30 +56,17 @@ static int rop_map[] = {
    GXand	/* ropAndPut */,		/* dest &= src */
    GXor		/* ropOrPut */,			/* dest |= src */
    GXcopyInverted /* ropNotPut */,		/* dest = !src */
-   GXnoop	/* ropNotBlack */,		/* dest = (src <> 0) ? src */	/* XXX */
-   GXnoop	/* ropNotDestXor */,		/* dest = (!dest) ^ src */	/* XXX */
+   GXinvert	/* ropInvert */,		/* dest = !dest */
+   GXclear	/* ropBlackness */,		/* dest = 0 */
    GXandReverse	/* ropNotDestAnd */,		/* dest = (!dest) & src */
    GXorReverse	/* ropNotDestOr */,		/* dest = (!dest) | src */
-   GXequiv	/* ropNotSrcXor */,		/* dest ^= !src */
+   GXset	/* ropWhiteness */,		/* dest = 1 */
    GXandInverted /* ropNotSrcAnd */,		/* dest &= !src */
    GXorInverted	/* ropNotSrcOr */,		/* dest |= !src */
-   GXnoop	/* ropNotXor */,		/* dest = !(src ^ dest) */	/* XXX */
+   GXequiv	/* ropNotXor */,		/* dest ^= !src */
    GXnand	/* ropNotAnd */,		/* dest = !(src & dest) */
    GXnor	/* ropNotOr */,			/* dest = !(src | dest) */
-   GXnoop	/* ropNotBlackXor */,		/* dest ^= (src <> 0) ? src */	/* XXX */
-   GXnoop	/* ropNotBlackAnd */,		/* dest &= (src <> 0) ? src */	/* XXX */
-   GXnoop	/* ropNotBlackOr */,		/* dest |= (src <> 0) ? src */	/* XXX */
-   GXnoop	/* ropNoOper */,		/* dest = dest */
-   GXclear	/* ropBlackness */,		/* dest = 0 */
-   GXset	/* ropWhiteness */,		/* dest = white */
-   GXinvert	/* ropInvert */,		/* dest = !dest */
-   GXnoop	/* ropPattern */,		/* dest = pattern */		/* YYY */
-   GXnoop	/* ropXorPattern */,		/* dest ^= pattern */		/* YYY */
-   GXnoop	/* ropAndPattern */,		/* dest &= pattern */		/* YYY */
-   GXnoop	/* ropOrPattern */,		/* dest |= pattern */		/* YYY */
-   GXnoop	/* ropNotSrcOrPat */,		/* dest |= pattern | (!src) */	/* YYY */
-   GXnoop	/* ropSrcLeave */,		/* dest = (src != fore color) ? src : figa */	/* YYY */
-   GXnoop	/* ropDestLeave */,		/* dest = (src != back color) ? src : figa */	/* YYY */
+   GXnoop	/* ropNoOper */			/* dest = dest */
 };
 
 int

@@ -311,40 +311,42 @@ apc_gp_line ( Handle self, int x1, int y1, int x2, int y2)
 
 static int ctx_rop2ROP[] = {
    ropCopyPut,      ROP_SRCCOPY,
-   ropOrPut,        ROP_SRCPAINT,
    ropAndPut,       ROP_SRCAND,
-   ropXorPut,       ROP_SRCINVERT,
-   ropNotPut,       ROP_NOTSRCCOPY,
-   ropNotDestAnd,   ROP_NOTSRCERASE,
-   ropAndPattern,   ROP_MERGECOPY,
-   ropNotSrcOr,     ROP_MERGEPAINT,
-   ropPattern,      ROP_PATCOPY,
-   ropNotSrcOrPat , ROP_PATPAINT,
-   ropXorPattern,   ROP_PATINVERT,
-   ropInvert,       ROP_DSTINVERT,
    ropBlackness,    ROP_ZERO,
+   ropInvert,       ROP_DSTINVERT,
+   ropNoOper,       0xAA,
+   ropNotAnd,       0x77,
+   ropNotDestAnd,   ROP_SRCERASE,
+   ropNotDestOr,    0xDD,
+   ropNotOr,        ROP_NOTSRCERASE,
+   ropNotPut,       ROP_NOTSRCCOPY,
+   ropNotSrcAnd,    0x22,
+   ropNotSrcOr,     ROP_MERGEPAINT,
+   ropNotXor,       0x99,
+   ropOrPut,        ROP_SRCPAINT,
    ropWhiteness,    ROP_ONE,
+   ropXorPut,       ROP_SRCINVERT,
    endCtx
 };
 
-
 static int ctx_rop2FM[] = {
-   ropCopyPut      , FM_DEFAULT,
    ropCopyPut      , FM_OVERPAINT,
-   ropXorPut       , FM_XOR,
-   ropAndPut       , FM_AND,
+   ropCopyPut      , FM_DEFAULT,
    ropOrPut        , FM_OR,
-   ropNotPut       , FM_NOTCOPYSRC,
-   ropNotDestOr    , FM_MERGESRCNOT,
-   ropNotSrcAnd    , FM_MASKSRCNOT,
-   ropNotSrcOr     , FM_MERGENOTSRC,
-   ropNotXor       , FM_NOTXORSRC,
-   ropNotAnd       , FM_NOTMASKSRC,
-   ropNotOr        , FM_NOTMERGESRC,
+   ropXorPut       , FM_XOR,
    ropNoOper       , FM_LEAVEALONE,
+   ropAndPut       , FM_AND,
+   ropNotSrcAnd    , FM_SUBTRACT,
+   ropNotDestAnd   , FM_MASKSRCNOT,
    ropBlackness    , FM_ZERO,
-   ropWhiteness    , FM_ONE,
+   ropNotOr        , FM_NOTMERGESRC,
+   ropNotXor       , FM_NOTXORSRC,
    ropInvert       , FM_INVERT,
+   ropNotDestOr    , FM_MERGESRCNOT,
+   ropNotPut       , FM_NOTCOPYSRC,
+   ropNotSrcOr     , FM_MERGENOTSRC,
+   ropNotAnd       , FM_NOTMASKSRC,
+   ropWhiteness    , FM_ONE,
    endCtx
 };
 
@@ -354,8 +356,6 @@ static int ctx_rop2BM[] = {
    ropOrPut        , BM_OR,
    ropNoOper       , BM_LEAVEALONE,
    ropNoOper       , BM_DEFAULT,
-   ropSrcLeave     , BM_SRCTRANSPARENT,
-   ropDestLeave    , BM_DESTTRANSPARENT,
    endCtx
 };
 

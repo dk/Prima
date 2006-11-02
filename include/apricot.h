@@ -2533,39 +2533,30 @@ typedef enum {
    ropAndPut,           /* dest &= src */
    ropOrPut,            /* dest |= src */
    ropNotPut,           /* dest = !src */
-   ropNotBlack,         /* dest = (src <> 0) ? src */
-   ropNotDestXor,       /* dest = (!dest) ^ src */
+   ropInvert,           /* dest = !dest*/
+   ropBlackness,        /* dest = 0 */
    ropNotDestAnd,       /* dest = (!dest) & src */
    ropNotDestOr,        /* dest = (!dest) | src */
-   ropNotSrcXor,        /* dest ^= !src */
+   ropWhiteness,        /* dest = 1 */
    ropNotSrcAnd,        /* dest &= !src */
    ropNotSrcOr,         /* dest |= !src */
    ropNotXor,           /* dest = !(src ^ dest) */
    ropNotAnd,           /* dest = !(src & dest) */
    ropNotOr,            /* dest = !(src | dest) */
-   ropNotBlackXor,      /* dest ^= (src <> 0) ? src */
-   ropNotBlackAnd,      /* dest &= (src <> 0) ? src */
-   ropNotBlackOr,       /* dest |= (src <> 0) ? src */
-   ropNoOper,           /* dest = dest */
-   ropBlackness,        /* dest = 0 */
-   ropWhiteness,        /* dest = white */
-   ropInvert,           /* dest = !dest */
-   ropPattern,          /* dest = pattern */
-   ropXorPattern,       /* dest ^= pattern */
-   ropAndPattern,       /* dest &= pattern */
-   ropOrPattern,        /* dest |= pattern */
-   ropNotSrcOrPat,      /* dest |= pattern | (!src) */
-   ropSrcLeave,         /* dest = (src != fore color) ? src : figa */
-   ropDestLeave         /* dest = (src != back color) ? src : figa */
+   ropNoOper            /* dest = dest */
 } ROP;
+
+
+#define ropNotSrcXor  ropNotXor    /* dest ^= !src */
+#define ropNotDestXor ropNotXor    /* dest  = !dest ^ src */
+
 #define ROP(const_name) CONSTANT(rop,const_name)
+
 START_TABLE(rop,UV)
-ROP(CopyPut)ROP(XorPut)ROP(AndPut)ROP(OrPut)ROP(NotPut)ROP(NotBlack)
-ROP(NotDestXor)ROP(NotDestAnd)ROP(NotDestOr)ROP(NotSrcXor)ROP(NotSrcAnd)
-ROP(NotSrcOr)ROP(NotXor)ROP(NotAnd)ROP(NotOr)ROP(NotBlackXor)ROP(NotBlackAnd)
-ROP(NotBlackOr)ROP(NoOper)ROP(Blackness)ROP(Whiteness)ROP(Invert)ROP(Pattern)
-ROP(XorPattern)ROP(AndPattern)ROP(OrPattern)ROP(NotSrcOrPat)ROP(SrcLeave)
-ROP(DestLeave)
+ROP(Blackness) ROP(NotOr) ROP(NotSrcAnd) ROP(NotPut) ROP(NotDestAnd)
+ROP(Invert) ROP(XorPut) ROP(NotAnd) ROP(AndPut) ROP(NotXor) ROP(NoOper)
+ROP(NotSrcOr) ROP(CopyPut) ROP(NotDestOr) ROP(OrPut) ROP(Whiteness)
+ROP(NotSrcXor) ROP(NotDestXor)
 END_TABLE(rop,UV)
 #undef ROP
 

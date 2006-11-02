@@ -75,15 +75,6 @@ bitblt_not( Byte * src, Byte * dst, int count)
 }
 
 static void
-bitblt_notdstxor( Byte * src, Byte * dst, int count)
-{
-   while ( count--) {
-      *dst = ~(*dst) ^ (*(src++));
-      dst++;
-   }
-}
-
-static void
 bitblt_notdstand( Byte * src, Byte * dst, int count)
 {
    while ( count--) {
@@ -99,12 +90,6 @@ bitblt_notdstor( Byte * src, Byte * dst, int count)
       *dst = ~(*dst) | (*(src++));
       dst++;
    }
-}
-
-static void
-bitblt_notsrcxor( Byte * src, Byte * dst, int count)
-{
-   while ( count--) *(dst++) ^= ~(*(src++));
 }
 
 static void
@@ -442,17 +427,11 @@ NOSCALE:
       case ropNotPut:
          proc = bitblt_not;
          break;
-      case ropNotDestXor:
-         proc = bitblt_notdstxor;
-         break;
       case ropNotDestAnd:
          proc = bitblt_notdstand;
          break;
       case ropNotDestOr:
          proc = bitblt_notdstor;
-         break;
-      case ropNotSrcXor:
-         proc = bitblt_notsrcxor;
          break;
       case ropNotSrcAnd:
          proc = bitblt_notsrcand;

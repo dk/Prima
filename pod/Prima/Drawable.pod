@@ -526,35 +526,24 @@ with the foreground color drawing, and C<::rop2> with the background.
 
 The toolkit defines the following operations:
 
-   rop::CopyPut        #   /* dest  = src */
-   rop::XorPut         #   /* dest ^= src */
-   rop::AndPut         #   /* dest &= src */
-   rop::OrPut          #   /* dest |= src */
-   rop::NotPut         #   /* dest = !src */
-   rop::NotBlack       #   /* dest = (src != 0) ? src : dest */
-   rop::NotDestXor     #   /* dest = (!dest) ^ src */
-   rop::NotDestAnd     #   /* dest = (!dest) & src */
-   rop::NotDestOr      #   /* dest = (!dest) | src */
-   rop::NotSrcXor      #   /* dest ^= !src */
-   rop::NotSrcAnd      #   /* dest &= !src */
-   rop::NotSrcOr       #   /* dest |= !src */
-   rop::NotXor         #   /* dest = !(src ^ dest) */
-   rop::NotAnd         #   /* dest = !(src & dest) */
-   rop::NotOr          #   /* dest = !(src | dest) */
-   rop::NotBlackXor    #   /* dest ^= (src != 0) ? src : dest */
-   rop::NotBlackAnd    #   /* dest &= (src != 0) ? src : dest */
-   rop::NotBlackOr     #   /* dest |= (src != 0) ? src : dest */
-   rop::NoOper         #   /* dest = dest */
-   rop::Blackness      #   /* dest = black */
-   rop::Whiteness      #   /* dest = white */
-   rop::Invert         #   /* dest = !dest */
-   rop::Pattern        #   /* dest = pattern */
-   rop::XorPattern     #   /* dest ^= pattern */
-   rop::AndPattern     #   /* dest &= pattern */
-   rop::OrPattern      #   /* dest |= pattern */
-   rop::NotSrcOrPat    #   /* dest |= pattern | (!src) */
-   rop::SrcLeave       #   /* dest = (src != fore color) ? src : dest */
-   rop::DestLeave      #   /* dest = (src != back color) ? src : dest */
+   rop::Blackness      #   = 0 
+   rop::NotOr          #   = !(src | dest) 
+   rop::NotSrcAnd      #  &= !src 
+   rop::NotPut         #   = !src 
+   rop::NotDestAnd     #   = !dest & src 
+   rop::Invert         #   = !dest 
+   rop::XorPut         #  ^= src 
+   rop::NotAnd         #   = !(src & dest) 
+   rop::AndPut         #  &= src 
+   rop::NotXor         #   = !(src ^ dest) 
+   rop::NotSrcXor      #     alias for rop::NotXor
+   rop::NotDestXor     #     alias for rop::NotXor
+   rop::NoOper         #   = dest 
+   rop::NotSrcOr       #  |= !src 
+   rop::CopyPut        #   = src 
+   rop::NotDestOr      #   = !dest | src 
+   rop::OrPut          #  |= src 
+   rop::Whiteness      #   = 1 
 
 Usually, however, graphic devices support only a small part
 of the above set, limiting C<::rop> to the most important operations:

@@ -1174,7 +1174,7 @@ Image_map( Handle self, Color color)
       switch ( rop[i]) {
       case ropNotPut:
           rop[i] = ropCopyPut; not = 1; break;
-      case ropNotSrcXor:
+      case ropNotSrcXor: /* same as ropNotDestXor and ropNotXor */
           rop[i] = ropXorPut; not = 1; break;    
       case ropNotSrcAnd:
           rop[i] = ropAndPut; not = 1; break;    
@@ -1233,14 +1233,10 @@ Image_map( Handle self, Color color)
                data-> r = ( ~data-> r) & r[z].r; data-> g = ( ~data-> g) & r[z].g; data-> b = ( ~data-> b) & r[z].b; break;
             case ropNotDestOr:  
                data-> r = ( ~data-> r) | r[z].r; data-> g = ( ~data-> g) | r[z].g; data-> b = ( ~data-> b) | r[z].b; break;
-            case ropNotDestXor: 
-               data-> r = ( ~data-> r) ^ r[z].r; data-> g = ( ~data-> g) ^ r[z].g; data-> b = ( ~data-> b) ^ r[z].b; break;
             case ropNotAnd:     
                data-> r = ~(data-> r & r[z].r); data-> g = ~(data-> g & r[z].g); data-> b = ~(data-> b & r[z].b); break;
             case ropNotOr:      
                data-> r = ~(data-> r | r[z].r); data-> g = ~(data-> g | r[z].g); data-> b = ~(data-> b | r[z].b); break;
-            case ropNotXor:     
-               data-> r = ~(data-> r ^ r[z].r); data-> g = ~(data-> g ^ r[z].g); data-> b = ~(data-> b ^ r[z].b); break;
             case ropNoOper:     
                break;   
             case ropInvert:     
@@ -1266,14 +1262,10 @@ Image_map( Handle self, Color color)
                *data = (~(*data)) & b[z]; break;
             case ropNotDestOr:  
                *data = (~(*data)) | b[z]; break;
-            case ropNotDestXor: 
-               *data = (~(*data)) ^ b[z]; break;
             case ropNotAnd:     
                *data = ~(*data & b[z]); break;
             case ropNotOr:      
                *data = ~(*data | b[z]); break;
-            case ropNotXor:     
-               *data = ~(*data ^ b[z]); break;
             case ropNoOper:     
                break;   
             case ropInvert:     
