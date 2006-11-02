@@ -1168,6 +1168,8 @@ apc_gp_get_pixel( Handle self, int x, int y)
 
    if ( XT_IS_DBM(XX)) {
       pixmap = XT_IS_PIXMAP(XX) ? true : false;
+   } else if ( XT_IS_BITMAP(XX)) {
+      pixmap = 0;
    } else {
       pixmap = guts. idepth > 1;
    }   
