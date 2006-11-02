@@ -1196,16 +1196,26 @@ put_pixmap( Handle self, Handle pixmap, int dst_x, int dst_y, int src_x, int src
 {
    DEFXX;
    PDrawableSysData YY = X(pixmap);
+   XGCValues gcv;
+   int func;
 
    /* XXX currently can X-fail in several cases */
-   /* XXX rop support */
    SHIFT( dst_x, dst_y);
 
+   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
+      warn( "UAI_016: error querying GC values");
    XCHECKPOINT;
+   func = prima_rop_map( rop);
+   if ( func != gcv. function)
+      XSetFunction( DISP, XX-> gc, func);
+
    XCopyArea( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
               src_x, YY->size.y - src_y - h,
               w, h,
               dst_x, XX->size.y - dst_y - h);
+
+   if ( func != gcv. function)
+      XSetFunction( DISP, XX-> gc, gcv. function);
    XCHECKPOINT;
    return true;
 }
@@ -1380,7 +1390,7 @@ apc_image_begin_paint( Handle self)
 
    if ( !DISP) return false;
    if (img-> w == 0 || img-> h == 0) return false;
-   
+
    XX-> gdrawable = XCreatePixmap( DISP, guts. root, img-> w, img-> h,
                                    bitmap ? 1 : guts. depth);
    XX-> type.pixmap = !bitmap;
