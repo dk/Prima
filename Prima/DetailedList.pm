@@ -414,17 +414,31 @@ sub sort
 		$dirSort = $self-> { lastSortDir};
 	}
 	my $foci = undef;
+	my %selected = map {
+		$self->{items}->[$_] =>  $_
+	} keys %{$self-> {selectedItems}}
+		if $self-> {multiSelect};
+
 	$foci = $self-> {items}-> [$self-> {focusedItem}] if $self-> {focusedItem} >= 0;
 	$self-> notify(q(Sort), $c, $dirSort);
 	$self-> repaint;
-	return unless defined $foci;
+	
+	return unless defined $foci; # do not select items either; 
+	                             # focused item should be < 0 only on empty lists
 	my $i = 0;
 	my $newfoc;
+	my @newsel;
 	for ( @{$self-> {items}}) {
-		$newfoc = $i, last if $_ == $foci;
+		if ( $_ == $foci) {
+			$newfoc = $i;
+			last unless $self-> {multiSelect};
+		}
+		push @newsel, $i 
+			if $self-> {multiSelect} and exists $selected{ $_ };
 		$i++;
 	}
 	$self-> focusedItem( $newfoc) if defined $newfoc;
+	$self-> selectedItems( \@newsel) if $self-> {multiSelect};
 }
 
 sub on_sort
