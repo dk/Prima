@@ -766,7 +766,8 @@ sub InputLine_MouseDown
 }
 
 sub InputLine_Enter { $_[1]-> repaint; }
-sub InputLine_Leave { $_[1]-> repaint; }
+
+sub InputLine_Leave { $_[0]-> listVisible(0) }
 
 sub List_Create
 {

@@ -106,7 +106,7 @@ sub profile_default
 		listProfile    => {},
 		buttonProfile  => {},
 		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown)],
-		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change)],
+		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave)],
 		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick 
 			MouseUp MouseMove Paint)],
 	}
@@ -167,6 +167,7 @@ sub init
 	$self-> {list} = $self-> insert( $profile{listClass} =>
 		name         => 'List',
 		origin       => [ 0, 0],
+		selectable   => 0,
 		width        => $w,
 		height       => ( $self-> {style} == cs::Simple) ? ( $h - $eh) : $self-> {listHeight},
 		growMode     => gm::Client,
@@ -322,6 +323,11 @@ sub Button_Paint
 	$canvas-> fillpoly([ 4, $h * 0.6, $w - 5, $h * 0.6, $w/2, $h * 0.4]);
 }
 
+sub InputLine_Leave
+{
+	$_[0]-> listVisible( 0) if $_[0]-> {style} != cs::Simple;
+}
+
 sub InputLine_FontChanged
 {
 	$_[0]-> editHeight ( $_[1]-> font-> height + $_[1]-> borderWidth * 2);
@@ -334,7 +340,14 @@ sub InputLine_Create
 
 sub InputLine_KeyDown
 {
-	my ( $self, $edit, $code, $key, $mod) = @_;
+	my ( $self, $edit, $code, $key, $mod, $repeat) = @_;
+
+	if ( $self-> listVisible) {
+		$self-> {list}-> notify(q(KeyDown), $code, $key, $mod, $repeat);
+		$edit-> clear_event;
+		return;
+	}
+	
 	return if $mod & km::DeadKey;
 	if (
 		( $key & 0xFF00) && 
@@ -532,7 +545,8 @@ sub set_list_visible
 	$list-> bring_to_front if $nlv;
 	$list-> visible( $nlv);
 	$self-> {button}-> repaint;
-	$nlv ? $list-> focus : $edit-> focus;
+	$list-> capture( $nlv ? 1 : 0);
+	$edit-> focus;
 }
 
 sub set_edit_height
