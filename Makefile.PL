@@ -1704,8 +1704,8 @@ XS(boot_pmts$n2) {
 D
 		close TMPSRC;
 
-		my @cc1 = grep !/^-W(all|error|\d)/i, cc_command_line( $c1, $o1, $dl1, 1);
-		my @cc2 = grep !/^-W(all|error|\d)/i, cc_command_line( $c2, $o2, $dl2, 1);
+		my @cc1 = grep !/^-W(all|error|\d)/i, cc_command_line( $c1, $o1, $dl1, 1, 1);
+		my @cc2 = grep !/^-W(all|error|\d)/i, cc_command_line( $c2, $o2, $dl2, 1, 1);
 		my @ld1 = ld_command_line( $dl1, $o1);
 		my @ld2 = ld_command_line( $dl2, $o2);
 		my $dlpl = "$^X -e '" . (join ' ', split("\n", <<DN)) . "'";
