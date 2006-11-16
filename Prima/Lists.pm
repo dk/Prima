@@ -797,7 +797,7 @@ sub reset
 		);
 		$self-> {lastItem} = $max > $last ? $last : $max;
 		$self-> {active_rows} = $self->{lastItem} - $self-> {topItem} + 1;
-		$self-> {uncover} = $size[1] - $self-> {active_rows} * $ih + 1
+		$self-> {uncover} = $size[1] - $self-> {active_rows} * $ih - 1
 			if $self->{active_rows} < $self-> {partial_rows};
 	}
 	$self-> {uncover} = undef if $size[0] <= 0 or $size[1] <= 0;
