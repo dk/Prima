@@ -806,7 +806,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
    if (( dash == 14) && guts. locale[0] && (strcmp( ppFontNameSize + len - 4, "-*-*") == 0)) {
       memcpy( buf, ppFontNameSize, len - 3);
       buf[ len - 3] = 0;
-      strncat( buf, guts. locale, 512);
+      strncat( buf, guts. locale, 512 - strlen(buf) - 1);
       buf[511] = 0;
       ppFontNameSize = buf;
       len = strlen( ppFontNameSize);

@@ -726,7 +726,7 @@ XS( Component_notify_FROMPERL)
    SPAGAIN;
 
    /* searching private on_xxx method */
-   strncat( strcpy( buf, "on_"), name, 1023);
+   strncat( strcpy( buf, "on_"), name, 1020);
    for ( s = buf; *s; s++) *s = tolower(*s);
    privMethod = ( SV *) query_method( self, buf, 0);
    if ( privMethod) {
