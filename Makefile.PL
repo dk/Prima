@@ -1293,13 +1293,17 @@ sub setup_paths
 		}
 
 		# find X11 libraries
-		my $libpath = find_lib( "X11", '', 
+		my @libpath = ( "X11", '', 
 			(defined($X11BASE) ? "$X11BASE/lib" : ()), 
 			"/usr/X11R6/lib", 
 			"/usr/X11/lib",
 			"/usr/X/lib",
 			"/usr/openwin/lib"
 		);
+		# using /usr/X11R6/lib64 ?
+		unshift @libpath, map { s/lib$/lib64/; $_ } grep { /lib$/ } @libpath
+			if $Config{intsize} == 8;
+		my $libpath = find_lib( @libpath);
 		die "Prima needs X11 libraries for compilation! Set X11BASE='/path/to/X' or LIBPATH+='/path/to/X/lib' if you have a non-standard path to X. $extramsg\n" 
 			unless defined $libpath;
 		if ( -d $libpath) {
@@ -1308,8 +1312,8 @@ sub setup_paths
 		}
 		push @LIBS, 'X11';
 		if (defined find_lib( "Xext", '', '')) {
-				print "Xext library found.\n";
-				push @LIBS, "Xext";
+			print "Xext library found.\n";
+			push @LIBS, "Xext";
 		}
 	}
 	else {
