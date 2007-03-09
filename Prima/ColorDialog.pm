@@ -767,7 +767,7 @@ sub InputLine_MouseDown
 
 sub InputLine_Enter { $_[1]-> repaint; }
 
-sub InputLine_Leave { $_[0]-> listVisible(0) }
+sub InputLine_Leave { $_[0]-> listVisible(0) if $Prima::ComboBox::capture_mode }
 
 sub List_Create
 {

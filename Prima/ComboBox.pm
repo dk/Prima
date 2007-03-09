@@ -37,7 +37,7 @@ use strict;
 
 package Prima::ComboBox;
 
-use vars qw(@ISA %listProps %editProps %listDynas);
+use vars qw(@ISA %listProps %editProps %listDynas $capture_mode);
 use Prima qw( InputLine Lists Utils StdBitmap);
 @ISA = qw(Prima::Widget);
 
@@ -77,6 +77,7 @@ sub Prima::ComboBox::DummyList::$_ {}
 GENPROC
 }
 
+$capture_mode = (Prima::Application-> get_system_info-> {apc} == apc::Unix);
 
 sub profile_default
 {
@@ -167,7 +168,7 @@ sub init
 	$self-> {list} = $self-> insert( $profile{listClass} =>
 		name         => 'List',
 		origin       => [ 0, 0],
-		selectable   => 0,
+		selectable   => $capture_mode ? 0 : 1,
 		width        => $w,
 		height       => ( $self-> {style} == cs::Simple) ? ( $h - $eh) : $self-> {listHeight},
 		growMode     => gm::Client,
@@ -325,7 +326,7 @@ sub Button_Paint
 
 sub InputLine_Leave
 {
-	$_[0]-> listVisible( 0) if $_[0]-> {style} != cs::Simple;
+	$_[0]-> listVisible( 0) if $capture_mode and $_[0]-> {style} != cs::Simple;
 }
 
 sub InputLine_FontChanged
@@ -545,8 +546,12 @@ sub set_list_visible
 	$list-> bring_to_front if $nlv;
 	$list-> visible( $nlv);
 	$self-> {button}-> repaint;
-	$list-> capture( $nlv ? 1 : 0);
-	$edit-> focus;
+	if ( $capture_mode) {
+		$list-> capture( $nlv ? 1 : 0);
+		$edit-> focus;
+	} else {
+		$nlv ? $list-> focus : $edit-> focus;
+	}
 }
 
 sub set_edit_height
