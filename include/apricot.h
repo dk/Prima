@@ -2860,12 +2860,6 @@ extern Bool
 apc_image_end_paint_info( Handle self);
 
 extern Bool
-apc_image_read( const char *filename, PList imgInfo, Bool readData);
-
-extern Bool
-apc_image_save( const char *filename, const char *format, PList imgInfo);
-
-extern Bool
 apc_image_update_change( Handle self);
 
 extern const char *
@@ -3401,9 +3395,6 @@ extern char*
 apc_get_user_name( void);
 extern PList
 apc_getdir( const char *dirname);
-
-extern void*
-apc_dlopen(char *path, int mode);
 
 extern Bool
 apc_dl_export(char *path);

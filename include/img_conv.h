@@ -86,7 +86,6 @@ extern void bc_byte_op( Byte * source, Byte * dest, int count, U16 * tree, PRGBC
 extern void bc_byte_graybyte( register Byte * source, register Byte * dest, register int count, register PRGBColor palette);
 extern void bc_byte_rgb( register Byte * source, Byte * dest, register int count, register PRGBColor palette);
 extern void bc_graybyte_mono_ht( register Byte * source, register Byte * dest, register int count, int lineSeqNo);
-extern void bc_graybyte_mono_ed( Byte * source, Byte * dest, int count);
 extern void bc_graybyte_nibble_ht( register Byte * source, Byte * dest, register int count, int lineSeqNo);
 extern void bc_graybyte_nibble_ed( Byte * source, Byte * dest, int count, int * err_buf);
 extern void bc_graybyte_rgb( register Byte * source, Byte * dest, register int count);
