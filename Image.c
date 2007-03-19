@@ -362,7 +362,7 @@ Image_data( Handle self, Bool set, SV * svdata)
 
 /*
   Routine sets image data almost as Image::set_data, but taking into
-  account 'lineSize' and 'type', fields. To be called from bunch routines,
+  account 'lineSize', 'type', and 'reverse' fields. To be called from bunch routines,
   line ::init or ::set. Returns true if relevant fields were found and
   data extracted and set, and false if user data should be set throught ::set_data.
   Image itself may undergo conversion during the routine; in that case 'palette'
@@ -375,7 +375,7 @@ Image_set_extended_data( Handle self, HV * profile)
    void *data, *proc;
    STRLEN dataSize;
    int lineSize = 0, newType = -1, fixType, oldType = -1;
-   Bool pexistType, pexistLine, supp;
+   Bool pexistType, pexistLine, pexistReverse, supp, reverse = false;
 
    if ( !pexist( data)) {
       if ( pexist( lineSize)) {
@@ -390,11 +390,13 @@ Image_set_extended_data( Handle self, HV * profile)
    /* parameters check */
    pexistType = pexist( type) && ( newType = pget_i( type)) != var-> type;
    pexistLine = pexist( lineSize) && ( lineSize = pget_i( lineSize)) != var-> lineSize;
+   pexistReverse = pexist( reverse) && ( reverse = pget_B( reverse));
 
    pdelete( lineSize);
    pdelete( type);
+   pdelete( reverse);
    
-   if ( !pexistLine && !pexistType) return false;
+   if ( !pexistLine && !pexistType && !pexistReverse) return false;
 
    if ( is_opt( optInDraw) || dataSize <= 0) 
       goto GOOD_RETURN;
@@ -406,7 +408,7 @@ Image_set_extended_data( Handle self, HV * profile)
          goto GOOD_RETURN;
       }   
       if ( !pexistType) { /* plain repadding */
-         ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 1, 1, nil);
+         ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 1, 1, nil, reverse);
          my-> update_change( self);
          goto GOOD_RETURN;
       }   
@@ -425,7 +427,7 @@ Image_set_extended_data( Handle self, HV * profile)
    } else if ( !itype_importable( newType, &fixType, &proc, nil)) {
       warn( "Image::set_data: invalid image type %08x", newType);
       goto GOOD_RETURN;
-   }   
+   }
       
    /* fixing image and maybe palette - for known type it's same code as in ::set, */
    /* but here's no sense calling it, just doing what we need. */
@@ -435,7 +437,7 @@ Image_set_extended_data( Handle self, HV * profile)
    }   
 
     /* copying user data */
-   if ( supp && lineSize == 0) 
+   if ( supp && lineSize == 0 && !reverse) 
        /* same code as in ::set_data */
       memcpy( var->data, data, dataSize > var->dataSize ? var->dataSize : dataSize);
    else {
@@ -444,8 +446,8 @@ Image_set_extended_data( Handle self, HV * profile)
          lineSize = (( var-> w * ( newType & imBPP) + 31) / 32) * 4;
       /* copying using repadding routine */
       ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 
-                 ( newType & imBPP) / 8, ( var-> type & imBPP) / 8, proc
-               );
+              ( newType & imBPP) / 8, ( var-> type & imBPP) / 8, proc, reverse
+      );
    }   
    my-> update_change( self);
    /* if want to keep original type, restoring */

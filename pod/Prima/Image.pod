@@ -228,6 +228,23 @@ write-only flag 'lineSize':
 
   output: RGB-RGB-
 
+Internally, Prima contains images in memory so that the first scanline is
+the farthest away from the memory start; this is consistent with general
+Y-axis orientation in Prima drawable terminology, but might be inconvenient
+when importing data organized otherwise. Another write-only boolean flag C<reverse>
+can be set to 1 so data then are treated as if the first scanline of the image
+is the closest to the start of data:
+  
+  $image-> set( width => 1, height=> 2, type => im::RGB);
+  $image-> set(
+     data => 'RGB-123-',
+     reverse => 1,
+  );
+  print $image-> data, "\n";
+
+  output: RGB-123-
+
+
 Although it is possible to perform all kinds of calculations and modification
 with the pixels, returned by C<::data>, it is not advisable unless the speed
 does not matter. Standalone PDL package with help of PDL::PrimaImage package, 
@@ -309,11 +326,11 @@ converted to a 1-bit image, the following results occur:
 
 =item data SCALAR
 
-Provides access to the bitmap data. On get-call, returns
-all bitmap pixels, aligned to 4-byte boundary. On set-call,
-stores the provided data with same alignment. The alignment
-can be altered by submitting 'lineSize' write-only flag
-to set call. ( see L<Data access> ).
+Provides access to the bitmap data. On get-call, returns all bitmap pixels,
+aligned to 4-byte boundary. On set-call, stores the provided data with same
+alignment. The alignment can be altered by submitting 'lineSize' write-only
+flag to set call; the ordering of scan lines can be altered by setting
+'reverse' write-only flag ( see L<Data access> ).
 
 =item height INTEGER
 

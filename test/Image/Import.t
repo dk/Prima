@@ -1,5 +1,5 @@
 # $Id$
-print "1..8 import,bounds overset,bounds underset,im::fmtBGR,im::fmtIRGB,im::fmtRGBI,im::fmtIBGR,im::fmtBGRI,im::bpp8+palette";
+print "1..10 import,bounds overset,bounds underset,im::fmtBGR,im::fmtIRGB,im::fmtRGBI,im::fmtIBGR,im::fmtBGRI,im::bpp8+palette,reverse";
 
 my $i = Prima::Image-> create( 
 	width  => 4,
@@ -41,6 +41,13 @@ $i-> set(
 	data    => "\0\1\2\3\4\5\6\7",
 	type    => im::bpp8,
 	palette => [ map { ord } split('', $rgb)],
+);
+ok( $i-> data eq "\0\1\2\3\4\5\6\7");
+# 10
+$i-> set(
+	data    => "\4\5\6\7\0\1\2\3",
+	reverse => 1,
+	type    => im::bpp8,
 );
 ok( $i-> data eq "\0\1\2\3\4\5\6\7");
 

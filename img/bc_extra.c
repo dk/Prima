@@ -70,7 +70,7 @@ memcpy_bitconvproc( Byte * src, Byte * dest, int count)
 
 
 void
-ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int srcDataSize, int dstDataSize, int srcBpp, int dstBpp, void * convProc)
+ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int srcDataSize, int dstDataSize, int srcBpp, int dstBpp, void * convProc, Bool reverse)
 {
    int sb  = srcLineSize / srcBpp;
    int db  = dstLineSize / dstBpp;
@@ -83,9 +83,15 @@ ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int src
       convProc = (void*)memcpy_bitconvproc;
       srcBpp = dstBpp = 1;
    }
-   
-   for ( ; h > 0; h--, source += srcLineSize, dest += dstLineSize)
-      (( PSimpleConvProc) convProc)( source, dest, bsc);
+
+   if ( reverse) {
+      dest += dstLineSize * ( h - 1);
+      for ( ; h > 0; h--, source += srcLineSize, dest -= dstLineSize)
+         (( PSimpleConvProc) convProc)( source, dest, bsc);
+   } else {
+      for ( ; h > 0; h--, source += srcLineSize, dest += dstLineSize)
+         (( PSimpleConvProc) convProc)( source, dest, bsc);
+   }
 
    sb = srcDataSize % srcLineSize / srcBpp;
    db = dstDataSize % dstLineSize / dstBpp;
