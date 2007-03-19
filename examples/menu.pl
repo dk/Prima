@@ -69,8 +69,8 @@ use vars qw(@ISA);
 sub create_menu
 {
 	my $img = Prima::Image-> create;
-	$0 =~ /^(.*)\\|\/[^\\\/]+$/;
-	$img-> load( "$1/Hand.gif");
+	$0 =~ /^(.*)(\\|\/)[^\\\/]+$/;
+	$img-> load(( $1 || '.') . '/Hand.gif');
 	return [
 		[ "~File" => [
 			[ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!\n";}],   # anonymous sub
