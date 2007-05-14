@@ -119,7 +119,7 @@ prima_prepare_ximage( int width, int height, Bool bitmap)
    bzero( i, sizeof( PrimaXImage));
 
 #ifdef USE_MITSHM
-   if ( guts. local_connection && guts. shared_image_extension && !bitmap) {
+   if ( guts. shared_image_extension && !bitmap) {
       i-> image = XShmCreateImage( DISP, VISUAL, 
                                    bitmap ? 1 : guts.depth,
                                    bitmap ? XYBitmap : ZPixmap,
