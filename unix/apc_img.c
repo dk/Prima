@@ -265,10 +265,20 @@ prima_ximage_event( XEvent *eve) /* to be called from apc_event's handle_event *
 }
 
 void
-prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i, int src_x, int src_y, int dst_x, int dst_y, int width, int height)
-{
+prima_put_ximage( 
+	XDrawable win, GC gc, PrimaXImage *i, 
+	int src_x, int src_y, int dst_x, int dst_y, int width, int height
+) {
+   if ( src_x < 0) {
+      width += src_x;
+      dst_x -= src_x;
+      src_x = 0;
+      if ( width <= 0) return;
+   }
 #ifdef USE_MITSHM
    if ( i-> shm) {
+      if ( src_y + height > i-> image-> height)
+         height = i-> image-> height - src_y;
       if ( i-> ref_cnt < 0)
          i-> ref_cnt = 0;
       i-> ref_cnt++;
@@ -2043,9 +2053,21 @@ apc_gp_stretch_image( Handle self, Handle image,
       src_w = -src_w;
       dst_w = -dst_w;
    }   
-   if ( src_x < 0) src_x = 0; if ( src_x >= img-> w) return false;
-   if ( src_y < 0) src_y = 0; if ( src_y >= img-> h) return false;
+   if ( abs(src_x) >= img-> w) return false;
+   if ( abs(src_y) >= img-> h) return false;
    if ( src_w == 0 || src_h == 0) return false;
+   if ( src_x < 0) {
+      dst_x -= src_x * dst_w / src_w;
+      dst_w += src_x * dst_w / src_w;
+      src_w += src_x;
+      src_x = 0;
+   }
+   if ( src_y < 0) {
+      dst_y -= src_y * dst_h / src_h;
+      dst_h += src_y * dst_h / src_h;
+      src_h += src_y;
+      src_y = 0;
+   }
    if ( src_x + src_w > img-> w) {
       dst_w = (img-> w - src_x) * dst_w / src_w;
       src_w = img-> w - src_x;
