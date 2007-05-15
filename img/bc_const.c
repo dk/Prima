@@ -371,6 +371,9 @@ REPEAT_CALC:
                big_pal[j]. r = (i / ( side * side)) << shift;
                big_pal[j]. g = ((i / side) % side ) << shift;
                big_pal[j]. b = (i % side) << shift;
+	       if ( big_pal[j]. r > 127) big_pal[j]. r += side - 1;
+	       if ( big_pal[j]. g > 127) big_pal[j]. g += side - 1;
+	       if ( big_pal[j]. b > 127) big_pal[j]. b += side - 1;
                j++;
             }
          cm_squeeze_palette( big_pal, j, palette, *max_pal_size);
