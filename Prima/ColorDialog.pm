@@ -1042,6 +1042,11 @@ of C<Prima::Widget> color properties, and depends on combination of keys:
 
 Default action reflects the property to be changes in the dialog title
 
+=item Change
+
+The notification is called when the L<value> property is changed, either 
+interactively or as a result of direct call.
+
 =item EndDragColor $PROPERTY, $WIDGET
 
 Called when the user releases the mouse drag over a Prima widget.
