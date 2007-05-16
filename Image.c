@@ -88,7 +88,7 @@ Image_init( Handle self, HV * profile)
    var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
    if (!( var->type & imGrayScale) && 
        pexist( palette)) { /* palette might be killed by set_extended_data() */
-      int ps = apc_img_read_palette( var->palette, pget_sv( palette));
+      int ps = apc_img_read_palette( var->palette, pget_sv( palette), true);
       if ( ps) var-> palSize = ps;
    }
 
@@ -208,7 +208,7 @@ Image_stretch( Handle self, int width, int height)
 }
 
 static void
-Image_reset_sv( Handle self, int new_type, SV * palette)
+Image_reset_sv( Handle self, int new_type, SV * palette, Bool triplets)
 {
    int colors;
    RGBColor pal_buf[256], *pal_ptr;
@@ -216,7 +216,7 @@ Image_reset_sv( Handle self, int new_type, SV * palette)
       pal_ptr = nil;
       colors  = 0;
    } else if ( SvROK( palette) && ( SvTYPE( SvRV( palette)) == SVt_PVAV)) {
-      colors = apc_img_read_palette( pal_ptr = pal_buf, palette);
+      colors = apc_img_read_palette( pal_ptr = pal_buf, palette, triplets);
    } else {
       pal_ptr = nil;
       colors  = SvIV( palette); 
@@ -252,8 +252,22 @@ Image_set( Handle self, HV * profile)
       if ( !itype_supported( newType))
          warn("RTC0100: Invalid image type requested (%08x) in Image::set_type", newType);
       else 
-         if ( !opt_InPaint) 
-            Image_reset_sv( self, newType, pexist( palette) ? pget_sv( palette) : nilSV);
+         if ( !opt_InPaint) {
+	    SV * palette;
+	    Bool triplets;
+	    if ( pexist( palette)) {
+	       palette  = pget_sv(palette);
+	       triplets = true;
+	    } else if ( pexist( colormap)) {
+	       palette  = pget_sv(colormap);
+	       triplets = false;
+	    } else {
+	       palette = nilSV;
+	       triplets = false;
+	    }
+            Image_reset_sv( self, newType, palette, triplets);
+	 }
+      pdelete( colormap);
       pdelete( palette);
       pdelete( type);
    }
@@ -431,9 +445,22 @@ Image_set_extended_data( Handle self, HV * profile)
       
    /* fixing image and maybe palette - for known type it's same code as in ::set, */
    /* but here's no sense calling it, just doing what we need. */
-   if ( fixType != var-> type || pexist( palette)) { 
-      Image_reset_sv( self, fixType, pget_sv( palette));
+   if ( fixType != var-> type || pexist( palette) || pexist( colormap)) {
+      SV * palette;
+      Bool triplets;
+      if ( pexist( palette)) {
+         palette = pget_sv( palette);
+	 triplets = true;
+      } else if ( pexist( colormap)) {
+         palette = pget_sv( colormap);
+	 triplets = false;
+      } else {
+         palette = nilSV;
+	 triplets = false;
+      }
+      Image_reset_sv( self, fixType, palette, triplets);
       pdelete( palette);
+      pdelete( colormap);
    }   
 
     /* copying user data */
@@ -747,7 +774,8 @@ Image_palette( Handle self, Bool set, SV * palette)
       int ps;
       if ( var->type & imGrayScale) return nilSV;
       if ( !var->palette)           return nilSV;
-      ps = apc_img_read_palette( var->palette, palette);
+      ps = apc_img_read_palette( var->palette, palette, true);
+      
       if ( ps)
          var-> palSize = ps;
       else

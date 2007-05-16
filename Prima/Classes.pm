@@ -556,6 +556,7 @@ sub profile_default
 		height        => 0,
 		hScaling      => 1,
 		palette       => [0, 0, 0, 0xFF, 0xFF, 0xFF],
+		colormap      => undef,
 		preserveType  => 0,
 		rangeLo       => 0,
 		rangeHi       => 1,
@@ -568,6 +569,21 @@ sub profile_default
 	return $def;
 }
 
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+
+	if ( exists $p-> {colormap} and not exists $p-> {palette}) {
+		$p-> {palette} = [ map {
+			( $_        & 0xFF),
+			(($_ >> 8)  & 0xFF),
+			(($_ >> 16) & 0xFF),
+		} @{$p-> {colormap}} ];
+		delete $p-> {colormap};
+	}
+	$self-> SUPER::profile_check_in( $p, $default);
+}
+
 sub rangeLo      { return shift-> stats( is::RangeLo , @_); }
 sub rangeHi      { return shift-> stats( is::RangeHi , @_); }
 sub sum          { return shift-> stats( is::Sum     , @_); }
@@ -576,6 +592,23 @@ sub mean         { return shift-> stats( is::Mean    , @_); }
 sub variance     { return shift-> stats( is::Variance, @_); }
 sub stdDev       { return shift-> stats( is::StdDev  , @_); }
 
+sub colormap
+{
+	if ( $#_) {
+		shift-> palette([ map {
+			( $_        & 0xFF),
+			(($_ >> 8)  & 0xFF),
+			(($_ >> 16) & 0xFF),
+		} @_ ]);
+	} else {
+		my $p = $_[0]-> palette;
+		my ($i,@r);
+		for ($i = 0; $i < @$p; $i += 3) {
+			push @r, $$p[$i] + ($$p[$i+1] << 8) + ($$p[$i+2] << 16);
+		}
+		return @r;
+	}
+}
 
 # class Icon
 package Prima::Icon;

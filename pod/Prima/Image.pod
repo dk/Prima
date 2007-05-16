@@ -203,7 +203,9 @@ for an 24-bit image,
   $image-> set( type => im::bpp8, palette => 32);
 
 call would calculate colors in the image, compress them to a palette of
-32 cells and converts to a 8-bit format.
+32 cells and converts to a 8-bit format. 
+
+Instead of C<palette> property, C<colormap> can also be used.
 
 =head2 Data access 
 
@@ -293,6 +295,15 @@ C<rop::CopyPut>, usually fail.
 
 =over
 
+=item colormap @PALETTE
+
+A color palette, used for representing 1, 4, and 8-bit bitmaps, when an image
+object is to be visualized. @PALETTE contains individual colors component
+triplets, in RGB format. For example, black-and-white monochrome image may
+contain colormap as C<0,0xffffff>.
+
+See also C<palette>.
+
 =item conversion TYPE
 
 Selects type of dithering algorithm, when down-sampling 
@@ -352,8 +363,12 @@ Mean value is C<::sum> of pixel values, divided by number of pixels.
 
 =item palette [ @PALETTE ] 
 
-A color palette, used for representing 1, 4, and 8-bit bitmaps,
-when an image object is to be visualized.
+A color palette, used for representing 1, 4, and 8-bit bitmaps, when an image
+object is to be visualized. @PALETTE contains individual color component
+triplets, in BGR format. For example, black-and-white monochrome image may
+contain palette as C<[0,0,0,255,255,255]>.
+
+See also C<colormap>.
 
 =item pixel ( X_OFFSET, Y_OFFSET ) PIXEL
 

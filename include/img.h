@@ -161,7 +161,7 @@ extern void  apc_img_codecs( PList result);
 extern HV *  apc_img_info2hash( PImgCodec c);
 
 extern void  apc_img_profile_add( HV * to, HV * from, HV * keys);
-extern int   apc_img_read_palette( PRGBColor palBuf, SV * palette);
+extern int   apc_img_read_palette( PRGBColor palBuf, SV * palette, Bool triplets);
 
 #ifdef __cplusplus
 }

@@ -549,7 +549,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       if ( pexist( screenColorResolution)) cr = pget_i( screenColorResolution);
       if ( pexist( screenBackGroundColor)) bg = pget_i( screenBackGroundColor);
       if ( pexist( screenPalette)) 
-         ps = apc_img_read_palette( r = rgbc, pget_sv( screenPalette));
+         ps = apc_img_read_palette( r = rgbc, pget_sv( screenPalette), true);
       c = make_colormap( r, ps);
       if ( !c) outcm( ps * 3);
       if ( w < 0) w = i-> w;
