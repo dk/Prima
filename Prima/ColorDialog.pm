@@ -662,6 +662,7 @@ sub set_value
 		$self-> Roller_Repaint;
 	}
 	$self-> {setTransaction} = $st;
+	$self-> notify(q(Change));
 }
 
 sub value        {($#_)?$_[0]-> set_value        ($_[1]):return $_[0]-> {value};}
