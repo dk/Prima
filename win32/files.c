@@ -252,7 +252,12 @@ apc_file_attach( Handle self)
       if ( getsockopt(( SOCKET) INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE, (char*)&_data, &_sz) != 0)
          guts. socket_version = -1; // no sockets available
       else
+#if PERL_PATCHLEVEL < 8
          guts. socket_version = ( _data == SO_SYNCHRONOUS_NONALERT) ? 1 : 2;
+#else
+         guts. socket_version = 1;
+#endif
+
 #endif
    }
 
