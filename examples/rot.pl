@@ -64,7 +64,7 @@ my @data = (
 
 my $xdim = length( $data[0]) - 1;
 my $ydim = $#data;
-my $antialias = 0;
+my $antialias = 1;
 my @box  = ([0,$ydim], [$xdim,$ydim], [$xdim,0], [0,0]);
 
 sub f
@@ -100,10 +100,10 @@ sub imgbin
 sub ds
 {
 	if ( $_[0] < 0.125) { return ' '}
-	elsif ( $_[0] < 0.375) { return '°'}
-	elsif ( $_[0] < 0.625) { return '±'}
-	elsif ( $_[0] < 0.875) { return '²'}
-	else {  return 'Û'};
+	elsif ( $_[0] < 0.375) { return '.'}
+	elsif ( $_[0] < 0.625) { return ':'}
+	elsif ( $_[0] < 0.875) { return '+'}
+	else {  return 'x'};
 }
 
 
@@ -135,7 +135,7 @@ for ( $y = $r[1]; $y <= $r[3]; $y++) {
 		unless  ( $antialias) {
 			$sx = round( $sx);
 			$sy = round( $sy);
-			substr( $rs[ $y - $r[1]], $x - $r[0], 1, imgbin( $sx, $sy) ? 'Û' : ' ');
+			substr( $rs[ $y - $r[1]], $x - $r[0], 1, imgbin( $sx, $sy) ? '*' : ' ');
 		} else {
 			my $fx = int( $sx) - (( $sx > 0) ? 0 : 1);
 			my $fy = int( $sy) - (( $sy > 0) ? 0 : 1);
@@ -155,10 +155,10 @@ my $a = 1;
 my $w = Prima::MainWindow-> create
 (
 text => 'Rotating line',
-font => { name => 'Terminal', size => 12, pitch => fp::Fixed},
+font => { pitch => fp::Fixed, style => fs::Bold },
 menuItems =>
 	[[ '~Options' => [
-		[ '~Antialias' => sub {
+		[ '*a' => '~Antialias' => sub {
 			$antialias = $_[0]-> menu-> toggle( $_[1]);
 		}],
 	],
@@ -173,8 +173,9 @@ onPaint => sub {
 	my ( $x, $y, @lines) = rotate( $a);
 	my ( $fh, $fw) = ( $canvas-> font-> height, $canvas-> font-> width);
 	my $dy = 0;
+	my ( $X, $Y) = map { $_ / 2 } $self-> size;
 	for ( @lines) {
-		$canvas-> text_out( $_, ( 10 + $x) * $fw, ( 10 + $dy + $y) * $fh );
+		$canvas-> text_out( $_, $X + $x * $fw, $Y + ( $dy + $y) * $fh );
 		$dy++;
 	}
 	$canvas-> text_out( "$x $y ".(int($a * 180 / 3.14159)), 0, 0);
