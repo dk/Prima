@@ -520,6 +520,9 @@ window_subsystem_cleanup( void)
    if ( !DISP) return;
    /*XXX*/
    prima_end_menu();
+#ifdef WITH_GTK
+   prima_gtk_done();
+#endif
 }
 
 static void
@@ -674,11 +677,19 @@ apc_application_end_paint_info( Handle self)
 int
 apc_application_get_gui_info( char * description, int len)
 {
+#ifdef WITH_GTK2
+   if ( description) {
+      strncpy( description, "X Window System + GTK2", len);
+      description[len-1] = 0;
+   }
+   return guiGTK2;
+#else
    if ( description) {
       strncpy( description, "X Window System", len);
       description[len-1] = 0;
    }
    return guiXLib;
+#endif
 }
 
 Handle

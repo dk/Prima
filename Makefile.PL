@@ -79,6 +79,7 @@ use vars @ovvars = qw(
 	$WITH_XFT
 	$WITH_ICONV
 	$CODEC_PRIGRAPH
+	$WITH_GTK2
 );
 
 use vars @path_expand_ovvars = qw(
@@ -931,6 +932,7 @@ sub setup_variables
 	my $unix = (!$Win32 && !$OS2);
 	setvar('WITH_ICONV', $unix);
 	setvar('WITH_XFT', $unix);
+	setvar('WITH_GTK2', 0);
 	$install_manuals = $cygwin || (!$Win32 && !$OS2);
 	$install_manuals = 0 if !length( $INSTALL_MAN1) || !length($INSTALL_MAN3);
 
@@ -1203,8 +1205,45 @@ EOF
 		$WITH_ICONV = 0;
 	}
 	
+	if ( $WITH_GTK2) {
+		print "Checking for presence of gtk2... ";
+		my $pkg_config = `which pkg-config`;
+		chomp $pkg_config;
+		unless ( -f $pkg_config) {
+			$WITH_GTK2 = 0;
+			print "no pkg-config, no gtk2\n";
+		}
+
+		if ( $WITH_GTK2) {
+			my $vers = `pkg-config --modversion gtk+-2.0`;
+			chomp $vers;
+			if ( $vers =~ /^[\d\.]+$/) {
+				$DEFINES{GTK_VERSION} = "\"$vers\"";
+				print "yes, $vers\n";
+			} else {
+				$WITH_GTK2 = 0;
+				print "no\n";
+			}
+		}
+
+		if ( $WITH_GTK2) {
+			my $inc = `pkg-config --cflags-only-I gtk+-2.0`;
+			chomp $inc;
+			my %inc = map { $_ => 1 } @INCPATH;
+			push @INCPATH, $_ for grep { not exists $inc{$_}} $inc =~ /-I(\S+)/g;
+
+			my $lib = `pkg-config --libs-only-l gtk+-2.0`;
+			chomp $lib;
+			my %lib = map { $_ => 1 } @LIBS;
+			push @LIBS, $_ for grep { not exists $lib{$_}} $lib =~ /-l(\S+)/g;
+
+			$DEFINES{WITH_GTK2} = 1;
+		}
+	}
+	
 	print "Using Xft library\n" if $WITH_XFT;
 	print "Using iconv library\n" if $WITH_ICONV;
+	print "Using gtk2 library\n" if $WITH_GTK2;
 }       
 
 sub generate_win32_def

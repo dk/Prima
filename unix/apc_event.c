@@ -805,7 +805,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
             if ( guts. message_boxes) {
                struct MsgDlg * md = guts. message_boxes;
                while ( md) {
-                  XMapRaised( DISP, md-> w);
+	          if ( md-> w) XMapRaised( DISP, md-> w);
                   md = md-> next;
                }
                return false;

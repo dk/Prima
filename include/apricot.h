@@ -1481,10 +1481,8 @@ GUI(PM)
 GUI(Windows)
 #define guiXLib                 3
 GUI(XLib)
-#define guiOpenLook             4
-GUI(OpenLook)
-#define guiMotif                5
-GUI(Motif)
+#define guiGTK2                 4
+GUI(GTK2)
 END_TABLE(gui,UV)
 #undef GUI
 

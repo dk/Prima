@@ -74,6 +74,15 @@ Makefile.PL, where the most useful are:
 
 Look in Makefile.PL for details.
 
+GTK2
+----
+
+Prima can be compiled width GTK2 on unix systems. To do so run
+
+    perl Makefile.PL WITH_GTK2=1
+
+If successful, Prima will display GTK file dialogs. 
+
 BINARY DISTRIBUTION INSTALLATION
 ================================
 

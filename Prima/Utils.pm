@@ -178,11 +178,7 @@ user interface used in the system:
 	gui::PM  
 	gui::Windows
 	gui::XLib 
-	gui::OpenLook
-	gui::Motif
-
-The meaning of the return value is somewhat vague, and
-might be deprecated in future releases.
+	gui::GTK2
 
 =item get_os
 

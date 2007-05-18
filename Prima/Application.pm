@@ -561,11 +561,7 @@ user interface used in the system:
 	gui::PM  
 	gui::Windows
 	gui::XLib 
-	gui::OpenLook
-	gui::Motif
-
-The meaning of this field is somewhat vague, and
-the field will possibly be deprecated in the future releases.
+	gui::GTK2
 
 =item guiDescription
 

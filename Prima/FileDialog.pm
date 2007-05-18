@@ -695,16 +695,18 @@ sub profile_check_in
 
 my $unix  = ($^O =~ /cygwin/) || (Prima::Application-> get_system_info-> {apc} == apc::Unix);
 my $win32 = (Prima::Application-> get_system_info-> {apc} == apc::Win32);
+my $gtk2  = (Prima::Utils::get_gui == gui::GTK2);
 
 sub create
 {
 	my ( $class, %params) = @_;
-	if ( $params{system} && $win32) {
+	if ( $params{system} && ( $win32 || $gtk2))  {
+		my $sys = $win32 ? 'win32' : 'gtk2';
 		if ( $class =~ /^Prima::(Open|Save|File)Dialog$/) {
 			undef $@;
-			eval "use Prima::sys::win32::FileDialog";
+			eval "use Prima::sys::${sys}::FileDialog";
 			die $@ if $@;
-			$class =~ s/(Prima)/$1::sys::win32/;
+			$class =~ s/(Prima)/$1::sys::$sys/;
 			return $class-> create(%params);
 		}
 	}

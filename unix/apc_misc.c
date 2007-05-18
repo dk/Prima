@@ -1249,6 +1249,13 @@ apc_system_action( const char *s)
              snprintf( buf, sizeof(buf), "%d %d %d %d", r.left, r.bottom, r.right, r.top) < sizeof(buf))
             return duplicate_string( buf);
          return duplicate_string("");
+      } else if ( strncmp( s, "gtk2.OpenFile.", 14) == 0) {
+#ifdef WITH_GTK2
+	 s += 14;
+	 return prima_gtk_openfile( s);
+#else
+         return nil;
+#endif
       }
       break;
    case 's':
@@ -1289,7 +1296,7 @@ apc_system_action( const char *s)
       }
       break;
    }
-   warn("Unknow sysaction:%s", s);
+   warn("Unknown sysaction:%s", s);
    return nil;
 }
 

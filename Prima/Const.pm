@@ -459,8 +459,7 @@ See L<Prima::Application/get_system_info>
 	gui::PM  
 	gui::Windows
 	gui::XLib 
-	gui::OpenLook
-	gui::Motif
+	gui::GTK2
 
 =head2 le::  - line end styles
 

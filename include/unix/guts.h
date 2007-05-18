@@ -1217,4 +1217,13 @@ prima_xft_parse( char * ppFontNameSize, Font * font);
 extern void
 prima_xft_update_region( Handle self);
 
+#ifdef WITH_GTK
+Bool
+prima_gtk_init( void);
 
+Bool
+prima_gtk_done( void);
+
+char *
+prima_gtk_openfile( char * params);
+#endif

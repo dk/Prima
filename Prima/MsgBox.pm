@@ -58,8 +58,7 @@ sub insert_buttons
 	my $fresh;
 	my $freshFirst;
 
-	my $dir = Prima::Utils::get_gui;
-	$dir = ( $dir == gui::Motif) ? 1 : 0;
+	my $dir = 0; # set to 1 for reverse direction of buttons
 	@bConsts = reverse @bConsts unless $dir;
 	@bTexts  = reverse @bTexts  unless $dir;
 
