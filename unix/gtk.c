@@ -104,6 +104,8 @@ gtk_openfile( Bool open)
 	char *result = NULL;
    	struct MsgDlg message_dlg, **storage;
 
+	if ( gtk_dialog) return NULL; /* we're not reentrant */
+
 	gtk_dialog = gtk_file_chooser_dialog_new (
 		gtk_dialog_title_ptr ? 
 			gtk_dialog_title_ptr :
