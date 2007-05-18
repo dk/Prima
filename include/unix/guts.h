@@ -1217,7 +1217,7 @@ prima_xft_parse( char * ppFontNameSize, Font * font);
 extern void
 prima_xft_update_region( Handle self);
 
-#ifdef WITH_GTK
+#ifdef WITH_GTK2
 Bool
 prima_gtk_init( void);
 

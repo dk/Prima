@@ -1252,7 +1252,7 @@ apc_system_action( const char *s)
       } else if ( strncmp( s, "gtk2.OpenFile.", 14) == 0) {
 #ifdef WITH_GTK2
 	 s += 14;
-	 return prima_gtk_openfile( s);
+	 return prima_gtk_openfile(( char*) s);
 #else
          return nil;
 #endif
