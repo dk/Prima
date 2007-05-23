@@ -1660,7 +1660,7 @@ sub clsmake
 	my @ancestors = gencls( $clsfile, depend => 1);
 	$mk .= qd( "include/generic/$_.h $_.cls ") foreach @ancestors;
 	print "\n";
-	$mk .= "\n\t$^X utils/gencls.pl --inc --h --tml $clsfile include/generic\n\n";
+	$mk .= "\n\t$^X -I. utils/gencls.pl --inc --h --tml $clsfile include/generic\n\n";
 }
 
 sub qqd
@@ -2066,6 +2066,31 @@ FOOTER
 	}
 
 	clean_dist;
+} elsif ( $#ARGV >= 0 && $ARGV[ 0] eq '--help') {
+	print <<HELP;
+
+$0 - configuration script for Prima
+
+syntax:
+    perl Makefile.PL [options] 
+
+compiler/linker options:
+    COMPILER          - one of (cc,gcc,hpcc,irixcc,emx,msvc,bcc32), selects 
+                        environment profile. Detected automatically if unset.
+    CC, CFLAGS        - compiler and its flags
+    LD, LDFLAGS       - linker and its flags
+    INCPATH, LIBPATH  - additional paths to include and library files
+                        (f.ex. INCPATH+=/usr/opt/include )
+    PREFIX            - installation prefix, default is perl5 hierarchy
+    WANTNOGIFS        - compile without gif loader
+    X11BASE           - path where X11 includes and libraries are installed
+    WITH_XFT          - compile with/without Xft (default 1), X only
+    WITH_ICONV        - compile with/without iconv (default 1), X only
+    WITH_GTK2         - compile with/without GTK2 (default 0), X only
+    CODEC_PRIGRAPH    - compile with/without prigraph (default 1), win32/os2 only
+
+HELP
+	exit;
 } else {
 	$CWD = cwd;
 
@@ -2247,7 +2272,7 @@ $PrimaTarget: @allojects $extralibs
 
 test: all
 \t\@echo Testing Prima v$DEFINES{PRIMA_VERSION}.$DEFINES{PRIMA_SUBVERSION}
-\t\@$^X -w test/Tester.pl
+\t\@$^X -I. -w test/Tester.pl
 
 ppd:
 \t\@$^X -e "print qq{<SOFTPKG NAME=\\"Prima\\" VERSION=\\"$DEFINES{PRIMA_VERSION},$DEFINES{PRIMA_SUBVERSION},0,0\\">\\n}. qq{\\t<TITLE>Prima</TITLE>\\n}. qq{\\t<ABSTRACT>Perl GUI toolkit</ABSTRACT>\\n}. qq{\\t<AUTHOR>Dmitry Karasik</AUTHOR>\\n}. qq{\\t<IMPLEMENTATION>\\n}. qq{\\t\\t<OS NAME=\\"$^O\\" />\\n}. qq{\\t\\t<ARCHITECTURE NAME=\\"$Config{myarchname}\\" />\\n}. qq{\\t\\t<CODEBASE HREF=\\"http://www.prima.eu.org/download/Prima-$DEFINES{PRIMA_VERSION}.$DEFINES{PRIMA_SUBVERSION}.tar.gz\\" />\\n}. qq{\\t</IMPLEMENTATION>\\n}. qq{</SOFTPKG>\\n}" > Prima.ppd
