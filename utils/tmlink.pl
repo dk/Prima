@@ -128,5 +128,7 @@ HEAD
 for ( sort keys %funcs) {
 	print $f $funcs{$_};
 }
+print $f "\n";
+
 close FILE if defined $incFile;
 
