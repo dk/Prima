@@ -93,7 +93,7 @@ Object_create( char *className, HV * profile)
          OPEN_G_EVAL;
          Object_destroy( self);
          CLOSE_G_EVAL;
-         croak( SvPV( GvSV( errgv), na));
+         croak( SvPV_nolen( GvSV( errgv)));
       }
       CLOSE_G_EVAL;
       SPAGAIN;

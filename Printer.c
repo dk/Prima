@@ -225,7 +225,7 @@ XS( Printer_options_FROMPERL)
    }
    case 2: {
       char *option, *value;
-      option = ( char*) SvPV( ST(1), na);
+      option = ( char*) SvPV_nolen( ST(1));
       if ( apc_prn_get_option( self, option, &value)) {
          SPAGAIN;
          XPUSHs( sv_2mortal( newSVpv( value, 0)));
@@ -242,8 +242,8 @@ XS( Printer_options_FROMPERL)
       char *option, *value;
 
       for ( i = 1; i < items; i+=2) {
-         option = ( char*) SvPV( ST(i), na);
-         value  = (SvOK( ST(i+1)) ? ( char*) SvPV( ST(i+1), na) : nil);
+         option = ( char*) SvPV_nolen( ST(i));
+         value  = (SvOK( ST(i+1)) ? ( char*) SvPV_nolen( ST(i+1)) : nil);
 	 if ( !value) continue;
          if ( !apc_prn_set_option( self, option, value)) continue;
 	 success++;

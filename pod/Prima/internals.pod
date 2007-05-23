@@ -358,7 +358,7 @@ technique that keeps previous error message and looks like:
     perl_call_method( ... | G_EVAL);    // G_EVAL is necessary
     if ( SvTRUE( GvSV( errgv)) {
         CLOSE_G_EVAL;                   // close brackets
-        croak( SvPV( GvSV( errgv), na));// propagate exception
+        croak( SvPV_nolen( GvSV( errgv)));// propagate exception
         // no code is executed after croak
     }
     CLOSE_G_EVAL;                       // close brackets

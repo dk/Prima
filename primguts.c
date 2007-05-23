@@ -260,7 +260,7 @@ clean_perl_call_method( char* methname, I32 flags)
       }
       if ( flags & G_EVAL) return ret;
       CLOSE_G_EVAL;
-      croak( SvPV( GvSV( errgv), na));
+      croak( SvPV_nolen( GvSV( errgv)));
    }
 
    if ( !( flags & G_EVAL)) { CLOSE_G_EVAL; }
@@ -285,7 +285,7 @@ clean_perl_call_pv( char* subname, I32 flags)
       }
       if ( flags & G_EVAL) return ret;
       CLOSE_G_EVAL;
-      croak( SvPV( GvSV( errgv), na));
+      croak( SvPV_nolen( GvSV( errgv)));
    }
 
    if ( !( flags & G_EVAL)) { CLOSE_G_EVAL; }
@@ -389,7 +389,7 @@ XS( create_from_Perl)
       Handle  _c_apricot_res_;
       HV *hv = parse_hv( ax, sp, items, mark, 2 - 1, "Object_create");
       _c_apricot_res_ = Object_create(
-         ( char*) SvPV( ST( 0), na),
+         ( char*) SvPV_nolen( ST( 0)),
          hv
       );
       SPAGAIN;
@@ -590,9 +590,9 @@ XS(Prima_options)
       }
       break;
    case 2:
-      value  = (SvOK( ST(1)) ? ( char*) SvPV( ST(1), na) : nil);
+      value  = (SvOK( ST(1)) ? ( char*) SvPV_nolen( ST(1)) : nil);
    case 1:
-      option = ( char*) SvPV( ST(0), na);
+      option = ( char*) SvPV_nolen( ST(0));
       window_subsystem_set_option( option, value);
       break;
    default:
@@ -659,7 +659,7 @@ XS( Prima_message_FROMPERL)
    (void)items;
    if ( items != 1)
       croak("Invalid usage of Prima::%s", "message");
-   apc_show_message((char*) SvPV( ST(0), na), SvUTF8(ST(0)));
+   apc_show_message((char*) SvPV_nolen( ST(0)), SvUTF8(ST(0)));
    XSRETURN_EMPTY;
 }
 
@@ -669,7 +669,7 @@ XS( Prima_dl_export)
    (void)items;
    if ( items != 1)
       croak("Invalid usage of Prima::%s", "dl_export");
-   apc_dl_export((char*) SvPV( ST(0), na));
+   apc_dl_export((char*) SvPV_nolen( ST(0)));
    XSRETURN_EMPTY;
 }
 
@@ -753,7 +753,7 @@ gimme_the_vmt( const char *className)
       /* ISA found! */
       inheritedName = av_fetch( GvAV(( GV *) *isaGlob), 0, 0);
       if ( inheritedName != nil)
-         originalVmt = gimme_the_vmt( SvPV( *inheritedName, na));
+         originalVmt = gimme_the_vmt( SvPV_nolen( *inheritedName));
       else
          return nil; /* The error message will be printed by the previous incarnation */
    }
@@ -982,7 +982,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
             (void)POPs;
             PUB_CHECK;
             CLOSE_G_EVAL;
-            croak( SvPV( GvSV( errgv), na));    /* propagate */
+            croak( SvPV_nolen( GvSV( errgv)));    /* propagate */
          }
          CLOSE_G_EVAL;
 #else
@@ -1013,7 +1013,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
          {
             PUB_CHECK;
             CLOSE_G_EVAL;
-            croak( SvPV( GvSV( errgv), na));    /* propagate */
+            croak( SvPV_nolen( GvSV( errgv)));    /* propagate */
          }
          CLOSE_G_EVAL;
 #else

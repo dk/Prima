@@ -241,7 +241,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
                            holder = av_fetch( item, num, 0);                   \
                            if ( holder) {                                      \
 			      if ( SvTYPE(*holder) != SVt_NULL) {              \
-				 l_ = duplicate_string( SvPV( *holder, na));   \
+				 l_ = duplicate_string( SvPV_nolen( *holder)); \
 				 fl_ = SvUTF8(*holder) ? 1 : 0;                \
 			      }                                                \
                            } else {                                            \
@@ -259,7 +259,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
             my-> dispose_menu( self, m);
             return nil;
          }
-         r-> key = key_normalize( SvPV( *holder, na));
+         r-> key = key_normalize( SvPV_nolen( *holder));
       }
 
       if ( r-> variable)
@@ -317,7 +317,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
             SvREFCNT_inc( SvRV(( PObject( r-> bitmap))-> mate));
          } else {
          TEXT:
-            r-> text = duplicate_string( SvPV( subItem, na));
+            r-> text = duplicate_string( SvPV_nolen( subItem));
             r-> flags. utf8_text = SvUTF8( subItem) ? 1 : 0;
          }
       }
@@ -349,7 +349,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
             }
          } else {
             if ( SvPOK( subItem)) {
-               r-> perlSub = duplicate_string( SvPV( subItem, na));
+               r-> perlSub = duplicate_string( SvPV_nolen( subItem));
                r-> flags. utf8_perlSub = SvUTF8( subItem) ? 1 : 0;
             } else {
                warn("RTC0038: menu build error: invalid sub name passed");
@@ -646,7 +646,7 @@ AbstractMenu_accel( Handle self, Bool set, char * varName, SV * accel)
    }
    if ( m-> text == nil) return nilSV;
    free( m-> accel);
-   m-> accel = duplicate_string( SvPV( accel, na));
+   m-> accel = duplicate_string( SvPV_nolen( accel));
    m-> flags. utf8_accel = SvUTF8( accel) ? 1 : 0;
 
    if ( m-> id > 0)
@@ -686,7 +686,7 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
       }
       m-> flags. utf8_perlSub = 0;
    } else {
-      char * line = ( char *) SvPV( action, na);
+      char * line = ( char *) SvPV_nolen( action);
       free( m-> perlSub);
       if ( m-> code) sv_free( m-> code);
       m-> code = nil;
@@ -795,7 +795,7 @@ AbstractMenu_text( Handle self, Bool set, char * varName, SV * text)
       return sv;
    }
    free( m-> text);
-   m-> text = duplicate_string( SvPV( text, na));
+   m-> text = duplicate_string( SvPV_nolen( text));
    m-> flags. utf8_accel = SvUTF8( text) ? 1 : 0;
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
@@ -814,7 +814,7 @@ AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
    if ( !set)
       return newSViv( m-> key);
 
-   m-> key = key_normalize( SvPV( key, na));
+   m-> key = key_normalize( SvPV_nolen( key));
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
          apc_menu_item_set_key( self, m);

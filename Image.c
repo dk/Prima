@@ -500,10 +500,10 @@ XS( Image_load_FROMPERL)
       croak("Invalid usage of Prima::Image::load");
    
    self = gimme_the_mate( ST( 0));
-   fn   = ( char *) SvPV( ST( 1), na);
+   fn   = ( char *) SvPV_nolen( ST( 1));
    profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
    if ( !pexist( className)) 
-      pset_c( className, self ? my-> className : ( char*) SvPV( ST( 0), na));
+      pset_c( className, self ? my-> className : ( char*) SvPV_nolen( ST( 0)));
    ret = apc_img_load( self, fn, profile, error);
    sv_free(( SV *) profile);
    SPAGAIN;
@@ -551,7 +551,7 @@ Image_load( SV * who, char *filename, HV * profile)
    Handle self = gimme_the_mate( who);
    char error[ 256];
    if ( !pexist( className)) 
-      pset_c( className, self ? my-> className : ( char*) SvPV( who, na));
+      pset_c( className, self ? my-> className : ( char*) SvPV_nolen( who));
    ret = apc_img_load( self, filename, profile, error);
    return ret;
 }
@@ -570,7 +570,7 @@ XS( Image_save_FROMPERL)
       croak("Invalid usage of Prima::Image::save");
    
    self = gimme_the_mate( ST( 0));
-   fn   = ( char *) SvPV( ST( 1), na);
+   fn   = ( char *) SvPV_nolen( ST( 1));
    profile = parse_hv( ax, sp, items, mark, 2, "Image::save");
    ret = apc_img_save( self, fn, profile, error);
    sv_free(( SV *) profile);
@@ -600,7 +600,7 @@ Image_save( SV * who, char *filename, HV * profile)
    Handle self = gimme_the_mate( who);
    char error[ 256];
    if ( !pexist( className)) 
-      pset_c( className, self ? my-> className : ( char*) SvPV( who, na));
+      pset_c( className, self ? my-> className : ( char*) SvPV_nolen( who));
    return apc_img_save( self, filename, profile, error);
 }
 

@@ -244,7 +244,7 @@ Component_name( Handle self, Bool set, SV * name)
 {
    if ( set) {
       free( var-> name);
-      var-> name = duplicate_string( SvPV( name, na));
+      var-> name = duplicate_string( SvPV_nolen( name));
       opt_assign( optUTF8_name, SvUTF8(name));
       if ( var-> stage >= csNormal)
          apc_component_fullname_changed_notify( self);
@@ -667,7 +667,7 @@ XS( Component_notify_FROMPERL)
       croak ("Invalid usage of Component.notify");
    SP -= items;
    self    = gimme_the_mate( ST( 0));
-   name    = ( char*) SvPV( ST( 1), na);
+   name    = ( char*) SvPV_nolen( ST( 1));
    if ( self == nilHandle)
       croak( "Illegal object reference passed to Component.notify");
 
@@ -690,7 +690,7 @@ XS( Component_notify_FROMPERL)
          (void)POPs;
          PUB_CHECK;
          CLOSE_G_EVAL;
-         croak( SvPV( GvSV( errgv), na));
+         croak( SvPV_nolen( GvSV( errgv)));
       } 
       CLOSE_G_EVAL;
       SPAGAIN;
@@ -810,7 +810,7 @@ XS( Component_notify_FROMPERL)
          if ( privMethod) sv_free( privMethod);
          free( argsv);
          free( sequence);
-         croak( SvPV( GvSV( errgv), na));
+         croak( SvPV_nolen( GvSV( errgv)));
       } 
       CLOSE_G_EVAL;
       SPAGAIN;
@@ -1023,7 +1023,7 @@ XS( Component_get_notification_FROMPERL)
       croak( "Illegal object reference passed to Component.get_notification");
 
    if ( var-> eventIDs == nil) XSRETURN_EMPTY;
-   event = ( char *) SvPV( ST( 1), na);
+   event = ( char *) SvPV_nolen( ST( 1));
    ret = hash_fetch( var-> eventIDs, event, strlen( event));
    if ( ret == nil) XSRETURN_EMPTY;
    list = var-> events + PTR2UV( ret) - 1;
@@ -1119,7 +1119,7 @@ Component_delegations( Handle self, Bool set, SV * delegations)
             CV * sub;
             SV * subref;
             char buf[ 1024];
-            char * event = SvPV( *holder, na);
+            char * event = SvPV_nolen( *holder);
             snprintf( buf, 1023, "%s_%s", name, event);
             sub = query_method( referer, buf, 0);
             if ( sub == nil) continue;
@@ -1131,7 +1131,8 @@ Component_delegations( Handle self, Bool set, SV * delegations)
       HE * he;
       AV * av = newAV();
       Handle last = nilHandle;
-      if ( var-> stage > csNormal || var-> eventIDs == nil) newRV_noinc(( SV*) av);
+      if ( var-> stage > csNormal || var-> eventIDs == nil)
+         return newRV_noinc(( SV*) av);
 
       hv_iterinit( var-> eventIDs);
       while (( he = hv_iternext( var-> eventIDs)) != nil) {

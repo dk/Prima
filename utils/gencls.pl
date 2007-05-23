@@ -27,7 +27,6 @@
 #  $Id$
 #
 
-use lib qw( ..);
 use Prima::Gencls;
 
 # Main

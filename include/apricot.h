@@ -249,6 +249,9 @@ extern "C" {
 #define INT2PTR(type,x) ((type)((UV)x))
 #endif
 
+#ifndef SvPV_nolen
+#define SvPV_nolen(_sv)  SvPV(_sv,na)
+#endif
 
 #define PERL_CALL_SV_DIE_BUG_AWARE 1
 
@@ -554,7 +557,7 @@ XS(prima_autoload_##package##_constant) \
    } \
  \
    if ( items != 1) croak( "invalid call to " #package "::constant"); \
-   name = SvPV( ST( 0), na); \
+   name = SvPV_nolen( ST( 0)); \
    SPAGAIN; \
    SP -= items; \
    r = (type *)hash_fetch( table, name, strlen( name)); \
@@ -1304,7 +1307,7 @@ SvBOOL( SV *sv)
 #define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ), &sv_undef : *temporary_prf_Sv)
 #define pget_i( key)  ( pget_sv( key), SvIV( *temporary_prf_Sv))
 #define pget_f( key)  ( pget_sv( key), SvNV( *temporary_prf_Sv))
-#define pget_c( key)  ( pget_sv( key), SvPV( *temporary_prf_Sv, na))
+#define pget_c( key)  ( pget_sv( key), SvPV_nolen( *temporary_prf_Sv))
 #define pget_H( key)  gimme_the_mate( pget_sv( key))
 #define pget_B( key)  ( SvTRUE( pget_sv( key)))
 

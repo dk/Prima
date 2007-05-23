@@ -74,7 +74,7 @@ XS(Utils_getdir_FROMPERL) {
    if ( items >= 2) {
       croak( "invalid usage of Prima::Utils::getdir");
    }
-   dirname = SvPV( ST( 0), na);
+   dirname = SvPV_nolen( ST( 0));
    dirlist = apc_getdir( dirname);
    SPAGAIN;
    SP -= items;

@@ -229,8 +229,8 @@ sub init_variables
 		# 0         1            2           3        4           5        6        7       8
 		'int'     => ['int',    'SvIV',      'sv_setiv',  '',      '(IV)',     '',    'POPi',    'SViv', ''     ],
 		'double'  => ['double', 'SvNV',      'sv_setnv',  '',      '(double)', '',    'POPn',    'SVnv', ''     ],
-		'char*'   => ['char *', 'SvPV',      'sv_setpv',  '(SV*)', '',         ', 0', 'POPp',    'SVpv', ', na' ],
-		'string'  => ['char',   'SvPV',      'sv_setpv',  '(SV*)', '',         ', 0', 'POPp',    'SVpv', ', na' ],
+		'char*'   => ['char *', 'SvPV_nolen','sv_setpv',  '(SV*)', '',         ', 0', 'POPp',    'SVpv', '' ],
+		'string'  => ['char',   'SvPV_nolen','sv_setpv',  '(SV*)', '',         ', 0', 'POPp',    'SVpv', '' ],
 		'Handle'  => ['Handle', $incGetMate, '',          '',      '',         '',    '0/0',     '',     ''     ],
 		'SV*'     => ['SV *',   '',          '',          '',      '',         '',    '0/0',     '',     ''     ],
 		'Bool'    => ['Bool',   'SvBOOL',    'sv_setiv',  '0/0',   '0/0',      '',    'SvBOOL( POPs)', 'SViv', ''     ],
@@ -1499,7 +1499,7 @@ sub out_method_profile
 			if ( $resSub eq "char*") {
 print HEADER <<LABEL;
 	{
-		char * $incRet =$castedResult SvPV( $incRes, na);
+		char * $incRet =$castedResult SvPV_nolen( $incRes);
 		sv_2mortal( $incRes);
 		return $incRet;
 	}
@@ -1701,7 +1701,7 @@ LABEL
 					my $lType  = ${ $structs{ $lVar}[ 0]}[ $j];
 					my $lName  = ${ $structs{ $lVar}[ 1]}[ $j];
 					if ( $lType eq "string") {
-						$paramAuxSet .= "strncpy( $incRes$structCount. $lName, ( char*) SvPV( ST( $stn), na), 255); $incRes$structCount. $lName\[255\]=0;\n\t\t";
+						$paramAuxSet .= "strncpy( $incRes$structCount. $lName, ( char*) SvPV_nolen( ST( $stn)), 255); $incRes$structCount. $lName\[255\]=0;\n\t\t";
 					} else {
 						$paramAuxSet .= "$incRes$structCount. $lName = ";
 						if ( $lType eq "SV*") {
@@ -1725,7 +1725,7 @@ LABEL
 				if ( $lName eq 'SV*') { 
 					$str = "$incRes$structCount\[$incCount\] = ST( $stn + $incCount)" 
 				} elsif ( $lName eq 'string') {
-					$str = "strncpy( $incRes$structCount\[$incCount\], ( char*) SvPV( ST( $stn + $incCount), na), 255);$incRes$structCount\[$incCount\]\[255\]=0"
+					$str = "strncpy( $incRes$structCount\[$incCount\], ( char*) SvPV_nolen( ST( $stn + $incCount)), 255);$incRes$structCount\[$incCount\]\[255\]=0"
 				} else {
 					$str = "$incRes$structCount\[$incCount\] = ( $lType) $xsConv{$lName}[1]( ST( $stn + $incCount)$xsConv{$lName}[8])";
 				}
