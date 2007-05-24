@@ -127,7 +127,7 @@ sub init
 		selectable  => 1,
 		current     => 1,
 		delegations => [ qw( 
-			Paint MouseDown MouseMove MouseUp 
+			Paint MouseDown MouseMove MouseUp MouseWheel
 			KeyDown Size FontChanged Enter Leave
 		)],
 		growMode    => gm::Client,
@@ -334,6 +334,29 @@ sub Day_MouseUp
 	return unless $btn == mb::Left && $self-> {mouseTransaction};
 	delete $self-> {mouseTransaction};
 	$self-> clear_event;
+}
+
+sub Day_MouseWheel
+{
+	my ( $self, $widget, $mod, $x, $y, $z) = @_;
+	my ( $day, $month, $year) = @{$self-> {date}};
+	if ( $z > 0) {
+		if ( --$day < 1) {
+			if ( --$month < 0) {
+				return if --$year < 0;
+				$month = 11;
+			}
+			$day = $days_in_months[$month];
+		}
+	} elsif ( ++$day > $days_in_months[$month]) {
+		if ( ++$month > 11) {
+			return if ++$year > 199;
+			$month = 0;
+		}
+		$day = 1;
+	}
+	$self-> date( $day, $month, $year);
+	$widget-> clear_event;
 }
 
 sub day_reset

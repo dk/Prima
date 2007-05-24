@@ -770,6 +770,32 @@ sub InputLine_Enter { $_[1]-> repaint; }
 
 sub InputLine_Leave { $_[0]-> listVisible(0) if $Prima::ComboBox::capture_mode }
 
+sub InputLine_MouseWheel
+{
+	my ( $self, $widget, $mod, $x, $y, $z) = @_;
+
+	my $v = $self-> value;
+	$z = $z / 120 * 16;
+	my ( $r, $g, $b) = ( $v >> 16, ($v >> 8) & 0xff, $v & 0xff);
+	if ( $mod & km::Shift) {
+		$r += $z;
+	} elsif ( $mod & km::Ctrl) {
+		$g += $z;
+	} elsif ( $mod & km::Alt) {
+		$b += $z;
+	} else {
+		$r += $z;
+		$g += $z;
+		$b += $z;
+	}
+	for ( $r, $g, $b) {
+		$_ = 0 if $_ < 0;
+		$_ = 255 if $_ > 255;
+	}
+	$self-> value( $r * 65536 + $g * 256 + $b);
+	$widget-> clear_event;
+}
+
 sub List_Create
 {
 	my ($combo,$self) = @_;

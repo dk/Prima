@@ -454,6 +454,7 @@ sub InputLine_MouseWheel
 	$self-> value( $value + $z * $self-> {step});
 	$self-> value( $z > 0 ? $self-> min : $self-> max)
 		if $self-> {circulate} && ( $self-> value == $value);
+	$edit-> clear_event;
 }
 
 sub Spin_Increment
@@ -802,6 +803,27 @@ sub on_mouseclick
 	$self-> clear_event unless $self-> notify( "MouseDown", @_);
 }
 
+sub on_mousewheel
+{
+	my ( $self, $mod, $x, $y, $z) = @_;
+	$self-> set_next_value( $self-> {step} * $z / 120);
+	$self-> clear_event;
+}
+
+sub set_next_value
+{
+	my ( $self, $dir) = @_;
+	$dir *= -1 if $self-> {min} > $self-> {max};
+	if ( $self-> snap) {
+		my $v = $self-> value;
+		my $w = $v;
+		return if ( $v + $dir > $self-> {min} and $v + $dir > $self-> {max}) or
+			( $v + $dir < $self-> {min} and $v + $dir < $self-> {max});
+		$self-> value( $v += $dir) while $self-> {value} == $w;
+	} else {
+		$self-> value( $self-> value + $dir);
+	}
+}
 
 sub set_read_only
 {
@@ -1227,19 +1249,7 @@ sub on_keydown
 	if ( $key == kb::Left || $key == kb::Right || $key == kb::Up || $key == kb::Down) {
 		my $s = $self-> {step};
 		$self-> clear_event;
-		my $dir = ( $key == kb::Left || $key == kb::Down) ? -$s : $s;
-		$dir *= -1 if $self-> {min} > $self-> {max};
-		$dir *= -1 if $self-> {vertical};
-		if ( $self-> snap) {
-			my $v = $self-> value;
-			my $w = $v;
-			return if 
-				( $v + $dir > $self-> {min} and $v + $dir > $self-> {max}) or
-				( $v + $dir < $self-> {min} and $v + $dir < $self-> {max});
-			$self-> value( $v += $dir) while $self-> {value} == $w;
-		} else {
-			$self-> value( $self-> value + $dir);
-		}
+		$self-> set_next_value(( $key == kb::Left || $key == kb::Down) ? -$s : $s);
 	}
 }
 
@@ -1576,17 +1586,7 @@ sub on_keydown
 	if ( $key == kb::Left || $key == kb::Right || $key == kb::Up || $key == kb::Down) {
 		my $s = $self-> {step};
 		$self-> clear_event;
-		my $dir = ( $key == kb::Left || $key == kb::Down) ? -$s : $s;
-		$dir *= -1 if $self-> {min} > $self-> {max};
-		if ( $self-> snap) {
-			my $v = $self-> value;
-			my $w = $v;
-			return if ( $v + $dir > $self-> {min} and $v + $dir > $self-> {max}) or
-				( $v + $dir < $self-> {min} and $v + $dir < $self-> {max});
-			$self-> value( $v += $dir) while $self-> {value} == $w;
-		} else {
-			$self-> value( $self-> value + $dir);
-		}
+		$self-> set_next_value(( $key == kb::Left || $key == kb::Down) ? -$s : $s);
 	}
 }
 

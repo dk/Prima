@@ -107,7 +107,7 @@ sub profile_default
 		listProfile    => {},
 		buttonProfile  => {},
 		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown)],
-		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave)],
+		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave MouseWheel)],
 		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick 
 			MouseUp MouseMove Paint)],
 	}
@@ -482,6 +482,18 @@ sub InputLine_Change
 		$edit-> {interaction} = undef;
 	}
 	$list-> {interaction} = undef;
+}
+
+sub InputLine_MouseWheel
+{
+	my ( $self, $edit, $mod, $x, $y, $z) = @_;
+
+	my $f = $self-> {list}-> focusedItem;
+	$f += (($z > 0) ? -1 : 1);
+	return if $f < 0;
+	$self-> {list}-> focusedItem($f);
+	$self-> notify(q(Change));
+	$edit-> clear_event;
 }
 
 sub set_style

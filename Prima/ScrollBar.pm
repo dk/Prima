@@ -459,6 +459,12 @@ sub on_mousemove
 	}
 }
 
+sub on_mousewheel
+{
+	my ( $self, $mod, $x, $y, $z) = @_;
+	$self-> value( $self-> value - $self-> step * int( $z/120));
+	$self-> clear_event;
+}
 
 sub reset
 {
