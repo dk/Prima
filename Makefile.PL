@@ -868,6 +868,12 @@ sub setup_variables
 		my ( $defname, $defvalue) = ( $1, $2 || 1);
 		$DEFINES{ $defname} = $defvalue;
 	}
+	
+	if ( $COMPILER eq 'msvc') {
+		$DEFINES{_CRT_SECURE_NO_DEPRECATE} = 1;
+		# to be invoked on command line
+		$CFLAGS .= " -D_CRT_SECURE_NO_DEPRECATE";
+	}
 
 	# find common denominator with installsitearch and installscript
 	my @a = split( '\\\\|\/', $Config{installscript});
@@ -1251,7 +1257,6 @@ sub generate_win32_def
 	open PRIMADEF, ">$DEFFILE" or die "Cannot create $DEFFILE: $!";
 	print PRIMADEF <<EOF;
 LIBRARY Prima
-DESCRIPTION 'Prima Guts version 2.00, Copyright (C) the Protein Laboratory 1997'
 EXPORTS
 EOF
 	if ( $COMPILER eq 'bcc32') {
