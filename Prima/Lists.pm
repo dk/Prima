@@ -2078,19 +2078,16 @@ Removes selection from all items.
 
 Only for multi-select mode.
 
-=item draw_items CANVAS, ITEMS
+=item draw_items CANVAS, ITEM_DRAW_DATA
 
-Called from within C<Paint> notification to draw
-items. The default behavior is to call C<DrawItem>
-notification for every item in ITEMS array. ITEMS
-is an array or arrays, where each array consists
-of parameters, passed to C<DrawItem> notification.
+Called from within C<Paint> notification to draw items. The default behavior is
+to call C<DrawItem> notification for every item in ITEM_DRAW_DATA array.
+ITEM_DRAW_DATA is an array or arrays, where each array consists of parameters,
+passed to C<DrawItem> notification.
 
-This method is overridden in some descendant classes,
-to increase the speed of drawing routine. For example,
-C<std_draw_text_items> is the optimized routine for
-drawing unified text-based items. It is used in 
-C<Prima::ListBox> class.
+This method is overridden in some descendant classes, to increase the speed of
+drawing routine. For example, C<std_draw_text_items> is the optimized routine
+for drawing unified text-based items. It is used in C<Prima::ListBox> class.
 
 See L<DrawItem> for parameters description.
 
@@ -2132,9 +2129,9 @@ Returns the index of an item that contains point (X,Y). If the point
 belongs to the item outside the widget's interior, returns the index
 of the first item outside the widget's interior in the direction of the point.
 
-=item redraw_items ITEMS
+=item redraw_items INDICES
 
-Redraws all items in ITEMS array.
+Redraws all items in INDICES array.
 
 =item select_all
 
@@ -2155,7 +2152,7 @@ Selects INDEXth item.
 
 Only for multi-select mode.
 
-=item std_draw_text_items CANVAS, ITEMS
+=item std_draw_text_items CANVAS, ITEM_DRAW_DATA
 
 An optimized method, draws unified text-based items.
 It is fully compatible to C<draw_items> interface,
@@ -2171,7 +2168,7 @@ While the background is drawn by the routine itself, the foreground
 the text positioning and eventual decorations would not require
 full rewrite of code. 
 
-ITEMS is an array of arrays of scalars, where each array
+ITEM_DRAW_DATA is an array of arrays of scalars, where each array
 contains parameters of C<DrawItem> notification.
 See L<DrawItem> for parameters description.
 
@@ -2284,40 +2281,36 @@ Appends array of ITEMS to the end of the list.
 Recalculates all item widths and adjusts C<itemWidth> if
 C<autoWidth> is set.
 
-=item delete_items ITEMS
+=item delete_items INDICES
 
-Deletes items from the list. ITEMS can be either an array,
+Deletes items from the list. INDICES can be either an array,
 or a reference to an array of item indices.
 
 =item get_item_width INDEX
 
 Returns width in pixels of INDEXth item from internal cache.
 
-=item get_items ITEMS
+=item get_items INDICES
 
-Returns array of items. ITEMS can be either an array,
-or a reference to an array of item indices.
-Depending on the caller context, the results are different:
-in array context the item list is returned; in scalar -
-only the first item from the list. The semantic of the last
-call is naturally usable only for single item retrieval.
+Returns array of items. INDICES can be either an array, or a reference to an
+array of item indices.  Depending on the caller context, the results are
+different: in array context the item list is returned; in scalar - only the
+first item from the list. The semantic of the last call is naturally usable
+only for single item retrieval.
 
 =item insert_items OFFSET, ITEMS
 
-Inserts array of items at OFFSET index in the list.
-Offset must be a valid index; to insert items at the end of
-the list use C<add_items> method.
+Inserts array of items at OFFSET index in the list.  Offset must be a valid
+index; to insert items at the end of the list use C<add_items> method.
 
-ITEMS can be either an array, or a reference to an array of 
-item indices.
+ITEMS can be either an array, or a reference to an array of items.
 
 =item replace_items OFFSET, ITEMS
 
-Replaces existing items at OFFSET index in the list.
-Offset must be a valid index.
+Replaces existing items at OFFSET index in the list.  Offset must be a valid
+index.
 
-ITEMS can be either an array, or a reference to an array of 
-item indices.
+ITEMS can be either an array, or a reference to an array of items.
 
 =back
 
