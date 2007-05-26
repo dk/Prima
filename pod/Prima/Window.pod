@@ -143,29 +143,29 @@ The both kinds of modal windows can coexist, but the exclusive
 windows prevents the shared from operation; while there are
 exclusive windows, the shared have same rights as the usual windows.
 
-The stacking order for these two models is slightly different.
-Any window, called execute() is set on top of the last exclusive
-modal window. The same is valid for the shared model, but since
-there can be many shared window stacks, a window enters same stack
-as of its owner. Here introduced the 'modal horizon'
-term. A modal horizon is a root of the shared window stack, 
-and the default horizon is $::application's. The boolean C<::modalHorizon>
-property is responsible whether the window serves as a horizon or not.
+The stacking order for these two models is slightly different.  A window after
+execute() call is set on top of the last exclusive modal window, or, in other
+words, is added to the exclusive window stack. There can be only one exclusive
+window stack, but many shared window stacks; a window after execute_shared()
+call is added to a shared window stack, to the one the window's owner belongs
+to. The shared window stacks are rooted in so-called modal horizons, windows
+with boolean property C<::modalHorizon> set to C<true>. The default horizon is
+C<::application>.
 
-A window in modal state can return to its normal state by 
-calling C<end_modal()> method. The window is then set hidden and disabled, 
-and the windows below can be operated. If the window was in exclusive
-modal state, the execute() call finished and returns an exit code, which
-can be set through C<::modalResult> property. This property is an convenience
-indicator of how the window was dismissed. There two methods, that 
-dismiss the window with returning two basic 'ok' and 'not ok' code.
-These are C<ok()> and C<cancel()> methods; the latter is identical to
-when the user closes the modal window by the means of the system.
-The values set to C<::modalResult> are C<mb::OK> and C<mb::Cancel>,
-correspondingly. There are more C<mb::XXX> constants, but these represent
-no special meaning; any integer value can be passed. Prima::MsgBox::message
-method uses these so the message window can return up to four different
-return codes.
+A window in modal state can return to the normal (non-modal) state by calling
+C<end_modal()> method. The window is then hidden and disabled, and the windows
+below are accessible to the user. If the window was in the exclusive modal
+state, the execute() call is finished and returns the exit code, the value of
+C<::modalResult> property. There two shortuct methods that end modal state,
+setting C<::modalResult> to the basic 'ok' and 'not ok' code, correspondingly
+C<ok()> and C<cancel()> methods. Behavior of C<cancel()> is identical to when
+the user closes the modal window by clicking the system close button, pressing
+Escape key, or otherwise cancelling the dialog execution. C<ok()> sets
+C<::modalResult> to C<mb::OK>, C<cancel()> to C<mb::Cancel>, correspondingly.
+There are more C<mb::XXX> constants, but these have no special meaning, any
+integer value can be passed. For example, C<Prima::MsgBox::message> method uses
+these constants so the message window can return up to four different C<mb>
+codes.
 
 =head2 Menu
 
@@ -362,16 +362,15 @@ See also: C<menuItems>, C<menuColorIndex>, C<menuFont>, C<menu>
 
 =item modalHorizon BOOLEAN
 
-Reflects whether a window is a root to the shared modal window stack
-or is a non-root. A window with C<::modalHorizon> set to 1
-in shared modal state groups its children windows in a separate
-hierarchy from other shared modal hierarchies. The C<::modalHorizon>
-is therefore useful only when several shared modal window stacks
-are needed.
+Reflects if a window serves as root to the shared modal window stack.  A window
+with C<::modalHorizon> set to 1 in shared modal state groups its children
+windows in a window stack, separate from other shared modal stacks. The
+C<::modalHorizon> is therefore useful only when several shared modal window
+stacks are needed.
 
-The property also serves as an additional grouping factor
-for widgets and windows. For example, default keyboard navigation by
-tab and arrow keys is limited to the windows and widgets of a horizon.
+The property also serves as an additional grouping factor for widgets and
+windows. For example, default keyboard navigation by tab and arrow keys is
+limited to the windows and widgets of a single window stack.
 
 =item modalResult INTEGER
 
