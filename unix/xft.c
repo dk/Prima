@@ -238,6 +238,19 @@ prima_xft_done(void)
    hash_destroy( mismatch, false);
 }
 
+static unsigned short
+utf8_flag_strncpy( char * dst, const char * src, unsigned int maxlen, unsigned short is_utf8_flag)
+{
+	int is_utf8 = 0;
+	while ( maxlen-- && *src) {
+		if ( *((unsigned char*)src) > 0x7f) 
+			is_utf8 = 1;
+		*(dst++) = *(src++);
+	}
+	*dst = 0;
+	return is_utf8 ? is_utf8_flag : 0;
+}
+
 static void
 fcpattern2font( FcPattern * pattern, PFont font)
 {
@@ -248,9 +261,9 @@ fcpattern2font( FcPattern * pattern, PFont font)
 
    /* FcPatternPrint( pattern); */
    if ( FcPatternGetString( pattern, FC_FAMILY, 0, &s) == FcResultMatch)
-      strncpy( font-> name, (char*)s, 255);
+      font-> utf8_flags |= utf8_flag_strncpy( font-> name, (char*)s, 255, FONT_UTF8_NAME);
    if ( FcPatternGetString( pattern, FC_FOUNDRY, 0, &s) == FcResultMatch)
-      strncpy( font-> family, (char*)s, 255);
+      font-> utf8_flags |= utf8_flag_strncpy( font-> family, (char*)s, 255, FONT_UTF8_FAMILY);
    font-> style = 0;
    if ( FcPatternGetInteger( pattern, FC_SLANT, 0, &i) == FcResultMatch) 
       if ( i == FC_SLANT_ITALIC || i == FC_SLANT_OBLIQUE)

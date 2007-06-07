@@ -828,6 +828,7 @@ font_fontmetrics2font( PFONTMETRICS m, PFont f, Bool readonly)
    f-> lastChar           = m-> sLastChar        ;
    f-> breakChar          = m-> sBreakChar       ;
    f-> defaultChar        = m-> sDefaultChar     ;
+   f-> utf8_flags         = 0                    ;
    strcpy( f-> encoding, font_cp2enc( m-> usCodePage));
 }
 

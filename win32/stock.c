@@ -1187,6 +1187,7 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
       hash_store( f-> hash, name, strlen( name), fm); 
    }
    fm-> direction = fm-> resolution = 0;
+   fm-> utf8_flags = 0;
    strcpy( fm-> name, name);
    if ( f-> wide)
       wchar2char( fm-> family, e-> elfFullName, LF_FULLFACESIZE);

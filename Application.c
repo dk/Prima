@@ -313,6 +313,21 @@ Application_fonts( Handle self, char * name, char * encoding)
    for ( i = 0; i < count; i++) {
       SV * sv      = sv_Font2HV( &fmtx[ i]);
       HV * profile = ( HV*) SvRV( sv);
+      if ( fmtx[i]. utf8_flags & FONT_UTF8_NAME) {
+         SV ** entry = hv_fetch(( HV*) SvRV( sv), "name", 4, 0);
+	 if ( entry && SvOK( *entry))
+            SvUTF8_on( *entry);
+      }	 
+      if ( fmtx[i]. utf8_flags & FONT_UTF8_FAMILY) {
+         SV ** entry = hv_fetch(( HV*) SvRV( sv), "family", 6, 0);
+	 if ( name && SvOK( *entry))
+            SvUTF8_on( *entry);
+      }	 
+      if ( fmtx[i]. utf8_flags & FONT_UTF8_ENCODING) {
+         SV ** entry = hv_fetch(( HV*) SvRV( sv), "encoding", 8, 0);
+	 if ( name && SvOK( *entry))
+            SvUTF8_on( *entry);
+      }	 
       if ( name[0] == 0 && encoding[0] == 0) {
          /* Read specially-coded (const char*) encodings[] vector,
             stored in fmtx[i].encoding. First pointer is filled with 0s,

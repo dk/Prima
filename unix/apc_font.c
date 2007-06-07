@@ -1266,6 +1266,7 @@ AGAIN:
       f-> flags. externalLeading = true;
       f-> font.  externalLeading = abs( s-> max_bounds. ascent - s-> ascent) + 
                                    abs( s-> max_bounds. descent - s-> descent);
+      f-> font.  utf8_flags      = 0;				  
 
       /* detailing width */
       if ( f-> font. width == 0 || !f-> flags. width) {
