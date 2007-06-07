@@ -33,12 +33,18 @@ ok(($dong || &__wait) && ($ww-> enabled != 0));
 $dong = 0;
 
 $ww-> focused(1);
-ok(($dong || &__wait) && ($ww-> focused != 0));
-$dong = 0;
-
-$ww-> focused(0);
-ok(($dong || &__wait) && ($ww-> focused == 0));
-$dong = 0;
+if ( $ww-> focused) {
+	ok(($dong || &__wait));
+	$dong = 0;
+	
+	$ww-> focused(0);
+	ok(($dong || &__wait) && ($ww-> focused == 0));
+	$dong = 0;
+} else {
+	# WM refuses to refocus
+	skip;
+	skip;
+}
 
 $ww-> destroy;
 

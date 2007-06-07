@@ -53,11 +53,11 @@ ok( $xw-> windowState == ws::Normal);
 %id=();
 $dong = 0;
 $xw-> insert( Timer =>
-	timeout => 500,
+	timeout => 250,
 	onTick => sub {
 	$_[0]-> stop;
 	$w-> focus;
-	ok( !$w-> selected && $xw-> selected);
+	ok( !$w-> selected);
 	$xw-> ok;
 	$_[0]-> destroy;
 })-> start;
