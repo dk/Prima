@@ -821,6 +821,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
   ViewProfile vprf;
   int oStage = var stage;
   WindowData ws;
+  HICON icon = nilHandle;
   WINDOWPLACEMENT wp = {sizeof(WINDOWPLACEMENT)};
   DWORD style = WS_CLIPCHILDREN | WS_OVERLAPPED
      | (( borderIcons &  biSystemMenu) ? WS_SYSMENU     : 0)
@@ -861,6 +862,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
      ws = sys s. window;
      if ( !GetWindowPlacement( HANDLE, &wp)) apiErr;
      usePos = useSize = 1; // prevent using shell-position flags for recreate
+     icon = ( HICON) SendMessage( HANDLE, WM_GETICON, ICON_BIG, 0);
      reset = true;
   }
   HWND_lock( true);
@@ -896,6 +898,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
         GetWindowRect( HANDLE, &wp. rcNormalPosition);
      if ( !SetWindowPlacement( HANDLE, &wp)) apiErr;
      var stage = oStage;
+     if ( icon) SendMessage( HANDLE, WM_SETICON, ICON_BIG, ( LPARAM) icon);
   }
   else {
 //   WINDOWPLACEMENT wp = {sizeof( WINDOWPLACEMENT)};
