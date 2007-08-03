@@ -1866,6 +1866,8 @@ apc_application_get_widget_from_point( Handle self, Point point);
 extern Handle
 apc_application_get_handle( Handle self, ApiHandle apiHandle);
 
+extern Rect
+apc_application_get_indents( Handle self);
 
 extern int
 apc_application_get_os_info( char *system, int slen,

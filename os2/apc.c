@@ -217,6 +217,12 @@ apc_application_get_handle( Handle self, ApiHandle apiHandle)
    return hwnd_to_view(( HWND) apiHandle);
 }
 
+Rect
+apc_application_get_handle( Handle self)
+{
+   Rect r = {0,0,0,0};
+   return r;
+}
 
 int
 apc_application_get_os_info( char *system, int slen,

@@ -719,6 +719,13 @@ apc_application_get_handle( Handle self, ApiHandle apiHandle)
    return prima_xw2h(( XWindow) apiHandle);
 }
 
+Rect
+apc_application_get_handle( Handle self)
+{
+   Rect r = {0,0,0,0};
+   return r;
+}
+
 int
 apc_application_get_os_info( char *system, int slen,
 			     char *release, int rlen,

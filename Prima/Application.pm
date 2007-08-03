@@ -485,6 +485,14 @@ Returns object reference to a currently focused widget,
 if any, that belongs to the program. If no such widget exists,
 C<undef> is returned.
 
+=item get_hint_widget
+
+Returns the hint label widget, attached automatically to
+Prima::Application object during startup. The widget
+is of C<::hintClass> class, Prima::HintWidget by
+default.
+
+
 =item get_image X_OFFSET, Y_OFFSET, WIDTH, HEIGHT
 
 Returns Prima::Image object with WIDTH and HEIGHT dimensions
@@ -494,12 +502,12 @@ extend beyond the screen dimensions, they are adjusted.
 If the offsets are outside screen boundaries, or WIDTH and
 HEIGHT are zero or negative, C<undef> is returned.
 
-=item get_hint_widget
+=item get_indents
 
-Returns the hint label widget, attached automatically to
-Prima::Application object during startup. The widget
-is of C<::hintClass> class, Prima::HintWidget by
-default.
+Returns 4 integers that corresponds to extensions of eventual desktop
+decorations that the windowing system may present on the left, bottom, right,
+and top edges of the screen. For example, for win32 this reports the size
+of the part of the scraan that windows taskbar may occupies, if any.
 
 =item get_printer
 
