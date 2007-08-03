@@ -334,8 +334,8 @@ apc_application_get_indents( Handle self)
 			if ( ret. right < 0) ret. right = 0;
 			break;
 		case ABE_LEFT:
-			ret. right = d. rc. right;
-			if ( ret. right < 0) ret. right = 0;
+			ret. left = d. rc. right;
+			if ( ret. left < 0) ret. left = 0;
 			break;
 		}
 	}

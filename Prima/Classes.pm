@@ -1263,9 +1263,9 @@ sub maximize    { $_[0]-> windowState( ws::Maximized)}
 sub minimize    { $_[0]-> windowState( ws::Minimized)}
 sub restore     { $_[0]-> windowState( ws::Normal)}
 
-sub frameWidth           {($#_)?$_[0]-> set_frame_size($_[1], ($_[0]-> get_frame_size)[1]):return ($_[0]-> get_frame_size)[0];  }
-sub frameHeight          {($#_)?$_[0]-> set_frame_size(($_[0]-> get_frame_size)[0], $_[1]):return ($_[0]-> get_frame_size)[1];  }
-sub menuFont             {($#_)?$_[0]-> set_menu_font   ($_[1])  :return Prima::Font-> new($_[0], "get_menu_font", "set_menu_font")}
+sub frameWidth           {($#_)?$_[0]-> frameSize($_[1], ($_[0]-> frameSize)[1]):return ($_[0]-> frameSize)[0];  }
+sub frameHeight          {($#_)?$_[0]-> frameSize(($_[0]-> frameSize)[0], $_[1]):return ($_[0]-> frameSize)[1];  }
+sub menuFont             {($#_)?$_[0]-> menuFont   ($_[1])  :return Prima::Font-> new($_[0], "get_menu_font", "set_menu_font")}
 sub menuColor            { return shift-> menuColorIndex( ci::NormalText   , @_);}
 sub menuBackColor        { return shift-> menuColorIndex( ci::Normal       , @_);}
 sub menuDisabledBackColor{ return shift-> menuColorIndex( ci::Disabled     , @_);}
