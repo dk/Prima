@@ -218,7 +218,7 @@ apc_application_get_handle( Handle self, ApiHandle apiHandle)
 }
 
 Rect
-apc_application_get_handle( Handle self)
+apc_application_get_indents( Handle self)
 {
    Rect r = {0,0,0,0};
    return r;

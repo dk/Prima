@@ -121,7 +121,65 @@ set_net_hints( XWindow window, int task_listed, int modal, int zoom, int on_top)
    if ( on_top > 0) data[ count++] = NET_WM_STATE_STAYS_ON_TOP;
    XChangeProperty( DISP, window, NET_WM_STATE, XA_ATOM, 32,
        PropModeReplace, ( unsigned char *) data, count);
-} 
+}
+
+unsigned char * 
+prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * actual_type,
+                           int * actual_format, unsigned long * nitems)
+{
+   Atom a_actual_type;
+   unsigned char * ret, * ptr;
+   unsigned long left, n, a_nitems;
+   int a_actual_format, curr_size, new_size, malloc_size, offset;
+
+   ret = NULL;
+   offset = 0;
+   new_size = curr_size = malloc_size = 0;
+   if ( actual_type   == NULL) actual_type   = &a_actual_type;
+   if ( actual_format == NULL) actual_format = &a_actual_format;
+   if ( nitems        == NULL) nitems        = &a_nitems;
+
+   *nitems = 0;
+
+   while ( XGetWindowProperty( DISP, window, property, offset, 2048, false, req_type,
+          actual_type, actual_format, &n, &left, &ptr) == Success) {
+     if ( ptr) {
+         if ( n > 0) {
+	     curr_size = n * *actual_format / 8;
+	     new_size += curr_size;
+             offset += curr_size / 4;
+	     *nitems += n;
+
+	     if ( ret == NULL) {
+	         malloc_size = new_size;
+		 ret = malloc( malloc_size);
+		 if ( ret == NULL) {
+                    warn("Not enough memory: %d bytes\n", malloc_size);
+		    return NULL;
+		 }
+	     } else {
+                 if ( new_size > malloc_size) {
+		     unsigned char * p;
+		     malloc_size = new_size * 2;
+		     p = realloc( ret, malloc_size);
+		     if ( p) {
+		        ret = p;
+		     } else {
+		        free( ret);
+                        warn("Not enough memory: %d bytes\n", malloc_size);
+			return NULL;
+		     }
+		 }
+	     }
+	     memcpy( ret + new_size - curr_size, ptr, curr_size);
+         }
+         XFree( ptr);
+      }
+      if ( left <= 0) break;
+   }
+
+   return ret;
+}
 
 Bool
 prima_wm_net_state_read_maximization( XWindow window, Atom property)
@@ -129,41 +187,36 @@ prima_wm_net_state_read_maximization( XWindow window, Atom property)
    reads property, returns true if it has both vertical and horizontal properties set.
   */
 {
-   Atom type, * prop;
-   int format, offset = 0;
-   unsigned long i, n, left;
+   Atom * prop;
+   unsigned long i, n;
    int horiz = 0, vert = 0;
 
    if ( guts. icccm_only) return false;
 
-   while ( XGetWindowProperty( DISP, window, property, offset, 2048, false, XA_ATOM,
-          &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
-     if ( prop) {
-         for ( i = 0; i < n; i++) {
-            if ( prop[i] == NET_WM_STATE_MAXIMIZED_VERT) vert = 1;
-            /* KDE v2 defines _HORIZ, KDE v3 defines _HORZ - a horrible hack follows */
-            else if ( prop[i] == guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_HORZ]) {
-               if ( guts. net_wm_maximize_HORZ_vs_HORIZ == 0) {
-                  guts. net_wm_maximize_HORZ_vs_HORIZ = AI_NET_WM_STATE_MAXIMIZED_HORZ;
-                  Mdebug("wm: kde-3 style detected\n");
-               }
-               horiz = 1;
-            }
-            else if ( prop[i] == guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_HORIZ]) {
-               if ( guts. net_wm_maximize_HORZ_vs_HORIZ == 0) {
-                  guts. net_wm_maximize_HORZ_vs_HORIZ = AI_NET_WM_STATE_MAXIMIZED_HORIZ;
-                  Mdebug("wm: kde-2 style detected\n");
-               }
-               horiz = 1;
-            }
+   prop = ( Atom *) prima_get_window_property( window, property, XA_ATOM, NULL, NULL, &n);
+   if ( !prop) return false;
+
+   for ( i = 0; i < n; i++) {
+      if ( prop[i] == NET_WM_STATE_MAXIMIZED_VERT) vert = 1;
+      /* KDE v2 defines _HORIZ, KDE v3 defines _HORZ - a horrible hack follows */
+      else if ( prop[i] == guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_HORZ]) {
+         if ( guts. net_wm_maximize_HORZ_vs_HORIZ == 0) {
+            guts. net_wm_maximize_HORZ_vs_HORIZ = AI_NET_WM_STATE_MAXIMIZED_HORZ;
+            Mdebug("wm: kde-3 style detected\n");
          }
-         XFree(( unsigned char *) prop);
-         if ( vert && horiz) return true;
-         offset += n;
+         horiz = 1;
       }
-      if ( left <= 0) break;
+      else if ( prop[i] == guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_HORIZ]) {
+         if ( guts. net_wm_maximize_HORZ_vs_HORIZ == 0) {
+            guts. net_wm_maximize_HORZ_vs_HORIZ = AI_NET_WM_STATE_MAXIMIZED_HORIZ;
+            Mdebug("wm: kde-2 style detected\n");
+         }
+         horiz = 1;
+      }
    }
-   return false;
+
+   free( prop);
+   return vert && horiz;
 }
 
 static Bool

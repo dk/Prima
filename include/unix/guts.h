@@ -399,7 +399,9 @@ typedef struct {
 #define AI_NET_WM_STATE_MAXIMIZED_HORIZ  28
 #define AI_UTF8_MIME                     29
 #define AI_NET_WM_STATE_STAYS_ON_TOP     30
-#define AI_count                         31
+#define AI_NET_CURRENT_DESKTOP           31
+#define AI_NET_WORKAREA                  32
+#define AI_count                         33
 
 #define FXA_RESOLUTION_X guts. atoms[ AI_FXA_RESOLUTION_X]
 #define FXA_RESOLUTION_Y guts. atoms[ AI_FXA_RESOLUTION_Y]
@@ -435,6 +437,8 @@ typedef struct {
 #define NET_SUPPORTED guts. atoms[ AI_NET_SUPPORTED]
 #define UTF8_MIME guts. atoms[ AI_UTF8_MIME]
 #define NET_WM_STATE_STAYS_ON_TOP guts. atoms[ AI_NET_WM_STATE_STAYS_ON_TOP]
+#define NET_CURRENT_DESKTOP guts. atoms[ AI_NET_CURRENT_DESKTOP]
+#define NET_WORKAREA guts. atoms[ AI_NET_WORKAREA]
 
 #define DEBUG_FONTS 0x01
 #define DEBUG_CLIP  0x02
@@ -1092,6 +1096,10 @@ prima_wm_sync( Handle self, int eventType);
 
 extern Bool
 prima_wm_net_state_read_maximization( XWindow window, Atom property);
+
+extern unsigned char * 
+prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * actual_type,
+                           int * actual_format, unsigned long * nitems);
 
 extern PFontABC
 prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar);
