@@ -1,3 +1,6 @@
+1.22  Use GTK file dialogs if compiled with GTK2. Better use of mouse wheel for
+      Calendar, ColorDialog, ComboBox, Notebooks, Scrollbar, and Sliders widgets.
+
 1.21  No new features
 
 1.20  Add Printer::options
