@@ -54,7 +54,7 @@ prima_init_clipboard_subsystem(char * error_buf)
 
    CF_ASSIGN(cfText, XA_STRING, XA_STRING, 8);
    CF_ASSIGN(cfUTF8, UTF8_STRING, UTF8_STRING, 8);
-   CF_ASSIGN(cfBitmap, XA_PIXMAP, XA_ATOM, 32);
+   CF_ASSIGN(cfBitmap, XA_PIXMAP, XA_PIXMAP, 32);
    CF_ASSIGN(cfTargets, CF_TARGETS, XA_ATOM, 32);
 
    /* XXX - bitmaps and indexed pixmaps may have the associated colormap or pixel values 
@@ -159,7 +159,7 @@ get_typename( long id, int index, Atom * type)
          if ( type) *type = CF_TYPE(id);
 	 return CF_NAME(id);
       } else {
-         if ( type) *type = XA_ATOM;
+         if ( type) *type = XA_BITMAP;
 	 return XA_BITMAP;
       }
    case cfTargets:
