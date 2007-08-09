@@ -1289,8 +1289,6 @@ pop_hv_for_REDEFINED( SV **sp, int count, HV *hv, int shouldBe);
 extern void*
 create_object( const char *objClass, const char *types, ...);
 
-extern SV **temporary_prf_Sv;
-
 #ifdef __GNUC__
 #define SvBOOL(sv) ({ SV *svsv = sv; SvTRUE(svsv);})
 #else
@@ -1303,7 +1301,7 @@ SvBOOL( SV *sv)
 
 #define pexist( key) hv_exists( profile, # key, strlen( #key))
 #define pdelete( key) hv_delete( profile, # key, strlen( #key), G_DISCARD)
-
+#define dPROFILE  SV ** temporary_prf_Sv
 #define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ), &sv_undef : *temporary_prf_Sv)
 #define pget_i( key)  ( pget_sv( key), SvIV( *temporary_prf_Sv))
 #define pget_f( key)  ( pget_sv( key), SvNV( *temporary_prf_Sv))

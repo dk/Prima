@@ -43,6 +43,7 @@ extern "C" {
 void
 DeviceBitmap_init( Handle self, HV * profile)
 {
+   dPROFILE;
    inherited init( self, profile);
    var-> w = pget_i( width);
    var-> h = pget_i( height);

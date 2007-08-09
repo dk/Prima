@@ -261,6 +261,7 @@ colorFound:;
 void
 Icon_init( Handle self, HV * profile)
 {
+   dPROFILE;
    inherited init( self, profile);
    my-> set_maskColor( self, pget_i( maskColor));
    my-> set_autoMasking( self, pget_i( autoMasking));

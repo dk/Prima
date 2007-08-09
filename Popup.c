@@ -44,6 +44,7 @@ extern "C" {
 void
 Popup_init( Handle self, HV * profile)
 {
+   dPROFILE;
    inherited init( self, profile);
    opt_assign( optAutoPopup, pget_B( autoPopup));
    CORE_INIT_TRANSIENT(Popup);
@@ -52,6 +53,7 @@ Popup_init( Handle self, HV * profile)
 void
 Popup_update_sys_handle( Handle self, HV * profile)
 {
+   dPROFILE;
    Handle xOwner = pexist( owner) ? pget_H( owner) : var-> owner;
    if ( var-> owner && ( xOwner != var-> owner))
       ((( PWidget) var-> owner)-> self)-> set_popup( var-> owner, nilHandle);

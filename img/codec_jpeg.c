@@ -252,6 +252,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 static Bool   
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
+   dPROFILE;
    PImage i = ( PImage) fi-> object;
    SaveRec * l = ( SaveRec *) fi-> instance;
    HV * profile = fi-> objectExtras;

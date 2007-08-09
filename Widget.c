@@ -73,6 +73,7 @@ extern Bool Widget_move_notify( Handle self, Handle child, Point * moveTo);
 void
 Widget_init( Handle self, HV * profile)
 {
+   dPROFILE;
    enter_method;
    SV * sv;
 
@@ -237,6 +238,7 @@ Widget_init( Handle self, HV * profile)
 void
 Widget_update_sys_handle( Handle self, HV * profile)
 {
+   dPROFILE;
    enter_method;
    Handle    owner;
    Bool      clipOwner;
@@ -1293,6 +1295,7 @@ Widget_scroll_REDEFINED( Handle self, int dx, int dy, Rect *confine, Rect *clip,
 
 XS( Widget_scroll_FROMPERL)
 {
+   dPROFILE;
    dXSARGS;
    Handle self;
    int dx, dy;
@@ -1344,6 +1347,7 @@ Widget_send_to_back( Handle self)
 void
 Widget_set( Handle self, HV * profile)
 {
+   dPROFILE;
    enter_method;
    Handle postOwner = nilHandle;
    AV *order = nil;
@@ -1650,6 +1654,7 @@ Widget_update_view( Handle self)
 Bool
 Widget_validate_owner( Handle self, Handle * owner, HV * profile)
 {
+   dPROFILE;
    *owner = pget_H( owner);
    if ( !kind_of( *owner, CWidget)) return false;
    return inherited-> validate_owner( self, owner, profile);
@@ -2056,6 +2061,7 @@ auto_enable_children( Handle self, Handle child, void * enable)
 SV *
 Widget_accelItems( Handle self, Bool set, SV * accelItems)
 {
+   dPROFILE;
    enter_method;
    if ( var-> stage > csFrozen) return nilSV;
    if ( !set)
@@ -2594,6 +2600,7 @@ Widget_popupColorIndex( Handle self, Bool set, int index, Color color)
 SV *
 Widget_popupItems( Handle self, Bool set, SV * popupItems)
 {
+   dPROFILE;
    enter_method;
    if ( var-> stage > csFrozen) return nilSV;
    if ( !set)

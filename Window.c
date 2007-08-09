@@ -47,6 +47,7 @@ extern "C" {
 void
 Window_init( Handle self, HV * profile)
 {
+   dPROFILE;
    SV * sv;
    inherited init( self, profile);
 
@@ -96,6 +97,7 @@ Window_cleanup( Handle self)
 
 void Window_update_sys_handle( Handle self, HV * profile)
 {
+   dPROFILE;
    var-> widgetClass = wcWindow;
    if (!(
        pexist( owner) ||
@@ -451,6 +453,7 @@ Window_focused( Handle self, Bool set, Bool focused)
 
 void Window_set( Handle self, HV * profile)
 {
+   dPROFILE;
    Bool owner_icon = false;
    
    if ( pexist( menuFont)) {
@@ -564,6 +567,7 @@ Window_menu( Handle self, Bool set, Handle menu)
 SV *
 Window_menuItems( Handle self, Bool set, SV * menuItems)
 {
+   dPROFILE;
    if ( var-> stage > csFrozen) return nilSV;
 
    if ( !set)
@@ -771,6 +775,7 @@ Window_text( Handle self, Bool set, SV * text)
 Bool
 Window_validate_owner( Handle self, Handle * owner, HV * profile)
 {
+   dPROFILE;
    *owner = pget_H( owner);
    if ( *owner != application && !kind_of( *owner, CWidget)) return false;
    return inherited validate_owner( self, owner, profile);

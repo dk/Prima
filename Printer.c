@@ -43,6 +43,7 @@ extern "C" {
 void
 Printer_init( Handle self, HV * profile)
 {
+   dPROFILE;
    char * prn;
    inherited init( self, profile);
    if ( !apc_prn_create( self))
@@ -63,6 +64,7 @@ Printer_done( Handle self)
 Bool
 Printer_validate_owner( Handle self, Handle * owner, HV * profile)
 {
+   dPROFILE;
    if ( pget_H( owner) != application || application == nilHandle) return false;
    *owner = application;
    return true;

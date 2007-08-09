@@ -421,6 +421,7 @@ prepare_xpm_color( void * value, int keyLen, Color * color_ptr, CalcData * cd)
 static Bool   
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
+   dPROFILE;
    XpmInfo  info;
    XpmImage image;
    HV * profile = fi-> objectExtras;

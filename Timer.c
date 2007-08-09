@@ -52,6 +52,7 @@ Timer_init( Handle self, HV * profile)
 void
 Timer_update_sys_handle( Handle self, HV * profile)
 {
+   dPROFILE;
    Handle xOwner = pexist( owner) ? pget_H( owner) : var-> owner;
    if (!( pexist( owner))) return;
    if ( !apc_timer_create( self, xOwner, pexist( timeout)
@@ -94,6 +95,7 @@ Timer_done( Handle self)
 Bool
 Timer_validate_owner( Handle self, Handle * owner, HV * profile)
 {
+   dPROFILE;
    *owner = pget_H( owner);
    if ( !kind_of( *owner, CWidget)) return false;
    return inherited validate_owner( self, owner, profile);

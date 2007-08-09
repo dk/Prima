@@ -2172,6 +2172,7 @@ SD
 			print HEADER "\tHV * $incHV = ( HV*)\n\t".
 				"(( SvROK( hashRef) && ( SvTYPE( SvRV( hashRef)) == SVt_PVHV)) ? SvRV( hashRef)\n\t\t".
 				": ( croak( \"Illegal hash reference passed to %s\", err), nil));\n";
+			print HEADER "\tSV ** $incSV;\n\n\t(void)$incSV;\n\n";
 			for ( my $j = 0; $j < scalar @{$structs{$_}[0]}; $j++)
 			{
 				my $lType = @{ $structs{$_}[ TYPES]}[$j];

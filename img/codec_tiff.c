@@ -494,6 +494,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    
    /* check load options */   
    {
+      dPROFILE;
       HV * profile = fi-> profile;
       if ( pexist( InvertMinIsWhite)) InvertMinIsWhite = pget_i( InvertMinIsWhite);
   /* check fax option applicability */
@@ -846,6 +847,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 static Bool   
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
+   dPROFILE;
    PIcon i = ( PIcon) fi-> object;
    TIFF * tiff = ( TIFF*) fi-> instance;
    Bool icon = kind_of( fi-> object, CIcon);

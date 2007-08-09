@@ -326,6 +326,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 static Bool   
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
+   dPROFILE;
    LoadRec * l = ( LoadRec *) fi-> instance;
    png_uint_32 width, height;
    int obd, bit_depth, color_type, interlace_type, bpp, number_passes, pass, filter;
@@ -849,6 +850,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 static Bool   
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
+   dPROFILE;
    PIcon i = ( PIcon) fi-> object;
    SaveRec * l = ( SaveRec *) fi-> instance;
    HV * profile = fi-> objectExtras;

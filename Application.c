@@ -48,6 +48,7 @@ static void Application_HintTimer_handle_event( Handle, PEvent);
 void
 Application_init( Handle self, HV * profile)
 {
+   dPROFILE;
    int hintPause = pget_i( hintPause);
    Color hintColor = pget_i( hintColor), hintBackColor = pget_i( hintBackColor);
    SV * hintFont = pget_sv( hintFont);

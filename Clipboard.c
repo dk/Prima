@@ -105,6 +105,7 @@ Clipboard_done( Handle self)
 Bool
 Clipboard_validate_owner( Handle self, Handle * owner, HV * profile)
 {
+   dPROFILE;
    if ( pget_H( owner) != application || application == nilHandle) return false;
    *owner = application;
    return true;

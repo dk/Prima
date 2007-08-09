@@ -47,6 +47,7 @@ typedef ActionProc *PActionProc;
 void
 Component_init( Handle self, HV * profile)
 {
+   dPROFILE;
    SV * res;
    HV * hv;
    HE * he;
@@ -573,6 +574,7 @@ Component_update_sys_handle( Handle self, HV * profile)
 Bool
 Component_validate_owner( Handle self, Handle * owner, HV * profile)
 {
+   dPROFILE;
    *owner = pget_H( owner);
 
    if ( *owner != nilHandle) {

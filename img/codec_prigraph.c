@@ -527,6 +527,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 static Bool   
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
+   dPROFILE;
    GBMRec * g = ( GBMRec *) fi-> instance; 
    GBM_ERR rc;
    PImage i = ( PImage) fi-> object;

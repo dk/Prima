@@ -190,6 +190,7 @@ apc_img_profile_add( HV * to, HV * from, HV * keys)
 PList 
 apc_img_load( Handle self, char * fileName, HV * profile, char * error)
 {
+   dPROFILE;
    int i, profiles_len = 0, lastFrame = -2, codecID = -1;
    PList ret;
    PImgCodec c = nil;
@@ -753,6 +754,7 @@ EXIT_NOW:;
 int
 apc_img_save( Handle self, char * fileName, HV * profile, char * error)
 {
+   dPROFILE;
    int i;
    PImgCodec c = nil;
    ImgSaveFileInstance fi;

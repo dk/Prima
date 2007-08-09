@@ -53,6 +53,7 @@ static Bool Image_set_extended_data( Handle self, HV * profile);
 void
 Image_init( Handle self, HV * profile)
 {
+   dPROFILE;
    inherited init( self, profile);
    var->w = pget_i( width);
    var->h = pget_i( height);
@@ -227,6 +228,7 @@ Image_reset_sv( Handle self, int new_type, SV * palette, Bool triplets)
 void
 Image_set( Handle self, HV * profile)
 {
+   dPROFILE;
    if ( pexist( conversion))
    {
       my-> set_conversion( self, pget_i( conversion));
@@ -386,6 +388,7 @@ Image_data( Handle self, Bool set, SV * svdata)
 Bool
 Image_set_extended_data( Handle self, HV * profile)
 {
+   dPROFILE;
    void *data, *proc;
    STRLEN dataSize;
    int lineSize = 0, newType = -1, fixType, oldType = -1;

@@ -52,6 +52,7 @@ static void File_reset_notifications( Handle self);
 void
 File_init( Handle self, HV * profile)
 {
+   dPROFILE;
    var-> fd = -1;
    inherited-> init( self, profile);
    my-> set_mask( self, pget_i( mask));

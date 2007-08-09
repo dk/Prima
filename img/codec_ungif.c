@@ -244,6 +244,7 @@ typedef struct _GIFGraphControlExt {
 static void
 load_extension( PImgLoadFileInstance fi, int code, Byte * data, Bool privateExtensions)
 {
+   dPROFILE;
    LoadRec * l = ( LoadRec *) fi-> instance;
    HV * profile = l-> content;
    
@@ -533,6 +534,7 @@ make_colormap( PRGBColor r, int sz)
 static Bool   
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
+   dPROFILE;
    GifFileType * g = ( GifFileType *) fi-> instance; 
    PImage i = ( PImage) fi-> object;
    HV * profile = fi-> objectExtras;

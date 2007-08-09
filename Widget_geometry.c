@@ -838,6 +838,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
       
       return newRV_noinc(( SV *) profile);
    } else {
+      dPROFILE;
       HV * profile;
       Bool reset_zorder = false, set_in = false;
       Handle in = nilHandle;
@@ -1207,6 +1208,7 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
       
       return newRV_noinc(( SV *) profile);
    } else {
+      dPROFILE;
       HV * profile;
       Handle in = nilHandle;
       Bool set_in = false;

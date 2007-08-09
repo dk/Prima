@@ -59,6 +59,7 @@ extern "C" {
 void
 Drawable_init( Handle self, HV * profile)
 {
+   dPROFILE;
    inherited init( self, profile);
    apc_gp_init( self);
    var-> w = var-> h = 0;
@@ -167,6 +168,7 @@ Drawable_end_paint_info( Handle self)
 void 
 Drawable_set( Handle self, HV * profile)
 {
+   dPROFILE;
    if ( pexist( font))
    {
       SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::set");

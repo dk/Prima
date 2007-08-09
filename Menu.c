@@ -44,6 +44,7 @@ extern "C" {
 void
 Menu_update_sys_handle( Handle self, HV * profile)
 {
+   dPROFILE;
    Handle xOwner = pexist( owner) ? pget_H( owner) : var-> owner;
    var-> system = true;
    if ( var-> owner && ( xOwner != var-> owner))
@@ -70,6 +71,7 @@ Menu_selected( Handle self, Bool set, Bool selected)
 Bool
 Menu_validate_owner( Handle self, Handle * owner, HV * profile)
 {
+   dPROFILE;
    *owner = pget_H( owner);
    if ( !kind_of( *owner, CWindow)) return false;
    return inherited validate_owner( self, owner, profile);
