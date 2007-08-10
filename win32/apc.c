@@ -535,8 +535,10 @@ apc_application_yield()
 {
    MSG msg;
    while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE))
-      if ( !process_msg( &msg))
+      if ( !process_msg( &msg)) {
          PostThreadMessage( guts. mainThreadId, appDead ? WM_QUIT : WM_TERMINATE, 0, 0);
+	 break;
+      }
    return true;
 }
 
