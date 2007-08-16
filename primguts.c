@@ -1186,7 +1186,6 @@ kill_objects( void * item, int keyLen, Handle * self, void * dummy)
 }
 
 Bool appDead = false;
-SV** temporary_prf_Sv;
 
 Bool dolbug;
 Bool waitBeforeQuit;
