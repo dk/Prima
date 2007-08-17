@@ -31,7 +31,7 @@ package Prima;
 
 use strict;
 require DynaLoader;
-use vars qw($VERSION @ISA $__import);
+use vars qw($VERSION @ISA $__import @preload);
 @ISA = qw(DynaLoader);
 sub dl_load_flags { 0x00 }
 $VERSION = '1.22';
@@ -44,11 +44,12 @@ $::application = undef;
 require Prima::Const;
 require Prima::Classes;
 
-# process @ARGV
-if ( @ARGV) {
+sub parse_argv
+{
 	my %options = Prima::options();
-	for ( my $i = 0; $i < @ARGV; $i++) {
-		if ( $ARGV[$i] =~ m/^--(?:([^\=]+)\=)?(.*)$/) {
+	my @ret;
+	for ( my $i = 0; $i < @_; $i++) {
+		if ( $_[$i] =~ m/^--(?:([^\=]+)\=)?(.*)$/) {
 			my ( $option, $value) = ( defined( $1) ? ( $1, $2) : ( $2, undef));
 			last unless defined($option);
 			if ( $option eq 'help') {
@@ -59,10 +60,26 @@ if ( @ARGV) {
 			}
 			next unless exists $options{$option};
 			Prima::options( $option, $value);
-			splice @ARGV, $i--, 1;
+		} else {
+			push @ret, $_[$i];
 		}
 	}
+	return @ret;
 }
+
+{
+	my ( $i, $skip_argv, @argv);
+	for ( $i = 0; $i < @preload; $i++) {
+		if ( $preload[$i] eq 'argv') {
+			push @argv, $preload[++$i];
+		} elsif ( $preload[$i] eq 'noargv') {
+			$skip_argv++;	
+		}
+	}
+	parse_argv( @argv) if @argv;
+	@ARGV = parse_argv( @ARGV) if @ARGV and not $skip_argv;
+}
+
 Prima::init($VERSION);
 
 sub END
@@ -244,6 +261,10 @@ Displays a system message box with TEXT.
 Enters the program event loop. The loop is ended when C<Prima::Application>'s C<destroy>
 or C<close> method is called.
 
+=item parse_argv @ARGS
+
+Parses prima options from @ARGS, returns unparsed arguments. 
+
 =back
 
 =head1 OPTIONS
@@ -256,6 +277,9 @@ particular platform. Run
 or any Prima program with C<--help> argument to get the list of supported
 arguments. Programmaticaly, setting and obtaining these options can be done
 by using C<Prima::options> routine.
+
+In cases where Prima argument parsing conflicts with application options, use
+L<Prima::noARGV> to disable automatic parsing. Also see L<parse_argv>.
 
 =head1 SEE ALSO
 

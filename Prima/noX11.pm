@@ -29,4 +29,5 @@
 #
 # Initializes Prima in no-X11 environment
 
-push @ARGV, '--no-x11' unless $^O =~ /(win32|cygwin|os2)/;
+push @Prima::preload, argv => '--no-x11' unless $^O =~ /(win32|cygwin|os2)/;
+1;
