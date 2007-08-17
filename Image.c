@@ -357,6 +357,39 @@ Image_get_handle( Handle self)
    return newSVpv( buf, 0);
 }
 
+Color
+Image_get_nearest_color( Handle self, Color color)
+{
+   Byte pal;
+   RGBColor rgb, *pcolor;
+
+   if ( is_opt( optInDrawInfo) || is_opt( optInDraw))
+      return inherited get_nearest_color( self, color);
+
+   switch ( var-> type & imCategory) {
+   case imColor:
+      if (( var-> type & imBPP) > 8)
+         return color;
+      rgb. b = color         & 0xFF;
+      rgb. g = (color >> 8)  & 0xFF;
+      rgb. r = (color >> 16) & 0xFF;
+      break;
+   case imGrayScale:
+      rgb. r = rgb. g = rgb. b = (
+        (color & 0xFF) + 
+        ((color >> 8)  & 0xFF) + 
+        ((color >> 16) & 0xFF)
+      ) / 3;
+      break;
+   default:
+      return clInvalid; /* what else? */
+   }
+
+   pal    = cm_nearest_color( rgb, var-> palSize, var-> palette);
+   pcolor = var->palette + pal;
+   return ARGB( pcolor-> r, pcolor-> g, pcolor-> b);
+}
+
 SV *
 Image_data( Handle self, Bool set, SV * svdata)
 {

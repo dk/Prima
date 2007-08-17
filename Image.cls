@@ -64,6 +64,7 @@ object Prima::Image( Prima::Drawable)
    method Handle extract( int x, int y, int width, int height);
    method int    get_bpp();
    method SV   * get_handle();
+   method Color  get_nearest_color( Color color);
    method void   init( HV * profile);
    weird  PList  load( SV * className, char *filename, HV * profile);
    c_only void   make_empty();
