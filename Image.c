@@ -574,6 +574,15 @@ XS( Image_load_FROMPERL)
    return;
 }   
 
+int
+Image_lineSize( Handle self, Bool set, int dummy)
+{
+   if ( set)
+      croak("Image::lineSize: attempt to write read-only property");
+
+   return var-> lineSize;
+}
+
 PList
 Image_load_REDEFINED( SV * who, char *filename, HV * profile)
 {

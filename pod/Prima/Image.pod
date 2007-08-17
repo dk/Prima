@@ -217,8 +217,11 @@ up to a 'line size' margin ( 4-byte boundary ), which is calculated as
 
   $lineSize = int(( $image->width * ( $image-> type & im::BPP) + 31) / 32) * 4; 
 
-This is a default line size, but C<::data> can be accompanied with a
-write-only flag 'lineSize':
+or returned from the read-only property C<::lineSize>.
+
+This is the line size for the data as lined up internally in memory, however
+C<::data> should not necessarily should be aligned like this, and can be
+accompanied with a write-only flag 'lineSize' if data is aligned differently:
 
   $image-> set( width => 1, height=> 2);
   $image-> type( im::RGB);
@@ -355,6 +358,14 @@ the pixel values are either scaled or truncated.
 If 1, the bitmap data will be scaled when image changes its
 horizontal extent. If 0, the data will be stripped or padded 
 with zeros.
+
+=item lineSize INTEGER
+
+A read-only property, returning the length of an image row in bytes, as
+represented internally in memory. Data returned by C<::data> property are
+aligned with C<::lineSize> bytes per row, and setting C<::data> expects data
+aligned with this value, unless C<lineSize> is set together with C<data> to
+indicate another alignment. See L<Data access> for more.
 
 =item mean
 

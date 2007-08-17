@@ -42,6 +42,7 @@ object Prima::Image( Prima::Drawable)
    property int    conversion;
    property SV *   data;
    property Bool   hScaling;
+   property int    lineSize;
    property SV *   palette;
    property SV *   pixel( int x, int y);
    property Bool   preserveType;
