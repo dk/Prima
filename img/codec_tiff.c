@@ -32,6 +32,9 @@
 #include "img.h"
 #include "img_conv.h"
 #include "Icon.h"
+#ifdef _MSC_VER
+#define HAVE_INT32
+#endif
 #include <tiff.h>
 #include <tiffio.h>
 #include <tiffconf.h>
@@ -278,7 +281,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    errbuf = fi-> errbuf;
    err_signal = 0;
    
-   if ( !TIFFSetDirectory( tiff, fi-> frame)) {
+   if ( !TIFFSetDirectory( tiff, (tdir_t) fi-> frame)) {
       outc( "Frame index out of range");
       return false;
    }
@@ -623,7 +626,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    tiffline = tiffstrip; /* just set the line to the top of the strip.
                           * we'll move it through below. */
 
-   /* printf("w:%d, bps:%d, spp:%d, planar:%d, tile_height:%d, strip_sz:%d, bpp:%d\n", w, bps, spp, planar, tile_height, stripsz, bpp); */
+   printf("w:%d, bps:%d, spp:%d, planar:%d, tile_height:%d, strip_sz:%d, bpp:%d\n", w, bps, spp, planar, tile_height, strip_bps, bpp); 
    /* setting up destination pointers */
    primaline = i-> data + ( h - 1) * i-> lineSize;
    if ( icon) {
@@ -665,7 +668,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          int dw = w * (( planar == PLANARCONFIG_CONTIG) ? spp : 1);
          Byte * d = tiffline + stripsz;
          for ( s = 0; s < reads; s++, d += w * strip_bps) {
-            if ( TIFFReadScanline( tiff, tiffline, y, s) < 0) {
+            if ( TIFFReadScanline( tiff, tiffline, y, (tsample_t) s) < 0) {
                if ( !( errbuf && errbuf[0]))
                  sprintf( fi-> errbuf, "Error reading scanline %d", y);
                free(tifftile);
