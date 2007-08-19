@@ -297,7 +297,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    /* finding codec */
    {
       Bool * loadmap = ( Bool *) malloc( sizeof( Bool) * imgCodecs. count);
-      char * xc = fileName + strlen( fileName);
+      int fileNameLen = strlen( fileName);
 
       if ( !loadmap) 
          out("Not enough memory");
@@ -312,13 +312,6 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          } 
       }
       
-      while ( xc != fileName) {
-         if ( *xc == '.') 
-            break;
-         xc--;
-      }   
-      if ( *xc == '.') xc++;
-
       /* finding by extension first */
       c = nil;
       for ( i = 0; i < imgCodecs. count; i++) {
@@ -326,7 +319,9 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          if ( loadmap[ i]) continue;
          c = ( PImgCodec ) ( imgCodecs. items[ i]);
          while ( c-> info-> fileExtensions[ j]) {
-            if ( stricmp( c-> info-> fileExtensions[ j], xc) == 0) {
+	    char * ext = c-> info-> fileExtensions[ j];
+	    int extLen = strlen( ext);
+	    if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0) {
                found = true;
                break;
             }   
@@ -337,7 +332,6 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
 
             if ( !c-> info-> canLoad)
                continue;
-
             if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL) {
                codecID = i;
                break;
@@ -613,7 +607,7 @@ apc_img_frame_count( char * fileName)
    /* finding codec */
    {
       Bool * loadmap = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count);
-      char * xc = fileName + strlen( fileName);
+      int fileNameLen = strlen( fileName);
 
       if ( !loadmap) 
          return 0;
@@ -628,13 +622,6 @@ apc_img_frame_count( char * fileName)
          } 
       }
       
-      while ( xc != fileName) {
-         if ( *xc == '.') 
-            break;
-         xc--;
-      }   
-      if ( *xc == '.') xc++;
-
       /* finding by extension first */
       c = nil;
       for ( i = 0; i < imgCodecs. count; i++) {
@@ -642,7 +629,9 @@ apc_img_frame_count( char * fileName)
          if ( loadmap[ i]) continue;
          c = ( PImgCodec ) ( imgCodecs. items[ i]);
          while ( c-> info-> fileExtensions[ j]) {
-            if ( stricmp( c-> info-> fileExtensions[ j], xc) == 0) {
+	    char * ext = c-> info-> fileExtensions[ j];
+	    int extLen = strlen( ext);
+	    if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0) {
                found = true;
                break;
             }   
@@ -845,7 +834,7 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
    strcpy( error, "No appropriate codec found");
    {
       Bool * savemap = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count);
-      char * xc = fileName + strlen( fileName);
+      int fileNameLen = strlen( fileName);
 
       if ( !savemap)
          out("Not enough memory");
@@ -919,19 +908,14 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
      
       if ( !c) {
          /* finding codec by extension  */
-         while ( xc != fileName) {
-            if ( *xc == '.') 
-               break;
-            xc--;
-         }   
-         if ( *xc == '.') xc++;
-         
          for ( i = 0; i < imgCodecs. count; i++) {
             int j = 0, found = false;
             if ( savemap[ i]) continue;
             c = ( PImgCodec ) ( imgCodecs. items[ i]);
             while ( c-> info-> fileExtensions[ j]) {
-               if ( stricmp( c-> info-> fileExtensions[ j], xc) == 0) {
+	       char * ext = c-> info-> fileExtensions[ j];
+	       int extLen = strlen( ext);
+	       if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0) {
                   found = true;
                   break;
                }   
