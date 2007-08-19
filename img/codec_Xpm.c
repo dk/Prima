@@ -35,6 +35,9 @@
 #define Font            XFont
 #define Window          XWindow
 #undef FUNC
+#ifdef _MSC_VER
+#define Bool I32
+#endif
 #include <X11/xpm.h>
 #undef Font
 #undef Drawable

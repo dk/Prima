@@ -1300,7 +1300,7 @@ sub setup_misc
 	for ( @codecs) {
 		my @inc;
 		m/codec_(.*)\.c$/i;
-		my ( $fn, $lib) = ( $_, $1);
+		my ( $fn, $lib, $codec) = ( $_, $1, $1);
 		next unless open F, $fn;
 		while(<F>) {
 			push @inc, $_ if m/^\s*#include\s*\</;
@@ -1308,7 +1308,7 @@ sub setup_misc
 		close F;
 		$lib.='.lib' if ( $Win32 && !$cygwin) || $OS2;
 		if ( !$stop_codecs && ( $libs{$lib} || defined find_lib( $lib, join('', @inc), ''))) {
-			if ( $lib eq 'prigraph') {
+			if ( $lib =~ /^prigraph/) {
 				if ( $CODEC_PRIGRAPH) {
 					print <<PRIGRAPH_WARNING unless defined $USER_VARS{CODEC_PRIGRAPH};
           
@@ -1324,7 +1324,7 @@ PRIGRAPH_WARNING
 					next;
 				}
 			}
-			push( @ACTIVE_CODECS, $1);
+			push( @ACTIVE_CODECS, $codec);
 			push( @LIBS, $lib) unless $libs{$lib};
 			print "Using image library '$lib'\n";
 		} else {

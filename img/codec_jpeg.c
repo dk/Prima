@@ -33,6 +33,13 @@
 #undef LOCAL
 #undef HAVE_STDDEF_H
 #undef HAVE_STDLIB_H
+#undef HAVE_BOOLEAN
+#ifdef BROKEN_PERL_PLATFORM
+#undef      FAR
+#undef      setjmp
+#undef      longjmp
+#define     setjmp _setjmp
+#endif
 #include <sys/types.h>
 #include <stdio.h>
 #include <jpeglib.h>

@@ -32,6 +32,7 @@
 #define Z_PREFIX 
 #include <png.h>
 #undef Byte
+#undef FAR
 
 #ifndef PNG_GAMMA_THRESHOLD
 #define PNG_GAMMA_THRESHOLD 0.05
@@ -44,9 +45,16 @@
 #  define png_jmpbuf(png_ptr) ((png_ptr)->jmpbuf)
 #endif
 
+
 #include "img.h"
 #include "img_conv.h"
 #include "Icon.h"
+
+#ifdef BROKEN_PERL_PLATFORM
+#undef      setjmp
+#undef      longjmp
+#define     setjmp _setjmp
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -257,21 +265,19 @@ typedef struct _LoadRec {
    Byte * line;
 } LoadRec;
 
-static 
+static void
 #ifdef PNGAPI 
 PNGAPI
 #endif
-void
 warning_fn( png_structp png_ptr, png_const_charp msg) 
 { 
    /* warn( msg); */
 }
 
-static 
+static void
 #ifdef PNGAPI 
 PNGAPI
 #endif
-void
 error_fn( png_structp png_ptr, png_const_charp msg) 
 {
    char * buf = ( char *) png_get_error_ptr( png_ptr); 

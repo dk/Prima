@@ -42,9 +42,17 @@
 #undef FUNC
 #include "Image.h"
 
-#ifndef __CYGWIN__
+#define MIRROR(a,b)
+#ifdef __CYGWIN__
+#else
+#ifdef _MSC_VER
+#undef fprintf
+#else
+#undef MIRROR
 extern void
 prima_mirror_bytes( unsigned char *data, int dataSize);
+#define MIRROR(a,b) prima_mirror_bytes(data,dataSize)
+#endif
 #endif
 
 #ifdef __cplusplus
@@ -152,9 +160,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       src += ls;
       dst -= i-> lineSize;
    }   
-#ifndef __CYGWIN__   
-   prima_mirror_bytes( i-> data, i-> dataSize);
-#endif
+   MIRROR( i-> data, i-> dataSize);
    return true;
 }   
 
@@ -230,9 +236,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       int w = ls;
       
       memcpy( s1, s, ls);
-#ifndef __CYGWIN__   
-      prima_mirror_bytes( s1, ls);
-#endif      
+      MIRROR( s1, ls);
       
       while ( w--) {
          if ( first) {
