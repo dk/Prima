@@ -412,10 +412,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       break;
 #ifdef JPEG_SUPPORT
    case PHOTOMETRIC_SEPARATED:
-      /* probably can rely on libjpeg to convert to RGB */
+      /* XXX raw data in CMYK */
       bpp = imbpp24;
-      spp = 3;
-      TIFFSetField( tiff, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
+      spp = 4;
       photometric_descr = "Separated";
       photometric = PHOTOMETRIC_RGB;
       break;
@@ -626,7 +625,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    tiffline = tiffstrip; /* just set the line to the top of the strip.
                           * we'll move it through below. */
 
-   printf("w:%d, bps:%d, spp:%d, planar:%d, tile_height:%d, strip_sz:%d, bpp:%d\n", w, bps, spp, planar, tile_height, strip_bps, bpp); 
+   /* printf("w:%d, bps:%d, spp:%d, planar:%d, tile_height:%d, strip_sz:%d, bpp:%d\n", w, bps, spp, planar, tile_height, stripsz, bpp); */
    /* setting up destination pointers */
    primaline = i-> data + ( h - 1) * i-> lineSize;
    if ( icon) {
