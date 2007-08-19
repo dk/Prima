@@ -51,7 +51,7 @@
 #undef MIRROR
 extern void
 prima_mirror_bytes( unsigned char *data, int dataSize);
-#define MIRROR(a,b) prima_mirror_bytes(data,dataSize)
+#define MIRROR(a,b) prima_mirror_bytes(a,b)
 #endif
 #endif
 
