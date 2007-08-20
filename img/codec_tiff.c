@@ -269,13 +269,13 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    uint16 resunit;
    char * photometric_descr = nil;
    unsigned short photometric, bps, spp, planar, comp_method;
-   int x, y, w, h, bpp = 0, palSize = 0, icon, tiled, 
+   int x, y, w, h, bpp = 0, palSize = 0, icon, tiled, rgba_striped = 0,
       InvertMinIsWhite = INVERT_MINISWHITE, strip_bps, faxpect = 0;
    float xres, yres;
    unsigned short *redcolormap, *greencolormap, *bluecolormap;
    Byte *tiffstrip, *tiffline, *tifftile, *primaline, *primamask = nil;
    size_t stripsz, linesz, tilesz = 0L;
-   uint32 tile_width, tile_height, num_tilesX = 0L;
+   uint32 tile_width, tile_height, num_tilesX = 0L, rowsperstrip;
    Byte bw_colorref[256];
    
    errbuf = fi-> errbuf;
@@ -298,6 +298,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       outc("Cannot query IMAGELENGTH tag");
       return false;
    }
+
    if ( !TIFFGetField( tiff, TIFFTAG_BITSPERSAMPLE, &bps))  bps = 1;
       else if ( fi-> loadExtras) pset_i( BitsPerSample, bps);
    if ( bps != 16 && bps != 8 && bps != 4 && bps != 2 && bps != 1) {
@@ -412,28 +413,27 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       break;
 #ifdef JPEG_SUPPORT
    case PHOTOMETRIC_SEPARATED:
-      /* XXX raw data in CMYK */
       bpp = imbpp24;
       spp = 4;
+      rgba_striped = 1;
       photometric_descr = "Separated";
       photometric = PHOTOMETRIC_RGB;
       break;
 #endif
-   case PHOTOMETRIC_MASK:
-   case PHOTOMETRIC_CIELAB:
-   case PHOTOMETRIC_DEPTH:
-      sprintf( fi-> errbuf, 
-        "Don't know how to handle photometric %s",
+   default:
+      /* fallback, to RGBA strips */
+      bpp = imbpp24;
+      spp = 4;
+      rgba_striped = 1;
+      photometric_descr = 
         photometric == PHOTOMETRIC_MASK?      "MASK" :
         photometric == PHOTOMETRIC_CIELAB?    "CIELAB" :
         photometric == PHOTOMETRIC_DEPTH?     "DEPTH" :
         photometric == PHOTOMETRIC_SEPARATED? "SEPARATED" :
         photometric == PHOTOMETRIC_YCBCR?     "YCBCR" :
-                                              "unknown");
-       return false;
-   default:
-      sprintf( fi-> errbuf, "Unknown PHOTOMETRIC=%d", photometric);
-      return false;
+                                              "unknown";
+      photometric = PHOTOMETRIC_RGB;
+      break;
    }
 
    /* check bps and spp combinations - 3 and 4 samples for RGB, 1 and 2 for the others */
@@ -602,21 +602,30 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       /* check if linesz is big enough */
       z = tilesz / tile_height * num_tilesX;
       if ( linesz < z) linesz = z;
+
+      rowsperstrip = 1;
    } else {
       tile_width  = w;
       tile_height = 1;
       num_tilesX  = 1;
       tilesz      = linesz;
+      if ( rgba_striped) {
+         if( !TIFFGetField(tiff, TIFFTAG_ROWSPERSTRIP, &rowsperstrip) ) {
+             outc("Cannot query ROWSPERSTRIP tag");
+             return false;
+         }
+      } else
+	 rowsperstrip = 1;
    }
 
 
    /* setup buffers for twofold size for byte and intrapixel conversion */
    strip_bps = ( bps > 8) ? 2 : 1;
-   if ( !( tifftile = (Byte*) malloc( strip_bps * w * spp * 2))) {
+   if ( !( tifftile = (Byte*) malloc( strip_bps * w * rowsperstrip * tile_height * spp * 2))) {
       outcm( strip_bps * w * spp * 2);
       return false;
    }
-   stripsz = strip_bps * tile_height * w * spp;
+   stripsz = strip_bps * rowsperstrip * tile_height * w * spp;
    if ( !( tiffstrip = (Byte*) malloc( stripsz * 2))) {
       free( tifftile);
       outcm( stripsz * 2);
@@ -643,25 +652,58 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          if (( y % tile_height) == 0) {
             for (col = 0; ok && col < num_tilesX; col++) {
                Byte *dest, *src;
-               int r, dd, sd;
+               int r, dd, sd, rows, cols;
                int tileno = col+(y/tile_height)*num_tilesX;
                /* read the tile into the array */
-               if (!TIFFReadEncodedTile(tiff, tileno, tifftile, tilesz)) {
+	       int ret = rgba_striped ?
+		  TIFFReadRGBATile( tiff, col * tile_width, y, (uint32_t*) tifftile) :
+                  TIFFReadEncodedTile(tiff, tileno, tifftile, tilesz);
+               if (!ret) {
                   ok = 0;
                   break;
                }
 
                /* copy this tile into the row buffer */
-               src  = tifftile;
-               dest = tiffstrip + stripsz + col * strip_bps * spp;
-               dd   = linesz;
-               sd   = tilesz / tile_height;
-               for (r = 0; r < (int) tile_height; r++, src += sd, dest += dd) 
-                  scan_convert( src, dest, tile_width * spp, bps);
+               dest = tiffstrip + stripsz + col * strip_bps * spp * tile_width;
+	       rows = ((y + tile_height) > h) ? h - y : tile_height;
+	       cols = (col == num_tilesX - 1) ? w - col * tile_width : tile_width;
+               dd   = w * spp;
+	       if ( rgba_striped) {
+	          /* RGBATiles are reversed */
+		  sd   = - (tile_width * spp);
+                  src  = tifftile - sd * (tile_height - 1); 
+	       } else {
+                  sd   = tilesz / tile_height;
+                  src  = tifftile;
+	       }
+               for (r = 0; r < rows; r++, src += sd, dest += dd)
+                  scan_convert( src, dest, cols * spp, bps);
             }
             tiffline = tiffstrip; /* set tileline to top of strip */
          } else 
-            tiffline = tiffstrip + (y % tile_height) * linesz;
+            tiffline = tiffstrip + (y % tile_height) * w * spp;
+      } else if ( rgba_striped) {
+         /* Is it time for a new strip? */
+         if (( y % rowsperstrip) == 0) {
+            Byte *dest, *src, xx;
+            int r, rows, dd, sd;
+            if ( TIFFReadRGBAStrip( tiff, y, (uint32_t*) tifftile) < 0) {
+               if ( !( errbuf && errbuf[0]))
+                 sprintf( fi-> errbuf, "Error reading scanline %d", y);
+               free(tifftile);
+               free(tiffstrip);
+               return false;
+	    }
+	    rows = ((y + rowsperstrip) > h) ? h - y : rowsperstrip;
+            dest = tiffstrip + stripsz;
+            dd   = sd = spp * w;
+            src  = tifftile + sd * (rows - 1);
+	    /* RGBAStrips are reversed */
+            for (r = 0; r < rows; r++, src -= sd, dest += dd) 
+                scan_convert( src, dest, sd, bps);
+            tiffline = tiffstrip; /* set tileline to top of strip */
+	 } else
+            tiffline = tiffstrip + (y % rowsperstrip) * spp * w;
       } else {
          int s = 0, reads = ( planar == PLANARCONFIG_CONTIG) ? 1 : spp;
          int dw = w * (( planar == PLANARCONFIG_CONTIG) ? spp : 1);
