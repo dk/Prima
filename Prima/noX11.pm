@@ -29,5 +29,16 @@
 #
 # Initializes Prima in no-X11 environment
 
-push @Prima::preload, argv => '--no-x11' unless $^O =~ /(win32|cygwin|os2)/;
+package Prima;
+
+push @preload, argv => '--no-x11' unless $^O =~ /(win32|cygwin|os2)/;
+
+sub XOpenDisplay
+{
+	return undef if $^O =~ /(win32|cygwin|os2)/;
+
+	Prima::options( 'display', $_[0]) if @_;
+	return Prima::Application::sys_action( 'Prima::Application', 'XOpenDisplay');
+}
+
 1;

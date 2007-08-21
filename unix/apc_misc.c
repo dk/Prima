@@ -1295,6 +1295,17 @@ apc_system_action( const char *s)
           return nil;
       }
       break;
+   case 'X':
+      if ( strcmp( s, "XOpenDisplay") == 0) {
+         char err_buf[512];
+         if ( DISP)
+             return duplicate_string( "X display already opened");
+         window_subsystem_set_option( "yes-x11", NULL);
+	 if ( !window_subsystem_init( err_buf))
+             return duplicate_string( err_buf);
+	 return NULL;
+      }
+      break;
    }
    warn("Unknown sysaction:%s", s);
    return nil;

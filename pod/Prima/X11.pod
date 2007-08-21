@@ -68,13 +68,20 @@ for the same purpose but more convenient to use as
 construct. Second, there is a technique to continue execution even if connection
 to a X server failed:
 
-   eval 'use Prima;';
-   unless ( $@) {
-      print "X11 enabled\n";
+   use Prima::noX11;
+   use Prima;
+   
+   my $error = Prima::XOpenDisplay();
+   if ( defined $error) {
+        print "not connected to display: $error\n";
    } else {
-      die $@ unless $@ =~ /can't open display/i;
-      print "X11 disabled\n";
+   	print "connected to display\n";
    }
+
+The L<Prima::noX11> module exports a single function C<XOpenDisplay> into
+C<Prima> namespace, to connect to the X display explicitly. The display to be
+connected to is C<$ENV{DISPLAY}>, unless started otherwise on command line ( with
+--display option) or with parameter to the C<XOpenDisplay> function.
 
 This technique may be useful to programs that use Prima imaging functionality
 and may or may not use windowing capabilites.

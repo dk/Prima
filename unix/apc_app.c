@@ -469,6 +469,9 @@ window_subsystem_set_option( char * option, char * value)
       if ( value) warn("`--no-x11' option has no parameters");
       do_x11 = false;
       return true;
+   } else if ( strcmp( option, "yes-x11") == 0) {
+      do_x11 = true;
+      return true;
    } else if ( strcmp( option, "display") == 0) {
       free( do_display);
       do_display = duplicate_string( value);

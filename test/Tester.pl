@@ -30,12 +30,12 @@ use vars qw( @ISA $noX11 $w $dong);
 use strict;
 # startup
 use Prima::Config;
+use Prima::noX11;
+use Prima;
+
 # testing if is running over a dumb terminal
-eval "use Prima;";
-if ( $@) {
-	die $@ unless $@ =~ /can't open display/i;
-	$noX11 = 1;
-}
+$noX11 = 1 if defined Prima::XOpenDisplay();
+
 # should be ok now
 my $verbose = 0;
 my $tie     = 1;
