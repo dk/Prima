@@ -685,7 +685,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       } else if ( rgba_striped) {
          /* Is it time for a new strip? */
          if (( y % rowsperstrip) == 0) {
-            Byte *dest, *src, xx;
+            Byte *dest, *src;
             int r, rows, dd, sd;
             if ( TIFFReadRGBAStrip( tiff, y, (uint32_t*) tifftile) < 0) {
                if ( !( errbuf && errbuf[0]))
