@@ -39,11 +39,13 @@ use Prima::FileDialog;
 sub filtered_codecs
 {
 	my $codecs = defined($_[0]) ? $_[0] : Prima::Image-> codecs;
-	return map { 
-		my $n = uc join( ';', @{$_-> {fileExtensions}});
+	return map {
+		my $n = uc $_-> {fileExtensions}->[0];
 		my $x = join( ';', map {"*.$_"} @{$_-> {fileExtensions}});
-		[ "$_->{fileType} ($n)" => $x ]} 
-	@$codecs;
+		[ "$n - $_->{fileType}" => $x ] 
+	} sort {
+		$a-> {fileExtensions}->[0] cmp $b-> {fileExtensions}->[0] 
+	} @$codecs;
 }
 
 sub filtered_codecs2all
@@ -288,7 +290,10 @@ sub init
 	
 	$self-> {codecFilters} = [];
 	$self-> {allCodecs} = Prima::Image-> codecs;
-	$self-> {codecs} = [ grep { $_-> {canSave}} @{$self-> {allCodecs}}];
+	$self-> {codecs} = [ 
+		sort { $a-> {fileExtensions}->[0] cmp $b-> {fileExtensions}->[0] } 
+		grep { $_-> {canSave}} @{$self-> {allCodecs}}
+		];
 	my $codec = $self-> {codecs}-> [$self-> filterIndex];
 	
 	$self-> image( $profile{image});
