@@ -279,7 +279,12 @@ arguments. Programmaticaly, setting and obtaining these options can be done
 by using C<Prima::options> routine.
 
 In cases where Prima argument parsing conflicts with application options, use
-L<Prima::noARGV> to disable automatic parsing. Also see L<parse_argv>.
+L<Prima::noARGV> to disable automatic parsing; also see L<parse_argv>. 
+Alternatively, the construct 
+        
+	BEGIN { local @ARGV; use Prima; } 
+
+will also do.
 
 =head1 SEE ALSO
 
