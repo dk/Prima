@@ -656,7 +656,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
                int tileno = col+(y/tile_height)*num_tilesX;
                /* read the tile into the array */
 	       int ret = rgba_striped ?
-		  TIFFReadRGBATile( tiff, col * tile_width, y, (uint32_t*) tifftile) :
+		  TIFFReadRGBATile( tiff, col * tile_width, y, (void*) tifftile) :
                   TIFFReadEncodedTile(tiff, tileno, tifftile, tilesz);
                if (!ret) {
                   ok = 0;
@@ -687,7 +687,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          if (( y % rowsperstrip) == 0) {
             Byte *dest, *src;
             int r, rows, dd, sd;
-            if ( TIFFReadRGBAStrip( tiff, y, (uint32_t*) tifftile) < 0) {
+            if ( TIFFReadRGBAStrip( tiff, y, (void*) tifftile) < 0) {
                if ( !( errbuf && errbuf[0]))
                  sprintf( fi-> errbuf, "Error reading scanline %d", y);
                free(tifftile);
