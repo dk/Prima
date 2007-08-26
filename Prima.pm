@@ -282,7 +282,7 @@ In cases where Prima argument parsing conflicts with application options, use
 L<Prima::noARGV> to disable automatic parsing; also see L<parse_argv>. 
 Alternatively, the construct 
         
-	BEGIN { local @ARGV; use Prima; } 
+	BEGIN { local @ARGV; require Prima; } 
 
 will also do.
 
