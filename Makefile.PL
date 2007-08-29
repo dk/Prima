@@ -2245,6 +2245,7 @@ CPBIN=$^X Makefile.PL --cpbin
 MD=$^X Makefile.PL --md
 RM=$^X Makefile.PL --rm
 RMDIR=$^X Makefile.PL --rmdir
+CHMOD=$^X -e $SHQUOTE chmod 0555, \@ARGV $SHQUOTE
 
 dirs:
 \t\@echo Creating directories...
@@ -2293,10 +2294,12 @@ EOF
 
 	my %cp;
 	my %cpbin;
+	my @chmodx; # cygwin's File::Copy sucks, doesn't save permissions
 	$cp{$PrimaTarget} = $INSTALL_DL;
 	$cp{$PrimaLib}    = $INSTALL_DL;
 	$cp{"Prima.pm"}   = $INSTALLSITEARCH;
 	$cp{'.packlist'}  = $INSTALL_DL;
+	push @chmodx, "$INSTALL_DL/$OS2DLLF$DL_EXT";
 	push @allman, 'Prima.pm', manname( 'Prima.pm', 3, '');
 
 	my $cwd = cwd();
@@ -2359,6 +2362,7 @@ EOF
 		$cpbin{$src} = qd( "$dst/" . basename( $src, '.pl')) . $SCRIPT_EXT;
 	}
 	dump_cmd( sub { "$_[0] $cpbin{$_[0]}"}, 'CPBIN', keys %cpbin);
+	dump_cmd( sub { $_[0] }, 'CHMOD', @chmodx);
 	
 	print MAKE "\n\t\@echo Updating config...\n";
 	print MAKE "\t$^X Makefile.PL --updateconfig $INSTALLSITEARCH/Prima/Config.pm";
