@@ -1862,7 +1862,7 @@ if ( $#ARGV >= 0 && $ARGV[ 0] =~ /^\-\-cp(bin)?$/) {
 			unlink $dst;
 			open SRCPL, "<$src" or die "Cannot open $src: $!";
 			open DSTPL, ">$dst" or die "Cannot create $dst: $!";
-			chmod 0555, $dst unless ($Win32 && !$cygwin) || $OS2;
+			chmod 0755, $dst unless ($Win32 && !$cygwin) || $OS2;
 			if ( $Win32 && !$cygwin) {
 				print DSTPL <<EOF;
 \@rem = '--*-Perl-*--
@@ -2245,7 +2245,7 @@ CPBIN=$^X Makefile.PL --cpbin
 MD=$^X Makefile.PL --md
 RM=$^X Makefile.PL --rm
 RMDIR=$^X Makefile.PL --rmdir
-CHMOD=$^X -e $SHQUOTE chmod 0555, \@ARGV $SHQUOTE
+CHMOD=$^X -e $SHQUOTE chmod 0755, \@ARGV $SHQUOTE
 
 dirs:
 \t\@echo Creating directories...
