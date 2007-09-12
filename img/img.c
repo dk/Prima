@@ -189,13 +189,13 @@ apc_img_profile_add( HV * to, HV * from, HV * keys)
 static unsigned long 
 stdio_read( void * f, unsigned long bufsize, char * buffer)
 {
-    return fread( buffer, bufsize, 1, ( FILE*) f);
+    return fread( buffer, 1, bufsize, ( FILE*) f);
 }
 
 static unsigned long 
 stdio_write( void * f, unsigned long bufsize, char * buffer)
 {
-    return fwrite( buffer, bufsize, 1, ( FILE*) f);
+    return fwrite( buffer, 1, bufsize, ( FILE*) f);
 }
 
 static unsigned long 

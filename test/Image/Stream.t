@@ -23,7 +23,7 @@ unless ( $fileok) {
 }
 
 print "1..", 2 * scalar(@codecs), ' ', 
-	join(',', map { "load $_->{fileShortType},save $_->{fileShortType}"} @codecs);
+	join(',', map { "save $_->{fileShortType},load $_->{fileShortType}"} @codecs);
 
 my $i = Prima::Image-> create(
 	width => 16,
