@@ -649,6 +649,8 @@ and
 
 See L<Prima::image-load> for details.
 
+NB! When loading from streams on win32, mind C<binmode>.
+
 =item map COLOR
 
 Performs iterative mapping of bitmap pixels, setting every pixel
@@ -687,6 +689,8 @@ contains error description string.
 Note that when saving to a stream, C<codecID> must be explicitly given in C<%PARAMETERS>.
 
 See L<Prima::image-load> for details.
+
+NB! When saving to streams on win32, mind C<binmode>.
 
 =back
 

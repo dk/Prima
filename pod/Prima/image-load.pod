@@ -30,6 +30,7 @@ Error is returned into $@ variable ( see perldoc perlvar for more info).
 C<Prima::Image> can also load image by reading from a stream:
 
 	open FILE, 'a.jpeg' or die "Cannot open:$!";
+	binmode FILE;
 	my $x = Prima::Image-> load( \*FILE);
         die "$@" unless $x;
 
@@ -225,6 +226,7 @@ and is an integer that selects image encoding format.
    die "No png codec installed" unless @png_id;
 
    open FILE, "> a.png" or die "Cannot save:$!";
+   binmode FILE;
    $image-> save( \*FILE, codecID => $png_id[0])
       or die "Cannot save:$@";
 
