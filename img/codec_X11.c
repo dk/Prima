@@ -78,10 +78,7 @@ static ImgCodecInfo codec_info = {
    nil,    /* features  */
    "",     /* module */
    "",     /* package */
-   true,   /* canLoad */
-   false,  /* canLoadMultiple  */
-   true,   /* canSave */
-   false,  /* canSaveMultiple */
+   IMG_LOAD_FROM_FILE | IMG_SAVE_TO_FILE,
    xbmbpp, /* save types */
    loadOutput
 };
@@ -222,13 +219,13 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       xc++;
    }  
    
-   fprintf( fi-> f, "#define %s_width %d\n", name, i-> w);
-   fprintf( fi-> f, "#define %s_height %d\n", name, i-> h);
+   fprintf( fi-> req-> handle, "#define %s_width %d\n", name, i-> w);
+   fprintf( fi-> req-> handle, "#define %s_height %d\n", name, i-> h);
    if ( pexist( hotSpotX))
-      fprintf( fi-> f, "#define %s_x_hot %d\n", name, (int)pget_i( hotSpotX));
+      fprintf( fi-> req-> handle, "#define %s_x_hot %d\n", name, (int)pget_i( hotSpotX));
    if ( pexist( hotSpotY))
-      fprintf( fi-> f, "#define %s_y_hot %d\n", name, (int)pget_i( hotSpotY));
-   fprintf( fi-> f, "static char %s_bits[] = {\n  ", name);
+      fprintf( fi-> req-> handle, "#define %s_y_hot %d\n", name, (int)pget_i( hotSpotY));
+   fprintf( fi-> req-> handle, "static char %s_bits[] = {\n  ", name);
 
   
    while ( h--) {
@@ -242,18 +239,18 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
          if ( first) {
            first = 0;
          } else {
-           fprintf( fi-> f, ", ");
+           fprintf( fi-> req-> handle, ", ");
          }  
          if ( col++ == 11) {
             col = 0;
-            fprintf( fi-> f, "\n  ");
+            fprintf( fi-> req-> handle, "\n  ");
          }   
-         fprintf( fi-> f, "0x%02x", (Byte)~(*(s1++)));
+         fprintf( fi-> req-> handle, "0x%02x", (Byte)~(*(s1++)));
       }   
       s -= i-> lineSize;
    }  
 
-   fprintf( fi-> f, "};\n");
+   fprintf( fi-> req-> handle, "};\n");
    
    free( l);
    free( name);

@@ -629,9 +629,9 @@ Returns the bit depth of the pixel format. Same as C<::type & im::BPP>.
 
 Returns a system handle for an image object.
 
-=item load FILENAME [ %PARAMETERS ]
+=item load (FILENAME or FILEGLOB) [ %PARAMETERS ]
 
-Loads image file FILENAME into an object, and returns the success flag.
+Loads image from file FILENAME or stream FILEGLOB into an object, and returns the success flag.
 The semantics of C<load()> is extensive, and can be influenced by 
 PARAMETERS hash. C<load()> can be called either in a context of an existing object,
 then a boolean success flag is returned, or in a class context, then a newly
@@ -677,12 +677,14 @@ gray non-8 bit pixel values, by the code:
 
    $image-> resample( $image-> rangeLo, $image-> rangeHi, 0, 255);
 
-=item save FILENAME, [ %PARAMETERS ]
+=item save (FILENAME or FILEGLOB), [ %PARAMETERS ]
 
-Stores image data into image file FILENAME, and returns the success flag.
+Stores image data into image file FILENAME or stream FILEGLOB, and returns the success flag.
 The semantics of C<save()> is extensive, and can be influenced by 
 PARAMETERS hash. If error occurs, C<$@> variable
 contains error description string.
+
+Note that when saving to a stream, C<codecID> must be explicitly given in C<%PARAMETERS>.
 
 See L<Prima::image-load> for details.
 

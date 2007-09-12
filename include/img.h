@@ -38,12 +38,30 @@
 extern "C" {
 #endif
 
+typedef struct _ImgIORequest {
+  unsigned long (*read)       ( void * handle, unsigned long busize, char * buffer);
+  unsigned long (*write)      ( void * handle, unsigned long busize, char * buffer);
+  unsigned long (*seek)       ( void * handle, unsigned long offset, int whence);
+  unsigned long (*tell)       ( void * handle);
+  int           (*flush)      ( void * handle);
+  int           (*error)      ( void * handle);
+  void   * handle;
+} ImgIORequest, *PImgIORequest;
+
+#define req_read(req,size,buf)       ((req)->read(((req)->handle),(size),(buf)))
+#define req_write(req,size,buf)      ((req)->write(((req)->handle),(size),(buf)))
+#define req_seek(req,offset,whence)  ((req)->seek(((req)->handle),(offset),(whence)))
+#define req_tell(req)                ((req)->tell((req)->handle))
+#define req_flush(req)               ((req)->flush((req)->handle))
+#define req_error(req)               ((req)->error((req)->handle))
+
 /* common data, request for a whole file load */
 
 typedef struct _ImgLoadFileInstance {
   /* instance data, filled by core */
   char          * fileName;
-  FILE          * f; 
+  PImgIORequest   req; 
+  Bool            req_is_stdio;
 
   /* instance data, filled by open_load */
   int             frameCount;     /* total frames in the file; can return -1 if unknown */
@@ -77,7 +95,8 @@ typedef struct _ImgLoadFileInstance {
 typedef struct _ImgSaveFileInstance {
   /* instance data, filled by core */
   char          * fileName;
-  FILE          * f; 
+  PImgIORequest   req; 
+  Bool            req_is_stdio;
   Bool            append;         /* true if append, false if rewrite */
 
   /* instance data, filled by open_save */
@@ -95,6 +114,13 @@ typedef struct _ImgSaveFileInstance {
   char          * errbuf;         /* $! value */
 } ImgSaveFileInstance, *PImgSaveFileInstance;
 
+#define IMG_LOAD_FROM_FILE           0x0000001
+#define IMG_LOAD_FROM_STREAM         0x0000002
+#define IMG_LOAD_MULTIFRAME          0x0000004
+#define IMG_SAVE_TO_FILE             0x0000010
+#define IMG_SAVE_TO_STREAM           0x0000020
+#define IMG_SAVE_MULTIFRAME          0x0000040
+
 /* codec info */
 typedef struct _ImgCodecInfo {
    char  * name;              /* DUFF codec */
@@ -107,10 +133,7 @@ typedef struct _ImgCodecInfo {
    char ** featuresSupported; /* duff-version 1, duff-rgb, duff-cmyk */
    char  * primaModule;       /* Prima::ImgPlugins::duff.pm */
    char  * primaPackage;      /* Prima::ImgPlugins::duff */
-   Bool    canLoad;
-   Bool    canLoadMultiple;  
-   Bool    canSave;          
-   Bool    canSaveMultiple;  
+   unsigned int IOFlags;      /* IMG_XXX */
    int   * saveTypes;         /* imMono, imBW ... 0 */
    char ** loadOutput;        /* hash keys reported by load  */
 } ImgCodecInfo, *PImgCodecInfo;
@@ -153,9 +176,9 @@ extern void  apc_img_init(void);
 extern void  apc_img_done(void);
 extern Bool  apc_img_register( PImgCodecVMT codec, void * initParam);
 
-extern int   apc_img_frame_count( char * fileName);
-extern PList apc_img_load( Handle self, char * fileName, HV * profile, char * error);
-extern int   apc_img_save( Handle self, char * fileName, HV * profile, char * error);
+extern int   apc_img_frame_count( char * fileName, PImgIORequest ioreq);
+extern PList apc_img_load( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, char * error);
+extern int   apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, char * error);
 
 extern void  apc_img_codecs( PList result);
 extern HV *  apc_img_info2hash( PImgCodec c);

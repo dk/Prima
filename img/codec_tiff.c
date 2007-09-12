@@ -171,10 +171,8 @@ static ImgCodecInfo codec_info = {
    tifffeatures,    /* features  */
    "Prima::Image::tiff",     /* module */
    "Prima::Image::tiff",     /* package */
-   true,   /* canLoad */
-   true,  /* canLoadMultiple  */
-   true,   /* canSave */
-   true,  /* canSaveMultiple */
+   IMG_LOAD_FROM_FILE | IMG_LOAD_MULTIFRAME | IMG_LOAD_FROM_STREAM | 
+   IMG_SAVE_TO_FILE | IMG_SAVE_MULTIFRAME | IMG_SAVE_TO_STREAM,
    tiffbpp, /* save types */
    loadOutput
 };
@@ -201,15 +199,71 @@ load_defaults( PImgCodec c)
    return profile;
 }
 
+static tsize_t
+my_tiff_read( thandle_t h, tdata_t data, tsize_t size)
+{
+    return req_read( (PImgIORequest) h, size, data);
+}
+
+static tsize_t
+my_tiff_write( thandle_t h, tdata_t data, tsize_t size)
+{
+    return req_write( (PImgIORequest) h, size, data);
+}
+
+static toff_t
+my_tiff_seek( thandle_t h, toff_t offset, int whence)
+{
+    if ( req_seek( (PImgIORequest) h, offset, whence) < 0)
+       return -1;
+    return req_tell( (PImgIORequest) h);
+}
+
+static int
+my_tiff_close( thandle_t h)
+{
+    return (( PImgIORequest) h)-> flush ? 
+       req_flush( (PImgIORequest) h) :
+       0;
+}
+
+static toff_t
+my_tiff_size( thandle_t h)
+{
+    return 0;
+}
+
+static int
+my_tiff_map( thandle_t h, tdata_t * data, toff_t * offset)
+{
+    return 0;
+}
+
+static void
+my_tiff_unmap( thandle_t h, tdata_t data, toff_t offset)
+{
+}
+
+
 static void * 
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    TIFF * tiff;
    errbuf = fi-> errbuf;
    err_signal = 0;
-   if (!( tiff = TIFFFdOpen( fileno(fi-> f), fi-> fileName, "r"))) {
-      fseek( fi-> f, 0, SEEK_SET);
-      return nil;
+   if ( fi-> req_is_stdio) {
+      if (!( tiff = TIFFFdOpen( fileno(( FILE*) fi-> req-> handle), fi-> fileName, "r"))) {
+         req_seek( fi-> req, 0, SEEK_SET);
+         return nil;
+      }
+   } else {
+      if (!( tiff = TIFFClientOpen( "", "r", (thandle_t) fi-> req,
+         my_tiff_read, my_tiff_write,
+         my_tiff_seek, my_tiff_close, my_tiff_size, 
+	 my_tiff_map, my_tiff_unmap))) {
+         req_seek( fi-> req, 0, SEEK_SET);
+         return nil;
+      }
    }
    fi-> frameCount = TIFFNumberOfDirectories( tiff);
    fi-> stop = true;
@@ -883,8 +937,16 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
    TIFF * tiff;
    errbuf = fi-> errbuf;
    err_signal = 0;
-   if (!( tiff = TIFFFdOpen( fileno(fi-> f), fi-> fileName, "w")))
-      return nil;
+   if ( fi-> req_is_stdio) {
+      if (!( tiff = TIFFFdOpen( fileno(( FILE*) fi-> req-> handle), fi-> fileName, "w")))
+         return nil;
+   } else {
+      if (!( tiff = TIFFClientOpen( "", "w", (thandle_t) fi-> req,
+         my_tiff_read, my_tiff_write,
+         my_tiff_seek, my_tiff_close, my_tiff_size, 
+	 my_tiff_map, my_tiff_unmap)))
+         return nil;
+   }
    return tiff;
 }
 

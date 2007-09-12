@@ -134,10 +134,7 @@ static ImgCodecInfo codec_info = {
    nil,    // features 
    "",     // module
    "",     // package
-   true,   // canLoad
-   false,  // canLoadMultiple 
-   true,   // canSave
-   false,  // canSaveMultiple
+   IMG_LOAD_FROM_FILE | IMG_SAVE_TO_FILE,
    nil,    // save types
 };
 
@@ -240,7 +237,7 @@ init( ImgCodecInfo ** info, void * param)
 
    switch ( gbm_ft_map[(int)param] ) {
       case itGIF:
-         (*info)-> canLoadMultiple = true;
+         (*info)-> IOFlags |= IMG_LOAD_MULTIPLE;
          (*info)-> saveTypes = t_no24;
          (*info)-> primaModule  = "Prima::Image::GBM";
          (*info)-> primaPackage = "Prima::Image::GBM::gif";
@@ -274,7 +271,7 @@ init( ImgCodecInfo ** info, void * param)
          break;
       case itCVP:   
       case itIAX:
-         (*info)-> canSave = false;
+         (*info)-> IOFlags &= ~IMG_SAVE_TO_FILE;
          break;
       case itTGA:
          (*info)-> saveTypes = t_targa;
@@ -331,13 +328,14 @@ static ImageSignatures signatures[] =
 #define N_SIGS ( sizeof( signatures) / sizeof( signatures[ 0]))
 
 static Bool
-type_ok( FILE * fd, int ft)
+type_ok( PImgIORequest req, int ft)
 {
    char buf[ 8];
    int i;
-   fseek( fd, 0, SEEK_SET);
+   req_seek( req, 0, SEEK_SET);
    memset( buf, 0, 8);
-   fread( buf, 8, 1, fd);
+   req_read( req, 8, buf);
+   req_seek( req, 0, SEEK_SET);
    for ( i = 0; i < N_SIGS; i++) {
       if (( signatures[ i]. type == ft) &&
           ( memcmp( buf, signatures[ i]. sig, signatures[ i]. size) == 0))
@@ -360,9 +358,9 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    GBMRec * g;
   
-   if ( !type_ok( fi-> f, gbm_ft_map[(int)(instance-> initParam)])) {
+   if ( !type_ok( fi-> req, gbm_ft_map[(int)(instance-> initParam)])) {
       int ft;
-      if ( gbm_guess_filetype( fi-> fileName, &ft) != 0)
+      if ( fi-> fileName && gbm_guess_filetype( fi-> fileName, &ft) != 0)
          return nil;
       if ( ft != (int)(instance-> initParam)) 
          return nil;

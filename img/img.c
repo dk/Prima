@@ -44,7 +44,6 @@ extern "C" {
 
 static Bool initialized = false;   
 
-
 void 
 apc_img_init( void)
 {
@@ -187,8 +186,53 @@ apc_img_profile_add( HV * to, HV * from, HV * keys)
    }
 }   
 
+static unsigned long 
+stdio_read( void * f, unsigned long bufsize, char * buffer)
+{
+    return fread( buffer, bufsize, 1, ( FILE*) f);
+}
+
+static unsigned long 
+stdio_write( void * f, unsigned long bufsize, char * buffer)
+{
+    return fwrite( buffer, bufsize, 1, ( FILE*) f);
+}
+
+static unsigned long 
+stdio_seek( void * f, unsigned long offset, int whence)
+{
+    return fseek( ( FILE*) f, offset, whence);
+}
+
+static unsigned long 
+stdio_tell( void * f)
+{
+    return ftell( ( FILE*) f);
+}
+
+static int
+stdio_flush( void * f)
+{
+    return fflush( ( FILE*) f);
+}
+
+static int
+stdio_error( void * f)
+{
+    return ferror( ( FILE*) f);
+}
+     
+static ImgIORequest std_ioreq = {
+      stdio_read,
+      stdio_write,
+      stdio_seek,
+      stdio_tell,
+      stdio_flush,
+      stdio_error
+};
+
 PList 
-apc_img_load( Handle self, char * fileName, HV * profile, char * error)
+apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, char * error)
 {
    dPROFILE;
    int i, profiles_len = 0, lastFrame = -2, codecID = -1;
@@ -202,6 +246,8 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    Bool incrementalLoad = false;
    Bool iconUnmask = false;
    char * baseClassName = "Prima::Image";
+   ImgIORequest sioreq;
+   int  load_mask;
 
 
 #define out(x){ err = true;\
@@ -221,8 +267,18 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    fi. errbuf = error;
 
    /* open file */
-   if (( fi. f = ( FILE *) fopen( fileName, "rb")) == NULL)
-      out( strerror( errno));
+   if ( ioreq == NULL) {
+      memcpy( &sioreq, &std_ioreq, sizeof( sioreq));
+      if (( sioreq. handle = fopen( fileName, "rb")) == NULL)
+         out( strerror( errno));
+      fi. req = &sioreq;
+      fi. req_is_stdio = true;
+      load_mask = IMG_LOAD_FROM_FILE;
+   } else {
+      fi. req = ioreq;
+      fi. req_is_stdio = false;
+      load_mask = IMG_LOAD_FROM_STREAM;
+   }
    fi. fileName = fileName;
    fi. stop = false;
 
@@ -297,7 +353,6 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    /* finding codec */
    {
       Bool * loadmap = ( Bool *) malloc( sizeof( Bool) * imgCodecs. count);
-      int fileNameLen = strlen( fileName);
 
       if ( !loadmap) 
          out("Not enough memory");
@@ -311,48 +366,55 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
             continue;
          } 
       }
+      c = nil;
       
       /* finding by extension first */
-      c = nil;
-      for ( i = 0; i < imgCodecs. count; i++) {
-         int j = 0, found = false;
-         if ( loadmap[ i]) continue;
-         c = ( PImgCodec ) ( imgCodecs. items[ i]);
-         while ( c-> info-> fileExtensions[ j]) {
-	    char * ext = c-> info-> fileExtensions[ j];
-	    int extLen = strlen( ext);
-	    if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0) {
-               found = true;
-               break;
-            }   
-            j++;
-         } 
-         if ( found) {
-            loadmap[ i] = true;
+      if ( fileName) {
+         int fileNameLen = strlen( fileName);
+         for ( i = 0; i < imgCodecs. count; i++) {
+            int j = 0, found = false;
+            if ( loadmap[ i]) continue;
+            c = ( PImgCodec ) ( imgCodecs. items[ i]);
+            while ( c-> info-> fileExtensions[ j]) {
+               char * ext = c-> info-> fileExtensions[ j];
+               int extLen = strlen( ext);
+               if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0) {
+                  found = true;
+                  break;
+               }   
+               j++;
+            } 
+            if ( found) {
+               loadmap[ i] = true;
 
-            if ( !c-> info-> canLoad)
-               continue;
-            if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL) {
-               codecID = i;
-               break;
-            }   
+               if ( !( c-> info-> IOFlags & load_mask)) {
+	          c = nil;
+                  continue;
+	       }	  
+               if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL) {
+                  codecID = i;
+                  break;
+               }   
 
-            if ( fi. stop) { 
-               err = true; 
-               free( loadmap);
-               goto EXIT_NOW; 
-            }
-         }   
-         c = nil;
-      }   
+               if ( fi. stop) { 
+                  err = true; 
+                  free( loadmap);
+                  goto EXIT_NOW; 
+               }
+            }   
+            c = nil;
+         }
+      }
       
       /* use first suitable codec */
       if ( c == nil) {
-         for ( i = 0; i < imgCodecs. count; i++) {        
+         for ( i = 0; i < imgCodecs. count; i++) {
             if ( loadmap[ i]) continue;
             c = ( PImgCodec ) ( imgCodecs. items[ i]);
-            if ( !c-> info-> canLoad)
+            if ( !( c-> info-> IOFlags & load_mask)) {
+	          c = nil;
                   continue;
+            }
             if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL) {
                codecID = i;
                break;
@@ -367,7 +429,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
       }
       free( loadmap);
       if ( !c) out("No appropriate codec found");
-   }   
+   }
 
    if ( fi. loadAll) {
       if ( fi. frameCount >= 0) {
@@ -381,6 +443,7 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
          incrementalLoad = true;
       }   
    }   
+
 
    /* use common profile */
    def = c-> vmt-> load_defaults( c); 
@@ -400,8 +463,8 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
 
       fi. frame = incrementalLoad ? i : fi. frameMap[ i];
       if (( fi. frameCount >= 0 && fi. frame >= fi. frameCount) || 
-          ( !c-> info-> canLoadMultiple && fi. frame > 0)) { 
-         if ( !c-> info-> canLoadMultiple && fi. frameCount < 0)
+          ( !(c-> info-> IOFlags & IMG_LOAD_MULTIFRAME) && fi. frame > 0)) { 
+         if ( !(c-> info-> IOFlags & IMG_LOAD_MULTIFRAME) && fi. frameCount < 0)
             fi. frameCount = i; 
          if ( incrementalLoad) 
             /* that means, codec bothered to set frameCount at last - report no error then */
@@ -558,7 +621,9 @@ apc_img_load( Handle self, char * fileName, HV * profile, char * error)
    
 EXIT_NOW:;
    if ( fi. frameCount < 0 && pexist( wantFrames) && pget_i( wantFrames)) {
-      fi. frameCount = apc_img_frame_count( fileName);
+      if ( ioreq != NULL) 
+         req_seek( ioreq, 0, SEEK_SET);
+      fi. frameCount = apc_img_frame_count( fileName, ioreq);
    }
    if ( firstObjectExtras)
       hv_store( firstObjectExtras, "frames", 6, newSViv( fi. frameCount), 0);
@@ -570,26 +635,39 @@ EXIT_NOW:;
       sv_free(( SV *) commonHV);
    if ( fi. fileProperties) 
       sv_free((SV *) fi. fileProperties); 
-   if ( fi. f) 
-      fclose( fi. f);
+   if ( ioreq == NULL && fi.req != NULL && fi. req-> handle != NULL) 
+      fclose(( FILE*) fi. req-> handle);
    free( fi. frameMap);
    return ret;
 #undef out   
 #undef outd
-}   
+}
 
 int 
-apc_img_frame_count( char * fileName)
+apc_img_frame_count( char * fileName, PImgIORequest ioreq )
 {
    PImgCodec c = nil;
    ImgLoadFileInstance fi;
    int i, frameMap, ret = 0;
    char error[256];
+   ImgIORequest sioreq;
+   int load_mask;
 
    CHK;
    memset( &fi, 0, sizeof( fi));
    /* open file */
-   if (( fi. f = ( FILE *) fopen( fileName, "rb")) == NULL) goto EXIT_NOW;
+   if ( ioreq == NULL) {
+      memcpy( &sioreq, &std_ioreq, sizeof( sioreq));
+      if (( sioreq. handle = fopen( fileName, "rb")) == NULL)
+         goto EXIT_NOW;
+      fi. req = &sioreq;
+      fi. req_is_stdio = true;
+      load_mask = IMG_LOAD_FROM_FILE;
+   } else {
+      fi. req = ioreq;
+      fi. req_is_stdio = false;
+      load_mask = IMG_LOAD_FROM_STREAM;
+   }
    
    /* assigning request */
    fi. fileName = fileName;
@@ -607,7 +685,6 @@ apc_img_frame_count( char * fileName)
    /* finding codec */
    {
       Bool * loadmap = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count);
-      int fileNameLen = strlen( fileName);
 
       if ( !loadmap) 
          return 0;
@@ -622,50 +699,58 @@ apc_img_frame_count( char * fileName)
          } 
       }
       
-      /* finding by extension first */
       c = nil;
-      for ( i = 0; i < imgCodecs. count; i++) {
-         int j = 0, found = false;
-         if ( loadmap[ i]) continue;
-         c = ( PImgCodec ) ( imgCodecs. items[ i]);
-         while ( c-> info-> fileExtensions[ j]) {
-	    char * ext = c-> info-> fileExtensions[ j];
-	    int extLen = strlen( ext);
-	    if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0) {
-               found = true;
-               break;
-            }   
-            j++;
-         } 
-         if ( found) {
-            loadmap[ i] = true;
 
-            if ( !c-> info-> canLoad)
-               continue;
-            if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL)
-               break;
-            
-            if ( fi. stop) { 
-               free( loadmap);
-               goto EXIT_NOW; 
-            }
-         }   
-         c = nil;
-      }   
+      /* finding by extension first */
+      if ( fileName) {
+         int fileNameLen = strlen( fileName);
+         for ( i = 0; i < imgCodecs. count; i++) {
+            int j = 0, found = false;
+            if ( loadmap[ i]) continue;
+            c = ( PImgCodec ) ( imgCodecs. items[ i]);
+            while ( c-> info-> fileExtensions[ j]) {
+               char * ext = c-> info-> fileExtensions[ j];
+               int extLen = strlen( ext);
+               if ( extLen < fileNameLen && stricmp( fileName + fileNameLen - extLen, ext) == 0) {
+                  found = true;
+                  break;
+               }   
+               j++;
+            } 
+            if ( found) {
+               loadmap[ i] = true;
+
+               if ( !( c-> info-> IOFlags & load_mask)) {
+	          c = nil;
+                  continue;
+	       }
+               if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL)
+                  break;
+               
+               if ( fi. stop) { 
+                  free( loadmap);
+                  goto EXIT_NOW; 
+               }
+            }   
+            c = nil;
+         }
+      }
       
       if ( c == nil) {
          for ( i = 0; i < imgCodecs. count; i++) {        
             if ( loadmap[ i]) continue;
             c = ( PImgCodec ) ( imgCodecs. items[ i]);
-            if ( !c-> info-> canLoad)
+            if ( !( c-> info-> IOFlags & load_mask)) {
+	          c = nil;
                   continue;
+	    }  
             if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL)
                break;
             if ( fi. stop) { 
                free( loadmap);
                goto EXIT_NOW; 
             }
-           c = nil;
+            c = nil;
          }
       }
       free( loadmap);
@@ -680,7 +765,7 @@ apc_img_frame_count( char * fileName)
       goto EXIT_NOW;
    }  
 
-   if ( !c-> info-> canLoadMultiple) {
+   if ( !( c-> info-> IOFlags & IMG_LOAD_MULTIFRAME)) {
       c-> vmt-> close_load( c, &fi);
       ret = 1; /* single-framed file. what else? */
       goto EXIT_NOW;
@@ -710,7 +795,7 @@ apc_img_frame_count( char * fileName)
    for ( i = 0; i < INT_MAX; i++) {
       fi. jointFrame = i > 0;
       frameMap = fi. frame = i;
-      if ( !c-> info-> canLoadMultiple) {
+      if ( !( c-> info-> IOFlags & IMG_LOAD_MULTIFRAME)) {
          c-> vmt-> close_load( c, &fi);
          if ( !( fi. instance = c-> vmt-> open_load( c, &fi))) {
             ret = i;
@@ -735,13 +820,13 @@ EXIT_NOW:;
       sv_free(( SV *) fi. frameProperties);
    if ( fi. fileProperties)
       sv_free(( SV *) fi. fileProperties);
-   if ( fi. f) 
-      fclose( fi. f);
+   if ( ioreq == NULL && fi.req != NULL && fi. req-> handle != NULL)
+      fclose(( FILE*) fi. req-> handle);
    return ret;
 }   
 
 int
-apc_img_save( Handle self, char * fileName, HV * profile, char * error)
+apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, char * error)
 {
    dPROFILE;
    int i;
@@ -754,6 +839,8 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
    int xself = self ? 1 : 0;
    int ret = 0;
    Bool autoConvert = true;
+   ImgIORequest sioreq;
+   int save_mask;
 
 #define out(x){ err = true;\
    strncpy( error, x, 256);\
@@ -773,15 +860,25 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
       autoConvert = pget_B( autoConvert);
 
    /* open file */
-   if ( fi. append) {
+   if ( fi. append && ioreq == NULL) {
       FILE * f = ( FILE *) fopen( fileName, "rb");
       fclose( f);
       if ( !f) fi. append = false;
    }   
    
    fi. errbuf = error;
-   if (( fi. f = ( FILE *) fopen( fileName, fi. append ? "rb+" : "wb+" )) == NULL)
-      out( strerror( errno));
+   if ( ioreq == NULL) {
+      memcpy( &sioreq, &std_ioreq, sizeof( sioreq));
+      if (( sioreq. handle = fopen( fileName, fi. append ? "rb+" : "wb+" )) == NULL)
+         out( strerror( errno));
+      fi. req = &sioreq;
+      fi. req_is_stdio = true;
+      save_mask = IMG_SAVE_TO_FILE;
+   } else {
+      fi. req = ioreq;
+      fi. req_is_stdio = false;
+      save_mask = IMG_SAVE_TO_STREAM;
+   }
 
    fi. fileName     = fileName;
    
@@ -834,7 +931,6 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
    strcpy( error, "No appropriate codec found");
    {
       Bool * savemap = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count);
-      int fileNameLen = strlen( fileName);
 
       if ( !savemap)
          out("Not enough memory");
@@ -878,12 +974,13 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
              out("Codec index out of range");
 
          c = ( PImgCodec ) ( imgCodecs. items[ codecID]);
-
-         if ( !c-> info-> canSave) 
-            out("Codec cannot save images");
+         if ( !( c-> info-> IOFlags & save_mask))
+               out( ioreq ? 
+	          "Codec cannot save images to streams" : 
+		  "Codec cannot save images");
          
          if (( fi. append || ( fi. frameMapSize > 1)) && 
-               !c-> info-> canSaveMultiple) 
+               !( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) 
             out("Codec cannot append frames");
          
          if (( fi. instance = c-> vmt-> open_save( c, &fi)) == NULL) 
@@ -906,7 +1003,8 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
          }      
       }   
      
-      if ( !c) {
+      if ( !c && fileName) {
+         int fileNameLen = strlen( fileName);
          /* finding codec by extension  */
          for ( i = 0; i < imgCodecs. count; i++) {
             int j = 0, found = false;
@@ -924,12 +1022,16 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
 
             if ( found) {
                savemap[ i] = true;
-               if ( !c-> info-> canSave) 
+               if ( !( c-> info-> IOFlags & save_mask)) {
+	          c = nil;
                   continue;
+	       }
                
                if (( fi. append || ( fi. frameMapSize > 1)) 
-                   && !c-> info-> canSaveMultiple)
+                   && ( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) {
+	          c = nil;
                   continue;
+	       }
                
                if ( !autoConvert) {
                   int j, *k = c-> info-> saveTypes, ok = 0;
@@ -943,13 +1045,15 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
                         k++;
                      }   
                   }   
-                  if ( !ok) 
+                  if ( !ok) {
+	             c = nil;
                      continue;
-               }      
+		  }
+               }
               
                if (( fi. instance = c-> vmt-> open_save( c, &fi)) != NULL)
                   break;
-            }   
+            }
             c = nil;
          }   
       }
@@ -961,7 +1065,7 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
       }   
    }   
 
-   snprintf( error, 256, "Error saving %s", fileName);
+   snprintf( error, 256, "Error saving %s", fileName ? fileName : "to stream");
 
    /* use common profile */
    def = c-> vmt-> save_defaults( c); 
@@ -1050,9 +1154,9 @@ apc_img_save( Handle self, char * fileName, HV * profile, char * error)
    
 EXIT_NOW:;
    free( fi. frameMap);
-   if ( fi. f)
-      fclose( fi. f);
-   if ( err)
+   if ( ioreq == NULL && fi. req-> handle != NULL)
+      fclose(( FILE*) fi. req-> handle);
+   if ( err && fileName)
       unlink( fileName);
    if ( def)
       sv_free(( SV *) def);
@@ -1174,17 +1278,19 @@ apc_img_info2hash( PImgCodec codec)
    fill_plist( "featuresSupported", c-> featuresSupported, profile);
    pset_c( module,  c-> primaModule);
    pset_c( package, c-> primaPackage);
-   pset_i( canLoad,         c-> canLoad);
-   pset_i( canSave        , c-> canSave);
-   pset_i( canLoadMultiple, c-> canLoadMultiple);
-   pset_i( canSaveMultiple, c-> canSaveMultiple);
+   pset_i( canLoad,         c-> IOFlags & IMG_LOAD_FROM_FILE);
+   pset_i( canLoadStream  , c-> IOFlags & IMG_LOAD_FROM_STREAM);
+   pset_i( canLoadMultiple, c-> IOFlags & IMG_LOAD_MULTIFRAME);
+   pset_i( canSave        , c-> IOFlags & IMG_SAVE_TO_FILE);
+   pset_i( canSaveStream  , c-> IOFlags & IMG_SAVE_TO_STREAM);
+   pset_i( canSaveMultiple, c-> IOFlags & IMG_SAVE_MULTIFRAME);
    
    
-   fill_ilist( "types",  c-> canSave ? c-> saveTypes : nil, profile);
+   fill_ilist( "types",  c-> saveTypes, profile);
 
-   if ( c-> canLoad) {
+   if ( c-> IOFlags & ( IMG_LOAD_FROM_FILE|IMG_LOAD_FROM_STREAM)) {
       hv = codec-> vmt-> load_defaults( codec);
-      if ( c-> canLoadMultiple) {
+      if ( c-> IOFlags & IMG_LOAD_MULTIFRAME) {
          hv_store( hv, "index",        5, newSViv(0),     0);
          hv_store( hv, "map",          3, newSVsv(nilSV), 0);
          hv_store( hv, "loadAll",      7, newSViv(0),     0);
@@ -1198,18 +1304,18 @@ apc_img_info2hash( PImgCodec codec)
       hv = newHV();
    pset_sv_noinc( loadInput, newRV_noinc(( SV *) hv));
    
-   av = fill_plist( "loadOutput", c-> canLoad ? c-> loadOutput : nil, profile);
-   if ( c-> canLoad) {
-      if ( c-> canLoadMultiple) 
+   av = fill_plist( "loadOutput", c-> loadOutput, profile);
+   if ( c-> IOFlags & ( IMG_LOAD_FROM_FILE|IMG_LOAD_FROM_STREAM)) {
+      if ( c-> IOFlags & IMG_LOAD_MULTIFRAME) 
          av_push( av, newSVpv( "frames", 0));
       av_push( av, newSVpv( "height", 0));
       av_push( av, newSVpv( "width",  0));
       av_push( av, newSVpv( "codecID", 0));      
    }
    
-   if ( c-> canSave) {
+   if ( c-> IOFlags & ( IMG_SAVE_TO_FILE|IMG_SAVE_TO_STREAM)) {
       hv = codec-> vmt-> save_defaults( codec);
-      if ( c-> canSaveMultiple)
+      if ( c-> IOFlags & IMG_SAVE_MULTIFRAME) 
          hv_store( hv, "append",       6, newSViv(0), 0);
       hv_store( hv, "autoConvert", 10, newSViv(1), 0);
       hv_store( hv, "codecID",     7,  newSVsv( nilSV), 0);

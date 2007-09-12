@@ -43,6 +43,7 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <jpeglib.h>
+#include <jerror.h>
 
 
 #ifdef __cplusplus
@@ -62,10 +63,7 @@ static ImgCodecInfo codec_info = {
    nil,    /* features  */
    "Prima::Image::jpeg",  /* module */
    "Prima::Image::jpeg",  /* package */
-   true,   /* canLoad */
-   false,  /* canLoadMultiple  */
-   true,   /* canSave */
-   false,  /* canSaveMultiple */
+   IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM,
    jpgbpp, /* save types */
    nil
 };
@@ -106,16 +104,122 @@ load_error_exit(j_common_ptr cinfo)
    longjmp( l-> j, 1);
 }
 
+/* begin ripoff from jdatasrc.c */
+typedef struct {
+  struct jpeg_source_mgr pub;	/* public fields */
+  JOCTET * buffer;		/* start of buffer */
+  boolean start_of_file;	/* have we gotten any data yet? */
+  ImgIORequest  *req;
+} my_source_mgr;
+
+typedef my_source_mgr * my_src_ptr;
+
+#define INPUT_BUF_SIZE  4096	/* choose an efficiently fread'able size */
+
+void
+init_source (j_decompress_ptr cinfo)
+{
+   ((my_src_ptr) cinfo->src)->start_of_file = true;
+}
+
+boolean
+fill_input_buffer (j_decompress_ptr cinfo)
+{
+  unsigned long nbytes;
+  my_src_ptr src = (my_src_ptr) cinfo->src;
+
+  nbytes = req_read( src->req, INPUT_BUF_SIZE, src->buffer);
+  if (nbytes <= 0) {
+    if (src->start_of_file)	/* Treat empty input file as fatal error */
+      ERREXIT(cinfo, JERR_INPUT_EMPTY);
+    WARNMS(cinfo, JWRN_JPEG_EOF);
+    /* Insert a fake EOI marker */
+    src->buffer[0] = (JOCTET) 0xFF;
+    src->buffer[1] = (JOCTET) JPEG_EOI;
+    nbytes = 2;
+  }
+
+  src->pub.next_input_byte = src->buffer;
+  src->pub.bytes_in_buffer = nbytes;
+  src->start_of_file = false;
+
+  return true;
+}
+
+void
+skip_input_data (j_decompress_ptr cinfo, long num_bytes)
+{
+  my_src_ptr src = (my_src_ptr) cinfo->src;
+
+  /* Just a dumb implementation for now.  Could use fseek() except
+   * it doesn't work on pipes.  Not clear that being smart is worth
+   * any trouble anyway --- large skips are infrequent.
+   */
+  if (num_bytes > 0) {
+    while (num_bytes > (long) src->pub.bytes_in_buffer) {
+      num_bytes -= (long) src->pub.bytes_in_buffer;
+      (void) fill_input_buffer(cinfo);
+      /* note we assume that fill_input_buffer will never return FALSE,
+       * so suspension need not be handled.
+       */
+    }
+    src->pub.next_input_byte += (size_t) num_bytes;
+    src->pub.bytes_in_buffer -= (size_t) num_bytes;
+  }
+}
+
+/*
+ * Terminate source --- called by jpeg_finish_decompress
+ * after all data has been read.  Often a no-op.
+ * NB: *not* called by jpeg_abort or jpeg_destroy; surrounding
+ * application must deal with any cleanup that should happen even
+ * for error exit.
+ */
+
+void
+term_source (j_decompress_ptr cinfo)
+{
+  /* no work necessary here */
+}
+
+
+static void
+custom_src( j_decompress_ptr cinfo, PImgLoadFileInstance fi)
+{
+  my_src_ptr src;
+
+  cinfo->src = (struct jpeg_source_mgr *) malloc(sizeof(my_source_mgr));
+  src = (void*) cinfo-> src;			 
+  src-> buffer = (JOCTET *) malloc( INPUT_BUF_SIZE * sizeof(JOCTET));
+  src-> pub.init_source = init_source;
+  src-> pub.fill_input_buffer = fill_input_buffer;
+  src-> pub.skip_input_data = skip_input_data;
+  src-> pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
+  src-> pub.term_source = term_source;
+  src-> pub.bytes_in_buffer = 0; /* forces fill_input_buffer on first read */
+  src-> pub.next_input_byte = NULL; /* until buffer loaded */
+
+  src-> req    = fi-> req;
+}
+/* end ripoff from jdatasrc.c */
+
 static void * 
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    LoadRec * l;
-   Byte buf[4];
+   Byte buf[2];
 
-   if ( fseek( fi-> f, 0, SEEK_SET) < 0) return false;
-   if ( fread( buf, 1, 2, fi-> f) != 2) return false;
-   if ( memcmp( "\xff\xd8", buf, 2) != 0) return false;   
-   if ( fseek( fi-> f, 0, SEEK_SET) < 0) return false;
+   if ( req_seek( fi-> req, 0, SEEK_SET) < 0) return false;
+   if ( req_read( fi-> req, 2, buf) < 0) {
+      req_seek( fi-> req, 0, SEEK_SET);
+      return false;
+   }
+   if ( memcmp( "\xff\xd8", buf, 2) != 0) {
+      req_seek( fi-> req, 0, SEEK_SET);
+      return false;   
+   }
+   if ( req_seek( fi-> req, 0, SEEK_SET) < 0) return false;
+
    fi-> stop = true;
    fi-> frameCount = 1;
    
@@ -135,7 +239,10 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
       return false;
    } 
    jpeg_create_decompress( &l-> d);
-   jpeg_stdio_src( &l-> d, fi-> f);
+   if ( fi-> req_is_stdio)
+      jpeg_stdio_src( &l-> d, fi-> req-> handle);
+   else
+      custom_src( &l-> d, fi);
    jpeg_read_header( &l-> d, true);
    l-> init = false;
    return l;
@@ -187,6 +294,12 @@ static void
 close_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    LoadRec * l = ( LoadRec *) fi-> instance;
+   if ( !fi-> req_is_stdio) {
+       my_src_ptr src = (my_src_ptr) l->d.src;
+       free( src-> buffer);
+       free( src);
+       l->d.src = NULL;
+   }
    jpeg_destroy_decompress(&l-> d);
    free( l);
 }
@@ -229,6 +342,92 @@ save_defaults( PImgCodec c)
    return profile;
 }
 
+/* begin ripoff from jdatadst.c */
+
+#define OUTPUT_BUF_SIZE  4096	/* choose an efficiently fwrite'able size */
+
+/* Expanded data destination object for stdio output */
+
+typedef struct {
+  struct jpeg_destination_mgr pub; /* public fields */
+  PImgIORequest req;
+  JOCTET * buffer;		/* start of buffer */
+} my_destination_mgr;
+
+typedef my_destination_mgr * my_dest_ptr;
+
+void
+init_destination (j_compress_ptr cinfo)
+{
+  my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+
+  /* Allocate the output buffer --- it will be released when done with image */
+  dest->buffer = (JOCTET *) malloc( OUTPUT_BUF_SIZE * sizeof(JOCTET));
+  dest->pub.next_output_byte = dest->buffer;
+  dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
+}
+
+
+/* Empty the output buffer --- called whenever buffer fills up.  */
+
+boolean
+empty_output_buffer (j_compress_ptr cinfo)
+{
+  my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+
+  if ( req_write(dest->req, OUTPUT_BUF_SIZE, dest->buffer) !=
+      (size_t) OUTPUT_BUF_SIZE)
+    ERREXIT(cinfo, JERR_FILE_WRITE);
+
+  dest->pub.next_output_byte = dest->buffer;
+  dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
+
+  return true;
+}
+
+
+/*
+ * Terminate destination --- called by jpeg_finish_compress
+ * after all data has been written.  Usually needs to flush buffer.
+ *
+ * NB: *not* called by jpeg_abort or jpeg_destroy; surrounding
+ * application must deal with any cleanup that should happen even
+ * for error exit.
+ */
+
+void
+term_destination (j_compress_ptr cinfo)
+{
+  my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+  size_t datacount = OUTPUT_BUF_SIZE - dest->pub.free_in_buffer;
+
+  /* Write any data remaining in the buffer */
+  if (datacount > 0) {
+    if (req_write(dest->req, datacount, dest->buffer) != datacount)
+      ERREXIT(cinfo, JERR_FILE_WRITE);
+  }
+  req_flush(dest->req);
+  /* Make sure we wrote the output file OK */
+  if (req_error(dest->req))
+    ERREXIT(cinfo, JERR_FILE_WRITE);
+}
+
+void
+custom_dest(j_compress_ptr cinfo, PImgIORequest req)
+{
+  my_dest_ptr dest;
+
+  cinfo->dest = (struct jpeg_destination_mgr *) malloc( sizeof(my_destination_mgr));
+  dest = (my_dest_ptr) cinfo->dest;
+  dest->pub.init_destination = init_destination;
+  dest->pub.empty_output_buffer = empty_output_buffer;
+  dest->pub.term_destination = term_destination;
+  dest->req = req;
+}
+
+/* end ripoff from jdatadst.c */
+
+
 static void *
 open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
@@ -251,7 +450,10 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
       return false;
    } 
    jpeg_create_compress( &l-> c);
-   jpeg_stdio_dest( &l-> c, fi-> f);
+   if ( fi-> req_is_stdio)
+      jpeg_stdio_dest( &l-> c, fi-> req-> handle);
+   else
+      custom_dest( &l-> c, fi-> req);
    l-> init = false;
    return l;
 }
@@ -317,6 +519,12 @@ close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
    SaveRec * l = ( SaveRec *) fi-> instance;
    free( l-> buf);
+   if ( !fi-> req_is_stdio) {
+       my_dest_ptr dest = (my_dest_ptr) l->c.dest;
+       free( dest-> buffer);
+       free( dest);
+       l->c.dest = NULL;
+   }
    jpeg_destroy_compress(&l-> c);
    free( l);
 }

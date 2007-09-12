@@ -87,10 +87,7 @@ static ImgCodecInfo codec_info = {
    nil,    /* features  */
    "",     /* module */
    "",     /* package */
-   true,   /* canLoad */
-   false,  /* canLoadMultiple  */
-   true,   /* canSave */
-   false,  /* canSaveMultiple */
+   IMG_LOAD_FROM_FILE | IMG_SAVE_TO_FILE,
    xpmbpp, /* save types */
    loadOutput
 };

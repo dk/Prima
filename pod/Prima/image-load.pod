@@ -25,6 +25,14 @@ object itself is changing. The code above could be also written as
 In both cases $x contains image data upon success.
 Error is returned into $@ variable ( see perldoc perlvar for more info). 
 
+=head2 Loading from stream
+
+C<Prima::Image> can also load image by reading from a stream:
+
+	open FILE, 'a.jpeg' or die "Cannot open:$!";
+	my $x = Prima::Image-> load( \*FILE);
+        die "$@" unless $x;
+
 =head2 Multiframe loading
 
 Multiframe load call can be also issued in two ways:
@@ -204,6 +212,22 @@ Save requests also can be performed with package syntax:
    die "$@" unless Prima::Image-> save( 'filename.duf', 
        images => [ $x]);
 
+=head2 Saving to a stream
+
+Saving to a stream requires explicit C<codecID> to be supplied. When an image
+is loaded with C<loadExtras>, this field is always present on the image object,
+and is an integer that selects image encoding format.
+
+   my @png_id = 
+      map  { $_-> {codecID} }
+      grep { $_-> {fileShortType} =~ /^png$/i } 
+      @{ Prima::Image-> codecs };
+   die "No png codec installed" unless @png_id;
+
+   open FILE, "> a.png" or die "Cannot save:$!";
+   $image-> save( \*FILE, codecID => $png_id[0])
+      or die "Cannot save:$@";
+
 =head2 Multiframe saving
 
 In multiframe invocation save returns number of successfully saved frames.
@@ -274,6 +298,11 @@ following parameters:
 
 =over
 
+=item codecID 
+
+Unique integer value for a codec, same as index of the codec entry in
+results of C<< Prima::Image->codecs >>;
+
 =item name
 
 codec full name, string
@@ -320,6 +349,10 @@ Strings, undefined if empty.
 
 1 if a codec can load images, 0 if not
 
+=item canLoadStream
+
+1 if a codec can load images from streams, 0 otherwise
+
 =item canLoadMultiple
 
 1 if a codec can handle multiframe load requests and load frames with
@@ -328,6 +361,10 @@ index more than zero. 0 if not.
 =item canSave
 
 1 if a codec can save images, 0 if not.
+
+=item canSaveStream
+
+1 if a codec can save images to streams, 0 otherwise
 
 =item canSaveMultiple
 

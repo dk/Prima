@@ -37,6 +37,14 @@
 #include <Image.inc>
 #include "Clipboard.h"
 
+#ifdef PerlIO
+typedef PerlIO *FileStream;
+#else
+#define PERLIO_IS_STDIO 1
+typedef FILE *FileStream;
+#define PerlIO_fileno(f) fileno(f)
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -520,27 +528,109 @@ Image_set_extended_data( Handle self, HV * profile)
 GOOD_RETURN:   
    pdelete(data);
    return true;
-}   
+}
+
+static unsigned long 
+img_perlio_read( void * f, unsigned long bufsize, char * buffer)
+{
+#ifdef PerlIO
+    return PerlIO_read(( FileStream) f, buffer, bufsize);
+#else
+    return fread( buffer, bufsize, 1, ( FileStream) f);
+#endif
+}
+
+static unsigned long 
+img_perlio_write( void * f, unsigned long bufsize, char * buffer)
+{
+#ifdef PerlIO
+    return PerlIO_write( ( FileStream) f, buffer, bufsize);
+#else
+    return fwrite( buffer, bufsize, 1, ( FileStream) f);
+#endif
+}
+
+static unsigned long 
+img_perlio_seek( void * f, unsigned long offset, int whence)
+{
+#ifdef PerlIO
+    return PerlIO_seek( ( FileStream) f, offset, whence);
+#else
+    return fseek( ( FileStream) f, offset, whence);
+#endif
+}
+
+static unsigned long 
+img_perlio_tell( void * f)
+{
+#ifdef PerlIO
+    return PerlIO_tell( ( FileStream) f);
+#else
+    return ftell( ( FileStream) f);
+#endif
+}
+
+static int
+img_perlio_flush( void * f)
+{
+#ifdef PerlIO
+    return PerlIO_flush( ( FileStream) f);
+#else
+    return fflush( ( FileStream) f);
+#endif
+}
+
+static int
+img_perlio_error( void * f)
+{
+#ifdef PerlIO
+    return PerlIO_error( ( FileStream) f);
+#else
+    return ferror( ( FileStream) f);
+#endif
+}
 
 XS( Image_load_FROMPERL) 
 {
    dXSARGS;
    Handle self;
+   SV * sv;
    HV *profile;
    char *fn;
    PList ret;
    Bool err = false;
+   FileStream f = NULL;
+   ImgIORequest ioreq, *pioreq;
    char error[256];
 
    if (( items < 2) || (( items % 2) != 0))
       croak("Invalid usage of Prima::Image::load");
    
    self = gimme_the_mate( ST( 0));
-   fn   = ( char *) SvPV_nolen( ST( 1));
+
+   sv   = ST(1);
+   if ( SvROK(sv) && SvTYPE( SvRV( sv)) == SVt_PVGV)
+      f = IoIFP(sv_2io(ST(1)));
+
+   if ( f != NULL) {
+       pioreq        = &ioreq;
+       ioreq. handle = f;
+       ioreq. read   = img_perlio_read;
+       ioreq. write  = img_perlio_write;
+       ioreq. seek   = img_perlio_seek;
+       ioreq. tell   = img_perlio_tell;
+       ioreq. flush  = img_perlio_flush;
+       ioreq. error  = img_perlio_error;
+       fn            = NULL;
+   } else {
+       fn            = ( char *) SvPV_nolen( ST( 1));
+       pioreq        = NULL;
+   }
+   
    profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
    if ( !pexist( className)) 
       pset_c( className, self ? my-> className : ( char*) SvPV_nolen( ST( 0)));
-   ret = apc_img_load( self, fn, profile, error);
+   ret = apc_img_load( self, fn, pioreq, profile, error);
    sv_free(( SV *) profile);
    SPAGAIN;
    SP -= items;
@@ -597,7 +687,7 @@ Image_load( SV * who, char *filename, HV * profile)
    char error[ 256];
    if ( !pexist( className)) 
       pset_c( className, self ? my-> className : ( char*) SvPV_nolen( who));
-   ret = apc_img_load( self, filename, profile, error);
+   ret = apc_img_load( self, filename, NULL, profile, error);
    return ret;
 }
 
@@ -610,14 +700,36 @@ XS( Image_save_FROMPERL)
    char *fn;
    int ret;
    char error[256];
+   FileStream f = NULL;
+   SV * sv;
+   ImgIORequest ioreq, *pioreq;
 
    if (( items < 2) || (( items % 2) != 0))
       croak("Invalid usage of Prima::Image::save");
    
    self = gimme_the_mate( ST( 0));
-   fn   = ( char *) SvPV_nolen( ST( 1));
+
+   sv   = ST(1);
+   if ( SvROK(sv) && SvTYPE( SvRV( sv)) == SVt_PVGV)
+      f = IoIFP(sv_2io(ST(1)));
+
+   if ( f != NULL) {
+       pioreq        = &ioreq;
+       ioreq. handle = f;
+       ioreq. read   = img_perlio_read;
+       ioreq. write  = img_perlio_write;
+       ioreq. seek   = img_perlio_seek;
+       ioreq. tell   = img_perlio_tell;
+       ioreq. flush  = img_perlio_flush;
+       ioreq. error  = img_perlio_error;
+       fn            = NULL;
+   } else {
+       fn            = ( char *) SvPV_nolen( ST( 1));
+       pioreq        = NULL;
+   }
+
    profile = parse_hv( ax, sp, items, mark, 2, "Image::save");
-   ret = apc_img_save( self, fn, profile, error);
+   ret = apc_img_save( self, fn, pioreq, profile, error);
    sv_free(( SV *) profile);
    SPAGAIN;
    SP -= items;
@@ -646,7 +758,7 @@ Image_save( SV * who, char *filename, HV * profile)
    char error[ 256];
    if ( !pexist( className)) 
       pset_c( className, self ? my-> className : ( char*) SvPV_nolen( who));
-   return apc_img_save( self, filename, profile, error);
+   return apc_img_save( self, filename, NULL, profile, error);
 }
 
 int
@@ -1369,7 +1481,9 @@ Image_codecs( SV * dummy)
    apc_img_codecs( p);  
    for ( i = 0; i < p-> count; i++) {
       PImgCodec c = ( PImgCodec ) p-> items[ i];
-      av_push( av, newRV_noinc(( SV *) apc_img_info2hash( c))); 
+      HV * profile = apc_img_info2hash( c);
+      pset_i( codecID, i);
+      av_push( av, newRV_noinc(( SV *) profile)); 
    }  
    plist_destroy( p);
    return newRV_noinc(( SV *) av); 

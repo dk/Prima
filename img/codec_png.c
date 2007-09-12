@@ -162,10 +162,7 @@ static ImgCodecInfo codec_info = {
    features,    /* features  */
    "",     /* module */
    "",     /* package */
-   true,   /* canLoad */
-   false,  /* canLoadMultiple  */
-   true,   /* canSave */
-   false,  /* canSaveMultiple */
+   IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM,
    pngbpp, /* save types */
    loadOutput
 };
@@ -285,15 +282,39 @@ error_fn( png_structp png_ptr, png_const_charp msg)
    longjmp( png_ptr-> jmpbuf, 1);
 }
 
+static void
+img_png_read (png_structp png_ptr, png_bytep data, png_size_t size)
+{
+   req_read( (( PImgLoadFileInstance) png_ptr-> io_ptr)-> req, size, data);
+}
+
+static void
+img_png_write (png_structp png_ptr, png_bytep data, png_size_t size)
+{
+   req_write( (( PImgLoadFileInstance) png_ptr-> io_ptr)-> req, size, data);
+}
+
+static void
+img_png_flush (png_structp png_ptr)
+{
+   req_flush( (( PImgLoadFileInstance) png_ptr-> io_ptr)-> req);
+}
+
 static void * 
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    LoadRec * l;
    unsigned char buf[8];
 
-   if ( fseek( fi-> f, 0, SEEK_SET) < 0) return false;
-   if ( fread( buf, 1, 8, fi-> f) != 8) return false;
-   if ( png_sig_cmp( buf, 0, 8) != 0) return false;
+   if ( req_seek( fi-> req, 0, SEEK_SET) < 0) return false;
+   if ( req_read( fi-> req, 8, buf) < 0) {
+      req_seek( fi-> req, 0, SEEK_SET);
+      return false;
+   }
+   if ( png_sig_cmp( buf, 0, 8) != 0) {
+      req_seek( fi-> req, 0, SEEK_SET);
+      return false;
+   }
 
    fi-> stop = true;
    fi-> frameCount = 1;
@@ -324,7 +345,10 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
       return false;
    }
 
-   png_init_io( l-> png_ptr, fi-> f);
+   if ( !fi-> req_is_stdio)
+      png_set_read_fn( l-> png_ptr, fi, img_png_read);
+   else
+      png_init_io( l-> png_ptr, fi-> req-> handle);
    png_set_sig_bytes( l-> png_ptr, 8);
    return l;
 }
@@ -847,8 +871,10 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
       free( l);
       return false;
    }
-
-   png_init_io( l-> png_ptr, fi-> f);
+   if ( !fi-> req_is_stdio)
+      png_set_write_fn( l-> png_ptr, fi, img_png_write, img_png_flush);
+   else
+      png_init_io( l-> png_ptr, fi-> req-> handle);
 
    return l;
 }
