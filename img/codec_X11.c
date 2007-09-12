@@ -46,7 +46,7 @@
 #ifdef __CYGWIN__
 #else
 #ifdef _MSC_VER
-#undef fprintf
+#undef vsnprintf
 #else
 #undef MIRROR
 extern void
@@ -78,7 +78,7 @@ static ImgCodecInfo codec_info = {
    nil,    /* features  */
    "",     /* module */
    "",     /* package */
-   IMG_LOAD_FROM_FILE | IMG_SAVE_TO_FILE,
+   IMG_LOAD_FROM_FILE | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM,
    xbmbpp, /* save types */
    loadOutput
 };
@@ -184,6 +184,18 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
    return (void*)1;
 }
 
+static void
+myprintf( PImgIORequest req, const char *format, ...)
+{
+	int len;
+	char buf[2048];
+        va_list args;
+        va_start( args, format);
+        len = vsnprintf( buf, 2048, format, args);
+        va_end( args);
+	req_write( req, len, buf);
+}
+
 static Bool   
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
@@ -201,6 +213,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    if ( !l) return false;
 
    /* extracting name */
+   if ( xc == NULL) xc = "xbm";
    name = xc;
    while ( *xc) {
       if ( *xc == '/') 
@@ -218,14 +231,16 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       }   
       xc++;
    }  
+
+   name[1024] = 0;
    
-   fprintf( fi-> req-> handle, "#define %s_width %d\n", name, i-> w);
-   fprintf( fi-> req-> handle, "#define %s_height %d\n", name, i-> h);
+   myprintf( fi-> req, "#define %s_width %d\n", name, i-> w);
+   myprintf( fi-> req, "#define %s_height %d\n", name, i-> h);
    if ( pexist( hotSpotX))
-      fprintf( fi-> req-> handle, "#define %s_x_hot %d\n", name, (int)pget_i( hotSpotX));
+      myprintf( fi-> req, "#define %s_x_hot %d\n", name, (int)pget_i( hotSpotX));
    if ( pexist( hotSpotY))
-      fprintf( fi-> req-> handle, "#define %s_y_hot %d\n", name, (int)pget_i( hotSpotY));
-   fprintf( fi-> req-> handle, "static char %s_bits[] = {\n  ", name);
+      myprintf( fi-> req, "#define %s_y_hot %d\n", name, (int)pget_i( hotSpotY));
+   myprintf( fi-> req, "static char %s_bits[] = {\n  ", name);
 
   
    while ( h--) {
@@ -239,18 +254,18 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
          if ( first) {
            first = 0;
          } else {
-           fprintf( fi-> req-> handle, ", ");
+           myprintf( fi-> req, ", ");
          }  
          if ( col++ == 11) {
             col = 0;
-            fprintf( fi-> req-> handle, "\n  ");
+            myprintf( fi-> req, "\n  ");
          }   
-         fprintf( fi-> req-> handle, "0x%02x", (Byte)~(*(s1++)));
+         myprintf( fi-> req, "0x%02x", (Byte)~(*(s1++)));
       }   
       s -= i-> lineSize;
    }  
 
-   fprintf( fi-> req-> handle, "};\n");
+   myprintf( fi-> req, "};\n");
    
    free( l);
    free( name);
