@@ -134,47 +134,63 @@ static ImgCodecInfo codec_info = {
    nil,    // features 
    "",     // module
    "",     // package
-   IMG_LOAD_FROM_FILE | IMG_SAVE_TO_FILE,
+   IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM,
    nil,    // save types
 };
 
 static int refCnt = 0;
 
+#define MAX_FAKE_FD  32
+static PImgIORequest fdmap[MAX_FAKE_FD+1];
+
 static int  
 std_open(const char *fn, int mode)
 {
-   return open(fn,mode);
+     int i;
+
+     /* Normal use from within GBM is discouraged, only our code
+	can call gbm io */
+     if ( mode >= 0) return -1;
+
+     for ( i = 0; i <= MAX_FAKE_FD; i++) {
+	if ( fdmap[i] == NULL) {
+	   fdmap[i] = ( PImgIORequest) fn;
+	   return i;
+	}
+     }
+     return -1;
 }
 
 static int  
 std_create(const char *fn, int mode)
 {
-   return open(fn, O_CREAT|O_TRUNC|mode, S_IREAD|S_IWRITE);
+     return std_open( fn, mode);
 }
 
 static void 
 std_close (int fd)
 {
-   close(fd);
+     fdmap[ fd ] = NULL;
 }
 
 static long 
 std_lseek(int fd, long pos, int whence)
 {
-   return lseek(fd,pos,whence);
+     if ( req_seek( fdmap[fd], pos, whence) < 0)
+	  return -1;
+     return req_tell( fdmap[fd]);
 }
 static int  
 std_read(int fd, void *buf, int len)
 {
-   return read( fd, buf, len);
+   return req_read( fdmap[fd], len, buf);
 }
 
 static int  
 std_write(int fd, const void *buf, int len)
 {
-   return write( fd, buf, len);
+   return req_write( fdmap[fd], len, (void*) buf);
 }
-
 
 static void * 
 init( ImgCodecInfo ** info, void * param)
@@ -184,6 +200,7 @@ init( ImgCodecInfo ** info, void * param)
    int count = 0, len, i;
    
    if ( refCnt++ == 0) {
+      bzero( fdmap, sizeof(fdmap));
       gbm_io_setup( std_open, std_create, std_close, std_lseek, std_read, std_write);
       codec_info. versionMaj = gbm_version() / 100;
       codec_info. versionMin = gbm_version() % 100;
@@ -237,7 +254,7 @@ init( ImgCodecInfo ** info, void * param)
 
    switch ( gbm_ft_map[(int)param] ) {
       case itGIF:
-         (*info)-> IOFlags |= IMG_LOAD_MULTIPLE;
+         (*info)-> IOFlags |= IMG_LOAD_MULTIFRAME;
          (*info)-> saveTypes = t_no24;
          (*info)-> primaModule  = "Prima::Image::GBM";
          (*info)-> primaPackage = "Prima::Image::GBM::gif";
@@ -271,7 +288,7 @@ init( ImgCodecInfo ** info, void * param)
          break;
       case itCVP:   
       case itIAX:
-         (*info)-> IOFlags &= ~IMG_SAVE_TO_FILE;
+         (*info)-> IOFlags &= ~(IMG_SAVE_TO_FILE|IMG_SAVE_TO_STREAM);
          break;
       case itTGA:
          (*info)-> saveTypes = t_targa;
@@ -279,6 +296,21 @@ init( ImgCodecInfo ** info, void * param)
       default:
          (*info)-> saveTypes = t_all;
    }      
+
+   switch ( gbm_ft_map[(int)param] ) {
+   case itTGA:
+   case itIAX:
+   case itXBM:
+   case itSPR:
+   case itPSG:
+   case itGEM:
+   case itCVP:
+   /* XXX These actually _can_ load from stream, but gbm cannot autodetect which sub-codec
+      to use when there is no file extension.  */
+   case itKPS:
+   /* KPS loads from 2 files, .KPS and .PAL, so no stream by definition */
+         (*info)-> IOFlags &= ~IMG_LOAD_FROM_STREAM;
+   }
 
    return (void*)1;
 }   
@@ -332,11 +364,12 @@ type_ok( PImgIORequest req, int ft)
 {
    char buf[ 8];
    int i;
-   req_seek( req, 0, SEEK_SET);
    memset( buf, 0, 8);
-   req_read( req, 8, buf);
-   req_seek( req, 0, SEEK_SET);
+   if ( req_seek( req, 0, SEEK_SET) < 0) return false;
+   if ( req_read( req, 8, buf) < 8) return false;
+   if ( req_seek( req, 0, SEEK_SET) < 0) return false;
    for ( i = 0; i < N_SIGS; i++) {
+      if ( signatures[ i]. type == ft)
       if (( signatures[ i]. type == ft) &&
           ( memcmp( buf, signatures[ i]. sig, signatures[ i]. size) == 0))
          return true;
@@ -357,14 +390,14 @@ static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    GBMRec * g;
-  
+
    if ( !type_ok( fi-> req, gbm_ft_map[(int)(instance-> initParam)])) {
       int ft;
       if ( fi-> fileName && gbm_guess_filetype( fi-> fileName, &ft) != 0)
          return nil;
       if ( ft != (int)(instance-> initParam)) 
          return nil;
-   }   
+   }  
 
    fi-> stop = true;
 
@@ -386,15 +419,11 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    else
       fi-> frameCount = 1;
 
-   if (( g-> fd = gbm_io_open( fi-> fileName, O_RDONLY | O_BINARY)) < 0) {
+   if (( g-> fd = gbm_io_open(( const char*) fi-> req, -1)) < 0) {
       free( g);
       return nil;      
    }  
 
-   // safe to kill
-   fclose( fi-> f);
-   fi-> f = NULL;
-   
    return g;
 }
 
@@ -407,7 +436,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
    snprintf( g-> params, 250, "index=%d", fi-> frame);
    
-   if (( rc = gbm_read_header( fi-> fileName, g-> fd, g-> ft_gbm, &g-> gbm, g-> statParams)) != 0) {
+   if (( rc = gbm_read_header( 
+	fi-> fileName ? fi-> fileName : "", 
+	g-> fd, g-> ft_gbm, &g-> gbm, g-> statParams)) != 0) {
       strncpy( fi-> errbuf, gbm_err( rc), 256);
       return false;
    }
@@ -542,15 +573,11 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
       g-> params += 4;
    }   
 
-   if (( g-> fd = gbm_io_create( fi-> fileName, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY)) < 0) {
+   if (( g-> fd = gbm_io_create(( const char*) fi-> req, -1)) < 0) {
       free( g);
       return nil;      
    }  
 
-   // safe to kill
-   fclose( fi-> f);
-   fi-> f = NULL;
-   
    return g;
 }
 
@@ -631,7 +658,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    memset( pal, 0, sizeof( pal));
    cm_reverse_palette( i-> palette, pal, i-> palSize);
 
-   if (( rc = gbm_write( fi-> fileName, g-> fd, g-> ft_gbm, &g-> gbm, ( GBMRGB *) pal, i-> data, g-> statParams)) != 0) {
+   if (( rc = gbm_write( 
+      fi-> fileName ? fi-> fileName : "gbm", 
+      g-> fd, g-> ft_gbm, &g-> gbm, ( GBMRGB *) pal, i-> data, g-> statParams)) != 0
+   ) {
       strncpy( fi-> errbuf, gbm_err( rc), 256);
       return false;
    }    
@@ -665,8 +695,10 @@ apc_img_codec_prigraph( void )
 
    gbm_init();
    gbm_query_n_filetypes(&nft);
-   for ( i = 0; i < nft; i++)
+   for ( i = 0; i < nft; i++) {
+      if ( i == itKPS) continue; /* KPS cannot load from single file, requires .PAL */
       apc_img_register( &vmt, (void*)i);
+   }
 }  
 
 
