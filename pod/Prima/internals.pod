@@ -148,7 +148,6 @@ Prima defines the following built-in classes: (in hierarchy order)
                 Widget
                         Application
                         Window
-        
 
 These classes can be seen from perl with Prima:: prefix.
 Along with these, Utils class is defined. Its only 
@@ -189,7 +188,7 @@ Objects can be created from perl by using following code example:
    );
 
 and from C:
-   
+
    Handle obj;
    HV * profile = newHV();
    pset_c( name, "Sample");
@@ -217,7 +216,7 @@ An object can be automatically destroyed when its reference count
 reaches 0. Note that the auto destruction would never happen
 if the object's reference count is not lowered after its
 creation. The code
-   
+
    --SvREFCNT( SvRV( PAnyObject(object)-> mate)); 
 
 is required if the object is to be returned to perl.
@@ -391,7 +390,7 @@ be destroyed inside the call. Typical code example would be like:
         stage = PObject(object)-> stage;
         unprotect_object( object);
         if ( stage == csDead) return;
-        
+
         // proceed with the object
    }
 
@@ -486,7 +485,7 @@ due perl's garbage cleaning mechanism right away, unless the
 object value would be assigned to a scalar, for example.
 
 Thus
-   
+
     $c = Prima::Object-> create();
 
 and
@@ -526,7 +525,7 @@ list does not affect the reference counting.
 Prima::Object method set() is designed to assign
 several properties at one time. Sometimes it is
 more convenient to write
-   
+
    $c-> set( index => 10, name  => "Sample" );
 
 than to invoke several methods one by one. set()
@@ -592,7 +591,7 @@ __ORDER__ anonymous array have to be added to set() parameters.
 =item primaObjects, PHash
 
 Hash with all prima objects, where keys are their data instances
- 
+
 =item application, Handle
 
 Pointer to an application. There can be only one Application
@@ -719,7 +718,7 @@ If the action procedure returns true, enumeration stops and the last processed
 value is returned. Otherwise nil is returned. action have to be function declared as
 
  Bool action_callback( void * value, int keyLen, void * key, void * params);
- 
+
 params is a pointer to an arbitrary user data
 
 =item kind_of
@@ -861,7 +860,7 @@ Puts hv content as arguments to perl code to be called
 Reads result of executed perl code and stores them into hv.
 
 =item pexist
- 
+
  Bool(char*key)
 
 Return true if a key is present into hash 'profile'
@@ -982,7 +981,7 @@ If action returns true, enumeration stops and the index is returned.
 Otherwise -1 is returned. action have to be a function declared as
 
  Bool action_callback( Handle item, void * params);
- 
+
 params is a pointer to an arbitrary user data
 
 =item list_index_of

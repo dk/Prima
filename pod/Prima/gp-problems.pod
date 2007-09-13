@@ -418,7 +418,6 @@ inappropriate (although technically possible).
 It is planned to fix the problem by checking
 the palette difference for every PutImage invocation.
 NB - the effect is seen on dynamic color displays only.
- 
 
 =head1 AUTHOR
 

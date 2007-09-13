@@ -270,13 +270,13 @@ and I<value> property respectively.
 =head1 SYNOPSIS
 
 	use Prima::Tie;
-	
+
 	tie @items, 'Prima::Tie::items', $widget;
-	
+
 	tie @some_property, 'Prima::Tie::Array', $widget, 'some_property';
-	
+
 	tie $text, 'Prima::Tie::text', $widget;
-	
+
 	tie $some_property, 'Prima::Tie::Scalar', $widget, 'some_property';
 
 =head1 USAGE

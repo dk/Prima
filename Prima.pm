@@ -125,7 +125,7 @@ Prima - a perl graphic toolkit
 =head1 SYNOPSIS
 
 	use Prima qw(Application Buttons);
-	
+
 	new Prima::MainWindow(
 		text     => 'Hello world!',
 		size     => [ 200, 200],
@@ -134,7 +134,7 @@ Prima - a perl graphic toolkit
 		text     => 'Hello world!',
 		onClick  => sub { $::application-> close },
 	);
-	
+
 	run Prima;
 
 =head1 DESCRIPTION
@@ -281,7 +281,7 @@ by using C<Prima::options> routine.
 In cases where Prima argument parsing conflicts with application options, use
 L<Prima::noARGV> to disable automatic parsing; also see L<parse_argv>. 
 Alternatively, the construct 
-        
+
 	BEGIN { local @ARGV; require Prima; } 
 
 will also do.
@@ -314,7 +314,11 @@ L<Prima::Widget> - window management
 
 =over 2
 
+=item *
+
 L<Prima::Widget::pack> - Tk::pack geometry manager
+
+=item *
 
 L<Prima::Widget::place> - Tk::place geometry manager
 

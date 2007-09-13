@@ -681,12 +681,11 @@ See L<init> for details.
    install:
    \t$^X Makefile.PL --cp $ld $INSTALL_DL a.pm $INSTALL_LIB
    \t$^X Makefile.PL --cpbin a.pl $INSTALL_BIN
-      
+
    MAKE
    close F;
 
-
-=head2 API
+=head1 API
 
 =head2 Methods
 

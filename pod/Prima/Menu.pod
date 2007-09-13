@@ -89,7 +89,7 @@ string is passed. When copying menu items to another menu object, all menu
 items to be copied change their IDs, but explicitly set names are preserved.
 Since the anonymous menu items do not have name, their auto-generated names
 change also.
- 
+
 If the name is prepended by '-' or '*' characters, or both, these are not
 treated as part of the name but as indicator that the item is disabled  ( '-'
 character ) or checked ( '*' character ).  This syntax is valid only for
@@ -200,7 +200,7 @@ can be more elaborated and shown as
    $menu-> items( [
       [ text menu item description ],
       [ sub-menu item description [
-        
+
          [ text menu item description ],
          [ sub-menu item description [
              [ text menu item description ],

@@ -355,7 +355,6 @@ added, the correct picture occurs:
   Shrink             190   -5       90            95
   Grow               195   +5       95            95
   Grow               200   +5      100           100
- 
 
 Strictly speaking, the I<virtual size> must be declared a read-only property,
 but currently it is implemented as a C<get_virtual_size()> function,
@@ -1115,7 +1114,7 @@ decorations.
 
 Default value: 1
 
-See L<"Parent-children relationship">
+See L<"Parent-child relationship">
 
 See also: C<Prima::Object> owner section, C<parentHandle>
 

@@ -1619,7 +1619,11 @@ and vice versa calculations
 
 - ::region is not realized ( yet?)
 
+=back
+
 =head2 Specific properties
+
+=over
 
 =item ::copies
 

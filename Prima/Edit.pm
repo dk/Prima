@@ -2769,9 +2769,9 @@ __DATA__
 =head1 NAME
 
 Prima::Edit - standard text editing widget
-	
+
 =head1 SYNOPSIS
-	
+
 	use Prima::Edit;
 	my $e = Prima::Edit-> create(
 		text         => 'Hello $world',

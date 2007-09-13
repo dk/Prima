@@ -329,7 +329,7 @@ after the creation, the widget hierarchy can be accessed in the standard way:
 In case a form is to be included not from a fm file but from other data source,
 L<AUTOFORM_REALIZE> call can be used to transform perl array into set of
 widgets:
-		
+
 	$form = AUTOFORM_REALIZE( [ Form1 => {
 		class   => 'Prima::Window',
 		parent  => 1,

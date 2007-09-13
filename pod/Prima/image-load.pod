@@ -6,6 +6,8 @@ Prima::image-load - Using image subsystem
 
 =head1 DESCRIPTION
 
+Details on image subsystem - image loading, saving, and codec managements
+
 =head1 Loading
 
 =head2 Simple loading
@@ -230,7 +232,7 @@ not recommended.
 There are two techniques to display partial image as it loads. All of these
 share overloading of C<onHeaderReady> and C<onDataReady>. The simpler is to
 call C<put_image> from inside C<onDataReady>:
-          
+
 	$i = Prima::Image-> new(
 		onDataReady => sub {
 			$progress_widget-> put_image( 0, 0, $i);
@@ -241,7 +243,7 @@ but that will most probably loads heavily underlying OS-dependent conversion of
 image data to native display bitmap data. A more smarter, but more complex
 solution is to copy loaded (and only loaded) bits to a preexisting device
 bitmap:
-	
+
 	$i = Prima::Image-> new(
 		onHeaderReady => sub {
 			$bitmap = Prima::DeviceBitmap-> new(

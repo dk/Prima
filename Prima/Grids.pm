@@ -2642,7 +2642,7 @@ and explained below:
 	gsci::COL_INDEX - visual column number where the cell displayed
 	gsci::ROW_INDEX - visual row number where the cell displayed 
 	gsci::V_FULL    - cell is fully visible
-	
+
 	gsci::V_LEFT    - inclusive-inclusive rectangle of the visible
 	gsci::V_BOTTOM    part of the cell. These four indices are grouped
 	gsci::V_RIGHT     under list constant, gsci::V_RECT.
@@ -2652,7 +2652,7 @@ and explained below:
 	gsci::BOTTOM      it is fully visible. These four indices are grouped
 	gsci::RIGHT       under list constant, gsci::RECT. If gsci::V_FULL
 	gsci::TOP         is 1, these values are identical to these in gsci::V_RECT.
-		
+
 If the cell is not visible, returns empty array.
 
 =item has_selection

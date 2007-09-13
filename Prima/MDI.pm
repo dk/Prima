@@ -1361,7 +1361,7 @@ window class ( see L<Prima::DockManager>.
 =head1 SYNOPSIS
 
 	use Prima::MDI;
-	
+
 	my $owner = Prima::MDIWindowOwner-> create();
 	my $mdi   = $owner-> insert( 'Prima::MDI');
 	$mdi-> client-> insert( 'Prima::Button' => centered => 1 );

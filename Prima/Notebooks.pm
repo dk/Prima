@@ -1736,7 +1736,7 @@ displayed inside the larger polygon:
 
 
    POLYGON1
-   
+
         [2,3]        [4,5]
           o..........o
          .            .

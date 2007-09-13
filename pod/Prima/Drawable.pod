@@ -161,9 +161,6 @@ if it supports raster operations - the printers usually do not ). Example:
   }
   $d-> end_paint;
 
-
-  
-
 There are ( at least ) two color properties on each drawable -
 C<::color> and C<::backColor>. The values they operate are integers 
 in the discussed above RRGGBB format, however, the toolkit defines 
@@ -304,12 +301,12 @@ that are represented by at least one font in the system.
 
 Unix systems and the toolkit PostScript interface usually 
 provide the following encodings:
-  
+
    iso8859-1
    iso8859-2
    ... other iso8859 ...
    fontspecific
-   
+
 Win32 returns the literal strings like
 
    Western
@@ -411,7 +408,7 @@ Negative if the ascent line is above the external leading line.
 =for html <p><img src="leadings.gif">
 
           ------------- external leading line
-  
+
      $    ------------- ascent line
     $ $
           ------------- internal leading line
@@ -888,8 +885,6 @@ text, and also provides the tilde ( ~ )- character underlining support.
 
 The FLAGS is a combination of the following constants:
 
-=over
-
   dt::Left                  - text is aligned to the left boundary
   dt::Right                 - text is aligned to the right boundary
   dt::Center                - text is aligned horizontally in center
@@ -918,8 +913,6 @@ The FLAGS is a combination of the following constants:
   dt::WordWrap              - performs word wrapping by the width of the boundaries 
   dt::Default               - dt::NewLineBreak|dt::WordBreak|dt::ExpandTabs|
                               dt::UseExternalLeading
-
-=back
 
 Context used: color, backColor, font, rop, textOpaque, textOutBaseline
 
@@ -1229,7 +1222,7 @@ may change the system colors at any moment.
 
 Returns TEXT string width if it would be drawn using currently
 selected font.
- 
+
 If ADD_OVERHANG is 1, the first character's absolute A value and the last
 character's absolute C value are added to the string if they are negative.
 
@@ -1241,7 +1234,7 @@ Context used: font
 
 Returns TEXT string extensions if it would be drawn using currently
 selected font.
- 
+
 The result is an anonymous array of 5 points ( 5 integer pairs  
 in (X,Y) format). These 5 points are offsets for the following string
 extents, given the string is plotted at (0,0):
@@ -1267,7 +1260,7 @@ Context used: font, textOutBaseline
 =for podview <img src="gettextbox.gif" cut=1>
 
 =for html <p><img src="gettextbox.gif">
-      
+
       1      3         3         4
          **               ****  
            *               *  *
@@ -1294,7 +1287,7 @@ for cases when these are insufficient.
 
 Breaks TEXT string in chunks that would fit
 into WIDTH pixels wide box. 
- 
+
 The break algorithm and its result are governed by OPTIONS integer value
 which is a combination of C<tw::> constants:
 

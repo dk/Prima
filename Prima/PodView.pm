@@ -1693,13 +1693,13 @@ The 'podview' commands are:
 Example:
 
 	=for podview <cut>
-	
+
 	=for text just text-formatter info
-	
+
 		....
 		text-only info
 		...
-	
+
 	=for podview </cut>
 
 The E<lt>cut<gt> clause skips all POD input until cancelled.
@@ -1717,16 +1717,16 @@ L<cut> behavior if ( and only if ) the image load operation was unsuccessful.
 This make possible simultaneous use of 'podview' and 'text' :
 
 	=for podview <img src="graphic.gif" cut=1 >
-	
+
 	=begin text
-	
+
 	y     .
 	|  .
 	|.
 	+----- x
-	
+
 	=end text
-	
+
 	=for podview </cut>
 
 In the example above 'graphic.gif' will be shown if it can be found and loaded,

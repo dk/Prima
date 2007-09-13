@@ -167,7 +167,7 @@ For those who know Perl-Tk and prefer its ways to position a widget, Prima
 provides I<pack> and I<place> interfaces. Here one can replace the line
 
 	growMode => gm::Center,
-	
+
 to 
 
 	pack     => { expand => 1 },
@@ -234,7 +234,7 @@ L<Prima::TextView> - rich text browser widget
 In Prima, a tree-like menu is built by passing a nested set of arrays, where
 each array corresponds to a single menu entry. Such as, to modify the
 hello-world program to contain a simple menu, it is enough to write this:
-	
+
 	use Prima qw(Application MsgBox);
 	my $window = Prima::MainWindow-> new( 
 		text => 'Hello world!',
@@ -310,7 +310,7 @@ string, an image object is supplied:
 
 	use Prima qw(Application MsgBox);
 	use Prima::Utils qw(find_image);
-	
+
 	my $i = Prima::Image-> load( find_image( 'examples/Hand.gif'));
 	$i ||= 'No image found or can be loaded';
 
@@ -342,7 +342,7 @@ overridden:
 		my ( $self, $menu_item) = @_;
 		print "hey! $menu_item called me!\n" 
 	}
-	
+
 	my $window = MyWindow-> new( 
 		menuItems => [
 			[ '~File' => [

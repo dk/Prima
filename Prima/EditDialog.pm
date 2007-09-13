@@ -286,7 +286,7 @@ to find and replace options selection.
 =head1 SYNOPSIS
 
 	use Prima::StdDlg;
-	
+
 	my $dlg = Prima::FindDialog-> create( findStyle => 0);
 	my $res = $dlg-> execute;
 	if ( $res == mb::Ok) {

@@ -1785,11 +1785,11 @@ This property unites the following set of class hierarchies:
 	Prima::AbstractSpinButton
 		Prima::SpinButton
 		Prima::AltSpinButton
-		
+
 	Prima::SpinEdit
-	
+
 	Prima::Gauge
-	
+
 	Prima::AbstractSlider
 		Prima::Slider
 		Prima::CircularSlider

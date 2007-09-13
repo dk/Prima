@@ -43,7 +43,7 @@ Prima::Widget::pack - Geometry manager that packs around edges of cavity
 =head1 SYNOPSIS
 
   $widget-> pack( args);
-  
+
   $widget-> packInfo( args);
   $widget-> geometry( gt::Pack);
 

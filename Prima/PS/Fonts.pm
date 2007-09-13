@@ -373,7 +373,7 @@ patched correspondingly.
 Example:
 
 	$Prima::PS::Fonts::files{Standard Symbols} = $Prima::PS::Fonts::files{Symbol};
-	
+
 	$Prima::PS::Fonts::files{'Device-specific symbols, set 1'} = 'my/devspec/data.1';
 	$Prima::PS::Fonts::files{'Device-specific symbols, set 2'} = 'my/devspec/data.2';
 	$Prima::PS::Fonts::enum_families{DevSpec} = 'Device-specific symbols, set 1';

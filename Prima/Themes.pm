@@ -257,7 +257,7 @@ For interactive theme selection use F<examples/theme.pl> sample program.
 	use Prima::Themes; load('color');
 	# list registered themes
 	print Prima::Themes::list;
-	
+
 	# install a theme
 	Prima::Themes::install('cyan');
 	# list installed themes

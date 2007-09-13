@@ -70,7 +70,7 @@ to a X server failed:
 
    use Prima::noX11;
    use Prima;
-   
+
    my $error = Prima::XOpenDisplay();
    if ( defined $error) {
         print "not connected to display: $error\n";
@@ -157,7 +157,7 @@ by
    Prima.Submenudelay: 10
 
 or
-   
+
    Prima.submenudelay: 10
 
 syntax. Despite that these calls are different, in a way that one reaches for
@@ -586,7 +586,7 @@ If 'mouse down' and 'mouse up' events are follow in MSEC, 'mouse click'
 event is synthesized.
 
 Default value: 200
-      
+
 =item Doubleclicktimeframe.doubleclicktimeframe MSEC
 
 If 'mouse click' and 'mouse down' events are follow in MSEC, 'mouse double click'
@@ -626,7 +626,7 @@ Default value: 50
 =head2 Miscellaneous
 
 =over
-   
+
 =item Visual.visual: VISUAL_ID
 
 Selects display visual by VISUAL_ID, which is usually has a form of C<0x??>.

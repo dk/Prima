@@ -66,7 +66,6 @@ the following:
 
    # copy
    $c-> text( $string);
-   
 
 This simplistic code hides other aspects of Prima::Clipboard class.
 
@@ -109,7 +108,7 @@ said:
       if ( $formats{'Image'}) {
          $image = $c-> fetch('Image');
       }
-    
+
       $c-> close;
    }
 

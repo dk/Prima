@@ -7,7 +7,7 @@ Prima::Object - Prima toolkit base classes
 =head1 SYNOPSIS
 
     if ( $obj-> isa('Prima::Component')) {
-    
+
         # set and get a property
 	my $name = $obj-> name;
 	$obj->name( 'an object' );

@@ -916,7 +916,7 @@ Prima::FrameSet - standard frameset widget
 =head1 SYNOPSIS
 
 	use Prima::FrameSet;
-	
+
 	my $frame = Prima::FrameSet->create(
 		frameSizes => [qw(211 20% 123 10% * 45% *)],
 		opaqueResize => 0,
@@ -939,10 +939,6 @@ and L<resizeMethod> properties, respectively.
 
 Two additional auxiliary packages are defined within this module: L<Prima::FrameSet::Frame>
 and L<Prima::FrameSet::Slider>.
-
-=head1 API
-
-=head2 Properties
 
 =head1 AUTHOR
 

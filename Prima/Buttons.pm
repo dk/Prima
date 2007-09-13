@@ -1240,13 +1240,13 @@ Note: C<*> - marked classes are abstract.
 =head1 USAGE
 
 	use Prima::Buttons;
-	
+
 	my $button = $widget-> insert( 'Prima::Button', 
 		text => 'Push button',
 		onClick => sub { print "hey!\n" },
 	);
 	$button-> flat(1);
-	
+
 	my $group = $widget-> insert( 'Prima::GroupBox', 
 		onRadioClick => sub { print $_[1]-> text, "\n"; }
 	);

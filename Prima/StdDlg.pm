@@ -212,7 +212,7 @@ no need to C<use> the corresponding module explicitly.
 =head1 SYNOPSIS
 
 	use Prima::StdDlg;
-	
+
 	Prima::FileDialog-> create-> execute;
 	Prima::FontDialog-> create-> execute;
 

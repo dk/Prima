@@ -195,7 +195,7 @@ Perl code:
 Note that array references are not used, and
 the number of items in all array parameters must
 be exactly as the dimensions of the arrays.
-  
+
 Note: the following declaration will not compile
 with C compiler, as C cannot return arrays. However 
 it is not treated as an error by gencls:

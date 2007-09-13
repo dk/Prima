@@ -647,7 +647,7 @@ See also L<Prima::Object/Flow>.
 
 	nt::PrivateFirst
 	nt::CustomFirst
-	
+
 =item Direction constants 
 
 	nt::FluxReverse

@@ -189,7 +189,7 @@ selection process.
 =head1 SYNOPSIS
 
 	use Prima::PrintDialog;
-	
+
 	$dlg = Prima::PrintSetupDialog-> create;
 	if ( $dlg-> execute) {
 		my $p = $::application-> get_printer;
