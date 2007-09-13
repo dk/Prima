@@ -1103,7 +1103,6 @@ Component_delegations( Handle self, Bool set, SV * delegations)
       char *name;
 
       if ( var-> stage > csNormal) return nilSV;
-      if ( !var-> owner) return nilSV;
       if ( !SvROK( delegations) || SvTYPE( SvRV( delegations)) != SVt_PVAV) return nilSV;
 
       referer = var-> owner;
@@ -1122,6 +1121,9 @@ Component_delegations( Handle self, Bool set, SV * delegations)
             SV * subref;
             char buf[ 1024];
             char * event = SvPV_nolen( *holder);
+
+	    if ( referer == nilHandle)
+	       croak("Event delegations for objects without owners must be provided with explicit referer");
             snprintf( buf, 1023, "%s_%s", name, event);
             sub = query_method( referer, buf, 0);
             if ( sub == nil) continue;
