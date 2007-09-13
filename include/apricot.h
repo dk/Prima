@@ -775,6 +775,9 @@ CM(DelegateKey)
 #define cmFileRead       0x00000070
 #define cmFileWrite      0x00000071
 #define cmFileException  0x00000072
+
+#define cmImageHeaderReady 0x00000073
+#define cmImageDataReady 0x00000074
 END_TABLE(cm,UV)
 #undef CM
 

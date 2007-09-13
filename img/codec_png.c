@@ -591,6 +591,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    /* reading bits */
    CImage( fi-> object)-> create_empty( fi-> object, width, height, bpp);
 
+   EVENT_HEADER_READY(fi);
+
    /* create buffer for 8 to 4 bpp conversion */
    if ( obd == 2) 
       if ( !( l-> b8_4 = malloc( width))) outcm( width);
@@ -631,12 +633,13 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       Byte * data = PImage( fi-> object)-> data;
       Byte * a_data = nil;
       
+      EVENT_SCANLINES_RESET(fi);
       data += ( height - 1) * PImage( fi-> object)-> lineSize;
       if ( alpha_image) {
          a_data = PImage( alpha_image)-> data;
          a_data += ( height - 1) * PImage( alpha_image)-> lineSize;
       }
-      for (y = 0; y < height; y++) { 
+      for (y = 0; y < height; y++) {
          if ( alpha_image) {
             int i;
             Byte * dst = data, * src = l-> line, *a = a_data;
@@ -663,6 +666,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          }
          data -= PImage( fi-> object)-> lineSize;
          if ( alpha_image) a_data -= PImage( alpha_image)-> lineSize;
+
+         EVENT_TOPDOWN_SCANLINES_READY(fi,1);
       }
    }
 

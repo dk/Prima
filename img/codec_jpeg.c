@@ -273,6 +273,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    }   
    
    CImage( fi-> object)-> create_empty( fi-> object, l-> d. output_width, l-> d. output_height, bpp);
+   EVENT_HEADER_READY(fi);
    {
       Byte * dest = i-> data + ( i-> h - 1) * i-> lineSize;
       while ( l-> d.output_scanline < l-> d.output_height ) {
@@ -283,6 +284,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          if ( bpp == 24) 
             cm_reverse_palette(( PRGBColor) dest, ( PRGBColor) dest, i-> w);
          dest -= scanlines * i-> lineSize;
+         EVENT_TOPDOWN_SCANLINES_READY(fi,scanlines);
       }   
    }   
    jpeg_finish_decompress(&l-> d);

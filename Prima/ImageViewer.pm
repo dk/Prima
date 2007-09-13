@@ -215,10 +215,19 @@ sub set_image
 	$self-> {imageY} = $y;
 	$x *= $self-> {zoom};
 	$y *= $self-> {zoom};
-	$self-> {icon} = $img-> isa('Prima::Icon');
+	$self-> {icon}   = $img-> isa('Prima::Icon');
+	$self-> {bitmap} = $img-> isa('Prima::DeviceBitmap');
 	$self-> limits($x,$y);
 	if ( $self-> {quality}) {
-		if (( $img-> type & im::BPP) > 8) {
+		my $do_cubic;
+
+		if ( $self-> {bitmap}) {
+			$do_cubic = not($img-> monochrome) && $::application-> get_bpp > 8;
+		} else {
+			$do_cubic = ( $img-> type & im::BPP) > 8;
+		}
+
+		if ( $do_cubic) {
 			my $depth = $self-> get_bpp;
 			if (($depth > 2) && ($depth <= 8)) {
 				unless ( scalar @cubic_palette) {
@@ -367,6 +376,54 @@ sub imageFile    {($#_)?$_[0]-> set_image_file($_[1]):return $_[0]-> {imageFile}
 sub zoom         {($#_)?$_[0]-> set_zoom($_[1]):return $_[0]-> {zoom}}
 sub quality      {($#_)?$_[0]-> set_quality($_[1]):return $_[0]-> {quality}}
 
+sub PreviewImage_HeaderReady
+{ 
+	my ( $self, $image) = @_;
+	$self-> image(
+		Prima::DeviceBitmap-> new(
+			width    => $image-> width,
+			height   => $image-> height,
+		));
+	$self-> {__preview_image} = 1;
+}
+
+sub PreviewImage_DataReady
+{ 
+	my ( $self, $image, $x, $y, $w, $h) = @_;
+	$self-> image-> put_image( $x, $y, $image-> extract( $x, $y, $w, $h));
+	$self-> invalidate_rect( $self-> point2screen( $x, $y, $x + $w, $y + $h));
+	$self-> update_view;
+}
+
+sub watch_load_progress
+{
+	my ( $self, $image) = @_;
+
+	$self-> unwatch_load_progress(0);
+
+	my @ids =
+		$image-> add_notification( 'HeaderReady', \&PreviewImage_HeaderReady, $self),
+		$image-> add_notification( 'DataReady',   \&PreviewImage_DataReady,   $self)
+		;
+	$self-> {__watch_notifications} = [ @ids ];
+}
+
+sub unwatch_load_progress
+{
+	my ( $self, $clear_image) = @_;
+
+	return unless $self-> {__watch_notifications};
+
+	$self-> {image}-> remove_notification($_) for @{ $self-> {__watch_notifications} };
+	delete $self-> {__watch_notifications};
+
+	$clear_image = 1 unless defined $clear_image;
+	if ( $self-> {__preview_image}) {
+		$self-> image( undef) if $clear_image;
+		delete $self-> {__preview_image};
+	}
+}
+
 1;
 
 __DATA__
@@ -473,6 +530,24 @@ Useful for determining a screen location of an image point.
 
 The reverse function is C<screen2point>.
 
+=item watch_load_progress IMAGE
+
+When called, image viewer watches as the IMAGE is loaded ( see L<Prima::Image/load> )
+and displays the progress. As soon IMAGE begins to load, it replaces the existing C<image>
+property. Example:
+
+    $i = Prima::Image-> new;
+    $viewer-> watch_load_progress( $i);
+    $i-> load('huge.jpg');
+    $viewer-> unwatch_load_progress( $i);
+
+Similar functionality is present in L<Prima::ImageDialog>.
+
+=item unwatch_load_progress CLEAR_IMAGE=1
+
+Stops monitoring of image loading progress. If CLEAR_IMAGE is 0, the leftovers of the
+incremental loading stay intact in C<image> propery. Otherwise, C<image> is set to C<undef>.
+
 =back
 
 =head1 AUTHOR
@@ -481,6 +556,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Image>, L<Prima::ScrollWidget>, F<examples/iv.pl>.
+L<Prima>, L<Prima::Image>, L<Prima::ScrollWidget>, L<Prima::ImageDialog>, F<examples/iv.pl>.
 
 =cut

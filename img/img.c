@@ -324,7 +324,16 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
    
    if ( pexist( iconUnmask) && pget_B( iconUnmask))
       fi. iconUnmask = iconUnmask = true;
-
+   
+   if ( pexist( eventMask))
+      fi. eventMask = pget_i( eventMask);
+   
+   if ( pexist( eventDelay))
+      fi. eventDelay = 1000.0 * pget_f( eventDelay);
+   if ( fi. eventDelay <= 0)
+      fi. eventDelay = 100; /* 100 ms. reasonable? */
+   EVENT_SCANLINES_RESET(&fi);
+   
    if ( pexist( profiles)) {
       SV * sv = pget_sv( profiles);
       if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
@@ -1285,7 +1294,6 @@ apc_img_info2hash( PImgCodec codec)
    pset_i( canSaveStream  , c-> IOFlags & IMG_SAVE_TO_STREAM);
    pset_i( canSaveMultiple, c-> IOFlags & IMG_SAVE_MULTIFRAME);
    
-   
    fill_ilist( "types",  c-> saveTypes, profile);
 
    if ( c-> IOFlags & ( IMG_LOAD_FROM_FILE|IMG_LOAD_FROM_STREAM)) {
@@ -1328,7 +1336,41 @@ apc_img_info2hash( PImgCodec codec)
 char * imgPVEmptySet[] = { nil };
 int    imgIVEmptySet[] = { 0 };
 
+void
+apc_img_notify_header_ready( PImgLoadFileInstance fi)
+{
+      Event e = { cmImageHeaderReady };
+      CImage( fi-> object)-> message( fi-> object, &e);
+}
 
+void
+apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines)
+{
+      Event e;
+      int height;
+      unsigned int dt;
+      struct timeval t;
+
+      if ( scanlines == 0) return;
+
+      fi-> lastCachedScanline += scanlines;
+      gettimeofday( &t, nil);
+      dt = 
+         t.tv_sec * 1000 + t.tv_usec / 1000 -
+         fi-> lastEventTime.tv_sec * 1000 - fi-> lastEventTime.tv_usec / 1000;
+      if ( dt < fi-> eventDelay) return;
+
+      e. cmd = cmImageDataReady;
+      height = PImage( fi-> object)-> h;
+      e. gen. R. left   = 0;
+      e. gen. R. right  = PImage( fi-> object)-> w - 1;
+      e. gen. R. top    = height - fi-> lastEventScanline  - 1;
+      e. gen. R. bottom = height - fi-> lastCachedScanline;
+      CImage( fi-> object)-> message( fi-> object, &e);
+
+      gettimeofday( &fi-> lastEventTime, nil);
+      fi-> lastEventScanline = fi-> lastCachedScanline;
+}
 #ifdef __cplusplus
 }
 #endif

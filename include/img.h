@@ -57,11 +57,15 @@ typedef struct _ImgIORequest {
 
 /* common data, request for a whole file load */
 
+#define IMG_EVENTS_HEADER_READY 1
+#define IMG_EVENTS_DATA_READY   2
+
 typedef struct _ImgLoadFileInstance {
   /* instance data, filled by core */
   char          * fileName;
   PImgIORequest   req; 
   Bool            req_is_stdio;
+  int             eventMask;      /* IMG_EVENTS_XXX / if set, Image:: events are issued */
 
   /* instance data, filled by open_load */
   int             frameCount;     /* total frames in the file; can return -1 if unknown */
@@ -88,6 +92,12 @@ typedef struct _ImgLoadFileInstance {
   int           * frameMap;
   Bool            stop;
   char          * errbuf;         /* $! value */
+  
+  /* scanline event progress */
+  unsigned int    eventDelay;     /* in milliseconds */
+  struct timeval  lastEventTime;
+  int             lastEventScanline;
+  int             lastCachedScanline;
 } ImgLoadFileInstance, *PImgLoadFileInstance;
 
 /* common data, request for a whole file save */
@@ -185,6 +195,22 @@ extern HV *  apc_img_info2hash( PImgCodec c);
 
 extern void  apc_img_profile_add( HV * to, HV * from, HV * keys);
 extern int   apc_img_read_palette( PRGBColor palBuf, SV * palette, Bool triplets);
+
+/* event macros */
+extern void  apc_img_notify_header_ready( PImgLoadFileInstance fi);
+extern void  apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines);
+
+#define EVENT_HEADER_READY(fi) \
+  if ( fi-> eventMask & IMG_EVENTS_HEADER_READY) \
+    apc_img_notify_header_ready((fi))
+
+#define EVENT_SCANLINES_RESET(fi) \
+  (fi)-> lastEventScanline = (fi)-> lastCachedScanline = 0; \
+  gettimeofday( &(fi)-> lastEventTime, nil)
+
+#define EVENT_TOPDOWN_SCANLINES_READY(fi,scanlines) \
+  if ( (fi)-> eventMask & IMG_EVENTS_DATA_READY) \
+    apc_img_notify_scanlines_ready((fi),scanlines)
 
 #ifdef __cplusplus
 }

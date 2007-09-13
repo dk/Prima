@@ -199,6 +199,65 @@ to a C<true> value, and the object is C<Prima::Icon> descendant,
 C<Prima::Icon::autoMasking> is set to C<am::None> prior to the
 file loading. By default this options is turned off.
 
+=head2 Loading with progress indicator
+
+Some codecs (PNG,TIFF,JPEG) can notify the caller as they read image data.  For
+this purpose, C<Prima::Image> has two events, C<onHeaderReady> and
+C<onDataReady>. If either (or both) are present on image object that is issuing
+load call, and the codec supports progressive loading, these events are called.
+C<onHeaderReady> is called when image header data is acquired, and empty image
+with the dimensions and pixel type is allocated. C<onDataReady> is called
+whenever a part of image is ready and is loaded in the memory of the object;
+the position and dimensions of the loaded area is reported also. The format of
+the events is:
+
+    onHeaderReady $OBJECT
+    onDataReady   $OBJECT, $X, $Y, $WIDTH, $HEIGHT
+
+C<onHeaderReady> is called only once, but C<onDataReady> is called as soon as
+new image data is available. To reduce frequency of these calls, that otherwise
+would be issued on every scanline loaded, C<load> has parameter C<eventDelay>,
+a number of seconds, which limits event rate. The default C<eventDelay> is 0.1 .
+
+The handling on C<onDataReady> must be performed with care. First, the image 
+must be accessed read-only, which means no transformations with image size and 
+type are allowed. Currently there is no protection for such actions ( because
+codec must perform these ), so a crash will most surely issue.
+Second, loading and saving of images is not in general reentrant, and although
+some codecs are reentrant, loading and saving images inside image events is
+not recommended.
+
+There are two techniques to display partial image as it loads. All of these
+share overloading of C<onHeaderReady> and C<onDataReady>. The simpler is to
+call C<put_image> from inside C<onDataReady>:
+          
+	$i = Prima::Image-> new(
+		onDataReady => sub {
+			$progress_widget-> put_image( 0, 0, $i);
+		},
+	);
+
+but that will most probably loads heavily underlying OS-dependent conversion of
+image data to native display bitmap data. A more smarter, but more complex
+solution is to copy loaded (and only loaded) bits to a preexisting device
+bitmap:
+	
+	$i = Prima::Image-> new(
+		onHeaderReady => sub {
+			$bitmap = Prima::DeviceBitmap-> new(
+				width    => $i-> width,
+				height   => $i-> height,
+			));
+		},
+		onDataReady => sub {
+			my ( $i, $x, $y, $w, $h) = @_;
+			$bitmap-> put_image( $x, $y, $i-> extract( $x, $y, $w, $h));
+		},
+	);
+
+The latter technique is used by C<Prima::ImageViewer> when it is setup to monitor
+image loading progress. See L<Prima::ImageViewer/watch_load_progress> for details.
+
 =head1 Saving
 
 =head2 Simple saving

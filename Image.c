@@ -57,12 +57,17 @@ extern "C" {
 #define var (( PImage) self)
 
 static Bool Image_set_extended_data( Handle self, HV * profile);
+static void Image_reset_notifications( Handle self);
 
 void
 Image_init( Handle self, HV * profile)
 {
    dPROFILE;
    inherited init( self, profile);
+   var-> eventMask1 =
+     ( query_method( self, "on_headerready", 0) ? IMG_EVENTS_HEADER_READY : 0) |
+     ( query_method( self, "on_dataready",   0) ? IMG_EVENTS_DATA_READY   : 0);
+   Image_reset_notifications( self);
    var->w = pget_i( width);
    var->h = pget_i( height);
    var->conversion = pget_i( conversion);
@@ -121,6 +126,26 @@ Image_init( Handle self, HV * profile)
    apc_image_create( self);
    my->update_change( self);
    CORE_INIT_TRANSIENT(Image);
+}
+
+void
+Image_handle_event( Handle self, PEvent event)
+{
+   inherited handle_event ( self, event);
+   if ( var-> stage > csNormal) return;
+   switch ( event-> cmd) {
+   case cmImageHeaderReady:
+      my-> notify( self, "<s", "HeaderReady");
+      break;
+   case cmImageDataReady:
+      my-> update_change( self);
+      my-> notify( self, "<siiii", "DataReady", 
+         event-> gen. R. left,
+         event-> gen. R. bottom,
+         event-> gen. R. right - event-> gen. R. left   + 1,
+         event-> gen. R. top   - event-> gen. R. bottom + 1);
+      break;
+   }
 }
 
 void
@@ -630,6 +655,7 @@ XS( Image_load_FROMPERL)
    profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
    if ( !pexist( className)) 
       pset_c( className, self ? my-> className : ( char*) SvPV_nolen( ST( 0)));
+   pset_i( eventMask, self ? var-> eventMask2 : 0);
    ret = apc_img_load( self, fn, pioreq, profile, error);
    sv_free(( SV *) profile);
    SPAGAIN;
@@ -1503,6 +1529,40 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
    return ret;
 }
 
+long
+Image_add_notification( Handle self, char * name, SV * subroutine, Handle referer, int index)
+{
+   long id = inherited add_notification( self, name, subroutine, referer, index);
+   if ( id != 0) Image_reset_notifications( self);
+   return id;
+}
+
+void
+Image_remove_notification( Handle self, long id)
+{
+   inherited remove_notification( self, id);
+   Image_reset_notifications( self);
+}
+
+static void
+Image_reset_notifications( Handle self)
+{
+   int i;
+   PList  list;
+   void * ret[ 2];
+   int    cmd[ 2] = { IMG_EVENTS_HEADER_READY, IMG_EVENTS_DATA_READY };
+   var-> eventMask2 = var-> eventMask1;
+   if ( var-> eventIDs == nil) return;
+
+   ret[0] = hash_fetch( var-> eventIDs, "HeaderReady", 11);
+   ret[1] = hash_fetch( var-> eventIDs, "DataReady",   9);
+
+   for ( i = 0; i < 2; i++) {
+      if ( ret[i] == nil) continue;
+      list = var-> events + PTR2IV( ret[i]) - 1;
+      if ( list-> count > 0) var-> eventMask2 |= cmd[ i];
+   }
+}
 
 #ifdef __cplusplus
 }

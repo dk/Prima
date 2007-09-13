@@ -547,6 +547,16 @@ package Prima::Image;
 use vars qw( @ISA);
 @ISA = qw(Prima::Drawable);
 
+{
+my %RNT = (
+	%{Prima::Drawable-> notification_types()},
+	HeaderReady => nt::Default,
+	DataReady   => nt::Default,
+);
+
+sub notification_types { return \%RNT; }
+}
+
 sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;

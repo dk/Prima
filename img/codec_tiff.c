@@ -576,7 +576,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       pset_i( height, h);
    } else 
       CImage( fi-> object)-> create_empty( fi-> object, w, h, bpp);
-      
+   EVENT_HEADER_READY(fi);
 
    /* check if palette available */
    if ( photometric == PHOTOMETRIC_PALETTE) { 
@@ -886,8 +886,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          bc_byte_mono_cr( alpha, primamask, w, bw_colorref);
          primamask -= i-> maskLine;
       }
+      EVENT_TOPDOWN_SCANLINES_READY(fi,1);
    }
-
    
    /* finalize */
    free( tiffstrip);

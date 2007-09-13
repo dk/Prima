@@ -91,7 +91,7 @@ sub status
 
 sub menuadd
 {
-	unless ( $_[0]-> IV-> image) {
+	unless ( $_[0]-> IV-> {menuadded}) {
 		$_[0]-> {omenuID} = 'P';
 		$_[0]-> {conversion} = ict::Optimized;
 		$_[0]-> menu-> insert(
@@ -156,33 +156,44 @@ sub menuadd
 			],
 			'', 1,
 		);
+		$_[0]-> IV-> {menuadded}++;
 	}
+}
+
+my $imgdlg;
+sub create_image_dialog
+{
+	return $imgdlg if $imgdlg;
+	$imgdlg  = Prima::ImageOpenDialog-> create();
 }
 
 sub fdopen
 {
 	my $self = $_[0]-> IV;
-	my $dlg  = Prima::ImageOpenDialog-> create();
-	my $i    = $dlg-> load;
+
+	my $dlg = create_image_dialog( $self);
+	my $i   = $dlg-> load( progressViewer => $self);
+
 	if ( $i) {
 		menuadd( $_[0]);
 		$self-> image( $i);
 		$self-> {fileName} = $dlg-> fileName;
 		status( $_[0]);
 	}
-	$dlg-> destroy;
 }
 
 sub freopen
 {
 	my $self = $_[0]-> IV;
-	my $i = Prima::Image-> create;
+	my $i = Prima::Image-> new;
+	$self-> watch_load_progress( $i);
 	if ( $i-> load( $self-> {fileName}, loadExtras => 1)) {
 		$self-> image( $i);
 		status( $_[0]);
 	} else {
 		Prima::MsgBox::message("Cannot reload ". $self-> {fileName}. ":$@");
 	}
+	$self-> unwatch_load_progress(0);
 }
 
 sub newwindow
@@ -208,10 +219,11 @@ sub newwindow
 
 sub fnewopen
 {
-	my $dlg  = Prima::ImageOpenDialog-> create();
-	my $i = $dlg-> load;
+	my $self = $_[0]-> IV;
+	my $dlg  = create_image_dialog( $self);
+	my $i    = $dlg-> load;
+
 	newwindow( $_[0], $dlg-> fileName, $i) if $i;
-	$dlg-> destroy;
 }
 
 
@@ -219,7 +231,9 @@ sub fload
 {
 	my $self = $_[0]-> IV;
 	my $f = $_[1];
-	my $i = Prima::Image-> create;
+	my $i = Prima::Image-> new;
+	$self-> watch_load_progress( $i);
+
 	if ( $i-> load( $f, loadExtras => 1)) {
 		menuadd( $_[0]);
 		my @sizes = ( $i-> size, map { $_ * 0.9 } $::application-> size);
@@ -232,6 +246,8 @@ sub fload
 	} else {
 		Prima::MsgBox::message("Cannot load $f:$@");
 	}
+	
+	$self-> unwatch_load_progress(0);
 }
 
 

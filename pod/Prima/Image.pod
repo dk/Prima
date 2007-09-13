@@ -694,6 +694,29 @@ NB! When saving to streams on win32, mind C<binmode>.
 
 =back
 
+=head2 Prima::Image events
+
+C<Prima::Image>-specific events occur only from inside L<load> call, to report
+image loading progress. Not all codecs (currently JPEG,PNG,TIFF only) are able
+to report the progress to the caller. See L<Prima::image-load/"Loading with
+progress indicator"> for details, L<Prima::ImageViewer/watch_load_progress> and 
+L<Prima::ImageDialog/load> for suggested use.
+
+=over
+
+=item HeaderReady
+
+Called whenever image header is read, and image dimensions and pixel type
+is changed accordingly to accomodate image data.
+
+=item DataReady X, Y, WIDTH, HEIGHT
+
+Called whenever image data that cover area designated by X,Y,WIDTH,HEIGHT 
+is acquired. Use C<load> option C<eventDelay> to limit the rate of C<DataReady>
+event.
+
+=back
+
 =head2 Prima::Icon methods 
 
 =over
