@@ -1297,8 +1297,10 @@ sub setup_misc
 		}
 	}
 	
+	my @codec_libpath = qd( $Config{installsitearch});
 	for ( @codecs) {
 		my @inc;
+		my $foundlib;
 		m/codec_(.*)\.c$/i;
 		my ( $fn, $lib, $codec) = ( $_, $1, $1);
 		next unless open F, $fn;
@@ -1307,7 +1309,14 @@ sub setup_misc
 		}
 		close F;
 		$lib.='.lib' if ( $Win32 && !$cygwin) || $OS2;
-		if ( !$stop_codecs && ( $libs{$lib} || defined find_lib( $lib, join('', @inc), ''))) {
+		if ( !$stop_codecs && ( 
+			$libs{$lib} || 
+			defined ( $foundlib = find_lib( $lib, join('', @inc), '', @codec_libpath))
+		)) {
+			if ( defined $foundlib) {
+				push @LIBPATH, $foundlib;
+				@codec_libpath = ();
+			}
 			if ( $lib =~ /^prigraph/) {
 				if ( $CODEC_PRIGRAPH) {
 					print <<PRIGRAPH_WARNING unless defined $USER_VARS{CODEC_PRIGRAPH};
