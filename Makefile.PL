@@ -1313,7 +1313,7 @@ sub setup_misc
 			$libs{$lib} || 
 			defined ( $foundlib = find_lib( $lib, join('', @inc), '', @codec_libpath))
 		)) {
-			if ( defined $foundlib) {
+			if ( defined $foundlib and length $foundlib) {
 				push @LIBPATH, $foundlib;
 				@codec_libpath = ();
 			}
