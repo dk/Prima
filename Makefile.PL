@@ -31,6 +31,11 @@ BEGIN {
 	unshift @INC, '.';
 };
 
+my $END; 
+END {
+	print $END if defined $END;
+};
+
 require 5.00502;
 use strict;
 use Config;
@@ -80,6 +85,7 @@ use vars @ovvars = qw(
 	$WITH_ICONV
 	$CODEC_PRIGRAPH
 	$WITH_GTK2
+	$AUTOMATED_RUN
 );
 
 use vars @path_expand_ovvars = qw(
@@ -143,6 +149,7 @@ use vars qw(
 	$install_manuals
 	$packlist
 	%cache_find_files
+	$binary_prereq
 );
 
 my $extramsg = "(see also makefile.log for details)";
@@ -930,6 +937,7 @@ sub setup_variables
 	setvar( 'DISTNAME', "Prima-$ver1.$ver2");
 	setvar( 'WANTNOCODECS', 0);
 	setvar( 'WANTNOGIFS', 0);
+	setvar( 'AUTOMATED_RUN', 0);
 	setvar( 'CODEC_PRIGRAPH', 1);
 	@executables = qw(
 		Prima/VB/VB.pl
@@ -941,6 +949,7 @@ sub setup_variables
 	setvar('WITH_GTK2', 0);
 	$install_manuals = $cygwin || (!$Win32 && !$OS2);
 	$install_manuals = 0 if !length( $INSTALL_MAN1) || !length($INSTALL_MAN3);
+	$binary_prereq = '';
 
 	@Prima_exports = qw(
 boot_Prima build_dynamic_vmt build_static_vmt call_perl call_perl_indirect
@@ -949,7 +958,7 @@ ctx_remap_def cv_call_perl debug_write duplicate_string eval gimme_the_mate
 gimme_the_vmt kind_of kill_zombies notify_perl Object_create Object_destroy parse_hv
 plist_create plist_destroy prima_mallocz pop_hv_for_REDEFINED protect_object
 push_hv push_hv_for_REDEFINED query_method sv_call_perl sv_query_method
-unprotect_object 
+unprotect_object
 );
 	push @Prima_exports, grep { /^(apc|list|prima)/ } suck_symbols('include/apricot.h');
 	push @Prima_exports, suck_symbols('include/img.h');
@@ -1342,31 +1351,15 @@ PRIGRAPH_WARNING
 	}
 
 	unless ( @ACTIVE_CODECS || $WANTNOCODECS) {
-		if ( $Win32 || $OS2) {
-			open F, "> Makefile";
-			my $dep = $Win32 ? 'win32' : 'os2';
-			print F <<DUMB_MAKE;
-# This makefile is created deliberately empty in case 
-# Makefile.PL was run from under CPAN shell, which scans
-# Makefile for uresolved dependencies
-# 
-# PREREQ_PM => { Prima::prigraph::$dep=>q[0] }
-#
-all:
-\t$^X Makefile.PL
-\tmake
-
-test: all
-DUMB_MAKE
-			close F;
-		}
-		print <<NOCODECS;
+		$binary_prereq = 'win32' if $Win32;
+		$binary_prereq = 'os2'   if $OS2; 
+		$END .= <<NOCODECS;
 
 ** No image codecs found. Use
 
 perl Makefile.PL WANTNOCODECS=1
 
-to ignore this error. Note that in this configuration Prima
+to ignore this warning. Note that in this configuration Prima
 will not be able to work with graphic files. Please follow
 the instructions in README file.
 
@@ -1374,22 +1367,23 @@ If you are under CPAN shell and are asked to follow Prima::prigraph
 dependencies, do so and re-run 'install Prima' afterwards.
 
 NOCODECS
-		exit;
 	}
 
-	unless ( $WANTNOCODECS or $WANTNOGIFS or grep { m/^(prigraph|ungif)/ } @ACTIVE_CODECS) {
-		print <<UNGIF_WARNING;
+	unless ( 
+		not(@ACTIVE_CODECS) or $WANTNOCODECS or 
+		$WANTNOGIFS or grep { m/^(prigraph|ungif)/ } @ACTIVE_CODECS
+	) {
+		$END .= <<UNGIF_WARNING;
           
 ** Warning: no libungif / libprigraph found. Use
 
 perl Makefile.PL WANTNOGIFS=1
 
-to ignore this error. Note that in this configuration Prima
+to ignore this warning. Note that in this configuration Prima
 will not be able to work with GIF files. Please follow
 the instructions in README file.
 
 UNGIF_WARNING
-		exit;
 	}
 
 	push @Prima_exports, 'bzero' unless $DEFINES{HAVE_BZERO};
@@ -2185,17 +2179,28 @@ EOF
 	create_codecs_c;
 	#exit;
 
-	my $make = <<EOF;
+	my $make = <<HEADER;
 # Makefile for Prima project under $Config{archname}
 #
 # THIS IS GENERATED FILE.
 #
 # Do not edit -- all changes will be lost.
 # Edit Makefile.PL instead.
+HEADER
 
-all: prima
+	$make .= <<PREREQ if $binary_prereq;
+#	
+# PREREQ_PM => { Prima::prigraph::$binary_prereq=>q[0] }
+#
+prereq1: prereq2 all
 
-EOF
+prereq2:
+\t$^X Makefile.PL --rm Makefile
+\t$^X Makefile.PL AUTOMATED_RUN=1
+
+PREREQ
+
+	$make .= "all: prima\n\n";
 
 	$make .= join( "\n", @headers) . "\n";
 
