@@ -86,6 +86,7 @@ use vars @ovvars = qw(
 	$CODEC_PRIGRAPH
 	$WITH_GTK2
 	$AUTOMATED_RUN
+	$CYGWIN_X11
 );
 
 use vars @path_expand_ovvars = qw(
@@ -579,6 +580,9 @@ sub suck_symbols
 
 sub setup_variables
 {
+	setvar( 'CYGWIN_X11', 0);
+	$Win32 = 0 if $CYGWIN_X11;
+
 	my $platform;
 	$NeedX11 = 0;
 	if ( $Win32) {              
@@ -2098,6 +2102,7 @@ compiler/linker options:
     WITH_ICONV        - compile with/without iconv (default 1), X only
     WITH_GTK2         - compile with/without GTK2 (default 0), X only
     CODEC_PRIGRAPH    - compile with/without prigraph (default 1), win32/os2 only
+    CYGWIN_X11        - X11 build in cygwin environment
 
 HELP
 	exit;
