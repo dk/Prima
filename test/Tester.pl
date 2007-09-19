@@ -314,6 +314,7 @@ sub run
 	rundir('.');
 	print("Atomic tests passed:$passed, skipped:$skipped, failed:$failed\n") if $verbose;
 	print("Total tests passed:$epassed, skipped:$eskipped, failed:$efailed\n");
+	print("All tests successful\n") unless $efailed; # fake Test::Harness output for CPAN::reporter
 }
 
 
