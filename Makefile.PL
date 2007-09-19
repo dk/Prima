@@ -1360,7 +1360,7 @@ test: all
 DUMB_MAKE
 			close F;
 		}
-		die <<NOCODECS;
+		print <<NOCODECS;
 
 ** No image codecs found. Use
 
@@ -1374,10 +1374,11 @@ If you are under CPAN shell and are asked to follow Prima::prigraph
 dependencies, do so and re-run 'install Prima' afterwards.
 
 NOCODECS
+		exit;
 	}
 
 	unless ( $WANTNOCODECS or $WANTNOGIFS or grep { m/^(prigraph|ungif)/ } @ACTIVE_CODECS) {
-		die <<UNGIF_WARNING;
+		print <<UNGIF_WARNING;
           
 ** Warning: no libungif / libprigraph found. Use
 
@@ -1388,6 +1389,7 @@ will not be able to work with GIF files. Please follow
 the instructions in README file.
 
 UNGIF_WARNING
+		exit;
 	}
 
 	push @Prima_exports, 'bzero' unless $DEFINES{HAVE_BZERO};
