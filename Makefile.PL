@@ -1368,7 +1368,7 @@ will not be able to work with graphic files. Please follow
 the instructions in README file.
 
 If you are under CPAN shell and are asked to follow Prima::prigraph 
-dependencies, do so and re-run 'install Prima' afterwards.
+dependencies, do so.
 
 NOCODECS
 	}
