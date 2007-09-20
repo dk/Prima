@@ -950,7 +950,7 @@ sub setup_variables
 	my $unix = (!$Win32 && !$OS2);
 	setvar('WITH_ICONV', $unix);
 	setvar('WITH_XFT', $unix);
-	setvar('WITH_GTK2', 0);
+	setvar('WITH_GTK2', $unix);
 	$install_manuals = $cygwin || (!$Win32 && !$OS2);
 	$install_manuals = 0 if !length( $INSTALL_MAN1) || !length($INSTALL_MAN3);
 	$binary_prereq = '';
@@ -2100,7 +2100,7 @@ compiler/linker options:
     X11BASE           - path where X11 includes and libraries are installed
     WITH_XFT          - compile with/without Xft (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
-    WITH_GTK2         - compile with/without GTK2 (default 0), X only
+    WITH_GTK2         - compile with/without GTK2 (default 1), X only
     CODEC_PRIGRAPH    - compile with/without prigraph (default 1), win32/os2 only
     CYGWIN_X11        - X11 build in cygwin environment
 
