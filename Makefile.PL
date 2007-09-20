@@ -1750,7 +1750,7 @@ use vars qw(%Config %Config_inst);
 	incpaths              => [ $ippi ],
 	gencls                => '$iscr${ifs}gencls$SCRIPT_EXT',
 	tmlink                => '$iscr${ifs}tmlink$SCRIPT_EXT',
-	libname               => '$isa${ifs}Prima$LIB_EXT',
+	libname               => '$isa${ifs}auto${ifs}Prima${ifs}Prima$LIB_EXT',
 	dlname                => '$isa${ifs}$pt',
 	ldpaths               => [$libpathi],
 );
@@ -2197,14 +2197,16 @@ HEADER
 #	
 # PREREQ_PM => { Prima::prigraph::$binary_prereq=>q[0] }
 #
+PREREQ
+
+	$make .= <<RERUN if $binary_prereq and not $AUTOMATED_RUN;
 prima_prereq:
 \t\@echo Rebuilding Makefile...
+\t\@$^X Makefile.PL --rm Makefile
 \t\@$^X Makefile.PL $ARGV_STR AUTOMATED_RUN=1
 \t\@$MAKE
-\t\@echo You are safe to ignore the following error...
-\t\@false
 
-PREREQ
+RERUN
 
 	$make .= "all: prima\n\n";
 
