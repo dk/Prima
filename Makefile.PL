@@ -2197,11 +2197,10 @@ HEADER
 #	
 # PREREQ_PM => { Prima::prigraph::$binary_prereq=>q[0] }
 #
-prereq1: prereq2 all
-
-prereq2:
+prima_prereq:
 \t$^X Makefile.PL --rm Makefile
 \t$^X Makefile.PL AUTOMATED_RUN=1
+\t$Config{make}
 
 PREREQ
 
