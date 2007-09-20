@@ -2198,9 +2198,11 @@ HEADER
 # PREREQ_PM => { Prima::prigraph::$binary_prereq=>q[0] }
 #
 prima_prereq:
-\t$^X Makefile.PL --rm Makefile
-\t$^X Makefile.PL AUTOMATED_RUN=1
-\t$Config{make}
+\t\@echo Rebuilding Makefile...
+\t\@$^X Makefile.PL $ARGV_STR AUTOMATED_RUN=1
+\t\@$MAKE
+\t\@echo You are safe to ignore the following error...
+\t\@false
 
 PREREQ
 
