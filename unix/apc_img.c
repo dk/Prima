@@ -1549,6 +1549,9 @@ prima_query_image( Handle self, XImage * i)
 
    if (( img-> type & imBPP) != target_depth) 
       CImage( self)-> create_empty( self, img-> w, img-> h, target_depth);
+   
+   X(self)-> size. x = img-> w;
+   X(self)-> size. y = img-> h;
 
    if ( target_depth == 1) {
       prima_copy_xybitmap( img-> data, (Byte*)i-> data, img-> w, img-> h, img-> lineSize, i-> bytes_per_line);
