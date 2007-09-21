@@ -1,3 +1,5 @@
+1.23  Images can load and save to streams. Image loading process can be watched.
+
 1.22  Use GTK file dialogs if compiled with GTK2. Better use of mouse wheel for
       Calendar, ColorDialog, ComboBox, Notebooks, Scrollbar, and Sliders widgets.
 
