@@ -38,7 +38,14 @@ if ( $build) {
 		if (  m/L\<([^<]*)\>/) {
 			push @bs, [ 0, $1];
 		} elsif ( m/^=item\s*(.*)/) {
-			push @bs, [ 1, $1];
+			if ( $1 eq '*') {
+				$_ = <F>;
+				$_ = <F>;
+				chomp;
+				push @bs, [ 1, $_];
+			} else {
+				push @bs, [ 1, $1];
+			}
 			push @bs, [0,'Prima'] 
 				if $#bs && $bs[-1][0] == 1 && $bs[-1][1] =~ /Core toolkit classes/;
 		}
