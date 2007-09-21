@@ -1363,7 +1363,7 @@ PRIGRAPH_WARNING
 
 perl Makefile.PL WANTNOCODECS=1
 
-to ignore this warning. Note that in this configuration Prima
+to suppress this warning. Note that in this configuration Prima
 will not be able to work with graphic files. Please follow
 the instructions in README file.
 
@@ -1383,7 +1383,7 @@ NOCODECS
 
 perl Makefile.PL WANTNOGIFS=1
 
-to ignore this warning. Note that in this configuration Prima
+to suppress this warning. Note that in this configuration Prima
 will not be able to work with GIF files. Please follow
 the instructions in README file.
 
