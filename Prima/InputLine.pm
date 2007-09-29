@@ -412,6 +412,10 @@ sub on_keydown
 		$self-> copy if $start != $end;
 		$self-> clear_event;
 		return;
+	} elsif ($c eq "\cA") {
+		$self-> select_all;
+		$self-> clear_event;
+		return;
 	} elsif ($c eq "\cV") {
 		$self-> paste;
 		$self-> clear_event;
