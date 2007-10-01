@@ -1296,6 +1296,8 @@ window_start_modal( Handle self, Bool shared, Handle insert_before)
 {
    DEFXX;
    Handle selectee;
+   if ( guts. grab_widget)
+      apc_widget_set_capture( guts. grab_widget, 0, 0);
    if (( XX-> preexec_focus = apc_widget_get_focused()))
       protect_object( XX-> preexec_focus);
    CWindow( self)-> exec_enter_proc( self, shared, insert_before);

@@ -895,6 +895,9 @@ apc_show_message( const char * message, Bool utf8)
       warn( "%s", message);
       return true;
    }   
+      
+   if ( guts. grab_widget)
+      apc_widget_set_capture( guts. grab_widget, 0, 0);
   
    appSz = apc_application_get_size( nilHandle);
    /* acquiring message font and wrapping message text */
