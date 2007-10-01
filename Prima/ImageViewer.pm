@@ -414,7 +414,10 @@ sub unwatch_load_progress
 
 	return unless $self-> {__watch_notifications};
 
-	$self-> {image}-> remove_notification($_) for @{ $self-> {__watch_notifications} };
+	if ( $self-> {image}) {
+		$self-> {image}-> remove_notification($_) 
+			for @{ $self-> {__watch_notifications} };
+	}
 	delete $self-> {__watch_notifications};
 
 	$clear_image = 1 unless defined $clear_image;
