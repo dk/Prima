@@ -121,7 +121,6 @@ gtk_openfile( Bool open)
 		gtk_file_chooser_set_select_multiple( GTK_FILE_CHOOSER (gtk_dialog), gtk_select_multiple);
 	gtk_file_chooser_set_do_overwrite_confirmation( GTK_FILE_CHOOSER (gtk_dialog), gtk_overwrite_prompt);
 	gtk_file_chooser_set_show_hidden( GTK_FILE_CHOOSER (gtk_dialog), gtk_show_hidden_files);
-	gtk_file_chooser_set_show_hidden( GTK_FILE_CHOOSER (gtk_dialog), true);
 	if ( gtk_current_folder_ptr)
 		gtk_file_chooser_set_current_folder( GTK_FILE_CHOOSER (gtk_dialog), gtk_current_folder_ptr);
 
