@@ -36,6 +36,8 @@
 
 #ifdef WITH_GTK2
 
+#undef dirty
+
 #include <gtk/gtk.h>
 
 static int gtk_initialized = 0;
