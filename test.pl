@@ -1,1 +1,2 @@
-do 'test/Tester.pl'
+do 'test/Tester.pl';
+die $@ if $@;
