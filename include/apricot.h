@@ -57,6 +57,8 @@
 #elif defined( __BORLANDC__)
    #define BROKEN_PERL_PLATFORM  1
    #define BROKEN_COMPILER       1
+#elif defined(WIN32)
+   #define BROKEN_PERL_PLATFORM  1
 #endif
 
 #ifdef WORD

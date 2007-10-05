@@ -226,7 +226,7 @@ sub cc_command_line
 	push @cc, "${ CDEFFLAG}HAVE_CONFIG_H=1";
 #	push @cc, "${CDEFFLAG}PRIGRAPH" if $usePrigraph;
 	push @cc, ( $compile_only ? "$COUTOFLAG$objf" : "$COUTEXEFLAG$exef");
-	push @cc, "$COUTOFLAG$objf" if $Win32 && ! $compile_only;
+	push @cc, "$COUTOFLAG$objf" if $COMPILER =~ /^(msvc|bcc32)$/ && !$compile_only;
 	push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH unless $compile_only || ( $COMPILER eq 'msvc');
 	push @cc, $srcf;
 	return @cc if $compile_only;
@@ -254,7 +254,10 @@ sub ld_command_line
 		push @ld, "$LDOUTFLAG$dstf", @_;
 		push @ld, map { "$LDLIBFLAG$_"} @LIBS;
 		push @ld, "os2\\Prima.def" if $OS2;
-		push @ld, "/def:win32\\Prima.def" if $Win32 && !$cygwin;
+		if ( $Win32) {
+			push @ld, "/def:win32\\Prima.def" if $COMPILER eq 'msvc';
+			push @ld, "win32/Prima.def" if $COMPILER eq 'gcc';
+		}
 	}
 	return @ld;
 }
@@ -417,10 +420,9 @@ sub have_define
 	chdir $TMPDIR;
 	my $tmpsrc = qd( tempfile( "pmts%04d.c"));
 	my $tmpo = $tmpsrc;
-	if ( $Win32 && !$cygwin) {
+	if ( $COMPILER eq 'msvc') {
 		$tmpo =~ s/\.c$/\.obj/;
-	}
-	else {
+	} else {
 		$tmpo =~ s/\.c$/\.o/;
 	}
 	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $extramsg";
@@ -733,6 +735,14 @@ sub setup_variables
 
 	setvar( 'CC', $Config{ cc});
 	print "Determining compiler type... ";
+
+	# setting preliminary $COMPILER so have_define() can run
+	if ( $Win32) {
+		$COMPILER = ( $CC =~ /cl(\.exe)?$/i ) ? 'msvc' : $CC;
+	} else {
+		$COMPILER = $CC;
+	}
+
 	if ( defined $USER_VARS{ COMPILER}) {
 		$COMPILER = $USER_VARS{ COMPILER};
 		die "Compiler type $COMPILER is unknown" unless defined $cc_specs{ $COMPILER};
@@ -772,7 +782,7 @@ sub setup_variables
 	# Checking some Config.pm - were empty for ActiveState 626
 	$Config{PATCHLEVEL} = $Config{patchlevel} if !defined $Config{PATCHLEVEL} || !length $Config{PATCHLEVEL};
 	$Config{SUBVERSION} = $Config{subversion} if !defined $Config{SUBVERSION} || !length $Config{SUBVERSION};
-	$Config{ld} = (($Win32 && !$cygwin) ? 'link' : 'ld'), print("** warning: malformed Config.pm\n")
+	$Config{ld} = (($COMPILER eq 'msvc') ? 'link' : 'ld'), print("** warning: malformed Config.pm\n")
 		unless length $Config{ld};
 
 	my $ccflags   = $Config{ ccflags};
@@ -841,7 +851,7 @@ sub setup_variables
 	setvar( 'LIBS', ());
 	my @flibs;
 	
-	if ( $cygwin) {
+	if ( $Win32 && $COMPILER eq 'gcc') {
 		$Config{libperl} =~ s/^lib(.*)\.a$/$1/i;
 		push @libs, qw(gdi32 mpr winspool comdlg32); # add more when appropriate
 	}
@@ -1321,7 +1331,7 @@ sub setup_misc
 			push @inc, $_ if m/^\s*#include\s*\</;
 		}
 		close F;
-		$lib.='.lib' if ( $Win32 && !$cygwin) || $OS2;
+		$lib.='.lib' if ( $COMPILER eq 'msvc') || $OS2;
 		if ( !$stop_codecs && ( 
 			$libs{$lib} || 
 			defined ( $foundlib = find_lib( $lib, join('', @inc), '', @codec_libpath))
@@ -1330,7 +1340,7 @@ sub setup_misc
 				push @LIBPATH, $foundlib;
 				@codec_libpath = ();
 			}
-			if ( $lib =~ /^prigraph/) {
+			if ( $lib !~ /^prigraph/) {
 				if ( $CODEC_PRIGRAPH) {
 					print <<PRIGRAPH_WARNING unless defined $USER_VARS{CODEC_PRIGRAPH};
           
@@ -2379,13 +2389,13 @@ EOF
 	}
 
 	print MAKE "\ninstall: all\n";
-	dump_cmd( sub { "$_[0] $cp{$_[0]}"}, 'CP', keys %cp);
+	dump_cmd( sub { "$_[0] $cp{$_[0]}"}, 'CP', sort keys %cp);
 	while ( scalar @allbins) {
 		my ( $src, $dst) = ( shift @allbins, shift @allbins);
 		$cp{qd( basename( $src, '.pl') . $SCRIPT_EXT)} = $dst;
 		$cpbin{$src} = qd( "$dst/" . basename( $src, '.pl')) . $SCRIPT_EXT;
 	}
-	dump_cmd( sub { "$_[0] $cpbin{$_[0]}"}, 'CPBIN', keys %cpbin);
+	dump_cmd( sub { "$_[0] $cpbin{$_[0]}"}, 'CPBIN', sort keys %cpbin);
 	dump_cmd( sub { $_[0] }, 'CHMOD', @chmodx);
 	
 	print MAKE "\n\t\@echo Updating config...\n";
