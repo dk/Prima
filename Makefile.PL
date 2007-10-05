@@ -1340,7 +1340,7 @@ sub setup_misc
 				push @LIBPATH, $foundlib;
 				@codec_libpath = ();
 			}
-			if ( $lib !~ /^prigraph/) {
+			if ( $lib =~ /^prigraph/) {
 				if ( $CODEC_PRIGRAPH) {
 					print <<PRIGRAPH_WARNING unless defined $USER_VARS{CODEC_PRIGRAPH};
           
