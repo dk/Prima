@@ -179,7 +179,7 @@ Clipboard_deregister_format( Handle self, char * format)
    fr-> server( self, fr, cefDone, nilSV);
    free( fr-> id);
    formatCount--;
-   memcpy( fr, fr + 1, sizeof( ClipboardFormatReg) * ( formatCount - ( fr - list)));
+   memmove( fr, fr + 1, sizeof( ClipboardFormatReg) * ( formatCount - ( fr - list)));
    if ( formatCount > 0) {
       if (( fr = allocn( ClipboardFormatReg, formatCount)))
          memcpy( fr, list, sizeof( ClipboardFormatReg) * formatCount);
