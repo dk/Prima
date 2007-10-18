@@ -57,7 +57,7 @@ static Bool   do_no_scaled_fonts = false;
 static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 
 static void
-strlwr( char *d, const char *s)
+str_lwr( char *d, const char *s)
 {
    while ( *s) {
       *d++ = tolower( *s++);
@@ -97,7 +97,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
          XCHECKPOINT;
          if ( c) {
             f-> flags. encoding = true;
-            strlwr( f-> font. encoding, c);
+            str_lwr( f-> font. encoding, c);
             XFree( c);
          } 
       }
@@ -110,7 +110,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
             XCHECKPOINT;
             if ( c) {
                strcat( f-> font. encoding, "-");
-               strlwr( f-> font. encoding + strlen( f-> font. encoding), c);
+               str_lwr( f-> font. encoding + strlen( f-> font. encoding), c);
                XFree( c);
             } 
          }
@@ -130,7 +130,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
       if ( c) {
          f-> flags. family = true;
          strncpy( f-> font. family, c, 255);  f-> font. family[255] = '\0';
-         strlwr( f-> font. family, f-> font. family);
+         str_lwr( f-> font. family, f-> font. family);
          XFree( c);
       }
    } 
@@ -143,7 +143,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
       if ( c) {
          f-> flags. name = true;
          strncpy( f-> font. name, c, 255);  f-> font. name[255] = '\0';
-         strlwr( f-> font. name, f-> font. name);
+         str_lwr( f-> font. name, f-> font. name);
          XFree( c);
       } 
    }
@@ -192,15 +192,15 @@ font_query_name( XFontStruct * s, PFontInfo f)
             strcpy( f-> font. name, c);
          }
       }
-      strlwr( f-> font. family, f-> font. family);
-      strlwr( f-> font. name, f-> font. name);
+      str_lwr( f-> font. family, f-> font. family);
+      str_lwr( f-> font. name, f-> font. name);
       f-> flags. name = true;
       f-> flags. family = true;
    } else if ( ! f-> flags. family ) {
-      strlwr( f-> font. family, f-> font. name);
+      str_lwr( f-> font. family, f-> font. name);
       f-> flags. name = true;
    } else if ( ! f-> flags. name ) {
-      strlwr( f-> font. name, f-> font. family);
+      str_lwr( f-> font. name, f-> font. family);
       f-> flags. name = true;
    }
 }   
@@ -598,7 +598,7 @@ prima_init_font_subsystem( char * error_buf)
       guts. locale[31] = 0;
       len = strlen( guts. locale);
       if ( !hash_fetch( encodings, guts. locale, len)) {
-         strlwr( guts. locale, guts. locale);
+         str_lwr( guts. locale, guts. locale);
          if ( !hash_fetch( encodings, guts. locale, len) && 
               (
                 ( strncmp( guts. locale, "iso-", 4) == 0)||
@@ -1509,7 +1509,7 @@ prima_core_font_pick( Handle self, PFont source, PFont dest)
 
    if ( !by_size) prima_init_try_height( &hgs, dest-> height, dest-> height);
 
-   strlwr( lcname, dest-> name);
+   str_lwr( lcname, dest-> name);
 AGAIN:   
    index = lastIndex = -1;
    lastDiff = minDiff = INT_MAX;
