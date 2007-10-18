@@ -855,6 +855,9 @@ sub setup_variables
 		$Config{libperl} =~ s/^lib(.*)\.a$/$1/i;
 		push @libs, qw(gdi32 mpr winspool comdlg32); # add more when appropriate
 	}
+	if ( $CYGWIN_X11) {
+		$Config{libperl} =~ s/^lib(.*)\.a$/$1/i;
+	}
 
 # here starts lot of execs...
 
@@ -1044,7 +1047,8 @@ sub setup_paths
 			push @LIBS, "Xext";
 		}
 	}
-	else {
+	
+	if ( !$NeedX11 || $CYGWIN_X11) {
 		my $libpath = find_lib( $Config{ libperl}, '', "", qd( "$Config{ archlib}/CORE"));
 		die "Cannot find perl library $extramsg\n" unless defined $libpath;
 		print "Perl library found in ", ( $libpath || "default LIBPATH"), "\n";
