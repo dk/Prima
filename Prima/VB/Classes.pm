@@ -1535,7 +1535,6 @@ sub open
 	my $h = $self-> {container}-> height;
 	$self-> {A} = $self-> {container}-> insert( SpinEdit =>
 		origin => [ 5, $h - 36],
-		width  => 120,
 		min    => -16383,
 		max    => 16383,
 		onChange => sub {
@@ -1571,7 +1570,6 @@ sub open
 	my $h = $self-> {container}-> height;
 	$self-> {A} = $self-> {container}-> insert( CheckBox =>
 		origin => [ 5, $h - 36],
-		width  => 120,
 		text   => $self-> {id},
 		onClick  => sub {
 			$self-> change;
@@ -1799,7 +1797,6 @@ sub open
 	my $h = $self-> {container}-> height;
 	$self-> {A} = $self-> {container}-> insert( SpinEdit =>
 		origin   => [ 5, $h - 72],
-		width    => 120,
 		min      => -16383,
 		max      => 16383,
 		onChange => sub {
@@ -1816,7 +1813,6 @@ sub open
 
 	$self-> {B} = $self-> {container}-> insert( SpinEdit =>
 		origin   => [ 5, $self-> {A}-> bottom - $self-> {container}-> font-> height - 39],
-		width    => 120,
 		min      => -16383,
 		max      => 16383,
 		onChange => sub {
@@ -1902,7 +1898,6 @@ sub open
 
 	$self-> {C} = $self-> {container}-> insert( SpinEdit =>
 		origin   => [ 5, $self-> {B}-> bottom - $self-> {container}-> font-> height - 39],
-		width    => 120,
 		min      => -16383,
 		max      => 16383,
 		onChange => sub {
@@ -1919,7 +1914,6 @@ sub open
 
 	$self-> {D} = $self-> {container}-> insert( SpinEdit =>
 		origin   => [ 5, $self-> {C}-> bottom - $self-> {container}-> font-> height - 39],
-		width    => 120,
 		min      => -16383,
 		max      => 16383,
 		onChange => sub {
