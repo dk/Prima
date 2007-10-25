@@ -662,7 +662,7 @@ font_logfont2font( LOGFONT * lf, Font * f, Point * res)
    f-> height              = tm. tmHeight;
    f-> size                = ( f-> height - tm. tmInternalLeading) * 72.0 / res-> y + 0.5;
    f-> width               = lf-> lfWidth;
-   f-> direction           = lf-> lfEscapement * 10;
+   f-> direction           = lf-> lfEscapement / 10;
    f-> style               = 0 |
       ( lf-> lfItalic     ? fsItalic     : 0) |
       ( lf-> lfUnderline  ? fsUnderlined : 0) |
@@ -680,8 +680,8 @@ font_font2logfont( Font * f, LOGFONT * lf)
 {
    lf-> lfHeight           = f-> height;
    lf-> lfWidth            = f-> width;
-   lf-> lfEscapement       = f-> direction / 10;
-   lf-> lfOrientation      = f-> direction / 10;
+   lf-> lfEscapement       = f-> direction * 10;
+   lf-> lfOrientation      = f-> direction * 10;
    lf-> lfWeight           = ( f-> style & fsBold)       ? 800 : 400;
    lf-> lfItalic           = ( f-> style & fsItalic)     ? 1 : 0;
    lf-> lfUnderline        = ( f-> style & fsUnderlined) ? 1 : 0;
