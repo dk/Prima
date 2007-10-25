@@ -1699,8 +1699,8 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
 
    if ( var font. direction != 0) {
       int i;
-      float s = sin( var font. direction / ( 10 * GRAD));
-      float c = cos( var font. direction / ( 10 * GRAD));
+      float s = sin( var font. direction / GRAD);
+      float c = cos( var font. direction / GRAD);
       for ( i = 0; i < 5; i++) {
          float x = pt[i]. x * c - pt[i]. y * s;
          float y = pt[i]. x * s + pt[i]. y * c;

@@ -283,10 +283,8 @@ the consistency of the pitch key.
 
 =item direction
 
-A counter-clockwise rotation angle multiplied by 10.
-0 is default, 900 is pi/2, 1800 is pi, etc. If a font
-could not be rotated, it is usually substituted
-to the one that can.
+A counter-clockwise rotation angle - 0 is default, 90 is pi/2, 180 is pi, etc.
+If a font could not be rotated, it is usually substituted to the one that can.
 
 =item encoding
 

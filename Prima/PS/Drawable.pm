@@ -952,7 +952,7 @@ sub text_out
 	$self-> emit("$wmul 1 Z") if $wmul != 1;
 	$self-> emit("0 0 M");
 	if ( $self-> {font}-> {direction} != 0) {
-		my $r = $self-> {font}-> {direction} / 10;
+		my $r = $self-> {font}-> {direction};
 		$self-> emit("$r R");
 	}
 	my @rb;
@@ -1559,8 +1559,8 @@ sub get_text_box
 		$ret[$_] += $self-> {font}-> {descent} for (1,3,5,7,9);
 	}
 	if ( $self-> {font}-> {direction} != 0) {
-		my $s = sin( $self-> {font}-> {direction} / 572.9577951);
-		my $c = cos( $self-> {font}-> {direction} / 572.9577951);
+		my $s = sin( $self-> {font}-> {direction} / 57.29577951);
+		my $c = cos( $self-> {font}-> {direction} / 57.29577951);
 		my $i;
 		for ( $i = 0; $i < 10; $i+=2) {
 			my ( $x, $y) = @ret[$i,$i+1];

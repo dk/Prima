@@ -965,7 +965,7 @@ dump_font( PFont f)
    fprintf( stderr, "width: %d\n", f-> width);
    fprintf( stderr, "style: %d\n", f-> style);
    fprintf( stderr, "pitch: %d\n", f-> pitch);
-   fprintf( stderr, "direction: %d\n", f-> direction);
+   fprintf( stderr, "direction: %g\n", f-> direction);
    fprintf( stderr, "name: %s\n", f-> name);
    fprintf( stderr, "family: %s\n", f-> family);
    fprintf( stderr, "size: %d\n", f-> size);
@@ -1853,16 +1853,31 @@ apc_menu_set_font( Handle self, PFont font)
 }
 
 Bool
-prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, int direction, PRotatedFont * result)
+prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, double direction, PRotatedFont * result,
+   Bool * ok_to_not_rotate)
 {
    PRotatedFont * pr = &f-> rotated;
    PRotatedFont r = nil;
    int i;
    
-   while ( direction < 0) direction += 3600;
-   direction %= 3600;
-   if ( direction == 0)
+   while ( direction < 0)     direction += 360.0;
+   while ( direction > 360.0) direction -= 360.0;
+
+   /* granulate direction */
+   {
+      double g;
+      int x = f-> fs-> max_bounds. width;
+      int y = f-> fs-> max_bounds. ascent + f-> fs-> max_bounds. descent;
+      if ( x < y) x = y;
+      g = fabs(0.785398 - atan2(x+1,x)) * 90.0 / 3.14159265358;
+      if ( g > 0) direction = floor(direction / g) * g;
+   }
+
+   if ( direction == 0.0) {
+      if ( ok_to_not_rotate) *ok_to_not_rotate = true;
       return false;
+   }
+   if ( ok_to_not_rotate) *ok_to_not_rotate = false;
 
    /* finding record for given direction */
    while (*pr) {
@@ -1908,7 +1923,7 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
          }
          bzero( r-> map, r-> length * sizeof( void*));
       }    
-      rad = direction * 3.14159 / 1800.0;
+      rad = direction * 3.14159265358 / 180.0;
       r-> sin. l = ( sin1 = sin( -rad)) * UINT16_PRECISION;
       r-> cos. l = ( cos1 = cos( -rad)) * UINT16_PRECISION;
       r-> sin2.l = ( sin2 = sin(  rad)) * UINT16_PRECISION;

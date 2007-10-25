@@ -827,7 +827,7 @@ apc_gp_get_text_width ( Handle self, const char* text, int len, Bool addOverhang
    }
    if ( !GpiQueryTextBox( ps, len, ( char*)text, TXTBOX_COUNT, pt)) apiErr;
    if ( var font. direction != 0) {
-      GRADIENTL g = ( GRADIENTL) { ( long) ( cos( var font. direction / GRAD) * 1000) , ( long) ( sin( var font. direction / GRAD) * 1000)};
+      GRADIENTL g = ( GRADIENTL) { ( long) ( cos( var font. direction / GRAD) * 10000) , ( long) ( sin( var font. direction / GRAD) * 10000)};
       if ( !GpiSetCharAngle( ps, &g)) apiErr;
    }
    return pt[ TXTBOX_CONCAT]. x + ( addOverhang ? pt[ TXTBOX_BOTTOMLEFT]. x : 0);
@@ -953,7 +953,7 @@ gp_set_font_extra( Handle self, HPS ps, int fontId, PSIZEF sz, Bool vectored, PF
       GRADIENTL g;
       if ( !GpiSetCharBox( ps, sz)) apiErr;
       if ( font-> direction != 0)
-         g = ( GRADIENTL) { ( long) ( cos( font-> direction / GRAD) * 1000) , ( long) ( sin( font-> direction / GRAD) * 1000)};
+         g = ( GRADIENTL) { ( long) ( cos( font-> direction / GRAD) * 10000) , ( long) ( sin( font-> direction / GRAD) * 10000)};
       else
          g = ( GRADIENTL) { 1, 0};
       if ( !GpiSetCharAngle( ps, &g)) apiErr;

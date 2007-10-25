@@ -42,7 +42,7 @@ global %Font {
    int         width             ;
    int         style             ;
    int         pitch             ;
-   int         direction         ;
+   double      direction         ;
    long        resolution        ;
    string      name              ;
    int         size              ;

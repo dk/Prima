@@ -49,7 +49,7 @@ my $widefactor = 0.05;   # range 0.01 - 0.3
 my $digitShades = 8;     # range 1 - 20
 my $textShades = 3;      # range 1 - 20
 my $shadesDepth = 4;     # range 1 - 100
-my $xshspeed = 2;        # range 1 - 4
+my $xshspeed = 0.2;      # range 1 - 4
 my $basicfsize = 10;     # range 6 - 24
 my $vlines = 40;         # range 10 - 80
 my $textToBMRatio = 0.3; # range 0.01 - 0.9
@@ -65,7 +65,7 @@ my @vlbmsped = (( 1) x $vlines);
 my @vlbms  = map { int( rand( 3))} 1..$vlines;
 my @vlxcol = (( 0) x $vlines);
 my @vlbmxcol = (( 0) x $vlines);
-my $xshcnt = -1000;
+my $xshcnt = -100;
 my $xshdir  = 1;
 my $xcol = 30;
 my $yextraspeed = 0;
@@ -107,16 +107,16 @@ sub efont
 	$owidth = $owidth * $id * $widefactor;
 	$owidth = ( $owidth < 1) ? 1 : $owidth;
 
-	if ( $xshcnt > 1000) {
-		$xshdir = -1;
-	} elsif ( $xshcnt < -1000) {
-		$xshdir = 50;
+	if ( $xshcnt > 100) {
+		$xshdir = -0.1;
+	} elsif ( $xshcnt < -100) {
+		$xshdir = 5;
 	}
 	$xshcnt += $xshdir * $xshspeed;
 	$c-> font-> set(
 		height    => $oheight,
 		width     => $owidth,
-		direction => int(($xshcnt * 0.1 + $id / $maxstep * 60) / 10) * 10
+		direction => ($xshcnt + $id / $maxstep * 6) / 10,
 	);
 }
 
@@ -244,7 +244,7 @@ my $w = Prima::MainWindow-> create(
 				ecolor( $c, $cc, $self-> backColor, $x / 30);
 				my $mp;
 				if ( $tickerMode) {
-					$mp = abs( $c-> font-> direction);
+					$mp = abs( 10 * int( $c-> font-> direction));
 					if ( $mp < 100) {
 						$mp = $mp * 10 + $mp / 10;
 					} else {

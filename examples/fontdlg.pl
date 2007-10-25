@@ -452,7 +452,7 @@ my $csl = $w-> insert( CircularSlider =>
 	scheme      => ss::Axis,
 	increment   => 30,
 	step        => 10,
-	onChange    => sub {  $fd = $_[0]-> value * 10; &$re_sample; },
+	onChange    => sub {  $fd = $_[0]-> value; &$re_sample; },
 );
 
 $csl-> insert( Button =>
@@ -555,7 +555,7 @@ $w-> insert( Widget =>
 			my $name = $font-> name;
 			my $size = $font-> size;
 			$fs = $font-> style;
-			$fd = $font-> direction / 10;
+			$fd = $font-> direction;
 			my ( $i, $j);
 			for ( $i = 0; $i < scalar @fontItems; $i++)
 			{

@@ -1559,7 +1559,7 @@ static Point *
 gp_get_text_box( Handle self, const char * text, int len, Bool wide);
 
 static Bool
-gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool wide) 
+gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool wide, Bool * ok_to_not_rotate) 
 {
    DEFXX;
    int i;
@@ -1570,7 +1570,7 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
    int psx, psy, dsx, dsy;
    Fixed rx, ry;
 
-   if ( !prima_update_rotated_fonts( XX-> font, text, len, wide, PDrawable( self)-> font. direction, &r)) 
+   if ( !prima_update_rotated_fonts( XX-> font, text, len, wide, PDrawable( self)-> font. direction, &r, ok_to_not_rotate)) 
       return false;
 
    for ( i = 0; i < len; i++) {
@@ -1781,9 +1781,12 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
    RANGE2(x,y);
 
    if ( PDrawable( self)-> font. direction != 0) {
-      Bool ret = gp_text_out_rotated( self, text, x, y, len, utf8);
-      if ( utf8) free(( char *) text);
-      return ret;
+      Bool ok_to_not_rotate = false;
+      Bool ret = gp_text_out_rotated( self, text, x, y, len, utf8, &ok_to_not_rotate);
+      if ( !ok_to_not_rotate) {
+         if ( utf8) free(( char *) text);
+         return ret;
+      }
    }
 
    if ( !XX-> flags. paint_base_line)
@@ -2189,8 +2192,8 @@ gp_get_text_box( Handle self, const char * text, int len, Bool wide)
    
    if ( PDrawable( self)-> font. direction != 0) {
       int i;
-      double s = sin( PDrawable( self)-> font. direction / 572.9577951);
-      double c = cos( PDrawable( self)-> font. direction / 572.9577951);
+      double s = sin( PDrawable( self)-> font. direction / 57.29577951);
+      double c = cos( PDrawable( self)-> font. direction / 57.29577951);
       for ( i = 0; i < 5; i++) {
          double x = pt[i]. x * c - pt[i]. y * s;
          double y = pt[i]. x * s + pt[i]. y * c;

@@ -486,7 +486,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
       if ( f. width != 0)
          FcMatrixScale( &mat, ( double) f. width / base_width, 1);
       if ( f. direction != 0)
-         FcMatrixRotate( &mat, cos(f.direction * 3.14159 / 1800.0), sin(f.direction * 3.14159 / 1800.0));
+         FcMatrixRotate( &mat, cos(f.direction * 3.14159265358 / 180.0), sin(f.direction * 3.14159265358 / 180.0));
       FcPatternAddMatrix( request, FC_MATRIX, &mat);
    }
 
@@ -740,8 +740,8 @@ prima_xft_set_font( Handle self, PFont font)
       csi = locale;
    XX-> xft_map8 = csi-> map;
    if ( PDrawable( self)-> font. direction != 0) {
-      XX-> xft_font_sin = sin( font-> direction / 572.9577951);
-      XX-> xft_font_cos = cos( font-> direction / 572.9577951);
+      XX-> xft_font_sin = sin( font-> direction / 57.29577951);
+      XX-> xft_font_cos = cos( font-> direction / 57.29577951);
    } else {
       XX-> xft_font_sin = 0.0;
       XX-> xft_font_cos = 1.0;
@@ -979,8 +979,8 @@ prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8)
    
    if ( PDrawable( self)-> font. direction != 0) {
       int i;
-      double s = sin( PDrawable( self)-> font. direction / 572.9577951);
-      double c = cos( PDrawable( self)-> font. direction / 572.9577951);
+      double s = sin( PDrawable( self)-> font. direction / 57.29577951);
+      double c = cos( PDrawable( self)-> font. direction / 57.29577951);
       for ( i = 0; i < 5; i++) {
          double x = pt[i]. x * c - pt[i]. y * s;
          double y = pt[i]. x * s + pt[i]. y * c;
