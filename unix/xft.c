@@ -1062,6 +1062,9 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
    XftColor xftcolor;
    XftFont *font = XX-> font-> xft;
    int rop = XX-> paint_rop;
+   Point baseline;
+
+   if ( len == 0) return true;
 
    /* filter out unsupported rops */
    switch ( rop) {
@@ -1154,10 +1157,12 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
    RANGE2(x,y);
 
    /* xft doesn't allow shifting glyph reference point - need to adjust manually */
+   baseline. x = - PDrawable(self)-> font. descent * XX-> xft_font_sin;
+   baseline. y = - PDrawable(self)-> font. descent * ( 1 - XX-> xft_font_cos ) 
+                 + XX-> font-> font. descent;
    if ( !XX-> flags. paint_base_line) {
-      int d = PDrawable(self)-> font. descent;
-      x -= d * XX-> xft_font_sin;
-      y -= d * ( 1 - XX-> xft_font_cos ) - XX-> font-> font. descent;
+      x += baseline. x;
+      y += baseline. y;
    }
 
    /* allocate xftdraw surface */
@@ -1187,13 +1192,34 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       int dx  = prima_xft_get_text_width( XX-> font, text, len, 
           true, utf8, X(self)-> xft_map8, nil);
       int dy  = XX-> font-> font. height;
-      int width    = dx * XX-> xft_font_cos - dy * XX-> xft_font_sin + 0.5;
-      int height   = dx * XX-> xft_font_sin + dy * XX-> xft_font_cos + 0.5;
-      Pixmap canvas = XCreatePixmap( DISP, guts. root, width, height, 
+      int i, width, height;
+      Rect rc;
+      Point p[4], offset;
+      Pixmap canvas;
+
+      bzero( &rc, sizeof(rc));
+      offset. x = offset. y = 0;
+      p[0].x = p[2].x = 0;
+      p[0].y = p[1].y = 0;
+      p[1].x = p[3].x = dx;
+      p[2].y = p[3].y = dy;
+      rc. left = rc. right = rc. top = rc. bottom = 0;
+      for ( i = 1; i < 4; i++) {
+          int x = p[i].x * XX-> xft_font_cos - p[i].y * XX-> xft_font_sin + 0.5;
+          int y = p[i].x * XX-> xft_font_sin + p[i].y * XX-> xft_font_cos + 0.5;
+	  if ( rc. left    > x) rc. left   = x;
+	  if ( rc. right   < x) rc. right  = x;
+	  if ( rc. bottom  > y) rc. bottom = y;
+	  if ( rc. top     < y) rc. top    = y;
+      }
+      width  = rc. right  - rc. left   + 1;
+      height = rc. top    - rc. bottom + 1;
+
+      canvas = XCreatePixmap( DISP, guts. root, width, height, 
                                      XX-> type. bitmap ? 1 : guts. depth);
       if ( !canvas) goto COPY_PUT;
-      dx = XX-> font-> font. ascent  * XX-> xft_font_sin + 0.5;
-      dy = XX-> font-> font. descent * XX-> xft_font_cos + 0.5;
+      dx = -rc. left;
+      dy = -rc. bottom;
       gc = XCreateGC( DISP, canvas, 0, &gcv);
       switch ( rop) {
       case ropAndPut:
@@ -1209,11 +1235,13 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       XftDrawChange( XX-> xft_drawable, canvas);
       if ( XX-> flags. xft_clip)
          XftDrawSetClip( XX-> xft_drawable, 0);
-      my_XftDrawString32( XX, &xftcolor, dx, height - dy, ucs4, len);
+      my_XftDrawString32( XX, &xftcolor, dx + baseline.x, height - dy - baseline. y, ucs4, len);
       XftDrawChange( XX-> xft_drawable, XX-> gdrawable);
       if ( XX-> flags. xft_clip)
          XftDrawSetClip( XX-> xft_drawable, XX-> current_region);
       XCHECKPOINT;
+      x -= baseline.x;
+      y -= baseline.y;
       XCopyArea( DISP, canvas, XX-> gdrawable, XX-> gc, 0, 0, width, height, x - dx, REVERT( y - dy + height));
       XFreeGC( DISP, gc);
       XFreePixmap( DISP, canvas);
