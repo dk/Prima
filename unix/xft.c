@@ -1312,7 +1312,7 @@ prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
 {
    PFontABC abc;
    int i, len = lastChar - firstChar + 1;
-   XftFont *font = X(self)-> font-> xft;
+   XftFont *font = X(self)-> font-> xft_base;
 
    if ( !( abc = malloc( sizeof( FontABC) * len))) 
       return nil;
