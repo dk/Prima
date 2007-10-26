@@ -1010,6 +1010,50 @@ create_no_aa_font( XftFont * font)
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
 #define RANGE4(a,b,c,d) RANGE(a) RANGE(b) RANGE(c) RANGE(d)
 
+/* When plotting rotated fonts, xft does not account for the accumulated
+   roundoff error, and thus the text line is shown at different angle
+   than requested. We track this and align the reference point when it
+   deviates from the ideal line */
+void
+my_XftDrawString32( PDrawableSysData selfxx,
+	_Xconst XftColor *color, int x, int y,
+	_Xconst FcChar32 *string, int len)
+{
+	int i, lastchar, lx, ly, ox, oy, shift;
+	if ( XX-> font-> font. direction == 0) {
+		XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, x, y, string, len);
+		return;
+	}
+	lx = ox = x;
+	ly = oy = y;
+	lastchar = 0;
+	shift = 0;
+	for ( i = 0; i < len; i++) {
+		int cx, cy;
+		FT_UInt ft_index;
+		XGlyphInfo glyph;
+		ft_index = XftCharIndex( DISP, XX-> font-> xft, string[i]);
+		XftGlyphExtents( DISP, XX-> font-> xft, &ft_index, 1, &glyph);
+		lx += glyph. xOff;
+		ly += glyph. yOff;
+		XftGlyphExtents( DISP, XX-> font-> xft_base, &ft_index, 1, &glyph);
+		shift += glyph. xOff;
+		cx = ox + (int)(shift * XX-> xft_font_cos + 0.5);
+		cy = oy - (int)(shift * XX-> xft_font_sin + 0.5);
+		if ( cx == lx && cy == ly) continue;
+
+		XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, 
+			x, y, string + lastchar, i - lastchar + 1);
+		lastchar = i + 1;
+		x = lx = cx;
+		y = ly = cy;
+	}
+
+	if ( lastchar < len)
+		XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, 
+			x, y, string + lastchar, len - lastchar);
+}
+
 Bool
 prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8)
 {
@@ -1165,7 +1209,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       XftDrawChange( XX-> xft_drawable, canvas);
       if ( XX-> flags. xft_clip)
          XftDrawSetClip( XX-> xft_drawable, 0);
-      XftDrawString32( XX-> xft_drawable, &xftcolor, font, dx, height - dy, ucs4, len);
+      my_XftDrawString32( XX, &xftcolor, dx, height - dy, ucs4, len);
       XftDrawChange( XX-> xft_drawable, XX-> gdrawable);
       if ( XX-> flags. xft_clip)
          XftDrawSetClip( XX-> xft_drawable, XX-> current_region);
@@ -1175,7 +1219,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       XFreePixmap( DISP, canvas);
    } else {
    COPY_PUT:
-      XftDrawString32( XX-> xft_drawable, &xftcolor, font, x, REVERT( y) + 1, ucs4, len);
+      my_XftDrawString32( XX, &xftcolor, x, REVERT( y) + 1, ucs4, len);
    }
    free( ucs4);
    /*
