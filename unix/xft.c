@@ -974,7 +974,7 @@ prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8)
 
    if ( !XX-> flags. paint_base_line) {
       int i;
-      for ( i = 0; i < 5; i++) pt[i]. y += XX-> font-> font. descent;
+      for ( i = 0; i < 4; i++) pt[i]. y += XX-> font-> font. descent;
    }   
    
    if ( PDrawable( self)-> font. direction != 0) {

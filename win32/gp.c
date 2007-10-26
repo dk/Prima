@@ -1674,7 +1674,7 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
    }
 
    if ( !is_apt( aptTextOutBaseline)) {
-      int i = 5, d = var font. descent;
+      int i = 4, d = var font. descent;
       while ( i--) pt[ i]. y += d;
    }
 

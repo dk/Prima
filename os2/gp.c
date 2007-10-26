@@ -842,7 +842,7 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
    apc_gp_move( sys ps, 0, 0);
    if ( !GpiQueryTextBox( sys ps, len, (char*) text, TXTBOX_COUNT, pt)) apiErr;
    if ( !is_apt( aptTextOutBaseline)) {
-      int i = 5, d = var font. descent;
+      int i = 4, d = var font. descent;
       while ( i--) pt[ i]. y += d;
    }
    return ( Point *) pt;
