@@ -868,36 +868,38 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
    int div = 32768L / (var font. maximalWidth ? var font. maximalWidth : 1);
    if ( div <= 0) div = 1;
 
-   if ( !HAS_WCHAR) utf8 = false;
-
-   if ( utf8)  
-      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) return false;
-
-   STYLUS_USE_TEXT( ps);
-   if ( opa != bk) SetBkMode( ps, opa);
-
    /* Win32 has problems with text_out strings that are wider than
       32K pixel - it doesn't plot the string at all. This hack is
       although ugly, but is better that Win32 default behaviour, and
       at least can be excused by the fact that all GP spaces have
       their geometrical limits. */
-   while ( len > 0) {
-      SIZE sz;
-      int drawLen = ( len > div) ? div : len;
+   if ( len > div) len = div;
+
+   if ( !HAS_WCHAR) utf8 = false;
+
+   if ( utf8)  
+      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) return false;
+
+   if ( sys rop != R2_COPYPEN) {
+      STYLUS_USE_BRUSH( ps);
+      BeginPath(ps);
+      if ( utf8) 
+         TextOutW( ps, x, sys lastSize. y - y, ( U16*)text, len);
+      else
+         TextOutA( ps, x, sys lastSize. y - y, text, len);
+      EndPath(ps);
+      FillPath(ps);
+   } else {
+      STYLUS_USE_TEXT( ps);
+      if ( opa != bk) SetBkMode( ps, opa);
+
       if ( utf8) {
-         if ( !( ok = TextOutW( ps, x, sys lastSize. y - y, ( U16*)text, drawLen))) apiErr;
-         if ( len > 0) 
-            GetTextExtentPoint32W( ps, (U16*) text, drawLen, &sz);
+         if ( !( ok = TextOutW( ps, x, sys lastSize. y - y, ( U16*)text, len))) apiErr;
       } else {
-         if ( !( ok = TextOut( ps, x, sys lastSize. y - y, text, drawLen))) apiErr;
-         if ( len > 0) 
-            GetTextExtentPoint32( ps, (char*)text, drawLen, &sz);
+         if ( !( ok = TextOutA( ps, x, sys lastSize. y - y, text, len))) apiErr;
       }
-      x += sz. cx - ( IS_NT ? sys tmOverhang : 0);
-      if (( len -= div) <= 0) break;
-      text += div * ( utf8 ? 2 : 1);
+      if ( opa != bk) SetBkMode( ps, bk);
    }
-   if ( opa != bk) SetBkMode( ps, bk);
    if ( utf8) free(( char *) text);
    return ok;
 }}
