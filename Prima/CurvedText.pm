@@ -275,7 +275,7 @@ sub curved_text_out
 	my $bevel      = not (exists $options{bevel})      || $options{bevel};
 
 	my $offset = $options{offset} || 0;
-	my $p = init_pointer( $polyline, $offset > 0);
+	my $p = init_pointer( $polyline, $offset >= 0);
 	move_pointer( $p, $offset);
 
 	my ( @chunks, $try_text_wrap, $angle, @box); 

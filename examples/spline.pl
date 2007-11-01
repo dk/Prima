@@ -88,7 +88,7 @@ my $w = Prima::MainWindow-> create(
 		}
 
 		$canvas-> rop( rop::XorPut);
-		$canvas-> curved_text_out("Hello, world!", $spline, collisions => 2, bevel => 1);
+		$canvas-> curved_text_out("Hello, world!", $spline);
 
 		my $i;
 		for ( $i = 0; $i < @points; $i+=2) {
