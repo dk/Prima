@@ -40,7 +40,7 @@ which are dragable by the mouse
 =cut
 
 use strict;
-use Prima qw(Application);
+use Prima qw(Application CurvedText);
 
 my @bounds;
 my @points = (
@@ -77,15 +77,20 @@ my $w = Prima::MainWindow-> create(
 	onPaint => sub {
 		my ( $self, $canvas) = @_;
 		$canvas-> clear;
-		$canvas-> fill_spline( [ @points, @points[0,1]] );
-		my $i;
+
+		my $spline = $canvas-> render_spline( [ @points, @points[0,1]]);
+		$canvas-> fillpoly( $spline);
 		if ( defined $capture) {
 			$canvas-> fill_ellipse( 
 				$points[$capture], $points[$capture+1], 
 				$aperture, $aperture
 			);
 		}
+
 		$canvas-> rop( rop::XorPut);
+		$canvas-> curved_text_out("Hello, world!", $spline, collisions => 2, bevel => 1);
+
+		my $i;
 		for ( $i = 0; $i < @points; $i+=2) {
 			$canvas-> ellipse( 
 				$points[$i], $points[$i+1], 
