@@ -880,7 +880,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
    if ( utf8)  
       if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) return false;
 
-   if ( sys rop != R2_COPYPEN) {
+   if ( GetROP2( sys ps) != R2_COPYPEN) {
       STYLUS_USE_BRUSH( ps);
       BeginPath(ps);
       if ( utf8) 
