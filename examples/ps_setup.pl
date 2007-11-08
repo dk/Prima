@@ -61,8 +61,9 @@ for ( keys %p) {
 #	print "$_:$p{$_} => $x->{data}->{devParms}->{$_}\n";
 }
 
-$x-> begin_doc;
-$x-> text_out( "hello!", 100, 100);
-$x-> end_doc;
+# uncomment this to print document with the applied changes
+#$x-> begin_doc;
+#$x-> text_out( "hello!", 100, 100);
+#$x-> end_doc;
 
 1;
