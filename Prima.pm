@@ -444,8 +444,6 @@ L<Prima::codecs>    - Step-by-step image codec creation
 
 L<gencls>           - C<gencls>, a class compiler tool.
 
-L<Prima::Make> - module for automated Makefile creation 
-
 =item Miscellaneous
 
 L<Prima::faq> - frequently asked questions 
