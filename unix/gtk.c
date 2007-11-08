@@ -261,7 +261,7 @@ prima_gtk_openfile( char * params)
 	if ( strncmp( params, "directory", 9) == 0) {
 		params += 9;
 		if ( *params == '=') {
-			*params++;
+			params++;
 			if ( *params == 0) {
 				gtk_current_folder_ptr = NULL;
 			} else {
