@@ -151,6 +151,7 @@ use vars qw(
 	$packlist
 	%cache_find_files
 	$binary_prereq
+	$win32_use_dlltool
 );
 
 my $extramsg = "(see also makefile.log for details)";
@@ -775,6 +776,7 @@ sub setup_variables
 		$COMPILER = 'cc';
 	}
 	print "$cc_specs{ $COMPILER}->{ name}\n";
+	$win32_use_dlltool = $Win32 && ( $COMPILER eq 'gcc') && !$cygwin;
 
 	# 5.8.0 hack
 	$Config{PATCHLEVEL} = $Config{PERL_PATCHLEVEL} if !defined $Config{PATCHLEVEL} || !length $Config{PATCHLEVEL};
@@ -1736,22 +1738,30 @@ sub create_config_pm
 	} else {
 		push @libs, $perllib;
 	}
-	unless ( $PLATFORM eq 'unix') {
+	unless ( $PLATFORM eq 'unix' or $COMPILER eq 'gcc') {
 		push @libpath, "$_cwd/auto/Prima";
 		push @libs, 'Prima' . $cc_specs{$COMPILER}->{ldlibext};
 	}
 	my $libpath = qqd(join( ',', map {"'$_'"} @libpath));
-	unless ( $PLATFORM eq 'unix') {
+	unless ( $PLATFORM eq 'unix' or $COMPILER eq 'gcc') {
 		$libpath[-1] = "$INSTALLSITEARCH/auto/Prima";
 	}
 	my $libpathi = qqd(join( ',', map {"'$_'"} @libpath));
-	my $libs    = qqd(join( ',', map {"'$_'"} @libs));
+	my $ldlibs  = qqd(join( ',', map {"'$_'"} @libs));
 	my $perl    = qqd($^X);
 	my $pl = qqd( $PrimaLib);
 	my $pt = qqd( $PrimaTarget);
 	my $iscr = qqd($INSTALLSCRIPT);
 	my $isa  = qqd($INSTALLSITEARCH);
 
+	my $define = join(' ', map { "-D$_" } @cdefs);
+	my $inc    = join(' ', map { "-I$_" } @ip);
+	my $libs   = '';
+	if ( $cygwin) {
+		$libs = "-L$INSTALL_DL -lPrima";
+	} elsif ( $Win32 || $OS2) {
+		$libs = "$INSTALLSITEARCH/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT";
+	}
 
 	open F, "> Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
 	print F <<CONFIG;
@@ -1767,6 +1777,10 @@ use vars qw(%Config %Config_inst);
 	libname               => '$isa${ifs}auto${ifs}Prima${ifs}Prima$LIB_EXT',
 	dlname                => '$isa${ifs}$pt',
 	ldpaths               => [$libpathi],
+
+	libs                  => '$libs',
+	define                => '$define',
+	inc                   => '$inc',
 );
 
 %Config = (
@@ -1793,6 +1807,7 @@ use vars qw(%Config %Config_inst);
 	libext                => '$LIB_EXT',
 	libprefix             => '$LIB_PREFIX',
 	libname               => '$cwd${ifs}$pl',
+	libs                  => '$cwd${ifs}$pl',
 	dlname                => '$cwd${ifs}$pt',
 	dlext                 => '$DL_EXT',
 	ld                    => '$LD',
@@ -1803,11 +1818,15 @@ use vars qw(%Config %Config_inst);
 	ldlibflag             => '$LDLIBFLAG',
 	ldlibpathflag         => '$LDLIBPATHFLAG',
 	ldpaths               => [$libpath],
-	ldlibs                => [$libs],
+	ldlibs                => [$ldlibs],
 	ldlibext              =>'$cc_specs{$COMPILER}->{ldlibext}',
 	inline                => '$DEFINES{__INLINE__}',
 	perl                  => '$perl',
 	dl_load_flags         => $DL_LOAD_FLAGS,
+
+	libs                  => '$libs',
+	define                => '$define',
+	inc                   => '$inc',
 );
 
 1;
@@ -2274,6 +2293,8 @@ $extralibs:
 OS2D
 	}
 
+	my $libtarget = $win32_use_dlltool ? $PrimaLib : '';
+
 	print MAKE <<EOF;
 $thunks_tinc: Makefile @alltmldeps
 \t$^X utils/tmlink.pl -Iinclude/generic -o$thunks_tinc @alltml
@@ -2309,7 +2330,7 @@ dist: tardist
 \t\$(RM) $DISTNAME.tar.gz
 \t\@gzip -9 $DISTNAME.tar
 
-prima: dirs $PrimaTarget
+prima: dirs $PrimaTarget $libtarget
 
 $PrimaTarget: @allojects $extralibs
 \t${ \eval{ return join ' ', ld_command_line( $PrimaTarget, @allojects)}}
@@ -2329,6 +2350,12 @@ Makefile: Makefile.PL @Makefile_deps
 \t\@false
 
 EOF
+
+	print MAKE <<DLLTOOL if $win32_use_dlltool;
+$PrimaLib: $PrimaTarget
+\t\@dlltool -l $PrimaLib -d win32/Prima.def -D PRIMA.DLL $PrimaTarget
+
+DLLTOOL
 
 	my %cp;
 	my %cpbin;
