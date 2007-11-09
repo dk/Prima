@@ -809,7 +809,7 @@ sub prf_name
 	my $old = $_[0]-> name;
 	$_[0]-> name($_[1]);
 	$_[0]-> name_changed( $old, $_[1]);
-	$_[0]-> hint($_[1]) if $VB::form && $_[0] != $VB::form;
+	$_[0]-> update_hint if $VB::form && $_[0] != $VB::form;
 
 	return unless $VB::inspector;
 	my $s = $VB::inspector-> Selector;
@@ -885,6 +885,20 @@ sub on_destroy
 		$_-> on_hook( $self-> name, 'DESTROY') for @{$hooks{DESTROY}};
 	}
 	$VB::main-> update_markings();
+}
+
+sub update_hint
+{
+	my $self = $_[0];
+	my @d = $self-> get_o_delta();
+	my @o = $self-> origin;
+	$o[0] += $d[0];
+	$o[1] += $d[1];
+	$self-> hint(
+		$self-> name . ' ['.
+		join(',', @o) . '-' .
+		join(',', $self-> size) .
+	']');
 }
 
 package Prima::VB::Drawable;
@@ -1077,6 +1091,7 @@ sub rerect
 	if (( $who eq 'width') || ( $who eq 'height') || ( $who eq 'right') || ( $who eq 'top')) {
 		$self-> prf_size( [ $self-> size]);
 	}
+	$self-> update_hint;
 	$self-> {syncRecting} = undef;
 }
 
