@@ -196,8 +196,7 @@ sub init
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
 
-	my @rx = split( ' ', $VB::main-> {ini}-> {ObjectInspectorRect});
-	$self-> rect( @rx) if scalar grep { $_ != -1 } @rx;
+	$VB::main-> init_position( $self, 'ObjectInspectorRect');
 
 	my @sz = $self-> size;
 
@@ -1428,8 +1427,7 @@ sub init
 	my $i = $self-> {ini} = $self-> {iniFile}-> section( 'View' );
 	$self-> menu-> dsnap-> checked( $i-> {SnapToGrid});
 	$self-> menu-> gsnap-> checked( $i-> {SnapToGuidelines});
-	my @rx = split( ' ', $i-> {MainPanelRect});
-	$self-> rect( @rx) if scalar grep { $_ != -1 } @rx;
+	$self-> init_position( $self, 'MainPanelRect');
 	return %profile;
 }
 
@@ -2348,6 +2346,22 @@ sub bring_color_dialog
 	}
 	$VB::color_dialog-> bring_to_front;
 	$VB::color_dialog-> select;
+}
+
+sub init_position
+{
+	my ( $self, $window, $name) = @_;
+
+	my @sz = $::application-> size;
+	my @rx = split( ' ', $self-> {ini}-> {$name});
+	return unless grep { $_ != -1 } @rx;
+
+	$rx[0] = 0 if $rx[0] < 0 or $rx[0] > $sz[0] + 100;
+	$rx[1] = 0 if $rx[1] < 0 or $rx[1] > $sz[1] + 100;
+	$rx[2] = $sz[0] if $rx[2] > $sz[0];
+	$rx[3] = $sz[1] if $rx[3] > $sz[1];
+
+	$window-> rect( @rx);
 }
 
 package VisualBuilder;

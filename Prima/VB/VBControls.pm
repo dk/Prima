@@ -538,9 +538,7 @@ sub init
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
 
-
-	my @rx = split( ' ', $VB::main-> {ini}-> {CodeEditorRect});
-	$self-> rect( @rx) if scalar grep { $_ != -1 } @rx;
+	$VB::main-> init_position( $self, 'CodeEditorRect');
 
 	my $i = $VB::main-> {iniFile}-> section('Editor');
 
