@@ -540,11 +540,9 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
    case XK_F28:			keycode = kbF28;		break;
    case XK_F29:			keycode = kbF29;		break;
    case XK_F30:			keycode = kbF30;		break;
+   case XK_space:		keycode = kbSpace;		break;
    default:			keycode = kbNoKey;
    }
-
-   if ( str_len == 1 && keycode == kbNoKey && *str_buf == ' ')
-      keycode = kbSpace;
    if (( keycode == kbTab || keycode == kbKPTab) && ( ev-> state & ShiftMask))
       keycode = kbBackTab;
    if ( keycode == kbNoKey) {
