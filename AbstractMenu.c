@@ -514,8 +514,12 @@ new_av(  PMenuItemReg m, int level)
 	    SV * sv = newSVpv( m-> variable, 0);
             if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
             av_push( loc, sv);
-	 } else
-            av_push( loc, newSVsv( nilSV));
+	 } else {
+	    int len;
+	    char buffer[20];
+	    len = sprintf( buffer, "#%d", m-> id);
+            av_push( loc, newSVpv( buffer, ( STRLEN) len));
+	 }
       }
       av_push( glo, newRV_noinc(( SV *) loc));
       m = m-> next;
