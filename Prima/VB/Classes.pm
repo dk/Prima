@@ -456,6 +456,7 @@ sub on_mousedown
 
 		if ( $mod & km::Shift) {
 			$self-> marked( $self-> marked ? 0 : 1);
+			ObjectInspector::update_markings();
 			$self-> focus;
 			return;
 		}

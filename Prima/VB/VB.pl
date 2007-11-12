@@ -357,6 +357,12 @@ sub item_changed
 				$list-> {check}-> [$ix] = 1;
 				$list-> redraw_items( $ix);
 			}
+
+			my @w = $VB::form-> marked_widgets;
+			for my $w ( @w) {
+				next if $w == $self-> {current};
+				$w-> prf_set($self-> {opened}-> {id} => $data);
+			}
 			$self-> {sync} = undef;
 		}
 	}
@@ -427,7 +433,6 @@ sub open_item
 	$self-> {lastOpenedId} = undef;
 }
 
-
 sub enter_widget
 {
 	return unless $VB::inspector;
@@ -483,6 +488,55 @@ sub enter_widget
 		}
 		$self-> Selector-> text( '');
 	}
+}
+
+sub update_markings
+{
+	return unless $VB::inspector;
+	my @w = $VB::form-> marked_widgets;
+	return enter_widget( $VB::form) if 0 == @w;
+	return enter_widget( $w[0])     if 1 == @w;
+	
+	my $self = $VB::inspector;
+	$self-> close_item;
+	my $n1 = $self-> {current} = shift @w;
+	my %el = %{$n1-> {events}};
+	my %pl = %{$n1-> {default}};
+	delete @pl{ keys %el };
+	delete @pl{ qw(name) }; # won't set these properties
+	for my $w ( @w) {
+		delete @el{ grep { not exists $w->{events}->{$_} }  keys %el};
+		delete @pl{ grep { not exists $w->{default}->{$_} } keys %pl};
+	}
+
+	my $oid = $self-> {lastOpenedId};
+
+	my @ef = sort keys %el;
+	my $ep = $self-> {elist};
+	my $num = 0;
+	my @check = ();
+	my %ix = ();
+	for my $e ( @ef) {
+		push( @check, ( grep { $_-> {profile}->{$e} } $n1, @w ) ? 1 : 0);
+		$ix{$e} = $num++;
+	}
+	$ep-> reset_items( [@ef], [@check], {%ix});
+	$ep-> focusedItem( $ix{$oid}) if defined $oid and defined $ix{$oid};
+
+	my $lp = $self-> {plist};
+	@ef = sort keys %pl;
+	%ix = ();
+	@check = ();
+	$num = 0;
+	for my $e ( @ef) {
+		push( @check, ( grep { $_-> {profile}->{$e} } $n1, @w ) ? 1 : 0);
+		$ix{$e} = $num++;
+	}
+	$lp-> reset_items( [@ef], [@check], {%ix});
+	$lp-> focusedItem( $ix{$oid}) if defined $oid and defined $ix{$oid};
+
+	$self-> Selector-> text( join(',', map { $_-> name } $n1, @w));
+	$self-> open_item;
 }
 
 sub renew_widgets
@@ -839,6 +893,7 @@ sub on_mouseup
 			next if $x[0] < $r[0] || $x[1] < $r[1] || $x[2] > $r[2] || $x[3] > $r[3];
 			$_-> marked(1);
 		}
+		ObjectInspector::update_markings();
 		return;
 	}
 
@@ -1037,12 +1092,14 @@ sub fm_duplicate
 		push ( @r, $j);
 		$j-> marked(1,0);
 	}
+	ObjectInspector::update_markings();
 }
 
 sub fm_selectall
 {
 	return unless $VB::form;
 	$_-> marked(1) for $VB::form-> widgets;
+	ObjectInspector::update_markings();
 }
 
 sub fm_delete
@@ -1102,6 +1159,7 @@ sub fm_paste
 	ObjectInspector::renew_widgets;
 	$_-> notify(q(Load)) for @seq;
 	$_-> marked( 1, 0) for @seq;
+	ObjectInspector::update_markings();
 }
 
 
