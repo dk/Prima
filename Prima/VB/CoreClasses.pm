@@ -267,8 +267,8 @@ sub prf_types
 {
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
-		bool    => ['flat','vertical','default','checkable','checked', 'autoRepeat'],
-		uiv     => ['glyphs','borderWidth','defaultGlyph','hiliteGlyph','disabledGlyph','pressedGlyph','holdGlyph'],
+		bool    => [qw(flat vertical default checkable checked autoRepeat autoHeight autoWidth)],
+		uiv     => [qw(glyphs borderWidth defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph)],
 		uiv     => ['imageScale',],
 		modalResult  => ['modalResult',],
 		icon    => ['image',],
@@ -366,7 +366,7 @@ sub prf_types
 	my %de = (
 		align   => ['alignment',],
 		valign  => ['valignment',],
-		bool    => ['autoWidth','autoHeight','showAccelChar','showPartial','wordWrap'],
+		bool    => [qw(autoWidth autoHeight showAccelChar showPartial wordWrap)],
 		Handle  => ['focusLink',],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
@@ -420,8 +420,7 @@ sub prf_types
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
 		align   => ['alignment',],
-		bool    => ['writeOnly','readOnly','insertMode','autoSelect',
-			'autoTab','firstChar','charOffset'],
+		bool    => [qw(writeOnly readOnly insertMode autoSelect autoHeight autoTab firstChar charOffset)],
 		upoint  => ['selection',],
 		uiv     => ['selStart','selEnd','maxLen','borderWidth'],
 		char    => ['passwordChar',],
@@ -483,7 +482,7 @@ sub prf_types
 {
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
-		bool    => ['auto','checked'],
+		bool    => [qw(auto checked pressed autoHeight autoWidth)],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;

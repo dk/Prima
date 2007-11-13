@@ -790,13 +790,10 @@ sub marked
 
 sub sizeable
 {
-	if ( $#_) {
+	return $_[0]-> {sizeable} unless $#_;
 	return if $_[1] == $_[0]-> {sizeable};
 	$_[0]-> {sizeable} = $_[1];
 	$_[0]-> pointer( cr::Default) unless $_[1];
-	} else {
-	return $_[0]-> {sizeable};
-	}
 }
 
 sub mainEvent
@@ -952,6 +949,8 @@ sub prf_adjust_default
 		selectedWidget
 		capture
 		hintVisible
+		widgets
+		buffered
 
 		left
 		right
@@ -1007,6 +1006,7 @@ sub prf_types
 			'ownerShowHint','ownerPalette','scaleChildren',
 			'selectable','selected','showHint','syncPaint','tabStop','transparent',
 			'visible','x_centered','y_centered','originDontCare','sizeDontCare',
+			'packPropagate',
 		],
 		iv            => ['bottom','height','left','right','top','width'],
 		tabOrder      => ['tabOrder'],
@@ -1018,6 +1018,7 @@ sub prf_types
 		widget        => ['currentWidget', 'selectedWidget'],
 		pointer       => ['pointer',],
 		growMode      => ['growMode'],
+		geometry      => ['geometry'],
 		string        => ['helpContext'],
 		text          => ['text', 'hint'],
 		selectingButtons=> ['selectingButtons'],
@@ -2231,6 +2232,12 @@ sub open
 	}
 }
 
+package Prima::VB::Types::geometry;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::radio);
+sub IDS    { qw(GrowMode Pack Place) }
+
+sub packID { 'gt'; }
 
 package Prima::VB::Types::font;
 use vars qw(@ISA);
