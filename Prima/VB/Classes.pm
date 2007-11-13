@@ -991,31 +991,30 @@ sub prf_types
 {
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
-		menu          => ['accelTable', 'popup',],
-		menuItems     => ['accelItems', 'popupItems'],
-		color         => ['dark3DColor', 'light3DColor', 'disabledBackColor',
-			'disabledColor', 'hiliteBackColor', 'hiliteColor', 'popupColor',
-			'popupBackColor','popupHiliteColor','popupHiliteBackColor',
-			'popupDisabledColor','popupDisabledBackColor',
-			'popupLight3DColor','popupDark3DColor',
-		],
+		menu          => [qw(accelTable popup)],
+		menuItems     => [qw(accelItems popupItems)],
+		color         => [qw(dark3DColor light3DColor disabledBackColor
+			disabledColor hiliteBackColor hiliteColor popupColor
+			popupBackColor popupHiliteColor popupHiliteBackColor
+			popupDisabledColor popupDisabledBackColor
+			popupLight3DColor popupDark3DColor
+		)],
 		font          => ['popupFont'],
-		bool          => ['autoEnableChildren', 'briefKeys','buffered','capture','clipOwner',
-			'centered','current','cursorVisible','enabled','firstClick','focused',
-			'hintVisible','ownerColor','ownerBackColor','ownerFont','ownerHint',
-			'ownerShowHint','ownerPalette','scaleChildren',
-			'selectable','selected','showHint','syncPaint','tabStop','transparent',
-			'visible','x_centered','y_centered','originDontCare','sizeDontCare',
-			'packPropagate',
-		],
-		iv            => ['bottom','height','left','right','top','width'],
+		bool          => [qw(autoEnableChildren briefKeys buffered capture clipOwner
+			centered current cursorVisible enabled firstClick focused
+			hintVisible ownerColor ownerBackColor ownerFont ownerHint
+			ownerShowHint ownerPalette scaleChildren
+			selectable selected showHint syncPaint tabStop transparent
+			visible x_centered y_centered originDontCare sizeDontCare
+			packPropagate
+		)],
+		iv            => [qw(bottom height left right top width)],
 		tabOrder      => ['tabOrder'],
 		rect          => ['rect'],
 		point         => ['cursorPos'],
 		origin        => ['origin'],
-		upoint        => ['cursorSize', 'designScale', 'size', 'sizeMin', 
-			'sizeMax', 'pointerHotSpot'],
-		widget        => ['currentWidget', 'selectedWidget'],
+		upoint        => [qw(cursorSize designScale size sizeMin sizeMax pointerHotSpot)],
+		widget        => [qw(currentWidget selectedWidget)],
 		pointer       => ['pointer',],
 		growMode      => ['growMode'],
 		geometry      => ['geometry'],
@@ -1024,6 +1023,7 @@ sub prf_types
 		selectingButtons=> ['selectingButtons'],
 		widgetClass   => ['widgetClass'],
 		image         => ['shape'],
+		packInfo      => ['packInfo'],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
@@ -2012,17 +2012,39 @@ sub IDS    {}
 sub packID {}
 sub on_change {}
 
+package Prima::VB::Types::strings;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::cluster);
+
+sub open   { shift-> open_indirect }
+
+sub set
+{
+	my ( $self, $data) = @_;
+	my $i = 0;
+	$self-> {A}-> focusedItem(-1), return unless defined $data;
+	for ( $self-> IDS) {
+		if ( $_ eq $data) {
+			$self-> {A}-> focusedItem($i);
+			last;
+		}
+		$i++;
+	}
+}
+
+sub get
+{
+	my $self = $_[0];
+	my @IDS = $self-> IDS;
+	my $ix  = $self-> {A}-> focusedItem;
+	return $IDS[($ix < 0) ? 0 : $ix];
+}
 
 package Prima::VB::Types::radio;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::cluster);
 
-sub open
-{
-	my $self = $_[0];
-	$self-> open_indirect();
-}
-
+sub open   { shift-> open_indirect }
 sub IDS    {}
 sub packID {}
 
@@ -2771,6 +2793,252 @@ use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::event);
 
 
+package PackPropListViewer;
+use vars qw(@ISA);
+@ISA = qw(PropListViewer);
+
+sub on_click
+{
+	my $self = $_[0];
+	my $index = $self-> focusedItem;
+	my $master = $self-> {master};
+	my $id = $self-> {'id'}-> [$index];
+	$self-> SUPER::on_click;
+	if ( $self-> {check}-> [$index]) {
+		$master-> {data}-> {$id} = $master-> {prop_defaults}-> {$id};
+		$self-> {master}-> item_changed;
+	} else {
+		$self-> {master}-> item_deleted;
+	}
+}
+
+package Prima::VB::Types::pack_fill;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::strings);
+sub IDS  { qw(none x y both) }
+
+package Prima::VB::Types::pack_anchor;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::strings);
+sub IDS  { qw(nw n ne w center e sw s e) }
+
+package Prima::VB::Types::pack_side;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::Types::strings);
+sub IDS  { qw(top bottom left right) }
+
+package Prima::VB::Types::packInfo;
+use vars qw(@ISA %packProps %packDefaults);
+@ISA = qw(Prima::VB::Types::generic);
+
+%packProps = (
+	after     => 'Handle',
+	before    => 'Handle',
+	anchor    => 'pack_anchor',
+	expand    => 'bool',
+	fill      => 'pack_fill',
+	pad       => 'point',
+	ipad      => 'point',
+	side      => 'pack_side',
+);
+
+%packDefaults = (
+	after     => undef,
+	before    => undef,
+	anchor    => 'center',
+	expand    => 0,
+	fill      => 'none',
+	pad       => [0,0],
+	ipad      => [0,0],
+	side      => 'top',
+);
+
+sub name { $_[0]-> {widget}-> name} # proxy call for Handle
+
+sub open
+{
+	my $self = $_[0];
+	my $h = $self-> {container}-> height;
+	my $w = $self-> {container}-> width;
+	my $fh = $self-> {container}-> font-> height;
+
+	my $divx = $h / 2;
+	$self-> {A} = $self-> {container}-> insert( PackPropListViewer =>
+		origin => [ 0, $divx + 6],
+		size   => [ $w, $h - $divx - 6],
+		growMode => gm::Ceiling,
+		onSelectItem => sub {
+			$self-> close_item;
+			$self-> open_item;
+		},
+	);
+	$self-> {A}-> {master} = $self;
+	$self-> {prop_defaults} = \%packDefaults;
+
+	$self-> {Div1} = $self-> {container}-> insert( Divider =>
+		vertical => 0,
+		origin => [ 0, $divx],
+		size   => [ $w, 6],
+		min    => 20,
+		max    => 20,
+		name   => 'Div',
+		growMode => gm::Ceiling,
+		onChange => sub {
+			my $bottom = $_[0]-> bottom;
+			$self-> {panel}-> height( $bottom);
+			$self-> {A}-> set(
+				top    => $self-> {container}-> height,
+				bottom => $bottom + 6,
+			);
+		}
+	);
+
+	$self-> {panel} = $self-> {container}-> insert( Notebook =>
+		origin    => [ 0, 0],
+		size      => [ $w, $divx],
+		growMode  => gm::Client,
+		name      => 'Panel',
+		pageCount => 1,
+	);
+	$self-> {panel}-> {pages} = {};
+	$self-> {data} = {};
+}
+
+sub close_item
+{
+	my ( $self ) = @_;
+	return unless defined $self-> {opened};
+	$self-> {opened} = undef;
+}
+
+sub open_item
+{
+	my ( $self) = @_;
+	return if defined $self-> {opened};
+	my $list = $self-> {A};
+	my $f = $list-> focusedItem;
+
+	if ( $f < 0) {
+		$self-> {panel}-> pageIndex(0);
+		return;
+	}
+	my $id   = $list-> {id}-> [$f];
+	my $type = $VB::main-> get_typerec( $packProps{ $id});
+	my $p = $self-> {panel};
+	my $pageset;
+	if ( exists $p-> {pages}-> {$type}) {
+		$self-> {opened} = $self-> {typeCache}-> {$type};
+		$pageset = $p-> {pages}-> {$type};
+		$self-> {opened}-> renew( $id, $self);
+	} else {
+		$p-> pageCount( $p-> pageCount + 1);
+		$p-> pageIndex( $p-> pageCount - 1);
+		$p-> {pages}-> {$type} = $p-> pageIndex;
+		$self-> {opened} = $type-> new( $p, $id, $self);
+		$self-> {opened}-> {changeProc} = 
+			\&Prima::VB::Types::packInfo::item_changed_from_notebook;
+		$self-> {typeCache}-> {$type} = $self-> {opened};
+	}
+	my $data = exists $self->{data}-> {$id} ? $self->{data}-> {$id} : $packDefaults{$id};
+	$self-> {sync} = 1;
+	$self-> {opened}-> set( $data);
+	$self-> {sync} = undef;
+	$p-> pageIndex( $pageset) if defined $pageset;
+}
+
+sub item_changed_from_notebook
+{
+	item_changed( $_[0]-> {widget});
+}
+
+sub item_deleted
+{
+	my $self = $_[0];
+	return unless $self;
+	return unless $self-> {opened};
+	return if $self-> {sync};
+	$self-> {sync} = 1;
+	my $id = $self-> {A}-> {id}-> [$self-> {A}-> focusedItem];
+	$self-> {opened}-> set( $packDefaults{$id});
+	my $list = $self-> {A};
+	my $ix = $list-> {index}-> {$self-> {opened}-> {id}};
+	if ( $list-> {check}-> [$ix]) {
+		$list-> {check}-> [$ix] = 0;
+		$list-> redraw_items( $ix);
+	}
+	$self-> change;
+	$self-> {sync} = 0;
+}
+
+sub item_changed
+{
+	my $self = $_[0];
+	return unless $self;
+	return unless $self-> {opened};
+	return if $self-> {sync};
+	return unless $self-> {opened}-> valid;
+	return unless $self-> {opened}-> can( 'get');
+
+	$self-> {sync} = 1;
+	my $list = $self-> {A};
+	my $data = $self-> {opened}-> get;
+	my @redraw;
+	if ( $self-> {opened}-> {id} eq 'after') {
+		delete $self-> {data}-> {before};
+		push @redraw, $list-> {index}-> {before};
+		$list-> {check}-> [ $redraw[-1] ];
+	} elsif ( $self-> {opened}-> {id} eq 'before') {
+		delete $self-> {data}-> {after};
+		push @redraw, $list-> {index}-> {after};
+		$list-> {check}-> [ $redraw[-1] ];
+	}
+
+	$self-> {data}-> { $self-> {opened}-> {id} } = $data;
+	my $ix = $list-> {index}-> {$self-> {opened}-> {id}};
+	unless ( $list-> {check}-> [$ix]) {
+		$list-> {check}-> [$ix] = 1;
+		push @redraw, $ix;
+	}
+	$list-> redraw_items( @redraw) if @redraw;
+	$self-> change;
+	$self-> {sync} = undef;
+}
+
+sub set
+{
+	my ( $self, $data) = @_;
+	$self-> {sync} = 1;
+	$self-> {data} = $data ? {%$data} : {};
+
+	my $l = $self-> {A};
+	my @id = sort keys %packProps;
+	my @chk = ();
+	my %ix  = ();
+	my $num = 0;
+	for ( @id) {
+		push( @chk, exists $self->{data}->{$_} ? 1 : 0);
+		$ix{$_} = $num++;
+	}
+	$l-> reset_items( \@id, \@chk, \%ix);
+
+	if ( $self-> {opened}) {
+		my $id   = $self-> {opened}-> {id};
+		my $data = exists $self->{data}-> {$id} ? $self->{data}-> {$id} : $packDefaults{$id};
+		$self-> {sync} = 1;
+		$self-> {opened}-> set( $data);
+		$self-> {sync} = undef;
+	}
+
+	$self-> {sync} = 0;
+}
+
+sub get
+{
+	my $self = $_[0];
+	my %d = %{ $self-> {data}};
+	return \%d;
+}
+
 package MyOutline;
 
 sub on_keydown
@@ -2892,7 +3160,6 @@ sub on_click
 		$self-> {master}-> item_deleted;
 	}
 }
-
 
 package Prima::VB::Types::menuItems;
 use vars qw(@ISA %menuProps %menuDefaults);
@@ -3055,7 +3322,6 @@ sub close_item
 	return unless defined $self-> {opened};
 	$self-> {opened} = undef;
 }
-
 
 sub open_item
 {
