@@ -150,11 +150,12 @@ sub on_click
 {
 	my $self = $_[0];
 	my $index = $self-> focusedItem;
+	my $current = $VB::inspector-> {current};
 	return if $index < 0;
 	my $id = $self-> {'id'}-> [$index];
 	return if $id eq 'name' || $id eq 'owner';
 	$self-> SUPER::on_click;
-	for ( $VB::form-> marked_widgets) {
+	for ( $current, grep { $current != $_ } $VB::form-> marked_widgets) {
 		if ( $self-> {check}-> [$index]) {
 			$_-> prf_set( $id => $_-> {default}-> {$id});
 		} else {
