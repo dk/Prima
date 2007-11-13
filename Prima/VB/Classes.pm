@@ -1666,6 +1666,7 @@ sub set
 			(map { $_ => 1} sort @{$VB::inspector-> Selector-> items}) : 
 			();
 		delete $items{ $self-> {widget}-> name};
+		delete @items{ map { $_-> name } $VB::form-> marked_widgets};
 		$self-> {A}-> items( [ keys %items]);
 		$data = $VB::form-> name unless length $data;
 	}
