@@ -2986,11 +2986,11 @@ sub item_changed
 	if ( $self-> {opened}-> {id} eq 'after') {
 		delete $self-> {data}-> {before};
 		push @redraw, $list-> {index}-> {before};
-		$list-> {check}-> [ $redraw[-1] ];
+		$list-> {check}-> [ $redraw[-1] ] = 0;
 	} elsif ( $self-> {opened}-> {id} eq 'before') {
 		delete $self-> {data}-> {after};
 		push @redraw, $list-> {index}-> {after};
-		$list-> {check}-> [ $redraw[-1] ];
+		$list-> {check}-> [ $redraw[-1] ] = 0;
 	}
 
 	$self-> {data}-> { $self-> {opened}-> {id} } = $data;
