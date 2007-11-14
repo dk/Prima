@@ -485,17 +485,13 @@ sub on_mousedown
 
 		my $part = $self-> xy2part( $x, $y);
 		if ( $self-> {locked} and not $self-> marked) {
-			if ( $part eq 'client') {
-				# propagate for marquee selection
-				$VB::form-> on_mousedown( 
-					$btn, $mod, 
-					$x + $self-> left,
-					$y + $self-> bottom
-				) if $self != $VB::form;
-				return;
-			} elsif ( $part !~ /^Size/) {
-				return ;
-			}
+			# propagate for marquee selection
+			$VB::form-> on_mousedown( 
+				$btn, $mod, 
+				$x + $self-> left,
+				$y + $self-> bottom
+			) if $self != $VB::form;
+			return;
 		}
 		
 		$self-> bring_to_front;
