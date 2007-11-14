@@ -1747,7 +1747,7 @@ apc_gp_set_back_color( Handle self, Color color)
       PStylus s = & sys stylus;
       if ( pal_ok) clr = palette_match( self, clr);
       if ( SetBkColor( sys ps, clr) == CLR_INVALID) apiErr;
-      s-> brush. backColor = color;
+      s-> brush. backColor = clr;
       if ( s-> brush. lb. lbStyle == BS_DIBPATTERNPT)
          stylus_change( self);
    }
