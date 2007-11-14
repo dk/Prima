@@ -50,6 +50,7 @@ die "$@" if $@;
 use Prima::Application name => 'Form template builder';
 
 package VB;
+use strict;
 use vars qw($inspector
 	$main
 	$editor
@@ -143,6 +144,7 @@ sub accelItems
 }
 
 package OPropListViewer;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(PropListViewer);
 
@@ -174,6 +176,7 @@ sub on_selectitem
 
 
 package ObjectInspector;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::Window);
 
@@ -595,6 +598,7 @@ sub help_lookup
 
 
 package Form;
+use strict;
 use vars qw(@ISA);
 @ISA = qw( Prima::Window Prima::VB::Window);
 
@@ -719,30 +723,16 @@ sub on_paint
 
 sub on_move
 {
-	my ( $self, $ox, $oy, $x, $y) = @_;
-	return if $self-> {syncRecting};
-	$self-> {syncRecting} = $self;
-	$self-> prf_set(
-		origin => [$x, $y],
-		originDontCare => 0,
-	);
-	$self-> {syncRecting} = undef;
-	$self-> {profile}-> {left} = $x;
-	$self-> {profile}-> {bottom} = $y;
+	my $self = shift;
+	$self-> SUPER::on_move(@_);
+	$self-> prf_set( originDontCare => 0);
 }
 
 sub on_size
 {
-	my ( $self, $ox, $oy, $x, $y) = @_;
-	return if $self-> {syncRecting};
-	$self-> {syncRecting} = $self;
-	$self-> prf_set(
-		size => [$x, $y],
-		sizeDontCare => 0,
-	);
-	$self-> {syncRecting} = undef;
-	$self-> {profile}-> {width} = $x;
-	$self-> {profile}-> {height} = $y;
+	my $self = shift;
+	$self-> SUPER::on_size(@_);
+	$self-> prf_set( sizeDontCare => 0);
 }
 
 sub on_close
@@ -1260,6 +1250,7 @@ sub prf_menuItems
 }
 
 package MainPanel;
+use strict;
 use vars qw(@ISA *do_layer);
 @ISA = qw(Prima::Window);
 
@@ -2425,6 +2416,7 @@ sub init_position
 }
 
 package VisualBuilder;
+use strict;
 
 $::application-> icon( Prima::Image-> load( Prima::Utils::find_image( 'VB::VB.gif'), index => 6));
 $::application-> accelItems( VB::accelItems);

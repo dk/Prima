@@ -238,6 +238,7 @@ use Prima::Classes;
 use Prima::StdBitmap;
 
 package Prima::VB::CommonControl;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Control);
 
@@ -260,6 +261,7 @@ sub prf_adjust_default
 }
 
 package Prima::VB::Button;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -357,6 +359,7 @@ sub prf_imageScale  { $_[0]-> repaint; }
 
 
 package Prima::VB::Label;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -402,6 +405,7 @@ sub prf_wordWrap      { $_[0]-> repaint; }
 sub prf_showAccelChar { $_[0]-> repaint; }
 
 package Prima::VB::InputLine;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -465,6 +469,7 @@ sub prf_borderWidth   { $_[0]-> repaint; }
 sub prf_passwordChar  { $_[0]-> repaint; }
 
 package Prima::VB::Cluster;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -507,6 +512,7 @@ sub paint
 }
 
 package Prima::VB::CheckBox;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Cluster);
 
@@ -518,6 +524,7 @@ sub on_paint
 }
 
 package Prima::VB::Radio;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Cluster);
 
@@ -529,6 +536,7 @@ sub on_paint
 }
 
 package Prima::VB::GroupBox;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -578,6 +586,7 @@ sub on_paint
 }
 
 package Prima::VB::BiScroller;
+use strict;
 
 sub paint_exterior
 {
@@ -623,6 +632,7 @@ sub prf_hScroll       { $_[0]-> repaint; }
 sub prf_vScroll       { $_[0]-> repaint; }
 
 package Prima::VB::ListBox;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
 
@@ -682,6 +692,7 @@ sub on_paint
 sub prf_items         { $_[0]-> repaint; }
 
 package Prima::VB::ListViewer;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::ListBox);
 
@@ -697,6 +708,7 @@ sub prf_events
 
 
 package Prima::VB::DirectoryListBox;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::ListBox);
 
@@ -731,6 +743,7 @@ sub on_paint
 
 
 package Prima::VB::ScrollBar;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -787,6 +800,7 @@ sub on_paint
 sub prf_vertical   { $_[0]-> repaint; }
 
 package Prima::VB::ComboBox;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -875,6 +889,7 @@ sub prf_items         { $_[0]-> repaint; }
 sub prf_borderWidth   { $_[0]-> repaint; }
 
 package Prima::VB::DriveComboBox;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::ComboBox);
 
@@ -898,6 +913,7 @@ sub prf_adjust_default
 }
 
 package Prima::VB::ColorComboBox;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::ComboBox);
 
@@ -922,6 +938,7 @@ sub prf_adjust_default
 
 
 package Prima::VB::Edit;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
 
@@ -974,6 +991,7 @@ sub on_paint
 sub prf_wordWrap      { $_[0]-> repaint; }
 
 package Prima::VB::ImageViewer;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
 
@@ -1041,6 +1059,7 @@ sub prf_valignment    { $_[0]-> repaint; }
 sub prf_zoom          { $_[0]-> repaint; }
 
 package Prima::VB::ScrollWidget;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
 
@@ -1063,6 +1082,7 @@ sub on_paint
 }
 
 package Prima::VB::SpinButton;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -1109,6 +1129,7 @@ sub on_paint
 }
 
 package Prima::VB::AltSpinButton;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -1173,6 +1194,7 @@ sub on_paint
 }
 
 package Prima::VB::SpinEdit;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::InputLine);
 
@@ -1227,6 +1249,7 @@ sub prf_alignment     { $_[0]-> repaint; }
 sub prf_borderWidth   { $_[0]-> repaint; }
 
 package Prima::VB::Gauge;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -1338,6 +1361,7 @@ sub prf_relief        { $_[0]-> repaint; }
 sub prf_vertical      { $_[0]-> repaint; }
 
 package Prima::VB::AbstractSlider;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl);
 
@@ -1371,6 +1395,7 @@ sub prf_adjust_default
 }
 
 package Prima::VB::Slider;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::AbstractSlider);
 
@@ -1418,6 +1443,7 @@ sub on_paint
 sub prf_vertical  { $_[0]-> repaint; }
 
 package Prima::VB::CircularSlider;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::AbstractSlider);
 
@@ -1472,6 +1498,7 @@ sub on_paint
 
 
 package Prima::VB::AbstractOutline;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
 
@@ -1521,6 +1548,7 @@ sub prf_adjust_default
 }
 
 package Prima::VB::OutlineViewer;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::AbstractOutline);
 
@@ -1533,6 +1561,7 @@ sub prf_adjust_default
 
 
 package Prima::VB::StringOutline;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::AbstractOutline);
 
@@ -1571,6 +1600,7 @@ ENOUGH:
 sub prf_items  { $_[0]-> repaint; }
 
 package Prima::VB::DirectoryOutline;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::AbstractOutline);
 
@@ -1594,6 +1624,7 @@ sub on_paint
 }
 
 package Prima::VB::Notebook;
+use strict;
 use vars qw(@ISA);
 @ISA = qw( Prima::VB::CommonControl);
 
@@ -1768,6 +1799,7 @@ sub pg_inc
 }
 
 package Prima::VB::TabSet;
+use strict;
 use vars qw(@ISA);
 @ISA = qw( Prima::VB::CommonControl);
 
@@ -1973,6 +2005,7 @@ sub prf_pageIndex {
 
 
 package Prima::VB::Header;
+use strict;
 use vars qw(@ISA);
 @ISA = qw( Prima::VB::CommonControl);
 
@@ -2029,6 +2062,7 @@ sub prf_widths{ $_[0]-> repaint; }
 
 
 package Prima::VB::DetailedList;
+use strict;
 use vars qw(@ISA);
 @ISA = qw( Prima::VB::ListBox);
 
@@ -2110,6 +2144,7 @@ sub prf_headers { $_[0]-> prf_set( columns => scalar @{$_[0]-> prf('headers')});
 
 
 package Prima::VB::Calendar;
+use strict;
 use vars qw(@ISA);
 @ISA = qw( Prima::VB::CommonControl);
 
@@ -2150,6 +2185,7 @@ sub on_paint
 }
 
 package Prima::VB::Grid;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::CommonControl Prima::VB::BiScroller);
 

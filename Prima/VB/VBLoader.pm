@@ -240,6 +240,7 @@ sub AUTOFORM_CREATE
 }
 
 package Prima; 
+use strict;
 
 sub VBLoad
 {

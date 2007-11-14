@@ -43,6 +43,7 @@ use Prima::Classes;
 
 
 package Prima::VB::Object;
+use strict;
 
 
 my %hooks = ();
@@ -181,6 +182,7 @@ sub act_profile
 }
 
 package Prima::VB::Component;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::VB::Object);
 
@@ -900,6 +902,7 @@ sub update_hint
 }
 
 package Prima::VB::Drawable;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Component);
 
@@ -927,6 +930,7 @@ sub prf_types
 }
 
 package Prima::VB::Widget;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Drawable);
 
@@ -1123,6 +1127,7 @@ sub on_size
 	return if $self-> {syncRecting};
 	$self-> {syncRecting} = $self;
 	$self-> prf_set( size => [$x, $y]);
+	$self-> update_children_geometry( $ox, $oy, $x, $y);
 	$self-> {syncRecting} = undef;
 }
 
@@ -1159,7 +1164,38 @@ sub on_paint
 	$self-> common_paint( $canvas);
 }
 
+sub update_children_geometry
+{
+	my ($self, $ox, $oy, $x, $y) = @_;
+	return unless $VB::form;
+	my $name = $self-> prf('name');
+	my @w    = grep { $_-> prf('owner') eq $name } $VB::form-> widgets;
+	my @o    = ( $self == $VB::form) ? ( 0, 0) : $self-> origin;
+	if ( $self-> prf('geometry') == gt::GrowMode) {
+		for ( @w) {
+			my @size  = $_-> get_virtual_size;
+			my @pos   = $_-> origin;
+			$pos[$_] -= $o[$_] for 0,1;
+			my @osize = @size;
+			my @opos  = @pos;
+			my @d     = ( $x - $ox, $y - $oy);
+			my $gm    = $_-> prf('growMode');
+			$pos[0]  += $d[0] if $gm & gm::GrowLoX;
+			$pos[1]  += $d[1] if $gm & gm::GrowLoY;
+			$size[0] += $d[0] if $gm & gm::GrowHiX;
+			$size[1] += $d[1] if $gm & gm::GrowHiY;
+			$pos[0]   = ( $x - $size[0]) / 2 if $gm & gm::XCenter;
+			$pos[1]   = ( $y - $size[1]) / 2 if $gm & gm::YCenter;
+			unless ( grep { $pos[$_] != $opos[$_] and $size[$_] != $osize[$_] } 0,1) {
+				$pos[$_] += $o[$_] for 0,1;
+				$_-> rect( @pos, $pos[0] + $size[0], $pos[1] + $size[1]);
+			}
+		}
+	}
+}
+
 package Prima::VB::Control;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Widget);
 
@@ -1195,6 +1231,7 @@ sub prf_adjust_default
 }
 
 package Prima::VB::Window;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Control);
 
@@ -1258,6 +1295,7 @@ use Prima::Label;
 use Prima::Outlines;
 
 package Prima::VB::Types::generic;
+use strict;
 
 sub new
 {
@@ -1346,6 +1384,7 @@ sub preload_modules
 }
 
 package Prima::VB::Types::textee;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -1361,6 +1400,7 @@ sub get
 }
 
 package Prima::VB::Types::string;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::textee);
 
@@ -1379,6 +1419,7 @@ sub open
 }
 
 package Prima::VB::Types::char;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::string);
 
@@ -1391,6 +1432,7 @@ sub open
 
 
 package Prima::VB::Types::name;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::string);
 
@@ -1438,6 +1480,7 @@ sub valid
 
 
 package Prima::VB::Types::text;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::textee);
 
@@ -1519,6 +1562,7 @@ sub open
 }
 
 package Prima::VB::Types::fallback;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::text);
 
@@ -1543,6 +1587,7 @@ sub get
 }
 
 package Prima::VB::Types::iv;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::string);
 
@@ -1567,6 +1612,7 @@ sub write
 }
 
 package Prima::VB::Types::uiv;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::iv);
 
@@ -1578,6 +1624,7 @@ sub open
 }
 
 package Prima::VB::Types::bool;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -1610,6 +1657,7 @@ sub write
 }
 
 package Prima::VB::Types::tabOrder;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::iv);
 
@@ -1637,6 +1685,7 @@ sub change
 }
 
 package Prima::VB::Types::Handle;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -1681,6 +1730,7 @@ sub get
 }
 
 package Prima::VB::Types::color;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -1806,6 +1856,7 @@ sub write
 }
 
 package Prima::VB::Types::point;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -1871,6 +1922,7 @@ sub write
 }
 
 package Prima::VB::Types::upoint;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::point);
 
@@ -1883,6 +1935,7 @@ sub open
 }
 
 package Prima::VB::Types::origin;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::point);
 
@@ -1906,6 +1959,7 @@ sub get
 }
 
 package Prima::VB::Types::rect;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::point);
 
@@ -1975,6 +2029,7 @@ sub write
 }
 
 package Prima::VB::Types::urect;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::rect);
 
@@ -1986,6 +2041,7 @@ sub open
 }
 
 package Prima::VB::Types::cluster;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -2013,6 +2069,7 @@ sub packID {}
 sub on_change {}
 
 package Prima::VB::Types::strings;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::cluster);
 
@@ -2041,6 +2098,7 @@ sub get
 }
 
 package Prima::VB::Types::radio;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::cluster);
 
@@ -2086,6 +2144,7 @@ sub write
 }
 
 package Prima::VB::Types::checkbox;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::cluster);
 
@@ -2141,42 +2200,49 @@ sub write
 
 
 package Prima::VB::Types::borderStyle;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(None Sizeable Single Dialog); }
 sub packID { 'bs'; }
 
 package Prima::VB::Types::align;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Left Center Right); }
 sub packID { 'ta'; }
 
 package Prima::VB::Types::valign;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Top Middle Bottom); }
 sub packID { 'ta'; }
 
 package Prima::VB::Types::windowState;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Normal Minimized Maximized); }
 sub packID { 'ws'; }
 
 package Prima::VB::Types::borderIcons;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::checkbox);
 sub IDS    { qw(SystemMenu Minimize Maximize TitleBar); }
 sub packID { 'bi'; }
 
 package Prima::VB::Types::selectingButtons;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::checkbox);
 sub IDS    { qw(Left Middle Right); }
 sub packID { 'mb'; }
 
 package Prima::VB::Types::widgetClass;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Button CheckBox Combo Dialog Edit InputLine Label ListBox Menu
@@ -2184,6 +2250,7 @@ sub IDS    { qw(Button CheckBox Combo Dialog Edit InputLine Label ListBox Menu
 sub packID { 'wc'; }
 
 package Prima::VB::Types::rop;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(CopyPut Blackness NotOr NotSrcAnd NotPut NotDestAnd Invert
@@ -2193,6 +2260,7 @@ NotDestXor ); }
 sub packID { 'rop'; }
 
 package Prima::VB::Types::comboStyle;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Simple DropDown DropDownList); }
@@ -2200,6 +2268,7 @@ sub packID { 'cs'; }
 sub preload_modules { return 'Prima::ComboBox' };
 
 package Prima::VB::Types::gaugeRelief;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Sink Border Raise); }
@@ -2207,6 +2276,7 @@ sub packID { 'gr'; }
 sub preload_modules { return 'Prima::Sliders' };
 
 package Prima::VB::Types::sliderScheme;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Gauge Axis Thermometer StdMinMax); }
@@ -2214,6 +2284,7 @@ sub packID { 'ss'; }
 sub preload_modules { return 'Prima::Sliders' };
 
 package Prima::VB::Types::tickAlign;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(Normal Alternative Dual); }
@@ -2221,6 +2292,7 @@ sub packID { 'tka'; }
 sub preload_modules { return 'Prima::Sliders' };
 
 package Prima::VB::Types::growMode;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::checkbox);
 sub IDS    { qw( GrowLoX GrowLoY GrowHiX GrowHiY XCenter YCenter DontCare); }
@@ -2255,6 +2327,7 @@ sub open
 }
 
 package Prima::VB::Types::geometry;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::radio);
 sub IDS    { qw(GrowMode Pack Place) }
@@ -2262,6 +2335,7 @@ sub IDS    { qw(GrowMode Pack Place) }
 sub packID { 'gt'; }
 
 package Prima::VB::Types::font;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -2508,6 +2582,7 @@ sub write
 }
 
 package Prima::VB::Types::icon;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -2687,6 +2762,7 @@ sub write
 
 
 package Prima::VB::Types::image;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::icon);
 
@@ -2697,6 +2773,7 @@ sub imgClass
 
 
 package Prima::VB::Types::items;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::text);
 
@@ -2723,6 +2800,7 @@ sub write
 }
 
 package Prima::VB::Types::multiItems;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::items);
 
@@ -2762,6 +2840,7 @@ sub write
 
 
 package Prima::VB::Types::event;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::text);
 
@@ -2789,11 +2868,13 @@ sub write
 }
 
 package Prima::VB::Types::FMAction;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::event);
 
 
 package PackPropListViewer;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(PropListViewer);
 
@@ -2813,21 +2894,25 @@ sub on_click
 }
 
 package Prima::VB::Types::pack_fill;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::strings);
 sub IDS  { qw(none x y both) }
 
 package Prima::VB::Types::pack_anchor;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::strings);
 sub IDS  { qw(nw n ne w center e sw s e) }
 
 package Prima::VB::Types::pack_side;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::strings);
 sub IDS  { qw(top bottom left right) }
 
 package Prima::VB::Types::packInfo;
+use strict;
 use vars qw(@ISA %packProps %packDefaults);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -3040,6 +3125,7 @@ sub get
 }
 
 package MyOutline;
+use strict;
 
 sub on_keydown
 {
@@ -3118,6 +3204,7 @@ sub on_dragitem
 }
 
 package MenuOutline;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::Outline MyOutline);
 
@@ -3141,6 +3228,7 @@ sub makeseparator
 }
 
 package MPropListViewer;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(PropListViewer);
 
@@ -3162,6 +3250,7 @@ sub on_click
 }
 
 package Prima::VB::Types::menuItems;
+use strict;
 use vars qw(@ISA %menuProps %menuDefaults);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -3609,6 +3698,7 @@ sub write
 
 
 package Prima::VB::Types::menuname;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::name);
 
@@ -3636,6 +3726,7 @@ sub valid
 }
 
 package Prima::VB::Types::key;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 
@@ -3672,6 +3763,7 @@ sub write
 
 
 package ItemsOutline;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::StringOutline MyOutline);
 
@@ -3681,6 +3773,7 @@ sub new_item
 }
 
 package Prima::VB::Types::treeItems;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::generic);
 

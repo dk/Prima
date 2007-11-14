@@ -31,6 +31,7 @@ use Prima::Classes;
 use Prima::Lists;
 
 package Divider;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
 
@@ -170,6 +171,7 @@ sub max
 }
 
 package PropListViewer;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::ListViewer);
 
@@ -247,6 +249,7 @@ sub on_click
 
 
 package Editor;
+use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::Edit);
 
@@ -301,6 +304,7 @@ sub on_change
 }
 
 package CodeEditor;
+use strict;
 use vars qw(@ISA @editors);
 @ISA = qw(Prima::Window);
 
