@@ -1226,8 +1226,8 @@ sub update_children_geometry
 	my $name = $self-> prf('name');
 	my @w    = grep { $_-> prf('owner') eq $name } $VB::form-> widgets;
 	my @o    = ( $self == $VB::form) ? ( 0, 0) : $self-> origin;
-	if ( $self-> prf('geometry') == gt::GrowMode) {
-		for ( @w) {
+	for ( @w) {
+		if ( $_-> prf('geometry') == gt::GrowMode) {
 			my @size  = $_-> get_virtual_size;
 			my @pos   = $_-> origin;
 			$pos[$_] -= $o[$_] for 0,1;
