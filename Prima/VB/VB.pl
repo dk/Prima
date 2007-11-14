@@ -844,6 +844,7 @@ sub on_mousemove
 	if ( $self-> {transaction} == 2) {
 		$self-> {guidelineX} = $x;
 		$self-> text( $x);
+		$_-> repaint for grep { $_-> {locked} } $self-> widgets;
 		$self-> repaint;
 		return;
 	}
@@ -851,6 +852,7 @@ sub on_mousemove
 	if ( $self-> {transaction} == 3) {
 		$self-> {guidelineY} = $y;
 		$self-> text( $y);
+		$_-> repaint for grep { $_-> {locked} } $self-> widgets;
 		$self-> repaint;
 		return;
 	}
@@ -859,12 +861,11 @@ sub on_mousemove
 		$self-> {guidelineY} = $y;
 		$self-> {guidelineX} = $x;
 		$self-> text( "$x:$y");
+		$_-> repaint for grep { $_-> {locked} } $self-> widgets;
 		$self-> repaint;
 		return;
 	}
-
 }
-
 
 sub on_mouseup
 {
@@ -883,6 +884,7 @@ sub on_mouseup
 		for ( $self-> widgets) {
 			my @x = $_-> rect;
 			next if $x[0] < $r[0] || $x[1] < $r[1] || $x[2] > $r[2] || $x[3] > $r[3];
+			next if $_-> {locked};
 			$_-> marked(1);
 		}
 		ObjectInspector::update_markings();
@@ -1237,6 +1239,18 @@ data =>
 	$d-> destroy;
 }
 
+sub fm_toggle_lock
+{
+	my $self = $VB::form;
+	return unless $self;
+
+	my @w      = $self-> marked_widgets;
+	my $unlock = not grep { $_-> {locked} } @w;
+	$_-> {locked} = $unlock for @w;
+	$self-> marked(0,1) if $unlock;
+	$_-> repaint for @w;
+}
+
 sub prf_icon
 {
 	$_[0]-> icon( $_[1]);
@@ -1294,6 +1308,7 @@ sub profile_default
 				]],
 				['~Change class...' => sub { Form::fm_reclass();}],
 				['Creation ~order' => sub { Form::fm_creationorder(); } ],
+				['To~ggle lock' => 'Ctrl+G' => '^G' => sub { Form::fm_toggle_lock(); }],
 			]],
 			['~View' => [
 			['~Object Inspector' => 'F11' => 'F11' => sub { $_[0]-> bring_inspector; }],
@@ -2601,6 +2616,15 @@ before its parent. However, the explicit order might be helpful
 in a case, when, for example, C<tabOrder> property is left to its default
 value, so it is assigned according to the order of widget creation.
 
+=item Toggle lock
+
+Changes the lock status for selected widgets. The lock, if set, prevents
+a widget from being selected by mouse, to avoid occasional positional changes.
+This is useful when a widget is used as owner for many sub-widgets.
+
+Ctrl+mouse click locks and unlocks a widget.
+
+
 =back
 
 =over
@@ -2701,7 +2725,9 @@ can be more than one selected widget at a time, or none at all.
 To explicitly select a widget in addition to the already selected
 ones, hold the C<shift> key while clicking on a widget. This combination
 also deselects the widget. To select all widgets on the form window,
-call L<Select all> command from the menu.
+call L<Select all> command from the menu. To prevent widgets from being
+occasionally selected, lock them with "Edit/Toggle lock" command or 
+Ctrl+mouse click.
 
 =item Moving
 

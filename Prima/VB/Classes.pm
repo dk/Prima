@@ -314,8 +314,8 @@ sub get_profile_default
 sub common_paint
 {
 	my ( $self, $canvas) = @_;
+	my @sz = $canvas-> size;
 	if ( $self-> {marked}) {
-		my @sz = $canvas-> size;
 		$canvas-> color( cl::Black);
 		$canvas-> rectangle( 1, 1, $sz[0] - 2, $sz[1] - 2);
 		$canvas-> rop( rop::XorPut);
@@ -330,6 +330,19 @@ sub common_paint
 		$canvas-> bar( 0,$hh-2,2,$hh+2);
 		$canvas-> bar( $sz[0]-5,$hh-2,$sz[0]-1,$hh+2);
 		$canvas-> rop( rop::CopyPut);
+	} elsif ( $self-> {locked}) {
+		my $x = $VB::form->{guidelineX} - $self-> left;
+		my $y = $VB::form->{guidelineY} - $self-> bottom;
+		$canvas-> fillPattern([0,0,0,0,4,0,0,0]);
+		$canvas-> backColor( cl::Clear);
+		$canvas-> color( cl::Set);
+		$canvas-> rop( rop::XorPut);
+		$canvas-> bar( 0, 0, @sz);
+		$canvas-> rop( rop::CopyPut);
+		$canvas-> color( cl::Blue);
+		$canvas-> linePattern( lp::Dash);
+		$canvas-> line( $x, 0, $x, $sz[1]);
+		$canvas-> line( 0, $y, $sz[0], $y);
 	}
 }
 
@@ -430,7 +443,7 @@ sub maintain_children_origin
 	for ( $VB::form-> widgets) {
 		next unless $_-> prf('owner') eq $name;
 		my @o = $_-> origin;
-		$_-> origin( $o[0] + $x, $o[1] + $y) unless $_-> marked;
+		$_-> origin( $o[0] + $x, $o[1] + $y);
 		$_-> maintain_children_origin( @o);
 	}
 }
@@ -462,6 +475,28 @@ sub on_mousedown
 			$self-> focus;
 			return;
 		}
+
+		if ( $mod & km::Ctrl) {
+			$self-> {locked} = not $self-> {locked};
+			$self-> marked(0) if $self-> {locked};
+			$self-> repaint;
+			return;
+		}
+
+		my $part = $self-> xy2part( $x, $y);
+		if ( $self-> {locked} and not $self-> marked) {
+			if ( $part eq 'client') {
+				# propagate for marquee selection
+				$VB::form-> on_mousedown( 
+					$btn, $mod, 
+					$x + $self-> left,
+					$y + $self-> bottom
+				) if $self != $VB::form;
+				return;
+			} elsif ( $part !~ /^Size/) {
+				return ;
+			}
+		}
 		
 		$self-> bring_to_front;
 		$self-> focus;
@@ -473,10 +508,9 @@ sub on_mousedown
 
 		$self-> iterate_children( sub { $_[0]-> bring_to_front; $_[0]-> update_view; }); 
 
-		my $part = $self-> xy2part( $x, $y);
 		my @mw;
 		@mw = $VB::form-> marked_widgets if $part eq q(client) && $self-> marked;
-		$self-> marked( 1, 1) unless @mw;    
+		$self-> marked( 1, 1) unless @mw;
 		$self-> clear_event;
 		$self-> capture(1, $self-> owner);
 		$self-> {spotX} = $x;
@@ -601,76 +635,88 @@ sub on_mousemove
 		my @xorg = $self-> client_to_screen( $x - $self-> {spotX}, $y - $self-> {spotY});
 		$self-> {prevRect} = [ @xorg, $sz[0] + $xorg[0], $sz[1] + $xorg[1]];
 		$self-> xorrect( @{$self-> {prevRect}}, 1);
-	} else {
-		if ( $self-> {sizeable}) {
-			if ( $self-> {sizeAction}) {
-				my @org = $_[0]-> rect;
-				my @new = @org;
-				my @min = $self-> sizeMin;
-				my @og = $self-> origin;
-				my ( $xa, $ya) = @{$self-> {dirData}};
+	} elsif ( $self-> {sizeable}) {
+		if ( $self-> {sizeAction}) {
+			my @org = $_[0]-> rect;
+			my @new = @org;
+			my @min = $self-> sizeMin;
+			my @og = $self-> origin;
+			my ( $xa, $ya) = @{$self-> {dirData}};
 
-				if ( $VB::main-> {ini}-> {SnapToGrid}) {
-					$x -= ( $x - $self-> {spotX} + $og[0]) % 4;
-					$y -= ( $y - $self-> {spotY} + $og[1]) % 4;
-				}
-
-				if ( $VB::main-> {ini}-> {SnapToGuidelines}) {
-					my @sz = $self-> size;
-					my $xline = $VB::form-> {guidelineX} - $og[0];
-					my $yline = $VB::form-> {guidelineY} - $og[1];
-					if ( $xa != 0) {
-						$x = $xline + $self-> {spotX} 
-							if abs( $xline - $x + $self-> {spotX}) < 8;
-						$x = $xline + $self-> {spotX} - $sz[0] 
-							if abs( $xline - $x + $self-> {spotX} - $sz[0]) < 8;
-					}
-					if ( $ya != 0) {
-						$y = $yline + $self-> {spotY} 
-							if abs( $yline - $y + $self-> {spotY}) < 8;
-						$y = $yline + $self-> {spotY} - $sz[1] 
-							if abs( $yline - $y + $self-> {spotY} - $sz[1]) < 8;
-					}
-				}
-
-				if ( $xa < 0) {
-					$new[0] = $org[0] + $x - $self-> {spotX};
-					$new[0] = $org[2] - $min[0] if $new[0] > $org[2] - $min[0];
-				} elsif ( $xa > 0) {
-					$new[2] = $org[2] + $x - $self-> {spotX};
-					if ( $new[2] < $org[0] + $min[0]) {
-						$new[2] = $org[0] + $min[0];
-					}
-				}
-
-				if ( $ya < 0) {
-					$new[1] = $org[1] + $y - $self-> {spotY};
-					$new[1] = $org[3] - $min[1] if $new[1] > $org[3] - $min[1];
-				} elsif ( $ya > 0) {
-					$new[3] = $org[3] + $y - $self-> {spotY};
-					if ( $new[3] < $org[1] + $min[1]) {
-						$new[3] = $org[1] + $min[1];
-					}
-				}
-
-				if ( 
-					$org[1] != $new[1] || $org[0] != $new[0] || 
-					$org[2] != $new[2] || $org[3] != $new[3]
-				) {
-					$self-> xorrect( @{$self-> {prevRect}});
-					$self-> {prevRect} = [$self-> owner-> client_to_screen( @new)];
-					$self-> xorrect( @{$self-> {prevRect}}, 1);
-				}
-				return;
-			} else {
-				return if !$self-> enabled;
-				my $part = $self-> xy2part( $x, $y);
-				$self-> pointer( $part =~ /^Size/ ? &{$cr::{$part}} : cr::Arrow);
+			if ( $VB::main-> {ini}-> {SnapToGrid}) {
+				$x -= ( $x - $self-> {spotX} + $og[0]) % 4;
+				$y -= ( $y - $self-> {spotY} + $og[1]) % 4;
 			}
+
+			if ( $VB::main-> {ini}-> {SnapToGuidelines}) {
+				my @sz = $self-> size;
+				my $xline = $VB::form-> {guidelineX} - $og[0];
+				my $yline = $VB::form-> {guidelineY} - $og[1];
+				if ( $xa != 0) {
+					$x = $xline + $self-> {spotX} 
+						if abs( $xline - $x + $self-> {spotX}) < 8;
+					$x = $xline + $self-> {spotX} - $sz[0] 
+						if abs( $xline - $x + $self-> {spotX} - $sz[0]) < 8;
+				}
+				if ( $ya != 0) {
+					$y = $yline + $self-> {spotY} 
+						if abs( $yline - $y + $self-> {spotY}) < 8;
+					$y = $yline + $self-> {spotY} - $sz[1] 
+						if abs( $yline - $y + $self-> {spotY} - $sz[1]) < 8;
+				}
+			}
+
+			if ( $xa < 0) {
+				$new[0] = $org[0] + $x - $self-> {spotX};
+				$new[0] = $org[2] - $min[0] if $new[0] > $org[2] - $min[0];
+			} elsif ( $xa > 0) {
+				$new[2] = $org[2] + $x - $self-> {spotX};
+				if ( $new[2] < $org[0] + $min[0]) {
+					$new[2] = $org[0] + $min[0];
+				}
+			}
+
+			if ( $ya < 0) {
+				$new[1] = $org[1] + $y - $self-> {spotY};
+				$new[1] = $org[3] - $min[1] if $new[1] > $org[3] - $min[1];
+			} elsif ( $ya > 0) {
+				$new[3] = $org[3] + $y - $self-> {spotY};
+				if ( $new[3] < $org[1] + $min[1]) {
+					$new[3] = $org[1] + $min[1];
+				}
+			}
+
+			if ( 
+				$org[1] != $new[1] || $org[0] != $new[0] || 
+				$org[2] != $new[2] || $org[3] != $new[3]
+			) {
+				$self-> xorrect( @{$self-> {prevRect}});
+				$self-> {prevRect} = [$self-> owner-> client_to_screen( @new)];
+				$self-> xorrect( @{$self-> {prevRect}}, 1);
+			}
+			return;
+		} else {
+			return if !$self-> enabled;
+			my $part = $self-> xy2part( $x, $y);
+			$self-> pointer( $part =~ /^Size/ ? &{$cr::{$part}} : cr::Arrow);
+		}
+	} 
+	
+	if ( $self-> {locked} and not $self-> marked) {
+		# propagate guideline selection
+		$x += $self-> left;
+		$y += $self-> bottom;
+		if ( abs( $VB::form-> {guidelineX} - $x) < 3) {
+			$self-> pointer(( abs( $VB::form-> {guidelineY} - $y) < 3) ? 
+				cr::Move : 
+				cr::SizeWE);
+		} elsif ( abs( $VB::form-> {guidelineY} - $y) < 3) {
+			$self-> pointer( cr::SizeNS);
+		} else {
+			$self-> pointer( cr::Arrow);
 		}
 	}
 }
-
 
 sub on_mouseup
 {
@@ -688,16 +734,24 @@ sub on_mouseup
 					@{$self-> {prevRect}}[0,1]
 				)
 			);
-			$self-> maintain_children_origin( @o);
 			if ( defined $self-> {extraRects}) {
+				# get all children, and do _not_ move them together with us
+				my @allchildren = ($self-> name);
+				my %allwidgets;
+				push @{$allwidgets{$_->prf('owner')}}, $_->name for $VB::form-> widgets;
+				for ( my $i = 0; $i < @allchildren; $i++) {
+					push @allchildren, @{$allwidgets{$allchildren[$i]}}
+						if $allwidgets{$allchildren[$i]};
+				}
+				my %allchildren = map { $_ => 1 } @allchildren;
+
 				my @org = $self-> owner-> client_to_screen( @{$self-> {sav}});
 				$org[0] = $self-> {prevRect}-> [0] - $org[0];
 				$org[1] = $self-> {prevRect}-> [1] - $org[1];
 				for my $wij ( @{$self-> {extraWidgets}}) {
-					next if $wij == $self;
+					next if $allchildren{$wij-> name};
 					my @o = $wij-> origin;
 					$wij-> origin( $o[0] + $org[0], $o[1] + $org[1]);
-					$wij-> maintain_children_origin( @o);
 				}
 			}
 			$VB::form-> text( $VB::form-> {saveHdr});
@@ -709,7 +763,6 @@ sub on_mouseup
 			@r = $self-> owner-> screen_to_client(@r);
 			my @o = $self-> origin;
 			$self-> rect( @r);
-			$self-> maintain_children_origin( @o);
 			$self-> pointer( cr::Default);
 			$self-> capture(0);
 			$self-> {sizeAction} = 0;
@@ -1097,8 +1150,8 @@ sub rerect
 	if (( $who eq 'width') || ( $who eq 'height') || ( $who eq 'right') || ( $who eq 'top')) {
 		$self-> prf_size( [ $self-> size]);
 	}
-	$self-> update_hint;
 	$self-> {syncRecting} = undef;
+	$self-> update_hint;
 }
 
 sub recolor
@@ -1115,10 +1168,12 @@ sub recolor
 sub on_move
 {
 	my ( $self, $ox, $oy, $x, $y) = @_;
-	return if $self-> {syncRecting};
-	$self-> {syncRecting} = $self;
-	$self-> prf_set( origin => [$x, $y]);
-	$self-> {syncRecting} = undef;
+	if ( $self-> {syncRecting}) {
+		$self-> {syncRecting} = $self;
+		$self-> prf_set( origin => [$x, $y]);
+		$self-> {syncRecting} = undef;
+	}
+	$self-> maintain_children_origin( $ox, $oy) if $self != $VB::form;
 }
 
 sub on_size
@@ -3574,8 +3629,6 @@ sub set
 	};
 	$traverse-> ( $_, $setData) for @$data;
 	undef $traverse;
-#print "set:";
-#print Dumper( $setData);
 	$self-> {B}-> items( $setData);
 	$self-> {sync} = 0;
 }
@@ -3642,8 +3695,6 @@ sub get
 	};
 	$traverse-> ( $_, $retData) for @{$self-> {B}-> items};
 	undef $traverse;
-#print "get:";
-#print Dumper( $retData);
 	return $retData;
 }
 
