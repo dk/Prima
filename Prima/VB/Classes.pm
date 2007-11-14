@@ -1164,7 +1164,7 @@ sub recolor
 sub on_move
 {
 	my ( $self, $ox, $oy, $x, $y) = @_;
-	if ( $self-> {syncRecting}) {
+	unless ( $self-> {syncRecting}) {
 		$self-> {syncRecting} = $self;
 		$self-> prf_set( origin => [$x, $y]);
 		$self-> {syncRecting} = undef;
