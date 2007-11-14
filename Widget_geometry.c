@@ -55,7 +55,6 @@ static void Widget_place_leave( Handle self);
               geomSize request size, uses virtualSize instead.
 
    pack and place - copy-pasted from Perl-Tk.  
-   Warning - all Tk positioning code is in Tk coordinates, meaning that Y axis descends
    
   */
 
@@ -619,7 +618,7 @@ Widget_pack_slaves( Handle self)
 		cavityHeight = 0;
 	    }
 	    frameX = cavityX;
-	    if (slavePtr-> geomInfo. side == TOP) {
+	    if (slavePtr-> geomInfo. side == BOTTOM) {
 		frameY = cavityY;
 		cavityY += frameHeight;
 	    } else {
@@ -676,13 +675,13 @@ Widget_pack_slaves( Handle self)
            break;
         }
 	switch (slavePtr-> geomInfo. anchory) {
-        case NORTH:
+        case SOUTH:
            y = frameY + borderY;
            break;
         case CENTER:
            y = frameY + (frameHeight - height)/2;
            break;
-        case SOUTH:
+        case NORTH:
            y = frameY + frameHeight - height - borderY;
            break;
         }
@@ -690,9 +689,9 @@ Widget_pack_slaves( Handle self)
         {
            Rect r;
            r. left   = x;
-           r. bottom = size. y - y - height;
+           r. bottom = y;
            r. right  = x + width;
-           r. top    = size. y - y;
+           r. top    = y + height;
 
            /* printf("%s: %d %d %d %d\n", slavePtr-> name, x, r.bottom, width, r.top); */
            slavePtr-> self-> set_rect(( Handle) slavePtr, r);
@@ -1147,21 +1146,21 @@ Widget_place_slaves( Handle self)
         }
 	switch (slavePtr-> anchory) {
         case NORTH:
+           y -= height;
            break;
         case CENTER:
 	   y -= height/2;
            break;
         case SOUTH:
-           y -= height;
            break;
         }
 
         {
            Rect r;
            r. left   = x;
-           r. bottom = size. y - y - height;
+           r. bottom = y;
            r. right  = x + width;
-           r. top    = size. y - y;
+           r. top    = y + height;
             
            /* printf("%s: %d %d %d %d\n", slave-> name, x, y, width, height); */
            slave-> self-> set_rect(( Handle) slave, r);
