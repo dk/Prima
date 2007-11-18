@@ -43,6 +43,7 @@ sub profile_default
 		image        => undef,
 		imageFile    => undef,
 		zoom         => 1,
+		zoomPrecision=> 100,
 		alignment    => ta::Left,
 		valignment   => ta::Bottom,
 		quality      => 1,
@@ -72,9 +73,10 @@ sub init
 		{ $self-> {$_} = 0; }
 	for ( qw( zoom integralScreen integralImage))
 		{ $self-> {$_} = 1; }
+	$self-> {zoomPrecision} = 10;
 	my %profile = $self-> SUPER::init(@_);
 	$self-> { imageFile}     = $profile{ imageFile};
-	for ( qw( image zoom alignment valignment quality)) {
+	for ( qw( image zoomPrecision zoom alignment valignment quality)) {
 		$self-> $_($profile{$_});
 	}
 	return %profile;
@@ -268,18 +270,31 @@ sub set_quality
 	$self-> repaint;
 }
 
+sub zoom_round
+{
+	my ( $self, $zoom) = @_;
+	$zoom = 100 if $zoom > 100;
+	$zoom = 0.01 if $zoom <= 0.01;
+
+	my $mul = $self-> {zoomPrecision};
+	my $dv = int( $mul * ( $zoom - int( $zoom)) + 0.5);
+	$dv-- if ($dv % 2) and ( $dv % 5);
+	return int($zoom) + $dv / $mul;
+}
+
 sub set_zoom
 {
 	my ( $self, $zoom) = @_;
 
 	$zoom = 100 if $zoom > 100;
-	$zoom = 0.02 if $zoom < 0.02;
+	$zoom = 0.01 if $zoom < 0.01;
 
-	my $dv = int( 100 * ( $zoom - int( $zoom)) + 0.5);
+	my $mul = $self-> {zoomPrecision};
+	my $dv = int( $mul * ( $zoom - int( $zoom)) + 0.5);
 	$dv-- if ($dv % 2) and ( $dv % 5);
-	$zoom = int($zoom) + $dv / 100;
-	$dv = 0 if $dv >= 100;
-	my ($r,$n,$m) = (1,100,$dv);
+	$zoom = int($zoom) + $dv / $mul;
+	$dv = 0 if $dv >= $mul;
+	my ($r,$n,$m) = (1,$mul,$dv);
 	while(1) {
 		$r = $m % $n;
 		last unless $r;
@@ -288,8 +303,8 @@ sub set_zoom
 	return if $zoom == $self-> {zoom};
 
 	$self-> {zoom} = $zoom;
-	$self-> {integralScreen} = int( 100 / $n) * int( $zoom) + int( $dv / $n);
-	$self-> {integralImage}  = int( 100 / $n);
+	$self-> {integralScreen} = int( $mul / $n) * int( $zoom) + int( $dv / $n);
+	$self-> {integralImage}  = int( $mul / $n);
 
 	return unless defined $self-> {image};
 	my ( $x, $y) = ($self-> {image}-> width, $self-> {image}-> height);
@@ -300,6 +315,17 @@ sub set_zoom
 	$self-> repaint;
 	$self-> {hScrollBar}-> set_steps( $zoom, $zoom * 10) if $self-> {hScroll};
 	$self-> {vScrollBar}-> set_steps( $zoom, $zoom * 10) if $self-> {vScroll};
+}
+
+sub set_zoom_precision
+{
+	my ( $self, $zp) = @_;
+
+	$zp = 10 if $zp < 10;
+	return if $zp == $self-> {zoomPrecision};
+
+	$self-> {zoomPrecision} = $zp;
+	$self-> zoom( $self-> {zoom});
 }
 
 sub screen2point
@@ -374,6 +400,7 @@ sub valignment   {($#_)?($_[0]-> set_valignment(    $_[1]))              :return
 sub image        {($#_)?$_[0]-> set_image($_[1]):return $_[0]-> {image} }
 sub imageFile    {($#_)?$_[0]-> set_image_file($_[1]):return $_[0]-> {imageFile}}
 sub zoom         {($#_)?$_[0]-> set_zoom($_[1]):return $_[0]-> {zoom}}
+sub zoomPrecision{($#_)?$_[0]-> set_zoom_precision($_[1]):return $_[0]-> {zoomPrecision}}
 sub quality      {($#_)?$_[0]-> set_quality($_[1]):return $_[0]-> {quality}}
 
 sub PreviewImage_HeaderReady
@@ -499,12 +526,40 @@ Default value: C<ta::Bottom>
 
 =item zoom FLOAT
 
-Selects zoom level for image display. The acceptable value range
-is between 0.02 and 100. The zoom value
-is rounded to fiftieth and twentieth fractional values - 
-.02, .04, .05, .06, .08, and 0.1 .
+Selects zoom level for image display. The acceptable value range is between
+0.01 and 100. The zoom value is rounded to the closest value divisible by
+1/C<zoomPrecision>. For example, is C<zoomPrecision> is 100, the zoom values
+will be rounded to the precision of hundredth - to fiftieth and twentieth
+fractional values - .02, .04, .05, .06, .08, and 0.1 . When C<zoomPrecision>
+is 1000, the precision is one thousandth, and so on.
 
 Default value: 1
+
+=item zoomPrecision INTEGER
+
+Zoom precision of C<zoom> property. Minimal acceptable value is 10,
+where zoom will be rounded to 0.2, 0.4, 0.5, 0.6, 0.8 and 1.0 .
+
+The reason behind this arithmetics is that when image of arbitrary zoom factor
+is requested to be displayed, the image sometimes must begin to be drawn from
+partial pixel - for example, 10x zoomed image shifted 3 pixels left, must be
+displayed so the first image pixel from the left occupies 3 screen pixels, and
+the next ones - 10 screen pixels.  That means, that the correct image display
+routine must ask the system to draw the image ot offset -7 screen pixels. In
+case of a large image, such negative offsets become large, and the system will
+behave ineffectively trying to access all image pixels in system memory,
+slowing the drawing significantly, or in the worst case, failing the request. A
+workaround is to pre-calculate the zoom factor so that whatever image offset is
+requested, the negative screen offset will be fixed, and will impose fixed
+penalty on the system image scaling routine. For example, the default
+C<zoomPrecision> value 100 means that for any given image offset, the screen
+offset will not exceed 100 pixels, and thus whatever the zoom factor is, the
+system will internally scale max. screen size / zoom factor + 100 pixels.
+
+These considerations make sense for zoom factors greater than one only, but are
+applied also to those less than one for the consistency sake.
+
+Default value: 100
 
 =back
 
@@ -550,6 +605,12 @@ Similar functionality is present in L<Prima::ImageDialog>.
 
 Stops monitoring of image loading progress. If CLEAR_IMAGE is 0, the leftovers of the
 incremental loading stay intact in C<image> propery. Otherwise, C<image> is set to C<undef>.
+
+=item zoom_round ZOOM
+
+Rounds the zoom factor to C<zoomPrecision> precision, returns
+the rounded zoom value. The algorithm is the same as used internally
+in C<zoom> property.
 
 =back
 
