@@ -6,7 +6,7 @@ Prima.dvi: Prima.tex
 	latex Prima.tex
 
 Prima.ps: Prima.dvi
-	dvips -o Prima.ps Prima.dvi
+	dvips -Ppdf -o Prima.ps Prima.dvi
 
 Prima.pdf: Prima.ps
 	ps2pdf -dAutoFilterColorImages=false -dColorImageFilter=/FlateEncode -dAutoFilterGrayImages=false -dGrayImageFilter=/FlateEncode Prima.ps
