@@ -342,7 +342,7 @@ typedef unsigned short Handle;
 #error "Cannot find adequate integer type"
 #endif
 typedef Handle ApiHandle;
-typedef long Color;
+typedef uint32_t Color;
 
 #include "Types.h"
 
@@ -2428,7 +2428,7 @@ apc_show_message( const char* message, Bool utf8);
 
 
 /* graphics constants */
-#define ARGB(r,g,b) ((long)(((unsigned char)(b)|((unsigned short)((unsigned char)(g))<<8))|(((unsigned long)(unsigned char)(r))<<16)))
+#define ARGB(r,g,b) ((uint32_t)(((unsigned char)(b)|((uint32_t)((unsigned char)(g))<<8))|(((uint32_t)((unsigned char)(r)))<<16)))
 
 /* colors */
 #define CL(const_name) CONSTANT(cl,const_name)
@@ -2467,37 +2467,37 @@ CL(Yellow)
 CL(White)
 #define    clGray             ARGB(128,128,128)
 CL(Gray)
-#define    clSysFlag          (unsigned long)(0x80000000)
+#define    clSysFlag          (uint32_t)(0x10000000)
 CL(SysFlag)
-#define    clSysMask          (unsigned long)(0x7FFFFFFF)
+#define    clSysMask          (uint32_t)(0xEFFFFFFF)
 CL(SysMask)
-#define    clInvalid          (unsigned long)(0x80000000)
+#define    clInvalid          (uint32_t)(0x10000000)
 CL(Invalid)
-#define    clNormalText       (unsigned long)(0x80000001)
+#define    clNormalText       (uint32_t)(0x10000001)
 CL(NormalText)
-#define    clFore             (unsigned long)(0x80000001)
+#define    clFore             (uint32_t)(0x10000001)
 CL(Fore)
-#define    clNormal           (unsigned long)(0x80000002)
+#define    clNormal           (uint32_t)(0x10000002)
 CL(Normal)
-#define    clBack             (unsigned long)(0x80000002)
+#define    clBack             (uint32_t)(0x10000002)
 CL(Back)
-#define    clHiliteText       (unsigned long)(0x80000003)
+#define    clHiliteText       (uint32_t)(0x10000003)
 CL(HiliteText)
-#define    clHilite           (unsigned long)(0x80000004)
+#define    clHilite           (uint32_t)(0x10000004)
 CL(Hilite)
-#define    clDisabledText     (unsigned long)(0x80000005)
+#define    clDisabledText     (uint32_t)(0x10000005)
 CL(DisabledText)
-#define    clDisabled         (unsigned long)(0x80000006)
+#define    clDisabled         (uint32_t)(0x10000006)
 CL(Disabled)
-#define    clLight3DColor     (unsigned long)(0x80000007)
+#define    clLight3DColor     (uint32_t)(0x10000007)
 CL(Light3DColor)
-#define    clDark3DColor      (unsigned long)(0x80000008)
+#define    clDark3DColor      (uint32_t)(0x10000008)
 CL(Dark3DColor)
-#define    clSet              (unsigned long)(0x80000009)
+#define    clSet              (uint32_t)(0x10000009)
 CL(Set)
-#define    clClear            (unsigned long)(0x8000000A)
+#define    clClear            (uint32_t)(0x1000000A)
 CL(Clear)
-#define    clMaxSysColor      (unsigned long)(0x8000000A)
+#define    clMaxSysColor      (uint32_t)(0x1000000A)
 CL(MaxSysColor)
 END_TABLE(cl,UV)
 #undef CL
