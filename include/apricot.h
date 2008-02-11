@@ -342,7 +342,6 @@ typedef unsigned short Handle;
 #error "Cannot find adequate integer type"
 #endif
 typedef Handle ApiHandle;
-typedef uint32_t Color;
 
 #include "Types.h"
 
@@ -386,6 +385,7 @@ typedef unsigned long uint64_t;
 #endif
 #endif
 
+typedef uint32_t        Color;
 
 typedef uint8_t         Byte;
 typedef int16_t         Short;
