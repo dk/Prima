@@ -174,8 +174,7 @@ sub draw_items
 }
 
 sub on_measureitem {
-	my ($self, $index, $result) = @_;
-	my ($node,$level) = $self->get_item($index);
+	my ($self, $node, $level, $result) = @_;
 	my $c = $self->{mainColumn};
 	my $txt = defined($node->[0]->[$c]) ? $node->[0]->[$c] : '';
 	$$result = $self->get_text_width($txt);
@@ -207,9 +206,9 @@ sub recalc_widths {
 	my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureItem));
 	$self-> push_event;
 	$self-> begin_paint_info;
-	while (my @dummy = $self->get_item($i)) {
+	while (my ($node, $lev) = $self->get_item($i)) {
 		my $iw = 0;
-		$notifier->( @notifyParms, $i, \$iw);
+		$notifier->( @notifyParms, $node, $lev, \$iw);
 		$maxWidth = $iw if $maxWidth < $iw;
 		push ( @w, $iw);
 		$i++;

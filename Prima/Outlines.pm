@@ -948,7 +948,7 @@ sub reset_tree
 		my ( $current, $parent, $index, $position, $level, $visibility) = @_;
 		my $iw = $fullc ? undef : $current-> [WIDTH];
 		unless ( defined $iw) {
-			$notifier-> ( @notifyParms, $current, \$iw);
+			$notifier-> ( @notifyParms, $current, $level, \$iw);
 			$current-> [WIDTH] = $iw;
 		}
 		my $iwc = $iw + ( 2.5 + $level) * $indent;
@@ -1392,7 +1392,7 @@ sub on_drawitem
 
 sub on_measureitem
 {
-#	my ( $self, $node, $result) = @_;
+#	my ( $self, $node, $level, $result) = @_;
 }
 
 sub on_stringify
@@ -1619,7 +1619,7 @@ sub draw_items
 
 sub on_measureitem
 {
-	my ( $self, $node, $result) = @_;
+	my ( $self, $node, $level, $result) = @_;
 	$$result = $self-> get_text_width( $node-> [0]);
 }
 
@@ -1654,7 +1654,7 @@ sub draw_items
 
 sub on_measureitem
 {
-	my ( $self, $node, $result) = @_;
+	my ( $self, $node, $level, $result) = @_;
 	$$result = $self-> get_text_width( $node-> [0]-> [0]);
 }
 
@@ -1821,7 +1821,7 @@ sub on_fontchanged
 
 sub on_measureitem
 {
-	my ( $self, $node, $result) = @_;
+	my ( $self, $node, $level, $result) = @_;
 	my $tw = $self-> get_text_width( $node-> [0]-> [0]) + $self-> {indent} / 4;
 
 	unless ( length $node-> [0]-> [1]) { #i.e. root
@@ -2447,11 +2447,11 @@ CANVAS. X1, Y1, X2, Y2 coordinated define the exterior rectangle
 of the item in widget coordinates. SELECTED and FOCUSED boolean flags are set to
 1 if the item is selected or focused, respectively; 0 otherwise.
 
-=item MeasureItem NODE, REF
+=item MeasureItem NODE, LEVEL, REF
 
-Puts width of NODE item in pixels into REF
-scalar reference. This notification must be called 
-from within C<begin_paint_info/end_paint_info> block.
+Puts width of NODE item in pixels into REF scalar reference. LEVEL is the node 
+depth as returned by C<get_item> for the reference. This notification
+must be called from within C<begin_paint_info/end_paint_info> block.
 
 =item SelectItem [[INDEX, ITEM, SELECTED], [INDEX, ITEM, SELECTED], ...]
 
