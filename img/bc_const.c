@@ -313,6 +313,33 @@ cm_study_palette( RGBColor * palette, int pal_size)
    return p;
 }
 
+static int
+sort_palette( const void * a, const void * b)
+{
+   register unsigned int A = 
+      ((PRGBColor)a)->r +
+      ((PRGBColor)a)->g +
+      ((PRGBColor)a)->b
+   ;
+   register unsigned int B = 
+      ((PRGBColor)b)->r +
+      ((PRGBColor)b)->g +
+      ((PRGBColor)b)->b
+   ;
+   if ( A < B) 
+      return -1;
+   else if ( A > B)
+      return 1;
+   else
+      return 0;
+}
+
+void
+cm_sort_palette( RGBColor * palette, int size)
+{
+   qsort( palette, size, sizeof(RGBColor), sort_palette);
+}
+
 #define MAP1_SIDE  32
 #define MAP1_SHIFT  3
 #define MAP1_SIDE3 (MAP1_SIDE*MAP1_SIDE*MAP1_SIDE)
@@ -361,6 +388,7 @@ REPEAT_CALC:
       }
       NO_MEMORY:
       {
+         int delta = (1 << shift) - 1;
          RGBColor * big_pal = malloc( count * sizeof(RGBColor));
          if ( !big_pal) {
             free( map);
@@ -371,12 +399,13 @@ REPEAT_CALC:
                big_pal[j]. r = (i / ( side * side)) << shift;
                big_pal[j]. g = ((i / side) % side ) << shift;
                big_pal[j]. b = (i % side) << shift;
-	       if ( big_pal[j]. r > 127) big_pal[j]. r += side - 1;
-	       if ( big_pal[j]. g > 127) big_pal[j]. g += side - 1;
-	       if ( big_pal[j]. b > 127) big_pal[j]. b += side - 1;
+	       if ( big_pal[j]. r > 127) big_pal[j]. r += delta;
+	       if ( big_pal[j]. g > 127) big_pal[j]. g += delta;
+	       if ( big_pal[j]. b > 127) big_pal[j]. b += delta;
                j++;
             }
          cm_squeeze_palette( big_pal, j, palette, *max_pal_size);
+	 cm_sort_palette( palette, *max_pal_size);
          free( big_pal);
          free( map);
          return true;
@@ -481,6 +510,9 @@ REPEAT_CALC:
                   big_pal[count]. r = r + ((j / ( 4 * 4)) << 1);
                   big_pal[count]. g = g + (((j / 4) % 4) << 1);
                   big_pal[count]. b = b + ((j % 4) << 1);
+	          if ( big_pal[count]. r > 127) big_pal[count]. r ++;
+	          if ( big_pal[count]. g > 127) big_pal[count]. g ++;
+	          if ( big_pal[count]. b > 127) big_pal[count]. b ++;
                   count++;
                }
             }
@@ -491,6 +523,9 @@ REPEAT_CALC:
                   big_pal[count]. r = r + ((j / ( 2 * 2)) << 2);
                   big_pal[count]. g = g + (((j / 2) % 2) << 2);
                   big_pal[count]. b = b + ((j % 2) << 2);
+	          if ( big_pal[count]. r > 127) big_pal[count]. r += 3;
+	          if ( big_pal[count]. g > 127) big_pal[count]. g += 3;
+	          if ( big_pal[count]. b > 127) big_pal[count]. b += 3;
                   count++;
                }
                k += 7;
@@ -506,6 +541,7 @@ REPEAT_CALC:
    free( map);
    free( map2);
    *max_pal_size = count;
+   cm_sort_palette( palette, count);
    return true;
 }
 
