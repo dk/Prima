@@ -722,7 +722,7 @@ sub init
 	$self-> {colors} = $profile{colors};
 	@{$profile{listDelegations}} = grep { $_ ne 'SelectItem' } @{$profile{listDelegations}};
 	push ( @{$profile{listDelegations}}, qw(Create Paint MouseDown));
-	push ( @{$profile{editDelegations}}, qw(Paint MouseDown Enter Leave KeyDown));
+	push ( @{$profile{editDelegations}}, qw(Paint MouseDown Enter Leave Enable Disable KeyDown));
 	%profile = $self-> SUPER::init(%profile);
 	$self-> colors( $profile{colors});
 	$self-> value( $profile{value});
@@ -749,6 +749,7 @@ sub InputLine_Paint
 	$canvas-> rectangle( 1, 1, $w - 2, $h - 2);
 	$canvas-> rectangle( 2, 2, $w - 3, $h - 3);
 	$canvas-> color( $clr);
+	$canvas-> fillPattern([(0xEE, 0xBB) x 4]) unless $self-> enabled;
 	$canvas-> bar( 3, 3, $w - 4, $h - 4);
 	$canvas-> rect_focus(2, 2, $w - 3, $h - 3) if $focused;
 }
@@ -766,9 +767,16 @@ sub InputLine_MouseDown
 	$self-> clear_event;
 }
 
-sub InputLine_Enter { $_[1]-> repaint; }
+sub InputLine_Enable  { $_[1]-> repaint };
+sub InputLine_Disable { $_[1]-> repaint };
+sub InputLine_Enter   { $_[1]-> repaint; }
 
-sub InputLine_Leave { $_[0]-> listVisible(0) if $Prima::ComboBox::capture_mode }
+sub InputLine_Leave
+{
+	$_[0]-> listVisible(0) if $Prima::ComboBox::capture_mode;
+	$_[1]-> repaint;
+}
+
 
 sub InputLine_MouseWheel
 {

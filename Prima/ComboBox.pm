@@ -109,7 +109,7 @@ sub profile_default
 		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown)],
 		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave MouseWheel)],
 		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick 
-			MouseUp MouseMove Paint)],
+			MouseUp MouseMove Paint Enable Disable)],
 	}
 }
 
@@ -323,6 +323,9 @@ sub Button_Paint
 	$canvas-> color( $clr[0]);
 	$canvas-> fillpoly([ 4, $h * 0.6, $w - 5, $h * 0.6, $w/2, $h * 0.4]);
 }
+
+sub Button_Enable  { $_[1]-> repaint }
+sub Button_Disable { $_[1]-> repaint }
 
 sub InputLine_Leave
 {
