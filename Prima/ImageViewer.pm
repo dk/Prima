@@ -417,8 +417,8 @@ sub PreviewImage_HeaderReady
 sub PreviewImage_DataReady
 { 
 	my ( $self, $image, $x, $y, $w, $h) = @_;
-	$self-> image-> put_image( $x, $y, $image-> extract( $x, $y, $w, $h));
-	$self-> invalidate_rect( $self-> point2screen( $x, $y, $x + $w, $y + $h));
+	$self-> image-> put_image_indirect( $image, $x, $y, $x, $y, $w, $h, $w, $h, rop::CopyPut);
+	$self-> invalidate_rect( $self-> point2screen( $x, $y, $x + $w - 1, $y + $h - 1));
 	$self-> update_view;
 }
 
@@ -590,14 +590,14 @@ The reverse function is C<screen2point>.
 
 =item watch_load_progress IMAGE
 
-When called, image viewer watches as the IMAGE is loaded ( see L<Prima::Image/load> )
-and displays the progress. As soon IMAGE begins to load, it replaces the existing C<image>
+When called, image viewer watches as IMAGE is being loaded ( see L<Prima::Image/load> )
+and displays the progress. As soon as IMAGE begins to load, it replaces the existing C<image>
 property. Example:
 
     $i = Prima::Image-> new;
     $viewer-> watch_load_progress( $i);
     $i-> load('huge.jpg');
-    $viewer-> unwatch_load_progress( $i);
+    $viewer-> unwatch_load_progress;
 
 Similar functionality is present in L<Prima::ImageDialog>.
 
