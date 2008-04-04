@@ -841,6 +841,11 @@ sub on_mousemove
 		return;
 	}
 
+	if ( $VB::main-> {ini}-> {SnapToGrid}) {
+		$x -= $x % 4;
+		$y -= $y % 4;
+	}
+
 	if ( $self-> {transaction} == 2) {
 		$self-> {guidelineX} = $x;
 		$self-> text( $x);
