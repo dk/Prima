@@ -70,6 +70,7 @@ prima_gtk_init(void)
 	r = gtk_init_check( &argc, NULL);
 
 	if ( r == gtk_true()) {
+		XSetErrorHandler( guts. main_error_handler);
 		gtk_initialized = 1;
 		return true;
 	} else {
