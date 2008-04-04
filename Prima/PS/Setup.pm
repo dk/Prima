@@ -104,7 +104,7 @@ sub sdlg_exec
 		eval "use Prima::VB::VBLoader"; die "$@\n" if $@;
 		eval "use Prima::MsgBox"; die "$@\n" if $@;
 		$self-> {setupDlg} = Prima::VBLoad( 'Prima::PS::setup.fm', 
-		'Form1'     => { visible => 0, centered => 1},
+		'Form1'     => { visible => 0, centered => 1, designScale => [ 9, 16 ]},
 		'PaperSize' => { items => [ sort keys %pageSizes ], },
 		'OK'        => {
 			onClick => sub { 
