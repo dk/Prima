@@ -537,27 +537,51 @@ Default value: 1
 
 =item zoomPrecision INTEGER
 
-Zoom precision of C<zoom> property. Minimal acceptable value is 10,
-where zoom will be rounded to 0.2, 0.4, 0.5, 0.6, 0.8 and 1.0 .
+Zoom precision of C<zoom> property. Minimal acceptable value is 10, where zoom
+will be rounded to 0.2, 0.4, 0.5, 0.6, 0.8 and 1.0 .
 
 The reason behind this arithmetics is that when image of arbitrary zoom factor
 is requested to be displayed, the image sometimes must begin to be drawn from
 partial pixel - for example, 10x zoomed image shifted 3 pixels left, must be
-displayed so the first image pixel from the left occupies 3 screen pixels, and
+displayed so the first image pixel from the left occupies 7 screen pixels, and
 the next ones - 10 screen pixels.  That means, that the correct image display
-routine must ask the system to draw the image ot offset -7 screen pixels. In
-case of a large image, such negative offsets become large, and the system will
-behave ineffectively trying to access all image pixels in system memory,
-slowing the drawing significantly, or in the worst case, failing the request. A
-workaround is to pre-calculate the zoom factor so that whatever image offset is
-requested, the negative screen offset will be fixed, and will impose fixed
-penalty on the system image scaling routine. For example, the default
-C<zoomPrecision> value 100 means that for any given image offset, the screen
-offset will not exceed 100 pixels, and thus whatever the zoom factor is, the
-system will internally scale max. screen size / zoom factor + 100 pixels.
+routine must ask the system to draw the image at offset -3 screen pixels, where
+the first pixel column would correspond to that pixel.
 
-These considerations make sense for zoom factors greater than one only, but are
-applied also to those less than one for the consistency sake.
+When zoom factor is fractional, the picture is getting more complex. For
+example, with zoom factor 12.345, and zero screen offset, first image pixel
+begins at 12th screen pixel, the next - 25th ( because of the roundoff ), then
+37th etc etc. Also, for example the image is 2000x2000 pixels wide, and is
+asked to be drawn so that the image appears shifted 499 screen image pixels
+left, beginning to be drawn from ~ 499/12.3456=40.42122 image pixel. Is might
+seems that indeed it would be enough to ask system to begin drawing from image
+pixel 40, and offset int(0.42122*12.345)=5 screen pixels to the left, however,
+that procedure will not account for the correct fixed point roundoff that
+accumulates as system scales the image. For zoom factor 12.345 this roundoff
+sequence is, as we seen before, (12,25,37,49,62,74,86,99,111,123) for first 10
+pixels displayed, that occupy (12,13,12,12,13,12,12,13,12,12) screen pixels.
+For pixels starting at 499, this sequence is
+(506,519,531,543,556,568,580,593,605,617) offsets or
+(13,12,12,13,13,12,12,13,12,12) widths -- note the two subsequent 13s there.
+This sequence begins to repeat itself after 200 iterations
+(12.345*200=2469.000), which means that in order to achieve correct display
+results, the image must be asked to be displayed from image pixel 0 if image's
+first pixel on the screen is between 0 and 199 ( or for screen pixels 0-2468),
+from image pixel 200 for offsets 200-399, ( screen pixels 2469-4937), and so
+on.
+
+Since system internally allocate memory for image scaling, that means that up
+to 2*200*min(window_width,imtage_width)*bytes_per_pixel unneccessary bytes will
+be allocated for each image drawing call (2 because the calculations are valid
+for both the vertical and horizontal strips), and this can lead to slowdown or
+even request failure when image or window dimensions are large. The proposed
+solution is to roundoff accepted zoom factors, so these offsets are kept small
+- for example, N.25 zoom factors require only max 1/.25=4 extra pixels. When
+C<zoomPrecision> value is 100, zoom factors are rounded to 0.X2, 0.X4, 0.X5,
+0.X6, 0.X8, 0.X0, thus requiring max 50 extra pixels.
+
+NB. If, despite the efforts, the property gets in the way, increase it to
+1000 or even 10000, but note that this may lead to problems.
 
 Default value: 100
 
