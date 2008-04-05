@@ -57,6 +57,9 @@
 #  if XFT_MAJOR > 1 && FC_MAJOR > 1
 #     define USE_XFT
 #  endif
+#  if XFT_VERSION < 20112
+#     define NEED_X11_EXTENSIONS_XRENDER_H
+#  endif
 #endif
 #undef Font
 #undef Drawable

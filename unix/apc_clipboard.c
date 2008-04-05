@@ -413,7 +413,7 @@ read_property( Atom property, Atom * type, int * format,
 
       if ( new_size > 0) {
          if ( !( a1 = realloc( *data, big_offs + offs * 4 + new_size))) {
-            warn("Not enough memory: %d bytes\n", offs * 4 + new_size);
+            warn("Not enough memory: %ld bytes\n", offs * 4 + new_size);
             XDeleteProperty( DISP, WIN, property);
             XFree( prop);
             return ret;

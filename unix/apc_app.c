@@ -81,11 +81,13 @@ x_error_handler( Display *d, XErrorEvent *ev)
       return 0;
    }
 
+#ifdef NEED_X11_EXTENSIONS_XRENDER_H
    if ( ev-> request_code == guts. xft_xrender_major_opcode &&
         ev-> request_code > 127 && 
         ev-> error_code == BadLength)
       /* Xrender large polygon request failed */ 
       guts. xft_disable_large_fonts = 1;
+#endif
 
    XGetErrorText( d, ev-> error_code, buf, BUFSIZ);
    XGetErrorDatabaseText( d, name, "XError", "X Error", mesg, BUFSIZ);
