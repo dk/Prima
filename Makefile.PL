@@ -1262,6 +1262,9 @@ EOF
 		}
 
 		if ( $WITH_GTK2) {
+			my @saveinc = @INCPATH;
+			my @savelib = @LIBS;
+
 			my $inc = `pkg-config --cflags-only-I gtk+-2.0`;
 			chomp $inc;
 			my %inc = map { $_ => 1 } @INCPATH;
@@ -1272,7 +1275,19 @@ EOF
 			my %lib = map { $_ => 1 } @LIBS;
 			push @LIBS, $_ for grep { not exists $lib{$_}} $lib =~ /-l(\S+)/g;
 
-			$DEFINES{WITH_GTK2} = 1;
+			# now, try to compile with GTK. I've got lots of CPAN build failures
+			# because GTK wasn't willing to compile or god knows what.
+			print "Checking if can compile and link with gtk2... ";
+			my $ok = compile( "#include <gtk/gtk.h>\nint main() { return 0; }\n");
+			if ( $ok) {
+				$DEFINES{WITH_GTK2} = 1;
+				print "yes\n";
+			} else {
+				$WITH_GTK2 = 0;
+				@LIBS     = @savelib;
+				@INCPATH  = @saveinc;
+				print "no\n";
+			}
 		}
 	}
 	
