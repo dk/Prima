@@ -100,6 +100,7 @@ sub init
 		growMode   => gm::GrowLoX | gm::GrowLoY,
 		hScroll    => 0,
 		vScroll    => 0,
+		zoomPrecision => 1000,
 	);
 	$pk-> size(($self-> Cancel-> width) x 2); # force square dimension
 
