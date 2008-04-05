@@ -48,7 +48,7 @@ use Cwd;
 use DynaLoader;
 use Prima::Gencls;
 use ExtUtils::Packlist;
-use vars qw( %make_trans @ovvars @path_expand_ovvars $dir_sep $path_sep );
+use vars qw( %make_trans @ovvars @path_expand_ovvars $dir_sep $path_sep @no_compat );
 use vars @ovvars = qw(
 	$CC $CFLAGS $CCFLAGS $CCCDLFLAGS $CDLFLAGS $C_FLAGS $CDEBUGFLAGS $CDLFLAGS $COUTOFLAG $COUTEXEFLAG $CINCPATHFLAG
 	$CDEFFLAG $COMPONLYFLAG $CLIBPATHFLAG $CLINKPREFIX
@@ -57,7 +57,8 @@ use vars @ovvars = qw(
 	$OBJ_EXT $LIB_EXT $LIB_PREFIX $EXE_EXT $DL_EXT $SCRIPT_EXT
 	@INCPATH
 	@LIBPATH
-	@LIBS
+	$LIBS
+	$INC
 	$PLATFORM
 	$COMPILER
 	$PREFIX
@@ -93,7 +94,8 @@ use vars @ovvars = qw(
 use vars @path_expand_ovvars = qw(
 	@INCPATH
 	@LIBPATH
-	@LIBS
+	$INC
+	$LIBS
 	$COMPILER
 	$PREFIX
 	$X11BASE
@@ -111,6 +113,17 @@ use vars @path_expand_ovvars = qw(
 	$DEFFILE
 );
 
+@no_compat = qw(
+	 SITELIBEXP     INSTALLDIRS
+         PERLPREFIX     SITEPREFIX      VENDORPREFIX
+         INST_ARCHLIB                   INSTALLARCHLIB  INSTALLVENDORARCH
+         INST_LIB       INSTALLPRIVLIB  INSTALLSITELIB      INSTALLVENDORLIB
+         INST_BIN       INSTALLBIN      INSTALLSITEBIN      INSTALLVENDORBIN
+         INST_SCRIPT                    INSTALLSITESCRIPT   INSTALLVENDORSCRIPT
+         INST_MAN1DIR   INSTALLMAN1DIR  INSTALLSITEMAN1DIR  INSTALLVENDORMAN1DIR
+         INST_MAN3DIR   INSTALLMAN3DIR  INSTALLSITEMAN3DIR  INSTALLVENDORMAN3DIR
+);
+
 use vars qw(
 	$CWD
 	$Win32
@@ -121,6 +134,7 @@ use vars qw(
 	$usePrigraph
 	$useGC
 	%cc_specs
+	@LIBS
 	%DEFINES
 	%PASSIVE_CODECS
 	@ACTIVE_CODECS
@@ -551,7 +565,7 @@ sub setvar
 	}
 	elsif ( $overrideable{ $varname} eq '@') {
 		if ( defined $USER_VARS{ $varname}) {
-			eval "\@$varname = \$USER_VARS{ \$varname}";
+			eval "\@$varname = \@{\$USER_VARS{ \$varname}}";
 		}
 		else {
 			eval "\@$varname = \@_";
@@ -835,15 +849,28 @@ sub setup_variables
 	setvar( 'SCRIPT_EXT',
 				(( $Win32 && !$cygwin) ? '.bat' : ( $OS2 ? '.cmd' : '')));
 	setvar( 'DL_EXT', "." . $Config{ dlext});
+	setvar( 'INC', ''); # compat mode INC
 	setvar( 'INCPATH', (
 		"include",
 		qd( "include/generic"),
 		$Config{installarchlib} . qd( "/CORE"),
+		( map { s/-I//; $_ } split ' ', $INC)
 	));
 	my @libpaths = quoted_split( $Config{ libpth});
 	push( @libpaths, '/usr/local/lib') if $platform eq 'unix';  # or perl makefile.pl LIBPATH+=/usr/local/lib
 	setvar( 'LIBPATH', @libpaths);
 	my @libs = map { s/^$LDLIBFLAG//; $_} quoted_split($Config{ libs});
+	# compat mode LIBS
+	setvar( 'LIBS', '');
+	for ( split ' ', $LIBS) {
+		if ( /^-l(.*)/) {
+			push @libs, $1;
+		} elsif ( /^-L(.*)/) {
+			push @LIBPATH, $1;
+		} else {
+			$LDFLAGS .= " $_";
+		}
+	}
 	#    push ( @libs, 'pmprintf') if $OS2 && defined $ENV{PRIMA_PMPRINTF};
 	#    push ( @libs, ( $Win32 || $OS2) ? 'prigraph.lib' : 'prigraph') if $usePrigraph;
 	if ( $useGC) {
@@ -852,7 +879,6 @@ sub setup_variables
 	if ( $COMPILER eq 'gcc') {
 		push @libs, 'gcc';
 	}
-	setvar( 'LIBS', ());
 	my @flibs;
 	
 	if ( $Win32 && $COMPILER eq 'gcc') {
@@ -873,7 +899,7 @@ sub setup_variables
 		}
 	}
 
-	setvar( 'LIBS', @flibs);
+	@LIBS = @flibs;
 	%DEFINES = (
 		PERL_PATCHLEVEL => $Config{ PATCHLEVEL},
 		PERL_SUBVERSION => $Config{ SUBVERSION},
@@ -1551,10 +1577,15 @@ sub process_commandline
 {
 	%overrideable = map { /^(.)(.*)$/; $2 => $1} @ovvars; # Script variables which may be overridden.
 	my %expand = map { /^.(.*)$/; $1 => 1 } @path_expand_ovvars;
+	my %no_compat = map { $_ => 1 } @no_compat;
 	$ARGV_STR = join( " ", map { "\"$_\""} @ARGV);
 	foreach my $arg ( @ARGV) {
 		if ( $arg =~ /^\s*(\w+)\s*(\+?)\=(.*)$/) {
 			my ( $varname, $setmode, $varval) = ( $1, $2 || '', $3);
+			if ( $no_compat{ $varname}) {
+				print "Variable $varname is not supported. Expect wrong behavior\n";
+				next;
+			}
 			die "Unknown variable $varname" unless $overrideable{ $varname};
 			$varval =~ s/~/$ENV{HOME}/g if $expand{ $varname};
 			if ( $overrideable{ $varname} eq '$') {
@@ -1573,7 +1604,7 @@ sub process_commandline
 				if ( $setmode eq '+') {
 					push @{ $USER_VARS_ADDONS{ $varname}}, @values;
 				} else {
-					$USER_VARS{ $varname} = @values;
+					$USER_VARS{ $varname} = \@values;
 				}
 				die $@ if $@;
 			}
