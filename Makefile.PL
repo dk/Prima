@@ -64,6 +64,7 @@ use vars @ovvars = qw(
 	$X11BASE
 	$INSTALLSCRIPT
 	$INSTALLSITEARCH
+	$INSTALL_BASE
 	$INSTALL_LIB
 	$INSTALL_DL
 	$INSTALL_EXAMPLES
@@ -98,6 +99,7 @@ use vars @path_expand_ovvars = qw(
 	$X11BASE
 	$INSTALLSCRIPT
 	$INSTALLSITEARCH
+	$INSTALL_BASE
 	$INSTALL_LIB
 	$INSTALL_DL
 	$INSTALL_EXAMPLES
@@ -910,6 +912,7 @@ sub setup_variables
 		$i++;
 	}
 	my $prefix = qd(($i ? join( '/', @a[0..$i-1]) : ''));
+	$USER_VARS{PREFIX} ||= $USER_VARS{INSTALL_BASE} if exists $USER_VARS{INSTALL_BASE};
 	setvar( 'PREFIX',           $prefix);
 	setvar( 'INSTALLSCRIPT',    $PREFIX . qd( '/' . join( '/', @a[$i .. $#a])));
 	setvar( 'INSTALLSITEARCH',  $PREFIX . qd( '/' . join( '/', @b[$i .. $#b])));
