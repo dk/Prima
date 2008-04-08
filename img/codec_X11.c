@@ -230,9 +230,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
          break;
       }   
       xc++;
-   }  
-
-   name[1024] = 0;
+   } 
    
    myprintf( fi-> req, "#define %s_width %d\n", name, i-> w);
    myprintf( fi-> req, "#define %s_height %d\n", name, i-> h);
