@@ -1371,6 +1371,7 @@ Image_map( Handle self, Color color)
          rop[i] = ropCopyPut;
          break;
       case ropNoOper:
+         r[i]. r = r[i]. g = r[i]. b = 0;
          break;   
       default: {   
          Color c = i ? my-> get_backColor( self) : my-> get_color( self);
@@ -1380,8 +1381,7 @@ Image_map( Handle self, Color color)
       }} 
                
       if (( type & imBPP) <= 8) {
-         b[0] = cm_nearest_color( r[0], var-> palSize, var-> palette);
-         b[1] = cm_nearest_color( r[1], var-> palSize, var-> palette);
+         b[i] = cm_nearest_color( r[i], var-> palSize, var-> palette);
       }
       
       switch ( rop[i]) {
@@ -1402,7 +1402,6 @@ Image_map( Handle self, Color color)
 	 b[i]    = ~ b[i];
       }
    }         
-
 
    c. r = ( color >> 16) & 0xff;
    c. g = ( color >> 8) & 0xff;
