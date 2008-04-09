@@ -1174,8 +1174,8 @@ sub on_paint
 		$self-> color( $self-> disabledColor);
 		$self-> backColor( $self-> disabledBackColor);
 	}
-	my ( $bw, $r, $c, $o, $t, $dv, $dh, $dx, $dy) = (
-		$self-> {borderWidth}, $self-> {rows}, $self-> {columns},
+	my ( $r, $c, $o, $t, $dv, $dh, $dx, $dy) = (
+		$self-> {rows}, $self-> {columns},
 		$self-> {leftCell}, $self-> {topCell}, $self-> {drawVGrid}, $self-> {drawHGrid},
 		$self-> {dx}, $self-> {dy},
 	);
@@ -1183,10 +1183,7 @@ sub on_paint
 	my ($i,$j);
 	my @px = @{$self-> {pixelCellIndents}};
 	my @clipRect = $canvas-> clipRect;
-	$canvas-> rect3d( 
-		0, 0, $size[0]-1, $size[1]-1, $bw, 
-		$self-> dark3DColor, $self-> light3DColor
-	);
+	$self-> draw_border( $canvas, undef, @size);
 	$canvas-> clipRect( @a);
 	if ( $self-> {visibleCols} <= 0 || $self-> {visibleRows} <= 0) {
 		$canvas-> clear( @a);

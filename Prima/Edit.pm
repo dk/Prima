@@ -549,10 +549,7 @@ sub on_paint
 		$canvas-> clipRect( $a[0], $a[1], $a[2] - 1, $a[3] - 1);
 		$canvas-> bar( 0, 0, @size);
 	} else {
-		$canvas-> rect3d( 
-			0, 0, $size[0]-1, $size[1]-1, $bw, 
-			$self-> dark3DColor, $self-> light3DColor, $clr[1]
-		);
+		$self-> draw_border( $canvas, $clr[1], @size);
 		# $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
 		$canvas-> clipRect( $a[0], $a[1], $a[2] - 1, $a[3] - 1);
 	}

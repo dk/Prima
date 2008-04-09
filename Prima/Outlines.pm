@@ -271,8 +271,8 @@ sub on_paint
 	my @clr    = $self-> enabled ?
 	( $self-> color, $self-> backColor) :
 	( $self-> disabledColor, $self-> disabledBackColor);
-	my ( $bw, $ih, $iw, $indent, $foc, @a) = (
-		$self-> { borderWidth}, $self-> { itemHeight}, $self-> { maxWidth},
+	my ( $ih, $iw, $indent, $foc, @a) = (
+		$self-> { itemHeight}, $self-> { maxWidth},
 		$self-> {indent}, $self-> {focusedItem}, $self-> get_active_area( 1, @size));
 	my $i;
 	my $j;
@@ -288,10 +288,7 @@ sub on_paint
 		$canvas-> color( $clr[1]);
 		$canvas-> bar( 0, 0, @size);
 	} else {
-		$canvas-> rect3d( 
-			0, 0, $size[0]-1, $size[1]-1, $bw, 
-			$self-> dark3DColor, $self-> light3DColor, $clr[1]
-		);
+		$self-> draw_border( $canvas, $clr[1], @size);
 		$canvas-> clipRect( @a);
 	}
 

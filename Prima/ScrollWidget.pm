@@ -374,10 +374,7 @@ sub update_geom_size
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
-	my @size = $self-> size;
-	$canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, 
-		$self-> borderWidth, $self-> dark3DColor, $self-> light3DColor,
-		$self-> backColor);
+	$self-> draw_border( $canvas, $self-> backColor, $self-> size );
 }
 
 sub on_size

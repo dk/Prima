@@ -925,15 +925,8 @@ sub UpdateTimer_Tick {
 
 #\subsection{on\_paint}
 sub on_paint {
-	my ( $self, $drawDst) = @_;
-
-	return if $self != $drawDst;
-
-	#$self->color( cl::Green);
-	#$self->bar( $self->clipRect);
-
-	$self-> rect3d( 0, 0, $self-> right - 1, $self-> top - 1, $self-> { borderWidth},
-		cl::Dark3DColor, cl::Light3DColor);
+	my ( $self, $canvas) = @_;
+	$self-> draw_border( $canvas, $self-> backColor, $self-> size );
 }
 
 #\subsection{on\_postmessage}
