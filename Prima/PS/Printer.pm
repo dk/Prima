@@ -79,7 +79,7 @@ $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix;
 
 use constant lpr  => 0;
 use constant file => 1;
-use constant exec => 2;
+use constant cmd  => 2;
 
 
 sub profile_default
@@ -145,7 +145,7 @@ sub init
 		if ( $unix) {
 			$self-> import_printers( 'printers', '/etc/printcap');
 			$self-> {printers}-> {GhostView} = deepcopy( $self-> {defaultData});
-			$self-> {printers}-> {GhostView}-> {spoolerType} = exec;
+			$self-> {printers}-> {GhostView}-> {spoolerType} = cmd;
 			$self-> {printers}-> {GhostView}-> {spoolerData} = 'gv -';
 		}
 		$self-> {printers}-> {File} = deepcopy( $self-> {defaultData});
@@ -628,7 +628,7 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
-	$self-> {data}-> {spoolerType} = Prima::PS::Printer::exec;
+	$self-> {data}-> {spoolerType} = Prima::PS::Printer::cmd;
 	$self-> {data}-> {spoolerData} = $profile{command};
 }
 
