@@ -270,9 +270,9 @@ sub prf_types
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
 		bool    => [qw(flat vertical default checkable checked autoRepeat autoHeight autoWidth)],
-		uiv     => [qw(glyphs borderWidth defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph)],
-		uiv     => ['imageScale',],
-		modalResult  => ['modalResult',],
+		uiv     => [qw(glyphs borderWidth defaultGlyph hiliteGlyph disabledGlyph pressedGlyph 
+			holdGlyph imageScale )],
+		modalResult  => ['modalResult'],
 		icon    => ['image',],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
