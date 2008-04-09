@@ -448,17 +448,17 @@ sub on_paint
 		if $self-> { default};
 	@clr = ( $self-> disabledColor, $self-> disabledBackColor) 
 		if !$self-> enabled;
-	my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
 	my @size = $canvas-> size;
-	@c3d = reverse @c3d if $_[0]-> { pressed} || $_[0]-> { checked};
 	
 	my @fbar = $self-> {default} ?
 		( 1, 1, $size[0] - 2, $size[1] - 2):
 		( 0, 0, $size[0] - 1, $size[1] - 1);
 	if ( !$self-> {flat} || $self-> {hilite}) {
-		$self-> transparent ?
-			$canvas-> rect3d( @fbar, $self-> {borderWidth}, @c3d) :
-			$canvas-> rect3d( @fbar, $self-> {borderWidth}, @c3d, $clr[ 1])
+		$self-> rect_bevel( $canvas, @fbar, 
+			fill    => ( $self-> transparent ? undef : $clr[1]),
+			width   => $self-> {borderWidth},
+			concave => ( $_[0]-> { pressed} || $_[0]-> { checked}),
+		);
 	} else {
 		$canvas-> color( $clr[ 1]);
 		$canvas-> bar( @fbar) unless $self-> transparent;

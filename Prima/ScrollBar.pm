@@ -37,6 +37,7 @@ use vars qw(@ISA @stdMetrics);
 @ISA = qw(Prima::Widget Prima::MouseScroller);
 
 @stdMetrics = Prima::Application-> get_default_scrollbar_metrics;
+my $win32 = (Prima::Application-> get_system_info-> {apc} == apc::Win32);
 
 use strict;
 use Prima::Const;
@@ -152,9 +153,11 @@ sub on_paint
 	$canvas-> line( 0, $maxy, $maxx, $maxy);
 	$canvas-> line( 0, 0, 0, $maxy);
 	{
-		my @border = @c3d;
-		push ( @border, shift @border) if $self-> {b1}-> { pressed};
-		$canvas-> rect3d( @{$self-> {b1}-> {rect}}, 2, @border, $clr[1]);
+		$self-> rect_bevel( $canvas, @{$self-> {b1}-> {rect}}, 
+			width   => 2, 
+			fill    => $clr[1],
+			concave => $self->{b1}->{pressed},
+		);
 		$canvas-> color( $self-> {b1}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b1}-> { pressed} ? 1 : 0;
 		my @spot = $v ? (
@@ -169,9 +172,11 @@ sub on_paint
 		$canvas-> fillpoly( [ @spot]);
 	}
 	{
-		my @border = @c3d;
-		push ( @border, shift @border) if $self-> {b2}-> { pressed};
-		$canvas-> rect3d( @{$self-> {b2}-> {rect}}, 2, @border, $clr[1]);
+		$self-> rect_bevel( $canvas, @{$self-> {b2}-> {rect}}, 
+			width   => 2, 
+			fill    => $clr[1],
+			concave => $self->{b2}->{pressed},
+		);
 		$canvas-> color( $self-> {b2}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b2}-> { pressed} ? 1 : 0;
 		my @spot = $v ? (
@@ -188,8 +193,6 @@ sub on_paint
 	}
 	if ( $self-> { tab}-> { enabled})
 	{
-		my @border = @c3d;
-		push ( @border, shift @border) if $self-> {tab}-> { pressed};
 		my @rect = @{$self-> { tab}-> { rect}};
 		my $lenx = $self-> { tab}-> { q(length)};
 
@@ -202,12 +205,23 @@ sub on_paint
 				$v ? ( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
 					( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
 				$canvas-> color( $self-> {$_}-> {pressed} ? $clr[0] : $clr[1]);
-				$canvas-> bar( @r);
+				if ( $win32) {
+					$canvas-> backColor( $c3d[0]);
+					$canvas-> fillPattern([(0xAA,0x55) x 4]);
+					$canvas-> bar( @r);
+					$canvas-> fillPattern(fp::Solid);
+				} else {
+					$canvas-> bar( @r);
+				}
 			}
 		}
 
-		$canvas-> rect3d( @rect, 2, @border, $clr[1]);
-		if ( $self-> {minThumbSize} > 8)
+		$self-> rect_bevel( $canvas, @rect,
+			width   => 2, 
+			fill    => $clr[1],
+			concave => $self->{tab}->{pressed},
+		);
+		if ( $self-> {minThumbSize} > 8 && !$win32)
 		{
 			if ( $v)
 			{
@@ -247,7 +261,15 @@ sub on_paint
 			( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
 			( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
 		$canvas-> color( $clr[1]);
-		$canvas-> bar( @r);
+
+		if ( $win32) {
+			$canvas-> backColor( $c3d[0]);
+			$canvas-> fillPattern([(0xAA,0x55) x 4]);
+			$canvas-> bar( @r);
+			$canvas-> fillPattern(fp::Solid);
+		} else {
+			$canvas-> bar( @r);
+		}
 	}
 }
 

@@ -1166,6 +1166,32 @@ sub placeForget { $_[0]-> geometry( gt::Default) if $_[0]-> geometry == gt::Plac
 sub packSlaves { shift-> get_pack_slaves()}
 sub placeSlaves { shift-> get_place_slaves()}
 
+sub rect_bevel
+{
+	my ( $self, $canvas, $x, $y, $x1, $y1, %opt) = @_;
+
+	my $width = $opt{width} || 1;
+	my @c3d1  = $opt{concave} ?
+		( $self-> dark3DColor, $self-> light3DColor) :
+		( $self-> light3DColor, $self-> dark3DColor);
+	my $fill  = $opt{fill};
+
+	return $canvas-> rect3d( $x, $y, $x1, $y1, 1, @c3d1, $fill)
+		if 1 == $width;
+	
+	my $back  = defined($fill) ? $fill : $self-> backColor;
+	my @c3d2  = $opt{concave} ?
+		( 0x404040, $back) :
+		( $back, 0x404040);
+
+	my $hw = int( $width / 2);
+	$canvas-> rect3d( $x, $y, $x1, $y1, $hw,
+		$c3d2[0], $c3d2[1], $fill);
+	$canvas-> rect3d( $x + $hw, $y + $hw, $x1 - $hw, $y1 - $hw, $width - $hw,
+		$c3d1[0], $c3d1[1]);
+}
+
+
 # class Window
 package Prima::Window;
 use vars qw(@ISA);

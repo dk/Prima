@@ -2197,6 +2197,29 @@ so re-painting of the area happens. See L<"Graphic content">.
 See also: C<validate_rect>, C<get_invalid_rect>, C<invalidate_rect>, C<Paint>, 
 C<update_view>, C<syncPaint>
 
+=item rect_bevel $CANVAS, @RECT, %OPTIONS
+
+Draws a rectangular area, similar to produced by C<rect3d> over C<@RECT>
+that is 4-integer coordinates of the area, but implicitly using widget's C<light3DColor>
+and C<dark3DColor> properties' values. The following options are
+recognized:
+
+=over
+
+=item fill COLOR
+
+If set, the area is filled with COLOR, ortherwise is left intact.
+
+=item width INTEGER
+
+Width of the border in pixels
+
+=item concave BOOLEAN
+
+If 1, draw a concave area, bulged otherwise
+
+=back
+
 =item responsive
 
 Returns a boolean flag, indicating whether a widget and its owners
