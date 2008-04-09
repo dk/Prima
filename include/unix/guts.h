@@ -404,7 +404,8 @@ typedef struct {
 #define AI_NET_WM_STATE_STAYS_ON_TOP     30
 #define AI_NET_CURRENT_DESKTOP           31
 #define AI_NET_WORKAREA                  32
-#define AI_count                         33
+#define AI_NET_WM_STATE_ABOVE            33
+#define AI_count                         34
 
 #define FXA_RESOLUTION_X guts. atoms[ AI_FXA_RESOLUTION_X]
 #define FXA_RESOLUTION_Y guts. atoms[ AI_FXA_RESOLUTION_Y]
@@ -442,6 +443,7 @@ typedef struct {
 #define NET_WM_STATE_STAYS_ON_TOP guts. atoms[ AI_NET_WM_STATE_STAYS_ON_TOP]
 #define NET_CURRENT_DESKTOP guts. atoms[ AI_NET_CURRENT_DESKTOP]
 #define NET_WORKAREA guts. atoms[ AI_NET_WORKAREA]
+#define NET_WM_STATE_ABOVE guts. atoms[ AI_NET_WM_STATE_ABOVE]
 
 #define DEBUG_FONTS 0x01
 #define DEBUG_CLIP  0x02
@@ -633,7 +635,6 @@ typedef struct _UnixGuts
    Bool                         icccm_only;
    Bool                         net_wm_maximization;
    int                          net_wm_maximize_HORZ_vs_HORIZ;
-   int                          X_bug_32_bit_property_is_long;
 } UnixGuts;
 
 extern UnixGuts guts;

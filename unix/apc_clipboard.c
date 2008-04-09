@@ -37,6 +37,7 @@
 #define CF_TYPE(x)   (guts. clipboard_formats[(x)*3+1])
 #define CF_FORMAT(x) (guts. clipboard_formats[(x)*3+2])
 #define CF_ASSIGN(i,a,b,c) CF_NAME(i)=(a);CF_TYPE(i)=(b);CF_FORMAT(i)=((Atom)c)
+#define CF_32        (sizeof(long)*8)        /* 32-bit properties are hacky */
 
 Bool
 prima_init_clipboard_subsystem(char * error_buf)
@@ -54,13 +55,13 @@ prima_init_clipboard_subsystem(char * error_buf)
 
    CF_ASSIGN(cfText, XA_STRING, XA_STRING, 8);
    CF_ASSIGN(cfUTF8, UTF8_STRING, UTF8_STRING, 8);
-   CF_ASSIGN(cfBitmap, XA_PIXMAP, XA_PIXMAP, 32);
-   CF_ASSIGN(cfTargets, CF_TARGETS, XA_ATOM, 32);
+   CF_ASSIGN(cfBitmap, XA_PIXMAP, XA_PIXMAP, CF_32);
+   CF_ASSIGN(cfTargets, CF_TARGETS, XA_ATOM, CF_32);
 
    /* XXX - bitmaps and indexed pixmaps may have the associated colormap or pixel values 
-   CF_ASSIGN(cfPalette, XA_COLORMAP, XA_ATOM, 32);
-   CF_ASSIGN(cfForeground, CF_FOREGROUND, CF_PIXEL, 32);
-   CF_ASSIGN(cfBackground, CF_BACKGROUND, CF_PIXEL, 32);
+   CF_ASSIGN(cfPalette, XA_COLORMAP, XA_ATOM, CF_32);
+   CF_ASSIGN(cfForeground, CF_FOREGROUND, CF_PIXEL, CF_32);
+   CF_ASSIGN(cfBackground, CF_BACKGROUND, CF_PIXEL, CF_32);
    */
    
    guts. clipboard_event_timeout = 2000;
@@ -406,6 +407,8 @@ read_property( Atom property, Atom * type, int * format,
       XCHECKPOINT;
       Cdebug("clipboard: type=0x%x(%s) fmt=%d n=%d left=%d\n", 
 	     *type, XGetAtomName(DISP,*type), *format, n, left);
+      
+      if ( *format == 32) *format = CF_32;
 
       if ( *type == 0 ) return RPS_NODATA;
 
@@ -499,7 +502,7 @@ query_datum( Handle self, long id, Atom query_target, Atom query_type)
    }
 
    /* setup INCR */
-   if ( format != 32 || size < 4) goto FAIL;
+   if ( format != CF_32 || size < 4) goto FAIL;
    incr = (unsigned long) *(( Atom*) data);
    if ( incr == 0) goto FAIL;
    size = 0;
@@ -935,7 +938,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
                         XSelectInput( DISP, x-> requestor, PropertyChangeMask|StructureNotifyMask); 
                      hash_store( guts. clipboard_xfers, &x-> requestor, sizeof(XWindow), INT2PTR( void*, refcnt));
 
-                     format = 32;
+                     format = CF_32;
                      size = 1;
                      incr = ( Atom) CC-> internal[id]. size;
                      data = ( unsigned char*) &incr; 
@@ -945,8 +948,9 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
                   }
                }
                if ( !ok) size = reqlen;
-            } 
+            }
 
+            if ( format == CF_32) format = 32;
             XChangeProperty( 
                xe. xselection. display,
                xe. xselection. requestor,
@@ -990,7 +994,7 @@ SEND_EMPTY:
       break;
    case PropertyNotify:
       if ( ev-> xproperty. state == PropertyDelete) {
-         unsigned long offs, size, reqlen = guts. limits. request_length - 4;
+         unsigned long offs, size, reqlen = guts. limits. request_length - 4, format;
          ClipboardXfer * x = ( ClipboardXfer *) self;
          PClipboardSysData CC = C(x-> self);
          offs = x-> offset * reqlen;
@@ -1004,8 +1008,9 @@ SEND_EMPTY:
          Cdebug("clipboard: put %d %d in %08x %d\n", x-> offset, size, x-> requestor, x-> property); 
          if ( x-> format > 8)  size /= 2;
          if ( x-> format > 16) size /= 2;
+	 format = ( x-> format == CF_32) ? 32 : x-> format;
          XChangeProperty( DISP, x-> requestor, x-> property, x-> target,
-            x-> format, PropModeReplace, 
+            format, PropModeReplace, 
             x-> data + offs, size);
          XFlush( DISP);
          x-> offset++;

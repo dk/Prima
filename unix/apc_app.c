@@ -213,7 +213,8 @@ init_x11( char * error_buf )
       "text/plain;charset=UTF-8",
       "_NET_WM_STATE_STAYS_ON_TOP",
       "_NET_CURRENT_DESKTOP",
-      "_NET_WORKAREA"
+      "_NET_WORKAREA",
+      "_NET_WM_STATE_ABOVE"
    };
    char hostname_buf[256], *hostname = hostname_buf;
 
@@ -731,18 +732,18 @@ wm_net_get_current_workarea( Rect * r)
 {
    Bool ret = false;
    unsigned long n;
-   uint32_t *desktop = NULL, *workarea = NULL, *w;
+   unsigned long *desktop = NULL, *workarea = NULL, *w;
 
    if ( guts. icccm_only) return false;
 
-   desktop = ( uint32_t *) prima_get_window_property( guts. root, 
+   desktop = ( unsigned long *) prima_get_window_property( guts. root, 
                 NET_CURRENT_DESKTOP, XA_CARDINAL, 
                 NULL, NULL,
                 &n);
    if ( desktop == NULL || n < 1) goto EXIT;
    Mdebug("wm: current desktop = %d\n", *desktop);
    
-   workarea = ( uint32_t *) prima_get_window_property( guts. root, 
+   workarea = ( unsigned long *) prima_get_window_property( guts. root, 
                 NET_WORKAREA, XA_CARDINAL, 
                 NULL, NULL,
                 &n);

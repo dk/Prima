@@ -556,7 +556,7 @@ GOOD_RETURN:
 }
 
 static unsigned long 
-img_perlio_read( void * f, unsigned long bufsize, char * buffer)
+img_perlio_read( void * f, unsigned long bufsize, void * buffer)
 {
 #ifdef PerlIO
     return PerlIO_read(( FileStream) f, buffer, bufsize);
@@ -566,7 +566,7 @@ img_perlio_read( void * f, unsigned long bufsize, char * buffer)
 }
 
 static unsigned long 
-img_perlio_write( void * f, unsigned long bufsize, char * buffer)
+img_perlio_write( void * f, unsigned long bufsize, void * buffer)
 {
 #ifdef PerlIO
     return PerlIO_write( ( FileStream) f, buffer, bufsize);

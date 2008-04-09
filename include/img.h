@@ -39,8 +39,8 @@ extern "C" {
 #endif
 
 typedef struct _ImgIORequest {
-  unsigned long (*read)       ( void * handle, unsigned long busize, char * buffer);
-  unsigned long (*write)      ( void * handle, unsigned long busize, char * buffer);
+  unsigned long (*read)       ( void * handle, unsigned long busize, void * buffer);
+  unsigned long (*write)      ( void * handle, unsigned long busize, void * buffer);
   unsigned long (*seek)       ( void * handle, unsigned long offset, int whence);
   unsigned long (*tell)       ( void * handle);
   int           (*flush)      ( void * handle);

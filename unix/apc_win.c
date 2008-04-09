@@ -46,7 +46,8 @@
 static void
 set_net_hints( XWindow window, int task_listed, int modal, int zoom, int on_top)
 {
-   Atom data[40], type, * prop;
+   long data[40], * prop;
+   Atom type;
    int count = 0, format;
    XClientMessageEvent ev;
    unsigned long i, n, left;
@@ -62,6 +63,7 @@ set_net_hints( XWindow window, int task_listed, int modal, int zoom, int on_top)
             if (( prop[i] != NET_WM_STATE_SKIP_TASKBAR || task_listed < 0) && 
                 ( prop[i] != NET_WM_STATE_MODAL || modal < 0) && 
                 ( prop[i] != NET_WM_STATE_STAYS_ON_TOP || on_top < 0) && 
+                ( prop[i] != NET_WM_STATE_ABOVE || on_top < 0) && 
                 (( prop[i] != NET_WM_STATE_MAXIMIZED_VERT && 
                    prop[i] != NET_WM_STATE_MAXIMIZED_HORZ) || ( zoom < 0)))
                data[ count++] = prop[i];
@@ -108,6 +110,7 @@ set_net_hints( XWindow window, int task_listed, int modal, int zoom, int on_top)
    if ( on_top >= 0) {
       ev. data. l[0] = ( on_top > 0) ? 1 : 0;
       ev. data. l[1] = ( long) NET_WM_STATE_STAYS_ON_TOP;
+      ev. data. l[1] = ( long) NET_WM_STATE_ABOVE;
       XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
    }
 
@@ -118,7 +121,10 @@ set_net_hints( XWindow window, int task_listed, int modal, int zoom, int on_top)
       data[ count++] = NET_WM_STATE_MAXIMIZED_VERT;
       data[ count++] = NET_WM_STATE_MAXIMIZED_HORZ;
    }
-   if ( on_top > 0) data[ count++] = NET_WM_STATE_STAYS_ON_TOP;
+   if ( on_top > 0) {
+      data[ count++] = NET_WM_STATE_STAYS_ON_TOP;
+      data[ count++] = NET_WM_STATE_ABOVE;
+   }
    XChangeProperty( DISP, window, NET_WM_STATE, XA_ATOM, 32,
        PropModeReplace, ( unsigned char *) data, count);
 }
@@ -145,6 +151,7 @@ prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * 
           actual_type, actual_format, &n, &left, &ptr) == Success) {
      if ( ptr) {
          if ( n > 0) {
+	     if ( *actual_format == 32) *actual_format = sizeof(long) * 8; /* MUAHAHA!! That's even documented now */
 	     curr_size = n * *actual_format / 8;
 	     new_size += curr_size;
              offset += curr_size / 4;
@@ -187,13 +194,13 @@ prima_wm_net_state_read_maximization( XWindow window, Atom property)
    reads property, returns true if it has both vertical and horizontal properties set.
   */
 {
-   Atom * prop;
+   long * prop;
    unsigned long i, n;
    int horiz = 0, vert = 0;
 
    if ( guts. icccm_only) return false;
 
-   prop = ( Atom *) prima_get_window_property( window, property, XA_ATOM, NULL, NULL, &n);
+   prop = ( long *) prima_get_window_property( window, property, XA_ATOM, NULL, NULL, &n);
    if ( !prop) return false;
 
    for ( i = 0; i < n; i++) {
@@ -213,7 +220,7 @@ prima_wm_net_state_read_maximization( XWindow window, Atom property)
          }
          horiz = 1;
       }
-   }
+   }  
 
    free( prop);
    return vert && horiz;
@@ -266,46 +273,18 @@ apc_window_task_listed( Handle self, Bool task_list)
 static void
 set_motif_hints( XWindow window, int border_style, int border_icons)
 {
-/*
-   32-bit properties on some Xlibs are treated as longs.
-   This gives certain paint on 64-bit machines, and this
-   situation we are trying to detect here. First, we
-   use longs, because these are larger than 32 bytes,
-   and see if these work.  */
-   Bool check_if_long_is_ok = false;
    struct {
      unsigned long flags, functions, decorations;
      long  input_mode;
      unsigned long status;
-   } mwmhints_long;
-   struct {
-     uint32_t flags, functions, decorations;
-     int32_t  input_mode;
-     uint32_t status;
-   } mwmhints_int32;
+   } mwmhints;
 
-   if ( guts.X_bug_32_bit_property_is_long == 0) {
-        if ( sizeof(long) <= sizeof(int32_t)) {
-            guts.X_bug_32_bit_property_is_long = -1; /* use int32 */
-        } else {
-            guts.X_bug_32_bit_property_is_long = 1; /* use long */
-            check_if_long_is_ok = true;
-        }
-   }
 
-#define MWMHINT_OR(field,value) ((guts.X_bug_32_bit_property_is_long > 0 ) ? \
-                                  (mwmhints_long.field |= (value)):\
-                                  (mwmhints_int32.field |= (value))) 
-#define MWMHINTS ((guts.X_bug_32_bit_property_is_long > 0) ? \
-                                  (void*)&mwmhints_long : \
-                                  (void*)&mwmhints_int32)
-#define MWMHINTS_SIZE ((guts.X_bug_32_bit_property_is_long > 0) ? \
-                                  sizeof(mwmhints_long) : \
-                                  sizeof(mwmhints_int32))
+#define MWMHINT_OR(field,value) mwmhints.field |= (value)
 
    if ( guts. icccm_only) return;
 
-   bzero( MWMHINTS, MWMHINTS_SIZE);
+   bzero( &mwmhints, sizeof(mwmhints));
    MWMHINT_OR( flags, MWM_HINTS_DECORATIONS);
    MWMHINT_OR( flags, MWM_HINTS_FUNCTIONS);
    if ( border_style == bsSizeable) {
@@ -329,28 +308,7 @@ set_motif_hints( XWindow window, int border_style, int border_icons)
    }
 
    XChangeProperty(DISP, window, XA_MOTIF_WM_HINTS, XA_MOTIF_WM_HINTS, 32,
-       PropModeReplace, (unsigned char *) MWMHINTS, 5);
-
-   if ( check_if_long_is_ok) {
-      Atom type;
-      uint32_t *prop = (uint32_t*)0;
-      int format;
-      unsigned long n, left;
-      if ( XGetWindowProperty( DISP, window, XA_MOTIF_WM_HINTS, 0, 5, false, XA_MOTIF_WM_HINTS,
-             &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
-         if ( prop && n == 5) {
-            if ( memcmp( prop, MWMHINTS, 5 * sizeof(int32_t)) != 0) {
-               /* long is NOT ok */ 
-               guts. X_bug_32_bit_property_is_long = -1;
-               set_motif_hints( window, border_style, border_icons);
-            }
-         } else {
-            warn("error in XGetWindowProperty(XA_MOTIF_WM_HINTS)");
-         }
-         if ( prop)
-            XFree(( unsigned char *) prop);
-      }
-   }
+       PropModeReplace, (unsigned char *) &mwmhints, 5);
 }
 
 Bool
@@ -1364,7 +1322,8 @@ apc_window_end_modal( Handle self)
 Bool
 apc_window_get_on_top( Handle self)
 {
-   Atom type, * prop;
+   Atom type;
+   long * prop;
    int format;
    unsigned long i, n, left;
    Bool on_top = 0;
@@ -1375,7 +1334,10 @@ apc_window_get_on_top( Handle self)
           &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
      if ( prop) {
          for ( i = 0; i < n; i++) {
-            if ( prop[i] == NET_WM_STATE_STAYS_ON_TOP) {
+            if ( 
+	       prop[i] == NET_WM_STATE_STAYS_ON_TOP ||
+	       prop[i] == NET_WM_STATE_ABOVE
+	    ) {
 	       on_top = 1;
 	       break;
 	    }
