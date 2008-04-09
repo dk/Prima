@@ -319,6 +319,21 @@ sub borderWidth     {($#_)?($_[0]-> set_border_width( $_[1])):return $_[0]-> {bo
 sub hScroll         {($#_)?$_[0]-> set_h_scroll       ($_[1]):return $_[0]-> {hScroll}}
 sub vScroll         {($#_)?$_[0]-> set_v_scroll       ($_[1]):return $_[0]-> {vScroll}}
 
+sub draw_border
+{
+	my ( $self, $canvas, $backColor, @size) = @_;
+
+	@size = $self-> size unless @size;
+	$self-> rect_bevel(
+		$canvas,
+		0, 0,
+		$size[0]-1, $size[1]-1,
+		width => $self-> {borderWidth},
+		panel => 1,
+		fill  => $backColor,
+	);
+}
+
 1;
 
 __DATA__

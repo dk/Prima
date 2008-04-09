@@ -1171,24 +1171,30 @@ sub rect_bevel
 	my ( $self, $canvas, $x, $y, $x1, $y1, %opt) = @_;
 
 	my $width = $opt{width} || 1;
-	my @c3d1  = $opt{concave} ?
+	my @c3d  = $opt{concave} ?
 		( $self-> dark3DColor, $self-> light3DColor) :
 		( $self-> light3DColor, $self-> dark3DColor);
 	my $fill  = $opt{fill};
 
-	return $canvas-> rect3d( $x, $y, $x1, $y1, 1, @c3d1, $fill)
+	return $canvas-> rect3d( $x, $y, $x1, $y1, 1, @c3d, $fill)
 		if 1 == $width;
-	
 	my $back  = defined($fill) ? $fill : $self-> backColor;
-	my @c3d2  = $opt{concave} ?
-		( 0x404040, $back) :
-		( $back, 0x404040);
+
+	# 0 - upper left under 2 -- inner square
+	# 1 - lower right over 3
+	# 2 - upper left         -- outer square
+	# 3 - lower right
+	if ( $opt{concave}) {
+		push @c3d, 0x404040, $back;
+	} elsif ( $opt{panel}) {
+		@c3d = ( 0x404040, $c3d[0], $c3d[1], $back);
+	} else {
+		push @c3d, $back, 0x404040;
+	}
 
 	my $hw = int( $width / 2);
-	$canvas-> rect3d( $x, $y, $x1, $y1, $hw,
-		$c3d2[0], $c3d2[1], $fill);
-	$canvas-> rect3d( $x + $hw, $y + $hw, $x1 - $hw, $y1 - $hw, $width - $hw,
-		$c3d1[0], $c3d1[1]);
+	$canvas-> rect3d( $x, $y, $x1, $y1, $hw, @c3d[2,3], $fill);
+	$canvas-> rect3d( $x + $hw, $y + $hw, $x1 - $hw, $y1 - $hw, $width - $hw, @c3d[0,1]);
 }
 
 
