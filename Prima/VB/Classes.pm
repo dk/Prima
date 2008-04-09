@@ -1272,7 +1272,6 @@ sub prf_adjust_default
 		cursorPos
 		cursorSize
 		cursorVisible
-		designScale
 		pointer
 		pointerType
 		pointerHotSpot
