@@ -333,6 +333,8 @@ method of the menu owner ( in this example, the window ) to be called. This can
 be useful when constructing a generic class with menu actions that can be
 overridden:
 
+	use Prima qw(Application);
+	
 	package MyWindow;
 	use vars qw(@ISA);
 	@ISA = qw(Prima::MainWindow);
@@ -350,6 +352,8 @@ overridden:
 			]],
 		],
 	);
+
+	run Prima;
 
 All actions are called with the menu item identifier passed in as a string parameter.
 
