@@ -1170,14 +1170,14 @@ sub rect_bevel
 {
 	my ( $self, $canvas, $x, $y, $x1, $y1, %opt) = @_;
 
-	my $width = $opt{width} || 1;
-	my @c3d  = $opt{concave} ?
+	my $width = $opt{width} || 0;
+	my @c3d   = ( $opt{concave} || $opt{panel}) ?
 		( $self-> dark3DColor, $self-> light3DColor) :
 		( $self-> light3DColor, $self-> dark3DColor);
 	my $fill  = $opt{fill};
 
-	return $canvas-> rect3d( $x, $y, $x1, $y1, 1, @c3d, $fill)
-		if 1 == $width;
+	return $canvas-> rect3d( $x, $y, $x1, $y1, $width, @c3d, $fill)
+		if $width < 2;
 	my $back  = defined($fill) ? $fill : $self-> backColor;
 
 	# 0 - upper left under 2 -- inner square
@@ -1187,7 +1187,7 @@ sub rect_bevel
 	if ( $opt{concave}) {
 		push @c3d, 0x404040, $back;
 	} elsif ( $opt{panel}) {
-		@c3d = ( 0x404040, $self-> disabledBackColor, $c3d[1], $back);
+		@c3d = ( 0x404040, $self-> disabledBackColor, $c3d[0], $c3d[1]);
 	} else {
 		push @c3d, $back, 0x404040;
 	}
