@@ -162,18 +162,15 @@ static Bool
 init_x11( char * error_buf )
 {
    /*XXX*/ /* Namely, support for -display host:0.0 etc. */
-   XrmQuark common_quarks_list[26];  /*XXX change number of elements if necessary */
+   XrmQuark common_quarks_list[20];  /*XXX change number of elements if necessary */
    XrmQuarkList ql = common_quarks_list;
    XGCValues gcv;
    char *common_quarks =
       "String."
-      "Background.background."
       "Blinkinvisibletime.blinkinvisibletime."
       "Blinkvisibletime.blinkvisibletime."
       "Clicktimeframe.clicktimeframe."
       "Doubleclicktimeframe.doubleclicktimeframe."
-      "Font.font."
-      "Foreground.foreground."
       "Wheeldown.wheeldown."
       "Wheelup.wheelup."
       "Submenudelay.submenudelay."
@@ -275,8 +272,6 @@ init_x11( char * error_buf )
    guts.db = get_database();
    XrmStringToQuarkList( common_quarks, common_quarks_list);
    guts.qString = *ql++;
-   guts.qBackground = *ql++;
-   guts.qbackground = *ql++;
    guts.qBlinkinvisibletime = *ql++;
    guts.qblinkinvisibletime = *ql++;
    guts.qBlinkvisibletime = *ql++;
@@ -285,10 +280,6 @@ init_x11( char * error_buf )
    guts.qclicktimeframe = *ql++;
    guts.qDoubleclicktimeframe = *ql++;
    guts.qdoubleclicktimeframe = *ql++;
-   guts.qFont = *ql++;
-   guts.qfont = *ql++;
-   guts.qForeground = *ql++;
-   guts.qforeground = *ql++;
    guts.qWheeldown = *ql++;
    guts.qwheeldown = *ql++;
    guts.qWheelup = *ql++;

@@ -36,182 +36,62 @@
 #include "Drawable.h"
 #include "Window.h"
 
+/* have two color layouts for panel widgets (lists, edits) and gray widgets (buttons, labels) */
+#define COLOR_DEFAULT_TEXT         0x000000
+#define COLOR_DEFAULT_GRAY         0xcccccc
+#define COLOR_DEFAULT_BACK         0xffffff
 
-static Color standard_button_colors[] = {
-   0x000000,	/* Prima.Button.foreground */
-   0xcccccc,        /* Prima.Button.background */
-   0x000000,	/* Prima.Button.hilitefore */
-   0xcccccc,        /* Prima.Button.hiliteback */
-   0x606060,        /* Prima.Button.disabledfore */
-   0xcccccc,        /* Prima.Button.disabledback */
-   0xffffff,        /* Prima.Button.light3d */
-   0x808080,	/* Prima.Button.dark3d */
-};
+#define COLOR_GRAY_NORMAL_TEXT     COLOR_DEFAULT_TEXT
+#define COLOR_GRAY_NORMAL_BACK     COLOR_DEFAULT_GRAY
+#define COLOR_GRAY_HILITE_TEXT     COLOR_DEFAULT_TEXT
+#define COLOR_GRAY_HILITE_BACK     COLOR_DEFAULT_GRAY
+#define COLOR_GRAY_DISABLED_TEXT   0x606060
+#define COLOR_GRAY_DISABLED_BACK   0xcccccc
 
-static Color standard_checkbox_colors[] = {
-   0x000000,	/* Prima.Checkbox.foreground */
-   0xcccccc,        /* Prima.Checkbox.background */
-   0x000000,	/* Prima.Checkbox.hilitefore */
-   0xcccccc,        /* Prima.Checkbox.hiliteback */
-   0x606060,        /* Prima.Checkbox.disabledfore */
-   0xcccccc,        /* Prima.Checkbox.disabledback */
-   0xffffff,        /* Prima.Checkbox.light3d */
-   0x808080,	/* Prima.Checkbox.dark3d */
-};
+#define COLOR_PANEL_NORMAL_TEXT    COLOR_DEFAULT_TEXT
+#define COLOR_PANEL_NORMAL_BACK    COLOR_DEFAULT_BACK
+#define COLOR_PANEL_HILITE_TEXT    COLOR_DEFAULT_BACK
+#define COLOR_PANEL_HILITE_BACK    COLOR_DEFAULT_TEXT
+#define COLOR_PANEL_DISABLED_TEXT  0x606060
+#define COLOR_PANEL_DISABLED_BACK  0xdddddd
 
-static Color standard_combo_colors[] = {
-   0x000000,	/* Prima.Combo.foreground */
-   0xcccccc,        /* Prima.Combo.background */
-   0x000000,	/* Prima.Combo.hilitefore */
-   0xcccccc,        /* Prima.Combo.hiliteback */
-   0x606060,        /* Prima.Combo.disabledfore */
-   0xcccccc,        /* Prima.Combo.disabledback */
-   0xffffff,        /* Prima.Combo.light3d */
-   0x808080,	/* Prima.Combo.dark3d */
-};
+#define COLOR_LIGHT3D              0xffffff
+#define COLOR_DARK3D               0x808080
 
-static Color standard_dialog_colors[] = {
-   0x000000,	/* Prima.Dialog.foreground */
-   0xcccccc,        /* Prima.Dialog.background */
-   0x000000,	/* Prima.Dialog.hilitefore */
-   0xcccccc,        /* Prima.Dialog.hiliteback */
-   0x606060,        /* Prima.Dialog.disabledfore */
-   0xcccccc,        /* Prima.Dialog.disabledback */
-   0xffffff,        /* Prima.Dialog.light3d */
-   0x808080,	/* Prima.Dialog.dark3d */
-};
+#define COLORSET_GRAY_NORMAL       COLOR_GRAY_NORMAL_TEXT,   COLOR_GRAY_NORMAL_BACK
+#define COLORSET_GRAY_HILITE       COLOR_GRAY_HILITE_TEXT,   COLOR_GRAY_HILITE_BACK
+#define COLORSET_GRAY_ALT_HILITE   COLOR_GRAY_HILITE_BACK,   COLOR_GRAY_HILITE_TEXT
+#define COLORSET_GRAY_DISABLED     COLOR_GRAY_DISABLED_TEXT, COLOR_GRAY_DISABLED_BACK
 
-static Color standard_edit_colors[] = {
-   0x000000,	/* Prima.Edit.foreground */
-   0xcccccc,        /* Prima.Edit.background */
-   0xcccccc,        /* Prima.Edit.hilitefore */
-   0x000000,	/* Prima.Edit.hilitebac */
-   0x606060,        /* Prima.Edit.disabledfore */
-   0xcccccc,        /* Prima.Edit.disabledback */
-   0xffffff,        /* Prima.Edit.light3d */
-   0x808080,	/* Prima.Edit.dark3d */
-};
+#define COLORSET_PANEL_NORMAL      COLOR_PANEL_NORMAL_TEXT,   COLOR_PANEL_NORMAL_BACK
+#define COLORSET_PANEL_HILITE      COLOR_PANEL_HILITE_TEXT,   COLOR_PANEL_HILITE_BACK
+#define COLORSET_PANEL_DISABLED    COLOR_PANEL_DISABLED_TEXT, COLOR_PANEL_DISABLED_BACK
 
-static Color standard_inputline_colors[] = {
-   0x000000,	/* Prima.Inputline.foreground */
-   0xcccccc,        /* Prima.Inputline.background */
-   0xcccccc,        /* Prima.Inputline.hilitefore */
-   0x000000,	/* Prima.Inputline.hiliteback */
-   0x606060,        /* Prima.Inputline.disabledfore */
-   0xcccccc,        /* Prima.Inputline.disabledback */
-   0xffffff,        /* Prima.Inputline.light3d */
-   0x808080,	/* Prima.Inputline.dark3d */
-};
+#define COLORSET_3D                COLOR_LIGHT3D, COLOR_DARK3D
 
-static Color standard_label_colors[] = {
-   0x000000,	/* Prima.Label.foreground */
-   0xcccccc,        /* Prima.Label.background */
-   0x000000,	/* Prima.Label.hilitefore */
-   0xcccccc,        /* Prima.Label.hiliteback */
-   0x606060,        /* Prima.Label.disabledfore */
-   0xcccccc,        /* Prima.Label.disabledback */
-   0xffffff,        /* Prima.Label.light3d */
-   0x808080,	/* Prima.Label.dark3d */
-};
+#define COLORSET_GRAY              COLORSET_GRAY_NORMAL, COLORSET_GRAY_HILITE, \
+                                   COLORSET_GRAY_DISABLED, COLORSET_3D
+#define COLORSET_ALT_GRAY          COLORSET_GRAY_NORMAL, COLORSET_GRAY_ALT_HILITE, \
+                                   COLORSET_GRAY_DISABLED, COLORSET_3D
+#define COLORSET_PANEL             COLORSET_PANEL_NORMAL, COLORSET_PANEL_HILITE, \
+                                   COLORSET_PANEL_DISABLED, COLORSET_3D
 
-static Color standard_listbox_colors[] = {
-   0x000000,	/* Prima.Listbox.foreground */
-   0xcccccc,        /* Prima.Listbox.background */
-   0xcccccc,        /* Prima.Listbox.hilitefore */
-   0x000000,	/* Prima.Listbox.hiliteback */
-   0x606060,        /* Prima.Listbox.disabledfore */
-   0xcccccc,        /* Prima.Listbox.disabledback */
-   0xffffff,        /* Prima.Listbox.light3d */
-   0x808080,	/* Prima.Listbox.dark3d */
-};
-
-static Color standard_menu_colors[] = {
-   0x000000,	/* Prima.Menu.foreground */
-   0xcccccc,        /* Prima.Menu.background */
-   0xcccccc,        /* Prima.Menu.hilitefore */
-   0x000000,	/* Prima.Menu.hiliteback */
-   0x606060,        /* Prima.Menu.disabledfore */
-   0xcccccc,        /* Prima.Menu.disabledback */
-   0xffffff,        /* Prima.Menu.light3d */
-   0x808080,	/* Prima.Menu.dark3d */
-};
-
-static Color standard_popup_colors[] = {
-   0x000000,	/* Prima.Popup.foreground */
-   0xcccccc,        /* Prima.Popup.background */
-   0xcccccc,        /* Prima.Popup.hilitefore */
-   0x000000,	    /* Prima.Popup.hiliteback */
-   0x606060,        /* Prima.Popup.disabledfore */
-   0xcccccc,        /* Prima.Popup.disabledback */
-   0xffffff,        /* Prima.Popup.light3d */
-   0x808080,	/* Prima.Popup.dark3d */
-};
-
-static Color standard_radio_colors[] = {
-   0x000000,	/* Prima.Radio.foreground */
-   0xcccccc,        /* Prima.Radio.background */
-   0x000000,	/* Prima.Radio.hilitefore */
-   0xcccccc,        /* Prima.Radio.hiliteback */
-   0x606060,        /* Prima.Radio.disabledfore */
-   0xcccccc,        /* Prima.Radio.disabledback */
-   0xffffff,        /* Prima.Radio.light3d */
-   0x808080,	/* Prima.Radio.dark3d */
-};
-
-static Color standard_scrollbar_colors[] = {
-   0x000000,	/* Prima.Scrollbar.foreground */
-   0xcccccc,        /* Prima.Scrollbar.background */
-   0xcccccc,        /* Prima.Scrollbar.hilitefore */
-   0x000000,	/* Prima.Scrollbar.hiliteback */
-   0x606060,        /* Prima.Scrollbar.disabledfore */
-   0xcccccc,        /* Prima.Scrollbar.disabledback */
-   0xffffff,        /* Prima.Scrollbar.light3d */
-   0x808080,	/* Prima.Scrollbar.dark3d */
-};
-
-static Color standard_slider_colors[] = {
-   0x000000,	/* Prima.Slider.foreground */
-   0xcccccc,        /* Prima.Slider.background */
-   0x000000,	/* Prima.Slider.hilitefore */
-   0xcccccc,        /* Prima.Slider.hiliteback */
-   0x606060,        /* Prima.Slider.disabledfore */
-   0xcccccc,        /* Prima.Slider.disabledback */
-   0xffffff,        /* Prima.Slider.light3d */
-   0x808080,	/* Prima.Slider.dark3d */
-};
-
-static Color standard_widget_colors[] = {
-   0x000000,	/* Prima.Widget.foreground */
-   0xcccccc,        /* Prima.Widget.background */
-   0xcccccc,        /* Prima.Widget.hilitefore */
-   0x000000,	    /* Prima.Widget.hiliteback */
-   0x606060,        /* Prima.Widget.disabledfore */
-   0xcccccc,        /* Prima.Widget.disabledback */
-   0xffffff,        /* Prima.Widget.light3d */
-   0x808080,	/* Prima.Widget.dark3d */
-};
-
-static Color standard_window_colors[] = {
-   0x000000,	/* Prima.Window.foreground */
-   0xcccccc,        /* Prima.Window.background */
-   0xffffff,	    /* Prima.Window.hilitefore */
-   0x000000,        /* Prima.Window.hiliteback */
-   0x606060,        /* Prima.Window.disabledfore */
-   0xcccccc,        /* Prima.Window.disabledback */
-   0xffffff,        /* Prima.Window.light3d */
-   0x808080,	/* Prima.Window.dark3d */
-};
-
-static Color standard_application_colors[] = {
-   0x000000,	/* Prima.Application.foreground */
-   0xcccccc,        /* Prima.Application.background */
-   0x000000,	/* Prima.Application.hilitefore */
-   0xcccccc,        /* Prima.Application.hiliteback */
-   0x606060,        /* Prima.Application.disabledfore */
-   0xcccccc,        /* Prima.Application.disabledback */
-   0xffffff,        /* Prima.Application.light3d */
-   0x808080,	/* Prima.Application.dark3d */
-};
+static Color standard_button_colors[]      = { COLORSET_GRAY     };
+static Color standard_checkbox_colors[]    = { COLORSET_GRAY     };
+static Color standard_combo_colors[]       = { COLORSET_GRAY     };
+static Color standard_dialog_colors[]      = { COLORSET_GRAY     };
+static Color standard_edit_colors[]        = { COLORSET_PANEL    };
+static Color standard_inputline_colors[]   = { COLORSET_PANEL    };
+static Color standard_label_colors[]       = { COLORSET_GRAY     };
+static Color standard_listbox_colors[]     = { COLORSET_PANEL    };
+static Color standard_menu_colors[]        = { COLORSET_ALT_GRAY };
+static Color standard_popup_colors[]       = { COLORSET_ALT_GRAY };
+static Color standard_radio_colors[]       = { COLORSET_GRAY     };
+static Color standard_scrollbar_colors[]   = { COLORSET_ALT_GRAY };
+static Color standard_slider_colors[]      = { COLORSET_GRAY     };
+static Color standard_widget_colors[]      = { COLORSET_ALT_GRAY };
+static Color standard_window_colors[]      = { COLORSET_GRAY     };
+static Color standard_application_colors[] = { COLORSET_GRAY     };
 
 static Color* standard_colors[] = {
    nil,
@@ -640,6 +520,14 @@ set_color_class( int class, char * option, char * value)
    list_add( color_options, ( Handle) duplicate_string(value));
 }   
 
+static void
+apply_color_class( int c_class, Color value) 
+{
+   int i;
+   Color ** t = standard_colors + 1;
+   for ( i = 1; i < MAX_COLOR_CLASS; i++, t++) (*t)[c_class] = value;
+   Mdebug("color: class %d=%06x\n", c_class, value);
+}
 
 Bool
 prima_init_color_subsystem(char * error_buf)
@@ -934,20 +822,38 @@ BLACK_WHITE_ALLOCATED:
    guts. localPalSize = guts. palSize / 4 + ((guts. palSize % 4) ? 1 : 0);
    hatches = hash_create();
 
+   /* get XRDB colors */
+   {
+      Color c;
+      if ( apc_fetch_resource( "Prima", "", "Color", "color", nilHandle, frColor, &c))
+         apply_color_class( ciFore, c);
+      if ( apc_fetch_resource( "Prima", "", "Back", "backColor", nilHandle, frColor, &c))
+         apply_color_class( ciBack, c);
+      if ( apc_fetch_resource( "Prima", "", "HiliteColor", "hiliteColor", nilHandle, frColor, &c))
+         apply_color_class( ciHiliteText, c);
+      if ( apc_fetch_resource( "Prima", "", "HiliteBackColor", "hiliteBackColor", nilHandle, frColor, &c))
+         apply_color_class( ciHilite, c);
+      if ( apc_fetch_resource( "Prima", "", "DisabledColor", "disabledColor", nilHandle, frColor, &c))
+         apply_color_class( ciDisabledText, c);
+      if ( apc_fetch_resource( "Prima", "", "DisabledBackColor", "disabledBackColor", nilHandle, frColor, &c))
+         apply_color_class( ciDisabled, c);
+      if ( apc_fetch_resource( "Prima", "", "Light3DColor", "light3DColor", nilHandle, frColor, &c))
+         apply_color_class( ciLight3DColor, c);
+      if ( apc_fetch_resource( "Prima", "", "Dark3DColor", "dark3DColor", nilHandle, frColor, &c))
+         apply_color_class( ciDark3DColor, c);
+   }
+
+
    /* parse user colors */
    if ( color_options) {
-      int i, j, c_class;
+      int i, c_class;
       char *value;
-      Color ** t, val;
       XColor xcolor;
       for ( i = 0; i < color_options-> count; i+=2) {
 	 c_class = (int)   color_options-> items[i];
 	 value   = (char*) color_options-> items[i+1];
          if ( XParseColor( DISP, DefaultColormap( DISP, SCREEN), value, &xcolor)) {
-            val = ARGB(xcolor.red >> 8, xcolor.green >> 8, xcolor.blue >> 8);
-            t = standard_colors + 1;
-	    for ( j = 1; j < MAX_COLOR_CLASS; j++, t++) (*t)[c_class] = val;
-	    Mdebug("color: class %d=%06x\n", c_class, val);
+	    apply_color_class( c_class, ARGB(xcolor.red >> 8, xcolor.green >> 8, xcolor.blue >> 8));
 	 } else {
 	    warn("Cannot parse color value `%s`", value);
 	 }
@@ -974,13 +880,13 @@ prima_color_subsystem_set_option( char * option, char * value)
    } else if ( strcmp( option, "bg") == 0) {
       set_color_class( ciBack, option, value);
    } else if ( strcmp( option, "hilite-bg") == 0) {
-      set_color_class( ciHiliteText, option, value);
-   } else if ( strcmp( option, "hilite-fg") == 0) {
       set_color_class( ciHilite, option, value);
+   } else if ( strcmp( option, "hilite-fg") == 0) {
+      set_color_class( ciHiliteText, option, value);
    } else if ( strcmp( option, "disabled-bg") == 0) {
-      set_color_class( ciDisabledText, option, value);
-   } else if ( strcmp( option, "disabled-fg") == 0) {
       set_color_class( ciDisabled, option, value);
+   } else if ( strcmp( option, "disabled-fg") == 0) {
+      set_color_class( ciDisabledText, option, value);
    } else if ( strcmp( option, "light") == 0) {
       set_color_class( ciLight3DColor, option, value);
    } else if ( strcmp( option, "dark") == 0) {

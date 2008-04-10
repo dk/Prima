@@ -300,19 +300,10 @@ for many applications, and these in turn call C<XParseColor> to convert strings
 into RGB values.
 
 Prima is no exception to the scheme. Each widget can be assigned eight color
-properties that belongs to two classes by means of standard XRDB techniques:
+properties: C<color>, C<hiliteBackColor>, C<disabledColor>, C<dark3DColor>
+C<backColor>, C<hiliteColor>, C<disabledBackColor>, C<light3DColor> by their name:
 
-=over
-
-=item class C<Foreground>
-
-Widget properties: C<color>, C<hiliteBackColor>, C<disabledColor>, C<dark3DColor>
-
-=item class C<Background>
-
-Widget properties: C<backColor>, C<hiliteColor>, C<disabledBackColor>, C<light3DColor>
-
-=back
+   Prima.backColor: #cccccc
 
 Additionally, set of command-line arguments allows overriding default values for these:
 

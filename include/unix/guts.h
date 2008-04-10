@@ -508,8 +508,6 @@ typedef struct _UnixGuts
    int                          no_scaled_fonts;
    /* Resource management */
    XrmDatabase                  db;
-   XrmQuark                     qBackground;
-   XrmQuark                     qbackground;
    XrmQuark                     qBlinkinvisibletime;
    XrmQuark                     qblinkinvisibletime;
    XrmQuark                     qBlinkvisibletime;
@@ -518,10 +516,6 @@ typedef struct _UnixGuts
    XrmQuark                     qclicktimeframe;
    XrmQuark                     qDoubleclicktimeframe;
    XrmQuark                     qdoubleclicktimeframe;
-   XrmQuark                     qFont;
-   XrmQuark                     qfont;
-   XrmQuark                     qForeground;
-   XrmQuark                     qforeground;
    XrmQuark                     qString;
    XrmQuark                     qWheeldown;
    XrmQuark                     qwheeldown;
