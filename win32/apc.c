@@ -1707,7 +1707,6 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
          RealizePalette( sys ps);
       }
    }
-   hwnd_enter_paint( self);
 
    if ( useRPDraw) {
       HDC dc;
@@ -1729,6 +1728,11 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       apc_gp_set_transform( owner, 0, 0);
       dsys( owner) ps = dc;
       CWidget( owner)-> end_paint( owner);
+   }
+
+   hwnd_enter_paint( self);
+
+   if ( useRPDraw) {
       apc_gp_set_transform( self, sys transform. x, sys transform. y);
    }
 
