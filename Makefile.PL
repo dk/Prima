@@ -268,6 +268,7 @@ sub ld_command_line
 				"$SHQUOTE$LDLIBPATHFLAG$_$SHQUOTE" :
 				"$LDLIBPATHFLAG$_"
 		} @LIBPATH;
+		push @ld, map { "-Wl,-R$_" } @LIBPATH if $^O =~ /netbsd/;
 		push @ld, "$LDOUTFLAG$dstf", @_;
 		push @ld, map { "$LDLIBFLAG$_"} @LIBS;
 		push @ld, "os2\\Prima.def" if $OS2;
