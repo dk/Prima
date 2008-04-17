@@ -1545,6 +1545,7 @@ sub init
 		origin => [ 10, 10],
 		width  => 150,
 		name   => 'Drive',
+		drive  => $self-> Dir-> path,
 		delegations => [qw(Change)],
 	) if $drives;
 
