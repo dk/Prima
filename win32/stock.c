@@ -489,7 +489,7 @@ font_alloc( Font * data, Point * resolution)
       LOGFONT logfont;
       PFont   f;
 
-      if ( IS_WIN95 && ( hash_count( fontMan) > 128))
+      if ( hash_count( fontMan) > 128)
          font_clean();
 
       ret = ( PDCFont) malloc( sizeof( DCFont));
@@ -773,7 +773,8 @@ apc_font_load( const char* filename)
 #define fgBitmap 0
 #define fgVector 1
 
-static Bool recursiveFF = 0;
+static Bool recursiveFF         = 0;
+static Bool recursiveFFEncoding = 0;
 
 typedef struct _FEnumStruc
 {
@@ -963,10 +964,12 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
    }
 
    // check encoding match
-   if (( es. passedCount == 0) && ( elf. lfCharSet != DEFAULT_CHARSET)) {
+   if (( es. passedCount == 0) && ( elf. lfCharSet != DEFAULT_CHARSET) && ( recursiveFFEncoding == 0)) {
       int r;
       font-> name[0] = 0; // any name
+      recursiveFFEncoding++;
       r = font_font2gp_internal( font, res, forceSize, dc);
+      recursiveFFEncoding--;
       out( r);
    }
 
