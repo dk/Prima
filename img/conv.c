@@ -64,6 +64,28 @@ void ic_##SourceType##_##DestType( Handle self,                           \
    memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));                     \
 }
 
+#define macro_asis_toint(SourceType,DestType)                                        \
+void ic_##SourceType##_##DestType( Handle self,                           \
+      Byte *dstData, PRGBColor dstPal, int dstType, int * dstPalSize, Bool palSize_only)   \
+{                                                                              \
+   SourceType *src = (SourceType*) var->data;                                   \
+   DestType *dst = (DestType*) dstData;                                        \
+   int y;                                                                      \
+   int  width = var->w;                                                         \
+   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
+   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   for ( y = 0; y < var->h; y++)                                                \
+   {                                                                           \
+      SourceType *s = src;                                                     \
+      DestType *d = dst;                                                       \
+      SourceType *stop = s + width;                                            \
+      while ( s != stop) *d++ = (DestType)(*s++ + 0.5);                        \
+      src = (SourceType*)(((Byte*)src) + srcLine);                             \
+      dst = (DestType*)(((Byte*)dst) + dstLine);                               \
+   }                                                                           \
+   memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));                     \
+}
+
 #define macro_asis_complex(SourceType,DestType)                                        \
 void ic_##SourceType##_##DestType##_complex( Handle self,                           \
       Byte *dstData, PRGBColor dstPal, int dstType, int * dstPalSize, Bool palSize_only)  \
@@ -108,6 +130,27 @@ void ic_##SourceType##_complex_##DestType( Handle self,                         
    memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));                     \
 }
 
+#define macro_asis_revcomplex_toint(SourceType,DestType)                       \
+void ic_##SourceType##_complex_##DestType( Handle self,                           \
+      Byte *dstData, PRGBColor dstPal, int dstType, int * dstPalSize, Bool palSize_only)         \
+{                                                                              \
+   SourceType *src = (SourceType*) var->data;                                   \
+   DestType *dst = (DestType*) dstData;                                        \
+   int y;                                                                      \
+   int  width = var->w;                                                         \
+   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
+   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   for ( y = 0; y < var->h; y++)                                                \
+   {                                                                           \
+      SourceType *s = src;                                                     \
+      DestType *d = dst;                                                       \
+      SourceType *stop = s + width*2;                                          \
+      while ( s != stop) { *d++ = (DestType)(*s++ + 0.5); s++; }                \
+      src = (SourceType*)(((Byte*)src) + srcLine);                            \
+      dst = (DestType*)(((Byte*)dst) + dstLine);                               \
+   }                                                                           \
+   memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));                     \
+}
 
 #define macro_int_int(SourceType,DestType)                                     \
 void rs_##SourceType##_##DestType( Handle self,                                \
@@ -206,7 +249,8 @@ void rs_##SourceType##_##DestType( Handle self,                                \
    if ( srcHi == srcLo || dstHi == dstLo)                                      \
    {                                                                           \
       DestType v = (dstLo<minimum_##DestType##Value) ? minimum_##DestType##Value : \
-          ((dstLo>maximum_##DestType##Value) ? maximum_##DestType##Value : dstLo); \
+          ((dstLo>maximum_##DestType##Value) ? maximum_##DestType##Value : dstLo) \
+          + 0.5;                                                                \
       for ( y = 0; y < var->h; y++)                                             \
       {                                                                        \
          DestType *d = dst;                                                    \
@@ -237,27 +281,6 @@ void rs_##SourceType##_##DestType( Handle self,                                \
    }                                                                           \
 }
 
-/*  macro_int_int( Byte, Short)
-    macro_int_int( Byte, Long)
-    macro_int_int( Short, Long)
-    macro_int_int( Short, Byte)
-    macro_int_int( Long, Short)
-    macro_int_int( Long, Byte)
-    macro_float_float__int_float( float, double)
-    macro_float_float__int_float( double, float)
-    macro_float_float__int_float( Byte, float)
-    macro_float_float__int_float( Byte, double)
-    macro_float_float__int_float( Short, float)
-    macro_float_float__int_float( Short, double)
-    macro_float_float__int_float( Long, float)
-    macro_float_float__int_float( Long, double)
-    macro_float_int(float, Byte)
-    macro_float_int(float, Short)
-    macro_float_int(float, Long)
-    macro_float_int(double, Byte)
-    macro_float_int(double, Short)
-    macro_float_int(double, Long) */
-
 macro_int_int( Byte, Byte)
 macro_int_int( Short, Short)
 macro_int_int( Long, Long)
@@ -281,13 +304,13 @@ macro_asis(Long,Byte)
 macro_asis(Long,Short)
 macro_asis(Long,float)
 macro_asis(Long,double)
-macro_asis(float,Byte)
-macro_asis(float,Short)
-macro_asis(float,Long)
+macro_asis_toint(float,Byte)
+macro_asis_toint(float,Short)
+macro_asis_toint(float,Long)
 macro_asis(float,double)
-macro_asis(double,Byte)
-macro_asis(double,Short)
-macro_asis(double,Long)
+macro_asis_toint(double,Byte)
+macro_asis_toint(double,Short)
+macro_asis_toint(double,Long)
 macro_asis(double,float)
 
 macro_asis_complex(Byte,float)
@@ -303,14 +326,14 @@ macro_asis_complex(double,double)
 
 macro_asis_revcomplex(double,double)
 macro_asis_revcomplex(double,float)
-macro_asis_revcomplex(double,Long)
-macro_asis_revcomplex(double,Short)
-macro_asis_revcomplex(double,Byte)
+macro_asis_revcomplex_toint(double,Long)
+macro_asis_revcomplex_toint(double,Short)
+macro_asis_revcomplex_toint(double,Byte)
 macro_asis_revcomplex(float,double)
 macro_asis_revcomplex(float,float)
-macro_asis_revcomplex(float,Long)
-macro_asis_revcomplex(float,Short)
-macro_asis_revcomplex(float,Byte)
+macro_asis_revcomplex_toint(float,Long)
+macro_asis_revcomplex_toint(float,Short)
+macro_asis_revcomplex_toint(float,Byte)
    
 #ifdef __cplusplus
 }
