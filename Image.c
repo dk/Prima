@@ -555,28 +555,28 @@ GOOD_RETURN:
    return true;
 }
 
-static unsigned long 
-img_perlio_read( void * f, unsigned long bufsize, void * buffer)
+static size_t
+img_perlio_read( void * f, size_t bufsize, void * buffer)
 {
 #ifdef PerlIO
     return PerlIO_read(( FileStream) f, buffer, bufsize);
 #else
-    return fread( buffer, bufsize, 1, ( FileStream) f);
+    return fread( buffer, 1, bufsize, ( FileStream) f);
 #endif
 }
 
-static unsigned long 
-img_perlio_write( void * f, unsigned long bufsize, void * buffer)
+static size_t
+img_perlio_write( void * f, size_t bufsize, void * buffer)
 {
 #ifdef PerlIO
     return PerlIO_write( ( FileStream) f, buffer, bufsize);
 #else
-    return fwrite( buffer, bufsize, 1, ( FileStream) f);
+    return fwrite( buffer, 1, bufsize, ( FileStream) f);
 #endif
 }
 
-static unsigned long 
-img_perlio_seek( void * f, unsigned long offset, int whence)
+static int
+img_perlio_seek( void * f, long offset, int whence)
 {
 #ifdef PerlIO
     return PerlIO_seek( ( FileStream) f, offset, whence);

@@ -186,49 +186,25 @@ apc_img_profile_add( HV * to, HV * from, HV * keys)
    }
 }   
 
-static unsigned long 
-stdio_read( void * f, unsigned long bufsize, char * buffer)
+static size_t 
+stdio_read( void * f, size_t bufsize, char * buffer)
 {
     return fread( buffer, 1, bufsize, ( FILE*) f);
 }
 
-static unsigned long 
-stdio_write( void * f, unsigned long bufsize, char * buffer)
+static size_t 
+stdio_write( void * f, size_t bufsize, char * buffer)
 {
     return fwrite( buffer, 1, bufsize, ( FILE*) f);
 }
 
-static unsigned long 
-stdio_seek( void * f, unsigned long offset, int whence)
-{
-    return fseek( ( FILE*) f, offset, whence);
-}
-
-static unsigned long 
-stdio_tell( void * f)
-{
-    return ftell( ( FILE*) f);
-}
-
-static int
-stdio_flush( void * f)
-{
-    return fflush( ( FILE*) f);
-}
-
-static int
-stdio_error( void * f)
-{
-    return ferror( ( FILE*) f);
-}
-     
 static ImgIORequest std_ioreq = {
       stdio_read,
       stdio_write,
-      stdio_seek,
-      stdio_tell,
-      stdio_flush,
-      stdio_error
+      (void*) fseek,
+      (void*) ftell,
+      (void*) fflush,
+      (void*) ferror
 };
 
 PList 

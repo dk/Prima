@@ -85,7 +85,6 @@ use vars @ovvars = qw(
 	$DEBUG
 	$WITH_XFT
 	$WITH_ICONV
-	$CODEC_PRIGRAPH
 	$WITH_GTK2
 	$AUTOMATED_RUN
 	$CYGWIN_X11
@@ -241,7 +240,6 @@ sub cc_command_line
 #		push @cc, "$CDEFFLAG$_=$DEFINES{$_}";
 #	}
 	push @cc, "${ CDEFFLAG}HAVE_CONFIG_H=1";
-#	push @cc, "${CDEFFLAG}PRIGRAPH" if $usePrigraph;
 	push @cc, ( $compile_only ? "$COUTOFLAG$objf" : "$COUTEXEFLAG$exef");
 	push @cc, "$COUTOFLAG$objf" if $COMPILER =~ /^(msvc|bcc32)$/ && !$compile_only;
 	push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH unless $compile_only || ( $COMPILER eq 'msvc');
@@ -987,7 +985,6 @@ sub setup_variables
 	setvar( 'WANTNOCODECS', 0);
 	setvar( 'WANTNOGIFS', 0);
 	setvar( 'AUTOMATED_RUN', 0);
-	setvar( 'CODEC_PRIGRAPH', 1);
 	@executables = qw(
 		Prima/VB/VB.pl
 		Prima/VB/cfgmaint.pl
@@ -1374,10 +1371,12 @@ sub setup_misc
 	# finding image codecs
 	my %libs = map { $_ => 1 } @LIBS;
 	my @codecs;
-	my $stop_codecs;
+	my @builtin_codecs;
 	while ( <img/codec_*.c>) {
 		if ( m/prigraph/) {
 			unshift @codecs, $_; # put it first
+		} elsif ( m/codec_(bmp)/) {
+			push @builtin_codecs, $1;
 		} else {
 			push @codecs, $_;
 		}
@@ -1395,29 +1394,13 @@ sub setup_misc
 		}
 		close F;
 		$lib.='.lib' if ( $COMPILER eq 'msvc') || $OS2;
-		if ( !$stop_codecs && ( 
+		if ( 
 			$libs{$lib} || 
 			defined ( $foundlib = find_lib( $lib, join('', @inc), '', @codec_libpath))
-		)) {
+		) {
 			if ( defined $foundlib and length $foundlib) {
 				push @LIBPATH, $foundlib;
 				@codec_libpath = ();
-			}
-			if ( $lib =~ /^prigraph/) {
-				if ( $CODEC_PRIGRAPH) {
-					print <<PRIGRAPH_WARNING unless defined $USER_VARS{CODEC_PRIGRAPH};
-          
-** Warning: image library 'prigraph' cannot coexist with the other image
-libraries, so these are disabled. To disable 'prigraph' instead, run
-
-perl Makefile.PL CODEC_PRIGRAPH=0
-
-PRIGRAPH_WARNING
-					$stop_codecs = 1;
-				} else {
-					$PASSIVE_CODECS{$fn} = 1;
-					next;
-				}
 			}
 			push( @ACTIVE_CODECS, $codec);
 			push( @LIBS, $lib) unless $libs{$lib};
@@ -1462,6 +1445,12 @@ the instructions in README file.
 
 UNGIF_WARNING
 	}
+	push @ACTIVE_CODECS, @builtin_codecs;
+
+	# make prigraph last so it'll have a chance to check which codecs it doesn't 
+	# need to support
+	@codecs = grep { $_ ne 'prigraph' } @ACTIVE_CODECS;
+	@ACTIVE_CODECS = ( @codecs, 'prigraph' ) unless @codecs == @ACTIVE_CODECS;
 
 	push @Prima_exports, 'bzero' unless $DEFINES{HAVE_BZERO};
 	# Setting up translation tables for quoting string for different make utilities.
@@ -1944,7 +1933,6 @@ CONTENT
 # Here we go...
 #
 
-# $usePrigraph = env_true( 'PRIMA_PRIGRAPH');
 $useGC = env_true( 'PRIMA_USE_GC');
 
 $Win32 = ( $^O =~ /mswin32|cygwin/i);
@@ -2196,7 +2184,6 @@ compiler/linker options:
     WITH_XFT          - compile with/without Xft (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
     WITH_GTK2         - compile with/without GTK2 (default 1), X only
-    CODEC_PRIGRAPH    - compile with/without prigraph (default 1), win32/os2 only
     CYGWIN_X11        - X11 build in cygwin environment
 
 HELP

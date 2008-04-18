@@ -39,12 +39,12 @@ extern "C" {
 #endif
 
 typedef struct _ImgIORequest {
-  unsigned long (*read)       ( void * handle, unsigned long busize, void * buffer);
-  unsigned long (*write)      ( void * handle, unsigned long busize, void * buffer);
-  unsigned long (*seek)       ( void * handle, unsigned long offset, int whence);
-  unsigned long (*tell)       ( void * handle);
-  int           (*flush)      ( void * handle);
-  int           (*error)      ( void * handle);
+  size_t (*read)       ( void * handle, size_t busize, void * buffer);
+  size_t (*write)      ( void * handle, size_t busize, void * buffer);
+  int    (*seek)       ( void * handle, long offset, int whence);
+  long   (*tell)       ( void * handle);
+  int    (*flush)      ( void * handle);
+  int    (*error)      ( void * handle);
   void   * handle;
 } ImgIORequest, *PImgIORequest;
 
