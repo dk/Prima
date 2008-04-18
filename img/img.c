@@ -187,22 +187,35 @@ apc_img_profile_add( HV * to, HV * from, HV * keys)
 }   
 
 static size_t 
-stdio_read( void * f, size_t bufsize, char * buffer)
+stdio_read( void * f, size_t bufsize, void * buffer)
 {
     return fread( buffer, 1, bufsize, ( FILE*) f);
 }
 
 static size_t 
-stdio_write( void * f, size_t bufsize, char * buffer)
+stdio_write( void * f, size_t bufsize, void * buffer)
 {
     return fwrite( buffer, 1, bufsize, ( FILE*) f);
 }
 
+static int
+stdio_seek( void * f, long offset, int whence)
+{
+    return fseek( ( FILE*) f, offset, whence);
+}
+
+static long
+stdio_tell( void * f)
+{
+    return ftell( ( FILE*) f);
+}
+
+
 static ImgIORequest std_ioreq = {
       stdio_read,
       stdio_write,
-      (void*) fseek,
-      (void*) ftell,
+      stdio_seek,
+      stdio_tell,
       (void*) fflush,
       (void*) ferror
 };

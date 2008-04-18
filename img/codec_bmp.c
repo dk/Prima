@@ -493,7 +493,6 @@ read_bmp_header( PImgLoadFileInstance fi)
 static Bool
 req_read_big( PImgLoadFileInstance fi, int h, unsigned long lineSize, Byte * data)
 {
-	PImgIORequest fd = fi-> req;
 	unsigned long size = h * lineSize, read = 0;
 	int lasty = 0, y = 0;
 
@@ -531,7 +530,6 @@ req_read_big( PImgLoadFileInstance fi, int h, unsigned long lineSize, Byte * dat
 static Bool   
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
-	dPROFILE;
 	HV * profile = fi-> frameProperties;
 	LoadRec * l = ( LoadRec *) fi-> instance;
 	PImgIORequest fd = fi-> req;
