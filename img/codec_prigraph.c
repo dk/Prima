@@ -194,6 +194,19 @@ std_write(int fd, const void *buf, int len)
    return req_write( fdmap[fd], len, (void*) buf);
 }
 
+static Bool
+codec_is_enabled( int ft)
+{
+   int i;
+   ft = gbm_ft_map[ft];
+   for ( i = 0; i < n_disabled_codecs; i++) {
+      if ( disabled_codecs[i] == ft)
+         return false;
+   }
+   return true;
+}
+
+
 static void * 
 init( ImgCodecInfo ** info, void * param)
 {
@@ -216,13 +229,6 @@ init( ImgCodecInfo ** info, void * param)
       return false;
    } 
 
-   for ( i = 0; i <= itMAX; i++) {
-      if ( strcmp( gft. short_name, gbm_ids[i]) == 0) {
-	 gbm_ft_map[(int)param] = i;
-	 break;
-      }
-   } 
-   
    memcpy( *info, &codec_info, sizeof( ImgCodecInfo));
    (*info)-> fileType = gft. long_name;
    (*info)-> fileShortType = gft. short_name;
@@ -297,7 +303,7 @@ init( ImgCodecInfo ** info, void * param)
          break;
       default:
          (*info)-> saveTypes = t_all;
-   }      
+   }
 
    switch ( gbm_ft_map[(int)param] ) {
    case itTGA:
@@ -362,17 +368,6 @@ static ImageSignatures signatures[] =
 #define N_SIGS ( sizeof( signatures) / sizeof( signatures[ 0]))
 
 static Bool
-codec_is_enabled( int ft)
-{
-   int i;
-   for ( i = 0; i < n_disabled_codecs; i++) {
-      if ( disabled_codecs[i] == ft)
-         return false;
-   }
-   return true;
-}
-
-static Bool
 type_ok( PImgIORequest req, int ft)
 {
    char buf[ 8];
@@ -429,7 +424,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( g-> ft == itBMP) {
       strcat( g-> params, "inv ");
       g-> params += 4;
-   }      
+   }
 
    if ( g-> ft == itGIF) 
       fi-> frameCount = -1;
@@ -697,7 +692,7 @@ close_save( PImgCodec instance, PImgSaveFileInstance fi)
 void 
 apc_img_codec_prigraph( void )
 {
-   int i, nft;
+   int i, j, nft;
    struct ImgCodecVMT vmt;
    memcpy( &vmt, &CNullImgCodecVMT, sizeof( CNullImgCodecVMT));
    vmt. init       = init;      
@@ -745,9 +740,22 @@ apc_img_codec_prigraph( void )
    disabled_codecs[ n_disabled_codecs++ ] = itKPS;
 
    gbm_init();
+   
+   /* fill map */
    gbm_query_n_filetypes(&nft);
+   for ( i = 0; i < nft; i++) {
+      GBMFT gft;
+      gbm_query_filetype( i, &gft);
+      for ( j = 0; j <= itMAX; j++) {
+         if ( strcmp( gft. short_name, gbm_ids[j]) == 0) {
+            gbm_ft_map[i] = j;
+            break;
+         }
+      }
+   }
+   /* register codecs */
    for ( i = 0; i < nft; i++)
-      if ( codec_is_enabled( i)) 
+      if ( codec_is_enabled(i))
          apc_img_register( &vmt, (void*)i);
 }  
 

@@ -25,22 +25,22 @@ if ( open F, "> ./test.test" ) {
 	unlink "./test.test";
 }
 
-# test if has GIF support compiled in
-my $has_gif = grep { $_->{fileShortType} =~ /^gif$/i } @$codecs;
+# test if has BMP support compiled in
+my $has_bmp = grep { $_->{fileShortType} =~ /^bmp$/i } @$codecs;
 
 unless ( $fileok) {
-	print "1..3 basic functionality,GIF supported,codecs";
+	print "1..3 basic functionality,BMP supported,codecs";
 	ok(1);
-	ok($has_gif);
+	ok($has_bmp);
 	skip;
 	return 1;
 }
 
 my $cdx = scalar(@$codecs) + 3;
-print "1..$cdx basic functionality,GIF supported,", join(',', 'codecs', @names);
+print "1..$cdx basic functionality,BMP supported,", join(',', 'codecs', @names);
 # 1-3
 ok(1);
-ok($has_gif);
+ok($has_bmp);
 ok(1);
 
 my $i = Prima::Image-> create(
