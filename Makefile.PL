@@ -514,7 +514,7 @@ sub have_funcs_in
 
 sub find_inline
 {
-	print "Checking for inline...";
+	print "Checking for inline... ";
 	for ( qw( inline __inline inline__ __inline__
 				INLINE __INLINE INLINE__ __INLINE__)) {
 		my $i = $_;    
@@ -899,7 +899,7 @@ sub setup_variables
 	setup_compiler();
 
 	for my $lib (@libs) {
-		print "Checking for $lib...";
+		print "Checking for library $lib... ";
 		my $path = find_lib($lib, '', '');
 		if ( defined $path) {
 			push @flibs, $lib;
@@ -967,7 +967,7 @@ sub setup_variables
 		setvar( 'INSTALL_MAN1', $Config{installman1dir});
 		setvar( 'INSTALL_MAN3', $Config{installman3dir});
 	}
-	setvar( 'X11BASE') if $NeedX11;
+	setvar( 'X11BASE');
 
 	setvar( 'MAKETYPE', lc ( $MAKE = $Config{ make}));
 	# Note that Borland's make utility also named 'make'. But its
@@ -1033,66 +1033,85 @@ EOF
 	print "yes\n";
 }
 
-sub setup_paths
+sub setup_X11
 {
+	# find X11 include files
+	print "Checking for X11 headers...";
+	push @INCPATH, "$X11BASE/include" if defined($X11BASE) and -d "$X11BASE/include";
+	for ( 'local/', 'freeware/', 'gnu/', 'opt/') {
+		push @INCPATH, qd( "/usr/${_}include") if -d "/usr/${_}include";
+	}
+	my $incpath = find_header( qd( "X11/Xlib.h"), 
+		qd( "/usr/X11R6/include"), 
+		qd( "/usr/X11/include"), 
+		qd("/usr/X/include"), 
+		qd("/usr/openwin/include")
+	);
+
+	unless ( defined $incpath) {
+		print "no\n";
+		return unless $NeedX11;
+		warn 
+			"Prima needs X11 headers for compilation! ".
+			"Set X11BASE='/path/to/X' or INCPATH+='/path/to/X/include' ".
+			"if you have a non-standard path to X. $see_makefile_log\n";
+		exit(0);
+	}
+
+	print "yes";
+	if ( -d $incpath) {
+		print ", in $incpath";
+		push @INCPATH, $incpath;
+	}
+	print "\n";
+
+	# find X11 libraries
+	my @libpath = ( "X11", '', 
+		(defined($X11BASE) ? "$X11BASE/lib" : ()), 
+		"/usr/X11R6/lib", 
+		"/usr/X11/lib",
+		"/usr/X/lib",
+		"/usr/openwin/lib"
+	);
+	# using /usr/X11R6/lib64 ?
+	unshift @libpath, map { s/lib$/lib64/; $_ } grep { /lib$/ } @libpath
+		if $Config{intsize} == 8;
+
+	print "Checking for library X11... ";
+	my $libpath = find_lib( @libpath);
+	unless ( defined $libpath) {
+		print "no\n";
+		unless ( $NeedX11) {
+			pop @INCPATH if @INCPATH and $INCPATH[-1] eq $incpath;
+			return;
+		}
+		warn 
+			"Prima needs X11 libraries for compilation! ".
+			"Set X11BASE='/path/to/X' or LIBPATH+='/path/to/X/lib' ".
+			"if you have a non-standard path to X. $see_makefile_log\n";
+		exit(0);
+	}
+
+	print "yes";
+	if ( -d $libpath) {
+		print ", in $libpath";
+		push @LIBPATH, $libpath;
+	}
+	print "\n";
+
 	if ( $NeedX11) {
-		# find X11 include files
-		push @INCPATH, "$X11BASE/include" if defined($X11BASE) and -d "$X11BASE/include";
-		for ( 'local/', 'freeware/', 'gnu/', 'opt/') {
-				push @INCPATH, qd( "/usr/${_}include") if -d "/usr/${_}include";
-		}
-		my $incpath = find_header( qd( "X11/Xlib.h"), 
-			qd( "/usr/X11R6/include"), 
-			qd( "/usr/X11/include"), 
-			qd("/usr/X/include"), 
-			qd("/usr/openwin/include")
-		);
-
-		unless ( defined $incpath) {
-			warn 
-				"Prima needs X11 headers for compilation! ".
-				"Set X11BASE='/path/to/X' or INCPATH+='/path/to/X/include' ".
-				"if you have a non-standard path to X. $see_makefile_log\n";
-			exit(0);
-		}
-
-		if ( -d $incpath) {
-			print "X11 includes found in $incpath\n";
-			push @INCPATH, $incpath;
-		}
-
-		# find X11 libraries
-		my @libpath = ( "X11", '', 
-			(defined($X11BASE) ? "$X11BASE/lib" : ()), 
-			"/usr/X11R6/lib", 
-			"/usr/X11/lib",
-			"/usr/X/lib",
-			"/usr/openwin/lib"
-		);
-		# using /usr/X11R6/lib64 ?
-		unshift @libpath, map { s/lib$/lib64/; $_ } grep { /lib$/ } @libpath
-			if $Config{intsize} == 8;
-		my $libpath = find_lib( @libpath);
-		unless ( defined $libpath) {
-			warn 
-				"Prima needs X11 libraries for compilation! ".
-				"Set X11BASE='/path/to/X' or LIBPATH+='/path/to/X/lib' ".
-				"if you have a non-standard path to X. $see_makefile_log\n";
-			exit(0);
-		}
-		if ( -d $libpath) {
-			print "X11 libraries found in $libpath\n";
-			push @LIBPATH, $libpath;
-		}
 		push @LIBS, 'X11';
 		if (defined find_lib( "Xext", '', '')) {
 			print "Xext library found.\n";
 			push @LIBS, "Xext";
 		}
 	}
-	
-	if ( !$NeedX11 || $CYGWIN_X11) {
-		print "Checking for perl library...";
+}
+
+sub setup_perl
+{
+	if ( $Win32 || $OS2) {
+		print "Checking for perl library... ";
 		my $libpath = find_lib( $Config{ libperl}, '', "", qd( "$Config{ archlib}/CORE"));
 		unless ( defined $libpath) {
 			print "no\n";
@@ -1381,7 +1400,7 @@ sub setup_codecs
 	$prereq = 'win32' if $Win32 and not $cygwin;
 	$prereq = 'os2'   if $OS2; 
 	if ( $prereq) {
-		print "Checking for Prima::codecs::$prereq...";
+		print "Checking for Prima::codecs::$prereq... ";
 		eval "use Prima::codecs::$prereq;";
 		unless ( $@) {
 			print "yes\n";
@@ -1420,7 +1439,7 @@ sub setup_codecs
 		}
 		close F;
 		$lib.='.lib' if ( $COMPILER eq 'msvc') || $OS2;
-		print "Checking for $codec library...";
+		print "Checking for $codec library... ";
 		if ( 
 			$libs{$lib} || 
 			defined ( $foundlib = find_lib( $lib, join('', @inc), '', @codec_libpath))
@@ -1516,7 +1535,7 @@ sub setup_misc
 	# check if we need dl_load_flags(0x01)
 	if ( $DL_LOAD_FLAGS < 0) {
 
-		print "Determining dl_load_flags...";
+		print "Determining dl_load_flags... ";
 
 		my $c1  = qd( tempfile( "$TMPDIR/pmts%04d.c"));
 		$c1 =~ m/pmts([^\.]*).c$/;
@@ -2250,7 +2269,8 @@ HELP
 =cut
 	process_commandline;
 	setup_variables;
-	setup_paths;
+	setup_X11;
+	setup_perl;
 	setup_defines;
 	setup_xft;
 	
