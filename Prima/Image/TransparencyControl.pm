@@ -136,6 +136,7 @@ sub index
 sub Index_Change
 {
 	$_[0]-> index( $_[1]-> value);
+	$_[0]-> Palette-> repaint;
 }
 
 sub on_enable

@@ -47,6 +47,7 @@ for ( @codecs) {
 		skip(1);
 		next;
 	}
+	binmode F;
 	unless ( $xi-> save( \*F, codecID => $ci-> {codecID})) {
 		ok(0);
 		skip(1);
@@ -62,6 +63,7 @@ for ( @codecs) {
 		unlink $name;
 		next;
 	}
+	binmode F;
 
 	my $xl = Prima::Image-> load( \*F, loadExtras => 1);
 	close F;

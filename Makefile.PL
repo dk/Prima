@@ -79,8 +79,6 @@ use vars @ovvars = qw(
 	$MAKETYPE
 	$DEFFILE
 	$DISTNAME
-	$WANTNOCODECS
-	$WANTNOGIFS
 	$DL_LOAD_FLAGS
 	$DEBUG
 	$WITH_XFT
@@ -130,7 +128,6 @@ use vars qw(
 	$NeedX11
 	$OS2
 	$OS2DLLF
-	$usePrigraph
 	$useGC
 	%cc_specs
 	@LIBS
@@ -169,7 +166,7 @@ use vars qw(
 	$win32_use_dlltool
 );
 
-my $extramsg = "(see also makefile.log for details)";
+my $see_makefile_log = "(see also makefile.log for details)";
 
 sub print_config
 {
@@ -314,7 +311,7 @@ sub compile
 	$tmpextras[0] =~ s/\.[^\.+]$/.ilk/;
 	$tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
 
-	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $extramsg";
+	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $see_makefile_log";
 	print TMPSRC $text;
 	close TMPSRC;
 
@@ -404,7 +401,7 @@ EOF
 sub have_func
 {
 	my ( $funcname, @headers) = @_;
-	die "have_func() without any header is deprecated $extramsg" unless @headers;
+	die "have_func() without any header is deprecated $see_makefile_log" unless @headers;
 	my $defname = "HAVE_" . uc $funcname;
 	my @srchead = map { "#include <$_>\n"} @headers;
 	$defname =~ s/\W/_/g;
@@ -441,7 +438,7 @@ sub have_define
 	} else {
 		$tmpo =~ s/\.c$/\.o/;
 	}
-	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $extramsg";
+	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $see_makefile_log";
 	print TMPSRC <<EOF;
 int
 main()
@@ -871,7 +868,6 @@ sub setup_variables
 		}
 	}
 	#    push ( @libs, 'pmprintf') if $OS2 && defined $ENV{PRIMA_PMPRINTF};
-	#    push ( @libs, ( $Win32 || $OS2) ? 'prigraph.lib' : 'prigraph') if $usePrigraph;
 	if ( $useGC) {
 		push @libs, 'leak';
 	}
@@ -888,18 +884,38 @@ sub setup_variables
 		$Config{libperl} =~ s/^lib(.*)\.a$/$1/i;
 	}
 
+	open F, 'Prima.pm' or die "Cannot open Prima.pm:$!\n";
+	my ($ver1, $ver2);
+	while (<F>) {
+		next unless m/\$VERSION[^\.\d]*(\d+)\.(\d+)/;
+		$ver1 = $1, $ver2 = $2, last;
+	}
+	close F;
+	die "Cannot find VERSION string in Prima.pm\n" unless defined $ver1;
+	print "Version: $ver1.$ver2\n";
+	setvar( 'DISTNAME', "Prima-$ver1.$ver2");
+
 # here starts lot of execs...
+	setup_compiler();
 
 	for my $lib (@libs) {
-		if ( defined find_lib($lib, '', '')) {
+		print "Checking for $lib...";
+		my $path = find_lib($lib, '', '');
+		if ( defined $path) {
 			push @flibs, $lib;
+			print "yes";
+			print ", in $path" if length($path);
+			print "\n";
 		} else {
-			print "*** Warning (probably harmless): `$lib' library not found\n";
+			print "no\n";
+			$END .= "*** Warning (probably harmless): `$lib' library not found\n";
 		}
 	}
 
 	@LIBS = @flibs;
 	%DEFINES = (
+		PRIMA_VERSION => $ver1,
+		PRIMA_SUBVERSION => $ver2,
 		PERL_PATCHLEVEL => $Config{ PATCHLEVEL},
 		PERL_SUBVERSION => $Config{ SUBVERSION},
 		PRIMA_CORE => 1,
@@ -970,20 +986,6 @@ sub setup_variables
 	$extralibs = '';
 	$extralibs = qd("auto/Prima/Prima.lib") if $OS2;
 	setvar( 'DEFFILE', $Win32 ? qd( "win32/Prima.def") : ( $OS2 ? qd( "os2/Prima.def") : ''));
-	open F, 'Prima.pm' or die "Cannot open Prima.pm:$!\n";
-	my ($ver1, $ver2);
-	while (<F>) {
-		next unless m/\$VERSION[^\.\d]*(\d+)\.(\d+)/;
-		$ver1 = $1, $ver2 = $2, last;
-	}
-	close F;
-	die "Cannot find VERSION string in Prima.pm\n" unless defined $ver1;
-	print "Version: $ver1.$ver2\n";
-	$DEFINES{PRIMA_VERSION} = $ver1;
-	$DEFINES{PRIMA_SUBVERSION} = $ver2;
-	setvar( 'DISTNAME', "Prima-$ver1.$ver2");
-	setvar( 'WANTNOCODECS', 0);
-	setvar( 'WANTNOGIFS', 0);
 	setvar( 'AUTOMATED_RUN', 0);
 	@executables = qw(
 		Prima/VB/VB.pl
@@ -1017,11 +1019,11 @@ unprotect_object
 sub setup_compiler
 {
 	print "Checking if can compile... ";
-	compile('int a;', 1) or die "no $extramsg\n";
+	compile('int a;', 1) or die "no $see_makefile_log\n";
 	print "yes\n";
 
 	print "Checking if can link... ";
-	compile( <<EOF, 0) or die "no $extramsg\n";
+	compile( <<EOF, 0) or die "no $see_makefile_log\n";
 int
 main()
 {
@@ -1050,7 +1052,7 @@ sub setup_paths
 			warn 
 				"Prima needs X11 headers for compilation! ".
 				"Set X11BASE='/path/to/X' or INCPATH+='/path/to/X/include' ".
-				"if you have a non-standard path to X. $extramsg\n";
+				"if you have a non-standard path to X. $see_makefile_log\n";
 			exit(0);
 		}
 
@@ -1075,7 +1077,7 @@ sub setup_paths
 			warn 
 				"Prima needs X11 libraries for compilation! ".
 				"Set X11BASE='/path/to/X' or LIBPATH+='/path/to/X/lib' ".
-				"if you have a non-standard path to X. $extramsg\n";
+				"if you have a non-standard path to X. $see_makefile_log\n";
 			exit(0);
 		}
 		if ( -d $libpath) {
@@ -1090,9 +1092,15 @@ sub setup_paths
 	}
 	
 	if ( !$NeedX11 || $CYGWIN_X11) {
+		print "Checking for perl library...";
 		my $libpath = find_lib( $Config{ libperl}, '', "", qd( "$Config{ archlib}/CORE"));
-		die "Cannot find perl library $extramsg\n" unless defined $libpath;
-		print "Perl library found in ", ( $libpath || "default LIBPATH"), "\n";
+		unless ( defined $libpath) {
+			print "no\n";
+			die "Cannot find perl library $see_makefile_log\n" 
+		}
+		print "yes";
+		print ", in $libpath" if length($libpath);
+		print "\n";
 		push @LIBPATH, $libpath if $libpath;
 		push @LIBS, $Config{ libperl};
 	}
@@ -1129,7 +1137,7 @@ sub setup_defines
 	if ( $OS2 && defined $ENV{ PRIMA_PMPRINTF}) {
 		if ( have_header( "pmprintf.h", "os2.h")) {
 				my $libpath = find_lib( 'pmprintf', '', "");
-				die "There is no library for pmprintf  $extramsg\n" unless defined $libpath;
+				die "There is no library for pmprintf  $see_makefile_log\n" unless defined $libpath;
 				push @LIBS, 'pmprintf';
 		}
 		else {
@@ -1366,8 +1374,25 @@ EOF
 }
 
 
-sub setup_misc
+sub setup_codecs
 {
+	# see if Prima::codecs:: is installed
+	my ( $prereq, $have_binary_prereq);
+	$prereq = 'win32' if $Win32 and not $cygwin;
+	$prereq = 'os2'   if $OS2; 
+	if ( $prereq) {
+		print "Checking for Prima::codecs::$prereq...";
+		eval "use Prima::codecs::$prereq;";
+		unless ( $@) {
+			print "yes\n";
+			$have_binary_prereq++;
+			push @LIBPATH, qd("$Config{installsitearch}/Prima/codecs/$prereq/lib");
+			push @INCPATH, qd("$Config{installsitearch}/Prima/codecs/$prereq/include");
+		} else {
+			print "no\n";
+		}
+	}
+
 	# finding image codecs
 	my %libs = map { $_ => 1 } @LIBS;
 	my @codecs;
@@ -1383,6 +1408,7 @@ sub setup_misc
 	}
 	
 	my @codec_libpath = qd( $Config{installsitearch});
+	my @warn_codecs;
 	for ( @codecs) {
 		my @inc;
 		my $foundlib;
@@ -1394,6 +1420,7 @@ sub setup_misc
 		}
 		close F;
 		$lib.='.lib' if ( $COMPILER eq 'msvc') || $OS2;
+		print "Checking for $codec library...";
 		if ( 
 			$libs{$lib} || 
 			defined ( $foundlib = find_lib( $lib, join('', @inc), '', @codec_libpath))
@@ -1404,46 +1431,56 @@ sub setup_misc
 			}
 			push( @ACTIVE_CODECS, $codec);
 			push( @LIBS, $lib) unless $libs{$lib};
-			print "Using image library '$lib'\n";
+			print "yes";
+			print ", in $foundlib" if defined($foundlib) and length($foundlib);
+			print "\n";
 		} else {
 			$PASSIVE_CODECS{$fn} = 1;
+			push @warn_codecs, $codec unless $codec eq 'prigraph';
+			print "no\n";
 		}
 	}
 
-	unless ( @ACTIVE_CODECS || $WANTNOCODECS) {
-		$binary_prereq = 'win32' if $Win32;
-		$binary_prereq = 'os2'   if $OS2; 
+	unless ( @ACTIVE_CODECS) {
+		$binary_prereq = $prereq;
 		$END .= <<NOCODECS;
 
-** No image codecs found. Use
+** No image codecs found. 
 
-perl Makefile.PL WANTNOCODECS=1
+Note that in this configuration Prima will not be 
+able to work with graphic files. Please follow the 
+instructions in README file.
+NOCODECS
+		$END .= <<BROKEN_CODECS if $have_binary_prereq;
 
-to suppress this warning. Note that in this configuration Prima
-will not be able to work with graphic files. Please follow
-the instructions in README file.
+** Prima::codecs::$binary_prereq is found in 
+$Config{installsitearch}, but is broken. Please reinstall it.
 
-If you are under CPAN shell and are asked to follow Prima::prigraph 
-dependencies, do so.
+BROKEN_CODECS
+		$END .= <<NOCODECS_BIN if $binary_prereq;
+
+If you are under CPAN shell and are asked to install 
+Prima::codecs::$binary_prereq dependency, do so. Otherwise,
+install it manually.
+NOCODECS_BIN
+
+		$END .= <<NOCODECS_CYGWIN if $cygwin;
+
+Install these libraries and re-run Makefile.PL
+
+NOCODECS_CYGWIN
+	} elsif ( @warn_codecs) {
+		$END .= <<NOCODECS;
+          
+** Warning: the following image libraries weren't found:
+
+@warn_codecs
+
+Note that in this configuration Prima will not be 
+able to work with the corresponding image formats.
+Please follow the instructions in README file.
 
 NOCODECS
-	}
-
-	unless ( 
-		not(@ACTIVE_CODECS) or $WANTNOCODECS or 
-		$WANTNOGIFS or grep { m/^(prigraph|ungif)/ } @ACTIVE_CODECS
-	) {
-		$END .= <<UNGIF_WARNING;
-          
-** Warning: no libungif / libprigraph found. Use
-
-perl Makefile.PL WANTNOGIFS=1
-
-to suppress this warning. Note that in this configuration Prima
-will not be able to work with GIF files. Please follow
-the instructions in README file.
-
-UNGIF_WARNING
 	}
 	push @ACTIVE_CODECS, @builtin_codecs;
 
@@ -1451,7 +1488,10 @@ UNGIF_WARNING
 	# need to support
 	@codecs = grep { $_ ne 'prigraph' } @ACTIVE_CODECS;
 	@ACTIVE_CODECS = ( @codecs, 'prigraph' ) unless @codecs == @ACTIVE_CODECS;
+}
 
+sub setup_misc
+{
 	push @Prima_exports, 'bzero' unless $DEFINES{HAVE_BZERO};
 	# Setting up translation tables for quoting string for different make utilities.
 	my ( $make_tbl, $nmake_tbl, $dmake_tbl);
@@ -2179,7 +2219,6 @@ compiler/linker options:
     INCPATH, LIBPATH  - additional paths to include and library files
                         (f.ex. INCPATH+=/usr/opt/include )
     PREFIX            - installation prefix, default is perl5 hierarchy
-    WANTNOGIFS        - compile without gif loader
     X11BASE           - path where X11 includes and libraries are installed
     WITH_XFT          - compile with/without Xft (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
@@ -2211,7 +2250,6 @@ HELP
 =cut
 	process_commandline;
 	setup_variables;
-	setup_compiler;
 	setup_paths;
 	setup_defines;
 	setup_xft;
@@ -2236,6 +2274,7 @@ EOF
 EOF
 	close CONFIG;
 	
+	setup_codecs;
 	setup_misc; # contains code dependant on config.h
 
 	push @allrealclean, $config_h;
@@ -2277,7 +2316,7 @@ HEADER
 
 	$make .= <<PREREQ if $binary_prereq;
 #	
-# PREREQ_PM => { Prima::prigraph::$binary_prereq=>q[0] }
+# PREREQ_PM => { Prima::codecs::$binary_prereq=>q[0] }
 #
 PREREQ
 
