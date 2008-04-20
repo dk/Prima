@@ -632,6 +632,7 @@ sub profile_default
 		autoMasking => am::Auto,
 		mask        => '',
 		maskColor   => 0,
+		maskIndex   => 0,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;

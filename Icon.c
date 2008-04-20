@@ -64,7 +64,10 @@ produce_mask( Handle self)
       rgbcolor. r = (var-> maskColor >> 16) & 0xFF;
       if ( bpp <= 8)
          color = cm_nearest_color( rgbcolor, var-> palSize, var-> palette);
-   }   
+   } else if ( var-> autoMasking == amMaskIndex) {
+      if ( bpp > 8) return;	 
+      color = var-> maskIndex;
+   }
 
    if ( bpp == imMono) {
       /* mono case simplifies our task */
@@ -264,6 +267,7 @@ Icon_init( Handle self, HV * profile)
    dPROFILE;
    inherited init( self, profile);
    my-> set_maskColor( self, pget_i( maskColor));
+   my-> set_maskIndex( self, pget_i( maskIndex));
    my-> set_autoMasking( self, pget_i( autoMasking));
    my-> set_mask( self, pget_sv( mask));
    CORE_INIT_TRANSIENT(Icon);
@@ -311,6 +315,18 @@ Icon_maskColor( Handle self, Bool set, Color color)
    if ( var-> autoMasking == amMaskColor) 
       my-> update_change( self);
    return clInvalid;
+}   
+
+int
+Icon_maskIndex( Handle self, Bool set, int index)
+{
+   if ( !set)
+      return var-> maskIndex;
+   var-> maskIndex = index;
+   if ( is_opt( optInDraw)) return 0;
+   if ( var-> autoMasking == amMaskIndex) 
+      my-> update_change( self);
+   return -1;
 }   
 
 void
@@ -412,6 +428,7 @@ Icon_dup( Handle self)
    memcpy( i-> mask, var-> mask, var-> maskSize);
    i-> autoMasking = var-> autoMasking;
    i-> maskColor   = var-> maskColor;
+   i-> maskIndex   = var-> maskIndex;
    return h;
 }
 

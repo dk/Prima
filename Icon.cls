@@ -37,9 +37,11 @@ object Prima::Icon( Prima::Image)
    int               maskLine;
    int               maskSize;
    Color             maskColor;
+   int               maskIndex;
    int               autoMasking;
    property SV *     mask;
    property Color    maskColor;
+   property int      maskIndex;
    property int      autoMasking;
    method void       init( HV * profile);
    method Handle     dup();

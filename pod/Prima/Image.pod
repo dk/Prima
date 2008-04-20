@@ -279,7 +279,7 @@ Alike I<Prima::Image> C<::data> property, I<Prima::Icon> C<::mask>
 property provides access to the binary mask data.
 The mask can be updated automatically, after an icon object
 was subject to painting or other change. The auxiliary 
-properties C<::autoMasking> and C<::maskColor> regulate  
+properties C<::autoMasking> and C<::maskColor>/C<::maskIndex> regulate  
 mask update procedure. For example, if an icon was loaded with
 the color ( vs. bitmap ) transparency information, the binary
 mask will be generated anyway, but it will be also recorded that
@@ -552,6 +552,7 @@ one of C<am::XXX> constants:
 
    am::None           - no mask update performed
    am::MaskColor      - mask update based on ::maskColor property
+   am::MaskIndex      - mask update based on ::maskIndex property
    am::Auto           - mask update based on corner pixel values
 
 The C<::maskColor> color value is used as a transparent color if
@@ -560,6 +561,9 @@ turned on by C<am::Auto> checks corner pixel values, assuming that
 majority of the corner pixels represents a transparent color. Once
 such color is found, the mask is generated as in C<am::MaskColor>
 case.
+
+C<::maskIndex> is the same as C<::maskColor>, except that it points
+to a specific color index in the palette.
 
 When image C<::data> is stretched, C<::mask> is stretched accordingly,
 disregarding the C<::autoMasking> value.
@@ -574,6 +578,12 @@ stores the provided transparency data with same alignment.
 
 When C<::autoMasking> set to C<am::MaskColor>, COLOR 
 is used as a transparency value.
+
+=item maskIndex INDEX
+
+When C<::autoMasking> set to C<am::MaskIndex>, INDEXth
+color in teh current palette is used as a transparency value.
+
 
 =back 
 

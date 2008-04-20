@@ -2847,6 +2847,8 @@ AM(None)
 AM(MaskColor)
 #define    amAuto                2
 AM(Auto)
+#define    amMaskIndex           3
+AM(MaskIndex)
 END_TABLE(am,UV)
 #undef AM
 

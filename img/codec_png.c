@@ -692,10 +692,10 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
                    min_ix = i;
                 }
              p += min_ix;
+             PIcon( fi-> object)-> maskIndex = min_ix;
           } else 
-             p += trns_p[0].index;
-          PIcon( fi-> object)-> maskColor   = ARGB( p->r, p->g, p-> b);
-          PIcon( fi-> object)-> autoMasking = amMaskColor;
+             PIcon( fi-> object)-> maskIndex = trns_p[0].index;
+          PIcon( fi-> object)-> autoMasking = amMaskIndex;
       }
    }
 

@@ -397,7 +397,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
                   }   
                   src += ls;
                }   
-            }   
+            }
 
             free( data);
 
@@ -405,10 +405,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
             if ( kind_of( fi-> object, CIcon) && 
                  ( l-> transparent >= 0) &&
                  ( l-> transparent < PIcon( fi-> object)-> palSize)) {
-               PRGBColor p = PIcon( fi-> object)-> palette;
-               p += l-> transparent;
-               PIcon( fi-> object)-> maskColor = ARGB( p->r, p-> g, p-> b);
-               PIcon( fi-> object)-> autoMasking = amMaskColor;
+               PIcon( fi-> object)-> maskIndex = l-> transparent;
+               PIcon( fi-> object)-> autoMasking = amMaskIndex;
             }   
          }   
          

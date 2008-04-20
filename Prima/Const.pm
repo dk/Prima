@@ -111,6 +111,7 @@ See also L<Prima::Image/autoMasking>
 
 	am::None           - no mask update performed
 	am::MaskColor      - mask update based on Prima::Icon::maskColor property
+	am::MaskIndex      - mask update based on Prima::Icon::maskIndex property
 	am::Auto           - mask update based on corner pixel values
 
 =head2 apc:: - OS type
