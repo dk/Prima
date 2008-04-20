@@ -1029,25 +1029,37 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       png_byte trns_t[256];
       int trns_n = 0;
       Color color = pexist( transparent_color) ? pget_i( transparent_color) : clInvalid;
+      int   index = pexist( transparent_color_index) ? pget_i( transparent_color_index) : -1;
 
-      if ( icon && (i-> autoMasking == amMaskColor) && ( color & clSysFlag))
+      if ( index > i-> palSize)
+         index = i-> palSize - 1;
+      if ( icon && (i-> autoMasking == amMaskIndex) && ( index < 0))
+         index = i-> maskIndex;
+
+      if ( color & clSysFlag)
+         color = clInvalid;
+      if ( icon && (i-> autoMasking == amMaskColor) && ( color == clInvalid))
          color = i-> maskColor;
       memset( trns_p, 0, sizeof( trns_p));
-      if ( !( color & clSysFlag)) {
+      if ( color != clInvalid || index >= 0) {
          memset( trns_t, 255, sizeof( trns_t));
          if (( i-> type & imBPP) < 24) {
             int x;
-            RGBColor r;
-            r.r = (color & 0xFF0000) >> 16;
-            r.g = (color & 0x00FF00) >> 8;
-            r.b = (color & 0x0000FF);
-            x = cm_nearest_color( r, i-> palSize, i-> palette);
+	    if ( index < 0) {
+               RGBColor r;
+               r.r = (color & 0xFF0000) >> 16;
+               r.g = (color & 0x00FF00) >> 8;
+               r.b = (color & 0x0000FF);
+               x = cm_nearest_color( r, i-> palSize, i-> palette);
+	    } else {
+	       x = index;
+	    }
             trns_t[x] = 0;
             trns_n = x + 1;
             trns_p[0].index = x;
             trns_p[x].index = x;
             png_set_tRNS(l->png_ptr, l-> info_ptr, trns_t, trns_n, trns_p);
-         } else {
+         } else if ( color != clInvalid) {
             trns_p[0].red   = (color & 0xFF0000) >> 16;
             trns_p[0].green = (color & 0x00FF00) >> 8;
             trns_p[0].blue  = (color & 0x0000FF);
