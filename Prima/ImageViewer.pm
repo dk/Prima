@@ -411,6 +411,8 @@ sub PreviewImage_HeaderReady
 			width    => $image-> width,
 			height   => $image-> height,
 		));
+        $self-> image-> backColor(0);
+        $self-> image-> clear;
 	$self-> {__preview_image} = 1;
 }
 
