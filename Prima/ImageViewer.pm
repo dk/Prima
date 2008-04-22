@@ -420,7 +420,8 @@ sub PreviewImage_DataReady
 { 
 	my ( $self, $image, $x, $y, $w, $h) = @_;
 	$self-> image-> put_image_indirect( $image, $x, $y, $x, $y, $w, $h, $w, $h, rop::CopyPut);
-	$self-> invalidate_rect( $self-> point2screen( $x, $y, $x + $w - 1, $y + $h - 1));
+	my @r = $self-> point2screen( $x, $y, $x + $w, $y + $h);
+	$self-> invalidate_rect( @r[0,1], map { int($_ + 0.5) } @r[2,3] );
 	$self-> update_view;
 }
 
