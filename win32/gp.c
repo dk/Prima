@@ -751,11 +751,11 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       oFore  = GetTextColor( sys ps);
       oBack  = GetBkColor( sys ps);
       SetTextColor( sys ps,
-         i-> palSize > 1
+         i-> palSize > 0
          ? RGB( pal[0].r, pal[0].g, pal[0].b)
          : RGB( 0, 0, 0));
       SetBkColor( sys ps,
-         i-> palSize > 2
+         i-> palSize > 1
          ? RGB( pal[1].r, pal[1].g, pal[1].b)
          : RGB( 0xff, 0xff, 0xff));
    }
