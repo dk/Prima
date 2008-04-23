@@ -78,6 +78,8 @@ produce_mask( Handle self)
          while ( j--) mask[ j] = ~mask[ j];
       }
       var-> palette[color]. r = var-> palette[color]. g = var-> palette[color]. b = 0;
+      if ( color > 0)
+         var-> type &= ~imGrayScale;
       return;
    }
 
@@ -257,8 +259,11 @@ colorFound:;
 
    /* finalize */
    if ( var-> data != area8) free( area8);
-   if ( var-> palSize > color && bpp <= im256)
+   if ( var-> palSize > color && bpp <= im256) {
       var-> palette[ color]. r = var-> palette[ color]. b = var-> palette[ color]. g = 0;
+      if ( color > 0)
+         var-> type &= ~imGrayScale;
+   }
 }
 
 void
