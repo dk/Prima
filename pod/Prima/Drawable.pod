@@ -205,6 +205,31 @@ export its palette to an output device, because images usually are not
 subject to automatic dithering algorithms. Prima::ImageViewer module
 employs this scheme.
 
+=head2 Monochrome bitmaps
+
+A special case of C<put_image> is taken where the object to be drawn is a
+monochrome DeviceBitmap object. This object doesn't possess the color palette,
+and is by definition a bitmap, where there are only two values present, 0s and
+1s. When it is drawn, 0s are drawn with the color value of the target canvas
+C<color> property, and 1s with C<backColor>.
+
+This means that the following code
+
+    $bitmap-> color(0);
+    $bitmap-> line(0,0,100,100);
+    $target-> color(cl::Green);
+    $target-> put_image(0,0,$bitmap);
+
+produces a green line on C<$target>.
+
+When using monochrome bitmaps for logical operations, note that target colors
+should not be explicit 0 and 0xffffff, nor C<cl::Black> and C<cl::White>, but
+C<cl::Clear> and C<cl::Set> instead. The reason is that on paletted displays,
+system palette may not necessarily contain the white color under palette index
+(2^ScreenDepth-1). C<cl::Set> thus signals that the value should be "all ones",
+no matter what color it represents, because it will be used for logical
+operations.
+
 =head2 Fonts
 
 Prima maintains its own font naming convention, that
