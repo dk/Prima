@@ -215,6 +215,8 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
    SelectPalette( dc, hp3, 1);
    dc_free();
 
+   apc_image_update_change( image);
+
    return true;
 }
 
