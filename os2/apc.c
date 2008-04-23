@@ -351,6 +351,12 @@ apc_application_unlock( Handle self)
 }
 
 Bool
+apc_application_sync( void)
+{
+   return true;
+}
+
+Bool
 apc_application_yield( void)
 {
    QMSG message;

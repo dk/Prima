@@ -1888,6 +1888,9 @@ extern Bool
 apc_application_lock( Handle self);
 
 extern Bool
+apc_application_sync( void);
+
+extern Bool
 apc_application_unlock( Handle self);
 
 extern Bool

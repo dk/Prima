@@ -1078,6 +1078,13 @@ any_event( Display *d, XEvent *ev, XPointer arg)
 }
 
 Bool
+apc_application_sync(void)
+{
+   XSync( DISP, false);
+   return true;
+}
+
+Bool
 apc_application_yield( void)
 {
    if (!application) return false;

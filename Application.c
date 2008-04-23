@@ -236,6 +236,12 @@ void Application_handle_event( Handle self, PEvent event)
 }
 
 void
+Application_sync( char * dummy)
+{
+   apc_application_sync();
+}
+
+void
 Application_yield( char * dummy)
 {
    apc_application_yield();

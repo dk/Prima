@@ -679,6 +679,11 @@ link POD format ( see L<perlpod> ) - the string is treated
 as "manpage/section", where 'manpage' is the file with POD 
 content and 'section' is the topic inside the manpage.
 
+=item sync
+
+Synchronizes all pending requests where there are any. Is
+an effective C<XSync(false)> on X11, and is a no-op otherwise.
+
 =item sys_action CALL
 
 CALL is an arbitrary string of the system
