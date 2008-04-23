@@ -94,7 +94,6 @@ typedef struct _LoadRec {
   GifRecordType grt;
   int           passed;
   int           transparent;
-  HV          * content;
 } LoadRec;
 
 static SV * 
@@ -214,7 +213,6 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    }
    fi-> stop = true;
 
-   l-> content = newHV();
    l-> passed  = -1;
    l-> transparent = -1;
 
@@ -254,7 +252,7 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data)
 {
    dPROFILE;
    LoadRec * l = ( LoadRec *) fi-> instance;
-   HV * profile = l-> content;
+   HV * profile = fi-> frameProperties;
    
    switch( code) {
    case GRAPHICS_EXT_FUNC_CODE: {
@@ -296,11 +294,10 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data)
           }
       }
       break;
-
-   default: /* unknown extension */
-      while ( data)
-         if ( DGifGetExtensionNext( l-> gft, &data) != GIF_OK) out;
    }
+
+   while ( data)
+      if ( DGifGetExtensionNext( l-> gft, &data) != GIF_OK) out;
 
    return true;
 } 
@@ -320,8 +317,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( fi-> frame <= l-> passed) {
       DGifCloseFile( l-> gft);
       if ( !( l-> gft = DGifOpenFileName( fi-> fileName))) out;
-      sv_free(( SV*) l-> content);   
-      l-> content = newHV();
       l-> passed  = -1;
       l-> transparent = -1;
    }   
@@ -446,10 +441,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       }   
    }   
 
-   /* frame loaded successfully, add slice of extra info */
-   if ( fi-> loadExtras)
-      apc_img_profile_add( profile, l-> content, l-> content);
-   
    return true;
 }
 
@@ -457,7 +448,6 @@ static void
 close_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    LoadRec * l = ( LoadRec *) fi-> instance;
-   sv_free(( SV*) l-> content);
    DGifCloseFile( l-> gft);
    free( l);
 }   
