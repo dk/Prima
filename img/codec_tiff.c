@@ -251,19 +251,12 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    TIFF * tiff;
    errbuf = fi-> errbuf;
    err_signal = 0;
-   if ( fi-> req_is_stdio) {
-      if (!( tiff = TIFFFdOpen( fileno(( FILE*) fi-> req-> handle), fi-> fileName, "r"))) {
-         req_seek( fi-> req, 0, SEEK_SET);
-         return nil;
-      }
-   } else {
-      if (!( tiff = TIFFClientOpen( "", "r", (thandle_t) fi-> req,
-         my_tiff_read, my_tiff_write,
-         my_tiff_seek, my_tiff_close, my_tiff_size, 
-	 my_tiff_map, my_tiff_unmap))) {
-         req_seek( fi-> req, 0, SEEK_SET);
-         return nil;
-      }
+   if (!( tiff = TIFFClientOpen( "", "r", (thandle_t) fi-> req,
+      my_tiff_read, my_tiff_write,
+      my_tiff_seek, my_tiff_close, my_tiff_size, 
+      my_tiff_map, my_tiff_unmap))) {
+      req_seek( fi-> req, 0, SEEK_SET);
+      return nil;
    }
    fi-> frameCount = TIFFNumberOfDirectories( tiff);
    fi-> stop = true;
@@ -937,16 +930,11 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
    TIFF * tiff;
    errbuf = fi-> errbuf;
    err_signal = 0;
-   if ( fi-> req_is_stdio) {
-      if (!( tiff = TIFFFdOpen( fileno(( FILE*) fi-> req-> handle), fi-> fileName, "w")))
-         return nil;
-   } else {
-      if (!( tiff = TIFFClientOpen( "", "w", (thandle_t) fi-> req,
-         my_tiff_read, my_tiff_write,
-         my_tiff_seek, my_tiff_close, my_tiff_size, 
-	 my_tiff_map, my_tiff_unmap)))
-         return nil;
-   }
+   if (!( tiff = TIFFClientOpen( "", "w", (thandle_t) fi-> req,
+      my_tiff_read, my_tiff_write,
+      my_tiff_seek, my_tiff_close, my_tiff_size, 
+      my_tiff_map, my_tiff_unmap)))
+      return nil;
    return tiff;
 }
 

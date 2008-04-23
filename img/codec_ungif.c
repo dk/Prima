@@ -207,16 +207,9 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( !l) return nil;
    memset( l, 0, sizeof( LoadRec));
    
-   if ( fi-> req_is_stdio) {
-      if ( !( l-> gft = DGifOpenFileHandle( fileno(( FILE*) fi-> req-> handle)))) {
-         free( l);
-         return nil;
-      }
-   } else {
-      if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read))) {
-         free( l);
-         return nil;
-      }
+   if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read))) {
+      free( l);
+      return nil;
    }
    fi-> stop = true;
 
@@ -493,13 +486,8 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
    GifFileType * g;
    
-   if ( fi-> req_is_stdio) {
-      if ( !( g = EGifOpenFileHandle( fileno(( FILE*) fi-> req-> handle))))
-         return nil;
-   } else {
-      if ( !( g = EGifOpen( fi-> req, my_gif_write)))
-         return nil;
-   }
+   if ( !( g = EGifOpen( fi-> req, my_gif_write)))
+      return nil;
 
    return g;
 }

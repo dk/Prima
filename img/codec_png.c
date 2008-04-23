@@ -345,10 +345,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
       return false;
    }
 
-   if ( !fi-> req_is_stdio)
-      png_set_read_fn( l-> png_ptr, fi, img_png_read);
-   else
-      png_init_io( l-> png_ptr, fi-> req-> handle);
+   png_set_read_fn( l-> png_ptr, fi, img_png_read);
    png_set_sig_bytes( l-> png_ptr, 8);
    return l;
 }
@@ -876,10 +873,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
       free( l);
       return false;
    }
-   if ( !fi-> req_is_stdio)
-      png_set_write_fn( l-> png_ptr, fi, img_png_write, img_png_flush);
-   else
-      png_init_io( l-> png_ptr, fi-> req-> handle);
+   png_set_write_fn( l-> png_ptr, fi, img_png_write, img_png_flush);
 
    return l;
 }
