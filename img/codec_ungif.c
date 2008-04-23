@@ -316,13 +316,24 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    /* Reopen file if rewind requested */
    if ( fi-> frame <= l-> passed) {
       DGifCloseFile( l-> gft);
-      if ( !( l-> gft = DGifOpenFileName( fi-> fileName))) out;
+      l-> gft = NULL;
+      if ( req_seek( fi-> req, 0, SEEK_SET)) {
+         snprintf( fi-> errbuf, 256, "Can't rewind GIF stream, seek() error:%s", strerror(req_error( fi-> req)));
+	 return false;
+      }
+      if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read))) out;
       l-> passed  = -1;
       l-> transparent = -1;
    }   
 
    while ( loop) {
-      if ( DGifGetRecordType( l-> gft, &l-> grt) != GIF_OK) out;
+      if ( DGifGetRecordType( l-> gft, &l-> grt) != GIF_OK) {
+         /* handle premature EOF gracefully */
+	 if ( fi-> frameCount < 0 && l-> passed < fi-> frame)
+	    fi-> frameCount = l-> passed;
+         out;
+      }
+
       switch( l-> grt) {
          
       case SCREEN_DESC_RECORD_TYPE: 
@@ -368,8 +379,17 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          }   
 
          if ( fi-> noImageData) {
+            int sz;
+            Byte * block = nil;
+
             pset_i( width,      l-> gft-> Image. Width);
             pset_i( height,     l-> gft-> Image. Height);
+             
+	    /* skip block */
+            if ( DGifGetCode( l-> gft, &sz, &block) != GIF_OK) out;
+            while ( block) {
+                if ( DGifGetCodeNext( l-> gft, &block) != GIF_OK) out;
+            }  
          } else {
             GifPixelType * data;
             int ls = sizeof( GifPixelType) * l-> gft-> Image. Width, ps = i-> palSize;
@@ -381,7 +401,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
             if ( DGifGetLine( l-> gft, data, i-> w * i-> h) != GIF_OK) {
                free( data);
                out;
-            }   
+            }
 
             /* copying & converting data */
             {
@@ -432,9 +452,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
             int code = -1;
             Byte * data = nil;
             if ( DGifGetExtension( l-> gft, &code, &data) != GIF_OK) out;
-            if ( data)
+            if ( data) {
+               if ( 1 + l-> passed != fi-> frame) /* skip this extension block */
+	          code = -1;
                if ( !load_extension( fi, code, data))
 	          return false;
+            }
          }   
          break;
       default:;
@@ -448,7 +471,7 @@ static void
 close_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
    LoadRec * l = ( LoadRec *) fi-> instance;
-   DGifCloseFile( l-> gft);
+   if ( l-> gft) DGifCloseFile( l-> gft);
    free( l);
 }   
 
