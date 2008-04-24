@@ -733,7 +733,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          if ( dsys( image) bm == nil) {
             image_destroy_cache( image); // if palette still exists
             deja = image_enscreen( image, self);
-            image_set_cache( deja, image);
+            ok = image_set_cache( deja, image);
          }
       } else
          deja = image_enscreen( image, self);
@@ -773,7 +773,6 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          yFrom = 0;
       }
    }
-
 
    // if image is actually icon, drawing and-mask
    if ( kind_of( deja, CIcon)) {
@@ -819,9 +818,11 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    //
    if ( dc) {
-      if ( !( ok = StretchBlt( xdc, x, ly - y - yDestLen, xDestLen, yDestLen, dc,
-            xFrom, i-> h - yFrom - yLen, xLen, yLen, theRop)))
+      if ( !StretchBlt( xdc, x, ly - y - yDestLen, xDestLen, yDestLen, dc,
+            xFrom, i-> h - yFrom - yLen, xLen, yLen, theRop)) {
+	 ok = false;
          apiErr;
+      }
    } else {
       XBITMAPINFO xbi;
       BITMAPINFO * bi = image_get_binfo( deja, &xbi);
@@ -855,6 +856,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       if ( dc) DeleteDC( dc);
       if ( deja != image) Object_destroy( deja);
    }
+
    return ok;
 }}
 

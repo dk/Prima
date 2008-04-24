@@ -381,9 +381,10 @@ char * err_msg( DWORD errId, char * buffer)
    /* chomp! */
    len = strlen(buffer);
    while ( len > 0) {
-      if ( buffer[len - 1] != '\xD' && buffer[len - 1] != '\xA')
+      len--;
+      if ( buffer[len] != '\xD' && buffer[len] != '\xA' && buffer[len] != '.')
          break;
-      buffer[--len] = 0;
+      buffer[len] = 0;
    }
 
    return buffer;

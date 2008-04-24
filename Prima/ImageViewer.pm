@@ -155,7 +155,7 @@ sub on_paint
 
 	$canvas-> clear( $atx, $aty, $atx + $imXz, $aty + $imYz) if $self-> {icon};
 
-	$canvas-> put_image_indirect(
+	unless $canvas-> put_image_indirect(
 		$self-> {image},
 		$atx, $aty,
 		$xDest, $yDest,
