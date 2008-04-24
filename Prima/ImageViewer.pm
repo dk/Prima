@@ -94,7 +94,7 @@ sub on_paint
 			0, 0, $size[0]-1, $size[1]-1, $bw, 
 			$self-> dark3DColor, $self-> light3DColor, $self-> backColor
 		);
-		return;
+		return 1;
 	}
 
 	$canvas-> rect3d( 
@@ -155,7 +155,7 @@ sub on_paint
 
 	$canvas-> clear( $atx, $aty, $atx + $imXz, $aty + $imYz) if $self-> {icon};
 
-	unless $canvas-> put_image_indirect(
+	return $canvas-> put_image_indirect(
 		$self-> {image},
 		$atx, $aty,
 		$xDest, $yDest,
@@ -600,6 +600,20 @@ Default value: 100
 =head2 Methods
 
 =over
+
+=item on_paint SELF, CANVAS
+
+The C<Paint> notification handler is mentioned here for the specific case
+of its return value, that is the return value of internal C<put_image> call.
+For those who might be interested in C<put_image> failures, that mostly occur
+when trying to draw an image that is too big, the following code might be 
+useful:
+
+    sub on_paint 
+    {
+        my ( $self, $canvas) = @_;
+	warn "put_image() error:$@" unless $self-> SUPER::on_paint($canvas);
+    }
 
 =item screen2point X, Y, [ X, Y, ... ]
 
