@@ -355,12 +355,6 @@ sub image
 	return $i;
 }
 
-sub masks   { ( $_[0]-> {canvas}, $_[0]-> {mask} ) }
-sub width   { $_[0]-> {canvas} ? $_[0]-> {canvas}-> width  : 0 }
-sub height  { $_[0]-> {canvas} ? $_[0]-> {canvas}-> height : 0 }
-sub size    { $_[0]-> {canvas} ? $_[0]-> {canvas}-> size   : (0,0) }
-sub bgColor { $_[0]-> {bgColor} }
-
 sub draw
 {
 	my ( $self, $canvas, $x, $y) = @_;
@@ -377,6 +371,29 @@ sub draw
 	$canvas-> set( %save);
 }
 
+
+sub masks   { ( $_[0]-> {canvas}, $_[0]-> {mask} ) }
+sub width   { $_[0]-> {canvas} ? $_[0]-> {canvas}-> width  : 0 }
+sub height  { $_[0]-> {canvas} ? $_[0]-> {canvas}-> height : 0 }
+sub size    { $_[0]-> {canvas} ? $_[0]-> {canvas}-> size   : (0,0) }
+sub bgColor { $_[0]-> {bgColor} }
+sub current { $_[0]-> {current} }
+sub total   { scalar @{$_[0]-> {images}} }
+
+sub length
+{
+	my $length = 0;
+	$length += $_-> {delayTime} || 0 for 
+		map { $_-> {extras} || {} } 
+		@{$_[0]-> {images}};
+	return $length / 100;
+}
+
+sub loopCount
+{
+	return $_[0]-> {loopCount} unless $#_;
+	$_[0]-> {loopCount} = $_[1];
+}
 
 1;
 
@@ -436,6 +453,10 @@ Return the background color specified by the GIF sequence as the preferred
 background color to use when there is no specific background to superimpose the
 animation to.
 
+=head2 current
+
+Return index of the current frame
+
 =head2 draw $CANVAS, $X, $Y
 
 Draws the current composite frame on C<$CANVAS> at the given coordinates.
@@ -454,12 +475,19 @@ Creates and returns an image object off the current composite frame.  The
 transparent pixels on the image are replaced with the preferred background
 color.
 
-
 =head2 is_stopped
 
 Returns true if the animation sequence was stopped, false otherwise.
 If the sequence was stopped, the only way to restart it is to
 call C<reset>.
+
+=head2 length
+
+Returns total animation length (without repeats) in seconds.
+
+=head2 loopCount [ INTEGER ]
+
+Sets and returns number of loops left, undef for indefinite.
 
 =head2 masks
 
@@ -493,9 +521,13 @@ or when sequence display restart is needed.
 
 Returns width and height of the composite frame.
 
-=head2 height
+=head2 total
 
-Returns height of the composite frame.
+Return number fo frames
+
+=head2 width
+
+Returns width of the composite frame.
 
 =head1 SEE ALSO
 
