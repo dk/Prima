@@ -250,7 +250,6 @@ typedef struct _GIFNetscapeLoopExt {
 static Bool
 load_extension( PImgLoadFileInstance fi, int code, Byte * data)
 {
-   dPROFILE;
    LoadRec * l = ( LoadRec *) fi-> instance;
    HV * profile = fi-> frameProperties;
    
