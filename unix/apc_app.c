@@ -580,8 +580,10 @@ window_subsystem_done( void)
 Bool
 apc_application_begin_paint( Handle self)
 {
+   DEFXX;
    if ( guts. appLock > 0) return false;
    prima_prepare_drawable_for_painting( self, false);
+   XX-> flags. force_flush = 1;
    return true;
 }
 
@@ -662,6 +664,8 @@ apc_application_destroy( Handle self)
 Bool
 apc_application_end_paint( Handle self)
 {
+   DEFXX;
+   XX-> flags. force_flush = 0;
    prima_cleanup_drawable_after_painting( self);
    return true;
 }

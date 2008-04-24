@@ -727,6 +727,7 @@ typedef struct _drawable_sys_data
       unsigned exposed			: 1;
       unsigned falsely_hidden           : 1;
       unsigned first_click              : 1;
+      unsigned force_flush              : 1;
       unsigned grab                 	: 1;
       unsigned has_icon                 : 1;
       unsigned iconic                   : 1;
@@ -769,6 +770,7 @@ typedef struct _drawable_sys_data
 
 #define XF_ENABLED(x)   ((x)->flags.enabled)
 #define XF_IN_PAINT(x)  ((x)->flags.paint)
+#define XFLUSH          if (XX->flags.force_flush) XFlush(DISP)
 
 #define MenuTimerMessage   1021
 

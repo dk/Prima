@@ -1308,6 +1308,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       if ( lw != 1) 
          apc_gp_set_line_width( self, lw);
    }  
+   XFLUSH;
 
    return true;
 }

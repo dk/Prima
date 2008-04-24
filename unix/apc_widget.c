@@ -390,6 +390,9 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
       X(owner)-> gdrawable = dc;
       CWidget( owner)-> end_paint( owner);
    }
+
+   XX-> flags. force_flush = !inside_on_paint;
+
    return true;
 }
 
@@ -471,6 +474,8 @@ apc_widget_default_font( PFont f)
 Bool
 apc_widget_end_paint( Handle self)
 {
+   DEFXX;
+   XX-> flags. force_flush = 0;
    prima_cleanup_drawable_after_painting( self);
    prima_update_cursor( self);
    return true;

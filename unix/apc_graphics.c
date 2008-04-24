@@ -586,6 +586,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
    if ( needf)
       XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
           angleStart * 64, ( angleEnd - angleStart) * 64);
+   XFLUSH;	  
    return true;
 }
 
@@ -604,6 +605,7 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
    while ( prima_make_brush( XX, mix++)) 
       XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
    XCHECKPOINT;
+   XFLUSH;	  
    return true;
 }
 
@@ -644,6 +646,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
       XSetFillStyle( DISP, XX-> gc, FillSolid);
    XX-> flags. brush_fore = 0;
    XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
+   XFLUSH;	  
    
    return true;
 }
@@ -674,6 +677,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
    XDrawLine( DISP, XX-> gdrawable,
       XX-> gc, x + cos( angleStart / GRAD) * dX / 2, y - sin( angleStart / GRAD) * dY / 2,
                x + cos( angleEnd / GRAD) * dX / 2,   y - sin( angleEnd / GRAD) * dY / 2);
+   XFLUSH;	  
    return true;
 }
 
@@ -702,6 +706,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
    XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, n, CoordModeOrigin);
 
    free( p);
+   XFLUSH;	  
    return true;
 }
 
@@ -732,6 +737,7 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
    XDrawSegments( DISP, XX-> gdrawable, XX-> gc, s, n);
 
    free( s);
+   XFLUSH;	  
    return true;
 }
 
@@ -750,6 +756,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
    PURE_FOREGROUND;
    calculate_ellipse_divergence();
    XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
+   XFLUSH;	  
    return true;
 }
 
@@ -787,6 +794,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
       }
    }
    FILL_ANTIDEFECT_CLOSE;
+   XFLUSH;	  
    return true;
 }
 
@@ -810,6 +818,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
          XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 0, 64*360);
    }
    FILL_ANTIDEFECT_CLOSE;
+   XFLUSH;	  
    return true;
 }
 
@@ -847,6 +856,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
       warn( "Prima::Drawable::fill_poly: too many points");
    FILL_ANTIDEFECT_CLOSE;
    free( p);
+   XFLUSH;	  
    return true;
 }
 
@@ -883,6 +893,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
       }
    }
    FILL_ANTIDEFECT_CLOSE;
+   XFLUSH;	  
    return true;
 }
 
@@ -1134,6 +1145,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
       if ( s. lists[x]) 
          plist_destroy( s.lists[x]);
    free( s. lists);
+   XFLUSH;	  
 
    return ret;
 }
@@ -1329,6 +1341,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
       gcv. line_width = 0;
       XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
    }
+   XFLUSH;	  
    return true;
 }
 
@@ -1351,6 +1364,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
    }
    XDrawRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
    XCHECKPOINT;
+   XFLUSH;	  
    return true;
 }
 
@@ -1385,6 +1399,7 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
        x, y,
        x + cos( angleEnd / GRAD) * dX / 2, y - sin( angleEnd / GRAD) * dY / 2
    );
+   XFLUSH;	  
    return true;
 }
 
@@ -1532,6 +1547,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
    XSetForeground( DISP, XX-> gc, prima_allocate_color( self, color, nil));
    XDrawPoint( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y));
    XX-> flags. brush_fore = 0;
+   XFLUSH;	  
    return true;
 }
 
@@ -1731,6 +1747,7 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
       if ( lw != XX-> font-> underlineThickness) 
          apc_gp_set_line_width( self, lw);
    }   
+   XFLUSH;	  
    return true;
 }   
 
@@ -1824,6 +1841,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
    }   
 
    if ( utf8) free(( char *) text);
+   XFLUSH;	  
    
    return true;
 }
