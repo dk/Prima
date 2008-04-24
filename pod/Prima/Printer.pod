@@ -12,13 +12,13 @@ Prima::Printer - system printing services
    if ( $p-> begin_doc) {
       $p-> bar( 0, 0, 100, 100);
       print "another page...\n";
-      $p-> new_page;
+      $p-> new_page or die "new_page:$@";
       $p-> ellipse( 100, 100, 200, 200);
       (time % 1) ? # depending on the moon phase, print it or cancel out
             $p-> end_doc :
             $p-> abort_doc;
    } else {
-      print "failed\n";
+      print "failed:$@\n";
    }
 
 =head1 DESCRIPTION
@@ -75,6 +75,8 @@ Typical code that prints the document looks like
    if ( $p-> begin_doc) {
       ... draw ...
       $p-> end_doc;
+   } else {
+      print "failed:$@\n";
    }
 
 In addition, a standard package I<Prima::PrintDialog> can be recommended
@@ -120,6 +122,8 @@ could still been printed.
 
 Initiates the printing session, and triggers the object into the enabled painting
 state. The document is assigned DOCUMENT_NAME string identifier.
+
+Returns success flag; if failed, C<$@> contains the error.
 
 =item begin_paint
 
@@ -169,6 +173,8 @@ array of the font encodings, available for the fonts of NAME font family.
 =item new_page
 
 Finalizes the current page and starts a new blank page.
+
+Returns success flag; if failed, C<$@> contains the error.
 
 =item options [ OPTION, [ VALUE, [ ... ]]]
 

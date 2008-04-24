@@ -324,8 +324,10 @@ Widget_begin_paint( Handle self)
    Bool ok;
    if ( !inherited-> begin_paint( self))
       return false;
-   if ( !( ok = apc_widget_begin_paint( self, false)))
+   if ( !( ok = apc_widget_begin_paint( self, false))) {
       inherited-> end_paint( self);
+      perl_error();
+   }
    return ok;
 }
 
@@ -336,8 +338,10 @@ Widget_begin_paint_info( Handle self)
    if ( is_opt( optInDraw))     return true;
    if ( !inherited-> begin_paint_info( self))
       return false;
-   if ( !( ok = apc_widget_begin_paint_info( self)))
+   if ( !( ok = apc_widget_begin_paint_info( self))) {
       inherited-> end_paint_info( self);
+      perl_error();
+   }
    return ok;
 }
 

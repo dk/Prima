@@ -83,6 +83,8 @@ the canvas is accessible:
       $d-> color( cl::White);
       $d-> fill_ellipse( $d-> width / 2, $d-> height / 2, 30, 30);
       $d-> end_paint;
+   } else {
+      die "can't draw on image:$@";
    }
 
 Different objects are mapped to different types of canvases -
@@ -968,6 +970,8 @@ Example:
 
 Context used: color, backColor, fillPattern, rop, rop2, fillWinding
 
+Returns success flag; if failed, C<$@> contains the error.
+
 See also: polyline().
 
 =item fill_sector X, Y, DIAMETER_X, DIAMETER_Y, START_ANGLE, END_ANGLE 
@@ -988,6 +992,8 @@ Example:
    $d-> fill_spline([ 0, 0, 15, 20, 30, 0]);
 
 Context used: color, backColor, fillPattern, rop, rop2, splinePrecision
+
+Returns success flag; if failed, C<$@> contains the error.
 
 See also: spline, splinePrecision, render_spline
 
@@ -1021,6 +1027,8 @@ lines() plots a straight line per quartet.
 
 Context used: color, backColor, linePattern, lineWidth, rop, rop2
 
+Returns success flag; if failed, C<$@> contains the error.
+
 =item pixel X, Y, <COLOR>
 
 ::pixel is a property - on set-call it changes the pixel value at (X,Y)
@@ -1035,14 +1043,17 @@ POLYGON must present an array of integer pair in (X,Y) format.
 
 Context used: color, backColor, linePattern, lineWidth, lineJoin, lineEnd, rop, rop2
 
-See also: fillpoly().
+Returns success flag; if failed, C<$@> contains the error.
 
+See also: fillpoly().
 
 =item put_image X, Y, OBJECT, [ ROP ]
 
 Draws an OBJECT at coordinates (X,Y). OBJECT must be Prima::Image,
 Prima::Icon or Prima::DeviceBitmap. If ROP raster operation is specified,
 it is used. Otherwise, value of C<::rop> property is used. 
+
+Returns success flag; if failed, C<$@> contains the error.
 
 Context used: rop; color and backColor for a monochrome DeviceBitmap 
 
@@ -1061,6 +1072,8 @@ negative, a mirroring by respective axis is performed.
 OBJECT must be Prima::Image, Prima::Icon or Prima::DeviceBitmap.
 
 No context is used, except color and backColor for a monochrome DeviceBitmap 
+
+Returns success flag; if failed, C<$@> contains the error.
 
 =item rect3d X1, Y1, X2, Y2, WIDTH, LIGHT_COLOR, DARK_COLOR, [ BACK_COLOR ] 
 
@@ -1098,6 +1111,8 @@ POLYGON must present an array of integer pair in (X,Y) format.
 
 Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
 
+Returns success flag; if failed, C<$@> contains the error.
+
 See also: fill_spline, splinePrecision, render_spline.
 
 =item stretch_image X, Y, DEST_WIDTH, DEST_HEIGHT, OBJECT, [ ROP ]
@@ -1113,11 +1128,15 @@ property is used.
 
 OBJECT must be Prima::Image, Prima::Icon or Prima::DeviceBitmap.
 
+Returns success flag; if failed, C<$@> contains the error.
+
 Context used: rop
 
 =item text_out TEXT, X, Y
 
 Draws TEXT string at (X,Y). 
+
+Returns success flag; if failed, C<$@> contains the error.
 
 Context used: color, backColor, font, rop, textOpaque, textOutBaseline
 
@@ -1129,7 +1148,8 @@ Context used: color, backColor, font, rop, textOpaque, textOutBaseline
 
 =item begin_paint
 
-Enters the enabled ( active paint ) state, returns success flag.
+Enters the enabled ( active paint ) state, returns success flag; if failed,
+C<$@> contains the error.
 Once the object is in enabled state, painting and drawing 
 methods can perform write operations on a canvas.
 
@@ -1137,7 +1157,8 @@ See also: C<end_paint>, C<begin_paint_info>, L<"Graphic context and canvas">
 
 =item begin_paint_info
 
-Enters the information state, returns success flag.
+Enters the information state, returns success flag; if failed,
+C<$@> contains the error.
 The object information state is same as enabled state ( see C<begin_paint>),
 except painting and drawing methods do not change the object canvas.
 

@@ -406,11 +406,16 @@ sub quality      {($#_)?$_[0]-> set_quality($_[1]):return $_[0]-> {quality}}
 sub PreviewImage_HeaderReady
 { 
 	my ( $self, $image) = @_;
-	$self-> image(
-		Prima::DeviceBitmap-> new(
+	my $db;
+	eval {
+		$db = Prima::DeviceBitmap-> new(
 			width    => $image-> width,
 			height   => $image-> height,
-		));
+		);
+	};
+	return unless $db;
+
+	$self-> image($db);
         $self-> image-> backColor(0);
         $self-> image-> clear;
 	$self-> {__preview_image} = 1;
@@ -419,6 +424,8 @@ sub PreviewImage_HeaderReady
 sub PreviewImage_DataReady
 { 
 	my ( $self, $image, $x, $y, $w, $h) = @_;
+	return unless $self-> {__preview_image};
+
 	$self-> image-> put_image_indirect( $image, $x, $y, $x, $y, $w, $h, $w, $h, rop::CopyPut);
 	my @r = $self-> point2screen( $x, $y, $x + $w, $y + $h);
 	$self-> invalidate_rect( @r[0,1], map { int($_ + 0.5) } @r[2,3] );

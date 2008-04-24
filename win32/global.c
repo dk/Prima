@@ -362,11 +362,12 @@ apc_deregister_event( void * sysMessage)
 }   
 
 
-static char buf[ 256];
+static char err_buf[ 256] = "";
 char * err_msg( DWORD errId, char * buffer)
 {
    LPVOID lpMsgBuf;
-   if ( buffer == nil) buffer = buf;
+   int len;
+   if ( buffer == nil) buffer = err_buf;
    FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, errId,
       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       ( LPTSTR) &lpMsgBuf, 0, NULL);
@@ -376,9 +377,23 @@ char * err_msg( DWORD errId, char * buffer)
       buffer[0] = 0;
    buffer[ 255] = 0;
    LocalFree( lpMsgBuf);
-   return buf;
+
+   /* chomp! */
+   len = strlen(buffer);
+   while ( len > 0) {
+      if ( buffer[len - 1] != '\xD' && buffer[len - 1] != '\xA')
+         break;
+      buffer[--len] = 0;
+   }
+
+   return buffer;
 }
 
+char *
+apc_last_error(void)
+{
+   return err_buf;
+}
 
 static Bool move_back( PWidget self, PWidget child, int * delta)
 {

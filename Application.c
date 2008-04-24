@@ -253,8 +253,10 @@ Application_begin_paint( Handle self)
    Bool ok;
    if ( !CDrawable-> begin_paint( self))
       return false;
-   if ( !( ok = apc_application_begin_paint( self)))
+   if ( !( ok = apc_application_begin_paint( self))) {
       CDrawable-> end_paint( self);
+      perl_error();
+   }
    return ok;
 }
 
@@ -265,8 +267,10 @@ Application_begin_paint_info( Handle self)
    if ( is_opt( optInDraw))     return true;
    if ( !CDrawable-> begin_paint_info( self))
       return false;
-   if ( !( ok = apc_application_begin_paint_info( self)))
+   if ( !( ok = apc_application_begin_paint_info( self))) {
       CDrawable-> end_paint_info( self);
+      perl_error();
+   }
    return ok;
 }
 

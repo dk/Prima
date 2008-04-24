@@ -84,16 +84,21 @@ Printer_begin_doc( Handle self, char * docName)
       my-> end_paint_info( self);
    if ( !inherited begin_paint( self))
       return false;
-   if ( !( ok = apc_prn_begin_doc( self, docName)))
+   if ( !( ok = apc_prn_begin_doc( self, docName))) {
       inherited end_paint( self);
+      perl_error();
+   }
    return ok;
 }
 
 Bool
 Printer_new_page( Handle self)
 {
+   Bool ok;
    if ( !is_opt( optInDraw)) return false;
-   return apc_prn_new_page( self);
+   ok = apc_prn_new_page( self);
+   if ( !ok) perl_error();
+   return ok;
 }
 
 Bool
@@ -103,6 +108,7 @@ Printer_end_doc( Handle self)
    if ( !is_opt( optInDraw)) return false;
    ret = apc_prn_end_doc( self);
    inherited end_paint( self);
+   if ( !ret) perl_error();
    return ret;
 }
 
@@ -134,8 +140,10 @@ Printer_begin_paint_info( Handle self)
    if ( is_opt( optInDraw))     return true;
    if ( !inherited begin_paint_info( self))
       return false;
-   if ( !( ok = apc_prn_begin_paint_info( self)))
+   if ( !( ok = apc_prn_begin_paint_info( self))) {
       inherited end_paint_info( self);
+      if ( !ok) perl_error();
+   }
    return ok;
 }
 

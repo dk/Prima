@@ -1592,7 +1592,7 @@ Prima::PS::Drawable -  PostScript interface to Prima::Drawable
 		print F $_[1];
 		close F;
 	});
-	$x-> begin_doc;
+	die "error:$@" unless $x-> begin_doc;
 	$x-> font-> size( 30);
 	$x-> text_out( "hello!", 100, 100);
 	$x-> end_doc;

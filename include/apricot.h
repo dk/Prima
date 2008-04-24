@@ -1291,6 +1291,9 @@ push_hv_for_REDEFINED( SV **sp, HV *hv);
 extern int
 pop_hv_for_REDEFINED( SV **sp, int count, HV *hv, int shouldBe);
 
+extern void
+perl_error(void);
+
 extern void*
 create_object( const char *objClass, const char *types, ...);
 
@@ -1831,6 +1834,9 @@ extern long   apcError;
 /* *****************
 *  apc functions   *
 ***************** */
+
+extern char *
+apc_last_error();
 
 extern Handle
 apc_get_application(void);

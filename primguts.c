@@ -1185,6 +1185,14 @@ kill_objects( void * item, int keyLen, Handle * self, void * dummy)
    return false;
 }
 
+void
+perl_error(void)
+{
+    char * error = apc_last_error();
+    if ( error == NULL) error = "unknown system error";
+    sv_setpv( GvSV( errgv), error);
+}
+
 Bool appDead = false;
 
 Bool dolbug;

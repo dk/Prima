@@ -1490,6 +1490,12 @@ prima_char2wchar( XChar2b * dest, char * src, int lim)
       dest--;
    }
 }
+
+char *
+apc_last_error( void )
+{
+   return NULL;
+}
 /* printer stubs */
 
 Bool   apc_prn_create( Handle self) { return false; }

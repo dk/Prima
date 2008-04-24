@@ -122,30 +122,24 @@ typedef HANDLE SOCKETHANDLE;
 #define FHT_PIPE    2
 #define FHT_OTHER   3
 
-
-
 #if PRIMA_DEBUG
-#define apiErr {                                            \
-   rc = GetLastError();                                     \
-   apcError = errApcError;                                  \
-   fprintf( stderr, "WIN_%d (%s) at line %d in %s", (int)rc,     \
-      err_msg( rc, nil), __LINE__, __FILE__);                    \
-}
-#define apcErr( err) {                                      \
-   apcError = err;                                          \
-}
-#define apiAltErr( err) {                                   \
-   apcError = errApcError;                                  \
-   rc = err;                                                \
-   fprintf( stderr, "WIN_%d (%s) at line %d at %s", (int)rc,     \
-        err_msg( rc, nil), __LINE__, __FILE__);                  \
-}
+#define apcWarn warn( "win32 error %d: '%s' at line %d in %s\n", (int)rc,\
+                      err_msg( rc, nil), __LINE__, __FILE__)
 #else
-#define apiErr       { rc = GetLastError();    apcError = errApcError; }
-#define apcErr( err)    apcError = err;
-#define apiAltErr( err) { apcError = errApcError; rc = err; }
-#endif /* PRIMA_DEBUG */
+#define apcWarn err_msg( rc, nil)
+#endif
 
+#define apcErr( err) apcError = err
+#define apiErr {           \
+   rc = GetLastError();    \
+   apcError = errApcError; \
+   apcWarn;                \
+}
+#define apiAltErr( err) {  \
+   apcError = errApcError; \
+   rc = err;               \
+   apcWarn;                \
+}
 #define apiErrRet         { apiErr;               return false; }
 #define apiErrCheckRet    { apiErrCheck; if ( rc) return false; }
 #define apcErrRet(err)    { apcErr(err);          return false; }
@@ -573,7 +567,7 @@ extern HPALETTE     image_make_bitmap_palette( Handle img);
 extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer);
 extern void         image_query_bits( Handle self, Bool forceNewImage);
 extern Bool         image_screenable( Handle image, Handle screen, int * bitCount);
-extern void         image_set_cache( Handle from, Handle self);
+extern Bool         image_set_cache( Handle from, Handle self);
 extern void         mod_free( BYTE * modState);
 extern BYTE *       mod_select( int mod);
 extern Bool         palette_change( Handle self);

@@ -461,3 +461,9 @@ apc_fetch_resource( const char *className, const char *name,
 {
    return false;
 }
+
+char *
+apc_last_error( void )
+{
+   return NULL;
+}

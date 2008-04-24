@@ -441,21 +441,27 @@ Drawable_width( Handle self, Bool set, int width)
 Bool
 Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
+   Bool ok;
    if ( image == nilHandle) return false;
    if ( xLen == xDestLen && yLen == yDestLen) 
-      return apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
+      ok = apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
    else    
-      return apc_gp_stretch_image( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+      ok = apc_gp_stretch_image( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+   if ( !ok) perl_error();
+   return ok;
 }
 
 Bool
 Drawable_text_out( Handle self, SV * text, int x, int y)
 {
+   Bool ok;
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
    Bool   utf8 = SvUTF8( text);
    if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
-   return apc_gp_text_out( self, c_text, x, y, dlen, utf8);
+   ok = apc_gp_text_out( self, c_text, x, y, dlen, utf8);
+   if ( !ok) perl_error();
+   return ok;
 }
 
 Point *
@@ -503,6 +509,7 @@ polypoints( Handle self, SV * points, char * procName, int mod, Bool (*procPtr)(
    Bool ret = false;
    if (( p = Drawable_polypoints( points, procName, mod, &count))) {
       ret = procPtr( self, count, p);
+      if ( !ret) perl_error();
       free( p);
    }
    return ret;
@@ -748,8 +755,10 @@ plot_spline( Handle self, int count, Point * points, Bool fill)
 
    if ( fill && ( my-> fillpoly == Drawable_fillpoly)) {
       ret = apc_gp_fill_poly( self, array_size, array);
+      if ( !ret) perl_error();
    } else if ( !fill && ( my-> polyline == Drawable_polyline)) {
       ret = apc_gp_draw_poly( self, array_size, array);
+      if ( !ret) perl_error();
    } else {
       int i;
       AV * av = newAV();
