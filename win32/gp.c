@@ -733,7 +733,11 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          if ( dsys( image) bm == nil) {
             image_destroy_cache( image); // if palette still exists
             deja = image_enscreen( image, self);
-            ok = image_set_cache( deja, image);
+            if ( !image_set_cache( deja, image)) {
+	       // we're low on memory, reverting to StretchDIBits
+	       DeleteDC( dc);
+	       dc = nil;
+	    }
          }
       } else
          deja = image_enscreen( image, self);
