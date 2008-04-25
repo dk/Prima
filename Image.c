@@ -77,7 +77,7 @@ Image_init( Handle self, HV * profile)
       if ( !itype_importable( var-> type, &var-> type, nil, nil)) {
          warn( "Image::init: cannot set type %08x", var-> type);
          var-> type = imBW;
-      }   
+      } 
    var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
    var->dataSize = ( var->lineSize) * var->h;
    if ( var-> dataSize > 0) {
@@ -89,7 +89,6 @@ Image_init( Handle self, HV * profile)
       }
    } else 
       var-> data = nil;
-   free( var->palette);
    var->palette = allocn( RGBColor, 256);
    if ( var-> palette == nil) {
       free( var-> data);
@@ -324,8 +323,6 @@ Image_done( Handle self)
 {
    apc_image_destroy( self);
    my->make_empty( self);
-   var->data = nil;
-   var->palette = nil;
    inherited done( self);
 }
 
@@ -341,6 +338,7 @@ Image_make_empty( Handle self)
    var->lineSize = 0;
    var->dataSize = 0;
    var->data     = nil;
+   var->palette  = nil;
    my->update_change( self);
 }
 
@@ -1002,9 +1000,10 @@ Image_create_empty( Handle self, int width, int height, int type)
    if ( var->dataSize > 0)
    {
       var->data = allocb( var->dataSize);
-      if ( var-> data == nil) { 
+      if ( var-> data == nil) {
+         int sz = var-> dataSize;
          my-> make_empty( self);
-         croak("Image::create_empty: cannot allocate %d bytes", var-> dataSize);
+         croak("Image::create_empty: cannot allocate %d bytes", sz);
       }
       memset( var->data, 0, var->dataSize);
    } else
