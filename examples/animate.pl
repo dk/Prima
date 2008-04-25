@@ -40,7 +40,7 @@ while ( my $info = $x-> next) {
 		$Y + $info-> {bottom},
 		$X + $info-> {right},
 		$Y + $info-> {top},
-	);
+	) if $clip_debug;
 
 	$::application-> color(cl::Red);
 	$::application-> rop(rop::XorPut);
