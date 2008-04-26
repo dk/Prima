@@ -211,6 +211,11 @@ extern void  apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanli
 #define EVENT_TOPDOWN_SCANLINES_READY(fi,scanlines) \
   if ( (fi)-> eventMask & IMG_EVENTS_DATA_READY) \
     apc_img_notify_scanlines_ready((fi),scanlines)
+#define EVENT_SCANLINES_FINISHED(fi) \
+  if ( (fi)-> eventMask & IMG_EVENTS_DATA_READY) {\
+    fi-> lastEventTime.tv_sec = fi-> lastEventTime.tv_usec = 0;\
+    apc_img_notify_scanlines_ready((fi),0); \
+  }
 
 #ifdef __cplusplus
 }

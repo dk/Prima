@@ -795,6 +795,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		if ( !req_read_big(fi, cLinesWorth, l->h, data))
 			return false;
 	}
+	EVENT_SCANLINES_FINISHED(fi);
 		
 	return true;
 }

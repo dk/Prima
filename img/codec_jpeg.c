@@ -284,6 +284,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          EVENT_TOPDOWN_SCANLINES_READY(fi,scanlines);
       }   
    }   
+   EVENT_SCANLINES_FINISHED(fi);
    jpeg_finish_decompress(&l-> d);
    return true;
 }   

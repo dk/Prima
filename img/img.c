@@ -1340,14 +1340,14 @@ apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines)
       unsigned int dt;
       struct timeval t;
 
-      if ( scanlines == 0) return;
-
       fi-> lastCachedScanline += scanlines;
       gettimeofday( &t, nil);
       dt = 
          t.tv_sec * 1000 + t.tv_usec / 1000 -
          fi-> lastEventTime.tv_sec * 1000 - fi-> lastEventTime.tv_usec / 1000;
+
       if ( dt < fi-> eventDelay) return;
+      if ( fi-> lastEventScanline == fi-> lastCachedScanline) return;
 
       e. cmd = cmImageDataReady;
       height = PImage( fi-> object)-> h;

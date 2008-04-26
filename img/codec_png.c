@@ -666,6 +666,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
          EVENT_TOPDOWN_SCANLINES_READY(fi,1);
       }
+      EVENT_SCANLINES_FINISHED(fi);
    }
 
    /* adjusting icon mask if possible */
