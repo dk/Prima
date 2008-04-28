@@ -1110,7 +1110,7 @@ sub setup_X11
 
 sub setup_perl
 {
-	if ( $Win32 || $OS2) {
+	if ( $Win32 || $cygwin || $OS2) {
 		print "Checking for perl library... ";
 		my $libpath = find_lib( $Config{ libperl}, '', "", qd( "$Config{ archlib}/CORE"));
 		unless ( defined $libpath) {
