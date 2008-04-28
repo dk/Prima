@@ -241,14 +241,12 @@ extern "C" {
    #endif
 #endif
 
-#ifndef PTR2UV
-#define PTR2UV(x) ((UV)(x))
-#endif
-#ifndef PTR2IV
-#define PTR2IV(x) ((IV)(x))
-#endif
+#undef PTR2UV
+#define PTR2UV(x) ((UV)(PTRV)(x))
+#undef PTR2IV
+#define PTR2IV(x) ((IV)(PTRV)(x))
 #undef INT2PTR
-#define INT2PTR(type,x) ((type)((UV)x))
+#define INT2PTR(type,x) ((type)((PTRV)x))
 
 #ifndef SvPV_nolen
 #define SvPV_nolen(_sv)  SvPV(_sv,na)
