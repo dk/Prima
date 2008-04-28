@@ -88,10 +88,10 @@ Application_init( Handle self, HV * profile)
    /* store extra info */
    {
       HV * hv = ( HV *) SvRV( var-> mate);
-      hv_store( hv, "PrinterClass",  12, newSVpv( pget_c( printerClass),  0), 0);
-      hv_store( hv, "PrinterModule", 13, newSVpv( pget_c( printerModule), 0), 0);
-      hv_store( hv, "HelpClass",     9,  newSVpv( pget_c( helpClass),     0), 0);
-      hv_store( hv, "HelpModule",    10, newSVpv( pget_c( helpModule),    0), 0);
+      (void) hv_store( hv, "PrinterClass",  12, newSVpv( pget_c( printerClass),  0), 0);
+      (void) hv_store( hv, "PrinterModule", 13, newSVpv( pget_c( printerModule), 0), 0);
+      (void) hv_store( hv, "HelpClass",     9,  newSVpv( pget_c( helpClass),     0), 0);
+      (void) hv_store( hv, "HelpModule",    10, newSVpv( pget_c( helpModule),    0), 0);
    }
 
    {

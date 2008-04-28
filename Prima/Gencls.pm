@@ -2212,7 +2212,7 @@ CONTAINED_STRUCTURE
 				my $lNameLen = length $lName;
 				my $lType = @{$structs{$_}[TYPES]}[$k];
 				my $inter = type2sv( $lType, "strucRef-> $lName");
-				print HEADER "\thv_store( $incHV, \"$lName\", $lNameLen, $inter, 0);\n";
+				print HEADER "\t(void) hv_store( $incHV, \"$lName\", $lNameLen, $inter, 0);\n";
 			}
 			print HEADER "\treturn newRV_noinc(( SV*) $incHV);\n";
 			print HEADER "}\n\n";

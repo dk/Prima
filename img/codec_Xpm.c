@@ -269,7 +269,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
                if ( j + 1 < e-> nlines) 
                   sv_catpv( string, "\n");
             }
-            hv_store( hash, e-> name, strlen( e-> name), string, 0);
+            (void) hv_store( hash, e-> name, strlen( e-> name), string, 0);
          }
          pset_sv_noinc( extensions, newRV_noinc((SV*)hash));
       }

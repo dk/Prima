@@ -572,8 +572,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    } 
 
    if ( fi-> noImageData) {
-      hv_store( fi-> frameProperties, "width",  5, newSViv( width), 0);
-      hv_store( fi-> frameProperties, "height", 6, newSViv( height), 0);
+      (void) hv_store( fi-> frameProperties, "width",  5, newSViv( width), 0);
+      (void) hv_store( fi-> frameProperties, "height", 6, newSViv( height), 0);
       if ( fi-> loadExtras) { /* skip data and read info blocks */
          for (pass = 0; pass < number_passes; pass++) {
             int y;
@@ -746,7 +746,7 @@ READ_END:
       if ( png_get_text( l-> png_ptr, l-> info_ptr, &tx, &ct)) {
          HV * hash = newHV();
          for ( i = 0; i < ct; i++, tx++) 
-            hv_store( hash, tx-> key, strlen( tx-> key), newSVpv( tx-> text, tx-> text_length), 0);
+            (void) hv_store( hash, tx-> key, strlen( tx-> key), newSVpv( tx-> text, tx-> text_length), 0);
          pset_sv_noinc( text, newRV_noinc(( SV *) hash));
       }
 #endif      

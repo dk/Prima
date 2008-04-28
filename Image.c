@@ -583,7 +583,7 @@ img_perlio_seek( void * f, long offset, int whence)
 #endif
 }
 
-static unsigned long 
+static long 
 img_perlio_tell( void * f)
 {
 #ifdef PerlIO
@@ -1269,7 +1269,7 @@ Image_dup( Handle self)
    if ( hv_exists(( HV*)SvRV( var-> mate), "extras", 6)) {
       SV ** sv = hv_fetch(( HV*)SvRV( var-> mate), "extras", 6, 0);
       if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV)
-         hv_store(( HV*)SvRV( i-> mate), "extras", 6, newSVsv( *sv), 0);
+         (void) hv_store(( HV*)SvRV( i-> mate), "extras", 6, newSVsv( *sv), 0);
    }
    
    --SvREFCNT( SvRV( i-> mate));

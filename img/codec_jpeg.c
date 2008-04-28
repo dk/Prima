@@ -263,8 +263,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( bpp == 8) bpp |= imGrayScale;
    CImage( fi-> object)-> create_empty( fi-> object, 1, 1, bpp);
    if ( fi-> noImageData) {
-      hv_store( fi-> frameProperties, "width",  5, newSViv( l-> d. output_width), 0);
-      hv_store( fi-> frameProperties, "height", 6, newSViv( l-> d. output_height), 0);
+      (void) hv_store( fi-> frameProperties, "width",  5, newSViv( l-> d. output_width), 0);
+      (void) hv_store( fi-> frameProperties, "height", 6, newSViv( l-> d. output_height), 0);
       jpeg_abort_decompress( &l-> d);
       return true;
    }   

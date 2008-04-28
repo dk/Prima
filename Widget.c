@@ -1404,6 +1404,7 @@ Widget_set( Handle self, HV * profile)
       Bool exists[ 6];
       int  values[ 6];
 
+      bzero( values, sizeof(values));
       if ( pexist( origin))
       {
          int set[2];

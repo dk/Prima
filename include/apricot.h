@@ -247,9 +247,8 @@ extern "C" {
 #ifndef PTR2IV
 #define PTR2IV(x) ((IV)(x))
 #endif
-#ifndef INT2PTR
+#undef INT2PTR
 #define INT2PTR(type,x) ((type)((UV)x))
-#endif
 
 #ifndef SvPV_nolen
 #define SvPV_nolen(_sv)  SvPV(_sv,na)
@@ -1308,7 +1307,7 @@ SvBOOL( SV *sv)
 #endif
 
 #define pexist( key) hv_exists( profile, # key, strlen( #key))
-#define pdelete( key) hv_delete( profile, # key, strlen( #key), G_DISCARD)
+#define pdelete( key) (void) hv_delete( profile, # key, strlen( #key), G_DISCARD)
 #define dPROFILE  SV ** temporary_prf_Sv
 #define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ), &sv_undef : *temporary_prf_Sv)
 #define pget_i( key)  ( pget_sv( key), SvIV( *temporary_prf_Sv))
@@ -1317,7 +1316,7 @@ SvBOOL( SV *sv)
 #define pget_H( key)  gimme_the_mate( pget_sv( key))
 #define pget_B( key)  ( SvTRUE( pget_sv( key)))
 
-#define pset_sv_noinc( key, value) hv_store( profile, # key, strlen( # key), value, 0);
+#define pset_sv_noinc( key, value) (void)hv_store( profile, # key, strlen( # key), value, 0)
 #define pset_sv( key, value) pset_sv_noinc( key, newSVsv( value))
 #define pset_i( key, value)  pset_sv_noinc( key, newSViv( value))
 #define pset_f( key, value)  pset_sv_noinc( key, newSVnv( value))

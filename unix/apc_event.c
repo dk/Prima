@@ -954,7 +954,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    Event e, secondary;
    PDrawableSysData selfxx;
    XButtonEvent *bev;
-   KeySym keysym;
+   KeySym keysym = 0;
    int cmd;
 
    XCHECKPOINT;

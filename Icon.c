@@ -67,6 +67,7 @@ produce_mask( Handle self)
    } else if ( var-> autoMasking == amMaskIndex) {
       if ( bpp > 8) return;	 
       color = var-> maskIndex;
+      bzero( &rgbcolor, sizeof(rgbcolor));
    }
 
    if ( bpp == imMono) {
