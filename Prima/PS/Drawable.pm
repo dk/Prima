@@ -452,7 +452,6 @@ sub end_doc
 {
 	my $self = $_[0];
 	return 0 unless $self-> {canDraw};
-
 	$self-> emit(<<PSFOOTER);
 ; P
 
@@ -981,7 +980,7 @@ sub text_out
 	for ( $i = 0; $i < $m; $i++) {
 		my $j = substr( $text, $i, 1);
 		my $xr = $rm-> [ ord $j] || $nd;
-		if ( $n == 1 && ( $le-> [ ord $j] ne '.notdef') && 
+		if ( $n == 1 && ord($j) < 256 && ( $le-> [ ord $j] ne '.notdef') && 
 			( $spec || exists ( $c-> {$le-> [ ord $j]}))
 		) {
 			$j =~ s/([\\()])/\\$1/g; 

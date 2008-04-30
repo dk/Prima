@@ -437,7 +437,9 @@ sub __end
 {
 	my $self = $_[0];
 	close( $self-> {spoolHandle}) if $self-> {spoolHandle};
-	defined($sigpipe) ? $SIG{PIPE} = $sigpipe : delete($SIG{PIPE});
+	if ( $self-> {data}-> {spoolerType} != file) {
+		defined($sigpipe) ? $SIG{PIPE} = $sigpipe : delete($SIG{PIPE});
+	}
 	$self-> {spoolHandle} = undef;
 	$sigpipe = undef;
 }
