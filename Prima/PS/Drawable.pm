@@ -26,14 +26,16 @@
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
 #  $Id$
 #
+package Prima::PS::Drawable;
+use vars qw(@ISA);
+@ISA = qw(Prima::Drawable);
+
 use strict;
 use Prima;
 use Prima::PS::Fonts;
 use Prima::PS::Encodings;
+use Encode;
 
-package Prima::PS::Drawable;
-use vars qw(@ISA);
-@ISA = qw(Prima::Drawable);
 
 {
 my %RNT = (
@@ -969,35 +971,72 @@ sub text_out
 	}
 	
 	$self-> emit( $self-> cmd_rgb( $self-> color));
-	my $i;
-	my $m = length $text;
 	my ( $rm, $nd) = $self-> get_rmap;
 	my ( $xp, $yp) = ( $x, $y);
 	my $c  = $self-> {font}-> {chardata}; 
 	my $le = $self-> {localeEncoding};
 	my $adv = 0;
 
-	for ( $i = 0; $i < $m; $i++) {
-		my $j = substr( $text, $i, 1);
-		my $xr = $rm-> [ ord $j] || $nd;
-		if ( $n == 1 && ord($j) < 256 && ( $le-> [ ord $j] ne '.notdef') && 
-			( $spec || exists ( $c-> {$le-> [ ord $j]}))
-		) {
+	my ( @t, @umap);
+	my $unicode = Encode::is_utf8( $text);
+	if ( defined($self-> {font}-> {encoding}) && $unicode) {
+		# known encoding?
+		eval { Encode::encode( $self-> {font}-> {encoding}, ''); };
+		unless ( $@) {
+			# convert as much of unicode text as possible into the current encoding
+			while ( 1) {
+				my $conv = Encode::encode(
+					$self-> {font}-> {encoding}, $text,
+					Encode::FB_QUIET
+				);
+				push @t, split( '', $conv);
+				push @umap, (undef) x length $conv;
+				last unless length $text;
+				push @t, substr( $text, 0, 1, '');
+				push @umap, 1;
+			}
+		} else {
+			@t = split '', $text;
+			@umap = map { undef } @t;
+		}
+	} else {
+		@t = split '', $text;
+		@umap = map { undef } @t;
+	}
+
+	my $i = -1;
+	for my $j ( @t) {
+		$i++;
+		my $advance;
+		my $u = $umap[$i]||0;
+		if ( 
+			!$umap[$i] &&                           # not unicode
+			$n == 1 &&                              # postscript font 
+			( $le-> [ ord $j] ne '.notdef') && (    # 
+				$spec ||                        # fontspecific
+				exists ( $c-> {$le-> [ ord $j]} # have predefined font metrics
+			)
+		)) {
 			$j =~ s/([\\()])/\\$1/g; 
 			my $adv2 = int( $adv * 100 + 0.5) / 100;
 			$self-> emit( "$adv2 0 M") if $adv2 != 0;
 			$self-> emit("($j) S");
-		} elsif ( defined $rm-> [ord $j]) {
-			my $adv2 = $adv + $$xr[1] * 72.27 / $self-> {resolution}-> [0]; 
-			$adv2 = int( $adv * 100 + 0.5) / 100;
-			my $pg = $self-> plate_glyph( ord $j);
+			my $xr = $rm-> [ ord $j];
+			$advance = $$xr[1] + $$xr[2] + $$xr[3];
+		} else {
+			my ( $pg, $a, $b, $c) = $self-> place_glyph( $j);
 			if ( length $pg) {
+				my $adv2 = $adv + $a * 72.27 / $self-> {resolution}-> [0]; 
+				$adv2 = int( $adv * 100 + 0.5) / 100;
 				$self-> emit( "$adv2 $self->{plate}->{yd} M : CP T");
 				$self-> emit( $pg);
 				$self-> emit(";");
+				$advance = $a + $b + $c;
+			} else {
+				$advance = $$nd[1] + $$nd[2] + $$nd[3];
 			}
-		} 
-		$adv += ( $$xr[1] + $$xr[2] + $$xr[3]) * 72.27 / $self-> {resolution}-> [0];
+		}
+		$adv += $advance * 72.27 / $self-> {resolution}-> [0];
 	}
 	
 	#$text =~ s/([\\()])/\\$1/g;
@@ -1365,11 +1404,12 @@ sub plate
 	return $self-> {plate};
 }
 
-sub plate_glyph
+sub place_glyph
 {
 	return '' if $_[0]-> {useDeviceFontsOnly};
+	my ( $self, $char) = @_;
 	my $z = $_[0]-> plate;
-	my $x = $_[1];
+	my $x = ord $char;
 	my $d  = $z-> font-> descent;
 	my ( $dimx, $dimy) = $z-> size;
 	my ( $f, $l) = ( $z-> font-> firstChar, $z-> font-> lastChar);
@@ -1378,14 +1418,18 @@ sub plate_glyph
 	my $ax = ( $dimx & 7) ? (( 0xff << (7-( $dimx & 7))) & 0xff) : 0xff;
 	
 	my $xsf = 0;
-	$x = $f if $x < $f || $x > $l;
+	my ( $a, $b, $c);
 
-	my $abc = $z-> {ABC};
-	my ( $a, $b, $c) = (
-		$abc-> [ ( $x - $f) * 3],
-		$abc-> [ ( $x - $f) * 3 + 1],
-		$abc-> [ ( $x - $f) * 3 + 2],
-	);
+	if ( Encode::is_utf8( $char)) {
+		( $a, $b, $c) = @{ $z-> get_font_abc( $x, $x, 1)};
+	} else {
+		my $abc = $z-> {ABC};
+		( $a, $b, $c) = (
+			$abc-> [ ( $x - $f) * 3],
+			$abc-> [ ( $x - $f) * 3 + 1],
+			$abc-> [ ( $x - $f) * 3 + 2],
+		);
+	}
 	return '' if $b <= 0;
 	$z-> begin_paint;
 	$z-> clear;
@@ -1439,8 +1483,10 @@ sub plate_glyph
 		$_[0]-> {plate}-> {yd} = $bbox[1] * 72.27 / $_[0]-> {resolution}-> [1];
 		my $scalex = 72.27 * $b   / $_[0]-> {resolution}-> [0];
 		my $scaley = 72.27 * $bby / $_[0]-> {resolution}-> [1];
-		return "$scalex $scaley scale $b $bby true [$b 0 0 -$bby 0 $bby] <$cdz> imagemask";
-	} 
+		return 
+			"$scalex $scaley scale $b $bby true [$b 0 0 -$bby 0 $bby] <$cdz> imagemask",
+			$a, $b, $c;
+	}
 	return '';
 }
 
