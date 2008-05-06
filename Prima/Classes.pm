@@ -54,7 +54,6 @@ sub DESTROY
 	::destroy_mate( $self);
 }
 
-
 sub profile_add
 {
 	my ($self,$profile) = @_;
@@ -1343,7 +1342,8 @@ package Prima::MainWindow;
 use vars qw(@ISA);
 @ISA = qw(Prima::Window);
 
-sub on_destroy { $::application-> close }
+sub on_create  { $::main_window = $_[0]; }
+sub on_destroy { $::application-> close; undef $::main_window }
 
 # class MenuItem
 package Prima::MenuItem;

@@ -213,6 +213,8 @@ rather than
 
 , although these lines are equivalent.
 
+Also, the C<$::main_window> is pointed to a newly created main window.
+
 =head1 API
 
 =head2 Properties

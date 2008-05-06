@@ -81,7 +81,7 @@ can do lot more. For example
 displays two buttons and an icon. A small achievement, but the following is a bit more interesting:
 
 	use Prima qw(Application MsgBox);
-	message('Hello world', mb::OkCancel|mb::Information, {
+	message('Hello world', mb::OkCancel|mb::Information, 
 		buttons => {
 			mb::Cancel => {
 				# there are predefined color constants to use
@@ -93,7 +93,7 @@ displays two buttons and an icon. A small achievement, but the following is a bi
 				text 	=> 'Indeed',
 			},
 		}
-	});
+	);
 
 
 =for podview <img src="tutorial/hello5.gif">

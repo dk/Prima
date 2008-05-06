@@ -106,7 +106,13 @@ sub insert_buttons
 
 sub message_box
 {
-	my ( $title, $text, $options, $extras) = @_;
+	my ( $title, $text, $options, @extras) = @_;
+	
+	my $extras = 
+		( 1 == @extras and (ref($extras[0])||'') eq 'HASH') ?
+	   	$extras[0] : # old style
+		{ @extras }; # new style
+
 	$options = mb::Ok | mb::Error unless defined $options;
 	$options |= mb::Ok unless $options & 0x0FF;
 	my $buttons = $options & 0xFF;
@@ -133,6 +139,7 @@ sub message_box
 		visible       => 0,
 		text          => $title,
 		font          => $::application-> get_message_font,
+		owner         => $extras-> {owner} || $::main_window || $::application,
 		onExecute     => sub {
 			Prima::Utils::beep( $options) if $options && !$nosound;
 		},
@@ -209,8 +216,13 @@ sub message
 
 sub input_box
 {
-	my ( $title, $text, $string, $buttons, $extras) = @_;
+	my ( $title, $text, $string, $buttons, @extras) = @_;
 	$buttons = mb::Ok|mb::Cancel unless defined $buttons;
+	
+	my $extras = 
+		( 1 == @extras and (ref($extras[0])||'') eq 'HASH') ?
+	   	$extras[0] : # old style
+		{ @extras }; # new style
 
 	my $dlg = Prima::Dialog-> create(
 		centered      => 1,
@@ -289,7 +301,7 @@ dialog boxes.
 
 =over
 
-=item input_box TITLE, LABEL, INPUT_STRING, [ BUTTONS = mb::OkCancel, PROFILES = {} ]
+=item input_box TITLE, LABEL, INPUT_STRING, [ BUTTONS = mb::OkCancel, %PROFILES ]
 
 Invokes standard dialog box, that contains an input line, a text label, and
 buttons used for ending dialog session. The dialog box uses TITLE string to
@@ -310,11 +322,11 @@ text entered. The input text is not restored to its original value if the
 dialog was cancelled. In scalar context returns the text entered, if the dialog
 was ended with C<mb::OK> or C<mb::Yes> result, or C<undef> otherwise.
 
-=item message TEXT, [ OPTIONS = mb::Ok | mb::Error, PROFILES = {} ]
+=item message TEXT, [ OPTIONS = mb::Ok | mb::Error, %PROFILES ]
 
 Same as C<message_box> call, with application name passed as the title string.
 
-=item message_box TITLE, TEXT, [ OPTIONS = mb::Ok | mb::Error, PROFILES = {} ] 
+=item message_box TITLE, TEXT, [ OPTIONS = mb::Ok | mb::Error, %PROFILES ]
 
 Invokes standard dialog box, that contains a text label, a predefined icon, and
 buttons used for ending dialog session. The dialog box uses TITLE string to
@@ -390,18 +402,24 @@ can be set with the hash reference under C<buttons> key.  The hash is a
 profile, passed to the button as creation parameters. For example, to change
 the text and behavior of a button, the following construct can be used:
 
-	Prima::MsgBox::message( 'Hello', mb::OkCancel, {
+	Prima::MsgBox::message( 'Hello', mb::OkCancel,
 		buttons => {
 			mb::Ok, {
 				text     => '~Hello',
 				onClick  => sub { Prima::message('Hello indeed!'); }
 			}
 		}
-	});
+	);
 
 If it is not desired that the dialog must be closed when the user presses a
 button, its C<::modalResult> property ( see L<Prima::Buttons> ) must be reset
 to 0.
+
+=item owner WINDOW
+
+If set, the dialog owner is set to WINDOW, otherwise to C<$::main_window>.
+Necessary to maintain window stack order under some window managers, to disallow
+windows to be brought over the message box.
 
 =back
 

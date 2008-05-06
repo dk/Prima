@@ -379,7 +379,7 @@ sub begin_doc
 	if ( $self-> {data}-> {spoolerType} == file) {
 		if ( $self-> {gui}) {
 			eval "use Prima::MsgBox"; die "$@\n" if $@;
-			my $f = Prima::MsgBox::input_box( 'Print to file', 'Output file name:', '', mb::OKCancel, { buttons => {
+			my $f = Prima::MsgBox::input_box( 'Print to file', 'Output file name:', '', mb::OKCancel, buttons => {
 				mb::OK, { 
 				modalResult => undef,
 				onClick => sub {
@@ -400,7 +400,7 @@ sub begin_doc
 					} 
 					$_[0]-> owner-> modalResult( mb::OK);
 					$_[0]-> owner-> end_modal;
-			}}}});
+			}}});
 			return 0 unless defined $f;
 			my $h = IO::Handle-> new;
 			unless ( open $h, "> $f") {

@@ -119,7 +119,7 @@ my $w = Prima::MainWindow-> create(
 		["~Help" => sub{
 			Prima::MsgBox::message( 
 				'Chess puzzle. Objective is to put figures so they could reach every cell upon the board',
-				mb::OK | mb::Cancel, {
+				mb::OK | mb::Cancel,
 				buttons => { mb::Cancel , {
 					text => '~Solution',
 					onClick => sub {
@@ -129,7 +129,7 @@ my $w = Prima::MainWindow-> create(
 						);
 					}
 				}}
-			});
+			);
 		}],
 	],
 	onPaint => sub {

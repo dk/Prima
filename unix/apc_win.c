@@ -1273,17 +1273,32 @@ Bool
 apc_window_execute( Handle self, Handle insert_before)
 {
    DEFXX;
+   Handle toplevel;
+   
+   if (!application) return false;
+
+   toplevel = CApplication(application)-> get_modal_window(application, mtExclusive, true);
+   if ( toplevel == nilHandle) {
+      if ( 
+          PWindow(self)-> owner && 
+	  PWindow(self)-> owner != application
+      ) 
+         toplevel = PWindow(self)-> owner;
+   }
+   if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, PWidget(toplevel)-> handle);
+
    XX-> flags.modal = true;
    set_net_hints( X_WINDOW, -1, XX-> flags.modal, -1, -1);
    if ( !window_start_modal( self, false, insert_before))
       return false;
-   if (!application) return false;
 
    protect_object( self);
 
    XSync( DISP, false);
    while ( prima_one_loop_round( true, true) && XX-> flags.modal)
       ;
+   
+   if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, None);
    if ( X_WINDOW) set_net_hints( X_WINDOW, -1, XX-> flags.modal, -1, -1);
    unprotect_object( self);
    return true;
