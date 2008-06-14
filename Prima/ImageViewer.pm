@@ -121,7 +121,7 @@ sub on_paint
 		if ( $ya == ta::Top) {
 			$aty = $winY - $imYz;
 		} elsif ( $ya != ta::Bottom) {
-			$aty = ($winY - $imYz)/2;
+			$aty = int(($winY - $imYz)/2 + .5);
 		} else {
 			$aty = 0;
 		}
@@ -139,7 +139,7 @@ sub on_paint
 		if ( $xa == ta::Right) {
 			$atx = $winX - $imXz;
 		} elsif ( $xa != ta::Left) {
-			$atx = ($winX - $imXz)/2;
+			$atx = int(($winX - $imXz)/2 + .5);
 		} else {
 			$atx = 0;
 		}
