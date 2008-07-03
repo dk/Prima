@@ -1099,7 +1099,7 @@ sub add
 					} else {
 						$l = $s;
 					}
-					unless ( $linkHREF =~ /\//) {
+					unless ( $s =~ /^\w+\:\/\//) {
 						my ( $page, $section) = ( '', '');
 						if ( $s =~ /^([^\/]*)\/(.*)$/) {
 							( $page, $section) = ( $1, $2);
