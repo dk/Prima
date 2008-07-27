@@ -426,6 +426,9 @@ sub PreviewImage_DataReady
 	my ( $self, $image, $x, $y, $w, $h) = @_;
 	return unless $self-> {__preview_image};
 
+	# do not update if DataReady covers the whole image at once
+	return if $y == 0 and $h == $image-> height;
+
 	$self-> image-> put_image_indirect( $image, $x, $y, $x, $y, $w, $h, $w, $h, rop::CopyPut);
 	my @r = $self-> point2screen( $x, $y, $x + $w, $y + $h);
 	$self-> invalidate_rect( @r[0,1], map { int($_ + 0.5) } @r[2,3] );
@@ -564,7 +567,7 @@ begins at 12th screen pixel, the next - 25th ( because of the roundoff ), then
 37th etc etc. Also, for example the image is 2000x2000 pixels wide, and is
 asked to be drawn so that the image appears shifted 499 screen image pixels
 left, beginning to be drawn from ~ 499/12.3456=40.42122 image pixel. Is might
-seems that indeed it would be enough to ask system to begin drawing from image
+seem that indeed it would be enough to ask system to begin drawing from image
 pixel 40, and offset int(0.42122*12.345)=5 screen pixels to the left, however,
 that procedure will not account for the correct fixed point roundoff that
 accumulates as system scales the image. For zoom factor 12.345 this roundoff
@@ -581,7 +584,7 @@ from image pixel 200 for offsets 200-399, ( screen pixels 2469-4937), and so
 on.
 
 Since system internally allocate memory for image scaling, that means that up
-to 2*200*min(window_width,imtage_width)*bytes_per_pixel unneccessary bytes will
+to 2*200*min(window_width,image_width)*bytes_per_pixel unneccessary bytes will
 be allocated for each image drawing call (2 because the calculations are valid
 for both the vertical and horizontal strips), and this can lead to slowdown or
 even request failure when image or window dimensions are large. The proposed
