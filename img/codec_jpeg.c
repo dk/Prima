@@ -53,6 +53,12 @@ extern "C" {
 static char * jpgext[] = { "jpg", "jpe", "jpeg", nil };
 static int    jpgbpp[] = { imbpp8 | imGrayScale, imbpp24, 0 };   
 
+static char * loadOutput[] = { 
+   "comment",
+   "appdata",
+   nil
+};   
+
 static ImgCodecInfo codec_info = {
    "JPEG",
    "Independent JPEG Group",
@@ -65,7 +71,7 @@ static ImgCodecInfo codec_info = {
    "Prima::Image::jpeg",  /* package */
    IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM,
    jpgbpp, /* save types */
-   nil
+   loadOutput
 };
 
 static void * 
@@ -83,6 +89,7 @@ typedef struct _LoadRec {
    jmp_buf                        j;
    Bool                        init;
 } LoadRec;
+
 
 static void
 load_output_message(j_common_ptr cinfo)
@@ -110,6 +117,7 @@ typedef struct {
   JOCTET * buffer;		/* start of buffer */
   boolean start_of_file;	/* have we gotten any data yet? */
   ImgIORequest  *req;
+  HV * fp;                      /* frame properties */
 } my_source_mgr;
 
 typedef my_source_mgr * my_src_ptr;
@@ -182,6 +190,8 @@ term_source (j_decompress_ptr cinfo)
   /* no work necessary here */
 }
 
+static boolean j_read_profile(j_decompress_ptr jpeg_info);
+static boolean j_read_comment(j_decompress_ptr jpeg_info);
 
 static void
 custom_src( j_decompress_ptr cinfo, PImgLoadFileInstance fi)
@@ -198,10 +208,99 @@ custom_src( j_decompress_ptr cinfo, PImgLoadFileInstance fi)
   src-> pub.term_source = term_source;
   src-> pub.bytes_in_buffer = 0; /* forces fill_input_buffer on first read */
   src-> pub.next_input_byte = NULL; /* until buffer loaded */
+ 
+  if ( fi-> loadExtras) { 
+     int i;
+     jpeg_set_marker_processor( cinfo, JPEG_COM, j_read_comment);
+     for ( i = 1; i < 16; i++)
+        jpeg_set_marker_processor( cinfo, (int) (JPEG_APP0+i), j_read_profile);
+  }
 
   src-> req    = fi-> req;
 }
 /* end ripoff from jdatasrc.c */
+
+/* ripoff from imagemagick/coders/jpeg.c */
+static int
+j_read_octet(j_decompress_ptr jpeg_info)
+{
+   if (jpeg_info->src->bytes_in_buffer == 0)
+      (void) (*jpeg_info->src->fill_input_buffer)(jpeg_info);
+   jpeg_info->src->bytes_in_buffer--;
+   return ((int) GETJOCTET(*jpeg_info->src->next_input_byte++));
+}
+
+/* Read generic profile  */
+static boolean
+j_read_profile(j_decompress_ptr jpeg_info)
+{
+   SV ** sv;
+   AV * av;
+   HV * fp = ((my_source_mgr *)(jpeg_info-> src))-> fp;
+   char * name, *p, key[8];
+   int marker, l, length, keylen;
+ 
+   length  = j_read_octet( jpeg_info) << 8;
+   length += j_read_octet( jpeg_info);
+   if (length <= 2) return true;
+
+   length -= 2;
+   name = malloc( length);
+   if ( !name) return true;
+
+   marker  = jpeg_info->unread_marker - JPEG_APP0;
+   p = name;
+   l = length;
+   while (l--) *p++ = j_read_octet( jpeg_info);
+
+   sv = hv_fetch( fp, "appdata", 7, 0);
+   if ( sv == NULL) {
+       av = newAV();
+       hv_store( fp, "appdata", 7, newRV_noinc((SV*) av), 0); 
+   } else {
+       if ( SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVAV) {
+	   av = (AV*) SvRV( *sv);
+       } else {
+	   croak("bad profile 'appdata': expected array");
+       }
+   }
+
+   av_store( av, marker, newSVpv( name, length));
+
+   free( name);
+   return true;
+}
+
+static boolean
+j_read_comment(j_decompress_ptr jpeg_info)
+{
+   char *comment, *p;
+   int l, length;
+   SV * sv;
+   
+   length  = j_read_octet( jpeg_info) << 8;
+   length += j_read_octet( jpeg_info);
+   if (length <= 2) return true;
+
+   length -= 2;
+   comment = malloc( length+1);
+   if ( !comment) return true;
+
+   l = length;
+   p = comment;
+   while (l--) *p++ = j_read_octet( jpeg_info);
+   *p = 0;
+
+   (void) hv_store(
+       ((my_source_mgr *)(jpeg_info-> src))-> fp, 
+       "comment",  7, 
+       newSVpv( comment, length), 0);
+   free( comment);
+
+   return true;
+}
+/* end ripoff from imagemagick/coders/jpeg.c */
+
 
 static void * 
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
@@ -240,7 +339,6 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    } 
    jpeg_create_decompress( &l-> d);
    custom_src( &l-> d, fi);
-   jpeg_read_header( &l-> d, true);
    l-> init = false;
    return l;
 }
@@ -253,6 +351,10 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    int bpp;
   
    if ( setjmp( l-> j) != 0) return false;
+
+   ((my_source_mgr*)(l-> d. src))-> fp = fi-> frameProperties;
+   jpeg_read_header( &l-> d, true);
+
    jpeg_start_decompress( &l-> d);
    bpp = l-> d. output_components * 8;   
    if ( bpp != 8 && bpp != 24) {
@@ -337,6 +439,8 @@ save_defaults( PImgCodec c)
    HV * profile = newHV();
    pset_i( quality, 75);
    pset_i( progressive, 0);
+   pset_c( comment, "");
+   pset_sv( appdata, newRV_noinc((SV*) newAV()));
    return profile;
 }
 
@@ -453,12 +557,28 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
    return l;
 }
 
+static void
+j_write_extras( j_compress_ptr j, int marker, SV * data)
+{
+   int i, w;
+   STRLEN len;
+   char * p;
+
+   p = SvPV( data, len);
+   for ( i = 0; i < len; i += 65533) {
+       w = len - i;
+       if ( w > 65533) w = 65533;
+       jpeg_write_marker( j, marker, ( unsigned char *) p + i, w);
+   }
+}
+
 static Bool   
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
    dPROFILE;
    PImage i = ( PImage) fi-> object;
    SaveRec * l = ( SaveRec *) fi-> instance;
+   AV * appdata = NULL;
    HV * profile = fi-> objectExtras;
    
    if ( setjmp( l-> j) != 0) return false;
@@ -468,7 +588,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    l-> c. input_components = ((( i-> type & imBPP) == 24) ? 3 : 1);
    l-> c. in_color_space   = ((( i-> type & imBPP) == 24) ? JCS_RGB : JCS_GRAYSCALE);
    jpeg_set_defaults( &l-> c);
-   
+
    if ( pexist( quality)) {
       int q = pget_i( quality);
       if ( q < 0 || q > 100) {
@@ -489,9 +609,33 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
          return false;
       }   
    }                    
+   
+   if ( pexist( appdata)) {
+      SV * sv = pget_sv( appdata);
+      if ( !SvROK(sv) || SvTYPE(SvRV(sv)) != SVt_PVAV) {
+         strcpy( fi-> errbuf, "'appdata' must be an array");
+         return false;
+      }
+      appdata = (AV*) SvRV( sv);
+   }
 
    jpeg_start_compress( &l-> c, true);
-   
+
+   /* write extras */
+   if ( pexist( comment)) 
+      j_write_extras( &l-> c, JPEG_COM, pget_sv( comment));
+
+   if ( appdata) {
+      int marker;
+      SV ** sv;
+      for ( marker = 1; marker < 16; marker++) {
+	  sv = av_fetch( appdata, marker, 0);
+	  if ( sv && *sv && SvOK( *sv))
+	     j_write_extras( &l-> c, JPEG_APP0 + marker, *sv);
+      }
+   } 
+  
+   /* write pixels */ 
    {
       Byte * src = i-> data + ( i-> h - 1) * i-> lineSize;
       while ( l-> c.next_scanline < i-> h ) {
