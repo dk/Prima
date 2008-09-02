@@ -455,7 +455,7 @@ Image_set_extended_data( Handle self, HV * profile)
    dPROFILE;
    void *data, *proc;
    STRLEN dataSize;
-   int lineSize = 0, newType = -1, fixType, oldType = -1;
+   int lineSize = 0, newType = var-> type, fixType, oldType = -1;
    Bool pexistType, pexistLine, pexistReverse, supp, reverse = false;
 
    if ( !pexist( data)) {
