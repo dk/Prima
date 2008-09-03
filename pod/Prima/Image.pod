@@ -771,9 +771,7 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 L<Prima>, L<Prima::Drawable>, L<Prima::image-load>, L<Prima::codecs>.
 
-L<http://pdl.perl.org/> - PDL home page,
+L<PDL>, L<PDL::PrimaImage>, L<IPA>
 
-L<http://prima.eu.org/PDL-PrimaImage/> - PDL::PrimaImage home page,
-
-L<http://prima.eu.org/IPA/> - IPA toolkit home page,
+L<ImageMagick>, L<Prima::Image::Magick>
 
