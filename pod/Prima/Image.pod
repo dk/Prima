@@ -28,7 +28,7 @@ Prima::Image - Bitmap routines
    $i-> save('a.gif') or die "Error saving:$@\n";
    $i-> load('a.gif') or die "Error loading:$@\n";
 
-   # draw on application
+   # draw on screen
    $::application-> begin_paint;
 
    # an image is drawn as specified by its palette
@@ -41,59 +41,57 @@ Prima::Image - Bitmap routines
 
 =head1 DESCRIPTION
 
-I<Prima::Image>, I<Prima::Icon> and I<Prima::DeviceBitmap> are classes
-for bitmap handling, including file and graphic input and
-output. I<Prima::Image> and I<Prima::DeviceBitmap> are descendants of
-I<Prima::Drawable> and represent bitmaps, stored in memory.
-I<Prima::Icon> is a descendant of I<Prima::Image>
+I<Prima::Image>, I<Prima::Icon> and I<Prima::DeviceBitmap> are classes for
+bitmap handling, including file and graphic input and output. I<Prima::Image>
+and I<Prima::DeviceBitmap> are descendants of I<Prima::Drawable> and represent
+bitmaps, stored in memory.  I<Prima::Icon> is a descendant of I<Prima::Image>
 and contains a transparency mask along with the regular data.
 
 =head1 USAGE
 
-Images usually are represented as a memory area, where pixel data
-are stored row-wise. The Prima toolkit is no exception, however,
-it does not assume that the GUI system uses the same memory format.
-The implicit conversion routines are called when I<Prima::Image> is
-about to be drawn onto the screen, for example. The conversions
-are not always efficient, therefore the I<Prima::DeviceBitmap> class
-is introduced to represent a bitmap, stored in the system memory
-in the system pixel format. These two basic classes serve the different
-needs, but can be easily converted to each other, with C<image> and
+Images usually are represented as a memory area, where pixel data are stored
+row-wise. The Prima toolkit is no exception, however, it does not assume that
+the GUI system uses the same memory format.  The implicit conversion routines
+are called when I<Prima::Image> is about to be drawn onto the screen, for
+example. The conversions are not always efficient, therefore the
+I<Prima::DeviceBitmap> class is introduced to represent a bitmap, stored in the
+system memory in the system pixel format. These two basic classes serve the
+different needs, but can be easily converted to each other, with C<image> and
 C<bitmap> methods. I<Prima::Image> is a more general bitmap representation,
-capable of file and graphic input and output, plus it is supplied with
-number of conversion and scaling functions. The I<Prima::DeviceBitmap>
-class has almost none of additional functionality, and is targeted
-to efficient graphic input and output.
+capable of file and graphic input and output, plus it is supplied with number
+of conversion and scaling functions. The I<Prima::DeviceBitmap> class has
+almost none of additional functionality, and is targeted to efficient graphic
+input and output.
 
 =head2 Graphic input and output
 
-As descendants of I<Prima::Drawable>, all I<Prima::Image>, I<Prima::Icon> and 
-I<Prima::DeviceBitmap> objects are subject to three-state painting mode - 
+As descendants of I<Prima::Drawable>, all I<Prima::Image>, I<Prima::Icon> and
+I<Prima::DeviceBitmap> objects are subject to three-state painting mode -
 normal ( disabled ), painting ( enabled ) and informational.
-I<Prima::DeviceBitmap> is, however, exists only in the enabled state,
-and can not be switched to the other two.
+I<Prima::DeviceBitmap> is, however, exists only in the enabled state, and can
+not be switched to the other two.
 
-When an object enters the enabled state, it serves as a canvas, and
-all I<Prima::Drawable> operations can be performed on it. When the object
-is back to the disabled state, the graphic information is stored into
-the object associated memory, in the pixel format, supported by the toolkit.
-This information can be visualized by using one of C<Prima::Drawable::put_image>
+When an object enters the enabled state, it serves as a canvas, and all
+I<Prima::Drawable> operations can be performed on it. When the object is back
+to the disabled state, the graphic information is stored into the object
+associated memory, in the pixel format, supported by the toolkit.  This
+information can be visualized by using one of C<Prima::Drawable::put_image>
 group methods. If the object enters the enabled state again, the graphic
 information is presented as an initial state of a bitmap.
 
-It must be noted, that if an implicit conversion takes place after an
-object enters and before it leaves the enabled state, as it is with
-I<Prima::Image> and I<Prima::Icon>, the bitmap is converted to the system pixel
-format. During such conversion some information can be lost, due to down-sampling,
-and there is no way to preserve the information. This does not happen with
+It must be noted, that if an implicit conversion takes place after an object
+enters and before it leaves the enabled state, as it is with I<Prima::Image>
+and I<Prima::Icon>, the bitmap is converted to the system pixel format. During
+such conversion some information can be lost, due to down-sampling, and there
+is no way to preserve the information. This does not happen with
 I<Prima::DeviceBitmap>.
 
-Image objects can be drawn upon images, as well as on the screen and L<Prima::Widget>
-objects. This operation is performed via one of I<Prima::Drawable::put_image> group methods
-( see L<Prima::Drawable>),
-and can be called with the image object disregarding the paint state. The following
-code illustrates the dualism of an image object, where it can serve both as a drawing surface 
-and as a drawing tool:
+Image objects can be drawn upon images, as well as on the screen and
+L<Prima::Widget> objects. This operation is performed via one of
+I<Prima::Drawable::put_image> group methods ( see L<Prima::Drawable>), and can
+be called with the image object disregarding the paint state. The following
+code illustrates the dualism of an image object, where it can serve both as a
+drawing surface and as a drawing tool:
 
     my $a = Prima::Image-> create( width => 100, height => 100, type => im::RGB);
     $a-> begin_paint;
@@ -108,30 +106,30 @@ and as a drawing tool:
     $::application-> end_paint;
 
 It must be noted, that C<put_image>, C<stretch_image> and C<put_image_indirect>
-are only painting methods that allow drawing on an image that is in its 
+are only painting methods that allow drawing on an image that is in its
 paint-disabled state. Moreover, in such context they only allow C<Prima::Image>
 descendants to be passed as a source image object. This functionality does not
 imply that the image is internally switched to the paint-enabled state and
 back; the painting is performed without switching and without interference with
 the system's graphical layer.
 
-Another special case is a 1-bit ( monochrome ) DeviceBitmap. When it is drawn upon
-a drawable with bit depth greater than 1, the drawable's color and backColor properties
-are used to reflect 1 and 0 bits, respectively. On a 1-bit drawable this does not
-happen, and the color properties are not used. 
+Another special case is a 1-bit ( monochrome ) DeviceBitmap. When it is drawn
+upon a drawable with bit depth greater than 1, the drawable's color and
+backColor properties are used to reflect 1 and 0 bits, respectively. On a 1-bit
+drawable this does not happen, and the color properties are not used. 
 
 =head2 File input and output
 
 Depending on the toolkit configuration, images can be read and written in
-different formats. This functionality in accessible via C<load()>
-and C<save()> methods. L<Prima::image-load> is dedicated to the 
-description of loading and saving parameters, that can be passed to the methods,
-so they can handle different aspects of file format-specific options,
-such as multi-frame operations, auto conversion when a format does not
-support a particular pixel format etc. In this document, C<load()>
-and C<save()> methods are illustrated only in their basic, single-frame
-functionality. When called with no extra parameters, these methods fail
-only if a disk I/O error occurred or an unknown image format was used. 
+different formats. This functionality in accessible via C<load()> and C<save()>
+methods. L<Prima::image-load> is dedicated to the description of loading and
+saving parameters, that can be passed to the methods, so they can handle
+different aspects of file format-specific options, such as multi-frame
+operations, auto conversion when a format does not support a particular pixel
+format etc. In this document, C<load()> and C<save()> methods are illustrated
+only in their basic, single-frame functionality. When called with no extra
+parameters, these methods fail only if a disk I/O error occurred or an unknown
+image format was used. 
 
 When an image is loaded, the old bitmap memory content is discarded,
 and the image attributes are changed accordingly to the loaded image.
@@ -144,37 +142,37 @@ in the image file.
 I<Prima::Image> supports a number of pixel formats, governed by the C<::type>
 property. It is reflected by an integer value, a combination of C<im::XXX>
 constants. The whole set of pixel formats is represented by colored formats,
-like, 16-color, 256-color and 16M-color, and by gray-scale formats, mapped to
-C data types - unsigned char, unsigned short, unsigned long, float and double.
-The gray-scale formats are subdivided to real-number formats and complex-number
-format; the last ones are represented by two real values per pixel, containing
-the real and the imaginary values.
+like, 16-color, 256-color and 16M-color, and by gray-scale formats, mapped to C
+data types - unsigned char, unsigned short, unsigned long, float and double.
+The gray-scale formats are further subdivided to real-number formats and
+complex-number format; the last ones are represented by two real values per
+pixel, containing the real and the imaginary values.
 
 I<Prima::Image> can also be initialized from other formats, that it does not
-support, but can convert data from. Currently these are
-represented by a set of permutations of 32-bit RGBA format, and 24-bit BGR format. 
-These formats can only be used in conjunction with C<::data> property.
+support, but can convert data from. Currently these are represented by a set of
+permutations of 32-bit RGBA format, and 24-bit BGR format.  These formats can
+only be used in conjunction with C<::data> property.
 
 The conversions can be performed between any of the supported formats ( to do
-so, C<::type> property is to be set-called ). An image of any of these formats 
-can be drawn on the screen,
-but if the system can not accept the pixel format ( as it is with non-integer or
-complex formats ), the bitmap data are implicitly converted. The conversion
-does not change the data if the image is to be output; the conversion is performed 
-only when the image is to be served as a drawing surface. If, by any reason, it is
-desired that the pixel format is not to be changed, the C<::preserveType> property
-must be set to 1. It does not prevent the conversion, but it detects if the image
-was implicitly converted inside C<end_paint()> call, and reverts it to
-its previous pixel format.
+so, C<::type> property is to be set-called ). An image of any of these formats
+can be drawn on the screen, but if the system can not accept the pixel format (
+as it is with non-integer or complex formats ), the bitmap data are implicitly
+converted. The conversion does not change the data if the image is about to be
+drawn; the conversion is performed only when the image is about to be served as
+a drawing surface. If, by any reason, it is desired that the pixel format is
+not to be changed, the C<::preserveType> property must be set to 1. It does not
+prevent the conversion, but it detects if the image was implicitly converted
+inside C<end_paint()> call, and reverts it to its previous pixel format.
 
-There are situations, when a pixel format conversion must be made with
-down-sampling. One of four down-sampling methods can be selected -
+There are situations, when pixel format must be changed together while
+down-sampling the image. One of four down-sampling methods can be selected -
 normal, 8x8 ordered halftoning, error diffusion, and error diffusion
 combined with optimized palette. These can be set to
 the C<::conversion> property with one of C<ict::XXX> constants.
 When there is no information loss, C<::conversion> property is not used.
 
-Another special case of conversion is a conversion with a palette.
+Another special case of conversion is a conversion with a palette. The following
+calls,
 
   $image-> type( im::bpp4);
   $image-> palette( $palette);
@@ -184,26 +182,25 @@ and
   $image-> palette( $palette);
   $image-> type( im::bpp4);
 
-produce different results, but none of these takes into account eventual 
+produce different results, but none of these takes into account eventual
 palette remapping, because C<::palette> property does not change bitmap pixel
-data, but overwrites palette information. A proper call syntax is
+data, but overwrites palette information. A proper call syntax here would be
 
   $image-> set(
      palette => $palette,
      type    => im::bpp4,
   );
 
-This call produces correct results, if palette pixel mapping is desired.
-The most power of this syntax is available when conversion is C<ict::Optimized>
-( by default ). This does not only allows remapping or downsampling to a
-predefined colors set, but also can be used to limit palette size to a 
-particular number, without actual color cells values knowledge. For example,
-for an 24-bit image,
+This call produces also palette pixel mapping.  This syntax is most powerful
+when conversion is set to C<ict::Optimized> ( by default ). It not
+only allows remapping or downsampling to a predefined colors set, but also can
+be used to limit palette size to a particular number, without knowing the actual 
+values of the final color palette. For example, for an 24-bit image,
 
   $image-> set( type => im::bpp8, palette => 32);
 
-call would calculate colors in the image, compress them to a palette of
-32 cells and converts to a 8-bit format. 
+call would calculate colors in the image, compress them to an optimized palette of
+32 cells and finally converts to a 8-bit format. 
 
 Instead of C<palette> property, C<colormap> can also be used.
 
@@ -221,7 +218,7 @@ or returned from the read-only property C<::lineSize>.
 
 This is the line size for the data as lined up internally in memory, however
 C<::data> should not necessarily should be aligned like this, and can be
-accompanied with a write-only flag 'lineSize' if data is aligned differently:
+accompanied with a write-only flag 'lineSize' if pixels are aligned differently:
 
   $image-> set( width => 1, height=> 2);
   $image-> type( im::RGB);
@@ -252,11 +249,12 @@ is the closest to the start of data:
 
 Although it is possible to perform all kinds of calculations and modification
 with the pixels, returned by C<::data>, it is not advisable unless the speed
-does not matter. Standalone PDL package with help of PDL::PrimaImage package, 
-and Prima-derived IPA package provide routines for data and image analysis.
-I<Prima::Image> itself provides only the simplest statistic information, namely: 
-lowest and highest pixel values, pixel sum, sum of square pixels, mean, variance, 
-and standard deviation.
+does not matter. Standalone PDL package with help of L<PDL::PrimaImage>
+package, and Prima-derived IPA package provide routines for data and image
+analysis.  Also, L<Prima::Image::Magick> connects L<ImageMagick> with Prima.
+I<Prima::Image> itself provides only the simplest statistic information,
+namely: lowest and highest pixel values, pixel sum, sum of square pixels, mean,
+variance, and standard deviation.
 
 =head2 Standalone usage
 
@@ -265,32 +263,32 @@ toolkit being uninitialized. This is useful in non-interactive programs,
 running in evnironments with no GUI access, a cgi-script with no access to
 X11 display, for example. Normally, Prima fails to start in such situations,
 but can be told not to initialize its GUI part by explicitly operating
-system-dependent options. Currently, X11 implementation provides
-'--no-x11' option which effectively turns off X11 support.
+system-dependent options. To do so, invoke
+
+  use Prima::noX11;
+
+in the beginning of your program. See L<Prima::noX11> for more.
 
 =head2 Prima::Icon
 
-I<Prima::Icon> inherits all properties of I<Prima::Image>, 
-and it also provides a 1-bit depth transparency mask.
-This mask can also be loaded and saved into image files,
-if the format supports a transparency information.
+I<Prima::Icon> inherits all properties of I<Prima::Image>, and it also provides
+a 1-bit depth transparency mask.  This mask can also be loaded and saved into
+image files, if the format supports a transparency information.
 
-Alike I<Prima::Image> C<::data> property, I<Prima::Icon> C<::mask>
-property provides access to the binary mask data.
-The mask can be updated automatically, after an icon object
-was subject to painting or other change. The auxiliary 
-properties C<::autoMasking> and C<::maskColor>/C<::maskIndex> regulate  
-mask update procedure. For example, if an icon was loaded with
-the color ( vs. bitmap ) transparency information, the binary
-mask will be generated anyway, but it will be also recorded that
-a particular color serves as a transparent indicator, so eventual
-conversions can rely on the color value, instead of the mask bitmap.
+Similar to I<Prima::Image::data> property, I<Prima::Icon::mask> property
+provides access to the binary mask data.  The mask can be updated
+automatically, after an icon object was subject to painting, resizing, or other
+destructive change.  The auxiliary properties C<::autoMasking> and
+C<::maskColor>/C<::maskIndex> regulate  mask update procedure. For example, if
+an icon was loaded with the color ( vs. bitmap ) transparency information, the
+binary mask will be generated anyway, but it will be also recorded that a
+particular color serves as a transparent indicator, so eventual conversions can
+rely on the color value, instead of the mask bitmap.
 
-If an icon is drawn upon a graphic canvas, the image output
-is constrained to the mask. On raster displays it is typically
-simulated by a combination of and- and xor- operation modes,
-therefore attempts to put an icon with C<::rop>, different from
-C<rop::CopyPut>, usually fail.
+If an icon is drawn upon a graphic canvas, the image output is constrained to
+the mask. On raster displays it is typically simulated by a combination of and-
+and xor- operation modes, therefore attempts to put an icon with C<::rop>,
+different from C<rop::CopyPut>, usually fail.
 
 =head1 API
 
@@ -309,8 +307,8 @@ See also C<palette>.
 
 =item conversion TYPE
 
-Selects type of dithering algorithm, when down-sampling 
-takes place. TYPE is one of C<ict::XXX> constants:
+Selects the type of dithering algorithm to be used for pixel down-sampling.
+TYPE is one of C<ict::XXX> constants:
 
    ict::None            - no dithering
    ict::Halftone        - 8x8 ordered halftone dithering
