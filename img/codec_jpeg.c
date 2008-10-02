@@ -237,8 +237,8 @@ j_read_profile(j_decompress_ptr jpeg_info)
    SV ** sv;
    AV * av;
    HV * fp = ((my_source_mgr *)(jpeg_info-> src))-> fp;
-   char * name, *p, key[8];
-   int marker, l, length, keylen;
+   char * name, *p;
+   int marker, l, length;
  
    length  = j_read_octet( jpeg_info) << 8;
    length += j_read_octet( jpeg_info);
@@ -276,7 +276,6 @@ j_read_comment(j_decompress_ptr jpeg_info)
 {
    char *comment, *p;
    int l, length;
-   SV * sv;
    
    length  = j_read_octet( jpeg_info) << 8;
    length += j_read_octet( jpeg_info);
