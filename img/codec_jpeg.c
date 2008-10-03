@@ -42,6 +42,7 @@
 #endif
 #include <sys/types.h>
 #include <stdio.h>
+#define XMD_H /* fails otherwise on redefined INT32 */
 #include <jpeglib.h>
 #include <jerror.h>
 

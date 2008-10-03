@@ -632,11 +632,11 @@ sub setup_variables
 			liboflag => '',
 		},
 		gcc => {
-			warnflags => "-Wall",
+			warnflags => "",
 			cflags => "",
 			coutoflag => '-o ',
 			coutexeflag => '-o ',
-			cdebugflags => '-g -O',
+			cdebugflags => '-g -O -Wall',
 			clinkprefix => '',
 			clibpathflag => '-L',
 			ldflags => '',
@@ -1449,7 +1449,9 @@ sub setup_codecs
 				@codec_libpath = ();
 			}
 			push( @ACTIVE_CODECS, $codec);
-			push( @LIBS, $lib) unless $libs{$lib};
+			# In gcc, order of libs matters. libXpm requires libgdi32, and
+			# has to be mentioned _after_ it to work.
+			unshift( @LIBS, $lib) unless $libs{$lib};
 			print "yes";
 			print ", in $foundlib" if defined($foundlib) and length($foundlib);
 			print "\n";
