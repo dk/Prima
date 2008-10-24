@@ -1026,7 +1026,7 @@ apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, c
 	       }
                
                if (( fi. append || ( fi. frameMapSize > 1)) 
-                   && ( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) {
+                   && !( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) {
 	          c = nil;
                   continue;
 	       }
