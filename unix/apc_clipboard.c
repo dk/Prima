@@ -683,7 +683,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
    case cfUTF8: {
       void * ret = malloc( size);
       if ( !ret) {
-         warn("Not enough memory: %d bytes\n", size);
+         warn("Not enough memory: %d bytes\n", (int)size);
          return false;
       }
       memcpy( ret, data, size);
@@ -693,7 +693,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
    default: {
       void * ret = malloc( size);
       if ( !ret) {
-         warn("Not enough memory: %d bytes\n", size);
+         warn("Not enough memory: %d bytes\n", (int)size);
          return false;
       }
       memcpy( ret, data, size);

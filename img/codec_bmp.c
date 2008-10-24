@@ -521,7 +521,7 @@ req_read_big( PImgLoadFileInstance fi, int h, unsigned long lineSize, Byte * dat
 		if ( r < 0)
 			outr( fi-> req);
 		if ( r != size)
-			outcm( "Read error: unexpected end of file");
+			outc( "Read error: unexpected end of file");
 	}
 
 	return true;

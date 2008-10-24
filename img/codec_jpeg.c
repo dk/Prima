@@ -257,7 +257,7 @@ j_read_profile(j_decompress_ptr jpeg_info)
    sv = hv_fetch( fp, "appdata", 7, 0);
    if ( sv == NULL) {
        av = newAV();
-       hv_store( fp, "appdata", 7, newRV_noinc((SV*) av), 0); 
+       (void) hv_store( fp, "appdata", 7, newRV_noinc((SV*) av), 0); 
    } else {
        if ( SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVAV) {
 	   av = (AV*) SvRV( *sv);

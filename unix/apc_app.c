@@ -1074,13 +1074,6 @@ apc_application_unlock( Handle self)
    return true;
 }
 
-static XBool
-any_event( Display *d, XEvent *ev, XPointer arg)
-{
-   (void)d; (void)ev; (void)arg; (void)any_event;
-   return true;
-}
-
 Bool
 apc_application_sync(void)
 {
