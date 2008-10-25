@@ -130,6 +130,7 @@ typedef struct _ImgSaveFileInstance {
 #define IMG_SAVE_TO_FILE             0x0000010
 #define IMG_SAVE_TO_STREAM           0x0000020
 #define IMG_SAVE_MULTIFRAME          0x0000040
+#define IMG_SAVE_APPEND              0x0000080
 
 /* codec info */
 typedef struct _ImgCodecInfo {

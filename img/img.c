@@ -860,8 +860,10 @@ apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, c
    /* open file */
    if ( fi. append && ioreq == NULL) {
       FILE * f = ( FILE *) fopen( fileName, "rb");
-      fclose( f);
-      if ( !f) fi. append = false;
+      if ( !f)
+         fi. append = false;
+      else
+         fclose( f);
    }   
    
    fi. errbuf = error;
@@ -977,8 +979,11 @@ apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, c
 	          "Codec cannot save images to streams" : 
 		  "Codec cannot save images");
          
-         if (( fi. append || ( fi. frameMapSize > 1)) && 
-               !( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) 
+         if ( fi. frameMapSize > 1 && 
+               !( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME))
+            out("Codec cannot save mutiframe images");
+         if ( fi. append && 
+               !( c-> info-> IOFlags & IMG_SAVE_APPEND))
             out("Codec cannot append frames");
          
          if (( fi. instance = c-> vmt-> open_save( c, &fi)) == NULL) 
@@ -1025,8 +1030,13 @@ apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, c
                   continue;
 	       }
                
-               if (( fi. append || ( fi. frameMapSize > 1)) 
+               if ( fi. frameMapSize > 1
                    && !( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) {
+	          c = nil;
+                  continue;
+	       }
+               if ( fi. append 
+                   && !( c-> info-> IOFlags & IMG_SAVE_APPEND)) {
 	          c = nil;
                   continue;
 	       }
@@ -1282,6 +1292,7 @@ apc_img_info2hash( PImgCodec codec)
    pset_i( canSave        , c-> IOFlags & IMG_SAVE_TO_FILE);
    pset_i( canSaveStream  , c-> IOFlags & IMG_SAVE_TO_STREAM);
    pset_i( canSaveMultiple, c-> IOFlags & IMG_SAVE_MULTIFRAME);
+   pset_i( canAppend,       c-> IOFlags & IMG_SAVE_APPEND);
    
    fill_ilist( "types",  c-> saveTypes, profile);
 

@@ -431,7 +431,11 @@ index more than zero. 0 if not.
 
 =item canSaveMultiple
 
-1 if codec can save and/or append more that one frame. 0 if not.
+Set if a codec can save more that one frame
+
+=item canAppend
+
+Set if a codec can append frames to an exising file
 
 =item types
 

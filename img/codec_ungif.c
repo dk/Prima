@@ -565,7 +565,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    PImage i = ( PImage) fi-> object;
    HV * profile = fi-> objectExtras;
 
-   if ( fi-> frame == 0) {  
+   if ( fi-> frame == 0) {
       /* put screen description */
       int w = i-> w, h = i-> h, cr = i-> palSize, bg = 0, ps = i-> palSize;
       RGBColor * r = i-> palette;
@@ -587,8 +587,8 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
          out;
       }
       FreeMapObject( c);
-   }   
-   
+   }
+
    /* writing extras */
 
    /* comments  */
