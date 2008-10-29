@@ -1,3 +1,5 @@
+1.27  Support JPEG comments and metadata. Save multiframe images.
+
 1.26  Abandond prigraph, adopt libjpeg/libpng/etc cohort instead.
       Develop gif animation features.
 
