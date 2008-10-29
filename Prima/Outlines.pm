@@ -736,13 +736,13 @@ sub on_keydown
 
 	if (
 		( $key == kb::NoKey) && 
-		(( $code & 0xFF) >= ord(' '))
+		( $code >= ord(' '))
 	) {
-		if ( chr( $code) eq '+') {
+		if ( chr($code) eq '+') {
 			$self-> adjust( $self-> {focusedItem}, 1);
 			$self-> clear_event;
 			return;
-		} elsif ( chr( $code) eq '-') {
+		} elsif ( chr($code) eq '-') {
 			my ( $item, $lev) = $self-> get_item( $self-> {focusedItem});
 			if ( $item-> [DOWN] && $item-> [EXPANDED]) {
 				$self-> adjust( $self-> {focusedItem}, 0);
@@ -760,7 +760,7 @@ sub on_keydown
 
 		if ( !($mod & ~km::Shift))  {
 			my $i;
-			my ( $c, $hit, $items) = ( lc chr ( $code & 0xFF), undef, $self-> {items});
+			my ( $c, $hit, $items) = ( lc chr $code, undef, $self-> {items});
 			for ( $i = $self-> {focusedItem} + 1; $i < $self-> {count}; $i++)
 			{
 				my $fc = substr( $self-> get_index_text($i), 0, 1);

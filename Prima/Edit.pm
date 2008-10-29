@@ -943,7 +943,7 @@ sub on_keydown
 		$mod &= ~km::Ctrl;
 	}
 	if  (
-		(( $code & 0xFF) >= ord(' ') || (( $code & 0xFF) == ord("\t"))) &&
+		( $code >= ord(' ') || ( $code == ord("\t"))) &&
 		(( $mod  & (km::Alt | km::Ctrl)) == 0) &&
 		(( $key == kb::NoKey) || ( $key == kb::Space) || ( $key == kb::Tab))
 	) {
