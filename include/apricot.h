@@ -423,6 +423,10 @@ typedef struct { double r,  ph; } TrigDComplex;
 
 /* Event structures */
 
+#ifdef KeyEvent
+#undef KeyEvent
+#endif
+
 typedef struct _KeyEvent {
    int    cmd;
    int    subcmd;
@@ -433,6 +437,10 @@ typedef struct _KeyEvent {
    int    repeat;
 } KeyEvent, *PKeyEvent;
 
+#ifdef PositionalEvent
+#undef PositionalEvent
+#endif
+
 typedef struct _PositionalEvent {
    int    cmd;
    int    subcmd;
@@ -442,6 +450,10 @@ typedef struct _PositionalEvent {
    int    mod;
    Bool   dblclk;
 } PositionalEvent, *PPositionalEvent;
+
+#ifdef GenericEvent
+#undef GenericEvent
+#endif
 
 typedef struct _GenericEvent {
    int    cmd;
