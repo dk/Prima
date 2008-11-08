@@ -701,7 +701,6 @@ close_save( PImgCodec instance, PImgSaveFileInstance fi)
    EGifCloseFile(( GifFileType *) fi-> instance);
 }   
 
-
 void 
 apc_img_codec_ungif( void )
 {
@@ -717,6 +716,13 @@ apc_img_codec_ungif( void )
    vmt. close_save    = close_save;
    apc_img_register( &vmt, nil);
 }
+
+void 
+apc_img_codec_gif( void )
+{
+   apc_img_codec_ungif();
+}
+
 
 #undef out   
 #undef outc   
