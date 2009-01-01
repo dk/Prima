@@ -785,7 +785,7 @@ sub init
 	my %profile = $self-> SUPER::init( @_);
 	for ( qw( step min max increment readOnly ticks snap value autoTrack))
 	{$self-> $_($profile{$_});}
-	$self-> scheme( $profile{scheme}, 1) if defined $profile{scheme};
+	$self-> scheme( $profile{scheme}) if defined $profile{scheme};
 	return %profile;
 }
 
@@ -846,7 +846,6 @@ sub set_step
 	$_[0]-> {step} = $i;
 }
 
-
 sub get_ticks
 {
 	my $self  =  $_[0];
@@ -880,6 +879,7 @@ sub set_ticks
 	$self-> {tickVal} = \@val;
 	$self-> {tickLen} = \@len;
 	$self-> {tickTxt} = \@txt;
+	$self-> {scheme}  = undef;
 	$self-> value( $self-> value);
 	$self-> repaint;
 }
@@ -888,17 +888,21 @@ sub set_bound
 {
 	my ( $self, $val, $bound) = @_;
 	$self-> {$bound} = $val;
+	$self-> scheme($self-> {scheme}) if defined $self-> {scheme};
 	$self-> repaint;
 }
 
-
 sub set_scheme
 {
-	my ( $self, $s, $addFlag) = @_;
-	return unless defined $s;
+	my ( $self, $s) = @_;
+	unless ( defined $s) {
+		$self-> {scheme} = undef;
+		return;
+	}
 	my ( $max, $min) = ( $self-> {max}, $self-> {min});
-	( $addFlag ? 0 : $self-> ticks([])), return if $max == $min;
-	my @t = $addFlag ? $self-> ticks : ();
+	$self-> ticks([]), return if $max == $min;
+
+	my @t;
 	my $i;
 	my $inc = $self-> {increment};
 	if ( $s == ss::Gauge) {
@@ -937,14 +941,24 @@ sub set_scheme
 		}
 	}
 	$self-> ticks( @t);
+	$self-> {scheme} = $s;
 }
 
-sub increment   {($#_)?$_[0]-> {increment}   =  $_[1] :return $_[0]-> {increment};}
+sub increment
+{
+	return $_[0]-> {increment} unless $#_;
+	my ( $self, $increment) = @_;
+	$self-> {increment} = $increment;
+	if ( defined $self-> {scheme}) {
+		$self-> scheme( $self-> {scheme});
+		$self-> repaint;
+	}
+}
 sub readOnly    {($#_)?$_[0]-> set_read_only   ($_[1]):return $_[0]-> {readOnly};}
 sub ticks       {($#_)?shift-> set_ticks          (@_):return $_[0]-> get_ticks;}
 sub snap        {($#_)?$_[0]-> set_snap        ($_[1]):return $_[0]-> {snap};}
 sub step        {($#_)?$_[0]-> set_step        ($_[1]):return $_[0]-> {step};}
-sub scheme      {($#_)?shift-> set_scheme         (@_):$_[0]-> raise_wo("scheme");}
+sub scheme      {($#_)?shift-> set_scheme         (@_):return $_[0]-> {scheme}}
 sub value       {($#_)?$_[0]-> {value} =       $_[1]  :return $_[0]-> {value};}
 sub min         {($#_)?$_[0]-> set_bound($_[1],q(min)):return $_[0]-> {min};}
 sub max         {($#_)?$_[0]-> set_bound($_[1],q(max)):return $_[0]-> {max};}
@@ -1109,6 +1123,7 @@ sub on_paint
 		my $i;
 
 		$canvas-> color( $clr[0]);
+		my $lastx = 0;
 		for ( $i = 0; $i < scalar @{$tval}; $i++) {
 			my $val = 1 + $bw + abs( $$tval[$i] - $min) * ( $br - 3) / $range;
 			if ( $$tlen[ $i]) {
@@ -1117,10 +1132,20 @@ sub on_paint
 				$canvas-> line( $val, $bh - 4, $val, $bh - 4 - $$tlen[ $i]) 
 					if $ta & 2;
 			}
+
+			next unless defined $$ttxt[ $i]; 
+			my $tw = $canvas-> get_text_width( $$ttxt[ $i]) / 2;
+			my $x = $val - $tw;
+			last if $x >= $size[0] or $val + $tw < 0;
+			$x = 0 if $x < 0; # adjust rightmost and leftmost labels
+			$x = $size[0] - 1 - $tw * 2 if $x > $size[0] - 1 - $tw * 2;
+			next if $x < $lastx; # do not draw overlapping text
+
+			$lastx = $val + $tw;
 			$canvas-> text_out( $$ttxt[ $i],
-				$val - $canvas-> get_text_width( $$ttxt[ $i]) / 2,
+				$x,
 				( $ta == 2) ? $bh - $$tlen[ $i] - 5 - $fh : $bh + $sb + $$tlen[ $i] + 5
-			) if defined $$ttxt[ $i];
+			);
 		}
 
 		unless ( $self-> {readOnly}) {
@@ -1287,9 +1312,9 @@ sub set_bound
 {
 	my ( $self, $val, $bound) = @_;
 	$self-> {$bound} = $val;
+	$self-> scheme($self-> {scheme}) if defined $self-> {scheme};
 	$self-> repaint;
 }
-
 
 sub value
 {
@@ -1713,7 +1738,6 @@ sub on_stringify
 	$self-> clear_event;
 }
 
-
 sub set_buttons
 {
 	$_[0]-> {buttons} = $_[1];
@@ -2107,7 +2131,7 @@ If ARRAY is C<undef>, no ticks are drawn.
 
 =item scheme INTEGER
 
-C<scheme> is a write-only property, that creates a set of tick marks
+C<scheme> is a property, that creates a set of tick marks
 using one of the predefined scale designs, selected by C<ss::XXX> constants.
 Each constant produces different scale; some make use of C<increment> integer
 property, which selects a step by which the additional 
@@ -2124,6 +2148,8 @@ The module defines the following constants:
 	ss::Gauge         - 1 tick per increment
 	ss::StdMinMax     - 2 ticks at the ends of the bar
 	ss::Thermometer   - 10 minor ticks per increment, longer text ticks
+
+When C<tick> property is set, C<scheme> is reset to C<undef>.
 
 =item snap BOOLEAN
 
