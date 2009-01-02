@@ -913,10 +913,14 @@ sub set_scheme
 		for ( $i = $min; $i <= $max; $i += $inc) {
 			push ( @t, { value => $i, height => 6,   text => $i });
 			if ( $i < $max) {
-				push ( @t, { value => $i + $inc / 5 * 1, height => 3 });
-				push ( @t, { value => $i + $inc / 5 * 2, height => 3 });
-				push ( @t, { value => $i + $inc / 5 * 3, height => 3 });
-				push ( @t, { value => $i + $inc / 5 * 4, height => 3 });
+				for ( 1..4) {
+					my $v = $i + $inc / 5 * $_;
+					last if $v > $max;
+					push ( @t, { value => $v, height => 3 });
+					push ( @t, { value => $v, height => 3 });
+					push ( @t, { value => $v, height => 3 });
+					push ( @t, { value => $v, height => 3 });
+				}
 			}
 		}
 	} elsif ( $s == ss::StdMinMax) {
@@ -932,8 +936,10 @@ sub set_scheme
 			if ( $i < $max) {
 				my $j;
 				for ( $j = 1; $j < 10; $j++) {
+					my $v = $i + $inc / 10 * $j;
+					last if $v > $max;
 					push ( @t, { 
-						value => $i + $inc / 10 * $j, 
+						value => $v,
 						height => $j == 5 ? 5 : 3 
 					});
 				}
@@ -980,6 +986,7 @@ sub profile_default
 {
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
+		borderWidth    => 0,
 		ribbonStrip    => 0,
 		shaftBreadth   => 6,
 		tickAlign      => tka::Normal,
@@ -991,10 +998,10 @@ sub init
 {
 	my $self = shift;
 	$self-> {$_} = 0 
-		for qw( vertical tickAlign ribbonStrip shaftBreadth);
+		for qw( vertical tickAlign ribbonStrip shaftBreadth borderWidth);
 	my %profile = $self-> SUPER::init( @_);
 	$self-> $_($profile{$_}) 
-		for qw( vertical tickAlign ribbonStrip shaftBreadth);
+		for qw( vertical tickAlign ribbonStrip shaftBreadth borderWidth);
 	return %profile;
 }
 
@@ -1097,7 +1104,7 @@ sub on_paint
 			$canvas-> line($bw - 3, $jp[7]-1, $jp[6]-1, $jp[7]-1);
 		}
 	} else {
-		my $bw = $canvas-> font-> width;
+		my $bw = $canvas-> font-> width + $self-> {borderWidth};
 		my $bh  = ( $size[1] - $sb) / 2;
 		my $fh = $canvas-> font-> height;
 		return if $size[0] <= DefButtonX * ($self-> {readOnly} ? 1 : 0) + 2 * $bw + 2;
@@ -1123,9 +1130,9 @@ sub on_paint
 		my $i;
 
 		$canvas-> color( $clr[0]);
-		my $lastx = 0;
+		my @texts;
 		for ( $i = 0; $i < scalar @{$tval}; $i++) {
-			my $val = 1 + $bw + abs( $$tval[$i] - $min) * ( $br - 3) / $range;
+			my $val = int( 1 + $bw + abs( $$tval[$i] - $min) * ( $br - 3) / $range + .5);
 			if ( $$tlen[ $i]) {
 				$canvas-> line( $val, $bh + $sb + 3, $val, $bh + $sb + $$tlen[ $i] + 3) 
 					if $ta & 1;
@@ -1134,19 +1141,51 @@ sub on_paint
 			}
 
 			next unless defined $$ttxt[ $i]; 
-			my $tw = $canvas-> get_text_width( $$ttxt[ $i]) / 2;
+			my $tw = int( $canvas-> get_text_width( $$ttxt[ $i]) / 2 + .5);
 			my $x = $val - $tw;
-			last if $x >= $size[0] or $val + $tw < 0;
-			$x = 0 if $x < 0; # adjust rightmost and leftmost labels
-			$x = $size[0] - 1 - $tw * 2 if $x > $size[0] - 1 - $tw * 2;
-			next if $x < $lastx; # do not draw overlapping text
-
-			$lastx = $val + $tw;
-			$canvas-> text_out( $$ttxt[ $i],
-				$x,
+			next if $x >= $size[0] or $val + $tw < 0;
+			push @texts, [
+				$$ttxt[$i], $val, $tw,
 				( $ta == 2) ? $bh - $$tlen[ $i] - 5 - $fh : $bh + $sb + $$tlen[ $i] + 5
-			);
+			];
 		}
+
+		
+		if ( @texts) {
+			# see that leftmost val fits
+			if ( $texts[0]->[1] - $texts[0]->[2] < 0) {
+				$texts[0]->[1] = $texts[0]->[2];
+				unshift @texts if $texts[0]->[1] + $texts[0]->[2];
+				goto NO_LABELS unless @texts;
+			}
+
+			# see that rightmost text fits
+			my ( $rightmost_val, $rightmost_label_width) = (
+				$texts[-1]->[1], $texts[-1]->[2]);
+			$rightmost_val = $size[0] - 1 - $rightmost_label_width
+				if $rightmost_val > $size[0] - 1 - $rightmost_label_width;
+			if ( 1 < @texts and $rightmost_val < 0) {
+				# skip it
+				pop @texts;
+				goto NO_LABELS unless @texts;
+			} else {
+				my $dx = $texts[-1]->[1] - $rightmost_val;
+				$texts[-1]->[1] = $rightmost_val;
+				# push the label next to it (but not the 1st one)
+				$texts[-2]->[1] -= $dx if 2 < @texts;
+			}
+
+			# draw labels
+			my $lastx = 0;
+			for ( @texts) {
+				my ( $text, $val, $width, $y) = @$_;
+				my $x = $val - $width;
+				next if $x < $lastx or $x < 0 or $val + $width >= $size[0];
+				$lastx = $val + $width;
+				$canvas-> text_out( $text, $x, $y);
+			}
+		}
+		NO_LABELS:
 
 		unless ( $self-> {readOnly}) {
 			my @jp = (
@@ -1193,7 +1232,7 @@ sub pos2info
 			return 1, $ret1, $y - $val;
 		}
 	} else {
-		my $bw = $self-> font-> width;
+		my $bw = $self-> font-> width + $self->{borderWidth};
 		my $val = 
 			$bw + 
 			1 + 
@@ -1359,7 +1398,7 @@ sub value
 		} else {
 			$sb = $size[1] / 6 unless $sb;
 			$sb = 2 unless $sb;
-			my $bw = $self-> font-> width;
+			my $bw = $self-> font-> width + $self-> {borderWidth};
 			my $bh  = ( $size[1] - $sb) / 2;
 			my $v1  = $bw + 1 + abs( $self-> {value} - $self-> {min}) *
 				( $size[0] - 2 * $bw - 5) / (abs($self-> {max} - $self-> {min})||1);
@@ -1382,6 +1421,15 @@ sub vertical    {($#_)?$_[0]-> set_vertical    ($_[1]):return $_[0]-> {vertical}
 sub tickAlign   {($#_)?$_[0]-> set_tick_align  ($_[1]):return $_[0]-> {tickAlign};}
 sub ribbonStrip {($#_)?$_[0]-> set_ribbon_strip($_[1]):return $_[0]-> {ribbonStrip};}
 sub shaftBreadth{($#_)?$_[0]-> set_shaft_breadth($_[1]):return $_[0]-> {shaftBreadth};}
+
+sub borderWidth
+{
+	return $_[0]-> {borderWidth} unless $#_;
+	my ( $self, $bw) = @_;
+	$bw = 0 if $bw < 0;
+	$self-> {borderWidth} = $bw;
+	$self-> repaint;
+}
 
 package Prima::CircularSlider;
 use vars qw(@ISA);
@@ -2199,6 +2247,13 @@ Presents a linear sliding bar, movable along a linear shaft.
 =head2 Properties
 
 =over
+
+=item borderWidth INTEGER
+
+In horizontal mode, sets extra margin space between the slider line and
+the widget boundaries. Can be used for fine tuning of displaying text
+labels from <ticks()>, where the default spacing (0) or spacing procedure 
+(drop overlapping labels) is not enough.
 
 =item ribbonStrip BOOLEAN
 
