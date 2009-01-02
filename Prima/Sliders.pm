@@ -1155,7 +1155,8 @@ sub on_paint
 			# see that leftmost val fits
 			if ( $texts[0]->[1] - $texts[0]->[2] < 0) {
 				$texts[0]->[1] = $texts[0]->[2];
-				unshift @texts if $texts[0]->[1] + $texts[0]->[2];
+				shift @texts
+					if $texts[0]->[1] + $texts[0]->[2] > $size[0];
 				goto NO_LABELS unless @texts;
 			}
 
