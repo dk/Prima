@@ -230,7 +230,8 @@ sub AUTOLOAD
 	no strict;
 	my $self = shift;
 	my $expectedMethod = $AUTOLOAD;
-	Carp::confess "There is no such thing as \"$expectedMethod\"\n" if scalar @_;
+	Carp::confess "There is no such thing as \"$expectedMethod\"\n"
+		if scalar(@_) or not ref $self;
 	my ($componentName) = $expectedMethod =~ /::([^:]+)$/;
 	my $component = $self-> bring( $componentName);
 	Carp::croak("Unknown widget or method \"$expectedMethod\"") 
@@ -1412,7 +1413,8 @@ sub AUTOLOAD
 	no strict;
 	my $self = shift;
 	my $expectedMethod = $AUTOLOAD;
-	die "There is no such method as \"$expectedMethod\"" if scalar @_;
+	die "There is no such method as \"$expectedMethod\""
+		if scalar(@_) or not ref $self;
 	my ($itemName) = $expectedMethod =~ /::([^:]+)$/;
 	die "Unknown menu item identifier \"$itemName\"" 
 		unless defined $itemName && $self-> has_item( $itemName);
