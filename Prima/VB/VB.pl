@@ -2016,8 +2016,13 @@ sub write_PL
 	$VB::writeMode = 1;
 
 	my $header = <<PREPREHEAD;
+package ${main}Window;
+
 use Prima;
 use Prima::Classes;
+use vars qw(\@ISA);
+\@ISA = qw(Prima::MainWindow);
+
 PREPREHEAD
 
 	my %modules = map { $_-> {module} => 1 } @cmp;
@@ -2025,11 +2030,8 @@ PREPREHEAD
 	CodeEditor::sync_code;
 	
 	my $c = <<PREHEAD;
-$VB::code
 
-package ${main}Window;
-use vars qw(\@ISA);
-\@ISA = qw(Prima::MainWindow);
+$VB::code
 
 sub profile_default
 {
