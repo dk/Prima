@@ -2046,6 +2046,17 @@ PREHEAD
 		$val = defined($val) ? $type-> write( $_, $val) : 'undef';
 		$c .= "\t\t$_ => $val,\n";
 	}
+
+	# size/origin have lower priority than width/left etc
+	if ( not($prf-> {sizeDontCare}) and exists $prf->{size}) {
+		my @s = @{$prf->{size}};
+		$c .= "\t\twidth => $s[0],\n\t\theight => $s[1],\n";
+	}
+	if ( not($prf-> {originDontCare}) and exists $prf->{origin}) {
+		my @o = @{$prf->{origin}};
+		$c .= "\t\tleft => $o[0],\n\t\tbottom => $o[1],\n";
+	}
+
 	my @ds = ( $::application-> font-> width, $::application-> font-> height);
 	$c .= "\t\tdesignScale => [ $ds[0], $ds[1]],\n";
 	$c .= <<HEAD2;
