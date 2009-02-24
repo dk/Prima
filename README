@@ -20,9 +20,18 @@ libraries can be compiled in on all platforms:
    - libtiff
    - libX11  - support for native X11 bitmap files
 
-For Win32 and OS/2 platforms, libprigraph library can be used instead.  The
-library supports most of the popular image file formats, including BMP, PCX,
-GIF, JPEG, TIFF, PNG, and is distributed in binary form for these platforms:
+For Win32, CPAN contains binary distributions that can
+be installed just for this purpose:
+
+  http://search.cpan.org/~karasik/Prima-codecs-win32/
+
+it should work for all MSVC and GCC compilers and for native,
+cygwin, and mingw/strawberry perl runtimes.
+
+Alternatively, for Win32 and OS/2 platforms, libprigraph library can be used
+instead.  The library supports most of the popular image file formats,
+including BMP, PCX, GIF, JPEG, TIFF, PNG, and is distributed in binary form for
+these platforms:
 
    - Win32, native : http://www.prima.eu.org/download/gbm-bin-win32.zip. 
    - Win32, cygwin : http://www.prima.eu.org/download/gbm-bin-cygwin.zip. 
