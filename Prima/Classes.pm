@@ -239,6 +239,17 @@ sub AUTOLOAD
 	return $component;
 }
 
+sub find_component
+{
+	my ( $self, $name ) = @_;
+	my @q = $self-> get_components;
+	while ( my $x = shift @q ) {
+		return $x if $x-> name eq $name;
+		push @q, $x-> get_components;
+	}
+	return undef;
+}
+
 # class File
 package Prima::File;
 use vars qw(@ISA);

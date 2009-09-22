@@ -788,6 +788,8 @@ possible the usage of the following constructs:
    ...
    $owner-> Obj-> destroy;
 
+See also: C<find_component>
+
 =item can_event
 
 Returns true if the object event circulation is allowed.  In general, the same
@@ -828,6 +830,14 @@ L<Prima::EventHook> for multiplexing of the hook access.
 
 The method is static, and can be called either with or without class or
 object as a first parameter.
+
+=item find_component NAME
+
+Performs a depth-first search on children tree hierarchy, matching the object
+that has name equal to NAME.  Returns its reference on success, undef
+otherwise. 
+
+See also: C<bring>
 
 =item get_components
 
