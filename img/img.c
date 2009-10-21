@@ -1162,7 +1162,7 @@ apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, c
    
 EXIT_NOW:;
    free( fi. frameMap);
-   if ( ioreq == NULL && fi. req-> handle != NULL)
+   if ( ioreq == NULL && fi. req != NULL && fi. req-> handle != NULL)
       fclose(( FILE*) fi. req-> handle);
    if ( err && fileName)
       unlink( fileName);
