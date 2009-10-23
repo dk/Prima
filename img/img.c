@@ -234,6 +234,7 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
    Bool loadExtras = false, noImageData = false;
    Bool incrementalLoad = false;
    Bool iconUnmask = false;
+   Bool noIncomplete = false;
    char * baseClassName = "Prima::Image";
    ImgIORequest sioreq;
    int  load_mask;
@@ -313,6 +314,9 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
    
    if ( pexist( iconUnmask) && pget_B( iconUnmask))
       fi. iconUnmask = iconUnmask = true;
+   
+   if ( pexist( noIncomplete) && pget_B( noIncomplete))
+      fi. noIncomplete = noIncomplete = true;
    
    if ( pexist( eventMask))
       fi. eventMask = pget_i( eventMask);
@@ -471,9 +475,11 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
          out("Frame index out of range");
       }   
 
-      fi. loadExtras  = loadExtras;
-      fi. noImageData = noImageData;
-      fi. iconUnmask  = iconUnmask;
+      fi. loadExtras   = loadExtras;
+      fi. noImageData  = noImageData;
+      fi. iconUnmask   = iconUnmask;
+      fi. noIncomplete = noIncomplete;
+      fi. wasTruncated = false;
 
       /* query profile */
       if ( profiles && ( i <= profiles_len)) {
@@ -499,7 +505,7 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
                  fi. iconUnmask = pget_B( iconUnmask);
             }   
          }
-      }   
+      }
 
       fi. jointFrame = ( fi. frame == lastFrame + 1);
       fi. profile    = profile;
@@ -548,7 +554,10 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
          }   
          err = true;
 	 goto EXIT_NOW;
-      }  
+      }
+   
+      if ( fi. loadExtras && fi. wasTruncated)
+          (void) hv_store( fi. frameProperties, "truncated", 9, newSViv(1), 0);
 
       /* checking for grayscale */
       {
@@ -674,6 +683,7 @@ apc_img_frame_count( char * fileName, PImgIORequest ioreq )
    fi. loadExtras     = true;
    fi. noImageData    = true;
    fi. iconUnmask     = false;
+   fi. noIncomplete   = false;
    fi. extras         = newHV();
    fi. fileProperties = newHV(); 
    fi. frameCount = -1;
@@ -1304,10 +1314,11 @@ apc_img_info2hash( PImgCodec codec)
          (void) hv_store( hv, "loadAll",      7, newSViv(0),     0);
          (void) hv_store( hv, "wantFrames",  10, newSViv(0),     0);
       }
-      (void) hv_store( hv, "loadExtras",  10, newSViv(0),     0);
-      (void) hv_store( hv, "noImageData", 11, newSViv(0),     0);
-      (void) hv_store( hv, "iconUnmask",  10, newSViv(0),     0);
-      (void) hv_store( hv, "className",    9, newSVpv("Prima::Image", 0), 0);
+      (void) hv_store( hv, "loadExtras",   10, newSViv(0),     0);
+      (void) hv_store( hv, "noImageData",  11, newSViv(0),     0);
+      (void) hv_store( hv, "iconUnmask",   10, newSViv(0),     0);
+      (void) hv_store( hv, "noIncomplete", 12, newSViv(0),     0);
+      (void) hv_store( hv, "className",     9, newSVpv("Prima::Image", 0), 0);
    } else
       hv = newHV();
    pset_sv_noinc( loadInput, newRV_noinc(( SV *) hv));
@@ -1318,7 +1329,8 @@ apc_img_info2hash( PImgCodec codec)
          av_push( av, newSVpv( "frames", 0));
       av_push( av, newSVpv( "height", 0));
       av_push( av, newSVpv( "width",  0));
-      av_push( av, newSVpv( "codecID", 0));      
+      av_push( av, newSVpv( "codecID", 0));
+      av_push( av, newSVpv( "truncated", 0));
    }
    
    if ( c-> IOFlags & ( IMG_SAVE_TO_FILE|IMG_SAVE_TO_STREAM)) {

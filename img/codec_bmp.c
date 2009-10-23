@@ -223,10 +223,14 @@ create_ahead(PImgLoadFileInstance fi, unsigned long lineSize)
 	return ahead;
 }
 
-static void
+/* returns true on hard failure */
+static Bool
 destroy_ahead(AHEAD *ahead)
 {
+	Bool error = ahead-> error;
 	free(ahead);
+	if (error & ahead-> fi-> wasTruncated) error = false;
+	return error;
 }	
 
 static byte 
@@ -245,6 +249,8 @@ read_ahead(AHEAD *ahead)
 					strerror( req_error( ahead-> fi-> req))
 			));
 			ahead-> error = 1;
+			if ( !ahead-> fi-> noIncomplete && ahead-> cnt >= 0)
+				ahead-> fi-> wasTruncated = true;
 			return 0;
 		}
 
@@ -623,8 +629,12 @@ req_read_big( PImgLoadFileInstance fi, int h, unsigned long lineSize, Byte * dat
 			);
 			if ( r < 0)
 				outr( fi-> req);
-			if ( r == 0)
-				outc("Read error: unexpected end of file");
+			if ( r == 0) {
+				if ( fi-> noIncomplete)
+					outc("Read error: unexpected end of file")
+				else
+					size = 0;
+			}
 			read += r;
 			size -= r;
 			data += r;
@@ -637,7 +647,7 @@ req_read_big( PImgLoadFileInstance fi, int h, unsigned long lineSize, Byte * dat
 		unsigned long r = req_read( fi-> req, size, data);
 		if ( r < 0)
 			outr( fi-> req);
-		if ( r != size)
+		if ( r != size && fi-> noIncomplete)
 			outc( "Read error: unexpected end of file");
 	}
 
@@ -667,7 +677,10 @@ read_16_32_bpp( PImgLoadFileInstance fi, PImage i, int bpp, unsigned long stride
 			free( src);
 			if ( r < 0)
 				outr( fi-> req);
-			outc("Read error: unexpected end of file");
+			if ( fi-> noIncomplete)
+				outc("Read error: unexpected end of file");
+			h = i->h;
+			fi-> wasTruncated = true;
 		}
 
 		/* Extract red, green, blue. */
@@ -884,7 +897,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 						break;
 					}
 				}
-				destroy_ahead(ahead);
+				if ( destroy_ahead(ahead))
+					return false;
 			}
 			break;
 
@@ -976,7 +990,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 					}
 				}
 					
-				destroy_ahead(ahead);
+				if ( destroy_ahead(ahead))
+					return false;
 			}
 			break;
 		case BCA_BITFIELDS:

@@ -71,12 +71,14 @@ typedef struct _ImgLoadFileInstance {
   int             frameCount;     /* total frames in the file; can return -1 if unknown */
   HV            * fileProperties; /* specific file data */
   void          * instance;       /* user instance */
+  Bool            wasTruncated;   /* if codec can recover from EOF */
 
   /* user-specified data - applied to whole file */
   Bool            loadExtras; 
   Bool            loadAll;
   Bool            noImageData;
   Bool            iconUnmask;
+  Bool            noIncomplete;
   HV            * extras;         /* profile applied to all frames */
 
   /* user-specified data - applied to every frame */

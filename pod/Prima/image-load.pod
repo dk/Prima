@@ -124,8 +124,8 @@ with more than thousand frames. 'wantFrames' is useful in null load requests.
 The parameters that are accepted by load, are divided into several 
 categories - first, those that apply to all loading process and those
 who apply only to a particular frame. Those who are defined by Prima, are
-enumerated above - loadExtras, loadAll etc. Only loadExtras, noImageData 
-and iconUnmask are applicable to
+enumerated above - loadExtras, loadAll etc. Only loadExtras, noImageData,
+noIncomplete and iconUnmask are applicable to
 a frame, other govern the loading process. A codec may as well define its own
 parameters, however it is not possible to tell what parameter belongs to what
 group - this information is to be found in codec documentation;
@@ -259,6 +259,16 @@ bitmap:
 
 The latter technique is used by C<Prima::ImageViewer> when it is setup to monitor
 image loading progress. See L<Prima::ImageViewer/watch_load_progress> for details.
+
+=head2 Truncated files
+
+By default, codecs are not specified whether they would fail on premature end
+of file or omit the error and return truncated image. C<noIncomplete> boolean
+flag tells that a codec must always fail if the image cannot be red in full. It
+is off by default. If indeed the codec detected that the file was incomplete,
+it sets C<truncated> boolean flag in the C<extras> profile, if C<loadExtras>
+was requested.
+
 
 =head1 Saving
 
