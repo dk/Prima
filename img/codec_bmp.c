@@ -27,7 +27,7 @@
  */
 /*
 
-Copyright Andy Key
+Copyright Andy Key, Heiko Nitzsche
 
 gbmbmp.c - OS/2 1.1, 1.2, 2.0 and Windows 3.0 support
 
@@ -72,6 +72,7 @@ static char * loadOutput[] = {
    	"ImportantColors",
 	"XResolution",
 	"YResolution",
+	"BitDepth",
 	NULL
 };
 
@@ -161,7 +162,7 @@ write_dword(PImgIORequest req, dword d)
 #define	BCA_UNCOMP	0x00000000L
 #define	BCA_RLE8	0x00000001L
 #define	BCA_RLE4	0x00000002L
-#define	BCA_HUFFFMAN1D	0x00000003L
+#define	BCA_BITFIELDS	0x00000003L
 #define	BCA_RLE24	0x00000004L
 #define	BCA_MAX		BCA_RLE24
 #define	MSWCC_EOL	0
@@ -172,7 +173,7 @@ static char * bca_sets[] = {
 	"Uncompressed",
 	"RLE8",
 	"RLE4",
-	"Huffman",
+	"Raw bits",
 	"RLE24"
 };
 
@@ -189,6 +190,7 @@ swap_pal( RGBColor * p)
 #define outw(fd) { snprintf( fi-> errbuf, 256, "Write error:%s",strerror( req_error( fd))); return false; }
 #define outs(fd) { snprintf( fi-> errbuf, 256, "Seek error:%s",strerror( req_error( fd))); return false; }
 #define outcm(dd){ snprintf( fi-> errbuf, 256, "No enough memory (%d bytes)", (int)(dd)); return false;}
+#define outcd(x,dd){ snprintf( fi-> errbuf, 256, x, (int)(dd)); return false;}
 
 
 #define	BUFSIZE 16384
@@ -256,6 +258,12 @@ read_ahead(AHEAD *ahead)
 	return ahead->buf[ahead->inx++];
 }
 
+typedef struct _RGBTriplet {
+	dword r;
+	dword g;
+	dword b;
+} RGBTriplet;
+
 typedef struct _LoadRec {
 	size_t base;
 	Bool windows;
@@ -272,6 +280,9 @@ typedef struct _LoadRec {
 	int passed;
 	size_t passed_frame_offset;
 	size_t file_start_offset;
+	RGBTriplet rgb_offset;
+	RGBTriplet rgb_mask;
+	RGBTriplet rgb_valid_bits;
 } LoadRec;
 
 
@@ -362,6 +373,35 @@ rewind_to_frame( PImgLoadFileInstance fi)
 	return true;
 }
 
+static dword
+count_mask_bits(dword mask, dword * bitoffset)
+{
+	dword testmask = 1; /* start with the least significant bit */
+	dword counter  = 0;
+	dword index    = 0;
+	
+	*bitoffset = 0;
+	
+	/* find offset of first bit */
+	while (((mask & testmask) == 0) && (index < 31)) {
+		index++;
+		testmask <<= 1;
+	}
+	*bitoffset = index;
+	
+	/* count the bits set in the rest of the mask */
+	while ((testmask <= mask) && (index < 31)) {
+		if (mask & testmask) {
+			counter++;
+		}
+		index++;
+		testmask <<= 1;
+	}
+	
+	return counter;
+}
+
+
 static Bool
 read_bmp_header( PImgLoadFileInstance fi)
 {
@@ -397,11 +437,11 @@ read_bmp_header( PImgLoadFileInstance fi)
 	   		outr(fd);
 		
 		if ( cx == 0 || cy == 0 )
-			outc("Bad size");
+			outcm("Bad size");
 		if ( cPlanes != 1 )
-			outc("Number of bitmap planes is not 1");
+			outcd("Number of bitmap planes is %d, must be 1", cPlanes);
 		if ( cBitCount != 1 && cBitCount != 4 && cBitCount != 8 && cBitCount != 24 )
-			outc("Bit count not 1, 4, 8 or 24");
+			outcd("Bit count is %d, must be 1, 4, 8 or 24", cBitCount);
 		
 		l-> w   = (int) cx;
 		l-> h   = (int) cy;
@@ -470,9 +510,16 @@ read_bmp_header( PImgLoadFileInstance fi)
 		if ( ulWidth == 0L || ulHeight == 0L )
 			outc("Bad image size");
 		if ( cPlanes != 1 )
-			outc("Number of bitmap planes is not 1");
-		if ( cBitCount != 1 && cBitCount != 4 && cBitCount != 8 && cBitCount != 24 )
-			outc("Bit count not 1, 4, 8 or 24");
+			outcd("Number of bitmap planes is %d, must be 1", cPlanes);
+		if ( 
+			cBitCount != 1 && 
+			cBitCount != 4 && 
+			cBitCount != 8 && 
+			cBitCount != 16 && 
+			cBitCount != 24 && 
+			cBitCount != 32
+		)
+			outcd("Bit count is %d, must be 1, 4, 8, 16, 24 or 32", cBitCount);
 		
 		l-> w   = (int) ulWidth;
 		l-> h   = (int) ulHeight;
@@ -486,7 +533,77 @@ read_bmp_header( PImgLoadFileInstance fi)
 		l-> resolution.y  = ulYPelsPerMeter;
 	} else 
 		outc("cbFix is bad");
+		
+	if ( l-> bpp == 16 || l-> bpp == 32 ) {
+		switch ( l-> ulCompression) {
+		case BCA_UNCOMP:
+			l-> rgb_offset. b = 0;
+			l-> rgb_offset. g = (l->bpp == 16) ?  5 :  8;
+			l-> rgb_offset. r = (l->bpp == 16) ? 10 : 16;
 
+			/* set color masks to either 16bpp (5,5,5) or 32bpp (8,8,8) */
+			l-> rgb_mask. b = (l-> bpp == 16) ? 0x001f : 0x000000ff; 
+			l-> rgb_mask. g = (l-> bpp == 16) ? 0x03e0 : 0x0000ff00;
+			l-> rgb_mask. r = (l-> bpp == 16) ? 0x7c00 : 0x00ff0000;
+
+			l-> rgb_valid_bits. b = 
+			l-> rgb_valid_bits. g = 
+			l-> rgb_valid_bits. r = (l->bpp == 16) ?  5 :  8;
+			break;
+
+		case BCA_BITFIELDS: {
+			Bool ok = 1;
+			RGBTriplet bytes;
+
+			/* Read BI_BITFIELDS color masks from the header (where usually the palette is) */
+			/* These are strangely stored as dwords in the order of R-G-B. */
+			if ( req_seek(fd, (long) (l-> base + 14L + l-> cbFix), SEEK_SET) < 0)
+				outs(fd);
+			ok &= read_dword(fd, &l-> rgb_mask. r);
+			ok &= read_dword(fd, &l-> rgb_mask. g);
+			ok &= read_dword(fd, &l-> rgb_mask. b);
+			if ( !ok )
+				outr(fd);
+
+			/* count the bits used in each mask */
+			l-> rgb_valid_bits. b = count_mask_bits( l-> rgb_mask. b, &l-> rgb_offset. b);
+			l-> rgb_valid_bits. g = count_mask_bits( l-> rgb_mask. g, &l-> rgb_offset. g);
+			l-> rgb_valid_bits. r = count_mask_bits( l-> rgb_mask. r, &l-> rgb_offset. r);
+
+			/* Only up to 8 bit per mask are allowed */
+			if ( 
+				l-> rgb_valid_bits. b > 8 ||
+				l-> rgb_valid_bits. g > 8 ||
+				l-> rgb_valid_bits. r > 8
+			)
+				outc("Bad bit masks for non-24bits RGB data");
+
+			/* check for non-overlapping bits */
+			if ( 
+				l-> rgb_valid_bits. b +
+				l-> rgb_valid_bits. g +
+				l-> rgb_valid_bits. r > l-> bpp
+			)
+				outc("Bad bit masks for non-24bits RGB data");
+
+			
+			if ( 
+				l-> rgb_offset. b + l-> rgb_valid_bits. b > l-> rgb_offset. g ||
+				l-> rgb_offset. g + l-> rgb_valid_bits. g > l-> rgb_offset. r ||
+				l-> rgb_offset. r + l-> rgb_valid_bits. r > l-> bpp
+			)
+				outc("Bad bit masks for non-24bits RGB data");
+
+			l-> rgb_valid_bits. r = 8 - l-> rgb_valid_bits. r;
+			l-> rgb_valid_bits. g = 8 - l-> rgb_valid_bits. g;
+			l-> rgb_valid_bits. b = 8 - l-> rgb_valid_bits. b;
+			break;
+		}
+
+		default:
+			outcd("compression type is %d, expected 0 or 3", l->ulCompression);
+
+	}}
 	return true;
 }
 
@@ -527,6 +644,63 @@ req_read_big( PImgLoadFileInstance fi, int h, unsigned long lineSize, Byte * dat
 	return true;
 }
 
+/* Read 16bpp data with compression BI_RGB or BI_BITFIELDS (will be mapped to 24bpp, lossless) */
+static Bool
+read_16_32_bpp( PImgLoadFileInstance fi, PImage i, int bpp, unsigned long stride_dst)
+{
+	LoadRec * l = ( LoadRec *) fi-> instance;
+	int h, stride_src = ((i-> w * 16 + 31) / 32) * 4;
+	Byte *src, *dst;
+
+	if ( !( src = (Byte*) malloc(stride_src)))
+		outcm(stride_src);
+
+	dst = i-> data; /* write pointer */
+	for (h = 0; h < i-> h; h++) {
+		int block_count = i-> w;
+		const word *  src16  = (const word *)  src;
+		const dword * src32  = (const dword *) src;
+		Byte * line  = dst;
+		unsigned long r = req_read( fi-> req, stride_src, src);
+
+		if ( r != stride_src ) {
+			free( src);
+			if ( r < 0)
+				outr( fi-> req);
+			outc("Read error: unexpected end of file");
+		}
+
+		/* Extract red, green, blue. */
+		/* Encoding starts at least significant bit, then xB,yG,zR (most significant bit is unused). */
+		/* Map these into 24bpp BGR. */
+#define GetX(X,SRC) (((SRC & l-> rgb_mask.X) >> l->rgb_offset.X) << l->rgb_valid_bits.X) 
+		if ( bpp == 16 ) {
+			while (block_count > 0) {
+			       	register word data16 = *src16++;
+			       	*line++ = GetX(b,data16);
+			       	*line++ = GetX(g,data16);
+			       	*line++ = GetX(r,data16);
+			       	--block_count;
+			}
+		} else {
+			while (block_count > 0) {
+			       	register dword data32 = *src32++;
+			       	*line++ = GetX(b,data32);
+			       	*line++ = GetX(g,data32);
+			       	*line++ = GetX(r,data32);
+			       	--block_count;
+			}
+		}
+#undef GetX
+		dst += stride_dst;
+		EVENT_TOPDOWN_SCANLINES_READY(fi, 1);
+	}
+
+	free(src);
+	return true;
+}
+
+
 static Bool   
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
@@ -535,6 +709,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	PImgIORequest fd = fi-> req;
 	PImage img;
 	int cLinesWorth; /* bmp alignment and prima alignment are identical, by 4-byte boundary */
+	int bpp;
 	Byte * data;
 
 	if ( !rewind_to_frame(fi))
@@ -543,18 +718,19 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		return false;
 
 	img = PImage( fi-> object);
+	bpp = ( l-> bpp == 16 || l-> bpp == 32 ) ? 24 : l-> bpp;
 	if ( fi-> noImageData) {
       		pset_i( width,  l-> w);
       		pset_i( height, l-> h);
-		CImage( fi-> object)-> create_empty( fi-> object, 1, 1, l-> bpp);
+		CImage( fi-> object)-> create_empty( fi-> object, 1, 1, bpp);
 	} else {
-		CImage( fi-> object)-> create_empty( fi-> object, l-> w, l-> h, l-> bpp);
+		CImage( fi-> object)-> create_empty( fi-> object, l-> w, l-> h, bpp);
 		EVENT_HEADER_READY( fi);
 	}
 	data = img-> data;
 
 	/* read palette */
-	if ( l-> bpp != 24) {
+	if ( bpp != 24) {
 		int i;
 		byte b[4];
 		PRGBColor pal;
@@ -587,7 +763,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		img-> palSize = 0;
 	}
 
-	if ( l-> bpp == 1)
+	if ( bpp == 1)
 		swap_pal( img-> palette);
 
 	if ( fi-> loadExtras) {
@@ -596,6 +772,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	   		pset_i( OS2, 1);
 		pset_i( XHotSpot, l-> xHotspot);
 		pset_i( YHotSpot, l-> yHotspot);
+		pset_i( BitDepth, l-> bpp);
 
 		c = ( l-> ulCompression < 0 || l-> ulCompression > BCA_MAX) ?
 		   	"Unknown" : bca_sets[ l-> ulCompression];
@@ -611,7 +788,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		return true;
 
 	/* read data */
-	cLinesWorth = ((l->bpp * l->w + 31) / 32) * 4;
+	cLinesWorth = ((bpp * l->w + 31) / 32) * 4;
 
 	if ( l-> windows ) {
 		if ( req_seek( fd, (long) l-> offBits, SEEK_SET) < 0)
@@ -620,8 +797,25 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		switch ( (int) l-> ulCompression ) {
 
 		case BCA_UNCOMP:
-			if ( !req_read_big(fi, l-> h, cLinesWorth, data)) 
-				return false;
+			switch ( l-> bpp) {
+			case 1:
+			case 4:
+			case 8:
+			case 24:
+				if ( !req_read_big(fi, l-> h, cLinesWorth, data)) 
+					return false;
+				break;
+			case 16:
+			        if ( !read_16_32_bpp(fi, PImage(fi-> object), 16, cLinesWorth))
+					return false;
+				break;
+			case 32:
+			        if ( !read_16_32_bpp(fi, PImage(fi-> object), 32, cLinesWorth))
+					return false;
+				break;
+			default:
+				outc("Unsupported bit depth");
+			}
 			break;
 
 		case BCA_RLE8: {
@@ -783,6 +977,20 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				}
 					
 				destroy_ahead(ahead);
+			}
+			break;
+		case BCA_BITFIELDS:
+			switch ( l-> bpp) {
+			case 16:
+			        if ( !read_16_32_bpp(fi, PImage(fi-> object), 16, cLinesWorth))
+					return false;
+				break;
+			case 32:
+			        if ( !read_16_32_bpp(fi, PImage(fi-> object), 32, cLinesWorth))
+					return false;
+				break;
+			default:
+				outcd("Unsupported bit depth %d, expected 16 or 32", l-> bpp);
 			}
 			break;
 		default:
