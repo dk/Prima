@@ -188,9 +188,9 @@ sub reset
 				$self-> {images}-> [0]-> palette;
 		my $i = $e-> {screenBackGroundColor} * 3;
 		$self-> {bgColor} = (
-			($$cm[$i] || 0) | 
+			($$cm[$i+2] || 0) | 
 			(($$cm[$i+1] || 0) << 8) | 
-			(($$cm[$i+2] || 0) << 16)
+			(($$cm[$i] || 0) << 16)
 		);
 	}
 }
