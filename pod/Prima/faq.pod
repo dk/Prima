@@ -169,6 +169,16 @@ Dynaloader would complain. On win32 and os2 this usually happen when
 prigraph.dll ( and/or priz.dll on os2 ) are not found. If this is the case, try
 to copy these files into your PATH, for example in C:/WINNT .
 
+=head2 Prima doesn't get installed using ppm (ActiveState)
+
+Prima uses a non-conventional build process, which is not picked up by
+automated ActiveState ppm builder. So if you run "ppm install Prima" and
+it succeeds but installs nothing, try this:
+
+  ppm install --force http://cpan.uwinnipeg.ca/PPMPackages/10xx/Prima.ppd
+
+(Justin Allegakoen and Randy Kobes:thanks!)
+
 =head2 Prima error: Can't open display
 
 This error happens when you've compiled Prima for X11, and no connection to X11
