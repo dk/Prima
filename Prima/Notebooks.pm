@@ -703,11 +703,11 @@ sub delete_page
 	$at = -1 unless defined $at;
 	$at = $self-> {pageCount} - 1 if $at < 0 || $at >= $self-> {pageCount};
 	
-	my @r = splice( @{$self-> {widgets}}, $at, 1);
+	my $r = splice( @{$self-> {widgets}}, $at, 1);
 	$self-> {pageCount}--;
 	$self-> pageIndex( $self-> pageIndex);
 	if ( $removeChildren) {
-		$$_[0]-> destroy for @{$r[0]};
+		$_-> destroy for @$r;
 	}
 }
 
@@ -823,8 +823,8 @@ sub move_widget
 {
 	my ( $self, $widget, $newPage) = @_;
 	my ( $page, $number) = $self-> contains_widget( $widget);
-	return unless defined $page;
-	@{$self-> {widgets}-> [$newPage]} = splice( @{$self-> {widgets}-> [$page]}, $number, 1);
+	return unless defined $page and $page != $newPage;
+	push @{$self-> {widgets}-> [$newPage]}, splice( @{$self-> {widgets}-> [$page]}, $number, 1);
 	$self-> repaint if $self-> {pageIndex} == $page || $self-> {pageIndex} == $newPage;
 }
 
