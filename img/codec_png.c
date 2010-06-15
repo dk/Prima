@@ -26,6 +26,7 @@
 /* Created by Dmitry Karasik <dk@plab.ku.dk> */
 /* $Id$ */
 
+#define USE_NO_MINGW_SETJMP_TWO_ARGS
 #ifdef HAVE_CONFIG_H
 #include <generic/config.h>
 #endif

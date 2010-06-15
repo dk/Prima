@@ -871,7 +871,10 @@ sub setup_variables
 	if ( $useGC) {
 		push @libs, 'leak';
 	}
-	if ( $COMPILER eq 'gcc') {
+	if (
+		$COMPILER eq 'gcc' and 
+		$LD ne 'g++' # g++ and gcc together are weird kind - g++ does -lgcc itself
+	) {
 		push @libs, 'gcc';
 	}
 	my @flibs;
