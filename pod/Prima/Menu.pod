@@ -155,13 +155,20 @@ entry in a menu item, its action is triggered.
 
 =item Action
 
-Every non-separator and non-submenu item is destined to
-perform an action. The action can be set either as
-an anonymous sub, or as string with name of a method
-on the owner of a menu object. Both have their niche of
-usage, and both are supplied with three parameters, when called -
-the owner of a menu object, the menu object itself and
-the name of a menu item, that triggered the action.
+Every non-separator and non-submenu item is destined to perform an action. The
+action can be set either as an anonymous sub, or as string with name of a
+method on the owner of a menu object. Both have their niche of usage, and both
+are supplied with two parameters, when called - the owner of a menu object, and
+the name of a menu item, that triggered the action:
+
+   Prima::MainWindow-> new(
+   	menuItems => [
+   		['item', 'Test', 
+                sub {
+                    my ( $window, $item) = @_; # contain MainWindow and 'item'
+                }],
+   	]
+   );
 
 Action scalar in menu item is accessible via C<::action>
 property.
