@@ -746,6 +746,9 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 {
    DEFXX;
 
+   if ( dX == 1 || dY == 1 ) /* Xorg bug */
+   	return apc_gp_rectangle( self, x - dX / 2, y - dY / 2, x + dX / 2, y + dY / 2);
+
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
    if ( dX <= 0 || dY <= 0) return false;
@@ -803,6 +806,9 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
 {
    DEFXX;
    int mix = 0;
+
+   if ( dX == 1 || dY == 1 ) /* Xorg bug */
+   	return apc_gp_bar( self, x - dX / 2, y - dY / 2, x + dX / 2, y + dY / 2);
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
