@@ -849,7 +849,7 @@ sub setup_variables
 	setvar( 'INCPATH', (
 		"include",
 		qd( "include/generic"),
-		$Config{installarchlib} . qd( "/CORE"),
+		$Config{archlib} . qd( "/CORE"),
 		( map { s/-I//; $_ } split ' ', $INC)
 	));
 	my @libpaths = quoted_split( $Config{ libpth});
