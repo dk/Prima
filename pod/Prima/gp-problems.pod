@@ -199,6 +199,12 @@ the problem emerges if logical ROP (rop::Xor) is chosen.(OS/2)
 
 Dithering might be not used for line plotting. (Win9X)
 
+=item Arcs and circles
+
+Drawing is dependent in X11 on an X servers - different X servers do different plotting
+strategies on small (less than 3 pixels) diameters. Current version is adapted best to the
+latest (2010) Xorg capabilities. See discussion on CPAN bug https://rt.cpan.org/Ticket/Display.html?id=62972 .
+
 =back
 
 =head2 Fonts
