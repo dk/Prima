@@ -1117,7 +1117,9 @@ sub setup_perl
 {
 	if ( $Win32 || $cygwin || $OS2) {
 		print "Checking for perl library... ";
-		my $libpath = find_lib( $Config{ libperl}, '', "", qd( "$Config{ archlib}/CORE"));
+		my $libperl = $Config{ libperl};
+		$libperl =~ s/\.dll$//i if $cygwin;
+		my $libpath = find_lib( $libperl, '', "", qd( "$Config{ archlib}/CORE"));
 		unless ( defined $libpath) {
 			print "no\n";
 			die "Cannot find perl library $see_makefile_log\n" 
@@ -1126,7 +1128,7 @@ sub setup_perl
 		print ", in $libpath" if length($libpath);
 		print "\n";
 		push @LIBPATH, $libpath if $libpath;
-		push @LIBS, $Config{ libperl};
+		push @LIBS, $libperl;
 	}
 }
 
