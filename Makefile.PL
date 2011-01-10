@@ -164,6 +164,7 @@ use vars qw(
 	%cache_find_files
 	$binary_prereq
 	$win32_use_dlltool
+	$compiler_version
 );
 
 my $see_makefile_log = "(see also makefile.log for details)";
@@ -326,6 +327,34 @@ sub compile
 	unlink $tmpexe if -w $tmpexe;
 	unlink $_ for @tmpextras;
 	return( $rc == 0);
+}
+
+sub compile_and_run
+{
+	my ( $text) = @_;
+	my $tmpsrc = qd( tempfile( "$TMPDIR/pmts%04d.c"));
+	my $tmpo = qd( tempfile( "$TMPDIR/pmts%04d$OBJ_EXT"));
+	my $tmpexe = qd( tempfile( "$TMPDIR/pmts%04d$EXE_EXT"));
+	my @tmpextras = ( $tmpsrc, $tmpsrc);
+	$tmpextras[0] =~ s/\.[^\.+]$/.ilk/;
+	$tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
+
+	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $see_makefile_log";
+	print TMPSRC $text;
+	close TMPSRC;
+
+	null_output;
+	my @cc = grep !/^-W(all|error|\d)/i, cc_command_line( $tmpsrc, $tmpo, $tmpexe, 0);
+	print STDERR "@cc\n";
+	my $rc = system("@cc");
+	restore_output;
+	unlink $tmpsrc;
+	unlink $tmpo if -w $tmpo;
+	my $ret = `$tmpexe`;
+	chomp $ret;
+	unlink $tmpexe if -w $tmpexe;
+	unlink $_ for @tmpextras;
+	return $ret;
 }
 
 sub have_header
@@ -942,9 +971,15 @@ sub setup_variables
 	}
 	
 	if ( $COMPILER eq 'msvc') {
-		$DEFINES{_CRT_SECURE_NO_DEPRECATE} = 1;
-		# to be invoked on command line
-		$CFLAGS .= " -D_CRT_SECURE_NO_DEPRECATE";
+		# crazy activestate/msvc stuff
+		if ( $compiler_version < 1400) {
+			$DEFINES{_CRT_SECURE_NO_DEPRECATE} = 1;
+			# to be invoked on command line
+			$CFLAGS .= " -D_CRT_SECURE_NO_DEPRECATE";
+		}
+		if ( $compiler_version >= 1600 ) {
+			delete $DEFINES{_USE_32BIT_TIME_T};
+		}
 	}
 
 	# find common denominator with installsitearch and installscript
@@ -1036,6 +1071,18 @@ main()
 }
 EOF
 	print "yes\n";
+
+	if ( $COMPILER eq 'msvc' ) {
+		print "Checking MSVC version... ";
+		$compiler_version = compile_and_run(<<'MSCVER');
+#include <stdio.h>
+int main() { 
+	printf("%d\n", _MSC_VER); 
+	return 0;
+}
+MSCVER
+		print "$compiler_version\n";
+	}
 }
 
 sub setup_X11
