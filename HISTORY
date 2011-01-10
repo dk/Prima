@@ -1,5 +1,5 @@
 1.29  Support for 16-bit BMP files. Fixes for modern Xorg, macos, and strawberry. 
-      Optionally support truncated image files.
+      Optionally support truncated image files. 
 
 1.28  Fixes in documentation, Sliders, and key event handling.
 
