@@ -646,7 +646,7 @@ sub reset_cursor {
 	else {
 		#print "setting cursor to ",$self->{ charWidth} * $cursorCol, "x", $self->{ charHeight} * ( $self->{ textRows} - $cursorRow - 1);
 		$self-> { termView}-> cursorVisible(1);
-		$self-> { termView}-> set_cursor_pos( $self-> { charWidth} * $cursorCol,
+		$self-> { termView}-> set_cursor_pos( $self-> { charWidth} * $cursorCol, $self->{ charHeight} * ( $self->{textRows} - $cursorRow - 1));
 	}
 }
 
