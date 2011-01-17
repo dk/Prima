@@ -337,7 +337,6 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    }
 
    fi-> instance = l;
-
    if (setjmp(png_jmpbuf( l-> png_ptr))) {
       /* If we get here, we had a problem inside open_load */
       png_destroy_read_struct(&l-> png_ptr, &l-> info_ptr, (png_infopp)NULL);

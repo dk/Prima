@@ -119,7 +119,7 @@ apc_clipboard_create( Handle self)
 }
 
 static void
-clipboard_free_data( void * data, int size, long id)
+clipboard_free_data( void * data, int size, Handle id)
 {
    if ( size <= 0) {
       if ( size == 0 && data != nil) free( data);
@@ -141,7 +141,7 @@ clipboard_free_data( void * data, int size, long id)
    get_typename() returns such pairs by the index.
  */
 static Atom
-get_typename( long id, int index, Atom * type)
+get_typename( Handle id, int index, Atom * type)
 {
    if ( type) *type = None;
    switch ( id) {
@@ -179,7 +179,7 @@ get_typename( long id, int index, Atom * type)
 }
 
 static void
-clipboard_kill_item( PClipboardDataItem item, long id)
+clipboard_kill_item( PClipboardDataItem item, Handle id)
 {
    item += id;
    clipboard_free_data( item-> data, item-> size, id);
@@ -300,7 +300,7 @@ apc_clipboard_close( Handle self)
    there's a chance of coredump.
  */
 static void
-detach_xfers( PClipboardSysData XX, long id, Bool clear_original_data)
+detach_xfers( PClipboardSysData XX, Handle id, Bool clear_original_data)
 {
    int i, got_master = 0, got_anything = 0;
    if ( !XX-> xfers) return;
@@ -439,7 +439,7 @@ read_property( Atom property, Atom * type, int * format,
 }
 
 static Bool
-query_datum( Handle self, long id, Atom query_target, Atom query_type)
+query_datum( Handle self, Handle id, Atom query_target, Atom query_type)
 {
    DEFCC;
    XEvent ev;
@@ -550,7 +550,7 @@ FAIL:
 
 
 static Bool
-query_data( Handle self, long id)
+query_data( Handle self, Handle id)
 {
    Atom name, type;
    int index = 0;
@@ -577,7 +577,7 @@ find_atoms( Atom * data, int length, int id)
 
 
 Bool
-apc_clipboard_has_format( Handle self, long id)
+apc_clipboard_has_format( Handle self, Handle id)
 {
    DEFCC;
    if ( id < 0 || id >= guts. clipboard_formats_count) return false;
@@ -636,7 +636,7 @@ apc_clipboard_has_format( Handle self, long id)
 }
 
 Bool
-apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
+apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 {
    DEFCC;
    STRLEN size;
@@ -705,7 +705,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
 }
 
 Bool
-apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
+apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 {
    DEFCC;
    if ( id < 0 || id >= guts. clipboard_formats_count) return false;
@@ -765,7 +765,7 @@ expand_clipboards( Handle self, int keyLen, void * key, void * dummy)
    return false;
 }
 
-long
+Handle
 apc_clipboard_register_format( Handle self, const char* format)
 {
    int i;
@@ -792,7 +792,7 @@ apc_clipboard_register_format( Handle self, const char* format)
 }
 
 Bool
-apc_clipboard_deregister_format( Handle self, long id)
+apc_clipboard_deregister_format( Handle self, Handle id)
 {
    return true;
 }

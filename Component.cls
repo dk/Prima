@@ -36,7 +36,7 @@ object Prima::Component( Prima::Object)
     property SV *      name;
     property Handle    owner;
 
-    method   long      add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
+    method   UV        add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
     method   void      attach( Handle objectHandle);
     method   Handle    bring( char * componentName);
     method   Bool      can_event();
@@ -61,7 +61,7 @@ object Prima::Component( Prima::Object)
     import   SV *      profile_default();
     method   void      push_event();
     c_only   void      recreate();
-    method   void      remove_notification( long id);
+    method   void      remove_notification( UV id);
     method   void      set( HV * profile);
     method   void      setup();
     public   void      set_notification( char * name, SV * subroutine);

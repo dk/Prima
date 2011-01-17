@@ -36,12 +36,12 @@ object Prima::File( Prima::Component)
    property SV *      file;
    property int       mask;
 
-   method   long      add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
+   method   UV        add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
    method   void      init( HV * profile);
    method   void      cleanup();
    method   SV      * get_handle();
    c_only   void      handle_event( PEvent event);
    method   Bool      is_active( Bool autoDetach = false);
    import   SV *      notification_types();
-   method   void      remove_notification( long id);
+   method   void      remove_notification( UV id);
 }

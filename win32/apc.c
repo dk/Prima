@@ -94,7 +94,7 @@ apc_application_create( Handle self)
           nil, nil, guts. instance, nil))) apiErrRet;
    sys handle = h;
    sys parent = sys owner = HWND_DESKTOP;
-   SetWindowLong( sys handle, GWL_USERDATA, self);
+   SetWindowLongPtr( sys handle, GWLP_USERDATA, self);
    PostMessage( sys handle, WM_PRIMA_CREATE, 0, 0);
    sys className = WC_APPLICATION;
    // if ( !SetTimer( h, TID_USERMAX, 100, nil)) apiErr;
@@ -102,7 +102,7 @@ apc_application_create( Handle self)
    if ( !( var handle = ( Handle) CreateWindowEx( 0,  "Generic", "", WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
         0, 0, r. right - r. left, r. bottom - r. top, h, nil,
         guts. instance, nil))) apiErrRet;
-   SetWindowLong(( HWND) var handle, GWL_USERDATA, self);
+   SetWindowLongPtr(( HWND) var handle, GWLP_USERDATA, self);
    apt_set( aptEnabled);
    sys lastSize = apc_application_get_size( self);
    return true;
@@ -119,7 +119,7 @@ Bool
 apc_application_destroy( Handle self)
 {
    objCheck false;
-   SetWindowLong( sys handle, GWL_USERDATA, 0);
+   SetWindowLongPtr( sys handle, GWLP_USERDATA, 0);
    if ( IsWindow( sys handle))  {
       if ( guts. mouseTimer) {
           guts. mouseTimer = 0;
@@ -225,18 +225,18 @@ Handle
 hwnd_to_view( HWND win)
 {
    Handle h;
-   LONG ll;
+   LONG_PTR ll;
    if (( !win) || ( !IsWindow( win)))
       return nilHandle;
    if ( GetWindowThreadProcessId( win, nil) != guts. mainThreadId)
       return nilHandle;
-   h = GetWindowLong( win, GWL_USERDATA);
+   h = GetWindowLongPtr( win, GWLP_USERDATA);
    if ( !h) return nilHandle;
-   ll = GetWindowLong( win, GWL_WNDPROC);
+   ll = GetWindowLongPtr( win, GWLP_WNDPROC);
    if (
-       ( ll == ( LONG) generic_view_handler) ||
-       ( ll == ( LONG) generic_app_handler) ||
-       ( ll == ( LONG) generic_frame_handler)
+       ( ll == ( LONG_PTR) generic_view_handler) ||
+       ( ll == ( LONG_PTR) generic_app_handler) ||
+       ( ll == ( LONG_PTR) generic_frame_handler)
       ) return h;
 
    if ( SendMessage( win, WM_HASMATE, 0, ( LPARAM) &h) == HASMATE_MAGIC)
@@ -572,7 +572,7 @@ apc_application_get_widget_from_point( Handle self, Point point)
    if ( !p) return nilHandle;
    if ( !( tid = GetWindowThreadProcessId( p, &pid))) apiErr;
    if ( tid != guts. mainThreadId) return nilHandle;
-   return ( Handle) GetWindowLong( p, GWL_USERDATA);
+   return ( Handle) GetWindowLongPtr( p, GWLP_USERDATA);
 }
 
 // Component
@@ -777,7 +777,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
           sys lastSize. x = r. right  - r. left;
           sys yOverride = sys lastSize. y = r. bottom - r. top;
           sys handle = frame;
-          SetWindowLong( frame, GWL_USERDATA, ( LONG) self);
+          SetWindowLongPtr( frame, GWLP_USERDATA, ( LONG) self);
        }
        break;
     case WC_CUSTOM:
@@ -808,7 +808,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
    sys owner   = ownerView;
    if ( !reset)
       sys pointer = LoadCursor( guts. instance, IDC_ARROW);
-   SetWindowLong( ret, GWL_USERDATA, ( LONG) self);
+   SetWindowLongPtr( ret, GWLP_USERDATA, ( LONG) self);
 
    if ( reset)
    {
@@ -1784,7 +1784,7 @@ Bool
 apc_widget_destroy( Handle self)
 {
    objCheck false;
-   SetWindowLong( HANDLE, GWL_USERDATA, 0);
+   SetWindowLongPtr( HANDLE, GWLP_USERDATA, 0);
    if ( sys pointer2) {
       if ( sys pointer2 == sys pointer) SetCursor( NULL); // un-use resource first
       if ( !DestroyCursor( sys pointer2)) apiErr;
@@ -2878,7 +2878,7 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
 }
 
 
-int ctx_kb2VK[] = {
+Handle ctx_kb2VK[] = {
    kbNoKey       ,   0                 ,
    kbAltL        ,   VK_MENU           ,
    kbAltR        ,   VK_RMENU          ,
@@ -2929,7 +2929,7 @@ int ctx_kb2VK[] = {
    endCtx
 };
 
-int ctx_kb2VK2[] = {
+Handle ctx_kb2VK2[] = {
    kbBackspace   ,   VK_BACK           ,
    kbTab         ,   VK_TAB            ,
    kbEsc         ,   VK_ESCAPE         ,
@@ -2938,7 +2938,7 @@ int ctx_kb2VK2[] = {
    endCtx
 };
 
-int ctx_kb2VK3[] = {
+Handle ctx_kb2VK3[] = {
    kbAltL        ,   kbAltR            ,
    kbShiftL      ,   kbShiftR          ,
    kbCtrlL       ,   kbCtrlR           ,
@@ -3331,7 +3331,7 @@ apc_system_action( const char * params)
          waitBeforeQuit = 1;
       } else if ( strncmp( params, "win32.DrawFocusRect ", 20) == 0) {
          RECT r;
-         unsigned long win;
+         Handle win;
          Handle self;
          int i = sscanf( params + 20, "%lu %ld %ld %ld %ld", &win, &r.left, &r.bottom, &r.right, &r.top);
 
@@ -3394,7 +3394,7 @@ apc_system_action( const char * params)
 
          if ( strcmp( params, " exists") == 0) {
            char * p = ( char *) malloc(12);
-           if ( p) sprintf( p, "0x%08lx", ( unsigned long) guts. console);
+           if ( p) sprintf( p, "0x%08lx", ( Handle) guts. console);
            return p;
          } else
          if ( strcmp( params, " hide") == 0)     { ShowWindow( guts. console, SW_HIDE); } else

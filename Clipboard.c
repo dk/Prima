@@ -54,7 +54,7 @@ typedef ClipboardExchangeFunc *PClipboardExchangeFunc;
 typedef struct _ClipboardFormatReg
 {
    char                          *id;
-   long                          sysId;
+   Handle                         sysId;
    ClipboardExchangeFunc         *server;
    void                          *data;
    Bool                           written;
@@ -157,7 +157,7 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
    list += formatCount++;
    list-> id     = duplicate_string( format);
    list-> server = ( ClipboardExchangeFunc *) serverProc;
-   list-> sysId  = ( long) list-> server( self, list, cefInit, nilSV);
+   list-> sysId  = ( Handle) list-> server( self, list, cefInit, nilSV);
    return list;
 }
 

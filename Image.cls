@@ -55,7 +55,7 @@ object Prima::Image( Prima::Drawable)
    property Bool   vScaling;
 
    # methods
-   method long   add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
+   method UV     add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
    method Handle bitmap();
    method Bool   begin_paint();
    method Bool   begin_paint_info();
@@ -77,7 +77,7 @@ object Prima::Image( Prima::Drawable)
    import SV *   notification_types();
    import SV *   profile_default ();
    method Bool   put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
-   method void   remove_notification( long id);
+   method void   remove_notification( UV id);
    method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
    weird  int    save( SV *className, char *filename, HV * profile);
    method void   set( HV * profile);

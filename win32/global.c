@@ -422,7 +422,7 @@ local_wnd( HWND who, HWND client)
    Handle self;
    if ( who == client)
       return true;
-   self = GetWindowLong( client, GWL_USERDATA);
+   self = GetWindowLongPtr( client, GWLP_USERDATA);
    v = (PComponent) hwnd_to_view( who);
    while (v && ( Handle) v != application)
    {
@@ -432,9 +432,9 @@ local_wnd( HWND who, HWND client)
    return false;
 }
 
-extern int ctx_kb2VK[];
-extern int ctx_kb2VK2[];
-extern int ctx_kb2VK3[];
+extern Handle ctx_kb2VK[];
+extern Handle ctx_kb2VK2[];
+extern Handle ctx_kb2VK3[];
 
 static Bool
 find_oid( PAbstractMenu menu, PMenuItemReg m, int id)
@@ -463,7 +463,7 @@ zorder_sync( Handle self, HWND me, LPWINDOWPOS lp)
 LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
 {
    LRESULT ret = 0;
-   Handle  self   = GetWindowLong( win, GWL_USERDATA);
+   Handle  self   = GetWindowLongPtr( win, GWLP_USERDATA);
    PWidget v      = ( PWidget) self;
    UINT    orgMsg = msg;
    Event   ev;
@@ -477,7 +477,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    for ( i = 0; i < guts. eventHooks. count; i++) {
       if ((( PrimaHookProc *)( guts. eventHooks. items[i]))((void*) &msg))
          return 0;
-   }    
+   }
    
    memset( &ev, 0, sizeof (ev));
    ev. gen. source = self;
@@ -987,7 +987,7 @@ AGAIN:
    switch ( orgMsg) {
    case WM_DESTROY:
       v-> handle = nilHandle;       // tell apc not to kill this HWND
-      SetWindowLong( win, GWL_USERDATA, 0);
+      SetWindowLongPtr( win, GWLP_USERDATA, 0);
       Object_destroy(( Handle) v);
       break;
    case WM_PAINT:
@@ -1031,7 +1031,7 @@ AGAIN:
 LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
 {
    LRESULT ret = 0;
-   Handle  self   = GetWindowLong( win, GWL_USERDATA);
+   Handle  self   = GetWindowLongPtr( win, GWLP_USERDATA);
    PWidget   v    = ( PWidget) self;
    UINT    orgMsg = msg;
    Event   ev;
@@ -1294,7 +1294,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
            CWindow( self)-> cancel( self);
            return 0;
          } else {
-           SetWindowLong( win, GWL_USERDATA, 0);
+           SetWindowLongPtr( win, GWLP_USERDATA, 0);
            Object_destroy(( Handle) v);
          }
          break;

@@ -169,11 +169,11 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       PHash c = hash_create();
       XpmColor * x = l-> image. colorTable;
       unsigned int offsets[5];
-      offsets[0] = (unsigned long)(&x-> c_color)  - (unsigned long)x;
-      offsets[1] = (unsigned long)(&x-> g_color)  - (unsigned long)x;
-      offsets[2] = (unsigned long)(&x-> g4_color) - (unsigned long)x;
-      offsets[3] = (unsigned long)(&x-> m_color)  - (unsigned long)x;
-      offsets[4] = (unsigned long)(&x-> symbolic) - (unsigned long)x;
+      offsets[0] = (Handle)(&x-> c_color)  - (Handle)x;
+      offsets[1] = (Handle)(&x-> g_color)  - (Handle)x;
+      offsets[2] = (Handle)(&x-> g4_color) - (Handle)x;
+      offsets[3] = (Handle)(&x-> m_color)  - (Handle)x;
+      offsets[4] = (Handle)(&x-> symbolic) - (Handle)x;
       for ( i = 0; i < l-> image. ncolors; i++, x++) {
          for ( j = 0; j < 5; j++) {
             char * s = *((char**)((char *)x + offsets[j]));
@@ -455,7 +455,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
           for ( x = 0; x < i-> w; x++, pp++) {
              if ( !icon || !( mask[ x >> 3] & ( 0x80 >> ( x & 7)))) {
                 Color key = ARGB(pp->r,pp->g,pp->b);
-                unsigned long val = (unsigned long) hash_fetch( hash, &key, sizeof(key));
+                Handle val = (Handle) hash_fetch( hash, &key, sizeof(key));
                 if ( val == 0) 
                    hash_store( hash, &key, sizeof(key), (void*)(val = (hash_count( hash) + 1)));
                 *(dest++) = val - 1;

@@ -572,7 +572,7 @@ static char* encodings[] = {
    nil
 };
 
-static int ctx_CHARSET2index[] = {
+static Handle ctx_CHARSET2index[] = {
   ANSI_CHARSET        , 0,
   DEFAULT_CHARSET     , 1, 
   SYMBOL_CHARSET      , 2,  
@@ -1328,81 +1328,81 @@ apc_font_encodings( Handle self )
 #define stdHilite    COLOR_HIGHLIGHTTEXT   ,  COLOR_HIGHLIGHT
 #define std3d        COLOR_BTNHIGHLIGHT    ,  COLOR_BTNSHADOW
 
-static int buttonScheme[] = {
+static Handle buttonScheme[] = {
    COLOR_BTNTEXT,   COLOR_BTNFACE,
    COLOR_BTNTEXT,   COLOR_BTNFACE,
    COLOR_GRAYTEXT,  COLOR_BTNFACE,
    std3d
 };
-static int sliderScheme[] = {
+static Handle sliderScheme[] = {
    COLOR_WINDOWTEXT,       COLOR_SCROLLBAR,
    COLOR_WINDOWTEXT,       COLOR_SCROLLBAR,
    stdDisabled,
    std3d
 };
 
-static int dialogScheme[] = {
+static Handle dialogScheme[] = {
    COLOR_WINDOWTEXT, COLOR_BTNFACE,
    COLOR_CAPTIONTEXT, COLOR_ACTIVECAPTION,
    COLOR_INACTIVECAPTIONTEXT, COLOR_INACTIVECAPTION,
    std3d
 };
-static int staticScheme[] = {
+static Handle staticScheme[] = {
    COLOR_WINDOWTEXT, COLOR_BTNFACE,
    COLOR_WINDOWTEXT, COLOR_BTNFACE,
    stdDisabled,
    std3d
 };
-static int editScheme[] = {
+static Handle editScheme[] = {
    COLOR_WINDOWTEXT, COLOR_WINDOW,
    stdHilite,
    stdDisabled,
    std3d
 };
-static int menuScheme[] = {
+static Handle menuScheme[] = {
    COLOR_MENUTEXT, COLOR_MENU,
    stdHilite,
    stdDisabled,
    std3d
 };
 
-static int scrollScheme[] = {
+static Handle scrollScheme[] = {
    COLOR_WINDOWTEXT,    COLOR_BTNFACE,
    stdHilite,
    stdDisabled,
    std3d
 };
 
-static int windowScheme[] = {
+static Handle windowScheme[] = {
    COLOR_WINDOWTEXT,  COLOR_BTNFACE,
    COLOR_CAPTIONTEXT, COLOR_ACTIVECAPTION,
    COLOR_INACTIVECAPTIONTEXT, COLOR_INACTIVECAPTION,
    std3d
 };
-static int customScheme[] = {
+static Handle customScheme[] = {
    COLOR_WINDOWTEXT, COLOR_BTNFACE,
    stdHilite,
    stdDisabled,
    std3d
 };
 
-static int ctx_wc2SCHEME[] =
+static Handle ctx_wc2SCHEME[] =
 {
-   wcButton    , ( int) &buttonScheme,
-   wcCheckBox  , ( int) &buttonScheme,
-   wcRadio     , ( int) &buttonScheme,
-   wcDialog    , ( int) &dialogScheme,
-   wcSlider    , ( int) &sliderScheme,
-   wcLabel     , ( int) &staticScheme,
-   wcInputLine , ( int) &editScheme,
-   wcEdit      , ( int) &editScheme,
-   wcListBox   , ( int) &editScheme,
-   wcCombo     , ( int) &editScheme,
-   wcMenu      , ( int) &menuScheme,
-   wcPopup     , ( int) &menuScheme,
-   wcScrollBar , ( int) &scrollScheme,
-   wcWindow    , ( int) &windowScheme,
-   wcWidget    , ( int) &customScheme,
+   wcButton    , ( Handle) &buttonScheme,
+   wcCheckBox  , ( Handle) &buttonScheme,
+   wcRadio     , ( Handle) &buttonScheme,
+   wcDialog    , ( Handle) &dialogScheme,
+   wcSlider    , ( Handle) &sliderScheme,
+   wcLabel     , ( Handle) &staticScheme,
+   wcInputLine , ( Handle) &editScheme,
+   wcEdit      , ( Handle) &editScheme,
+   wcListBox   , ( Handle) &editScheme,
+   wcCombo     , ( Handle) &editScheme,
+   wcMenu      , ( Handle) &menuScheme,
+   wcPopup     , ( Handle) &menuScheme,
+   wcScrollBar , ( Handle) &scrollScheme,
+   wcWindow    , ( Handle) &windowScheme,
+   wcWidget    , ( Handle) &customScheme,
    endCtx
 };
 
@@ -1414,7 +1414,7 @@ remap_color( long clr, Bool toSystem)
    unsigned char sw = cp-> r;
    if ( toSystem && ( clr & clSysFlag)) {
       long c = clr;
-      int * scheme = ( int *) ctx_remap_def( clr & wcMask, ctx_wc2SCHEME, true, ( int) &customScheme);
+      Handle * scheme = ( Handle *) ctx_remap_def( clr & wcMask, ctx_wc2SCHEME, true, ( Handle) &customScheme);
       if (( clr = ( clr & ~wcMask)) > clMaxSysColor) clr = clMaxSysColor;
       if ( clr == clSet)   return 0xFFFFFF;
       if ( clr == clClear) return 0;

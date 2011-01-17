@@ -443,7 +443,7 @@ read_bmp_header( PImgLoadFileInstance fi)
 	   		outr(fd);
 		
 		if ( cx == 0 || cy == 0 )
-			outcm("Bad size");
+			outc("Bad size");
 		if ( cPlanes != 1 )
 			outcd("Number of bitmap planes is %d, must be 1", cPlanes);
 		if ( cBitCount != 1 && cBitCount != 4 && cBitCount != 8 && cBitCount != 24 )

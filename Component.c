@@ -900,10 +900,10 @@ XS( Component_get_components_FROMPERL)
 void Component_get_components          ( Handle self) { warn("Invalid call of Component::get_components"); }
 void Component_get_components_REDEFINED( Handle self) { warn("Invalid call of Component::get_components"); }
 
-long
+UV
 Component_add_notification( Handle self, char * name, SV * subroutine, Handle referer, int index)
 {
-   void * ret;
+   UV     ret;
    PList  list;
    int    nameLen = strlen( name);
    SV   * res;
@@ -925,11 +925,11 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
 
    if ( var-> eventIDs == nil) {
       var-> eventIDs = hash_create();
-      ret = nil;
+      ret = 0;
    } else
-      ret = hash_fetch( var-> eventIDs, name, nameLen);
+      ret = (UV) hash_fetch( var-> eventIDs, name, nameLen);
 
-   if ( ret == nil) {
+   if ( ret == 0) {
       hash_store( var-> eventIDs, name, nameLen, INT2PTR(void*, var-> eventIDCount + 1));
       if ( var-> events == nil)
          var-> events = ( List*) malloc( sizeof( List));
@@ -944,7 +944,7 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
    } else
       list = var-> events +  PTR2UV( ret) - 1;
 
-   ret = ( void *) newSVsv( subroutine);
+   ret   = (UV) newSVsv( subroutine);
    index = list_insert_at( list, referer, index);
    list_insert_at( list, ( Handle) ret, index + 1);
 
@@ -962,11 +962,11 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
       list_add( var-> refs, referer);
    NO_SELFREF:;
    }
-   return ( long) ret;
+   return ret;
 }
 
 void
-Component_remove_notification( Handle self, long id)
+Component_remove_notification( Handle self, UV id)
 {
    int i = var-> eventIDCount;
    PList  list = var-> events;
@@ -976,7 +976,7 @@ Component_remove_notification( Handle self, long id)
    while ( i--) {
       int j;
       for ( j = 0; j < list-> count; j += 2) {
-         if ((( long) list-> items[ j + 1]) != id) continue;
+         if ((( UV ) list-> items[ j + 1]) != id) continue;
          sv_free(( SV *) list-> items[ j + 1]);
          list_delete_at( list, j + 1);
          list_delete_at( list, j);

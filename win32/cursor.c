@@ -211,24 +211,24 @@ apc_pointer_set_pos( Handle self, int x, int y)
    return true;
 }
 
-int ctx_cr2IDC[] =
+Handle ctx_cr2IDC[] =
 {
-   crArrow,     ( int) IDC_ARROW,
-   crText,      ( int) IDC_IBEAM,
-   crWait,      ( int) IDC_WAIT,
-   crSize,      ( int) IDC_SIZEALL,
-   crMove,      ( int) IDC_SIZEALL,
-   crSizeWest,  ( int) IDC_SIZEWE,
-   crSizeEast,  ( int) IDC_SIZEWE,
-   crSizeWE,    ( int) IDC_SIZEWE,
-   crSizeNorth, ( int) IDC_SIZENS,
-   crSizeSouth, ( int) IDC_SIZENS,
-   crSizeNS,    ( int) IDC_SIZENS,
-   crSizeNW,    ( int) IDC_SIZENWSE,
-   crSizeSE,    ( int) IDC_SIZENWSE,
-   crSizeNE,    ( int) IDC_SIZENESW,
-   crSizeSW,    ( int) IDC_SIZENESW,
-   crInvalid,   ( int) IDC_NO,
+   crArrow,     ( Handle) IDC_ARROW,
+   crText,      ( Handle) IDC_IBEAM,
+   crWait,      ( Handle) IDC_WAIT,
+   crSize,      ( Handle) IDC_SIZEALL,
+   crMove,      ( Handle) IDC_SIZEALL,
+   crSizeWest,  ( Handle) IDC_SIZEWE,
+   crSizeEast,  ( Handle) IDC_SIZEWE,
+   crSizeWE,    ( Handle) IDC_SIZEWE,
+   crSizeNorth, ( Handle) IDC_SIZENS,
+   crSizeSouth, ( Handle) IDC_SIZENS,
+   crSizeNS,    ( Handle) IDC_SIZENS,
+   crSizeNW,    ( Handle) IDC_SIZENWSE,
+   crSizeSE,    ( Handle) IDC_SIZENWSE,
+   crSizeNE,    ( Handle) IDC_SIZENESW,
+   crSizeSW,    ( Handle) IDC_SIZENESW,
+   crInvalid,   ( Handle) IDC_NO,
    endCtx
 };
 
@@ -264,7 +264,7 @@ apc_pointer_set_shape( Handle self, int sysPtrId)
    }
    sys pointer = ( sysPtrId == crUser) ? user :
       LoadCursor( NULL, MAKEINTRESOURCE(
-      ctx_remap_def( sysPtrId, ctx_cr2IDC, true, ( int)IDC_ARROW)));
+      ctx_remap_def( sysPtrId, ctx_cr2IDC, true, ( Handle)IDC_ARROW)));
 
    if ( direct_pointer_change( self)) 
       SetCursor( sys pointer);

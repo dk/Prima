@@ -1370,8 +1370,8 @@ XS( boot_Prima)
 }
 
 typedef struct _RemapHashNode_ {
-   int key;
-   int val;
+   Handle key;
+   Handle val;
    struct _RemapHashNode_ *next;
 } RemapHashNode, *PRemapHashNode;
 
@@ -1379,8 +1379,8 @@ typedef struct _RemapHash_ {
    PRemapHashNode table[1];
 } RemapHash, *PRemapHash;
 
-int
-ctx_remap_def( int value, int *table, Bool direct, int default_value)
+Handle
+ctx_remap_def( Handle value, Handle *table, Bool direct, Handle default_value)
 {
    register PRemapHash hash;
    register PRemapHashNode node;
@@ -1388,7 +1388,7 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
    if ( table == nil) return default_value;
    if ( table[0] != endCtx) {
       /* Hash was not built before;  building */
-      int *tbl;
+      Handle *tbl;
       PRemapHash hash1, hash2;
       PRemapHashNode next;
       int sz = 0;
@@ -1406,7 +1406,7 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
       tbl = table;
       next = ( PRemapHashNode )(((char *)hash) + sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
       while ((*tbl) != endCtx) {
-              int key = (*tbl)&0x1F;
+              Handle key = (*tbl)&0x1F;
               if (hash->table[key]) {
                  /* Already exists something */
                  node = hash->table[key];
@@ -1437,7 +1437,7 @@ ctx_remap_def( int value, int *table, Bool direct, int default_value)
       tbl = table;
       next = ( PRemapHashNode)(((char *)hash) + sizeof(RemapHash) + sizeof( PRemapHashNode) * (32-1));
       while ((*tbl) != endCtx) {
-              int key = tbl[1]&0x1F;
+              Handle key = tbl[1]&0x1F;
               if (hash->table[key]) {
                  /* Already exists something */
                  node = hash->table[key];

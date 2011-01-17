@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 
-static int ctx_mb2MB[] =
+static Handle ctx_mb2MB[] =
 {
    mbError       , MB_ICONHAND,
    mbQuestion    , MB_ICONQUESTION,
@@ -155,7 +155,7 @@ apc_query_drives_map( const char *firstDrive, char *map, int len)
    return true;
 }
 
-static int ctx_dt2DRIVE[] =
+static Handle ctx_dt2DRIVE[] =
 {
    dtUnknown  , 0               ,
    dtNone     , 1               ,
@@ -450,8 +450,8 @@ static Bool
 prf_exists( HKEY hk, char * path, int * info)
 {
    HKEY hKey;
-   long cache;
-   if (( cache = ( long) hash_fetch( regnodeMan, path, strlen( path)))) {
+   Handle cache;
+   if (( cache = ( Handle) hash_fetch( regnodeMan, path, strlen( path)))) {
       if ( info) *info = cache;
       return cache & rgxExists;
    }

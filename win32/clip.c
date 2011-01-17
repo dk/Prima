@@ -92,7 +92,7 @@ apc_clipboard_clear( Handle self)
    return true;
 }
 
-static long cf2CF( long id)
+static Handle cf2CF( Handle id)
 {
    if ( id == cfText)   return CF_TEXT;
    if ( id == cfUTF8)   return CF_UNICODETEXT;
@@ -101,7 +101,7 @@ static long cf2CF( long id)
 }
 
 Bool
-apc_clipboard_has_format( Handle self, long id)
+apc_clipboard_has_format( Handle self, Handle id)
 {
    id = cf2CF( id);
    return IsClipboardFormatAvailable( id) || 
@@ -109,7 +109,7 @@ apc_clipboard_has_format( Handle self, long id)
 }
 
 Bool
-apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
+apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 {
    id = cf2CF( id);
    switch( id)
@@ -235,7 +235,7 @@ apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c)
 }
 
 Bool
-apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
+apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 {
    id = cf2CF( id);
    switch ( id)
@@ -337,7 +337,7 @@ apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c)
     return false;
 }
 
-long
+Handle
 apc_clipboard_register_format( Handle self, const char * format)
 {
    UINT r;
@@ -346,7 +346,7 @@ apc_clipboard_register_format( Handle self, const char * format)
 }
 
 Bool
-apc_clipboard_deregister_format( Handle self, long id)
+apc_clipboard_deregister_format( Handle self, Handle id)
 {
    // Windows doesn't have such functionality. Such a strange malfunction
    return true;

@@ -337,6 +337,8 @@ typedef unsigned long Handle;
 typedef unsigned int Handle;
 #elif PTRSIZE==SHORTSIZE
 typedef unsigned short Handle;
+#elif defined(HAS_LONG_LONG) && PTRSIZE==LONGLONGSIZE
+typedef unsigned long long Handle;
 #else
 #error "Cannot find adequate integer type"
 #endif
@@ -1381,8 +1383,8 @@ SvBOOL( SV *sv)
 
 #define endCtx          0x19740108
 
-extern int
-ctx_remap_def ( int value, int * table, Bool direct, int default_value);
+extern Handle
+ctx_remap_def ( Handle value, Handle * table, Bool direct, Handle default_value);
 
 #define ctx_remap_end(a,b,c)    ctx_remap_def((a),(b),(c), endCtx)
 #define ctx_remap(a,b,c)        ctx_remap_def((a),(b),(c), 0)
@@ -2312,22 +2314,22 @@ extern Bool
 apc_clipboard_clear( Handle self);
 
 extern Bool
-apc_clipboard_has_format( Handle self, long id);
+apc_clipboard_has_format( Handle self, Handle id);
 
 extern Bool
-apc_clipboard_get_data( Handle self, long id, PClipboardDataRec c);
+apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c);
 
 extern ApiHandle
 apc_clipboard_get_handle( Handle self);
 
 extern Bool
-apc_clipboard_set_data( Handle self, long id, PClipboardDataRec c);
+apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c);
 
-extern long
+extern Handle
 apc_clipboard_register_format( Handle self, const char *format);
 
 extern Bool
-apc_clipboard_deregister_format( Handle self, long id);
+apc_clipboard_deregister_format( Handle self, Handle id);
 
 /* Menus & popups */
 

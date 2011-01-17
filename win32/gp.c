@@ -362,7 +362,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY)
    return ok;
 }}
 
-static int ctx_R22R4[] = {
+static Handle ctx_R22R4[] = {
   R2_COPYPEN      ,  SRCCOPY          ,
   R2_XORPEN       ,  SRCINVERT        ,
   R2_MASKPEN      ,  SRCAND           ,
@@ -644,7 +644,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 }
 
 
-static int ctx_rop2R4[] = {
+static Handle ctx_rop2R4[] = {
   ropCopyPut      ,  SRCCOPY          ,
   ropXorPut       ,  SRCINVERT        ,
   ropAndPut       ,  SRCAND           ,
@@ -1049,12 +1049,12 @@ apc_gp_get_font_abc( Handle self, int first, int last, Bool unicode)
    return f1;
 }}
 
-static unsigned long bopomoto_ranges[] = {
+static Handle bopomoto_ranges[] = {
   0x3100 , 0x312f,  // 51 Bopomofo  
   0x31a0 , 0x31bf,  //    Extended Bopomofo 
 };
 
-static unsigned long cjk_ranges[] = {
+static Handle cjk_ranges[] = {
   0x4e00 , 0x9fff,  // 59 CJK Unified Ideographs
   0x2e80 , 0x2eff,  //    CJK Radicals Supplement
   0x2f00 , 0x2fdf,  //    Kangxi Radicals
@@ -1062,7 +1062,7 @@ static unsigned long cjk_ranges[] = {
   0x3400 , 0x4dbf,  //    CJK Unified Ideograph Extension A 
 };  
 
-static unsigned long unicode_subranges[ 84 * 2] = {
+static Handle unicode_subranges[ 84 * 2] = {
   0x0020 , 0x007e,  // 0  Basic Latin 
   0x00a0 , 0x00ff,  // 1  Latin-1 Supplement 
   0x0100 , 0x017f,  // 2  Latin Extended-A 
@@ -1114,7 +1114,7 @@ static unsigned long unicode_subranges[ 84 * 2] = {
   0x3000 , 0x303f,  // 48 Chinese, Japanese, and Korean (CJK) Symbols and Punctuation 
   0x3040 , 0x309f,  // 49 Hiragana 
   0x30a0 , 0x30ff,  // 50 Katakana 
-       2,  (unsigned long) &bopomoto_ranges,
+       2,  (Handle) &bopomoto_ranges,
   0x3130 , 0x318f,  // 52 Hangul Compatibility Jamo 
   0x3190 , 0x319f,  // 53 CJK Miscellaneous 
   0x3200 , 0x32ff,  // 54 Enclosed CJK Letters and Months 
@@ -1122,7 +1122,7 @@ static unsigned long unicode_subranges[ 84 * 2] = {
   0xac00 , 0xd7a3,  // 56 Hangul 
   0xd800 , 0xdfff,  // 57 Surrogates
        0 ,      0,  // 58 Reserved  
-       5,  (unsigned long) &cjk_ranges,
+       5,  (Handle) &cjk_ranges,
   0xe000 , 0xf8ff,  // 60 Private Use Area 
   0xf900 , 0xfaff,  // 61 CJK Compatibility Ideographs 
   0xfb00 , 0xfb4f,  // 62 Alphabetic Presentation Forms 
@@ -1149,7 +1149,7 @@ static unsigned long unicode_subranges[ 84 * 2] = {
   0xa000 , 0xa48c   // 83 YI, Yi Radicals 
 };
 
-static int ctx_CHARSET2index[] = {
+static Handle ctx_CHARSET2index[] = {
   // SHIFTJIS_CHARSET   ??
   HANGEUL_CHARSET     , 28, 
   // GB2312_CHARSET     ?? 
@@ -1217,7 +1217,7 @@ apc_gp_get_font_ranges( Handle self, int * count)
 
    for ( i = 0; i < 84; i++) 
       if ( f. fsUsb[ i / 32] & ( 1 << (i % 32))) {
-         unsigned long x = unicode_subranges[i * 2];
+         Handle x = unicode_subranges[i * 2];
          if ( x < 0x20)
             (*count) += x * 2;
          else
@@ -1230,9 +1230,9 @@ apc_gp_get_font_ranges( Handle self, int * count)
    *count = 0;
    for ( i = 0; i < 84; i++) 
       if ( f. fsUsb[ i / 32] & ( 1 << (i % 32))) {
-         unsigned long x = unicode_subranges[i * 2];
+         Handle x = unicode_subranges[i * 2];
          if ( x < 0x20) {
-            unsigned long * z = ( unsigned long *) unicode_subranges[i * 2 + 1];
+            Handle * z = ( Handle *) unicode_subranges[i * 2 + 1];
             while ( x--) {
                ret[ (*count)++] = *(z++);
                ret[ (*count)++] = *(z++);
@@ -1296,7 +1296,7 @@ apc_gp_get_fill_winding( Handle self)
    return GetPolyFillMode( sys ps) == WINDING;
 }
 
-static int ctx_le2PS_ENDCAP[] = {
+static Handle ctx_le2PS_ENDCAP[] = {
     leRound,          PS_ENDCAP_ROUND             ,
     leSquare,         PS_ENDCAP_SQUARE            ,
     leFlat,           PS_ENDCAP_FLAT              ,
@@ -1311,7 +1311,7 @@ apc_gp_get_line_end( Handle self)
    return ctx_remap_def( sys stylus. extPen. lineEnd, ctx_le2PS_ENDCAP, false, leRound);
 }
 
-static int ctx_lj2PS_JOIN[] = {
+static Handle ctx_lj2PS_JOIN[] = {
     ljRound,          PS_JOIN_ROUND             ,
     ljBevel,          PS_JOIN_BEVEL             ,
     ljMiter,          PS_JOIN_MITER             ,
@@ -1552,7 +1552,7 @@ apc_gp_get_resolution( Handle self)
    return sys res;
 }
 
-static int ctx_rop2R2[] = {
+static Handle ctx_rop2R2[] = {
    ropCopyPut       , R2_COPYPEN      ,
    ropXorPut        , R2_XORPEN       ,
    ropAndPut        , R2_MASKPEN      ,
@@ -1838,7 +1838,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
    } else {
       s-> brush. lb. lbStyle = BS_DIBPATTERNPT;
       s-> brush. lb. lbColor = DIB_RGB_COLORS;
-      s-> brush. lb. lbHatch = ( LONG) &bmiHatch;
+      s-> brush. lb. lbHatch = ( LONG_PTR) &bmiHatch;
       s-> brush. backColor   = GetBkColor( ps);
       memcpy( s-> brush. pattern, pattern, sizeof( FillPattern));
    }

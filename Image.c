@@ -1531,16 +1531,16 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
    return ret;
 }
 
-long
+UV
 Image_add_notification( Handle self, char * name, SV * subroutine, Handle referer, int index)
 {
-   long id = inherited add_notification( self, name, subroutine, referer, index);
+   UV id = inherited add_notification( self, name, subroutine, referer, index);
    if ( id != 0) Image_reset_notifications( self);
    return id;
 }
 
 void
-Image_remove_notification( Handle self, long id)
+Image_remove_notification( Handle self, UV id)
 {
    inherited remove_notification( self, id);
    Image_reset_notifications( self);

@@ -124,6 +124,7 @@ use vars @path_expand_ovvars = qw(
 use vars qw(
 	$CWD
 	$Win32
+	$Win64
 	$cygwin
 	$NeedX11
 	$OS2
@@ -1083,6 +1084,14 @@ int main() {
 MSCVER
 		print "$compiler_version\n";
 	}
+	
+	if ($Win32) {
+		print "Checking windows subsystem...";
+		$Win64 = have_define('_WIN64');
+		print $Win64 ? " 64" : " 32";
+		print " bits\n";
+	}
+
 }
 
 sub setup_X11
@@ -1452,6 +1461,7 @@ sub setup_codecs
 	# see if Prima::codecs:: is installed
 	my ( $prereq, $have_binary_prereq);
 	$prereq = 'win32' if $Win32 and not $cygwin;
+	$prereq = 'win64' if $Win64 and not $cygwin;
 	$prereq = 'os2'   if $OS2; 
 	if ( $prereq) {
 		print "Checking for Prima::codecs::$prereq... ";
