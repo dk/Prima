@@ -718,18 +718,12 @@ sub _bulletpaint
 		$canvas-> ellipse     ( $x + $fh / 2, $y + $$block[ tb::BLK_HEIGHT] / 2, $fh, $fh);
 }
 
-sub read
+sub read_paragraph
 {
-	my ( $self, $pod) = @_;
+	my ( $self, $line ) = @_;
 	my $r = $self-> {readState};
-	return unless $r;
 
-	my $odd = 0;
-	for ( split ( "(\n)", $pod)) {
-		next unless $odd = !$odd;
-	
-		$_ .= "\n";
-
+	for ( $line ) {
 		if ($r-> {cutting}) {
 			next unless /^=/;
 			$r-> {cutting} = 0;
@@ -805,6 +799,34 @@ sub read
 		else {
 			$self-> add($_, STYLE_TEXT, $r-> {indent});
 		}
+	}
+}
+
+sub read
+{
+	my ( $self, $pod) = @_;
+	my $r = $self-> {readState};
+	return unless $r;
+
+	my $odd = 0;
+	for ( split ( "(\n)", $pod)) {
+		next unless $odd = !$odd;
+
+		if (defined $r-> {command_buffer}) {
+			if ( /^$/) {
+				my $cb = $r-> {command_buffer};
+				undef $r-> {command_buffer};
+				$self-> read_paragraph("$cb\n");
+			} else {
+				$r-> {command_buffer} .= " $_";
+				next;
+			}
+		} elsif ( /^=/) {
+			$r-> {command_buffer} = $_;
+			next;
+		}
+	
+		$self-> read_paragraph("$_\n");
 	}
 }
 
