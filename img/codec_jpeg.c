@@ -689,10 +689,7 @@ apc_img_codec_jpeg( void )
    vmt. open_save     = open_save;
    vmt. save          = save; 
    vmt. close_save    = close_save;
-//#ifndef _WIN64   
-   /* XXX some setjmp trouble, investigate later */
    apc_img_register( &vmt, nil);
-//#endif
 }
 
 #ifdef __cplusplus
