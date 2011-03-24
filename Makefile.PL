@@ -1175,6 +1175,7 @@ sub setup_perl
 		print "Checking for perl library... ";
 		my $libperl = $Config{ libperl};
 		$libperl =~ s/\.dll$//i if $cygwin;
+		$libperl =~ s/\.lib$// if $Win32 and $COMPILER eq 'gcc' and not $cygwin;
 		my $libpath = find_lib( $libperl, '', "", qd( "$Config{ archlib}/CORE"));
 		unless ( defined $libpath) {
 			print "no\n";
