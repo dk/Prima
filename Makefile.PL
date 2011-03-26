@@ -184,6 +184,14 @@ sub qd
 	return $path_str;
 }
 
+sub qtilde
+{
+	my $path = shift;
+	return $path unless $path =~ s/^~//;
+	die "** path '~$path' begins with '~' but no HOME is set\n" unless exists $ENV{HOME};
+	return $ENV{HOME} . $path;
+}
+
 sub quoted_split
 {
 	my @neww = ();
@@ -879,7 +887,7 @@ sub setup_variables
 	setvar( 'INCPATH', (
 		"include",
 		qd( "include/generic"),
-		$Config{archlib} . qd( "/CORE"),
+		qtilde($Config{archlib}) . qd( "/CORE"),
 		( map { s/-I//; $_ } split ' ', $INC)
 	));
 	my @libpaths = quoted_split( $Config{ libpth});
@@ -1181,7 +1189,7 @@ sub setup_perl
 		my $libperl = $Config{ libperl};
 		$libperl =~ s/\.dll$//i if $cygwin;
 		$libperl =~ s/\.lib$// if $Win32 and $COMPILER eq 'gcc' and not $cygwin;
-		my $libpath = find_lib( $libperl, '', "", qd( "$Config{ archlib}/CORE"));
+		my $libpath = find_lib( $libperl, '', "", qtilde(qd( "$Config{ archlib}/CORE")));
 		unless ( defined $libpath) {
 			print "no\n";
 			die "Cannot find perl library $see_makefile_log\n" 
