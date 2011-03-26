@@ -88,12 +88,12 @@ Object_create( char *className, HV * profile)
 
       OPEN_G_EVAL;
       PERL_CALL_METHOD( "init", G_VOID|G_DISCARD|G_EVAL);
-      if ( SvTRUE( GvSV( errgv))) {
+      if ( SvTRUE( GvSV( PL_errgv))) {
          CLOSE_G_EVAL;
          OPEN_G_EVAL;
          Object_destroy( self);
          CLOSE_G_EVAL;
-         croak( SvPV_nolen( GvSV( errgv)));
+         croak( SvPV_nolen( GvSV( PL_errgv)));
       }
       CLOSE_G_EVAL;
       SPAGAIN;

@@ -79,7 +79,7 @@ apc_beep_tone( int freq, int duration)
          Sleep( duration);
          return true;
       }   
-#ifndef __GNUC__
+#if defined(_MSC_VER) && defined (_M_IX86)
       // Nastiest hack ever - Beep() doesn't work under W9X.
       __asm {
         in      al,0x61                  ;Stop sound, if any

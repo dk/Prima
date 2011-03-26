@@ -251,7 +251,7 @@ clean_perl_call_method( char* methname, I32 flags)
 
    if ( !( flags & G_EVAL)) { OPEN_G_EVAL; }
    ret = perl_call_method( methname, flags | G_EVAL);
-   if ( SvTRUE( GvSV( errgv))) {
+   if ( SvTRUE( GvSV( PL_errgv))) {
       PUB_CHECK;
       if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR) {
          dSP;
@@ -260,7 +260,7 @@ clean_perl_call_method( char* methname, I32 flags)
       }
       if ( flags & G_EVAL) return ret;
       CLOSE_G_EVAL;
-      croak( SvPV_nolen( GvSV( errgv)));
+      croak( SvPV_nolen( GvSV( PL_errgv)));
    }
 
    if ( !( flags & G_EVAL)) { CLOSE_G_EVAL; }
@@ -276,7 +276,7 @@ clean_perl_call_pv( char* subname, I32 flags)
 
    if ( !( flags & G_EVAL)) { OPEN_G_EVAL; }
    ret = perl_call_pv( subname, flags | G_EVAL);
-   if ( SvTRUE( GvSV( errgv))) {
+   if ( SvTRUE( GvSV( PL_errgv))) {
       PUB_CHECK;
       if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR) {
          dSP;
@@ -285,7 +285,7 @@ clean_perl_call_pv( char* subname, I32 flags)
       }
       if ( flags & G_EVAL) return ret;
       CLOSE_G_EVAL;
-      croak( SvPV_nolen( GvSV( errgv)));
+      croak( SvPV_nolen( GvSV( PL_errgv)));
    }
 
    if ( !( flags & G_EVAL)) { CLOSE_G_EVAL; }
@@ -398,7 +398,7 @@ XS( create_from_Perl)
       {
          XPUSHs( sv_mortalcopy((( PAnyObject) _c_apricot_res_)-> mate));
          --SvREFCNT( SvRV((( PAnyObject) _c_apricot_res_)-> mate));
-      } else XPUSHs( &sv_undef);
+      } else XPUSHs( &PL_sv_undef);
       /* push_hv( ax, sp, items, mark, 1, hv); */
       sv_free(( SV *) hv);
    }
@@ -882,7 +882,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
       if (  c_decl && !query_method          ( self, subName, 0))
          return toReturn;
       if ( !c_decl && !sv_query_method(( SV *) self, subName, 0))
-         return &sv_undef;
+         return &PL_sv_undef;
    }
 
    if ( format[ 0] == '<')
@@ -977,12 +977,12 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
             perl_call_sv(( SV *) subName, G_SCALAR|G_EVAL) :
             perl_call_method( subName, G_SCALAR|G_EVAL);
          SPAGAIN;
-         if ( SvTRUE( GvSV( errgv)))
+         if ( SvTRUE( GvSV( PL_errgv)))
          {
             (void)POPs;
             PUB_CHECK;
             CLOSE_G_EVAL;
-            croak( SvPV_nolen( GvSV( errgv)));    /* propagate */
+            croak( SvPV_nolen( GvSV( PL_errgv)));    /* propagate */
          }
          CLOSE_G_EVAL;
 #else
@@ -1009,11 +1009,11 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
          OPEN_G_EVAL;
          if ( coderef) perl_call_sv(( SV *) subName, G_DISCARD|G_EVAL);
             else perl_call_method( subName, G_DISCARD|G_EVAL);
-         if ( SvTRUE( GvSV( errgv)))
+         if ( SvTRUE( GvSV( PL_errgv)))
          {
             PUB_CHECK;
             CLOSE_G_EVAL;
-            croak( SvPV_nolen( GvSV( errgv)));    /* propagate */
+            croak( SvPV_nolen( GvSV( PL_errgv)));    /* propagate */
          }
          CLOSE_G_EVAL;
 #else
@@ -1190,7 +1190,7 @@ perl_error(void)
 {
     char * error = apc_last_error();
     if ( error == NULL) error = "unknown system error";
-    sv_setpv( GvSV( errgv), error);
+    sv_setpv( GvSV( PL_errgv), error);
 }
 
 Bool appDead = false;
@@ -1249,7 +1249,7 @@ XS( prima_cleanup)
 #endif
    prima_init_ok = 0;
 
-   ST(0) = &sv_yes;
+   ST(0) = &PL_sv_yes;
    XSRETURN(1);
 }
 
@@ -1313,7 +1313,7 @@ XS( boot_Prima)
 #define TYPECHECK(s1,s2) \
   if (sizeof(s1) != (s2)) { \
       printf("Error: type %s is %d bytes long (expected to be %d)", #s1, (int)sizeof(s1), s2); \
-      ST(0) = &sv_no; \
+      ST(0) = &PL_sv_no; \
       XSRETURN(1); \
   }
    TYPECHECK( uint8_t,  1);
@@ -1365,7 +1365,7 @@ XS( boot_Prima)
    register_Timer_Class();
    register_Printer_Class();
 
-   ST(0) = &sv_yes;
+   ST(0) = &PL_sv_yes;
    XSRETURN(1);
 }
 
@@ -1722,7 +1722,7 @@ hash_destroy( PHash h, Bool killAll)
    hv_iterinit( h);
    while (( he = hv_iternext( h)) != nil) {
       if ( killAll) free( HeVAL( he));
-      HeVAL( he) = &sv_undef;
+      HeVAL( he) = &PL_sv_undef;
    }
    sv_free(( SV *) h);
 }
@@ -1754,7 +1754,7 @@ hash_delete( PHash h, const void *key, int keyLen, Bool kill)
    ksv_check;
    if ( !he) return nil;
    val = HeVAL( he);
-   HeVAL( he) = &sv_undef;
+   HeVAL( he) = &PL_sv_undef;
    (void) hv_delete_ent( h, ksv, G_DISCARD, 0);
    if ( kill) {
       free( val);
@@ -1769,10 +1769,10 @@ hash_store( PHash h, const void *key, int keyLen, void *val)
    HE *he;
    ksv_check;
    if ( he) {
-      HeVAL( he) = &sv_undef;
+      HeVAL( he) = &PL_sv_undef;
       (void) hv_delete_ent( h, ksv, G_DISCARD, 0);
    }
-   he = hv_store_ent( h, ksv, &sv_undef, 0);
+   he = hv_store_ent( h, ksv, &PL_sv_undef, 0);
    HeVAL( he) = ( SV *) val;
    return true;
 }
@@ -1871,7 +1871,7 @@ output_mallocs( void)
    while (( he = hv_iternext( hash)) != nil) {
       DOLBUG( "%s\n", (char *)HeVAL( he));
       free( HeVAL( he));
-      HeVAL( he) = &sv_undef;
+      HeVAL( he) = &PL_sv_undef;
    }
    DOLBUG( "=========================== Report done ===========================\n");
    sv_free(( SV *) hash);

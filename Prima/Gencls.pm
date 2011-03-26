@@ -1180,7 +1180,7 @@ sub type2sv
 	if ( ref $type) {
 		return "sv_$type->[PROPS]->{name}2HV(&($name))";
 	} elsif ( $type eq 'Handle') {
-		return "( $name ? (( $incInst)$name)-> $hMate : &sv_undef)";
+		return "( $name ? (( $incInst)$name)-> $hMate : &PL_sv_undef)";
 	} elsif ( $type eq 'SV*') {
 		return $name;
 	} else {
@@ -1868,7 +1868,7 @@ LABEL
 				print HEADER "\t\tif ( $incRes && (( $incInst) $incRes)-> $hMate && ((( $incInst) $incRes)-> $hMate != nilSV))\n";
 				print HEADER "\t\t{\n";
 				print HEADER "\t\t\tXPUSHs( sv_mortalcopy((( $incInst) $incRes)-> $hMate));\n";
-				print HEADER "\t\t} else XPUSHs( &sv_undef);\n";
+				print HEADER "\t\t} else XPUSHs( &PL_sv_undef);\n";
 			} elsif ($resSub eq "SV*") {
 				print HEADER "\t\tXPUSHs( sv_2mortal( $incRes));\n";
 			} else {

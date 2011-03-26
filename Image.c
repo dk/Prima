@@ -667,22 +667,22 @@ XS( Image_load_FROMPERL)
             if (( Handle) o != self)
               --SvREFCNT( SvRV( o-> mate));
          } else {
-            XPUSHs( &sv_undef);    
+            XPUSHs( &PL_sv_undef);    
             err = true;
          }   
       }
       plist_destroy( ret);
    } else {
-      XPUSHs( &sv_undef);   
+      XPUSHs( &PL_sv_undef);   
       err = true;
    }   
 
    /* This code breaks exception propagation chain
       since it uses $@ for its own needs  */
    if ( err)
-      sv_setpv( GvSV( errgv), error);
+      sv_setpv( GvSV( PL_errgv), error);
    else
-      sv_setsv( GvSV( errgv), nilSV);
+      sv_setsv( GvSV( PL_errgv), nilSV);
 
    PUTBACK;
    return;
@@ -762,9 +762,9 @@ XS( Image_save_FROMPERL)
    /* This code breaks exception propagation chain
       since it uses $@ for its own needs  */
    if ( ret <= 0)
-      sv_setpv( GvSV( errgv), error);
+      sv_setpv( GvSV( PL_errgv), error);
    else
-      sv_setsv( GvSV( errgv), nilSV);
+      sv_setsv( GvSV( PL_errgv), nilSV);
    PUTBACK;
    return;
 }   

@@ -734,7 +734,7 @@ sub setup_variables
 			name => "EMX",
 		},
 		msvc => {
-			warnflags => "-W3 -WX",
+			warnflags => "-W3",
 			cflags => "-nologo",
 			coutoflag => '-Fo',
 			coutexeflag => '-Fe',
@@ -980,6 +980,11 @@ sub setup_variables
 		}
 		if ( $compiler_version >= 1600 ) {
 			delete $DEFINES{_USE_32BIT_TIME_T};
+			$DEFINES{_CRT_SECURE_NO_WARNINGS} = 1;
+			$CFLAGS .= " -D_CRT_SECURE_NO_WARNINGS";
+			$CFLAGS .= " /wd4244"; # warning C4244: '=' : conversion from 'Bool' to 'char', possible loss of data
+			$CFLAGS .= " /wd4267"; # warning C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+			$CFLAGS .= " /wd4018"; # warning C4018: '<' : signed/unsigned mismatch";
 		}
 	}
 
@@ -1895,6 +1900,13 @@ sub manname
 	return (( $section == 3 ) ? $INSTALL_MAN3 : $INSTALL_MAN1) . $dir_sep . $name;
 }
 
+sub _quote
+{
+	my $name = shift;
+	$name =~ s/'/\\'/g;
+	return \ "'$name'";
+}
+
 sub create_config_pm
 {
 	my $_cwd = cwd;
@@ -1972,39 +1984,39 @@ use vars qw(%Config %Config_inst);
 	platform              => '$PLATFORM',
 	compiler              => '$COMPILER',
 	incpaths              => [ $ipp ],
-	platform_path         => '$cwd${ifs}$PLATFORM',
+	platform_path         => ${_quote("$cwd${ifs}$PLATFORM")},
 	gencls                => '\\$SHQUOTE$perl\\$SHQUOTE $cwd${ifs}utils${ifs}gencls.pl',
 	tmlink                => '\\$SHQUOTE$perl\\$SHQUOTE $cwd${ifs}utils${ifs}tmlink.pl',
 	scriptext             => '$SCRIPT_EXT',
 	genclsoptions         => '--tml --h --inc',
-	cc                    => '$CC',
-	cflags                => '-c $C_FLAGS $CCFLAGS',
-	cdebugflags           => '$cc_specs{$COMPILER}->{cdebugflags}',
-	cincflag              => '$CINCPATHFLAG',
-	cobjflag              => '$COUTOFLAG',
-	cdefflag              => '$CDEFFLAG',
+	cc                    => ${_quote($CC)},
+	cflags                => ${_quote("-c $C_FLAGS $CCFLAGS")},
+	cdebugflags           => ${_quote($cc_specs{$COMPILER}->{cdebugflags})},
+	cincflag              => ${_quote($CINCPATHFLAG)},
+	cobjflag              => ${_quote($COUTOFLAG)},
+	cdefflag              => ${_quote($CDEFFLAG)},
 	cdefs                 => [$cdefs],
-	objext                => '$OBJ_EXT',
-	lib                   => '$LIB',
-	liboutflag            => '$LIBOFLAG',
-	libext                => '$LIB_EXT',
-	libprefix             => '$LIB_PREFIX',
-	libname               => '$cwd${ifs}$pl',
-	libs                  => '$cwd${ifs}$pl',
-	dlname                => '$cwd${ifs}$pt',
-	dlext                 => '$DL_EXT',
-	ld                    => '$LD',
-	ldflags               => '$LD_FLAGS',
-	lddefflag             => '$lddef',
-	lddebugflags          => '$cc_specs{$COMPILER}->{lddebugflags}',
-	ldoutflag             => '$LDOUTFLAG',
-	ldlibflag             => '$LDLIBFLAG',
-	ldlibpathflag         => '$LDLIBPATHFLAG',
+	objext                => ${_quote($OBJ_EXT)},
+	lib                   => ${_quote($LIB)},
+	liboutflag            => ${_quote($LIBOFLAG)},
+	libext                => ${_quote($LIB_EXT)},
+	libprefix             => ${_quote($LIB_PREFIX)},
+	libname               => ${_quote("$cwd${ifs}$pl")},
+	libs                  => ${_quote("$cwd${ifs}$pl")},
+	dlname                => ${_quote("$cwd${ifs}$pt")},
+	dlext                 => ${_quote($DL_EXT)},
+	ld                    => ${_quote($LD)},
+	ldflags               => ${_quote($LD_FLAGS)},
+	lddefflag             => ${_quote($lddef)},
+	lddebugflags          => ${_quote($cc_specs{$COMPILER}->{lddebugflags})},
+	ldoutflag             => ${_quote($LDOUTFLAG)},
+	ldlibflag             => ${_quote($LDLIBFLAG)},
+	ldlibpathflag         => ${_quote($LDLIBPATHFLAG)},
 	ldpaths               => [$libpath],
 	ldlibs                => [$ldlibs],
-	ldlibext              =>'$cc_specs{$COMPILER}->{ldlibext}',
-	inline                => '$DEFINES{__INLINE__}',
-	perl                  => '$perl',
+	ldlibext              => ${_quote($cc_specs{$COMPILER}->{ldlibext})},
+	inline                => ${_quote($DEFINES{__INLINE__})},
+	perl                  => ${_quote($perl)},
 	dl_load_flags         => $DL_LOAD_FLAGS,
 
 	libs                  => '$libs',

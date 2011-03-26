@@ -448,7 +448,7 @@ new_av(  PMenuItemReg m, int level)
 	    SV * sv;
             int shift = ( m-> flags. checked ? 1 : 0) + ( m-> flags. disabled ? 1 : 0);
 	    if ( shift > 0) { /* has flags */
-	       int len = strlen( m-> variable);
+	       int len = (int) strlen( m-> variable);
                char * name = allocs( len + shift);
 	       if ( name) {
 		  int slen = len + shift;

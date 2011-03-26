@@ -95,7 +95,7 @@ XS(Utils_getdir_FROMPERL) {
          }
          plist_destroy( dirlist);
       } else {
-         XPUSHs( &sv_undef);
+         XPUSHs( &PL_sv_undef);
       }
    }
    PUTBACK;

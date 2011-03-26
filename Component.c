@@ -618,7 +618,7 @@ XS( Component_event_hook_FROMPERL)
       if ( eventHook)
          XPUSHs( sv_2mortal( newSVsv(( SV *) eventHook)));
       else
-         XPUSHs( &sv_undef);
+         XPUSHs( &PL_sv_undef);
       PUTBACK;
       return;
    }
@@ -688,11 +688,11 @@ XS( Component_notify_FROMPERL)
       OPEN_G_EVAL;
       perl_call_sv( eventHook, G_SCALAR | G_EVAL);
       SPAGAIN;
-      if ( SvTRUE( GvSV( errgv))) {
+      if ( SvTRUE( GvSV( PL_errgv))) {
          (void)POPs;
          PUB_CHECK;
          CLOSE_G_EVAL;
-         croak( SvPV_nolen( GvSV( errgv)));
+         croak( SvPV_nolen( GvSV( PL_errgv)));
       } 
       CLOSE_G_EVAL;
       SPAGAIN;
@@ -806,13 +806,13 @@ XS( Component_notify_FROMPERL)
       PUTBACK;
       OPEN_G_EVAL;
       perl_call_sv(( SV*) sequence[ i + 1], G_DISCARD | G_EVAL);
-      if ( SvTRUE( GvSV( errgv))) {
+      if ( SvTRUE( GvSV( PL_errgv))) {
          PUB_CHECK;
          CLOSE_G_EVAL;
          if ( privMethod) sv_free( privMethod);
          free( argsv);
          free( sequence);
-         croak( SvPV_nolen( GvSV( errgv)));
+         croak( SvPV_nolen( GvSV( PL_errgv)));
       } 
       CLOSE_G_EVAL;
       SPAGAIN;

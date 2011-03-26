@@ -339,6 +339,8 @@ typedef unsigned int Handle;
 typedef unsigned short Handle;
 #elif defined(HAS_LONG_LONG) && PTRSIZE==LONGLONGSIZE
 typedef unsigned long long Handle;
+#elif defined(HAS_QUAD) && PTRSIZE==8
+typedef Uquad_t Handle;
 #else
 #error "Cannot find adequate integer type"
 #endif
@@ -419,7 +421,7 @@ typedef struct { double r,  ph; } TrigDComplex;
 #define nil       Null(void*)
 #endif
 #define nilHandle Null(Handle)
-#define nilSV     &sv_undef
+#define nilSV     &PL_sv_undef
 #define true TRUE
 #define false FALSE
 
@@ -567,7 +569,7 @@ XS(prima_autoload_##package##_constant) \
                / sizeof( ConstTable_##package); i++) \
          hash_store( table, \
                      Prima_Autoload_##package##_constants[i]. name, \
-                     strlen( Prima_Autoload_##package##_constants[i]. name), \
+                     (I32) strlen( Prima_Autoload_##package##_constants[i]. name), \
                      &Prima_Autoload_##package##_constants[i]. value); \
    } \
  \
@@ -575,7 +577,7 @@ XS(prima_autoload_##package##_constant) \
    name = SvPV_nolen( ST( 0)); \
    SPAGAIN; \
    SP -= items; \
-   r = (type *)hash_fetch( table, name, strlen( name)); \
+   r = (type *)hash_fetch( table, name, (I32) strlen( name)); \
    if ( !r) croak( "invalid value: " #package "::%s", name); \
    XPUSHs( sv_2mortal( newSV##suffix((conversion)*r))); \
    PUTBACK; \
@@ -1320,17 +1322,17 @@ SvBOOL( SV *sv)
 }
 #endif
 
-#define pexist( key) hv_exists( profile, # key, strlen( #key))
-#define pdelete( key) (void) hv_delete( profile, # key, strlen( #key), G_DISCARD)
+#define pexist( key) hv_exists( profile, # key, (I32) strlen( #key))
+#define pdelete( key) (void) hv_delete( profile, # key, (I32) strlen( #key), G_DISCARD)
 #define dPROFILE  SV ** temporary_prf_Sv
-#define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ), &sv_undef : *temporary_prf_Sv)
+#define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ), &PL_sv_undef : *temporary_prf_Sv)
 #define pget_i( key)  ( pget_sv( key), SvIV( *temporary_prf_Sv))
 #define pget_f( key)  ( pget_sv( key), SvNV( *temporary_prf_Sv))
 #define pget_c( key)  ( pget_sv( key), SvPV_nolen( *temporary_prf_Sv))
 #define pget_H( key)  gimme_the_mate( pget_sv( key))
 #define pget_B( key)  ( SvTRUE( pget_sv( key)))
 
-#define pset_sv_noinc( key, value) (void)hv_store( profile, # key, strlen( # key), value, 0)
+#define pset_sv_noinc( key, value) (void)hv_store( profile, # key, (I32) strlen( # key), value, 0)
 #define pset_sv( key, value) pset_sv_noinc( key, newSVsv( value))
 #define pset_i( key, value)  pset_sv_noinc( key, newSViv( value))
 #define pset_f( key, value)  pset_sv_noinc( key, newSVnv( value))
