@@ -6,7 +6,7 @@ Prima::tutorial - introductory tutorial
 
 =head1 DESCRIPTION
 
-Programming graphic interfaces is often considered somewhat boring, and not
+Programming graphic interfaces is often considered a somewhat boring business, and not
 without a cause. It is a small pride in knowing that your buttons and
 scrollbars work exactly as millions of others buttons and scrollbars do, so
 whichever GUI toolkit is chosen, it is usually regarded as a tool of small
