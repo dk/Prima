@@ -103,8 +103,7 @@ files.
 To load and save images, Prima employs graphic libraries. Such as, to load GIF
 files, libungif library is used, etc. Makefile.PL finds available libraries and
 links Prima against these. It is possible to compile Prima without any, but this
-is not really useful. If Makefile.PL wouldn't find any of the supported graphic
-libraries, it would abort unless WANTNOCODECS=1 parameter was supplied to it.
+is not really useful. 
 
 On every supported platform Prima can make use of the following graphic
 libraries:
@@ -116,14 +115,10 @@ libraries:
    libpng   - PNG images
    libtiff  - tiff images
 
-Alternatively, on win32 and os2 there is a binary PRIGPARH library distributed
-together with the Prima binary distributions, which supports its own set of
-graphic files. The PRIGPARH is a modified GBM graphic library, which ( GBM ) is
-no longer supported, but nevertheless it is useful for Prima. The use of
-PRIGPARH is preferred on win32 and os2, and Makefile.PL would favor it before
-the other graphic libraries.  To compile and run Prima with PRIGPARH, library (
-.lib or .a) and runtime ( .dll ) files must be present in the LIBPATH and PATH,
-correspondingly.
+Strawberry perl and Cygwin come with most of them, so on these installations Prima just
+compiles without any throuble. For other perl builds, use one of C<Prima::codecs::> 
+modules that contains the needed include and lib files. If you're installing Prima
+through CPAN, that gets done authomatically.
 
 =head2 img/codec_XXX.c compile error
 
@@ -166,7 +161,7 @@ message would something like
 
 If Prima library or one of the libraries it depends on cannot be found, perl
 Dynaloader would complain. On win32 and os2 this usually happen when
-prigraph.dll ( and/or priz.dll on os2 ) are not found. If this is the case, try
+some dll files Prima needs are not found. If this is the case, try
 to copy these files into your PATH, for example in C:/WINNT .
 
 =head2 Prima doesn't get installed using ppm (ActiveState)
@@ -189,7 +184,7 @@ parameter or include C<use Prima::noX11> statement in your program.
 
 =head2 X11: my fonts are bad!
 
-Check whether you've Xft and fontconfig installed. Prima benefits greatly from
+Check whether you have Xft and fontconfig installed. Prima benefits greatly from
 having been compiled with Xft/fontconfig. Read more in L<Prima::X11> .
 
 =head2 Where are the docs installed?
@@ -208,7 +203,7 @@ of latex and dvips to produce one of tex, dvi, ps, or pdf targets.
 
 =head2 I've found a bug!
 
-Send the bug report into the mailing list.
+Send the bug report into the mailing list or to CPAN RT.
 
 =head1 PROGRAMMING
 
@@ -221,6 +216,8 @@ podview L<Prima::VB::VBLoader>
    use Prima::noX11; # this prevents Prima from connecting to X11 display
    use Prima;
    my $i = Prima::Image-> load( ... )
+
+Note that drawing on images will be severly limited - only pixel and put_image methods would work.
 
 =head2 How would I change several properties with a single call?
 
@@ -351,14 +348,14 @@ layer must be selected ( see L<open> ).
 
 Prima can input and output UTF8 text if the underlying system capabilities
 support that ( check Prima::Application::get_system_value, C<sv::CanUTF8_Input>
-and C<sv::CanUTF8_Output> ).  Displaying UTF8 text is transparent, because Perl
+and C<sv::CanUTF8_Output> ).  Displaying UTF8 text is unproblematic, because Perl
 scalars can be unambiguously told whether the text they contain is in UTF8 or
 not. The text that comes from the user input
 - keyboard and clipboard - can be treated and reported to Prima
 either as UTF8 or plain text, depending on
 C<Prima::Application::wantUnicodeInput> property.
 
-The keyboard input is easy, because a character key event comes with the character
+The keyboard input is also easy, because a character key event comes with the character
 code, not the character itself, and conversion between these is done via
 standard perl's C<chr> and C<ord>.  The clipboard input is more complicated,
 because the clipboard may contain both UTF8 and plain text data at once, and it
@@ -374,7 +371,7 @@ L<Prima::Clipboard/Unicode>.
 
 Prima doesn't work if called from more than one thread, since Perl scalars
 cannot be shared between threads automatically, but only if explicitly told,
-bu using L<thread::shared>. Prima does work in multithread environments though,
+by using L<thread::shared>. Prima does work in multithread environments though,
 but only given it runs within a dedicated thread. It is important not to
 call Prima methods from any other thread, because scalars that may be created
 inside these calls will be unavailable to the Prima core, which would result
