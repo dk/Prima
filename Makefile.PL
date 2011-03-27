@@ -928,7 +928,7 @@ sub setup_variables
 	open F, 'Prima.pm' or die "Cannot open Prima.pm:$!\n";
 	my ($ver1, $ver2);
 	while (<F>) {
-		next unless m/\$VERSION[^\.\d]*(\d+)\.(\d+)/;
+		next unless m/\$VERSION[^\.\d]*(\d+)\.([_\d]+)/;
 		$ver1 = $1, $ver2 = $2, last;
 	}
 	close F;
