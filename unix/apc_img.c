@@ -1018,7 +1018,7 @@ cache_remap_1( Image*img, ImageCache* cache)
    int sz = img-> h * cache-> image-> bytes_per_line_alias;
    Byte * p = cache-> image-> data_alias;
    if ( guts. mappingPlace[0] == guts. mappingPlace[1]) 
-      memset( p, sz, (guts. mappingPlace[0] == 0) ? 0 : 0xff);
+      memset( p, (guts. mappingPlace[0] == 0) ? 0 : 0xff, sz);
    else if ( guts. mappingPlace[0] != 0)  
       while ( sz--) {
          *p = ~(*p);
