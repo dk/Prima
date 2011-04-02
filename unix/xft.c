@@ -82,6 +82,17 @@
 #include <iconv.h>
 #endif
 
+/* fontconfig version < 2.2.0 */
+#ifndef FC_WEIGHT_NORMAL
+#define FC_WEIGHT_NORMAL 80
+#endif
+#ifndef FC_WEIGHT_THIN
+#define FC_WEIGHT_THIN 0
+#endif
+#ifndef FC_WIDTH
+#define FC_WIDTH "width"
+#endif
+
 typedef struct {
    char      *name;
    FcCharSet *fcs;
