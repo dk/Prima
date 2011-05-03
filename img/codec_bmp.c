@@ -65,8 +65,8 @@ static char * bmpfeat[] = {
 };
 
 static char * loadOutput[] = {
-   	"XHotSpot",
-   	"YHotSpot",
+   	"HotSpotX",
+   	"HotSpotY",
    	"OS2",
    	"Compression",
    	"ImportantColors",
@@ -783,8 +783,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	   	char * c;
 		if ( !l-> windows)
 	   		pset_i( OS2, 1);
-		pset_i( XHotSpot, l-> xHotspot);
-		pset_i( YHotSpot, l-> yHotspot);
+		pset_i( HotSpotX, l-> xHotspot);
+		pset_i( HotSpotY, l-> yHotspot);
 		pset_i( BitDepth, l-> bpp);
 
 		c = ( l-> ulCompression < 0 || l-> ulCompression > BCA_MAX) ?
@@ -1035,8 +1035,8 @@ save_defaults( PImgCodec c)
 {
 	HV * profile = newHV();
 	pset_i( OS2, 0);
-	pset_i( XHotSpot, 0);
-	pset_i( YHotSpot, 0);
+	pset_i( HotSpotX, 0);
+	pset_i( HotSpotY, 0);
 	pset_i( ImportantColors, 0);
 	pset_i( XResolution, 0);
 	pset_i( YResolution, 0);
@@ -1068,10 +1068,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 
 	if ( pexist( OS2))
 		os2 = pget_B( OS2);
-	if ( pexist( XHotSpot))
-		xHotspot = pget_i( XHotSpot);
-	if ( pexist( YHotSpot))
-		yHotspot = pget_i( YHotSpot);
+	if ( pexist( HotSpotX))
+		xHotspot = pget_i( HotSpotX);
+	if ( pexist( HotSpotY))
+		yHotspot = pget_i( HotSpotY);
 	if ( pexist( ImportantColors))
 		cclrImportant = pget_i( ImportantColors);
 	if ( pexist( XResolution))
@@ -1143,8 +1143,6 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	} else {
 		/* Windows */
 		word usType         = BFT_BMAP;
-		word xHotspot       = 0;
-		word yHotspot       = 0;
 		dword cbFix         = (dword) 40;
 		dword cx            = (dword) i->w;
 		dword cy            = (dword) i->h;
