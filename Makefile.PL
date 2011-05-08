@@ -2266,10 +2266,10 @@ FOOTER
 		return if $_ eq '.' || 
 			($_ eq 'Makefile' && $File::Find::dir eq $cwd) || 
 			$_ eq 'makefile.log' || 
-			$_ eq '.packlist';
+			m/^\./;
 		return if /\.(pdb|ncb|opt|dsp|dsw)$/i; # M$VC
 		my $f = "$File::Find::dir/$_";
-		return if $f =~ /include.generic|CVS/;
+		return if $f =~ /include.generic|CVS|\.git/;
 		if ($type eq 'bin') {
 			return if $f =~ /\.(c|cls|h)$/i;
 			return if $f =~ /$cwd.(img|include|os2|win32|unix|Makefile.PL)/i;
