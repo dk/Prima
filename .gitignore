@@ -25,6 +25,7 @@ auto/Prima/Prima.dll
 img/bc_color.o
 img/bc_const.o
 img/bc_extra.o
+img/codec_X11.o
 img/codec_Xpm.o
 img/codec_bmp.o
 img/codec_jpeg.o
@@ -111,3 +112,13 @@ win32/gp.o
 win32/misc.o
 win32/stock.o
 win32/timers.o
+unix/apc.o
+unix/clip.o
+unix/cursor.o
+unix/dev.o
+unix/files.o
+unix/global.o
+unix/gp.o
+unix/misc.o
+unix/stock.o
+unix/timers.o
