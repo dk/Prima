@@ -22,6 +22,7 @@ Widget_geometry.o
 Window.o
 auto/Prima/Prima.a
 auto/Prima/Prima.dll
+auto/Prima/Prima.so
 img/bc_color.o
 img/bc_const.o
 img/bc_extra.o
