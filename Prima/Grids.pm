@@ -139,9 +139,10 @@ sub init
 	$self-> $_( $profile{ $_}) for qw( 
 		allowChangeCellHeight allowChangeCellWidth
 		constantCellWidth constantCellHeight
-		autoHScroll autoVScroll drawHGrid drawVGrid gridColor hScroll vScroll leftCell
-		cellIndents multiSelect focusedCell topCell borderWidth indentCellColor
-		indentCellBackColor clipCells gridGravity columns rows
+		autoHScroll autoVScroll drawHGrid drawVGrid gridColor hScroll vScroll
+		columns rows cellIndents 
+		leftCell topCell multiSelect focusedCell borderWidth indentCellColor
+		indentCellBackColor clipCells gridGravity
 	);
 	$self-> reset;
 	return %profile;
