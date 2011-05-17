@@ -126,7 +126,7 @@ sub init
 		autoHScroll autoVScroll scrollTransaction gridColor hScroll vScroll dx dy
 		leftCell topCell multiSelect borderWidth visibleCols visibleRows
 		indentCellColor indentCellBackColor clipCells cache_geometry_requests
-		allowChangeCellWidth allowChangeCellHeight gridGravity columns rows
+		allowChangeCellWidth allowChangeCellHeight gridGravity
 	);
 	$self-> {$_} = 1 for qw( drawHGrid drawVGrid columns rows);
 	$self-> {focusedCell} = [0,0];
@@ -141,7 +141,7 @@ sub init
 		constantCellWidth constantCellHeight
 		autoHScroll autoVScroll drawHGrid drawVGrid gridColor hScroll vScroll leftCell
 		cellIndents multiSelect focusedCell topCell borderWidth indentCellColor
-		indentCellBackColor clipCells gridGravity
+		indentCellBackColor clipCells gridGravity columns rows
 	);
 	$self-> reset;
 	return %profile;
