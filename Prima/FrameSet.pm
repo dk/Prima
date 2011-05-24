@@ -28,6 +28,7 @@
 #
 #  $Id$
 use strict;
+use warnings;
 use Prima;
 use Prima::Const;
 
@@ -43,6 +44,7 @@ use constant Proportional => 1; # XXX Yet to be implemented.
 
 package Prima::FrameSet::Frame;
 use strict;
+use warnings;
 use vars qw(@ISA);
 
 @ISA = qw(Prima::Widget Prima::MouseScroller);
@@ -105,6 +107,7 @@ sub maxFrameWidth
 
 package Prima::FrameSet::Slider;
 use strict;
+use warnings;
 use vars qw(@ISA);
 
 @ISA = qw(Prima::Widget);
@@ -399,6 +402,7 @@ sub sliderIndex
 
 package Prima::FrameSet;
 use strict;
+use warnings;
 use vars qw(@ISA);
 
 @ISA = qw(Prima::Widget);
@@ -599,6 +603,7 @@ sub recalc_frames
 		}
 
 		$me-> {sizes} = [@sizes];
+		$me-> {virtual_sizes} = [@sizes];
 
 	} elsif ($profile{resize}) {
 
@@ -607,19 +612,23 @@ sub recalc_frames
 		my $new_size = @{$profile{sizes}}[$idx + 2];
 		return if ($old_size == $new_size);
 
+		my $virtual_sizes = $me-> {virtual_sizes} || [];
+
 		if ($me-> {resizeMethod} == frr::Simple) {
 			my $i;
 			for ($i = 0; $i < ($me-> {frameCount} - 1); $i++) {
 				$old_size -= $me-> {sliders}-> [$i]-> {thickness};
 				$new_size -= $me-> {sliders}-> [$i]-> {thickness};
 			}
-			my @nsizes;
+			my (@nsizes, @vsizes);
 			my $newTotal = 0;
-			my $ratio = $old_size ? ( $new_size / $old_size ) : 1;
+			my $ratio = ($old_size && $new_size) ? ( $new_size / $old_size ) : 1;
 			my ($f, $ns);
 			for ($i = 0; $i < ($me-> {frameCount} - 1); $i++) {
 				$f = $me-> {frames}-> [$i];
-				$ns = int($sizes[$i] * $ratio + .5);
+				$ns = $virtual_sizes-> [$i] * $ratio;
+				$vsizes[$i] = $ns;
+				$ns = int( $ns + 0.5 );
 				$ns = $f-> {minFrameWidth}
 					if defined($f-> {minFrameWidth}) && ($ns < $f-> {minFrameWidth});
 				$ns = $f-> {maxFrameWidth}
@@ -630,7 +639,8 @@ sub recalc_frames
 # Calculate for the last frame.
 			$f = $me-> {frames}-> [$i];
 			$ns = $new_size - $newTotal;
-			$ns = 0 if $ns < 0;
+			$vsizes[$i] = $ns;
+			$ns = 1 if $ns < 1;
 			$ns = $f-> {minFrameWidth}
 				if defined($f-> {minFrameWidth}) && ($ns < $f-> {minFrameWidth});
 			$ns = $f-> {maxFrameWidth}
@@ -638,6 +648,7 @@ sub recalc_frames
 			$nsizes[$i] = $ns;
 
 			$me-> {sizes} = \@nsizes;
+			$me-> {virtual_sizes} = \@vsizes;
 		}
 		
 	}
@@ -725,8 +736,8 @@ sub slider_moved
 			$frame2-> rect(@rect);
 		}
 
-		$me-> {sizes}-> [$si] = $nw1;
-		$me-> {sizes}-> [$si + 1] = $nw2;
+		$me-> {virtual_sizes}-> [$si]     = $me-> {sizes}-> [$si]     = $nw1;
+		$me-> {virtual_sizes}-> [$si + 1] = $me-> {sizes}-> [$si + 1] = $nw2;
 	}
 }
 
