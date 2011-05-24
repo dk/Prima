@@ -615,10 +615,11 @@ sub recalc_frames
 			}
 			my @nsizes;
 			my $newTotal = 0;
+			my $ratio = $old_size ? ( $new_size / $old_size ) : 1;
 			my ($f, $ns);
 			for ($i = 0; $i < ($me-> {frameCount} - 1); $i++) {
 				$f = $me-> {frames}-> [$i];
-				$ns = int(($sizes[$i] * $new_size) / $old_size + .5);
+				$ns = int($sizes[$i] * $ratio + .5);
 				$ns = $f-> {minFrameWidth}
 					if defined($f-> {minFrameWidth}) && ($ns < $f-> {minFrameWidth});
 				$ns = $f-> {maxFrameWidth}
