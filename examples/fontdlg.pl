@@ -376,6 +376,7 @@ onClick   => sub {
 			push @{$ranges[-1]}, $_ :
 			push @ranges, [$_];
 	}
+	@ranges = sort { $a->[0] <=> $b-> [0] } @ranges;
 	my $count = 0;
 	$count += $$_[1] - $$_[0] + 1 for @ranges;
 	my $ih = int($f-> height * 1.5);
