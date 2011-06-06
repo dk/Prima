@@ -626,6 +626,7 @@ See also L<Prima::Widget/KeyDown>.
 	km::Alt
 	km::KeyPad
 	km::DeadKey
+	km::Unicode
 
 =head2 mt:: - modality types
 

@@ -2541,6 +2541,7 @@ The valid C<km::> constants are:
    km::Alt
    km::KeyPad
    km::DeadKey
+   km::Unicode
 
 The valid C<kb::> constants are grouped in several sets.
 Some codes are aliased, like, C<kb::PgDn> and C<kb::PageDown>.

@@ -67,6 +67,7 @@ char * keyLayouts[]   = {  "0409", "0403", "0405", "0406", "0407",
       "040A","040B","040C","040E","040F","0410","0413","0414","0415","0416",
       "0417","0418","041A","041D"
 };
+WCHAR lastDeadKey = 0;
 
 
 BOOL APIENTRY
@@ -442,6 +443,14 @@ find_oid( PAbstractMenu menu, PMenuItemReg m, int id)
    return m-> down && ( m-> down-> id == id);
 }
 
+Handle ctx_deadkeys[] = {
+   0x5E, 0x302, // Circumflex accent
+   0x60, 0x300, // Grave accent
+   0xA8, 0x308, // Diaeresis
+   0xB4, 0x301, // Acute accent
+   0xB8, 0x327, // Cedilla
+   endCtx
+};
 
 static void
 zorder_sync( Handle self, HWND me, LPWINDOWPOS lp)
@@ -586,6 +595,15 @@ AGAIN:
              // unicode mapping
              switch ( ToUnicodeEx( mp1, scan, keyState, keys, 2, 0, kl)) {
              case 1: // char
+	     	if ( lastDeadKey ) {
+ 		   WCHAR wcBuffer[3];
+ 		   WCHAR out[3];
+ 		   wcBuffer[0] = keys[0];
+ 		   wcBuffer[1] = lastDeadKey;
+ 		   wcBuffer[2] = '\0';
+ 		   if ( FoldStringW(MAP_PRECOMPOSED, (LPWSTR) wcBuffer, 3, (LPWSTR) out, 3) )
+ 		      keys[0] = out[0];
+		}
                 if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0) && ( GetKeyState( VK_SHIFT) >= 0)) {
                    WCHAR keys2[2];
                    if (( ToUnicodeEx( mp1, scan, guts. emptyKeyState, keys2, 2, 0, kl) == 1) &&
@@ -596,20 +614,12 @@ AGAIN:
                        ev. key. mod &= ~(kmAlt|kmCtrl|kmShift);
                    }
                 }   
+                if (!up) lastDeadKey = 0;
                 break;
-             case 2: { // double char
-                   Event evx;
-                   if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0) && ( GetKeyState( VK_SHIFT) >= 0)) {
-                      WCHAR keys2[2];
-                      if (( ToUnicodeEx( mp1, scan, guts. emptyKeyState, keys2, 2, 0, kl) == 1) &&
-                          ( keys2[0] != keys[1]))
-                          ev. key. mod &= ~(kmAlt|kmCtrl|kmShift);
-                   }   
-                   memcpy( &evx, &ev, sizeof( ev));
-                   evx. key. code = keys[ 0];
-                   keys[ 0] = keys[ 1];
-                   v-> self-> message( self, &evx);
-                   if ( v-> stage != csNormal) return 1;
+             case 2: { // dead key
+                   lastDeadKey = ctx_remap_def( keys[0], ctx_deadkeys, true, keys[0]);
+                   keys[ 0] = 0;
+               	   ev. key. mod |= kmDeadKey;
                 }
                 break;
              case 0: // virtual key
@@ -621,17 +631,28 @@ AGAIN:
                 } else {
                 /* same meaning without mods, no code anyway */
                    keys[ 0] = 0;
-                }   
+                }
+                if (!up) lastDeadKey = 0;
                 break;
              default:
-                 ev. key. mod |= kmDeadKey;
+               	ev. key. mod |= kmDeadKey;
+                if (!up) lastDeadKey = 0;
              }
              ev. key. code = keys[ 0];
+	     ev. key. mod |= kmUnicode;
           } else {
              BYTE keys[ 4];
-             // ascii mapping
              switch ( ToAsciiEx( mp1, scan, keyState, (LPWORD) keys, 0, kl)) {
              case 1: // char
+	     	if ( lastDeadKey ) {
+ 		   BYTE cBuffer[3];
+ 		   BYTE out[3];
+ 		   cBuffer[0] = keys[0];
+ 		   cBuffer[1] = lastDeadKey;
+ 		   cBuffer[2] = '\0';
+ 		   if ( FoldStringA(MAP_PRECOMPOSED, (LPSTR) cBuffer, 3, (LPSTR) out, 3) )
+ 		      keys[0] = out[0];
+		}
                 if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0) && ( GetKeyState( VK_SHIFT) >= 0)) {
                    BYTE keys2[4];
                    if (( ToAsciiEx( mp1, scan, guts. emptyKeyState, (LPWORD) keys2, 0, kl) == 1) &&
@@ -643,19 +664,10 @@ AGAIN:
                    }
                 }   
                 break;
-             case 2: { // double char
-                   Event evx;
-                   if ( !deadPollCount && ( GetKeyState( VK_MENU) < 0) && ( GetKeyState( VK_SHIFT) >= 0)) {
-                      BYTE keys2[4];
-                      if (( ToAsciiEx( mp1, scan, guts. emptyKeyState, (LPWORD) keys2, 0, kl) == 1) &&
-                          ( keys2[0] != keys[1]))
-                          ev. key. mod &= ~(kmAlt|kmCtrl|kmShift);
-                   }   
-                   memcpy( &evx, &ev, sizeof( ev));
-                   evx. key. code = keys[ 0];
-                   keys[ 0] = keys[ 1];
-                   v-> self-> message( self, &evx);
-                   if ( v-> stage != csNormal) return 1;
+             case 2: { // dead key
+                   lastDeadKey = keys[0];
+                   keys[ 0] = 0;
+               	   ev. key. mod |= kmDeadKey;
                 }
                 break;
              case 0: // virtual key
@@ -668,13 +680,14 @@ AGAIN:
                 /* same meaning without mods, no code anyway */
                    keys[ 0] = 0;
                 }   
+                if (!up) lastDeadKey = 0;
                 break;
              default:
-                 ev. key. mod |= kmDeadKey;
+                ev. key. mod |= kmDeadKey;
+                if (!up) lastDeadKey = 0;
              }
              ev. key. code = keys[ 0];
           }
-          
 
           // simulated key codes
           if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))

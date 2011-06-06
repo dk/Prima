@@ -275,7 +275,8 @@ sub on_keydown
 {
 	my ( $self, $code, $key, $mod) = @_;
 	return if $mod & km::DeadKey;
-	
+
+	my $is_unicode = $mod & km::Unicode;
 	$mod &= ( km::Shift|km::Ctrl|km::Alt);
 	$self-> notify(q(MouseUp),0,0,0) if defined $self-> {mouseTransaction};
 	my $offset = $self-> charOffset;
@@ -454,7 +455,10 @@ sub on_keydown
 		} elsif ( !$self-> {insertMode}) {
 			$end++;
 		}
-		substr( $cap, $start, $end - $start) = chr $code;
+		my $chr = chr $code;
+		utf8::upgrade($chr) if $is_unicode;
+		substr( $cap, $start, $end - $start) = $chr;
+
 		$self-> selection(0,0);
 		if ( $self-> maxLen >= 0 and length ( $cap) > $self-> maxLen)
 		{

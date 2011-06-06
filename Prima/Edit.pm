@@ -951,15 +951,17 @@ sub on_keydown
 		my $c  = $self-> get_line( $cs[1]);
 		my $l = 0;
 		$self-> begin_undo_group;
+		my $chr = chr $code;
+		utf8::upgrade($chr) if $mod & km::Unicode;
 		if ( $self-> insertMode) {
 			$l = $cs[0] - length( $c), $c .= ' ' x $l 
 				if length( $c) < $cs[ 0];
-			substr( $c, $cs[0], 0) = chr($code) x $repeat;
+			substr( $c, $cs[0], 0) = $chr x $repeat;
 			$self-> set_line( $cs[1], $c, q(add), $cs[0], $l + $repeat);
 		} else {
 			$l = $cs[0] - length( $c) + $repeat, $c .= ' ' x $l 
 				if length( $c) < $cs[ 0] + $repeat;
-			substr( $c, $cs[0], $repeat) = chr($code) x $repeat;
+			substr( $c, $cs[0], $repeat) = $code x $repeat;
 			$self-> set_line( $cs[1], $c, q(overtype));
 		}
 		$self-> cursor( $cs[0] + $repeat, $cs[1]);

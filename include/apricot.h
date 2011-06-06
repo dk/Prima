@@ -876,6 +876,8 @@ KM(Shift)
 KM(Ctrl)
 #define kmAlt           0x08000000
 KM(Alt)
+#define kmUnicode       0x10000000
+KM(Unicode)
 #define kmKeyPad        0x40000000
 KM(KeyPad)
 #define kmDeadKey       0x80000000

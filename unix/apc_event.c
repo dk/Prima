@@ -573,19 +573,20 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
    e-> cmd = release ? cmKeyUp : cmKeyDown;
    e-> key. key = keycode & kbCodeMask;
    if ( !e-> key. key)		e-> key. key = kbNoKey;
-   if ( PApplication(application)-> wantUnicodeInput) {
-      e-> key. code = KeySymToUcs4( keysym);
-      if (( ev-> state & ControlMask) && isalpha( e-> key. code)) 
-         e-> key. code = toupper( e-> key. code) - '@';
-   } else {
-      e-> key. code = keycode & kbCharMask;
-   }
    e-> key. mod = keycode & kbModMask;
    e-> key. repeat = 1;
    /* ShiftMask LockMask ControlMask Mod1Mask Mod2Mask Mod3Mask Mod4Mask Mod5Mask */
    if ( ev-> state & ShiftMask)		e-> key. mod |= kmShift;
    if ( ev-> state & ControlMask)	e-> key. mod |= kmCtrl;
    if ( ev-> state & Mod1Mask)		e-> key. mod |= kmAlt;
+   if ( PApplication(application)-> wantUnicodeInput) {
+      e-> key. mod  |= kmUnicode;
+      e-> key. code = KeySymToUcs4( keysym);
+      if (( ev-> state & ControlMask) && isalpha( e-> key. code)) 
+         e-> key. code = toupper( e-> key. code) - '@';
+   } else {
+      e-> key. code = keycode & kbCharMask;
+   }
 }
 
 static Bool
