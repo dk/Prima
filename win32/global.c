@@ -27,6 +27,7 @@
  */
 /* Created by Dmitry Karasik <dk@plab.ku.dk> */
 #include "win32\win32guts.h"
+#include <imm.h>
 #include "Window.h"
 #include "Application.h"
 #include "Menu.h"
@@ -84,7 +85,7 @@ DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
 Bool
 window_subsystem_init( char * error_buf)
 {
-   WNDCLASS  wc;
+   WNDCLASSW wc;
    HDC dc;
    HBITMAP hbm;
 
@@ -110,8 +111,8 @@ window_subsystem_init( char * error_buf)
    wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
    wc.hCursor       = LoadCursor( NULL, IDC_ARROW);
    wc.hbrBackground = (HBRUSH)NULL;
-   wc.lpszClassName = "GenericApp";
-   RegisterClass( &wc);
+   wc.lpszClassName = const_char2wchar("GenericApp");
+   RegisterClassW( &wc);
 
    memset( &wc, 0, sizeof( wc));
    wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -122,8 +123,8 @@ window_subsystem_init( char * error_buf)
    wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
    wc.hCursor       = LoadCursor( NULL, IDC_ARROW);
    wc.hbrBackground = (HBRUSH)NULL;
-   wc.lpszClassName = "GenericFrame";
-   RegisterClass( &wc);
+   wc.lpszClassName = const_char2wchar("GenericFrame");
+   RegisterClassW( &wc);
 
    memset( &wc, 0, sizeof( wc));
    wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -134,8 +135,8 @@ window_subsystem_init( char * error_buf)
    wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
    wc.hCursor       = NULL; // LoadCursor( NULL, IDC_ARROW);
    wc.hbrBackground = (HBRUSH)NULL;
-   wc.lpszClassName = "Generic";
-   RegisterClass( &wc);
+   wc.lpszClassName = const_char2wchar("Generic");
+   RegisterClassW( &wc);
 
    stylusMan  = hash_create();
    fontMan    = hash_create();
@@ -554,6 +555,29 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_HASMATE:
       *(( Handle*) mp2) = self;
       return HASMATE_MAGIC;
+   case WM_IME_COMPOSITION:
+      if ( apc_widget_is_responsive( self)) {
+         // lifted from gtk+, gdk/win32/gdkevents-win32.c 
+         HIMC himc;
+         int i, count;
+         WCHAR wbuf[100];
+         if (!(mp1 & GCS_RESULTSTR)) break;
+
+         himc = ImmGetContext (win);
+         count = ImmGetCompositionStringW (himc, GCS_RESULTSTR, wbuf, sizeof (wbuf));
+         ImmReleaseContext (win, himc);
+         count /= 2;
+         for ( i = 0; i < count; i++) {
+              Event evx;
+              evx. cmd = cmKeyDown;
+              evx. key. mod  = 0;
+              evx. key. key  = kbNoKey;
+              evx. key. code = wbuf[ i];
+              v-> self-> message( self, &evx);
+              if ( v-> stage != csNormal) return 1;
+         }
+         break;
+      }
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
       if ( mp2 & ( 1 << 29)) ev. key. mod = kmAlt;

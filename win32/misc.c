@@ -645,12 +645,22 @@ void
 char2wchar( WCHAR * dest, char * src, int lim)
 {
    int l = strlen( src) + 1;
-   if ( lim < 1) return;
+   if ( lim < 0) lim = l;
+   if ( lim == 0) return;
    if ( lim > l) lim = l;
    src  += lim - 2;
    dest += lim - 1;
    *(dest--) = 0;
    while ( lim--) *(dest--) = *(src--);
+}
+
+static WCHAR wbuf[256];
+
+const WCHAR *
+const_char2wchar( const char * src)
+{
+    char2wchar( wbuf, (char*)src, 256);
+    return wbuf;
 }
 
 #ifdef __cplusplus

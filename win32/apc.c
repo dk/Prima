@@ -89,8 +89,10 @@ apc_application_create( Handle self)
 {
    HWND h;
    RECT r;
+   const WCHAR wnull = 0;
+
    objCheck false;
-   if ( !( h = CreateWindowEx( 0, "GenericApp", "", 0, 0, 0, 0, 0,
+   if ( !( h = CreateWindowExW( 0, const_char2wchar("GenericApp"), &wnull, 0, 0, 0, 0, 0,
           nil, nil, guts. instance, nil))) apiErrRet;
    sys handle = h;
    sys parent = sys owner = HWND_DESKTOP;
@@ -99,7 +101,7 @@ apc_application_create( Handle self)
    sys className = WC_APPLICATION;
    // if ( !SetTimer( h, TID_USERMAX, 100, nil)) apiErr;
    GetClientRect( h, &r);
-   if ( !( var handle = ( Handle) CreateWindowEx( 0,  "Generic", "", WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
+   if ( !( var handle = ( Handle) CreateWindowExW( 0,  const_char2wchar("Generic"), &wnull, WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
         0, 0, r. right - r. left, r. bottom - r. top, h, nil,
         guts. instance, nil))) apiErrRet;
    SetWindowLongPtr(( HWND) var handle, GWLP_USERDATA, self);
@@ -720,6 +722,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
    int  count = 0;
    Bool reset = false;
    Handle * list = nil;
+   const WCHAR wnull = 0;
 
    if ( HANDLE)
    {
@@ -755,7 +758,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
               parentView = DHANDLE( application);
           if ( !usePos)  rcp[0] = rcp[1] = CW_USEDEFAULT;
           if ( !useSize) rcp[2] = rcp[3] = CW_USEDEFAULT;
-          if ( !( frame = CreateWindowEx( exstyle, "GenericFrame", "",
+          if ( !( frame = CreateWindowExW( exstyle, const_char2wchar("GenericFrame"), &wnull,
                 style | WS_CLIPCHILDREN,
                 rcp[0], rcp[1], rcp[2], rcp[3],
                 parentView, nil, guts. instance, nil)))
@@ -769,7 +772,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
                    0,0,0,0,SWP_NOMOVE | SWP_NOSIZE  | SWP_NOACTIVATE))
                 apiErr;
           GetClientRect( frame, &r);
-          if ( !( ret = CreateWindowEx( 0,  "Generic", "",
+          if ( !( ret = CreateWindowExW( 0,  const_char2wchar("Generic"), &wnull,
                 WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
                 0, 0, r. right - r. left, r. bottom - r. top, frame, nil,
                 guts. instance, nil)))
@@ -789,7 +792,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
        if ( parentHandle) parentView = parentHandle;
        sys parentHandle = parentHandle;
 
-       if ( !( ret = CreateWindowEx( exstyle,  "Generic", "",
+       if ( !( ret = CreateWindowExW( exstyle,  (LPCWSTR) const_char2wchar("Generic"), &wnull,
              style | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 0, 0,
              parentView, nil, guts. instance, nil)))
           apiErrRet;
