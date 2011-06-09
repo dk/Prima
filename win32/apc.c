@@ -89,9 +89,14 @@ apc_application_create( Handle self)
 {
    HWND h;
    RECT r;
+   MSG msg;
    const WCHAR wnull = 0;
 
    objCheck false;
+
+   // make sure that no leftover messages, esp.WM_QUIT, are floating around
+   while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE)); 
+
    if ( !( h = CreateWindowExW( 0, const_char2wchar("GenericApp"), &wnull, 0, 0, 0, 0, 0,
           nil, nil, guts. instance, nil))) apiErrRet;
    sys handle = h;
