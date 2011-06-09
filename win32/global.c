@@ -575,6 +575,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
               evx. key. code = wbuf[ i];
               v-> self-> message( self, &evx);
               if ( v-> stage != csNormal) return 1;
+	      if ( !apc_widget_is_responsive( self)) break;
          }
          break;
       }
