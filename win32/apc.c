@@ -1244,8 +1244,11 @@ Bool
 apc_window_set_caption( Handle self, const char * caption, Bool utf8)
 {
    objCheck false;
-   if ( HAS_WCHAR && utf8) {
-      WCHAR * c = alloc_utf8_to_wchar( caption, -1);
+   if ( HAS_WCHAR) {
+      WCHAR * c = utf8 ? 
+      	alloc_utf8_to_wchar( caption, -1) :
+      	alloc_char_to_wchar( caption, -1)
+	;
       if ( !( rc = SetWindowTextW( HANDLE, c))) apiErr;
       free( c);
    } else {

@@ -311,7 +311,7 @@ apc_show_message( const char * message, Bool utf8)
 {
    Bool ret;
    if ( HAS_WCHAR && utf8 && (message = ( char*)alloc_utf8_to_wchar( message, -1))) {
-      ret = MessageBoxW( NULL, ( WCHAR*) message, ( WCHAR*)"P\0r\0i\0m\0a\0", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
+      ret = MessageBoxW( NULL, ( WCHAR*) message, (WCHAR*) const_char2wchar( "Prima"), MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
       free(( void*) message); 
    } else
       ret = MessageBox( NULL, message, "Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
@@ -626,6 +626,7 @@ WCHAR *
 alloc_utf8_to_wchar( const char * utf8, int length)
 {
    WCHAR * ret;
+   if ( utf8 == NULL ) utf8 = "";
    if ( length < 0) length = prima_utf8_length( utf8) + 1;
    if ( !( ret = malloc( length * sizeof( WCHAR)))) return nil;
    utf8_to_wchar( utf8, ret, length);
@@ -651,7 +652,7 @@ char2wchar( WCHAR * dest, char * src, int lim)
    src  += lim - 2;
    dest += lim - 1;
    *(dest--) = 0;
-   while ( lim--) *(dest--) = *(src--);
+   while ( --lim) *(dest--) = *(src--);
 }
 
 static WCHAR wbuf[256];
@@ -661,6 +662,17 @@ const_char2wchar( const char * src)
 {
     char2wchar( wbuf, (char*)src, 256);
     return wbuf;
+}
+
+WCHAR *
+alloc_char_to_wchar( const char * text, int length)
+{
+   WCHAR * ret;
+   if ( text == NULL ) text = "";
+   if ( length < 0) length = strlen( text) + 1;
+   if ( !( ret = malloc( length * sizeof( WCHAR)))) return nil;
+   char2wchar( ret, (char*) text, length);
+   return ret;
 }
 
 #ifdef __cplusplus

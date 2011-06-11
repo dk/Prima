@@ -482,7 +482,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    Bool    message_result = true;
 
    if ( !self || appDead)
-      return DefWindowProc( win, msg, mp1, mp2);
+      return DefWindowProcW( win, msg, mp1, mp2);
 
    for ( i = 0; i < guts. eventHooks. count; i++) {
       if ((( PrimaHookProc *)( guts. eventHooks. items[i]))((void*) &msg))
@@ -1012,7 +1012,7 @@ AGAIN:
    }
 
    if ( hiStage)
-      ret = DefWindowProc( win, msg, mp1, mp2);
+      ret = DefWindowProcW( win, msg, mp1, mp2);
 
    orgCmd = ev. cmd;
    if ( ev. cmd) 
@@ -1061,7 +1061,7 @@ AGAIN:
    }
 
    if ( ev. cmd && !hiStage)
-      ret = DefWindowProc( win, msg, mp1, mp2);
+      ret = DefWindowProcW( win, msg, mp1, mp2);
 
    return ret;
 }
@@ -1077,7 +1077,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    int     i, orgCmd;
 
    if ( !self)
-      return DefWindowProc( win, msg, mp1, mp2);
+      return DefWindowProcW( win, msg, mp1, mp2);
 
    for ( i = 0; i < guts. eventHooks. count; i++) {
       MSG ms = { win, msg, mp1, mp2, 0};
@@ -1318,7 +1318,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    }
 
    if ( hiStage)
-      ret = DefWindowProc( win, msg, mp1, mp2);
+      ret = DefWindowProcW( win, msg, mp1, mp2);
 
    orgCmd = ev. cmd;
    if ( ev. cmd) v-> self-> message( self, &ev); else ev. cmd = orgMsg;
@@ -1341,7 +1341,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    }
 
    if ( ev. cmd && !hiStage)
-      ret = DefWindowProc( win, msg, mp1, mp2);
+      ret = DefWindowProcW( win, msg, mp1, mp2);
    return ret;
 }
 
