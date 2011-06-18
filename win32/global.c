@@ -563,30 +563,6 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
          ev. key. code = mp1;
       }
       break;
-   case WM_IME_COMPOSITION:
-      if ( apc_widget_is_responsive( self)) {
-         // lifted from gtk+, gdk/win32/gdkevents-win32.c 
-         HIMC himc;
-         int i, count;
-         WCHAR wbuf[100];
-         if (!(mp1 & GCS_RESULTSTR)) break;
-
-         himc = ImmGetContext (win);
-         count = ImmGetCompositionStringW (himc, GCS_RESULTSTR, wbuf, sizeof (wbuf));
-         ImmReleaseContext (win, himc);
-         count /= 2;
-         for ( i = 0; i < count; i++) {
-              Event evx;
-              evx. cmd = cmKeyDown;
-              evx. key. mod  = 0;
-              evx. key. key  = kbNoKey;
-              evx. key. code = wbuf[ i];
-              v-> self-> message( self, &evx);
-              if ( v-> stage != csNormal) return 1;
-	      if ( !apc_widget_is_responsive( self)) break;
-         }
-         break;
-      }
    case WM_SYSKEYDOWN:
    case WM_SYSKEYUP:
       if ( mp2 & ( 1 << 29)) ev. key. mod = kmAlt;
