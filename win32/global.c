@@ -555,6 +555,14 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
    case WM_HASMATE:
       *(( Handle*) mp2) = self;
       return HASMATE_MAGIC;
+   case WM_IME_CHAR:
+      if ( apc_widget_is_responsive( self)) {
+         ev. cmd = cmKeyDown;
+         ev. key. mod  = kmUnicode;
+         ev. key. key  = kbNoKey;
+         ev. key. code = mp1;
+      }
+      break;
    case WM_IME_COMPOSITION:
       if ( apc_widget_is_responsive( self)) {
          // lifted from gtk+, gdk/win32/gdkevents-win32.c 
