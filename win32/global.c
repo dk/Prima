@@ -27,7 +27,6 @@
  */
 /* Created by Dmitry Karasik <dk@plab.ku.dk> */
 #include "win32\win32guts.h"
-#include <imm.h>
 #include "Window.h"
 #include "Application.h"
 #include "Menu.h"

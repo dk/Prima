@@ -922,8 +922,8 @@ sub setup_variables
 			$Config{libperl} =~ s/^lib(.*)\.a$/$1/i;
 			push @libs, qw(gdi32 mpr winspool comdlg32); # add more when appropriate
 		}
-		push @libs, map { $_ . $cc_specs{$COMPILER}->{ldlibext} } 
-			qw(imm32); # add more when appropriate 
+#		push @libs, map { $_ . $cc_specs{$COMPILER}->{ldlibext} } 
+#			qw(imm32); # add more when appropriate 
 	}
 	if ( $CYGWIN_X11) {
 		$Config{libperl} =~ s/^lib(.*)\.a$/$1/i;
