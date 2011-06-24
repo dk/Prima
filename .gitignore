@@ -128,3 +128,5 @@ unix/apc_win.o
 unix/color.o
 unix/gtk.o
 unix/xft.o
+auto/
+vc100.pdb 
