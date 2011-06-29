@@ -623,6 +623,12 @@ apc_window_get_border_style( Handle self)
    return X(self)-> flags. sizeable ? bsSizeable : bsDialog;
 }
 
+ApiHandle
+apc_window_get_client_handle( Handle self)
+{
+   return X(self)-> client;
+}
+
 Point
 apc_window_get_client_pos( Handle self)
 {

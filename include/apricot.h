@@ -1952,6 +1952,9 @@ apc_window_get_border_icons( Handle self);
 extern int
 apc_window_get_border_style( Handle self);
 
+extern ApiHandle
+apc_window_get_client_handle( Handle self);
+
 extern Point
 apc_window_get_client_pos( Handle self);
 

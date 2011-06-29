@@ -207,6 +207,14 @@ Window_get_modal( Handle self)
    return var-> modal;
 }
 
+SV *
+Window_get_client_handle( Handle self)
+{
+   char buf[ 256];
+   snprintf( buf, 256, "0x%08lx", apc_window_get_client_handle( self));
+   return newSVpv( buf, 0);
+}
+
 Handle
 Window_get_modal_window( Handle self, int modalFlag, Bool next)
 {

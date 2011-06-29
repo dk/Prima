@@ -771,6 +771,12 @@ get_window_borders( int borderStyle)
    return ret;
 }
 
+ApiHandle
+apc_window_get_client_handle( Handle self)
+{
+   objCheck 0;
+   return ( ApiHandle) var handle;
+}
 
 Point
 apc_window_get_client_pos( Handle self)

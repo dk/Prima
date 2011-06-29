@@ -2363,7 +2363,7 @@ See also: C<validate_rect>, C<invalidate_rect>, C<repaint>, C<Paint>, C<syncPain
 
 Returns a system handle for a widget
 
-See also: C<get_parent_handle>
+See also: C<get_parent_handle>, C<Window::get_client_handle>
 
 =item get_locked
 

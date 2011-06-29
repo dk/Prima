@@ -497,6 +497,15 @@ C<Execute> notification is triggered.
 
 The function is returned immediately.
 
+=item get_client_handle
+
+Returns a system handle for a system window that is inserted in top-level windows and
+covers all of its area. Is different from C<Window::get_handle> in that it returns the
+system handle of the top-level window itself. In other terms, window returned by
+this function is a child of the window returned by C<Window::get_handle>.
+
+See also: C<get_handle>
+
 =item get_default_menu_font
 
 Returns the default font for a Prima::Menu class.
