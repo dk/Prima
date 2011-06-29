@@ -1490,8 +1490,11 @@ sub setup_codecs
 		unless ( $@) {
 			print "yes\n";
 			$have_binary_prereq++;
-			push @LIBPATH, qd("$Config{installsitearch}/Prima/codecs/$prereq/lib");
-			push @INCPATH, qd("$Config{installsitearch}/Prima/codecs/$prereq/include");
+			my $f = $INC{"Prima/codecs/$prereq.pm"};
+			$f =~ s/.pm$//;
+			push @LIBPATH, qd("$f/lib");
+			push @INCPATH, qd("$f/include");
+
 		} else {
 			print "no\n";
 		}
