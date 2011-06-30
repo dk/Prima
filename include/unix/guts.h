@@ -91,7 +91,7 @@
 #include <sys/time.h>
 
 #include "../guts.h"
-#include "bsd/queue.h"
+#include "queue.h"
 #include "Widget.h"
 #include "Image.h"
 #include "img_conv.h"
