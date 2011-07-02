@@ -911,7 +911,7 @@ sub setup_variables
 	}
 	if (
 		$COMPILER eq 'gcc' and 
-		$LD ne 'g++' # g++ and gcc together are weird kind - g++ does -lgcc itself
+		$LD !~ /^g\+\+/ # g++ and gcc together are weird kind - g++ does -lgcc itself
 	) {
 		push @libs, 'gcc';
 	}
