@@ -280,25 +280,29 @@ error_fn( png_structp png_ptr, png_const_charp msg)
 {
    char * buf = ( char *) png_get_error_ptr( png_ptr); 
    if ( buf) strncpy( buf, msg, 256);
+#if PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR < 5
    longjmp( png_ptr-> jmpbuf, 1);
+#else
+   png_longjmp( png_ptr, 1);
+#endif
 }
 
 static void
 img_png_read (png_structp png_ptr, png_bytep data, png_size_t size)
 {
-   req_read( (( PImgLoadFileInstance) png_ptr-> io_ptr)-> req, size, data);
+   req_read( (( PImgLoadFileInstance) png_get_io_ptr(png_ptr))-> req, size, data);
 }
 
 static void
 img_png_write (png_structp png_ptr, png_bytep data, png_size_t size)
 {
-   req_write( (( PImgLoadFileInstance) png_ptr-> io_ptr)-> req, size, data);
+   req_write( (( PImgLoadFileInstance) png_get_io_ptr(png_ptr))-> req, size, data);
 }
 
 static void
 img_png_flush (png_structp png_ptr)
 {
-   req_flush( (( PImgLoadFileInstance) png_ptr-> io_ptr)-> req);
+   req_flush( (( PImgLoadFileInstance) png_get_io_ptr(png_ptr))-> req);
 }
 
 static void * 
