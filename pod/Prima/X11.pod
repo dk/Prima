@@ -434,6 +434,9 @@ if Prima program aborts, the shared memory will never be returned to the OS.
 To remove the leftover segments, use your OS facilities, for example, C<ipcrm>
 on *BSD.
 
+To disable shared memory with images, use C<--no-shmem> switch in command-line
+arguments.
+
 The clipboard exchange of images is incompletely implemented, since Prima does
 not accompany ( and neither reads ) COLORMAP, FOREGROUND, and BACKGROUND
 clipboard data, which contains pixel RGB values for a paletted image. As a

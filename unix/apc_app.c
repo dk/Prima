@@ -162,6 +162,7 @@ static Bool  do_sync    = false;
 static char* do_display = NULL;
 static int   do_debug   = 0;
 static Bool  do_icccm_only = false;
+static Bool  do_no_shmem   = false;
 
 static Bool
 init_x11( char * error_buf )
@@ -261,7 +262,7 @@ init_x11( char * error_buf )
    guts. shape_extension = false;
 #endif
 #ifdef USE_MITSHM
-   if ( XShmQueryExtension( DISP)) {
+   if ( !do_no_shmem && XShmQueryExtension( DISP)) {
       guts. shared_image_extension = true;
       guts. shared_image_completion_event = XShmGetEventBase( DISP) + ShmCompletion;
    } else {
@@ -429,6 +430,9 @@ window_subsystem_get_options( int * argc, char *** argv)
 	    " P(palettes and colors),"\
 	    " X(XRDB),"\
 	    " A(all together)",
+#ifdef USE_MITSHM
+   "no-shmem",       "do not use shared memory for images",
+#endif
    "no-core-fonts", "do not use core fonts",
 #ifdef USE_XFT
    "no-xft",        "do not use XFT",
@@ -478,6 +482,10 @@ window_subsystem_set_option( char * option, char * value)
    } else if ( strcmp( option, "icccm") == 0) {
       if ( value) warn("`--icccm' option has no parameters");
       do_icccm_only = true;
+      return true;
+   } else if ( strcmp( option, "no-shmem") == 0) {
+      if ( value) warn("`--no-shmem' option has no parameters");
+      do_no_shmem = true;
       return true;
    } else if ( strcmp( option, "debug") == 0) {
       if ( !value) {
