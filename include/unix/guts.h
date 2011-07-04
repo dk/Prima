@@ -407,43 +407,43 @@ typedef struct {
 #define AI_NET_WM_STATE_ABOVE            33
 #define AI_count                         34
 
-#define FXA_RESOLUTION_X guts. atoms[ AI_FXA_RESOLUTION_X]
-#define FXA_RESOLUTION_Y guts. atoms[ AI_FXA_RESOLUTION_Y]
+#define FXA_RESOLUTION_X pguts-> atoms[ AI_FXA_RESOLUTION_X]
+#define FXA_RESOLUTION_Y pguts-> atoms[ AI_FXA_RESOLUTION_Y]
 #define FXA_POINT_SIZE XA_POINT_SIZE
-#define FXA_PIXEL_SIZE guts. atoms[ AI_FXA_PIXEL_SIZE]
-#define FXA_SPACING guts. atoms[ AI_FXA_SPACING]
+#define FXA_PIXEL_SIZE pguts-> atoms[ AI_FXA_PIXEL_SIZE]
+#define FXA_SPACING pguts-> atoms[ AI_FXA_SPACING]
 #define FXA_WEIGHT XA_WEIGHT
-#define FXA_RELATIVE_WEIGHT guts. atoms[ AI_FXA_RELATIVE_WEIGHT]
-#define FXA_FOUNDRY guts. atoms[ AI_FXA_FOUNDRY]
+#define FXA_RELATIVE_WEIGHT pguts-> atoms[ AI_FXA_RELATIVE_WEIGHT]
+#define FXA_FOUNDRY pguts-> atoms[ AI_FXA_FOUNDRY]
 #define FXA_FAMILY_NAME XA_FAMILY_NAME
-#define FXA_AVERAGE_WIDTH   guts. atoms[ AI_FXA_AVERAGE_WIDTH]
-#define FXA_CHARSET_REGISTRY guts. atoms[ AI_FXA_CHARSET_REGISTRY]
-#define FXA_CHARSET_ENCODING guts. atoms[ AI_FXA_CHARSET_ENCODING]
+#define FXA_AVERAGE_WIDTH   pguts-> atoms[ AI_FXA_AVERAGE_WIDTH]
+#define FXA_CHARSET_REGISTRY pguts-> atoms[ AI_FXA_CHARSET_REGISTRY]
+#define FXA_CHARSET_ENCODING pguts-> atoms[ AI_FXA_CHARSET_ENCODING]
 #define FXA_CAP_HEIGHT XA_CAP_HEIGHT
-#define CREATE_EVENT guts. atoms[ AI_CREATE_EVENT]
-#define WM_DELETE_WINDOW guts. atoms[ AI_WM_DELETE_WINDOW]
-#define WM_PROTOCOLS guts. atoms[ AI_WM_PROTOCOLS]
-#define WM_TAKE_FOCUS guts. atoms[ AI_WM_TAKE_FOCUS]
-#define NET_WM_STATE guts. atoms[ AI_NET_WM_STATE]
-#define NET_WM_STATE_SKIP_TASKBAR guts. atoms[ AI_NET_WM_STATE_SKIP_TASKBAR]
-#define NET_WM_STATE_MAXIMIZED_VERT guts. atoms[ AI_NET_WM_STATE_MAXIMIZED_VERT]
-#define NET_WM_STATE_MAXIMIZED_HORZ guts. atoms[ (guts. net_wm_maximize_HORZ_vs_HORIZ > 0) ? guts. net_wm_maximize_HORZ_vs_HORIZ : AI_NET_WM_STATE_MAXIMIZED_HORZ]
-#define NET_WM_NAME guts. atoms[ AI_NET_WM_NAME]
-#define NET_WM_ICON_NAME guts. atoms[ AI_NET_WM_ICON_NAME]
-#define UTF8_STRING guts. atoms[ AI_UTF8_STRING]
-#define CF_TARGETS guts. atoms[ AI_TARGETS]
-#define XA_INCR  guts. atoms[ AI_INCR]
-#define CF_PIXEL guts. atoms[ AI_PIXEL]
-#define CF_FOREGROUND guts. atoms[ AI_FOREGROUND]
-#define CF_BACKGROUND guts. atoms[ AI_BACKGROUND]
-#define XA_MOTIF_WM_HINTS guts. atoms[ AI_MOTIF_WM_HINTS]
-#define NET_WM_STATE_MODAL guts. atoms[ AI_NET_WM_STATE_MODAL]
-#define NET_SUPPORTED guts. atoms[ AI_NET_SUPPORTED]
-#define UTF8_MIME guts. atoms[ AI_UTF8_MIME]
-#define NET_WM_STATE_STAYS_ON_TOP guts. atoms[ AI_NET_WM_STATE_STAYS_ON_TOP]
-#define NET_CURRENT_DESKTOP guts. atoms[ AI_NET_CURRENT_DESKTOP]
-#define NET_WORKAREA guts. atoms[ AI_NET_WORKAREA]
-#define NET_WM_STATE_ABOVE guts. atoms[ AI_NET_WM_STATE_ABOVE]
+#define CREATE_EVENT pguts-> atoms[ AI_CREATE_EVENT]
+#define WM_DELETE_WINDOW pguts-> atoms[ AI_WM_DELETE_WINDOW]
+#define WM_PROTOCOLS pguts-> atoms[ AI_WM_PROTOCOLS]
+#define WM_TAKE_FOCUS pguts-> atoms[ AI_WM_TAKE_FOCUS]
+#define NET_WM_STATE pguts-> atoms[ AI_NET_WM_STATE]
+#define NET_WM_STATE_SKIP_TASKBAR pguts-> atoms[ AI_NET_WM_STATE_SKIP_TASKBAR]
+#define NET_WM_STATE_MAXIMIZED_VERT pguts-> atoms[ AI_NET_WM_STATE_MAXIMIZED_VERT]
+#define NET_WM_STATE_MAXIMIZED_HORZ pguts-> atoms[ (pguts-> net_wm_maximize_HORZ_vs_HORIZ > 0) ? pguts-> net_wm_maximize_HORZ_vs_HORIZ : AI_NET_WM_STATE_MAXIMIZED_HORZ]
+#define NET_WM_NAME pguts-> atoms[ AI_NET_WM_NAME]
+#define NET_WM_ICON_NAME pguts-> atoms[ AI_NET_WM_ICON_NAME]
+#define UTF8_STRING pguts-> atoms[ AI_UTF8_STRING]
+#define CF_TARGETS pguts-> atoms[ AI_TARGETS]
+#define XA_INCR  pguts-> atoms[ AI_INCR]
+#define CF_PIXEL pguts-> atoms[ AI_PIXEL]
+#define CF_FOREGROUND pguts-> atoms[ AI_FOREGROUND]
+#define CF_BACKGROUND pguts-> atoms[ AI_BACKGROUND]
+#define XA_MOTIF_WM_HINTS pguts-> atoms[ AI_MOTIF_WM_HINTS]
+#define NET_WM_STATE_MODAL pguts-> atoms[ AI_NET_WM_STATE_MODAL]
+#define NET_SUPPORTED pguts-> atoms[ AI_NET_SUPPORTED]
+#define UTF8_MIME pguts-> atoms[ AI_UTF8_MIME]
+#define NET_WM_STATE_STAYS_ON_TOP pguts-> atoms[ AI_NET_WM_STATE_STAYS_ON_TOP]
+#define NET_CURRENT_DESKTOP pguts-> atoms[ AI_NET_CURRENT_DESKTOP]
+#define NET_WORKAREA pguts-> atoms[ AI_NET_WORKAREA]
+#define NET_WM_STATE_ABOVE pguts-> atoms[ AI_NET_WM_STATE_ABOVE]
 
 #define DEBUG_FONTS 0x01
 #define DEBUG_CLIP  0x02
@@ -455,12 +455,12 @@ typedef struct {
 #define _debug prima_debug
 extern int
 prima_debug( const char *format, ...);
-#define Fdebug if (guts.debug & DEBUG_FONTS) _debug
-#define Cdebug if (guts.debug & DEBUG_CLIP) _debug
-#define Edebug if (guts.debug & DEBUG_EVENT) _debug
-#define Mdebug if (guts.debug & DEBUG_MISC) _debug
-#define Pdebug if (guts.debug & DEBUG_COLOR) _debug
-#define Xdebug if (guts.debug & DEBUG_XRDB) _debug
+#define Fdebug if (pguts->debug & DEBUG_FONTS) _debug
+#define Cdebug if (pguts->debug & DEBUG_CLIP) _debug
+#define Edebug if (pguts->debug & DEBUG_EVENT) _debug
+#define Mdebug if (pguts->debug & DEBUG_MISC) _debug
+#define Pdebug if (pguts->debug & DEBUG_COLOR) _debug
+#define Xdebug if (pguts->debug & DEBUG_XRDB) _debug
 
 typedef struct _UnixGuts
 {
@@ -631,20 +631,21 @@ typedef struct _UnixGuts
    int                          net_wm_maximize_HORZ_vs_HORIZ;
 } UnixGuts;
 
-extern UnixGuts guts;
+extern UnixGuts  guts;
+extern UnixGuts* pguts;
 
 #define XCHECKPOINT						\
    STMT_START {							\
-      guts. ri[ guts. ri_head]. line = __LINE__;			\
-      guts. ri[ guts. ri_head]. file = __FILE__;			\
-      guts. ri[ guts. ri_head]. request = NextRequest(DISP);	\
-      guts. ri_head++;						\
-      if ( guts. ri_head >= REQUEST_RING_SIZE)			\
-	 guts. ri_head = 0;					\
-      if ( guts. ri_tail == guts. ri_head) {			\
-	 guts. ri_tail++;					\
-	 if ( guts. ri_tail >= REQUEST_RING_SIZE)		\
-	    guts. ri_tail = 0;					\
+      pguts-> ri[ pguts-> ri_head]. line = __LINE__;			\
+      pguts-> ri[ pguts-> ri_head]. file = __FILE__;			\
+      pguts-> ri[ pguts-> ri_head]. request = NextRequest(DISP);	\
+      pguts-> ri_head++;						\
+      if ( pguts-> ri_head >= REQUEST_RING_SIZE)			\
+	 pguts-> ri_head = 0;					\
+      if ( pguts-> ri_tail == pguts-> ri_head) {			\
+	 pguts-> ri_tail++;					\
+	 if ( pguts-> ri_tail >= REQUEST_RING_SIZE)		\
+	    pguts-> ri_tail = 0;					\
       }								\
    } STMT_END
 
@@ -881,10 +882,10 @@ typedef union _unix_sys_data
    TimerSysData                 timer;
 } UnixSysData, *PUnixSysData;
 
-#define DISP		(guts. display)
-#define SCREEN		(guts. screen_number)
-#define VISUAL          (guts. visual. visual)
-#define DRIN		guts. display, guts. screen_number
+#define DISP		(pguts-> display)
+#define SCREEN		(pguts-> screen_number)
+#define VISUAL          (pguts-> visual. visual)
+#define DRIN		pguts-> display, pguts-> screen_number
 #define X_WINDOW	(PComponent(self)-> handle)
 #define X(obj)		((PDrawableSysData)(PComponent((obj))-> sysData))
 #define DEFXX		PDrawableSysData selfxx = (self == nilHandle ? nil : X(self))
@@ -896,6 +897,9 @@ typedef union _unix_sys_data
 #define WHEEL_DELTA	120
 
 typedef U8 ColorComponent;
+
+extern UnixGuts *
+prima_unix_guts(void);
 
 extern Handle
 prima_xw2h( XWindow win);
@@ -947,7 +951,7 @@ prima_palette_replace( Handle self, Bool fast);
 #define COLORHINT_WHITE 2 
 
 #define LOGCOLOR_BLACK 0
-#define LOGCOLOR_WHITE (guts.palSize?(guts.palSize-1):0xffffffff)
+#define LOGCOLOR_WHITE (pguts->palSize?(pguts->palSize-1):0xffffffff)
 
 extern Color
 prima_map_color( Color color, int * hint);

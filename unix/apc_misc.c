@@ -1306,6 +1306,10 @@ apc_system_action( const char *s)
           return nil;
       }
       break;
+   case 'u':
+      if ( strcmp( s, "unix_guts") == 0) 
+	 return (char*) &guts;
+      break;
    case 'X':
       if ( strcmp( s, "XOpenDisplay") == 0) {
          char err_buf[512];

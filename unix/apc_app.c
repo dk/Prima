@@ -51,8 +51,13 @@
 #define BUFSIZ  2048
 #endif
 
-UnixGuts guts;
+UnixGuts guts, *pguts = &guts;
 
+UnixGuts *
+prima_unix_guts(void)
+{
+   return &guts;
+}
 
 static int
 x_error_handler( Display *d, XErrorEvent *ev)
