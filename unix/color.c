@@ -589,12 +589,6 @@ class;
       return false;
    }
 
-   if ( id >= 0 && guts. visualClass == DirectColor) {
-      warn("warning: non-default DirectColor visuals are not supported.\n");
-      id = -1;
-      goto FALLBACK_TO_DEFAULT_VISUAL;
-   }
-
    guts. useDithering     = true;
    guts. dynamicColors    = false;
    guts. grayScale        = false;

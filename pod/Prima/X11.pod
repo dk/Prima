@@ -412,17 +412,14 @@ display modes. This visual class is the best in terms of visual quality.
 Same as I<TrueColor>, but additionally each pixel value can be reprogrammed.
 Not all hardware support this visual, and usually by default it is not set.
 Prima supports this mode in exactly same way as I<TrueColor> without additional
-features. During testing, it appeared that non-default I<DirectColor> visuals
-require explicit assignment of each pixel used, which is inappropriate for
-color-rich images, and therefore Prima refuses to work on a non-default
-I<DirectColor> visual.
+features.
 
 =back
 
 =head1 Images
 
 As described in the previous section, X does not standardize pixel memory
-format for I<TrueColor> and C<DirectColor> visuals, so there is a chance that
+format for I<TrueColor> and I<DirectColor> visuals, so there is a chance that
 Prima wouldn't work on some bizarre hardware. Currently, Prima knows how to
 compose pixels of 15, 16, 24, and 32 bit depth, of contiguous ( not
 interspersed ) red-green-blue memory layout. Any other pixel memory layout
