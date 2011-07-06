@@ -165,6 +165,7 @@ use vars qw(
 	%cache_find_files
 	$binary_prereq
 	$win32_use_dlltool
+	$win32_dlltool
 	$compiler_version
 );
 
@@ -827,6 +828,7 @@ sub setup_variables
 	}
 	print "$cc_specs{ $COMPILER}->{ name}\n";
 	$win32_use_dlltool = $Win32 && ( $COMPILER eq 'gcc') && !$cygwin;
+	$win32_dlltool = $Config{dlltool} || 'dlltool';
 
 	# 5.8.0 hack
 	$Config{PATCHLEVEL} = $Config{PERL_PATCHLEVEL} if !defined $Config{PATCHLEVEL} || !length $Config{PATCHLEVEL};
@@ -2564,7 +2566,7 @@ EOF
 
 	print MAKE <<DLLTOOL if $win32_use_dlltool;
 $PrimaLib: $PrimaTarget
-\t\@dlltool -l $PrimaLib -d win32/Prima.def -D PRIMA.DLL $PrimaTarget
+\t\@$win32_dlltool -l $PrimaLib -d win32/Prima.def -D PRIMA.DLL $PrimaTarget
 
 DLLTOOL
 
