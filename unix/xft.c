@@ -201,7 +201,7 @@ prima_xft_init(void)
       optr = std_charsets[i]. map;
       ibl = 128;
       obl = 128 * sizeof( uint32_t);
-      iconv( ii, ( const char **) &iptr, &ibl, ( char **) &optr, &obl);
+      iconv( ii, ( char **) &iptr, &ibl, ( char **) &optr, &obl);
       iconv_close(ii);
 
       optr = std_charsets[i]. map - 128;

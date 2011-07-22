@@ -1384,9 +1384,14 @@ EOF
 			push @LIBS, 'iconv';
 			print "yes\n";
 		} else {
-			$DEFINES{HAVE_ICONV_H} = undef;
-			$WITH_ICONV = 0;
-			print "no\n";
+			my $ok = compile( "#include <iconv.h>\nint main() { iconv_close(0); return 0; }\n");
+			if ( $ok ) {
+				print "no, but works as part of libc\n";
+			} else {
+				$DEFINES{HAVE_ICONV_H} = undef;
+				$WITH_ICONV = 0;
+				print "no\n";
+			}
 		}
 	} else {
 		$WITH_ICONV = 0;
