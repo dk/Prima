@@ -192,7 +192,7 @@ prima_xft_init(void)
    for ( i = 1; i < MAX_CHARSET; i++) {
       memset( std_charsets[i]. map, 0, sizeof(std_charsets[i]. map));
 
-      ii = iconv_open("UCS-4-INTERNAL", std_charsets[i]. name);
+      ii = iconv_open("UCS-4", std_charsets[i]. name);
       if ( ii == (iconv_t)(-1)) continue;
 
       std_charsets[i]. fcs = FcCharSetUnion( fcs_ascii, fcs_ascii);
@@ -225,7 +225,7 @@ prima_xft_init(void)
       char upcase[256], *dest = upcase, *src = std_charsets[i].name;
       if ( !std_charsets[i]. enabled) continue;
       while ( *src) {
-         *dest++ = *src++;
+         *dest++ = toupper(*src++);
          length++;
       }
       hash_store( encodings, upcase, length, (void*) (std_charsets + i));
@@ -530,7 +530,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          xft_build_font_key( &key, &f, by_size);
          key. width = 0;
          hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
-	 Fdebug("xft: charset mismatch\n");
+         Fdebug("xft: charset mismatch\n");
          FcPatternDestroy( match);
          return false;
       }
