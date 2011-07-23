@@ -48,6 +48,7 @@ sub open
 	my $topic = $_[0];
 	
 	$windowClass-> create unless scalar @helpWindows;
+	$helpWindows[0]-> bring_to_front;
 	$helpWindows[0]-> {text}-> update_view;
 	$helpWindows[0]-> {text}-> load_link( $topic); 
 	$helpWindows[0]-> {text}-> select;
