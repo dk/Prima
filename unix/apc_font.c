@@ -494,13 +494,56 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
                 if (( info-> vecname = malloc( pat - pattern)))
                    strcpy( info-> vecname, pattern);
           } else
-     	    info-> font. vector = false;
-            info-> flags. vector = true;
+     	       info-> font. vector = false;
+          info-> flags. vector = true;
          }
       }
    }
 skip_font:
    return conformant;
+}
+
+static Bool
+pick_default_font_with_encoding(void)
+{
+    PFontInfo info;
+    int i, best = -1, best_weight = 0, max_weight = 5;
+
+    if ( !guts. no_scaled_fonts) max_weight++;
+    for ( i = 0, info = guts. font_info; i < guts. n_fonts; i++, info++) {
+       if ( strcmp( info-> font. encoding, guts. locale) == 0) {
+          int weight = 0;
+          if ( info-> font. style == fsNormal) weight++;
+          if ( info-> font. weight == fwMedium) weight++;
+          if ( info-> font. pitch == fpVariable) weight++;
+          if ( info-> font. vector) weight++;
+          if (
+              ( strcmp( info-> font.name, "helvetica") == 0 ) ||
+              ( strcmp( info-> font.name, "arial") == 0 )
+          )
+             weight+=2;
+          if (
+             ( strcmp( info-> font.name, "lucida") == 0 ) ||
+             ( strcmp( info-> font.name, "verdana") == 0 ) 
+          )
+             weight++;
+          if ( weight > best_weight) {
+             best_weight = weight;
+             best = i;
+             if ( weight == max_weight) break;
+          }
+       }
+    }
+
+    if ( best >= 0) {
+       fill_default_font( &guts. default_font);
+       strcpy( guts. default_font. name, guts. font_info[best].font.name);
+       strcpy( guts. default_font. encoding, guts. locale);
+       prima_core_font_pick( application, &guts. default_font, &guts. default_font);
+       guts. default_font. pitch = fpDefault;
+       return true;
+    }
+    return false;
 }
 
 Bool
@@ -643,29 +686,7 @@ prima_init_font_subsystem( char * error_buf)
           encoding, and has more or less reasonable metrics.
        */
       if ( guts. locale[0] && (strcmp( guts. locale, guts. default_font. encoding) != 0)) {
-         int i, best = -1, best_weight = 0;
-         for ( i = 0, info = guts. font_info; i < guts. n_fonts; i++, info++) {
-            if ( strcmp( info-> font. encoding, guts. locale) == 0) {
-               int weight = 0;
-               if ( info-> font. style == fsNormal) weight++;
-               if ( info-> font. weight == fwMedium) weight++;
-               if ( info-> font. pitch == fpVariable) weight++;
-               if ( info-> font. vector) weight++;
-               if ( weight > best_weight) {
-                  best_weight = weight;
-                  best = i;
-                  if ( weight == 4) break;
-               }
-            }
-         }
-
-         if ( best >= 0) {
-            fill_default_font( &guts. default_font);
-            strcpy( guts. default_font. name, guts. font_info[best].font.name);
-            strcpy( guts. default_font. encoding, guts. locale);
-            apc_font_pick( application, &guts. default_font, &guts. default_font);
-            guts. default_font. pitch = fpDefault;
-         }
+         pick_default_font_with_encoding(); 
       }
    }
    guts. default_font_ok = 1;
