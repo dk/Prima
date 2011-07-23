@@ -155,6 +155,7 @@ prima_xft_init(void)
 #ifdef HAVE_ICONV_H
    iconv_t ii;
    unsigned char in[128], *iptr;
+   char ucs4[12];
    size_t ibl, obl;
    uint32_t *optr;
    int j;
@@ -189,10 +190,13 @@ prima_xft_init(void)
    std_charsets[0]. glyphs = ( 127 - 32) + ( 255 - 161);
       
 #ifdef HAVE_ICONV_H
+   sprintf( ucs4, "UCS-4%cE", (guts.machine_byte_order == LSBFirst) ? 'L' : 'B');
    for ( i = 1; i < MAX_CHARSET; i++) {
       memset( std_charsets[i]. map, 0, sizeof(std_charsets[i]. map));
 
-      ii = iconv_open("UCS-4", std_charsets[i]. name);
+      guts. machine_byte_order = LSBFirst;
+
+      ii = iconv_open(ucs4, std_charsets[i]. name);
       if ( ii == (iconv_t)(-1)) continue;
 
       std_charsets[i]. fcs = FcCharSetUnion( fcs_ascii, fcs_ascii);
@@ -201,7 +205,17 @@ prima_xft_init(void)
       optr = std_charsets[i]. map;
       ibl = 128;
       obl = 128 * sizeof( uint32_t);
-      iconv( ii, ( char **) &iptr, &ibl, ( char **) &optr, &obl);
+      while ( 1 ) {
+         int ret = iconv( ii, ( char **) &iptr, &ibl, ( char **) &optr, &obl);
+         if ( ret < 0 && errno == EILSEQ) {
+            iptr++;
+            optr++;
+            ibl--;
+            obl -= sizeof(uint32_t);
+            continue;
+         }
+         break;
+      }
       iconv_close(ii);
 
       optr = std_charsets[i]. map - 128;
