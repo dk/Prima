@@ -79,6 +79,7 @@ use vars @ovvars = qw(
 	$MAKETYPE
 	$DEFFILE
 	$DISTNAME
+	$DISTVERSION
 	$DL_LOAD_FLAGS
 	$DEBUG
 	$WITH_XFT
@@ -941,6 +942,7 @@ sub setup_variables
 	die "Cannot find VERSION string in Prima.pm\n" unless defined $ver1;
 	print "Version: $ver1.$ver2\n";
 	setvar( 'DISTNAME', "Prima-$ver1.$ver2");
+	setvar( 'DISTVERSION', "$ver1.$ver2");
 
 # here starts lot of execs...
 	setup_compiler();
@@ -2054,6 +2056,40 @@ CONFIG
 	close F;
 }
 
+sub create_meta_yml
+{
+	open F, '>', 'META.yml' or die "Can't open META.yml:$!\n"; 
+print F <<YAML;	
+--- #YAML:1.0
+name:               Prima
+version:            $DISTVERSION
+abstract:           a perl graphic toolkit
+author:
+    - Dmitry Karasik <dmitry\@karasik.eu.org>
+license:            BSD
+homepage:           http://www.prima.eu.org/
+repository:         https://github.com/dk/Prima
+distribution_type:  module
+no_index:
+    directory:
+        - include
+        - img
+        - os2
+        - test
+        - unix
+        - win32
+    file:
+        - Makefile.PL
+        - test.pl
+        - ms_install.pl
+generated_by:       Prima/Makefile.PL
+meta-spec:
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4
+YAML
+	close F;
+}
+
 sub create_codecs_c
 {
 	open F, "> img/codecs.c" or die "cannot open img/codecs.c:$!\n";
@@ -2433,6 +2469,8 @@ EOF
 	create_config_pm;
 	print "Creating img/codecs.c\n";
 	create_codecs_c;
+	print "Creating META.yml\n";
+	create_meta_yml;
 	#exit;
 
 	my $make = <<HEADER;
