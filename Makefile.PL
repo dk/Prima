@@ -2068,7 +2068,7 @@ author:
     - Dmitry Karasik <dmitry\@karasik.eu.org>
 license:            BSD
 homepage:           http://www.prima.eu.org/
-repository:         https://github.com/dk/Prima
+repository:         http://github.com/dk/Prima
 distribution_type:  module
 no_index:
     directory:
