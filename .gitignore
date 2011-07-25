@@ -178,3 +178,4 @@ win32/gp.obj
 win32/misc.obj
 win32/stock.obj
 win32/timers.obj
+META.yml
