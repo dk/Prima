@@ -2067,8 +2067,9 @@ abstract:           a perl graphic toolkit
 author:
     - Dmitry Karasik <dmitry\@karasik.eu.org>
 license:            BSD
-homepage:           http://www.prima.eu.org/
-repository:         http://github.com/dk/Prima
+resources:
+    homepage:       http://www.prima.eu.org/
+    repository:     http://github.com/dk/Prima
 distribution_type:  module
 no_index:
     directory:
