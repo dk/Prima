@@ -206,12 +206,12 @@ sub change_transform
 
 	@cr = $_[0]-> pixel2point( @cr);
 	@tp = $_[0]-> pixel2point( @tp);
-	my $mcr2 = -$cr[2];
+	my $mcr2 = -$cr[3];
 	
 	$_[0]-> emit(';') unless $_[1];
 	$_[0]-> emit(':');
 	$_[0]-> emit(<<CLIP) if $doClip;
-N $cr[0] $cr[1] M 0 $cr[2] L $cr[3] 0 L 0 $mcr2 L X C
+N $cr[0] $cr[1] M 0 $cr[3] L $cr[2] 0 L 0 $mcr2 L X C
 CLIP
 	$_[0]-> emit("@tp T") if $doTR;
 	$_[0]-> emit("@sc Z") if $doSC;
