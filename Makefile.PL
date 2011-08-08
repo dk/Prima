@@ -248,7 +248,6 @@ sub cc_command_line
 #		next unless $DEFINES{$_};
 #		push @cc, "$CDEFFLAG$_=$DEFINES{$_}";
 #	}
-	push @cc, "${ CDEFFLAG}HAVE_CONFIG_H=1";
 	push @cc, ( $compile_only ? "$COUTOFLAG$objf" : "$COUTEXEFLAG$exef");
 	push @cc, "$COUTOFLAG$objf" if $COMPILER =~ /^(msvc|bcc32)$/ && !$compile_only;
 	push @cc, map { "$CLIBPATHFLAG$_"} @LIBPATH unless $compile_only || ( $COMPILER eq 'msvc');
@@ -1946,7 +1945,7 @@ sub create_config_pm
 	$ip[0] = qqd("$INSTALLSITEARCH/Prima/CORE");
 	$ip[1] = qqd("$INSTALLSITEARCH/Prima/CORE/generic");
 	my $ippi = join(',', map {"\'$_\'"} @ip);
-	my @cdefs = ('HAVE_CONFIG_H=1');
+	my @cdefs;
 	my $cdefs = join( ',', map {"'$_'"} @cdefs);
 	my $lddef = ( $COMPILER eq 'msvc') ? '/def:' : '',
 	my @libpath = @LIBPATH;

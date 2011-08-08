@@ -34,9 +34,7 @@
 #define POLLUTE_NAME_SPACE 1
 #endif
 
-#if defined( HAVE_CONFIG_H)
 #include "generic/config.h"
-#endif
 
 #if (PERL_PATCHLEVEL < 4 || (( PERL_PATCHLEVEL == 4) && ( PERL_SUBVERSION <= 4)))
 #error "Prima require at least perl 5.005"

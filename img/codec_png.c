@@ -27,9 +27,7 @@
 /* $Id$ */
 
 #define USE_NO_MINGW_SETJMP_TWO_ARGS
-#ifdef HAVE_CONFIG_H
 #include <generic/config.h>
-#endif
 #define Z_PREFIX 
 #include <png.h>
 #undef Byte
