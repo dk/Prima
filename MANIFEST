@@ -373,6 +373,5 @@ win32/files.c
 win32/global.c
 win32/gp.c
 win32/misc.c
-win32/Prima.def
 win32/stock.c
 win32/timers.c
