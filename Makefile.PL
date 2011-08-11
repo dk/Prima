@@ -1855,7 +1855,9 @@ WriteMakefile(
 			my $k = $_;
 			s/^include\///;
 			( $k => '$(INST_LIBDIR)/Prima/CORE/' . $_ )
-		} @h_files )
+		} @h_files ),
+		# examples
+		( map { $_ => '$(INST_LIBDIR)/' . $_ } <examples/*> ),
 	},
 	OPTIMIZE          => $OPTIMIZE,
 	PREREQ_PM         => \%PREREQ,
