@@ -99,7 +99,6 @@ examples/triangle.pl
 img/bc_color.c
 img/bc_const.c
 img/bc_extra.c
-img/codecs.c
 img/codec_bmp.c
 img/codec_jpeg.c
 img/codec_png.c
