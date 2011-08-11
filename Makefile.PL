@@ -58,7 +58,6 @@ use vars qw(
 	$path_sep
 	$dir_sep
 	%alldeps
-	%files
 	@pm_files
 	@prima_files
 	@pod_files
@@ -202,7 +201,7 @@ sub ffind
 sub setup_files
 {
 	@prima_files   = ('Prima.pm', ffind( qr/./, 'Prima' ));
-	@pod_files  = ffind( qr/\.pod$/ );
+	@pod_files  = ffind( qr/./, 'pod' );
 	@pm_files  = ffind( qr/\.pm$/ );
 	@c_files    = ( 
 		<*.c>,
@@ -236,18 +235,6 @@ sub setup_files
 		@exe_files = extmap('', @exe_files);
 		push @target_clean, @exe_files;
 	}
-		
-
-	%files = (
-		POD   => \@pod_files,
-		PM    => \@pm_files,
-		C     => \@c_files,
-		H     => \@h_files,
-		O     => \@o_files,
-		CLS   => \@cls_files,
-		EXE   => \@exe_files,
-		PRIMA => \@prima_files,
-	);
 }
 
 sub setup_environment
@@ -1856,8 +1843,10 @@ WriteMakefile(
 			s/^include\///;
 			( $k => '$(INST_LIBDIR)/Prima/CORE/' . $_ )
 		} @h_files ),
+		# POD
+		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } @pod_files ),
 		# examples
-		( map { $_ => '$(INST_LIBDIR)/' . $_ } <examples/*> ),
+		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } <examples/*> ),
 	},
 	OPTIMIZE          => $OPTIMIZE,
 	PREREQ_PM         => \%PREREQ,
@@ -1878,7 +1867,7 @@ WriteMakefile(
 			$target =~ s/\.\w+$//;
 			$_ => '$(INST_MAN3DIR)/'. $target . '.$(MAN3EXT)'
 		}
-		(@pm_files, @pod_files)
+		(@pm_files, grep { /pod$/ } @pod_files)
 	},
 	META_MERGE        => {
 		resources => {
