@@ -63,25 +63,8 @@ that means you don't have image libraries that Prima supports in your path.
 See PREREQUISITES section.
 
 If some of the required libraries or include files can not be found,
-INCPATH+=/some/include and LIBPATH+=/some/lib semantics should be used to tell
-Makefile.PL about these.
-
-To install Prima into a non-default directory, for example your home
-directory:
-
-    perl Makefile.PL PREFIX=$HOME/lib/perl
-
-If compilation process fails because Makefile contains invalid switches for
-your compiler or linker, try changing these by specifying arguments to
-Makefile.PL, where the most useful are:
-
-   COMPILER - type of compiler ( gcc, emx, mscv32, bcc32, irixcc)
-   CC       - compiler command
-   CFLAGS   - compiler arguments
-   LD       - linked command
-   LDFLAGS  - linker arguments
-
-Look in Makefile.PL for details.
+INC=-I/some/include and LIBS=-L/some/lib semantics should be used to tell
+Makefile.PL about these. Check ExtUtils::MakeMaker for more.
 
 GTK2
 ----
