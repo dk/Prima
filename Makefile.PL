@@ -339,13 +339,18 @@ sub setup_environment
 
 	my $os_suffix = $^O;
 	$os_suffix =~ s/\s/_/g;
-	$DISTNAME = "Prima-$ver1.$ver2-$os_suffix-$Config{PERL_REVISION}.$Config{PATCHLEVEL}.$Config{SUBVERSION}";
+
+	my $PATCHLEVEL = defined($Config{PATCHLEVEL}) ? $Config{PATCHLEVEL} : $Config{PERL_PATCHLEVEL};
+	my $SUBVERSION = defined($Config{SUBVERSION}) ? $Config{SUBVERSION} : $Config{PERL_SUBVERSION};
+	my $REVISION   = defined($Config{REVISION})   ? $Config{REVISION}   : $Config{PERL_REVISION};
+
+	$DISTNAME = "Prima-$ver1.$ver2-$os_suffix-$REVISION.$PATCHLEVEL.$SUBVERSION";
 
 	%DEFINES = (
 		PRIMA_VERSION    => $ver1,
 		PRIMA_SUBVERSION => $ver2,
-		PERL_PATCHLEVEL  => $Config{PATCHLEVEL},
-		PERL_SUBVERSION  => $Config{SUBVERSION},
+		PERL_PATCHLEVEL  => $PATCHLEVEL,
+		PERL_SUBVERSION  => $SUBVERSION,
 		PRIMA_CORE       => 1,
 		PERL_POLLUTE     => 1,
 		PRIMA_DEBUG      => 0,
