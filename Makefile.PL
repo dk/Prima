@@ -1,3 +1,30 @@
+#!env perl
+#
+#  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+#  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+#  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+#  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+#  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+#  SUCH DAMAGE.
+#
+
 package MY;
 use strict;
 use warnings;
@@ -11,11 +38,6 @@ use File::Find;
 use File::Path;
 use File::Basename;
 use File::Copy;
-
-# XXX
-# - binary_prereq under automated CPAN
-# - msvc warnings
-# - msvc ld debug flags /DEBUG
 
 use vars qw(
 	$ARGV_STR
@@ -45,6 +67,8 @@ use vars qw(
 	$SHQUOTE
 	$DEFFILE
 	$OPTIMIZE
+	%ALL_PM_INSTALL
+	%ALL_MAN_INSTALL
 );
 
 use vars qw(
@@ -235,6 +259,31 @@ sub setup_files
 		@exe_files = extmap('', @exe_files);
 		push @target_clean, @exe_files;
 	}
+
+	%ALL_PM_INSTALL = (
+		# PM
+		( map { $_ => '$(INST_LIBDIR)/'. $_ } @prima_files ),
+		# INC
+		( map {
+			my $k = $_;
+			s/^include\///;
+			( $k => '$(INST_LIBDIR)/Prima/CORE/' . $_ )
+		} @h_files ),
+		# POD
+		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } @pod_files ),
+		# examples
+		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } <examples/*> ),
+	);
+	%ALL_MAN_INSTALL = (
+		map {
+			my $target = $_;
+			$target =~ s/^pod\///;
+			$target =~ s/\//::/g;
+			$target =~ s/\.\w+$//;
+			$_ => '$(INST_MAN3DIR)/'. $target . '.$(MAN3EXT)'
+		}
+		(@pm_files, grep { /pod$/ } @pod_files)
+	);
 }
 
 sub setup_environment
@@ -261,6 +310,7 @@ sub setup_environment
 		$LDOUTFLAG    = '/OUT:';
 		$LD_LIB_EXT   = '.lib';
 		$OPTIMIZE     = '-Zi' if $cmd_options{DEBUG};
+		# link flag is /DEBUG, but we don't care because ActiveState has it on by default anyway
 	}
 	else {
 		$COUTOFLAG    = '-o';
@@ -1771,7 +1821,42 @@ $base$Config{_o}: Makefile $cfile @deps
 
 H
 	}
-	
+
+	my ( $pm_deinstall, $pm_deinstall_dir, %pm_deinstall_dir) = ('');
+	my @rm;
+	for ( values %ALL_PM_INSTALL ) {
+		my $f = $_;
+		$f =~ s/INST_LIBDIR/DESTINSTALLSITEARCH/;
+		push @rm, $f;
+		$f =~ s/[-\w\.]*$//;
+		$pm_deinstall_dir{$f} = 1;
+	}
+	$pm_deinstall_dir{'$(DESTINSTALLSITEARCH)/Prima/sys'}  = 1;
+	$pm_deinstall_dir{'$(DESTINSTALLSITEARCH)/auto/Prima'} = 1;
+	for ( values %ALL_MAN_INSTALL ) {
+		my $f = $_;
+		$f =~ s/INST_MAN3DIR/DESTINSTALLSITEMAN3DIR/;
+		push @rm, $f;
+	}
+	push @rm, 
+		'$(DESTINSTALLSITEMAN3DIR)/gencls.$(MAN3EXT)',
+		'$(DESTINSTALLSITEMAN1DIR)/VB.$(MAN1EXT)',
+		'$(DESTINSTALLSITEMAN1DIR)/cfgmaint.$(MAN1EXT)',
+		'$(DESTINSTALLSITEARCH)/auto/Prima/$(BASEEXT)$(LIB_EXT)',
+		'$(DESTINSTALLSITEARCH)/auto/Prima/$(DLBASE).$(DLEXT)',
+		'$(DESTINSTALLSITEARCH)/auto/Prima/$(BASEEXT).bs',
+		'$(DESTINSTALLSITEARCH)/auto/Prima/Prima.exp',
+		'$(DESTINSTALLSITEARCH)/auto/Prima/Prima.pdb',
+		;
+	while (@rm) {
+		my @part = splice(@rm, 0, 20);
+		$pm_deinstall .= "\t\$(ABSPERL) -e ${SHQUOTE}unlink \@ARGV${SHQUOTE} @part\n";
+	}
+	chomp $pm_deinstall;
+	$pm_deinstall_dir = 
+		"\t\$(ABSPERL) -e ${SHQUOTE}rmdir for \@ARGV${SHQUOTE} ".
+		join( ' ', sort { length $b <=> length $a } keys %pm_deinstall_dir)
+		;
 	$t .= <<H;
 
 bindist: all
@@ -1781,11 +1866,8 @@ devclean:
 \t\$(RM_F) *$Config{_o} img/*$Config{_o} $platform/*$Config{_o}
 
 deinstall:
-\t\$(RM_RF) \$(DESTINSTALLSITEARCH)/auto/\$(FULLEXT) \$(DESTINSTALLSITEARCH)/Prima*
-\t\$(RM_F)  \$(DESTINSTALLSITEMAN3DIR)/Prima* \\
-\t\$(DESTINSTALLSITEMAN3DIR)/gencls.\$(MAN3EXT) \\
-\t\$(DESTINSTALLSITEMAN1DIR)/VB.\$(MAN1EXT) \\
-\t\$(DESTINSTALLSITEMAN1DIR)/cfgmaint.\$(MAN1EXT)
+$pm_deinstall
+$pm_deinstall_dir 
 
 H
 
@@ -1834,20 +1916,7 @@ WriteMakefile(
 	VERSION_FROM      => 'Prima.pm',
 	ABSTRACT_FROM     => 'Prima.pm',
 	AUTHOR            => 'Dmitry Karasik <dmitry@karasik.eu.org>',
-	PM                => {
-		# PM
-		( map { $_ => '$(INST_LIBDIR)/'. $_ } @prima_files ),
-		# INC
-		( map {
-			my $k = $_;
-			s/^include\///;
-			( $k => '$(INST_LIBDIR)/Prima/CORE/' . $_ )
-		} @h_files ),
-		# POD
-		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } @pod_files ),
-		# examples
-		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } <examples/*> ),
-	},
+	PM                => \%ALL_PM_INSTALL,
 	OPTIMIZE          => $OPTIMIZE,
 	PREREQ_PM         => \%PREREQ,
 	OBJECT            => "@o_files",
@@ -1859,16 +1928,7 @@ WriteMakefile(
 	LICENSE           => 'BSD',
 	EXE_FILES         => \@exe_files,
 	PL_FILES          => {},
-	MAN3PODS          => {
-		map {
-			my $target = $_;
-			$target =~ s/^pod\///;
-			$target =~ s/\//::/g;
-			$target =~ s/\.\w+$//;
-			$_ => '$(INST_MAN3DIR)/'. $target . '.$(MAN3EXT)'
-		}
-		(@pm_files, grep { /pod$/ } @pod_files)
-	},
+	MAN3PODS          => \%ALL_MAN_INSTALL,
 	META_MERGE        => {
 		resources => {
 			homepage   => 'http://www.prima.eu.org/',
