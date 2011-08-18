@@ -230,7 +230,7 @@ sub setup_files
 	@c_files    = ( 
 		<*.c>,
 		(grep { not $PASSIVE_CODECS{$_} } <img/*.c>),
-		<$platform/*.c>,
+		(grep { !m/xft.c/ || $cmd_options{WITH_XFT} } <$platform/*.c>),
 	);
 	@cls_files  = ( <*.cls> );
 	@h_files    = ( 
