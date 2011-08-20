@@ -833,6 +833,10 @@ MSCVER
 
 	@LIBS = qw(gdi32 mpr winspool comdlg32) if $Win32; # add more when appropriate
 	push @LIBPATH, '/usr/lib/w32api' if $cygwin;
+	if ($^O eq 'solaris') {
+		push @LIBPATH, '/opt/csw/lib';
+		$OPTIMIZE .= ' -Wall' if $Config{ccname} eq 'gcc';
+	}
 
 }
 
