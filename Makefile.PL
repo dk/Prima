@@ -313,12 +313,12 @@ sub setup_environment
 		# link flag is /DEBUG, but we don't care because ActiveState has it on by default anyway
 	}
 	else {
-		$COUTOFLAG    = '-o';
-		$COUTEXEFLAG  = '-o';
+		$COUTOFLAG    = '-o ';
+		$COUTEXEFLAG  = '-o ';
 		$CLIBPATHFLAG = '-L';
 		$CLINKPREFIX  = '';
 		$LDLIBFLAG    = '-l';
-		$LDOUTFLAG    = '-o';
+		$LDOUTFLAG    = '-o ';
 		$LD_LIB_EXT   = '';
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
 	}
