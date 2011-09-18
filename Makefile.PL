@@ -461,7 +461,7 @@ sub cc_command_line
 	$cc .= ' ' . join(' ', map { "-I$_" } @INCPATH);
 	$cc .= $compile_only ? " $COUTOFLAG$objf" : " $COUTEXEFLAG$exef";
 	$cc .= " $COUTOFLAG$objf" if $Config{ccname} eq 'cl' && !$compile_only;
-	$cc .= ' ' . join( map { "$CLIBPATHFLAG$_"} @LIBPATH) unless $compile_only || ( $Config{ccname} eq 'cl');
+	$cc .= ' ' . join(' ', map { "$CLIBPATHFLAG$_"} @LIBPATH) unless $compile_only || ( $Config{ccname} eq 'cl');
 	$cc .= " $srcf";
 	return $cc if $compile_only;
 	$cc .= " $CLINKPREFIX";
