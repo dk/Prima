@@ -1607,6 +1607,7 @@ sub command_postinstall
 
 	if ( $opt{dl} ) {
 		my $f = "$opt{lib}/Prima.pm";
+		$DL_LOAD_FLAGS = $opt{dl};
 		print "Setting dl_load_flags=$DL_LOAD_FLAGS in $f\n";
 		open F, $f or die "cannot open $f:$!\n";
 		local $/;
