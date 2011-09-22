@@ -1614,9 +1614,12 @@ sub command_postinstall
 		my $ct = <F>;
 		close F;
 		$ct =~ s/(dl_load_flags\s*\{\s*)0x00/${1}0x01/;
-		open F, "> $f" or die "cannot write $f:$!\n";
+		# open_rw(\*F, $f);
+		open F, "> $f.tmp" or die "Cannot open $f.tmp:$!";
 		print F $ct;
 		close F;
+		unlink $f;
+		rename "$f.tmp", $f;
 	}
 	
 	my $fn_cfg = "$opt{lib}/Prima/Config.pm";
