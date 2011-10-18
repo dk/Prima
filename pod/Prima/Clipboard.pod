@@ -6,10 +6,9 @@ Prima::Clipboard - GUI interprocess data exchange
 
 =head1 DESCRIPTION
 
-Prima::Clipboard class is a descendant of Prima::Component. 
-It serves as an interface to the specific data
-storage, called clipboard, visible to all clients of one 
-GUI space. The system clipboard is intended for the exchange of
+Prima::Clipboard class is a descendant of Prima::Component.  It serves as an
+interface to the specific data storage, called clipboard, visible to all
+clients of one GUI space. The system clipboard is intended for the exchange of
 information of an arbitrary type between graphic applications.
 
 =head1 SYNOPSIS
@@ -37,27 +36,23 @@ information of an arbitrary type between graphic applications.
 
 =head1 USAGE
 
-Prima::Clipboard provides access to the system clipboard
-data storage. For the easier communication, the system clipboard
-has one 'format' field, that is stored along with the data.
-This field is used to distinguish between data formats.
-Moreover, a clipboard can hold simultaneously several data
-instances, of different data formats. Since the primary usage of a clipboard is
-'copying' and 'pasting', an application can store copied
-information in several formats, increasing possibility
-that the receiving application recognizes the data.
+Prima::Clipboard provides access to the system clipboard data storage. For the
+easier communication, the system clipboard has one 'format' field, that is
+stored along with the data.  This field is used to distinguish between data
+formats.  Moreover, a clipboard can hold simultaneously several data instances,
+of different data formats. Since the primary usage of a clipboard is 'copying'
+and 'pasting', an application can store copied information in several formats,
+increasing possibility that the receiving application recognizes the data.
 
-Different systems provide spectrum of predefined data
-types, but the toolkit uses only three of these - ascii text, utf8 text,
-and image. It does not limit, however, the data format
-being one of these three types - an application is free to
-register its own formats. Both predefined and newly defined data 
-formats are described by a string, and the three predefined formats
-are represented by C<'Text'>, C<'UTF8'>, and C<'Image'> string constants. 
+Different systems provide spectrum of predefined data types, but the toolkit
+uses only three of these - ascii text, utf8 text, and image. It does not limit,
+however, the data format being one of these three types - an application is
+free to register its own formats. Both predefined and newly defined data
+formats are described by a string, and the three predefined formats are
+represented by C<'Text'>, C<'UTF8'>, and C<'Image'> string constants. 
 
-The most frequent usage of Prima::Clipboard is to preform
-two tasks - copying and pasting. Both can be exemplified by
-the following:
+The most frequent usage of Prima::Clipboard is to preform two tasks - copying
+and pasting. Both can be exemplified by the following:
 
    my $c = $::application-> Clipboard;
 
@@ -69,26 +64,24 @@ the following:
 
 This simplistic code hides other aspects of Prima::Clipboard class.
 
-First, the default clipboard is accessible by an implicit name call,
-as an object named 'Clipboard'. This scheme makes it easily overridable.
-A more important point is, that the default clipboard object might
-be accompanied by other clipboard objects. This is the case with
-X11 environment, which defines also 'Primary' and 'Secondary'
-system clipboards. Their functionality is identical to the default
-clipboard, however. C<get_standard_clipboards()> method
-returns strings for the clipboards, provided by the system.
+First, the default clipboard is accessible by an implicit name call, as an
+object named 'Clipboard'. This scheme makes it easily overridable.  A more
+important point is, that the default clipboard object might be accompanied by
+other clipboard objects. This is the case with X11 environment, which defines
+also 'Primary' and 'Secondary' system clipboards. Their functionality is
+identical to the default clipboard, however. C<get_standard_clipboards()>
+method returns strings for the clipboards, provided by the system.
 
-Second, code for fetching and storing multi-format data is
-somewhat different. Clipboard is viewed as a shared system resource,
-and have to be 'opened', before a process can grab it, so other
-processes can access the clipboard data only after the clipboard
-is 'closed' ( Note: It is not so under X11, where there the clipboard locking
-is advisory, and any process can grab clipboard at any time) .
+Second, code for fetching and storing multi-format data is somewhat different.
+Clipboard is viewed as a shared system resource, and have to be 'opened',
+before a process can grab it, so other processes can access the clipboard data
+only after the clipboard is 'closed' ( Note: It is not so under X11, where
+there the clipboard locking is advisory, and any process can grab clipboard at
+any time) .
 
-C<fetch()> and C<store()> implicitly call C<open()>
-and C<close()>, but these functions must be called explicitly
-for the multi-format data handling. The code below illustrates the
-said:
+C<fetch()> and C<store()> implicitly call C<open()> and C<close()>, but these
+functions must be called explicitly for the multi-format data handling. The
+code below illustrates the said:
 
     # copy text and image 
     if ( $c-> open) {
@@ -130,18 +123,15 @@ by a program:
 
 =head2 Custom formats
 
-Once registered, all processes in a GUI space can access
-the data by this format. The registration must take place 
-also if a Prima-driven program needs to read data in
-a format, defined by an another program. In either case, 
-the duplicate registration is a valid event.
-When no longer needed, a format can be de-registered.
-It is not a mandatory action, however - the toolkit cleans
-up before exit. Moreover, the system maintains a reference
-counter on the custom-registered formats; de-registering
-does not mean deletion, thus. If two processes use a custom
-format, and one exits and re-starts, it still can access the
-data in the same format, registered by its previous incarnation.
+Once registered, all processes in a GUI space can access the data by this
+format. The registration must take place also if a Prima-driven program needs
+to read data in a format, defined by an another program. In either case, the
+duplicate registration is a valid event.  When no longer needed, a format can
+be de-registered.  It is not a mandatory action, however - the toolkit cleans
+up before exit. Moreover, the system maintains a reference counter on the
+custom-registered formats; de-registering does not mean deletion, thus. If two
+processes use a custom format, and one exits and re-starts, it still can access
+the data in the same format, registered by its previous incarnation.
 
 =head2 Unicode
 
@@ -150,16 +140,35 @@ leaving the choice to reader programs.  While it is possible to access both at
 the same time, by C<fetch>'ing content of C<Text> and C<UTF8> clipboard slots,
 widgets implement their own pasting scheme. To avoid hacking widget code, usage
 of C<text> property is advised instead of indicating C<'Text'> and C<'UTF8'>
-constants. This method is used in standard widgets, and is implemented so
-the programmer can reprogram its default action by overloading C<PasteText>
+constants. This method is used in standard widgets, and is implemented so the
+programmer can reprogram its default action by overloading C<PasteText>
 notification of C<Prima::Application> ( see L<Prima::Application/PasteText> ).
 
-The default action of C<PasteText> is to query first if C<'Text'> format is available,
-and if so, return the ascii text scalar. If C<Prima::Application::wantUnicodeInput> is set, 
-C<'UTF8'> format is checked before resorting to C<'Text'>. It is clear that this
-scheme is not the only possibly needed, for example, an application may want
-to ignore ASCII text, or, ignore UTF8 text but have C<Prima::Application::wantUnicodeInput>
-set, etc.
+The default action of C<PasteText> is to query first if C<'Text'> format is
+available, and if so, return the ascii text scalar. If
+C<Prima::Application::wantUnicodeInput> is set, C<'UTF8'> format is checked
+before resorting to C<'Text'>. It is clear that this scheme is not the only
+possibly needed, for example, an application may want to ignore ASCII text, or,
+ignore UTF8 text but have C<Prima::Application::wantUnicodeInput> set, etc.
+
+=head2 Images
+
+Image data can be transferred in different formats in different OSes. The
+lowest level is raw pixel data in display-based format, whereas GTK-based
+applications can also exchange images in file-based formats, such as bmp, png
+etc. To avoid further complications in the implementations, C<PasteImage>
+action was introduced to handle these cases. 
+
+The default action of C<PasteImage> is to query first if C<'Image'> format is
+available, and if so, return the Image object. This by default reads data from
+raw image buffer, but if fails, on unix the logic proceeds by checking data in
+formats 'image/bmp', 'image/png' etc.  C<BMP> is checked first because the
+corresponding codec is always compiled in Prima, it doesn't depend on external
+libraries. Next is checked C<PNG> format, because it is lossless, then C<TIFF>,
+then all others.
+
+When storing the image on the clipboard, only the default format, raw pixel data
+is used.
 
 =head1 API
 

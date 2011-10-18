@@ -289,6 +289,7 @@ sub profile_default
 	$def-> {name} = 'Clipboard';
 	return $def;
 }
+
 sub text
 { 
 	if ($#_) {
@@ -300,7 +301,16 @@ sub text
 	}
 }
 
-sub image { $#_ ? $_[0]-> store( 'Image', $_[1]) : return $_[0]-> fetch('Image') }
+sub image
+{ 
+	if ($#_) {
+		$_[0]-> store( 'Image',  $_[1]);
+	} else {
+		my $image;
+		$::application-> notify( 'PasteImage', $_[0], \$image);
+		return $image;
+	}
+}
 
 # class Drawable
 package Prima::Drawable;
@@ -1517,15 +1527,17 @@ use vars qw(@ISA @startupNotifications);
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
 	PasteText   => nt::Action,
+	PasteImage  => nt::Action,
 );
 
 sub notification_types { return \%RNT; }
 }
+	
+my $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix;
 
 sub profile_default
 {
 	my $def  = $_[ 0]-> SUPER::profile_default;
-	my $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix;
 	my %prf = (
 		autoClose      => 0,
 		pointerType    => cr::Arrow,
@@ -1588,6 +1600,22 @@ sub setup
 	}
 	$_-> ($self) for @startupNotifications;
 	undef @startupNotifications;
+
+	# setup image cliboard transfer routines specific to gtk
+	if ( $unix ) {
+		my %weights = (
+			bmp  => 4,  # bmp is independent on codecs
+			png  => 3,  # png is lossless
+			tiff => 2,  # tiff is usually lossless
+		);
+		my %codecs  = map { lc($_-> {fileShortType})  => ( $weights{ lc($_-> {fileShortType}) } || 1 ) }
+			@{Prima::Image-> codecs};
+		delete @codecs{qw(xbm xpm)};
+		my @codecs = map { "image/$_" } sort { $codecs{$b} <=> $codecs{$a} } keys %codecs;
+		my $clipboard = $self-> Clipboard;
+		$clipboard-> register_format($_) for @codecs;
+		$self-> {GTKImageClipboardFormats} = \@codecs;
+	}
 }
 
 sub get_printer
@@ -1635,6 +1663,30 @@ sub on_pastetext
 		return if defined ( $$ref = $clipboard-> fetch( 'UTF8'));
 	}
 	$$ref = $clipboard-> fetch( 'Text');
+	undef;
+}
+
+sub on_pasteimage
+{
+	my ( $self, $clipboard, $ref) = @_;
+	$$ref = $clipboard-> fetch( 'Image');
+	return if defined $$ref;
+
+	my $codecs = $self-> {GTKImageClipboardFormats};
+	return unless $codecs;
+
+	my %formats = map { $_ => 1 } $clipboard-> get_formats;
+	my @codecs  = grep { $formats{$_} } @$codecs;
+	return unless @codecs;
+
+	my $data = $clipboard-> fetch($codecs[0]);
+	return unless defined $data;
+
+	my $handle;
+	open( $handle, '<', \$data) or return undef;
+
+	$$ref = Prima::Image-> load($handle, loadExtras => 1 );
+
 	undef;
 }
 

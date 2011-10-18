@@ -367,6 +367,16 @@ Default value: 0
 
 =over
 
+=item PasteImage $CLIPBOARD, $$IMAGE_REF
+
+The notification queries C<$CLIPBOARD> for image content and stores in
+C<$$IMAGE_REF>. Default action is that C<'Image'> format is queried.
+On unix, encoded formats C<'image/bmp'>, C<'image/png'> etc are queried if
+the default C<'Image'> is not found.
+
+The C<PasteImage> mechanism is devised to read images from clipboard in 
+GTK environment.
+
 =item PasteText $CLIPBOARD, $$TEXT_REF
 
 The notification queries C<$CLIPBOARD> for text content and stores in
