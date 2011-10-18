@@ -179,3 +179,15 @@ win32/misc.obj
 win32/stock.obj
 win32/timers.obj
 META.yml
+MYMETA.yml
+Makefile.old
+Prima.bs
+Prima/VB/VB
+Prima/VB/cfgmaint
+blib/
+pm_to_blib
+utils/fmview
+utils/gencls
+utils/p-class
+utils/podview
+utils/tmlink
