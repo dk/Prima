@@ -1610,7 +1610,6 @@ sub setup
 		);
 		my %codecs  = map { lc($_-> {fileShortType})  => ( $weights{ lc($_-> {fileShortType}) } || 1 ) }
 			@{Prima::Image-> codecs};
-		delete @codecs{qw(xbm xpm)};
 		my @codecs = map { "image/$_" } sort { $codecs{$b} <=> $codecs{$a} } keys %codecs;
 		my $clipboard = $self-> Clipboard;
 		$clipboard-> register_format($_) for @codecs;
@@ -1683,8 +1682,9 @@ sub on_pasteimage
 	return unless defined $data;
 
 	my $handle;
-	open( $handle, '<', \$data) or return undef;
+	open( $handle, '<', \$data) or return;
 
+	local $@;
 	$$ref = Prima::Image-> load($handle, loadExtras => 1 );
 
 	undef;
