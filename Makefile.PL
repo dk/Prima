@@ -366,7 +366,7 @@ sub setup_environment
 	if ( $Win32 and not $cygwin ) {
 		if ( $Config{myuname} =~ /strawberryperl/i) {
 			$flavor = 'strawberry';
-		} elsif ( `perl -V` =~ /activestate/i) {
+		} elsif ( `perl -V` =~ /activeperl/i) {
 			$flavor = 'activestate';
 		}
 	}
