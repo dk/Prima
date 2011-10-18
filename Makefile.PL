@@ -79,6 +79,7 @@ use vars qw(
 	$unix
 	$cygwin
 	$platform
+	$flavor
 	$path_sep
 	$dir_sep
 	%alldeps
@@ -340,14 +341,9 @@ sub setup_environment
 	die "Cannot find VERSION string in Prima.pm\n" unless defined $ver1;
 	print "Version: $ver1.$ver2\n";
 
-	my $os_suffix = $^O;
-	$os_suffix =~ s/\s/_/g;
-
 	my $PATCHLEVEL = defined($Config{PATCHLEVEL}) ? $Config{PATCHLEVEL} : $Config{PERL_PATCHLEVEL};
 	my $SUBVERSION = defined($Config{SUBVERSION}) ? $Config{SUBVERSION} : $Config{PERL_SUBVERSION};
 	my $REVISION   = defined($Config{REVISION})   ? $Config{REVISION}   : $Config{PERL_REVISION};
-
-	$DISTNAME = "Prima-$ver1.$ver2-$os_suffix-$REVISION.$PATCHLEVEL.$SUBVERSION";
 
 	%DEFINES = (
 		PRIMA_VERSION    => $ver1,
@@ -364,6 +360,23 @@ sub setup_environment
 
 	$OS2DLLF = 'Prima';
 	$OS2DLLF = &DynaLoader::mod2fname([$OS2DLLF]) if $OS2 && defined &DynaLoader::mod2fname;
+
+	print "Flavor: ";
+	$flavor = $^O;
+	if ( $Win32 and not $cygwin ) {
+		if ( $Config{myuname} =~ /strawberryperl/i) {
+			$flavor = 'strawberry';
+		} elsif ( `perl -V` =~ /activestate/i) {
+			$flavor = 'activestate';
+		}
+	}
+	$flavor =~ s/\s/_/g;
+	print "$flavor\n";
+
+	$flavor = 'sb32' if $flavor eq 'strawberry';
+	$flavor = 'as32' if $flavor eq 'activestate';
+	
+	$DISTNAME = "Prima-$ver1.$ver2-$flavor-$REVISION.$PATCHLEVEL.$SUBVERSION";
 }
 
 sub qtilde
@@ -826,7 +839,7 @@ MSCVER
 		$Win64 = have_define('_WIN64');
 		print $Win64 ? " 64" : " 32";
 		print " bits\n";
-		$DISTNAME =~ s/(mswin)32/${1}64/i if $Win64;
+		$DISTNAME =~ s/(mswin|sb|as)32/${1}64/i if $Win64;
 	}
 
 	@INCPATH = (
