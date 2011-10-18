@@ -1,4 +1,7 @@
-1,31  Compile on 5.14 and libpng15. Enhance unicode input on win32.
+1.32  Major rehaul of Makefile.PL, migrated to ExtUtils::MakeMaker.
+      Support image/mime clipboard formats under GTK.
+
+1.31  Compile on 5.14 and libpng15. Enhance unicode input on win32.
       Better libiconv support.
 
 1.30  Compile on 5.13. Compile on 64-bit ActiveState and strawberry builds. 
