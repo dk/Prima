@@ -629,7 +629,7 @@ apc_clipboard_has_format( Handle self, Handle id)
          return false;
 
       /* selection owner does not support TARGETS, so peek */
-      if ( XX-> external[id]. size == 0 && XX-> internal[id]. size == 0)
+      if ( XX-> external[cfTargets]. size == 0 && XX-> internal[id]. size == 0)
          return query_data( self, id);
    }
    return false;
