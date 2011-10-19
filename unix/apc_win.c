@@ -1291,6 +1291,16 @@ apc_window_execute( Handle self, Handle insert_before)
       ) 
          toplevel = PWindow(self)-> owner;
    }
+   /* find main window */
+   if ( toplevel == nilHandle) {
+   	int i;
+	PList l = & PWidget(application)-> widgets;
+	for ( i = 0; i < l-> count; i++)
+	    if ( PObject(l-> items[i])-> options. optMainWindow) {
+	       toplevel = l-> items[i];
+	       break;
+	    }
+   }
    if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, PWidget(toplevel)-> handle);
 
    XX-> flags.modal = true;

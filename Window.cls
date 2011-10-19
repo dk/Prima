@@ -39,6 +39,7 @@ object Prima::Window( Prima::Widget)
    property Point    frameOrigin;
    property Point    frameSize;
    property Handle   icon;
+   property Bool     mainWindow;
    property Handle   menu;
    property Color    menuColorIndex( int index);
    property SV *     menuItems;

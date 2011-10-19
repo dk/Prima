@@ -1339,7 +1339,7 @@ sub prf_types
 			'menuLight3DColor', 'menuDark3DColor'
 		],
 		font          => ['menuFont'],
-		bool          => ['modalHorizon', 'taskListed', 'ownerIcon', 'onTop'],
+		bool          => ['modalHorizon', 'taskListed', 'ownerIcon', 'onTop', 'mainWindow'],
 		uiv           => ['modalResult'],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);

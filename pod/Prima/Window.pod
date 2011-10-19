@@ -199,21 +199,26 @@ provided.
 =head2 Prima::MainWindow
 
 The class is a simple descendant of Prima::Window, which overloads
-C<on_destroy> notification and calls C<$application-E<gt>close> inside it.
-The purpose of declaration of a separate class for such a trifle difference
-is that many programs are designed under a paradigm where these is a main
-window, which is most 'important' to the user. As such consruct is used more
-often than any other, it is considered an optimization to write
+C<on_destroy> notification and calls C<$application-E<gt>close> inside it. The
+purpose of declaration of a separate class for such a trifle difference is that
+many programs are designed under a paradigm where these is a main window, which
+is most 'important' to the user. As such the construct is used more often than
+any other, it is considered an optimization to write
 
    Prima::MainWindow-> create( ... )
 
 rather than
 
-   Prima::Window-> create( ..., onDestroy => sub { $::application-> close })
+   Prima::Window-> create( ..., 
+      mainWindow => 1,
+      onDestroy  => sub { $::application-> close }
+   )
 
 , although these lines are equivalent.
 
 Also, the C<$::main_window> is pointed to a newly created main window.
+
+See also C<mainWindow>.
 
 =head1 API
 
@@ -282,6 +287,15 @@ Hints the system about an icon, associated with a window.
 If OBJECT is C<undef>, the system-default icon is assumed.
 
 See also: C<ownerIcon>
+
+=item mainWindow BOOLEAN
+
+Tells the system that the window is the main window for the application.  When
+dialogs and modal windows are not anchored to any specific window, the main
+window is used. In this context, anchoring means that if, for example, a window
+spawns a dialog, and then is minimized or obscured, and then the user clicks on
+either window, both can be brought forward (also in correct Z-order) by the system
+window manager.
 
 =item menu OBJECT
 

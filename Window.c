@@ -53,6 +53,7 @@ Window_init( Handle self, HV * profile)
 
    opt_set( optSystemSelectable);
    opt_assign( optOwnerIcon, pget_B( ownerIcon));
+   opt_assign( optMainWindow, pget_B( mainWindow));
    my-> set_icon( self, pget_H( icon));
    my-> menuColorIndex( self, true, ciFore,          pget_i( menuColor)            );
    my-> menuColorIndex( self, true, ciBack,          pget_i( menuBackColor)        );
@@ -548,6 +549,15 @@ Window_icon( Handle self, Bool set, Handle icon)
    apc_window_set_icon( self, icon);
    opt_clear( optOwnerIcon);
    return nilHandle;
+}
+
+Bool
+Window_mainWindow( Handle self, Bool set, Bool mainWindow)
+{
+   if ( !set)
+      return is_opt( optMainWindow);
+   opt_assign( optMainWindow, mainWindow);
+   return false;
 }
 
 Handle

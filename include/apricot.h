@@ -1620,6 +1620,7 @@ typedef struct _ObjectOptions_ {
    unsigned optAutoPopup           : 1;   /* Popup */
    unsigned optActive              : 1;   /* Timer */
    unsigned optOwnerIcon           : 1;   /* Window */
+   unsigned optMainWindow          : 1;
 } ObjectOptions;
 
 #define opt_set( option)           (PObject(self)-> options. option = 1)

@@ -1247,6 +1247,7 @@ sub profile_default
 		clipOwner             => 0,
 		growMode              => gm::DontCare,
 		icon                  => 0,
+		mainWindow            => 0,
 		menu                  => undef,
 		menuItems             => undef,
 		menuColor             => cl::NormalText,
@@ -1364,7 +1365,17 @@ package Prima::MainWindow;
 use vars qw(@ISA);
 @ISA = qw(Prima::Window);
 
-sub on_create  { $::main_window = $_[0]; }
+sub profile_default
+{
+	my $def = $_[ 0]-> SUPER::profile_default;
+	my %prf = (
+		mainWindow => 1,
+	);
+	@$def{keys %prf} = values %prf;
+	return $def;
+}
+
+sub on_create  { $::main_window = $_[0] }
 sub on_destroy { $::application-> close; undef $::main_window }
 
 # class MenuItem
