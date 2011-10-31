@@ -867,6 +867,15 @@ MSCVER
 				last;
 			}
 			closedir D;
+
+			$END .= <<WARN;
+
+** Warning: Bug #68937 detected in your Portable Strawberry Perl .
+Consider switching to another Strawberry build, or fix your installation by 
+applying the patch described at https://rt.cpan.org/Ticket/Display.html?id=68937
+Note that Prima-dependent modules may not build because of the bug .
+
+WARN
 		}
 	}
 }
