@@ -853,31 +853,6 @@ MSCVER
 		push @LIBPATH, '/opt/csw/lib';
 		$OPTIMIZE .= ' -Wall' if $Config{ccname} eq 'gcc';
 	}
-
-
-	# workaround portable strawberry libpth bug ( see https://rt.cpan.org/Ticket/Display.html?id=68937 )
-	if ($Win32 and $flavor =~ /^sb/ and 1 == split(' ', $Config{libpth})) {
-		my $lib_prefix = ($Config{libpth} =~ /^(.*?)\blib$/)[0];
-		unless ( -f "${lib_prefix}libgdi32.a") {
-			opendir D, $lib_prefix;
-			for ( readdir D ) {
-				next if m/^\./ or not -d "$lib_prefix$_";
-				next unless -f "$lib_prefix$_\\lib\\libgdi32.a";
-				push @LIBPATH, "$lib_prefix$_\\lib";
-				last;
-			}
-			closedir D;
-
-			$END .= <<WARN;
-
-** Warning: Bug #68937 detected in your Portable Strawberry Perl .
-Consider switching to another Strawberry build, or fix your installation by 
-applying the patch described at https://rt.cpan.org/Ticket/Display.html?id=68937
-Note that Prima-dependent modules may not build because of the bug .
-
-WARN
-		}
-	}
 }
 
 sub setup_defines
@@ -1994,6 +1969,7 @@ WriteMakefile(
 	OBJECT            => "@o_files",
 	INC               => join(' ', map { "-I$_" } @INCPATH ),
 	LIBS              => [ 
+		':nosearch ' .
 		join(' ', map { "-L$_" } @LIBPATH) . ' ' .
 		join(' ', map { "-l$_" } @LIBS),
 	],
