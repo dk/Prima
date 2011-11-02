@@ -47,8 +47,8 @@
 #	include <ctype.h>
 #	define X_PROTOCOL              11
 #	define _Xconst
-#	define False                   0
-#	define True                    0
+#	define False                    0
+#	define True                     1
 #	define BitmapSuccess		0
 #	define BitmapOpenFailed 	1
 #	define BitmapFileInvalid 	2
