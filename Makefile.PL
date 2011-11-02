@@ -1385,6 +1385,10 @@ sub setup_codecs
 			$lib = $codec = 'gif';
 			print "no\n";
 			goto AGAIN;
+		} elsif ( $codec eq 'X11') {
+			$DEFINES{EMULATE_X11_CODEC} = 1;
+			push( @ACTIVE_CODECS, $codec);
+			print "no, using built-in\n";
 		} else {
 			$PASSIVE_CODECS{$fn} = 1;
 			push @warn_codecs, $codec unless $codec eq 'prigraph';
