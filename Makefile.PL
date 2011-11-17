@@ -1117,7 +1117,7 @@ sub setup_xlibs
 			qd("/usr/freeware/include/freetype2"),
 			qd("/usr/opt/include/freetype2")
 		);
-		my $have_ft2build_h = find_header( qd("ft2build.h"), @ft_incpaths );
+		my $have_ft2build_h = defined find_header( qd("ft2build.h"), @ft_incpaths );
 
 		print "Checking for presence of freetype/freetype.h... ";
 		my $incpath;
