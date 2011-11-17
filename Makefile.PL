@@ -73,6 +73,7 @@ use vars qw(
 
 use vars qw(
 	%cmd_options
+	%passthru_options
 	$Win32
 	$Win64
 	$OS2
@@ -167,11 +168,25 @@ sub setup_argv
 		AUTOMATED_RUN => 0,
 		DL_LOAD_FLAGS => undef,
 	);
+
+	%passthru_options = (
+		DEFINE        => '',
+		LIBS          => '',
+		INC           => '',
+		LD            => $Config{ld},
+		LDDLFLAGS     => $Config{lddlflags},
+	);
 	
 	@ARGV = grep {
 		my ( $k, $v) = split( '=', $_, 2 );
 		exists($cmd_options{$k}) ? ($cmd_options{$k} = $v, 0) : 1;
 	} @ARGV;
+
+	for ( @ARGV ) {
+		my ( $k, $v) = split( '=', $_, 2 );
+		next unless exists $passthru_options{$k};
+		$passthru_options{$k} = $v;
+	}
 }
 
 sub setup_variables
@@ -471,10 +486,12 @@ sub cc_command_line
 	my $ccflags = $Config{ccflags};
 	$ccflags =~ s/\b\-W(all|error|\d)w*//i;
 	my $cc = "$Config{cc} $ccflags";
+	$cc .= " $passthru_options{DEFINE}" if length $passthru_options{DEFINE};
 	$cc .= " $Config{cccdlflags}" if $dl;
 	$cc .= " $Config{ccdlflags}" if $dl && !$compile_only;
 	$cc .= " -c " if $compile_only;
 	$cc .= ' ' . join(' ', map { "-I$_" } @INCPATH);
+	$cc .= " $passthru_options{INC}" if length $passthru_options{INC};
 	$cc .= $compile_only ? " $COUTOFLAG$objf" : " $COUTEXEFLAG$exef";
 	$cc .= " $COUTOFLAG$objf" if $Config{ccname} eq 'cl' && !$compile_only;
 	$cc .= ' ' . join(' ', map { "$CLIBPATHFLAG$_"} @LIBPATH) unless $compile_only || ( $Config{ccname} eq 'cl');
@@ -483,13 +500,14 @@ sub cc_command_line
 	$cc .= " $CLINKPREFIX";
 	$cc .= ' ' . join(' ', map { "\"$CLIBPATHFLAG\\\"$_\\\"\"" } @LIBPATH) if $Config{ccname} eq 'cl';
 	$cc .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
+	$cc .= " $passthru_options{LIBS}" if length $passthru_options{LIBS};
 	return $cc;
 }
 
 sub ld_command_line
 {
 	my ( $dstf) = shift;
-	my $ld = "$Config{ld} $Config{lddlflags}";
+	my $ld = "$passthru_options{LD} $passthru_options{LDDLFLAGS}";
 	$ld .= " $LDOUTFLAG$dstf @_";
 	$ld .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
 	return $ld;
