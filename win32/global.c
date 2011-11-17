@@ -838,7 +838,8 @@ AGAIN:
       ev. pos. mod      = 0 |
         (( mp1 & MK_CONTROL ) ? kmCtrl   : 0) |
         (( mp1 & MK_SHIFT   ) ? kmShift  : 0) |
-        (( GetKeyState( VK_MENU) < 0) ? kmAlt : 0)
+        (( GetKeyState( VK_MENU) < 0) ? kmAlt : 0) |
+	apc_pointer_get_state(self)
       ;
       break;
    case WM_MENUCHAR:
