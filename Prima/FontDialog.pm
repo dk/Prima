@@ -67,6 +67,7 @@ sub profile_default
 		showHelp    => 0,
 		fixedOnly   => 0,
 		logFont     => $_[ 0]-> get_default_font,
+		sampleText  => 'AaBbYyZz',
 	}
 }
 
@@ -88,9 +89,10 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	my $j;
 
-	$self-> {showHelp}  = $profile{showHelp};
-	$self-> {logFont}   = $profile{logFont};
-	$self-> {fixedOnly} = $profile{fixedOnly};
+	$self-> {showHelp}   = $profile{showHelp};
+	$self-> {logFont}    = $profile{logFont};
+	$self-> {fixedOnly}  = $profile{fixedOnly};
+	$self-> {sampleText} = $profile{sampleText};
 
 	my $gr = $self-> insert( CheckBoxGroup =>
 		origin => [ 10, 10],
@@ -357,7 +359,7 @@ sub Example_Paint
 	$canvas-> bar( 0, 0, @size);
 	$canvas-> color( cl::Black);
 	my $f = $self-> font;
-	my $line = 'AaBbYyZz';
+	my $line = $owner-> sampleText;
 	$canvas-> text_out(
 		$line,
 		( $size[0] - $canvas-> get_text_width( $line)) / 2,
@@ -450,6 +452,8 @@ sub logFont
 
 sub showHelp         { ($#_)? shift-> raise_ro('showHelp')  : return $_[0]-> {showHelp}};
 sub fixedOnly        { ($#_)? shift-> set_fixed_only($_[1]) : return $_[0]-> {fixedOnly}};
+sub sampleText       { ($#_)? shift-> {sampleText} = $_[1]  : return $_[0]-> {sampleText}};
+
 
 1;
 
@@ -489,6 +493,12 @@ Default value: 0
 
 Provides access to the interactive font selection as a hash reference.
 FONT format is fully compatible with C<Prima::Drawable::font>.
+
+=item sampleText STRING
+
+Sample line of text featuring current font selection.
+
+Default value: AaBbYyZz
 
 =item showHelp BOOLEAN
 
