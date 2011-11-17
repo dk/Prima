@@ -177,8 +177,9 @@ sub init
 		origin     => [ 5, 5],
 		size       => [ 345, 90],
 		name       => 'Example',
-		delegations=> [ $self, 'Paint', 'FontChanged', 'MouseDown', 'MouseUp'],
+		delegations=> [ $self, 'Paint', 'FontChanged', 'MouseDown', 'MouseUp', 'MouseClick'],
 		growMode   => gm::Client,
+		hint       => 'Click to drag font, double-click to edit text',
 	);
 
 	my $enc = $self-> insert( ComboBox =>
@@ -365,6 +366,21 @@ sub Example_Paint
 		( $size[0] - $canvas-> get_text_width( $line)) / 2,
 		( $size[1] - $f-> height) / 2
 	);
+}
+
+sub Example_MouseClick
+{
+	my ( $owner, $self, $button, $mod, $x, $y, $double) = @_;
+	return unless $double;
+	require Prima::MsgBox;
+
+	my $wui  = $::application-> wantUnicodeInput;
+	$::application-> wantUnicodeInput(1);
+	my $text = Prima::MsgBox::input_box( $owner-> text, 'Set new sample text', $owner-> sampleText);
+	$::application-> wantUnicodeInput($wui);
+	return unless defined $text;
+	$owner-> sampleText($text);
+	$self-> repaint;
 }
 
 sub Example_FontChanged
