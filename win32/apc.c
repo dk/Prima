@@ -2963,19 +2963,19 @@ Handle ctx_kb2VK3[] = {
    endCtx
 };
 
-
-typedef LRESULT (*ApiMessageSender)(HWND hwnd, UINT msg, WPARAM mp1, LPARAM mp2);
 Bool
 apc_message( Handle self, PEvent ev, Bool post)
 {
    ULONG msg;
    USHORT mp1s = 0;
-   ApiMessageSender sender = post ? (ApiMessageSender) PostMessage : (ApiMessageSender) SendMessage;
    objCheck false;
    switch ( ev-> cmd)
    {
        case cmPost:
-          sender(( HWND) var handle, WM_POSTAL, ( WPARAM) ev-> gen. H, ( LPARAM) ev-> gen. p);
+          if (post)
+             PostMessage(( HWND) var handle, WM_POSTAL, ( WPARAM) ev-> gen. H, ( LPARAM) ev-> gen. p);
+	  else
+             SendMessage(( HWND) var handle, WM_POSTAL, ( WPARAM) ev-> gen. H, ( LPARAM) ev-> gen. p);
           break;
        case cmMouseMove:
           msg = WM_MOUSEMOVE;
