@@ -1823,7 +1823,7 @@ sub special_targets
 	my $self = shift;
 	my $t = $self->SUPER::special_targets(@_);
 	$t .= <<RERUN if $binary_prereq and not $cmd_options{AUTOMATED_RUN};
-prima_prereq:
+all ::
 \t\@echo Rebuilding Makefile...
 \t\@\$(RM_F) Makefile
 \t\@$^X Makefile.PL $ARGV_STR AUTOMATED_RUN=1
