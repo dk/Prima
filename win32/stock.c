@@ -1162,6 +1162,8 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
    } else
       name = (( ENUMLOGFONTEXA*) e)-> elfLogFont. lfFaceName;
 
+   if ( name[0] == '@') return 1; /* skip vertical fonts */
+
    if ( f-> hash) { /* gross-family enumeration */
       fm = hash_fetch( f-> hash, name, strlen( name));
       if ( fm) {
