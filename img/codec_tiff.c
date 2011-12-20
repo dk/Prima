@@ -344,7 +344,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    char * photometric_descr = nil;
    unsigned short photometric, orig_bps, bps, sample_format, bytes_ps, spp, planar, comp_method;
    int x, y, w, h, bpp = 0, format = 0, palSize = 0, icon, tiled, rgba_striped = 0,
-      InvertMinIsWhite = INVERT_MINISWHITE, strip_bps, faxpect = 0, full_image = 0;
+      InvertMinIsWhite = INVERT_MINISWHITE, strip_bps, faxpect = 0, full_image = 0,
+      read_failure = 0;
    float xres, yres;
    unsigned short *redcolormap, *greencolormap, *bluecolormap;
    Byte *tiffstrip, *tiffline, *tifftile, *primaline, *primamask = nil;
@@ -807,10 +808,13 @@ VALID_COMBINATION:
    for ( y = 0; y < h; y++, primaline -= i-> lineSize) {
       /* read from file - tiled and not tiled */
       if ( tiled) {
-         int col, ok = 1;
+         int col;
          /* Is it time for a new strip? */
          if (( y % tile_height) == 0) {
-            for (col = 0; ok && col < num_tilesX; col++) {
+
+            if ( read_failure) goto END_LOOP; /* process lines from the last tile, and then fail */
+
+            for (col = 0; col < num_tilesX; col++) {
                Byte *dest, *src;
                int r, dd, sd, rows, cols;
                int tileno = col+(y/tile_height)*num_tilesX;
@@ -819,8 +823,9 @@ VALID_COMBINATION:
 		  TIFFReadRGBATile( tiff, col * tile_width, y, (void*) tifftile) :
                   TIFFReadEncodedTile(tiff, tileno, tifftile, tilesz);
                if (!ret) {
-                  ok = 0;
-                  break;
+                  if ( !( errbuf && errbuf[0]))
+                    sprintf( fi-> errbuf, "Error reading tile");
+                  read_failure = 1;
                }
 
                /* copy this tile into the row buffer */
@@ -838,6 +843,7 @@ VALID_COMBINATION:
 	       }
                for (r = 0; r < rows; r++, src += sd, dest += dd)
                   scan_convert( src, dest, cols * spp, bps);
+               if ( read_failure) break;
             }
             tiffline = tiffstrip; /* set tileline to top of strip */
          } else 
@@ -847,11 +853,13 @@ VALID_COMBINATION:
          if (( y % rowsperstrip) == 0) {
             Byte *dest, *src;
             int r, rows, dd, sd;
+
+            if ( read_failure) goto END_LOOP; /* process lines from the last stripe, and then fail */
+
             if ( TIFFReadRGBAStrip( tiff, y, (void*) tifftile) < 0) {
                if ( !( errbuf && errbuf[0]))
                  sprintf( fi-> errbuf, "Error reading scanline %d", y);
-               free(tifftile);
-               return false;
+	       read_failure = 1;
 	    }
 	    rows = ((y + rowsperstrip) > h) ? h - y : rowsperstrip;
             dest = tiffstrip + stripsz;
@@ -874,11 +882,12 @@ VALID_COMBINATION:
                    if ( TIFFReadScanline( tiff, tiffline, y, (tsample_t) s) < 0) {
                       if ( !( errbuf && errbuf[0]))
                         sprintf( fi-> errbuf, "Error reading scanline %d:%d", s, y);
-                      free(tifftile);
-                      return false;
+	              read_failure = 1;
                    }
                    scan_convert( tiffline, d, w, bps);
 	       }
+
+               if ( read_failure ) break;
             }
 	 } else {
             /* just advance the pointer */
@@ -892,12 +901,13 @@ VALID_COMBINATION:
             if ( TIFFReadScanline( tiff, tiffline, y, (tsample_t) s) < 0) {
                if ( !( errbuf && errbuf[0]))
                  sprintf( fi-> errbuf, "Error reading scanline %d", y);
-               free(tifftile);
-               return false;
+               read_failure = 1;
             }
             scan_convert( tiffline, d, dw, bps);
+            if ( read_failure) goto END_LOOP;
          }
       }
+   END_LOOP:
 
       /* convert intrapixel layout into planar layout to extract alpha in separate space  */
       {
@@ -995,12 +1005,19 @@ VALID_COMBINATION:
          primamask -= i-> maskLine;
       }
       EVENT_TOPDOWN_SCANLINES_READY(fi,1);
+
+      if ( read_failure ) break;
    }
-   EVENT_SCANLINES_FINISHED(fi);
    
    /* finalize */
    free( tifftile);
 
+   if ( read_failure) {
+        if ( fi-> noIncomplete) return false;
+   } else {
+        EVENT_SCANLINES_FINISHED(fi);
+   }
+   
    return true;
 }   
 
