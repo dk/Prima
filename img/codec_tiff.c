@@ -278,7 +278,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 static void
 scan_convert( Byte * src, Byte * dest, int width, int bps)
 {
-   if ( bps <= 4 ) {
+   if ( bps <= 6 ) {
       switch ( bps) {
       case 1:
          bc_mono_byte( src, dest, width);
@@ -300,6 +300,28 @@ scan_convert( Byte * src, Byte * dest, int width, int bps)
       case 4:
          bc_nibble_byte( src, dest, width);
          break;
+      case 6:
+         while ( width > 4) {
+            /* [ 6 : 2 + 4 : 4 + 2 : 6 ] */
+            register Byte a = *src++;
+            register Byte b = *src++;
+            register Byte c = *src++;
+            *dest++ = a & 0xfc;
+            *dest++ = (( a & 0x3 ) << 6 ) | (( b & 0xf0 ) >> 2 );
+            *dest++ = ( b << 4 ) | (( c & 0xfc) >> 4 );
+            *dest++ = c << 2;
+            width -= 4;
+        }
+        if ( width > 0 ) {
+            Byte a, b, c;
+            a = *src++;
+            if (width > 1) b = *src++;
+            if (width > 2) c = *src++;
+            *dest++ = a & 0xfc;
+            if ( width > 1) *dest++ = (( a & 0x3 ) << 6 ) | (( b & 0xf0 ) >> 2 );
+            if ( width > 2) *dest++ = ( b << 4 ) | (( c & 0xfc ) >> 4 );
+        }
+        break;
       }
    } else {
       memcpy( dest, src, width * bps / 8);
@@ -381,14 +403,10 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( orig_bps > 64 || orig_bps < 0 ) {
       sprintf( fi-> errbuf, "Unexpected BITSPERSAMPLE: %d", orig_bps);
       return false;
-   } else if ( orig_bps <= 4) {
+   } else if ( orig_bps <= 7) {
       /* less than 1 byte per sample */
       bytes_ps = 0;
-      if ( orig_bps > 2 ) {
-         bps = 4;
-      } else {
-         bps = orig_bps;
-      }
+      bps = orig_bps;
    } else {
       bytes_ps = orig_bps / 8 + (( orig_bps % 8 ) ? 1 : 0);
       bps      = bytes_ps * 8;
@@ -585,9 +603,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    case imbpp1: 
       if ( bps      == 1 ) goto VALID_COMBINATION;
    case imbpp4:
-      if ( bps == 4 || bps == 2) goto VALID_COMBINATION;
+      if ( bps == 4 || bps == 2)  goto VALID_COMBINATION;
    case imbpp8:
-      if ( bytes_ps == 1 ) goto VALID_COMBINATION;
+      if ( bps == 6 || bps == 8) goto VALID_COMBINATION;
    case imbpp16:
       if ( bytes_ps == 2 ) goto VALID_COMBINATION;
    case imbpp24:
