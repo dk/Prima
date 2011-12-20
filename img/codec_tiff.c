@@ -585,7 +585,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    case imbpp1: 
       if ( bps      == 1 ) goto VALID_COMBINATION;
    case imbpp4:
-      if ( bps      == 4 ) goto VALID_COMBINATION;
+      if ( bps == 4 || bps == 2) goto VALID_COMBINATION;
    case imbpp8:
       if ( bytes_ps == 1 ) goto VALID_COMBINATION;
    case imbpp16:
