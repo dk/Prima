@@ -786,8 +786,11 @@ VALID_COMBINATION:
    /* setup two buffers, both twofold size for byte and intrapixel conversion */
    strip_bps = ( bytes_ps > 0 ) ? bytes_ps : 1; /* max size of internal tiff pixel */
    stripsz = strip_bps * rowsperstrip * tile_height * w * spp;
+   if ( stripsz < linesz) stripsz = linesz; /* our size should be really enough, */
+   if ( stripsz < tilesz) stripsz = tilesz; /* but just to be extra paranoid */
+
    if ( !( tifftile = (Byte*) malloc( stripsz * 2 * 2))) {
-      outcm( stripsz * 2);
+      outcm( stripsz * 2 * 2);
       return false;
    }
    tiffstrip = tifftile + stripsz * 2;
