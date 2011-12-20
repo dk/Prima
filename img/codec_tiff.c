@@ -274,11 +274,50 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    return tiff;
 }
 
+static __INLINE__ unsigned long
+get_bits( Byte * src, register unsigned int offset, register int length)
+{
+    register unsigned long accum = 0;
+
+    src += offset / 8;
+    offset %= 8;
+
+    if ( offset > 0 ) {
+        register Byte x = *src++;
+        register Byte bits = 8 - offset;
+	x &= (0xff >> offset);
+        if ( length < bits ) {
+           x >>= bits - length;
+           accum <<= length;
+        } else {
+           accum <<= bits;
+        }
+        length -= bits;
+        accum |= x;
+    }
+
+    while ( length > 0 ) {
+        register Byte x = *src++;
+        if ( length < 8 ) {
+           x >>= 8 - length;
+           accum <<= length;
+        } else {
+           accum <<= 8;
+        }
+        length -= 8;
+        accum |= x;
+    }
+
+    return accum;
+}
+
 
 static void
 scan_convert( Byte * src, Byte * dest, int width, int bps)
 {
-   if ( bps <= 6 ) {
+   if ( bps % 8 == 0) {
+      memcpy( dest, src, width * bps / 8);
+   } else if ( bps < 8 ) {
       switch ( bps) {
       case 1:
          bc_mono_byte( src, dest, width);
@@ -297,34 +336,45 @@ scan_convert( Byte * src, Byte * dest, int width, int bps)
               }
            }
          } break;
+      case 3:
+         {
+            unsigned int offset = 0;
+            while ( width-- ) {
+               *dest++ = get_bits( src, offset, bps ) << 1;
+               offset += bps;
+            }
+         }
       case 4:
          bc_nibble_byte( src, dest, width);
          break;
+      case 5:
       case 6:
-         while ( width > 4) {
-            /* [ 6 : 2 + 4 : 4 + 2 : 6 ] */
-            register Byte a = *src++;
-            register Byte b = *src++;
-            register Byte c = *src++;
-            *dest++ = a & 0xfc;
-            *dest++ = (( a & 0x3 ) << 6 ) | (( b & 0xf0 ) >> 2 );
-            *dest++ = ( b << 4 ) | (( c & 0xfc) >> 4 );
-            *dest++ = c << 2;
-            width -= 4;
-        }
-        if ( width > 0 ) {
-            Byte a, b, c;
-            a = *src++;
-            if (width > 1) b = *src++;
-            if (width > 2) c = *src++;
-            *dest++ = a & 0xfc;
-            if ( width > 1) *dest++ = (( a & 0x3 ) << 6 ) | (( b & 0xf0 ) >> 2 );
-            if ( width > 2) *dest++ = ( b << 4 ) | (( c & 0xfc ) >> 4 );
-        }
-        break;
+      case 7:
+         {
+            unsigned int offset = 0;
+            unsigned int shift  = 8 - bps;
+            while ( width-- ) {
+               *dest++ = get_bits( src, offset, bps ) << shift;
+               offset += bps;
+            }
+         }
       }
-   } else {
-      memcpy( dest, src, width * bps / 8);
+   } else if ( bps < 16 ) {
+      unsigned int offset = 0;
+      unsigned int shift  = 16 - bps;
+      Short * sdest = (Short *) dest;
+      while ( width-- ) {
+         *sdest++ = get_bits( src, offset, bps ) << shift;
+         offset += bps;
+      }
+   } else if ( bps < 32 ) {
+      unsigned int offset = 0;
+      unsigned int shift  = 32 - bps;
+      Long * sdest = (Long *) dest;
+      while ( width-- ) {
+         *sdest++ = get_bits( src, offset, bps ) << shift;
+         offset += bps;
+      }
    }
 }
 
@@ -366,7 +416,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    char * photometric_descr = nil;
    unsigned short photometric, orig_bps, bps, sample_format, bytes_ps, spp, planar, comp_method;
    int x, y, w, h, bpp = 0, format = 0, palSize = 0, icon, tiled, rgba_striped = 0,
-      InvertMinIsWhite = INVERT_MINISWHITE, strip_bps, faxpect = 0, full_image = 0,
+      InvertMinIsWhite = INVERT_MINISWHITE, faxpect = 0, full_image = 0,
       read_failure = 0;
    float xres, yres;
    unsigned short *redcolormap, *greencolormap, *bluecolormap;
@@ -403,13 +453,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( orig_bps > 64 || orig_bps < 0 ) {
       sprintf( fi-> errbuf, "Unexpected BITSPERSAMPLE: %d", orig_bps);
       return false;
-   } else if ( orig_bps <= 7) {
-      /* less than 1 byte per sample */
-      bytes_ps = 0;
-      bps = orig_bps;
    } else {
       bytes_ps = orig_bps / 8 + (( orig_bps % 8 ) ? 1 : 0);
-      bps      = bytes_ps * 8;
+      bps      = orig_bps;
    }
 
    if ( TIFFGetField( tiff, TIFFTAG_SAMPLEFORMAT, &sample_format)) {
@@ -603,15 +649,15 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    case imbpp1: 
       if ( bps      == 1 ) goto VALID_COMBINATION;
    case imbpp4:
-      if ( bps == 4 || bps == 2)  goto VALID_COMBINATION;
+      if ( bps <= 4 && bps >= 2)  goto VALID_COMBINATION;
    case imbpp8:
-      if ( bps == 6 || bps == 8) goto VALID_COMBINATION;
+      if ( bps <= 8 && bps >= 5) goto VALID_COMBINATION;
    case imbpp16:
-      if ( bytes_ps == 2 ) goto VALID_COMBINATION;
+      if ( bps <= 16 && bps >= 9 ) goto VALID_COMBINATION;
    case imbpp24:
-      if ( bytes_ps >  0 ) goto VALID_COMBINATION;
+      if ( bps < 8 || bps % 8 == 0 ) goto VALID_COMBINATION;
    case imbpp32:
-      if ( bytes_ps == 4 ) goto VALID_COMBINATION;
+      if ( bps <= 32 && bps >= 17 ) goto VALID_COMBINATION;
    }
    sprintf( fi-> errbuf, "Cannot handle combination PHOTOMETRIC=%s, BITSPERSAMPLE=%d SAMPLEFORMAT=%d", photometric_descr, orig_bps, sample_format);
    return false;
@@ -802,8 +848,7 @@ VALID_COMBINATION:
    }
 
    /* setup two buffers, both twofold size for byte and intrapixel conversion */
-   strip_bps = ( bytes_ps > 0 ) ? bytes_ps : 1; /* max size of internal tiff pixel */
-   stripsz = strip_bps * rowsperstrip * tile_height * w * spp;
+   stripsz = bytes_ps * rowsperstrip * tile_height * w * spp;
    if ( stripsz < linesz) stripsz = linesz; /* our size should be really enough, */
    if ( stripsz < tilesz) stripsz = tilesz; /* but just to be extra paranoid */
 
@@ -850,7 +895,7 @@ VALID_COMBINATION:
                }
 
                /* copy this tile into the row buffer */
-               dest = tiffstrip + stripsz + col * strip_bps * spp * tile_width;
+               dest = tiffstrip + stripsz + col * bytes_ps * spp * tile_width;
 	       rows = ((y + tile_height) > h) ? h - y : tile_height;
 	       cols = (col == num_tilesX - 1) ? w - col * tile_width : tile_width;
                dd   = w * spp;
@@ -895,7 +940,7 @@ VALID_COMBINATION:
       } else if ( full_image) {
          /* read whole file, once; make interleaved scanlines */
 	 if ( y == 0) {
-            int y, s, line_width = w * strip_bps, skip_width = line_width * spp;
+            int y, s, line_width = w * bytes_ps, skip_width = line_width * spp;
             Byte * d0 = tiffline + stripsz;
             for ( s = 0; s < spp; s++, d0 += line_width) {
 	       Byte * d = d0;
@@ -912,13 +957,13 @@ VALID_COMBINATION:
             }
 	 } else {
             /* just advance the pointer */
-	    tiffline += w * strip_bps * spp;
+	    tiffline += w * bytes_ps * spp;
 	 }
       } else {
          int s = 0, reads = ( planar == PLANARCONFIG_CONTIG) ? 1 : spp;
          int dw = w * (( planar == PLANARCONFIG_CONTIG) ? spp : 1);
          Byte * d = tiffline + stripsz;
-         for ( s = 0; s < reads; s++, d += w * strip_bps) {
+         for ( s = 0; s < reads; s++, d += w * bytes_ps) {
             if ( TIFFReadScanline( tiff, tiffline, y, (tsample_t) s) < 0) {
                if ( !( errbuf && errbuf[0]))
                  sprintf( fi-> errbuf, "Error reading scanline %d", y);
@@ -939,27 +984,27 @@ VALID_COMBINATION:
            PLANARCONFIG_CONTIG   = 1 ; single image plane 
            PLANARCONFIG_SEPARATE = 2 ; separate planes of data
          */
-	 register Byte byte_counter = strip_bps;
+	 register Byte byte_counter = bytes_ps;
          switch ( planar * 10 + spp) {
          case 12:
             dst1 = dst0 + w * byte_counter;
             while ( x--) {
-               byte_counter = strip_bps;
+               byte_counter = bytes_ps;
 	       while ( byte_counter--) *dst0++ = *src0++;
-               byte_counter = strip_bps;
+               byte_counter = bytes_ps;
 	       while ( byte_counter--) *dst1++ = *src0++;
             }
             break;
          case 14:
             dst1 = dst0 + 3 * byte_counter * w;
             while ( x--) {
-               byte_counter = strip_bps;
+               byte_counter = bytes_ps;
                while ( byte_counter--) {
                   *dst0++ = *src0++;
                   *dst0++ = *src0++;
                   *dst0++ = *src0++;
 	       }
-               byte_counter = strip_bps;
+               byte_counter = bytes_ps;
                while ( byte_counter--) 
                   *dst1++ = *src0++;
             }
@@ -971,23 +1016,23 @@ VALID_COMBINATION:
             src1 = src0 + w * byte_counter;
             src2 = src1 + w * byte_counter;
             while ( x--) {
-               byte_counter = strip_bps;
+               byte_counter = bytes_ps;
                while ( byte_counter--) *dst0++ = *src0++;
-               byte_counter = strip_bps;
+               byte_counter = bytes_ps;
                while ( byte_counter--) *dst0++ = *src1++;
-               byte_counter = strip_bps;
+               byte_counter = bytes_ps;
                while ( byte_counter--) *dst0++ = *src2++;
             }
             break;
          default:
-            memcpy( dst0, src0, w * spp * strip_bps);
+            memcpy( dst0, src0, w * spp * bytes_ps);
 	 }
       }
 
       /* invert data, if any */
       if ( InvertMinIsWhite && photometric == PHOTOMETRIC_MINISWHITE) {
          Byte *s = tiffline;
-         int  sz = w * strip_bps * spp;
+         int  sz = w * bytes_ps * spp;
          register Byte mask = ( bps > 4) ? 0xff : (1 << bps) - 1;
          while ( sz--) {
             *s = (~*s) & mask;
@@ -1020,7 +1065,7 @@ VALID_COMBINATION:
 
       /* do alpha channel */
       if ( icon && ( spp == 2 || spp == 4)) {
-         Byte * alpha = tiffline + w * ( spp - 1 ) * strip_bps;
+         Byte * alpha = tiffline + w * ( spp - 1 ) * bytes_ps;
          if ( bytes_ps > 1 ) bc_bytes_to_byte( alpha, alpha, bytes_ps, format, w);
          bc_byte_mono_cr( alpha, primamask, w, bw_colorref);
          primamask -= i-> maskLine;
