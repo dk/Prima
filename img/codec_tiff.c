@@ -312,12 +312,20 @@ get_bits( Byte * src, register unsigned int offset, register int length)
 }
 
 static void
-scan_convert( Byte * src, Byte * dest, int width, int bps, int signed_int)
+scan_convert( Byte * src, Byte * dest, int width, int bps, int signed_int, int format)
 {
    if ( bps % 8 == 0) {
       memcpy( dest, src, width * bps / 8);
-      if ( !signed_int ) 
+      if ( !signed_int && format == 0) 
       	switch ( bps ) {
+	case 8: {
+	      Byte * p = (Byte *) dest;
+	      while (width--) {
+	         *p = *((uint8_t*)p) + 256;
+		 p++;
+	      }
+	   }
+	   break;
 	case 16: {
 	      Short * p = (Short *) dest;
 	      while (width--) {
@@ -960,7 +968,7 @@ VALID_COMBINATION:
                   src  = tifftile;
 	       }
                for (r = 0; r < rows; r++, src += sd, dest += dd)
-                  scan_convert( src, dest, cols * spp, bps, signed_int);
+                  scan_convert( src, dest, cols * spp, bps, signed_int, format);
                if ( read_failure) break;
             }
             tiffline = tiffstrip; /* set tileline to top of strip */
@@ -985,7 +993,7 @@ VALID_COMBINATION:
             src  = tifftile + sd * (rows - 1);
 	    /* RGBAStrips are reversed */
             for (r = 0; r < rows; r++, src -= sd, dest += dd) 
-                scan_convert( src, dest, sd, bps, signed_int);
+                scan_convert( src, dest, sd, bps, signed_int, format);
             tiffline = tiffstrip; /* set tileline to top of strip */
 	 } else
             tiffline = tiffstrip + (y % rowsperstrip) * spp * w;
@@ -1002,7 +1010,7 @@ VALID_COMBINATION:
                         sprintf( fi-> errbuf, "Error reading scanline %d:%d", s, y);
 	              read_failure = 1;
                    }
-                   scan_convert( tiffline, d, w, bps, signed_int);
+                   scan_convert( tiffline, d, w, bps, signed_int, format);
 	       }
 
                if ( read_failure ) break;
@@ -1021,7 +1029,7 @@ VALID_COMBINATION:
                  sprintf( fi-> errbuf, "Error reading scanline %d", y);
                read_failure = 1;
             }
-            scan_convert( tiffline, d, dw, bps, signed_int);
+            scan_convert( tiffline, d, dw, bps, signed_int, format);
             if ( read_failure) goto END_LOOP;
          }
       }
