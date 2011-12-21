@@ -406,6 +406,37 @@ bc_bytes_to_byte( Byte *src, Byte *dst, int bytes_ps, int format, int pixels)
    }
 }
 
+static void 
+invert_scanline( Byte * src, int bpp, int pixels)
+{
+    switch (bpp) {
+    case 32: {
+         Long *s = (Long*) src;
+         while ( pixels--) {
+            *s = - *s;
+            s++;
+         }
+      }
+      break;
+    case 16: {
+         Short *s = (Short*) src;
+         while ( pixels--) {
+            *s = - *s;
+            s++;
+         }
+      }
+      break;
+    default: {
+         int  sz = pixels; /* 1 and 4 bits are safe here with full byte */
+         register Byte mask = ( bpp > 4) ? 0xff : (1 << bpp) - 1;
+         while ( sz--) {
+            *src = (~*src) & mask;
+            src++;
+         }
+      }
+   }
+}
+
 static Bool   
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
@@ -540,7 +571,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       if ( bps > 2) bpp = imbpp4 | imGrayScale; else
       if ( bps > 1) bpp = imbpp4; else
                     bpp = imbpp1 | imGrayScale;
-      photometric_descr = ( photometric == PHOTOMETRIC_MINISBLACK) ? "MinIsWhite" : "MinIsBlack";
+      photometric_descr = ( photometric == PHOTOMETRIC_MINISWHITE) ? "MinIsWhite" : "MinIsBlack";
       break;
    case PHOTOMETRIC_PALETTE:
       if ( !TIFFGetField( tiff, TIFFTAG_COLORMAP, &redcolormap, &greencolormap, &bluecolormap)) {
@@ -1030,15 +1061,8 @@ VALID_COMBINATION:
       }
 
       /* invert data, if any */
-      if ( InvertMinIsWhite && photometric == PHOTOMETRIC_MINISWHITE) {
-         Byte *s = tiffline;
-         int  sz = w * bytes_ps * spp;
-         register Byte mask = ( bps > 4) ? 0xff : (1 << bps) - 1;
-         while ( sz--) {
-            *s = (~*s) & mask;
-            s++;
-         }
-      }
+      if ( InvertMinIsWhite && photometric == PHOTOMETRIC_MINISWHITE)
+         invert_scanline( tiffline, bpp & imBPP, w * spp);
 
       /* copy data into image */
       switch ( bpp) {
