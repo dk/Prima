@@ -997,6 +997,7 @@ Image_create_empty( Handle self, int width, int height, int type)
    var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
    var->dataSize = var->lineSize * var->h;
    var->palSize  = (1 << (var->type & imBPP)) & 0x1ff;
+   var->statsCache = 0;
    if ( var->dataSize > 0)
    {
       var->data = allocb( var->dataSize);
