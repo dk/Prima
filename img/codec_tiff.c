@@ -311,12 +311,30 @@ get_bits( Byte * src, register unsigned int offset, register int length)
     return accum;
 }
 
-
 static void
-scan_convert( Byte * src, Byte * dest, int width, int bps)
+scan_convert( Byte * src, Byte * dest, int width, int bps, int signed_int)
 {
    if ( bps % 8 == 0) {
       memcpy( dest, src, width * bps / 8);
+      if ( !signed_int ) 
+      	switch ( bps ) {
+	case 16: {
+	      Short * p = (Short *) dest;
+	      while (width--) {
+	         *p = *((uint16_t*)p) + INT16_MAX;
+		 p++;
+	      }
+	   }
+	   break;
+	case 32: {
+	      Long * p = (Long *) dest;
+	      while (width--) {
+	         *p = *((uint32_t*)p) + INT32_MAX;
+		 p++;
+	      }
+	   }
+	   break;
+	}
    } else if ( bps < 8 ) {
       switch ( bps) {
       case 1:
@@ -364,7 +382,8 @@ scan_convert( Byte * src, Byte * dest, int width, int bps)
       unsigned int shift  = 16 - bps;
       Short * sdest = (Short *) dest;
       while ( width-- ) {
-         *sdest++ = get_bits( src, offset, bps ) << shift;
+         unsigned int v = get_bits( src, offset, bps ) << shift;
+         if ( !signed_int) *sdest++ = v + INT16_MAX; /* convert to signed */
          offset += bps;
       }
    } else if ( bps < 32 ) {
@@ -372,7 +391,8 @@ scan_convert( Byte * src, Byte * dest, int width, int bps)
       unsigned int shift  = 32 - bps;
       Long * sdest = (Long *) dest;
       while ( width-- ) {
-         *sdest++ = get_bits( src, offset, bps ) << shift;
+         unsigned long v = get_bits( src, offset, bps ) << shift;
+         if ( !signed_int) *sdest++ = v + INT32_MAX;
          offset += bps;
       }
    }
@@ -448,7 +468,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    unsigned short photometric, orig_bps, bps, sample_format, bytes_ps, spp, planar, comp_method;
    int x, y, w, h, bpp = 0, format = 0, palSize = 0, icon, tiled, rgba_striped = 0,
       InvertMinIsWhite = INVERT_MINISWHITE, faxpect = 0, full_image = 0,
-      read_failure = 0;
+      read_failure = 0, signed_int = 0;
    float xres, yres;
    unsigned short *redcolormap, *greencolormap, *bluecolormap;
    Byte *tiffstrip, *tiffline, *tifftile, *primaline, *primamask = nil;
@@ -505,6 +525,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          sprintf( fi-> errbuf, "Unexpected SAMPLEFORMAT: %s", pixeltype[i].name);
          return false;
       case SAMPLEFORMAT_INT:
+         signed_int = 1;
       case SAMPLEFORMAT_UINT:
       case SAMPLEFORMAT_VOID: /* seems valid */
          break;
@@ -939,7 +960,7 @@ VALID_COMBINATION:
                   src  = tifftile;
 	       }
                for (r = 0; r < rows; r++, src += sd, dest += dd)
-                  scan_convert( src, dest, cols * spp, bps);
+                  scan_convert( src, dest, cols * spp, bps, signed_int);
                if ( read_failure) break;
             }
             tiffline = tiffstrip; /* set tileline to top of strip */
@@ -964,7 +985,7 @@ VALID_COMBINATION:
             src  = tifftile + sd * (rows - 1);
 	    /* RGBAStrips are reversed */
             for (r = 0; r < rows; r++, src -= sd, dest += dd) 
-                scan_convert( src, dest, sd, bps);
+                scan_convert( src, dest, sd, bps, signed_int);
             tiffline = tiffstrip; /* set tileline to top of strip */
 	 } else
             tiffline = tiffstrip + (y % rowsperstrip) * spp * w;
@@ -981,7 +1002,7 @@ VALID_COMBINATION:
                         sprintf( fi-> errbuf, "Error reading scanline %d:%d", s, y);
 	              read_failure = 1;
                    }
-                   scan_convert( tiffline, d, w, bps);
+                   scan_convert( tiffline, d, w, bps, signed_int);
 	       }
 
                if ( read_failure ) break;
@@ -1000,7 +1021,7 @@ VALID_COMBINATION:
                  sprintf( fi-> errbuf, "Error reading scanline %d", y);
                read_failure = 1;
             }
-            scan_convert( tiffline, d, dw, bps);
+            scan_convert( tiffline, d, dw, bps, signed_int);
             if ( read_failure) goto END_LOOP;
          }
       }
