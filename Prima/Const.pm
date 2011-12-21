@@ -516,6 +516,8 @@ See L<Prima::Image/type>.
 	im::RealNumber
 	im::ComplexNumber
 	im::TrigComplexNumber
+	im::SignedInt
+
 
 =item Mnemonic image types
 

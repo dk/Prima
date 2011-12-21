@@ -2771,6 +2771,8 @@ IM(RealNumber)
 IM(ComplexNumber)
 #define    imTrigComplexNumber   0x8000
 IM(TrigComplexNumber)
+#define    imSignedInt           0x0100
+IM(SignedInt)
 #define    imCategory            0xFF00
 IM(Category)
 
@@ -2811,9 +2813,9 @@ IM(RGB)
 IM(Triple)
 #define    imByte           (imbpp8|imGrayScale)
 IM(Byte)
-#define    imShort          (imbpp16|imGrayScale)
+#define    imShort          (imbpp16|imGrayScale|imSignedInt)
 IM(Short)
-#define    imLong           (imbpp32|imGrayScale)
+#define    imLong           (imbpp32|imGrayScale|imSignedInt)
 IM(Long)
 #define    imFloat          ((sizeof(float)*8)|imGrayScale|imRealNumber)
 IM(Float)

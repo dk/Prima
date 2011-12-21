@@ -469,6 +469,7 @@ The following values designate the pixel format category:
    im::RealNumber
    im::ComplexNumber
    im::TrigComplexNumber
+   im::SignedInt
 
 Value of C<im::Color> is 0, whereas other category constants 
 represented by unique bit value, so combination of

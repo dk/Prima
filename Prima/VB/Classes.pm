@@ -2803,7 +2803,7 @@ sub write
 		', height=>'.$data-> height;
 	my $type = $data-> type;
 	my $xc = '';
-	for ( qw(GrayScale RealNumber ComplexNumber TrigComplexNumber)) {
+	for ( qw(GrayScale RealNumber ComplexNumber TrigComplexNumber SignedInt)) {
 		$xc = "im::$_ | " if &{$im::{$_}}() & $type;
 	}
 	$xc .= 'im::bpp'.( $type & im::BPP);
