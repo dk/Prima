@@ -152,7 +152,7 @@ void ic_##SourceType##_complex_##DestType( Handle self,                         
    memcpy( dstPal, map_RGB_gray, 256 * sizeof( RGBColor));                     \
 }
 
-#define macro_int_int(SourceType,DestType)                                     \
+#define macro_int_int(SourceType,MidType,DestType)                             \
 void rs_##SourceType##_##DestType( Handle self,                                \
      Byte * dstData, int dstType,                                              \
      double srcLo, double srcHi, double dstLo, double dstHi)                   \
@@ -160,9 +160,9 @@ void rs_##SourceType##_##DestType( Handle self,                                \
    SourceType *src = (SourceType*) var->data;                                   \
    DestType *dst = (DestType*) dstData;                                        \
    int y;                                                                      \
-   long aNumerator      = dstHi - dstLo;                                       \
-   long bNumerator      = dstLo * srcHi - dstHi * srcLo;                       \
-   long denominator     = srcHi - srcLo;                                       \
+   MidType aNumerator      = dstHi - dstLo;                                       \
+   MidType bNumerator      = dstLo * srcHi - dstHi * srcLo;                       \
+   MidType denominator     = srcHi - srcLo;                                       \
    int  width = var->w;                                                         \
    int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
    int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
@@ -184,7 +184,7 @@ void rs_##SourceType##_##DestType( Handle self,                                \
       SourceType *s = src;                                                     \
       DestType *d = dst;                                                       \
       SourceType *stop = s + width;                                            \
-      long v;                                                                  \
+      MidType v;                                                                  \
       while ( s != stop)                                                       \
       {                                                                        \
          v = (aNumerator**s+++bNumerator)/denominator;                         \
@@ -268,27 +268,27 @@ void rs_##SourceType##_##DestType( Handle self,                                \
       SourceType* s = src;                                                     \
       DestType* d = dst;                                                       \
       SourceType* stop = s + width;                                            \
-      long v;                                                                  \
+      SourceType v;                                                            \
       while ( s != stop)                                                       \
       {                                                                        \
          v = a**s+++b;                                                         \
          v = (v<minimum_##DestType##Value) ? minimum_##DestType##Value :       \
              ((v>maximum_##DestType##Value) ? maximum_##DestType##Value : v);  \
-         *d++ = v;                                                             \
+         *d++ = v + .5;                                                        \
       }                                                                        \
       src = (SourceType*)(((Byte*)src) + srcLine);                             \
       dst = (DestType*)(((Byte*)dst) + dstLine);                               \
    }                                                                           \
 }
 
-macro_int_int( Byte, Byte)
-macro_int_int( Short, Short)
-macro_int_int( Long, Long)
+macro_int_int( Byte, int, Byte)
+macro_int_int( Short, long, Short)
+macro_int_int( Long, int64_t, Long)
 macro_float_float__int_float( float, float)
 macro_float_float__int_float( double, double)
 
-macro_int_int( Short, Byte)
-macro_int_int( Long, Byte)
+macro_int_int( Short, long, Byte)
+macro_int_int( Long, int64_t, Byte)
 macro_float_int(float, Byte)
 macro_float_int(double, Byte)
 
