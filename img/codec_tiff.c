@@ -981,6 +981,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          source_bits = 8;
       }
 
+      if ( source_format == imSignedInt ) /* SGILODATAFMT are reported as unsigned */
+         source_format = 0;
+
       if (photometric == PHOTOMETRIC_LOGL) {
          photometric = PHOTOMETRIC_MINISBLACK;
          photometric_descr = "LogL";
