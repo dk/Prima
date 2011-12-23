@@ -1222,10 +1222,10 @@ VALID_COMBINATION:
                int r, dd, sd, rows, cols;
                int tileno = col+(y/tile_height)*num_tilesX;
                /* read the tile into the array */
-               int ret = rgba_striped ?
+               Bool ok = rgba_striped ?
                   TIFFReadRGBATile( tiff, col * tile_width, y, (void*) tifftile) :
-                  TIFFReadEncodedTile(tiff, tileno, tifftile, tilesz);
-               if (!ret) {
+                  ( TIFFReadEncodedTile(tiff, tileno, tifftile, tilesz) >= 0 );
+               if (!ok) {
                   if ( !( errbuf && errbuf[0]))
                     sprintf( fi-> errbuf, "Error reading tile");
                   read_failure = 1;
@@ -1260,7 +1260,7 @@ VALID_COMBINATION:
 
             if ( read_failure) goto END_LOOP; /* process lines from the last stripe, and then fail */
 
-            if ( TIFFReadRGBAStrip( tiff, y, (void*) tifftile) < 0) {
+            if ( !TIFFReadRGBAStrip( tiff, y, (void*) tifftile)) {
                if ( !( errbuf && errbuf[0]))
                  sprintf( fi-> errbuf, "Error reading scanline %d", y);
                read_failure = 1;
@@ -1290,8 +1290,8 @@ VALID_COMBINATION:
                       read_failure = 1;
                    }
                    scan_convert( tiffline, d, w, source_bits, source_format, mid_bytes, mid_format);
+		   if ( read_failure ) break;
                 }
-
                 if ( read_failure ) break;
             }
          } else {
@@ -1405,7 +1405,7 @@ VALID_COMBINATION:
       }
       EVENT_TOPDOWN_SCANLINES_READY(fi,1);
 
-      if ( read_failure ) break;
+      if ( read_failure && !full_image) break;
    }
    
    /* finalize */
@@ -1413,6 +1413,9 @@ VALID_COMBINATION:
 
    if ( read_failure) {
         if ( fi-> noIncomplete) return false;
+
+	/* it's not icomplete, it's a real libtiff error camouflaged inside */
+        if ( y == 0 ) return false;
    } else {
         EVENT_SCANLINES_FINISHED(fi);
    }
