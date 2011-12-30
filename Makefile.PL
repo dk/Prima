@@ -1122,7 +1122,6 @@ sub setup_xlibs
 		print "Checking for presence of freetype/freetype.h... ";
 		my $incpath;
 		if ($have_ft2build_h) {
-			$DEFINES{HAVE_FT2BUILD_H} = undef;
 			$incpath = find_header( 
 				qd("freetype/freetype.h"), {
 					Code => <<EOF,
@@ -1145,6 +1144,7 @@ EOF
 				push @LIBS, 'freetype';
 				$HAVE_XFT++;
 				print "yes\n";
+				$DEFINES{HAVE_FREETYPE_FREETYPE_H} = 1;
 			} else {
 				print "no\n";
 				$DEFINES{HAVE_FREETYPE_FREETYPE_H} = undef;
