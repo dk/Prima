@@ -1360,9 +1360,7 @@ sub setup_codecs
 	my @codecs;
 	my @builtin_codecs;
 	while ( <img/codec_*.c>) {
-		if ( m/prigraph/) {
-			unshift @codecs, $_; # put it first
-		} elsif ( m/codec_(bmp)/) {
+		if ( m/codec_(bmp)/) {
 			push @builtin_codecs, $1;
 		} else {
 			push @codecs, $_;
@@ -1409,7 +1407,7 @@ sub setup_codecs
 			print "no, using built-in\n";
 		} else {
 			$PASSIVE_CODECS{$fn} = 1;
-			push @warn_codecs, $codec unless $codec eq 'prigraph';
+			push @warn_codecs, $codec;
 			print "no\n";
 		}
 	}
@@ -1457,11 +1455,6 @@ Please follow the instructions in README file.
 NOCODECS
 	}
 	push @ACTIVE_CODECS, @builtin_codecs;
-
-	# make prigraph last so it'll have a chance to check which codecs it doesn't 
-	# need to support
-	@codecs = grep { $_ ne 'prigraph' } @ACTIVE_CODECS;
-	@ACTIVE_CODECS = ( @codecs, 'prigraph' ) unless @codecs == @ACTIVE_CODECS;
 }
 
 sub create_codecs_c

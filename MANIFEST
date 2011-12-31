@@ -102,7 +102,6 @@ img/bc_extra.c
 img/codec_bmp.c
 img/codec_jpeg.c
 img/codec_png.c
-img/codec_prigraph.c
 img/codec_tiff.c
 img/codec_ungif.c
 img/codec_X11.c
@@ -192,7 +191,6 @@ Prima/Header.pm
 Prima/HelpViewer.fm
 Prima/HelpViewer.pm
 Prima/Image/AnimateGIF.pm
-Prima/Image/GBM.pm
 Prima/Image/gif.pm
 Prima/Image/jpeg.pm
 Prima/Image/tiff.fm
