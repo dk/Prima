@@ -1310,7 +1310,11 @@ VALID_COMBINATION:
       } else if ( full_rgba_image) {
          /* read whole file */
          if ( y == 0) {
-            TIFFReadRGBAImageOriented( tiff, w, h, tiffline, 0, ORIENTATION_BOTLEFT);
+            if ( !TIFFReadRGBAImageOriented( tiff, w, h, tiffline, 0, ORIENTATION_BOTLEFT)) {
+               if ( !( errbuf && errbuf[0]))
+                 sprintf( fi-> errbuf, "Error reading image");
+               read_failure = 1;
+	    }
          } else {
             /* just advance the pointer */
             tiffline += w * 4;
