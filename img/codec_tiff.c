@@ -1310,7 +1310,7 @@ VALID_COMBINATION:
       } else if ( full_rgba_image) {
          /* read whole file */
          if ( y == 0) {
-            if ( !TIFFReadRGBAImageOriented( tiff, w, h, tiffline, 0, ORIENTATION_BOTLEFT)) {
+            if ( !TIFFReadRGBAImageOriented(tiff, w, h, (uint32*) tiffline, 0, ORIENTATION_BOTLEFT)) {
                if ( !( errbuf && errbuf[0]))
                  sprintf( fi-> errbuf, "Error reading image");
                read_failure = 1;
