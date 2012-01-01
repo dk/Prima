@@ -864,7 +864,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    char * photometric_descr = nil;
    unsigned short photometric, comp_method;
    int x, y, w, h, icon, tiled, rgba_striped = 0,
-      InvertMinIsWhite = INVERT_MINISWHITE, faxpect = 0, full_image = 0,
+      InvertMinIsWhite = INVERT_MINISWHITE, faxpect = 0, full_image = 0, full_rgba_image = 0,
       read_failure = 0;
    int source_bits, source_format, source_samples, mid_bytes, mid_format, target_type;
    Bool source_is_planar, build_gray_palette = 0;
@@ -949,6 +949,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
           /* can rely on libjpeg to convert to RGB */
           TIFFSetField( tiff, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
           source_samples = 3;
+      } else {
+	  full_rgba_image = 1;
       }
       /* fall thru... */
 #endif
@@ -1180,8 +1182,15 @@ VALID_COMBINATION:
       if ( !source_is_planar && source_samples > 1 ) {
          /* need to read full image because LZW can't seek between planes */
          full_image  = 1;
-         tile_height = h;
       }
+   }
+         
+   if ( full_image || full_rgba_image)	 
+      tile_height = h;
+
+   if ( full_rgba_image ) {
+      mid_bytes = 1;
+      source_samples = 4;
    }
 
    /* setup two buffers, both twofold size for byte and intrapixel conversion */
@@ -1298,6 +1307,15 @@ VALID_COMBINATION:
             /* just advance the pointer */
             tiffline += w * mid_bytes * source_samples;
          }
+      } else if ( full_rgba_image) {
+         /* read whole file */
+         if ( y == 0) {
+            TIFFReadRGBAImageOriented( tiff, w, h, tiffline, 0, ORIENTATION_BOTLEFT);
+         } else {
+            /* just advance the pointer */
+            tiffline += w * 4;
+         }
+         scan_convert( tiffline, tiffline + stripsz, w * 4, source_bits, source_format, mid_bytes, mid_format);
       } else {
          int s = 0, reads = source_is_planar ? 1 : source_samples;
          int dw = w * ( source_is_planar ? source_samples : 1);
