@@ -123,6 +123,8 @@ options:
     WITH_GTK2         - compile with/without GTK2 (default 1), X only
     CYGWIN_X11        - X11 build in cygwin environment
     DEBUG             - build with debug information
+    EXTRA_LDFLAGS      - add extra ld line (i.e. -lgcc )
+    EXTRA_CCFLAGS      - add extra cc line (i.e. -I/usr/local/include )
 
 HELP
 	exit;
@@ -163,6 +165,8 @@ sub setup_argv
 		WITH_GTK2    => 1,
 		CYGWIN_X11   => 0,
 		DEBUG        => 0,
+		EXTRA_CCFLAGS => '',
+		EXTRA_LDFLAGS => '',
 		
 		# service vars
 		AUTOMATED_RUN => 0,
@@ -486,6 +490,7 @@ sub cc_command_line
 	my $ccflags = $Config{ccflags};
 	$ccflags =~ s/\b\-W(all|error|\d)w*//i;
 	my $cc = "$Config{cc} $ccflags";
+	$cc .= " $cmd_options{EXTRA_CCFLAGS}"  if length $cmd_options{WITH_CCFLAGS};
 	$cc .= " $passthru_options{DEFINE}" if length $passthru_options{DEFINE};
 	$cc .= " $Config{cccdlflags}" if $dl;
 	$cc .= " $Config{ccdlflags}" if $dl && !$compile_only;
@@ -508,6 +513,7 @@ sub ld_command_line
 {
 	my ( $dstf) = shift;
 	my $ld = "$passthru_options{LD} $passthru_options{LDDLFLAGS}";
+	$ld .= " $cmd_options{EXTRA_LDFLAGS}" if length $cmd_options{WITH_LDFLAGS};
 	$ld .= " $LDOUTFLAG$dstf @_";
 	$ld .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
 	return $ld;
@@ -1982,8 +1988,11 @@ WriteMakefile(
 	OPTIMIZE          => $OPTIMIZE,
 	PREREQ_PM         => \%PREREQ,
 	OBJECT            => "@o_files",
-	INC               => join(' ', map { "-I$_" } @INCPATH ),
+	INC               => 
+		$cmd_options{EXTRA_CCFLAGS} . ' ' .
+		join(' ', map { "-I$_" } @INCPATH ),
 	LIBS              => [ 
+		$cmd_options{EXTRA_LDFLAGS} . ' ' .
 		':nosearch ' .
 		join(' ', map { "-L$_" } @LIBPATH) . ' ' .
 		join(' ', map { "-l$_" } @LIBS),
