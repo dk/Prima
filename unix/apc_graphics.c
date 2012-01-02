@@ -463,7 +463,7 @@ Bool
 apc_gp_done( Handle self)
 {
    DEFXX;
-   if ( XX) return false;
+   if (!XX) return false;
    if ( XX-> dashes) {
       free(XX-> dashes);
       XX-> dashes = nil;
