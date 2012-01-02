@@ -490,7 +490,7 @@ sub cc_command_line
 	my $ccflags = $Config{ccflags};
 	$ccflags =~ s/\b\-W(all|error|\d)w*//i;
 	my $cc = "$Config{cc} $ccflags";
-	$cc .= " $cmd_options{EXTRA_CCFLAGS}"  if length $cmd_options{WITH_CCFLAGS};
+	$cc .= " $cmd_options{EXTRA_CCFLAGS}"  if length $cmd_options{EXTRA_CCFLAGS};
 	$cc .= " $passthru_options{DEFINE}" if length $passthru_options{DEFINE};
 	$cc .= " $Config{cccdlflags}" if $dl;
 	$cc .= " $Config{ccdlflags}" if $dl && !$compile_only;
@@ -506,6 +506,7 @@ sub cc_command_line
 	$cc .= ' ' . join(' ', map { "\"$CLIBPATHFLAG\\\"$_\\\"\"" } @LIBPATH) if $Config{ccname} eq 'cl';
 	$cc .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
 	$cc .= " $passthru_options{LIBS}" if length $passthru_options{LIBS};
+	$cc .= " $cmd_options{EXTRA_LDFLAGS}" if length $cmd_options{EXTRA_LDFLAGS};
 	return $cc;
 }
 
@@ -513,7 +514,7 @@ sub ld_command_line
 {
 	my ( $dstf) = shift;
 	my $ld = "$passthru_options{LD} $passthru_options{LDDLFLAGS}";
-	$ld .= " $cmd_options{EXTRA_LDFLAGS}" if length $cmd_options{WITH_LDFLAGS};
+	$ld .= " $cmd_options{EXTRA_LDFLAGS}" if length $cmd_options{EXTRA_LDFLAGS};
 	$ld .= " $LDOUTFLAG$dstf @_";
 	$ld .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
 	return $ld;
