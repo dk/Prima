@@ -129,7 +129,7 @@ sub on_click
 	}
 	$newP .= $items-> [$foc]-> {text};
 	$newP .= '/' unless $newP =~ m/[\/\\]$/;
-	$_[0]-> path( $newP);
+	$self-> path( $newP);
 }
 
 sub on_drawitem
@@ -1120,6 +1120,8 @@ sub Dir_Change
 	my @a = grep { /$mask/i; } $dir-> files( 'reg');
 	@a = grep { !/^\./ } @a unless $self-> {showDotFiles};
 	@a = sort {uc($a) cmp uc($b)} @a if $self-> {sorted};
+	$self-> Files-> topItem(0);
+	$self-> Files-> focusedItem(-1);
 	$self-> Files-> items([@a]);
 	$self-> Directory_FontChanged( $self-> Directory);
 }
