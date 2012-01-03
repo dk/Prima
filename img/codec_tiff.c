@@ -530,6 +530,8 @@ scan_convert( Byte * src, Byte * dest, int pixels, int source_bits, int source_f
    }
 }
 
+
+
 static void 
 invert_scanline( Byte * src, int source_bits, int type, int pixels)
 {
@@ -562,6 +564,21 @@ invert_scanline( Byte * src, int source_bits, int type, int pixels)
             src++;
          }
       }
+   }
+}
+
+static Bool
+convert_abgr_to_rgba( Byte * buffer, int quads)
+{
+   register uint32_t * x = (uint32_t *) buffer;
+   while ( quads-- ) {
+      register uint32_t f = *x;
+      *x++ = 
+         (f >> 24) |
+         ((f >> 8) & 0x00FF00) |
+         ((f << 8) & 0xFF0000) |
+         (f << 24)
+         ;
    }
 }
 
@@ -1336,6 +1353,11 @@ VALID_COMBINATION:
       }
    END_LOOP:
 
+#if (BYTEORDER==0x4321) || (BYTEORDER==0x87654321)
+      if ( full_rgba_image || rgba_striped )
+         convert_abgr_to_rgba( tiffline + stripsz, w);
+#endif
+
       /* convert intrapixel layout into planar layout to extract alpha in separate space  */
       {
          Byte * dst0 = tiffline, *dst1;
@@ -1389,8 +1411,8 @@ VALID_COMBINATION:
       /* upgrade 8-bit data, if these were used for RGB from 1-to-7 bit source */
       if ( source_bits < 8 && target_type == imbpp24 ) {
          int shift = 8 - source_bits, bytes = w * 3;
-	 Byte * x = tiffline;
-	 while ( bytes-- ) *x++ <<= shift;
+         Byte * x = tiffline;
+         while ( bytes-- ) *x++ <<= shift;
       }
 
       /* invert data, if any */
