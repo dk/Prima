@@ -194,8 +194,6 @@ prima_xft_init(void)
    for ( i = 1; i < MAX_CHARSET; i++) {
       memset( std_charsets[i]. map, 0, sizeof(std_charsets[i]. map));
 
-      guts. machine_byte_order = LSBFirst;
-
       ii = iconv_open(ucs4, std_charsets[i]. name);
       if ( ii == (iconv_t)(-1)) continue;
 
