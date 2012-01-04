@@ -34,6 +34,7 @@ package Prima::MDI;
 
 use strict;
 use Prima::Classes;
+use Prima::RubberBand;
 
 package Prima::MDIMethods;
 
@@ -525,21 +526,21 @@ sub sizemove_cancel
 		if ( $self-> {fullDrag}) {
 			$self-> origin( @{$self-> {trackSaveData}});
 		} else {
-			$self-> xorrect( @{$self-> {prevRect}});
+			$self-> xorrect;
 		}
 		$ok = 1;
 	} elsif ( $self-> {mouseTransactionArea} eq q(size)) {
 		if ( $self-> {fullDrag}) {
 			$self-> rect( @{$self-> {trackSaveData}});
 		} else {
-			$self-> xorrect( @{$self-> {prevRect}});
+			$self-> xorrect;
 		}
 		$ok = 1;
 	} elsif ( $self-> {mouseTransaction} eq q(keyMove)) {
 		if ( $self-> {fullDrag}) {
 			$self-> origin( @{$self-> {trackSaveData}});
 		} else {
-			$self-> xorrect( @{$self-> {prevRect}});
+			$self-> xorrect;
 		}
 		$self-> select;
 		$ok = 1;
@@ -547,7 +548,7 @@ sub sizemove_cancel
 		if ( $self-> {fullDrag}) {
 			$self-> rect( @{$self-> {trackSaveData}});
 		} else {
-			$self-> xorrect( @{$self-> {prevRect}});
+			$self-> xorrect;
 		}
 		$self-> select;
 		$ok = 1;
@@ -587,7 +588,7 @@ sub keyMove
 
 	unless ($self-> {fullDrag}) {
 		$self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
-		$self-> xorrect( @{$self-> {prevRect}});
+		$self-> xorrect($self-> client_to_screen(0,0,$self-> size));
 	};
 }
 
@@ -603,7 +604,7 @@ sub keySize
 
 	unless ($self-> {fullDrag}) {
 		$self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
-		$self-> xorrect( @{$self-> {prevRect}});
+		$self-> xorrect($self-> client_to_screen(0,0,$self-> size));
 	};
 }
 
@@ -627,13 +628,21 @@ sub on_postmessage
 sub xorrect
 {
 	my ( $self, @r) = @_;
-	$r[2]--;
-	$r[3]--;
+	if ( @r ) {
+		$r[2]--;
+		$r[3]--;
+	}
 	my $o = $::application;
 	$o-> begin_paint;
 	my $oo = $self-> clipOwner ? $self-> owner : $::application;
 	$o-> clipRect( $oo-> client_to_screen( 0,0,$oo-> size));
-	$o-> rect_focus( @r, $self-> {border});
+	$o-> rubberband( @r ? ( 
+			rect    => \@r,
+			breadth => $self-> {border}
+		) : (
+			destroy => 1
+		)
+	);
 	$o-> end_paint;
 }
 
@@ -688,8 +697,7 @@ sub on_mousedown
 		$self-> check_drag;
 		unless ($self-> {fullDrag}) {
 			$self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
-			$self-> xorrect( @{$self-> {prevRect}});
-			my @r = @{$self-> {prevRect}};
+			$self-> xorrect($self-> client_to_screen(0,0,$self-> size));
 		};
 		return;
 	}
@@ -718,7 +726,7 @@ sub on_mousedown
 		
 		unless ($self-> {fullDrag}) {
 			$self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
-			$self-> xorrect( @{$self-> {prevRect}});
+			$self-> xorrect($self-> client_to_screen(0,0,$self-> size));
 		};
 		return;
 	}
@@ -821,7 +829,7 @@ sub on_keydown
 			$self-> capture(0);
 			$self-> clear_event;
 			unless ( $self-> {fullDrag}) {
-				$self-> xorrect( @{$self-> {prevRect}});
+				$self-> xorrect;
 				my $oo = $self-> clipOwner ? $self-> owner : $::application;
 				$self-> origin( 
 					$oo-> screen_to_client(@{$self-> {prevRect}}[0,1])
@@ -843,7 +851,6 @@ sub on_keydown
 			if ( $self-> {fullDrag}) {
 				$self-> origin( $o[0] + $dx, $o[1] + $dy);
 			} else {
-				$self-> xorrect( @{$self-> {prevRect}});
 				${$self-> {prevRect}}[0] += $dx;
 				${$self-> {prevRect}}[1] += $dy;
 				${$self-> {prevRect}}[2] += $dx;
@@ -867,7 +874,7 @@ sub on_keydown
 				$self-> capture(0);
 				$self-> clear_event;
 				unless ( $self-> {fullDrag}) {
-					$self-> xorrect( @{$self-> {prevRect}});
+					$self-> xorrect;
 					my $oo = $self-> clipOwner ? 
 						$self-> owner : 
 						$::application;
@@ -886,8 +893,6 @@ sub on_keydown
 					$self-> bottom( $b - $dy) unless $self-> height != $o[1] + $dy;
 				}
 			} else {
-				$self-> xorrect( @{$self-> {prevRect}});
-				
 				my @r = @{$self-> {prevRect}};
 				$r[1] -= $dy;
 				$r[2] += $dx;
@@ -923,7 +928,7 @@ sub on_mouseup
 
 	if ( $tr eq q(caption)) {
 		unless ( $self-> {fullDrag}) {
-			$self-> xorrect( @{$self-> {prevRect}});
+			$self-> xorrect;
 
 			my @org = $_[0]-> origin;
 			my @new = ( $org[0] + $x - $self-> {spotX}, $org[1] + $y - $self-> {spotY});
@@ -947,7 +952,7 @@ sub on_mouseup
 	if ( $self-> {mouseTransactionArea} eq q(size)) {
 		unless ($self-> {fullDrag}) {
 			my @r = @{$self-> {prevRect}};
-			$self-> xorrect( @r);
+			$self-> xorrect;
 			my $oo = $self-> clipOwner ? $self-> owner : $::application;
 			$self-> rect( $oo-> screen_to_client(@r));
 		};
@@ -972,7 +977,6 @@ sub on_mousemove
 				$self-> origin( $new[0], $new[1]) 
 					if $org[1] != $new[1] || $org[0] != $new[0];
 			} else {
-				$self-> xorrect( @{$self-> {prevRect}});
 				my @xorg = $self-> client_to_screen( 
 					$x - $self-> {spotX}, 
 					$y - $self-> {spotY}
@@ -998,7 +1002,6 @@ sub on_mousemove
 					if $org[1] != $new[1] || $org[0] != $new[0];
 			} else {
 			#  works also, but is confusing slightly
-			#  $self-> xorrect( @{$self-> {prevRect}});
 			#  my @xorg = $self-> client_to_screen( $x - $self->{spotX}, $y - $self->{spotY});
 			#  my @sz   = $self-> size;
 			#  $self-> {prevRect} = [ @xorg, $sz[0] + $xorg[0], $sz[1] + $xorg[1]];
@@ -1066,7 +1069,6 @@ sub on_mousemove
 				if ( $self-> {fullDrag}) {
 					$self-> rect( @new)
 				} else {
-					$self-> xorrect( @{$self-> {prevRect}});
 					my $oo = $self-> clipOwner ? $self-> owner : $::application;
 					$self-> {prevRect} = [$oo-> client_to_screen( @new)];
 					$self-> xorrect( @{$self-> {prevRect}});

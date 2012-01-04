@@ -24,7 +24,7 @@
 #
 # $Id$
 use strict;
-use Prima qw(StdDlg Notebooks MsgBox ComboBox FontDialog ColorDialog IniFile Utils);
+use Prima qw(StdDlg Notebooks MsgBox ComboBox FontDialog ColorDialog IniFile Utils RubberBand);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;
@@ -771,14 +771,17 @@ sub on_destroy
 
 sub veil
 {
-	my $self = $_[0];
+	my ($self, $draw) = @_;
 	$::application-> begin_paint;
 	my @r = ( @{$self-> {anchor}}, @{$self-> {dim}});
 	( $r[0], $r[2]) = ( $r[2], $r[0]) if $r[2] < $r[0];
 	( $r[1], $r[3]) = ( $r[3], $r[1]) if $r[3] < $r[1];
 	@r = $self-> client_to_screen( @r);
 	$::application-> clipRect( $self-> client_to_screen( 0,0,$self-> size));
-	$::application-> rect_focus( @r, 1);
+	$::application-> rubberband( $draw ?
+		( rect => \@r ) :
+		( destroy => 1 )
+	);
 	$::application-> end_paint;
 }
 
@@ -812,7 +815,7 @@ sub on_mousedown
 			$self-> capture(1);
 			$self-> {anchor} = [ $x, $y];
 			$self-> {dim}    = [ $x, $y];
-			$self-> veil;
+			$self-> veil(1);
 			ObjectInspector::enter_widget( $self);
 		}
 	}
@@ -835,9 +838,8 @@ sub on_mousemove
 	}
 	if ( $self-> {transaction} == 1) {
 		return if $self-> {dim}-> [0] == $x && $self-> {dim}-> [1] == $y;
-		$self-> veil;
 		$self-> {dim} = [ $x, $y];
-		$self-> veil;
+		$self-> veil(1);
 		return;
 	}
 
@@ -880,7 +882,7 @@ sub on_mouseup
 
 	$self-> capture(0);
 	if ( $self-> {transaction} == 1) {
-		$self-> veil;
+		$self-> veil(0);
 		my @r = ( @{$self-> {anchor}}, @{$self-> {dim}});
 		( $r[0], $r[2]) = ( $r[2], $r[0]) if $r[2] < $r[0];
 		( $r[1], $r[3]) = ( $r[3], $r[1]) if $r[3] < $r[1];

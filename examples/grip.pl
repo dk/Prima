@@ -50,6 +50,7 @@ use strict;
 use Prima;
 use Prima::ImageViewer;
 use Prima::Application;
+use Prima::RubberBand;
 
 package MonoDeviceBitmap;
 use vars qw(@ISA);
@@ -116,12 +117,13 @@ sub paint
 
 sub xordraw
 {
-	my $self = shift;
+	my ($self, $new_rect) = @_;
 	my $o = $::application;
-	my @xrect = @_;
 	$o-> begin_paint;
-	$o-> rect_focus( $self-> {capx},$self-> {capy}, @xrect, 1) if scalar @xrect == 2;
-	$o-> rect_focus( $self-> {capx},$self-> {capy}, $self-> {dx},$self-> {dy}, 1);
+	$o-> rubberband( $new_rect ?
+		( rect => [$self-> {capx},$self-> {capy}, $self-> {dx},$self-> {dy}]) :
+		( destroy => 1 )
+	);
 	$o-> end_paint;
 }
 
@@ -148,7 +150,7 @@ my $w = Prima::MainWindow-> create(
 		$self-> {cap} = 3;
 		($self-> {capx},$self-> {capy}) = $self-> client_to_screen( $x, $y);
 		($self-> {dx},$self-> {dy}) = ($self-> {capx},$self-> {capy});
-		xordraw( $self);
+		xordraw( $self, 1);
 	},
 	onMouseMove => sub {
 		my ( $self, $mod, $x, $y) = @_;
@@ -156,7 +158,7 @@ my $w = Prima::MainWindow-> create(
 		return unless $self-> {cap} == 3;
 		my @od = ($self-> {dx},$self-> {dy});
 		($self-> {dx},$self-> {dy}) = $self-> client_to_screen( $x, $y);
-		xordraw( $self, @od);
+		xordraw( $self, 1);
 	},
 	onMouseUp => sub {
 		my ( $self, $btn, $mod, $x, $y) = @_;

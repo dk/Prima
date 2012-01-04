@@ -41,6 +41,7 @@
 package Prima::Docks;
 
 use Prima;
+use Prima::RubberBand;
 use strict;
 use Tie::RefHash;
 
@@ -1214,11 +1215,16 @@ sub xorrect
 {
 	my ( $self, $x1, $y1, $x2, $y2, $width) = @_;
 	$::application-> begin_paint;
-	$x2--; $y2--;
-	$width = $self-> {lastXorrectWidth} unless defined $width;
-	$::application-> rect_focus( $x1, $y1, $x2, $y2, $width);
+	if ( defined $x1 ) {
+		$x2--; $y2--;
+		$::application-> rubberband(
+			rect    => [ $x1, $y1, $x2, $y2 ],
+			breadth => $width,
+		);
+	} else {
+		$::application-> rubberband( destroy => 1 )
+	}
 	$::application-> end_paint;
-	$self-> {lastXorrectWidth} = $width;
 }
 
 sub on_paint
@@ -1266,7 +1272,7 @@ sub drag
 		$self-> pointer( $self-> {pointerSave});
 		$_-> close_session( $self-> {sessions}-> {$_}) for keys %{$self-> {sessions}};
 		delete $self-> {$_} for qw( anchor drag orgRect oldRect pointerSave sessions dockInfo);
-		$self-> xorrect( @rrc);
+		$self-> xorrect;
 	}
 	
 	unless ( $drag) {
@@ -1323,7 +1329,6 @@ sub on_mousemove
 	@rc = @$rect;
 	$w = 1;
 LEAVE:   
-	$self-> xorrect( @{$self-> {oldRect}});
 	$self-> {oldRect} = \@rc;
 	$self-> xorrect( @{$self-> {oldRect}}, $w);
 	$self-> clear_event;
