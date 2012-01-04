@@ -357,7 +357,7 @@ int
 apc_sys_get_value( int sysValue)
 {
    HKEY hKey;
-   DWORD valSize = 256, valType = REG_SZ;
+   DWORD valSize = 256, valType = REG_SZ, dw = 0;
    char buf[ 256] = "";
 
    switch ( sysValue) {
@@ -409,6 +409,13 @@ apc_sys_get_value( int sysValue)
    case svColorPointer    : return guts. displayBMInfo. bmiHeader. biBitCount > 4;
    case svCanUTF8_Input   : return HAS_WCHAR;
    case svCanUTF8_Output  : return HAS_WCHAR;
+   case svCompositeDisplay:
+       valType = REG_DWORD;
+       valSize = sizeof(DWORD);
+       RegOpenKeyEx( HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\DWM", 0, KEY_READ, &hKey);
+       RegQueryValueEx( hKey, "CompositionPolicy", nil, &valType, ( LPBYTE)&dw, &valSize);
+       RegCloseKey( hKey);
+       return dw == 0;
    default:
       return -1;
    }

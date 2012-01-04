@@ -824,6 +824,7 @@ See also L<Prima::Application/get_system_value>
 	sv::ColorPointer     - 1 if system accepts color pointer icons.
 	sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
 	sv::CanUTF8_Output   - 1 if system can output utf8 text
+	sv::CompositeDisplay - 1 if system uses double-buffering for the desktop
 
 =head2 ta::  - alignment constants
 

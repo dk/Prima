@@ -1841,6 +1841,8 @@ SV(ColorPointer)
 SV(CanUTF8_Input)
 #define   svCanUTF8_Output  31
 SV(CanUTF8_Output)
+#define   svCompositeDisplay 32
+SV(CompositeDisplay)
 END_TABLE(sv,UV)
 #undef SV
 

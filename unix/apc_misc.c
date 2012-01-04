@@ -1173,6 +1173,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svColorPointer:         return 0;
    case svCanUTF8_Input:        return 1;
    case svCanUTF8_Output:       return 1;
+   case svCompositeDisplay:     return 0; /* XXX detect compiz */
    default:
       return -1;
    }
