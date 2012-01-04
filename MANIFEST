@@ -270,6 +270,7 @@ Prima/PS/locale/win-cp1252
 Prima/PS/Printer.pm
 Prima/PS/setup.fm
 Prima/PS/Setup.pm
+Prima/RubberBand.pm
 Prima/ScrollBar.pm
 Prima/ScrollWidget.pm
 Prima/Sliders.pm
