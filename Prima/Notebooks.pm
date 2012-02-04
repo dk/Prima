@@ -707,7 +707,7 @@ sub delete_page
 	$self-> {pageCount}--;
 	$self-> pageIndex( $self-> pageIndex);
 	if ( $removeChildren) {
-		$_-> destroy for @$r;
+		$_-> [0]-> destroy for @$r;
 	}
 }
 
