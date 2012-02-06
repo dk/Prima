@@ -1362,8 +1362,8 @@ VALID_COMBINATION:
       {
          Byte * dst0 = tiffline, *dst1;
          Byte * src0 = tiffline + stripsz, *src1, *src2;
-         x = w;
          register Byte byte_counter = mid_bytes;
+         x = w;
          switch ((source_is_planar ? 10 : 20) + source_samples) {
          case 12:
             dst1 = dst0 + w * byte_counter;
