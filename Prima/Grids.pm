@@ -1647,7 +1647,7 @@ sub dy
 	}
 	$self-> scroll( 0, $delta, clipRect => \@a);
 	my @info = $self-> get_screen_cell_info( $self-> focusedCell);
-	$self-> invalidate_rect( gsci::V_RECT ) if scalar @info;
+	$self-> invalidate_rect( @info[ gsci::V_RECT ] ) if scalar @info;
 }
 
 sub focusedCell
