@@ -590,6 +590,7 @@ sub compile
 	my @tmpextras = ( $tmpsrc, $tmpsrc);
 	$tmpextras[0] =~ s/\.[^\.+]$/.ilk/;
 	$tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
+	unlink @tmpextras; # leftovers are toxic to msvc
 
 	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
 	print TMPSRC $text;
@@ -617,6 +618,7 @@ sub compile_and_run
 	my @tmpextras = ( $tmpsrc, $tmpsrc);
 	$tmpextras[0] =~ s/\.[^\.+]$/.ilk/;
 	$tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
+	unlink @tmpextras; # leftovers are toxic to msvc
 
 	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
 	print TMPSRC $text;
@@ -910,7 +912,7 @@ sub setup_defines
 	have_header( "unistd.h");
 	have_header( "strings.h");
 
-	my @int_types = qw(int8_t int16_t int32_t);
+	my @int_types = qw(int8_t int16_t int32_t int64_t);
 	my @uint_types = qw(uint8_t uint16_t uint32_t uint64_t);
 	my @u_int_types = qw(u_int8_t u_int16_t u_int32_t u_int64_t);
 	have_types_in( "sys/types.h", @int_types)

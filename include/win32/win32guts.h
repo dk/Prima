@@ -595,6 +595,15 @@ extern const WCHAR* const_char2wchar( const char * src);
 extern BOOL         gp_GetTextMetrics( HDC dc, LPTEXTMETRICW tm);
 extern void         textmetric_c2w( LPTEXTMETRICA from, LPTEXTMETRICW to);
 
+/* compatibility to MSVC 6 */
+#ifndef GWLP_USERDATA
+#	define GWLP_USERDATA GWL_USERDATA 
+#	define GWLP_WNDPROC  GWL_WNDPROC 
+#	define LONG_PTR      LONG 
+#	define GetWindowLongPtr GetWindowLong
+#	define SetWindowLongPtr SetWindowLong
+#endif
+
 #ifdef __cplusplus
 }
 #endif
