@@ -105,7 +105,16 @@ END {
 	print $END if defined $END;
 };
 
+my ($offset_makefile_log, $captured_makefile_log);
 my $see_makefile_log = "(see also makefile.log for details)";
+
+sub see_makefile_log
+{
+	my $ret = "$see_makefile_log\n";
+	$ret .= "\n--------------------------------------------\n$captured_makefile_log\n"
+		if defined $captured_makefile_log;
+	return $ret;
+}
 
 sub usage
 {
@@ -532,6 +541,11 @@ sub null_output
 	}
 	open STDOUT, ">>$NULLDEV" or die "STDOUT redirect failed: $!";
 	open STDERR, ">&STDOUT" or die "STDERR redirect failed: $!";
+
+	if ( -f $NULLDEV ) {
+		$offset_makefile_log = -s $NULLDEV;
+		undef $captured_makefile_log;
+	}
 }
 
 sub restore_output
@@ -544,6 +558,16 @@ sub restore_output
 	open STDERR, ">&OLDSTDERR" or die "STDERR restoration failed: $!";
 	close OLDSTDOUT;
 	close OLDSTDERR;
+
+	if ( -f $NULLDEV ) {
+		if ( open MAKEFILELOG, '<', $NULLDEV) {
+			binmode MAKEFILELOG;
+			seek MAKEFILELOG, $offset_makefile_log, 0;
+			local $/;
+			$captured_makefile_log = <MAKEFILELOG>;
+			close MAKEFILELOG;
+		}
+	}
 }
 
 sub tempfile
@@ -567,7 +591,7 @@ sub compile
 	$tmpextras[0] =~ s/\.[^\.+]$/.ilk/;
 	$tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
 
-	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $see_makefile_log";
+	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
 	print TMPSRC $text;
 	close TMPSRC;
 
@@ -594,7 +618,7 @@ sub compile_and_run
 	$tmpextras[0] =~ s/\.[^\.+]$/.ilk/;
 	$tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
 
-	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $see_makefile_log";
+	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
 	print TMPSRC $text;
 	close TMPSRC;
 
@@ -685,7 +709,7 @@ EOF
 sub have_func
 {
 	my ( $funcname, @headers) = @_;
-	die "have_func() without any header is deprecated $see_makefile_log" unless @headers;
+	die "have_func() without any header is deprecated " unless @headers;
 	my $defname = "HAVE_" . uc $funcname;
 	my @srchead = map { "#include <$_>\n"} @headers;
 	$defname =~ s/\W/_/g;
@@ -718,7 +742,7 @@ sub have_define
 	my $tmpsrc = qd( tempfile( "pmts%04d.c"));
 	my $tmpo = $tmpsrc;
 	$tmpo =~ s/\.c$/\.$Config{_o}/;
-	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed $see_makefile_log";
+	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
 	print TMPSRC <<EOF;
 int
 main()
@@ -823,11 +847,11 @@ sub setup_compiler
 	print "Compiler: $Config{ccname}\n";
 
 	print "Checking if can compile... ";
-	compile('int a;', 1) or die "no $see_makefile_log\n";
+	compile('int a;', 1) or die "no " . see_makefile_log;
 	print "yes\n";
 
 	print "Checking if can link... ";
-	compile( <<EOF, 0) or die "no $see_makefile_log\n";
+	compile( <<EOF, 0) or die "no " . see_makefile_log;
 int
 main()
 {
