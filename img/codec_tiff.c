@@ -32,7 +32,7 @@
 #include "img.h"
 #include "img_conv.h"
 #include "Icon.h"
-#if defined(_MSC_VER) && _MSC_VER < 1500 && _MSC_VER > 1200
+#if defined(_MSC_VER) && _MSC_VER < 1400 && _MSC_VER > 1200
 #define HAVE_INT32
 #endif
 #include <tiff.h>
