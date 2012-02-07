@@ -338,6 +338,7 @@ sub setup_environment
 		$COUTEXEFLAG  = '-Fe';
 		$CLIBPATHFLAG = '/LIBPATH:';
 		$CLINKPREFIX  = '/link';
+		$CLINKPREFIX .= " $1" if $Config{libs} =~ /(bufferoverflowU.lib)/i;
 		$LDLIBFLAG    = '';
 		$LDOUTFLAG    = '/OUT:';
 		$LD_LIB_EXT   = '.lib';
