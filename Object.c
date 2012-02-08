@@ -93,7 +93,7 @@ Object_create( char *className, HV * profile)
          OPEN_G_EVAL;
          Object_destroy( self);
          CLOSE_G_EVAL;
-         croak( SvPV_nolen( GvSV( PL_errgv)));
+         croak( "%s", SvPV_nolen( GvSV( PL_errgv)));
       }
       CLOSE_G_EVAL;
       SPAGAIN;
@@ -221,7 +221,7 @@ Object_destroy( Handle self)
       if ( postDestroys. count == 0) break;
       if ( postDestroys. items[ 0] != last) continue;
       if ( postDestroys. count == 1)
-         croak("RTC0A00: Zombie detected: %08x", last);
+         croak("RTC0A00: Zombie detected: %p", (void*)last);
       else {
          list_delete_at( &postDestroys, 0);
          list_add( &postDestroys, last);

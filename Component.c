@@ -692,7 +692,7 @@ XS( Component_notify_FROMPERL)
          (void)POPs;
          PUB_CHECK;
          CLOSE_G_EVAL;
-         croak( SvPV_nolen( GvSV( PL_errgv)));
+         croak( "%s", SvPV_nolen( GvSV( PL_errgv)));
       } 
       CLOSE_G_EVAL;
       SPAGAIN;
@@ -812,7 +812,7 @@ XS( Component_notify_FROMPERL)
          if ( privMethod) sv_free( privMethod);
          free( argsv);
          free( sequence);
-         croak( SvPV_nolen( GvSV( PL_errgv)));
+         croak( "%s", SvPV_nolen( GvSV( PL_errgv)));
       } 
       CLOSE_G_EVAL;
       SPAGAIN;

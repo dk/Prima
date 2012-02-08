@@ -2038,7 +2038,7 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 
    if ( !rv_av || !SvROK( rv_av) || ( SvTYPE( SvRV( rv_av)) != SVt_PVAV)) {
       result = false;
-      if ( error) croak( error);
+      if ( error) croak( "%s", error);
    } else {
       av = (AV*)SvRV(rv_av);
       for ( i = 0; i < number; i++) {
@@ -2048,7 +2048,7 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
          else {
             pt[i] = 0;
             result = false;
-            if ( error) croak( error);
+            if ( error) croak( "%s", error);
          }
       }
    }
