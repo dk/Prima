@@ -1807,7 +1807,7 @@ sub command_bindist
 		cleanup("Error copying $_ to $_") unless copy $_, $f;
 	}
 	for (<blib/arch/auto/Prima/*>) {
-		next if m/(\.exists|Prima\.bs)$/;
+		next if m/(\.exists|Prima\.bs|Prima\.pdb)$/;
 		my $f = $_;
 		$f =~ s[^blib/arch][$DISTNAME];
 		cleanup("Error copying $_ to $_") unless copy $_, $f;
