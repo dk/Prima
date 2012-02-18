@@ -256,18 +256,13 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
          return true;
       case CF_UNICODETEXT:
 	 {
-            int ulen = utf8_length(( char*) c-> data, ( char*) c-> data + c-> length);
-            int i, cr = 0;
+            int ulen = MultiByteToWideChar(CP_UTF8, 0, (char*) c-> data, c-> length, NULL, 0) + 1; 
             void *ptr = nil;
             HGLOBAL glob;
 
-            for ( i = 0; i < c-> length; i++) 
-               if (c-> data[i] == '\n' && ( i == 0 || c-> data[i-1] != '\r')) 
-                  cr++;
-
-            if (( glob = GlobalAlloc( GMEM_DDESHARE, ( ulen + 1) * sizeof( WCHAR)))) {
+            if (( glob = GlobalAlloc( GMEM_DDESHARE, ( ulen + 0) * sizeof( WCHAR)))) {
                if (( ptr = GlobalLock( glob))) {
-                  utf8_to_wchar(( char*) c-> data, ptr, ulen + 1);
+                  MultiByteToWideChar(CP_UTF8, 0, c-> data, c-> length, ptr, ulen);
                   GlobalUnlock( glob);
                   if ( !SetClipboardData( CF_UNICODETEXT, glob)) apiErr;
                } else {

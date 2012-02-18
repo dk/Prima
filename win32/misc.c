@@ -633,10 +633,16 @@ WCHAR *
 alloc_utf8_to_wchar( const char * utf8, int length)
 {
    WCHAR * ret;
-   if ( utf8 == NULL ) utf8 = "";
-   if ( length < 0) length = prima_utf8_length( utf8) + 1;
-   if ( !( ret = malloc( length * sizeof( WCHAR)))) return nil;
-   utf8_to_wchar( utf8, ret, length);
+   int size;
+   char * u2 = (char*) utf8;
+   if ( length > 0) {
+      while ( length-- > 0 ) u2 = ( char*) utf8_hop(( U8*) u2, 1);
+      length = u2 - utf8;
+   }
+   size = MultiByteToWideChar(CP_UTF8, 0, utf8, length, NULL, 0);
+   if ( size < 0) return nil;
+   if ( !( ret = malloc( size * sizeof( WCHAR)))) return nil;
+   MultiByteToWideChar(CP_UTF8, 0, utf8, length, ret, size);
    return ret;
 }
 
