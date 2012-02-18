@@ -46,6 +46,7 @@ use Prima::StdDlg;
 
 eval "use Encode;";
 my $can_utf8 = $@ ? 0 : 1;
+$::application-> wantUnicodeInput($can_utf8);
 
 package Indicator;
 use vars qw(@ISA);
@@ -182,7 +183,11 @@ sub profile_default
 				[],
 				(
 					$can_utf8 ? 
-					['utf'  => 'UTF-8 mode' => sub { $_[0]-> {utf8} = $_[0]-> menu-> utf-> toggle }] :
+					['utf'  => 'UTF-8 mode' => sub {
+						my $utf8_mode = $_[0]-> menu-> utf-> toggle;
+						$_[0]-> {utf8} = $utf8_mode;
+						$::application-> wantUnicodeInput($utf8_mode);
+					}] :
 					()
 				),
 				[ 'Set ~font' => q(setfont)],
