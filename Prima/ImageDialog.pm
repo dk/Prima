@@ -213,6 +213,14 @@ sub Preview_Click
 	$_[0]-> update_preview;
 }   
 
+sub on_endmodal
+{
+	my $self = $_[0];
+	my $i = $self-> PickHole;
+	$i-> image(undef);
+}
+
+
 sub Files_SelectItem
 {
 	my ( $self, $lst) = @_;
@@ -421,6 +429,7 @@ sub image
 
 sub on_endmodal
 {
+	$_[0]-> SUPER::on_endmodal();
 	$_[0]-> image( undef); # just freeing the reference
 }
 
