@@ -172,6 +172,10 @@ static TagRec pixeltype [] = {
   { SAMPLEFORMAT_COMPLEXIEEEFP  , "complex floating point"},
 };
 
+#ifndef TIFF_VERSION
+#define TIFF_VERSION TIFF_VERSION_CLASSIC
+#endif
+
 static ImgCodecInfo codec_info = {
    "TIFF Bitmap",
    "www.libtiff.org",
