@@ -216,10 +216,17 @@ Clipboard_close( Handle self)
 	    src = ( U8 *) SvPV( utf8_sv, l);
 	    text_sv = newSVpvn("", 0);
 	    while ( l--) {
-               register UV u = utf8_to_uvchr( src, &charlen);
+               register UV u = 
+#if PERL_PATCHLEVEL >= 16
+	       	  utf8_to_uvchr_buf( src, src + UTF8_MAXBYTES, &charlen)
+#else
+	       	  utf8_to_uvchr( src, &charlen)
+#endif
+		  ;
 	       char c = ( u < 0x7f) ? u : '?';
 	       src += charlen;
 	       sv_catpvn( text_sv, &c, 1);
+	       if ( charlen == 0 ) break;
 	    }
 	    text-> server( self, text, cefFetch, text_sv);
 	    sv_free( text_sv);

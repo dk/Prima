@@ -1048,8 +1048,13 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
       
       if ( t-> utf8_text) {
          STRLEN len;
+#if PERL_PATCHLEVEL >= 16
+         uv = utf8_to_uvchr_buf(( U8*) t-> text + i, ( U8*) t-> text + t-> textLen, &len);
+#else	 
          uv = utf8_to_uvchr(( U8*) t-> text + i, &len);
+#endif
          i += len;
+	 if ( len == 0 ) break;
       } else
          uv = (( unsigned char *)(t-> text))[i++];
 
@@ -1163,16 +1168,12 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
     
    /* removing ~ and determining it's location */
    if ( tildeIndex >= 0 && !(t-> options & twReturnChunks)) {
-      UV uv;
-      STRLEN len;
       PFontABC abc;
       char *l = ret[ tildeLine];
       t-> t_char = t-> text + tildePos + 1;
       if ( t-> options & twCollapseTilde)
          memmove( l + tildePos, l + tildePos + 1, strlen( l) - tildePos);
-      l = ret[ t-> t_line] + tildeLPos;
-      uv = t-> utf8_text ? utf8_to_uvchr(( U8*) l, &len) : *((unsigned char*)l);
-      abc = query_abc_range( self, t, uv / 256) + (uv & 0xff);
+      abc = query_abc_range( self, t, 0) + '~';
       w = tildeOffset;
       t-> t_start = w - 1;
       t-> t_end   = w + abc->a + abc->b + abc->c;

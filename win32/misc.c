@@ -619,13 +619,21 @@ apc_dl_export(char *path)
 }   
 
 void
-utf8_to_wchar( const char * utf8, WCHAR * u16, int length)
+utf8_to_wchar( const char * utf8, WCHAR * u16, int src_len, int target_len )
 {
    STRLEN charlen;
-   while ( length--) {
-      register UV u = ( utf8_to_uvchr(( U8*) utf8, &charlen));
+   while ( target_len--) {
+      register UV u = ( 
+#if PERL_PATCHLEVEL >= 16
+         utf8_to_uvchr_buf(( U8*) utf8, ( U8*)(utf8 + src_len), &charlen)
+#else
+         utf8_to_uvchr(( U8*) utf8, &charlen)
+#endif
+      );
       *(u16++) = ( u < 0x10000) ? u : 0xffff;
       utf8 += charlen;
+      src_len -= charlen;
+      if ( src_len <= 0 || charlen == 0) break;
    }
 }
 

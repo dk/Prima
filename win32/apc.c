@@ -1144,13 +1144,13 @@ map_text_accel( PMenuItemReg i)
    memset( buf, 0, sizeof( WCHAR) * ( l1 + l2 + amps));
    
    if ( i-> flags. utf8_text && HAS_WCHAR) 
-      utf8_to_wchar( i-> text, buf, l1 - 1);
+      utf8_to_wchar( i-> text, buf, strlen(i->text), l1 - 1);
    else
       MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, i-> text, l1 - 1, buf, l1 * 2 - 2);
    if ( i-> accel) {
       buf[l1 - 1] = '\t';
       if ( i-> flags. utf8_accel && HAS_WCHAR) 
-         utf8_to_wchar( i-> accel, buf + l1, l2);
+         utf8_to_wchar( i-> accel, buf + l1, strlen(i->accel), l2);
       else
          MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, i-> accel, l2 - 1, buf + l1, l2 * 2 - 2);
    }

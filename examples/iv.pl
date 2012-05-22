@@ -370,14 +370,14 @@ sub iv_destroy
 	$::application-> close unless $winCount;
 }
 
-
+use utf8;
 
 my $w = Prima::Window-> create(
 	size => [ 300, 300],
 	onDestroy => \&iv_destroy,
 	onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},
 	menuItems => [
-	[ file => '~File' => [
+	[ file => 'F~~ileжж1' => [
 		[ '~Open' =>  'F3'     => kb::F3     , \&fdopen],
 		[],
 		[ 'E~xit' => 'Alt+X' => '@X' => sub {$::application-> close}],
