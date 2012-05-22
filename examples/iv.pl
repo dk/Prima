@@ -377,7 +377,7 @@ my $w = Prima::Window-> create(
 	onDestroy => \&iv_destroy,
 	onMouseWheel => sub { iv_mousewheel( shift-> IV, @_)},
 	menuItems => [
-	[ file => 'F~~ileжж1' => [
+	[ file => '~File' => [
 		[ '~Open' =>  'F3'     => kb::F3     , \&fdopen],
 		[],
 		[ 'E~xit' => 'Alt+X' => '@X' => sub {$::application-> close}],
