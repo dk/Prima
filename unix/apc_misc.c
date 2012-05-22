@@ -1453,11 +1453,17 @@ prima_rect_intersect( XRectangle *t, const XRectangle *s)
 
 
 void
-prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int length)
+prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len, int target_len )
 {
    STRLEN charlen;
-   while ( length--) {
-      register UV u = ( utf8_to_uvchr(( U8*) utf8, &charlen));
+   while ( target_len--) {
+      register UV u = (
+#if PERL_PATCHLEVEL >= 16
+         utf8_to_uvchr_buf(( U8*) utf8, ( U8*)(utf8 + src_len), &charlen)
+#else
+         utf8_to_uvchr(( U8*) utf8, &charlen)
+#endif
+      );
       if ( u < 0x10000) {
          u16-> byte1 = u >> 8;
          u16-> byte2 = u & 0xff;
@@ -1465,6 +1471,8 @@ prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int length)
          u16-> byte1 = u16-> byte2 = 0xff;
       u16++;
       utf8 += charlen;
+      src_len -= charlen;
+      if ( src_len <= 0 || charlen == 0) break;
    }
 }
 
@@ -1474,7 +1482,7 @@ prima_alloc_utf8_to_wchar( const char * utf8, int length)
    XChar2b * ret;
    if ( length < 0) length = prima_utf8_length( utf8) + 1;
    if ( !( ret = malloc( length * sizeof( XChar2b)))) return nil;
-   prima_utf8_to_wchar( utf8, ret, length);
+   prima_utf8_to_wchar( utf8, ret, strlen(utf8), length);
    return ret;
 }
 

@@ -228,7 +228,7 @@ get_font_abc( PCachedFont font, char * index, Bool utf8, FontABC * rec, MenuDraw
    }
 #endif   
    if ( utf8)
-      prima_utf8_to_wchar( index, ( XChar2b*) buf, 1);
+      prima_utf8_to_wchar( index, ( XChar2b*) buf, 2, 1);
    else
       buf[0] = *index;
    cs = prima_char_struct( font-> fs, ( XChar2b*) buf, utf8);
@@ -630,11 +630,19 @@ menu_enter_item( PMenuSysData XX, PMenuWindow w, int index, int type)
 
 
 static void
-store_char( char * src, int * srcptr, char * dst, int * dstptr, Bool utf8, MenuDrawRec * data)
+store_char( char * src, int srclen, int * srcptr, char * dst, int * dstptr, Bool utf8, MenuDrawRec * data)
 {
+   if ( *srcptr >= srclen ) return;
+
    if ( utf8) {
       STRLEN char_len;
-      UV uv = utf8_to_uvchr(( U8*) src + *srcptr, &char_len);
+      UV uv = 
+#if PERL_PATCHLEVEL >= 16
+         utf8_to_uvchr_buf(( U8*) src + *srcptr, ( U8*) src + srclen, &char_len)
+#else
+         utf8_to_uvchr(( U8*) src + *srcptr, &char_len)
+#endif
+      ;
       *srcptr += char_len;
       if ( data-> xft_map8) {
          *(( uint32_t*)(dst + *dstptr)) = (uint32_t) uv;
@@ -776,9 +784,9 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
             int s = 0, d = 0;
             draw. pixel = clr;
             draw. rgb   = rgb;
-            store_char( ">", &s, buf, &d, 0, &draw);
+            store_char( ">", strlen(">"), &s, buf, &d, 0, &draw);
             s = 0;
-            store_char( ">", &s, buf, &d, 0, &draw);
+            store_char( ">", strlen(">"), &s, buf, &d, 0, &draw);
             text_out( kf, buf, 2,
                   x + MENU_XOFFSET + xtoffs, 
                   y + MENU_ITEM_GAP + kf-> font. height - kf-> font. descent, 
@@ -811,6 +819,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
             if ( m-> text) {
                int lineStart, lineEnd = 0, haveDash = 0;
                int ay = y + deltaY - MENU_ITEM_GAP - kf-> font. descent;
+	       int text_len = strlen(m-> text);
 
                t = m-> text;
                for (;;) {
@@ -820,7 +829,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                      if (t[i] == '~' && t[i+1]) {
                         if ( t[i+1] == '~') {
                            int dummy = 0;
-                           store_char( "~", &dummy, s, &l, false, &draw);
+                           store_char( "~", strlen("~"), &dummy, s, &l, false, &draw);
                            i += 2;
                            slen++;
                         } else {
@@ -839,8 +848,8 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                            if ( lineStart < 0)
                               lineStart = ( abc.a < 0) ? -abc.a : 0;
                            lineStart += abc.a + abc.b + abc.c;
-                        }  
-                        store_char( t, &i, s, &l, m-> flags. utf8_text, &draw);
+                        }
+                        store_char( t, text_len, &i, s, &l, m-> flags. utf8_text, &draw);
                         slen++;
                      }
                   }
@@ -884,16 +893,18 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                int zy = vertical ? 
                   y + ( deltaY + kf-> font. height) / 2 - kf-> font. descent: 
                   y + deltaY - MENU_ITEM_GAP - kf-> font. descent;
+	       int accel_len = strlen(m-> accel);
+
                if ( m-> flags. utf8_accel) 
                   ul = prima_utf8_length( m-> accel);
                else
-                  ul = strlen( m-> accel);
+                  ul = accel_len;
                if (( ul * 4 + 4) > sz) {
                   free(s); 
                   if ( !( s = malloc( sz = (ul * 4 + 4)))) goto EXIT;
                }
                for ( i = 0; i < ul; i++)
-                  store_char( m-> accel, &sl, s, &dl, m-> flags. utf8_accel, &draw);
+                  store_char( m-> accel, accel_len, &sl, s, &dl, m-> flags. utf8_accel, &draw);
                if ( m-> flags. disabled && !selected) {
                   draw. pixel = XX->c[ciLight3DColor]; 
                   draw. rgb   = XX->rgb[ciLight3DColor]; 

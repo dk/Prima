@@ -423,8 +423,14 @@ typedef struct { double r,  ph; } TrigDComplex;
 #endif
 #define nilHandle Null(Handle)
 #define nilSV     &PL_sv_undef
+
+#ifndef true
 #define true TRUE
+#endif
+
+#ifndef false
 #define false FALSE
+#endif
 
 /* Event structures */
 

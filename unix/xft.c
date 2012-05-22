@@ -916,12 +916,21 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 {
    FcChar32 *ret, *r;
    if ( utf8) {
-      STRLEN charlen;
+      STRLEN charlen, bytelen = strlen(text);
+      (void)bytelen;
+
       if ( len < 0) len = prima_utf8_length(( char*) text);
       if ( !( r = ret = malloc( len * sizeof( FcChar32)))) return nil;
       while ( len--) {
-         *(r++) = utf8_to_uvchr(( U8*) text, &charlen);
+         *(r++) = 
+#if PERL_PATCHLEVEL >= 16
+         utf8_to_uvchr_buf(( U8*) text, ( U8*) + bytelen, &charlen)
+#else
+         utf8_to_uvchr(( U8*) text, &charlen)
+#endif
+         ;
          text += charlen;
+	 if ( charlen == 0 ) break;
       }
    } else {
       int i;
@@ -937,10 +946,11 @@ int
 prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool addOverhang, 
                           Bool utf8, uint32_t * map8, Point * overhangs)
 {
-   int i, ret = 0;
+   int i, ret = 0, bytelen;
    XftFont * font = self-> xft_base;
 
    if ( overhangs) overhangs-> x = overhangs-> y = 0;
+   if ( utf8 ) bytelen = strlen(text);
 
    for ( i = 0; i < len; i++) {
       FcChar32 c;
@@ -948,8 +958,15 @@ prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool add
       XGlyphInfo glyph;
       if ( utf8) {
          STRLEN charlen;
-         c = ( FcChar32) utf8_to_uvchr(( U8*) text, &charlen);
+         c = ( FcChar32) 
+#if PERL_PATCHLEVEL >= 16
+	 utf8_to_uvchr_buf(( U8*) text, (U8*) text + bytelen, &charlen)
+#else
+	 utf8_to_uvchr(( U8*) text, &charlen)
+#endif
+         ;
          text += charlen;
+	 if ( charlen == 0 ) break;
       } else if ( ((Byte*)text)[i] > 127) {
          c = map8[ ((Byte*)text)[i] - 128];
       } else
