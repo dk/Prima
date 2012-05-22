@@ -879,7 +879,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
   ViewProfile vprf;
   int oStage = var stage;
   WindowData ws;
-  HICON icon = nilHandle;
+  HICON icon = (HICON) nilHandle;
   WINDOWPLACEMENT wp = {sizeof(WINDOWPLACEMENT)};
   DWORD style = WS_CLIPCHILDREN | WS_OVERLAPPED
      | (( borderIcons &  biSystemMenu) ? WS_SYSMENU     : 0)
@@ -2660,7 +2660,7 @@ apc_menu_set_font( Handle self, PFont font)
 Bool
 apc_menu_item_delete( Handle self, PMenuItemReg m)
 {
-   PWindow owner = nilHandle;
+   PWindow owner = nil;
    Point size;
    Bool resize;
    objCheck false;

@@ -273,7 +273,7 @@ apc_file_attach( Handle self)
       int result =
 #ifndef __CYGWIN__	 
           SOCKETS_AS_HANDLES ?
-          WSAAsyncSelect((SOCKET) sys s. file. object, nilHandle, 0, 0) :
+          WSAAsyncSelect((SOCKET) sys s. file. object, (HWND) NULL, 0, 0) :
 #endif	  
           getsockopt(( SOCKET) sys s. file. object, SOL_SOCKET, SO_TYPE, (char*)&_data, &_sz);
       if ( result != 0)
