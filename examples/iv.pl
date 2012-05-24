@@ -370,8 +370,6 @@ sub iv_destroy
 	$::application-> close unless $winCount;
 }
 
-use utf8;
-
 my $w = Prima::Window-> create(
 	size => [ 300, 300],
 	onDestroy => \&iv_destroy,
