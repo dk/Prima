@@ -393,7 +393,7 @@ sub setup_environment
 	print "Flavor: ";
 	$flavor = $^O;
 	if ( $Win32 and not $cygwin ) {
-		if ( $Config{myuname} =~ /strawberryperl/i) {
+		if ( $Config{myuname} =~ /strawberry\-?perl/i) {
 			$flavor = 'strawberry';
 		} elsif ( `perl -V` =~ /activeperl/i) {
 			$flavor = 'activestate';
