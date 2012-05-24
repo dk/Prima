@@ -457,7 +457,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
    Bool ok;
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
-   Bool   utf8 = SvUTF8( text);
+   Bool   utf8 = prima_is_utf8_sv( text);
    if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
    ok = apc_gp_text_out( self, c_text, x, y, dlen, utf8);
    if ( !ok) perl_error();
@@ -847,7 +847,7 @@ Drawable_get_text_width( Handle self, SV * text, Bool addOverhang)
    int res;
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
-   Bool   utf8 = SvUTF8( text);
+   Bool   utf8 = prima_is_utf8_sv( text);
    if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
    gpENTER(0);
    res = apc_gp_get_text_width( self, c_text, dlen, addOverhang, utf8);
@@ -864,7 +864,7 @@ Drawable_get_text_box( Handle self, SV * text)
    int i;
    STRLEN dlen;
    char * c_text = SvPV( text, dlen);
-   Bool   utf8 = SvUTF8( text);
+   Bool   utf8 = prima_is_utf8_sv( text);
    if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
    gpENTER( newRV_noinc(( SV *) newAV()));
    p = apc_gp_get_text_box( self, c_text, dlen, utf8);
@@ -1224,7 +1224,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
    STRLEN tlen;
 
    t. text      = SvPV( text, tlen);
-   t. utf8_text = SvUTF8( text);
+   t. utf8_text = prima_is_utf8_sv( text);
    if ( t. utf8_text) {
       t. utf8_textLen = prima_utf8_length( t. text);
       t. textLen = utf8_hop(( U8*) t. text, t. utf8_textLen) - (U8*) t. text; 

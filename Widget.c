@@ -2336,7 +2336,7 @@ Widget_helpContext( Handle self, Bool set, SV *helpContext)
       if ( var-> stage > csFrozen) return nilSV;
       free( var-> helpContext);
       var-> helpContext = duplicate_string( SvPV_nolen( helpContext));
-      opt_assign( optUTF8_helpContext, SvUTF8(helpContext));
+      opt_assign( optUTF8_helpContext, prima_is_utf8_sv(helpContext));
    } else {
       helpContext = newSVpv( var-> helpContext ? var-> helpContext : "", 0);
       if ( is_opt( optUTF8_helpContext)) SvUTF8_on( helpContext);
@@ -2354,7 +2354,7 @@ Widget_hint( Handle self, Bool set, SV *hint)
       my-> first_that( self, (void*)hint_notify, (void*)hint);
       free( var-> hint);
       var-> hint = duplicate_string( SvPV_nolen( hint));
-      opt_assign( optUTF8_hint, SvUTF8(hint));
+      opt_assign( optUTF8_hint, prima_is_utf8_sv(hint));
       if ( application && (( PApplication) application)-> hintVisible &&
            (( PApplication) application)-> hintUnder == self)
       {
@@ -2950,7 +2950,7 @@ Widget_text( Handle self, Bool set, SV *text)
       if ( var-> stage > csFrozen) return nilSV;
       free( var-> text);
       var-> text = duplicate_string( SvPV_nolen( text));
-      opt_assign( optUTF8_text, SvUTF8(text));
+      opt_assign( optUTF8_text, prima_is_utf8_sv(text));
    } else {
       text = newSVpv( var-> text ? var-> text : "", 0);
       if ( is_opt( optUTF8_text)) SvUTF8_on( text);

@@ -659,7 +659,7 @@ XS( Prima_message_FROMPERL)
    (void)items;
    if ( items != 1)
       croak("Invalid usage of Prima::%s", "message");
-   apc_show_message((char*) SvPV_nolen( ST(0)), SvUTF8(ST(0)));
+   apc_show_message((char*) SvPV_nolen( ST(0)), prima_is_utf8_sv(ST(0)));
    XSRETURN_EMPTY;
 }
 
@@ -1812,6 +1812,24 @@ prima_utf8_length( const char * utf8)
       ret++;
    }
    return ret;
+#else
+   return 0;
+#endif
+}
+
+Bool
+prima_is_utf8_sv( SV * sv)
+{
+#ifdef PERL_SUPPORTS_UTF8
+   /* from Encode.xs */
+   if (SvGMAGICAL(sv)) {
+      SV * sv2 = newSVsv(sv); /* GMAGIG will be done */
+      Bool ret = SvUTF8(sv2) ? 1 : 0;
+      SvREFCNT_dec(sv2); /* it was a temp copy */
+      return ret;
+   } else {
+      return SvUTF8(sv) ? 1 : 0;
+   }
 #else
    return 0;
 #endif

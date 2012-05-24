@@ -211,20 +211,22 @@ Clipboard_close( Handle self)
      if ( utf8-> written && !text-> written) {
 	 SV *utf8_sv, *text_sv;
 	 if (( utf8_sv = utf8-> server( self, utf8, cefFetch, nilSV))) {
-	    STRLEN l, charlen;
+	    STRLEN bytelen, charlen, bytecount;
 	    U8 * src;
-	    src = ( U8 *) SvPV( utf8_sv, l);
+	    src = ( U8 *) SvPV( utf8_sv, bytelen);
+	    bytecount = bytelen;
 	    text_sv = newSVpvn("", 0);
-	    while ( l--) {
+	    while ( bytecount > 0) {
                register UV u = 
 #if PERL_PATCHLEVEL >= 16
-	       	  utf8_to_uvchr_buf( src, src + UTF8_MAXBYTES, &charlen)
+	       	  utf8_to_uvchr_buf( src, src + bytelen, &charlen)
 #else
 	       	  utf8_to_uvchr( src, &charlen)
 #endif
 		  ;
 	       char c = ( u < 0x7f) ? u : '?';
 	       src += charlen;
+	       bytecount -= charlen;
 	       sv_catpvn( text_sv, &c, 1);
 	       if ( charlen == 0 ) break;
 	    }
@@ -400,7 +402,7 @@ text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
       break;
 
    case cefStore:
-      if ( SvUTF8( data)) {
+      if ( prima_is_utf8_sv( data)) {
 	 /* jump to UTF8. close() will later downgrade data to ascii, if any */
          instance = formats + cfUTF8;
          return instance-> server( self, instance, cefStore, data);

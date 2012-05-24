@@ -246,7 +246,7 @@ Component_name( Handle self, Bool set, SV * name)
    if ( set) {
       free( var-> name);
       var-> name = duplicate_string( SvPV_nolen( name));
-      opt_assign( optUTF8_name, SvUTF8(name));
+      opt_assign( optUTF8_name, prima_is_utf8_sv(name));
       if ( var-> stage >= csNormal)
          apc_component_fullname_changed_notify( self);
    } else {

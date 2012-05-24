@@ -242,7 +242,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
                            if ( holder) {                                      \
 			      if ( SvTYPE(*holder) != SVt_NULL) {              \
 				 l_ = duplicate_string( SvPV_nolen( *holder)); \
-				 fl_ = SvUTF8(*holder) ? 1 : 0;                \
+				 fl_ = prima_is_utf8_sv(*holder);              \
 			      }                                                \
                            } else {                                            \
                               warn("RTC003A: menu build error: array panic");  \
@@ -318,7 +318,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
          } else {
          TEXT:
             r-> text = duplicate_string( SvPV_nolen( subItem));
-            r-> flags. utf8_text = SvUTF8( subItem) ? 1 : 0;
+            r-> flags. utf8_text = prima_is_utf8_sv( subItem);
          }
       }
 
@@ -350,7 +350,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
          } else {
             if ( SvPOK( subItem)) {
                r-> perlSub = duplicate_string( SvPV_nolen( subItem));
-               r-> flags. utf8_perlSub = SvUTF8( subItem) ? 1 : 0;
+               r-> flags. utf8_perlSub = prima_is_utf8_sv( subItem);
             } else {
                warn("RTC0038: menu build error: invalid sub name passed");
             }
@@ -654,7 +654,7 @@ AbstractMenu_accel( Handle self, Bool set, char * varName, SV * accel)
    if ( m-> text == nil) return nilSV;
    free( m-> accel);
    m-> accel = duplicate_string( SvPV_nolen( accel));
-   m-> flags. utf8_accel = SvUTF8( accel) ? 1 : 0;
+   m-> flags. utf8_accel = prima_is_utf8_sv( accel);
 
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
@@ -698,7 +698,7 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
       if ( m-> code) sv_free( m-> code);
       m-> code = nil;
       m-> perlSub = duplicate_string( line);
-      m-> flags. utf8_perlSub = SvUTF8( action) ? 1 : 0;
+      m-> flags. utf8_perlSub = prima_is_utf8_sv( action);
    }
    return nilSV;
 }
@@ -803,7 +803,7 @@ AbstractMenu_text( Handle self, Bool set, char * varName, SV * text)
    }
    free( m-> text);
    m-> text = duplicate_string( SvPV_nolen( text));
-   m-> flags. utf8_accel = SvUTF8( text) ? 1 : 0;
+   m-> flags. utf8_accel = prima_is_utf8_sv( text);
    if ( m-> id > 0)
       if ( var-> stage <= csNormal && var-> system)
          apc_menu_item_set_text( self, m);
@@ -842,7 +842,7 @@ AbstractMenu_set_variable( Handle self, char * varName, SV * newName)
       v = SvPV( newName, len);
       if ( len > 0) {
 	 m-> variable = duplicate_string( v);
-	 m-> flags. utf8_variable = SvUTF8( newName) ? 1 : 0;
+	 m-> flags. utf8_variable = prima_is_utf8_sv( newName);
 	 return;
       }
    }
