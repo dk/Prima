@@ -182,22 +182,22 @@ menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
 #define MENU_CHECK_XOFFSET 10
 
 static int
-get_text_width( PCachedFont font, const char * text, int length, Bool utf8, uint32_t * xft_map8)
+get_text_width( PCachedFont font, const char * text, int byte_length, Bool utf8, uint32_t * xft_map8)
 {
    int ret = 0;
+   int char_len = utf8 ? utf8_length(( U8*) text, ( U8*) text + byte_length) : byte_length;
 #ifdef USE_XFT
    if ( font-> xft)
-      return prima_xft_get_text_width( font, text, length, false, utf8, xft_map8, nil);
+      return prima_xft_get_text_width( font, text, char_len, false, utf8, xft_map8, nil);
 #endif   
    if ( utf8) {
-      int len = utf8_length(( U8*) text, ( U8*) text + length);
-      XChar2b * xc = prima_alloc_utf8_to_wchar( text, len);
+      XChar2b * xc = prima_alloc_utf8_to_wchar( text, char_len);
       if ( xc) {
-         ret = XTextWidth16( font-> fs, xc, len);
+         ret = XTextWidth16( font-> fs, xc, char_len);
          free( xc);
       }
    } else {
-      ret = XTextWidth( font-> fs, text, length);
+      ret = XTextWidth( font-> fs, text, byte_length);
    }
    return ret;
 }

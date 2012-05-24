@@ -1129,10 +1129,10 @@ extern int
 prima_try_height( HeightGuessStack * p, int height);
 
 extern void         
-prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len, int target_len);
+prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len_bytes, int target_len_xchars);
 
 extern XChar2b *      
-prima_alloc_utf8_to_wchar( const char * utf8, int length);
+prima_alloc_utf8_to_wchar( const char * utf8, int length_chars);
 
 extern void         
 prima_wchar2char( char * dest, XChar2b * src, int lim);

@@ -1453,13 +1453,13 @@ prima_rect_intersect( XRectangle *t, const XRectangle *s)
 
 
 void
-prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len, int target_len )
+prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len_bytes, int target_len_xchars )
 {
    STRLEN charlen;
-   while ( target_len--) {
+   while ( target_len_xchars--) {
       register UV u = (
 #if PERL_PATCHLEVEL >= 16
-         utf8_to_uvchr_buf(( U8*) utf8, ( U8*)(utf8 + src_len), &charlen)
+         utf8_to_uvchr_buf(( U8*) utf8, ( U8*)(utf8 + src_len_bytes), &charlen)
 #else
          utf8_to_uvchr(( U8*) utf8, &charlen)
 #endif
@@ -1471,18 +1471,18 @@ prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len, int target_l
          u16-> byte1 = u16-> byte2 = 0xff;
       u16++;
       utf8 += charlen;
-      src_len -= charlen;
-      if ( src_len <= 0 || charlen == 0) break;
+      src_len_bytes -= charlen;
+      if ( src_len_bytes <= 0 || charlen == 0) break;
    }
 }
 
 XChar2b *
-prima_alloc_utf8_to_wchar( const char * utf8, int length)
+prima_alloc_utf8_to_wchar( const char * utf8, int length_chars)
 {
    XChar2b * ret;
-   if ( length < 0) length = prima_utf8_length( utf8) + 1;
-   if ( !( ret = malloc( length * sizeof( XChar2b)))) return nil;
-   prima_utf8_to_wchar( utf8, ret, strlen(utf8), length);
+   if ( length_chars < 0) length_chars = prima_utf8_length( utf8) + 1;
+   if ( !( ret = malloc( length_chars * sizeof( XChar2b)))) return nil;
+   prima_utf8_to_wchar( utf8, ret, strlen(utf8), length_chars);
    return ret;
 }
 
