@@ -393,7 +393,7 @@ sub setup_environment
 	print "Flavor: ";
 	$flavor = $^O;
 	if ( $Win32 and not $cygwin ) {
-		if ( $Config{myuname} =~ /strawberryperl/i) {
+		if ( $Config{myuname} =~ /strawberry\-?perl/i) {
 			$flavor = 'strawberry';
 		} elsif ( `perl -V` =~ /activeperl/i) {
 			$flavor = 'activestate';
@@ -1812,6 +1812,7 @@ sub command_bindist
 		$f =~ s[^blib/arch][$DISTNAME];
 		cleanup("Error copying $_ to $_") unless copy $_, $f;
 	}
+	system "strip $DISTNAME/auto/Prima/Prima.dll" if $^O eq 'cygwin'; # it's 27 MB!
 
 	my $zipname = "$DISTNAME.zip";
 	unlink $zipname;
