@@ -1819,6 +1819,7 @@ sub command_bindist
 		$f =~ s[^blib/arch][$DISTNAME];
 		cleanup("Error copying $_ to $_") unless copy $_, $f;
 	}
+	system "strip $DISTNAME/auto/Prima/Prima.dll" if $^O eq 'cygwin'; # it's 27 MB!
 
 	my $zipname = "$DISTNAME.zip";
 	unlink $zipname;

@@ -67,6 +67,7 @@ my %iv_prf = (
 	onMouseDown => \&iv_mousedown,
 	onMouseUp   => \&iv_mouseup,
 	onMouseMove => \&iv_mousemove,
+	onMouseWheel => \&iv_mousewheel,
 	onSize      => \&iv_size,
 );
 
@@ -349,7 +350,8 @@ sub iv_mousewheel
 {
 	my ( $self, $mod, $x, $y, $z) = @_;
 	$z = int( $z / 120);
-	my $xv = ($mod & km::Shift) ? $self-> VScroll : $self-> HScroll;
+	my $xv = $self-> bring(($mod & km::Shift) ? 'VScroll' : 'HScroll');
+	return unless $xv;
 	$z *= ($mod & km::Ctrl) ? $xv-> pageStep : $xv-> step;
 	if ( $mod & km::Shift) {
 		$self-> deltaX( $self-> deltaX - $z);
