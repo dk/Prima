@@ -95,6 +95,7 @@ use vars qw(
 	@target_clean
 	%cache_find_files
 	$binary_prereq
+	$compiler_type
 	$compiler_version
 	@Prima_exports
 	$win32_use_dlltool
@@ -318,11 +319,17 @@ sub setup_files
 
 sub setup_environment
 {
+    if ( $Config{ccname} =~ /\bgcc/ ) {
+        $compiler_type = 'gcc';
+    } else {
+        $compiler_type = $Config{ccname};
+    }
+
 	if ( $Win32 and not $cygwin ) {
 		$SCRIPT_EXT = '.bat';
 		$SHQUOTE    = '"';
 		$win32_use_dlltool = $Config{dlltool} || 'dlltool'
-			if $Config{ccname} eq 'gcc';
+			if $compiler_type eq 'gcc';
 	} elsif ( $OS2 ) {
 		$SCRIPT_EXT = '.cmd';
 		$SHQUOTE    = "'";
@@ -333,7 +340,7 @@ sub setup_environment
 
 	$OPTIMIZE = $Config{optimize};
 
-	if ( $Config{ccname} eq 'cl') {
+	if ( $compiler_type eq 'cl') {
 		$COUTOFLAG    = '-Fo';
 		$COUTEXEFLAG  = '-Fe';
 		$CLIBPATHFLAG = '/LIBPATH:';
@@ -508,12 +515,12 @@ sub cc_command_line
 	$cc .= ' ' . join(' ', map { "-I$_" } @INCPATH);
 	$cc .= " $passthru_options{INC}" if length $passthru_options{INC};
 	$cc .= $compile_only ? " $COUTOFLAG$objf" : " $COUTEXEFLAG$exef";
-	$cc .= " $COUTOFLAG$objf" if $Config{ccname} eq 'cl' && !$compile_only;
-	$cc .= ' ' . join(' ', map { "$CLIBPATHFLAG$_"} @LIBPATH) unless $compile_only || ( $Config{ccname} eq 'cl');
+	$cc .= " $COUTOFLAG$objf" if $compiler_type eq 'cl' && !$compile_only;
+	$cc .= ' ' . join(' ', map { "$CLIBPATHFLAG$_"} @LIBPATH) unless $compile_only || ( $compiler_type eq 'cl');
 	$cc .= " $srcf";
 	return $cc if $compile_only;
 	$cc .= " $CLINKPREFIX";
-	$cc .= ' ' . join(' ', map { "\"$CLIBPATHFLAG\\\"$_\\\"\"" } @LIBPATH) if $Config{ccname} eq 'cl';
+	$cc .= ' ' . join(' ', map { "\"$CLIBPATHFLAG\\\"$_\\\"\"" } @LIBPATH) if $compiler_type eq 'cl';
 	$cc .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
 	$cc .= " $passthru_options{LIBS}" if length $passthru_options{LIBS};
 	$cc .= " $cmd_options{EXTRA_LDFLAGS}" if length $cmd_options{EXTRA_LDFLAGS};
@@ -847,7 +854,7 @@ EOF
 
 sub setup_compiler
 {
-	print "Compiler: $Config{ccname}\n";
+	print "Compiler: $compiler_type\n";
 
 	print "Checking if can compile... ";
 	compile('int a;', 1) or die "no " . see_makefile_log;
@@ -863,7 +870,7 @@ main()
 EOF
 	print "yes\n";
 
-	if ( $Config{ccname} eq 'cl' ) {
+	if ( $compiler_type eq 'cl' ) {
 		print "Checking MSVC version... ";
 		$compiler_version = compile_and_run(<<'MSCVER');
 #include <stdio.h>
@@ -903,7 +910,7 @@ MSCVER
 	push @LIBPATH, '/usr/lib/w32api' if $cygwin;
 	if ($^O eq 'solaris') {
 		push @LIBPATH, '/opt/csw/lib';
-		$OPTIMIZE .= ' -Wall' if $Config{ccname} eq 'gcc';
+		$OPTIMIZE .= ' -Wall' if $compiler_type eq 'gcc';
 	}
 }
 
@@ -1312,7 +1319,7 @@ sub generate_win32_def
 LIBRARY Prima
 EXPORTS
 EOF
-	if ( $Config{ccname} eq 'bcc32') {
+	if ( $compiler_type eq 'bcc32') {
 		print PRIMADEF map { "\t_$_\n\t$_=_$_\n"} @Prima_exports;
 	}
 	else {
@@ -1587,12 +1594,12 @@ sub create_config_pm
 	# libs
 	my @libpath = @LIBPATH;
 	my @libs    = @LIBS;
-	unless ( $unix or $Config{ccname} eq 'gcc') {
+	unless ( $unix or $compiler_type eq 'gcc') {
 		push @libpath, "$cwd/auto/Prima";
 		push @libs, "Prima$LD_LIB_EXT";
 	}
 	my $libpath = qd(join( ',', map {"'$_'"} @libpath));
-	unless ( $unix or $Config{ccname} eq 'gcc') {
+	unless ( $unix or $compiler_type eq 'gcc') {
 		$libpath[-1] = '$(lib)/auto/Prima';
 	}
 	my $libpathi = qd(join( ',', map {"'$_'"} @libpath));
