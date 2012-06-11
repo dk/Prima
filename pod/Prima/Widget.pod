@@ -753,7 +753,7 @@ The first set deals with button actions. Pressing, de-pressing, clicking
 notifications. The notifications are sent together with the mouse pointer coordinates,
 the button that was touched, and the eventual modifier keys that were pressed.
 In addition, C<MouseClick> provides the boolean flag if the click was single or double,
-and C<MouseWheel> - the Z-range of the wheel turn. These notifications occur
+and C<MouseWheel> the wheel turn amount. These notifications occur
 when the mouse event occurs within the geometrical bounds of a widget,
 with one notable exception, when a widget is in I<capture> mode.
 If the C<::capture> is set to 1, then these events are sent to the widget even
@@ -2136,10 +2136,10 @@ to be passed to the notification callbacks.
 See also: C<MouseDown>, C<MouseWheel>, C<MouseClick>,
 C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
 
-=item mouse_wheel MOD = 0, X = 0, Y = 0, Z = 0, POST = 0 
+=item mouse_wheel MOD = 0, X = 0, Y = 0, INCR = 0, POST = 0 
 
 The method sends or posts ( POST flag ) simulated C<MouseUp> event 
-to the system. MOD, X, Y and Z are the parameters
+to the system. MOD, X, Y and INCR are the parameters
 to be passed to the notification callbacks.
 
 See also: C<MouseDown>, C<MouseUp>, C<MouseClick>,
@@ -2684,14 +2684,19 @@ X and Y are the mouse pointer coordinates.
 See also: C<MouseDown>, C<MouseClick>, C<MouseWheel>,
 C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
 
-=item MouseWheel MOD, X, Y, Z
+=item MouseWheel MOD, X, Y, INCR
 
-Occurs when the user rotates mouse wheel on a widget.
-MOD is a combination of  C<km::XXX> constants, 
-reflecting the pressed modificator keys during the event,
-X and Y are the mouse pointer coordinates. Z is the virtual
-coordinate of a wheel. Typical ( 2001 A.D. ) mouse produces
-Z 120-fold values.
+Occurs when the user rotates mouse wheel on a widget.  MOD is a combination of
+C<km::XXX> constants, reflecting the pressed modificator keys during the event,
+INCR is the wheel movement, scaled by 120.  +120 is a step upwards, or -120
+downwards.  For wheels which are discrete button clicks INCR is +/-120 but
+other devices may give other amounts.  A widget should scroll by INCR/120 many
+units, or partial unit, for whatever its unit of movement might be, such as
+lines of text, slider ticks, etc.
+
+A widget might like to vary its unit move according to the MOD keys.  For
+example C<Prima::SpinEdit> has a C<step> and C<pageStep> and moves by
+C<pageStep> when C<km::Ctrl> is held down (see L<Prima::Sliders>).
 
 See also: C<MouseDown>, C<MouseUp>, C<MouseClick>,
 C<MouseMove>, C<MouseEnter>, C<MouseLeave> 
