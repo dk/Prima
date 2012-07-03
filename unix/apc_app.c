@@ -1034,13 +1034,13 @@ FetchAndProcess:
       if ( r > 0) {
          for ( i = 0; i < guts.files->count; i++) {
             PFile f = (PFile)list_at( guts.files,i);
-            if ( FD_ISSET( f->fd, &read_set)) {
+            if ( FD_ISSET( f->fd, &read_set) && f->eventMask & feRead) {
                prima_simple_message((Handle)f, cmFileRead, false);
                break;
-            } else if ( FD_ISSET( f->fd, &write_set)) {
+            } else if ( FD_ISSET( f->fd, &write_set) && f->eventMask & feWrite) {
                prima_simple_message((Handle)f, cmFileWrite, false);
                break;
-            } else if ( FD_ISSET( f->fd, &excpt_set)) {
+            } else if ( FD_ISSET( f->fd, &excpt_set) && f->eventMask & feException) {
                prima_simple_message((Handle)f, cmFileException, false);
                break;
             }
