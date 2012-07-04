@@ -297,18 +297,21 @@ sub setup_files
 		# INC
 		( map {
 			my $k = $_;
-			s/^include\///;
-			( $k => '$(INST_LIBDIR)/Prima/CORE/' . $_ )
+			$k =~ s/^include\///;
+			( $_ => '$(INST_LIBDIR)/Prima/CORE/' . $k )
 		} @h_files ),
 		# POD
-		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } @pod_files ),
+		( map { 
+			my $k = $_;
+			$k =~ s/^pod\///;
+			$_ => '$(INST_LIBDIR)/' . $k 
+		} @pod_files ),
 		# examples
 		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } <examples/*> ),
 	);
 	%ALL_MAN_INSTALL = (
 		map {
 			my $target = $_;
-			$target =~ s/^pod\///;
 			$target =~ s/\//::/g;
 			$target =~ s/\.\w+$//;
 			$_ => '$(INST_MAN3DIR)/'. $target . '.$(MAN3EXT)'
