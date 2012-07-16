@@ -97,6 +97,7 @@ sub init
 		useDeviceFonts rotate reversed useDeviceFontsOnly);
 	$self-> $_( @{$profile{$_}}) for qw( pageSize pageMargins resolution scale);
 	$self-> {localeEncoding} = [];
+	$self-> set_font($profile{font}); # update to the changed resolution, device fonts etc
 	return %profile;
 }
 
