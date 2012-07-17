@@ -644,6 +644,10 @@ Sets menu item in unchecked state.
 
 =back
 
+=head1 BUGS
+
+Menu colors and fonts don't work on Windows and probably never will.
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
