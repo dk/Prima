@@ -484,13 +484,12 @@ viewer C<podview> ( see File/Run/p-class ).
 
 =head1 COPYRIGHT
 
-Copyright 1997, 2003 The Protein Laboratory, University of Copenhagen. All
+Copyright 1997-2003 The Protein Laboratory, University of Copenhagen. All
 rights reserved.
 
-Copyright 2004 Dmitry Karasik. All rights reserved. 
+Copyright 2004-2012 Dmitry Karasik. All rights reserved. 
 
-This library is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
+This program is distributed under the BSD License.
 
 =head1 AUTHORS
 

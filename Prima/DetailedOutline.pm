@@ -392,7 +392,7 @@ If this is set to a true value, the column widths will be automatically recalcul
 
 Copyright 2003 Teo Sankaro
 
-You may redistribute and/or modify this module under the same terms as Perl itself.
+This program is distributed under the BSD License.
 (Although a credit would be nice.)
 
 =head1 AUTHOR

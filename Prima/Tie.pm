@@ -328,7 +328,7 @@ and C<Prima::ScrollBar>.
 
 Copyright 2004 Teo Sankaro
 
-You may redistribute and/or modify this module under the same terms as Perl itself.
+This program is distributed under the BSD License.
 (Although a credit would be nice.)
 
 =head1 AUTHORS
