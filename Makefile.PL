@@ -2040,7 +2040,7 @@ WriteMakefile(
 		join(' ', map { "-L$_" } @LIBPATH) . ' ' .
 		join(' ', map { "-l$_" } @LIBS),
 	],
-	LICENSE           => 'BSD',
+	LICENSE           => 'FREEBSD',
 	EXE_FILES         => \@exe_files,
 	PL_FILES          => {},
 	MAN3PODS          => \%ALL_MAN_INSTALL,
