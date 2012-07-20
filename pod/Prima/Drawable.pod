@@ -430,7 +430,7 @@ Negative if the ascent line is above the external leading line.
 
 =for podview <img src="leadings.gif" cut=1>
 
-=for html <p><img src="leadings.gif">
+=for html <p><img src="leadings.gif"><!--
 
           ------------- external leading line
 
@@ -449,6 +449,8 @@ Negative if the ascent line is above the external leading line.
                  $
                  $
              $$$$  ---- descent line
+
+=for html -->
 
 =for podview </cut>
 
@@ -510,7 +512,7 @@ glyph's black part relative to the glyph extent:
 
 =for podview <img src="fontabc.gif" cut=1 >
 
-=for html <p><img src="fontabc.gif">
+=for html <p><img src="fontabc.gif"><!--
 
     .  .     .  .      .  .        .  .
     .  .     $$$.      .  .        .  .
@@ -530,6 +532,8 @@ glyph's black part relative to the glyph extent:
       A = -3                A = 3
       B = 13                B = 10
       C = -3                C = 3
+
+=for html -->
 
 =for podview </cut>
 
@@ -1393,7 +1397,7 @@ Equals to 0, is a mnemonic to an unset tw::ReturnChunks.
 
 If unset, the TEXT breaks as soon as the chunk width exceeds WIDTH.
 If set, tries to keep words in TEXT so they do not appear in two
-chunks, e.g. keeps breaking TEXT by words, not by characters.
+chunks, e.g. breaks TEXT by words, not by characters.
 
 =item tw::ReturnFirstLineLength
 
