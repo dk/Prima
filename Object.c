@@ -39,14 +39,6 @@ extern "C" {
 #define my  ((( PObject) self)-> self)
 #define var (( PObject) self)
 
-SV *
-Object_can( Handle self, char *methodName, Bool cacheIt)
-{
-   CV *cv = query_method( self, methodName, cacheIt);
-   if (cv) return newRV(( SV*) cv);
-   return nilSV;
-}
-
 Handle
 Object_create( char *className, HV * profile)
 {

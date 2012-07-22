@@ -33,7 +33,6 @@ object Prima::Object
    Handle  owner;
    void *  transient_class;
    ObjectOptions options;
-   method SV*	 can( char *name, Bool cacheIt = 1);
    method void   cleanup();
    method void   done();
    method void   init( HV * profile);

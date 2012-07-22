@@ -212,10 +212,10 @@ sub get_notify_sub
 			return $sub, $self;
 		}
 		my $method = "on_" . lc $note;
-		return ( $sub, $self) if $sub = $self-> can( $method, 0);
+		return ( $sub, $self) if $sub = $self-> can( $method);
 	} else {
 		my ( $sub, $method) = ( undef, "on_" . lc $note);
-		return ( $sub, $self) if $sub = $self-> can( $method, 0);
+		return ( $sub, $self) if $sub = $self-> can( $method);
 		my ( $referer, $sub2, $id) = $self-> get_notification( $note, ($rnt & nt::FluxReverse) ? -1 : 0);
 		if ( defined $referer) {
 			return ( $sub, $referer, $self) if $referer != $self;
