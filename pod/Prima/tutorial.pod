@@ -167,7 +167,7 @@ we can catch a mouse click on the window:
 
 While an interesting concept, it is not really practical if the only thing
 you want is to catch a click, and this is the part where a standard button 
-is probably should be preferred:
+probably should be preferred:
 
 	use Prima qw(Application Buttons MsgBox);
 	my $window = Prima::MainWindow-> new( 
@@ -320,7 +320,7 @@ example, may contain more menu items, in the recursive fashion:
 Finally, text items, with the most complex syntax, can be constructed with three to six
 items in the array. There can be set the left-aligned text string for the item, the
 right-aligned text string for the display of the hot key, if any, the definition of the
-hot hey itself, and the action to be taken if the user has pressed either the menu item
+hot key itself, and the action to be taken if the user has pressed either the menu item
 or the hot key combination. Also, as in the previous cases, the explicit ID can be set,
 and also an arbitrary data scalar, for generic needs. This said, the text item combinations are:
 
