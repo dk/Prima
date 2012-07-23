@@ -100,6 +100,7 @@ use vars qw(
 	$compiler_version
 	@Prima_exports
 	$win32_use_dlltool
+	$cygwin_fake_Slib
 );
 
 my $END;
@@ -419,6 +420,14 @@ sub setup_environment
 	$flavor = 'as32' if $flavor eq 'activestate';
 	
 	$DISTNAME = "Prima-$ver1.$ver2-$flavor-$REVISION.$PATCHLEVEL.$SUBVERSION";
+   
+	if ( $cygwin and $] > 5.010 ) {
+		# 5.10 was shipped with a hack in ExtUtils/Liblist/Kid.pm where having auto/Prima.dll was ok
+		# 5.14 is not patched that way, do it ourselves
+		$cygwin_fake_Slib = 'SlibPrima' . ( $Config{lib_ext} || '.a' );
+	} else {
+		$cygwin_fake_Slib = '';
+	}
 }
 
 sub qtilde
@@ -1698,6 +1707,12 @@ sub command_postinstall
 		unlink $f;
 		rename "$f.tmp", $f;
 	}
+
+    if ( $opt{slib} ) {
+        my $f = "$opt{lib}/auto/Prima/$opt{slib}";
+        open F, ">", $f or warn "** warning: Cannot write to a fake lib '$f': Prima extensions won't build\n";
+        close F;
+    }
 	
 	my $fn_cfg = "$opt{lib}/Prima/Config.pm";
 	print "Updating config $fn_cfg\n";
@@ -1825,7 +1840,14 @@ sub command_bindist
 		$f =~ s[^blib/arch][$DISTNAME];
 		cleanup("Error copying $_ to $_") unless copy $_, $f;
 	}
-	system "strip $DISTNAME/auto/Prima/Prima.dll" if $^O eq 'cygwin'; # it's 27 MB!
+	if ($^O eq 'cygwin') {
+		system "strip $DISTNAME/auto/Prima/Prima.dll" ; # it's 27 MB!
+		if ( $] > 5.010 ) {
+			$cygwin_fake_Slib = 'SlibPrima' . ( $Config{lib_ext} || '.a' );
+			open F, '>', "$DISTNAME/auto/Prima/$cygwin_fake_Slib";
+			close F;
+		}
+	}
 
 	my $zipname = "$DISTNAME.zip";
 	unlink $zipname;
@@ -2007,7 +2029,7 @@ sub install
 		(.*?)                                       # 8
 		\n\n
 	][
-		"$1$2$3$4$5$6$7$8\n\t\$(NOECHO) \$(ABSPERL) $0 --postinstall lib=$3 bin=$6 dl=$DL_LOAD_FLAGS\n\n"
+		"$1$2$3$4$5$6$7$8\n\t\$(NOECHO) \$(ABSPERL) $0 --postinstall lib=$3 bin=$6 dl=$DL_LOAD_FLAGS slib=$cygwin_fake_Slib\n\n"
 	]xgse;
 
 	$END .= <<BAD_MAKEFILE if $n != 3;
