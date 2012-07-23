@@ -1874,7 +1874,7 @@ sub cursor_shift_key
 	$self-> start_block unless exists $self-> {anchor};
 	$menuItem =~ s/Shift//;
 	my $action = $self-> accelTable-> action( $menuItem);
-	$action = $self-> can( $action, 0) unless ref $action;
+	$action = $self-> can( $action) unless ref $action;
 	$self-> {delayPanning} = 1;
 	$self-> blockShiftMark(1);
 	$action-> ( @_);

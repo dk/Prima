@@ -32,6 +32,19 @@ is low; a minimal working 'Hello world' can be written in three lines of code:
 
 =for podview <img src="tutorial/hello1.gif">
 
+=begin html
+
+<p><img src="tutorial/hello1.gif" id="hello1_gif">
+
+<script type="text/javascript"><!--
+function primg(x) {
+if ( document.images[x + '_gif'].naturalWidth == 0 ) {
+document.getElementById(x + '_gif').src='https://github.com/dk/Prima/raw/master/pod/Prima/tutorial/' + x + '.gif';
+}}
+//--></script>
+
+=end html
+
 Line 1 here is the invocation of modules I<Prima> and I<Prima::Application>. Sure,
 one can explicitly invoke both C<use Prima> and C<use Prima::Application> etc etc,
 but as module Prima doesn't export method names, the exemplified syntax is well-suited
@@ -57,6 +70,8 @@ lines:
 
 =for podview <img src="tutorial/hello2.gif">
 
+=for html <p><img src="tutorial/hello2.gif" id="hello2_gif">
+
 but it is not illustrative and not useful. C<Prima::message> is rarely used, 
 and is one of few methods contained in C<Prima::> namespace. To display a 
 message, the I<MsgBox> module is often preferred, with its control over message
@@ -69,6 +84,8 @@ as
 
 =for podview <img src="tutorial/hello3.gif">
 
+=for html <p><img src="tutorial/hello3.gif" id="hello3_gif">
+
 but where C<Prima::message> accepts the only text scalar parameters, C<Prima::MsgBox::message>
 can do lot more. For example 
 
@@ -77,6 +94,8 @@ can do lot more. For example
 
 
 =for podview <img src="tutorial/hello4.gif">
+
+=for html <p><img src="tutorial/hello4.gif" id="hello4_gif">
 
 displays two buttons and an icon. A small achievement, but the following is a bit more interesting:
 
@@ -97,6 +116,8 @@ displays two buttons and an icon. A small achievement, but the following is a bi
 
 
 =for podview <img src="tutorial/hello5.gif">
+
+=for html <p><img src="tutorial/hello5.gif" id="hello5_gif">
 
 The definition of many object properties at once is a major feature of Prima, and is seen
 throughout the toolkit. Returning back to the very first example, we can demonstrate
@@ -146,7 +167,7 @@ we can catch a mouse click on the window:
 
 While an interesting concept, it is not really practical if the only thing
 you want is to catch a click, and this is the part where a standard button 
-is probably should be preferred:
+probably should be preferred:
 
 	use Prima qw(Application Buttons MsgBox);
 	my $window = Prima::MainWindow-> new( 
@@ -162,6 +183,8 @@ is probably should be preferred:
 
 
 =for podview <img src="tutorial/hello6.gif">
+
+=for html <p><img src="tutorial/hello6.gif" id="hello6_gif">
 
 For those who know Perl-Tk and prefer its ways to position a widget, Prima
 provides I<pack> and I<place> interfaces. Here one can replace the line
@@ -251,6 +274,8 @@ hello-world program to contain a simple menu, it is enough to write this:
 
 =for podview <img src="tutorial/menu1.gif">
 
+=for html <p><img src="tutorial/menu1.gif" id="menu1_gif">
+
 Each of five arrays here in the example is written using different semantics, to represent
 either a text menu item, a sub-menu entry, or a menu separator. Strictly speaking, menus
 can also display images, but that syntax is practically identical to the text item syntax.
@@ -290,10 +315,12 @@ example, may contain more menu items, in the recursive fashion:
 
 =for podview <img src="tutorial/menu2.gif">
 
+=for html <p><img src="tutorial/menu2.gif" id="menu2_gif">
+
 Finally, text items, with the most complex syntax, can be constructed with three to six
 items in the array. There can be set the left-aligned text string for the item, the
 right-aligned text string for the display of the hot key, if any, the definition of the
-hot hey itself, and the action to be taken if the user has pressed either the menu item
+hot key itself, and the action to be taken if the user has pressed either the menu item
 or the hot key combination. Also, as in the previous cases, the explicit ID can be set,
 and also an arbitrary data scalar, for generic needs. This said, the text item combinations are:
 
@@ -326,6 +353,25 @@ string, an image object is supplied:
 
 =for podview <img src="tutorial/menu3.gif">
 
+=for html <p><img src="tutorial/menu3.gif" id="menu3_gif">
+
+=begin html
+
+<script type="text/javascript"><!--
+setTimeout(function() {
+primg('hello1');
+primg('hello2');
+primg('hello3');
+primg('hello4');
+primg('hello5');
+primg('hello6');
+primg('menu1');
+primg('menu2');
+primg('menu3');
+}, 500); // good enough for local disk I/O, I guess
+--></script>
+
+=end html
 The action item of them menu description array points to the code executed when
 the menu item is selected.  It is either an anonymous subroutine, as it is
 shown in all the examples above, or a string.  The latter case will cause the

@@ -430,7 +430,18 @@ Negative if the ascent line is above the external leading line.
 
 =for podview <img src="leadings.gif" cut=1>
 
-=for html <p><img src="leadings.gif">
+=begin html
+
+<script type="text/javascript"><!--
+function primg(x) {
+if ( document.images[x + '_gif'].naturalWidth == 0 ) {
+document.getElementById(x + '_gif').src='https://github.com/dk/Prima/raw/master/pod/Prima/' + x + '.gif';
+}}
+//--></script>
+
+<p><img src="leadings.gif" id="leadings_gif"><!--
+
+=end html
 
           ------------- external leading line
 
@@ -449,6 +460,8 @@ Negative if the ascent line is above the external leading line.
                  $
                  $
              $$$$  ---- descent line
+
+=for html -->
 
 =for podview </cut>
 
@@ -510,7 +523,7 @@ glyph's black part relative to the glyph extent:
 
 =for podview <img src="fontabc.gif" cut=1 >
 
-=for html <p><img src="fontabc.gif">
+=for html <p><img src="fontabc.gif" id="fontabc_gif"><!--
 
     .  .     .  .      .  .        .  .
     .  .     $$$.      .  .        .  .
@@ -530,6 +543,8 @@ glyph's black part relative to the glyph extent:
       A = -3                A = 3
       B = 13                B = 10
       C = -3                C = 3
+
+=for html -->
 
 =for podview </cut>
 
@@ -1303,7 +1318,7 @@ Context used: font, textOutBaseline
 
 =for podview <img src="gettextbox.gif" cut=1>
 
-=for html <p><img src="gettextbox.gif">
+=for html <p><img src="gettextbox.gif" id="gettextbox_gif"><!--
 
       1      3         3         4
          **               ****  
@@ -1315,6 +1330,18 @@ Context used: font, textOutBaseline
 
 =for podview </cut>
 
+=begin html
+
+-->
+<script type="text/javascript"><!--
+setTimeout(function() {
+primg('leadings');
+primg('fontabc');
+primg('gettextbox');
+}, 500); // good enough for local disk I/O, I guess
+--></script>
+
+=end html
 
 =item render_spline VERTICES, [ PRECISION ]
 
@@ -1393,7 +1420,7 @@ Equals to 0, is a mnemonic to an unset tw::ReturnChunks.
 
 If unset, the TEXT breaks as soon as the chunk width exceeds WIDTH.
 If set, tries to keep words in TEXT so they do not appear in two
-chunks, e.g. keeps breaking TEXT by words, not by characters.
+chunks, e.g. breaks TEXT by words, not by characters.
 
 =item tw::ReturnFirstLineLength
 

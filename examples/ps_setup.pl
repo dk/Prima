@@ -62,8 +62,8 @@ for ( keys %p) {
 }
 
 # uncomment this to print document with the applied changes
-#$x-> begin_doc;
-#$x-> text_out( "hello!", 100, 100);
-#$x-> end_doc;
+$x-> begin_doc;
+$x-> text_out( "hello!", 100, 100);
+$x-> end_doc;
 
 1;

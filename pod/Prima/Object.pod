@@ -610,12 +610,6 @@ its init() stage. Example:
 
   print $obj-> name if Prima::Object::alive( $obj);
 
-=item can NAME, CACHE = 1
-
-Checks if an object namespace contains a NAME method.  Returns the code
-reference to it, if found, and undef if not.  If CACHE is true, caches the
-result to speed-up subsequent calls.
-
 =item cleanup
 
 Called right after destroy() started. Used to initiate C<cmDestroy>

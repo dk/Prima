@@ -212,10 +212,10 @@ sub get_notify_sub
 			return $sub, $self;
 		}
 		my $method = "on_" . lc $note;
-		return ( $sub, $self) if $sub = $self-> can( $method, 0);
+		return ( $sub, $self) if $sub = $self-> can( $method);
 	} else {
 		my ( $sub, $method) = ( undef, "on_" . lc $note);
-		return ( $sub, $self) if $sub = $self-> can( $method, 0);
+		return ( $sub, $self) if $sub = $self-> can( $method);
 		my ( $referer, $sub2, $id) = $self-> get_notification( $note, ($rnt & nt::FluxReverse) ? -1 : 0);
 		if ( defined $referer) {
 			return ( $sub, $referer, $self) if $referer != $self;
@@ -1170,16 +1170,26 @@ sub defocus     { $_[0]-> focused(0); }
 
 # Tk namespace and syntax compatibility
 
+sub __tk_dash_map
+{
+	my %ret;
+	my %hash = @_;
+	while ( my ( $k, $v ) = each %hash ) {
+		$k =~ s/^-//;
+		$ret{$k} = $v;
+	}
+	return %ret;
+}
+
 sub pack { 
 	my $self = shift;
-	# XXX regexp kills valid undefs   
-	$self-> packInfo( { grep { defined } map { /^(?:-(\D.*))|(.*)$/; } @_ });
+	$self-> packInfo( { __tk_dash_map(@_) });
 	$self-> geometry( gt::Pack);
 }
 
 sub place { 
 	my $self = shift;
-	$self-> placeInfo( { grep { defined } map { /^(?:-(\D.*))|(.*)$/; } @_ });
+	$self-> placeInfo( { __tk_dash_map(@_) });
 	$self-> geometry( gt::Place);
 }
 
