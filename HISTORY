@@ -1,3 +1,5 @@
+1.35  Fixes in unicode, files, documentation, installed POD paths.
+
 1.34  Unicode fixes, ready for 5.16
 
 1.33  Image codecs: remove prigraph, add XBM, and enhance TIFF support
