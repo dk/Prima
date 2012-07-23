@@ -789,6 +789,13 @@ Mapped onto the edit widget's C<text> property.
 
 =back
 
+=head2 Events
+
+ComboBox forwards C<SelectItem> and C<DrawItem> events from the list box, and these are executed
+in the List's context (therefore $self there is not ComboBox, but the ComboBox->List). 
+
+See more in L<Prima::Lists>.
+
 =head2 Exported names
 
 =over
