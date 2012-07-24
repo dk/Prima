@@ -65,7 +65,7 @@ input and output.
 
 Note: If you're looking for information how to display an image, this is not
 the manual page. Look either at L<Prima::ImageViewer>, or use C<put_image> /
-C<stretch_image> ( L<Prima::Drawable ) inside your widget's onPaint.
+C<stretch_image> ( L<Prima::Drawable> ) inside your widget's onPaint.
 
 =head2 Graphic input and output
 
