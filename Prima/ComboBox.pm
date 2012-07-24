@@ -806,6 +806,8 @@ C<Change> instead.
 
 See more in L<Prima::Lists>.
 
+=back
+
 =head2 Exported names
 
 =over
