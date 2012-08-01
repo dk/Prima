@@ -439,6 +439,13 @@ doesn't have any interface elements on its own, and provides only page flipping
 function. The sub-widgets, therefore, are to be addressed as C<<
 $TabbedNotebook-> Notebook-> MyButton >>.
 
+=head2 How to compile a Prima-based module using XS?
+
+Take a look at L<IPA>, L<Prima::OpenGL>, L<Prima::Image::Magick>, L<PDL::PrimaImage>,
+and L<PDL::Drawing::Prima> . These modules compile against Prima dynamic module,
+start from there. Note - it's important to include PRIMA_VERSION_BOOTCHECK in the "BOOT:"
+section, to avoid binary incompatibilites, if there should be any.
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
