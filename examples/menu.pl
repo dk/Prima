@@ -62,9 +62,7 @@ use vars qw(@ISA);
 # Notes:
 #   1. When adding image, scalar must be object derived from Image component
 #  or Image component by itself.
-#   2. Some platforms cannot keep pure definition of "right-adjacent part";
-#  OS/2, for example, can keep no more than two right-adgacent items.
-#   3. You cannot assign to shortcut key modificator keys.
+#   2. You cannot assign to shortcut key modificator keys.
 
 sub create_menu
 {

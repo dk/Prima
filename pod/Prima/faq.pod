@@ -15,7 +15,7 @@ installation, and programming.
 
 Prima is a general purpose extensible graphical user interface toolkit with a
 rich set of standard widgets and an emphasis on 2D image processing tasks. A
-Perl program using PRIMA looks and behaves identically on X, Win32 and OS/2 PM.
+Perl program using PRIMA looks and behaves identically on X, Win32.
 
 =head2 Yeah, right. So what is Prima again?
 
@@ -26,6 +26,9 @@ Ok. A Yet Another Perl GUI.
 Prima was started on OS/2, where Tk didn't really run. We have had two options
 - either port Tk, or write something on our own, probably better than the
 existing tools.  We believe that we've succeeded.
+
+Interestingly enough, Prima still builds for OS/2 (as of July 2012), but its support
+was killed because noone needs it anyway.
 
 =head2 Why Perl?
 
@@ -68,7 +71,7 @@ documentation, and some other useful info.
 =head2 What is better, source or binary?
 
 Depends where your are and what are your goals. On unix, the best is to use the
-source. On win32 and os2 the binaries probably are preferred. If you happen to
+source. On win32 the binaries probably are preferred. If you happen to
 use cygwin you probably still better off using the source.
 
 =head2 How to install binary distribution?
@@ -151,7 +154,7 @@ Again, there are reasons for Prima to fail during the start.
 
 First, check whether all main files are installed correctly. F<Prima.pm> must
 be in your perl directory, and Prima library file ( F<Prima.a> or F<Prima.so> for
-unix, F<Prima.dll> for win32, and F<PrimaDI.dll> for os2 ) is copied in the
+unix, F<Prima.dll> for win32 ) is copied in the
 correct location in the perl tree. 
 
 Second, try to run 'perl -MPrima -e 1' . If Prima.pm is not found, the error
@@ -160,7 +163,7 @@ message would something like
   Can't locate Prima.pm in @INC
 
 If Prima library or one of the libraries it depends on cannot be found, perl
-Dynaloader would complain. On win32 and os2 this usually happen when
+Dynaloader would complain. On win32 this usually happen when
 some dll files Prima needs are not found. If this is the case, try
 to copy these files into your PATH, for example in C:/WINNT .
 

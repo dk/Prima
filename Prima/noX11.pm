@@ -31,11 +31,11 @@
 
 package Prima;
 
-push @preload, argv => '--no-x11' unless $^O =~ /(win32|cygwin|os2)/;
+push @preload, argv => '--no-x11' unless $^O =~ /(win32|cygwin)/;
 
 sub XOpenDisplay
 {
-	return undef if $^O =~ /(win32|cygwin|os2)/i;
+	return undef if $^O =~ /(win32|cygwin)/i;
 
 	Prima::options( 'display', $_[0]) if @_;
 	return Prima::Application::sys_action( 'Prima::Application', 'XOpenDisplay');

@@ -178,7 +178,7 @@ $::application hosts set of Prima::Clipboard objects, created
 automatically to reflect the system-provided clipboard IPC
 functionality. Their number depends on the system, - under X11
 environment there is three clipboard objects, and only one 
-under Win32 and OS/2.
+under Win32.
 
 These are no methods to access these clipboard objects, except
 fetch() ( or, the indirect name calling ) - the clipboard objects

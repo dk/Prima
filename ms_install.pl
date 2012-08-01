@@ -28,8 +28,8 @@
 #
 
 BEGIN {
-die <<UX if $^O !~ /os2|win32|cygwin/i;
-  This program is only intented to be run under MSWin32 and OS/2,
+die <<UX if $^O !~ /win32|cygwin/i;
+  This program is only intented to be run under MSWin32,
   for the binary installations. Please install the toolkit from the 
   source distribution, by typing 
     
@@ -60,7 +60,7 @@ for ( @ARGV) {
 		$_ eq '--help' || $_ eq '--h' || $_ eq '--?'
 	) {
 		print <<SD;
-Prima binary distribution installer for MS systems ( WinNT, Win9X, OS/2).
+Prima binary distribution installer for MS systems ( WinNT, Win9X).
 
 Format: perl ms_install.pl [ -uninstall]
 SD
@@ -68,14 +68,12 @@ SD
 	}
 }
 
-my $os2 = $^O eq 'os2';
 my $mswin32 = ($^O =~ /MSWin32/);
 my $cygwin = ($^O =~ /cygwin/);
 
 my $iarc = $Config{ installsitearch};
 my $ibin = $Config{ installbin};
 my $perlpath = $Config{ perlpath};
-$perlpath =~ s/(perl)(\.exe)?$/$1__$2/i if $os2 && $perlpath =~ /perl(\.exe)?$/i;
 
 unless ( $cygwin) {
 	$iarc =~ s/\//\\/g;
@@ -123,8 +121,8 @@ if ( $install) {
 			$destdir = $iarc . $destdir;
 		}
 
-		return if -d $_ && m/(utils|pod|test|os2|unix|img|CVS|include|scripts)$/i;
-		return if $File::Find::dir =~ /test|CVS|include|os2|unix|bsd|scripts/i;
+		return if -d $_ && m/(utils|pod|test|unix|img|CVS|include|scripts)$/i;
+		return if $File::Find::dir =~ /test|CVS|include|unix|bsd|scripts/i;
 		return if m/ms_install|Makefile|\.(pdb|opt|pal|obj|log|dsp|dsw|ncb|c|cls|h|inc|def|tml|o)/;
 
 		if ( -d $_) {
@@ -153,24 +151,10 @@ if ( $install) {
 	print "Copying executables...\n";
 	for ( @cpbin) {
 		my ( $src, $dst) = @$_;
-		$dst .= ( $os2 ? '.cmd' : ( $mswin32 ? '.bat' : ''));
+		$dst .= $mswin32 ? '.bat' : '');
 		push @instfiles, $dst;
 		print "Installing $src ...\n";
-		if ( $os2) {
-			open SRCPL, "<$src" or abort "Cannot open $src: $!";
-			open DSTPL, ">$dst" or abort "Cannot create $dst: $!";
-			print DSTPL <<ENDP;
-extproc $perlpath -wS
-ENDP
-			my $filestart = 1;
-			while ( <SRCPL>) {
-				next if $filestart && /^\#\!/;
-				$filestart = 0;
-				print DSTPL;
-			}
-			close SRCPL;
-			close DSTPL;
-		} elsif ( $mswin32) {
+		if ( $mswin32) {
 			print "Installing $dst ...\n";
 			$dst =~ s/bat$/pl/;
 			abort "Error:$!\n" unless copy $src, $dst;

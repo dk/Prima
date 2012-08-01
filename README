@@ -3,7 +3,7 @@ DESCRIPTION
 
 PRIMA is a general purpose extensible graphical user interface toolkit with a
 rich set of standard widgets and an emphasis on 2D image processing tasks. A
-Perl program using PRIMA looks and behaves identically on X, Win32 and OS/2 PM. 
+Perl program using PRIMA looks and behaves identically on X11 and Win32.
 
 PREREQUISITES
 =============
@@ -28,24 +28,11 @@ be installed just for this purpose:
 it should work for all MSVC and GCC compilers and for native,
 cygwin, and mingw/strawberry perl runtimes.
 
-Alternatively, for Win32 and OS/2 platforms, libprigraph library can be used
-instead.  The library supports most of the popular image file formats,
-including BMP, PCX, GIF, JPEG, TIFF, PNG, and is distributed in binary form for
-these platforms:
-
-   - Win32, native : http://www.prima.eu.org/download/gbm-bin-win32.zip. 
-   - Win32, cygwin : http://www.prima.eu.org/download/gbm-bin-cygwin.zip. 
-   - OS/2          : http://www.prima.eu.org/download/gbm-bin-os2.zip. 
-
-The zip files contain prigraph.dll and other DLL files if needed. The files are
-to be put in PATH. The library files, .LIB or .A, are used when compiling Prima
-from source and to be put in LIBPATH.
-
 SOURCE DISTRIBUTION INSTALLATION
 ================================
 
 Create a makefile by running Makefile.PL using perl and then run make ( or
-gmake, or nmake for Win32 and OS/2):
+gmake, or nmake for Win32):
 
     perl Makefile.PL
     make
@@ -78,7 +65,7 @@ If successful, Prima will display GTK file dialogs.
 BINARY DISTRIBUTION INSTALLATION
 ================================
 
-Available only for MSWin32 and OS/2. Please use installation from source for
+Available only for MSWin32. Please use installation from source for
 the other platforms.
 
 To install the toolkit from the binary distribution run 

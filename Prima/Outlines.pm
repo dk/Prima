@@ -2489,7 +2489,7 @@ class.
 Provides a standard widget with the item tree mapped to the directory
 structure, so each item is mapped to a directory. Depending on the type 
 of the host OS, there is either single root directory ( unix ), or
-one or more disk drive root items ( win32, os2 ).
+one or more disk drive root items ( win32 ).
 
 The format of a node is defined as follows:
 
@@ -2549,7 +2549,7 @@ Runtime-only property. Selects current file system path.
 Selects if the directories with the first dot character
 are shown the tree view. The treatment of the dot-prefixed names
 as hidden is traditional to unix, and is of doubtful use under
-win32 and os2.
+win32.
 
 Default value: 0
 

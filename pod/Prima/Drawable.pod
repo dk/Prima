@@ -406,7 +406,7 @@ Adobe Courier and Microsoft Courier).
 A boolean; true if the font is vector ( e.g. can be scaled
 with no quality loss ), false otherwise. The false value
 does not show if the font can be scaled at all - the behavior
-is system-dependent. Win32 and OS/2 can scale all non-vector fonts;
+is system-dependent. Win32 can scale all non-vector fonts;
 X11 only the fonts specified as the scalable.
 
 =item ascent
@@ -430,18 +430,7 @@ Negative if the ascent line is above the external leading line.
 
 =for podview <img src="leadings.gif" cut=1>
 
-=begin html
-
-<script type="text/javascript"><!--
-function primg(x) {
-if ( document.images[x + '_gif'].naturalWidth == 0 ) {
-document.getElementById(x + '_gif').src='https://github.com/dk/Prima/raw/master/pod/Prima/' + x + '.gif';
-}}
-//--></script>
-
-<p><img src="leadings.gif" id="leadings_gif"><!--
-
-=end html
+=for html <p><img src="leadings.gif" id="leadings_gif"><!--
 
           ------------- external leading line
 
@@ -584,9 +573,8 @@ The toolkit defines the following operations:
 
 Usually, however, graphic devices support only a small part
 of the above set, limiting C<::rop> to the most important operations:
-Copy, And, Or, Xor, NoOp. C<::rop2> is usually even more restricted -
-it is only OS/2 system that supports currently rop2 modes others than
-Copy and NoOp.
+Copy, And, Or, Xor, NoOp. C<::rop2> is usually even more restricted,
+supports only Copy and NoOp.
 
 The raster operations apply to all graphic primitives except SetPixel.
 
@@ -1330,18 +1318,7 @@ Context used: font, textOutBaseline
 
 =for podview </cut>
 
-=begin html
-
--->
-<script type="text/javascript"><!--
-setTimeout(function() {
-primg('leadings');
-primg('fontabc');
-primg('gettextbox');
-}, 500); // good enough for local disk I/O, I guess
---></script>
-
-=end html
+=for html -->
 
 =item render_spline VERTICES, [ PRECISION ]
 

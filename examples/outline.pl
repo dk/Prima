@@ -52,13 +52,13 @@ my $o = $w-> insert(
 			my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
 			my ( $p, $o) = $_[0]-> get_item_parent( $x);
 			$_[0]-> insert_items( $p, $o + 1, [
-				[ $^O =~ /win32|os2/ ? 'C:' : '/', ''], [], 0
+				[ $^O =~ /win32/ ? 'C:' : '/', ''], [], 0
 			]);
 		}],
 		['Insert updir inside' => sub{
 			my ( $x, $l) = $_[0]-> get_item( $_[0]-> focusedItem);
 			$_[0]-> insert_items( $x, 0, [
-				[ $^O =~ /win32|os2/ ? 'C:' : '/', ''], [], 0
+				[ $^O =~ /win32/ ? 'C:' : '/', ''], [], 0
 			]);
 		}],
 		['Expand this' => sub{

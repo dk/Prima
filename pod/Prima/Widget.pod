@@ -964,11 +964,7 @@ the C<::popupColorIndex> and C<::popupFont> properties are introduced.
 C<::popupHiliteColor>, C<::popupHiliteBackColor>, etc etc
 properties exactly like the C<::colorIndex> property ).
 
-The font and color of a menu object might not always be writable.
-The underlying system capabilities in this area range
-from total inability for a program to manage the menu fonts and colors 
-in Win32, to a sport in interactive changing menu fonts and colors
-in OS/2.
+The font and color of a menu object might not always be writable (Win32).
 
 The Prima::Window class provides equivalent methods for the menu bar, introducing
 C<::menu>, C<::menuItems>, C<::menuColorIndex> ( with multiplexing ) and
@@ -983,7 +979,7 @@ preferences as close as possible to the toolkit paradigm.
 
 Unix version employs XRDB ( X resource database ), which is the
 natural way for the user to tell the preferences with fine
-granularity. Win32 and OS/2 read the setting that the user has to
+granularity. Win32 reads the setting that the user has to
 set interactively, using system tools. Nevertheless, the toolkit
 can not emulate all user settings that are available on the supported
 platforms; it rather takes a 'least common denominator', which is

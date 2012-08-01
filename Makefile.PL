@@ -63,7 +63,6 @@ use vars qw(
 	$DL_LOAD_FLAGS
 	$DISTNAME
 	$CWD
-	$OS2DLLF
 	$SHQUOTE
 	$DEFFILE
 	$OPTIMIZE
@@ -76,7 +75,6 @@ use vars qw(
 	%passthru_options
 	$Win32
 	$Win64
-	$OS2
 	$unix
 	$cygwin
 	$mingw
@@ -220,8 +218,6 @@ sub setup_variables
 			$platform = 'win32';
 		}
 		$cygwin = 1;
-	} elsif ( $^O =~ /os2/i ) {
-		$platform = 'os2';
 	} else {
 		$platform = 'unix';
 		$unix = 1;
@@ -337,9 +333,6 @@ sub setup_environment
 			$win32_use_dlltool = $Config{dlltool} || 'dlltool';
 			$mingw = 1;
 		}
-	} elsif ( $OS2 ) {
-		$SCRIPT_EXT = '.cmd';
-		$SHQUOTE    = "'";
 	} else {
 		$SCRIPT_EXT = '';
 		$SHQUOTE    = "'";
@@ -400,9 +393,6 @@ sub setup_environment
 	
 	$TMPDIR  = $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{SystemDrive}\\TEMP") : "/tmp");
 	$NULLDEV = 'makefile.log';
-
-	$OS2DLLF = 'Prima';
-	$OS2DLLF = &DynaLoader::mod2fname([$OS2DLLF]) if $OS2 && defined &DynaLoader::mod2fname;
 
 	print "Flavor: ";
 	$flavor = $^O;
@@ -556,8 +546,8 @@ sub null_output
 {
 	open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
 	open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
-#	$NULLDEV = ( $Win32 || $OS2) ? "CON" : "/dev/tty";
-#	$NULLDEV = ( $Win32 || $OS2) ? "NUL" : "/dev/null";
+#	$NULLDEV = ( $Win32) ? "CON" : "/dev/tty";
+#	$NULLDEV = ( $Win32) ? "NUL" : "/dev/null";
 	if ( $^O !~ /linux/) {
 		close STDOUT;
 		close STDERR;
@@ -700,19 +690,6 @@ sub find_lib
 	my ( $lib, $inc) = ( shift, shift );
 	my ( $libpath, $present);
 
-	if ( $OS2 && !length $inc) { # link386 is broken - warns, not dies if no library found
-		if ( -f $lib) {
-			$lib =~ s/(\\|\/[^\\|\/]*)$//g;
-			return $lib;
-		}
-		for ( @LIBPATH) {
-			return $_ if -f "$_/$lib";
-			return $_ if -f "$_/$lib.lib";
-			return $_ if -f "$_/$lib.a";
-		}
-		return undef;
-	}
-	
 	local @LIBS = @LIBS;
 	push @LIBS, $lib;
 	foreach $libpath ( @_) {
@@ -1343,20 +1320,6 @@ EOF
 	close PRIMADEF;
 }
 
-sub generate_os2_def
-{
-	open PRIMADEF, ">$DEFFILE" or die "Cannot create $DEFFILE: $!";
-	print PRIMADEF <<EOF;
-LIBRARY $OS2DLLF INITINSTANCE TERMINSTANCE
-DESCRIPTION 'Prima DLL'
-CODE LOADONCALL
-DATA LOADONCALL NONSHARED MULTIPLE
-EXPORTS
-EOF
-	print PRIMADEF map { "\t$_\n"} @Prima_exports;
-	close PRIMADEF;
-}
-
 sub suck_symbols
 {
 	my $fn = shift;
@@ -1385,7 +1348,6 @@ unprotect_object perl_error
 	delete @g{qw(prima_utf8_to_uv prima_uv_to_utf8)};
 	@Prima_exports = sort keys %g;
 	generate_win32_def() if $Win32;
-	generate_os2_def() if $OS2;
 }
 
 sub setup_codecs
@@ -1394,7 +1356,6 @@ sub setup_codecs
 	my ( $prereq, $have_binary_prereq);
 	$prereq = 'win32' if $Win32 and not $cygwin;
 	$prereq = 'win64' if $Win64 and not $cygwin;
-	$prereq = 'os2'   if $OS2; 
 	if ( $prereq) {
 		print "Checking for Prima::codecs::$prereq... ";
 		eval "use Prima::codecs::$prereq;";
@@ -1624,7 +1585,7 @@ sub create_config_pm
 	if ( $cygwin) {
 		$libs  = "-L$cwd/blib/arch/auto/Prima -lPrima";
 		$libsi = '-L$(lib)/auto/Prima -lPrima';
-	} elsif ( $Win32 || $OS2) {
+	} elsif ( $Win32) {
 		$libs  = qd("$cwd/blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT");
 		$libsi = '$(lib)' . qd("/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT");
 	}
@@ -1641,7 +1602,7 @@ use vars qw(%Config %Config_inst);
 	gencls                => '\$(bin)${ifs}gencls$SCRIPT_EXT',
 	tmlink                => '\$(bin)${ifs}tmlink$SCRIPT_EXT',
 	libname               => '\$(lib)${ifs}auto${ifs}Prima${ifs}${LIB_PREFIX}Prima$LIB_EXT',
-	dlname                => '\$(lib)${ifs}auto${ifs}Prima${ifs}$OS2DLLF.$Config{dlext}',
+	dlname                => '\$(lib)${ifs}auto${ifs}Prima${ifs}Prima.$Config{dlext}',
 	ldpaths               => [$libpathi],
 
 	inc                   => '$inci',
@@ -1665,7 +1626,7 @@ use vars qw(%Config %Config_inst);
 	libext                => ${_quote($LIB_EXT)},
 	libprefix             => ${_quote($LIB_PREFIX)},
 	libname               => ${_quotepath("$cwd/blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT")},
-	dlname                => ${_quotepath("$cwd/blib/arch/auto/Prima/$OS2DLLF.$Config{dlext}")},
+	dlname                => ${_quotepath("$cwd/blib/arch/auto/Prima/Prima.$Config{dlext}")},
 	ldoutflag             => ${_quote($LDOUTFLAG)},
 	ldlibflag             => ${_quote($LDLIBFLAG)},
 	ldlibpathflag         => ${_quote($CLIBPATHFLAG)},
@@ -1811,7 +1772,7 @@ sub command_bindist
 		my $f = "$File::Find::dir/$_";
 		return if $f =~ /include.generic|\.git|blib|dll.base|dll.exp|Prima.bs|Prima.def/;
 		return if $f =~ /\.(c|cls|h)$/i;
-		return if $f =~ /$CWD.(img|include|os2|win32|unix|Makefile.PL|Makefile.old)/i;
+		return if $f =~ /$CWD.(img|include|win32|unix|Makefile.PL|Makefile.old)/i;
 		if ( -d $f) {
 			$f =~ s/^$CWD/$DISTNAME/;
 			push @dirs, $f;
@@ -2072,7 +2033,7 @@ WriteMakefile(
 			repository => 'http://github.com/dk/Prima',
 		},
 		no_index  => {
-			directory  => [qw(include img test os2 unix win32)],
+			directory  => [qw(include img test unix win32)],
 			file       => [qw(Makefile.PL test.pl ms_install.pl)],
 		},
 	},

@@ -1736,7 +1736,7 @@ Runtime-only property. Selects a file system path.
 Selects if the directories with the first dot character
 are shown the view. The treatment of the dot-prefixed names
 as hidden is traditional to unix, and is of doubtful use under
-win32 and os2.
+win32.
 
 Default value: 1
 

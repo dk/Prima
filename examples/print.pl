@@ -33,7 +33,7 @@ A printing example
 =item FEATURES
 
 Demonstrates the usage of Prima printing interface.
-A particular incoherence between *nix and win32/os2 systems
+A particular incoherence between *nix and win32 systems
 in their printing system is particularly solved by a implicit 
 Prima::PS modules set usage.
 

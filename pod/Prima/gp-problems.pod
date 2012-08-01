@@ -103,7 +103,7 @@ the wrapping code should not allow color property to be writable then.
 Due the fact that paletted displays employ indexed color 
 representation, 'black' and 'white' indices are not always
 0 and 2^n-1, so result of raster image operations may look garbled (X).
-Win32 and OS/2 protect themselves from this condition by 
+Win32 protects themselves from this condition by 
 forcing white to be the last color in the system palette.
 
 Example: if white color on 8-bit display occupies palette index 15 
@@ -149,17 +149,6 @@ cannot be drawn as a solid, the correct rendering requires
 correspondingly 3 or 4 colors.  Some rendering engines (Win9X)
 fail to produce correct results.
 
-=item Overfill effect
-
-In complex shapes ( FillPoly, for example) the platform renderer can
-fill certain areas two or more times. Whereas the effect is not
-noticeable with rop::CopyPut, the other raster operations
-(like rop::Xor) produce incorrect picture. (OS/2)
-
-NB - has nothing in common with the fill winding rule.
-
-Workaround: Do not use raster operations with complex filled shapes
-
 =item Pattern offset
 
 For a widget that contains a pattern-filled shape, 
@@ -190,11 +179,6 @@ design rather than to a platform-specific code. (All)
 
 Workaround: use predefined patterns (lp::XXX) 
 
-=item Line joins
-
-Joint areas may be drawn two (or more) times -
-the problem emerges if logical ROP (rop::Xor) is chosen.(OS/2)
-
 =item Dithering
 
 Dithering might be not used for line plotting. (Win9X)
@@ -214,7 +198,7 @@ latest (2010) Xorg capabilities. See discussion on CPAN bug https://rt.cpan.org/
 =item Font metric inconsistency
 
 A font is loaded by request with one size,
-but claims another afterwards.(OS/2, X).
+but claims another afterwards.(X).
 
 Impact: system-dependent font description may not match
 to Prima's.
@@ -226,7 +210,7 @@ system-dependent ones and vice versa.
 
 No internal function for drawing transparent bitmaps (like fonts).
 Therefore, if a font emulation is desired, special ROPs cannot be
-reproduced. (OS/2, Win9X, WinNT)
+reproduced. (Win9X, WinNT)
 
 Impact: font emulation is laborsome, primarily because the glyphs 
 have to be plotted by consequential anding and xoring a bitmap.
@@ -243,22 +227,6 @@ From the other hand, sometimes glyph position cannot be
 determined correctly if no information for the text kerning 
 is provided. (Win9X) 
 
-=item Fractional text position
-
-If the font glyphs have fractional widths,
-it might be observed that letters may change their position in
-a string. 
-
-Example: A set of glyphs has width of 8.6 pixels for each symbol.
-If the string "abcd" is drawn at position 0,
-then black part of "d" starts at 25th pixel, but if "cd" is drawn 
-at 17th, as it supposed to be if the integer arithmetics is used, 
-it starts at 24th pixel. (OS/2)
-
-Solution: Do not rely to Drawable::get_text_width information,
-because it always returns integer value, but to Drawable::get_font_abc,
-which returns real values.
-
 =item Text background
 
 If a text is drawn with non-CopyPut raster operation, text background 
@@ -272,16 +240,16 @@ Advise: Do not use ::rop2 and text background for special effects
 
 =item Internal platform features
 
-Font change notification is not provided. (X, OS/2)
+Font change notification is not provided. (X)
 
-Raster fonts cannot be synthesized (OS/2, partly X)
+Raster fonts cannot be synthesized (partly X)
 
 =back
 
 =head2 Raster operations ( ROPs)
 
 Background raster operations are not supported (X,Win9X,WinNT) and
-foreground ROPs have limited number of modes (OS/2,X). Not all ROPs
+foreground ROPs have limited number of modes (X). Not all ROPs
 can be emulated for certain primitives, like fonts,
 complex shapes, and patterned shapes.
 
@@ -329,8 +297,6 @@ and its direct children ( not ::clipOwner(0)) can benefit
 from using Widget::palette. System palette is switched every time 
 as different windows moved to the front.
 
-OS/2 - not implemented, but in principle the same as under win32.
-
 X - Any application can easily ruin system color table.
 Since this behavior is such by design, no workaround can be
 applied here.
@@ -352,25 +318,13 @@ Workaround: none
 =item Large scale factors
 
 Request for drawing a bitmap might fail 
-if large scaling factor is selected. (OS/2,Win9X,WinNT).
+if large scaling factor is selected. (Win9X,WinNT).
 This effect is obviously due that fact that these platforms
 scale the bitmap into a memory before the plotting takes place.
 
 =back
 
 =head1 Platform-specific peculiarities
-
-=head2 OS/2
-
-Some ROPs are ambiguous - SRCTRANSPARENT, for example. Some
-times they work, some times they don't. The particular behavior
-depends on a video driver.
-
-Circles cannot be drawn using an even diameter.
-
-Fast GDI operations on HWND_DESKTOP may be delayed, thus
-GetPixel may return invalid pixel values.
-
 
 =head2 Windows 9X
 
@@ -401,10 +355,6 @@ Filled shapes are broken.
 Color bitmaps cannot be drawn onto mono bitmaps.
 
 =head1 Implementation notes
-
-=head2 OS/2
-
-Palettes are not implemented
 
 =head2 Win32
 

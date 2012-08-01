@@ -518,7 +518,6 @@ sub load_file
 		my ( $fn, $mpath);
 		my @ext =  ( '.pod', '.pm', '.pl' );
 		push @ext, ( '.bat' ) if $^O =~ /win32/i;
-		push @ext, ( '.bat', '.cmd' ) if $^O =~ /os2/;
 		push @ext, ( '.com' ) if $^O =~ /VMS/;
 		for ( map { $_, "$_/pod", "$_/pods" } 
 				grep { defined && length && -d } 
