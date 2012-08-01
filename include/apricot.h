@@ -34,6 +34,12 @@
 #define POLLUTE_NAME_SPACE 1
 #endif
 
+#define PRIMA_CORE_VERSION 2012080101
+
+#define PRIMA_VERSION_BOOTCHECK \
+    if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
+        croak("Core Prima version %ld and current %ld mismatch. Recompile the module", apc_get_core_version(), PRIMA_CORE_VERSION )
+
 #include "generic/config.h"
 
 #if (PERL_PATCHLEVEL < 4 || (( PERL_PATCHLEVEL == 4) && ( PERL_SUBVERSION <= 4)))
@@ -1864,6 +1870,9 @@ extern long   apcError;
 /* *****************
 *  apc functions   *
 ***************** */
+
+extern unsigned long
+apc_get_core_version();
 
 extern char *
 apc_last_error();
