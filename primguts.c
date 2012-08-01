@@ -1514,7 +1514,7 @@ apc_get_application(void)
    return application;
 }
 
-unsigned long
+Handle
 apc_get_core_version()
 {
     return PRIMA_CORE_VERSION;
