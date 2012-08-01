@@ -113,7 +113,6 @@ img/imgscale.c
 img/imgtype.c
 img/put.c
 include/apricot.h
-include/gbm.h
 include/guts.h
 include/img.h
 include/img_conv.h
