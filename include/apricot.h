@@ -38,7 +38,7 @@
 
 #define PRIMA_VERSION_BOOTCHECK \
     if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
-        croak("Core Prima version %ld and current %ld mismatch. Recompile the module", apc_get_core_version(), PRIMA_CORE_VERSION )
+        croak("Prima object version(%ld) doesn't match module version(%ld). Recompile the module", apc_get_core_version(), PRIMA_CORE_VERSION )
 
 #include "generic/config.h"
 
@@ -1871,7 +1871,7 @@ extern long   apcError;
 *  apc functions   *
 ***************** */
 
-extern unsigned long
+extern Handle
 apc_get_core_version();
 
 extern char *
