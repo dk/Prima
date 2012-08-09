@@ -222,13 +222,12 @@ CLIP
 
 sub fill
 {
-	my ( $self, $start, $code, $end) = @_;
+	my ( $self, $code) = @_;
 	my ( $r1, $r2) = ( $self-> rop, $self-> rop2);
 	return if 
 		$r1 == rop::NoOper &&
 		$r2 == rop::NoOper;
 	
-	$self-> emit( $start) if length $start;
 	if ( $r2 != rop::NoOper && $self-> {fpType} ne 'F') {
 		my $bk = 
 			( $r2 == rop::Blackness) ? 0 :
@@ -267,20 +266,17 @@ RGBPAT
 		}
 		$self-> emit( $code);
 	}
-	$self-> emit( $end) if length $end;
 }
 
 sub stroke
 {
-	my ( $self, $start, $code, $end) = @_; 
+	my ( $self, $code) = @_; 
 
 	my ( $r1, $r2) = ( $self-> rop, $self-> rop2);
 	my $lp = $self-> linePattern;
 	return if 
 		$r1 == rop::NoOper &&
 		$r2 == rop::NoOper;
-
-	$self-> emit( $start) if length $start;
 
 	if ( $r2 != rop::NoOper && $lp ne lp::Solid ) {
 		my $bk = 
@@ -333,8 +329,6 @@ sub stroke
 		}
 		$self-> emit( $code);
 	}
-	$self-> emit( $end) if length $end;
-	
 }
 
 # Prima::Printer interface
@@ -810,14 +804,10 @@ sub arc
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 	my $rx = $dx / 2;
 	$end -= $start;
-	$self-> stroke( <<ARC,
-$x $y M
-:   
-$x $y T
-1 $try Z $start R
+	$self-> stroke( <<ARC );
+$x $y M : $x $y T 1 $try Z $start R
+N $rx 0 M 0 0 $rx 0 $end a O ;
 ARC
-		"N $rx 0 M 0 0 $rx 0 $end a O",
-		";");
 }
 
 sub chord
@@ -827,14 +817,10 @@ sub chord
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 	my $rx = $dx / 2;
 	$end -= $start;
-	$self-> stroke(<<ARC,
-$x $y M
-:
-$x $y T
-1 $try Z $start R
-ARC
-		"N $rx 0 M 0 0 $rx 0 $end a X O",
-		";");
+	$self-> stroke(<<CHORD);
+$x $y M : $x $y T 1 $try Z $start R
+N $rx 0 M 0 0 $rx 0 $end a X O ;
+CHORD
 }
 
 sub ellipse
@@ -843,14 +829,10 @@ sub ellipse
 	my $try = $dy / $dx;
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 	my $rx = $dx / 2;
-	$self-> stroke(<<ARC,
-$x $y M
-:   
-$x $y T
-1 $try Z
-ARC
-		"N $rx 0 M 0 0 $rx 0 360 a O",
-		";");
+	$self-> stroke(<<ELLIPSE);
+$x $y M : $x $y T 1 $try Z
+N $rx 0 M 0 0 $rx 0 360 a O ;
+ELLIPSE
 }
 
 sub fill_chord
@@ -861,14 +843,10 @@ sub fill_chord
 	my $rx = $dx / 2;
 	$end -= $start;
 	my $F = $self-> fillWinding ? 'F' : 'E';
-	$self-> fill( <<START,
-$x $y M
-:   
-$x $y T
-1 $try Z
-START
-	"N $rx 0 M 0 0 $rx 0 $end a X $F",
-	";");
+	$self-> fill( <<CHORD );
+$x $y M : $x $y T 1 $try Z
+N $rx 0 M 0 0 $rx 0 $end a X $F ;
+CHORD
 }
 
 sub fill_ellipse
@@ -877,14 +855,10 @@ sub fill_ellipse
 	my $try = $dy / $dx;
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 	my $rx = $dx / 2;
-	$self-> fill(<<ARC,
-$x $y M
-:   
-$x $y T
-1 $try Z
-ARC
-	"N $rx 0 M 0 0 $rx 0 360 a F",
-	";");
+	$self-> fill(<<ELLIPSE);
+$x $y M : $x $y T 1 $try Z
+N $rx 0 M 0 0 $rx 0 360 a F ;
+ELLIPSE
 }
 
 sub sector
@@ -894,14 +868,10 @@ sub sector
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 	my $rx = $dx / 2;
 	$end -= $start;
-	$self-> stroke(<<ARC,
-$x $y M
-:   
-$x $y T
-1 $try Z $start R
-ARC
-		"N 0 0 M 0 0 $rx 0 $end a 0 0 l O",
-		";");
+	$self-> stroke(<<SECTOR);
+$x $y M : $x $y T 1 $try Z $start R
+N 0 0 M 0 0 $rx 0 $end a 0 0 l O ;
+SECTOR
 }
 
 sub fill_sector
@@ -912,15 +882,10 @@ sub fill_sector
 	my $rx = $dx / 2;
 	$end -= $start;
 	my $F = $self-> fillWinding ? 'F' : 'E';
-	$self-> fill(<<ARC,
-$x $y M
-:   
-$x $y T
-1 $try Z $start R
-ARC
-
-	"N 0 0 M 0 0 $rx 0 $end a 0 0 l $F",
-	";");
+	$self-> fill(<<SECTOR);
+$x $y M : $x $y T 1 $try Z $start R
+N 0 0 M 0 0 $rx 0 $end a 0 0 l $F ;
+SECTOR
 }
 
 sub text_out
@@ -1062,16 +1027,14 @@ sub bar
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
 	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
-	$self-> fill('', 
-	"N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X F", '');
+	$self-> fill( "N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X F");
 }
 
 sub rectangle
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
 	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
-	$self-> stroke( '', 
-		"N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X O", '');
+	$self-> stroke( "N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X O");
 }
 
 sub clear
@@ -1096,7 +1059,7 @@ sub line
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
 	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
-	$self-> stroke('', "N $x1 $y1 M $x2 $y2 l O", '');
+	$self-> stroke("N $x1 $y1 M $x2 $y2 l O");
 }
 
 sub lines
@@ -1110,7 +1073,7 @@ sub lines
 	for ( $i = 0; $i < $c; $i += 4) {
 		$z .= "N @a[$i,$i+1] M @a[$i+2,$i+3] l O";
 	}
-	$self-> stroke( '', $z, '');
+	$self-> stroke( $z);
 }
 
 sub polyline
@@ -1126,7 +1089,7 @@ sub polyline
 		$z .= "@a[$i,$i+1] l ";
 	}
 	$z .= "O";
-	$self-> stroke( '', $z, '');
+	$self-> stroke( $z);
 }
 
 sub fillpoly
@@ -1142,7 +1105,7 @@ sub fillpoly
 		$x .= "@a[$i,$i+1] l ";
 	}
 	$x .= 'X ' . ($self-> fillWinding ? 'F' : 'E');
-	$self-> fill( '', $x, '');
+	$self-> fill( $x);
 }
 
 sub flood_fill { return 0; }
