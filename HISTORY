@@ -1,3 +1,5 @@
+1.36 Remove OS/2 support. Add binary compatibility checks.
+
 1.35  Fixes in unicode, files, documentation, installed POD paths.
 
 1.34  Unicode fixes, ready for 5.16
