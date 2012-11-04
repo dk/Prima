@@ -751,7 +751,7 @@ sub read_paragraph
 		}me;
 
 		# Translate verbatim paragraph
-		if (/^\s/) {
+		if (/^\s/) { 
 			$self-> add($_,STYLE_CODE,$r-> {indent});
 			next;
 		}
@@ -811,28 +811,34 @@ sub read
 	for ( split ( "(\n)", $pod)) {
 		next unless $odd = !$odd;
 
-		if (defined $r-> {command_buffer}) {
+        if (defined $r-> {paragraph_buffer}) {
 			if ( /^$/) {
-				my $cb = $r-> {command_buffer};
-				undef $r-> {command_buffer};
-				$self-> read_paragraph("$cb\n");
-			} else {
-				$r-> {command_buffer} .= " $_";
+				my $pb = $r-> {paragraph_buffer};
+				undef $r-> {paragraph_buffer};
+				$self-> read_paragraph("$pb\n");
+            } else {
+				$r-> {paragraph_buffer} .= " $_";
 				next;
-			}
-		} elsif ( /^=/) {
-			$r-> {command_buffer} = $_;
-			next;
-		}
-	
-		$self-> read_paragraph("$_\n");
-	}
+            }
+        } elsif ( !/^$/) {
+            $r->{paragraph_buffer} = $_;
+            next;
+        }
+    }        
 }
 
 sub close_read
 {
 	my ( $self, $topicView) = @_;
 	return unless $self-> {readState};
+
+	my $r = $self-> {readState};
+    if ( defined $r->{paragraph_buffer}) {
+		my $pb = $r-> {paragraph_buffer};
+		undef $r-> {paragraph_buffer};
+		$self-> read_paragraph("$pb\n");
+    }
+
 	$topicView = $self-> {topicView} unless defined $topicView;
 	$self-> add( "\n", STYLE_TEXT, 0); # end
 	$self-> {contents}-> [0]-> references( $self-> {links});
@@ -854,7 +860,6 @@ sub close_read
 	## and then uses black magic to put it in the front.
 
 	# remember the current end state
-	my $r = $self-> {readState};
 	my @text_ends_at = ( 
 		$r-> {bigofs}, 
 		scalar @{$self->{model}},
