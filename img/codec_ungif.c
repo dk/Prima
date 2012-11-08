@@ -27,6 +27,7 @@
  */
 /* Created by Dmitry Karasik <dk@plab.ku.dk> */
 
+#include <sys/types.h>
 #include "img.h"
 #include "img_conv.h"
 #include "Image.h"
