@@ -129,9 +129,9 @@ init( ImgCodecInfo ** info, void * param)
    codec_info.versionMaj = GIFLIB_MAJOR;
    codec_info.versionMin = GIFLIB_MINOR;
 #else
-   sscanf( GIF_LIB_VERSION, "%s %d.%d", vd, &((*info)-> versionMaj), &((*info)-> versionMin));
-   if ((*info)-> versionMaj > 4) EGifSetGifVersion( "89a");
+   sscanf( GIF_LIB_VERSION, "%s %d.%d", vd, &codec_info.versionMaj, &codec_info.versionMin);
 #endif
+   if (codec_info.versionMaj > 4) EGifSetGifVersion( "89a");
 
    return (void*)1;
 }  
@@ -254,6 +254,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( !l) return nil;
    memset( l, 0, sizeof( LoadRec));
    
+   GIF_CALL 0;
    if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read GIF_ERROR_ARG))) {
       free( l);
       return nil;
@@ -291,7 +292,6 @@ typedef struct _GIFNetscapeLoopExt {
 #define out { format_error( GifLastError(), fi-> errbuf, __LINE__); return false;}
 #define outc(x){ strncpy( fi-> errbuf, x, 256); return false;}
 #define outcm(dd){ snprintf( fi-> errbuf, 256, "No enough memory (%d bytes)", dd); return false;}
-#define ifout if(img_gif_error_code != GIF_OK) out
 
 #define NETSCAPE_EXT_FUNC_CODE 255
 
@@ -322,10 +322,7 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data)
       SV *sv, *mainsv = newSVpv((char*) data + 1, *data);
       pset_sv_noinc( comment, mainsv); 
       while ( 1) {
-         GIF_CALL DGifGetExtensionNext( l-> gft, &data);
-         ifout;
-         GIF_CALL DGifGetExtensionNext( l-> gft, &data);
-         ifout;
+         if (( GIF_CALL DGifGetExtensionNext( l-> gft, &data)) != GIF_OK ) out;
     	 if ( data == NULL) break;
          sv = newSVpv((char*) data + 1, *data);
          sv_catsv( mainsv, sv);
@@ -337,8 +334,7 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data)
    case NETSCAPE_EXT_FUNC_CODE: 
       if ( *data == 11 && memcmp( data + 1, "NETSCAPE2.0", 11) == 0) {
           LoadRec * l = ( LoadRec *) fi-> instance;
-          GIF_CALL DGifGetExtensionNext( l-> gft, &data);
-          ifout;
+          if ((GIF_CALL DGifGetExtensionNext( l-> gft, &data)) != GIF_OK) out;
 	      if ( data && *data == 3 && fi-> loadExtras) {
              PGIFNetscapeLoopExt ext = ( PGIFNetscapeLoopExt) ( data + 1);
 	         pset_i( loopCount, ext-> loopCountLo + 256 * ext-> loopCountHi);
@@ -348,8 +344,7 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data)
    }
 
    while ( data) {
-      GIF_CALL DGifGetExtensionNext( l-> gft, &data);
-      ifout;
+      if (( GIF_CALL DGifGetExtensionNext( l-> gft, &data)) != GIF_OK) out;
    }      
 
    return true;
@@ -374,6 +369,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          snprintf( fi-> errbuf, 256, "Can't rewind GIF stream, seek() error:%s", strerror(req_error( fi-> req)));
          return false;
       }
+      GIF_CALL 0;
       if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read GIF_ERROR_ARG))) out;
       l-> passed  = -1;
       l-> transparent = -1;
@@ -398,17 +394,14 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          outc("Frame index out of range");
          
       case IMAGE_DESC_RECORD_TYPE:
-         GIF_CALL DGifGetImageDesc( l-> gft);
-         ifout;
+         if (( GIF_CALL DGifGetImageDesc( l-> gft)) != GIF_OK) out;
 
          if ( ++l-> passed != fi-> frame) { /* skip image block */
              int sz;
              Byte * block = nil;
-             GIF_CALL DGifGetCode( l-> gft, &sz, &block);
-             ifout;
+             if ((GIF_CALL DGifGetCode( l-> gft, &sz, &block)) != GIF_OK) out;
              while ( block) {
-                GIF_CALL DGifGetCodeNext( l-> gft, &block);
-                ifout;
+                if (( GIF_CALL DGifGetCodeNext( l-> gft, &block)) != GIF_OK) out;
              }  
              break;
          }   
@@ -443,11 +436,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
             pset_i( height,     l-> gft-> Image. Height);
              
 	    /* skip block */
-            GIF_CALL DGifGetCode( l-> gft, &sz, &block);
-            ifout;
+            if (( GIF_CALL DGifGetCode( l-> gft, &sz, &block)) != GIF_OK) out;
             while ( block) {
-                GIF_CALL DGifGetCodeNext( l-> gft, &block);;
-                ifout;
+                if (( GIF_CALL DGifGetCodeNext( l-> gft, &block)) != GIF_OK) out;
             }  
          } else {
             GifPixelType * data;
@@ -511,13 +502,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          {
             int code = -1;
             Byte * data = nil;
-            GIF_CALL DGifGetExtension( l-> gft, &code, &data);
-            ifout;
+            if (( GIF_CALL DGifGetExtension( l-> gft, &code, &data)) != GIF_OK) out;
             if ( data) {
                if ( 1 + l-> passed != fi-> frame) /* skip this extension block */
-	          code = -1;
+                  code = -1;
                if ( !load_extension( fi, code, data))
-	          return false;
+	              return false;
             }
          }   
          break;
@@ -580,6 +570,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
    GifFileType * g;
    
+   GIF_CALL 0;
    if ( !( g = EGifOpen( fi-> req, my_gif_write GIF_ERROR_ARG)))
       return nil;
 
@@ -686,21 +677,18 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
          ( transparent    ? 1 : 0) |
          ( userInput      ? 2 : 0) |
          (( disposalMethod & 7) << 2);
-      GIF_CALL EGifPutExtension( g, GRAPHICS_EXT_FUNC_CODE, 
-         sizeof( GIFGraphControlExt), &ext);
-      ifout;
+      if (( GIF_CALL EGifPutExtension( g, GRAPHICS_EXT_FUNC_CODE, 
+         sizeof( GIFGraphControlExt), &ext)) != GIF_OK) out;
    }
 
    /* loop count */
    if ( pexist( loopCount)) {
       int lc = pget_i( loopCount);
       GIFNetscapeLoopExt ext = { 1, lc % 256, lc / 256};
-      GIF_CALL EGifPutExtensionFirst( g, NETSCAPE_EXT_FUNC_CODE, 
-         11, "NETSCAPE2.0");
-      ifout;
-      GIF_CALL EGifPutExtensionLast( g, 0, 
-         sizeof( GIFNetscapeLoopExt), &ext);
-      ifout;
+      if (( GIF_CALL EGifPutExtensionFirst( g, NETSCAPE_EXT_FUNC_CODE, 
+         11, "NETSCAPE2.0")) != GIF_OK) out;
+      if (( GIF_CALL EGifPutExtensionLast( g, 0, 
+         sizeof( GIFNetscapeLoopExt), &ext)) != GIF_OK) out;
    }
 
    /* writing image */
