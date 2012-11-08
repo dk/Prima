@@ -80,13 +80,59 @@ static ImgCodecInfo codec_info = {
    loadOutput
 };
 
+static int img_gif_error_code = 0;
+
+#if defined(GIFLIB_MAJOR) && GIFLIB_MAJOR >= 5
+#define GIF_ERROR_ARG ,&img_gif_error_code
+#define MakeMapObject GifMakeMapObject
+#define FreeMapObject GifFreeMapObject
+
+static int
+GifLastError()
+{
+    return img_gif_error_code;
+}
+
+static int
+EGifPutExtensionFirst(GifFileType * GifFile,
+                      int ExtCode,
+                      int ExtLen,
+                      const void * Extension) {
+    int r = EGifPutExtensionLeader( GifFile, ExtCode );
+    if ( r != GIF_OK ) return r;
+    return EGifPutExtensionBlock( GifFile, ExtLen, Extension ); 
+}
+
+static int
+EGifPutExtensionLast(GifFileType * GifFile,
+                      int ExtCode,
+                      int ExtLen,
+                      const void * Extension) {
+    int r = EGifPutExtensionBlock( GifFile, ExtLen, Extension );
+    if ( r != GIF_OK ) return r;
+    return EGifPutExtensionTrailer( GifFile); 
+}
+
+
+
+#else
+#define GIF_ERROR_ARG
+#endif
+
 static void * 
 init( ImgCodecInfo ** info, void * param)
 {
    char vd[1024];
    *info = &codec_info;
+
+#if defined(GIFLIB_MAJOR)
+   codec_info.versionMaj = GIFLIB_MAJOR;
+   codec_info.versionMin = GIFLIB_MINOR;
+#else
    sscanf( GIF_LIB_VERSION, "%s %d.%d", vd, &((*info)-> versionMaj), &((*info)-> versionMin));
    if ((*info)-> versionMaj > 4) EGifSetGifVersion( "89a");
+#endif
+
    return (void*)1;
 }  
 
@@ -208,7 +254,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( !l) return nil;
    memset( l, 0, sizeof( LoadRec));
    
-   if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read))) {
+   if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read GIF_ERROR_ARG))) {
       free( l);
       return nil;
    }
@@ -319,9 +365,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       l-> gft = NULL;
       if ( req_seek( fi-> req, 0, SEEK_SET)) {
          snprintf( fi-> errbuf, 256, "Can't rewind GIF stream, seek() error:%s", strerror(req_error( fi-> req)));
-	 return false;
+         return false;
       }
-      if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read))) out;
+      if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read GIF_ERROR_ARG))) out;
       l-> passed  = -1;
       l-> transparent = -1;
    }   
@@ -519,7 +565,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
    GifFileType * g;
    
-   if ( !( g = EGifOpen( fi-> req, my_gif_write)))
+   if ( !( g = EGifOpen( fi-> req, my_gif_write GIF_ERROR_ARG)))
       return nil;
 
    return g;
