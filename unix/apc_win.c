@@ -91,27 +91,27 @@ set_net_hints( XWindow window, int task_listed, int modal, int zoom, int on_top)
       ev. data. l[0] = ( task_listed > 0) ? 0 : 1;
       ev. data. l[1] = ( long) NET_WM_STATE_SKIP_TASKBAR;
       ev. data. l[2] = 0;
-      XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
+      XSendEvent( DISP, guts. root, false, SubstructureRedirectMask|SubstructureNotifyMask, (XEvent*)&ev);
    }
 
    if ( modal >= 0) {
       ev. data. l[0] = ( modal > 0) ? 1 : 0;
       ev. data. l[1] = ( long) NET_WM_STATE_MODAL;
-      XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
+      XSendEvent( DISP, guts. root, false, SubstructureRedirectMask|SubstructureNotifyMask, (XEvent*)&ev);
    }
 
    if ( zoom >= 0) {
       ev. data. l[0] = ( zoom > 0) ? 1 : 0;
       ev. data. l[1] = ( long) NET_WM_STATE_MAXIMIZED_VERT;
       ev. data. l[2] = ( long) NET_WM_STATE_MAXIMIZED_HORZ;
-      XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
+      XSendEvent( DISP, guts. root, false, SubstructureRedirectMask|SubstructureNotifyMask, (XEvent*)&ev);
    }
    
    if ( on_top >= 0) {
       ev. data. l[0] = ( on_top > 0) ? 1 : 0;
       ev. data. l[1] = ( long) NET_WM_STATE_STAYS_ON_TOP;
       ev. data. l[1] = ( long) NET_WM_STATE_ABOVE;
-      XSendEvent( DISP, guts. root, false, 0, (XEvent*)&ev);
+      XSendEvent( DISP, guts. root, false, SubstructureRedirectMask|SubstructureNotifyMask, (XEvent*)&ev);
    }
 
    /* finally reset the list of properties */
