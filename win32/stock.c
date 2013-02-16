@@ -1412,21 +1412,21 @@ static Handle ctx_wc2SCHEME[] =
 long
 remap_color( long clr, Bool toSystem)
 {
-   PRGBColor cp = ( PRGBColor) &clr;
-   unsigned char sw = cp-> r;
    if ( toSystem && ( clr & clSysFlag)) {
       long c = clr;
       Handle * scheme = ( Handle *) ctx_remap_def( clr & wcMask, ctx_wc2SCHEME, true, ( Handle) &customScheme);
       if (( clr = ( clr & ~wcMask)) > clMaxSysColor) clr = clMaxSysColor;
-      if ( clr == clSet)   return 0xFFFFFF;
+      if ( clr == clSet || clr == clInvalid) return 0xFFFFFF;
       if ( clr == clClear) return 0;
-      if ( clr == 0) return 0xFFFFFF; // clInvalid
       c = GetSysColor( scheme[( clr & clSysMask) - 1]);
       return c;
+   } else {
+      PRGBColor cp = ( PRGBColor) &clr;
+      unsigned char sw = cp-> r;
+      cp-> r = cp-> b;
+      cp-> b = sw;
+      return clr;
    }
-   cp-> r = cp-> b;
-   cp-> b = sw;
-   return clr;
 }
 
 Color
