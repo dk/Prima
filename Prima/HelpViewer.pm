@@ -376,7 +376,9 @@ sub init
 	if ( $sec-> {FullText}) {
 		$self-> menu-> fullView-> check; 
 		$self-> {text}-> topicView(0);
-	}
+	} else {
+		$self-> {text}-> topicView(1);
+    }
 
 	$self-> {text}-> {fontPalette}-> [0]-> {name} = $sec-> {VariableFont}
 		if $sec-> {VariableFont};
