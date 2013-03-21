@@ -310,6 +310,8 @@ sub load_link
 
 		if ( $s =~ /^file:\/\/(.*)$/) {
 			$page = $1;
+		} elsif ( $s =~ m{^([:\w]+)/?$} ) {
+			$page = $1;
 		} elsif ( $s =~ /^([^\/]*)(\/)(.*)$/) {
 			( $page, $lead_slash, $section) = ( $1, $2, $3);
 		} else {
