@@ -629,6 +629,7 @@ sub add_formatted
 	
 	if ( $format eq 'text') {
 		$self-> add($text,STYLE_CODE,0);
+		$self-> add_new_line;
 	} elsif ( $format eq 'podview') {
 		while ( $text =~ m/<\s*([^<>]*)\s*>/gcs) {
 			my $cmd = lc $1;
@@ -738,7 +739,7 @@ sub read_paragraph
 			my $begun = $r-> {begun};
 			if (/^=end\s+$begun/ || /^=cut/) {
 					$r-> {begun} = '';
-					$self-> add("\n",STYLE_TEXT,0); # end paragraph
+					$self-> add_new_line; # end paragraph 
 					$r-> {cutting} = 1 if /^=cut/;
 			} else {
 					$self-> add_formatted( $r-> {begun}, $_);
@@ -754,7 +755,8 @@ sub read_paragraph
 
 		# Translate verbatim paragraph
 		if (/^\s/) { 
-			$self-> add($_,STYLE_CODE,$r-> {indent});
+			$self-> add($_,STYLE_CODE,$r-> {indent}) for split "\n", $_;
+			$self-> add_new_line;
 			next;
 		}
 
@@ -766,7 +768,6 @@ sub read_paragraph
 			$self-> add_formatted( $1, $2) if defined $2;
 			next;
 		}
-
 
 		if (s/^=//) {
 			my $Cmd;
@@ -786,20 +787,21 @@ sub read_paragraph
 			elsif ($Cmd eq 'over') {
 				push(@{$r-> {indentStack}}, $r-> {indent});
 				$r-> {indent} += ( m/^(\d+)$/ ) ? $1 : DEF_INDENT;
-				$self-> add("\n", STYLE_TEXT, 0);
 			}
 			elsif ($Cmd eq 'back') {
 				$self-> _close_topic( STYLE_ITEM);
 				$r-> {indent} = pop(@{$r-> {indentStack}}) || 0;
-				$self-> add("\n", STYLE_TEXT, 0);
 			}
 			elsif ($Cmd eq 'item') {
 				$self-> add($_, STYLE_ITEM, $r-> {indentStack}-> [-1] || DEF_INDENT);
 			}
 		}
 		else {
+			s/\n/ /g;
 			$self-> add($_, STYLE_TEXT, $r-> {indent});
 		}
+
+		$self-> add_new_line unless $r->{bulletMode};
 	}
 }
 
@@ -817,9 +819,9 @@ sub read
 			if ( /^$/) {
 				my $pb = $r-> {paragraph_buffer};
 				undef $r-> {paragraph_buffer};
-				$self-> read_paragraph("$pb\n");
+				$self-> read_paragraph($pb);
             } else {
-				$r-> {paragraph_buffer} .= " $_";
+				$r-> {paragraph_buffer} .= "\n$_";
 				next;
             }
         } elsif ( !/^$/) {
@@ -842,7 +844,7 @@ sub close_read
     }
 
 	$topicView = $self-> {topicView} unless defined $topicView;
-	$self-> add( "\n", STYLE_TEXT, 0); # end
+	$self-> add_new_line; # end
 	$self-> {contents}-> [0]-> references( $self-> {links});
 
 	goto NO_INDEX unless $self-> {readState}-> {createIndex};
@@ -886,8 +888,7 @@ sub close_read
 		last if $secid == $msecid; # do not add 'Index' entry
 		my ( $ofs, $end, $text, $style, $depth, $linkStart) = @$k;
 		my $indent = ( $style - STYLE_HEAD_1 + $depth ) * 2;
-		$self-> add("L<$text|topic://$secid>\n", STYLE_TEXT, $indent);
-		$self-> add("\n", STYLE_TEXT, 0);
+		$self-> add("L<$text|topic://$secid>", STYLE_TEXT, $indent);
 		$secid++;
 	}
 
@@ -992,22 +993,6 @@ sub add
 	my $cstyle;
 	my $r = $self-> {readState};
 	return unless $r;
-
-	# line up the wrappable text
-	if ( $style == STYLE_TEXT) {
-		if ( $p =~ m/^\n$/ ) {
-			$p = $r-> {wrapstate} . $p;
-			$r-> {wrapstate} = '';
-			$indent = $r-> {wrapindent};
-		} else {
-			chomp $p;
-			$r-> {wrapindent} = $indent unless length $r-> {wrapstate};
-			$r-> {wrapstate} .= ' ' . $p;
-			return;
-		}
-	} elsif ( length $r-> {wrapstate}) {
-		$self-> add( "\n", STYLE_TEXT, $r-> {wrapindent});
-	}
 
 	$p =~ s/\n//g; 
 	my $g = [ $indent, $r-> {bigofs}, 0];
@@ -1232,10 +1217,21 @@ sub add
 
 	# all-string format options - close brackets
 	push @$g, @{$self-> {styleInfo}-> [$style * 2 + 1]};
-
+	
 	# finish block
 	$r-> {bigofs} += length $p;
 	push @{$self-> {model}}, $g unless $no_push_block;
+}
+
+sub add_new_line
+{
+	my $self = $_[0];
+	my $r = $self-> {readState};
+	return unless $r;
+	my $p = " \n";
+	${$self-> {text}} .= $p;
+	push @{$self-> {model}}, [ 0, $r->{bigofs}, 0, tb::text(0, 1) ];
+	$r-> {bigofs} += length $p;
 }
 
 sub stop_format
