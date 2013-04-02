@@ -41,6 +41,11 @@
 #define XK_XKB_KEYS
 #include <X11/keysymdef.h>
 
+#define SELF_MESSAGE(_eventrec) {\
+guts.currentFocusTime=guts.last_time;\
+CComponent(self)-> message(self,&_eventrec);\
+guts.currentFocusTime=CurrentTime;\
+}
 
 void
 prima_send_create_event( XWindow win)
@@ -701,7 +706,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
       e. cmd      = cmMove;
       e. gen. P   = XX-> origin = wmsd-> origin;
       e. gen. source = self;
-      CComponent( self)-> message( self, &e);
+      SELF_MESSAGE(e);
       if ( PObject( self)-> stage == csDead) return false; 
    }
 
@@ -720,7 +725,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
       XX-> above = wmsd-> above;
       bzero( &e, sizeof( Event));
       e. cmd = cmZOrderChanged;
-      CComponent( self)-> message( self, &e);
+      SELF_MESSAGE(e);
       if ( PObject( self)-> stage == csDead) return false; 
    }
    
@@ -749,7 +754,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
             XX-> zoomRect.top = XX-> size.y;
          }
       }   
-      if ( e. cmd) CComponent( self)-> message( self, &e);
+      if ( e. cmd) SELF_MESSAGE(e);
       if ( PObject( self)-> stage == csDead) return false; 
    }
 
@@ -767,10 +772,10 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
          XX-> flags. withdrawn = 0;
       XX-> flags. mapped = 1;
       e. cmd = cmShow;
-      CComponent( self)-> message( self, &e);
+      SELF_MESSAGE(e);
       if ( PObject( self)-> stage == csDead) return false; 
       if ( f. cmd) {
-         CComponent( self)-> message( self, &f);
+         SELF_MESSAGE(f);
          if ( PObject( self)-> stage == csDead) return false; 
       }
     } else if ( XX-> flags. mapped && !wmsd-> mapped) {
@@ -785,10 +790,10 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
       }   
       e. cmd = cmHide;
       XX-> flags. mapped = 0;
-      CComponent( self)-> message( self, &e);
+      SELF_MESSAGE(e);
       if ( PObject( self)-> stage == csDead) return false; 
       if ( f. cmd) {
-         CComponent( self)-> message( self, &f);
+         SELF_MESSAGE(f);
          if ( PObject( self)-> stage == csDead) return false; 
       }
     }   
@@ -1324,7 +1329,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
       if ( XT_IS_WINDOW(XX)) {
 	 e. cmd = cmActivate;
-	 CComponent( self)-> message( self, &e);
+         SELF_MESSAGE(e);
          if (( PObject( self)-> stage == csDead) ||
              ( ev-> xfocus. detail == NotifyNonlinearVirtual)) return;
       }
@@ -1350,7 +1355,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       
       if ( XT_IS_WINDOW(XX)) {
 	 e. cmd = cmDeactivate;
-	 CComponent( self)-> message( self, &e);
+         SELF_MESSAGE(e);
          if (( PObject( self)-> stage == csDead) ||
              ( ev-> xfocus. detail == NotifyNonlinearVirtual)) return;
       }
@@ -1609,7 +1614,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
    if ( e. cmd) {
       guts. handled_events++;
       cmd = e. cmd;
-      CComponent( self)-> message( self, &e);
+      SELF_MESSAGE(e);
       if ( PObject( self)-> stage == csDead) return; 
       if ( e. cmd) {
          switch ( cmd) {
@@ -1625,7 +1630,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
          }
       }
       if ( secondary. cmd) {
-	 CComponent( self)-> message( self, &secondary);
+         SELF_MESSAGE(secondary);
          if ( PObject( self)-> stage == csDead) return; 
       }
    } else {
