@@ -110,7 +110,7 @@ window_subsystem_init( char * error_buf)
    wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
    wc.hCursor       = LoadCursor( NULL, IDC_ARROW);
    wc.hbrBackground = (HBRUSH)NULL;
-   wc.lpszClassName = const_char2wchar("GenericApp");
+   wc.lpszClassName = L"GenericApp";
    RegisterClassW( &wc);
 
    memset( &wc, 0, sizeof( wc));
@@ -122,7 +122,7 @@ window_subsystem_init( char * error_buf)
    wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
    wc.hCursor       = LoadCursor( NULL, IDC_ARROW);
    wc.hbrBackground = (HBRUSH)NULL;
-   wc.lpszClassName = const_char2wchar("GenericFrame");
+   wc.lpszClassName = L"GenericFrame";
    RegisterClassW( &wc);
 
    memset( &wc, 0, sizeof( wc));
@@ -134,7 +134,7 @@ window_subsystem_init( char * error_buf)
    wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
    wc.hCursor       = NULL; // LoadCursor( NULL, IDC_ARROW);
    wc.hbrBackground = (HBRUSH)NULL;
-   wc.lpszClassName = const_char2wchar("Generic");
+   wc.lpszClassName = L"Generic";
    RegisterClassW( &wc);
 
    stylusMan  = hash_create();

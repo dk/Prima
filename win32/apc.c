@@ -97,7 +97,7 @@ apc_application_create( Handle self)
    // make sure that no leftover messages, esp.WM_QUIT, are floating around
    while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE)); 
 
-   if ( !( h = CreateWindowExW( 0, const_char2wchar("GenericApp"), &wnull, 0, 0, 0, 0, 0,
+   if ( !( h = CreateWindowExW( 0, L"GenericApp", &wnull, 0, 0, 0, 0, 0,
           nil, nil, guts. instance, nil))) apiErrRet;
    sys handle = h;
    sys parent = sys owner = HWND_DESKTOP;
@@ -106,7 +106,7 @@ apc_application_create( Handle self)
    sys className = WC_APPLICATION;
    // if ( !SetTimer( h, TID_USERMAX, 100, nil)) apiErr;
    GetClientRect( h, &r);
-   if ( !( var handle = ( Handle) CreateWindowExW( 0,  const_char2wchar("Generic"), &wnull, WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
+   if ( !( var handle = ( Handle) CreateWindowExW( 0,  L"Generic", &wnull, WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
         0, 0, r. right - r. left, r. bottom - r. top, h, nil,
         guts. instance, nil))) apiErrRet;
    SetWindowLongPtr(( HWND) var handle, GWLP_USERDATA, self);
@@ -763,7 +763,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
               parentView = DHANDLE( application);
           if ( !usePos)  rcp[0] = rcp[1] = CW_USEDEFAULT;
           if ( !useSize) rcp[2] = rcp[3] = CW_USEDEFAULT;
-          if ( !( frame = CreateWindowExW( exstyle, const_char2wchar("GenericFrame"), &wnull,
+          if ( !( frame = CreateWindowExW( exstyle, L"GenericFrame", &wnull,
                 style | WS_CLIPCHILDREN,
                 rcp[0], rcp[1], rcp[2], rcp[3],
                 parentView, nil, guts. instance, nil)))
@@ -777,7 +777,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
                    0,0,0,0,SWP_NOMOVE | SWP_NOSIZE  | SWP_NOACTIVATE))
                 apiErr;
           GetClientRect( frame, &r);
-          if ( !( ret = CreateWindowExW( 0,  const_char2wchar("Generic"), &wnull,
+          if ( !( ret = CreateWindowExW( 0,  L"Generic", &wnull,
                 WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
                 0, 0, r. right - r. left, r. bottom - r. top, frame, nil,
                 guts. instance, nil)))
@@ -797,7 +797,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
        if ( parentHandle) parentView = parentHandle;
        sys parentHandle = parentHandle;
 
-       if ( !( ret = CreateWindowExW( exstyle,  (LPCWSTR) const_char2wchar("Generic"), &wnull,
+       if ( !( ret = CreateWindowExW( exstyle,  L"Generic", &wnull,
              style | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 0, 0,
              parentView, nil, guts. instance, nil)))
           apiErrRet;
@@ -1123,40 +1123,53 @@ map_tildas( WCHAR * buf, int len)
          continue;
       }
    }
-   buf[len - 1] = 0;
 }
+      
 
 static WCHAR *
 map_text_accel( PMenuItemReg i)
 {
    char * c;
    int l1, l2 = 0, amps = 0;
-   WCHAR * buf;
+   WCHAR *buf, *text, *accel;
 
-   l1 = 1 + (( i-> flags. utf8_text && HAS_WCHAR) ? prima_utf8_length( i-> text) : strlen( i-> text));
-   c = i-> text;  while (*c++) if ( *c == '&') amps++;
-   if ( i-> accel) {
-      l2 = 1 + (( i-> flags. utf8_accel && HAS_WCHAR) ? prima_utf8_length( i-> accel) : strlen( i-> accel));
-      c = i-> accel; while (*c++) if ( *c == '&') amps++;
+   c = i-> text;
+   while (*c++) if ( *c == '&') amps++;
+   if ( i-> flags. utf8_text && HAS_WCHAR) {
+      text = alloc_utf8_to_wchar( i-> text, prima_utf8_length( i-> text), &l1);
+   } else {
+      l1 = strlen( i-> text);
+      text = alloc_ascii_to_wchar( i-> text, l1);
+   }      
+  
+   if ( i-> accel ) {
+      c = i-> accel; 
+      while (*c++) if ( *c == '&') amps++;
+      if ( i-> flags. utf8_accel && HAS_WCHAR) {
+         accel = alloc_utf8_to_wchar( i-> accel, prima_utf8_length( i-> accel), &l2);
+      } else {
+         l2 = strlen( i-> accel);
+         accel = alloc_ascii_to_wchar( i-> accel, l2);
+      }
    }
-   buf = malloc( sizeof( WCHAR) * ( l1 + l2 + amps));
-   if ( !buf) return nil;
-   memset( buf, 0, sizeof( WCHAR) * ( l1 + l2 + amps));
+
+   buf = malloc(sizeof(WCHAR) * (l1 + l2 + amps + 1));
+
+   memcpy( buf, text, l1 * sizeof(WCHAR));
+   free(text);
+
+   if ( i->accel ) {
+      buf[l1] = '\t';
+      memcpy( buf + l1 + 1, accel, l2 * sizeof(WCHAR));
+      free(accel);
+   }
    
-   if ( i-> flags. utf8_text && HAS_WCHAR) 
-      utf8_to_wchar( i-> text, buf, strlen(i->text), l1 - 1);
-   else
-      MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, i-> text, l1 - 1, buf, l1 * 2 - 2);
-   if ( i-> accel) {
-      buf[l1 - 1] = '\t';
-      if ( i-> flags. utf8_accel && HAS_WCHAR) 
-         utf8_to_wchar( i-> accel, buf + l1, strlen(i->accel), l2);
-      else
-         MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, i-> accel, l2 - 1, buf + l1, l2 * 2 - 2);
-   }
    map_tildas( buf, l1 + l2 + amps);
+   buf[l1 + l2 + amps] = 0;
+   
    if ( !HAS_WCHAR)
-      wchar2char(( char*) buf, buf, l1 + l2 + amps); 
+     wchar2char(( char*) buf, buf, l1 + l2 + amps); 
+
    return buf;
 }
 
@@ -1252,7 +1265,7 @@ apc_window_set_caption( Handle self, const char * caption, Bool utf8)
 {
    objCheck false;
    if ( HAS_WCHAR && utf8) {
-      WCHAR * c = alloc_utf8_to_wchar( caption, -1);
+      WCHAR * c = alloc_utf8_to_wchar( caption, -1, NULL);
       if ( !( rc = SetWindowTextW( HANDLE, c))) apiErr;
       free( c);
    } else {

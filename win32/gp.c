@@ -883,8 +883,11 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
 
    if ( !HAS_WCHAR) utf8 = false;
 
-   if ( utf8)  
-      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) return false;
+   if ( utf8) {
+      int mb_len;
+      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len, &mb_len))) return false;
+      len = mb_len;
+   }      
 
    if ( GetROP2( sys ps) != R2_COPYPEN) {
       STYLUS_USE_BRUSH( ps);
@@ -1049,6 +1052,12 @@ apc_gp_get_font_abc( Handle self, int first, int last, Bool unicode)
    return f1;
 }}
 
+static Handle ipa_ranges[] = {
+  0x0250 , 0x02AF,	// 4  IPA Extensions
+  0x1D00 , 0x1D7F,  //    Phonetic Extensions
+  0x1D80 , 0x1DBF,  //    Phonetic Extensions Supplement
+};
+
 static Handle bopomoto_ranges[] = {
   0x3100 , 0x312f,  // 51 Bopomofo  
   0x31a0 , 0x31bf,  //    Extended Bopomofo 
@@ -1064,10 +1073,10 @@ static Handle cjk_ranges[] = {
 
 static Handle unicode_subranges[ 84 * 2] = {
   0x0020 , 0x007e,  // 0  Basic Latin 
-  0x00a0 , 0x00ff,  // 1  Latin-1 Supplement 
+  0x0080 , 0x00ff,  // 1  Latin-1 Supplement 
   0x0100 , 0x017f,  // 2  Latin Extended-A 
   0x0180 , 0x024f,  // 3  Latin Extended-B 
-  0x0250 , 0x02af,  // 4  IPA Extensions 
+        3, (Handle) &ipa_ranges,
   0x02b0 , 0x02ff,  // 5  Spacing Modifier Letters 
   0x0300 , 0x036f,  // 6  Combining Diacritical Marks 
   0x0370 , 0x03ff,  // 7  Basic Greek 
@@ -1649,8 +1658,11 @@ apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang,
 {
    int ret;
    if ( !HAS_WCHAR) utf8 = false;
-   if ( utf8)  
-      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) return 0;
+   if ( utf8) {
+      int mb_len;
+      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len, &mb_len))) return 0;
+      len = mb_len;
+   }      
    ret = gp_get_text_width( self, text, len, addOverhang, utf8);
    if ( utf8)
       free(( char*) text);
@@ -1666,11 +1678,14 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
    if ( !HAS_WCHAR) utf8 = false;
    memset( pt, 0, sizeof( Point) * 5);
 
-   if ( utf8)  
-      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len))) {
+   if ( utf8) {
+      int mb_len;
+      if ( !( text = ( char *) alloc_utf8_to_wchar( text, len, &mb_len))) {
          free( pt);
          return nil;
       }
+      len = mb_len;
+   }
 
    pt[0].y = pt[2]. y = var font. ascent - 1;
    pt[1].y = pt[3]. y = - var font. descent;

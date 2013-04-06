@@ -586,12 +586,10 @@ extern Bool         stylus_extpenned( PStylus stylus, int excludeFlags);
 extern void         stylus_free( PDCStylus res, Bool permanent);
 extern DWORD        stylus_get_extpen_style( PStylus s);
 extern HRGN         region_create( Handle mask);
-extern void         utf8_to_wchar( const char * utf8, WCHAR * u16, int src_len, int target_len );
-extern WCHAR *      alloc_utf8_to_wchar( const char * utf8, int length);
-extern WCHAR *      alloc_char_to_wchar( const char * text, int length);
+extern WCHAR *      alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len);
+extern WCHAR *      alloc_ascii_to_wchar( const char * text, int length);
 extern void         wchar2char( char * dest, WCHAR * src, int lim);
 extern void         char2wchar( WCHAR * dest, char * src, int lim);
-extern const WCHAR* const_char2wchar( const char * src);
 extern BOOL         gp_GetTextMetrics( HDC dc, LPTEXTMETRICW tm);
 extern void         textmetric_c2w( LPTEXTMETRICA from, LPTEXTMETRICW to);
 

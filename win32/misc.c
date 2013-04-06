@@ -310,8 +310,8 @@ Bool
 apc_show_message( const char * message, Bool utf8)
 {
    Bool ret;
-   if ( HAS_WCHAR && utf8 && (message = ( char*)alloc_utf8_to_wchar( message, -1))) {
-      ret = MessageBoxW( NULL, ( WCHAR*) message, (WCHAR*) const_char2wchar( "Prima"), MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
+   if ( HAS_WCHAR && utf8 && (message = ( char*)alloc_utf8_to_wchar( message, -1, NULL))) {
+      ret = MessageBoxW( NULL, ( WCHAR*) message, L"Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
       free(( void*) message); 
    } else
       ret = MessageBox( NULL, message, "Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
@@ -618,27 +618,8 @@ apc_dl_export(char *path)
    return LoadLibrary( path) != NULL;
 }   
 
-void
-utf8_to_wchar( const char * utf8, WCHAR * u16, int src_len, int target_len )
-{
-   STRLEN charlen;
-   while ( target_len--) {
-      register UV u = ( 
-#if PERL_PATCHLEVEL >= 16
-         utf8_to_uvchr_buf(( U8*) utf8, ( U8*)(utf8 + src_len), &charlen)
-#else
-         utf8_to_uvchr(( U8*) utf8, &charlen)
-#endif
-      );
-      *(u16++) = ( u < 0x10000) ? u : 0xffff;
-      utf8 += charlen;
-      src_len -= charlen;
-      if ( src_len <= 0 || charlen == 0) break;
-   }
-}
-
 WCHAR *
-alloc_utf8_to_wchar( const char * utf8, int length)
+alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len)
 {
    WCHAR * ret;
    int size;
@@ -648,9 +629,13 @@ alloc_utf8_to_wchar( const char * utf8, int length)
       length = u2 - utf8;
    }
    size = MultiByteToWideChar(CP_UTF8, 0, utf8, length, NULL, 0);
-   if ( size < 0) return nil;
+   if ( size < 0) {
+      if ( mb_len ) *mb_len = 0;
+      return nil;
+   }
    if ( !( ret = malloc( size * sizeof( WCHAR)))) return nil;
    MultiByteToWideChar(CP_UTF8, 0, utf8, length, ret, size);
+   if ( mb_len ) *mb_len = size;
    return ret;
 }
 
@@ -676,23 +661,14 @@ char2wchar( WCHAR * dest, char * src, int lim)
    while ( --lim) *(dest--) = *(src--);
 }
 
-static WCHAR wbuf[256];
-
-const WCHAR *
-const_char2wchar( const char * src)
-{
-    char2wchar( wbuf, (char*)src, 256);
-    return wbuf;
-}
-
 WCHAR *
-alloc_char_to_wchar( const char * text, int length)
+alloc_ascii_to_wchar( const char * text, int length)
 {
    WCHAR * ret;
    if ( text == NULL ) text = "";
    if ( length < 0) length = strlen( text) + 1;
    if ( !( ret = malloc( length * sizeof( WCHAR)))) return nil;
-   char2wchar( ret, (char*) text, length);
+   MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, text, length, ret, length * 2);
    return ret;
 }
 
