@@ -1118,14 +1118,14 @@ map_tildas( WCHAR * buf, int len)
              buf[ j] = '&';
           continue;
       } else if ( buf[ j] == '&') {
-         memmove( buf + j + 1, buf + j, (len - j - 1) * sizeof( WCHAR));
+         memmove( buf + j + 1, buf + j, (len - j + 1) * sizeof( WCHAR));
          j++;
+         len++;
          continue;
       }
    }
 }
       
-
 static WCHAR *
 map_text_accel( PMenuItemReg i)
 {
@@ -1153,7 +1153,7 @@ map_text_accel( PMenuItemReg i)
       }
    }
 
-   buf = malloc(sizeof(WCHAR) * (l1 + l2 + amps + 1));
+   buf = malloc(sizeof(WCHAR) * (l1 + l2 + amps + 2));
 
    memcpy( buf, text, l1 * sizeof(WCHAR));
    free(text);
@@ -1162,10 +1162,11 @@ map_text_accel( PMenuItemReg i)
       buf[l1] = '\t';
       memcpy( buf + l1 + 1, accel, l2 * sizeof(WCHAR));
       free(accel);
+      l2++;
    }
    
-   map_tildas( buf, l1 + l2 + amps);
-   buf[l1 + l2 + amps] = 0;
+   buf[l1 + l2] = 0;
+   map_tildas( buf, l1 + l2);
    
    if ( !HAS_WCHAR)
      wchar2char(( char*) buf, buf, l1 + l2 + amps); 
