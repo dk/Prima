@@ -148,40 +148,25 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
          break;
       case CF_UNICODETEXT:
 	 {
-             WCHAR *ptr, *p;
-             int i, len, size;
-             char *utf;
+             WCHAR *ptr;
              Bool ret = false;
-             void *ph = GetClipboardData( CF_UNICODETEXT);
-
+             void *ph;
+             
+             ph = GetClipboardData( CF_UNICODETEXT);
              if ( ph == nil) {
                 apcErr( errInvClipboardData);
                 return false;
              }
              if ( !( ptr = ( WCHAR*) GlobalLock( ph)))
                 apiErrRet;
-             c-> length = len = 0;
-             p = ptr;
-             while ( *(p++)) len++;
-             p = ptr;
-             size = len + 8; 
-             if (( utf = c-> data = malloc( size))) {
-                for ( i = 0; i < len; i++, p++) {
-                   if ( *p == '\r') continue;
-                   if ( c-> length > size - 8) {
-                      int dt = utf - (char*)c-> data;
-                      char * d = malloc( size *= 2);
-                      if ( !d) goto CLEAR;
-                      memcpy( d, c-> data, c-> length);
-                      utf = c-> data + dt;
-                   }
-                   utf = uvchr_to_utf8( utf, *p);
-                }
+             c->length = WideCharToMultiByte(CP_UTF8, 0, ptr, -1, NULL, 0, NULL, 0);
+             if (( c->data = malloc( c-> length ) )) {
+                WideCharToMultiByte(CP_UTF8, 0, ptr, -1, c->data, c->length, NULL, 0); 
+                if ( c->length > 0) c->length--; // terminating 0
+                ret = true;
+             } else {
+                c->length = 0;
              }
-             ret = true;
-          CLEAR:;
-             *utf = 0;
-             c-> length = strlen( utf);
              GlobalUnlock( ph);
              return ret;
 	 }
