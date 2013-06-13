@@ -1641,6 +1641,42 @@ __END__
 
 Prima::TextView - rich text browser widget
 
+=head1 SYNOPSIS
+
+ use strict;
+ use warnings;
+ use Prima qw(TextView Application);
+ 
+ my $w = Prima::MainWindow-> create(
+     name => 'TextView example',
+ );
+ 
+ my $t = $w->insert(TextView =>
+     text     => 'Hello from TextView!',
+     pack     => { expand => 1, fill => 'both' },
+ );
+ 
+ # Create a single block that renders all the text using the default font
+ my $tb = tb::block_create();
+ my $text_width_px = $t->get_text_width($t->text);
+ my $font_height_px = $t->font->height;
+ $tb->[tb::BLK_WIDTH]  = $text_width_px;
+ $tb->[tb::BLK_HEIGHT] = $font_height_px;
+ $tb->[tb::BLK_BACKCOLOR] = cl::Back;
+ $tb->[tb::BLK_FONT_SIZE] = int($font_height_px) + tb::F_HEIGHT;
+ # Add an operation that draws the text:
+ push @$tb, tb::text(0, length($t->text), $text_width_px);
+ 
+ # Set the markup block(s) and recalculate the ymap
+ $t->{blocks} = [$tb];
+ $t->recalc_ymap;
+ 
+ # Additional step needed for horizontal scroll as well as per-character
+ # selection:
+ $t->paneSize($text_width_px, $font_height_px);
+ 
+ run Prima;
+
 =head1 DESCRIPTION
 
 Prima::TextView accepts blocks of formatted text, and provides
