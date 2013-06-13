@@ -938,7 +938,11 @@ sub block_draw
 					$self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
 					$c_taint = 1;
 				}
-				$ret = $canvas-> text_out( substr( $$t, $o + $$b[$i + 1], $$b[$i + 2]), $x, $y);
+				# Make we ultimately return "fail" if any text_out operation
+				# in this block fails. XXX if there are multiple failures, $@
+				# will only contain the last one. Consider consolidating
+				# them somehow.
+				$ret &&= $canvas-> text_out( substr( $$t, $o + $$b[$i + 1], $$b[$i + 2]), $x, $y);
 			}
 			$x += $$b[ $i + 3];
 		} elsif ( $cmd == tb::OP_FONT) {
