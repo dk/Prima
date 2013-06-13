@@ -489,7 +489,7 @@ sub recalc_ymap
 	# if $from is zero or not defined, clear the ymap; otherwise we append
 	# to what was already calculated. This is optimized for *building* a
 	# collection of blocks; if you need to change a collection of blocks,
-	# you should always set from to a false value.
+	# you should always set $from to a false value.
 	$self-> {ymap} = [] unless $from; # ok if $from == 0
 	my $ymap = $self-> {ymap};
 	my $blocks = $self-> {blocks};
