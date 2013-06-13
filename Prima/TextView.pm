@@ -969,6 +969,8 @@ sub block_draw
 			$state[ tb::BLK_COLOR + (($$b[ $i + 1] & tb::BACKCOLOR_FLAG) ? 1 : 0)] 
 				= $$b[$i + 1];
 			$c_taint = undef;
+		} else {
+			die("Invalid Prima::TextView block op $cmd\n");
 		}
 	}
 
