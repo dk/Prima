@@ -486,16 +486,20 @@ sub realize_state
 sub recalc_ymap
 {
 	my ( $self, $from) = @_;
+	# if $from is zero or not defined, clear the ymap; otherwise we append
+	# to what was already calculated. This is optimized for *building* a
+	# collection of blocks; if you need to change a collection of blocks,
+	# you should always set from to a false value.
 	$self-> {ymap} = [] unless $from; # ok if $from == 0
 	my $ymap = $self-> {ymap};
-	my ( $i, $lim) = ( defined($from) ? $from : 0, scalar(@{$self-> {blocks}}));
-	my $b = $self-> {blocks};
+	my $blocks = $self-> {blocks};
+	my ( $i, $lim) = ( defined($from) ? $from : 0, scalar(@{$blocks}));
 	for ( ; $i < $lim; $i++) {
-		$_ = $$b[$i];
-		my $y1 = $$_[ tb::BLK_Y];
-		my $y2 = $$_[ tb::BLK_HEIGHT] + $y1;
-		for ( int( $y1 / tb::YMAX) .. int ( $y2 / tb::YMAX)) {
-			push @{$ymap-> [$_]}, $i; 
+		my $block = $$blocks[$i];
+		my $y1 = $block->[ tb::BLK_Y];
+		my $y2 = $block->[ tb::BLK_HEIGHT] + $y1;
+		for my $y ( int( $y1 / tb::YMAX) .. int ( $y2 / tb::YMAX)) {
+			push @{$ymap-> [$y]}, $i;
 		}
 	}
 }
