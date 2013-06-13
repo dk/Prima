@@ -830,10 +830,9 @@ sub on_paint
 
 	my ( $sx1, $sy1, $sx2, $sy2) = @{$self-> {selection}};
 
-	for ( int( $cy[0] / tb::YMAX) .. int( $cy[1] / tb::YMAX)) {
-		next unless $self-> {ymap}-> [$_];
-		for ( @{$self-> {ymap}-> [$_]}) {
-			my $j = $_;
+	for my $ymap_i ( int( $cy[0] / tb::YMAX) .. int( $cy[1] / tb::YMAX)) {
+		next unless $self-> {ymap}-> [$ymap_i];
+		for my $j ( @{$self-> {ymap}-> [$ymap_i]}) {
 			$b = $$bx[$j];
 			my ( $x, $y) = ( 
 				$aa[0] - $offset + $$b[ tb::BLK_X], 
