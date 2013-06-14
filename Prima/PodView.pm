@@ -770,8 +770,8 @@ sub read_paragraph
 		}
 
 		if (s/^=//) {
-			my $Cmd;
-			($Cmd, $_) = split(' ', $_, 2);
+			my ($Cmd, $args) = split(' ', $_, 2);
+			$args = '' unless defined $args;
 			if ($Cmd eq 'cut') {
 				$r-> {cutting} = 1;
 			}
@@ -779,21 +779,21 @@ sub read_paragraph
 				$r-> {cutting} = 0;
 			}
 			elsif ($Cmd eq 'head1') {
-				$self-> add($_, STYLE_HEAD_1, 0);
+				$self-> add( $args, STYLE_HEAD_1, 0);
 			}
 			elsif ($Cmd eq 'head2') {
-				$self-> add( $_, STYLE_HEAD_2, 0);
+				$self-> add( $args, STYLE_HEAD_2, 0);
 			}
 			elsif ($Cmd eq 'over') {
 				push(@{$r-> {indentStack}}, $r-> {indent});
-				$r-> {indent} += ( m/^(\d+)$/ ) ? $1 : DEF_INDENT;
+				$r-> {indent} += ( $args =~ m/^(\d+)$/ ) ? $1 : DEF_INDENT;
 			}
 			elsif ($Cmd eq 'back') {
 				$self-> _close_topic( STYLE_ITEM);
 				$r-> {indent} = pop(@{$r-> {indentStack}}) || 0;
 			}
 			elsif ($Cmd eq 'item') {
-				$self-> add($_, STYLE_ITEM, $r-> {indentStack}-> [-1] || DEF_INDENT);
+				$self-> add( $args, STYLE_ITEM, $r-> {indentStack}-> [-1] || DEF_INDENT);
 			}
 		}
 		else {
