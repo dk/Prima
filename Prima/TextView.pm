@@ -899,7 +899,7 @@ sub on_paint
 				$self-> selection_state( $canvas);
 				$self-> block_draw( $canvas, $b, $x, $y);
 				$self-> {selectionPaintMode} = 0;
-			} else {
+			} else { # no selection case
 				$self-> block_draw( $canvas, $b, $x, $y);
 			}
 		}
@@ -969,8 +969,8 @@ sub block_draw
 			$state[ tb::BLK_COLOR + (($$b[ $i + 1] & tb::BACKCOLOR_FLAG) ? 1 : 0)] 
 				= $$b[$i + 1];
 			$c_taint = undef;
-		} else {
-			die("Invalid Prima::TextView block op $cmd\n");
+		} elsif ($cmd >= @tb::oplen) {
+			die("Unknown Prima::TextView block op $cmd\n");
 		}
 	}
 
