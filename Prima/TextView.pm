@@ -938,7 +938,7 @@ sub block_draw
 					$self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
 					$c_taint = 1;
 				}
-				# Make we ultimately return "fail" if any text_out operation
+				# Make sure we ultimately return "fail" if any text_out operation
 				# in this block fails. XXX if there are multiple failures, $@
 				# will only contain the last one. Consider consolidating
 				# them somehow.
