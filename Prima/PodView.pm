@@ -1034,7 +1034,6 @@ sub add
 		$p =~ s/[\s\t]+/ /g;
 		$p =~ s/([\200-\377])/"E<".ord($1).">"/ge;
 		$p =~ s/(E<[^<>]+>)/noremap($1)/ge;
-		$p =~ s/(\W)([\$\@\%\*\&])(?!Z<>)([^\s\(\)\{\}]+)/$1C<$2$3>/g; 
 		$p =~ s/([:A-Za-z_][:A-Za-z_0-9]*\([^\)]*\))/C<$1>/g;
 		my $maxnest = 10;
 		my $linkStart = scalar @{$self-> {links}};
@@ -1047,9 +1046,9 @@ sub add
 					[ pos($m) - 1, lc $1, 1];
 				substr $m, $ids[$_][0], $ids[$_][2], '_' x $ids[$_][2] for -2,-1;
 			}
-			while ( $m =~ m/([A-Z])(<<+\s?)/gcs) {
-				my ( $pos, $cmd, $left, $right) = ( pos($m), $1, $2, ' ' . ('>' x ( length($2) - 1)));
-				if ( $m =~ m/(.*?)($right)(?!>)/gcs) {
+			while ( $m =~ m/([A-Z])(<<+) /gcs) {
+				my ( $pos, $cmd, $left, $right) = ( pos($m), $1, $2, ('>' x ( length($2))));
+				if ( $m =~ m/\G.*? $right(?!>)/gcs) {
 					push @ids, 
 						[ 
 							$pos - length($left) - 1, 
