@@ -24,6 +24,7 @@ For Win32, CPAN contains binary distributions that can
 be installed just for this purpose:
 
   http://search.cpan.org/~karasik/Prima-codecs-win32/
+  http://search.cpan.org/~karasik/Prima-codecs-win64/
 
 it should work for all MSVC and GCC compilers and for native,
 cygwin, and mingw/strawberry perl runtimes.
