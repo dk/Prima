@@ -486,16 +486,20 @@ sub realize_state
 sub recalc_ymap
 {
 	my ( $self, $from) = @_;
+	# if $from is zero or not defined, clear the ymap; otherwise we append
+	# to what was already calculated. This is optimized for *building* a
+	# collection of blocks; if you need to change a collection of blocks,
+	# you should always set $from to a false value.
 	$self-> {ymap} = [] unless $from; # ok if $from == 0
 	my $ymap = $self-> {ymap};
-	my ( $i, $lim) = ( defined($from) ? $from : 0, scalar(@{$self-> {blocks}}));
-	my $b = $self-> {blocks};
+	my $blocks = $self-> {blocks};
+	my ( $i, $lim) = ( defined($from) ? $from : 0, scalar(@{$blocks}));
 	for ( ; $i < $lim; $i++) {
-		$_ = $$b[$i];
-		my $y1 = $$_[ tb::BLK_Y];
-		my $y2 = $$_[ tb::BLK_HEIGHT] + $y1;
-		for ( int( $y1 / tb::YMAX) .. int ( $y2 / tb::YMAX)) {
-			push @{$ymap-> [$_]}, $i; 
+		my $block = $$blocks[$i];
+		my $y1 = $block->[ tb::BLK_Y];
+		my $y2 = $block->[ tb::BLK_HEIGHT] + $y1;
+		for my $y ( int( $y1 / tb::YMAX) .. int ( $y2 / tb::YMAX)) {
+			push @{$ymap-> [$y]}, $i;
 		}
 	}
 }
@@ -826,10 +830,9 @@ sub on_paint
 
 	my ( $sx1, $sy1, $sx2, $sy2) = @{$self-> {selection}};
 
-	for ( int( $cy[0] / tb::YMAX) .. int( $cy[1] / tb::YMAX)) {
-		next unless $self-> {ymap}-> [$_];
-		for ( @{$self-> {ymap}-> [$_]}) {
-			my $j = $_;
+	for my $ymap_i ( int( $cy[0] / tb::YMAX) .. int( $cy[1] / tb::YMAX)) {
+		next unless $self-> {ymap}-> [$ymap_i];
+		for my $j ( @{$self-> {ymap}-> [$ymap_i]}) {
 			$b = $$bx[$j];
 			my ( $x, $y) = ( 
 				$aa[0] - $offset + $$b[ tb::BLK_X], 
@@ -896,7 +899,7 @@ sub on_paint
 				$self-> selection_state( $canvas);
 				$self-> block_draw( $canvas, $b, $x, $y);
 				$self-> {selectionPaintMode} = 0;
-			} else {
+			} else { # no selection case
 				$self-> block_draw( $canvas, $b, $x, $y);
 			}
 		}
@@ -935,7 +938,11 @@ sub block_draw
 					$self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
 					$c_taint = 1;
 				}
-				$ret = $canvas-> text_out( substr( $$t, $o + $$b[$i + 1], $$b[$i + 2]), $x, $y);
+				# Make we ultimately return "fail" if any text_out operation
+				# in this block fails. XXX if there are multiple failures, $@
+				# will only contain the last one. Consider consolidating
+				# them somehow.
+				$ret &&= $canvas-> text_out( substr( $$t, $o + $$b[$i + 1], $$b[$i + 2]), $x, $y);
 			}
 			$x += $$b[ $i + 3];
 		} elsif ( $cmd == tb::OP_FONT) {
@@ -962,6 +969,8 @@ sub block_draw
 			$state[ tb::BLK_COLOR + (($$b[ $i + 1] & tb::BACKCOLOR_FLAG) ? 1 : 0)] 
 				= $$b[$i + 1];
 			$c_taint = undef;
+		} elsif ($cmd >= @tb::oplen) {
+			die("Unknown Prima::TextView block op $cmd\n");
 		}
 	}
 
@@ -1631,6 +1640,42 @@ __END__
 =head1 NAME 
 
 Prima::TextView - rich text browser widget
+
+=head1 SYNOPSIS
+
+ use strict;
+ use warnings;
+ use Prima qw(TextView Application);
+ 
+ my $w = Prima::MainWindow-> create(
+     name => 'TextView example',
+ );
+ 
+ my $t = $w->insert(TextView =>
+     text     => 'Hello from TextView!',
+     pack     => { expand => 1, fill => 'both' },
+ );
+ 
+ # Create a single block that renders all the text using the default font
+ my $tb = tb::block_create();
+ my $text_width_px = $t->get_text_width($t->text);
+ my $font_height_px = $t->font->height;
+ $tb->[tb::BLK_WIDTH]  = $text_width_px;
+ $tb->[tb::BLK_HEIGHT] = $font_height_px;
+ $tb->[tb::BLK_BACKCOLOR] = cl::Back;
+ $tb->[tb::BLK_FONT_SIZE] = int($font_height_px) + tb::F_HEIGHT;
+ # Add an operation that draws the text:
+ push @$tb, tb::text(0, length($t->text), $text_width_px);
+ 
+ # Set the markup block(s) and recalculate the ymap
+ $t->{blocks} = [$tb];
+ $t->recalc_ymap;
+ 
+ # Additional step needed for horizontal scroll as well as per-character
+ # selection:
+ $t->paneSize($text_width_px, $font_height_px);
+ 
+ run Prima;
 
 =head1 DESCRIPTION
 
