@@ -90,6 +90,7 @@ typedef struct _LoadRec {
    struct  jpeg_error_mgr         e;
    jmp_buf                        j;
    Bool                        init;
+   Byte *                    tmpbuf;
 } LoadRec;
 
 
@@ -362,11 +363,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
    jpeg_start_decompress( &l-> d);
    bpp = l-> d. output_components * 8;   
-   if ( bpp != 8 && bpp != 24) {
+   if ( bpp != 8 && bpp != 24 && bpp != 32) {
       sprintf( fi-> errbuf, "Bit depth %d is not supported", bpp);
       return false;
    }   
 
+   if ( bpp == 32) bpp = 24;
    if ( bpp == 8) bpp |= imGrayScale;
    CImage( fi-> object)-> create_empty( fi-> object, 1, 1, bpp);
    if ( fi-> noImageData) {
@@ -374,19 +376,46 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       (void) hv_store( fi-> frameProperties, "height", 6, newSViv( l-> d. output_height), 0);
       jpeg_abort_decompress( &l-> d);
       return true;
-   }   
+   }
+
    
    CImage( fi-> object)-> create_empty( fi-> object, l-> d. output_width, l-> d. output_height, bpp);
    EVENT_HEADER_READY(fi);
    {
       Byte * dest = i-> data + ( i-> h - 1) * i-> lineSize;
+
+      if (l-> d. output_components == 4) {
+         if ( !(l->tmpbuf = malloc( i-> w * 4))) {
+            sprintf( fi-> errbuf, "Not enough memory");
+            return false;
+         }
+      }
+
       while ( l-> d.output_scanline < l-> d.output_height ) {
-	 JSAMPROW sarray[1];
-	 int scanlines;
-         sarray[0] = dest;
+         JSAMPROW sarray[1];
+         int scanlines;
+         sarray[0] = (l-> d. output_components == 4) ? l->tmpbuf : dest;
          scanlines = jpeg_read_scanlines(&l-> d, sarray, 1);
-         if ( bpp == 24) 
+         switch (l-> d. output_components) {
+         case 3:
             cm_reverse_palette(( PRGBColor) dest, ( PRGBColor) dest, i-> w);
+            break;
+         case 4:
+            {
+                register Byte * s = l->tmpbuf - 4;
+                register Byte * d = dest;
+                register int w = i->w;
+                register Byte mul;
+                while (w-- > 0) {
+                    s += 7;
+                    mul = *s--;
+                    *d++ = *s-- * mul / 255;
+                    *d++ = *s-- * mul / 255;
+                    *d++ = *s * mul / 255;
+                }
+            }
+            break;
+         }
          dest -= scanlines * i-> lineSize;
          EVENT_TOPDOWN_SCANLINES_READY(fi,scanlines);
       }   
@@ -404,6 +433,7 @@ close_load( PImgCodec instance, PImgLoadFileInstance fi)
    my_src_ptr src = (my_src_ptr) l->d.src;
    free( src-> buffer);
    free( src);
+   free(l->tmpbuf);
    l->d.src = NULL;
    jpeg_destroy_decompress(&l-> d);
    free( l);
