@@ -129,6 +129,7 @@ static CharSetInfo std_charsets[] = {
 #define MAX_GLYPH_SIZE (guts.limits.request_length / 256)
 
 static PHash encodings    = nil;
+static PHash mono_fonts   = nil; /* family->mono font mapping */
 static PHash mismatch     = nil; /* fonts not present in xft base */
 static char  fontspecific[] = "fontspecific";
 static CharSetInfo * locale = nil;
@@ -231,6 +232,7 @@ prima_xft_init(void)
 #endif
 
    mismatch     = hash_create();
+   mono_fonts   = hash_create();
    encodings    = hash_create();
    for ( i = 0; i < MAX_CHARSET; i++) {
       int length = 0;
@@ -259,6 +261,7 @@ prima_xft_done(void)
          FcCharSetDestroy( std_charsets[i]. fcs);
    hash_destroy( encodings, false);
    hash_destroy( mismatch, false);
+   hash_destroy( mono_fonts, true);
 }
 
 static unsigned short
@@ -275,6 +278,31 @@ utf8_flag_strncpy( char * dst, const char * src, unsigned int maxlen, unsigned s
 }
 
 static void
+fcpattern2fontnames( FcPattern * pattern, Font * font)
+{
+   FcChar8 * s;
+
+   if ( FcPatternGetString( pattern, FC_FAMILY, 0, &s) == FcResultMatch)
+      font-> utf8_flags |= utf8_flag_strncpy( font-> name, (char*)s, 255, FONT_UTF8_NAME);
+   if ( FcPatternGetString( pattern, FC_FOUNDRY, 0, &s) == FcResultMatch)
+      font-> utf8_flags |= utf8_flag_strncpy( font-> family, (char*)s, 255, FONT_UTF8_FAMILY);
+
+   /* fake family */
+   if (
+         ( strcmp(font->family, "") == 0) ||
+         ( strcmp(font->family, "unknown") == 0)
+   ) {
+      char * name   = font->name;
+      char * family = font->family;
+      while (*name && *name != ' ') {
+         *family++ = (*name < 127 ) ? tolower(*name) : *name;
+         name++;
+      }
+      *family = 0;
+   }
+}
+
+static void
 fcpattern2font( FcPattern * pattern, PFont font)
 {
    FcChar8 * s;
@@ -283,10 +311,8 @@ fcpattern2font( FcPattern * pattern, PFont font)
    FcCharSet *c = nil;
 
    /* FcPatternPrint( pattern); */
-   if ( FcPatternGetString( pattern, FC_FAMILY, 0, &s) == FcResultMatch)
-      font-> utf8_flags |= utf8_flag_strncpy( font-> name, (char*)s, 255, FONT_UTF8_NAME);
-   if ( FcPatternGetString( pattern, FC_FOUNDRY, 0, &s) == FcResultMatch)
-      font-> utf8_flags |= utf8_flag_strncpy( font-> family, (char*)s, 255, FONT_UTF8_FAMILY);
+   fcpattern2fontnames(pattern, font);
+
    font-> style = 0;
    if ( FcPatternGetInteger( pattern, FC_SLANT, 0, &i) == FcResultMatch) 
       if ( i == FC_SLANT_ITALIC || i == FC_SLANT_OBLIQUE)
@@ -390,6 +416,89 @@ try_size( Handle self, Font f, double size)
    return ( PCachedFont) hash_fetch( guts. font_hash, &key, sizeof( FontKey));
 }
 
+static char *
+find_good_monospaced_font_by_family( Font * f ) 
+{
+   static Bool initialized = 0;
+
+   if ( !initialized ) {
+      /* iterate over all monospace font, build family->name (i.e best default match) hash */
+      int i,j;
+      FcFontSet * s;
+      FcPattern   *pat, **ppat;
+      FcObjectSet *os;
+      CharSetInfo *csi;
+
+      initialized = 1;
+
+      pat = FcPatternCreate();
+      FcPatternAddBool( pat, FC_SCALABLE, 1);
+      os = FcObjectSetBuild( FC_FAMILY, FC_CHARSET, FC_ASPECT, 
+           FC_SLANT, FC_WEIGHT, FC_SIZE, FC_PIXEL_SIZE, FC_SPACING,
+           FC_FOUNDRY, FC_SCALABLE, FC_DPI,
+           (void*) 0);
+      s = FcFontList( 0, pat, os);
+      FcObjectSetDestroy( os);
+      FcPatternDestroy( pat);
+      if ( !s) return NULL;
+   
+      csi = ( CharSetInfo*) hash_fetch( encodings, std_charsets[0].name, strlen(std_charsets[0].name));
+
+
+      ppat = s-> fonts; 
+      for ( i = 0; i < s->nfont; i++, ppat++) {
+         Font f;
+         FcCharSet *c = nil;
+         int spacing, slant, len, weight;
+
+         /* only mono fonts */
+         if (
+            ( FcPatternGetInteger( *ppat, FC_SPACING, 0, &spacing) != FcResultMatch) ||
+            ( spacing != FC_MONO )
+         )
+            continue;
+
+         /* only regular fonts */
+         if (
+            ( FcPatternGetInteger( *ppat, FC_SLANT, 0, &slant) != FcResultMatch) ||
+            ( slant == FC_SLANT_ITALIC || slant == FC_SLANT_OBLIQUE)
+         )            
+            continue;
+         if (
+            ( FcPatternGetInteger( *ppat, FC_WEIGHT, 0, &weight) != FcResultMatch) ||
+            ( weight <= FC_WEIGHT_LIGHT || weight >= FC_WEIGHT_BOLD)
+         )            
+            continue;
+
+         fcpattern2font( *ppat, &f);
+         len = strlen(f.family);
+         if ( hash_fetch( mono_fonts, f.family, len))
+            continue;
+
+         hash_store( mono_fonts, f.family, len, duplicate_string(f.name));
+      }
+      FcFontSetDestroy(s);
+   }
+   /* initialized ok */
+
+   /* try to find same family and same 1st word in font name */
+   {
+      char *c, *w, word1[255], word2[255];
+      int p;
+      c = hash_fetch( mono_fonts, f->family, strlen(f->family));
+      if ( !c ) return NULL;
+      if ( strcmp( c, f->name) == 0) return NULL; /* same font */
+
+      strcpy( word1, c);
+      strcpy( word2, f->name);
+      if (( w = strchr( word1, ' '))) *w = 0;
+      if (( w = strchr( word2, ' '))) *w = 0;
+      if ( strcmp( word1, word2 ) != 0 ) return NULL;
+      return c;
+   }
+}
+
+static int force_xft_monospace_emulation = 0;
 
 Bool
 prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
@@ -497,8 +606,10 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          FcPatternAddInteger( request, FC_SIZE, f. size);
    } else
       FcPatternAddInteger( request, FC_PIXEL_SIZE, pixel_size);
+   FcPatternAddInteger( request, FC_SPACING, 
+      (f. pitch == fpFixed && force_xft_monospace_emulation) ? FC_MONO : FC_PROPORTIONAL);
+   
    FcPatternAddInteger( request, FC_SLANT, ( f. style & fsItalic) ? FC_SLANT_ITALIC : FC_SLANT_ROMAN);
-   FcPatternAddInteger( request, FC_SPACING, ( f. pitch == fpFixed) ? FC_MONO : FC_PROPORTIONAL);
    FcPatternAddInteger( request, FC_WEIGHT, 
                         ( f. style & fsBold) ? FC_WEIGHT_BOLD :
                         ( f. style & fsThin) ? FC_WEIGHT_THIN : FC_WEIGHT_NORMAL);
@@ -519,12 +630,46 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
    /* match best font - must return something useful; the match is statically allocated */
    match = XftFontMatch( DISP, SCREEN, request, &res);
    if ( !match) {
-      Fdebug("xft: XftFontMatch error\n");
+      Fdebug("xft: XftFontMatch error\n");   
       FcPatternDestroy( request);
       return false;
    }
    FcPatternDestroy( request);
-   
+      
+   /* xft does a rather bad job with synthesizing a monospaced
+   font out of a proportional one ... try to find one ourself,
+   or bail out if it is the case 
+   */
+   if ( f.pitch == fpFixed && !force_xft_monospace_emulation) {
+      int spacing = -1;
+
+      if (
+         ( FcPatternGetInteger( match, FC_SPACING, 0, &spacing) == FcResultMatch) &&
+         ( spacing != FC_MONO )
+      ) {
+         Font font_with_family;
+         char * monospace_font;
+         font_with_family = f;
+         fcpattern2fontnames(match, &font_with_family);
+         FcPatternDestroy( match);
+
+         if (( monospace_font = find_good_monospaced_font_by_family(&font_with_family))) {
+            /* try a good mono font, again */
+            Font s = *source;
+            strcpy(s.name, monospace_font);
+            Fdebug("xft: try fixed pitch\n");
+            return prima_xft_font_pick( self, &s, dest, size);
+         } else {
+            Bool ret;
+            Fdebug("xft: force ugly monospace\n");
+            force_xft_monospace_emulation++;
+            ret = prima_xft_font_pick( self, source, dest, size);
+            force_xft_monospace_emulation--;
+            return ret;
+         }
+      }
+   }
+  
    /* Manually check if font contains wanted encoding - matching by FcCharSet 
       can't set threshold on how many glyphs can be omitted */
    {
@@ -556,7 +701,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          xft_build_font_key( &key, &f, by_size);
          key. width = 0;
          hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
-	 Fdebug("xft: refuse bitmapped font\n");
+         Fdebug("xft: refuse bitmapped font\n");
          FcPatternDestroy( match);
          return false;
       }
@@ -581,34 +726,34 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
       FcChar8 * s = nil;
       FcPatternGetString( match, FC_FAMILY, 0, &s);
       if ( !s || strcmp(( const char*) s, f. name) != 0) {
-	 int i, n = guts. n_fonts;
+         int i, n = guts. n_fonts;
          PFontInfo info = guts. font_info;
 
-	 if ( !guts. xft_priority) {
-	    Fdebug("xft: name mismatch\n");
-	 NAME_MISMATCH:
-	    xft_build_font_key( &key, &f, by_size);
-	    key. width = 0;
-	    hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
+	      if ( !guts. xft_priority) {
+	         Fdebug("xft: name mismatch\n");
+	      NAME_MISMATCH:
+	         xft_build_font_key( &key, &f, by_size);
+	         key. width = 0;
+	         hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
             FcPatternDestroy( match);
-	    return false;
-	 }
-	 
-         /* check if core has cached face name */
-	 if ( prima_find_known_font( &f, false, by_size)) {
-	    Fdebug("xft: pass to cached core\n");
-	    goto NAME_MISMATCH;
-	 }
+	         return false;
+	      }
+	      
+              /* check if core has cached face name */
+	      if ( prima_find_known_font( &f, false, by_size)) {
+	         Fdebug("xft: pass to cached core\n");
+	         goto NAME_MISMATCH;
+	      }
 
-         /* check if core has non-cached face name */
+           /* check if core has non-cached face name */
          for ( i = 0; i < n; i++) {
             if ( 
-		  info[i]. flags. disabled || 
-		  !info[i].flags.name ||
-	          (strcmp( info[i].font.name, f.name) != 0) 
-	       ) continue;
-	    Fdebug("xft: pass to core\n");
-	    goto NAME_MISMATCH;
+               info[i]. flags. disabled || 
+               !info[i].flags.name ||
+               (strcmp( info[i].font.name, f.name) != 0) 
+            ) continue;
+            Fdebug("xft: pass to core\n");
+            goto NAME_MISMATCH;
          }
       }
    }
