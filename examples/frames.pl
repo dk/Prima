@@ -41,7 +41,7 @@ my $frame = $w-> insert(
 	size => [$w-> size],
 	origin => [0, 0],
 	frameSizes => [qw(211 20% 123 10% * 45% *)],
-	opaqueResize => 0,
+	opaqueResize => 1,
 	frameProfiles => [ 0,0, { minFrameWidth => 123, maxFrameWidth => 123 }],
 );
 
