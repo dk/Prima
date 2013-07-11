@@ -707,7 +707,8 @@ READ_END:
       
    if ( fi-> loadExtras) {
       HV * profile = fi-> frameProperties;
-      char * name, * pf;
+      char * name;
+      unsigned char * pf;
       int ct, i;
       png_uint_32 pl, py;
       png_int_32 pli, pyi;
