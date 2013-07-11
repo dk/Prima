@@ -1383,9 +1383,9 @@ sub format_chunks
 				for ( ; $i < $lim; $i += $tb::oplen[ $$b[$i] ]) {
 					my $cmd = $$b[$i];
 					if ( $cmd == tb::OP_TEXT) {
-						$x += $$b[ $i + 3];
+						$x += $$b[ $i + tb::T_WID];
 					} elsif ( $cmd == tb::OP_TRANSPOSE) {
-						$x += $$b[ $i + 1] 
+						$x += $$b[ $i + tb::X_X] 
 							unless $$b[ $i + tb::X_FLAGS] & tb::X_EXTEND;
 					} elsif ( $cmd == $OP_LINK) {
 						if ( $linkState = $$b[ $i + 1]) {
