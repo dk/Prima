@@ -416,6 +416,7 @@ try_size( Handle self, Font f, double size)
    return ( PCachedFont) hash_fetch( guts. font_hash, &key, sizeof( FontKey));
 }
 
+/* find a most similar monospace font by name and family */
 static char *
 find_good_monospaced_font_by_family( Font * f ) 
 {
@@ -470,7 +471,7 @@ find_good_monospaced_font_by_family( Font * f )
          )            
             continue;
 
-         fcpattern2font( *ppat, &f);
+         fcpattern2fontnames( *ppat, &f);
          len = strlen(f.family);
          if ( hash_fetch( mono_fonts, f.family, len))
             continue;
