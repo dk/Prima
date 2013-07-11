@@ -109,6 +109,7 @@ package Prima::FrameSet::Slider;
 use strict;
 use warnings;
 use vars qw(@ISA);
+use Prima::RubberBand;
 
 @ISA = qw(Prima::Widget);
 
@@ -257,7 +258,6 @@ sub on_mousemove
 			$different ||= $oldrect[$_] != $me-> {traceRect}-> [$_] foreach 0..3;
 			if ($different) {
 # Don't redraw dragging rect if the old and the new rectangle are the same.
-				$me-> xorrect(@oldrect);
 				$me-> xorrect(@{$me-> {traceRect}});
 			}
 		}
@@ -294,19 +294,14 @@ sub adjust_sizes
 sub xorrect
 {
 	my ( $self, @r) = @_;
-	$r[2]--;
-	$r[3]--;
 	my $o = $::application;
+	my $p = $self->get_parent;
 	$o-> begin_paint;
-	my $oo = $self-> clipOwner ? $self-> owner : $::application;
-	$o-> clipRect( $oo-> client_to_screen( 0,0,$oo-> size));
-	$o-> set(
-		fillPattern => fp::SimpleDots,
-		color       => cl::Set,
-		backColor   => cl::Clear,
-		rop         => rop::XorPut,
+	$o-> clipRect( $p-> client_to_screen( 0,0,$p-> size));
+	$o-> rubberband( @r ?
+		( rect => \@r, breadth => $self->{thickness} ) :
+		( destroy => 1 )
 	);
-	$o-> bar( @r);
 	$o-> end_paint;
 }
 
@@ -329,7 +324,7 @@ sub stop_dragging
 {
 	my $me = shift;
 
-	$me-> xorrect(@{$me-> {traceRect}}) unless $me-> owner-> opaqueResize;
+	$me-> xorrect unless $me-> owner-> opaqueResize;
 	$me-> {draggingMode} = 0;
 	$me-> capture(0);
 	$me-> {oldFocus}-> focus
