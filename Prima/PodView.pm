@@ -883,11 +883,12 @@ sub close_read
 		$msecid++;
 	}
 	$self-> add( "Index",  STYLE_HEAD_1, 0);
+	$self-> add_new_line;
 	$self-> {hasIndex} = 1;
 	for my $k ( @{$self-> {topics}}) {
 		last if $secid == $msecid; # do not add 'Index' entry
 		my ( $ofs, $end, $text, $style, $depth, $linkStart) = @$k;
-		my $indent = ( $style - STYLE_HEAD_1 + $depth ) * 2;
+		my $indent = DEF_INDENT + ( $style - STYLE_HEAD_1 + $depth ) * 2;
 		$self-> add("L<$text|topic://$secid>", STYLE_TEXT, $indent);
 		$secid++;
 	}
