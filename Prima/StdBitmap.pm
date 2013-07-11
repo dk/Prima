@@ -34,6 +34,19 @@ use Prima;
 use Prima::Utils;
 
 my %bmCache;
+my $warned;
+
+sub _warn
+{
+	my ($img, $fail) = @_;
+	return if $warned;
+	$warned++;
+	if ( defined $fail) {
+		warn "Failed to load standard bitmap '$img':$@. Did you compile Prima with GIF support?\n";
+	} else {
+		warn "Failed to load standard bitmap '$img'. Did you install Prima correctly?\n";
+	}
+}
 
 sub load_std_bmp
 {
@@ -44,6 +57,7 @@ sub load_std_bmp
 	if ( $copy) {
 		my $i = $class-> create(name => $index);
 		undef $i unless $i-> load( $imageFile, index => $index);
+		_warn($imageFile, $@) unless $i;
 		return $i;
 	}
 	$bmCache{$imageFile} = {} unless exists $bmCache{$imageFile};
@@ -52,6 +66,7 @@ sub load_std_bmp
 	$x-> {$index} = [ undef, undef] unless exists $x-> {$index};
 	my $i = $class-> create(name => $index);
 	undef $i unless $i-> load( $imageFile, index => $index);
+	_warn($imageFile, $@) unless $i;
 	$x-> {$index}-> [$asIcon] = $i;
 	return $i;
 }
@@ -60,6 +75,7 @@ $sysimage = Prima::Utils::find_image(
 	((Prima::Application-> get_system_info-> {apc} == apc::Win32) ? 'sys/win32/' : '') .
 	"sysimage.gif") 
 	unless defined $sysimage;
+_warn('sysimage.gif') unless defined $sysimage;
 
 sub icon { return load_std_bmp( $_[0], 1, 0, $sysimage); }
 sub image{ return load_std_bmp( $_[0], 0, 0, $sysimage); }
