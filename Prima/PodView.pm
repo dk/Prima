@@ -32,6 +32,7 @@ use Prima;
 use Config;
 use Prima::Utils;
 use Prima::TextView;
+use Encode;
 
 package Prima::PodView::Link;
 use vars qw(@ISA);
@@ -73,9 +74,11 @@ use constant STYLE_CODE   => 0;
 use constant STYLE_TEXT   => 1;
 use constant STYLE_HEAD_1 => 2;
 use constant STYLE_HEAD_2 => 3;
-use constant STYLE_ITEM   => 4;
-use constant STYLE_LINK   => 5;
-use constant STYLE_MAX_ID => 5;
+use constant STYLE_HEAD_3 => 4;
+use constant STYLE_HEAD_4 => 5;
+use constant STYLE_ITEM   => 6;
+use constant STYLE_LINK   => 7;
+use constant STYLE_MAX_ID => 7;
 
 # model layout indices
 use constant M_INDENT      => 0; # pod-content driven indent
@@ -144,6 +147,8 @@ sub profile_default
 			{ },                                      # STYLE_TEXT
 			{ fontSize => 4, fontStyle => fs::Bold }, # STYLE_HEAD_1
 			{ fontSize => 2, fontStyle => fs::Bold }, # STYLE_HEAD_2
+			{ fontStyle => fs::Bold | fs::Italic },   # STYLE_HEAD_3
+			{ fontStyle => fs::Italic },              # STYLE_HEAD_4
 			{ fontStyle => fs::Bold },                # STYLE_ITEM
 			{ color     => COLOR_LINK_FOREGROUND,     # STYLE_LINK
 			fontStyle => fs::Underlined   },  
@@ -241,7 +246,7 @@ sub make_bookmark
 			
 			return "$self->{pageName}|0|0" unless defined $t;
 			return undef if $tid + 1 >= scalar @{$self-> {topics}}; # already on top
-			if ( $$t[ T_STYLE] == STYLE_HEAD_1 || $$t[ T_STYLE] == STYLE_HEAD_2) {
+			if ( $$t[ T_STYLE] == STYLE_HEAD_1 && $$t[ T_STYLE] == STYLE_HEAD_2) {
 				$t = $self-> {topics}-> [-1];
 				return "$self->{pageName}|$$t[T_MODEL_START]|0" 
 			}
@@ -618,6 +623,7 @@ sub open_read
 		ignoreFormat => 0,
 
 		createIndex  => 1,
+		encoding     => undef,
 	};
 }
 
@@ -784,6 +790,12 @@ sub read_paragraph
 			elsif ($Cmd eq 'head2') {
 				$self-> add( $args, STYLE_HEAD_2, 0);
 			}
+			elsif ($Cmd eq 'head3') {
+				$self-> add( $args, STYLE_HEAD_3, 0);
+			}
+			elsif ($Cmd eq 'head4') {
+				$self-> add( $args, STYLE_HEAD_4, 0);
+			}
 			elsif ($Cmd eq 'over') {
 				push(@{$r-> {indentStack}}, $r-> {indent});
 				$r-> {indent} += ( $args =~ m/^(\d+)$/ ) ? $1 : DEF_INDENT;
@@ -795,7 +807,10 @@ sub read_paragraph
 			elsif ($Cmd eq 'item') {
 				$self-> add( $args, STYLE_ITEM, $r-> {indentStack}-> [-1] || DEF_INDENT);
 			}
-		}
+			elsif ($Cmd eq 'encoding') {
+				$r->{encoding} = Encode::find_encoding($args); # or undef
+			}
+		}			
 		else {
 			s/\n/ /g;
 			$self-> add($_, STYLE_TEXT, $r-> {indent});
@@ -814,21 +829,22 @@ sub read
 	my $odd = 0;
 	for ( split ( "(\n)", $pod)) {
 		next unless $odd = !$odd;
+		$_ = $r->{encoding}->decode($_, Encode::FB_HTMLCREF) if $r->{encoding};
 
-        if (defined $r-> {paragraph_buffer}) {
+        	if (defined $r-> {paragraph_buffer}) {
 			if ( /^$/) {
 				my $pb = $r-> {paragraph_buffer};
 				undef $r-> {paragraph_buffer};
 				$self-> read_paragraph($pb);
-            } else {
+        	    	} else {
 				$r-> {paragraph_buffer} .= "\n$_";
 				next;
-            }
-        } elsif ( !/^$/) {
-            $r->{paragraph_buffer} = $_;
-            next;
-        }
-    }        
+	            	}
+        	} elsif ( !/^$/) {
+	            $r->{paragraph_buffer} = $_;
+        	    next;
+	        }
+	}        
 }
 
 sub close_read
@@ -837,11 +853,11 @@ sub close_read
 	return unless $self-> {readState};
 
 	my $r = $self-> {readState};
-    if ( defined $r->{paragraph_buffer}) {
+	if ( defined $r->{paragraph_buffer}) {
 		my $pb = $r-> {paragraph_buffer};
 		undef $r-> {paragraph_buffer};
 		$self-> read_paragraph("$pb\n");
-    }
+	}
 
 	$topicView = $self-> {topicView} unless defined $topicView;
 	$self-> add_new_line; # end
