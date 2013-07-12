@@ -707,8 +707,7 @@ READ_END:
       
    if ( fi-> loadExtras) {
       HV * profile = fi-> frameProperties;
-      char * name;
-      unsigned char * pf;
+      char * name, *pf;
       int ct, i;
       png_uint_32 pl, py;
       png_int_32 pli, pyi;
@@ -739,7 +738,7 @@ READ_END:
 #endif      
 
 #ifdef PNG_iCCP_SUPPORTED      
-      if ( png_get_iCCP( l-> png_ptr, l-> info_ptr, &name, &ct, &pf, &pl)) {
+      if ( png_get_iCCP( l-> png_ptr, l-> info_ptr, &name, &ct, (png_charpp)&pf, &pl)) {
          pset_c( iccp_name, name);
          if ( pf) pset_sv_noinc( iccp_profile, newSVpv( pf, pl));
       }
