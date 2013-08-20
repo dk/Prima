@@ -277,10 +277,10 @@ void
 Widget_done( Handle self)
 {
    free( var-> text);
+   var-> text = nil;
    apc_widget_destroy( self);
    free( var-> helpContext);
    free( var-> hint);
-   var-> text = nil;
    var-> helpContext = nil;
    var-> hint = nil;
 
@@ -2335,6 +2335,7 @@ Widget_helpContext( Handle self, Bool set, SV *helpContext)
    if ( set) {
       if ( var-> stage > csFrozen) return nilSV;
       free( var-> helpContext);
+      var-> helpContext = nil;
       var-> helpContext = duplicate_string( SvPV_nolen( helpContext));
       opt_assign( optUTF8_helpContext, prima_is_utf8_sv(helpContext));
    } else {
@@ -2353,6 +2354,7 @@ Widget_hint( Handle self, Bool set, SV *hint)
       if ( var-> stage > csFrozen) return nilSV;
       my-> first_that( self, (void*)hint_notify, (void*)hint);
       free( var-> hint);
+      var-> hint = nil;
       var-> hint = duplicate_string( SvPV_nolen( hint));
       opt_assign( optUTF8_hint, prima_is_utf8_sv(hint));
       if ( application && (( PApplication) application)-> hintVisible &&
@@ -2949,6 +2951,7 @@ Widget_text( Handle self, Bool set, SV *text)
    if ( set) {
       if ( var-> stage > csFrozen) return nilSV;
       free( var-> text);
+      var-> text = nil;
       var-> text = duplicate_string( SvPV_nolen( text));
       opt_assign( optUTF8_text, prima_is_utf8_sv(text));
    } else {

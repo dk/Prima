@@ -1502,6 +1502,8 @@ apc_menu_create( Handle self, Handle owner)
    XX-> w-> self  = self; 
    XX-> w-> m     = TREE;
    XX-> w-> first = 0;
+   XX-> w-> sz.x  = 0;
+   XX-> w-> sz.y  = 0;
    for ( i = 0; i <= ciMaxId; i++)
       XX-> c[i] = prima_allocate_color( 
           nilHandle, 

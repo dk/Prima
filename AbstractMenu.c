@@ -653,6 +653,7 @@ AbstractMenu_accel( Handle self, Bool set, char * varName, SV * accel)
    }
    if ( m-> text == nil) return nilSV;
    free( m-> accel);
+   m-> accel = nil;
    m-> accel = duplicate_string( SvPV_nolen( accel));
    m-> flags. utf8_accel = prima_is_utf8_sv( accel);
 
@@ -802,6 +803,7 @@ AbstractMenu_text( Handle self, Bool set, char * varName, SV * text)
       return sv;
    }
    free( m-> text);
+   m-> text = nil;
    m-> text = duplicate_string( SvPV_nolen( text));
    m-> flags. utf8_accel = prima_is_utf8_sv( text);
    if ( m-> id > 0)

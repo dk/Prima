@@ -245,6 +245,7 @@ Component_name( Handle self, Bool set, SV * name)
 {
    if ( set) {
       free( var-> name);
+      var-> name = nil;
       var-> name = duplicate_string( SvPV_nolen( name));
       opt_assign( optUTF8_name, prima_is_utf8_sv(name));
       if ( var-> stage >= csNormal)
