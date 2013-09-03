@@ -26,21 +26,24 @@
 #  $Id$
 #
 
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 Prima button widgets
 
-=item FEATURES
+=head1 FEATURES
 
 Demonstrates basic use of Prima toolkit, in particular
-creation of built-in push-buttons and radio-buttons.
+creation of built-in push-buttons and radio-buttons. L<Prima::Buttons>
 A customized button creation with subclassing is exemplified
 
 =cut
 
 
 use strict;
+use warnings;
+
 use Prima 'Buttons', Application => { name => 'Buttons sample' };
 
 package UserButton;
@@ -60,7 +63,7 @@ sub on_paint
 	my @fcap = ( $canvas-> get_text_width( $self-> text), $canvas-> font-> height);
 	$canvas-> color( $self-> pressed ? cl::LightGreen : cl::Green);
 	$canvas-> bar(0, 0, $x - 1 , $y - 1);
-	
+
 	$canvas-> color( $self-> pressed ? cl::Green : cl::LightGreen);
 	$canvas-> line ( 0, 0, 0, $y - 1);
 	$canvas-> line ( 1, 1, 1, $y - 2);
@@ -71,7 +74,7 @@ sub on_paint
 	$canvas-> line ( 1, 1, $x - 2, 1);
 	$canvas-> line ( $x - 1, 0, $x - 1, $y - 1);
 	$canvas-> line ( $x - 2, 1, $x - 2, $y - 2);
-	
+
 	$canvas-> color(cl::Black);
 	$canvas-> text_out ( $self-> text,
 		($x - $fcap[ 0]) / 2,
@@ -94,9 +97,9 @@ sub clone
 	my ( $self, %profile) = @_;
 	my %d = %{$self-> profile_default};
 	my %readfilter = (
-		x_centered  => 1,   
-		y_centered  => 1,   
-		centered    => 1,   
+		x_centered  => 1,
+		y_centered  => 1,
+		centered    => 1,
 		delegations => 1,
 		designScale => 1,
 	);
@@ -111,9 +114,9 @@ sub clone
 		$d{$_} = @res ? ($#res ? (
 			$hashed{$_} ? {@res} : [@res]
 		) : $res[0]) : undef;
-	}   
+	}
 	return ref($self)-> create( %d, %profile);
-}   
+}
 
 package main;
 
@@ -123,9 +126,9 @@ my $w = Prima::MainWindow-> create(
 	height    => 300,
 	width     => 400,
 );
-$w-> insert( "Button"     , origin => [  50,180], pressed => 1);
-my $l = $w-> insert( "UserButton" , origin => [ 250,180], autoRepeat => 1);
-$l-> clone( origin => [ 250, 290]);
-$w-> insert( "Radio"      , origin => [  50,140]);
+$w->insert( "Button"     , origin => [  50,180], pressed => 1);
+my $l = $w->insert( "UserButton" , origin => [ 250,180], autoRepeat => 1);
+$l->clone( origin => [ 250, 290]);
+$w->insert( "Radio"      , origin => [  50,140]);
 
 run Prima;
