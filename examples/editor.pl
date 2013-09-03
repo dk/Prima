@@ -26,17 +26,21 @@
 #  $Id$
 #
 
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 A basic text editor
 
-=item FEATURES
+=head1 FEATURES
 
-Demonstrates usage of Prima::Edit class,
+Demonstrates usage of L<Prima::Edit> class,
 and, in lesser extent, of standard find/replace dialogs.
 
 =cut
+
+use strict;
+use warnings;
 
 use Prima;
 use Prima::Edit;
@@ -46,7 +50,7 @@ use Prima::StdDlg;
 
 eval "use Encode;";
 my $can_utf8 = $@ ? 0 : 1;
-$::application-> wantUnicodeInput($can_utf8);
+$::application->wantUnicodeInput($can_utf8);
 
 package Indicator;
 use vars qw(@ISA);
@@ -54,7 +58,7 @@ use vars qw(@ISA);
 
 sub profile_default
 {
-	my %def = %{$_[ 0]-> SUPER::profile_default};
+	my %def = %{$_[ 0]->SUPER::profile_default};
 	return {
 		%def,
 		editor   => undef,
@@ -69,7 +73,7 @@ sub profile_default
 sub init
 {
 	my $self = shift;
-	my %profile = $self-> SUPER::init(@_);
+	my %profile = $self->SUPER::init(@_);
 	$self-> {editor} = $profile{editor};
 	$self-> reset;
 	return %profile;
