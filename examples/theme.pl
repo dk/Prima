@@ -27,6 +27,8 @@
 #
 #  $Id$
 
+use strict;
+use warnings;
 use Prima qw(Application Themes ScrollBar Buttons InputLine ExtLists Notebooks ScrollWidget);
 
 =pod 
@@ -43,67 +45,9 @@ perl -MPrima::Themes program
 
 =cut
 
-my ( $w, $c, $playground, $t);
+my ( $playground, $tab );
 
-sub test
-{
-	$t-> destroy if $t;
-	my @themes;	
-	if (  $c-> count) {
-		for ( 0 .. $c-> count - 1) { 
-			push @themes, $c-> get_item_text($_) if $c-> button($_);
-		}
-	}
-	Prima::Themes::select( @themes);
-	my $failed = join(',', grep { ! Prima::Themes::active $_ } @themes);
-	Prima::message("Theme(s) $failed failed to load") if length $failed;
-	$t = $playground-> insert( TabbedScrollNotebook => 
-		pack => { fill => 'both', expand => 1},
-		tabs => ['Tab'],
-	);
-
-	$t-> insert( ScrollBar => 
-		vertical => 0,
-		pack => { side => 'bottom', fill => 'x', },
-	);
-	$t-> insert( ScrollBar => 
-		vertical => 1,
-		partial  => 50,
-		pack => { side => 'right', fill => 'y', },
-	);
-	$t-> insert( ListBox => 
-		pack => { side => 'right', fill => 'both', expand => 1, padx => 5, pady => 5},
-		items => [ qw(1 2 3 4 5)],
-		focusedItem => 1,
-	);
-	$t-> insert( Button => 
-		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
-		text => 'Normal',
-	);
-	$t-> insert( Button => 
-		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
-		text => 'Disabled',
-		enabled => 0,
-	);
-	$t-> insert( Button => 
-		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
-		text => 'Default',
-		default => 1,
-	);
-	$t-> insert( Radio => 
-		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
-		text => 'Radio',
-	);
-	$t-> insert( CheckBox => 
-		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
-		text => 'CheckBox',
-	);
-	$t-> insert( InputLine => 
-		pack => { side => 'bottom', anchor => 's', fill => 'x', expand => 1, padx => 5, pady => 5},
-	);
-}
-
-$w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> create(
 	text => 'Theme selector',
 	menuItems => [
 		[ 'Options' => [
@@ -125,7 +69,7 @@ for (@INC) {
 }
 
 my @list = Prima::Themes::list;
-$c = $w-> insert( Prima::CheckList => 
+my $checklist = $w-> insert( CheckList => 
 	pack => { side => 'left', fill => 'y', padx => 5, pady => 5},
 	items => \@list,
 	onChange => \&test,
@@ -143,8 +87,69 @@ $w-> set( centered => 1);
 
 # select active themes
 my %list = map { $list[$_] => $_ } 0..$#list;
-$c-> button( $list{$_}, 1) for Prima::Themes::list_active;
+$checklist-> button( $list{$_}, 1) for Prima::Themes::list_active;
 
 test();
 
 run Prima;
+exit;
+
+sub test
+{
+	$tab-> destroy if $tab;
+	my @themes;	
+	if (  $checklist-> count) {
+		for ( 0 .. $checklist-> count - 1) { 
+			push @themes, $checklist-> get_item_text($_) if $checklist-> button($_);
+		}
+	}
+	Prima::Themes::select( @themes);
+	my $failed = join(',', grep { ! Prima::Themes::active $_ } @themes);
+	Prima::message("Theme(s) $failed failed to load") if length $failed;
+	$tab = $playground-> insert( TabbedScrollNotebook => 
+		pack => { fill => 'both', expand => 1},
+		tabs => ['Tab'],
+	);
+
+	$tab-> insert( ScrollBar => 
+		vertical => 0,
+		pack => { side => 'bottom', fill => 'x', },
+	);
+	$tab-> insert( ScrollBar => 
+		vertical => 1,
+		partial  => 50,
+		pack => { side => 'right', fill => 'y', },
+	);
+	$tab-> insert( ListBox => 
+		pack => { side => 'right', fill => 'both', expand => 1, padx => 5, pady => 5},
+		items => [ qw(1 2 3 4 5)],
+		focusedItem => 1,
+	);
+	$tab-> insert( Button => 
+		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
+		text => 'Normal',
+	);
+	$tab-> insert( Button => 
+		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
+		text => 'Disabled',
+		enabled => 0,
+	);
+	$tab-> insert( Button => 
+		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
+		text => 'Default',
+		default => 1,
+	);
+	$tab-> insert( Radio => 
+		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
+		text => 'Radio',
+	);
+	$tab-> insert( CheckBox => 
+		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
+		text => 'CheckBox',
+	);
+	$tab-> insert( InputLine => 
+		pack => { side => 'bottom', anchor => 's', fill => 'x', expand => 1, padx => 5, pady => 5},
+	);
+}
+
+
