@@ -26,15 +26,19 @@
 #  $Id$
 #
 =pod 
-=item NAME
+
+=head1 NAME
 
 Prima toolkit example
 
-=item FEATURES
+=head1 FEATURES
 
 Needs custom fonts for antialiasing emulation.
 
 =cut
+
+use strict;
+use warnings;
 
 use Prima qw(Application);
 
@@ -182,7 +186,7 @@ onPaint => sub {
 },
 );
 
-$w-> insert( Prima::Timer =>
+$w-> insert( Timer =>
 	timeout => 100,
 	onTick => sub {
 		$a += 0.1;

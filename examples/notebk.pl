@@ -27,17 +27,20 @@
 #
 
 =pod 
-=item NAME
+
+=head1 NAME
 
 Prima notebook widget
 
-=item FEATURES
+=head1 FEATURES
 
 Demonstrates the basic Prima toolkit usage and
-Prima::TabbedNotebook standard class.
+L<Prima::TabbedNotebook> standard class.
 
 =cut
 
+use strict;
+use warnings;
 use Prima;
 use Prima::Buttons;
 use Prima::Notebooks;
@@ -95,11 +98,10 @@ sub init
 
 package Generic;
 
-my $l;
 my $w = Bla-> create(
-size => [ 600, 300],
-y_centered  => 1,
-# current  => 1,
+	size => [ 600, 300],
+	y_centered  => 1,
+	# current  => 1,
 );
 
 run Prima;
