@@ -45,7 +45,7 @@ perl -MPrima::Themes program
 
 =cut
 
-my ( $playground, $tab );
+my ( $tab );
 
 my $w = Prima::MainWindow-> create(
 	text => 'Theme selector',
@@ -76,7 +76,7 @@ my $checklist = $w-> insert( CheckList =>
 	vector => '',
 );
 
-$playground = $w-> insert( Widget => 
+my $playground = $w-> insert( Widget => 
 	size => [ 250, 250],
 	pack => { side => 'right', padx => 5, pady => 5, expand => 1, fill => 'both'},
 	packPropagate => 0,
