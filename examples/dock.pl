@@ -28,27 +28,37 @@
 #  $Id$
 #
 
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 Docking widgets
 
-=item FEATURES
+=head1 FEATURES
 
-This is the demonstration of Prima::Dock and Prima::DockManager 
-modules. The window created is docking client, and it's able 
+This is the demonstration of Prima::Dock and Prima::DockManager
+modules. The window created is docking client, and it's able
 to accept toolbars and panels, and toolbars in turn accept buttons.
 buttons are very samplish; there are two panels, Edit and Banner,
 that are docked in different ways.
 Note the following unevident features:
-- popup on the border of the window ( and the Customize command there)
-- dragging of buttons on the window and the extreior
-- dragging panels and toolbar to the exterior
-- storing of the geometry in the ~/.demo_dock file
+
+=over 4
+
+=item popup on the border of the window ( and the Customize command there)
+
+=item dragging of buttons on the window and the extreior
+
+=item dragging panels and toolbar to the exterior
+
+=item storing of the geometry in the ~/.demo_dock file
+
+=back
 
 =cut
 
 use strict;
+use warnings;
 
 use Prima;
 use Prima::Application;
@@ -62,8 +72,8 @@ use constant Edit       => 0x100000;
 use constant Vertical   => 0x200000;
 use constant Horizontal => 0x400000;
 
-# This is the main window. it's responsible for 
-# command handling and bar visiblity; 
+# This is the main window. it's responsible for
+# command handling and bar visiblity;
 # NB - bars are not owned by this window when undocked.
 
 package Prima::Dock::BasicWindow;
@@ -73,23 +83,23 @@ use vars qw(@ISA);
 sub profile_default
 {
 	my $def = $_[0]-> SUPER::profile_default;
-	my %prf = ( 
+	my %prf = (
 		instance => undef,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}   
+}
 
 sub init
 {
 	my  $self = shift;
 	my %profile = $self-> SUPER::init( @_);
 	$self-> $_($profile{$_}) for qw(instance);
-	$self-> {toolBarPopup} = $self-> insert( Popup => 
-		autoPopup  => 0,  
+	$self-> {toolBarPopup} = $self-> insert( Popup =>
+		autoPopup  => 0,
 		items      => $self-> make_popupitems(),
 	);
-	$self-> {mainDock} = $self-> insert( FourPartDocker => 
+	$self-> {mainDock} = $self-> insert( FourPartDocker =>
 		rect        => [ 0, 0, $self-> size],
 		fingerprint => dmfp::Tools|dmfp::Toolbar|dmfp::Edit|dmfp::Horizontal|dmfp::Vertical,
 		dockup      => $self-> instance,
@@ -100,14 +110,14 @@ sub init
 				( $x, $y) = $self-> screen_to_client( $me-> client_to_screen($x, $y));
 				$self-> {toolBarPopup}-> popup( $x, $y);
 				$me-> clear_event;
-			}   
-		},   
+			}
+		},
 		dockerProfileClient => { # allow docking only to Edit
 			fingerprint => dmfp::Edit,
-		},   
-		dockerProfileLeft   => { fingerprint => dmfp::Vertical|dmfp::Tools|dmfp::Toolbar },   
-		dockerProfileRight  => { fingerprint => dmfp::Vertical|dmfp::Tools|dmfp::Toolbar },   
-		dockerProfileTop    => { fingerprint => dmfp::Horizontal|dmfp::Tools|dmfp::Toolbar },   
+		},
+		dockerProfileLeft   => { fingerprint => dmfp::Vertical|dmfp::Tools|dmfp::Toolbar },
+		dockerProfileRight  => { fingerprint => dmfp::Vertical|dmfp::Tools|dmfp::Toolbar },
+		dockerProfileTop    => { fingerprint => dmfp::Horizontal|dmfp::Tools|dmfp::Toolbar },
 		dockerProfileBottom => { fingerprint => dmfp::Horizontal|dmfp::Tools|dmfp::Toolbar },
 	);
 	$self-> instance-> add_notification( 'ToolbarChange', \&on_toolbarchange, $self);
