@@ -26,17 +26,19 @@
 #  $Id$
 #
 =pod 
-=item NAME
+
+=head1 NAME
 
 Escher's Impossible Triangle
 
-=item FEATURES
+=head1 FEATURES
 
 Demonstrates the basic usage of the Prima toolkit.
 
 =cut
 
 use strict;
+use warnings;
 use Prima qw(Buttons);
 use constant PI => 4.0 * atan2 1, 1;
 use constant D2R => PI / 180;
