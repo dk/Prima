@@ -3298,6 +3298,10 @@ See also: L<make_logical>.
 
 Returns the line, corresponding to the chunk index.
 
+=item get_selected_text
+
+Return the text currently selected.
+
 =item has_selection
 
 Returns boolean value, indicating if the selection block is active.

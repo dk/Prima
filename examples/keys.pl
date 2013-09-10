@@ -26,12 +26,13 @@
 #  $Id$
 #
 
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 A key dump example
 
-=item FEATURES
+=head1 FEATURES
 
 Tests the correct implementation of keyboard event subsystem.
 The following features are tested:
@@ -46,9 +47,10 @@ The following features are tested:
 
 =cut
 
+use strict;
+use warnings;
 use Prima;
 use Prima::Buttons;
-use strict;
 use Prima::Label;
 use Prima::FontDialog;
 use Prima::Application;

@@ -26,11 +26,12 @@
 #  $Id$
 #
 =pod 
-=item NAME
+
+=head1 NAME
 
 An eyes program clone
 
-=item FEATURES
+=head1 FEATURES
 
 A well-known eyes written in Prima toolkit.
 Demostrates the usage of a shape-extension and a 
@@ -43,6 +44,7 @@ shape-extension interface.
 =cut
 
 use strict;
+use warnings;
 use Prima;
 use Prima::Application name => 'Eyes';
 
@@ -150,13 +152,13 @@ $x-> icon( reshape( $x));
 my @pp = $x-> pointerPos;
 
 $x-> insert( Timer => 
-timeout => 100,
-onTick => sub {
-	my @pxp = $x-> pointerPos;
-	return if $pxp[0] == $pp[0] && $pxp[1] == $pp[1];
-	$x-> repaint;
-	@pp = @pxp;
-})-> start;
+	timeout => 100,
+	onTick => sub {
+		my @pxp = $x-> pointerPos;
+		return if $pxp[0] == $pp[0] && $pxp[1] == $pp[1];
+		$x-> repaint;
+		@pp = @pxp;
+	})-> start;
 $x-> show;
 $x-> select;
 

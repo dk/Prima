@@ -372,6 +372,7 @@ primg('menu3');
 --></script>
 
 =end html
+
 The action item of them menu description array points to the code executed when
 the menu item is selected.  It is either an anonymous subroutine, as it is
 shown in all the examples above, or a string.  The latter case will cause the

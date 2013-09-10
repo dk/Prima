@@ -40,6 +40,7 @@ which are dragable by the mouse
 =cut
 
 use strict;
+use warnings;
 use Prima qw(Application CurvedText);
 
 my @bounds;

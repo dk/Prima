@@ -26,17 +26,20 @@
 #  $Id$
 #
 =pod 
-=item NAME
+
+=head1 NAME
 
 Prima outline widget
 
-=item FEATURES
+=head1 FEATURES
 
 Demonstrates the basic Prima toolkit usage
-and Prima::Outlines class. 
+and L<Prima::Outlines> class. 
 
 =cut
 
+use strict;
+use warnings;
 use Prima qw(Application Outlines);
 
 my $w = Prima::MainWindow-> create( size => [ 200, 200]);

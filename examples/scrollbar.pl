@@ -27,11 +27,12 @@
 #
 
 =pod 
-=item NAME
+
+=head1 NAME
 
 A Prima toolkit example
 
-=item FEATURES
+=head1 FEATURES
 
 Tests correct representation of a color created by a combination
 of R,G and B components. The Prima::Widget::sizeMin and Prima::Widget::sizeMax
@@ -42,6 +43,7 @@ Note how Area widget maintains its maximum size when the window gets maximized.
 =cut
 
 use strict;
+use warnings;
 use Prima qw(ScrollBar);
 use Prima::Application name => 'scrollbar';
 
