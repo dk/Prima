@@ -38,6 +38,8 @@ rearrangement ( horizontal, with drag ).
 
 =cut
 
+use strict;
+use warnings;
 use Prima;
 use Prima::DetailedList;
 
