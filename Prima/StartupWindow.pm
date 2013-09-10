@@ -63,9 +63,8 @@ sub import {
 }
 
 sub unimport {
-	return unless defined @windowStack;
-	return if @windowStack <= 0;
 	my $w = pop @windowStack;
+	return unless $w;
 	my $oautoClose = $::application-> autoClose;
 	$::application-> autoClose(0);
 	$w-> destroy;
