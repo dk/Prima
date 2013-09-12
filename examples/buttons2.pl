@@ -23,21 +23,23 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-#  $Id$
-#
 
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 Prima button widgets
 
-=item FEATURES
+=head1 FEATURES
 
 Demonstrates the variety of built-in buttons functionality.
 Note the "Bits for toolbar" button, which copies and
 pastes its image into the clipboard.
 
 =cut
+
+use strict;
+use warnings;
 
 use Prima qw(Buttons StdBitmap), Application => { name => 'Buttons sample' };
 
@@ -63,8 +65,8 @@ $w-> insert( Radio =>
 	hint => 'Radio!',
 );
 
-$i = Prima::StdBitmap::icon( sbmp::GlyphCancel);
-$j = Prima::StdBitmap::icon( sbmp::GlyphOK);
+my $i = Prima::StdBitmap::icon( sbmp::GlyphCancel);
+my $j = Prima::StdBitmap::icon( sbmp::GlyphOK);
 
 $w-> insert( Button =>
 	origin => [ 10, 100],

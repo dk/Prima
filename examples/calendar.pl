@@ -26,19 +26,21 @@
 #  $Id$
 #
 
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 Standard calendar widget
 
-=item FEATURES
+=head1 FEATURES
 
-Demonstrates usage of Prima::Calendar. 
+Demonstrates usage of L<Prima::Calendar>.
 Note the special check of C<useLocale> success.
 
 =cut
 
 use strict;
+use warnings;
 use Prima;
 use Prima::Application name => 'Calendar';
 use Prima::Calendar;

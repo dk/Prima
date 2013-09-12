@@ -26,12 +26,13 @@
 #  $Id$
 #
 
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 A Prima example launcher
 
-=item FEATURES
+=head1 FEATURES
 
 Uses to execute several Prima examples in one task space.
 Many examples inflict the view af a user-selected widget, but
@@ -39,6 +40,9 @@ lack existence of the appropriate one. The launcher helps
 such experiments. See cv.pl or fontdlg.pl in particular.
 
 =cut
+
+use strict;
+use warnings;
 
 use Prima;
 use Prima::Classes;

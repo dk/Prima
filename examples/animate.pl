@@ -1,5 +1,11 @@
-# $Id$
+=head1 NAME
+
+Animate using L<Prima::Image::AnimateGIF>
+
+=cut
+
 use strict;
+use warnings;
 use Prima qw(Application Image::AnimateGIF);
 
 my $clip_debug = 0;

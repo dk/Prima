@@ -27,18 +27,20 @@
 #
 use Prima 'MsgBox', Application => { name => 'Chess puzzle' };
 
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 A chess puzzle
 
-=item FEATURES
+=head1 FEATURES
 
 Demonstrates custom pointer creation
 
 =cut
 
 use strict;
+use warnings;
 
 # binhex and rle crunched data from 5 40x40 1-bit images
 my $d = <<DATA;

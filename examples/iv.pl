@@ -25,19 +25,35 @@
 #
 #  $Id$
 #
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 A image viewer program
 
-=item FEATURES
+=head1 FEATURES
 
 Demonstrates usage of Prima image subsystem, in particular:
 
-- Standard open dialog. Note it's behavior with the multi-frame images.
-- Standard save dialog. Note the graphic filters usage.
-- Image conversion routines.
-- Standard Prima::ImageViewer class.
+=over 4
+
+=item *
+
+Standard open dialog. Note it's behavior with the multi-frame images.
+
+=item *
+
+Standard save dialog. Note the graphic filters usage.
+
+=item *
+
+Image conversion routines.
+
+=item *
+
+Standard L<Prima::ImageViewer> class.
+
+=back
 
 Test the correct implementation of the internal image paint routines,
 in particular on the paletted displays and the representation of 1-bit
@@ -48,6 +64,7 @@ Note the mouse wheel interaction.
 =cut
 
 use strict;
+use warnings;
 use Prima qw(ImageViewer StdDlg MsgBox);
 use Prima::Application name => "IV";
 
