@@ -32,13 +32,14 @@ use warnings;
 use Prima qw(Application Themes ScrollBar Buttons InputLine ExtLists Notebooks ScrollWidget);
 
 =pod 
-=item NAME
+
+=head1 NAME
 
 Theme selector
 
-=item FEATURES
+=head1 FEATURES
 
-Demonstrates usage of Prima::Themes, stores selected theme
+Demonstrates usage of L<Prima::Themes>, stores selected theme
 in rc file. Other programs can use the selection by running
 
 perl -MPrima::Themes program

@@ -26,11 +26,12 @@
 #  $Id$
 #
 =pod 
-=item NAME
+
+=head1 NAME
 
 Prima toolkit example
 
-=item FEATURES
+=head1 FEATURES
 
 Demonstrates the usage of Prima::Widget::transparent property.
 Test the certain events: for example, when two transparent
@@ -41,11 +42,14 @@ Note that the $tt widget is not transparent but uses shape extension.
 
 =cut
 
+use strict;
+use warnings;
+
 use Prima;
 use Prima::Const;
 use Prima::Application name => 'Generic.pm';
 
-$w = Prima::MainWindow-> create(
+my $w = Prima::MainWindow-> create(
 	size => [ 300, 300],
 	borderStyle => bs::Dialog,
 	backColor => cl::Green,
