@@ -180,6 +180,7 @@ win32/stock.obj
 win32/timers.obj
 META.yml
 MYMETA.yml
+MYMETA.json
 Makefile.old
 Prima.bs
 Prima/VB/VB
