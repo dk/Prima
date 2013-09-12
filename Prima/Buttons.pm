@@ -39,6 +39,7 @@
 #   AbstractButton
 #   Cluster
 
+package Prima::Buttons;
 
 use Carp;
 use Prima::Const;
