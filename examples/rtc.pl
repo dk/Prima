@@ -23,20 +23,23 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-#  $Id$
-#
-=pod 
-=item NAME
+
+=pod
+
+=head1 NAME
 
 Prima scrollbar widget
 
-=item FEATURES
+=head1 FEATURES
 
 A Prima toolkit demonstration example.
-Tests the Prima::Scrollbar widget and dynamic
+Tests the L<Prima::Scrollbar> widget and dynamic
 change of its parameters.
 
 =cut
+
+use strict;
+use warnings;
 
 use Prima qw( Buttons ScrollBar);
 use Prima::Application name => 'rtc';

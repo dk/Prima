@@ -23,21 +23,26 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-#  $Id$
-#
 
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 A minimalistic graphic editor window
 
-=item FEATURES
+=head1 FEATURES
 
 Outlines features required for a graphic editor window -
-color selection, and, mainly, non-standart Prima::ImageViewer
+color selection, and, mainly, non-standart L<Prima::ImageViewer>
 usage. 
 
+Using L<Prima::Classes>, L<Prima::ScrollWidget>, L<Prima::Application>,
+L<Prima::ColorDialog>, L<Prima::ImageViewer>.
+
 =cut
+
+use strict;
+use warnings;
 
 use Prima;
 use Prima::Classes;
@@ -246,20 +251,20 @@ sub init
 	);
 	$self-> {attrs} = \%attrs;
 
-	$self-> {painter} = $self-> insert( ImageEdit::Painter =>
+	$self-> {painter} = $self-> insert( 'ImageEdit::Painter' =>
 		origin     => [ 64, 64],
 		size       => [ $self-> width - 64, $self-> height - 64],
 		limitX     => $profile{imageSize}-> [0],
 		limitY     => $profile{imageSize}-> [1],
 	);
 
-	$self-> {colorsel} = $self-> insert( ImageEdit::ColorSelector =>
+	$self-> {colorsel} = $self-> insert( 'ImageEdit::ColorSelector' =>
 		origin     => [ 64, 0],
 		size       => [ $self-> width - 64, 63],
 		growMode   => gm::Floor,
 	);
 
-	$self-> {indicator} = $self-> insert( ImageEdit::Indicator =>
+	$self-> {indicator} = $self-> insert( 'ImageEdit::Indicator' =>
 		origin     => [ 0, 0],
 		size       => [ 61, 63],
 	);

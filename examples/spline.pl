@@ -23,19 +23,20 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
-#  $Id$
-#
 
-=pod 
-=item NAME
+=pod
+
+=head1 NAME
 
 A spline demo
 
-=item FEATURES
+=head1 FEATURES
 
 Demonstrates parabolic splines as graphic primitives.
 The points arount the filled shapes are spline vertexes,
-which are dragable by the mouse
+which are dragable by the mouse.
+
+Using L<Prima::CurvedText>.
 
 =cut
 
