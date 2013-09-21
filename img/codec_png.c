@@ -738,7 +738,7 @@ READ_END:
 #endif      
 
 #ifdef PNG_iCCP_SUPPORTED      
-      if ( png_get_iCCP( l-> png_ptr, l-> info_ptr, &name, &ct, (png_charpp)&pf, &pl)) {
+      if ( png_get_iCCP( l-> png_ptr, l-> info_ptr, &name, &ct, (png_bytepp)&pf, &pl)) {
          pset_c( iccp_name, name);
          if ( pf) pset_sv_noinc( iccp_profile, newSVpv( pf, pl));
       }
