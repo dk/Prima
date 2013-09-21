@@ -93,6 +93,10 @@
 #define FC_WIDTH "width"
 #endif
 
+#if FC_MAJOR < 2 || ( FC_MAJOR == 2 && FC_MINOR < 10 )
+#define NEED_EXPLICIT_FC_SCALABLE 1
+#endif
+
 typedef struct {
    char      *name;
    FcCharSet *fcs;
@@ -433,7 +437,9 @@ find_good_monospaced_font_by_family( Font * f )
       initialized = 1;
 
       pat = FcPatternCreate();
+#ifdef NEED_EXPLICIT_FC_SCALABLE
       FcPatternAddBool( pat, FC_SCALABLE, 1);
+#endif
       os = FcObjectSetBuild( FC_FAMILY, FC_CHARSET, FC_ASPECT, 
            FC_SLANT, FC_WEIGHT, FC_SIZE, FC_PIXEL_SIZE, FC_SPACING,
            FC_FOUNDRY, FC_SCALABLE, FC_DPI,
@@ -614,7 +620,9 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
    FcPatternAddInteger( request, FC_WEIGHT, 
                         ( f. style & fsBold) ? FC_WEIGHT_BOLD :
                         ( f. style & fsThin) ? FC_WEIGHT_THIN : FC_WEIGHT_NORMAL);
+#ifdef NEED_EXPLICIT_FC_SCALABLE
    FcPatternAddInteger( request, FC_SCALABLE, 1);
+#endif
    if ( f. direction != 0 || f. width != 0) {
       FcMatrix mat;
       FcMatrixInit(&mat);
@@ -958,7 +966,9 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 
    pat = FcPatternCreate();
    if ( facename) FcPatternAddString( pat, FC_FAMILY, ( FcChar8*) facename);
+#ifdef NEED_EXPLICIT_FC_SCALABLE   
    FcPatternAddBool( pat, FC_SCALABLE, 1);
+#endif
    os = FcObjectSetBuild( FC_FAMILY, FC_CHARSET, FC_ASPECT, 
         FC_SLANT, FC_WEIGHT, FC_SIZE, FC_PIXEL_SIZE, FC_SPACING,
         FC_FOUNDRY, FC_SCALABLE, FC_DPI,
