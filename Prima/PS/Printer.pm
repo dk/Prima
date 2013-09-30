@@ -243,7 +243,7 @@ sub printer
 	return $_[0]-> {current} unless $#_;
 	my ( $self, $printer) = @_;
 	return undef unless exists $self-> {printers}-> {$printer};
-	$self-> end_paint_info if $self-> get_paint_state == 2;
+	$self-> end_paint_info if $self-> get_paint_state == mb::Information;
 	$self-> end_paint if $self-> get_paint_state;
 	$self-> {current} = $printer;
 	$self-> {data} = {};

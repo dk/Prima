@@ -13,7 +13,7 @@ my $i = Prima::Image-> create(
 ok( $i);
 ok( $i-> type == im::Mono);
 $i-> begin_paint_info;
-ok( $i-> get_paint_state == 2);
+ok( $i-> get_paint_state == ps::Information);
 $i-> end_paint_info;
 
 # 4
@@ -39,11 +39,11 @@ my @p = @{$i-> palette};
 ok( $p[0] == 0 && $p[1] == 0 && $p[2] == 0 && $p[3] == 0xFF && $p[4] == 0 && $p[5] == 0);
 ok(  $i-> pixel( 0,0) == 0 && $i-> pixel( 15,15) == 0 && $i-> pixel( 1,1) != 0);
 $i-> begin_paint;
-ok( $i-> get_paint_state == 1);
+ok( $i-> get_paint_state == ps::Enabled);
 $i-> end_paint;
 
 # 8,9,10
-ok( $i-> get_paint_state == 0);
+ok( $i-> get_paint_state == ps::Disabled);
 ok( $i-> type == im::bpp1);
 ok( $i-> pixel( 0,0) == 0 && $i-> pixel( 15,15) == 0);
 $i-> size( 160, 160);

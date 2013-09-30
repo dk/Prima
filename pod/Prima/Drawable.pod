@@ -1249,8 +1249,13 @@ if the device bit depth is equals or greater than 24.
 
 =item get_paint_state
 
-Returns paint state value - 0 if the object is in the disabled state,
-1 for the enabled state, 2 for the information state.
+Returns paint state value on of ps:: constants - C<ps::Disabled> if the object is in the disabled state,
+C<ps::Enabled> for the enabled state, C<ps::Information> for the information state.
+
+For brevity, mb::Disabled is equal to 0 so this allows for simple boolean testing whether one can 
+get/set graphical properties on an object.
+
+See L<"Graphic context and canvas"> for more.
 
 =item get_physical_palette
 

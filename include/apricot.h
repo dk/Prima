@@ -1792,6 +1792,18 @@ END_TABLE(ws,UV)
 #define   zoNext           2
 #define   zoPrev           3
 
+/* paint state values */
+#define PS(const_name) CONSTANT(ps,const_name)
+START_TABLE(ps,UV)
+#define   psDisabled        0
+PS(Disabled)
+#define   psEnabled         1
+PS(Enabled)
+#define   psInformation     2
+PS(Information)
+END_TABLE(ps,UV)
+#undef PS
+
 /* system values */
 #define SV(const_name) CONSTANT(sv,const_name)
 START_TABLE(sv,UV)

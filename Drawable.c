@@ -268,11 +268,11 @@ int
 Drawable_get_paint_state( Handle self)
 {
    if ( is_opt( optInDraw))
-      return 1;
+      return psEnabled;
    else if ( is_opt( optInDrawInfo))
-      return 2;
+      return psInformation;
    else
-      return 0;
+      return psDisabled;
 }
 
 int

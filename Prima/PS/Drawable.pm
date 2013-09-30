@@ -491,7 +491,7 @@ sub begin_paint_info
 sub end_paint_info
 {
 	my $self = $_[0];
-	return if $self-> get_paint_state != 2;
+	return if $self-> get_paint_state != ps::Information;
 	$self-> SUPER::end_paint_info;
 	$self-> restore_state;
 }

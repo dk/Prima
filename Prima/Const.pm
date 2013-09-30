@@ -77,6 +77,7 @@ package fe; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# file events
 package fr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# fetch resource constants
 package mt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# modality types
 package gt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# geometry manager types
+package ps; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# paint states
 
 1;
 
@@ -718,6 +719,17 @@ See also L<Prima::Window/modalResult>, L<Prima::Button/modalResult>.
 	mb::Question
 
 =back
+
+=head2 ps:: - paint states
+
+	mb::Disabled    - can neither draw, nor get/set graphical properties on an object
+	mb::Enabled     - can both draw and get/set graphical properties on an object
+	mb::Information - can only get/set graphical properties on an object
+
+For brevity, mb::Disabled is equal to 0 so this allows for simple boolean testing whether one can 
+get/set graphical properties on an object.
+
+See L<Drawable/get_paint_state>.
 
 =head2 rop:: - raster operation codes
 
