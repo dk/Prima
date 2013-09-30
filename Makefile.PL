@@ -1653,7 +1653,7 @@ sub command_postinstall
 	my %opt = map { split /=/, $_, 2 } @_;
 
 	if ( $opt{dl} ) {
-		my $f = "$opt{lib}/Prima.pm";
+		my $f = "$opt{dest}/Prima.pm";
 		$DL_LOAD_FLAGS = $opt{dl};
 		print "Setting dl_load_flags=$DL_LOAD_FLAGS in $f\n";
 		open F, $f or die "cannot open $f:$!\n";
@@ -1670,12 +1670,12 @@ sub command_postinstall
 	}
 
     if ( $opt{slib} ) {
-        my $f = "$opt{lib}/auto/Prima/$opt{slib}";
+        my $f = "$opt{dest}/auto/Prima/$opt{slib}";
         open F, ">", $f or warn "** warning: Cannot write to a fake lib '$f': Prima extensions won't build\n";
         close F;
     }
 	
-	my $fn_cfg = "$opt{lib}/Prima/Config.pm";
+	my $fn_cfg = "$opt{dest}/Prima/Config.pm";
 	print "Updating config $fn_cfg\n";
 	open F, $fn_cfg or die "cannot open $fn_cfg:$!\n";
 	open FF, "> $fn_cfg.tmp" or die "cannot open $fn_cfg.tmp:$!\n";
@@ -1985,12 +1985,17 @@ sub install
 	my $t = $self->SUPER::install(@_);
 	my $n = $t =~ s[
 		(pure_\w+_install.*?)                       # 1
-		(INST_ARCHLIB\)\s+)(\$\(DEST\w+\))(.*?)     # 2,3,4
-		(INST_BIN\)\s+)(\$\(DEST\w+\))(.*?)         # 5,6,7
+		(INST_ARCHLIB\)\s+)\$\(DEST(\w+)\)(.*?)     # 2,3,4
+		(INST_BIN\)\s+)\$\(DEST(\w+)\)(.*?)         # 5,6,7
 		(.*?)                                       # 8
 		\n\n
 	][
-		"$1$2$3$4$5$6$7$8\n\t\$(NOECHO) \$(ABSPERL) $0 --postinstall lib=$3 bin=$6 dl=$DL_LOAD_FLAGS slib=$cygwin_fake_Slib\n\n"
+		"$1".
+		"$2\$(DEST$3)$4".
+		"$5\$(DEST$6)$7$8".
+		"\n\t\$(NOECHO) \$(ABSPERL) $0 --postinstall ".
+			"dest=\$(DEST$3) lib=\$($3) bin=\$($6) ".
+			"dl=$DL_LOAD_FLAGS slib=$cygwin_fake_Slib\n\n"
 	]xgse;
 
 	$END .= <<BAD_MAKEFILE if $n != 3;
