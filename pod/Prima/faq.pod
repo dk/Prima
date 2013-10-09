@@ -403,6 +403,42 @@ asyncronously read data passed through a pipe or a socket.
 Note: Win32 runtime library does not support asynchronous pipes, only asyncronous sockets.
 Cygwin does support both asyncronous pipes and sockets.
 
+=head2 How do I use Prima with AnyEvent ?
+
+Prima works well with L<AnyEvent> but there are some minor differences in using
+Prima. L<AnyEvent> is a generic event processing library that supports various
+underlying event loop implementations such as L<EV>, L<Event>, L<POE> etc.
+Prima internally uses its own event loop to perform its event handling and
+L<AnyEvent> can support that by automatically selecting L<POE> to be the
+internal implementation when Prima is loaded.  However, you may use L<AnyEvent>
+with any other internal event loop implementation along with Prima but the
+results might be scary. There are a few points to note:
+
+=over
+
+=item *
+
+Prima has to be loaded before L<AnyEvent>.
+
+=item *
+
+You can call C<AnyEvent::detect> to check if the implementation is
+C<'AnyEvent::Impl::POE'>;
+
+=item *
+
+You have to not call C<run Prima> but instead call L<AnyEvent>'s condition variable
+C<recv> function.
+
+=item *
+
+You have to use C<$::application-E<gt>yield> in an C<AnyEvent-E<gt>timer> object to
+allow for the Prima UI to update periodically.
+
+=back
+
+See full example in F<examples/socket_anyevent.pl> .
+
 =head2 How do I post an asynchronous message?
 
 C<Prima::Component::post_message> method posts a message through the system event dispatcher
