@@ -2,7 +2,7 @@
 
 =item NAME
 
-AnyEvent version of examples/socket.pl with automatic selection of Event library
+AnyEvent version of examples/socket.pl  with POE::Loop::Prima
 
 =head AUTHOR
 
@@ -12,11 +12,11 @@ Vikas N Kumar
 
 use strict;
 use warnings;
+use POE 'Loop::Prima';
 use Prima qw(InputLine Edit Application);
 use AnyEvent;
 use AnyEvent::Socket;
 
-my $loop = AnyEvent->condvar;
 my $impl = AnyEvent::detect;
 print "AnyEvent implementation is $impl\n";
 
@@ -25,7 +25,6 @@ my $w = Prima::MainWindow-> create(
 	text      => 'AnyEvent demo',
     onDestroy => sub {
         # when the window is closed we want AnyEvent to also exit
-        $loop->send;
     },
 );
 
@@ -77,9 +76,4 @@ my $il = $w-> insert( InputLine =>
 );
 $il-> select_all;
 
-# replace 'run Prima' with the below timer
-my $timer = AnyEvent->timer(after => 0, interval => 1/20, cb => sub {
-        $::application->yield;
-});
-# start the AnyEvent loop
-$loop->recv;
+run Prima;
