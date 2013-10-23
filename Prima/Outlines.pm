@@ -127,7 +127,21 @@ sub init
 		if ( $images[0]) {
 			@imageSize = $images[0]-> size;
 		} else {
-			@imageSize = (0,0);
+			# if compiled without gif support
+			@imageSize = (11,11);
+			for my $i (0,1) {
+				$images[$i] = Prima::DeviceBitmap->new(
+					width     => $imageSize[0],
+					height    => $imageSize[1],
+					backColor => cl::White,
+					color     => cl::Gray,
+				);
+				$images[$i]->clear;
+				$images[$i]->rectangle(0,0,10,10);
+				$images[$i]->color(cl::Black);
+				$images[$i]->line( 2, 5, 8, 5 );
+			}
+			$images[1]->line( 5, 2, 5, 8);
 		}
 	}
 	for ( qw( topItem focusedItem))
