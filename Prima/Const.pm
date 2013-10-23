@@ -722,11 +722,11 @@ See also L<Prima::Window/modalResult>, L<Prima::Button/modalResult>.
 
 =head2 ps:: - paint states
 
-	mb::Disabled    - can neither draw, nor get/set graphical properties on an object
-	mb::Enabled     - can both draw and get/set graphical properties on an object
-	mb::Information - can only get/set graphical properties on an object
+	ps::Disabled    - can neither draw, nor get/set graphical properties on an object
+	ps::Enabled     - can both draw and get/set graphical properties on an object
+	ps::Information - can only get/set graphical properties on an object
 
-For brevity, mb::Disabled is equal to 0 so this allows for simple boolean testing whether one can 
+For brevity, ps::Disabled is equal to 0 so this allows for simple boolean testing whether one can 
 get/set graphical properties on an object.
 
 See L<Drawable/get_paint_state>.

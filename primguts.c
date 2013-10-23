@@ -1293,6 +1293,7 @@ register_constants( void)
    register_fr_constants();
    register_mt_constants();
    register_gt_constants();
+   register_ps_constants();
 }
 
 XS( Object_alive_FROMPERL);
