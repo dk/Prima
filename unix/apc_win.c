@@ -1296,7 +1296,7 @@ apc_window_execute( Handle self, Handle insert_before)
    	int i;
 	PList l = & PWidget(application)-> widgets;
 	for ( i = 0; i < l-> count; i++)
-	    if ( PObject(l-> items[i])-> options. optMainWindow) {
+	    if ( PObject(l-> items[i])-> options. optMainWindow && self != l->items[i]) {
 	       toplevel = l-> items[i];
 	       break;
 	    }
