@@ -422,6 +422,14 @@ typedef struct { double re, im; } DComplex;
 typedef struct { float  r,  ph; } TrigComplex;
 typedef struct { double r,  ph; } TrigDComplex;
 
+typedef struct _Rect2
+{
+    int x;
+    int y;
+    int width;
+    int height;
+} Rect2, *PRect2;
+
 #ifdef __cplusplus
 #define nil       NULL
 #else
@@ -1937,6 +1945,9 @@ apc_application_get_os_info( char *system, int slen,
 
 extern Point
 apc_application_get_size( Handle self);
+
+extern Rect2 *
+apc_application_get_monitor_rects( Handle self, int * nrects);
 
 extern Bool
 apc_application_go( Handle self);

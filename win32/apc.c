@@ -364,6 +364,13 @@ apc_application_get_size( Handle self)
    return ret;
 }
 
+Rect2 *
+apc_application_get_monitor_rects( Handle self, int * nrects)
+{
+    *nrects = 0;
+    return nil;
+}
+
 static Bool
 files_rehash( Handle self, void * dummy)
 {

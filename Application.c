@@ -647,6 +647,37 @@ Application_get_modal_window( Handle self, int modalFlag, Bool topMost)
    return nilHandle;
 }
 
+SV * 
+Application_get_monitor_rects( Handle self)
+{
+   int i, nrects;
+   Rect2 * rects = apc_application_get_monitor_rects(self, &nrects);
+   AV * ret = newAV();
+   for ( i = 0; i < nrects; i++) {
+   	AV * rect = newAV();
+	av_push( rect, newSViv( rects[i].x));
+	av_push( rect, newSViv( rects[i].y));
+	av_push( rect, newSViv( rects[i].width));
+	av_push( rect, newSViv( rects[i].height));
+	av_push( ret, newRV_noinc(( SV *) rect));
+   }
+   free(rects);
+
+   /* .. or return at least the current size */
+   if ( nrects == 0) {
+   	AV * rect = newAV();
+	Point sz = apc_application_get_size(self);
+	av_push( rect, newSViv( 0));
+	av_push( rect, newSViv( 0));
+	av_push( rect, newSViv( sz.x));
+	av_push( rect, newSViv( sz.y));
+	av_push( ret, newRV_noinc(( SV *) rect));
+   }
+
+   return newRV_noinc(( SV *) ret);
+}
+
+
 Handle
 Application_get_parent( Handle self)
 {

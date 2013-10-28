@@ -1,5 +1,5 @@
 # $Id$
-print "1..3 gp_init,pixel,forbidden actions\n";
+print "1..4 gp_init,pixel,forbidden actions,monitor sizes\n";
 my $a = $::application;
 
 my @sz = $a-> size;
@@ -21,5 +21,8 @@ $a-> end_paint;
 
 $a-> visible(0);
 ok( $a-> visible && $a-> width == $sz[0] && $a-> height == $sz[1]);
+
+my $msz = $a->get_monitor_rects;
+ok( $msz && ref($msz) eq 'ARRAY' && @$msz > 0 );
 
 1;

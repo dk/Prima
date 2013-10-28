@@ -1298,10 +1298,23 @@ EOF
 			}
 		}
 	}
+
+	if ( have_header( "X11/extensions/Xrandr.h")) {
+		print "Checking for presence of libXrandr... ";
+		if ( defined find_lib( 'Xrandr', '', '')) {
+			push @LIBS, 'Xrandr';
+			print "yes\n";
+		} else {
+			$DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H} = undef;
+			print "no\n";
+		}
+	}
 	
 	print "Using Xft library\n" if $cmd_options{WITH_XFT};
 	print "Using iconv library\n" if $cmd_options{WITH_ICONV};
 	print "Using gtk2 library\n" if $cmd_options{WITH_GTK2};
+	print "Using Xrandr library\n" if $DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H};
+		
 }
 
 sub generate_win32_def

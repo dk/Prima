@@ -273,7 +273,14 @@ init_x11( char * error_buf )
    guts. shared_image_extension = false;
    guts. shared_image_completion_event = -1;
 #endif
-   
+   guts. randr_extension = false;
+#ifdef HAVE_X11_EXTENSIONS_XRANDR_H
+   {
+      int dummy;
+      if ( XShapeQueryExtension( DISP, &dummy, &dummy))
+         guts. randr_extension = true;
+   }	 
+#endif
    XrmInitialize();
    guts.db = get_database();
    XrmStringToQuarkList( common_quarks, common_quarks_list);
@@ -846,6 +853,44 @@ Point
 apc_application_get_size( Handle self)
 {
    return guts. displaySize;
+}
+
+Rect2 *
+apc_application_get_monitor_rects( Handle self, int * nrects)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRANDR_H
+   XRRScreenResources * sr;
+   Rect2 * ret = nil;
+
+   if ( !guts. randr_extension) {
+      *nrects = 0;
+      return nil;
+   }
+
+   XCHECKPOINT;
+   sr = XRRGetScreenResources(DISP,guts.root);
+   if ( sr ) {
+      int i;
+      ret = malloc(sizeof(Rect2) * sr->ncrtc);
+      *nrects = sr->ncrtc;
+      for ( i = 0; i < sr->ncrtc; i++) {
+	 XRRCrtcInfo * ci = XRRGetCrtcInfo (DISP, sr, sr->crtcs[i]);
+	 ret[i].x      = ci->x;
+	 ret[i].y      = guts.displaySize.y - ci->height - ci->y;
+	 ret[i].width  = ci->width;
+	 ret[i].height = ci->height;
+	 XRRFreeCrtcInfo(ci);
+      }
+      XRRFreeScreenResources(sr);
+      XCHECKPOINT;
+   } else {
+      *nrects = sr->ncrtc;
+   }
+   return ret;
+#else   
+   *nrects = 0;
+   return nil;
+#endif
 }
 
 typedef struct {

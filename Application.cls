@@ -89,6 +89,7 @@ object Prima::Application( Prima::Widget)
    method Handle get_hint_widget();
    method Rect   get_indents() => apc_application_get_indents;
    static Font   get_message_font( char * dummy = "");
+   method SV *   get_monitor_rects();
    method Handle get_modal_window( int modalFlag = mtExclusive, Bool topMost = true);
    method Point  get_scroll_rate();
    static SV *   get_system_info( char * dummy = "");

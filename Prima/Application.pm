@@ -542,6 +542,11 @@ if 0, the 'lowest' one ( in a simple case when window A is made modal
 If a chain is empty C<undef> is returned. In case when a chain consists
 of just one window, TOPMOST value is apparently irrelevant.
 
+=item get_monitor_rects
+
+Returns set of rects in format [X,Y,WIDTH,HEIGHT] identifying monitor
+configurations. Currently works under X11 only.
+
 =item get_scroll_rate
 
 Returns two integer values of two system-specific
