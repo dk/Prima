@@ -110,7 +110,7 @@ set_net_hints( XWindow window, int task_listed, int modal, int zoom, int on_top)
    if ( on_top >= 0) {
       ev. data. l[0] = ( on_top > 0) ? 1 : 0;
       ev. data. l[1] = ( long) NET_WM_STATE_STAYS_ON_TOP;
-      ev. data. l[1] = ( long) NET_WM_STATE_ABOVE;
+      ev. data. l[2] = ( long) NET_WM_STATE_ABOVE;
       XSendEvent( DISP, guts. root, false, SubstructureRedirectMask|SubstructureNotifyMask, (XEvent*)&ev);
    }
 
