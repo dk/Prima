@@ -170,9 +170,9 @@ my $w = Prima::MainWindow-> create(
 	color     => cl::LightGreen,
 	menuItems => [
 		["~Options" => [
-		[ '*bt' => 'Show ~big text' => sub { $showBigText = $_[0]-> menu-> toggle( $_[1]); }],
-		[ '*st' => 'Show ~small text' => sub { $showSmallText = $_[0]-> menu-> toggle( $_[1]); }],
-		[ '*bm' => 'Show bit~maps' => sub { $showBitmaps = $_[0]-> menu-> toggle( $_[1]); }],
+		[ '@*bt' => 'Show ~big text' => sub { $showBigText = $_[2]; }],
+		[ '@*st' => 'Show ~small text' => sub { $showSmallText = $_[2]; }],
+		[ '@*bm' => 'Show bit~maps' => sub { $showBitmaps = $_[2] }],
 		[],
 		['~Full screen' => sub {
 			$fullScreen = 1;

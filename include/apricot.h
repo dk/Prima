@@ -2406,6 +2406,7 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
       unsigned int utf8_text     : 1;
       unsigned int utf8_accel    : 1;
       unsigned int utf8_perlSub  : 1;
+      unsigned int autotoggle    : 1;  /* true if menu is toggled automatially */
    } flags;
 } MenuItemReg, *PMenuItemReg;
 

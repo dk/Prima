@@ -162,9 +162,7 @@ text => 'Rotating line',
 font => { pitch => fp::Fixed, style => fs::Bold },
 menuItems =>
 	[[ '~Options' => [
-		[ '*a' => '~Antialias' => sub {
-			$antialias = $_[0]-> menu-> toggle( $_[1]);
-		}],
+		[ '@*a' => '~Antialias' => sub { $antialias = $_[2] }],
 	],
 ]],
 

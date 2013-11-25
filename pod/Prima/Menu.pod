@@ -18,7 +18,8 @@ Prima::Menu - pull-down and pop-up menu objects
               [ '~Exit', 'Alt+X', '@X', sub { exit } ],
            ]],
            [ '~Options' => [
-              [ '*option1' => 'Checkable option' => sub { $_[0]-> menu-> toggle( $_[1]) }],
+              [ '*option1'  => 'Checkable option' => sub { $_[0]-> menu-> toggle( $_[1]) }],
+              [ '*@option2' => 'Checkable option' => sub {}], # same
            ]],
            [],
            [ '~Help' => [
@@ -90,10 +91,11 @@ items to be copied change their IDs, but explicitly set names are preserved.
 Since the anonymous menu items do not have name, their auto-generated names
 change also.
 
-If the name is prepended by '-' or '*' characters, or both, these are not
+If the name is prepended by '-', '*', or '@' characters, the characters are not
 treated as part of the name but as indicator that the item is disabled  ( '-'
-character ) or checked ( '*' character ).  This syntax is valid only for
-C<::items> and C<insert()> functions, not for C<set_variable()> method.
+character ), checked ( '*' character ), or has an auto-toggle flag ('@').
+This syntax is valid only for C<::items> and C<insert()> functions, not for
+C<set_variable()> method.
 
 =item Menu text / menu image
 
@@ -158,20 +160,31 @@ entry in a menu item, its action is triggered.
 Every non-separator and non-submenu item is destined to perform an action. The
 action can be set either as an anonymous sub, or as string with name of a
 method on the owner of a menu object. Both have their niche of usage, and both
-are supplied with two parameters, when called - the owner of a menu object, and
-the name of a menu item, that triggered the action:
+are supplied with three parameters, when called - the owner of a menu object, 
+the name of a menu item, that triggered the action, and the menu checked status:
 
    Prima::MainWindow-> new(
    	menuItems => [
-   		['item', 'Test', 
+   		['@item', 'Test', 
                 sub {
-                    my ( $window, $item) = @_; # contain MainWindow and 'item'
+                    my ( 
+                       $window,  # MainWindow
+                       $item,    # 'item'
+                       $checked  # MainWindow->men('item')->checked
+                    ) = @_;
                 }],
    	]
    );
 
 Action scalar in menu item is accessible via C<::action>
 property.
+
+A special built-in action can automatically toggle a menu item, instead of
+an explicit call
+    
+   $window->menu->toggle($item)
+
+To achieve this, add '@' character to the menu item name (see L<"Menu item name">).
 
 =item User data 
 

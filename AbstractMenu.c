@@ -204,7 +204,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       if ( count < 2) {          /* empty or 1 means line divisor, no matter of text */
          r-> flags. divider = true;
          rightAdjust = (( level == 0) && ( var-> anchored));
-	 if ( count == 1) l_var = 0;
+         if ( count == 1) l_var = 0;
       } else if ( count == 2) {
          l_text = 0;
          l_sub  = 1;
@@ -240,10 +240,10 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 #define a_get( l_, fl_, num) if ( num >= 0 ) {                                 \
                            holder = av_fetch( item, num, 0);                   \
                            if ( holder) {                                      \
-			      if ( SvTYPE(*holder) != SVt_NULL) {              \
-				 l_ = duplicate_string( SvPV_nolen( *holder)); \
-				 fl_ = prima_is_utf8_sv(*holder);              \
-			      }                                                \
+                              if ( SvTYPE(*holder) != SVt_NULL) {              \
+                                 l_ = duplicate_string( SvPV_nolen( *holder)); \
+                                 fl_ = prima_is_utf8_sv(*holder);              \
+                              }                                                \
                            } else {                                            \
                               warn("RTC003A: menu build error: array panic");  \
                               my-> dispose_menu( self, m);                     \
@@ -267,24 +267,31 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
          #define s r-> variable
          int i, decr = 0;
          for ( i = 0; i < 2; i++) {
-	    switch ( s[i]) {
-	    case '-':
-	       r-> flags. disabled = 1;
-	       decr++;
-	       break;
-	    case '*':
-	       r-> flags. checked = 1;
-	       decr++;
-	       break;
-	    default:
-	       break;
-	    }
+            switch ( s[i]) {
+            case '-':
+               r-> flags. disabled = 1;
+               decr++;
+               break;
+            case '*':
+               r-> flags. checked = 1;
+               decr++;
+               break;
+            case '@':
+               if ( r-> flags. divider )
+                  warn("warning: auto-toggle flag @ ignored on a divider menu");
+               else
+                  r-> flags. autotoggle = 1;
+               decr++;
+               break;
+            default:
+               break;
+            }
          }
          if ( decr) memmove( s, s + decr, strlen( s) + 1 - decr);
          if ( strlen( s) == 0 || is_var_id_name( s) != 0) {
             free( r-> variable);
             r-> variable = nil;
-	 }
+         }
          #undef s
       }
 
@@ -445,34 +452,36 @@ new_av(  PMenuItemReg m, int level)
       AV * loc = newAV();
       if ( !m-> flags. divider) {
          if ( m-> variable) { /* has name */
-	    SV * sv;
+            SV * sv;
             int shift = ( m-> flags. checked ? 1 : 0) + ( m-> flags. disabled ? 1 : 0);
-	    if ( shift > 0) { /* has flags */
-	       int len = (int) strlen( m-> variable);
+            if ( shift > 0) { /* has flags */
+               int len = (int) strlen( m-> variable);
                char * name = allocs( len + shift);
-	       if ( name) {
-		  int slen = len + shift;
-		  memcpy( name + shift, m-> variable, len);
-		  if ( m-> flags. checked)  name[ --shift] = '*';
-		  if ( m-> flags. disabled) name[ --shift] = '-';
+               if ( name) {
+                  int slen = len + shift;
+                  memcpy( name + shift, m-> variable, len);
+                  if ( m-> flags. disabled)   name[ --shift] = '-';
+                  if ( m-> flags. checked)    name[ --shift] = '*';
+                  if ( m-> flags. autotoggle) name[ --shift] = '@';
                   sv = newSVpv( name, slen);
-	       } else 
+               } else 
                   sv = newSVpv( m-> variable, len);
-	    } else /* has name but no flags */
+            } else /* has name but no flags */
                sv = newSVpv( m-> variable, 0);
 
             if ( m-> flags. utf8_variable) 
-	       SvUTF8_on( sv);
+               SvUTF8_on( sv);
             av_push( loc, sv);
          } else { /* has flags but no name - autogenerate */
-	    int len;
-	    char buffer[20];
-	    len = sprintf( buffer, "%s%s#%d", 
-                m-> flags. disabled ? "-" : "",
-                m-> flags. checked  ? "*" : "",
-		m-> id);
+            int len;
+            char buffer[20];
+            len = sprintf( buffer, "%s%s%s#%d", 
+                m-> flags. disabled   ? "-" : "",
+                m-> flags. checked    ? "*" : "",
+                m-> flags. autotoggle ? "@" : "",
+                m-> id);
             av_push( loc, newSVpv( buffer, ( STRLEN) len));
-	 }
+         }
 
          if ( m-> bitmap) {
             if ( PObject( m-> bitmap)-> stage < csDead)
@@ -491,35 +500,35 @@ new_av(  PMenuItemReg m, int level)
             if ( m-> flags. utf8_accel) SvUTF8_on( sv);
          } else {
             av_push( loc, newSVpv( "", 0));
-	 }
+         }
          av_push( loc, newSViv( m-> key));
 
          if ( m-> down) {
-	    av_push( loc, new_av( m-> down, level + 1));
-	 } else if ( m-> code) {
-	    av_push( loc, newSVsv( m-> code)); 
-	 } else if ( m-> perlSub) {
+            av_push( loc, new_av( m-> down, level + 1));
+         } else if ( m-> code) {
+            av_push( loc, newSVsv( m-> code)); 
+         } else if ( m-> perlSub) {
             SV * sv = newSVpv( m-> perlSub, 0);
             if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
             av_push( loc, sv);
          } else {
             av_push( loc, newSVpv( "", 0));
-	 }
+         }
 
          if ( m-> data) 
-	    av_push( loc, newSVsv( m-> data));
+            av_push( loc, newSVsv( m-> data));
       } else {
-	 /* divider */
+         /* divider */
          if ( m-> variable) {
-	    SV * sv = newSVpv( m-> variable, 0);
+            SV * sv = newSVpv( m-> variable, 0);
             if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
             av_push( loc, sv);
-	 } else {
-	    int len;
-	    char buffer[20];
-	    len = sprintf( buffer, "#%d", m-> id);
+         } else {
+            int len;
+            char buffer[20];
+            len = sprintf( buffer, "#%d", m-> id);
             av_push( loc, newSVpv( buffer, ( STRLEN) len));
-	 }
+         }
       }
       av_push( glo, newRV_noinc(( SV *) loc));
       m = m-> next;
@@ -582,16 +591,16 @@ AbstractMenu_get_items( Handle self, char * varName)
    {
       PMenuItemReg m = find_menuitem( self, varName, true);
       if ( m && m-> down) {
-	 return new_av( m-> down, 1);
+         return new_av( m-> down, 1);
       } else if ( m) {
-   	 return newRV_noinc(( SV *) newAV());
+         return newRV_noinc(( SV *) newAV());
       } else {
-	 return nilSV;
+         return nilSV;
       }
    } else {
       return var-> tree ? 
-	 new_av( var-> tree, 0) :
-   	 newRV_noinc(( SV *) newAV());
+         new_av( var-> tree, 0) :
+         newRV_noinc(( SV *) newAV());
    }
 }
 
@@ -843,9 +852,9 @@ AbstractMenu_set_variable( Handle self, char * varName, SV * newName)
       char * v;
       v = SvPV( newName, len);
       if ( len > 0) {
-	 m-> variable = duplicate_string( v);
-	 m-> flags. utf8_variable = prima_is_utf8_sv( newName);
-	 return;
+         m-> variable = duplicate_string( v);
+         m-> flags. utf8_variable = prima_is_utf8_sv( newName);
+         return;
       }
    }
    m-> variable = nil;
@@ -858,22 +867,26 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
    char buffer[16], *context;
    if ( m == nil) return false;
    context = AbstractMenu_make_var_context( self, m, buffer);
+   if ( m-> flags. autotoggle ) {
+      m-> flags. checked = m-> flags. checked ? 0 : 1;
+      apc_menu_item_set_check( self, m);
+   }
    if ( m-> code) {
       if ( m-> flags. utf8_variable) {
          SV * sv = newSVpv( context, 0);
          SvUTF8_on( sv);
-         cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "S", sv);
+         cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "Si", sv, m-> flags. checked);
          sv_free( sv);
       } else
-         cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "s", context);
+         cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "si", context, m-> flags. checked);
    } else if ( m-> perlSub) {
       if ( m-> flags. utf8_variable) {
          SV * sv = newSVpv( context, 0);
          SvUTF8_on( sv);
-         call_perl( var-> owner, m-> perlSub, "S", sv);
+         call_perl( var-> owner, m-> perlSub, "Si", sv, m-> flags. checked);
          sv_free( sv);
       } else
-         call_perl( var-> owner, m-> perlSub, "s", context);
+         call_perl( var-> owner, m-> perlSub, "si", context, m-> flags. checked);
    }
    return true;
 }

@@ -151,8 +151,8 @@ sub menuadd
 					['~Normal ( 100%)' => 'Ctrl+Z' => '^Z' => sub{$_[0]-> IV-> zoom(1.0)}],
 					['~Best fit' => 'Ctrl+Shift+Z' => km::Shift|km::Ctrl|ord('z') => \&zbestfit],
 					[],
-					['abfit' => '~Auto best fit' => sub{
-						zbestfit($_[0]) if $_[0]-> IV-> {autoBestFit} = $_[0]-> menu-> abfit-> toggle;
+					['@abfit' => '~Auto best fit' => sub{
+						zbestfit($_[0]) if $_[0]-> IV-> {autoBestFit} = $_[2];
 					}],
 					[],
 					['25%' => sub{$_[0]-> IV-> zoom(0.25)}],

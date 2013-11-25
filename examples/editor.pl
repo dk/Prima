@@ -177,13 +177,13 @@ sub profile_default
 				['~Redo' => 'Ctrl+R'        => kb::NoKey   , sub {$_[0]-> {editor}-> redo}],
 			]],
 			['~Options' => [
-				[ 'syx' => '~Syntax hilite' => sub{ $_[0]-> {editor}-> syntaxHilite( $_[0]-> menu-> syx-> toggle)}],
-				[ '*aid' => '~Auto indent' => sub{ $_[0]-> {editor}-> autoIndent( $_[0]-> menu-> aid-> toggle)}],
-				[ 'wwp' => '~Word wrap' => sub{ $_[0]-> {editor}-> wordWrap( $_[0]-> menu-> wwp-> toggle)}],
-				[ 'psb' => '~Presistent blocks' => sub{ $_[0]-> {editor}-> persistentBlock( $_[0]-> menu-> psb-> toggle)}],
+				[ '@syx' => '~Syntax hilite' => sub{ $_[0]-> {editor}-> syntaxHilite( $_[2] )}],
+				[ '@*aid' => '~Auto indent' => sub{ $_[0]-> {editor}-> autoIndent( $_[2] )}],
+				[ '@wwp' => '~Word wrap' => sub{ $_[0]-> {editor}-> wordWrap( $_[2] )}],
+				[ '@psb' => '~Presistent blocks' => sub{ $_[0]-> {editor}-> persistentBlock( $_[2] )}],
 				[],
-				[ '*hsc' => '~Horizontal scrollbar' => sub{ $_[0]-> {editor}-> hScroll( $_[0]-> menu-> hsc-> toggle)}],
-				[ '*vsc' => '~Vertical scrollbar'   => sub{ $_[0]-> {editor}-> vScroll( $_[0]-> menu-> vsc-> toggle)}],
+				[ '@*hsc' => '~Horizontal scrollbar' => sub{ $_[0]-> {editor}-> hScroll( $_[2])}],
+				[ '@*vsc' => '~Vertical scrollbar'   => sub{ $_[0]-> {editor}-> vScroll( $_[2])}],
 				[],
 				(
 					$can_utf8 ? 
