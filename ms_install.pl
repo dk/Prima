@@ -151,7 +151,7 @@ if ( $install) {
 	print "Copying executables...\n";
 	for ( @cpbin) {
 		my ( $src, $dst) = @$_;
-		$dst .= $mswin32 ? '.bat' : '');
+		$dst .= $mswin32 ? '.bat' : '';
 		push @instfiles, $dst;
 		print "Installing $src ...\n";
 		if ( $mswin32) {
