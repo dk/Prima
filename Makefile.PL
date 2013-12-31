@@ -1093,7 +1093,8 @@ sub setup_X11
 		"/usr/X11/lib",
 		"/usr/X/lib",
 		"/usr/openwin/lib",
-		"/opt/X11/lib"
+		"/opt/X11/lib",
+        "/usr/local/lib"
 	);
 	# using /usr/X11R6/lib64 ?
 	unshift @libpath, map { s/lib$/lib64/; $_ } grep { /lib$/ } @libpath
