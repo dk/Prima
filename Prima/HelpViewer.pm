@@ -189,7 +189,13 @@ use vars qw(@ISA $finddlg $prndlg $setupdlg $inifile
 $defaultVariableFont $defaultFixedFont);
 @ISA = qw(Prima::Window);
 
-$inifile = Prima::IniFile-> create( Prima::Utils::path( 'HelpWindow'));
+$inifile = Prima::IniFile-> create(
+	file => Prima::Utils::path('HelpWindow'),
+	default => { View => {
+		FullText => 1,
+		FixedFont => 'monospace',
+	}},
+);
 
 sub profile_default
 {
