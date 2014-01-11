@@ -93,7 +93,7 @@
 #define FC_WIDTH "width"
 #endif
 
-#if FC_MAJOR < 2 || ( FC_MAJOR == 2 && FC_MINOR < 10 )
+#if FC_MAJOR < 2 || ( FC_MAJOR == 2 && FC_MINOR > 10 )
 #define NEED_EXPLICIT_FC_SCALABLE 1
 #endif
 
