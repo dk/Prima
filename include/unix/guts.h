@@ -747,7 +747,6 @@ typedef struct _drawable_sys_data
       unsigned reload_font		: 1;
       unsigned sizeable                 : 1;
       unsigned sizemax_set              : 1;
-      unsigned suppress_cmMinimize      : 1;
       unsigned sync_paint               : 1;
       unsigned task_listed              : 1;
       unsigned transparent              : 1;

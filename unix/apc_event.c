@@ -782,7 +782,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
       Event f;
       bzero( &e, sizeof( Event));
       bzero( &f, sizeof( Event));
-      if ( !XX-> flags. iconic && XX-> type. window && !XX-> flags. suppress_cmMinimize) {
+      if ( !XX-> flags. iconic && XX-> type. window) {
          f. cmd = cmWindowState;
          f. gen. i = wsMinimized;
          f. gen. source = self;

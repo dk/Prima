@@ -41,36 +41,14 @@
 /* Tell a NET-compliant window manager that the window needs special treatment.
     See freedesktop.org for docs 
 
-    params - -1 - don't touch, 0 - clear, 1 - set
+    params - 0 - clear, 1 - set
  */
 static void
-set_net_hints( XWindow window, int task_listed, int modal, int zoom, int on_top)
+set_net_hint(XWindow window, Bool state, Atom prop1, Atom prop2)
 {
-   long data[40], * prop;
-   Atom type;
-   int count = 0, format;
    XClientMessageEvent ev;
-   unsigned long i, n, left;
-   
-   if ( guts. icccm_only) return;
 
-   /* read and preserve all state properties we don't know about */
-   if ( XGetWindowProperty( DISP, window, NET_WM_STATE, 0, 32, false, XA_ATOM,
-          &type, &format, &n, &left, (unsigned char**)&prop) == Success) {
-     if ( prop) {
-         if ( n > 32) n = 32;
-         for ( i = 0; i < n; i++) {
-            if (( prop[i] != NET_WM_STATE_SKIP_TASKBAR || task_listed < 0) && 
-                ( prop[i] != NET_WM_STATE_MODAL || modal < 0) && 
-                ( prop[i] != NET_WM_STATE_STAYS_ON_TOP || on_top < 0) && 
-                ( prop[i] != NET_WM_STATE_ABOVE || on_top < 0) && 
-                (( prop[i] != NET_WM_STATE_MAXIMIZED_VERT && 
-                   prop[i] != NET_WM_STATE_MAXIMIZED_HORZ) || ( zoom < 0)))
-               data[ count++] = prop[i];
-         }
-         XFree(( unsigned char *) prop);
-      }
-   }
+   if ( guts. icccm_only) return;
 
    /* Send change message to root window, it's responsible for
       on-the-fly changes. Otherwise, the properties are not re-read
@@ -81,53 +59,23 @@ set_net_hints( XWindow window, int task_listed, int modal, int zoom, int on_top)
    ev. window = window;
    ev. message_type = NET_WM_STATE;
    ev. format = 32;
+   
    /*
       _NET_WM_STATE_REMOVE        0    // remove/unset property 
       _NET_WM_STATE_ADD           1    // add/set property 
       _NET_WM_STATE_TOGGLE        2    // toggle property  
     */
 
-   if ( task_listed >= 0) {
-      ev. data. l[0] = ( task_listed > 0) ? 0 : 1;
-      ev. data. l[1] = ( long) NET_WM_STATE_SKIP_TASKBAR;
-      ev. data. l[2] = 0;
-      XSendEvent( DISP, guts. root, false, SubstructureRedirectMask|SubstructureNotifyMask, (XEvent*)&ev);
-   }
-
-   if ( modal >= 0) {
-      ev. data. l[0] = ( modal > 0) ? 1 : 0;
-      ev. data. l[1] = ( long) NET_WM_STATE_MODAL;
-      XSendEvent( DISP, guts. root, false, SubstructureRedirectMask|SubstructureNotifyMask, (XEvent*)&ev);
-   }
-
-   if ( zoom >= 0) {
-      ev. data. l[0] = ( zoom > 0) ? 1 : 0;
-      ev. data. l[1] = ( long) NET_WM_STATE_MAXIMIZED_VERT;
-      ev. data. l[2] = ( long) NET_WM_STATE_MAXIMIZED_HORZ;
-      XSendEvent( DISP, guts. root, false, SubstructureRedirectMask|SubstructureNotifyMask, (XEvent*)&ev);
-   }
-   
-   if ( on_top >= 0) {
-      ev. data. l[0] = ( on_top > 0) ? 1 : 0;
-      ev. data. l[1] = ( long) NET_WM_STATE_STAYS_ON_TOP;
-      ev. data. l[2] = ( long) NET_WM_STATE_ABOVE;
-      XSendEvent( DISP, guts. root, false, SubstructureRedirectMask|SubstructureNotifyMask, (XEvent*)&ev);
-   }
-
-   /* finally reset the list of properties */
-   if ( task_listed == 0) data[ count++] = NET_WM_STATE_SKIP_TASKBAR;
-   if ( modal > 0) data[ count++] = NET_WM_STATE_MODAL;
-   if ( zoom > 0)  {
-      data[ count++] = NET_WM_STATE_MAXIMIZED_VERT;
-      data[ count++] = NET_WM_STATE_MAXIMIZED_HORZ;
-   }
-   if ( on_top > 0) {
-      data[ count++] = NET_WM_STATE_STAYS_ON_TOP;
-      data[ count++] = NET_WM_STATE_ABOVE;
-   }
-   XChangeProperty( DISP, window, NET_WM_STATE, XA_ATOM, 32,
-       PropModeReplace, ( unsigned char *) data, count);
+   ev. data. l[0] = state ? 1 : 0;
+   ev. data. l[1] = (long)prop1;
+   ev. data. l[2] = (long)prop2;
+   XSendEvent( DISP, guts. root, false, SubstructureRedirectMask|SubstructureNotifyMask, (XEvent*)&ev);
 }
+
+#define NETWM_SET_TASK_LISTED(xwindow,flag) set_net_hint(xwindow,flag,NET_WM_STATE_SKIP_TASKBAR,0)
+#define NETWM_SET_MODAL(xwindow,flag)       set_net_hint(xwindow,flag,NET_WM_STATE_MODAL,0)
+#define NETWM_SET_MAXIMIZED(xwindow,flag)   set_net_hint(xwindow,flag,NET_WM_STATE_MAXIMIZED_VERT,NET_WM_STATE_MAXIMIZED_HORZ)
+#define NETWM_SET_ON_TOP(xwindow,flag)      set_net_hint(xwindow,flag,NET_WM_STATE_STAYS_ON_TOP,NET_WM_STATE_ABOVE)
 
 unsigned char * 
 prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * actual_type,
@@ -151,34 +99,34 @@ prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * 
           actual_type, actual_format, &n, &left, &ptr) == Success) {
      if ( ptr) {
          if ( n > 0) {
-	     if ( *actual_format == 32) *actual_format = sizeof(long) * 8; /* MUAHAHA!! That's even documented now */
-	     curr_size = n * *actual_format / 8;
-	     new_size += curr_size;
+             if ( *actual_format == 32) *actual_format = sizeof(long) * 8; /* MUAHAHA!! That's even documented now */
+             curr_size = n * *actual_format / 8;
+             new_size += curr_size;
              offset += curr_size / 4;
-	     *nitems += n;
+             *nitems += n;
 
-	     if ( ret == NULL) {
-	         malloc_size = new_size;
-		 ret = malloc( malloc_size);
-		 if ( ret == NULL) {
+             if ( ret == NULL) {
+                 malloc_size = new_size;
+                 ret = malloc( malloc_size);
+                 if ( ret == NULL) {
                     warn("Not enough memory: %d bytes\n", malloc_size);
-		    return NULL;
-		 }
-	     } else {
+                    return NULL;
+                 }
+             } else {
                  if ( new_size > malloc_size) {
-		     unsigned char * p;
-		     malloc_size = new_size * 2;
-		     p = realloc( ret, malloc_size);
-		     if ( p) {
-		        ret = p;
-		     } else {
-		        free( ret);
+                     unsigned char * p;
+                     malloc_size = new_size * 2;
+                     p = realloc( ret, malloc_size);
+                     if ( p) {
+                        ret = p;
+                     } else {
+                        free( ret);
                         warn("Not enough memory: %d bytes\n", malloc_size);
-			return NULL;
-		     }
-		 }
-	     }
-	     memcpy( ret + new_size - curr_size, ptr, curr_size);
+                        return NULL;
+                     }
+                 }
+             }
+             memcpy( ret + new_size - curr_size, ptr, curr_size);
          }
          XFree( ptr);
       }
@@ -246,7 +194,7 @@ apc_window_task_listed( Handle self, Bool task_list)
 {
    DEFXX;
    XX-> flags. task_listed = ( task_list ? 1 : 0);
-   set_net_hints( X_WINDOW, XX-> flags.task_listed, -1, -1, -1);
+   NETWM_SET_TASK_LISTED( X_WINDOW, XX-> flags.task_listed );
 } 
 
 /* Motif window hints */
@@ -334,37 +282,28 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       if ( !guts.icccm_only && (
            ( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
            ( border_icons != XX-> borderIcons) || 
-	   ( on_top >= 0)
-         )) {
-	 Bool visible = XX-> flags. mapped;
-	 if (
-           ( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
-           ( border_icons != XX-> borderIcons))
-	    destructive_motif_hints = 1;
-	 if ( destructive_motif_hints && on_top < 0)
-	    on_top = apc_window_get_on_top( self);
-	 if ( visible) {
-	    XUnmapWindow( DISP, X_WINDOW);
-            prima_wm_sync( self, UnmapNotify);
-	 }
-         if ( destructive_motif_hints)
-            set_motif_hints( X_WINDOW, border_style, border_icons);
-	 if ( on_top >= 0)
-	    set_net_hints( X_WINDOW, -1, -1, -1, on_top);
-	 if ( visible) { 
-	    XMapWindow( DISP, X_WINDOW);
-            prima_wm_sync( self, MapNotify);
-	 }
-         XX-> borderIcons = border_icons;
-         XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
-      }
-      if (
-            (( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0)) 
-	    || destructive_motif_hints
-	 )
-         apc_window_task_listed( self, task_list);
+      ( on_top >= 0)
+   )) {
+      Bool visible = XX-> flags. mapped;
+      if (( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
+          ( border_icons != XX-> borderIcons))
+         destructive_motif_hints = 1;
+      if ( destructive_motif_hints && on_top < 0)
+         on_top = apc_window_get_on_top( self);
+      if ( destructive_motif_hints)
+         set_motif_hints( X_WINDOW, border_style, border_icons);
+      if ( on_top >= 0)
+         NETWM_SET_ON_TOP( X_WINDOW, on_top);
+      XX-> borderIcons = border_icons;
+      XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
+    }
+    if (
+       (( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0)) 
+       || destructive_motif_hints
+    )
+      apc_window_task_listed( self, task_list);
       return true; 
-   }   
+   }
 
    /* create */
    attrs. event_mask = 0
@@ -517,7 +456,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XX-> owner = real_owner;
    apc_component_fullname_changed_notify( self);
    prima_send_create_event( X_WINDOW);
-   if ( on_top > 0) set_net_hints( X_WINDOW, -1, -1, -1, 1);
+   if ( on_top > 0) NETWM_SET_ON_TOP( X_WINDOW, 1);
    apc_window_task_listed( self, task_list);
    if ( border_style == bsSizeable) XX-> flags. sizeable = 1;
 
@@ -530,7 +469,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       XX-> size. y *= 0.75;
    } else {
       XX-> flags. zoomed = 1;
-      set_net_hints( X_WINDOW, -1, -1, 1, -1);
+      NETWM_SET_MAXIMIZED( X_WINDOW, 1);
       if ( net_supports_maximization()) {
          XX-> zoomRect. right = XX-> size. x;
          XX-> zoomRect. top   = XX-> size. y;
@@ -1175,35 +1114,18 @@ apc_window_set_window_state( Handle self, int state)
    if ( state == wsMaximized && !XX-> flags. zoomed && net_supports_maximization()) {
       Bool visible = XX-> flags. mapped;
       Rect zoomRect;
-   /* net hints changes by themselves do not result in maximization -
-      need explicit map/unmap. */
-      if ( visible) {
-	 XUnmapWindow( DISP, X_WINDOW);
-         /* suppress reaction to UnmapNotify */
-         XX-> flags. suppress_cmMinimize = 1;
-         prima_wm_sync( self, UnmapNotify);
-         XX-> flags. suppress_cmMinimize = 0;
-	 /* in case WM removes NET properties on unmap ( pretty valid )
-	    wait a bit so we can push our net hints. Still a race, but 
-	    nothing bad if we lose - heuristic maximization works fine also, after all. */
-	 XSync( DISP, false);
-      }
-      set_net_hints( X_WINDOW, -1, -1, 1, -1);
+      NETWM_SET_MAXIMIZED( X_WINDOW, 1);
       zoomRect. left   = XX-> origin.x;
       zoomRect. bottom = XX-> origin.y;
       zoomRect. right  = XX-> size.x;
       zoomRect. top    = XX-> size.y;
       if ( visible) {
-         XMapWindow( DISP, X_WINDOW);
-         /* again, wait and suppress reaction to UnmapNotify */
-         XX-> flags. suppress_cmMinimize = 1;
          prima_wm_sync( self, ConfigureNotify);
-         XX-> flags. suppress_cmMinimize = 0;
-	 if ( !prima_wm_net_state_read_maximization( X_WINDOW, NET_WM_STATE)) {
-	    /* wm denies maximization request, or we lost in the race ( see above ),
-	       do maximization by casual heuristic */
-	    goto FALL_THROUGH;
-	 }
+         if ( !prima_wm_net_state_read_maximization( X_WINDOW, NET_WM_STATE)) {
+             /* wm denies maximization request, or we lost in the race ( see above ),
+                do maximization by casual heuristic */
+             goto FALL_THROUGH;
+         }
       }
       XX-> zoomRect = zoomRect; /* often reset in ConfigureNotify to already maximized window */
       XX-> flags. zoomed = 1;
@@ -1237,7 +1159,7 @@ apc_window_set_window_state( Handle self, int state)
    }
 
    if ( XX-> flags. zoomed && state != wsMaximized) {
-      set_net_hints( X_WINDOW, -1, -1, 0, -1);
+      NETWM_SET_MAXIMIZED( X_WINDOW, 0);
       apc_window_set_rect( self, XX-> zoomRect. left, XX-> zoomRect. bottom, 
          XX-> zoomRect. right, XX-> zoomRect. top);
       if ( XX-> flags. zoomed) sync = ConfigureNotify;
@@ -1304,7 +1226,7 @@ apc_window_execute( Handle self, Handle insert_before)
    if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, PWidget(toplevel)-> handle);
 
    XX-> flags.modal = true;
-   set_net_hints( X_WINDOW, -1, XX-> flags.modal, -1, -1);
+   NETWM_SET_MODAL( X_WINDOW, XX-> flags.modal);
    if ( !window_start_modal( self, false, insert_before))
       return false;
 
@@ -1315,7 +1237,7 @@ apc_window_execute( Handle self, Handle insert_before)
       ;
    
    if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, None);
-   if ( X_WINDOW) set_net_hints( X_WINDOW, -1, XX-> flags.modal, -1, -1);
+   if ( X_WINDOW) NETWM_SET_MODAL( X_WINDOW, XX-> flags.modal);
    unprotect_object( self);
    return true;
 }
