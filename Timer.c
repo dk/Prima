@@ -58,7 +58,7 @@ Timer_update_sys_handle( Handle self, HV * profile)
    if ( !apc_timer_create( self, xOwner, pexist( timeout)
                            ? pget_i( timeout)
                            : my-> get_timeout( self)))
-      croak("RTC0063: cannot create timer");
+      croak("cannot create timer");
    if ( pexist( timeout)) pdelete( timeout);
 }
 

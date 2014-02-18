@@ -55,14 +55,14 @@ Application_init( Handle self, HV * profile)
    SV * sv;
    char * hintClass      = pget_c( hintClass);
    if ( application != nilHandle) 
-      croak( "RTC0010: Attempt to create more than one application instance");
+      croak( "Attempt to create more than one application instance");
 
    CDrawable-> init( self, profile);
    list_create( &var->  widgets, 16, 16);
    list_create( &var->  modalHorizons, 0, 8);
    application = self;
    if ( !apc_application_create( self))
-      croak( "RTC0011: Error creating application");
+      croak( "Error creating application");
 /* Widget init */
    SvHV_Font( pget_sv( font), &Font_buffer, "Application::init");
    my-> set_font( self, Font_buffer);
@@ -74,12 +74,12 @@ Application_init( Handle self, HV * profile)
       if ( holder)
          var->  designScale. x = SvNV( *holder);
       else
-         warn("RTC0012: Array panic on 'designScale'");
+         warn("Array panic on 'designScale'");
       holder = av_fetch( av, 1, 0);
       if ( holder)
          var->  designScale. y = SvNV( *holder);
       else
-         warn("RTC0012: Array panic on 'designScale'");
+         warn("Array panic on 'designScale'");
       pdelete( designScale);
    }
    var->  text = duplicate_string("");
@@ -525,7 +525,7 @@ Application_icon( Handle self, Bool set, Handle icon)
       return var-> icon;
 
    if ( icon && !kind_of( icon, CImage)) {
-       warn("RTC0013: Illegal object reference passed to Application::icon");
+       warn("Illegal object reference passed to Application::icon");
        return nilHandle;
    }
    if ( icon) {

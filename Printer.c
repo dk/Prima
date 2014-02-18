@@ -47,7 +47,7 @@ Printer_init( Handle self, HV * profile)
    char * prn;
    inherited init( self, profile);
    if ( !apc_prn_create( self))
-      croak("RTC0070: Cannot create printer");
+      croak("Cannot create printer");
    prn = pget_c( printer);
    if ( strlen( prn) == 0) prn = my-> get_default_printer( self);
    my-> set_printer( self, prn);

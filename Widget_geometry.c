@@ -198,7 +198,7 @@ Widget_check_in( Handle self, Handle in, Bool barf)
    /* check overall validity */
    if ( !in || !kind_of( in, CWidget)) {
       if ( barf)
-         croak("%s: invalid 'in': not a widget", "RTC008F: Prima::Widget::pack");
+         croak("%s: invalid 'in': not a widget", "Prima::Widget::pack");
       else
          return nilHandle;
    }
@@ -207,7 +207,7 @@ Widget_check_in( Handle self, Handle in, Bool barf)
    while ( h) {
       if ( h == self) {
          if ( barf)
-            croak("%s: invalid 'in': is already a child", "RTC008F: Prima::Widget::pack");
+            croak("%s: invalid 'in': is already a child", "Prima::Widget::pack");
          else
             return nilHandle;
       }
@@ -219,7 +219,7 @@ Widget_check_in( Handle self, Handle in, Bool barf)
    while ( h) {
       if ( h == in) {
          if ( barf)
-            croak("%s: invalid 'in': already a pack slave", "RTC008F: Prima::Widget::pack");
+            croak("%s: invalid 'in': already a pack slave", "Prima::Widget::pack");
          else
             return nilHandle;
       }
@@ -230,7 +230,7 @@ Widget_check_in( Handle self, Handle in, Bool barf)
    while ( h) {
       if ( h == in) {
          if ( barf)
-            croak("%s: invalid 'in': already a place slave", "RTC008F: Prima::Widget::pack");
+            croak("%s: invalid 'in': already a place slave", "Prima::Widget::pack");
          else
             return nilHandle;
       }
@@ -854,7 +854,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
          if ( *c == 'b' && (strcmp( c, "bottom")==0)) var-> geomInfo. side = BOTTOM; else
          if ( *c == 'r' && (strcmp( c, "right")==0))  var-> geomInfo. side = RIGHT; else
          if ( *c == 't' && (strcmp( c, "top")==0))    var-> geomInfo. side = TOP; else
-            croak("%s: invalid 'side'", "RTC008F: Prima::Widget::pack");
+            croak("%s: invalid 'side'", "Prima::Widget::pack");
       }
 
       if ( pexist( fill)) {
@@ -872,7 +872,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
             var-> geomInfo. fillx = 
             var-> geomInfo. filly = 1; 
          } else
-            croak("%s: invalid 'fill'", "RTC008F: Prima::Widget::pack");
+            croak("%s: invalid 'fill'", "Prima::Widget::pack");
       }
       
       if ( pexist( expand)) {
@@ -909,7 +909,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
             var-> geomInfo. anchorx = CENTER;
             var-> geomInfo. anchory = CENTER;
          } else
-            croak("%s: invalid 'anchor'", "RTC008F: Prima::Widget::pack");
+            croak("%s: invalid 'anchor'", "Prima::Widget::pack");
       }
 
       if ( pexist( ipadx)) var-> geomInfo. ipad. x = pget_i( ipadx);
@@ -921,12 +921,12 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
          SV * sv = pget_sv( after);
          if ( SvTYPE(sv) != SVt_NULL) {
             if ( !( var-> geomInfo. order = gimme_the_mate( sv)))
-               croak("%s: invalid 'after'", "RTC008F: Prima::Widget::pack");
+               croak("%s: invalid 'after'", "Prima::Widget::pack");
             var-> geomInfo. after = 1;
             if ( pexist( before)) {
                sv = pget_sv( before);
                if ( SvTYPE(sv) != SVt_NULL)
-                  croak("%s: 'after' and 'before' cannot be present simultaneously", "RTC008F: Prima::Widget::pack");
+                  croak("%s: 'after' and 'before' cannot be present simultaneously", "Prima::Widget::pack");
             }
          } else {
             var-> geomInfo. order = nilHandle;
@@ -937,7 +937,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
          SV * sv = pget_sv( before);
          if ( SvTYPE(sv) != SVt_NULL) {
             if ( !( var-> geomInfo. order = gimme_the_mate( sv)))
-               croak("%s: invalid 'before'", "RTC008F: Prima::Widget::pack");
+               croak("%s: invalid 'before'", "Prima::Widget::pack");
          } else
             var-> geomInfo. order = nilHandle;
          var-> geomInfo. after = 0;
@@ -1249,7 +1249,7 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
             var-> geomInfo. anchorx = CENTER;
             var-> geomInfo. anchory = CENTER;
          } else
-            croak("%s: invalid 'anchor'", "RTC008F: Prima::Widget::place");
+            croak("%s: invalid 'anchor'", "Prima::Widget::place");
       }
 
       if ( pexist( x)) {

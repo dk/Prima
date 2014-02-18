@@ -49,7 +49,7 @@ DeviceBitmap_init( Handle self, HV * profile)
    var-> h = pget_i( height);
    var-> monochrome = pget_B( monochrome);
    if ( !apc_dbm_create( self, var-> monochrome))
-      croak("RTC0110: Cannot create device bitmap");
+      croak("Cannot create device bitmap");
    inherited begin_paint( self);
    opt_set( optInDraw);
    CORE_INIT_TRANSIENT(DeviceBitmap);

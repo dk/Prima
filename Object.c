@@ -213,7 +213,7 @@ Object_destroy( Handle self)
       if ( postDestroys. count == 0) break;
       if ( postDestroys. items[ 0] != last) continue;
       if ( postDestroys. count == 1)
-         croak("RTC0A00: Zombie detected: %p", (void*)last);
+         croak("Zombie detected: %p", (void*)last);
       else {
          list_delete_at( &postDestroys, 0);
          list_add( &postDestroys, last);

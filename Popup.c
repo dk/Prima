@@ -59,7 +59,7 @@ Popup_update_sys_handle( Handle self, HV * profile)
       ((( PWidget) var-> owner)-> self)-> set_popup( var-> owner, nilHandle);
    if ( !pexist( owner)) return;
    if ( !apc_popup_create( self, xOwner))
-      croak("RTC0061: Cannot create popup");
+      croak("Cannot create popup");
    var-> system = true;
 }
 

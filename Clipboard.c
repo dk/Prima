@@ -78,7 +78,7 @@ Clipboard_init( Handle self, HV * profile)
 {
    inherited init( self, profile);
    if ( !apc_clipboard_create(self))
-      croak( "RTC0022: Cannot create clipboard");
+      croak( "Cannot create clipboard");
    if (clipboards == 0) {
       Clipboard_register_format_proc( self, "Text",  (void*)text_server);
       Clipboard_register_format_proc( self, "Image", (void*)image_server);
@@ -464,7 +464,7 @@ image_server( Handle self, PClipboardFormatReg instance, int function, SV * data
        c. image = gimme_the_mate( data);
 
        if ( !kind_of( c. image, CImage)) {
-          warn("RTC0023: Not an image passed to clipboard");
+          warn("Not an image passed to clipboard");
           return nilSV;
        }
        instance-> written = apc_clipboard_set_data( self, cfBitmap, &c);

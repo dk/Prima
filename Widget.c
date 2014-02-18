@@ -119,9 +119,9 @@ Widget_init( Handle self, HV * profile)
    {
       Point hotSpot;
       Handle icon = pget_H( pointerIcon);
-      prima_read_point( pget_sv( pointerHotSpot), (int*)&hotSpot, 2, "RTC0087: Array panic on 'pointerHotSpot'");
+      prima_read_point( pget_sv( pointerHotSpot), (int*)&hotSpot, 2, "Array panic on 'pointerHotSpot'");
       if ( icon != nilHandle && !kind_of( icon, CIcon)) {
-         warn("RTC083: Illegal object reference passed to Widget::pointerIcon");
+         warn("Illegal object reference passed to Widget::pointerIcon");
          icon = nilHandle;
       }
       apc_pointer_set_user( self, icon, hotSpot);
@@ -159,23 +159,23 @@ Widget_init( Handle self, HV * profile)
       SV ** holder;
       NPoint ds = {1,1};
 
-      prima_read_point( pget_sv( sizeMin), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
-      prima_read_point( pget_sv( sizeMax), (int*)&set2, 2, "RTC0083: Array panic on 'sizeMax'");
+      prima_read_point( pget_sv( sizeMin), (int*)&set, 2, "Array panic on 'sizeMin'");
+      prima_read_point( pget_sv( sizeMax), (int*)&set2, 2, "Array panic on 'sizeMax'");
       var-> sizeMax = set2;
       my-> set_sizeMin( self, set);
       my-> set_sizeMax( self, set2);
-      prima_read_point( pget_sv( cursorSize), (int*)&set, 2, "RTC0084: Array panic on 'cursorSize'");
+      prima_read_point( pget_sv( cursorSize), (int*)&set, 2, "Array panic on 'cursorSize'");
       my-> set_cursorSize( self, set);
-      prima_read_point( pget_sv( cursorPos), (int*)&set, 2, "RTC0085: Array panic on 'cursorPos'");
+      prima_read_point( pget_sv( cursorPos), (int*)&set, 2, "Array panic on 'cursorPos'");
       my-> set_cursorPos( self, set);
 
       av = ( AV *) SvRV( pget_sv( designScale));
       holder = av_fetch( av, 0, 0);
       ds. x = holder ? SvNV( *holder) : 1;
-      if ( !holder) warn("RTC0086: Array panic on 'designScale'");
+      if ( !holder) warn("Array panic on 'designScale'");
       holder = av_fetch( av, 1, 0);
       ds. y = holder ? SvNV( *holder) : 1;
-      if ( !holder) warn("RTC0086: Array panic on 'designScale'");
+      if ( !holder) warn("Array panic on 'designScale'");
       my-> set_designScale( self, ds);
    }
    my-> set_enabled     ( self, pget_B( enabled));
@@ -256,7 +256,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
 
    if ( parentHandle) {
       if (( owner != application) && clipOwner) 
-         croak("RTC008D: Cannot accept 'parentHandle' for non-application child and clip-owner widget");
+         croak("Cannot accept 'parentHandle' for non-application child and clip-owner widget");
    }
    
    if ( !apc_widget_create( self,
@@ -266,7 +266,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
       pexist( transparent) ? pget_B( transparent): my-> get_transparent( self),
       parentHandle
    ))
-     croak( "RTC0080: Cannot create widget");
+     croak( "Cannot create widget");
    pdelete( transparent);
    pdelete( syncPaint);
    pdelete( clipOwner);
@@ -309,7 +309,7 @@ Widget_attach( Handle self, Handle objectHandle)
    if ( var-> stage > csNormal) return;
    if ( kind_of( objectHandle, CWidget)) {
       if ( list_index_of( &var-> widgets, objectHandle) >= 0) {
-         warn( "RTC0040: Object attach failed");
+         warn( "Object attach failed");
          return;
       }
       list_add( &var-> widgets, objectHandle);
@@ -1316,7 +1316,7 @@ XS( Widget_scroll_FROMPERL)
    dy = SvIV( ST(2));
    profile = parse_hv( ax, sp, items, mark, 3, "Widget::scroll");
    if ( pexist( confineRect)) {
-      prima_read_point( pget_sv( confineRect), rect, 4, "RTC008B: Array panic on 'confineRect'");
+      prima_read_point( pget_sv( confineRect), rect, 4, "Array panic on 'confineRect'");
       confine = &confine_rect;
       confine-> left = rect[0];
       confine-> bottom = rect[1];
@@ -1324,7 +1324,7 @@ XS( Widget_scroll_FROMPERL)
       confine-> top = rect[3];
    }
    if ( pexist( clipRect)) {
-      prima_read_point( pget_sv( clipRect), rect, 4, "RTC008C: Array panic on 'clipRect'");
+      prima_read_point( pget_sv( clipRect), rect, 4, "Array panic on 'clipRect'");
       clip = &clip_rect;
       clip-> left = rect[0];
       clip-> bottom = rect[1];
@@ -1410,7 +1410,7 @@ Widget_set( Handle self, HV * profile)
          int set[2];
          if (order && !pexist(left))   av_push( order, newSVpv("left",0));
          if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
-         prima_read_point( pget_sv( origin), set, 2, "RTC0087: Array panic on 'origin'");
+         prima_read_point( pget_sv( origin), set, 2, "Array panic on 'origin'");
          pset_i( left,   set[0]);
          pset_i( bottom, set[1]);
          pdelete( origin);
@@ -1422,7 +1422,7 @@ Widget_set( Handle self, HV * profile)
          if (order && !pexist(bottom)) av_push( order, newSVpv("bottom",0));
          if (order && !pexist(width)) av_push( order, newSVpv("width",0));
          if (order && !pexist(height)) av_push( order, newSVpv("height",0));
-         prima_read_point( pget_sv( rect), rect, 4, "RTC0088: Array panic on 'rect'");
+         prima_read_point( pget_sv( rect), rect, 4, "Array panic on 'rect'");
          pset_i( left,   rect[0]);
          pset_i( bottom, rect[1]);
          pset_i( width,  rect[2] - rect[0]);
@@ -1434,7 +1434,7 @@ Widget_set( Handle self, HV * profile)
          int set[2];
          if (order && !pexist(width)) av_push( order, newSVpv("width",0));
          if (order && !pexist(height)) av_push( order, newSVpv("height",0));
-         prima_read_point( pget_sv( size), set, 2, "RTC0089: Array panic on 'size'");
+         prima_read_point( pget_sv( size), set, 2, "Array panic on 'size'");
          pset_i( width,  set[0]);
          pset_i( height, set[1]);
          pdelete( size);
@@ -1536,9 +1536,9 @@ Widget_set( Handle self, HV * profile)
    {
       Point hotSpot;
       Handle icon = pget_H( pointerIcon);
-      prima_read_point( pget_sv( pointerHotSpot), (int*)&hotSpot, 2, "RTC0087: Array panic on 'pointerHotSpot'");
+      prima_read_point( pget_sv( pointerHotSpot), (int*)&hotSpot, 2, "Array panic on 'pointerHotSpot'");
       if ( icon != nilHandle && !kind_of( icon, CIcon)) {
-         warn("RTC083: Illegal object reference passed to Widget.set_pointer_icon");
+         warn("Illegal object reference passed to Widget.set_pointer_icon");
          icon = nilHandle;
       }
       apc_pointer_set_user( self, icon, hotSpot);
@@ -1552,41 +1552,41 @@ Widget_set( Handle self, HV * profile)
       SV ** holder = av_fetch( av, 0, 0);
       NPoint ds = {1,1};
       ds. x = holder ? SvNV( *holder) : 1;
-      if ( !holder) warn("RTC0086: Array panic on 'designScale'");
+      if ( !holder) warn("Array panic on 'designScale'");
       holder = av_fetch( av, 1, 0);
       ds. y = holder ? SvNV( *holder) : 1;
-      if ( !holder) warn("RTC0086: Array panic on 'designScale'");
+      if ( !holder) warn("Array panic on 'designScale'");
       my-> set_designScale( self, ds);
       pdelete( designScale);
    }
    if ( pexist( sizeMin)) {
       Point set;
-      prima_read_point( pget_sv( sizeMin), (int*)&set, 2, "RTC0082: Array panic on 'sizeMin'");
+      prima_read_point( pget_sv( sizeMin), (int*)&set, 2, "Array panic on 'sizeMin'");
       my-> set_sizeMin( self, set);
       pdelete( sizeMin);
    }
    if ( pexist( sizeMax)) {
       Point set;
-      prima_read_point( pget_sv( sizeMax), (int*)&set, 2, "RTC0083: Array panic on 'sizeMax'");
+      prima_read_point( pget_sv( sizeMax), (int*)&set, 2, "Array panic on 'sizeMax'");
       my-> set_sizeMax( self, set);
       pdelete( sizeMax);
    }
    if ( pexist( cursorSize)) {
       Point set;
-      prima_read_point( pget_sv( cursorSize), (int*)&set, 2, "RTC0084: Array panic on 'cursorSize'");
+      prima_read_point( pget_sv( cursorSize), (int*)&set, 2, "Array panic on 'cursorSize'");
       my-> set_cursorSize( self, set);
       pdelete( cursorSize);
    }
    if ( pexist( cursorPos)) {
       Point set;
-      prima_read_point( pget_sv( cursorPos), (int*)&set, 2, "RTC0085: Array panic on 'cursorPos'");
+      prima_read_point( pget_sv( cursorPos), (int*)&set, 2, "Array panic on 'cursorPos'");
       my-> set_cursorPos( self, set);
       pdelete( cursorPos);
    }
    if ( pexist( geomSize))
    {
       Point set;
-      prima_read_point( pget_sv( geomSize), (int*)&set, 2, "RTC0089: Array panic on 'geomSize'");
+      prima_read_point( pget_sv( geomSize), (int*)&set, 2, "Array panic on 'geomSize'");
       my-> set_geomSize( self, set);
       pdelete( geomSize);
    }
@@ -2528,7 +2528,7 @@ Widget_pointerIcon( Handle self, Bool set, Handle icon)
    }
 
    if ( icon != nilHandle && !kind_of( icon, CIcon)) {
-      warn("RTC083: Illegal object reference passed to Widget::pointerIcon");
+      warn("Illegal object reference passed to Widget::pointerIcon");
       return nilHandle;
    }
    hotSpot = my-> get_pointerHotSpot( self);
@@ -2802,7 +2802,7 @@ Widget_shape( Handle self, Bool set, Handle mask)
    }
 
    if ( mask && !kind_of( mask, CImage)) {
-      warn("RTC008A: Illegal object reference passed to Widget::shape");
+      warn("Illegal object reference passed to Widget::shape");
       return nilHandle;
    }
 

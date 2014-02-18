@@ -146,7 +146,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
    }
 
    if ( !SvROK( sv) || ( SvTYPE( SvRV( sv)) != SVt_PVAV)) {
-      warn("RTC0034: menu build error: menu is not an array");
+      warn("menu build error: menu is not an array");
       return nil;
    }
    av = (AV *) SvRV( sv);
@@ -154,7 +154,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
    
    if ( n == -1) {
       if ( level == 0) return nil; /* null menu */
-      warn("RTC003E: menu build error: empty array passed");
+      warn("menu build error: empty array passed");
       return nil;
    }
    /* log_write("%s(%d){", buf, n+1); */
@@ -177,12 +177,12 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 
       if ( itemHolder == nil)
       {
-         warn("RTC0035: menu build error: array panic");
+         warn("menu build error: array panic");
          my-> dispose_menu( self, m);
          return nil;
       }
       if ( !SvROK( *itemHolder) || ( SvTYPE( SvRV( *itemHolder)) != SVt_PVAV)) {
-         warn("RTC0036: menu build error: submenu is not an array");
+         warn("menu build error: submenu is not an array");
          my-> dispose_menu( self, m);
          return nil;
       }
@@ -190,7 +190,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       item = ( AV *) SvRV( *itemHolder);
       count = av_len( item) + 1;
       if ( count > 6) {
-         warn("RTC0032: menu build error: extra declaration");
+         warn("menu build error: extra declaration");
          count = 5;
       }
       if ( !( r = alloc1z( MenuItemReg))) {
@@ -245,7 +245,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
                                  fl_ = prima_is_utf8_sv(*holder);              \
                               }                                                \
                            } else {                                            \
-                              warn("RTC003A: menu build error: array panic");  \
+                              warn("menu build error: array panic");  \
                               my-> dispose_menu( self, m);                     \
                               return nil;                                      \
                            }                                                   \
@@ -255,7 +255,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       if ( l_key >= 0) {
          holder = av_fetch( item, l_key, 0);
          if ( !holder) {
-            warn("RTC003B: menu build error: array panic");
+            warn("menu build error: array panic");
             my-> dispose_menu( self, m);
             return nil;
          }
@@ -300,7 +300,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       {
          holder = av_fetch( item, l_text, 0);
          if ( !holder) {
-            warn("RTC003C: menu build error: array panic");
+            warn("menu build error: array panic");
             my-> dispose_menu( self, m);
             return nil;
          }
@@ -310,14 +310,14 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
             Handle c_object = gimme_the_mate( subItem);
             if (( c_object == nilHandle) || !( kind_of( c_object, CImage)))
             {
-               warn("RTC0033: menu build error: not an image passed");
+               warn("menu build error: not an image passed");
                goto TEXT;
             }
             /* log_write("%sbmp: %s %d", buf, ((PComponent)c_object)->name, kind_of( c_object, CImage)); */
             if (((( PImage) c_object)-> w == 0)
                || ((( PImage) c_object)-> h == 0))
             {
-               warn("RTC0037: menu build error: invalid image passed");
+               warn("menu build error: invalid image passed");
                goto TEXT;
             }
             protect_object( r-> bitmap = c_object);
@@ -334,7 +334,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       {
          holder = av_fetch( item, l_sub, 0);
          if ( !holder) {
-            warn("RTC003D: menu build error: array panic");
+            warn("menu build error: array panic");
             my-> dispose_menu( self, m);
             return nil;
          }
@@ -359,7 +359,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
                r-> perlSub = duplicate_string( SvPV_nolen( subItem));
                r-> flags. utf8_perlSub = prima_is_utf8_sv( subItem);
             } else {
-               warn("RTC0038: menu build error: invalid sub name passed");
+               warn("menu build error: invalid sub name passed");
             }
          }
       }
@@ -369,7 +369,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       {
          holder = av_fetch( item, l_data, 0);
          if ( !holder) {
-            warn("RTC003D: menu build error: array panic");
+            warn("menu build error: array panic");
             my-> dispose_menu( self, m);
             return nil;
          }
@@ -778,11 +778,11 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
    }
 
    if (( image == nilHandle) || !( kind_of( image, CImage))) {
-      warn("RTC0039: invalid object passed to ::image");
+      warn("invalid object passed to ::image");
       return nilHandle;
    }
    if ( i-> w == 0 || i-> h == 0) {
-      warn("RTC0039: invalid object passed to ::image");
+      warn("invalid object passed to ::image");
       return nilHandle;
    }
 

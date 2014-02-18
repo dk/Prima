@@ -218,13 +218,13 @@ Component_attach( Handle self, Handle object)
          var-> components = plist_create( 8, 8);
       else
          if ( list_index_of( var-> components, object) >= 0) {
-            warn( "RTC0040: Object attach failed");
+            warn( "Object attach failed");
             return;
          }
       list_add( var-> components, object);
       SvREFCNT_inc( SvRV(( PObject( object))-> mate));
    } else
-       warn( "RTC0040: Object attach failed");
+       warn( "Object attach failed");
 }
 
 void
@@ -337,7 +337,7 @@ ForceProcess:
       unprotect_object( self);
    } else if ( var-> stage == csConstructing) {
       if ( var-> evQueue == nil)
-          croak("RTC0041: Object set twice to constructing stage");
+          croak("Object set twice to constructing stage");
 Constructing:      
       switch ( event-> cmd & ctQueueMask) {
       case ctDiscardable:
@@ -397,7 +397,7 @@ Component_pop_event( Handle self)
    if ( var-> stage == csDead)
       return false;
    if ( !var-> evStack || var-> evPtr <= 0) {
-      warn("RTC0042: Component::pop_event call not within message()");
+      warn("Component::pop_event call not within message()");
       return false;
    }
    return var-> evStack[ --var-> evPtr];
@@ -410,7 +410,7 @@ Component_eventFlag( Handle self, Bool set, Bool eventFlag)
    if ( var-> stage == csDead)
       return false;
    if ( !var-> evStack || var-> evPtr <= 0) {
-      warn("RTC0043: Component::eventFlag call not within message()");
+      warn("Component::eventFlag call not within message()");
       return false;
    }
    if ( set)
@@ -639,7 +639,7 @@ XS( Component_event_hook_FROMPERL)
    }
 
    if ( !SvROK( hook) || ( SvTYPE( SvRV( hook)) != SVt_PVCV)) {
-      warn("RTC04D: Not a CODE reference passed to Prima::Component::event_hook");
+      warn("Not a CODE reference passed to Prima::Component::event_hook");
       PUTBACK;
       return; 
    }
@@ -719,7 +719,7 @@ XS( Component_notify_FROMPERL)
    if ( hv_exists( hv, name, nameLen)) {
       SV ** holder = hv_fetch( hv, name, nameLen, 0);
       if ( !holder || !SvOK(*holder) || SvTYPE(*holder) == SVt_NULL)
-         croak("RTC0045: Inconsistent storage in %s::notification_types for %s during Component.notify", var-> self-> className, name);
+         croak("Inconsistent storage in %s::notification_types for %s during Component.notify", var-> self-> className, name);
       rnt = SvIV( *holder);
    } else {
       warn("Unknown notification:%s", name);
@@ -912,13 +912,13 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
    res = my-> notification_types( self);
    if ( !hv_exists(( HV *) SvRV( res), name, nameLen)) {
        sv_free( res);
-       warn("RTC04B: No such event %s", name);
+       warn("No such event %s", name);
        return 0;
    }
    sv_free( res);
 
    if ( !subroutine || !SvROK( subroutine) || ( SvTYPE( SvRV( subroutine)) != SVt_PVCV)) {
-      warn("RTC04C: Not a CODE reference passed to %s to Component::add_notification", name);
+      warn("Not a CODE reference passed to %s to Component::add_notification", name);
       return 0;
    }
 

@@ -82,9 +82,9 @@ Drawable_init( Handle self, HV * profile)
       AV * av = ( AV *) SvRV( pget_sv( translate));
       Point tr = {0,0};
       SV ** holder = av_fetch( av, 0, 0);
-      if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'translate'");
+      if ( holder) tr.x = SvIV( *holder); else warn("Array panic on 'translate'");
       holder = av_fetch( av, 1, 0);
-      if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'translate'");
+      if ( holder) tr.y = SvIV( *holder); else warn("Array panic on 'translate'");
       my-> set_translate( self, tr);
    }
    SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::init");
@@ -180,9 +180,9 @@ Drawable_set( Handle self, HV * profile)
       AV * av = ( AV *) SvRV( pget_sv( translate));
       Point tr = {0,0};
       SV ** holder = av_fetch( av, 0, 0);
-      if ( holder) tr.x = SvIV( *holder); else warn("RTC0059: Array panic on 'translate'");
+      if ( holder) tr.x = SvIV( *holder); else warn("Array panic on 'translate'");
       holder = av_fetch( av, 1, 0);
-      if ( holder) tr.y = SvIV( *holder); else warn("RTC0059: Array panic on 'translate'");
+      if ( holder) tr.y = SvIV( *holder); else warn("Array panic on 'translate'");
       my-> set_translate( self, tr);
       pdelete( translate);
    }
@@ -472,13 +472,13 @@ Drawable_polypoints( SV * points, char * procName, int mod, int * n_points)
    Point * p;
 
    if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
-      warn("RTC0050: Invalid array reference passed to %s", procName);
+      warn("Invalid array reference passed to %s", procName);
       return nil;
    }
    av = ( AV *) SvRV( points);
    count = av_len( av) + 1;
    if ( count % mod) {
-      warn("RTC0051: Drawable::%s: Number of elements in an array must be a multiple of %d",
+      warn("Drawable::%s: Number of elements in an array must be a multiple of %d",
            procName, mod);
       return nil;
    }
@@ -491,7 +491,7 @@ Drawable_polypoints( SV * points, char * procName, int mod, int * n_points)
        SV** psvy = av_fetch( av, i * 2 + 1, 0);
        if (( psvx == nil) || ( psvy == nil)) {
           free( p);
-          warn("RTC0052: Array panic on item pair %d on Drawable::%s", i, procName);
+          warn("Array panic on item pair %d on Drawable::%s", i, procName);
           return nil;
        }
        p[ i]. x = SvIV( *psvx);
@@ -1412,7 +1412,7 @@ Drawable_region( Handle self, Bool set, Handle mask)
 
    if ( set) {
       if ( mask && !kind_of( mask, CImage)) {
-         warn("RTC005A: Illegal object reference passed to Drawable::region");
+         warn("Illegal object reference passed to Drawable::region");
          return nilHandle;
       }
 
@@ -1504,13 +1504,13 @@ Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
           FillPattern fp;
           AV * av = ( AV *) SvRV( svpattern);
           if ( av_len( av) != 7) {
-             warn("RTC0056: Illegal fillPattern passed to Drawable::fillPattern");
+             warn("Illegal fillPattern passed to Drawable::fillPattern");
              return nilSV;
           }
           for ( i = 0; i < 8; i++) {
             SV ** holder = av_fetch( av, i, 0);
             if ( !holder) {
-               warn("RTC0057: Array panic on Drawable::fillPattern");
+               warn("Array panic on Drawable::fillPattern");
                return nilSV;
             }
             fp[ i] = SvIV( *holder);
@@ -1519,7 +1519,7 @@ Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
       } else {
          int id = SvIV( svpattern);
          if (( id < 0) || ( id > fpMaxId)) {
-            warn("RTC0058: fillPattern index out of range passed to Drawable::fillPattern");
+            warn("fillPattern index out of range passed to Drawable::fillPattern");
             return nilSV;
          }
          apc_gp_set_fill_pattern( self, fillPatterns[ id]);

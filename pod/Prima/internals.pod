@@ -542,7 +542,7 @@ type conversion code is exemplified:
       {
          int newType = pget_i( type);
          if ( !itype_supported( newType))
-            warn("RTC0100: Invalid image type requested (%08x) in Image::set_type", 
+            warn("Invalid image type requested (%08x) in Image::set_type", 
                newType);
          else 
             if ( !opt_InPaint)

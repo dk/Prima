@@ -120,7 +120,7 @@ void Window_update_sys_handle( Handle self, HV * profile)
       !( pexist( originDontCare) && pget_B( originDontCare)),
       !( pexist( sizeDontCare)   && pget_B( sizeDontCare))
    ))
-      croak("RTC0090: Cannot create window");
+      croak("Cannot create window");
    pdelete( borderStyle);
    pdelete( borderIcons);
    pdelete( syncPaint);
@@ -481,7 +481,7 @@ void Window_set( Handle self, HV * profile)
       Point o, s;
       if ( pexist( frameOrigin)) {
          int set[2];
-         prima_read_point( pget_sv( frameOrigin), set, 2, "RTC0092: Array panic on 'frameOrigin'");
+         prima_read_point( pget_sv( frameOrigin), set, 2, "Array panic on 'frameOrigin'");
          pdelete( frameOrigin);
          o. x = set[0];
          o. y = set[1];
@@ -491,7 +491,7 @@ void Window_set( Handle self, HV * profile)
       }
       if ( pexist( frameSize)) {
          int set[2];
-         prima_read_point( pget_sv( frameSize), set, 2, "RTC0093: Array panic on 'frameSize'");
+         prima_read_point( pget_sv( frameSize), set, 2, "Array panic on 'frameSize'");
          pdelete( frameSize);
          s. x = set[0];
          s. y = set[1];
@@ -542,7 +542,7 @@ Window_icon( Handle self, Bool set, Handle icon)
    }
 
    if ( icon && !kind_of( icon, CImage)) {
-       warn("RTC0091: Illegal object reference passed to Window::icon");
+       warn("Illegal object reference passed to Window::icon");
        return nilHandle;
    }
    my-> first_that( self, (void*)icon_notify, (void*)icon);

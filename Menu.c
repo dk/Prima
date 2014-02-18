@@ -51,7 +51,7 @@ Menu_update_sys_handle( Handle self, HV * profile)
       ((( PWindow) var-> owner)-> self)-> set_menu( var-> owner, nilHandle);
    if ( !pexist( owner)) return;
    if ( !apc_menu_create( self, xOwner))
-      croak("RTC0060: Cannot create menu");
+      croak("Cannot create menu");
 }
 
 Bool
