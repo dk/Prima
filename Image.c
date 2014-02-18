@@ -1285,6 +1285,7 @@ Image_extract( Handle self, int x, int y, int width, int height)
    HV * profile;
    unsigned char * data = var->data;
    int ls = var->lineSize;
+   int nodata = 0;
 
    if ( var->w == 0 || var->h == 0) return my->dup( self);
    if ( x < 0) x = 0;
@@ -1293,7 +1294,16 @@ Image_extract( Handle self, int x, int y, int width, int height)
    if ( y >= var->h) y = var->h - 1;
    if ( width  + x > var->w) width  = var->w - x;
    if ( height + y > var->h) height = var->h - y;
-   if ( width <= 0 || height <= 0) return my->dup( self);
+   if ( width <= 0 ) {
+      warn("Requested image width is less than 1");
+      width = 1;
+      nodata = 1;
+   }
+   if ( height <= 0 ) {
+      warn("Requested image height is less than 1");
+      height = 1;
+      nodata = 1;
+   }
 
    profile = newHV();
    pset_H( owner,        var->owner);
@@ -1311,6 +1321,8 @@ Image_extract( Handle self, int x, int y, int width, int height)
    i = ( PImage) h;
    memcpy( i-> palette, var->palette, 768);
    i-> palSize = var-> palSize;
+   if (nodata) goto NODATA;
+
    if (( var->type & imBPP) >= 8) {
       int pixelSize = ( var->type & imBPP) / 8;
       while ( height > 0) {
@@ -1330,6 +1342,7 @@ Image_extract( Handle self, int x, int y, int width, int height)
          bc_mono_copy( data + ( y + height) * ls, i-> data + height * i-> lineSize, x, width);
       }
    }
+NODATA:   
    --SvREFCNT( SvRV( i-> mate));
    return h;
 }
