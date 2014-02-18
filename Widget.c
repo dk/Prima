@@ -1819,8 +1819,24 @@ Widget_set_centered( Handle self, Bool x, Bool y)
    Point size    = CWidget( parent)-> get_size( parent);
    Point mysize  = my-> get_size ( self);
    Point mypos   = my-> get_origin( self);
-   if ( x) mypos. x = ( size. x - mysize. x) / 2;
-   if ( y) mypos. y = ( size. y - mysize. y) / 2;
+   Point delta   = {0,0};
+   if ( parent == application ) {
+        int i, nrects = 0;
+        Rect2 *best = nil, *rects = apc_application_get_monitor_rects( application, &nrects);
+        for ( i = 0; i < nrects; i++) {
+            Rect2 * curr = rects + i;
+            if ( best == nil || best-> x > curr->x || best->y > curr->y)
+	            best = curr;
+        }
+        if ( best ) {
+            delta.x = best->x;
+            delta.y = best->y;
+            size.x  = best->width;
+            size.y  = best->height;
+        }
+   }
+   if ( x) mypos. x = ( size. x - mysize. x) / 2 + delta.x;
+   if ( y) mypos. y = ( size. y - mysize. y) / 2 + delta.y;
    my-> set_origin( self, mypos);
 }
 

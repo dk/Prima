@@ -889,7 +889,7 @@ apc_show_message( const char * message, Bool utf8)
 {
    char ** wrapped;
    Font f;
-   Point appSz; 
+   Point appSz, appPos; 
    Point textSz;
    Point winSz;
    TextWrapRec twr;
@@ -908,6 +908,26 @@ apc_show_message( const char * message, Bool utf8)
       apc_widget_set_capture( guts. grab_widget, 0, 0);
   
    appSz = apc_application_get_size( nilHandle);
+   appPos.x = 0;
+   appPos.y = 0;
+
+   /* multi-monitor centering */
+   {
+        int i, nrects = 0;
+        Rect2 *best = nil, *rects = apc_application_get_monitor_rects( application, &nrects);
+        for ( i = 0; i < nrects; i++) {
+            Rect2 * curr = rects + i;
+            if ( best == nil || best-> x > curr->x || best->y > curr->y)
+	            best = curr;
+        }
+        if ( best ) {
+            appPos.x = best->x;
+            appPos.y = best->y;
+            appSz.x  = best->width;
+            appSz.y  = best->height;
+        }
+   }
+
    /* acquiring message font and wrapping message text */
    {
       PCachedFont cf;
@@ -1031,7 +1051,7 @@ apc_show_message( const char * message, Bool utf8)
       attrs. do_not_propagate_mask = attrs. event_mask;
          
       md. w = XCreateWindow( DISP, guts. root,
-         ( appSz.x - winSz.x) / 2, ( appSz.y - winSz.y) / 2,
+         appPos.x + ( appSz.x - winSz.x) / 2, appPos.y + ( appSz.y - winSz.y) / 2,
          winSz.x, winSz.y, 0, CopyFromParent, InputOutput, 
          CopyFromParent, CWEventMask | CWOverrideRedirect, &attrs);  
       XCHECKPOINT;
@@ -1044,8 +1064,8 @@ apc_show_message( const char * message, Bool utf8)
       xs. flags = PMinSize | PMaxSize | USPosition;
       xs. min_width  = xs. max_width  = winSz.x;
       xs. min_height = xs. max_height = winSz. y;
-      xs. x = ( appSz.x - winSz.x) / 2;
-      xs. y = ( appSz.y - winSz.y) / 2;
+      xs. x = appPos.x + ( appSz.x - winSz.x) / 2;
+      xs. y = appPos.y + ( appSz.y - winSz.y) / 2;
       XSetWMNormalHints( DISP, md. w, &xs);
       if ( XStringListToTextProperty( &prima, 1, &p) != 0) {
          XSetWMIconName( DISP, md. w, &p);
@@ -1077,7 +1097,7 @@ apc_show_message( const char * message, Bool utf8)
    
    XMapWindow( DISP, md. w);
    XMoveResizeWindow( DISP, md. w, 
-      ( appSz.x - winSz.x) / 2, ( appSz.y - winSz.y) / 2, winSz.x, winSz.y);
+      appPos.x + ( appSz.x - winSz.x) / 2, appPos.y + ( appSz.y - winSz.y) / 2, winSz.x, winSz.y);
    XNoOp( DISP);
    XFlush( DISP);
    while ( md. active && !guts. applicationClose) 
