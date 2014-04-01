@@ -1,5 +1,10 @@
 Revision history for Perl module Prima
 
+1.38 2014-04-01
+ - X11: add multimonitor support
+ - special char @ means auto-toggle in menu items
+ - AnyEvent example
+
 1.37 2013-08-21
  - Support libgif5.
  - Podview fixes.
