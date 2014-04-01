@@ -40,44 +40,83 @@ sub AUTOLOAD {
 	goto &$AUTOLOAD;
 }
 
-package nt; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# notification types
-package kb; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# keyboard-related constants
-package km; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# keyboard modifiers
-package mb; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# mouse buttons & message box constants
-package ta; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text alignment
-package cl; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# colors
-package ci; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# color indices
-package wc; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# widget classes
-package cm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# commands
-package rop; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# raster operations
-package gm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# grow modes
-package lp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line pen styles
-package fp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# fill styles & font pitches
-package le; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line ends
-package lj; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line joins
-package fs; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font styles
-package fw; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font weights
-package bi; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# border icons
-package bs; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# border styles
-package ws; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# window states
-package sv; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# system values
-package im; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# image types
-package ict; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image conversion types
-package is; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Image statistics types
-package am; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Icon auto masking
-package apc; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# OS type
-package gui; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# GUI types
-package dt; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# drives types & draw_text constants
-package cr; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# pointer id's
-package sbmp; *AUTOLOAD =\&Prima::Const::AUTOLOAD;	# system bitmaps index
-package tw; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text wrapping constants
-package fds; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog scope type
-package fdo; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog options
-package fe; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# file events
-package fr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# fetch resource constants
-package mt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# modality types
-package gt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# geometry manager types
-package ps; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# paint states
+# double lines for CPAN indexer, we don't want these packages in top-level namespace
+package 
+    nt; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# notification types
+package 
+    kb; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# keyboard-related constants
+package 
+    km; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# keyboard modifiers
+package 
+    mb; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# mouse buttons & message box constants
+package 
+    ta; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text alignment
+package 
+    cl; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# colors
+package 
+    ci; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# color indices
+package 
+    wc; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# widget classes
+package 
+    cm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# commands
+package 
+    rop; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# raster operations
+package 
+    gm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# grow modes
+package 
+    lp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line pen styles
+package 
+    fp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# fill styles & font pitches
+package 
+    le; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line ends
+package 
+    lj; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line joins
+package 
+    fs; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font styles
+package 
+    fw; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font weights
+package 
+    bi; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# border icons
+package 
+    bs; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# border styles
+package 
+    ws; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# window states
+package 
+    sv; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# system values
+package 
+    im; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# image types
+package 
+    ict; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image conversion types
+package 
+    is; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Image statistics types
+package 
+    am; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Icon auto masking
+package 
+    apc; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# OS type
+package 
+    gui; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# GUI types
+package 
+    dt; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# drives types & draw_text constants
+package 
+    cr; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# pointer id's
+package 
+    sbmp; *AUTOLOAD =\&Prima::Const::AUTOLOAD;	# system bitmaps index
+package 
+    tw; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text wrapping constants
+package 
+    fds; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog scope type
+package 
+    fdo; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog options
+package 
+    fe; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# file events
+package 
+    fr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# fetch resource constants
+package 
+    mt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# modality types
+package 
+    gt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# geometry manager types
+package 
+    ps; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# paint states
 
 1;
 
