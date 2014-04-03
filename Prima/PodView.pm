@@ -147,8 +147,8 @@ sub profile_default
 			{ },                                      # STYLE_TEXT
 			{ fontSize => 4, fontStyle => fs::Bold }, # STYLE_HEAD_1
 			{ fontSize => 2, fontStyle => fs::Bold }, # STYLE_HEAD_2
-			{ fontStyle => fs::Bold | fs::Italic },   # STYLE_HEAD_3
-			{ fontStyle => fs::Italic },              # STYLE_HEAD_4
+			{ fontSize => 1, fontStyle => fs::Bold }, # STYLE_HEAD_3
+			{ fontSize => 1, fontStyle => fs::Bold }, # STYLE_HEAD_4
 			{ fontStyle => fs::Bold },                # STYLE_ITEM
 			{ color     => COLOR_LINK_FOREGROUND,     # STYLE_LINK
 			fontStyle => fs::Underlined   },  
@@ -246,7 +246,7 @@ sub make_bookmark
 			
 			return "$self->{pageName}|0|0" unless defined $t;
 			return undef if $tid + 1 >= scalar @{$self-> {topics}}; # already on top
-			if ( $$t[ T_STYLE] == STYLE_HEAD_1 && $$t[ T_STYLE] == STYLE_HEAD_2) {
+			if ( $$t[ T_STYLE] >= STYLE_HEAD_1 && $$t[ T_STYLE] <= STYLE_HEAD_4) {
 				$t = $self-> {topics}-> [-1];
 				return "$self->{pageName}|$$t[T_MODEL_START]|0" 
 			}
@@ -981,7 +981,7 @@ sub _close_topic
 
 	my $r = $self-> {readState};
 	my $t = $r-> { topicStack};
-	my $state = ( $style == STYLE_HEAD_1 || $style == STYLE_HEAD_2) ? 
+	my $state = ( $style >= STYLE_HEAD_1 && $style <= STYLE_HEAD_4) ? 
 		0 : scalar @{$r-> {indentStack}};
 
 	if ( $state <= $$t[-1]-> [0]) {
@@ -1210,7 +1210,8 @@ sub add
 		}
 
 		# add topic
-		if ( $style == STYLE_HEAD_1 || $style == STYLE_HEAD_2 || 
+		if ( 
+            ( $style >= STYLE_HEAD_1 && $style <= STYLE_HEAD_4 ) ||
 			(( $style == STYLE_ITEM) && $p !~ /^[0-9*]+\.?$/)) {
 			my $itemDepth = ( $style == STYLE_ITEM) ?
 				scalar @{$r-> {indentStack}} : 0;
