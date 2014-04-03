@@ -1494,8 +1494,29 @@ sub print
 	$$state[ tb::BLK_FONT_ID] = 0;
 
 	my ( $formatWidth, $formatHeight) = $canvas-> size;
+        my $hmargin = $formatWidth  / 24;
+        my $vmargin = $formatHeight / 12;
+        $formatWidth  -= $hmargin * 2;
+        $formatHeight -= $vmargin * 2;
+        $canvas->translate( $hmargin, $vmargin );
+
 	my $mid = $min;
 	my $y = $formatHeight;
+
+	my $pageno = 1;
+	my $pagenum  = sub {
+		$canvas->translate( 0, 0 );
+		$canvas->font->set( name => $self->fontPalette->[0]->{name} || 'Default', size => 6, style => 0, pitch => fp::Default );
+		$canvas->set( color => cl::Black );
+		$canvas->text_out( $pageno, ( $formatWidth - $canvas->get_text_width($pageno) ) / 2, ($vmargin - $canvas->font->height ) / 2 );
+		$pageno++;
+	};
+	my $new_page = sub {
+		goto ABORT if $callback && ! $callback-> ();
+		$pagenum->();
+		goto ABORT unless $canvas-> new_page;
+		$canvas->translate( $hmargin, $vmargin );
+	};
 
 	for ( ; $mid <= $max; $mid++) {
 		my $g = tb::block_create();
@@ -1514,15 +1535,13 @@ sub print
 			my $b = $_; 
 			if ( $y < $$b[ tb::BLK_HEIGHT]) {
 				if ( $$b[ tb::BLK_HEIGHT] < $formatHeight) {
-					goto ABORT if $callback && ! $callback-> ();
-					goto ABORT unless $canvas-> new_page;
+					$new_page->();
 					$y = $formatHeight - $$b[ tb::BLK_HEIGHT];
 					$self-> block_draw( $canvas, $b, $indent, $y);
 				} else { 
 					$y -= $$b[ tb::BLK_HEIGHT];
 					while ( $y < 0) {
-						goto ABORT if $callback && ! $callback-> ();
-						goto ABORT unless $canvas-> new_page;
+						$new_page->();
 						$self-> block_draw( $canvas, $b, $indent, $y);
 						$y += $formatHeight;
 					}
@@ -1533,6 +1552,7 @@ sub print
 			}
 		}
 	}
+	$pagenum->();
 
 	$ret = 1;
 ABORT:
