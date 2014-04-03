@@ -831,19 +831,19 @@ sub read
 		next unless $odd = !$odd;
 		$_ = $r->{encoding}->decode($_, Encode::FB_HTMLCREF) if $r->{encoding};
 
-        	if (defined $r-> {paragraph_buffer}) {
-			if ( /^$/) {
+		if (defined $r-> {paragraph_buffer}) {
+			if ( /^\s*$/) {
 				my $pb = $r-> {paragraph_buffer};
 				undef $r-> {paragraph_buffer};
 				$self-> read_paragraph($pb);
-        	    	} else {
+			} else {
 				$r-> {paragraph_buffer} .= "\n$_";
 				next;
-	            	}
-        	} elsif ( !/^$/) {
-	            $r->{paragraph_buffer} = $_;
-        	    next;
-	        }
+			}
+		} elsif ( !/^$/) {
+		    $r->{paragraph_buffer} = $_;
+		    next;
+		}
 	}        
 }
 
