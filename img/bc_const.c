@@ -528,7 +528,7 @@ REPEAT_CALC:
 	          if ( big_pal[count]. b > 127) big_pal[count]. b += 3;
                   count++;
                }
-               k += 7;
+               k += 8;
             }
             break;
          }
