@@ -94,10 +94,10 @@ cm_init_colormap( void)
       {
 /*       cubic_palette[ b + g * 6 + r * 36] =( RGBColor) { b * 51, g * 51, r *
  *       51 }; */
-	 int idx = b + g * 6 + r * 36;
-	 cubic_palette[ idx]. b = b * 51;
-	 cubic_palette[ idx]. g = g * 51;
-	 cubic_palette[ idx]. r = r * 51;
+         int idx = b + g * 6 + r * 36;
+         cubic_palette[ idx]. b = b * 51;
+         cubic_palette[ idx]. g = g * 51;
+         cubic_palette[ idx]. r = r * 51;
       }
    }
    {
@@ -106,10 +106,10 @@ cm_init_colormap( void)
       {
 /*       cubic_palette8[ b + g * 2 + r * 4] = ( RGBColor) { b * 255, g * 255,
  *       r * 255 }; */
-	 int idx = b + g * 2 + r * 4;
-	 cubic_palette8[ idx]. b = b * 255;
-	 cubic_palette8[ idx]. g = g * 255;
-	 cubic_palette8[ idx]. r = r * 255;
+         int idx = b + g * 2 + r * 4;
+         cubic_palette8[ idx]. b = b * 255;
+         cubic_palette8[ idx]. g = g * 255;
+         cubic_palette8[ idx]. r = r * 255;
       }
    }
 }
@@ -148,15 +148,15 @@ cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destCol
       {
          int i;
          int tt2 = tolerance*tolerance;
-	
+        
          for ( i = 0; i < colors - 1; i++)
          {
-	    register int r = buf[i]. r;
-	    register int g = buf[i]. g;
-	    register int b = buf[i]. b;
+            register int r = buf[i]. r;
+            register int g = buf[i]. g;
+            register int b = buf[i]. b;
             int j;
             register PRGBColor next = buf + i + 1;
-	
+        
             for ( j = i + 1; j < colors; j++)
             {
                if (( ( next-> r - r)*( next-> r - r) +
@@ -169,7 +169,7 @@ cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destCol
                next++;
             }
          }
-	 tolerance += 2;
+         tolerance += 2;
       }
 Enough:
       memcpy( dest, buf, destColors * sizeof( RGBColor));
@@ -206,6 +206,49 @@ cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette
          cm_nearest_color( fromPalette[ fromColorCount], toColorCount, toPalette);
 }
 
+/*
+
+cm_study_palette scans a RGB palette and builds a special structure that allows
+quick mapping of a RGB triplet into palette index. The structure is organized
+as a set of 64-cell tables (U16 array) following each other without any special
+order except the 1st table:
+
+ Table 0   Table 1
+ [U16 x 64][U16 x 64] ...
+
+so that it forms one chunk of memory. 
+
+Each table can reference up to 64 colors, using a table-specific resolution.
+In order to map a RGB value to a palette index, one splits 8-bit channel values
+into 2-bit index, which makes for exactly 4*4*4=64 address space, and is
+basically a color cube.
+
+Each U16 table entry is either a color
+index (in which case it is less than 256 ), or a reference to another table, in
+which case there's PAL_REF bit is set, and the table referenced by int value,
+or PAL_FREE (unoccupied).
+
+For example, the tableset is formed like this:
+
+[ 50, PAL_REF | 1, 60, ... ]
+[ 70, 100, ... ]
+
+and RGB=(0x00,0x00,0x00) is stripped to bit mask 0xC0 (bits 6 and 7), so that
+index points in the table 1 to cell #0 (value 50). For RGB=(0x00,0x00,0x50) the
+stripped bit mask (0x40>>6) points to the cell #1, which is PAL_REF|1.  That
+means that one has to switch to table #1, and use bit mask 0x30 (bits 4 and 5),
+and read cell #1 there (value 100).
+
+This process can go deep max 3 tables, where the last table uses bits 0 and 1.
+However the procedure never allocates more than 256 color cells, because the
+input palette is 256 colors max.
+
+At the end of the process there's no PAL_FREE entries, and each is made to hold
+a color index to the closest color represented by the palette. This allows quick
+mapping also for colors outside the palette, which is the whole point of this
+function.
+
+*/
 U16 *
 cm_study_palette( RGBColor * palette, int pal_size)
 {
@@ -216,6 +259,10 @@ cm_study_palette( RGBColor * palette, int pal_size)
    U16 * p = malloc( sz * sizeof( U16));
    if ( !p) return nil;
    for ( i = 0; i < sz; i++) p[i] = PAL_FREE;
+
+   /* Scan for all palette entries. If the cell is empty, assign the color index to it;
+      if there is already an index, promote the cell into PAL_REF and realloc the tableset.
+      If there's alreay a PAL_REF, just go down and repeat the procesure on the next level */
    for ( i = 0; i < pal_size; i++, palette++) {
       int table = 0, index = 
          ((palette-> r >> 6) << 4) +
@@ -224,9 +271,11 @@ cm_study_palette( RGBColor * palette, int pal_size)
       int shift = 4;
       while ( 1) {
          if ( p[table + index] & PAL_FREE) {
+            /* PAL_FREE -> color index */
             p[table + index] = i;
             break;
          } else if ( p[table + index] & PAL_REF) {
+            /* do down one level */
             table = (p[table + index] & ~PAL_REF) * CELL_SIZE;
             index = 
                (((palette-> r >> shift) & 3) << 4) + 
@@ -234,10 +283,12 @@ cm_study_palette( RGBColor * palette, int pal_size)
                 ((palette-> b >> shift) & 3);
             shift -= 2;
          } else {
+            /* color index -> PAL_REF */
             U16 old = p[table + index];
             int sub_index, old_sub_index, new_table;
 
           REPEAT:
+            /* realloc */
             if ( pal2count == pal2size) {
                int j, newsz;
                U16 * n;
@@ -253,10 +304,13 @@ cm_study_palette( RGBColor * palette, int pal_size)
                sz = newsz;
             }
 
+            /* this color value */
             sub_index =
                (((palette-> r >> shift) & 3) << 4) + 
                (((palette-> g >> shift) & 3) << 2) +
                 ((palette-> b >> shift) & 3);
+            /* the value that was previously assigned - now both are moved
+            to the subtable */
             old_sub_index = 
                (((org_palette[old].r >> shift) & 3) << 4) + 
                (((org_palette[old].g >> shift) & 3) << 2) +
@@ -264,16 +318,19 @@ cm_study_palette( RGBColor * palette, int pal_size)
             new_table = pal2count * CELL_SIZE;
             p[table + index] = (pal2count++) | PAL_REF;
             if ( sub_index != old_sub_index) {
+               /* finally, assign color index */
                p[ new_table + sub_index]     = i;
                p[ new_table + old_sub_index] = old;
                break;
             } else {
+               /* both values have the same 6-bit index on this level, go down to the next table */
                if ( shift > 1) {
                   shift -= 2;
                   table = new_table;
                   index = sub_index;
                   goto REPEAT;
                }
+               /* just a duplicate */
                p[ table + index] = i;
                break; 
             }
@@ -281,6 +338,7 @@ cm_study_palette( RGBColor * palette, int pal_size)
       }
    }
 
+   /* do cm_nearest_color for each PAL_FREE cell */
    {
       struct {
          int i;
@@ -288,7 +346,7 @@ cm_study_palette( RGBColor * palette, int pal_size)
          int r;
          int g;
          int b;
-      } stack[4]; /* max depth */
+      } stack[4]; /* max depth - each channel is 8 bit, but each color cube uses 2 bits, so 8/2=4 levels max */
       int sp = 0;
       memset( stack, 0, sizeof(stack));
       for ( ; stack[sp].i < 64; stack[sp].i++) {
@@ -339,6 +397,12 @@ cm_sort_palette( RGBColor * palette, int size)
 {
    qsort( palette, size, sizeof(RGBColor), sort_palette);
 }
+
+/*
+
+cm_optimized_palette scans a RGB image and builds a palette that best represents colors found in the image.
+
+*/
 
 #define MAP1_SIDE  32
 #define MAP1_SHIFT  3
@@ -399,13 +463,13 @@ REPEAT_CALC:
                big_pal[j]. r = (i / ( side * side)) << shift;
                big_pal[j]. g = ((i / side) % side ) << shift;
                big_pal[j]. b = (i % side) << shift;
-	       if ( big_pal[j]. r > 127) big_pal[j]. r += delta;
-	       if ( big_pal[j]. g > 127) big_pal[j]. g += delta;
-	       if ( big_pal[j]. b > 127) big_pal[j]. b += delta;
+               if ( big_pal[j]. r > 127) big_pal[j]. r += delta;
+               if ( big_pal[j]. g > 127) big_pal[j]. g += delta;
+               if ( big_pal[j]. b > 127) big_pal[j]. b += delta;
                j++;
             }
          cm_squeeze_palette( big_pal, j, palette, *max_pal_size);
-	 cm_sort_palette( palette, *max_pal_size);
+         cm_sort_palette( palette, *max_pal_size);
          free( big_pal);
          free( map);
          return true;
@@ -510,9 +574,9 @@ REPEAT_CALC:
                   big_pal[count]. r = r + ((j / ( 4 * 4)) << 1);
                   big_pal[count]. g = g + (((j / 4) % 4) << 1);
                   big_pal[count]. b = b + ((j % 4) << 1);
-	          if ( big_pal[count]. r > 127) big_pal[count]. r ++;
-	          if ( big_pal[count]. g > 127) big_pal[count]. g ++;
-	          if ( big_pal[count]. b > 127) big_pal[count]. b ++;
+                  if ( big_pal[count]. r > 127) big_pal[count]. r ++;
+                  if ( big_pal[count]. g > 127) big_pal[count]. g ++;
+                  if ( big_pal[count]. b > 127) big_pal[count]. b ++;
                   count++;
                }
             }
@@ -523,9 +587,9 @@ REPEAT_CALC:
                   big_pal[count]. r = r + ((j / ( 2 * 2)) << 2);
                   big_pal[count]. g = g + (((j / 2) % 2) << 2);
                   big_pal[count]. b = b + ((j % 2) << 2);
-	          if ( big_pal[count]. r > 127) big_pal[count]. r += 3;
-	          if ( big_pal[count]. g > 127) big_pal[count]. g += 3;
-	          if ( big_pal[count]. b > 127) big_pal[count]. b += 3;
+                  if ( big_pal[count]. r > 127) big_pal[count]. r += 3;
+                  if ( big_pal[count]. g > 127) big_pal[count]. g += 3;
+                  if ( big_pal[count]. b > 127) big_pal[count]. b += 3;
                   count++;
                }
                k += 8;
