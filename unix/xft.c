@@ -458,7 +458,7 @@ find_good_font_by_family( Font * f, int fc_spacing )
       for ( i = 0; i < s->nfont; i++, ppat++) {
          Font f;
          FcCharSet *c = nil;
-         int spacing, slant, len, weight;
+         int spacing = FC_PROPORTIONAL, slant, len, weight;
          PHash font_hash;
 
          /* only regular fonts */
@@ -477,8 +477,8 @@ find_good_font_by_family( Font * f, int fc_spacing )
          len = strlen(f.family);
 
          /* sort fonts by family and spacing */
-         font_hash =  (
-            ( FcPatternGetInteger( *ppat, FC_SPACING, 0, &spacing) != FcResultMatch) &&
+         font_hash = (
+            ( FcPatternGetInteger( *ppat, FC_SPACING, 0, &spacing) == FcResultMatch) &&
             ( spacing == FC_MONO )
          ) ?
             mono_fonts : prop_fonts;
