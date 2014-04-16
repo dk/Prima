@@ -134,6 +134,7 @@ static CharSetInfo std_charsets[] = {
 
 static PHash encodings    = nil;
 static PHash mono_fonts   = nil; /* family->mono font mapping */
+static PHash prop_fonts   = nil; /* family->proportional font mapping */
 static PHash mismatch     = nil; /* fonts not present in xft base */
 static char  fontspecific[] = "fontspecific";
 static CharSetInfo * locale = nil;
@@ -237,6 +238,7 @@ prima_xft_init(void)
 
    mismatch     = hash_create();
    mono_fonts   = hash_create();
+   prop_fonts   = hash_create();
    encodings    = hash_create();
    for ( i = 0; i < MAX_CHARSET; i++) {
       int length = 0;
@@ -265,6 +267,7 @@ prima_xft_done(void)
          FcCharSetDestroy( std_charsets[i]. fcs);
    hash_destroy( encodings, false);
    hash_destroy( mismatch, false);
+   hash_destroy( prop_fonts, true);
    hash_destroy( mono_fonts, true);
 }
 
@@ -420,14 +423,14 @@ try_size( Handle self, Font f, double size)
    return ( PCachedFont) hash_fetch( guts. font_hash, &key, sizeof( FontKey));
 }
 
-/* find a most similar monospace font by name and family */
+/* find a most similar monospace/proportional font by name and family */
 static char *
-find_good_monospaced_font_by_family( Font * f ) 
+find_good_font_by_family( Font * f, int fc_spacing ) 
 {
    static Bool initialized = 0;
 
    if ( !initialized ) {
-      /* iterate over all monospace font, build family->name (i.e best default match) hash */
+      /* iterate over all monospace and proportional font, build family->name (i.e best default match) hash */
       int i,j;
       FcFontSet * s;
       FcPattern   *pat, **ppat;
@@ -451,19 +454,12 @@ find_good_monospaced_font_by_family( Font * f )
    
       csi = ( CharSetInfo*) hash_fetch( encodings, std_charsets[0].name, strlen(std_charsets[0].name));
 
-
       ppat = s-> fonts; 
       for ( i = 0; i < s->nfont; i++, ppat++) {
          Font f;
          FcCharSet *c = nil;
          int spacing, slant, len, weight;
-
-         /* only mono fonts */
-         if (
-            ( FcPatternGetInteger( *ppat, FC_SPACING, 0, &spacing) != FcResultMatch) ||
-            ( spacing != FC_MONO )
-         )
-            continue;
+         PHash font_hash;
 
          /* only regular fonts */
          if (
@@ -479,10 +475,17 @@ find_good_monospaced_font_by_family( Font * f )
 
          fcpattern2fontnames( *ppat, &f);
          len = strlen(f.family);
-         if ( hash_fetch( mono_fonts, f.family, len))
+
+         /* sort fonts by family and spacing */
+         font_hash =  (
+            ( FcPatternGetInteger( *ppat, FC_SPACING, 0, &spacing) != FcResultMatch) &&
+            ( spacing == FC_MONO )
+         ) ?
+            mono_fonts : prop_fonts;
+         if ( hash_fetch( font_hash, f.family, len))
             continue;
 
-         hash_store( mono_fonts, f.family, len, duplicate_string(f.name));
+         hash_store( font_hash, f.family, len, duplicate_string(f.name));
       }
       FcFontSetDestroy(s);
    }
@@ -492,7 +495,8 @@ find_good_monospaced_font_by_family( Font * f )
    {
       char *c, *w, word1[255], word2[255];
       int p;
-      c = hash_fetch( mono_fonts, f->family, strlen(f->family));
+      PHash font_hash = (fc_spacing == FC_MONO) ? mono_fonts : prop_fonts;            
+      c = hash_fetch( font_hash, f->family, strlen(f->family));
       if ( !c ) return NULL;
       if ( strcmp( c, f->name) == 0) return NULL; /* same font */
 
@@ -662,7 +666,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          fcpattern2fontnames(match, &font_with_family);
          FcPatternDestroy( match);
 
-         if (( monospace_font = find_good_monospaced_font_by_family(&font_with_family))) {
+         if (( monospace_font = find_good_font_by_family(&font_with_family, FC_MONO))) {
             /* try a good mono font, again */
             Font s = *source;
             strcpy(s.name, monospace_font);
@@ -677,6 +681,36 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
             return ret;
          }
       }
+   } else if ( f.pitch == fpVariable ) {
+      /*
+         xft picks a monospaced font when a proportional one is requested if the name points at it.
+   	   Not that this is wrong, but in Prima terms pich is heavier than name (this concept was borrowed from win32).
+   	   So try to pick a variable font of the same family, if there is one. Same algorithm as with fixed fonts,
+         but not as strict - if we can't find a proportional font within same family, so be it then
+      */
+      int spacing = -1;
+
+      if (
+         ( FcPatternGetInteger( match, FC_SPACING, 0, &spacing) == FcResultMatch) &&
+         ( spacing == FC_MONO ) /* for our purpose all what is not FC_MONO is good enough to be fpVariable */
+      ) {
+         Font font_with_family;
+         char * proportional_font;
+         font_with_family = f;
+         fcpattern2fontnames(match, &font_with_family);
+
+         if (( proportional_font = find_good_font_by_family(&font_with_family, FC_PROPORTIONAL))) {
+            /* try a good variable font, again */
+            Font s = *source;
+            strcpy(s.name, proportional_font);
+            Fdebug("xft: try variable pitch\n");
+            FcPatternDestroy( match);
+            return prima_xft_font_pick( self, &s, dest, size);
+         } else {
+            Fdebug("xft: variable pitch is not found within family %s\n", font_with_family.family);
+         }
+      }         
+      
    }
   
    /* Manually check if font contains wanted encoding - matching by FcCharSet 
@@ -738,21 +772,21 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
          int i, n = guts. n_fonts;
          PFontInfo info = guts. font_info;
 
-	      if ( !guts. xft_priority) {
-	         Fdebug("xft: name mismatch\n");
-	      NAME_MISMATCH:
-	         xft_build_font_key( &key, &f, by_size);
-	         key. width = 0;
-	         hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
+         if ( !guts. xft_priority) {
+            Fdebug("xft: name mismatch\n");
+         NAME_MISMATCH:
+            xft_build_font_key( &key, &f, by_size);
+            key. width = 0;
+            hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
             FcPatternDestroy( match);
-	         return false;
-	      }
+            return false;
+         }
 	      
-              /* check if core has cached face name */
-	      if ( prima_find_known_font( &f, false, by_size)) {
-	         Fdebug("xft: pass to cached core\n");
-	         goto NAME_MISMATCH;
-	      }
+         /* check if core has cached face name */
+         if ( prima_find_known_font( &f, false, by_size)) {
+            Fdebug("xft: pass to cached core\n");
+            goto NAME_MISMATCH;
+         }
 
            /* check if core has non-cached face name */
          for ( i = 0; i < n; i++) {
