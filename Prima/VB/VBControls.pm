@@ -30,7 +30,7 @@ use strict;
 use Prima::Classes;
 use Prima::Lists;
 
-package Divider;
+package Prima::VB::Divider;
 use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
@@ -170,7 +170,7 @@ sub max
 	}
 }
 
-package PropListViewer;
+package Prima::VB::PropListViewer;
 use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::ListViewer);
@@ -248,7 +248,7 @@ sub on_click
 }
 
 
-package Editor;
+package Prima::VB::Editor;
 use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::Edit);
@@ -303,7 +303,7 @@ sub on_change
 	$o-> Indicator-> repaint;
 }
 
-package CodeEditor;
+package Prima::VB::CodeEditor;
 use strict;
 use vars qw(@ISA @editors);
 @ISA = qw(Prima::Window);
@@ -550,7 +550,7 @@ sub init
 	my $fh = $self-> font-> height + 6;
 
 	my $indicator;
-	my $editor = $self-> insert( Editor => 
+	my $editor = $self-> insert( 'Prima::VB::Editor' => 
 		origin   => [ 0, $fh],
 		size     => [ $sz[0], $sz[1] - $fh],
 		growMode => gm::Client,

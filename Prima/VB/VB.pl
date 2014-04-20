@@ -139,14 +139,14 @@ sub accelItems
 		['Code Editor' => 'F12' => 'F12' => sub { $VB::main-> bring_code_editor; }],
 		['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => sub { $VB::main-> form_run}, ],
 		['~Help' => 'F1' => 'F1' => sub { $::application-> open_help('VB/Help')}],
-		['~Widget property' => 'Shift+F1' => '#F1' => sub { ObjectInspector::help_lookup() }],
+		['~Widget property' => 'Shift+F1' => '#F1' => sub { Prima::VB::ObjectInspector::help_lookup() }],
 	];
 }
 
-package OPropListViewer;
+package Prima::VB::OPropListViewer;
 use strict;
 use vars qw(@ISA);
-@ISA = qw(PropListViewer);
+@ISA = qw(Prima::VB::PropListViewer);
 
 sub on_click
 {
@@ -175,7 +175,7 @@ sub on_selectitem
 }
 
 
-package ObjectInspector;
+package Prima::VB::ObjectInspector;
 use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::Window);
@@ -234,14 +234,14 @@ sub init
 	);
 	$self-> {mtabs}-> {mode} = 0;
 
-	$self-> {plist} = $self-> {monger}-> insert_to_page( 0, OPropListViewer =>
+	$self-> {plist} = $self-> {monger}-> insert_to_page( 0, 'Prima::VB::OPropListViewer' =>
 		origin   => [ 0, 0],
 		size     => [ 100, $sz[1] - $fh * 2],
 		name       => 'PList',
 		growMode   => gm::Client,
 	);
 
-	$self-> {elist} = $self-> {monger}-> insert_to_page( 1, OPropListViewer =>
+	$self-> {elist} = $self-> {monger}-> insert_to_page( 1, 'Prima::VB::OPropListViewer' =>
 		origin   => [ 0, 0],
 		size     => [ 100, $sz[1] - $fh * 2],
 		name       => 'EList',
@@ -249,7 +249,7 @@ sub init
 	);
 	$self-> {currentList} = $self-> {'plist'};
 
-	$self-> insert( Divider =>
+	$self-> insert( 'Prima::VB::Divider' =>
 		vertical => 1,
 		origin => [ 100, 0],
 		size   => [ 6, $sz[1] - $fh],
@@ -339,7 +339,7 @@ sub Selector_Change
 	}
 	if ( $enter) {
 		$enter-> marked(1,1);
-		ObjectInspector::enter_widget( $enter);
+		Prima::VB::ObjectInspector::enter_widget( $enter);
 	}
 	$self-> {selectorRetrieving} = 0;
 }
@@ -597,7 +597,7 @@ sub help_lookup
 }
 
 
-package Form;
+package Prima::VB::Form;
 use strict;
 use vars qw(@ISA);
 @ISA = qw( Prima::Window Prima::VB::Window);
@@ -702,7 +702,7 @@ sub insert_new_control
 	unless ( $profile{manualSelect}) {
 		$j-> select;
 		$j-> marked(1,1);
-		ObjectInspector::enter_widget( $j);
+		Prima::VB::ObjectInspector::enter_widget( $j);
 	}
 	return $j;
 }
@@ -765,8 +765,8 @@ sub on_destroy
 			$VB::main-> update_markings();
 		}
 	}
-	CodeEditor::flush;
-	ObjectInspector::renew_widgets;
+	Prima::VB::CodeEditor::flush;
+	Prima::VB::ObjectInspector::renew_widgets;
 }
 
 sub veil
@@ -816,7 +816,7 @@ sub on_mousedown
 			$self-> {anchor} = [ $x, $y];
 			$self-> {dim}    = [ $x, $y];
 			$self-> veil(1);
-			ObjectInspector::enter_widget( $self);
+			Prima::VB::ObjectInspector::enter_widget( $self);
 		}
 	}
 }
@@ -894,7 +894,7 @@ sub on_mouseup
 			next if $_-> {locked};
 			$_-> marked(1);
 		}
-		ObjectInspector::update_markings();
+		Prima::VB::ObjectInspector::update_markings();
 		return;
 	}
 
@@ -1093,21 +1093,21 @@ sub fm_duplicate
 		push ( @r, $j);
 		$j-> marked(1,0);
 	}
-	ObjectInspector::update_markings();
+	Prima::VB::ObjectInspector::update_markings();
 }
 
 sub fm_selectall
 {
 	return unless $VB::form;
 	$_-> marked(1) for $VB::form-> widgets;
-	ObjectInspector::update_markings();
+	Prima::VB::ObjectInspector::update_markings();
 }
 
 sub fm_delete
 {
 	return unless $VB::form;
 	$_-> destroy for $VB::form-> marked_widgets;
-	ObjectInspector::renew_widgets();
+	Prima::VB::ObjectInspector::renew_widgets();
 }
 
 sub fm_copy
@@ -1157,10 +1157,10 @@ sub fm_paste
 
 	$VB::form-> marked(0,1);
 	@seq = $VB::main-> push_widgets( @seq);
-	ObjectInspector::renew_widgets;
+	Prima::VB::ObjectInspector::renew_widgets;
 	$_-> notify(q(Load)) for @seq;
 	$_-> marked( 1, 0) for @seq;
-	ObjectInspector::update_markings();
+	Prima::VB::ObjectInspector::update_markings();
 }
 
 
@@ -1270,7 +1270,7 @@ sub prf_menuItems
 	$_[0]-> menuItems( $_[1]);
 }
 
-package MainPanel;
+package Prima::VB::MainPanel;
 use strict;
 use vars qw(@ISA *do_layer);
 @ISA = qw(Prima::Window);
@@ -1300,22 +1300,22 @@ sub profile_default
 				['E~xit' => 'Ctrl+Q' => '^Q' => sub{$_[0]-> close;}],
 			]],
 			['edit' => '~Edit' => [
-				['Cop~y' => 'Ctrl+C' => '^C' =>       sub { Form::fm_copy(); }],
-				['~Paste' => 'Ctrl+V' => '^V' =>      sub { Form::fm_paste(); }],
-				['~Delete' => 'Ctrl-X' => '^X' =>     sub { Form::fm_delete(); } ], 
-				['~Select all' => 'Ctrl+A' => '^A' => sub { Form::fm_selectall(); }],
-				['D~uplicate'  => 'Ctrl+D' => '^D' => sub { Form::fm_duplicate(); }],
+				['Cop~y' => 'Ctrl+C' => '^C' =>       sub { Prima::VB::Form::fm_copy(); }],
+				['~Paste' => 'Ctrl+V' => '^V' =>      sub { Prima::VB::Form::fm_paste(); }],
+				['~Delete' => 'Ctrl-X' => '^X' =>     sub { Prima::VB::Form::fm_delete(); } ], 
+				['~Select all' => 'Ctrl+A' => '^A' => sub { Prima::VB::Form::fm_selectall(); }],
+				['D~uplicate'  => 'Ctrl+D' => '^D' => sub { Prima::VB::Form::fm_duplicate(); }],
 				[],
 				['~Align' => [
-					['~Bring to front' => 'Shift+PgUp' => km::Shift|kb::PgUp, sub { Form::fm_subalign(1);}],
-					['~Send to back'   => 'Shift+PgDn' => km::Shift|kb::PgDn, sub { Form::fm_subalign(0);}],
-					['Step ~forward'   => 'Ctrl+PgUp' => km::Ctrl|kb::PgUp, sub { Form::fm_stepalign(1);}],
-					['Step bac~k'      => 'Ctrl+PgDn' => km::Ctrl|kb::PgDn, sub { Form::fm_stepalign(0);}],
-					['~Restore order'   => 'Shift+Ctrl+PgDn' => km::Shift|km::Ctrl|kb::PgDn, sub { Form::fm_realign;}],
+					['~Bring to front' => 'Shift+PgUp' => km::Shift|kb::PgUp, sub { Prima::VB::Form::fm_subalign(1);}],
+					['~Send to back'   => 'Shift+PgDn' => km::Shift|kb::PgDn, sub { Prima::VB::Form::fm_subalign(0);}],
+					['Step ~forward'   => 'Ctrl+PgUp' => km::Ctrl|kb::PgUp, sub { Prima::VB::Form::fm_stepalign(1);}],
+					['Step bac~k'      => 'Ctrl+PgDn' => km::Ctrl|kb::PgDn, sub { Prima::VB::Form::fm_stepalign(0);}],
+					['~Restore order'   => 'Shift+Ctrl+PgDn' => km::Shift|km::Ctrl|kb::PgDn, sub { Prima::VB::Form::fm_realign;}],
 				]],
-				['~Change class...' => sub { Form::fm_reclass();}],
-				['Creation ~order' => sub { Form::fm_creationorder(); } ],
-				['To~ggle lock' => 'Ctrl+G' => '^G' => sub { Form::fm_toggle_lock(); }],
+				['~Change class...' => sub { Prima::VB::Form::fm_reclass();}],
+				['Creation ~order' => sub { Prima::VB::Form::fm_creationorder(); } ],
+				['To~ggle lock' => 'Ctrl+G' => '^G' => sub { Prima::VB::Form::fm_toggle_lock(); }],
 			]],
 			['~View' => [
 			['~Object Inspector' => 'F11' => 'F11' => sub { $_[0]-> bring_inspector; }],
@@ -1324,7 +1324,7 @@ sub profile_default
 			['~Font dialog'  => q(bring_font_dialog) ],
 			['~Add widgets...' => q(add_widgets)],
 			[],
-			['Reset ~guidelines' => sub { Form::fm_resetguidelines(); } ],
+			['Reset ~guidelines' => sub { Prima::VB::Form::fm_resetguidelines(); } ],
 			['*gsnap' => 'Snap to guid~elines' => sub { $VB::main-> {ini}-> {SnapToGuidelines} = $VB::main-> menu-> toggle( 'gsnap') ? 1 : 0; } ],
 			['*dsnap' => 'Snap to gri~d'       => sub { $VB::main-> {ini}-> {SnapToGrid} = $VB::main-> menu-> toggle( 'dsnap') ? 1 : 0; } ],
 			[],
@@ -1335,7 +1335,7 @@ sub profile_default
 			['~Help' => [
 				['~About' => sub { Prima::MsgBox::message("Visual Builder for Prima toolkit, version $VBVersion")}],
 				['~Help' => 'F1' => 'F1' => sub { $::application-> open_help('VB/Help')}],
-				['~Widget property' => 'Shift+F1' => '#F1' => sub { ObjectInspector::help_lookup() }],
+				['~Widget property' => 'Shift+F1' => '#F1' => sub { Prima::VB::ObjectInspector::help_lookup() }],
 			]],
 		],
 	);
@@ -1688,9 +1688,9 @@ sub new
 {
 	my $self = $_[0];
 	return if $VB::form and !$VB::form-> close;
-	$VB::form = Form-> create;
+	$VB::form = Prima::VB::Form-> create;
 	$VB::main-> {fmName} = undef;
-	ObjectInspector::renew_widgets;
+	Prima::VB::ObjectInspector::renew_widgets;
 	update_menu();
 }
 
@@ -1867,7 +1867,7 @@ sub load_file
 	my $maxwij = scalar(@seq) / 2;
 	$self-> text( "Loading...");
 
-	$VB::form = Form-> create(
+	$VB::form = Prima::VB::Form-> create(
 		realClass   => $mf-> {realClass},
 		class       => $mf-> {class},
 		module      => $mf-> {module},
@@ -1895,7 +1895,7 @@ sub load_file
 	}, @seq);
 	$VB::form-> show;
 	$VB::inspector-> {selectorChanging}-- if $VB::inspector;
-	ObjectInspector::renew_widgets;
+	Prima::VB::ObjectInspector::renew_widgets;
 	update_menu();
 	$self-> text( $oldtxt);
 	$VB::form-> notify(q(Load));
@@ -1950,7 +1950,7 @@ STARTSUB
 \t\tmodule  => '$module',
 MEDI
 		if ( $_ == $VB::form) {
-			CodeEditor::sync_code;
+			Prima::VB::CodeEditor::sync_code;
 			$c .= "\t\tparent => 1,\n";
 			$c .= "\t\tcode => Prima::VB::VBLoader::GO_SUB(\'".
 				Prima::VB::Types::generic::quotable($VB::code). "'),\n";
@@ -2029,7 +2029,7 @@ PREPREHEAD
 
 	my %modules = map { $_-> {module} => 1 } @cmp;
 
-	CodeEditor::sync_code;
+	Prima::VB::CodeEditor::sync_code;
 	
 	my $c = <<PREHEAD;
 
@@ -2368,8 +2368,8 @@ sub bring_inspector
 		$VB::inspector-> bring_to_front;
 		$VB::inspector-> select;
 	} else {
-		$VB::inspector = ObjectInspector-> create;
-		ObjectInspector::renew_widgets;
+		$VB::inspector = Prima::VB::ObjectInspector-> create;
+		Prima::VB::ObjectInspector::renew_widgets;
 	}
 }
 
@@ -2380,7 +2380,7 @@ sub bring_code_editor
 		$VB::editor-> bring_to_front;
 		$VB::editor-> select;
 	} else {
-		$VB::editor = CodeEditor-> create;
+		$VB::editor = Prima::VB::CodeEditor-> create;
 	}
 }
 
@@ -2450,20 +2450,20 @@ sub init_position
 	$window-> rect( @rx);
 }
 
-package VisualBuilder;
+package Prima::VB::VisualBuilder;
 use strict;
 
 $::application-> icon( Prima::Image-> load( Prima::Utils::find_image( 'VB::VB.gif'), index => 6));
 $::application-> accelItems( VB::accelItems);
-$VB::main = MainPanel-> create;
-$VB::inspector = ObjectInspector-> create(
+$VB::main = Prima::VB::MainPanel-> create;
+$VB::inspector = Prima::VB::ObjectInspector-> create(
 	top => $VB::main-> bottom - 12 - $::application-> get_system_value(sv::YTitleBar)
 ) if $VB::main-> {ini}-> {ObjectInspectorVisible};
 $VB::code = '';
-$VB::editor = CodeEditor-> create() if $VB::main-> {ini}-> {CodeEditorVisible};
-$VB::form = Form-> create; 
-ObjectInspector::renew_widgets;
-ObjectInspector::preload() unless $VB::fastLoad;
+$VB::editor = Prima::VB::CodeEditor-> create() if $VB::main-> {ini}-> {CodeEditorVisible};
+$VB::form = Prima::VB::Form-> create; 
+Prima::VB::ObjectInspector::renew_widgets;
+Prima::VB::ObjectInspector::preload() unless $VB::fastLoad;
 $VB::main-> update_menu();
 
 $VB::main-> load_file( $ARGV[0]) if @ARGV && -f $ARGV[0] && -r _;

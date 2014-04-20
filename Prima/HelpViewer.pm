@@ -74,7 +74,7 @@ sub close
 	}
 }
 
-package CustomPodView;
+package Prima::CustomPodView;
 use vars qw(@ISA);
 @ISA = qw(Prima::PodView);
 
@@ -281,7 +281,7 @@ sub init
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
 	my $t = $self-> font-> height + 2;
-	$self-> {text} = $self-> insert( CustomPodView => 
+	$self-> {text} = $self-> insert( 'Prima::CustomPodView' => 
 		origin => [ 0, $t],
 		size   => [ $self-> width, $self-> height - $t * 2 - 4],
 		growMode => gm::Client,

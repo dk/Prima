@@ -61,6 +61,7 @@ sub open_cfg
 		$file = Prima::Utils::path($userCfg);
 		$pkg  = "Prima::VB::UserConfig";
 		return 1 unless -f $file;
+		$file =~ s[\\][/]g;
 		eval "require \"$file\";";
 	}
 	return (0,  "$@") if $@;

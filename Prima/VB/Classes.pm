@@ -126,7 +126,7 @@ sub prf_set
 		( $VB::inspector-> {current} eq $self);
 	for ( keys %profile) {
 		my $cname = 'prf_'.$_;
-		ObjectInspector::widget_changed(0, $_) if $check;
+		Prima::VB::ObjectInspector::widget_changed(0, $_) if $check;
 		$self-> $cname( $profile{$_}) if $self-> can( $cname);
 	}
 }
@@ -143,7 +143,7 @@ sub prf_delete
 		delete $pr-> {$_};
 		my $cname = 'prf_'.$_;
 		if ( $check) {
-			ObjectInspector::widget_changed(1, $_); # if $check eq $_;
+			Prima::VB::ObjectInspector::widget_changed(1, $_); # if $check eq $_;
 		}
 		$self-> $cname( $df-> {$_}) if $self-> can( $cname);
 	}
@@ -302,7 +302,7 @@ sub init
 	$yname = sprintf("%s%d", $xname, $cnt++) while exists $names{$yname};
 	$profile{profile}-> {name} = $yname;
 	$self-> init_profiler( \%profile);
-	ObjectInspector::renew_widgets();
+	Prima::VB::ObjectInspector::renew_widgets();
 	return %profile;
 }
 
@@ -471,7 +471,7 @@ sub on_mousedown
 
 		if ( $mod & km::Shift) {
 			$self-> marked( $self-> marked ? 0 : 1);
-			ObjectInspector::update_markings();
+			Prima::VB::ObjectInspector::update_markings();
 			$self-> focus;
 			return;
 		}
@@ -498,7 +498,7 @@ sub on_mousedown
 		$self-> focus;
 		if ( $VB::inspector) {
 			$VB::inspector-> {selectorChanging} = 1; # disallow auto single-select
-			ObjectInspector::enter_widget( $self);
+			Prima::VB::ObjectInspector::enter_widget( $self);
 			$VB::inspector-> {selectorChanging} = 0;
 		}
 
@@ -808,7 +808,7 @@ sub on_keydown
 	if ( $key == kb::Delete) {
 		$self-> clear_event;
 		$_-> destroy for $VB::form-> marked_widgets;
-		ObjectInspector::renew_widgets();
+		Prima::VB::ObjectInspector::renew_widgets();
 		return;
 	}
 	if ( $key == kb::Esc) {
@@ -1365,7 +1365,7 @@ sub new
 	my $self = {};
 	bless( $self, $class);
 	( $self-> {container}, $self-> {id}, $self-> {widget}) = @_;
-	$self-> {changeProc} = \&ObjectInspector::item_changed;
+	$self-> {changeProc} = \&Prima::VB::ObjectInspector::item_changed;
 	$self-> open();
 	return $self;
 }
@@ -2913,10 +2913,10 @@ sub open
 	my $i = $VB::main-> {iniFile}-> section('Editor');
 	$self-> {A}-> font ( map { $_,  $i-> {'Font' . ucfirst($_)}} qw(name size style encoding) );
 	$self-> {A}-> syntaxHilite(1);
-	push @CodeEditor::editors, $self-> {A};
+	push @Prima::VB::CodeEditor::editors, $self-> {A};
 	$self-> {A}-> onDestroy( sub {
 		my $self = $_[0];
-		@CodeEditor::editors = grep { $_ != $self } @CodeEditor::editors;
+		@Prima::VB::CodeEditor::editors = grep { $_ != $self } @Prima::VB::CodeEditor::editors;
 	}) ;
 }
 
@@ -2935,10 +2935,10 @@ use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::event);
 
 
-package PackPropListViewer;
+package Prima::VB::PackPropListViewer;
 use strict;
 use vars qw(@ISA);
-@ISA = qw(PropListViewer);
+@ISA = qw(Prima::VB::PropListViewer);
 
 sub on_click
 {
@@ -3010,7 +3010,7 @@ sub open
 	my $fh = $self-> {container}-> font-> height;
 
 	my $divx = $h / 2;
-	$self-> {A} = $self-> {container}-> insert( PackPropListViewer =>
+	$self-> {A} = $self-> {container}-> insert( 'Prima::VB::PackPropListViewer' =>
 		origin => [ 0, $divx + 6],
 		size   => [ $w, $h - $divx - 6],
 		growMode => gm::Ceiling,
@@ -3022,7 +3022,7 @@ sub open
 	$self-> {A}-> {master} = $self;
 	$self-> {prop_defaults} = \%packDefaults;
 
-	$self-> {Div1} = $self-> {container}-> insert( Divider =>
+	$self-> {Div1} = $self-> {container}-> insert( 'Prima::VB::Divider' =>
 		vertical => 0,
 		origin => [ 0, $divx],
 		size   => [ $w, 6],
@@ -3186,7 +3186,7 @@ sub get
 	return \%d;
 }
 
-package MyOutline;
+package Prima::VB::MyOutline;
 use strict;
 
 sub on_keydown
@@ -3265,10 +3265,10 @@ sub on_dragitem
 	$self-> {master}-> change;
 }
 
-package MenuOutline;
+package Prima::VB::MenuOutline;
 use strict;
 use vars qw(@ISA);
-@ISA = qw(Prima::Outline MyOutline);
+@ISA = qw(Prima::Outline Prima::VB::MyOutline);
 
 sub new_item
 {
@@ -3289,10 +3289,10 @@ sub makeseparator
 	$_[0]-> {master}-> enter_menuitem( $x);
 }
 
-package MPropListViewer;
+package Prima::VB::MPropListViewer;
 use strict;
 use vars qw(@ISA);
-@ISA = qw(PropListViewer);
+@ISA = qw(Prima::VB::PropListViewer);
 
 sub on_click
 {
@@ -3348,7 +3348,7 @@ sub open
 	my $fh = $self-> {container}-> font-> height;
 
 	my $divx = $h / 2;
-	$self-> {A} = $self-> {container}-> insert( MPropListViewer =>
+	$self-> {A} = $self-> {container}-> insert( 'Prima::VB::MPropListViewer' =>
 		origin => [ 0, 0],
 		size   => [ 100, $divx],
 		growMode => gm::Client,
@@ -3359,7 +3359,7 @@ sub open
 	);
 	$self-> {A}-> {master} = $self;
 
-	$self-> {Div1} = $self-> {container}-> insert( Divider =>
+	$self-> {Div1} = $self-> {container}-> insert( 'Prima::VB::Divider' =>
 		vertical => 0,
 		origin => [ 0, $divx],
 		size   => [ 100, 6],
@@ -3377,7 +3377,7 @@ sub open
 		}
 	);
 
-	$self-> {B} = $self-> {container}-> insert( MenuOutline =>
+	$self-> {B} = $self-> {container}-> insert( 'Prima::VB::MenuOutline' =>
 		origin => [ 0, $divx + 6],
 		size   => [ 100, $h - $divx - 6],
 		growMode => gm::Ceiling,
@@ -3407,7 +3407,7 @@ sub open
 		onClick => sub { $self-> {B}-> popup-> popup($_[0]-> origin)},
 	);
 
-	$self-> {Div2} = $self-> {container}-> insert( Divider =>
+	$self-> {Div2} = $self-> {container}-> insert( 'Prima::VB::Divider' =>
 		vertical => 1,
 		origin => [ 100, 0],
 		size   => [ 6, $h - 1],
@@ -3820,10 +3820,10 @@ sub write
 }
 
 
-package ItemsOutline;
+package Prima::VB::ItemsOutline;
 use strict;
 use vars qw(@ISA);
-@ISA = qw(Prima::StringOutline MyOutline);
+@ISA = qw(Prima::StringOutline Prima::VB::MyOutline);
 
 sub new_item
 {
@@ -3843,7 +3843,7 @@ sub open
 	my $w = $self-> {container}-> width;
 	my $fh = $self-> {container}-> font-> height;
 
-	$self-> {A} = $self-> {container}-> insert( ItemsOutline =>
+	$self-> {A} = $self-> {container}-> insert( 'Prima::VB::ItemsOutline' =>
 		origin => [ 0, $fh + 4],
 		size   => [ $w - 1, $h - $fh - 4],
 		growMode => gm::Client,
