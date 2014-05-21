@@ -277,7 +277,7 @@ init_x11( char * error_buf )
 #ifdef HAVE_X11_EXTENSIONS_XRANDR_H
    {
       int dummy;
-      if ( XShapeQueryExtension( DISP, &dummy, &dummy))
+      if ( XRRQueryExtension( DISP, &dummy, &dummy))
          guts. randr_extension = true;
    }	 
 #endif
