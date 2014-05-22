@@ -952,7 +952,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
    if ( IS_WIN95 && elf. lfCharSet == DEFAULT_CHARSET) {
       int i;
       es. wide = false;
-      for ( i = 0; i < sizeof( ctx_CHARSET2index) / 2; i+=2) {
+      for ( i = 0; i < sizeof( ctx_CHARSET2index) / 2 - 1; i+=2) {
          elf. lfCharSet = ctx_CHARSET2index[ i];
          EnumFontFamiliesExA( dc, ( LOGFONTA*) &elf, ( FONTENUMPROC) fep, ( LPARAM) &es, 0);
       }
@@ -1241,7 +1241,7 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
    if ( IS_WIN95 && facename && !encoding) {
       int i;
       f. wide = false;
-      for ( i = 0; i < sizeof( ctx_CHARSET2index) / 2; i+=2) {
+      for ( i = 0; i < sizeof( ctx_CHARSET2index) / 2 - 1; i+=2) {
          elf. lfCharSet = ctx_CHARSET2index[ i];
          EnumFontFamiliesExA( dc, ( LOGFONTA*) &elf, ( FONTENUMPROC) fep2, ( LPARAM) &f, 0);
       }
