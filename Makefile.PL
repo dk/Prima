@@ -1879,9 +1879,9 @@ sub postamble
 	my @alltml;
 	my @alltmldeps;
 	
+    print "Finding .cls dependencies...\n";
 	for my $clsfile ( @cls_files) {
 		my ( $base ) = $clsfile =~ m/^(.*?).cls$/;
-		print "Finding dependencies for $clsfile...\n";
 		my $ancestors = join(' ', map { "include/generic/$_.h $_.cls" } gencls( $clsfile, depend => 1));
 	  	$t .= <<H;
 
@@ -1899,9 +1899,13 @@ include/generic/thunks.tinc: \$(FIRST_MAKEFILE) @alltmldeps
 
 H
 
+    my %dirs;
 	for my $cfile ( @c_files ) {
+        my ( $dir ) = ( $cfile =~ /^(\w+)\// );
+        $dir = 'root directory' unless $dir;
+	    print "Finding .c dependencies in $dir...\n" unless $dirs{$dir}++;
+
 		my ( $base ) = $cfile =~ m/^(.*?).c$/;
-		print "Finding dependencies for $cfile...\n";
 		my @deps = find_cdeps( $cfile );
 	  	$t .= <<H
 
