@@ -715,7 +715,7 @@ AGAIN:
          PMenuItemReg m = nil;
          sys lastMenu = mwd ? mwd-> menu : nilHandle;
          if ( mwd && mwd-> menu && ( PAbstractMenu(mwd-> menu)->stage <= csNormal)) {
-            m = ( PMenuItemReg) AbstractMenu_first_that( mwd-> menu, find_oid, (void*)mwd->id, true);
+            m = ( PMenuItemReg) AbstractMenu_first_that( mwd-> menu, find_oid, INT2PTR(void*,mwd->id), true);
             hiStage    = true;
             ev. cmd    = cmMenu;
             ev. gen. H = mwd-> menu;

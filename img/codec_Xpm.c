@@ -207,7 +207,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
                   }
                   xc = ARGB( r, g, b);
                } else {
-                  xc = (Color) hash_fetch( c, s, strlen(s));
+                  xc = (Color) PTR2UV(hash_fetch( c, s, strlen(s)));
                   if ( xc) {
                      xc -= 10;
                   } else if ( stricmp( s, "none") == 0)  {
@@ -216,7 +216,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
                      xc = 0;
                   } else {
                      xc = apc_lookup_color( s);
-                     hash_store( c, s, strlen(s), (void*)((Color)xc + 10));
+                     hash_store( c, s, strlen(s), INT2PTR(void*, (Color)xc + 10));
                      if ( xc == clInvalid) xc = 0;
                   }
                }
