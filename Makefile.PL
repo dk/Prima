@@ -410,6 +410,7 @@ sub setup_environment
 	$flavor = 'as32' if $flavor eq 'activestate';
 	
 	$DISTNAME = "Prima-$ver1.$ver2-$flavor-$REVISION.$PATCHLEVEL.$SUBVERSION";
+    print "Build: $DISTNAME\n";
    
 	if ( $cygwin and $] > 5.010 ) {
 		# 5.10 was shipped with a hack in ExtUtils/Liblist/Kid.pm where having auto/Prima.dll was ok
