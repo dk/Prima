@@ -34,7 +34,7 @@ require DynaLoader;
 use vars qw($VERSION @ISA $__import @preload);
 @ISA = qw(DynaLoader);
 sub dl_load_flags { 0x00 }
-$VERSION = '1.38';
+$VERSION = '1.39';
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {
 	$::application = 0;
