@@ -34,7 +34,8 @@ use Prima::ScrollBar;
 use Prima::Utils;
 
 # Terminal specific constants
-package tm;
+package 
+    tm;
 
 use constant WordBegin      => 0x0000;
 use constant WordEnd        => 0x0001;
