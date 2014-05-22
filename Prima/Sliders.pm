@@ -573,7 +573,8 @@ sub value
 
 
 # gauge reliefs
-package gr;
+package 
+    gr;
 use constant Sink         =>  -1;
 use constant Border       =>  0;
 use constant Raise        =>  1;
@@ -737,7 +738,8 @@ sub max       {($#_)?$_[0]-> set_bounds($_[0]-> {'min'}, $_[1])  : return $_[0]-
 sub threshold {($#_)?($_[0]-> {threshold} = $_[1]):return $_[0]-> {threshold};}
 
 # slider standard schemes
-package ss;
+package 
+    ss;
 use constant Gauge        => 0;
 use constant Axis         => 1;
 use constant Thermometer  => 2;
@@ -971,7 +973,8 @@ sub max         {($#_)?$_[0]-> set_bound($_[1],q(max)):return $_[0]-> {max};}
 
 
 # linear slider tick alignment
-package tka;
+package 
+    tka;
 use constant Normal      => 0;
 use constant Alternative => 1;
 use constant Dual        => 2;

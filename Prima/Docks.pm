@@ -335,7 +335,8 @@ sub on_paint
 	$canvas-> rect3d( 0, 0, $sz[0]-1, $sz[1]-1, 1, $self-> dark3DColor, $self-> light3DColor);
 }   
 
-package grow;
+package 
+    grow;
 # direct, ::vertical-independent
 use constant ForwardLeft   => 0x01;
 use constant ForwardDown   => 0x02;

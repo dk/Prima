@@ -136,7 +136,8 @@ sub AUTOLOAD
 	shift-> $method(@_);
 }
 
-package mb;
+package 
+    mb;
 
 use constant ChangeAll => 0xCA11;
 

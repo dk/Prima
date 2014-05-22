@@ -300,7 +300,8 @@ sub instance
 
 
 # flags for fingerprints - for different dockers and stages.
-package dmfp;
+package 
+    dmfp;
 
 use constant Tools     => 0x0F000; # those who want tools, must set this
 use constant Toolbar   => 0x10000; # those who want toolbars, must set this

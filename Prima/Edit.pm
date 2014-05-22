@@ -30,7 +30,8 @@
 #  $Id$
 #
 # edit block types
-package bt;
+package 
+    bt;
 use constant CUA          =>  0;
 use constant Vertical     =>  1;
 use constant Horizontal   =>  2;

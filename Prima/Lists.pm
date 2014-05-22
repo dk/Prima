@@ -46,7 +46,8 @@ use Prima::IntUtils;
 use Prima::Utils;
 use Cwd;
 
-package ci;
+package 
+    ci;
 
 BEGIN {
 eval 'use constant Grid => 1 + MaxId;' unless exists $ci::{Grid};

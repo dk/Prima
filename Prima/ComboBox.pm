@@ -28,7 +28,8 @@
 #  $Id$
 
 # combo styles
-package cs;
+package 
+    cs;
 use constant Simple       =>  0;
 use constant DropDown     =>  1;
 use constant DropDownList =>  2;
