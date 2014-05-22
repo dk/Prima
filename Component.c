@@ -928,7 +928,7 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
       var-> eventIDs = hash_create();
       ret = 0;
    } else
-      ret = (UV) hash_fetch( var-> eventIDs, name, nameLen);
+      ret = PTR2UV(hash_fetch( var-> eventIDs, name, nameLen));
 
    if ( ret == 0) {
       hash_store( var-> eventIDs, name, nameLen, INT2PTR(void*, var-> eventIDCount + 1));
@@ -945,7 +945,7 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
    } else
       list = var-> events +  PTR2UV( ret) - 1;
 
-   ret   = (UV) newSVsv( subroutine);
+   ret   = PTR2UV(newSVsv( subroutine));
    index = list_insert_at( list, referer, index);
    list_insert_at( list, ( Handle) ret, index + 1);
 
