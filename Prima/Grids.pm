@@ -32,7 +32,8 @@ use strict;
 use Prima;
 use Prima::IntUtils;
 
-package ci;
+package 
+    ci;
 
 BEGIN {
 	eval 'use constant Grid           => 1 + MaxId;' unless exists $ci::{Grid};
@@ -40,7 +41,8 @@ BEGIN {
 	eval 'use constant IndentCellBack => 3 + MaxId;' unless exists $ci::{IndentCellBack};
 }
 
-package gsci;
+package 
+    gsci;
 
 use constant COL_INDEX => 0;
 use constant ROW_INDEX => 1;

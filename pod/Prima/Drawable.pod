@@ -430,7 +430,7 @@ Negative if the ascent line is above the external leading line.
 
 =for podview <img src="leadings.gif" cut=1>
 
-=for html <p><img src="leadings.gif" id="leadings_gif"><!--
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/leadings.gif" id="leadings_gif"><!--
 
           ------------- external leading line
 
@@ -512,7 +512,7 @@ glyph's black part relative to the glyph extent:
 
 =for podview <img src="fontabc.gif" cut=1 >
 
-=for html <p><img src="fontabc.gif" id="fontabc_gif"><!--
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/fontabc.gif" id="fontabc_gif"><!--
 
     .  .     .  .      .  .        .  .
     .  .     $$$.      .  .        .  .
@@ -1311,7 +1311,7 @@ Context used: font, textOutBaseline
 
 =for podview <img src="gettextbox.gif" cut=1>
 
-=for html <p><img src="gettextbox.gif" id="gettextbox_gif"><!--
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/gettextbox.gif" id="gettextbox_gif"><!--
 
       1      3         3         4
          **               ****  

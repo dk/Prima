@@ -32,12 +32,14 @@ use warnings;
 use Prima;
 use Prima::Const;
 
-package fra; # Frame arragement constants.
+package 
+    fra; # Frame arragement constants.
 
 use constant Vertical => 0;
 use constant Horizontal => 1;
 
-package frr; # Frame resize method constants.
+package 
+    frr; # Frame resize method constants.
 
 use constant Simple => 0;
 use constant Proportional => 1; # XXX Yet to be implemented.

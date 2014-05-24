@@ -906,12 +906,14 @@ sub pageIndex     {($#_)?($_[0]-> set_page_index   ( $_[1]))    :return $_[0]-> 
 sub pageCount     {($#_)?($_[0]-> set_page_count   ( $_[1]))    :return $_[0]-> {pageCount}}
 
 # TabbedNotebook styles
-package tns;
+package 
+    tns;
 use constant Simple   => 0;
 use constant Standard => 1;
 
 # TabbedNotebook orientations
-package tno;
+package 
+    tno;
 use constant Top    => 0;
 use constant Bottom => 1;
 

@@ -89,7 +89,8 @@ sub profile_default
 	return $def;
 }
 
-package mbi;
+package 
+    mbi;
 
 use constant SystemMenu => bi::SystemMenu;
 use constant Minimize   => bi::Minimize;

@@ -33,7 +33,8 @@ use Prima;
 use Prima::IntUtils;
 use Prima::ScrollBar;
 
-package tb;
+package 
+    tb;
 use vars qw(@oplen);
 
 @oplen = ( 4, 2, 3, 4, 3, 2, 4);   # lengths of tb::OP_XXX constants ( see below ) + 1
