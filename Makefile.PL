@@ -1667,28 +1667,11 @@ sub command_postinstall
 {
 	my %opt = map { split /=/, $_, 2 } @_;
 
-	if ( $opt{dl} ) {
-		my $f = "$opt{dest}/Prima.pm";
-		$DL_LOAD_FLAGS = $opt{dl};
-		print "Setting dl_load_flags=$DL_LOAD_FLAGS in $f\n";
-		open F, $f or die "cannot open $f:$!\n";
-		local $/;
-		my $ct = <F>;
+	if ( $opt{slib} ) {
+		my $f = "$opt{dest}/auto/Prima/$opt{slib}";
+		open F, ">", $f or warn "** warning: Cannot write to a fake lib '$f': Prima extensions won't build\n";
 		close F;
-		$ct =~ s/(dl_load_flags\s*\{\s*)0x00/${1}0x01/;
-		# open_rw(\*F, $f);
-		open F, "> $f.tmp" or die "Cannot open $f.tmp:$!";
-		print F $ct;
-		close F;
-		unlink $f;
-		rename "$f.tmp", $f;
 	}
-
-    if ( $opt{slib} ) {
-        my $f = "$opt{dest}/auto/Prima/$opt{slib}";
-        open F, ">", $f or warn "** warning: Cannot write to a fake lib '$f': Prima extensions won't build\n";
-        close F;
-    }
 	
 	my $fn_cfg = "$opt{dest}/Prima/Config.pm";
 	print "Updating config $fn_cfg\n";
@@ -1748,6 +1731,25 @@ FOOTER
 	close F;
 	unlink $fn_cfg;
 	rename "$fn_cfg.tmp", $fn_cfg;
+}
+
+sub command_dl
+{
+	$DL_LOAD_FLAGS = shift;
+	my $f = "blib/lib/Prima.pm";
+
+	print "Setting dl_load_flags=$DL_LOAD_FLAGS in $f\n";
+	open F, $f or die "cannot open $f:$!\n";
+	local $/;
+	my $ct = <F>;
+	close F;
+	$ct =~ s/(dl_load_flags\s*\{\s*)0x00/${1}0x01/;
+	# open_rw(\*F, $f);
+	open F, "> $f.tmp" or die "Cannot open $f.tmp:$!";
+	print F $ct;
+	close F;
+	unlink $f;
+	rename "$f.tmp", $f;
 }
 
 sub command_bindist
@@ -2014,7 +2016,7 @@ sub install
 		"$5\$(DEST$6)$7$8".
 		"\n\t\$(NOECHO) \$(ABSPERL) $0 --postinstall ".
 			"dest=\$(DEST$3) lib=\$($3) bin=\$($6) ".
-			"dl=$DL_LOAD_FLAGS slib=$cygwin_fake_Slib\n\n"
+			"slib=$cygwin_fake_Slib\n\n"
 	]xgse;
 
 	$END .= <<BAD_MAKEFILE if $n != 3;
@@ -2028,6 +2030,8 @@ BAD_MAKEFILE
 
 	return $t;
 }
+
+sub linkext { shift->SUPER::linkext .  "\t\$(NOECHO) \$(ABSPERL) $0 --dl $DL_LOAD_FLAGS\n\n" }
 
 WriteMakefile(
 	NAME              => 'Prima',
