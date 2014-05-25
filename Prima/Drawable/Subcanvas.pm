@@ -235,14 +235,6 @@ sub AUTOLOAD {
 	}
 }
 
-sub restore_parent {
-	my $self = shift;
-	my @props = map { /^backup_(.*)/ ? ($1) : () } keys %$self;
-	# Restore all the backed-up props; all properties have special handling for
-	# a single undefined value.
-	$self->$_(undef) for (@props);
-}
-
 sub paint_widgets
 {
     my ( $self, $root, $x, $y ) = @_;
