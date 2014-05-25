@@ -36,13 +36,13 @@ Demonstrates parabolic splines as graphic primitives.
 The points arount the filled shapes are spline vertexes,
 which are dragable by the mouse.
 
-Using L<Prima::CurvedText>.
+Using L<Prima::Drawable::CurvedText>.
 
 =cut
 
 use strict;
 use warnings;
-use Prima qw(Application CurvedText);
+use Prima qw(Application Drawable::CurvedText);
 
 my @bounds;
 my @points = (

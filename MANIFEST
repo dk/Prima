@@ -160,11 +160,11 @@ Prima/ColorDialog.pm
 Prima/ComboBox.pm
 Prima/Config.pm
 Prima/Const.pm
-Prima/CurvedText.pm
 Prima/DetailedList.pm
 Prima/DetailedOutline.pm
 Prima/DockManager.pm
 Prima/Docks.pm
+Prima/Drawable/CurvedText.pm
 Prima/Drawable/Subcanvas.pm
 Prima/Edit.pm
 Prima/EditDialog.pm

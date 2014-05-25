@@ -23,7 +23,7 @@
 #  SUCH DAMAGE.
 #
 # $Id$
-package Prima::CurvedText;
+package Prima::Drawable::CurvedText;
 
 use strict;
 use warnings;
