@@ -165,6 +165,7 @@ Prima/DetailedList.pm
 Prima/DetailedOutline.pm
 Prima/DockManager.pm
 Prima/Docks.pm
+Prima/Drawable/Subcanvas.pm
 Prima/Edit.pm
 Prima/EditDialog.pm
 Prima/EventHook.pm

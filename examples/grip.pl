@@ -51,69 +51,9 @@ use Prima;
 use Prima::ImageViewer;
 use Prima::Application;
 use Prima::RubberBand;
-
-package MonoDeviceBitmap;
-use vars qw(@ISA);
-@ISA = qw(Prima::DeviceBitmap);
-
-sub color
-{
-	return $_[0]-> SUPER::color unless $#_;
-	my ( $self, $color) = @_;
-	$self-> SUPER::color( $self-> get_nearest_color( $color));
-}
-
-sub backColor
-{
-	return $_[0]-> SUPER::backColor unless $#_;
-	my ( $self, $color) = @_;
-	$self-> SUPER::backColor( $self-> get_nearest_color( $color));
-}
+use Prima::Drawable::Subcanvas;
 
 package Generic;
-
-my $imgType = im::bpp1;
-
-sub canvas
-{
-	my $self = $_[0];
-	my $i = MonoDeviceBitmap-> create(
-		type         => $imgType,
-		width        => $self-> width,
-		height       => $self-> height,
-		monochrome   => 1,
-		preserveType => 1,
-	);
-
-	$i-> begin_paint;
-	$i-> set(
-		color      => $self-> color,
-		backColor  => $self-> backColor,
-		font       => $self-> font,
-	);
-	return $i;
-}
-
-sub paint
-{
-	my ( $self, $canvas) = @_;
-	$self-> notify(q(Paint), $canvas);
-	$canvas-> clipRect( 0, 0, $self-> size);
-	$canvas-> translate(0, 0);
-	$canvas-> palette([]);
-	my @c = $self-> widgets;
-	for ( @c) {
-		next unless $_-> visible;
-		my @org = $_-> origin;
-		my $i = canvas( $_);
-		if ( $_-> transparent) {
-			$i-> put_image( -$org[0], -$org[1], $canvas);
-		}
-		paint( $_, $i);
-		$i-> end_paint;
-		$canvas-> put_image( @org, $i);
-	}
-}
 
 sub xordraw
 {
@@ -170,10 +110,7 @@ my $w = Prima::MainWindow-> create(
 			$self-> pointer( cr::Default);
 			my $v = $::application-> get_widget_from_point( $self-> client_to_screen( $x, $y));
 			return unless $v;
-			my $i = canvas( $v);
-			paint( $v, $i);
-			$i-> end_paint;
-			$self-> IV-> image( $i-> image);
+			$self-> IV-> image( $v->screenshot );
 		} elsif ( $cap == 3) {
 			($self-> {dx},$self-> {dy}) = $self-> client_to_screen( $x, $y);
 			xordraw( $self);
@@ -193,5 +130,7 @@ $w-> insert( ImageViewer =>
 	alignment   => ta::Center,
 	quality => 1,
 );
+
+print "don't run this by itself, run launch.pl then run grip.pl and some other example. Then 'grip' or 'grap' that other example\n";
 
 run Prima;
