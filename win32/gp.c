@@ -1281,6 +1281,7 @@ Rect
 apc_gp_get_clip_rect( Handle self)
 {
    RECT r;
+   Point p;
    Rect rr = {0,0,0,0};
    objCheck rr;
    if ( !is_opt( optInDraw) || !sys ps) return rr;
@@ -1290,10 +1291,13 @@ apc_gp_get_clip_rect( Handle self)
    rr. right  = r. right - 1;
    rr. bottom = sys lastSize. y - r. bottom;
    rr. top    = sys lastSize. y - r. top    - 1;
-// rr. left   += sys transform2. x;
-// rr. right  += sys transform2. x;
-// rr. top    -= sys transform2. y;
-// rr. bottom -= sys transform2. y;
+
+   p = apc_gp_get_transform(self);
+   rr. left   += p.x;
+   rr. right  += p.x;
+   rr. top    += p.y;
+   rr. bottom += p.y;
+
    return rr;
 }
 
