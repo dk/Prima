@@ -36,5 +36,6 @@ object Prima::DeviceBitmap( Prima::Drawable)
    method Handle icon();
    method Handle image();
    method SV *   get_handle();
+   method int    get_paint_state();
    method void   init( HV * profile);
 }

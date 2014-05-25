@@ -108,6 +108,12 @@ DeviceBitmap_get_handle( Handle self)
    return newSVpv( buf, 0);
 }
 
+int
+DeviceBitmap_get_paint_state( Handle self)
+{
+   return psEnabled;
+}
+
 #ifdef __cplusplus
 }
 #endif
