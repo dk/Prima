@@ -387,7 +387,7 @@ typedef U32 uint32_t;
 typedef u_int64_t       uint64_t;
 #elif defined U64
 typedef U64 uint64_t;
-#elif defined(_MSC_VER) && _MSC_VER < 1500
+#elif defined(_MSC_VER) && _MSC_VER <= 1500
 typedef unsigned __int64 uint64_t;
 typedef __int64 int64_t;
 #else
