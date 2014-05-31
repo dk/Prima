@@ -32,6 +32,7 @@
 #endif
 #include "Window.h"
 #include "Icon.h"
+#include "Printer.h"
 #include "DeviceBitmap.h"
 
 #ifdef __cplusplus
@@ -57,6 +58,9 @@ Bool image_screenable( Handle image, Handle screen, int * bitCount)
    if ( i-> type == imRGB) {
 
       if ( !screen)
+         return true;
+
+      if ( kind_of( screen, CPrinter)) /* make printer itself to do the dithering */
          return true;
 
       if ( dsys( screen) options. aptCompatiblePS || !dsys( screen) ps) {
