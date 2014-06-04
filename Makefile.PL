@@ -131,7 +131,7 @@ options:
     WITH_XFT          - compile with/without Xft (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
     WITH_GTK2         - compile with/without GTK2 (default 1), X only
-    CYGWIN_X11        - X11 build in cygwin environment
+    CYGWIN_WINAPI     - Winapi build in cygwin environment
     DEBUG             - build with debug information
     EXTRA_LDFLAGS      - add extra ld line (i.e. -lgcc )
     EXTRA_CCFLAGS      - add extra cc line (i.e. -I/usr/local/include )
@@ -169,12 +169,12 @@ sub setup_argv
 	$ARGV_STR = join(' ', @ARGV);
 
 	%cmd_options = (
-		X11BASE      => undef,
-		WITH_XFT     => 1,
-		WITH_ICONV   => 1,
-		WITH_GTK2    => 1,
-		CYGWIN_X11   => 0,
-		DEBUG        => 0,
+		X11BASE       => undef,
+		WITH_XFT      => 1,
+		WITH_ICONV    => 1,
+		WITH_GTK2     => 1,
+		CYGWIN_WINAPI => 0,
+		DEBUG         => 0,
 		EXTRA_CCFLAGS => '',
 		EXTRA_LDFLAGS => '',
 		
@@ -210,12 +210,12 @@ sub setup_variables
 		$Win32 = 1;
 		$platform = 'win32';
 	} elsif ( $^O =~ /cygwin/i) {
-		if ( $cmd_options{CYGWIN_X11}) {
-			$unix = 1;
-			$platform = 'unix';
-		} else {
+		if ( $cmd_options{CYGWIN_WINAPI}) {
 			$Win32 = 1;
 			$platform = 'win32';
+		} else {
+			$unix = 1;
+			$platform = 'unix';
 		}
 		$cygwin = 1;
 	} else {
@@ -408,7 +408,7 @@ sub setup_environment
 
 	$flavor = 'sb32' if $flavor eq 'strawberry';
 	$flavor = 'as32' if $flavor eq 'activestate';
-	$flavor .= '.' . ( $cmd_options{CYGWIN_X11} ? 'x11' : 'win32' ) if $flavor eq 'cygwin';
+	$flavor .= '.' . ( $cmd_options{CYGWIN_WINAPI} ? 'win32' : 'x11' ) if $flavor eq 'cygwin';
 	
 	$DISTNAME = "Prima-$ver1.$ver2-$flavor-$REVISION.$PATCHLEVEL.$SUBVERSION";
 	print "Build: $DISTNAME\n";
