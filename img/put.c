@@ -312,7 +312,7 @@ NOSCALE:
       if (rop != ropCopyPut || i-> conversion == ictNone) { 
          Handle b8 = i-> self-> dup( dest);
          PImage j  = ( PImage) b8;
-         int mask  = (1 << type) - 1;
+         int mask  = (1 << (type & imBPP)) - 1;
          int sz;
          Byte *dj, *di;
          Byte colorref[256];
@@ -328,8 +328,13 @@ NOSCALE:
          for ( sz = 0; sz < 256; sz++) colorref[sz] = ( sz > mask) ? mask : sz;
          dj = j-> data;
          di = i-> data;
-         for ( sz = 0; sz < i-> h; sz++, dj += j-> lineSize, di += i-> lineSize) 
-            bc_byte_mono_cr( dj, di, i-> w, colorref);
+
+         for ( sz = 0; sz < i-> h; sz++, dj += j-> lineSize, di += i-> lineSize) {
+            if (( type & imBPP) == 1) 
+               bc_byte_mono_cr( dj, di, i-> w, colorref);
+            else
+               bc_byte_nibble_cr( dj, di, i-> w, colorref);
+         }
          Object_destroy( b8);
       } else {
          int conv = i-> conversion;
@@ -379,7 +384,7 @@ NOSCALE:
          colorref);
       s = PImage( src)-> data;
       /* identity transform for padded ( 1->xfff, see above ) pixels */
-      for ( sz = PImage( src)-> palSize; sz < 256; sz++) 
+      for ( sz = PImage( src)-> palSize; sz < 256; sz++)
          colorref[sz] = sz;
       while ( i--) {
          *s = colorref[ *s];
