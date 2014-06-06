@@ -525,7 +525,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          channels = 4;
       }
       png_set_background(l->png_ptr, &p, PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
-   } 
+   }
 
    number_passes = png_set_interlace_handling(l-> png_ptr);
 
@@ -644,12 +644,28 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
             Byte * dst = data, * src = l-> line, *a = a_data;
             png_read_row(l->png_ptr, l-> line, NULL);
             if ( channels == 4) {
-               for ( i = 0; i < width; i++) {
-                  *dst++ = *src++;
-                  *dst++ = *src++;
-                  *dst++ = *src++;
-                  *a++ = *src++;
-               }
+	       if (icon) {
+	          /* for bad pngs where pixels to be masked out are not 0x000000, they look bad with xor 
+		     icons' masks are 1-bit only; if this is ever to be changed, then this should change too
+		  */
+                  for ( i = 0; i < width; i++) {
+		     register Byte r = *src++;
+		     register Byte g = *src++;
+		     register Byte b = *src++;
+		     register Byte A = *src++;
+                     *dst++ = (A > 127) ? r : 0;
+                     *dst++ = (A > 127) ? g : 0;
+                     *dst++ = (A > 127) ? b : 0;
+                     *a++ = A;
+                  }
+	       } else {
+                  for ( i = 0; i < width; i++) {
+                     *dst++ = *src++;
+                     *dst++ = *src++;
+                     *dst++ = *src++;
+                     *a++ = *src++;
+                  }
+	       }
             } else {
                for ( i = 0; i < width; i++) {
                   *dst++ = *src++;
