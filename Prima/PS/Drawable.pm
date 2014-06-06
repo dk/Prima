@@ -1169,7 +1169,7 @@ sub put_image_indirect
 
 	my $g  = $image-> data;
 	my $bt = ( $image-> type & im::BPP) * $is[0] / 8;
-	my $ls = int(( $is[0] * ( $image-> type & im::BPP) + 31) / 32) * 4; 
+	my $ls = $image->lineSize;
 	my ( $i, $j);
 
 	$self-> emit(": $x $y T @fullScale Z");
@@ -1180,8 +1180,8 @@ sub put_image_indirect
 
 	for ( $i = 0; $i < $is[1]; $i++) {
 		my $w  = substr( $g, $ls * $i, $bt);
-		$w =~ s/(.)(.)(.)/$3$2$1/g if $ib == 24;
-		$w =~ s/(.)/sprintf("%02x",ord($1))/eg;
+		$w =~ s/(.)(.)(.)/$3$2$1/gs if $ib == 24;
+		$w =~ s/(.)/sprintf("%02x",ord($1))/egs;
 		$self-> emit( $w);
 	}
 	$self-> emit(';');
