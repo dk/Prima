@@ -1739,12 +1739,16 @@ sub command_dl
 	$DL_LOAD_FLAGS = shift;
 	my $f = "blib/lib/Prima.pm";
 
-	print "Setting dl_load_flags=$DL_LOAD_FLAGS in $f\n";
 	open F, $f or die "cannot open $f:$!\n";
 	local $/;
 	my $ct = <F>;
 	close F;
-	$ct =~ s/(dl_load_flags\s*\{\s*)0x00/${1}0x01/;
+	
+	$ct =~ m/dl_load_flags\s*\{\s*0x0(\d)/;
+	return if $1 eq $DL_LOAD_FLAGS;
+
+	print "Setting dl_load_flags=$DL_LOAD_FLAGS in $f\n";
+	$ct =~ s/(dl_load_flags\s*\{\s*)0x00/${1}0x0$DL_LOAD_FLAGS/;
 	# open_rw(\*F, $f);
 	open F, "> $f.tmp" or die "Cannot open $f.tmp:$!";
 	print F $ct;
