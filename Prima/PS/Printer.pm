@@ -56,7 +56,7 @@ Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
 	} elsif ( $print_in_file) {
 		$x = Prima::PS::File-> create( file => 'out.ps');
 	} else {
-		$x = Prima::PS::LPR-> create( args => '-Pcolorprinter');
+		$x = Prima::PS::LPR-> create( args => '-d colorprinter');
 	}
 	$x-> begin_doc;
 	$x-> font-> size( 300);
@@ -197,7 +197,7 @@ sub import_printers
 		}
 		$self-> {$slot}-> {$n} = deepcopy( $self-> {defaultData});
 		$self-> {$slot}-> {$n}-> {spoolerType} = lpr;
-		$self-> {$slot}-> {$n}-> {spoolerData} = "-P$_";
+		$self-> {$slot}-> {$n}-> {spoolerData} = "-d $_";
 		push @ret, $n;
 	}
 	return @ret;
