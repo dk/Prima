@@ -469,7 +469,8 @@ Widget_fetch_resource( char *className, char *name, char *classRes, char *res, H
    Color clr;
    void *parm;
    Font font;
-   SV * ret;
+   SV * ret = nilSV;
+   char *r_className, *r_name, *r_classRes, *r_res;
 
    switch ( resType) {
    case frColor:
@@ -483,13 +484,18 @@ Widget_fetch_resource( char *className, char *name, char *classRes, char *res, H
       resType = frString;
    }
 
+   r_className = duplicate_string(className);
+   r_name      = duplicate_string(name);
+   r_classRes  = duplicate_string(classRes);
+   r_res       = duplicate_string(res);
+
    if ( !apc_fetch_resource(
-      prima_normalize_resource_string( className, true),
-      prima_normalize_resource_string( name, false),
-      prima_normalize_resource_string( classRes, true),
-      prima_normalize_resource_string( res, false),
+      prima_normalize_resource_string( r_className, true),
+      prima_normalize_resource_string( r_name, false),
+      prima_normalize_resource_string( r_classRes, true),
+      prima_normalize_resource_string( r_res, false),
       owner, resType, parm))
-      return nilSV;
+      goto FAIL;
 
    switch ( resType) {
    case frColor:
@@ -502,6 +508,13 @@ Widget_fetch_resource( char *className, char *name, char *classRes, char *res, H
       ret = str ? newSVpv( str, 0) : nilSV;
       free( str);
    }
+
+FAIL:
+   free(r_className);
+   free(r_name);
+   free(r_classRes);
+   free(r_res);
+
    return ret;
 }
 
