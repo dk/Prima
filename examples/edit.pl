@@ -30,7 +30,7 @@
 
 =head1 NAME
 
-An input line
+examples/edit.pl - An input line
 
 =head1 FEATURES
 

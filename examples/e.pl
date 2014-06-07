@@ -28,7 +28,7 @@
 
 =head1 NAME
 
-A minimalistic graphic editor window
+examples/e.pl - A minimalistic graphic editor window
 
 =head1 FEATURES
 

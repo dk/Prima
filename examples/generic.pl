@@ -27,11 +27,12 @@
 #
 
 =pod 
-=item NAME
 
-A "hello world" program
+=head1 NAME
 
-=item FEATURES
+examples/generic.pl - A "hello world" program
+
+=head1 FEATURES
 
 A very basic Prima toolkit usage is demonstrated
 

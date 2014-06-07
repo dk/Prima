@@ -31,7 +31,7 @@ use Prima 'MsgBox', Application => { name => 'Chess puzzle' };
 
 =head1 NAME
 
-A chess puzzle
+examples/amba.pl - A chess puzzle
 
 =head1 FEATURES
 

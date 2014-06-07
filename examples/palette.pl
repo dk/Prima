@@ -26,11 +26,12 @@
 #  $Id$
 #
 =pod 
-=item NAME
 
-A palette functionality test
+=head1 NAME
 
-=item FEATURES
+examples/palette.pl - A palette functionality test
+
+=head1 FEATURES
 
 Test the Prima palette functionality on paletted
 displays. True-color displays are of no interest here.

@@ -29,7 +29,7 @@
 
 =head1 NAME
 
-An eyes program clone
+examples/eyes.pl - An eyes program clone
 
 =head1 FEATURES
 

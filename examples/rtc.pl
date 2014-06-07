@@ -28,7 +28,7 @@
 
 =head1 NAME
 
-Prima scrollbar widget
+examples/rtc.pl - Prima scrollbar widget
 
 =head1 FEATURES
 

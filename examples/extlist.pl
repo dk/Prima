@@ -27,11 +27,12 @@
 #
 
 =pod 
-=item NAME
 
-Prima check-list widget
+=head1 NAME
 
-=item FEATURES
+examples/extlist.pl - Prima check-list widget
+
+=head1 FEATURES
 
 Demonstrates basic usage of a Prima toolkit and
 its standard CheckList class.

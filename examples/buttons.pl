@@ -30,7 +30,7 @@
 
 =head1 NAME
 
-Prima button widgets
+examples/buttons.pl - Prima button widgets
 
 =head1 FEATURES
 

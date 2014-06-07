@@ -28,7 +28,7 @@
 
 =head1 NAME
 
-A spline demo
+examples/spline.pl - A spline demo
 
 =head1 FEATURES
 

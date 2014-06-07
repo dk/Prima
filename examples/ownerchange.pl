@@ -26,11 +26,12 @@
 #  $Id$
 #
 =pod 
-=item NAME
 
-A recreate functionality example.
+=head1 NAME
 
-=item FEATURES
+examples/ownerchange.pl - A recreate functionality example.
+
+=head1 FEATURES
 
 Widgets that change owner dynamically often gets 
 recreated internally - one system window gets

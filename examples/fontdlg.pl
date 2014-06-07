@@ -28,11 +28,12 @@
 package fontdlg;
 
 =pod 
-=item NAME
 
-An alternate font selection window
+=head1 NAME
 
-=item FEATURES
+examples/fontdlg.pl - An alternate font selection window
+
+=head1 FEATURES
 
 Demonstrates Prima font API and its usage.
 

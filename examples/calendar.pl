@@ -30,7 +30,7 @@
 
 =head1 NAME
 
-Standard calendar widget
+examples/calendar.pl - Standard calendar widget
 
 =head1 FEATURES
 

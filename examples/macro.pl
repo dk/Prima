@@ -25,11 +25,12 @@
 #
 #  $Id$
 =pod 
-=item NAME
 
-A macro recording program
+=head1 NAME
 
-=item FEATURES
+examples/macro.pl - A macro recording program
+
+=head1 FEATURES
 
 Demonstration and test of mouse_event() function usage.
 

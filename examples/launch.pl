@@ -30,7 +30,7 @@
 
 =head1 NAME
 
-A Prima example launcher
+examples/launch.pl - A Prima example launcher
 
 =head1 FEATURES
 

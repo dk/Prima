@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-async.pl - example of using asynchonous communication with a process
+examples/async.pl - example of using asynchonous communication with a process
 
 =cut
 

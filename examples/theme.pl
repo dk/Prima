@@ -35,7 +35,7 @@ use Prima qw(Application Themes ScrollBar Buttons InputLine ExtLists Notebooks S
 
 =head1 NAME
 
-Theme selector
+examples/theme.pl - Theme selector
 
 =head1 FEATURES
 

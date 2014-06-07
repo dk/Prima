@@ -26,11 +26,12 @@
 #  $Id$
 #
 =pod 
-=item NAME
 
-A gradient fill example
+=head1 NAME
 
-=item FEATURES
+examples/f_fill.pl - A gradient fill example
+
+=head1 FEATURES
 
 Demonstrates the usage of graphic context regions.
 Note that the $i region is not created, but is assigned

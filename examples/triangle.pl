@@ -29,7 +29,7 @@
 
 =head1 NAME
 
-Escher's Impossible Triangle
+examples/triangle.pl - Escher's Impossible Triangle
 
 =head1 FEATURES
 

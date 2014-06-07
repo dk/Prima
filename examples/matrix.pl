@@ -27,11 +27,12 @@
 #
 
 =pod 
-=item NAME
 
-A matrix screen-saver
+=head1 NAME
 
-=item FEATURES
+examples/matrix.pl - A matrix screen-saver
+
+=head1 FEATURES
 
 Tests the paletted DeviceBitmap implementation
 and large font output performance.

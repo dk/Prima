@@ -27,11 +27,12 @@
 #
 
 =pod 
-=item NAME
 
-A periodic table of elements
+=head1 NAME
 
-=item FEATURES
+examples/periodic.pl - A periodic table of elements
+
+=head1 FEATURES
 
 Demonstrates usage of grid widget
 

@@ -30,7 +30,7 @@
 
 =head1 NAME
 
-Prima label widget
+examples/label.pl - Prima label widget
 
 =head1 FEATURES
 

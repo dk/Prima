@@ -29,7 +29,7 @@
 
 =head1 NAME
 
-Prima toolkit example
+examples/rot.pl - Prima toolkit example
 
 =head1 FEATURES
 

@@ -29,11 +29,12 @@
 #  Grid example
 #
 =pod 
-=item NAME
 
-Prima grid widget example
+=head1 NAME
 
-=item FEATURES
+examples/grid.pl - Prima grid widget example
+
+=head1 FEATURES
 
 Demonstrates the usage of grid widgets - Prima::AbstractGrid and
 its text-oriented descendant, Prima::Grid. To switch between

@@ -27,11 +27,12 @@
 use Prima;
 use Prima::Utils;
 =pod 
-=item NAME
 
-A sound example
+=head1 NAME
 
-=item FEATURES
+examples/pitch.pl - A sound example
+
+=head1 FEATURES
 
 Tests the implementation of apc_beep_tone() function.
 

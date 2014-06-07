@@ -28,7 +28,7 @@
 
 =head1 NAME
 
-Prima button widgets
+examples/buttons2.pl - Prima button widgets
 
 =head1 FEATURES
 

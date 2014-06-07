@@ -1,10 +1,10 @@
 =pod 
 
-=item NAME
+=head1 NAME
 
-AnyEvent version of examples/socket.pl with automatic selection of Event library
+examples/socket_anyevent.pl - AnyEvent version of examples/socket.pl with automatic selection of Event library
 
-=head AUTHOR
+=head1 AUTHOR
 
 Vikas N Kumar
 

@@ -26,11 +26,12 @@
 #  $Id$
 #
 =pod 
-=item NAME
 
-A printing example
+=head1 NAME
 
-=item FEATURES
+examples/print.pl - A printing example
+
+=head1 FEATURES
 
 Demonstrates the usage of Prima printing interface.
 A particular incoherence between *nix and win32 systems

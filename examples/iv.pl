@@ -29,7 +29,7 @@
 
 =head1 NAME
 
-A image viewer program
+examples/iv.pl - A image viewer program
 
 =head1 FEATURES
 

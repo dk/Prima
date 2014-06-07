@@ -30,7 +30,7 @@
 
 =head1 NAME
 
-A Prima toolkit example
+examples/scrollbar.pl - A Prima toolkit example
 
 =head1 FEATURES
 

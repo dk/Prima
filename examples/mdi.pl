@@ -27,9 +27,10 @@
 #
 
 =pod 
+
 =item NAME
 
-A MDI ( multiple-document interface ) example
+examples/mdi.pl - A MDI ( multiple-document interface ) example
 
 =item FEATURES
 

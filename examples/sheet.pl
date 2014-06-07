@@ -29,7 +29,7 @@
 
 =head1 NAME
 
-Prima DetailedList widget example
+examples/sheet.pl - Prima DetailedList widget example
 
 =head1 FEATURES
 

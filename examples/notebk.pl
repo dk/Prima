@@ -30,7 +30,7 @@
 
 =head1 NAME
 
-Prima notebook widget
+examples/notebk.pl - Prima notebook widget
 
 =head1 FEATURES
 

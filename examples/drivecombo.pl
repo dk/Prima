@@ -27,11 +27,12 @@
 #
 
 =pod 
-=item NAME
 
-File tree widgets
+=head1 NAME
 
-=item FEATURES
+examples/drivecombo.pl - File tree widgets
+
+=head1 FEATURES
 
 Use of standard file-listbox and drive-combo box ( the latter
 is idle under *nix )

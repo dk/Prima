@@ -26,12 +26,12 @@
 #  $Id$
 #
 =pod 
-=item NAME
 
-Downloads a html file from a given URL and donwstrips
-it to a text level.
+=head1 NAME
 
-=item FEATURES
+examples/socket.pl - Downloads a html file from a given URL and strips it to text.
+
+=head1 FEATURES
 
 Tests the functionality of Prima::File and its
 events - onRead, onWrite and onException. ( The latter is not exemplified )

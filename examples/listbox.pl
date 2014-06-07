@@ -29,11 +29,12 @@
 #
 
 =pod 
-=item NAME
 
-Prima listbox, combobox and widget example
+=head1 NAME
 
-=item FEATURES
+examples/listbox.pl - Prima listbox, combobox and widget example
+
+=head1 FEATURES
 
 Demonstrates the usage of Prima::Edit, Prima::ComboBox
 and Prima::ListBox widgets. 

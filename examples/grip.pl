@@ -27,11 +27,12 @@
 #
 
 =pod 
-=item NAME
 
-Screen and widget grabbing example
+=head1 NAME
 
-=item FEATURES
+examples/grip.pl - Screen and widget grabbing example
+
+=head1 FEATURES
 
 Provided two standalone tests.
 

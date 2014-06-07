@@ -32,7 +32,7 @@
 
 =head1 NAME
 
-Docking widgets
+examples/dock.pl - Docking widgets
 
 =head1 FEATURES
 

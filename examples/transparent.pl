@@ -29,7 +29,7 @@
 
 =head1 NAME
 
-Prima toolkit example
+examples/transparent.pl - Prima toolkit example
 
 =head1 FEATURES
 

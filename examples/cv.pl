@@ -27,11 +27,12 @@
 #
 
 =pod 
-=item NAME
 
-Standard color dialog
+=head1 NAME
 
-=item FEATURES
+examples/cv.pl - Standard color dialog
+
+=head1 FEATURES
 
 Demonstrates usage of a standard color dialog.
 Note the left-button drag effect from the color wheel with 

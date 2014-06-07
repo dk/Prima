@@ -1,10 +1,10 @@
 =pod 
 
-=item NAME
+=head1 NAME
 
-AnyEvent version of examples/socket.pl  with POE::Loop::Prima
+examples/socket_anyevent_poe.pl - AnyEvent version of examples/socket.pl with POE::Loop::Prima
 
-=head AUTHOR
+=head1 AUTHOR
 
 Vikas N Kumar
 

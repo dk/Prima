@@ -29,7 +29,7 @@
 
 =head1 NAME
 
-Prima outline widget
+examples/outline.pl - Prima outline widget
 
 =head1 FEATURES
 

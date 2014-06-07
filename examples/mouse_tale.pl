@@ -27,11 +27,12 @@
 #
 
 =pod 
-=item NAME
 
-The mouse tale from Alice In Wonderland
+=head1 NAME
 
-=item FEATURES
+examples/mouse_tale.pl - The mouse tale from Alice In Wonderland
+
+=head1 FEATURES
 
 Demonstrates Prima::TextView capabilities
 

@@ -27,11 +27,12 @@
 #
 
 =pod 
-=item NAME
 
-A menu usage example
+=head1 NAME
 
-=item FEATURES
+examples/menu.pl - A menu usage example
+
+=head1 FEATURES
 
 Demonstrates the usage of Prima menu API:
 

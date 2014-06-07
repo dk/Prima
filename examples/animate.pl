@@ -1,6 +1,6 @@
 =head1 NAME
 
-Animate using L<Prima::Image::AnimateGIF>
+examples/animate.pl - Animate using L<Prima::Image::AnimateGIF>
 
 =cut
 

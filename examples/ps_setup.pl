@@ -25,12 +25,14 @@
 #
 # $Id$
 =pod 
-=item NAME
 
-A prima PostScript printer output setup program.
+=head1 NAME
+
+examples/ps_setup.pl - A prima PostScript printer output setup program.
+
+=head1 FEATURES
+
 Prints a PS document after setup dialog is finished.
-
-=item FEATURES
 
 Whereas Prima::PS modules can be used on any platform,
 they serve as an only remedy on *nix systems when printing

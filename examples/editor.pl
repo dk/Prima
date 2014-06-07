@@ -30,7 +30,7 @@
 
 =head1 NAME
 
-A basic text editor
+examples/editor.pl - A basic text editor
 
 =head1 FEATURES
 

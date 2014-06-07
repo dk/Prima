@@ -30,7 +30,7 @@
 
 =head1 NAME
 
-A key dump example
+examples/keys.pl - A key dump example
 
 =head1 FEATURES
 
