@@ -532,7 +532,7 @@ Returns width of the composite frame.
 =head1 SEE ALSO
 
 L<Prima::image-load>,
-L<http://www.the-labs.com/GIFMerge/ >
+L<http://www.the-labs.com/GIFMerge/>
 
 =head1 AUTHOR
 
