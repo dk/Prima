@@ -67,7 +67,7 @@ sub get_paint_state  { ps::Enabled }
 ### For these methods, just call the method on the parent widget directly
 for my $direct_method (qw(
 	fonts get_bpp get_font_abc get_font_ranges get_handle
-	get_nearest_color get_physical_palette get_text_width text_wrap
+	get_nearest_color get_physical_palette get_text_width text_wrap get_text_box
 )) {
 	no strict 'refs';
 	*{$direct_method} = sub {
@@ -228,7 +228,7 @@ sub AUTOLOAD {
 	
 	my $parent_canvas = $self->{parent_canvas};
 	if (my $subref = $parent_canvas->can($called)) {
-		$subref->($parent_canvas, @_);
+		return $subref->($parent_canvas, @_);
 	}
 	else {
 		die "Don't know how to $called\n";
