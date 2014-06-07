@@ -344,8 +344,8 @@ sub begin_doc
 		unless defined $docName;
 	my $data = scalar localtime;
 	my @b2 = (
-		$self-> {pageSize}-> [0] - $self-> {pageMargins}-> [2],
-		$self-> {pageSize}-> [1] - $self-> {pageMargins}-> [3]
+		int($self-> {pageSize}-> [0] - $self-> {pageMargins}-> [2] + .5),
+		int($self-> {pageSize}-> [1] - $self-> {pageMargins}-> [3] + .5)
 	);
 	
 	$self-> {fpHash}  = {};
