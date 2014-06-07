@@ -64,6 +64,7 @@ sub profile_default
 		reversed         => 0,
 		rotate           => 0,
 		scale            => [ 1, 1],
+		isEPS            => 0,
 		textOutBaseline  => 1,
 		useDeviceFonts   => 1,
 		useDeviceFontsOnly => 0,
@@ -88,14 +89,15 @@ sub init
 	$self-> {pageMargins} = [0,0,0,0];
 	$self-> {resolution}  = [72,72];
 	$self-> {scale}       = [ 1, 1];
+	$self-> {isEPS}       = 0;
 	$self-> {copies}      = 1;
 	$self-> {rotate}      = 1;
 	$self-> {font}        = {};
 	$self-> {useDeviceFonts} = 1;
 	my %profile = $self-> SUPER::init(@_);
 	$self-> $_( $profile{$_}) for qw( grayscale copies pageDevice 
-		useDeviceFonts rotate reversed useDeviceFontsOnly);
-	$self-> $_( @{$profile{$_}}) for qw( pageSize pageMargins resolution scale);
+		useDeviceFonts rotate reversed useDeviceFontsOnly isEPS);
+	$self-> $_( @{$profile{$_}}) for qw( pageSize pageMargins resolution scale );
 	$self-> {localeEncoding} = [];
 	$self-> set_font($profile{font}); # update to the changed resolution, device fonts etc
 	return %profile;
@@ -375,9 +377,12 @@ NUMPAGES
 	}
 	$self-> {localeData} = {};
 	$self-> {fontLocaleData} = {};
+
+	my $header = "%!PS-Adobe-2.0";
+	$header .= " EPSF-2.0" if $self->isEPS;
 	
 	$self-> emit( <<PSHEADER);
-%!PS-Adobe-2.0
+$header
 %%Title: $docName
 %%Creator: Prima::PS::Drawable
 %%CreationDate: $data
@@ -656,6 +661,8 @@ sub scale
 	$self-> {scale} = [@_[0,1]];
 	$self-> change_transform;
 }
+
+sub isEPS { $#_ ? $_[0]-> {isEPS} = $_[1] : $_[0]-> {isEPS} }
 
 sub reversed
 {

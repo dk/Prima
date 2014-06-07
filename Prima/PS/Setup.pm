@@ -48,6 +48,7 @@ sub sdlg_export
 	$p-> {useDeviceFontsOnly} = $i-> [ $hk{UseDeviceFontsOnly}]-> [3];
 	$p-> {useDeviceFonts} = $i-> [ $hk{UseDeviceFonts}]-> [3];
 	$p-> {useDeviceFonts} = 1 if $p-> {useDeviceFontsOnly};
+	$p-> {isEPS} = $i-> [ $hk{IsEPS}]-> [3];
 	$p-> {spoolerType} = $d-> Spool-> index;
 	$p-> {spoolerData} = $d-> Spool-> bring(( $p-> {spoolerType} == lpr) ? 'LParams' : 'CmdLine')-> text;
 }
@@ -75,6 +76,7 @@ sub sdlg_import
 	$i-> [ $hk{UseDeviceFontsOnly}]-> [3] = $p-> {useDeviceFontsOnly};
 	$i-> [ $hk{UseDeviceFonts}]-> [3] = $p-> {useDeviceFonts};
 	$i-> [ $hk{UseDeviceFonts}]-> [3] = 1 if $p-> {useDeviceFontsOnly}; 
+	$i-> [ $hk{IsEPS}]-> [3] = $p-> {isEPS};
 
 	for ( @$i) {
 		if ( $$_[2] == 0) {

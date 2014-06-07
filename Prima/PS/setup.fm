@@ -434,6 +434,9 @@ A
 Use limited set of device fonts instead of exported bitmap fonts.
 Its usage may lead to that some document fonts will be mismatched
 A
+   IsEPS => <<A,
+Generate encapsulated postscript document
+A
    MediaType => <<A,
 An arbitrary string representing special attributes of the medium other
 than its size, color, and weight. This parameter can be used to identify special
@@ -513,7 +516,7 @@ $self->{helpData}->{$_} =~ s/\\n/ /g for keys %{$self->{helpData}};
    
 ','VList', 'onCreate'),
 			name => 'VList',
-			items => [['UseDeviceFonts', ' ', '1', '1', ],['UseDeviceFontsOnly', ' ', '1', '0', ],['MediaType', ' ', '0', ' ', ],['MediaColor', ' ', '0', ' ', ],['MediaWeight', ' ', '0', ' ', ],['MediaClass', ' ', '0', ' ', ],['InsertSheet', ' ', '1', '0', ],['LeadingEdge', ' ', '2', '0', ],['ManualFeed', ' ', '1', '0', ],['TraySwitch', ' ', '1', '0', ],['MediaPosition', ' ', '0', ' ', ],['DeferredMediaSelection', ' ', '1', '0', ],['MatchAll', ' ', '1', '0', ],],
+			items => [['UseDeviceFonts', ' ', '1', '1', ],['UseDeviceFontsOnly', ' ', '1', '0', ],['IsEPS',' ','1','0'],['MediaType', ' ', '0', ' ', ],['MediaColor', ' ', '0', ' ', ],['MediaWeight', ' ', '0', ' ', ],['MediaClass', ' ', '0', ' ', ],['InsertSheet', ' ', '1', '0', ],['LeadingEdge', ' ', '2', '0', ],['ManualFeed', ' ', '1', '0', ],['TraySwitch', ' ', '1', '0', ],['MediaPosition', ' ', '0', ' ', ],['DeferredMediaSelection', ' ', '1', '0', ],['MatchAll', ' ', '1', '0', ],],
 			dragable => 0,
 			growMode => gm::GrowHiX | gm::GrowLoY,
 			scalable => 1,
