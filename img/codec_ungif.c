@@ -121,6 +121,7 @@ EGifPutExtensionLast(GifFileType * GifFile,
 
 #else
 #define GIF_ERROR_ARG
+#define GIF_ERROR_ARG_51
 #endif
 #define GIF_CALL        img_gif_error_code = 
 #define GIF_CALL_FAILED img_gif_error_code != GIF_OK
