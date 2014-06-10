@@ -40,6 +40,7 @@ use Prima::Utils;
 	'1277'       => 'PS/locale/ps-iso-latin1',
 	'ps-latin1'  => 'PS/locale/ps-iso-latin1',
 	'Latin1'     => 'PS/locale/ps-iso-latin1',
+	'Western'    => 'PS/locale/ps-iso-latin1',
 	'iso8859-1'  => 'PS/locale/iso8859-1',
 	'iso8859-2'  => 'PS/locale/iso8859-2',
 	'iso8859-3'  => 'PS/locale/iso8859-3',
