@@ -252,10 +252,7 @@ sub paint_widgets
 	# font.size(in points) and font.width(in pixels) will get in conflict, because 
 	# if there's .size, .height is ignored (but .width isn't)
 	my %font = %{$root->font};
-	my @dst_res = $self->resolution;
-	my @src_res = $root->resolution;
-	$font{width} *= int($dst_res[0] / $src_res[0] + .5)
-		if "@dst_res" ne "@src_res" && exists $font{width} && exists $font{size};
+	delete $font{size} if exists $font{size} && exists $font{height};
 	$self->font(\%font);
 
 	$self->translate(0,0);
