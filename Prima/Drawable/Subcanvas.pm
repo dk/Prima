@@ -159,7 +159,7 @@ sub clipRect {
 	# If the clipRect is outside the widget's
 	# boundaries, set a flag that will prevent drawing operations.
 	my ($w, $h) = $self->size;
-	if ($left >= $w or $right < 0 or $bottom < 0 or $top >= $h) {
+	if ($left >= $w or $right < 0 or $bottom >= $h or $top < 0) {
 		$self->{parent_canvas}->clipRect(0,0,0,0); # XXX Prima can't completely block out drawing by clipping
 		$self->{null_clip_region} = 1;
 		return;
@@ -170,15 +170,16 @@ sub clipRect {
 	
 	# Trim the translated boundaries so that they are clipped by the widget's
 	# actual edges.
-	$left  = 0	  if $left	<  0;  $bottom = 0	  if $bottom < 0;
-	$right = 0	  if $right <  0;  $top    = 0	  if $top	 < 0;
-	$left  = $w-1 if $left	>= $w; $bottom = $h-1 if $bottom >= $h;
-	$right = $w-1 if $right >= $w;	$top   = $h-1 if $top	 >= $h;
+	$left  = 0    if $left	<  0;   $bottom = 0    if $bottom < 0;
+	$right = 0    if $right <  0;   $top    = 0    if $top	  < 0;
+	$left  = $w-1 if $left	>= $w;  $bottom = $h-1 if $bottom >= $h;
+	$right = $w-1 if $right >= $w;	$top    = $h-1 if $top	  >= $h;
 	
 	# Finally, calculate the clipping rectangle with respect to the parent's origin. 
 	my ($x_off, $y_off) = $self->offset;
 	$left  += $x_off; $bottom += $y_off;
 	$right += $x_off; $top	  += $y_off;
+
 	$self->{parent_canvas}->clipRect($left, $bottom, $right, $top);
 }
 
