@@ -53,15 +53,15 @@ sub offset {
 
 sub width  { $#_ ? $_[0]->raise_ro('width')  : $_[0]->{size}->[0] }
 sub height { $#_ ? $_[0]->raise_ro('height') : $_[0]->{size}->[1] }
-sub size   { $#_ ? $_[0]->raise_ro('size')   : @{$_[0]->{size}}   }
+sub size   { $#_ ? $_[0]->raise_ro('size')	 : @{$_[0]->{size}}   }
 
 sub resolution { $#_ ? $_[0]->raise_ro('resolution') : @{$_[0]->{parent_canvas}->resolution}}
 
 # we're always in the paint state
-sub begin_paint      { 0 }
+sub begin_paint		 { 0 }
 sub begin_paint_info { 0 }
-sub end_paint        {} 
-sub end_paint_info   {} 
+sub end_paint		 {} 
+sub end_paint_info	 {} 
 sub get_paint_state  { ps::Enabled }
 
 ### For these methods, just call the method on the parent widget directly
@@ -86,15 +86,15 @@ for my $direct_method (qw(
 
 # Build the sub to handle the getting and setting of the property.
 for my $prop_name (@easy_props) {
-    no strict 'refs';
+	no strict 'refs';
 	*{$prop_name} = sub { shift->{parent_canvas}->$prop_name(@_) };
 }
 
 sub palette
 {
-    return $_[0]->{parent_canvas}->palette unless $#_;
-    my ( $self, $palette ) = @_;
-    # XXX do not set anything so far
+	return $_[0]->{parent_canvas}->palette unless $#_;
+	my ( $self, $palette ) = @_;
+	# XXX do not set anything so far
 }
 
 # Primitives must apply the clipping and translating before calling on the
@@ -142,43 +142,43 @@ sub clipRect {
 	my ($self, @r) = @_;
 	
 	# If we are called as a getter, return what we have
-    return @{$self->{clipRect}} unless @r;
+	return @{$self->{clipRect}} unless @r;
 	
-    # validate
+	# validate
 	my ($left, $bottom, $right, $top) = @r;
-    my $width  = $right - $left;
-    my $height = $top   - $bottom;
-    $width  = 0 if $width  < 0;
-    $height = 0 if $height < 0;
-    $right = $left   + $width;
-    $top   = $bottom + $height;
+	my $width  = $right - $left;
+	my $height = $top	- $bottom;
+	$width	= 0 if $width  < 0;
+	$height = 0 if $height < 0;
+	$right = $left	 + $width;
+	$top   = $bottom + $height;
 
-    # Store the rectangle to be returned
-    @{$self->{clipRect}} = ($left, $bottom, $right, $top);
+	# Store the rectangle to be returned
+	@{$self->{clipRect}} = ($left, $bottom, $right, $top);
 
 	# If the clipRect is outside the widget's
 	# boundaries, set a flag that will prevent drawing operations.
 	my ($w, $h) = $self->size;
 	if ($left >= $w or $right < 0 or $bottom < 0 or $top >= $h) {
-        $self->{parent_canvas}->clipRect(0,0,0,0); # XXX Prima can't completely block out drawing by clipping
-	    $self->{null_clip_region} = 1;
-        return;
-    }
+		$self->{parent_canvas}->clipRect(0,0,0,0); # XXX Prima can't completely block out drawing by clipping
+		$self->{null_clip_region} = 1;
+		return;
+	}
 	
 	# If we're here, we are going to clip, so remove that flag.
 	delete $self->{null_clip_region};
 	
 	# Trim the translated boundaries so that they are clipped by the widget's
 	# actual edges.
-	$left  = 0    if $left  <  0;  $bottom = 0    if $bottom < 0;
-	$right = 0    if $right <  0;  $top    = 0    if $top    < 0;
-	$left  = $w-1 if $left  >= $w; $bottom = $h-1 if $bottom >= $h;
-	$right = $w-1 if $right >= $w;  $top   = $h-1 if $top    >= $h;
+	$left  = 0	  if $left	<  0;  $bottom = 0	  if $bottom < 0;
+	$right = 0	  if $right <  0;  $top    = 0	  if $top	 < 0;
+	$left  = $w-1 if $left	>= $w; $bottom = $h-1 if $bottom >= $h;
+	$right = $w-1 if $right >= $w;	$top   = $h-1 if $top	 >= $h;
 	
 	# Finally, calculate the clipping rectangle with respect to the parent's origin. 
-    my ($x_off, $y_off) = $self->offset;
+	my ($x_off, $y_off) = $self->offset;
 	$left  += $x_off; $bottom += $y_off;
-	$right += $x_off; $top    += $y_off;
+	$right += $x_off; $top	  += $y_off;
 	$self->{parent_canvas}->clipRect($left, $bottom, $right, $top);
 }
 
@@ -200,24 +200,24 @@ sub translate {
 sub region {
 	return $_[0]->{region} unless $#_;
 
-    my ( $self, $region ) = @_;
-    $self->{region} = $region;
-    if ( $region ) {
-        my ($x, $y) = $self->offset;
-        if ( $x != 0 || $y != 0 ) {
-            # Manually translate the region
-            my $r = Prima::Image->new(
-                width  => $region->width  + $x,
-                height => $region->height + $y,
-            );
-            $r->put_image( $x, $y, $region );
-            $self->{parent_canvas}->region($r);
-        } else {
-            $self->{parent_canvas}->region($region);
-        }
-    } else {
-        $self->{parent_canvas}->region(undef);
-    }
+	my ( $self, $region ) = @_;
+	$self->{region} = $region;
+	if ( $region ) {
+		my ($x, $y) = $self->offset;
+		if ( $x != 0 || $y != 0 ) {
+			# Manually translate the region
+			my $r = Prima::Image->new(
+				width  => $region->width  + $x,
+				height => $region->height + $y,
+			);
+			$r->put_image( $x, $y, $region );
+			$self->{parent_canvas}->region($r);
+		} else {
+			$self->{parent_canvas}->region($region);
+		}
+	} else {
+		$self->{parent_canvas}->region(undef);
+	}
 }
 
 sub AUTOLOAD {
@@ -237,64 +237,64 @@ sub AUTOLOAD {
 
 sub paint_widgets
 {
-    my ( $self, $root, $x, $y ) = @_;
+	my ( $self, $root, $x, $y ) = @_;
 
-    $self->offset($x,$y);
-    $self->{size} = [ $root->size ];
-    $self->{current_widget} = $root;
-    
+	$self->offset($x,$y);
+	$self->{size} = [ $root->size ];
+	$self->{current_widget} = $root;
+	
 	for my $property (@easy_props) {
 		$self->$property($root->$property);
 	}
-    $self->translate(0,0);
-    $self->clipRect(0,0,$root->width-1,$root->height-1);
-    $self->region( $root->shape ) if $root->shape;
+	$self->translate(0,0);
+	$self->clipRect(0,0,$root->width-1,$root->height-1);
+	$self->region( $root->shape ) if $root->shape;
 
-    $root->push_event;
-    $root->begin_paint_info;
+	$root->push_event;
+	$root->begin_paint_info;
 	$root->notify('Paint', $self);
-    $self->color(cl::White);
-    $root->end_paint_info;
-    $root->pop_event;
-    
-    $self->{current_widget} = undef;
-        
-    # Paint children in z-order
-    my @widgets = $root->get_widgets;
-    if ( $widgets[0] ) {
-        my $w = $widgets[0]->last;
-        @widgets = ();
-        while ( $w ) {
-            push @widgets, $w; 
-            $w = $w->prev;
-        }
-    }
+	$self->color(cl::White);
+	$root->end_paint_info;
+	$root->pop_event;
 	
-    for my $widget (@widgets) {
-        $self->paint_widgets( $widget, $x + $widget->left, $y + $widget->bottom );
+	$self->{current_widget} = undef;
+		
+	# Paint children in z-order
+	my @widgets = $root->get_widgets;
+	if ( $widgets[0] ) {
+		my $w = $widgets[0]->last;
+		@widgets = ();
+		while ( $w ) {
+			push @widgets, $w; 
+			$w = $w->prev;
+		}
+	}
+	
+	for my $widget (@widgets) {
+		$self->paint_widgets( $widget, $x + $widget->left, $y + $widget->bottom );
 	}
 }
 
 sub Prima::Drawable::paint_with_widgets {
 	my ($self, $canvas, $x, $y) = @_;
-    return unless $canvas->get_paint_state == ps::Enabled;
-    # XXX handle paletted image
-    my $subcanvas = Prima::Drawable::Subcanvas->new( parent_canvas => $canvas );
-    $subcanvas->paint_widgets($self,$x || 0, $y || 0);
+	return unless $canvas->get_paint_state == ps::Enabled;
+	# XXX handle paletted image
+	my $subcanvas = Prima::Drawable::Subcanvas->new( parent_canvas => $canvas );
+	$subcanvas->paint_widgets($self,$x || 0, $y || 0);
 }
 
 sub Prima::Drawable::screenshot {
-    my ($self, %opt) = @_;
-    my $screenshot = Prima::Image->new(
-        width  => $self->width,
-        height => $self->height,
-        type   => im::RGB,
-        %opt
-    );
-    $screenshot->begin_paint;
-    $self->paint_with_widgets($screenshot);
-    $screenshot->end_paint;
-    return $screenshot;
+	my ($self, %opt) = @_;
+	my $screenshot = Prima::Image->new(
+		width  => $self->width,
+		height => $self->height,
+		type   => im::RGB,
+		%opt
+	);
+	$screenshot->begin_paint;
+	$self->paint_with_widgets($screenshot);
+	$screenshot->end_paint;
+	return $screenshot;
 }
 
 1;
@@ -314,8 +314,8 @@ When loaded, it aytomatically adds two methods to any Drawable: L<paint_with_wid
 
 =head1 SYNOPSIS
 
-	use Prima qw(Application Button);
-	my $w = Prima::MainWindow-> create;
+    use Prima qw(Application Button);
+    my $w = Prima::MainWindow-> create;
     $w->insert( 'Button' );
     $w->screenshot->save('a.bmp');
 
