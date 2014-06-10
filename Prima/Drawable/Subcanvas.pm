@@ -55,7 +55,7 @@ sub width  { $#_ ? $_[0]->raise_ro('width')  : $_[0]->{size}->[0] }
 sub height { $#_ ? $_[0]->raise_ro('height') : $_[0]->{size}->[1] }
 sub size   { $#_ ? $_[0]->raise_ro('size')	 : @{$_[0]->{size}}   }
 
-sub resolution { $#_ ? $_[0]->raise_ro('resolution') : @{$_[0]->{parent_canvas}->resolution}}
+sub resolution { $#_ ? $_[0]->raise_ro('resolution') : $_[0]->{parent_canvas}->resolution}
 
 # we're always in the paint state
 sub begin_paint		 { 0 }
@@ -244,8 +244,20 @@ sub paint_widgets
 	$self->{current_widget} = $root;
 	
 	for my $property (@easy_props) {
+		next if $property eq 'font'; 
 		$self->$property($root->$property);
 	}
+
+	# font is special because widget and canvas resolution can differ - and if they do,
+	# font.size(in points) and font.width(in pixels) will get in conflict, because 
+	# if there's .size, .height is ignored (but .width isn't)
+	my %font = %{$root->font};
+	my @dst_res = $self->resolution;
+	my @src_res = $root->resolution;
+	$font{width} *= int($dst_res[0] / $src_res[0] + .5)
+		if "@dst_res" ne "@src_res" && exists $font{width} && exists $font{size};
+	$self->font(\%font);
+
 	$self->translate(0,0);
 	$self->clipRect(0,0,$root->width-1,$root->height-1);
 	$self->region( $root->shape ) if $root->shape;
