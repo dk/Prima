@@ -239,6 +239,7 @@ sub AUTOLOAD {
 sub paint_widgets
 {
 	my ( $self, $root, $x, $y ) = @_;
+	return unless $root->visible;
 
 	$self->offset($x,$y);
 	$self->{size} = [ $root->size ];
