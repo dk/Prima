@@ -65,7 +65,7 @@ sub profile_default
 		rotate           => 0,
 		scale            => [ 1, 1],
 		isEPS            => 0,
-		textOutBaseline  => 1,
+		textOutBaseline  => 0,
 		useDeviceFonts   => 1,
 		useDeviceFontsOnly => 0,
 	);
