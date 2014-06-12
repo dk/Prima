@@ -1293,7 +1293,7 @@ sub _get_gui_font_ratio
 	}
 	$::application->set_font(\%request);
 
-	if ( $n eq $::application->font->name ) {
+	if ( $n eq $::application->font->name && exists $self->{font}->{chardata}->{m}) {
 		# yes, indeed that is a pickable gui font
 		my $chardata     = $self->{font}->{chardata}->{m};
 		my $gui_em_width = $::application->get_text_width('m') / $scale;
