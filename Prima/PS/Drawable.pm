@@ -136,11 +136,17 @@ sub save_state
 	my $self = $_[0];
 	
 	$self-> {saveState} = {};
-	$self-> set_font( $self-> get_font) if $self-> {useDeviceFonts};
+	if ($self-> {useDeviceFonts}) {
+		# force-fill font data
+		my $f = $self->get_font;
+		delete $f->{size} if exists $f->{height} and exists $f->{size};
+		$self-> set_font( $f );
+	}
 	$self-> {saveState}-> {$_} = $self-> $_() for qw( 
 		color backColor fillPattern lineEnd linePattern lineWidth
 		rop rop2 textOpaque textOutBaseline font lineJoin fillWinding
 	);
+	delete $self->{saveState}->{font}->{size};
 	$self-> {saveState}-> {$_} = [$self-> $_()] for qw( 
 		translate clipRect
 	);
@@ -318,16 +324,19 @@ sub stroke
 			my $le = $self-> lineEnd;
 			my $id = ( $le == le::Round) ? 1 : (( $le == le::Square) ? 2 : 0);
 			$self-> emit( "$id SL");
+			$self-> {changed}-> {lineEnd} = 0;
 		}
 		
 		if ( $self-> {changed}-> {lineJoin}) { 
 			my $lj = $self-> lineJoin;
 			my $id = ( $lj == lj::Round) ? 1 : (( $lj == lj::Bevel) ? 2 : 0);
 			$self-> emit( "$id SJ");
+			$self-> {changed}-> {lineJoin} = 0;
 		}
 
 		if ( $self-> {changed}-> {fill}) {
 			$self-> emit( $self-> cmd_rgb( $fk));
+			$self-> {changed}-> {fill} = 0;
 		}
 		$self-> emit( $code);
 	}
@@ -731,10 +740,12 @@ sub grayscale
 sub set_locale
 {
 	my ( $self, $loc) = @_;
-	return if !$self-> {useDeviceFonts} || !$self-> {canDraw};
+	return if !$self-> {useDeviceFonts};
 
 	$self-> {locale} = $loc;
 	my $le  = $self-> {localeEncoding} = Prima::PS::Encodings::load( $loc);
+
+	return unless $self->{canDraw};
 
 	unless ( scalar keys %{$self-> {localeData}}) {
 		return if ! defined($loc);
@@ -1252,6 +1263,50 @@ sub get_font
 	return $z;
 }
 
+# we're asked to substitute a non-PS font, which most probably has its own definiton of box width
+# let's find out what em-width the font has, and if we can adapt for it
+#
+# return the multiplication factor between the requested gui font and the currently selected PS font
+sub _get_gui_font_ratio
+{
+	my ($self, %request) = @_;
+	my $n = $request{name};
+
+	return unless
+		($n ne 'Default') && exists $request{width} && $::application &&
+		!exists($Prima::PS::Fonts::enum_families{ $n}) && !exists($Prima::PS::Fonts::files{ $n})
+		;
+
+	my $ratio;
+	my $paint_state = $::application->get_paint_state != ps::Disabled;
+	my $save_font;
+	$paint_state ? $::application->begin_paint_info : ( $save_font = \%{ $::application->get_font } );
+
+	my $scale = 10; # scale font 10 times for better accuracy
+	for (qw(width height)) {
+		next unless exists $request{$_};
+		$scale = 1, last if $request{$_} > 10;
+	}
+	for (qw(width height)) {
+		next unless exists $request{$_};
+		$request{$_} *= $scale;
+	}
+	$::application->set_font(\%request);
+
+	if ( $n eq $::application->font->name ) {
+		# yes, indeed that is a pickable gui font
+		my $chardata     = $self->{font}->{chardata}->{m};
+		my $gui_em_width = $::application->get_text_width('m') / $scale;
+		my $ps_em_width  = ($chardata->[1] + $chardata->[2] + $chardata->[3]) * 
+			($self-> {font}-> {height} / $self-> {fontCharHeight}) * 
+			($self-> {font}-> {width} / $self-> {fontWidthDivisor});
+		$ratio = $gui_em_width / $ps_em_width;
+	}
+	
+	$paint_state ? $::application->end_paint_info   : ( $::application->set_font($save_font) );
+	return $ratio;
+}		
+
 sub set_font 
 {
 	my ( $self, $font) = @_;
@@ -1263,7 +1318,6 @@ sub set_font
 
 	$font-> {height} = int(( $font-> {size} * $self-> {resolution}-> [1]) / 72.27 + 0.5)
 		if exists $font-> {size};
-
 AGAIN:
 	if ( $self-> {useDeviceFontsOnly} || !$::application ||
 			( $self-> {useDeviceFonts} && 
@@ -1299,8 +1353,15 @@ AGAIN:
 		$self-> {fontCharHeight} = $self-> {font}-> {charheight};
 		$self-> {docFontMap}-> {$self-> {font}-> {docname}} = 1; 
 		$self-> {typeFontMap}-> {$self-> {font}-> {name}} = 1; 
-		$self-> {fontWidthDivisor} = $self-> {font}-> {maximalWidth};
+		$self-> {fontWidthDivisor} = $self-> {font}-> {referenceWidth};
 		$self-> set_locale( $self-> {font}-> {encoding});
+
+		my %request = ( %$font, name => $n );
+		delete $request{size};
+		if ( my $ratio = $self->_get_gui_font_ratio(%request)) {
+			$self->{font}->{width}        *= $ratio;
+			$self->{font}->{maximalWidth} *= $ratio;
+		}
 	} else {
 		my $wscale = $font-> {width};
 		my $wsize  = $font-> {size};
@@ -1464,10 +1525,11 @@ sub place_glyph
 sub get_rmap
 {
 	my @rmap;
-	my $c = $_[0]-> {font}-> {chardata};
-	my $le = $_[0]-> {localeEncoding};
+	my $self = shift;
+	my $c  = $self-> {font}-> {chardata};
+	my $le = $self-> {localeEncoding};
 	my $nd = $c-> {'.notdef'};
-	my $fs = $_[0]-> {font}-> {height} / $_[0]-> {fontCharHeight};
+	my $fs = $self-> {font}-> {height} / $self-> {fontCharHeight};
 	if ( defined $nd) {
 		$nd = [ @$nd ];
 		$$nd[$_] *= $fs for 1..3;
@@ -1475,21 +1537,21 @@ sub get_rmap
 		$nd = [0,0,0,0];
 	}
 
-	my ( $f, $l) = ( $_[0]-> {font}-> {firstChar}, $_[0]-> {font}-> {lastChar});
+	my ( $f, $l) = ( $self-> {font}-> {firstChar}, $self-> {font}-> {lastChar});
 	my $i;
 	my $abc;
-	if ( $_[0]-> {typeFontMap}-> {$_[0]-> {font}-> {name}} == 1) {
+	if ( $self-> {typeFontMap}-> {$self-> {font}-> {name}} == 1) {
 		for ( $i = 0; $i < 255; $i++) {
-			if (( $le-> [$i] ne '.notdef') && $c-> { $le-> [ $i]}) {
+			if (defined($le->[$i]) && ( $le-> [$i] ne '.notdef') && $c-> { $le-> [ $i]}) {
 				$rmap[$i] = [ $i, map { $_ * $fs } @{$c-> { $le-> [ $i]}}[1..3]];
-			} elsif ( $i >= $f && $i <= $l) {
-				$abc = $_[0]-> plate-> {ABC} unless $abc; 
+			} elsif ( !$self->{useDeviceFontsOnly} && $i >= $f && $i <= $l) {
+				$abc = $self-> plate-> {ABC} unless $abc; 
 				my $j = ( $i - $f) * 3; 
 				$rmap[$i] = [ $i, @$abc[ $j .. $j + 2]];   
 			}
 		}
 	} else {
-		$abc = $_[0]-> plate-> {ABC};
+		$abc = $self-> plate-> {ABC};
 		for ( $i = $f; $i <= $l; $i++) {
 			my $j = ( $i - $f) * 3;
 			$rmap[$i] = [ $i, @$abc[ $j .. $j + 2]];
@@ -1529,6 +1591,7 @@ sub get_font_ranges
 sub get_text_width
 {
 	my ( $self, $text, $addOverhang) = @_;
+
 	my $i;
 	my $len = length $text;
 	return 0 unless $len;
