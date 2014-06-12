@@ -1273,7 +1273,7 @@ sub _get_gui_font_ratio
 	my $n = $request{name};
 
 	return unless
-		($n ne 'Default') && exists $request{width} && $::application &&
+		($n ne 'Default') && exists $request{width} && exists $request{height} && $::application &&
 		!exists($Prima::PS::Fonts::enum_families{ $n}) && !exists($Prima::PS::Fonts::files{ $n})
 		;
 
@@ -1282,25 +1282,15 @@ sub _get_gui_font_ratio
 	my $save_font;
 	$paint_state ? $::application->begin_paint_info : ( $save_font = \%{ $::application->get_font } );
 
-	my $scale = 10; # scale font 10 times for better accuracy
-	for (qw(width height)) {
-		next unless exists $request{$_};
-		$scale = 1, last if $request{$_} > 10;
-	}
-	for (qw(width height)) {
-		next unless exists $request{$_};
-		$request{$_} *= $scale;
-	}
+	my $scale = ($request{height} > 20) ? 10 : 1; # scale font 10 times for better accuracy
+	my $width = delete($request{width});
+	$request{height} *= $scale;
 	$::application->set_font(\%request);
 
-	if ( $n eq $::application->font->name && exists $self->{font}->{chardata}->{m}) {
-		# yes, indeed that is a pickable gui font
-		my $chardata     = $self->{font}->{chardata}->{m};
-		my $gui_em_width = $::application->get_text_width('m') / $scale;
-		my $ps_em_width  = ($chardata->[1] + $chardata->[2] + $chardata->[3]) * 
-			($self-> {font}-> {height} / $self-> {fontCharHeight}) * 
-			($self-> {font}-> {width} / $self-> {fontWidthDivisor});
-		$ratio = $gui_em_width / $ps_em_width;
+	if ( $n eq $::application->font->name) {
+		my $gui_scaling = $width / $::application->font->width;
+		my $ps_scaling  = $self->{font}->{referenceWidth} / $self->{font}->{width}; 
+		$ratio = $ps_scaling * $gui_scaling;
 	}
 	
 	$paint_state ? $::application->end_paint_info   : ( $::application->set_font($save_font) );
@@ -1357,6 +1347,7 @@ AGAIN:
 		$self-> set_locale( $self-> {font}-> {encoding});
 
 		my %request = ( %$font, name => $n );
+		$request{height} = $self->{font}->{height} unless defined $request{height};
 		delete $request{size};
 		if ( my $ratio = $self->_get_gui_font_ratio(%request)) {
 			$self->{font}->{width}        *= $ratio;
