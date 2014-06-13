@@ -1278,7 +1278,7 @@ sub _get_gui_font_ratio
 		;
 
 	my $ratio;
-	my $paint_state = $::application->get_paint_state != ps::Disabled;
+	my $paint_state = $::application->get_paint_state == ps::Disabled;
 	my $save_font;
 	$paint_state ? $::application->begin_paint_info : ( $save_font = \%{ $::application->get_font } );
 
