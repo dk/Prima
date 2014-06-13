@@ -1282,7 +1282,7 @@ sub _get_gui_font_ratio
 	my $save_font;
 	$paint_state ? $::application->begin_paint_info : ( $save_font = \%{ $::application->get_font } );
 
-	my $scale = ($request{height} > 20) ? 10 : 1; # scale font 10 times for better accuracy
+	my $scale = ($request{height} < 20) ? 10 : 1; # scale font 10 times for better accuracy
 	my $width = delete($request{width});
 	$request{height} *= $scale;
 	$::application->set_font(\%request);
@@ -1290,12 +1290,12 @@ sub _get_gui_font_ratio
 	if ( $n eq $::application->font->name) {
 		my $gui_scaling = $width / $::application->font->width;
 		my $ps_scaling  = $self->{font}->{referenceWidth} / $self->{font}->{width}; 
-		$ratio = $ps_scaling * $gui_scaling;
+		$ratio = $ps_scaling * $gui_scaling * $scale;
 	}
 	
 	$paint_state ? $::application->end_paint_info   : ( $::application->set_font($save_font) );
 	return $ratio;
-}		
+}
 
 sub set_font 
 {
