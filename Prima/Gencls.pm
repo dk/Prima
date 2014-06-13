@@ -220,7 +220,7 @@ sub init_variables
 	%mapTypes = (
 		"int" => "int", "Bool" => "Bool", "Handle" => "Handle", "long" => "int", "short" => "int",
 		"char" => "int", "U8" => "int", "UV" => "UV", 
-		"double" => "double", "Color" => "int", "SV"=> "SV", "HV"=> "HV");
+		"double" => "double", "Color" => "UV", "SV"=> "SV", "HV"=> "HV");
 
 	%typedefs = ();
 
