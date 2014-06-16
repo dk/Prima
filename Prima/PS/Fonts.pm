@@ -241,7 +241,7 @@ sub font_pick
 	if ( $bySize) {
 		$dest-> {height} = int(( 1 + $m2->{internalLeading}/$m2->{size} ) * $dest-> {size} * $res / 72.27 + 0.5);
 	} else {
-		$dest-> {size} = $dest-> {height} * ( 1 - $dest->{internalLeading}/$m2->{height} ) * 72.27 / $res;
+		$dest-> {size} = $dest-> {height} * ( 1 - $m2->{internalLeading}/$m2->{height} ) * 72.27 / $res;
 	}
 	my $a = $dest-> {height} / $m2-> {height};
 	my %muls = %$m2;
