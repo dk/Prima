@@ -238,11 +238,10 @@ sub font_pick
 
 	# scale dimensions
 	my $res = $options{resolution} ? $options{resolution} : $m2-> {yDeviceRes};
-	my $diff = 1 + ($m2->{height} - $m2->{size})/1000; # only valid for 1000pt
 	if ( $bySize) {
-		$dest-> {height} = int( $dest-> {size} * $diff * $res / 72.27 + 0.5); 
+		$dest-> {height} = int(( 1 + $m2->{internalLeading}/$m2->{size} ) * $dest-> {size} * $res / 72.27 + 0.5);
 	} else {
-		$dest-> {size} = $dest-> {height} / $diff * 72.27 / $res;
+		$dest-> {size} = $dest-> {height} * ( 1 - $dest->{internalLeading}/$m2->{height} ) * 72.27 / $res;
 	}
 	my $a = $dest-> {height} / $m2-> {height};
 	my %muls = %$m2;
