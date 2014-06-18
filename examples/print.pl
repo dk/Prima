@@ -45,10 +45,13 @@ use Prima::Lists;
 use Prima::Const;
 use Prima::Label;
 use Prima::MsgBox;
+use Prima::PS::Printer;
 
 $::application = Prima::Application-> create( name => "Generic.pm");
 my $p = $::application-> get_printer;
+my $curr;
 my @printers;
+my $ps_printer = ($::application->{PrinterClass} =~ /PS/) ? undef : Prima::PS::Printer->new;
 
 my $l;
 my $w;
@@ -88,13 +91,15 @@ sub set_options
 {
 	my ( $opt, $val) = @_;
 
-	return if $p-> options( $opt, $val);
+	return if $curr == $::application;
+
+	return if $curr-> options( $opt, $val);
 	message("Error setting printer option '$opt'");
 }
 
 sub print_sample
 {
-	if ( $w-> ListBox1-> get_items($w-> ListBox1-> focusedItem) eq $display) {
+	if ( $curr == $::application) {
 		$wDisplay-> destroy if $wDisplay;
 		$wDisplay = Prima::Window-> create(
 			text    => 'DISPLAY',
@@ -111,7 +116,7 @@ sub print_sample
 		return;
 	}
 
-	if ( !$p-> begin_doc)
+	if ( !$curr-> begin_doc)
 	{
 		message_box( $w-> name, "Error starting print document", mb::Ok|mb::Error);
 		return;
@@ -132,9 +137,9 @@ sub print_sample
 		valignment  => ta::Center,
 	);
 	
-	paint( $p);
+	paint( $curr);
 
-	$p-> end_doc;
+	$curr-> end_doc;
 	$ww-> destroy;
 }
 
@@ -144,6 +149,11 @@ sub refresh
 	@printers = @{$p-> printers};
 	my $x = $w-> menu;
 	$w-> menu-> A2-> enabled( scalar @printers);
+
+	my @ps_printers;
+	@ps_printers = @{ $ps_printer->printers } if $ps_printer;
+	$_->{name} = "PostScript: $_->{name}" for @ps_printers;
+	push @printers, @ps_printers;
 
 	push( @printers, { name => $display});
 	$l-> items([ map {$_ = $_-> {name}} @{[@printers]}]),
@@ -160,12 +170,11 @@ $w = Prima::MainWindow-> create(
 	menuItems => [
 		['~Print' => [
 			[A1 => '~Print sample' => \&print_sample],
-			[A2 => 'Printer ~setup...' => 'F2' => 'F2' => sub {$p-> setup_dialog}],
+			[A2 => 'Printer ~setup...' => 'F2' => 'F2' => sub {$curr-> setup_dialog if $curr != $::application}],
 			[A3 => 'Print available fonts...' => sub {
 				my $item  = $w-> ListBox1-> get_items($w-> ListBox1-> focusedItem);
 				print "\n$item\n---\n";
-				my $pp = ( $item eq $display) ? $::application : $p;
-				for ( @{$pp-> fonts}) { print $_-> {name}."\n"};
+				for ( @{$curr-> fonts}) { print $_-> {name}."\n"};
 				print "---\n";
 			}],
 			[],
@@ -186,8 +195,9 @@ $w = Prima::MainWindow-> create(
 			]],
 			[],
 			[ "Print all options" => sub {
-				for my $opt ( $p-> options) {
-					my $val = $p-> options( $opt);
+				return if $curr == $::application;
+				for my $opt ( $curr-> options) {
+					my $val = $curr-> options( $opt);
 					$val = "<undefined>" unless defined $val;
 					print "$opt:$val\n";
 				}
@@ -208,11 +218,18 @@ $l = $w-> insert( ListBox =>
 
 		if ( $name eq $display) {
 			$w-> menu-> A2-> enabled( 0);
+			$curr = $::application;
 			return;
 		}
 
 		$w-> menu-> A2-> enabled( 1);
-		$p-> printer( $name);
+		if ( $name =~ /^PostScript: (.*)/) {
+			$ps_printer-> printer( $1);
+			$curr = $ps_printer;
+		} else {
+			$p-> printer( $name);
+			$curr = $p;
+		}
 	},
 );
 
