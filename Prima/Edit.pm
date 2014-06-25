@@ -962,7 +962,7 @@ sub on_keydown
 		} else {
 			$l = $cs[0] - length( $c) + $repeat, $c .= ' ' x $l 
 				if length( $c) < $cs[ 0] + $repeat;
-			substr( $c, $cs[0], $repeat) = $code x $repeat;
+			substr( $c, $cs[0], $repeat) = $chr x $repeat;
 			$self-> set_line( $cs[1], $c, q(overtype));
 		}
 		$self-> cursor( $cs[0] + $repeat, $cs[1]);
