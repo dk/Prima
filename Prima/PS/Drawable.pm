@@ -639,7 +639,7 @@ sub rop2
 	return $_[0]-> SUPER::rop2 unless $#_;
 	my ( $self, $rop) = @_;
 	$rop = rop::CopyPut if 
-		$rop != rop::Blackness || $rop != rop::Whiteness || $rop != rop::NoOper;
+		$rop != rop::Blackness && $rop != rop::Whiteness && $rop != rop::NoOper;
 	$self-> SUPER::rop2( $rop);
 }
 
