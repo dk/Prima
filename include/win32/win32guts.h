@@ -367,6 +367,11 @@ typedef struct _DrawableData
    int            bpp;                     // bits per pixel
    Point          res;                     // resolution
 
+   /* for opaque stroke emulation */
+   Bool           currentROP;
+   Bool           currentROP2;
+   HPEN	          opaquePen;
+
    /* cached gp_GetCharABCWidthsFloat results */
    BYTE           tmPitchAndFamily;
    LONG           tmOverhang;
@@ -386,7 +391,7 @@ typedef struct _DrawableData
    int            rop;
    int            rop2;
    Point          transform;
-   PPaintSaveData psd;                     // Their values durind paint saved in sys psd
+   PPaintSaveData psd;                     // Their values during paint saved in sys psd
 
    /* Basic widget fields */
    HWND           handle;                  // Windows handle of a widget

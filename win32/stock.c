@@ -1668,6 +1668,10 @@ hwnd_leave_paint( Handle self)
    sys stockFont = nil;
    sys stockPalette = nil;
    stylus_free( sys stylusResource, false);
+   if ( sys opaquePen ) {
+   	DeleteObject( sys opaquePen );
+	sys opaquePen = nil;
+   }
    if ( IS_WIN95) {
       if ( sys linePatternLen2 > 3) free( sys linePattern2);
       sys linePatternLen2 = 0;

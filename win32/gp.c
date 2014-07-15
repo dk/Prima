@@ -152,6 +152,14 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
 #define ARC_ANGLED_SUPERINCLUSIVE   (int)(x + cos( angleStart / GRAD) * dX / 2 + 0.5), (int)(y - sin( angleStart / GRAD) * dY / 2 + 0.5), \
                      (int)(x + cos( angleEnd / GRAD) * dX / 2 + 1.5),   (int)(y - sin( angleEnd / GRAD) * dY / 2 + 1.5)
 
+#define EMULATE_OPAQUE_LINE \
+ (!(IS_WIN95) && sys stylus. pen. lopnStyle == PS_USERSTYLE && sys currentROP2 == ropCopyPut)
+#define STYLUS_USE_OPAQUE_LINE \
+   sys stylusFlags &=~ stbPen;\
+   if ( !sys opaquePen) sys opaquePen = CreatePen( PS_SOLID, sys stylus.pen.lopnWidth.x, sys lbs[1]);\
+   SelectObject(sys ps, sys opaquePen);\
+   if (sys currentROP != R2_COPYPEN) SetROP2( sys ps, R2_COPYPEN)
+#define STYLUS_RESTORE_OPAQUE_LINE if (sys currentROP != R2_COPYPEN) SetROP2( sys ps, sys currentROP)
 
 Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
@@ -159,9 +167,20 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
    int compl, needf, drawState = 0;
    Bool erratic = erratic_line( self);
    HDC     ps = sys ps;
-   STYLUS_USE_PEN( ps);
-   compl = arc_completion( &angleStart, &angleEnd, &needf);
+
    y = sys lastSize. y - y - 1;
+   compl = arc_completion( &angleStart, &angleEnd, &needf);
+
+   if (EMULATE_OPAQUE_LINE) {
+      STYLUS_USE_OPAQUE_LINE;
+      if ( compl )
+         Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
+      else
+         Arc( ps, ELLIPSE_RECT, ARC_ANGLED);
+      STYLUS_RESTORE_OPAQUE_LINE;
+   }
+
+   STYLUS_USE_PEN( ps);
    while( compl--) {
       if ( erratic)
          drawState = gp_arc( self, x, y, dX, dY, 0, 360, drawState);
@@ -225,8 +244,16 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
    int compl, needf, drawState = 0;
    Bool erratic = erratic_line( self);
    compl = arc_completion( &angleStart, &angleEnd, &needf);
-   STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y - 1;
+
+   if (EMULATE_OPAQUE_LINE) {
+      STYLUS_USE_OPAQUE_LINE;
+      if ( compl ) Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
+      Chord( ps, ELLIPSE_RECT, ARC_ANGLED);
+      STYLUS_RESTORE_OPAQUE_LINE;
+   }
+
+   STYLUS_USE_PEN( ps);
    while( compl--) {
       if ( erratic)
          drawState = gp_arc( self, x, y,  dX, dY, 0, 360, drawState);
@@ -251,6 +278,13 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
    for ( i = 0; i < numPts; i++)  points[ i]. y = dy - points[ i]. y - 1;
    if ( points[ 0]. x != points[ numPts - 1].x || points[ 0]. y != points[ numPts - 1].y)
       adjust_line_end( points[ numPts - 2].x, points[ numPts - 2].y, &points[ numPts - 1].x, &points[ numPts - 1].y, true);
+
+   if (EMULATE_OPAQUE_LINE) {
+      STYLUS_USE_OPAQUE_LINE;
+      Polyline( sys ps, ( POINT*) points, numPts);
+      STYLUS_RESTORE_OPAQUE_LINE;
+   }
+
    STYLUS_USE_PEN( sys ps);
    if ( erratic_line( self)) {
       int draw = 0;
@@ -276,6 +310,13 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
       if ( i & 1)
          adjust_line_end( points[ i - 1].x, points[ i - 1].y, &points[ i].x, &points[ i].y, true);
    }
+
+   if (EMULATE_OPAQUE_LINE) {
+      STYLUS_USE_OPAQUE_LINE;
+      PolyPolyline( sys ps, ( POINT*) points, pts, numPts/2);
+      STYLUS_RESTORE_OPAQUE_LINE;
+   }
+
    STYLUS_USE_PEN( sys ps);
    if ( erratic_line( self)) {
       for ( i = 0; i < numPts; i++)  {
@@ -296,8 +337,15 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
 
-   STYLUS_USE_PEN( ps);
    y = sys lastSize. y - y - 1;
+
+   if (EMULATE_OPAQUE_LINE) {
+      STYLUS_USE_OPAQUE_LINE;
+      Ellipse( ps, ELLIPSE_RECT);
+      STYLUS_RESTORE_OPAQUE_LINE;
+   }
+
+   STYLUS_USE_PEN( ps);
    if ( erratic_line( self))
       gp_arc( self, x, y, dX, dY, 0, 360, 0);
    else {
@@ -540,12 +588,20 @@ Bool
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
    HDC ps = sys ps;
-
-   STYLUS_USE_PEN( ps);
-
+   
    adjust_line_end( x1, y1, &x2, &y2, true);
    y1 = sys lastSize. y - y1 - 1;
    y2 = sys lastSize. y - y2 - 1;
+
+   if (EMULATE_OPAQUE_LINE) {
+      STYLUS_USE_OPAQUE_LINE;
+      MoveToEx( ps, x1, y1, nil);
+      LineTo( ps, x2, y2);
+      STYLUS_RESTORE_OPAQUE_LINE;
+   }
+
+   STYLUS_USE_PEN( ps);
+
    if ( erratic_line( self))
       gp_line( self, x1, y1, x2, y2, 0);
    else {
@@ -567,26 +623,36 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
    Bool ok = true;
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
-   STYLUS_USE_PEN( ps);
+
    check_swap( x1, x2);
    if ( erratic_line( self)) {
       int draw;
       y1 = sys lastSize. y - y1 - 1;
       y2 = sys lastSize. y - y2 - 1;
       check_swap( y1, y2);
+      STYLUS_USE_PEN( ps);
       draw = gp_line( self, x2, y1, x1 + 1, y1, 0);
       draw = gp_line( self, x1, y1, x1, y2 - 1, draw);
       draw = gp_line( self, x1, y2, x2 - 1, y2, draw);
       gp_line( self, x2, y2, x2, y1 + 1, draw);
+      /* EMULATE_OPAQUE_LINE is never called here */
    } else {
       check_swap( y1, y2);
       if ( sys stylus. pen. lopnWidth. x > 1 &&
            (sys stylus. pen. lopnWidth. x % 2) == 0
 	 ) {
-	 /* change up-winding to down-winding */
-	 y1--;
-	 y2--;
+         /* change up-winding to down-winding */
+         y1--;
+         y2--;
       }
+
+      if ( EMULATE_OPAQUE_LINE ) {
+   	 STYLUS_USE_OPAQUE_LINE;
+         Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1);
+         STYLUS_RESTORE_OPAQUE_LINE;
+      }
+
+      STYLUS_USE_PEN( ps);
       if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1))) apiErr;
    }
    SelectObject( ps, old);
@@ -609,8 +675,20 @@ apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, dou
    pts[ 0]. y = newY - sin( angleEnd / GRAD) * dY / 2 + 0.5;
    pts[ 1]. x = x + cos( angleStart / GRAD) * dX / 2 + 0.5;
    pts[ 1]. y = newY - sin( angleStart / GRAD) * dY / 2 + 0.5;
-   STYLUS_USE_PEN( ps);
    y = newY;
+
+   if (EMULATE_OPAQUE_LINE) {
+      STYLUS_USE_OPAQUE_LINE;
+      if ( compl ) Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
+      Pie(
+          ps, ELLIPSE_RECT,
+          pts[ 1]. x, pts[ 1]. y,
+          pts[ 0]. x, pts[ 0]. y
+      );
+      STYLUS_RESTORE_OPAQUE_LINE;
+   }
+
+   STYLUS_USE_PEN( ps);
 
    while( compl--) {
       if ( erratic)
@@ -1775,6 +1853,12 @@ apc_gp_set_back_color( Handle self, Color color)
       s-> brush. backColor = clr;
       if ( s-> brush. lb. lbStyle == BS_DIBPATTERNPT)
          stylus_change( self);
+      if ( sys opaquePen ) {
+         sys stylusFlags &=~ stbPen;
+         SelectObject( sys ps, sys stockPen);
+         DeleteObject( sys opaquePen );
+         sys opaquePen = nil;
+      }
    }
    sys lbs[1] = clr;
    return true;
@@ -2025,7 +2109,8 @@ apc_gp_set_rop( Handle self, int rop)
 {
    objCheck false;
    if ( !sys ps) { sys rop = rop; return true; }
-   if ( !SetROP2( sys ps, ctx_remap_def( rop, ctx_rop2R2, true, R2_COPYPEN))) apiErr;
+   sys currentROP = ctx_remap_def( rop, ctx_rop2R2, true, R2_COPYPEN);
+   if ( !SetROP2( sys ps, sys currentROP)) apiErr;
    return true;
 }
 
@@ -2035,6 +2120,7 @@ apc_gp_set_rop2( Handle self, int rop)
    objCheck false;
    if ( !sys ps) { sys rop2 = rop; return true; }
    if ( rop != ropCopyPut) rop = ropNoOper;
+   sys currentROP2 = rop;
    if ( !SetBkMode( sys ps, ( rop == ropCopyPut) ? OPAQUE : TRANSPARENT)) apiErr;
    return true;
 }
