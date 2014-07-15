@@ -265,19 +265,7 @@ apc_application_get_os_info( char *system, int slen,
    version = GetVersion();
    GetVersionEx( &os);
    if ( system) {
-      if ( IS_NT) {
-         strncpy( system, "Windows NT", slen);
-      } else if ( IS_WIN95) {
-         if ((os.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) &&
-             ((os.dwMajorVersion > 4) ||
-              ((os.dwMajorVersion == 4) && (os.dwMinorVersion > 0)))) {
-            strncpy( system, "Windows 98", slen);
-         } else {
-            strncpy( system, "Windows 95", slen);
-         }
-      } else {
-         strncpy( system, "Windows", slen);
-      }
+      strncpy( system, "Windows NT", slen);
       system[ slen-1] = 0;
    }
    if ( vendor) {
@@ -1142,7 +1130,7 @@ map_text_accel( PMenuItemReg i)
 
    c = i-> text;
    while (*c++) if ( *c == '&') amps++;
-   if ( i-> flags. utf8_text && HAS_WCHAR) {
+   if ( i-> flags. utf8_text ) {
       text = alloc_utf8_to_wchar( i-> text, prima_utf8_length( i-> text), &l1);
    } else {
       l1 = strlen( i-> text);
@@ -1152,7 +1140,7 @@ map_text_accel( PMenuItemReg i)
    if ( i-> accel ) {
       c = i-> accel; 
       while (*c++) if ( *c == '&') amps++;
-      if ( i-> flags. utf8_accel && HAS_WCHAR) {
+      if ( i-> flags. utf8_accel ) {
          accel = alloc_utf8_to_wchar( i-> accel, prima_utf8_length( i-> accel), &l2);
       } else {
          l2 = strlen( i-> accel);
@@ -1175,9 +1163,6 @@ map_text_accel( PMenuItemReg i)
    buf[l1 + l2] = 0;
    map_tildas( buf, l1 + l2);
    
-   if ( !HAS_WCHAR)
-     wchar2char(( char*) buf, buf, l1 + l2 + amps); 
-
    return buf;
 }
 
@@ -1229,10 +1214,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
              menuItem. dwTypeData = map_text_accel( i);
           } else if ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead)
              menuItem. dwTypeData = ( LPWSTR) image_make_bitmap_handle( i-> bitmap, nil);
-          if ( HAS_WCHAR)
-             InsertMenuItemW( m, -1, true, &menuItem);
-          else
-             InsertMenuItemA( m, -1, true, ( LPMENUITEMINFOA) &menuItem);
+          InsertMenuItemW( m, -1, true, &menuItem);
           if ( i-> text && menuItem. dwTypeData) free( menuItem. dwTypeData);
        }
        menuItem. dwItemData = menu;
@@ -1272,7 +1254,7 @@ Bool
 apc_window_set_caption( Handle self, const char * caption, Bool utf8)
 {
    objCheck false;
-   if ( HAS_WCHAR && utf8) {
+   if ( utf8) {
       WCHAR * c = alloc_utf8_to_wchar( caption, -1, NULL);
       if ( !( rc = SetWindowTextW( HANDLE, c))) apiErr;
       free( c);
@@ -1454,7 +1436,7 @@ apc_window_set_icon( Handle self, Handle icon)
 {
    HICON i;
    objCheck false;
-   i = icon ? image_make_icon_handle( icon, guts. iconSizeLarge, nil, false) : nil;
+   i = icon ? image_make_icon_handle( icon, guts. iconSizeLarge, nil) : nil;
    i = ( HICON) SendMessage( HANDLE, WM_SETICON, ICON_BIG, ( LPARAM) i);
    if ( i) DestroyIcon( i);
    return true;
@@ -2720,15 +2702,9 @@ apc_menu_item_set_accel( Handle self, PMenuItemReg m)
 
    apcErrClear;
    buf = map_text_accel( m);
-   if ( HAS_WCHAR) {
-      if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                       m-> id + MENU_ID_AUTOSTART, buf)) 
-         apiErr;
-   } else {
-      if ( !ModifyMenuA(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                       m-> id + MENU_ID_AUTOSTART, ( char *) buf)) 
-         apiErr;
-   }
+   if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                    m-> id + MENU_ID_AUTOSTART, buf)) 
+      apiErr;
    free( buf);
    return rc == errOk;
 }
@@ -2778,13 +2754,8 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m)
 
    apcErrClear;
    buf = map_text_accel( m);
-   if ( HAS_WCHAR) {
-      if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                    m-> id + MENU_ID_AUTOSTART, (WCHAR*) buf)) apiErr;
-   } else {
-      if ( !ModifyMenuA(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                    m-> id + MENU_ID_AUTOSTART, (char*) buf)) apiErr;
-   }
+   if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                 m-> id + MENU_ID_AUTOSTART, (WCHAR*) buf)) apiErr;
    free( buf);
    return rc == errOk;
 }
@@ -2802,15 +2773,9 @@ apc_menu_item_set_image( Handle self, PMenuItemReg m)
 
    flags |= MF_BITMAP;
 
-   if ( HAS_WCHAR) {
-      if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                       m-> id + MENU_ID_AUTOSTART, 
-                       ( LPCWSTR) image_make_bitmap_handle( m-> bitmap, nil))) apiErrRet;
-   } else {
-      if ( !ModifyMenuA(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-                       m-> id + MENU_ID_AUTOSTART, 
-                       ( LPCSTR) image_make_bitmap_handle( m-> bitmap, nil))) apiErrRet;
-   }
+   if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
+                    m-> id + MENU_ID_AUTOSTART, 
+                    ( LPCWSTR) image_make_bitmap_handle( m-> bitmap, nil))) apiErrRet;
    return true;
 }
 
@@ -3406,15 +3371,12 @@ apc_system_action( const char * params)
 
          if ( stricmp( ver, "NT") == 0) {
             guts. version = 0;
-            guts. is98 = 0;
          } else if (( stricmp( ver, "95") == 0) || ( stricmp( ver, "mustdie") == 0)) {
             guts. version = 0x80000095;
-            guts. is98 = 0;
          } else if ( stricmp( ver, "98") == 0) {
             guts. version = 0x80000098;
-            guts. is98 = 1;
          } else {
-            warn( "Are you nuts? Microsoft itself afraid of %s yet!", ver);
+            guts. version = 0x80000000;
          }
       } else if ( strncmp( params, "win32.ConsoleWindow", 19) == 0) {
          params += 19;

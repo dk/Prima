@@ -48,12 +48,6 @@ typedef int SOCKETHANDLE;
 typedef HANDLE SOCKETHANDLE;
 #endif
 
-#define IS_NT      (BOOL)( guts. version < 0x80000000)
-#define IS_WIN32S  (BOOL)(!(IS_NT) && (LOBYTE(LOWORD(guts. version))<4))
-#define IS_WIN95   (BOOL)(!(IS_NT) && !(IS_WIN32S))
-#define IS_WIN98   (BOOL)( guts. is98)
-#define HAS_WCHAR  IS_NT
-
 #undef  HWND_DESKTOP
 #define HWND_DESKTOP         guts. desktopWindow
 
@@ -207,7 +201,6 @@ typedef struct _WinGuts
     UINT           errorMode;          // SetErrorMode() result
     DWORD          version;            // GetVersion() cached result
     Point          smDblClk;           // cached SM_CxDOUBLECLK values
-    Bool           is98;               // is win98
     int            socket_version;     // socket behavior type
     List           files;              // List of active File objects
     int            mouseTimer;         // is mouse timer started
@@ -372,7 +365,7 @@ typedef struct _DrawableData
    Bool           currentROP2;
    HPEN	          opaquePen;
 
-   /* cached gp_GetCharABCWidthsFloat results */
+   /* cached GetTextMetrics */
    BYTE           tmPitchAndFamily;
    LONG           tmOverhang;
 
@@ -384,8 +377,6 @@ typedef struct _DrawableData
    int            lineJoin;
    unsigned char *linePattern;
    int            linePatternLen;
-   unsigned char *linePattern2;
-   int            linePatternLen2;
    FillPattern    fillPattern;
    FillPattern    fillPattern2;
    int            rop;
@@ -545,7 +536,6 @@ extern void         dc_compat_free( void);
 extern void         dbm_recreate( Handle self);
 extern Bool         destroy_font_hash( void);
 extern char *       err_msg( DWORD errId, char * buffer);
-extern Bool         erratic_line( Handle self);
 extern PDCFont      font_alloc( Font * data, Point * resolution);
 extern void         font_change( Handle self, Font * font);
 extern void         font_clean( void);
@@ -556,8 +546,6 @@ extern void         font_pp2font( char * presParam, Font * font);
 extern void         font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readOnly);
 extern Bool         get_font_from_hash( PFont font, int *vectored, Bool bySize);
 extern Point        get_window_borders( int borderStyle);
-extern int          gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd, int drawState);
-extern int          gp_line( Handle self, int x1, int y1, int x2, int y2, int draw);
 extern Bool         hwnd_check_limits( int x, int y, Bool uint);
 extern void         hwnd_enter_paint( Handle self);
 extern Handle       hwnd_frame_top_level( Handle self);
@@ -569,7 +557,7 @@ extern Handle       image_enscreen( Handle image, Handle screen);
 extern BITMAPINFO * image_get_binfo( Handle img, XBITMAPINFO * bi);
 extern HBITMAP      image_make_bitmap_handle( Handle img, HPALETTE palette);
 extern HPALETTE     image_make_bitmap_palette( Handle img);
-extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer);
+extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotSpot);
 extern void         image_query_bits( Handle self, Bool forceNewImage);
 extern Bool         image_screenable( Handle image, Handle screen, int * bitCount);
 extern Bool         image_set_cache( Handle from, Handle self);
@@ -587,7 +575,7 @@ extern PDCStylus    stylus_alloc( PStylus data);
 extern void         stylus_change( Handle self);
 extern void         stylus_clean( void);
 extern Bool         stylus_complex( PStylus stylus, HDC dc);
-extern Bool         stylus_extpenned( PStylus stylus, int excludeFlags);
+extern Bool         stylus_extpenned( PStylus stylus);
 extern void         stylus_free( PDCStylus res, Bool permanent);
 extern DWORD        stylus_get_extpen_style( PStylus s);
 extern HRGN         region_create( Handle mask);
@@ -595,7 +583,6 @@ extern WCHAR *      alloc_utf8_to_wchar( const char * utf8, int length, int * mb
 extern WCHAR *      alloc_ascii_to_wchar( const char * text, int length);
 extern void         wchar2char( char * dest, WCHAR * src, int lim);
 extern void         char2wchar( WCHAR * dest, char * src, int lim);
-extern BOOL         gp_GetTextMetrics( HDC dc, LPTEXTMETRICW tm);
 extern void         textmetric_c2w( LPTEXTMETRICA from, LPTEXTMETRICW to);
 
 /* compatibility to MSVC 6 */

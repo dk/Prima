@@ -75,8 +75,6 @@ apc_gp_done( Handle self)
       }
    }
    if ( sys linePatternLen  > 3) free( sys linePattern);
-
-   if ( sys linePatternLen2 > 3) free( sys linePattern2);
    font_free( sys fontResource, false);
    if ( sys p256) free( sys p256);
    sys bm = nil;
@@ -153,7 +151,7 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
                      (int)(x + cos( angleEnd / GRAD) * dX / 2 + 1.5),   (int)(y - sin( angleEnd / GRAD) * dY / 2 + 1.5)
 
 #define EMULATE_OPAQUE_LINE \
- (!(IS_WIN95) && sys stylus. pen. lopnStyle == PS_USERSTYLE && sys currentROP2 == ropCopyPut)
+ (sys stylus. pen. lopnStyle == PS_USERSTYLE && sys currentROP2 == ropCopyPut)
 #define STYLUS_USE_OPAQUE_LINE \
    sys stylusFlags &=~ stbPen;\
    if ( !sys opaquePen) sys opaquePen = CreatePen( PS_SOLID, sys stylus.pen.lopnWidth.x, sys lbs[1]);\
@@ -165,7 +163,6 @@ Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 { objCheck false; {
    int compl, needf, drawState = 0;
-   Bool erratic = erratic_line( self);
    HDC     ps = sys ps;
 
    y = sys lastSize. y - y - 1;
@@ -181,17 +178,10 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
    }
 
    STYLUS_USE_PEN( ps);
-   while( compl--) {
-      if ( erratic)
-         drawState = gp_arc( self, x, y, dX, dY, 0, 360, drawState);
-      else
-         Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-   }
+   while( compl--) 
+      Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
    if ( !needf) return true;
-   if ( erratic)
-      gp_arc( self, x, y, dX, dY, angleStart, angleEnd, drawState);
-   else
-      if ( !Arc( ps, ELLIPSE_RECT, ARC_ANGLED)) apiErrRet;
+   if ( !Arc( ps, ELLIPSE_RECT, ARC_ANGLED)) apiErrRet;
    return true;
 }}
 
@@ -242,7 +232,6 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
    HDC     ps = sys ps;
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
    int compl, needf, drawState = 0;
-   Bool erratic = erratic_line( self);
    compl = arc_completion( &angleStart, &angleEnd, &needf);
    y = sys lastSize. y - y - 1;
 
@@ -254,18 +243,10 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
    }
 
    STYLUS_USE_PEN( ps);
-   while( compl--) {
-      if ( erratic)
-         drawState = gp_arc( self, x, y,  dX, dY, 0, 360, drawState);
-      else
-         Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-   }
+   while( compl--)
+      Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
    if ( needf) {
-      if ( erratic) {
-         drawState = gp_arc( self, x, y,  dX, dY, angleStart, angleEnd, drawState);
-         gp_line( self, ARC_ANGLED, drawState);
-      } else
-         if ( !( ok = Chord( ps, ELLIPSE_RECT, ARC_ANGLED))) apiErr;
+      if ( !( ok = Chord( ps, ELLIPSE_RECT, ARC_ANGLED))) apiErr;
    }
    SelectObject( ps, old);
    return ok;
@@ -286,13 +267,8 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
    }
 
    STYLUS_USE_PEN( sys ps);
-   if ( erratic_line( self)) {
-      int draw = 0;
-      for ( i = 0; i < numPts - 1; i++)
-         draw = gp_line( self, points[i].x, points[i].y, points[i+1].x, points[i+1].y, draw);
-   } else {
-      if ( !Polyline( sys ps, ( POINT*) points, numPts)) apiErrRet;
-   }
+   if ( !Polyline( sys ps, ( POINT*) points, numPts)) apiErrRet;
+
    return true;
 }}
 
@@ -318,13 +294,7 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
    }
 
    STYLUS_USE_PEN( sys ps);
-   if ( erratic_line( self)) {
-      for ( i = 0; i < numPts; i++)  {
-         if ( i & 1)
-            gp_line( self, points[ i - 1].x, points[ i - 1].y, points[ i].x, points[ i].y, 0);
-      }
-   } else
-      if ( !( ok = PolyPolyline( sys ps, ( POINT*) points, pts, numPts/2))) apiErr;
+   if ( !( ok = PolyPolyline( sys ps, ( POINT*) points, pts, numPts/2))) apiErr;
    free( pts);
    return ok;
 }}
@@ -346,12 +316,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
    }
 
    STYLUS_USE_PEN( ps);
-   if ( erratic_line( self))
-      gp_arc( self, x, y, dX, dY, 0, 360, 0);
-   else {
-      // if ( !( ok = Ellipse( ps, x - dX - 0.5, y - dY + 0.5, x + dX + 1.0, y + dY + 1.5))) apiErr;
-      if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
-   }
+   if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
    SelectObject( ps, old);
    return ok;
 }}
@@ -602,12 +567,9 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 
    STYLUS_USE_PEN( ps);
 
-   if ( erratic_line( self))
-      gp_line( self, x1, y1, x2, y2, 0);
-   else {
-      MoveToEx( ps, x1, y1, nil);
-      if ( !LineTo( ps, x2, y2)) apiErrRet;
-   }
+   MoveToEx( ps, x1, y1, nil);
+   if ( !LineTo( ps, x2, y2)) apiErrRet;
+
    return true;
 }}
 
@@ -625,36 +587,23 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
    HGDIOBJ old = SelectObject( ps, hBrushHollow);
 
    check_swap( x1, x2);
-   if ( erratic_line( self)) {
-      int draw;
-      y1 = sys lastSize. y - y1 - 1;
-      y2 = sys lastSize. y - y2 - 1;
-      check_swap( y1, y2);
-      STYLUS_USE_PEN( ps);
-      draw = gp_line( self, x2, y1, x1 + 1, y1, 0);
-      draw = gp_line( self, x1, y1, x1, y2 - 1, draw);
-      draw = gp_line( self, x1, y2, x2 - 1, y2, draw);
-      gp_line( self, x2, y2, x2, y1 + 1, draw);
-      /* EMULATE_OPAQUE_LINE is never called here */
-   } else {
-      check_swap( y1, y2);
-      if ( sys stylus. pen. lopnWidth. x > 1 &&
-           (sys stylus. pen. lopnWidth. x % 2) == 0
-	 ) {
-         /* change up-winding to down-winding */
-         y1--;
-         y2--;
-      }
-
-      if ( EMULATE_OPAQUE_LINE ) {
-   	 STYLUS_USE_OPAQUE_LINE;
-         Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1);
-         STYLUS_RESTORE_OPAQUE_LINE;
-      }
-
-      STYLUS_USE_PEN( ps);
-      if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1))) apiErr;
+   check_swap( y1, y2);
+   if ( sys stylus. pen. lopnWidth. x > 1 &&
+        (sys stylus. pen. lopnWidth. x % 2) == 0
+      ) {
+      /* change up-winding to down-winding */
+      y1--;
+      y2--;
    }
+
+   if ( EMULATE_OPAQUE_LINE ) {
+      STYLUS_USE_OPAQUE_LINE;
+      Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1);
+      STYLUS_RESTORE_OPAQUE_LINE;
+   }
+
+   STYLUS_USE_PEN( ps);
+   if ( !( ok = Rectangle( sys ps, x1, sys lastSize. y - y1, x2 + 1, sys lastSize. y - y2 - 1))) apiErr;
    SelectObject( ps, old);
    return ok;
 }}
@@ -665,7 +614,6 @@ apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, dou
    Bool ok = true;
    HDC     ps = sys ps;
    int compl, needf, newY = sys lastSize. y - y - 1, drawState = 0;
-   Bool erratic = erratic_line( self);
    POINT   pts[ 2];
    HGDIOBJ old;
 
@@ -690,23 +638,14 @@ apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, dou
 
    STYLUS_USE_PEN( ps);
 
-   while( compl--) {
-      if ( erratic)
-         drawState = gp_arc( self, x, y, dX, dY, 0, 360, drawState);
-      else
-         Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-   }
+   while( compl--)
+      Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
    if ( needf) {
-      if ( erratic) {
-         drawState = gp_arc( self, x, y, dX, dY, angleStart, angleEnd, drawState);
-         drawState = gp_line( self, pts[ 1]. x, pts[ 1]. y, x, y, drawState);
-         gp_line( self, x, y, pts[ 0]. x, pts[ 0]. y, drawState);
-      } else
-         if ( !( ok = Pie(
-             ps, ELLIPSE_RECT,
-             pts[ 1]. x, pts[ 1]. y,
-             pts[ 0]. x, pts[ 0]. y
-         ))) apiErr;
+      if ( !( ok = Pie(
+          ps, ELLIPSE_RECT,
+          pts[ 1]. x, pts[ 1]. y,
+          pts[ 0]. x, pts[ 0]. y
+      ))) apiErr;
    }
 
    SelectObject( ps, old);
@@ -842,20 +781,6 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          : RGB( 0xff, 0xff, 0xff));
    }
 
-   // Winsloth 95 is morbid, but 98 is yet formidable!
-   if ( IS_WIN95) {
-      if ( xLen + xFrom > i-> w) {
-         xDestLen = xDestLen * ( i-> w - xFrom) / xLen;
-         xLen = i-> w - xFrom;
-      }
-      if ( yFrom < 0) {
-         y -= yFrom * yDestLen / yLen;
-         yDestLen += yFrom * yDestLen / yLen;
-         yLen  += yFrom;
-         yFrom = 0;
-      }
-   }
-
    // if image is actually icon, drawing and-mask
    if ( kind_of( deja, CIcon)) {
       XBITMAPINFO xbi = {
@@ -959,8 +884,6 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
       their geometrical limits. */
    if ( len > div) len = div;
 
-   if ( !HAS_WCHAR) utf8 = false;
-
    if ( utf8) {
       int mb_len;
       if ( !( text = ( char *) alloc_utf8_to_wchar( text, len, &mb_len))) return false;
@@ -991,94 +914,6 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
    return ok;
 }}
 
-
-// This procedure is about to compensate morbid Win95 behavior when
-// calling GetCharABCWidthsFloat() - it returns ERROR_CALL_NOT_IMPLEMENTED. psst.
-static BOOL
-gp_GetCharABCWidthsFloat( HDC dc, UINT iFirstChar, UINT iLastChar, LPABCFLOAT lpABCF, Bool unicode)
-{
-   UINT i, d = iLastChar - iFirstChar + 1;
-   TEXTMETRICW tm;
-
-   if ( IS_NT)
-      return unicode ? 
-         GetCharABCWidthsFloatW( dc, iFirstChar, iLastChar, lpABCF) :
-         GetCharABCWidthsFloatA( dc, iFirstChar, iLastChar, lpABCF);
-
-   if ( iFirstChar > iLastChar)  // checking bound as far as we can
-      return FALSE;
-
-   if ( !HAS_WCHAR) unicode = false;
-   
-   if ( !gp_GetTextMetrics( dc, &tm)) // determining font
-      return FALSE;
-
-   if ( tm. tmPitchAndFamily & TMPF_TRUETYPE) {
-      ABC *abc;
-      int charExtra;
-      INT fb;
-      
-      if ( unicode) {
-         if ( !GetCharWidthW( dc, iFirstChar, iFirstChar, &fb))
-            return FALSE;
-      } else {
-         if ( !GetCharWidthA( dc, iFirstChar, iFirstChar, &fb))
-            return FALSE;
-      }
-
-      if ( !( abc = malloc( d * sizeof( ABC)))) 
-         return FALSE;
-
-      if ( unicode) {
-         if ( !GetCharABCWidthsW( dc, iFirstChar, iLastChar, abc))
-            apiErrRet;
-      } else {
-         if ( !GetCharABCWidthsA( dc, iFirstChar, iLastChar, abc))
-            apiErrRet;
-      }
-
-      charExtra = fb - tm. tmOverhang - ( abc[0].abcA + abc[0].abcB + abc[0].abcC);
-      if ( charExtra < 0) charExtra = 0;
-
-      for ( i = 0; i <= iLastChar - iFirstChar; i++) {
-         lpABCF[i]. abcfA = abc[ i]. abcA;
-         lpABCF[i]. abcfB = abc[ i]. abcB + charExtra;
-         lpABCF[i]. abcfC = abc[ i]. abcC;
-      }
-
-      free( abc);
-   } else {
-      INT * fb;
-
-      if ( !( fb = malloc( d * sizeof( INT)))) 
-         return FALSE;
-
-      if ( unicode) {
-         if ( !GetCharWidthW( dc, iFirstChar, iLastChar, fb)) {// checking full widths
-            free( fb);
-            return FALSE;
-         }
-      } else {
-         if ( !GetCharWidthA( dc, iFirstChar, iLastChar, fb)) {// checking full widths
-            free( fb);
-            return FALSE;
-         }
-      }
-
-      memset( lpABCF, 0, sizeof( ABCFLOAT) * ( iLastChar - iFirstChar + 1));
-
-      for ( i = 0; i <= iLastChar - iFirstChar; i++) {
-         lpABCF[i]. abcfA = tm. tmOverhang;
-         lpABCF[i]. abcfB = fb[ i] - tm. tmOverhang;
-         lpABCF[i]. abcfC = -tm. tmOverhang;
-      }
-
-      free( fb);
-   }
-   
-   return TRUE;
-}
-
 #define TM(field) to->field = from->field
 void
 textmetric_c2w( LPTEXTMETRICA from, LPTEXTMETRICW to)
@@ -1091,19 +926,6 @@ textmetric_c2w( LPTEXTMETRICA from, LPTEXTMETRICW to)
     TM(tmStruckOut); TM(tmPitchAndFamily); TM(tmCharSet);
 }
 #undef TM
-                
-
-BOOL
-gp_GetTextMetrics( HDC dc, LPTEXTMETRICW tm)
-{
-   BOOL ret;
-   TEXTMETRICA a;
-   if ( HAS_WCHAR)
-      return GetTextMetricsW( dc, tm);
-   ret = GetTextMetricsA( dc, &a);
-   textmetric_c2w( &a, tm);
-   return ret;
-}
 
 PFontABC
 apc_gp_get_font_abc( Handle self, int first, int last, Bool unicode)
@@ -1120,7 +942,12 @@ apc_gp_get_font_abc( Handle self, int first, int last, Bool unicode)
       return nil;
    }
 
-   if ( !gp_GetCharABCWidthsFloat( sys ps, first, last, f2, unicode)) apiErr;
+   if ( unicode ) {
+      if (!GetCharABCWidthsFloatW( sys ps, first, last, f2)) apiErr;
+   } else {
+      if (!GetCharABCWidthsFloatA( sys ps, first, last, f2)) apiErr;
+   }
+
    for ( i = 0; i <= last - first; i++) {
       f1[i].a = f2[i].abcfA;
       f1[i].b = f2[i].abcfB;
@@ -1263,17 +1090,6 @@ apc_gp_get_font_ranges( Handle self, int * count)
    unsigned long * ret;
    FONTSIGNATURE f;
 
-   if ( !HAS_WCHAR) {
-      TEXTMETRIC tm;
-      GetTextMetrics( sys ps, &tm);
-      if ( !( ret = malloc( sizeof( unsigned long) * 2)))
-        return nil;
-      ret[0] = tm. tmFirstChar;
-      ret[1] = tm. tmLastChar;
-      *count = 2;
-      return ret;
-   }
-   
    memset( &f, 0, sizeof(f));
    i = GetTextCharsetInfo( sys ps, &f, 0);
    if ( i == DEFAULT_CHARSET)
@@ -1284,7 +1100,7 @@ apc_gp_get_font_ranges( Handle self, int * count)
       TEXTMETRICW tm;
       if ( !( ret = malloc( sizeof( unsigned long) * 4)))
         return nil;
-      gp_GetTextMetrics( sys ps, &tm);
+      GetTextMetricsW( sys ps, &tm);
       if ( index == endCtx) {
          ret[0] = 0x20;
          ret[1] = 0xff;
@@ -1697,8 +1513,6 @@ gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Boo
    objCheck 0;
    if ( len == 0) return 0;
 
-   if ( !HAS_WCHAR) wide = false;
-
    /* width more that 32K returned incorrectly by Win32 core */
    if (( div = 32768L / ( var font. maximalWidth ? var font. maximalWidth : 1)) == 0)
       div = 1;
@@ -1711,7 +1525,6 @@ gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Boo
          if ( !GetTextExtentPoint32( sys ps, text + offset, chunk_len, &sz)) apiErr;
       }
       ret += sz. cx;
-      if ( !IS_NT && offset > 0) ret -= sys tmOverhang;
       offset += div;
    }
    
@@ -1727,10 +1540,8 @@ gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Boo
          }
          if ( abc[0]. abcA < 0) ret -= abc[0]. abcA;
          if ( abc[1]. abcC < 0) ret -= abc[1]. abcC;
-      } else if ( IS_NT)
-         ret += sys tmOverhang;
-   } else if ( !IS_NT) 
-      ret -= sys tmOverhang;
+      }
+   }
 
    return ret;
 }
@@ -1739,7 +1550,6 @@ int
 apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Bool utf8)
 {
    int ret;
-   if ( !HAS_WCHAR) utf8 = false;
    if ( utf8) {
       int mb_len;
       if ( !( text = ( char *) alloc_utf8_to_wchar( text, len, &mb_len))) return 0;
@@ -1757,7 +1567,6 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
    Point * pt = ( Point *) malloc( sizeof( Point) * 5);
    if ( !pt) return nil;
 
-   if ( !HAS_WCHAR) utf8 = false;
    memset( pt, 0, sizeof( Point) * 5);
 
    if ( utf8) {
@@ -1773,10 +1582,6 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
    pt[1].y = pt[3]. y = - var font. descent;
    pt[4].y = pt[0]. x = pt[1].x = 0;
    pt[3].x = pt[2]. x = pt[4].x = gp_get_text_width( self, text, len, false, utf8);
-   if ( len > 0 && !IS_NT) {
-      pt[2].x += sys tmOverhang;
-      pt[3].x += sys tmOverhang;
-   }
 
    if ( !is_apt( aptTextOutBaseline)) {
       int i = 4, d = var font. descent;
@@ -1956,7 +1761,7 @@ apc_gp_set_font( Handle self, PFont font)
    objCheck false;
    if ( !sys ps) return true;
    font_change( self, font);
-   gp_GetTextMetrics( sys ps, &tm);
+   GetTextMetricsW( sys ps, &tm);
    sys tmOverhang       = tm. tmOverhang;
    sys tmPitchAndFamily = tm. tmPitchAndFamily;
    return true;
@@ -1977,7 +1782,7 @@ apc_gp_set_line_end( Handle self, int lineEnd)
       PStylus s         = &sys stylus;
       PEXTPEN ep        = &s-> extPen;
       ep-> lineEnd      = ctx_remap_def( lineEnd, ctx_le2PS_ENDCAP, true, PS_ENDCAP_ROUND);
-      if (( ep-> actual  = stylus_extpenned( s, 0 & exsLineEnd)))
+      if (( ep-> actual  = stylus_extpenned( s)))
          ep-> style = stylus_get_extpen_style( s);
       stylus_change( self);
    }
@@ -1992,7 +1797,7 @@ apc_gp_set_line_join( Handle self, int lineJoin)
       PStylus s         = &sys stylus;
       PEXTPEN ep        = &s-> extPen;
       ep-> lineJoin     = ctx_remap_def( lineJoin, ctx_lj2PS_JOIN, true, PS_JOIN_ROUND);
-      if (( ep-> actual = stylus_extpenned( s, 0 & exsLineJoin)))
+      if (( ep-> actual = stylus_extpenned( s)))
          ep-> style = stylus_get_extpen_style( s);
       stylus_change( self);
    }
@@ -2033,23 +1838,8 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
       PStylus s           = &sys stylus;
       PEXTPEN ep          = &s-> extPen;
 
-      if ( IS_WIN95) {
-         if ( sys linePatternLen2 > 3)
-            free( sys linePattern2);
-         if ( len > 3) {
-            sys linePattern2 = ( unsigned char *) malloc( len);
-            if ( !sys linePattern2) {
-               sys linePatternLen2 = 0;
-               return false;
-            }
-            memcpy( sys linePattern2, pattern, len);
-         } else
-            memcpy( &sys linePattern2, pattern, len);
-         sys linePatternLen2 = len;
-      }
-
       s-> pen. lopnStyle  = patres_user( pattern, len);
-      if (( ep-> actual    = stylus_extpenned( s, 0 & exsLinePattern))) {
+      if (( ep-> actual    = stylus_extpenned( s))) {
          ep-> style       = stylus_get_extpen_style( s);
          ep-> patResource = ( s-> pen. lopnStyle == PS_USERSTYLE) ?
             patres_fetch( pattern, len) : &hPatHollow;

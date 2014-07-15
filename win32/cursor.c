@@ -281,7 +281,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
    apcErrClear;
    direct = direct_pointer_change( self);
    hotSpot. y = guts. pointerSize. y - hotSpot. y - 1;
-   cursor = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot, true) : nil;
+   cursor = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot) : nil;
    if ( apcError) return false;
    
    if ( sys pointer2) {

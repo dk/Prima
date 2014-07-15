@@ -613,7 +613,7 @@ apc_dbm_destroy( Handle self)
 }
 
 HICON
-image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer)
+image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 {
    PIcon i = ( PIcon) img;
    HICON    r;
@@ -629,15 +629,9 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
    ii. xHotspot = hotSpot ? hotSpot-> x : 0;
    ii. yHotspot = hotSpot ? hotSpot-> y : 0;
 
-   if ( noSZ || noBPP || ( !notAnIcon && !IS_NT))
+   if ( noSZ || noBPP) {
       i = ( PIcon)( i-> self-> dup( img));
 
-   if ( IS_WIN95 && forPointer && ( guts. displayBMInfo. bmiHeader. biBitCount <= 4)) {
-      i-> self-> set_conversion(( Handle) i, ictNone);
-   } else
-      forPointer = false;
-
-   if ( noSZ || noBPP) {
       if ( noSZ)
          i-> self-> set_size(( Handle) i, size);
       if ( noBPP)
@@ -656,74 +650,15 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot, Bool forPointer
    if ( bi. bmiHeader. biClrUsed > 0)
       bi. bmiHeader. biClrUsed = bi. bmiHeader. biClrImportant = i-> palSize;
 
-  // if ( 0) {
-   if ( IS_NT) {
-      
-      if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-          i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
-      bi. bmiHeader. biBitCount = bi. bmiHeader. biPlanes = 1;
-      bi. bmiColors[ 0]. rgbRed = bi. bmiColors[ 0]. rgbGreen = bi. bmiColors[ 0]. rgbBlue = 0;
-      bi. bmiColors[ 1]. rgbRed = bi. bmiColors[ 1]. rgbGreen = bi. bmiColors[ 1]. rgbBlue = 255;
+   if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+       i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+   bi. bmiHeader. biBitCount = bi. bmiHeader. biPlanes = 1;
+   bi. bmiColors[ 0]. rgbRed = bi. bmiColors[ 0]. rgbGreen = bi. bmiColors[ 0]. rgbBlue = 0;
+   bi. bmiColors[ 1]. rgbRed = bi. bmiColors[ 1]. rgbGreen = bi. bmiColors[ 1]. rgbBlue = 255;
 
-      if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-         notAnIcon ? NULL : i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
-   } else {
-// Moronious and "macaronious" code for Win95 -
-// since CreateIconIndirect gives results so weird,
-// we use the following sequence.
-	 Byte * mask;
-         if ( !notAnIcon) {
-            int mSize = i-> maskSize / i-> h;
-            Byte *data = ( Byte*)malloc( mSize), *b1 = i-> mask, *b2 = i-> mask + mSize*(i-> h - 1);
-            if ( !data) {
-               dc_free();
-               if (( Handle) i != img) Object_destroy(( Handle) i);
-               return nil;
-            }
-
-       // reverting bits vertically - it's not HBITMAP, just bare bits
-            while ( b1 < b2) {
-               memcpy( data, b1,   mSize);
-               memcpy( b1,   b2,   mSize);
-               memcpy( b2,   data, mSize);
-               b1 += mSize;
-               b2 -= mSize;
-            }
-            free( data);
-            mask = i-> mask;
-         } else {
-            int sz = (( i-> w + 31) / 32) * 4 * i-> h; 
-            mask = ( Byte*)malloc( sz);
-            if ( !mask) {
-                dc_free();
-                if (( Handle) i != img) Object_destroy(( Handle) i);
-                return nil;
-            }
-            memset( mask, 0x0, sz);
-         }   
-// creating icon by old 3.1 method - we need that for correct AND-mask,
-// don't care other pointer properties
-      r = forPointer ?
-         CreateCursor( guts. instance, ii. xHotspot, ii. yHotspot,
-            size.x, size.y, mask, i-> data) :
-         CreateIcon( guts. instance, size.x, size.y, 1, ( Byte)(i-> type & imBPP),
-            mask, i-> data);
-      if ( notAnIcon) free( mask);
-      if ( !r) {
-         dc_free();
-         if (( Handle) i != img) Object_destroy(( Handle) i);
-         apiErrRet;
-      }
-      GetIconInfo( r, &ii);
-      ii. fIcon = hotSpot ? false : true;
-      ii. xHotspot = hotSpot ? hotSpot-> x : 0;
-      ii. yHotspot = hotSpot ? hotSpot-> y : 0;
-      DeleteObject( ii. hbmColor);
-
-      if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-          i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
-      DestroyIcon( r);
-   }
+   if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+      notAnIcon ? NULL : i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+   
    dc_free();
 
    if ( !( r = CreateIconIndirect( &ii))) apiErr;

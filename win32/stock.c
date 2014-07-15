@@ -73,11 +73,6 @@ stylus_alloc( PStylus data)
       ret-> refcnt = 0;
       p = ret-> s. pen;
 
-      if ( IS_WIN95 && extPen) {
-         extPen = 0;
-         p. lopnStyle = PS_SOLID;
-      }
-
       if ( !extPen) {
          if ( !( ret-> hpen = CreatePenIndirect( &p))) {
             apiErr;
@@ -95,7 +90,7 @@ stylus_alloc( PStylus data)
             ret-> s. extPen. patResource-> dotsCount,
             ret-> s. extPen. patResource-> dotsPtr
          ))) {
-            if ( !IS_WIN95) apiErr;
+            apiErr;
             ret-> hpen = CreatePen( PS_SOLID, 0, 0);
          }
          for ( i = 1; i < ret-> s. extPen. patResource-> dotsCount; i += 2)
@@ -173,7 +168,7 @@ stylus_clean()
 }
 
 Bool
-stylus_extpenned( PStylus s, int excludeFlags)
+stylus_extpenned( PStylus s)
 {
    Bool ext = false;
    if ( s-> pen. lopnWidth. x > 1) {
@@ -181,13 +176,7 @@ stylus_extpenned( PStylus s, int excludeFlags)
           return true;
    } else if ( s-> pen. lopnStyle == PS_USERSTYLE)
       return true;
-   if ( !( excludeFlags & exsLinePattern))
-      ext |= s-> pen. lopnStyle == PS_USERSTYLE;
-   if ( !( excludeFlags & exsLineEnd))
-      ext |= s-> extPen. lineEnd != PS_ENDCAP_ROUND;
-   if ( !( excludeFlags & exsLineJoin))
-      ext |= s-> extPen. lineJoin != PS_JOIN_ROUND;
-   return ext;
+   return false;
 }
 
 Bool
@@ -242,40 +231,13 @@ patres_fetch( unsigned char * pattern, int len)
 UINT
 patres_user( unsigned char * pattern, int len)
 {
-   if ( IS_WIN95) {
-      // no user line patterns
-      switch ( len) {
-      case 0:
-         return PS_NULL;
-      case 1:
-         return pattern[0] ? PS_SOLID : PS_NULL;
-      case 2:
-         if ( memcmp( pattern, psDot, 2) == 0)
-            return PS_DOT;
-         if ( memcmp( pattern, lpDot, 2) == 0)
-            return PS_DOT;
-         if ( memcmp( pattern, psDash, 2) == 0)
-            return PS_DASH;
-         if ( memcmp( pattern, lpDash, 2) == 0)
-            return PS_DASH;
-         return PS_DOT;
-      case 4:
-         return PS_DASHDOT;
-      case 5:
-      case 6:
-         return PS_DASHDOTDOT;
-      default:
-         return PS_SOLID;
-      }
-   } else {
-      switch ( len) {
-      case 0:
-         return PS_NULL;
-      case 1:
-         return pattern[0] ? PS_SOLID : PS_NULL;
-      default:
-         return PS_USERSTYLE;
-      }
+   switch ( len) {
+   case 0:
+      return PS_NULL;
+   case 1:
+      return pattern[0] ? PS_SOLID : PS_NULL;
+   default:
+      return PS_USERSTYLE;
    }
 }
 
@@ -654,7 +616,7 @@ font_logfont2font( LOGFONT * lf, Font * f, Point * res)
    if ( !dc) return;
    hf = SelectObject( dc, CreateFontIndirect( lf));
 
-   gp_GetTextMetrics( dc, &tm);
+   GetTextMetricsW( dc, &tm);
    DeleteObject( SelectObject( dc, hf));
    dc_free();
 
@@ -790,7 +752,6 @@ typedef struct _FEnumStruc
    Bool          forceSize;
    Bool          vecId;
    Bool          matchILead;
-   Bool          wide;
    PFont         font;
    TEXTMETRICW   tm;
    LOGFONT       lf;
@@ -807,28 +768,6 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, PFEnumStruc es)
    long hei, res;
    NEWTEXTMETRICEXW atx;
    ENUMLOGFONTEXW elx;
-
-   if ( !es-> wide) {
-      /* it is probably too much an overhead, copy ALL structures 
-         when just so little info is read, but this is made deliberately in case
-         changes are made here with no respect to A/W restrictions */
-      textmetric_c2w(( TEXTMETRICA *) t, ( TEXTMETRICW *) &atx);
-      atx. ntmTm. ntmFlags      = (( NEWTEXTMETRICEXA*) t)-> ntmTm. ntmFlags;
-      atx. ntmTm. ntmSizeEM     = (( NEWTEXTMETRICEXA*) t)-> ntmTm. ntmSizeEM;
-      atx. ntmTm. ntmCellHeight = (( NEWTEXTMETRICEXA*) t)-> ntmTm. ntmCellHeight;
-      atx. ntmTm. ntmAvgWidth   = (( NEWTEXTMETRICEXA*) t)-> ntmTm. ntmAvgWidth;
-      memcpy( &elx. elfLogFont, &(( ENUMLOGFONTEXA*)e)-> elfLogFont, sizeof(LOGFONTA) - LF_FACESIZE);
-      char2wchar( elx. elfLogFont. lfFaceName, (( ENUMLOGFONTEXA*)e)-> elfLogFont. lfFaceName, LF_FACESIZE);
-      if ( type & TRUETYPE_FONTTYPE) {
-         char2wchar((WCHAR*) elx. elfFullName, (( ENUMLOGFONTEXA*)e)-> elfFullName, LF_FULLFACESIZE);
-         char2wchar((WCHAR*) elx. elfStyle,    (( ENUMLOGFONTEXA*)e)-> elfStyle, LF_FACESIZE);
-      } else { /* these fields are undefined for raster fonts */
-         char2wchar((WCHAR*) elx. elfFullName, (( ENUMLOGFONTEXA*)e)-> elfLogFont. lfFaceName, LF_FACESIZE);
-         char2wchar((WCHAR*) elx. elfStyle,    "", 1);
-      }
-      t = &atx;
-      e = &elx;
-   }
 
    es-> passedCount++;
           
@@ -914,7 +853,7 @@ static void
 font_logfont2textmetric( HDC dc, LOGFONT * lf, TEXTMETRICW * tm)
 {
    HFONT hf = SelectObject( dc, CreateFontIndirect( lf));
-   gp_GetTextMetrics( dc, tm);
+   GetTextMetricsW( dc, tm);
    DeleteObject( SelectObject( dc, hf));
 }
 
@@ -943,26 +882,10 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
    if ( font-> height < 0) font-> height *= -1;
    if ( font-> size   < 0) font-> size   *= -1;
 
-   if ( HAS_WCHAR && !IS_WIN95)
-      char2wchar( elf. lfFaceName, font-> name, LF_FACESIZE);
-   else
-      strncpy(( char*) elf. lfFaceName, font-> name, LF_FACESIZE);
+   char2wchar( elf. lfFaceName, font-> name, LF_FACESIZE);
    elf. lfPitchAndFamily = 0;
    elf. lfCharSet = font_encoding2charset( font-> encoding);
-   if ( IS_WIN95 && elf. lfCharSet == DEFAULT_CHARSET) {
-      int i;
-      es. wide = false;
-      for ( i = 0; i < sizeof( ctx_CHARSET2index) / 2; i+=2) {
-         if (ctx_CHARSET2index[ i] == endCtx) break;
-         elf. lfCharSet = ctx_CHARSET2index[ i];
-         EnumFontFamiliesExA( dc, ( LOGFONTA*) &elf, ( FONTENUMPROC) fep, ( LPARAM) &es, 0);
-      }
-      elf. lfCharSet = DEFAULT_CHARSET;
-   } else if (( es. wide = HAS_WCHAR)) {
-      EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep, ( LPARAM) &es, 0);
-   } else {
-      EnumFontFamiliesExA( dc, ( LOGFONTA*) &elf, ( FONTENUMPROC) fep, ( LPARAM) &es, 0);
-   }
+   EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep, ( LPARAM) &es, 0);
 
    // check encoding match
    if (( es. passedCount == 0) && ( elf. lfCharSet != DEFAULT_CHARSET) && ( recursiveFFEncoding == 0)) {
@@ -1148,7 +1071,6 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 typedef struct {
    List  lst;
    PHash hash; 
-   Bool  wide;
 } Fep2;
 
 int CALLBACK
@@ -1157,11 +1079,8 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
    PFont fm;
    char wname[256], *name = nil;
 
-   if ( f-> wide) {
-      wchar2char( wname, e-> elfLogFont. lfFaceName, LF_FACESIZE);
-      name = wname;
-   } else
-      name = (( ENUMLOGFONTEXA*) e)-> elfLogFont. lfFaceName;
+   wchar2char( wname, e-> elfLogFont. lfFaceName, LF_FACESIZE);
+   name = wname;
 
    if ( name[0] == '@') return 1; /* skip vertical fonts */
 
@@ -1178,13 +1097,7 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
    }
    fm = ( PFont) malloc( sizeof( Font));
    if ( !fm) return 1;
-   if ( f-> wide) {
-      font_textmetric2font(( TEXTMETRICW*) &t-> ntmTm, fm, false);
-   } else {
-      TEXTMETRICW w;
-      textmetric_c2w(( TEXTMETRICA*) &t-> ntmTm, &w);
-      font_textmetric2font( &w, fm, false);
-   }
+   font_textmetric2font(( TEXTMETRICW*) &t-> ntmTm, fm, false);
    if ( f-> hash) { /* multi-encoding format */
       char ** enc = (char**) fm-> encoding;
       unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;      
@@ -1195,12 +1108,7 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
    fm-> direction = fm-> resolution = 0;
    fm-> utf8_flags = 0;
    strcpy( fm-> name, name);
-   if ( f-> wide)
-      wchar2char( fm-> family, e-> elfFullName, LF_FULLFACESIZE);
-   else if ( type & TRUETYPE_FONTTYPE)
-      strncpy( fm-> family, (( ENUMLOGFONTEXA*)e)-> elfFullName, LF_FULLFACESIZE);
-   else
-      strncpy( fm-> family, (( ENUMLOGFONTEXA*)e)-> elfLogFont. lfFaceName, LF_FACESIZE);
+   wchar2char( fm-> family, e-> elfFullName, LF_FULLFACESIZE);
    list_add( &f-> lst, ( Handle) fm);
    return 1;
 }
@@ -1235,25 +1143,9 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
          return nil;
    list_create( &f. lst, 256, 256);
    memset( &elf, 0, sizeof( elf));
-   if ( HAS_WCHAR && !IS_WIN95)
-      char2wchar( elf. lfFaceName, (char*)(facename ? facename : ""), LF_FACESIZE);
-   else
-      strncpy(( char*) elf. lfFaceName, (char*)(facename ? facename : ""), LF_FACESIZE); 
-   if ( IS_WIN95 && facename && !encoding) {
-      int i;
-      f. wide = false;
-      for ( i = 0; i < sizeof( ctx_CHARSET2index) / 2; i+=2) {
-         if (ctx_CHARSET2index[ i] == endCtx) break;
-         elf. lfCharSet = ctx_CHARSET2index[ i];
-         EnumFontFamiliesExA( dc, ( LOGFONTA*) &elf, ( FONTENUMPROC) fep2, ( LPARAM) &f, 0);
-      }
-   } else {
-      elf. lfCharSet = font_encoding2charset( encoding); 
-      if (( f. wide = HAS_WCHAR)) 
-         EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep2, ( LPARAM) &f, 0);
-      else
-         EnumFontFamiliesExA( dc, ( LOGFONTA*) &elf, ( FONTENUMPROC) fep2, ( LPARAM) &f, 0);
-   }
+   char2wchar( elf. lfFaceName, (char*)(facename ? facename : ""), LF_FACESIZE);
+   elf. lfCharSet = font_encoding2charset( encoding); 
+   EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep2, ( LPARAM) &f, 0);
    if ( f. hash) {
       hash_destroy( f. hash, false);
       f. hash = nil;
@@ -1310,10 +1202,7 @@ apc_font_encodings( Handle self )
    lst = hash_create();
    memset( &elf, 0, sizeof( elf));
    elf. lfCharSet = DEFAULT_CHARSET;
-   if ( HAS_WCHAR)
-      EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep3, ( LPARAM) lst, 0);
-   else
-      EnumFontFamiliesExA( dc, ( LOGFONTA*) &elf, ( FONTENUMPROC) fep3, ( LPARAM) lst, 0);
+   EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep3, ( LPARAM) lst, 0);
 
    if ( self == nilHandle || self == application)
       dc_free();
@@ -1671,11 +1560,6 @@ hwnd_leave_paint( Handle self)
    if ( sys opaquePen ) {
    	DeleteObject( sys opaquePen );
 	sys opaquePen = nil;
-   }
-   if ( IS_WIN95) {
-      if ( sys linePatternLen2 > 3) free( sys linePattern2);
-      sys linePatternLen2 = 0;
-      sys linePattern2 = nil;
    }
    if ( sys psd != nil) {
       var font           = sys psd-> font;
@@ -2052,309 +1936,6 @@ region_create( Handle mask)
    free( rdata);
 
    return rgn;
-}
-
-
-Bool
-erratic_line( Handle self)
-{
-   return IS_WIN95 && sys stylus. pen. lopnWidth. x > 1 && sys linePatternLen2 > 1;
-}
-
-
-int
-gp_line( Handle self, int x1, int y1, int x2, int y2, int drawState)
-{
-   int x3, y3, x4, y4;
-   int len = sys linePatternLen2, ptr = 0, offset = 0, cumul = drawState, delta = 0;
-   int dx = x2 - x1, dy = y2 - y1;
-   int llen = sqrt( dx * dx + dy * dy);
-   int lw = sys stylus. pen. lopnWidth. x + 1;
-   unsigned char * lp = ( unsigned char *)(( len > 3) ? sys linePattern2 : (Byte*) &sys linePattern2);
-   HDC ps = sys ps;
-   Bool draw = 1;
-
-   MoveToEx( ps, x1, y1, nil);
-
-#define DELTA(x,y,offs) \
-  x = x1 + ((offs) * dx) / llen;\
-  y = y1 + ((offs) * dy) / llen
-
-   if ( GetBkMode( ps) != TRANSPARENT) {
-      HPEN pen = SelectObject( ps, CreatePen( PS_SOLID, lw, sys lbs[1]));
-      if ( !LineTo( ps, x2, y2)) apiErr;
-      DeleteObject( SelectObject( ps, pen));
-   }
-
-   while ( drawState > 0) {
-      int d = lp[ ptr];
-      if ( !draw) d += lw;
-      drawState -= d;
-      if ( drawState < 0) {
-         offset -= drawState;
-         if ( draw) {
-            DELTA( x3, y3, 0);
-            DELTA( x4, y4, offset - 1);
-            MoveToEx( ps, x3, y3, nil);
-            LineTo( ps, x4, y4);
-         }
-      }
-      draw = !draw;
-      if ( ++ptr >= len) {
-         ptr = cumul = 0;
-         draw = 1;
-      }
-   }
-
-   while ( offset < llen) {
-      int d2;
-      delta = lp[ ptr];
-      if ( !draw) delta += lw;
-      d2 = offset + delta - 1;
-      if ( d2 > llen) d2 = llen;
-      DELTA( x3, y3, offset);
-      DELTA( x4, y4, d2);
-      offset += delta;
-      cumul += delta;
-      if ( draw) {
-         MoveToEx( ps, x3, y3, nil);
-         LineTo( ps, x4, y4);
-      }
-      draw = !draw;
-      if ( ++ptr >= len) {
-         ptr = 0;
-         if ( offset < llen) cumul = 0;
-         draw = 1;
-      }
-   }
-#undef DELTA
-
-   cumul -= offset - llen;
-   return cumul;
-}
-
-static int
-is_y( double angle)
-{
-   while ( angle > 360) angle -= 360;
-   return angle < 45 || angle >= 315 || ( angle >= 135 && angle < 225);
-}
-
-static int
-d_octet( double angle)
-{
-   while ( angle > 360) angle -= 360;
-   if ( angle >= 45 && angle < 315) return -1;
-   return ( angle >= 315) ? 1 : 0;
-}
-
-static void
-arc_offset( int delta, int dX, int dY, int * quarter, int * x1, int * y1)
-{
-   int radX = dX / 2;
-   int radY = dY / 2;
-AGAIN:
-   switch ( *quarter) {
-   case 0:
-      if ( *y1 + delta > radY) {
-         delta = *y1 + delta - radY;
-         *y1 = radY;
-         *x1 = radX;
-         (*quarter)++;
-         goto AGAIN;
-      } else
-         *y1 += delta;
-      break;
-   case 1:
-     if ( *x1 - delta < - radX) {
-        delta = - (*x1) + delta - radX;
-        *y1 = radY;
-        *x1 = -radX;
-        (*quarter)++;
-        goto AGAIN;
-     } else
-        *x1 -= delta;
-     break;
-   case 2:
-      if ( *y1 - delta < - radY) {
-         delta = - (*y1) + delta - radY;
-         *y1 = -radY;
-         *x1 = -radX;
-         (*quarter)++;
-         goto AGAIN;
-      } else
-         *y1 -= delta;
-      break;
-   case 3:
-      if ( *x1 + delta > radX) {
-         delta = *x1 + delta - radX;
-         *y1 = -radY;
-         *x1 = radX;
-         *quarter = 0;
-         goto AGAIN;
-      } else
-         *x1 += delta;
-      break;
-   }
-}
-
-static int
-quarter( double angle)
-{
-   while ( angle > 360) angle -= 360;
-   if ( angle < 45 || angle >= 315) return 0; else
-   if ( angle >= 135 && angle < 225) return 2; else
-   if ( angle >= 45 && angle < 135) return 1; else
-   return 3;
-}
-
-#define GRAD 57.29577951
-
-/*
-   int a = radX * radX;
-   int b = radY * radY;
-   int d = b - a * radY + a / 4;
-   int dx = 0;
-   int dy = a * radY * 2;
-   int sx = 0, sy = radY;
-
-   while ( dx < dy ) {
-      // [sx, sy] x 4
-      if ( d > 0) {
-         sy--;
-         dy -= a + a;
-         d  -=dy;
-      }
-      sx++;
-      dx += b + b;
-      d += b + dx;
-   }
-
-   d = ( a - b + (a - b) / 2 - dx - dy) / 2;
-
-   while ( sy >= 0) {
-      // [sx, sy] x 4
-      if ( d < 0) {
-         sx++;
-         dx += b + b;
-         d += dx;
-      }
-      sy--;
-      dy -= a + a;
-      d += a - dy;
-   }
-*/
-
-int
-gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd, int drawState)
-{
-   int x1, y1, x2, y2;
-   int len = sys linePatternLen2, ptr = 0, offset = 0, cumul = drawState, delta = 0;
-   int lw = sys stylus. pen. lopnWidth. x + 1;
-   int llen = 0;
-   unsigned char * lp = ( Byte*)(( len > 3) ? sys linePattern2 : (Byte*) &sys linePattern2);
-   HDC ps = sys ps;
-   Bool draw = 1;
-   double cosa = cos( angleStart / GRAD), cosb = cos( angleEnd / GRAD);
-   double sina = sin( angleStart / GRAD), sinb = sin( angleEnd / GRAD);
-   int xstart = cosa * dX / 2 + 0.5, ystart = sina * dY / 2 + 0.5;
-   int xend = cosb * dX / 2 + 0.5, yend = sinb * dY / 2 + 0.5;
-   int qplane, qstart = quarter( angleStart), qend = quarter( angleEnd);
-
-
-   // calculating arc length
-   if ( qstart == qend &&
-        angleStart <= angleEnd &&
-        d_octet( angleStart) == d_octet( angleEnd)) {
-       // angles are in same quarter
-       llen += is_y( angleStart) ?
-          abs( yend - ystart) :
-          abs( xend - xstart);
-    } else {
-       int i, qe2 = qend;
-       llen += is_y( angleStart) ?
-          abs( dY / 2 * (( qstart == 2) ? -1 : 1) - ystart) :
-          abs( dX / 2  * (( qstart == 1) ? -1 : 1) - xstart);
-       llen += is_y( angleEnd) ?
-          abs( dY / 2  * (( qend == 0) ? -1 : 1) - yend) :
-          abs( dX / 2  * (( qend == 3) ? -1 : 1) - xend);
-       if ( qe2 <= qstart) qe2 += 4;
-       for ( i = qstart + 1; i < qe2; i++)
-          llen += abs((float)( 2 * (( i % 2) ? ( dX / 2 + 0.5) : ( dY / 2 + 0.5))));
-    }
-
-    // drawing arc
-    if ( GetBkMode( ps) != TRANSPARENT) {
-       HPEN pen = SelectObject( ps, CreatePen( PS_SOLID, lw, sys lbs[1]));
-       if ( !Arc( ps, x - ( dX - 1) / 2, y - dY / 2, x + dX / 2 + 1, y + (dY - 1) / 2 + 1,
-          x + xstart, y - ystart, x + xend, y - yend
-       )) apiErr;
-       DeleteObject( SelectObject( ps, pen));
-    }
-
-    x1 = xstart;
-    y1 = ystart;
-    switch ( qstart) {
-    case 0: x1 = dX / 2 ;  break;
-    case 1: y1 = dY / 2 ;  break;
-    case 2: x1 = -dX / 2 ; break;
-    case 3: y1 = -dY / 2 ; break;
-    }
-    qplane = qstart;
-
-    while ( drawState > 0) {
-       int d = lp[ ptr];
-       if ( !draw) d += lw;
-       drawState -= d;
-       if ( drawState < 0) {
-          offset -= drawState;
-          x2 = x1;
-          y2 = y1;
-          arc_offset( d, dX, dY, &qplane, &x1, &y1);
-          if ( draw) {
-             Arc( ps,
-                x - ( dX - 1) / 2, y - dY / 2, x + dX / 2 + 1, y + (dY - 1) / 2 + 1,
-                x + x2, y - y2,
-                x + x1, y - y1
-             );
-          }
-       }
-       draw = !draw;
-       if ( ++ptr >= len) {
-          ptr = cumul = 0;
-          draw = 1;
-       }
-    }
-
-    while ( offset < llen)
-    {
-       int d2;
-       delta = lp[ ptr];
-       if ( !draw) delta += lw;
-       d2 = delta;
-       x2 = x1;
-       y2 = y1;
-       if ( offset + d2 >= llen) d2 = llen - offset;
-       arc_offset( d2, dX, dY, &qplane, &x1, &y1);
-       if ( draw) {
-          // if ( lim-- == 0) break;
-          Arc( ps,
-             x - ( dX - 1) / 2, y - dY / 2, x + dX / 2 + 1, y + (dY - 1) / 2 + 1,
-             x + x2, y - y2,
-             x + x1, y - y1
-          );
-       }
-       offset += delta;
-       cumul += delta;
-       draw = !draw;
-       if ( ++ptr >= len) {
-          ptr = 0;
-          if ( offset < llen) cumul = 0;
-          draw = 1;
-       }
-    }
-    cumul -= offset - llen;
-    return cumul;
 }
 
 int
