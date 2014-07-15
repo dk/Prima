@@ -286,6 +286,26 @@ sub stroke
 		$r1 == rop::NoOper &&
 		$r2 == rop::NoOper;
 
+	if ( $self-> {changed}-> {lineWidth}) {
+		my ($lw) = $self-> pixel2point($self-> lineWidth);
+		$self-> emit( $lw . ' SW');
+		$self-> {changed}-> {lineWidth} = 0;
+	}
+
+	if ( $self-> {changed}-> {lineEnd}) { 
+		my $le = $self-> lineEnd;
+		my $id = ( $le == le::Round) ? 1 : (( $le == le::Square) ? 2 : 0);
+		$self-> emit( "$id SL");
+		$self-> {changed}-> {lineEnd} = 0;
+	}
+	
+	if ( $self-> {changed}-> {lineJoin}) { 
+		my $lj = $self-> lineJoin;
+		my $id = ( $lj == lj::Round) ? 1 : (( $lj == lj::Bevel) ? 2 : 0);
+		$self-> emit( "$id SJ");
+		$self-> {changed}-> {lineJoin} = 0;
+	}
+
 	if ( $r2 != rop::NoOper && $lp ne lp::Solid ) {
 		my $bk = 
 			( $r2 == rop::Blackness) ? 0 :
@@ -293,6 +313,7 @@ sub stroke
 		
 		$self-> {changed}-> {linePattern} = 1;
 		$self-> {changed}-> {fill}        = 1;
+		$self-> emit('[] 0 SD');
 		$self-> emit( $self-> cmd_rgb( $bk)); 
 		$self-> emit( $code);
 	}
@@ -312,26 +333,6 @@ sub stroke
 				$self-> emit("[@x] 0 SD");
 			}
 			$self-> {changed}-> {linePattern} = 0;
-		}
-
-		if ( $self-> {changed}-> {lineWidth}) {
-			my ($lw) = $self-> pixel2point($self-> lineWidth);
-			$self-> emit( $lw . ' SW');
-			$self-> {changed}-> {lineWidth} = 0;
-		}
-
-		if ( $self-> {changed}-> {lineEnd}) { 
-			my $le = $self-> lineEnd;
-			my $id = ( $le == le::Round) ? 1 : (( $le == le::Square) ? 2 : 0);
-			$self-> emit( "$id SL");
-			$self-> {changed}-> {lineEnd} = 0;
-		}
-		
-		if ( $self-> {changed}-> {lineJoin}) { 
-			my $lj = $self-> lineJoin;
-			my $id = ( $lj == lj::Round) ? 1 : (( $lj == lj::Bevel) ? 2 : 0);
-			$self-> emit( "$id SJ");
-			$self-> {changed}-> {lineJoin} = 0;
 		}
 
 		if ( $self-> {changed}-> {fill}) {
@@ -639,7 +640,7 @@ sub rop2
 	return $_[0]-> SUPER::rop2 unless $#_;
 	my ( $self, $rop) = @_;
 	$rop = rop::CopyPut if 
-		$rop != rop::Blackness || $rop != rop::Whiteness || $rop != rop::NoOper;
+		$rop != rop::Blackness && $rop != rop::Whiteness && $rop != rop::NoOper;
 	$self-> SUPER::rop2( $rop);
 }
 
