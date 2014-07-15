@@ -333,6 +333,10 @@ prima_cleanup_drawable_after_painting( Handle self)
    XSetForeground( DISP, XX-> gc, XX-> fore. primary);\
    XX->flags.brush_fore=1;\
 }\
+if (!XX->flags.brush_back && XX-> paint_rop2 == ropCopyPut) {\
+   XSetBackground( DISP, XX-> gc, XX-> back. primary);\
+   XX->flags.brush_back=1;\
+}\
 XSetFillStyle( DISP, XX-> gc, FillSolid);\
 
 Bool
