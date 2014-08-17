@@ -42,6 +42,7 @@ sub profile_default
 	my %prf = (
 		image        => undef,
 		imageFile    => undef,
+		stretch      => 0,
 		zoom         => 1,
 		zoomPrecision=> 100,
 		alignment    => ta::Left,
@@ -69,14 +70,14 @@ sub init
 	my $self = shift;
 	for ( qw( image ImageFile))
 		{ $self-> {$_} = undef; }
-	for ( qw( alignment quality valignment imageX imageY))
+	for ( qw( alignment quality valignment imageX imageY stretch))
 		{ $self-> {$_} = 0; }
 	for ( qw( zoom integralScreen integralImage))
 		{ $self-> {$_} = 1; }
 	$self-> {zoomPrecision} = 10;
 	my %profile = $self-> SUPER::init(@_);
 	$self-> { imageFile}     = $profile{ imageFile};
-	for ( qw( image zoomPrecision zoom alignment valignment quality)) {
+	for ( qw( image zoomPrecision zoom stretch alignment valignment quality)) {
 		$self-> $_($profile{$_});
 	}
 	return %profile;
@@ -117,6 +118,13 @@ sub on_paint
 	my ($iS, $iI) = ($self-> {integralScreen}, $self-> {integralImage});
 	my ( $atx, $aty, $xDest, $yDest);
 
+	if ( $self->{stretch}) {
+		$atx = $aty = $xDest = $yDest = 0;
+		$imXz = $r[2] - $r[0];
+		$imYz = $r[3] - $r[1];
+		goto PAINT;
+	}
+
 	if ( $imYz < $winY) {
 		if ( $ya == ta::Top) {
 			$aty = $winY - $imYz;
@@ -153,6 +161,7 @@ sub on_paint
 		$imX = $imXz / $iS * $iI;
 	}
 
+PAINT:
 	$canvas-> clear( $atx, $aty, $atx + $imXz, $aty + $imYz) if $self-> {icon};
 
 	return $canvas-> put_image_indirect(
@@ -167,6 +176,8 @@ sub on_paint
 sub on_keydown
 {
 	my ( $self, $code, $key, $mod) = @_;
+
+	return if $self->{stretch};
 
 	return unless grep { $key == $_ } (
 		kb::Left, kb::Right, kb::Down, kb::Up
@@ -219,7 +230,7 @@ sub set_image
 	$y *= $self-> {zoom};
 	$self-> {icon}   = $img-> isa('Prima::Icon');
 	$self-> {bitmap} = $img-> isa('Prima::DeviceBitmap');
-	$self-> limits($x,$y);
+	$self-> limits($x,$y) unless $self->{stretch};
 	if ( $self-> {quality}) {
 		my $do_cubic;
 
@@ -286,6 +297,8 @@ sub set_zoom
 {
 	my ( $self, $zoom) = @_;
 
+	return if $self->{stretch};
+
 	$zoom = 100 if $zoom > 100;
 	$zoom = 0.01 if $zoom < 0.01;
 
@@ -328,6 +341,16 @@ sub set_zoom_precision
 	$self-> zoom( $self-> {zoom});
 }
 
+sub set_stretch
+{
+	my ( $self, $s) = @_;
+	$s = $s ? 1 : 0;
+	return if $self->{stretch} == $s;
+	$self->{stretch} = $s;
+	$self->limits(0,0) if $s;
+	$self->repaint;
+}
+
 sub screen2point
 {
 	my $self = shift;
@@ -335,20 +358,30 @@ sub screen2point
 	my ( $i, $wx, $wy, $z, $dx, $dy, $ha, $va) =
 		@{$self}{qw(indents winX winY zoom deltaX deltaY alignment valignment)};
 
-	my $maxy = ( $wy < $self-> {limitY}) ? $self-> {limitY} - $wy : 0;
-	unless ( $maxy) {
-		if ( $va == ta::Top) {
-			$maxy += $self-> {imageY} * $z - $wy;
-		} elsif ( $va != ta::Bottom) {
-			$maxy += ( $self-> {imageY} * $z - $wy) / 2;
+	my ($maxx, $maxy, $zx, $zy);
+
+	if ( $self->{stretch}) {
+		$dx = $dy = $maxx = $maxy = 0;
+		$zx = ($self->width  - $$i[2] - $$i[0]) / $self->{imageX};
+		$zy = ($self->height - $$i[3] - $$i[1]) / $self->{imageY};
+	} else {
+		$zx = $zy = $z;
+		$maxy = ( $wy < $self-> {limitY}) ? $self-> {limitY} - $wy : 0;
+		unless ( $maxy) {
+			if ( $va == ta::Top) {
+				$maxy += $self-> {imageY} * $z - $wy;
+			} elsif ( $va != ta::Bottom) {
+				$maxy += ( $self-> {imageY} * $z - $wy) / 2;
+			}
 		}
-	}
-	my $maxx = 0;
-	if ( $wx > $self-> {limitX}) {
-		if ( $ha == ta::Right) {
-			$maxx += $self-> {imageX} * $z - $wx;
-		} elsif ( $ha != ta::Left) {
-			$maxx += ( $self-> {imageX} * $z - $wx) / 2;
+
+		$maxx = 0;
+		if ( $wx > $self-> {limitX}) {
+			if ( $ha == ta::Right) {
+				$maxx += $self-> {imageX} * $z - $wx;
+			} elsif ( $ha != ta::Left) {
+				$maxx += ( $self-> {imageX} * $z - $wx) / 2;
+			}
 		}
 	}
 
@@ -357,7 +390,7 @@ sub screen2point
 		$x += $dx - $$i[0];
 		$y += $maxy - $dy - $$i[1];
 		$x += $maxx;
-		push @ret, $x / $z, $y / $z;
+		push @ret, $x / $zx, $y / $zy;
 	}
 	return @ret;
 }
@@ -368,28 +401,37 @@ sub point2screen
 	my @ret = ();
 	my ( $i, $wx, $wy, $z, $dx, $dy, $ha, $va) =
 		@{$self}{qw(indents winX winY zoom deltaX deltaY alignment valignment)};
-	my $maxy = ( $wy < $self-> {limitY}) ? $self-> {limitY} - $wy : 0;
-	unless ( $maxy) {
-		if ( $va == ta::Top) {
-			$maxy += $self-> {imageY} * $z - $wy;
-		} elsif ( $va != ta::Bottom) {
-			$maxy += ( $self-> {imageY} * $z - $wy) / 2;
+
+	my ( $maxx, $maxy, $zx, $zy );
+	if ( $self->{stretch}) {
+		$dx = $dy = $maxx = $maxy = 0;
+		$zx = ($self->width  - $$i[2] - $$i[0]) / $self->{imageX};
+		$zy = ($self->height - $$i[3] - $$i[1]) / $self->{imageY};
+	} else {
+		$zx = $zy = $z;
+		$maxy = ( $wy < $self-> {limitY}) ? $self-> {limitY} - $wy : 0;
+		unless ( $maxy) {
+			if ( $va == ta::Top) {
+				$maxy += $self-> {imageY} * $z - $wy;
+			} elsif ( $va != ta::Bottom) {
+				$maxy += ( $self-> {imageY} * $z - $wy) / 2;
+			}
 		}
-	}
-	
-	my $maxx = 0;
-	if ( $wx > $self-> {limitX}) {
-		if ( $ha == ta::Right) {
-			$maxx += $self-> {imageX} * $z - $wx;
-		} elsif ( $ha != ta::Left) {
-			$maxx += ( $self-> {imageX} * $z - $wx) / 2;
+		
+		$maxx = 0;
+		if ( $wx > $self-> {limitX}) {
+			if ( $ha == ta::Right) {
+				$maxx += $self-> {imageX} * $z - $wx;
+			} elsif ( $ha != ta::Left) {
+				$maxx += ( $self-> {imageX} * $z - $wx) / 2;
+			}
 		}
 	}
 
 	while ( scalar @_) {
-		my ( $x, $y) = ( $z * shift, $z * shift);
-		$x -= $maxx + $self-> {deltaX} - $$i[0];
-		$y -= $maxy - $self-> {deltaY} - $$i[1];
+		my ( $x, $y) = ( $zx * shift, $zy * shift);
+		$x -= $maxx + $dx - $$i[0];
+		$y -= $maxy - $dy - $$i[1];
 		push @ret, $x, $y;
 	}
 	return @ret;
@@ -402,6 +444,7 @@ sub imageFile    {($#_)?$_[0]-> set_image_file($_[1]):return $_[0]-> {imageFile}
 sub zoom         {($#_)?$_[0]-> set_zoom($_[1]):return $_[0]-> {zoom}}
 sub zoomPrecision{($#_)?$_[0]-> set_zoom_precision($_[1]):return $_[0]-> {zoomPrecision}}
 sub quality      {($#_)?$_[0]-> set_quality($_[1]):return $_[0]-> {quality}}
+sub stretch      {($#_)?$_[0]-> set_stretch($_[1]):return $_[0]-> {stretch}}
 
 sub PreviewImage_HeaderReady
 { 
@@ -516,6 +559,11 @@ an instance of C<Prima::Image>, C<Prima::Icon>, or C<Prima::DeviceBitmap> class.
 
 Set the image FILE to be loaded and displayed. Is rarely used since does not return
 a loading success flag.
+
+=item stretch BOOLEAN
+
+If set, the image is simply stretched over the visual area. Scroll bars, zooming and
+keyboard navigation become disabled.
 
 =item quality BOOLEAN
 
