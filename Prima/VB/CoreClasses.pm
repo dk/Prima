@@ -999,7 +999,7 @@ sub prf_types
 {
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
-		bool    => [qw(hScroll vScroll quality autoHScroll autoVScroll )],
+		bool    => [qw(hScroll vScroll quality autoHScroll autoVScroll stretch)],
 		uiv     => [qw(borderWidth zoom)],
 		image   => ['image'],
 		align   => ['alignment',],
