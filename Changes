@@ -1,5 +1,14 @@
 Revision history for Perl module Prima
 
+1.40 2014-08-17
+ - Remove Win9X support
+ - Cygwin default build is for X11
+ - Compile with giflib 5.1
+ - Add Drawable::Subcanvas
+ - Add ImageViewer.stretch
+ - PS font and eps fixes
+ - win32.gp cliprect fix
+
 1.39 2014-05-22
  - Prepare for perl 5.20
 
