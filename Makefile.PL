@@ -2048,8 +2048,8 @@ WriteMakefile(
 	PREREQ_PM         => \%PREREQ,
 	OBJECT            => "@o_files",
 	INC               => 
-		$cmd_options{EXTRA_CCFLAGS} . ' ' .
-		join(' ', map { "-I$_" } @INCPATH ),
+		join(' ', map { "-I$_" } @INCPATH ).
+		' ' . $cmd_options{EXTRA_CCFLAGS},
 	LIBS              => [ 
 		$cmd_options{EXTRA_LDFLAGS} . ' ' .
 		':nosearch ' .
