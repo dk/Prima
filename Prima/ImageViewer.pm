@@ -40,6 +40,7 @@ sub profile_default
 {
 	my $def = $_[0]-> SUPER::profile_default;
 	my %prf = (
+		autoZoom     => 0,
 		image        => undef,
 		imageFile    => undef,
 		stretch      => 0,
@@ -70,14 +71,14 @@ sub init
 	my $self = shift;
 	for ( qw( image ImageFile))
 		{ $self-> {$_} = undef; }
-	for ( qw( alignment quality valignment imageX imageY stretch))
+	for ( qw( alignment autoZoom quality valignment imageX imageY stretch))
 		{ $self-> {$_} = 0; }
 	for ( qw( zoom integralScreen integralImage))
 		{ $self-> {$_} = 1; }
 	$self-> {zoomPrecision} = 10;
 	my %profile = $self-> SUPER::init(@_);
 	$self-> { imageFile}     = $profile{ imageFile};
-	for ( qw( image zoomPrecision zoom stretch alignment valignment quality)) {
+	for ( qw( image zoomPrecision zoom autoZoom stretch alignment valignment quality)) {
 		$self-> $_($profile{$_});
 	}
 	return %profile;
@@ -194,6 +195,32 @@ sub on_keydown
 	$dy -= $ystep if $key == kb::Up;
 
 	$self-> deltas( $dx, $dy);
+}
+
+sub on_size
+{
+	my $self = shift;
+	$self->apply_auto_zoom if $self->{autoZoom};
+}
+
+sub apply_auto_zoom
+{
+	my $self = shift;
+	$self->hScroll(0);
+	$self->vScroll(0);
+	return unless $self->image;
+	my @szA = $self->image-> size;
+	my @szB = $self-> get_active_area(2);
+	my $xx = $szB[0] / $szA[0];
+	my $yy = $szB[1] / $szA[1];
+	$self-> zoom( $xx < $yy ? $xx : $yy);
+}
+
+sub set_auto_zoom
+{
+	my ( $self, $az ) = @_;
+	$self->{autoZoom} = $az;
+	$self->apply_auto_zoom if $az;
 }
 
 sub set_alignment
@@ -437,6 +464,7 @@ sub point2screen
 	return @ret;
 }
 
+sub autoZoom     {($#_)?$_[0]-> set_auto_zoom($_[1]):return $_[0]-> {autoZoom}}
 sub alignment    {($#_)?($_[0]-> set_alignment(    $_[1]))               :return $_[0]-> {alignment}    }
 sub valignment   {($#_)?($_[0]-> set_valignment(    $_[1]))              :return $_[0]-> {valignment}   }
 sub image        {($#_)?$_[0]-> set_image($_[1]):return $_[0]-> {image} }
@@ -550,6 +578,11 @@ Selects the horizontal image alignment.
 
 Default value: C<ta::Left>
 
+=item autoZoom BOOLEAN
+
+When set, the image is automatically stretched while keeping aspects to the best available fit,
+given the C<zoomPrecision>. Scrollbars are turned off if C<autoZoom> is set to 1.
+
 =item image OBJECT
 
 Selects the image object to be displayed. OBJECT can be
@@ -562,7 +595,8 @@ a loading success flag.
 
 =item stretch BOOLEAN
 
-If set, the image is simply stretched over the visual area. Scroll bars, zooming and
+If set, the image is simply stretched over the visual area,
+without keeping the aspect. Scroll bars, zooming and
 keyboard navigation become disabled.
 
 =item quality BOOLEAN

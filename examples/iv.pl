@@ -85,7 +85,6 @@ my %iv_prf = (
 	onMouseUp   => \&iv_mouseup,
 	onMouseMove => \&iv_mousemove,
 	onMouseWheel => \&iv_mousewheel,
-	onSize      => \&iv_size,
 );
 
 sub status
@@ -149,11 +148,9 @@ sub menuadd
 				]],
 				['~Zoom' => [
 					['~Normal ( 100%)' => 'Ctrl+Z' => '^Z' => sub{$_[0]-> IV-> zoom(1.0)}],
-					['~Best fit' => 'Ctrl+Shift+Z' => km::Shift|km::Ctrl|ord('z') => \&zbestfit],
+					['~Best fit' => 'Ctrl+Shift+Z' => km::Shift|km::Ctrl|ord('z') => sub { $_[0]->IV->apply_auto_zoom } ],
 					[],
-					['@abfit' => '~Auto best fit' => sub{
-						zbestfit($_[0]) if $_[0]-> IV-> {autoBestFit} = $_[2];
-					}],
+					['@abfit' => '~Auto best fit' => sub{ $_[0]->IV->autoZoom($_[2]) }],
 					[],
 					['25%' => sub{$_[0]-> IV-> zoom(0.25)}],
 					['50%' => sub{$_[0]-> IV-> zoom(0.5)}],
@@ -323,16 +320,6 @@ sub iinfo
 	);
 }
 
-sub zbestfit
-{
-	my $iv = $_[0]-> IV;
-	my @szA = $iv-> image-> size;
-	my @szB = $iv-> get_active_area(2);
-	my $x = $szB[0]/$szA[0];
-	my $y = $szB[1]/$szA[1];
-	$iv-> zoom( $x < $y ? $x : $y);
-}
-
 sub iv_mousedown
 {
 	my ( $self, $btn, $mod, $x, $y) = @_;
@@ -377,11 +364,6 @@ sub iv_mousewheel
 	}
 }
 
-
-sub iv_size
-{
-	zbestfit($_[0]-> owner) if $_[0]-> {autoBestFit};
-}
 
 sub iv_destroy
 {
