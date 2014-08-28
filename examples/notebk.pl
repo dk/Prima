@@ -41,11 +41,7 @@ L<Prima::TabbedNotebook> standard class.
 
 use strict;
 use warnings;
-use Prima;
-use Prima::Buttons;
-use Prima::Notebooks;
-use Prima::ScrollWidget;
-use Prima::Application;
+use Prima qw(Buttons Notebooks ScrollWidget Application MsgBox);
 
 package Bla;
 use vars qw(@ISA);
@@ -60,6 +56,7 @@ sub init
 		pack => { fill => 'both', expand => 1, padx => 20, pady => 20 },
 #     		pageCount => 11,
 		tabs => [0..5,5,5..10],
+		name => 'book',
 	);
 
 	$n-> insert_to_page( 0 => 'Button');
@@ -101,7 +98,31 @@ package Generic;
 my $w = Bla-> create(
 	size => [ 600, 300],
 	y_centered  => 1,
-	# current  => 1,
+	menuItems => [[ '~Action' => [
+		[ '~New tab', 'Ctrl+N', '^N', sub {
+			my $book   = shift->book;
+			my $tabid  = scalar(@{$book->TabSet->tabs}) + 1;
+			my $pageno = $book->insert_page("tab$tabid");
+			$book->insert_to_page($pageno, Button => 
+				origin  => [ 20, 20 ], 
+				text    => "$tabid",
+			),
+		}],
+		[ 'New ~page', 'Ctrl+M', '^M', sub {
+			my $book = shift->book;
+			my $tabid  = $book->page2tab($book->pageIndex) + 1;
+			my $pageid = $book->pageIndex + 1;
+			my $pageno = $book->insert_page("tab$tabid", $pageid - 1);
+			$book->insert_to_page($pageno, Button => 
+				origin  => [ 20, 20 ], 
+				text    => "$tabid/$pageid",
+			),
+		}],
+		[ '~Delete tab', 'Ctrl+W', '^W', sub {
+			my $book = shift->book;
+			$book->delete_page($book->pageIndex, 1);
+		}],			
+	]]],
 );
 
 run Prima;

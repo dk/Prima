@@ -589,6 +589,51 @@ sub set_tabs
 	$self-> update_view;
 }
 
+sub insert_tab
+{
+	my ( $self, $text, $at ) = @_;
+
+	$at = -1 unless defined $at;
+
+	my $t = $self->{tabs};
+	$at = @$t - $at + 1 if $at < 0;
+	return if $at > @$t || $at < 0;
+	splice( @$t, $at, 0, $text );
+
+	my $iw = 0;
+	my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureTab));
+	$self-> begin_paint_info;
+	$self-> push_event;
+	$notifier-> ( @notifyParms, $at, \$iw);
+	$self-> pop_event;
+	$self-> end_paint_info;
+
+	splice( @{$self->{widths}}, $at, 0,  $iw);
+
+	$self-> reset;
+	$self-> tabIndex( $self-> tabIndex);
+	$self-> repaint;
+
+	return $at;
+}
+
+sub delete_tab
+{
+	my ( $self, $at ) = @_;
+	my $t = $self->{tabs};
+	$at = @$t - $at if $at < 0;
+	return if $at > $#$t || $at < 0;
+	splice( @$t, $at, 1 );
+	splice( @{$self->{widths}}, $at, 1 );
+
+	$self-> reset;
+	$self-> lock;
+	$self-> firstTab( $self-> firstTab);
+	$self-> tabIndex( $self-> tabIndex);
+	$self-> unlock;
+	$self-> update_view;
+}
+
 sub set_top_most
 {
 	my ( $self, $tm) = @_;
@@ -693,6 +738,8 @@ sub insert_page
 	splice( @{$self-> {widgets}}, $at, 0, []);
 	$self-> {pageCount}++;
 	$self-> pageIndex(0) if $self-> {pageCount} == 1;
+
+	return $at;
 }
 
 sub delete_page
@@ -707,16 +754,17 @@ sub delete_page
 
 	my $idx = $self->pageIndex;
 	if ($at == $idx && $self->{pageCount} > 1) {
+		# switch away to record widget states properly
 		if ( $at > 0 ) {
 			$self->pageIndex( --$idx );
 		} else {
 			$self->pageIndex( 1 );
 			$idx = 0;
 		}
-	} elsif ( $idx == $self->{pageCount} - 1 ) {
+	} elsif ( $idx > $at) {
 		$idx--;
-		$idx = 0 if $idx < 0;
 	}
+	$idx = 0 if $idx < 0;
 	
 	my $r = splice( @{$self-> {widgets}}, $at, 1);
 	$self-> {pageCount}--;
@@ -1196,7 +1244,9 @@ sub page2tab
 	my $j = 0;
 	while( $i < $index) {
 		$j++;
-		$i += $$t[ $j*2 + 1];
+		my $n = $$t[ $j*2 + 1];
+		last unless defined $n;
+		$i += $n; 
 	}
 	return $j;
 }
@@ -1217,7 +1267,6 @@ sub TabSet_Change
 	return if $self-> {changeLock};
 	$self-> pageIndex( $self-> tab2page( $tabset-> tabIndex));
 }
-
 
 sub set_tabs
 {
@@ -1353,7 +1402,71 @@ sub adjust_widgets
 	$self-> repaint;
 }
 
-sub tabIndex     {($#_)?($_[0]-> {tabSet}-> tabIndex( $_[1]))   :return $_[0]-> {tabSet}-> tabIndex}
+sub insert_page
+{
+	my ( $self, $tabName, $at ) = @_;
+
+	my $book = $self->{notebook};
+	$at = -1 unless defined $at;
+	$at = $book->pageCount + $at + 1 if $at < 0;
+	return if $at > $book->pageCount || $at < 0;
+	
+	local $self-> {changeLock} = 1;
+	$self-> {notebook}->insert_page($at);
+
+	my $ctab = $self->page2tab($at);
+	my $tabs = $self->{tabs};
+	if ( defined($tabs->[$ctab * 2]) && $tabs->[$ctab * 2] eq $tabName) {
+		$tabs->[$ctab * 2 + 1]++;
+	} elsif ( $ctab > 0 && defined($tabs->[$ctab * 2 - 2]) && $tabs->[$ctab * 2 - 2] eq $tabName) {
+		$tabs->[$ctab * 2 - 1]++;
+	} else {
+		splice( @$tabs, $ctab * 2, 0, $tabName, 1 );
+		$self-> {tabSet}->insert_tab($tabName, $ctab);
+	}
+
+	$self->repaint if $self->{style} != tns::Simple;
+
+	return $at;
+}
+
+sub delete_page
+{
+	my ( $self, $at, $removeChildren ) = @_;
+
+	my $book = $self->{notebook};
+	$at = -1 unless defined $at;
+	$at = $book->pageCount + $at if $at < 0;
+	return if $at >= $book->pageCount || $at < 0;
+
+	local $self-> {changeLock} = 1;
+	my $ctab = $self->page2tab($at);
+	my $tabs = $self->{tabs};
+
+	# stay on page within same tab, if possible
+	if ( $tabs->[$ctab * 2 + 1] > 1 && $at == $self->pageIndex && $at > 0 ) {
+		$book->pageIndex( $book->pageIndex + 1 );
+	}
+	$book->delete_page($at, $removeChildren);
+	$ctab = $self->page2tab($at);
+
+	unless ( --$tabs->[$ctab * 2 + 1] ) {
+		splice(@$tabs, $ctab * 2, 2 );
+		$self->{tabSet}->delete_tab( $ctab );
+
+		# further collapse?
+		while ( 4 < @$tabs && $ctab * 2 < @$tabs && $tabs->[$ctab * 2] eq $tabs->[$ctab * 2 - 2]) {
+			my ( undef, $n) = splice(@$tabs, $ctab * 2, 2 );
+			$tabs->[$ctab * 2 - 1] += $n;
+			$self->{tabSet}->delete_tab( $ctab );
+		}
+	}
+	$self->repaint if $self->{style} != tns::Simple;
+
+	# futher collapse
+}
+
+sub tabIndex     {($#_)?($_[0]-> {tabSet}-> tabIndex( $_[1]))  :return $_[0]-> {tabSet}-> tabIndex}
 sub pageIndex    {($#_)?($_[0]-> set_page_index   ( $_[1]))    :return $_[0]-> {notebook}-> pageIndex}
 sub tabs         {($#_)?(shift-> set_tabs     (    @_   ))     :return $_[0]-> get_tabs}
 
@@ -1733,6 +1846,14 @@ Returns width in pixels of INDEXth tab.
 Returns the index of a tab, that will be drawn leftmost if
 INDEXth tab is to be displayed.
 
+=item insert_tab TEXT, [ POSITION = -1 ]
+
+Inserts a new tab text at the given position, which is at the end by default
+
+=item delete_tab POSITION
+
+Removes a tab from the given position
+
 =back
 
 =head2 Events
@@ -1927,6 +2048,16 @@ Returns second-level tab index, that corresponds to the INDEXth first-level tab.
 
 Returns first-level tab index, that corresponds to the INDEXth second-level
 tab.
+
+=item insert_page TEXT, [ POSITION = -1 ]
+
+Inserts a new page with text at the given position, which is at the end by default.
+If TEXT is same as the existing tab left or right from POSITION, the page is joined
+the existing tab; otherwise a new tab is created.
+
+=item delete_page POSITION
+
+Removes a page from the given position.
 
 =back
 
