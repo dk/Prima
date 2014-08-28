@@ -698,10 +698,13 @@ sub insert_page
 sub delete_page
 {
 	my ( $self, $at, $removeChildren) = @_;
+
+	return unless $self->{pageCount};
 	
 	$removeChildren = 1 unless defined $removeChildren;
 	$at = -1 unless defined $at;
 	$at = $self-> {pageCount} - 1 if $at < 0 || $at >= $self-> {pageCount};
+	$self->pageIndex( $at ? $self->pageIndex - 1 : 1 ) if $at == $self->pageIndex && $self->{pageCount};
 	
 	my $r = splice( @{$self-> {widgets}}, $at, 1);
 	$self-> {pageCount}--;
