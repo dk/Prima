@@ -704,11 +704,24 @@ sub delete_page
 	$removeChildren = 1 unless defined $removeChildren;
 	$at = -1 unless defined $at;
 	$at = $self-> {pageCount} - 1 if $at < 0 || $at >= $self-> {pageCount};
-	$self->pageIndex( $at ? $self->pageIndex - 1 : 1 ) if $at == $self->pageIndex && $self->{pageCount};
+
+	my $idx = $self->pageIndex;
+	if ($at == $idx && $self->{pageCount} > 1) {
+		if ( $at > 0 ) {
+			$self->pageIndex( --$idx );
+		} else {
+			$self->pageIndex( 1 );
+			$idx = 0;
+		}
+	} elsif ( $idx == $self->{pageCount} - 1 ) {
+		$idx--;
+		$idx = 0 if $idx < 0;
+	}
 	
 	my $r = splice( @{$self-> {widgets}}, $at, 1);
 	$self-> {pageCount}--;
-	$self-> pageIndex( $self-> pageIndex);
+	$self-> {pageIndex} = $idx;
+
 	if ( $removeChildren) {
 		$_-> [0]-> destroy for @$r;
 	}
