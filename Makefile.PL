@@ -24,6 +24,16 @@
 #  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 #  SUCH DAMAGE.
 #
+use strict;
+use warnings;
+
+package MY::orderedhash;
+require Tie::Hash;
+our @ISA = qw(Tie::ExtraHash);
+sub tie      { CORE::tie my %a, $_[0], $_[1]; \%a }
+sub TIEHASH  { bless [{%{$_[1]}}], $_[0] }
+sub FIRSTKEY { $_[0][1] = [ sort keys %{$_[0][0]} ]; shift @{ $_[0][1] } }
+sub NEXTKEY  { shift @{ $_[0][1] } }
 
 package MY;
 use strict;
@@ -2043,7 +2053,7 @@ WriteMakefile(
 	VERSION_FROM      => 'Prima.pm',
 	ABSTRACT_FROM     => 'Prima.pm',
 	AUTHOR            => 'Dmitry Karasik <dmitry@karasik.eu.org>',
-	PM                => \%ALL_PM_INSTALL,
+	PM                => MY::orderedhash->tie(\%ALL_PM_INSTALL),
 	OPTIMIZE          => $OPTIMIZE,
 	PREREQ_PM         => \%PREREQ,
 	OBJECT            => "@o_files",
@@ -2059,7 +2069,7 @@ WriteMakefile(
 	LICENSE           => 'FREEBSD',
 	EXE_FILES         => \@exe_files,
 	PL_FILES          => {},
-	MAN3PODS          => \%ALL_MAN_INSTALL,
+	MAN3PODS          => MY::orderedhash->tie(\%ALL_MAN_INSTALL),
 	META_MERGE        => {
 		resources => {
 			homepage   => 'http://www.prima.eu.org/',
@@ -2072,3 +2082,4 @@ WriteMakefile(
 	},
 	clean             => { FILES => "@target_clean" },
 );
+
