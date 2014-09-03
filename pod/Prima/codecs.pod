@@ -1,5 +1,3 @@
-=for rcs $Id$
-
 =head1 NAME
 
 Prima::codecs - How to write a codec for Prima image subsystem

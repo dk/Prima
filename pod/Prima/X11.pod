@@ -1,5 +1,3 @@
-=for rcs $Id$
-
 =head1 NAME
 
 Prima::X11 - usage guide for X11 environment
