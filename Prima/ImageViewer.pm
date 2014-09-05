@@ -201,6 +201,7 @@ sub on_size
 {
 	my $self = shift;
 	$self->apply_auto_zoom if $self->{autoZoom};
+	$self->SUPER::on_size(@_);
 }
 
 sub apply_auto_zoom
