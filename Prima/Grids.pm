@@ -242,10 +242,10 @@ sub get_cell_text
 
 sub get_range
 {
-	my ( $self, $axis, $index) = @_;
+	my ( $self, $vertical, $index) = @_;
 	my ( $min, $max) = ( 1, 16384 ); # actually, no real restriction on $max - 
 					# just a reasonable non-undef value
-	$self-> notify(q(GetRange), $axis, $index, \$min, \$max); 
+	$self-> notify(q(GetRange), $vertical, $index, \$min, \$max); 
 	$min = 1 if $min < 1;
 	$max = $min if $max < $min;
 	return $min, $max;
@@ -2015,8 +2015,16 @@ sub on_getrange
 
 sub on_measure
 {
-	my ( $self, $col, $row, $sref) = @_;
-	$$sref = $self-> get_text_width( $self-> get_cell_text( $col, $row), 1);
+	my ( $self, $vertical, $index, $sref) = @_;
+	if ( $vertical) {
+		$$sref = $self-> font-> height + 2;
+	} else {
+		$$sref = 0;
+		for ( my $i = 0; $i < $self-> {colMax}; $i++ ) {
+			my $w = $self-> get_text_width( $self->get_cell_text($i, $index), 1);	
+			$$sref = $w if $$sref < $w;
+		}
+	}
 }
 
 package Prima::GridViewer;
@@ -2280,11 +2288,15 @@ sub on_fontchanged
 
 sub on_measure
 {
-	my ( $self, $column, $index, $sref) = @_;
-	if ( $column) {
-		$$sref = $self-> get_text_width( $self-> {cells}-> [0]-> [$index], 1);
-	} else {
+	my ( $self, $vertical, $index, $sref) = @_;
+	if ( $vertical) {
 		$$sref = $self-> font-> height + 2;
+	} else {
+		$$sref = 0;
+		for ( @{$self-> {cells}}) {
+			my $w = $self-> get_text_width( $$_[$index], 1);	
+			$$sref = $w if $$sref < $w;
+		}
 	}
 }
 
@@ -2626,10 +2638,10 @@ Returns text string assigned to cell in COLUMN and ROW.
 Since the class does not assume the item storage organization,
 the text is queried via C<Stringify> notification.
 
-=item get_range AXIS, INDEX
+=item get_range VERTICAL, INDEX
 
 Returns a pair of integers, minimal and maximal breadth of INDEXth column
-or row in pixels. If AXIS is 1, the rows are queried; if 0, the columns.
+or row in pixels. If VERTICAL is 1, the rows are queried; if 0, the columns.
 
 The method calls C<GetRange> notification.
 
@@ -2775,14 +2787,14 @@ SELECTED and FOCUSED are boolean
 flags, if the cell must be drawn correspondingly in selected and
 focused states.
 
-=item GetRange AXIS, INDEX, MIN, MAX
+=item GetRange VERTICAL, INDEX, MIN, MAX
 
-Puts minimal and maximal breadth of INDEXth column ( AXIS = 0 ) or row ( AXIS = 1)
+Puts minimal and maximal breadth of INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1)
 in corresponding MIN and MAX scalar references.
 
-=item Measure AXIS, INDEX, BREADTH
+=item Measure VERTICAL, INDEX, BREADTH
 
-Puts breadth in pixels of INDEXth column ( AXIS = 0 ) or row ( AXIS = 1)
+Puts breadth in pixels of INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1)
 into BREADTH scalar reference. 
 
 This notification by default may be called from within 
@@ -2793,9 +2805,9 @@ set internal flag C<{NoBulkPaintInfo}> to 1.
 
 Called when a cell with COLUMN and ROW coordinates is focused.
 
-=item SetExtent AXIS, INDEX, BREADTH 
+=item SetExtent VERTICAL, INDEX, BREADTH 
 
-Reports breadth in pixels of INDEXth column ( AXIS = 0 ) or row ( AXIS = 1),
+Reports breadth in pixels of INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1),
 as a response to C<columnWidth> and C<rowHeight> calls.
 
 =item Stringify COLUMN, ROW, TEXT_REF
