@@ -46,8 +46,6 @@ sub XOpenDisplay
 
 __DATA__
 
-=for rcs $Id$
-
 =head1 NAME
 
 Prima::noX11 - Use Prima without X11

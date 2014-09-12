@@ -124,9 +124,14 @@ sub load_link
 			open UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED, "|start $link";
 			close UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED if 0;
 		} else {
-			my $pg = $::application-> sys_action('browser');
-			$self-> owner-> status("Cannot start browser"), return unless
-			defined $pg && ! system( "$pg $link &");
+			my $pg;
+			CMD: for my $cmd ( qw(sensible-browser xdg-open x-www-browser www-browser firefox mozilla netscape)) {
+				for ( split /:/, $ENV{PATH} ) {
+					$pg = "$_/$cmd", last CMD if -x "$_/$cmd";
+				}
+			}
+			$self-> owner-> status("Cannot start browser"), return 
+				unless defined $pg && ! system( "$pg $link &");
 		}   
 		return;
 	}

@@ -1,5 +1,3 @@
-=for rcs $Id$
-
 =head1 NAME
 
 Prima::Object - Prima toolkit base classes

@@ -1,5 +1,3 @@
-=for rcs $Id$
-
 =head1 NAME
 
 Prima::internals - Prima internal architecture

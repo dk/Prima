@@ -854,12 +854,12 @@ sub on_paint
 				$cr[2] = $x1 - 1 if $cr[2] > $x1 - 1;
 				$cr[2] = $aa[2] if $cr[2] > $aa[2];
 				$cr[2] = $aa[0] if $cr[2] < $aa[0];
-				if ( $cr[0] <= $cr[2]) {
-					$self-> selection_state( $canvas) 
-						if $self-> {selectionPaintMode}; 
-					$self-> clipRect( @cr);
-					$self-> block_draw( $canvas, $b, $x, $y);
-				}
+					if ( $cr[0] <= $cr[2]) {
+						$self-> selection_state( $canvas) 
+							if $self-> {selectionPaintMode}; 
+						$self-> clipRect( @cr);
+						$self-> block_draw( $canvas, $b, $x, $y);
+					}
 					@cr = @clipRect;
 				}
 				$self-> {selectionPaintMode} = (( $eq || $j == $sy1 ) ? 1 : 0); 
@@ -1758,7 +1758,7 @@ special commands to L<block_wrap>.
 
 C<OP_TEXT> commands to draw a string, from offset C<tb::BLK_TEXT_OFFSET + TEXT_OFFSET>,
 with a length TEXT_LENGTH. The third parameter TEXT_WIDTH contains the width of the text
-in pixels. Such the two-part offset scheme is made for simplification or an imaginary code,
+in pixels. Such the two-part offset scheme is made for simplification of an imaginary code,
 that would alter ( insert to, or delete part of ) the big text chunk; the updating procedure
 would not need to traverse all commands, but just the block headers.
 
@@ -1899,9 +1899,9 @@ cleared in the output block.
 
 =item block_draw CANVAS, BLOCK, X, Y
 
-The C<block_draw> draws BLOCK onto CANVAS in screen coordinates (X,Y).
-It can not only be used for drawing inside begin_paint/end_paint brackets;
-CANVAS can be an arbitrary C<Prima::Drawable> descendant.
+The C<block_draw> draws BLOCK onto CANVAS in screen coordinates (X,Y). It can
+be used not only inside begin_paint/end_paint brackets; CANVAS can be an
+arbitrary C<Prima::Drawable> descendant.
 
 =back
 
@@ -1912,7 +1912,7 @@ Prima::TextView employs two its own coordinate systems:
 
 The document coordinate system is isometric and measured in pixels. Its origin is located 
 into the imaginary point of the beginning of the document ( not of the first block! ),
-in the upper-left point. X increases to the right, Y increases downwards.
+in the upper-left pixel. X increases to the right, Y increases down.
 The block header values BLK_X and BLK_Y are in document coordinates, and
 the widget's pane extents ( regulated by C<::paneSize>, C<::paneWidth> and
 C<::paneHeight> properties ) are also in document coordinates.
@@ -1921,7 +1921,7 @@ The block coordinate system in an-isometric - its second axis, BLOCK, is an inde
 of a text block in the widget's blocks storage, C<$self-E<gt>{blocks}>, and
 its first axis, TEXT_OFFSET is a text offset from the beginning of the block.
 
-Below described different coordinate system converters
+Below different coordinate system converters are described
 
 =over
 
@@ -1962,7 +1962,7 @@ Accepts big text offset and returns BLOCK coordinate.
 
 =head2 Text selection
 
-The text selection is performed automatically when the user selects the
+The text selection is performed automatically when the user selects a text
 region with a mouse. The selection is stored in (TEXT_OFFSET,BLOCK)
 coordinate pair, and is accessible via the C<::selection> property.
 If its value is assigned to (-1,-1,-1,-1) this indicates that there is
@@ -1995,5 +1995,14 @@ for such usage. Its property C<::rectangles> contains an array of
 rectangles, and the C<contains> method returns an integer value, whether
 the passed coordinates are inside one of its rectangles or not; in the first
 case it is the rectangle index.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima::PodView>, F<examples/mouse_tale.pl>.
+
 
 =cut

@@ -1,5 +1,3 @@
-=for rcs $Id$
-
 =head1 NAME 
 
 Prima::gp-problems - Problems, questionable or intricate topics in 2-D Graphics
