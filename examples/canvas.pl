@@ -1741,7 +1741,7 @@ my $w = Prima::MainWindow-> create(
 text => 'Canvas demo',
 menuItems => [
 	['~Object' => [
-		(map { [ $_  => "~$_" => \&insert] }
+		(map { [ $_  => "~$_" => \&insert_from_menu] }
 			qw(Rectangle Ellipse Arc Chord Sector Image Bitmap Line Polygon Text Button InputLine)),
 		[],
 		[ '~Delete' => 'Del' , kb::Delete , \&delete]
@@ -1884,6 +1884,12 @@ sub insert
 	$profile{text} = "use Prima qw(Application);\nMainWindow-> create();\nrun Prima;"
 		if $obj eq 'Text';
 	$c-> focused_object( $c-> insert_object( "Prima::Canvas::$obj", %profile));
+}
+
+sub insert_from_menu
+{
+	my ( $self, $obj ) = @_;
+	insert($self, $obj);
 }
 
 sub delete
