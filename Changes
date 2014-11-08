@@ -1,5 +1,9 @@
 Revision history for Perl module Prima
 
+1.41 2014-11-08
+ - Add ImageViewer.autoZoom
+ - Fixes to Notebook  
+
 1.40 2014-08-17
  - Remove Win9X support
  - Cygwin default build is for X11
