@@ -30,6 +30,7 @@ use strict;
 use Prima::Const;
 use Prima::Classes;
 use Prima::IntUtils;
+use Prima::ScrollWidget;
 
 package Prima::TabSet;
 use vars qw(@ISA);
