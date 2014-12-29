@@ -1644,7 +1644,11 @@ sub make_logical
 	$y = $i;
 	$i *= 3;
 	$i-= 3, $y-- while $$cm[ $i] != 0;
-	$i+= 3, $y++ while $x > $$cm[ $i] + $$cm[ $i + 1];
+	while ($x > $$cm[ $i] + $$cm[ $i + 1]) {
+		last unless defined $$cm[$i+3];
+		$i+= 3;
+		$y++;
+	}
 	$x -= $$cm[ $i];
 	return $x, $y;
 }
