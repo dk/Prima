@@ -267,8 +267,6 @@ sub reset
 			my $twOpts  = tw::WordBreak|tw::CalcTabs|tw::NewLineBreak|tw::ReturnChunks;
 			my @chunkMap;
 			$self-> begin_paint_info;
-			$#chunkMap = scalar @{$self-> {lines}} * 2;
-			@chunkMap = ();
 			my $j = 0;
 			for ( @{$self-> {lines}})
 			{
