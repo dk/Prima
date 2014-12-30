@@ -98,7 +98,22 @@ sub profile_default
 				return if $_[0]-> {readOnly};
 				$_[0]-> has_selection ? $_[0]-> delete_block : $_[0]-> delete_char; 
 			}],
-			[ Backspace      => 0, 0, kb::Backspace, sub {$_[0]-> back_char unless $_[0]-> {readOnly}}],
+			[ Backspace      => 0, 0, kb::Backspace, sub {
+				return if $_[0]-> {readOnly};
+				$_[0]-> has_selection ? $_[0]-> delete_block : $_[0]-> back_char;
+			}],
+			[ CtrlBackspace  => 0, 0, kb::Backspace|km::Ctrl, sub {
+				return if $_[0]-> {readOnly};
+				return $_[0]-> delete_block if $_[0]-> has_selection;
+				$_[0]-> cursor_shift_key('ShiftWordLeft');
+				$_[0]-> delete_block;
+			}],
+			[ CtrlDelete     => 0, 0, kb::Delete|km::Ctrl, sub {
+				return if $_[0]-> {readOnly};
+				return $_[0]-> delete_block if $_[0]-> has_selection;
+				$_[0]-> cursor_shift_key('ShiftWordRight');
+				$_[0]-> delete_block;
+			}],
 			[ DeleteChunk    => 0, 0, '^Y',          sub {$_[0]-> delete_current_chunk unless $_[0]-> {readOnly}}],
 			[ DeleteToEnd    => 0, 0, '^E',          sub {$_[0]-> delete_to_end unless $_[0]-> {readOnly}}],
 			[ DupLine        => 0, 0, '^K',          sub {$_[0]-> insert_line($_[0]-> cursorY, $_[0]-> get_line($_[0]-> cursorY)) unless $_[0]-> {readOnly}}],
@@ -1773,7 +1788,7 @@ sub cursor_end
 	$_[0]-> cursorX( length $nonspaces);
 
 }
-sub cursor_cend  { $_[0]-> cursorY(-1); }
+sub cursor_cend  { $_[0]-> cursorY(-1); $_[0]->cursor_end; }
 sub cursor_chome { $_[0]-> cursorY( 0); }
 sub cursor_cpgdn { $_[0]-> cursor(-1,-1); }
 sub cursor_cpgup { $_[0]-> cursor( 0, 0); }
