@@ -1788,7 +1788,7 @@ sub cursor_end
 	$_[0]-> cursorX( length $nonspaces);
 
 }
-sub cursor_cend  { $_[0]-> cursorY(-1); }
+sub cursor_cend  { $_[0]-> cursorY(-1); $_[0]->cursor_end; }
 sub cursor_chome { $_[0]-> cursorY( 0); }
 sub cursor_cpgdn { $_[0]-> cursor(-1,-1); }
 sub cursor_cpgup { $_[0]-> cursor( 0, 0); }
