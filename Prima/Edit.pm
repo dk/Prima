@@ -98,7 +98,10 @@ sub profile_default
 				return if $_[0]-> {readOnly};
 				$_[0]-> has_selection ? $_[0]-> delete_block : $_[0]-> delete_char; 
 			}],
-			[ Backspace      => 0, 0, kb::Backspace, sub {$_[0]-> back_char unless $_[0]-> {readOnly}}],
+			[ Backspace      => 0, 0, kb::Backspace, sub {
+				return if $_[0]-> {readOnly};
+				$_[0]-> has_selection ? $_[0]-> delete_block : $_[0]-> back_char;
+			}],
 			[ DeleteChunk    => 0, 0, '^Y',          sub {$_[0]-> delete_current_chunk unless $_[0]-> {readOnly}}],
 			[ DeleteToEnd    => 0, 0, '^E',          sub {$_[0]-> delete_to_end unless $_[0]-> {readOnly}}],
 			[ DupLine        => 0, 0, '^K',          sub {$_[0]-> insert_line($_[0]-> cursorY, $_[0]-> get_line($_[0]-> cursorY)) unless $_[0]-> {readOnly}}],
