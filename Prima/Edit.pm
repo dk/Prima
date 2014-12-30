@@ -1641,11 +1641,11 @@ sub make_logical
 			last;
 		}
 	}
+	my $cy = $y;
 	$y = $i;
 	$i *= 3;
 	$i-= 3, $y-- while $$cm[ $i] != 0;
-	while ($x > $$cm[ $i] + $$cm[ $i + 1]) {
-		last unless defined $$cm[$i+3];
+	while (defined $$cm[$i+3] and $x >= $$cm[$i+3] and $cy == $$cm[$i+5]) {
 		$i+= 3;
 		$y++;
 	}
