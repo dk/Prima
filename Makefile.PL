@@ -536,6 +536,7 @@ sub cc_command_line
 	$cc .= ' ' . join(' ', map { "$CLIBPATHFLAG$_"} @LIBPATH) unless $compile_only || ( $compiler_type eq 'cl');
 	$cc .= " $srcf";
 	return $cc if $compile_only;
+	$cc .= " $passthru_options{LDDLFLAGS}" if $compiler_type eq 'gcc';
 	$cc .= " $CLINKPREFIX";
 	$cc .= ' ' . join(' ', map { "\"$CLIBPATHFLAG\\\"$_\\\"\"" } @LIBPATH) if $compiler_type eq 'cl';
 	$cc .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
