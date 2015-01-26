@@ -412,13 +412,15 @@ sub setup_environment
 		} elsif ( `perl -V` =~ /activeperl/i) {
 			$flavor = 'activestate';
 		}
-	}
+	} elsif ( $cygwin ) {
+        $flavor .= ( $Config{ptrsize} == 8 ) ? '64' : '32';
+	    $flavor .= '.' . ( $cmd_options{CYGWIN_WINAPI} ? 'win32' : 'x11' );
+    }
 	$flavor =~ s/\s/_/g;
 	print "$flavor\n";
 
 	$flavor = 'sb32' if $flavor eq 'strawberry';
 	$flavor = 'as32' if $flavor eq 'activestate';
-	$flavor .= '.' . ( $cmd_options{CYGWIN_WINAPI} ? 'win32' : 'x11' ) if $flavor eq 'cygwin';
 	
 	$DISTNAME = "Prima-$ver1.$ver2-$flavor-$REVISION.$PATCHLEVEL.$SUBVERSION";
 	print "Build: $DISTNAME\n";
