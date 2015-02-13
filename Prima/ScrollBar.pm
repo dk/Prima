@@ -57,6 +57,7 @@ sub profile_default
 		partial       => 10,
 		selectable    => 0,
 		step          => 1,
+		style         => ( $win32 ? 'xp' : 'os2' ),
 		tabStop       => 0,
 		value         => 0,
 		vertical      => 0,
@@ -93,9 +94,9 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	for ( qw( b1 b2 tab left right)) { $self-> { $_}-> { pressed} = 0; }
 	for ( qw( b1 b2 tab)) { $self-> { $_}-> { enabled} = 0; }
-	for ( qw( autoTrack minThumbSize vertical min max step pageStep whole partial value))
+	for ( qw( autoTrack minThumbSize vertical min max step pageStep whole partial value style))
 		{ $self-> {$_} = 1; }
-	for ( qw( autoTrack minThumbSize vertical min max step pageStep whole partial value))
+	for ( qw( autoTrack minThumbSize vertical min max step pageStep whole partial value style))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> {suppressNotify} = undef;
 	$self-> reset;
@@ -205,7 +206,7 @@ sub on_paint
 				$v ? ( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
 					( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
 				$canvas-> color( $self-> {$_}-> {pressed} ? $clr[0] : $clr[1]);
-				if ( $win32) {
+				if ( $self->{style} eq 'xp') {
 					$canvas-> backColor( $c3d[0]);
 					$canvas-> fillPattern([(0xAA,0x55) x 4]);
 					$canvas-> bar( @r);
@@ -221,7 +222,7 @@ sub on_paint
 			fill    => $clr[1],
 			concave => $self->{tab}->{pressed},
 		);
-		if ( $self-> {minThumbSize} > 8 && !$win32)
+		if ( $self-> {minThumbSize} > 8 && $self->{style} ne 'xp')
 		{
 			if ( $v)
 			{
@@ -262,7 +263,7 @@ sub on_paint
 			( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
 		$canvas-> color( $clr[1]);
 
-		if ( $win32) {
+		if ( $self->{style} eq 'xp') {
 			$canvas-> backColor( $c3d[0]);
 			$canvas-> fillPattern([(0xAA,0x55) x 4]);
 			$canvas-> bar( @r);
@@ -674,6 +675,7 @@ sub min          {($#_)?$_[0]-> set_bounds($_[1], $_[0]-> {'max'})      : return
 sub minThumbSize {($#_)?$_[0]-> set_min_thumb_size($_[1])               : return $_[0]-> {minThumbSize};}
 sub max          {($#_)?$_[0]-> set_bounds($_[0]-> {'min'}, $_[1])      : return $_[0]-> {max};}
 sub step         {($#_)?$_[0]-> set_steps ($_[1], $_[0]-> {'pageStep'}) : return $_[0]-> {step};}
+sub style        { $#_ ? ($_[0]->{style} = $_[1], $_[0]->repaint) : $_[0]->{style} }
 sub pageStep     {($#_)?$_[0]-> set_steps ($_[0]-> {'step'}, $_[1])     : return $_[0]-> {pageStep};}
 sub partial      {($#_)?$_[0]-> set_proportion ($_[1], $_[0]-> {'whole'}): return $_[0]-> {partial};}
 sub whole        {($#_)?$_[0]-> set_proportion($_[0]-> {'partial'},$_[1]): return $_[0]-> {whole};}
