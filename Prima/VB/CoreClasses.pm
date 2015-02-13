@@ -594,7 +594,7 @@ sub paint_exterior
 	my @sz = $canvas-> size;
 	my $cl = $self-> color;
 	my ( $bw, $hs, $vs, $ahs, $avs) = 
-		$self-> prf(qw( borderWidth hScroll vScroll autoHScroll autoVScroll));
+		$self-> prf(qw( scrollBarClass borderWidth hScroll vScroll autoHScroll autoVScroll));
 	$hs ||= $ahs;
 	$vs ||= $avs;
 	$canvas-> rect3d( 0,0,$sz[0]-1,$sz[1]-1,$bw,
@@ -665,6 +665,7 @@ sub prf_types
 		uiv     => [qw(itemHeight itemWidth focusedItem borderWidth offset topItem)],
 		color   => [qw(gridColor)],
 		items   => [qw(items selectedItems)],
+		string  => [qw(scrollBarClass)],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
@@ -846,7 +847,7 @@ sub prf_adjust_default
 		charOffset       offset          listVisible
 		passwordChar     topItem         listClass
 		wordDelimiters   gridColor       autoHScroll
-		autoVScroll
+		autoVScroll      scrollBarClass
 	);
 }
 
@@ -953,7 +954,7 @@ sub prf_types
 		uiv     => [qw(borderWidth tabIndent undoLimit)],
 		editBlockType => ['blockType',],
 		color   => [qw(hiliteNumbers hiliteQStrings hiliteQQStrings)],
-		string  => ['wordDelimiters',],
+		string  => ['wordDelimiters','scrollBarClass'],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
@@ -1004,6 +1005,7 @@ sub prf_types
 		image   => ['image'],
 		align   => ['alignment',],
 		valign  => ['valignment',],
+		string  => ['scrollBarClass',],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
@@ -1069,6 +1071,7 @@ sub prf_types
 	my %de = (
 		bool    => [qw(autoHScroll autoVScroll hScroll vScroll)],
 		uiv     => [qw(borderWidth deltaX deltaY limitX limitY)],
+		string  => ['scrollBarClass',],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
@@ -1534,6 +1537,7 @@ sub prf_types
 				openedGlyphs closedGlyphs)],
 		treeItems => [qw(items)],
 		icon      => [qw(closedIcon openedIcon)],
+		string    => ['scrollBarClass',],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
@@ -2232,6 +2236,7 @@ sub prf_types
 		color   => [qw(gridColor indentCellBackColor indentCellColor)],
 		urect   => [qw(cellIndents)],
 		multiItems  => ['cells'],
+		string  => ['scrollBarClass',],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;

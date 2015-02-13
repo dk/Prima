@@ -182,6 +182,8 @@ utime values vec wait waitpid wantarray warn while write y
 		pointerType       => cr::Text,
 		persistentBlock   => 0,
 		readOnly          => 0,
+		scrollBarClass    => 'Prima::ScrollBar',
+		scrollBarProfile  => {},
 		selection         => [0, 0, 0, 0],
 		selStart          => [0, 0],
 		selEnd            => [0, 0],
@@ -236,6 +238,7 @@ sub init
 	$self-> {undo} = [];
 	$self-> {redo} = [];
 	$profile{selection} = [@{$profile{selStart}}, @{$profile{selEnd}}];
+	$self->{$_} = $profile{$_} for qw(scrollBarClass scrollBarProfile);
 	for ( qw( hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs
 		autoHScroll autoVScroll
 		textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth

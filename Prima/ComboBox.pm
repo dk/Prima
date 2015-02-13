@@ -59,7 +59,7 @@ use constant DefButtonX => 17;
 	integralHeight items       itemHeight 
 	topItem        vScroll     gridColor  
 	multiColumn    offset      autoHScroll
-	autoVScroll    
+	autoVScroll
 );
 
 %listDynas = map { $_ => 1} qw(onDrawItem onSelectItem);
@@ -104,9 +104,11 @@ sub profile_default
 		editClass      => 'Prima::InputLine',
 		listClass      => 'Prima::ListBox',
 		buttonClass    => 'Prima::Widget',
+		scrollBarClass => 'Prima::ScrollBar',
 		editProfile    => {},
 		listProfile    => {},
 		buttonProfile  => {},
+		scrollBarProfile  => {},
 		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown)],
 		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave MouseWheel)],
 		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick 
@@ -163,7 +165,7 @@ sub init
 		%{$profile{editProfile}},
 	);
 
-	my %lp = %listProps;
+	my %lp = (%listProps, scrollBarClass => 1, scrollBarProfile => 1);
 	delete $lp{hScroll} if $profile{autoHScroll};
 	delete $lp{vScroll} if $profile{autoVScroll};
 	$self-> {list} = $self-> insert( $profile{listClass} =>

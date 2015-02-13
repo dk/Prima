@@ -212,7 +212,7 @@ sub set_h_scroll
 	return if $hs == $self-> {hScroll};
 	my $bw = $self-> {borderWidth} || 0;
 	if ( $self-> {hScroll} = $hs) {
-		$self-> {hScrollBar} = Prima::ScrollBar-> new(
+		$self-> {hScrollBar} = $self->{scrollBarClass}-> new(
 			owner       => $self,
 			name        => q(HScroll),
 			vertical    => 0,
@@ -226,6 +226,7 @@ sub set_h_scroll
 					0),
 			delegations => ['Change'],
 			designScale => undef,
+			%{ $self->{scrollBarProfile} || {} },
 		);
 		
 		$self-> setup_indents;
@@ -264,7 +265,7 @@ sub set_v_scroll
 	my @size = $self-> size;
 	
 	if ( $self-> {vScroll} = $vs) {
-		$self-> {vScrollBar} = Prima::ScrollBar-> new(
+		$self-> {vScrollBar} = $self->{scrollBarClass}-> new(
 			owner    => $self,
 			name     => q(VScroll),
 			vertical => 1,
@@ -275,6 +276,7 @@ sub set_v_scroll
 			pointerType  => cr::Arrow,
 			delegations  => ['Change'],
 			designScale => undef,
+			%{ $self->{scrollBarProfile} || {} },
 		);
 		
 		$self-> setup_indents;
@@ -548,6 +550,14 @@ points to it.
 
 Selects if the vertical scrollbar is visible. If it is, C<{vScrollBar}>
 points to it.
+
+=item scrollBarClass STRING = Prima::ScrollBar
+
+Create-only property that allows to change scrollbar class
+
+=item scrollBarProfile HASH
+
+Create-only property that allows to change scrollbar parameters when it is being created
 
 =back
 
