@@ -132,3 +132,71 @@ sub save_dialog
 {
 	return Prima::Image::jpeg-> create;
 }
+
+
+sub exif_get_orientation
+{
+#      1        2       3      4         5            6           7          8
+#
+#    888888  888888      88  88      8888888888  88                  88  8888888888
+#    88          88      88  88      88  88      88  88          88  88      88  88
+#    8888      8888    8888  8888    88          8888888888  8888888888          88
+#    88          88      88  88
+#    88          88  888888  888888
+#
+# courtesy from gtk/gdk-pixbuf/io-jpeg.c
+	my $i = shift;
+	my $exif;
+	for my $a ( @{ $i->{extras}->{appdata} || [] }) {
+		next unless defined $a && $a =~ s/^Exif\0\0//;
+		$exif = $a;
+	}
+	return unless $exif && length($exif) > 32;
+
+        # Check for exif header and catch endianess */
+	# Just skip data until exif header - it should be within 16 bytes from marker start.
+	#  Normal structure relative to APP1 marker -
+	#       0x0000: APP1 marker entry = 2 bytes
+	#  	0x0002: APP1 length entry = 2 bytes
+	#       0x0004: Exif Identifier entry = 6 bytes
+	#       0x000A: Start of exif header (Byte order entry) - 4 bytes  
+	#           	- This is what we look for, to determine endianess.
+	#       0x000E: 0th IFD offset pointer - 4 bytes
+	#
+	#       exif_marker->data points to the first data after the APP1 marker
+	#       and length entries, which is the exif identification string.
+	#       The exif header should thus normally be found at i=6, below,
+	#       and the pointer to IFD0 will be at 6+4 = 10.
+	my $order;
+	if ( $exif =~ s/.{0,12}\x49\x49\x2a\x00//) {
+		$order = 'v'; # LE
+	} elsif ( $exif =~ s/.{0,12}\x4d\x4d\x00\x2a// ) {
+		$order = 'n'; # BE
+	} else {
+		return;
+	}
+
+        # Read out the offset pointer to IFD0 
+	my $offset = unpack("\U$order", $exif) - 4;
+	return if $offset < 0 || length($exif) < $offset;
+	substr( $exif, 0, $offset, '');
+
+	# Find out how many tags we have in IFD0. As per the exif spec, the first
+	# two bytes of the IFD contain a count of the number of tags.
+	my $tags = unpack($order, $exif);
+	$exif =~ s/^..//;
+	return if $tags * 12 > length $exif;
+
+	# Check through IFD0 for tags of interest */
+	while ($tags--){
+		# The tags are listed in consecutive 12-byte blocks
+		my ($tag, $type, $count, $val) = unpack("$order$order\U$order$order", $exif);
+		$exif =~ s/^.{12}//;
+		# Is this the orientation tag? 
+		next unless $tag == 0x112;
+		return if $type != 3 or $count != 1 or $val > 8;
+		return $val;
+	}
+
+	return; # nothing found
+}
