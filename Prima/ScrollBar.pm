@@ -809,6 +809,11 @@ mouse/keyboard interaction.
 
 Default value is 1.
 
+=item style STRING = [ 'xp' | 'os2 ]
+
+Defines the scrollbar drawing style, that was historically different on windows
+and the other platforms. It is possible to define own styles.
+
 =item value INTEGER
 
 A basic scrollbar property; reflects the imaginary position between C<min> and
