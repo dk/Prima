@@ -58,7 +58,8 @@ sub profile_default
 		limitX         => 0,
 		limitY         => 0,
 		scrollBarClass => 'Prima::ScrollBar',
-		scrollBarProfile=>{},
+		hScrollBarProfile=>{},
+		vScrollBarProfile=>{},
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -80,7 +81,7 @@ sub init
 		{ $self->{$_} = 0; }
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
-	$self->{$_} = $profile{$_} for qw(scrollBarClass scrollBarProfile);
+	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	for ( qw( autoHScroll autoVScroll hScroll vScroll borderWidth))
 		{ $self->$_( $profile{ $_}); }
 	$self-> limits( $profile{limitX}, $profile{limitY});

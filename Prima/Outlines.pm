@@ -91,7 +91,8 @@ sub profile_default
 		offset         => 0,
 		scaleChildren  => 0,
 		scrollBarClass => 'Prima::ScrollBar',
-		scrollBarProfile=>{},
+		hScrollBarProfile=>{},
+		vScrollBarProfile=>{},
 		selectable     => 1,
 		showItemHint   => 1,
 		vScroll        => 1,
@@ -157,7 +158,7 @@ sub init
 	$self-> {items}      = [];
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
-	$self->{$_} = $profile{$_} for qw(scrollBarClass scrollBarProfile);
+	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	for ( qw( autoHScroll autoVScroll hScroll vScroll offset itemHeight autoHeight borderWidth 
 		indent items focusedItem topItem showItemHint dragable multiSelect extendedSelect))
 		{ $self-> $_( $profile{ $_}); }
