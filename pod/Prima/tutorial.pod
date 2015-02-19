@@ -30,18 +30,7 @@ is low; a minimal working 'Hello world' can be written in three lines of code:
 
 =for podview <img src="tutorial/hello1.gif">
 
-=begin html
-
-<p><img src="tutorial/hello1.gif" id="hello1_gif">
-
-<script type="text/javascript"><!--
-function primg(x) {
-if ( document.images[x + '_gif'].naturalWidth == 0 ) {
-document.getElementById(x + '_gif').src='https://github.com/dk/Prima/raw/master/pod/Prima/tutorial/' + x + '.gif';
-}}
-//--></script>
-
-=end html
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello1.gif">
 
 Line 1 here is the invocation of modules I<Prima> and I<Prima::Application>. Sure,
 one can explicitly invoke both C<use Prima> and C<use Prima::Application> etc etc,
@@ -68,7 +57,7 @@ lines:
 
 =for podview <img src="tutorial/hello2.gif">
 
-=for html <p><img src="tutorial/hello2.gif" id="hello2_gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello2.gif">
 
 but it is not illustrative and not useful. C<Prima::message> is rarely used, 
 and is one of few methods contained in C<Prima::> namespace. To display a 
@@ -82,7 +71,7 @@ as
 
 =for podview <img src="tutorial/hello3.gif">
 
-=for html <p><img src="tutorial/hello3.gif" id="hello3_gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello3.gif">
 
 but where C<Prima::message> accepts the only text scalar parameters, C<Prima::MsgBox::message>
 can do lot more. For example 
@@ -93,7 +82,7 @@ can do lot more. For example
 
 =for podview <img src="tutorial/hello4.gif">
 
-=for html <p><img src="tutorial/hello4.gif" id="hello4_gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello4.gif">
 
 displays two buttons and an icon. A small achievement, but the following is a bit more interesting:
 
@@ -115,7 +104,7 @@ displays two buttons and an icon. A small achievement, but the following is a bi
 
 =for podview <img src="tutorial/hello5.gif">
 
-=for html <p><img src="tutorial/hello5.gif" id="hello5_gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello5.gif">
 
 The definition of many object properties at once is a major feature of Prima, and is seen
 throughout the toolkit. Returning back to the very first example, we can demonstrate
@@ -182,7 +171,7 @@ probably should be preferred:
 
 =for podview <img src="tutorial/hello6.gif">
 
-=for html <p><img src="tutorial/hello6.gif" id="hello6_gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello6.gif">
 
 For those who know Perl-Tk and prefer its ways to position a widget, Prima
 provides I<pack> and I<place> interfaces. Here one can replace the line
@@ -272,7 +261,7 @@ hello-world program to contain a simple menu, it is enough to write this:
 
 =for podview <img src="tutorial/menu1.gif">
 
-=for html <p><img src="tutorial/menu1.gif" id="menu1_gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/menu1.gif">
 
 Each of five arrays here in the example is written using different semantics, to represent
 either a text menu item, a sub-menu entry, or a menu separator. Strictly speaking, menus
@@ -313,7 +302,7 @@ example, may contain more menu items, in the recursive fashion:
 
 =for podview <img src="tutorial/menu2.gif">
 
-=for html <p><img src="tutorial/menu2.gif" id="menu2_gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/menu2.gif">
 
 Finally, text items, with the most complex syntax, can be constructed with three to six
 items in the array. There can be set the left-aligned text string for the item, the
@@ -351,25 +340,7 @@ string, an image object is supplied:
 
 =for podview <img src="tutorial/menu3.gif">
 
-=for html <p><img src="tutorial/menu3.gif" id="menu3_gif">
-
-=begin html
-
-<script type="text/javascript"><!--
-setTimeout(function() {
-primg('hello1');
-primg('hello2');
-primg('hello3');
-primg('hello4');
-primg('hello5');
-primg('hello6');
-primg('menu1');
-primg('menu2');
-primg('menu3');
-}, 500); // good enough for local disk I/O, I guess
---></script>
-
-=end html
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/menu3.gif">
 
 The action item of them menu description array points to the code executed when
 the menu item is selected.  It is either an anonymous subroutine, as it is
