@@ -1243,7 +1243,7 @@ Context used: font
 
 Returns a nearest possible solid color in representation
 of object-bound graphic device. Always returns same color
-if the device bit depth is equals or greater than 24.
+if the device bit depth is equal or greater than 24.
 
 =item get_paint_state
 
