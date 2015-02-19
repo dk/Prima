@@ -104,7 +104,8 @@ sub profile_default
 		topCell                 => 0,
 		scaleChildren           => 0,
 		scrollBarClass          => 'Prima::ScrollBar',
-		scrollBarProfile        => {},
+		hScrollBarProfile       => {},
+		vScrollBarProfile       => {},
 		selectable              => 1,
 		vScroll                 => 1,
 		widgetClass             => wc::ListBox,
@@ -140,7 +141,7 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
 
-	$self->{$_} = $profile{$_} for qw(scrollBarClass scrollBarProfile);
+	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	$self-> $_( $profile{ $_}) for qw( 
 		allowChangeCellHeight allowChangeCellWidth
 		constantCellWidth constantCellHeight

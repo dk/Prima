@@ -226,7 +226,7 @@ sub set_h_scroll
 					0),
 			delegations => ['Change'],
 			designScale => undef,
-			%{ $self->{scrollBarProfile} || {} },
+			%{ $self->{hScrollBarProfile} || {} },
 		);
 		
 		$self-> setup_indents;
@@ -265,18 +265,21 @@ sub set_v_scroll
 	my @size = $self-> size;
 	
 	if ( $self-> {vScroll} = $vs) {
+		my $width = exists( $self->{vScrollBarProfile}->{width} ) ? 
+			$self->{vScrollBarProfile}->{width} : 
+			$Prima::ScrollBar::stdMetrics[0];
 		$self-> {vScrollBar} = $self->{scrollBarClass}-> new(
 			owner    => $self,
 			name     => q(VScroll),
 			vertical => 1,
-			left     => $size[0] - $bw - $Prima::ScrollBar::stdMetrics[0] + 1,
+			left     => $size[0] - $bw - $width + 1,
 			top      => $size[1] - $bw + 1,
 			bottom   => $bw + ( $self-> {hScroll} ? $self-> {hScrollBar}-> height - 2 : 0),
 			growMode => gm::GrowLoX | gm::GrowHiY,
 			pointerType  => cr::Arrow,
 			delegations  => ['Change'],
 			designScale => undef,
-			%{ $self->{scrollBarProfile} || {} },
+			%{ $self->{vScrollBarProfile} || {} },
 		);
 		
 		$self-> setup_indents;
@@ -555,7 +558,7 @@ points to it.
 
 Create-only property that allows to change scrollbar class
 
-=item scrollBarProfile HASH
+=item hScrollBarProfile, vScrollBarProfile HASH
 
 Create-only property that allows to change scrollbar parameters when it is being created
 

@@ -189,7 +189,8 @@ sub profile_default
 		topLine         => 0,
 		scaleChildren   => 0,
 		scrollBarClass  => 'Prima::ScrollBar',
-		scrollBarProfile=> {},
+		hScrollBarProfile=> {},
+		vScrollBarProfile=> {},
 		selectable      => 1,
 		textOutBaseline => 1,
 		textRef         => '',
@@ -232,7 +233,7 @@ sub init
 	$self-> {ymap} = [];
 	$self-> setup_indents;
 	$self-> resolution( @{$profile{resolution}});
-	$self->{$_} = $profile{$_} for qw(scrollBarClass scrollBarProfile);
+	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	for ( qw( autoHScroll autoVScroll colorMap fontPalette 
 				hScroll vScroll borderWidth paneWidth paneHeight 
 				offset topLine textRef))

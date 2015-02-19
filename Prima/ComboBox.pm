@@ -108,7 +108,8 @@ sub profile_default
 		editProfile    => {},
 		listProfile    => {},
 		buttonProfile  => {},
-		scrollBarProfile  => {},
+		hScrollBarProfile => {},
+		vScrollBarProfile => {},
 		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown)],
 		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave MouseWheel)],
 		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick 
@@ -165,7 +166,7 @@ sub init
 		%{$profile{editProfile}},
 	);
 
-	my %lp = (%listProps, scrollBarClass => 1, scrollBarProfile => 1);
+	my %lp = (%listProps, scrollBarClass => 1, hScrollBarProfile => 1, vScrollBarProfile => 1);
 	delete $lp{hScroll} if $profile{autoHScroll};
 	delete $lp{vScroll} if $profile{autoVScroll};
 	$self-> {list} = $self-> insert( $profile{listClass} =>
