@@ -714,7 +714,7 @@ can be one of
   le::Square
   le::Round
 
-  constants. le::Round is the default value.
+constants. le::Round is the default value.
 
 =item lineJoin VALUE
 
