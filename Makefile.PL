@@ -400,6 +400,12 @@ sub setup_environment
 		PERL_POLLUTE     => 1,
 		PRIMA_DEBUG      => 0,
 	);
+
+	if ( $platform eq 'win32') {
+		$DEFINES{PRIMA_PLATFORM_WINDOWS} = 1;
+	} else {
+		$DEFINES{PRIMA_PLATFORM_X11} = 1;
+	}
 	
 	$TMPDIR  = $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{SystemDrive}\\TEMP") : "/tmp");
 	$NULLDEV = 'makefile.log';
