@@ -190,7 +190,7 @@ sub exif_get_orientation
 	# Check through IFD0 for tags of interest */
 	while ($tags--){
 		# The tags are listed in consecutive 12-byte blocks
-		my ($tag, $type, $count, $val) = unpack("$order$order\U$order$order", $exif);
+		my ($tag, $type, $count, $val) = unpack("$order$order\U$order\L$order", $exif);
 		$exif =~ s/^.{12}//;
 		# Is this the orientation tag? 
 		next unless $tag == 0x112;
