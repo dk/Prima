@@ -146,6 +146,10 @@ sub exif_get_orientation
 #
 # courtesy from gtk/gdk-pixbuf/io-jpeg.c
 	my $i = shift;
+
+	return unless exists $i->{extras}->{codecID};
+	return unless Prima::Image->codecs->[ $i->{extras}->{codecID} ]->{fileShortType} eq 'JPEG';
+	
 	my $exif;
 	for my $a ( @{ $i->{extras}->{appdata} || [] }) {
 		next unless defined $a && $a =~ s/^Exif\0\0//;
