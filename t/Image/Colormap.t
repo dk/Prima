@@ -1,37 +1,33 @@
-# $Id$
+use Test::More;
 
-print "1..3 create,get,set,nearest\n";
+use lib 't/lib';
+
+BEGIN {
+    use_ok( "Prima::Test" );
+}
+# noX11 test
 
 my $p = [0,1,2,3,4,5];
 my $c = [0x020100, 0x050403];
 my $i = Prima::Image-> create(
-	width => 1,
-	height => 1,
-	type => im::Mono,
-	colormap => $c,
+       width => 1,
+       height => 1,
+       type => im::Mono,
+       colormap => $c,
 );
 
-sub cmpx
-{
-	my ( $a, $b) = @_;
-	return 0 unless @$a == @$b;
-	my $i;
-	for ( $i = 0; $i < @$a; $i++) {
-		return 0 unless $a->[$i] == $b-> [$i];
-	}
-	return 1;
-}
-
-# 1 
-ok( cmpx( $i-> palette, $p));
+# 1
+is_deeply( $i-> palette, $p, "create" );
 
 # 2
-ok( cmpx( [ $i-> colormap ], $c)); 
+is_deeply( [ $i-> colormap ], $c, "get" );
 
 # 3
 $i-> colormap( @$c);
-ok( cmpx( $i-> palette, $p));
+is_deeply( $i-> palette, $p, "set" );
 
 # 4
 my $cc = $i-> get_nearest_color(0x030101);
-ok( $cc == 0x020100);
+cmp_ok( $cc, '==', 0x020100, "nearest" );
+
+done_testing();

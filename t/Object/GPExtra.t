@@ -1,5 +1,13 @@
-# $Id$
-print "1..5 linePattern,lineWidth,fillPattern,dithering,rop paint\n";
+use Test::More;
+
+use lib 't/lib';
+
+BEGIN {
+    use_ok( "Prima::Test" );
+}
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 
@@ -14,9 +22,9 @@ $x-> linePattern( lp::Solid);
 my $bl = 0;
 my $i;
 for ( $i = 0; $i < 8; $i++) {
-	$bl++ if $x-> pixel( $i, 4) == 0;
+       $bl++ if $x-> pixel( $i, 4) == 0;
 }
-ok( $bl < 6);
+cmp_ok( $bl, '<', 6, "linePattern");
 
 # 2
 $x-> color( cl::White);
@@ -25,9 +33,8 @@ $x-> color( cl::Black);
 $x-> lineWidth( 3);
 $x-> line( 3, 4, 5, 4);
 $x-> lineWidth( 1);
-ok( $x-> pixel( 2, 4) == 0 &&
-	$x-> pixel( 5, 3) == 0
-);
+cmp_ok( $x-> pixel( 2, 4), '==', 0, "lineWidth");
+cmp_ok( $x-> pixel( 5, 3), '==', 0, "lineWidth");
 
 # 3
 $x-> color( cl::White);
@@ -40,7 +47,8 @@ $x-> fillPattern( fp::Solid);
 $bl = $x-> image;
 $bl-> type( im::Byte);
 $bl = $bl-> sum;
-ok( $bl > 6000 && $bl < 10000 );
+cmp_ok( $bl, '>', 6000, "fillPattern" );
+cmp_ok( $bl, '<', 10000, "fillPattern" );
 
 # 4
 $x-> color( cl::White);
@@ -49,9 +57,10 @@ $x-> color( 0x808080);
 $x-> bar( 0, 0, 7, 7);
 $bl = 0;
 for ( $i = 0; $i < 8; $i++) {
-	$bl++ if $x-> pixel( $i, 4) == 0;
+       $bl++ if $x-> pixel( $i, 4) == 0;
 }
-ok( $bl > 2 && $bl < 6);
+cmp_ok( $bl, '>', 2, "dithering" );
+cmp_ok( $bl, '<', 6, "dithering" );
 
 # 5
 $x-> color( cl::White);
@@ -59,7 +68,8 @@ $x-> bar( 0, 0, 7, 7);
 $x-> rop( rop::XorPut);
 $x-> bar( 0, 0, 1, 1);
 $x-> rop( rop::CopyPut);
-ok( $x-> pixel( 0, 0) == 0);
+cmp_ok( $x-> pixel( 0, 0), '==', 0, "rob paint" );
 
 $x-> destroy;
-1;
+
+done_testing();
