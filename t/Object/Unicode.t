@@ -1,4 +1,10 @@
 # $Id$
+use Test::More;
+use Prima::Test qw(noX11);
+
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
 
 unless ( $] >= 5.006 && 
 	$::application-> get_system_value( sv::CanUTF8_Output)
@@ -8,12 +14,13 @@ unless ( $] >= 5.006 &&
 	return 1;
 }
 
-print "1..2 support,wrap utf8 text\n";
-ok(1);
+pass("support");
 
 my $utf8_line;
 eval '$utf8_line="line\\x{2028}line"';
 my @r = @{$::application-> text_wrap( $utf8_line, 1000, tw::NewLineBreak)};
-ok( 2 == @r && $r[0] eq $r[1]);
+cmp_ok( scalar @r, '==', 2, "wrap utf8 text");
+ok( @r, "wrap utf8 text"  );
+is( $r[0], $r[1], "wrap utf8 text" );
 
-1;
+done_testing();

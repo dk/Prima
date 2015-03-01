@@ -5,12 +5,13 @@ my $stage = 1;
 
 package GumboJumboObject;
 use vars qw(@ISA);
+use Test::More;
 @ISA = qw(Prima::Object);
 
 sub init
 {
 	my $self = shift;
-	main::ok( $self) if $stage == 1;
+	ok( $self, "init") if $stage == 1;
 	my %profile = @_;
 	%profile = $self-> SUPER::init( %profile);
 	croak("test!") if $stage == 2;
@@ -28,21 +29,23 @@ sub done
 {
 	my $self = $_[0];
 	$self-> SUPER::done;
-	main::ok(1);
+	pass("done" );
 }
 
 package main;
+use Prima::Test qw(dong);
+use Test::More;
 
 $dong = 0;
 my $o = GumboJumboObject-> create;
-ok( $o);
-ok( $o-> alive);
-ok( $dong);
+ok( $o, "create result" );
+ok( $o-> alive, "alive" );
+ok( Prima::Test->set_dong(), "method override" );
 $o-> destroy;
-ok( !$o-> alive);
+ok( !$o-> alive, "destroy");
 $stage++;
 undef $o;
 eval { $o = GumboJumboObject-> create; };
-ok( !defined $o);
+ok( !defined $o, "croak during init" );
 
-1;
+done_testing();

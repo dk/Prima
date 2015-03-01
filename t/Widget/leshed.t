@@ -1,54 +1,58 @@
-# $Id$
-# Leave, Enter, Show, Hide, Enable, Disable
-print "1..6 hide,show,disable,enable,enter,leave\n";
+use Test::More;
+use Prima::Test qw(noX11 w dong);
 
-my $ww = $w-> insert( 'Widget' => origin => [ 10, 10],);
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
 
-$dong = 0;
+my $ww = $Prima::Test::w-> insert( 'Widget' => origin => [ 10, 10],);
+
+$Prima::Test::dong = 0;
 
 $ww-> set(
-	onEnter   => sub { $dong = 1; },
-	onLeave   => sub { $dong = 1; },
-	onShow    => sub { $dong = 1; },
-	onHide    => sub { $dong = 1; },
-	onEnable  => sub { $dong = 1; },
-	onDisable => sub { $dong = 1; }
+	onEnter   => sub { $Prima::Test::dong = 1; },
+	onLeave   => sub { $Prima::Test::dong = 1; },
+	onShow    => sub { $Prima::Test::dong = 1; },
+	onHide    => sub { $Prima::Test::dong = 1; },
+	onEnable  => sub { $Prima::Test::dong = 1; },
+	onDisable => sub { $Prima::Test::dong = 1; }
 );
 
 
 $ww-> hide;
-ok(($dong || &__wait) && ($ww-> visible == 0));
-$dong = 0;
+ok($Prima::Test::dong || &Prima::Test::wait, "hide" );
+cmp_ok($ww-> visible, '==', 0, "hide" );
+$Prima::Test::dong = 0;
 
 $ww-> show;
-ok(($dong || &__wait) && ($ww-> visible != 0));
-$dong = 0;
+ok($Prima::Test::dong || &Prima::Test::wait, "show" );
+cmp_ok($ww-> visible, '!=', 0, "show" );
+$Prima::Test::dong = 0;
 
 $ww-> enabled(0);
-ok(($dong || &__wait) && ($ww-> enabled == 0));
-$dong = 0;
+ok($Prima::Test::dong || &Prima::Test::wait, "disable" );
+cmp_ok($ww-> enabled, '==', 0, "disable" );
+$Prima::Test::dong = 0;
 
 $ww-> enabled(1);
-ok(($dong || &__wait) && ($ww-> enabled != 0));
-$dong = 0;
+ok($Prima::Test::dong || &Prima::Test::wait, "enable" );
+cmp_ok( $ww-> enabled, '!=', 0, "enable" );
+$Prima::Test::dong = 0;
 
 $ww-> focused(1);
 if ( $ww-> focused) {
-	ok(($dong || &__wait));
-	$dong = 0;
+	ok($Prima::Test::dong || &Prima::Test::wait, "enter" );
+	$Prima::Test::dong = 0;
 	
 	$ww-> focused(0);
-	ok(($dong || &__wait) && ($ww-> focused == 0));
-	$dong = 0;
+	ok( $Prima::Test::dong || &Prima::Test::wait, "leave" );
+    cmp_ok( $ww-> focused, '==', 0, "leave" );
+	$Prima::Test::dong = 0;
 } else {
 	# WM refuses to refocus
-	skip;
 	skip;
 }
 
 $ww-> destroy;
 
-
-1;
-
-
+done_testing();

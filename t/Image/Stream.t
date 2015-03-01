@@ -1,4 +1,5 @@
-# $Id$
+use Test::More;
+use Prima::Test;
 
 my @codecs;
 
@@ -18,12 +19,9 @@ if ( open F, "> ./test.test" ) {
 }
 unless ( $fileok) {
 	print "1..1 load/save to streams";
-	skip(1);
+	skip("skipping load/save to streams");
 	return 1;
 }
-
-print "1..", 2 * scalar(@codecs), ' ', 
-	join(',', map { "save $_->{fileShortType},load $_->{fileShortType}"} @codecs);
 
 my $i = Prima::Image-> create(
 	width => 16,
@@ -43,23 +41,23 @@ for ( @codecs) {
 	
 	my $xi = $i-> dup;
 	unless( open F, ">", $name) {
-		ok(0);
-		skip(1);
+		fail("load ".$ci->{fileShortType});
+		skip;
 		next;
 	}
 	binmode F;
 	unless ( $xi-> save( \*F, codecID => $ci-> {codecID})) {
-		ok(0);
-		skip(1);
+		fail("save ".$ci->{fileShortType});
+		skip;
 		close F;
 		unlink $name;
 		next;
 	}
 	close F;
-	ok(1);
+	pass("save ".$ci->{fileShortType});
 
 	unless ( open F, "<", $name) {
-		ok(0);
+		fail($ci);
 		unlink $name;
 		next;
 	}
@@ -69,12 +67,11 @@ for ( @codecs) {
 	close F;
 	unlink $name;
 	unless ( $xl) {
-		ok(0);
+		fail($ci);
 		next;
 	}
 
-	ok( 1);
+	pass("load ".$ci->{fileShortType});
 }
 
-1;
-
+done_testing();

@@ -1,9 +1,9 @@
-# $Id$
+use Test::More;
+use Prima::Test qw(noX11);
 
-# extensive testing of raster operations:
-# - Image::put_image ( img/put.c ) outside begin_paint/end_paint
-# - Image::put_image ( platform-specific) inside begin_paint/end_paint
-# - Image::map ( Image.c )
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
 
 my @alu = qw(
    Blackness
@@ -24,13 +24,7 @@ my @alu = qw(
    Whiteness
 );
 
-print "1..48 ", join(',', 
-	( map { "image $_" } @alu ), 
-	( map { "gui $_" } @alu ), 
-	( map { "map $_" } @alu ), 
-);
-	
-my $src = Prima::Image-> create( 
+my $src = Prima::Image-> create(
 	width        => 1,
 	height       => 1,
 	type         => im::BW,
@@ -39,12 +33,14 @@ my $src = Prima::Image-> create(
 );
 my $dst = $src-> dup;
 
-my @table = ( 
+my @table = (
 	[0,0,0],
 	[0,0xffffff,1],
 	[0xffffff,0,2],
 	[0xffffff,0xffffff,3],
 );
+
+my $test_name = "image ";
 
 AGAIN:
 for ( my $i = 0; $i < @alu; $i++) {
@@ -56,12 +52,13 @@ for ( my $i = 0; $i < @alu; $i++) {
 		$dst-> put_image( 0, 0, $src, $rop::{$alu[$i]}->());
 		$res |= ( $dst-> pixel(0, 0) & 1) << $p;
 	}
-	ok( $res == $i);
+	cmp_ok( $res, '==', $i, $test_name.$alu[$i] );
 }
 
 unless ( $src-> get_paint_state) {
 	$src-> begin_paint;
 	$dst-> begin_paint;
+    $test_name = "gui ";
 	goto AGAIN;
 } else {
 	$src-> end_paint;
@@ -86,8 +83,7 @@ for ( my $i = 0; $i < @alu; $i++) {
 		$src-> map( 0);
 		$res |= ( $src-> pixel(0, 0) & 1) << $p;
 	}
-	ok( $res == $i);
+	cmp_ok( $res, '==', $i, "map ". $alu[ $i] );
 }
 
-
-1;
+done_testing();

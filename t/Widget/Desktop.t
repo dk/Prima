@@ -1,10 +1,16 @@
-# $Id$
-print "1..2 size,indents";
+use Test::More;
+use Prima::Test qw(noX11);
+
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
+
 my @sz = $::application-> size;
-ok( $sz[0] > 256 and $sz[1] > 256);
+cmp_ok( $sz[0], '>', 256, "size");
+cmp_ok( $sz[1], '>', 256, "size" );
 
 my @i = $::application-> get_indents;
-ok(($i[0] + $i[2] < $sz[0]) and ( $i[1] + $i[3] < $sz[1]));
+cmp_ok( $i[0] + $i[2], '<', $sz[0], "indents" );
+cmp_ok( $i[1] + $i[3], '<', $sz[1], "indents" );
 
-1;
-
+done_testing();

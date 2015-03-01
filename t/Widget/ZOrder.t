@@ -1,19 +1,25 @@
-# $Id$
-print "1..3 create,runtime,event\n";
+use Test::More;
+use Prima::Test qw(noX11 w dong);
 
-my $first   = $w-> insert( 'Widget');
-my $second  = $w-> insert( 'Widget');
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
 
-ok(( $second-> next || 0) == $first && ( $first-> prev || 0) == $second);
+my $first   = $Prima::Test::w-> insert( 'Widget');
+my $second  = $Prima::Test::w-> insert( 'Widget');
 
-$dong = 0;
-$second-> set( onZOrderChanged => sub { $dong = 1; });
+cmp_ok(( $second-> next || 0), '==', $first, "create" );
+cmp_ok(( $first-> prev || 0), '==', $second,  "create" );
+
+$Prima::Test::dong = 0;
+$second-> set( onZOrderChanged => sub { $Prima::Test::dong = 1; });
 $second-> insert_behind( $first);
 
-ok(( $second-> prev || 0) == $first && ( $first-> next || 0) == $second);
-ok( $dong || &__wait);
+cmp_ok(( $second-> prev || 0), '==', $first, "runtime" );
+cmp_ok(( $first-> next || 0), '==', $second, "runtime" );
+ok( $Prima::Test::dong || &Prima::Test::wait, "event" );
 
 $first-> destroy;
 $second-> destroy;
 
-1;
+done_testing();

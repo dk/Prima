@@ -1,23 +1,35 @@
-# $Id$
-print "1..3 create,runtime sizeMin,reparent sizeMax\n";
+use Test::More;
+use Prima::Test qw(noX11 wait dong w);
 
-my $ww = $w-> insert( Widget =>
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
+
+my $ww = $Prima::Test::w-> insert( Widget =>
 	origin => [ 0, 0],
 	sizeMin => [ 10, 10],
 	sizeMax => [ 200, 200],
 );
 $ww-> size( 100, 100);
 my @sz = $ww-> size;
-ok( $sz[0] >= 10 && $sz[1] >= 10 && $sz[0] <= 200 && $sz[1] <= 200);
+cmp_ok( $sz[0], '>=', 10, "create" );
+cmp_ok( $sz[1], '>=', 10, "create" );
+cmp_ok( $sz[0], '<=', 200, "create" );
+cmp_ok( $sz[1], '<=', 200, "create");
 $ww-> size( 1, 1);
 @sz = $ww-> size;
-ok( $sz[0] >= 10 && $sz[1] >= 10 && $sz[0] <= 200 && $sz[1] <= 200);
+cmp_ok( $sz[0], '>=', 10, "runtime sizeMin" );
+cmp_ok( $sz[1], '>=', 10, "runtime sizeMin" );
+cmp_ok( $sz[0], '<=', 200, "runtime sizeMin" );
+cmp_ok( $sz[1], '<=', 200, "runtime sizeMin" );
 $ww-> owner( $::application);
-$ww-> owner( $w);
+$ww-> owner( $Prima::Test::w );
 $ww-> size( 1000, 1000);
-ok( $sz[0] >= 10 && $sz[1] >= 10 && $sz[0] <= 200 && $sz[1] <= 200);
+cmp_ok( $sz[0], '>=', 10, "reparent sizeMax" );
+cmp_ok( $sz[1], '>=', 10, "reparent sizeMax" );
+cmp_ok( $sz[0], '<=', 200, "reparent sizeMax" );
+cmp_ok( $sz[1], '<=', 200, "reparent sizeMax" );
 
 $ww-> destroy;
 
-1;
-
+done_testing();

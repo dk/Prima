@@ -1,39 +1,49 @@
-# $Id$
-print "1..7 create,runtime,horizontal,vertical,hidden,event,reparent\n";
+use Test::More;
+use Prima::Test qw(noX11 w dong);
 
-my $ww = $w-> insert( Widget =>
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
+
+my $ww = $Prima::Test::w-> insert( Widget =>
 	origin    => [ 10, 10],
 	growMode  => gm::GrowLoX,
 );
 
-ok( $ww-> left == 10 && $ww-> bottom == 10);
+cmp_ok( $ww-> left, '==', 10, "create" );
+cmp_ok( $ww-> bottom, '==', 10, "create" );
 
 $ww-> origin( 30, 30);
 
-ok( $ww-> left == 30 && $ww-> bottom == 30);
+cmp_ok( $ww-> left, '==', 30, "runtime" );
+cmp_ok( $ww-> bottom, '==', 30, "runtime" );
 
-$w-> size( 200, 200);
-my @wp = $w-> size;
-$w-> size( 300, 300);
-$wp[0] = $w-> width - $wp[0];
-$wp[1] = $w-> height- $wp[1];
+$Prima::Test::w-> size( 200, 200);
+my @wp = $Prima::Test::w-> size;
+$Prima::Test::w-> size( 300, 300);
+$wp[0] = $Prima::Test::w-> width - $wp[0];
+$wp[1] = $Prima::Test::w-> height- $wp[1];
 
-ok( $ww-> left == 30 + $wp[0] && $ww-> bottom == 30);
+cmp_ok( $ww-> left, '==', 30 + $wp[0], "horizontal" );
+cmp_ok( $ww-> bottom, '==', 30, "horizontal" );
 $ww-> growMode( gm::GrowLoY);
-$w-> size( 200, 200);
-ok( $ww-> left == 30 + $wp[0] && $ww-> bottom == 30 - $wp[1]);
+$Prima::Test::w-> size( 200, 200);
+cmp_ok( $ww-> left, '==', 30 + $wp[0], "vertical" );
+cmp_ok( $ww-> bottom, '==', 30 - $wp[1], "vertical" );
 
 $ww-> hide;
 $dong = 0;
-$ww-> set( onMove => sub { $dong = 1; });
+$ww-> set( onMove => sub { $Prima::Test::dong = 1; });
 $ww-> origin(10,10);
-ok( $ww-> left == 10 && $ww-> bottom == 10);
-ok( $dong || &__wait);
+cmp_ok( $ww-> left, '==', 10, "hidden" );
+cmp_ok( $ww-> bottom, '==', 10, "hidden" );
+ok( $Prima::Test::dong || &__wait, "event" );
 
 $ww-> owner( $::application);
-$ww-> owner( $w);
-ok( $ww-> left == 10 && $ww-> bottom == 10);
+$ww-> owner( $Prima::Test::w );
+cmp_ok( $ww-> left, '==', 10, "reparent" );
+cmp_ok( $ww-> bottom, '==', 10, "reparent" );
 
 $ww-> destroy;
 
-1;
+done_testing();

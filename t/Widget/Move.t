@@ -1,5 +1,9 @@
-# $Id$
-print "1..10 onMove message - pass 1,correct movement,parameters consistency - pass 1,child move,child move consistency,onMove message - pass 2,parameters consistency - pass 2,gmDontCare,recreate consistency,scroll children\n";
+use Test::More;
+use Prima::Test qw(noX11 dong wait end_wait);
+
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
 
 my $dong2 = 0;
 
@@ -7,7 +11,7 @@ my @mrep;
 my @mrep2;
 my $wx = Prima::Window-> create(
 	size => [ 100, 100],
-	onMove => sub { $dong = 1; shift; @mrep = scalar(@mrep) ? ( @mrep[0,1], @_[2,3]) : @_;  },
+	onMove => sub { $Prima::Test::dong = 1; shift; @mrep = scalar(@mrep) ? ( @mrep[0,1], @_[2,3]) : @_;  },
 	name => 'TEST',
 );
 
@@ -15,27 +19,31 @@ my $wx = Prima::Window-> create(
 my $wl = $wx-> insert( 'Prima::Widget' =>
 	clipOwner => 0,
 	growMode  => 0,
-	onMove => sub { $dong2 = 1; __end_wait(); shift; @mrep2 = scalar(@mrep2) ? ( @mrep2[0,1], @_[2,3]) : @_;  },
+	onMove => sub { $dong2 = 1; Prima::Test::end_wait(); shift; @mrep2 = scalar(@mrep2) ? ( @mrep2[0,1], @_[2,3]) : @_;  },
 );
 
 my @or = $wx-> origin;
 my @or2 = $wl-> origin;
-$dong = 0;
+$Prima::Test::dong = 0;
 $wx-> origin( $wx-> left + 1, $wx-> bottom + 1);
 
-ok(( $dong && $dong2) || &__wait);
+ok(( $Prima::Test::dong && $dong2) || &Prima::Test::wait, "onMove message - pass 1" );
 my @nor = $wx-> origin;
 if ( $nor[0] == $or[0] + 1 && $nor[1] == $or[1] + 1) {
-	ok(1);
+	pass("correct movement");
 } elsif ( Prima::Application-> get_system_info->{apc} != apc::Unix) {
-	ok(0);
+	fail("correct movement");
 } else {
 	skip;
 }
-ok( $mrep[2] == $nor[0] && $mrep[3] == $nor[1]);
+cmp_ok( $mrep[2], '==', $nor[0], "parameters consistency - pass 1" );
+cmp_ok( $mrep[3], '==', $nor[1], "parameters consistency - pass 1" );
 my @d = ( $nor[0] - $or[0], $nor[1] - $or[1]);
-ok( scalar(@mrep2));
-ok( $mrep2[0] == $or2[0] && $mrep2[1] == $or2[1] && $mrep2[2] == $mrep2[0] + $d[0] && $mrep2[3] == $mrep2[1] + $d[1]);
+ok( scalar(@mrep2), "child move" );
+cmp_ok( $mrep2[0], '==', $or2[0], "child move consistency" );
+cmp_ok( $mrep2[1], '==', $or2[1], "child move consistency" );
+cmp_ok( $mrep2[2], '==', $mrep2[0] + $d[0], "child move consistency" );
+cmp_ok( $mrep2[3], '==', $mrep2[1] + $d[1], "child move consistency" );
 
 $wx-> origin( $wx-> left + 1, $wx-> bottom + 1);
 $wx-> size( $wx-> width + 1, $wx-> height + 1);
@@ -44,27 +52,33 @@ $wx-> size( $wx-> width + 1, $wx-> height + 1);
 @or2 = $wl-> origin;
 @mrep = @mrep2 = ();
 
-$dong = 0;
+$Prima::Test::dong = 0;
 $wl-> growMode( gm::DontCare);
 $wx-> origin( $wx-> left + 2, $wx-> bottom + 2);
-ok( $dong || &__wait);
+ok( $Prima::Test::dong || &Prima::Test::wait, "onMove message - pass 2" );
 @nor = $wx-> origin;
-ok( $mrep[0] == $or[0] && $mrep[1] == $or[1] && $mrep[2] == $nor[0] && $mrep[3] == $nor[1]);
+cmp_ok( $mrep[0], '==', $or[0], "parameters consistency - pass 2" );
+cmp_ok( $mrep[1], '==', $or[1], "parameters consistency - pass 2" );
+cmp_ok( $mrep[2], '==', $nor[0], "parameters consistency - pass 2" );
+cmp_ok( $mrep[3], '==', $nor[1], "parameters consistency - pass 2" );
 @or = $wl-> origin;
-ok( $or[0] == $or2[0] && $or[1] == $or2[1]);
+cmp_ok( $or[0], '==', $or2[0], "gmDontCare" );
+cmp_ok( $or[1], '==', $or2[1], "gmDontCare" );
 
 @or = $wl-> origin;
-$wl-> owner( $w);
+$wl-> owner( $Prima::Test::w );
 @nor = $wl-> origin;
 $wl-> owner( $wx);
-ok( $or[0] == $nor[0] && $or[1] == $nor[1]);
+cmp_ok( $or[0], '==', $nor[0], "recreate consistency" );
+cmp_ok( $or[1], '==', $nor[1], "recreate consistency" );
 
 $wl-> clipOwner(1);
 @or = map { $_ + 10 } $wl-> origin;
 $wx->scroll( 10, 10, withChildren => 1); 
 @or2 = $wl-> origin;
-ok( $or[0] == $or2[0] && $or[1] == $or2[1]);
+cmp_ok( $or[0], '==', $or2[0], "scroll children" );
+cmp_ok( $or[1], '==', $or2[1], "scroll children" );
 
 $wx-> destroy;
 
-1;
+done_testing();

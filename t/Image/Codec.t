@@ -1,11 +1,10 @@
-# $Id$
+use Test::More;
+use Prima::Test;
 
 my $codecs = Prima::Image-> codecs;
 if ( !defined $codecs || ref($codecs) ne 'ARRAY') {
 BASE_ERROR:
-	print "1..1 basic functionality";
-	ok(0);
-	return 1;
+	fail("basic functionality");
 }
 
 my @names;
@@ -29,19 +28,18 @@ if ( open F, "> ./test.test" ) {
 my $has_bmp = grep { $_->{fileShortType} =~ /^bmp$/i } @$codecs;
 
 unless ( $fileok) {
-	print "1..3 basic functionality,BMP supported,codecs";
-	ok(1);
-	ok($has_bmp);
+	pass("basic functionality");
+	ok($has_bmp, "BMP supported");
 	skip;
-	return 1;
 }
 
 my $cdx = scalar(@$codecs) + 3;
-print "1..$cdx basic functionality,BMP supported,", join(',', 'codecs', @names);
-# 1-3
-ok(1);
-ok($has_bmp);
-ok(1);
+my @test_names = ( "basic functionality",
+                   "BMP supported",
+                   join(",", 'codecs', @names) );
+pass( $test_names[ 0 ] );
+ok($has_bmp, $test_names[ 1 ] );
+pass( $test_names[ 2 ] );
 
 my $i = Prima::Image-> create(
 	width => 16,
@@ -63,13 +61,12 @@ for ( @$codecs) {
 	my $name = "./test.test." . $ci-> {fileExtensions}->[0];
 	
 	my $xi = $i-> dup;
-	ok(0), unlink( $name), next unless $xi-> save( $name);
+	fail(0), unlink( $name), next unless $xi-> save( $name);
 	my $xl = Prima::Image-> load( $name, loadExtras => 1);
 	unlink $name;
-	ok(0), next unless $xl;
+	pass( $names[ $cid] ), next unless $xl;
 	skip, next if $xl-> {extras}-> {codecID} != $cid;
-	ok( 1);
+	pass( $names[ $cid ] );
 }
 
-1;
-
+done_testing();

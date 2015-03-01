@@ -1,23 +1,27 @@
-# $Id$
-print "1..5 create,onCreate,onPostMessage,onPostMessage,onDestroy\n";
+use Test::More;
+use Prima::Test qw(noX11 w dong);
 
-$dong = 0;
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
+
+$Prima::Test::dong = 0;
 my @xpm = (0,0);
-my $c = $w-> insert( Widget =>
-	onCreate  => \&__dong,
-	onDestroy => \&__dong,
-	onPostMessage => sub { $dong = 1; @xpm = ($_[1],$_[2])}
+my $c = $Prima::Test::w-> insert( Widget =>
+	onCreate  => \&Prima::Test::set_dong,
+	onDestroy => \&Prima::Test::set_dong,
+	onPostMessage => sub { $Prima::Test::dong = 1; @xpm = ($_[1],$_[2])}
 );
-ok($c);
-ok($dong);
+ok($c, "create" );
+ok($Prima::Test::dong, "onCreate" );
 $c-> post_message("abcd", [1..200]);
 $c-> owner( $::application);
-$c-> owner( $w);
-ok(&__wait);
-ok($xpm[0] eq 'abcd' && @{$xpm[1]} == 200);
-$dong = 0;
+$c-> owner( $Prima::Test::w);
+ok(&Prima::Test::wait, "onPostMessage" );
+is($xpm[0], 'abcd', "onPostMessage" );
+cmp_ok( @{$xpm[1]}, '==', 200, "onPostMessage" );
+$Prima::Test::dong = 0;
 $c-> destroy;
-ok($dong);
+ok($Prima::Test::dong, "onDestroy" );
 
-1;
-
+done_testing();

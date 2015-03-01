@@ -1,10 +1,6 @@
 use Test::More;
+use Prima::Test;
 
-use lib 't/lib';
-
-BEGIN {
-    use_ok( "Prima::Test" );
-}
 # noX11 test
 
 my $i = Prima::Image-> create( 

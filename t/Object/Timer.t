@@ -1,14 +1,18 @@
-# $Id$
-print "1..4 create,start,onTick,recreate\n";
+use Test::More;
+use Prima::Test qw(noX11 w);
 
-my $t = $w-> insert( Timer => timeout => 20 => onTick => \&__dong);
-ok( $t);
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
+
+my $t = $Prima::Test::w-> insert( Timer => timeout => 20 => onTick => \&Prima::Test::set_dong);
+ok( $t, "create" );
 $t-> start;
-ok( $t-> get_active);
-ok( &__wait);
+ok( $t-> get_active, "start" );
+ok( &Prima::Test::wait, "onTick" );
 $t-> owner( $::application);
-$t-> owner( $w);
-ok( &__wait);
+$t-> owner( $Prima::Test::w );
+ok( &Prima::Test::wait, "recreate" );
 $t-> destroy;
 
-1;
+done_testing();

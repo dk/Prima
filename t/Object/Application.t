@@ -1,12 +1,8 @@
 use Test::More;
+use Prima::Test qw(noX11);
 
-use lib 't/lib';
-
-BEGIN {
-    use_ok( "Prima::Test" );
-}
 if( $Prima::Test::noX11 ) {
-    plan skip_all => "Skipping all because noX11";
+    plan skip_all => "Skipping all test because noX11\n";
 }
 
 my $a = $::application;
