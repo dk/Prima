@@ -1,5 +1,8 @@
-use Test::More;
+use Test::More tests => 4;
 use Prima::Test;
+
+use strict;
+use warnings;
 
 my @codecs;
 

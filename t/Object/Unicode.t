@@ -1,6 +1,10 @@
-# $Id$
-use Test::More;
-use Prima::Test qw(noX11);
+use Test::More tests => 4;
+
+use strict;
+use warnings;
+
+use Prima::Test;
+use Prima::Application;
 
 if( $Prima::Test::noX11 ) {
     plan skip_all => "Skipping all because noX11";

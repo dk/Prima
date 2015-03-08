@@ -1,5 +1,8 @@
-use Test::More;
+use Test::More tests => 8;
 use Prima::Test;
+
+use strict;
+use warnings;
 
 if( $Prima::Test::noX11 ) {
     plan skip_all => "Skipping all because noX11";

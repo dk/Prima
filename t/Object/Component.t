@@ -1,5 +1,12 @@
-# $Id$
-print "1..7 create,onCreate,name,onPostMessage,onPostMessage,onDestroy,garbage collection\n";
+use Test::More tests => 8;
+use Prima::Test;
+
+use strict;
+use warnings;
+
+if( $Prima::Test::noX11 ) {
+    plan skip_all => "Skipping all because noX11";
+}
 
 { # block for mys
 $dong = 0;

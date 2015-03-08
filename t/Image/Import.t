@@ -1,5 +1,8 @@
-use Test::More;
+use Test::More tests => 10;
 use Prima::Test;
+
+use strict;
+use warnings;
 
 # noX11 test
 

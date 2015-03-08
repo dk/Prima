@@ -28,7 +28,8 @@
 package Prima::Test;
 # use vars qw( @ISA $noX11 $w $dong);
 use strict;
-# startup
+use warnings;
+
 use Prima::Config;
 use Prima::noX11;
 use Prima;

@@ -6,6 +6,10 @@ my $stage = 1;
 package GumboJumboObject;
 use vars qw(@ISA);
 use Test::More;
+
+use strict;
+use warnings;
+
 @ISA = qw(Prima::Object);
 
 sub init

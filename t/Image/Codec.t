@@ -1,5 +1,8 @@
-use Test::More;
+use Test::More tests => 6;
 use Prima::Test;
+
+use strict;
+use warnings;
 
 my $codecs = Prima::Image-> codecs;
 if ( !defined $codecs || ref($codecs) ne 'ARRAY') {

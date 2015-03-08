@@ -1,5 +1,8 @@
-use Test::More;
-use Prima::Test qw(noX11 dong set_dong wait);
+use Test::More tests => 10;
+use Prima::Test;
+
+use strict;
+use warnings;
 
 if( $Prima::Test::noX11 ) {
     plan skip_all => "Skipping all because noX11";
