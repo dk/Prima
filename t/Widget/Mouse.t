@@ -12,12 +12,12 @@ reset_flag();
 my @keydata = ();
 my $window = create_window();
 my $c = $window-> insert( Widget =>
-	onCreate  => \&Prima::Test::set_flag,
-	onDestroy => \&Prima::Test::set_flag,
-	onMouseDown  => sub { set_flag(0); push( @keydata, [@_]); },
-	onMouseUp    => sub { set_flag(0); },
-	onMouseMove  => sub { set_flag(0); },
-	onMouseClick => sub { set_flag(0); push( @keydata, [@_]);},
+       onCreate  => \&Prima::Test::set_flag,
+       onDestroy => \&Prima::Test::set_flag,
+       onMouseDown  => sub { set_flag(0); push( @keydata, [@_]); },
+       onMouseUp    => sub { set_flag(0); },
+       onMouseMove  => sub { set_flag(0); },
+       onMouseClick => sub { set_flag(0); push( @keydata, [@_]);},
 );
 
 $c-> mouse_event( cm::MouseDown, mb::Left, 0, 1, 2, 0, 0);

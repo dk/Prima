@@ -1,6 +1,3 @@
-# $Id$
-print "1..8 init,create result,alive,method override,done,destroy,done on croak,croak during init\n";
-
 my $stage = 1;
 
 package GumboJumboObject;
@@ -25,7 +22,7 @@ sub init
 
 sub setup
 {
-	$main::dong = 1;
+	main::set_flag(0);
 	$_[0]-> SUPER::setup;
 }
 

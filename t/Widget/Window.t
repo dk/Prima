@@ -64,8 +64,8 @@ $xw-> insert( Timer =>
               timeout => 250,
               onTick => sub {
                   $_[0]-> stop;
-                  $Prima::Test::w-> focus;
-                  ok( !$Prima::Test::w-> selected, "execute" );
+                  $window-> focus;
+                  ok( !$window-> selected, "execute" );
                   $xw-> ok;
                   $_[0]-> destroy;
               })-> start;

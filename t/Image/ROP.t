@@ -61,7 +61,7 @@ for ( my $i = 0; $i < @alu; $i++) {
 unless ( $src-> get_paint_state) {
 	$src-> begin_paint;
 	$dst-> begin_paint;
-    $test_name = "gui ";
+       $test_name = "gui ";
 	goto AGAIN;
 } else {
 	$src-> end_paint;

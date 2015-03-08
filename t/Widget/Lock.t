@@ -12,8 +12,8 @@ reset_flag();
 my $window = create_window();
 $window->lock;
 my $c = $window-> insert( Widget =>
-	onPaint => sub { set_flag(0); }
-);
+                          onPaint => sub { set_flag(0); }
+    );
 $c-> update_view;
 ok( !get_flag(), "child" );
 
