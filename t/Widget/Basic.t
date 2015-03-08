@@ -14,15 +14,15 @@ my $c = $window-> insert( Widget =>
                      onDestroy => $sub_ref,
                      onPostMessage => sub { set_flag(0); @xpm = ($_[1],$_[2])}
     );
-ok($c);
-ok(get_flag());
+ok($c, "create" );
+ok(get_flag(), "onCreate" );
 $c-> post_message("abcd", [1..200]);
 $c-> owner( $::application);
 $c-> owner( $window );
-ok(&Prima::Test::wait);
-ok($xpm[0] eq 'abcd' && @{$xpm[1]} == 200);
+ok(&Prima::Test::wait, "onPostMessage" );
+ok($xpm[0] eq 'abcd' && @{$xpm[1]} == 200, , "onPostMessage" );
 reset_flag();
 $c-> destroy;
-ok(get_flag());
+ok(get_flag(), "onDestroy" );
 
 done_testing();
