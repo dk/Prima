@@ -37,8 +37,12 @@ sub done
 }
 
 package main;
-use Prima::Test qw(dong);
-use Test::More;
+use Prima::Test;
+use Prima::Application;
+use Test::More tests => 8;
+
+use strict;
+use warnings;
 
 $dong = 0;
 my $o = GumboJumboObject-> create;

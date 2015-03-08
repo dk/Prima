@@ -26,37 +26,32 @@
 #  $Id$
 #
 package Prima::Test;
-# use vars qw( @ISA $noX11 $w $dong);
+
 use strict;
 use warnings;
 
 use Prima::Config;
 use Prima::noX11;
 use Prima;
+use Exporter qw(import);
 
-our @ISA;
-our $w;
+use Test::More;
+our @EXPORT = qw(create_window set_flag get_flag reset_flag noX11);
+
 our $dong;
 # testing if is running over a dumb terminal
 our $noX11 = 1 if defined Prima::XOpenDisplay();
 
-my $tick;
+our $tick;
 
-init();
-
-sub init
-{
-	unless ( $noX11) {
+sub create_window {
+	unless ($noX11) {
 		eval "use Prima::Application name => 'failtester';"; die $@ if $@;
-		$w = Prima::Window-> create(
+		return Prima::Window-> create(
 			onDestroy => sub { $::application-> close},
 			size => [ 200,200],
 		);
-	}
-}
-
-sub end_wait {
-	$tick = 1;
+	}    
 }
 
 sub wait {
@@ -74,8 +69,21 @@ sub wait {
 	return $dong;
 }
 
-sub set_dong {
-	$dong = 1;
+sub set_flag {
+    my $flag = shift;
+    if( $flag ) {
+        $tick = 1;
+    } else {
+        $dong = 1;
+    }
+}
+
+sub reset_flag {
+    $dong = 0;
+}
+
+sub get_flag {
+    return $dong;
 }
 
 1;
