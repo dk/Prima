@@ -18,16 +18,16 @@ my $ww = $window-> insert( Widget => origin => [ 0, 0] => size => [ 8, 8],
                                set_flag(0);
                                @rcrect = $_[0]-> clipRect;
                            });
-ok( get_flag() || &Prima::Test::wait, "onPaint message" );
+ok( get_flag || &wait, "onPaint message" );
 reset_flag();
 $ww-> repaint;
 $ww-> update_view;
-ok( get_flag(), "update_view" );
+ok( get_flag, "update_view" );
 
 reset_flag();
 $ww-> scroll( 2, 2);
 $ww-> update_view;
-ok( get_flag(), "scroll" );
+ok( get_flag, "scroll" );
 
 $ww-> invalidate_rect( 0, 0, 2, 2);
 my @cr = $ww-> get_invalid_rect;

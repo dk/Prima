@@ -17,18 +17,18 @@ my $c = $window-> insert( Component =>
     );
 # 1
 ok($c, "create" );
-ok(get_flag(), "onCreate" );
+ok(get_flag, "onCreate" );
 is($c-> name, 'gumbo jumbo', "name" );
 $c-> post_message("abcd", [1..200]);
 $c-> owner( $::application);
 $c-> owner( $window );
 # 4
-ok(\&Prima::Test::wait(), "onPostMessage" );
+ok(\&wait(), "onPostMessage" );
 is($xpm[0], 'abcd', "onPostMessage" );
 is( @{$xpm[1]}, 200, "onPostMessage" );
 reset_flag();
 $c-> destroy;
-ok(get_flag(), "onDestroy" );
+ok(get_flag, "onDestroy" );
 # 7
 reset_flag();
 Prima::Drawable-> create( onDestroy => sub { set_flag(0); } );

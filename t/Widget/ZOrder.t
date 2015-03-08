@@ -17,7 +17,7 @@ $second-> insert_behind( $first);
 
 is(( $second-> prev || 0), $first, "runtime" );
 is(( $first-> next || 0), $second, "runtime" );
-ok( get_flag() || &Prima::Test::wait, "event" );
+ok( get_flag || &wait, "event" );
 
 $first-> destroy;
 $second-> destroy;

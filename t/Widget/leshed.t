@@ -20,33 +20,33 @@ $ww-> set(
 
 
 $ww-> hide;
-ok(get_flag() || &Prima::Test::wait, "hide" );
+ok(get_flag || &wait, "hide" );
 is($ww-> visible, 0, "hide" );
 reset_flag();
 
 $ww-> show;
-ok(get_flag() || &Prima::Test::wait, "show" );
+ok(get_flag || &wait, "show" );
 isnt($ww-> visible, 0, "show" );
 reset_flag();
 
 $ww-> enabled(0);
-ok(get_flag() || &Prima::Test::wait, "disable" );
+ok(get_flag || &wait, "disable" );
 is($ww-> enabled, 0, "disable" );
 reset_flag();
 
 $ww-> enabled(1);
-ok(get_flag() || &Prima::Test::wait, "enable" );
+ok(get_flag || &wait, "enable" );
 isnt( $ww-> enabled, 0, "enable" );
 reset_flag();
 
 $ww-> focused(1);
 SKIP : {
     if ( $ww-> focused) {
-       ok(get_flag() || &Prima::Test::wait, "enter" );
+       ok(get_flag || &wait, "enter" );
        reset_flag();
 	
        $ww-> focused(0);
-       ok( get_flag() || &Prima::Test::wait, "leave" );
+       ok( get_flag || &wait, "leave" );
        is( $ww-> focused, 0, "leave" );
        reset_flag();
     } else {

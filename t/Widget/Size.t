@@ -22,7 +22,7 @@ my $id = $window-> add_notification( Size => sub {
                                      });
 reset_flag();
 $window-> size( 200, 200);
-ok( get_flag() || &Prima::Test::wait, "onSize message" );
+ok( get_flag || &wait, "onSize message" );
 $window-> remove_notification( $id);
 $window-> size( @w);
 my @dw = $window-> size;

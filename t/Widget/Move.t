@@ -28,7 +28,7 @@ my @or2 = $wl-> origin;
 reset_flag();
 $wx-> origin( $wx-> left + 1, $wx-> bottom + 1);
 
-ok(( get_flag() && $dong2) || &Prima::Test::wait, "onMove message - pass 1" );
+ok(( get_flag && $dong2) || &wait, "onMove message - pass 1" );
 my @nor = $wx-> origin;
 SKIP : {
     if ( $nor[0] == $or[0] + 1 && $nor[1] == $or[1] + 1) {
@@ -58,7 +58,7 @@ $wx-> size( $wx-> width + 1, $wx-> height + 1);
 reset_flag();
 $wl-> growMode( gm::DontCare);
 $wx-> origin( $wx-> left + 2, $wx-> bottom + 2);
-ok( get_flag() || &Prima::Test::wait, "onMove message - pass 2" );
+ok( get_flag || &wait, "onMove message - pass 2" );
 @nor = $wx-> origin;
 is( $mrep[0], $or[0], "parameters consistency - pass 2" );
 is( $mrep[1], $or[1], "parameters consistency - pass 2" );

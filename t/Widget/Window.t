@@ -23,19 +23,19 @@ $window-> focus;
 reset_flag();
 $xw-> focus;
 ok( $xw-> selected, "activate" );
-ok(( get_flag() || &Prima::Test::wait) && $id{Activate}, "onActivate" );
+ok(( get_flag || &wait) && $id{Activate}, "onActivate" );
 %id=();
 
 reset_flag();
 $window-> focus;
 ok( !$xw-> selected, "deActivate" );
-ok(( get_flag() || &Prima::Test::wait) && $id{Deactivate}, "onDeactivate" );
+ok(( get_flag || &wait) && $id{Deactivate}, "onDeactivate" );
 %id=();
 
 reset_flag();
 $xw-> windowState( ws::Maximized);
 is( $xw-> windowState, ws::Maximized, "maximize" );
-ok(( get_flag() || &Prima::Test::wait) && $id{State}, "onWindowState" );
+ok(( get_flag || &wait) && $id{State}, "onWindowState" );
 $xw-> windowState( ws::Normal);
 is( $xw-> windowState, ws::Normal, "restore from maximized" );
 %id=();
@@ -65,22 +65,22 @@ $xw-> insert( Timer =>
                   $_[0]-> destroy;
               })-> start;
 my $mr = $xw-> execute;
-ok( get_flag(), "execute" );
+ok( get_flag, "execute" );
 is( $mr, mb::OK, "execute" );
 
 reset_flag();
 %id=();
 $xw-> show;
-ok(( get_flag() || &Prima::Test::wait) && $id{Show} && $xw-> visible, "show" );
+ok(( get_flag || &wait) && $id{Show} && $xw-> visible, "show" );
 
 reset_flag();
 %id=();
 $xw-> hide;
-ok(( get_flag() || &Prima::Test::wait) && $id{Hide} && !$xw-> visible, "hide" );
+ok(( get_flag || &wait) && $id{Hide} && !$xw-> visible, "hide" );
 
 %id=();
 reset_flag();
 $xw-> close;
-ok(( get_flag() || &Prima::Test::wait) && $id{Close} && $xw-> alive, "close" );
+ok(( get_flag || &wait) && $id{Close} && $xw-> alive, "close" );
 
 $xw-> destroy;

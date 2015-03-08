@@ -38,7 +38,7 @@ $ww-> set( onMove => sub { set_flag(0); });
 $ww-> origin(10,10);
 is( $ww-> left, 10, "hidden" );
 is( $ww-> bottom, 10, "hidden" );
-ok( get_flag() || &__wait, "event" );
+ok( get_flag || &__wait, "event" );
 
 $ww-> owner( $::application);
 $ww-> owner( $window );
