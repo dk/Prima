@@ -6,22 +6,20 @@ use warnings;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
+SKIP : {
+    unless ( $] >= 5.006 &&
+             $::application-> get_system_value( sv::CanUTF8_Output)
+        ) {
+        skip "$] >= 5.006 && UTF8_Output not supported", 4;
+    }
 
-unless ( $] >= 5.006 && 
-	$::application-> get_system_value( sv::CanUTF8_Output)
-) {
-	print "1..1 support\n";
-	skip;
-	return 1;
-}
+    pass("support");
 
-pass("support");
-
-my $utf8_line;
-eval '$utf8_line="line\\x{2028}line"';
-my @r = @{$::application-> text_wrap( $utf8_line, 1000, tw::NewLineBreak)};
-is( scalar @r, 2, "wrap utf8 text");
-ok( @r, "wrap utf8 text"  );
-is( $r[0], $r[1], "wrap utf8 text" );
-
+    my $utf8_line;
+    eval '$utf8_line="line\\x{2028}line"';
+    my @r = @{$::application-> text_wrap( $utf8_line, 1000, tw::NewLineBreak)};
+    is( scalar @r, 2, "wrap utf8 text");
+    ok( @r, "wrap utf8 text"  );
+    is( $r[0], $r[1], "wrap utf8 text" );
+};
 done_testing();
