@@ -23,24 +23,24 @@ $ww-> set(
 
 
 $ww-> hide;
-ok($Prima::Test::dong || &Prima::Test::wait, "hide" );
-cmp_ok($ww-> visible, '==', 0, "hide" );
-$Prima::Test::dong = 0;
+ok(get_flag() || &Prima::Test::wait, "hide" );
+is($ww-> visible, 0, "hide" );
+reset_flag();
 
 $ww-> show;
-ok($Prima::Test::dong || &Prima::Test::wait, "show" );
-cmp_ok($ww-> visible, '!=', 0, "show" );
-$Prima::Test::dong = 0;
+ok(get_flag() || &Prima::Test::wait, "show" );
+isnt($ww-> visible, 0, "show" );
+reset_flag();
 
 $ww-> enabled(0);
-ok($Prima::Test::dong || &Prima::Test::wait, "disable" );
-cmp_ok($ww-> enabled, '==', 0, "disable" );
-$Prima::Test::dong = 0;
+ok(get_flag() || &Prima::Test::wait, "disable" );
+is($ww-> enabled, 0, "disable" );
+reset_flag();
 
 $ww-> enabled(1);
-ok($Prima::Test::dong || &Prima::Test::wait, "enable" );
-cmp_ok( $ww-> enabled, '!=', 0, "enable" );
-$Prima::Test::dong = 0;
+ok(get_flag() || &Prima::Test::wait, "enable" );
+isnt( $ww-> enabled, 0, "enable" );
+reset_flag();
 
 $ww-> focused(1);
 if ( $ww-> focused) {

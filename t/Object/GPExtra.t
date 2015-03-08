@@ -32,8 +32,8 @@ $x-> color( cl::Black);
 $x-> lineWidth( 3);
 $x-> line( 3, 4, 5, 4);
 $x-> lineWidth( 1);
-cmp_ok( $x-> pixel( 2, 4), '==', 0, "lineWidth");
-cmp_ok( $x-> pixel( 5, 3), '==', 0, "lineWidth");
+is( $x-> pixel( 2, 4), 0, "lineWidth");
+is( $x-> pixel( 5, 3), 0, "lineWidth");
 
 # 3
 $x-> color( cl::White);
@@ -67,7 +67,7 @@ $x-> bar( 0, 0, 7, 7);
 $x-> rop( rop::XorPut);
 $x-> bar( 0, 0, 1, 1);
 $x-> rop( rop::CopyPut);
-cmp_ok( $x-> pixel( 0, 0), '==', 0, "rob paint" );
+is( $x-> pixel( 0, 0), 0, "rob paint" );
 
 $x-> destroy;
 

@@ -27,8 +27,8 @@ $c-> store( "Image", $i);
 $i = $c-> fetch( 'Image');
 %fm = map { $_ => 1 } $c-> get_formats;
 ok( exists $fm{Image} && defined $i && $i-> alive, "image");
-cmp_ok( $i-> width, '==', 32, "image" );
-cmp_ok( $i-> height, '==', 32, "image" );
+is( $i-> width, 32, "image" );
+is( $i-> height, 32, "image" );
 $i-> destroy if $i;
 
 $c-> register_format("Mumbo-Jumbo");
@@ -42,6 +42,6 @@ $c-> deregister_format("Mumbo-Jumbo");
 
 $c-> clear;
 my @f = $c-> get_formats;
-cmp_ok( scalar(@f), '==', 0, "clear");
+is( scalar(@f), 0, "clear");
 
 done_testing();

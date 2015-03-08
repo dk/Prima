@@ -18,8 +18,8 @@ for ( qw( height width size direction)) {
            skip;
        } else {
            $x-> font( $_ => $fx);
-           cmp_ok( $fx, '==', $x-> font-> $_(), "$_");
-       }
+           is( $fx, $x-> font-> $_(), "$_");
+       };
 }
 
 my $fx = $x-> font-> pitch;
@@ -27,8 +27,8 @@ my $newfx = ( $fx == fp::Fixed) ? fp::Variable : fp::Fixed;
 $x-> font( pitch => $newfx);
 my $fx2 = $x-> font-> pitch;
 $x-> font( pitch => $fx);
-cmp_ok( $x-> font-> pitch, '==', $fx, "pitch");
-cmp_ok( $fx2, '==', $newfx, "pitch");
+is( $x-> font-> pitch, $fx, "pitch");
+is( $fx2, $newfx, "pitch");
 
 $fx = $x-> font-> style;
 $newfx = ~$fx;

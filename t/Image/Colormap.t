@@ -27,6 +27,6 @@ is_deeply( $i-> palette, $p, "set" );
 
 # 4
 my $cc = $i-> get_nearest_color(0x030101);
-cmp_ok( $cc, '==', 0x020100, "nearest" );
+is( $cc, 0x020100, "nearest" );
 
 done_testing();

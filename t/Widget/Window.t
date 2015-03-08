@@ -41,21 +41,21 @@ $xw-> windowState( ws::Maximized);
 cmp_ok( $xw-> windowState, '==', ws::Maximized, "maximize" );
 ok(( $Prima::Test::dong || &Prima::Test::wait) && $id{State}, "onWindowState" );
 $xw-> windowState( ws::Normal);
-cmp_ok( $xw-> windowState, '==', ws::Normal, "restore from maximized" );
+is( $xw-> windowState, ws::Normal, "restore from maximized" );
 %id=();
 
 $Prima::Test::dong = 0;
 $xw-> windowState( ws::Minimized);
-cmp_ok( $xw-> windowState, '==', ws::Minimized, "restore from minimized" );
+is( $xw-> windowState, ws::Minimized, "restore from minimized" );
 
 $Prima::Test::dong = 0;
 $xw-> windowState( ws::Normal);
-cmp_ok( $xw-> windowState, '==', ws::Normal, "restore max->min->normal" );
+is( $xw-> windowState, ws::Normal, "restore max->min->normal" );
 
 $xw-> windowState( ws::Maximized);
 $xw-> windowState( ws::Minimized);
 $xw-> windowState( ws::Normal);
-cmp_ok( $xw-> windowState, '==', ws::Normal, "user modality" );
+is( $xw-> windowState, ws::Normal, "user modality" );
 
 %id=();
 $Prima::Test::dong = 0;
@@ -69,8 +69,8 @@ $xw-> insert( Timer =>
                   $_[0]-> destroy;
               })-> start;
 my $mr = $xw-> execute;
-ok( $Prima::Test::dong, "execute" );
-cmp_ok( $mr, "==", mb::OK, "execute" );
+ok( get_flag(), "execute" );
+is( $mr, mb::OK, "execute" );
 
 $Prima::Test::dong = 0;
 %id=();

@@ -59,8 +59,8 @@ ok( $c-> capture, "capture" );
 $Prima::Test::dong = 0;
 $c-> pointerPos( 10, 10);
 my @pp = $c-> pointerPos;
-cmp_ok( $pp[0], '==', 10, "positioning" );
-cmp_ok( $pp[1], '==', 10, "positioning" );
+is( $pp[0], 10, "positioning" );
+is( $pp[1], 10, "positioning" );
 $c-> pointerPos( 11, 11);
 ok( $Prima::Test::dong || &Prima::Test::__wait, "simulated movement" );
 

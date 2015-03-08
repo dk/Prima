@@ -322,7 +322,7 @@ $x-> color( cl::White);
 $x-> bar(0,0,8,8);
 $x-> put_image( 0, 0, $y);
 $y-> destroy;
-cmp_ok( $x-> pixel( 0, 0), '==', 0, 'dbm(put_image)');
+is( $x-> pixel( 0, 0), 0, 'dbm(put_image)');
 
 $x-> destroy;
 
@@ -330,7 +330,7 @@ sub run_tests {
     my ($x, $coordinates, $name) =  @_;
     for my $coordinate( @$coordinates ) {
         my ($xco, $yco, $expected) = @$coordinate;
-        cmp_ok( $x->pixel( $xco, $yco ), '==', $expected, "$name ($xco, $yco)" );
+        is( $x->pixel( $xco, $yco ), $expected, "$name ($xco, $yco)" );
     }
 }
 

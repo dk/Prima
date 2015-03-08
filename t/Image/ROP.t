@@ -55,7 +55,7 @@ for ( my $i = 0; $i < @alu; $i++) {
 		$dst-> put_image( 0, 0, $src, $rop::{$alu[$i]}->());
 		$res |= ( $dst-> pixel(0, 0) & 1) << $p;
 	}
-	cmp_ok( $res, '==', $i, $test_name.$alu[$i] );
+	is( $res, $i, $test_name.$alu[$i] );
 }
 
 unless ( $src-> get_paint_state) {
@@ -86,7 +86,7 @@ for ( my $i = 0; $i < @alu; $i++) {
 		$src-> map( 0);
 		$res |= ( $src-> pixel(0, 0) & 1) << $p;
 	}
-	cmp_ok( $res, '==', $i, "map ". $alu[ $i] );
+	is( $res, $i, "map ". $alu[ $i] );
 }
 
 done_testing();

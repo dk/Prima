@@ -34,15 +34,15 @@ ok( $Prima::Test::dong, "scroll" );
 
 $ww-> invalidate_rect( 0, 0, 2, 2);
 my @cr = $ww-> get_invalid_rect;
-cmp_ok( $cr[0], '==', 0, "query invalid area" );
-cmp_ok( $cr[1], '==', 0, "query invalid area" );
-cmp_ok( $cr[2], '==', 2, "query invalid area" );
-cmp_ok( $cr[3], '==', 2, "query invalid area" );
+is( $cr[0], 0, "query invalid area" );
+is( $cr[1], 0, "query invalid area" );
+is( $cr[2], 2, "query invalid area" );
+is( $cr[3], 2, "query invalid area" );
 $ww-> update_view;
-cmp_ok( $rcrect[0], '==', 0, "invalid area consistency" );
-cmp_ok( $rcrect[1], '==', 0, "invalid area consistency" );
-cmp_ok( $rcrect[2], '==', 1, "invalid area consistency" );
-cmp_ok( $rcrect[3], '==', 1, "invalid area consistency" );
+is( $rcrect[0], 0, "invalid area consistency" );
+is( $rcrect[1], 0, "invalid area consistency" );
+is( $rcrect[2], 1, "invalid area consistency" );
+is( $rcrect[3], 1, "invalid area consistency" );
 
 $ww-> buffered(1);
 $ww-> set( onPaint => sub {
@@ -51,15 +51,15 @@ $ww-> set( onPaint => sub {
 	$x-> pixel( 0,0,cl::White);
 	my $white = $x-> pixel(0,0);
 	$x-> pixel( 0,0,cl::Black);
-	cmp_ok( $x-> pixel(0,0), '==', 0, "pixel" );
+	is( $x-> pixel(0,0), 0, "pixel" );
 	$x-> color( cl::White);
 	$x-> bar( 0, 0, 7, 7);
 	$x-> color( cl::Black);
 	$x-> clipRect( 2, 2, 3, 3);
 	$x-> bar( 1, 1, 2, 2);
 	$x-> clipRect( 0, 0, $x-> size);
-	cmp_ok( $x-> pixel( 2,2), '==', 0, "clipRect" );
-    cmp_ok( $x-> pixel( 1,1), '==', $white, "clipRect" );
+	is( $x-> pixel( 2,2), 0, "clipRect" );
+       is( $x-> pixel( 1,1), $white, "clipRect" );
 
 	$x-> color( cl::White);
 	$x-> bar( 0, 0, 7, 7);
@@ -67,8 +67,8 @@ $ww-> set( onPaint => sub {
 	$x-> translate( -1, 1);
 	$x-> bar( 2, 2, 3, 3);
 	$x-> translate( 0, 0);
-	cmp_ok( $x-> pixel( 1,4), '==', 0, "translate" );
-	cmp_ok( $x-> pixel( 3,2), '==', $white, "translate" );
+	is( $x-> pixel( 1,4), 0, "translate" );
+	is( $x-> pixel( 3,2), $white, "translate" );
 });
 $ww-> repaint;
 $ww-> update_view;
