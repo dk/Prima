@@ -4,10 +4,6 @@ use Prima::Test qw(noX11);
 use strict;
 use warnings;
 
-if( $Prima::Test::noX11 ) {
-    plan skip_all => "Skipping all because noX11";
-}
-
 my @alu = qw(
    Blackness
    NotOr

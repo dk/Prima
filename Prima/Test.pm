@@ -33,15 +33,27 @@ use warnings;
 use Prima::Config;
 use Prima::noX11;
 use Prima;
-use Exporter qw(import);
-
 use Test::More;
-our @EXPORT = qw(create_window set_flag get_flag reset_flag noX11);
+
+our @ISA = qw(Exporter);
+our @EXPORT_OK = qw(create_window set_flag get_flag reset_flag noX11);
+
+my $noX11 = 1 if defined Prima::XOpenDisplay();
+
+sub import
+{
+    my ($self) = @_;
+    my @args = grep { $_ eq 'noX11' } @_;
+    my $test_runs_without_x11 = scalar @args;
+
+    push @args, qw(create_window set_flag get_flag reset_flag);
+    $self->export_to_level( 1, @args);
+
+    plan skip_all => "skipping all because noX11"
+        if( $test_runs_without_x11 && $noX11 );
+}
 
 our $dong;
-# testing if is running over a dumb terminal
-our $noX11 = 1 if defined Prima::XOpenDisplay();
-
 our $tick;
 
 sub create_window {

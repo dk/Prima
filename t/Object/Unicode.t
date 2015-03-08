@@ -3,12 +3,9 @@ use Test::More tests => 4;
 use strict;
 use warnings;
 
-use Prima::Test;
+use Prima::Test qw(noX11);
 use Prima::Application;
 
-if( $Prima::Test::noX11 ) {
-    plan skip_all => "Skipping all because noX11";
-}
 
 unless ( $] >= 5.006 && 
 	$::application-> get_system_value( sv::CanUTF8_Output)

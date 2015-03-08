@@ -6,10 +6,6 @@ use warnings;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
-if( $Prima::Test::noX11 ) {
-    plan skip_all => "Skipping all test because noX11\n";
-}
-
 my $a = $::application;
 
 my @sz = $a->size;

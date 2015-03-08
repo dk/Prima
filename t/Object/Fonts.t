@@ -4,10 +4,6 @@ use Prima::Test qw(noX11);
 use strict;
 use warnings;
 
-if( $Prima::Test::noX11 ) {
-    plan skip_all => "Skipping all because noX11";
-}
-
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 
 for ( qw( height width size direction)) {

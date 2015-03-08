@@ -6,10 +6,6 @@ use warnings;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
-if( $Prima::Test::noX11 ) {
-    plan skip_all => "Skipping all because noX11";
-}
-
 my $c = $::application-> Clipboard;
 ok( $c && $c-> alive, "alive");
 

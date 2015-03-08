@@ -5,10 +5,6 @@ use warnings;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
-if( $Prima::Test::noX11 ) {
-    plan skip_all => "Skipping all because noX11";
-}
-
 my $i = Prima::Image-> create(
        width => 20,
        height => 20,

@@ -1,13 +1,9 @@
 use Test::More tests => 5;
-use Prima::Test;
+use Prima::Test qw(noX11);
 use Prima::Application;
 
 use strict;
 use warnings;
-
-if( $Prima::Test::noX11 ) {
-    plan skip_all => "Skipping all because noX11";
-}
 
 my $sub_ref = \&set_flag;
 reset_flag();

@@ -1,12 +1,8 @@
 use Test::More tests => 3;
-use Prima::Test;
+use Prima::Test qw(noX11);
 
 use strict;
 use warnings;
-
-if( $Prima::Test::noX11 ) {
-    plan skip_all => "Skipping all because noX11";
-}
 
 reset_flag();
 my $window = create_window();
