@@ -9,7 +9,7 @@ use Prima::Application;
 
 my $window = create_window();
 my $sub_ref = \&Prima::Test::set_flag;
-my $t = $window->( Timer =>
+my $t = $window->insert( Timer =>
                    timeout => 20,
                    onTick => $sub_ref);
 ok( $t, "create" );
