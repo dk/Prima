@@ -39,42 +39,42 @@ my $i = Prima::Image-> create(
 );
 
 for ( @codecs) {
-	my $ci = $_;
-	my $name = "./test.test." . $ci-> {fileExtensions}->[0];
+    SKIP : {
+       my $ci = $_;
+       my $name = "./test.test." . $ci-> {fileExtensions}->[0];
 	
-	my $xi = $i-> dup;
-	unless( open F, ">", $name) {
-		fail("load ".$ci->{fileShortType});
-		skip;
-		next;
-	}
-	binmode F;
-	unless ( $xi-> save( \*F, codecID => $ci-> {codecID})) {
-		fail("save ".$ci->{fileShortType});
-		skip;
-		close F;
-		unlink $name;
-		next;
-	}
-	close F;
-	pass("save ".$ci->{fileShortType});
+       my $xi = $i-> dup;
+       unless( open F, ">", $name) {
+           fail("load ".$ci->{fileShortType});
+           skip "skipping load ".$ci->{fileShortType}, 2;
+       }
+       binmode F;
+       unless ( $xi-> save( \*F, codecID => $ci-> {codecID})) {
+           fail("save ".$ci->{fileShortType});
+           skip "skipping save ".$ci->{fileShortType}, 2;
+           close F;
+           unlink $name;
+       }
+       close F;
+       pass("save ".$ci->{fileShortType});
 
-	unless ( open F, "<", $name) {
-		fail($ci);
-		unlink $name;
-		next;
-	}
-	binmode F;
+       unless ( open F, "<", $name) {
+           fail($ci);
+           unlink $name;
+           skip "load ".$ci->{fileShortType}, 1;
+       }
+       binmode F;
 
-	my $xl = Prima::Image-> load( \*F, loadExtras => 1);
-	close F;
-	unlink $name;
-	unless ( $xl) {
-		fail($ci);
-		next;
-	}
+       my $xl = Prima::Image-> load( \*F, loadExtras => 1);
+       close F;
+       unlink $name;
+       unless ( $xl) {
+           fail($ci);
+           skip "load ".$ci->{fileShortType}, 1;
+       }
 
-	pass("load ".$ci->{fileShortType});
+       pass("load ".$ci->{fileShortType});
+   };
 }
 
 done_testing();

@@ -44,11 +44,11 @@ use Test::More tests => 8;
 use strict;
 use warnings;
 
-$dong = 0;
+reset_flag();
 my $o = GumboJumboObject-> create;
 ok( $o, "create result" );
 ok( $o-> alive, "alive" );
-ok( Prima::Test->set_dong(), "method override" );
+ok( set_flag(0), "method override" );
 $o-> destroy;
 ok( !$o-> alive, "destroy");
 $stage++;

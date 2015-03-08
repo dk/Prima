@@ -29,12 +29,15 @@ $i-> preserveType(0);
 $i-> begin_paint;
 $i-> end_paint;
 $i-> preserveType(1);
-if ( $::application-> get_bpp != 1) {
-    ok( im::BPP, "paint type consistency" );
-    cmp_ok( $i-> type, '!=', 1, "paint type consistency" );
-} else {
-	skip();
-}
+SKIP: {
+    if ( $::application->get_bpp != 1 ) {
+        ok( im::BPP, "paint type consistency" );
+        isnt( $i-> type, 1, "paint type consistency" );
+    } else {
+        skip( "skipping paint type consistency tests", 2);
+    }
+};
+
 $i-> type( im::bpp1);
 $i-> palette( [0,0,0,255,0,0]);
 $i-> data(

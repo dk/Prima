@@ -8,25 +8,26 @@ if( $Prima::Test::noX11 ) {
     plan skip_all => "Skipping all because noX11";
 }
 
-$Prima::Test::dong = 0;
-$Prima::Test::w->lock;
-my $c = $Prima::Test::w-> insert( Widget =>
-	onPaint => sub { $Prima::Test::dong = 1; }
+reset_flag();
+my $window = create_window();
+$window->lock;
+my $c = $window-> insert( Widget =>
+	onPaint => sub { set_flag(0); }
 );
 $c-> update_view;
-ok( !$Prima::Test::dong, "child" );
+ok( !get_flag(), "child" );
 
-$dong = 0;
+reset_flag();
 $c-> repaint;
-$Prima::Test::w-> unlock;
+$window-> unlock;
 $c-> update_view;
-ok($Prima::Test::dong, "child unlock" );
+ok(get_flag(), "child unlock" );
 
-$Prima::Test::dong = 0;
+reset_flag();
 $c-> lock;
 $c-> repaint;
 $c-> update_view;
-ok( !$Prima::Test::dong, "lock consistency" );
+ok( !get_flag(), "lock consistency" );
 $c-> unlock;
 $c-> destroy;
 

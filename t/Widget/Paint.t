@@ -8,29 +8,30 @@ if( $Prima::Test::noX11 ) {
     plan skip_all => "Skipping all because noX11";
 }
 
-$Prima::Test::dong = 0;
-$Prima::Test::w-> bring_to_front;
+reset_flag(0);
+my $window = create_window();
+$window-> bring_to_front;
 my @rcrect;
-my $ww = $Prima::Test::w-> insert( Widget => origin => [ 0, 0] => size => [ 8, 8],
-                                   syncPaint => 0,
-                                   buffered => 0,
-                                   cursorSize => [ 30, 30],
-                                   cursorVisible => 1,
-                                   onPaint => sub {
-                                       $_[0]-> on_paint( $_[1]);
-                                       $Prima::Test::dong = 1;
-                                       @rcrect = $_[0]-> clipRect;
-                                   });
-ok( $Prima::Test::dong || &Prima::Test::wait, "onPaint message" );
-$Prima::Test::dong = 0;
+my $ww = $window-> insert( Widget => origin => [ 0, 0] => size => [ 8, 8],
+                           syncPaint => 0,
+                           buffered => 0,
+                           cursorSize => [ 30, 30],
+                           cursorVisible => 1,
+                           onPaint => sub {
+                               $_[0]-> on_paint( $_[1]);
+                               set_flag(0);
+                               @rcrect = $_[0]-> clipRect;
+                           });
+ok( get_flag() || &Prima::Test::wait, "onPaint message" );
+reset_flag();
 $ww-> repaint;
 $ww-> update_view;
-ok( $Prima::Test::dong, "update_view" );
+ok( get_flag(), "update_view" );
 
-$Prima::Test::dong = 0;
+reset_flag();
 $ww-> scroll( 2, 2);
 $ww-> update_view;
-ok( $Prima::Test::dong, "scroll" );
+ok( get_flag(), "scroll" );
 
 $ww-> invalidate_rect( 0, 0, 2, 2);
 my @cr = $ww-> get_invalid_rect;

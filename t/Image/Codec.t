@@ -60,16 +60,18 @@ my $cid = -1;
 for ( @$codecs) {
 	$cid++;
 	my $ci = $_;
-	skip, next unless $ci-> {canSave};    
-	my $name = "./test.test." . $ci-> {fileExtensions}->[0];
+    SKIP : {
+       skip "can't save, hence skipping". $names[ $cid ], 1,  unless $ci-> {canSave};
+       my $name = "./test.test." . $ci-> {fileExtensions}->[0];
 	
-	my $xi = $i-> dup;
-	fail(0), unlink( $name), next unless $xi-> save( $name);
-	my $xl = Prima::Image-> load( $name, loadExtras => 1);
-	unlink $name;
-	pass( $names[ $cid] ), next unless $xl;
-	skip, next if $xl-> {extras}-> {codecID} != $cid;
-	pass( $names[ $cid ] );
+       my $xi = $i-> dup;
+       fail($names[ $cid ]), unlink( $name), next unless $xi-> save( $name);
+       my $xl = Prima::Image-> load( $name, loadExtras => 1);
+       unlink $name;
+       pass( $names[ $cid] ), next unless $xl;
+       skip "skipping ".$names[ $cid ], 1  if $xl-> {extras}-> {codecID} != $cid;
+       pass( $names[ $cid ] );
+    };
 }
 
 done_testing();

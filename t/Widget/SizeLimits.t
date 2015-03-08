@@ -10,7 +10,8 @@ if( $Prima::Test::noX11 ) {
     plan skip_all => "Skipping all because noX11";
 }
 
-my $ww = $Prima::Test::w-> insert( Widget =>
+my $window = create_window();
+my $ww = $window-> insert( Widget =>
 	origin => [ 0, 0],
 	sizeMin => [ 10, 10],
 	sizeMax => [ 200, 200],
@@ -28,7 +29,7 @@ cmp_ok( $sz[1], '>=', 10, "runtime sizeMin" );
 cmp_ok( $sz[0], '<=', 200, "runtime sizeMin" );
 cmp_ok( $sz[1], '<=', 200, "runtime sizeMin" );
 $ww-> owner( $::application);
-$ww-> owner( $Prima::Test::w );
+$ww-> owner( $window );
 $ww-> size( 1000, 1000);
 cmp_ok( $sz[0], '>=', 10, "reparent sizeMax" );
 cmp_ok( $sz[1], '>=', 10, "reparent sizeMax" );

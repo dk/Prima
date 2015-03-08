@@ -10,8 +10,10 @@ if( $Prima::Test::noX11 ) {
     plan skip_all => "Skipping all because noX11";
 }
 
-my $ww = $Prima::Test::w->insert( 'Widget' => origin => [ 10, 10],);
-my @xr = $Prima::Test::w-> origin;
+my $window = create_window();
+
+my $ww = $window->insert( 'Widget' => origin => [ 10, 10],);
+my @xr = $window-> origin;
 my @r = $ww-> screen_to_client( $xr[0] + 10, $xr[1] + 10);
 is( $r[0], 0, "screen to client" );
 is( $r[1], 0, "screen to client" );

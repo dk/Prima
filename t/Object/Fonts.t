@@ -14,9 +14,11 @@ for ( qw( height width size direction)) {
        my $fx = $x-> font-> $_();
        $x-> font( $_ => $x-> font-> $_() * 3 + 12);
        my $fx2 = $x-> font-> $_();
-       if ( $fx2 == $fx) {
-           skip;
-       } else {
+       SKIP: {
+           if ( $fx2 == $fx) {
+               skip "$_", 1;
+               next;
+           }
            $x-> font( $_ => $fx);
            is( $fx, $x-> font-> $_(), "$_");
        };
@@ -34,12 +36,13 @@ $fx = $x-> font-> style;
 $newfx = ~$fx;
 $x-> font( style => $newfx);
 $fx2 = $x-> font-> style;
-if ( $fx2 == $fx) {
-       skip;
-} else {
-       $x-> font( style => $fx);
-       cmp_ok( $fx, '==', $x-> font-> style, "style");
-}
+SKIP : {
+    if ( $fx2 == $fx) {
+        skip "style", 1;
+    }
+    $x-> font( style => $fx);
+    is( $fx, $x-> font-> style, "style");
+};
 
 $x-> font-> height( 16);
 my $w = $x-> width;
