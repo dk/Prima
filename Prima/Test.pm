@@ -36,7 +36,8 @@ use Prima;
 use Test::More;
 
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(create_window set_flag get_flag reset_flag noX11);
+our @EXPORT_OK = qw(create_window set_flag get_flag reset_flag wait noX11);
+our @EXPORT    = qw(create_window set_flag get_flag reset_flag wait);
 
 my $noX11 = 1 if defined Prima::XOpenDisplay();
 
@@ -46,7 +47,6 @@ sub import
     my @args = grep { $_ eq 'noX11' } @_;
     my $test_runs_without_x11 = scalar @args;
 
-    push @args, qw(create_window set_flag get_flag reset_flag);
     $self->export_to_level( 1, @args);
 
     plan skip_all => "skipping all because noX11"
