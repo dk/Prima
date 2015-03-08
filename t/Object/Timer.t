@@ -1,8 +1,7 @@
-use Test::More tests => 4;
-
 use strict;
 use warnings;
 
+use Test::More tests => 4;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
@@ -20,5 +19,3 @@ $t-> owner( $::application );
 $t-> owner( $window );
 ok( &Prima::Test::wait, "recreate" );
 $t-> destroy;
-
-done_testing();

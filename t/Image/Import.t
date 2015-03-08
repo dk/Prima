@@ -1,8 +1,8 @@
-use Test::More tests => 10;
-use Prima::Test;
-
 use strict;
 use warnings;
+
+use Test::More tests => 10;
+use Prima::Test;
 
 # noX11 test
 
@@ -55,5 +55,3 @@ $i-> set(
        type    => im::bpp8,
 );
 is( $i-> data, "\0\1\2\3\4\5\6\7", "reverse" );
-
-done_testing()

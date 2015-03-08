@@ -1,8 +1,8 @@
-use Test::More tests => 10;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 10;
+use Prima::Test qw(noX11);
 
 reset_flag();
 my @keydata = ();
@@ -64,5 +64,3 @@ ok( get_flag() || &Prima::Test::__wait, "simulated movement" );
 $c-> pointerPos( @ppx);
 $c-> capture(0);
 $c-> destroy;
-
-done_testing();

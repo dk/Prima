@@ -1,8 +1,8 @@
-use Test::More tests => 8;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 8;
+use Prima::Test qw(noX11);
 
 reset_flag();
 my @xpm = (0,0);
@@ -33,5 +33,3 @@ ok(get_flag(), "onDestroy" );
 reset_flag();
 Prima::Drawable-> create( onDestroy => sub { set_flag(0); } );
 ok( get_flag(), "garbage collection" );
-
-done_testing();

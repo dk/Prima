@@ -1,8 +1,8 @@
-use Test::More tests => 119;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 119;
+use Prima::Test qw(noX11);
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 # 1
@@ -329,5 +329,3 @@ sub run_tests {
         is( $x->pixel( $xco, $yco ), $expected, "$name ($xco, $yco)" );
     }
 }
-
-done_testing();

@@ -1,7 +1,7 @@
-use Test::More tests => 23;
-
 use strict;
 use warnings;
+
+use Test::More tests => 23;
 
 use Prima::Test qw(noX11);
 use Prima::Application;
@@ -83,5 +83,3 @@ $window-> size( 200, 200);
 is( $a[0], -2, "virtual size runtime consistency" );
 is( $a[1], -2, "virtual size runtime consistency" );
 $ww-> destroy;
-
-done_testing()

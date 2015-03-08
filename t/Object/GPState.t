@@ -1,8 +1,8 @@
-use Test::More tests => 28;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 28;
+use Prima::Test qw(noX11);
 
 my $a = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 
@@ -69,5 +69,3 @@ is( $a-> textOpaque, 1, "textOpaque" );
 is( $a-> textOutBaseline, 1, "textOutBaseline" );
 is( $a-> lineJoin, lj::Bevel, "lineJoin" );
 ok( $a-> fillWinding, "fillWinding");
-
-done_testing();

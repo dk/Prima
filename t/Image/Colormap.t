@@ -1,8 +1,8 @@
-use Test::More tests => 4;
-use Prima::Test;
-
 use strict;
 use warnings;
+
+use Test::More tests => 4;
+use Prima::Test;
 
 # noX11 test
 
@@ -28,5 +28,3 @@ is_deeply( $i-> palette, $p, "set" );
 # 4
 my $cc = $i-> get_nearest_color(0x030101);
 is( $cc, 0x020100, "nearest" );
-
-done_testing();

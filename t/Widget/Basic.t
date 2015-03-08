@@ -1,9 +1,9 @@
+use strict;
+use warnings;
+
 use Test::More tests => 5;
 use Prima::Test qw(noX11);
 use Prima::Application;
-
-use strict;
-use warnings;
 
 my $sub_ref = \&set_flag;
 reset_flag();
@@ -25,4 +25,3 @@ reset_flag();
 $c-> destroy;
 ok(get_flag(), "onDestroy" );
 
-done_testing();

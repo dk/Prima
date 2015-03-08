@@ -1,7 +1,7 @@
-use Test::More tests => 44;
 use strict;
 use warnings;
 
+use Test::More tests => 44;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
@@ -134,5 +134,3 @@ $i-> type(im::Long);
 is( $i-> pixel(0,0), 5, "integer roundoff" );
 
 $i-> destroy;
-
-done_testing();

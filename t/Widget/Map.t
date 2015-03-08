@@ -1,8 +1,7 @@
-use Test::More tests => 6;
-
 use strict;
 use warnings;
 
+use Test::More tests => 6;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
@@ -23,5 +22,3 @@ is( $r[0], 1, "application" );
 is( $r[1], 2, "application" );
 
 $ww-> destroy;
-
-done_testing();

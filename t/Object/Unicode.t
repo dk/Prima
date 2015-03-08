@@ -1,8 +1,7 @@
-use Test::More tests => 4;
-
 use strict;
 use warnings;
 
+use Test::More tests => 4;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
@@ -22,4 +21,3 @@ SKIP : {
     ok( @r, "wrap utf8 text"  );
     is( $r[0], $r[1], "wrap utf8 text" );
 };
-done_testing();

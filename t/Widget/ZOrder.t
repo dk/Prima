@@ -1,8 +1,8 @@
-use Test::More tests => 5;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 5;
+use Prima::Test qw(noX11);
 
 my $window = create_window();
 my $first   = $window-> insert( 'Widget');
@@ -21,5 +21,3 @@ ok( get_flag() || &Prima::Test::wait, "event" );
 
 $first-> destroy;
 $second-> destroy;
-
-done_testing();

@@ -1,8 +1,7 @@
-use Test::More tests => 4;
-
 use strict;
 use warnings;
 
+use Test::More tests => 4;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
@@ -30,5 +29,3 @@ ok( $a-> visible && $a-> width == $sz[0] && $a-> height == $sz[1], "width and he
 
 my $msz = $a->get_monitor_rects;
 ok( $msz && ref($msz) eq 'ARRAY' && @$msz > 0, "monitor configuration ok" );
-
-done_testing();

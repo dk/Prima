@@ -1,8 +1,8 @@
-use Test::More tests => 16;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 16;
+use Prima::Test qw(noX11);
 
 reset_flag(0);
 my $window = create_window();
@@ -71,5 +71,3 @@ $ww-> repaint;
 $ww-> update_view;
 
 $ww-> destroy;
-
-done_testing();

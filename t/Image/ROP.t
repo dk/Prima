@@ -1,8 +1,8 @@
-use Test::More tests => 48;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 48;
+use Prima::Test qw(noX11);
 
 my @alu = qw(
    Blackness
@@ -84,5 +84,3 @@ for ( my $i = 0; $i < @alu; $i++) {
 	}
 	is( $res, $i, "map ". $alu[ $i] );
 }
-
-done_testing();

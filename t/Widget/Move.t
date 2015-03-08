@@ -1,7 +1,7 @@
-use Test::More tests => 20;
-
 use strict;
 use warnings;
+
+use Test::More tests => 20;
 
 use Prima::Test qw(noX11);
 use Prima::Application;
@@ -83,5 +83,3 @@ is( $or[0], $or2[0], "scroll children" );
 is( $or[1], $or2[1], "scroll children" );
 
 $wx-> destroy;
-
-done_testing();

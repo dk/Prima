@@ -1,8 +1,7 @@
-use Test::More tests => 4;
-
 use strict;
 use warnings;
 
+use Test::More tests => 4;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
@@ -13,5 +12,3 @@ cmp_ok( $sz[1], '>', 256, "size" );
 my @i = $::application-> get_indents;
 cmp_ok( $i[0] + $i[2], '<', $sz[0], "indents" );
 cmp_ok( $i[1] + $i[3], '<', $sz[1], "indents" );
-
-done_testing();

@@ -1,8 +1,7 @@
-use Test::More tests => 16;
-
 use strict;
 use warnings;
 
+use Test::More tests => 16;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
@@ -85,5 +84,3 @@ $xw-> close;
 ok(( get_flag() || &Prima::Test::wait) && $id{Close} && $xw-> alive, "close" );
 
 $xw-> destroy;
-
-done_testing();

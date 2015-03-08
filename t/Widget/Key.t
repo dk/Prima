@@ -1,8 +1,8 @@
-use Test::More tests => 3;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 3;
+use Prima::Test qw(noX11);
 
 reset_flag();
 my @keydata = ();
@@ -31,5 +31,3 @@ ok(get_flag() && scalar @keydata, "simulation" );
 @keydata = ();
 
 $c-> destroy;
-
-done_testing();

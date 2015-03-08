@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 my $stage = 1;
 
 package GumboJumboObject;
@@ -34,12 +37,12 @@ sub done
 }
 
 package main;
+use strict;
+use warnings;
+
 use Prima::Test;
 use Prima::Application;
 use Test::More tests => 8;
-
-use strict;
-use warnings;
 
 reset_flag();
 my $o = GumboJumboObject-> create;
@@ -52,5 +55,3 @@ $stage++;
 undef $o;
 eval { $o = GumboJumboObject-> create; };
 ok( !defined $o, "croak during init" );
-
-done_testing();

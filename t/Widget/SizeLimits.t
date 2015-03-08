@@ -1,8 +1,7 @@
-use Test::More tests => 12;
-
 use strict;
 use warnings;
 
+use Test::More tests => 12;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
@@ -33,5 +32,3 @@ cmp_ok( $sz[0], '<=', 200, "reparent sizeMax" );
 cmp_ok( $sz[1], '<=', 200, "reparent sizeMax" );
 
 $ww-> destroy;
-
-done_testing();

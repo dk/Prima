@@ -1,8 +1,8 @@
-use Test::More tests => 3;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 3;
+use Prima::Test qw(noX11);
 
 reset_flag();
 my $window = create_window();
@@ -26,5 +26,3 @@ $c-> update_view;
 ok( !get_flag(), "lock consistency" );
 $c-> unlock;
 $c-> destroy;
-
-done_testing();

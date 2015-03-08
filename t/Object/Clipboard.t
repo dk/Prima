@@ -1,8 +1,7 @@
-use Test::More tests => 10;
-
 use strict;
 use warnings;
 
+use Test::More tests => 10;
 use Prima::Test qw(noX11);
 use Prima::Application;
 
@@ -39,5 +38,3 @@ $c-> deregister_format("Mumbo-Jumbo");
 $c-> clear;
 my @f = $c-> get_formats;
 is( scalar(@f), 0, "clear");
-
-done_testing();

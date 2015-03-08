@@ -1,8 +1,8 @@
-use Test::More tests => 13;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 13;
+use Prima::Test qw(noX11);
 
 my $window = create_window();
 
@@ -46,5 +46,3 @@ is( $ww-> left, 10, "reparent" );
 is( $ww-> bottom, 10, "reparent" );
 
 $ww-> destroy;
-
-done_testing();

@@ -1,8 +1,8 @@
-use Test::More tests => 8;
-use Prima::Test qw(noX11);
-
 use strict;
 use warnings;
+
+use Test::More tests => 8;
+use Prima::Test qw(noX11);
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 
@@ -60,5 +60,3 @@ $x-> rop( rop::CopyPut);
 is( $x-> pixel( 0, 0), 0, "rob paint" );
 
 $x-> destroy;
-
-done_testing();
