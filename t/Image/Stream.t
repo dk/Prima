@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More;
 use Prima::Test;
 
 my @codecs;
@@ -76,3 +76,5 @@ for ( @codecs) {
        pass("load ".$ci->{fileShortType});
    };
 }
+
+done_testing();
