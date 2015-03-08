@@ -6,8 +6,6 @@ use warnings;
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 
-
-# 1
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
@@ -21,7 +19,6 @@ for ( $i = 0; $i < 8; $i++) {
 }
 cmp_ok( $bl, '<', 6, "linePattern");
 
-# 2
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
@@ -31,7 +28,6 @@ $x-> lineWidth( 1);
 is( $x-> pixel( 2, 4), 0, "lineWidth");
 is( $x-> pixel( 5, 3), 0, "lineWidth");
 
-# 3
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( cl::Black);
@@ -45,7 +41,6 @@ $bl = $bl-> sum;
 cmp_ok( $bl, '>', 6000, "fillPattern" );
 cmp_ok( $bl, '<', 10000, "fillPattern" );
 
-# 4
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> color( 0x808080);
@@ -57,7 +52,6 @@ for ( $i = 0; $i < 8; $i++) {
 cmp_ok( $bl, '>', 2, "dithering" );
 cmp_ok( $bl, '<', 6, "dithering" );
 
-# 5
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
 $x-> rop( rop::XorPut);
