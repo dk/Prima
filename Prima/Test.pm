@@ -82,6 +82,7 @@ sub wait {
 }
 
 sub set_flag {
+    shift if ref $_[0]; # ok to call as a method
     my $flag = shift;
     if( $flag ) {
         $tick = 1;
