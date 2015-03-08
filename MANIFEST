@@ -34,7 +34,6 @@ primguts.c
 Printer.c
 Printer.cls
 README
-test.pl
 Timer.c
 Timer.cls
 Types.cls

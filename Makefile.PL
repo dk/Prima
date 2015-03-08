@@ -2085,10 +2085,11 @@ WriteMakefile(
 			repository => 'http://github.com/dk/Prima',
 		},
 		no_index  => {
-			directory  => [qw(include img test unix win32)],
-			file       => [qw(Makefile.PL test.pl ms_install.pl)],
+			directory  => [qw(include t img unix win32)],
+			file       => [qw(Makefile.PL ms_install.pl)],
 		},
 	},
+       test => {TESTS => 't/*.t t/*/*.t'},
 	clean             => { FILES => "@target_clean" },
 );
 
