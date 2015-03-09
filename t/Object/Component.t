@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 8;
-use Prima::Test qw(noX11);
+use Prima::Test;
 
 reset_flag();
 my @xpm = (0,0);

@@ -40,7 +40,7 @@ package main;
 use strict;
 use warnings;
 
-use Prima::Test;
+use Prima::Test qw(noX11);
 use Prima::Application;
 use Test::More tests => 8;
 

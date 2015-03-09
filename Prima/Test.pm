@@ -50,7 +50,8 @@ sub import
     $self->export_to_level( 1, @args);
 
     plan skip_all => "skipping all because noX11"
-        if( $test_runs_without_x11 && $noX11 );
+        unless $test_runs_without_x11 or not $noX11;
+
 }
 
 our $dong;

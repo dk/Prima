@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 5;
-use Prima::Test qw(noX11);
+use Prima::Test;
 
 my $window = create_window();
 my $first   = $window-> insert( 'Widget');

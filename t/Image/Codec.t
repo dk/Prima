@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use Prima::Test;
+use Prima::Test qw(noX11);
 
 my $codecs = Prima::Image-> codecs;
 if ( !defined $codecs || ref($codecs) ne 'ARRAY') {

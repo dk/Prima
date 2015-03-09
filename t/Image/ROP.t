@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 48;
-use Prima::Test qw(noX11);
+use Prima::Test;
 
 my @alu = qw(
    Blackness

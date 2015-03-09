@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 8;
-use Prima::Test qw(noX11);
+use Prima::Test;
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 

@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 44;
-use Prima::Test qw(noX11);
+use Prima::Test;
 use Prima::Application;
 
 my $i = Prima::Image-> create(

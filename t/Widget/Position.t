@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 13;
-use Prima::Test qw(noX11);
+use Prima::Test;
 
 my $window = create_window();
 

@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 3;
-use Prima::Test qw(noX11);
+use Prima::Test;
 
 reset_flag();
 my @keydata = ();

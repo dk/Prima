@@ -3,7 +3,7 @@ use warnings;
 
 use Test::More tests => 20;
 
-use Prima::Test qw(noX11);
+use Prima::Test;
 use Prima::Application;
 
 my $dong2 = 0;
