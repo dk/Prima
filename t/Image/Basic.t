@@ -3,8 +3,10 @@ use warnings;
 
 use Test::More;
 use Prima::Test;
+use Prima::Application;
 
 plan tests => 44;
+
 my $i = Prima::Image-> create(
        width => 20,
        height => 20,
