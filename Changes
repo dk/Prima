@@ -1,5 +1,10 @@
 Revision history for Perl module Prima
 
+1.42 2015-03-11
+ - Tests became TAP compliant and using Prima::Test
+ - Jpeg exif orientation support added
+ - Scrollbar overriding properties added for scroller widgets
+
 1.41 2014-11-08
  - Add ImageViewer.autoZoom
  - Fixes to Notebook  
