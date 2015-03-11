@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 28;
+plan tests => 26;
 
 my $a = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 
@@ -35,8 +35,7 @@ is( $a-> rop2, rop::NotSrcXor, 'rop2' );
 
 $a-> translate( 1, 2);
 my @z = $a-> translate;
-is( $z[0], 1, 'translate' );
-is( $z[1], 2, 'translate' );
+is_deeply( \@z, [1,2], 'translate' );
 
 $a-> textOpaque( 1);
 is( $a-> textOpaque, 1, 'textOpaque' );
@@ -65,8 +64,7 @@ is( $a-> rop, rop::NotSrcXor, "rop" );
 is( $a-> rop2 , rop::NotSrcXor, "rop2");
 
 @z = $a-> translate;
-is( $z[0], 1, "translate" );
-is( $z[1], 2, "translate" );
+is_deeply( \@z, [1,2], "translate" );
 is( $a-> textOpaque, 1, "textOpaque" );
 is( $a-> textOutBaseline, 1, "textOutBaseline" );
 is( $a-> lineJoin, lj::Bevel, "lineJoin" );

@@ -7,7 +7,7 @@ use Prima::Application;
 
 plan tests => 12;
 
-my $window = create_window();
+my $window = create_window;
 my $ww = $window-> insert( Widget =>
 	origin => [ 0, 0],
 	sizeMin => [ 10, 10],

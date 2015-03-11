@@ -29,75 +29,50 @@ package Prima::Test;
 
 use strict;
 use warnings;
-
 use Prima::Config;
 use Prima::noX11;
 use Prima;
 use Test::More;
 
-our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(create_window set_flag get_flag reset_flag wait noX11);
-our @EXPORT    = qw(create_window set_flag get_flag reset_flag wait);
-
-my $noX11 = 1 if defined Prima::XOpenDisplay();
+our @ISA     = qw(Exporter);
+our @EXPORT  = qw(create_window set_flag get_flag reset_flag wait_flag);
+our $noX11   = 1 if defined Prima::XOpenDisplay();
+our $flag;
 
 sub import
 {
-    my @args = grep { $_ ne 'noX11' } @_;
-    my $test_runs_without_x11 = @args != @_;
-    __PACKAGE__->export_to_level(1,@args);
-
-    if( $test_runs_without_x11 ) {
-        return 1;
-    } elsif( $noX11 ) {
-        plan skip_all => "skipping all because noX11";
-    }
+	my @args    = grep { $_ ne 'noX11' } @_;
+	my $needX11 = @args == @_;
+	__PACKAGE__->export_to_level(1,@args);
+	plan skip_all => "no X11 connection" if $needX11 and $noX11;
 }
 
-our $dong;
-our $tick;
-
-sub create_window {
-	unless ($noX11) {
-		eval "use Prima::Application name => 'failtester';"; die $@ if $@;
-		return Prima::Window-> create(
-			onDestroy => sub { $::application-> close},
-			size => [ 200,200],
-		);
-	}    
+sub create_window
+{
+	return if $noX11;
+	eval "use Prima::Application name => 'failtester';"; die $@ if $@;
+	return Prima::Window-> create(
+		onDestroy => sub { $::application-> close},
+		size => [ 200,200],
+	);
 }
 
-sub wait {
+sub __wait
+{
 	return 0 if $noX11;
-	$tick = 0;
-	my $t = Prima::Timer-> create( timeout => 500, 
-		onTick => sub { $tick = 1 });
-	$dong = 0;
+
+	my $tick = 0;
+	my $t = Prima::Timer-> create( timeout => 500, onTick => sub { $tick = 1 });
+	$flag = 0;
 	$t-> start;
-	while ( 1) {
-		last if $dong || $tick;
-		$::application-> yield;
-	}
+	$::application-> yield while not $flag and not $tick;
 	$t-> destroy;
-	return $dong;
+	return $flag;
 }
 
-sub set_flag {
-    shift if ref $_[0]; # ok to call as a method
-    my $flag = shift;
-    if( $flag ) {
-        $tick = 1;
-    } else {
-        $dong = 1;
-    }
-}
-
-sub reset_flag {
-    $dong = 0;
-}
-
-sub get_flag {
-    return $dong;
-}
+sub set_flag   { $flag = 1 }
+sub get_flag   { $flag }
+sub reset_flag { $flag = 0 }
+sub wait_flag  { get_flag || &__wait }
 
 1;

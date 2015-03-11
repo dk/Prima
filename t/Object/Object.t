@@ -25,7 +25,7 @@ sub init
 
 sub setup
 {
-	main::set_flag(0);
+	main::set_flag();
 	$_[0]-> SUPER::setup;
 }
 
@@ -47,7 +47,7 @@ reset_flag();
 my $o = GumboJumboObject-> create;
 ok( $o, "create result" );
 ok( $o-> alive, "alive" );
-ok( set_flag(0), "method override" );
+ok( set_flag, "method override" );
 $o-> destroy;
 ok( !$o-> alive, "destroy");
 $stage++;

@@ -6,51 +6,51 @@ use Prima::Test;
 
 plan tests => 11;
 
-my $window = create_window();
+my $window = create_window;
 my $ww = $window-> insert( 'Widget' => origin => [ 10, 10],);
 
 reset_flag();
 
 $ww-> set(
-	onEnter   => sub { set_flag(0); },
-	onLeave   => sub { set_flag(0); },
-	onShow    => sub { set_flag(0); },
-	onHide    => sub { set_flag(0); },
-	onEnable  => sub { set_flag(0); },
-	onDisable => sub { set_flag(0); }
+	onEnter   => \&set_flag,
+	onLeave   => \&set_flag,
+	onShow    => \&set_flag,
+	onHide    => \&set_flag,
+	onEnable  => \&set_flag,
+	onDisable => \&set_flag
 );
 
 
 $ww-> hide;
-ok(get_flag || &wait, "hide" );
+ok(wait_flag, "hide" );
 is($ww-> visible, 0, "hide" );
-reset_flag();
+reset_flag;
 
 $ww-> show;
-ok(get_flag || &wait, "show" );
+ok(wait_flag, "show" );
 isnt($ww-> visible, 0, "show" );
-reset_flag();
+reset_flag;
 
 $ww-> enabled(0);
-ok(get_flag || &wait, "disable" );
+ok(wait_flag, "disable" );
 is($ww-> enabled, 0, "disable" );
-reset_flag();
+reset_flag;
 
 $ww-> enabled(1);
-ok(get_flag || &wait, "enable" );
+ok(wait_flag, "enable" );
 isnt( $ww-> enabled, 0, "enable" );
-reset_flag();
+reset_flag;
 
 $ww-> focused(1);
 SKIP : {
     if ( $ww-> focused) {
-       ok(get_flag || &wait, "enter" );
-       reset_flag();
+       ok(wait_flag, "enter" );
+       reset_flag;
 	
        $ww-> focused(0);
-       ok( get_flag || &wait, "leave" );
+       ok( wait_flag, "leave" );
        is( $ww-> focused, 0, "leave" );
-       reset_flag();
+       reset_flag;
     } else {
        # WM refuses to refocus
        skip "WM refuses to refocus", 3;

@@ -6,7 +6,7 @@ use Prima::Test;
 
 plan tests => 13;
 
-my $window = create_window();
+my $window = create_window;
 
 my $ww = $window-> insert( Widget =>
 	origin    => [ 10, 10],
@@ -36,11 +36,11 @@ is( $ww-> bottom, 30 - $wp[1], "vertical" );
 
 $ww-> hide;
 reset_flag();
-$ww-> set( onMove => sub { set_flag(0); });
+$ww-> set( onMove => \&set_flag );
 $ww-> origin(10,10);
 is( $ww-> left, 10, "hidden" );
 is( $ww-> bottom, 10, "hidden" );
-ok( get_flag || &__wait, "event" );
+ok( wait_flag, "event" );
 
 $ww-> owner( $::application);
 $ww-> owner( $window );

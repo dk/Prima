@@ -6,14 +6,14 @@ use Prima::Test;
 
 plan tests => 3;
 
-reset_flag();
+reset_flag;
 my @keydata = ();
-my $window = create_window();
+my $window = create_window;
 my $c = $window-> insert( Widget =>
 	onCreate  => \&set_flag,
 	onDestroy => \&set_flag,
-	onKeyDown => sub { set_flag(); push( @keydata, [@_]); },
-	onKeyUp   => sub { set_flag(); push( @keydata, [ $_[0]-> get_shift_state, @_])  },
+	onKeyDown => sub { set_flag; push( @keydata, [@_]); },
+	onKeyUp   => sub { set_flag; push( @keydata, [ $_[0]-> get_shift_state, @_])  },
 );
 
 $c-> key_event( cm::KeyDown, ord(' '), kb::Space, 0, 1, 0);
@@ -22,7 +22,8 @@ ok( get_flag && scalar @keydata, "send" );
 @keydata = ();
 
 $c-> key_event( cm::KeyDown, ord(' '), kb::Space, 0, 1, 1);
-my $ww = &wait;
+reset_flag;
+my $ww = wait_flag;
 @keydata = grep {  scalar @$_ == 5 && $$_[1] == ord(' ') && $$_[2] == kb::Space && $$_[3] == 0} @keydata;
 ok( $ww && scalar @keydata, "post" );
 @keydata = ();

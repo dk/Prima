@@ -4,10 +4,10 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 16;
+plan tests => 10;
 
-reset_flag(0);
-my $window = create_window();
+reset_flag;
+my $window = create_window;
 $window-> bring_to_front;
 my @rcrect;
 my $ww = $window-> insert( Widget => origin => [ 0, 0] => size => [ 8, 8],
@@ -17,31 +17,25 @@ my $ww = $window-> insert( Widget => origin => [ 0, 0] => size => [ 8, 8],
                            cursorVisible => 1,
                            onPaint => sub {
                                $_[0]-> on_paint( $_[1]);
-                               set_flag(0);
+                               set_flag;
                                @rcrect = $_[0]-> clipRect;
                            });
-ok( get_flag || &wait, "onPaint message" );
-reset_flag();
+ok( wait_flag, "onPaint message" );
+reset_flag;
 $ww-> repaint;
 $ww-> update_view;
 ok( get_flag, "update_view" );
 
-reset_flag();
+reset_flag;
 $ww-> scroll( 2, 2);
 $ww-> update_view;
 ok( get_flag, "scroll" );
 
 $ww-> invalidate_rect( 0, 0, 2, 2);
 my @cr = $ww-> get_invalid_rect;
-is( $cr[0], 0, "query invalid area" );
-is( $cr[1], 0, "query invalid area" );
-is( $cr[2], 2, "query invalid area" );
-is( $cr[3], 2, "query invalid area" );
+is_deeply( \@cr, [0,0,2,2], "query invalid area" );
 $ww-> update_view;
-is( $rcrect[0], 0, "invalid area consistency" );
-is( $rcrect[1], 0, "invalid area consistency" );
-is( $rcrect[2], 1, "invalid area consistency" );
-is( $rcrect[3], 1, "invalid area consistency" );
+is_deeply( \@rcrect, [0,0,1,1], "invalid area consistency" );
 
 $ww-> buffered(1);
 $ww-> set( onPaint => sub {
@@ -58,7 +52,7 @@ $ww-> set( onPaint => sub {
 	$x-> bar( 1, 1, 2, 2);
 	$x-> clipRect( 0, 0, $x-> size);
 	is( $x-> pixel( 2,2), 0, "clipRect" );
-       is( $x-> pixel( 1,1), $white, "clipRect" );
+	is( $x-> pixel( 1,1), $white, "clipRect" );
 
 	$x-> color( cl::White);
 	$x-> bar( 0, 0, 7, 7);

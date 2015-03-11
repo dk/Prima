@@ -10,43 +10,43 @@ plan tests => 16;
 my %id;
 my $xw = Prima::Window-> create(
 	size => [ 100, 100],
-	onActivate    => sub { set_flag(0); $id{Activate}   = 1;},
-	onDeactivate  => sub { set_flag(0); $id{Deactivate} = 1;},
-	onExecute     => sub { set_flag(0); $id{Execute}    = 1;},
-	onWindowState => sub { set_flag(0); $id{State}      = 1;},
-	onClose       => sub { set_flag(0); $id{Close}      = 1; $_[0]-> clear_event; },
-	onShow        => sub { set_flag(0); $id{Show}       = 1; },
-	onHide        => sub { set_flag(0); $id{Hide}       = 1; },
+	onActivate    => sub { set_flag; $id{Activate}   = 1;},
+	onDeactivate  => sub { set_flag; $id{Deactivate} = 1;},
+	onExecute     => sub { set_flag; $id{Execute}    = 1;},
+	onWindowState => sub { set_flag; $id{State}      = 1;},
+	onClose       => sub { set_flag; $id{Close}      = 1; $_[0]-> clear_event; },
+	onShow        => sub { set_flag; $id{Show}       = 1; },
+	onHide        => sub { set_flag; $id{Hide}       = 1; },
 );
 
-my $window = create_window();
+my $window = create_window;
 $window-> focus;
 
-reset_flag();
+reset_flag;
 $xw-> focus;
 ok( $xw-> selected, "activate" );
-ok(( get_flag || &wait) && $id{Activate}, "onActivate" );
+ok( wait_flag && $id{Activate}, "onActivate" );
 %id=();
 
-reset_flag();
+reset_flag;
 $window-> focus;
 ok( !$xw-> selected, "deActivate" );
-ok(( get_flag || &wait) && $id{Deactivate}, "onDeactivate" );
+ok( wait_flag && $id{Deactivate}, "onDeactivate" );
 %id=();
 
-reset_flag();
+reset_flag;
 $xw-> windowState( ws::Maximized);
 is( $xw-> windowState, ws::Maximized, "maximize" );
-ok(( get_flag || &wait) && $id{State}, "onWindowState" );
+ok( wait_flag && $id{State}, "onWindowState" );
 $xw-> windowState( ws::Normal);
 is( $xw-> windowState, ws::Normal, "restore from maximized" );
 %id=();
 
-reset_flag();
+reset_flag;
 $xw-> windowState( ws::Minimized);
 is( $xw-> windowState, ws::Minimized, "restore from minimized" );
 
-reset_flag();
+reset_flag;
 $xw-> windowState( ws::Normal);
 is( $xw-> windowState, ws::Normal, "restore max->min->normal" );
 
@@ -56,7 +56,7 @@ $xw-> windowState( ws::Normal);
 is( $xw-> windowState, ws::Normal, "user modality" );
 
 %id=();
-reset_flag();
+reset_flag;
 $xw-> insert( Timer =>
               timeout => 250,
               onTick => sub {
@@ -70,19 +70,19 @@ my $mr = $xw-> execute;
 ok( get_flag, "execute" );
 is( $mr, mb::OK, "execute" );
 
-reset_flag();
+reset_flag;
 %id=();
 $xw-> show;
-ok(( get_flag || &wait) && $id{Show} && $xw-> visible, "show" );
+ok( wait_flag && $id{Show} && $xw-> visible, "show" );
 
-reset_flag();
+reset_flag;
 %id=();
 $xw-> hide;
-ok(( get_flag || &wait) && $id{Hide} && !$xw-> visible, "hide" );
+ok( wait_flag && $id{Hide} && !$xw-> visible, "hide" );
 
 %id=();
-reset_flag();
+reset_flag;
 $xw-> close;
-ok(( get_flag || &wait) && $id{Close} && $xw-> alive, "close" );
+ok( wait_flag && $id{Close} && $xw-> alive, "close" );
 
 $xw-> destroy;
