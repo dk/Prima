@@ -1,8 +1,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 16;
+use Test::More;
 use Prima::Test;
+
+plan tests => 16;
 
 reset_flag(0);
 my $window = create_window();

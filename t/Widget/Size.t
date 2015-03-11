@@ -1,10 +1,12 @@
 use strict;
 use warnings;
 
-use Test::More tests => 23;
+use Test::More;
 
 use Prima::Test;
 use Prima::Application;
+
+plan tests => 23;
 
 my @w;
 my $window = create_window();

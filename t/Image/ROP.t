@@ -1,8 +1,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 48;
+use Test::More;
 use Prima::Test;
+
+plan tests => 48;
 
 my @alu = qw(
    Blackness

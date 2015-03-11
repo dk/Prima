@@ -43,15 +43,15 @@ my $noX11 = 1 if defined Prima::XOpenDisplay();
 
 sub import
 {
-    my ($self) = @_;
-    my @args = grep { $_ eq 'noX11' } @_;
-    my $test_runs_without_x11 = scalar @args;
+    my @args = grep { $_ ne 'noX11' } @_;
+    my $test_runs_without_x11 = @args != @_;
+    __PACKAGE__->export_to_level(1,@args);
 
-    $self->export_to_level( 1, @args);
-
-    plan skip_all => "skipping all because noX11"
-        unless $test_runs_without_x11 or not $noX11;
-
+    if( $test_runs_without_x11 ) {
+        return 1;
+    } elsif( $noX11 ) {
+        plan skip_all => "skipping all because noX11";
+    }
 }
 
 our $dong;

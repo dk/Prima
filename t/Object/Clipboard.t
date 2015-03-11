@@ -1,10 +1,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 10;
+use Test::More;
 use Prima::Test;
 use Prima::Application;
 
+plan tests => 10;
 my $c = $::application-> Clipboard;
 ok( $c && $c-> alive, "alive");
 

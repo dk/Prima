@@ -1,9 +1,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
+use Test::More;
 use Prima::Test;
 use Prima::Application;
+
+plan tests => 5;
 
 my $sub_ref = \&set_flag;
 reset_flag();

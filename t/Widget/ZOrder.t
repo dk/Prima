@@ -1,8 +1,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
+use Test::More;
 use Prima::Test;
+
+plan tests => 5;
 
 my $window = create_window();
 my $first   = $window-> insert( 'Widget');

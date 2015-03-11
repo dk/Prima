@@ -1,8 +1,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 28;
+use Test::More;
 use Prima::Test;
+
+plan tests => 28;
 
 my $a = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 

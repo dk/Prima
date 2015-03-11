@@ -1,10 +1,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More;
 use Prima::Test;
 use Prima::Application;
 
+plan tests => 4;
 
 my $window = create_window();
 my $sub_ref = \&set_flag;

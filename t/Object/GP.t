@@ -1,8 +1,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 119;
+use Test::More;
 use Prima::Test;
+
+plan tests => 119;
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 # 1

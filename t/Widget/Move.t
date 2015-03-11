@@ -1,10 +1,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 20;
-
+use Test::More;
 use Prima::Test;
 use Prima::Application;
+
+plan tests => 20;
 
 my $dong2 = 0;
 
