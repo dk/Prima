@@ -1,30 +1,3 @@
-#
-#  Copyright (c) 1997-2002 The Protein Laboratory, University of Copenhagen
-#  All rights reserved.
-#
-#  Redistribution and use in source and binary forms, with or without
-#  modification, are permitted provided that the following conditions
-#  are met:
-#  1. Redistributions of source code must retain the above copyright
-#     notice, this list of conditions and the following disclaimer.
-#  2. Redistributions in binary form must reproduce the above copyright
-#     notice, this list of conditions and the following disclaimer in the
-#     documentation and/or other materials provided with the distribution.
-#
-#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-#  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-#  ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-#  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-#  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-#  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-#  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-#  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-#  SUCH DAMAGE.
-#
-#  $Id$
-#
 package Prima::Test;
 
 use strict;
@@ -76,3 +49,64 @@ sub reset_flag { $flag = 0 }
 sub wait_flag  { get_flag || &__wait }
 
 1;
+
+__DATA__
+
+=pod
+
+
+=head1 NAME
+
+Prima::Test - GUI test tools
+
+=head1 DESCRIPTION
+
+The module contains a small set or tool used for testing of 
+Prima-related code together with standard perl C<Test::> suite.
+
+=head1 SYNOPSIS
+
+	use Test::More;
+	use Prima::Test;
+	plan tests => 1;
+	ok( create_window, "can create window");
+
+=head1 USAGE
+
+=head2 Methods
+
+=over
+
+=item create_window %args
+
+Creates a standard simple Prima window, returns its handle
+
+=item set_flag,get_flag,reset_flag
+
+These manipulate the state of an internal C<$flag> that stops event loop when set.
+
+=item wait_flag
+
+Waits for the flag to be raised in 500 msec, or returns false.
+
+=back
+
+=head2 no-X11 environment
+
+By default fires skip_all condition if running without X11 connection. If the test 
+can be ran without X11, use as:
+
+	use Prima::Test qw(noX11);
+
+which signals the module not to do any GUI initialization.
+
+=head1 AUTHORS
+
+Upasana Shukla, E<lt>me@upasana.meE<gt>,
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, F<t/*/*.t>
+
+=cut
