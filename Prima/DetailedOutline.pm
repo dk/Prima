@@ -1,7 +1,5 @@
 package Prima::DetailedOutline;
 
-$VERSION = 0.01;
-
 use strict;
 use Prima::Outlines;
 use Prima::DetailedList;
