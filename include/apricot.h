@@ -292,7 +292,7 @@ stricmp(const char *s1, const char *s2);
 #ifdef HAVE_STRNCASECMP
 #define strnicmp(a,b,c) strncasecmp((a),(b),(c))
 #else
-#define strncasecmp(a,b) strnicmp((a),(b))
+#define strncasecmp(a,b,c) strnicmp((a),(b),(c))
 #define PRIMA_NEED_OWN_STRNICMP 1
 extern int
 strnicmp(const char *s1, const char *s2, size_t count);
