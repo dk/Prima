@@ -109,6 +109,7 @@ use vars qw(
 	@Prima_exports
 	$win32_use_dlltool
 	$cygwin_fake_Slib
+	$force_cccdl
 );
 
 my $END;
@@ -534,7 +535,7 @@ sub cc_command_line
 	my $cc = "$Config{cc} $ccflags";
 	$cc .= " $cmd_options{EXTRA_CCFLAGS}"  if length $cmd_options{EXTRA_CCFLAGS};
 	$cc .= " $passthru_options{DEFINE}" if length $passthru_options{DEFINE};
-	$cc .= " $Config{cccdlflags}" if $dl;
+	$cc .= " $Config{cccdlflags}" if $dl || $force_cccdl;
 	$cc .= " $Config{ccdlflags}" if $dl && !$compile_only;
 	$cc .= " -c " if $compile_only;
 	$cc .= ' ' . join(' ', map { "-I$_" } @INCPATH);
@@ -873,14 +874,19 @@ sub setup_compiler
 	compile('int a;', 1) or die "no " . see_makefile_log;
 	print "yes\n";
 
-	print "Checking if can link... ";
-	compile( <<EOF, 0) or die "no " . see_makefile_log;
+	my $text = <<EOF;
 int
 main()
 {
    return 0;
 }
 EOF
+	print "Checking if can link... ";
+	unless ( compile($text, 0)) {
+		print "no, let's try with '$Config{cccdlflags}'... ";
+		$force_cccdl = 1;
+		compile( $text, 0) or die "no " . see_makefile_log;
+	}
 	print "yes\n";
 
 	if ( $compiler_type eq 'cl' ) {
