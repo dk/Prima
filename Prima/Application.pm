@@ -367,6 +367,14 @@ Default value: 0
 
 =over
 
+=item CopyImage $CLIPBOARD, $IMAGE
+
+The notification stores C<$IMAGE> in clipboard.
+
+=item CopyText $CLIPBOARD, $TEXT
+
+The notification stores C<$TEXT> in clipboard.
+
 =item PasteImage $CLIPBOARD, $$IMAGE_REF
 
 The notification queries C<$CLIPBOARD> for image content and stores in

@@ -295,7 +295,11 @@ sub profile_default
 sub text
 { 
 	if ($#_) {
-		$_[0]-> store( 'Text',  $_[1]);
+		my ( $self, $text ) = @_;
+		$self-> open;
+		$self-> clear;
+		$::application-> notify( 'CopyText', $self, $text );
+		$self-> close;
 	} else {
 		my $text;
 		$::application-> notify( 'PasteText', $_[0], \$text);
@@ -306,7 +310,11 @@ sub text
 sub image
 { 
 	if ($#_) {
-		$_[0]-> store( 'Image',  $_[1]);
+		my ( $self, $image ) = @_;
+		$self-> open;
+		$self-> clear;
+		$::application-> notify( 'CopyImage', $self, $image);
+		$self-> close;
 	} else {
 		my $image;
 		$::application-> notify( 'PasteImage', $_[0], \$image);
@@ -1549,7 +1557,9 @@ use vars qw(@ISA @startupNotifications);
 {
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
+	CopyText    => nt::Action,
 	PasteText   => nt::Action,
+	CopyImage   => nt::Action,
 	PasteImage  => nt::Action,
 );
 
@@ -1631,11 +1641,14 @@ sub setup
 			png  => 3,  # png is lossless
 			tiff => 2,  # tiff is usually lossless
 		);
-		my %codecs  = map { lc($_-> {fileShortType})  => ( $weights{ lc($_-> {fileShortType}) } || 1 ) }
-			@{Prima::Image-> codecs};
-		my @codecs = map { "image/$_" } sort { $codecs{$b} <=> $codecs{$a} } keys %codecs;
+		my %codecs  = map { lc($_-> {fileShortType})  => $_ } @{Prima::Image-> codecs};
+		$_->{weight} = $weights{ lc($_-> {fileShortType}) } || 1 for values %codecs;
+		my @codecs = map { {
+			mime => "image/$_",
+			id   => $codecs{$_}->{codecID},
+		} } sort { $codecs{$b}->{weight} <=> $codecs{$a}->{weight} } keys %codecs;
 		my $clipboard = $self-> Clipboard;
-		$clipboard-> register_format($_) for @codecs;
+		$clipboard-> register_format($_->{mime}) for @codecs;
 		$self-> {GTKImageClipboardFormats} = \@codecs;
 	}
 }
@@ -1678,6 +1691,24 @@ sub open_help
 	return $self-> {HelpClass}-> open($link);
 }
 
+sub on_copytext
+{
+	my ( $self, $clipboard, $text ) = @_;
+	$clipboard-> store( 'Text',  $text);
+}
+
+sub on_copyimage
+{
+	my ( $self, $clipboard, $image) = @_;
+	$clipboard-> store( 'Image',  $image);
+	if ( my $formats = $self-> {GTKImageClipboardFormats} ) {
+		my ($bmp, $data, $handle) = ($formats->[0], '');
+		if (open( $handle, '>', \$data) and $image->save($handle, codecID => $bmp->{id})) {
+			$clipboard->store($bmp->{mime}, $data);
+		}
+	}
+}
+
 sub on_pastetext
 {
 	my ( $self, $clipboard, $ref) = @_;
@@ -1698,10 +1729,10 @@ sub on_pasteimage
 	return unless $codecs;
 
 	my %formats = map { $_ => 1 } $clipboard-> get_formats;
-	my @codecs  = grep { $formats{$_} } @$codecs;
+	my @codecs  = grep { $formats{$_->{mime}} } @$codecs;
 	return unless @codecs;
 
-	my $data = $clipboard-> fetch($codecs[0]);
+	my $data = $clipboard-> fetch($codecs[0]->{mime});
 	return unless defined $data;
 
 	my $handle;

@@ -149,13 +149,17 @@ before resorting to C<'Text'>. It is clear that this scheme is not the only
 possibly needed, for example, an application may want to ignore ASCII text, or,
 ignore UTF8 text but have C<Prima::Application::wantUnicodeInput> set, etc.
 
+The symmetric action is C<CopyText>, that allows for a custom text conversion
+code to be installed.
+
 =head2 Images
 
 Image data can be transferred in different formats in different OSes. The
 lowest level is raw pixel data in display-based format, whereas GTK-based
 applications can also exchange images in file-based formats, such as bmp, png
 etc. To avoid further complications in the implementations, C<PasteImage>
-action was introduced to handle these cases. 
+action was introduced to handle these cases, together with a symmetrical
+C<CopyImage>. 
 
 The default action of C<PasteImage> is to query first if C<'Image'> format is
 available, and if so, return the Image object. This by default reads data from
