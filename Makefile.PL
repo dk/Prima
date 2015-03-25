@@ -112,9 +112,18 @@ use vars qw(
 	$force_cccdl
 );
 
+unlink "showlog";
+open MAKELOG, ">", "makepl.log";
+
+sub printlog($)
+{
+	print $_[0];
+	print MAKELOG $_[0];
+}
+
 my $END;
 END {
-	print $END if defined $END;
+	printlog $END if defined $END;
 };
 
 my ($offset_makefile_log, $captured_makefile_log);
@@ -130,7 +139,7 @@ sub see_makefile_log
 
 sub usage
 {
-	print <<HELP;
+	printlog <<HELP;
 
 $0 - configuration script for Prima
 
@@ -386,7 +395,7 @@ sub setup_environment
 	}
 	close F;
 	die "Cannot find VERSION string in Prima.pm\n" unless defined $ver1;
-	print "Version: $ver1.$ver2\n";
+	printlog "Version: $ver1.$ver2\n";
 
 	my $PATCHLEVEL = defined($Config{PATCHLEVEL}) ? $Config{PATCHLEVEL} : $Config{PERL_PATCHLEVEL};
 	my $SUBVERSION = defined($Config{SUBVERSION}) ? $Config{SUBVERSION} : $Config{PERL_SUBVERSION};
@@ -411,7 +420,7 @@ sub setup_environment
 	$TMPDIR  = $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{SystemDrive}\\TEMP") : "/tmp");
 	$NULLDEV = 'makefile.log';
 
-	print "Flavor: ";
+	printlog "Flavor: ";
 	$flavor = $^O;
 	if ( $Win32 and not $cygwin ) {
 		if ( $Config{myuname} =~ /strawberry\-?perl/i) {
@@ -424,13 +433,13 @@ sub setup_environment
 	    $flavor .= '.' . ( $cmd_options{CYGWIN_WINAPI} ? 'win32' : 'x11' );
     }
 	$flavor =~ s/\s/_/g;
-	print "$flavor\n";
+	printlog "$flavor\n";
 
 	$flavor = 'sb32' if $flavor eq 'strawberry';
 	$flavor = 'as32' if $flavor eq 'activestate';
 	
 	$DISTNAME = "Prima-$ver1.$ver2-$flavor-$REVISION.$PATCHLEVEL.$SUBVERSION";
-	print "Build: $DISTNAME\n";
+	printlog "Build: $DISTNAME\n";
    
 	if ( $cygwin and $] > 5.010 ) {
 		# 5.10 was shipped with a hack in ExtUtils/Liblist/Kid.pm where having auto/Prima.dll was ok
@@ -679,14 +688,15 @@ sub have_header
 	(my $defname = "HAVE_" . uc $header) =~ s/\W/_/g;
 	return $DEFINES{$defname} if exists $DEFINES{$defname};
 	my @pre_headers = map { "#include <$_>\n" } @_;
-	print "Checking for presence of $header... ";
+	printlog "Checking for presence of $header... ";
 	my $present = compile( <<EOF, 1);
 @pre_headers
 #include <$header>
 EOF
 	$DEFINES{ $defname} = undef;
 	$DEFINES{ $defname} = 1 if $present;
-	print( $present ? "yes" : "no", "\n");
+	printlog ($present ? "yes" : "no");
+	printlog "\n";
 	return $present;
 }
 
@@ -737,7 +747,7 @@ sub have_func
 	my $defname = "HAVE_" . uc $funcname;
 	my @srchead = map { "#include <$_>\n"} @headers;
 	$defname =~ s/\W/_/g;
-	print "Checking for function $funcname... ";
+	printlog "Checking for function $funcname... ";
 	my $rc = compile( <<EOF);
 @srchead
 
@@ -750,10 +760,10 @@ main()
 EOF
 	if ( $rc) {
 		$DEFINES{ $defname} = 1;
-		print "yes\n";
+		printlog "yes\n";
 	} else {
 		$DEFINES{ $defname} = undef;
-		print "no\n";
+		printlog "no\n";
 	}
 	return $rc;
 }
@@ -792,7 +802,7 @@ sub have_type
 	my ( $type, @headers) = @_;
 	(my $defname = "HAVE_" . uc $type) =~ s/\W/_/g;
 	return 1 if $DEFINES{$defname};
-	print "Checking for presence of type ${ type}... ";
+	printlog "Checking for presence of type $type... ";
 	my @srchead = map { "#include <$_>\n"} @headers;
 	my $rc = compile( <<EOF);
 @srchead
@@ -806,11 +816,11 @@ main()
 EOF
 	if ( $rc) {
 		$DEFINES{ $defname} = 1;
-		print "yes\n";
+		printlog "yes\n";
 	}
 	else {
 		$DEFINES{ $defname} = undef;
-		print "no\n";
+		printlog "no\n";
 	}
 	return $rc;
 }
@@ -842,7 +852,7 @@ sub have_funcs_in
 
 sub find_inline
 {
-	print "Checking for inline... ";
+	printlog "Checking for inline... ";
 	for ( qw( inline __inline inline__ __inline__
 				INLINE __INLINE INLINE__ __INLINE__)) {
 		my $i = $_;    
@@ -858,21 +868,21 @@ main()
 EOF
 		if ( $rc) {
 			$DEFINES{__INLINE__} = $i;
-			print "$i\n";
+			printlog "$i\n";
 			return;
 		}
 	}
-	print "none found\n";
+	printlog "none found\n";
 	$DEFINES{__INLINE__} = 'static'; # nasty hack, but better than #pragma inline
 }
 
 sub setup_compiler
 {
-	print "Compiler: $compiler_type\n";
+	printlog "Compiler: $compiler_type\n";
 
-	print "Checking if can compile... ";
+	printlog "Checking if can compile... ";
 	compile('int a;', 1) or die "no " . see_makefile_log;
-	print "yes\n";
+	printlog "yes\n";
 
 	my $text = <<EOF;
 int
@@ -881,16 +891,16 @@ main()
    return 0;
 }
 EOF
-	print "Checking if can link... ";
+	printlog "Checking if can link... ";
 	unless ( compile($text, 0)) {
-		print "no, let's try with '$Config{cccdlflags}'... ";
+		printlog "no, let's try with '$Config{cccdlflags}'... ";
 		$force_cccdl = 1;
 		compile( $text, 0) or die "no " . see_makefile_log;
 	}
-	print "yes\n";
+	printlog "yes\n";
 
 	if ( $compiler_type eq 'cl' ) {
-		print "Checking MSVC version... ";
+		printlog "Checking MSVC version... ";
 		$compiler_version = compile_and_run(<<'MSCVER');
 #include <stdio.h>
 int main() { 
@@ -898,7 +908,7 @@ int main() {
 	return 0;
 }
 MSCVER
-		print "$compiler_version\n";
+		printlog "$compiler_version\n";
 
 		# kill annoying warnings
 		if ( $compiler_version < 1400) {
@@ -913,10 +923,10 @@ MSCVER
 	}
 	
 	if ($Win32) {
-		print "Checking windows subsystem...";
+		printlog "Checking windows subsystem...";
 		$Win64 = have_define('_WIN64');
-		print $Win64 ? " 64" : " 32";
-		print " bits\n";
+		printlog ($Win64 ? " 64" : " 32");
+		printlog " bits\n";
 		$DISTNAME =~ s/(mswin|sb|as)32/${1}64/i if $Win64;
 	}
 
@@ -981,7 +991,7 @@ sub setup_dl_loadflags
 {
 	return if $DL_LOAD_FLAGS >= 0;
 
-	print "Determining dl_load_flags... ";
+	printlog "Determining dl_load_flags... ";
 	
 	local @INCPATH = ( qtilde($Config{archlib}) . qd( "/CORE"));
 
@@ -1069,20 +1079,20 @@ FAIL:
 	unlink ( $c1, $c2, $o1, $o2, $dl1, $dl2, @ex );
 	restore_output;
 	if ( $DL_LOAD_FLAGS < 0 ) {
-		print <<DLERR;
+		printlog <<DLERR;
 unknown
 ** warning: set DL_LOAD_FLAGS=1 if your system requires RTLD_GLOBAL
 DLERR
 		$DL_LOAD_FLAGS = 0;
 	} else {
-		printf("0x%02x\n", $DL_LOAD_FLAGS);
+		printlog sprintf("0x%02x\n", $DL_LOAD_FLAGS);
 	}
 }
 
 sub setup_X11
 {
 	# find X11 include files
-	print "Checking for X11 headers...";
+	printlog "Checking for X11 headers...";
 	push @INCPATH, "$cmd_options{X11BASE}/include"
 		if defined($cmd_options{X11BASE}) and -d "$cmd_options{X11BASE}/include";
 	for ( 'local/', 'freeware/', 'gnu/', 'opt/') {
@@ -1097,7 +1107,7 @@ sub setup_X11
 	);
 
 	unless ( defined $incpath) {
-		print "no\n";
+		printlog "no\n";
 		return unless $unix;
 		warn 
 			"Prima needs X11 headers for compilation! ".
@@ -1106,12 +1116,12 @@ sub setup_X11
 		exit(0);
 	}
 
-	print "yes";
+	printlog "yes";
 	if ( -d $incpath) {
-		print ", in $incpath";
+		printlog ", in $incpath";
 		push @INCPATH, $incpath;
 	}
-	print "\n";
+	printlog "\n";
 
 	# find X11 libraries
 	my @libpath = ( "X11", '', 
@@ -1127,10 +1137,10 @@ sub setup_X11
 	unshift @libpath, map { s/lib$/lib64/; $_ } grep { /lib$/ } @libpath
 		if $Config{intsize} == 8;
 
-	print "Checking for library X11... ";
+	printlog "Checking for library X11... ";
 	my $libpath = find_lib( @libpath);
 	unless ( defined $libpath) {
-		print "no\n";
+		printlog "no\n";
 		unless ( $unix) {
 			pop @INCPATH if @INCPATH and $INCPATH[-1] eq $incpath;
 			return;
@@ -1142,17 +1152,17 @@ sub setup_X11
 		exit(0);
 	}
 
-	print "yes";
+	printlog "yes";
 	if ( -d $libpath) {
-		print ", in $libpath";
+		printlog ", in $libpath";
 		push @LIBPATH, $libpath;
 	}
-	print "\n";
+	printlog "\n";
 
 	if ( $unix) {
 		push @LIBS, 'X11';
 		if (defined find_lib( "Xext", '', '')) {
-			print "Xext library found.\n";
+			printlog "Xext library found.\n";
 			push @LIBS, "Xext";
 		}
 	}
@@ -1180,7 +1190,7 @@ sub setup_xlibs
 		);
 		my $have_ft2build_h = defined find_header( qd("ft2build.h"), @ft_incpaths );
 
-		print "Checking for presence of freetype/freetype.h... ";
+		printlog "Checking for presence of freetype/freetype.h... ";
 		my $incpath;
 		if ($have_ft2build_h) {
 			$incpath = find_header( 
@@ -1196,58 +1206,58 @@ EOF
 			$incpath = find_header( qd("freetype/freetype.h"), @ft_incpaths);
 		}
 		if (defined $incpath) {
-			print "yes";
-			print ", in $incpath" if $incpath;
-			print "\n";
+			printlog "yes";
+			printlog ", in $incpath" if $incpath;
+			printlog "\n";
 			push @INCPATH, $incpath if $incpath;
-			print "Checking for presence of libfreetype... ";
+			printlog "Checking for presence of libfreetype... ";
 			if ( defined find_lib( 'freetype', '', '')) {
 				push @LIBS, 'freetype';
 				$HAVE_XFT++;
-				print "yes\n";
+				printlog "yes\n";
 				$DEFINES{HAVE_FREETYPE_FREETYPE_H} = 1;
 			} else {
-				print "no\n";
+				printlog "no\n";
 				$DEFINES{HAVE_FREETYPE_FREETYPE_H} = undef;
 			}
 		} else {
-			print "no\n";
+			printlog "no\n";
 		}
 
 		if ( have_header( "fontconfig/fontconfig.h")) {
-			print "Checking for presence of libfontconfig... ";
+			printlog "Checking for presence of libfontconfig... ";
 			if ( defined find_lib( 'fontconfig', '', '')) {
 				push @LIBS, 'fontconfig';
 				$HAVE_XFT++;
-				print "yes\n";
+				printlog "yes\n";
 			} else {
 				$DEFINES{HAVE_FONTCONFIG_FONTCONFIG_H} = undef;
-				print "no\n";
+				printlog "no\n";
 			}
 		}
 
 		if ( have_header( "X11/extensions/Xrender.h", "X11/X.h", 
 				"X11/Xlib.h", "X11/extensions/Xext.h")) {
-			print "Checking for presence of libXrender... ";
+			printlog "Checking for presence of libXrender... ";
 			if ( defined find_lib( 'Xrender', '', '')) {
 				push @LIBS, 'Xrender';
 				$HAVE_XFT++;
-				print "yes\n";
+				printlog "yes\n";
 			} else {
 				$DEFINES{HAVE_X11_EXTENSIONS_XRENDER_H} = undef;
-				print "no\n";
+				printlog "no\n";
 			}
 		}
 
 		if ( have_header( "X11/Xft/Xft.h", "X11/X.h", "X11/Xlib.h", 
 				"X11/extensions/Xext.h", "X11/extensions/Xrender.h")) {
-			print "Checking for presence of libXft... ";
+			printlog "Checking for presence of libXft... ";
 			if ( defined find_lib( 'Xft', '', '')) {
-				print "yes\n";
+				printlog "yes\n";
 				push @LIBS, 'Xft';
 				$HAVE_XFT++;
 			} else {
-				print "no\n";
+				printlog "no\n";
 				$DEFINES{HAVE_X11_XFT_XFT_H} = undef;
 			}
 		}
@@ -1258,18 +1268,18 @@ EOF
 
 	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
 	if ( $cmd_options{WITH_ICONV} && have_header( "iconv.h")) {
-		print "Checking for presence of libiconv... ";
+		printlog "Checking for presence of libiconv... ";
 		if ( defined find_lib( 'iconv', '', '')) {
 			push @LIBS, 'iconv';
-			print "yes\n";
+			printlog "yes\n";
 		} else {
 			my $ok = compile( "#include <iconv.h>\nint main() { iconv_close(0); return 0; }\n");
 			if ( $ok ) {
-				print "no, but works as part of libc\n";
+				printlog "no, but works as part of libc\n";
 			} else {
 				$DEFINES{HAVE_ICONV_H} = undef;
 				$cmd_options{WITH_ICONV} = 0;
-				print "no\n";
+				printlog "no\n";
 			}
 		}
 	} else {
@@ -1277,12 +1287,12 @@ EOF
 	}
 	
 	if ( $cmd_options{WITH_GTK2}) {
-		print "Checking for presence of gtk2... ";
+		printlog "Checking for presence of gtk2... ";
 		my $pkg_config = `which pkg-config`;
 		chomp $pkg_config;
 		unless ( -f $pkg_config) {
 			$cmd_options{WITH_GTK2} = 0;
-			print "no pkg-config, no gtk2\n";
+			printlog "no pkg-config, no gtk2\n";
 		}
 
 		if ( $cmd_options{WITH_GTK2}) {
@@ -1290,10 +1300,10 @@ EOF
 			chomp $vers;
 			if ( $vers =~ /^[\d\.]+$/) {
 				$DEFINES{GTK_VERSION} = "\"$vers\"";
-				print "yes, $vers\n";
+				printlog "yes, $vers\n";
 			} else {
 				$cmd_options{WITH_GTK2} = 0;
-				print "no\n";
+				printlog "no\n";
 			}
 		}
 
@@ -1313,35 +1323,35 @@ EOF
 
 			# now, try to compile with GTK. I've got lots of CPAN build failures
 			# because GTK wasn't willing to compile or god knows what.
-			print "Checking if can compile and link with gtk2... ";
+			printlog "Checking if can compile and link with gtk2... ";
 			my $ok = compile( "#include <gtk/gtk.h>\nint main() { return 0; }\n");
 			if ( $ok) {
 				$DEFINES{WITH_GTK2} = 1;
-				print "yes\n";
+				printlog "yes\n";
 			} else {
 				$cmd_options{WITH_GTK2} = 0;
 				@LIBS     = @savelib;
 				@INCPATH  = @saveinc;
-				print "no\n";
+				printlog "no\n";
 			}
 		}
 	}
 
 	if ( have_header( "X11/extensions/Xrandr.h")) {
-		print "Checking for presence of libXrandr... ";
+		printlog "Checking for presence of libXrandr... ";
 		if ( defined find_lib( 'Xrandr', '', '')) {
 			push @LIBS, 'Xrandr';
-			print "yes\n";
+			printlog "yes\n";
 		} else {
 			$DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H} = undef;
-			print "no\n";
+			printlog "no\n";
 		}
 	}
 	
-	print "Using Xft library\n" if $cmd_options{WITH_XFT};
-	print "Using iconv library\n" if $cmd_options{WITH_ICONV};
-	print "Using gtk2 library\n" if $cmd_options{WITH_GTK2};
-	print "Using Xrandr library\n" if $DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H};
+	printlog "Using Xft library\n" if $cmd_options{WITH_XFT};
+	printlog "Using iconv library\n" if $cmd_options{WITH_ICONV};
+	printlog "Using gtk2 library\n" if $cmd_options{WITH_GTK2};
+	printlog "Using Xrandr library\n" if $DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H};
 		
 }
 
@@ -1398,10 +1408,10 @@ sub setup_codecs
 	$prereq = 'win32' if $Win32 and not $cygwin;
 	$prereq = 'win64' if $Win64 and not $cygwin;
 	if ( $prereq) {
-		print "Checking for Prima::codecs::$prereq... ";
+		printlog "Checking for Prima::codecs::$prereq... ";
 		eval "use Prima::codecs::$prereq;";
 		unless ( $@) {
-			print "yes\n";
+			printlog "yes\n";
 			$have_binary_prereq++;
 			my $f = $INC{"Prima/codecs/$prereq.pm"};
 			$f =~ s/.pm$//;
@@ -1409,7 +1419,7 @@ sub setup_codecs
 			push @INCPATH, qd("$f/include");
 
 		} else {
-			print "no\n";
+			printlog "no\n";
 		}
 	}
 
@@ -1439,7 +1449,7 @@ sub setup_codecs
 		close F;
 
 	AGAIN:
-		print "Checking for $codec library... ";
+		printlog "Checking for $codec library... ";
 		if ( 
 			$libs{$lib} || 
 			defined ( $foundlib = find_lib( $lib, join('', @inc), '', @codec_libpath))
@@ -1452,21 +1462,21 @@ sub setup_codecs
 			# In gcc, order of libs matters. libXpm requires libgdi32, and
 			# has to be mentioned _after_ it to work.
 			unshift( @LIBS, $lib) unless $libs{$lib};
-			print "yes";
-			print ", in $foundlib" if defined($foundlib) and length($foundlib);
-			print "\n";
+			printlog "yes";
+			printlog ", in $foundlib" if defined($foundlib) and length($foundlib);
+			printlog "\n";
 		} elsif ( $codec eq 'ungif') {
 			$lib = $codec = 'gif';
-			print "no\n";
+			printlog "no\n";
 			goto AGAIN;
 		} elsif ( $codec eq 'X11') {
 			$DEFINES{EMULATE_X11_CODEC} = 1;
 			push( @ACTIVE_CODECS, $codec);
-			print "no, using built-in\n";
+			printlog "no, using built-in\n";
 		} else {
 			$PASSIVE_CODECS{$fn} = 1;
 			push @warn_codecs, $codec;
-			print "no\n";
+			printlog "no\n";
 		}
 	}
 
@@ -1517,7 +1527,7 @@ NOCODECS
 
 sub create_codecs_c
 {
-	print "Creating img/codecs.c\n";
+	printlog "Creating img/codecs.c\n";
 	open F, "> img/codecs.c" or die "cannot open img/codecs.c:$!\n";
 
 	my $def1 = join("\n", map { "extern void apc_img_codec_$_(void);"} @ACTIVE_CODECS);
@@ -1563,7 +1573,7 @@ sub create_config_h
 {
 	my $config_dir = "include/generic";
 	my $config_h = "$config_dir/config.h";
-	print "Creating $config_h\n";
+	printlog "Creating $config_h\n";
 	unless ( -d "$config_dir") {
 		mkdir $config_dir, 0777;
 	}
@@ -1911,19 +1921,35 @@ sub postamble
 
 	my @alltml;
 	my @alltmldeps;
+
+	my $showlog = '';
+
+	# that's because CPAN doesn't save Makefile.PL output, and I want it for tests
+	if ( $ENV{AUTOMATED_TESTING} ) {
+		$showlog = 'showlog';
+		$t .= <<SHOWMORE;
+
+showlog:
+\t\$(NOECHO) $^X -e ${SHQUOTE}open F,q(makepl.log);print <F>${SHQUOTE}
+\t\$(NOECHO) \$(TOUCH) showlog
+
+SHOWMORE
+	}
 	
-    print "Finding .cls dependencies...\n";
+    	printlog "Finding .cls dependencies...\n";
+
 	for my $clsfile ( @cls_files) {
 		my ( $base ) = $clsfile =~ m/^(.*?).cls$/;
 		my $ancestors = join(' ', map { "include/generic/$_.h $_.cls" } gencls( $clsfile, depend => 1));
 	  	$t .= <<H;
 
-include/generic/$base.h: \$(FIRST_MAKEFILE) $base.cls $ancestors
+include/generic/$base.h: \$(FIRST_MAKEFILE) $showlog $base.cls $ancestors
 \t$^X -I. utils/gencls.pl --inc --h --tml $clsfile include/generic
 
 H
 		push @alltml, "include/generic/$base.tml";
 		push @alltmldeps, "include/generic/$base.h";
+		$showlog = '';
 	}
 
 	$t .= <<H;
@@ -1932,15 +1958,15 @@ include/generic/thunks.tinc: \$(FIRST_MAKEFILE) @alltmldeps
 
 H
 
-    my %dirs;
+	my %dirs;
 	for my $cfile ( @c_files ) {
         my ( $dir ) = ( $cfile =~ /^(\w+)\// );
         $dir = 'root directory' unless $dir;
-	    print "Finding .c dependencies in $dir...\n" unless $dirs{$dir}++;
+	printlog "Finding .c dependencies in $dir...\n" unless $dirs{$dir}++;
 
-		my ( $base ) = $cfile =~ m/^(.*?).c$/;
-		my @deps = find_cdeps( $cfile );
-	  	$t .= <<H
+	my ( $base ) = $cfile =~ m/^(.*?).c$/;
+	my @deps = find_cdeps( $cfile );
+	$t .= <<H
 
 $base$Config{_o}: \$(FIRST_MAKEFILE) $cfile @deps
 
