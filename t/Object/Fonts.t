@@ -4,11 +4,11 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 8;
+plan tests => 9;
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 
-for ( qw( height width size direction)) {
+for ( qw( height size direction)) {
        my $fx = $x-> font-> $_();
        $x-> font( $_ => $x-> font-> $_() * 3 + 12);
        my $fx2 = $x-> font-> $_();
@@ -20,6 +20,22 @@ for ( qw( height width size direction)) {
            $x-> font( $_ => $fx);
            is( $fx, $x-> font-> $_(), "$_");
        };
+}
+
+# width is a bit special, needs height or size
+for (qw( height size)) {
+	my $fh = $x-> font-> $_();
+	my $fw = $x-> font-> width;
+	$x-> font( $_ => $fh, width => $fw * 3 + 12);
+	my $fw2 = $x-> font-> width;
+	SKIP: {
+	    if ( $fw2 == $fw) {
+	        skip "width", 1;
+	        next;
+	    }
+	    $x-> font( $_ => $fh, width => $fw );
+	    is( $fw, $x-> font-> width, "width by $_");
+	};
 }
 
 my $fx = $x-> font-> pitch;
