@@ -271,7 +271,7 @@ typedef struct _RGBTriplet {
 } RGBTriplet;
 
 typedef struct _LoadRec {
-	size_t base;
+	long base;
 	Bool windows;
 	dword cbFix;
 	dword ulCompression;
@@ -622,7 +622,7 @@ req_read_big( PImgLoadFileInstance fi, int h, unsigned long lineSize, Byte * dat
 	if ( fi-> eventMask & IMG_EVENTS_DATA_READY) {
 		/* read and notify */
 		while ( size > 0) {
-			unsigned long r = req_read(
+			ssize_t r = req_read(
 				fi-> req, 
 				( BUFSIZE > size) ? size : BUFSIZE,
 				data
@@ -644,7 +644,7 @@ req_read_big( PImgLoadFileInstance fi, int h, unsigned long lineSize, Byte * dat
 		}
 	} else {
 		/* just read */
-		unsigned long r = req_read( fi-> req, size, data);
+		ssize_t r = req_read( fi-> req, size, data);
 		if ( r < 0)
 			outr( fi-> req);
 		if ( r != size && fi-> noIncomplete)
@@ -671,7 +671,7 @@ read_16_32_bpp( PImgLoadFileInstance fi, PImage i, int bpp, unsigned long stride
 		const word *  src16  = (const word *)  src;
 		const dword * src32  = (const dword *) src;
 		Byte * line  = dst;
-		unsigned long r = req_read( fi-> req, stride_src, src);
+		ssize_t r = req_read( fi-> req, stride_src, src);
 
 		if ( r != stride_src ) {
 			free( src);
@@ -787,7 +787,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		pset_i( HotSpotY, l-> yHotspot);
 		pset_i( BitDepth, l-> bpp);
 
-		c = ( l-> ulCompression < 0 || l-> ulCompression > BCA_MAX) ?
+		c = ( l-> ulCompression > BCA_MAX) ?
 		   	"Unknown" : bca_sets[ l-> ulCompression];
 		pset_c( Compression, c);
 		if ( l-> windows) {

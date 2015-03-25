@@ -39,8 +39,8 @@ extern "C" {
 #endif
 
 typedef struct _ImgIORequest {
-  size_t (*read)       ( void * handle, size_t busize, void * buffer);
-  size_t (*write)      ( void * handle, size_t busize, void * buffer);
+  ssize_t (*read)      ( void * handle, size_t busize, void * buffer);
+  ssize_t (*write)     ( void * handle, size_t busize, void * buffer);
   int    (*seek)       ( void * handle, long offset, int whence);
   long   (*tell)       ( void * handle);
   int    (*flush)      ( void * handle);

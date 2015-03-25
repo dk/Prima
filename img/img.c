@@ -186,13 +186,13 @@ apc_img_profile_add( HV * to, HV * from, HV * keys)
    }
 }   
 
-static size_t 
+static ssize_t 
 stdio_read( void * f, size_t bufsize, void * buffer)
 {
     return fread( buffer, 1, bufsize, ( FILE*) f);
 }
 
-static size_t 
+static ssize_t 
 stdio_write( void * f, size_t bufsize, void * buffer)
 {
     return fwrite( buffer, 1, bufsize, ( FILE*) f);

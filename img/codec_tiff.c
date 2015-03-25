@@ -571,7 +571,7 @@ invert_scanline( Byte * src, int source_bits, int type, int pixels)
    }
 }
 
-static Bool
+static void
 convert_abgr_to_rgba( Byte * buffer, int quads)
 {
    register uint32_t * x = (uint32_t *) buffer;
@@ -629,7 +629,7 @@ read_source_format( PImgLoadFileInstance fi, int source_bits, int * source_forma
       default:
          sprintf( fi-> errbuf,
             "SAMPLEFORMAT in file is %d bits, while supported floats are %d and %d bits, can't convert",
-            source_bits, sizeof(float)*8, sizeof(double)*8);
+            source_bits, (int)sizeof(float)*8, (int)sizeof(double)*8);
          return false;
       }
       break;
@@ -842,13 +842,13 @@ read_palette( PImgLoadFileInstance fi, int source_bits, int * colors, RGBColor *
    last = *p--;
    for ( x = *colors - 1; x > 0; x--, p--) {
       if ( p->r == last.r && p->g == last.g && p->b == last.b) {
-         *colors--;
+         (*colors)--;
       } else {
          /* see if this color is also present somewhere */
          p = palette;
          for ( x = 0; x < *colors - 1; x++) {
             if ( p->r == last.r && p->g == last.g && p->b == last.b) {
-               *colors--;
+               (*colors)--;
                break;
             }
          }

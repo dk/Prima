@@ -553,7 +553,7 @@ GOOD_RETURN:
    return true;
 }
 
-static size_t
+static ssize_t
 img_perlio_read( void * f, size_t bufsize, void * buffer)
 {
 #ifdef PerlIO
@@ -563,7 +563,7 @@ img_perlio_read( void * f, size_t bufsize, void * buffer)
 #endif
 }
 
-static size_t
+static ssize_t
 img_perlio_write( void * f, size_t bufsize, void * buffer)
 {
 #ifdef PerlIO
