@@ -3,6 +3,7 @@ use warnings;
 
 use Test::More;
 use Prima::Test;
+use Prima::Application;
 
 plan tests => 8;
 
@@ -51,8 +52,12 @@ $bl = 0;
 for ( $i = 0; $i < 8; $i++) {
        $bl++ if $x-> pixel( $i, 4) == 0;
 }
+SKIP: {
+my $sys = $::application->get_system_info;
+skip "XP not supported", 2 if $sys->{system} eq 'Windows NT' && $sys->{release} < 5.2;
 cmp_ok( $bl, '>', 2, "dithering" );
 cmp_ok( $bl, '<', 6, "dithering" );
+}
 
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);
