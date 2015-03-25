@@ -69,7 +69,7 @@ for ( @codecs) {
        close F;
        unlink $name;
        unless ( $xl) {
-           fail($ci);
+           fail($ci->{fileShortType});
            skip "load ".$ci->{fileShortType}, 1;
        }
 
