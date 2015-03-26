@@ -747,9 +747,9 @@ CM(ZOrderChanged)
 CM(Enable)
 #define cmDisable       (0x00000016|ctDiscardable) /*           commands */
 CM(Disable)
-#define cmActivate      (0x00000017|ctDiscardable) /* commands for window */
+#define cmActivate      (0x00000017)               /* commands for window */
 CM(Activate)
-#define cmDeactivate    (0x00000018|ctDiscardable) /* active stage change */
+#define cmDeactivate    (0x00000018)               /* active stage change */
 CM(Deactivate)
 #define cmFontChanged   (0x00000019|ctDiscardable) /* generates when font
                                                       changed */

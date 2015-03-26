@@ -511,7 +511,7 @@ apc_window_activate( Handle self)
    XWindow xfoc;
    XEvent ev;
 
-   if ( !XX-> flags. mapped) return true;
+   if ( !XX->flags. want_visible) return true;
    if ( guts. message_boxes) return false;
    if ( self && ( self != CApplication( application)-> map_focus( application, self)))
       return false;
