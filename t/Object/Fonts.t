@@ -26,6 +26,7 @@ for ( qw( height size direction)) {
 for (qw( height size)) {
 	my $fh = $x-> font-> $_();
 	my $fw = $x-> font-> width;
+	my $fn = $x-> font-> name;
 	$x-> font( $_ => $fh, width => $fw * 3 + 12);
 	my $fw2 = $x-> font-> width;
 	SKIP: {
@@ -33,23 +34,23 @@ for (qw( height size)) {
 	        skip "width", 1;
 	        next;
 	    }
-	    $x-> font( $_ => $fh, width => $fw );
+	    $x-> font( $_ => $fh, width => $fw, name => $fn );
 	    is( $fw, $x-> font-> width, "width by $_");
 	};
 }
 
-my $fx = $x-> font-> pitch;
-my $newfx = ( $fx == fp::Fixed) ? fp::Variable : fp::Fixed;
-$x-> font( pitch => $newfx);
-my $fx2 = $x-> font-> pitch;
-$x-> font( pitch => $fx);
-is( $x-> font-> pitch, $fx, "pitch");
-is( $fx2, $newfx, "pitch");
+# set a variable font, force it to fixed
+# the way around is not guaranteed though, so don't test
+$x->font->pitch(fp::Variable);
+is( $x-> font-> pitch, fp::Variable, "variable pitch");
+$x->font->pitch(fp::Fixed);
+is( $x-> font-> pitch, fp::Fixed, "fixed pitch");
 
-$fx = $x-> font-> style;
-$newfx = ~$fx;
+# style
+my $fx = $x-> font-> style;
+my $newfx = ~$fx;
 $x-> font( style => $newfx);
-$fx2 = $x-> font-> style;
+my $fx2 = $x-> font-> style;
 SKIP : {
     if ( $fx2 == $fx) {
         skip "style", 1;
@@ -58,6 +59,7 @@ SKIP : {
     is( $fx, $x-> font-> style, "style");
 };
 
+# wrapping
 $x-> font-> height( 16);
 my $w = $x-> width;
 cmp_ok( scalar @{$x-> text_wrap( "Ein zwei drei fir funf sechs seben acht neun zehn", $w * 5)}, '>', 4, "text wrap");
