@@ -19,21 +19,33 @@ my $xw = Prima::Window-> create(
 	onHide        => sub { set_flag; $id{Hide}       = 1; },
 );
 
-my $window = create_window;
+# window managers are heavy today
+local $Prima::Test::timeout = 5000;
+
+# make sure the other window is focused
+my $window = create_window( onActivate => sub {
+	set_flag;
+	$id{Activate2} = 1;
+});
 $window-> focus;
-
 reset_flag;
-$xw-> focus;
-ok( $xw-> selected, "activate" );
-ok( wait_flag && $id{Activate}, "onActivate" );
-%id=();
+wait_flag;
+SKIP: {
+	skip "WM doesn't respect focus requests", 4 unless $id{Activate2};
+	
+	reset_flag;
+	$xw-> focus;
+	ok( wait_flag && $id{Activate}, "onActivate" );
+	ok( $xw-> selected, "activate" );
+	%id=();
+	
+	reset_flag;
+	$window-> focus;
+	ok( !$xw-> selected, "deactivate" );
+	ok( wait_flag && $id{Deactivate}, "onDeactivate" );
+}
 
-reset_flag;
-$window-> focus;
-ok( !$xw-> selected, "deActivate" );
-ok( wait_flag && $id{Deactivate}, "onDeactivate" );
 %id=();
-
 reset_flag;
 $xw-> windowState( ws::Maximized);
 is( $xw-> windowState, ws::Maximized, "maximize" );
