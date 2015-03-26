@@ -10,68 +10,77 @@ plan tests => 10;
 my $dong1 = 0;
 my $dong2 = 0;
 
-my @mrep;
-my @mrep2;
-my $wx = Prima::Window-> create(
+my @p_rep;
+my @c_rep;
+my $p = Prima::Window-> create(
 	size => [ 100, 100],
-	onMove => sub { $dong1 = 1; set_flag; shift; @mrep = scalar(@mrep) ? ( @mrep[0,1], @_[2,3]) : @_;  },
+	onMove => sub { 
+		$dong1 = 1;
+		set_flag;
+		shift;
+		@p_rep = scalar(@p_rep) ? ( @p_rep[0,1], @_[2,3]) : @_;
+	},
 	name => 'TEST',
 );
 
 
-my $wl = $wx-> insert( 'Prima::Widget' =>
+my $c = $p-> insert( 'Prima::Widget' =>
 	clipOwner => 0,
 	growMode  => 0,
-	onMove => sub { $dong2 = 1; set_flag; shift; @mrep2 = scalar(@mrep2) ? ( @mrep2[0,1], @_[2,3]) : @_;  },
+	onMove => sub {
+		$dong2 = 1;
+		set_flag; shift;
+		@c_rep = scalar(@c_rep) ? ( @c_rep[0,1], @_[2,3]) : @_;
+	},
 );
 
-my @or = $wx-> origin;
-my @or2 = $wl-> origin;
+my @p_or = $p-> origin;
+my @c_or = $c-> origin;
 reset_flag;
-$wx-> origin( $wx-> left + 1, $wx-> bottom + 1);
+$p-> origin( $p-> left + 1, $p-> bottom + 1);
 
 ok(( $dong1 && $dong2) || wait_flag, "onMove message - pass 1" );
-my @nor = $wx-> origin;
+my @nor = $p-> origin;
 SKIP : {
-    if ( $nor[0] == $or[0] + 1 && $nor[1] == $or[1] + 1) {
+    if ( $nor[0] == $p_or[0] + 1 && $nor[1] == $p_or[1] + 1) {
         pass("correct movement");
     } elsif ( Prima::Application-> get_system_info->{apc} != apc::Unix) {
         fail("correct movement");
     } else {
-        skip "skipping movement", 1;
+        skip "WM doesn't respect moving request", 1;
     }
 };
-is_deeply( [$mrep[2],$mrep[3]], \@nor, "parameters consistency - pass 1" );
-my @d = ( $nor[0] - $or[0], $nor[1] - $or[1]);
-ok( scalar(@mrep2), "child move" );
-is_deeply( \@mrep2, [@or2, $mrep2[0] + $d[1], $mrep2[0] + $d[1]], "child move consistency" );
+is_deeply( [$p_rep[2],$p_rep[3]], \@nor, "parameters consistency - pass 1" );
+my @d = ( $nor[0] - $p_or[0], $nor[1] - $p_or[1]);
+ok( scalar(@c_rep), "c_rep move" );
+is_deeply( \@c_rep, [@c_or, $c_rep[0] + $d[0], $c_rep[0] + $d[1]], "child move consistency" );
 
-$wx-> origin( $wx-> left + 1, $wx-> bottom + 1);
-$wx-> size( $wx-> width + 1, $wx-> height + 1);
+$p-> origin( $p-> left + 1, $p-> bottom + 1);
+$p-> size( $p-> width + 1, $p-> height + 1);
 
-@or = $wx-> origin;
-@or2 = $wl-> origin;
-@mrep = @mrep2 = ();
+@p_or = $p-> origin;
+@c_or = $c-> origin;
+@p_rep = @c_rep = ();
 
 reset_flag;
-$wl-> growMode( gm::DontCare);
-$wx-> origin( $wx-> left + 2, $wx-> bottom + 2);
+$c-> growMode( gm::DontCare);
+$p-> origin( $p-> left + 2, $p-> bottom + 2);
 ok( wait_flag, "onMove message - pass 2" );
-@nor = $wx-> origin;
-is_deeply( \@mrep, [@or,@nor], "parameters consistency - pass 2" );
-@or = $wl-> origin;
-is_deeply( \@or, \@or2, "gmDontCare" );
+@nor = $p-> origin;
+is_deeply( \@p_rep, [@p_or,@nor], "parameters consistency - pass 2" );
+@p_or = $c-> origin;
+is_deeply( \@p_or, \@c_or, "gmDontCare" );
 
-@or = $wl-> origin;
-$wl-> owner( create_window() );
-@nor = $wl-> origin;
-$wl-> owner( $wx);
-is_deeply( \@or, \@nor, "recreate consistency" );
+@p_or = $c-> origin;
+$c-> owner( create_window() );
+@nor = $c-> origin;
+$c-> owner( $p);
+is_deeply( \@p_or, \@nor, "recreate consistency" );
 
-$wl-> clipOwner(1);
-@or = map { $_ + 10 } $wl-> origin;
-$wx->scroll( 10, 10, withChildren => 1); 
-@or2 = $wl-> origin;
-is_deeply( \@or, \@or2, "scroll children" );
+$c-> clipOwner(1);
+@p_or = map { $_ + 10 } $c-> origin;
+$p->scroll( 10, 10, withChildren => 1); 
+@c_or = $c-> origin;
+is_deeply( \@p_or, \@c_or, "scroll childrren" );
 
-$wx-> destroy;
+$p-> destroy;
