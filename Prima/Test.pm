@@ -11,6 +11,7 @@ our @ISA     = qw(Exporter);
 our @EXPORT  = qw(create_window set_flag get_flag reset_flag wait_flag);
 our $noX11   = 1 if defined Prima::XOpenDisplay();
 our $flag;
+our $timeout = 500;
 
 sub import
 {
@@ -27,6 +28,7 @@ sub create_window
 	return Prima::Window-> create(
 		onDestroy => sub { $::application-> close},
 		size => [ 200,200],
+		@_,
 	);
 }
 
@@ -35,7 +37,7 @@ sub __wait
 	return 0 if $noX11;
 
 	my $tick = 0;
-	my $t = Prima::Timer-> create( timeout => 500, onTick => sub { $tick = 1 });
+	my $t = Prima::Timer-> create( timeout => $timeout, onTick => sub { $tick = 1 });
 	$flag = 0;
 	$t-> start;
 	$::application-> yield while not $flag and not $tick;
