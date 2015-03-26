@@ -12,7 +12,7 @@ my $xw = Prima::Window-> create(
 	size => [ 100, 100],
 	onActivate    => sub { set_flag; $id{Activate}   = 1;},
 	onDeactivate  => sub { set_flag; $id{Deactivate} = 1;},
-	onExecute     => sub { set_flag; $id{Execute}    = 1;},
+	onExecute     => sub { set_flag; $id{Execute}    = 1; execute(); },
 	onWindowState => sub { set_flag; $id{State}      = 1;},
 	onClose       => sub { set_flag; $id{Close}      = 1; $_[0]-> clear_event; },
 	onShow        => sub { set_flag; $id{Show}       = 1; },
@@ -31,7 +31,8 @@ $window-> focus;
 reset_flag;
 wait_flag;
 SKIP: {
-	skip "WM doesn't respect focus requests", 4 unless $id{Activate2};
+	skip "WM doesn't respect focus requests", 4 if !$id{Activate2} &&
+		Prima::Application-> get_system_info->{apc} == apc::Unix;
 	
 	reset_flag;
 	$xw-> focus;
@@ -69,6 +70,9 @@ is( $xw-> windowState, ws::Normal, "user modality" );
 
 %id=();
 reset_flag;
+
+sub execute
+{
 $xw-> insert( Timer =>
               timeout => 250,
               onTick => sub {
@@ -78,6 +82,7 @@ $xw-> insert( Timer =>
                   $xw-> ok;
                   $_[0]-> destroy;
               })-> start;
+}
 my $mr = $xw-> execute;
 ok( get_flag, "execute" );
 is( $mr, mb::OK, "execute" );
