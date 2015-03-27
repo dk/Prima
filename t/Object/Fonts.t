@@ -7,6 +7,8 @@ use Prima::Test;
 plan tests => 9;
 
 my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
+	
+Prima::options(debug => 'f') if Prima::Application-> get_system_info-> {apc} == apc::Unix;
 
 for ( qw( height size direction)) {
        my $fx = $x-> font-> $_();
@@ -23,7 +25,6 @@ for ( qw( height size direction)) {
 }
 
 # width is a bit special, needs height or size
-my $width_debug;
 for (qw( height size)) {
 	my $fh = $x-> font-> $_();
 	my $fw = $x-> font-> width;
@@ -37,7 +38,6 @@ for (qw( height size)) {
 	    }
 	    $x-> font( $_ => $fh, width => $fw, name => $fn );
 	    is( $fw, $x-> font-> width, "width by $_");
-	    $width_debug = 1 if $fw != $x->font->width;
 	};
 }
 
@@ -66,23 +66,3 @@ $x-> font-> height( 16);
 my $w = $x-> width;
 cmp_ok( scalar @{$x-> text_wrap( "Ein zwei drei fir funf sechs seben acht neun zehn", $w * 5)}, '>', 4, "text wrap");
 $x-> destroy;
-
-if ( $width_debug ) {
-	# oh well, we're failing the test anyway .. lets show the output
-	Prima::options(debug => 'f');
-	print STDERR "init\n";
-	my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
-	for (qw( height size)) {
-		my $fh = $x-> font-> $_();
-		my $fw = $x-> font-> width;
-		my $fn = $x-> font-> name;
-		print STDERR "$_: set\n";
-		$x-> font( $_ => $fh, width => $fw * 3 + 12);
-		print STDERR "$_: get\n";
-		my $fw2 = $x-> font-> width;
-		next if $fw2 == $fw;
-		$x-> font( $_ => $fh, width => $fw, name => $fn );
-		print STDERR "$_: $fw vs ", $x->font->width, "\n";
-	}
-	$x-> destroy;
-}

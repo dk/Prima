@@ -851,12 +851,12 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size)
                   ksz = try_size( self, f1, ( double) sz / 10.0);
                   if ( !ksz) break;
                   h = ksz-> font. height;
-                  Fdebug("%d => %d\n", sz, h);
+                  Fdebug("xft update height:%d => %d\n", sz, h);
                   if ( h == f1. height) break;
                }
             }
             if ( sz < 0) sz = last_sz;
-            Fdebug("fini:%d\n", sz);
+            Fdebug("xft:finish:%d\n", sz);
             if ( sz > 0) f1. size = (double) sz / 10.0 + 0.5;
          }
 
