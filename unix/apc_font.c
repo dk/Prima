@@ -1557,7 +1557,7 @@ AGAIN:
    i = index;
 
    Fdebug("font: #%d (diff=%g): %s\n", i, minDiff, info[i].xname); 
-   Fdebug("font: pick:%d(%d)x%d.%x.%s/%s %s.%s\n", info[i].font. height, info[i].font. size, info[i].font. width, info[i].font. style, info[i].font. name, info[i].font. encoding, info[i].flags.sloppy?"sloppy":"", info[i].vecname?"vector":"");
+   Fdebug("font: pick:%d(%d)x%d.%x.%s %s/%s %s.%s\n", info[i].font. height, info[i].font. size, info[i].font. width, info[i].font. style, _F_DEBUG_PITCH(info[i].font. pitch), info[i].font. name, info[i].font. encoding, info[i].flags.sloppy?"sloppy":"", info[i].vecname?"vector":"");
     
    if ( !by_size && info[ i]. flags. sloppy && !info[ i]. vecname) {
       detail_font_info( info + i, dest, false, by_size); 
