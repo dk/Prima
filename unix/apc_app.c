@@ -430,6 +430,7 @@ window_subsystem_get_options( int * argc, char *** argv)
    "icccm", "do not use NET_WM (kde/gnome) and MOTIF extensions, ICCCM only",
    "debug", "turns on debugging on subsystems, selected by characters (--debug=FC). "\
             "Recognized characters are: "\
+	    " 0(none),"\
 	    " C(clipboard),"\
 	    " E(events),"\
 	    " F(fonts),"\
@@ -502,6 +503,9 @@ window_subsystem_set_option( char * option, char * value)
 	 return true;
       }
       while ( *value) switch ( tolower(*(value++))) {
+      case '0':
+	 guts. debug = 0;
+	 break;
       case 'c':
 	 guts. debug |= DEBUG_CLIP;
 	 break;
