@@ -54,6 +54,8 @@ static Bool   do_xft_no_antialias = false;
 static Bool   do_xft_priority = true;
 static Bool   do_no_scaled_fonts = false;
 
+#define _F_DEBUG_PITCH(x) ((x==fpDefault)?"default":(x==fpFixed?"fixed":"variable"))
+
 static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 
 static void
@@ -1175,9 +1177,9 @@ AGAIN:
       XCHECKPOINT;
       if ( !s) {
          if ( !font) 
-            warn( "UAF_004: font %s load error", name);
+            warn( "font %s load error", name);
          if ( of-> flags. disabled) 
-            warn( "UAF_005: font %s pick-up error", name);
+            warn( "font %s pick-up error", name);
          of-> flags. disabled = true;
               
          Fdebug( "font: kill %s\n", name);
@@ -1293,9 +1295,12 @@ AGAIN:
       if ( f-> font. width == 0 || !f-> flags. width) {
          if ( XGetFontProperty( s, FXA_AVERAGE_WIDTH, &v) && v) {
             XCHECKPOINT;
-            f-> font. width = v / 10;
-         } else 
+            f-> font. width = (v + 5) / 10;
+            Fdebug("font: width = FXA_AVERAGE_WIDTH %d(%d)\n", f->font.width, v);
+         } else {
             f-> font. width = s-> max_bounds. width;
+            Fdebug("font: width = max_width %d\n", f->font.width);
+	 }
       }
       f-> flags. width = true;
 
@@ -1317,8 +1322,10 @@ AGAIN:
                   if ( f-> font. maximalWidth < x)
                      f-> font. maximalWidth = x;
                }
-         } else 
+         } else {
             f-> font. width = f-> font. maximalWidth = s-> max_bounds. width;
+            Fdebug("font: force width = max_width %d\n", f->font.width);
+	 }
       }
       of-> flags. sloppy = false;
    } 
@@ -1348,7 +1355,7 @@ AGAIN:
          underlinePos = -s-> max_bounds. descent + underlineThickness / 2;
 
       prima_build_font_key( &key, font, bySize); 
-      Fdebug("font cache add to :%d.%d.{%d}.%s\n", f-> font.height, f-> font.size, f-> font. style, f-> font.name);
+      Fdebug("font cache add: %d(%d)x%d.%x.%s %s/%s\n", f-> font.height, f-> font.size, f->font.width, f-> font. style, _F_DEBUG_PITCH(f->font. pitch), f-> font.name, f-> font.encoding);
       if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
          return;
       askedDefaultPitch = font-> pitch == fpDefault;
@@ -1520,9 +1527,9 @@ prima_core_font_pick( Handle self, PFont source, PFont dest)
    }
 
    if ( by_size) {
-      Fdebug("font reqS:%d.[%d]{%d}(%d).%s/%s\n", dest-> size, dest-> height, dest-> style, dest-> pitch, dest-> name, dest-> encoding);
+      Fdebug("font reqS:%d(h=%d)x%d.%x.%s %s/%s\n", dest-> size, dest-> height, dest->width, dest-> style, _F_DEBUG_PITCH(dest-> pitch), dest-> name, dest-> encoding);
    } else {
-      Fdebug("font reqH:%d.[%d]{%d}(%d).%s/%s\n", dest-> height, dest-> size, dest-> style, dest-> pitch, dest-> name, dest-> encoding);
+      Fdebug("font reqH:%d(s=%d)x%d.%x.%s %s/%s\n", dest-> height, dest-> size, dest->width, dest-> style, _F_DEBUG_PITCH(dest-> pitch), dest-> name, dest-> encoding);
    }
 
    if ( !hash_fetch( encodings, dest-> encoding, strlen( dest-> encoding)))
@@ -1549,8 +1556,8 @@ AGAIN:
 
    i = index;
 
-   Fdebug("font: #0: %d (%g): %s\n", i, minDiff, info[i].xname); 
-   Fdebug("font: pick:%d.[%d]{%d}%s%s.%s\n", info[i].font. height, info[i].font. size, info[i].font. style, info[i].flags.sloppy?"S":"", info[i].vecname?"V":"", info[i].font. name);
+   Fdebug("font: #%d (diff=%g): %s\n", i, minDiff, info[i].xname); 
+   Fdebug("font: pick:%d(%d)x%d.%x.%s/%s %s.%s\n", info[i].font. height, info[i].font. size, info[i].font. width, info[i].font. style, info[i].font. name, info[i].font. encoding, info[i].flags.sloppy?"sloppy":"", info[i].vecname?"vector":"");
     
    if ( !by_size && info[ i]. flags. sloppy && !info[ i]. vecname) {
       detail_font_info( info + i, dest, false, by_size); 
@@ -1803,7 +1810,7 @@ apc_gp_set_font( Handle self, PFont font)
    kf = prima_find_known_font( font, false, false);
    if ( !kf || !kf-> id) {
       dump_font( font);
-      if ( DISP) warn( "UAF_007: internal error (kf:%08lx)", PTR2UV(kf)); /* the font was not cached, can't be */
+      if ( DISP) warn( "internal error (kf:%08lx)", PTR2UV(kf)); /* the font was not cached, can't be */
       return false;
    }
 
@@ -1848,7 +1855,7 @@ apc_menu_set_font( Handle self, PFont font)
       kf = prima_find_known_font( font, false, false);
       if ( !kf || !kf-> id) {
          dump_font( font);
-         warn( "UAF_010: internal error (kf:%08lx)", PTR2UV(kf)); /* the font was not cached, can't be */
+         warn( "internal error (kf:%08lx)", PTR2UV(kf)); /* the font was not cached, can't be */
          return false;
       }
    }
