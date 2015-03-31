@@ -131,6 +131,8 @@ static CharSetInfo std_charsets[] = {
 #endif    
 };
 
+static CharSetInfo fontspecific_charset = { "fontspecific", nil, 0, 1 };
+
 #define KOI8_INDEX 12
 #define MAX_CHARSET (sizeof(std_charsets)/sizeof(CharSetInfo))
 #define MAX_GLYPH_SIZE (guts.limits.request_length / 256)
@@ -268,6 +270,10 @@ prima_xft_init(void)
       hash_store( encodings, upcase, length, (void*) (std_charsets + i));
       hash_store( encodings, std_charsets[i]. name, length, (void*) (std_charsets + i));
    }
+
+   fontspecific_charset. fcs = FcCharSetCreate();
+   for ( i = 128; i < 256; i++) fontspecific_charset. map[i - 128] = i;
+   hash_store( encodings, fontspecific, strlen(fontspecific), (void*) &fontspecific_charset);
  
    locale = hash_fetch( encodings, guts. locale, strlen( guts.locale));
    if ( !locale) locale = std_charsets;
@@ -796,9 +802,6 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
                 ( FcCharSetIntersectCount( csi-> fcs, c) < csi-> glyphs - 1)
              )
          )) {
-         xft_build_font_key( &key, &requested_font, by_size);
-         key. width = 0;
-         hash_store( mismatch, &key, sizeof( FontKey), (void*)1);
          XFTdebug("charset mismatch (%s)", requested_font. encoding);
          FcPatternDestroy( match);
          return false;
@@ -1053,8 +1056,8 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
    FcPatternDestroy( pat);
    if ( !s) return array;
 
-   /* XXX make dynamic */
-   if ( !( newarray = realloc( array, sizeof(Font) * (*retCount + s-> nfont * MAX_CHARSET)))) {
+   /* make dynamic */
+   if (( *retCount + s->nfont == 0) || !( newarray = realloc( array, sizeof(Font) * (*retCount + s-> nfont * MAX_CHARSET)))) {
       FcFontSetDestroy(s);
       return array;
    }
@@ -1071,7 +1074,8 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
       if ( c && FcCharSetCount(c) == 0) continue;
       if ( encoding) {
          /* case 1 - encoding is set, filter only given encoding */
-         if ( c && ( FcCharSetIntersectCount( csi-> fcs, c) >= csi-> glyphs - 1)) {
+
+         if ( c && ((signed) FcCharSetIntersectCount( csi-> fcs, c) >= csi-> glyphs - 1)) {
             if ( !facename) {
                /* and, if no facename set, each facename is reported only once */
                if ( hash_fetch( names, f-> name, strlen( f-> name))) continue;
