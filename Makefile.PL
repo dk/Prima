@@ -112,9 +112,6 @@ use vars qw(
 	$force_cccdl
 );
 
-unlink "showlog";
-open MAKELOG, ">", "makepl.log";
-
 sub printlog($)
 {
 	print $_[0];
@@ -168,6 +165,9 @@ if ( defined($ARGV[0]) and $ARGV[0] =~ /^--(.*)$/) {
 	$sub->(@ARGV);
 	exit;
 }
+
+unlink "showlog";
+open MAKELOG, ">", "makepl.log";
 
 setup_argv();
 setup_variables();
