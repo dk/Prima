@@ -429,6 +429,10 @@ STOP_2:;
    font-> externalLeading = 0;
 }
 
+#define ROUND_DIRECTION 1000.0
+#define IS_ZERO(a)  ((int)(a*ROUND_DIRECTION)==0)
+#define ROUGHLY(a) (((int)(a*ROUND_DIRECTION))/ROUND_DIRECTION)
+
 static void
 xft_build_font_key( PFontKey key, PFont f, Bool bySize)
 {
@@ -437,7 +441,7 @@ xft_build_font_key( PFontKey key, PFont f, Bool bySize)
    key-> width = f-> width;
    key-> style = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut);
    key-> pitch = f-> pitch;
-   key-> direction = f-> direction;
+   key-> direction = ROUGHLY(f-> direction);
    strcpy( key-> name, f-> name);
 }
 
@@ -448,7 +452,7 @@ try_size( Handle self, Font f, double size)
    XftFont * xft = nil;
    f. size = size + 0.5;
    f. height = f. width = C_NUMERIC_UNDEF;
-   f. direction = 0;
+   f. direction = 0.0;
    xft_debug_indent++;
    prima_xft_font_pick( self, &f, &f, &size, &xft);
    xft_debug_indent--;
@@ -555,7 +559,7 @@ xft_store_font(Font * k, Font * v, Bool by_size, XftFont * xft, XftFont * xft_ba
          kf-> xft      = xft;
 	 kf-> xft_base = xft_base;
          hash_store( guts. font_hash, &key, sizeof( FontKey), kf);
-         XFTdebug("store %x(%x):%dx%d.%x.%s.%s", xft, xft_base, key.height, key.width, key.style, _F_DEBUG_PITCH(key.pitch), key.name);
+         XFTdebug("store %x(%x):%dx%d.%x.%s.%s^%g", xft, xft_base, key.height, key.width, key.style, _F_DEBUG_PITCH(key.pitch), key.name, ROUGHLY(key.direction));
       }
    }
 }
@@ -602,7 +606,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
    /* see if the font is not present in xft - the hashed negative matches
          are stored with width=0, as the width alterations are derived */
    xft_build_font_key( &key, &requested_font, by_size);
-   XFTdebug("want %dx%d.%x.%s.%s/%s", key.height, key. width, key.style, _F_DEBUG_PITCH(key.pitch), key.name, requested_font.encoding);
+   XFTdebug("want %dx%d.%x.%s.%s/%s^%g", key.height, key. width, key.style, _F_DEBUG_PITCH(key.pitch), key.name, requested_font.encoding, ROUGHLY(requested_font.direction));
    
    key. width = 0;
    if ( hash_fetch( mismatch, &key, sizeof( FontKey))) {
@@ -626,6 +630,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
       strcpy( dest-> encoding, csi-> name);
       if ( requested_font. style & fsStruckOut) dest-> style |= fsStruckOut;
       if ( requested_font. style & fsUnderlined) dest-> style |= fsUnderlined;
+      if ( xft_result ) *xft_result = kf-> xft;
       return true;
    }
    /* see if the non-xscaled font exists */
@@ -651,21 +656,21 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
       }
    }
    /* see if the non-rotated font exists */
-   if ( key. direction != 0) {
-      key. direction = 0;
+   if ( !IS_ZERO(key. direction)) {
+      key. direction = 0.0;
       key. width = requested_font. width;
       if ( !( kf_base = hash_fetch( guts. font_hash, &key, sizeof( FontKey)))) {
          Font s = *source, d = *dest;
-         s. direction = d. direction = 0;
+         s. direction = d. direction = 0.0;
 	 XFTdebug("try nonrotated font");
          xft_debug_indent++;
          prima_xft_font_pick( self, &s, &d, size, nil);
          xft_debug_indent--;
          /* if fails, cancel rotation and see if the base font is banned  */
          if ( !( kf_base = hash_fetch( guts. font_hash, &key, sizeof( FontKey))))
-            requested_font. direction = 0;
+            requested_font. direction = 0.0;
       }
-      if ( requested_font. direction != 0) {
+      if ( !IS_ZERO(requested_font. direction)) {
          /* as requested_font. height != FC_PIXEL_SIZE, read the correct request
             from the non-rotated font */
          if ( FcPatternGetDouble( kf_base-> xft-> pattern, FC_PIXEL_SIZE, 0, &pixel_size) == FcResultMatch) {
@@ -701,12 +706,14 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 #ifdef NEED_EXPLICIT_FC_SCALABLE
    FcPatternAddInteger( request, FC_SCALABLE, 1);
 #endif
-   if ( requested_font. direction != 0 || requested_font. width != 0) {
+   if ( !IS_ZERO(requested_font. direction) || requested_font. width != 0) {
       FcMatrix mat;
       FcMatrixInit(&mat);
-      if ( requested_font. width != 0)
-         FcMatrixScale( &mat, ( double) requested_font. width / base_width, 1);
-      if ( requested_font. direction != 0)
+      if ( requested_font. width != 0) {
+         FcMatrixScale( &mat, ( double) requested_font. width / base_width, 1);	
+         XFTdebug("FcMatrixScale %g", ( double) requested_font. width / base_width);
+      }
+      if ( !IS_ZERO(requested_font. direction))
          FcMatrixRotate( &mat, cos(requested_font.direction * 3.14159265358 / 180.0), sin(requested_font.direction * 3.14159265358 / 180.0));
       FcPatternAddMatrix( request, FC_MATRIX, &mat);
    }
@@ -962,7 +969,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
             sum += glyph. xOff;
             num++;
          }
-         loaded_font. width = ( num > 10) ? (sum / num) : loaded_font. maximalWidth;
+         loaded_font. width = ( num > 10) ? ((float) sum / num + 0.5) : loaded_font. maximalWidth;
       } else
          loaded_font. width = loaded_font. maximalWidth;
    }
@@ -994,12 +1001,12 @@ prima_xft_set_font( Handle self, PFont font)
    if ( !( csi = hash_fetch( encodings, font-> encoding, strlen( font-> encoding))))
       csi = locale;
    XX-> xft_map8 = csi-> map;
-   if ( PDrawable( self)-> font. direction != 0) {
-      XX-> xft_font_sin = sin( font-> direction / 57.29577951);
-      XX-> xft_font_cos = cos( font-> direction / 57.29577951);
-   } else {
+   if ( IS_ZERO(PDrawable( self)-> font. direction)) {
       XX-> xft_font_sin = 0.0;
       XX-> xft_font_cos = 1.0;
+   } else {
+      XX-> xft_font_sin = sin( font-> direction / 57.29577951);
+      XX-> xft_font_cos = cos( font-> direction / 57.29577951);
    }
    return true;
 }
@@ -1252,7 +1259,7 @@ prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8)
       for ( i = 0; i < 4; i++) pt[i]. y += XX-> font-> font. descent;
    }   
    
-   if ( PDrawable( self)-> font. direction != 0) {
+   if ( !IS_ZERO(PDrawable( self)-> font. direction)) {
       int i;
       double s = sin( PDrawable( self)-> font. direction / 57.29577951);
       double c = cos( PDrawable( self)-> font. direction / 57.29577951);
@@ -1295,7 +1302,7 @@ my_XftDrawString32( PDrawableSysData selfxx,
 	_Xconst FcChar32 *string, int len)
 {
 	int i, lastchar, lx, ly, ox, oy, shift;
-	if ( XX-> font-> font. direction == 0) {
+	if ( IS_ZERO(XX-> font-> font. direction)) {
 		XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, x, y, string, len);
 		return;
 	}
