@@ -462,6 +462,7 @@ prima_debug( const char *format, ...);
 #define Mdebug if (pguts->debug & DEBUG_MISC) _debug
 #define Pdebug if (pguts->debug & DEBUG_COLOR) _debug
 #define Xdebug if (pguts->debug & DEBUG_XRDB) _debug
+#define _F_DEBUG_PITCH(x) ((x==fpDefault)?"default":(x==fpFixed?"fixed":"variable"))
 
 typedef struct _UnixGuts
 {
@@ -1191,7 +1192,7 @@ extern void
 prima_xft_done( void);
 
 extern Bool
-prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size);
+prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, XftFont ** xft_result);
 
 extern Bool
 prima_xft_set_font( Handle self, PFont font);

@@ -54,8 +54,6 @@ static Bool   do_xft_no_antialias = false;
 static Bool   do_xft_priority = true;
 static Bool   do_no_scaled_fonts = false;
 
-#define _F_DEBUG_PITCH(x) ((x==fpDefault)?"default":(x==fpFixed?"fixed":"variable"))
-
 static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 
 static void
@@ -1589,7 +1587,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 {
 #ifdef USE_XFT
    if ( guts. use_xft) {
-      if ( prima_xft_font_pick( self, source, dest, nil)) 
+      if ( prima_xft_font_pick( self, source, dest, nil, nil)) 
          return true;
    }
 #endif
