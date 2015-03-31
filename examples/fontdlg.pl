@@ -534,9 +534,19 @@ $w-> insert( Widget =>
 		$_[1]-> bar( 0, 0, $x, $y);
 		$_[1]-> color( $fore);
 		my $m = $_[1]-> get_font;
-		my $probe = $_[1]-> font-> size.".".$_[1]-> font-> name;
-		$probe = join('', map { chr($_+$m-> {firstChar})} 51,52,0x430,0x431,0x440) 
-		if $m-> {firstChar} > 127;
+		my $probe;
+		my @ranges = @{$_[1]-> get_font_ranges};
+		my $vec = '';
+		my ($i,$j,$latin,$non_latin);
+		RANGES: for ( $i = 0; $i < @ranges; $i += 2) {
+			for ( $j = $ranges[$i]; $j < $ranges[$i+1]; $j++) {
+				$latin     .= chr($j) if $j > 45 && $j < 128;
+				$non_latin .= chr($j) if $j > 256;
+				last RANGES if length($latin) > 32 && length($non_latin) > 32;
+			}
+		}
+		$probe = (length($latin) > 32) ? $_[1]-> font-> size.".".$_[1]-> font-> name : substr($non_latin, 0, 12);
+
 		my @box = @{$_[1]-> get_text_box( $probe)};
 		pop @box;
 		pop @box;
