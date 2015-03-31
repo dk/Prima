@@ -537,7 +537,8 @@ $w-> insert( Widget =>
 		my $probe;
 		my @ranges = @{$_[1]-> get_font_ranges};
 		my $vec = '';
-		my ($i,$j,$latin,$non_latin);
+		my ($i,$j);
+		my ($latin,$non_latin)=('','');
 		RANGES: for ( $i = 0; $i < @ranges; $i += 2) {
 			for ( $j = $ranges[$i]; $j < $ranges[$i+1]; $j++) {
 				$latin     .= chr($j) if $j > 45 && $j < 128;

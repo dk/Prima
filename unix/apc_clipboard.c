@@ -586,7 +586,7 @@ Bool
 apc_clipboard_has_format( Handle self, Handle id)
 {
    DEFCC;
-   if ( id < 0 || id >= guts. clipboard_formats_count) return false;
+   if ( id >= guts. clipboard_formats_count) return false;
 
    if ( XX-> inside_event) {
       return XX-> internal[id]. size > 0 || XX-> external[id]. size > 0;
@@ -649,7 +649,7 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
    unsigned char * data;
    Atom name;
 
-   if ( id < 0 || id >= guts. clipboard_formats_count) return false;
+   if ( id >= guts. clipboard_formats_count) return false;
 
    if ( !XX-> inside_event) {
       if ( XX-> internal[id]. size == 0) {
@@ -714,7 +714,7 @@ Bool
 apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 {
    DEFCC;
-   if ( id < 0 || id >= guts. clipboard_formats_count) return false;
+   if ( id >= guts. clipboard_formats_count) return false;
 
    if ( id >= cfTargets && id < cfCOUNT ) return false;
    detach_xfers( XX, id, true);

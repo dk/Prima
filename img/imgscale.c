@@ -272,7 +272,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
       if ( h < 0)
       {
          dstData += dstLine * ( yMin - 1);
-         dstLine =- dstLine;
+         dstLine = -dstLine;
       }
       for ( y = 0; y < yMin; y++, srcData += srcLine, dstData += dstLine) 
          memcpy( dstData, srcData, xMin);
@@ -290,7 +290,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
       if ( h < 0)
       {
          dstData += dstLine * ( absh - 1);
-         dstLine =- dstLine;
+         dstLine = -dstLine;
       }
       if ( absh < srcH)
       {
@@ -366,7 +366,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
       if ( h < 0)
       {
          dstData += dstLine * ( yMin - 1);
-         dstLine =- dstLine;
+         dstLine = -dstLine;
       }
       for ( i = 0; i < srcH; i++, srcData += srcLine, dstData += dstLine)
          proc( srcData, dstData, srcW, w, absw, xstep.l);
@@ -377,7 +377,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
    if ( h < 0)
    {
       dstData += dstLine * ( absh - 1);
-      dstLine =- dstLine;
+      dstLine = -dstLine;
    }
    if ( absh < srcH)
    {

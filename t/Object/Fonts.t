@@ -58,11 +58,12 @@ sub t
 	};
 	
 	# wrapping
-	$x-> font-> height( 16);
-	my $w = $x-> width;
-	my ($a,$b,$c) = @{$x->get_font_abc(ord('e'),ord('e'))};
 	SKIP : {
-		skip "text wrap", 1 if $a + $b + $c <= 0; # some non-latin or symbol font
+		$x-> font-> height( 16);
+		my ($a,$b,$c) = @{$x->get_font_abc(ord('e'),ord('e'))};
+		my $w = $a + $b + $c;
+		skip "text wrap", 1 if $w <= 0; # some non-latin or symbol font
+		print $x->font->name, "\n";
 		cmp_ok( scalar @{$x-> text_wrap( "ein zwei drei fir funf sechs seben acht neun zehn", $w * 5)}, '>', 4, "text wrap");
 	}
 }

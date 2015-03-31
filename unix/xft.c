@@ -229,7 +229,7 @@ prima_xft_init(void)
       ibl = 128;
       obl = 128 * sizeof( uint32_t);
       while ( 1 ) {
-         int ret = iconv( ii, ( char **) &iptr, &ibl, ( char **) &optr, &obl);
+         int ret = iconv( ii, ( const char **) &iptr, &ibl, ( char **) &optr, &obl);
          if ( ret < 0 && errno == EILSEQ) {
             iptr++;
             optr++;
@@ -1158,7 +1158,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 {
    FcChar32 *ret, *r;
    if ( utf8) {
-      STRLEN charlen, bytelen = strlen(text);
+      STRLEN charlen, bytelen = strlen(( const char *) text);
       (void)bytelen;
 
       if ( len < 0) len = prima_utf8_length(( char*) text);
