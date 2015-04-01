@@ -5,12 +5,12 @@ use Test::More;
 use Prima::Test;
 use Prima::Application;
 
-Prima::options(debug => 'f') if Prima::Application-> get_system_info-> {apc} == apc::Unix;
-
 my $x;
 
 sub t
 {
+	my $f = shift;
+	my $ok = 1;
 	for ( qw( height size direction)) {
 	       my $fx = $x-> font-> $_();
 	       $x-> font( $_ => $x-> font-> $_() * 3 + 12);
@@ -21,7 +21,7 @@ sub t
 	               next;
 	           }
 	           $x-> font( $_ => $fx);
-	           is( $x-> font-> $_(), $fx, "$_");
+	           $ok &= is( $x-> font-> $_(), $fx, "$_ / $f->{name}");
 	       };
 	}
 	
@@ -35,11 +35,11 @@ sub t
 		my $fw2 = $x-> font-> width;
 		SKIP: {
 		    if ( $fw2 == $fw) {
-		        skip "width", 1;
+		        skip "width / $f->{name}", 1;
 		        next;
 		    }
 		    $x-> font( $_ => $fh, width => $fw, name => $fn );
-		    is( $x-> font-> width, $fw, "width by $_");
+		    $ok &= is( $x-> font-> width, $fw, "width by $_ / $f->{name}");
 		};
 	}
 	
@@ -54,7 +54,7 @@ sub t
 	        skip "style", 1;
 	    }
 	    $x-> font( style => $fx);
-	    is( $fx, $x-> font-> style, "style");
+	    is( $fx, $x-> font-> style, "style / $f->{name}");
 	};
 	
 	# wrapping
@@ -62,10 +62,11 @@ sub t
 		$x-> font-> height( 16);
 		my ($a,$b,$c) = @{$x->get_font_abc(ord('e'),ord('e'))};
 		my $w = $a + $b + $c;
-		skip "text wrap", 1 if $w <= 0; # some non-latin or symbol font
-		print $x->font->name, "\n";
-		cmp_ok( scalar @{$x-> text_wrap( "ein zwei drei fir funf sechs seben acht neun zehn", $w * 5)}, '>', 4, "text wrap");
+		skip "text wrap $f->{name}", 1 if $w <= 0; # some non-latin or symbol font
+		cmp_ok( scalar @{$x-> text_wrap( "ein zwei drei fir funf sechs seben acht neun zehn", $w * 5)}, '>', 4, "text wrap $f->{name}");
 	}
+
+	return $ok;
 }
 
 $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
@@ -76,7 +77,12 @@ for my $f ( @{$::application->fonts} ) {
 		pitch    => $f->{pitch},
 		encoding => $f->{encoding},
 	});
-	t;
+
+	if (!t($f) && Prima::Application-> get_system_info-> {apc} == apc::Unix) {
+		Prima::options(debug => 'f');
+		t($f);
+		Prima::options(debug => '0');
+	}
 }
 $x-> destroy;
 
