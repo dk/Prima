@@ -378,8 +378,11 @@ onClick   => sub {
 			push @ranges, [$_];
 	}
 	@ranges = sort { $a->[0] <=> $b-> [0] } @ranges;
+	my %charmap;
 	my $count = 0;
-	$count += $$_[1] - $$_[0] + 1 for @ranges;
+	for ( @ranges) {
+		$charmap{$count++} = $_ for $$_[0] .. $$_[1];
+	}
 	my $ih = int($f-> height * 1.5);
 	my $l = $ww-> insert( AbstractListViewer => 
 		origin => [0,0],
@@ -393,22 +396,14 @@ onClick   => sub {
 		hScroll     => 1,
 		onSelectItem => sub {
 			my ( $self, $item, $sel) = @_;
-			$item = $item-> [0];
-			for ( @ranges) {
-				my $d = $$_[1] - $$_[0] + 1;
-				if ( $item < $d) {
-					my $c = $$_[0] + $item;
-					my $pretty = sprintf( "0x%x", $c);
-					if ( $use_charnames) {
-						my $x = charnames::viacode($c);
-						$pretty .= " - $x" if defined $x;
-					}
-					$self-> hint( $pretty );
-					$self-> hintVisible(1);
-					last;
-				} else {
-					$item -= $d;
+			if ( defined( my $c = $charmap{$item->[0]} )) {
+				my $pretty = sprintf( "0x%x", $c);
+				if ( $use_charnames) {
+					my $x = charnames::viacode($c);
+					$pretty .= " - $x" if defined $x;
 				}
+				$self-> hint( $pretty );
+				$self-> hintVisible(1);
 			}
 		},
 		onDrawItem => sub {
@@ -424,15 +419,8 @@ onClick   => sub {
 				);
 			}
 			$canvas-> clear( $x, $y + 1, $x2, $y2);
-			for ( @ranges) {
-				my $d = $$_[1] - $$_[0] + 1;
-				if ( $itemIndex < $d) {
-					my $c = chr($$_[0] + $itemIndex);
-					$canvas-> text_out( $c, $x + $ih / 4, $y + $ih / 4);
-					last;
-				} else {
-					$itemIndex -= $d;
-				}
+			if ( defined( my $c = $charmap{$itemIndex} )) {
+				$canvas-> text_out( chr($c), $x + $ih / 4, $y + $ih / 4);
 			}
 			$canvas-> set( color => $cs[0], backColor => $cs[1]) if $focused;
 		},
