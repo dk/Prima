@@ -10,6 +10,14 @@ my $x;
 sub t
 {
 	my $f = shift;
+
+	$x->set_font({
+		name     => $f->{name},
+		height   => $f->{height} || 10,
+		pitch    => $f->{pitch},
+		encoding => $f->{encoding},
+	});
+
 	my $ok = 1;
 	for ( qw( height size direction)) {
 	       my $fx = $x-> font-> $_();
@@ -71,13 +79,6 @@ sub t
 
 $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 for my $f ( @{$::application->fonts} ) {
-	$x->set_font({
-		name     => $f->{name},
-		height   => $f->{height} || 10,
-		pitch    => $f->{pitch},
-		encoding => $f->{encoding},
-	});
-
 	if (!t($f) && Prima::Application-> get_system_info-> {apc} == apc::Unix) {
 		Prima::options(debug => 'f');
 		t($f);
