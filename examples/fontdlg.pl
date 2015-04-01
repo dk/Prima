@@ -530,7 +530,7 @@ $w-> insert( Widget =>
 		RANGES: for ( $i = 0; $i < @ranges; $i += 2) {
 			for ( $j = $ranges[$i]; $j < $ranges[$i+1]; $j++) {
 				$latin     .= chr($j) if $j > 45 && $j < 128;
-				$non_latin .= chr($j) if $j > 256 && ( !$use_charnames || charnames::viacode($j) !~ 
+				$non_latin .= chr($j) if $j > 256 && ( !$use_charnames || (charnames::viacode($j) || '') !~ 
 					/(space|punctuation|mark|accent|point|combining|modifier)/i);
 				last RANGES if length($latin) > 32 || length($non_latin) > 32;
 			}
