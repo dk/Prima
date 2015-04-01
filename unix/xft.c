@@ -353,6 +353,13 @@ fcpattern2font( FcPattern * pattern, PFont font)
       else if ( i >= FC_WEIGHT_BOLD)
          font-> style |= fsBold;
    }
+   
+   font-> xDeviceRes = guts. resolution. x;
+   font-> yDeviceRes = guts. resolution. y;
+   if ( FcPatternGetDouble( pattern, FC_DPI, 0, &d) == FcResultMatch)
+      font-> yDeviceRes = d + 0.5;
+   if ( FcPatternGetDouble( pattern, FC_ASPECT, 0, &d) == FcResultMatch)
+      font-> xDeviceRes = font-> yDeviceRes * d;
 
    if ( FcPatternGetInteger( pattern, FC_SPACING, 0, &i) == FcResultMatch)
       font-> pitch = (( i == FC_PROPORTIONAL) ? fpVariable : fpFixed);
@@ -379,12 +386,6 @@ fcpattern2font( FcPattern * pattern, PFont font)
       XFTdebug("size unknown");
    }
 
-   font-> xDeviceRes = guts. resolution. x;
-   font-> yDeviceRes = guts. resolution. y;
-   if ( FcPatternGetDouble( pattern, FC_DPI, 0, &d) == FcResultMatch)
-      font-> yDeviceRes = d + 0.5;
-   if ( FcPatternGetDouble( pattern, FC_ASPECT, 0, &d) == FcResultMatch)
-      font-> xDeviceRes = font-> yDeviceRes * d;
    FcPatternGetBool( pattern, FC_SCALABLE, 0, &font-> vector);
 
    font-> firstChar = 32; font-> lastChar = 255;
