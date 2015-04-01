@@ -1273,7 +1273,7 @@ EOF
 			push @LIBS, 'iconv';
 			printlog "yes\n";
 		} else {
-			my $ok = compile( "#include <iconv.h>\nint main() { iconv_close(0); return 0; }\n");
+			my $ok = compile( "#include <iconv.h>\nint main() { iconv_close(0); return 0; }\n", 1, $Config{cccdlflags});
 			if ( $ok ) {
 				printlog "no, but works as part of libc\n";
 			} else {
