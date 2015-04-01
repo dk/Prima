@@ -594,7 +594,7 @@ sub paint_exterior
 	my @sz = $canvas-> size;
 	my $cl = $self-> color;
 	my ( $bw, $hs, $vs, $ahs, $avs) = 
-		$self-> prf(qw( scrollBarClass borderWidth hScroll vScroll autoHScroll autoVScroll));
+		$self-> prf(qw( borderWidth hScroll vScroll autoHScroll autoVScroll));
 	$hs ||= $ahs;
 	$vs ||= $avs;
 	$canvas-> rect3d( 0,0,$sz[0]-1,$sz[1]-1,$bw,
