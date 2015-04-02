@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 
+use open ':std', ':encoding(utf8)';
 use Test::More;
 use Prima::Test;
 use Prima::Application;
