@@ -1,5 +1,9 @@
 Revision history for Perl module Prima
 
+1.43 2015-04-10
+ - Rewrite font test and polish rough ends in xft font handling
+ - Copy images to clipboard so that GTK recognizes them
+
 1.42 2015-03-11
  - Tests became TAP compliant and using Prima::Test
  - Jpeg exif orientation support added
