@@ -297,14 +297,14 @@ prima_xft_done(void)
 static unsigned short
 utf8_flag_strncpy( char * dst, const char * src, unsigned int maxlen, unsigned short is_utf8_flag)
 {
-	int is_utf8 = 0;
-	while ( maxlen-- && *src) {
-		if ( *((unsigned char*)src) > 0x7f) 
-			is_utf8 = 1;
-		*(dst++) = *(src++);
-	}
-	*dst = 0;
-	return is_utf8 ? is_utf8_flag : 0;
+        int is_utf8 = 0;
+        while ( maxlen-- && *src) {
+                if ( *((unsigned char*)src) > 0x7f) 
+                        is_utf8 = 1;
+                *(dst++) = *(src++);
+        }
+        *dst = 0;
+        return is_utf8 ? is_utf8_flag : 0;
 }
 
 static void
@@ -558,7 +558,7 @@ xft_store_font(Font * k, Font * v, Bool by_size, XftFont * xft, XftFont * xft_ba
          memcpy( &kf-> font, v, sizeof( Font));
          kf-> font. style &= ~(fsUnderlined|fsOutline|fsStruckOut);
          kf-> xft      = xft;
-	 kf-> xft_base = xft_base;
+         kf-> xft_base = xft_base;
          hash_store( guts. font_hash, &key, sizeof( FontKey), kf);
          XFTdebug("store %x(%x):%dx%d.%x.%s.%s^%g", xft, xft_base, key.height, key.width, key.style, _F_DEBUG_PITCH(key.pitch), key.name, ROUGHLY(key.direction));
       }
@@ -640,7 +640,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
       if ( !( kf = hash_fetch( guts. font_hash, &key, sizeof( FontKey)))) {
          Font s = *source, d = *dest;
          s. width = d. width = 0;
-	 XFTdebug("try nonscaled font");
+         XFTdebug("try nonscaled font");
          xft_debug_indent++;
          prima_xft_font_pick( self, &s, &d, size, nil);
          xft_debug_indent--;
@@ -649,8 +649,8 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
          base_width = kf-> font. width;
          if ( FcPatternGetDouble( kf-> xft-> pattern, FC_PIXEL_SIZE, 0, &pixel_size) == FcResultMatch) {
             exact_pixel_size = 1;
-	    XFTdebug("existing base font %x %dx0 suggests exact_pixel_size %g base_width %d", kf->xft, key.height, pixel_size, base_width);
-	 }
+            XFTdebug("existing base font %x %dx0 suggests exact_pixel_size %g base_width %d", kf->xft, key.height, pixel_size, base_width);
+         }
       } else { /* if fails, cancel x scaling and see if it failed due to banning */
          if ( hash_fetch( mismatch, &key, sizeof( FontKey))) return false;
          requested_font. width = 0;
@@ -663,7 +663,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
       if ( !( kf_base = hash_fetch( guts. font_hash, &key, sizeof( FontKey)))) {
          Font s = *source, d = *dest;
          s. direction = d. direction = 0.0;
-	 XFTdebug("try nonrotated font");
+         XFTdebug("try nonrotated font");
          xft_debug_indent++;
          prima_xft_font_pick( self, &s, &d, size, nil);
          xft_debug_indent--;
@@ -675,9 +675,9 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
          /* as requested_font. height != FC_PIXEL_SIZE, read the correct request
             from the non-rotated font */
          if ( FcPatternGetDouble( kf_base-> xft-> pattern, FC_PIXEL_SIZE, 0, &pixel_size) == FcResultMatch) {
-	    XFTdebug("existing base font %x %dx%d dir=0 suggests exact_pixel_size %g", kf_base->xft, key.height, key.width, pixel_size);
+            XFTdebug("existing base font %x %dx%d dir=0 suggests exact_pixel_size %g", kf_base->xft, key.height, key.width, pixel_size);
             exact_pixel_size = 1;
-	 }
+         }
       }
    }
    
@@ -688,10 +688,10 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
    if ( by_size) {
       if ( size) {
          FcPatternAddDouble( request, FC_SIZE, *size);
-      	 XFTdebug("FC_SIZE = %.1f", *size);
+         XFTdebug("FC_SIZE = %.1f", *size);
       } else {
          FcPatternAddInteger( request, FC_SIZE, requested_font. size);
-      	 XFTdebug("FC_SIZE = %d", requested_font. size);
+         XFTdebug("FC_SIZE = %d", requested_font. size);
       }
    } else {
       FcPatternAddDouble( request, FC_PIXEL_SIZE, pixel_size);
@@ -711,7 +711,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
       FcMatrix mat;
       FcMatrixInit(&mat);
       if ( requested_font. width != 0) {
-         FcMatrixScale( &mat, ( double) requested_font. width / base_width, 1);	
+         FcMatrixScale( &mat, ( double) requested_font. width / base_width, 1); 
          XFTdebug("FcMatrixScale %g", ( double) requested_font. width / base_width);
       }
       if ( !IS_ZERO(requested_font. direction))
@@ -767,8 +767,8 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
    } else if ( requested_font.pitch == fpVariable ) {
       /*
          xft picks a monospaced font when a proportional one is requested if the name points at it.
-   	   Not that this is wrong, but in Prima terms pich is heavier than name (this concept was borrowed from win32).
-   	   So try to pick a variable font of the same family, if there is one. Same algorithm as with fixed fonts,
+           Not that this is wrong, but in Prima terms pich is heavier than name (this concept was borrowed from win32).
+           So try to pick a variable font of the same family, if there is one. Same algorithm as with fixed fonts,
          but not as strict - if we can't find a proportional font within same family, so be it then
       */
       int spacing = -1;
@@ -861,7 +861,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
             FcPatternDestroy( match);
             return false;
          }
-	      
+              
          /* check if core has cached face name */
          if ( prima_find_known_font( &requested_font, false, by_size)) {
             XFTdebug("pass to cached core");
@@ -909,14 +909,14 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
       if ( !by_size && !exact_pixel_size) {
          /* Try to locate the corresponding size and
             the correct height - FC_PIXEL_SIZE is not correct most probably
-	    multiply size by 10 to address pixel-wise heights correctly.
+            multiply size by 10 to address pixel-wise heights correctly.
             */
          HeightGuessStack hgs;
          int h, sz, last_sz = -1;
-	 XftFont * guessed_font = nil;
+         XftFont * guessed_font = nil;
    
          sz = 10.0 * (float) loaded_font. size * (float) loaded_font. height / (float) xf->height;
-   	 XFTdebug("need to figure the corresponding size - try %g first...", ( double) sz / 10.0);
+         XFTdebug("need to figure the corresponding size - try %g first...", ( double) sz / 10.0);
          guessed_font = try_size( self, loaded_font, ( double) sz / 10.0);
 
          if ( guessed_font) {
@@ -938,12 +938,12 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
             }
             if ( sz < 0) sz = last_sz;
             if ( sz > 0) {
-	    	loaded_font. size = (double) sz / 10.0 + 0.5;
-            	XFTdebug("found size: %.1f (%d)", ( float) sz / 10.0, loaded_font. size);
-	    }
-	 } else {
+               loaded_font. size = (double) sz / 10.0 + 0.5;
+               XFTdebug("found size: %.1f (%d)", ( float) sz / 10.0, loaded_font. size);
+            }
+         } else {
             XFTdebug("found nothing");
-	 }
+         }
 
          if ( guessed_font && requested_font. height != xf-> height) {
             xf = guessed_font;
@@ -952,7 +952,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
          }
          XFTdebug("guessed size %d", loaded_font.size); 
       } else {
-      	 loaded_font. height = xf-> height;
+         loaded_font. height = xf-> height;
          XFTdebug("set height: %d", loaded_font.height); 
       }
 
@@ -1173,7 +1173,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 #endif
          ;
          text += charlen;
-	 if ( charlen == 0 ) break;
+         if ( charlen == 0 ) break;
       }
    } else {
       int i;
@@ -1203,13 +1203,13 @@ prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool add
          STRLEN charlen;
          c = ( FcChar32) 
 #if PERL_PATCHLEVEL >= 16
-	 utf8_to_uvchr_buf(( U8*) text, (U8*) text + bytelen, &charlen)
+         utf8_to_uvchr_buf(( U8*) text, (U8*) text + bytelen, &charlen)
 #else
-	 utf8_to_uvchr(( U8*) text, &charlen)
+         utf8_to_uvchr(( U8*) text, &charlen)
 #endif
          ;
          text += charlen;
-	 if ( charlen == 0 ) break;
+         if ( charlen == 0 ) break;
       } else if ( ((Byte*)text)[i] > 127) {
          c = map8[ ((Byte*)text)[i] - 128];
       } else
@@ -1285,9 +1285,9 @@ create_no_aa_font( XftFont * font)
    return XftFontOpenPattern( DISP, request);
 }
 
-#define SORT(a,b)	{ int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
-#define REVERT(a)	(XX-> size. y - (a) - 1)
-#define SHIFT(a,b)	{ (a) += XX-> gtransform. x + XX-> btransform. x; \
+#define SORT(a,b)       { int swp; if ((a) > (b)) { swp=(a); (a)=(b); (b)=swp; }}
+#define REVERT(a)       (XX-> size. y - (a) - 1)
+#define SHIFT(a,b)      { (a) += XX-> gtransform. x + XX-> btransform. x; \
                            (b) += XX-> gtransform. y + XX-> btransform. y; }
 #define RANGE(a)        { if ((a) < -16383) (a) = -16383; else if ((a) > 16383) a = 16383; }
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
@@ -1299,42 +1299,42 @@ create_no_aa_font( XftFont * font)
    deviates from the ideal line */
 void
 my_XftDrawString32( PDrawableSysData selfxx,
-	_Xconst XftColor *color, int x, int y,
-	_Xconst FcChar32 *string, int len)
+        _Xconst XftColor *color, int x, int y,
+        _Xconst FcChar32 *string, int len)
 {
-	int i, lastchar, lx, ly, ox, oy, shift;
-	if ( IS_ZERO(XX-> font-> font. direction)) {
-		XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, x, y, string, len);
-		return;
-	}
-	lx = ox = x;
-	ly = oy = y;
-	lastchar = 0;
-	shift = 0;
-	for ( i = 0; i < len; i++) {
-		int cx, cy;
-		FT_UInt ft_index;
-		XGlyphInfo glyph;
-		ft_index = XftCharIndex( DISP, XX-> font-> xft, string[i]);
-		XftGlyphExtents( DISP, XX-> font-> xft, &ft_index, 1, &glyph);
-		lx += glyph. xOff;
-		ly += glyph. yOff;
-		XftGlyphExtents( DISP, XX-> font-> xft_base, &ft_index, 1, &glyph);
-		shift += glyph. xOff;
-		cx = ox + (int)(shift * XX-> xft_font_cos + 0.5);
-		cy = oy - (int)(shift * XX-> xft_font_sin + 0.5);
-		if ( cx == lx && cy == ly) continue;
+   int i, lastchar, lx, ly, ox, oy, shift;
+   if ( IS_ZERO(XX-> font-> font. direction)) {
+      XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, x, y, string, len);
+      return;
+   }
+   lx = ox = x;
+   ly = oy = y;
+   lastchar = 0;
+   shift = 0;
+   for ( i = 0; i < len; i++) {
+      int cx, cy;
+      FT_UInt ft_index;
+      XGlyphInfo glyph;
+      ft_index = XftCharIndex( DISP, XX-> font-> xft, string[i]);
+      XftGlyphExtents( DISP, XX-> font-> xft, &ft_index, 1, &glyph);
+      lx += glyph. xOff;
+      ly += glyph. yOff;
+      XftGlyphExtents( DISP, XX-> font-> xft_base, &ft_index, 1, &glyph);
+      shift += glyph. xOff;
+      cx = ox + (int)(shift * XX-> xft_font_cos + 0.5);
+      cy = oy - (int)(shift * XX-> xft_font_sin + 0.5);
+      if ( cx == lx && cy == ly) continue;
 
-		XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, 
-			x, y, string + lastchar, i - lastchar + 1);
-		lastchar = i + 1;
-		x = lx = cx;
-		y = ly = cy;
-	}
+      XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, 
+         x, y, string + lastchar, i - lastchar + 1);
+      lastchar = i + 1;
+      x = lx = cx;
+      y = ly = cy;
+   }
 
-	if ( lastchar < len)
-		XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, 
-			x, y, string + lastchar, len - lastchar);
+   if ( lastchar < len)
+      XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, 
+         x, y, string + lastchar, len - lastchar);
 }
 
 Bool
@@ -1393,19 +1393,19 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 
    if ( XX-> type. bitmap) {
       xftcolor.color.alpha = 
-	 ((xftcolor.color.red/3 + xftcolor.color.green/3 + xftcolor.color.blue/3) > (0xff00 / 2)) ?
-	    0xffff : 0;
+         ((xftcolor.color.red/3 + xftcolor.color.green/3 + xftcolor.color.blue/3) > (0xff00 / 2)) ?
+            0xffff : 0;
       /* force-remove antialiasing, xft doesn't have a better API for this */
       if ( !guts. xft_no_antialias && !XX-> font-> xft_no_aa) {
          FcBool aa;
          if ( 
-	      ( FcPatternGetBool( font-> pattern, FC_ANTIALIAS, 0, &aa) == FcResultMatch)
-	      && aa
-	    ) {
-	    XftFont * f = create_no_aa_font( font);
-	    if ( f)
-	       font = XX-> font-> xft_no_aa = f;
-	 }
+              ( FcPatternGetBool( font-> pattern, FC_ANTIALIAS, 0, &aa) == FcResultMatch)
+              && aa
+            ) {
+            XftFont * f = create_no_aa_font( font);
+            if ( f)
+               font = XX-> font-> xft_no_aa = f;
+         }
        }
    } else {
       xftcolor.color.alpha = 0xffff;
@@ -1490,10 +1490,10 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       for ( i = 1; i < 4; i++) {
           int x = p[i].x * XX-> xft_font_cos - p[i].y * XX-> xft_font_sin + 0.5;
           int y = p[i].x * XX-> xft_font_sin + p[i].y * XX-> xft_font_cos + 0.5;
-	  if ( rc. left    > x) rc. left   = x;
-	  if ( rc. right   < x) rc. right  = x;
-	  if ( rc. bottom  > y) rc. bottom = y;
-	  if ( rc. top     < y) rc. top    = y;
+          if ( rc. left    > x) rc. left   = x;
+          if ( rc. right   < x) rc. right  = x;
+          if ( rc. bottom  > y) rc. bottom = y;
+          if ( rc. top     < y) rc. top    = y;
       }
       width  = rc. right  - rc. left   + 1;
       height = rc. top    - rc. bottom + 1;
