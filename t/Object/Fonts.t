@@ -78,8 +78,11 @@ sub t
 	return $ok;
 }
 
+my $filter = @ARGV ? qr/$ARGV[0]/ : qr/./;
+
 $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
 for my $f ( @{$::application->fonts} ) {
+	next unless $f->{name} =~ /$filter/;
 	if (!t($f) && Prima::Application-> get_system_info-> {apc} == apc::Unix) {
 		Prima::options(debug => 'f');
 		t($f);
