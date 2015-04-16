@@ -1185,6 +1185,8 @@ typedef int (*XIfEventProcType)(Display*,XEvent*,XPointer);
 
 #endif
 
+#ifdef USE_XFT
+
 extern void
 prima_xft_init( void);
 
@@ -1231,6 +1233,8 @@ prima_xft_parse( char * ppFontNameSize, Font * font);
 
 extern void
 prima_xft_update_region( Handle self);
+
+#endif
 
 #ifdef WITH_GTK2
 Bool
