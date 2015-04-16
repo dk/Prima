@@ -1291,7 +1291,10 @@ AGAIN:
 
       /* detailing width */
       if ( f-> font. width == 0 || !f-> flags. width) {
-         if ( XGetFontProperty( s, FXA_AVERAGE_WIDTH, &v) && v) {
+      	 if ( f-> vecname && font-> width > 0) {
+            f-> font. width = font-> width;
+            Fdebug("font: width = copy as is %d\n", f->font.width);
+	 } else if ( XGetFontProperty( s, FXA_AVERAGE_WIDTH, &v) && v) {
             XCHECKPOINT;
             f-> font. width = (v + 5) / 10;
             Fdebug("font: width = FXA_AVERAGE_WIDTH %d(%d)\n", f->font.width, v);
