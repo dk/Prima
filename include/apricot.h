@@ -1349,7 +1349,7 @@ SvBOOL( SV *sv)
 #define pdelete( key) (void) hv_delete( profile, # key, (I32) strlen( #key), G_DISCARD)
 #define dPROFILE  SV ** temporary_prf_Sv
 #define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ), &PL_sv_undef : *temporary_prf_Sv)
-#define pget_sv_void( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ) : NULL)
+#define pget_sv_void( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ) : (void)NULL)
 #define pget_i( key)  ( pget_sv_void( key), SvIV( *temporary_prf_Sv))
 #define pget_f( key)  ( pget_sv_void( key), SvNV( *temporary_prf_Sv))
 #define pget_c( key)  ( pget_sv_void( key), SvPV_nolen( *temporary_prf_Sv))
