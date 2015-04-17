@@ -267,7 +267,7 @@ PNGAPI
 #endif
 warning_fn( png_structp png_ptr, png_const_charp msg) 
 { 
-   /* warn( msg); */
+   warn( msg);
 }
 
 static void
