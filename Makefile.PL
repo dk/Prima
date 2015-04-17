@@ -1434,7 +1434,7 @@ sub setup_codecs
 			push @codecs, $_;
 		}
 	}
-	
+
 	my @codec_libpath = qd( $Config{installsitearch});
 	my @warn_codecs;
 	for my $cx ( @codecs) {
@@ -1448,8 +1448,19 @@ sub setup_codecs
 		}
 		close F;
 
+		# do we have a versioned inc/lib from dependency hell?
+		my $version = '';
+		if (
+			( $codec ne 'X11' ) &&
+			( my @versioned = grep { /$codec\d+$/ } @INCPATH )
+		) {
+			$versioned[0] =~ /$codec(\d+)$/;
+			$version = $1;
+			$lib .= $1;
+		}
+
 	AGAIN:
-		printlog "Checking for $codec library... ";
+		printlog "Checking for $codec$version library... ";
 		if ( 
 			$libs{$lib} || 
 			defined ( $foundlib = find_lib( $lib, join('', @inc), '', @codec_libpath))
@@ -1466,13 +1477,19 @@ sub setup_codecs
 			printlog ", in $foundlib" if defined($foundlib) and length($foundlib);
 			printlog "\n";
 		} elsif ( $codec eq 'ungif') {
-			$lib = $codec = 'gif';
+			$codec = 'gif';
+			$lib = $codec.$version;
 			printlog "no\n";
 			goto AGAIN;
 		} elsif ( $codec eq 'X11') {
 			$DEFINES{EMULATE_X11_CODEC} = 1;
 			push( @ACTIVE_CODECS, $codec);
 			printlog "no, using built-in\n";
+		} elsif ( length $version) {
+			$lib = $codec;
+			$version = '';
+			printlog "no\n";
+			goto AGAIN;
 		} else {
 			$PASSIVE_CODECS{$fn} = 1;
 			push @warn_codecs, $codec;
