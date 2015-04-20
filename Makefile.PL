@@ -2079,8 +2079,8 @@ sub install
 	my $t = $self->SUPER::install(@_);
 	my $n = $t =~ s[
 		(pure_\w+_install.*?)                       # 1
-		(INST_ARCHLIB\)\s+)\$\(DEST(\w+)\)(.*?)     # 2,3,4
-		(INST_BIN\)\s+)\$\(DEST(\w+)\)(.*?)         # 5,6,7
+		(INST_ARCHLIB\)"?\s+"?)\$\(DEST(\w+)\)(.*?)     # 2,3,4
+		(INST_BIN\)"?\s+"?)\$\(DEST(\w+)\)(.*?)         # 5,6,7
 		(.*?)                                       # 8
 		\n\n
 	][
