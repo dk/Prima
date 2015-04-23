@@ -12,6 +12,10 @@ ok( $c && $c-> alive, "alive");
 my %rc = map { $_ => 1 } $c-> get_registered_formats;
 ok( exists $rc{'Text'} && exists $rc{'Image'}, "predefined formats" );
 
+SKIP: {
+skip "Cannot talk to clipboard", 8 unless $c->open;
+$c->close;
+
 $c-> store( "Text", 'jabba dabba du');
 my $res = $c-> fetch( 'Text');
 my %fm = map { $_ => 1 } $c-> get_formats;
@@ -39,3 +43,4 @@ $c-> deregister_format("Mumbo-Jumbo");
 $c-> clear;
 my @f = $c-> get_formats;
 is( scalar(@f), 0, "clear");
+}
