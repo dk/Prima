@@ -690,7 +690,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
          FcPatternAddDouble( request, FC_SIZE, *size);
          XFTdebug("FC_SIZE = %.1f", *size);
       } else {
-         FcPatternAddInteger( request, FC_SIZE, requested_font. size);
+         FcPatternAddDouble( request, FC_SIZE, requested_font. size);
          XFTdebug("FC_SIZE = %d", requested_font. size);
       }
    } else {
