@@ -229,7 +229,7 @@ prima_xft_init(void)
       ibl = 128;
       obl = 128 * sizeof( uint32_t);
       while ( 1 ) {
-         int ret = iconv( ii, ( const char **) &iptr, &ibl, ( char **) &optr, &obl);
+         int ret = iconv( ii, ( char **) &iptr, &ibl, ( char **) &optr, &obl);
          if ( ret < 0 && errno == EILSEQ) {
             iptr++;
             optr++;
