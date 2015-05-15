@@ -429,9 +429,9 @@ sub setup_environment
 			$flavor = 'activestate';
 		}
 	} elsif ( $cygwin ) {
-        $flavor .= ( $Config{ptrsize} == 8 ) ? '64' : '32';
-	    $flavor .= '.' . ( $cmd_options{CYGWIN_WINAPI} ? 'win32' : 'x11' );
-    }
+		$flavor .= ( $Config{ptrsize} == 8 ) ? '64' : '32';
+		$flavor .= '.' . ( $cmd_options{CYGWIN_WINAPI} ? 'win32' : 'x11' );
+	}
 	$flavor =~ s/\s/_/g;
 	printlog "$flavor\n";
 
