@@ -15,8 +15,9 @@ $a-> begin_paint;
 ok( $a-> get_paint_state, "get_paint_state");
 
 SKIP: {
-	skip "pixel", 1 if $^O eq 'darwin';
+	skip "xquartz doesn't support this", 1 if $^O eq 'darwin';
 	my $pix = $a-> pixel( 10, 10);
+	skip "rdesktop", 1 if $^O =~ /win32/i && $pix == cl::Invalid;
 	
 	$a-> pixel( 10, 10, 0);
 	my $bl = $a-> pixel( 10, 10);

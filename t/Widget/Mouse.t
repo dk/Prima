@@ -50,20 +50,25 @@ $c-> mouse_event( cm::MouseClick, mb::Left, 0, 1, 2, 1, 0);
 @keydata = grep { scalar @$_ == 6 && $$_[1] == mb::Left && $$_[2] == 0 && $$_[3] == 1 && $$_[4] == 2 && $$_[5] == 1 } @keydata;
 ok( get_flag && scalar @keydata, "doubleclick" );
 
-
 my @ppx = $c-> pointerPos;
 $c-> capture(1);
 $c-> focus;
 ok( $c-> capture, "capture" );
 
-reset_flag;
-$c-> pointerPos( 10, 10);
-my @pp = $c-> pointerPos;
-is( $pp[0], 10, "positioning" );
-is( $pp[1], 10, "positioning" );
-$c-> pointerPos( 11, 11);
-ok( wait_flag, "simulated movement" );
+SKIP: {
+	$::application->begin_paint;
+	skip "rdesktop", 3 if $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid;
+	$::application->end_paint;
 
-$c-> pointerPos( @ppx);
-$c-> capture(0);
+	reset_flag;
+	$c-> pointerPos( 10, 10);
+	my @pp = $c-> pointerPos;
+	is( $pp[0], 10, "positioning" );
+	is( $pp[1], 10, "positioning" );
+	$c-> pointerPos( 11, 11);
+	ok( wait_flag, "simulated movement" );
+	
+	$c-> pointerPos( @ppx);
+	$c-> capture(0);
+}
 $c-> destroy;

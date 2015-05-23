@@ -4,10 +4,15 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 10;
-
 reset_flag;
 my $window = create_window;
+
+$::application->begin_paint;
+plan skip_all => "rdesktop" if $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid;
+$::application->end_paint;
+
+plan tests => 10;
+
 $window-> bring_to_front;
 my @rcrect;
 my $ww = $window-> insert( Widget => origin => [ 0, 0] => size => [ 8, 8],
