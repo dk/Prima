@@ -29,7 +29,7 @@ my $window = create_window( onActivate => sub {
 });
 $window-> focus;
 reset_flag;
-wait_flag;
+wait_flag unless $id{Activate2};
 SKIP: {
 	skip "WM doesn't respect focus requests", 4 if !$id{Activate2} &&
 		Prima::Application-> get_system_info->{apc} == apc::Unix;
