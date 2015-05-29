@@ -22,10 +22,38 @@ sub set
 {
 	my ( $self, %profile ) = @_;
 	my $visible = $self-> {visible};
-	$self-> hide if $visible;
-	$self-> $_( @{$profile{$_}} ) for grep { exists $profile{$_} } qw(rect);
-	$self-> $_( $profile{$_}    ) for grep { exists $profile{$_} } qw(mode canvas breadth);
-	$self-> show if $visible;
+
+	my ($rect_changed, $other_changed);
+	if ( exists $profile{rect} ) {
+		my @rect = @{$profile{rect}};
+		($rect[2],$rect[0]) = ($rect[0],$rect[2]) if $rect[2] < $rect[0];
+		($rect[3],$rect[1]) = ($rect[1],$rect[3]) if $rect[3] < $rect[1];
+		$rect_changed = 1 if 
+			$self->{rect}->[0] != $rect[0] or
+			$self->{rect}->[1] != $rect[1] or
+			$self->{rect}->[2] != $rect[2] or
+			$self->{rect}->[3] != $rect[3];
+	}
+	for my $accessor (grep { exists $profile{$_} } qw(mode canvas breadth)) {
+		my $old = $self->$accessor();
+		next if $old == $profile{$accessor};
+		$other_changed = 1;
+		last;
+	}
+	$other_changed = 1 if $rect_changed and ( !$visible or !$self->_gfx_mode );
+	$rect_changed  = 0 if $other_changed;
+	return unless $rect_changed or $other_changed;
+
+	if ( $other_changed ) {
+		$self-> hide if $visible;
+		$self-> $_( @{$profile{$_}} ) for grep { exists $profile{$_} } qw(rect);
+		$self-> $_( $profile{$_}    ) for grep { exists $profile{$_} } qw(mode canvas breadth);
+		$self-> show if $visible;
+	} elsif ( $rect_changed ) {
+		$self->{visible} = 0;
+		$self->rect( @{ $profile{rect} });
+		$self->_visible(1, 1);
+	}
 }
 
 sub DESTROY { shift-> hide }
@@ -132,7 +160,7 @@ sub _visible
 {
 	return $_[0]-> {visible} unless $#_;
 
-	my ( $self, $visible ) = @_;
+	my ( $self, $visible, $optimized_rect_change ) = @_;
 	$visible = ( $visible ? 1 : 0 );
 	my $curr_visible = ( $self-> {visible} ? 1 : 0);
 	return if $visible == $curr_visible;
@@ -148,7 +176,6 @@ sub _visible
 		return;
 	}
 
-	# save all bits under the rect
 	if ( $visible ) {
 		my @desktop = $::application-> size;
 		@desktop = ( 0, 0, $desktop[0] - 1, $desktop[1] - 1);
@@ -179,48 +206,51 @@ sub _visible
 		}
 
 		@requests = grep { _intersect( $_, \@desktop ) } @requests;
-		$self-> {_cache} = [];
 
 		return unless @requests;
-		
+
 		for ( @requests ) {
 			my ( $x1, $y1, $x2, $y2) = @$_;
-			push @{ $self-> {_cache} }, [
-				$x1 - $delta[0], 
-				$y1 - $delta[1], 
-				$::application-> get_image( $x1, $y1, $x2 - $x1 + 1, $y2 - $y1 + 1 )
-			];
+			($x1, $x2) = ($x2, $x1) if $x1 > $x2;
+			($y1, $y2) = ($y2, $y1) if $y1 > $y2;
+			@$_ = ( $x1, $y1, $x2 - $x1 + 1, $y2 - $y1 + 1 );
 		}
 
-		my ( $cl, $cl2, $rop, $fp) = ( $canvas-> color, $canvas-> backColor, $canvas-> rop, $canvas-> fillPattern);
-		$canvas-> set(
-			fillPattern => fp::SimpleDots,
-			color       => cl::Set,
-			backColor   => cl::Clear,
-			rop         => rop::XorPut,
-		);
+		unless ( $self->{_widgets} ) {
+			push @{ $self-> {_widgets} }, Prima::Widget->new(
+				origin      => [ 0, 0 ],
+				size        => [ 1, 1 ],
+				owner       => $::application,
+				color       => cl::White,
+				backColor   => cl::Black,
+				visible     => 0,
+				onPaint     => sub {
+					my ( $self, $canvas ) = @_;
+					$canvas->fillPattern(
+						($self->left % 2) ?
+							[ (0xaa, 0x55) x 4 ] :
+							[ (0x55, 0xaa) x 4 ]
+					);
+					$canvas->bar(0,0,$self->size);
+				},
+			) for 1..4;
+		}
 
+		my $i = 0;
 		for ( @requests ) {
-			my ( $x1, $y1, $x2, $y2) = @$_;
-			$canvas-> bar(
-				$x1 + $delta[0],
-				$y1 + $delta[1],
-				$x2 + $delta[0],
-				$y2 + $delta[1]
+			my ( $x, $y, $w, $h) = @$_;
+			$self->{_widgets}->[$i++]->set(
+				origin  => [ $x, $y ],
+				size    => [ $w, $h ],
+				visible => 1,
 			);
 		}
 
-		$canvas-> set(
-			fillPattern => $fp,
-			backColor   => $cl2,
-			color       => $cl,
-			rop         => $rop,
-		);
+		if ( $optimized_rect_change ) {
+			$_->visible( @requests == 4 ) for @{$self->{_widgets}}[1..3];
+		}
 	} else {
-		# restore bits
-		# $canvas-> rectangle( $_->[0], $_-> [1], $_->[0] - 1 + $_->[2]-> width, $_[1] - 1 + $_-> [2]-> height) for @{ $self-> {_cache} };
-		$canvas-> put_image( @$_) for @{ $self-> {_cache} };
-		$self-> {_cache} = [];
+		$_->hide for @{$self->{_widgets}};
 	}
 }
 
@@ -326,7 +356,7 @@ Sets the painting surface, and also the widget (it must be a widget) used for dr
 =item mode STRING = 'auto'
 
 The module implements two techniques, standard classic 'xor' (using .rect_focus method) 
-and a conservative method that explicitly saves and restores desktop pixels ('full').
+and a conservative method that uses widgets instead of drawing on a canvas ('full').
 The 'auto' mode checks the system and selects the appropriate mode.
 
 Allowed modes: auto, xor, full
