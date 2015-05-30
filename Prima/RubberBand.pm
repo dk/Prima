@@ -36,7 +36,7 @@ sub set
 	}
 	for my $accessor (grep { exists $profile{$_} } qw(mode canvas breadth)) {
 		my $old = $self->$accessor();
-		next if $old == $profile{$accessor};
+		next if $old eq $profile{$accessor};
 		$other_changed = 1;
 		last;
 	}
@@ -172,7 +172,10 @@ sub _visible
 		
 	# just a regular xor
 	unless ( $self-> _gfx_mode ) {
+		my $ps = $canvas->get_paint_state;
+		$canvas-> begin_paint if $ps == ps::Disabled;
 		$canvas-> rect_focus( $self-> rect, $self-> breadth );
+		$canvas-> end_paint if $ps == ps::Disabled;
 		return;
 	}
 
@@ -310,13 +313,10 @@ rubberband is erased too.
 	sub xordraw
 	{
 		my ($self, @new_rect) = @_;
-		my $o = $::application;
-		$o-> begin_paint;
-		$o-> rubberband( @new_rect ?
+		$::application-> rubberband( @new_rect ?
 			( rect => \@new_rect ) :
 			( destroy => 1 )
 		);
-		$o-> end_paint;
 	}
 	
 	Prima::MainWindow-> create(

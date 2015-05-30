@@ -296,15 +296,10 @@ sub adjust_sizes
 sub xorrect
 {
 	my ( $self, @r) = @_;
-	my $o = $::application;
-	my $p = $self->get_parent;
-	$o-> begin_paint;
-	$o-> clipRect( $p-> client_to_screen( 0,0,$p-> size));
-	$o-> rubberband( @r ?
+	$::application-> rubberband( @r ?
 		( rect => \@r, breadth => $self->{thickness} ) :
 		( destroy => 1 )
 	);
-	$o-> end_paint;
 }
 
 sub get_delta

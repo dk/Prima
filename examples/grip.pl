@@ -59,13 +59,10 @@ package Generic;
 sub xordraw
 {
 	my ($self, $new_rect) = @_;
-	my $o = $::application;
-	$o-> begin_paint;
-	$o-> rubberband( $new_rect ?
+	$::application-> rubberband( $new_rect ?
 		( rect => [$self-> {capx},$self-> {capy}, $self-> {dx},$self-> {dy}]) :
 		( destroy => 1 )
 	);
-	$o-> end_paint;
 }
 
 my $w = Prima::MainWindow-> create(

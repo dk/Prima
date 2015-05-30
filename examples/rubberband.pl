@@ -5,13 +5,10 @@ use Prima qw(Application RubberBand);
 sub xordraw
 {
 	my ($self, @new_rect) = @_;
-	my $o = $::application;
-	$o-> begin_paint;
-	$o-> rubberband( @new_rect ?
+	$::application-> rubberband( @new_rect ?
 		( rect => \@new_rect ) :
-		( destroy => 1 )
+		( destroy => 1 ),
 	);
-	$o-> end_paint;
 }
 
 Prima::MainWindow-> create(

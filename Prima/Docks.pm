@@ -1215,7 +1215,6 @@ sub client2frame
 sub xorrect
 {
 	my ( $self, $x1, $y1, $x2, $y2, $width) = @_;
-	$::application-> begin_paint;
 	if ( defined $x1 ) {
 		$x2--; $y2--;
 		$::application-> rubberband(
@@ -1225,7 +1224,6 @@ sub xorrect
 	} else {
 		$::application-> rubberband( destroy => 1 )
 	}
-	$::application-> end_paint;
 }
 
 sub on_paint
