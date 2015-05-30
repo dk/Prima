@@ -7,15 +7,37 @@ sub new
 {
 	my ( $class, %profile ) = @_;
 	my $ref = {
-	        mode    => 'auto',  # auto, full, xor
-		canvas  => $::application,
-		rect    => [-1,-1,-1,-1],
-		breadth => 1,
+	        mode     => 'auto',  # auto, full, xor
+		canvas   => $::application,
+		rect     => [-1,-1,-1,-1],
+		clipRect => [-1,-1,-1,-1],
+		breadth  => 1,
 	};
 	my $self = bless $ref, shift;
 	$self-> set(%profile);
 	$self-> show;
 	return $self;
+}
+
+sub _normalize_rect
+{
+	my $rect = shift;
+	($$rect[2],$$rect[0]) = ($$rect[0],$$rect[2]) if $$rect[2] < $$rect[0];
+	($$rect[3],$$rect[1]) = ($$rect[1],$$rect[3]) if $$rect[3] < $$rect[1];
+}
+
+sub _rect_changed
+{
+	my ( $a, $b ) = @_;
+	my @r1 = @$a;
+	my @r2 = @$b;
+	_normalize_rect(\@r1);
+	_normalize_rect(\@r2);
+	return
+		$r2[0] != $r1[0] ||
+		$r2[1] != $r1[1] ||
+		$r2[2] != $r1[2] ||
+		$r2[3] != $r1[3];
 }
 
 sub set
@@ -25,14 +47,10 @@ sub set
 
 	my ($rect_changed, $other_changed);
 	if ( exists $profile{rect} ) {
-		my @rect = @{$profile{rect}};
-		($rect[2],$rect[0]) = ($rect[0],$rect[2]) if $rect[2] < $rect[0];
-		($rect[3],$rect[1]) = ($rect[1],$rect[3]) if $rect[3] < $rect[1];
-		$rect_changed = 1 if 
-			$self->{rect}->[0] != $rect[0] or
-			$self->{rect}->[1] != $rect[1] or
-			$self->{rect}->[2] != $rect[2] or
-			$self->{rect}->[3] != $rect[3];
+		$rect_changed = 1 if _rect_changed($profile{rect}, $self->{rect});
+	}
+	if ( exists $profile{clipRect} ) {
+		$other_changed = 1 if _rect_changed($profile{clipRect}, $self->{clipRect});
 	}
 	for my $accessor (grep { exists $profile{$_} } qw(mode canvas breadth)) {
 		my $old = $self->$accessor();
@@ -46,7 +64,7 @@ sub set
 
 	if ( $other_changed ) {
 		$self-> hide if $visible;
-		$self-> $_( @{$profile{$_}} ) for grep { exists $profile{$_} } qw(rect);
+		$self-> $_( @{$profile{$_}} ) for grep { exists $profile{$_} } qw(rect clipRect);
 		$self-> $_( $profile{$_}    ) for grep { exists $profile{$_} } qw(mode canvas breadth);
 		$self-> show if $visible;
 	} elsif ( $rect_changed ) {
@@ -120,9 +138,25 @@ sub rect
 	my ( $self, @rect ) = @_;
 	Carp::confess("@rect") unless 4 == grep { defined } @rect;
 
-	($rect[2],$rect[0]) = ($rect[0],$rect[2]) if $rect[2] < $rect[0];
-	($rect[3],$rect[1]) = ($rect[1],$rect[3]) if $rect[3] < $rect[1];
+	_normalize_rect(\@rect);
 	@{$self-> {rect}} = @rect;
+}
+
+sub clipRect
+{
+	return @{$_[0]-> {clipRect}} unless $#_;
+
+	my ( $self, @rect ) = @_;
+	Carp::confess("@rect") unless 4 == grep { defined } @rect;
+
+	_normalize_rect(\@rect);
+	@{$self-> {clipRect}} = @rect;
+}
+
+sub has_clip_rect
+{
+	my $self = shift;
+	return 4 != grep { $_ == -1 } @{ $self->{clipRect} };
 }
 
 sub breadth
@@ -174,14 +208,16 @@ sub _visible
 	unless ( $self-> _gfx_mode ) {
 		my $ps = $canvas->get_paint_state;
 		$canvas-> begin_paint if $ps == ps::Disabled;
+		$canvas-> clipRect( $self-> clipRect ) if $self-> has_clip_rect;
 		$canvas-> rect_focus( $self-> rect, $self-> breadth );
 		$canvas-> end_paint if $ps == ps::Disabled;
 		return;
 	}
 
 	if ( $visible ) {
-		my @desktop = $::application-> size;
-		@desktop = ( 0, 0, $desktop[0] - 1, $desktop[1] - 1);
+		my @clip = $self-> has_clip_rect ? 
+			$canvas-> client_to_screen( $self-> clipRect ) :
+			( 0, 0, $::application->width - 1, $::application-> height - 1 );
 
 		my @outer = $self-> rect;
 		my @delta = $canvas-> client_to_screen(0,0);
@@ -207,17 +243,11 @@ sub _visible
 			push @requests, [ $outer[0], $inner[1] + 1, $inner[0], $inner[3] - 1 ];
 			push @requests, [ $inner[2], $inner[1] + 1, $outer[2], $inner[3] - 1 ];
 		}
+		@requests = map { _intersect( $_, \@clip ) } @requests;
 
-		@requests = grep { _intersect( $_, \@desktop ) } @requests;
+		goto LEAVE unless @requests;
 
-		return unless @requests;
-
-		for ( @requests ) {
-			my ( $x1, $y1, $x2, $y2) = @$_;
-			($x1, $x2) = ($x2, $x1) if $x1 > $x2;
-			($y1, $y2) = ($y2, $y1) if $y1 > $y2;
-			@$_ = ( $x1, $y1, $x2 - $x1 + 1, $y2 - $y1 + 1 );
-		}
+		_normalize_rect($_) for @requests;
 
 		unless ( $self->{_widgets} ) {
 			push @{ $self-> {_widgets} }, Prima::Widget->new(
@@ -241,16 +271,21 @@ sub _visible
 
 		my $i = 0;
 		for ( @requests ) {
-			my ( $x, $y, $w, $h) = @$_;
+			my ( $x1, $y1, $x2, $y2) = @$_;
+			my $w = $x2 - $x1 + 1;
+			my $h = $y2 - $y1 + 1;
 			$self->{_widgets}->[$i++]->set(
-				origin  => [ $x, $y ],
+				origin  => [ $x1, $y1 ],
 				size    => [ $w, $h ],
 				visible => 1,
 			);
 		}
 
+	LEAVE:
 		if ( $optimized_rect_change ) {
-			$_->visible( @requests == 4 ) for @{$self->{_widgets}}[1..3];
+			for ( my $i = 0; $i < 4; $i++) {
+				$self->{_widgets}->[$i]->visible( defined $requests[$i] );
+			}
 		}
 	} else {
 		$_->hide for @{$self->{_widgets}};
@@ -352,6 +387,11 @@ Defines rubberband breadth, in pixels.
 =item canvas = $::application
 
 Sets the painting surface, and also the widget (it must be a widget) used for drawing.
+
+=item clipRect X1, Y1, X2, Y2
+
+Defines the clipping rectangle, in inclusive-inclusive coordinates. If set to [-1,-1,-1,-1],
+means no clipping is done.
 
 =item mode STRING = 'auto'
 

@@ -296,9 +296,12 @@ sub adjust_sizes
 sub xorrect
 {
 	my ( $self, @r) = @_;
-	$::application-> rubberband( @r ?
-		( rect => \@r, breadth => $self->{thickness} ) :
-		( destroy => 1 )
+	my $p = $self->get_parent;
+	$::application-> rubberband( 
+		clipRect => [ $p->client_to_screen( 0,0,$p-> size) ],
+		@r ?
+			( rect => \@r, breadth => $self->{thickness} ) :
+			( destroy => 1 )
 	);
 }
 

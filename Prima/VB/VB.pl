@@ -776,9 +776,11 @@ sub veil
 	( $r[0], $r[2]) = ( $r[2], $r[0]) if $r[2] < $r[0];
 	( $r[1], $r[3]) = ( $r[3], $r[1]) if $r[3] < $r[1];
 	@r = $self-> client_to_screen( @r);
-	$::application-> rubberband( $draw ?
-		( rect => \@r ) :
-		( destroy => 1 )
+	$::application-> rubberband( 
+		clipRect => [ $self-> client_to_screen( 0,0,$self->size ) ],
+		$draw ?
+			( rect => \@r ) :
+			( destroy => 1 )
 	);
 }
 
