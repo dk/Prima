@@ -723,6 +723,10 @@ sub useDeviceFonts
 	}
 	$_[0]-> {useDeviceFonts} = $_[1] unless $_[0]-> get_paint_state;
 	$_[0]-> {useDeviceFonts} = 1 if $_[0]-> {useDeviceFontsOnly};
+	if ( !$::application && !$_[1] ) {
+		warn "warning: ignored .useDeviceFonts(0) because Prima::Application is not instantiated\n";
+		$_[0]->{useDeviceFonts} = 1;
+	}
 }
 
 sub useDeviceFontsOnly
@@ -1016,6 +1020,8 @@ sub text_out
 				$self-> emit( "$adv2 $self->{plate}->{yd} M : CP T");
 				$self-> emit( $pg);
 				$self-> emit(";");
+				$advance = $a + $b + $c;
+			} elsif ( defined $a ) {
 				$advance = $a + $b + $c;
 			} else {
 				$advance = $$nd[1] + $$nd[2] + $$nd[3];
@@ -1511,7 +1517,7 @@ sub place_glyph
 			"$scalex $scaley scale $b $bby true [$b 0 0 -$bby 0 $bby] <$cdz> imagemask",
 			$a, $b, $c;
 	}
-	return '';
+	return '', $a, $b, $c;
 }
 
 sub get_rmap
