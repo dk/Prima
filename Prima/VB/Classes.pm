@@ -2984,8 +2984,10 @@ use vars qw(@ISA %packProps %packDefaults);
 	anchor    => 'pack_anchor',
 	expand    => 'bool',
 	fill      => 'pack_fill',
-	pad       => 'point',
-	ipad      => 'point',
+	padx      => 'iv',
+	pady      => 'iv',
+	ipadx     => 'iv',
+	ipady     => 'iv',
 	side      => 'pack_side',
 );
 
@@ -2995,8 +2997,10 @@ use vars qw(@ISA %packProps %packDefaults);
 	anchor    => 'center',
 	expand    => 0,
 	fill      => 'none',
-	pad       => [0,0],
-	ipad      => [0,0],
+	padx      => 0,
+	pady      => 0,
+	ipadx     => 0,
+	ipady     => 0,
 	side      => 'top',
 );
 
