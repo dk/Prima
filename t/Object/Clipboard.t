@@ -13,6 +13,10 @@ my %rc = map { $_ => 1 } $c-> get_registered_formats;
 ok( exists $rc{'Text'} && exists $rc{'Image'}, "predefined formats" );
 
 SKIP: {
+$::application->begin_paint;
+skip "rdesktop", 8 if $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid;
+$::application->end_paint;
+
 skip "Cannot talk to clipboard", 8 unless $c->open;
 $c->close;
 
