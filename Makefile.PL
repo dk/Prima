@@ -1668,8 +1668,8 @@ use vars qw(%Config %Config_inst);
 
 %Config_inst = (
 	incpaths              => [ $ippi ],
-	gencls                => '\$(bin)${ifs}gencls$SCRIPT_EXT',
-	tmlink                => '\$(bin)${ifs}tmlink$SCRIPT_EXT',
+	gencls                => 'gencls$SCRIPT_EXT',
+	tmlink                => 'tmlink$SCRIPT_EXT',
 	libname               => '\$(lib)${ifs}auto${ifs}Prima${ifs}${LIB_PREFIX}Prima$LIB_EXT',
 	dlname                => '\$(lib)${ifs}auto${ifs}Prima${ifs}Prima.$Config{dlext}',
 	ldpaths               => [$libpathi],
@@ -1739,10 +1739,15 @@ sub command_postinstall
 		s/\//\\/g for values %vars;
 	}
 
-	print FF <<HEADER;
+	print FF <<'HEADER';
 # This file was automatically generated.
 package Prima::Config;
 use vars qw(%Config);
+
+# Determine lib based on the location of this module
+use File::Basename qw(dirname);
+use File::Spec;
+my $lib = File::Spec->catfile(dirname(__FILE__), '..');
 
 %Config = (
 HEADER
@@ -1756,7 +1761,9 @@ HEADER
 				$ci_state = 0;
 			} elsif ( m/^\s*(\S+)\s*/ ) {
 				my $k = $1;
-				s/\$\((\w+)\)/$vars{$1}/g;
+				s/\$\((\w+)\)/\$$1/g;
+				s/'/"/g;
+				s{\\}{\\\\}g;
 				$ci{$k} = $_;
 			}
 		}
@@ -2089,8 +2096,7 @@ sub install
 		"$2\$(DEST$3)$4".
 		"$5\$(DEST$6)$7$8".
 		"\n\t\$(NOECHO) \$(ABSPERL) $0 --postinstall ".
-			"dest=\$(DEST$3) lib=\$($3) bin=\$($6) ".
-			"slib=$cygwin_fake_Slib\n\n"
+			"dest=\$(DEST$3) slib=$cygwin_fake_Slib\n\n"
 	]xgse;
 
 	$END .= <<BAD_MAKEFILE if $n != 3;
