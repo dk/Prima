@@ -1744,12 +1744,6 @@ sub command_postinstall
 package Prima::Config;
 use vars qw(%Config);
 
-# Determine lib and bin directories based on the location of this module
-use File::Basename qw(dirname);
-use File::Spec;
-my \$lib = File::Spec->catfile(dirname(__FILE__), '..');
-my \$bin = File::Spec->catfile(\$lib, qw( .. bin ));
-
 %Config = (
 HEADER
 	while ( <F>) {
@@ -1762,9 +1756,7 @@ HEADER
 				$ci_state = 0;
 			} elsif ( m/^\s*(\S+)\s*/ ) {
 				my $k = $1;
-				s/\$\((\w+)\)/\$$1/g;
-				s/'/"/g;
-				s{\\}{\\\\}g;
+				s/\$\((\w+)\)/$vars{$1}/g;
 				$ci{$k} = $_;
 			}
 		}
