@@ -204,11 +204,11 @@ is finished.
 
 The window is created by invoking 
 
-	new Prima::Window();
+	new Prima::MainWindow();
 
 or
 
-	Prima::Window-> create()
+	Prima::MainWindow-> create()
 
 code with the additional parameters. Actually, all Prima objects are created by such a
 scheme. The class name is passed as the first parameter, and a custom set
