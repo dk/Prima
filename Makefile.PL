@@ -1748,7 +1748,7 @@ use vars qw(%Config);
 use File::Basename qw(dirname);
 use File::Spec;
 my \$lib = File::Spec->catfile(dirname(__FILE__), '..');
-my \$bin = File::Spec->catfile(\$lib, qw( .. .. bin ));
+my \$bin = File::Spec->catfile(\$lib, qw( .. bin ));
 
 %Config = (
 HEADER
