@@ -1,5 +1,10 @@
 Revision history for Perl module Prima
 
+1.44 2015-08-04
+ - Rewrite rubberband
+ - Work on portable perls
+ - Better support of graphic libs where several versions are available
+
 1.43 2015-04-10
  - Rewrite font test and polish rough ends in xft font handling
  - Copy images to clipboard so that GTK recognizes them
