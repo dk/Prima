@@ -35,6 +35,7 @@
 #define Font            XFont
 #define Window          XWindow
 #undef FUNC
+#undef Bool
 #define Bool I32
 #include <X11/xpm.h>
 #undef Font
