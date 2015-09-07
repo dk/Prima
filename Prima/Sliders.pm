@@ -761,6 +761,8 @@ sub profile_default
 {
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
+		autoHeight     => 0,
+		autoWidth      => 0,
 		autoTrack      => 1,
 		increment      => 10,
 		min            => 0,
@@ -781,21 +783,19 @@ sub profile_default
 sub init
 {
 	my $self = shift;
-	for ( qw( min max readOnly snap value autoTrack))
+	for ( qw( min max readOnly snap value autoTrack autoWidth autoHeight))
 		{$self-> {$_}=0}
 	for ( qw( tickVal tickLen tickTxt )) { $self-> {$_} = [] };
 	my %profile = $self-> SUPER::init( @_);
-	for ( qw( step min max increment readOnly ticks snap value autoTrack))
+	for ( qw( step min max increment readOnly ticks snap value autoTrack autoHeight autoWidth))
 	{$self-> $_($profile{$_});}
 	$self-> scheme( $profile{scheme}) if defined $profile{scheme};
 	return %profile;
 }
 
-sub autoTrack
-{
-	return $_[0]-> {autoTrack} unless $#_;
-	$_[0]-> {autoTrack} = $_[1];
-}
+sub autoTrack  { $#_ ? $_[0]-> {autoTrack}  = $_[1] : $_[0]-> {autoTrack}  }
+sub autoWidth  { $#_ ? $_[0]-> {autoWidth}  = $_[1] : $_[0]-> {autoWidth}  }
+sub autoHeight { $#_ ? $_[0]-> {autoHeight} = $_[1] : $_[0]-> {autoHeight} }
 
 sub on_mouseclick
 {
@@ -826,6 +826,8 @@ sub set_next_value
 		$self-> value( $self-> value + $dir);
 	}
 }
+
+sub update_geom_sizes {}
 
 sub set_read_only
 {
@@ -882,6 +884,7 @@ sub set_ticks
 	$self-> {tickLen} = \@len;
 	$self-> {tickTxt} = \@txt;
 	$self-> {scheme}  = undef;
+	$self-> update_geom_sizes;
 	$self-> value( $self-> value);
 	$self-> repaint;
 }
@@ -995,6 +998,22 @@ sub profile_default
 		tickAlign      => tka::Normal,
 		vertical       => 0,
 	}
+}
+
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+	$p-> { autoWidth} = 1
+		if !exists $p->{autoWidth} and (($p->{vertical} // $default->{vertical}) == 1);
+	$p-> { autoHeight} = 1
+		if !exists $p->{autoHeight} and (($p->{vertical} // $default->{vertical}) == 0);
+	$p-> { autoHeight} = 0
+		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} || 
+			( exists $p-> {top} && exists $p-> {bottom});
+	$p-> { autoWidth} = 0
+		if exists $p-> {width} || exists $p-> {size} || exists $p-> {rect} || 
+			( exists $p-> {left} && exists $p-> {right});
+	$self-> SUPER::profile_check_in( $p, $default);
 }
 
 sub init
@@ -1211,6 +1230,39 @@ sub on_paint
 	}
 }
 
+sub on_fontchanged
+{
+	my $self = shift;
+	$self->update_geom_sizes;
+	$self->repaint;
+}
+
+sub update_geom_sizes
+{
+	my $self = shift;
+	my $maxtlen = 0;
+	for ( @{ $self->{tickLen}}) {
+		$maxtlen = $_ if $maxtlen < $_;
+	}
+	$maxtlen *= 2 if $self->tickAlign == tka::Dual;
+	if ( $self->vertical ) {
+		return unless $self->autoWidth;
+		my $maxtwid = 0;
+		$self->begin_paint_info;
+		for ( grep { defined } @{ $self->{tickTxt}}) {
+			my $w = $self->get_text_width($_);
+			$maxtwid = $w if $maxtwid < $w;
+		}
+		$self->end_paint_info;
+		my $x = $maxtlen + $maxtwid * 2 + $self->shaftBreadth + $self->borderWidth + 5 + DefButtonX;
+		$self->geomWidth($x);
+	} else {
+		return unless $self->autoHeight;
+		my $y = $maxtlen + $self->font->height * 2 + $self->shaftBreadth + $self->borderWidth + 5 + DefButtonX;
+		$self->geomHeight($y);
+	}
+}
+
 sub pos2info
 {
 	my ( $self, $x, $y) = @_;
@@ -1324,6 +1376,7 @@ sub on_keydown
 sub set_vertical
 {
 	$_[0]-> {vertical} = $_[1];
+	$_[0]-> update_geom_sizes;
 	$_[0]-> repaint;
 }
 
@@ -1333,6 +1386,7 @@ sub set_tick_align
 	$ta = tka::Normal if $ta != tka::Alternative and $ta != tka::Dual;
 	return if $ta == $self-> {tickAlign};
 	$self-> {tickAlign} = $ta;
+	$self-> update_geom_sizes;
 	$self-> repaint;
 }
 
@@ -1348,6 +1402,7 @@ sub set_shaft_breadth
 	$sb = 0 if $sb < 0;
 	return if $sb == $self-> {shaftBreadth};
 	$self-> {shaftBreadth} = $sb;
+	$self-> update_geom_sizes;
 	$self-> repaint;
 }
 
@@ -1432,6 +1487,7 @@ sub borderWidth
 	my ( $self, $bw) = @_;
 	$bw = 0 if $bw < 0;
 	$self-> {borderWidth} = $bw;
+	$self-> update_geom_sizes;
 	$self-> repaint;
 }
 
