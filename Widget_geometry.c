@@ -912,8 +912,10 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
             croak("%s: invalid 'anchor'", "Prima::Widget::pack");
       }
 
+      if ( pexist( ipad)) var-> geomInfo. ipad. x = var-> geomInfo. ipad. y = pget_i( ipad);
       if ( pexist( ipadx)) var-> geomInfo. ipad. x = pget_i( ipadx);
       if ( pexist( ipady)) var-> geomInfo. ipad. y = pget_i( ipady);
+      if ( pexist( pad)) var-> geomInfo. pad. x = var-> geomInfo. pad. y = pget_i( pad);
       if ( pexist( padx))  var-> geomInfo. pad. x  = pget_i( padx);
       if ( pexist( pady))  var-> geomInfo. pad. y  = pget_i( pady);
 

@@ -137,6 +137,13 @@ Insert the slave(s) at the end of the packing order for the master
 window given by I<$master>. Currently, only the immediate owner
 can be accepted as master.
 
+=item B<ipad> =E<gt> I<amount>
+
+I<Amount> specifies how much both horizontal and vertical internal padding to
+leave on each side of the slave(s).
+I<Amount> must be a valid screen distance, such as B<2> or B<.5c>.
+It defaults to 0.
+
 =item B<ipadx> =E<gt> I<amount>
 
 I<Amount> specifies how much horizontal internal padding to
@@ -149,6 +156,12 @@ It defaults to 0.
 I<Amount> specifies how much vertical internal padding to
 leave on each side of the slave(s).
 I<Amount>  defaults to 0.
+
+=item B<pad> =E<gt> I<amount>
+
+I<Amount> specifies how much horizontal and vertical external padding to
+leave on each side of the slave(s).
+I<Amount> defaults to 0.
 
 =item B<padx> =E<gt> I<amount>
 
