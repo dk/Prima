@@ -55,7 +55,7 @@ use constant DefButtonX => 17;
 );
 
 %listProps = map { $_ => 1 } qw(
-	autoHeight     focusedItem hScroll    
+	focusedItem hScroll    
 	integralHeight items       itemHeight 
 	topItem        vScroll     gridColor  
 	multiColumn    offset      autoHScroll
@@ -89,6 +89,7 @@ sub profile_default
 		%{$_[ 0]-> SUPER::profile_default},
 		style          => cs::Simple,
 		caseSensitive  => 0,
+		autoHeight     => 1,
 
 		autoHScroll    => 0,
 		autoVScroll    => 1,
@@ -122,6 +123,8 @@ sub profile_check_in
 	my ( $self, $p, $default) = @_;
 	$self-> SUPER::profile_check_in( $p, $default);
 	my $style = exists $p-> {style} ? $p-> {style} : $default-> {style};
+	$p-> {autoHeight} = 0
+		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} || ( exists $p-> {top} && exists $p-> {bottom});
 	if ( $style != cs::Simple) {
 		$p-> { editHeight } = exists $p-> {height} ? $p-> {height} : $default-> {height} 
 			unless exists $p-> { editHeight };
@@ -152,6 +155,7 @@ sub init
 	$self-> {literal}      = $profile{literal};
 	my $eh = $self-> {editHeight } = $profile{editHeight };
 	$self-> {listHeight}   = $profile{listHeight};
+	$self-> {autoHeight}   = $profile{autoHeight};
 
 	$self-> {edit} = $self-> insert( $profile{editClass} =>
 		name        => 'InputLine',
@@ -165,6 +169,13 @@ sub init
 		(map { $_   => $profile{$_}} keys %editProps),
 		%{$profile{editProfile}},
 	);
+
+	if ( $self->{autoHeight} && $self->{style} != cs::Simple) {
+		$self->check_auto_size;
+		( $w, $h) = ( $self-> size);
+		$eh = $self-> height;
+		$self->{edit}->set( height => $eh, bottom => $h - $eh );
+	}
 
 	my %lp = (%listProps, scrollBarClass => 1, hScrollBarProfile => 1, vScrollBarProfile => 1);
 	delete $lp{hScroll} if $profile{autoHScroll};
@@ -202,6 +213,13 @@ sub init
 
 	$self-> visible( $visible);
 	return %profile;
+}
+
+sub check_auto_size
+{
+	my $self = $_[0];
+	$self-> geomHeight( $self-> {edit}-> default_geom_height )
+		if $self-> {autoHeight} && $self->{style} != cs::Simple && $self->{edit}->can('default_geom_height');
 }
 
 sub on_create
@@ -338,7 +356,8 @@ sub InputLine_Leave
 
 sub InputLine_FontChanged
 {
-	$_[0]-> editHeight ( $_[1]-> font-> height + $_[1]-> borderWidth * 2);
+	$_[0]-> editHeight ( $_[1]-> default_geom_height );
+	$_[0]-> check_auto_size;
 }
 
 sub InputLine_Create
@@ -668,6 +687,13 @@ The module defines C<cs::> package for the constants used by L<style> property.
 
 =over
 
+=item autoHeight BOOLEAN
+
+If 1, adjusts the height of the widget automatically when its font changes.
+Only when style is not C<cs::Simple>.
+
+Default value: 1
+
 =item buttonClass STRING
 
 Assigns a drop-down button class.
@@ -827,7 +853,7 @@ See more in L<Prima::Lists>.
 
 =item %listProps
 
-	autoHeight     focusedItem    hScroll        
+		       focusedItem    hScroll        
 	integralHeight items          itemHeight     
 	topItem        vScroll        gridColor      
 	multiColumn    offset         

@@ -491,10 +491,16 @@ sub on_popup
 	$p-> enabled( 'select_all',   length($self-> {wholeLine}));
 }
 
+sub default_geom_height
+{
+	my $self = $_[0];
+	return $self-> font-> height + 2 + $self-> {borderWidth} * 2;
+}
+
 sub check_auto_size
 {
 	my $self = $_[0];
-	$self-> geomHeight( $self-> font-> height + 2 + $self-> {borderWidth} * 2) 
+	$self-> geomHeight( $self-> default_geom_height )
 		if $self-> {autoHeight};
 }
 
