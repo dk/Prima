@@ -213,6 +213,7 @@ sub on_translateaccel
 sub on_click
 {
 	my ( $self, $f) = ( $_[0], $_[0]-> {focusLink});
+	$f = $self->owner->bring($f) if defined $f && ! ref $f;
 	$f-> select if defined $f && $f-> alive && $f-> enabled;
 }
 
@@ -442,8 +443,9 @@ Default value: 1
 
 =item focusLink WIDGET
 
-Points to a widget, which is explicitly focused when the user
-presses the combination of a hot key with the C<Alt> key.
+Points to a widget or a widget name (has to be a sibling widget), which is
+explicitly focused when the user presses the combination of a hot key with the
+C<Alt> key.
 
 Prima::Label does not provide a separate property to access the
 hot key value, however it can be read from the C<{accel}> variable.
