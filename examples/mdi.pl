@@ -28,11 +28,11 @@
 
 =pod 
 
-=item NAME
+=head1 NAME
 
 examples/mdi.pl - A MDI ( multiple-document interface ) example
 
-=item FEATURES
+=head1 FEATURES
 
 Outlines usage of Prima::MDI module.
 Note the MDI window are not subject for a window-manager 
