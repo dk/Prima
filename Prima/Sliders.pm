@@ -931,7 +931,7 @@ sub set_scheme
 	} elsif ( $s == ss::StdMinMax) {
 		push ( @t, { value => $min, height => 6,   text => "Min" });
 		push ( @t, { value => $max, height => 6,   text => "Max" });
-	} elsif ( $s == ss::Thermometer) {
+	} elsif ( $s == ss::Thermometer ) {
 		for ( $i = $min; $i <= $max; $i += $inc) {
 			push ( @t, { 
 				value => $i, 
@@ -950,6 +950,7 @@ sub set_scheme
 				}
 			}
 		}
+		push ( @t, { value => $max, height => 6,   text => $max }) if $i != $max;
 	}
 	$self-> ticks( @t);
 	$self-> {scheme} = $s;
@@ -2252,10 +2253,10 @@ default C<min>, C<max>, and C<increment> values would look like that:
 
 The module defines the following constants:
 
-	ss::Axis          - 5 minor ticks per increment
-	ss::Gauge         - 1 tick per increment
-	ss::StdMinMax     - 2 ticks at the ends of the bar
-	ss::Thermometer   - 10 minor ticks per increment, longer text ticks
+	ss::Axis           - 5 minor ticks per increment
+	ss::Gauge          - 1 tick per increment
+	ss::StdMinMax      - 2 ticks at the ends of the bar
+	ss::Thermometer    - 10 minor ticks per increment, longer text ticks
 
 When C<tick> property is set, C<scheme> is reset to C<undef>.
 
