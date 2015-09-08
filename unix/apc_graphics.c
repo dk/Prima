@@ -614,6 +614,36 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 }
 
 Bool
+apc_gp_bars( Handle self, int nr, Rect *rr)
+{
+   DEFXX;
+   XRectangle *r, *rp;
+   int i, mix = 0;
+
+   if ( PObject( self)-> options. optInDrawInfo) return false;
+   if ( !XF_IN_PAINT(XX)) return false;
+   if ((r = malloc( sizeof( XRectangle)*nr)) == nil) return false;
+  
+   for ( i = 0, rp = r; i < nr; i++, rr++, rp++) {
+      SHIFT( rr->left,rr-> bottom); SHIFT( rr->right, rr->top);
+      SORT( rr->left, rr->right); SORT( rr->bottom, rr->top);
+      RANGE4( rr->left, rr->bottom, rr->right, rr->top);
+      rp->x = rr->left;
+      rp->y = REVERT(rr->top);
+      rp->width = rr->right - rr->left + 1;
+      rp->height = rr->top - rr->bottom + 1;
+   }
+
+   while ( prima_make_brush( XX, mix++)) 
+      XFillRectangles( DISP, XX-> gdrawable, XX-> gc, r, nr);
+
+   XCHECKPOINT;
+   XFLUSH;	  
+   free( r);
+   return true;
+}
+
+Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;

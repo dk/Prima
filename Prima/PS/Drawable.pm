@@ -1055,6 +1055,20 @@ sub bar
 	$self-> fill( "N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X F");
 }
 
+sub bars
+{
+	my ( $self, $array) = @_;
+	my $i; 
+	my $c = scalar @$array;
+	my @a = $self-> pixel2point( @$array);
+	$c = int( $c / 4) * 4;
+	my $z = '';
+	for ( $i = 0; $i < $c; $i += 4) {
+		$z .= "N @a[$i,$i+1] M @a[$i,$i+3] l @a[$i+2,$i+3] l @a[$i+2,$i+1] l X F ");
+	}
+	$self-> stroke( $z);
+}
+
 sub rectangle
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
@@ -1096,7 +1110,7 @@ sub lines
 	$c = int( $c / 4) * 4;
 	my $z = '';
 	for ( $i = 0; $i < $c; $i += 4) {
-		$z .= "N @a[$i,$i+1] M @a[$i+2,$i+3] l O";
+		$z .= "N @a[$i,$i+1] M @a[$i+2,$i+3] l O ";
 	}
 	$self-> stroke( $z);
 }

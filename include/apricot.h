@@ -3148,6 +3148,9 @@ extern Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
+apc_gp_bars( Handle self, int nr, Rect *rr);
+
+extern Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool

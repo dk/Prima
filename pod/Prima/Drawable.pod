@@ -887,6 +887,13 @@ Draws a filled rectangle with (X1,Y1) - (X2,Y2) extents.
 
 Context used: color, backColor, fillPattern, rop, rop2
 
+=item bars @RECTS
+
+Draws a set of filled rectangles.
+RECTS is an array of integer quartets in format (X1,Y1,X2,Y2).
+
+Context used: color, backColor, fillPattern, rop, rop2
+
 =item chord X, Y, DIAMETER_X, DIAMETER_Y, START_ANGLE, END_ANGLE 
 
 Plots an arc with center in X, Y and DIAMETER_X and DIAMETER_Y axis

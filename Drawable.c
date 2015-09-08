@@ -483,7 +483,7 @@ Drawable_polypoints( SV * points, char * procName, int mod, int * n_points)
       return nil;
    }
    count /= 2;
-   if ( count < 2) return nil;
+   if ( count < 1) return nil;
    if (!( p = allocn( Point, count))) return false;
    for ( i = 0; i < count; i++)
    {
@@ -498,6 +498,47 @@ Drawable_polypoints( SV * points, char * procName, int mod, int * n_points)
        p[ i]. y = SvIV( *psvy);
    }
    *n_points = count;
+   return p;
+}
+
+Rect *
+Drawable_polyrects( SV * rects, char * procName, int * n_rects)
+{
+   AV * av;
+   int i, count;
+   Rect * p;
+
+   if ( !SvROK( rects) || ( SvTYPE( SvRV( rects)) != SVt_PVAV)) {
+      warn("Invalid array reference passed to %s", procName);
+      return nil;
+   }
+   av = ( AV *) SvRV( rects);
+   count = av_len( av) + 1;
+   if ( count % 4) {
+      warn("Drawable::%s: Number of elements in an array must be a multiple of 4",
+           procName);
+      return nil;
+   }
+   count /= 4;
+   if ( count < 1) return nil;
+   if (!( p = allocn( Rect, count))) return false;
+   for ( i = 0; i < count; i++)
+   {
+       SV** psvx1 = av_fetch( av, i * 4, 0);
+       SV** psvy1 = av_fetch( av, i * 4 + 1, 0);
+       SV** psvx2 = av_fetch( av, i * 4 + 2, 0);
+       SV** psvy2 = av_fetch( av, i * 4 + 3, 0);
+       if (( psvx1 == nil) || ( psvy1 == nil) || (psvx2 == nil) || (psvy2 == nil)) {
+          free( p);
+          warn("Array panic on item pair %d on Drawable::%s", i, procName);
+          return nil;
+       }
+       p[ i]. left   = SvIV( *psvx1);
+       p[ i]. bottom = SvIV( *psvy1);
+       p[ i]. right  = SvIV( *psvx2);
+       p[ i]. top = SvIV( *psvy2);
+   }
+   *n_rects = count;
    return p;
 }
 
@@ -531,6 +572,20 @@ Bool
 Drawable_fillpoly( Handle self, SV * points)
 {
    return polypoints( self, points, "Drawable::fillpoly", 2, apc_gp_fill_poly);
+}
+
+Bool
+Drawable_bars( Handle self, SV * rects)
+{
+   int count;
+   Rect * p;
+   Bool ret = false;
+   if (( p = Drawable_polyrects( rects, "Drawable::bars", &count))) {
+      ret = apc_gp_bars( self, count, p);
+      if ( !ret) perl_error();
+      free( p);
+   }
+   return ret;
 }
 
 /*
