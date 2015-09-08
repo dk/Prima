@@ -376,6 +376,14 @@ rubberband is erased too.
 
 =head1 API
 
+=over
+
+=item new %properties
+
+Creates a new RubberBand instance. See description of properties below.
+
+=back
+
 =head2 Properties
 
 =over
@@ -416,6 +424,10 @@ is always inside these coordinates, no matter what breadth is.
 
 Hides the band, if drawn
 
+=item has_clip_rect
+
+Cheks whether clipRect contains an actual clippring rectange or it is empty.
+
 =item set %profile
 
 Applies all properties
@@ -423,6 +435,11 @@ Applies all properties
 =item left, right, top, bottom, width, height, origin, size
 
 Same shortcuts as in C<Prima::Widget>, but read-only.
+
+=item show
+
+Show the band, if invisible
+
 
 =back
 

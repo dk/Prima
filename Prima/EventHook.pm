@@ -77,7 +77,7 @@ sub install
 		}
 	}
 
-	Prima::Component-> event_hook( $hook = \&hook_proc) 
+	Prima::Component-> event_hook( $hook = \&_hook_proc) 
 		if $auto_hook && !$hook;
 }
 
@@ -93,7 +93,7 @@ sub deinstall
 		if !$total && $hook && $auto_hook;
 }
 
-sub hook_proc
+sub _hook_proc
 {
 	my ( $object, $event, @params) = @_;
 	for ( '*', $event) {

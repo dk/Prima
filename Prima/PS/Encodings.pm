@@ -144,6 +144,10 @@ PS interpreter, the Latin glyph set was selected as a ground level.
 
 =over
 
+=item exists $encoding
+
+Returns whether C<$encoding> exists in the list of internal list of recognized names
+
 =item files
 
 It's unlikely that users will need to supply their own encodings, however
