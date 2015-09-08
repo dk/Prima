@@ -615,6 +615,11 @@ Returns newly created I<Prima::DeviceBitmap> instance,
 with the image dimensions and with the bitmap pixel 
 values copied to.
 
+=item clone %properties
+
+Creates a copy of the image and applies C<%properties>. An easy way to create
+a down-sampled copy, for example.
+
 =item codecs
 
 Returns array of hashes, each describing the supported image

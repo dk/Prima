@@ -651,6 +651,13 @@ sub colormap
 	}
 }
 
+sub clone
+{
+	my $i = shift->dup;
+	$i->set(@_);
+	return $i;
+}
+
 # class Icon
 package Prima::Icon;
 use vars qw( @ISA);
