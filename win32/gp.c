@@ -200,6 +200,26 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 }}
 
 Bool
+apc_gp_bars( Handle self, int nr, Rect *rr)
+{objCheck false;{
+   HDC     ps = sys ps;
+   HGDIOBJ old = SelectObject( ps, hPenHollow);
+   Bool ok = true;
+   int i, y = sys lastSize. y;
+   STYLUS_USE_BRUSH( ps);
+   for ( i = 0; i < nr; i++, rr++) {
+      check_swap( rr->left, rr->right);
+      check_swap( rr->bottom, rr->top);
+      if ( !( ok = Rectangle( ps, rr->left, y - rr->top - 1, rr->left + 2, y - rr->bottom + 1))) {
+         apiErr;
+         break;
+      }
+   }
+   SelectObject( ps, old);
+   return ok;
+}}
+
+Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
    Bool     ok = true;
