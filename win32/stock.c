@@ -766,7 +766,6 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, PFEnumStruc es)
    Font * font = es-> font;
    int ret = 1, copy = 0;
    long hei, res;
-   NEWTEXTMETRICEXW atx;
    ENUMLOGFONTEXW elx;
 
    es-> passedCount++;
