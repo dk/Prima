@@ -953,6 +953,7 @@ sub setup_defines
 	my @int_types = qw(int8_t int16_t int32_t int64_t);
 	my @uint_types = qw(uint8_t uint16_t uint32_t uint64_t);
 	my @u_int_types = qw(u_int8_t u_int16_t u_int32_t u_int64_t);
+	my @size_types = qw(ssize_t);
 	have_types_in( "sys/types.h", @int_types)
 		|| have_types_in( "sys/bitypes.h", @int_types)
 		|| have_types_in( "sys/inttypes.h", @int_types)
@@ -965,6 +966,9 @@ sub setup_defines
 		|| have_types_in( "sys/bitypes.h", @u_int_types)
 		|| have_types_in( "sys/inttypes.h", @u_int_types)
 		|| have_types_in( "stdint.h", @u_int_types);
+	have_types_in( "sys/types.h", @size_types)
+		|| have_types_in( "io.h", @size_types)
+		|| have_types_in( "unistd.h", @size_types);
 
 	if ( $unix) {
 		have_header( "sys/ipc.h", "sys/types.h");

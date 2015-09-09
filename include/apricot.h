@@ -394,6 +394,9 @@ typedef __int64 int64_t;
 typedef unsigned long uint64_t;
 #endif
 #endif
+#if !defined(HAVE_SSIZE_T)
+typedef size_t ssize_t;
+#endif
 
 typedef uint32_t        Color;
 
