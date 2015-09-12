@@ -1821,9 +1821,9 @@ exception_remember(char * text)
       if ( !( exception_text = realloc(exception_text, strlen(text) + strlen(exception_text) + 1)))
          croak("not enough memory");
       strcat( exception_text, text );
-	} else {
-		exception_text = duplicate_string( text );
-	}
+   } else {
+      exception_text = duplicate_string( text );
+   }
 }
 
 Bool

@@ -74,6 +74,6 @@ $ww-> update_view;
 $ww-> destroy;
 
 $ww = $window->insert( Widget => onPaint => sub { die "moo" });
-eval { $ww->update_view; };
+eval { $ww->repaint; $ww->update_view; };
 ok( $@ =~ /moo/, 'exception in cmPaint');
 $ww-> destroy;
