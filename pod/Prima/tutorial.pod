@@ -253,7 +253,7 @@ hello-world program to contain a simple menu, it is enough to write this:
 				['~Open', 'Ctrl+O', '^O', sub { message('open!') }],
 				['~Save as...', sub { message('save as!') }],
 				[],
-				['~Exit', 'Alt+X', km::Alt | ord('X'), sub { shift-> close } ],
+				['~Exit', 'Alt+X', km::Alt | ord('x'), sub { shift-> close } ],
 			]],
 		],
 	);
@@ -384,7 +384,7 @@ produces a less readable code, but is more explicit and powerful:
 	[ '~Reboot', 'Ctrl+Alt+Delete', km::Alt | km::Ctrl | kb::Delete, sub {
 		print "wow!\n";
 	}],
-	[ '~Or not reboot?', 'Ctrl+Alt+R', km::Alt | km::Ctrl | ord('R'), sub {}],
+	[ '~Or not reboot?', 'Ctrl+Alt+R', km::Alt | km::Ctrl | ord('r'), sub {}],
 
 This concludes the short tutorial on menus. To read more, see L<Prima::Menu> .
 

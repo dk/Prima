@@ -11,7 +11,7 @@ Prima::Menu - pull-down and pop-up menu objects
         menuItems => [
            [ '~File' => [
               [ '~Open', 'Ctrl+O', '^O', \&open_file ],
-              [ '-save_file', '~Save', km::Ctrl | ord('S'), sub { save_file() } ],
+              [ '-save_file', '~Save', km::Ctrl | ord('s'), sub { save_file() } ],
               [],
               [ '~Exit', 'Alt+X', '@X', sub { exit } ],
            ]],
