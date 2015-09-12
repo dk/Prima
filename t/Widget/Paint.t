@@ -11,7 +11,7 @@ $::application->begin_paint;
 plan skip_all => "rdesktop" if $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid;
 $::application->end_paint;
 
-plan tests => 10;
+plan tests => 11;
 
 $window-> bring_to_front;
 my @rcrect;
@@ -71,4 +71,9 @@ $ww-> set( onPaint => sub {
 $ww-> repaint;
 $ww-> update_view;
 
+$ww-> destroy;
+
+$ww = $window->insert( Widget => onPaint => sub { die "moo" });
+eval { $ww->update_view; };
+ok( $@ =~ /moo/, 'exception in cmPaint');
 $ww-> destroy;

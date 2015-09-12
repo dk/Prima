@@ -666,13 +666,17 @@ XS( Component_notify_FROMPERL)
    int      seqCount = 0, stage = csNormal;
    PList    list = nil;
 
-   if ( items < 2)
-      croak ("Invalid usage of Component.notify");
+   if ( items < 2) {
+      exception_remember("Invalid usage of Component.notify");
+      return;
+   }
    SP -= items;
    self    = gimme_the_mate( ST( 0));
    name    = ( char*) SvPV_nolen( ST( 1));
-   if ( self == nilHandle)
-      croak( "Illegal object reference passed to Component.notify");
+   if ( self == nilHandle) {
+      exception_remember( "Illegal object reference passed to Component.notify");
+      return;
+   }
 
    if ( eventHook) {
       dSP;
@@ -693,7 +697,8 @@ XS( Component_notify_FROMPERL)
          (void)POPs;
          PUB_CHECK;
          CLOSE_G_EVAL;
-         croak( "%s", SvPV_nolen( GvSV( PL_errgv)));
+         exception_remember(SvPV_nolen( GvSV( PL_errgv)));
+         return;
       } 
       CLOSE_G_EVAL;
       SPAGAIN;
@@ -718,8 +723,12 @@ XS( Component_notify_FROMPERL)
    nameLen = strlen( name);
    if ( hv_exists( hv, name, nameLen)) {
       SV ** holder = hv_fetch( hv, name, nameLen, 0);
-      if ( !holder || !SvOK(*holder) || SvTYPE(*holder) == SVt_NULL)
-         croak("Inconsistent storage in %s::notification_types for %s during Component.notify", var-> self-> className, name);
+      if ( !holder || !SvOK(*holder) || SvTYPE(*holder) == SVt_NULL) {
+         char buf[1024];
+         snprintf(buf, 1024, "Inconsistent storage in %s::notification_types for %s during Component.notify", var-> self-> className, name);
+         exception_remember(buf);
+         return;
+      }
       rnt = SvIV( *holder);
    } else {
       warn("Unknown notification:%s", name);
@@ -813,7 +822,8 @@ XS( Component_notify_FROMPERL)
          if ( privMethod) sv_free( privMethod);
          free( argsv);
          free( sequence);
-         croak( "%s", SvPV_nolen( GvSV( PL_errgv)));
+         exception_remember(SvPV_nolen( GvSV( PL_errgv)));
+         return;
       } 
       CLOSE_G_EVAL;
       SPAGAIN;

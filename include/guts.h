@@ -82,6 +82,12 @@ extern Bool find_accel( Handle self, Handle item, int * key);
 extern Bool single_color_notify ( Handle self, Handle child, void * color);
 extern Bool kill_all( Handle self, Handle child, void * dummy);
 
+#if PRIMA_PLATFORM_X11
+#define EXCEPTION_CHECK_RAISE(v) exception_check_raise()
+#else
+#define EXCEPTION_CHECK_RAISE(v) if ( exception_charged()) return v;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -1319,6 +1319,28 @@ unprotect_object( Handle obj);
 extern void
 kill_zombies( void);
 
+/*
+ exception_* functions are solely needed as a workaround of a Win64 bug when running 32-bit programs.
+ It can be manifested when a perl code dies in f.ex. onPaint, and the triggered longjmp is
+ expected to land somewhere in perl guts. Except it doesn't, and the next 32-bit executed code
+ is right after DispatchMessage.
+
+ Discussion on stackoverflow here:
+ http://stackoverflow.com/questions/32525561/64-bit-windows-longjmp-lands-in-a-wrong-place
+*/
+
+extern void
+exception_remember( char * text);
+
+extern Bool
+exception_charged();
+
+extern Bool
+exception_block( Bool block );
+
+extern void
+exception_check_raise( void );
+
 extern HV*
 parse_hv( I32 ax, SV **sp, I32 items, SV **mark,
           int expected, const char *methodName);

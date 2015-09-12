@@ -1395,7 +1395,8 @@ ctx_remap_def cv_call_perl debug_write duplicate_string eval gimme_the_mate
 gimme_the_vmt kind_of kill_zombies notify_perl Object_create Object_destroy parse_hv
 plist_create plist_destroy prima_mallocz pop_hv_for_REDEFINED protect_object
 push_hv push_hv_for_REDEFINED query_method sv_call_perl sv_query_method
-unprotect_object perl_error
+unprotect_object perl_error exception_remember exception_block exception_check_raise
+exception_charged
 );
 	push @Prima_exports, grep { /^(apc|list|prima)/ } suck_symbols('include/apricot.h');
 	push @Prima_exports, suck_symbols('include/img.h');

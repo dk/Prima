@@ -1809,6 +1809,48 @@ hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** p
    return nil;
 }
 
+static char* exception_text = NULL;
+static Bool  exception_blocking = 0;
+
+void
+exception_remember(char * text)
+{
+   if ( !exception_blocking ) croak( "%s", text );
+
+   if ( exception_text ) {
+      if ( !( exception_text = realloc(exception_text, strlen(text) + strlen(exception_text) + 1)))
+         croak("not enough memory");
+      strcat( exception_text, text );
+	} else {
+		exception_text = duplicate_string( text );
+	}
+}
+
+Bool
+exception_charged(void)
+{
+   return exception_text != NULL;
+}
+
+Bool
+exception_block(Bool block)
+{
+    Bool old = exception_blocking;
+    exception_blocking = block;
+    return old;
+}
+
+void
+exception_check_raise(void)
+{
+    char buf[1024];
+    if ( !exception_text ) return;
+    strncpy( buf, exception_text, 1023 );
+    free( exception_text );
+    exception_text = NULL;
+    croak("%s", buf);
+}
+
 int
 prima_utf8_length( const char * utf8)
 {
@@ -1862,7 +1904,7 @@ prima_uv_to_utf8( U8 * utf8, UV uv)
 #ifdef PARANOID_MALLOC
 #undef malloc
 #undef free
-#if PRIMA_PLATFORM != apcUnix
+#if PRIMA_PLATFORM_WINDOWS
 #define HAVE_FTIME
 #endif
 
@@ -1949,7 +1991,7 @@ _test_free( void *ptr, int ln, char *fil, Handle self)
 }
 
 /* to make freaking Windows happy */
-#if PRIMA_PLATFORM != apcUnix
+#if PRIMA_PLATFORM_WINDOWS
 
 #undef list_create
 #undef plist_create
@@ -1960,7 +2002,7 @@ PList plist_create( int size, int delta) {}
 
 #endif /* PARANOID_MALLOC */
 
-#if PRIMA_PLATFORM != apcUnix
+#if PRIMA_PLATFORM_WINDOWS
 int
 debug_write( const char *format, ...)
 {

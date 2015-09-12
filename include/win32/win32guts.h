@@ -584,6 +584,7 @@ extern WCHAR *      alloc_ascii_to_wchar( const char * text, int length);
 extern void         wchar2char( char * dest, WCHAR * src, int lim);
 extern void         char2wchar( WCHAR * dest, char * src, int lim);
 extern void         textmetric_c2w( LPTEXTMETRICA from, LPTEXTMETRICW to);
+extern int          apcUpdateWindow( HWND wnd );
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA

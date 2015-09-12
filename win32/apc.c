@@ -359,6 +359,22 @@ apc_application_get_monitor_rects( Handle self, int * nrects)
     return nil;
 }
 
+static void
+apcDispatchMessage( const MSG * lpmsg)
+{
+    DispatchMessage(lpmsg);
+    exception_check_raise();
+}
+
+int
+apcUpdateWindow( HWND win )
+{
+    int ret;
+    ret = UpdateWindow( win );
+    exception_check_raise();
+    return ret;
+}
+
 static Bool
 files_rehash( Handle self, void * dummy)
 {
@@ -399,6 +415,7 @@ process_msg( MSG * msg)
          BYTE * mod = mod_select( kp-> mod);
          SendMessage( kp-> wnd, kp-> msg, kp-> mp1, kp-> mp2);
          mod_free( mod);
+         exception_check_raise();
       }
       break;
    case WM_LBUTTONDOWN:  musClk. emsg = WM_LBUTTONUP; goto MUS1;
@@ -483,7 +500,7 @@ process_msg( MSG * msg)
    }
    if ( !postpone_msg_translation) 
       TranslateMessage( msg);
-   DispatchMessage( msg);
+   apcDispatchMessage( msg);
    if ( postpone_msg_translation) { 
       if ( guts. dont_xlate_message)
          guts. dont_xlate_message = false;
@@ -500,7 +517,7 @@ apc_application_go( Handle self)
 {
    MSG msg;
    objCheck false;
-
+  
    while ( GetMessage( &msg, NULL, 0, 0) && process_msg( &msg));
 
    if ( application) Object_destroy( application);
@@ -547,7 +564,7 @@ apc_application_yield()
    while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE))
       if ( !process_msg( &msg)) {
          PostThreadMessage( guts. mainThreadId, appDead ? WM_QUIT : WM_TERMINATE, 0, 0);
-	 break;
+         break;
       }
    return true;
 }
@@ -1658,12 +1675,12 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
             MSG  msg;
             list_add( &guts. transp, self);
             WinHideWindow(( HWND) var handle);
-            if ( parent) UpdateWindow( parent);
+            if ( parent) apcUpdateWindow( parent);
             while ( PeekMessage( &msg, NULL, WM_PAINT, WM_PAINT, PM_REMOVE))
-               DispatchMessage( &msg);
+               apcDispatchMessage( &msg);
             if ( !parent) Sleep( 1);
             WinShowWindow(( HWND) var handle);
-            UpdateWindow(( HWND) var handle);
+            apcUpdateWindow(( HWND) var handle);
             list_delete( &guts. transp, self);
          } else
             useRPDraw = true;
@@ -2210,7 +2227,7 @@ apc_widget_invalidate_rect( Handle self, Rect * rect)
    PRECT pRect = rect ? map_Rect( self, rect) : nil;
    objCheck false;
    if ( !InvalidateRect (( HWND) var handle, pRect, false)) apiErr;
-   if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
+   if ( is_apt( aptSyncPaint) && !apcUpdateWindow(( HWND) var handle)) apiErr;
    objCheck false;
    process_transparents( self);
    return true;
@@ -2257,7 +2274,7 @@ apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Rect *cr, Bool sc
       }
    }
    objCheck false;
-   if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
+   if ( is_apt( aptSyncPaint) && !apcUpdateWindow(( HWND) var handle)) apiErr;
    return ShowCaret(( HWND) var handle);
 }
 
@@ -2576,7 +2593,7 @@ Bool
 apc_widget_update( Handle self)
 {
    objCheck false;
-   if ( !UpdateWindow(( HWND) var handle)) apiErrRet;
+   if ( !apcUpdateWindow(( HWND) var handle)) apiErrRet;
    return true;
 }
 
@@ -2957,8 +2974,10 @@ apc_message( Handle self, PEvent ev, Bool post)
        case cmPost:
           if (post)
              PostMessage(( HWND) var handle, WM_POSTAL, ( WPARAM) ev-> gen. H, ( LPARAM) ev-> gen. p);
-	  else
+           else {
              SendMessage(( HWND) var handle, WM_POSTAL, ( WPARAM) ev-> gen. H, ( LPARAM) ev-> gen. p);
+             exception_check_raise();
+          }
           break;
        case cmMouseMove:
           msg = WM_MOUSEMOVE;

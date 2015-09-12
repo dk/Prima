@@ -1681,7 +1681,7 @@ repaint_all( Handle owner, Handle self, void * dummy)
       return false;
    if ( !is_apt( aptTransparent)) {
       if ( !InvalidateRect(( HWND) var handle, nil, false)) apiErr;
-      if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
+      if ( is_apt( aptSyncPaint) && !apcUpdateWindow(( HWND) var handle)) apiErr;
       objCheck false;
       var self-> first_that( self, repaint_all, nil);
    }
@@ -1694,7 +1694,7 @@ hwnd_repaint( Handle self)
 {
    objCheck;
    if ( !InvalidateRect (( HWND) var handle, NULL, false)) apiErr;
-   if ( is_apt( aptSyncPaint) && !UpdateWindow(( HWND) var handle)) apiErr;
+   if ( is_apt( aptSyncPaint) && !apcUpdateWindow(( HWND) var handle)) apiErr;
    objCheck;
    var self-> first_that( self, repaint_all, nil);
    process_transparents( self);
