@@ -2080,23 +2080,23 @@ with the following definitions of indices:
 
 =over
 
-=item 0
+=item #0
 
 Item id with non-defined format. The simplest implementation, C<Prima::StringOutline>, 
 treats the scalar as a text string. The more complex classes store 
 references to arrays or hashes here. See C<items> article of a concrete class
 for the format of a node record.
 
-=item 1
+=item #1
 
 Reference to a child node. C<undef> if there is none.
 
-=item 2
+=item #2
 
 A boolean flag, which selects if the node shown as expanded, e.g.
 all its immediate children are visible.
 
-=item 3
+=item #3
 
 Width of an item in pixels.
 
@@ -2338,32 +2338,32 @@ ACTION subroutine is called with the following parameters:
 
 =over
 
-=item 0
+=item #0
 
 Node reference
 
-=item 1
+=item #1
 
 Parent node reference; if C<undef>, the node is the root.
 
-=item 2
+=item #2
 
 Node offset in parent item list.
 
-=item 3
+=item #3
 
 Node index.
 
-=item 4
+=item #4
 
 Node depth level. 0 means the root node.
 
-=item 5
+=item #5
 
 A boolean flag, set to 1 if the node is the last child in parent node list,
 set to 0 otherwise.
 
-=item 6
+=item #6
 
 Visibility index. When C<iterate> is called with C<FULL = 1>, the index is
 the item index as seen of the screen. If the item is not visible, the index
@@ -2513,19 +2513,19 @@ The format of a node is defined as follows:
 
 =over
 
-=item 0
+=item #0
 
 Directory name, string.
 
-=item 1
+=item #1
 
 Parent path; an empty string for the root items.
 
-=item 2
+=item #2
 
 Icon width in pixels, integer.
 
-=item 3
+=item #3
 
 Drive icon; defined only for the root items under non-unix hosts
 in order to reflect the drive type ( hard, floppy, etc ).
