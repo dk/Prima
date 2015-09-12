@@ -322,8 +322,7 @@ t/Widget/Size.t
 t/Widget/SizeLimits.t
 t/Widget/Window.t
 t/Widget/ZOrder.t
-t/pod/pod.t
-t/pod/coverage.t
+t/misc/pod.t
 unix/apc_app.c
 unix/apc_clipboard.c
 unix/apc_event.c
