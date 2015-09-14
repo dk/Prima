@@ -42,7 +42,7 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
 	username
 	xcolor
 	find_image path
-	alarm post
+	alarm post last_error
 );
 
 sub xcolor {
@@ -227,6 +227,10 @@ The file type is a string, one of the following:
 
 This function was implemented for faster directory reading, 
 to avoid successive call of C<stat> for every file.
+
+=item last_error
+
+Returns last system error, if any
 
 =item path [ FILE ]
 

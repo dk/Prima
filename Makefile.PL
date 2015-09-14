@@ -409,7 +409,6 @@ sub setup_environment
 		PERL_SUBVERSION  => $SUBVERSION,
 		PRIMA_CORE       => 1,
 		PERL_POLLUTE     => 1,
-		PRIMA_DEBUG      => 0,
 	);
 
 	if ( $platform eq 'win32') {

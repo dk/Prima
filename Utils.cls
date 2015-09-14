@@ -36,4 +36,5 @@ package Prima::Utils
    long floor( double x);
    void sound( int freq = 2000, int dur = 100) => apc_beep_tone;
    char *username() => apc_get_user_name;
+   char *last_error() => apc_last_error;
 }

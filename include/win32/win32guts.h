@@ -116,12 +116,12 @@ typedef HANDLE SOCKETHANDLE;
 #define FHT_PIPE    2
 #define FHT_OTHER   3
 
-#if PRIMA_DEBUG
-#define apcWarn warn( "win32 error %d: '%s' at line %d in %s\n", (int)rc,\
-                      err_msg( rc, nil), __LINE__, __FILE__)
-#else
-#define apcWarn err_msg( rc, nil)
-#endif
+#define apcWarn \
+   if (debug) \
+      warn( "win32 error %d: '%s' at line %d in %s\n", (int)rc, \
+                      err_msg( rc, nil), __LINE__, __FILE__);   \
+   else \
+      err_msg( rc, nil)
 
 #define apcErr( err) apcError = err
 #define apiErr {           \
@@ -502,6 +502,7 @@ typedef struct _MusClkRec {
 #define palette_create image_make_bitmap_palette
 
 extern Bool         appDead;
+extern Bool         debug;
 extern DIBMONOBRUSH bmiHatch;
 extern PHash        fontMan;
 extern int          FONTSTRUCSIZE;

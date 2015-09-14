@@ -72,6 +72,7 @@ char * keyLayouts[]   = {  "0409", "0403", "0405", "0406", "0407",
       "0417","0418","041A","041D"
 };
 WCHAR lastDeadKey = 0;
+Bool debug = false;
 
 
 BOOL APIENTRY
@@ -268,13 +269,21 @@ window_subsystem_init( char * error_buf)
 Bool
 window_subsystem_get_options( int * argc, char *** argv)
 {
-   *argc = 0;
+   static char * win32_argv[] = {
+      "debug", "turns on debugging"
+   };
+   *argv = win32_argv;
+   *argc = sizeof( win32_argv) / sizeof( char*);
    return true;
 }
 
 Bool
 window_subsystem_set_option( char * option, char * value)
 {
+   if ( strcmp( option, "debug") == 0) {
+      debug = value ? *value != '0' : true;
+      return true;
+   }
    return false;
 }
 
