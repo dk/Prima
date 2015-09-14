@@ -124,8 +124,6 @@ AbstractMenu_dispose_menu( Handle self, void * menu)
    free( m);
 }
 
-/* #define log_write debug_write */
-
 void *
 AbstractMenu_new_menu( Handle self, SV * sv, int level)
 {
@@ -135,10 +133,6 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
    PMenuItemReg m    = nil;
    PMenuItemReg curr = nil;
    Bool rightAdjust = false;
-
-  /*  char buf [ 200];
-      memset( buf, ' ', 200);
-      buf[ level * 3] = '\0'; */
 
    if ( level == 0)
    {
@@ -157,7 +151,6 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
       warn("menu build error: empty array passed");
       return nil;
    }
-   /* log_write("%s(%d){", buf, n+1); */
 
    /* cycling the list of items */
    for ( i = 0; i <= n; i++)
@@ -199,7 +192,6 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
          return nil;
       }
       r-> key = kbNoKey;
-      /* log_write("%sNo: %d, count: %d", buf, i, count); */
 
       if ( count < 2) {          /* empty or 1 means line divisor, no matter of text */
          r-> flags. divider = true;
@@ -313,7 +305,6 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
                warn("menu build error: not an image passed");
                goto TEXT;
             }
-            /* log_write("%sbmp: %s %d", buf, ((PComponent)c_object)->name, kind_of( c_object, CImage)); */
             if (((( PImage) c_object)-> w == 0)
                || ((( PImage) c_object)-> h == 0))
             {
@@ -376,17 +367,6 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
          r-> data = newSVsv( *holder);
       }
    }
-   /* log_write("%s}", buf); */
-/* log_write("adda bunch:"); 
-   {
-     PMenuItemReg x = m;
-     while ( x)
-     {
-        log_write( x-> variable);
-        x = x-> next;
-     }
-   }
-   log_write("end."); */
    return m;
 }
 

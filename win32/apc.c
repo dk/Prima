@@ -3347,9 +3347,7 @@ apc_system_action( const char * params)
       }
       break;
    case 'w':
-      if ( strcmp( params, "wait.before.quit") == 0) {
-         waitBeforeQuit = 1;
-      } else if ( strncmp( params, "win32.DrawFocusRect ", 20) == 0) {
+      if ( strncmp( params, "win32.DrawFocusRect ", 20) == 0) {
          RECT r;
          Handle win;
          Handle self;
@@ -3363,27 +3361,6 @@ apc_system_action( const char * params)
          r. bottom = sys lastSize. y - r. bottom;
          r. top    = sys lastSize. y - r. top;
          DrawFocusRect( sys ps, &r);
-      } else if (strcmp( params, "win.printfocusedwindow") == 0) {
-         HWND h = GetFocus();
-         if ( h) {
-            char b[ 256];
-            DOLBUG( "%08x: %s", h, GetWindowText( h, b, 255) ? b : "NULL");
-         } else {
-            DOLBUG( "? No foc");
-         }
-      } else if (strncmp( params, "win32.WNetGetUser", 17) == 0) {
-         char connection[ 1024];
-         char user[ 1024], *c;
-         DWORD len = 1024;
-         int i = sscanf( params + 18, "%s", connection);
-         if ( i != 1) {
-            warn( "Bad parameters to sysaction win32.WNetGetUser");
-            return 0;
-         }
-         if ( WNetGetUser( connection, user, &len) != NO_ERROR)
-            return 0;
-         c = ( char *) malloc( strlen( user) + 1);
-         return c ? strcpy( c , user) : 0;
       } else if ( strncmp( params, "win32.SetVersion", 16) == 0) {
          const char * ver = params + 17;
          while ( *ver && ( *ver == ' '  || *ver == '\t')) ver++;

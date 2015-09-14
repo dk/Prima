@@ -1391,7 +1391,7 @@ sub setup_exports
 	@Prima_exports = qw(
 boot_Prima build_dynamic_vmt build_static_vmt call_perl call_perl_indirect
 clean_perl_call_method clean_perl_call_pv create_mate create_object
-ctx_remap_def cv_call_perl debug_write duplicate_string eval gimme_the_mate
+ctx_remap_def cv_call_perl duplicate_string eval gimme_the_mate
 gimme_the_vmt kind_of kill_zombies notify_perl Object_create Object_destroy parse_hv
 plist_create plist_destroy prima_mallocz pop_hv_for_REDEFINED protect_object
 push_hv push_hv_for_REDEFINED query_method sv_call_perl sv_query_method

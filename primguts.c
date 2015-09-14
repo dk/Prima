@@ -56,10 +56,6 @@
 #include "img_conv.h"
 
 
-#define USE_MAGICAL_STORAGE 0
-
-#define MODULE "Prima Guts"
-
 #include <Types.inc>
 
 #ifdef __cplusplus
@@ -319,23 +315,7 @@ create_mate( SV *perlObject)
    object-> self = ( PVMT) vmt;
    object-> super = ( PVMT *) vmt-> super;
 
-   if (USE_MAGICAL_STORAGE)
-   {
-      /* assigning the tilde-magic */
-      MAGIC *mg;
-
-      sv_magic( SvRV( perlObject), SvRV( perlObject), '~', (char*)&object, sizeof(void*));
-      if ( !SvMAGICAL( SvRV( perlObject)) || !(mg = mg_find( SvRV( perlObject), '~')) || mg-> mg_len < sizeof(void*))
-      {
-         croak( "GUTS006: create_mate() magic trick failed.\n");
-         return 0;
-      }
-   }
-   else
-   {
-      /* another scheme, uses hash slot */
-      (void) hv_store( (HV*)SvRV( perlObject), "__CMATE__", 9, newSViv( PTR2IV(object)), 0);
-   }
+   (void) hv_store( (HV*)SvRV( perlObject), "__CMATE__", 9, newSViv( PTR2IV(object)), 0);
 
    /* extra check */
    self = gimme_the_mate( perlObject);
@@ -348,27 +328,14 @@ create_mate( SV *perlObject)
 Handle
 gimme_the_real_mate( SV *perlObject)
 {
-   if (USE_MAGICAL_STORAGE)
-   {
-      MAGIC *mg;
-      return
-         SvROK( perlObject) &&
-         SvMAGICAL(SvRV( perlObject)) &&
-         (mg = mg_find( SvRV( perlObject), '~')) &&
-         (mg-> mg_len >= sizeof(void*)) ?
-            (Handle)*((void**)(mg-> mg_ptr)) : nilHandle;
-   }
-   else
-   {
-      HV *obj;
-      SV **mate;
-      if ( !SvROK( perlObject)) return nilHandle;
-      obj = (HV*)SvRV( perlObject);
-      if ( SvTYPE((SV*)obj) != SVt_PVHV) return nilHandle;
-      mate = hv_fetch( obj, "__CMATE__", 9, 0);
-      if ( mate == nil) return nilHandle;
-      return SvIV( *mate);
-   }
+   HV *obj;
+   SV **mate;
+   if ( !SvROK( perlObject)) return nilHandle;
+   obj = (HV*)SvRV( perlObject);
+   if ( SvTYPE((SV*)obj) != SVt_PVHV) return nilHandle;
+   mate = hv_fetch( obj, "__CMATE__", 9, 0);
+   if ( mate == nil) return nilHandle;
+   return SvIV( *mate);
 }
 
 Handle
@@ -709,11 +676,6 @@ build_static_vmt( void *vvmmtt)
    hash_store( vmtHash, vmt-> className, strlen( vmt-> className), vmt);
 }
 
-#ifdef PARANOID_MALLOC
-static unsigned long
-timestamp( void);
-#endif
-
 PVMT
 gimme_the_vmt( const char *className)
 {
@@ -765,9 +727,6 @@ gimme_the_vmt( const char *className)
    if ( strEQ( className, originalVmt-> className))
       return originalVmt;
 
-#ifdef PARANOID_MALLOC
-   debug_write( "%lu Dynamic vmt creation (%d) for %s\n", timestamp(), originalVmt-> vmtSize, className);
-#endif
    vmtSize = originalVmt-> vmtSize;
    vmt = ( PVMT) malloc( vmtSize);
    if ( !vmt) return nil;
@@ -1195,12 +1154,6 @@ perl_error(void)
 
 Bool appDead = false;
 
-Bool dolbug;
-Bool waitBeforeQuit;
-
-#ifdef PARANOID_MALLOC
-static void output_mallocs( void);
-#endif
 
 #if (PERL_PATCHLEVEL == 5)
 #define PRIMAPERL_scopestack_ix PL_scopestack_ix
@@ -1244,9 +1197,6 @@ XS( prima_cleanup)
    if ( prima_init_ok > 2) window_subsystem_done();
    list_first_that( &staticHashes, (void*)kill_hashes, nil);
    list_destroy( &staticHashes);
-#ifdef PARANOID_MALLOC
-   output_mallocs();
-#endif
    prima_init_ok = 0;
 
    ST(0) = &PL_sv_yes;
@@ -1301,15 +1251,10 @@ XS( Component_event_hook_FROMPERL);
 
 XS( boot_Prima)
 {
-   char *dolbug_str;
    dXSARGS;
    (void)items;
 
    XS_VERSION_BOOTCHECK;
-
-   if ( ( dolbug_str = getenv( "PRIMA_DOLBUG")) != NULL) {
-      dolbug = ( Bool) atoi( dolbug_str);
-   }
 
 #define TYPECHECK(s1,s2) \
   if (sizeof(s1) != (s2)) { \
@@ -1333,7 +1278,7 @@ XS( boot_Prima)
    list_create( &postDestroys, 16, 16);
 
    /* register hard coded XSUBs */
-   newXS( "::destroy_mate", destroy_mate, MODULE);
+   newXS( "::destroy_mate", destroy_mate, "Prima Guts");
    newXS( "Prima::cleanup", prima_cleanup, "Prima");
    newXS( "Prima::init", Prima_init, "Prima");
    newXS( "Prima::options", Prima_options, "Prima");
@@ -1543,38 +1488,6 @@ FillPattern fillPatterns[] = {
 
 /* list section */
 
-#ifdef PARANOID_MALLOC
-void
-paranoid_list_create( PList slf, int size, int delta, char *fil, int ln)
-{
-   char *buf;
-   int blen;
-   if ( !slf) return;
-   buf = allocs( blen = strlen( fil) + strlen( __FILE__) + 9);
-   snprintf( buf, blen, "%s(%d),%s", fil, ln, __FILE__);
-   memset( slf, 0, sizeof( List));
-   slf-> delta = ( delta > 0) ? delta : 1;
-   slf-> size  = size;
-   slf-> items = ( size > 0) ? _test_malloc( size * sizeof( Handle), __LINE__, buf, nilHandle) : nil;
-   free( buf);
-}
-
-PList
-paranoid_plist_create( int size, int delta, char *fil, int ln)
-{
-   char *buf;
-   int blen;
-   PList new_list;
-   buf = allocs( blen = strlen( fil) + strlen( __FILE__) + 9);
-   snprintf( buf, blen, "%s(%d),%s", fil, ln, __FILE__);
-   new_list = ( PList) _test_malloc( sizeof( List), __LINE__, buf, nilHandle);
-   if ( new_list != nil) {
-      paranoid_list_create( new_list, size, delta, buf, __LINE__);
-   }
-   free( buf);
-   return new_list;
-}
-#else
 void
 list_create( PList slf, int size, int delta)
 {
@@ -1597,7 +1510,6 @@ plist_create( int size, int delta)
    }
    return new_list;
 }
-#endif
 
 void
 list_destroy( PList slf)
@@ -1898,140 +1810,6 @@ prima_uv_to_utf8( U8 * utf8, UV uv)
 {
    *(utf8++) = ( U8) uv;
    return utf8;
-}
-#endif
-
-#ifdef PARANOID_MALLOC
-#undef malloc
-#undef free
-#if PRIMA_PLATFORM_WINDOWS
-#define HAVE_FTIME
-#endif
-
-#include <sys/timeb.h>
-
-static PHash hash = nil;
-Handle self = 0;
-
-static unsigned long
-timestamp( void)
-{
-#ifdef HAVE_FTIME
-   struct timeb t;
-   ftime( &t);
-   return t. time * 1000 + t. millitm;
-#else
-   struct timeval t;
-   struct timezone tz;
-   gettimeofday( &t, &tz);
-   return t.tv_sec * 1000 + t.tv_usec;
-#endif
-}
-
-static void
-output_mallocs( void)
-{
-   HE *he;
-   DOLBUG( "=========================== Reporing heap problems ===========================\n");
-   hv_iterinit( hash);
-   DOLBUG( "Iteration done...\n");
-   while (( he = hv_iternext( hash)) != nil) {
-      DOLBUG( "%s\n", (char *)HeVAL( he));
-      free( HeVAL( he));
-      HeVAL( he) = &PL_sv_undef;
-   }
-   DOLBUG( "=========================== Report done ===========================\n");
-   sv_free(( SV *) hash);
-}
-
-void *
-_test_malloc( size_t size, int ln, char *fil, Handle self)
-{
-   void *mlc;
-   char s[512];
-   char obj[ 256];
-   char *c1, *c2;
-
-   if (!hash) {
-       hash = hash_create();
-   }
-   mlc = malloc( size);
-   c1 = strrchr( fil, '/');
-   c2 = strrchr( fil, '\\');
-   if (c1<c2) c1 = c2;
-   if (c1>0) fil = c1+1;
-   if (self && hash_fetch( primaObjects, &self, sizeof(self))) {
-      if ( kind_of( self, CComponent) && (( PComponent) self)-> name)
-         sprintf( obj, "%s(%s)", ((( PObject) self)-> self)-> className, (( PComponent) self)-> name);
-      else
-         sprintf( obj, "%s(?)", ((( PObject) self)-> self)-> className);
-   } else
-      strcpy( obj, "NOSELF");
-   hash_store( hash, &mlc, sizeof(mlc),
-      strcpy( malloc( 1 + sprintf( s, "%lu %p %s(%d) %s %lu", timestamp(), mlc, fil, ln, obj, ( unsigned long) size)), s)
-   );
-   return mlc;
-}
-
-void *
-_test_realloc( void * ptr, size_t size, int ln, char *fil, Handle self)
-{
-   void * nptr = _test_malloc( size, ln, fil, self);
-   if ( nptr == NULL) return NULL;
-   memcpy( nptr, ptr, size);
-   _test_free( ptr, ln, fil, self);
-   return nptr;
-}
-
-void
-_test_free( void *ptr, int ln, char *fil, Handle self)
-{
-   free( ptr);
-   hash_delete( hash, &ptr, sizeof(ptr), false);
-}
-
-/* to make freaking Windows happy */
-#if PRIMA_PLATFORM_WINDOWS
-
-#undef list_create
-#undef plist_create
-
-void list_create( PList slf, int size, int delta) {}
-PList plist_create( int size, int delta) {}
-#endif
-
-#endif /* PARANOID_MALLOC */
-
-#if PRIMA_PLATFORM_WINDOWS
-int
-debug_write( const char *format, ...)
-{
-   FILE *f;
-   int rc;
-   va_list arg_ptr;
-
-   if( ( f = ( FILE*) fopen( "C:\\PRIMAERR.LOG", "at")) == NULL) {
-       return false;
-   }
-   va_start( arg_ptr, format);
-   rc = vfprintf( f, format, arg_ptr);
-   va_end( arg_ptr);
-   fclose( f);
-
-   return ( rc != EOF);
-}
-#else
-int
-debug_write( const char *format, ...)
-{
-    int rc = 0;
-    if ( dolbug) {
-        va_list args;
-        va_start( args, format);
-        rc = vfprintf( stderr, format, args);
-        va_end( args);
-    }
-    return rc;
 }
 #endif
 

@@ -1118,7 +1118,6 @@ apc_application_go( Handle self)
 
    if ( application) Object_destroy( application);
    application = nilHandle;
-   CHECK_LEAKS;
    return true;
 }
 

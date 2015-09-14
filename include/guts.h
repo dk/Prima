@@ -36,12 +36,8 @@
 extern "C" {
 #endif
 
-extern Bool dolbug;
-extern Bool waitBeforeQuit;
-
 #define dPUB_ARGS    int rc = recursiveCall
 #define PUB_CHECK    rc = recursiveCall
-#define DOLBUG       if(dolbug)debug_write
 
 #define dG_EVAL_ARGS SV * errSave = nil
 #define OPEN_G_EVAL \

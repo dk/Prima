@@ -207,7 +207,6 @@ typedef struct _WinGuts
     Bool           popupActive;        // flag to avoid double popup activation
     Bool           pointerInvisible;      
     HWND           console;            // win32-bound console window
-    List           eventHooks;         // event hook list
     Byte           msgMask[100];       // 800 user-defined messages allowed
 // socket variables
     List           sockets;            // List of watchable sockets

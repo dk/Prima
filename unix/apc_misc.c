@@ -47,12 +47,6 @@
 #define RANGE(a)        { if ((a) < -16383) (a) = -16383; else if ((a) > 16383) a = 16383; }
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
 
-Bool
-log_write( const char *format, ...)
-{
-   return false;
-}
-
 static XrmQuark
 get_class_quark( const char *name)
 {

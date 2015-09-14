@@ -46,8 +46,6 @@
 #error "Prima require at least perl 5.005"
 #endif
 
-/* #define PARANOID_MALLOC */
-
 #ifdef _MSC_VER
    #define BROKEN_COMPILER       1
    #define BROKEN_PERL_PLATFORM  1
@@ -137,13 +135,6 @@ public:
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/*
-#undef realloc
-#undef malloc
-#undef free
-*/
-
 
 #if defined (package)
    #undef mod
@@ -1243,10 +1234,6 @@ extern FillPattern fillPatterns[];
 extern Bool
 kind_of( Handle object, void *cls);
 
-/* debugging functions */
-extern int
-debug_write( const char *format, ...);
-
 /* perl links */
 #if (PERL_PATCHLEVEL < 5)
 /* ...(perl stinks)... */
@@ -1429,7 +1416,6 @@ SvBOOL( SV *sv)
 #define CWindow(h)                      (PWindow(h)-> self)
 #endif
 
-
 /* mapping functions */
 
 #define endCtx          0x19740108
@@ -1537,8 +1523,6 @@ prima_is_utf8_sv( SV * sv);
 /* OS types */
 #define APC(const_name) CONSTANT(apc,const_name)
 START_TABLE(apc,UV)
-#define apcOs2                  1
-APC(Os2)
 #define apcWin32                2
 APC(Win32)
 #define apcUnix                 3
@@ -3511,78 +3495,12 @@ apc_query_drive_type( const char *drive);
 
 extern char*
 apc_get_user_name( void);
+
 extern PList
 apc_getdir( const char *dirname);
 
 extern Bool
 apc_dl_export(char *path);
-
-
-#define HOOK_EVENT_LOOP 0
-
-typedef Bool PrimaHookProc( void * message);
-
-extern  Bool
-apc_register_hook( int hookType, void * hookProc);
-
-extern  Bool
-apc_deregister_hook( int hookType, void * hookProc);
-
-extern  Bool
-apc_register_event( void * sysMessage);
-
-extern  Bool
-apc_deregister_event( void * sysMessage);
-
-
-
-/* Memory bugs debugging tools */
-#ifdef PARANOID_MALLOC
-extern void *
-_test_malloc( size_t size, int ln, char *fil, Handle self);
-
-extern void *
-_test_realloc( void * ptr, size_t size, int ln, char *fil, Handle self);
-
-extern void
-_test_free( void *ptr, int ln, char *fil, Handle self);
-
-#define plist_create( sz, delta) paranoid_plist_create( sz, delta, __FILE__, __LINE__)
-#define list_create( slf, sz, delta) paranoid_list_create( slf, sz, delta, __FILE__, __LINE__)
-extern PList
-paranoid_plist_create( int, int, char *, int);
-
-extern void
-paranoid_list_create( PList, int, int, char *, int);
-
-extern Handle self;
-
-#undef malloc
-#undef realloc
-#undef free
-#define realloc(ptr,sz) _test_realloc((ptr),(sz),__LINE__,__FILE__,self)
-#define malloc(sz) _test_malloc((sz),__LINE__,__FILE__,self)
-#define free(ptr) _test_free((ptr),__LINE__,__FILE__,self)
-#endif /* PARANOID_MALLOC */
-
-#if defined( USE_GC)
-#if defined( HAVE_GC_H)
-#define GC_DEBUG 1
-#include <gc.h>
-#undef malloc
-#undef free
-#undef realloc
-#define malloc( sz) GC_MALLOC( sz)
-#define free( p) GC_FREE( p)
-#define realloc( old, sz) GC_REALLOC( old, sz)
-#define CHECK_LEAKS GC_gcollect()
-#else
-#warning USE_GC requires presence of gc.h
-#define CHECK_LEAKS
-#endif /* HAVE_GC_H */
-#else
-#define CHECK_LEAKS
-#endif /* USE_GC */
 
 #ifdef __cplusplus
 }
