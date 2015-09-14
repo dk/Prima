@@ -58,6 +58,7 @@ typedef struct _ClipboardFormatReg
    ClipboardExchangeFunc         *server;
    void                          *data;
    Bool                           written;
+   Bool                           success;
 } ClipboardFormatReg, *PClipboardFormatReg;
 
 static SV * text_server  ( Handle self, PClipboardFormatReg, int, SV *);
@@ -194,6 +195,7 @@ Clipboard_open( Handle self)
 {
    var-> openCount++;
    if ( var-> openCount > 1) return true;
+
    first_that( self, (void*) reset_written, nil);
    return apc_clipboard_open( self);
 }
@@ -265,19 +267,20 @@ Clipboard_fetch( Handle self, char * format)
    return ret;
 }
 
-void
+Bool
 Clipboard_store( Handle self, char * format, SV * data)
 {
    PClipboardFormatReg fr = first_that( self, (void*)find_format, format);
 
-   if ( !fr) return;
-   my-> open( self);
+   if ( !fr) return false;
+   if ( !my-> open( self)) return false;
    if ( var->  openCount == 1) {
       first_that( self, (void*) reset_written, nil);
       apc_clipboard_clear( self);
    }
    fr-> server( self, fr, cefStore, data);
    my-> close( self);
+   return fr-> success;
 }
 
 void
@@ -408,7 +411,8 @@ text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
          return instance-> server( self, instance, cefStore, data);
       } else {
          c. data = ( Byte*) SvPV( data, c. length);
-         instance-> written = apc_clipboard_set_data( self, cfText, &c);
+         instance-> success = apc_clipboard_set_data( self, cfText, &c);
+         instance-> written = true;
       }
       break;
    }
@@ -435,7 +439,8 @@ utf8_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 
    case cefStore:
       c. data = ( Byte*) SvPV( data, c. length);
-      instance-> written = apc_clipboard_set_data( self, cfUTF8, &c);
+      instance-> success = apc_clipboard_set_data( self, cfUTF8, &c);
+      instance-> written = true;
       break;
    }
    return nilSV;
@@ -467,7 +472,8 @@ image_server( Handle self, PClipboardFormatReg instance, int function, SV * data
           warn("Not an image passed to clipboard");
           return nilSV;
        }
-       instance-> written = apc_clipboard_set_data( self, cfBitmap, &c);
+       instance-> success = apc_clipboard_set_data( self, cfBitmap, &c);
+       instance-> written = true;
        break;
     }
     return nilSV;
@@ -492,7 +498,8 @@ binary_server( Handle self, PClipboardFormatReg instance, int function, SV * dat
       break;
    case cefStore:
       c. data = (Byte*) SvPV( data, c. length);
-      instance-> written = apc_clipboard_set_data( self, instance-> sysId, &c);
+      instance-> success = apc_clipboard_set_data( self, instance-> sysId, &c);
+      instance-> written = true;
       break;
    }
    return nilSV;

@@ -20,7 +20,7 @@ $::application->end_paint;
 skip "Cannot talk to clipboard", 8 unless $c->open;
 $c->close;
 
-$c-> store( "Text", 'jabba dabba du');
+skip "Cannot save to clipboard", 8 unless $c-> store( "Text", 'jabba dabba du');
 my $res = $c-> fetch( 'Text');
 my %fm = map { $_ => 1 } $c-> get_formats;
 ok( exists $fm{Text} && defined $res, "text");
