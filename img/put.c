@@ -501,9 +501,9 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
    int lineSize = i-> lineSize; 
    int palSize  = i-> palSize; 
    int type     = i-> type;
-   int pixSize  = type & imBPP;
+   int pixSize  = (type & imBPP) / 8;
    PBitBltProc proc;
-#define BLT_BUFSIZE 1024   
+#define BLT_BUFSIZE 1024
    Byte blt_buffer[BLT_BUFSIZE];
    int j, k, offset, blt_bytes, blt_step;
    Byte filler, lmask, rmask, *p, *q;
@@ -532,7 +532,7 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
       break;
    case imbpp4:
       filler = (*((Byte*)color)) * 17;
-      blt_bytes = w / 2 + 1;
+      blt_bytes = (( x + w - 1) >> 1) - (x >> 1) + 1;
       blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
       memset( blt_buffer, filler, blt_step);
       lmask = ( x & 1 )       ? 0xf0 : 0;
@@ -561,8 +561,9 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
    data += lineSize * y + offset;
    proc = find_blt_proc(rop);
 
+#define DEBUG_ 1
 #ifdef DEBUG
-   warn("%d/%d, blt_bytes: %d, blt_step:%d, lmask: %02x, rmask: %02x, buf:%02x%02x%02x%02x\n", 
+   warn("%d/%d, blt_bytes:%d, blt_step:%d, lmask:%02x, rmask:%02x, buf:%02x%02x%02x%02x\n", 
    	x, w, blt_bytes, blt_step, lmask, rmask, blt_buffer[0], blt_buffer[1], blt_buffer[2], blt_buffer[3]);
 #endif	
 
@@ -570,13 +571,7 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
       int bytes = blt_bytes;
       Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
       while ( bytes > 0 ) {
-#ifdef DEBUG      
-   	 warn("buf:%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]); 
-#endif	 
-         proc( blt_buffer, p, blt_step );
-#ifdef DEBUG      
-   	 warn("buf:%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]); 
-#endif	 
+         proc( blt_buffer, p, ( bytes > blt_step ) ? blt_step : bytes );
          bytes -= blt_step;
          p += blt_step;
       }
@@ -585,7 +580,6 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
       data -= lineSize;
    }
 }
-
 
 #ifdef __cplusplus
 }

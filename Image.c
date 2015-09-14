@@ -1595,21 +1595,21 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
       rgb.g = ((color)>>8) & 0xff;
       rgb.r = ((color)>>16) & 0xff;
 
-      switch (var->type & imBPP) {
+      switch (var->type) {
       case imBW:
-         colorbuf[0] = (int)(( rgb.r + rgb.g + rgb.b + .5) / 768.0);
+         colorbuf[0] = (int)( (rgb.r + rgb.g + rgb.b) / 768.0 + .5);
          break;
       case imbpp1: 
          colorbuf[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 1;
          break;
       case imbpp4 | imGrayScale :
-         colorbuf[0] = (int)(( rgb.r + rgb.g + rgb.b + .5) / 48.0);
+         colorbuf[0] = (int)( (rgb.r + rgb.g + rgb.b) / 48.0);
          break;
       case imbpp4  :
          colorbuf[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 7;
 	 break;
       case imByte:
-         colorbuf[0] = (int)(( rgb.r + rgb.g + rgb.b + .5) / 3.0);
+         colorbuf[0] = (int)( (rgb.r + rgb.g + rgb.b) / 3.0);
 	 break;
       case imbpp8:
          colorbuf[0] = cm_nearest_color(rgb,var->palSize,var->palette);
