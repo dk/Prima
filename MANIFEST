@@ -292,6 +292,7 @@ Prima/VB/VB.pl
 Prima/VB/VBControls.pm
 Prima/VB/VBLoader.pm
 Prima/Widgets.pm
+t/Image/Bar.t
 t/Image/Basic.t
 t/Image/Codec.t
 t/Image/Colormap.t

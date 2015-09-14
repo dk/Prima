@@ -1586,7 +1586,48 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
    if (opt_InPaint) {
       apc_gp_bar( self, x1, y1, x2, y2);
    } else {
-      img_bar( self, x1, y1, x2 - x1, y2 - y1, my-> get_rop(self), NULL);  
+      Byte colorbuf[sizeof(double)*2];
+      Color color;
+      RGBColor rgb;
+
+      color = my->get_color(self);
+      rgb.b = color & 0xff;
+      rgb.g = ((color)>>8) & 0xff;
+      rgb.r = ((color)>>16) & 0xff;
+
+      switch (var->type & imBPP) {
+      case imBW:
+         colorbuf[0] = (int)(( rgb.r + rgb.g + rgb.b + .5) / 768.0);
+         break;
+      case imbpp1: 
+         colorbuf[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 1;
+         break;
+      case imbpp4 | imGrayScale :
+         colorbuf[0] = (int)(( rgb.r + rgb.g + rgb.b + .5) / 48.0);
+         break;
+      case imbpp4  :
+         colorbuf[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 7;
+	 break;
+      case imByte:
+         colorbuf[0] = (int)(( rgb.r + rgb.g + rgb.b + .5) / 3.0);
+	 break;
+      case imbpp8:
+         colorbuf[0] = cm_nearest_color(rgb,var->palSize,var->palette);
+         break;
+      case imShort :
+         *((Short*)colorbuf) = color;
+         break;
+      case imRGB :
+         *((Color*)colorbuf) = color;
+         break;
+      case imLong :
+         *((Long*)colorbuf) = color;
+         break;
+      default:
+         croak("Not implemented yet");
+      }
+      img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, my-> get_rop(self), colorbuf);  
+      my-> update_change(self);
    }
 }
 

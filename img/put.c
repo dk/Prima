@@ -517,8 +517,8 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
       y = 0;
    }
    if ( x + w > i->w ) w = i->w - x;
-   if ( y + h > i->h ) y = i->h - y;
-   if ( w < 0 || h < 0 ) return true;
+   if ( y + h > i->h ) h = i->h - y;
+   if ( w <= 0 || h <= 0 ) return true;
 
    switch ( type & imBPP) {
    case imbpp1:
@@ -527,7 +527,7 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
       blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
       memset( blt_buffer, filler, blt_step);
       lmask = ( x & 7 ) ? 255 << ( 7 - x & 7) : 0;
-      rmask = (( x + w ) & 7 ) ? 255 >> ((x + w) & 7) : 0;
+      rmask = (( x + w) & 7 ) ? 255 >> ((x + w) & 7) : 0;
       offset = x >> 3;
       break;
    case imbpp4:
@@ -535,8 +535,8 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
       blt_bytes = w / 2 + 1;
       blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
       memset( blt_buffer, filler, blt_step);
-      lmask = ( x & 1 )        ? 0xf0 : 0;
-      rmask = (( x + w ) & 1 ) ? 0x0f : 0;
+      lmask = ( x & 1 )       ? 0xf0 : 0;
+      rmask = (( x + w) & 1 ) ? 0x0f : 0;
       offset = x >> 1;
       break;
    case imbpp8:
@@ -560,17 +560,25 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
 
    data += lineSize * y + offset;
    proc = find_blt_proc(rop);
+
+   /*
+   warn("%d/%d, blt_bytes: %d, blt_step:%d, lmask: %02x, rmask: %02x, buf:%02x%02x%02x%02x\n", 
+   	y, h, blt_bytes, blt_step, lmask, rmask, blt_buffer[0], blt_buffer[1], blt_buffer[2], blt_buffer[3]);
+   */
+
    for ( j = 0; j < h; j++) {
       int bytes = blt_bytes;
       Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
       while ( bytes > 0 ) {
+   	 /* warn("buf:%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]); */
          proc( blt_buffer, p, blt_step );
+   	 /* warn("buf:%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]); */
          bytes -= blt_step;
          p += blt_step;
       }
       if ( lmask ) *data = (lsave & lmask) | (*data & ~lmask);
       if ( rmask ) data[blt_bytes-1] = (rsave & rmask) | (data[blt_bytes-1] & ~rmask);
-      data += lineSize;
+      data -= lineSize;
    }
 }
 
