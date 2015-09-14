@@ -17,17 +17,17 @@ $::application->begin_paint;
 skip "rdesktop", 8 if $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid;
 $::application->end_paint;
 
-skip "Cannot talk to clipboard", 8 unless $c->open;
+skip "Cannot acquire clipboard", 8 unless $c->open;
 $c->close;
 
-skip "Cannot save to clipboard", 8 unless $c-> store( "Text", 'jabba dabba du');
+skip "Cannot acquire clipboard", 8 unless $c-> store( "Text", 'jabba dabba du');
 my $res = $c-> fetch( 'Text');
 my %fm = map { $_ => 1 } $c-> get_formats;
 ok( exists $fm{Text} && defined $res, "text exists");
 is( $res, 'jabba dabba du', "text is correct" );
 
 my $i = Prima::Image-> create( width => 32, height => 32);
-$c-> store( "Image", $i);
+skip "Cannot acquire clipboard", 6 unless $c-> store( "Image", $i);
 $i = $c-> fetch( 'Image');
 %fm = map { $_ => 1 } $c-> get_formats;
 ok( exists $fm{Image} && defined $i && $i-> alive, "image exists");
@@ -37,7 +37,7 @@ $i-> destroy if $i;
 
 ok( $c-> register_format("Mumbo-Jumbo"), "register user-defined format");
 %rc = map { $_ => 1 } $c-> get_registered_formats;
-$c-> store( "Mumbo-Jumbo", pack( 'C*', 0,1,2,3,4,5,6,7,8,9));
+skip "Cannot acquire clipboard", 3 unless $c-> store( "Mumbo-Jumbo", pack( 'C*', 0,1,2,3,4,5,6,7,8,9));
 $res = $c-> fetch( "Mumbo-Jumbo");
 %fm = map { $_ => 1 } $c-> get_formats;
 ok(exists $rc{"Mumbo-Jumbo"} && exists $fm{"Mumbo-Jumbo"} && defined $res, "exists user-defined format" );
