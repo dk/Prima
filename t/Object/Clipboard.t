@@ -17,11 +17,11 @@ $::application->begin_paint;
 skip "rdesktop", 8 if $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid;
 $::application->end_paint;
 
-skip "Cannot acquire clipboard", 8 unless $c->open;
+skip "Cannot acquire clipboard", 9 unless $c->open;
 $c->close;
 
-skip "Cannot acquire clipboard", 8 unless $c-> store( "Text", 'jabba dabba du');
-skip "Cannot acquire clipboard", 8 unless $c->open;
+skip "Cannot acquire clipboard", 9 unless $c-> store( "Text", 'jabba dabba du');
+skip "Cannot acquire clipboard", 9 unless $c->open;
 my $res = $c-> fetch( 'Text');
 my %fm = map { $_ => 1 } $c-> get_formats;
 ok( exists $fm{Text} && defined $res, "text exists");
@@ -29,8 +29,8 @@ is( $res, 'jabba dabba du', "text is correct" );
 $c->close;
 
 my $i = Prima::Image-> create( width => 32, height => 32);
-skip "Cannot acquire clipboard", 6 unless $c-> store( "Image", $i);
-skip "Cannot acquire clipboard", 6 unless $c->open;
+skip "Cannot acquire clipboard", 7 unless $c-> store( "Image", $i);
+skip "Cannot acquire clipboard", 7 unless $c->open;
 $i = $c-> fetch( 'Image');
 %fm = map { $_ => 1 } $c-> get_formats;
 ok( exists $fm{Image} && defined $i && $i-> alive, "image exists");
