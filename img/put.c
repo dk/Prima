@@ -523,10 +523,10 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
    switch ( type & imBPP) {
    case imbpp1:
       filler = (*((Byte*)color)) ? 255 : 0;
-      blt_bytes = (( x + w ) >> 3) - (x >> 3) + 1;
+      blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
       blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
       memset( blt_buffer, filler, blt_step);
-      lmask = ( x & 7 ) ? 255 << ( 7 - x & 7) : 0;
+      lmask = ( x & 7 ) ? 255 << ( 8 - x & 7) : 0;
       rmask = (( x + w) & 7 ) ? 255 >> ((x + w) & 7) : 0;
       offset = x >> 3;
       break;
@@ -561,18 +561,22 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
    data += lineSize * y + offset;
    proc = find_blt_proc(rop);
 
-   /*
+#ifdef DEBUG
    warn("%d/%d, blt_bytes: %d, blt_step:%d, lmask: %02x, rmask: %02x, buf:%02x%02x%02x%02x\n", 
-   	y, h, blt_bytes, blt_step, lmask, rmask, blt_buffer[0], blt_buffer[1], blt_buffer[2], blt_buffer[3]);
-   */
+   	x, w, blt_bytes, blt_step, lmask, rmask, blt_buffer[0], blt_buffer[1], blt_buffer[2], blt_buffer[3]);
+#endif	
 
    for ( j = 0; j < h; j++) {
       int bytes = blt_bytes;
       Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
       while ( bytes > 0 ) {
-   	 /* warn("buf:%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]); */
+#ifdef DEBUG      
+   	 warn("buf:%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]); 
+#endif	 
          proc( blt_buffer, p, blt_step );
-   	 /* warn("buf:%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]); */
+#ifdef DEBUG      
+   	 warn("buf:%02x%02x%02x%02x\n", p[0], p[1], p[2], p[3]); 
+#endif	 
          bytes -= blt_step;
          p += blt_step;
       }
