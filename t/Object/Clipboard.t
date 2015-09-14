@@ -5,7 +5,7 @@ use Test::More;
 use Prima::Test;
 use Prima::Application;
 
-plan tests => 10;
+plan tests => 11;
 my $c = $::application-> Clipboard;
 ok( $c && $c-> alive, "alive");
 
@@ -23,25 +23,25 @@ $c->close;
 skip "Cannot save to clipboard", 8 unless $c-> store( "Text", 'jabba dabba du');
 my $res = $c-> fetch( 'Text');
 my %fm = map { $_ => 1 } $c-> get_formats;
-ok( exists $fm{Text} && defined $res, "text");
-is( $res, 'jabba dabba du', "text" );
+ok( exists $fm{Text} && defined $res, "text exists");
+is( $res, 'jabba dabba du', "text is correct" );
 
 my $i = Prima::Image-> create( width => 32, height => 32);
 $c-> store( "Image", $i);
 $i = $c-> fetch( 'Image');
 %fm = map { $_ => 1 } $c-> get_formats;
-ok( exists $fm{Image} && defined $i && $i-> alive, "image");
-is( $i-> width, 32, "image" );
-is( $i-> height, 32, "image" );
+ok( exists $fm{Image} && defined $i && $i-> alive, "image exists");
+is( $i-> width, 32, "image width ok" );
+is( $i-> height, 32, "image height ok" );
 $i-> destroy if $i;
 
-$c-> register_format("Mumbo-Jumbo");
+ok( $c-> register_format("Mumbo-Jumbo"), "register user-defined format");
 %rc = map { $_ => 1 } $c-> get_registered_formats;
 $c-> store( "Mumbo-Jumbo", pack( 'C*', 0,1,2,3,4,5,6,7,8,9));
 $res = $c-> fetch( "Mumbo-Jumbo");
 %fm = map { $_ => 1 } $c-> get_formats;
-ok(exists $rc{"Mumbo-Jumbo"} && exists $fm{"Mumbo-Jumbo"} && defined $res, "user-defined format" );
-is( $res, pack( 'C*', 0,1,2,3,4,5,6,7,8,9), "user-defined format");
+ok(exists $rc{"Mumbo-Jumbo"} && exists $fm{"Mumbo-Jumbo"} && defined $res, "exists user-defined format" );
+is( $res, pack( 'C*', 0,1,2,3,4,5,6,7,8,9), "user-defined format data ok");
 $c-> deregister_format("Mumbo-Jumbo");
 
 $c-> clear;
