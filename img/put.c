@@ -152,6 +152,62 @@ bitblt_invert( Byte * src, Byte * dst, int count)
    }
 }
 
+static PBitBltProc
+find_blt_proc( int rop )
+{
+   PBitBltProc proc = NULL;
+   switch ( rop) {
+   case ropCopyPut:
+      proc = bitblt_copy;
+      break;
+   case ropAndPut:
+      proc = bitblt_and;
+      break;
+   case ropOrPut:
+      proc = bitblt_or;
+      break;
+   case ropXorPut:
+      proc = bitblt_xor;
+      break;
+   case ropNotPut:
+      proc = bitblt_not;
+      break;
+   case ropNotDestAnd:
+      proc = bitblt_notdstand;
+      break;
+   case ropNotDestOr:
+      proc = bitblt_notdstor;
+      break;
+   case ropNotSrcAnd:
+      proc = bitblt_notsrcand;
+      break;
+   case ropNotSrcOr:
+      proc = bitblt_notsrcor;
+      break;
+   case ropNotXor:
+      proc = bitblt_notxor;
+      break;
+   case ropNotAnd:
+      proc = bitblt_notand;
+      break;
+   case ropNotOr:
+      proc = bitblt_notor;
+      break;
+   case ropBlackness:
+      proc = bitblt_black;
+      break;
+   case ropWhiteness:
+      proc = bitblt_white;
+      break;
+   case ropInvert:
+      proc = bitblt_invert;
+      break;
+   default:
+      proc = bitblt_copy;
+   }
+   return proc;
+}
+
 Bool 
 img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
@@ -414,58 +470,7 @@ NOSCALE:
    {
       int  y, dyd, dys, count, pix;
       Byte *dptr, *sptr;
-      PBitBltProc proc;
-
-      switch ( rop) {
-      case ropCopyPut:
-         proc = bitblt_copy;
-         break;
-      case ropAndPut:
-         proc = bitblt_and;
-         break;
-      case ropOrPut:
-         proc = bitblt_or;
-         break;
-      case ropXorPut:
-         proc = bitblt_xor;
-         break;
-      case ropNotPut:
-         proc = bitblt_not;
-         break;
-      case ropNotDestAnd:
-         proc = bitblt_notdstand;
-         break;
-      case ropNotDestOr:
-         proc = bitblt_notdstor;
-         break;
-      case ropNotSrcAnd:
-         proc = bitblt_notsrcand;
-         break;
-      case ropNotSrcOr:
-         proc = bitblt_notsrcor;
-         break;
-      case ropNotXor:
-         proc = bitblt_notxor;
-         break;
-      case ropNotAnd:
-         proc = bitblt_notand;
-         break;
-      case ropNotOr:
-         proc = bitblt_notor;
-         break;
-      case ropBlackness:
-         proc = bitblt_black;
-         break;
-      case ropWhiteness:
-         proc = bitblt_white;
-         break;
-      case ropInvert:
-         proc = bitblt_invert;
-         break;
-      default:
-         proc = bitblt_copy;
-      }
-
+      PBitBltProc proc = find_blt_proc(rop);
 
       pix = ( PImage( dest)-> type & imBPP ) / 8;
       dyd = PImage( dest)-> lineSize;
@@ -485,6 +490,88 @@ EXIT:
    if ( newObject) Object_destroy( src);
 
    return true;
+}
+
+Bool 
+img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
+{
+   PImage i     = (PImage) dest;
+   Byte * data  = i-> data;
+   int dataSize = i-> dataSize; 
+   int lineSize = i-> lineSize; 
+   int palSize  = i-> palSize; 
+   int type     = i-> type;
+   int pixSize  = type & imBPP;
+   PBitBltProc proc;
+#define BLT_BUFSIZE 1024   
+   Byte blt_buffer[BLT_BUFSIZE];
+   int j, k, offset, blt_bytes, blt_step;
+   Byte filler, lmask, rmask, *p, *q;
+  
+   if ( x < 0 ) {
+      w += x;
+      x = 0;
+   }
+   if ( y < 0 ) {
+      h += y;
+      y = 0;
+   }
+   if ( x + w > i->w ) w = i->w - x;
+   if ( y + h > i->h ) y = i->h - y;
+   if ( w < 0 || h < 0 ) return true;
+
+   switch ( type & imBPP) {
+   case imbpp1:
+      filler = (*((Byte*)color)) ? 255 : 0;
+      blt_bytes = (( x + w ) >> 3) - (x >> 3) + 1;
+      blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
+      memset( blt_buffer, filler, blt_step);
+      lmask = ( x & 7 ) ? 255 << ( 7 - x & 7) : 0;
+      rmask = (( x + w ) & 7 ) ? 255 >> ((x + w) & 7) : 0;
+      offset = x >> 3;
+      break;
+   case imbpp4:
+      filler = (*((Byte*)color)) * 17;
+      blt_bytes = w / 2 + 1;
+      blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
+      memset( blt_buffer, filler, blt_step);
+      lmask = ( x & 1 )        ? 0xf0 : 0;
+      rmask = (( x + w ) & 1 ) ? 0x0f : 0;
+      offset = x >> 1;
+      break;
+   case imbpp8:
+      filler = (*((Byte*)color));
+      blt_bytes = w;
+      blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
+      memset( blt_buffer, filler, blt_step);
+      lmask = rmask = 0;
+      offset = x;
+      break;
+   default:
+      blt_bytes = w * pixSize;
+      blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE / pixSize : w;
+      for ( j = 0, p = blt_buffer; j < blt_step; j ++ )
+         for ( k = 0, q = (Byte*) color; k < pixSize; k++ )
+            *(p++) = *(q++);
+      blt_step *= pixSize;
+      lmask = rmask = 0;
+      offset = x * pixSize;
+   }
+
+   data += lineSize * y + offset;
+   proc = find_blt_proc(rop);
+   for ( j = 0; j < h; j++) {
+      int bytes = blt_bytes;
+      Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
+      while ( bytes > 0 ) {
+         proc( blt_buffer, p, blt_step );
+         bytes -= blt_step;
+         p += blt_step;
+      }
+      if ( lmask ) *data = (lsave & lmask) | (*data & ~lmask);
+      if ( rmask ) data[blt_bytes-1] = (rsave & rmask) | (data[blt_bytes-1] & ~rmask);
+      data += lineSize;
+   }
 }
 
 

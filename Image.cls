@@ -56,6 +56,7 @@ object Prima::Image( Prima::Drawable)
 
    # methods
    method UV     add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
+   method Bool   bar(int x1, int y1, int x2, int y2);
    method Handle bitmap();
    method Bool   begin_paint();
    method Bool   begin_paint_info();

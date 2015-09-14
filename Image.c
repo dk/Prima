@@ -1580,6 +1580,16 @@ Image_reset_notifications( Handle self)
    }
 }
 
+Bool
+Image_bar( Handle self, int x1, int y1, int x2, int y2)
+{
+   if (opt_InPaint) {
+      apc_gp_bar( self, x1, y1, x2, y2);
+   } else {
+      img_bar( self, x1, y1, x2 - x1, y2 - y1, my-> get_rop(self), NULL);  
+   }
+}
+
 #ifdef __cplusplus
 }
 #endif
