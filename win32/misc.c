@@ -32,6 +32,7 @@
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
+#include "guts.h"
 #include "Component.h"
 
 #ifdef __cplusplus

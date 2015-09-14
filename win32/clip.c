@@ -27,6 +27,10 @@
  */
 /* Created by Dmitry Karasik <dk@plab.ku.dk> */
 #include "win32\win32guts.h"
+#ifndef _APRICOT_H_
+#include "apricot.h"
+#endif
+#include "guts.h"
 #include "Window.h"
 #include "Application.h"
 #include "Clipboard.h"

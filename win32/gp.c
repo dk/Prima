@@ -29,6 +29,7 @@
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
+#include "guts.h"
 #include "win32\win32guts.h"
 #include "Window.h"
 #include "Icon.h"

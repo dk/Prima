@@ -46,6 +46,7 @@ void __inline my_fd_set( HANDLE fd, fd_set* f) { FD_SET((unsigned int) fd, f); }
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
+#include "guts.h"
 #include "Component.h"
 #include "File.h"
 

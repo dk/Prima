@@ -32,10 +32,11 @@
       Stock objects - pens, brushes, fonts
 */
 
+#include "win32\win32guts.h"
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
-#include "win32\win32guts.h"
+#include "guts.h"
 #include <ctype.h>
 #include "Window.h"
 #include "Image.h"

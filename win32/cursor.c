@@ -30,6 +30,7 @@
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
+#include "guts.h"
 #include "Window.h"
 #include "Icon.h"
 #include "Application.h"
