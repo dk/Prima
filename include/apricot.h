@@ -34,17 +34,13 @@
 #define POLLUTE_NAME_SPACE 1
 #endif
 
-#define PRIMA_CORE_VERSION 2012080101
+#define PRIMA_CORE_VERSION 2015091401
 
 #define PRIMA_VERSION_BOOTCHECK \
     if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
         croak("Prima object version(%ld) doesn't match module version(%ld). Recompile the module", apc_get_core_version(), PRIMA_CORE_VERSION )
 
 #include "generic/config.h"
-
-#if (PERL_PATCHLEVEL < 4 || (( PERL_PATCHLEVEL == 4) && ( PERL_SUBVERSION <= 4)))
-#error "Prima require at least perl 5.005"
-#endif
 
 #ifdef _MSC_VER
    #define BROKEN_COMPILER       1
@@ -56,9 +52,6 @@
    #define HAVE_SNPRINTF         1
    #define HAVE_STRICMP          1
    #define HAVE_STRNICMP         1
-#elif defined( __BORLANDC__)
-   #define BROKEN_PERL_PLATFORM  1
-   #define BROKEN_COMPILER       1
 #elif defined(WIN32)
    #define BROKEN_PERL_PLATFORM  1
 #endif
@@ -249,15 +242,8 @@ extern "C" {
 #define SvPV_nolen(_sv)  SvPV(_sv,na)
 #endif
 
-#define PERL_CALL_SV_DIE_BUG_AWARE 1
-
-#ifdef PERL_CALL_SV_DIE_BUG_AWARE
 #define PERL_CALL_METHOD   clean_perl_call_method
 #define PERL_CALL_PV       clean_perl_call_pv
-#else
-#define PERL_CALL_METHOD   perl_call_method
-#define PERL_CALL_PV       perl_call_pv
-#endif
 
 #ifndef HAVE_BZERO
 extern void bzero(void*,size_t);
@@ -1235,21 +1221,12 @@ extern Bool
 kind_of( Handle object, void *cls);
 
 /* perl links */
-#if (PERL_PATCHLEVEL < 5)
-/* ...(perl stinks)... */
-#undef  SvREFCNT_inc
-#define SvREFCNT_inc(sv) ((Sv = (SV*)(sv)),             \
-                          (void)(Sv && ++SvREFCNT(Sv)), \
-                          (SV*)Sv)
-#endif
 
-#ifdef PERL_CALL_SV_DIE_BUG_AWARE
 extern I32
 clean_perl_call_method( char* methname, I32 flags);
 
 extern I32
 clean_perl_call_pv( char* subname, I32 flags);
-#endif
 
 extern void
 build_static_vmt( void *vmt);
@@ -1327,6 +1304,13 @@ exception_block( Bool block );
 
 extern void
 exception_check_raise( void );
+
+#if PRIMA_PLATFORM_X11
+#define EXCEPTION_CHECK_RAISE(v) exception_check_raise()
+#else
+#define EXCEPTION_CHECK_RAISE(v) if ( exception_charged()) return v;
+#endif
+
 
 extern HV*
 parse_hv( I32 ax, SV **sp, I32 items, SV **mark,
@@ -1481,39 +1465,6 @@ extern int
 list_index_of( PList self, Handle item);
 
 /* utf8 */
-#if PERL_PATCHLEVEL > 5
-#define PERL_SUPPORTS_UTF8  1
-#if (PERL_PATCHLEVEL == 6)
-#define utf8_to_uvchr utf8_to_uv_simple
-#define utf8_to_uvuni utf8_to_uv_simple
-#define uvchr_to_utf8 uv_to_utf8
-#define uvuni_to_utf8 uv_to_utf8
-#endif
-#else
-/* dummy utf8 functionality */
-#undef utf8_hop
-#undef utf8_length
-#undef  PERL_SUPPORTS_UTF8
-#define IN_BYTES            1
-#define DO_UTF8(sv)         0
-#define SvUTF8(sv)          0
-#define utf8_length(s,e)    ((U8*)(e)-(U8*)(s))
-#define utf8_hop(s,off)     ((U8*)((s)+(off)))
-#define SvUTF8_on(sv)       {}
-#define SvUTF8_off(sv)      {}
-
-#define utf8_to_uvchr       prima_utf8_to_uv
-#define utf8_to_uvuni       prima_utf8_to_uv
-#define uvchr_to_utf8        prima_uv_to_utf8
-#define uvuni_to_utf8        prima_uv_to_utf8
-extern UV
-prima_utf8_to_uv( U8 * utf8, STRLEN * len);
-
-extern U8 *
-prima_uv_to_utf8( U8 * utf8, UV uv);
-
-#endif
-
 extern int
 prima_utf8_length( const char * utf8);
 
@@ -1895,7 +1846,6 @@ END_TABLE(sv,UV)
 #undef SV
 
 extern Handle application;
-extern long   apcError;
 
 /* *****************
 *  apc functions   *

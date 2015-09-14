@@ -26,6 +26,7 @@
 #
 use strict;
 use warnings;
+use 5.008;
 
 package MY::orderedhash;
 require Tie::Hash;
@@ -1401,9 +1402,6 @@ exception_charged
 	push @Prima_exports, grep { /^(apc|list|prima)/ } suck_symbols('include/apricot.h');
 	push @Prima_exports, suck_symbols('include/img.h');
 	push @Prima_exports, suck_symbols('include/img_conv.h');
-	my %g = map { $_ => 1 } @Prima_exports;
-	delete @g{qw(prima_utf8_to_uv prima_uv_to_utf8)};
-	@Prima_exports = sort keys %g;
 	generate_win32_def() if $Win32;
 }
 

@@ -236,8 +236,6 @@ snprintf( char *buf, size_t len, const char *format, ...)
 }
 #endif
 
-#ifdef PERL_CALL_SV_DIE_BUG_AWARE
-
 I32
 clean_perl_call_method( char* methname, I32 flags)
 {
@@ -287,7 +285,6 @@ clean_perl_call_pv( char* subname, I32 flags)
    if ( !( flags & G_EVAL)) { CLOSE_G_EVAL; }
    return ret;
 }
-#endif
 
 SV *
 eval( char *string)
@@ -928,7 +925,6 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
       PUTBACK;
       if ( returns)
       {
-#ifdef PERL_CALL_SV_DIE_BUG_AWARE
          dPUB_ARGS;
          dG_EVAL_ARGS;
          OPEN_G_EVAL;
@@ -944,12 +940,6 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
             croak( "%s", SvPV_nolen( GvSV( PL_errgv)));    /* propagate */
          }
          CLOSE_G_EVAL;
-#else
-         retCount = ( coderef) ?
-            perl_call_sv(( SV *) subName, G_SCALAR) :
-            perl_call_method( subName, G_SCALAR);
-         SPAGAIN;
-#endif
          if ( retCount == 1)
          {
             toReturn = newSVsv( POPs);
@@ -962,7 +952,6 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
       }
       else
       {
-#ifdef PERL_CALL_SV_DIE_BUG_AWARE
          dPUB_ARGS;
          dG_EVAL_ARGS;
          OPEN_G_EVAL;
@@ -975,10 +964,6 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
             croak( "%s", SvPV_nolen( GvSV( PL_errgv)));    /* propagate */
          }
          CLOSE_G_EVAL;
-#else
-         if ( coderef) perl_call_sv(( SV *) subName, G_DISCARD);
-            else perl_call_method( subName, G_DISCARD);
-#endif
          SPAGAIN; FREETMPS; LEAVE;
       }
    }
@@ -1766,22 +1751,17 @@ exception_check_raise(void)
 int
 prima_utf8_length( const char * utf8)
 {
-#ifdef PERL_SUPPORTS_UTF8
    int ret = 0;
    while ( *utf8) {
       utf8 = ( char*) utf8_hop(( U8*) utf8, 1);
       ret++;
    }
    return ret;
-#else
-   return 0;
-#endif
 }
 
 Bool
 prima_is_utf8_sv( SV * sv)
 {
-#ifdef PERL_SUPPORTS_UTF8
    /* from Encode.xs */
    if (SvGMAGICAL(sv)) {
       SV * sv2 = newSVsv(sv); /* GMAGIG will be done */
@@ -1791,27 +1771,7 @@ prima_is_utf8_sv( SV * sv)
    } else {
       return SvUTF8(sv) ? 1 : 0;
    }
-#else
-   return 0;
-#endif
 }
-
-
-#ifndef PERL_SUPPORTS_UTF8
-UV
-prima_utf8_to_uv( U8 * utf8, STRLEN * len)
-{
-   *len = 1;
-   return (UV) *utf8;
-}
-
-U8 *
-prima_uv_to_utf8( U8 * utf8, UV uv)
-{
-   *(utf8++) = ( U8) uv;
-   return utf8;
-}
-#endif
 
 #ifdef __cplusplus
 }

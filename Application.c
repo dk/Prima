@@ -1001,10 +1001,8 @@ Bool
 Application_wantUnicodeInput( Handle self, Bool set, Bool want_ui)
 {
    if ( !set) return var-> wantUnicodeInput;
-#ifdef PERL_SUPPORTS_UTF8
    if ( apc_sys_get_value( svCanUTF8_Input)) 
       var-> wantUnicodeInput = want_ui;
-#endif
    return 0;
 }
 
