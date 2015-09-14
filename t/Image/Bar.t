@@ -5,7 +5,7 @@ use Test::More;
 use Prima::Test;
 use Prima::Application;
 
-plan tests => 1130;
+plan tests => 1133;
 
 sub bits  { join ':', map { sprintf "%08b", ord } split '', shift }
 sub bytes { unpack('H*', shift ) }
@@ -123,6 +123,7 @@ $i->set(
 	type     => im::bpp8,
 	colormap => [0..255],
 	color    => 0x12,
+	rop      => rop::CopyPut,
 );
 $i->bar(0,0,7,0);
 is_bytes( $i->data, "\x12\x12\x12\x12", "imbpp8 color find");
@@ -134,9 +135,31 @@ $i->set(
 $i->bar(0,0,3,0);
 is_bytes( $i->data, "\x80\x80\x80\x80", "imByte color find");
 
+# rgb
+
 $i->set(
 	type     => im::RGB,
+	color    => 0x563412,
+);
+$i->bar(0,0,3,0);
+is_bytes( $i->data, "\x12\x34\x56" x 4, "imRGB ropCopy");
+
+$i->color( 0xf0f0f0);
+$i->rop( rop::OrPut);
+$i->bar(0,0,3,0);
+is_bytes( $i->data, "\xf2\xf4\xf6" x 4, "imRGB ropOrPut");
+
+# short, long
+$i->set(
+	rop      => rop::CopyPut,
+	type     => im::Short,
+	color    => 1023,
+);
+$i->bar(0,0,3,0);
+is( $i->pixel(0,0), 1023, "imShort");
+$i->set(
+	type     => im::Long,
 	color    => 0x123456,
 );
 $i->bar(0,0,3,0);
-is_bytes( $i->data, "\x12\x34\x56" x 4, "imRGB");
+is( $i->pixel(0,0), 0x123456, "imLong");
