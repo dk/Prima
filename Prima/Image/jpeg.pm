@@ -133,17 +133,8 @@ sub save_dialog
 	return Prima::Image::jpeg-> create;
 }
 
-
 sub exif_get_orientation
 {
-#      1        2       3      4         5            6           7          8
-#
-#    888888  888888      88  88      8888888888  88                  88  8888888888
-#    88          88      88  88      88  88      88  88          88  88      88  88
-#    8888      8888    8888  8888    88          8888888888  8888888888          88
-#    88          88      88  88
-#    88          88  888888  888888
-#
 # courtesy from gtk/gdk-pixbuf/io-jpeg.c
 	my $i = shift;
 
@@ -203,4 +194,38 @@ sub exif_get_orientation
 	}
 
 	return; # nothing found
+}
+
+#      1        2       3      4         5            6           7          8
+#
+#    888888  888888      88  88      8888888888  88                  88  8888888888
+#    88          88      88  88      88  88      88  88          88  88      88  88
+#    8888      8888    8888  8888    88          8888888888  8888888888          88
+#    88          88      88  88
+#    88          88  888888  888888
+#
+
+sub exif_transform_image
+{
+        my ( $image, $exif_orientation ) = @_;
+
+	return unless defined $orientation and $orientation > 1;
+
+	if ( $orientation == 2 ) {
+		$image->mirror(1);
+	} elsif ( $orientation == 3 ) {
+		$image->rotate(180);
+	} elsif ( $orientation == 4 ) {
+		$image->mirror(0);
+	} elsif ( $orientation == 5 ) {
+                $image->rotate(90);
+		$image->mirror(1);
+	} elsif ( $orientation == 6 ) {
+		$image->rotate(90);
+	} elsif ( $orientation == 7 ) {
+                $image->rotate(90);
+                $image->mirror(0);
+	} elsif ( $orientation == 8 ) {
+                $image->rotate(270);
+	}
 }
