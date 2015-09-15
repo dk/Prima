@@ -207,7 +207,7 @@ sub exif_get_orientation
 
 sub exif_transform_image
 {
-        my ( $image, $exif_orientation ) = @_;
+        my ( $image, $orientation ) = @_;
 
 	return unless defined $orientation and $orientation > 1;
 
