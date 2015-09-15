@@ -5,7 +5,7 @@ use Test::More;
 use Prima::Test;
 use Prima::Application;
 
-plan tests => 9;
+plan tests => 16;
 
 sub bytes { unpack('H*', shift ) }
 
@@ -42,3 +42,38 @@ $j->rotate(180);
 is( $j->width, 4, "rotate(180) width ok");
 is( $j->height, 2, "rotate(180) height ok");
 is($j->data, "75318642", "rotate(180) data ok");
+
+my $k = Prima::Image->create(
+	width    => 2,
+	height   => 2,
+	type     => im::Short,
+	data     => "12345678",
+	lineSize => 4,
+);
+
+$k->rotate(270);
+is($k->data, "56127834", "short: rotate(270) data ok");
+
+$k->data("12345678");
+$k->rotate(90);
+is($k->data, "34781256", "short: rotate(90) data ok");
+
+$k->data("12345678");
+$k->rotate(180);
+is($k->data, "78563412", "short: rotate(180) data ok");
+
+# mirroring
+$j->data("12345678");
+$j->mirror(1);
+is( $j->data, "56781234", "byte: vertical mirroring ok");
+$j->data("12345678");
+$j->mirror(0);
+is( $j->data, "43218765", "byte: horizontal mirroring ok");
+
+$j->type(im::Short);
+$j->data("123456789ABCDEFG");
+$j->mirror(1);
+is( $j->data, "9ABCDEFG12345678", "short: vertical mirroring ok");
+$j->data("123456789ABCDEFG");
+$j->mirror(0);
+is( $j->data, "78563412FGDEBC9A", "short: horizontal mirroring ok");

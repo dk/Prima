@@ -1637,6 +1637,28 @@ Image_rotate( Handle self, int degrees)
 {
    Byte * new_data;
    int new_line_size;
+
+   switch (degrees) {
+   case 90:
+   case 270:
+   case 180:
+      break;
+   default:
+      croak("'degrees' must be 90,180,or 270");
+   }
+
+   if (( var-> type & imBPP) < 8) {
+      int type = var->type;
+      my->set_type( self, imbpp8 );
+      my->rotate( self, degrees );
+      if ( is_opt( optPreserveType)) {
+         my-> set_conversion( self, ictNone);
+         my-> set_type( self, type);
+         my-> set_conversion( self, var-> conversion);
+      }
+      return;
+   }      
+   
    switch (degrees) {
    case 90:
    case 270:
@@ -1648,8 +1670,6 @@ Image_rotate( Handle self, int degrees)
       if (( new_data = allocb( var->dataSize )) == NULL )
          croak("Image::rotate: cannot allocate %d bytes", var->dataSize );
       break;
-   default:
-      croak("'degrees' must be 90,180,or 270");
    }
 
    img_rotate( self, new_data, degrees );
@@ -1663,6 +1683,25 @@ Image_rotate( Handle self, int degrees)
    free( var->data);
    var->data = new_data;
 
+   my-> update_change(self);
+}
+
+void
+Image_mirror( Handle self, Bool vertically)
+{
+   if (!vertically && ( var-> type & imBPP) < 8) {
+      int type = var->type;
+      my->set_type( self, imbpp8 );
+      my->mirror( self, vertically );
+      if ( is_opt( optPreserveType)) {
+         my-> set_conversion( self, ictNone);
+         my-> set_type( self, type);
+         my-> set_conversion( self, var-> conversion);
+      }
+      return;
+   }      
+
+   img_mirror( self, vertically );
    my-> update_change(self);
 }
 

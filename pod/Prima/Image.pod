@@ -699,6 +699,10 @@ gray non-8 bit pixel values, by the code:
 
    $image-> resample( $image-> rangeLo, $image-> rangeHi, 0, 255);
 
+=item rotate DEGREES
+
+Rotates the image by 90, 180, or 270 degrees.
+
 =item save (FILENAME or FILEGLOB), [ %PARAMETERS ]
 
 Stores image data into image file FILENAME or stream FILEGLOB, and returns the success flag.

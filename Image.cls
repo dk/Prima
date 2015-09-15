@@ -75,6 +75,7 @@ object Prima::Image( Prima::Drawable)
    weird  PList  load( SV * className, char *filename, HV * profile);
    c_only void   make_empty();
    method void   map( Color color);
+   method void   mirror( Bool vertically );
    import SV *   notification_types();
    import SV *   profile_default ();
    method Bool   put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
