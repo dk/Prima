@@ -691,6 +691,10 @@ Examples:
    rop2 => rop::NoOper
    input: map(2) output: [ 1, 10, 3, 4 ]
 
+=item mirror VERTICAL
+
+Mirrors the image depending on boolean flag VERTICAL
+
 =item resample SRC_LOW, SRC_HIGH, DEST_LOW, DEST_HIGH
 
 Performs linear scaling of gray pixel values from range (SRC_LOW - SRC_HIGH)
