@@ -212,19 +212,19 @@ sub exif_transform_image
 	return unless defined $orientation and $orientation > 1;
 
 	if ( $orientation == 2 ) {
-		$image->mirror(1);
+		$image->mirror(0);
 	} elsif ( $orientation == 3 ) {
 		$image->rotate(180);
 	} elsif ( $orientation == 4 ) {
-		$image->mirror(0);
+		$image->mirror(1);
 	} elsif ( $orientation == 5 ) {
                 $image->rotate(90);
-		$image->mirror(1);
+		$image->mirror(0);
 	} elsif ( $orientation == 6 ) {
 		$image->rotate(90);
 	} elsif ( $orientation == 7 ) {
                 $image->rotate(90);
-                $image->mirror(0);
+                $image->mirror(1);
 	} elsif ( $orientation == 8 ) {
                 $image->rotate(270);
 	}
