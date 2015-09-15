@@ -79,6 +79,7 @@ object Prima::Image( Prima::Drawable)
    import SV *   profile_default ();
    method Bool   put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
    method void   remove_notification( UV id);
+   method void   rotate( int degrees );
    method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
    weird  int    save( SV *className, char *filename, HV * profile);
    method void   set( HV * profile);

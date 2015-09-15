@@ -112,6 +112,7 @@ img/img.c
 img/imgscale.c
 img/imgtype.c
 img/put.c
+img/rotate.c
 include/apricot.h
 include/guts.h
 include/img.h
@@ -299,6 +300,7 @@ t/Image/Colormap.t
 t/Image/Import.t
 t/Image/ROP.t
 t/Image/Stream.t
+t/Image/Transform.t
 t/Object/Application.t
 t/Object/Clipboard.t
 t/Object/Component.t

@@ -492,7 +492,7 @@ EXIT:
    return true;
 }
 
-Bool 
+void 
 img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
 {
    PImage i     = (PImage) dest;
@@ -518,7 +518,7 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
    }
    if ( x + w > i->w ) w = i->w - x;
    if ( y + h > i->h ) h = i->h - y;
-   if ( w <= 0 || h <= 0 ) return true;
+   if ( w <= 0 || h <= 0 ) return;
 
    switch ( type & imBPP) {
    case imbpp1:

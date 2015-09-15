@@ -1584,7 +1584,7 @@ Bool
 Image_bar( Handle self, int x1, int y1, int x2, int y2)
 {
    if (opt_InPaint) {
-      apc_gp_bar( self, x1, y1, x2, y2);
+      return apc_gp_bar( self, x1, y1, x2, y2);
    } else {
       Byte colorbuf[sizeof(double)*2];
       Color color;
@@ -1628,7 +1628,42 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
       }
       img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, my-> get_rop(self), colorbuf);  
       my-> update_change(self);
+      return true;
    }
+}
+
+void
+Image_rotate( Handle self, int degrees)
+{
+   Byte * new_data;
+   int new_line_size;
+   switch (degrees) {
+   case 90:
+   case 270:
+      new_line_size = (( var-> h * ( var->type & imBPP) + 31) / 32) * 4 ;
+      if (( new_data = allocb( new_line_size * var->w )) == NULL )
+         croak("Image::rotate: cannot allocate %d bytes", new_line_size * var->w);
+      break;
+   case 180:
+      if (( new_data = allocb( var->dataSize )) == NULL )
+         croak("Image::rotate: cannot allocate %d bytes", var->dataSize );
+      break;
+   default:
+      croak("'degrees' must be 90,180,or 270");
+   }
+
+   img_rotate( self, new_data, degrees );
+   if ( degrees != 180 ) {
+      int h = var->h;
+      var->h = var->w;
+      var->w = h;
+      var->lineSize = new_line_size;
+      var->dataSize = new_line_size * var->h;
+   }
+   free( var->data);
+   var->data = new_data;
+
+   my-> update_change(self);
 }
 
 #ifdef __cplusplus
