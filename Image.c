@@ -306,6 +306,14 @@ Image_set( Handle self, HV * profile)
       pdelete( type);
    }
 
+   if ( pexist( size))
+   {
+      int set[2];
+      prima_read_point( pget_sv( size), set, 2, "Array panic on 'size'");
+      my-> stretch( self, set[0], set[1]);
+      pdelete( size);
+   }
+
    if ( pexist( resolution))
    {
       Point set;
@@ -376,7 +384,7 @@ Image_size( Handle self, Bool set, Point size)
 {
    if ( !set)
       return inherited size( self, set, size);
-   CImage( self)-> stretch( self, size.x, size.y);
+   my-> stretch( self, size.x, size.y);
    return size;
 }
 
