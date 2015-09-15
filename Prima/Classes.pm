@@ -690,7 +690,7 @@ sub rotate
         my ($self, $degrees) = @_;
         my ($xor, $and) = $self->split;
         $and->preserveType(1);
-        $_->rotate($degree) for $xor, $and;
+        $_->rotate($degrees) for $xor, $and;
         $self->combine($xor, $and);
 }
 
