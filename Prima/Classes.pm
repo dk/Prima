@@ -676,6 +676,24 @@ sub profile_default
 	return $def;
 }
 
+sub mirror
+{
+        my ($self, $vertically) = @_;
+        my ($xor, $and) = $self->split;
+        $and->preserveType(1);
+        $_->mirror($vertically) for $xor, $and;
+        $self->combine($xor, $and);
+}
+
+sub rotate
+{
+        my ($self, $degrees) = @_;
+        my ($xor, $and) = $self->split;
+        $and->preserveType(1);
+        $_->rotate($degree) for $xor, $and;
+        $self->combine($xor, $and);
+}
+
 # class DeviceBitmap
 package Prima::DeviceBitmap;
 use vars qw( @ISA);
