@@ -229,7 +229,12 @@ init_x11( char * error_buf )
    guts. last_time = CurrentTime;
 
    guts. ri_head = guts. ri_tail = 0;
+#ifdef WITH_GTK2
+   DISP = prima_gtk_init();
+#else
    DISP = XOpenDisplay( do_display);
+#endif
+   
    if (!DISP) {
       char * disp = getenv("DISPLAY");
       snprintf( error_buf, 256, "Error: Can't open display '%s'", 
@@ -586,7 +591,9 @@ window_subsystem_done( void)
       XFreeFont( DISP, guts.pointer_font);
       guts.pointer_font = nil;
    }
+#ifndef WITH_GTK2
    XCloseDisplay( DISP);
+#endif
    DISP = nil;
    
    plist_destroy( guts. files);

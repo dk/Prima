@@ -38,6 +38,9 @@
 
 #undef dirty
 
+#define Window  XWindow
+
+#include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 
 static int gtk_initialized = 0;
@@ -53,30 +56,26 @@ static char*	gtk_current_folder_ptr = NULL;
 static List*	gtk_filters            = NULL;
 static int	gtk_filter_index       = 0;
 
-Bool
+static GdkDisplay * display = NULL;
+
+Display*
 prima_gtk_init(void)
 {
 	int argc = 0;
 
-	gboolean r;
-	
 	switch ( gtk_initialized) {
 	case -1:
-		return false;
+		return NULL;
 	case 1:
-		return true;
+		return gdk_x11_display_get_xdisplay(display);
 	}
 
-	r = gtk_init_check( &argc, NULL);
-
-	if ( r == gtk_true()) {
-		XSetErrorHandler( guts. main_error_handler);
-		gtk_initialized = 1;
-		return true;
-	} else {
+	if ( !gtk_parse_args (&argc, NULL) || (display = gdk_display_open_default_libgtk_only()) == NULL) {
 		gtk_initialized = -1;
-		warn("** Cannot initialize GTK");
 		return false;
+	} else {
+		gtk_initialized = 1;
+		return gdk_x11_display_get_xdisplay(display);
 	}
 }
 
@@ -258,8 +257,6 @@ prima_gtk_openfile( char * params)
 		return duplicate_string( GTK_VERSION);
 
 	if ( !DISP) 
-		return NULL;
-	if( !prima_gtk_init()) 
 		return NULL;
 
 	if ( strncmp( params, "directory", 9) == 0) {

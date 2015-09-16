@@ -1237,7 +1237,7 @@ prima_xft_update_region( Handle self);
 #endif
 
 #ifdef WITH_GTK2
-Bool
+Display*
 prima_gtk_init( void);
 
 Bool
