@@ -280,6 +280,7 @@ extern void ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineS
 extern Bool img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop);
 extern void img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color);
 extern void img_rotate( Handle self, Byte * new_data, int degrees);
+extern void img_mirror( Handle self, Bool vertically);
 
 /* internal maps */
 extern Byte     map_stdcolorref    [ 256];
