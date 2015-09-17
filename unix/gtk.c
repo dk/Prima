@@ -258,6 +258,8 @@ prima_gtk_openfile( char * params)
 
 	if ( !DISP) 
 		return NULL;
+	if( !prima_gtk_init()) 
+		return NULL;
 
 	if ( strncmp( params, "directory", 9) == 0) {
 		params += 9;
