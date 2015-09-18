@@ -1239,6 +1239,13 @@ apc_beep_tone( int freq, int duration)
    return true;
 }
 
+#include <gtk/gtk.h>
+
+static void _gtk_callback( GtkWidget *widget, gpointer   data )
+{
+    g_print ("Hello again - %s was pressed\n", (char *) data);
+}
+
 char *
 apc_system_action( const char *s)
 {
