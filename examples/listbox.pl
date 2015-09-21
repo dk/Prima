@@ -66,6 +66,12 @@ sub create_menu
 			["~Increase item height"=>sub{$_[0]-> ListBox1-> itemHeight($_[0]-> ListBox1-> itemHeight+2)}],
 			["~Decrease item height"=>sub{$_[0]-> ListBox1-> itemHeight($_[0]-> ListBox1-> itemHeight-2)}],
 			[],
+			['Ali~gn' => [
+				['~Left'   => sub { shift->ListBox1->align(ta::Left)   }],
+				['~Right'  => sub { shift->ListBox1->align(ta::Right)  }],
+				['~Center' => sub { shift->ListBox1->align(ta::Center) }],
+			]],
+			[],
 			["Add~itional"=> sub {
 				my $box  = $_[0]-> ListBox1;
 				$box-> add_items( 'Hello', 'user', 'from', 'Perl');
@@ -140,6 +146,7 @@ $w-> insert( "ListBox",
 	font            => { size => 24},
 	items           => ['Items', 'created', 'indirect'],
 	pack            => { side => 'left', expand => 1, fill => 'both', padx => 20, pady => 20},
+	align => ta::Right,
 );
 $w-> insert( "Edit",
 	maxLen         => 200,

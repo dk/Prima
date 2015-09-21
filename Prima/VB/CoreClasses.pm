@@ -666,6 +666,7 @@ sub prf_types
 		color   => [qw(gridColor)],
 		items   => [qw(items selectedItems)],
 		string  => [qw(scrollBarClass)],
+		align   => [qw(align)],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
@@ -682,15 +683,24 @@ sub on_paint
 {
 	my ( $self, $canvas) = @_;
 	my @r = $self-> paint_exterior( $canvas);
+	my $align = $self->prf('align');
+	if ( $align == ta::Right ) {
+		$align = dt::Right;
+	} elsif ( $align == ta::Center ) {
+		$align = dt::Center;
+	} else {
+		$align = dt::Left;
+	}
 	$canvas-> draw_text( join("\n", @{$self-> prf('items')}), @r,
 		dt::NoWordWrap |
-		dt::NewLineBreak | dt::Left | dt::Top | dt::UseExternalLeading |
-		dt::UseClip
+		dt::NewLineBreak | dt::Top | dt::UseExternalLeading |
+		dt::UseClip | $align
 	)  if scalar @r;
 	$self-> common_paint($canvas);
 }
 
 sub prf_items         { $_[0]-> repaint; }
+sub prf_align         { $_[0]-> repaint; }
 
 package Prima::VB::ListViewer;
 use strict;

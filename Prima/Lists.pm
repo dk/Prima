@@ -76,6 +76,7 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
+		align          => ta::Left,
 		autoHeight     => 1,
 		autoHScroll    => 1,
 		autoVScroll    => 1,
@@ -143,7 +144,7 @@ sub init
 		itemWidth offset multiColumn count autoHeight multiSelect 
 		extendedSelect borderWidth dragable ))
 		{ $self-> {$_} = 0; }
-	for ( qw( drawGrid itemHeight integralWidth integralHeight vertical))
+	for ( qw( drawGrid itemHeight integralWidth integralHeight vertical align))
 		{ $self-> {$_} = 1; }
 	$self-> {selectedItems} = {};
 	my %profile = $self-> SUPER::init(@_);
@@ -154,7 +155,7 @@ sub init
 		autoHScroll autoVScroll gridColor hScroll vScroll offset multiColumn 
 		itemHeight autoHeight itemWidth multiSelect extendedSelect integralHeight 
 		integralWidth focusedItem topItem selectedItems borderWidth dragable 
-		vertical drawGrid))
+		vertical drawGrid align))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> reset;
 	$self-> reset_scrolls;
@@ -893,6 +894,14 @@ sub set_auto_height
 	$self-> {autoHeight} = $auto;
 }
 
+sub set_align
+{
+	my ( $self, $align) = @_;
+
+	$self-> {align} = $align;
+	$self-> repaint;
+}
+
 sub reset_indents
 {
 	my ( $self) = @_;
@@ -1313,6 +1322,7 @@ sub HScroll_Change
 #}
 
 sub autoHeight    {($#_)?$_[0]-> set_auto_height    ($_[1]):return $_[0]-> {autoHeight}     }
+sub align         {($#_)?$_[0]-> set_align          ($_[1]):return $_[0]-> {align}          }
 sub count         {($#_)?$_[0]-> set_count          ($_[1]):return $_[0]-> {count}          }
 sub extendedSelect{($#_)?$_[0]-> set_extended_select($_[1]):return $_[0]-> {extendedSelect} }
 sub drawGrid      {($#_)?$_[0]-> set_draw_grid      ($_[1]):return $_[0]-> {drawGrid}       }
@@ -1365,11 +1375,22 @@ sub draw_text_items
 {
 	my ( $self, $canvas, $first, $last, $step, $x, $y, $textShift, $clipRect) = @_;
 	my ($i,$j);
+	my ($dx,$iw) = (0);
+	if ( $self->{align} != ta::Left ) {
+		my @a = $self->item2rect( $first );
+		$iw = $a[2] - $a[0];
+		$iw = $self->{itemWidth} if $iw < $self->{itemWidth};
+	}
 	for ( $i = $first, $j = 1; $i <= $last; $i += $step, $j++) {
-		next if $self-> get_item_width( $i) + 
-			$self-> {offset} + $x + 1 < $clipRect-> [0];
+		my $width = $self-> get_item_width( $i);
+		next if $width + $self-> {offset} + $x + 1 < $clipRect-> [0];
+		if ( $self->{align} == ta::Center) {
+			$dx = ($iw > $width) ? ($iw - $width) / 2 : 0;
+		} elsif ( $self->{align} == ta::Right) {
+			$dx = ($iw > $width) ? $iw - $width : 0;
+		}
 		$canvas-> text_out( $self-> get_item_text( $i), 
-			$x, $y + $textShift - $j * $self-> {itemHeight} + 1
+			$x + $dx, $y + $textShift - $j * $self-> {itemHeight} + 1
 		);
 	}
 }
@@ -2096,7 +2117,7 @@ See L<DrawItem> for parameters description.
 
 Called by C<std_draw_text_items> to draw sequence of text items with 
 indices from FIRST to LAST, by STEP, on CANVAS, starting at point X, Y, and
-incrementing the vertical position with OFFSET. CLIP_RECT is a reference
+incrementing the horizontal position with OFFSET. CLIP_RECT is a reference
 to array of four integers with inclusive-inclusive coordinates of the active 
 clipping rectangle.
 
