@@ -64,7 +64,6 @@ if ( $os-> {apc} == apc::Unix) {
 	$fname =
 	( $os-> {system} eq 'Windows NT') ?
 		"$ENV{SYSTEMROOT}\\system32\\drivers\\etc\\services" : undef;
-	$fname = 'z:/etc/services' if Prima::Utils::username eq 'dk';
 };
 
 if ( defined $fname) {
@@ -93,6 +92,7 @@ my $l = $w-> insert( DetailedList =>
 	pack    => { expand => 1, fill => 'both' },
 	items   => \@items,
 	headers => [ 'Service' , 'Port', 'Protocol', 'Description'],
+	aligns  => [undef, ta::Right],
 	columns => 4,
 	onSort => sub {
 		my ( $self, $col, $dir) = @_;

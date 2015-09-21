@@ -74,6 +74,7 @@ sub profile_default
 		columns           => 0,
 		widths            => [],
 		headers           => [],
+		aligns            => [],
 		mainColumn        => 0,
 	};
 }
@@ -112,7 +113,7 @@ sub init
 
 	my $x = $self-> {header}-> items;
 	$self-> {umap} = [ 0 .. $#$x];
-	$self-> $_( $profile{$_}) for qw( columns mainColumn);
+	$self-> $_( $profile{$_}) for qw( aligns columns mainColumn);
 
 	if ( scalar @{$profile{widths}}) {
 		$self-> {itemWidth} = $self-> {header}-> {maxWidth} - 1;
@@ -267,7 +268,9 @@ sub draw_items
 	my $txw = 1;
 	for ( $ci = 0; $ci < $cols; $ci++) {
 		$umap = $self-> {umap}-> [$ci];
+		my $dx = 0;
 		my $wx = $widths[ $ci] + 2;
+		my $align = $self->{aligns}->[$ci] // $self->{align};
 		if ( $xstart + $wx - $o >= $clipRect[0]) {
 			$canvas-> clipRect(
 				(( $xstart - $o) < $clipRect[0]) ? $clipRect[0] : $xstart - $o,
@@ -279,7 +282,14 @@ sub draw_items
 					@{$$iref[$i]};
 				my $c = $clrs[ $selected ? 2 : 0];
 				$canvas-> color( $c), $lc = $c if $c != $lc;
-				$canvas-> text_out( $rref-> [$itemIndex]-> [$umap], $x + $txw, $y);
+				if ( $align == ta::Center) {
+					my $iw = $canvas->get_text_width($rref-> [$itemIndex]-> [$umap]);
+					$dx = ($iw < $wx) ? ($wx - $iw) / 2 : 0;
+				} elsif ( $align == ta::Right ) {
+					my $iw = $canvas->get_text_width($rref-> [$itemIndex]-> [$umap]);
+					$dx = ($iw < $wx) ? $wx - $iw : 0;
+				}
+				$canvas-> text_out( $rref-> [$itemIndex]-> [$umap], $x + $txw + $dx, $y);
 			}
 		}
 		$xstart += $wx;
@@ -301,7 +311,8 @@ sub Header_SizeItem
 	my ( $self, $header, $col, $oldw, $neww) = @_;
 	my $xs = $self-> {borderWidth} - 1 - $self-> {offset};
 	my $i = 0;
-	for ( @{$self-> {header}-> widths}) {
+	my @widths = @{$self-> {header}-> widths};
+	for ( @widths ) {
 		last if $col == $i++;
 		$xs += $_ + 2;
 	}
@@ -313,8 +324,16 @@ sub Header_SizeItem
 		confineRect => [ $xs, $a[1], $a[2] + abs( $neww - $oldw), $a[3]],
 		clipRect    => \@a,
 	);
+	$self->invalidate_rect( $xs - $widths[$col], $a[1], $xs, $a[3]) 
+		if ( $self->{aligns}->[$col] // $self->{align} ) != ta::Left;
 	$self-> {itemWidth} = $self-> {header}-> {maxWidth} - 1;
 	$self-> reset_scrolls if $self-> {hScroll} || $self-> {autoHScroll};
+}
+
+sub aligns {
+	return shift-> {aligns} unless $#_;
+	my $self = shift;
+	$self-> {aligns} = shift;
 }
 
 sub widths {
@@ -522,6 +541,11 @@ arbitrated by C<cmp> operator ( see L<perlop/"Equality Operators"> ) .
 =head2 Properties
 
 =over
+
+=item aligns ARRAY
+
+Array of C<ta::> align constants, where each defined the column alignment.
+Where an item in the array is undef, it means that the value of the C<align> property must be used.
 
 =item columns INTEGER
 
