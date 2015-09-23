@@ -109,6 +109,10 @@ $g = $w-> insert(
 		my ( $self, $col, $row, $ref) = @_;
 		$$ref = "$col.$row";
 	},
+	onGetAlignment => sub {
+		my ( $self, $col, $row, $ha, $va) = @_;
+		$$ha = ta::Center if $col == 0 || $row == 0 || $col == 9999 || $row == 9999;
+	},
 	allowChangeCellWidth => 1,
 	allowChangeCellHeight => 1,
 	clipCells => 2,

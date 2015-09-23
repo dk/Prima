@@ -67,6 +67,7 @@ my %RNT = (
 	%{Prima::Widget-> notification_types()},
 	DrawCell      => nt::Action,
 	GetRange      => nt::Action,
+	GetAlignment  => nt::Action,
 	Measure       => nt::Action,
 	SelectCell    => nt::Default,
 	SetExtent     => nt::Action,
@@ -211,8 +212,24 @@ sub draw_text_cells
 	for ( $i = 0; $i < @$screen_rects; $i++) {
 		my @r = @{$$cell_rects[$i]};
 		$canvas-> clipRect( @{$$screen_rects[$i]}) if $self-> {clipCells} == 2;
-		$canvas-> text_out( $self-> get_cell_text( @{$$cell_indices[$i]}), 
-			$r[0], ($r[3] + $r[1] - $font_height) / 2);
+		my ($ha, $va) = $self-> get_cell_alignment(@{$$cell_indices[$i]});
+		my ( $x, $y ) = ($r[0], $r[1]);
+		my $text = $self-> get_cell_text( @{$$cell_indices[$i]});
+		if ( $ha == ta::Right ) {
+			my $dx = $r[2] - $r[0] - $self-> get_text_width($text);
+			$x += $dx if $dx > 0;
+		} elsif ( $ha == ta::Center ) {
+			my $dx = ($r[2] - $r[0] - $self-> get_text_width($text)) / 2;
+			$x += $dx if $dx > 0;
+		}
+		if ( $va == ta::Top ) {
+			my $dy = $r[3] - $r[1] - $font_height;
+			$y += $dy if $dy > 0;
+		} elsif ( $va == ta::Middle ) {
+			my $dy = ($r[3] - $r[1] - $font_height) / 2;
+			$y += $dy if $dy > 0;
+		}
+		$canvas-> text_out( $text, $x, $y);
 	}
 	$canvas-> clipRect( @clip) if $self-> {clipCells} == 2;
 }
@@ -242,6 +259,14 @@ sub get_cell_text
 	my $txt = '';
 	$self-> notify(q(Stringify), $col, $row, \$txt);
 	return $txt;
+}
+
+sub get_cell_alignment
+{
+	my ( $self, $col, $row) = @_;
+	my ($ha, $va) = ( ta::Left, ta::Middle );
+	$self-> notify(q(GetAlignment), $col, $row, \$ha, \$va);
+	return $ha, $va;
 }
 
 sub get_range
@@ -1358,8 +1383,8 @@ sub on_paint
 		$$_[4] = $a[2] if $$_[4] > $a[2];
 	}
 	for ( @rowsDraw) {
-	$$_[3] = $a[1] if $$_[3] < $a[1];
-	$$_[4] = $a[3] if $$_[4] > $a[3];
+		$$_[3] = $a[1] if $$_[3] < $a[1];
+		$$_[4] = $a[3] if $$_[4] > $a[3];
 	}
 	
 	# draw cells
@@ -2277,6 +2302,11 @@ sub get_cell_text
 	return $self-> {cells}-> [$row]-> [$col];
 }
 
+sub get_cell_alignment
+{
+	return (ta::Left, ta::Middle);
+}
+
 sub on_getrange
 {
 	my ( $self, $column, $index, $min, $max) = @_;
@@ -2636,6 +2666,12 @@ Returns screen area in inclusive-inclusive pixel coordinates, that is used
 to display normal cells. The extensions are related to the current size of a widget, 
 however, can be overridden by specifying WIDTH and HEIGHT.
 
+=item get_cell_alignment COLUMN, ROW
+
+Returns two C<ta::> constants for horizontal and vertical cell text alignment.
+Since the class does not assume the item storage organization,
+the values are queried via C<GetAlignment> notification.
+
 =item get_cell_text COLUMN, ROW
 
 Returns text string assigned to cell in COLUMN and ROW.
@@ -2791,6 +2827,11 @@ SELECTED and FOCUSED are boolean
 flags, if the cell must be drawn correspondingly in selected and
 focused states.
 
+=item GetAlignment COLUMN, ROW, HORIZONTAL_ALIGN_REF, VERTICAL_ALIGN_REF
+
+Puts two text alignment C<ta::> constants, assigned to cell with COLUMN and ROW coordinates, 
+into HORIZONTAL_ALIGN_REF and VERTICAL_ALIGN_REF scalar references.
+
 =item GetRange VERTICAL, INDEX, MIN, MAX
 
 Puts minimal and maximal breadth of INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1)
@@ -2937,6 +2978,12 @@ its ascendants, provides a standard text grid widget.
 =head2 Methods
 
 =over
+
+=item get_cell_alignment COLUMN, ROW
+
+Returns two C<ta::> constants for horizontal and vertical cell text alignment.
+Since the item storage organization is implemented, does
+so without calling C<GetAlignment> notification.
 
 =item get_cell_text COLUMN, ROW
 
