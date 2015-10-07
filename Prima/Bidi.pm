@@ -31,7 +31,7 @@ sub enabled
 	return $enabled unless @_;
 	return $enabled = 0 unless $_[0];
 	unless ( defined $available ) {
-		eval "use Text::Bidi::Paragraph;";
+		eval "use Text::Bidi::Paragraph; use Text::Bidi::Constants;";
 		if ( $@ ) {
 			$failure_text = "Bi-directional text services not available: $@\n";
 			$available = $enabled = 0;
@@ -42,7 +42,7 @@ sub enabled
 	return ( $enabled = $available ) ? undef : $failure_text;
 }
 
-sub visual { paragraph(@_)->{text} }
+sub visual { scalar paragraph(@_) }
 
 sub paragraph
 {
@@ -59,11 +59,21 @@ sub paragraph
 		$off += $l;
 		push @text, $v;
 	}
-	return {
-		text => join("\n", @text),
-		map  => $p->map,
-		rtl  => $p->is_rtl,
-	};
+	return ($p, join("\n", @text));
+}
+
+sub _par
+{
+	my ( $text, @opt ) = @_;
+	my $p = Text::Bidi::Paragraph->new( $text, @opt );
+	my $off = 0;
+	my $width = $p->len;
+	while ( $off < $width ) {
+		my $v = $p->visual($off, $width);
+		my $l = length($v);
+		$off += $l;
+	}
+	return $p;
 }
 
 sub selection_chunks
@@ -144,6 +154,93 @@ sub selection_walk
 		}
 		next if $length <= 0;
 		$sub->( $offset, $length, $selected );
+	}
+}
+
+sub is_strong($) { $_[0] & $Text::Bidi::Mask::STRONG }
+sub is_weak($)   { !($_[0] & $Text::Bidi::Mask::STRONG) }
+sub is_rtl($)    { $_[0] & $Text::Bidi::Mask::RTL    }
+sub is_ltr($)    { !($_[0] & $Text::Bidi::Mask::RTL) }
+
+sub edit_insert
+{
+	my ( $src_p, $src_rtl, $visual_pos, $new_str ) = @_;
+	my $new_p     = _par($new_str);
+	my $src_map   = $src_p->map;
+	my $src_types = $src_p->types;
+	my $new_types = $new_p->types;
+	my $limit     = $#$src_map;
+}
+
+sub edit_delete
+{
+	my ( $p, $rtl, $visual_pos, $ltr_kills_left ) = @_;
+	my $map   = $p->map;
+	my $t     = $p->types;
+	my $limit = $#$map;
+
+	my ($il,$ir,$l,$r,$pl,$pr) = (0,0,0,0,$limit,0);
+
+	if ( $visual_pos > 0 ) {
+		$il = $t->[$map->[$pl = $visual_pos - 1]];
+		$pl-- while is_weak($l = $t->[$map->[$pl]]) && $pl > 0;
+	}
+	if ( $visual_pos <= $limit ) {
+		$ir = $t->[$map->[$pr = $visual_pos]];
+		$pr++ while is_weak($r = $t->[$map->[$pr]]) && $pr < $limit;
+	}
+
+	#warn "il: ", (is_strong($il) ? 'strong' : 'weak'), ' ', (is_rtl($il) ? 'rtl' : 'ltr'), " at ", $visual_pos - 1, "\n";
+	#warn "ir: ", (is_strong($ir) ? 'strong' : 'weak'), ' ', (is_rtl($ir) ? 'rtl' : 'ltr'), " at ", $visual_pos, "\n";
+	#warn "l: ", (is_strong($l) ? 'strong' : 'weak'), ' ', (is_rtl($l) ? 'rtl' : 'ltr'), " at $pl\n";
+	#warn "r: ", (is_strong($r) ? 'strong' : 'weak'), ' ', (is_rtl($r) ? 'rtl' : 'ltr'), " at $pr\n";
+	#warn "vp: $visual_pos, limit: $limit\n";
+
+	$rtl = !$rtl unless $ltr_kills_left;
+
+	if ( $rtl ) {
+		# strong rtl immediately right, kill immediately right
+		return 1, $map->[$visual_pos], 1      if $visual_pos <= $limit && is_strong $ir && is_rtl $ir;
+		# strong ltr immediately left, kill immediately left
+		return 1, $map->[$visual_pos - 1], 0  if $visual_pos > 0       && is_strong $il && is_ltr $il;
+	} else {
+		# strong ltr immediately left, kill immediately left
+		return 1, $map->[$visual_pos - 1], -1 if $visual_pos > 0       && is_strong $il && is_ltr $il;
+		# strong rtl immediately right, kill immediately right
+		return 1, $map->[$visual_pos],     0  if $visual_pos <= $limit && is_strong $ir && is_rtl $ir;
+	}
+
+	# any rtl on left, kill greedy leftmost
+	if ($visual_pos > 0 && is_rtl $l) {
+		my $L = $l;
+		$pl-- while !(is_strong($L = $t->[$map->[$pl]]) && is_ltr $L) && $pl > 0;
+		return 1, $map->[$pl], $pl - $visual_pos
+	}
+
+	# any ltr on left, kill immediately left
+	return 1, $map->[$visual_pos - 1], -1      if $visual_pos > 0 && is_ltr $l;
+
+	# nothing
+	return 0, 0, 0;
+}
+
+sub debug_str
+{
+	my ( $p, $str ) = @_;
+	my $t = $p->types;
+	my $b = $p->bd;
+	for ( my $i = 0; $i < length($str); $i++) {
+		my $chr = ord( substr( $str, $i, 1));
+		my $typ = $t->[$i];
+		my $tn  = $b->get_bidi_type_name($typ);
+		my @mas;
+		no strict 'refs';
+		for my $name ( keys %Text::Bidi::Mask::) {
+			my $value = ${"Text::Bidi::Mask::$name"};
+			next unless $typ & $value;
+			push @mas, $name;
+		}
+		printf("$i: %03x: %06x / %s\n", $chr, $typ, join(',', @mas));
 	}
 }
 

@@ -2,19 +2,26 @@ use strict;
 use warnings;
 use utf8;
 use Prima qw(Label InputLine Application);
-use Prima::Bidi qw(:require :ltr);
+use Prima::Bidi qw(:require :rtl);
 
-#$Prima::Bidi::default_direction_rtl = 1;
-
-sub _b($) { Prima::Bidi::visual(shift) }
-
-my $w = Prima::MainWindow-> create(
+my $w;
+$w = Prima::MainWindow-> create(
 	size => [ 430, 200],
 	text => "Bidirectional texts",
+	menuItems => [
+		[ "~Options" => [
+			[ "~Toggle direction" => sub {
+				$w-> Arabic-> alignment( $w-> Arabic-> alignment == ta::Left ? ta::Right : ta::Left );
+				$w-> Hebrew-> alignment( $w-> Hebrew-> alignment == ta::Left ? ta::Right : ta::Left );
+				$w-> Hebrew-> textDirection(! $w-> Hebrew-> textDirection);
+			} ],
+		]],
+	],
 );
 
 $w->insert( Label =>
 	origin => [ 10, 50],
+	name  => 'Arabic',
 	text => "الفالح حلمه كبير.
 طول ساق النبتة وصارت
 شجرة في أرض الفالح
@@ -29,10 +36,11 @@ $w->insert( Label =>
 	showPartial => 0,
 );
 
-my $i = $w->insert( InputLine =>
+$w->insert( InputLine =>
+	name => 'Hebrew',
 	origin => [ 10, 10],
 	width  => 200,
-	text => "אפס123 - תראה מה אני יכול!",
+	text => "אפס123 - תרttttאה מה אני יכול!",
 	growMode => gm::Floor,
 );
 

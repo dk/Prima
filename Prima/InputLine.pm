@@ -45,7 +45,7 @@ sub profile_default
 	my $font = $_[ 0]-> get_default_font;
 	return {
 		%def,
-		alignment      => ta::Left,
+		alignment      => $Prima::Bidi::default_direction_rtl ? ta::Right : ta::Left,
 		autoHeight     => 1,
 		autoSelect     => 1,
 		autoTab        => 0,
@@ -86,8 +86,6 @@ sub profile_check_in
 	my ( $self, $p, $default) = @_;
 	$p-> {autoHeight} = 0
 		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} || ( exists $p-> {top} && exists $p-> {bottom});
-	$p-> {alignment} = ta::Right
-		if !exists $p->{alignment} && $Prima::Bidi::default_direction_rtl;
 	$self-> SUPER::profile_check_in( $p, $default);
 	($p-> { selStart}, $p-> { selEnd}) = @{$p-> { selection}} if exists( $p-> { selection});
 }
@@ -269,8 +267,13 @@ sub text
 		$self-> SUPER::text( $cap);
 
 	if ($Prima::Bidi::enabled && length($cap)) {
-		$self->{bidiData} = Prima::Bidi::paragraph( $cap, $self->{textDirection} );
-		$cap = $self->{bidiData}->{text};
+		my ( $p, $c ) = Prima::Bidi::paragraph( $cap, $self->{textDirection} );
+		$self->{bidiData} = {
+			p   => $p,
+			map => $p->map,
+		};
+		$cap = $c;
+		# Prima::Bidi::debug_str($p,$c);
 	} else {
 		delete $self->{bidiData};
 	}
@@ -381,7 +384,7 @@ sub on_keydown
 	($start, $end) = ($offset, $offset) if $start == $end;
 	my $p_offset = $self-> char_offset_strpos;
 	my ($p_start, $p_end) = $self-> selection_strpos;
-	warn "$start $end $offset > $p_start $p_end $p_offset\n";
+	# warn "$start $end $offset > $p_start $p_end $p_offset\n";
 
 	if ( $key == kb::Backspace)
 	{
@@ -393,6 +396,20 @@ sub on_keydown
 				$self-> set_selection(0,0);
 				$self-> text( $cap);
 				$self-> charOffset( $start);
+			} elsif ( $self->{bidiData} ) {
+				my $ofs = $self->{textDirection} ?
+					length($self->{wholeLine}) - $self->charOffset
+					: $self->charOffset;
+				my ( $howmany, $at, $moveto) = Prima::Bidi::edit_delete(
+					$self->{bidiData}->{p}, $self->{textDirection},
+					$ofs, 1
+				);
+				if ( $howmany ) {
+					substr( $cap, $at, $howmany) = '';
+					$moveto = -$moveto if $self->{textDirection};
+					$self-> charOffset( $self-> charOffset + $moveto );
+					$self-> text( $cap);
+				}
 			} elsif ( $p_offset > 0) {
 				substr( $cap, $p_offset - 1, 1) = '';
 				$self-> text( $cap);
@@ -404,7 +421,7 @@ sub on_keydown
 	}
 	if ( $key == kb::Delete)
 	{
-		if ( !$self-> {readOnly} && ( $p_offset < $caplen || $p_start != $p_end))
+		if ( !$self-> {readOnly})
 		{
 			my $del;
 			if ( $p_start != $p_end)
@@ -414,7 +431,22 @@ sub on_keydown
 				$self-> set_selection(0,0);
 				$self-> text( $cap);
 				$self-> charOffset( $start);
-			} else {
+			} elsif ( $self->{bidiData} ) {
+				my $ofs = $self->{textDirection} ?
+					length($self->{wholeLine}) - $self->charOffset
+					: $self->charOffset;
+				my ( $howmany, $at, $moveto) = Prima::Bidi::edit_delete(
+					$self->{bidiData}->{p}, $self->{textDirection},
+					$ofs, 0
+				);
+				if ( $howmany ) {
+					$del = substr( $cap, $at, $howmany);
+					substr( $cap, $at, $howmany) = '';
+					$moveto = -$moveto if $self->{textDirection};
+					$self-> charOffset( $self-> charOffset + $moveto );
+					$self-> text( $cap);
+				}
+			} elsif ( $p_offset < $caplen ) {
 				$del = substr( $cap, $p_offset, 1);
 				substr( $cap, $p_offset, 1) = '';
 				$self-> text( $cap);
@@ -610,10 +642,9 @@ sub offset2strpos
 	my $bd = $self->{bidiData} ?
 		$self->{bidiData}->{map} :
 		return $#p ? @p : $p[0];
-	my @bounds = ( $self->{bidiData}->{rtl} ) ? ($l, 0) : (0, $l);
 	my @ret    =  map {
-		 ($_ <   0) ? $bounds[0] :
-		(($_ >= $l) ? $bounds[1] : $bd->[$_])
+		 ($_ <   0) ? 0 :
+		(($_ >= $l) ? $l - 1 : $bd->[$_])
 	} @p;
 	return $#ret ? @ret : $ret[0];
 }
@@ -621,12 +652,19 @@ sub offset2strpos
 sub char_offset_strpos
 {
 	my $self = shift;
-	return $self-> offset2strpos( $self-> charOffset );
+	if ( $self-> charOffset < length($self->{wholeLine})) {
+		return $self-> offset2strpos( $self-> charOffset );
+	} elsif ( length($self->{wholeLine}) > 0 ) {
+		return $self-> offset2strpos( $self-> charOffset - 1 ) + 1;
+	} else {
+		return 0;
+	}
 }
 
 sub selection_strpos
 {
 	my $self = shift;
+	return (0,0) unless length $self->{wholeLine};
 	my ($start, $end) = $self-> selection;
 	return ($self-> char_offset_strpos) x 2 if $start == $end;
 	($start, $end) = $self-> offset2strpos( $start, $end - 1);
