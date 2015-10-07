@@ -956,7 +956,7 @@ sub set_selection
 
 	my $new_chunks;
 	if ( $start != $end ) {
-		if ( $start == 0 && $end == $l + 1 ) {
+		if ( $start == 0 && $end == $l ) {
 			# select all
 			$self->{selChunks} = [ 0, $l ];
 		} elsif ( $self->{bidiData} ) {
