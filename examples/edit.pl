@@ -42,6 +42,10 @@ use strict;
 use warnings;
 
 use Prima 'InputLine', Application => { name => 'InputLine sample', wantUnicodeInput => 1 };
+use Prima::Bidi qw(:enable);
+
+die "Bidirectional text service not available, please install Text::Bidi\n"
+	unless Prima::Bidi::enabled(1);
 
 my $w = Prima::MainWindow->create( size => [ 700, 300]);
 

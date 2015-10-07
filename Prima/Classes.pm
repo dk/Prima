@@ -502,6 +502,10 @@ sub draw_text
 
 	return 0 unless scalar @lines;
 
+	if (($flags & dt::BidiText) && $Prima::Bidi::available) {
+		$_ = Prima::Bidi::visual($_) for @lines;
+	}
+
 	my @clipSave;
 	my $fh = $canvas-> font-> height +
 		(( $flags & dt::UseExternalLeading) ? 

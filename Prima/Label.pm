@@ -33,14 +33,16 @@ use vars qw(@ISA);
 use Carp;
 use Prima::Const;
 use Prima::Classes;
+use Prima::Bidi;
 use strict;
+use warnings;
 
 sub profile_default
 {
 	my $font = $_[ 0]-> get_default_font;
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
-		alignment      => ta::Left,
+		alignment      => $Prima::Bidi::default_direction_rtl ? ta::Right : ta::Left,
 		autoHeight     => 0,
 		autoWidth      => 1,
 		focusLink      => undef,
@@ -280,6 +282,9 @@ sub reset_lines
 	my $lines = $self-> text_wrap( $self-> text, $width, $opt);
 	my $lastRef = pop @{$lines};
 	
+	if ( $Prima::Bidi::enabled) {
+		$_ = Prima::Bidi::visual($_) for @$lines;
+	}
 	$self-> {textLines} = scalar @$lines;
 	for( qw( tildeStart tildeEnd tildeLine)) {$self-> {$_} = $lastRef-> {$_}}
 	

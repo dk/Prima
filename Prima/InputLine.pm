@@ -33,8 +33,10 @@ use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::MouseScroller);
 
 use strict;
-use Prima::Const;
+use warnings;
+
 use Prima::Classes;
+use Prima::Bidi;
 use Prima::IntUtils;
 
 sub profile_default
@@ -70,6 +72,7 @@ sub profile_default
 		selStart       => 0,
 		selEnd         => 0,
 		selectable     => 1,
+		textDirection  => $Prima::Bidi::default_direction_rtl,
 		textRef        => undef,
 		widgetClass    => wc::InputLine,
 		width          => 96,
@@ -83,6 +86,8 @@ sub profile_check_in
 	my ( $self, $p, $default) = @_;
 	$p-> {autoHeight} = 0
 		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} || ( exists $p-> {top} && exists $p-> {bottom});
+	$p-> {alignment} = ta::Right
+		if !exists $p->{alignment} && $Prima::Bidi::default_direction_rtl;
 	$self-> SUPER::profile_check_in( $p, $default);
 	($p-> { selStart}, $p-> { selEnd}) = @{$p-> { selection}} if exists( $p-> { selection});
 }
@@ -106,10 +111,11 @@ sub init
 
 	my %profile = $self-> SUPER::init(@_);
 
-	for ( qw( 
+	for ( qw(
+		textDirection
 		textRef writeOnly borderWidth passwordChar maxLen alignment 
 		autoTab autoSelect readOnly selEnd selStart charOffset 
-		firstChar wordDelimiters))
+		firstChar wordDelimiters ))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> {resetDisabled} = 0;
 	$self-> {resetLevel}    = 0;
@@ -162,27 +168,26 @@ sub on_paint
 	$useSel = 0 if $self-> {selEnd} <= $self-> {firstChar};
 
 	my ( $x, $y) = ( $self-> {atDrawX}, $self-> {atDrawY});
-	if ( $useSel) {
-		my $actSelStart = $self-> {selStart} - $self-> {firstChar};
-		my $actSelEnd   = $self-> {selEnd} - $self-> {firstChar};
-		$actSelStart = 0 if $actSelStart < 0;
-		$actSelEnd   = 0 if $actSelEnd < 0;
-		my ( $left, $sel, $right) = (
-			substr( $cap, 0, $actSelStart),
-			substr( $cap, $actSelStart, $actSelEnd - $actSelStart),
-			substr( $cap, $actSelEnd, length( $cap) - $actSelEnd)
-		);
-		my ( $a, $b) = (
-			$canvas-> get_text_width( $left),
-			$canvas-> get_text_width( $left.$sel),
-		);
-		$canvas-> color( $clr[0]);
-		$canvas-> text_out( $left,  $x, $y);
-		$canvas-> text_out( $right, $x + $b, $y);
-		$canvas-> color( $self-> hiliteBackColor);
-		$canvas-> bar( $x + $a, 0, $x + $b - 1, $size[1]-1);
-		$canvas-> color( $self-> hiliteColor);
-		$canvas-> text_out( $sel, $x + $a, $y);
+	if ( $useSel && @{ $self->{selChunks} // [] }) {
+		Prima::Bidi::selection_walk( 
+			$self->{selChunks}, 
+			($self->{textDirection} ? 
+				(0, length($cap)) : 
+				($self->{firstChar}, length($self->{wholeLine}))),
+		sub {
+			my ( $offset, $length, $selected ) = @_;
+			my $text = substr( $cap, $offset, $length );
+			my $dx = $canvas->get_text_width( $text );
+			if ( $selected ) {
+				$canvas-> color( $self-> hiliteBackColor);
+				$canvas-> bar( $x, 0, $x + $dx - 1, $size[1] - 1);
+				$canvas-> color( $self-> hiliteColor);
+			} else {
+				$canvas-> color( $clr[0]);
+			}
+			$canvas-> text_out( $text, $x, $y );
+			$x += $dx;
+		});
 	} else {
 		$canvas-> color( $clr[0]);
 		$canvas-> text_out( $cap, $x, $y);
@@ -207,6 +212,7 @@ sub reset
 	my $width = $size[0] - ( $border + 1) * 2;
 	my $fcCut = $self-> {firstChar};
 	my $reCalc = 0;
+	my $rtl = $self-> textDirection;
 
 	if ( $self-> {resetLevel} == 0) {
 		$self-> { atDrawY} = ( $size[1] - ( $border + 1) * 2 - $self-> {font_height}) / 2;
@@ -214,9 +220,12 @@ sub reset
 		{
 			if (( $self-> {alignment} == ta::Left) || $reCalc)
 			{
-				$self-> { atDrawX}   = 0;
-				$self-> { line}      = substr( $cap, $fcCut, length($cap));
+				$self-> { line} = $rtl ?
+					substr( $cap, 0, $fcCut ? -$fcCut : length($cap)) :
+					substr( $cap, $fcCut, length($cap));
 				$self-> { lineWidth} = $self-> get_text_width( $self-> {line});
+				$self-> { atDrawX}   = ($rtl && ($self->{lineWidth} > $width || $fcCut > 0)) ? 
+					$width - $self->{lineWidth} : 0;
 			} else {
 				$self-> { line}      = $cap;
 				$self-> { lineWidth} = $self-> get_text_width( $cap);
@@ -230,12 +239,15 @@ sub reset
 	}
 
 	my $ofs = $self-> {charOffset} - $fcCut;
-	$cap    = substr( $self-> {line}, 0, $ofs);
-
+	if ( $rtl ) {
+		$ofs = length($self->{line}) - $ofs;
+		$ofs-- unless $self->{insertMode};
+	}
+	$cap = ($ofs < 0) ? '' : substr( $self-> {line}, 0, $ofs );
 	my $x   = $self-> get_text_width( $cap) + $self-> {atDrawX} + $border;
 	my $curWidth = $self-> {insertMode} ? 
 		$self-> {defcw} : 
-		$self-> get_text_width( substr( $self-> {line}, $ofs, 1)) + 1;
+		(( $ofs < 0 ) ? 0 : $self-> get_text_width( substr( $self-> {line}, $ofs, 1)) + 1);
 	$curWidth = $size[0] - $x - $border if $curWidth + $x > $size[0] - $border;
 	$self-> cursorSize( $curWidth, $size[1] - $border * 2 - 2);
 	$self-> cursorPos( $x, $border + 1);
@@ -256,6 +268,12 @@ sub text
 		${$self-> {textRef}} = $cap :
 		$self-> SUPER::text( $cap);
 
+	if ($Prima::Bidi::enabled && length($cap)) {
+		$self->{bidiData} = Prima::Bidi::paragraph( $cap, $self->{textDirection} );
+		$cap = $self->{bidiData}->{text};
+	} else {
+		delete $self->{bidiData};
+	}
 	$cap = $self-> {passwordChar} x length $cap if $self-> {writeOnly};
 	$self-> {wholeLine} = $cap;
 	$self-> charOffset( length $cap) if $self-> {charOffset} > length $cap;
@@ -359,21 +377,24 @@ sub on_keydown
 		return;
 	}
 # edit part
-	my ( $start, $end) = $self-> selection;
-	($start, $end) = ( $offset, $offset) if $start == $end;
+	my ($start, $end) = $self->selection;
+	($start, $end) = ($offset, $offset) if $start == $end;
+	my $p_offset = $self-> char_offset_strpos;
+	my ($p_start, $p_end) = $self-> selection_strpos;
+	warn "$start $end $offset > $p_start $p_end $p_offset\n";
 
 	if ( $key == kb::Backspace)
 	{
-		if ( !$self-> {readOnly} && ($offset > 0 || $start != $end))
+		if ( !$self-> {readOnly})
 		{
-			if ( $start != $end)
+			if ( $p_start != $p_end)
 			{
-				substr( $cap, $start, $end - $start) = '';
+				substr( $cap, $p_start, $p_end - $p_start) = '';
 				$self-> set_selection(0,0);
 				$self-> text( $cap);
 				$self-> charOffset( $start);
-			} else {
-				substr( $cap, $offset - 1, 1) = '';
+			} elsif ( $p_offset > 0) {
+				substr( $cap, $p_offset - 1, 1) = '';
 				$self-> text( $cap);
 				$self-> charOffset ( $offset - 1);
 			}
@@ -383,19 +404,19 @@ sub on_keydown
 	}
 	if ( $key == kb::Delete)
 	{
-		if ( !$self-> {readOnly} && ( $offset < $caplen || $start != $end))
+		if ( !$self-> {readOnly} && ( $p_offset < $caplen || $p_start != $p_end))
 		{
 			my $del;
-			if ( $start != $end)
+			if ( $p_start != $p_end)
 			{
-				$del = substr( $cap, $start, $end - $start);
-				substr( $cap, $start, $end - $start) = '';
+				$del = substr( $cap, $p_start, $p_end - $p_start);
+				substr( $cap, $p_start, $p_end - $p_start) = '';
 				$self-> set_selection(0,0);
 				$self-> text( $cap);
 				$self-> charOffset( $start);
 			} else {
-				$del = substr( $cap, $offset, 1);
-				substr( $cap, $offset, 1) = '';
+				$del = substr( $cap, $p_offset, 1);
+				substr( $cap, $p_offset, 1) = '';
 				$self-> text( $cap);
 			}
 			$::application-> Clipboard-> text( $del)
@@ -408,7 +429,7 @@ sub on_keydown
 	{
 		if ( $mod & km::Ctrl)
 		{
-			$self-> copy if $start != $end;
+			$self-> copy if $p_start != $p_end;
 		} else {
 			$self-> paste;
 		}
@@ -417,7 +438,7 @@ sub on_keydown
 	}
 
 	if ($code == ord("\cC")) {
-		$self-> copy if $start != $end;
+		$self-> copy if $p_start != $p_end;
 		$self-> clear_event;
 		return;
 	} elsif ($code == ord("\cA")) {
@@ -429,10 +450,10 @@ sub on_keydown
 		$self-> clear_event;
 		return;
 	} elsif ($code == ord("\cX")) {
-		if ( !$self-> {readOnly} && $start != $end) {
+		if ( !$self-> {readOnly} && $p_start != $p_end) {
 			my $del;
-			$del = substr( $cap, $start, $end - $start);
-			substr( $cap, $start, $end - $start) = '';
+			$del = substr( $cap, $p_start, $p_end - $p_start);
+			substr( $cap, $p_start, $p_end - $p_start) = '';
 			$self-> set_selection(0,0);
 			$self-> text( $cap);
 			$self-> charOffset( $start);
@@ -450,14 +471,14 @@ sub on_keydown
 		(( $mod  & (km::Alt | km::Ctrl)) == 0) &&
 		(( $key == kb::NoKey) || ( $key == kb::Space))
 	) {
-		if ( $start != $end) {
-			$offset = $start;
+		if ( $p_start != $p_end) {
+			$offset = $p_start;
 		} elsif ( !$self-> {insertMode}) {
-			$end++;
+			$p_end++;
 		}
 		my $chr = chr $code;
 		utf8::upgrade($chr) if $is_unicode;
-		substr( $cap, $start, $end - $start) = $chr;
+		substr( $cap, $p_start, $p_end - $p_start) = $chr;
 
 		$self-> selection(0,0);
 		if ( $self-> maxLen >= 0 and length ( $cap) > $self-> maxLen)
@@ -507,7 +528,7 @@ sub check_auto_size
 sub copy
 {
 	my $self = $_[0];
-	my ( $start, $end) = $self-> selection;
+	my ( $start, $end) = $self-> selection_strpos;
 	return if $start == $end;
 	return if $self-> {writeOnly};
 
@@ -525,7 +546,8 @@ sub paste
 	my $s = $::application-> Clipboard-> text;
 	return if !defined($s) or length( $s) == 0;
 
-	substr( $cap, $start, $end - $start) = $s;
+	my ($p_start, $p_end) = $self->selection_strpos;
+	substr( $cap, $p_start, $p_end - $p_start) = $s;
 	$self-> selection(0,0);
 	$self-> text( $cap);
 	$self-> charOffset( $start + length( $s));
@@ -534,7 +556,7 @@ sub paste
 sub delete
 {
 	my $self = $_[0];
-	my ( $start, $end) = $self-> selection;
+	my ( $start, $end) = $self-> selection_strpos;
 	return if $start == $end;
 
 	my $cap = $self-> text;
@@ -546,7 +568,7 @@ sub delete
 sub cut
 {
 	my $self = $_[0];
-	my ( $start, $end) = $self-> selection;
+	my ( $start, $end) = $self-> selection_strpos;
 	return if $start == $end;
 
 	my $cap = $self-> text;
@@ -561,14 +583,54 @@ sub cut
 sub x2offset
 {
 	my ( $self, $x) = @_;
-	$x -= $self-> {atDrawX} + $self-> {borderWidth} + 1;
-	
-	return $self-> {firstChar} 
-		if $x <= 0;
-	return $self-> {firstChar} + length( $self-> {line}) 
-		if $x >= $self-> {lineWidth};
 
-	return $self-> {firstChar} + $self-> text_wrap( $self-> {line}, $x, tw::ReturnFirstLineLength);
+ 	$x -= $self-> {atDrawX} + $self-> {borderWidth} + 1;
+	if ( $self-> textDirection ) {
+		return $self-> {firstChar} + length( $self-> {line})
+			if $x <= 0;
+		return $self-> {firstChar}
+			if $x >= $self-> {lineWidth};
+		return $self-> {firstChar} + $self-> text_wrap(
+			scalar(reverse $self-> {line}), $self->{lineWidth} - $x, 
+			tw::ReturnFirstLineLength);
+	} else {
+		return $self-> {firstChar} 
+			if $x <= 0;
+		return $self-> {firstChar} + length( $self-> {line}) 
+			if $x >= $self-> {lineWidth};
+		return $self-> {firstChar} + $self-> text_wrap( $self-> {line}, $x, tw::ReturnFirstLineLength);
+	}
+}
+
+sub offset2strpos
+{
+	my $self = shift;
+	my $l  = length $self->{wholeLine};
+	my @p  = $self->{textDirection} ? map { $l - $_ - 1 } @_ : @_;
+	my $bd = $self->{bidiData} ?
+		$self->{bidiData}->{map} :
+		return $#p ? @p : $p[0];
+	my @bounds = ( $self->{bidiData}->{rtl} ) ? ($l, 0) : (0, $l);
+	my @ret    =  map {
+		 ($_ <   0) ? $bounds[0] :
+		(($_ >= $l) ? $bounds[1] : $bd->[$_])
+	} @p;
+	return $#ret ? @ret : $ret[0];
+}
+
+sub char_offset_strpos
+{
+	my $self = shift;
+	return $self-> offset2strpos( $self-> charOffset );
+}
+
+sub selection_strpos
+{
+	my $self = shift;
+	my ($start, $end) = $self-> selection;
+	return ($self-> char_offset_strpos) x 2 if $start == $end;
+	($start, $end) = $self-> offset2strpos( $start, $end - 1);
+	return ($start <= $end) ?  ( $start, $end + 1) : ( $end, $start + 1);
 }
 
 sub on_mousedown
@@ -587,7 +649,8 @@ sub on_mousedown
 		my $s = $cp-> text;
 		return if !defined($s) or length( $s) == 0;
 		
-		substr( $cap, $start, $end - $start) = $s;
+		my ($p_start, $p_end) = $self-> selection_strpos;
+		substr( $cap, $p_start, $p_end - $p_start) = $s;
 		$self-> selection(0,0);
 		$self-> text( $cap);
 		$self-> charOffset( $start + length( $s));
@@ -646,7 +709,9 @@ sub on_mousemove
 		my $fw = $self-> {font_width};
 		$delta = ($width - $border * 2)/($fw*6) if $width - $border * 2 > $fw * 6;
 		$delta = int( $delta);
-		my $nSel = $self-> charOffset + $delta * ( $x <= $border ? -1 : 1);
+		my $nSel = $self-> charOffset + $delta * 
+			( $x <= $border ? -1 : 1) *
+			( $self->{textDirection} ? -1 : 1);
 		$nSel = 0 if $nSel < 0;
 
 		$self-> lock;
@@ -654,7 +719,7 @@ sub on_mousemove
 		
 		my $newFc  = $self-> firstChar + $delta * ( $x <= $border ? -1 : 1);
 		my $caplen = length $self-> {wholeLine};
-		$newFc = $caplen - $delta if $newFc + $delta  > $caplen;
+		$newFc = $caplen - $delta if $newFc + $delta > $caplen;
 
 		$self-> firstChar ( $newFc);
 		$self-> charOffset( $nSel);
@@ -678,7 +743,7 @@ sub on_mouseup
 	my $cp = $::application-> bring('Primary');
 	return unless $cp;
 
-	my ( $start, $end) = $self-> selection;
+	my ( $start, $end) = $self-> selection_strpos;
 	$cp-> text(substr( $self-> text, $start, $end - $start)) if $start != $end;
 }
 
@@ -686,7 +751,7 @@ sub on_size
 {
 	my $self = $_[0];
 	$self-> reset;
-	$self-> firstChar( $self-> firstChar) if $self-> alignment != ta::Left;
+	$self-> firstChar( $self-> firstChar) if $self->{alignment} != ta::Left || $self->textDirection;
 }
 
 sub on_fontchanged
@@ -745,9 +810,11 @@ sub set_char_offset
 	if ( $fc > $offset) {
 		$self-> firstChar( $offset);
 	} else {
-		my $gapWidth = $self-> get_text_width( substr( $self-> {line}, 0, $offset - $fc));
+		my $ofs = $offset - $fc;
+		my $str = $self->textDirection ? substr( $self-> {line}, -$ofs) : substr( $self-> {line}, 0, $ofs);
+		my $gapWidth = ($ofs > 0) ? $self-> get_text_width($str) : 0;
 		if ( $gapWidth > $w) {
-			my $wrapRec = $self-> text_wrap( substr( $self-> {line}, 0, $offset - $fc), $w, tw::ReturnChunks);
+			my $wrapRec = $self-> text_wrap( $str, $w, tw::ReturnChunks);
 			if ( scalar @{$wrapRec} < 5) {
 				$self-> firstChar( $fc + $$wrapRec[-1] + 1);
 			} else {
@@ -777,7 +844,7 @@ sub set_first_char
 	$pos = $l if $pos > $l;
 	$pos = 0 if $pos < 0;
 	$pos = 0 if 
-		( $self-> {alignment} != ta::Left) &&
+		( $self-> {alignment} != ta::Left || $self->textDirection) &&
 		( $self-> get_text_width( $self-> {wholeLine}) <= $self-> width - $self-> {borderWidth} * 2 - 2);
 	my $ofc = $self-> {firstChar};
 	return if $self-> {firstChar} == $pos;
@@ -788,12 +855,19 @@ sub set_first_char
 	my @size = $self-> size;
 
 	$self-> scroll(
-		( $ofc > $pos) ?
-			$self-> get_text_width( substr( $self-> {line}, 0, $ofc - $pos)) :
-			- $self-> get_text_width( substr( $oline, 0, $pos - $ofc)),
+		$self->textDirection ? (
+			( $ofc > $pos) ?
+				- $self-> get_text_width( substr( $self-> {line}, -1, $ofc - $pos)) :
+				$self-> get_text_width( substr( $oline, -1, $pos - $ofc))
+		) : (
+			( $ofc > $pos) ?
+				$self-> get_text_width( substr( $self-> {line}, 0, $ofc - $pos)) :
+				- $self-> get_text_width( substr( $oline, 0, $pos - $ofc))
+		),
 		0,
 		clipRect => [ $border, $border, $size[0] - $border, $size[1] - $border]
-	);
+	) if 0;
+	$self->repaint;
 }
 
 sub set_write_only
@@ -836,9 +910,35 @@ sub set_selection
 	$start = $l if $start > $l;
 	$end   = $l if $end   > $l;
 	$start = $end if $start > $end;
+	my $old_chunks = $self->{selChunks} // [];
 	$self-> {selStart} = $start;
 	$self-> {selEnd} = $end;
+	$self-> {selChunks} = [];
 	return if $start == $end && $onsel;
+
+	my $new_chunks;
+	if ( $start != $end ) {
+		if ( $start == 0 && $end == $l + 1 ) {
+			# select all
+			$self->{selChunks} = [ 0, $l ];
+		} elsif ( $self->{bidiData} ) {
+			my ( $log_start, $log_end ) = $self-> {textDirection} ?
+				( $l - $end, $l - $start - 1) : 
+				( $start, $end - 1 );
+			$self->{selChunks} = Prima::Bidi::selection_chunks(
+				$self->{bidiData}->{map}, 
+				$log_start, $log_end);
+			# warn "$start:$end > $log_start:$log_end > @{$self->{selChunks}}\n";
+		} else {
+			$self->{selChunks} = [
+				$self->{selStart}, $self->{selEnd} - $self->{selStart}, 
+				$l - $self->{selEnd}
+			];
+		}
+		$new_chunks = $self->{selChunks};
+	} else {
+		$new_chunks = [ length( $self->{wholeLine}) ];
+	}
 	
 	my $ooffset = $self-> charOffset;
 	$self-> charOffset( $end) if ( $start != $end) && !defined $self-> {autoAdjustDisabled};
@@ -846,31 +946,28 @@ sub set_selection
 
 	$self-> reset;
 
-	if (( $start == $ostart || $end == $oend) && ( $ooffset == $self-> charOffset)) {
-		my ( $a1, $a2) = ( $start == $ostart) ? 
-			( $end, $oend) : 
-			( $start, $ostart);
-		( $a1, $a2) = ( $a2, $a1) if ( $a2 < $a1);
+	my $border = $self-> {borderWidth};
+	my @size = $self-> size;
+	my @r = ( $self->{atDrawX} + $border + 2, $self->{atDrawX} + $border + 2 );
+	my @invalid_rects;
+	$self-> begin_paint_info;
+	Prima::Bidi::selection_walk( 
+		Prima::Bidi::selection_diff( $old_chunks, $new_chunks ),
+		($self->{textDirection} ? 
+			(0, length($self->{line})) : 
+			($self->{firstChar}, length($self->{wholeLine}))),
+		sub {
+			my ( $offset, $length, $changed ) = @_;
+			my $dx = $self->get_text_width( substr( $self->{line}, $offset, $length ) );
+			$r[1] += $dx;
+			push @invalid_rects, [ $r[0] - 1, $border + 1, $r[1], $size[1]-$border-1 ]
+				if $changed;
+			$r[0] = $r[1];
+		}
+	);
+	$self-> end_paint_info;
 
-		my $fcCut = $self-> firstChar;
-		$a1 -= $fcCut;
-		$a2 -= $fcCut;
-		return if $a1 < 0 && $a2 < 0;
-		
-		my @r;
-		$a1 = 0 if $a1 < 0;
-		$a2 = 0 if $a2 < 0;
-		my $border = $self-> {borderWidth};
-		$r[0] = $a1 > 0 ? $self-> get_text_width( substr( $self-> {line}, 0, $a1)) : 0;
-		$r[0] += $self-> {atDrawX} + $border;
-
-		my @size = $self-> size;
-		$r[1] = $self-> get_text_width( substr( $self-> {line}, 0, $a2));
-		$r[1] += $self-> {atDrawX} + $border + 2;
-		$self-> invalidate_rect( $r[0], $border + 1, $r[1], $size[1]-$border-1);
-		return;
-	}
-	$self-> repaint;
+	$self->invalidate_rect(@$_) for @invalid_rects;
 }
 
 sub on_enable  { $_[0]-> repaint; }
@@ -910,6 +1007,13 @@ sub autoHeight
 	$_[0]-> check_auto_size;
 }
 
+sub textDirection
+{
+	return $_[0]-> {textDirection} unless $#_;
+	$_[0]-> {textDirection} = $_[1];
+	$_[0]-> text( $_[0]-> text );
+}
+
 sub autoSelect    {($#_)?($_[0]-> {autoSelect}    = $_[1])                :return $_[0]-> {autoSelect}   }
 sub autoTab       {($#_)?($_[0]-> {autoTab}       = $_[1])                :return $_[0]-> {autoTab}      }
 sub readOnly      {($#_)?($_[0]-> {readOnly }     = $_[1])                :return $_[0]-> {readOnly }    }
@@ -926,8 +1030,7 @@ sub selection     {($#_)? $_[0]-> set_selection   ($_[1], $_[2]) : return ($_[0]
 sub selStart      {($#_)? $_[0]-> set_selection   ($_[1], $_[0]-> {selEnd}): return $_[0]-> {'selStart'}}
 sub selEnd        {($#_)? $_[0]-> set_selection   ($_[0]-> {'selStart'}, $_[1]):return $_[0]-> {'selEnd'}}
 sub selText    {
-	my( $f, $t) = ( $_[0]-> {q(selStart)}, $_[0]-> {q(selEnd)});
-	$f = $t = $_[0]-> {q(charOffset)} if $f == $t;
+	my( $f, $t) = $_[0]->selection_strpos;
 	($#_) ? do {
 	my $x = $_[ 0]-> text;
 	substr( $x, $f, $t - $f) = $_[ 1];

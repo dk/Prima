@@ -1554,6 +1554,8 @@ DT(QueryLinesDrawn)
 DT(NoWordWrap)
 #define dtWordWrap                 0x0000
 DT(WordWrap)
+#define dtBidiText                 0x8000
+DT(BidiText)
 #define dtDefault                  (dtNewLineBreak|dtWordBreak|dtExpandTabs|dtUseExternalLeading)
 DT(Default)
 

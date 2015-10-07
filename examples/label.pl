@@ -42,7 +42,6 @@ text wrapping.
 
 use strict;
 use warnings;
-
 use Prima;
 use Prima::Const;
 use Prima::Buttons;

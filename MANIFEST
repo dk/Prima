@@ -47,6 +47,7 @@ examples/amba.pl
 examples/animate.pl
 examples/async.pl
 examples/buttons.pl
+examples/bidi.pl
 examples/buttons2.pl
 examples/calendar.pl
 examples/canvas.pl
@@ -154,6 +155,7 @@ pod/Prima/Window.pod
 pod/Prima/X11.pod
 Prima/Application.pm
 Prima/Buttons.pm
+Prima/Bidi.pm
 Prima/Calendar.pm
 Prima/Classes.pm
 Prima/ColorDialog.pm
