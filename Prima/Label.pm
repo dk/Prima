@@ -33,7 +33,6 @@ use vars qw(@ISA);
 use Carp;
 use Prima::Const;
 use Prima::Classes;
-use Prima::Bidi;
 use strict;
 use warnings;
 

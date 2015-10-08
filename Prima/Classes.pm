@@ -577,6 +577,15 @@ sub draw_text
 	return $retVal;
 }
 
+sub text_out_bidi
+{
+	if ( $Prima::Bidi::enabled) {
+		return shift->text_out( Prima::Bidi::visual(shift), @_);
+	} else {
+		return shift->text_out(@_);
+	}
+}
+
 # class Image
 package Prima::Image;
 use vars qw( @ISA);
@@ -1565,7 +1574,7 @@ sub on_paint
 	my $fh = $canvas-> font-> height;
 	my ( $x, $y) = ( 3, $size[1] - 1 - $fh);
 	for ( @ln) {
-		$canvas-> text_out( $_, $x, $y);
+		$canvas-> text_out_bidi( $_, $x, $y);
 		$y -= $fh;
 	}
 }

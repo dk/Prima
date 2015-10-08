@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use utf8;
-use Prima qw(Label InputLine Application);
+use Prima qw(Label InputLine Buttons Application);
 use Prima::Bidi qw(:require :rtl);
 
 my $w;
@@ -41,6 +41,14 @@ $w->insert( InputLine =>
 	width  => 200,
 	text => "אפס123 - תרttttאה מה אני יכול!",
 	growMode => gm::Floor,
+);
+
+$w-> insert( Button => 
+	name => 'Farsi',
+	text => 'ترک',
+	origin => [ 320, 10 ],
+	growMode => gm::Right,
+	onClick => sub { $::application-> close },
 );
 
 run Prima;

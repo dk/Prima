@@ -439,7 +439,7 @@ sub on_drawtab
 			$$poly[0] + ( $$poly[6] - $$poly[0] - $self-> {widths}-> [$i]) / 2 + DefGapX * 2,
 			$$poly[1] + ( $$poly[3] - $$poly[1] - $canvas-> font-> height) / 2
 		);
-		$canvas-> text_out( $self-> {tabs}-> [$i], @tx);
+		$canvas-> text_out_bidi( $self-> {tabs}-> [$i], @tx);
 		$canvas-> rect_focus( $tx[0] - 1, $tx[1] - 1,
 			$tx[0] + $self-> {widths}-> [$i] - DefGapX * 4 + 1, $tx[1] + $canvas-> font-> height + 1)
 				if ( $i == $self-> {focusedTab}) && $self-> focused;
@@ -1183,7 +1183,7 @@ sub on_paint
 			my $t1 = $$t[ $tx * 2];
 			my $yh = $y - $fh * 0.8 - $self-> font-> height / 2;
 			$canvas-> clipRect( DefBorderX + 1, $y - $fh * 1.6 + 1, $x - 4, $y - 3);
-			$canvas-> text_out( $t1, DefBorderX + 4, $yh);
+			$canvas-> text_out_bidi( $t1, DefBorderX + 4, $yh);
 			if ( $$t[ $tx * 2 + 1] > 1) {
 				$t1 = sprintf("Page %d of %d ", $self-> pageIndex - $self-> tab2page( $tx) + 1, $$t[ $tx * 2 + 1]);
 				my $tl1 = $size[0] - DefBorderX - 3 - DefBookmarkX - $self-> get_text_width( $t1);

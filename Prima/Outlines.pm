@@ -1623,10 +1623,10 @@ sub draw_items
 			$canvas-> color( $self-> hiliteBackColor);
 			$canvas-> bar( $left, $bottom, $right, $top);
 			$canvas-> color( $self-> hiliteColor);
-			$canvas-> text_out( $node-> [0], $left, $bottom);
+			$canvas-> text_out_bidi( $node-> [0], $left, $bottom);
 			$canvas-> color( $c);
 		} else {
-			$canvas-> text_out( $node-> [0], $left, $bottom);
+			$canvas-> text_out_bidi( $node-> [0], $left, $bottom);
 		}
 		$canvas-> rect_focus( $left, $bottom, $right, $top) if $focused;
 	}
@@ -1658,10 +1658,10 @@ sub draw_items
 			$canvas-> color( $self-> hiliteBackColor);
 			$canvas-> bar( $left, $bottom, $right, $top);
 			$canvas-> color( $self-> hiliteColor);
-			$canvas-> text_out( $node-> [0]-> [0], $left, $bottom);
+			$canvas-> text_out_bidi( $node-> [0]-> [0], $left, $bottom);
 			$canvas-> color( $c);
 		} else {
-			$canvas-> text_out( $node-> [0]-> [0], $left, $bottom);
+			$canvas-> text_out_bidi( $node-> [0]-> [0], $left, $bottom);
 		}
 		$canvas-> rect_focus( $left, $bottom, $right, $top) if $focused;
 	}
@@ -1787,7 +1787,7 @@ sub draw_items
 			int($bottom + ( $self-> {itemHeight} - $self-> {iconSizes}-> [1]) / 2),
 			$icon
 		);
-		$canvas-> text_out( 
+		$canvas-> text_out_bidi( 
 			$node-> [0]-> [0], 
 			$left + $dw,
 			int($bottom + ( $self-> {itemHeight} - $self-> {fontHeight}) / 2)

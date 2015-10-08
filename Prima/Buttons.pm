@@ -292,11 +292,11 @@ sub draw_caption
 	{
 		my $c = $canvas-> color;
 		$canvas-> color( cl::White);
-		$canvas-> text_out( $cap, $x+1, $y-1);
+		$canvas-> text_out_bidi( $cap, $x+1, $y-1);
 		$canvas-> color( $c);
 	}
 
-	$canvas-> text_out( $cap, $x, $y);
+	$canvas-> text_out_bidi( $cap, $x, $y);
 	$canvas-> rect_focus( $x - 2, $y - 2, $x + 2 + $fw, $y + 2 + $fh) 
 		if $self-> focused;
 }
@@ -1137,7 +1137,7 @@ sub on_paint
 			16 + $canvas-> get_text_width( $c), $size[1] - 1
 		);
 		$canvas-> color( $clr[0]);
-		$canvas-> text_out( $c, 12, $size[1] - $fh - 1);
+		$canvas-> text_out_bidi( $c, 12, $size[1] - $fh - 1);
 	}
 }
 

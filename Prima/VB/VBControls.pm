@@ -231,7 +231,7 @@ sub on_drawitem
 	$canvas-> clear( $left, $bottom, $right, $top);
 	my $text = $me-> {id}-> [$index];
 	my $x = $left + 2;
-	$canvas-> text_out( $text, $x, ($top + $bottom + 1 - $me-> {fHeight}) / 2);
+	$canvas-> text_out_bidi( $text, $x, ($top + $bottom + 1 - $me-> {fHeight}) / 2);
 	$canvas-> backColor( $bc) if $hilite;
 	$canvas-> color( $c) if $hilite || !$ena
 }

@@ -189,7 +189,7 @@ sub on_drawitem
 		$iconWidth, $iconHeight,
 		$iconWidth, $iconHeight, rop::CopyPut);
 
-	$canvas-> text_out( $text,
+	$canvas-> text_out_bidi( $text,
 		$left + 2 + $indent + $self-> {oneSpaceWidth} + $iconWidth,
 		int($top + $bottom - $self-> {fontHeight}) / 2+0.5);
 
@@ -445,7 +445,7 @@ sub on_paint
 	}
 
 	$canvas-> color( $fore);
-	$canvas-> text_out( $self-> text, $adj, ($H - $canvas-> font-> height) / 2);
+	$canvas-> text_out_bidi( $self-> text, $adj, ($H - $canvas-> font-> height) / 2);
 }
 
 sub on_mousedown
@@ -598,7 +598,7 @@ sub List_DrawItem
 	}
 
 	($h,$w) = ($font-> height, $canvas-> get_text_width( $text));
-	$canvas-> text_out( $text, $x, ($top + $bottom - $h) / 2);
+	$canvas-> text_out_bidi( $text, $x, ($top + $bottom - $h) / 2);
 
 	if ( $hilite) {
 		$canvas-> color( $c);

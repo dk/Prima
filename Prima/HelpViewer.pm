@@ -339,7 +339,7 @@ sub init
 		onPaint     => sub {
 			my ( $self, $canvas) = @_;
 			$canvas-> clear;
-			$canvas-> text_out( $self-> text, 1, 1);
+			$canvas-> text_out_bidi( $self-> text, 1, 1);
 		}
 	);
 

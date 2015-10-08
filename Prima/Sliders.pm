@@ -670,23 +670,23 @@ sub on_paint
 		my ( $zBeg, $zEnd) = $v ? ( $yBeg, $yEnd) : ( $xBeg, $xEnd);
 		if ( $zBeg > $i + $complete) {
 			$canvas-> color( $clFore);
-			$canvas-> text_out( $s, $xBeg, $yBeg);
+			$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
 		} elsif ( $zEnd < $i + $complete + 1) {
 			$canvas-> color( $clHilite);
-			$canvas-> text_out( $s, $xBeg, $yBeg);
+			$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
 		} else {
 			$canvas-> clipRect( $v ? 
 				( 0, 0, $x, $i + $complete) : 
 				( 0, 0, $i + $complete, $y)
 			);
 			$canvas-> color( $clHilite);
-			$canvas-> text_out( $s, $xBeg, $yBeg);
+			$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
 			$canvas-> clipRect( $v ? 
 				( 0, $i + $complete + 1, $x, $y) : 
 				( $i + $complete + 1, 0, $x, $y)
 			);
 			$canvas-> color( $clFore);
-			$canvas-> text_out( $s, $xBeg, $yBeg);
+			$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
 		}
 	}
 }
@@ -1102,7 +1102,7 @@ sub on_paint
 					$bw - 4 - $$tlen[ $i], $val
 				) if $ta & 1;
 			}
-			$canvas-> text_out( $$ttxt[ $i],
+			$canvas-> text_out_bidi( $$ttxt[ $i],
 				( $ta == 2) ? 
 					$bw + $sb + $$tlen[ $i] + 5 : 
 					$bw - $$tlen[ $i] - 5 - $canvas-> get_text_width( $$ttxt[ $i]),
@@ -1206,7 +1206,7 @@ sub on_paint
 				my $x = $val - $width;
 				next if $x < $lastx or $x < 0 or $val + $width >= $size[0];
 				$lastx = $val + $width;
-				$canvas-> text_out( $text, $x, $y);
+				$canvas-> text_out_bidi( $text, $x, $y);
 			}
 		}
 		NO_LABELS:
@@ -1649,7 +1649,7 @@ sub on_paint
 					my $x = $cpt[0] + $r * $cos - 
 						( 1 - $cos) * 
 						$canvas-> get_text_width( $$ttxt[ $i]) / 2;
-					$canvas-> text_out( $$ttxt[ $i], $x, $y);
+					$canvas-> text_out_bidi( $$ttxt[ $i], $x, $y);
 				}
 			}
 		}
@@ -1659,12 +1659,12 @@ sub on_paint
 	}
 
 	my $ttw = $canvas-> get_text_width( $self-> {string});
-	$canvas-> text_out( $self-> {string}, ( $size[0] - $ttw) / 2, $size[1] / 2 - $fh / 3)
+	$canvas-> text_out_bidi( $self-> {string}, ( $size[0] - $ttw) / 2, $size[1] / 2 - $fh / 3)
 	if $ttw < $rad || !$self-> {circAlive};
 	return if defined $self-> {singlePaint};
 
 	$ttw = $canvas-> get_text_width( $self-> text);
-	$canvas-> text_out( $self-> text, ( $size[0] - $ttw) / 2, 2);
+	$canvas-> text_out_bidi( $self-> text, ( $size[0] - $ttw) / 2, 2);
 
 	if ( $self-> {buttons}) {
 		my $s = $self-> {pressState};

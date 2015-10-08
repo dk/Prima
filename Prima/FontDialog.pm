@@ -361,7 +361,7 @@ sub Example_Paint
 	$canvas-> color( cl::Black);
 	my $f = $self-> font;
 	my $line = $owner-> sampleText;
-	$canvas-> text_out(
+	$canvas-> text_out_bidi(
 		$line,
 		( $size[0] - $canvas-> get_text_width( $line)) / 2,
 		( $size[1] - $f-> height) / 2

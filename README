@@ -8,6 +8,9 @@ Perl program using PRIMA looks and behaves identically on X11 and Win32.
 PREREQUISITES
 =============
 
+Graphic libraries
+-----------------
+
 Prima can use several graphic libraries to handle image files.  Compiling Prima
 with at least one library, preferably for GIF files is strongly recommended,
 because internal library images are stored in GIFs. Support for the following
@@ -28,6 +31,15 @@ be installed just for this purpose:
 
 it should work for all MSVC and GCC compilers and for native,
 cygwin, and mingw/strawberry perl runtimes.
+
+Fribidi
+-------
+
+To support bi-directional text input and output you'll need C<Text::Bidi>
+module from CPAN. The module is not a prerequisite; it'll need the external fribidi
+library to build. On windows the library is not installed by default, grab it here:
+
+  http://prima.eu.org/download/fribidi-win32.zip
 
 SOURCE DISTRIBUTION INSTALLATION
 ================================

@@ -284,6 +284,8 @@ sub curved_text_out
 	$try_text_wrap = 1;
 	@box[8,9] = ( $p->{x}, $p->{y});
 	push @all_boxes, \@translated_box if $collisions == 1;
+	
+	$text = Prima::Bidi::visual($text) if $Prima::Bidi::enabled;
 
 	while ( not $p-> {end} and length ($text) ) {
 		# Try to fit next glyphs in the string. We don't know whether more than 1 glyph
