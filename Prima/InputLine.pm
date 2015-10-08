@@ -169,9 +169,7 @@ sub on_paint
 	if ( $useSel && @{ $self->{selChunks} // [] }) {
 		Prima::Bidi::selection_walk( 
 			$self->{selChunks}, 
-			($self->{textDirection} ? 
-				(0, length($cap)) : 
-				($self->{firstChar}, length($self->{wholeLine}))),
+				$self->{firstChar}, length($self->{wholeLine}),
 		sub {
 			my ( $offset, $length, $selected ) = @_;
 			my $text = substr( $cap, $offset, $length );
@@ -210,37 +208,38 @@ sub reset
 	my $width = $size[0] - ( $border + 1) * 2;
 	my $fcCut = $self-> {firstChar};
 	my $reCalc = 0;
-	my $rtl = $self-> textDirection;
 
 	if ( $self-> {resetLevel} == 0) {
 		$self-> { atDrawY} = ( $size[1] - ( $border + 1) * 2 - $self-> {font_height}) / 2;
-		while (1)
+		if ( $self-> {alignment} == ta::Left)
 		{
-			if (( $self-> {alignment} == ta::Left) || $reCalc)
-			{
-				$self-> { line} = $rtl ?
-					substr( $cap, 0, $fcCut ? -$fcCut : length($cap)) :
-					substr( $cap, $fcCut, length($cap));
-				$self-> { lineWidth} = $self-> get_text_width( $self-> {line});
-				$self-> { atDrawX}   = ($rtl && ($self->{lineWidth} > $width || $fcCut > 0)) ? 
-					$width - $self->{lineWidth} : 0;
+			$self-> {line}       = substr( $cap, $fcCut, length($cap));
+			$self-> {lineWidth} = $self-> get_text_width( $self-> {line});
+			$self-> {atDrawX}   = 0;
+		} elsif ( $self-> {alignment} == ta::Center ) {
+			$self-> {lineWidth} = $self-> get_text_width( $cap);
+			if ( $self-> { lineWidth} > $width) {
+				$self-> {line}      = substr( $cap, $fcCut, length($cap));
+				$self-> {lineWidth} = $self-> get_text_width( $self-> {line});
+				$self-> {atDrawX}   = 0;
 			} else {
-				$self-> { line}      = $cap;
-				$self-> { lineWidth} = $self-> get_text_width( $cap);
-				if ( $self-> { lineWidth} > $width) { $reCalc = 1; next; }
-				$self-> { atDrawX} = ( $self-> {alignment} == ta::Center) ?
-					(( $width - $self-> {lineWidth}) / 2) :
-					( $width - $self-> {lineWidth});
+				$self-> {line}      = $cap;
+				$self-> {atDrawX}   = ( $width - $self-> {lineWidth}) / 2;
 			}
-			last;
+		} else {
+			$self-> {lineWidth} = $self-> get_text_width( $cap);
+			if ( $self-> { lineWidth} > $width) {
+				$self-> {line}      = substr( $cap, $fcCut, length($cap));
+				$self-> {lineWidth} = $self-> get_text_width( $self-> {line});
+				$self-> {atDrawX}   = 0;
+			} else {
+				$self-> {line}      = $cap;
+				$self-> {atDrawX}   = $width - $self->{lineWidth};
+			}
 		}
 	}
 
 	my $ofs = $self-> {charOffset} - $fcCut;
-	if ( $rtl ) {
-		$ofs = length($self->{line}) - $ofs;
-		$ofs-- unless $self->{insertMode};
-	}
 	$cap = ($ofs < 0) ? '' : substr( $self-> {line}, 0, $ofs );
 	my $x   = $self-> get_text_width( $cap) + $self-> {atDrawX} + $border;
 	my $curWidth = $self-> {insertMode} ? 
@@ -266,7 +265,7 @@ sub text
 		${$self-> {textRef}} = $cap :
 		$self-> SUPER::text( $cap);
 
-	if ($Prima::Bidi::enabled && length($cap)) {
+	if ($Prima::Bidi::enabled && length($cap) && $cap =~ /\p{bc=R}/ ) {
 		my ( $p, $c ) = Prima::Bidi::paragraph( $cap, $self->{textDirection} );
 		$self->{bidiData} = {
 			p   => $p,
@@ -303,6 +302,7 @@ sub on_keydown
 	my $offset = $self-> charOffset;
 	my $cap    = $self-> text;
 	my $caplen = length( $cap);
+	my $p_offset = $self-> char_offset_strpos;
 
 	# navigation part
 	if ( scalar grep { $key == $_ } (kb::Left,kb::Right,kb::Home,kb::End))
@@ -321,28 +321,26 @@ sub on_keydown
 				my $w = $self-> {wordDelimiters};
 				if ( $key == kb::Right)
 				{
-					if (!($w =~ quotemeta(substr( $cap, $offset, 1))))
+					if ($w !~ quotemeta($self->char_at($offset)))
 					{
-						$delta++ while (!($w =~ quotemeta( substr( $cap, $offset + $delta, 1))) &&
-							( $offset + $delta < $caplen)
-						)
+						$delta++ while (($w !~ quotemeta( $self->char_at( $offset + $delta) // '')) &&
+							( $offset + $delta < $caplen));
 					}
 					if ( $offset + $delta < $caplen)
 					{
-					$delta++ while (( $w =~ quotemeta( substr( $cap, $offset + $delta, 1))) &&
-						( $offset + $delta < $caplen))
+						$delta++ while (( $w =~ quotemeta( $self->char_at( $offset + $delta) // '')) &&
+							( $offset + $delta < $caplen));
 					}
 				} else {
-					if ( $w =~ quotemeta( substr( $cap, $offset - 1, 1)))
+					if ( $w =~ quotemeta( $self->char_at( $offset - 1)))
 					{
-						$delta-- while (( $w =~ quotemeta( substr( $cap, $offset + $delta - 1, 1))) &&
+						$delta-- while (( $w =~ quotemeta( $self->char_at( $offset + $delta - 1) // '')) &&
 							( $offset + $delta > 0));
 					}
 					if ( $offset + $delta > 0)
 					{
-						$delta-- while (!( $w =~ quotemeta( substr( $cap, $offset + $delta - 1, 1))) &&
-							( $offset + $delta > 0)
-						);
+						$delta-- while (( $w !~ quotemeta( $self->char_at( $offset + $delta - 1) // '')) &&
+							( $offset + $delta > 0));
 					}
 				}
 			}
@@ -382,7 +380,6 @@ sub on_keydown
 # edit part
 	my ($start, $end) = $self->selection;
 	($start, $end) = ($offset, $offset) if $start == $end;
-	my $p_offset = $self-> char_offset_strpos;
 	my ($p_start, $p_end) = $self-> selection_strpos;
 	# warn "$start $end $offset > $p_start $p_end $p_offset\n";
 
@@ -396,24 +393,16 @@ sub on_keydown
 				$self-> set_selection(0,0);
 				$self-> text( $cap);
 				$self-> charOffset( $start);
-			} elsif ( $self->{bidiData} ) {
-				my $ofs = $self->{textDirection} ?
-					length($self->{wholeLine}) - $self->charOffset
-					: $self->charOffset;
+			} else {
 				my ( $howmany, $at, $moveto) = Prima::Bidi::edit_delete(
-					$self->{bidiData}->{p}, $self->{textDirection},
-					$ofs, 1
+					$self->{bidiData} ?  $self->{bidiData}->{p} : undef,
+					$self->charOffset, 1
 				);
 				if ( $howmany ) {
 					substr( $cap, $at, $howmany) = '';
-					$moveto = -$moveto if $self->{textDirection};
 					$self-> charOffset( $self-> charOffset + $moveto );
 					$self-> text( $cap);
 				}
-			} elsif ( $p_offset > 0) {
-				substr( $cap, $p_offset - 1, 1) = '';
-				$self-> text( $cap);
-				$self-> charOffset ( $offset - 1);
 			}
 		}
 		$self-> clear_event;
@@ -432,24 +421,16 @@ sub on_keydown
 				$self-> text( $cap);
 				$self-> charOffset( $start);
 			} elsif ( $self->{bidiData} ) {
-				my $ofs = $self->{textDirection} ?
-					length($self->{wholeLine}) - $self->charOffset
-					: $self->charOffset;
 				my ( $howmany, $at, $moveto) = Prima::Bidi::edit_delete(
-					$self->{bidiData}->{p}, $self->{textDirection},
-					$ofs, 0
+					$self->{bidiData} ?  $self->{bidiData}->{p} : undef,
+					$self->charOffset, 0
 				);
 				if ( $howmany ) {
 					$del = substr( $cap, $at, $howmany);
 					substr( $cap, $at, $howmany) = '';
-					$moveto = -$moveto if $self->{textDirection};
 					$self-> charOffset( $self-> charOffset + $moveto );
 					$self-> text( $cap);
 				}
-			} elsif ( $p_offset < $caplen ) {
-				$del = substr( $cap, $p_offset, 1);
-				substr( $cap, $p_offset, 1) = '';
-				$self-> text( $cap);
 			}
 			$::application-> Clipboard-> text( $del)
 				if $mod & ( km::Ctrl|km::Shift);
@@ -496,20 +477,25 @@ sub on_keydown
 	}
 
 # typing part
-	
 	if  (
 		!$self-> {readOnly} &&
 		( $code >= ord(' ')) &&
 		(( $mod  & (km::Alt | km::Ctrl)) == 0) &&
 		(( $key == kb::NoKey) || ( $key == kb::Space))
 	) {
+		my $chr = chr $code;
+		utf8::upgrade($chr) if $is_unicode;
 		if ( $p_start != $p_end) {
 			$offset = $p_start;
 		} elsif ( !$self-> {insertMode}) {
 			$p_end++;
+		} else {
+			my $moveto = Prima::Bidi::edit_insert( 
+				$self->{bidiData} ? $self->{bidiData}->{p} : undef,
+				$start, $chr, $self->{textDirection}
+			);
+			$offset += $moveto - 1;
 		}
-		my $chr = chr $code;
-		utf8::upgrade($chr) if $is_unicode;
 		substr( $cap, $p_start, $p_end - $p_start) = $chr;
 
 		$self-> selection(0,0);
@@ -617,28 +603,19 @@ sub x2offset
 	my ( $self, $x) = @_;
 
  	$x -= $self-> {atDrawX} + $self-> {borderWidth} + 1;
-	if ( $self-> textDirection ) {
-		return $self-> {firstChar} + length( $self-> {line})
-			if $x <= 0;
-		return $self-> {firstChar}
-			if $x >= $self-> {lineWidth};
-		return $self-> {firstChar} + $self-> text_wrap(
-			scalar(reverse $self-> {line}), $self->{lineWidth} - $x, 
-			tw::ReturnFirstLineLength);
-	} else {
-		return $self-> {firstChar} 
-			if $x <= 0;
-		return $self-> {firstChar} + length( $self-> {line}) 
-			if $x >= $self-> {lineWidth};
-		return $self-> {firstChar} + $self-> text_wrap( $self-> {line}, $x, tw::ReturnFirstLineLength);
-	}
+	my $fc = $self->{firstChar};
+	return $fc if $x <= 0;
+	return $fc + length( $self-> {line}) if $x >= $self-> {lineWidth};
+	return $fc + $self-> text_wrap( $self-> {line}, $x, tw::ReturnFirstLineLength);
 }
+
+sub is_bidi { exists shift->{bidiData} }
 
 sub offset2strpos
 {
 	my $self = shift;
 	my $l  = length $self->{wholeLine};
-	my @p  = $self->{textDirection} ? map { $l - $_ - 1 } @_ : @_;
+	my @p  = @_;
 	my $bd = $self->{bidiData} ?
 		$self->{bidiData}->{map} :
 		return $#p ? @p : $p[0];
@@ -647,6 +624,14 @@ sub offset2strpos
 		(($_ >= $l) ? $l - 1 : $bd->[$_])
 	} @p;
 	return $#ret ? @ret : $ret[0];
+}
+
+sub char_at
+{
+	my ( $self, $at ) = @_;
+	return undef if $at < 0 || $at >= length($self->{wholeLine});
+	$at = $self-> offset2strpos($at);
+	return substr( $self->text, $at, 1);
 }
 
 sub char_offset_strpos
@@ -747,9 +732,7 @@ sub on_mousemove
 		my $fw = $self-> {font_width};
 		$delta = ($width - $border * 2)/($fw*6) if $width - $border * 2 > $fw * 6;
 		$delta = int( $delta);
-		my $nSel = $self-> charOffset + $delta * 
-			( $x <= $border ? -1 : 1) *
-			( $self->{textDirection} ? -1 : 1);
+		my $nSel = $self-> charOffset + $delta * ( $x <= $border ? -1 : 1);
 		$nSel = 0 if $nSel < 0;
 
 		$self-> lock;
@@ -789,7 +772,7 @@ sub on_size
 {
 	my $self = $_[0];
 	$self-> reset;
-	$self-> firstChar( $self-> firstChar) if $self->{alignment} != ta::Left || $self->textDirection;
+	$self-> firstChar( $self-> firstChar) if $self->{alignment} != ta::Left;
 }
 
 sub on_fontchanged
@@ -849,7 +832,7 @@ sub set_char_offset
 		$self-> firstChar( $offset);
 	} else {
 		my $ofs = $offset - $fc;
-		my $str = $self->textDirection ? substr( $self-> {line}, -$ofs) : substr( $self-> {line}, 0, $ofs);
+		my $str = substr( $self-> {line}, 0, $ofs);
 		my $gapWidth = ($ofs > 0) ? $self-> get_text_width($str) : 0;
 		if ( $gapWidth > $w) {
 			my $wrapRec = $self-> text_wrap( $str, $w, tw::ReturnChunks);
@@ -882,7 +865,7 @@ sub set_first_char
 	$pos = $l if $pos > $l;
 	$pos = 0 if $pos < 0;
 	$pos = 0 if 
-		( $self-> {alignment} != ta::Left || $self->textDirection) &&
+		( $self-> {alignment} != ta::Left) &&
 		( $self-> get_text_width( $self-> {wholeLine}) <= $self-> width - $self-> {borderWidth} * 2 - 2);
 	my $ofc = $self-> {firstChar};
 	return if $self-> {firstChar} == $pos;
@@ -893,16 +876,10 @@ sub set_first_char
 	my @size = $self-> size;
 
 	$self-> scroll(
-		$self->textDirection ? (
-			( $ofc > $pos) ?
-				- $self-> get_text_width( substr( $self-> {line}, -1, $ofc - $pos)) :
-				$self-> get_text_width( substr( $oline, -1, $pos - $ofc))
-		) : (
-			( $ofc > $pos) ?
-				$self-> get_text_width( substr( $self-> {line}, 0, $ofc - $pos)) :
-				- $self-> get_text_width( substr( $oline, 0, $pos - $ofc))
-		),
-		0,
+		( $ofc > $pos) ?
+			$self-> get_text_width( substr( $self-> {line}, 0, $ofc - $pos)) :
+			- $self-> get_text_width( substr( $oline, 0, $pos - $ofc))
+		, 0,
 		clipRect => [ $border, $border, $size[0] - $border, $size[1] - $border]
 	) if 0;
 	$self->repaint;
@@ -960,12 +937,9 @@ sub set_selection
 			# select all
 			$self->{selChunks} = [ 0, $l ];
 		} elsif ( $self->{bidiData} ) {
-			my ( $log_start, $log_end ) = $self-> {textDirection} ?
-				( $l - $end, $l - $start - 1) : 
-				( $start, $end - 1 );
 			$self->{selChunks} = Prima::Bidi::selection_chunks(
 				$self->{bidiData}->{map}, 
-				$log_start, $log_end);
+				$start, $end - 1);
 			# warn "$start:$end > $log_start:$log_end > @{$self->{selChunks}}\n";
 		} else {
 			$self->{selChunks} = [
@@ -991,9 +965,7 @@ sub set_selection
 	$self-> begin_paint_info;
 	Prima::Bidi::selection_walk( 
 		Prima::Bidi::selection_diff( $old_chunks, $new_chunks ),
-		($self->{textDirection} ? 
-			(0, length($self->{line})) : 
-			($self->{firstChar}, length($self->{wholeLine}))),
+		$self->{firstChar}, length($self->{wholeLine}),
 		sub {
 			my ( $offset, $length, $changed ) = @_;
 			my $dx = $self->get_text_width( substr( $self->{line}, $offset, $length ) );
@@ -1152,7 +1124,7 @@ Default value: 2
 =item charOffset INTEGER
 
 Selects the position of the cursor in characters starting from
-the beginning of text.
+the beginning of visual text.
 
 =item firstChar
 
@@ -1197,6 +1169,10 @@ Selects the start of text selection.
 
 Selects the end of text selection.
 
+=item textDirection BOOLEAN.
+
+If set, indicates RTL text input.
+
 =item textRef SCALAR_REF
 
 If not undef, contains reference to the scalar that holds the text
@@ -1208,7 +1184,6 @@ structures is to set-call either ::textRef or ::text after every such change.
 If undef, the internal text container is used.
 
 Default value: undef
-
 
 =item wordDelimiters STRING
 
@@ -1259,12 +1234,44 @@ Selects all text
 
 =back
 
+=head2 Bi-directional input and output
+
+When bidi is enabled, methods C<firstChar>, C<charOffset>, C<selection> etc
+change their meaning, so that these cannot be used to calculate text offsets
+f.ex. via C<substr>.  Also, selection ranges of bidi text are not
+straighforward.  Use the following methods whenever text manipulations are
+needed:
+
+=over
+
+=item is_bidi
+
+Returns 1 if visual layout does not correspond to storage layout.
+
+=item char_at OFFSET
+
+Returns character at OFFSET
+
+=item offset2strpos
+
+Converts visual offset to storage offset
+
+=item char_offset_strpos
+
+Returns the character offset in storage directly under the cursor.
+
+=item selection_strpos
+
+Returns range of characters covered by the selection.
+
+=back
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, F<examples/edit.pl>.
+L<Prima>, L<Prima::Widget>, L<Prima::Bidi>, F<examples/edit.pl>.
 
 =cut

@@ -20,6 +20,21 @@ sub import
 			$default_direction_rtl = 1;
 		} elsif ( $p eq ':ltr') {
 			$default_direction_rtl = 0;
+		} elsif ( $p eq ':locale') {
+			# http://stackoverflow.com/questions/18996183/identifyng-rtl-language-in-android 
+			$default_direction_rtl = ( $ENV{LANG} =~ /^(
+				ar| # arabic
+				dv| # divehi
+				fa| # persian (farsi)
+				ha| # hausa
+				he| # hebrew
+				iw| # hebrew (old code)
+				ji| # yiddish (old code)
+				ps| # pashto, pushto
+				ur| # urdu
+				yi  # yiddish
+			)/x ? 1 : 0)
+				if defined $ENV{LANG};
 		} else {
 			die "no such keyword: $p\n";
 		}
@@ -164,17 +179,40 @@ sub is_ltr($)    { !($_[0] & $Text::Bidi::Mask::RTL) }
 
 sub edit_insert
 {
-	my ( $src_p, $src_rtl, $visual_pos, $new_str ) = @_;
+	my ( $src_p, $visual_pos, $new_str, $rtl ) = @_;
+	
+	# non-bidi compatibility
+	return length($new_str) unless $src_p;
+
 	my $new_p     = _par($new_str);
-	my $src_map   = $src_p->map;
-	my $src_types = $src_p->types;
+	my $map       = $src_p->map;
+	my $t         = $src_p->types;
 	my $new_types = $new_p->types;
-	my $limit     = $#$src_map;
+	my $limit     = $#$map;
+	
+	# XXX - just a simple method, please extend if you know how
+	if ( $rtl ) {
+		if ( $new_str =~ /^\p{bc=R}+$/ ) {
+			return $visual_pos, 0;
+		} else {
+			return $visual_pos, 1;
+		}
+	} else {
+		if ( $new_str =~ /^\p{bc=R}+$/ ) {
+			return $visual_pos, 0;
+		} else {
+			return $visual_pos, 1;
+		}
+	}
 }
 
 sub edit_delete
 {
-	my ( $p, $rtl, $visual_pos, $ltr_kills_left ) = @_;
+	my ( $p, $visual_pos, $backspace ) = @_;
+
+	# non-bidi compatibility
+	return ($visual_pos > 0) ? (1, $visual_pos - 1, -1) : (0, 0, 0) unless $p;
+
 	my $map   = $p->map;
 	my $t     = $p->types;
 	my $limit = $#$map;
@@ -196,29 +234,37 @@ sub edit_delete
 	#warn "r: ", (is_strong($r) ? 'strong' : 'weak'), ' ', (is_rtl($r) ? 'rtl' : 'ltr'), " at $pr\n";
 	#warn "vp: $visual_pos, limit: $limit\n";
 
-	$rtl = !$rtl unless $ltr_kills_left;
-
-	if ( $rtl ) {
-		# strong rtl immediately right, kill immediately right
-		return 1, $map->[$visual_pos], 1      if $visual_pos <= $limit && is_strong $ir && is_rtl $ir;
-		# strong ltr immediately left, kill immediately left
-		return 1, $map->[$visual_pos - 1], 0  if $visual_pos > 0       && is_strong $il && is_ltr $il;
-	} else {
+	if ( $backspace ) {
 		# strong ltr immediately left, kill immediately left
 		return 1, $map->[$visual_pos - 1], -1 if $visual_pos > 0       && is_strong $il && is_ltr $il;
 		# strong rtl immediately right, kill immediately right
-		return 1, $map->[$visual_pos],     0  if $visual_pos <= $limit && is_strong $ir && is_rtl $ir;
+		return 1, $map->[$visual_pos], 0      if $visual_pos <= $limit && is_strong $ir && is_rtl $ir;
+		# any ltr immediately left, kill immediately left
+		return 1, $map->[$visual_pos - 1], -1 if $visual_pos > 0 && is_ltr $il;
+		# any rtl on right, kill immediately right
+		return 1, $map->[$visual_pos], 0      if $visual_pos <= $limit && is_rtl $r;
+		# any rtl on left, kill greedy leftmost
+		if ($visual_pos > 0 && is_rtl $l) {
+			my $L = $l;
+			$pl-- while !(is_strong($L = $t->[$map->[$pl]]) && is_ltr $L) && $pl > 0;
+			return 1, $map->[$pl], $pl - $visual_pos
+		}
+	} else {
+		# strong ltr immediately right, kill immediately right
+		return 1, $map->[$visual_pos], 0      if $visual_pos <= $limit && is_strong $il && is_ltr $il;
+		# strong rtl immediately left, kill immediately left
+		return 1, $map->[$visual_pos - 1], 0  if $visual_pos > 0       && is_strong $ir && is_rtl $ir;
+		# any ltr immediately right, kill immediately right
+		return 1, $map->[$visual_pos], 0      if $visual_pos <= $limit && is_ltr $ir;
+		# any rtl on left, kill immediately left
+		return 1, $map->[$visual_pos - 1], -1 if $visual_pos > 0 && is_rtl $l;
+		# any ltr on right, kill greedy rightmost
+		if ($visual_pos <= $limit && is_ltr $r) {
+			my $R = $r;
+			$pr-- while !(is_strong($R = $t->[$map->[$pr]]) && is_rtl $R) && $pr > 0;
+			return 1, $map->[$pr], $pr - $visual_pos
+		}
 	}
-
-	# any rtl on left, kill greedy leftmost
-	if ($visual_pos > 0 && is_rtl $l) {
-		my $L = $l;
-		$pl-- while !(is_strong($L = $t->[$map->[$pl]]) && is_ltr $L) && $pl > 0;
-		return 1, $map->[$pl], $pl - $visual_pos
-	}
-
-	# any ltr on left, kill immediately left
-	return 1, $map->[$visual_pos - 1], -1      if $visual_pos > 0 && is_ltr $l;
 
 	# nothing
 	return 0, 0, 0;
