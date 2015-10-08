@@ -33,6 +33,7 @@ use vars qw(@ISA);
 use Carp;
 use Prima::Const;
 use Prima::Classes;
+use Prima::Bidi qw(is_bidi);
 use strict;
 use warnings;
 
@@ -282,7 +283,7 @@ sub reset_lines
 	my $lastRef = pop @{$lines};
 	
 	if ( $Prima::Bidi::enabled) {
-		$_ = Prima::Bidi::visual($_) for @$lines;
+		$_ = Prima::Bidi::visual($_) for grep { is_bidi $_ } @$lines;
 	}
 	$self-> {textLines} = scalar @$lines;
 	for( qw( tildeStart tildeEnd tildeLine)) {$self-> {$_} = $lastRef-> {$_}}

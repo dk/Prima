@@ -36,7 +36,7 @@ use strict;
 use warnings;
 
 use Prima::Classes;
-use Prima::Bidi qw(:methods);
+use Prima::Bidi qw(:methods is_bidi);
 use Prima::IntUtils;
 
 sub profile_default
@@ -267,7 +267,7 @@ sub text
 		${$self-> {textRef}} = $cap :
 		$self-> SUPER::text( $cap);
 
-	if ($Prima::Bidi::enabled && length($cap) && $cap =~ /\p{bc=R}/ ) {
+	if ($Prima::Bidi::enabled && is_bidi $cap ) {
 		my ( $p, $c ) = $self->bidi_paragraph( $cap, $self->{textDirection} );
 		$self->{bidiData} = {
 			p   => $p,
@@ -611,7 +611,7 @@ sub x2offset
 	return $fc + $self-> text_wrap( $self-> {line}, $x, tw::ReturnFirstLineLength);
 }
 
-sub is_bidi { exists shift->{bidiData} }
+sub has_bidi_data { exists shift->{bidiData} }
 
 sub offset2strpos
 {
@@ -655,7 +655,7 @@ sub selection_strpos
 	my ($start, $end) = $self-> selection;
 	return ($self-> char_offset_strpos) x 2 if $start == $end;
 	($start, $end) = $self-> offset2strpos( $start, $end - 1);
-	return ($start <= $end) ?  ( $start, $end + 1) : ( $end, $start + 1);
+	return ($start <= $end) ? ( $start, $end + 1) : ( $end, $start + 1);
 }
 
 sub on_mousedown
@@ -1248,7 +1248,7 @@ needed:
 
 =over
 
-=item is_bidi
+=item has_bidi_data
 
 Returns 1 if visual layout does not correspond to storage layout.
 

@@ -326,6 +326,7 @@ sub image
 package Prima::Drawable;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
+use Prima::Bidi qw(is_bidi);
 
 my $sysData = Prima::Application-> get_system_info;
 
@@ -579,7 +580,7 @@ sub draw_text
 
 sub text_out_bidi
 {
-	if ( $Prima::Bidi::enabled) {
+	if ( $Prima::Bidi::enabled && is_bidi $_[1] ) {
 		return shift->text_out( Prima::Bidi::visual(shift), @_);
 	} else {
 		return shift->text_out(@_);
