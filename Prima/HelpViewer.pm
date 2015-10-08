@@ -703,10 +703,10 @@ sub do_find
 	$offset = $self-> {find_offset};
 	} else {
 		if ( $$p{scope} != fds::Cursor) {
-		my @scope = ($$p{scope} == fds::Top) ? (0,0) : (-1,-1);
-		$offset = $t-> info2text_offset( @scope);
+			my @scope = ($$p{scope} == fds::Top) ? (0,0) : (-1,-1);
+			$offset = $t-> info2text_offset( @scope);
 		} else {
-		$offset = $t-> info2text_offset( $t-> xy2info( $t-> offset, $t-> topLine));
+			$offset = $t-> info2text_offset( $t-> xy2info( $t-> offset, $t-> topLine));
 		}
 	}
 
