@@ -448,6 +448,8 @@ L<gencls>           - C<gencls>, a class compiler tool.
 
 L<Prima::faq> - frequently asked questions 
 
+L<Prima::Bidi> - bi-directional text input and output
+
 L<Prima::Const> - predefined toolkit constants 
 
 L<Prima::EventHook> - event filtering

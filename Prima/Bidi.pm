@@ -291,3 +291,26 @@ sub debug_str
 }
 
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME
+
+Prima::Bidi - helper routines for bi-directional text input and output
+
+=head1 SYNOPSIS
+
+   use Prima::Bidi qw(:enable);
+   say Prima::Bidi::visual( $bidi_text );
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+F<examples/bidi.pl>.
+
+=cut
