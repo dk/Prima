@@ -86,6 +86,8 @@ sub profile_check_in
 	my ( $self, $p, $default) = @_;
 	$p-> {autoHeight} = 0
 		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} || ( exists $p-> {top} && exists $p-> {bottom});
+	$p-> {alignment} = ( $p->{textDirection} // $default->{textDirection} ) ?
+		ta::Right : ta::Left unless exists $p->{alignment};
 	$self-> SUPER::profile_check_in( $p, $default);
 	($p-> { selStart}, $p-> { selEnd}) = @{$p-> { selection}} if exists( $p-> { selection});
 }
@@ -1020,8 +1022,10 @@ sub autoHeight
 sub textDirection
 {
 	return $_[0]-> {textDirection} unless $#_;
-	$_[0]-> {textDirection} = $_[1];
-	$_[0]-> text( $_[0]-> text );
+	my ( $self, $td ) = @_;
+	$self-> {textDirection} = $td;
+	$self-> text( $self-> text );
+	$self-> alignment( $td ? ta::Right : ta::Left );
 }
 
 sub autoSelect    {($#_)?($_[0]-> {autoSelect}    = $_[1])                :return $_[0]-> {autoSelect}   }

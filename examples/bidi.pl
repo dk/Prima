@@ -12,7 +12,6 @@ $w = Prima::MainWindow-> create(
 		[ "~Options" => [
 			[ "~Toggle direction" => sub {
 				$w-> Arabic-> alignment( $w-> Arabic-> alignment == ta::Left ? ta::Right : ta::Left );
-				$w-> Hebrew-> alignment( $w-> Hebrew-> alignment == ta::Left ? ta::Right : ta::Left );
 				$w-> Hebrew-> textDirection(! $w-> Hebrew-> textDirection);
 			} ],
 		]],

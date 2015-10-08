@@ -424,7 +424,7 @@ sub prf_types
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
 		align   => ['alignment',],
-		bool    => [qw(writeOnly readOnly insertMode autoSelect autoHeight autoTab firstChar charOffset)],
+		bool    => [qw(writeOnly readOnly insertMode autoSelect autoHeight autoTab firstChar charOffset textDirection)],
 		upoint  => ['selection',],
 		uiv     => ['selStart','selEnd','maxLen','borderWidth'],
 		char    => ['passwordChar',],
