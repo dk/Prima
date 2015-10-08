@@ -16,14 +16,18 @@ our @methods = qw(
 	selection_chunks
 	edit_insert
 	edit_delete
+	is_bidi
 );
 
-our @EXPORT_OK = map { "bidi_$_" } @methods;
+our @EXPORT_OK = ( qw(
+	is_bidi
+), map { "bidi_$_" } @methods);
 { local $_; eval "sub bidi_$_ { shift; goto &$_ }" for @methods; }
 
 sub import
 {
 	my $package = shift;
+	my @other;
 	for my $p ( @_ ) {
 		if ( $p eq ':require' ) {
 			my $error = enabled(1);
@@ -52,8 +56,12 @@ sub import
 		} elsif ( $p eq ':methods') {
 			$package->export_to_level(1, __PACKAGE__, map { "bidi_$_" } @methods);
 		} else {
-			die "no such keyword: $p\n";
+			push @other, $p;
 		}
+	}
+	if ( @other ) {
+		@_ = ($package, @other);
+		goto &Exporter::import;
 	}
 }
 
@@ -188,6 +196,8 @@ sub selection_walk
 	}
 }
 
+sub is_bidi($)   { $_[0] =~ /[\p{bc=R}\p{bc=AL}\p{bc=AN}\p{bc=RLE}\p{bc=RLO}]/ }
+
 sub is_strong($) { $_[0] & $Text::Bidi::Mask::STRONG }
 sub is_weak($)   { !($_[0] & $Text::Bidi::Mask::STRONG) }
 sub is_rtl($)    { $_[0] & $Text::Bidi::Mask::RTL    }
@@ -208,13 +218,13 @@ sub edit_insert
 	
 	# XXX - just a simple method, please extend if you know how
 	if ( $rtl ) {
-		if ( $new_str =~ /^\p{bc=R}+$/ ) {
+		if ( is_bidi $new_str ) {
 			return $visual_pos, 0;
 		} else {
 			return $visual_pos, 1;
 		}
 	} else {
-		if ( $new_str =~ /^\p{bc=R}+$/ ) {
+		if ( is_bidi $new_str ) {
 			return $visual_pos, 0;
 		} else {
 			return $visual_pos, 1;
