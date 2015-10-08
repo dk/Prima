@@ -2,14 +2,28 @@ package Prima::Bidi;
 
 use strict;
 use warnings;
+use base 'Exporter';
 our $available;
 our $enabled = 0;
 our $failure_text;
 our $default_direction_rtl = 0;
 
+our @methods = qw(
+	paragraph
+	visual
+	selection_diff
+	selection_walk
+	selection_chunks
+	edit_insert
+	edit_delete
+);
+
+our @EXPORT_OK = map { "bidi_$_" } @methods;
+{ local $_; eval "sub bidi_$_ { shift; goto &$_ }" for @methods; }
+
 sub import
 {
-	shift;
+	my $package = shift;
 	for my $p ( @_ ) {
 		if ( $p eq ':require' ) {
 			my $error = enabled(1);
@@ -35,6 +49,8 @@ sub import
 				yi  # yiddish
 			)/x ? 1 : 0)
 				if defined $ENV{LANG};
+		} elsif ( $p eq ':methods') {
+			$package->export_to_level(1, __PACKAGE__, map { "bidi_$_" } @methods);
 		} else {
 			die "no such keyword: $p\n";
 		}

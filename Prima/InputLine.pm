@@ -36,7 +36,7 @@ use strict;
 use warnings;
 
 use Prima::Classes;
-use Prima::Bidi;
+use Prima::Bidi qw(:methods);
 use Prima::IntUtils;
 
 sub profile_default
@@ -169,7 +169,7 @@ sub on_paint
 
 	my ( $x, $y) = ( $self-> {atDrawX}, $self-> {atDrawY});
 	if ( $useSel && @{ $self->{selChunks} // [] }) {
-		Prima::Bidi::selection_walk( 
+		$self->bidi_selection_walk( 
 			$self->{selChunks}, 
 				$self->{firstChar}, length($self->{wholeLine}),
 		sub {
@@ -268,7 +268,7 @@ sub text
 		$self-> SUPER::text( $cap);
 
 	if ($Prima::Bidi::enabled && length($cap) && $cap =~ /\p{bc=R}/ ) {
-		my ( $p, $c ) = Prima::Bidi::paragraph( $cap, $self->{textDirection} );
+		my ( $p, $c ) = $self->bidi_paragraph( $cap, $self->{textDirection} );
 		$self->{bidiData} = {
 			p   => $p,
 			map => $p->map,
@@ -396,7 +396,7 @@ sub on_keydown
 				$self-> text( $cap);
 				$self-> charOffset( $start);
 			} else {
-				my ( $howmany, $at, $moveto) = Prima::Bidi::edit_delete(
+				my ( $howmany, $at, $moveto) = $self->bidi_edit_delete(
 					$self->{bidiData} ?  $self->{bidiData}->{p} : undef,
 					$self->charOffset, 1
 				);
@@ -423,7 +423,7 @@ sub on_keydown
 				$self-> text( $cap);
 				$self-> charOffset( $start);
 			} elsif ( $self->{bidiData} ) {
-				my ( $howmany, $at, $moveto) = Prima::Bidi::edit_delete(
+				my ( $howmany, $at, $moveto) = $self->bidi_edit_delete(
 					$self->{bidiData} ?  $self->{bidiData}->{p} : undef,
 					$self->charOffset, 0
 				);
@@ -492,7 +492,7 @@ sub on_keydown
 		} elsif ( !$self-> {insertMode}) {
 			$p_end++;
 		} else {
-			my $moveto = Prima::Bidi::edit_insert( 
+			my $moveto = $self->bidi_edit_insert( 
 				$self->{bidiData} ? $self->{bidiData}->{p} : undef,
 				$start, $chr, $self->{textDirection}
 			);
@@ -939,7 +939,7 @@ sub set_selection
 			# select all
 			$self->{selChunks} = [ 0, $l ];
 		} elsif ( $self->{bidiData} ) {
-			$self->{selChunks} = Prima::Bidi::selection_chunks(
+			$self->{selChunks} = $self->bidi_selection_chunks(
 				$self->{bidiData}->{map}, 
 				$start, $end - 1);
 			# warn "$start:$end > $log_start:$log_end > @{$self->{selChunks}}\n";
@@ -965,8 +965,8 @@ sub set_selection
 	my @r = ( $self->{atDrawX} + $border + 2, $self->{atDrawX} + $border + 2 );
 	my @invalid_rects;
 	$self-> begin_paint_info;
-	Prima::Bidi::selection_walk( 
-		Prima::Bidi::selection_diff( $old_chunks, $new_chunks ),
+	$self->bidi_selection_walk( 
+		$self->bidi_selection_diff( $old_chunks, $new_chunks ),
 		$self->{firstChar}, length($self->{wholeLine}),
 		sub {
 			my ( $offset, $length, $changed ) = @_;
