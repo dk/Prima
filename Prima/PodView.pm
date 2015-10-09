@@ -28,6 +28,7 @@
 #  $Id$
 
 use strict;
+use warnings;
 use Prima;
 use Config;
 use Prima::Utils;
@@ -98,7 +99,7 @@ use constant T_LINK_OFFSET => 5; #
 use constant FORMAT_LINES    => 10;
 use constant FORMAT_TIMEOUT  => 300;
 
-$OP_LINK  = tb::opcode(1);
+$OP_LINK = tb::opcode(1);
 
 # init a 'hand' pointer
 	$handIcon = Prima::Icon-> create( width=>19, height=>24, type => im::bpp4,
@@ -153,8 +154,9 @@ sub profile_default
 			{ color     => COLOR_LINK_FOREGROUND,     # STYLE_LINK
 			fontStyle => fs::Underlined   },  
 		],
-		pageName   => '',
-		topicView  => 0,
+		pageName      => '',
+		topicView     => 0,
+		textDirection  => $Prima::Bidi::default_direction_rtl,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -168,6 +170,7 @@ sub init
 	$self-> {links} = [];
 	$self-> {styles} = [];
 	$self-> {pageName} = '';
+	$self-> {textDirection} = $Prima::Bidi::default_direction_rtl;
 	$self-> {manpath}  = '';
 	$self-> {modelRange} = [0,0,0];
 	$self-> {postBlocks} = {};
@@ -455,6 +458,13 @@ sub pageName
 	$_[0]-> {pageName} = $_[1];
 }
 
+sub textDirection
+{
+	return $_[0]-> {textDirection} unless $#_;
+	my ( $self, $td ) = @_;
+	$self-> {textDirection} = $td;
+}
+
 sub styles
 {
 	return $_[0]-> {styles} unless $#_;
@@ -606,23 +616,24 @@ sub open_read
 	return if $self-> {readState};
 	$self-> clear_all;
 	$self-> {readState} = {
-		cutting      => 1,
-		pod_cutting  => 1,
-		begun        => '',
-		bulletMode   => 0,
+		cutting       => 1,
+		pod_cutting   => 1,
+		begun         => '',
+		bulletMode    => 0,
 		
-		indent       => DEF_INDENT,
-		indentStack  => [],
+		indent        => DEF_INDENT,
+		indentStack   => [],
 
-		bigofs       => 0,
-		wrapstate    => '',
-		wrapindent   => 0,
+		bigofs        => 0,
+		wrapstate     => '',
+		wrapindent    => 0,
 
-		topicStack   => [[-1]],
-		ignoreFormat => 0,
+		topicStack    => [[-1]],
+		ignoreFormat  => 0,
 
-		createIndex  => 1,
-		encoding     => undef,
+		createIndex   => 1,
+		encoding      => undef,
+
 		@opt,
 	};
 }
@@ -1211,8 +1222,9 @@ sub add
 
 		# add topic
 		if ( 
-            ( $style >= STYLE_HEAD_1 && $style <= STYLE_HEAD_4 ) ||
-			(( $style == STYLE_ITEM) && $p !~ /^[0-9*]+\.?$/)) {
+	        	( $style >= STYLE_HEAD_1 && $style <= STYLE_HEAD_4 ) ||
+			(( $style == STYLE_ITEM) && $p !~ /^[0-9*]+\.?$/)
+		) {
 			my $itemDepth = ( $style == STYLE_ITEM) ?
 				scalar @{$r-> {indentStack}} : 0;
 			my $pp = $p;
@@ -1377,7 +1389,11 @@ sub format_chunks
 
 		# adjust size
 		for ( @blocks) {
-			$$_[ tb::BLK_X] += $indent;
+			if ( $self->{textDirection} ) {
+				$$_[ tb::BLK_X] = $f->{paneWidth} - $$_[ tb::BLK_WIDTH] - $indent;
+			} else {
+				$$_[ tb::BLK_X] += $indent;
+			}
 			$f-> {paneWidth} = $$_[ tb::BLK_X] + $$_[ tb::BLK_WIDTH] 
 				if $$_[ tb::BLK_X] + $$_[ tb::BLK_WIDTH] > $f-> {paneWidth};
 		}

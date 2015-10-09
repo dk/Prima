@@ -5,14 +5,21 @@ use Prima qw(Label InputLine Buttons Application PodView);
 use Prima::Bidi qw(:require :rtl);
 
 my $w;
+my $pod;
+my $arabic;
+my $pod_text;
+
 $w = Prima::MainWindow-> create(
 	size => [ 430, 200],
 	text => "Bidirectional texts",
 	menuItems => [
 		[ "~Options" => [
 			[ "~Toggle direction" => sub {
-				$w-> Arabic-> alignment( $w-> Arabic-> alignment == ta::Left ? ta::Right : ta::Left );
-				$w-> Hebrew-> textDirection(! $w-> Hebrew-> textDirection);
+				$arabic-> alignment( $arabic-> alignment == ta::Left ? ta::Right : ta::Left );
+				my $td = !$w-> Hebrew-> textDirection;
+				$w-> Hebrew-> textDirection($td);
+				$pod->textDirection($td);
+				$pod->format(1);
 			} ],
 		]],
 	],
@@ -40,34 +47,35 @@ my $panel = $w->insert( Widget =>
 	growMode  => gm::Client,
 );
 
-my $arabic = "الفالح حلمه كبير.
+my $arabic_text = "الفالح حلمه كبير.
 طول ساق النبتة وصارت
 شجرة في أرض الفالح
 وعلى الشجرة غصون و أوراق
 بفيتها إ حتمى الفالح
 الفالح حلمه كبير";
 
-$panel->insert( Label =>
+$arabic = $panel->insert( Label =>
 	packInfo => { fill => 'both', expand => 1, pad => 10, side => 'left' },
 	geometry => gt::Pack,
 	name  => 'Arabic',
 	backColor => cl::Yellow,
-	text     => $arabic,
+	text     => $arabic_text,
 	wordWrap => 1,
 	height => 140,
 	width  => 200,
 	showPartial => 0,
 );
 
-my $pod = $panel-> insert( PodView => 
+$pod = $panel-> insert( PodView => 
 	packInfo => { fill => 'both', expand => 1, pad => 10 , side => 'left'},
 	geometry => gt::Pack,
 	name => 'Pod',
 );
 
+$arabic_text =~ s/(.*?)\n//;
+$pod_text = "=head1 $1\n\n" . join("\n\n", split "\n", $arabic_text) . "\n\n";
 $pod-> open_read( createIndex => 0 );
-my $head = $arabic =~ s/(.*?)\n//;
-$pod-> read("=head1 $1\n\n" . join("\n\n", split "\n", $arabic) . "\n\n");
+$pod-> read($pod_text);
 $pod-> close_read;
 
 run Prima;
