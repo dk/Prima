@@ -256,7 +256,13 @@ sub edit_delete
 	my ( $p, $visual_pos, $backspace ) = @_;
 
 	# non-bidi compatibility
-	return ($visual_pos > 0) ? (1, $visual_pos - 1, -1) : (0, 0, 0) unless $p;
+	unless (ref $p) {
+		if ( $backspace ) {
+			return ($visual_pos > 0) ? (1, $visual_pos - 1, -1) : (0, 0, 0);
+		} else {
+			return ($visual_pos < $p) ? (1, $visual_pos, 0) : (0, 0, 0);
+		}
+	}
 
 	my $map   = $p->map;
 	my $t     = $p->types;

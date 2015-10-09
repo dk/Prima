@@ -30,7 +30,7 @@
 
 package Prima::InputLine;
 use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller);
+@ISA = qw(Prima::Widget Prima::MouseScroller Prima::UndoActions);
 
 use strict;
 use warnings;
@@ -66,6 +66,8 @@ sub profile_default
 			[ delete     => '~Delete'     => 'delete'    ],
 			[],
 			[select_all  => 'Select ~All' => 'select_all'],
+			[undo        => '~Undo', 'Ctrl+Z', '^Z', 'undo'],
+			[redo        => '~Redo', 'Ctrl+Y', '^Y', 'redo'],
 		],
 		readOnly       => 0,
 		selection      => [0, 0],
@@ -74,6 +76,7 @@ sub profile_default
 		selectable     => 1,
 		textDirection  => $Prima::Bidi::default_direction_rtl,
 		textRef        => undef,
+		undoLimit      => 10,
 		widgetClass    => wc::InputLine,
 		width          => 96,
 		wordDelimiters => ".()\"',#$@!%^&*{}[]?/|;:<>-= \xff\t",
@@ -100,7 +103,7 @@ sub init
 		borderWidth passwordChar maxLen alignment autoTab autoSelect 
 		firstChar charOffset readOnly))
 		{ $self-> {$_} = 1; }
-	for ( qw( selStart selEnd atDrawX autoHeight))
+	for ( qw( selStart selEnd atDrawX autoHeight undoLimit))
 		{ $self-> {$_} = 0;}
 	$self-> { insertMode}   = $::application-> insertMode;
 	$self-> { maxLen}   = -1;
@@ -110,6 +113,7 @@ sub init
 	$self-> {resetDisabled} = 1;
 
 	my %profile = $self-> SUPER::init(@_);
+	$self->init_undo(\%profile);
 
 	for ( qw(
 		textDirection
@@ -389,23 +393,25 @@ sub on_keydown
 	{
 		if ( !$self-> {readOnly})
 		{
+			$self-> begin_undo_group;
 			if ( $p_start != $p_end)
 			{
 				substr( $cap, $p_start, $p_end - $p_start) = '';
 				$self-> set_selection(0,0);
-				$self-> text( $cap);
+				$self-> edit_text( $cap);
 				$self-> charOffset( $start);
 			} else {
 				my ( $howmany, $at, $moveto) = $self->bidi_edit_delete(
-					$self->{bidiData} ?  $self->{bidiData}->{p} : undef,
+					$self->{bidiData} ? $self->{bidiData}->{p} : length($cap),
 					$self->charOffset, 1
 				);
 				if ( $howmany ) {
 					substr( $cap, $at, $howmany) = '';
 					$self-> charOffset( $self-> charOffset + $moveto );
-					$self-> text( $cap);
+					$self-> edit_text( $cap);
 				}
 			}
+			$self-> end_undo_group;
 		}
 		$self-> clear_event;
 		return;
@@ -415,25 +421,27 @@ sub on_keydown
 		if ( !$self-> {readOnly})
 		{
 			my $del;
+			$self-> begin_undo_group;
 			if ( $p_start != $p_end)
 			{
 				$del = substr( $cap, $p_start, $p_end - $p_start);
 				substr( $cap, $p_start, $p_end - $p_start) = '';
 				$self-> set_selection(0,0);
-				$self-> text( $cap);
+				$self-> edit_text( $cap);
 				$self-> charOffset( $start);
-			} elsif ( $self->{bidiData} ) {
+			} else {
 				my ( $howmany, $at, $moveto) = $self->bidi_edit_delete(
-					$self->{bidiData} ?  $self->{bidiData}->{p} : undef,
+					$self->{bidiData} ?  $self->{bidiData}->{p} : length($cap),
 					$self->charOffset, 0
 				);
 				if ( $howmany ) {
 					$del = substr( $cap, $at, $howmany);
 					substr( $cap, $at, $howmany) = '';
 					$self-> charOffset( $self-> charOffset + $moveto );
-					$self-> text( $cap);
+					$self-> edit_text( $cap);
 				}
 			}
+			$self-> end_undo_group;
 			$::application-> Clipboard-> text( $del)
 				if $mod & ( km::Ctrl|km::Shift);
 		}
@@ -446,6 +454,7 @@ sub on_keydown
 		{
 			$self-> copy if $p_start != $p_end;
 		} else {
+			$self-> push_group_undo_action('text', $self->text);
 			$self-> paste;
 		}
 		$self-> clear_event;
@@ -461,6 +470,7 @@ sub on_keydown
 		$self-> clear_event;
 		return;
 	} elsif ($code == ord("\cV")) {
+		$self-> push_group_undo_action('text', $self->text);
 		$self-> paste;
 		$self-> clear_event;
 		return;
@@ -469,9 +479,11 @@ sub on_keydown
 			my $del;
 			$del = substr( $cap, $p_start, $p_end - $p_start);
 			substr( $cap, $p_start, $p_end - $p_start) = '';
+			$self-> begin_undo_group;
 			$self-> set_selection(0,0);
-			$self-> text( $cap);
+			$self-> edit_text( $cap);
 			$self-> charOffset( $start);
+			$self-> end_undo_group;
 			$::application-> Clipboard-> text( $del);
 		}
 		$self-> clear_event;
@@ -486,6 +498,7 @@ sub on_keydown
 		(( $key == kb::NoKey) || ( $key == kb::Space))
 	) {
 		my $chr = chr $code;
+		$self-> begin_undo_group;
 		utf8::upgrade($chr) if $is_unicode;
 		if ( $p_start != $p_end) {
 			$offset = $p_start;
@@ -505,10 +518,11 @@ sub on_keydown
 		{
 			$self-> event_error;
 		} else {
-			$self-> text( $cap);
+			$self-> edit_text( $cap);
 			$self-> charOffset( $offset + 1)
 		}
 		$self-> clear_event;
+		$self-> end_undo_group;
 		return;
 	}
 }
@@ -530,6 +544,8 @@ sub on_popup
 	$p-> enabled( 'delete',       $sel);
 	$p-> enabled( 'paste',        $clip);
 	$p-> enabled( 'select_all',   length($self-> {wholeLine}));
+	$p-> enabled( 'undo',         $self->can_undo );
+	$p-> enabled( 'redo',         $self->can_redo );
 }
 
 sub default_geom_height
@@ -826,6 +842,8 @@ sub set_char_offset
 	$offset = 0 if $offset < 0;
 	return if $self-> {charOffset} == $offset;
 	
+	$self-> push_undo_action( 'charOffset', $offset) unless $self->has_undo_action('charOffset');
+	
 	my $border = $self-> {borderWidth};
 	$self-> {charOffset} = $offset;
 	my $w = $self-> width - ( $border + 1) * 2;
@@ -871,6 +889,7 @@ sub set_first_char
 		( $self-> get_text_width( $self-> {wholeLine}) <= $self-> width - $self-> {borderWidth} * 2 - 2);
 	my $ofc = $self-> {firstChar};
 	return if $self-> {firstChar} == $pos;
+	$self-> push_undo_action( 'firstChar', $pos);
 	my $oline = $self-> {line};
 	$self-> {firstChar} = $pos;
 	$self-> reset;
@@ -910,7 +929,10 @@ sub set_insert_mode
 	my ( $self, $insert) = @_;
 	my $oi = $self-> {insertMode};
 	$self-> {insertMode} = $insert;
-	$self-> reset if $oi != $insert;
+	if ($oi != $insert) {
+		$self-> reset;
+		$self-> push_undo_action( 'insertMode', $oi);
+	}
 	$::application-> insertMode( $insert);
 }
 
@@ -931,6 +953,7 @@ sub set_selection
 	$self-> {selStart} = $start;
 	$self-> {selEnd} = $end;
 	$self-> {selChunks} = [];
+	$self-> push_group_undo_action('selection', $ostart, $oend);
 	return if $start == $end && $onsel;
 
 	my $new_chunks;
@@ -1021,6 +1044,15 @@ sub textDirection
 	$self-> {textDirection} = $td;
 	$self-> text( $self-> text );
 	$self-> alignment( $td ? ta::Right : ta::Left );
+}
+
+sub edit_text
+{
+	my ($self, $text) = @_;
+	$self-> begin_undo_group;
+	$self-> push_undo_action( 'edit_text', $self->text);
+	$self-> text($text);
+	$self-> end_undo_group;
 }
 
 sub autoSelect    {($#_)?($_[0]-> {autoSelect}    = $_[1])                :return $_[0]-> {autoSelect}   }
