@@ -497,8 +497,7 @@ sub message
 {
 	my ( $self, $message, $error) = @_;
 	my $x;
-	$self-> open_read;
-	$self-> {readState}-> {createIndex} = 0;
+	$self-> open_read( createIndex => 0 );
 	if ( $error) {
 		$x = $self-> {styles}-> [STYLE_HEAD_1]-> {color};
 		$self-> {styles}-> [STYLE_HEAD_1]-> {color} = cl::Red;
@@ -603,7 +602,7 @@ sub load_content
 
 sub open_read
 {
-	my $self = $_[0];
+	my ($self, @opt) = @_;
 	return if $self-> {readState};
 	$self-> clear_all;
 	$self-> {readState} = {
@@ -624,6 +623,7 @@ sub open_read
 
 		createIndex  => 1,
 		encoding     => undef,
+		@opt,
 	};
 }
 
@@ -1718,7 +1718,7 @@ functions:
 
 =over
 
-=item open_read
+=item open_read %OPTIONS
 
 Clears the current content and enters the reading mode. In this mode
 the content can be appended by calling L<read> that pushes the raw POD

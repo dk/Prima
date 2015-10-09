@@ -938,16 +938,11 @@ sub set_selection
 		if ( $start == 0 && $end == $l ) {
 			# select all
 			$self->{selChunks} = [ 0, $l ];
-		} elsif ( $self->{bidiData} ) {
-			$self->{selChunks} = $self->bidi_selection_chunks(
-				$self->{bidiData}->{map}, 
-				$start, $end - 1);
-			# warn "$start:$end > $log_start:$log_end > @{$self->{selChunks}}\n";
 		} else {
-			$self->{selChunks} = [
-				$self->{selStart}, $self->{selEnd} - $self->{selStart}, 
-				$l - $self->{selEnd}
-			];
+			$self->{selChunks} = $self->bidi_selection_chunks(
+				$self->{bidiData} ? $self->{bidiData}->{map} : $l,
+				$start, $end - 1);
+			# warn "$start:$end > @{$self->{selChunks}}\n";
 		}
 		$new_chunks = $self->{selChunks};
 	} else {

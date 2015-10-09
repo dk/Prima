@@ -29,6 +29,7 @@
 #  $Id$
 
 use strict;
+use warnings;
 use Prima;
 use Prima::IntUtils;
 use Prima::ScrollBar;
@@ -166,6 +167,7 @@ sub on_mouseup   {}
 package Prima::TextView;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
+use Prima::Bidi qw(:methods is_bidi);
 
 sub profile_default
 {
@@ -804,6 +806,45 @@ sub selection_state
 	$canvas-> textOpaque(0);
 }
 
+sub paint_selection
+{
+	my ( $self, $canvas, $block, $x, $y, $index, $sx1, $sx2, $clipRect, $aa) = @_;
+
+	my @cr  = @$clipRect;
+	my $restore_clip;
+
+	my ($map, $chunks);
+	if ( $Prima::Bidi::enabled && is_bidi( my $str = $self-> get_block_text($index))) {
+		my ($p) = $self->bidi_paragraph($str);
+		$map = $p->map;
+		$sx1 = $self->bidi_map_find($map, 0)      if $sx1 eq 'start';
+		$sx2 = $self->bidi_map_find($map, $#$map) if $sx2 eq 'end';
+	} else {
+		$map = $self->get_block_text_length($index);
+		$sx1 = 0        if $sx1 eq 'start';
+		$sx2 = $map - 1 if $sx2 eq 'end';
+	}
+	($sx1, $sx2) = ($sx2, $sx1) if $sx2 < $sx1;
+
+	$chunks = $self->bidi_selection_chunks( $map, $sx1, $sx2);
+	$self->bidi_selection_walk( $chunks, 0, undef, sub {
+		my ( $offset, $length, $selected ) = @_;
+		$self-> selection_state( $canvas) if $self-> {selectionPaintMode} = $selected; 
+		$cr[2] = $x + $self-> text2xoffset($offset + $length, $index) - 1;
+		$cr[2] = $$aa[2] if $cr[2] > $$aa[2];
+		$cr[2] = $$aa[0] if $cr[2] < $$aa[0];
+		if ( $cr[0] < $cr[2] ) {
+			$restore_clip = 1;
+			$self-> clipRect( @cr);
+			$self-> block_draw( $canvas, $block, $x, $y);
+		}
+		$cr[0] = $cr[2] + 1;
+		$self-> {selectionPaintMode} = 0;
+	});
+
+	$self-> clipRect( @$clipRect) if $restore_clip;
+}
+
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
@@ -848,57 +889,15 @@ sub on_paint
 				$y + $$b[ tb::BLK_HEIGHT] < $clipRect[1] || $y > $clipRect[3] ||
 				$$b[ tb::BLK_WIDTH] == 0 || $$b[ tb::BLK_HEIGHT] == 0;
 					
-
-			if ( $j == $sy1 || $j == $sy2) { # complex selection case
-				my @cr = @clipRect;
-				my $x1 = $x + $self-> text2xoffset(( $j == $sy1) ? $sx1 : $sx2, $j);
-				my $eq = ( $j == $sy1 ) && ( $j == $sy2 );
-				$self-> {selectionPaintMode} = ( $eq || $j == $sy1 ) ? 0 : 1;
-				if ( $cr[0] <= $x1 ) { # left upper part
-				$cr[2] = $x1 - 1 if $cr[2] > $x1 - 1;
-				$cr[2] = $aa[2] if $cr[2] > $aa[2];
-				$cr[2] = $aa[0] if $cr[2] < $aa[0];
-					if ( $cr[0] <= $cr[2]) {
-						$self-> selection_state( $canvas) 
-							if $self-> {selectionPaintMode}; 
-						$self-> clipRect( @cr);
-						$self-> block_draw( $canvas, $b, $x, $y);
-					}
-					@cr = @clipRect;
-				}
-				$self-> {selectionPaintMode} = (( $eq || $j == $sy1 ) ? 1 : 0); 
-				if ( $cr[2] >= $x1) { # right part
-					$cr[0] = $x1 if $cr[0] < $x1;
-					$cr[0] = $aa[0] if $cr[0] < $aa[0];
-					$cr[0] = $aa[2] if $cr[0] > $aa[2];
-					my $x2 = $x + $self-> text2xoffset( $sx2, $j);
-					if ( $eq) { # selection is one block - center part
-						if ( $cr[0] <= $x2) {
-							my $cr2 = $cr[2];
-							$cr[2] = $x2 - 1 if $cr[2] > $x2 - 1;
-							$cr[2] = $aa[0] if $cr[2] < $aa[0];
-							$cr[2] = $aa[2] if $cr[2] > $aa[2];
-							if ( $cr[0] <= $cr[2]) {
-								$self-> selection_state( $canvas) 
-									if $self-> {selectionPaintMode}; 
-								$self-> clipRect( @cr);
-								$self-> block_draw( $canvas, $b, $x, $y);
-							}
-							@cr = @clipRect;
-						}
-						$cr[0] = $x2 if $cr[0] < $x2;
-						$cr[0] = $aa[0] if $cr[0] < $aa[0];
-						$cr[0] = $aa[2] if $cr[0] > $aa[2];
-					}
-					$self-> {selectionPaintMode} = ( $eq || $j == $sy2 ) ? 0 : 1;
-					if ( $cr[0] <= $cr[2]) {
-						$self-> selection_state( $canvas) if $self-> {selectionPaintMode}; 
-						$self-> clipRect( @cr);
-						$self-> block_draw( $canvas, $b, $x, $y);
-					}
-				}
-				$self-> {selectionPaintMode} = 0;
-				$self-> clipRect( @clipRect);
+			if ( $j == $sy1 && $j == $sy2 ) {
+				# selection within one line
+				$self->paint_selection( $canvas, $b, $x, $y, $j, $sx1, $sx2 - 1, \@clipRect, \@aa);
+			} elsif ( $j == $sy1 ) {
+				# upper selected part
+				$self->paint_selection( $canvas, $b, $x, $y, $j, $sx1, 'end', \@clipRect, \@aa);
+			} elsif ( $j == $sy2 ) {
+				# lower selected part
+				$self->paint_selection( $canvas, $b, $x, $y, $j, 'start', $sx2 - 1, \@clipRect, \@aa);
 			} elsif ( $j > $sy1 && $j < $sy2) { # simple selection case
 				$self-> {selectionPaintMode} = 1;
 				$self-> selection_state( $canvas);
@@ -926,7 +925,7 @@ sub block_draw
 	my ( $f_taint, $c_taint); 
 
 	$canvas-> clear( $x, $y, $x + $$b[ tb::BLK_WIDTH] - 1, $y + $$b[ tb::BLK_HEIGHT] - 1)
-	if $self-> {selectionPaintMode};
+		if $self-> {selectionPaintMode};
 
 	$x += $$b[ tb::BLK_APERTURE_X];
 	$y += $$b[ tb::BLK_APERTURE_Y];
@@ -947,7 +946,7 @@ sub block_draw
 				# in this block fails. XXX if there are multiple failures, $@
 				# will only contain the last one. Consider consolidating
 				# them somehow.
-				$ret &&= $canvas-> text_out( substr( $$t, $o + $$b[$i + tb::T_OFS], $$b[$i + tb::T_LEN]), $x, $y);
+				$ret &&= $canvas-> text_out_bidi( substr( $$t, $o + $$b[$i + tb::T_OFS], $$b[$i + tb::T_LEN]), $x, $y);
 			}
 			$x += $$b[ $i + tb::T_WID];
 		} elsif ( $cmd == tb::OP_FONT) {
@@ -1077,7 +1076,7 @@ sub xy2info
 
 	# find text offset
 	my $bofs = $$b[ tb::BLK_TEXT_OFFSET];
-	my ( $ofs, $unofs) = (0,0);
+	my $ofs = 0;
 	my $pm = $self-> get_paint_state;
 	$self-> begin_paint_info unless $pm;
 	my $savefont  = $self-> get_font;
@@ -1092,24 +1091,23 @@ sub xy2info
 			my $npx = $px + $$b[$i + tb::T_WID];
 			if ( $px > $x) {
 				$ofs = $$b[ $i + tb::T_OFS]; 
-				undef $unofs;
 				last;
 			} elsif ( $px <= $x && $npx > $x) {
 				unless ( $f_taint) {
 					$self-> realize_state( $self, \@state, tb::REALIZE_FONTS); 
 					$f_taint = $self-> get_font;
 				}
-				$ofs = $$b[ $i + tb::T_OFS] + $self-> text_wrap( 
-					substr( 
-						${$self-> {text}}, $bofs + $$b[ $i + tb::T_OFS], $$b[ $i + tb::T_LEN]
-					),
+				my $subtext = substr( ${$self-> {text}}, $bofs + $$b[ $i + tb::T_OFS], $$b[ $i + tb::T_LEN]);
+				$subtext = Prima::Bidi::visual($subtext) if 
+					$Prima::Bidi::enabled && is_bidi $subtext;
+				$ofs = $$b[ $i + tb::T_OFS] + $self-> text_wrap(
+					$subtext,
 					$x - $px, 
 					tw::ReturnFirstLineLength | tw::BreakSingle
 				);
-				undef $unofs;
 				last;
 			} 
-			$unofs = $$b[ $i + tb::T_OFS] + $$b[ $i + tb::T_LEN];
+			$ofs = $$b[ $i + tb::T_OFS] + $$b[ $i + tb::T_LEN];
 			$px = $npx;
 		} elsif (( $cmd == tb::OP_TRANSPOSE) && !($$b[ $i + tb::X_FLAGS] & tb::X_EXTEND)) {
 			$px += $$b[ $i + tb::X_X];
@@ -1127,7 +1125,7 @@ sub xy2info
 		$self-> set_font( $savefont) : 
 		$self-> end_paint_info;
 
-	return defined( $unofs) ? $unofs : $ofs, $bid;
+	return $ofs, $bid;
 }
 
 sub screen2point
@@ -1174,13 +1172,14 @@ sub text2xoffset
 						);
 						$f_taint = $self-> get_font;
 					}
-					$px += $self-> get_text_width( 
-						substr( 
-							${$self-> {text}}, 
-							$bofs + $$b[$i+tb::T_OFS], 
-							$x - $$b[$i+tb::T_OFS] 
-						)
+					my $subtext = substr( 
+						${$self-> {text}}, 
+						$bofs + $$b[$i+tb::T_OFS], 
+						$x - $$b[$i+tb::T_OFS] 
 					);
+					$subtext = Prima::Bidi::visual($subtext) if 
+						$Prima::Bidi::enabled && is_bidi $subtext;
+					$px += $self-> get_text_width( $subtext );
 					last;
 				} elsif ( $x == $$b[$i+tb::T_OFS] + $$b[$i+tb::T_LEN]) {
 					$px += $$b[$i+tb::T_WID];
@@ -1203,14 +1202,40 @@ sub text2xoffset
 	return $px;
 }
 
+sub get_block_text
+{
+	my ( $self, $block ) = @_;
+	my $ptr = $self-> {blocks}-> [$block]-> [tb::BLK_TEXT_OFFSET];
+	my $len = $self->get_block_text_length( $block );
+	return substr( ${$self->{text}}, $ptr, $len);
+}
+
+sub get_block_text_length
+{
+	my ( $self, $block ) = @_;
+	my $ptr1 = $self-> {blocks}-> [$block]-> [tb::BLK_TEXT_OFFSET];
+	my $ptr2 = ( $block + 1 < @{$self-> {blocks}}) ? 
+		$self-> {blocks}-> [$block+1]-> [tb::BLK_TEXT_OFFSET] :
+		length ${$self-> {text}};
+	return $ptr2 - $ptr1;
+}
+
 sub info2text_offset
 {
-	my ( $self, $ofs, $blk) = @_;
-	if ( $blk >= 0 && $ofs >= 0) {
-		return $self-> {blocks}-> [$blk]-> [tb::BLK_TEXT_OFFSET] + $ofs;
-	} else {
-		return length ${$self-> {text}};
+	my ( $self, $offset, $block) = @_;
+	return length ${$self-> {text}} unless $block >= 0 && $offset >= 0;
+
+	my $ptr = $self-> {blocks}-> [$block]-> [tb::BLK_TEXT_OFFSET];
+	my $len = $self->get_block_text_length( $block );
+	if (
+		$offset < $len &&
+		$Prima::Bidi::enabled &&
+		is_bidi( my $str = substr( ${$self-> {text}}, $ptr, $len ) )
+	) {
+		my ($p) = $self-> bidi_paragraph( $str );
+		$offset = $p->map->[$offset];
 	}
+	return $ptr + $offset;
 }
 
 sub text_offset2info
@@ -1218,7 +1243,13 @@ sub text_offset2info
 	my ( $self, $ofs) = @_;
 	my $blk = $self-> text_offset2block( $ofs);
 	return undef unless defined $blk;
-	return $ofs - $self-> {blocks}-> [$blk]-> [ tb::BLK_TEXT_OFFSET], $blk;
+	$ofs -= $self-> {blocks}-> [$blk]-> [ tb::BLK_TEXT_OFFSET];
+
+	if ( $Prima::Bidi::enabled && is_bidi( my $str = $self-> get_block_text($blk))) {
+		my ($p) = $self->bidi_paragraph($str);
+		$ofs = $self->bidi_map_find( $p->map, $ofs );
+	}
+	return $ofs, $blk;
 }
 
 sub info2xy
@@ -1255,7 +1286,7 @@ sub text_offset2block
 				last;
 			}
 		} else {
-		$r = $i;
+			$r = $i;
 		}
 	}
 	return $ret;
@@ -1335,6 +1366,9 @@ sub on_mouseup
 		}
 		return;
 	}
+
+	# my $p = $self-> get_selected_text;
+	# Prima::Bidi::debug_str($p) if defined $p;
 
 	return if $btn != mb::Left;
 	
@@ -1471,16 +1505,17 @@ sub selection
 
 	my $empty = ! $self-> has_selection;
 	my ( $osx1, $osy1, $osx2, $osy2) = @{$self-> {selection}};
-	my ( $x1, $y1, $x2, $y2) = (0,0,0,0);
-	
+	my ( $y1, $y2) = (0,0);
+	my ( @old, @new);
+
 	unless ( grep { $_ != -1 } $sx1, $sy1, $sx2, $sy2 ) { # new empty selection
 	EMPTY:
 		return if $empty;     
 		$y1 = $osy1;
 		$y2 = $osy2;
 		if ( $y1 == $y2) {
-			$x1 = $osx1;
-			$x2 = $osx2;
+			@old = ( $osx1, $osx2 - 1 );
+			@new = (1,0);
 		}
 	} else {
 		( $sy1, $sy2, $sx1, $sx2) = ( $sy2, $sy1, $sx2, $sx1) if $sy2 < $sy1;
@@ -1491,8 +1526,8 @@ sub selection
 			$y1 = $sy1;
 			$y2 = $sy2;
 			if ( $y1 == $y2) {
-				$x1 = $sx1;
-				$x2 = $sx2;
+				@new = ( $sx1, $sx2 - 1 );
+				@old = (1,0);
 			}
 		} else {
 			if ( $sy1 == $osy1 && $sx1 == $osx1) {
@@ -1500,25 +1535,25 @@ sub selection
 				$y1 = $sy2;
 				$y2 = $osy2;
 				if ( $sy2 == $osy2) {
-					$x1 = $sx2;
-					$x2 = $osx2;
+					@old = ( 0, $osx2 - 1 );
+					@new = ( 0, $sx2  - 1 );
 				}
 			} elsif ( $sy2 == $osy2 && $sx2 == $osx2) {
 				$y1 = $sy1;
 				$y2 = $osy1;
 				if ( $sy1 == $osy1) {
-					$x1 = $sx1;
-					$x2 = $osx1;
+					@old = ( $osx1, -1 );
+					@new = ( $sx1,  -1 );
 				}
 			} else {
 				$y1 = ( $sy1 < $osy1) ? $sy1 : $osy1;
 				$y2 = ( $sy2 > $osy2) ? $sy2 : $osy2;
 				if ( $sy1 == $sy2 && $osy1 == $osy2 && $sy2 == $osy1) {
-					$x1 = ( $sx1 < $osx1) ? $sx1 : $osx1;
-					$x2 = ( $sx2 > $osx2) ? $sx2 : $osx2;
+					@old = ( $osx1, $osx2 - 1 );
+					@new = ( $sx1,  $sx2  - 1 );
 				}
 			}
-			( $y1, $y2, $x1, $x2) = ( $y2, $y1, $x2, $x1) if $y2 < $y1;
+			( $y1, $y2) = ( $y2, $y1) if $y2 < $y1;
 		}
 	}
 
@@ -1526,6 +1561,7 @@ sub selection
 	my @clipRect;
 	my @size = $self-> size;
 	my @aa   = $self-> get_active_area( 0, @size);
+	my @invalid_rects;
 
 	if ( $y2 != $y1) {
 		my $b = $$bx[ $y1];
@@ -1540,35 +1576,63 @@ sub selection
 		$clipRect[1] = $aa[3] + $self-> {topLine} - $a[1] - 1;
 		$clipRect[2] = $aa[0] - $self-> {offset}  + $a[2];
 		$clipRect[3] = $aa[3] + $self-> {topLine} - $a[3] - 1;
+
+		for ( 0, 1) {
+			@clipRect[$_,$_+2] = @clipRect[$_+2,$_] 
+				if $clipRect[$_] > $clipRect[$_+2];
+			$clipRect[$_] = $aa[$_] if $clipRect[$_] < $aa[$_]; 
+			$clipRect[$_+2] = $aa[$_+2] if $clipRect[$_+2] > $aa[$_+2];
+		}
+
+		push @invalid_rects, \@clipRect;
 	} else {
+		my $len = $self-> get_block_text_length($y1);
+		$old[-1] = $len - 1 if $old[-1] < 0;
+		$new[-1] = $len - 1 if $new[-1] < 0;
+
+		my $map;
+		if ( $Prima::Bidi::enabled && is_bidi( my $str = $self-> get_block_text($y1)) ) {
+			my ($p) = $self->bidi_paragraph($str);
+			$map = $p->map;
+		} else {
+			$map = $len;
+		}
+		my $old_chunks = $self->bidi_selection_chunks( $map, @old);
+		my $new_chunks = $self->bidi_selection_chunks( $map, @new);
+
 		my $b = $$bx[ $y1]; 
-		( $x2, $x1) = ( $x1, $x2) if $x1 > $x2;
-		$clipRect[0] = $aa[0] - $self-> {offset} + 
-			$$b[ tb::BLK_X] + $self-> text2xoffset( $x1, $y1); 
-		$clipRect[1] = $aa[3] - $$b[ tb::BLK_Y] - 
-			$$b[ tb::BLK_HEIGHT] + $self-> {topLine} - 1;
-		$clipRect[2] = $aa[0] - $self-> {offset} + 
-			$$b[ tb::BLK_X] + $self-> text2xoffset( $x2, $y1);
-		$clipRect[3] = $aa[3] - $$b[ tb::BLK_Y] + 
-			$self-> {topLine} - 1;
+		@clipRect = (
+			$aa[0] - $self-> {offset} + $$b[ tb::BLK_X],
+			$aa[3] - $$b[ tb::BLK_Y]  - $$b[ tb::BLK_HEIGHT] + $self-> {topLine} - 1,
+			$aa[0] - $self-> {offset} + $$b[ tb::BLK_X],
+			$aa[3] - $$b[ tb::BLK_Y]  + $self-> {topLine} - 1,
+		);
+		# warn "s: (@old_chunks) @$old_chunks / (@new_chunks) @$new_chunks)\n";
+
+		$self->bidi_selection_walk(
+			$self->bidi_selection_diff( $old_chunks, $new_chunks),
+			0, undef, sub {
+				my ( $offset, $length, $changed ) = @_;
+				push @invalid_rects, [ 
+					$clipRect[0] + $self-> text2xoffset( $offset, $y1),
+					$clipRect[1], 
+					$clipRect[2] + $self-> text2xoffset( $offset + $length, $y1),
+					$clipRect[3]
+				] if $changed;
+			});
 	}
 
-	for ( 0, 1) {
-		@clipRect[$_,$_+2] = @clipRect[$_+2,$_] 
-			if $clipRect[$_] > $clipRect[$_+2];
-		$clipRect[$_] = $aa[$_] if $clipRect[$_] < $aa[$_]; 
-		$clipRect[$_+2] = $aa[$_+2] if $clipRect[$_+2] > $aa[$_+2];
-	}
-
-	$self-> {selection} = [ $sx1, $sy1, $sx2, $sy2 ];
 	my @cpr = $self-> get_invalid_rect;
 	if ( $cpr[0] != $cpr[2] || $cpr[1] != $cpr[3]) {
-		for ( 0,1) {
-			$clipRect[$_] = $cpr[$_] if $clipRect[$_] > $cpr[$_];
-			$clipRect[$_+2] = $cpr[$_+2] if $clipRect[$_+2] < $cpr[$_+2];
+		for my $cr ( @invalid_rects ) {
+			for ( 0,1) {
+				$cr->[$_] = $cpr[$_]     if $cr->[$_] > $cpr[$_];
+				$cr->[$_+2] = $cpr[$_+2] if $cr->[$_+2] < $cpr[$_+2];
+			}
 		}
 	}
-	$self-> invalidate_rect( @clipRect);
+	$self-> {selection} = [ $sx1, $sy1, $sx2, $sy2 ];
+	$self->invalidate_rect(@$_) for @invalid_rects;
 }
 
 sub get_selected_text
@@ -1576,11 +1640,12 @@ sub get_selected_text
 	my $self = $_[0];
 	return unless $self-> has_selection;
 	my ( $sx1, $sy1, $sx2, $sy2) = $self-> selection;
-	my ( $a1, $a2) = (
-		$self-> {blocks}-> [$sy1]-> [tb::BLK_TEXT_OFFSET] + $sx1,
-		$self-> {blocks}-> [$sy2]-> [tb::BLK_TEXT_OFFSET] + $sx2,
+	my ( $a1, $a2) = ( 
+		$self-> info2text_offset( $sx1    , $sy1 ),
+		$self-> info2text_offset( $sx2 - 1, $sy2 ),
 	);
-	return substr( ${$self-> {text}}, $a1, $a2 - $a1);
+	($a1, $a2) = ($a2, $a1) if $a1 > $a2;
+	return substr( ${$self-> {text}}, $a1, $a2 - $a1 + 1);
 }
 
 sub copy

@@ -17,6 +17,7 @@ our @methods = qw(
 	edit_insert
 	edit_delete
 	is_bidi
+	map_find
 );
 
 our @EXPORT_OK = ( qw(
@@ -101,6 +102,15 @@ sub paragraph
 	return ($p, join("\n", @text));
 }
 
+sub map_find
+{
+	my ($map, $index) = @_;
+	for ( my $i = 0; $i < @$map; $i++) {
+		return $i if $map->[$i] == $index;
+	}
+	return undef;
+}
+
 sub _par
 {
 	my ( $text, @opt ) = @_;
@@ -119,14 +129,22 @@ sub selection_chunks
 {
 	my ( $map, $start, $end, $offset ) = @_;
 	$offset //= 0;
-	return [scalar @$map] if $offset > @$map || $start > $end;
+	my @selection_map;
+	return [0] if $start > $end || $offset > $end;
+	unless ( ref $map ) {
+		for ( my $i = $offset; $i < $map; $i++) {
+			push @selection_map, ( $i >= $start && $i <= $end ) ? 1 : 0;
+		}
+		return _map2chunks( \@selection_map );
+	}
+
+	return [0] if $offset > @$map;
 	$start = 0      if $start < 0;
 	$end   = 0      if $end   < 0;
 	$start = $#$map if $start > $#$map;
 	$end   = $#$map if $end   > $#$map;
 	my ($text_start, $text_end) = @$map[$start, $end];
 	($text_start, $text_end) = ($text_end, $text_start) if $text_start > $text_end;
-	my @selection_map;
 	for ( my $i = $offset; $i < @$map; $i++) {
 		push @selection_map, ($map->[$i] >= $text_start && $map->[$i] <= $text_end) ? 1 : 0;
 	}
@@ -168,8 +186,9 @@ sub selection_diff
 {
 	my ( $old, $new) = map { _chunks2map($_) } @_;
 	my @diff;
-	for ( my $i = 0; $i < @$new; $i++) {
-		$diff[$i] = (($old->[$i] // 0) == $new->[$i] ) ? 0 : 1 ;
+	my $max = ( @$old > @$new ) ? @$old : @$new;
+	for ( my $i = 0; $i < $max; $i++) {
+		$diff[$i] = (($old->[$i] // 0) == ($new->[$i] // 0) ) ? 0 : 1 ;
 	}
 	return _map2chunks( \@diff );
 }
@@ -298,7 +317,9 @@ sub edit_delete
 
 sub debug_str
 {
-	my ( $p, $str ) = @_;
+	return unless $enabled;
+	my $str = shift;
+	my $p = _par($str);
 	my $t = $p->types;
 	my $b = $p->bd;
 	for ( my $i = 0; $i < length($str); $i++) {
