@@ -158,7 +158,6 @@ See also L<Prima::Image/autoMasking>
 
 See L<Prima::Application/get_system_info>
 
-	apc::Os2    
 	apc::Win32  
 	apc::Unix   
 

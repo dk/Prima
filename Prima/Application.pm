@@ -579,7 +579,6 @@ The hash result contains the following keys:
 One of C<apc::XXX> constants, reflecting the platform.
 Currently, the list of the supported platforms is:
 
-	apc::Os2    
 	apc::Win32  
 	apc::Unix   
 

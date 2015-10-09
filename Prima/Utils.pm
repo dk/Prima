@@ -185,7 +185,6 @@ user interface used in the system:
 Returns one of C<apc::XXX> constants, reflecting the platfrom.
 Currently, the list of the supported platforms is:
 
-	apc::Os2    
 	apc::Win32  
 	apc::Unix
 
