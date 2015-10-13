@@ -1,12 +1,13 @@
 use strict;
 use warnings;
 use utf8;
-use Prima qw(Label InputLine Buttons Application PodView);
+use Prima qw(Label InputLine Buttons Application PodView Edit);
 use Prima::Bidi qw(:require :rtl);
 
 my $w;
 my $pod;
 my $arabic;
+my $editor;
 my $pod_text;
 
 $w = Prima::MainWindow-> create(
@@ -54,6 +55,13 @@ my $arabic_text = "الفالح حلمه كبير.
 بفيتها إ حتمى الفالح
 الفالح حلمه كبير";
 
+$editor = $panel-> insert( Edit => 
+	packInfo => { fill => 'both', expand => 1, pad => 10 , side => 'left'},
+	geometry => gt::Pack,
+	name => 'Editor',
+	text     => $arabic_text,
+);
+
 $arabic = $panel->insert( Label =>
 	packInfo => { fill => 'both', expand => 1, pad => 10, side => 'left' },
 	geometry => gt::Pack,
@@ -61,8 +69,6 @@ $arabic = $panel->insert( Label =>
 	backColor => cl::Yellow,
 	text     => $arabic_text,
 	wordWrap => 1,
-	height => 140,
-	width  => 200,
 	showPartial => 0,
 );
 

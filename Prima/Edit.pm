@@ -45,6 +45,7 @@ use Prima::Const;
 use Prima::Classes;
 use Prima::ScrollBar;
 use Prima::IntUtils;
+use Prima::Bidi qw(:methods is_bidi);
 
 {
 my %RNT = (
@@ -514,7 +515,6 @@ SYNTAXER
 	}
 }
 
-
 sub draw_colorchunk
 {
 	my ( $self, $canvas, $chunk, $i, $x, $y, $clr) = @_;
@@ -529,31 +529,82 @@ sub draw_colorchunk
 	for ( $j = 0; $j < scalar @{$sd} - 1; $j += 2) {
 		my $xd = $self-> get_chunk_width( $chunk, $ofs, $$sd[$j], \$cc);
 		$canvas-> color(( $$sd[$j+1] == cl::Fore) ? $clr : $$sd[$j+1]);
-		$cc =~ s/\t/$self->{tabs}/g;
-		$canvas-> text_out( $cc, $x, $y);
+		$canvas-> text_out_bidi( $cc, $x, $y);
 		$x += $xd;
 		$ofs += $$sd[$j];
 	}
 }
 
+sub paint_selection
+{
+	my ( $self, $canvas, $text, $index, $x, $y, $width, $height, $sx1, $sx2, $color, $clipRect ) = @_;
+
+	my $restore_clip;
+
+	my ($map, $chunks, $visual);
+	if ( $Prima::Bidi::enabled && is_bidi($text)) {
+		my ($p, $v) = $self->bidi_paragraph($text);
+		$visual = $v;
+		$map = $p->map;
+		$sx1 = $self->bidi_map_find($map, 0)      if $sx1 eq 'start';
+		$sx2 = $self->bidi_map_find($map, $#$map) if $sx2 eq 'end';
+	} else {
+		$visual = $text;
+		$map = length($text);
+		$sx1 = 0        if $sx1 eq 'start';
+		$sx2 = $map - 1 if $sx2 eq 'end';
+	}
+	($sx1, $sx2) = ($sx2, $sx1) if $sx2 < $sx1;
+
+	$chunks = $self->bidi_selection_chunks( $map, $sx1, $sx2);
+	my @cr = @$clipRect;
+	my $rx = $x;
+	my $expanded = $visual;
+	$expanded =~ s/\t/$self->{tabs}/g;
+	$self->bidi_selection_walk( $chunks, 0, undef, sub {
+		my ( $offset, $length, $selected ) = @_;
+
+		$cr[0] = $rx;
+		my $substr = substr( $visual, $offset, $length );
+		$substr =~ s/\t/$self->{tabs}/g;
+		$rx += $canvas->get_text_width( $substr );
+		$cr[2] = $rx - 1;
+
+		$self->clipRect(@cr);
+		$restore_clip = 1;
+	
+		if ( $selected ) {
+			$canvas-> color( $self->hiliteBackColor );
+			$canvas-> bar(0, $y, $width, $y + $height);
+			$canvas-> color( $self->hiliteColor );
+			$canvas-> text_out( $expanded, $x, $y);
+		} elsif ( $self->{syntaxHilite}) {
+			$self-> draw_colorchunk( $canvas, $text, $index, $x, $y, $color); 
+		} else {
+			$canvas-> color( $color );
+			$canvas-> text_out( $expanded, $x, $y);
+		}
+	});
+
+	$self-> clipRect( @$clipRect) if $restore_clip;
+}
+
 sub on_paint
 {
-# local variables definition area
 	my ( $self, $canvas) = @_;
 	my @size   = $canvas-> size;
 	my @clr    = $self-> enabled ?
 	( $self-> color, $self-> backColor) :
 	( $self-> disabledColor, $self-> disabledBackColor);
 	my @sclr   = ( $self-> hiliteColor, $self-> hiliteBackColor);
-	my ( $bw, $fh, $tl, $lc, $rc, $ofs, $yt, $tabs, $cw, $bt, $issel,
-		$sh, $sx) = ( $self-> {borderWidth}, $self-> font-> height,
-		$self-> {topLine }, $self-> {maxChunk}+1, $self-> {rows}, $self-> {offset},
-		$self-> {yTail}, $self-> {tabs},  $self-> {defcw}, $self-> {blockType},
-		$self-> has_selection, $self-> {syntaxHilite}, $self-> {syntax},
+	my ( $bw, $fh, $tl, $lc, $ofs, $tabs, $bt, $issel) = (
+		$self-> {borderWidth}, $self-> font-> height, $self-> {topLine}, 
+		$self-> {maxChunk}+1, $self-> {offset}, $self-> {tabs}, $self-> {blockType},
+		$self-> has_selection,
 	);
 	my @a = $self-> get_active_area( 0, @size);
 
-# drawing sheet
+	# drawing sheet
 	my @clipRect = $self-> clipRect;
 	if ( 
 		$clipRect[0] > $a[0] && 
@@ -562,12 +613,10 @@ sub on_paint
 		$clipRect[3] < $a[3]
 	) {
 		$canvas-> color( $clr[ 1]);
-		# $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
 		$canvas-> clipRect( $a[0], $a[1], $a[2] - 1, $a[3] - 1);
 		$canvas-> bar( 0, 0, @size);
 	} else {
 		$self-> draw_border( $canvas, $clr[1], @size);
-		# $canvas-> clipRect( $bw, $bw + $dy, $size[0] - $bw - $dx - 1, $size[1] - $bw - 1);
 		$canvas-> clipRect( $a[0], $a[1], $a[2] - 1, $a[3] - 1);
 	}
 	$canvas-> color( $clr[0]);
@@ -582,64 +631,29 @@ sub on_paint
 	}
 	$lim = $lc if $lim > $lc;
 	my $x    = $a[0] - $ofs;
-# painting selection
+
+	# painting selection background as a big block
 	my @sel;
-	my @cuaXs;
 	if ( $issel) {
 		@sel  = (@{$self-> {selStartl}}, @{$self-> {selEndl}});
 		if ( $bt == bt::CUA) {
-			@cuaXs   = (
-				$a[0] - $ofs + $self-> get_chunk_width( 
-					$self-> get_chunk( $sel[1]), 0, $sel[0]
-				),
-				$a[0] - $ofs + $self-> get_chunk_width( 
-					$self-> get_chunk( $sel[3]), 0, $sel[2]
-				)
-			);
-			my $cSet = 0;
-			if ( $sel[1] == $sel[3]) {
-				if ( $sel[1] >= $tl && $sel[ 1] < $lim) {
-					$cSet = 1;
-					$canvas-> color( $sclr[ 1]);
-					$canvas-> bar( 
-						$cuaXs[0], $y - $fh * ( $sel[1] - $tl - 1) - 1, 
-						$cuaXs[1]-1, $y - $fh * ( $sel[1] - $tl)
-					);
-				}
-			} else {
-				if ( $sel[1] >= $tl && $sel[ 1] < $lim) {
-					$cSet = 1;
-					$canvas-> color( $sclr[ 1]);
-					$canvas-> bar( 	
-						$cuaXs[0], $y - $fh * ( $sel[1] - $tl - 1) - 1, 
-						$size[0], $y - $fh * ( $sel[1] - $tl)
-					);
-				}
-				if ( $sel[3] >= $tl && $sel[ 3] < $lim) {
-					$canvas-> color( $sclr[ 1]) unless $cSet;
-					$cSet = 1;
-					$canvas-> bar( 
-						0, $y - $fh * ( $sel[3] - $tl - 1) - 1, 
-						$cuaXs[1]-1, $y - $fh * ( $sel[3] - $tl)
-					);
-				}
-				if ( 
-					$sel[3] -1 > $sel[1] && 
-					( $sel[1] + 1 < $lim || $sel[ 3] - 1 >= $tl)
-				) {
-					$canvas-> color( $sclr[ 1]) unless $cSet;
-					$cSet = 1;
-					$canvas-> bar( 
-						0, $y - $fh * ( $sel[1] - $tl) - 1, 
-						$size[0], $y - $fh * ( $sel[3] - $tl - 1)
-					);
-				}
+			# paint simple selection over many lines
+			if ( 
+				$sel[1] != $sel[3] &&
+				$sel[3] -1 > $sel[1] && 
+				( $sel[1] + 1 < $lim || $sel[ 3] - 1 >= $tl)
+			) {
+				$canvas-> color( $sclr[ 1]);
+				$canvas-> bar( 
+					0, $y - $fh * ( $sel[1] - $tl) - 1, 
+					$size[0], $y - $fh * ( $sel[3] - $tl - 1)
+				);
 			}
-			$canvas-> color( $clr[0]) if $cSet;
 		} elsif ( $bt == bt::Horizontal) {
 			if ( $sel[1] < $lim || $sel[ 3] >= $tl) {
 				$canvas-> color( $sclr[ 1]);
 				$canvas-> bar( 0, $y - $fh * ( $sel[1] - $tl - 1) - 1, $size[0], $y - $fh * ( $sel[3] - $tl));
+
 				# painting horizontal block lines, if available
 				$canvas-> color( $sclr[0]);
 				my ($from, $to) = (
@@ -651,130 +665,44 @@ sub on_paint
 				{
 					my $c = $self-> get_chunk( $i);
 					$c =~ s/\t/$tabs/g;
-					$canvas-> text_out( $c, $x, $horz_y);
+					$canvas-> text_out_bidi( $c, $x, $horz_y);
 					$horz_y -= $fh;
 				}
 				$canvas-> color( $clr[0]);
 			}
 		}
 	}
-	my $cSet = 0;
 
-# painting lines
+	# painting lines
 	for ( $i = $tl; $i < $lim; $i++)
 	{
 		my $c = $self-> get_chunk( $i);
 		if ( $issel && $i >= $sel[1] && $i <= $sel[3])
 		{
-	# painting selected lines
+			# painting selected lines
 			if ( $bt == bt::CUA) {
-				if ( $sel[1] == $sel[3])
-				{
-					my $cl = $sel[2] - length( $c);
-					$c .= ' 'x$cl if $cl > 0;
-					my $lc;
-					if ( $sh) { 
-						$self-> draw_colorchunk(
-							$canvas, $c, $i, 
-							$x, $y, $clr[0]
-						); 
-					} else {
-						$lc = substr( $c, 0, $sel[0]); 
-						$lc =~ s/\t/$tabs/g;
-						$canvas-> text_out( $lc, $x, $y);
-						
-						$lc = substr( $c, $sel[2], length($c)); 
-						$lc =~ s/\t/$tabs/g;
-						$canvas-> text_out( $lc, $cuaXs[1], $y);
-					}
-					$lc = substr( $c, $sel[0], $sel[2] - $sel[0]); 
-					$lc =~ s/\t/$tabs/g;
-					$canvas-> color( $sclr[0]);
-					$canvas-> text_out( $lc, $cuaXs[0], $y);
-					$canvas-> color( $clr[0]);
+				if ( $sel[1] == $sel[3]) {
+					$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
 				} elsif ( $i == $sel[1]) {
-					my $cl = $sel[0] - length( $c);
-					$c .= ' 'x$cl if $cl > 0;
-					my $lc;
-					if ( $sh) { 
-						$self-> draw_colorchunk(
-							$canvas, $c, $i, 
-							$x, $y, $clr[0]
-						);
-					} else {
-						$lc = substr( $c, 0, $sel[0]); 
-						$lc =~ s/\t/$tabs/g;
-						$canvas-> text_out( $lc, $x, $y);
-					}
-					$canvas-> color( $sclr[0]);
-					$lc = substr( $c, $sel[0], length( $c)); 
-					$lc =~ s/\t/$tabs/g;
-					$canvas-> text_out( $lc, $cuaXs[0], $y);
-					$cSet = 1;
+					$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, $sel[0], 'end'      , $clr[0], \@clipRect);
 				} elsif ( $i == $sel[3]) {
-					my $cl = $sel[2] - length( $c);
-					$c .= ' 'x$cl if $cl > 0;
-					if ( $sh) { 
-						$self-> draw_colorchunk(
-							$canvas, $c, $i, 
-							$x, $y, $clr[0]); 
-					} else {
-						$canvas-> color( $clr[0]);
-						$lc = substr( $c, $sel[2], length( $c)); 
-						$lc =~ s/\t/$tabs/g;
-						$canvas-> text_out( $lc, $cuaXs[1], $y);
-					}
-					$canvas-> color( $sclr[0]);
-					my $lc = substr( $c, 0, $sel[2]); 
-					$lc =~ s/\t/$tabs/g;
-					$canvas-> text_out( $lc, $x, $y);
-					$canvas-> color( $clr[0]);
+					$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, 'start', $sel[2] - 1, $clr[0], \@clipRect);
 				} else {
 					$c =~ s/\t/$tabs/g;
-					$canvas-> color( $sclr[0]) unless $cSet;
-					$cSet = 1;
-					$canvas-> text_out( $c, $x, $y);
+					$canvas-> color( $sclr[0]);
+					$canvas-> text_out_bidi( $c, $x, $y);
 				}
 			} elsif ( $bt == bt::Vertical) {
-				my @vXs = (
-					$self-> get_chunk_width( $c, 0, $sel[0]) - $ofs + $a[0],
-					$self-> get_chunk_width( $c, 0, $sel[2]) - $ofs + $a[0]
-				);
-				$canvas-> color( $sclr[1]);
-				$canvas-> bar( $vXs[0], $y, $vXs[1]-1, $y + $fh - 1);
-				$canvas-> color( $clr[0]);
-				my $cl = $sel[2] - length( $c);
-				$c .= ' 'x$cl if $cl > 0;
-				my $lc;
-				if ( $sh) { 
-					$self-> draw_colorchunk(
-						$canvas, $c, $i, 
-						$x, $y, $clr[0]
-					);
-				} else {
-					$lc = substr( $c, 0, $sel[0]); 
-					$lc =~ s/\t/$tabs/g;
-					$canvas-> text_out( $lc, $x, $y);
-					$lc = substr( $c, $sel[2], length($c)); 
-					$lc =~ s/\t/$tabs/g;
-					$canvas-> text_out( $lc, $vXs[1], $y);
-				}
-				$lc = substr( $c, $sel[0], $sel[2] - $sel[0]); 
-				$lc =~ s/\t/$tabs/g;
-				$canvas-> color( $sclr[0]);
-				$canvas-> text_out( $lc, $vXs[0], $y);
-				$canvas-> color( $clr[0]);
+				$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
 			}
+		} elsif ( $self->{syntaxHilite} ) {
+			# painting syntaxed lines
+			$self-> draw_colorchunk( $canvas, $c, $i, $x, $y, $clr[0]);
 		} else {
-		# painting syntaxed lines
-			if ( $sh) {
-				$self-> draw_colorchunk( $canvas, $c, $i, $x, $y, $clr[0]);
-			} else {
-		# painting normal lines
-				$c =~ s/\t/$tabs/g;
-				$canvas-> color( $clr[0]);
-				$canvas-> text_out( $c, $x, $y);
-			}
+			# painting normal lines
+			$c =~ s/\t/$tabs/g;
+			$canvas-> color( $clr[0]);
+			$canvas-> text_out_bidi( $c, $x, $y);
 		}
 		$y -= $fh;
 	}
@@ -803,6 +731,7 @@ sub point2xy
 	$rx = 0;
 
 	my $chunk  = $self-> get_chunk( $ry);
+	$chunk = Prima::Bidi::visual($chunk) if $Prima::Bidi::enabled && is_bidi $chunk;
 	my $cl     = ( $w + $ofs) / ($self-> get_text_width(' ')||1);
 	$chunk    .= ' 'x$cl;
 	if ( $ofs + $x > 0)
@@ -1134,6 +1063,7 @@ sub get_chunk_width
 	my $cl;
 	$cl = $from + $len - length( $chunk) + 1;
 	$chunk .= ' 'x$cl if $cl >= 0;
+	$chunk = $self->bidi_visual($chunk) if $Prima::Bidi::enabled && is_bidi($chunk);
 	$chunk  = substr( $chunk, $from, $len);
 	$chunk  =~ s/\t/$self->{tabs}/g;
 	$$retC = $chunk if $retC;
@@ -1461,14 +1391,15 @@ sub set_selection
 			$a[3] - $fh * ( $start - $tl + 1),
 			$a[0] - $ofs + $self-> get_chunk_width( $chunk, 0, $xend),
 			$a[3] - $fh * ( $start - $tl)
-		);
+		) if 0;
 	} else {
 		# general connected lines paint
 		$self-> invalidate_rect(
 			$a[0], $a[3] - $fh * ( $end - $tl + 1),
 			$a[2], $a[3] - $fh * ( $start - $tl),
-		);
+		) if 0;
 	}
+	$self->repaint;
 }
 
 sub set_tab_indent

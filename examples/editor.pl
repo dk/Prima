@@ -44,6 +44,7 @@ use warnings;
 
 use Prima;
 use Prima::Edit;
+use Prima::Bidi qw(:enable);
 use Prima::Application;
 use Prima::MsgBox;
 use Prima::StdDlg;
@@ -471,8 +472,8 @@ my @fn = @ARGV;
 
 for ( @fn) {
 my $w = EditorWindow-> create(
-	origin => [ 10, 100],
-	size   => [ $::application-> width - 820, $::application-> height - 150],
+        origin => [ 10, 100],
+        size   => [ $::application-> width - 820, $::application-> height - 150],
 	fileName => $_,
 );
 }
