@@ -1452,13 +1452,31 @@ sub copy
 	$::application-> Clipboard-> text($text) if defined $text;
 }
 
+sub xy2text_offset
+{
+	my ( $self, $x, $y) = @_;
+	return $x unless $Prima::Bidi::enabled;
+	my $l = $self->get_line($y);
+	return $x unless is_bidi($l);
+	my ($p) = $self->bidi_paragraph($l);
+	return $p->map->[$x];
+}
+
 sub get_selected_text
 {
 	my $self = $_[0];
 	return undef unless $self-> has_selection;
-	my @sel = $self-> selection;
 	my $text = '';
 	my $bt = $self-> blockType;
+
+	my @sel = $self->selection;
+	($sel[0], $sel[2]) = (
+		$self->xy2text_offset($sel[0],     $sel[1]),
+		$self->xy2text_offset($sel[2] - 1, $sel[3]),
+	);
+	@sel[0,2] = @sel[2,0] if $sel[0] > $sel[2];
+	$sel[2]++;
+
 	if ( $bt == bt::CUA) {
 		if ( $sel[1] == $sel[3]) {
 			$text = substr( $self-> get_line( $sel[1]), $sel[0], $sel[2] - $sel[0]);
@@ -1475,7 +1493,7 @@ sub get_selected_text
 	} elsif ( $bt == bt::Horizontal) {
 		my $i;
 		for ( $i = $sel[1]; $i <= $sel[3]; $i++) {
-		$text .= $self-> get_line( $i)."\n";
+			$text .= $self-> get_line( $i)."\n";
 		}
 	} else {
 		my $i;
