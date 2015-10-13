@@ -397,7 +397,7 @@ sub has_undo_action
 {
 	my ($self, $method) = @_;
 	my $has = 0;
-	if ( !$self-> {undo_in_action} && @{$self-> {undo}} && @{$self-> {undo}-> [-1]}) {
+	if ( !$self-> {undo_in_action} && @{$self-> {undo} // []} && @{$self-> {undo}-> [-1]}) {
 		my $ok = 1;   
 		for ( @{$self-> {undo}-> [-1]}) {
 			$ok = 0, last if $$_[0] ne $method;
