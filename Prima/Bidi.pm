@@ -88,7 +88,9 @@ sub paragraph
 {
 	my ( $text, $rtl, $flags ) = @_;
 	my $p = Text::Bidi::Paragraph->new( $text,
-		dir => $rtl ? $Text::Bidi::Par::RTL : $Text::Bidi::Par::LTR
+		defined($rtl) ? (
+			dir => $rtl ? $Text::Bidi::Par::RTL : $Text::Bidi::Par::LTR
+		) : ()
 	);
 	my $off = 0;
 	my $width = $p->len;

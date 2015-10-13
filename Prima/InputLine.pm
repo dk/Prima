@@ -272,7 +272,7 @@ sub text
 		$self-> SUPER::text( $cap);
 
 	if ($Prima::Bidi::enabled && is_bidi $cap ) {
-		my ( $p, $c ) = $self->bidi_paragraph( $cap, $self->{textDirection} );
+		my ( $p, $c ) = $self->bidi_paragraph( $cap );
 		$self->{bidiData} = {
 			p   => $p,
 			map => $p->map,
