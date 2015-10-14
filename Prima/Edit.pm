@@ -554,13 +554,24 @@ sub paint_selection
 		$sx1 = 0        if $sx1 eq 'start';
 		$sx2 = $map - 1 if $sx2 eq 'end';
 	}
+
+	my $expanded = $visual;
+	$expanded =~ s/\t/$self->{tabs}/g;
+	if ( $sx2 < 0 ) {
+		if ( $self->{syntaxHilite}) {
+			$self-> draw_colorchunk( $canvas, $text, $index, $x, $y, $color); 
+		} else {
+			$canvas-> color( $color );
+			$canvas-> text_out( $expanded, $x, $y);
+		}
+		return;
+	}
+
 	($sx1, $sx2) = ($sx2, $sx1) if $sx2 < $sx1;
 
 	$chunks = $self->bidi_selection_chunks( $map, $sx1, $sx2);
 	my @cr = @$clipRect;
 	my $rx = $x;
-	my $expanded = $visual;
-	$expanded =~ s/\t/$self->{tabs}/g;
 	$self->bidi_selection_walk( $chunks, 0, undef, sub {
 		my ( $offset, $length, $selected ) = @_;
 
@@ -695,14 +706,8 @@ sub on_paint
 			} elsif ( $bt == bt::Vertical) {
 				$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
 			}
-		} elsif ( $self->{syntaxHilite} ) {
-			# painting syntaxed lines
-			$self-> draw_colorchunk( $canvas, $c, $i, $x, $y, $clr[0]);
 		} else {
-			# painting normal lines
-			$c =~ s/\t/$tabs/g;
-			$canvas-> color( $clr[0]);
-			$canvas-> text_out_bidi( $c, $x, $y);
+			$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, -1, -1, $clr[0], \@clipRect);	
 		}
 		$y -= $fh;
 	}
@@ -894,20 +899,24 @@ sub on_keydown
 		(( $key == kb::NoKey) || ( $key == kb::Space) || ( $key == kb::Tab))
 	) {
 		my @cs = $self-> cursor;
+		my $text_ofs = $self->xy2text_offset(@cs);
 		my $c  = $self-> get_line( $cs[1]);
+		my $p;
+		($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
 		my $l = 0;
 		$self-> begin_undo_group;
 		my $chr = chr $code;
 		utf8::upgrade($chr) if $mod & km::Unicode;
 		if ( $self-> insertMode) {
-			$l = $cs[0] - length( $c), $c .= ' ' x $l 
-				if length( $c) < $cs[ 0];
-			substr( $c, $cs[0], 0) = $chr x $repeat;
+			$l = $text_ofs - length( $c), $c .= ' ' x $l 
+				if length( $c) < $text_ofs;
+			substr( $c, $text_ofs, 0) = $chr x $repeat;
 			$self-> set_line( $cs[1], $c, q(add), $cs[0], $l + $repeat);
+			$repeat = $self-> bidi_edit_insert( $p, $cs[0], $chr x $repeat ); 
 		} else {
-			$l = $cs[0] - length( $c) + $repeat, $c .= ' ' x $l 
-				if length( $c) < $cs[ 0] + $repeat;
-			substr( $c, $cs[0], $repeat) = $chr x $repeat;
+			$l = $text_ofs - length( $c) + $repeat, $c .= ' ' x $l 
+				if length( $c) < $text_ofs + $repeat;
+			substr( $c, $text_ofs, $repeat) = $chr x $repeat;
 			$self-> set_line( $cs[1], $c, q(overtype));
 		}
 		$self-> cursor( $cs[0] + $repeat, $cs[1]);
@@ -1462,6 +1471,16 @@ sub xy2text_offset
 	return $p->map->[$x];
 }
 
+sub text_offset2x
+{
+	my ( $self, $x, $y) = @_;
+	return $x unless $Prima::Bidi::enabled;
+	my $l = $self->get_line($y);
+	return $x unless is_bidi($l);
+	my ($p) = $self->bidi_paragraph($l);
+	return $self->bidi_map_find($p-> map, $x);
+}
+
 sub get_selected_text
 {
 	my $self = $_[0];
@@ -1474,8 +1493,13 @@ sub get_selected_text
 		$self->xy2text_offset($sel[0],     $sel[1]),
 		$self->xy2text_offset($sel[2] - 1, $sel[3]),
 	);
-	@sel[0,2] = @sel[2,0] if $sel[0] > $sel[2];
-	$sel[2]++;
+	#@sel[0,2] = @sel[2,0] if $sel[0] > $sel[2];
+	if ($sel[0] > $sel[2]) {
+		@sel[0,2] = @sel[2,0];
+		$sel[2]++;
+	} else {
+		$sel[2]++;
+	}
 
 	if ( $bt == bt::CUA) {
 		if ( $sel[1] == $sel[3]) {
@@ -1489,6 +1513,7 @@ sub get_selected_text
 			}
 			$c = $self-> get_line( $sel[3]);
 			$text .= substr( $c, 0, $sel[2]);
+			warn $text;
 		}
 	} elsif ( $bt == bt::Horizontal) {
 		my $i;
@@ -1530,6 +1555,7 @@ sub insert_text
 	$self-> begin_undo_group;
 	$self-> cancel_block unless $self-> {blockType} == bt::CUA;
 	my @cs = $self-> cursor;
+	my $px = $self-> xy2text_offset(@cs);
 	my @ln = split( "\n", $s, -1);
 	pop @ln unless length $ln[-1];
 	$s = $self-> get_line( $cs[1]);
@@ -1538,19 +1564,23 @@ sub insert_text
 	$cl = 0 if $cl < 0;
 	$self-> lock_change(1);
 	if ( scalar @ln == 1) {
-		substr( $s, $cs[0], 0) = $ln[0];
+		substr( $s, $px, 0) = $ln[0];
 		$self-> set_line( $cs[1], $s, q(add), $cs[0], $cl + length( $ln[0]));
-		$self-> selection( $cs[0], $cs[1], $cs[0] + length( $ln[0]), $cs[1])
+		my $sx1 = $self-> text_offset2x($px, $cs[1]);
+		my $sx2 = $self-> text_offset2x($px + length($ln[0]) - 1, $cs[1]);
+		($sx1 > $sx2) ? $sx1++ : $sx2++;
+		$self-> selection( $sx1, $cs[1], $sx2, $cs[1]) 
 			if $hilite && $self-> {blockType} == bt::CUA;
 	} else {
-		my $spl = substr( $s, $cs[0], length( $s) - $cs[0]);
-		substr( $s, $cs[0], length( $s) - $cs[0]) = $ln[0];
+		my $spl = substr( $s, $px, length( $s) - $px);
+		substr( $s, $px, length( $s) - $px) = shift @ln;
 		$self-> lock;
 		$self-> set_line( $cs[1], $s);
-		shift @ln;
 		$self-> insert_line( $cs[1] + 1, (@ln, $spl));
-		$self-> selection( $cs[0], $cs[1], length( $ln[-1]), $cs[1]+scalar(@ln))
-			if $hilite && $self-> {blockType} == bt::CUA;
+		$self-> selection( 
+			$self-> text_offset2x(@cs), $cs[1], 
+			0, $cs[1] + @ln + 1
+		) if $hilite && $self-> {blockType} == bt::CUA;
 		$self-> unlock;
 	}
 	$self-> lock_change(0);
@@ -2289,23 +2319,44 @@ sub delete_text
 
 sub delete_char
 {
-	my $self = $_[0];
-	$self-> delete_text( $self-> cursor, $_[1] || 1);
+	my ($self, $repeat) = @_;
+	$repeat ||= 1;
+	$self-> begin_undo_group;
+	while ( $repeat-- ) {
+		my @cs          = $self-> cursor;
+		my $text_offset = $self-> xy2text_offset(@cs);
+		my $c           = $self->get_line($cs[1]);
+		my $p           = length($c);
+		($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
+
+		my ( $howmany, $at, $moveto) = $self->bidi_edit_delete( $p, $cs[0], 0);
+		return unless $howmany;
+
+		$self-> delete_text( $at, $cs[1], $howmany );
+		$self-> cursor( $cs[0] + $moveto, $cs[1] ) if $moveto;
+	}
+	$self-> end_undo_group;
 }
 
 sub back_char
 {
-	my $self = $_[0];
+	my ($self, $repeat) = @_;
 	my @c = $self-> cursor;
-	my $d = $_[1] || 1;
+	$repeat ||= 1;
 
 	$self-> begin_undo_group;
-	if ( $c[0] >= $d) {
-		$self-> delete_text( $c[0] - $d, $c[1], $d);
-		$self-> cursorX( $c[0] - $d);
-	} elsif ( $c[1] > 0) {
-		$self-> cursor( -1, $c[1] - 1);
-		$self-> delete_text( -1, $c[1] - 1);
+	while ( $repeat-- ) {
+		my @cs          = $self-> cursor;
+		my $text_offset = $self-> xy2text_offset(@cs);
+		my $c           = $self->get_line($cs[1]);
+		my $p           = length($c);
+		($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
+
+		my ( $howmany, $at, $moveto) = $self->bidi_edit_delete( $p, $cs[0], 1);
+		return unless $howmany;
+
+		$self-> delete_text( $at, $cs[1], $howmany );
+		$self-> cursor( $cs[0] + $moveto, $cs[1] ) if $moveto;
 	}
 	$self-> end_undo_group;
 }
@@ -2343,14 +2394,19 @@ sub delete_block
 		my @sel = ( @{$self-> {selStart}}, @{$self-> {selEnd}});
 		if ( $sel[1] == $sel[3]) {
 			$c = $self-> get_line( $sel[1]);
-			substr( $c, $sel[0], $sel[2] - $sel[0]) = '';
+			my $px1 = $self-> xy2text_offset($sel[0],   $sel[1]);
+			my $px2 = $self-> xy2text_offset($sel[2]-1, $sel[3]);
+			($px2, $px1) = ($px1, $px2) if $px1 > $px2;
+			substr( $c, $px1, $px2 - $px1 + 1) = '';
 			$self-> set_line( $sel[1], $c);
 		} else {
 			my ( $from, $len) = ( $sel[1], $sel[3] - $sel[1]);
-			my $res = substr( $self-> get_line( $from), 0, $sel[0]);
+
+			my $res = substr( $self-> get_line( $from), 0, $self-> xy2text_offset(@sel[0,1]));
 			$c = $self-> get_line( $sel[3]);
-			if ( $sel[2] < length( $c)) {
-				$res .= substr( $c, $sel[2], length( $c) - $sel[2]);
+			my $px2 = $self->xy2text_offset( $sel[2] - 1, $sel[3] ) + 1;
+			if ( $px2 < length( $c)) {
+				$res .= substr( $c, $px2, length( $c) - $px2);
 			} elsif ( $sel[3] < $self-> {maxLine}) {
 				$res .= $self-> get_line( $sel[3] + 1);
 			}
@@ -2369,7 +2425,7 @@ sub delete_block
 		{
 			my $c = $self-> get_line( $i);
 			if ( $c ne '') {
-				substr( $c, $sel[0], $len) = '';
+				substr( $c, $self-> xy2text_offset(@sel[0,1]), $len) = '';
 				$self-> set_line( $i, $c);
 			}
 		}

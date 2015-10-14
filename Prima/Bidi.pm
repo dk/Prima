@@ -242,13 +242,13 @@ sub edit_insert
 		if ( is_bidi $new_str ) {
 			return $visual_pos, 0;
 		} else {
-			return $visual_pos, 1;
+			return $visual_pos, length($new_str);
 		}
 	} else {
 		if ( is_bidi $new_str ) {
 			return $visual_pos, 0;
 		} else {
-			return $visual_pos, 1;
+			return $visual_pos, length($new_str);
 		}
 	}
 }

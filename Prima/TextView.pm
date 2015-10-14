@@ -1172,14 +1172,19 @@ sub text2xoffset
 						);
 						$f_taint = $self-> get_font;
 					}
+					my $nchars  = $x - $$b[$i+tb::T_OFS];
 					my $subtext = substr( 
 						${$self-> {text}}, 
 						$bofs + $$b[$i+tb::T_OFS], 
-						$x - $$b[$i+tb::T_OFS] 
+						$$b[$i+tb::T_LEN] 
 					);
-					$subtext = Prima::Bidi::visual($subtext) if 
-						$Prima::Bidi::enabled && is_bidi $subtext;
-					$px += $self-> get_text_width( $subtext );
+					if ( $Prima::Bidi::enabled && is_bidi $subtext ) {
+						my ($p, $visual) = $self->bidi_paragraph($subtext);
+						my $map = $p->map;
+						$px += $self-> get_text_width( substr( $visual, 0, $nchars));
+					} else {
+						$px += $self-> get_text_width( substr( $subtext, 0, $nchars));
+					}
 					last;
 				} elsif ( $x == $$b[$i+tb::T_OFS] + $$b[$i+tb::T_LEN]) {
 					$px += $$b[$i+tb::T_WID];
