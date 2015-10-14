@@ -4,6 +4,8 @@ use utf8;
 use Prima qw(Label InputLine Buttons Application PodView Edit);
 use Prima::Bidi qw(:require :rtl);
 
+$::application-> wantUnicodeInput(1);
+
 my $w;
 my $pod;
 my $arabic;
