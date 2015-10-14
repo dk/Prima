@@ -1583,14 +1583,15 @@ sub visual_to_physical
 	return $x unless $Prima::Bidi::enabled;
 	my $l = $self->get_line($y);
 	return $x unless is_bidi($l);
+	my $offset = 0;
+	if ( $self-> {wordWrap} ) {
+		my ( $lx, $ly ) = $self-> visual_to_logical($x, $y);
+		$x = $lx;
+		my $cm = $self->{chunkMap};
+		$l = substr($l, $offset = $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
+	}
 	my ($p) = $self->bidi_paragraph($l);
-	return $p->map->[$x];
-}
-
-sub visual_to_logical
-{
-	my ( $self, $x, $y) = @_;
-	return $self->physical_to_logical( $self-> visual_to_physical( $x, $y ), $y );
+	return $offset + $p->map->[$x];
 }
 
 sub logical_to_physical
@@ -1624,8 +1625,7 @@ sub logical_to_visual
 	my ( $ofs, $l, $nY) = ( $$cm[ $y * 3], $$cm[ $y * 3 + 1], $$cm[ $y * 3 + 2]);
 	$x = 0  if $x < 0;
 	$x = $l if $x > $l;
-
-	return $self-> physical_to_visual($x + $ofs, $nY), $nY;
+	return $x + $ofs, $nY;
 }
 
 sub physical_to_visual
@@ -1634,15 +1634,21 @@ sub physical_to_visual
 	return $x unless $Prima::Bidi::enabled;
 	my $l = $self->get_line($y);
 	return $x unless is_bidi($l);
+	my $offset = 0;
+	if ( $self-> {wordWrap} ) {
+		my ( $lx, $ly ) = $self-> visual_to_logical($x, $y);
+		$x = $lx;
+		my $cm = $self->{chunkMap};
+		$l = substr($l, $offset = $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
+	}
 	my ($p) = $self->bidi_paragraph($l);
-	return $self->bidi_map_find($p-> map, $x);
+	return $offset + $self->bidi_map_find($p-> map, $x);
 }
 
-sub physical_to_logical
+sub visual_to_logical
 {
 	my ( $self, $x, $y) = @_;
-	return (0,0) if $self-> {maxChunk} < 0;
-	return $self-> physical_to_visual($x, $y), $y unless $self-> {wordWrap};
+	return $x,$y unless $self->{wordWrap};
 
 	my $maxY = $self-> {maxLine};
 	$y = $maxY if $y > $maxY || $y < 0;
@@ -1683,7 +1689,16 @@ sub physical_to_logical
 		$y++;
 	}
 	$x -= $$cm[ $i];
+	return $x, $y;
+}
 
+sub physical_to_logical
+{
+	my ( $self, $x, $y) = @_;
+	return (0,0) if $self-> {maxChunk} < 0;
+	return $self-> physical_to_visual($x, $y), $y unless $self-> {wordWrap};
+
+	($x, $y) = $self->visual_to_logical($x, $y);
 	return $x, $y unless $Prima::Bidi::enabled;
 	my $l = $self->get_chunk($y);
 	return $x, $y unless is_bidi($l);
