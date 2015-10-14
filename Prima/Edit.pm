@@ -746,7 +746,7 @@ sub point2xy
 		$rx = $self-> text_wrap( $chunk, $ofsx, 
 			tw::CalcTabs|tw::BreakSingle|tw::ReturnFirstLineLength, $self-> {tabIndent});
 	}
-	return $self-> make_physical( $rx, $ry), $inBounds;
+	return $self-> logical_to_visual( $rx, $ry), $inBounds;
 }
 
 sub on_mousedown
@@ -848,7 +848,7 @@ sub on_mouseclick
 	$self-> cancel_block;
 	$self-> cursor( @xy);
 
-	my $p = $self->xy2text_offset(@xy);
+	my $p = $self->visual_to_physical(@xy);
 	my $sl = length $s;
 	my ($l,$r);
 
@@ -870,8 +870,8 @@ sub on_mouseclick
 		$r = $p + length $1;
 	}
 
-	$l = $self-> text_offset2x( $l, $xy[1] );
-	$r = $self-> text_offset2x( $r - 1, $xy[1]);
+	$l = $self-> physical_to_visual( $l, $xy[1] );
+	$r = $self-> physical_to_visual( $r - 1, $xy[1]);
 	($l > $r) ? $l++ : $r++;
 
 	$self-> selection( $l, $xy[1], $r, $xy[1] );
@@ -903,7 +903,7 @@ sub on_keydown
 		(( $key == kb::NoKey) || ( $key == kb::Space) || ( $key == kb::Tab))
 	) {
 		my @cs = $self-> cursor;
-		my $text_ofs = $self->xy2text_offset(@cs);
+		my $text_ofs = $self->visual_to_physical(@cs);
 		my $c  = $self-> get_line( $cs[1]);
 		my $p;
 		($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
@@ -1041,7 +1041,7 @@ sub get_line_dimension
 {
 	my ( $self, $y) = @_;
 	return $y, 1 unless $self-> {wordWrap};
-	( undef, $y) = $self-> make_logical( 0, $y);
+	( undef, $y) = $self-> physical_to_logical( 0, $y);
 	my ($ret, $ix, $cm) = ( 0, $y * 3 + 2, $self-> {chunkMap});
 	$ret++, $ix += 3 while $$cm[ $ix] == $y;
 	return $y, $ret;
@@ -1111,7 +1111,7 @@ sub set_cursor
 	$y = 0 if $y < 0; # ??
 	my $line = $self-> get_line( $y);
 	$x = length( $line) if $x < 0;
-	my ( $lx, $ly) = $self-> make_logical( $x, $y);
+	my ( $lx, $ly) = $self-> visual_to_logical( $x, $y);
 	my ( $olx, $oly) = ( $self-> {cursorXl}, $self-> {cursorYl});
 	$self-> {cursorXl} = $lx;
 	$self-> {cursorYl} = $ly;
@@ -1322,8 +1322,8 @@ sub set_selection
 	$sx = $fcl if ( $bt != bt::Vertical && $sx > $fcl) || ( $sx < 0);
 	$ex = $lcl if ( $bt != bt::Vertical && $ex > $lcl) || ( $ex < 0);
 	( $sx, $ex) = ( $ex, $sx) if $sx > $ex && (( $sy == $ey && $bt == bt::CUA) || ( $bt == bt::Vertical));
-	my ( $lsx, $lsy) = $self-> make_logical( $sx, $sy);
-	my ( $lex, $ley) = $self-> make_logical( $ex, $ey);
+	my ( $lsx, $lsy) = $self-> visual_to_logical( $sx, $sy);
+	my ( $lex, $ley) = $self-> visual_to_logical( $ex, $ey);
 	( $lsx, $lex) = ( $lex, $lsx) if $lsx > $lex && (( $lsy == $ley && $bt == bt::CUA) || ( $bt == bt::Vertical));
 	$sy = $ey if $sx == $ex and $bt == bt::Vertical;
 	my ( $_osx, $_osy) = @{$self-> {selStartl}};
@@ -1465,34 +1465,6 @@ sub copy
 	$::application-> Clipboard-> text($text) if defined $text;
 }
 
-sub xy2text_offset
-{
-	my ( $self, $x, $y) = @_;
-	return $x unless $Prima::Bidi::enabled;
-	my $l = $self->get_line($y);
-	return $x unless is_bidi($l);
-	unless ($self->{wordWrap}) {
-		my ($p) = $self->bidi_paragraph($l);
-		return $p->map->[$x];
-	}
-
-	my ($lx,$ly) = $self->make_logical($x,$y);
-	my $cm = $self->{chunkMap};
-	$l = substr($l, $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
-	my ($p) = $self->bidi_paragraph($l);
-	return $$cm[$ly * 3] + $p->map->[$lx];
-}
-
-sub text_offset2x
-{
-	my ( $self, $x, $y) = @_;
-	return $x unless $Prima::Bidi::enabled;
-	my $l = $self->get_line($y);
-	return $x unless is_bidi($l);
-	my ($p) = $self->bidi_paragraph($l);
-	return $self->bidi_map_find($p-> map, $x);
-}
-
 sub get_selected_text
 {
 	my $self = $_[0];
@@ -1502,8 +1474,8 @@ sub get_selected_text
 
 	my @sel = $self->selection;
 	($sel[0], $sel[2]) = (
-		$self->xy2text_offset($sel[0],     $sel[1]),
-		$self->xy2text_offset($sel[2] - 1, $sel[3]),
+		$self->visual_to_physical($sel[0],     $sel[1]),
+		$self->visual_to_physical($sel[2] - 1, $sel[3]),
 	);
 	#@sel[0,2] = @sel[2,0] if $sel[0] > $sel[2];
 	if ($sel[0] > $sel[2]) {
@@ -1566,7 +1538,7 @@ sub insert_text
 	$self-> begin_undo_group;
 	$self-> cancel_block unless $self-> {blockType} == bt::CUA;
 	my @cs = $self-> cursor;
-	my $px = $self-> xy2text_offset(@cs);
+	my $px = $self-> visual_to_physical(@cs);
 	my @ln = split( "\n", $s, -1);
 	pop @ln unless length $ln[-1];
 	$s = $self-> get_line( $cs[1]);
@@ -1577,8 +1549,8 @@ sub insert_text
 	if ( scalar @ln == 1) {
 		substr( $s, $px, 0) = $ln[0];
 		$self-> set_line( $cs[1], $s, q(add), $cs[0], $cl + length( $ln[0]));
-		my $sx1 = $self-> text_offset2x($px, $cs[1]);
-		my $sx2 = $self-> text_offset2x($px + length($ln[0]) - 1, $cs[1]);
+		my $sx1 = $self-> physical_to_visual($px, $cs[1]);
+		my $sx2 = $self-> physical_to_visual($px + length($ln[0]) - 1, $cs[1]);
 		($sx1 > $sx2) ? $sx1++ : $sx2++;
 		$self-> selection( $sx1, $cs[1], $sx2, $cs[1]) 
 			if $hilite && $self-> {blockType} == bt::CUA;
@@ -1589,7 +1561,7 @@ sub insert_text
 		$self-> set_line( $cs[1], $s);
 		$self-> insert_line( $cs[1] + 1, (@ln, $spl));
 		$self-> selection( 
-			$self-> text_offset2x(@cs), $cs[1], 
+			$self-> physical_to_visual(@cs), $cs[1], 
 			0, $cs[1] + @ln + 1
 		) if $hilite && $self-> {blockType} == bt::CUA;
 		$self-> unlock;
@@ -1605,11 +1577,73 @@ sub paste
 	$self-> insert_text( $::application-> Clipboard-> text, 1);
 }
 
-sub make_logical
+sub visual_to_physical
+{
+	my ( $self, $x, $y) = @_;
+	return $x unless $Prima::Bidi::enabled;
+	my $l = $self->get_line($y);
+	return $x unless is_bidi($l);
+	my ($p) = $self->bidi_paragraph($l);
+	return $p->map->[$x];
+}
+
+sub visual_to_logical
+{
+	my ( $self, $x, $y) = @_;
+	return $self->physical_to_logical( $self-> visual_to_physical( $x, $y ), $y );
+}
+
+sub logical_to_physical
+{
+	my ( $self, $x, $y) = @_;
+	return $self-> visual_to_physical($x,$y) unless $self->{wordWrap};
+	
+	$y = $self-> {maxChunk} if $y > $self-> {maxChunk};
+	$y = 0  if $y < 0;
+	my $cm = $self-> {chunkMap};
+	my ( $ofs, $l, $nY) = ( $$cm[ $y * 3], $$cm[ $y * 3 + 1], $$cm[ $y * 3 + 2]);
+	$x = 0  if $x < 0;
+	$x = $l if $x > $l;
+
+	my $str = substr($self->get_line($nY), $ofs, $l);
+	if ( $Prima::Bidi::enabled && is_bidi($str) ) {
+		my ($p) = $self->bidi_paragraph($str);
+		$x = $p->map->[$x];
+	}
+	return $ofs + $x;
+}
+
+sub logical_to_visual
+{
+	my ( $self, $x, $y) = @_;
+	return $x, $y unless $self->{wordWrap};
+	
+	$y = $self-> {maxChunk} if $y > $self-> {maxChunk};
+	$y = 0  if $y < 0;
+	my $cm = $self-> {chunkMap};
+	my ( $ofs, $l, $nY) = ( $$cm[ $y * 3], $$cm[ $y * 3 + 1], $$cm[ $y * 3 + 2]);
+	$x = 0  if $x < 0;
+	$x = $l if $x > $l;
+
+	return $self-> physical_to_visual($x + $ofs, $nY), $nY;
+}
+
+sub physical_to_visual
+{
+	my ( $self, $x, $y) = @_;
+	return $x unless $Prima::Bidi::enabled;
+	my $l = $self->get_line($y);
+	return $x unless is_bidi($l);
+	my ($p) = $self->bidi_paragraph($l);
+	return $self->bidi_map_find($p-> map, $x);
+}
+
+sub physical_to_logical
 {
 	my ( $self, $x, $y) = @_;
 	return (0,0) if $self-> {maxChunk} < 0;
-	return $x, $y unless $self-> {wordWrap};
+	return $self-> physical_to_visual($x, $y), $y unless $self-> {wordWrap};
+
 	my $maxY = $self-> {maxLine};
 	$y = $maxY if $y > $maxY || $y < 0;
 	$y = 0 if $y < 0;
@@ -1649,22 +1683,19 @@ sub make_logical
 		$y++;
 	}
 	$x -= $$cm[ $i];
-	return $x, $y;
+
+	return $x, $y unless $Prima::Bidi::enabled;
+	my $l = $self->get_chunk($y);
+	return $x, $y unless is_bidi($l);
+	my ($p) = $self->bidi_paragraph($l);
+	return $self->bidi_map_find($p-> map, $x), $y;
 }
 
-sub make_physical
+sub logical_to_physical
 {
 	my ( $self, $x, $y) = @_;
-	return (0,0) if $self-> {maxLine} < 0;
-	return $x, $y unless $self-> {wordWrap};
-	my $maxY = $self-> {maxChunk};
-	$y = $maxY if $y > $maxY || $y < 0;
-	$y = 0 if $y < 0;
-	my $cm = $self-> {chunkMap};
-	my ( $ofs, $l, $nY) = ( $$cm[ $y * 3], $$cm[ $y * 3 + 1], $$cm[ $y * 3 + 2]);
-	$x = $l if $x < 0 || $x > $l;
-	$x = 0 if $x < 0;
-	return $x + $ofs, $nY;
+	($x, $y) = $self-> logical_to_visual($x, $y);
+	return $self-> visual_to_physical($x, $y), $y;
 }
 
 sub start_block
@@ -1716,7 +1747,7 @@ sub cursor_up
 {
 	return if $_[0]-> {cursorYl} == 0;
 	my $d = $_[1] || 1;
-	my ( $x, $y) = $_[0]-> make_physical( $_[0]-> {cursorXl}, $_[0]-> {cursorYl} - $d);
+	my ( $x, $y) = $_[0]-> logical_to_visual( $_[0]-> {cursorXl}, $_[0]-> {cursorYl} - $d);
 	$y = 0 if $y < 0;
 	$_[0]-> cursor( $x, $y);
 }
@@ -1805,7 +1836,7 @@ sub cursor_pgdn  {
 sub char_at
 {
 	my ( $self, $x, $y ) = @_;
-	return substr($self->get_line($y), $self-> xy2text_offset($x,$y), 1);
+	return substr($self->get_line($y), $self-> visual_to_physical($x,$y), 1);
 }
 
 sub word_right
@@ -1930,8 +1961,8 @@ sub mark_horizontal
 		$self-> persistentBlock( 1);
 		$self-> start_block;
 		$self-> selection( 
-			$self-> make_physical( 0, $self-> {cursorYl}),
-			$self-> make_physical( -1, $self-> {cursorYl})
+			$self-> logical_to_visual( 0, $self-> {cursorYl}),
+			$self-> logical_to_visual( -1, $self-> {cursorYl})
 		);
 	}
 }
@@ -1958,7 +1989,7 @@ sub set_line
 			$self-> {tabIndent}
 		);
 		my @chunkMap;
-		( undef, $ry) = $self-> make_logical( 0, $y);
+		( undef, $ry) = $self-> physical_to_logical( 0, $y);
 		my ($ix, $cm) = ( $ry * 3 + 2, $self-> {chunkMap});
 		my $max_ix = $self-> {maxChunk} * 3 + 2;
 		$oldDim++, $ix += 3 while $ix <= $max_ix && $$cm[ $ix] == $y;
@@ -2042,7 +2073,7 @@ sub set_line
 			} elsif ( $newDim != $oldDim) {
 				my @selE = @{$self-> {selEndl}};
 				$selE[1] -= $oldDim - $newDim;
-				($sel[2], $sel[3]) = $self-> make_physical( @selE);
+				($sel[2], $sel[3]) = $self-> logical_to_visual( @selE);
 				@sel = (0,0,0,0) if $sel[3] < $sel[1];
 			}
 			$self-> selection( @sel);
@@ -2079,7 +2110,7 @@ sub insert_empty_line
 		if ( $y > $maxY) {
 			$ly = $self-> {maxChunk} + 1;
 		} else {
-			( undef, $ly) = $self-> make_logical( 0, $y);
+			( undef, $ly) = $self-> physical_to_logical( 0, $y);
 		}
 		my ($i, $maxC, $cm) = ( 0, $self-> {maxChunk}, $self-> {chunkMap});
 		if ( $y <= $maxY) {
@@ -2174,7 +2205,7 @@ sub delete_line
 	$len = $maxY - $y + 1 if $y + $len > $maxY + 1;
 	my ( $lx, $ly) = (0,0);
 	if ( $self-> {wordWrap}) {
-		( $lx, $ly) = $self-> make_logical( 0, $y);
+		( $lx, $ly) = $self-> physical_to_logical( 0, $y);
 		$lx = 0;
 		my ($i, $maxC, $cm) = ($ly, $self-> {maxChunk}, $self-> {chunkMap});
 		$lx++, $i++ while ( $i <= $maxC) and ( $$cm[ $i * 3 + 2] <= ( $y + $len - 1));
@@ -2204,8 +2235,8 @@ sub delete_line
 			$sel[2] = 0, $sel[3] = $ly if $sel[3] < $ly;
 		}
 		$self-> selection( 
-			$self-> make_physical($sel[0], $sel[1]), 
-			$self-> make_physical($sel[2], $sel[3])
+			$self-> logical_to_visual($sel[0], $sel[1]), 
+			$self-> logical_to_visual($sel[2], $sel[3])
 		);
 		delete $self-> {anchor};
 		$self-> cancel_block unless $self-> has_selection;
@@ -2337,7 +2368,7 @@ sub delete_char
 	$self-> begin_undo_group;
 	while ( $repeat-- ) {
 		my @cs          = $self-> cursor;
-		my $text_offset = $self-> xy2text_offset(@cs);
+		my $text_offset = $self-> visual_to_physical(@cs);
 		my $c           = $self->get_line($cs[1]);
 		my $p           = length($c);
 		($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
@@ -2360,7 +2391,7 @@ sub back_char
 	$self-> begin_undo_group;
 	while ( $repeat-- ) {
 		my @cs          = $self-> cursor;
-		my $text_offset = $self-> xy2text_offset(@cs);
+		my $text_offset = $self-> visual_to_physical(@cs);
 		my $c           = $self->get_line($cs[1]);
 		my $p           = length($c);
 		($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
@@ -2407,17 +2438,17 @@ sub delete_block
 		my @sel = ( @{$self-> {selStart}}, @{$self-> {selEnd}});
 		if ( $sel[1] == $sel[3]) {
 			$c = $self-> get_line( $sel[1]);
-			my $px1 = $self-> xy2text_offset($sel[0],   $sel[1]);
-			my $px2 = $self-> xy2text_offset($sel[2]-1, $sel[3]);
+			my $px1 = $self-> visual_to_physical($sel[0],   $sel[1]);
+			my $px2 = $self-> visual_to_physical($sel[2]-1, $sel[3]);
 			($px2, $px1) = ($px1, $px2) if $px1 > $px2;
 			substr( $c, $px1, $px2 - $px1 + 1) = '';
 			$self-> set_line( $sel[1], $c);
 		} else {
 			my ( $from, $len) = ( $sel[1], $sel[3] - $sel[1]);
 
-			my $res = substr( $self-> get_line( $from), 0, $self-> xy2text_offset(@sel[0,1]));
+			my $res = substr( $self-> get_line( $from), 0, $self-> visual_to_physical(@sel[0,1]));
 			$c = $self-> get_line( $sel[3]);
-			my $px2 = $self->xy2text_offset( $sel[2] - 1, $sel[3] ) + 1;
+			my $px2 = $self->visual_to_physical( $sel[2] - 1, $sel[3] ) + 1;
 			if ( $px2 < length( $c)) {
 				$res .= substr( $c, $px2, length( $c) - $px2);
 			} elsif ( $sel[3] < $self-> {maxLine}) {
@@ -2438,7 +2469,7 @@ sub delete_block
 		{
 			my $c = $self-> get_line( $i);
 			if ( $c ne '') {
-				substr( $c, $self-> xy2text_offset(@sel[0,1]), $len) = '';
+				substr( $c, $self-> visual_to_physical(@sel[0,1]), $len) = '';
 				$self-> set_line( $i, $c);
 			}
 		}
@@ -2658,7 +2689,7 @@ sub select_all { $_[0]-> selection(0,0,-1,-1); }
 sub autoIndent      {($#_)?($_[0]-> {autoIndent}    = $_[1])                :return $_[0]-> {autoIndent }  }
 sub blockType       {($#_)?($_[0]-> set_block_type  ( $_[1]))               :return $_[0]-> {blockType}    }
 sub cursor          {($#_)?($_[0]-> set_cursor    ($_[1],$_[2]))            :return $_[0]-> {cursorX},$_[0]-> {cursorY}}
-sub cursorLog       {($#_)?($_[0]-> set_cursor    ($_[0]-> make_physical($_[1],$_[2])))            :return $_[0]-> {cursorXl},$_[0]-> {cursorYl}}
+sub cursorLog       {($#_)?($_[0]-> set_cursor    ($_[0]-> logical_to_visual($_[1],$_[2])))            :return $_[0]-> {cursorXl},$_[0]-> {cursorYl}}
 sub cursorX         {($#_)?($_[0]-> set_cursor    ($_[1],$_[0]-> {cursorY})):return $_[0]-> {cursorX}    }
 sub cursorY         {($#_)?($_[0]-> set_cursor    ($_[0]-> {q(cursorX)},$_[1])):return $_[0]-> {cursorY}    }
 sub cursorWrap      {($#_)?($_[0]-> {cursorWrap     }=$_[1])                :return $_[0]-> {cursorWrap     }}
@@ -2717,8 +2748,8 @@ used by L<blockType> property.
 =head1 USAGE
 
 The class addresses the text space by (X,Y)-coordinates,
-where X is character offset and Y is line number. The addressing can be
-'physical' and 'logical', - in logical case Y is number of line of text.
+where X is visual character offset and Y is line number. The addressing can be
+'visual' and 'logical', - in logical case Y is number of line of text.
 The difference can be observed if L<wordWrap> property is set to 1, when a single 
 text string can be shown as several sub-strings, called I<chunks>.
 
@@ -2793,15 +2824,15 @@ See also: L<mark_horizontal>
 
 =item cursor X, Y
 
-Selects physical position of the cursor
+Selects visual position of the cursor
 
 =item cursorX X
 
-Selects physical horizontal position of the cursor
+Selects visual horizontal position of the cursor
 
 =item cursorY Y
 
-Selects physical vertical position of the cursor
+Selects visual vertical position of the cursor
 
 =item cursorWrap BOOLEAN
 
@@ -2858,7 +2889,7 @@ unset the value of L<blockType> is used.
 =item markers ARRAY
 
 Array of arrays with integer pairs, X and Y, where each represents
-a physical coordinates in text. Used as anchor storage for fast navigation.
+a visual coordinates in text. Used as anchor storage for fast navigation.
 
 See also: L<add_marker>, L<delete_marker>
 
@@ -2977,7 +3008,7 @@ method.
 
 =item add_marker X, Y
 
-Adds physical coordinated X,Y to L<markers> property.
+Adds visual coordinated X,Y to L<markers> property.
 
 =item back_char [ REPEAT = 1 ] 
 
@@ -3133,7 +3164,7 @@ Default key: Ctrl+E
 
 =item delete_text X, Y, TEXT_LENGTH
 
-Removes TEXT_LENGTH characters at X,Y physical coordinates
+Removes TEXT_LENGTH characters at X,Y visual coordinates
 
 =item draw_colorchunk CANVAS, TEXT, LINE_ID, X, Y, COLOR
 
@@ -3148,7 +3179,7 @@ Stops the block selection session.
 =item find SEARCH_STRING, [ X = 0, Y = 0, REPLACE_LINE = '', OPTIONS ]
 
 Tries to find ( and, if REPLACE_LINE is defined, to replace with it ) 
-SEARCH_STRING from (X,Y) physical coordinates. OPTIONS is an integer
+SEARCH_STRING from (X,Y) visual coordinates. OPTIONS is an integer
 that consists of the C<fdo::> constants; the same constants are used
 in L<Prima::EditDialog>, which provides graphic interface to the find and replace
 facilities of L<Prima::Edit>.
@@ -3211,7 +3242,7 @@ Returns two integers, representing the line at INDEX in L<wordWrap> mode:
 the first value is the corresponding chunk index, the second is how many
 chunks represent the line.
 
-See also: L<make_logical>.
+See also: L<physical_to_logical>.
 
 =item get_line_ext CHUNK_ID
 
@@ -3243,16 +3274,30 @@ the selection block is cancelled and the newly inserted text is selected.
 Increments ( 1 ) or decrements ( 0 ) lock count. Used to defer change notification
 in multi-change calls. When internal lock count hits zero, C<Change> notification is called. 
 
-=item make_logical X, Y
+=item physical_to_logical X, Y
 
-Maps logical X,Y coordinates to the physical and returns the integer pair.
+Maps visual X,Y coordinates to the logical and returns the integer pair.
 Returns same values when L<wordWrap> is 0.
 
-=item make_physical X, Y
+=item logical_to_visual X, Y
 
-Maps physical X,Y coordinates to the logical and returns the integer pair.
+Maps logical X,Y coordinates to the visual and returns the integer pair.
 
 Returns same values when L<wordWrap> is 0.
+
+=item visual_to_physical X, Y
+
+Maps visual X,Y coordinates to the physical text offset relative to the Y line
+
+Returns same X when the line does not contain any right-to-left characters or
+bi-directional input/output is disabled.
+
+=item physical_to_visual X, Y
+
+Maps test offset X from line Y to the visual X coordinate.
+
+Returns same X when the line does not contain any right-to-left characters or
+bi-directional input/output is disabled.
 
 =item mark_horizontal
 
