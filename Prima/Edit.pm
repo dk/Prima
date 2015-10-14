@@ -848,7 +848,7 @@ sub on_mouseclick
 	$self-> cancel_block;
 	$self-> cursor( @xy);
 
-	my $p = $xy[0];
+	my $p = $self->xy2text_offset(@xy);
 	my $sl = length $s;
 	my ($l,$r);
 
@@ -870,7 +870,11 @@ sub on_mouseclick
 		$r = $p + length $1;
 	}
 
-	$self-> selection( $l, $xy[1], $r, $xy[1]);
+	$l = $self-> text_offset2x( $l, $xy[1] );
+	$r = $self-> text_offset2x( $r - 1, $xy[1]);
+	($l > $r) ? $l++ : $r++;
+
+	$self-> selection( $l, $xy[1], $r, $xy[1] );
 	$self-> {doubleclickTimer} = Prima::Timer-> create( onTick => sub{
 		$self-> {doubleclickTimer}-> destroy;
 		delete $self-> {doubleclickTimer};
@@ -1071,8 +1075,8 @@ sub get_chunk_width
 	my ( $self, $chunk, $from, $len, $retC) = @_;
 	my $cl;
 	$cl = $from + $len - length( $chunk) + 1;
-	$chunk .= ' 'x$cl if $cl >= 0;
 	$chunk = $self->bidi_visual($chunk) if $Prima::Bidi::enabled && is_bidi($chunk);
+	$chunk .= ' 'x$cl if $cl >= 0;
 	$chunk  = substr( $chunk, $from, $len);
 	$chunk  =~ s/\t/$self->{tabs}/g;
 	$$retC = $chunk if $retC;
@@ -1467,8 +1471,16 @@ sub xy2text_offset
 	return $x unless $Prima::Bidi::enabled;
 	my $l = $self->get_line($y);
 	return $x unless is_bidi($l);
+	unless ($self->{wordWrap}) {
+		my ($p) = $self->bidi_paragraph($l);
+		return $p->map->[$x];
+	}
+
+	my ($lx,$ly) = $self->make_logical($x,$y);
+	my $cm = $self->{chunkMap};
+	$l = substr($l, $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
 	my ($p) = $self->bidi_paragraph($l);
-	return $p->map->[$x];
+	return $$cm[$ly * 3] + $p->map->[$lx];
 }
 
 sub text_offset2x
@@ -1513,7 +1525,6 @@ sub get_selected_text
 			}
 			$c = $self-> get_line( $sel[3]);
 			$text .= substr( $c, 0, $sel[2]);
-			warn $text;
 		}
 	} elsif ( $bt == bt::Horizontal) {
 		my $i;
@@ -1791,6 +1802,12 @@ sub cursor_pgdn  {
 	}
 }
 
+sub char_at
+{
+	my ( $self, $x, $y ) = @_;
+	return substr($self->get_line($y), $self-> xy2text_offset($x,$y), 1);
+}
+
 sub word_right
 {
 	my $self = $_[0];
@@ -1812,14 +1829,12 @@ sub word_right
 				$clen = length( $line);
 			}
 		}
-		my $cl = $x - $clen + 1;
-		$line .= ' 'x$cl if $cl >= 0;
-		unless ($w =~ quotemeta substr $line, $x, 1) {
-			$delta++ while ( $w !~ quotemeta substr $line, $x + $delta, 1) &&
+		unless ($w =~ quotemeta $self->char_at($x,$y)) {
+			$delta++ while ( $w !~ quotemeta $self->char_at($x + $delta, $y)) &&
 				$x + $delta < $clen;
 		}
 		if ( $x + $delta < $clen) {
-			$delta++ while ( $w =~ quotemeta substr $line, $x + $delta, 1) &&
+			$delta++ while ( $w =~ quotemeta $self->char_at($x + $delta, $y)) &&
 				$x + $delta < $clen;
 		}
 		$self-> cursor( $x + $delta, $y);
@@ -1844,16 +1859,14 @@ sub word_left
 				$x = $clen = length( $line);
 			}
 		}
-		my $cl = $x - $clen + 1;
-		$line .= ' 'x$cl if $cl >= 0;
-		if ( $w =~ quotemeta( substr( $line, $x - 1, 1)))
+		if ( $w =~ quotemeta( $self->char_at( $x - 1, $y)))
 		{
-			$delta-- while (( $w =~ quotemeta( substr( $line, $x + $delta - 1, 1))) &&
+			$delta-- while (( $w =~ quotemeta( $self->char_at( $x + $delta - 1, $y))) &&
 				( $x + $delta > 0))
 		}
 		if ( $x + $delta > 0)
 		{
-			$delta-- while (!( $w =~ quotemeta( substr( $line, $x + $delta - 1, 1))) &&
+			$delta-- while (!( $w =~ quotemeta( $self->char_at( $x + $delta - 1, $y))) &&
 				( $x + $delta > 0))
 		}
 		$self-> cursor( $x + $delta, $y);
