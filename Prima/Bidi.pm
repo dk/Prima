@@ -262,7 +262,7 @@ sub edit_insert
 	#warn "ir: ", (is_strong($ir) ? 'strong' : 'weak'), ' ', (is_rtl($ir) ? 'rtl' : 'ltr'), " at ", $visual_pos, "\n";
 	#warn "l: ", (is_strong($l) ? 'strong' : 'weak'), ' ', (is_rtl($l) ? 'rtl' : 'ltr'), " at $pl\n";
 	#warn "r: ", (is_strong($r) ? 'strong' : 'weak'), ' ', (is_rtl($r) ? 'rtl' : 'ltr'), " at $pr\n";
-	#warn "vp: $visual_pos, limit: $limit\n";
+	#warn "vp: $visual_pos, tp: $text_pos, limit: $limit\n";
 	#warn "new: ", (is_strong($new_type) ? 'strong' : 'weak'), ' ', (is_rtl($new_type) ? 'rtl' : 'ltr'), "\n"; 
 	
 	# strong letter defines own direction
@@ -274,8 +274,10 @@ sub edit_insert
 		}
 	}
 
-	# strong rtl at right
-	return $text_pos + 1, 0            if is_strong $r && is_rtl $r;
+	# strong rtl immediately right, stuff at right before it
+	return $text_pos + 1, 0 if is_strong $ir && is_rtl $ir;
+	# strong rtl at right, stuff at right before it
+	return $map->[$pr-1] + 1, 0 if is_strong $r && is_rtl $r;
 	# strong ltr at left
 	return $text_pos, length($new_str) if is_strong $l && is_ltr $l;
 	# weak rtl at right and string is rtl
