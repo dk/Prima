@@ -580,6 +580,7 @@ extern void         stylus_free( PDCStylus res, Bool permanent);
 extern DWORD        stylus_get_extpen_style( PStylus s);
 extern HRGN         region_create( Handle mask);
 extern WCHAR *      alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len);
+extern WCHAR *      alloc_utf8_to_wchar_visual( const char * utf8, int length, int * mb_len);
 extern WCHAR *      alloc_ascii_to_wchar( const char * text, int length);
 extern void         wchar2char( char * dest, WCHAR * src, int lim);
 extern void         char2wchar( WCHAR * dest, char * src, int lim);

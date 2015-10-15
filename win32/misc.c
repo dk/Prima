@@ -585,6 +585,32 @@ alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len)
    return ret;
 }
 
+WCHAR *
+alloc_utf8_to_wchar_visual( const char * utf8, int length, int * mb_len)
+{
+   WCHAR * ret;
+   int size;
+   char * u2 = (char*) utf8;
+   if ( length > 0) {
+      while ( length-- > 0 ) u2 = ( char*) utf8_hop(( U8*) u2, 1);
+      length = u2 - utf8;
+   }
+   size = MultiByteToWideChar(CP_UTF8, 0, utf8, length, NULL, 0);
+   if ( size < 0) {
+      if ( mb_len ) *mb_len = 0;
+      return nil;
+   }
+   if ( !( ret = malloc((size + 1) * sizeof( WCHAR)))) return nil;
+   /*
+	U+202D (LRO) LEFT-TO-RIGHT OVERRIDE
+	Forces the following characters to be treated as strong left-to-right characters. 
+   */
+   ret[0] = 0x202D; 
+   MultiByteToWideChar(CP_UTF8, 0, utf8, length, ret + 1, size);
+   if ( mb_len ) *mb_len = size + 1;
+   return ret;
+}
+
 void 
 wchar2char( char * dest, WCHAR * src, int lim)
 {
