@@ -589,7 +589,7 @@ WCHAR *
 alloc_utf8_to_wchar_visual( const char * utf8, int length, int * mb_len)
 {
    WCHAR * ret;
-   int size;
+   int i, size;
    char * u2 = (char*) utf8;
    if ( length > 0) {
       while ( length-- > 0 ) u2 = ( char*) utf8_hop(( U8*) u2, 1);
@@ -602,11 +602,20 @@ alloc_utf8_to_wchar_visual( const char * utf8, int length, int * mb_len)
    }
    if ( !( ret = malloc((size + 1) * sizeof( WCHAR)))) return nil;
    /*
-	U+202D (LRO) LEFT-TO-RIGHT OVERRIDE
-	Forces the following characters to be treated as strong left-to-right characters. 
+U+202A (LRE)	LEFT-TO-RIGHT EMBEDDING	Treats the following text as embedded left-to-right.
+U+202B (RLE)	RIGHT-TO-LEFT EMBEDDING	Treats the following text as embedded right to left.
+U+202D (LRO)	LEFT-TO-RIGHT OVERRIDE	Forces the following characters to be treated as strong left-to-right characters.
+U+202E (RLO)	RIGHT-TO-LEFT OVERRIDE	Forces the following characters to be treated as strong right-to-left characters.
+U+202C (PDF)	POP DIRECTIONAL FORMATTING CODE	Restores the bidirectional state to what it was before the last LRE, RLE, RLO, or LRO.
+U+200E (LRM)	LEFT-TO-RIGHT MARK	Left-to-right strong zero-width character.
+U+200F (RLM)	RIGHT-TO-LEFT MARK	Right-to-left strong zero-width character.
    */
    ret[0] = 0x202D; 
    MultiByteToWideChar(CP_UTF8, 0, utf8, length, ret + 1, size);
+   for ( i = 1; i < size + 1; i++) {
+      if ( ret[i] >= 0x202A && ret[i] <= 0x202E || ret[i] == 0x200F ) 
+         ret[i] = 0x200E; 
+   }
    if ( mb_len ) *mb_len = size + 1;
    return ret;
 }
