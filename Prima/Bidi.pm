@@ -227,30 +227,63 @@ sub is_ltr($)    { !($_[0] & $Text::Bidi::Mask::RTL) }
 sub edit_insert
 {
 	my ( $src_p, $visual_pos, $new_str, $rtl ) = @_;
-	
-	# non-bidi compatibility
-	return length($new_str) unless $src_p;
+
+	return $visual_pos, 0 unless length $new_str;
+
+	unless ($src_p) {
+		my $rtl = $enabled && is_bidi($new_str);
+		return $visual_pos, $rtl ? 0 : length($new_str);
+	}
 
 	my $new_p     = _par($new_str);
 	my $map       = $src_p->map;
 	my $t         = $src_p->types;
+	my $new_map   = $new_p->map;
 	my $new_types = $new_p->types;
+	my $new_type  = 0;
 	my $limit     = $#$map;
+	my $text_pos  = $map->[$visual_pos];
 	
-	# XXX - just a simple method, please extend if you know how
-	if ( $rtl ) {
-		if ( is_bidi $new_str ) {
-			return $visual_pos, 0;
+	my ($il,$ir,$l,$r,$pl,$pr) = (0,0,0,0,$limit,0);
+
+	if ( $visual_pos > 0 ) {
+		$il = $t->[$map->[$pl = $visual_pos - 1]];
+		$pl-- while is_weak($l = $t->[$map->[$pl]]) && $pl > 0;
+	}
+	if ( $visual_pos <= $limit ) {
+		$ir = $t->[$map->[$pr = $visual_pos]];
+		$pr++ while is_weak($r = $t->[$map->[$pr]]) && $pr < $limit;
+	}
+	
+	$new_type |= $Text::Bidi::Mask::STRONG for grep { is_strong $new_types->[$new_map->[$_]] } 0 .. length($new_str) - 1;
+	$new_type |= $Text::Bidi::Mask::RTL    for grep { is_rtl    $new_types->[$new_map->[$_]] } 0 .. length($new_str) - 1;
+
+	#warn "il: ", (is_strong($il) ? 'strong' : 'weak'), ' ', (is_rtl($il) ? 'rtl' : 'ltr'), " at ", $visual_pos - 1, "\n";
+	#warn "ir: ", (is_strong($ir) ? 'strong' : 'weak'), ' ', (is_rtl($ir) ? 'rtl' : 'ltr'), " at ", $visual_pos, "\n";
+	#warn "l: ", (is_strong($l) ? 'strong' : 'weak'), ' ', (is_rtl($l) ? 'rtl' : 'ltr'), " at $pl\n";
+	#warn "r: ", (is_strong($r) ? 'strong' : 'weak'), ' ', (is_rtl($r) ? 'rtl' : 'ltr'), " at $pr\n";
+	#warn "vp: $visual_pos, limit: $limit\n";
+	#warn "new: ", (is_strong($new_type) ? 'strong' : 'weak'), ' ', (is_rtl($new_type) ? 'rtl' : 'ltr'), "\n"; 
+	
+	# strong letter defines own direction
+	if ( is_strong $new_type ) {
+		if ( is_rtl $new_type ) {
+			return $text_pos + 1, 0;
 		} else {
-			return $visual_pos, length($new_str);
-		}
-	} else {
-		if ( is_bidi $new_str ) {
-			return $visual_pos, 0;
-		} else {
-			return $visual_pos, length($new_str);
+			return $text_pos, length($new_str);
 		}
 	}
+
+	# strong rtl at right
+	return $text_pos + 1, 0            if is_strong $r && is_rtl $r;
+	# strong ltr at left
+	return $text_pos, length($new_str) if is_strong $l && is_ltr $l;
+	# weak rtl at right and string is rtl
+	return $text_pos + 1, 0            if is_rtl $new_str && is_rtl $r;
+	# weak ltr at left and string is ltr
+	return $text_pos, length($new_str) if is_ltr $new_str && is_ltr $l;
+
+	return $text_pos + 1, 0;
 }
 
 sub edit_delete

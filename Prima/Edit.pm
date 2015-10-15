@@ -905,8 +905,6 @@ sub on_keydown
 		my @cs = $self-> cursor;
 		my $text_ofs = $self->visual_to_physical(@cs);
 		my $c  = $self-> get_line( $cs[1]);
-		my $p;
-		($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
 		my $l = 0;
 		$self-> begin_undo_group;
 		my $chr = chr $code;
@@ -914,9 +912,13 @@ sub on_keydown
 		if ( $self-> insertMode) {
 			$l = $text_ofs - length( $c), $c .= ' ' x $l 
 				if length( $c) < $text_ofs;
-			substr( $c, $text_ofs, 0) = $chr x $repeat;
+			substr( $c, $text_ofs, 0) = '';
+			my $p;
+			($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
+			my ($at, $moveto) = $self-> bidi_edit_insert( $p, $cs[0], $chr x $repeat ); 
+			substr( $c, $at, 0) = $chr x $repeat;
 			$self-> set_line( $cs[1], $c, q(add), $cs[0], $l + $repeat);
-			$repeat = $self-> bidi_edit_insert( $p, $cs[0], $chr x $repeat ); 
+			$repeat = $moveto;
 		} else {
 			$l = $text_ofs - length( $c) + $repeat, $c .= ' ' x $l 
 				if length( $c) < $text_ofs + $repeat;

@@ -502,16 +502,29 @@ sub on_keydown
 		utf8::upgrade($chr) if $is_unicode;
 		if ( $p_start != $p_end) {
 			$offset = $p_start;
+			substr( $cap, $p_start, $p_end - $p_start) = '';
+			if ( $Prima::Bidi::enabled && is_bidi($cap)) {
+				my ($p) = $self->bidi_paragraph( $cap );
+				$self->{bidiData} = {
+					p   => $p,
+					map => $p->map,
+				};
+			} else {
+				delete $self->{bidiData};
+			}
+			goto INSERT;
 		} elsif ( !$self-> {insertMode}) {
 			$p_end++;
+			substr( $cap, $p_start, $p_end - $p_start) = $chr;
 		} else {
-			my $moveto = $self->bidi_edit_insert( 
+		INSERT:
+			my ($at,$moveto) = $self->bidi_edit_insert(
 				$self->{bidiData} ? $self->{bidiData}->{p} : undef,
 				$start, $chr, $self->{textDirection}
 			);
+			substr( $cap, $at, 0) = $chr;
 			$offset += $moveto - 1;
 		}
-		substr( $cap, $p_start, $p_end - $p_start) = $chr;
 
 		$self-> selection(0,0);
 		if ( $self-> maxLen >= 0 and length ( $cap) > $self-> maxLen)
