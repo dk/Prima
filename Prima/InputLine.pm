@@ -36,7 +36,7 @@ use strict;
 use warnings;
 
 use Prima::Classes;
-use Prima::Bidi qw(:methods is_bidi);
+use Prima::Bidi qw(:methods);
 use Prima::IntUtils;
 
 sub profile_default
@@ -271,7 +271,7 @@ sub text
 		${$self-> {textRef}} = $cap :
 		$self-> SUPER::text( $cap);
 
-	if ($Prima::Bidi::enabled && is_bidi $cap ) {
+	if ($self->is_bidi($cap)) {
 		my ( $p, $c ) = $self->bidi_paragraph( $cap );
 		$self->{bidiData} = {
 			p   => $p,
@@ -503,7 +503,7 @@ sub on_keydown
 		if ( $p_start != $p_end) {
 			$offset = $p_start;
 			substr( $cap, $p_start, $p_end - $p_start) = '';
-			if ( $Prima::Bidi::enabled && is_bidi($cap)) {
+			if ( $self->is_bidi($cap)) {
 				my ($p) = $self->bidi_paragraph( $cap );
 				$self->{bidiData} = {
 					p   => $p,

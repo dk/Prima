@@ -16,7 +16,6 @@ our @methods = qw(
 	selection_chunks
 	edit_insert
 	edit_delete
-	is_bidi
 	map_find
 );
 
@@ -55,7 +54,7 @@ sub import
 			)/x ? 1 : 0)
 				if defined $ENV{LANG};
 		} elsif ( $p eq ':methods') {
-			$package->export_to_level(1, __PACKAGE__, map { "bidi_$_" } @methods);
+			$package->export_to_level(1, __PACKAGE__, qw(is_bidi), map { "bidi_$_" } @methods);
 		} else {
 			push @other, $p;
 		}
@@ -217,7 +216,7 @@ sub selection_walk
 	}
 }
 
-sub is_bidi($)   { $_[0] =~ /[\p{bc=R}\p{bc=AL}\p{bc=AN}\p{bc=RLE}\p{bc=RLO}]/ }
+sub is_bidi      { $enabled && $_[-1] =~ /[\p{bc=R}\p{bc=AL}\p{bc=AN}\p{bc=RLE}\p{bc=RLO}]/ }
 
 sub is_strong($) { $_[0] & $Text::Bidi::Mask::STRONG }
 sub is_weak($)   { !($_[0] & $Text::Bidi::Mask::STRONG) }

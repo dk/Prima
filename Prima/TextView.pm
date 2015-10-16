@@ -167,7 +167,7 @@ sub on_mouseup   {}
 package Prima::TextView;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
-use Prima::Bidi qw(:methods is_bidi);
+use Prima::Bidi qw(:methods);
 
 sub profile_default
 {
@@ -814,7 +814,7 @@ sub paint_selection
 	my $restore_clip;
 
 	my ($map, $chunks);
-	if ( $Prima::Bidi::enabled && is_bidi( my $str = $self-> get_block_text($index))) {
+	if ( $self->is_bidi( my $str = $self-> get_block_text($index))) {
 		my ($p) = $self->bidi_paragraph($str);
 		$map = $p->map;
 		$sx1 = $self->bidi_map_find($map, 0)      if $sx1 eq 'start';
@@ -1099,7 +1099,7 @@ sub xy2info
 				}
 				my $subtext = substr( ${$self-> {text}}, $bofs + $$b[ $i + tb::T_OFS], $$b[ $i + tb::T_LEN]);
 				$subtext = Prima::Bidi::visual($subtext) if 
-					$Prima::Bidi::enabled && is_bidi $subtext;
+					$self->is_bidi($subtext);
 				$ofs = $$b[ $i + tb::T_OFS] + $self-> text_wrap(
 					$subtext,
 					$x - $px, 
@@ -1178,7 +1178,7 @@ sub text2xoffset
 						$bofs + $$b[$i+tb::T_OFS], 
 						$$b[$i+tb::T_LEN] 
 					);
-					if ( $Prima::Bidi::enabled && is_bidi $subtext ) {
+					if ( $self->is_bidi($subtext)) {
 						my ($p, $visual) = $self->bidi_paragraph($subtext);
 						my $map = $p->map;
 						$px += $self-> get_text_width( substr( $visual, 0, $nchars));
@@ -1234,8 +1234,7 @@ sub info2text_offset
 	my $len = $self->get_block_text_length( $block );
 	if (
 		$offset < $len &&
-		$Prima::Bidi::enabled &&
-		is_bidi( my $str = substr( ${$self-> {text}}, $ptr, $len ) )
+		$self->is_bidi( my $str = substr( ${$self-> {text}}, $ptr, $len ) )
 	) {
 		my ($p) = $self-> bidi_paragraph( $str );
 		$offset = $p->map->[$offset];
@@ -1250,7 +1249,7 @@ sub text_offset2info
 	return undef unless defined $blk;
 	$ofs -= $self-> {blocks}-> [$blk]-> [ tb::BLK_TEXT_OFFSET];
 
-	if ( $Prima::Bidi::enabled && is_bidi( my $str = $self-> get_block_text($blk))) {
+	if ( $self->is_bidi( my $str = $self-> get_block_text($blk))) {
 		my ($p) = $self->bidi_paragraph($str);
 		$ofs = $self->bidi_map_find( $p->map, $ofs );
 	}
@@ -1596,7 +1595,7 @@ sub selection
 		$new[-1] = $len - 1 if $new[-1] < 0;
 
 		my $map;
-		if ( $Prima::Bidi::enabled && is_bidi( my $str = $self-> get_block_text($y1)) ) {
+		if ( $self->is_bidi( my $str = $self-> get_block_text($y1)) ) {
 			my ($p) = $self->bidi_paragraph($str);
 			$map = $p->map;
 		} else {

@@ -45,7 +45,7 @@ use Prima::Const;
 use Prima::Classes;
 use Prima::ScrollBar;
 use Prima::IntUtils;
-use Prima::Bidi qw(:methods is_bidi);
+use Prima::Bidi qw(:methods);
 
 {
 my %RNT = (
@@ -542,7 +542,7 @@ sub paint_selection
 	my $restore_clip;
 
 	my ($map, $chunks, $visual);
-	if ( $Prima::Bidi::enabled && is_bidi($text)) {
+	if ( $self->is_bidi($text)) {
 		my ($p, $v) = $self->bidi_paragraph($text);
 		$visual = $v;
 		$map = $p->map;
@@ -736,7 +736,7 @@ sub point2xy
 	$rx = 0;
 
 	my $chunk  = $self-> get_chunk( $ry);
-	$chunk = Prima::Bidi::visual($chunk) if $Prima::Bidi::enabled && is_bidi $chunk;
+	$chunk = Prima::Bidi::visual($chunk) if $self->is_bidi($chunk);
 	my $cl     = ( $w + $ofs) / ($self-> get_text_width(' ')||1);
 	$chunk    .= ' 'x$cl;
 	if ( $ofs + $x > 0)
@@ -914,7 +914,7 @@ sub on_keydown
 				if length( $c) < $text_ofs;
 			substr( $c, $text_ofs, 0) = '';
 			my $p;
-			($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
+			($p) = $self-> bidi_paragraph($c) if $self->is_bidi($c);
 			my ($at, $moveto) = $self-> bidi_edit_insert( $p, $cs[0], $chr x $repeat ); 
 			substr( $c, $at, 0) = $chr x $repeat;
 			$self-> set_line( $cs[1], $c, q(add), $cs[0], $l + $repeat);
@@ -1077,7 +1077,7 @@ sub get_chunk_width
 	my ( $self, $chunk, $from, $len, $retC) = @_;
 	my $cl;
 	$cl = $from + $len - length( $chunk) + 1;
-	$chunk = $self->bidi_visual($chunk) if $Prima::Bidi::enabled && is_bidi($chunk);
+	$chunk = $self->bidi_visual($chunk) if $self->is_bidi($chunk);
 	$chunk .= ' 'x$cl if $cl >= 0;
 	$chunk  = substr( $chunk, $from, $len);
 	$chunk  =~ s/\t/$self->{tabs}/g;
@@ -1553,7 +1553,7 @@ sub visual_to_physical
 	my ( $self, $x, $y) = @_;
 	return $x unless $Prima::Bidi::enabled;
 	my $l = $self->get_line($y);
-	return $x unless is_bidi($l);
+	return $x unless $self->is_bidi($l);
 	my $offset = 0;
 	if ( $self-> {wordWrap} ) {
 		my ( $lx, $ly ) = $self-> visual_to_logical($x, $y);
@@ -1578,7 +1578,7 @@ sub logical_to_physical
 	$x = $l if $x > $l;
 
 	my $str = substr($self->get_line($nY), $ofs, $l);
-	if ( $Prima::Bidi::enabled && is_bidi($str) ) {
+	if ( $self->is_bidi($str) ) {
 		my ($p) = $self->bidi_paragraph($str);
 		$x = $p->map->[$x];
 	}
@@ -1606,7 +1606,7 @@ sub physical_to_visual
 	my ( $self, $x, $y) = @_;
 	return $x unless $Prima::Bidi::enabled;
 	my $l = $self->get_line($y);
-	return $x unless is_bidi($l);
+	return $x unless $self->is_bidi($l);
 	my $offset = 0;
 	if ( $self-> {wordWrap} ) {
 		my ( $lx, $ly ) = $self-> visual_to_logical($x, $y);
@@ -1674,7 +1674,7 @@ sub physical_to_logical
 	($x, $y) = $self->visual_to_logical($x, $y);
 	return $x, $y unless $Prima::Bidi::enabled;
 	my $l = $self->get_chunk($y);
-	return $x, $y unless is_bidi($l);
+	return $x, $y unless $self->is_bidi($l);
 	my ($p) = $self->bidi_paragraph($l);
 	return $self->bidi_map_find($p-> map, $x), $y;
 }
@@ -2359,7 +2359,7 @@ sub delete_char
 		my $text_offset = $self-> visual_to_physical(@cs);
 		my $c           = $self->get_line($cs[1]);
 		my $p           = length($c);
-		($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
+		($p) = $self-> bidi_paragraph($c) if $self->is_bidi($c);
 
 		my ( $howmany, $at, $moveto) = $self->bidi_edit_delete( $p, $cs[0], 0);
 		return unless $howmany;
@@ -2382,7 +2382,7 @@ sub back_char
 		my $text_offset = $self-> visual_to_physical(@cs);
 		my $c           = $self->get_line($cs[1]);
 		my $p           = length($c);
-		($p) = $self-> bidi_paragraph($c) if $Prima::Bidi::enabled && is_bidi($c);
+		($p) = $self-> bidi_paragraph($c) if $self->is_bidi($c);
 
 		my ( $howmany, $at, $moveto) = $self->bidi_edit_delete( $p, $cs[0], 1);
 		return unless $howmany;
@@ -2408,7 +2408,7 @@ sub delete_to_end
 	return if $cs[ 0] > length( $c);
 
 	$self-> set_line( $cs[1], substr( $c, 0, $pc[0]), q(delete), $cs[0], length( $c) - $cs[0]);
-	$self-> cursor(0,$cs[1]) if $Prima::Bidi::enabled && is_bidi($c);
+	$self-> cursor(0,$cs[1]) if $self->is_bidi($c);
 }
 
 sub delete_block
