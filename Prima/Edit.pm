@@ -2666,8 +2666,10 @@ sub find
 	}
 	my ($nX, $nY, $len, $newStr) = $matcher->($self, $x, $y, $c, $subLine, $match, $replaceLine);
 	return unless defined $nX;
-	$nX = $self-> physical_to_visual($nX, $nY);
-	return ($nX, $nY, $len, $newStr);
+	my $nX1 = $self-> physical_to_visual($nX, $nY);
+	my $nX2 = $self-> physical_to_visual($nX + $len - 1, $nY) + 1;
+	$nX2--, $nX1++ if $nX1 > $nX2;
+	return ($nX1, $nY, $nX2, $newStr);
 }
 
 sub add_marker
@@ -3183,6 +3185,9 @@ SEARCH_STRING from (X,Y) visual coordinates. OPTIONS is an integer
 that consists of the C<fdo::> constants; the same constants are used
 in L<Prima::EditDialog>, which provides graphic interface to the find and replace
 facilities of L<Prima::Edit>.
+
+Returns X1, Y, X2, NEW_STRING where X1.Y-X2.Y are visual coordinates of
+the found string, and NEW_STRING is the replaced version (if any)
 
 =over
 

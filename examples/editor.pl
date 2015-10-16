@@ -404,9 +404,9 @@ sub do_find
 		if ( $$p{scope} != fds::Cursor) {
 			if ( $e-> has_selection) {
 			my @sel = $e-> selection;
-			@scope = ($$p{scope} == fds::Top) ? ($sel[0],$sel[1]) : ($sel[2], $sel[3]);
+				@scope = ($$p{scope} == fds::Top) ? ($sel[0],$sel[1]) : ($sel[2], $sel[3]);
 			} else {
-			@scope = ($$p{scope} == fds::Top) ? (0,0) : (-1,-1);
+				@scope = ($$p{scope} == fds::Top) ? (0,0) : (-1,-1);
 			}
 		} else {
 			@scope = $e-> cursor;
@@ -416,8 +416,8 @@ sub do_find
 			Prima::MsgBox::message("No matches found");
 			return;
 		}
-		$e-> cursor(($$p{options} & fdo::BackwardSearch) ? $n[0] : $n[0] + $n[2], $n[1]);
-		$e-> selection( $n[0], $n[1], $n[0] + $n[2], $n[1]);
+		$e-> cursor(($$p{options} & fdo::BackwardSearch) ? $n[0] : $n[2], $n[1]);
+		$e-> selection( $n[0], $n[1], $n[2], $n[1]);
 		unless ( $$p{asFind}) {
 			if ( $$p{options} & fdo::ReplacePrompt) {
 				my $r = Prima::MsgBox::message_box( $self-> text,
