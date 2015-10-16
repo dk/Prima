@@ -401,8 +401,13 @@ Prima::Bidi - helper routines for bi-directional text input and output
 
 =head1 SYNOPSIS
 
-   use Prima::Bidi qw(:enable);
-   say Prima::Bidi::visual( $bidi_text );
+   use Prima::Bidi qw(:enable is_bidi);
+   say Prima::Bidi::visual( $bidi_text ) if is_bidi($bidi_text);
+
+or same, for classes
+
+   use Prima::Bidi qw(:methods);
+   say $self->bidi_visual( $bidi_text ) if $self-> is_bidi($bidi_text);
 
 =head1 AUTHOR
 
@@ -410,6 +415,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-F<examples/bidi.pl>.
+F<examples/bidi.pl>, L<Text::Bidi>
 
 =cut
