@@ -736,7 +736,7 @@ sub point2xy
 	$rx = 0;
 
 	my $chunk  = $self-> get_chunk( $ry);
-	$chunk = Prima::Bidi::visual($chunk) if $self->is_bidi($chunk);
+	$chunk = $self->bidi_visual($chunk) if $self->is_bidi($chunk);
 	my $cl     = ( $w + $ofs) / ($self-> get_text_width(' ')||1);
 	$chunk    .= ' 'x$cl;
 	if ( $ofs + $x > 0)
@@ -1561,8 +1561,7 @@ sub visual_to_physical
 		my $cm = $self->{chunkMap};
 		$l = substr($l, $offset = $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
 	}
-	my ($p) = $self->bidi_paragraph($l);
-	return $offset + $p->map->[$x];
+	return $offset + $self->bidi_map($l)->[$x];
 }
 
 sub logical_to_physical
@@ -1579,8 +1578,7 @@ sub logical_to_physical
 
 	my $str = substr($self->get_line($nY), $ofs, $l);
 	if ( $self->is_bidi($str) ) {
-		my ($p) = $self->bidi_paragraph($str);
-		$x = $p->map->[$x];
+		$x = $self->bidi_map($str)->[$x];
 	}
 	return $ofs + $x;
 }
@@ -1614,8 +1612,7 @@ sub physical_to_visual
 		my $cm = $self->{chunkMap};
 		$l = substr($l, $offset = $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
 	}
-	my ($p) = $self->bidi_paragraph($l);
-	return $offset + $self->bidi_map_find($p-> map, $x);
+	return $offset + $self->bidi_map_find($self-> bidi_map($l), $x);
 }
 
 sub visual_to_logical
@@ -1675,8 +1672,7 @@ sub physical_to_logical
 	return $x, $y unless $Prima::Bidi::enabled;
 	my $l = $self->get_chunk($y);
 	return $x, $y unless $self->is_bidi($l);
-	my ($p) = $self->bidi_paragraph($l);
-	return $self->bidi_map_find($p-> map, $x), $y;
+	return $self->bidi_map_find($self-> bidi_map($l), $x), $y;
 }
 
 sub logical_to_physical

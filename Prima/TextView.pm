@@ -1236,8 +1236,7 @@ sub info2text_offset
 		$offset < $len &&
 		$self->is_bidi( my $str = substr( ${$self-> {text}}, $ptr, $len ) )
 	) {
-		my ($p) = $self-> bidi_paragraph( $str );
-		$offset = $p->map->[$offset];
+		$offset = $self->bidi_map($str)->[$offset];
 	}
 	return $ptr + $offset;
 }
@@ -1250,8 +1249,7 @@ sub text_offset2info
 	$ofs -= $self-> {blocks}-> [$blk]-> [ tb::BLK_TEXT_OFFSET];
 
 	if ( $self->is_bidi( my $str = $self-> get_block_text($blk))) {
-		my ($p) = $self->bidi_paragraph($str);
-		$ofs = $self->bidi_map_find( $p->map, $ofs );
+		$ofs = $self->bidi_map_find( $self-> bidi_map($str), $ofs );
 	}
 	return $ofs, $blk;
 }
@@ -1594,13 +1592,7 @@ sub selection
 		$old[-1] = $len - 1 if $old[-1] < 0;
 		$new[-1] = $len - 1 if $new[-1] < 0;
 
-		my $map;
-		if ( $self->is_bidi( my $str = $self-> get_block_text($y1)) ) {
-			my ($p) = $self->bidi_paragraph($str);
-			$map = $p->map;
-		} else {
-			$map = $len;
-		}
+		my $map = $self-> bidi_selection_map($self-> get_block_text($y1));
 		my $old_chunks = $self->bidi_selection_chunks( $map, @old);
 		my $new_chunks = $self->bidi_selection_chunks( $map, @new);
 

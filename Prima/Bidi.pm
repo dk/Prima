@@ -10,7 +10,9 @@ our $default_direction_rtl = 0;
 
 our @methods = qw(
 	paragraph
+	map
 	visual
+	selection_map
 	selection_diff
 	selection_walk
 	selection_chunks
@@ -124,6 +126,14 @@ sub _par
 		$off += $l;
 	}
 	return $p;
+}
+
+sub map { _par(@_)->map }
+
+sub selection_map
+{
+	my $text = shift;
+	return is_bidi($text) ? map($text) : length($text);
 }
 
 sub selection_chunks
