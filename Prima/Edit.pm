@@ -1675,13 +1675,6 @@ sub physical_to_logical
 	return $self->bidi_map_find($self-> bidi_map($l), $x), $y;
 }
 
-sub logical_to_physical
-{
-	my ( $self, $x, $y) = @_;
-	($x, $y) = $self-> logical_to_visual($x, $y);
-	return $self-> visual_to_physical($x, $y), $y;
-}
-
 sub start_block
 {
 	my $self = $_[0];
