@@ -1346,6 +1346,7 @@ sub set_selection
 		$self-> repaint;
 		return;
 	}
+
 	# connective selection
 	my ( $start, $end);
 	if ( $bt == bt::CUA || ( $sx == $osx && $ex == $oex)) {
@@ -1376,45 +1377,13 @@ sub set_selection
 		$self-> font-> height, $self-> {rows}, 
 		$self-> {yTail}
 	);
-	my @a = $self-> get_active_area( 0);
 	return if $end < $tl || $start >= $tl + $r + $yT;
-	if ( $start == $end && $bt == bt::CUA) {
-		# single connective line paint
-		my $chunk;
-		my ( $xstart, $xend);
-		if ( $sx == $osx) {
-			( $xstart, $xend) = ( $ex < $oex) ? ( $ex, $oex) : ( $oex, $ex);
-		} elsif ( $ex == $oex) {
-			( $xstart, $xend) = ( $sx < $osx) ? ( $sx, $osx) : ( $osx, $sx);
-		} else {
-			$xstart = ( $sx < $osx) ? $sx : $osx;
-			$xend   = ( $ex > $oex) ? $ex : $oex;
-		}
-		unless ( $self-> {wordWrap}) {
-			if ( $start == $sy) {
-				$chunk = $firstChunk;
-			} elsif ( $start == $ey) {
-				$chunk = $lastChunk;
-			} else {
-				$chunk = $self-> get_chunk( $start);
-			}
-		} else {
-			$chunk = $self-> get_chunk( $start);
-		}
-		$self-> invalidate_rect(
-			$a[0] - $ofs + $self-> get_chunk_width( $chunk, 0, $xstart) - 1,
-			$a[3] - $fh * ( $start - $tl + 1),
-			$a[0] - $ofs + $self-> get_chunk_width( $chunk, 0, $xend),
-			$a[3] - $fh * ( $start - $tl)
-		) if 0;
-	} else {
-		# general connected lines paint
-		$self-> invalidate_rect(
-			$a[0], $a[3] - $fh * ( $end - $tl + 1),
-			$a[2], $a[3] - $fh * ( $start - $tl),
-		) if 0;
-	}
-	$self->repaint;
+
+	my @a = $self-> get_active_area( 0);
+	$self-> invalidate_rect(
+		$a[0], $a[3] - $fh * ( $end - $tl + 1),
+		$a[2], $a[3] - $fh * ( $start - $tl),
+	);
 }
 
 sub set_tab_indent
@@ -1619,14 +1588,16 @@ sub logical_to_physical
 sub logical_to_visual
 {
 	my ( $self, $x, $y) = @_;
-	return $x, $y unless $self->{wordWrap};
+	unless ($self->{wordWrap}) {
+		$x = length $self->get_line($y) if $x < 0;
+		return $x, $y 
+	}
 	
 	$y = $self-> {maxChunk} if $y > $self-> {maxChunk};
 	$y = 0  if $y < 0;
 	my $cm = $self-> {chunkMap};
 	my ( $ofs, $l, $nY) = ( $$cm[ $y * 3], $$cm[ $y * 3 + 1], $$cm[ $y * 3 + 2]);
-	$x = 0  if $x < 0;
-	$x = $l if $x > $l;
+	$x = $l if $x < 0 || $x > $l;
 	return $x + $ofs, $nY;
 }
 
@@ -2432,10 +2403,12 @@ sub delete_to_end
 {
 	my $self = $_[0];
 	my @cs = $self-> cursor;
+	my @pc = $self-> logical_to_physical(@cs);
 	my $c = $self-> get_line( $cs[1]);
 	return if $cs[ 0] > length( $c);
 
-	$self-> set_line( $cs[1], substr( $c, 0, $cs[0]), q(delete), $cs[0], length( $c) - $cs[0]);
+	$self-> set_line( $cs[1], substr( $c, 0, $pc[0]), q(delete), $cs[0], length( $c) - $cs[0]);
+	$self-> cursor(0,$cs[1]) if $Prima::Bidi::enabled && is_bidi($c);
 }
 
 sub delete_block
@@ -2611,6 +2584,53 @@ sub split_line
 	$self-> lock_change(0);
 }
 
+sub _search_forward
+{
+	my ($self, $x, $y, $first_line, $substr, $match, $replace) = @_;
+	local $_ = $first_line;
+	my ($l, $len) = (0);
+	while ( 1) {
+		if ( /$match/ ) {
+			$l   = $-[0];
+			$len = $+[0] - $-[0];
+			s/$match/$replace/ if $replace;
+			return $l + $x, $y, $len, $substr . $_;
+		}
+		$y++;
+		return if $y > $self->{maxLine};
+		$_ = $self->get_line($y);
+		$substr = '';
+		$l = $x = 0;
+	}
+}
+
+sub _search_backward
+{
+	my ($self, $x, $y, $first_line, $substr, $match, $replace) = @_;
+	local $_ = $first_line;
+	my ($l,$b,$len);
+	while ( 1) {
+		while (/$match/g) {
+			$l = $b;
+			$b = pos;
+		}
+		if ( defined $b ) {
+			$l ||= 0;
+			pos = $l;
+			$l = $_ =~ /$match/;
+			$len = $+[0] - $-[0];
+			$l   = pos($_) - $len;
+			substr($_, $l, $len) = $replace if defined $replace;
+			pos = undef;
+			return $l, $y, $len, $_ . $substr;
+		}
+		$y--;
+		return if $y < 0;
+		$_ = $self-> get_line($y);
+		$substr = '';
+	}
+}
+
 sub find
 {
 	my ( $self, $line, $x, $y, $replaceLine, $options) = @_;
@@ -2620,71 +2640,38 @@ sub find
 	return if $y > $maxY || $maxY < 0;
 
 	$line = '('.quotemeta( $line).')' unless $options & fdo::RegularExpression;
-	$replaceLine = quotemeta( $replaceLine), $replaceLine =~ s[\\(\$\d+)][$1]g
-		if !($options & fdo::RegularExpression) && defined $replaceLine;
 	$y = $maxY if $y < 0;
 	my $c = $self-> get_line( $y);
-	my ( $l, $b, $len, $subLine, $re, $re2, $esub);
+	my ( $subLine, $re, $re2, $matcher );
 	$x = length( $c) if $x < 0;
-	$re  = '/';
-	$re .= '\\b' if $options & fdo::WordsOnly;
-	$re .= "$line";
-	$re .= '\\b' if $options & fdo::WordsOnly;
-	$re .= '/';
-	$re2 = '';
-	$re2.= 'i' unless $options & fdo::MatchCase;
+	$x = $self-> visual_to_physical($x, $y);
 
-	unless ( $options & fdo::BackwardSearch) {
-		$l = 0;
-		$subLine = substr( $c, 0, $x);
-		substr( $c, 0, $x) = '';
-		$esub = eval(<<FINDER);
-sub {
-	\$_ = \$c;
-	while ( 1) {
-	if ( $re$re2) {
-		\$l   = length(\$`);
-		\$len = length(\$&);
-		s$re$replaceLine/$re2 if defined \$replaceLine;
-		return \$l+\$x, \$y, \$len, \$subLine.\$_;
-	}
-	\$y++;
-	return if \$y > \$maxY;
-	\$_ = \$self-> get_line( \$y);
-	\$subLine = '';
-	\$l = \$x = 0;
-	}
-}
-FINDER
-	} else {
-		$re2 .= 'g';
-		$l    = $b = undef;
+	$re  .= '\\b' if $options & fdo::WordsOnly;
+	$re  .= $line;
+	$re  .= '\\b' if $options & fdo::WordsOnly;
+	$re2  = '';
+	$re2 .= 'i' unless $options & fdo::MatchCase;
+
+	my $match;
+	eval {
+		$match = eval "qr/$re/$re2";
+		return if $@;
+	};
+	return unless $match;
+
+	if ( $options & fdo::BackwardSearch) {
 		$subLine = substr( $c, $x, length( $c) - $x);
 		substr( $c, $x, length( $c) - $x) = '';
-		$esub = eval(<<FINDER);
-sub {
-	\$_ = \$c;
-	while ( 1) {
-		\$l = \$b, \$b = pos(\$_) while $re$re2;
-		if ( defined \$b) {
-			\$l ||= 0;
-			pos = \$l;
-			\$l = $re$re2;
-			\$len = length(\$&);
-			\$l   = pos(\$_) - \$len;
-			substr(\$_, \$l, \$len) = \"$replaceLine\" if defined \$replaceLine;
-			pos = undef;
-			return \$l, \$y, \$len, \$_.\$subLine;
-		}
-		\$y--;
-		return if \$y < 0;
-		\$_ = \$self-> get_line( \$y);
-		\$subLine = '';
-	
-}
-FINDER
+		$matcher = \&_search_backward;
+	} else {
+		$subLine = substr( $c, 0, $x);
+		substr( $c, 0, $x) = '';
+		$matcher = \&_search_forward;
 	}
-	return $esub-> ();
+	my ($nX, $nY, $len, $newStr) = $matcher->($self, $x, $y, $c, $subLine, $match, $replaceLine);
+	return unless defined $nX;
+	$nX = $self-> physical_to_visual($nX, $nY);
+	return ($nX, $nY, $len, $newStr);
 }
 
 sub add_marker
