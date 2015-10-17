@@ -240,6 +240,7 @@ sub edit_insert
 	return $visual_pos, 0 unless length $new_str;
 
 	unless ($src_p) {
+		# empty string or non-bidi
 		my $rtl = $enabled && is_bidi($new_str);
 		return $visual_pos, $rtl ? 0 : length($new_str);
 	}
@@ -251,50 +252,76 @@ sub edit_insert
 	my $new_types = $new_p->types;
 	my $new_type  = 0;
 	my $limit     = $#$map;
-	my $text_pos  = $map->[$visual_pos];
-	
-	my ($il,$ir,$l,$r,$pl,$pr) = (0,0,0,0,$limit,0);
 
+	my ($tl,$tr,$pl,$pr);
 	if ( $visual_pos > 0 ) {
-		$il = $t->[$map->[$pl = $visual_pos - 1]];
-		$pl-- while is_weak($l = $t->[$map->[$pl]]) && $pl > 0;
+		$tl = $t->[$pl = $map->[$visual_pos - 1]];
 	}
 	if ( $visual_pos <= $limit ) {
-		$ir = $t->[$map->[$pr = $visual_pos]];
-		$pr++ while is_weak($r = $t->[$map->[$pr]]) && $pr < $limit;
+		$tr = $t->[$pr = $map->[$visual_pos]];
 	}
-	
-	$new_type |= $Text::Bidi::Mask::STRONG for grep { is_strong $new_types->[$new_map->[$_]] } 0 .. length($new_str) - 1;
-	$new_type |= $Text::Bidi::Mask::RTL    for grep { is_rtl    $new_types->[$new_map->[$_]] } 0 .. length($new_str) - 1;
 
-	#warn "il: ", (is_strong($il) ? 'strong' : 'weak'), ' ', (is_rtl($il) ? 'rtl' : 'ltr'), " at ", $visual_pos - 1, "\n";
-	#warn "ir: ", (is_strong($ir) ? 'strong' : 'weak'), ' ', (is_rtl($ir) ? 'rtl' : 'ltr'), " at ", $visual_pos, "\n";
-	#warn "l: ", (is_strong($l) ? 'strong' : 'weak'), ' ', (is_rtl($l) ? 'rtl' : 'ltr'), " at $pl\n";
-	#warn "r: ", (is_strong($r) ? 'strong' : 'weak'), ' ', (is_rtl($r) ? 'rtl' : 'ltr'), " at $pr\n";
-	#warn "vp: $visual_pos, tp: $text_pos, limit: $limit\n";
-	#warn "new: ", (is_strong($new_type) ? 'strong' : 'weak'), ' ', (is_rtl($new_type) ? 'rtl' : 'ltr'), "\n"; 
-	
-	# strong letter defines own direction
-	if ( is_strong $new_type ) {
-		if ( is_rtl $new_type ) {
-			return $text_pos + 1, 0;
+	# Cursor between two strongs
+	if ( defined($tl) && defined($tr) && is_strong $tl && is_strong $tr ) {
+		if ( is_ltr $tl ) {
+			if ( is_ltr $tr ) {
+				# normal LTR
+				return $pl + 1, 1;
+			} else {
+				# Cursor between R and L - the rightmost wins
+				return ( $pl > $pr ) ?
+					($pl + 1, 1) :
+					($pr + 1, 0);
+			}
 		} else {
-			return $text_pos, length($new_str);
+			if ( is_rtl $tr) {
+				# normal RTL
+				return $pr + 1, 0;
+			} else {
+				# Cursor between L and R - the leftmost wins
+				return ( $pl < $pr ) ?
+					($pl + 1, 1) :
+					($pr + 1, 0);
+			}
 		}
 	}
 
-	# strong rtl immediately right, stuff at right before it
-	return $text_pos + 1, 0 if is_strong $ir && is_rtl $ir;
-	# strong rtl at right, stuff at right before it
-	return $map->[$pr-1] + 1, 0 if is_strong $r && is_rtl $r;
-	# strong ltr at left
-	return $text_pos, length($new_str) if is_strong $l && is_ltr $l;
-	# weak rtl at right and string is rtl
-	return $text_pos + 1, 0            if is_rtl $new_str && is_rtl $r;
-	# weak ltr at left and string is ltr
-	return $text_pos, length($new_str) if is_ltr $new_str && is_ltr $l;
+	# Cursor next to a strong
+	if ( defined($tl) && is_strong $tl) {
+		return (is_ltr $tl) ?
+			# LTR append
+			( $pl + 1, 1 ) :
+			# RTL prepend
+			( $pl, 0 );
+	}
+	if ( defined($tr) && is_strong $tr) {
+		return (is_ltr $tr) ?
+			# LTR prepend
+			( $pr, 0 ) :
+			# RTL append
+			( $pr + 1, 0 );
+	}
 
-	return $text_pos + 1, 0;
+	# find out dominant directions by scanning to the first strong at each direction, if any
+	if ( defined $tl ) {
+		my $vp = $visual_pos - 1;
+		$vp-- while $vp >= 0 && is_weak($tl = $t->[$map->[$vp]]);
+		# right to a weak, adjacent to a strong LTR further right 
+		return $pl + 1, 1 if is_strong $tl && is_ltr $tl;
+	}
+	if ( defined $tr ) {
+		my $vp = $visual_pos;
+		$vp++ while $vp < $limit && is_weak($tr = $t->[$map->[$vp]]);
+		# left to a weak, adjacent to a strong LTR further left 
+		return $pr, 0     if is_strong $tr && is_ltr $tr;
+	}
+
+	# cursor at the end
+	return is_ltr $tr ? (0, 0) : ($limit + 1, 0) unless defined $tl;
+	return is_ltr $tl ? ($limit + 1, 1) : (0, 0) unless defined $tr;
+
+	# XXX this is too complex, give up
+	return $visual_pos, is_bidi($new_str) ? 0 : length($new_str);
 }
 
 sub edit_delete

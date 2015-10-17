@@ -1561,7 +1561,11 @@ sub visual_to_physical
 		my $cm = $self->{chunkMap};
 		$l = substr($l, $offset = $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
 	}
-	return $offset + $self->bidi_map($l)->[$x];
+	if ( $x >= length $l ) {
+		return $offset + $self->bidi_map($l)->[$x-1] + 1;
+	} else {
+		return $offset + $self->bidi_map($l)->[$x];
+	}
 }
 
 sub logical_to_physical
