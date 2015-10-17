@@ -436,7 +436,7 @@ sub reset_syntax
 		for ( @{$self-> {lines}}) {
 			my $sref = undef;
 			$notifier-> ( @notifyParms, $_, $sref);
-			push( @syntax, $sref);
+			push( @syntax, $self-> _syntax_entry($_, $sref));
 			last if $i++ > 50; # test speed...
 		}
 		$self-> pop_event;
@@ -515,23 +515,60 @@ SYNTAXER
 	}
 }
 
+sub _syntax_entry
+{
+	my ( $self, $chunk, $syntax ) = @_;
+
+	my @entry;
+	if ( $self-> is_bidi($chunk)) {
+		my ( $p, $v ) = $self-> bidi_paragraph($chunk);
+		my $map    = $self->bidi_revmap($p->map);
+		my @colors = (0) x @$map;
+		my $at     = 0;
+		for ( my $j = 0; $j < $#$syntax; $j += 2 ) {
+			my ( $len, $clr ) = @$syntax[$j,$j+1];
+			for ( my $k = 0; $k < $len; $k++) { $colors[ $map->[$at++] ] = $clr };
+		}
+		my $last_color = -1;
+		@entry = ( $v );
+		for my $clr ( @colors ) {
+			if ( $last_color == $clr ) {
+				$entry[-2]++;
+			} else {
+				push @entry, 1, $last_color = $clr;
+			}
+		}
+	} else {
+		@entry = ( undef, @$syntax );
+	}
+
+	return \@entry;
+}
+
 sub draw_colorchunk
 {
 	my ( $self, $canvas, $chunk, $i, $x, $y, $clr) = @_;
 	my $sd = $self-> {syntax}-> [$i];
 	unless ( defined $sd) {
 		$self-> notify(q(ParseSyntax), $chunk, $sd);
-		$self-> {syntax}-> [$i] = $sd;
+		$sd = $self-> {syntax}-> [$i] = $self->_syntax_entry($chunk, $sd);
 	}
-	my ( $cc,$j);
-	my $ofs = 0;
 
-	for ( $j = 0; $j < scalar @{$sd} - 1; $j += 2) {
-		my $xd = $self-> get_chunk_width( $chunk, $ofs, $$sd[$j], \$cc);
+	my $visual = $sd->[0] // $chunk;
+
+	my $ofs = 0;
+	for ( my $j = 1; $j <= $#$sd; $j += 2) {
+		my $len     = $$sd[$j];
+		my $substr  = substr( $visual, $ofs, $len);
+		$substr    =~ s/\t/$self->{tabs}/g;
+		my $width  = $self-> {fixed} ? 
+			( length( $substr) * $self-> {averageWidth}) : 
+			$self-> get_text_width( $substr);
+
 		$canvas-> color(( $$sd[$j+1] == cl::Fore) ? $clr : $$sd[$j+1]);
-		$canvas-> text_out_bidi( $cc, $x, $y);
-		$x += $xd;
-		$ofs += $$sd[$j];
+		$canvas-> text_out( $substr, $x, $y);
+		$x   += $width;
+		$ofs += $len;
 	}
 }
 
@@ -1561,8 +1598,9 @@ sub visual_to_physical
 		my $cm = $self->{chunkMap};
 		$l = substr($l, $offset = $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
 	}
+
 	if ( $x >= length $l ) {
-		return $offset + $self->bidi_map($l)->[$x-1] + 1;
+		return $offset + $self->bidi_map($l)->[length($x) - 1] + 1;
 	} else {
 		return $offset + $self->bidi_map($l)->[$x];
 	}
@@ -2119,7 +2157,7 @@ sub insert_empty_line
 	}
 	splice( @{$self-> {lines}}, $y, 0, ('') x $len);
 	$self-> {maxLine} += $len;
-	splice( @{$self-> {syntax}}, $y, 0, ([0,cl::Black]) x $len) 
+	splice( @{$self-> {syntax}}, $y, 0, (undef) x $len) 
 		if $self-> {syntaxHilite};
 
 	if ( $self-> has_selection) {

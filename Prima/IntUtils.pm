@@ -384,6 +384,7 @@ sub push_undo_action
 	my $ref = $self-> {undo_in_action} ? 'redo' : 'undo';
 	my $action = [ @_ ];
 	if ( $self-> {grouped_undo}) {
+		push @{$self-> {$ref}}, [] unless @{$self-> {$ref} // []};
 		push @{$self-> {$ref}-> [-1]}, $action;
 	} else {
 		push @{$self-> {$ref}}, [ $action ];

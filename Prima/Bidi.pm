@@ -11,6 +11,7 @@ our $default_direction_rtl = 0;
 our @methods = qw(
 	paragraph
 	map
+	revmap
 	visual
 	selection_map
 	selection_diff
@@ -129,6 +130,15 @@ sub _par
 }
 
 sub map { _par(@_)->map }
+
+sub revmap
+{
+	my $map = shift;
+	return $map unless ref $map;
+	my @newmap = (0) x @$map;
+	for (my $i = 0; $i < @$map; $i++) { $newmap[ $map->[$i] ] = $i }
+	return \@newmap;
+}
 
 sub selection_map
 {
