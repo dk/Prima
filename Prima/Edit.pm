@@ -96,31 +96,23 @@ sub profile_default
 			[ Insert         => 0, 0, kb::Insert , sub {$_[0]-> insertMode(!$_[0]-> insertMode)}],
 # edit keys
 			[ Delete         => 0, 0, kb::Delete,    sub {
-				return if $_[0]-> {readOnly};
 				$_[0]-> has_selection ? $_[0]-> delete_block : $_[0]-> delete_char; 
 			}],
 			[ Backspace      => 0, 0, kb::Backspace, sub {
-				return if $_[0]-> {readOnly};
 				$_[0]-> has_selection ? $_[0]-> delete_block : $_[0]-> back_char;
 			}],
 			[ CtrlBackspace  => 0, 0, kb::Backspace|km::Ctrl, sub {
-				return if $_[0]-> {readOnly};
-				return $_[0]-> delete_block if $_[0]-> has_selection;
-				$_[0]-> cursor_shift_key('ShiftWordLeft');
-				$_[0]-> delete_block;
+				$_[0]-> has_selection ? $_[0]-> delete_block : $_[0]-> delete_word(1);
 			}],
 			[ CtrlDelete     => 0, 0, kb::Delete|km::Ctrl, sub {
-				return if $_[0]-> {readOnly};
-				return $_[0]-> delete_block if $_[0]-> has_selection;
-				$_[0]-> cursor_shift_key('ShiftWordRight');
-				$_[0]-> delete_block;
+				$_[0]-> has_selection ? $_[0]-> delete_block : $_[0]-> delete_word(0);
 			}],
-			[ DeleteChunk    => 0, 0, '^Y',          sub {$_[0]-> delete_current_chunk unless $_[0]-> {readOnly}}],
-			[ DeleteToEnd    => 0, 0, '^E',          sub {$_[0]-> delete_to_end unless $_[0]-> {readOnly}}],
-			[ DupLine        => 0, 0, '^K',          sub {$_[0]-> insert_line($_[0]-> cursorY, $_[0]-> get_line($_[0]-> cursorY)) unless $_[0]-> {readOnly}}],
-			[ DeleteBlock    => 0, 0, '@D',          sub {$_[0]-> delete_block unless $_[0]-> {readOnly}}],
-			[ SplitLine      => 0, 0, kb::Enter,     sub {$_[0]-> split_line if !$_[0]-> {readOnly} && $_[0]-> {wantReturns}}],
-			[ SplitLine2     => 0, 0, km::Ctrl|kb::Enter,sub {$_[0]-> split_line if !$_[0]-> {readOnly} && !$_[0]-> {wantReturns}}],
+			[ DeleteChunk    => 0, 0, '^Y',          q(delete_current_chunk)],
+			[ DeleteToEnd    => 0, 0, '^E',          q(delete_to_end) ],
+			[ DupLine        => 0, 0, '^K',          sub {$_[0]-> insert_line($_[0]-> cursorY, $_[0]-> get_line($_[0]-> cursorY)) }],
+			[ DeleteBlock    => 0, 0, '@D',          q(delete_block) ],
+			[ SplitLine      => 0, 0, kb::Enter,     sub {$_[0]-> split_line if $_[0]-> {wantReturns}}],
+			[ SplitLine2     => 0, 0, km::Ctrl|kb::Enter,sub {$_[0]-> split_line if !$_[0]-> {wantReturns}}],
 # block keys
 			[ CancelBlock    => 0, 0, '@U',          q(cancel_block)],
 			[ MarkVertical   => 0, 0, '@B',          q(mark_vertical)],
@@ -223,9 +215,9 @@ sub init
 {
 	my $self = shift;
 	for ( qw( autoIndent topLine  offset resetDisabled blockType persistentBlock
-		tabIndent readOnly wantReturns wantTabs))
+		tabIndent wantReturns wantTabs))
 		{ $self-> {$_} = 1; }
-	for ( qw( wordWrap hScroll vScroll rows maxLineCount maxLineLength maxLineWidth
+	for ( qw( readOnly wordWrap hScroll vScroll rows maxLineCount maxLineLength maxLineWidth
 		scrollTransaction maxLine maxChunk capLen cursorY cursorX cursorWrap
 		cursorXl cursorYl syntaxHilite hiliteNumbers hiliteQStrings hiliteQQStrings
 		notifyChangeLock modified borderWidth autoHScroll autoVScroll blockShiftMark
@@ -520,14 +512,14 @@ sub _syntax_entry
 	my ( $self, $chunk, $syntax ) = @_;
 
 	my @entry;
-	if ( $self-> is_bidi($chunk)) {
+	if ( length($chunk) && $self-> is_bidi($chunk)) {
 		my ( $p, $v ) = $self-> bidi_paragraph($chunk);
 		my $map    = $self->bidi_revmap($p->map);
 		my @colors = (0) x @$map;
 		my $at     = 0;
 		for ( my $j = 0; $j < $#$syntax; $j += 2 ) {
 			my ( $len, $clr ) = @$syntax[$j,$j+1];
-			for ( my $k = 0; $k < $len; $k++) { $colors[ $map->[$at++] ] = $clr };
+			$colors[ $map->[$at++] ] = $clr while $len--;
 		}
 		my $last_color = -1;
 		@entry = ( $v );
@@ -1330,6 +1322,20 @@ sub set_offset
 		clipRect => [ $self-> get_active_area]);
 }
 
+sub set_readonly
+{
+	my ( $self, $ro ) = @_;
+	return if ($self->{readOnly} ? 1 : 0) == ($ro ? 1 : 0);
+	$self->{readOnly} = $ro;
+	$self-> accelTable-> enabled($_, !$ro) for qw(
+		Delete Backspace CtrlBackspace CtrlDelete
+		DeleteChunk DeleteToEnd DupLine DeleteBlock
+		SplitLine SplitLine2
+		CopyBlock OvertypeBlock
+		Cut Paste CutMS PasteMS
+		Undo Redo
+	);
+}
 
 sub set_selection
 {
@@ -1480,20 +1486,9 @@ sub get_selected_text
 	my $text = '';
 	my $bt = $self-> blockType;
 
-	my @sel = $self->selection;
-	($sel[0], $sel[2]) = (
-		$self->visual_to_physical($sel[0],     $sel[1]),
-		$self->visual_to_physical($sel[2] - 1, $sel[3]),
-	);
-	#@sel[0,2] = @sel[2,0] if $sel[0] > $sel[2];
-	if ($sel[0] > $sel[2]) {
-		@sel[0,2] = @sel[2,0];
-		$sel[2]++;
-	} else {
-		$sel[2]++;
-	}
 
 	if ( $bt == bt::CUA) {
+		my @sel = $self->selection_to_physical;
 		if ( $sel[1] == $sel[3]) {
 			$text = substr( $self-> get_line( $sel[1]), $sel[0], $sel[2] - $sel[0]);
 		} else {
@@ -1508,16 +1503,19 @@ sub get_selected_text
 		}
 	} elsif ( $bt == bt::Horizontal) {
 		my $i;
+		my @sel = $self->selection_to_physical;
 		for ( $i = $sel[1]; $i <= $sel[3]; $i++) {
 			$text .= $self-> get_line( $i)."\n";
 		}
 	} else {
 		my $i;
+		my @sel = $self->selection;
 		for ( $i = $sel[1]; $i <= $sel[3]; $i++) {
-			my $c = $self-> get_line( $i);
+			my @s2 = $self->selection_to_physical( $sel[0], $i, $sel[2], $i);
+			my $c  = $self-> get_line( $i);
 			my $cl = $sel[2] - length( $c);
 			$c .= ' 'x$cl if $cl > 0;
-			$text .= substr($c, $sel[0], $sel[2] - $sel[0])."\n";
+			$text .= substr($c, $s2[0], $s2[2] - $s2[0])."\n";
 		}
 		chomp( $text);
 	}
@@ -1715,6 +1713,23 @@ sub physical_to_logical
 	my $l = $self->get_chunk($y);
 	return $x, $y unless $self->is_bidi($l);
 	return $self->bidi_map_find($self-> bidi_map($l), $x), $y;
+}
+
+sub selection_to_physical
+{
+	my ($self, @ranges) = @_;
+	my @sel = @ranges ? @ranges : $self->selection;
+	($sel[0], $sel[2]) = (
+		$self->visual_to_physical($sel[0],     $sel[1]),
+		$self->visual_to_physical($sel[2] - 1, $sel[3]),
+	);
+	if ($sel[0] > $sel[2]) {
+		@sel[0,2] = @sel[2,0];
+		$sel[2]++;
+	} else {
+		$sel[2]++;
+	}
+	return @sel;
 }
 
 sub start_block
@@ -2351,7 +2366,6 @@ sub delete_chunk
 	$self-> end_undo_group;
 }
 
-
 sub delete_text
 {
 	my ( $self, $x, $y, $len) = @_;
@@ -2434,12 +2448,27 @@ sub delete_to_end
 {
 	my $self = $_[0];
 	my @cs = $self-> cursor;
-	my @pc = $self-> logical_to_physical(@cs);
+	my $px = $self-> logical_to_physical(@cs);
 	my $c = $self-> get_line( $cs[1]);
 	return if $cs[ 0] > length( $c);
 
-	$self-> set_line( $cs[1], substr( $c, 0, $pc[0]), q(delete), $cs[0], length( $c) - $cs[0]);
+	$self-> set_line( $cs[1], substr( $c, 0, $px), q(delete), $cs[0], length( $c) - $cs[0]);
 	$self-> cursor(0,$cs[1]) if $self->is_bidi($c);
+}
+
+sub delete_word
+{
+	my ($self, $as_backspace) = @_;
+	my @cs          = $self-> cursor;
+	my $c           = $self-> get_line($cs[1]);
+	my $p           = length($c);
+	($p) = $self-> bidi_paragraph($c) if $self->is_bidi($c);
+	my ( $howmany, $at, $moveto) = $self->bidi_edit_delete( $p, $cs[0], $as_backspace);
+	return unless $howmany;
+
+	my $direction = ( $moveto < 0 ) ? 'Left' : 'Right';
+	$self-> cursor_shift_key('ShiftWord' . $direction );
+	$self-> delete_block;
 }
 
 sub delete_block
@@ -2459,10 +2488,8 @@ sub delete_block
 		my @sel = ( @{$self-> {selStart}}, @{$self-> {selEnd}});
 		if ( $sel[1] == $sel[3]) {
 			$c = $self-> get_line( $sel[1]);
-			my $px1 = $self-> visual_to_physical($sel[0],   $sel[1]);
-			my $px2 = $self-> visual_to_physical($sel[2]-1, $sel[3]);
-			($px2, $px1) = ($px1, $px2) if $px1 > $px2;
-			substr( $c, $px1, $px2 - $px1 + 1) = '';
+			my @sel2 = $self-> selection_to_physical;
+			substr( $c, $sel2[0], $sel2[2] - $sel2[0]) = '';
 			$self-> set_line( $sel[1], $c);
 		} else {
 			my ( $from, $len) = ( $sel[1], $sel[3] - $sel[1]);
@@ -2490,7 +2517,7 @@ sub delete_block
 		{
 			my $c = $self-> get_line( $i);
 			if ( $c ne '') {
-				substr( $c, $self-> visual_to_physical(@sel[0,1]), $len) = '';
+				substr( $c, $self-> visual_to_physical($sel[0], $i), $len) = '';
 				$self-> set_line( $i, $c);
 			}
 		}
@@ -2512,39 +2539,31 @@ sub copy_block
 		$self-> {wordWrap} || 
 		!$self-> has_selection;
 
-	my @sel = $self-> selection;
 	$self-> lock_change(0);
 	$self-> lock;
 	$self-> begin_undo_group;
+	my @lines = split "\n", $self->get_selected_text;
 	if ( $self-> {blockType} == bt::Horizontal) {
-		my @lines;
-		my $i;
-		for ( $i = $sel[1]; $i <= $sel[3]; $i++) { 
-			push @lines, $self-> get_line( $i);
-		}
 		$self-> insert_line( $self-> cursorY, @lines);
 	} else {
-		my @lines;
-		my $i;
-		for ( $i = $sel[1]; $i <= $sel[3]; $i++) {
-			my $c = $self-> get_line( $i);
-			$c .= ' ' x ($sel[2]-length($c)) 
-				if length($c) < $sel[2];
-			push( @lines, substr( $c, $sel[0], $sel[2]-$sel[0]));
-		}
 		my @cs = $self-> cursor;
-		for ( $i = $cs[1]; $i < $cs[1] + scalar @lines; $i++) {
-			my $c = $self-> get_line( $i);
-			$c .= ' 'x($cs[0]-length($c)) if length($c) < $cs[0];
-			substr( $c, $cs[0], 0) = $lines[ $i - $cs[1]];
-			$self-> set_line( $i, $c);
+		for ( my $i = $cs[1]; $i < $cs[1] + scalar @lines; $i++) {
+			my $line = $lines[ $i - $cs[1]]; 
+			if ( $i <= $self-> {maxLine} ) {
+				my $c = $self-> get_line( $i);
+				$c .= ' 'x($cs[0]-length($c)) if length($c) < $cs[0];
+				my $px = $self-> logical_to_physical($cs[0], $i);
+				substr( $c, $px, 0) = $line;
+				$self-> set_line( $i, $c);
+			} else {
+				$self-> insert_line( $i, (' ' x $cs[0] ) . $line);
+			}
 		}
 	}
 	$self-> end_undo_group;
 	$self-> unlock;
 	$self-> lock_change(1);
 }
-
 
 sub overtype_block
 {
@@ -2559,27 +2578,29 @@ sub overtype_block
 	$self-> lock_change(0);
 	$self-> lock;
 	$self-> begin_undo_group;
+	my @lines = split "\n", $self->get_selected_text;
+	my @cs    = $self-> cursor;
 	if ( $self-> {blockType} == bt::Horizontal) {
-		my $i;
-		for ( $i = $sel[1]; $i <= $sel[3]; $i++) {
-			$self-> set_line( $i, $self-> get_line( $i));
+		for ( my $i = $cs[1]; $i < $cs[1] + scalar @lines; $i++) {
+			my $line = $lines[ $i - $cs[1]]; 
+			if ( $i <= $self-> {maxLine} ) {
+				$self-> set_line( $i, $line);
+			} else {
+				$self-> insert_line( $i, $line);
+			}
 		}
 	} else {
-		my @lines;
-		my $i;
-		for ( $i = $sel[1]; $i <= $sel[3]; $i++) {
-			my $c = $self-> get_line( $i);
-			$c .= ' ' x ($sel[2]-length($c)) if length($c) < $sel[2];
-			push( @lines, substr( $c, $sel[0], $sel[2]-$sel[0]));
-		}
-		my @cs = $self-> cursor;
-		my $bx = $sel[3] - $sel[1] + 1;
-		for ( $i = $cs[1]; $i < $cs[1] + scalar @lines; $i++) {
-			my $c = $self-> get_line( $i);
-			$c .= ' ' x ($cs[0]-length($c)) 
-				if length($c) < $cs[0];
-			substr( $c, $cs[0], $bx) = $lines[ $i - $cs[1]];
-			$self-> set_line( $i, $c);
+		for ( my $i = $cs[1]; $i < $cs[1] + scalar @lines; $i++) {
+			my $line = $lines[ $i - $cs[1]]; 
+			if ( $i <= $self-> {maxLine} ) {
+				my $c = $self-> get_line( $i);
+				$c .= ' 'x($cs[0]-length($c)) if length($c) < $cs[0];
+				my $px = $self-> logical_to_physical($cs[0], $i);
+				substr( $c, $px, length($line)) = $line;
+				$self-> set_line( $i, $c);
+			} else {
+				$self-> insert_line( $i, (' ' x $cs[0] ) . $line);
+			}
 		}
 	}
 	$self-> end_undo_group;
@@ -2743,7 +2764,7 @@ sub markers         {($#_)?($_[0]-> {markers}    = [@{$_[1]}])              :ret
 sub modified        {($#_)?($_[0]-> {modified }     = $_[1])                :return $_[0]-> {modified }    }
 sub offset          {($#_)?($_[0]-> set_offset   (    $_[1]))               :return $_[0]-> {offset   }    }
 sub persistentBlock {($#_)?($_[0]-> {persistentBlock}=$_[1])               :return $_[0]-> {persistentBlock}}
-sub readOnly        {($#_)?($_[0]-> {readOnly }     = $_[1])                :return $_[0]-> {readOnly }    }
+sub readOnly        {($#_)? $_[0]-> set_readonly($_[1])                     :return $_[0]-> {readOnly }    }
 sub selection       {($#_)? shift-> set_selection   (@_)           : return (@{$_[0]-> {selStart}},@{$_[0]-> {selEnd}})}
 sub selStart        {($#_)? $_[0]-> set_selection   ($_[1],$_[2],@{$_[0]-> {selEnd}}): return @{$_[0]-> {'selStart'}}}
 sub selEnd          {($#_)? $_[0]-> set_selection   (@{$_[0]-> {'selStart'}},$_[1],$_[2]):return @{$_[0]-> {'selEnd'}}}
@@ -2948,7 +2969,7 @@ Default value: 0
 
 =item readOnly BOOLEAN
 
-If 1, no user input is accepted.
+If 1, no user input is accepted. Manipulation with text are allowed though.
 
 =item selection X1, Y1, X2, Y2
 
