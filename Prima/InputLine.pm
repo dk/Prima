@@ -272,12 +272,7 @@ sub text
 		$self-> SUPER::text( $cap);
 
 	if ($self->is_bidi($cap)) {
-		my ( $p, $c ) = $self->bidi_paragraph( $cap );
-		$self->{bidiData} = {
-			p   => $p,
-			map => $p->map,
-		};
-		$cap = $c;
+		($self->{bidiData}, $cap) = $self->bidi_paragraph( $cap );
 		# Prima::Bidi::debug_str($p,$c);
 	} else {
 		delete $self->{bidiData};
@@ -402,7 +397,7 @@ sub on_keydown
 				$self-> charOffset( $start);
 			} else {
 				my ( $howmany, $at, $moveto) = $self->bidi_edit_delete(
-					$self->{bidiData} ? $self->{bidiData}->{p} : length($cap),
+					$self->{bidiData} // length($cap),
 					$self->charOffset, 1
 				);
 				if ( $howmany ) {
@@ -431,7 +426,7 @@ sub on_keydown
 				$self-> charOffset( $start);
 			} else {
 				my ( $howmany, $at, $moveto) = $self->bidi_edit_delete(
-					$self->{bidiData} ?  $self->{bidiData}->{p} : length($cap),
+					$self->{bidiData} // length($cap),
 					$self->charOffset, 0
 				);
 				if ( $howmany ) {
@@ -504,11 +499,7 @@ sub on_keydown
 			$offset = $p_start;
 			substr( $cap, $p_start, $p_end - $p_start) = '';
 			if ( $self->is_bidi($cap)) {
-				my ($p) = $self->bidi_paragraph( $cap );
-				$self->{bidiData} = {
-					p   => $p,
-					map => $p->map,
-				};
+				($self->{bidiData}) = $self->bidi_paragraph( $cap );
 			} else {
 				delete $self->{bidiData};
 			}
@@ -519,7 +510,7 @@ sub on_keydown
 		} else {
 		INSERT:
 			my ($at,$moveto) = $self->bidi_edit_insert(
-				$self->{bidiData} ? $self->{bidiData}->{p} : undef,
+				$self->{bidiData},
 				$start, $chr, $self->{textDirection}
 			);
 			substr( $cap, $at, 0) = $chr;
@@ -648,7 +639,7 @@ sub offset2strpos
 	my $l  = length $self->{wholeLine};
 	my @p  = @_;
 	my $bd = $self->{bidiData} ?
-		$self->{bidiData}->{map} :
+		$self->{bidiData}->map :
 		return $#p ? @p : $p[0];
 	my @ret    =  map {
 		 ($_ <   0) ? 0 :
@@ -976,7 +967,7 @@ sub set_selection
 			$self->{selChunks} = [ 0, $l ];
 		} else {
 			$self->{selChunks} = $self->bidi_selection_chunks(
-				$self->{bidiData} ? $self->{bidiData}->{map} : $l,
+				$self->{bidiData} ? $self->{bidiData}->map : $l,
 				$start, $end - 1);
 			# warn "$start:$end > @{$self->{selChunks}}\n";
 		}
