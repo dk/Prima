@@ -143,7 +143,7 @@ sub revmap
 sub selection_map
 {
 	my $text = shift;
-	return is_bidi($text) ? map($text) : length($text);
+	return is_bidi($text) ? _par($text)->map : length($text);
 }
 
 sub selection_chunks
