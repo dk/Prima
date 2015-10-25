@@ -1064,7 +1064,7 @@ sub bars
 	$c = int( $c / 4) * 4;
 	my $z = '';
 	for ( $i = 0; $i < $c; $i += 4) {
-		$z .= "N @a[$i,$i+1] M @a[$i,$i+3] l @a[$i+2,$i+3] l @a[$i+2,$i+1] l X F ");
+		$z .= "N @a[$i,$i+1] M @a[$i,$i+3] l @a[$i+2,$i+3] l @a[$i+2,$i+1] l X F ";
 	}
 	$self-> stroke( $z);
 }
