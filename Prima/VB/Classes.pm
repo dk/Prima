@@ -1569,7 +1569,7 @@ sub open
 		image  => $VB::main-> {openbutton}-> image,
 		glyphs => $VB::main-> {openbutton}-> glyphs,
 		onClick => sub {
-			my $d = VB::open_dialog;
+			my $d = VB::open_dialog();
 			if ( $d-> execute) {
 				my $f = $d-> fileName;
 				if ( open F, $f) {

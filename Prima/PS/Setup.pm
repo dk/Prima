@@ -29,7 +29,10 @@
 #  Setup dialog management
 
 use strict;
+use warnings;
+use Prima::PS::Printer;
 package Prima::PS::Printer;
+
 
 sub sdlg_export
 {

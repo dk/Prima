@@ -475,6 +475,10 @@ my $w = EditorWindow-> create(
         origin => [ 10, 100],
         size   => [ $::application-> width - 820, $::application-> height - 150],
 	fileName => $_,
+	font => {
+		size => 16,
+		name => 'Courier New',
+	},
 );
 }
 

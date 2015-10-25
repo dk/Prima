@@ -36,6 +36,7 @@ use Prima::Classes;
 use Prima::Buttons;
 use Prima::Label;
 use Prima::ComboBox;
+use Prima::StdDlg;
 
 package Prima::FindDialog;
 use vars qw(@ISA);
