@@ -60,7 +60,7 @@ ARGUMENT: while( 1)
 	/^-O$/          && do { $args->{ optimize} = 1; next ARGUMENT; };
 	/^-I(.*)$/      && do {
 		my $ii = $1;
-		push @{ $args->{ incpath}}, map { m{[\\/]$} ? $_ : "$_/" } split ';', $ii;
+		push @{ $args->{ incpath}}, split ';', $ii;
 		next ARGUMENT;
 	};
 	last ARGUMENT;

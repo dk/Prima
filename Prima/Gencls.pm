@@ -193,7 +193,7 @@ sub init_variables
 	$genDyna   = 0;		# generate exportable files
 	$genObject = 0;		# generate object files
 	$genPackage = 0;		# generate object or package files
-	@includeDirs = qw(./);	# where to search .clses
+	@includeDirs = qw(.);	# where to search .clses
 	%definedClasses = ();	# hash for class search
 	@allVars = ();		# all variables, in order of definition
 	%allVars = ();		# hash for var search
@@ -422,7 +422,7 @@ sub find_file
 		my %arraySave = %arrays;
 		my %defineSave = %defines;
 		my $nextStructureSave = $nextStructure;
-		eval { load_file( "$_$fileName") };
+		eval { load_file( "$_/$fileName") };
 		if ( !$@ && skipto( 'object'))
 		{
 			$tok = gettok;
@@ -439,7 +439,7 @@ sub find_file
 		%defines = %defineSave;
 		restore_context;
 		next unless $fit;
-		return "$_$fileName", $dyna;
+		return "$_/$fileName", $dyna;
 	}
 	return undef;
 }
@@ -1143,7 +1143,14 @@ sub load_structures
 			my $fid = getid;
 			expect(';');
 			save_context;
-			load_file( "$fid.cls");
+			my $loaded;
+			foreach (@includeDirs) {
+				my $f = "$_/$fid.cls";
+				next unless -f $f;
+				$loaded = $f;
+			}
+			die "$fid.cls not found\n" unless defined $loaded;
+			load_file( $loaded);
 			$level++;
 			&load_structures;
 			$level--;
@@ -1168,7 +1175,9 @@ if (( $tok eq "object") || ( $tok eq "package")) {
 		#$genInc = 0;
 		$ownFile = $fileName;
 		$ownFile =~ s/([^.]*)\..*$/$1/;
-		$ownCType = uc $ownFile;
+		my $out = $ownFile;
+		$out =~ s[.*\/][];
+		$ownCType = uc $out;
 	}
 }
 } # end of parse_file
@@ -1932,12 +1941,14 @@ METHODS: 	for ( my $i = 0; $i < scalar @{$methods}; $i++) {
 
 
 	if ( $genH) {
-																	# 1 - class.h
-	open HEADER, ">$dirOut$ownFile.h" or die "Cannot open $dirOut$ownFile.h\n";
+
+	my $out = $ownFile;
+	$out =~ s[.*\/][];
+	open HEADER, ">$dirOut$out.h" or die "Cannot open $dirOut$out.h\n";
 print HEADER <<LABEL;
 /* This file was automatically generated.
  * Do not edit, you\'ll loose your changes anyway.
- * file: $ownFile.h  */
+ * file: $out.h  */
 #ifndef ${ownCType}_H_
 #define ${ownCType}_H_
 #ifndef _APRICOT_H_
@@ -1971,6 +1982,7 @@ print HEADER "#include \"$baseFile.h\"\n" if $baseClass;
 	}
 
 	for ( keys %toInclude) {
+		s[.*\/][];
 		print HEADER "#include \"$_.h\"\n";
 	}
 }
@@ -2138,13 +2150,15 @@ close HEADER;
 
 if ( $genInc) {
 																			#2 - class.inc
-open HEADER, ">$dirOut$ownFile.inc" or die "Cannot open $dirOut$ownFile.inc\n";
+my $out = $ownFile;
+$out =~ s[.*\/][];
+open HEADER, ">$dirOut$out.inc" or die "Cannot open $dirOut$out.inc\n";
 print HEADER <<LABEL;
 /* This file was automatically generated.
  * Do not edit, you\'ll loose your changes anyway.
- * file: $ownFile.inc */
+ * file: $out.inc */
 
-#include "$ownFile.h"
+#include "$out.h"
 LABEL
 print HEADER "#include \"guts.h\"\n" if ( !$genDyna && $genObject);
 print HEADER <<SD;
@@ -2323,11 +2337,13 @@ SD
 	} # end gen Inc
 
 if ( $genTml) {                                        #3 - class.tml
-	open HEADER, ">$dirOut$ownFile.tml" or die "Cannot open $dirOut$ownFile.tml\n";
+	my $out = $ownFile;
+	$out =~ s[.*\/][];
+	open HEADER, ">$dirOut$out.tml" or die "Cannot open $dirOut$out.tml\n";
 	print HEADER <<LABEL;
 /* This file was automatically generated.
  Do not edit, you'll loose your changes anyway.
- file: $ownFile.tml   */
+ file: $out.tml   */
 
 LABEL
 

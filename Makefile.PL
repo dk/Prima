@@ -278,16 +278,16 @@ sub setup_files
 	@pod_files  = ffind( qr/./, 'pod' );
 	@pm_files  = ffind( qr/\.pm$/ );
 	@c_files    = ( 
-		<*.c>,
+		<src/*.c>,
 		(grep { not $PASSIVE_CODECS{$_} } <img/*.c>),
 		(grep { !m/xft.c/ || $cmd_options{WITH_XFT} } <$platform/*.c>),
 	);
-	@cls_files  = ( <*.cls> );
+	@cls_files  = ( <src/*.cls> );
 	@h_files    = ( 
 		<include/*.h>,
 		<include/generic/*.h>,
 		<include/$platform/*.h>,
-		map { "include/generic/$_" } extmap( '.h', @cls_files),
+		map { s[src/][]; "include/generic/$_" } extmap( '.h', @cls_files),
 	);
 	@o_files  = extmap( $Config{_o}, @c_files );
 
@@ -298,7 +298,7 @@ sub setup_files
 
 	@target_clean = (
 		"include/generic/*",
-		"*$Config{_o}",
+		"src/*$Config{_o}",
 		"img/*$Config{_o}",
 		"$platform/*$Config{_o}",
 	);
@@ -1854,7 +1854,7 @@ sub command_bindist
 			m/^\./;
 		return if /\.(pdb|ncb|opt|dsp|dsw)$/i; # MSVC
 		my $f = "$File::Find::dir/$_";
-		return if $f =~ /include.generic|\.git|blib|dll.base|dll.exp|Prima.bs|Prima.def/;
+		return if $f =~ /include.generic|\.git|\.swp|blib|dll.base|dll.exp|Prima.bs|Prima.def/;
 		return if $f =~ /\.(c|cls|h)$/i;
 		return if $f =~ /$CWD.(img|include|win32|unix|Makefile.PL|Makefile.old)/i;
 		if ( -d $f) {
@@ -1966,12 +1966,12 @@ SHOWMORE
     	printlog "Finding .cls dependencies...\n";
 
 	for my $clsfile ( @cls_files) {
-		my ( $base ) = $clsfile =~ m/^(.*?).cls$/;
-		my $ancestors = join(' ', map { "include/generic/$_.h $_.cls" } gencls( $clsfile, depend => 1));
+		my ( $base ) = $clsfile =~ m/^src\/(.*?).cls$/;
+		my $ancestors = join(' ', map { "include/generic/$_.h src/$_.cls" } gencls( $clsfile, depend => 1, incpath => ['src']));
 	  	$t .= <<H;
 
-include/generic/$base.h: \$(FIRST_MAKEFILE) $showlog $base.cls $ancestors
-\t$^X -I. utils/gencls.pl --inc --h --tml $clsfile include/generic
+include/generic/$base.h: \$(FIRST_MAKEFILE) $showlog src/$base.cls $ancestors
+\t$^X -I. utils/gencls.pl --inc --h -Isrc --tml $clsfile include/generic
 
 H
 		push @alltml, "include/generic/$base.tml";
@@ -1987,13 +1987,13 @@ H
 
 	my %dirs;
 	for my $cfile ( @c_files ) {
-        my ( $dir ) = ( $cfile =~ /^(\w+)\// );
-        $dir = 'root directory' unless $dir;
-	printlog "Finding .c dependencies in $dir...\n" unless $dirs{$dir}++;
+        	my ( $dir ) = ( $cfile =~ /^(\w+)\// );
+        	$dir = 'root directory' unless $dir;
+		printlog "Finding .c dependencies in $dir...\n" unless $dirs{$dir}++;
 
-	my ( $base ) = $cfile =~ m/^(.*?).c$/;
-	my @deps = find_cdeps( $cfile );
-	$t .= <<H
+		my ( $base ) = $cfile =~ m/^(.*?).c$/;
+		my @deps = find_cdeps( $cfile );
+		$t .= <<H
 
 $base$Config{_o}: \$(FIRST_MAKEFILE) $cfile @deps
 
@@ -2041,7 +2041,7 @@ bindist: all
 \t$^X $0 --bindist $DISTNAME
 
 devclean:
-\t\$(RM_F) *$Config{_o} img/*$Config{_o} $platform/*$Config{_o}
+\t\$(RM_F) src/*$Config{_o} img/*$Config{_o} $platform/*$Config{_o}
 
 deinstall:
 $pm_deinstall
