@@ -382,7 +382,7 @@ sub load_file
 				push @_words, $1; push @_lineNums, $ln;
 			} else {
 				close FILE;
-				error "APC009a:  Invalid character in input";
+				error " Invalid character in input";
 			}
 			redo;
 		}
@@ -797,7 +797,7 @@ sub preload_method
 
 	# checking default parameters
 	for ( my $i = 0; $i <= $#types; $i++) {
-		error "APC0039: Parameter ${\($i+1)} of type $types[$i] cannot be used with default parameters"
+		error "Parameter ${\($i+1)} of type $types[$i] cannot be used with default parameters"
 		if defined $defParms[$i] && (
 			$structs{$types[$i]} || $arrays{$types[$i]} ||
 #        ( $types[$i] eq "Handle") || <<<< to enable being Handle default parameters
@@ -980,9 +980,9 @@ sub load_single_part
 				putback( $tok);
 				my ( $superFile, $inhDyna) = find_file( "$superClass.cls");
 				$tok = gettok;
-				error "APC0035: Cannot find file corresponding to ''$superClass''" 
+				error "Cannot find file corresponding to ''$superClass''" 
 					unless defined $superFile;
-				error "APC0036: Static object cannot inherit dynamic module $superClass" 
+				error "Static object cannot inherit dynamic module $superClass" 
 					if !$genDyna && $inhDyna;
 				parse_file( $superFile) unless $sayparent;
 				$level--;
