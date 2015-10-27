@@ -1660,13 +1660,14 @@ sub visual_to_logical
 	my ( $self, $x, $y) = @_;
 	return $x,$y unless $self->{wordWrap};
 
+	my $cm = $self-> {chunkMap};
+	return 0,0 unless @$cm;
 	my $maxY = $self-> {maxLine};
 	$y = $maxY if $y > $maxY || $y < 0;
 	$y = 0 if $y < 0;
 	my $l = length( $self-> {lines}-> [$y]);
 	$x = $l if $x < 0 || $x > $l;
 	$x = 0 if $x < 0;
-	my $cm = $self-> {chunkMap};
 	my $r;
 	( $l, $r) = ( 0, $self-> {maxChunk} + 1);
 	my $i = int($r / 2);
