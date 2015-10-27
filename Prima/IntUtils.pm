@@ -724,9 +724,9 @@ Used for classes that can edit and undo and redo its content.
 
 =head2 Properties
 
-=item undoLimit INTEGER
-
 =over
+
+=item undoLimit INTEGER
 
 Sets limit on number of stored atomic undo operations. If 0,
 undo is disabled.
