@@ -292,21 +292,21 @@ sub expect
 # expect given string
 {
 	my $tofind = shift;
-	error "APC001: Found ``$tok'' but expecting ``$tofind''" unless ( $tok = gettok) eq $tofind;
+	error "Found ``$tok'' but expecting ``$tofind''" unless ( $tok = gettok) eq $tofind;
 }
 
 sub check
 # check whether $tok is equal to given parm
 {
 	my $tofind = shift;
-	error "APC002: Found ``$tok'' but expecting ``$tofind''" unless $tok eq $tofind;
+	error "Found ``$tok'' but expecting ``$tofind''" unless $tok eq $tofind;
 }
 
 sub getid
 # waits for indentifier
 {
 	$tok = gettok;
-	error "APC003: Expecting identifier but found ``$tok''" unless $tok =~ /^\w+$/;
+	error "Expecting identifier but found ``$tok''" unless $tok =~ /^\w+$/;
 	return $tok;
 }
 
@@ -317,7 +317,7 @@ sub getidsym
 	$tok = gettok;
 	return $tok if index($_[0],$tok) >= 0;   # $what =~ /\Q$tok\E/;
 	return $tok if $tok =~ /^\w+$/;
-	error "APC004: Expecting identifier or one of ``$_[0]'' but found ``$tok''";
+	error "Expecting identifier or one of ``$_[0]'' but found ``$tok''";
 }
 
 sub getObjName
@@ -325,7 +325,7 @@ sub getObjName
 	$tok = gettok;
 	for ( split( '::', $tok))
 	{
-		error "APC033: Expecting object identifier but found ``$_''" 
+		error "Expecting object identifier but found ``$_''" 
 			unless $_ =~ /^\w+$/;
 	}
 	return $tok;
@@ -357,7 +357,7 @@ sub load_file
 		return;
 	}
 
-	open FILE, $fileName or die "APC009: Cannot open $fileName\n";
+	open FILE, $fileName or die "Cannot open $fileName\n";
 
 	# loading the file
 	my @_words;
@@ -447,7 +447,7 @@ sub find_file
 sub checkid
 {
 	my $id = $_[0];
-	error "APC017: Indentifier '$id' already defined or cannot be used; error"
+	error "Indentifier '$id' already defined or cannot be used; error"
 	if $mapTypes{$id} || $structs{$id} || $arrays{$id} || $defines{$id} || $forbiddenParms{$id};
 }
 
@@ -484,8 +484,8 @@ sub parse_struc
 	{
 		# determining typecasting
 		my $nid = getid;
-		error "APC051: Invalid casting type $id" unless ( $arrays{$nid} || $structs{$nid} || $defines{$nid});
-		error "APC052: Invalid forecasting type $id" if $redef;
+		error "Invalid casting type $id" unless ( $arrays{$nid} || $structs{$nid} || $defines{$nid});
+		error "Invalid forecasting type $id" if $redef;
 		expect(';');
 		if ( $arrays{$nid}) {
 			$arrays{ $id} = [ $arrays{$nid}[0], $arrays{$nid}[1], {%added}];
@@ -503,7 +503,7 @@ sub parse_struc
 			}
 			expect('[');
 			my $dim = gettok;
-			error "APC050: Invalid array $id dimension '$dim'" if $dim <= 0;
+			error "Invalid array $id dimension '$dim'" if $dim <= 0;
 			expect(']');
 			expect(';');
 			$arrays{ $id} = [ $dim, $type, {%added}];
@@ -520,24 +520,24 @@ sub parse_struc
 		last if $type eq "}";
 		if ( exists $structs{ $type}) {
 			$structure = $structs{ $type};
-			error "APC053: Cannot do nested arrays (yet)"
+			error "Cannot do nested arrays (yet)"
 				unless $structure-> [PROPS]-> {hash};
 			$type = 'SV*';
 		} else {
-			error "APC046: Invalid field type $type"
+			error "Invalid field type $type"
 				if (!defined $mapTypes{$type} || $type eq 'HV') && ( $type ne 'string');
 			$structure = $type = $mapTypes{$type} if $mapTypes{$type};
 		}
 		$tok = gettok;
 		# checking pointer
 		if ( $tok eq '*') {
-			error "APC045: Invalid pointer to $type in structure $id"
+			error "Invalid pointer to $type in structure $id"
 				if ( $type ne 'char') && ( $type ne 'SV');
 			$type .='*';
 			$structure = $type;
 			$tok = getid;
 		} else {
-			error "APC054: Invalid filed type $type in structure $id"
+			error "Invalid filed type $type in structure $id"
 				if ( $type eq 'HV') or ( $type eq 'SV');
 		}
 		push ( @types, $structure);
@@ -567,7 +567,7 @@ sub parse_struc
 			expect(';');
 		}
 	}
-	error "APC047: Structure $id defined as empty" unless scalar @ids;
+	error "Structure $id defined as empty" unless scalar @ids;
 
 	if ( $redef) {
 		# if it's hash default values redefine check for structure exact match
@@ -575,9 +575,9 @@ sub parse_struc
 		$ln = $lineStart;
 		my @cmpType = (@{$structs{$id}[0]});
 		my @cmpIds  = (@{$structs{$id}[1]});
-		error "APC048: Structure $id is already defined. Error" unless @cmpType eq @types;
+		error "Structure $id is already defined. Error" unless @cmpType eq @types;
 		for ( my $i = 0; $i < scalar @types; $i++) {
-			error "APC048: Structure $id is already defined. Error"
+			error "Structure $id is already defined. Error"
 			unless ( $cmpType[$i] eq $types[$i]) && ( $cmpIds[$i] eq $ids[$i]);
 		}
 		$ln = $lineStart;
@@ -602,7 +602,7 @@ sub parse_typedef
 		checkid( $t);
 		$type = $t;
 	}
-	error "APC049: Invalid casting type $type" unless ( $mapTypes{$type});
+	error "Invalid casting type $type" unless ( $mapTypes{$type});
 	expect(';');
 	my $incl = $fileName;
 	$incl =~ s/([^.]*)\..*$/$1/;
@@ -663,12 +663,12 @@ sub preload_method
 			$acc .= " " . $tok;
 			$checkEmptyRes .= $tok;
 		}
-		error "APC020: Function result haven't been defined" unless $checkEmptyRes;
-		error "APC012: Unexpected (" unless $id;
+		error "Function result haven't been defined" unless $checkEmptyRes;
+		error "Unexpected (" unless $id;
 	} else {
-		error "APC056: Property cannot be 'void'" if $proptype eq 'void';
+		error "Property cannot be 'void'" if $proptype eq 'void';
 	}
-	error "APC013: Method $id already defined"
+	error "Method $id already defined"
 		if exists($allMethodsHosts{ $id}) && $allMethodsHosts{ $id} eq $className;
 
 	@defParms = ();
@@ -731,16 +731,16 @@ sub preload_method
 
 			pop @gp;
 			$tok = shift @gp;
-			error "APC040: Invalid parameter $parmNo description" unless defined $tok;
+			error "Invalid parameter $parmNo description" unless defined $tok;
 			push ( @types, $tok); # first type description, definitive for
 										# default parameter validity check
 			if ( $tok eq '...') {
 				$ellipsis  = 1;
 				$hasEllipsis++;
-				error "APC057: Property can not contain ellipsis into parameter list" 
+				error "Property can not contain ellipsis into parameter list" 
 					if $asProperty;
 			} else {
-				error "APC043: Invalid parameter $parmNo description" 
+				error "Invalid parameter $parmNo description" 
 					unless defined $gp[0];
 			}
 			my $hasEqState = 0;
@@ -749,10 +749,10 @@ sub preload_method
 			{
 				# checking for type-name matching
 				checkid($_);
-				error "APC005: Indirect function and array parameters are unsupported. Error"
+				error "Indirect function and array parameters are unsupported. Error"
 					if /^[\(\)\[\]\&]$/;
-				error "APC006: Unexpected semicolon" if /^[\;]$/;
-				error "APC042: End of default parameter description expected but found $_" 
+				error "Unexpected semicolon" if /^[\;]$/;
+				error "End of default parameter description expected but found $_" 
 					if $hasEqState > 1;
 				if ( $hasEqState == 1)
 				{
@@ -761,20 +761,20 @@ sub preload_method
 				}
 				# default parameter add
 				if ( $_ eq "=") {
-					error "APC041: Invalid default parameter $parmNo description" 
+					error "Invalid default parameter $parmNo description" 
 						if $hasEqState;
-					error "APC058: Property can not contain default parameters" 
+					error "Property can not contain default parameters" 
 						if $asProperty;
 					$hasEqState = 1;
 				}
 			}
-			error "APC038: Default argument missing for parameter $parmNo"
+			error "Default argument missing for parameter $parmNo"
 				if !defined $defaultParm && defined $defParms[-1];
 			push( @defParms, $defaultParm);
 			last if ( $parm[-1] eq ")");
 			$parmNo++;
 		}
-		error "APC055: Ellipsis (...) could be defined only in the end of parameters list"
+		error "Ellipsis (...) could be defined only in the end of parameters list"
 			if $hasEllipsis > 1 || ( $hasEllipsis == 1 && $ellipsis == 0);
 	} else {
 		$acc .= "$proptype value" if $asProperty;
@@ -786,11 +786,11 @@ sub preload_method
 	$tok = gettok;
 	if ( $tok eq "=") {
 		$tok = gettok;
-		error "APC044: Expected => but found $tok" unless $tok eq '>';
+		error "Expected => but found $tok" unless $tok eq '>';
 		$piped = getid;
 		expect(';');
 	} else {
-		error "APC022: Expected semicolon or => but found $tok" unless $tok eq ';';
+		error "Expected semicolon or => but found $tok" unless $tok eq ';';
 	}
 
 	$acc .= ';';
@@ -825,7 +825,7 @@ sub cmp_func
 sub store_method
 {
 	# comparing virtual overloaded methods bodies - die if unequal
-	error "APC016: Header '$id' does not match previous definition"
+	error "Header '$id' does not match previous definition"
 		if !exists($staticMethods{ $id}) &&
 			exists($allMethodsHosts{ $id}) && !($allMethodsHosts{ $id} eq $className) &&
 			($allMethodsHosts{ $id}) && !( cmp_func($allMethodsBodies[$allMethods{$id}], $acc));
@@ -871,7 +871,7 @@ sub parse_parms
 		my $valid = 0;
 		foreach (@lxmz)
 		{
-			error "APC019: Reserved word '$_' used" if $forbiddenParms{$_};
+			error "Reserved word '$_' used" if $forbiddenParms{$_};
 			$hvUsed = 1 if $_ eq "HV";
 		}
 		for ( my $j = 0; $j <= $#lxmz; $j++)
@@ -923,7 +923,7 @@ sub parse_parms
 
 	if ( $hvUsed) {
 		my @lxmz = split(" ", $chunks[ $#chunks]);
-		error "APC021: HV* can be declared only at the end of parameters list." unless $lxmz[ 0] eq "HV";
+		error "HV* can be declared only at the end of parameters list." unless $lxmz[ 0] eq "HV";
 	}
 	return $acc;
 }
@@ -948,7 +948,7 @@ sub load_single_part
 		$ownCType =~ s/^Prima:://;
 		$ownCType =~ s/::/__/g;
 	}
-	error "APC010: Class $className already defined" if $definedClasses{ $className};
+	error "Class $className already defined" if $definedClasses{ $className};
 	$definedClasses{ $className} = 1;
 	$tok = gettok;
 	$superClass = '';
@@ -967,7 +967,7 @@ sub load_single_part
 			}
 			expect ")";
 			$tok = gettok;
-			error "APC011: Cyclic inheritance detected.  Watch out ``$superClass''" 
+			error "Cyclic inheritance detected.  Watch out ``$superClass''" 
 				if $definedClasses{ $superClass};
 				
 			do {
@@ -988,7 +988,7 @@ sub load_single_part
 				$level--;
 			};
 		} else {
-			error "APC032: Cannot create dynamic object with no inheritance"
+			error "Cannot create dynamic object with no inheritance"
 			if $genDyna && ( $level == 0);
 		}
 	}
@@ -1026,7 +1026,7 @@ sub load_single_part
 				preload_method( 1, 0);
 				store_method;
 				unless ($level) {
-					error "APC018: Invalid types in import function $id declaration" 
+					error "Invalid types in import function $id declaration" 
 						unless parse_parms;
 					push (@portableImports, "${id}${acc}");
 					push (@newMethods, "${id}${acc}") unless $inherit;
@@ -1081,7 +1081,7 @@ sub load_single_part
 				$properties{$id} = $proptype;
 			} else {
 			# variable workaround
-				error "APC008: Expecting identifier but found ``$tok''" 
+				error "Expecting identifier but found ``$tok''" 
 					unless $tok =~ /^\w+$/;
 				$acc = $tok;
 				until (($tok = getidsym("*;[]()+")) eq ";")
@@ -1090,7 +1090,7 @@ sub load_single_part
 					$acc .= " " . $tok;
 				}
 				$acc .= ";";
-				error "APC015: Variable $id already defined" if $allVars{ $id};
+				error "Variable $id already defined" if $allVars{ $id};
 				$allVars{$id} = $className;
 				push(@allVars, $acc);
 			}
@@ -1162,7 +1162,7 @@ $tok = gettok;
 if (( $tok eq "object") || ( $tok eq "package")) {
 	load_single_part( $tok);
 } elsif ( $tok) {
-	error "APC037: found $tok but expecting 'object' or 'package'";
+	error "found $tok but expecting 'object' or 'package'";
 } else {
 	unless ( $level) {
 		#$genInc = 0;
@@ -1933,7 +1933,7 @@ METHODS: 	for ( my $i = 0; $i < scalar @{$methods}; $i++) {
 
 	if ( $genH) {
 																	# 1 - class.h
-	open HEADER, ">$dirOut$ownFile.h" or die "APC009: Cannot open $dirOut$ownFile.h\n";
+	open HEADER, ">$dirOut$ownFile.h" or die "Cannot open $dirOut$ownFile.h\n";
 print HEADER <<LABEL;
 /* This file was automatically generated.
  * Do not edit, you\'ll loose your changes anyway.
@@ -2138,7 +2138,7 @@ close HEADER;
 
 if ( $genInc) {
 																			#2 - class.inc
-open HEADER, ">$dirOut$ownFile.inc" or die "APC009: Cannot open $dirOut$ownFile.inc\n";
+open HEADER, ">$dirOut$ownFile.inc" or die "Cannot open $dirOut$ownFile.inc\n";
 print HEADER <<LABEL;
 /* This file was automatically generated.
  * Do not edit, you\'ll loose your changes anyway.
@@ -2323,7 +2323,7 @@ SD
 	} # end gen Inc
 
 if ( $genTml) {                                        #3 - class.tml
-	open HEADER, ">$dirOut$ownFile.tml" or die "APC009: Cannot open $dirOut$ownFile.tml\n";
+	open HEADER, ">$dirOut$ownFile.tml" or die "Cannot open $dirOut$ownFile.tml\n";
 	print HEADER <<LABEL;
 /* This file was automatically generated.
  Do not edit, you'll loose your changes anyway.
