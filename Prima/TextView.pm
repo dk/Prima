@@ -2059,7 +2059,7 @@ in pixels. Such the two-part offset scheme is made for simplification of an imag
 that would alter ( insert to, or delete part of ) the big text chunk; the updating procedure
 would not need to traverse all commands, but just the block headers.
 
-Relative to: C<tb::BLK_TEXT_OFFSET>.
+Relative to: C<tb::BLK_TEXT_OFFSET> when not preceded by L<OP_BIDIMAP>.
 
 =item OP_COLOR - COLOR
 
@@ -2157,6 +2157,14 @@ L<block_wrap> only sets (!) X and Y to the current coordinates when the command 
 Thus, C<OP_MARK> can be used for arbitrary reasons, easy marking the geometrical positions
 that undergo the block wrapping.
 
+=item OP_BIDIMAP VISUAL, BIDIMAP
+
+C<OP_BIDIMAP> is used when the text to be displayed is RTL (right-to-left) and requires
+special handling. This opcode is automatically created by C<block_wrap>. It must be 
+present before any C<OP_TEXT> opcode, because when in effect, the C<OP_TEXT> offset calculation
+is different - instead of reading characters from C<< $self->{text} >>, it reads them from
+C<VISUAL>, and C<BLK_TEXT_OFFSET> in the block header is not used.
+
 =back
 
 As can be noticed, these opcodes are far not enough for the full-weight rich text
@@ -2193,6 +2201,9 @@ cleared in the output block.
 - C<OP_MARK>'s second and third parameters assigned to the current (X,Y) coordinates.
 
 - C<OP_WRAP> removed from the output.
+
+- C<OP_BIDIMAP> added to the output, if the text to be displayed in the block
+contains right-to-left characters.
 
 =item block_draw CANVAS, BLOCK, X, Y
 
