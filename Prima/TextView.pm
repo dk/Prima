@@ -38,7 +38,7 @@ package
     tb;
 use vars qw(@oplen);
 
-@oplen = ( 4, 2, 3, 4, 3, 2, 4);   # lengths of tb::OP_XXX constants ( see below ) + 1
+@oplen = ( 4, 2, 3, 4, 3, 2, 4, 3);   # lengths of tb::OP_XXX constants ( see below ) + 1
 
 # basic opcodes
 use constant OP_TEXT               =>  0; # (3) text offset, text length, text width
@@ -50,6 +50,7 @@ use constant OP_CODE               =>  4; # (2) code pointer and parameters
 # formatting opcodes
 use constant OP_WRAP               =>  5; # (1) on / off
 use constant OP_MARK               =>  6; # (3) id, x, y
+use constant OP_BIDIMAP            =>  7; # (2) map, visual
 
 # OP_TEXT 
 use constant T_OFS                => 1;
@@ -75,6 +76,16 @@ use constant X_FLAGS => 3;
 use constant X_DIMENSION_PIXEL       => 0;
 use constant X_TRANSPOSE             => 0;
 use constant X_EXTEND                => 1;
+
+# OP_MARK
+use constant MARK_ID                 => 1;
+use constant MARK_X                  => 2;
+use constant MARK_Y                  => 3;
+
+# OP_BIDIMAP
+use constant BIDI_VISUAL             => 1;
+use constant BIDI_MAP                => 2;
+
 # formatting flags
 use constant X_DIMENSION_FONT_HEIGHT => 2; # multiply by font height
 use constant X_DIMENSION_POINT       => 4; # multiply by resolution / 72
@@ -157,6 +168,7 @@ sub extend         { return OP_TRANSPOSE, $_[0], $_[1], ($_[2] || 0) | X_EXTEND 
 sub code           { return OP_CODE, $_[0], $_[1] } 
 sub wrap           { return OP_WRAP, $_[0] } 
 sub mark           { return OP_MARK, $_[0], 0, 0 } 
+sub bidimap        { return OP_BIDIMAP, $_[0], $_[1] }
 
 package Prima::TextView::EventContent;
 
@@ -167,7 +179,7 @@ sub on_mouseup   {}
 package Prima::TextView;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
-use Prima::Bidi qw(:methods);
+use Prima::Bidi qw(:methods is_bidi);
 
 sub profile_default
 {
@@ -554,6 +566,7 @@ sub block_wrap
 	$$z[tb::BLK_TEXT_OFFSET] = $$b[tb::BLK_TEXT_OFFSET];
 
 	my %state_hash;
+	my $has_bidi;
 
 # print "start - $$b[tb::BLK_TEXT_OFFSET] \n";
 
@@ -576,7 +589,7 @@ sub block_wrap
 			my $tlen = $$b[ $i + tb::T_LEN];
 			$lastTextOffset = $ofs + $tlen unless $wrapmode;
 		REWRAP: 
-			my $tw = $canvas-> get_text_width( substr( $$t, $o + $ofs, $tlen), 1);
+			my $tw  = $canvas-> get_text_width( substr( $$t, $o + $ofs, $tlen), 1);
 			my $apx = $f_taint-> {width};
 # print "$x+$apx: new text $tw :|",substr( $$t, $o + $ofs, $tlen),"|\n";
 			if ( $x + $tw + $apx <= $width) {
@@ -731,8 +744,7 @@ sub block_wrap
 	$lastTextOffset = $$b[ tb::BLK_TEXT_OFFSET];
 	my $lastBlockOffset = $lastTextOffset;
 
-	for ( @ret) {
-		$b = $_;
+	for my $b ( @ret) {
 		$$b[ tb::BLK_Y] = $start;
 
 		( $x, $y, $i, $lim) = ( 0, 0, tb::BLK_START, scalar @$b);
@@ -778,8 +790,8 @@ sub block_wrap
 					( $x, $y) = ( $newX, $newY);
 				}
 			} elsif ( $cmd == tb::OP_MARK) {
-				$$b[ $i + 2] = $x;
-				$$b[ $i + 3] = $y;
+				$$b[ $i + tb::MARK_X] = $x;
+				$$b[ $i + tb::MARK_Y] = $y;
 			}
 		}
 		$$b[ tb::BLK_TEXT_OFFSET] = $lastBlockOffset;
@@ -795,7 +807,194 @@ sub block_wrap
 		$$state[$_] = $$b[$_] for tb::BLK_X, tb::BLK_Y, tb::BLK_HEIGHT, tb::BLK_WIDTH;
 	}
 
+	# third stage - map bidi characters to visual representation
+	my @text_offsets = (( map { $$_[  tb::BLK_TEXT_OFFSET ] } @ret ), $lastTextOffset);
+	for ( my $j = 0; $j < @ret; $j++) {
+		my $substr  = substr( ${$self->{text}}, $text_offsets[$j], $text_offsets[$j+1] - $text_offsets[$j]);
+		next unless $self->is_bidi($substr);
+		splice(@ret, $j, 1, $self-> make_bidi_block($ret[$j], $text_offsets[$j+1] - $text_offsets[$j]));
+	}
+
 	return @ret;
+}
+
+sub _debug_block
+{
+	my ($self, $b) = @_;
+	print STDERR "FLAGS      : ", (( $$b[tb::BLK_FLAGS] & tb::T_SIZE ) ? "T_SIZE" : ""), (( $$b[tb::BLK_FLAGS] & tb::T_WRAPABLE ) ? "T_WRAPABLE" : ""), "\n";
+	print STDERR "WIDTH      : ", $$b[tb::BLK_WIDTH], "\n";
+	print STDERR "HEIGHT     : ", $$b[tb::BLK_HEIGHT], "\n";
+	print STDERR "X          : ", $$b[tb::BLK_X], "\n";
+	print STDERR "Y          : ", $$b[tb::BLK_Y], "\n";
+	print STDERR "AX         : ", $$b[tb::BLK_APERTURE_X], "\n";
+	print STDERR "AY         : ", $$b[tb::BLK_APERTURE_Y], "\n";
+	print STDERR "TEXT       : ", $$b[tb::BLK_TEXT_OFFSET], "\n";
+	print STDERR "FONT_ID    : ", $$b[tb::BLK_FONT_ID], "\n";
+	print STDERR "FONT_SIZE  : ", $$b[tb::BLK_FONT_SIZE], "\n";
+	print STDERR "FONT_STYLE : ", $$b[tb::BLK_FONT_STYLE], "\n";
+	print STDERR "FONT_COLOR : ", $$b[tb::BLK_COLOR], "\n";
+
+	my ($i, $lim) = (tb::BLK_START, scalar @$b);
+	my $oplen;
+	for ( ; $i < $lim; $i += $oplen = $tb::oplen[ $$b[ $i]]) {
+		my $cmd = $$b[$i];
+		if ($cmd == tb::OP_TEXT) {
+			my $ofs = $$b[ $i + tb::T_OFS];
+			my $len = $$b[ $i + tb::T_LEN];
+			print STDERR ": OP_TEXT( $ofs $len )\n";
+		} elsif ( $cmd == tb::OP_FONT ) {
+			my $mode = $$b[ $i + tb::F_MODE ];
+			my $data = $$b[ $i + tb::F_DATA ];
+			if ( $mode == tb::F_ID ) {
+				$mode = 'F_ID';
+			} elsif ( $mode == tb::F_SIZE ) {
+				$mode = 'F_SIZE';
+			} elsif ( $mode == tb::F_STYLE) {
+				$mode = 'F_STYLE';
+			}
+			print STDERR ": OP_FONT.$mode $data\n";
+		} elsif ( $cmd == tb::OP_COLOR ) {
+			my $color = $$b[ $i + 1 ];
+			print STDERR ": OP_COLOR $color\n";
+		} elsif ( $cmd == tb::OP_TRANSPOSE) {
+			my $x = $$b[ $i + tb::X_X ];
+			my $y = $$b[ $i + tb::X_X ];
+			my $f = $$b[ $i + tb::X_FLAGS ] ? 'EXTEND' : 'TRANSPOSE';
+			print STDERR ": OP_TRANSPOSE $x $y $f\n";
+		} elsif ( $cmd == tb::OP_CODE ) {
+			my $code = $$b[ $i + 1 ];
+			print STDERR ": OP_CODE $code\n";
+		} elsif ( $cmd == tb::OP_BIDIMAP ) {
+			my $visual = $$b[ $i + tb::BIDI_VISUAL ];
+			my $map    = $$b[ $i + tb::BIDI_MAP ];
+			$visual =~ s/([^\x{32}-\x{128}])/sprintf("\\x{%x}", ord($1))/ge;
+			print STDERR ": OP_BIDIMAP: $visual / @$map\n";
+		} elsif ( $cmd == tb::OP_WRAP ) {
+			my $wrap = $$b[ $i + 1 ] ? 'ON' : 'OFF';
+			print STDERR ":OP_WRAP $wrap\b";
+		} elsif ( $cmd == tb::OP_MARK ) {
+			my $id = $$b[ $i + tb::MARK_ID ];
+			my $x  = $$b[ $i + tb::MARK_X ];
+			my $y  = $$b[ $i + tb::MARK_Y ];
+			print STDERR ":OP_MARK $id $x $y\n";
+		} else {
+			my @o = ($oplen > 1) ? @$b[ $i + 1 .. $i + $oplen - 1] : ();
+			print STDERR ":OP($cmd) @o\n"; 
+		}
+	}
+}
+
+# convert block with bidicharacters to its visual representation
+sub make_bidi_block
+{
+	my ( $self, $b, $len) = @_;
+	my $substr = substr( ${$self->{text}}, $$b[tb::BLK_TEXT_OFFSET], $len);
+
+	my ($p, $visual) = $self->bidi_paragraph($substr);
+	my $map     = $p->map;
+	my $revmap  = $self->bidi_revmap($map);
+	my @new     = ( @$b[0..tb::BLK_DATA_END], tb::bidimap( $visual, $map ) );
+	my $oplen;
+	my ($x, $y, $i, $lim) = (0,0,tb::BLK_START, scalar @$b);
+
+	# step 1 - record how each character is drawn with font/color, and also 
+	# where other ops are positioned
+	my @default_fc        = @$b[ tb::BLK_FONT_ID .. tb::BLK_COLOR ]; # fc == fonts and colors
+	my %id_hash           = ( join("\0", @default_fc) => 0 );
+	my @fonts_and_colors  = ( \@default_fc ); # this is the number #0, default char state
+	my @current_fc        = @default_fc;
+	my $current_state     = 0;
+	
+	my @char_states       = (-1) x length($visual); # not all chars are displayed
+	my $char_offset       = 0;
+	my %other_ops_after;
+
+	for ( ; $i < $lim; $i += $oplen = $tb::oplen[ $$b[ $i]]) {
+		my $cmd = $$b[$i];
+		if ($cmd == tb::OP_TEXT) {
+			my $ofs = $$b[ $i + tb::T_OFS];
+			my $len = $$b[ $i + tb::T_LEN];
+			for ( my $k = 0; $k < $len; $k++) {
+				$char_states[ $revmap->[ $ofs + $k ]] = $current_state;
+			}
+			$char_offset = $revmap->[$ofs + $len - 1];
+		} elsif ( $cmd == tb::OP_FONT || $cmd == tb::OP_COLOR) {
+			if ( $cmd == tb::OP_FONT ) {
+				$current_fc[ $$b[ $i + tb::F_MODE] - tb::BLK_FONT_ID ] = $$b[ $i + tb::F_DATA];
+			} else {
+				$current_fc[ tb::BLK_COLOR - tb::BLK_FONT_ID ] = $$b[$i + 1];
+			}
+			my $key = join("\0", @current_fc);
+			my $state;
+			if (defined ($state = $id_hash{$key}) ) {
+				$current_state = $state;
+			} else {
+				push @fonts_and_colors, [ @current_fc ];
+				$id_hash{$key} = ++$current_state;
+			}
+		} else {
+			push @{$other_ops_after{ $char_offset }}, @$b[ $i .. $i + $oplen - 1 ];
+		}
+	}
+
+	# step 2 - produce RLEs for text and stuff font/colors/other ops in between
+	my $last_char_state = 0;
+	my $current_text_offset;
+
+	# find first character displayed
+	for ( my $i = 0; $i < @char_states; $i++) {
+		next if $char_states[$i] < 0;
+		$current_text_offset = $i;
+		last;
+	}
+
+	my @initialized;
+	push @char_states, -1;
+	for ( my $i = 0; $i < @char_states; $i++) {
+		my $char_state = $char_states[$i];
+		if ( $char_state != $last_char_state ) {
+			# push accumulated text
+			my $ofs = $current_text_offset;
+			my $len = $i - $ofs;
+			$current_text_offset = ($char_state < 0) ? $i + 1 : $i;
+			if ( $len > 0 ) {
+				push @new, tb::OP_TEXT, $ofs, $len, $self->get_text_width( substr( $visual, $ofs, $len), 1 );
+			}
+
+			# change to the new font/color
+			if ( $char_state >= 0 ) {
+				my $old_state = $fonts_and_colors[ $last_char_state ];
+				my $new_state = $fonts_and_colors[ $char_state ];
+				if ( $$old_state[ tb::BLK_COLOR - tb::BLK_FONT_ID ] != $$new_state[ tb::BLK_COLOR - tb::BLK_FONT_ID ] ) {
+					if ( $initialized[ tb::BLK_COLOR - tb::BLK_FONT_ID ]++ ) {
+						push @new, tb::OP_COLOR, $$new_state[ tb::BLK_COLOR - tb::BLK_FONT_ID ];
+					} else {
+						$new[ tb::BLK_COLOR ] = $$new_state[ tb::BLK_COLOR - tb::BLK_FONT_ID ];
+					}
+				}
+				for ( my $font_mode = tb::BLK_FONT_ID; $font_mode <= tb::BLK_FONT_STYLE; $font_mode++) {
+					my $new_value = $$new_state[ $font_mode - tb::BLK_FONT_ID ];
+					$new_value += $self->{defaultFontSize} if $font_mode == tb::F_SIZE && $new_value < tb::F_HEIGHT;
+					next if $$old_state[ $font_mode - tb::BLK_FONT_ID ] == $new_value;
+					if ( $initialized[ $font_mode ]++ ) {
+						push @new, tb::OP_FONT, $font_mode, $$new_state[ $font_mode - tb::BLK_FONT_ID ];
+					} else {
+						$new[ $font_mode ] = $new_value;
+					}
+				}
+				$last_char_state = $char_state;
+			}
+		}
+
+		# push other ops
+		if ( my $ops = $other_ops_after{ $i } ) {
+			push @new, @$ops;
+		}
+	}
+
+	# step 3 -- XXX process OP_MARK and OP_TRANSPOSE ??
+
+	return \@new;
 }
 
 sub selection_state
@@ -946,7 +1145,7 @@ sub block_draw
 				# in this block fails. XXX if there are multiple failures, $@
 				# will only contain the last one. Consider consolidating
 				# them somehow.
-				$ret &&= $canvas-> text_out_bidi( substr( $$t, $o + $$b[$i + tb::T_OFS], $$b[$i + tb::T_LEN]), $x, $y);
+				$ret &&= $canvas-> text_out( substr( $$t, $o + $$b[$i + tb::T_OFS], $$b[$i + tb::T_LEN]), $x, $y);
 			}
 			$x += $$b[ $i + tb::T_WID];
 		} elsif ( $cmd == tb::OP_FONT) {
@@ -973,6 +1172,9 @@ sub block_draw
 			$state[ tb::BLK_COLOR + (($$b[ $i + 1] & tb::BACKCOLOR_FLAG) ? 1 : 0)] 
 				= $$b[$i + 1];
 			$c_taint = undef;
+		} elsif ($cmd == tb::OP_BIDIMAP) {
+			$t = \ $$b[$i + tb::BIDI_VISUAL];
+			$o = 0;
 		} elsif ($cmd >= @tb::oplen) {
 			die("Unknown Prima::TextView block op $cmd\n");
 		}
@@ -1075,7 +1277,9 @@ sub xy2info
 	}
 
 	# find text offset
+	my $text = $self->{text};
 	my $bofs = $$b[ tb::BLK_TEXT_OFFSET];
+	my $bidimap;
 	my $ofs = 0;
 	my $pm = $self-> get_paint_state;
 	$self-> begin_paint_info unless $pm;
@@ -1083,7 +1287,7 @@ sub xy2info
 	my @state = @$b[ 0 .. tb::BLK_DATA_END ];
 	my $f_taint;
 
-	my ( $i, $lim) = ( tb::BLK_START, scalar @$b);
+	my ( $i, $lim, $t) = ( tb::BLK_START, scalar @$b);
 	my $px = $$b[ tb::BLK_X];
 	for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]] ) {
 		my $cmd = $$b[$i];
@@ -1097,14 +1301,12 @@ sub xy2info
 					$self-> realize_state( $self, \@state, tb::REALIZE_FONTS); 
 					$f_taint = $self-> get_font;
 				}
-				my $subtext = substr( ${$self-> {text}}, $bofs + $$b[ $i + tb::T_OFS], $$b[ $i + tb::T_LEN]);
-				$subtext = Prima::Bidi::visual($subtext) if 
-					$self->is_bidi($subtext);
 				$ofs = $$b[ $i + tb::T_OFS] + $self-> text_wrap(
-					$subtext,
+					substr( $$text, $bofs + $$b[ $i + tb::T_OFS], $$b[ $i + tb::T_LEN]),
 					$x - $px, 
 					tw::ReturnFirstLineLength | tw::BreakSingle
 				);
+				$ofs = $bidimap->[$ofs] if $bidimap;
 				last;
 			} 
 			$ofs = $$b[ $i + tb::T_OFS] + $$b[ $i + tb::T_LEN];
@@ -1118,6 +1320,10 @@ sub xy2info
 				$state[ $$b[$i + tb::F_MODE]] = $$b[$i + tb::F_DATA];
 			}
 			$f_taint = undef;
+		} elsif ( $cmd == tb::OP_BIDIMAP ) {
+			$bofs = 0;
+			$bidimap = $$b[$i + tb::BIDI_MAP];
+			$text    = \ $$b[$i + tb::BIDI_VISUAL];
 		}
 	}
 
@@ -1160,6 +1366,7 @@ sub text2xoffset
 	my ( $i, $lim) = ( tb::BLK_START, scalar @$b);
 	my $px   = $$b[tb::BLK_APERTURE_X];
 	my $bofs = $$b[tb::BLK_TEXT_OFFSET];
+	my $text = $self->{text};
 	for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]] ) {
 		my $cmd = $$b[$i];
 		if ( $cmd == tb::OP_TEXT) {
@@ -1172,19 +1379,11 @@ sub text2xoffset
 						);
 						$f_taint = $self-> get_font;
 					}
-					my $nchars  = $x - $$b[$i+tb::T_OFS];
-					my $subtext = substr( 
-						${$self-> {text}}, 
+					$px += $self-> get_text_width( substr( 
+						$$text,
 						$bofs + $$b[$i+tb::T_OFS], 
-						$$b[$i+tb::T_LEN] 
-					);
-					if ( $self->is_bidi($subtext)) {
-						my ($p, $visual) = $self->bidi_paragraph($subtext);
-						my $map = $p->map;
-						$px += $self-> get_text_width( substr( $visual, 0, $nchars));
-					} else {
-						$px += $self-> get_text_width( substr( $subtext, 0, $nchars));
-					}
+						$x - $$b[$i+tb::T_OFS],
+					));
 					last;
 				} elsif ( $x == $$b[$i+tb::T_OFS] + $$b[$i+tb::T_LEN]) {
 					$px += $$b[$i+tb::T_WID];
@@ -1201,6 +1400,10 @@ sub text2xoffset
 				$state[ $$b[$i + tb::F_MODE]] = $$b[$i + tb::F_DATA];
 			}
 			$f_taint = undef;
+		} elsif ( $cmd == tb::OP_BIDIMAP ) {
+			$text = \ $$b[ $i + tb::BIDI_VISUAL ];
+			$x    = $self-> bidi_revmap($$b[ $i + tb::BIDI_MAP ])->[$x];
+			$bofs = 0;
 		}
 	}
 	$pm ? $self-> set_font( $savefont) : $self-> end_paint_info;
