@@ -812,7 +812,7 @@ sub block_wrap
 	for ( my $j = 0; $j < @ret; $j++) {
 		my $substr  = substr( ${$self->{text}}, $text_offsets[$j], $text_offsets[$j+1] - $text_offsets[$j]);
 		next unless $self->is_bidi($substr);
-		splice(@ret, $j, 1, $self-> make_bidi_block($ret[$j], $text_offsets[$j+1] - $text_offsets[$j]));
+		splice(@ret, $j, 1, $self-> make_bidi_block($canvas, $ret[$j], $text_offsets[$j+1] - $text_offsets[$j]));
 	}
 
 	return @ret;
@@ -841,7 +841,8 @@ sub _debug_block
 		if ($cmd == tb::OP_TEXT) {
 			my $ofs = $$b[ $i + tb::T_OFS];
 			my $len = $$b[ $i + tb::T_LEN];
-			print STDERR ": OP_TEXT( $ofs $len )\n";
+			my $wid = $$b[ $i + tb::T_WID] // 'NULL';
+			print STDERR ": OP_TEXT( $ofs $len : $wid )\n";
 		} elsif ( $cmd == tb::OP_FONT ) {
 			my $mode = $$b[ $i + tb::F_MODE ];
 			my $data = $$b[ $i + tb::F_DATA ];
@@ -887,7 +888,7 @@ sub _debug_block
 # convert block with bidicharacters to its visual representation
 sub make_bidi_block
 {
-	my ( $self, $b, $len) = @_;
+	my ( $self, $canvas, $b, $len) = @_;
 	my $substr = substr( ${$self->{text}}, $$b[tb::BLK_TEXT_OFFSET], $len);
 
 	my ($p, $visual) = $self->bidi_paragraph($substr);
@@ -899,7 +900,9 @@ sub make_bidi_block
 
 	# step 1 - record how each character is drawn with font/color, and also 
 	# where other ops are positioned
-	my @default_fc        = @$b[ tb::BLK_FONT_ID .. tb::BLK_COLOR ]; # fc == fonts and colors
+	my @default_fc        = @$b[ map { $_ - tb::BLK_FONT_ID } tb::BLK_FONT_ID .. tb::BLK_COLOR ]; # fc == fonts and colors
+	$default_fc[tb::BLK_FONT_SIZE - tb::BLK_FONT_ID] -= $self->{defaultFontSize} if 
+		$default_fc[tb::BLK_FONT_SIZE - tb::BLK_FONT_ID] < tb::F_HEIGHT;
 	my %id_hash           = ( join("\0", @default_fc) => 0 );
 	my @fonts_and_colors  = ( \@default_fc ); # this is the number #0, default char state
 	my @current_fc        = @default_fc;
@@ -958,7 +961,7 @@ sub make_bidi_block
 			my $len = $i - $ofs;
 			$current_text_offset = ($char_state < 0) ? $i + 1 : $i;
 			if ( $len > 0 ) {
-				push @new, tb::OP_TEXT, $ofs, $len, $self->get_text_width( substr( $visual, $ofs, $len), 1 );
+				push @new, tb::OP_TEXT, $ofs, $len, substr( $visual, $ofs, $len); # temporarily putting a string there
 			}
 
 			# change to the new font/color
@@ -992,7 +995,34 @@ sub make_bidi_block
 		}
 	}
 
-	# step 3 -- XXX process OP_MARK and OP_TRANSPOSE ??
+	# step 3 update widths and positions etc
+	$b = \@new;
+	( $x, $y, $i, $lim) = ( 0, 0, tb::BLK_START, scalar @$b);
+	my $state = $self-> create_state;
+	my $realized_font;
+	for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]]) {
+		my $cmd = $$b[$i];
+		if ( $cmd == tb::OP_TEXT) {
+			unless ( $realized_font ) {
+				$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
+				$realized_font = 1;
+			}
+			$$b[ $i + tb::T_WID ] = $canvas->get_text_width( $$b[ $i + tb::T_WID ] , 1 );
+		} elsif ( $cmd == tb::OP_FONT) {
+			if ( $$b[$i + tb::F_MODE] == tb::F_SIZE && $$b[$i + tb::F_DATA] < tb::F_HEIGHT ) {
+				$$state[ $$b[$i + tb::F_MODE]] = $self-> {defaultFontSize} + $$b[$i + tb::F_DATA];
+			} else {
+				$$state[ $$b[$i + tb::F_MODE]] = $$b[$i + tb::F_DATA];
+			}
+			$realized_font = 1;
+		} elsif ( $cmd == tb::OP_TRANSPOSE) {
+			$x += $$b[ $i + tb::X_X], $y += $$b[ $i + tb::X_Y] unless $$b[ $i + tb::X_FLAGS] & tb::X_EXTEND;
+		} elsif ( $cmd == tb::OP_MARK) {
+			$$b[ $i + tb::MARK_X] = $x;
+			$$b[ $i + tb::MARK_Y] = $y;
+		}
+	}
+	$self-> _debug_block($b);
 
 	return \@new;
 }
