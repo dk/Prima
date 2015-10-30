@@ -1022,7 +1022,6 @@ sub make_bidi_block
 			$$b[ $i + tb::MARK_Y] = $y;
 		}
 	}
-	$self-> _debug_block($b);
 
 	return \@new;
 }
