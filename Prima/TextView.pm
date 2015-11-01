@@ -137,14 +137,15 @@ use constant REALIZE_COLORS  => 0x2;
 use constant REALIZE_ALL     => 0x3;
 
 # trace constants
-use constant TRACE_FONTS            => 0x01;
-use constant TRACE_COLORS           => 0x02;
-use constant TRACE_FONTS_AND_COLORS => TRACE_COLORS | TRACE_FONTS;
-use constant TRACE_APERTURE         => 0x04;
-use constant TRACE_TEXT             => 0x08;
-use constant TRACE_GEOMETRY         => TRACE_FONTS | TRACE_APERTURE | TRACE_TEXT;
-use constant TRACE_UPDATE_MARK      => 0x10;
-use constant TRACE_PAINT_STATE      => 0x20;
+use constant TRACE_FONTS       => 0x01;
+use constant TRACE_COLORS      => 0x02;
+use constant TRACE_PENS        => TRACE_COLORS | TRACE_FONTS;
+use constant TRACE_APERTURE    => 0x04;
+use constant TRACE_TEXT        => 0x08;
+use constant TRACE_GEOMETRY    => TRACE_FONTS | TRACE_APERTURE | TRACE_TEXT;
+use constant TRACE_UPDATE_MARK => 0x10;
+use constant TRACE_PAINT_STATE => 0x20;
+use constant TRACE_REALIZE     => 0x40;
 
 use constant YMAX => 1000;
 
@@ -582,16 +583,15 @@ sub block_walk
 	( $text, $text_offset) = ( $self-> {text}, $$block[ tb::BLK_TEXT_OFFSET])
 		if $trace & tb::TRACE_TEXT;
 	@$state = @$block[ 0 .. tb::BLK_DATA_END ]
-		if $trace & tb::TRACE_FONTS_AND_COLORS;
+		if !@$state && $trace & tb::TRACE_PENS;
 	$$aperture[0] += $$block[ tb::BLK_APERTURE_X], $$aperture[1] += $$block[ tb::BLK_APERTURE_Y]
 		if $trace & tb::TRACE_APERTURE;
 
 	# go
-	my ( $lim, $oplen ) = ( scalar(@$block), $tb::oplen[ $$block[ tb::BLK_START ]]);
-	for ( $$ptr = tb::BLK_START; $$ptr < $lim; $$ptr += $oplen ) {
+	my $lim = scalar(@$block);
+	for ( $$ptr = tb::BLK_START; $$ptr < $lim; $$ptr += $tb::oplen[ $$block[ $$ptr ]] ) {
 		my $i   = $$ptr;
 		my $cmd = $$block[$i];
-		$oplen  = $tb::oplen[ $$block[ $i ]];
 		my $sub = $commands[ $$block[$i] ];
 		my @opcode;
 		if ( !$sub && $other ) {
@@ -601,17 +601,17 @@ sub block_walk
 		if ($cmd == tb::OP_TEXT) {
 			next unless $$block[$i + tb::T_LEN] > 0;
 
-			if (( $trace & tb::TRACE_FONTS) && !$f_taint) {
+			if (( $trace & tb::TRACE_FONTS) && ($trace & tb::TRACE_REALIZE) && !$f_taint) {
 				$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
 				$f_taint = $canvas-> get_font;
 			}
-			if (( $trace & tb::TRACE_COLORS) && !$c_taint) {
+			if (( $trace & tb::TRACE_COLORS) && ($trace & tb::TRACE_REALIZE) && !$c_taint) {
 				$self-> realize_state( $canvas, $state, tb::REALIZE_COLORS);
 				$c_taint = 1;
 			}
 			$ret = $sub->(
 				@opcode,
-				@$block[$i + 1 .. $i + $oplen - 1],
+				@$block[$i + 1 .. $i + $tb::oplen[ $$block[ $$ptr ]] - 1],
 				(( $trace & tb::TRACE_TEXT ) ?
 					substr( $$text, $text_offset + $$block[$i + tb::T_OFS], $$block[$i + tb::T_LEN] ) : ())
 			) if $sub;
@@ -628,10 +628,34 @@ sub block_walk
 		} elsif (($cmd == tb::OP_COLOR) && ($trace & tb::TRACE_COLORS)) {
 			$$state[ tb::BLK_COLOR + (($$block[ $i + 1] & tb::BACKCOLOR_FLAG) ? 1 : 0)] = $$block[$i + 1];
 			$c_taint = undef;
-		} elsif (( $cmd == tb::OP_TRANSPOSE) && !($$block[ $i + tb::X_FLAGS] & tb::X_EXTEND)) {
-			$$aperture[0] += $$block[ $i + tb::X_X];
-			$$aperture[1] += $$block[ $i + tb::X_Y];
-		} elsif (( $cmd == tb::OP_CODE) && ($trace & tb::TRACE_FONTS_AND_COLORS)) {
+		} elsif ( $cmd == tb::OP_TRANSPOSE) {
+			my $x = $$block[ $i + tb::X_X];
+			my $y = $$block[ $i + tb::X_Y];
+			my $f = $$block[ $i + tb::X_FLAGS];
+			if (($trace & tb::TRACE_FONTS) && ($trace & tb::TRACE_REALIZE)) {
+				if ( $f & tb::X_DIMENSION_FONT_HEIGHT) {
+					unless ( $f_taint) {
+						$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS); 
+						$f_taint = $canvas-> get_font;
+					}
+					$x *= $f_taint-> {height};
+					$y *= $f_taint-> {height};
+					$f &= ~tb::X_DIMENSION_FONT_HEIGHT;
+				}
+			}
+			if ( $f & tb::X_DIMENSION_POINT) {
+				$x *= $self-> {resolution}-> [0] / 72;
+				$y *= $self-> {resolution}-> [1] / 72;
+				$f &= ~tb::X_DIMENSION_POINT;
+			}
+			if (!($f & tb::X_EXTEND)) {
+				$$aperture[0] += $x;
+				$$aperture[1] += $y;
+			}
+			$ret = $sub->( $x, $y, $f ) if $sub;
+			last unless $self-> {blockWalk};
+			next;
+		} elsif (( $cmd == tb::OP_CODE) && ($trace & tb::TRACE_PENS) && ($trace & tb::TRACE_REALIZE)) {
 			unless ( $f_taint) {
 				$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
 				$f_taint = $canvas-> get_font;
@@ -644,10 +668,14 @@ sub block_walk
 			$text = \ $$block[$i + tb::BIDI_VISUAL];
 			$text_offset = 0;
 		} elsif (( $cmd == tb::OP_MARK) & ( $trace & tb::TRACE_UPDATE_MARK)) {
-			$$b[ $i + tb::MARK_X] = $$aperture[0];
-			$$b[ $i + tb::MARK_Y] = $$aperture[1];
+			$$block[ $i + tb::MARK_X] = $$aperture[0];
+			$$block[ $i + tb::MARK_Y] = $$aperture[1];
+		} elsif ( $cmd > $#tb::oplen ) {
+			warn "corrupted block, $cmd at $$ptr\n";
+			$self->_debug_block($block);
+			last;
 		}
-		$ret = $sub->( @opcode, @$block[$i + 1 .. $i + $oplen - 1]) if $sub;
+		$ret = $sub->( @opcode, @$block[$i + 1 .. $i + $tb::oplen[ $$block[ $$ptr ]] - 1]) if $sub;
 		last unless $self-> {blockWalk};
 	}
 
@@ -667,17 +695,15 @@ sub block_wrap
 {
 	my ( $self, $canvas, $b, $state, $width) = @_;
 	$width = 0 if $width < 0;
-	my ( $i, $lim) = ( tb::BLK_START, scalar @$b);
 
 	my $cmd;
 	my ( $o, $t) = ( $$b[ tb::BLK_TEXT_OFFSET], $self-> {text});
 	my ( $x, $y) = (0, 0);
-	my $f_taint;
 	my $wrapmode = 1;
 	my $stsave = $state;
 	$state = [ @$state ];
 	my ( $haswrapinfo, @wrapret);
-	my ( @ret, $z);
+	my ( @ret, $z, $ptr);
 	my $lastTextOffset = $$b[ tb::BLK_TEXT_OFFSET];
 	my $has_text;
 
@@ -699,7 +725,7 @@ sub block_wrap
 		splice( @{$ret[-1]}, $wrapret[0]); 
 		@$state = @{$wrapret[1]};
 		$newblock-> ();
-		$i = $wrapret[2];
+		$ptr = $wrapret[2];
 	};
 
 	$newblock-> ();
@@ -708,37 +734,27 @@ sub block_wrap
 	my %state_hash;
 	my $has_bidi;
 
-# print "start - $$b[tb::BLK_TEXT_OFFSET] \n";
-
 	# first state - wrap the block
-# print "new wrap for $width\n";
-	for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]]) {
-		$cmd = $$b[$i];
-		if ( $cmd == tb::OP_TEXT) {
-# print "OP_TEXT @$b[$i+1..$i+3], x = $x\n";
-			unless ( $f_taint) {
-				$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
-				$f_taint = $canvas-> get_font;
-				my $state_key = join('.', 
-					@$state[tb::BLK_FONT_ID .. tb::BLK_FONT_STYLE]
-				);
-				$state_hash{$state_key} = $f_taint 
-					unless $state_hash{$state_key};
-			}
-			my $ofs  = $$b[ $i + tb::T_OFS];
-			my $tlen = $$b[ $i + tb::T_LEN];
+	$self-> block_walk( $b,
+		pointer => \$ptr,
+		canvas  => $canvas,
+		state   => $state,
+		trace   => tb::TRACE_PENS | tb::TRACE_REALIZE,
+		text    => sub {
+			my ( $ofs, $tlen ) = @_;
+			my $state_key = join('.', @$state[tb::BLK_FONT_ID .. tb::BLK_FONT_STYLE]);
+			$state_hash{$state_key} = $canvas->get_font 
+				unless $state_hash{$state_key};
 			$lastTextOffset = $ofs + $tlen unless $wrapmode;
 		REWRAP: 
 			my $tw  = $canvas-> get_text_width( substr( $$t, $o + $ofs, $tlen), 1);
-			my $apx = $f_taint-> {width};
-# print "$x+$apx: new text $tw :|",substr( $$t, $o + $ofs, $tlen),"|\n";
+			my $apx = $state_hash{$state_key}-> {width};
 			if ( $x + $tw + $apx <= $width) {
 				push @$z, tb::OP_TEXT, $ofs, $tlen, $tw;
 				$x += $tw;
 				$has_text = 1;
-# print "copied as is, advanced to $x, width $tw, $ofs\n";
 			} elsif ( $wrapmode) {
-				next if $tlen <= 0;
+				return if $tlen <= 0;
 				my $str = substr( $$t, $o + $ofs, $tlen);
 				my $leadingSpaces = '';
 				if ( $str =~ /^(\s+)/) {
@@ -747,7 +763,6 @@ sub block_wrap
 				}
 				my $l = $canvas-> text_wrap( $str, $width - $apx - $x,
 					tw::ReturnFirstLineLength | tw::WordBreak | tw::BreakSingle);
-# print "repo $l bytes wrapped in $width - $apx - $x\n";
 				if ( $l > 0) {
 					if ( $has_text) {
 						push @$z, tb::OP_TEXT, 
@@ -763,13 +778,11 @@ sub block_wrap
 							);
 						$has_text = 1;
 					}
-# print "$x + advance $$z[-1]/$tw|", $leadingSpaces , "+", substr( $str, 0, $l), "|\n";
 					$str = substr( $str, $l);
 					$l += length $leadingSpaces;
 					$newblock-> ();
 					$ofs += $l;
 					$tlen -= $l;
-# print "tx shift $l, str=|$str|, x=$x\n";
 					if ( $str =~ /^(\s+)/) {
 						$ofs  += length $1;
 						$tlen -= length $1;
@@ -778,7 +791,6 @@ sub block_wrap
 					}
 					goto REWRAP if length $str;
 				} else { # does not fit into $width
-# print "new block: x = $x |$str|\n";
 					my $ox = $x;
 					$newblock-> ();
 					$ofs  += length $leadingSpaces;
@@ -797,82 +809,46 @@ sub block_wrap
 							goto REWRAP;
 						}
 					}
-					push @$z, tb::OP_TEXT, $ofs, length($str), $x += $canvas-> get_text_width( $str, 1);
+					push @$z, tb::OP_TEXT, $ofs, length($str),
+						$x += $canvas-> get_text_width( $str, 1);
 					$has_text = 1;
 				}
 			} elsif ( $haswrapinfo) { # unwrappable, and cannot be fit - retrace
 				$retrace-> ();
-# print "retrace\n";
-				next;
 			} else { # unwrappable, cannot be fit, no wrap info! - whole new block
-# print "new empty block - |", substr( $$t,$o + $ofs, $tlen), "|\n";
 				push @$z, tb::OP_TEXT, $ofs, $tlen, $tw;
 				$newblock-> ();
 			}
-		} elsif ( $cmd == tb::OP_WRAP) {
-			if ( $wrapmode == 1 && $$b[ $i + 1] == 0) {
-				@wrapret = ( scalar @$z, [ @$state ], $i);
+		},
+		wrap => sub {
+			my $mode = shift;
+			if ( $wrapmode == 1 && $mode == 0) {
+				@wrapret = ( scalar @$z, [ @$state ], $ptr);
 				$haswrapinfo = 1;
-# print "wrap start record x = $x\n";
 			}
-			$wrapmode = $$b[ $i + 1];
-# print "wrap: $wrapmode\n";
-		} elsif ( $cmd == tb::OP_FONT) {
-			if ( $$b[$i + tb::F_MODE] == tb::F_SIZE && $$b[$i + tb::F_DATA] < tb::F_HEIGHT ) {
-				$$state[ $$b[$i + tb::F_MODE]] = $self-> {defaultFontSize} + $$b[$i + tb::F_DATA];
-			} else {
-				$$state[ $$b[$i + tb::F_MODE]] = $$b[$i + tb::F_DATA];
-			}
-			$f_taint = undef;
-			push @$z, @$b[ $i .. ( $i + $tb::oplen[ $cmd] - 1)];
-		} elsif ( $cmd == tb::OP_COLOR) {
-			$$state[ tb::BLK_COLOR + (($$b[ $i + 1] & tb::BACKCOLOR_FLAG) ? 1 : 0)] = 
-				$$b[$i + 1];
-			push @$z, @$b[ $i .. ( $i + $tb::oplen[ $cmd] - 1)];
-		} elsif ( $cmd == tb::OP_TRANSPOSE) {
-			my @r = @$b[ $i .. $i + tb::X_FLAGS];
-			if ( $$b[ $i + tb::X_FLAGS] & tb::X_DIMENSION_FONT_HEIGHT) {
-				unless ( $f_taint) {
-					$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS); 
-					$f_taint = $canvas-> get_font;
-					my $state_key = join('.', 
-						@$state[tb::BLK_FONT_ID .. tb::BLK_FONT_STYLE]
-					);
-					$state_hash{$state_key} = $f_taint 
-						unless $state_hash{$state_key};
-				}
-				$r[ tb::X_X] *= $f_taint-> {height};
-				$r[ tb::X_Y] *= $f_taint-> {height};
-				$r[ tb::X_FLAGS] &= ~ tb::X_DIMENSION_FONT_HEIGHT;
-			}
-			if ( $$b[ $i + tb::X_FLAGS] & tb::X_DIMENSION_POINT) {
-				$r[ tb::X_X] *= $self-> {resolution}-> [0] / 72;
-				$r[ tb::X_Y] *= $self-> {resolution}-> [1] / 72;
-				$r[ tb::X_FLAGS] &= ~tb::X_DIMENSION_POINT;
-			}
-# print "advance block $x $r[tb::X_X]\n";
-			if ( $x + $r[tb::X_X] >= $width) {
+			$wrapmode = $mode;
+		},
+		transpose => sub {
+			my ( $dx, $dy, $flags) = @_;
+			if ( $x + $dx >= $width) {
 				if ( $wrapmode) {
 					$newblock-> (); 
 				} elsif ( $haswrapinfo) {
-					$retrace-> ();
-					next;
+					return $retrace-> ();
 				} 
 			} else {
-				$x += $r[ tb::X_X];
+				$x += $dx;
 			}
-			push @$z, @r;
-		} else {
-			push @$z, @$b[ $i .. ( $i + $tb::oplen[ $cmd] - 1)];
-		}
-	}
+			push @$z, tb::OP_TRANSPOSE, $dx, $dy, $flags;
+		},
+		other => sub { push @$z, @_ },
+	);
 
 	# remove eventual empty trailing blocks
 	pop @ret while scalar ( @ret) && ( tb::BLK_START == scalar @{$ret[-1]});
 
 	# second stage - position the blocks
 	$state = $stsave;
-	$f_taint = undef;
 	my $start;
 	if ( !defined $$b[ tb::BLK_Y]) { 
 		# auto position the block if the creator didn't care
@@ -886,15 +862,20 @@ sub block_wrap
 
 	for my $b ( @ret) {
 		$$b[ tb::BLK_Y] = $start;
-
-		( $x, $y, $i, $lim) = ( 0, 0, tb::BLK_START, scalar @$b);
-		for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]]) {
-			$cmd = $$b[$i];
-			if ( $cmd == tb::OP_TEXT) {
-				$f_taint = $state_hash{ join('.', 
+		my @xy = (0,0);
+		my $ptr;
+		$self-> block_walk( $b,
+			trace    => tb::TRACE_FONTS | tb::TRACE_APERTURE | tb::TRACE_UPDATE_MARK,
+			state    => $state,
+			aperture => \@xy,
+			pointer  => \$ptr,
+			text     => sub {
+				my ( $ofs, $len, $wid ) = @_;
+				my $f_taint = $state_hash{ join('.', 
 					@$state[tb::BLK_FONT_ID .. tb::BLK_FONT_STYLE]
 				) };
-				$x += $$b[ $i + tb::T_WID];
+				my $x = $xy[0] + $wid;
+				my $y = $xy[1];
 				$$b[ tb::BLK_WIDTH] = $x 
 					if $$b[ tb::BLK_WIDTH ] < $x;
 				$$b[ tb::BLK_APERTURE_Y] = $f_taint-> {descent} - $y 
@@ -903,21 +884,13 @@ sub block_wrap
 					if $$b[ tb::BLK_APERTURE_X] < $f_taint-> {width}   - $x;
 				my $newY = $y + $f_taint-> {ascent} + $f_taint-> {externalLeading};
 				$$b[ tb::BLK_HEIGHT] = $newY if $$b[ tb::BLK_HEIGHT] < $newY; 
-#            print "OP_TEXT patch $$b[$i+1] => ";
-				$lastTextOffset = 
-					$$b[ tb::BLK_TEXT_OFFSET] + 
-					$$b[ $i + tb::T_OFS] + 
-					$$b[ $i + tb::T_LEN];
-				$$b[ $i + tb::T_OFS] -= $lastBlockOffset - $$b[ tb::BLK_TEXT_OFFSET];
-#            print "$$b[$i+1]\n";
-			} elsif ( $cmd == tb::OP_FONT) {
-				if ( $$b[$i + tb::F_MODE] == tb::F_SIZE && $$b[$i + tb::F_DATA] < tb::F_HEIGHT ) {
-					$$state[ $$b[$i + tb::F_MODE]] = $self-> {defaultFontSize} + $$b[$i + tb::F_DATA];
-				} else {
-					$$state[ $$b[$i + tb::F_MODE]] = $$b[$i + tb::F_DATA];
-				}
-			} elsif ( $cmd == tb::OP_TRANSPOSE) {
-				my ( $newX, $newY) = ( $x + $$b[ $i + tb::X_X], $y + $$b[ $i + tb::X_Y]);
+				$lastTextOffset = $$b[ tb::BLK_TEXT_OFFSET] + $ofs + $len;
+
+				$$b[ $ptr + tb::T_OFS] -= $lastBlockOffset - $$b[ tb::BLK_TEXT_OFFSET];
+			},
+			transpose => sub {
+				my ( $dx, $dy ) = @_;
+				my ( $newX, $newY) = ( $xy[0] + $dx, $xy[1] + $dy);
 				$$b[ tb::BLK_WIDTH]  = $newX 
 					if $$b[ tb::BLK_WIDTH ] < $newX;
 				$$b[ tb::BLK_HEIGHT] = $newY 
@@ -926,16 +899,9 @@ sub block_wrap
 					if $newX < 0 && $$b[ tb::BLK_APERTURE_X] > -$newX;
 				$$b[ tb::BLK_APERTURE_Y] = -$newY 
 					if $newY < 0 && $$b[ tb::BLK_APERTURE_Y] > -$newY;
-				unless ( $$b[ $i + tb::X_FLAGS] & tb::X_EXTEND) {
-					( $x, $y) = ( $newX, $newY);
-				}
-			} elsif ( $cmd == tb::OP_MARK) {
-				$$b[ $i + tb::MARK_X] = $x;
-				$$b[ $i + tb::MARK_Y] = $y;
-			}
-		}
+			},
+		);
 		$$b[ tb::BLK_TEXT_OFFSET] = $lastBlockOffset;
-#      print "block offset: $lastBlockOffset\n";
 		$$b[ tb::BLK_HEIGHT] += $$b[ tb::BLK_APERTURE_Y];
 		$$b[ tb::BLK_WIDTH]  += $$b[ tb::BLK_APERTURE_X];
 		$start += $$b[ tb::BLK_HEIGHT];
@@ -962,22 +928,44 @@ sub _debug_block
 {
 	my ($self, $b) = @_;
 	print STDERR "FLAGS      : ", (( $$b[tb::BLK_FLAGS] & tb::T_SIZE ) ? "T_SIZE" : ""), (( $$b[tb::BLK_FLAGS] & tb::T_WRAPABLE ) ? "T_WRAPABLE" : ""), "\n";
-	print STDERR "WIDTH      : ", $$b[tb::BLK_WIDTH], "\n";
-	print STDERR "HEIGHT     : ", $$b[tb::BLK_HEIGHT], "\n";
-	print STDERR "X          : ", $$b[tb::BLK_X], "\n";
-	print STDERR "Y          : ", $$b[tb::BLK_Y], "\n";
-	print STDERR "AX         : ", $$b[tb::BLK_APERTURE_X], "\n";
-	print STDERR "AY         : ", $$b[tb::BLK_APERTURE_Y], "\n";
-	print STDERR "TEXT       : ", $$b[tb::BLK_TEXT_OFFSET], "\n";
-	print STDERR "FONT_ID    : ", $$b[tb::BLK_FONT_ID], "\n";
-	print STDERR "FONT_SIZE  : ", $$b[tb::BLK_FONT_SIZE], "\n";
-	print STDERR "FONT_STYLE : ", $$b[tb::BLK_FONT_STYLE], "\n";
-	print STDERR "FONT_COLOR : ", $$b[tb::BLK_COLOR], "\n";
+	print STDERR "WIDTH      : ", $$b[tb::BLK_WIDTH] // 'undef', "\n";
+	print STDERR "HEIGHT     : ", $$b[tb::BLK_HEIGHT] // 'undef', "\n";
+	print STDERR "X          : ", $$b[tb::BLK_X] // 'undef', "\n";
+	print STDERR "Y          : ", $$b[tb::BLK_Y] // 'undef', "\n";
+	print STDERR "AX         : ", $$b[tb::BLK_APERTURE_X] // 'undef', "\n";
+	print STDERR "AY         : ", $$b[tb::BLK_APERTURE_Y] // 'undef', "\n";
+	print STDERR "TEXT       : ", $$b[tb::BLK_TEXT_OFFSET] // 'undef', "\n";
+	print STDERR "FONT_ID    : ", $$b[tb::BLK_FONT_ID] // 'undef', "\n";
+	print STDERR "FONT_SIZE  : ", $$b[tb::BLK_FONT_SIZE] // 'undef', "\n";
+	print STDERR "FONT_STYLE : ", $$b[tb::BLK_FONT_STYLE] // 'undef', "\n";
+	my $color = $$b[tb::BLK_COLOR];
+	unless ( defined $color ) {
+		$color = "undef";
+	} elsif ( $color & tb::COLOR_INDEX) {
+		$color = "index(" . ( $color & ~tb::COLOR_INDEX) . ")";
+	} else {
+		$color = sprintf("%06x", $color);
+	}
+	print STDERR "COLOR      : $color\n";
+	$color = $$b[tb::BLK_BACKCOLOR];
+	unless ( defined $color ) {
+		$color = "undef";
+	} elsif ( $color & tb::COLOR_INDEX) {
+		$color = "index(" . ( $color & ~tb::COLOR_INDEX) . ")";
+	} else {
+		$color = sprintf("%06x", $color);
+	}
+	print STDERR "BACK_COLOR : $color\n";
 
 	my ($i, $lim) = (tb::BLK_START, scalar @$b);
 	my $oplen;
-	for ( ; $i < $lim; $i += $oplen = $tb::oplen[ $$b[ $i]]) {
+	for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]]) {
 		my $cmd = $$b[$i];
+		if ( !defined($cmd) || $cmd > $#tb::oplen ) {
+			$cmd //= 'undef';
+			print STDERR "corrupted block: $cmd at $i/$lim\n";
+			last;
+		}
 		if ($cmd == tb::OP_TEXT) {
 			my $ofs = $$b[ $i + tb::T_OFS];
 			my $len = $$b[ $i + tb::T_LEN];
@@ -992,10 +980,24 @@ sub _debug_block
 				$mode = 'F_SIZE';
 			} elsif ( $mode == tb::F_STYLE) {
 				$mode = 'F_STYLE';
+				my @s;
+				push @s, "italic" if $data & fs::Italic;
+				push @s, "bold" if $data & fs::Bold;
+				push @s, "thin" if $data & fs::Thin;
+				push @s, "underlined" if $data & fs::Underlined;
+				push @s, "struckout" if $data & fs::StruckOut;
+				push @s, "outline" if $data & fs::Outline;
+				@s = "normal" unless @s;
+				$data = join(',', @s);
 			}
 			print STDERR ": OP_FONT.$mode $data\n";
 		} elsif ( $cmd == tb::OP_COLOR ) {
 			my $color = $$b[ $i + 1 ];
+			if ( $color & tb::COLOR_INDEX) {
+				$color = "index(" . ( $color & ~tb::COLOR_INDEX) . ")";
+			} else {
+				$color = sprintf("%06x", $color);
+			}
 			print STDERR ": OP_COLOR $color\n";
 		} elsif ( $cmd == tb::OP_TRANSPOSE) {
 			my $x = $$b[ $i + tb::X_X ];
@@ -1012,15 +1014,16 @@ sub _debug_block
 			print STDERR ": OP_BIDIMAP: $visual / @$map\n";
 		} elsif ( $cmd == tb::OP_WRAP ) {
 			my $wrap = $$b[ $i + 1 ] ? 'ON' : 'OFF';
-			print STDERR ":OP_WRAP $wrap\b";
+			print STDERR ": OP_WRAP $wrap\n";
 		} elsif ( $cmd == tb::OP_MARK ) {
 			my $id = $$b[ $i + tb::MARK_ID ];
 			my $x  = $$b[ $i + tb::MARK_X ];
 			my $y  = $$b[ $i + tb::MARK_Y ];
-			print STDERR ":OP_MARK $id $x $y\n";
+			print STDERR ": OP_MARK $id $x $y\n";
 		} else {
+			my $oplen = $tb::oplen[ $cmd ];
 			my @o = ($oplen > 1) ? @$b[ $i + 1 .. $i + $oplen - 1] : ();
-			print STDERR ":OP($cmd) @o\n"; 
+			print STDERR ": OP($cmd) @o\n"; 
 		}
 	}
 }
@@ -1146,7 +1149,7 @@ sub make_bidi_block
 	my $ptr;
 	$self-> block_walk( \@new,
 		canvas   => $canvas,
-		trace    => tb::TRACE_FONTS | tb::TRACE_UPDATE_MARK | tb::TRACE_APERTURE,
+		trace    => tb::TRACE_FONTS | tb::TRACE_REALIZE | tb::TRACE_UPDATE_MARK | tb::TRACE_APERTURE,
 		aperture => \@xy,
 		pointer  => \$ptr,
 		text     => sub { $new[ $ptr + tb::T_WID ] = $canvas->get_text_width( $_[2], 1 ) },
@@ -1291,7 +1294,7 @@ sub block_draw
 	my @xy = ($x, $y);
 	my @state;
 	$self-> block_walk( $b, 
-		trace    => tb::TRACE_GEOMETRY | tb::TRACE_COLORS,
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_COLORS,
 		canvas   => $canvas,
 		aperture => \@xy,
 		state    => \@state,
@@ -1408,7 +1411,7 @@ sub xy2info
 
 	$self-> block_walk( $b,
 		aperture => \@pos,
-		trace    => tb::TRACE_GEOMETRY | tb::TRACE_PAINT_STATE,
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_PAINT_STATE,
 		text     => sub {
 			my ( $offset, $length, $width, $text) = @_;
 			my $npx = $pos[0] + $width;
@@ -1457,7 +1460,7 @@ sub text2xoffset
 
 	$self-> block_walk( $b,
 		aperture => \@pos,
-		trace    => tb::TRACE_GEOMETRY | tb::TRACE_PAINT_STATE,
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_PAINT_STATE,
 		text     => sub {
 			my ( $offset, $length, $width, $text) = @_;
 			return if $x < $offset;
