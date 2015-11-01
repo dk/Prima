@@ -137,15 +137,18 @@ use constant REALIZE_COLORS  => 0x2;
 use constant REALIZE_ALL     => 0x3;
 
 # trace constants
-use constant TRACE_FONTS       => 0x01;
-use constant TRACE_COLORS      => 0x02;
-use constant TRACE_PENS        => TRACE_COLORS | TRACE_FONTS;
-use constant TRACE_APERTURE    => 0x04;
-use constant TRACE_TEXT        => 0x08;
-use constant TRACE_GEOMETRY    => TRACE_FONTS | TRACE_APERTURE | TRACE_TEXT;
-use constant TRACE_UPDATE_MARK => 0x10;
-use constant TRACE_PAINT_STATE => 0x20;
-use constant TRACE_REALIZE     => 0x40;
+use constant TRACE_FONTS          => 0x01;
+use constant TRACE_COLORS         => 0x02;
+use constant TRACE_PENS           => TRACE_COLORS | TRACE_FONTS;
+use constant TRACE_APERTURE       => 0x04;
+use constant TRACE_TEXT           => 0x08;
+use constant TRACE_GEOMETRY       => TRACE_FONTS | TRACE_APERTURE | TRACE_TEXT;
+use constant TRACE_UPDATE_MARK    => 0x10;
+use constant TRACE_PAINT_STATE    => 0x20;
+use constant TRACE_REALIZE        => 0x40;
+use constant TRACE_REALIZE_FONTS  => TRACE_FONTS | TRACE_REALIZE;
+use constant TRACE_REALIZE_COLORS => TRACE_COLORS | TRACE_REALIZE;
+use constant TRACE_REALIZE_PENS   => TRACE_PENS | TRACE_REALIZE;
 
 use constant YMAX => 1000;
 
@@ -739,7 +742,7 @@ sub block_wrap
 		pointer => \$ptr,
 		canvas  => $canvas,
 		state   => $state,
-		trace   => tb::TRACE_PENS | tb::TRACE_REALIZE,
+		trace   => tb::TRACE_REALIZE_PENS,
 		text    => sub {
 			my ( $ofs, $tlen ) = @_;
 			my $state_key = join('.', @$state[tb::BLK_FONT_ID .. tb::BLK_FONT_STYLE]);
@@ -1149,7 +1152,7 @@ sub make_bidi_block
 	my $ptr;
 	$self-> block_walk( \@new,
 		canvas   => $canvas,
-		trace    => tb::TRACE_FONTS | tb::TRACE_REALIZE | tb::TRACE_UPDATE_MARK | tb::TRACE_APERTURE,
+		trace    => tb::TRACE_REALIZE_FONTS | tb::TRACE_UPDATE_MARK | tb::TRACE_APERTURE,
 		aperture => \@xy,
 		pointer  => \$ptr,
 		text     => sub { $new[ $ptr + tb::T_WID ] = $canvas->get_text_width( $_[2], 1 ) },
@@ -1294,7 +1297,7 @@ sub block_draw
 	my @xy = ($x, $y);
 	my @state;
 	$self-> block_walk( $b, 
-		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_COLORS,
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS,
 		canvas   => $canvas,
 		aperture => \@xy,
 		state    => \@state,
