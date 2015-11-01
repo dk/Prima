@@ -36,10 +36,9 @@ use Prima::ScrollBar;
 
 package 
     tb;
-use vars qw(@oplen);
+use vars qw(@oplen %opnames);
 
 @oplen = ( 4, 2, 3, 4, 3, 2, 4, 3);   # lengths of tb::OP_XXX constants ( see below ) + 1
-
 # basic opcodes
 use constant OP_TEXT               =>  0; # (3) text offset, text length, text width
 use constant OP_COLOR              =>  1; # (1) 0xRRGGBB or COLOR_INDEX | palette_index
@@ -51,6 +50,18 @@ use constant OP_CODE               =>  4; # (2) code pointer and parameters
 use constant OP_WRAP               =>  5; # (1) on / off
 use constant OP_MARK               =>  6; # (3) id, x, y
 use constant OP_BIDIMAP            =>  7; # (2) map, visual
+
+%opnames = (
+	text      => OP_TEXT,
+	color     => OP_COLOR,
+	font      => OP_FONT,
+	transpose => OP_TRANSPOSE,
+	code      => OP_CODE,
+	wrap      => OP_WRAP,
+	mark      => OP_MARK,
+	bidimap   => OP_BIDIMAP,
+);
+
 
 # OP_TEXT 
 use constant T_OFS                => 1;
@@ -117,6 +128,7 @@ use constant  F_HEIGHT=> 1000000;
 # BLK_FLAGS constants
 use constant T_SIZE      => 0x1;
 use constant T_WRAPABLE  => 0x2;
+use constant T_IS_BIDI   => 0x4;
 
 # realize_state mode
 
@@ -124,6 +136,15 @@ use constant REALIZE_FONTS   => 0x1;
 use constant REALIZE_COLORS  => 0x2;
 use constant REALIZE_ALL     => 0x3;
 
+# trace constants
+use constant TRACE_FONTS            => 0x01;
+use constant TRACE_COLORS           => 0x02;
+use constant TRACE_FONTS_AND_COLORS => TRACE_COLORS | TRACE_FONTS;
+use constant TRACE_APERTURE         => 0x04;
+use constant TRACE_TEXT             => 0x08;
+use constant TRACE_GEOMETRY         => TRACE_FONTS | TRACE_APERTURE | TRACE_TEXT;
+use constant TRACE_UPDATE_MARK      => 0x10;
+use constant TRACE_PAINT_STATE      => 0x20;
 
 use constant YMAX => 1000;
 
@@ -148,8 +169,10 @@ sub block_count
 sub opcode
 {
 	my $len = $_[0] || 0;
+	my $name = $_[1];
 	$len = 0 if $len < 0;
 	push @oplen, $len + 1;
+	$opnames{$name} = scalar(@oplen) - 1 if defined $name;
 	return scalar(@oplen) - 1;
 }
 
@@ -521,6 +544,123 @@ sub recalc_ymap
 			push @{$ymap-> [$y]}, $i;
 		}
 	}
+}
+
+sub block_walk_abort { shift->{blockWalk} = 0        }
+
+sub block_walk
+{
+	my ( $self, $block, %commands ) = @_;
+
+	my $trace    = delete($commands{trace})    // 0;
+	my $aperture = delete($commands{aperture}) // [0,0];
+	my $canvas   = delete($commands{canvas})   // $self;
+	my $state    = delete($commands{state})    // [];
+	my $other    = delete $commands{other};
+	my $ptr      = delete $commands{pointer}   // \(my $_i);
+
+	my @commands;
+	$commands[ $tb::opnames{$_} ] = $commands{$_} for keys %commands;
+	my $ret;
+	local $self-> {blockWalk} = 1;
+
+	my ( $text, $text_offset, $f_taint, $c_taint, $paint_state, %save_properties );
+
+	# save paint state
+	if ( $trace & tb::TRACE_PAINT_STATE ) {
+		$paint_state = $canvas-> get_paint_state;
+		if ($paint_state) {
+			$save_properties{set_font} = $canvas->get_font if $trace & tb::TRACE_FONTS;
+			if ($trace & tb::TRACE_COLORS) {
+				$save_properties{$_} = $canvas->$_() for qw(color backColor textOpaque);
+			}
+		} else {
+			$canvas-> begin_paint_info;
+		}
+	}
+
+	( $text, $text_offset) = ( $self-> {text}, $$block[ tb::BLK_TEXT_OFFSET])
+		if $trace & tb::TRACE_TEXT;
+	@$state = @$block[ 0 .. tb::BLK_DATA_END ]
+		if $trace & tb::TRACE_FONTS_AND_COLORS;
+	$$aperture[0] += $$block[ tb::BLK_APERTURE_X], $$aperture[1] += $$block[ tb::BLK_APERTURE_Y]
+		if $trace & tb::TRACE_APERTURE;
+
+	# go
+	my ( $lim, $oplen ) = ( scalar(@$block), $tb::oplen[ $$block[ tb::BLK_START ]]);
+	for ( $$ptr = tb::BLK_START; $$ptr < $lim; $$ptr += $oplen ) {
+		my $i   = $$ptr;
+		my $cmd = $$block[$i];
+		$oplen  = $tb::oplen[ $$block[ $i ]];
+		my $sub = $commands[ $$block[$i] ];
+		my @opcode;
+		if ( !$sub && $other ) {
+			$sub = $other;
+			@opcode = ($cmd);
+		}
+		if ($cmd == tb::OP_TEXT) {
+			next unless $$block[$i + tb::T_LEN] > 0;
+
+			if (( $trace & tb::TRACE_FONTS) && !$f_taint) {
+				$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
+				$f_taint = $canvas-> get_font;
+			}
+			if (( $trace & tb::TRACE_COLORS) && !$c_taint) {
+				$self-> realize_state( $canvas, $state, tb::REALIZE_COLORS);
+				$c_taint = 1;
+			}
+			$ret = $sub->(
+				@opcode,
+				@$block[$i + 1 .. $i + $oplen - 1],
+				(( $trace & tb::TRACE_TEXT ) ?
+					substr( $$text, $text_offset + $$block[$i + tb::T_OFS], $$block[$i + tb::T_LEN] ) : ())
+			) if $sub;
+			$$aperture[0] += $$block[ $i + tb::T_WID] if $trace & tb::TRACE_APERTURE;
+			last unless $self-> {blockWalk};
+			next;
+		} elsif (($cmd == tb::OP_FONT) && ($trace & tb::TRACE_FONTS)) {
+			if ( $$block[$i + tb::F_MODE] == tb::F_SIZE && $$block[$i + tb::F_DATA] < tb::F_HEIGHT ) {
+				$$state[ $$block[$i + tb::F_MODE]] = $self-> {defaultFontSize} + $$block[$i + tb::F_DATA];
+			} else {
+				$$state[ $$block[$i + tb::F_MODE]] = $$block[$i + tb::F_DATA];
+			}
+			$f_taint = undef;
+		} elsif (($cmd == tb::OP_COLOR) && ($trace & tb::TRACE_COLORS)) {
+			$$state[ tb::BLK_COLOR + (($$block[ $i + 1] & tb::BACKCOLOR_FLAG) ? 1 : 0)] = $$block[$i + 1];
+			$c_taint = undef;
+		} elsif (( $cmd == tb::OP_TRANSPOSE) && !($$block[ $i + tb::X_FLAGS] & tb::X_EXTEND)) {
+			$$aperture[0] += $$block[ $i + tb::X_X];
+			$$aperture[1] += $$block[ $i + tb::X_Y];
+		} elsif (( $cmd == tb::OP_CODE) && ($trace & tb::TRACE_FONTS_AND_COLORS)) {
+			unless ( $f_taint) {
+				$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
+				$f_taint = $canvas-> get_font;
+			}
+			unless ( $c_taint) {
+				$self-> realize_state( $canvas, $state, tb::REALIZE_COLORS);
+				$c_taint = 1;
+			}
+		} elsif (($cmd == tb::OP_BIDIMAP) && ( $trace & tb::TRACE_TEXT )) {
+			$text = \ $$block[$i + tb::BIDI_VISUAL];
+			$text_offset = 0;
+		} elsif (( $cmd == tb::OP_MARK) & ( $trace & tb::TRACE_UPDATE_MARK)) {
+			$$b[ $i + tb::MARK_X] = $$aperture[0];
+			$$b[ $i + tb::MARK_Y] = $$aperture[1];
+		}
+		$ret = $sub->( @opcode, @$block[$i + 1 .. $i + $oplen - 1]) if $sub;
+		last unless $self-> {blockWalk};
+	}
+
+	# restore paint state
+	if ( $trace & tb::TRACE_PAINT_STATE ) {
+		if ( $paint_state ) {
+			$canvas->$_( $save_properties{$_} ) for keys %save_properties;
+		} else {
+			$canvas->end_paint_info;
+		}
+	}
+
+	return $ret;
 }
 
 sub block_wrap
@@ -895,6 +1035,7 @@ sub make_bidi_block
 	my $map     = $p->map;
 	my $revmap  = $self->bidi_revmap($map);
 	my @new     = ( @$b[0..tb::BLK_DATA_END], tb::bidimap( $visual, $map ) );
+	$new[tb::BLK_FLAGS] |= tb::T_IS_BIDI;
 	my $oplen;
 	my ($x, $y, $i, $lim) = (0,0,tb::BLK_START, scalar @$b);
 
@@ -912,33 +1053,38 @@ sub make_bidi_block
 	my $char_offset       = 0;
 	my %other_ops_after;
 
-	for ( ; $i < $lim; $i += $oplen = $tb::oplen[ $$b[ $i]]) {
-		my $cmd = $$b[$i];
-		if ($cmd == tb::OP_TEXT) {
-			my $ofs = $$b[ $i + tb::T_OFS];
-			my $len = $$b[ $i + tb::T_LEN];
+	my $font_and_color = sub {
+		my $key = join("\0", @current_fc);
+		my $state;
+		if (defined ($state = $id_hash{$key}) ) {
+			$current_state = $state;
+		} else {
+			push @fonts_and_colors, [ @current_fc ];
+			$id_hash{$key} = ++$current_state;
+		}
+	};
+
+	$self-> block_walk( $b,
+		text => sub {
+			my ( $ofs, $len ) = @_;
 			for ( my $k = 0; $k < $len; $k++) {
 				$char_states[ $revmap->[ $ofs + $k ]] = $current_state;
 			}
 			$char_offset = $revmap->[$ofs + $len - 1];
-		} elsif ( $cmd == tb::OP_FONT || $cmd == tb::OP_COLOR) {
-			if ( $cmd == tb::OP_FONT ) {
-				$current_fc[ $$b[ $i + tb::F_MODE] - tb::BLK_FONT_ID ] = $$b[ $i + tb::F_DATA];
-			} else {
-				$current_fc[ tb::BLK_COLOR - tb::BLK_FONT_ID ] = $$b[$i + 1];
-			}
-			my $key = join("\0", @current_fc);
-			my $state;
-			if (defined ($state = $id_hash{$key}) ) {
-				$current_state = $state;
-			} else {
-				push @fonts_and_colors, [ @current_fc ];
-				$id_hash{$key} = ++$current_state;
-			}
-		} else {
-			push @{$other_ops_after{ $char_offset }}, @$b[ $i .. $i + $oplen - 1 ];
+		},
+		font  => sub {
+			my ( $mode, $data ) = @_;
+			$current_fc[ $mode - tb::BLK_FONT_ID ] = $data;
+			$font_and_color->();
+		},
+		color  => sub {
+			$current_fc[ tb::BLK_COLOR - tb::BLK_FONT_ID ] = shift;
+			$font_and_color->();
+		},
+		other  => sub {
+			push @{$other_ops_after{ $char_offset }}, @_;
 		}
-	}
+	);
 
 	# step 2 - produce RLEs for text and stuff font/colors/other ops in between
 	my $last_char_state = 0;
@@ -995,33 +1141,17 @@ sub make_bidi_block
 		}
 	}
 
-	# step 3 update widths and positions etc
-	$b = \@new;
-	( $x, $y, $i, $lim) = ( 0, 0, tb::BLK_START, scalar @$b);
-	my $state = $self-> create_state;
-	my $realized_font;
-	for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]]) {
-		my $cmd = $$b[$i];
-		if ( $cmd == tb::OP_TEXT) {
-			unless ( $realized_font ) {
-				$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
-				$realized_font = 1;
-			}
-			$$b[ $i + tb::T_WID ] = $canvas->get_text_width( $$b[ $i + tb::T_WID ] , 1 );
-		} elsif ( $cmd == tb::OP_FONT) {
-			if ( $$b[$i + tb::F_MODE] == tb::F_SIZE && $$b[$i + tb::F_DATA] < tb::F_HEIGHT ) {
-				$$state[ $$b[$i + tb::F_MODE]] = $self-> {defaultFontSize} + $$b[$i + tb::F_DATA];
-			} else {
-				$$state[ $$b[$i + tb::F_MODE]] = $$b[$i + tb::F_DATA];
-			}
-			$realized_font = 1;
-		} elsif ( $cmd == tb::OP_TRANSPOSE) {
-			$x += $$b[ $i + tb::X_X], $y += $$b[ $i + tb::X_Y] unless $$b[ $i + tb::X_FLAGS] & tb::X_EXTEND;
-		} elsif ( $cmd == tb::OP_MARK) {
-			$$b[ $i + tb::MARK_X] = $x;
-			$$b[ $i + tb::MARK_Y] = $y;
-		}
-	}
+	# step 3 -- update widths and positions etc
+	my @xy    = (0,0);
+	my $ptr;
+	$self-> block_walk( \@new,
+		canvas   => $canvas,
+		trace    => tb::TRACE_FONTS | tb::TRACE_UPDATE_MARK | tb::TRACE_APERTURE,
+		aperture => \@xy,
+		pointer  => \$ptr,
+		text     => sub { $new[ $ptr + tb::T_WID ] = $canvas->get_text_width( $_[2], 1 ) },
+	);
+	$new[ tb::BLK_WIDTH] = $xy[0] if $new[ tb::BLK_WIDTH ] < $xy[0];
 
 	return \@new;
 }
@@ -1037,6 +1167,16 @@ sub selection_state
 sub paint_selection
 {
 	my ( $self, $canvas, $block, $x, $y, $index, $sx1, $sx2, $clipRect, $aa) = @_;
+	return;
+
+	my $len = $self=>get_block_text_length($index);
+	$sx2 = $len - 1 if $sx2 < 0;
+
+	if ( $$block[tb::BLK_FLAGS] & tb::T_IS_BIDI ) {
+	}
+	
+
+	return;
 
 	my @cr  = @$clipRect;
 	my $restore_clip;
@@ -1122,10 +1262,10 @@ sub on_paint
 				$self->paint_selection( $canvas, $b, $x, $y, $j, $sx1, $sx2 - 1, \@clipRect, \@aa);
 			} elsif ( $j == $sy1 ) {
 				# upper selected part
-				$self->paint_selection( $canvas, $b, $x, $y, $j, $sx1, 'end', \@clipRect, \@aa);
+				$self->paint_selection( $canvas, $b, $x, $y, $j, $sx1, -1, \@clipRect, \@aa);
 			} elsif ( $j == $sy2 ) {
 				# lower selected part
-				$self->paint_selection( $canvas, $b, $x, $y, $j, 'start', $sx2 - 1, \@clipRect, \@aa);
+				$self->paint_selection( $canvas, $b, $x, $y, $j, 0, $sx2 - 1, \@clipRect, \@aa);
 			} elsif ( $j > $sy1 && $j < $sy2) { # simple selection case
 				$self-> {selectionPaintMode} = 1;
 				$self-> selection_state( $canvas);
@@ -1140,75 +1280,30 @@ sub on_paint
 	$self-> {selectionPaintMode} = 0;
 }
 
-
 sub block_draw
 {
 	my ( $self, $canvas, $b, $x, $y) = @_;
-	my ( $i, $lim) = ( tb::BLK_START, scalar @$b);
+
 	my $ret = 1;
-
-	my $cmd;
-	my ( $t, $o) = ( $self-> {text}, $$b[ tb::BLK_TEXT_OFFSET]);
-	my @state = @$b[ 0 .. tb::BLK_DATA_END ];
-	my ( $f_taint, $c_taint); 
-
 	$canvas-> clear( $x, $y, $x + $$b[ tb::BLK_WIDTH] - 1, $y + $$b[ tb::BLK_HEIGHT] - 1)
 		if $self-> {selectionPaintMode};
 
-	$x += $$b[ tb::BLK_APERTURE_X];
-	$y += $$b[ tb::BLK_APERTURE_Y];
-
-	for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]] ) {
-		$cmd = $$b[$i];
-		if ( $cmd == tb::OP_TEXT) {
-			if ( $$b[$i + tb::T_LEN] > 0) {
-				unless ( $f_taint) {
-					$self-> realize_state( $canvas, \@state, tb::REALIZE_FONTS); 
-					$f_taint = $canvas-> get_font;
-				}
-				unless ( $c_taint) {
-					$self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
-					$c_taint = 1;
-				}
-				# Make sure we ultimately return "fail" if any text_out operation
-				# in this block fails. XXX if there are multiple failures, $@
-				# will only contain the last one. Consider consolidating
-				# them somehow.
-				$ret &&= $canvas-> text_out( substr( $$t, $o + $$b[$i + tb::T_OFS], $$b[$i + tb::T_LEN]), $x, $y);
-			}
-			$x += $$b[ $i + tb::T_WID];
-		} elsif ( $cmd == tb::OP_FONT) {
-			if ( $$b[$i + tb::F_MODE] == tb::F_SIZE && $$b[$i + tb::F_DATA] < tb::F_HEIGHT ) {
-				$state[ $$b[$i + tb::F_MODE]] = $self-> {defaultFontSize} + $$b[$i + tb::F_DATA];
-			} else {
-				$state[ $$b[$i + tb::F_MODE]] = $$b[$i + tb::F_DATA];
-			}
-			$f_taint = undef;
-		} elsif (( $cmd == tb::OP_TRANSPOSE) && !($$b[ $i + tb::X_FLAGS] & tb::X_EXTEND)) {
-			$x += $$b[ $i + tb::X_X];
-			$y += $$b[ $i + tb::X_Y];
-		} elsif ( $cmd == tb::OP_CODE) {
-			unless ( $f_taint) {
-				$self-> realize_state( $canvas, \@state, tb::REALIZE_FONTS); 
-				$f_taint = $canvas-> get_font;
-			}
-			unless ( $c_taint) {
-				$self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
-				$c_taint = 1;
-			}
-			$$b[ $i + 1]-> ( $self, $canvas, $b, \@state, $x, $y, $$b[ $i + 2]);
-		} elsif ( $cmd == tb::OP_COLOR) {
-			$state[ tb::BLK_COLOR + (($$b[ $i + 1] & tb::BACKCOLOR_FLAG) ? 1 : 0)] 
-				= $$b[$i + 1];
-			$c_taint = undef;
-		} elsif ($cmd == tb::OP_BIDIMAP) {
-			$t = \ $$b[$i + tb::BIDI_VISUAL];
-			$o = 0;
-		} elsif ($cmd >= @tb::oplen) {
-			die("Unknown Prima::TextView block op $cmd\n");
-		}
-	}
-
+	my @xy = ($x, $y);
+	my @state;
+	$self-> block_walk( $b, 
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_COLORS,
+		canvas   => $canvas,
+		aperture => \@xy,
+		state    => \@state,
+		text     => sub {
+			$self-> block_walk_abort( $ret = 0 ) unless $canvas-> text_out($_[-1], @xy);
+		},
+		code     => sub {
+			my ( $code, $data ) = @_;
+			$code-> ( $self, $canvas, $b, \@state, @xy, $data);
+		},
+	);
+	
 	return $ret;
 }
 
@@ -1220,6 +1315,7 @@ sub xy2info
 	my ( $pw, $ph) = $self-> paneSize;
 	$x = 0 if $x < 0;
 	$x = $pw if $x > $pw;
+
 	return (0,0) if $y < 0 || !scalar(@$bx) ;
 	$x = $pw, $y = $ph if $y > $ph;
 	
@@ -1306,59 +1402,30 @@ sub xy2info
 	}
 
 	# find text offset
-	my $text = $self->{text};
-	my $bofs = $$b[ tb::BLK_TEXT_OFFSET];
-	my $bidimap;
 	my $ofs = 0;
-	my $pm = $self-> get_paint_state;
-	$self-> begin_paint_info unless $pm;
-	my $savefont  = $self-> get_font;
-	my @state = @$b[ 0 .. tb::BLK_DATA_END ];
-	my $f_taint;
+	my $bidimap;
+	my @pos = ($$b[ tb::BLK_X] - $x,0);
 
-	my ( $i, $lim, $t) = ( tb::BLK_START, scalar @$b);
-	my $px = $$b[ tb::BLK_X];
-	for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]] ) {
-		my $cmd = $$b[$i];
-		if ( $cmd == tb::OP_TEXT) {
-			my $npx = $px + $$b[$i + tb::T_WID];
-			if ( $px > $x) {
-				$ofs = $$b[ $i + tb::T_OFS]; 
-				last;
-			} elsif ( $px <= $x && $npx > $x) {
-				unless ( $f_taint) {
-					$self-> realize_state( $self, \@state, tb::REALIZE_FONTS); 
-					$f_taint = $self-> get_font;
-				}
-				$ofs = $$b[ $i + tb::T_OFS] + $self-> text_wrap(
-					substr( $$text, $bofs + $$b[ $i + tb::T_OFS], $$b[ $i + tb::T_LEN]),
-					$x - $px, 
-					tw::ReturnFirstLineLength | tw::BreakSingle
-				);
-				$ofs = $bidimap->[$ofs] if $bidimap;
-				last;
-			} 
-			$ofs = $$b[ $i + tb::T_OFS] + $$b[ $i + tb::T_LEN];
-			$px = $npx;
-		} elsif (( $cmd == tb::OP_TRANSPOSE) && !($$b[ $i + tb::X_FLAGS] & tb::X_EXTEND)) {
-			$px += $$b[ $i + tb::X_X];
-		} elsif ( $cmd == tb::OP_FONT) {
-			if ( $$b[$i + tb::F_MODE] == tb::F_SIZE && $$b[$i + tb::F_DATA] < tb::F_HEIGHT ) {
-				$state[ $$b[$i + tb::F_MODE]] = $self-> {defaultFontSize} + $$b[$i + tb::F_DATA];
+	$self-> block_walk( $b,
+		aperture => \@pos,
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_PAINT_STATE,
+		text     => sub {
+			my ( $offset, $length, $width, $text) = @_;
+			my $npx = $pos[0] + $width;
+			if ( $pos[0] > 0) {
+				$ofs = $offset;
+				$self-> block_walk_abort;
+			} elsif ( $pos[0] <= 0 && $npx > 0) {
+				$ofs = $offset + $self-> text_wrap( $text, -$pos[0], tw::ReturnFirstLineLength | tw::BreakSingle);
+				$self-> block_walk_abort;
 			} else {
-				$state[ $$b[$i + tb::F_MODE]] = $$b[$i + tb::F_DATA];
+				$ofs = $offset + $length - 1;
 			}
-			$f_taint = undef;
-		} elsif ( $cmd == tb::OP_BIDIMAP ) {
-			$bofs = 0;
-			$bidimap = $$b[$i + tb::BIDI_MAP];
-			$text    = \ $$b[$i + tb::BIDI_VISUAL];
-		}
-	}
+		},
+		bidimap => sub { $bidimap = pop },
+	);
 
-	$pm ? 
-		$self-> set_font( $savefont) : 
-		$self-> end_paint_info;
+	$ofs = $bidimap->[$ofs] if $bidimap;
 
 	return $ofs, $bid;
 }
@@ -1386,57 +1453,26 @@ sub text2xoffset
 	return 0 unless $b;
 	return 0 if $x <= 0; # XXX
 
-	my $pm = $self-> get_paint_state;
-	$self-> begin_paint_info unless $pm;
-	my $savefont = $self-> get_font;
-	my @state = @$b[ 0 .. tb::BLK_DATA_END ];
-	my $f_taint;
+	my @pos = (0,0);
 
-	my ( $i, $lim) = ( tb::BLK_START, scalar @$b);
-	my $px   = $$b[tb::BLK_APERTURE_X];
-	my $bofs = $$b[tb::BLK_TEXT_OFFSET];
-	my $text = $self->{text};
-	for ( ; $i < $lim; $i += $tb::oplen[ $$b[ $i]] ) {
-		my $cmd = $$b[$i];
-		if ( $cmd == tb::OP_TEXT) {
-			if ( $x >= $$b[$i + tb::T_OFS]) {
-				if ( $x < $$b[$i + tb::T_OFS] + $$b[$i + tb::T_LEN]) {
-					unless ( $f_taint) {
-						$self-> realize_state( 
-							$self, \@state, 
-							tb::REALIZE_FONTS
-						);
-						$f_taint = $self-> get_font;
-					}
-					$px += $self-> get_text_width( substr( 
-						$$text,
-						$bofs + $$b[$i+tb::T_OFS], 
-						$x - $$b[$i+tb::T_OFS],
-					));
-					last;
-				} elsif ( $x == $$b[$i+tb::T_OFS] + $$b[$i+tb::T_LEN]) {
-					$px += $$b[$i+tb::T_WID];
-					last;
-				}
+	$self-> block_walk( $b,
+		aperture => \@pos,
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_PAINT_STATE,
+		text     => sub {
+			my ( $offset, $length, $width, $text) = @_;
+			return if $x < $offset;
+
+			if ( $x < $offset + $length ) {
+				$pos[0] += $self-> get_text_width( substr( $text, 0, $x - $offset));
+				$self-> block_walk_abort;
+			} elsif ( $x == $offset + $length ) {
+				$pos[0] += $width;
+				$self-> block_walk_abort;
 			}
-			$px += $$b[$i+tb::T_WID];
-		} elsif (( $cmd == tb::OP_TRANSPOSE) && !($$b[ $i + tb::X_FLAGS] & tb::X_EXTEND)) {
-			$px += $$b[ $i + tb::X_X];
-		} elsif ( $cmd == tb::OP_FONT) {
-			if ( $$b[$i + tb::F_MODE] == tb::F_SIZE && $$b[$i + tb::F_DATA] < tb::F_HEIGHT ) {
-				$state[ $$b[$i + tb::F_MODE]] = $self-> {defaultFontSize} + $$b[$i + tb::F_DATA];
-			} else {
-				$state[ $$b[$i + tb::F_MODE]] = $$b[$i + tb::F_DATA];
-			}
-			$f_taint = undef;
-		} elsif ( $cmd == tb::OP_BIDIMAP ) {
-			$text = \ $$b[ $i + tb::BIDI_VISUAL ];
-			$x    = $self-> bidi_revmap($$b[ $i + tb::BIDI_MAP ])->[$x];
-			$bofs = 0;
-		}
-	}
-	$pm ? $self-> set_font( $savefont) : $self-> end_paint_info;
-	return $px;
+		},
+	);
+
+	return $pos[0];
 }
 
 sub get_block_text
@@ -1797,58 +1833,27 @@ sub selection
 	my @aa   = $self-> get_active_area( 0, @size);
 	my @invalid_rects;
 
-	if ( $y2 != $y1) {
-		my $b = $$bx[ $y1];
-		my @a = ( $$b[ tb::BLK_X], $$b[tb::BLK_Y], $$b[ tb::BLK_X], $$b[ tb::BLK_Y]);
-		for ( $y1 .. $y2) {
-			my $z = $$bx[ $_];
-			my @b = ( $$z[ tb::BLK_X], $$z[tb::BLK_Y], $$z[ tb::BLK_X] + $$z[ tb::BLK_WIDTH], $$z[ tb::BLK_Y] + $$z[ tb::BLK_HEIGHT]);
-			for ( 0, 1) { $a[$_] = $b[$_] if $a[$_] > $b[$_] }
-			for ( 2, 3) { $a[$_] = $b[$_] if $a[$_] < $b[$_] }
-		}
-		$clipRect[0] = $aa[0] - $self-> {offset}  + $a[0];
-		$clipRect[1] = $aa[3] + $self-> {topLine} - $a[1] - 1;
-		$clipRect[2] = $aa[0] - $self-> {offset}  + $a[2];
-		$clipRect[3] = $aa[3] + $self-> {topLine} - $a[3] - 1;
-
-		for ( 0, 1) {
-			@clipRect[$_,$_+2] = @clipRect[$_+2,$_] 
-				if $clipRect[$_] > $clipRect[$_+2];
-			$clipRect[$_] = $aa[$_] if $clipRect[$_] < $aa[$_]; 
-			$clipRect[$_+2] = $aa[$_+2] if $clipRect[$_+2] > $aa[$_+2];
-		}
-
-		push @invalid_rects, \@clipRect;
-	} else {
-		my $len = $self-> get_block_text_length($y1);
-		$old[-1] = $len - 1 if $old[-1] < 0;
-		$new[-1] = $len - 1 if $new[-1] < 0;
-
-		my $map = $self-> bidi_selection_map($self-> get_block_text($y1));
-		my $old_chunks = $self->bidi_selection_chunks( $map, @old);
-		my $new_chunks = $self->bidi_selection_chunks( $map, @new);
-
-		my $b = $$bx[ $y1]; 
-		@clipRect = (
-			$aa[0] - $self-> {offset} + $$b[ tb::BLK_X],
-			$aa[3] - $$b[ tb::BLK_Y]  - $$b[ tb::BLK_HEIGHT] + $self-> {topLine} - 1,
-			$aa[0] - $self-> {offset} + $$b[ tb::BLK_X],
-			$aa[3] - $$b[ tb::BLK_Y]  + $self-> {topLine} - 1,
-		);
-		# warn "s: (@old_chunks) @$old_chunks / (@new_chunks) @$new_chunks)\n";
-
-		$self->bidi_selection_walk(
-			$self->bidi_selection_diff( $old_chunks, $new_chunks),
-			0, undef, sub {
-				my ( $offset, $length, $changed ) = @_;
-				push @invalid_rects, [ 
-					$clipRect[0] + $self-> text2xoffset( $offset, $y1),
-					$clipRect[1], 
-					$clipRect[2] + $self-> text2xoffset( $offset + $length, $y1),
-					$clipRect[3]
-				] if $changed;
-			});
+	my $b = $$bx[ $y1];
+	my @a = ( $$b[ tb::BLK_X], $$b[tb::BLK_Y], $$b[ tb::BLK_X], $$b[ tb::BLK_Y]);
+	for ( $y1 .. $y2) {
+		my $z = $$bx[ $_];
+		my @b = ( $$z[ tb::BLK_X], $$z[tb::BLK_Y], $$z[ tb::BLK_X] + $$z[ tb::BLK_WIDTH], $$z[ tb::BLK_Y] + $$z[ tb::BLK_HEIGHT]);
+		for ( 0, 1) { $a[$_] = $b[$_] if $a[$_] > $b[$_] }
+		for ( 2, 3) { $a[$_] = $b[$_] if $a[$_] < $b[$_] }
 	}
+	$clipRect[0] = $aa[0] - $self-> {offset}  + $a[0];
+	$clipRect[1] = $aa[3] + $self-> {topLine} - $a[1] - 1;
+	$clipRect[2] = $aa[0] - $self-> {offset}  + $a[2];
+	$clipRect[3] = $aa[3] + $self-> {topLine} - $a[3] - 1;
+
+	for ( 0, 1) {
+		@clipRect[$_,$_+2] = @clipRect[$_+2,$_] 
+			if $clipRect[$_] > $clipRect[$_+2];
+		$clipRect[$_] = $aa[$_] if $clipRect[$_] < $aa[$_]; 
+		$clipRect[$_+2] = $aa[$_+2] if $clipRect[$_+2] > $aa[$_+2];
+	}
+
+	push @invalid_rects, \@clipRect;
 
 	my @cpr = $self-> get_invalid_rect;
 	if ( $cpr[0] != $cpr[2] || $cpr[1] != $cpr[3]) {

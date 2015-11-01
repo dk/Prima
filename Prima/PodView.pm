@@ -99,7 +99,7 @@ use constant T_LINK_OFFSET => 5; #
 use constant FORMAT_LINES    => 10;
 use constant FORMAT_TIMEOUT  => 300;
 
-$OP_LINK = tb::opcode(1);
+$OP_LINK = tb::opcode(1, 'link');
 
 # init a 'hand' pointer
 	$handIcon = Prima::Icon-> create( width=>19, height=>24, type => im::bpp4,
@@ -1403,38 +1403,31 @@ sub format_chunks
 			my $linkState = 0;
 			my $linkStart = 0;
 			my @rect;
-			for ( @blocks) {
-				my ( $b, $i, $lim, $x) = ( 
-					$_, tb::BLK_START, scalar @$_, $$_[ tb::BLK_X]
-				);
+			for my $b ( @blocks) {
+				my @pos = ( $$b[tb::BLK_X], 0 );
 
 				if ( $linkState) {
-					$rect[0] = $x;
+					$rect[0] = $$b[ tb::BLK_X];
 					$rect[1] = $$b[ tb::BLK_Y];
 				}
 
-				for ( ; $i < $lim; $i += $tb::oplen[ $$b[$i] ]) {
-					my $cmd = $$b[$i];
-					if ( $cmd == tb::OP_TEXT) {
-						$x += $$b[ $i + tb::T_WID];
-					} elsif ( $cmd == tb::OP_TRANSPOSE) {
-						$x += $$b[ $i + tb::X_X] 
-							unless $$b[ $i + tb::X_FLAGS] & tb::X_EXTEND;
-					} elsif ( $cmd == $OP_LINK) {
-						if ( $linkState = $$b[ $i + 1]) {
-							$rect[0] = $x;
+				$self-> block_walk( $b,
+					aperture => \@pos,
+					trace => tb::TRACE_APERTURE,
+					link  => sub {
+						if ( $linkState = shift ) {
+							$rect[0] = $pos[0];
 							$rect[1] = $$b[ tb::BLK_Y];
 						} else {
-							$rect[2] = $x;
-							$rect[3] = $$b[ tb::BLK_Y] + 
-								$$b[ tb::BLK_HEIGHT];
+							$rect[2] = $pos[0];
+							$rect[3] = $$b[ tb::BLK_Y] + $$b[ tb::BLK_HEIGHT];
 							push @$linkRects, [ @rect, $f-> {linkId} ++ ];
 						}
-					}
-				}
+					},
+				);
 
 				if ( $linkState) {
-					$rect[2] = $x;
+					$rect[2] = $pos[0];
 					$rect[3] = $$b[ tb::BLK_Y] + $$b[ tb::BLK_HEIGHT];
 					push @$linkRects, [ @rect, $f-> {linkId}];
 				}
