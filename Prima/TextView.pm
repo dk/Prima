@@ -629,7 +629,11 @@ sub block_walk
 			}
 			$f_taint = undef;
 		} elsif (($cmd == tb::OP_COLOR) && ($trace & tb::TRACE_COLORS)) {
-			$$state[ tb::BLK_COLOR + (($$block[ $i + 1] & tb::BACKCOLOR_FLAG) ? 1 : 0)] = $$block[$i + 1];
+			if ( ($$block[ $i + 1] & tb::BACKCOLOR_FLAG) ) {
+				$$state[ tb::BLK_BACKCOLOR ] = $$block[$i + 1] & ~tb::BACKCOLOR_FLAG;
+			} else {
+				$$state[ tb::BLK_COLOR ] = $$block[$i + 1];
+			}
 			$c_taint = undef;
 		} elsif ( $cmd == tb::OP_TRANSPOSE) {
 			my $x = $$block[ $i + tb::X_X];
@@ -996,12 +1000,17 @@ sub _debug_block
 			print STDERR ": OP_FONT.$mode $data\n";
 		} elsif ( $cmd == tb::OP_COLOR ) {
 			my $color = $$b[ $i + 1 ];
+			my $bk = '';
+			if ( $color & tb::BACKCOLOR_FLAG ) {
+				$bk = 'backcolor,';
+				$color &= ~tb::BACKCOLOR_FLAG;
+			}
 			if ( $color & tb::COLOR_INDEX) {
 				$color = "index(" . ( $color & ~tb::COLOR_INDEX) . ")";
 			} else {
 				$color = sprintf("%06x", $color);
 			}
-			print STDERR ": OP_COLOR $color\n";
+			print STDERR ": OP_COLOR $bk$color\n";
 		} elsif ( $cmd == tb::OP_TRANSPOSE) {
 			my $x = $$b[ $i + tb::X_X ];
 			my $y = $$b[ $i + tb::X_X ];
@@ -1047,10 +1056,8 @@ sub make_bidi_block
 
 	# step 1 - record how each character is drawn with font/color, and also 
 	# where other ops are positioned
-	my @default_fc        = @$b[ map { $_ - tb::BLK_FONT_ID } tb::BLK_FONT_ID .. tb::BLK_COLOR ]; # fc == fonts and colors
-	$default_fc[tb::BLK_FONT_SIZE - tb::BLK_FONT_ID] -= $self->{defaultFontSize} if 
-		$default_fc[tb::BLK_FONT_SIZE - tb::BLK_FONT_ID] < tb::F_HEIGHT;
-	my %id_hash           = ( join("\0", @default_fc) => 0 );
+	my @default_fc        = @$b[ 0 .. tb::BLK_DATA_END ]; # fc == fonts and colors
+	my %id_hash           = ( join(".", @default_fc[tb::BLK_DATA_START .. tb::BLK_DATA_END]) => 0 );
 	my @fonts_and_colors  = ( \@default_fc ); # this is the number #0, default char state
 	my @current_fc        = @default_fc;
 	my $current_state     = 0;
@@ -1060,7 +1067,7 @@ sub make_bidi_block
 	my %other_ops_after;
 
 	my $font_and_color = sub {
-		my $key = join("\0", @current_fc);
+		my $key = join(".", @current_fc[ tb::BLK_DATA_START .. tb::BLK_DATA_END ]);
 		my $state;
 		if (defined ($state = $id_hash{$key}) ) {
 			$current_state = $state;
@@ -1071,6 +1078,8 @@ sub make_bidi_block
 	};
 
 	$self-> block_walk( $b,
+		trace => tb::TRACE_PENS,
+		state => \@current_fc,
 		text => sub {
 			my ( $ofs, $len ) = @_;
 			for ( my $k = 0; $k < $len; $k++) {
@@ -1078,18 +1087,9 @@ sub make_bidi_block
 			}
 			$char_offset = $revmap->[$ofs + $len - 1];
 		},
-		font  => sub {
-			my ( $mode, $data ) = @_;
-			$current_fc[ $mode - tb::BLK_FONT_ID ] = $data;
-			$font_and_color->();
-		},
-		color  => sub {
-			$current_fc[ tb::BLK_COLOR - tb::BLK_FONT_ID ] = shift;
-			$font_and_color->();
-		},
-		other  => sub {
-			push @{$other_ops_after{ $char_offset }}, @_;
-		}
+		font  => $font_and_color,
+		color => $font_and_color,
+		other  => sub { push @{$other_ops_after{ $char_offset }}, @_ }
 	);
 
 	# step 2 - produce RLEs for text and stuff font/colors/other ops in between
@@ -1120,21 +1120,28 @@ sub make_bidi_block
 			if ( $char_state >= 0 ) {
 				my $old_state = $fonts_and_colors[ $last_char_state ];
 				my $new_state = $fonts_and_colors[ $char_state ];
-				if ( $$old_state[ tb::BLK_COLOR - tb::BLK_FONT_ID ] != $$new_state[ tb::BLK_COLOR - tb::BLK_FONT_ID ] ) {
-					if ( $initialized[ tb::BLK_COLOR - tb::BLK_FONT_ID ]++ ) {
-						push @new, tb::OP_COLOR, $$new_state[ tb::BLK_COLOR - tb::BLK_FONT_ID ];
+				if ( $$old_state[ tb::BLK_COLOR ] != $$new_state[ tb::BLK_COLOR ] ) {
+					if ( $initialized[ tb::BLK_COLOR ]++ ) {
+						push @new, tb::OP_COLOR, $$new_state[ tb::BLK_COLOR ];
 					} else {
-						$new[ tb::BLK_COLOR ] = $$new_state[ tb::BLK_COLOR - tb::BLK_FONT_ID ];
+						$new[ tb::BLK_COLOR ] = $$new_state[ tb::BLK_COLOR ];
+					}
+				}
+				if ( $$old_state[ tb::BLK_BACKCOLOR ] != $$new_state[ tb::BLK_BACKCOLOR ] ) {
+					if ( $initialized[ tb::BLK_BACKCOLOR ]++ ) {
+						push @new, tb::OP_COLOR, $$new_state[ tb::BLK_BACKCOLOR ] | tb::BACKCOLOR_FLAG;
+					} else {
+						$new[ tb::BLK_BACKCOLOR ] = $$new_state[ tb::BLK_BACKCOLOR ];
 					}
 				}
 				for ( my $font_mode = tb::BLK_FONT_ID; $font_mode <= tb::BLK_FONT_STYLE; $font_mode++) {
-					my $new_value = $$new_state[ $font_mode - tb::BLK_FONT_ID ];
-					$new_value += $self->{defaultFontSize} if $font_mode == tb::F_SIZE && $new_value < tb::F_HEIGHT;
-					next if $$old_state[ $font_mode - tb::BLK_FONT_ID ] == $new_value;
+					next if $$old_state[ $font_mode ] == $$new_state[ $font_mode ];
 					if ( $initialized[ $font_mode ]++ ) {
-						push @new, tb::OP_FONT, $font_mode, $$new_state[ $font_mode - tb::BLK_FONT_ID ];
+						my $new_value = $$new_state[ $font_mode ];
+						$new_value -= $self->{defaultFontSize} if $font_mode == tb::F_SIZE && $new_value < tb::F_HEIGHT;
+						push @new, tb::OP_FONT, $font_mode, 
 					} else {
-						$new[ $font_mode ] = $new_value;
+						$new[ $font_mode ] = $$new_state[ $font_mode ];
 					}
 				}
 				$last_char_state = $char_state;
@@ -1150,6 +1157,7 @@ sub make_bidi_block
 	# step 3 -- update widths and positions etc
 	my @xy    = (0,0);
 	my $ptr;
+
 	$self-> block_walk( \@new,
 		canvas   => $canvas,
 		trace    => tb::TRACE_REALIZE_FONTS | tb::TRACE_UPDATE_MARK | tb::TRACE_APERTURE,
