@@ -1158,6 +1158,7 @@ sub make_bidi_block
 	my @xy    = (0,0);
 	my $ptr;
 
+	$new[ tb::BLK_WIDTH] = 0;
 	$self-> block_walk( \@new,
 		canvas   => $canvas,
 		trace    => tb::TRACE_REALIZE_FONTS | tb::TRACE_UPDATE_MARK | tb::TRACE_APERTURE,
