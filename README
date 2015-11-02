@@ -36,9 +36,9 @@ Fribidi
 -------
 
 To support bi-directional text input and output you'll need C<Text::Bidi>
-module from CPAN. The module is not a prerequisite; it'll need the external
-fribidi library to build. On windows the library is not installed by default,
-grab it here:
+module from CPAN v2.10. The module is not a prerequisite; it'll need the
+external fribidi library to build. On windows the library is not installed by
+default, grab it here:
 
   http://prima.eu.org/download/fribidi-win32.zip
 
