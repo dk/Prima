@@ -1412,8 +1412,8 @@ sub format_chunks
 				}
 
 				$self-> block_walk( $b,
-					aperture => \@pos,
-					trace => tb::TRACE_APERTURE,
+					position => \@pos,
+					trace => tb::TRACE_POSITION,
 					link  => sub {
 						if ( $linkState = shift ) {
 							$rect[0] = $pos[0];
@@ -1784,7 +1784,7 @@ an image file. In case if scaling is required, C<width> and C<height> options
 can be set. When the image is a multiframe image, the frame index can be
 set by C<frame> option. Special C<cut> option, if set to a true value, activates the 
 L<cut> behavior if ( and only if ) the image load operation was unsuccessful.
-This make possible simultaneous use of 'podview' and 'text' :
+This makes possible simultaneous use of 'podview' and 'text' :
 
 	=for podview <img src="graphic.gif" cut=1 >
 
@@ -1860,6 +1860,8 @@ text parts. These styles are:
 	STYLE_TEXT   - normal text
 	STYLE_HEAD_1 - =head1
 	STYLE_HEAD_2 - =head2
+	STYLE_HEAD_3 - =head3
+	STYLE_HEAD_4 - =head4
 	STYLE_ITEM   - =item
 	STYLE_LINK   - style for L<> text
 

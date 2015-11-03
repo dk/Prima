@@ -49,7 +49,7 @@ use constant OP_CODE               =>  4; # (2) code pointer and parameters
 # formatting opcodes
 use constant OP_WRAP               =>  5; # (1) on / off
 use constant OP_MARK               =>  6; # (3) id, x, y
-use constant OP_BIDIMAP            =>  7; # (2) map, visual
+use constant OP_BIDIMAP            =>  7; # (2) visual, $map
 
 %opnames = (
 	text      => OP_TEXT,
@@ -84,9 +84,12 @@ use constant X_Y     => 2;
 use constant X_FLAGS => 3;
 
 # OP_TRANSPOSE - X_FLAGS constants
-use constant X_DIMENSION_PIXEL       => 0;
 use constant X_TRANSPOSE             => 0;
 use constant X_EXTEND                => 1;
+use constant X_DIMENSION_PIXEL       => 0;
+use constant X_DIMENSION_FONT_HEIGHT => 2; # multiply by font height
+use constant X_DIMENSION_POINT       => 4; # multiply by resolution / 72
+
 
 # OP_MARK
 use constant MARK_ID                 => 1;
@@ -96,10 +99,6 @@ use constant MARK_Y                  => 3;
 # OP_BIDIMAP
 use constant BIDI_VISUAL             => 1;
 use constant BIDI_MAP                => 2;
-
-# formatting flags
-use constant X_DIMENSION_FONT_HEIGHT => 2; # multiply by font height
-use constant X_DIMENSION_POINT       => 4; # multiply by resolution / 72
 
 # block header indices
 use constant  BLK_FLAGS            => 0;
@@ -140,9 +139,9 @@ use constant REALIZE_ALL     => 0x3;
 use constant TRACE_FONTS          => 0x01;
 use constant TRACE_COLORS         => 0x02;
 use constant TRACE_PENS           => TRACE_COLORS | TRACE_FONTS;
-use constant TRACE_APERTURE       => 0x04;
+use constant TRACE_POSITION       => 0x04;
 use constant TRACE_TEXT           => 0x08;
-use constant TRACE_GEOMETRY       => TRACE_FONTS | TRACE_APERTURE | TRACE_TEXT;
+use constant TRACE_GEOMETRY       => TRACE_FONTS | TRACE_POSITION;
 use constant TRACE_UPDATE_MARK    => 0x10;
 use constant TRACE_PAINT_STATE    => 0x20;
 use constant TRACE_REALIZE        => 0x40;
@@ -580,7 +579,7 @@ sub block_walk
 	my ( $self, $block, %commands ) = @_;
 
 	my $trace    = delete($commands{trace})    // 0;
-	my $aperture = delete($commands{aperture}) // [0,0];
+	my $position = delete($commands{position}) // [0,0];
 	my $canvas   = delete($commands{canvas})   // $self;
 	my $state    = delete($commands{state})    // [];
 	my $other    = delete $commands{other};
@@ -610,8 +609,8 @@ sub block_walk
 		if $trace & tb::TRACE_TEXT;
 	@$state = @$block[ 0 .. tb::BLK_DATA_END ]
 		if !@$state && $trace & tb::TRACE_PENS;
-	$$aperture[0] += $$block[ tb::BLK_APERTURE_X], $$aperture[1] += $$block[ tb::BLK_APERTURE_Y]
-		if $trace & tb::TRACE_APERTURE;
+	$$position[0] += $$block[ tb::BLK_APERTURE_X], $$position[1] += $$block[ tb::BLK_APERTURE_Y]
+		if $trace & tb::TRACE_POSITION;
 
 	# go
 	my $lim = scalar(@$block);
@@ -641,7 +640,7 @@ sub block_walk
 				(( $trace & tb::TRACE_TEXT ) ?
 					substr( $$text, $text_offset + $$block[$i + tb::T_OFS], $$block[$i + tb::T_LEN] ) : ())
 			) if $sub;
-			$$aperture[0] += $$block[ $i + tb::T_WID] if $trace & tb::TRACE_APERTURE;
+			$$position[0] += $$block[ $i + tb::T_WID] if $trace & tb::TRACE_POSITION;
 			last unless $self-> {blockWalk};
 			next;
 		} elsif (($cmd == tb::OP_FONT) && ($trace & tb::TRACE_FONTS)) {
@@ -678,11 +677,11 @@ sub block_walk
 				$y *= $self-> {resolution}-> [1] / 72;
 				$f &= ~tb::X_DIMENSION_POINT;
 			}
-			if (!($f & tb::X_EXTEND)) {
-				$$aperture[0] += $x;
-				$$aperture[1] += $y;
-			}
 			$ret = $sub->( $x, $y, $f ) if $sub;
+			if (!($f & tb::X_EXTEND) && ($trace & tb::TRACE_POSITION)) {
+				$$position[0] += $x;
+				$$position[1] += $y;
+			}
 			last unless $self-> {blockWalk};
 			next;
 		} elsif (( $cmd == tb::OP_CODE) && ($trace & tb::TRACE_PENS) && ($trace & tb::TRACE_REALIZE)) {
@@ -698,8 +697,8 @@ sub block_walk
 			$text = \ $$block[$i + tb::BIDI_VISUAL];
 			$text_offset = 0;
 		} elsif (( $cmd == tb::OP_MARK) & ( $trace & tb::TRACE_UPDATE_MARK)) {
-			$$block[ $i + tb::MARK_X] = $$aperture[0];
-			$$block[ $i + tb::MARK_Y] = $$aperture[1];
+			$$block[ $i + tb::MARK_X] = $$position[0];
+			$$block[ $i + tb::MARK_Y] = $$position[1];
 		} elsif ( $cmd > $#tb::oplen ) {
 			warn "corrupted block, $cmd at $$ptr\n";
 			$self->_debug_block($block);
@@ -895,9 +894,9 @@ sub block_wrap
 		my @xy = (0,0);
 		my $ptr;
 		$self-> block_walk( $b,
-			trace    => tb::TRACE_FONTS | tb::TRACE_APERTURE | tb::TRACE_UPDATE_MARK,
+			trace    => tb::TRACE_FONTS | tb::TRACE_POSITION | tb::TRACE_UPDATE_MARK,
 			state    => $state,
-			aperture => \@xy,
+			position => \@xy,
 			pointer  => \$ptr,
 			text     => sub {
 				my ( $ofs, $len, $wid ) = @_;
@@ -919,7 +918,7 @@ sub block_wrap
 				$$b[ $ptr + tb::T_OFS] -= $lastBlockOffset - $$b[ tb::BLK_TEXT_OFFSET];
 			},
 			transpose => sub {
-				my ( $dx, $dy ) = @_;
+				my ( $dx, $dy, $f ) = @_;
 				my ( $newX, $newY) = ( $xy[0] + $dx, $xy[1] + $dy);
 				$$b[ tb::BLK_WIDTH]  = $newX 
 					if $$b[ tb::BLK_WIDTH ] < $newX;
@@ -1184,8 +1183,8 @@ sub make_bidi_block
 	$new[ tb::BLK_WIDTH] = 0;
 	$self-> block_walk( \@new,
 		canvas   => $canvas,
-		trace    => tb::TRACE_REALIZE_FONTS | tb::TRACE_UPDATE_MARK | tb::TRACE_APERTURE,
-		aperture => \@xy,
+		trace    => tb::TRACE_REALIZE_FONTS | tb::TRACE_UPDATE_MARK | tb::TRACE_POSITION,
+		position => \@xy,
 		pointer  => \$ptr,
 		text     => sub { $new[ $ptr + tb::T_WID ] = $canvas->get_text_width( $_[2], 1 ) },
 	);
@@ -1204,51 +1203,63 @@ sub selection_state
 
 sub paint_selection
 {
-	my ( $self, $canvas, $block, $x, $y, $index, $sx1, $sx2, $clipRect, $aa) = @_;
-	return;
+	my ( $self, $canvas, $block, $index, $x, $y, $sx1, $sx2) = @_;
 
-	my $len = $self=>get_block_text_length($index);
+	my $len = $self->get_block_text_length($index);
 	$sx2 = $len - 1 if $sx2 < 0;
 
-	if ( $$block[tb::BLK_FLAGS] & tb::T_IS_BIDI ) {
+	my @selection_map;
+	unless ($$block[ tb::BLK_FLAGS ] & tb::T_IS_BIDI) {
+		@selection_map = (0) x $len;
+		$selection_map[$_] = 1 for $sx1 .. $sx2;
 	}
-	
+	my @state;
+	my @xy = ($x,$y);
+	local $self->{selectionPaintMode} = 0;
 
-	return;
+	my $draw_text = sub {
+		my ( $x, $text ) = @_;
+		my $f = $canvas->get_font;
+		my $w = $canvas->get_text_width($text);
+		$self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
+		$canvas->clear(
+			$x, $xy[1] - $f->{descent},
+			$x + $w - 1, $xy[1] + $f->{ascent} + $f->{externalLeading} - 1
+			) if $self->{selectionPaintMode};
+		$canvas-> text_out($text, $x, $xy[1]);
+		return $w;
+	};
 
-	my @cr  = @$clipRect;
-	my $restore_clip;
-
-	my ($map, $chunks);
-	if ( $self->is_bidi( my $str = $self-> get_block_text($index))) {
-		my ($p) = $self->bidi_paragraph($str);
-		$map = $p->map;
-		$sx1 = $self->bidi_map_find($map, 0)      if $sx1 eq 'start';
-		$sx2 = $self->bidi_map_find($map, $#$map) if $sx2 eq 'end';
-	} else {
-		$map = $self->get_block_text_length($index);
-		$sx1 = 0        if $sx1 eq 'start';
-		$sx2 = $map - 1 if $sx2 eq 'end';
-	}
-	($sx1, $sx2) = ($sx2, $sx1) if $sx2 < $sx1;
-
-	$chunks = $self->bidi_selection_chunks( $map, $sx1, $sx2);
-	$self->bidi_selection_walk( $chunks, 0, undef, sub {
-		my ( $offset, $length, $selected ) = @_;
-		$self-> selection_state( $canvas) if $self-> {selectionPaintMode} = $selected; 
-		$cr[2] = $x + $self-> text2xoffset($offset + $length, $index) - 1;
-		$cr[2] = $$aa[2] if $cr[2] > $$aa[2];
-		$cr[2] = $$aa[0] if $cr[2] < $$aa[0];
-		if ( $cr[0] < $cr[2] ) {
-			$restore_clip = 1;
-			$self-> clipRect( @cr);
-			$self-> block_draw( $canvas, $block, $x, $y);
-		}
-		$cr[0] = $cr[2] + 1;
-		$self-> {selectionPaintMode} = 0;
-	});
-
-	$self-> clipRect( @$clipRect) if $restore_clip;
+	$self-> block_walk( $block,
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS | tb::TRACE_TEXT,
+		canvas   => $canvas,
+		position => \@xy,
+		state    => \@state,
+		text     => sub {
+			my ($offset, $length, undef, $text) = @_;
+			my $accumulated = '';
+			my $x = $xy[0];
+			for ( my $i = 0; $i < $length; $i++) {
+				if ( $selection_map[$offset + $i] != $self->{selectionPaintMode} ) {
+					$x += $draw_text->( $x, $accumulated );
+					$accumulated = '';
+					$self->{selectionPaintMode} = $selection_map[$offset + $i];
+				}
+				$accumulated .= substr($text, $i, 1);
+			}
+			$draw_text->( $x, $accumulated ) if length $accumulated;
+		},
+		code     => sub {
+			my ( $code, $data ) = @_;
+			$code-> ( $self, $canvas, $b, \@state, @xy, $data);
+		},
+		bidimap  => sub {
+			my $map = pop;
+			for ( my $i = 0; $i < @$map; $i++) {
+				$selection_map[$i] = ($map->[$i] >= $sx1 && $map->[$i] <= $sx2) ? 1 : 0;
+			}
+		},
+	);
 }
 
 sub on_paint
@@ -1297,13 +1308,13 @@ sub on_paint
 					
 			if ( $j == $sy1 && $j == $sy2 ) {
 				# selection within one line
-				$self->paint_selection( $canvas, $b, $x, $y, $j, $sx1, $sx2 - 1, \@clipRect, \@aa);
+				$self->paint_selection( $canvas, $b, $j, $x, $y, $sx1, $sx2 - 1);
 			} elsif ( $j == $sy1 ) {
 				# upper selected part
-				$self->paint_selection( $canvas, $b, $x, $y, $j, $sx1, -1, \@clipRect, \@aa);
+				$self->paint_selection( $canvas, $b, $j, $x, $y, $sx1, -1);
 			} elsif ( $j == $sy2 ) {
 				# lower selected part
-				$self->paint_selection( $canvas, $b, $x, $y, $j, 0, $sx2 - 1, \@clipRect, \@aa);
+				$self->paint_selection( $canvas, $b, $j, $x, $y, 0, $sx2 - 1);
 			} elsif ( $j > $sy1 && $j < $sy2) { # simple selection case
 				$self-> {selectionPaintMode} = 1;
 				$self-> selection_state( $canvas);
@@ -1329,9 +1340,9 @@ sub block_draw
 	my @xy = ($x, $y);
 	my @state;
 	$self-> block_walk( $b, 
-		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS,
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS | tb::TRACE_TEXT,
 		canvas   => $canvas,
-		aperture => \@xy,
+		position => \@xy,
 		state    => \@state,
 		text     => sub {
 			$self-> block_walk_abort( $ret = 0 ) unless $canvas-> text_out($_[-1], @xy);
@@ -1445,8 +1456,8 @@ sub xy2info
 	my @pos = ($$b[ tb::BLK_X] - $x,0);
 
 	$self-> block_walk( $b,
-		aperture => \@pos,
-		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_PAINT_STATE,
+		position => \@pos,
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_PAINT_STATE | tb::TRACE_TEXT,
 		text     => sub {
 			my ( $offset, $length, $width, $text) = @_;
 			my $npx = $pos[0] + $width;
@@ -1494,14 +1505,14 @@ sub text2xoffset
 	my @pos = (0,0);
 
 	$self-> block_walk( $b,
-		aperture => \@pos,
-		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_PAINT_STATE,
+		position => \@pos,
+		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_PAINT_STATE | tb::TRACE_TEXT,
 		text     => sub {
 			my ( $offset, $length, $width, $text) = @_;
 			return if $x < $offset;
 
 			if ( $x < $offset + $length ) {
-				$pos[0] += $self-> get_text_width( substr( $text, 0, $x - $offset));
+				$pos[0] += $self-> get_text_width( substr( $text, 0, $x - $offset), 1);
 				$self-> block_walk_abort;
 			} elsif ( $x == $offset + $length ) {
 				$pos[0] += $width;
@@ -2253,6 +2264,10 @@ contains right-to-left characters.
 The C<block_draw> draws BLOCK onto CANVAS in screen coordinates (X,Y). It can
 be used not only inside begin_paint/end_paint brackets; CANVAS can be an
 arbitrary C<Prima::Drawable> descendant.
+
+=item block_walk BLOCK, %OPTIONS
+
+Cycles through block opcodes, calls supplied callbacks on each.
 
 =back
 
