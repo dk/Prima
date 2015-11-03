@@ -589,7 +589,7 @@ sub block_walk
 	my $ret;
 	local $self-> {blockWalk} = 1;
 
-	my ( $text, $text_offset, $f_taint, $c_taint, $paint_state, %save_properties );
+	my ( $text, $text_offset, $f_taint, $font, $c_taint, $paint_state, %save_properties );
 
 	# save paint state
 	if ( $trace & tb::TRACE_PAINT_STATE ) {
@@ -627,7 +627,7 @@ sub block_walk
 
 			if (( $trace & tb::TRACE_FONTS) && ($trace & tb::TRACE_REALIZE) && !$f_taint) {
 				$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
-				$f_taint = $canvas-> get_font;
+				$f_taint = 1;
 			}
 			if (( $trace & tb::TRACE_COLORS) && ($trace & tb::TRACE_REALIZE) && !$c_taint) {
 				$self-> realize_state( $canvas, $state, tb::REALIZE_COLORS);
@@ -648,7 +648,7 @@ sub block_walk
 			} else {
 				$$state[ $$block[$i + tb::F_MODE]] = $$block[$i + tb::F_DATA];
 			}
-			$f_taint = undef;
+			$font = $f_taint = undef;
 		} elsif (($cmd == tb::OP_COLOR) && ($trace & tb::TRACE_COLORS)) {
 			if ( ($$block[ $i + 1] & tb::BACKCOLOR_FLAG) ) {
 				$$state[ tb::BLK_BACKCOLOR ] = $$block[$i + 1] & ~tb::BACKCOLOR_FLAG;
@@ -664,10 +664,11 @@ sub block_walk
 				if ( $f & tb::X_DIMENSION_FONT_HEIGHT) {
 					unless ( $f_taint) {
 						$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS); 
-						$f_taint = $canvas-> get_font;
+						$f_taint = 1;
 					}
-					$x *= $f_taint-> {height};
-					$y *= $f_taint-> {height};
+					$font //= $canvas-> get_font;
+					$x *= $font-> {height};
+					$y *= $font-> {height};
 					$f &= ~tb::X_DIMENSION_FONT_HEIGHT;
 				}
 			}
@@ -686,7 +687,7 @@ sub block_walk
 		} elsif (( $cmd == tb::OP_CODE) && ($trace & tb::TRACE_PENS) && ($trace & tb::TRACE_REALIZE)) {
 			unless ( $f_taint) {
 				$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
-				$f_taint = $canvas-> get_font;
+				$f_taint = 1;
 			}
 			unless ( $c_taint) {
 				$self-> realize_state( $canvas, $state, tb::REALIZE_COLORS);
