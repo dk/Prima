@@ -503,13 +503,6 @@ sub end_paint_info
 	return $self->SUPER::end_paint_info;
 }
 
-sub end_paint
-{
-	my $self = shift;
-	delete $self->{currentFont};
-	return $self->SUPER::end_paint;
-}
-			
 sub _hash { my $k = shift; join("\0", map { ($_, $k->{$_}) } sort keys %$k) }
 
 sub realize_state
@@ -529,7 +522,6 @@ sub realize_state
 			exists $self->{currentFont} &&
 			_hash($self->{currentFont}) eq _hash(\%f);
 		$self->{currentFont} = \%f;
-
 		$canvas-> set_font( \%f);
 	SKIP:
 	}
@@ -711,6 +703,11 @@ sub block_walk
 	# restore paint state
 	if ( $trace & tb::TRACE_PAINT_STATE ) {
 		if ( $paint_state ) {
+			delete $save_properties{set_font} if
+				exists $self->{currentFont} && 
+				exists $save_properties{set_font} && 
+				_hash($self->{currentFont}) eq _hash($save_properties{set_font})
+				;
 			$canvas->$_( $save_properties{$_} ) for keys %save_properties;
 		} else {
 			$canvas->end_paint_info;
@@ -1265,6 +1262,7 @@ sub paint_selection
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
+	delete $self->{currentFont};
 	my @size = $canvas-> size;
 	unless ( $self-> enabled) {
 		$self-> color( $self-> disabledColor);
