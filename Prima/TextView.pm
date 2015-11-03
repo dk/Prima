@@ -497,6 +497,22 @@ sub create_state
 	return $g;
 }
 
+sub end_paint_info
+{
+	my $self = shift;
+	delete $self->{currentFont};
+	return $self->SUPER::end_paint_info;
+}
+
+sub end_paint
+{
+	my $self = shift;
+	delete $self->{currentFont};
+	return $self->SUPER::end_paint;
+}
+			
+sub _hash { my $k = shift; join("\0", map { ($_, $k->{$_}) } sort keys %$k) }
+
 sub realize_state
 {
 	my ( $self, $canvas, $state, $mode) = @_;
@@ -509,7 +525,14 @@ sub realize_state
 			$f{size} = $$state[ tb::BLK_FONT_SIZE];
 		}
 		$f{style} = $$state[ tb::BLK_FONT_STYLE];
+
+		goto SKIP if 
+			exists $self->{currentFont} &&
+			_hash($self->{currentFont}) eq _hash(\%f);
+		$self->{currentFont} = \%f;
+
 		$canvas-> set_font( \%f);
+	SKIP:
 	}
 
 	return unless $mode & tb::REALIZE_COLORS;

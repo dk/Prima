@@ -96,7 +96,7 @@ use constant T_ITEM_DEPTH  => 4; # depth of =item recursion
 use constant T_LINK_OFFSET => 5; # 
 
 # formatting constants
-use constant FORMAT_LINES    => 10;
+use constant FORMAT_LINES    => 100;
 use constant FORMAT_TIMEOUT  => 300;
 
 $OP_LINK = tb::opcode(1, 'link');
