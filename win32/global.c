@@ -92,8 +92,14 @@ window_subsystem_init( char * error_buf)
    WNDCLASSW wc;
    HDC dc;
    HBITMAP hbm;
+   OSVERSIONINFO os = { sizeof( OSVERSIONINFO)};
 
    guts. version  = GetVersion();
+   GetVersionEx( &os);
+   guts. alloc_utf8_to_wchar_visual = 
+   	(( os.dwMajorVersion > 5) || (os.dwMajorVersion == 5 && os.dwMinorVersion > 1)) ?
+		alloc_utf8_to_wchar_visual :
+		alloc_utf8_to_wchar;
    guts. mainThreadId = GetCurrentThreadId();
    guts. errorMode = SetErrorMode( SEM_FAILCRITICALERRORS);
    guts. desktopWindow = GetDesktopWindow();

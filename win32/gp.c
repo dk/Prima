@@ -907,7 +907,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
 
    if ( utf8) {
       int mb_len;
-      if ( !( text = ( char *) alloc_utf8_to_wchar_visual( text, len, &mb_len))) return false;
+      if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) return false;
       len = mb_len;
    }      
 
@@ -1577,7 +1577,7 @@ apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang,
    int ret;
    if ( utf8) {
       int mb_len;
-      if ( !( text = ( char *) alloc_utf8_to_wchar_visual( text, len, &mb_len))) return 0;
+      if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) return 0;
       len = mb_len;
    }      
    ret = gp_get_text_width( self, text, len, addOverhang, utf8);
@@ -1596,7 +1596,7 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
 
    if ( utf8) {
       int mb_len;
-      if ( !( text = ( char *) alloc_utf8_to_wchar_visual( text, len, &mb_len))) {
+      if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) {
          free( pt);
          return nil;
       }

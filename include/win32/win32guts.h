@@ -214,6 +214,7 @@ typedef struct _WinGuts
     HANDLE         socketThread;       // thread id
     Bool           socketPostSync;     // semaphore
     Bool           dont_xlate_message; // one-time stopper to TranslateMessage() call
+    WCHAR *      (*alloc_utf8_to_wchar_visual)(const char*,int,int*);
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
