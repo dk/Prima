@@ -496,6 +496,13 @@ sub create_state
 	return $g;
 }
 
+sub begin_paint_info
+{
+	my $self = shift;
+	delete $self->{currentFont};
+	return $self->SUPER::begin_paint_info;
+}
+
 sub end_paint_info
 {
 	my $self = shift;

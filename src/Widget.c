@@ -1863,9 +1863,11 @@ Widget_set_font( Handle self, Font font)
    if ( var-> stage > csFrozen) return;
    if ( !opt_InPaint) my-> first_that( self, (void*)font_notify, &font);
    if ( var-> handle == nilHandle) return; /* aware of call from Drawable::init */
-   apc_font_pick( self, &font, & var-> font);
-   if ( opt_InPaint) apc_gp_set_font ( self, & var-> font);
+   if ( opt_InPaint) {
+      inherited->set_font(self, font);
+   }
    else {
+      apc_font_pick( self, &font, & var-> font);
       opt_clear( optOwnerFont);
       apc_widget_set_font( self, & var-> font);
       my-> repaint( self);
