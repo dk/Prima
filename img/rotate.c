@@ -152,12 +152,12 @@ img_mirror( Handle self, Bool vertically)
    register Byte swap;
 
    if ( vertically ) {
-       Byte * src = i->data, *dst = i->data + ( h - 1 ) * ls, *p, *q, x;
+       Byte * src = i->data, *dst = i->data + ( h - 1 ) * ls, *p, *q;
        h /= 2;
        for ( y = 0; y < h; y++, src += ls, dst -= ls ) {
+          register int t = ls;
           p = src;
           q = dst;
-          register t = ls;
           while ( t-- ) {
             swap = *q;
             *(q++) = *p;
@@ -166,7 +166,7 @@ img_mirror( Handle self, Bool vertically)
        }
    } else {
       Byte * data = i->data;
-      int x, xl, xr, pixel_size = (i->type & imBPP) / 8, last_pixel = (w - 1) * pixel_size, t, w2 = w / 2;
+      int x, pixel_size = (i->type & imBPP) / 8, last_pixel = (w - 1) * pixel_size, w2 = w / 2;
       switch (i->type & imBPP) {
       case 1:
       case 4:
