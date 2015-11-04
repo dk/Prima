@@ -1,5 +1,9 @@
 Revision history for Perl module Prima
 
+1.45 2015-11-05
+ - Add Image .clone,.bar,.mirror,.rotate
+ - Support bidirectional texts with Text::Bidi
+
 1.44 2015-08-04
  - Rewrite rubberband
  - Work on portable perls
