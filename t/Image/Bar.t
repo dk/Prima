@@ -3,7 +3,6 @@ use warnings;
 
 use Test::More;
 use Prima::Test qw(noX11);
-use Prima::Application;
 
 plan tests => 1133;
 
