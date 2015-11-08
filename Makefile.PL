@@ -2151,6 +2151,6 @@ WriteMakefile(
 	},
         test => {TESTS => 't/*/*.t'},
 	clean             => { FILES => "@target_clean" },
-	MIN_PERL_VERSION  => 5.10,
+	MIN_PERL_VERSION  => 5.010,
 );
 
