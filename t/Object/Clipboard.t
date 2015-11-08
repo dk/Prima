@@ -46,7 +46,7 @@ try { $c->open } 7;
 $i = $c-> fetch( 'Image');
 %fm = map { $_ => 1 } $c-> get_formats;
 ok( exists $fm{Image} && defined $i && $i-> alive, "image exists");
-skip "no image", 2 unless $i;
+skip "no image", 6 unless $i;
 is( $i-> width, 32, "image width ok" );
 is( $i-> height, 32, "image height ok" );
 $i-> destroy if $i;

@@ -2149,7 +2149,8 @@ WriteMakefile(
 			file       => [qw(Makefile.PL ms_install.pl)],
 		},
 	},
-       test => {TESTS => 't/*/*.t'},
+        test => {TESTS => 't/*/*.t'},
 	clean             => { FILES => "@target_clean" },
+	MIN_PERL_VERSION  => 5.10,
 );
 
