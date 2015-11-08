@@ -111,6 +111,7 @@ use vars qw(
 	$win32_use_dlltool
 	$cygwin_fake_Slib
 	$force_cccdl
+	$use_pkgconfig
 );
 
 sub printlog($)
@@ -177,6 +178,7 @@ setup_compiler();
 setup_exports();
 setup_defines();
 setup_dl_loadflags();
+setup_pkgconfig();
 setup_X11() if $unix;
 setup_xlibs() if $unix;
 setup_codecs();
@@ -1094,8 +1096,75 @@ DLERR
 	}
 }
 
+sub setup_pkgconfig
+{
+	my $v = `pkg-config --version`;
+	chomp $v;
+	printlog "Checking for pkg-config...";
+	unless ($v =~ /^[\d\.]+$/) {
+		printlog "no\n";
+		return;
+	}
+	$use_pkgconfig = 1;
+	printlog "yes\n";
+}
+
+sub pkgconfig
+{
+	my $package = shift;
+	printlog "Checking for $package...";
+	if ( system "pkg-config --exists $package" ) {
+		printlog "no\n";
+		return 0;
+	}
+	my $modversion  = `pkg-config --modversion $package`;
+	chomp $modversion;
+	printlog "$modversion\n";
+
+	my %h;
+
+	%h = map { $_ => 1 } @INCPATH;
+	my $inc  = `pkg-config --cflags-only-I $package`;
+	chomp $inc;
+	$inc =~ s/\-I//g;
+	for ( split " ", $inc ) {
+		push @INCPATH, $_ unless $h{$_};
+	}
+
+	%h = map { $_ => 1 } @LIBS;
+	my $libs    = `pkg-config --libs-only-l $package`;
+	chomp $libs;
+	$libs =~ s/\-l//g;
+	push @LIBS, split " ", $libs;
+	for ( split " ", $libs ) {
+		push @LIBS, $_ unless $h{$_};
+	}
+	
+	%h = map { $_ => 1 } @LIBPATH;
+	my $libpath    = `pkg-config --libs-only-L $package`;
+	chomp $libpath;
+	$libpath =~ s/\-[LR]//g;
+	push @LIBPATH, split " ", $libpath;
+	for ( split " ", $libpath ) {
+		push @LIBPATH, $_ unless $h{$_};
+	}
+
+	return 1;
+}
+
 sub setup_X11
 {
+	if ($use_pkgconfig) {
+		unless (pkgconfig('x11')) {
+			warn 
+				"Prima needs package with x11 development file for compilation! ".
+				"Please install it with your system installer tool.\n";
+			exit(0);
+		}
+		pkgconfig('xext');
+		return;
+	}
+
 	# find X11 include files
 	printlog "Checking for X11 headers...";
 	push @INCPATH, "$cmd_options{X11BASE}/include"
@@ -1113,7 +1182,6 @@ sub setup_X11
 
 	unless ( defined $incpath) {
 		printlog "no\n";
-		return unless $unix;
 		warn 
 			"Prima needs X11 headers for compilation! ".
 			"Set X11BASE='/path/to/X' or INCPATH+='/path/to/X/include' ".
@@ -1136,7 +1204,7 @@ sub setup_X11
 		"/usr/X/lib",
 		"/usr/openwin/lib",
 		"/opt/X11/lib",
-        "/usr/local/lib"
+        	"/usr/local/lib"
 	);
 	# using /usr/X11R6/lib64 ?
 	unshift @libpath, map { s/lib$/lib64/; $_ } grep { /lib$/ } @libpath
@@ -1146,10 +1214,7 @@ sub setup_X11
 	my $libpath = find_lib( @libpath);
 	unless ( defined $libpath) {
 		printlog "no\n";
-		unless ( $unix) {
-			pop @INCPATH if @INCPATH and $INCPATH[-1] eq $incpath;
-			return;
-		}
+	NO_X:
 		warn 
 			"Prima needs X11 libraries for compilation! ".
 			"Set X11BASE='/path/to/X' ".
@@ -1164,115 +1229,133 @@ sub setup_X11
 	}
 	printlog "\n";
 
-	if ( $unix) {
-		push @LIBS, 'X11';
-		if (defined find_lib( "Xext", '', '')) {
-			printlog "Xext library found.\n";
-			push @LIBS, "Xext";
-		}
+	push @LIBS, 'X11';
+	if (defined find_lib( "Xext", '', '')) {
+		printlog "Xext library found.\n";
+		push @LIBS, "Xext";
 	}
 }
 
-sub setup_xlibs
+sub setup_xft
 {
-	if ( $cmd_options{WITH_XFT}) {
-		my $HAVE_XFT = 0;
-		my $NEED_XFT = 4;
-		my @pre_xft_libs = @LIBS;
+	my $HAVE_XFT = 0;
+	my $NEED_XFT = 4;
+	my @pre_xft_libs    = @LIBS;
+	my @pre_xft_libpath = @LIBPATH;
+	my @pre_xft_incpath = @INCPATH;
 
-		my @ft_incpaths = ( "",
-			( defined($cmd_options{X11BASE}) ? qd("$cmd_options{X11BASE}/include/freetype2") : ()),
-			qd("/usr/include/freetype2"),
-			qd("/usr/X11R6/include/freetype2"),
-			qd("/usr/X11/include/freetype2"),
-			qd("/usr/X/include/freetype2"),
-			qd("/usr/openwin/include/freetype2"),
-			qd("/opt/X11/include/freetype2"),
-			qd("/usr/local/include/freetype2"),
-			qd("/usr/gnu/include/freetype2"),
-			qd("/usr/freeware/include/freetype2"),
-			qd("/usr/opt/include/freetype2")
-		);
-		my $have_ft2build_h = defined find_header( qd("ft2build.h"), @ft_incpaths );
+	if ( $use_pkgconfig ) {
+		my @packages = map { pkgconfig($_) ? 1 : undef } (qw(freetype2 fontconfig xrender xft));
+		if ( @packages != $NEED_XFT ) {
+			$cmd_options{WITH_XFT} = 0;
+			@LIBS    = @pre_xft_libs;
+			@LIBPATH = @pre_xft_libpath;
+			@INCPATH = @pre_xft_incpath;
+		} else {
+			$DEFINES{$_} = 1 for qw( 
+				HAVE_FREETYPE_FREETYPE_H 
+				HAVE_FONTCONFIG_FONTCONFIG_H 
+				HAVE_X11_EXTENSIONS_XRENDER_H 
+				HAVE_X11_XFT_XFT_H
+			);
+		}
+		return;
+	}
 
-		printlog "Checking for presence of freetype/freetype.h... ";
-		my $incpath;
-		if ($have_ft2build_h) {
-			$incpath = find_header( 
-				qd("freetype/freetype.h"), {
-					Code => <<EOF,
+	my @ft_incpaths = ( "",
+		( defined($cmd_options{X11BASE}) ? qd("$cmd_options{X11BASE}/include/freetype2") : ()),
+		qd("/usr/include/freetype2"),
+		qd("/usr/X11R6/include/freetype2"),
+		qd("/usr/X11/include/freetype2"),
+		qd("/usr/X/include/freetype2"),
+		qd("/usr/openwin/include/freetype2"),
+		qd("/opt/X11/include/freetype2"),
+		qd("/usr/local/include/freetype2"),
+		qd("/usr/gnu/include/freetype2"),
+		qd("/usr/freeware/include/freetype2"),
+		qd("/usr/opt/include/freetype2")
+	);
+	my $have_ft2build_h = defined find_header( qd("ft2build.h"), @ft_incpaths );
+
+	printlog "Checking for presence of freetype/freetype.h... ";
+	my $incpath;
+	if ($have_ft2build_h) {
+		$incpath = find_header( 
+			qd("freetype/freetype.h"), {
+				Code => <<EOF,
 #include "ft2build.h"
 #include FT_FREETYPE_H
 EOF
-				},
-				@ft_incpaths,
-			);
-		} else {
-			$incpath = find_header( qd("freetype/freetype.h"), @ft_incpaths);
-		}
-		if (defined $incpath) {
-			printlog "yes";
-			printlog ", in $incpath" if $incpath;
-			printlog "\n";
-			push @INCPATH, $incpath if $incpath;
-			printlog "Checking for presence of libfreetype... ";
-			if ( defined find_lib( 'freetype', '', '')) {
-				push @LIBS, 'freetype';
-				$HAVE_XFT++;
-				printlog "yes\n";
-				$DEFINES{HAVE_FREETYPE_FREETYPE_H} = 1;
-			} else {
-				printlog "no\n";
-				$DEFINES{HAVE_FREETYPE_FREETYPE_H} = undef;
-			}
+			},
+			@ft_incpaths,
+		);
+	} else {
+		$incpath = find_header( qd("freetype/freetype.h"), @ft_incpaths);
+	}
+	if (defined $incpath) {
+		printlog "yes";
+		printlog ", in $incpath" if $incpath;
+		printlog "\n";
+		push @INCPATH, $incpath if $incpath;
+		printlog "Checking for presence of libfreetype... ";
+		if ( defined find_lib( 'freetype', '', '')) {
+			push @LIBS, 'freetype';
+			$HAVE_XFT++;
+			printlog "yes\n";
+			$DEFINES{HAVE_FREETYPE_FREETYPE_H} = 1;
 		} else {
 			printlog "no\n";
+			$DEFINES{HAVE_FREETYPE_FREETYPE_H} = undef;
 		}
-
-		if ( have_header( "fontconfig/fontconfig.h")) {
-			printlog "Checking for presence of libfontconfig... ";
-			if ( defined find_lib( 'fontconfig', '', '')) {
-				push @LIBS, 'fontconfig';
-				$HAVE_XFT++;
-				printlog "yes\n";
-			} else {
-				$DEFINES{HAVE_FONTCONFIG_FONTCONFIG_H} = undef;
-				printlog "no\n";
-			}
-		}
-
-		if ( have_header( "X11/extensions/Xrender.h", "X11/X.h", 
-				"X11/Xlib.h", "X11/extensions/Xext.h")) {
-			printlog "Checking for presence of libXrender... ";
-			if ( defined find_lib( 'Xrender', '', '')) {
-				push @LIBS, 'Xrender';
-				$HAVE_XFT++;
-				printlog "yes\n";
-			} else {
-				$DEFINES{HAVE_X11_EXTENSIONS_XRENDER_H} = undef;
-				printlog "no\n";
-			}
-		}
-
-		if ( have_header( "X11/Xft/Xft.h", "X11/X.h", "X11/Xlib.h", 
-				"X11/extensions/Xext.h", "X11/extensions/Xrender.h")) {
-			printlog "Checking for presence of libXft... ";
-			if ( defined find_lib( 'Xft', '', '')) {
-				printlog "yes\n";
-				push @LIBS, 'Xft';
-				$HAVE_XFT++;
-			} else {
-				printlog "no\n";
-				$DEFINES{HAVE_X11_XFT_XFT_H} = undef;
-			}
-		}
-
-		$cmd_options{WITH_XFT} = 0 unless $HAVE_XFT == $NEED_XFT;
-		@LIBS = @pre_xft_libs unless $cmd_options{WITH_XFT};
+	} else {
+		printlog "no\n";
 	}
 
-	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
-	if ( $cmd_options{WITH_ICONV} && have_header( "iconv.h")) {
+	if ( have_header( "fontconfig/fontconfig.h")) {
+		printlog "Checking for presence of libfontconfig... ";
+		if ( defined find_lib( 'fontconfig', '', '')) {
+			push @LIBS, 'fontconfig';
+			$HAVE_XFT++;
+			printlog "yes\n";
+		} else {
+			$DEFINES{HAVE_FONTCONFIG_FONTCONFIG_H} = undef;
+			printlog "no\n";
+		}
+	}
+
+	if ( have_header( "X11/extensions/Xrender.h", "X11/X.h", 
+			"X11/Xlib.h", "X11/extensions/Xext.h")) {
+		printlog "Checking for presence of libXrender... ";
+		if ( defined find_lib( 'Xrender', '', '')) {
+			push @LIBS, 'Xrender';
+			$HAVE_XFT++;
+			printlog "yes\n";
+		} else {
+			$DEFINES{HAVE_X11_EXTENSIONS_XRENDER_H} = undef;
+			printlog "no\n";
+		}
+	}
+
+	if ( have_header( "X11/Xft/Xft.h", "X11/X.h", "X11/Xlib.h", 
+			"X11/extensions/Xext.h", "X11/extensions/Xrender.h")) {
+		printlog "Checking for presence of libXft... ";
+		if ( defined find_lib( 'Xft', '', '')) {
+			printlog "yes\n";
+			push @LIBS, 'Xft';
+			$HAVE_XFT++;
+		} else {
+			printlog "no\n";
+			$DEFINES{HAVE_X11_XFT_XFT_H} = undef;
+		}
+	}
+
+	$cmd_options{WITH_XFT} = 0 unless $HAVE_XFT == $NEED_XFT;
+	@LIBS = @pre_xft_libs unless $cmd_options{WITH_XFT};
+}
+
+sub setup_iconv
+{
+	if ( have_header( "iconv.h")) {
 		printlog "Checking for presence of libiconv... ";
 		if ( defined find_lib( 'iconv', '', '')) {
 			push @LIBS, 'iconv';
@@ -1290,56 +1373,35 @@ EOF
 	} else {
 		$cmd_options{WITH_ICONV} = 0;
 	}
+}
+
+sub setup_gtk
+{
+	unless ( $use_pkgconfig ) {
+		$cmd_options{WITH_GTK2} = 0;
+		printlog "Checking for presence of gtk2... no, can only check with pkg-config installed\n";
+		return;
+	}
 	
-	if ( $cmd_options{WITH_GTK2}) {
-		printlog "Checking for presence of gtk2... ";
-		my $pkg_config = `which pkg-config`;
-		chomp $pkg_config;
-		unless ( -f $pkg_config) {
-			$cmd_options{WITH_GTK2} = 0;
-			printlog "no pkg-config, no gtk2\n";
-		}
+	if ( pkgconfig('gtk+-2.0')) {
+		# now, try to compile with GTK. I've got lots of CPAN build failures
+		# because GTK wasn't willing to compile or god knows what.
+		printlog "Checking if can compile and link with gtk2... ";
+		goto NO_GTK unless compile( "#include <gtk/gtk.h>\nint main() { return 0; }\n");
+		$DEFINES{WITH_GTK2} = 1;
+		printlog "yes\n";
+	} else {
+	NO_GTK:
+		$cmd_options{WITH_GTK2} = 0;
+		printlog "no\n";
+	}
+}
 
-		if ( $cmd_options{WITH_GTK2}) {
-			my $vers = `pkg-config --modversion gtk+-2.0`;
-			chomp $vers;
-			if ( $vers =~ /^[\d\.]+$/) {
-				$DEFINES{GTK_VERSION} = "\"$vers\"";
-				printlog "yes, $vers\n";
-			} else {
-				$cmd_options{WITH_GTK2} = 0;
-				printlog "no\n";
-			}
-		}
-
-		if ( $cmd_options{WITH_GTK2}) {
-			my @saveinc = @INCPATH;
-			my @savelib = @LIBS;
-
-			my $inc = `pkg-config --cflags-only-I gtk+-2.0`;
-			chomp $inc;
-			my %inc = map { $_ => 1 } @INCPATH;
-			push @INCPATH, $_ for grep { not exists $inc{$_}} $inc =~ /-I(\S+)/g;
-
-			my $lib = `pkg-config --libs-only-l gtk+-2.0`;
-			chomp $lib;
-			my %lib = map { $_ => 1 } @LIBS;
-			push @LIBS, $_ for grep { not exists $lib{$_}} $lib =~ /-l(\S+)/g;
-
-			# now, try to compile with GTK. I've got lots of CPAN build failures
-			# because GTK wasn't willing to compile or god knows what.
-			printlog "Checking if can compile and link with gtk2... ";
-			my $ok = compile( "#include <gtk/gtk.h>\nint main() { return 0; }\n");
-			if ( $ok) {
-				$DEFINES{WITH_GTK2} = 1;
-				printlog "yes\n";
-			} else {
-				$cmd_options{WITH_GTK2} = 0;
-				@LIBS     = @savelib;
-				@INCPATH  = @saveinc;
-				printlog "no\n";
-			}
-		}
+sub setup_xrandr
+{
+	if ( $use_pkgconfig ) {
+		$DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H} = pkgconfig('xrandr') ? 1 : undef;
+		return;
 	}
 
 	if ( have_header( "X11/extensions/Xrandr.h")) {
@@ -1352,12 +1414,21 @@ EOF
 			printlog "no\n";
 		}
 	}
+}
+
+sub setup_xlibs
+{
+	setup_xft() if $cmd_options{WITH_XFT};
+
+	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
+	setup_iconv() if $cmd_options{WITH_ICONV};
+	setup_gtk() if $cmd_options{WITH_GTK2};
+	setup_xrandr();
 	
 	printlog "Using Xft library\n" if $cmd_options{WITH_XFT};
 	printlog "Using iconv library\n" if $cmd_options{WITH_ICONV};
 	printlog "Using gtk2 library\n" if $cmd_options{WITH_GTK2};
 	printlog "Using Xrandr library\n" if $DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H};
-		
 }
 
 sub generate_win32_def
