@@ -117,7 +117,7 @@ File_file( Handle self, Bool set, SV * file)
    if ( file && ( SvTYPE( file) != SVt_NULL)) {
       FileStream f = IoIFP(sv_2io(file));
       if (!f) {
-         warn("RTC0A0: Not a IO reference passed to File::set_file");
+         warn("Not a IO reference passed to File::set_file");
       } else {
          var-> file = newSVsv( file);
          var-> fd = PerlIO_fileno( f);
