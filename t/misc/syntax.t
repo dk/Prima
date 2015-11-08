@@ -17,4 +17,4 @@ find ( sub {
 }, "$Bin/../../");
 
 plan tests => scalar @packages;
-use_ok($_) for @packages;
+require_ok($_) for @packages;
