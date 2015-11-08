@@ -307,6 +307,7 @@ t/Image/Transform.t
 t/Object/Application.t
 t/Object/Clipboard.t
 t/Object/Component.t
+t/Object/File.t
 t/Object/Fonts.t
 t/Object/GP.t
 t/Object/GPExtra.t
