@@ -207,23 +207,6 @@ reallocf(void *ptr, size_t size)
 #endif
 
 #if ! ( defined( HAVE_SNPRINTF) || defined( HAVE__SNPRINTF))
-/*
- * It is stupid, but Borland C/C++ 5.02 doesn't have snprintf/vsnprintf in its
- * RTL.
- */
-int
-vsnprintf( char *buf, size_t len, const char *format, va_list args)
-{
-    int rc;
-    rc = vsprintf( buf, format, args);
-    if ( rc >= len) {
-        /* We'd better die here rather than wait for memory corruption consequences! */
-        fprintf( stderr, "snprintf/vsnprintf buffer overflow, memory corruption possible. Blame Borland for this error!");
-        exit( 1);
-    }
-    return rc;
-}
-
 int
 snprintf( char *buf, size_t len, const char *format, ...)
 {
