@@ -1516,6 +1516,28 @@ sub setup_codecs
 		my $foundlib;
 		$cx =~ m/codec_(.*)\.c$/i;
 		my ( $fn, $lib, $codec) = ( $cx, $1, $1);
+
+		# First check if pkg-config can help us here. Not necessarily it can, not all
+		# graphic libs have .pc files. But if it can, it helps greatly with dll hell.
+		if ( $use_pkgconfig ) {
+			my $found;
+			if ( $codec eq 'X11') {
+				$DEFINES{EMULATE_X11_CODEC} = 1 unless pkgconfig('x11');
+				$found = 1;
+			} elsif ( $codec eq 'png') {
+				$found = 1 if pkgconfig('libpng');
+			} elsif ( $codec eq 'tiff') {
+				$found = 1 if pkgconfig('libtiff-5') || pkgconfig('libtiff-4');
+			} elsif ( $codec eq 'Xpm') {
+				$found = 1 if pkgconfig('xpm');
+			} # gif/ungif and jpeg -- I've never seen yet these libs shipped with .pc file, so don't check them so far
+					
+			if ( $found ) {
+				push( @ACTIVE_CODECS, $codec);
+				next;
+			}
+		}
+
 		next unless open F, $fn;
 		while(<F>) {
 			push @inc, $_ if m/^\s*#include\s*\</;

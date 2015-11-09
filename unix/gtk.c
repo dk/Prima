@@ -253,9 +253,6 @@ gtk_openfile( Bool open)
 char *
 prima_gtk_openfile( char * params)
 {
-	if ( strncmp( params, "version", 7) == 0)
-		return duplicate_string( GTK_VERSION);
-
 	if ( !DISP) 
 		return NULL;
 	if( !prima_gtk_init()) 
