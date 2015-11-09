@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Socket;
 use Test::More;
-use Prima;
+use Prima::Test;
 use Prima::Application;
 use Prima::Utils qw(post);
 use IO::Socket::INET;
