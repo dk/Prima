@@ -1,7 +1,7 @@
 use strict;
 use warnings qw(FATAL);
 use Test::More;
-use Prima::Test;
+use Prima::Test qw(noX11);
 use FindBin qw($Bin);
 use File::Find qw(find);
 

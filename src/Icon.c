@@ -422,8 +422,11 @@ Icon_create_empty( Handle self, int width, int height, int type)
       }
       memset( var-> mask, 0, var-> maskSize);
    }
-   else
+   else {
       var-> mask = nil;
+      var-> maskLine = 0;
+      var-> maskSize = 0;
+   }
 }
 
 Handle
@@ -474,7 +477,6 @@ Icon_combine( Handle self, Handle xorMask, Handle andMask)
 {
    Bool killAM = 0;
    int am = var-> autoMasking;
-
    
    if ( !kind_of( xorMask, CImage) || !kind_of( andMask, CImage))
       return;
