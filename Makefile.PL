@@ -1112,11 +1112,16 @@ sub setup_pkgconfig
 sub pkgconfig
 {
 	my $package = shift;
-	printlog "Checking for $package...";
+
+	printlog "Checking for $package with pkg-config...";
+	null_output;
 	if ( system "pkg-config --exists $package" ) {
+		restore_output;
 		printlog "no\n";
 		return 0;
 	}
+	restore_output;
+
 	my $modversion  = `pkg-config --modversion $package`;
 	chomp $modversion;
 	printlog "$modversion\n";
@@ -1135,7 +1140,6 @@ sub pkgconfig
 	my $libs    = `pkg-config --libs-only-l $package`;
 	chomp $libs;
 	$libs =~ s/\-l//g;
-	push @LIBS, split " ", $libs;
 	for ( split " ", $libs ) {
 		push @LIBS, $_ unless $h{$_};
 	}
@@ -1144,7 +1148,6 @@ sub pkgconfig
 	my $libpath    = `pkg-config --libs-only-L $package`;
 	chomp $libpath;
 	$libpath =~ s/\-[LR]//g;
-	push @LIBPATH, split " ", $libpath;
 	for ( split " ", $libpath ) {
 		push @LIBPATH, $_ unless $h{$_};
 	}
