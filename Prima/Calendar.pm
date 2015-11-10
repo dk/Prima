@@ -202,7 +202,7 @@ sub reset_days
 	my $self = $_[0];
 	my $dow = $self-> {firstDayOfWeek};
 	$self-> {days} = $self-> {useLocale} ?
-	[ map { strftime("%a", 0, 0, 0, 1, 0, 0, $_) } 0 .. 6 ] :
+	[ map { strftime("%a", 0, 0, 0, $_, 0, 0) } 0 .. 6 ] :
 	[ qw( Sun Mon Tue Wed Thu Fri Sat ) ];
 	push @{$self-> {days}}, splice( @{$self-> {days}}, 0, $dow) if $dow;
 }
