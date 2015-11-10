@@ -76,22 +76,22 @@ typedef struct {
 static GType gtf_type_null(void) { return G_TYPE_NONE; }
 
 static GTFStruct widget_types[] = {
-	{ GT(button),       wcButton       >> 16, NULL },  
-	{ GT(check_button), wcCheckBox     >> 16, NULL },  
-	{ GT(combo_box),    wcCombo        >> 16, NULL },  
-	{ GT(dialog),       wcDialog       >> 16, NULL },  
-	{ GT(entry),        wcEdit         >> 16, NULL },  
-	{ GT(entry),        wcInputLine    >> 16, NULL },  
-	{ GT(label),        wcLabel        >> 16, &guts. default_msg_font },  
-	{ GT(list),         wcListBox      >> 16, NULL },  
-	{ GT(menu),         wcMenu         >> 16, &guts. default_menu_font },  
-	{ GT(menu_item),    wcPopup        >> 16, NULL },  
-	{ GT(check_button), wcRadio        >> 16, NULL },  
-	{ GT(scrollbar),    wcScrollBar    >> 16, NULL },  
-	{ GT(ruler),        wcSlider       >> 16, NULL },  
-	{ GT(widget),       wcWidget       >> 16, &guts. default_widget_font },
-	{ GT(window),       wcWindow       >> 16, &guts. default_caption_font },  
-	{ GT(widget),       wcApplication  >> 16, &guts. default_font },  
+	{ GT(button),       wcButton      , NULL },  
+	{ GT(check_button), wcCheckBox    , NULL },  
+	{ GT(combo_box),    wcCombo       , NULL },  
+	{ GT(dialog),       wcDialog      , NULL },  
+	{ GT(entry),        wcEdit        , NULL },  
+	{ GT(entry),        wcInputLine   , NULL },  
+	{ GT(label),        wcLabel       , &guts. default_msg_font },  
+	{ GT(list),         wcListBox     , NULL },  
+	{ GT(menu),         wcMenu        , &guts. default_menu_font },  
+	{ GT(menu_item),    wcPopup       , NULL },  
+	{ GT(check_button), wcRadio       , NULL },  
+	{ GT(scrollbar),    wcScrollBar   , NULL },  
+	{ GT(ruler),        wcSlider      , NULL },  
+	{ GT(widget),       wcWidget      , &guts. default_widget_font },
+	{ GT(window),       wcWindow      , &guts. default_caption_font },  
+	{ GT(widget),       wcApplication , &guts. default_font },  
 };
 #undef GT
    
@@ -124,9 +124,10 @@ prima_gtk_init(void)
 	stdcolors = prima_standard_colors();
 	for ( i = 0; i < sizeof(widget_types)/sizeof(GTFStruct); i++) {
 		GTFStruct * s = widget_types + i;
-		Color     * c = stdcolors[ s-> prima_class ]; 
+		Color     * c = stdcolors[ s-> prima_class >> 16 ]; 
 		Font      * f = s->prima_font;
 		GtkStyle  * t = gtk_rc_get_style_by_paths(settings, NULL, NULL, s->func());
+		int selected  = ( s-> prima_class == wcRadio || s->prima_class == wcCheckBox) ? GTK_STATE_ACTIVE : GTK_STATE_SELECTED;
 		if ( t == NULL ) {
 			warn("cannot query gtk style for %s\n", s->name);
 			t = gtk_rc_get_style_by_paths(settings, NULL, NULL, GTK_TYPE_WIDGET);
@@ -134,8 +135,8 @@ prima_gtk_init(void)
 		}
 		c[ciFore]         = gdk_color( t-> fg + GTK_STATE_NORMAL );
 		c[ciBack]         = gdk_color( t-> bg + GTK_STATE_NORMAL );
-		c[ciHiliteText]   = gdk_color( t-> fg + GTK_STATE_SELECTED );
-		c[ciHilite]       = gdk_color( t-> bg + GTK_STATE_SELECTED );
+		c[ciHiliteText]   = gdk_color( t-> fg + selected );
+		c[ciHilite]       = gdk_color( t-> bg + selected );
 		c[ciDisabledText] = gdk_color( t-> fg + GTK_STATE_INSENSITIVE );
 		c[ciDisabled]     = gdk_color( t-> bg + GTK_STATE_INSENSITIVE );
 		/*
