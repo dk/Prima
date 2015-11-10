@@ -48,12 +48,7 @@ my $w = new Prima::MainWindow(
 	onClose => sub {
 		$::application-> destroy;
 	},
-	onMouseDown => sub {
-		die;
-	},
 	onPaint   => sub {
-		print STDERR "now\n";
-		die;
 		my ( $self, $canvas) = @_;
 		my $color = $self-> color;
 		$canvas-> color( $self-> backColor);
@@ -68,10 +63,6 @@ timeout => 2000,
 onTick => sub { 
 	$w-> width( $w-> width - 50);
 },   
-) -> start if 0;
+) -> start;
 
-print STDERR "prun\n";
-eval {
 run Prima;
-};
-warn $@;
