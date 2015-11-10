@@ -67,6 +67,7 @@ gdk_color(GdkColor * c)
 typedef struct {
 	GType (*func)(void);
 	char * name;
+	char * gtk_class;
 	int    prima_class;
 	Font * prima_font;
 } GTFStruct;
@@ -76,22 +77,22 @@ typedef struct {
 static GType gtf_type_null(void) { return G_TYPE_NONE; }
 
 static GTFStruct widget_types[] = {
-	{ GT(button),       wcButton      , NULL },  
-	{ GT(check_button), wcCheckBox    , NULL },  
-	{ GT(combo_box),    wcCombo       , NULL },  
-	{ GT(dialog),       wcDialog      , NULL },  
-	{ GT(entry),        wcEdit        , NULL },  
-	{ GT(entry),        wcInputLine   , NULL },  
-	{ GT(label),        wcLabel       , &guts. default_msg_font },  
-	{ GT(list),         wcListBox     , NULL },  
-	{ GT(menu),         wcMenu        , &guts. default_menu_font },  
-	{ GT(menu_item),    wcPopup       , NULL },  
-	{ GT(check_button), wcRadio       , NULL },  
-	{ GT(scrollbar),    wcScrollBar   , NULL },  
-	{ GT(ruler),        wcSlider      , NULL },  
-	{ GT(widget),       wcWidget      , &guts. default_widget_font },
-	{ GT(window),       wcWindow      , &guts. default_caption_font },  
-	{ GT(widget),       wcApplication , &guts. default_font },  
+	{ GT(button),       "GtkButton",         wcButton      , NULL },  
+	{ GT(check_button), "GtkCheckButton",    wcCheckBox    , NULL },  
+	{ GT(combo_box),    "GtkCombo",          wcCombo       , NULL },  
+	{ GT(dialog),       "GtkDialog",         wcDialog      , NULL },  
+	{ GT(entry),        "GtkEditable",       wcEdit        , NULL },  
+	{ GT(entry),        "GtkEntry",          wcInputLine   , NULL },  
+	{ GT(label),        "GtkLabel",          wcLabel       , &guts. default_msg_font },  
+	{ GT(list),         "GtkList",           wcListBox     , NULL },  
+	{ GT(menu),         "GtkMenuItem",       wcMenu        , &guts. default_menu_font },  
+	{ GT(menu_item),    "GtkMenuItem",       wcPopup       , NULL },  
+	{ GT(check_button), "GtkRadioButton",    wcRadio       , NULL },  
+	{ GT(scrollbar),    "GtkScrollBar",      wcScrollBar   , NULL },  
+	{ GT(ruler),        "GtkRuler",          wcSlider      , NULL },  
+	{ GT(widget),       "GtkWidget",         wcWidget      , &guts. default_widget_font },
+	{ GT(window),       "GtkWindow",         wcWindow      , &guts. default_caption_font },  
+	{ GT(widget),       "GtkWidget",         wcApplication , &guts. default_font },  
 };
 #undef GT
    
@@ -117,6 +118,7 @@ prima_gtk_init(void)
 		return false;
 	} else {
 		gtk_initialized = 1;
+   		XSetErrorHandler( guts.main_error_handler );
 		ret = gdk_x11_display_get_xdisplay(display);
 	}
 
@@ -126,8 +128,12 @@ prima_gtk_init(void)
 		GTFStruct * s = widget_types + i;
 		Color     * c = stdcolors[ s-> prima_class >> 16 ]; 
 		Font      * f = s->prima_font;
-		GtkStyle  * t = gtk_rc_get_style_by_paths(settings, NULL, NULL, s->func());
-		int selected  = ( s-> prima_class == wcRadio || s->prima_class == wcCheckBox) ? GTK_STATE_ACTIVE : GTK_STATE_SELECTED;
+		GtkStyle  * t = gtk_rc_get_style_by_paths(settings, NULL, s->gtk_class, s->func());
+		int selected  = ( 
+			s-> prima_class == wcRadio || 
+			s->prima_class == wcCheckBox || 
+			s->prima_class == wcButton
+		) ? GTK_STATE_ACTIVE : GTK_STATE_SELECTED;
 		if ( t == NULL ) {
 			warn("cannot query gtk style for %s\n", s->name);
 			t = gtk_rc_get_style_by_paths(settings, NULL, NULL, GTK_TYPE_WIDGET);
