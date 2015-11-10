@@ -245,6 +245,10 @@ sub profile_default
 sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
+	if ( exists $p->{owner} && !exists $p->{font} && !exists $p->{fontPalette} && 
+		(( $p->{ownerFont} // $default->{ownerFont} // 1 ) == 1 )) {
+		$p-> {fontPalette}-> [0]-> {name} = $p->{owner}->font->name;
+	}
 	$self-> SUPER::profile_check_in( $p, $default);
 	if ( exists( $p-> { paneSize})) {
 		$p-> { paneWidth}  = $p-> { paneSize}-> [ 0];
@@ -329,7 +333,7 @@ sub on_size
 sub on_fontchanged
 {
 	my $f = $_[0]-> font;
-	$_[0]-> {defaultFontSize}           = $f-> size;
+	$_[0]-> {defaultFontSize}            = $f-> size;
 	$_[0]-> {fontPalette}-> [0]-> {name} = $f-> name;
 }
 

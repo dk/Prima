@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use utf8;
-use Prima qw(Label InputLine Buttons Application PodView Edit);
+use Prima qw(Label InputLine Buttons Application PodView Edit FontDialog);
 use Prima::Bidi qw(:require :rtl);
 
 $::application-> wantUnicodeInput(1);
@@ -11,6 +11,7 @@ my $pod;
 my $arabic;
 my $editor;
 my $pod_text;
+my $font_dialog;
 
 $w = Prima::MainWindow-> create(
 	size => [ 430, 200],
@@ -24,9 +25,51 @@ $w = Prima::MainWindow-> create(
 				$pod->textDirection($td);
 				$pod->format(1);
 			} ],
+			[ "~Set font" => sub {
+				$font_dialog //= Prima::FontDialog-> create(logFont => $w->font);
+				$w->font($font_dialog-> logFont) if $font_dialog-> execute == mb::OK;
+			} ],
 		]],
 	],
 );
+
+sub can_rtl
+{
+	$::application->font(shift);
+	my @r = @{ $::application->get_font_ranges };
+	my $hebrew = ord('א');
+	my $arabic = ord('ر');
+	my $found_hebrew;
+	my $found_arabic;
+	for ( my $i = 0; $i < @r; $i += 2 ) {
+		my ( $l, $r ) = @r[$i, $i+1];
+		$found_hebrew = 1 if $l <= $hebrew && $r >= $hebrew;
+		$found_arabic = 1 if $l <= $arabic && $r >= $arabic;
+	}
+	return $found_hebrew && $found_arabic;
+}
+
+# try to find font with arabic and hebrew letters
+$::application->begin_paint_info;
+unless (can_rtl($w->font)) {
+	my $found;
+	for my $f ( @{$::application->fonts} ) {
+		next unless $f->{vector};
+		next unless can_rtl($f);
+		$found = $f;
+		goto FOUND;
+	}
+	for my $f ( @{$::application->fonts} ) {
+		next if $f->{vector};
+		next unless can_rtl($f);
+		$found = $f;
+		goto FOUND;
+	}
+FOUND:	
+	$w->font->name($found->{name}) if $found;
+
+}
+$::application->end_paint_info;
 
 $w->insert( InputLine =>
 	name => 'Hebrew',
