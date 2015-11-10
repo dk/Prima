@@ -376,6 +376,9 @@ init_x11( char * error_buf )
    if ( !prima_init_clipboard_subsystem( error_buf)) return false;
    if ( !prima_init_color_subsystem( error_buf)) return false;
    if ( !prima_init_font_subsystem( error_buf)) return false;
+#ifdef WITH_GTK2
+   if (!prima_gtk_init()) return false;
+#endif
    bzero( &guts. cursor_gcv, sizeof( guts. cursor_gcv));
    guts. cursor_gcv. cap_style = CapButt;
    guts. cursor_gcv. function = GXcopy;
@@ -544,7 +547,7 @@ window_subsystem_cleanup( void)
    if ( !DISP) return;
    /*XXX*/
    prima_end_menu();
-#ifdef WITH_GTK
+#ifdef WITH_GTK2
    prima_gtk_done();
 #endif
 }

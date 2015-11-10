@@ -115,6 +115,12 @@ static Color* standard_colors[] = {
 
 static const int MAX_COLOR_CLASS = sizeof( standard_colors) / sizeof( standard_colors[ 0]) - 1;
 
+Color **
+prima_standard_colors(void)
+{
+   return standard_colors;
+}
+
 /* maps RGB or cl-constant value to RGB value.  */
 Color 
 prima_map_color( Color clr, int * hint)

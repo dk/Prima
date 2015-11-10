@@ -1147,6 +1147,9 @@ prima_char2wchar( XChar2b * dest, char * src, int lim);
 extern XCharStruct * 
 prima_char_struct( XFontStruct * xs, void * c, Bool wide);
 
+extern Color**
+prima_standard_colors(void);
+
 struct MsgDlg {
    struct MsgDlg * next;
    Font  * font;

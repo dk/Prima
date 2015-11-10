@@ -58,10 +58,52 @@ static int	gtk_filter_index       = 0;
 
 static GdkDisplay * display = NULL;
 
+static Color 
+gdk_color(GdkColor * c)
+{
+	return ((c->red >> 8) << 16) | ((c->green >> 8) << 8) | (c->blue >> 8);
+}
+
+typedef struct {
+	GType (*func)(void);
+	char * name;
+	int    prima_class;
+	Font * prima_font;
+} GTFStruct;
+
+#define GT(x) gtk_##x##_get_type, #x
+
+static GType gtf_type_null(void) { return G_TYPE_NONE; }
+
+static GTFStruct widget_types[] = {
+	{ GT(button),       wcButton       >> 16, NULL },  
+	{ GT(check_button), wcCheckBox     >> 16, NULL },  
+	{ GT(combo_box),    wcCombo        >> 16, NULL },  
+	{ GT(dialog),       wcDialog       >> 16, NULL },  
+	{ GT(entry),        wcEdit         >> 16, NULL },  
+	{ GT(entry),        wcInputLine    >> 16, NULL },  
+	{ GT(label),        wcLabel        >> 16, &guts. default_msg_font },  
+	{ GT(list),         wcListBox      >> 16, NULL },  
+	{ GT(menu),         wcMenu         >> 16, &guts. default_menu_font },  
+	{ GT(menu_item),    wcPopup        >> 16, NULL },  
+	{ GT(check_button), wcRadio        >> 16, NULL },  
+	{ GT(scrollbar),    wcScrollBar    >> 16, NULL },  
+	{ GT(ruler),        wcSlider       >> 16, NULL },  
+	{ GT(widget),       wcWidget       >> 16, &guts. default_widget_font },
+	{ GT(window),       wcWindow       >> 16, &guts. default_caption_font },  
+	{ GT(widget),       wcApplication  >> 16, &guts. default_font },  
+};
+#undef GT
+   
 Display*
 prima_gtk_init(void)
 {
-	int argc = 0;
+	int i, argc = 0;
+	Display *ret;
+	GtkSettings * settings;
+	Color ** stdcolors;
+	PangoWeight weight;
+	PangoStyle style;
 
 	switch ( gtk_initialized) {
 	case -1:
@@ -75,8 +117,53 @@ prima_gtk_init(void)
 		return false;
 	} else {
 		gtk_initialized = 1;
-		return gdk_x11_display_get_xdisplay(display);
+		ret = gdk_x11_display_get_xdisplay(display);
 	}
+
+	settings  = gtk_settings_get_default();
+	stdcolors = prima_standard_colors();
+	for ( i = 0; i < sizeof(widget_types)/sizeof(GTFStruct); i++) {
+		GTFStruct * s = widget_types + i;
+		Color     * c = stdcolors[ s-> prima_class ]; 
+		Font      * f = s->prima_font;
+		GtkStyle  * t = gtk_rc_get_style_by_paths(settings, NULL, NULL, s->func());
+		if ( t == NULL ) {
+			warn("cannot query gtk style for %s\n", s->name);
+			t = gtk_rc_get_style_by_paths(settings, NULL, NULL, GTK_TYPE_WIDGET);
+			if ( !t ) continue;
+		}
+		c[ciFore]         = gdk_color( t-> fg + GTK_STATE_NORMAL );
+		c[ciBack]         = gdk_color( t-> bg + GTK_STATE_NORMAL );
+		c[ciHiliteText]   = gdk_color( t-> fg + GTK_STATE_SELECTED );
+		c[ciHilite]       = gdk_color( t-> bg + GTK_STATE_SELECTED );
+		c[ciDisabledText] = gdk_color( t-> fg + GTK_STATE_INSENSITIVE );
+		c[ciDisabled]     = gdk_color( t-> bg + GTK_STATE_INSENSITIVE );
+		/*
+		c[ciLight3DColor] = gdk_color( t-> light + GTK_STATE_NORMAL );
+		c[ciDark3DColor]  = gdk_color( t-> dark  + GTK_STATE_NORMAL );
+		*/
+   		Pdebug("gtk-color: %s %06x %06x %06x %06x %06x\n", s->name, c[0], c[1], c[2], c[3], c[4], c[5]);
+
+		if ( !f) continue;
+		bzero(f, sizeof(Font));
+		strncpy( f->name, pango_font_description_get_family(t->font_desc), 256);
+		/* does gnome ignore X resolution? */
+		f-> size = pango_font_description_get_size(t->font_desc) / PANGO_SCALE * (96.0 / guts. resolution. y);
+		weight = pango_font_description_get_weight(t->font_desc);
+		if ( weight <= PANGO_WEIGHT_LIGHT ) f-> style |= fsThin;
+		if ( weight >= PANGO_WEIGHT_BOLD  ) f-> style |= fsBold;
+		if ( pango_font_description_get_style(t->font_desc) == PANGO_STYLE_ITALIC)
+			f-> style |= fsItalic;
+   		strcpy( f->encoding, "Default" );
+   		f-> width = f-> height = f->pitch = C_NUMERIC_UNDEF;
+   		apc_font_pick( application, f, f);
+#define DEBUG_FONT(font) f->height,f->width,f->size,f->name,f->encoding
+   		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", s->name, DEBUG_FONT(f));
+		
+	}
+
+	return ret;
+
 }
 
 Bool
