@@ -230,6 +230,29 @@ sub on_mousemove
 	$self-> notify(q(Click));
 }
 
+sub on_mouseenter
+{
+	my $self = $_[0];
+	if ( 
+		!$self-> {spaceTransaction} && 
+		!$self-> {mouseTransaction} && 
+		$self-> enabled
+	) {
+		$self-> {hilite} = 1;
+		$self-> repaint;
+	}
+}
+
+sub on_mouseleave
+{
+	my $self = $_[0];
+	if ( $self-> {hilite}) {
+		undef $self-> {hilite};
+		$self-> repaint;
+	}
+}
+
+
 sub on_fontchanged
 {
 	$_[0]-> check_auto_size;
@@ -447,6 +470,7 @@ sub on_paint
 	my @clr  = ( $self-> color, $self-> backColor);
 	@clr = ( $self-> hiliteColor, $self-> hiliteBackColor)
 		if $self-> { default};
+	$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
 	@clr = ( $self-> disabledColor, $self-> disabledBackColor) 
 		if !$self-> enabled;
 	my @size = $canvas-> size;
@@ -569,31 +593,6 @@ sub on_click
 }
 
 sub on_check {}
-
-sub on_mouseenter
-{
-	my $self = $_[0];
-	if ( 
-		!$self-> {spaceTransaction} && 
-		!$self-> {mouseTransaction} && 
-		$self-> enabled
-	) {
-		$self-> {hilite} = 1;
-		$self-> repaint 
-			if $self-> {flat} || $self-> {defaultGlyph} != $self-> {hiliteGlyph};
-	}
-}
-
-sub on_mouseleave
-{
-	my $self = $_[0];
-	if ( $self-> {hilite}) {
-		undef $self-> {hilite};
-		$self-> repaint 
-			if $self-> {flat} || 
-				$self-> {defaultGlyph} != $self-> {hiliteGlyph};
-	}
-}
 
 sub std_calc_geom_size 
 {
@@ -895,6 +894,7 @@ sub on_paint
 		} else { 
 			@clr = ($self-> color, $self-> backColor); 
 		}
+		$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
 	} else { 
 		@clr = ($self-> disabledColor, $self-> disabledBackColor); 
 	}
@@ -968,6 +968,7 @@ sub on_paint
 		} else { 
 			@clr = ($self-> color, $self-> backColor); 
 		}
+		$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
 	} else { 
 		@clr = ($self-> disabledColor, $self-> disabledBackColor); 
 	}

@@ -114,7 +114,7 @@ sub profile_default
 		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown)],
 		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave MouseWheel)],
 		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick 
-			MouseUp MouseMove Paint Enable Disable)],
+			MouseUp MouseMove MouseEnter MouseLeave Paint Enable Disable)],
 	}
 }
 
@@ -324,6 +324,25 @@ sub Button_MouseMove
 	}
 }
 
+sub Button_MouseEnter
+{
+	my ( $self, $button ) = @_;
+	if ( !$button->capture && $self->enabled) {
+		$button->{prelight} = 1;
+		$button->repaint;
+	}
+}
+
+sub Button_MouseLeave
+{
+	my ( $self, $button ) = @_;
+	if ( !$button->capture && $button->{prelight}) {
+		delete $button->{prelight};
+		$button->repaint;
+	}
+
+}
+
 sub Button_MouseUp { $_[1]-> capture(0); }
 
 sub Button_Paint
@@ -332,8 +351,9 @@ sub Button_Paint
 	my ( $w, $h)   = $canvas-> size;
 	my $ena    = $self-> enabled;
 	my @clr    = $ena ?
-	( $self-> color, $self-> backColor) :
-	( $self-> disabledColor, $self-> disabledBackColor);
+		( $self-> color, $self-> backColor) :
+		( $self-> disabledColor, $self-> disabledBackColor);
+	$clr[1] = $self->prelight_color($clr[1]) if $self->{prelight};
 	my $lv = $owner-> listVisible;
 	my ( $rc, $lc) = ( $self-> light3DColor, $self-> dark3DColor);
 	( $rc, $lc) = ( $lc, $rc) if $lv;

@@ -1278,6 +1278,20 @@ sub rect_bevel
 	$canvas-> rect3d( $x + $hw, $y + $hw, $x1 - $hw, $y1 - $hw, $width - $hw, @c3d[0,1]);
 }
 
+sub prelight_color
+{
+	my ( $self, $color, $coeff ) = @_;
+	$coeff //= 1.05;
+	$color = $self->map_color($color) if $color & cl::SysFlag;
+	my @channels = map { $_ & 0xff } ($color >> 16), ($color >> 8), $color;
+	for (@channels) {
+		$_ *= $coeff;
+		$_ = 255 if $_ > 255;
+		$_ = 0   if $_ < 0;
+	}
+	return ( $channels[0] << 16 ) | ( $channels[1] << 8 ) | $channels[2];
+
+}
 
 # class Window
 package Prima::Window;

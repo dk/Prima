@@ -36,6 +36,7 @@
 #   CircularSlider
 
 use strict;
+use warnings;
 use Prima::Const;
 use Prima::Classes;
 use Prima::IntUtils;
@@ -101,7 +102,6 @@ sub profile_default
 	}
 }
 
-
 sub on_mousedown
 {
 	my ( $self, $btn, $mod, $x, $y) = @_;
@@ -115,6 +115,7 @@ sub on_mousedown
 	} else { 
 		$self-> { mouseTransaction} = 3; 
 	}
+	delete $self->{prelight};
 	$self-> { lastMouseOver}  = 1;
 	$self-> { startMouseY  }  = $y;
 	$self-> state( $self-> { mouseTransaction});
@@ -156,7 +157,23 @@ sub on_mousemove
 	my ( $self, $mod, $x, $y) = @_;
 	unless ( $self-> {mouseTransaction}) {
 		my $h = $self-> height;
-		$self-> pointer((( $y >= $h * 0.6) || ( $y < $h * 0.4)) ? cr::Default : cr::SizeWE);
+		my $prelight;
+		if ( $self-> enabled ) {
+			if ( $y >= $h * 0.6) {
+				$prelight = 'lower';
+				$self-> pointer(cr::Default);
+			} elsif ($y < $h * 0.4 ) {
+				$prelight = 'upper';
+				$self-> pointer(cr::Default);
+			} else {
+				$prelight = 'middle';
+				$self-> pointer(cr::SizeWE);
+			}
+			if (( $prelight // '') ne ($self->{prelight} // '')) {
+				$self->{prelight} = $prelight;
+				$self-> repaint;
+			}
+		}
 		return;
 	}
 	my @size = $self-> size;
@@ -180,22 +197,36 @@ sub on_mousemove
 	}
 }
 
+sub on_mouseleave
+{
+	my $self = shift;
+	$self-> repaint if defined( delete $self->{prelight} );
+}
 
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
-	my @clr  = ( $self-> color, $self-> backColor);
-	@clr = ( $self-> disabledColor, $self-> disabledBackColor) if ( !$self-> enabled);
+	my @clr;
+	my ($prelightPart, $prelightColor) = ('');
+	if ( $self-> enabled) {
+		@clr = ($self-> color, $self-> backColor);
+		if ($self->{prelight}) {
+			$prelightColor = $self-> prelight_color($clr[1], 1.5);
+			$prelightPart  = $self->{prelight};
+		}
+	} else {
+		@clr = ( $self-> disabledColor, $self-> disabledBackColor);
+	}
 	my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
 	my @size = $canvas-> size;
 	my $p = $self-> {pressState};
 
 	$canvas-> rect3d( 0, 0, $size[0] - 1, $size[1] * 0.4 - 1, 2,
-		(($p != 2) ? @c3d : reverse @c3d), $clr[1]);
+		(($p != 2) ? @c3d : reverse @c3d), ($prelightPart eq 'upper') ? $prelightColor : $clr[1]);
 	$canvas-> rect3d( 0, $size[1] * 0.4, $size[0] - 1, $size[1] * 0.6 - 1, 2,
-		(($p != 3) ? @c3d : reverse @c3d), $clr[1]);
+		(($p != 3) ? @c3d : reverse @c3d), ($prelightPart eq 'middle') ? $prelightColor : $clr[1]);
 	$canvas-> rect3d( 0, $size[1] * 0.6, $size[0] - 1, $size[1] - 1, 2,
-		(($p != 1) ? @c3d : reverse @c3d), $clr[1]);
+		(($p != 1) ? @c3d : reverse @c3d), ($prelightPart eq 'lower') ? $prelightColor : $clr[1]);
 
 	$canvas-> color( $clr[0]);
 	my $p1 = ( $p == 1) ? 1 : 0;
@@ -251,6 +282,7 @@ sub on_mousedown
 		(( $x * $self-> height / ( $self-> width || 1)) > $y) ? 
 			2 : 1;
 	$self-> { lastMouseOver}  = 1;
+	delete $self->{prelight};
 	$self-> state( $self-> { mouseTransaction});
 	$self-> capture(1);
 	$self-> clear_event;
@@ -276,7 +308,16 @@ sub on_mouseup
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
-	return unless $self-> {mouseTransaction};
+	unless ($self-> {mouseTransaction}) {
+		if ( $self-> enabled ) {
+			my $prelight = (( $x * $self-> height / ( $self-> width || 1)) > $y) ?  2 : 1;
+			if (( $self->{prelight} // 0 ) != $prelight) {
+				$self->{prelight} = $prelight;
+				$self->repaint;
+			}
+		}
+		return;
+	}
 	my @size = $self-> size;
 	my $mouseOver = $x > 0 && $y > 0 && $x < $size[0] && $y < $size[1];
 	$self-> state( $self-> {pressState} ? 0 : $self-> {mouseTransaction})
@@ -292,6 +333,11 @@ sub on_mousemove
 	}
 }
 
+sub on_mouseleave
+{
+	my $self = shift;
+	$self-> repaint if defined( delete $self->{prelight} );
+}
 
 sub on_paint
 {
@@ -299,18 +345,39 @@ sub on_paint
 	my @clr  = ( $self-> color, $self-> backColor);
 	@clr = ( $self-> hiliteColor, $self-> hiliteBackColor)     if $self-> { default};
 	@clr = ( $self-> disabledColor, $self-> disabledBackColor) if !$self-> enabled;
+	my ($prelightPart, $prelightColor) = (0);
+	if ($self->{prelight}) {
+		$prelightColor = $self-> prelight_color($clr[1], 1.5);
+		$prelightPart  = $self->{prelight};
+	}
 	my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
 	my @size = $canvas-> size;
 	$canvas-> color( $clr[ 1]);
 	$canvas-> bar( 0, 0, $size[0]-1, $size[1]-1);
 	my $p = $self-> {pressState};
 
+	if ( $prelightPart == 1 && $size[1] > 4 && $size[0] > 4 ) {
+		$canvas->color( $prelightColor );
+		$canvas->fillpoly([
+			2, 2,
+			2, $size[1] - 3,
+			$size[0] - 3, $size[1] - 3,
+		]);
+	}
 	$canvas-> color( $p == 1 ? $c3d[1] : $c3d[ 0]);
 	$canvas-> line( 0, 0, 0, $size[1] - 1);
 	$canvas-> line( 1, 1, 1, $size[1] - 2);
 	$canvas-> line( 2, $size[1] - 2, $size[0] - 3, $size[1] - 2);
 	$canvas-> line( 1, $size[1] - 1, $size[0] - 2, $size[1] - 1);
 
+	if ( $prelightPart == 2 && $size[1] > 4 && $size[0] > 4 ) {
+		$canvas->color( $prelightColor );
+		$canvas->fillpoly([
+			2, 2,
+			$size[0] - 3, $size[1] - 3,
+			$size[0] - 3, 2,
+		]);
+	}
 	$canvas-> color( $p == 2 ? $c3d[0] : $c3d[ 1]);
 	$canvas-> line( 1, 0, $size[0] - 1, 0);
 	$canvas-> line( 2, 1, $size[0] - 1, 1);
@@ -1031,8 +1098,14 @@ sub init
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
-	my @clr  = ( $self-> color, $self-> backColor);
-	@clr = ( $self-> disabledColor, $self-> disabledBackColor) if ( !$self-> enabled);
+	my @clr;
+	my $prelight;
+	if ( $self-> enabled) {
+		@clr  = ( $self-> color, $self-> backColor);
+		$prelight = $self-> prelight_color($clr[1], 1.5) if $self->{prelight};
+	} else {
+		@clr = ( $self-> disabledColor, $self-> disabledBackColor) 
+	}
 	my @c3d  = ( $self-> dark3DColor, $self-> light3DColor);
 	my @cht  = ( $self-> hiliteColor, $self-> hiliteBackColor);
 	my @size = $canvas-> size;
@@ -1117,7 +1190,7 @@ sub on_paint
 				$bw + $sb + 8, $val,
 				$bw + $sb + 1, $val - DefButtonX / 2,
 			);
-			$canvas-> color( $clr[1]);
+			$canvas-> color( $self->{prelight} ? $prelight : $clr[1]);
 			$canvas-> fillpoly( \@jp);
 			$canvas-> color( $c3d[0]);
 			$canvas-> polyline([@jp[6..9, 0, 1]]);
@@ -1219,7 +1292,7 @@ sub on_paint
 				$val + DefButtonX / 2, $bh - 2,
 				$val,                  $bh - 9,
 			);
-			$canvas-> color( $clr[1]);
+			$canvas-> color( $self->{prelight} ? $prelight : $clr[1]);
 			$canvas-> fillpoly( \@jp);
 			$canvas-> color( $c3d[0]);
 			$canvas-> polyline([@jp[4..9]]);
@@ -1318,6 +1391,7 @@ sub on_mousedown
 	return if $btn != mb::Left;
 	my ($info, $pos, $ap) = $self-> pos2info( $x, $y);
 	return unless defined $info;
+	delete $self->{prelight};
 	if ( $info == 0) {
 		$self-> value( $pos);
 		return;
@@ -1341,7 +1415,17 @@ sub on_mouseup
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
-	return unless $self-> {mouseTransaction};
+	unless ($self-> {mouseTransaction}) {
+		if ( $self-> enabled ) {
+			my ($prelight) = $self-> pos2info( $x, $y);
+			$prelight = (!defined($prelight) || ($prelight != 1)) ? undef : 1;
+			if (($prelight // 0) != ($self->{prelight} // 0)) {
+				$self->{prelight} = $prelight;
+				$self->repaint;
+			}
+		}
+		return;
+	}
 	$self-> {vertical} ? $y : $x   -= $self-> {aperture};
 	my ( $info, $pos) = $self-> pos2info( $x, $y);
 	return unless defined $info;
@@ -1352,6 +1436,11 @@ sub on_mousemove
 	$self-> notify(q(Track)) if !$self-> {autoTrack} && $ov != $self-> {value};
 }
 
+sub on_mouseleave
+{
+	my $self = shift;
+	$self-> repaint if defined( delete $self->{prelight} );
+}
 
 sub on_keydown
 {
@@ -1577,8 +1666,14 @@ sub offset2data
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
-	my @clr  = ( $self-> color, $self-> backColor);
-	@clr = ( $self-> disabledColor, $self-> disabledBackColor) if ( !$self-> enabled);
+	my @clr;
+	my $prelight;
+	if ( $self->enabled ) {
+		@clr = ( $self-> color, $self-> backColor);
+		$prelight = $self->prelight_color($clr[1]) if $self->{prelight};
+	} else {
+		@clr = ( $self-> disabledColor, $self-> disabledBackColor);
+	}
 	my @c3d  = ( $self-> dark3DColor, $self-> light3DColor);
 	my @cht  = ( $self-> hiliteColor, $self-> hiliteBackColor);
 	my @size = $canvas-> size;
@@ -1603,9 +1698,14 @@ sub on_paint
 	my @cpt = ( $self-> {circX}, $self-> {circY}, $rad*2+1, $rad*2+1);
 	if ( $self-> {circAlive}) {
 		if ( defined $self-> {singlePaint}) {
+			$canvas-> color( $prelight ) if $self->{prelight};
 			$canvas-> fill_ellipse( @cpt[0..1], $rad*2-5, $rad*2-5);
 			$canvas-> color( $clr[0]);
 		} else {
+			if ($self->{prelight}) {
+				$canvas-> color( $prelight );
+				$canvas-> fill_ellipse( @cpt[0..1], $rad*2-5, $rad*2-5);
+			}
 			$canvas-> color( $c3d[1]);
 			$canvas-> lineWidth(2);
 			$canvas-> arc( @cpt[0..1], $cpt[2]-2, $cpt[3]-2, 65, 235);
@@ -1809,7 +1909,16 @@ sub on_mouseup
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
-	return unless $self-> {mouseTransaction};
+	unless ($self-> {mouseTransaction}) {
+		if ( $self-> enabled ) {
+			my ( undef, $prelight) = $self-> xy2val( $x, $y);
+			if (($prelight // 0) != ($self->{prelight} // 0)) {
+				$self->{prelight} = $prelight;
+				$self->repaint_circle;
+			}
+		}
+		return;
+	}
 	if ( $self-> {mouseTransaction} == 3) {
 		my $ov = $self-> {value};
 		$self-> {suppressNotify} = 1 unless $self-> {autoTrack};
@@ -1825,6 +1934,12 @@ sub on_mousemove
 	} else {
 		$self-> scroll_timer_stop;
 	}
+}
+
+sub on_mouseleave
+{
+	my $self = shift;
+	$self-> repaint_circle if defined( delete $self->{prelight} );
 }
 
 sub on_mouseclick
@@ -1862,6 +1977,22 @@ sub set_std_pointer
 sub stdPointer  {($#_)?$_[0]-> set_std_pointer ($_[1]):return $_[0]-> {stdPointer};}
 sub buttons     {($#_)?$_[0]-> set_buttons     ($_[1]):return $_[0]-> {buttons};}
 
+sub repaint_circle
+{
+	my $self = shift;
+	$self-> {singlePaint} = 1;
+	my @clip = (
+		int( $self-> {circX} - $self-> {br} * 0.3),
+		int( $self-> {circY} - $self-> {br} * 0.3),
+		int( $self-> {circX} + $self-> {br} * 0.3),
+		int( $self-> {circY} + $self-> {br} * 0.3),
+	);
+	$self-> {expectedClip} = \@clip;
+	$self-> invalidate_rect( @clip[0..1], $clip[2]+1, $clip[3]+1);
+	$self-> update_view;
+	$self-> {singlePaint} = undef;
+}
+
 sub value
 {
 	return $_[0]-> {value} unless $#_;
@@ -1885,17 +2016,7 @@ sub value
 
 	$self-> {value} = $value;
 	$self-> notify(q(Stringify), $value, \$self-> {string});
-	$self-> {singlePaint} = 1;
-	my @clip = (
-		int( $self-> {circX} - $self-> {br} * 0.3),
-		int( $self-> {circY} - $self-> {br} * 0.3),
-		int( $self-> {circX} + $self-> {br} * 0.3),
-		int( $self-> {circY} + $self-> {br} * 0.3),
-	);
-	$self-> {expectedClip} = \@clip;
-	$self-> invalidate_rect( @clip[0..1], $clip[2]+1, $clip[3]+1);
-	$self-> update_view;
-	$self-> {singlePaint} = undef;
+	$self-> repaint_circle;
 	$self-> notify(q(Change)) unless $self-> {suppressNotify};
 }
 

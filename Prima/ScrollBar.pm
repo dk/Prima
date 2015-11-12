@@ -139,10 +139,16 @@ sub on_paint
 	my ($self,$canvas) = @_;
 	my @clr;
 	my @c3d = ( $self-> light3DColor, $self-> dark3DColor);
-	if ( $self-> enabled)
-	{
+	my ($prelightPart, $prelightColor) = ('');
+	if ( $self-> enabled) {
 		@clr = ($self-> color, $self-> backColor);
-	} else { @clr = ($self-> disabledColor, $self-> disabledBackColor); }
+		if ($self->{prelight} && $self-> {$self->{prelight}}-> { enabled}) {
+			$prelightColor = $self-> prelight_color($clr[1], 1.25);
+			$prelightPart = $self->{prelight};
+		}
+	} else {
+		@clr = ($self-> disabledColor, $self-> disabledBackColor);
+	}
 	my @size = $canvas-> size;
 	my $btx  = $self-> { btx};
 	my $v    = $self-> { vertical};
@@ -156,7 +162,7 @@ sub on_paint
 	{
 		$self-> rect_bevel( $canvas, @{$self-> {b1}-> {rect}}, 
 			width   => 2, 
-			fill    => $clr[1],
+			fill    => ($prelightPart eq 'b1') ? $prelightColor : $clr[1],
 			concave => $self->{b1}->{pressed},
 		);
 		$canvas-> color( $self-> {b1}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
@@ -175,7 +181,7 @@ sub on_paint
 	{
 		$self-> rect_bevel( $canvas, @{$self-> {b2}-> {rect}}, 
 			width   => 2, 
-			fill    => $clr[1],
+			fill    => ($prelightPart eq 'b2') ? $prelightColor : $clr[1],
 			concave => $self->{b2}->{pressed},
 		);
 		$canvas-> color( $self-> {b2}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
@@ -219,7 +225,7 @@ sub on_paint
 
 		$self-> rect_bevel( $canvas, @rect,
 			width   => 2, 
-			fill    => $clr[1],
+			fill    => ($prelightPart eq 'tab') ? $prelightColor : $clr[1],
 			concave => $self->{tab}->{pressed},
 		);
 		if ( $self-> {minThumbSize} > 8 && $self->{style} ne 'xp')
@@ -445,8 +451,22 @@ sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
 	$self-> clear_event;
-	return unless defined $self-> {mouseTransaction};
-	my $who   = $self-> {mouseTransaction};
+
+	my $who  = $self-> {mouseTransaction};
+	unless (defined $who) {
+		my $who = $self-> translate_point( $x, $y);
+		my $prelight;
+		if ( $self->enabled && (($who // '') =~ /^(b1|b2|tab)$/)) {
+			$prelight = $who;
+		} else {
+			$prelight = undef;
+		}
+		if (($prelight // '') ne ($self->{prelight} // '')) {
+			$self->{prelight} = $prelight;
+			$self->repaint;
+		}
+		return;
+	}
 
 	if ( $who eq q(tab)) {
 		my @groove = @{$self-> {groove}-> {rect}};
@@ -480,6 +500,12 @@ sub on_mousemove
 		my $useRepaint = $self-> {$who}-> {pressed} != $oldPress;
 		$self-> repaint if $useRepaint;
 	}
+}
+
+sub on_mouseleave
+{
+	my $self = shift;
+	$self-> repaint if defined( delete $self->{prelight} );
 }
 
 sub on_mousewheel
