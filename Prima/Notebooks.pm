@@ -149,33 +149,17 @@ sub recalc_widths
 	$self-> {widths}    = [@w];
 }
 
-sub on_mousedown
+sub x2pos
 {
-	my ( $self, $btn, $mod, $x, $y) = @_;
-	return if $self-> {mouseTransaction};
-	$self-> clear_event;
+	my ( $self, $x ) = @_;
+
 	my ( $a, $ww, $ft, $lt) = (
 		$self-> {arrows}, $self-> {widths}, $self-> {firstTab}, $self-> {lastTab}
 	);
-
-	if (( $a & 1) and ( $x < DefLeftX + DefGapX * 2 + DefArrowX)) {
-		$self-> firstTab( $self-> firstTab - 1);
-		$self-> capture(1);
-		$self-> {mouseTransaction} = -1;
-		$self-> scroll_timer_start;
-		$self-> scroll_timer_semaphore(0);
-		return;
-	}
+	return -1 if ( $a & 1) and ( $x < DefLeftX + DefGapX * 2 + DefArrowX);
 
 	my @size = $self-> size;
-	if (( $a & 2) and ( $x >= $size[0] - DefLeftX - DefGapX * 2 - DefArrowX)) {
-		$self-> firstTab( $self-> firstTab + 1);
-		$self-> capture(1);
-		$self-> {mouseTransaction} = 1;
-		$self-> scroll_timer_start;
-		$self-> scroll_timer_semaphore(0);
-		return;
-	}
+	return -2 if ( $a & 2) and ( $x >= $size[0] - DefLeftX - DefGapX * 2 - DefArrowX);
 
 	my $w = DefLeftX;
 	$w += DefGapX + DefArrowX if $a & 1;
@@ -185,13 +169,41 @@ sub on_mousedown
 		$found = $i, last if $x < $w + $$ww[$i] + DefGapX;
 		$w += $$ww[$i] + DefGapX;
 	}
-	return unless defined $found;
-	
-	if ( $found == $self-> {tabIndex}) {
-		$self-> focusedTab( $found);
+	return $found;
+}
+
+sub on_mousedown
+{
+	my ( $self, $btn, $mod, $x, $y) = @_;
+	return if $self-> {mouseTransaction};
+	$self-> clear_event;
+
+	my $pos = $self-> x2pos($x);
+	return unless defined $pos;
+
+	if ($pos == -1) {
+		$self-> firstTab( $self-> firstTab - 1);
+		$self-> capture(1);
+		$self-> {mouseTransaction} = -1;
+		$self-> scroll_timer_start;
+		$self-> scroll_timer_semaphore(0);
+		return;
+	}
+
+	if ($pos == -2) {
+		$self-> firstTab( $self-> firstTab + 1);
+		$self-> capture(1);
+		$self-> {mouseTransaction} = 1;
+		$self-> scroll_timer_start;
+		$self-> scroll_timer_semaphore(0);
+		return;
+	}
+
+	if ( $pos == $self-> {tabIndex}) {
+		$self-> focusedTab( $pos);
 		$self-> focus;
 	} else {
-		$self-> tabIndex( $found);
+		$self-> tabIndex( $pos);
 	}
 }
 
@@ -216,13 +228,28 @@ sub on_mouseup
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
-	return unless $self-> {mouseTransaction};
+	unless ($self-> {mouseTransaction}) {
+		if ( $self-> enabled ) {
+			my $prelight = $self-> x2pos($x);
+			if (( $prelight // '') ne ($self->{prelight} // '')) {
+				$self->{prelight} = $prelight;
+				$self-> repaint;
+			}
+		}
+		return;
+	}
 	return unless $self-> scroll_timer_semaphore;
 
 	$self-> scroll_timer_semaphore(0);
 	my $ft = $self-> firstTab;
 	$self-> firstTab( $ft + $self-> {mouseTransaction});
 	$self-> notify(q(MouseUp),1,0,0,0) if $ft == $self-> firstTab;
+}
+
+sub on_mouseleave
+{
+	my $self = shift;
+	$self-> repaint if defined( delete $self->{prelight} );
 }
 
 sub on_mouseclick
@@ -265,8 +292,12 @@ sub on_keydown
 sub on_paint
 {
 	my ($self,$canvas) = @_;
-	my @clr  = ( $self-> color, $self-> backColor);
-	@clr = ( $self-> disabledColor, $self-> disabledBackColor) if ( !$self-> enabled);
+	my @clr;
+	if ( $self-> enabled ) {
+		@clr = ( $self-> color, $self-> backColor);
+	} else {
+		@clr = ( $self-> disabledColor, $self-> disabledBackColor);
+	}
 	my @c3d  = ( $self-> dark3DColor, $self-> light3DColor);
 	my @size = $canvas-> size;
 
@@ -421,10 +452,11 @@ sub on_measuretab
 sub on_drawtab
 {
 	my ( $self, $canvas, $i, $clr, $poly, $poly2) = @_;
-	
-	$canvas-> color(( $self-> {colored} && ( $i >= 0)) ?
-		( $warpColors[ $i % scalar @warpColors]) : $$clr[1]);
-		
+
+	my $color = ( $self-> {colored} && ( $i >= 0)) ?
+		( $warpColors[ $i % scalar @warpColors]) : $$clr[1];
+	$color = $self-> prelight_color($color) if ($self->{prelight} // '') eq ($i // '');
+	$canvas-> color($color);
 	$canvas-> fillpoly( $poly);
 	$canvas-> fillpoly( $poly2) if $poly2;
 	$canvas-> color( $$clr[3]);

@@ -99,6 +99,12 @@ sub on_paint
 	( $self-> disabledColor, $self-> disabledBackColor);
 	my @c3d  = ( $self-> light3DColor, $self-> dark3DColor);
 
+	my ($prelightPart, $prelightColor) = (-1);
+	if ( defined $self->{prelight} ) {
+		$prelightColor = $self-> prelight_color($c[1]);
+		$prelightPart = $self->{prelight};
+	}
+
 	$self-> rect3d( 0, 0, $size[0]-1, $size[1]-1, 1, @c3d, $c[1]);
 	my $v = $self-> {vertical};
 	my ( $x, $y) = ( - $self-> {offset}, ( $size[1] - $self-> {fontHeight}) / 2);
@@ -120,6 +126,10 @@ sub on_paint
 		$v ?
 			$self-> clipRect( 1, $d < 1 ? 1 : $d, $size[0] - 2, $mx) :
 			$self-> clipRect( $d < 1 ? 1 : $d, 1, $mx, $size[1] - 2);
+		if ( $i == $prelightPart) {
+			$self-> color($prelightColor);
+			$self-> bar(0,0,@size);
+		}
 		$self-> color( $c[0]);
 		$v ?
 			$notifier-> ( @notifyParms, $canvas, $i, 1, $d + 1, $size[0] - 2, $mx - 1, $d + 4) :
@@ -295,16 +305,25 @@ sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
 	unless ( $self-> {transaction}) {
-		my $p = $self-> point2area( $x, $y);
-		my $ptr;
-		if ( defined $p && $p < 0) {
-			$ptr = $self-> {vertical} ? cr::SizeNS : cr::SizeWE;
-		} elsif ( $self-> {dragable} && !$self-> {clickable} && defined $p) {
-			$ptr = cr::Move;
-		} else {
-			$ptr = cr::Default;
+		if ( $self-> enabled ) {
+			my $p = $self-> point2area( $x, $y);
+			my $ptr;
+			if ( defined $p && $p < 0) {
+				$ptr = $self-> {vertical} ? cr::SizeNS : cr::SizeWE;
+			} elsif ( $self-> {dragable} && !$self-> {clickable} && defined $p) {
+				$ptr = cr::Move;
+			} else {
+				$ptr = cr::Default;
+			}
+			$self-> pointer( $ptr);
+
+			my $prelight = (defined($p) && $p >= 0) ? $p : undef;
+			if (( $prelight // -1 ) != ( $self->{prelight} // -1)) {
+				$self->{prelight} = $prelight;
+				$self->repaint;
+			}
+
 		}
-		$self-> pointer( $ptr);
 		return;
 	}
 
@@ -371,6 +390,12 @@ sub on_mousemove
 			);
 		$self-> notify(q(SizeItem), $self-> {tabId}, $ow, $nw);
 	}
+}
+
+sub on_mouseleave
+{
+	my $self = shift;
+	$self-> repaint if defined( delete $self->{prelight} );
 }
 
 sub on_mouseclick
