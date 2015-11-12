@@ -134,7 +134,7 @@ sub on_click
 
 sub on_drawitem
 {
-	my ($self, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focusedItem) = @_;
+	my ($self, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focusedItem, undef, $prelight) = @_;
 	my $item  = $self-> {items}-> [$index];
 	my $text  = $item-> {text};
 	$text =~ s[^\s*][];
@@ -144,11 +144,13 @@ sub on_drawitem
 	# $canvas-> color( $backColor);
 	# $canvas-> bar( $left, $bottom, $right, $top);
 	my ( $c, $bc);
-	if ( $hilite) {
+	if ( $hilite || $prelight) {
 		$c = $self-> color;
 		$bc = $self-> backColor;
-		$canvas-> color($self-> hiliteColor);
-		$canvas-> backColor($self-> hiliteBackColor);
+		$canvas-> color($hilite ? $self-> hiliteColor : $self->color);
+		my $bk = $hilite ? $self-> hiliteBackColor : $self->backColor;
+		$bk = $self->prelight_color($bk) if $prelight;
+		$canvas-> backColor($bk);
 	}
 	$canvas-> clear( $left, $bottom, $right, $top);
 
@@ -196,7 +198,7 @@ sub on_drawitem
 	$canvas-> rect_focus( $left + $self-> {offset}, $bottom, $right, $top)
 		if $focusedItem;
 
-	if ( $hilite) {
+	if ( $hilite || $prelight) {
 		$canvas-> color($c);
 		$canvas-> backColor($bc);
 	}
@@ -574,14 +576,16 @@ sub InputLine_KeyDown
 
 sub List_DrawItem
 {
-	my ($combo, $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused) = @_;
+	my ($combo, $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused, undef, $prelight) = @_;
 
 	my ( $c, $bc);
-	if ( $hilite) {
-		$c = $me-> color;
-		$bc = $me-> backColor;
-		$me-> color( $me-> hiliteColor);
-		$me-> backColor( $me-> hiliteBackColor);
+	if ( $hilite || $prelight) {
+		$c = $canvas-> color;
+		$bc = $canvas-> backColor;
+		$canvas-> color($hilite ? $me-> hiliteColor : $me->color);
+		my $bk = $hilite ? $me-> hiliteBackColor : $me->backColor;
+		$bk = $me->prelight_color($bk) if $prelight;
+		$canvas-> backColor($bk);
 	}
 	$canvas-> clear( $left, $bottom, $right, $top);
 
@@ -600,7 +604,7 @@ sub List_DrawItem
 	($h,$w) = ($font-> height, $canvas-> get_text_width( $text));
 	$canvas-> text_out_bidi( $text, $x, ($top + $bottom - $h) / 2);
 
-	if ( $hilite) {
+	if ( $hilite || $prelight) {
 		$canvas-> color( $c);
 		$canvas-> backColor( $bc);
 	}

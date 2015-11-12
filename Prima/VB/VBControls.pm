@@ -204,7 +204,7 @@ sub on_measureitem
 
 sub on_drawitem
 {
-	my ( $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused) = @_;
+	my ( $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused, undef, $prelight) = @_;
 	my $ena = $me-> {check}-> [$index];
 	unless ( defined $me-> {hBenchColor}) {
 		my ( $i1, $i2) = ( $me-> map_color( $me-> hiliteBackColor), $me-> map_color( $me-> hiliteColor));
@@ -219,9 +219,11 @@ sub on_drawitem
 		$me-> {hBenchColor} = $i1 if $me-> {hBenchColor} == $i2;
 	}
 	my ( $c, $bc);
-	if ( $hilite) {
+	if ( $hilite || $prelight) {
 		$bc = $canvas-> backColor;
-		$canvas-> backColor( $ena ? $me-> hiliteBackColor : $me-> {hBenchColor});
+		my $bk = $hilite ? ($ena ? $me-> hiliteBackColor : $me-> {hBenchColor}) : $bc;
+		$bk = $me->prelight_color($bk) if $prelight;
+		$canvas-> backColor( $bk );
 	}
 	if ( $hilite || !$ena) {
 		$c = $canvas-> color;
@@ -232,7 +234,7 @@ sub on_drawitem
 	my $text = $me-> {id}-> [$index];
 	my $x = $left + 2;
 	$canvas-> text_out_bidi( $text, $x, ($top + $bottom + 1 - $me-> {fHeight}) / 2);
-	$canvas-> backColor( $bc) if $hilite;
+	$canvas-> backColor( $bc) if $hilite || $prelight;
 	$canvas-> color( $c) if $hilite || !$ena
 }
 

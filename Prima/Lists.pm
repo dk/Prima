@@ -305,13 +305,15 @@ sub on_paint
 						(( $self-> {focusedItem} == $item) ? 1 : 0);
 					my $foc = ( $foci == $item) ? $focusedState : 0;
 					$foc = 1 if $item == 0 && $self-> {unfocVeil};
+					my $prelight = (defined($self->{prelight}) && ($self->{prelight} == $item)) ? 1 : 0;
 
 					push( @paintArray, [
 						$item,          # item number
 						$itemRect[0], $itemRect[1],
 						$itemRect[2]-1, $itemRect[3]-1,
 						$sel, $foc,     # selected and focused states
-						$j              # column
+						$j,             # column
+						$prelight
 					]);
 					$item += $di;
 				}
@@ -332,13 +334,15 @@ sub on_paint
 					(( $foci == $item) ? 1 : 0);
 				my $foc = ( $foci == $item) ? $focusedState : 0;
 				$foc = 1 if $item == 0 && $self-> {unfocVeil};
+				my $prelight = (defined($self->{prelight}) && ($self->{prelight} == $item)) ? 1 : 0;
 
 				push( @paintArray, [
 					$item,      # item number
 					$itemRect[0] - $self-> {offset}, $itemRect[1],  # logic rect
 					$itemRect[2], $itemRect[3],                     #
 					$sel, $foc, # selected and focused state
-					0 #column
+					0, #column,
+					$prelight,
 				]);
 				$item++;
 			}
@@ -606,7 +610,25 @@ sub on_mouseclick
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
-	return unless defined $self-> {mouseTransaction};
+	unless (defined $self-> {mouseTransaction}) {
+		if ( $self-> enabled ) {
+			my @a = $self-> get_active_area;
+			my $prelight;
+			if ( $y >= $a[1] && $y < $a[3] && $x >= $a[0] && $x < $a[2]) {
+				my ($item, $aux) = $self-> point2item( $x, $y);
+				$prelight = ($item >= 0) ? $item : undef unless defined $aux;
+			}
+			if ( ( $self->{prelight} // -1 ) != ( $prelight // -1 )) {
+				my @redraw = (
+					$self->{prelight} // (),
+					$prelight // ()
+				);
+				$self->{prelight} = $prelight;
+				$self->redraw_items( @redraw );
+			}
+		}
+		return;
+	}
 	
 	my $bw = $self-> { borderWidth};
 	my ($item, $aux) = $self-> point2item( $x, $y);
@@ -688,6 +710,13 @@ sub on_mouseup
 	$self-> capture(0);
 	$self-> clear_event;
 	$self-> notify(q(DragItem), @dragnotify) if @dragnotify;
+}
+
+sub on_mouseleave
+{
+	my $self = shift;
+	my $prelight = delete $self->{prelight};
+	$self-> redraw_items( $prelight ) if defined $prelight;
 }
 
 sub on_mousewheel
@@ -1308,7 +1337,7 @@ sub HScroll_Change
 
 #sub on_drawitem
 #{
-#	my ($self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused) = @_;
+#	my ($self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused, $column, $prelight) = @_;
 #}
 
 #sub on_selectitem
@@ -1426,14 +1455,19 @@ sub std_draw_text_items
 	for ( @colContainer) {
 		my @normals;
 		my @selected;
+		my @prelight;
 		my ( $lastNormal, $lastSelected) = (undef, undef);
-		my $isSelected = 0;
 		# sorting items in single column
 		{ $_ = [ sort { $$a[0]<=>$$b[0] } @$_]; }
 		# calculating conjoint bars
 		for ( $i = 0; $i < scalar @$_; $i++) {
-			my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = @{$$_[$i]};
-			if ( $selected) {
+			my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem, undef, $prelighted) = @{$$_[$i]};
+			if ( $prelighted ) {
+				push ( @prelight, [ 
+					$x, $y, $x2, $y2, 
+					$$_[$i]-> [0], $$_[$i]-> [0], $selected ? 3 : 2,
+				]);
+			} elsif ( $selected) {
 				if ( 
 					defined $lastSelected && 
 					( $y2 + 1 == $lastSelected)
@@ -1447,7 +1481,6 @@ sub std_draw_text_items
 					]);
 				}
 				$lastSelected = $y;
-				$isSelected = 1;
 			} else {
 				if ( 
 					defined $lastNormal && 
@@ -1465,12 +1498,17 @@ sub std_draw_text_items
 				$lastNormal = $y;
 			}
 		}
-		for ( @selected) { push ( @normals, $_); }
 		# draw items
 
-		for ( @normals) {
+		for ( @normals, @selected, @prelight) {
 			my ( $x, $y, $x2, $y2, $first, $last, $selected) = @$_;
-			my $c = $clrs[ $selected ? 3 : 1];
+			my $c;
+			if ($selected & 2) {
+				$selected -= 2;
+				$c = $self-> prelight_color($clrs[ $selected ? 3 : 1]);
+			} else {
+				$c = $clrs[ $selected ? 3 : 1];
+			}
 			if ( $c != $lbc) {
 				$canvas-> backColor( $c);
 				$lbc = $c;
@@ -2223,13 +2261,13 @@ Called when the user finishes the drag of an item
 from OLD_INDEX to NEW_INDEX position. The default action
 rearranges the item list in accord with the dragging action.
 
-=item DrawItem CANVAS, INDEX, X1, Y1, X2, Y2, SELECTED, FOCUSED
+=item DrawItem CANVAS, INDEX, X1, Y1, X2, Y2, SELECTED, FOCUSED, COLUMN, PRELIGHT
 
 Called when an INDEXth item is to be drawn on CANVAS. 
 X1, Y1, X2, Y2 designate the item rectangle in widget coordinates,
-where the item is to be drawn. SELECTED and FOCUSED are boolean
+where the item is to be drawn. SELECTED, FOCUSED, and PRELIGHT are boolean
 flags, if the item must be drawn correspondingly in selected and
-focused states.
+focused states, with or without the prelight effect.
 
 =item MeasureItem INDEX, REF
 

@@ -219,8 +219,7 @@ sub draw_items
 	my $drawVeilFoc = -1;
 	my $x0d    = $self-> {header}-> {maxWidth} - 2;
 
-	my @normals;
-	my @selected;
+	my (@normals, @selected, @p_normal, @p_selected);
 	my ( $lastNormal, $lastSelected) = (undef, undef);
 
 	# sorting items by index
@@ -232,10 +231,16 @@ sub draw_items
 
 	for ( $i = 0; $i < $icount; $i++)
 	{
-		my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = @{$$iref[$i]};
+		my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem, undef, $prelight) = @{$$iref[$i]};
 		$drawVeilFoc = $i if $focusedItem;
-		if ( $selected)
-		{
+		if ( $prelight) {
+			if ( $selected ) {
+				push ( @p_selected, [ $x, $y, $x + $x0d, $y2]);
+			} else {
+				push ( @p_normal, [ $x, $y, $x + $x0d, $y2]);
+			}
+
+		} elsif ( $selected) {
 			if ( defined $lastSelected && ( $y2 + 1 == $lastSelected)) {
 				${$selected[-1]}[1] = $y;
 			} else {
@@ -256,6 +261,14 @@ sub draw_items
 	$canvas-> clear( @$_) for @normals;
 	$canvas-> backColor( $clrs[3]);
 	$canvas-> clear( @$_) for @selected;
+	if ( @p_normal ) {
+		$canvas-> backColor( $self-> prelight_color($clrs[1]));
+		$canvas-> clear( @$_) for @p_normal;
+	}
+	if ( @p_selected ) {
+		$canvas-> backColor( $self-> prelight_color($clrs[3]));
+		$canvas-> clear( @$_) for @p_selected;
+	}
 
 	# draw veil
 	if ( $drawVeilFoc >= 0) {

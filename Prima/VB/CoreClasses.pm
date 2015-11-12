@@ -711,7 +711,7 @@ sub prf_events
 {
 	return (
 		$_[0]-> SUPER::prf_events,
-		onDrawItem    => 'my ( $self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused) = @_;',
+		onDrawItem    => 'my ( $self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused, $column, $prelight) = @_;',
 		onStringify   => 'my ( $self, $index, $result) = @_;',
 		onMeasureItem => 'my ( $self, $index, $result) = @_;',
 	);

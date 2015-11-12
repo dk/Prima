@@ -407,22 +407,22 @@ onClick   => sub {
 			}
 		},
 		onDrawItem => sub {
-			my ($self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused) = @_;
+			my ($self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused, undef, $prelight) = @_;
 			$canvas-> line( $x, $y, $x2, $y);
 			$canvas-> line( $x2+1, $y, $x2+1, $y2);
 			my @cs;
-			if ( $focused) {
+			if ( $focused || $prelight) {
 				@cs = ( $canvas-> color, $canvas-> backColor);
-				$canvas-> set( 
-					color => $canvas-> hiliteColor, 
-					backColor => $canvas-> hiliteBackColor
-				);
+				my $fo = $focused ? $canvas-> hiliteColor : $canvas-> color ;
+				my $bk = $focused ? $canvas-> hiliteBackColor : $canvas-> backColor ;
+				$bk = $self-> prelight_color( $bk ) if $prelight;
+				$canvas-> set( color => $fo, backColor => $bk );
 			}
 			$canvas-> clear( $x, $y + 1, $x2, $y2);
 			if ( defined( my $c = $charmap{$itemIndex} )) {
 				$canvas-> text_out( chr($c), $x + $ih / 4, $y + $ih / 4);
 			}
-			$canvas-> set( color => $cs[0], backColor => $cs[1]) if $focused;
+			$canvas-> set( color => $cs[0], backColor => $cs[1]) if $focused || $prelight;
 		},
 	);
 	$l-> count( $count);
