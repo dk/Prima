@@ -204,7 +204,7 @@ sub on_measureitem
 
 sub on_drawitem
 {
-	my ( $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused, undef, $prelight) = @_;
+	my ( $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused, $prelight) = @_;
 	my $ena = $me-> {check}-> [$index];
 	unless ( defined $me-> {hBenchColor}) {
 		my ( $i1, $i2) = ( $me-> map_color( $me-> hiliteBackColor), $me-> map_color( $me-> hiliteColor));

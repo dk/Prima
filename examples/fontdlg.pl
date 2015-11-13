@@ -407,7 +407,7 @@ onClick   => sub {
 			}
 		},
 		onDrawItem => sub {
-			my ($self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused, undef, $prelight) = @_;
+			my ($self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused, $prelight) = @_;
 			$canvas-> line( $x, $y, $x2, $y);
 			$canvas-> line( $x2+1, $y, $x2+1, $y2);
 			my @cs;

@@ -311,7 +311,7 @@ sub on_paint
 						$item,          # item number
 						$itemRect[0], $itemRect[1],
 						$itemRect[2]-1, $itemRect[3]-1,
-						$sel, $foc, $prelight  # selected and focused states
+						$sel, $foc, $prelight,  # selected and focused states
 						$j,             # column
 					]);
 					$item += $di;
@@ -339,7 +339,7 @@ sub on_paint
 					$item,      # item number
 					$itemRect[0] - $self-> {offset}, $itemRect[1],  # logic rect
 					$itemRect[2], $itemRect[3],                     #
-					$sel, $foc, $prelight # selected and focused state
+					$sel, $foc, $prelight, # selected and focused state
 					0, #column,
 				]);
 				$item++;

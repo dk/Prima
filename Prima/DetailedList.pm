@@ -231,7 +231,7 @@ sub draw_items
 
 	for ( $i = 0; $i < $icount; $i++)
 	{
-		my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem, undef, $prelight) = @{$$iref[$i]};
+		my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem, $prelight) = @{$$iref[$i]};
 		$drawVeilFoc = $i if $focusedItem;
 		if ( $prelight) {
 			if ( $selected ) {
