@@ -311,9 +311,8 @@ sub on_paint
 						$item,          # item number
 						$itemRect[0], $itemRect[1],
 						$itemRect[2]-1, $itemRect[3]-1,
-						$sel, $foc,     # selected and focused states
+						$sel, $foc, $prelight  # selected and focused states
 						$j,             # column
-						$prelight
 					]);
 					$item += $di;
 				}
@@ -340,9 +339,8 @@ sub on_paint
 					$item,      # item number
 					$itemRect[0] - $self-> {offset}, $itemRect[1],  # logic rect
 					$itemRect[2], $itemRect[3],                     #
-					$sel, $foc, # selected and focused state
+					$sel, $foc, $prelight # selected and focused state
 					0, #column,
-					$prelight,
 				]);
 				$item++;
 			}
@@ -1337,7 +1335,7 @@ sub HScroll_Change
 
 #sub on_drawitem
 #{
-#	my ($self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused, $column, $prelight) = @_;
+#	my ($self, $canvas, $itemIndex, $x, $y, $x2, $y2, $selected, $focused, $prelight, $column) = @_;
 #}
 
 #sub on_selectitem
@@ -1461,7 +1459,7 @@ sub std_draw_text_items
 		{ $_ = [ sort { $$a[0]<=>$$b[0] } @$_]; }
 		# calculating conjoint bars
 		for ( $i = 0; $i < scalar @$_; $i++) {
-			my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem, undef, $prelighted) = @{$$_[$i]};
+			my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem, $prelighted) = @{$$_[$i]};
 			if ( $prelighted ) {
 				push ( @prelight, [ 
 					$x, $y, $x2, $y2, 
@@ -2261,7 +2259,7 @@ Called when the user finishes the drag of an item
 from OLD_INDEX to NEW_INDEX position. The default action
 rearranges the item list in accord with the dragging action.
 
-=item DrawItem CANVAS, INDEX, X1, Y1, X2, Y2, SELECTED, FOCUSED, COLUMN, PRELIGHT
+=item DrawItem CANVAS, INDEX, X1, Y1, X2, Y2, SELECTED, FOCUSED, PRELIGHT, COLUMN
 
 Called when an INDEXth item is to be drawn on CANVAS. 
 X1, Y1, X2, Y2 designate the item rectangle in widget coordinates,
