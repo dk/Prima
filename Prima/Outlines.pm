@@ -341,6 +341,7 @@ sub on_paint
 	my ($array, $idx, $lim, $level) = ([['root'],$self-> {items}], 0, scalar @{$self-> {items}}, 0);
 	my @stack;
 	my $position = 0;
+	my $prelight = $self->{prelight} // -1;
 
 # preparing stack
 	$i = int(( $timin + 1) / STACK_FRAME) * STACK_FRAME - 1; 
@@ -384,7 +385,7 @@ sub on_paint
 				if $position >= $timin;
 				$lines[ $level] = undef;
 			} elsif ( $position > 0) {
-			# first and last
+				# first and last
 				$canvas-> bar(
 					$l, $firstY - $ih * ( $position - 0.5),
 					$l, $firstY - $ih * ( $position + 0.5))
@@ -401,8 +402,10 @@ sub on_paint
 			push ( @texts, [ $node, $l + $indent * 1.5, $lineY,
 				$l + $indent * 1.5 + $node-> [WIDTH] - 1, $lineY + $ih - 1,
 				$position, 
-						$self-> {multiSelect} ? $node-> [SELECTED] : ($foc == $position),
-					$foc == $position]);
+				$self-> {multiSelect} ? $node-> [SELECTED] : ($foc == $position),
+				$foc == $position,
+				$prelight == $position,
+			]);
 			$lineY -= $ih;
 		}
 		last if $position >= $lastItem;
@@ -571,8 +574,8 @@ sub makehint
 	my $ofs = ( $lev + 2.5) * $self-> {indent} - $self-> {offset} + $self-> {indents}-> [0];
 
 	if ( $w + $ofs <= $a[2]) {
-	$self-> makehint(0);
-	return;
+		$self-> makehint(0);
+		return;
 	}
 
 	$self-> {unsuccessfullId} = undef;
@@ -642,22 +645,39 @@ sub on_mousemove
 	my ( $self, $mod, $x, $y) = @_;
 	my @size = $self-> size;
 	my @a    = $self-> get_active_area( 0, @size);
-	if ( !defined $self-> {mouseTransaction} && $self-> {showItemHint}) {
+	if ( !defined $self-> {mouseTransaction} && $self->enabled) {
 		my $item   = $self-> point2item( $y, $size[1]);
 		my ( $rec, $lev) = $self-> get_item( $item);
+		my $item;
 		if ( 
 			!$rec || 
 			( $x < -$self-> {offset} + ($lev + 2) * $self-> {indent} + $self-> {indents}-> [0])
 		) {
 			$self-> makehint( 0);
-			return;
-		}
-		if (( $y >= $a[3]) || ( $y <= $a[1] + $self-> {itemHeight} / 2)) {
+		} elsif (( $y >= $a[3]) || ( $y <= $a[1] + $self-> {itemHeight} / 2)) {
 			$self-> makehint( 0);
-			return;
+		} else {
+			$y = $a[3] - $y; 
+			$item = $self-> {topItem} + int( $y / $self-> {itemHeight}); 
 		}
-		$y = $a[3] - $y;
-		$self-> makehint( 1, $self-> {topItem} + int( $y / $self-> {itemHeight}));
+
+		if ( $self-> {showItemHint} ) {
+			if ( defined $item ) {
+				$self-> makehint( 1, $self-> {topItem} + int( $y / $self-> {itemHeight}));
+			} else {
+				$self-> makehint( 0);
+			}
+		}
+
+		if (( $self->{prelight} // -1) != ( $item // -1)) {
+			my @redraw = (
+				$self->{prelight} // (),
+				$item // ()
+			);
+			$self->{prelight} = $item;
+			$self->redraw_items( @redraw );
+		}
+
 		return;
 	}
 	my $item = $self-> point2item( $y, $size[1]);
@@ -727,6 +747,13 @@ sub on_mousewheel
 	my $newTop = $self-> topItem - $z;
 	my $maxTop = $self-> {count} - $self-> {rows};
 	$self-> topItem( $newTop > $maxTop ? $maxTop : $newTop);
+}
+
+sub on_mouseleave
+{
+	my $self = shift;
+	my $prelight = delete $self->{prelight};
+	$self-> redraw_items( $prelight ) if defined $prelight;
 }
 
 sub on_enable  { $_[0]-> repaint; }
@@ -991,6 +1018,23 @@ sub update_tree
 	$self-> offset( $self-> {offset});
 }
 
+sub redraw_items
+{
+	my ( $self, @items ) = @_;
+	my @a  = $self-> get_active_area;
+	my $ih = $self-> {itemHeight};
+
+	my %match;
+	for my $i ( @items ) {
+		next unless $i >= 0 && $i >= $self-> {topItem} && $i <= $self-> {topItem} + $self-> {rows};
+		next if $match{$i}++;
+		$i -= $self->{topItem};
+		$self-> invalidate_rect( 
+			$a[0], $a[3] - ( $i + 1) * $ih,
+			$a[2], $a[3] - $i * $ih
+		);
+	}
+}
 
 sub draw_items
 {
@@ -1043,23 +1087,7 @@ sub set_focused_item
 	my @a  = $self-> get_active_area;
 	my $ih = $self-> {itemHeight};
 	my $lastItem = $self-> {topItem} + $self-> {rows};
-	
-	$self-> invalidate_rect( 
-		$a[0], $a[3] - ( $oldFoc - $self-> {topItem} + 1) * $ih,
-		$a[2], $a[3] - ( $oldFoc - $self-> {topItem}) * $ih
-	) if 
-		$oldFoc >= 0 && 
-		$oldFoc != $foc && 
-		$oldFoc >= $self-> {topItem} && 
-		$oldFoc <= $self-> {topItem} + $self-> {rows};
-		
-	$self-> invalidate_rect( 
-		$a[0], $a[3] - ( $foc - $self-> {topItem} + 1) * $ih,
-		$a[2], $a[3] - ( $foc - $self-> {topItem}) * $ih
-	) if 
-		$foc >= 0 && 
-		$foc >= $self-> {topItem} && 
-		$foc <= $self-> {topItem} + $self-> {rows};
+	$self->redraw_items($oldFoc, $foc);
 }
 
 sub set_indent
@@ -1617,12 +1645,14 @@ sub draw_items
 {
 	my ($self, $canvas, $paintStruc) = @_;
 	for ( @$paintStruc) {
-		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused) = @$_;
-		if ( $selected) {
+		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused, $prelight) = @$_;
+		if ( $selected || $prelight) {
 			my $c = $canvas-> color;
-			$canvas-> color( $self-> hiliteBackColor);
+			my $bk = $selected ? $self-> hiliteBackColor : $self-> backColor;
+			$bk = $self-> prelight_color($bk) if $prelight;
+			$canvas-> color( $bk );
 			$canvas-> bar( $left, $bottom, $right, $top);
-			$canvas-> color( $self-> hiliteColor);
+			$canvas-> color( $selected ? $self-> hiliteColor : $c );
 			$canvas-> text_out_bidi( $node-> [0], $left, $bottom);
 			$canvas-> color( $c);
 		} else {
@@ -1652,12 +1682,14 @@ sub draw_items
 {
 	my ($self, $canvas, $paintStruc) = @_;
 	for ( @$paintStruc) {
-		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused) = @$_;
-		if ( $selected) {
+		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused, $prelight) = @$_;
+		if ( $selected || $prelight ) {
 			my $c = $canvas-> color;
-			$canvas-> color( $self-> hiliteBackColor);
+			my $bk = $selected ? $self-> hiliteBackColor : $self-> backColor;
+			$bk = $self-> prelight_color($bk) if $prelight;
+			$canvas-> color( $bk );
 			$canvas-> bar( $left, $bottom, $right, $top);
-			$canvas-> color( $self-> hiliteColor);
+			$canvas-> color( $selected ? $self-> hiliteColor : $c );
 			$canvas-> text_out_bidi( $node-> [0]-> [0], $left, $bottom);
 			$canvas-> color( $c);
 		} else {
@@ -1768,16 +1800,18 @@ sub draw_items
 {
 	my ($self, $canvas, $paintStruc) = @_;
 	for ( @$paintStruc) {
-		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused) = @$_;
+		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused, $prelight) = @$_;
 		my $c;
 		my $dw = length $node-> [0]-> [1] ?
 			$self-> {iconSizes}-> [0] :
 			$node-> [0]-> [2];
-		if ( $selected) {
+		if ( $selected || $prelight) {
 			$c = $canvas-> color;
-			$canvas-> color( $self-> hiliteBackColor);
+			my $bk = $selected ? $self-> hiliteBackColor : $self-> backColor;
+			$bk = $self-> prelight_color($bk) if $prelight;
+			$canvas-> color( $bk );
 			$canvas-> bar( $left - $self-> {indent} / 4, $bottom, $right, $top);
-			$canvas-> color( $self-> hiliteColor);
+			$canvas-> color( $selected ? $self-> hiliteColor : $c );
 		}
 		my $icon = (length( $node-> [0]-> [1]) || $unix) ?
 			( $node-> [2] ? $self-> {openedIcon} : $self-> {closedIcon}) : 
@@ -1792,7 +1826,7 @@ sub draw_items
 			$left + $dw,
 			int($bottom + ( $self-> {itemHeight} - $self-> {fontHeight}) / 2)
 		);
-		$canvas-> color( $c) if $selected;
+		$canvas-> color( $c) if $selected || $prelight;
 		$canvas-> rect_focus( $left - $self-> {indent} / 4, $bottom, $right, $top) 
 			if $focused;
 	}
@@ -2455,12 +2489,12 @@ Called when the user finishes the drag of an item
 from OLD_INDEX to NEW_INDEX position. The default action
 rearranges the item list in accord with the dragging action.
 
-=item DrawItem CANVAS, NODE, X1, Y1, X2, Y2, INDEX, SELECTED, FOCUSED
+=item DrawItem CANVAS, NODE, X1, Y1, X2, Y2, INDEX, SELECTED, FOCUSED, PRELIGHT
 
 Called when INDEXth item, contained in NODE is to be drawn on 
 CANVAS. X1, Y1, X2, Y2 coordinated define the exterior rectangle
-of the item in widget coordinates. SELECTED and FOCUSED boolean flags are set to
-1 if the item is selected or focused, respectively; 0 otherwise.
+of the item in widget coordinates. SELECTED, FOCUSED, and PRELIGHT boolean flags are set to
+1 if the item is selected, focused, or pre-lighted, respectively; 0 otherwise.
 
 =item MeasureItem NODE, LEVEL, REF
 

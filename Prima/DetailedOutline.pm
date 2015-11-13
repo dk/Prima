@@ -135,9 +135,13 @@ sub draw_items
 	for (@widths) { $extent += $_ }
 	$canvas->backColor($clrs[3]);
 	for ( $i = 0; $i < $icount; $i++) {
-		my ($node, $x, $y, $x2, $y2, $position, $focused) = @{$$paintStruc[$i]};
+		my ($node, $x, $y, $x2, $y2, $position, $selected, $focused, $prelight) = @{$$paintStruc[$i]};
 		$x = $xend + 1 if ($xend < $x);
-		if ($focused) {
+		if ($prelight) {
+			$canvas->backColor( $self->prelight_color($selected ? $clrs[3] : $clrs[1]) );
+			$canvas->clear($x, $y, $extent, $y2);
+			$canvas->backColor( $clrs[3] );
+		} elsif ($selected) {
 			$canvas->clear($x, $y, $extent, $y2);
 		}
 	}
