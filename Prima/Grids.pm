@@ -180,16 +180,18 @@ sub draw_cells
 	my @selection = $self-> selection;
 	my @f = $self-> focused ? $self-> focusedCell : ( -1, -1);
 	$self-> push_event;
-	my ( $xsel, $ysel);
+	my @prelight    = @{$self->{prelight} // [-1,-1]};
+	my ( $xsel, $ysel, $xprelight, $yprelight);
 	my ( $clipV, $clipH) = ( $self-> {clipCells} == 1, $self-> {clipCells} == 2);
 	for ( @$cols) {
 		my ( $col, $xtype, $br, $x1, $x2, $X1, $X2) = @$_;
 		$canvas-> clipRect( $x1, $$active_area[1], $x2, $$active_area[3]) if $clipV;
-		$xsel = ( $col >= $selection[0] && $col <= $selection[2] ) ? 1 : 0;
+		$xsel = $col >= $selection[0] && $col <= $selection[2];
+		$xprelight = $col == $prelight[0];
 		for ( @$rows) {
 			my ( $row, $ytype, $br, $y1, $y2, $Y1, $Y2) = @$_;
-			$ysel = ( $row >= $selection[1] && $row <= $selection[3] ) ? 1 : 0 
-				if $xsel;
+			$ysel = $row >= $selection[1] && $row <= $selection[3] if $xsel;
+			$yprelight = $row == $prelight[1];
 			$canvas-> clipRect( $x1, $y1, $x2, $y2) if $clipH;
 			$notifier-> ( @notifyParms, 
 				$canvas, 
@@ -197,7 +199,8 @@ sub draw_cells
 				$x1, $y1, $x2, $y2,
 				$X1, $Y1, $X2, $Y2,
 				$xsel && $ysel,
-				( $col == $f[0] && $row == $f[1]) ? 1 : 0
+				( $col == $f[0] && $row == $f[1]) ? 1 : 0,
+				$xprelight && $yprelight
 			); 
 		}
 	}
@@ -452,7 +455,7 @@ sub point2cell
 		$cy = -1;
 		$hints{y} = +1;
 	} elsif ( 
-		$self-> {lastColEmpty} && 
+		$self-> {lastRowEmpty} && 
 		$y > $a[1] + $self-> {pixelCellIndents}-> [3] &&
 		$y < $a[1] + $self-> {pixelCellIndents}-> [3] + $self-> {lastRowTail} - 
 			(($self-> {cellIndents}-> [3] > 0) ? $self-> {drawHGrid} : 0) 
@@ -829,32 +832,41 @@ sub std_draw_text_cells
 	my @colors = (
 		$self-> color,
 		$self-> backColor,
-		$self-> colorIndex( ci::HiliteText),
-		$self-> colorIndex( ci::Hilite),
+		$self-> hiliteColor,
+		$self-> hiliteBackColor,
 		$self-> indentCellColor,
 		$self-> indentCellBackColor,
 		$self-> gridColor,
+		undef,
+		$self-> color,
+		$self-> prelight_color($self->backColor),
+		$self-> hiliteColor,
+		$self-> prelight_color($self->hiliteBackColor),
 	);
 	my @selection = $self-> selection;
 	my @f = $self-> focused ? $self-> focusedCell : ( -1, -1);
 	my @focRect;
 	my $font_height = $self-> font-> height;
-	my ( $xsel, $ysel);
+	my @prelight    = @{$self->{prelight} // [-1,-1]};
+	my ( $xsel, $ysel, $xprelight, $yprelight);
 	my ( $clipV, $clipH) = ( $self-> {clipCells} == 1, $self-> {clipCells} == 2);
 	my @clipRect = $canvas-> clipRect;
 	for ( @$cols) {
 		my ( $col, $xtype, $br, $x1, $x2, $X1, $X2) = @$_;
 		$canvas-> clipRect( $x1, $$active_area[1], $x2, $$active_area[3]) 
 			if $clipV;
-		$xsel = ( $col >= $selection[0] && $col <= $selection[2] ) ? 1 : 0;
+		$xsel      = $col >= $selection[0] && $col <= $selection[2];
+		$xprelight = $col == $prelight[0];
 		my $last_type;
 		my @bars;
 		my @rects;
 		my @cellids;
 		for ( @$rows) {
 			my ( $row, $ytype, $br, $y1, $y2, $Y1, $Y2) = @$_;
-			$ysel = ( $row >= $selection[1] && $row <= $selection[3] ) ? 1 : 0 if $xsel;
+			$ysel      = $row >= $selection[1] && $row <= $selection[3] if $xsel;
+			$yprelight = $row == $prelight[1] if $xprelight;
 			my $type = ($xtype || $ytype) ? 2 : (($xsel && $ysel) ? 1 : 0);
+			$type |= 4 if $xprelight && $yprelight;
 			if ( defined($last_type) && $type != $last_type) {
 				$canvas-> set(
 					color     => $colors[$last_type * 2],
@@ -862,7 +874,7 @@ sub std_draw_text_cells
 				);
 				$canvas-> clear(@$_) for @bars;
 				$self-> draw_text_cells( $canvas, \@bars, \@rects, \@cellids, $font_height);
-				@bars = (); @rects = (); @cellids = ();
+				@bars = @rects = @cellids = ();
 			}
 			$last_type = $type;
 			push @bars,  [$x1, $y1, $x2, $y2];
@@ -1076,13 +1088,24 @@ sub on_mousemove
 	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y, defined($self-> {mouseTransaction}));
 	$self-> clear_event;
 	unless ( defined $self-> {mouseTransaction}) {
+		my @prelight = (-1,-1);
+		my @old      = @{$self->{prelight} // [-1,-1]};
 		if ( defined($hints{x_grid}) && $self-> allowChangeCellWidth) {
 			$self-> pointerType( cr::SizeWE);
 		} elsif ( defined($hints{y_grid}) && $self-> allowChangeCellHeight) { 
 			$self-> pointerType( cr::SizeNS);
 		} else {
+			my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y);
+			@prelight = ($cx, $cy) if $hints{normal};
 			$self-> pointerType( cr::Default);
 		}
+
+		if ( join('.', @prelight ) ne join('.', @old)) {
+			$self->{prelight} = ( $prelight[0] < 0 ) ? undef : \@prelight;
+			$self->redraw_cell( @old )      if $old[0]      >= 0;
+			$self->redraw_cell( @prelight ) if $prelight[0] >= 0;
+		}
+
 		return;
 	}
 
@@ -1196,6 +1219,13 @@ sub on_mousewheel
 	$z *= ( $self-> {visibleRows} || 1) if $mod & km::Ctrl;
 	my $newTop = $self-> {topCell} - $z;
 	$self-> topCell( $newTop);
+}
+
+sub on_mouseleave
+{
+	my $self = shift;
+	my $prelight = delete $self->{prelight};
+	$self-> redraw_cell( @$prelight ) if defined $prelight;
 }
 
 sub on_paint
@@ -2816,16 +2846,15 @@ For explanation of COLUMNS, ROWS, and AREA parameters see L<draw_cells> .
 
 =over
 
-=item DrawCell CANVAS, COLUMN, ROW, INDENT, @SCREEN_RECT, @CELL_RECT, SELECTED, FOCUSED
+=item DrawCell CANVAS, COLUMN, ROW, INDENT, @SCREEN_RECT, @CELL_RECT, SELECTED, FOCUSED, PRELIGHT
 
 Called when a cell with COLUMN and ROW coordinates is to be drawn on CANVAS. 
 SCREEN_RECT is a cell rectangle in widget coordinates,
 where the item is to be drawn. CELL_RECT is same as SCREEN_RECT, but calculated
 as if the cell is fully visible.
 
-SELECTED and FOCUSED are boolean
-flags, if the cell must be drawn correspondingly in selected and
-focused states.
+SELECTED, FOCUSED, and PRELIGHT are boolean flagss, if the cell must be drawn
+correspondingly in selected, focused, and pre-lighted states.
 
 =item GetAlignment COLUMN, ROW, HORIZONTAL_ALIGN_REF, VERTICAL_ALIGN_REF
 

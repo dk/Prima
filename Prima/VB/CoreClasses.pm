@@ -1530,7 +1530,7 @@ sub prf_events
 	return (
 		$_[0]-> SUPER::prf_events,
 		onSelectItem  => 'my ( $self, $index) = @_;',
-		onDrawItem    => 'my ( $self, $canvas, $node, $left, $bottom, $right, $top, $position, $focused) = @_;',
+		onDrawItem    => 'my ( $self, $canvas, $node, $left, $bottom, $right, $top, $position, $selected, $focused, $prelight) = @_;',
 		onMeasureItem => 'my ( $self, $node, $result) = @_;',
 		onExpand      => 'my ( $self, $node, $action) = @_;',
 		onDragItem    => 'my ( $self, $from, $to) = @_;',
@@ -2223,7 +2223,7 @@ my ( \$self, \$canvas,
      \$column, \$row, \$indent, 
      \$sx1, \$sy1, \$sx2, \$sy2,
      \$cx1, \$cy1, \$cx2, \$cy2,
-     \$selected, \$focused
+     \$selected, \$focused, \$prelight
    )  = \@_;
 DRAWCELL
 		onGetRange    => 'my ( $self, $axis, $index, $min, $max) = @_;',

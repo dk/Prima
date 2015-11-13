@@ -1430,7 +1430,7 @@ sub get_index_width
 
 sub on_drawitem
 {
-#	my ( $self, $canvas, $node, $left, $bottom, $right, $top, $position, $selected, $focused) = @_;
+#	my ( $self, $canvas, $node, $left, $bottom, $right, $top, $position, $selected, $focused, $prelight) = @_;
 }
 
 sub on_measureitem

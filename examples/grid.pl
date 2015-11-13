@@ -66,7 +66,7 @@ my $w = Prima::MainWindow-> create(
 );  
 
 # change this to 0 and Prima::Grid will be created instead
-my $abstract_grid = 0;
+my $abstract_grid = 1;
 
 my @user_breadths=({},{});
 
@@ -91,10 +91,12 @@ $g = $w-> insert(
 				$col, $row, $type,
 				$x1, $y1, $x2, $y2,
 				$X1, $Y1, $X2, $Y2,
-				$sel, $foc) = @_;
+				$sel, $foc, $pre) = @_;
 		
-		$canvas-> backColor( $sel ? $self-> hiliteBackColor :
-						( $type ? $self-> indentCellBackColor : cl::Back));
+		my $bk = $sel ? $self-> hiliteBackColor :
+						( $type ? $self-> indentCellBackColor : cl::Back);
+		$bk = $self-> prelight_color($bk) if $pre;
+		$canvas-> backColor( $bk );
 		$canvas-> clear( $x1, $y1, $x2, $y2);
 		$canvas-> color( $sel ? $self-> hiliteColor :
 						( $type ? $self-> indentCellColor : cl::Fore));

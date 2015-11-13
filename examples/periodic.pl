@@ -254,7 +254,7 @@ my $g = $w-> insert( Periodic =>
 			$column, $row, $indent, 
 			$sx1, $sy1, $sx2, $sy2, 
 			$cx1, $cy1, $cx2, $cy2, 
-			$selected, $focused) = @_;
+			$selected, $focused, $prelight) = @_;
 		$canvas-> clear($sx1, $sy1, $sx2, $sy2);
 		my $item = $self-> {cells}-> [$row]-> [$column];
 		my $color = $colors{$layers[$row]};
@@ -266,10 +266,12 @@ my $g = $w-> insert( Periodic =>
 					$color-> {default});
 			$canvas-> color( cl::Black);
 			$canvas-> rectangle( $cx1-1, $cy1-1, $cx2, $cy2);
-			if ( $focused) {
-				$canvas-> color( $self-> hiliteBackColor);
+			if ( $focused || $prelight ) {
+				my $bk = $focused ? $self-> hiliteBackColor : cl::Back;
+				$bk = $self->prelight_color($bk) if $prelight;
+				$canvas-> color( $bk );
 				$canvas-> bar( $cx1, $cy1, $cx2-1, $cy2-1);
-				$canvas-> color( $self-> hiliteColor);
+				$canvas-> color( $focused ? $self-> hiliteColor : cl::Fore);
 			} else {
 				$canvas-> color( $color);
 			}
