@@ -528,7 +528,7 @@ sub init
 	}
 	$profile{text} = $profile{drive};
 	$profile{items} = [@{$self-> {drives}}];
-	push (@{$profile{editDelegations}}, 'KeyDown');
+	push (@{$profile{editDelegations}}, qw(KeyDown MouseEnter MouseLeave));
 	push (@{$profile{listDelegations}}, qw(DrawItem FontChanged MeasureItem Stringify));
 	%profile = $self-> SUPER::init(%profile);
 	$self-> {drive} = $self-> text;
@@ -573,6 +573,22 @@ sub InputLine_KeyDown
 		if (scalar grep { $code eq $_ } @{$combo-> {drives}}) && ($code ne $_[0]-> text);
 	$self-> clear_event;
 }
+
+sub InputLine_MouseEnter
+{
+	my $self = $_[1];
+	$self->{colors} = [
+		backColor       => $self-> backColor,
+		hiliteBackColor => $self->hiliteBackColor,
+		ownerBackColor  => $self->ownerBackColor,
+	];
+	$self->set(
+		backColor       => $self-> prelight_color($self->backColor),
+		hiliteBackColor => $self-> prelight_color($self->hiliteBackColor),
+	);
+}
+
+sub InputLine_MouseLeave { $_[1]->set( @{ delete($self->{colors}) // [] } ) }
 
 sub List_DrawItem
 {
