@@ -588,7 +588,7 @@ sub InputLine_MouseEnter
 	);
 }
 
-sub InputLine_MouseLeave { $_[1]->set( @{ delete($self->{colors}) // [] } ) }
+sub InputLine_MouseLeave { $_[1]->set( @{ delete($_[1]->{colors}) // [] } ) }
 
 sub List_DrawItem
 {
