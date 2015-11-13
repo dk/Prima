@@ -648,7 +648,6 @@ sub on_mousemove
 	if ( !defined $self-> {mouseTransaction} && $self->enabled) {
 		my $item   = $self-> point2item( $y, $size[1]);
 		my ( $rec, $lev) = $self-> get_item( $item);
-		my $item;
 		if ( 
 			!$rec || 
 			( $x < -$self-> {offset} + ($lev + 2) * $self-> {indent} + $self-> {indents}-> [0])
