@@ -1286,7 +1286,8 @@ sub prelight_color
 	$color = $self->map_color($color) if $color & cl::SysFlag;
 	my @channels = map { $_ & 0xff } ($color >> 16), ($color >> 8), $color;
 	for (@channels) {
-		$_ += $coeff;
+		my $amp = ( 256 - $_ ) / 8;
+		$_ += $coeff + $amp;
 		$_ = 255 if $_ > 255;
 		$_ = 0   if $_ < 0;
 	}
