@@ -127,7 +127,7 @@ sub init
 		selectable  => 1,
 		current     => 1,
 		delegations => [ qw( 
-			Paint MouseDown MouseMove MouseUp MouseWheel
+			Paint MouseDown MouseMove MouseUp MouseWheel MouseLeave
 			KeyDown Size FontChanged Enter Leave
 		)],
 		growMode    => gm::Client,
@@ -252,19 +252,22 @@ sub Day_Paint
 	my $v = $days_in_months[ $m] + (((( $y % 4) == 0) && ( $m == 1)) ? 1 : 0);
 	$y = $sz[1] - $zs[1] * 2 + $zs[3] - 3;
 	$d--;
+	my $prelight = ($self->{prelight} || 0) - 1;
 	for ( $i = 0; $i < $v; $i++) {
-		if ( $d == $i) {
-			$canvas-> color( cl::Hilite);
+		if ( $d == $i || $prelight == $i) {
+			my $bk = ($d == $i) ? cl::Hilite : cl::Back;
+			$bk = $self->prelight_color($bk) if $prelight == $i;
+			$canvas-> color($bk);
 			$canvas-> bar( 
 				$dow * $zs[0] + 2, $y - $zs[3], 
 				( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1
 			);
-			$canvas-> color( cl::HiliteText);
+			$canvas-> color(( $d == $i) ? cl::HiliteText : cl::Fore);
 			$canvas-> text_out_bidi( $i + 1, $dow * $zs[0] + $zs[2], $y);
 			$canvas-> rect_focus( 
 				$dow * $zs[0] + 2, $y - $zs[3], 
 				( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1
-			) if $self-> focused;
+			) if $d == $i && $self-> focused;
 			$canvas-> color( $c);
 		} else {
 			$canvas-> text_out_bidi( $i + 1, $dow * $zs[0] + $zs[2], $y);
@@ -297,35 +300,45 @@ sub Day_KeyDown
 	$owner-> date( $d, $m, $y);
 }
 
+sub xy2day
+{
+	my ($self, $x, $y) = @_;
+	my $widget = $self->Day;
+	my ( $day, $month, $year) = @{$self-> {date}};
+	my @zs = ( $widget-> {X}, $widget-> {Y});
+	my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
+	my @sz = $widget-> size;
+	$day = (int(($sz[1] - $y - 2) / $zs[1]) - 1) * 7 + 
+		int(($x - 2) / $zs[0]) - $self-> day_of_week( 1, $month, $year) + 1;
+	return ($day <= 0 || $day > $v) ? undef : $day;
+}
+
 sub Day_MouseDown
 {
 	my ( $owner, $self, $btn, $mod, $x, $y) = @_;
 	return unless $btn == mb::Left;
-	my ( $day, $month, $year) = @{$owner-> {date}};
-	my @zs = ( $self-> {X}, $self-> {Y});
-	my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
-	my @sz = $self-> size;
-	$day = (int(($sz[1] - $y - 2) / $zs[1]) - 1) * 7 + 
-		int(($x - 2) / $zs[0]) - $owner-> day_of_week( 1, $month, $year) + 1;
+	my ( undef, $month, $year) = @{$owner-> {date}};
+	my $day = $owner->xy2day($x,$y);
 	$self-> clear_event;
+	return unless defined $day;
 	$self-> {mouseTransaction} = 1;
-	return if $day <= 0 || $day > $v;
 	$owner-> date( $day, $month, $year);
 }
 
 sub Day_MouseMove
 {
 	my ( $owner, $self, $mod, $x, $y) = @_;
-	return unless $self-> {mouseTransaction};
-	my ( $day, $month, $year) = @{$owner-> {date}};
-	my @zs = ( $self-> {X}, $self-> {Y});
-	my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
-	my @sz = $self-> size;
-	$day = (int(($sz[1] - $y - 2) / $zs[1]) - 1) * 7 + 
-		int(($x - 2) / $zs[0]) - $owner-> day_of_week( 1, $month, $year) + 1;
+	my ( undef, $month, $year) = @{$owner-> {date}};
+	my $day = $owner->xy2day($x,$y);
+	unless ($self-> {mouseTransaction}) {
+		if (( $self->{prelight} // -1 ) != ( $day // -1 )) {
+			$self->{prelight} = $day;
+			$self-> repaint;
+		}
+		return;
+	}
 	$self-> clear_event;
-	return if $day <= 0 || $day > $v;
-	$owner-> date( $day, $month, $year);
+	$owner-> date( $day, $month, $year) if defined $day;
 }
 
 sub Day_MouseUp
@@ -334,6 +347,12 @@ sub Day_MouseUp
 	return unless $btn == mb::Left && $self-> {mouseTransaction};
 	delete $self-> {mouseTransaction};
 	$self-> clear_event;
+}
+
+sub Day_MouseLeave
+{
+	my $self = $_[1];
+	$self->repaint if delete $self->{prelight};
 }
 
 sub Day_MouseWheel
