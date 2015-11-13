@@ -1147,8 +1147,33 @@ sub on_paint
 		);
 
 		my $y = $size[1] - DefBorderX + Prima::TabSet::DefGapY;
-		my $x  = $size[0] - DefBorderX - DefBookmarkX;
+		my $x = $size[0] - DefBorderX - DefBookmarkX;
 		return if $y < DefBorderX * 2 + DefBookmarkX;
+		
+		my $a  = 0;
+		my ($pi, $mpi) = ( 
+			$self-> {notebook}-> pageIndex, 
+			$self-> {notebook}-> pageCount - 1
+		);
+		$a |= 1 if $pi > 0;
+		$a |= 2 if $pi < $mpi;
+
+		if ( my $p = $self->{prelight}) {
+			$canvas-> color( $self-> prelight_color($c3d[1]));
+			if ( $p < 0 && $a & 1) {
+				$canvas->fillpoly([
+					$x - 2, $y - 2,
+					$x + DefBookmarkX - 4, $y - DefBookmarkX,
+					$x - 2, $y - DefBookmarkX,  
+				]);
+			} elsif ( $p > 0 && $a & 2 ) {
+				$canvas->fillpoly([
+					$x - 2, $y - 2,
+					$x + DefBookmarkX - 4, $y - DefBookmarkX,
+					$x + DefBookmarkX - 4, $y - 2,
+				]);
+			}
+		}
 
 		$canvas-> color( $c3d[0]);
 		$canvas-> line( 
@@ -1163,13 +1188,6 @@ sub on_paint
 		);
 
 		my $fh = 24;
-		my $a  = 0;
-		my ($pi, $mpi) = ( 
-			$self-> {notebook}-> pageIndex, 
-			$self-> {notebook}-> pageCount - 1
-		);
-		$a |= 1 if $pi > 0;
-		$a |= 2 if $pi < $mpi;
 		
 		$canvas-> line( 
 			DefBorderX + 4, $y - $fh * 1.6, 
@@ -1249,6 +1267,29 @@ sub on_mousedown
 	$self-> clear_event;
 	return unless ( $x, $y) = $self-> event_in_page_flipper( $x, $y);
 	$self-> pageIndex( $self-> pageIndex + (( -$x + DefBookmarkX < $y) ? 1 : -1));
+}
+
+sub on_mousemove
+{
+	my ( $self, $mod, $x, $y) = @_;
+	my $prelight;
+	if (( $x, $y) = $self-> event_in_page_flipper( $x, $y)) {
+		if (-$x + DefBookmarkX < $y && $self->pageIndex < $self->pageCount - 1) {
+			$prelight = 1;
+		} elsif (-$x + DefBookmarkX >= $y && $self->pageIndex > 0 ){
+			$prelight = -1;
+		}
+	}
+	if (( $self->{prelight} // 0) != ($prelight // 0)) {
+		$self->{prelight} = $prelight;
+		$self->repaint;
+	}
+}
+
+sub on_mouseleave
+{
+	my $self = shift;
+	$self->repaint if delete $self->{prelight};
 }
 
 sub on_mousewheel
