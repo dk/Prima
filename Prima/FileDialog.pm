@@ -134,7 +134,7 @@ sub on_click
 
 sub on_drawitem
 {
-	my ($self, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focusedItem, undef, $prelight) = @_;
+	my ($self, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focusedItem, $prelight) = @_;
 	my $item  = $self-> {items}-> [$index];
 	my $text  = $item-> {text};
 	$text =~ s[^\s*][];
@@ -592,7 +592,7 @@ sub InputLine_MouseLeave { $_[1]->set( @{ delete($_[1]->{colors}) // [] } ) }
 
 sub List_DrawItem
 {
-	my ($combo, $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused, undef, $prelight) = @_;
+	my ($combo, $me, $canvas, $index, $left, $bottom, $right, $top, $hilite, $focused, $prelight) = @_;
 
 	my ( $c, $bc);
 	if ( $hilite || $prelight) {
