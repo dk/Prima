@@ -1645,7 +1645,7 @@ NOCODECS
 sub setup_modules
 {
 	printlog "Checking for Text::Bidi...";
-	eval { eval "use Text::Bidi;" };
+	eval "use Text::Bidi;";
 	if ( $@ ) {
 		printlog "no\n";
 		goto BAD_VERSION;
