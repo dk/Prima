@@ -83,6 +83,7 @@ sub init {
 	$self->$_( $profile{$_}) for qw(autoRecalc columns mainColumn);
 	$self->autowidths unless scalar @{$profile{widths}};
 	$self->{recalc} = 1 if $profile{autoRecalc};
+	$self->{align} = ta::Left;
 	return %profile;
 }
 
