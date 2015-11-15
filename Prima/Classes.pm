@@ -1433,6 +1433,12 @@ sub rect_bevel
 		push @c3d, $back, 0x404040;
 	}
 
+	if ( my $g = $opt{gradient} ) {
+		for (@{$g->{palette} // []}, $g->{color}) {
+			$_ = $self->map_color($_) if $_ & cl::SysFlag;
+		}
+	}
+
 	my $hw = int( $width / 2);
 	$canvas-> rect3d( $x, $y, $x1, $y1, $hw, @c3d[2,3], $opt{gradient} // $fill);
 	$canvas-> rect3d( $x + $hw, $y + $hw, $x1 - $hw, $y1 - $hw, $width - $hw, @c3d[0,1]);
