@@ -65,6 +65,7 @@ examples/fontdlg.pl
 examples/frames.pl
 examples/f_fill.pl
 examples/generic.pl
+examples/gradient.pl
 examples/grid.pl
 examples/grip.pl
 examples/Hand.gif

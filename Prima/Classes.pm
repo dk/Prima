@@ -578,6 +578,82 @@ sub draw_text
 	return $retVal;
 }
 
+sub prelight_color
+{
+	my ( $self, $color, $coeff ) = @_;
+	$coeff //= 1.05;
+	$coeff = ($coeff - 1) * 256;
+	$color = $self->map_color($color) if $color & cl::SysFlag;
+	my @channels = map { $_ & 0xff } ($color >> 16), ($color >> 8), $color;
+	for (@channels) {
+		my $amp = ( 256 - $_ ) / 8;
+		$_ += $coeff + $amp;
+		$_ = 255 if $_ > 255;
+		$_ = 0   if $_ < 0;
+	}
+	return ( $channels[0] << 16 ) | ( $channels[1] << 8 ) | $channels[2];
+}
+
+sub calculate_gradient
+{
+	my ( $self, $breadth, $start_color, $end_color, $curve ) = @_;
+
+	return [] if $breadth <= 0;
+	
+	$start_color = $self->map_color($start_color) if $start_color & cl::SysFlag;
+	$end_color   = $self->map_color($end_color)   if $end_color   & cl::SysFlag;
+	my @start = map { $_ & 0xff } ($start_color >> 16), ($start_color >> 8), $start_color;
+	my @end   = map { $_ & 0xff } ($end_color   >> 16), ($end_color   >> 8), $end_color;
+	my @color = @start;
+	
+	my @delta = map { ( $end[$_] - $start[$_] ) / $breadth } 0..2;
+
+	my $last_color = $start_color;
+	my $color      = $start_color;
+	my $width      = 0;
+	my @ret;
+	for ( my $i = 0; $i < $breadth; $i++) {
+		if ( $last_color != $color ) {
+			push @ret, $last_color = $color, $width;
+			$width = 0;
+		}
+
+		my @c;
+		my $j = $curve ? $curve->( $i ) : $i;
+		for ( 0..2 ) {
+			$color[$_] = $start[$_] + $j * $delta[$_] for 0..2;
+			$c[$_] = int($color[$_] + .5);
+			$c[$_] = 0xff if $c[$_] > 0xff;
+			$c[$_] = 0    if $c[$_] < 0;
+		}
+		$color = ( $c[0] << 16 ) | ( $c[1] << 8 ) | $c[2];
+		$width++;
+	}
+	push @ret, $color, $width;
+	return \@ret;
+}
+
+sub gradient_bar
+{
+	my ( $self, $x1, $y1, $x2, $y2, $vertical, $gradient ) = @_;
+	($x1,$x2)=($x2,$x1) if $x1 > $x2;
+	($y1,$y2)=($y2,$y1) if $y1 > $y2;
+	my @bar        = ($x1,$y1,$x2,$y2);
+	my ($ptr1,$ptr2) = $vertical ? (0,2) : (1,3);
+	my $max          = $bar[$ptr2];
+	for ( my $i = 0; $i < @$gradient; $i+=2) {
+		$bar[$ptr2] = $bar[$ptr1] + $gradient->[$i+1] - 1;
+		$self->color( $gradient->[$i]);
+		$self->bar( @bar );
+		$bar[$ptr1] = $bar[$ptr2] + 1;
+		last if $bar[$ptr1] > $max;
+	}
+	if ( $bar[$ptr1] <= $max ) {
+		$bar[$ptr2] = $max;
+		$self->bar(@bar);
+	}
+}
+
 sub text_out_bidi
 {
 	if ( $Prima::Bidi::enabled && is_bidi $_[1] ) {
@@ -1276,23 +1352,6 @@ sub rect_bevel
 	my $hw = int( $width / 2);
 	$canvas-> rect3d( $x, $y, $x1, $y1, $hw, @c3d[2,3], $fill);
 	$canvas-> rect3d( $x + $hw, $y + $hw, $x1 - $hw, $y1 - $hw, $width - $hw, @c3d[0,1]);
-}
-
-sub prelight_color
-{
-	my ( $self, $color, $coeff ) = @_;
-	$coeff //= 1.05;
-	$coeff = ($coeff - 1) * 256;
-	$color = $self->map_color($color) if $color & cl::SysFlag;
-	my @channels = map { $_ & 0xff } ($color >> 16), ($color >> 8), $color;
-	for (@channels) {
-		my $amp = ( 256 - $_ ) / 8;
-		$_ += $coeff + $amp;
-		$_ = 255 if $_ > 255;
-		$_ = 0   if $_ < 0;
-	}
-	return ( $channels[0] << 16 ) | ( $channels[1] << 8 ) | $channels[2];
-
 }
 
 # class Window
