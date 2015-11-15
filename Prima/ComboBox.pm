@@ -599,6 +599,7 @@ sub set_list_visible
 	if ( $nlv) {
 		my @gp = $edit-> client_to_screen( 0, -$list-> height);
 		$gp[1] += $edit-> height + $list-> height if $gp[1] < 0;
+		$gp[0] = $::application->width - $list->width if $gp[0] + $list->width > $::application->width;
 		$list-> origin( @gp);
 	}
 	$list-> bring_to_front if $nlv;
