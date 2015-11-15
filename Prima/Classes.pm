@@ -400,7 +400,7 @@ sub stretch_image {
 		@_[3,4], $_[5]-> size, 
 		defined ($_[6]) ? $_[6] : $_[0]-> rop
 	) if $_[5]
-} 
+}
 
 sub rect3d
 {
@@ -408,7 +408,10 @@ sub rect3d
 	my $c = $self-> color;
 	if ( defined $backColor)
 	{
-		if ( $backColor == cl::Back) {
+		if ( ref $backColor ) {
+			my $g = $self-> gradient_realize3d( $x, $y, $x1, $y1, $backColor);
+			$self-> gradient_bar($x + $width, $y + $width, $x1 - $width, $y1 - $width, $backColor->{vertical}, $g);
+		} elsif ( $backColor == cl::Back) {
 			$self-> clear( $x + $width, $y + $width, $x1 - $width, $y1 - $width);
 		} else {
 			$self-> color( $backColor);
@@ -594,12 +597,79 @@ sub prelight_color
 	return ( $channels[0] << 16 ) | ( $channels[1] << 8 ) | $channels[2];
 }
 
-sub calculate_gradient
+sub gradient_polyline_to_points
 {
-	my ( $self, $breadth, $start_color, $end_color, $curve ) = @_;
+	my ($self, $p) = @_;
+	my @map;
+	for ( my $i = 0; $i < @$p - 2; $i+=2) {
+		my ($x1,$y1,$x2,$y2) = @$p[$i..$i+3];
+		my $dx = $x2 - $x1;
+		if ( $dx > 0 ) {
+			my $dy = ($y2 - $y1) / $dx;
+			my $y = $y1;
+			for ( my $x = $x1; $x < $x2; $x++) {
+				$map[$x] = $y;
+				$y += $dy;
+			}
+		} else {
+			$map[$x1] = $y1;
+		}
+	}
+	return \@map;
+}
+
+sub gradient_realize3d
+{
+	my ( $self, $x, $y, $x1, $y1, $request) = @_;
+
+	my $points;
+	my $v       = $request->{vertical};
+	my $dx      = abs($x1 - $x) + 1;
+	my $dy      = abs($y1 - $y) + 1;
+	my $breadth = $v ? $dx : $dy;
+
+	unless ( $request->{points}) {
+		my @spline = (0,0);
+		if ( my $s = $request->{spline} ) {
+			my @s = ref($s) ? @$s : $s;
+			my $n = 1 / ( 1 + @s );
+			my $i = 0;
+			push @spline, map { $breadth * $n * ++$i, $breadth * $_ } @s;
+		}
+		push @spline, $breadth, $breadth;
+
+		my $polyline = ( @spline > 4 ) ? $self-> render_spline( \@spline ) : \@spline;
+		$points = $self-> gradient_polyline_to_points($polyline);
+	}
+
+	my $offsets = $request->{offsets};
+	unless ($offsets) {
+		my @o;
+		my $n = scalar(@{$request->{palette}}) - 1;
+		my $d = 0;
+		for ( my $i = 0; $i < $n; $i++) {
+			$d += 1/$n;
+			push @o, $d;
+		}
+		push @o, 1;
+		$offsets = \@o;
+	}
+
+	return $self-> gradient_calculate(
+		$request->{palette},
+		[ map { $_ * $breadth } @$offsets ],
+		sub { $points->[shift] }
+	);
+}
+
+
+sub _gradient_single
+{
+	my ( $self, $breadth, $start_color, $end_color, $function, $offset ) = @_;
 
 	return [] if $breadth <= 0;
-	
+
+	$offset //= 0;
 	$start_color = $self->map_color($start_color) if $start_color & cl::SysFlag;
 	$end_color   = $self->map_color($end_color)   if $end_color   & cl::SysFlag;
 	my @start = map { $_ & 0xff } ($start_color >> 16), ($start_color >> 8), $start_color;
@@ -619,7 +689,7 @@ sub calculate_gradient
 		}
 
 		my @c;
-		my $j = $curve ? $curve->( $i ) : $i;
+		my $j = $function ? $function->( $offset + $i ) - $offset : $i;
 		for ( 0..2 ) {
 			$color[$_] = $start[$_] + $j * $delta[$_] for 0..2;
 			$c[$_] = int($color[$_] + .5);
@@ -629,7 +699,21 @@ sub calculate_gradient
 		$color = ( $c[0] << 16 ) | ( $c[1] << 8 ) | $c[2];
 		$width++;
 	}
-	push @ret, $color, $width;
+
+	return @ret, $color, $width;
+}
+
+sub gradient_calculate
+{
+	my ( $self, $palette, $offsets, $function ) = @_;
+	my @ret;
+	my $last_offset = 0;
+	$offsets = [ $offsets ] unless ref $offsets;
+	for ( my $i = 0; $i < @$offsets; $i++) {
+		my $breadth = $offsets->[$i] - $last_offset;
+		push @ret, $self->_gradient_single( $breadth, $palette->[$i], $palette->[$i+1], $function, $last_offset);
+		$last_offset = $offsets->[$i];
+	}
 	return \@ret;
 }
 
@@ -1350,7 +1434,7 @@ sub rect_bevel
 	}
 
 	my $hw = int( $width / 2);
-	$canvas-> rect3d( $x, $y, $x1, $y1, $hw, @c3d[2,3], $fill);
+	$canvas-> rect3d( $x, $y, $x1, $y1, $hw, @c3d[2,3], $opt{gradient} // $fill);
 	$canvas-> rect3d( $x + $hw, $y + $hw, $x1 - $hw, $y1 - $hw, $width - $hw, @c3d[0,1]);
 }
 

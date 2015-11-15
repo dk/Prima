@@ -64,8 +64,12 @@ my $gradient = $w->insert( Widget =>
 		my $spline = $canvas-> render_spline( [ 0, 0, @points, $self->size ]);
 		$spline = [ 0, 0, $self->size ] unless @points;
 		my $v      = $vertical->checked;
-		my $points = polyline2points($spline, $v, $self-> size);
-		my $gradient = $self-> calculate_gradient( $v ? $self->width : $self->height, $c1->value, $c2->value, sub { $points->[shift] });
+		my $points = convert_polyline2points($self, $spline, $v, $self-> size);
+		my $gradient = $self-> gradient_calculate(
+			[$c1->value, $c2->value],
+			$v ? $self->width : $self->height,
+			sub { $points->[shift] }
+		);
 		$canvas->gradient_bar( 0,0,$self->size, $v, $gradient);
 
 		my $i;
@@ -172,28 +176,22 @@ sub reset
 
 reset();
 
-sub polyline2points
+sub convert_polyline2points
 {
-	my ($p, $vertical, $width, $height) = @_;
-	my @map;
-	($width, $height) = ($height, $width) unless $vertical;
-	for ( my $i = 0; $i < @$p - 2; $i+=2) {
-		my ($x1,$y1,$x2,$y2) = @$p[$i..$i+3];
-		($x1, $y1, $x2, $y2) = ($y1, $x1, $y2, $x2) unless $vertical;
-		my $dx = $x2 - $x1;
-		if ( $dx > 0 ) {
-			my $dy = ($y2 - $y1) / $dx;
-			my $y = $y1;
-			for ( my $x = $x1; $x < $x2; $x++) {
-				$map[$x] = $y;
-				$y += $dy;
-			}
-		} else {
-			$map[$x1] = $y1;
+	my ($self, $p, $vertical, $width, $height) = @_;
+	unless ($vertical) {
+		($width, $height) = ($height, $width);
+		my @p = @$p;
+		for ( my $i = 0; $i < @$p; $i+=2) {
+			@p[$i+1,$i] = @p[$i,$i+1];
 		}
+		$p = \@p;
 	}
-	$_ = $_ / $height * $width for @map;
-	return \@map;
+	my $map = $self-> gradient_polyline_to_points($p, $width);
+	unless ($vertical) {
+		$_ = $_ / $height * $width for @$map;
+	}
+	return $map;
 }
 
 run Prima;

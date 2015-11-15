@@ -480,9 +480,15 @@ sub on_paint
 		( 0, 0, $size[0] - 1, $size[1] - 1);
 	if ( !$self-> {flat} || $self-> {hilite}) {
 		$self-> rect_bevel( $canvas, @fbar, 
-			fill    => ( $self-> transparent ? undef : $clr[1]),
-			width   => $self-> {borderWidth},
-			concave => ( $_[0]-> { pressed} || $_[0]-> { checked}),
+			gradient => {
+				color    => $clr[1], 
+				palette  => [ $self-> light3DColor, $clr[1], $self-> dark3DColor ],  
+				spline   => [0.45,0.5,0.55],
+				vertical => 0,
+			},
+			fill     => $self-> transparent ? undef : $clr[1],
+			width    => $self-> {borderWidth},
+			concave  => ( $_[0]-> { pressed} || $_[0]-> { checked}),
 		);
 	} else {
 		$canvas-> color( $clr[ 1]);
