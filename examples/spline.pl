@@ -105,7 +105,7 @@ my $w = Prima::MainWindow-> create(
 		@bounds = ( $x, $y);
 	},
 	onMouseDown => sub {
-		my ( $self, $mod, $btn, $x, $y) = @_;
+		my ( $self, $btn, $mod, $x, $y) = @_;
 		my $i;
 		$capture = undef;
 		for ( $i = 0; $i < @points; $i+=2) {
