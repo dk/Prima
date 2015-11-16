@@ -183,8 +183,8 @@ my $gradient = $w->insert( Widget =>
 				$ay > $y - $aperture/2 && $ay < $y + $aperture/2) {
 				if ( $btn == mb::Left ) {
 					$capture = -$i - 1;
-				} elsif ( $btn == mb::Right ) {
-					splice(@colors, 1 + $i, 1);
+				} elsif ( $btn == mb::Right && @colors > 2) {
+					$_-> destroy for splice(@colors, 1 + $i, 1);
 					splice(@offsets, $i, 1);
 				}
 				$self->repaint;
