@@ -252,6 +252,12 @@ my $gradient = $w->insert( Widget =>
 			}
 		}
 	},
+	onMouseLeave => sub {
+		if ( $prelight ) {
+			undef $prelight;
+			repaint();
+		}
+	},
 );
 
 

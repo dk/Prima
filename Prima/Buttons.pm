@@ -482,8 +482,8 @@ sub on_paint
 		$self-> rect_bevel( $canvas, @fbar, 
 			gradient => {
 				color    => $clr[1], 
-				palette  => [ $self-> light3DColor, $clr[1], $self-> dark3DColor ],  
-				spline   => [0.45,0.5,0.55],
+				palette  => [ $self-> dark3DColor, $clr[1], $self-> light3DColor ],  
+				spline   => [0,0.5,1,0.5],
 				vertical => 0,
 			},
 			fill     => $self-> transparent ? undef : $clr[1],

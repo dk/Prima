@@ -631,13 +631,9 @@ sub gradient_realize3d
 	unless ( $request->{points}) {
 		my @spline = (0,0);
 		if ( my $s = $request->{spline} ) {
-			my @s = ref($s) ? @$s : $s;
-			my $n = 1 / ( 1 + @s );
-			my $i = 0;
-			push @spline, map { $breadth * $n * ++$i, $breadth * $_ } @s;
+			push @spline, map { $_ * $breadth } @$s;
 		}
 		push @spline, $breadth, $breadth;
-
 		my $polyline = ( @spline > 4 ) ? $self-> render_spline( \@spline ) : \@spline;
 		$points = $self-> gradient_polyline_to_points($polyline);
 	}
