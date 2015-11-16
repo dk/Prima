@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use subs qw(reset);
-use Prima qw(Application ColorDialog Label Buttons);
+use Prima qw(Application ColorDialog Label Buttons Sliders);
 
 my $w = Prima::MainWindow->new(
 	size => [ 400, 300 ],
@@ -38,6 +38,32 @@ $panel-> insert( Label =>
 	pack   => { side => 'right', },
 );
 
+sub breadth ();
+
+my @colors;
+my @offsets;
+my $add_color;
+$add_color = $panel-> insert( AltSpinButton => 
+	pack   => { side => 'right', padx => 20 },
+	onIncrement => sub {
+		my ( $self, $increment ) = @_;
+		if ( $increment > 0 ) {
+			return if @colors > 10;
+			splice(@colors, -1, 0, $panel-> insert( ColorComboBox => 
+				pack   => { side => 'right', padx => 20, after => $add_color },
+				value  => cl::Black,
+				onChange => \&repaint, 
+			));
+			push @offsets, ( @offsets ? ((breadth - $offsets[-1]) / 2) : (breadth * 0.3) );
+		} elsif ( @colors > 2 ) {
+			my ($c) = splice(@colors, -2, 1);
+			$c->destroy if $c;
+			pop @offsets if $c;
+		}
+		repaint();
+	}
+);
+
 my $c2 = $panel-> insert( ColorComboBox => 
 	pack   => { side => 'right', padx => 20 },
 	value  => cl::Black,
@@ -66,8 +92,8 @@ my $gradient = $w->insert( Widget =>
 		my $v      = $vertical->checked;
 		my $points = convert_polyline2points($self, $spline, $v, $self-> size);
 		my $gradient = $self-> gradient_calculate(
-			[$c1->value, $c2->value],
-			$v ? $self->width : $self->height,
+			[map { $_-> value } @colors ],
+			[ @offsets, breadth ],
 			sub { $points->[shift] }
 		);
 		$canvas->gradient_bar( 0,0,$self->size, $v, $gradient);
@@ -87,6 +113,24 @@ my $gradient = $w->insert( Widget =>
 				$aperture/2, $aperture/2
 			);
 		}
+
+		my $triangle = $v ? 
+			[ $aperture, 0, 0, -$aperture, -$aperture, 0, $aperture, 0 ] :
+			[ 0, $aperture, $aperture, 0, 0, -$aperture, 0, $aperture  ];
+		$c = -1 * ( $prelight // $capture // 1 ) - 1;
+		for ( $i = 0; $i < @offsets; $i++) {
+			my $offset = $offsets[$i];
+			$canvas->translate($v ? ( $offset, $self-> height ) : ( 0, $offset ));
+
+			$canvas->color(($i == $c) ? cl::White : cl::Black);
+			$canvas->lineWidth(3);
+			$canvas->polyline($triangle);
+			$canvas->lineWidth(1);
+			
+			$canvas->color(($i == $c) ? cl::Black : cl::White);
+			$canvas->fillpoly($triangle);
+		}
+		$canvas->translate(0,0);
 
 		$canvas->color(cl::Black);
 		$canvas->lineWidth(3);
@@ -111,9 +155,13 @@ my $gradient = $w->insert( Widget =>
 			$points[$i] = $x   if $points[$i] > $x;
 			$points[$i+1] = $y if $points[$i+1] > $y; 
 		}
+		my $b = $vertical->checked ? $x : $y;
+		for ( $i = 0; $i < @offsets; $i++) { 
+			$offsets[$i] = $b  if $offsets[$i] > $b;
+		}
 	},
 	onMouseDown => sub {
-		my ( $self, $mod, $btn, $x, $y) = @_;
+		my ( $self, $btn, $mod, $x, $y) = @_;
 		my $i;
 		$capture = undef;
 		for ( $i = 0; $i < @points; $i+=2) {
@@ -125,13 +173,29 @@ my $gradient = $w->insert( Widget =>
 					splice(@points, $i, 2);
 				}
 				$self->repaint;
-				last;
+				return;
+			}
+		}
+
+		for ( $i = 0; $i < @offsets; $i++) {
+			my ($ax, $ay) = $vertical->checked ? ( $offsets[$i], $self->height - $aperture/2 ) : ( $aperture/2, $offsets[$i]);
+			if ( $ax > $x - $aperture/2 && $ax < $x + $aperture/2 && 
+				$ay > $y - $aperture/2 && $ay < $y + $aperture/2) {
+				if ( $btn == mb::Left ) {
+					$capture = -$i - 1;
+				} elsif ( $btn == mb::Right ) {
+					splice(@colors, 1 + $i, 1);
+					splice(@offsets, $i, 1);
+				}
+				$self->repaint;
+				return;
 			}
 		}
 	},
 	onMouseClick => sub {
 		my ( $self, $mod, $btn, $x, $y, $dbl) = @_;
 		return unless $dbl;
+		return if @points > 10;
 		push @points, $x, $y;
 		$self->repaint;
 	},
@@ -141,10 +205,19 @@ my $gradient = $w->insert( Widget =>
 	},
 	onMouseMove => sub {
 		my ( $self, $btn, $x, $y) = @_;
-		if (defined $capture) {
+		if (defined $capture && $capture >= 0 ) {
 			my @bounds = $self->size;
 			$points[$capture] = $x if $x >= 0 && $x < $bounds[0];
 			$points[$capture+1] = $y if $y >= 0 && $y < $bounds[1];
+			$self->repaint;
+		} elsif (defined $capture && $capture < 0 ) {
+			my @bounds = $self->size;
+			my $i = -$capture - 1;
+			if ( $vertical->checked ) {
+				$offsets[$i] = $x if $x >= 0 && $x < $bounds[0];
+			} else {
+				$offsets[$i] = $y if $y >= 0 && $y < $bounds[1];
+			}
 			$self->repaint;
 		} else {
 			my $i;
@@ -153,10 +226,19 @@ my $gradient = $w->insert( Widget =>
 				if ( $points[$i] > $x - $aperture && $points[$i] < $x + $aperture && 
 					$points[$i+1] > $y - $aperture && $points[$i+1] < $y + $aperture) {
 					$p = $i;
+					goto FOUND;
+				}
+			}
+			for ( $i = 0; $i < @offsets; $i++) {
+				my ($ax, $ay) = $vertical->checked ? ( $offsets[$i], $self->height - $aperture/2 ) : ( $aperture/2, $offsets[$i]);
+				if ( $ax > $x - $aperture/2 && $ax < $x + $aperture/2 && 
+					$ay > $y - $aperture/2 && $ay < $y + $aperture/2) {
+					$p = -$i - 1;
 					last;
 				}
 			}
-			if (( $p // -1 ) != ($prelight // -1)) {
+		FOUND:
+			if (( $p // -20 ) != ($prelight // -20)) {
 				$prelight = $p;
 				$self->repaint;
 			}
@@ -171,6 +253,11 @@ sub reset
 	@points = map { $w->width * $_, $w->height * $_ } (0.33, 0.66);
 	$c1->value(cl::Black);
 	$c2->value(cl::White);
+	if (@colors > 2) {
+		$_-> destroy for @colors[1..$#colors-1];
+	}
+	@colors  = ( $c1, $c2 );
+	@offsets = ( );
 	repaint;
 }
 
@@ -192,6 +279,11 @@ sub convert_polyline2points
 		$_ = $_ / $height * $width for @$map;
 	}
 	return $map;
+}
+
+sub breadth()
+{
+	$vertical->checked ? $gradient->width : $gradient->height
 }
 
 run Prima;
