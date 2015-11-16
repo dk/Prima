@@ -19,6 +19,13 @@ my $vertical = $panel-> insert( CheckBox =>
 	onClick => \&repaint, 
 );
 
+my $splined = $panel-> insert( CheckBox => 
+	pack   => { side => 'left', padx => 20 },
+	text   => '~Splines',
+	checked => 1,
+	onClick => \&repaint, 
+);
+
 $panel-> insert( Button => 
 	text   => '~Reset',
 	pack   => { side => 'left', padx => 20 },
@@ -87,7 +94,8 @@ my $gradient = $w->insert( Widget =>
 	buffered => 1,
 	onPaint => sub {
 		my ( $self, $canvas ) = @_;
-		my $spline = $canvas-> render_spline( [ 0, 0, @points, $self->size ]);
+		my $spline = [ 0, 0, @points, $self->size ];
+		$spline = $canvas-> render_spline( $spline ) if $splined->checked;
 		$spline = [ 0, 0, $self->size ] unless @points;
 		my $v      = $vertical->checked;
 		my $points = convert_polyline2points($self, $spline, $v, $self-> size);
