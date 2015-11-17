@@ -104,7 +104,10 @@ my $gradient = $w->insert( Widget =>
 			[ @offsets, breadth ],
 			sub { $points->[shift] }
 		);
-		$canvas->gradient_bar( 0,0,$self->size, $v, $gradient);
+		$canvas->gradient_bar( 0,0,$self->size, {
+			vertical => $v, 
+			gradient => $gradient
+		});
 
 		my $i;
 		$canvas->lineWidth(2);
