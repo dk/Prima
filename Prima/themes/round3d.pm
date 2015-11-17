@@ -13,9 +13,14 @@ sub rect3d
 	my $canvas = $self-> {object};
 	if ( defined $backColor) {
 		my $c = $canvas-> color;
-		$canvas-> color( $backColor);
-		$canvas-> bar( $x, $y, $x1, $y1);
+		if ( ref($backColor)) {
+			$canvas->gradient_bar( $x, $y, $x1, $y1, $backColor);
+		} else {
+			$canvas-> color( $backColor);
+			$canvas-> bar( $x, $y, $x1, $y1);
+		}
 		$canvas-> color( $c);
+		
 	}
 	oval3d( $canvas, $x, $y, $x1, $y1, $width, $lColor, $rColor, 40);
 }

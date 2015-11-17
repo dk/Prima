@@ -150,7 +150,6 @@ sub draw_pad
 	}
 
 	my %gradient = (
-		cache      => 1,
 		palette    => \@palette,
 		spline     => \@spline,
 		vertical   => $self->{vertical},

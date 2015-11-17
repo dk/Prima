@@ -409,14 +409,7 @@ sub rect3d
 	if ( defined $backColor)
 	{
 		if ( ref $backColor ) {
-			my $g = $backColor->{gradient} // $self-> gradient_realize3d( 
-				$backColor->{vertical} ? 
-					($x1 - $x - $width * 2) + 1: 
-					($y1 - $y - $width * 2) + 1, 
-				$backColor
-			);
-			$backColor->{gradient} = $g if $backColor->{cache};
-			$self-> gradient_bar($x + $width, $y + $width, $x1 - $width, $y1 - $width, $backColor->{vertical}, $g);
+			$self-> gradient_bar($x + $width, $y + $width, $x1 - $width, $y1 - $width, $backColor);
 		} elsif ( $backColor == cl::Back) {
 			$self-> clear( $x + $width, $y + $width, $x1 - $width, $y1 - $width);
 		} else {
@@ -656,10 +649,8 @@ sub gradient_realize3d
 		$offsets = \@o;
 	}
 	
-	if ( $request->{cache} ) {
-		$request->{points}  = $points;
-		$request->{offsets} = $offsets;
-	}
+	$request->{points}  = $points;
+	$request->{offsets} = $offsets;
 
 	return $self-> gradient_calculate(
 		$request->{palette},
@@ -668,7 +659,7 @@ sub gradient_realize3d
 	);
 }
 
-sub _gradient_single
+sub gradient_calculate_single
 {
 	my ( $self, $breadth, $start_color, $end_color, $function, $offset ) = @_;
 
@@ -716,7 +707,7 @@ sub gradient_calculate
 	$offsets = [ $offsets ] unless ref $offsets;
 	for ( my $i = 0; $i < @$offsets; $i++) {
 		my $breadth = $offsets->[$i] - $last_offset;
-		push @ret, $self->_gradient_single( $breadth, $palette->[$i], $palette->[$i+1], $function, $last_offset);
+		push @ret, $self-> gradient_calculate_single( $breadth, $palette->[$i], $palette->[$i+1], $function, $last_offset);
 		$last_offset = $offsets->[$i];
 	}
 	return \@ret;
@@ -724,11 +715,20 @@ sub gradient_calculate
 
 sub gradient_bar
 {
-	my ( $self, $x1, $y1, $x2, $y2, $vertical, $gradient ) = @_;
+	my ( $self, $x1, $y1, $x2, $y2, $request ) = @_;
+
 	($x1,$x2)=($x2,$x1) if $x1 > $x2;
 	($y1,$y2)=($y2,$y1) if $y1 > $y2;
+
+	my $gradient = $request->{gradient} //= $self-> gradient_realize3d( 
+		$request->{vertical} ? 
+			$x2 - $x1 + 1 :
+			$y2 - $y1 + 1, 
+		$request
+	);
+
 	my @bar        = ($x1,$y1,$x2,$y2);
-	my ($ptr1,$ptr2) = $vertical ? (0,2) : (1,3);
+	my ($ptr1,$ptr2) = $request->{vertical} ? (0,2) : (1,3);
 	my $max          = $bar[$ptr2];
 	for ( my $i = 0; $i < @$gradient; $i+=2) {
 		$bar[$ptr2] = $bar[$ptr1] + $gradient->[$i+1] - 1;
