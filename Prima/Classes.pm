@@ -584,11 +584,17 @@ sub prelight_color
 {
 	my ( $self, $color, $coeff ) = @_;
 	$coeff //= 1.05;
-	$coeff = ($coeff - 1) * 256;
+	return 0 if $coeff <= 0;
 	$color = $self->map_color($color) if $color & cl::SysFlag;
+	if (( $color == 0xffffff && $coeff > 1) || ($color == 0 && $coeff < 1)) {
+		$coeff = 1/$coeff;
+	}
+	$coeff = ($coeff - 1) * 256;
 	my @channels = map { $_ & 0xff } ($color >> 16), ($color >> 8), $color;
+	my ( $below, $above ) = (0,0);
 	for (@channels) {
 		my $amp = ( 256 - $_ ) / 8;
+		$amp -= $amp if $coeff < 0;
 		$_ += $coeff + $amp;
 		$_ = 255 if $_ > 255;
 		$_ = 0   if $_ < 0;
