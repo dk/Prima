@@ -172,7 +172,7 @@ sub draw_pad
 	$cache->{offsets}    = $gradient{offsets};
 	$cache->{gradient}   = $gradient{gradient};
 	$cache->{base_color} = $base_color;
-}		
+}
 
 sub on_paint
 {
