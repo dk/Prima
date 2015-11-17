@@ -1446,7 +1446,7 @@ sub std_draw_text_items
 		push ( @colContainer, [])
 	};
 	for ( $i = 0; $i < scalar @_; $i++) {
-		push ( @{$colContainer[ $_[$i]-> [7]]}, $_[$i]);
+		push ( @{$colContainer[ $_[$i]-> [8]]}, $_[$i]);
 		$drawVeilFoc = $i if $_[$i]-> [6];
 	}
 	my ( $lc, $lbc) = @clrs[0,1];
