@@ -60,7 +60,7 @@ use constant RECT      => 7,8,9,10;
 
 package Prima::AbstractGridViewer;
 use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
+@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller Prima::ListBoxUtils);
 
 {
 my %RNT = (
@@ -837,11 +837,6 @@ sub std_draw_text_cells
 		$self-> indentCellColor,
 		$self-> indentCellBackColor,
 		$self-> gridColor,
-		undef,
-		$self-> color,
-		$self-> prelight_color($self->backColor),
-		$self-> hiliteColor,
-		$self-> prelight_color($self->hiliteBackColor),
 	);
 	my @selection = $self-> selection;
 	my @f = $self-> focused ? $self-> focusedCell : ( -1, -1);
@@ -869,10 +864,10 @@ sub std_draw_text_cells
 			$type |= 4 if $xprelight && $yprelight;
 			if ( defined($last_type) && $type != $last_type) {
 				$canvas-> set(
-					color     => $colors[$last_type * 2],
-					backColor => $colors[$last_type * 2 + 1],
+					color     => $colors[($last_type & 3) * 2],
+					backColor => $colors[($last_type & 3) * 2 + 1],
 				);
-				$canvas-> clear(@$_) for @bars;
+				$self-> draw_item_background($canvas, @$_, $last_type & 4) for @bars;
 				$self-> draw_text_cells( $canvas, \@bars, \@rects, \@cellids, $font_height);
 				@bars = @rects = @cellids = ();
 			}
@@ -885,10 +880,10 @@ sub std_draw_text_cells
 
 		if ( defined $last_type) {
 			$canvas-> set(
-				color     => $colors[$last_type * 2],
-				backColor => $colors[$last_type * 2 + 1],
+				color     => $colors[($last_type & 3) * 2],
+				backColor => $colors[($last_type & 3) * 2 + 1],
 			);
-			$canvas-> clear(@$_) for @bars;
+			$self-> draw_item_background($canvas, @$_, $last_type & 4) for @bars;
 			$self-> draw_text_cells( $canvas, \@bars, \@rects, \@cellids, $font_height);
 		}
 	}

@@ -39,7 +39,7 @@ use Prima qw(Classes IntUtils StdBitmap);
 
 package Prima::OutlineViewer;
 use vars qw(@ISA @images @imageSize);
-@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
+@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller Prima::ListBoxUtils);
 
 use constant DATA     => 0;
 use constant DOWN     => 1;
@@ -1646,11 +1646,13 @@ sub draw_items
 	for ( @$paintStruc) {
 		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused, $prelight) = @$_;
 		if ( $selected || $prelight) {
+			my $bc = $self->backColor;
+			$self-> draw_item_background($canvas, 
+				$left, $bottom, $right, $top, $prelight,
+				$selected ? $self-> hiliteBackColor : $self-> backColor
+			);
+			$self->backColor($bc);
 			my $c = $canvas-> color;
-			my $bk = $selected ? $self-> hiliteBackColor : $self-> backColor;
-			$bk = $self-> prelight_color($bk) if $prelight;
-			$canvas-> color( $bk );
-			$canvas-> bar( $left, $bottom, $right, $top);
 			$canvas-> color( $selected ? $self-> hiliteColor : $c );
 			$canvas-> text_out_bidi( $node-> [0], $left, $bottom);
 			$canvas-> color( $c);
@@ -1683,11 +1685,14 @@ sub draw_items
 	for ( @$paintStruc) {
 		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused, $prelight) = @$_;
 		if ( $selected || $prelight ) {
-			my $c = $canvas-> color;
-			my $bk = $selected ? $self-> hiliteBackColor : $self-> backColor;
-			$bk = $self-> prelight_color($bk) if $prelight;
-			$canvas-> color( $bk );
-			$canvas-> bar( $left, $bottom, $right, $top);
+			my $bc = $self->backColor;
+			$self-> draw_item_background($canvas, 
+				$left, $bottom, $right, $top, $prelight,
+				$selected ? $self-> hiliteBackColor : $bc,
+			);
+			$self->backColor($bc);
+
+			my $c  = $canvas-> color;
 			$canvas-> color( $selected ? $self-> hiliteColor : $c );
 			$canvas-> text_out_bidi( $node-> [0]-> [0], $left, $bottom);
 			$canvas-> color( $c);
@@ -1806,10 +1811,12 @@ sub draw_items
 			$node-> [0]-> [2];
 		if ( $selected || $prelight) {
 			$c = $canvas-> color;
-			my $bk = $selected ? $self-> hiliteBackColor : $self-> backColor;
-			$bk = $self-> prelight_color($bk) if $prelight;
-			$canvas-> color( $bk );
-			$canvas-> bar( $left - $self-> {indent} / 4, $bottom, $right, $top);
+			my $bc = $self->backColor;
+			$self-> draw_item_background($canvas, 
+				$left - $self-> {indent} / 4, $bottom, $right, $top, $prelight,
+				$selected ? $self-> hiliteBackColor : $self-> backColor
+			);
+			$self->backColor($bc);
 			$canvas-> color( $selected ? $self-> hiliteColor : $c );
 		}
 		my $icon = (length( $node-> [0]-> [1]) || $unix) ?

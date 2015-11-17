@@ -415,10 +415,9 @@ onClick   => sub {
 				@cs = ( $canvas-> color, $canvas-> backColor);
 				my $fo = $focused ? $canvas-> hiliteColor : $canvas-> color ;
 				my $bk = $focused ? $canvas-> hiliteBackColor : $canvas-> backColor ;
-				$bk = $self-> prelight_color( $bk ) if $prelight;
 				$canvas-> set( color => $fo, backColor => $bk );
 			}
-			$canvas-> clear( $x, $y + 1, $x2, $y2);
+			$self-> draw_item_background( $canvas, $x, $y + 1, $x2, $y2, $prelight );
 			if ( defined( my $c = $charmap{$itemIndex} )) {
 				$canvas-> text_out( chr($c), $x + $ih / 4, $y + $ih / 4);
 			}

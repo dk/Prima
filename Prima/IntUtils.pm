@@ -471,6 +471,25 @@ sub undoLimit
 	splice @{$self-> {undo}}, 0, $ul - @{$self-> {undo}} if @{$self-> {undo}} > $ul;
 }
 
+package Prima::ListBoxUtils;
+
+sub draw_item_background
+{
+	my ( $self, $canvas, $left, $bottom, $right, $top, $prelight, $back_color ) = @_;
+	if ( $prelight ) {
+		$back_color //= $canvas-> backColor;
+		my $c = $self-> color;
+		$canvas-> gradient_bar( $left, $bottom, $right, $top, {
+			vertical => 0,
+			spline   => [ 0.75, 0.25 ],
+			palette  => [ $self->prelight_color($back_color), $back_color ],
+		});
+		$self-> color($c);
+	} else {
+		$canvas-> backColor($back_color) if $back_color;
+		$canvas-> clear( $left, $bottom, $right, $top);
+	}
+}
 
 1;
 

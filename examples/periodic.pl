@@ -267,10 +267,8 @@ my $g = $w-> insert( Periodic =>
 			$canvas-> color( cl::Black);
 			$canvas-> rectangle( $cx1-1, $cy1-1, $cx2, $cy2);
 			if ( $focused || $prelight ) {
-				my $bk = $focused ? $self-> hiliteBackColor : cl::Back;
-				$bk = $self->prelight_color($bk) if $prelight;
-				$canvas-> color( $bk );
-				$canvas-> bar( $cx1, $cy1, $cx2-1, $cy2-1);
+				$self-> draw_item_background($canvas, $cx1, $cy1, $cx2-1, $cy2-1, $prelight, $focused ? $self-> hiliteBackColor : cl::Back);
+				$canvas-> backColor( cl::Back );
 				$canvas-> color( $focused ? $self-> hiliteColor : cl::Fore);
 			} else {
 				$canvas-> color( $color);

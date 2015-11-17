@@ -55,7 +55,7 @@ eval 'use constant Grid => 1 + MaxId;' unless exists $ci::{Grid};
 
 package Prima::AbstractListViewer;
 use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
+@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller Prima::ListBoxUtils);
 
 use Prima::Classes;
 
@@ -1501,17 +1501,19 @@ sub std_draw_text_items
 		for ( @normals, @selected, @prelight) {
 			my ( $x, $y, $x2, $y2, $first, $last, $selected) = @$_;
 			my $c;
+			my $prelight;
 			if ($selected & 2) {
 				$selected -= 2;
-				$c = $self-> prelight_color($clrs[ $selected ? 3 : 1]);
-			} else {
-				$c = $clrs[ $selected ? 3 : 1];
+				$prelight = 1;
 			}
+
+			$c = $clrs[ $selected ? 3 : 1];
 			if ( $c != $lbc) {
 				$canvas-> backColor( $c);
 				$lbc = $c;
 			}
-			$canvas-> clear( $x, $y, $x2, $y2);
+			
+			$self-> draw_item_background( $canvas, $x, $y, $x2, $y2, $prelight);
 
 			$c = $clrs[ $selected ? 2 : 0];
 			if ( $c != $lc) {

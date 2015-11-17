@@ -262,12 +262,10 @@ sub draw_items
 	$canvas-> backColor( $clrs[3]);
 	$canvas-> clear( @$_) for @selected;
 	if ( @p_normal ) {
-		$canvas-> backColor( $self-> prelight_color($clrs[1]));
-		$canvas-> clear( @$_) for @p_normal;
+		$self-> draw_item_background( $canvas, @$_, 1, $clrs[1]) for @p_normal;
 	}
 	if ( @p_selected ) {
-		$canvas-> backColor( $self-> prelight_color($clrs[3]));
-		$canvas-> clear( @$_) for @p_selected;
+		$self-> draw_item_background( $canvas, @$_, 1, $clrs[3]) for @p_selected;
 	}
 
 	# draw veil

@@ -144,15 +144,14 @@ sub on_drawitem
 	# $canvas-> color( $backColor);
 	# $canvas-> bar( $left, $bottom, $right, $top);
 	my ( $c, $bc);
-	if ( $hilite || $prelight) {
+	if ( $hilite ) {
 		$c = $self-> color;
 		$bc = $self-> backColor;
-		$canvas-> color($hilite ? $self-> hiliteColor : $self->color);
-		my $bk = $hilite ? $self-> hiliteBackColor : $self->backColor;
-		$bk = $self->prelight_color($bk) if $prelight;
-		$canvas-> backColor($bk);
+		$canvas-> color($self-> hiliteColor);
+		$canvas-> backColor($self-> hiliteBackColor);
 	}
-	$canvas-> clear( $left, $bottom, $right, $top);
+
+	$self-> draw_item_background( $canvas, $left, $bottom, $right, $top, $prelight);
 
 	my $type = $item-> {type};
 	# $canvas-> color($color);
@@ -198,7 +197,7 @@ sub on_drawitem
 	$canvas-> rect_focus( $left + $self-> {offset}, $bottom, $right, $top)
 		if $focusedItem;
 
-	if ( $hilite || $prelight) {
+	if ( $hilite ) {
 		$canvas-> color($c);
 		$canvas-> backColor($bc);
 	}
