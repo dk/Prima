@@ -177,7 +177,7 @@ sub init
 		origin     => [ 5, 5],
 		size       => [ 345, 90],
 		name       => 'Example',
-		delegations=> [ $self, 'Paint', 'FontChanged', 'MouseDown', 'MouseUp', 'MouseClick'],
+		delegations=> [ $self, qw(Paint FontChanged MouseDown MouseUp MouseClick MouseEnter MouseLeave)],
 		growMode   => gm::Client,
 		hint       => 'Click to drag font, double-click to edit text',
 	);
@@ -381,6 +381,16 @@ sub Example_MouseClick
 	return unless defined $text;
 	$owner-> sampleText($text);
 	$self-> repaint;
+}
+
+sub Example_MouseEnter
+{
+	$_[1]->backColor($_[1]->prelight_color(cl::Back));
+}
+
+sub Example_MouseLeave
+{
+	$_[1]->backColor(cl::Back);
 }
 
 sub Example_FontChanged

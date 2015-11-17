@@ -1227,6 +1227,24 @@ sub on_paint
 	$self-> common_paint( $canvas);
 }
 
+sub on_mouseenter
+{
+	my $self = shift;
+	return if $self->{locked};
+	local $self->{syncColoring} = 1;
+	$self->{prelight} = 1;
+	$self->backColor( $self->prelight_color( $self-> prf('backColor') ));
+}
+
+sub on_mouseleave
+{
+	my $self = shift;
+	return if $self->{locked} && !$self->{prelight};
+	local $self->{syncColoring} = 1;
+	delete $self->{prelight};
+	$self->backColor( $self-> prf('backColor'));
+}
+
 sub update_children_geometry
 {
 	my ($self, $ox, $oy, $x, $y) = @_;
