@@ -1439,7 +1439,7 @@ sub rect_bevel
 	}
 
 	if ( my $g = $opt{gradient} ) {
-		for (@{$g->{palette} // []}, $g->{color}) {
+		for (@{$g->{palette} // []}) {
 			$_ = $self->map_color($_) if $_ & cl::SysFlag;
 		}
 	}
