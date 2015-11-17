@@ -333,7 +333,7 @@ sub Day_MouseMove
 	unless ($self-> {mouseTransaction}) {
 		if (( $self->{prelight} // -1 ) != ( $day // -1 )) {
 			$self->{prelight} = $day;
-			$self-> repaint;
+			$self-> invalidate_rect( 2, 2, $self-> width - 3, $self-> height - $self-> {Y} - 3);
 		}
 		return;
 	}
