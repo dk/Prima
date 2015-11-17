@@ -134,18 +134,54 @@ sub on_size
 	$_[0]-> reset;
 }
 
+sub draw_pad
+{
+	my ( $self, $canvas, $part, $base_color, $cache) = @_;
+
+	if ( defined $self->{prelight} && $self->{prelight} eq $part && $self->enabled ) {
+		$base_color = $self-> prelight_color($base_color, 1.25);
+	}
+
+	my @palette = ( $base_color, $self->dark3DColor );
+	my @spline  = ( 1, 0 );
+	unless ($self-> { vertical } ) {
+		@palette = reverse @palette;
+		@spline  = reverse @spline;
+	}
+
+	my %gradient = (
+		cache      => 1,
+		palette    => \@palette,
+		spline     => \@spline,
+		vertical   => $self->{vertical},
+		points     => $cache->{points},
+		offsets    => $cache->{offsets},
+	);
+
+	if ( defined($cache->{base_color}) && $base_color == $cache->{base_color}) {
+		$gradient{gradient} = $cache->{gradient};
+	}
+
+	$self-> rect_bevel( $canvas, @{$self-> {$part}-> {rect}},
+		gradient=> \%gradient,
+		width   => 2, 
+		fill    => $base_color,
+		concave => $self->{$part}->{pressed},
+	);
+
+	$cache->{points}     = $gradient{points};
+	$cache->{offsets}    = $gradient{offsets};
+	$cache->{gradient}   = $gradient{gradient};
+	$cache->{base_color} = $base_color;
+}		
+
 sub on_paint
 {
 	my ($self,$canvas) = @_;
 	my @clr;
 	my @c3d = ( $self-> light3DColor, $self-> dark3DColor);
-	my ($prelightPart, $prelightColor) = ('');
 	if ( $self-> enabled) {
 		@clr = ($self-> color, $self-> backColor);
-		if ($self->{prelight} && $self-> {$self->{prelight}}-> { enabled}) {
-			$prelightColor = $self-> prelight_color($clr[1], 1.25);
-			$prelightPart = $self->{prelight};
-		}
 	} else {
 		@clr = ($self-> disabledColor, $self-> disabledBackColor);
 	}
@@ -159,12 +195,9 @@ sub on_paint
 	$canvas-> color( $c3d[1]);
 	$canvas-> line( 0, $maxy, $maxx, $maxy);
 	$canvas-> line( 0, 0, 0, $maxy);
+	my %pad_cache;
 	{
-		$self-> rect_bevel( $canvas, @{$self-> {b1}-> {rect}}, 
-			width   => 2, 
-			fill    => ($prelightPart eq 'b1') ? $prelightColor : $clr[1],
-			concave => $self->{b1}->{pressed},
-		);
+		$self-> draw_pad( $canvas, b1 => $clr[1], \%pad_cache);
 		$canvas-> color( $self-> {b1}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b1}-> { pressed} ? 1 : 0;
 		my @spot = $v ? (
@@ -179,11 +212,7 @@ sub on_paint
 		$canvas-> fillpoly( [ @spot]);
 	}
 	{
-		$self-> rect_bevel( $canvas, @{$self-> {b2}-> {rect}}, 
-			width   => 2, 
-			fill    => ($prelightPart eq 'b2') ? $prelightColor : $clr[1],
-			concave => $self->{b2}->{pressed},
-		);
+		$self-> draw_pad( $canvas, b2 => $clr[1], \%pad_cache);
 		$canvas-> color( $self-> {b2}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b2}-> { pressed} ? 1 : 0;
 		my @spot = $v ? (
@@ -223,11 +252,7 @@ sub on_paint
 			}
 		}
 
-		$self-> rect_bevel( $canvas, @rect,
-			width   => 2, 
-			fill    => ($prelightPart eq 'tab') ? $prelightColor : $clr[1],
-			concave => $self->{tab}->{pressed},
-		);
+		$self-> draw_pad( $canvas, tab => $clr[1], \%pad_cache);
 		if ( $self-> {minThumbSize} > 8 && $self->{style} ne 'xp')
 		{
 			if ( $v)

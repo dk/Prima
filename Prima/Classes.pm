@@ -409,7 +409,13 @@ sub rect3d
 	if ( defined $backColor)
 	{
 		if ( ref $backColor ) {
-			my $g = $self-> gradient_realize3d( $x, $y, $x1, $y1, $backColor);
+			my $g = $backColor->{gradient} // $self-> gradient_realize3d( 
+				$backColor->{vertical} ? 
+					($x1 - $x - $width * 2) + 1: 
+					($y1 - $y - $width * 2) + 1, 
+				$backColor
+			);
+			$backColor->{gradient} = $g if $backColor->{cache};
 			$self-> gradient_bar($x + $width, $y + $width, $x1 - $width, $y1 - $width, $backColor->{vertical}, $g);
 		} elsif ( $backColor == cl::Back) {
 			$self-> clear( $x + $width, $y + $width, $x1 - $width, $y1 - $width);
@@ -603,11 +609,12 @@ sub gradient_polyline_to_points
 	my @map;
 	for ( my $i = 0; $i < @$p - 2; $i+=2) {
 		my ($x1,$y1,$x2,$y2) = @$p[$i..$i+3];
+		$x1 = 0 if $x1 < 0;
 		my $dx = $x2 - $x1;
 		if ( $dx > 0 ) {
 			my $dy = ($y2 - $y1) / $dx;
 			my $y = $y1;
-			for ( my $x = $x1; $x < $x2; $x++) {
+			for ( my $x = $x1; $x <= $x2; $x++) {
 				$map[$x] = $y;
 				$y += $dy;
 			}
@@ -620,26 +627,24 @@ sub gradient_polyline_to_points
 
 sub gradient_realize3d
 {
-	my ( $self, $x, $y, $x1, $y1, $request) = @_;
+	my ( $self, $breadth, $request) = @_;
 
-	my $points;
-	my $v       = $request->{vertical};
-	my $dx      = abs($x1 - $x) + 1;
-	my $dy      = abs($y1 - $y) + 1;
-	my $breadth = $v ? $dx : $dy;
+	my ($offsets, $points);
 
-	unless ( $request->{points}) {
+	unless ( $points = $request->{points}) {
 		my @spline = (0,0);
 		if ( my $s = $request->{spline} ) {
 			push @spline, map { $_ * $breadth } @$s;
 		}
+		if ( my $s = $request->{poly} ) {
+			push @spline, map { $_ * $breadth } @$s;
+		}
 		push @spline, $breadth, $breadth;
-		my $polyline = ( @spline > 4 ) ? $self-> render_spline( \@spline ) : \@spline;
+		my $polyline = ( @spline > 4 && $request->{spline} ) ? $self-> render_spline( \@spline ) : \@spline;
 		$points = $self-> gradient_polyline_to_points($polyline);
 	}
 
-	my $offsets = $request->{offsets};
-	unless ($offsets) {
+	unless ($offsets = $request->{offsets}) {
 		my @o;
 		my $n = scalar(@{$request->{palette}}) - 1;
 		my $d = 0;
@@ -650,6 +655,11 @@ sub gradient_realize3d
 		push @o, 1;
 		$offsets = \@o;
 	}
+	
+	if ( $request->{cache} ) {
+		$request->{points}  = $points;
+		$request->{offsets} = $offsets;
+	}
 
 	return $self-> gradient_calculate(
 		$request->{palette},
@@ -657,7 +667,6 @@ sub gradient_realize3d
 		sub { $points->[shift] }
 	);
 }
-
 
 sub _gradient_single
 {
