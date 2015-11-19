@@ -480,7 +480,7 @@ sub on_mousemove
 	unless (defined $who) {
 		my $who = $self-> translate_point( $x, $y);
 		my $prelight;
-		if ( $self->enabled && (($who // '') =~ /^(b1|b2|tab)$/)) {
+		if ( $self->enabled && (($who // '') =~ /^(b1|b2|tab)$/) && $self-> {$who}-> {enabled}) {
 			$prelight = $who;
 		} else {
 			$prelight = undef;
