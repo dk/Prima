@@ -266,6 +266,7 @@ sub ffind
 	my @ret;
 	File::Find::finddepth( sub {
 		return unless -f and m/$mask/;
+		return if /\.swp$/;
 		my $dir = $File::Find::dir;
 		$dir =~ s/^\.[\\\/]?//;
 		return if $dir =~ /^blib/;
