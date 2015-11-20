@@ -95,6 +95,11 @@ static GTFStruct widget_types[] = {
 	{ GT(widget),       "GtkWidget",         wcApplication , &guts. default_font },  
 };
 #undef GT
+
+#if PERL_REVISION == 5 && PERL_VERSION == 20
+/* perl bug in 5.20.0, see more at https://rt.perl.org/Ticket/Display.html?id=122105 */
+#define PERL_PROTECT_LOCALE 1
+#endif
    
 Display*
 prima_gtk_init(void)
@@ -105,6 +110,9 @@ prima_gtk_init(void)
 	Color ** stdcolors;
 	PangoWeight weight;
 	PangoStyle style;
+#ifdef PERL_PROTECT_LOCALE
+	char lc_all[1024], *plc_all;
+#endif
 
 	switch ( gtk_initialized) {
 	case -1:
@@ -113,6 +121,11 @@ prima_gtk_init(void)
 		return gdk_x11_display_get_xdisplay(display);
 	}
 
+
+#ifdef PERL_PROTECT_LOCALE
+	if ((plc_all = setlocale( LC_ALL, NULL )))
+		strncpy( lc_all, plc_all, 1024);
+#endif
 	if ( !gtk_parse_args (&argc, NULL) || (display = gdk_display_open_default_libgtk_only()) == NULL) {
 		gtk_initialized = -1;
 		return false;
@@ -120,6 +133,9 @@ prima_gtk_init(void)
 		gtk_initialized = 1;
    		XSetErrorHandler( guts.main_error_handler );
 		ret = gdk_x11_display_get_xdisplay(display);
+#ifdef PROTECT_LOCALE
+		if (plc_all) setlocale( LC_ALL, lc_all );
+#endif
 	}
 
 	settings  = gtk_settings_get_default();
