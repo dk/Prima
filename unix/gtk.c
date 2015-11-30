@@ -96,7 +96,7 @@ static GTFStruct widget_types[] = {
 };
 #undef GT
 
-#if PERL_REVISION == 5 && PERL_VERSION == 20
+#if 1 || (PERL_REVISION == 5 && PERL_VERSION == 20)
 /* perl bug in 5.20.0, see more at https://rt.perl.org/Ticket/Display.html?id=122105 */
 #define PERL_PROTECT_LOCALE 1
 #endif
