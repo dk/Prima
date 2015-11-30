@@ -14,7 +14,7 @@ ok( exists $rc{'Text'} && exists $rc{'Image'}, "predefined formats" );
 
 SKIP: {
 $::application->begin_paint;
-skip "rdesktop", 8 if $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid;
+skip "rdesktop", 9 if $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid;
 $::application->end_paint;
 
 sub try(&$)
