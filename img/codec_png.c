@@ -152,7 +152,7 @@ static ImgCodecInfo codec_info = {
 #ifdef PNG_LIBPNG_VER_MINOR
    PNG_LIBPNG_VER_MINOR, 
 #else
-   PNG_LIBPNG_VER % 10000,
+   (PNG_LIBPNG_VER % 10000) / 100,
 #endif
    /* version */
    pngext,  /* extension */
@@ -1256,6 +1256,23 @@ void
 apc_img_codec_png( void )
 {
    struct ImgCodecVMT vmt;
+
+   int ver_release=
+#ifdef PNG_LIBPNG_VER_RELEASE
+   PNG_LIBPNG_VER_RELEASE
+#else
+   PNG_LIBPNG_VER % 100
+#endif
+   ;
+
+   if ( png_access_version_number() != codec_info.versionMaj * 10000 + codec_info.versionMin * 100 + ver_release) {
+      unsigned int v = (unsigned int) png_access_version_number();
+      warn("Application built with libpng-%d.%d.%d but running with %d.%d.%d\n", 
+         codec_info.versionMaj, codec_info.versionMin, ver_release,
+	 v / 10000, (v % 10000) / 100, v % 100);
+      return;
+   }
+
    memcpy( &vmt, &CNullImgCodecVMT, sizeof( CNullImgCodecVMT));
 
    vmt. init          = init;
