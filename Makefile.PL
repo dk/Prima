@@ -1250,7 +1250,7 @@ sub setup_xft
 	my @pre_xft_incpath = @INCPATH;
 
 	if ( $use_pkgconfig ) {
-		my @packages = map { pkgconfig($_) ? 1 : undef } (qw(freetype2 fontconfig xrender xft));
+		my @packages = map { pkgconfig($_) ? 1 : () } (qw(freetype2 fontconfig xrender xft));
 		if ( @packages != $NEED_XFT ) {
 			$cmd_options{WITH_XFT} = 0;
 			@LIBS    = @pre_xft_libs;
