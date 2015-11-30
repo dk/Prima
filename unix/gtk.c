@@ -151,7 +151,7 @@ prima_gtk_init(void)
 			s->prima_class == wcButton
 		) ? GTK_STATE_ACTIVE : GTK_STATE_SELECTED;
 		if ( t == NULL ) {
-			warn("cannot query gtk style for %s\n", s->name);
+			Pdebug("cannot query gtk style for %s\n", s->name);
 			t = gtk_rc_get_style_by_paths(settings, NULL, NULL, GTK_TYPE_WIDGET);
 			if ( !t ) continue;
 		}
