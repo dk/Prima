@@ -1009,7 +1009,7 @@ Application_wantUnicodeInput( Handle self, Bool set, Bool want_ui)
 
 void   Application_update_sys_handle( Handle self, HV * profile) {}
 Bool   Application_get_capture( Handle self) { return false; }
-void   Application_set_capture( Handle self, Bool capture, Handle confineTo) {}
+Bool   Application_set_capture( Handle self, Bool capture, Handle confineTo) { return false; }
 void   Application_set_centered( Handle self, Bool x, Bool y) {}
 
 Bool   Application_tabStop( Handle self, Bool set, Bool tabStop)       { return false; }

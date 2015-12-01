@@ -121,7 +121,7 @@ object Prima::Application( Prima::Widget)
    method Handle get_widget_from_point( Point p) => apc_application_get_widget_from_point;
 
    method void   set( HV * profile);
-   method void   set_capture( Bool capture, Handle confineTo);
+   method Bool   set_capture( Bool capture, Handle confineTo);
    method void   set_centered( Bool x, Bool y);
    method void   set_font( Font font);
    method void   set_hint_font( Font hintFont);

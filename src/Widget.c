@@ -1823,11 +1823,11 @@ Widget_get_virtual_size( Handle self)
 
 /* set_props() */
 
-void
+Bool
 Widget_set_capture( Handle self, Bool capture, Handle confineTo)
 {
-   if ( opt_InPaint) return;
-   apc_widget_set_capture( self, capture, confineTo);
+   if ( opt_InPaint) return false;
+   return apc_widget_set_capture( self, capture, confineTo);
 }
 
 void

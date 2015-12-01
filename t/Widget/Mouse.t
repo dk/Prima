@@ -54,9 +54,12 @@ $c-> mouse_event( cm::MouseClick, mb::Left, 0, 1, 2, 1, 0);
 ok( get_flag && scalar @keydata, "doubleclick" );
 
 my @ppx = $c-> pointerPos;
-$c-> capture(1);
-$c-> focus;
-ok( $c-> capture, "capture" );
+
+SKIP: {
+	$c-> capture(1) or skip "Can't capture", 1;
+	$c-> focus;
+	ok( $c-> capture, "capture" );
+}
 
 SKIP: {
 	$::application->begin_paint;

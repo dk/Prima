@@ -208,7 +208,7 @@ object Prima::Widget( Prima::Drawable)
    public   void     get_widgets();
 
 # properties write methods
-   method   void     set_capture( Bool capture, Handle confineTo = nilHandle);
+   method   Bool     set_capture( Bool capture, Handle confineTo = nilHandle);
    method   void     set_centered( Bool x, Bool y);
    method   void     set_font( Font font);
    method   void     set_popup_font( Font font);
