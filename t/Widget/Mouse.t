@@ -4,8 +4,6 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 10;
-
 reset_flag;
 my @keydata = ();
 my $window = create_window();
@@ -17,6 +15,11 @@ my $c = $window-> insert( Widget =>
        onMouseMove  => sub { set_flag; },
        onMouseClick => sub { set_flag; push( @keydata, [@_]);},
 );
+
+plan skip_all => "can't capture" unless $c->capture(1);
+$c->capture(0);
+
+plan tests => 10;
 
 $c-> mouse_event( cm::MouseDown, mb::Left, 0, 1, 2, 0, 0);
 @keydata = grep { $$_[1] == mb::Left && $$_[2] == 0 && $$_[3] == 1 && $$_[4] == 2} @keydata;
