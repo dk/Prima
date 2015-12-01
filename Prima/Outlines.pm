@@ -640,45 +640,56 @@ sub Hinter_MouseLeave
 	$_[0]-> makehint(0);
 }
 
+sub update_prelight
+{
+	my ( $self, $x, $y ) = @_;
+
+	return if $self->{mouseTransaction};
+	return unless $self->enabled;
+
+	my @size = $self-> size;
+	my @a    = $self-> get_active_area( 0, @size);
+
+	my $item   = $self-> point2item( $y, $size[1]);
+	my ( $rec, $lev) = $self-> get_item( $item);
+	if ( 
+		!$rec || 
+		( $x < -$self-> {offset} + ($lev + 2) * $self-> {indent} + $self-> {indents}-> [0])
+	) {
+		$self-> makehint( 0);
+	} elsif (( $y >= $a[3]) || ( $y <= $a[1] + $self-> {itemHeight} / 2)) {
+		$self-> makehint( 0);
+	} else {
+		$y = $a[3] - $y; 
+		$item = $self-> {topItem} + int( $y / $self-> {itemHeight}); 
+	}
+	
+	if ( $self-> {showItemHint} ) {
+		if ( defined $item ) {
+			$self-> makehint( 1, $self-> {topItem} + int( $y / $self-> {itemHeight}));
+		} else {
+			$self-> makehint( 0);
+		}
+	}
+	
+	if (( $self->{prelight} // -1) != ( $item // -1)) {
+		my @redraw = (
+			$self->{prelight} // (),
+			$item // ()
+		);
+		$self->{prelight} = $item;
+		$self->redraw_items( @redraw );
+	}
+}
+
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
+	return $self->update_prelight($x,$y) unless $self-> {mouseTransaction};
+	
 	my @size = $self-> size;
 	my @a    = $self-> get_active_area( 0, @size);
-	if ( !defined $self-> {mouseTransaction} && $self->enabled) {
-		my $item   = $self-> point2item( $y, $size[1]);
-		my ( $rec, $lev) = $self-> get_item( $item);
-		if ( 
-			!$rec || 
-			( $x < -$self-> {offset} + ($lev + 2) * $self-> {indent} + $self-> {indents}-> [0])
-		) {
-			$self-> makehint( 0);
-		} elsif (( $y >= $a[3]) || ( $y <= $a[1] + $self-> {itemHeight} / 2)) {
-			$self-> makehint( 0);
-		} else {
-			$y = $a[3] - $y; 
-			$item = $self-> {topItem} + int( $y / $self-> {itemHeight}); 
-		}
 
-		if ( $self-> {showItemHint} ) {
-			if ( defined $item ) {
-				$self-> makehint( 1, $self-> {topItem} + int( $y / $self-> {itemHeight}));
-			} else {
-				$self-> makehint( 0);
-			}
-		}
-
-		if (( $self->{prelight} // -1) != ( $item // -1)) {
-			my @redraw = (
-				$self->{prelight} // (),
-				$item // ()
-			);
-			$self->{prelight} = $item;
-			$self->redraw_items( @redraw );
-		}
-
-		return;
-	}
 	my $item = $self-> point2item( $y, $size[1]);
 	if ( $y >= $a[3] || $y < $a[1] || $x >= $a[2] || $x < $a[0])
 	{
@@ -746,6 +757,7 @@ sub on_mousewheel
 	my $newTop = $self-> topItem - $z;
 	my $maxTop = $self-> {count} - $self-> {rows};
 	$self-> topItem( $newTop > $maxTop ? $maxTop : $newTop);
+	$self-> update_prelight($x,$y);
 }
 
 sub on_mouseleave

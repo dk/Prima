@@ -605,28 +605,32 @@ sub on_mouseclick
 	$self-> notify(q(Click)) if $self-> focusedItem >= 0;
 }
 
+sub update_prelight
+{
+	my ( $self, $x, $y ) = @_;
+	return if $self->{mouseTransaction};
+	return unless $self->enabled;
+
+	my @a = $self-> get_active_area;
+	my $prelight;
+	if ( $y >= $a[1] && $y < $a[3] && $x >= $a[0] && $x < $a[2]) {
+		my ($item, $aux) = $self-> point2item( $x, $y);
+		$prelight = ($item >= 0) ? $item : undef unless defined $aux;
+	}
+	if ( ( $self->{prelight} // -1 ) != ( $prelight // -1 )) {
+		my @redraw = (
+			$self->{prelight} // (),
+			$prelight // ()
+		);
+		$self->{prelight} = $prelight;
+		$self->redraw_items( @redraw );
+	}
+}
+
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
-	unless (defined $self-> {mouseTransaction}) {
-		if ( $self-> enabled ) {
-			my @a = $self-> get_active_area;
-			my $prelight;
-			if ( $y >= $a[1] && $y < $a[3] && $x >= $a[0] && $x < $a[2]) {
-				my ($item, $aux) = $self-> point2item( $x, $y);
-				$prelight = ($item >= 0) ? $item : undef unless defined $aux;
-			}
-			if ( ( $self->{prelight} // -1 ) != ( $prelight // -1 )) {
-				my @redraw = (
-					$self->{prelight} // (),
-					$prelight // ()
-				);
-				$self->{prelight} = $prelight;
-				$self->redraw_items( @redraw );
-			}
-		}
-		return;
-	}
+	return $self-> update_prelight($x,$y) unless defined $self-> {mouseTransaction};
 	
 	my $bw = $self-> { borderWidth};
 	my ($item, $aux) = $self-> point2item( $x, $y);
@@ -730,6 +734,7 @@ sub on_mousewheel
 	my $maxTop = $self-> {count} - $self-> {whole_rows} * $cols;
 	
 	$self-> topItem( $newTop > $maxTop ? $maxTop : $newTop);
+	$self-> update_prelight($x,$y); 
 }
 
 sub on_size

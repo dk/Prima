@@ -1077,32 +1077,38 @@ sub on_mousedown
 	} 
 }
 
+sub update_prelight_and_pointer
+{
+	my ( $self, $x, $y) = @_;
+	return if $self-> {mouseTransaction};
+	return unless $self-> enabled;
+	
+	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y );
+	my @prelight = (-1,-1);
+	my @old      = @{$self->{prelight} // [-1,-1]};
+	if ( defined($hints{x_grid}) && $self-> allowChangeCellWidth) {
+		$self-> pointerType( cr::SizeWE);
+	} elsif ( defined($hints{y_grid}) && $self-> allowChangeCellHeight) { 
+		$self-> pointerType( cr::SizeNS);
+	} else {
+		@prelight = ($cx, $cy) if $hints{normal};
+		$self-> pointerType( cr::Default);
+	}
+
+	if ( join('.', @prelight ) ne join('.', @old)) {
+		$self->{prelight} = ( $prelight[0] < 0 ) ? undef : \@prelight;
+		$self->redraw_cell( @old )      if $old[0]      >= 0;
+		$self->redraw_cell( @prelight ) if $prelight[0] >= 0;
+	}
+}
+
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
-	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y, defined($self-> {mouseTransaction}));
 	$self-> clear_event;
-	unless ( defined $self-> {mouseTransaction}) {
-		my @prelight = (-1,-1);
-		my @old      = @{$self->{prelight} // [-1,-1]};
-		if ( defined($hints{x_grid}) && $self-> allowChangeCellWidth) {
-			$self-> pointerType( cr::SizeWE);
-		} elsif ( defined($hints{y_grid}) && $self-> allowChangeCellHeight) { 
-			$self-> pointerType( cr::SizeNS);
-		} else {
-			my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y);
-			@prelight = ($cx, $cy) if $hints{normal};
-			$self-> pointerType( cr::Default);
-		}
-
-		if ( join('.', @prelight ) ne join('.', @old)) {
-			$self->{prelight} = ( $prelight[0] < 0 ) ? undef : \@prelight;
-			$self->redraw_cell( @old )      if $old[0]      >= 0;
-			$self->redraw_cell( @prelight ) if $prelight[0] >= 0;
-		}
-
-		return;
-	}
+	return $self-> update_prelight_and_pointer($x,$y) unless $self-> {mouseTransaction};
+	
+	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y, defined($self-> {mouseTransaction}));
 
 	if ( $self-> {mouseTransaction} == 1) {
 		unless ( $hints{normal}) {
@@ -1214,6 +1220,7 @@ sub on_mousewheel
 	$z *= ( $self-> {visibleRows} || 1) if $mod & km::Ctrl;
 	my $newTop = $self-> {topCell} - $z;
 	$self-> topCell( $newTop);
+	$self-> update_prelight_and_pointer($x, $y);
 }
 
 sub on_mouseleave
