@@ -92,12 +92,16 @@ sub _gfx_mode
 {
 	my $self = shift;
 	if ( $self-> {mode} eq 'auto') {
-		return (
+		return 1 if
 			$^O =~ /win32/i && 
 			$::application-> get_system_value( sv::CompositeDisplay ) &&
 			$self-> {canvas} && 
-			$self-> {canvas}-> isa('Prima::Widget')
-		) ? 1 : 0;
+			$self-> {canvas}-> isa('Prima::Widget');
+		return 1 if
+			$^O =~ /darwin/i && 
+			$self-> {canvas} && 
+			$self-> {canvas}-> isa('Prima::Widget');
+		return 0;
 	} else {
 		return ( $self-> {mode} eq 'full' ) ? 1 : 0;
 	}
