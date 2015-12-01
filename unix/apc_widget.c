@@ -726,7 +726,7 @@ scroll( Handle owner, Handle self, Point * delta)
    return 0;
 }
 
-Bool
+int
 apc_widget_scroll( Handle self, int horiz, int vert,
 		   Rect *confine, Rect *clip, Bool withChildren)
 {
@@ -855,7 +855,7 @@ apc_widget_scroll( Handle self, int horiz, int vert,
       CWidget(self)-> first_that( self, (void*)scroll, &delta);
    }
    
-   return true;
+   return scrExpose;
 }
 
 Bool

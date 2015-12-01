@@ -2138,7 +2138,19 @@ apc_widget_map_color( Handle self, Color color);
 extern Bool
 apc_widget_map_points( Handle self, Bool toScreen, int count, Point * points);
 
-extern Bool
+/* scroll results */
+#define SCR(const_name) CONSTANT(scr,const_name)
+START_TABLE(scr,UV)
+#define   scrError         0
+SCR(Error)
+#define   scrNoExpose      1
+SCR(NoExpose)
+#define   scrExpose        2
+SCR(Expose)
+END_TABLE(scr,UV)
+#undef BS
+
+extern int
 apc_widget_scroll( Handle self, int horiz, int vert,
                    Rect *confine, Rect *clip,
                    Bool scrollChildren);

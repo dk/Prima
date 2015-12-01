@@ -117,6 +117,8 @@ package
     gt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# geometry manager types
 package 
     ps; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# paint states
+package 
+    scr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# scroll() results
 
 1;
 

@@ -27,20 +27,25 @@ my $ww = $window-> insert( Widget => origin => [ 0, 0] => size => [ 8, 8],
                            });
 ok( wait_flag, "onPaint message" );
 reset_flag;
+
 $ww-> repaint;
 $ww-> update_view;
 ok( get_flag, "update_view" );
 
 reset_flag;
-$ww-> scroll( 2, 2);
-$ww-> update_view;
-ok( get_flag, "scroll" );
+SKIP: {
+	my $p = $ww-> scroll( 2, 2);
+	skip "Window is still not top-level, obscured by something?", 3 if $p != scr::Expose;
 
-$ww-> invalidate_rect( 0, 0, 2, 2);
-my @cr = $ww-> get_invalid_rect;
-is_deeply( \@cr, [0,0,2,2], "query invalid area" );
-$ww-> update_view;
-is_deeply( \@rcrect, [0,0,1,1], "invalid area consistency" );
+	$ww-> update_view;
+	ok( get_flag, "scroll" );
+	
+	$ww-> invalidate_rect( 0, 0, 2, 2);
+	my @cr = $ww-> get_invalid_rect;
+	is_deeply( \@cr, [0,0,2,2], "query invalid area" );
+	$ww-> update_view;
+	is_deeply( \@rcrect, [0,0,1,1], "invalid area consistency" );
+}
 
 $ww-> buffered(1);
 $ww-> set( onPaint => sub {

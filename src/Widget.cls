@@ -175,7 +175,7 @@ object Prima::Widget( Prima::Drawable)
    method   void     repaint();
    method   Bool     responsive()                    => apc_widget_is_responsive;
    public   void     screen_to_client();
-   public   void     scroll( int dx, int dy, Rect *confine, Rect *clip, Bool withChildren);
+   public   int      scroll( int dx, int dy, Rect *confine, Rect *clip, Bool withChildren);
    method   void     send_to_back();
    method   void     set( HV * profile);
    method   void     setup();

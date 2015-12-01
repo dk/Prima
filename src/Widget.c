@@ -1299,18 +1299,20 @@ Widget_repaint( Handle self)
 }
 
 /*::s */
-void
+int
 Widget_scroll( Handle self, int dx, int dy, Rect *confine, Rect *clip, Bool withChildren)
 {
    enter_method;
    if ( !opt_InPaint && ( var-> stage == csNormal) && !my-> get_locked( self))
-      apc_widget_scroll( self, dx, dy, confine, clip, withChildren);
+      return apc_widget_scroll( self, dx, dy, confine, clip, withChildren);
+   return scrError;
 }
 
-void
+int
 Widget_scroll_REDEFINED( Handle self, int dx, int dy, Rect *confine, Rect *clip, Bool withChildren)
 {
    warn("Invalid call of Widget::scroll");
+   return scrError;
 }
 
 XS( Widget_scroll_FROMPERL)
@@ -1318,7 +1320,7 @@ XS( Widget_scroll_FROMPERL)
    dPROFILE;
    dXSARGS;
    Handle self;
-   int dx, dy;
+   int dx, dy, ret;
    Rect *confine = nil;
    Rect *clip = nil;
    Rect confine_rect, clip_rect;
@@ -1349,11 +1351,12 @@ XS( Widget_scroll_FROMPERL)
    }
    if ( pexist( withChildren)) withChildren = pget_B( withChildren);
    sv_free((SV*)profile);
-   Widget_scroll( self, dx, dy, confine, clip, withChildren);
+   ret = Widget_scroll( self, dx, dy, confine, clip, withChildren);
    SPAGAIN;
    SP -= items;
+   XPUSHs( sv_2mortal( newSViv( ret)));
    PUTBACK;
-   XSRETURN_EMPTY;
+   return;
 invalid_usage:
    croak ("Invalid usage of %s", "Widget::scroll");
 }

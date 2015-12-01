@@ -2233,13 +2233,14 @@ apc_widget_invalidate_rect( Handle self, Rect * rect)
    return true;
 }
 
-Bool
+int
 apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Rect *cr, Bool scrollChildren)
 {
    PRECT pRect = r ? map_Rect( self, r) : nil;
    PRECT pClipRect = cr ? map_Rect( self, cr) : nil;
    Point sz = apc_widget_get_size( self);
-   objCheck false;
+   int ret;
+   objCheck scrError;
 
    HideCaret(( HWND) var handle);
 
@@ -2264,18 +2265,21 @@ apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Rect *cr, Bool sc
          InvalidateRect(( HWND) var handle, &rc, false);
       } else 
          InvalidateRect(( HWND) var handle, pRect ? pRect : pClipRect, false);
+      ret = scrExpose;
    } else {
-      if ( !ScrollWindowEx(( HWND) var handle,
+      int rr = ScrollWindowEx(( HWND) var handle,
          horiz, -vert, pRect, pClipRect, NULL, NULL,
          SW_INVALIDATE | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
-      )) {
-         ShowCaret(( HWND) var handle);
-         apiErr;
-      }
+      ); 
+      if (!rr) apiErr;
+      ret = ( rr == 1 ) ? scrNoExpose : scrExpose;
    }
-   objCheck false;
+
+   objCheck scrError;
    if ( is_apt( aptSyncPaint) && !apcUpdateWindow(( HWND) var handle)) apiErr;
-   return ShowCaret(( HWND) var handle);
+   ShowCaret(( HWND) var handle);
+
+   return ret;
 }
 
 Bool

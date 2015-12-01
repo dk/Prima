@@ -1212,6 +1212,7 @@ register_constants( void)
    register_mt_constants();
    register_gt_constants();
    register_ps_constants();
+   register_scr_constants();
 }
 
 XS( Object_alive_FROMPERL);
