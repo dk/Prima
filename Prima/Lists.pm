@@ -1273,9 +1273,6 @@ sub set_top_item
 		$self-> {scrollTransaction} &= ~2;
 	}
 
-	$self-> repaint;
-	return;
-
 	if ( $self-> { multiColumn}) {
 		$iw += $self-> {drawGrid};
 		if ( $self-> {vertical}) {
