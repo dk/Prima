@@ -1080,7 +1080,7 @@ sub on_mousedown
 sub update_prelight_and_pointer
 {
 	my ( $self, $x, $y) = @_;
-	return if $self-> {mouseTransaction};
+	return delete $self->{prelight} if $self-> {mouseTransaction};
 	return unless $self-> enabled;
 	
 	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y );
@@ -1106,7 +1106,8 @@ sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
 	$self-> clear_event;
-	return $self-> update_prelight_and_pointer($x,$y) unless $self-> {mouseTransaction};
+	$self-> update_prelight_and_pointer($x,$y);
+	return unless $self-> {mouseTransaction};
 	
 	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y, defined($self-> {mouseTransaction}));
 

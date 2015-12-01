@@ -561,7 +561,7 @@ sub on_mousedown
 	return if defined $self-> {mouseTransaction} ||
 		$y < $a[1] || $y >= $a[3] ||
 		$x < $a[0] || $x >= $a[2];
-
+	
 	my $item = $self-> point2item( $x, $y);
 	my $foc = $item >= 0 ? $item : 0;
 
@@ -608,7 +608,7 @@ sub on_mouseclick
 sub update_prelight
 {
 	my ( $self, $x, $y ) = @_;
-	return if $self->{mouseTransaction};
+	return delete $self->{prelight} if $self->{mouseTransaction};
 	return unless $self->enabled;
 
 	my @a = $self-> get_active_area;
@@ -630,7 +630,8 @@ sub update_prelight
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
-	return $self-> update_prelight($x,$y) unless defined $self-> {mouseTransaction};
+	$self-> update_prelight($x,$y);
+	return unless defined $self-> {mouseTransaction};
 	
 	my $bw = $self-> { borderWidth};
 	my ($item, $aux) = $self-> point2item( $x, $y);

@@ -644,7 +644,7 @@ sub update_prelight
 {
 	my ( $self, $x, $y ) = @_;
 
-	return if $self->{mouseTransaction};
+	return delete $self->{prelight} if $self->{mouseTransaction};
 	return unless $self->enabled;
 
 	my @size = $self-> size;
@@ -685,7 +685,8 @@ sub update_prelight
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
-	return $self->update_prelight($x,$y) unless $self-> {mouseTransaction};
+	$self->update_prelight($x,$y);
+	return unless $self-> {mouseTransaction};
 	
 	my @size = $self-> size;
 	my @a    = $self-> get_active_area( 0, @size);
