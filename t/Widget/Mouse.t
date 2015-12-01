@@ -19,6 +19,15 @@ my $c = $window-> insert( Widget =>
 plan skip_all => "can't capture" unless $c->capture(1);
 $c->capture(0);
 
+# XP does some random bad magic with mouse movements
+# if there's a top-level window on top, or start menu,
+# or shutdown prompt ... anyway, we're not testing for robustness here,
+# but for proper implementation under normal circumstances
+if ( $^O =~ /win32/i) {
+	my $info = $::application->get_system_info;
+	plan skip_all => "XP does random bad things to me" if $info->{release} < 6;
+}
+
 plan tests => 10;
 
 $c-> mouse_event( cm::MouseDown, mb::Left, 0, 1, 2, 0, 0);
