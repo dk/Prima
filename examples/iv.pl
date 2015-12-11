@@ -227,6 +227,8 @@ sub newwindow
 	$w-> IV-> image( $i);
 	$w-> IV-> {fileName} = $filename;
 	$w-> {omenuID} = $self-> {omenuID};
+	$w->IV->{menuadded} = 1;
+	$w->{conversion} = ict::Optimized;
 	$w-> select;
 	status($w);
 }
