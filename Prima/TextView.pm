@@ -1260,7 +1260,7 @@ sub paint_selection
 		},
 		code     => sub {
 			my ( $code, $data ) = @_;
-			$code-> ( $self, $canvas, $b, \@state, @xy, $data);
+			$code-> ( $self, $canvas, $block, \@state, @xy, $data);
 		},
 		bidimap  => sub {
 			my $map = pop;
