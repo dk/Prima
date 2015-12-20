@@ -220,18 +220,8 @@ sub profile_default
 			['~Close window' => 'Ctrl-W' => '^W' => sub { $_[0]-> close }],
 			['E~xit' => 'Ctrl+Q' => '^Q' => sub { Prima::HelpViewer-> close }],
 		]], [ '~View' => [
-			[ '~Increase font' => 'Ctrl +' => '^+' => sub {
-					return if $_[0]-> {text}-> {defaultFontSize} > 100;
-					$_[0]-> {text}-> {defaultFontSize} += 2;
-					$_[0]-> {text}-> format(1);
-					$inifile-> section('View')-> {FontSize} = $_[0]-> {text}-> {defaultFontSize};
-			}],
-			[ '~Decrease font' => 'Ctrl -' => '^-' => sub {
-					return if $_[0]-> {text}-> {defaultFontSize} < 4;
-					$_[0]-> {text}-> {defaultFontSize} -= 2;
-					$_[0]-> {text}-> format(1);
-					$inifile-> section('View')-> {FontSize} = $_[0]-> {text}-> {defaultFontSize};
-			}],
+			[ '~Increase font' => 'Ctrl +' => '^+' => sub { $_[0]-> increase_font_size(2)  }],
+			[ '~Decrease font' => 'Ctrl -' => '^-' => sub { $_[0]-> increase_font_size(-2) }],
 			[],
 			[ 'fullView' => 'Full text ~view' => 'Ctrl+V' => '^V' => sub {
 				$_[0]-> {text}-> topicView( ! $_[0]-> menu-> toggle( $_[1]));
@@ -272,6 +262,9 @@ sub profile_default
 			}],
 		]
 		]],
+		accelItems => [
+			[ 0, 0, '^=' => sub { $_[0]-> increase_font_size(2) }],
+		],
 		text => 'POD viewer',
 		history => [],
 		icon    => Prima::StdBitmap::icon(0),
@@ -421,6 +414,20 @@ sub on_destroy
 	@Prima::HelpViewer::helpWindows = grep { $_ != $self } @Prima::HelpViewer::helpWindows;
 	$inifile-> write;
 	$self-> {source_mate}-> close if $self-> {source_mate};
+}
+
+sub increase_font_size
+{
+	my ( $self, $howmuch ) = @_;
+	my $t  = $self-> {text};
+	my $fs = $t-> {defaultFontSize};
+	$fs += $howmuch;
+	$fs = 4   if $fs < 4;
+	$fs = 100 if $fs > 100;
+	return if $fs == $t->{defaultFontSize};
+	$t->{defaultFontSize} = $fs;
+	$t-> format(1);
+	$inifile-> section('View')-> {FontSize} = $fs;
 }
 
 sub load_dialog
