@@ -1260,7 +1260,13 @@ sub paint_selection
 		},
 		code     => sub {
 			my ( $code, $data ) = @_;
+			$self-> realize_state( $canvas, \@state, tb::REALIZE_ALL); 
 			$code-> ( $self, $canvas, $block, \@state, @xy, $data);
+		},
+		transpose => sub {
+			my ( $x, $y, $f) = @_;
+			return if !($f & tb::X_EXTEND) || !$self->{selectionPaintMode} || $x == 0 || $y == 0;
+			$canvas->clear($xy[0], $xy[1] - $$block[ tb::BLK_APERTURE_Y], $xy[0] + $x - 1, $xy[1] + $y - $$block[ tb::BLK_APERTURE_Y] - 1);
 		},
 		bidimap  => sub {
 			my $map = pop;

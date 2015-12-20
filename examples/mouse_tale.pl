@@ -186,15 +186,18 @@ sub typeset
 			my $w3 = $t-> get_text_width( '--');
 			push @$tb, 
 				tb::fontStyle( fs::Italic),
-				tb::text( 0, 3, $w1 + $fh / 3),
+				tb::text( 0, 3, $w1),
+				tb::extend($fh / 3, $fh),
+				tb::moveto($fh / 3, 0),
 				tb::fontStyle( fs::Normal),
 				tb::text( 3, 1, $w2),
 			# Example of custom drawings - replace double '-' character by a long hyphen.
 			# Note when copying from the selection, the '--' is still present in the text
+				tb::extend( $w3, $fh),
 				tb::code( \&hyphen, $w3 - 1),
-			# The ::code by itself occupies no place, so ::moveto explicitly sets
-			# the hyphen dimensions
-				tb::moveto( $fh, $w3);
+			# The ::code by itself occupies no place, so ::extend explicitly sets
+			# the hyphen dimensions and ::moveto shifts the text pointer
+				tb::moveto( $w3, 0);
 			# Since 'you' italic is a bit wider that the non-italic 'you',
 			# fh/3 is here as a rough compensation. A more presice calculation
 			# requires the exact width of the italicized string.
