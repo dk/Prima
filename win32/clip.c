@@ -163,6 +163,7 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
              }
              if ( !( ptr = ( WCHAR*) GlobalLock( ph)))
                 apiErrRet;
+             apcErrClear;
              c->length = WideCharToMultiByte(CP_UTF8, 0, ptr, -1, NULL, 0, NULL, 0);
              if (( c->data = malloc( c-> length ) )) {
                 WideCharToMultiByte(CP_UTF8, 0, ptr, -1, c->data, c->length, NULL, 0); 
@@ -187,6 +188,7 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
              }
              if ( !( ptr = ( Byte*) GlobalLock( ph)))
                 apiErrRet;
+             apcErrClear;
              len = strlen( ptr);
              c-> length = 0;
              if ((c-> data = ( Byte *) malloc( len))) {

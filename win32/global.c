@@ -362,7 +362,17 @@ char * err_msg( DWORD errId, char * buffer)
 char *
 apc_last_error(void)
 {
-   return err_buf;
+   switch (apcError) {
+   case errApcError              : return err_buf;
+   case errOk                    : return NULL;
+   case errInvObject             : return "Bad object";
+   case errInvParams             : return "Bad parameters";
+   case errInvWindowIcon         : return "Bad window icon";
+   case errInvClipboardData      : return "Bad clipboard request";
+   case errInvPrinter            : return "Bad printer request";
+   case errNoPrinters            : return "No printers";
+   case errUserCancelled         : return "User cancelled";
+   }
 }
 
 static Bool move_back( PWidget self, PWidget child, int * delta)

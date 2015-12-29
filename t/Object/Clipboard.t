@@ -35,6 +35,10 @@ $c->close;
 try { $c-> store( "Text", 'jabba dabba du') } 9;
 try { $c->open } 9;
 my $res = $c-> fetch( 'Text');
+unless ( defined $res ) {
+	my $msg = "Cannot fetch data from clipboard: " . (Prima::Utils::last_error() // 'unknown error');
+	skip $msg, 9;
+}
 my %fm = map { $_ => 1 } $c-> get_formats;
 ok( exists $fm{Text} && defined $res, "text exists");
 is( $res, 'jabba dabba du', "text is correct" );

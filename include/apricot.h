@@ -1571,7 +1571,6 @@ END_TABLE(dt,UV)
 #define errInvClipboardData      0x0101
 #define errInvPrinter            0x0102
 #define errNoPrinters            0x0103
-#define errNoPrnSettableOptions  0x0103
 #define errUserCancelled         0x0104
 
 
