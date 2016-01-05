@@ -2498,6 +2498,7 @@ sub delete_block
 				$res .= substr( $c, $px2, length( $c) - $px2);
 			} elsif ( $sel[3] < $self-> {maxLine}) {
 				$res .= $self-> get_line( $sel[3] + 1);
+				$len++;
 			}
 			$self-> lock_change(1);
 			$self-> delete_line( $from + 1, $len) if $len > 0;
