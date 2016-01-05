@@ -1724,12 +1724,8 @@ sub selection_to_physical
 		$self->visual_to_physical($sel[0],     $sel[1]),
 		$self->visual_to_physical($sel[2] - 1, $sel[3]),
 	);
-	if ($sel[0] > $sel[2]) {
-		@sel[0,2] = @sel[2,0];
-		$sel[2]++;
-	} else {
-		$sel[2]++;
-	}
+	@sel[0,2] = @sel[2,0] if $sel[1] == $sel[3] && $sel[0] > $sel[2];
+	$sel[2]++;
 	return @sel;
 }
 
