@@ -218,9 +218,9 @@ sub init_variables
 
 
 	%mapTypes = (
-		"int" => "int", "Bool" => "Bool", "Handle" => "Handle", "long" => "int", "short" => "int",
-		"char" => "int", "U8" => "int", "UV" => "UV", 
-		"double" => "double", "Color" => "UV", "SV"=> "SV", "HV"=> "HV");
+		( long => 'int', U8 => 'int', char => 'int' ),
+		map {( $_, $_ )} qw(int Bool Handle UV Color double SV HV),
+	);
 
 	%typedefs = ();
 
@@ -229,6 +229,7 @@ sub init_variables
 		# 0         1            2           3        4           5        6        7       8
 		'int'     => ['int',    'SvIV',      'sv_setiv',  '',      '(IV)',     '',    'POPi',    'SViv', ''     ],
 		'UV'      => ['UV',     'SvUV',      'sv_setuv',  '',      '(UV)',     '',    'POPu',    'SVuv', ''     ],
+		'Color'   => ['Color',  'SvUV',      'sv_setuv',  '',      '(Color)',  '',    'POPu',    'SVuv', ''     ],
 		'double'  => ['double', 'SvNV',      'sv_setnv',  '',      '(double)', '',    'POPn',    'SVnv', ''     ],
 		'char*'   => ['char *', 'SvPV_nolen','sv_setpv',  '(SV*)', '',         ', 0', 'POPp',    'SVpv', '' ],
 		'string'  => ['char',   'SvPV_nolen','sv_setpv',  '(SV*)', '',         ', 0', 'POPp',    'SVpv', '' ],
