@@ -142,9 +142,16 @@ sub exif_get_orientation
 	return unless Prima::Image->codecs->[ $i->{extras}->{codecID} ]->{fileShortType} eq 'JPEG';
 	
 	my $exif;
-	for my $a ( @{ $i->{extras}->{appdata} || [] }) {
-		next unless defined $a && $a =~ s/^Exif\0\0//;
-		$exif = $a;
+	for my $a ( grep { defined } @{ $i->{extras}->{appdata} || [] }) {
+		$exif = $a if $a =~ s/^Exif\0\0//;
+		if ( $a =~ /\bAngleInfoRoll>([\d\.]+)</ ) {
+			my $r = int($1);
+			return 3 if $r == 180;
+			return 8 if $r == 90;
+			return 6 if $r == 270;
+			return 1;
+		}
+
 	}
 	return unless $exif && length($exif) > 32;
 
