@@ -2043,8 +2043,10 @@ sub command_cpbin
 sub c_o
 {
 	my $t = shift-> SUPER::c_o(@_);
-	unless ( $t =~ /.c\$\(OBJ_EXT\):\n\t.*\$\*\$\(OBJ_EXT\)/ ) {
-		$t =~ s/(\.c\$\(OBJ_EXT\):\n\t.*)/$1 $COUTOFLAG\$*\$(OBJ_EXT)/;
+	my $re1 = '\.c\$\(OBJ_EXT\):\n\t.*';
+	my $ending = '$*$(OBJ_EXT)';
+	unless ( $t =~ /$re1\Q$ending\E/ ) {
+		$t =~ s/($re1)/$1 $COUTOFLAG$ending/;
 	}
 	return $t;
 }
