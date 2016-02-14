@@ -2043,7 +2043,7 @@ sub command_cpbin
 sub c_o
 {
 	my $t = shift-> SUPER::c_o(@_);
-	my $re1 = '\.c\$\(OBJ_EXT\):\n\t.*';
+	my $re1 = '\.c\$\(OBJ_EXT\)\s*:\n\t.*';
 	my $ending = '$*$(OBJ_EXT)';
 	unless ( $t =~ /$re1\Q$ending\E/ ) {
 		$t =~ s/($re1)/$1 $COUTOFLAG$ending/;
