@@ -461,7 +461,28 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    if ( border_style == bsSizeable) XX-> flags. sizeable = 1;
 
    /* setting initial size */
-   XX-> size = guts. displaySize;
+   {
+      int nrects;
+      Rect2 * monitors;
+      monitors = apc_application_get_monitor_rects( nilHandle, &nrects);
+      if ( nrects > 0 ) {
+      	 int i, min_x = monitors[0].x, min_y = monitors[0].y; 
+         XX-> size.x = monitors[0].width;
+         XX-> size.y = monitors[0].height;
+      	 for ( i = 1; i < nrects; i++) {
+	     if ( min_x > monitors[i].x && min_y > monitors[i].y ) {
+	        min_x = monitors[i].x;
+	        min_y = monitors[i].y;
+                XX-> size.x = monitors[i].width;
+                XX-> size.y = monitors[i].height;
+	     }
+	 }
+      } else {
+         XX-> size = guts. displaySize;
+      }
+      free( monitors);
+   }
+
    if ( window_state != wsMaximized) {
       XX-> zoomRect. right = XX-> size. x;
       XX-> zoomRect. top   = XX-> size. y;
