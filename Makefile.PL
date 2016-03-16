@@ -1973,11 +1973,10 @@ sub command_bindist
 	finddepth( sub {
 		return if $_ eq '.' || 
 			($_ eq 'Makefile' && $File::Find::dir eq $CWD) || 
-			$_ eq 'makefile.log' || 
 			m/^\./;
 		return if /\.(pdb|ncb|opt|dsp|dsw)$/i; # MSVC
 		my $f = "$File::Find::dir/$_";
-		return if $f =~ /include.generic|\.git|\.swp|blib|dll.base|dll.exp|Prima.bs|Prima.def/;
+		return if $f =~ /include.generic|\.git|\.swp|\.log|blib|dll.base|dll.exp|Prima.bs|Prima.def/;
 		return if $f =~ /\.(c|cls|h)$/i;
 		return if $f =~ /$CWD.(img|include|win32|unix|Makefile.PL|Makefile.old)/i;
 		if ( -d $f) {
