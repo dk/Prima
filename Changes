@@ -1,6 +1,9 @@
 Revision history for Perl module Prima
 
 1.46 2016-03-16
+ - Use pkg_config, when available
+ - Require perl version 5.10
+ - Add prelighting and gradients to widgets
 
 1.45 2015-11-05
  - Add Image .clone,.bar,.mirror,.rotate
