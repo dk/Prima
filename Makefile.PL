@@ -1382,22 +1382,27 @@ sub setup_iconv
 
 sub setup_gtk
 {
+	$cmd_options{WITH_GTK2} = 0;
 	unless ( $use_pkgconfig ) {
-		$cmd_options{WITH_GTK2} = 0;
 		printlog "Checking for presence of gtk2... no, can only check with pkg-config installed\n";
 		return;
 	}
 	
 	if ( pkgconfig('gtk+-2.0')) {
+		my $version = `pkg-config --modversion gtk+-2.0`;
+		printlog "Checking if can compile and link with gtk2... ";
+		my $minversion = 7;
+		unless ( $version =~ m/^2\.(\d+)/ && $1 > $minversion ) {
+			printlog "no, need at least v2.$minversion.0\n";
+			return;
+		}
 		# now, try to compile with GTK. I've got lots of CPAN build failures
 		# because GTK wasn't willing to compile or god knows what.
-		printlog "Checking if can compile and link with gtk2... ";
 		goto NO_GTK unless compile( "#include <gtk/gtk.h>\nint main() { return 0; }\n");
 		$DEFINES{WITH_GTK2} = 1;
 		printlog "yes\n";
 	} else {
 	NO_GTK:
-		$cmd_options{WITH_GTK2} = 0;
 		printlog "no\n";
 	}
 }
