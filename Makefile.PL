@@ -436,6 +436,10 @@ sub setup_environment
 	} elsif ( $cygwin ) {
 		$flavor .= ( $Config{ptrsize} == 8 ) ? '64' : '32';
 		$flavor .= '.' . ( $cmd_options{CYGWIN_WINAPI} ? 'win32' : 'x11' );
+	} else {
+		my $arch = `uname -m`;
+		chomp $arch;
+		$flavor .= ".$arch";
 	}
 	$flavor =~ s/\s/_/g;
 	printlog "$flavor\n";
