@@ -1626,7 +1626,7 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
          *((Short*)colorbuf) = color;
          break;
       case imRGB :
-         *((Color*)colorbuf) = color;
+         memcpy( colorbuf, &rgb, 3);
          break;
       case imLong :
          *((Long*)colorbuf) = color;
