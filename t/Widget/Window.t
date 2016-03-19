@@ -8,8 +8,7 @@ use Prima::Application;
 plan tests => 16;
 
 my %id;
-my $xw = Prima::Window-> create(
-	size => [ 100, 100],
+my $xw = create_window(
 	onActivate    => sub { set_flag; $id{Activate}   = 1;},
 	onDeactivate  => sub { set_flag; $id{Deactivate} = 1;},
 	onExecute     => sub { set_flag; $id{Execute}    = 1; execute(); },
