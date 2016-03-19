@@ -1119,7 +1119,7 @@ sub pkgconfig
 {
 	my $package = shift;
 
-	printlog "Checking for $package with pkg-config...";
+	printlog "Checking for $package using pkg-config...";
 	null_output;
 	if ( system "pkg-config --exists $package" ) {
 		restore_output;
