@@ -27,6 +27,7 @@ sub create_window
 	eval "use Prima::Application name => 'failtester';"; die $@ if $@;
 	return Prima::Window-> create(
 		onDestroy => sub { $::application-> close},
+		origin => [ 200,200], # for twm
 		size => [ 200,200],
 		@_,
 	);

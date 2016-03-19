@@ -12,8 +12,7 @@ my $dong2 = 0;
 
 my @p_rep;
 my @c_rep;
-my $p = Prima::Window-> create(
-	size => [ 100, 100],
+my $p = create_window(
 	onMove => sub { 
 		$dong1 = 1;
 		set_flag;
