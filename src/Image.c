@@ -1660,9 +1660,10 @@ Image_rotate( Handle self, int degrees)
       my->set_type( self, imbpp8 );
       my->rotate( self, degrees );
       if ( is_opt( optPreserveType)) {
+         int conv = var-> conversion;
          my-> set_conversion( self, ictNone);
          my-> set_type( self, type);
-         my-> set_conversion( self, var-> conversion);
+         my-> set_conversion( self, conv);
       }
       return;
    }      
@@ -1702,9 +1703,10 @@ Image_mirror( Handle self, Bool vertically)
       my->set_type( self, imbpp8 );
       my->mirror( self, vertically );
       if ( is_opt( optPreserveType)) {
+         int conv = var-> conversion;
          my-> set_conversion( self, ictNone);
          my-> set_type( self, type);
-         my-> set_conversion( self, var-> conversion);
+         my-> set_conversion( self, conv );
       }
       return;
    }      
