@@ -26,8 +26,8 @@ libraries can be compiled in on all platforms:
 For Win32, CPAN contains binary distributions that can
 be installed just for this purpose:
 
-  http://search.cpan.org/~karasik/Prima-codecs-win32/
-  http://search.cpan.org/~karasik/Prima-codecs-win64/
+ - http://search.cpan.org/~karasik/Prima-codecs-win32/
+ - http://search.cpan.org/~karasik/Prima-codecs-win64/
 
 it should work for all MSVC and GCC compilers and for native,
 cygwin, and mingw/strawberry perl runtimes.
@@ -35,10 +35,10 @@ cygwin, and mingw/strawberry perl runtimes.
 Fribidi
 -------
 
-To support bi-directional text input and output you'll need C<Text::Bidi>
-module from CPAN v2.10. The module is not a prerequisite; it'll need the
+To support bi-directional text input and output you'll need Text::Bidi
+module from CPAN. The module is not a prerequisite; it'll need the
 external fribidi library to build. On windows the library is not installed by
-default, grab it here:
+default, you can grab it here:
 
   http://prima.eu.org/download/fribidi-win32.zip
 
