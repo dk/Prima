@@ -58,7 +58,7 @@ found in makefile.log.
 
 If make fails with message
 
-** No image codecs found
+    ** No image codecs found
 
 that means you don't have image libraries that Prima supports in your path.
 See PREREQUISITES section.
@@ -84,7 +84,7 @@ the other platforms.
 
 To install the toolkit from the binary distribution run 
 
-   perl ms_install.pl
+    perl ms_install.pl
 
 You have to patch Prima::Config.pm manually if you need to compile
 prima-dependent modules.
@@ -98,29 +98,28 @@ INSTALLSITEARCH/Prima/examples directory ( find it by running perl
 can be run either by their name or with perl as argument - for example,
 ..../generic or perl ..../generic .  ( perl ..../generic.bat for win32 )
 
-
 Typical code starts with
 
-   use Prima qw(Application);
+    use Prima qw(Application);
 
 and ends with
    
-   run Prima;
+    run Prima;
 
 which is an event loop call. Start from the following code:
 
-   use Prima qw(Application Buttons);
+    use Prima qw(Application Buttons);
 
-   new Prima::MainWindow(
-      text     => 'Hello world!',
-      size     => [ 200, 200],
-   )-> insert( Button =>
-      centered => 1,
-      text     => 'Hello world!',
-      onClick  => sub { $::application-> close },
-   );
-
-   run Prima;
+    new Prima::MainWindow(
+       text     => 'Hello world!',
+       size     => [ 200, 200],
+    )-> insert( Button =>
+       centered => 1,
+       text     => 'Hello world!',
+       onClick  => sub { $::application-> close },
+    );
+    
+    run Prima;
 
 Or, alternatively, start the VB program, which is the toolkit visual builder. 
 
@@ -143,39 +142,39 @@ COPYRIGHT
 AUTHORS
 =======
 
-Dmitry Karasik <dmitry@karasik.eu.org>
-Anton Berezin  <tobez@tobez.org>
-Vadim Belman   <voland@lflat.org>
+ - Dmitry Karasik <dmitry@karasik.eu.org>
+ - Anton Berezin  <tobez@tobez.org>
+ - Vadim Belman   <voland@lflat.org>
 
 CREDITS
 =======
 
-David Scott
-Teo Sankaro
-Kai Fiebach
-Johannes Blankenstein
-Mike Castle
-H.Merijn Brand
-Richard Morgan
-Kevin Ryde
-Chris Marshall
-Slaven Rezic
-Waldemar Biernacki
-Andreas Hernitscheck
-David Mertens
-Teo Sankaro
-Gabor Szabo
-Fabio D'Alfonso
-Rob "Sisyphus"
-Chris Marshall
-Reini Urban
-Nadim Khemir
-Vikas N Kumar
-Upasana Shukla
-Sergey Romanov
-Mathieu Arnold
-Petr Pisar
-Judy Hawkins
-Myra Nelson
-Sean Healy
-Ali Yassen
+ - David Scott
+ - Teo Sankaro
+ - Kai Fiebach
+ - Johannes Blankenstein
+ - Mike Castle
+ - H.Merijn Brand
+ - Richard Morgan
+ - Kevin Ryde
+ - Chris Marshall
+ - Slaven Rezic
+ - Waldemar Biernacki
+ - Andreas Hernitscheck
+ - David Mertens
+ - Teo Sankaro
+ - Gabor Szabo
+ - Fabio D'Alfonso
+ - Rob "Sisyphus"
+ - Chris Marshall
+ - Reini Urban
+ - Nadim Khemir
+ - Vikas N Kumar
+ - Upasana Shukla
+ - Sergey Romanov
+ - Mathieu Arnold
+ - Petr Pisar
+ - Judy Hawkins
+ - Myra Nelson
+ - Sean Healy
+ - Ali Yassen
