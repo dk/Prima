@@ -4,7 +4,7 @@ Makefile.PL
 MANIFEST
 LICENSE
 ms_install.pl
-README
+README.md
 Prima.pm
 src/AbstractMenu.c
 src/AbstractMenu.cls
