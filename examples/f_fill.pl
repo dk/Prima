@@ -44,9 +44,9 @@ use strict;
 use Prima qw(Application);
 
 my $i = Prima::Image-> create(
-preserveType => 1,
-type => im::BW,
-font => { size => 100, style => fs::Bold|fs::Italic },
+	preserveType => 1,
+	type => im::BW,
+	font => { size => 100, style => fs::Bold|fs::Italic },
 );
 $i-> begin_paint_info;
 my $textx = $i-> get_text_width( "PRIMA");
@@ -63,36 +63,29 @@ $i-> text_out( "PRIMA", 0,0);
 $i-> end_paint;
 
 
-my @xpal = ();
-for ( 1..32) {
-	my $x = (32-$_) * 8;
-	push(@xpal, $x,$x,$x);
-};
+sub gradient_circle
+{
+	my ( $canvas, $x, $y, $diameter, $request ) = @_;
+	my $gradient = $request->{gradient} //= $canvas-> gradient_realize3d( $diameter, $request );
+	for ( my $i = 0; $i < @$gradient; $i+=2) {
+		$canvas->color( $gradient->[$i]);
+		$canvas->fill_ellipse( $x, $y, $diameter, $diameter );
+		$diameter -= $gradient->[$i+1];
+	}
+}
 
 my $w = Prima::MainWindow-> create(
 	size   => [ @is],
 	centered => 1,
 	buffered => 1,
-	palette => [ @xpal],
+	palette => [ map { ($_) x 3 } 0..255 ],
 	onPaint => sub {
 	my ( $self, $canvas) = @_;
-	$canvas-> color( cl::Back);
-	$canvas-> bar( 0, 0, $canvas-> size);
-	my $xrad = $is[0] / 62;
-	for ( 1..32) {
-		my $x = (32-$_) * 8;
-		$x = ($x<<16)|($x<<8)|$x;
-        $canvas-> color($x);
-        $canvas-> fill_ellipse($is[0]/2,$is[1]/2, $xrad*(32-$_)*2, $xrad*(32-$_)*2);
-     };
-     $canvas-> region( $i);
-     for ( 1..32) {
-        my $x = ($_-1) * 8;
-        $x = ($x<<16)|($x<<8)|$x;
-        $canvas-> color($x);
-        $canvas-> fill_ellipse($is[0]/2,$is[1]/2, $xrad*(32-$_)*2, $xrad*(32-$_)*2);
-     };
-  },
+		$canvas->clear;
+		gradient_circle($canvas, $is[0]/2 ,$is[1]/2, $is[0], { palette => [ cl::White, cl::Black ] });
+		$canvas-> region( $i);
+		gradient_circle($canvas, $is[0]/2 ,$is[1]/2, $is[0], { palette => [ cl::Black, cl::White ] });
+	},
 );
 
 run Prima;

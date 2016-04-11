@@ -205,6 +205,55 @@ export its palette to an output device, because images usually are not
 subject to automatic dithering algorithms. Prima::ImageViewer module
 employs this scheme.
 
+=head2 Gradients
+
+Prima offers primitive gradient services to draw gradually changing colors.
+A gradient is requested by setting of at least two colors and optionally
+a set of cubic spline points that, when, projected, generate the transition curve
+between the colors.
+
+The example below fills a rectangle with a gradient calculated between a
+background color and its pre-lighted variant.
+
+    $canvas-> gradient_bar( $left, $bottom, $right, $top, {
+  	palette  => [ $self->prelight_color($back_color), $back_color ],
+    });
+
+Here are keys understood in the gradient request:
+
+=over
+
+=item palette @COLORS
+
+Each color is a C<cl::> value. When the gradient is calculated as polyline
+where each its vertex corresponds to a certain blend between two neighbour
+colors. F.ex. the simplest palette going from C<cl::White> to C<cl::Black>
+over a polyline C<0..1> (default), produces pure white color at the start and
+pure black color at the end, filling all available shades of gray in between,
+changing monotonically.
+
+=item poly @VERTEXES
+
+Set of 2-integer polyling vertexes where the first integer is a coordinate (x,
+y, or whatever required by the drawing primitive) between 0 and 1, and the
+second is the color blend value bteween 0 and 1.
+
+Default: ((0,0),(1,1))
+
+=item spline @VERTEXES
+
+Serving same purpose as C<poly> but vertexes are projected first to a cubic
+spline using L<render_spline> and current value of C<splinePrecision>. The
+resulting polyline is treated as C<poly>.
+
+=item vertical BOOLEAN
+
+Only used in L<gradient_bar>, to set gradient direction.
+
+=back
+
+See also: L<gradient_bar>, L<gradient_realize3d> .
+
 =head2 Monochrome bitmaps
 
 A special case of C<put_image> is taken where the object to be drawn is a
@@ -883,7 +932,7 @@ Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
 
 =item bar X1, Y1, X2, Y2
 
-Draws a filled rectangle with (X1,Y1) - (X2,Y2) extents.
+Draws a filled rectangle within (X1,Y1) - (X2,Y2) extents.
 
 Context used: color, backColor, fillPattern, rop, rop2
 
@@ -903,7 +952,7 @@ Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
 
 =item clear <X1, Y1, X2, Y2>
 
-Draws rectangle filled with pure background color with (X1,Y1) - (X2,Y2) extents.
+Draws rectangle filled with pure background color within (X1,Y1) - (X2,Y2) extents.
 Can be called without parameters, in this case fills all canvas area.
 
 Context used: backColor, rop2
@@ -1022,6 +1071,22 @@ is encountered. This style is useful for filling areas with
 multicolored boundaries.
 
 Context used: color, backColor, fillPattern, rop, rop2
+
+=item gradient_bar X1, Y1, X2, Y2, GRADIENT
+
+Draws a filled rectangle within (X1,Y1) - (X2,Y2) extents usign a gradient (see L<Gradients>).
+
+Context used: splinePrecision, fillPattern, rop, rop2
+
+=item gradient_realize3d BREADTH, GRADIENT
+
+Returns an array consisting of integer pairs, where the first one is
+a color value, and the second is the breadth of the color strip.
+L<gradient_bar> uses this information to draw a gradient fill, where
+each color strip is drawn with its own color. Can be used for implementing
+other gradient-aware primitives (see F<examples/f_fill.pl> )
+
+Context used: splinePrecision
 
 =item line X1, Y1, X2, Y2
 
