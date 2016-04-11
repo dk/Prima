@@ -65,8 +65,8 @@ $i-> end_paint;
 
 sub gradient_circle
 {
-	my ( $canvas, $x, $y, $diameter, $request ) = @_;
-	my $gradient = $request->{gradient} //= $canvas-> gradient_realize3d( $diameter, $request );
+	my ( $canvas, $x, $y, $diameter, @palette ) = @_;
+	my $gradient = $canvas-> gradient_realize3d( $diameter, { palette => \@palette } );
 	for ( my $i = 0; $i < @$gradient; $i+=2) {
 		$canvas->color( $gradient->[$i]);
 		$canvas->fill_ellipse( $x, $y, $diameter, $diameter );
@@ -82,9 +82,9 @@ my $w = Prima::MainWindow-> create(
 	onPaint => sub {
 	my ( $self, $canvas) = @_;
 		$canvas->clear;
-		gradient_circle($canvas, $is[0]/2 ,$is[1]/2, $is[0], { palette => [ cl::White, cl::Black ] });
+		gradient_circle($canvas, $is[0]/2 ,$is[1]/2, $is[0], cl::White, cl::Black);
 		$canvas-> region( $i);
-		gradient_circle($canvas, $is[0]/2 ,$is[1]/2, $is[0], { palette => [ cl::Black, cl::White ] });
+		gradient_circle($canvas, $is[0]/2 ,$is[1]/2, $is[0], cl::Black, cl::White);
 	},
 );
 
