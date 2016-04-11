@@ -189,7 +189,6 @@ sub prelight_color
 	}
 	$coeff = ($coeff - 1) * 256;
 	my @channels = map { $_ & 0xff } ($color >> 16), ($color >> 8), $color;
-	my ( $below, $above ) = (0,0);
 	for (@channels) {
 		my $amp = ( 256 - $_ ) / 8;
 		$amp -= $amp if $coeff < 0;
