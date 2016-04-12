@@ -35,6 +35,8 @@
 #   Slider
 #   CircularSlider
 
+package Prima::Sliders;
+
 use strict;
 use warnings;
 use Prima::Const;

@@ -26,6 +26,8 @@
 #  Created by Dmitry Karasik <dk@plab.ku.dk>
 #
 #  $Id$
+package Prima::Notebooks;
+
 use strict;
 use Prima::Const;
 use Prima::Classes;

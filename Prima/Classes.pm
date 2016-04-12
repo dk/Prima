@@ -28,6 +28,7 @@
 #     Dmitry Karasik <dk@plab.ku.dk> 
 #
 #  $Id$
+package Prima::Classes;
 use Prima;
 use Prima::Const;
 

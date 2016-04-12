@@ -30,6 +30,7 @@
 # contains:
 #   CheckList
 
+package Prima::ExtLists;
 use strict;
 use Prima::Const;
 use Prima::Classes;

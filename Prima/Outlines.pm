@@ -32,6 +32,7 @@
 #   StringOutline
 #   Outline
 #   DirectoryOutline
+package Prima::Outlines;
 
 use strict;
 use Cwd;

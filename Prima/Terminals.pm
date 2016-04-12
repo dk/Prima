@@ -27,6 +27,8 @@
 #
 #  $Id$
 
+package Prima::Terminals;
+
 use strict;
 use Prima::Const;
 use Prima::Classes;

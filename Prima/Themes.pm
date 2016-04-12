@@ -27,9 +27,9 @@
 #
 #  $Id$
 
+package Prima::Themes;
 use strict;
 use Prima;
-package Prima::Themes;
 use vars qw(%themes %data $load_rc_file);
 
 use constant INSTALLED => 0;

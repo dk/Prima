@@ -29,6 +29,7 @@
 
 # contains:
 #   Panel
+package Prima::Widgets;
 
 use strict;
 use Prima::Const;
