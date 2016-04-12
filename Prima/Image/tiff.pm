@@ -28,6 +28,7 @@
 #
 
 use strict;
+use warnings;
 use Prima;
 use Prima::VB::VBLoader;
 

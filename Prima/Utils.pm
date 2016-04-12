@@ -31,6 +31,7 @@
 
 package Prima::Utils;
 use strict;
+use warnings;
 require Exporter;
 use vars qw(@ISA @EXPORT @EXPORT_OK);
 @ISA = qw(Exporter);

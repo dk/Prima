@@ -2,6 +2,7 @@
 # sample color styles
 
 use strict;
+use warnings;
 use Prima qw(Themes);
 package Prima::Themes::color;
 

@@ -30,6 +30,7 @@
 package Prima::Image::TransparencyControl;
 
 use strict;
+use warnings;
 use Prima;
 use Prima::ImageViewer;
 use Prima::Label;

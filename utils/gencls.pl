@@ -26,13 +26,14 @@
 #
 #  $Id$
 #
-
+use strict;
+use warnings;
 use Prima::Gencls;
 
 # Main
 unless ( $ARGV[ 0]) {
 print <<TEXT;
-Apricot project. Pseudoobject Perl+C Bondage interface parser.
+Perl+C interface parser for Prima
 format  : gencls.pl [ options] filename.cls [ out_directory]
 options :
    --h          generates .h file
@@ -65,7 +66,7 @@ ARGUMENT: while( 1)
 	};
 	last ARGUMENT;
 } continue { shift @ARGV; }
-die "APC000: insufficient number of parameters" unless $ARGV [0];
+die "insufficient number of parameters" unless $ARGV [0];
 
 $ARGV[ 0] =~ m{^(.*[\\/])[^\\/]*$};
 $args->{ dirPrefix} = $1 || "";

@@ -48,6 +48,7 @@ especially on paletted displays.
 =cut
 
 use strict;
+use warnings;
 use Prima;
 use Prima::ImageViewer;
 use Prima::Application;

@@ -51,6 +51,7 @@ Note the left-mouse drag effect from a font screen widget.
 
 
 use strict;
+use warnings;
 use Carp;
 use Prima;
 use Prima::Classes;

@@ -25,6 +25,7 @@
 #
 # $Id$
 use strict;
+use warnings;
 package Prima::VB::Classes;
 
 sub classes

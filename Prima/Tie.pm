@@ -1,5 +1,6 @@
 # $Id$
 use strict;
+use warnings;
 
 package Prima::Tie::Array;
 use Tie::Array;

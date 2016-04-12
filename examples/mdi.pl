@@ -41,6 +41,7 @@ decorations and do not conform to the system user interaction scheme.
 =cut
 
 use strict;
+use warnings;
 use Prima qw( InputLine ImageViewer MDI Application);
 
 package Generic;

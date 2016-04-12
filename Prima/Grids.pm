@@ -31,6 +31,7 @@
 package Prima::Grids;
 
 use strict;
+use warnings;
 use Prima;
 use Prima::IntUtils;
 

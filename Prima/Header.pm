@@ -31,6 +31,7 @@
 package Prima::Header;
 
 use strict;
+use warnings;
 use Prima::Classes;
 
 use vars qw(@ISA);

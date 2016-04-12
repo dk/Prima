@@ -1,6 +1,7 @@
 # overrides rect3d calls for some classes
 
 use strict;
+use warnings;
 use Prima qw(Themes);
 
 package Round3D;

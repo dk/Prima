@@ -1,4 +1,5 @@
-# $Id$
+use strict;
+use warnings;
 
 die <<USAGE unless @ARGV;
 Prima::VB form file viewer

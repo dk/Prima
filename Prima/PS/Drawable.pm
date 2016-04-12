@@ -31,6 +31,7 @@ use vars qw(@ISA);
 @ISA = qw(Prima::Drawable);
 
 use strict;
+use warnings;
 use Prima;
 use Prima::PS::Fonts;
 use Prima::PS::Encodings;

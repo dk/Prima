@@ -32,6 +32,7 @@
 
 package Prima::ExtLists;
 use strict;
+use warnings;
 use Prima::Const;
 use Prima::Classes;
 use Prima::Lists;

@@ -47,6 +47,7 @@ use Prima::Classes;
 use Prima::IntUtils;
 use Prima::StdBitmap;
 use strict;
+use warnings;
 
 
 package Prima::AbstractButton;

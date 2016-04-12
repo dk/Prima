@@ -1,13 +1,15 @@
+use strict;
+use warnings;
 use Prima qw(Application DetailedOutline);
 
-$Main = Prima::MainWindow-> create(
+my $Main = Prima::MainWindow-> create(
 	name   => 'Main',
 	text   => 'DetailedOutline Test',
 	origin => [50,50],
 	size   => [500,500],
 );
 
-$Outline = $Main-> insert('DetailedOutline',
+my $Outline = $Main-> insert('DetailedOutline',
 	name   => 'Outline',
 	origin => [5,5],
 	size   => [490,490],

@@ -40,6 +40,8 @@ Prima::PS modules set usage.
 
 =cut
 
+use strict;
+use warnings;
 use Prima;
 use Prima::Lists;
 use Prima::Const;

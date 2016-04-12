@@ -39,6 +39,7 @@ Demonstrates Prima::TextView capabilities
 =cut
 
 use strict;
+use warnings;
 use Prima;
 use Prima::TextView;
 use Prima::Application;

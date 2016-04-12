@@ -41,6 +41,7 @@ to hold a cached region copy.
 =cut
 
 use strict;
+use warnings;
 use Prima qw(Application);
 
 my $i = Prima::Image-> create(

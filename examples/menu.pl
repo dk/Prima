@@ -44,6 +44,7 @@ Note the "Edit/Kill menu" realisation.
 =cut
 
 use strict;
+use warnings;
 use Prima qw( InputLine Label Application);
 
 package TestWindow;

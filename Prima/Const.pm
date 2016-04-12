@@ -40,6 +40,9 @@ sub AUTOLOAD {
 	goto &$AUTOLOAD;
 }
 
+use strict;
+use warnings;
+
 # double lines for CPAN indexer, we don't want these packages in top-level namespace
 package 
     nt; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# notification types

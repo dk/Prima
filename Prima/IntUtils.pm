@@ -29,6 +29,7 @@
 package Prima::IntUtils;
 
 use strict;
+use warnings;
 use Prima::Const;
 
 package Prima::MouseScroller;

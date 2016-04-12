@@ -40,6 +40,7 @@ and large font output performance.
 =cut
 
 use strict;
+use warnings;
 use Prima;
 use Prima::Application;
 

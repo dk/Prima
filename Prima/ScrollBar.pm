@@ -40,6 +40,7 @@ use vars qw(@ISA @stdMetrics);
 my $win32 = (Prima::Application-> get_system_info-> {apc} == apc::Win32);
 
 use strict;
+use warnings;
 use Prima::Const;
 use Prima::IntUtils;
 

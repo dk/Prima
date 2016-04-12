@@ -28,6 +28,7 @@
 #  $Id$
 
 use strict;
+use warnings;
 use Carp;
 use Prima::Classes;
 use Prima::Buttons;

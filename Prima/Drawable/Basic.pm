@@ -1,5 +1,8 @@
 package Prima::Drawable;
 
+use strict;
+use warnings;
+
 sub rect3d
 {
 	my ( $self, $x, $y, $x1, $y1, $width, $lColor, $rColor, $backColor) = @_;
@@ -266,7 +269,7 @@ sub gradient_calculate_single
 {
 	my ( $self, $breadth, $start_color, $end_color, $function, $offset ) = @_;
 
-	return [] if $breadth <= 0;
+	return if $breadth <= 0;
 
 	$offset //= 0;
 	$start_color = $self->map_color($start_color) if $start_color & cl::SysFlag;

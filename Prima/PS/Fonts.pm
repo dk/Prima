@@ -30,6 +30,7 @@ package Prima::PS::Fonts;
 
 
 use strict;
+use warnings;
 use Prima;
 use Prima::Utils;
 use Prima::PS::Encodings;

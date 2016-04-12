@@ -41,6 +41,7 @@ compbinations of Shift,Alt,and Control.
 =cut
 
 use strict;
+use warnings;
 use Prima 'StdDlg', Application => { name => 'CV' };
 
 my $p = Prima::ColorDialog-> create(

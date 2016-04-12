@@ -29,6 +29,7 @@
 #  $Id$
 
 use strict;
+use warnings;
 use Prima;
 use Prima::PodView;
 use Prima::Buttons;

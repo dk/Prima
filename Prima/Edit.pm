@@ -30,6 +30,8 @@
 #  $Id$
 #
 # edit block types
+use strict;
+use warnings;
 package 
     bt;
 use constant CUA          =>  0;
@@ -40,7 +42,6 @@ package Prima::Edit;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller Prima::UndoActions);
 
-use strict;
 use Prima::Const;
 use Prima::Classes;
 use Prima::ScrollBar;

@@ -26,6 +26,7 @@
 # $Id$
 package Prima::VB::CoreClasses;
 use strict;
+use warnings;
 
 sub classes
 {

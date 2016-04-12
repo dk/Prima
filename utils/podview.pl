@@ -27,6 +27,7 @@
 #
 
 use strict;
+use warnings;
 use Prima;
 use Prima::HelpViewer;
 use Prima::Application;

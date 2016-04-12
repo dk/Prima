@@ -30,6 +30,7 @@
 package Prima::IniFile;
 
 use strict;
+use warnings;
 use Carp;
 use Cwd;
 

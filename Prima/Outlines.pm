@@ -35,6 +35,7 @@
 package Prima::Outlines;
 
 use strict;
+use warnings;
 use Cwd;
 use Prima qw(Classes IntUtils StdBitmap);
 

@@ -32,6 +32,7 @@
 #
 
 use strict;
+use warnings;
 
 my $warnings       = 1;
 my $incFile;
@@ -51,7 +52,7 @@ sub find_file
 
 sub load_file
 {
-	open FILE, $_[0] or die "APC001: Cannot open $_[0]\n";
+	open FILE, $_[0] or die "Cannot open $_[0]\n";
 	{
 		local $/;
 		$_ = <FILE>;
@@ -70,20 +71,20 @@ sub load_file
 				$body .= "$1$2";
 				last if ( $brackets += (( $2 eq '{') ? 1 : -1)) == 0;
 			}
-			die "APC003: Unmatched bracket in $_[0] ( in $title)\n" if $brackets;
+			die "Unmatched bracket in $_[0] ( in $title)\n" if $brackets;
 			$funcs{$title} = "$res$title$parms$body";
 		} else {
 			s|[\s\n\t]*||;
 			last if length( $_) == 0;
 			my $title ||= 'start of file';
-			die "APC004: Error parsing $_[0] ( in $title)\n";
+			die "Error parsing $_[0] ( in $title)\n";
 		}
 	}
 }
 
 # Main
 unless ( $ARGV[ 0]) {
-print "Apricot project. Tml file linker.\n";
+print "Tml file linker for Prima\n";
 print "format: tmlink.pl [ options] filename.tml [filename2.tml...]\n";
 print "options: -Iinclude_path\n";
 print "options: -Ofilename.inc\n";
@@ -104,18 +105,18 @@ ARGUMENT: while( 1)
 	};
 	last ARGUMENT;
 } continue { shift @ARGV; }
-die "APC000: insufficient number of parameters" unless $ARGV [0];
+die "insufficient number of parameters" unless $ARGV [0];
 
 
 @files = @ARGV;
 for ( @files) {
 	s/\\/\//g;
 	my $fName = find_file( $_);
-	die "APC005: Cannot find file: $_\n" if !defined $fName;
+	die "Cannot find file: $_\n" if !defined $fName;
 	load_file( $fName);
 }
 
-open FILE, ">$incFile" or die "APC002: Cannot open $incFile\n" if defined $incFile;
+open FILE, ">$incFile" or die "Cannot open $incFile\n" if defined $incFile;
 my $f = ( defined $incFile) ? \*FILE : \*STDOUT;
 my $fName = defined $incFile ? $incFile : '.Untitled.tml';
 

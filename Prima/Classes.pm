@@ -36,6 +36,7 @@ use Prima::Const;
 package Prima::Object;
 use vars qw(@hooks);
 use strict;
+use warnings;
 use Carp;
 
 sub CLONE_SKIP { 1 }

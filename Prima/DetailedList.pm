@@ -32,6 +32,7 @@
 package Prima::DetailedList;
 
 use strict;
+use warnings;
 use Prima::Classes;
 use Prima::Lists;
 use Prima::Header;

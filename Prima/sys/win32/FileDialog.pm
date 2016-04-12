@@ -27,6 +27,7 @@
 
 use Prima;
 use strict;
+use warnings;
 
 package Prima::sys::win32::FileDialog;
 use vars qw(@ISA);

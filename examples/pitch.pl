@@ -24,8 +24,12 @@
 #  SUCH DAMAGE.
 #
 #  $Id$
+
+use strict;
+use warnings;
 use Prima;
 use Prima::Utils;
+
 =pod 
 
 =head1 NAME

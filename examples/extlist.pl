@@ -40,6 +40,8 @@ its standard CheckList class.
 
 =cut
 
+use strict;
+use warnings;
 use Prima;
 use Prima::ExtLists;
 use Prima::Application;
@@ -49,7 +51,7 @@ my $w = Prima::MainWindow-> create(
 );
 my $v = '';
 vec($v, 0, 8) = 0x77;
-$w-> insert( Prima::CheckList =>
+$w-> insert( 'Prima::CheckList' =>
 	pack     => { fill => 'both', expand => 1},
 	items    => [qw( 'SpaceBar' toggles selection 'Enter' toggles checkbox )],
 	multiColumn => 1,

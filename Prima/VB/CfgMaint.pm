@@ -26,6 +26,7 @@
 # $Id$
 package Prima::VB::CfgMaint;
 use strict;
+use warnings;
 use Prima::Utils;
 use vars qw(@pages %classes $backup $userCfg $rootCfg $systemWide);
 

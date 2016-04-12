@@ -11,12 +11,13 @@ BEGIN {
 };
 
 use strict;
+use warnings;
 use Fcntl qw(O_NONBLOCK F_GETFL F_SETFL);
 use Prima qw(Application Label);
 
 open F, "$^X -e '\$|++;for(1..10){sleep(1);print qq(\$_\\n)}' |";
 
-my $fc;
+my $fc = 0;
 fcntl( F, F_GETFL, $fc) or die "can't fcntl(F_GETFL):$!\n";
 fcntl( F, F_SETFL, O_NONBLOCK|$fc) or die "can't fcntl(F_SETFL):$!\n";
 

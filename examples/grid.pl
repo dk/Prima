@@ -44,6 +44,7 @@ these, toggle $abstract_grid flag.
 
 
 use strict;
+use warnings;
 use Prima;
 use Prima::Application;
 use Prima::Grids;

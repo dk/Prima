@@ -29,6 +29,7 @@
 
 package Prima::Themes;
 use strict;
+use warnings;
 use Prima;
 use vars qw(%themes %data $load_rc_file);
 

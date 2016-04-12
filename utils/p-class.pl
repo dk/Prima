@@ -31,6 +31,7 @@
 # Used by podview ( see File/Run/p-class )
 #
 use strict;
+use warnings;
 
 my $glob_path;
 my $debug = 0;

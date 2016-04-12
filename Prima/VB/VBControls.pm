@@ -27,6 +27,7 @@
 package Prima::VB::VBControls;
 
 use strict;
+use warnings;
 use Prima::Classes;
 use Prima::Lists;
 

@@ -39,7 +39,7 @@ A very basic Prima toolkit usage is demonstrated
 =cut
 
 use strict;
-use lib 'blib/arch';
+use warnings;
 use Prima;
 use Prima::Application name => 'Generic';
 

@@ -38,6 +38,7 @@ package Prima::Lists;
 #   ProtectedListBox
 
 use strict;
+use warnings;
 use Prima::Const;
 use Prima::Classes;
 use Prima::ScrollBar;

@@ -37,6 +37,7 @@ use Prima;
 use Prima::MsgBox;
 use Cwd;
 use strict;
+use warnings;
 
 
 sub profile_default

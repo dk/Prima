@@ -24,6 +24,7 @@
 #
 # $Id$
 use strict;
+use warnings;
 use Prima qw(StdDlg Notebooks MsgBox ComboBox FontDialog ColorDialog IniFile Utils RubberBand);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;

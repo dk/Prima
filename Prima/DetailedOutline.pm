@@ -1,6 +1,7 @@
 package Prima::DetailedOutline;
 
 use strict;
+use warnings;
 use Prima::Outlines;
 use Prima::DetailedList;
 

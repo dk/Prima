@@ -30,6 +30,7 @@ package Prima::StdBitmap;
 use vars qw($sysimage);
 
 use strict;
+use warnings;
 use Prima;
 use Prima::Utils;
 

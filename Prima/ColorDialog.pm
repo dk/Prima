@@ -32,6 +32,7 @@
 #    ColorComboBox
 
 use strict;
+use warnings;
 use Prima::Const;
 use Prima::Classes;
 use Prima::Sliders;

@@ -3,6 +3,9 @@
 
 package Prima::themes::sysimage;
 
+use strict;
+use warnings;
+
 my %state;
 
 use Prima::StdBitmap;

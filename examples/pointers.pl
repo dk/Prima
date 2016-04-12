@@ -40,6 +40,7 @@ Note the custom pointer creation and its dynamic change ( the "User" button ).
 =cut
 
 use strict;
+use warnings;
 use Prima qw( StdBitmap Buttons Application);
 
 package UserInit;

@@ -30,6 +30,7 @@
 #  $Id$
 #
 use strict;
+use warnings;
 use Prima::ScrollWidget;
 
 package Prima::ImageViewer;

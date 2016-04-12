@@ -35,6 +35,7 @@ use constant DropDown     =>  1;
 use constant DropDownList =>  2;
 
 use strict;
+use warnings;
 
 package Prima::ComboBox;
 
@@ -524,7 +525,7 @@ sub InputLine_Change
 
 	if ( $style == cs::DropDownList) {
 		$edit-> {interaction} = 1;
-		$edit-> text( $list-> get_item_text( $matchId));
+		$edit-> text( $list-> get_item_text( $matchId) // '');
 		$edit-> {interaction} = undef;
 	}
 	$list-> {interaction} = undef;

@@ -32,6 +32,7 @@
 package Prima::Widgets;
 
 use strict;
+use warnings;
 use Prima::Const;
 use Prima::Classes;
 

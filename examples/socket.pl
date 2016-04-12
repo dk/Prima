@@ -41,6 +41,7 @@ Note that the toolkit interface is alive during the download.
 =cut
 
 use strict;
+use warnings;
 use Prima 'InputLine', 'Edit', Application => { name => 'WebSource' };
 use Socket;
 

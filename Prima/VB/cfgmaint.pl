@@ -24,6 +24,8 @@
 #  SUCH DAMAGE.
 #
 # $Id$
+use strict;
+use warnings;
 use Prima::VB::CfgMaint;
 
 die <<ABOUT unless @ARGV;

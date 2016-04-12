@@ -41,6 +41,7 @@ implementation of Prima owner change functionality.
 =cut
 
 use strict;
+use warnings;
 use Prima qw(Buttons Application);
 
 my $w = Prima::Window-> create(

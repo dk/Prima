@@ -28,6 +28,7 @@
 #  $Id$
 
 use strict;
+use warnings;
 
 use Prima;
 use Prima::Classes;

@@ -43,7 +43,9 @@
 #   Prima::ImageOpenDialog  => Prima/ImageDialog.pm
 #   Prima::ImageSaveDialog  => Prima/ImageDialog.pm
 
-no strict;
+use strict;
+use warnings;
+
 
 package Prima::ColorDialog;
 

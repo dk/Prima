@@ -1,4 +1,5 @@
 use strict;
+use warnings;
 
 use Prima qw(ScrollWidget);
 # A widget with two scrollbars. Contains set of objects, that know

@@ -42,6 +42,7 @@ and Prima::ListBox widgets.
 =cut
 
 use strict;
+use warnings;
 use Prima qw( ComboBox Edit Application );
 
 

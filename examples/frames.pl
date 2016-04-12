@@ -27,6 +27,7 @@
 #
 
 use strict;
+use warnings;
 use Prima Application => {name => 'Frames sample'};
 use Prima::FrameSet;
 use Prima qw(Buttons);

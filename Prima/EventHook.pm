@@ -28,6 +28,7 @@
 #
 #  $Id$
 use strict;
+use warnings;
 
 package Prima::EventHook;
 use vars qw($hook $auto_hook %hooks %groups);

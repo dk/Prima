@@ -30,6 +30,7 @@
 package Prima::ImageDialog;
 
 use strict;
+use warnings;
 use Prima;
 use Prima::ImageViewer;
 use Prima::ComboBox;

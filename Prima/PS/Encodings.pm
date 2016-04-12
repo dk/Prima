@@ -31,6 +31,7 @@ package Prima::PS::Encodings;
 use vars qw(%files %fontspecific %cache);
 
 use strict;
+use warnings;
 use Prima::Utils;
 
 %files = (

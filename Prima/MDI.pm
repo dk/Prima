@@ -33,6 +33,7 @@ package Prima::MDI;
 #   MDIWindowOwner
 
 use strict;
+use warnings;
 use Prima::Classes;
 use Prima::RubberBand;
 

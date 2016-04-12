@@ -37,6 +37,7 @@ Demonstration and test of mouse_event() function usage.
 =cut
 
 use strict;
+use warnings;
 use Prima;
 use Prima::Classes;
 use Prima::Buttons;

@@ -29,6 +29,7 @@
 
 package Prima::StartupWindow;
 use strict;
+use warnings;
 use vars qw(@windowStack @pointersStack);
 
 sub import {

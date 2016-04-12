@@ -43,6 +43,7 @@ maintained by the PostScript output setup dialog.
 =cut
 
 use strict;
+use warnings;
 use Prima;
 use Prima::PS::Printer;
 use Prima::Application;

@@ -39,6 +39,7 @@ Demonstrates usage of grid widget
 =cut
 
 use strict;
+use warnings;
 use Prima qw(Application Grids);
 
 

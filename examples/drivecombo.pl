@@ -40,6 +40,7 @@ is idle under *nix )
 =cut
 
 use strict;
+use warnings;
 use Prima::ComboBox;
 use Prima::FileDialog;
 

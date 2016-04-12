@@ -66,6 +66,7 @@ Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
 =cut
 
 use strict;
+use warnings;
 use Prima;
 use Prima::Utils;
 use IO::Handle;

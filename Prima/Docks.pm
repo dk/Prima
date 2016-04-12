@@ -43,6 +43,7 @@ package Prima::Docks;
 use Prima;
 use Prima::RubberBand;
 use strict;
+use warnings;
 use Tie::RefHash;
 
 package Prima::AbstractDocker::Interface;

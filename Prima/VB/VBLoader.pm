@@ -26,6 +26,7 @@
 # $Id$
 package Prima::VB::VBLoader;
 use strict;
+use warnings;
 use Prima::Utils;
 use vars qw($builderActive $fileVersion @eventContext $form);
 

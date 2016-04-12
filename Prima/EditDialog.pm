@@ -32,6 +32,7 @@
 #      ReplaceDialog
 
 use strict;
+use warnings;
 use Prima::Classes;
 use Prima::Buttons;
 use Prima::Label;

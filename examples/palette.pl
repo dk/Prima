@@ -45,6 +45,8 @@ multiple images representation on a single widget.
 
 =cut
 
+use strict;
+use warnings;
 use Prima qw(Application);
 
 my $useImages = 0;
