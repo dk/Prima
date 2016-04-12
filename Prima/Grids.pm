@@ -28,6 +28,8 @@
 #
 #  $Id$
 
+package Prima::Grids;
+
 use strict;
 use Prima;
 use Prima::IntUtils;
