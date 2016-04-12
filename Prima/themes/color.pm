@@ -1,4 +1,3 @@
-# $Id$
 # sample color styles
 
 use strict;

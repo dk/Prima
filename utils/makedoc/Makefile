@@ -1,4 +1,3 @@
-# $Id$
 all: Prima.dvi Prima.pdf
 
 Prima.dvi: Prima.tex

@@ -1,4 +1,3 @@
-# $Id$
 # changes sysimage
 
 package Prima::themes::sysimage;
