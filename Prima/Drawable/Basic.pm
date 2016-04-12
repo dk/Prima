@@ -1,3 +1,4 @@
+package Prima::Drawable::Basic; # for metacpan
 package Prima::Drawable;
 
 use strict;

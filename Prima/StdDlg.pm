@@ -15,6 +15,7 @@
 #   Prima::ImageOpenDialog  => Prima/ImageDialog.pm
 #   Prima::ImageSaveDialog  => Prima/ImageDialog.pm
 
+package Prima::StdDlg;
 use strict;
 use warnings;
 

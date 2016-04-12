@@ -1,5 +1,6 @@
 # Initializes Prima in no-X11 environment
 
+package Prima::noX11; # for metacpan
 package Prima;
 use Prima::Config;
 
