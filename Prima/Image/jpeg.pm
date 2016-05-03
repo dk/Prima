@@ -105,27 +105,22 @@ sub save_dialog
 	return Prima::Image::jpeg-> create;
 }
 
-sub exif_get_orientation
+sub _exif_find_orientation_tag
 {
 # courtesy from gtk/gdk-pixbuf/io-jpeg.c
 	my $i = shift;
 
-	return unless exists $i->{extras}->{codecID};
-	return unless Prima::Image->codecs->[ $i->{extras}->{codecID} ]->{fileShortType} eq 'JPEG';
-	
-	my $exif;
+	my ($exif, $ptr);
 	for my $a ( grep { defined } @{ $i->{extras}->{appdata} || [] }) {
-		$exif = $a if $a =~ s/^Exif\0\0//;
-		if ( $a =~ /\bAngleInfoRoll>([\d\.]+)</ ) {
-			my $r = int($1);
-			return 3 if $r == 180;
-			return 8 if $r == 90;
-			return 6 if $r == 270;
-			return 1;
+		if ($a =~ /^Exif\0\0/) {
+			$ptr = \$a;
+			$exif = $a;
 		}
-
 	}
-	return unless $exif && length($exif) > 32;
+
+	return unless $exif && length($exif) > 36;
+	$exif =~ s/^(Exif\0\0)// or return;
+	my $offset_ret = length($1);
 
         # Check for exif header and catch endianess */
 	# Just skip data until exif header - it should be within 16 bytes from marker start.
@@ -142,10 +137,12 @@ sub exif_get_orientation
 	#       The exif header should thus normally be found at i=6, below,
 	#       and the pointer to IFD0 will be at 6+4 = 10.
 	my $order;
-	if ( $exif =~ s/.{0,12}\x49\x49\x2a\x00//) {
+	if ( $exif =~ s/(.{0,12}\x49\x49\x2a\x00)//) {
 		$order = 'v'; # LE
-	} elsif ( $exif =~ s/.{0,12}\x4d\x4d\x00\x2a// ) {
+		$offset_ret += 1;
+	} elsif ( $exif =~ s/(.{0,12}\x4d\x4d\x00\x2a)// ) {
 		$order = 'n'; # BE
+		$offset_ret += 1;
 	} else {
 		return;
 	}
@@ -154,26 +151,78 @@ sub exif_get_orientation
 	my $offset = unpack("\U$order", $exif) - 4;
 	return if $offset < 0 || length($exif) < $offset;
 	substr( $exif, 0, $offset, '');
+	$offset_ret += $offset;
 
 	# Find out how many tags we have in IFD0. As per the exif spec, the first
 	# two bytes of the IFD contain a count of the number of tags.
 	my $tags = unpack($order, $exif);
 	$exif =~ s/^..//;
+	$offset_ret += 2;
 	return if $tags * 12 > length $exif;
 
 	# Check through IFD0 for tags of interest */
 	while ($tags--){
 		# The tags are listed in consecutive 12-byte blocks
 		my ($tag, $type, $count, $val) = unpack("$order$order\U$order\L$order", $exif);
-		$exif =~ s/^.{12}//;
 		# Is this the orientation tag? 
-		next unless $tag == 0x112;
+		unless ($tag == 0x112) {
+			$exif =~ s/^.{12}//;
+			$offset_ret += 12;
+			next;
+		}
 		return if $type != 3 or $count != 1 or $val > 8;
-		return $val;
+		return $ptr, $offset_ret + 8, $order, $val;
 	}
 
 	return; # nothing found
 }
+
+sub _exif_find_angle_tag
+{
+	my $i = shift;
+
+	for my $a ( grep { defined } @{ $i->{extras}->{appdata} || [] }) {
+		if ( $a =~ /\bAngleInfoRoll>([\d\.]+)</ ) {
+			my $r = int($1);
+			return \$a, 3 if $r == 180;
+			return \$a, 8 if $r == 90;
+			return \$a, 6 if $r == 270;
+			return \$a, 1;
+		}
+	}
+
+	return;
+}
+
+sub exif_get_orientation
+{
+	my $i = shift;
+
+	return unless exists $i->{extras}->{codecID};
+	return unless Prima::Image->codecs->[ $i->{extras}->{codecID} ]->{fileShortType} eq 'JPEG';
+	
+	my ( undef, undef, undef, $value ) = _exif_find_orientation_tag( $i );
+	return $value if defined $value;
+	
+	( undef, $value ) = _exif_find_angle_tag( $i );
+	return $value;
+}
+
+sub exif_clear_orientation
+{
+	my $i = shift;
+	return unless exists $i->{extras}->{codecID};
+	return unless Prima::Image->codecs->[ $i->{extras}->{codecID} ]->{fileShortType} eq 'JPEG';
+	
+	my ( $exif, $offset, $format, $value ) = _exif_find_orientation_tag( $i );
+	if (defined $exif) {
+		substr( $$exif, $offset, 2 ) = pack( $format, 1 );
+	}
+	
+	my ( $angle ) = _exif_find_angle_tag( $i );
+	$$angle =~ s/\b(AngleInfoRoll>)[\d\.]+(<)/${1}0$2/ if $angle;
+}
+
 
 #      1        2       3      4         5            6           7          8
 #
