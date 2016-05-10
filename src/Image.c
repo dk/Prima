@@ -106,7 +106,7 @@ Image_handle_event( Handle self, PEvent event)
    if ( var-> stage > csNormal) return;
    switch ( event-> cmd) {
    case cmImageHeaderReady:
-      my-> notify( self, "<s", "HeaderReady");
+      my-> notify( self, "<sS", "HeaderReady", sv_2mortal(newRV((SV*) event-> gen. p)));
       break;
    case cmImageDataReady:
       my-> update_change( self);

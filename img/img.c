@@ -510,6 +510,8 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
          PIcon( fi. object)-> autoMasking = amNone;
 
       fi. frameProperties = newHV();
+      if ( fi. loadExtras && c-> info-> fileType) 
+         (void) hv_store( fi. frameProperties, "codecID", 7, newSViv( codecID), 0);
 
       /* loading image */
       if ( !c-> vmt-> load( c, &fi)) {
@@ -547,7 +549,7 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
                   i-> type |= imGrayScale;
                break;
             }
-      }   
+      }
 
       /* updating image */
       if ( !fi. noImageData)
@@ -1322,6 +1324,7 @@ void
 apc_img_notify_header_ready( PImgLoadFileInstance fi)
 {
       Event e = { cmImageHeaderReady };
+      e. gen. p = fi-> frameProperties;
       CImage( fi-> object)-> message( fi-> object, &e);
 }
 

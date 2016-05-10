@@ -257,3 +257,29 @@ sub exif_transform_image
                 $image->rotate(270);
 	}
 }
+
+# x1 = x0*a+y0*b+w*c+h*d
+# y1 = x0*e+y0*f+w*h*h*i
+sub exif_orientation_matrix
+{
+        my ( $orientation ) = @_;
+	$orientation //= 1;
+
+	if ( $orientation == 1 ) {
+		return ( 1, 0, 0, 0, 0, 1, 0, 0 );
+	} elsif ( $orientation == 2 ) {
+		return ( -1, 0, 1, 0, 0, 1, 0, 0 );
+	} elsif ( $orientation == 3 ) {
+		return ( -1, 0, 1, 0, 0, -1, 0, 1 );
+	} elsif ( $orientation == 4 ) {
+		return ( 1, 0, 0, 0, 0, -1, 0, 1 );
+	} elsif ( $orientation == 5 ) {
+		return ( 0, -1, 0, 1, -1, 0, 1, 0);
+	} elsif ( $orientation == 6 ) {
+		return ( 0, 1, 0, 0, -1, 0, 1, 0);
+	} elsif ( $orientation == 7 ) {
+		return ( 0, 1, 0, 0, 1, 0, 0, 0);
+	} elsif ( $orientation == 8 ) {
+		return ( 0, -1, 0, 1, 1, 0, 0, 0);
+	}
+}
