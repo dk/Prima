@@ -448,43 +448,14 @@ sub zoomPrecision{($#_)?$_[0]-> set_zoom_precision($_[1]):return $_[0]-> {zoomPr
 sub quality      {($#_)?$_[0]-> set_quality($_[1]):return $_[0]-> {quality}}
 sub stretch      {($#_)?$_[0]-> set_stretch($_[1]):return $_[0]-> {stretch}}
 
-sub transform_points
-{
-	my ( $m, $w, $h ) = (shift, shift, shift);
-	my @ret;
-	while ( @_ ) {
-		my ( $x, $y ) = ( shift, shift );	
-		push @ret, $$m[0]*$x + $$m[2]*$w + $$m[1]*$y + $$m[3]*$h, $$m[4]*$x + $$m[6]*$w + $$m[5]*$y + $$m[7]*$h;
-	}
-	return @ret;
-}
-
 sub PreviewImage_HeaderReady
 { 
 	my ( $self, $image, $extras) = @_;
 	my $db;
-	my ( $w, $h ) = $image-> size;
-	if ( $self-> {__watch}-> {options}-> {with_transforms} && $extras && exists $extras-> {codecID} ) {
-		if ( Prima::Image->codecs->[ $extras->{codecID} ]->{fileShortType} eq 'JPEG' ) {
-			eval "use Prima::Image::jpeg';";
-			local $image->{extras} = $extras;
-			my $orientation = Prima::Image::jpeg::exif_get_orientation($image);
-			my @m          = Prima::Image::jpeg::exif_orientation_matrix($orientation);
-			$orientation = undef if join('', @m) eq '10000100'; # identity
-			if ( defined $orientation ) {
-				my ($w1, $h1, $w2, $h2) = transform_points(\@m, $w, $h, 0, 0, $w, $h);
-				$w1 = $w2 if $w2 > $w1;
-				$h1 = $h2 if $h2 > $h1;
-				($w, $h) = ($w1, $h1);
-				$self-> {__watch}->{orientation} = $orientation;
-				$self-> {__watch}->{matrix}      = \@m;
-			}
-		}
-	}
 	eval {
 		$db = Prima::DeviceBitmap-> new(
-			width    => $w,
-			height   => $h,
+			width    => $image->width,
+			height   => $image->height,
 		);
 	};
 	return unless $db;
@@ -501,23 +472,10 @@ sub PreviewImage_DataReady
 	return unless exists $self-> {__watch} && $self->{__watch}->{preview};
 
 	# do not update if DataReady covers the whole image at once
-	return if $y == 0 and $h == $image-> height;
+	return if $y == 0 and $x == 0 && $h == $image-> height && $w == $image-> width;
 
-	my @r;
-	if ( defined $self-> {__watch}->{orientation} ) {
-		my $part = $image->extract( $x, $y, $w, $h );
-		Prima::Image::jpeg::exif_transform_image( $part, $self-> {__watch}->{orientation} );
-		my ($X1, $Y1, $X2, $Y2) = transform_points( $self-> {__watch}->{matrix}, $image->size, $x, $y, $x + $w, $y + $h );
-		($X1, $X2) = ($X2, $X1) if $X2 < $X1;
-		($Y1, $Y2) = ($Y2, $Y1) if $Y2 < $Y1;
-		my $W = $X2 - $X1;
-		my $H = $Y2 - $Y1;
-		$self-> image-> put_image_indirect( $part, $X1, $Y1, 0, 0, $W, $H, $W, $H, rop::CopyPut);
-		@r = $self-> point2screen( $X1, $Y1, $X2, $Y2);
-	} else {
-		$self-> image-> put_image_indirect( $image, $x, $y, $x, $y, $w, $h, $w, $h, rop::CopyPut);
-		@r = $self-> point2screen( $x, $y, $x + $w, $y + $h);
-	}
+	$self-> image-> put_image_indirect( $image, $x, $y, $x, $y, $w, $h, $w, $h, rop::CopyPut);
+	my @r = $self-> point2screen( $x, $y, $x + $w, $y + $h);
 	$self-> invalidate_rect(
 		(map { int($_) } @r[0,1]),
 		(map { int($_ + .5) + 1 } @r[2,3])
@@ -527,7 +485,7 @@ sub PreviewImage_DataReady
 
 sub watch_load_progress
 {
-	my ( $self, $image, %options) = @_;
+	my ( $self, $image) = @_;
 
 	$self-> unwatch_load_progress(0);
 
@@ -536,7 +494,6 @@ sub watch_load_progress
 		$image-> add_notification( 'DataReady',   \&PreviewImage_DataReady,   $self)
 		;
 	$self-> {__watch} = {
-		options       => \%options,
 		notifications => \@ids,
 	};
 }

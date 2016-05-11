@@ -1616,7 +1616,7 @@ void
 Image_rotate( Handle self, int degrees)
 {
    Byte * new_data;
-   int new_line_size;
+   int new_line_size = 0;
 
    switch (degrees) {
    case 90:
@@ -1653,7 +1653,7 @@ Image_rotate( Handle self, int degrees)
       break;
    }
 
-   img_rotate( self, new_data, degrees );
+   img_rotate( self, new_data, new_line_size, degrees );
    if ( degrees != 180 ) {
       int h = var->h;
       var->h = var->w;

@@ -1441,7 +1441,7 @@ VALID_COMBINATION:
 	/* it's not icomplete, it's a real libtiff error camouflaged inside */
         if ( y == 0 ) return false;
    } else {
-        EVENT_SCANLINES_FINISHED(fi);
+        EVENT_TOPDOWN_SCANLINES_FINISHED(fi);
    }
    
    return true;

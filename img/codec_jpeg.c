@@ -14,6 +14,8 @@
 #endif
 #include <sys/types.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #define XMD_H /* fails otherwise on redefined INT32 */
 #include <jpeglib.h>
 #include <jerror.h>
@@ -56,12 +58,21 @@ init( PImgCodecInfo * info, void * param)
    return (void*)1;
 }   
 
+static HV *
+load_defaults( PImgCodec c)
+{
+   HV * profile = newHV();
+   pset_c( exifTransform, "none");
+   return profile;
+}
+
 typedef struct _LoadRec {
    struct  jpeg_decompress_struct d;
    struct  jpeg_error_mgr         e;
    jmp_buf                        j;
    Bool                        init;
-   Byte *                    tmpbuf;
+   Byte *                    channelbuf;
+   Byte *                    transformbuf;
 } LoadRec;
 
 
@@ -318,13 +329,228 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
    return l;
 }
 
+/*
+courtesy from gtk/gdk-pixbuf/io-jpeg.c
+
+Check for exif header and catch endianess
+Just skip data until exif header - it should be within 16 bytes from marker start.
+ Normal structure relative to APP1 marker -
+      0x0000: APP1 marker entry = 2 bytes
+ 	0x0002: APP1 length entry = 2 bytes
+      0x0004: Exif Identifier entry = 6 bytes
+      0x000A: Start of exif header (Byte order entry) - 4 bytes  
+          	- This is what we look for, to determine endianess.
+      0x000E: 0th IFD offset pointer - 4 bytes
+
+      exif_marker->data points to the first data after the APP1 marker
+      and length entries, which is the exif identification string.
+      The exif header should thus normally be found at i=6, below,
+      and the pointer to IFD0 will be at 6+4 = 10.
+*/
+#define BYTEORDER_UNKNOWN -1
+#define BYTEORDER_LE 0
+#define BYTEORDER_BE 1
+#define READ_WORD(c,len,byteorder)  ((len < 2)  ? 0 : (c)[byteorder] + (int)((c)[!byteorder]) * 256)
+#define READ_DWORD(c,len,byteorder) ((len < 4)  ? 0 : \
+   READ_WORD((c) + byteorder * 2, len, byteorder ) + \
+   READ_WORD((c) + (!byteorder) * 2, len, byteorder ) * 65536)
+
+static int
+exif_find_orientation_tag( unsigned char * c, STRLEN len, int wipe)
+{
+    int i, byteorder = BYTEORDER_UNKNOWN, ifd_offset, ntags;
+    unsigned char le_sig[] = { 0x49, 0x49, 0x2a, 0x00 };
+    unsigned char be_sig[] = { 0x4d, 0x4d, 0x00, 0x2a };
+    if ( len < 36 ) return 0;
+#define ADVANCE(x) c += x; len -= x    
+
+    if ( memcmp((void*)c, (void*)"Exif\0\0", 6) != 0 ) return 0;
+    ADVANCE(6);
+
+    /* find out byteorder */
+    for ( i = 0; i < 12; i++, c++, len--) {
+       if (memcmp( c, le_sig, 4) == 0 ) {
+          byteorder = BYTEORDER_LE;
+	  break;
+       } 
+       if (memcmp( c, be_sig, 4) == 0 ) {
+          byteorder = BYTEORDER_BE;
+	  break;
+       } 
+    }
+    if ( byteorder == BYTEORDER_UNKNOWN ) return 0;
+    ADVANCE(4);
+
+    /* Read out the offset pointer to IFD0 */
+    ifd_offset = READ_DWORD(c, len, byteorder) - 4;
+    if ( ifd_offset < 0 || len < ifd_offset ) return 0;
+    ADVANCE(ifd_offset);
+
+    /* Find out how many tags we have in IFD0. As per the exif spec, the first
+      two bytes of the IFD contain a count of the number of tags.*/
+    ntags = READ_WORD(c, len, byteorder);
+    ADVANCE(2);
+    if ( ntags * 12 > len ) return 0;
+
+    /* Check through IFD0 for tags of interest */
+    while (ntags--) {
+	/*  The tags are listed in consecutive 12-byte blocks */
+	int tag   = READ_WORD ( c + 0, len - 0, byteorder);
+	int type  = READ_WORD ( c + 2, len - 2, byteorder);
+	int count = READ_DWORD( c + 4, len - 4, byteorder);
+	int value = READ_WORD ( c + 8, len - 8, byteorder);
+	/* Is this the orientation tag? */
+	if ( tag != 0x112 ) {
+           ADVANCE(12);
+	   continue;
+	}
+	if ( type != 3 || count != 1 || value > 8 ) return 0;
+	if ( wipe ) c[8 + byteorder] = 0;
+	return value;
+    }
+
+    return 0;
+}
+
+static int
+exif_find_angle_tag( unsigned char * c, STRLEN len, int wipe)
+{
+    int i;
+    char * c2, buf[256], sig[] = "AngleInfoRoll>";
+    if ((c  = strstr((char*)c, sig)) == NULL) return 0;
+    c += strlen( sig );
+    if ((c2 = strstr((char*)c, "<")) == NULL) return 0;
+    strncpy( buf, (char*)c, c2 - (char*)c);
+    buf[255] = 0;
+    i = atoi(buf);
+    if ( i == 0 ) return 0;
+
+    if ( wipe ) {
+       for ( ; (char*)c < c2; c++) *c = '0';
+    }
+    if ( i == 180 ) return 3;
+    if ( i == 90  ) return 8;
+    if ( i == 270 ) return 6;
+    return 1;
+}
+
+static int
+exif_detect_orientation( HV * fp, int wipe )
+{
+   int i, orientation, ret = 0;
+   AV * av;
+   SV ** sv = hv_fetch( fp, "appdata", 7, 0);
+   if ( !( sv && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVAV)) return 1;
+   av = (AV*) SvRV(*sv);
+   for ( i = 0; i <= av_len(av); i++) {
+      unsigned char * c;
+      STRLEN len;
+      SV ** ssv = av_fetch( av, i, 0);
+      if ( !ssv || !SvPOK( *ssv)) continue;
+      c = (unsigned char *) SvPV( *ssv, len );
+      if ((orientation = exif_find_orientation_tag( c, len, wipe )) > 0) {
+      	 if ( ret == 0 ) ret = orientation;
+         if ( !wipe ) break;
+      }
+      if ((orientation = exif_find_angle_tag( c, len, wipe )) > 0) {
+      	 if ( ret == 0 ) ret = orientation;
+         if ( !wipe ) break;
+      }
+   }
+   return ret;
+}
+
+/*
+      1        2       3      4         5            6           7          8
+
+    888888  888888      88  88      8888888888  88                  88  8888888888
+    88          88      88  88      88  88      88  88          88  88      88  88
+    8888      8888    8888  8888    88          8888888888  8888888888          88
+    88          88      88  88
+    88          88  888888  888888
+
+*/
+
+static void
+exif_setup_rotation( PImage i, PImage d, Byte ** dest, int orientation, int * direction )
+{
+   *d = *i;
+   d-> h = 1;
+   if ( orientation > 4 ) {
+      d-> w = i-> h;
+      d-> lineSize = (( d->w * ( d->type & imBPP) + 31) / 32) * 4;
+   }
+   d-> dataSize = d-> lineSize;
+
+   switch (orientation) {
+   case 2:
+      *dest = i-> data + ( i-> h - 1) * i-> lineSize;
+      *direction = SCANLINES_DIR_TOP_TO_BOTTOM;
+      break;
+   case 3:
+   case 4:
+      *dest = i-> data;
+      *direction = SCANLINES_DIR_BOTTOM_TO_TOP;
+      break;
+   case 5:
+   case 8:
+      *dest = i-> data;
+      *direction = SCANLINES_DIR_LEFT_TO_RIGHT;
+      break;
+   case 6:
+   case 7:
+      *dest = i-> data + (i-> w - 1) * ( i->type & imBPP) / 8;
+      *direction = SCANLINES_DIR_RIGHT_TO_LEFT;
+      break;
+   }
+}
+
+static void
+exif_transform_scanline( PImage i, PImage d, Byte ** dest, int orientation)
+{
+   int ls = i-> lineSize;
+   switch (orientation) {
+   case 2:
+      img_mirror((Handle) d, 0);
+      memcpy( *dest, d-> data, d-> lineSize);
+      *dest -= i-> lineSize;
+      break;
+   case 3:
+      img_rotate((Handle) d, *dest, 0, 180);
+      *dest += i-> lineSize;
+      break;
+   case 4:
+      memcpy( *dest, d-> data, d-> lineSize);
+      *dest += i-> lineSize;
+      break;
+   case 5:
+      img_rotate((Handle) d, *dest, i-> lineSize, 90);
+      *dest += (d->type & imBPP) / 8;
+      break;
+   case 6:
+      img_rotate((Handle) d, *dest, i-> lineSize, 90);
+      *dest -= (d->type & imBPP) / 8;
+      break;
+   case 7:
+      img_rotate((Handle) d, *dest, i-> lineSize, 270);
+      *dest -= (d->type & imBPP) / 8;
+      break;
+   case 8:
+      img_rotate((Handle) d, *dest, i-> lineSize, 270);
+      *dest += (d->type & imBPP) / 8;
+      break;
+   }
+}
+
 static Bool   
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
+   dPROFILE;
    LoadRec * l = ( LoadRec *) fi-> instance;
    PImage i = ( PImage) fi-> object;
-   int bpp;
+   int bpp, orientation = 0, width, height;
    jmp_buf j;
+   HV * profile = fi-> profile;
   
    if ( setjmp( j) != 0) return false;
    memcpy( l->j, j, sizeof(jmp_buf));
@@ -337,45 +563,84 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    if ( bpp != 8 && bpp != 24 && bpp != 32) {
       sprintf( fi-> errbuf, "Bit depth %d is not supported", bpp);
       return false;
-   }   
+   }
+
+   width  = l-> d. output_width;
+   height = l-> d. output_height;
+   if ( pexist( exifTransform )) {
+      char * cmd = pget_c(exifTransform);
+      int wipe = 0, transform = 0;
+      if ( strcmp(cmd, "wipe") == 0 ) {
+         wipe = transform = 1;
+      } else if ( strcmp( cmd, "auto" ) == 0 ) {
+         transform = 1;
+      }
+      if ( transform ) {
+         orientation = exif_detect_orientation(fi->frameProperties, wipe);
+         if ( orientation > 4 ) {
+            int i = width;
+            width = height;
+            height = i;
+         }
+      }
+   }
 
    if ( bpp == 32) bpp = 24;
    if ( bpp == 8) bpp |= imGrayScale;
    CImage( fi-> object)-> create_empty( fi-> object, 1, 1, bpp);
    if ( fi-> noImageData) {
-      (void) hv_store( fi-> frameProperties, "width",  5, newSViv( l-> d. output_width), 0);
-      (void) hv_store( fi-> frameProperties, "height", 6, newSViv( l-> d. output_height), 0);
+      (void) hv_store( fi-> frameProperties, "width",  5, newSViv( width), 0);
+      (void) hv_store( fi-> frameProperties, "height", 6, newSViv( height), 0);
       jpeg_abort_decompress( &l-> d);
       return true;
    }
 
-   
-   CImage( fi-> object)-> create_empty( fi-> object, l-> d. output_width, l-> d. output_height, bpp);
+   CImage( fi-> object)-> create_empty( fi-> object, width, height, bpp);
    EVENT_HEADER_READY(fi);
    {
       Byte * dest = i-> data + ( i-> h - 1) * i-> lineSize;
+      int direction = SCANLINES_DIR_TOP_TO_BOTTOM;
+      Image rotation;
 
       if (l-> d. output_components == 4) {
-         if ( !(l->tmpbuf = malloc( i-> w * 4))) {
+         if ( !(l->channelbuf = malloc( l-> d. output_width * 4))) {
             sprintf( fi-> errbuf, "Not enough memory");
             return false;
          }
       }
 
+      if ( orientation > 1 ) {
+         if ( !(l->transformbuf = malloc( l-> d. output_width * 4))) {
+            sprintf( fi-> errbuf, "Not enough memory");
+            return false;
+         }
+	 exif_setup_rotation( i, &rotation, &dest, orientation, &direction );
+	 rotation. data = l-> transformbuf;
+      }
+
       while ( l-> d.output_scanline < l-> d.output_height ) {
          JSAMPROW sarray[1];
-         int scanlines;
-         sarray[0] = (l-> d. output_components == 4) ? l->tmpbuf : dest;
+         int scanlines, offset = 0;
+	 Byte * prima_pixels = (orientation > 1) ? rotation. data : dest;
+         sarray[0] = (l-> d. output_components == 4) ? l->channelbuf : prima_pixels;
          scanlines = jpeg_read_scanlines(&l-> d, sarray, 1);
+	 if ( scanlines == 0 ) {
+	    if ( fi->noIncomplete ) {
+               sprintf( fi-> errbuf, "Image is truncated");
+               return false;
+	    }
+	    break;
+	 }
+
          switch (l-> d. output_components) {
          case 3:
-            cm_reverse_palette(( PRGBColor) dest, ( PRGBColor) dest, i-> w);
+            cm_reverse_palette(( PRGBColor) prima_pixels, ( PRGBColor) prima_pixels, l->d.output_width);
             break;
          case 4:
             {
-                register Byte * s = l->tmpbuf - 4;
-                register Byte * d = dest;
-                register int w = i->w;
+                register Byte * s = l->channelbuf - 4;
+                register Byte * d = prima_pixels;
+                register int w = l->d.output_width;
                 register Byte mul;
                 while (w-- > 0) {
                     s += 7;
@@ -387,11 +652,15 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
             }
             break;
          }
-         dest -= scanlines * i-> lineSize;
-         EVENT_TOPDOWN_SCANLINES_READY(fi,scanlines);
+	 if ( orientation > 1 ) {
+	    exif_transform_scanline( i, &rotation, &dest, orientation );
+	 } else {
+            dest -= i-> lineSize;
+	 }
+         EVENT_SCANLINES_READY(fi,1,direction);
       }   
    }   
-   EVENT_SCANLINES_FINISHED(fi);
+   EVENT_TOPDOWN_SCANLINES_FINISHED(fi);
    jpeg_finish_decompress(&l-> d);
    return true;
 }   
@@ -404,7 +673,8 @@ close_load( PImgCodec instance, PImgLoadFileInstance fi)
    my_src_ptr src = (my_src_ptr) l->d.src;
    free( src-> buffer);
    free( src);
-   free(l->tmpbuf);
+   free(l->transformbuf);
+   free(l->channelbuf);
    l->d.src = NULL;
    jpeg_destroy_decompress(&l-> d);
    free( l);
@@ -683,6 +953,7 @@ apc_img_codec_jpeg( void )
    struct ImgCodecVMT vmt;
    memcpy( &vmt, &CNullImgCodecVMT, sizeof( CNullImgCodecVMT));
    vmt. init          = init;
+   vmt. load_defaults = load_defaults;
    vmt. open_load     = open_load;
    vmt. load          = load; 
    vmt. close_load    = close_load; 

@@ -123,7 +123,7 @@ rotate270( PImage i, Byte * new_data, int new_line_size)
 }
 
 void 
-img_rotate( Handle self, Byte * new_data, int degrees)
+img_rotate( Handle self, Byte * new_data, int new_line_size, int degrees)
 {
    PImage i = ( PImage ) self;
 
@@ -132,13 +132,13 @@ img_rotate( Handle self, Byte * new_data, int degrees)
 
    switch ( degrees ) {
    case 90:
-      rotate90(i, new_data, (( i-> h * ( i->type & imBPP) + 31) / 32) * 4);
+      rotate90(i, new_data, new_line_size);
       break;
    case 180:
       rotate180(i, new_data);
       break;
    case 270:
-      rotate270(i, new_data, (( i-> h * ( i->type & imBPP) + 31) / 32) * 4);
+      rotate270(i, new_data, new_line_size);
       break;
    }
 }

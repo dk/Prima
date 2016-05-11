@@ -1329,10 +1329,10 @@ apc_img_notify_header_ready( PImgLoadFileInstance fi)
 }
 
 void
-apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines)
+apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines, int direction)
 {
       Event e;
-      int height;
+      int height, width;
       unsigned int dt;
       struct timeval t;
 
@@ -1347,10 +1347,34 @@ apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines)
 
       e. cmd = cmImageDataReady;
       height = PImage( fi-> object)-> h;
-      e. gen. R. left   = 0;
-      e. gen. R. right  = PImage( fi-> object)-> w - 1;
-      e. gen. R. top    = height - fi-> lastEventScanline  - 1;
-      e. gen. R. bottom = height - fi-> lastCachedScanline;
+      width  = PImage( fi-> object)-> w;
+
+      switch ( direction ) {
+      case SCANLINES_DIR_TOP_TO_BOTTOM:
+         e. gen. R. left   = 0;
+         e. gen. R. right  = width - 1;
+         e. gen. R. bottom = height - fi-> lastCachedScanline;
+         e. gen. R. top    = height - fi-> lastEventScanline  - 1;
+	 break;
+      case SCANLINES_DIR_BOTTOM_TO_TOP:
+         e. gen. R. left   = 0;
+         e. gen. R. right  = width - 1;
+         e. gen. R. bottom = fi-> lastEventScanline;
+         e. gen. R. top    = fi-> lastCachedScanline - 1;
+	 break;
+      case SCANLINES_DIR_LEFT_TO_RIGHT:
+         e. gen. R. left   = fi-> lastEventScanline;
+         e. gen. R. right  = fi-> lastCachedScanline - 1;
+         e. gen. R. bottom = 0;
+         e. gen. R. top    = height - 1;
+	 break;
+      case SCANLINES_DIR_RIGHT_TO_LEFT:
+         e. gen. R. left    = width - fi-> lastCachedScanline;
+         e. gen. R. right   = width - fi-> lastEventScanline - 1;
+         e. gen. R. bottom  = 0;
+         e. gen. R. top     = height - 1;
+	 break;
+      }
       CImage( fi-> object)-> message( fi-> object, &e);
 
       gettimeofday( &fi-> lastEventTime, nil);

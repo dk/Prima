@@ -171,8 +171,12 @@ extern void  apc_img_profile_add( HV * to, HV * from, HV * keys);
 extern int   apc_img_read_palette( PRGBColor palBuf, SV * palette, Bool triplets);
 
 /* event macros */
+#define SCANLINES_DIR_LEFT_TO_RIGHT 0
+#define SCANLINES_DIR_RIGHT_TO_LEFT 1
+#define SCANLINES_DIR_TOP_TO_BOTTOM 2
+#define SCANLINES_DIR_BOTTOM_TO_TOP 3
 extern void  apc_img_notify_header_ready( PImgLoadFileInstance fi);
-extern void  apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines);
+extern void  apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines, int direction);
 
 #define EVENT_HEADER_READY(fi) \
   if ( fi-> eventMask & IMG_EVENTS_HEADER_READY) \
@@ -182,14 +186,16 @@ extern void  apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanli
   (fi)-> lastEventScanline = (fi)-> lastCachedScanline = 0; \
   gettimeofday( &(fi)-> lastEventTime, nil)
 
-#define EVENT_TOPDOWN_SCANLINES_READY(fi,scanlines) \
+#define EVENT_SCANLINES_READY(fi,scanlines,dir) \
   if ( (fi)-> eventMask & IMG_EVENTS_DATA_READY) \
-    apc_img_notify_scanlines_ready((fi),scanlines)
-#define EVENT_SCANLINES_FINISHED(fi) \
+    apc_img_notify_scanlines_ready((fi),scanlines,dir)
+#define EVENT_SCANLINES_FINISHED(fi,dir) \
   if ( (fi)-> eventMask & IMG_EVENTS_DATA_READY) {\
     fi-> lastEventTime.tv_sec = fi-> lastEventTime.tv_usec = 0;\
-    apc_img_notify_scanlines_ready((fi),0); \
+    apc_img_notify_scanlines_ready((fi),0,dir); \
   }
+#define EVENT_TOPDOWN_SCANLINES_READY(fi,scanlines) EVENT_SCANLINES_READY(fi,scanlines,SCANLINES_DIR_TOP_TO_BOTTOM)
+#define EVENT_TOPDOWN_SCANLINES_FINISHED(fi) EVENT_SCANLINES_FINISHED(fi,SCANLINES_DIR_TOP_TO_BOTTOM)
 
 #ifdef __cplusplus
 }
