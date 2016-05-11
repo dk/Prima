@@ -237,6 +237,14 @@ prima_ximage_event( XEvent *eve) /* to be called from apc_event's handle_event *
 #endif
 }
 
+#ifdef USE_MITSHM
+static int
+check_ximage_event( Display * disp, XEvent * ev, XPointer data)
+{
+   return ev-> type == guts. shared_image_completion_event;
+}
+#endif
+
 void
 prima_put_ximage( 
 	XDrawable win, GC gc, PrimaXImage *i, 
@@ -250,6 +258,7 @@ prima_put_ximage(
    }
 #ifdef USE_MITSHM
    if ( i-> shm) {
+      XEvent ev;
       if ( src_y + height > i-> image-> height)
          height = i-> image-> height - src_y;
       if ( i-> ref_cnt < 0)
@@ -259,6 +268,10 @@ prima_put_ximage(
          hash_store( guts.ximages, &i->xmem.shmseg, sizeof(i->xmem.shmseg), i);
       XShmPutImage( DISP, win, gc, i-> image, src_x, src_y, dst_x, dst_y, width, height, true);
       XFlush(DISP);
+      if ( XCheckIfEvent( DISP, &ev, check_ximage_event, NULL) ) {
+          while (XCheckIfEvent( DISP, &ev, check_ximage_event, NULL));
+	  prima_ximage_event(&ev);
+      }
       return;
    }
 #endif
