@@ -231,7 +231,7 @@ read_ahead(AHEAD *ahead)
 		ahead-> lasty = ahead-> y;
 		ahead-> y     = ahead-> read / ahead-> ls;
 		ahead-> inx = 0;
-		EVENT_TOPDOWN_SCANLINES_READY(ahead-> fi, ahead-> y - ahead-> lasty);
+		EVENT_SCANLINES_READY(ahead-> fi, ahead-> y - ahead-> lasty, SCANLINES_DIR_BOTTOM_TO_TOP);
 	}
 
 	return ahead->buf[ahead->inx++];
@@ -613,7 +613,7 @@ req_read_big( PImgLoadFileInstance fi, int h, unsigned long lineSize, Byte * dat
 			data += r;
 			lasty = y;
 			y = read / lineSize;
-			EVENT_TOPDOWN_SCANLINES_READY(fi, y - lasty);
+			EVENT_SCANLINES_READY(fi, y - lasty, SCANLINES_DIR_BOTTOM_TO_TOP);
 		}
 	} else {
 		/* just read */
@@ -679,7 +679,7 @@ read_16_32_bpp( PImgLoadFileInstance fi, PImage i, int bpp, unsigned long stride
 		}
 #undef GetX
 		dst += stride_dst;
-		EVENT_TOPDOWN_SCANLINES_READY(fi, 1);
+		EVENT_SCANLINES_READY(fi, 1, SCANLINES_DIR_BOTTOM_TO_TOP);
 	}
 
 	free(src);
@@ -991,7 +991,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		if ( !req_read_big(fi, cLinesWorth, l->h, data))
 			return false;
 	}
-	EVENT_TOPDOWN_SCANLINES_FINISHED(fi);
+	EVENT_SCANLINES_FINISHED(fi, SCANLINES_DIR_BOTTOM_TO_TOP);
 		
 	return true;
 }
