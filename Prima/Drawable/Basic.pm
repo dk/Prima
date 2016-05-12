@@ -360,6 +360,6 @@ Prima::Drawable::Basic
 
 =head1 NAME
 
-Basic drawing routings for Prima::Drawable
+Basic drawing routines for Prima::Drawable
 
 =cut
