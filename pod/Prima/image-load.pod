@@ -467,6 +467,668 @@ in 'extras' hash.
 Hash, where keys are those that are accepted by Prima::Image-> save,
 and values are default values for these keys.
 
+=back
+
+=head1 API
+
+This section describes parameters accepted and data returned by C<Prima::Image::load>
+
+=head2 Common
+
+=head3 Loading parameters
+
+=over
+
+=item className STRING
+
+When loading more than one image, this string is used to create
+instances of image containers. By default the calling class is
+used (i.e. C<Prima::Image> or C<Prima::Icon>).
+
+=item eventDelay INT
+
+Specifies C<onDataReady> event granularity in microseconds, if
+image codec is capable of triggering this event.
+
+Default: 100
+
+=item iconUnmask BOOL
+
+If set, C<Prima::Icon::autoMasking> is set to C<am::None> prior to the
+file loading. 
+
+Default: false. Only actual for C<Prima::Icon> loading.
+
+=item index INT
+
+When loading from a multiframe file, selects the frame index to load.
+
+Default: 0
+
+=item map [INT]
+
+When loading from a multiframe file, selects set of frame indexes to load.
+
+Default: undef
+
+=item loadExtras BOOL
+
+If set, all available extra information will be stored in C<{extras}> hash
+on the loaded object.
+
+Default: false
+
+=item loadAll BOOL
+
+When loading from a multiframe file, selects that all frames are to be loaded
+
+Default: false
+
+=item noImageData BOOL
+
+When set, neither image data is not loaded, nor image dimensions are changed
+(newly created images have size of 1x1). Instead, C<{extras}> contains C<width>
+and C<height> integers.
+
+Default: false
+
+=item noIncomplete BOOL
+
+Affects the action when image is incomplete, truncated, etc.
+If set, signals an error. Otherwise no error is signalled and whatever
+data could be recovered from the image are returned, and C<truncated> flag
+is set.
+
+Default: false
+
+=item profiles [HASH]
+
+Array of hashes passed down to each frame in multiframe loads. Each
+frame load request will be passed an individual hash, a result of
+hash join of all profiles passed to C<Image::load> and the nth hash
+in the array.
+
+=item wantFrames BOOL
+
+Affects how the number of frames in a file is reported in C<frames> flag. If
+set, always scans the file for exact number. Otherwise it is up to the codec to
+do that.
+
+Default: false
+
+See also: L<frames>.
+
+=back
+
+=head3 Load output
+
+=over
+
+=item codecID INT
+
+Indicates the internal codec ID used to load the image. Can be used for C<Image::save>.
+
+=item frames INT
+
+If set to a positive integer, indicates number of frames in a file. Otherwise
+signals that there are frames, but codec needs an expensive scan to calculate
+the frames (and C<wantFrames> set).
+
+=item height INT
+
+When C<noImageData> is in action, contains image height.
+
+=item truncated BOOL
+
+When C<noIncomplete> is in action, is set if image was truncated.
+
+=item width INT
+
+When C<noImageData> is in action, contains image width.
+
+=back
+
+=head3 Saving parameters
+
+=over
+
+=item autoConvert BOOL
+
+Affects the action when image cannot be stored in file format in its existing pixel format.
+If set, the system tries to convert image into a pixel format understood by the selected
+codec. Fails otherwise.
+
+Default: true
+
+=item codecID INT
+
+Overrides codec selection based on filename extension.
+
+Default: undef
+
+=back
+
+=head2 BMP codec
+
+BMP, the bitmap codec is not depended on external libraries and is always available.
+
+=over
+
+=item BitDepth INT
+
+Original bit depth, may differ from C<Image::bpp>.
+
+Not valid as a saving parameter.
+
+=item Compression STRING
+
+Bitmap compressing method.
+
+Not valid as a saving parameter.
+
+=item HotSpotX, HotSpotY INT
+
+If loading from cursor file, contains pointer hotspot coordinates
+
+=item ImportantColors INT
+
+Minimal number of colors needed to display the image 
+
+=item OS2 BOOL
+
+Set when loading OS/2 bitmap
+
+=item XResolution, YResolution INT
+
+Image resolution in PPM
+
+=back
+
+=head2 X11 codec
+
+X11, the X Consortium data file codec may depend on external libraries, but is implement
+internally if these are not found, and is thus always available.
+
+=over
+
+=item hotSpotX, hotSpotY INT
+
+Contains pointer hotspot coordinates, if any
+
+=back
+
+=head2 XPM codec
+
+=over 
+
+=item extensions HASH
+
+Set of xpm-specific extension strings. Cannot be used for saving.
+
+=item hintsComment, colorsComment, pixelsComment STRING
+
+Contains comments to different sections
+
+=item hotSpotX, hotSpotY INT
+
+Contains pointer hotspot coordinates
+
+=item transparentColors [COLOR]
+
+Array or transparent colors. Cannot be used for saving.
+
+=back 
+
+=head2 JPEG codec
+
+=head3 Load parameteres
+
+=over
+
+=item exifTransform none|auto|wipe
+
+If set to C<auto> or C<wipe>, tries to detect whether there is are any exif
+tags hinting that the image has to be rotated and/or mirrored. If found, applies
+the transformation accordingly. 
+
+When set to C<wipe>, in addition to that, removes the exif tags so that subsequent
+image save won't result in transformed images with exifs tags still present.
+
+This parameter requires C<loadExtras> flag set, because exif tags are stored in extra JPEG data.
+
+=back
+
+=head3 Load output and save input
+
+=over
+
+=item appdata [STRING]
+
+Array of raw binary strings found in extra JPEG data.
+
+=item comment STRING
+
+Any comment text found in file.
+
+=item progressive BOOL
+
+If set, produces a progressively encoded JPEG file.
+
+Default: 0
+
+Only used for saving.
+
+=item quality INT
+
+JPEG quality, 1-100. 
+
+Default: 75
+
+Only used for saving.
+
+
+=back
+
+=head2 PNG codec
+
+=head3 Load input
+
+=over
+
+=item alpha none|split|blend
+
+Affects how to treat aplha channel bits, if any.
+
+If set to C<blend>, mixes the alpha channel with C<background> color.
+
+If set to C<split> (not applicable for C<Prima::Icon>), adds a 8-bit grayscale image
+to C<extras> that contains the separate alpha channel under C<alpha> key. 
+
+Default: blend
+
+Note: PNG alpha channel is 8-bit, but Prima's is 1-bit only. The loaded downsamples the
+alpha channel, if any, when loading to C<Icon>.
+
+=item background COLOR
+
+When PNG file contains alpha channel, and C<alpha> is set to C<blend>,
+this color is used to blend the background. If set to C<clInvalid>,
+default PNG library background color is used.
+
+Default: clInvalid
+
+Not applicable C<Prima::Icon>.
+
+=item gamma REAL
+
+Override gamma value applied to the loaded image
+
+Default: 0.45455
+
+=item screen_gamma REAL
+
+Current gamma value for the operating system, if specified.
+
+Default: 2.2
+
+=back
+
+=head3 Load output and save input
+
+=over
+
+=item alpha IMAGE
+
+8-bit grayscale image with alpha channel, if found
+
+Default: undef
+
+=item background COLOR
+
+Default PNG library background color
+
+Default: clInvalid, which means PNG library default
+
+=item gamma REAL
+
+Gamma value found in file.
+
+Default: 0.45455
+
+=item iccp_name, iccp_profile STRING
+
+Embedded ICC color profiles in raw format
+
+Default: C<unspecified> and C<"">.
+
+=item interlaced BOOL
+
+If set, PNG file is interlaced
+
+Default: 0
+
+=item mng_datastream BOOL
+
+If set, file contains a MNG datastream
+
+Default: 0
+
+=item offset_x, offset_y INT
+
+Positive offset from the left edge of the screen to offset_x and the positive
+offset from the left edge of the screen to offset_y
+
+Default: 0
+
+=item offset_dimension pixel|micrometer
+
+Offset units
+
+Default: pixel
+
+=item render_intent none|saturation|perceptual|relative|absolute
+
+See PNG docs.
+
+Default: none
+
+=item resolution_x, resolution_y INT
+
+Image resolution
+
+Default: 0
+
+=item resolution_dimension meter|unknown
+
+Image resolution units
+
+Default: meter
+
+=item scale_x, scale_y
+
+Image scale factors
+
+Default: 1
+
+=item scale_unit meter|radian|unknown
+
+Image scale factor units
+
+Default: unknown
+
+=item text HASH
+
+Free-text comments found in the file
+
+Default: C<{}>
+
+=item transparent_colors [COLOR], transparency_table [INT]
+
+When image contains transparent colors, returns either array of palette indexes
+(C<transparency_table>) in 0-255 range, for paletted images. Or an array of
+colors in RGB form for 24-bit images (C<transparent_colors>).
+
+Not applicable for save.
+
+Note: support for transparency is not symmetric; codec cannot automatically
+save the transparency info read from PNG files. See C<transparent_color> and
+C<transparent_color_index> for manual save of one transparent color.
+
+=item transparent_color COLOR
+
+One transparent color value for 24-bit PNG images.
+
+Default value: clInvalid (i.e. none)
+
+Not applicable for load.
+
+=item transparent_color_index INT
+
+One transparent color value, as palette index for 8- or less- bit PNG images.
+
+Default value: -1 (i.e. none)
+
+Not applicable for load.
+
+=back
+
+=head2 TIFF codec
+
+=head3 Load input
+
+=over
+
+=item MinIsWhite BOOL
+
+Automatically invert C<PHOTOMETRIC_MINISWHITE> images
+
+Default: 1
+
+=item Fax BOOL
+
+If set, converts 1-bit grayscale with ratio 2:1 into 2-bit grayscale (alglorithm also known as I<faxpect>).
+
+Default: 0
+
+=back
+
+=head3 Load output
+
+=over
+
+=item Photometric STRING
+
+TIFF C<PHOTOMETRIC_XXX> constant. One of:
+
+  MinIsWhite
+  MinIsBlack 
+  Palette
+  YCbCr
+  RGB
+  LogL
+  LogLUV
+  Separated
+  MASK
+  CIELAB
+  DEPTH
+  Unknown
+
+=item BitsPerSample INT
+
+Bits used to represent a single sample, 1-64
+
+=item SamplesPerPixel INT
+
+Number of samples per pixel, 1-4. F.ex. most images have 1 sample.  Planar
+TIFFs may split low and high bytes in 2 samples.  RGB has 3 samples, YCbCr and
+RGBA has 4.
+
+=item PlanarConfig contiguous|separate
+
+C<separate> images split individual samples or components (f.ex. R and G and B) 
+into individual planes. C<contiguous> mix sample bytes one after another.
+
+=item SampleFormat STRING
+
+Pixel sample format, one of:
+
+  unsigned integer
+  signed integer
+  floating point
+  untyped data
+  complex signed int
+  complex floating point
+
+=item Tiled BOOL
+
+If set, TIFF is tiled
+
+=item Faxpect BOOL
+
+When C<Fax> option set set to C<true>, and indeed the image was converted from 1 to 2 bits,
+this parameter will be set to signal this.
+
+=item CompressionType STRING
+
+Compression algorithm used for reading TIFF. One of:
+
+  NONE
+  CCITTRLE
+  CCITTFAX3
+  CCITTFAX4
+  LZW
+  OJPEG
+  JPEG
+  NEXT
+  CCITTRLEW
+  PACKBITS
+  THUNDERSCAN
+  IT8CTPAD
+  IT8LW
+  IT8MP
+  IT8BL
+  PIXARFILM
+  PIXARLOG
+  DEFLATE
+  ADOBE_DEFLATE
+  DCS
+  JBIG
+  SGILOG
+  SGILOG24
+
+=back
+
+=head3 Save input
+
+=over
+
+=item Compression STRING
+
+Same values as in C<CompressionType>. Different names are used 
+to avoid implicit but impossible compression selection, because
+tibtiff can decompress many types, but compress only a few.
+
+=back
+
+=head3 Load output and save input
+
+=over
+
+=item generic strings
+
+The following keys have no specific meanings for Prima, but are both recognized
+for loading and saving:
+
+  Artist
+  Copyright
+  DateTime
+  DocumentName
+  HostComputer
+  ImageDescription
+  Make
+  Model
+  PageName
+  PageNumber
+  PageNumber2
+
+=item PageNumber, PageNumber2 INT
+
+Default: 1
+
+=item ResolutionUnit inch|centimeter|none
+
+Default: none
+
+=item Software
+
+Default: Prima
+
+=item XPosition, YPosition INT
+
+Default: 0
+
+=item XResolution, YResolution INT
+
+Default: 1200
+
+=back
+
+=head2 GIF codec
+
+For GIF animation see L<Prima::Image::AnimateGIF>.
+
+The following load output and save input keys are recognized:
+
+=over
+
+=item comment STRING
+
+GIF comment text
+
+=item delayTime INT
+
+Delay in hundredth of a second between frames
+
+Default: 1
+
+=item disposalMethod INT
+
+Animation frame disposal method
+
+  DISPOSE_NOT_SPECIFIED    = 0; # Leave frame, let new frame draw on top
+  DISPOSE_KEEP             = 1; # Leave frame, let new frame draw on top
+  DISPOSE_CLEAR            = 2; # Clear the frame's area, revealing bg
+  DISPOSE_RESTORE_PREVIOUS = 3; # Restore the previous (composited) frame
+
+Default: 0
+
+=item interlaced BOOL
+
+If set, GIF is interlaced
+
+Default: 0
+
+=item left, top INT
+
+Frame offset in pixels
+
+Default: 0
+
+=item loopCount INT
+
+How many times the GIF animation loops. 0 means indefinite.
+
+Default: 1
+
+=item screenBackGroundColor COLOR
+
+GIF screen background color
+
+Default: 0
+
+=item screenColorResolution INT
+
+Default: 256
+
+=item screenWidth, screenHeight INT
+
+Default: -1, i.e. use image width and height
+
+=item screenPalette [INT]
+
+Default: 0,0,0,255,255,255
+
+=item transparentColorIndex INT
+
+Index of GIF transparent color
+
+Default: 0
+
+=item userInput INT
+
+User input flag
+
+Default: 0
 
 =back
 
