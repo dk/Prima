@@ -732,10 +732,12 @@ L<Prima::ImageDialog/load> for suggested use.
 
 =over
 
-=item HeaderReady
+=item HeaderReady EXTRAS
 
 Called whenever image header is read, and image dimensions and pixel type
 is changed accordingly to accomodate image data.
+
+C<EXTRAS> is the hash to be stored later in C<{extras}> key on the object.
 
 =item DataReady X, Y, WIDTH, HEIGHT
 
