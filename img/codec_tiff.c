@@ -1011,8 +1011,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
         photometric == PHOTOMETRIC_MASK?      "MASK" :
         photometric == PHOTOMETRIC_CIELAB?    "CIELAB" :
         photometric == PHOTOMETRIC_DEPTH?     "DEPTH" :
-        photometric == PHOTOMETRIC_SEPARATED? "SEPARATED" :
-        photometric == PHOTOMETRIC_YCBCR?     "YCBCR" :
+        photometric == PHOTOMETRIC_SEPARATED? "Separated" :
+        photometric == PHOTOMETRIC_YCBCR?     "YCbCr" :
                                               "unknown";
       photometric = PHOTOMETRIC_RGB;
       break;

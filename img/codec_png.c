@@ -77,6 +77,7 @@ static char * features[] = {
 static char * loadOutput[] = { 
    "alpha",
    "background",
+   "gamma",
 #ifdef PNG_iCCP_SUPPORTED   
    "iccp_name",
    "iccp_profile",
@@ -414,6 +415,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          has_gamma = true;
       } else if ( png_get_gAMA(l-> png_ptr, l-> info_ptr, &gamma)) {
          has_gamma = true;
+         pset_f( gamma, gamma);
       }
 #endif      
 
@@ -822,6 +824,7 @@ save_defaults( PImgCodec c)
 #endif
 #ifdef PNG_tRNS_SUPPORTED   
    pset_sv_noinc( transparent_color, newSViv(clInvalid));
+   pset_sv_noinc( transparent_color_index, newSViv(-1));
 #endif   
    return profile;
 }

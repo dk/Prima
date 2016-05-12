@@ -625,6 +625,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
          sarray[0] = (l-> d. output_components == 4) ? l->channelbuf : prima_pixels;
          scanlines = jpeg_read_scanlines(&l-> d, sarray, 1);
 	 if ( scanlines == 0 ) {
+	    fi-> wasTruncated = 1;
 	    if ( fi->noIncomplete ) {
                sprintf( fi-> errbuf, "Image is truncated");
                return false;
