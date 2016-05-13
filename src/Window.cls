@@ -29,6 +29,7 @@ object Prima::Window( Prima::Widget)
    property Bool     transparent;
    property int      windowState;
 
+   c_only   Bool     can_propagate_key();
    method   void     cancel();
    method   void     cleanup();
    method   void     end_modal();

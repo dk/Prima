@@ -58,6 +58,11 @@ Window_ok( Handle self)
    my-> end_modal( self);
 }
 
+Bool
+Window_can_propagate_key( Handle self)
+{
+   return !is_opt(optModalHorizon);
+}
 
 void
 Window_cleanup( Handle self)
@@ -145,6 +150,7 @@ void Window_handle_event( Handle self, PEvent event)
           ev. key. cmd   = cmTranslateAccel;
           if ( !my-> message( self, &ev)) leave;
           if ( my-> first_that( self, (void*)accel_notify, &ev)) leave;
+
           ev. key. cmd    = cmDelegateKey;
           ev. key. subcmd = 1;
           if ( my-> first_that( self, (void*)accel_notify, &ev)) leave;

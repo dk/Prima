@@ -113,6 +113,7 @@ object Prima::Widget( Prima::Drawable)
    method   Bool     begin_paint_info();
    method   void     bring_to_front();
    method   Bool     can_close();
+   c_only   Bool     can_propagate_key();
    method   void     cleanup();
    public   void     client_to_screen();
    method   Bool     close();

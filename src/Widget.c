@@ -334,6 +334,12 @@ Widget_can_close( Handle self)
    return ( var-> stage <= csNormal) ? my-> message( self, &ev) : true;
 }
 
+Bool
+Widget_can_propagate_key( Handle self)
+{
+   return true;
+}
+
 void
 Widget_cleanup( Handle self)
 {
@@ -757,7 +763,7 @@ void Widget_handle_event( Handle self, PEvent event)
                  my-> clear_event( self);
                  return;
               }
-              if ( var-> owner)
+              if ( var-> owner && my->can_propagate_key(self))
               {
                  if ( var-> owner == application)
                     ev. cmd = cmTranslateAccel;
