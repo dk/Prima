@@ -15,7 +15,7 @@ extern "C" {
 static void
 ic_Byte_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int * dstPalSize, Bool palSize_only, Bool inplace)
 {
-   int new_data_size = (( var->w * 8 + 31) / 32) * 4 * var-> h;
+   int new_data_size = LINE_SIZE(var->w, 8) * var->h;
    Byte * new_data;
    RGBColor dummy_pal[256];
    int dummy_pal_size = 0;

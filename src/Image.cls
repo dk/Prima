@@ -7,6 +7,7 @@ object Prima::Image( Prima::Drawable)
    int            lineSize;          # rounded to 32-bit boundary
    int            dataSize;          #  == lineSize * h
    int            conversion;        # ictXXXX
+   int            scaling;           # istXXXX
    unsigned char *data;
    ImageStats     stats;
    int            statsCache;
@@ -16,16 +17,15 @@ object Prima::Image( Prima::Drawable)
 
    property int    conversion;
    property SV *   data;
-   property Bool   hScaling;
    property int    lineSize;
    property SV *   palette;
    property SV *   pixel( int x, int y);
    property Bool   preserveType;
    property Point  resolution;
+   property int    scaling;
    property Point  size;
    property double stats( int index);
    property int    type;
-   property Bool   vScaling;
 
    # methods
    method UV     add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);

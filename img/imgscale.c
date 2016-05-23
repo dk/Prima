@@ -6,6 +6,7 @@ extern "C" {
 
 
 #define var (( PImage) self)
+#define my  ((( PImage) self)-> self)
 
 #define BS_BYTEIMPACT( type)                                                        \
 void bs_##type##_in( type * srcData, type * dstData, int w, int x, int absx, long step)  \
@@ -222,8 +223,9 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
 {
    int  absh = h < 0 ? -h : h;
    int  absw = w < 0 ? -w : w;
-   int  srcLine = (( srcW *  ( type & imBPP) + 31) / 32) * 4;
-   int  dstLine = (( absw  * ( type & imBPP) + 31) / 32) * 4;
+   int  srcLine = LINE_SIZE(srcW, type);
+   int  dstLine = LINE_SIZE(absw, type);
+
    Fixed xstep, ystep, count;
    int last = 0;
    int i;
@@ -386,6 +388,303 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
          dstData += dstLine;
       }
    }
+}
+
+/* Resizing with filters - stolen from ImageMagick MagickCore/resize.c */
+
+typedef double FilterFunc( const double x );
+typedef struct {
+   unsigned int id;
+   FilterFunc * filter;
+   unsigned int support;
+} FilterRec;
+
+#define PI 3.14159265358
+
+static double 
+filter_sinc(const double x) {
+  /*
+    Scaled sinc(x) function using a trig call:
+      sinc(x) == sin(pi x)/(pi x).
+  */
+  if (x != 0.0) {
+     const double alpha= (double) (PI * x);
+     return (sin((double) alpha) / alpha);
+  }
+  return ((double) 1.0);
+}
+
+static FilterRec filters[] = {
+   { istSinc, filter_sinc, 4 }
+};
+
+static void
+stretch_horizontal( FilterFunc * filter, double * contributions, double support, int channels, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double x_factor)
+{
+   int x, y, c, src_line_size, dst_line_size, x_lim;
+   
+   src_line_size = LINE_SIZE(src_w, imDouble);
+   dst_line_size = LINE_SIZE(dst_w, imDouble);
+ 
+   x_lim = src_w / channels;
+   for (x = 0; x < dst_w; x++) {
+      double bisect, density;
+      int n, start, stop, offset;
+
+      bisect = (double) (x + 0.5) / x_factor;
+      start  = bisect - support + 0.5;
+      if ( start < 0 ) start = 0;
+      stop   = bisect + support + 0.5;
+      if ( stop > src_w ) stop = src_w;
+
+      density = 0.0;
+      for (n = 0; n < (stop-start); n++) {
+         contributions[n] = filter(((double) (start+n)-bisect+0.5));
+         density += contributions[n];
+      }
+
+      if ( density != 0.0 && density != 1.0 ) {
+         int i;
+         for ( i = 0; i < n; i++) contributions[i] /= density;
+      }
+    
+      for ( c = 0; c < channels; c++) {
+         for ( y = 0; y < dst_h; y++) {
+            int x2, y2, j;
+            double pixel = 0.0;
+
+            for ( j = 0; j < n; j++) {
+               x2 = start + j;
+	            if ( x2 >= x_lim ) x2 = x_lim - 1;
+               pixel += contributions[j] * ((double*)(src_data + y * src_line_size))[ x2 * channels + c ];
+            }
+            ((double*)(dst_data + y * dst_line_size))[ x * channels + c ] = pixel;
+            printf("%d:%d:%d ", x, y, c);
+         }
+      }
+      printf("\n");
+   }
+}
+
+static void
+stretch_vertical( FilterFunc * filter, double * contributions, double support, int channels, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double y_factor)
+{
+   int x, y, c, src_line_size, dst_line_size;
+   
+   src_line_size = LINE_SIZE(src_w, imDouble);
+   dst_line_size = LINE_SIZE(dst_w, imDouble);
+
+   for ( y = 0; y < dst_h; y++) {
+      double bisect, density;
+      int n, start, stop;
+
+      bisect = (double) (y + 0.5) / y_factor;
+      start  = bisect - support +0.5;
+      if ( start < 0 ) start = 0;
+      stop   = bisect + support +0.5;
+      if ( stop > src_w ) stop = src_w;
+
+      density = 0.0;
+      for (n = 0; n < (stop-start); n++) {
+         contributions[n] = filter(((double) (start+n)-bisect+0.5));
+         density += contributions[n];
+      }
+
+      if ( density != 0.0 && density != 1.0 ) {
+         int i;
+         for ( i = 0; i < n; i++) contributions[i] /= density;
+      }
+    
+      for ( c = 0; c < channels; c++) {
+         for ( x = 0; x < dst_w; x++) {
+            int x2, y2, j;
+            double pixel = 0.0;
+
+            for ( j = 0; j < n; j++) {
+               y2 = j + start;
+	            if ( y2 >= src_h ) y2 = src_h - 1;
+               pixel += contributions[j] * ((double*)(src_data + y2 * src_line_size))[ x * channels + c];
+            }
+            ((double*)(dst_data + y * dst_line_size))[ x * channels + c ] = pixel;
+            printf("%d:%d:%d ", x, y, c);
+         }
+      }
+      printf("\n");
+   }
+}
+
+Bool
+ic_stretch_filtered( Handle self, int w, int h, int scaling )
+{
+   int absw, absh, channels, target_ls, target_ds, target_type, org_type, channel2_type, fw, fh, flw, i, support_size;
+   Bool mirror_x, mirror_y;
+   double factor_x, factor_y, scale_x, scale_y, *contributions, support_x, support_y ;
+   Byte * target_data, * filter_data;
+   FilterRec * filter = NULL;
+
+   for ( i = 0; i < sizeof(filters) / sizeof(FilterRec); i++) {
+      if ( filters[i]. id == scaling ) {
+         filter = &filters[i];
+         break;
+      }
+   }
+   if ( !filter ) 
+      croak("no appropriate scaling filter found");
+
+   org_type = var-> type;
+   absw = abs(w);
+   absh = abs(h);
+   mirror_x = w < 0;
+   mirror_y = h < 0;
+
+   /* if it's cheaper to mirror before the conversion, do it */
+   if ( mirror_y && var-> h < h ) {
+      img_mirror( self, 1 );
+      mirror_y = 0;
+   }
+   
+   /* convert to double, and use last chance to mirror horizontally */
+   switch (var-> type & imCategory) {
+   case imColor: 
+      channels = 3;
+      target_type = imRGB;
+      break;
+   case imComplexNumber:
+      channels = 2;
+      target_type = imDComplex;
+      break;
+   case imTrigComplexNumber:
+      channels = 2;
+      target_type = imTrigDComplex;
+      break;
+   default:
+      channels = 1;
+      target_type = imDouble;
+   }
+
+   if ( var-> type != target_type) my-> set_type( self, target_type );
+   if ( mirror_x ) {
+      if ( var-> lineSize < LINE_SIZE( absw, target_type)) {
+         img_mirror( self, 0 );
+         mirror_x = 0;
+      }
+   }
+
+   /* convert to multi-channel imDouble structures */
+   if ( var-> type == imRGB ) {
+      var-> type = imByte;
+      var-> w *= 3;
+      absw *= 3;
+      my-> set_type( self, imDouble );
+   }
+   if ( channels == 2 ) {
+      var-> w *= 2;
+      absw *= 2;
+      channel2_type = var-> type;
+      var-> type = imDouble;
+   }
+
+   /* allocate space for semi-filtered and target data */
+   factor_x = (double) absw / (double) var-> w;
+   factor_y = (double) absh / (double) var-> h;
+   if (factor_y > factor_y) {
+      fw = absw;
+      fh = var-> h;
+   } else {
+      fw = var-> w;
+      fh = absh;
+   }
+   flw = LINE_SIZE( fw, imDouble);
+   if ( !( filter_data = malloc( flw * fh )))
+      croak("not enough memory: %d bytes", flw * fh);
+   target_ls = LINE_SIZE( absw, imDouble);
+   target_ds = absh * target_ls;
+   if ( !( target_data = malloc( target_ds ))) {
+      free( filter_data );
+      croak("not enough memory: %d bytes", target_ds);
+   }
+
+   scale_x = 1.0 / factor_x;
+   if ( scale_x < 1.0 ) scale_x = 1.0;
+   scale_y = 1.0 / factor_y;
+   if ( scale_y < 1.0 ) scale_y = 1.0;
+   support_x = scale_x * filter-> support;
+   support_y = scale_y * filter-> support;
+   /* Support too small even for nearest neighbour: Reduce to point sampling.  */
+   if (support_x < 0.5) support_x = (double) 0.5;
+   if (support_y < 0.5) support_y = (double) 0.5;
+   support_size = (int)(sizeof(double) * 2.0 * (( support_x < support_y ) ? support_y : support_x) * 3.0);
+   if (!(contributions = malloc(support_size))) {
+      free( filter_data );
+      free( target_data );
+      croak("not enough memory: %d bytes", support_size);
+   }
+
+   /* stretch */
+   printf("%d %d %d %d %d\n", var-> w, absw, fw, flw, target_ls);
+   if (factor_x > factor_y) {
+       stretch_horizontal( filter->filter, contributions, support_x, channels, var-> data, var-> w, var-> h, filter_data, fw, fh, factor_x);
+       stretch_vertical  ( filter->filter, contributions, support_y, channels, filter_data, fw, fh, target_data, absw, absh, factor_y );
+   } else {
+       stretch_vertical  ( filter->filter, contributions, support_y, channels, var-> data, var-> w, var-> h, filter_data, fw, fh, factor_y);
+       stretch_horizontal( filter->filter, contributions, support_x, channels, filter_data, fw, fh, target_data, absw, absh, factor_x);
+   }
+   free( contributions );
+   free( filter_data );
+
+   /* clamp values */
+   printf("%d\n", __LINE__);
+   if ( channels != 2 && org_type != imDouble && org_type != imFloat ) {
+      double min, max;
+      double * t = (double *) target_data;
+      int x, y, ls = LINE_SIZE( absw, imDouble );
+
+      switch ( org_type & imBPP ) {
+      case 16:
+         min = INT16_MIN;
+         max = INT16_MAX;
+         break;
+      case 32:
+         min = INT32_MIN;
+         max = INT32_MAX;
+         break;
+      default:
+         min = 0;
+         max = 255;
+         break;
+      }
+      for ( y = 0; y < absh; y++, t = (double*)((Byte*)t + ls)) {
+         for ( x = 0; x < absw; x++) {
+            if ( t[x] < min ) 
+               t[x] = min;
+            else if ( t[x] > max ) 
+               t[x] = max;
+         }
+      }
+   }
+
+   /* convert back */
+   if ( channels == 2 ) {
+      absw /= 2;
+      var-> w /= 2;
+      var-> type = channel2_type;
+   }
+   var-> w = absw;
+   var-> h = absh;
+   var-> lineSize = LINE_SIZE( absw, var-> type );
+   var-> dataSize = var-> lineSize * absh;
+   free( var-> data );
+   var-> data = target_data;
+   if ( channels == 3 ) {
+      my-> set_type( self, imByte );
+      var-> type = imRGB;
+      var-> w /= 3;
+      w /= 3;
+   }
+   if ( is_opt( optPreserveType) && var-> type != org_type )
+      my-> set_type( self, org_type );
+   if ( mirror_x ) img_mirror( self, 0 );
+   if ( mirror_y ) img_mirror( self, 1 );
 }
 
 #ifdef __cplusplus

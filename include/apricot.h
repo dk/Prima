@@ -1575,8 +1575,6 @@ typedef struct _ObjectOptions_ {
    unsigned optUTF8_hint           : 1;
    unsigned optUTF8_text           : 1;
    unsigned optPreserveType        : 1;   /* Image */
-   unsigned optVScaling            : 1;
-   unsigned optHScaling            : 1;
    unsigned optAutoPopup           : 1;   /* Popup */
    unsigned optActive              : 1;   /* Timer */
    unsigned optOwnerIcon           : 1;   /* Window */
@@ -2859,6 +2857,23 @@ ICT(ErrorDiffusion)
 ICT(Optimized)
 END_TABLE(ict,UV)
 #undef ICT
+
+/* Image scaling types */
+#define IST(const_name) CONSTANT(ist,const_name)
+START_TABLE(ist,UV)
+#define    istNone               0
+IST(None)
+#define    istBoxX               1
+IST(BoxX)
+#define    istBoxY               2
+IST(BoxY)
+#define    istBox                (istBoxX|istBoxY)
+IST(Box)
+#define    istSinc               4
+IST(Sinc)
+END_TABLE(ist,UV)
+#define istMax istSinc
+#undef IST
 
 /* Icon auto masking types */
 #define AM(const_name) CONSTANT(am,const_name)

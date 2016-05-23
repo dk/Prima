@@ -1170,6 +1170,7 @@ register_constants( void)
    register_sv_constants();
    register_im_constants();
    register_ict_constants();
+   register_ist_constants();
    register_is_constants();
    register_am_constants();
    register_apc_constants();

@@ -478,7 +478,7 @@ exif_setup_rotation( PImage i, PImage d, Byte ** dest, int orientation, int * di
    d-> h = 1;
    if ( orientation > 4 ) {
       d-> w = i-> h;
-      d-> lineSize = (( d->w * ( d->type & imBPP) + 31) / 32) * 4;
+      d-> lineSize = LINE_SIZE(d->w, d->type);
    }
    d-> dataSize = d-> lineSize;
 

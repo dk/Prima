@@ -43,8 +43,7 @@ Image_init( Handle self, HV * profile)
    var->w = pget_i( width);
    var->h = pget_i( height);
    var->conversion = pget_i( conversion);
-   opt_assign( optHScaling, pget_B( hScaling));
-   opt_assign( optVScaling, pget_B( vScaling));
+   var->scaling = pget_i( scaling);
    if ( !itype_supported( var-> type = pget_i( type))) 
       if ( !itype_importable( var-> type, &var-> type, nil, nil)) {
          warn( "Image::init: cannot set type %08x", var-> type);
@@ -194,15 +193,23 @@ Image_stretch( Handle self, int width, int height)
       my->create_empty( self, 0, 0, var->type);
       return;
    }
+   if ( var-> scaling > istBox ) {
+      ic_stretch_filtered( self, width, height, var-> scaling );
+      my->update_change( self);
+      return;
+   }
+
    lineSize = (( abs( width) * ( var->type & imBPP) + 31) / 32) * 4;
    newData = allocb( lineSize * abs( height));
    if ( newData == nil) 
          croak("Image::stretch: cannot allocate %d bytes", lineSize * abs( height));
    memset( newData, 0, lineSize * abs( height));
-   if ( var-> data)
+   if ( var-> data) {
       ic_stretch( var-> type, var-> data, var-> w, var-> h, 
                   newData, width, height, 
-                  is_opt( optHScaling), is_opt( optVScaling));
+                  var->scaling & istBoxX, var->scaling & istBoxY);
+   }
+
    free( var->data);
    var->data = newData;
    var->lineSize = lineSize;
@@ -238,15 +245,10 @@ Image_set( Handle self, HV * profile)
       my-> set_conversion( self, pget_i( conversion));
       pdelete( conversion);
    }
-   if ( pexist( hScaling))
+   if ( pexist( scaling))
    {
-      my->set_hScaling( self, pget_B( hScaling));
-      pdelete( hScaling);
-   }
-   if ( pexist( vScaling))
-   {
-      my->set_vScaling( self, pget_B( vScaling));
-      pdelete( vScaling);
+      my->set_scaling( self, pget_i( scaling));
+      pdelete( scaling);
    }
 
    if ( Image_set_extended_data( self, profile))
@@ -322,24 +324,6 @@ Image_make_empty( Handle self)
    my->update_change( self);
 }
 
-Bool
-Image_hScaling( Handle self, Bool set, Bool scaling)
-{
-   if ( !set)
-      return is_opt( optHScaling);
-   opt_assign( optHScaling, scaling);
-   return false;
-}
-
-Bool
-Image_vScaling( Handle self, Bool set, Bool scaling)
-{
-   if ( !set)
-      return is_opt( optVScaling);
-   opt_assign( optVScaling, scaling);
-   return false;
-}
-
 Point
 Image_resolution( Handle self, Bool set, Point resolution)
 {
@@ -349,6 +333,19 @@ Image_resolution( Handle self, Bool set, Point resolution)
       resolution = apc_gp_get_resolution( application);
    var-> resolution = resolution;
    return resolution;
+}
+
+int
+Image_scaling( Handle self, Bool set, int scaling)
+{
+   if ( !set)
+      return var->scaling;
+   if ( scaling <= istNone || scaling > istMax ) {
+      warn("Invalid scaling: %d", scaling);
+      return false;
+   }
+   var->scaling = scaling;
+   return false;
 }
 
 Point
@@ -1231,8 +1228,7 @@ Image_dup( Handle self)
    pset_i( height,       var->h);
    pset_i( type,         var->type);
    pset_i( conversion,   var->conversion);
-   pset_i( hScaling,     is_opt( optHScaling));
-   pset_i( vScaling,     is_opt( optVScaling));
+   pset_i( scaling,      var->scaling);
    pset_i( preserveType, is_opt( optPreserveType));
 
    h = Object_create( var->self-> className, profile);
@@ -1291,8 +1287,7 @@ Image_extract( Handle self, int x, int y, int width, int height)
    pset_i( height,       height);
    pset_i( type,         var->type);
    pset_i( conversion,   var->conversion);
-   pset_i( hScaling,     is_opt( optHScaling));
-   pset_i( vScaling,     is_opt( optVScaling));
+   pset_i( scaling,      var->scaling);
    pset_i( preserveType, is_opt( optPreserveType));
 
    h = Object_create( var->self-> className, profile);

@@ -63,6 +63,8 @@ package
 package 
     is; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Image statistics types
 package 
+    ist; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image scaling types
+package 
     am; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Icon auto masking
 package 
     apc; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# OS type

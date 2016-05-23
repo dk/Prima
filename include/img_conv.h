@@ -18,7 +18,9 @@ extern "C" {
 extern void init_image_support(void);
 
 /* image basic routines */
+#define LINE_SIZE(width,type) (((( width ) * (( type ) & imBPP) + 31) / 32) * 4)
 extern void ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch);
+extern Bool ic_stretch_filtered( Handle self, int w, int h, int scaling );
 extern void ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int * palSize, Bool palSize_only);
 extern Bool itype_supported( int type);
 extern Bool itype_importable( int type, int *newtype, void **from_proc, void **to_proc);
@@ -276,8 +278,8 @@ extern Byte     map_halftone8x8_64 [  64];
    int i;                                                         \
    int width = var->w, height = var->h;                           \
    int srcType = var->type;                                       \
-   int srcLine = (( width * ( srcType & imBPP) + 31) / 32) * 4;   \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;   \
+   int srcLine = LINE_SIZE(width,srcType);                        \
+   int dstLine = LINE_SIZE(width,dstType);                        \
    Byte * srcData = var->data;                                    \
    Byte colorref[ 256]
 

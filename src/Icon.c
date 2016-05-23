@@ -367,8 +367,16 @@ Icon_stretch( Handle self, int width, int height)
       croak("Icon::stretch: cannot allocate %d bytes", lineSize * abs( height));
    }
    var-> autoMasking = amNone;
-   if ( var-> mask) 
-      ic_stretch( imMono, var-> mask, oldW, oldH, newMask, width, height, is_opt( optHScaling), is_opt( optVScaling));
+   if ( var-> mask) {
+      Bool hScaling, vScaling;
+      if ( var-> scaling <= istBox ) {
+      	 hScaling = var->scaling & istBoxX;
+      	 vScaling = var->scaling & istBoxY;
+      } else {
+      	 hScaling = vScaling = 1;
+      }
+      ic_stretch( imMono, var-> mask, oldW, oldH, newMask, width, height, hScaling, vScaling);
+   }      
    inherited stretch( self, width, height);
    free( var-> mask);
    var->mask = newMask;
@@ -426,8 +434,7 @@ Icon_split( Handle self)
    pset_i( height,       var-> h);
    pset_i( type,         imMono|imGrayScale);
    pset_i( conversion,   var->conversion);
-   pset_i( hScaling,     is_opt( optHScaling));
-   pset_i( vScaling,     is_opt( optVScaling));
+   pset_i( scaling,      var->scaling);
    pset_i( preserveType, is_opt( optPreserveType));
 
    ret. andMask = Object_create( "Prima::Image", profile);

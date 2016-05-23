@@ -357,12 +357,6 @@ On set-call, the image data are changed accordingly to the new height,
 and depending on C<::vScaling> property,
 the pixel values are either scaled or truncated.
 
-=item hScaling BOOLEAN
-
-If 1, the bitmap data will be scaled when image changes its
-horizontal extent. If 0, the data will be stripped or padded 
-with zeros.
-
 =item lineSize INTEGER
 
 A read-only property, returning the length of an image row in bytes, as
@@ -404,11 +398,49 @@ Returns maximum pixel value in the image data.
 
 Returns minimum pixel value in the image data.
 
+=item scaling INT
+
+Declares the scaling strategy when image is resized.  Strategies C<ist::None>
+through C<ist::Box> are very fast scalers, others not so.
+
+Can be one of:
+
+=over
+
+=item ist::None
+
+Image will be either stripped (when downsizing) or padded (when upsizing)
+with zeros.
+
+=item ist::BoxX
+
+Columns will be either stripped (when downsizing) or padded (when upsizing)
+with zeros. Rows will be scaled using simple box transform.
+
+=item ist::BoxY
+
+Rows will be either stripped (when downsizing) or padded (when upsizing)
+with zeros. Columns will be scaled using simple box transform.
+
+=item ist::BoxY
+
+Image will be scaled using simple box transform.
+
+=item ist::Sinc
+
+Image will be scaled using sinc transform
+
+=back
+
+If 1, the bitmap data will be scaled when image changes its
+vertical extent. If 0, the data will be stripped or padded 
+with zeros.
+
 =item size WIDTH, HEIGHT 
 
 Manages dimensions of the image. On set-call,
 the image data are changed accordingly to the new dimensions,
-and depending on C<::vScaling> and C<::hScaling> properties,
+and depending on C<::scaling> property,
 the pixel values are either scaled or truncated.
 
 =item stats ( INDEX ) VALUE
@@ -529,17 +561,11 @@ Returns variance of pixel values of the image data.
 Variance is C<::sum2>, divided by number of pixels 
 minus square of C<::sum> of pixel values.
 
-=item vScaling BOOLEAN
-
-If 1, the bitmap data will be scaled when image changes its
-vertical extent. If 0, the data will be stripped or padded 
-with zeros.
-
 =item width INTEGER
 
 Manages the horizontal dimension of the image data.
 On set-call, the image data are changed accordingly to the new width,
-and depending on C<::hScaling> property,
+and depending on C<::scaling> property,
 the pixel values are either scaled or truncated.
 
 =back

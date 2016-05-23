@@ -410,7 +410,7 @@ sub profile_default
 		conversion    => ict::Optimized,
 		data          => '',
 		height        => 0,
-		hScaling      => 1,
+		scaling       => ist::Box,
 		palette       => [0, 0, 0, 0xFF, 0xFF, 0xFF],
 		colormap      => undef,
 		preserveType  => 0,
@@ -419,7 +419,6 @@ sub profile_default
 		resolution    => [0, 0],
 		type          => im::Mono,
 		width         => 0,
-		vScaling      => 1,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;

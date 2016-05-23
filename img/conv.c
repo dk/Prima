@@ -23,8 +23,8 @@ void ic_##SourceType##_##DestType( Handle self,                           \
    DestType *dst = (DestType*) dstData;                                        \
    int y;                                                                      \
    int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   int srcLine = LINE_SIZE(width,var->type);                                   \
+   int dstLine = LINE_SIZE(width,dstType);                                      \
    for ( y = 0; y < var->h; y++)                                                \
    {                                                                           \
       SourceType *s = src;                                                     \
@@ -45,8 +45,8 @@ void ic_##SourceType##_##DestType( Handle self,                           \
    DestType *dst = (DestType*) dstData;                                        \
    int y;                                                                      \
    int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   int srcLine = LINE_SIZE(width,var->type);                                   \
+   int dstLine = LINE_SIZE(width,dstType);                                      \
    for ( y = 0; y < var->h; y++)                                                \
    {                                                                           \
       SourceType *s = src;                                                     \
@@ -67,8 +67,8 @@ void ic_##SourceType##_##DestType##_complex( Handle self,                       
    DestType *dst = (DestType*) dstData;                                        \
    int y;                                                                      \
    int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   int srcLine = LINE_SIZE(width,var->type);                                   \
+   int dstLine = LINE_SIZE(width,dstType);                                      \
    for ( y = 0; y < var->h; y++)                                                \
    {                                                                           \
       SourceType *s = src;                                                     \
@@ -89,8 +89,8 @@ void ic_##SourceType##_complex_##DestType( Handle self,                         
    DestType *dst = (DestType*) dstData;                                        \
    int y;                                                                      \
    int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   int srcLine = LINE_SIZE(width,var->type);                                   \
+   int dstLine = LINE_SIZE(width,dstType);                                      \
    for ( y = 0; y < var->h; y++)                                                \
    {                                                                           \
       SourceType *s = src;                                                     \
@@ -111,8 +111,8 @@ void ic_##SourceType##_complex_##DestType( Handle self,                         
    DestType *dst = (DestType*) dstData;                                        \
    int y;                                                                      \
    int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   int srcLine = LINE_SIZE(width,var->type);                                   \
+   int dstLine = LINE_SIZE(width,dstType);                                      \
    for ( y = 0; y < var->h; y++)                                                \
    {                                                                           \
       SourceType *s = src;                                                     \
@@ -137,8 +137,8 @@ void rs_##SourceType##_##DestType( Handle self,                                \
    MidType bNumerator      = dstLo * srcHi - dstHi * srcLo;                       \
    MidType denominator     = srcHi - srcLo;                                       \
    int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   int srcLine = LINE_SIZE(width,var->type);                                   \
+   int dstLine = LINE_SIZE(width,dstType);                                      \
    if ( denominator == 0 || dstHi == dstLo)                                    \
    {                                                                           \
       DestType v = (dstLo<minimum_##DestType##Value) ? minimum_##DestType##Value : \
@@ -180,8 +180,8 @@ void rs_##SourceType##_##DestType( Handle self,                                \
    int y;                                                                      \
    double a, b;                                                                \
    int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   int srcLine = LINE_SIZE(width,var->type);                                   \
+   int dstLine = LINE_SIZE(width,dstType);                                      \
    if ( srcHi == srcLo || dstHi == dstLo)                                      \
    {                                                                           \
       for ( y = 0; y < var->h; y++)                                             \
@@ -217,8 +217,8 @@ void rs_##SourceType##_##DestType( Handle self,                                \
    int y;                                                                      \
    double a, b;                                                                \
    int  width = var->w;                                                         \
-   int srcLine = (( width * ( var->type & imBPP) + 31) / 32) * 4;               \
-   int dstLine = (( width * ( dstType & imBPP) + 31) / 32) * 4;                \
+   int srcLine = LINE_SIZE(width,var->type);                                   \
+   int dstLine = LINE_SIZE(width,dstType);                                      \
    if ( srcHi == srcLo || dstHi == dstLo)                                      \
    {                                                                           \
       DestType v = (dstLo<minimum_##DestType##Value) ? minimum_##DestType##Value : \
