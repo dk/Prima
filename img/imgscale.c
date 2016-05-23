@@ -423,13 +423,13 @@ stretch_horizontal( FilterFunc * filter, double * contributions, double support,
 {
    int x, y, c, src_line_size, dst_line_size, x_lim;
    
-   src_line_size = LINE_SIZE(src_w, imDouble);
-   dst_line_size = LINE_SIZE(dst_w, imDouble);
+   src_line_size = LINE_SIZE(src_w * channels, imDouble);
+   dst_line_size = LINE_SIZE(dst_w * channels, imDouble);
  
-   x_lim = src_w / channels;
+   x_lim = src_w;
    for (x = 0; x < dst_w; x++) {
       double bisect, density;
-      int n, start, stop, offset;
+      int n, start, stop, offset, xc;
 
       bisect = (double) (x + 0.5) / x_factor;
       start  = bisect - support + 0.5;
@@ -448,26 +448,24 @@ stretch_horizontal( FilterFunc * filter, double * contributions, double support,
          for ( i = 0; i < n; i++) contributions[i] /= density;
       }
     
-      for ( c = 0; c < channels; c++) {
+      for ( c = 0, xc = x * channels; c < channels; c++, xc++) {
          for ( y = 0; y < dst_h; y++) {
             int x2, y2, j;
             double pixel = 0.0;
 
             for ( j = 0; j < n; j++) {
                x2 = start + j;
-	            if ( x2 >= x_lim ) x2 = x_lim - 1;
+	       if ( x2 >= x_lim ) x2 = x_lim - channels;
                pixel += contributions[j] * ((double*)(src_data + y * src_line_size))[ x2 * channels + c ];
             }
-            ((double*)(dst_data + y * dst_line_size))[ x * channels + c ] = pixel;
-            printf("%d:%d:%d ", x, y, c);
+            ((double*)(dst_data + y * dst_line_size))[ xc ] = pixel;
          }
       }
-      printf("\n");
    }
 }
 
 static void
-stretch_vertical( FilterFunc * filter, double * contributions, double support, int channels, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double y_factor)
+stretch_vertical( FilterFunc * filter, double * contributions, double support, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double y_factor)
 {
    int x, y, c, src_line_size, dst_line_size;
    
@@ -495,21 +493,17 @@ stretch_vertical( FilterFunc * filter, double * contributions, double support, i
          for ( i = 0; i < n; i++) contributions[i] /= density;
       }
     
-      for ( c = 0; c < channels; c++) {
-         for ( x = 0; x < dst_w; x++) {
-            int x2, y2, j;
-            double pixel = 0.0;
+      for ( x = 0; x < dst_w; x++) {
+         int x2, y2, j;
+         double pixel = 0.0;
 
-            for ( j = 0; j < n; j++) {
-               y2 = j + start;
-	            if ( y2 >= src_h ) y2 = src_h - 1;
-               pixel += contributions[j] * ((double*)(src_data + y2 * src_line_size))[ x * channels + c];
-            }
-            ((double*)(dst_data + y * dst_line_size))[ x * channels + c ] = pixel;
-            printf("%d:%d:%d ", x, y, c);
+         for ( j = 0; j < n; j++) {
+            y2 = j + start;
+            if ( y2 >= src_h ) y2 = src_h - 1;
+            pixel += contributions[j] * ((double*)(src_data + y2 * src_line_size))[ x ];
          }
+         ((double*)(dst_data + y * dst_line_size))[ x ] = pixel;
       }
-      printf("\n");
    }
 }
 
@@ -621,20 +615,18 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
    }
 
    /* stretch */
-   printf("%d %d %d %d %d\n", var-> w, absw, fw, flw, target_ls);
    if (factor_x > factor_y) {
-       stretch_horizontal( filter->filter, contributions, support_x, channels, var-> data, var-> w, var-> h, filter_data, fw, fh, factor_x);
-       stretch_vertical  ( filter->filter, contributions, support_y, channels, filter_data, fw, fh, target_data, absw, absh, factor_y );
+       stretch_horizontal( filter->filter, contributions, support_x, channels, var-> data, var-> w / channels, var-> h, filter_data, fw / channels, fh, factor_x);
+       stretch_vertical  ( filter->filter, contributions, support_y, filter_data, fw, fh, target_data, absw, absh, factor_y );
    } else {
-       stretch_vertical  ( filter->filter, contributions, support_y, channels, var-> data, var-> w, var-> h, filter_data, fw, fh, factor_y);
-       stretch_horizontal( filter->filter, contributions, support_x, channels, filter_data, fw, fh, target_data, absw, absh, factor_x);
+       stretch_vertical  ( filter->filter, contributions, support_y, var-> data, var-> w, var-> h, filter_data, fw, fh, factor_y);
+       stretch_horizontal( filter->filter, contributions, support_x, channels, filter_data, fw / channels, fh, target_data, absw / channels, absh, factor_x);
    }
    free( contributions );
    free( filter_data );
 
    /* clamp values */
-   printf("%d\n", __LINE__);
-   if ( channels != 2 && org_type != imDouble && org_type != imFloat ) {
+   if ( channels != 2 && (org_type & (imRealNumber|imComplexNumber|imTrigComplexNumber)) == 0) {
       double min, max;
       double * t = (double *) target_data;
       int x, y, ls = LINE_SIZE( absw, imDouble );
