@@ -583,7 +583,7 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
    /* allocate space for semi-filtered and target data */
    factor_x = (double) absw / (double) var-> w;
    factor_y = (double) absh / (double) var-> h;
-   if (factor_y > factor_y) {
+   if (factor_x > factor_y) {
       fw = absw;
       fh = var-> h;
    } else {
