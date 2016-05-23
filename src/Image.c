@@ -340,7 +340,7 @@ Image_scaling( Handle self, Bool set, int scaling)
 {
    if ( !set)
       return var->scaling;
-   if ( scaling <= istNone || scaling > istMax ) {
+   if ( scaling < istNone || scaling > istMax ) {
       warn("Invalid scaling: %d", scaling);
       return false;
    }
