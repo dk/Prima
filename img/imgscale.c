@@ -429,7 +429,8 @@ stretch_horizontal( FilterFunc * filter, double * contributions, double support,
    x_lim = src_w;
    for (x = 0; x < dst_w; x++) {
       double bisect, density;
-      int n, start, stop, offset, xc;
+      int n, start, stop, offset;
+      Byte *src, *dst;
 
       bisect = (double) (x + 0.5) / x_factor;
       start  = bisect - support + 0.5;
@@ -447,18 +448,17 @@ stretch_horizontal( FilterFunc * filter, double * contributions, double support,
          int i;
          for ( i = 0; i < n; i++) contributions[i] /= density;
       }
-    
-      for ( c = 0, xc = x * channels; c < channels; c++, xc++) {
-         for ( y = 0; y < dst_h; y++) {
-            int x2, y2, j;
-            double pixel = 0.0;
-
-            for ( j = 0; j < n; j++) {
-               x2 = start + j;
-	       if ( x2 >= x_lim ) x2 = x_lim - channels;
-               pixel += contributions[j] * ((double*)(src_data + y * src_line_size))[ x2 * channels + c ];
-            }
-            ((double*)(dst_data + y * dst_line_size))[ xc ] = pixel;
+  
+      dst = dst_data + x     * channels * sizeof(double);
+      src = src_data + start * channels * sizeof(double);
+      for ( c = 0; c < channels; c++, src += sizeof(double), dst += sizeof(double)) {
+         Byte *src_y = src, *dst_y = dst;
+         for ( y = 0; y < dst_h; y++, src_y += src_line_size, dst_y += dst_line_size ) {
+            register int j;
+            register double pixel = 0.0, *src_j = (double*)src_y;
+            for ( j = 0; j < n; j++, src_j += channels)
+               pixel += contributions[j] * *src_j;
+            *((double*)dst_y) = pixel;
          }
       }
    }
@@ -475,12 +475,13 @@ stretch_vertical( FilterFunc * filter, double * contributions, double support, B
    for ( y = 0; y < dst_h; y++) {
       double bisect, density;
       int n, start, stop;
+      Byte * src, * dst;
 
       bisect = (double) (y + 0.5) / y_factor;
       start  = bisect - support +0.5;
       if ( start < 0 ) start = 0;
       stop   = bisect + support +0.5;
-      if ( stop > src_w ) stop = src_w;
+      if ( stop > src_h ) stop = src_h;
 
       density = 0.0;
       for (n = 0; n < (stop-start); n++) {
@@ -492,18 +493,19 @@ stretch_vertical( FilterFunc * filter, double * contributions, double support, B
          int i;
          for ( i = 0; i < n; i++) contributions[i] /= density;
       }
-    
-      for ( x = 0; x < dst_w; x++) {
-         int x2, y2, j;
+ 
+      src = src_data + start * src_line_size;
+      dst = dst_data;
+      for ( x = 0; x < dst_w; x++, src += sizeof(double), dst += sizeof(double)) {
+         int j;
          double pixel = 0.0;
-
-         for ( j = 0; j < n; j++) {
-            y2 = j + start;
-            if ( y2 >= src_h ) y2 = src_h - 1;
-            pixel += contributions[j] * ((double*)(src_data + y2 * src_line_size))[ x ];
-         }
-         ((double*)(dst_data + y * dst_line_size))[ x ] = pixel;
+	 Byte * src_y = src;
+         for ( j = 0; j < n; j++, src_y += src_line_size)
+            pixel += contributions[j] * *((double*)(src_y));
+         *((double*)(dst)) = pixel;
       }
+
+      dst_data += dst_line_size;
    }
 }
 
@@ -627,9 +629,10 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
 
    /* clamp values */
    if ( channels != 2 && (org_type & (imRealNumber|imComplexNumber|imTrigComplexNumber)) == 0) {
-      double min, max;
-      double * t = (double *) target_data;
-      int x, y, ls = LINE_SIZE( absw, imDouble );
+      register double min, max;
+      register double * t = (double *) target_data;
+      register int x;
+      int y, ls = LINE_SIZE( absw, imDouble );
 
       switch ( org_type & imBPP ) {
       case 16:
