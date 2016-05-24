@@ -397,7 +397,6 @@ typedef struct {
    unsigned int id;
    FilterFunc * filter;
    double support;
-   double scale;
 } FilterRec;
 
 #define PI  3.14159265358979323846264338327950288419716939937510 
@@ -476,9 +475,9 @@ filter_quadratic(const double x)
     2rd order (quadratic) B-Spline approximation of Gaussian.
   */
   if (x < 0.5)
-    return 1/(0.75-x*x);
+    return (0.75-x*x);
   if (x < 1.5)
-    return 1/(0.5*(x-1.5)*(x-1.5));
+    return (0.5*(x-1.5)*(x-1.5));
   return(0.0);
 }
 
@@ -514,7 +513,7 @@ filter_quadratic(const double x)
 static double 
 filter_cubic_spline0(const double x)
 {
-  if (x < 1.0) return x*(x*(-3.0+x*2));
+  if (x < 1.0) return 1+x*(x*(-3.0+x*2));
   return 0.0;
 }
 
@@ -537,12 +536,12 @@ filter_gaussian(const double x)
 
 
 static FilterRec filters[] = {
-   { istTriangle,  filter_triangle,      1.0, 1.0 },
-   { istQuadratic, filter_quadratic,     2.25, 1.0 },
-   { istSinc,      filter_sinc_fast,     4.0, 1.0 },
-   { istHermite,   filter_cubic_spline0, 1.0, 1.0 },
-   { istCubic,     filter_cubic_spline1, 4.0, 1.0 },
-   { istGaussian,  filter_gaussian,      3.0, 1.0 }
+   { istTriangle,  filter_triangle,      1.0 },
+   { istQuadratic, filter_quadratic,     1.5 },
+   { istSinc,      filter_sinc_fast,     4.0 },
+   { istHermite,   filter_cubic_spline0, 1.0 },
+   { istCubic,     filter_cubic_spline1, 2.0 },
+   { istGaussian,  filter_gaussian,      2.0 }
 };
 
 static void
