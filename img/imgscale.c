@@ -567,7 +567,7 @@ stretch_horizontal( FilterRec * filter, double scale, double * contributions, do
 
       density = 0.0;
       for (n = 0; n < (stop-start); n++) {
-         contributions[n] = filter->filter(1 * ((double) (start+n)-bisect+0.5)) * 1;
+         contributions[n] = filter->filter(fabs((double) (start+n)-bisect+0.5));
          density += contributions[n];
       }
 
@@ -612,7 +612,7 @@ stretch_vertical( FilterRec * filter, double scale, double * contributions, doub
 
       density = 0.0;
       for (n = 0; n < (stop-start); n++) {
-         contributions[n] = filter->filter(1 * ((double) (start+n)-bisect+0.5)) * 1;
+         contributions[n] = filter->filter(fabs((double) (start+n)-bisect+0.5));
          density += contributions[n];
       }
 
