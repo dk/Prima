@@ -544,37 +544,43 @@ static FilterRec filters[] = {
    { istGaussian,  filter_gaussian,      2.0 }
 };
 
+static int
+fill_contributions( FilterRec * filter, double * contributions, int * start, int offset, double factor, int max, double support )
+{
+   double bisect, density;
+   int n, stop;
+   
+   bisect = (double) (offset + 0.5) / factor;
+   *start  = bisect - support + 0.5;
+   if ( *start < 0 ) *start = 0;
+   stop   = bisect + support + 0.5;
+   if ( stop > max ) stop = max;
+   
+   density = 0.0;
+   for (n = 0; n < (stop-*start); n++) {
+      contributions[n] = filter->filter(fabs((double) (*start+n)-bisect+0.5));
+      density += contributions[n];
+   }
+   
+   if ( density != 0.0 && density != 1.0 ) {
+      int i;
+      for ( i = 0; i < n; i++) contributions[i] /= density;
+   }
+   
+   return n;
+}
+
 static void
 stretch_horizontal( FilterRec * filter, double scale, double * contributions, double support, int channels, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double x_factor)
 {
-   int x, y, c, src_line_size, dst_line_size, x_lim;
+   int x, y, c, src_line_size, dst_line_size;
    
    src_line_size = LINE_SIZE(src_w * channels, imDouble);
    dst_line_size = LINE_SIZE(dst_w * channels, imDouble);
  
-   x_lim = src_w;
    for (x = 0; x < dst_w; x++) {
-      double bisect, density;
-      int n, start, stop, offset;
-      Byte *src, *dst;
-
-      bisect = (double) (x + 0.5) / x_factor;
-      start  = bisect - support + 0.5;
-      if ( start < 0 ) start = 0;
-      stop   = bisect + support + 0.5;
-      if ( stop > src_w ) stop = src_w;
-
-      density = 0.0;
-      for (n = 0; n < (stop-start); n++) {
-         contributions[n] = filter->filter(fabs((double) (start+n)-bisect+0.5));
-         density += contributions[n];
-      }
-
-      if ( density != 0.0 && density != 1.0 ) {
-         int i;
-         for ( i = 0; i < n; i++) contributions[i] /= density;
-      }
-  
+      Byte *src, *dst; 
+      int start, n = fill_contributions( filter, contributions, &start, x, x_factor, src_w, support );
       dst = dst_data + x     * channels * sizeof(double);
       src = src_data + start * channels * sizeof(double);
       for ( c = 0; c < channels; c++, src += sizeof(double), dst += sizeof(double)) {
@@ -599,27 +605,8 @@ stretch_vertical( FilterRec * filter, double scale, double * contributions, doub
    dst_line_size = LINE_SIZE(dst_w, imDouble);
 
    for ( y = 0; y < dst_h; y++) {
-      double bisect, density;
-      int n, start, stop;
-      Byte * src, * dst;
-
-      bisect = (double) (y + 0.5) / y_factor;
-      start  = bisect - support +0.5;
-      if ( start < 0 ) start = 0;
-      stop   = bisect + support +0.5;
-      if ( stop > src_h ) stop = src_h;
-
-      density = 0.0;
-      for (n = 0; n < (stop-start); n++) {
-         contributions[n] = filter->filter(fabs((double) (start+n)-bisect+0.5));
-         density += contributions[n];
-      }
-
-      if ( density != 0.0 && density != 1.0 ) {
-         int i;
-         for ( i = 0; i < n; i++) contributions[i] /= density;
-      }
- 
+      Byte *src, *dst; 
+      int start, n = fill_contributions( filter, contributions, &start, y, y_factor, src_h, support );
       src = src_data + start * src_line_size;
       dst = dst_data;
       for ( x = 0; x < dst_w; x++, src += sizeof(double), dst += sizeof(double)) {
