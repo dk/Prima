@@ -396,30 +396,157 @@ typedef double FilterFunc( const double x );
 typedef struct {
    unsigned int id;
    FilterFunc * filter;
-   unsigned int support;
+   double support;
+   double scale;
 } FilterRec;
 
-#define PI 3.14159265358
+#define PI  3.14159265358979323846264338327950288419716939937510 
+#define PI2 1.57079632679489661923132169163975144209858469968755
 
 static double 
-filter_sinc(const double x) {
+filter_sinc_fast(const double x)
+{
   /*
-    Scaled sinc(x) function using a trig call:
-      sinc(x) == sin(pi x)/(pi x).
+    Approximations of the sinc function sin(pi x)/(pi x) over the interval
+    [-4,4] constructed by Nicolas Robidoux and Chantal Racette with funding
+    from the Natural Sciences and Engineering Research Council of Canada.
+
+    Although the approximations are polynomials (for low order of
+    approximation) and quotients of polynomials (for higher order of
+    approximation) and consequently are similar in form to Taylor polynomials /
+    Pade approximants, the approximations are computed with a completely
+    different technique.
+
+    Summary: These approximations are "the best" in terms of bang (accuracy)
+    for the buck (flops). More specifically: Among the polynomial quotients
+    that can be computed using a fixed number of flops (with a given "+ - * /
+    budget"), the chosen polynomial quotient is the one closest to the
+    approximated function with respect to maximum absolute relative error over
+    the given interval.
+
+    The Remez algorithm, as implemented in the boost library's minimax package,
+    is the key to the construction: http://www.boost.org/doc/libs/1_36_0/libs/
+    math/doc/sf_and_dist/html/math_toolkit/backgrounders/remez.html
+
+    If outside of the interval of approximation, use the standard trig formula.
   */
-  if (x != 0.0) {
-     const double alpha= (double) (PI * x);
-     return (sin((double) alpha) / alpha);
+  if (x > 4.0)
+    {
+      const double alpha=(double) (PI*x);
+      return(sin((double) alpha)/alpha);
+    }
+  {
+    /*
+      The approximations only depend on x^2 (sinc is an even function).
+    */
+    const double xx = x*x;
+    /*
+      Maximum absolute relative error 6.3e-6 < 1/2^17.
+    */
+    const double c0 = 0.173610016489197553621906385078711564924e-2L;
+    const double c1 = -0.384186115075660162081071290162149315834e-3L;
+    const double c2 = 0.393684603287860108352720146121813443561e-4L;
+    const double c3 = -0.248947210682259168029030370205389323899e-5L;
+    const double c4 = 0.107791837839662283066379987646635416692e-6L;
+    const double c5 = -0.324874073895735800961260474028013982211e-8L;
+    const double c6 = 0.628155216606695311524920882748052490116e-10L;
+    const double c7 = -0.586110644039348333520104379959307242711e-12L;
+    const double p =
+      c0+xx*(c1+xx*(c2+xx*(c3+xx*(c4+xx*(c5+xx*(c6+xx*c7))))));
+    return((xx-1.0)*(xx-4.0)*(xx-9.0)*(xx-16.0)*p);
   }
-  return ((double) 1.0);
 }
 
+static double filter_triangle(const double x)
+{
+  /*
+    1st order (linear) B-Spline, bilinear interpolation, Tent 1D filter, or
+    a Bartlett 2D Cone filter.  
+  */
+  if (x < 1.0)
+    return(1.0-x);
+  return(0.0);
+}
+
+
+static double 
+filter_quadratic(const double x)
+{
+  /*
+    2rd order (quadratic) B-Spline approximation of Gaussian.
+  */
+  if (x < 0.5)
+    return 1/(0.75-x*x);
+  if (x < 1.5)
+    return 1/(0.5*(x-1.5)*(x-1.5));
+  return(0.0);
+}
+
+/*
+  Cubic Filters using B,C determined values:
+     Mitchell-Netravali  B = 1/3 C = 1/3  "Balanced" cubic spline filter
+     Catmull-Rom         B = 0   C = 1/2  Interpolatory and exact on linears
+     Spline              B = 1   C = 0    B-Spline Gaussian approximation
+     Hermite             B = 0   C = 0    B-Spline interpolator
+
+  See paper by Mitchell and Netravali, Reconstruction Filters in Computer
+  Graphics Computer Graphics, Volume 22, Number 4, August 1988
+  http://www.cs.utexas.edu/users/fussell/courses/cs384g/lectures/mitchell/
+  Mitchell.pdf.
+
+  Coefficents are determined from B,C values:
+     P0 = (  6 - 2*B       )/6 = coeff[0]
+     P1 =         0
+     P2 = (-18 +12*B + 6*C )/6 = coeff[1]
+     P3 = ( 12 - 9*B - 6*C )/6 = coeff[2]
+     Q0 = (      8*B +24*C )/6 = coeff[3]
+     Q1 = (    -12*B -48*C )/6 = coeff[4]
+     Q2 = (      6*B +30*C )/6 = coeff[5]
+     Q3 = (    - 1*B - 6*C )/6 = coeff[6]
+
+  which are used to define the filter:
+
+     P0 + P1*x + P2*x^2 + P3*x^3      0 <= x < 1
+     Q0 + Q1*x + Q2*x^2 + Q3*x^3      1 <= x < 2
+
+  which ensures function is continuous in value and derivative (slope).
+*/
+static double 
+filter_cubic_spline0(const double x)
+{
+  if (x < 1.0) return x*(x*(-3.0+x*2));
+  return 0.0;
+}
+
+static double 
+filter_cubic_spline1(const double x)
+{
+  if (x < 1.0)
+    return(2.0/3.0+x*(x*(-1.0+x/2.0)));
+  if (x < 2.0)
+    return(4.0/3.0+x*(-2.0+x*(1.0-x/6.0)));
+  return(0.0);
+}
+
+static double
+filter_gaussian(const double x)
+{
+  /* Gaussian with a sigma = 1/2 */
+  return exp((double)(x*x*-2.0));
+}
+
+
 static FilterRec filters[] = {
-   { istSinc, filter_sinc, 4 }
+   { istTriangle,  filter_triangle,      1.0, 1.0 },
+   { istQuadratic, filter_quadratic,     2.25, 1.0 },
+   { istSinc,      filter_sinc_fast,     4.0, 1.0 },
+   { istHermite,   filter_cubic_spline0, 1.0, 1.0 },
+   { istCubic,     filter_cubic_spline1, 4.0, 1.0 },
+   { istGaussian,  filter_gaussian,      3.0, 1.0 }
 };
 
 static void
-stretch_horizontal( FilterFunc * filter, double * contributions, double support, int channels, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double x_factor)
+stretch_horizontal( FilterRec * filter, double scale, double * contributions, double support, int channels, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double x_factor)
 {
    int x, y, c, src_line_size, dst_line_size, x_lim;
    
@@ -440,7 +567,7 @@ stretch_horizontal( FilterFunc * filter, double * contributions, double support,
 
       density = 0.0;
       for (n = 0; n < (stop-start); n++) {
-         contributions[n] = filter(((double) (start+n)-bisect+0.5));
+         contributions[n] = filter->filter(1 * ((double) (start+n)-bisect+0.5)) * 1;
          density += contributions[n];
       }
 
@@ -465,7 +592,7 @@ stretch_horizontal( FilterFunc * filter, double * contributions, double support,
 }
 
 static void
-stretch_vertical( FilterFunc * filter, double * contributions, double support, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double y_factor)
+stretch_vertical( FilterRec * filter, double scale, double * contributions, double support, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double y_factor)
 {
    int x, y, c, src_line_size, dst_line_size;
    
@@ -485,7 +612,7 @@ stretch_vertical( FilterFunc * filter, double * contributions, double support, B
 
       density = 0.0;
       for (n = 0; n < (stop-start); n++) {
-         contributions[n] = filter(((double) (start+n)-bisect+0.5));
+         contributions[n] = filter->filter(1 * ((double) (start+n)-bisect+0.5)) * 1;
          density += contributions[n];
       }
 
@@ -606,6 +733,8 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
    if ( scale_y < 1.0 ) scale_y = 1.0;
    support_x = scale_x * filter-> support;
    support_y = scale_y * filter-> support;
+   scale_x = 1/scale_x;
+   scale_y = 1/scale_y;
    /* Support too small even for nearest neighbour: Reduce to point sampling.  */
    if (support_x < 0.5) support_x = (double) 0.5;
    if (support_y < 0.5) support_y = (double) 0.5;
@@ -618,11 +747,11 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
 
    /* stretch */
    if (factor_x > factor_y) {
-       stretch_horizontal( filter->filter, contributions, support_x, channels, var-> data, var-> w / channels, var-> h, filter_data, fw / channels, fh, factor_x);
-       stretch_vertical  ( filter->filter, contributions, support_y, filter_data, fw, fh, target_data, absw, absh, factor_y );
+       stretch_horizontal( filter, scale_x, contributions, support_x, channels, var-> data, var-> w / channels, var-> h, filter_data, fw / channels, fh, factor_x);
+       stretch_vertical  ( filter, scale_y, contributions, support_y, filter_data, fw, fh, target_data, absw, absh, factor_y );
    } else {
-       stretch_vertical  ( filter->filter, contributions, support_y, var-> data, var-> w, var-> h, filter_data, fw, fh, factor_y);
-       stretch_horizontal( filter->filter, contributions, support_x, channels, filter_data, fw / channels, fh, target_data, absw / channels, absh, factor_x);
+       stretch_vertical  ( filter, scale_y, contributions, support_y, var-> data, var-> w, var-> h, filter_data, fw, fh, factor_y);
+       stretch_horizontal( filter, scale_x, contributions, support_x, channels, filter_data, fw / channels, fh, target_data, absw / channels, absh, factor_x);
    }
    free( contributions );
    free( filter_data );

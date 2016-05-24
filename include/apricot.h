@@ -2869,10 +2869,20 @@ IST(BoxX)
 IST(BoxY)
 #define    istBox                (istBoxX|istBoxY)
 IST(Box)
-#define    istSinc               4
+#define    istTriangle           3
+IST(Triangle)
+#define    istQuadratic          4
+IST(Quadratic)
+#define    istSinc               5
 IST(Sinc)
+#define    istHermite            6
+IST(Hermite)
+#define    istCubic              7
+IST(Cubic)
+#define    istGaussian           8
+IST(Gaussian)
 END_TABLE(ist,UV)
-#define istMax istSinc
+#define istMax istGaussian
 #undef IST
 
 /* Icon auto masking types */
