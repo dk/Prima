@@ -3462,6 +3462,16 @@ apc_getdir( const char *dirname);
 extern Bool
 apc_dl_export(char *path);
 
+/* OpenMP support */
+extern int
+prima_omp_max_threads(void);
+
+extern int
+prima_omp_thread_num(void);
+
+extern int
+prima_omp_set_num_threads(int num);
+
 #ifdef __cplusplus
 }
 #endif

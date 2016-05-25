@@ -52,6 +52,7 @@ use vars qw(
 	$SHQUOTE
 	$DEFFILE
 	$OPTIMIZE
+	$OPENMP
 	%ALL_PM_INSTALL
 	%ALL_MAN_INSTALL
 );
@@ -125,6 +126,7 @@ options:
     WITH_XFT          - compile with/without Xft (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
     WITH_GTK2         - compile with/without GTK2 (default 1), X only
+    WITH_OPENMP       - compile with/without openmp (default 1)
     CYGWIN_WINAPI     - Winapi build in cygwin environment
     DEBUG             - build with debug information
     EXTRA_LDFLAGS      - add extra ld line (i.e. -lgcc )
@@ -172,6 +174,7 @@ sub setup_argv
 		WITH_XFT      => 1,
 		WITH_ICONV    => 1,
 		WITH_GTK2     => 1,
+		WITH_OPENMP   => 1,
 		CYGWIN_WINAPI => 0,
 		DEBUG         => 0,
 		EXTRA_CCFLAGS => '',
@@ -350,6 +353,7 @@ sub setup_environment
 		$LDOUTFLAG    = '/OUT:';
 		$LD_LIB_EXT   = '.lib';
 		$OPTIMIZE     = '-Zi' if $cmd_options{DEBUG};
+		$OPENMP       = '/openmp';
 		# link flag is /DEBUG, but we don't care because ActiveState has it on by default anyway
 	}
 	else {
@@ -361,6 +365,7 @@ sub setup_environment
 		$LDOUTFLAG    = '-o ';
 		$LD_LIB_EXT   = '';
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
+		$OPENMP       = '-std=c99 -fopenmp';
 	}
 	
 	$DEFFILE    = 'Prima.def';
@@ -875,6 +880,7 @@ main()
    return 0;
 }
 EOF
+
 	printlog "Checking if can link... ";
 	unless ( compile($text, 0)) {
 		printlog "no, let's try with '$Config{cccdlflags}'... ";
@@ -882,6 +888,33 @@ EOF
 		compile( $text, 0) or die "no " . see_makefile_log;
 	}
 	printlog "yes\n";
+
+	if ( $cmd_options{WITH_OPENMP} ) {
+		printlog "Checking if can compile with OpenMP... ";
+	my $text = <<EOF;
+#include <omp.h>
+int
+main()
+{
+   int x = omp_get_thread_num();
+   #pragma omp parallel
+   x++;
+   return 0;
+}
+EOF
+		my $save_optimize = $OPTIMIZE;
+		$OPTIMIZE .= " $OPENMP";
+		push @LIBS, 'gomp' if $compiler_type eq 'gcc';
+		if ( compile($text)) {
+			$DEFINES{HAVE_OPENMP} = 1;
+			printlog "yes\n";
+		} else {
+			pop @LIBS if $compiler_type eq 'gcc';
+			$cmd_options{WITH_OPENMP} = 0;
+			$OPTIMIZE = $save_optimize;
+			printlog "no\n";
+		}
+	}
 
 	if ( $compiler_type eq 'cl' ) {
 		printlog "Checking MSVC version... ";
@@ -919,7 +952,7 @@ MSCVER
 		'include/generic',
 	);
 
-	@LIBS = qw(gdi32 mpr winspool comdlg32) if $Win32; # add more when appropriate
+	push @LIBS, qw(gdi32 mpr winspool comdlg32) if $Win32; # add more when appropriate
 	push @LIBPATH, '/usr/lib/w32api' if $cygwin;
 	if ($^O eq 'solaris') {
 		push @LIBPATH, '/opt/csw/lib';
@@ -1813,6 +1846,8 @@ use vars qw(%Config %Config_inst);
 	ldlibext              => ${_quote($LD_LIB_EXT)},
 	inline                => ${_quote($DEFINES{__INLINE__})},
 	dl_load_flags         => $DL_LOAD_FLAGS,
+	optimize              => '$OPTIMIZE',
+	openmp                => $cmd_options{WITH_OPENMP},
 
 	inc                   => '$inc',
 	define                => '',

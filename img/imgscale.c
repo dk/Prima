@@ -4,7 +4,6 @@
 extern "C" {
 #endif
 
-
 #define var (( PImage) self)
 #define my  ((( PImage) self)-> self)
 
@@ -578,23 +577,23 @@ fill_contributions( FilterRec * filter, double * contributions, int * start, int
    return n;
 }
 
-#define STRETCH_HORIZONTAL_OPEN(type,pixel_init,pixel_access,as_fixed,contrib,roundoff) \
+#define STRETCH_HORIZONTAL_OPEN(type) \
 static void \
 stretch_horizontal_##type(  \
-	FilterRec * filter, double scale, double * contributions, double support,  \
+	FilterRec * filter, double scale, double * contribution_storage, double support,  \
 	int channels, Byte * src_data, int src_w, int src_h,  \
-	Byte * dst_data, int dst_w, int dst_h, double x_factor \
+	Byte * dst_data, int dst_w, int dst_h, double x_factor, int contribution_chunk \
 ) { \
-   int x, y, c, src_line_size, dst_line_size; \
-    \
+   int x, src_line_size, dst_line_size; \
    src_line_size = LINE_SIZE(src_w * channels, 8*sizeof(type)); \
-   dst_line_size = LINE_SIZE(dst_w * channels, 8*sizeof(type)); \
-  \
+   dst_line_size = LINE_SIZE(dst_w * channels, 8*sizeof(type));\
+
+#define STRETCH_HORIZONTAL_LOOP(type,pixel_init,pixel_access,as_fixed,contrib,roundoff) \
    for (x = 0; x < dst_w; x++) { \
-      Byte *src, *dst; \
-      int start, n = fill_contributions( filter, contributions, &start, x, x_factor, src_w, support, as_fixed ); \
-      dst = dst_data + x     * channels * sizeof(type); \
-      src = src_data + start * channels * sizeof(type); \
+      double * contributions = (double*) (((Byte*)contribution_storage) + contribution_chunk * prima_omp_thread_num()); \
+      int y, c, start, n = fill_contributions( filter, contributions, &start, x, x_factor, src_w, support, as_fixed ); \
+      Byte * src = src_data + start * channels * sizeof(type); \
+      Byte * dst = dst_data + x     * channels * sizeof(type); \
       for ( c = 0; c < channels; c++, src += sizeof(type), dst += sizeof(type)) { \
          Byte *src_y = src, *dst_y = dst; \
          for ( y = 0; y < dst_h; y++, src_y += src_line_size, dst_y += dst_line_size ) { \
@@ -604,68 +603,122 @@ stretch_horizontal_##type(  \
             for ( j = 0; j < n; j++, src_j += channels) \
                pixel_access += (contrib * *src_j roundoff);
 
-#define STRETCH_HORIZONTAL_CLOSE(type) *((type*)dst_y)=pixel;}}}}
+#define STRETCH_PUTBACK(type) \
+            *((type*)(dst_y))
+#define STRETCH_HORIZONTAL_CLOSE(type) STRETCH_PUTBACK(type) = pixel; }}}}
 
-#define STRETCH_VERTICAL_OPEN(type,pixel_init,pixel_access,as_fixed,contrib,roundoff) \
+#define STRETCH_VERTICAL_OPEN(type) \
 static void \
 stretch_vertical_##type(  \
-	FilterRec * filter, double scale, double * contributions, double support,  \
+	FilterRec * filter, double scale, double * contribution_storage, double support,  \
 	Byte * src_data, int src_w, int src_h,  \
-	Byte * dst_data, int dst_w, int dst_h, double y_factor \
+	Byte * dst_data, int dst_w, int dst_h, double y_factor, int contribution_chunk \
 ) { \
-   int x, y, c, src_line_size, dst_line_size; \
-    \
+   int y, src_line_size, dst_line_size; \
    src_line_size = LINE_SIZE(src_w, 8*sizeof(type)); \
-   dst_line_size = LINE_SIZE(dst_w, 8*sizeof(type)); \
- \
+   dst_line_size = LINE_SIZE(dst_w, 8*sizeof(type));
+
+#define STRETCH_VERTICAL_LOOP(type,pixel_init,pixel_access,as_fixed,contrib,roundoff) \
    for ( y = 0; y < dst_h; y++) { \
-      Byte *src, *dst; \
-      int start, n = fill_contributions( filter, contributions, &start, y, y_factor, src_h, support, as_fixed ); \
-      src = src_data + start * src_line_size; \
-      dst = dst_data; \
-      for ( x = 0; x < dst_w; x++, src += sizeof(type), dst += sizeof(type)) { \
+      Byte *src_y, *dst_y; \
+      double * contributions = (double*) (((Byte*)contribution_storage) + contribution_chunk * prima_omp_thread_num()); \
+      int x, start, n = fill_contributions( filter, contributions, &start, y, y_factor, src_h, support, as_fixed ); \
+      src_y = src_data + start * src_line_size; \
+      dst_y = dst_data + y     * dst_line_size; \
+      for ( x = 0; x < dst_w; x++, src_y += sizeof(type), dst_y += sizeof(type)) { \
          int j; \
          pixel_init; \
-	 Byte * src_y = src;\
-         for ( j = 0; j < n; j++, src_y += src_line_size) \
-            pixel_access += (contrib * *((type*)(src_y)) roundoff);
+	 Byte * src = src_y;\
+         for ( j = 0; j < n; j++, src += src_line_size) \
+            pixel_access += (contrib * *((type*)(src)) roundoff);
 
-#define STRETCH_VERTICAL_CLOSE(type) *((type*)(dst)) = pixel; } dst_data += dst_line_size; }}
+#define STRETCH_VERTICAL_CLOSE(type) STRETCH_PUTBACK(type) = pixel; }}}
 
-STRETCH_HORIZONTAL_OPEN(Byte,Fixed pixel = {0},pixel.l,1,((Fixed*)contributions)[j].l,) \
-   if ( pixel.i.i < 0 ) pixel.i.i = 0;
-   if ( pixel.i.i > 255 ) pixel.i.i = 255;
-   *((Byte*)dst_y)=pixel.i.i;}}}
+#define STRETCH_FIXED_BYTE_CLAMP \
+   if ( pixel.i.i < 0 ) pixel.i.i = 0;\
+   if ( pixel.i.i > 255 ) pixel.i.i = 255;\
+
+STRETCH_HORIZONTAL_OPEN(Byte)
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+   STRETCH_HORIZONTAL_LOOP(Byte,Fixed pixel = {0},pixel.l,1,((Fixed*)contributions)[j].l,)
+   STRETCH_FIXED_BYTE_CLAMP
+   STRETCH_PUTBACK(Byte)=pixel.i.i;}}}
 }
-STRETCH_VERTICAL_OPEN(Byte,Fixed pixel = {0},pixel.l,1,((Fixed*)contributions)[j].l,) \
-   if ( pixel.i.i < 0 ) pixel.i.i = 0;
-   if ( pixel.i.i > 255 ) pixel.i.i = 255;
-   *((Byte*)dst)=pixel.i.i;} dst_data += dst_line_size; }
+
+STRETCH_VERTICAL_OPEN(Byte)
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+   STRETCH_VERTICAL_LOOP(Byte,Fixed pixel = {0},pixel.l,1,((Fixed*)contributions)[j].l,)
+   STRETCH_FIXED_BYTE_CLAMP
+   STRETCH_PUTBACK(Byte)=pixel.i.i;}}
 }
 
 #define STRETCH_CLAMP(min,max) \
    if ( pixel < min ) pixel = min;\
    if ( pixel > max ) pixel = max;
+
+STRETCH_HORIZONTAL_OPEN(Short)
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+STRETCH_HORIZONTAL_LOOP(Short,register long pixel = 0,pixel,0,contributions[j],+.5)
+STRETCH_CLAMP(INT16_MIN,INT16_MAX)
+STRETCH_HORIZONTAL_CLOSE(Short)
+
+STRETCH_VERTICAL_OPEN(Short)
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+STRETCH_VERTICAL_LOOP(Short,register long pixel = 0,pixel,0,contributions[j],+.5)
+STRETCH_CLAMP(INT16_MIN,INT16_MAX)
+STRETCH_VERTICAL_CLOSE(Short)
 	
-#define stretcher_int(type,min,max) \
-	STRETCH_HORIZONTAL_OPEN(type,register long pixel = 0,pixel,0,contributions[j],+.5) \
-	STRETCH_CLAMP(min,max)\
-	STRETCH_HORIZONTAL_CLOSE(type) \
-	STRETCH_VERTICAL_OPEN(type,register long pixel = 0,pixel,0,contributions[j],+.5) \
-	STRETCH_CLAMP(min,max)\
-	STRETCH_VERTICAL_CLOSE(type)
+STRETCH_HORIZONTAL_OPEN(Long)
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+STRETCH_HORIZONTAL_LOOP(Long,register long pixel = 0,pixel,0,contributions[j],+.5)
+STRETCH_CLAMP(INT32_MIN,INT32_MAX)
+STRETCH_HORIZONTAL_CLOSE(Long)
 
-#define stretcher_real(type) \
-	STRETCH_HORIZONTAL_OPEN(type,register type pixel = 0,pixel,0,contributions[j],) \
-	STRETCH_HORIZONTAL_CLOSE(type) \
-	STRETCH_VERTICAL_OPEN(type,register type pixel = 0,pixel,0,contributions[j],) \
-	STRETCH_VERTICAL_CLOSE(type)
+STRETCH_VERTICAL_OPEN(Long)
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+STRETCH_VERTICAL_LOOP(Long,register long pixel = 0,pixel,0,contributions[j],+.5)
+STRETCH_CLAMP(INT32_MIN,INT32_MAX)
+STRETCH_VERTICAL_CLOSE(Long)
 
-// stretcher_int(Byte,0,255)
-stretcher_int(Short,INT16_MIN,INT16_MAX)
-stretcher_int(Long,INT32_MIN,INT32_MAX)
-stretcher_real(float)
-stretcher_real(double)
+STRETCH_HORIZONTAL_OPEN(float)
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+STRETCH_HORIZONTAL_LOOP(float,register double pixel = 0,pixel,0,contributions[j],)
+STRETCH_HORIZONTAL_CLOSE(float)
+
+STRETCH_VERTICAL_OPEN(float)
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+STRETCH_VERTICAL_LOOP(float,register double pixel = 0,pixel,0,contributions[j],)
+STRETCH_VERTICAL_CLOSE(float)
+
+STRETCH_HORIZONTAL_OPEN(double)
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+STRETCH_HORIZONTAL_LOOP(double,register double pixel = 0,pixel,0,contributions[j],)
+STRETCH_HORIZONTAL_CLOSE(double)
+
+STRETCH_VERTICAL_OPEN(double)
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+STRETCH_VERTICAL_LOOP(double,register double pixel = 0,pixel,0,contributions[j],)
+STRETCH_VERTICAL_CLOSE(double)
 
 Bool
 ic_stretch_filtered( Handle self, int w, int h, int scaling )
@@ -777,7 +830,7 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
    if (support_y < 0.5) support_y = (double) 0.5;
    support_size = (int)(2.0 * (( support_x < support_y ) ? support_y : support_x) * 3.0);
    support_size *= (sizeof(Fixed) > sizeof(double)) ? sizeof(Fixed) : sizeof(double);
-   if (!(contributions = malloc(support_size))) {
+   if (!(contributions = malloc(support_size * prima_omp_max_threads()))) {
       free( filter_data );
       free( target_data );
       croak("not enough memory: %d bytes", support_size);
@@ -787,69 +840,51 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
    if (factor_x > factor_y) {
 #define HORIZONTAL(type) stretch_horizontal_##type( \
        filter, scale_x, contributions, support_x, channels, \
-       var-> data, var-> w / channels, var-> h, filter_data, fw / channels, fh, factor_x)
+       var-> data, var-> w / channels, var-> h, filter_data, fw / channels, fh, factor_x, support_size)
 #define VERTICAL(type)   stretch_vertical_##type  ( \
        filter, scale_y, contributions, support_y, \
-       filter_data, fw, fh, target_data, absw, absh, factor_y )
+       filter_data, fw, fh, target_data, absw, absh, factor_y, support_size )
+#define HANDLE_TYPE(type,name) \
+       case name: \
+          HORIZONTAL(type);\
+          VERTICAL(type);\
+	  break
        switch ( var-> type ) {
-       case imByte:
-          HORIZONTAL(Byte);
-          VERTICAL(Byte);
-	  break;
-       case imShort:
-          HORIZONTAL(Short);
-          VERTICAL(Short);
-	  break;
-       case imLong:
-          HORIZONTAL(Long);
-          VERTICAL(Long);
-	  break;
-       case imFloat:
-          HORIZONTAL(float);
-          VERTICAL(float);
-	  break;
-       case imDouble:
-          HORIZONTAL(double);
-          VERTICAL(double);
-	  break;
+          HANDLE_TYPE(Byte, imByte);
+          HANDLE_TYPE(Short, imShort);
+          HANDLE_TYPE(Long, imLong);
+          HANDLE_TYPE(float, imFloat);
+          HANDLE_TYPE(double, imDouble);
        default:
           croak("bad image type: %x", var->type);
        }
 #undef HORIZONTAL
 #undef VERTICAL
+#undef HANDLE_TYPE
    } else {
 #define VERTICAL(type)   stretch_vertical_##type  ( \
         filter, scale_y, contributions, support_y, \
-        var-> data, var-> w, var-> h, filter_data, fw, fh, factor_y)
+        var-> data, var-> w, var-> h, filter_data, fw, fh, factor_y, support_size)
 #define HORIZONTAL(type) stretch_horizontal_##type( \
         filter, scale_x, contributions, support_x, channels, \
-        filter_data, fw / channels, fh, target_data, absw / channels, absh, factor_x)
+        filter_data, fw / channels, fh, target_data, absw / channels, absh, factor_x, support_size)
+#define HANDLE_TYPE(type,name) \
+       case name: \
+          VERTICAL(type);\
+          HORIZONTAL(type);\
+	  break
        switch ( var-> type ) {
-       case imByte:
-          VERTICAL(Byte);
-          HORIZONTAL(Byte);
-	  break;
-       case imShort:
-          VERTICAL(Short);
-          HORIZONTAL(Short);
-	  break;
-       case imLong:
-          VERTICAL(Long);
-          HORIZONTAL(Long);
-	  break;
-       case imFloat:
-          VERTICAL(float);
-          HORIZONTAL(float);
-	  break;
-       case imDouble:
-          VERTICAL(double);
-          HORIZONTAL(double);
-	  break;
+          HANDLE_TYPE(Byte, imByte);
+          HANDLE_TYPE(Short, imShort);
+          HANDLE_TYPE(Long, imLong);
+          HANDLE_TYPE(float, imFloat);
+          HANDLE_TYPE(double, imDouble);
        default:
           croak("bad image type: %x", var->type);
        }
 #undef HORIZONTAL
 #undef VERTICAL
+#undef HANDLE_TYPE
    }
    free( contributions );
    free( filter_data );

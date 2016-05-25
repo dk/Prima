@@ -490,6 +490,38 @@ register_notifications( PVMT vmt)
    sv_free( package);
 }
 
+static Bool
+common_get_options( int * argc, char *** argv)
+{
+#ifdef HAVE_OPENMP
+   static char * common_argv[] = {
+      "openmp_threads", "sets number of openmp threads"
+   };
+   *argv = common_argv;
+   *argc = sizeof( common_argv) / sizeof( char*);
+#else
+   *argc = 0;
+#endif
+   return true;
+}
+
+static Bool
+common_set_option( char * option, char * value)
+{
+   if ( strcmp( option, "openmp_threads") == 0) {
+      if ( value) {
+         int n = strtol( value, &option, 10);
+	 if (*option)
+	    warn("invalid value sent to `--openmp_threads'.");
+	 else
+	    prima_omp_set_num_threads(n);
+      } else
+	 warn("`--openmp_threads' must be given parameters.");
+      return true;
+   }
+   return false;
+}
+
 XS(Prima_options)
 {
    dXSARGS;
@@ -499,12 +531,15 @@ XS(Prima_options)
    switch ( items) {
    case 0:
       {
-	 int i, argc = 0;
-	 char ** argv;
-	 window_subsystem_get_options( &argc, &argv);
-         EXTEND( sp, argc);
-	 for ( i = 0; i < argc; i++) 
-            PUSHs( sv_2mortal( newSVpv( argv[i], 0)));
+	 int i, argc1 = 0, argc2 = 0;
+	 char ** argv1, ** argv2;
+	 common_get_options( &argc1, &argv1);
+	 window_subsystem_get_options( &argc2, &argv2);
+         EXTEND( sp, argc1 + argc2);
+	 for ( i = 0; i < argc1; i++)
+            PUSHs( sv_2mortal( newSVpv( argv1[i], 0)));
+	 for ( i = 0; i < argc2; i++)
+            PUSHs( sv_2mortal( newSVpv( argv2[i], 0)));
 	 PUTBACK;
 	 return;    
       }
@@ -513,7 +548,9 @@ XS(Prima_options)
       value  = (SvOK( ST(1)) ? ( char*) SvPV_nolen( ST(1)) : nil);
    case 1:
       option = ( char*) SvPV_nolen( ST(0));
-      window_subsystem_set_option( option, value);
+	 printf("%s\n", option);
+      if ( !common_set_option( option, value))
+         window_subsystem_set_option( option, value);
       break;
    default:
       croak("Invalid call to Prima::options");
@@ -1729,6 +1766,42 @@ prima_is_utf8_sv( SV * sv)
    } else {
       return SvUTF8(sv) ? 1 : 0;
    }
+}
+
+#ifdef HAVE_OPENMP
+#include <omp.h>
+#endif
+
+int
+prima_omp_max_threads(void)
+{
+   return
+#ifdef HAVE_OPENMP
+      omp_get_max_threads()
+#else
+      1
+#endif
+   ;
+}
+
+int
+prima_omp_thread_num(void)
+{
+   return
+#ifdef HAVE_OPENMP
+      omp_get_thread_num()
+#else
+      0
+#endif
+   ;
+}
+
+int
+prima_omp_set_num_threads(int num)
+{
+#ifdef HAVE_OPENMP
+   omp_set_num_threads(num);
+#endif
 }
 
 #ifdef __cplusplus
