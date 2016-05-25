@@ -548,7 +548,6 @@ XS(Prima_options)
       value  = (SvOK( ST(1)) ? ( char*) SvPV_nolen( ST(1)) : nil);
    case 1:
       option = ( char*) SvPV_nolen( ST(0));
-	 printf("%s\n", option);
       if ( !common_set_option( option, value))
          window_subsystem_set_option( option, value);
       break;
