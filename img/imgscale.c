@@ -675,7 +675,6 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
    double factor_x, factor_y, scale_x, scale_y, *contributions, support_x, support_y ;
    Byte * target_data, * filter_data;
    FilterRec * filter = NULL;
-    	double t0 = gtd(), t1;
 
    for ( i = 0; i < sizeof(filters) / sizeof(FilterRec); i++) {
       if ( filters[i]. id == scaling ) {
