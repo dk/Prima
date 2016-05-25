@@ -426,9 +426,29 @@ with zeros. Columns will be scaled using simple box transform.
 
 Image will be scaled using simple box transform.
 
+=item ist::Triangle
+
+Bilinear interpolation
+
+=item ist::Quadratic
+
+2rd order (quadratic) B-Spline approximation of Gaussian.
+
 =item ist::Sinc
 
-Image will be scaled using sinc transform
+Sine function.
+
+=item ist::Hermite
+
+B-Spline interpolation
+
+=item ist::Cubic
+
+B-Spline Gaussian approximation
+
+=item ist::Gaussian
+
+Gaussian transform with gamma=0.5
 
 =back
 
