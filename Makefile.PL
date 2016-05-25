@@ -113,7 +113,7 @@ sub see_makefile_log
 
 sub usage
 {
-	printlog <<HELP;
+	print <<HELP;
 
 $0 - configuration script for Prima
 
