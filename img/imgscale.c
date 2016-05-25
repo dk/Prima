@@ -545,7 +545,7 @@ static FilterRec filters[] = {
 };
 
 static int
-fill_contributions( FilterRec * filter, double * contributions, int * start, int offset, double factor, int max, double support )
+fill_contributions( FilterRec * filter, double * contributions, int * start, int offset, double factor, int max, double support, Bool as_fixed )
 {
    double bisect, density;
    int n, stop;
@@ -566,61 +566,106 @@ fill_contributions( FilterRec * filter, double * contributions, int * start, int
       int i;
       for ( i = 0; i < n; i++) contributions[i] /= density;
    }
+
+   if ( as_fixed && n > 0 ) {
+      int i    = (sizeof(Fixed) > sizeof(double)) ? (n - 1) : 0;
+      int to   = (sizeof(Fixed) > sizeof(double)) ? -1 : n;
+      int incr = (sizeof(Fixed) > sizeof(double)) ? -1 : 1;
+      for ( ; i != to; i += incr ) 
+         ((Fixed*)(contributions))[i].l = contributions[i] * 65536.0 + .5;
+   }
    
    return n;
 }
 
-static void
-stretch_horizontal( FilterRec * filter, double scale, double * contributions, double support, int channels, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double x_factor)
-{
-   int x, y, c, src_line_size, dst_line_size;
-   
-   src_line_size = LINE_SIZE(src_w * channels, imDouble);
-   dst_line_size = LINE_SIZE(dst_w * channels, imDouble);
- 
-   for (x = 0; x < dst_w; x++) {
-      Byte *src, *dst; 
-      int start, n = fill_contributions( filter, contributions, &start, x, x_factor, src_w, support );
-      dst = dst_data + x     * channels * sizeof(double);
-      src = src_data + start * channels * sizeof(double);
-      for ( c = 0; c < channels; c++, src += sizeof(double), dst += sizeof(double)) {
-         Byte *src_y = src, *dst_y = dst;
-         for ( y = 0; y < dst_h; y++, src_y += src_line_size, dst_y += dst_line_size ) {
-            register int j;
-            register double pixel = 0.0, *src_j = (double*)src_y;
-            for ( j = 0; j < n; j++, src_j += channels)
-               pixel += contributions[j] * *src_j;
-            *((double*)dst_y) = pixel;
-         }
-      }
-   }
+#define STRETCH_HORIZONTAL_OPEN(type,pixel_init,pixel_access,as_fixed,contrib,roundoff) \
+static void \
+stretch_horizontal_##type(  \
+	FilterRec * filter, double scale, double * contributions, double support,  \
+	int channels, Byte * src_data, int src_w, int src_h,  \
+	Byte * dst_data, int dst_w, int dst_h, double x_factor \
+) { \
+   int x, y, c, src_line_size, dst_line_size; \
+    \
+   src_line_size = LINE_SIZE(src_w * channels, 8*sizeof(type)); \
+   dst_line_size = LINE_SIZE(dst_w * channels, 8*sizeof(type)); \
+  \
+   for (x = 0; x < dst_w; x++) { \
+      Byte *src, *dst; \
+      int start, n = fill_contributions( filter, contributions, &start, x, x_factor, src_w, support, as_fixed ); \
+      dst = dst_data + x     * channels * sizeof(type); \
+      src = src_data + start * channels * sizeof(type); \
+      for ( c = 0; c < channels; c++, src += sizeof(type), dst += sizeof(type)) { \
+         Byte *src_y = src, *dst_y = dst; \
+         for ( y = 0; y < dst_h; y++, src_y += src_line_size, dst_y += dst_line_size ) { \
+            register int j; \
+            pixel_init;\
+	    register type *src_j = (type*)src_y; \
+            for ( j = 0; j < n; j++, src_j += channels) \
+               pixel_access += (contrib * *src_j roundoff);
+
+#define STRETCH_HORIZONTAL_CLOSE(type) *((type*)dst_y)=pixel;}}}}
+
+#define STRETCH_VERTICAL_OPEN(type,pixel_init,pixel_access,as_fixed,contrib,roundoff) \
+static void \
+stretch_vertical_##type(  \
+	FilterRec * filter, double scale, double * contributions, double support,  \
+	Byte * src_data, int src_w, int src_h,  \
+	Byte * dst_data, int dst_w, int dst_h, double y_factor \
+) { \
+   int x, y, c, src_line_size, dst_line_size; \
+    \
+   src_line_size = LINE_SIZE(src_w, 8*sizeof(type)); \
+   dst_line_size = LINE_SIZE(dst_w, 8*sizeof(type)); \
+ \
+   for ( y = 0; y < dst_h; y++) { \
+      Byte *src, *dst; \
+      int start, n = fill_contributions( filter, contributions, &start, y, y_factor, src_h, support, as_fixed ); \
+      src = src_data + start * src_line_size; \
+      dst = dst_data; \
+      for ( x = 0; x < dst_w; x++, src += sizeof(type), dst += sizeof(type)) { \
+         int j; \
+         pixel_init; \
+	 Byte * src_y = src;\
+         for ( j = 0; j < n; j++, src_y += src_line_size) \
+            pixel_access += (contrib * *((type*)(src_y)) roundoff);
+
+#define STRETCH_VERTICAL_CLOSE(type) *((type*)(dst)) = pixel; } dst_data += dst_line_size; }}
+
+STRETCH_HORIZONTAL_OPEN(Byte,Fixed pixel = {0},pixel.l,1,((Fixed*)contributions)[j].l,) \
+   if ( pixel.i.i < 0 ) pixel.i.i = 0;
+   if ( pixel.i.i > 255 ) pixel.i.i = 255;
+   *((Byte*)dst_y)=pixel.i.i;}}}
+}
+STRETCH_VERTICAL_OPEN(Byte,Fixed pixel = {0},pixel.l,1,((Fixed*)contributions)[j].l,) \
+   if ( pixel.i.i < 0 ) pixel.i.i = 0;
+   if ( pixel.i.i > 255 ) pixel.i.i = 255;
+   *((Byte*)dst)=pixel.i.i;} dst_data += dst_line_size; }
 }
 
-static void
-stretch_vertical( FilterRec * filter, double scale, double * contributions, double support, Byte * src_data, int src_w, int src_h, Byte * dst_data, int dst_w, int dst_h, double y_factor)
-{
-   int x, y, c, src_line_size, dst_line_size;
-   
-   src_line_size = LINE_SIZE(src_w, imDouble);
-   dst_line_size = LINE_SIZE(dst_w, imDouble);
+#define STRETCH_CLAMP(min,max) \
+   if ( pixel < min ) pixel = min;\
+   if ( pixel > max ) pixel = max;
+	
+#define stretcher_int(type,min,max) \
+	STRETCH_HORIZONTAL_OPEN(type,register long pixel = 0,pixel,0,contributions[j],+.5) \
+	STRETCH_CLAMP(min,max)\
+	STRETCH_HORIZONTAL_CLOSE(type) \
+	STRETCH_VERTICAL_OPEN(type,register long pixel = 0,pixel,0,contributions[j],+.5) \
+	STRETCH_CLAMP(min,max)\
+	STRETCH_VERTICAL_CLOSE(type)
 
-   for ( y = 0; y < dst_h; y++) {
-      Byte *src, *dst; 
-      int start, n = fill_contributions( filter, contributions, &start, y, y_factor, src_h, support );
-      src = src_data + start * src_line_size;
-      dst = dst_data;
-      for ( x = 0; x < dst_w; x++, src += sizeof(double), dst += sizeof(double)) {
-         int j;
-         double pixel = 0.0;
-	 Byte * src_y = src;
-         for ( j = 0; j < n; j++, src_y += src_line_size)
-            pixel += contributions[j] * *((double*)(src_y));
-         *((double*)(dst)) = pixel;
-      }
+#define stretcher_real(type) \
+	STRETCH_HORIZONTAL_OPEN(type,register type pixel = 0,pixel,0,contributions[j],) \
+	STRETCH_HORIZONTAL_CLOSE(type) \
+	STRETCH_VERTICAL_OPEN(type,register type pixel = 0,pixel,0,contributions[j],) \
+	STRETCH_VERTICAL_CLOSE(type)
 
-      dst_data += dst_line_size;
-   }
-}
+// stretcher_int(Byte,0,255)
+stretcher_int(Short,INT16_MIN,INT16_MAX)
+stretcher_int(Long,INT32_MIN,INT32_MAX)
+stretcher_real(float)
+stretcher_real(double)
 
 Bool
 ic_stretch_filtered( Handle self, int w, int h, int scaling )
@@ -630,6 +675,7 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
    double factor_x, factor_y, scale_x, scale_y, *contributions, support_x, support_y ;
    Byte * target_data, * filter_data;
    FilterRec * filter = NULL;
+    	double t0 = gtd(), t1;
 
    for ( i = 0; i < sizeof(filters) / sizeof(FilterRec); i++) {
       if ( filters[i]. id == scaling ) {
@@ -652,23 +698,30 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
       mirror_y = 0;
    }
    
-   /* convert to double, and use last chance to mirror horizontally */
-   switch (var-> type & imCategory) {
-   case imColor: 
+   /* convert to closest type, and use last chance to mirror horizontally */
+   target_type = var->type;
+   switch (var-> type) {
+   case imMono: 
+   case imNibble: 
+   case im256: 
+   case imRGB: 
       channels = 3;
       target_type = imRGB;
       break;
-   case imComplexNumber:
-      channels = 2;
-      target_type = imDComplex;
+   case imBW:
+   case imNibble | imGrayScale:
+   case imByte:
+      channels = 1;
+      target_type = imByte;
       break;
-   case imTrigComplexNumber:
+   case imComplex:
+   case imDComplex:
+   case imTrigComplex:
+   case imTrigDComplex:
       channels = 2;
-      target_type = imTrigDComplex;
       break;
    default:
       channels = 1;
-      target_type = imDouble;
    }
 
    if ( var-> type != target_type) my-> set_type( self, target_type );
@@ -679,18 +732,17 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
       }
    }
 
-   /* convert to multi-channel imDouble structures */
+   /* convert to multi-channel structures */
    if ( var-> type == imRGB ) {
       var-> type = imByte;
       var-> w *= 3;
       absw *= 3;
-      my-> set_type( self, imDouble );
    }
    if ( channels == 2 ) {
       var-> w *= 2;
       absw *= 2;
       channel2_type = var-> type;
-      var-> type = imDouble;
+      var-> type = ( var-> type & imBPP ) | imGrayScale | imRealNumber;
    }
 
    /* allocate space for semi-filtered and target data */
@@ -703,10 +755,10 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
       fw = var-> w;
       fh = absh;
    }
-   flw = LINE_SIZE( fw, imDouble);
+   flw = LINE_SIZE( fw, var-> type);
    if ( !( filter_data = malloc( flw * fh )))
       croak("not enough memory: %d bytes", flw * fh);
-   target_ls = LINE_SIZE( absw, imDouble);
+   target_ls = LINE_SIZE( absw, var-> type);
    target_ds = absh * target_ls;
    if ( !( target_data = malloc( target_ds ))) {
       free( filter_data );
@@ -719,12 +771,13 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
    if ( scale_y < 1.0 ) scale_y = 1.0;
    support_x = scale_x * filter-> support;
    support_y = scale_y * filter-> support;
-   scale_x = 1/scale_x;
-   scale_y = 1/scale_y;
+   scale_x = 1.0 / scale_x;
+   scale_y = 1.0 / scale_y;
    /* Support too small even for nearest neighbour: Reduce to point sampling.  */
    if (support_x < 0.5) support_x = (double) 0.5;
    if (support_y < 0.5) support_y = (double) 0.5;
-   support_size = (int)(sizeof(double) * 2.0 * (( support_x < support_y ) ? support_y : support_x) * 3.0);
+   support_size = (int)(2.0 * (( support_x < support_y ) ? support_y : support_x) * 3.0);
+   support_size *= (sizeof(Fixed) > sizeof(double)) ? sizeof(Fixed) : sizeof(double);
    if (!(contributions = malloc(support_size))) {
       free( filter_data );
       free( target_data );
@@ -733,45 +786,74 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
 
    /* stretch */
    if (factor_x > factor_y) {
-       stretch_horizontal( filter, scale_x, contributions, support_x, channels, var-> data, var-> w / channels, var-> h, filter_data, fw / channels, fh, factor_x);
-       stretch_vertical  ( filter, scale_y, contributions, support_y, filter_data, fw, fh, target_data, absw, absh, factor_y );
+#define HORIZONTAL(type) stretch_horizontal_##type( \
+       filter, scale_x, contributions, support_x, channels, \
+       var-> data, var-> w / channels, var-> h, filter_data, fw / channels, fh, factor_x)
+#define VERTICAL(type)   stretch_vertical_##type  ( \
+       filter, scale_y, contributions, support_y, \
+       filter_data, fw, fh, target_data, absw, absh, factor_y )
+       switch ( var-> type ) {
+       case imByte:
+          HORIZONTAL(Byte);
+          VERTICAL(Byte);
+	  break;
+       case imShort:
+          HORIZONTAL(Short);
+          VERTICAL(Short);
+	  break;
+       case imLong:
+          HORIZONTAL(Long);
+          VERTICAL(Long);
+	  break;
+       case imFloat:
+          HORIZONTAL(float);
+          VERTICAL(float);
+	  break;
+       case imDouble:
+          HORIZONTAL(double);
+          VERTICAL(double);
+	  break;
+       default:
+          croak("bad image type: %x", var->type);
+       }
+#undef HORIZONTAL
+#undef VERTICAL
    } else {
-       stretch_vertical  ( filter, scale_y, contributions, support_y, var-> data, var-> w, var-> h, filter_data, fw, fh, factor_y);
-       stretch_horizontal( filter, scale_x, contributions, support_x, channels, filter_data, fw / channels, fh, target_data, absw / channels, absh, factor_x);
+#define VERTICAL(type)   stretch_vertical_##type  ( \
+        filter, scale_y, contributions, support_y, \
+        var-> data, var-> w, var-> h, filter_data, fw, fh, factor_y)
+#define HORIZONTAL(type) stretch_horizontal_##type( \
+        filter, scale_x, contributions, support_x, channels, \
+        filter_data, fw / channels, fh, target_data, absw / channels, absh, factor_x)
+       switch ( var-> type ) {
+       case imByte:
+          VERTICAL(Byte);
+          HORIZONTAL(Byte);
+	  break;
+       case imShort:
+          VERTICAL(Short);
+          HORIZONTAL(Short);
+	  break;
+       case imLong:
+          VERTICAL(Long);
+          HORIZONTAL(Long);
+	  break;
+       case imFloat:
+          VERTICAL(float);
+          HORIZONTAL(float);
+	  break;
+       case imDouble:
+          VERTICAL(double);
+          HORIZONTAL(double);
+	  break;
+       default:
+          croak("bad image type: %x", var->type);
+       }
+#undef HORIZONTAL
+#undef VERTICAL
    }
    free( contributions );
    free( filter_data );
-
-   /* clamp values */
-   if ( channels != 2 && (org_type & (imRealNumber|imComplexNumber|imTrigComplexNumber)) == 0) {
-      register double min, max;
-      register double * t = (double *) target_data;
-      register int x;
-      int y, ls = LINE_SIZE( absw, imDouble );
-
-      switch ( org_type & imBPP ) {
-      case 16:
-         min = INT16_MIN;
-         max = INT16_MAX;
-         break;
-      case 32:
-         min = INT32_MIN;
-         max = INT32_MAX;
-         break;
-      default:
-         min = 0;
-         max = 255;
-         break;
-      }
-      for ( y = 0; y < absh; y++, t = (double*)((Byte*)t + ls)) {
-         for ( x = 0; x < absw; x++) {
-            if ( t[x] < min ) 
-               t[x] = min;
-            else if ( t[x] > max ) 
-               t[x] = max;
-         }
-      }
-   }
 
    /* convert back */
    if ( channels == 2 ) {
@@ -786,7 +868,6 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
    free( var-> data );
    var-> data = target_data;
    if ( channels == 3 ) {
-      my-> set_type( self, imByte );
       var-> type = imRGB;
       var-> w /= 3;
       w /= 3;
@@ -795,7 +876,6 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
       my-> set_type( self, org_type );
    if ( mirror_x ) img_mirror( self, 0 );
    if ( mirror_y ) img_mirror( self, 1 );
-   return true;
 }
 
 #ifdef __cplusplus
