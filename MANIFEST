@@ -306,6 +306,7 @@ t/Image/Colormap.t
 t/Image/Import.t
 t/Image/ROP.t
 t/Image/Stream.t
+t/Image/Stretch.t
 t/Image/Transform.t
 t/Object/Application.t
 t/Object/Clipboard.t
