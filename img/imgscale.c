@@ -341,7 +341,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
          dstData += dstLine * ( yMin - 1);
          dstLine = -dstLine;
       }
-      for ( i = 0; i < srcH; i++, srcData += srcLine, dstData += dstLine)
+      for ( i = 0; i < yMin; i++, srcData += srcLine, dstData += dstLine)
          proc( srcData, dstData, srcW, w, absw, xstep.l);
       return;
    }
@@ -587,6 +587,10 @@ stretch_horizontal_##type(  \
    int x, src_line_size, dst_line_size; \
    src_line_size = LINE_SIZE(src_w * channels, 8*sizeof(type)); \
    dst_line_size = LINE_SIZE(dst_w * channels, 8*sizeof(type));\
+   if ( src_w == dst_w && src_h == dst_w ) { \
+      memcpy( dst_data, src_data, dst_line_size * dst_h);\
+      return;\
+   }
 
 #define STRETCH_HORIZONTAL_LOOP(type,pixel_init,pixel_access,as_fixed,contrib,roundoff) \
    for (x = 0; x < dst_w; x++) { \
@@ -616,7 +620,11 @@ stretch_vertical_##type(  \
 ) { \
    int y, src_line_size, dst_line_size; \
    src_line_size = LINE_SIZE(src_w, 8*sizeof(type)); \
-   dst_line_size = LINE_SIZE(dst_w, 8*sizeof(type));
+   dst_line_size = LINE_SIZE(dst_w, 8*sizeof(type));\
+   if ( src_w == dst_w && src_h == dst_w ) { \
+      memcpy( dst_data, src_data, dst_line_size * dst_h);\
+      return;\
+   }
 
 #define STRETCH_VERTICAL_LOOP(type,pixel_init,pixel_access,as_fixed,contrib,roundoff) \
    for ( y = 0; y < dst_h; y++) { \
@@ -794,7 +802,7 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
       var-> w *= 2;
       absw *= 2;
       channel2_type = var-> type;
-      var-> type = ( var-> type & imBPP ) | imGrayScale | imRealNumber;
+      var-> type = (( var-> type & imBPP ) / 2) | imGrayScale | imRealNumber;
    }
 
    /* allocate space for semi-filtered and target data */
