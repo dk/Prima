@@ -283,6 +283,9 @@ extern Byte     map_halftone8x8_64 [  64];
    Byte * srcData = var->data;                                    \
    Byte colorref[ 256]
 
+#define dBCLOOP \
+   Byte * srcDataLoop = srcData + i * srcLine;\
+   Byte * dstDataLoop = dstData + i * dstLine;
 
 #if defined (__BORLANDC__)
 #define BCWARN
@@ -294,6 +297,8 @@ extern Byte     map_halftone8x8_64 [  64];
 
 
 #define BCCONV srcData, dstData, width
+#define BCCONVLOOP srcDataLoop, dstDataLoop, width
+#define BCINCR srcData += srcLine; dstData += dstLine
 
 #define map_RGB_gray ((Byte*)std256gray_palette)
 

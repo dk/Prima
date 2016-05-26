@@ -594,7 +594,7 @@ stretch_horizontal_##type(  \
 
 #define STRETCH_HORIZONTAL_LOOP(type,pixel_init,pixel_access,as_fixed,contrib,roundoff) \
    for (x = 0; x < dst_w; x++) { \
-      double * contributions = (double*) (((Byte*)contribution_storage) + contribution_chunk * prima_omp_thread_num()); \
+      double * contributions = (double*) (((Byte*)contribution_storage) + contribution_chunk * OMP_THREAD_NUM); \
       int y, c, start, n = fill_contributions( filter, contributions, &start, x, x_factor, src_w, support, as_fixed ); \
       Byte * src = src_data + start * channels * sizeof(type); \
       Byte * dst = dst_data + x     * channels * sizeof(type); \
@@ -629,7 +629,7 @@ stretch_vertical_##type(  \
 #define STRETCH_VERTICAL_LOOP(type,pixel_init,pixel_access,as_fixed,contrib,roundoff) \
    for ( y = 0; y < dst_h; y++) { \
       Byte *src_y, *dst_y; \
-      double * contributions = (double*) (((Byte*)contribution_storage) + contribution_chunk * prima_omp_thread_num()); \
+      double * contributions = (double*) (((Byte*)contribution_storage) + contribution_chunk * OMP_THREAD_NUM); \
       int x, start, n = fill_contributions( filter, contributions, &start, y, y_factor, src_h, support, as_fixed ); \
       src_y = src_data + start * src_line_size; \
       dst_y = dst_data + y     * dst_line_size; \
@@ -838,7 +838,7 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
    if (support_y < 0.5) support_y = (double) 0.5;
    support_size = (int)(2.0 * (( support_x < support_y ) ? support_y : support_x) * 3.0);
    support_size *= (sizeof(Fixed) > sizeof(double)) ? sizeof(Fixed) : sizeof(double);
-   if (!(contributions = malloc(support_size * prima_omp_max_threads()))) {
+   if (!(contributions = malloc(support_size * OMP_MAX_THREADS))) {
       free( filter_data );
       free( target_data );
       croak("not enough memory: %d bytes", support_size);
