@@ -303,6 +303,7 @@ t/Image/Bar.t
 t/Image/Basic.t
 t/Image/Codec.t
 t/Image/Colormap.t
+t/Image/Conversion.t
 t/Image/Import.t
 t/Image/ROP.t
 t/Image/Stream.t
