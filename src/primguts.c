@@ -1795,7 +1795,7 @@ prima_omp_thread_num(void)
    ;
 }
 
-int
+void
 prima_omp_set_num_threads(int num)
 {
 #ifdef HAVE_OPENMP
