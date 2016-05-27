@@ -587,7 +587,7 @@ stretch_horizontal_##type(  \
    int x, src_line_size, dst_line_size; \
    src_line_size = LINE_SIZE(src_w * channels, 8*sizeof(type)); \
    dst_line_size = LINE_SIZE(dst_w * channels, 8*sizeof(type));\
-   if ( src_w == dst_w && src_h == dst_w ) { \
+   if ( src_w == dst_w && src_h == dst_h ) { \
       memcpy( dst_data, src_data, dst_line_size * dst_h);\
       return;\
    }
@@ -621,7 +621,7 @@ stretch_vertical_##type(  \
    int y, src_line_size, dst_line_size; \
    src_line_size = LINE_SIZE(src_w, 8*sizeof(type)); \
    dst_line_size = LINE_SIZE(dst_w, 8*sizeof(type));\
-   if ( src_w == dst_w && src_h == dst_w ) { \
+   if ( src_w == dst_w && src_h == dst_h ) { \
       memcpy( dst_data, src_data, dst_line_size * dst_h);\
       return;\
    }
