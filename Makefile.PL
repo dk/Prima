@@ -228,7 +228,7 @@ sub setup_variables
 
 	$DL_LOAD_FLAGS = $cmd_options{DL_LOAD_FLAGS} if defined $cmd_options{DL_LOAD_FLAGS};
 
-	$dir_sep = (( ( $path_sep = $Config{ path_sep}) eq ':') || ( defined $Config{ emxpath})) ? '/' : '\\';
+	$dir_sep = '/';
 }
 
 sub extmap
