@@ -3469,7 +3469,7 @@ prima_omp_max_threads(void);
 extern int
 prima_omp_thread_num(void);
 
-extern int
+extern void
 prima_omp_set_num_threads(int num);
 
 #ifdef HAVE_OPENMP
