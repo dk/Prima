@@ -913,6 +913,7 @@ EOF
 			if ( $captured_makefile_log =~ /recompile with (\-fpic)/i) {
 				printlog "no, trying with $1 ...";
 				$cmd_options{EXTRA_CCFLAGS} .= " $1";
+				$OPENMP .= " $1";
 				goto YES_OPENMP if compile($text);
 			}
 				
@@ -1807,6 +1808,8 @@ sub create_config_pm
 		$libs  = qd("$cwd/blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT");
 		$libsi = '$(lib)' . qd("/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT");
 	}
+	
+	my $cc_openmp = $cmd_options{WITH_OPENMP} ? $OPENMP : '';
 
 	open F, "> Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
 	print F <<CONFIG;
@@ -1854,7 +1857,7 @@ use vars qw(%Config %Config_inst);
 	inline                => ${_quote($DEFINES{__INLINE__})},
 	dl_load_flags         => $DL_LOAD_FLAGS,
 	optimize              => '$OPTIMIZE',
-	openmp                => $cmd_options{WITH_OPENMP},
+	openmp                => '$cc_openmp',
 
 	inc                   => '$inc',
 	define                => '',
