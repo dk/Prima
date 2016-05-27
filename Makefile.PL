@@ -902,16 +902,23 @@ main()
    return 0;
 }
 EOF
-		my $save_optimize = $OPTIMIZE;
-		$OPTIMIZE .= " $OPENMP";
+		my $save = $cmd_options{EXTRA_CCFLAGS};
+		$cmd_options{EXTRA_CCFLAGS} .= " $OPENMP";
 		push @LIBS, 'gomp' if $compiler_type eq 'gcc';
 		if ( compile($text)) {
+		YES_OPENMP:
 			$DEFINES{HAVE_OPENMP} = 1;
 			printlog "yes\n";
 		} else {
+			if ( $captured_makefile_log =~ /recompile with (\-fpic)/i) {
+				printlog "no, trying with $1 ...";
+				$cmd_options{EXTRA_CCFLAGS} .= " $1";
+				goto YES_OPENMP if compile($text);
+			}
+				
 			pop @LIBS if $compiler_type eq 'gcc';
 			$cmd_options{WITH_OPENMP} = 0;
-			$OPTIMIZE = $save_optimize;
+			$cmd_options{EXTRA_CCFLAGS} = $save;
 			printlog "no\n";
 		}
 	}
