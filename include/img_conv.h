@@ -285,7 +285,7 @@ extern Byte     map_halftone8x8_64 [  64];
 
 #define dBCLOOP \
    Byte * srcDataLoop = srcData + i * srcLine;\
-   Byte * dstDataLoop = dstData + i * dstLine;
+   Byte * dstDataLoop = dstData + i * dstLine
 
 #if defined (__BORLANDC__)
 #define BCWARN
