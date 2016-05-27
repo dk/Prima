@@ -1001,11 +1001,13 @@ sub setup_defines
 		have_header( "X11/extensions/XShm.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
 	}
 
-	have_funcs_in( 'strings.h', 'strcasecmp');
-	have_funcs_in( 'strings.h', 'strncasecmp');
+	if ( !have_funcs_in( 'strings.h', 'strcasecmp')) {
+	   have_funcs_in( 'string.h', 'stricmp');
+	}
+	if ( !have_funcs_in( 'strings.h', 'strncasecmp')) {
+	   have_funcs_in( 'string.h', 'strnicmp');
+	}
 	have_funcs_in( 'strings.h', 'strcasestr');
-	have_funcs_in( 'string.h', 'stricmp');
-	have_funcs_in( 'string.h', 'strnicmp');
 	have_funcs_in( 'stdio.h', 'snprintf');
 	have_funcs_in( 'stdio.h', '_snprintf');
 	have_funcs_in( 'stdlib.h', 'reallocf');
