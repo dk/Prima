@@ -365,7 +365,7 @@ sub setup_environment
 		$LDOUTFLAG    = '-o ';
 		$LD_LIB_EXT   = '';
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
-		$OPENMP       = '-std=c99 -fopenmp';
+		$OPENMP       = '-fopenmp';
 	}
 	
 	$DEFFILE    = 'Prima.def';
