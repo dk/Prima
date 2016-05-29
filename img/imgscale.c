@@ -918,6 +918,7 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
       my-> set_type( self, org_type );
    if ( mirror_x ) img_mirror( self, 0 );
    if ( mirror_y ) img_mirror( self, 1 );
+   return true;
 }
 
 #ifdef __cplusplus
