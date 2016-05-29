@@ -358,7 +358,7 @@ typedef int32_t         Long;
 #undef INT32_MIN
 #undef INT32_MAX
 #define INT16_MIN (-32768)
-#define INT16_MAX 32768
+#define INT16_MAX 32767
 #define INT32_MIN  (-2147483647L-1)
 #define INT32_MAX 2147483647L
 
