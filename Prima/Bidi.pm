@@ -245,7 +245,7 @@ sub is_ltr($)    { !($_[0] & $Text::Bidi::Mask::RTL) }
 
 sub edit_insert
 {
-	my ( $src_p, $visual_pos, $new_str, $rtl ) = @_;
+	my ( $src_p, $visual_pos, $new_str ) = @_;
 
 	return $visual_pos, 0 unless length $new_str;
 
@@ -445,6 +445,145 @@ or same, for classes
 
    use Prima::Bidi qw(:methods);
    say $self->bidi_visual( $bidi_text ) if $self-> is_bidi($bidi_text);
+
+=head1 API
+
+The API follows closely L<Text::Bidi> api, with view to serve as a loose set of
+helper routines for input and output in Prima widgets. It also makes use of
+installations without C<Text::Bidi> safe. Exports set of C<bidi_XXX> names,
+available as method calls.
+
+=over
+
+=item is_bidi $TEXT
+
+Returns boolean flags whether the text contains any bidirectional characters.
+
+=item bidi_map $TEXT, ...
+
+Shortcut for C<< Text::Bidi::Paragraph->new($TEXT, ...)->map >>.
+
+Returns a set of integer indices, showing placement of where in original bidi
+text a corresponding character can be found, i.e. C<$map[0]> contains the index of
+the character to be displayed leftmost, etc.
+
+This function could be useful f.ex. for translating screen position to text position.
+
+See L<Text::Bidi::Paragraph/map> for more.
+
+=item bidi_paragraph $TEXT, $RTL, $FLAGS
+
+Returns a C<Text::Bidi::Paragraph(dir => $RTL)> object together with result of
+call to C<visual($FLAGS)>.
+
+=item bidi_revmap $MAP
+
+Returns an inverse array of result of C<map>, i.e. showing where, if any, a
+bidi character is to be displayed in visual text, so that f.ex. C<$revmap[0]>
+contains visual position of character #0, etc.
+
+=item bidi_edit_delete $PARAGRAPH, $VISUAL_POSITION, $DELETE
+
+Handles bidirectional deletion, emulating user hitting a backspace (C<$DELETE =
+0>) or delete (C<$DELETE = 1>) key at C<$VISUAL_POSITION> in text represented
+by a C<Text::Bidi::Paragraph> object.
+
+Returns three integers, showing 1) how many characters are to be deleted, 2) at
+which text offset, and 3) how many characters to the right the cursor has to
+move.
+
+C<$PARAGRAPH> can be a non-object, in which case the text is considered to be non-bidi.
+
+=item bidi_edit_insert $PARAGRAPH, $VISUAL_POSITION, $NEW_STRING
+
+Handles typing of bidirectional text C<$NEW_STRING>, inside an existing
+C<$PARAGRAPH> represented by a C<Text::Bidi::Paragraph> object, where cursor is
+a C<$VISUAL_POSITION>.
+
+C<$PARAGRAPH> can be a non-object, in which case the text is considered to be non-bidi.
+
+=item bidi_map_find $MAP, $INDEX
+
+Searches thround C<$MAP> (returned by C<bidi_map>) for integer C<$INDEX>, returns
+its position if found.
+
+=item bidi_selection_chunks $MAP, $START, $END, $OFFSET = 0
+
+Calculates a set of chunks of texts, that, given a text selection from
+positions C<$START> to C<$END>, represent each either a set of selected and non-selected
+visual characters. The text is represented by a result of C<bidi_map>.
+
+Returns array of integers, RLE-encoding the chunks, where the first integer
+signifies number of non-selected characters to display, the second - number
+of selected characters, the third the non-selected again, etc. If the first
+character belongs to the selected chunk, the first integer in the result is set
+to 0.
+
+C<$MAP> can be also an integer length of text (i.e. shortcut for an identity
+array (0,1,2,3...) in which case the text is considered to be non-bidi, and
+selection result will contain max 3 chunks).
+
+C<$OFFSET> may be greater that 0, but less than C<$START>, if that information
+is not needed.
+
+Example: consider embedded number in a bidi text. For the sake of clarity I'll use
+latin characters here. For example, we have a text scalar containing these characters:
+
+   ABC123
+
+where I<ABC> is right-to-left text, and which, when rendered on screen, should be
+displayed as
+
+   123CBA
+
+(and C<$MAP> will be (3,4,5,2,1,0) ).
+
+Next, the user clicks the mouse between A and B (in text offset 1), and drags the selection
+in the right direction until between characters 2 and 3 (text offset 4). The resulting selection
+should not be, as one might naively expect, this:
+
+   123CBA
+   __^^^_
+
+but this instead:
+
+   123CBA
+   ^^_^^_
+
+because the next character after C is 1.
+
+In this case, the result of call to C<bidi_selection_chunks( $MAP, 1, 4 )> will be C<0,2,1,2,1> .
+
+=item bidi_selection_diff $OLD, $NEW
+
+Given set of two chunk lists, in format as returned by C<bidi_selection_chunks>, calculates
+a list of chunks affected by the selection change. Can be used for efficient repaints when
+the user interactively changes text selection, to redraw only the changed regions.
+
+=item bidi_selection_map $TEXT
+
+Same as C<bidi_map>, except when C<$TEXT> is not bidi, returns just length of
+it. Such format can be used to pass the result further to
+C<bidi_selection_chunks> efficiently where operations are performed on a
+non-bidi text.
+
+=item bidi_selection_walk $CHUNKS, $FROM, $TO = length, $SUB
+
+Walks the selection chunks array, returned by C<bidi_selection_chunks>, between
+C<$FROM> and C<$TO> visual positions, and for each chunk calls the provided C<
+$SUB->($offset, $length, $selected) >, where each call contains 2 integers to
+chunk offset and length, and a boolean flag whether the chunk is selected or
+not.
+
+Can be also used on a result of C<bidi_selection_walk>, in which case
+C<$selected> flag is irrelevant.
+
+=item bidi_visual $TEXT, $RTL, $FLAGS
+
+Same as C<bidi_paragraph> but returns only the rendered text, omitting the
+paragraph object.
+
+=back
 
 =head1 AUTHOR
 

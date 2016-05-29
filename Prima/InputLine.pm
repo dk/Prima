@@ -483,7 +483,7 @@ sub on_keydown
 		INSERT:
 			my ($at,$moveto) = $self->bidi_edit_insert(
 				$self->{bidiData},
-				$start, $chr, $self->{textDirection}
+				$start, $chr
 			);
 			substr( $cap, $at, 0) = $chr;
 			$offset += $moveto - 1;
