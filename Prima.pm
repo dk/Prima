@@ -390,6 +390,12 @@ L<Prima::PrintDialog> - standard printer setup dialog
 
 L<Prima::StdDlg> - wrapper module to the toolkit standard dialogs
 
+=item Drawing helpers
+
+L<Prima::Drawable::CurvedText> - fit text to path
+
+L<Prima::Drawable::Subcanvas> - paint a hierarchy of widgets to any drawable
+
 =item Visual Builder
 
 L<VB> - Visual Builder for the Prima toolkit
