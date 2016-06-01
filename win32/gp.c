@@ -1807,8 +1807,11 @@ apc_gp_set_line_width( Handle self, int lineWidth)
    objCheck false;
    if ( !sys ps) sys lineWidth = lineWidth; else {
       PStylus s = &sys stylus;
+      PEXTPEN ep        = &s-> extPen;
       if ( lineWidth < 0 || lineWidth > 8192) lineWidth = 0;
       s-> pen. lopnWidth. x = lineWidth;
+      if (( ep-> actual = stylus_extpenned( s)))
+         ep-> style = stylus_get_extpen_style( s);
       stylus_change( self);
    }
    return true;

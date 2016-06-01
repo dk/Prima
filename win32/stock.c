@@ -145,8 +145,9 @@ stylus_extpenned( PStylus s)
 {
    Bool ext = false;
    if ( s-> pen. lopnWidth. x > 1) {
-       if (( s-> pen. lopnStyle != PS_SOLID) && ( s-> pen. lopnStyle != PS_NULL))
-          return true;
+       if ( s-> pen. lopnStyle == PS_NULL)
+          return false;
+       return true;
    } else if ( s-> pen. lopnStyle == PS_USERSTYLE)
       return true;
    return false;
