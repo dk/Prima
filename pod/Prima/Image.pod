@@ -403,6 +403,10 @@ Returns minimum pixel value in the image data.
 Declares the scaling strategy when image is resized.  Strategies C<ist::None>
 through C<ist::Box> are very fast scalers, others not so.
 
+=for podview <img src="scalings.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/scalings.gif">
+
 Can be one of C<ist:::XXX> constants:
 
   ist::None      - image will be either stripped (when downsizing) 
