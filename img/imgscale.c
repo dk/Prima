@@ -217,6 +217,8 @@ void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx
    }
 }
 
+#define STEP(x) ((double)x * (double)(UINT16_PRECISION) + .5)
+
 void
 ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch)
 {
@@ -267,7 +269,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
       }
       if ( absh < srcH)
       {
-         ystep. l = (double) absh / srcH * UINT16_PRECISION;
+         ystep. l = STEP( absh / srcH );
          memcpy( dstData, srcData, xMin);
          dstData += dstLine;
          for ( i = 0; i < srcH; i++)
@@ -282,7 +284,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
             srcData += srcLine;
          }
       } else {
-         ystep. l = (double) srcH / absh * UINT16_PRECISION;
+         ystep. l = STEP( srcH / absh);
          for ( i = 0; i < absh; i++)
          {
             if ( count.i.i > last)
@@ -300,13 +302,12 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
 
 /* general actions for x-scaling */
    count. l = 0;
-   count. l = 0;
    if ( srcW < absw || srcH < absh || ( type & imBPP) == imNibble)
       memset( dstData, 0, dstLine * absh);
    if ( absw < srcW)
-      xstep. l = (double) absw / srcW * UINT16_PRECISION;
+      xstep. l = STEP( absw / srcW);
    else
-      xstep. l = (double) srcW / absw * UINT16_PRECISION;
+      xstep. l = STEP( srcW / absw);
    switch( type)
    {
       case imMono:     case imBW:
@@ -354,7 +355,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
    }
    if ( absh < srcH)
    {
-      ystep. l = (double) absh / srcH * UINT16_PRECISION;
+      ystep. l = STEP( absh / srcH);
       proc( srcData, dstData, srcW, w, absw, xstep.l);
       dstData += dstLine;
       for ( i = 0; i < srcH; i++)
@@ -369,7 +370,8 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
          srcData += srcLine;
       }
    } else {
-      ystep. l = (double) srcH / absh * UINT16_PRECISION;
+      ystep. l = STEP( srcH / absh);
+      printf("%d\n", ystep.i.f);
       for ( i = 0; i < absh; i++)
       {
          if ( count.i.i > last)
