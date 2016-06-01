@@ -604,6 +604,8 @@ sub open_read
 
 		createIndex   => 1,
 		encoding      => undef,
+		bom           => undef,
+		utf8          => undef,
 
 		@opt,
 	};
@@ -807,6 +809,13 @@ sub read
 	my ( $self, $pod) = @_;
 	my $r = $self-> {readState};
 	return unless $r;
+
+	unless ( defined $r->{bom} ) {
+		if ( $pod =~ s/^(\x{ef}\x{bb}\x{bf})// ) { # don't care about other BOMs so far
+			$r-> {bom} = $1;
+			$r-> {encoding} = Encode::find_encoding('utf-8');
+		}
+	}
 
 	my $odd = 0;
 	for ( split ( "(\n)", $pod)) {
