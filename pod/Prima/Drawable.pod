@@ -765,6 +765,10 @@ can be one of
 
 constants. le::Round is the default value.
 
+=for podview <img src="lineends.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends.gif">
+
 =item lineJoin VALUE
 
 Selects a line joining style for polygons. VALUE 
@@ -775,6 +779,10 @@ can be one of
   lj::Miter
 
 constants. lj::Round is the default value.
+
+=for podview <img src="linejoins.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/linejoins.gif">
 
 =item linePattern PATTERN
 

@@ -346,7 +346,6 @@ converted to a 1-bit image, the following results occur:
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/conversions.gif">
 
-
 =item data SCALAR
 
 Provides access to the bitmap data. On get-call, returns all bitmap pixels,
