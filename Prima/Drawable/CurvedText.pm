@@ -403,10 +403,15 @@ collide with the path boundaries and each other.
 
 =head1 SYNOPSIS
 
-  use Prima qw(Application CurvedText);
+  use Prima qw(Application Drawable::CurvedText);
+  $spline = [qw(100 100 150 150 200 100)];
   $::application-> begin_paint;
-  $::application-> curved_text_out( 'Hello, world!',
-    $::application-> render_spline( [qw(100 100 150 150 200 100)]));
+  $::application-> spline($spline);
+  $::application-> curved_text_out( 'Hello, world!', $::application-> render_spline( $spline ));
+
+=for podview <img src="../../pod/Prima/curvedtext.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/curvedtext.gif">
 
 =head2 curved_text_out $TEXT, $POLYLINE, %OPTIONS
 
