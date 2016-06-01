@@ -10,7 +10,7 @@ extern "C" {
 #define BS_BYTEIMPACT( type)                                                        \
 void bs_##type##_in( type * srcData, type * dstData, int w, int x, int absx, long step)  \
 {                                                                                   \
-   Fixed count = {0};                                                               \
+   Fixed count = {step/2};                                                               \
    int   last = 0;                                                                  \
    int   i;                                                                         \
    int   j    = ( x == absx) ? 0 : ( absx - 1);                                     \
@@ -32,7 +32,7 @@ void bs_##type##_in( type * srcData, type * dstData, int w, int x, int absx, lon
 #define BS_BYTEEXPAND( type)                                                        \
 void bs_##type##_out( type * srcData, type * dstData, int w, int x, int absx, long step) \
 {                                                                                   \
-   Fixed count = {0};                                                               \
+   Fixed count = {step/2};                                                               \
    int   i;                                                                         \
    int   j    = ( x == absx) ? 0 : ( absx - 1);                                     \
    int   inc  = ( x == absx) ? 1 : -1;                                              \
@@ -72,7 +72,7 @@ BS_BYTEIMPACT( DComplex)
 void
 bs_mono_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
-   Fixed count = {0};
+   Fixed count = {step/2};
    int   last   = 0;
    register int i, j;
    register U16 xd, xs;
@@ -121,7 +121,7 @@ bs_mono_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long s
 void
 bs_mono_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
-   Fixed    count = {0};
+   Fixed    count = {step/2};
    register int i, j = 0;
    register U16 xd = 0, xs;
    int last = 0;
@@ -171,7 +171,7 @@ bs_mono_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long 
 
 void bs_nibble_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
-   Fixed count = {0};
+   Fixed count = {step/2};
    int   last = 0;
    int   i;
    int   j    = ( x == absx) ? 0 : ( absx - 1);
@@ -195,7 +195,7 @@ void bs_nibble_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx,
 
 void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
-   Fixed count = {0};
+   Fixed count = {step/2};
    int   i, k = 0;
    int   j    = ( x == absx) ? 0 : ( absx - 1);
    int   inc  = ( x == absx) ? 1 : -1;
@@ -260,7 +260,6 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
       int xMin = (( type & imBPP) < 8) ? 
          ( srcLine > dstLine) ? dstLine : srcLine :
          (((( srcW > absw) ? absw : srcW) * ( type & imBPP)) / 8);
-      count. l = 0;
       if ( srcW < w) memset( dstData, 0, dstLine * absh);
       if ( h < 0)
       {
@@ -270,6 +269,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
       if ( absh < srcH)
       {
          ystep. l = STEP( absh / srcH );
+         count. l = ystep. l / 2;
          memcpy( dstData, srcData, xMin);
          dstData += dstLine;
          for ( i = 0; i < srcH; i++)
@@ -285,6 +285,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
          }
       } else {
          ystep. l = STEP( srcH / absh);
+         count. l = ystep. l / 2;
          for ( i = 0; i < absh; i++)
          {
             if ( count.i.i > last)
@@ -356,6 +357,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
    if ( absh < srcH)
    {
       ystep. l = STEP( absh / srcH);
+      count. l = ystep. l / 2;
       proc( srcData, dstData, srcW, w, absw, xstep.l);
       dstData += dstLine;
       for ( i = 0; i < srcH; i++)
@@ -371,7 +373,7 @@ ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w,
       }
    } else {
       ystep. l = STEP( srcH / absh);
-      printf("%d\n", ystep.i.f);
+      count. l = ystep. l / 2;
       for ( i = 0; i < absh; i++)
       {
          if ( count.i.i > last)

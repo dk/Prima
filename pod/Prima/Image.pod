@@ -403,10 +403,6 @@ Returns minimum pixel value in the image data.
 Declares the scaling strategy when image is resized.  Strategies C<ist::None>
 through C<ist::Box> are very fast scalers, others not so.
 
-=for podview <img src="scalings.gif">
-
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/scalings.gif">
-
 Can be one of C<ist:::XXX> constants:
 
   ist::None      - image will be either stripped (when downsizing) 
@@ -422,6 +418,10 @@ Can be one of C<ist:::XXX> constants:
   ist::Hermite   - B-Spline interpolation
   ist::Cubic     - 3rd order (cubic) B-Spline approximation of Gaussian 
   ist::Gaussian  - Gaussian transform with gamma=0.5
+
+=for podview <img src="scalings.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/scalings.gif">
 
 =item size WIDTH, HEIGHT 
 
