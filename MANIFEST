@@ -127,6 +127,7 @@ include/win32/win32guts.h
 pod/gencls.pod
 pod/Prima/Clipboard.pod
 pod/Prima/codecs.pod
+pod/Prima/conversions.gif
 pod/Prima/curvedtext.gif
 pod/Prima/Drawable.pod
 pod/Prima/faq.pod
