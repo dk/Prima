@@ -620,12 +620,12 @@ sub add_formatted
 		$self-> add_new_line;
 	} elsif ( $format eq 'podview') {
 		while ( $text =~ m/<\s*([^<>]*)\s*>/gcs) {
-			my $cmd = lc $1;
-			if ( $cmd eq 'cut') {
+			my $cmd = $1;
+			if ( lc($cmd) eq 'cut') {
 				$self-> {readState}-> {pod_cutting} = 0;
-			} elsif ( $cmd eq '/cut') {
+			} elsif ( lc($cmd) eq '/cut') {
 				$self-> {readState}-> {pod_cutting} = 1;
-			} elsif ( $cmd =~ /^img\s*(.*)$/) {
+			} elsif ( $cmd =~ /^img\s*(.*)$/i) {
 				$cmd = $1;
 				my ( $w, $h, $src, $frame, $cut);
 				$frame = 0;
