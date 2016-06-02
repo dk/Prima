@@ -132,6 +132,7 @@ pod/Prima/curvedtext.gif
 pod/Prima/Drawable.pod
 pod/Prima/faq.pod
 pod/Prima/File.pod
+pod/Prima/fills.gif
 pod/Prima/fontabc.gif
 pod/Prima/gettextbox.gif
 pod/Prima/gp-problems.pod
@@ -141,6 +142,7 @@ pod/Prima/internals.pod
 pod/Prima/leadings.gif
 pod/Prima/lineends.gif
 pod/Prima/linejoins.gif
+pod/Prima/linepats.gif
 pod/Prima/Menu.pod
 pod/Prima/Object.pod
 pod/Prima/Printer.pod
@@ -159,6 +161,7 @@ pod/Prima/tutorial.pod
 pod/Prima/Widget/pack.pod
 pod/Prima/Widget/place.pod
 pod/Prima/Widget.pod
+pod/Prima/windings.gif
 pod/Prima/Window.pod
 pod/Prima/X11.pod
 Prima/Application.pm

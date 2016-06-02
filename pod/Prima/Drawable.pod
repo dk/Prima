@@ -682,11 +682,15 @@ its context is neither recorded nor used as a template
 
 =item fillWinding BOOLEAN
 
-Affect filling style of complex polygonal shapes filled by C<fillpoly>.
+Affects filling style of complex polygonal shapes filled by C<fillpoly>.
 If 1, the filled shape contains no holes; otherwise, holes are present
 where the shape edges cross.
 
-Default value: 0
+=for podview <img src="windings.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/windings.gif">
+
+Default value: false
 
 =item fillPattern ( [ @PATTERN ] ) or ( fp::XXX )
 
@@ -698,6 +702,10 @@ each representing 8 bits of each line in a pattern, where the first integer
 is the topmost pattern line, and the bit 0x80 is the leftmost pixel in the line.
 
 There are some predefined patterns, that can be referred via C<fp::> constants:
+
+=for podview <img src="fills.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/fills.gif"><!--
 
   fp::Empty
   fp::Solid
@@ -714,6 +722,10 @@ There are some predefined patterns, that can be referred via C<fp::> constants:
   fp::SimpleDots
   fp::Borland
   fp::Parquet
+
+=for html -->
+
+=for podview </cut>
 
 ( the actual patterns are hardcoded in primguts.c )
 The default pattern is fp::Solid.
@@ -759,30 +771,38 @@ Applies to text_out(), get_text_width(), get_text_box(), get_font_abc().
 Selects a line ending cap for plotting primitives. VALUE 
 can be one of
 
+=for podview <img src="lineends.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends.gif"><!--
+
   le::Flat
   le::Square
   le::Round
 
+=for html -->
+
+=for podview </cut>
+
 constants. le::Round is the default value.
-
-=for podview <img src="lineends.gif">
-
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends.gif">
 
 =item lineJoin VALUE
 
 Selects a line joining style for polygons. VALUE 
 can be one of
 
+=for podview <img src="linejoins.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/linejoins.gif"><!--
+
   lj::Round
   lj::Bevel
   lj::Miter
 
+=for html -->
+
+=for podview </cut>
+
 constants. lj::Round is the default value.
-
-=for podview <img src="linejoins.gif">
-
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/linejoins.gif">
 
 =item linePattern PATTERN
 
@@ -793,6 +813,10 @@ and each odd byte is a length of a gap.
 
 The predefined constants are:
 
+=for podview <img src="linepats.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/linepats.gif"><!--
+
     lp::Null           #    ""              /*              */
     lp::Solid          #    "\1"            /* ___________  */
     lp::Dash           #    "\x9\3"         /* __ __ __ __  */
@@ -802,6 +826,10 @@ The predefined constants are:
     lp::DotDot         #    "\1\1"          /* ............ */
     lp::DashDot        #    "\x9\6\1\3"     /* _._._._._._  */
     lp::DashDotDot     #    "\x9\3\1\3\1\3" /* _.._.._.._.. */
+
+=for podview </cut>
+
+=for html -->
 
 Not all systems are capable of accepting user-defined line patterns,
 and in such situation the C<lp::> constants are mapped to the system-defined
