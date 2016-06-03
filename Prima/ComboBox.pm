@@ -145,7 +145,7 @@ sub init
 	if ( $self->{autoHeight} && $self->{style} != cs::Simple) {
 		$self->check_auto_size;
 		( $w, $h) = ( $self-> size);
-		$eh = $self-> height;
+		$eh = $self-> geomHeight;
 		$self->{edit}->set( height => $eh, bottom => $h - $eh );
 	}
 
