@@ -791,6 +791,22 @@ MB2(6,b6)
 MB2(7,b7)
 #define mb8             128
 MB2(8,b8)
+#define mb9             0x100
+MB2(9,b9)
+#define mb10            0x200
+MB2(10,b10)
+#define mb11            0x400
+MB2(11,b11)
+#define mb12            0x800
+MB2(12,b12)
+#define mb13            0x1000
+MB2(13,b13)
+#define mb14            0x2000
+MB2(14,b14)
+#define mb15            0x4000
+MB2(15,b15)
+#define mb16            0x8000
+MB2(16,b16)
 #define mbLeft          mb1
 MB(Left)
 #define mbRight         mb3

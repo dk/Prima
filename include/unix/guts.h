@@ -51,6 +51,30 @@
 #ifndef Button8
 #define Button8		8
 #endif
+#ifndef Button9
+#define Button9		9
+#endif
+#ifndef Button10
+#define Button10	10
+#endif
+#ifndef Button11
+#define Button11	11
+#endif
+#ifndef Button12
+#define Button12	12
+#endif
+#ifndef Button13
+#define Button13	13
+#endif
+#ifndef Button14
+#define Button14	14
+#endif
+#ifndef Button15
+#define Button15	15
+#endif
+#ifndef Button16
+#define Button16	16
+#endif
 #ifndef Button6Mask
 #define Button6Mask     (1<<13)
 #endif

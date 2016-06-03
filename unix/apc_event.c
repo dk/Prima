@@ -1113,6 +1113,30 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
       case Button8:
 	 e. pos. button = mb8;
 	 break;
+      case Button9:
+	 e. pos. button = mb9;
+	 break;
+      case Button10:
+	 e. pos. button = mb10;
+	 break;
+      case Button11:
+	 e. pos. button = mb11;
+	 break;
+      case Button12:
+	 e. pos. button = mb12;
+	 break;
+      case Button13:
+	 e. pos. button = mb13;
+	 break;
+      case Button14:
+	 e. pos. button = mb14;
+	 break;
+      case Button15:
+	 e. pos. button = mb15;
+	 break;
+      case Button16:
+	 e. pos. button = mb16;
+	 break;
       default:
 	 return;
       }
