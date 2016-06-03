@@ -1,5 +1,11 @@
 Revision history for Perl module Prima
 
+1.47 2016-06-03
+ - Add OpenMP support for image scaling and conversion
+ - Add custom image scaling algorithms
+ - Support JPEG mirror/rotation tags
+ - Implement image loading progress display for directions other than top-down (for jpeg and bmp)
+
 1.46 2016-03-16
  - Use pkg_config, when available
  - Require perl version 5.10
