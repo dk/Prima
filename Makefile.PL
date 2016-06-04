@@ -1932,7 +1932,7 @@ sub command_postinstall
 package Prima::Config;
 use vars qw(\%Config);
 
-my \$bin = qq($opt{bin});
+my \$bin = q($opt{bin});
 
 # Determine lib based on the location of this module
 use File::Basename qw(dirname);
