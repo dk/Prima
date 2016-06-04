@@ -908,7 +908,6 @@ EOF
 		push @LIBS, 'gomp' if $compiler_type eq 'gcc';
 		if ( compile($text)) {
 		YES_OPENMP:
-			$DEFINES{HAVE_OPENMP} = 1;
 			printlog "yes\n";
 		} else {
 			if ( $captured_makefile_log =~ /recompile with (\-fpic)/i) {
@@ -937,6 +936,7 @@ EOF
 			}
 			if ( $found ) {
 				printlog "yes\n";
+				$DEFINES{HAVE_OPENMP} = 1;
 			} else {
 				@LIBS = @savelibs;
 				$cmd_options{WITH_OPENMP} = 0;
