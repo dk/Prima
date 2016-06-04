@@ -1059,7 +1059,7 @@ sub add
 				if ( $m =~ m/\G.*? $right(?!>)/gcs) {
 					push @ids, 
 						[ 
-							$pos - length($left) - 1, 
+							$pos - length($left) - 2,
 							$cmd, 
 							length($cmd)+length($left)
 						], [ 
