@@ -538,9 +538,10 @@ displayed as
 
 (and C<$MAP> will be (3,4,5,2,1,0) ).
 
-Next, the user clicks the mouse between A and B (in text offset 1), and drags the selection
-in the right direction until between characters 2 and 3 (text offset 4). The resulting selection
-should not be, as one might naively expect, this:
+Next, the user clicks the mouse between A and B (in text offset 1), drags the
+mouse then to the left, and finally stops between characters 2 and 3 (text
+offset 4). The resulting selection then should not be, as one might naively expect,
+this:
 
    123CBA
    __^^^_
@@ -550,19 +551,20 @@ but this instead:
    123CBA
    ^^_^^_
 
-because the next character after C is 1.
+because the next character after C is 1, and the I<range> of the selected sub-text is from
+characters 1 to 4.
 
 In this case, the result of call to C<bidi_selection_chunks( $MAP, 1, 4 )> will be C<0,2,1,2,1> .
 
 =item bidi_selection_diff $OLD, $NEW
 
 Given set of two chunk lists, in format as returned by C<bidi_selection_chunks>, calculates
-a list of chunks affected by the selection change. Can be used for efficient repaints when
+the list of chunks affected by the selection change. Can be used for efficient repaints when
 the user interactively changes text selection, to redraw only the changed regions.
 
 =item bidi_selection_map $TEXT
 
-Same as C<bidi_map>, except when C<$TEXT> is not bidi, returns just length of
+Same as C<bidi_map>, except when C<$TEXT> is not bidi, returns just the length of
 it. Such format can be used to pass the result further to
 C<bidi_selection_chunks> efficiently where operations are performed on a
 non-bidi text.
@@ -570,8 +572,8 @@ non-bidi text.
 =item bidi_selection_walk $CHUNKS, $FROM, $TO = length, $SUB
 
 Walks the selection chunks array, returned by C<bidi_selection_chunks>, between
-C<$FROM> and C<$TO> visual positions, and for each chunk calls the provided C<
-$SUB->($offset, $length, $selected) >, where each call contains 2 integers to
+C<$FROM> and C<$TO> visual positions, and for each chunk calls the provided 
+C<< $SUB->($offset, $length, $selected) >>, where each call contains 2 integers to
 chunk offset and length, and a boolean flag whether the chunk is selected or
 not.
 
