@@ -316,12 +316,12 @@ the C<gm::GrowHiX> value must be used.
 
 When this implicit size change does occur, the C<::sizeMin> 
 and C<::sizeMax> do take their part as well - they still do not allow
-the widget's size excess their boundaries. However, this 
-algorithm derives a problem, that is illustrated by the following 
+the widget's size to exceed their boundaries. However, this 
+algorithm has a problem, that is illustrated by the following 
 setup. Imagine a widget with size-dependent C<::growMode> ( with
 C<gm::GrowHiX> or C<gm::GrowHiY> bits set ) that must maintain certain relation between
 the owner's size and its own. If the implicit size change would
-be dependent on the actual widget size, derived as a result from the previous
+depend on the actual widget size, derived as a result from the previous
 implicit size action, then its size (and probably position) will be incorrect
 after an attempt is made to change the widget's size to values outside
 the size boundaries. 
@@ -354,36 +354,33 @@ added, the correct picture occurs:
   Grow               195   +5       95            95
   Grow               200   +5      100           100
 
-Strictly speaking, the I<virtual size> must be declared a read-only property,
-but currently it is implemented as a C<get_virtual_size()> function,
-and it is planned to fix this discrepancy between the document
-and the implementation in favor of the property syntax.
-
 =head2 Geometry managers
 
-The concept of geometry managers is imported from Tk, which in turn
-is a port of Tcl-Tk. The idea behind it is that a widget size and
-position is governed by one of the managers, which operate depending 
-on the specific options given to the widget. The selection is operated
-by C<::geometry> property, and is one of C<gt::XXX> constants. The native
-( and the default ) geometry manager is the described above grow-mode 
-algorithm ( C<gt::GrowMode> ). The currently implemented Tk managers are
-packer ( C<gt::Pack> ) and placer ( C<gt::Place>). Each has its own set of
-options and methods, and their manuals are provided separately in
-L<Prima::Widget::pack> and L<Prima::Widget::place> ( the manpages are also imported from Tk ).
+The concept of geometry managers is imported from Tk, which in turn is a port
+of Tcl-Tk. The idea behind it is that a widget size and position is governed by
+one of the managers, which operate depending on the specific options given to
+the widget. The selection is operated by C<::geometry> property, and is one of
+C<gt::XXX> constants. The native ( and the default ) geometry manager is the
+described above grow-mode algorithm ( C<gt::GrowMode> ). The currently
+implemented Tk managers are packer ( C<gt::Pack> ) and placer ( C<gt::Place>).
+Each has its own set of options and methods, and their manuals are provided
+separately in L<Prima::Widget::pack> and L<Prima::Widget::place> ( the manpages
+are also imported from Tk ).
 
-Another concept that comes along with geometry managers is the 'geometry request size'.
-It is realized as a two-integer property C<::geomSize>, which reflects the size
-selected by some intrinsic widget knowledge, and the idea is that C<::geomSize> it
-is merely a request to a geometry manager, whereas the latter changes C<::size> 
-accordingly. For example, a button might set its 'intrinsic' width in accord with
-the width of text string displayed in it. If the default width for such a button is not overridden,
-it is assigned with such a width. By default, under C<gt::GrowMode> geometry manager,
-setting C<::geomSize> ( and its two semi-alias properties C<::geomWidth> and C<::geomHeight> ) 
-also changes the actual widget size.Moreover, when the size is passed to the Widget 
-initialization code, C<::size> properties are used to initialize C<::geomSize>. Such design
-minimizes the confusion between the two properties, and also minimizes the direct usage
-of C<::geomSize>, limiting it for selecting advisory size in widget internal code.
+Another concept that comes along with geometry managers is the 'geometry
+request size'.  It is realized as a two-integer property C<::geomSize>, which
+reflects the size deduced by some intrinsic widget knowledge. The idea is that
+C<::geomSize> it is merely a request to a geometry manager, whereas the latter
+changes C<::size> accordingly. For example, a button might set its 'intrinsic'
+width in accord with the width of text string displayed in it. If the default
+width for such a button is not overridden, it is assigned with such a width. By
+default, under C<gt::GrowMode> geometry manager, setting C<::geomSize> ( and
+its two semi-alias properties C<::geomWidth> and C<::geomHeight> ) also changes
+the actual widget size.Moreover, when the size is passed to the Widget
+initialization code, C<::size> properties are used to initialize C<::geomSize>.
+Such design minimizes the confusion between the two properties, and also
+minimizes the direct usage of C<::geomSize>, limiting it for selecting advisory
+size in widget internal code.
 
 The geometry request size is useless under C<gt::GrowMode> geometry 
 manager, but Tk managers use it extensively. 
@@ -394,8 +391,8 @@ Another geometry issue, or rather a programming technique
 must be mentioned - the I<relative coordinates>. It is
 the well-known problem, when a dialog window, developed
 with one font looks garbled on another system with another 
-font. The relative coordinates solve the problem; the solution
-provides the C<::designScale> two-integer property, the
+font. The relative coordinates solve that problem; the solution
+is to use the C<::designScale> two-integer property, the
 width and height of the font, that was used when the dialog
 window was designed. With this property supplied, the position
 and size supplied when a widget is actually created, are transformed in
@@ -458,9 +455,9 @@ Changes to Z-order trigger C<ZOrderChanged> notification.
 =head1 Parent-child relationship
 
 By default, if a widget is a child to a widget
-or window, it maintains two features: it is clipped by its
-owner's boundaries and is moved together as the owner widget moves.
-It is said also that a I<child> is inferior to its I<parent>. However,
+or a window, it maintains two features: it is clipped by its
+owner's boundaries and is moved together as the owner widget moves,
+i.e. a I<child> is inferior to its I<parent>. However,
 a widget without a parent still does have a valid owner.
 Instead of implementing I<parent> property, the C<::clipOwner>
 property was devised. It is 1 by default, and if it is 1, then
@@ -492,7 +489,7 @@ one or another inter-process communication scheme to interact with it.
 
 A widget does not need to undertake anything special to become an 'owner'.
 Any widget, that was set in C<::owner> property on any other widget,
-becomes owner automatically. Its C<get_widgets()> method returns non-empty
+becomes an owner automatically. Its C<get_widgets()> method returns non-empty
 widget list. C<get_widgets()> serves same purpose as Prima::Component::C<get_components()>,
 but returns only Prima::Widget descendants.
 
@@ -504,7 +501,7 @@ its C<::clipOwner> is set to 1.
 
 =head1 Visibility
 
-A widget is visible by default. Visible means that
+A widget is created visible by default. Visible means that
 it is shown on the screen if it is not shadowed by
 other widgets or windows. The visibility
 is governed by the C<::visible> property, and its
@@ -530,7 +527,7 @@ There are other kinds of visibility. A widget might be visible,
 but one of its owners might not. Or, a widget and its owners
 might be visible, but they might be over-shadowed by the other
 windows. These conditions are returned by C<showing()> and C<exposed()>
-functions. These return boolean values corresponding to the 
+functions, correspondinly. These return boolean values corresponding to the 
 condition described. So, if a widget is 'exposed', it is
 'showing' and 'visible'; C<exposed()> returns always 0 if a widget
 is either not 'showing' or not 'visible'. If a widget is 'showing',
@@ -557,7 +554,7 @@ is allowed to be focused, by the usage
 of the C<::selectable> property. With this granted, the focus
 is passed to the widget or to the one of its ( grand-) children.
 So to say, when 'selecting' a window with a text field by clicking
-on a window, one does not expect the window to be focused, but the text
+on a window, one does not expect the window itself to be focused, but the text
 field. To achieve this goal and reduce unnecessary coding, the 
 C<::current> property is introduced. With all equal conditions,
 a widget that is 'current' gets precedence in getting selected
@@ -576,7 +573,7 @@ The reassignments are performed automatically when a widget is focused.
 The reverse is also true: if a widget
 is explicitly marked as 'current', and belongs to the widget tree with the
 focus in one of its widgets, then the focus passed to the 'current' widget,
-or down to hierarchy if it is not selectable.
+or down to its hierarchy if it is not selectable.
 
 These relations between current widget pointer and focus allow the toolkit
 easily implement the focusing hierarchy. The focused widget is
@@ -614,10 +611,10 @@ must click twice to a widget to get it focused. The property
 does not influence anything if the top-level window was already active
 when the click event occured.
 
-Due to some vendor-specific GUI designs, it is hardly possibly to force selection
+Due to different GUI designs, it is hardly possibly to force selection
 of one top-level window when the click was on the another.
 The window manager or the OS can interfere, although this does not always
-happen, and produce different results on different platforms. Since
+happen, and produces different results on different platforms. Since
 the primary goal of the toolkit is portability, such functionality
 must be considered with care.
 Moreover, when the user selects a window by clicking not on the 
