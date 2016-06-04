@@ -904,6 +904,7 @@ main()
 EOF
 		my $save = $cmd_options{EXTRA_CCFLAGS};
 		$cmd_options{EXTRA_CCFLAGS} .= " $OPENMP";
+		my @savelibs = @LIBS;
 		push @LIBS, 'gomp' if $compiler_type eq 'gcc';
 		if ( compile($text)) {
 		YES_OPENMP:
@@ -917,10 +918,41 @@ EOF
 				goto YES_OPENMP if compile($text);
 			}
 				
-			pop @LIBS if $compiler_type eq 'gcc';
+			@LIBS = @savelibs;
 			$cmd_options{WITH_OPENMP} = 0;
 			$cmd_options{EXTRA_CCFLAGS} = $save;
 			printlog "no\n";
+		}
+
+		# see if perl can use that
+		if ( $cmd_options{WITH_OPENMP} ) {
+			printlog "Checking if perl setup is good enough for OpenMP...";
+			my $found;
+			LIBPTH: for my $libpth ( split / /, $Config{libpth} ) {
+				for my $lib ( <$libpth/*> ) {
+					next unless $lib =~ /gomp/;
+					$found = 1;
+					last LIBPTH;
+				}
+			}
+			if ( $found ) {
+				printlog "yes\n";
+			} else {
+				@LIBS = @savelibs;
+				$cmd_options{WITH_OPENMP} = 0;
+				$cmd_options{EXTRA_CCFLAGS} = $save;
+				printlog "no, config is broken\n";
+				$END .= <<OPENMP;
+
+** Warning: Your system has OpenMP libraries and Prima can use them.
+
+However your perl configuration is set up so that it is not available to Prima.
+If you want to build with OpenMP, edit 'libpth' entry in your Config.pm in
+system perl location so that it points to location of complier-specific
+libraries where libgomp is located.
+
+OPENMP
+			}
 		}
 	}
 
