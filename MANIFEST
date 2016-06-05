@@ -72,6 +72,7 @@ examples/grip.pl
 examples/Hand.gif
 examples/iv.pl
 examples/keys.pl
+examples/keyselector.pl
 examples/label.pl
 examples/launch.pl
 examples/listbox.pl
