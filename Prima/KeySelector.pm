@@ -11,16 +11,14 @@ use Prima;
 use Prima::Buttons;
 use Prima::Label;
 use Prima::ComboBox;
+use Prima::Outlines;
+use Prima::MsgBox;
 
 use vars qw(@ISA %vkeys);
 @ISA = qw(Prima::Widget);
 
 for ( keys %kb::) {
-	next if $_ eq 'constant';
-	next if $_ eq 'AUTOLOAD';
-	next if $_ eq 'CharMask';
-	next if $_ eq 'CodeMask';
-	next if $_ eq 'ModMask';
+	next if m/^(constant|AUTOLOAD|CharMask|CodeMask|ModMask|L\d+)$/;
 	$vkeys{$_} = &{$kb::{$_}}();
 }
 
@@ -285,6 +283,282 @@ sub shortcut
 		return export( $data);
 	}
 	return "'" . $txt . "'";
+}
+
+sub parse_menu_items
+{
+	my $items = shift;
+	my %vkeys;
+	my ($i, $ptr, $tree, @stack) = (0, $items, []);
+	while ( 1) {
+		for ( ; $i < @$ptr; $i++) {
+			my ( $id, $text, $accel, $vkey, $ref_or_sub) = @{ $ptr->[$i] };
+			if ( ref($ref_or_sub // '') eq 'ARRAY') {
+				push @stack, [ $i + 1, $ptr, $tree ];
+				$ptr = $ref_or_sub;
+				$i = -1;
+				my $subtree = [];
+				push @$tree, [[ $text, $id ], $subtree];
+				$tree = $subtree;
+			} else {
+				$text =~ s/~//;
+				push @$tree, [[ $text, $id ]];
+				$vkeys{$id} = $vkey;
+			}
+		}
+		@stack ? ( $i, $ptr, $tree ) = @{ pop @stack } : last;
+	}
+
+	return $tree, \%vkeys;
+}
+
+sub apply_to_menu
+{
+	my ($menu, $vkeys) = @_;
+	while ( my ( $id, $value ) = each %$vkeys) {
+		$menu-> key( $id, $value);
+		$menu-> accel( $id, ($value == kb::NoKey) ?  '' : describe( $value));
+	}
+}
+
+package Prima::KeySelector::MenuEditor;
+use vars qw(@ISA);
+@ISA = qw(Prima::Widget);
+
+sub profile_default
+{
+	return {
+		%{$_[ 0]-> SUPER::profile_default},
+		menu               => undef,
+		scaleChildren      => 0,
+		autoEnableChildren => 1,
+	}
+}
+
+sub init
+{
+	my $self = shift;
+	my %profile = $self-> SUPER::init( @_);
+
+	$self->{$_} = $profile{$_} for qw(menu);
+	$self-> {vkeys} = {};
+
+	my @size = $self-> size;
+	my $items = $self-> {menu} ? $self-> menu_to_items( $self-> {menu} ) : [];
+
+	$self-> insert( [ Outline  =>
+		origin => [ 10, 55],
+		size   => [ $size[0] - 180, $size[1] - 68],
+		name   => 'KeyList',
+		items  => $items,
+		growMode => gm::Client,
+		delegations => [ qw(SelectItem) ],
+	] , [ KeySelector =>
+		origin => [ $size[0] - 160, $size[1] - 185],
+		size   => [ 150, 170],
+		name   => 'KeySelector',
+		visible => 0,
+		delegations => [ qw(Change) ],
+		growMode => gm::GrowLoY|gm::GrowLoX,
+	], [ Button =>
+		origin  => [ 10, 10],
+		size    => [ 96, 36],
+		text    => '~Clear',
+		hint    => 'Clears the key',
+		name    => 'Clear',
+		delegations => [ qw(Click) ],
+	] , [ Button =>
+		origin  => [ 114, 10],
+		size    => [ 96, 36],
+		text    => '~Default',
+		hint    => 'Set default value for a key',
+		name    => 'Default',
+		delegations => [ qw(Click) ],
+	] );
+	$self-> KeyList-> focusedItem(0);
+	return %profile;
+}
+
+sub menu_to_items
+{
+	my ( $self, $menu ) = @_;
+	my ( $tree ) = Prima::KeySelector::parse_menu_items( $menu-> get_items('') );
+	return $tree;
+}
+
+sub get_focused_id
+{
+	my $self = shift;
+	my $kl = $self-> KeyList;
+	my ( $item ) = $kl-> get_item( $kl-> focusedItem);
+	return unless $item;
+	my ( undef, $id ) = @{ $item->[0] };
+	return $id;
+}
+
+sub update_focused_item
+{
+	my $self = shift;
+	my $id = $self-> get_focused_id;
+	return unless defined $id;
+	$self-> KeySelector-> key( $self-> get_vkey( $id ));
+}
+
+sub menu
+{
+	return shift-> {menu} unless $#_;
+	my ( $self, $menu ) = @_;
+	$self-> {menu} = $menu;
+	%{ $self->{vkeys} } = ();
+	$self-> KeyList->items( $self-> menu_to_items( $menu ) );
+	$self-> update_focused_item;
+}
+
+sub vkeys
+{
+	return shift-> {vkeys} unless $#_;
+	my ($self, $vkeys ) = @_;
+	$self-> {vkeys} = $vkeys;
+	$self-> update_focused_item;
+}
+
+sub reset
+{
+	my $self = shift;
+	%{ $self->{vkeys} } = ();
+	$self-> update_focused_item;
+}
+
+sub get_vkey
+{
+	my ( $self, $id ) = @_;
+	return $self->{vkeys}->{$id} // $self->menu->key($id);
+}
+
+sub KeyList_SelectItem
+{
+	my ( $self, $me, $foc ) = @_;
+	my ( $item, $lev) = $me-> get_item( $foc->[0]->[0]);
+	return unless $item;
+	my ( $text, $id ) = @{ $item->[0] };
+	$self-> {keyMappings_change} = 1;
+	unless ( ref($item-> [1])) {
+		$self-> KeySelector-> enabled(1);
+		$self-> KeySelector-> key( $self-> get_vkey($id));
+		$self-> KeySelector-> show;
+	} else {
+		$self-> KeySelector-> hide;
+		$self-> KeySelector-> enabled(0);
+	}
+	delete $self-> {keyMappings_change};
+}
+
+sub KeySelector_Change
+{
+	my ( $self, $me ) = @_;
+	return if $self-> {keyMappings_change};
+	my $kl = $self-> KeyList;
+	my ( $item, $lev) = $kl-> get_item( $kl-> focusedItem);
+	return unless $item;
+
+	my ( $text, $id ) = @{ $item->[0] };
+	my $value = $me-> key;
+	if ( $value != kb::NoKey) {
+		my $d = $self-> menu-> keys_defaults;
+		for my $k ( keys %$d) {
+			next if $k eq $id;
+			next unless $value == $self-> get_vkey($k);
+			if ( Prima::MsgBox::message_box(
+				$::application-> name,
+				"This key combination is already occupied by $k. Apply anyway?",
+				mb::YesNo) == mb::Yes) {
+				$self->{vkeys}->{$k} = kb::NoKey;
+				last;
+			} else {
+				$self-> {keyMappings_change} = 1;
+				$me-> key( $self-> get_vkey( $id ));
+				delete $self-> {keyMappings_change};
+				return;
+			}
+		}
+	}
+	$self-> {vkeys}-> {$id} = $value;
+}
+
+sub Clear_Click
+{
+	my $self = shift;
+	my $id = $self-> get_focused_id;
+	return unless defined $id;
+	$self-> {vkeys}->{$id} = kb::NoKey;
+	$self-> KeySelector-> key( $self-> get_vkey( $id ));
+}
+
+sub Default_Click
+{
+	my $self = shift;
+	my $id = $self-> get_focused_id;
+	return unless defined $id;
+	delete $self-> {vkeys}->{$id};
+	$self-> KeySelector-> key( $self-> get_vkey( $id ));
+}
+
+sub apply
+{
+	my $self = shift;
+	Prima::KeySelector::apply_to_menu( $self-> menu, $self-> vkeys );
+}
+
+package
+	Prima::AbstractMenu;
+
+sub _init_keys
+{
+	my $self = shift;
+	return $self-> {_key_loader} if $self-> {_key_loader};
+	my ( undef, $keys ) = Prima::KeySelector::parse_menu_items( $self-> get_items('') );
+	return $self-> {_key_loader} = {
+		defaults => $keys,
+	};
+}
+
+sub keys_load
+{
+	my ($self, $ini) = @_;
+	my $k = _init_keys($self);
+
+	my %v;
+	for my $key ( keys %{ $k-> {defaults} } ) {
+		my $value = $ini->{ $key } // $k-> {defaults}->{ $key };
+		$v{$key} = Prima::AbstractMenu-> translate_shortcut( eval($value)); # XXX safety!!!
+	}
+	Prima::KeySelector::apply_to_menu( $self, \%v);
+}
+
+sub keys_save
+{
+	my ($self, $ini) = @_;
+	my $k = _init_keys($self);
+
+	my ( undef, $vkeys ) = Prima::KeySelector::parse_menu_items( $self-> get_items('') );
+	for my $key ( keys %{ $k->{ defaults } } ) {
+		my $value = $vkeys->{ $key } // $k-> {defaults}-> {$key};
+		$ini->{$key} = Prima::KeySelector::shortcut( $value );
+	}
+}
+
+sub keys_reset
+{
+	my ($self) = @_;
+	my $k = _init_keys($self);
+	Prima::KeySelector::apply_to_menu( $self, $k->{defaults});
+}
+
+sub keys_defaults
+{
+	my ($self) = @_;
+	my $k = _init_keys($self);
+	return $k-> {defaults};
 }
 
 1;
