@@ -1332,7 +1332,7 @@ sub get_index
 		my ( $current, $parent, $index, $position, $level, $lastChild, $visibility) = @_;
 		$lev = $level, $rec = $position, return 1 if $current == $item;
 	});
-return $rec, $lev;
+	return $rec, $lev;
 }
 
 
