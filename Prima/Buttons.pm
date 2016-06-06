@@ -560,13 +560,18 @@ sub on_click
 	$self-> checked( !$self-> checked) 
 		if $self-> { checkable};
 	my $owner = $self-> owner;
-	if ( 
-		$owner-> isa(q(Prima::Window)) && 
-		$owner-> get_modal && 
-		$self-> modalResult
-	) {
-		$owner-> modalResult( $self-> modalResult);
-		$owner-> end_modal;
+	while ( $owner ) {
+		if ( 
+			$owner-> isa(q(Prima::Window)) && 
+			$owner-> get_modal && 
+			$self-> modalResult
+		) {
+			$owner-> modalResult( $self-> modalResult);
+			$owner-> end_modal;
+			last;
+		} else {
+			$owner = $owner-> owner;
+		}
 	}
 }
 
@@ -716,13 +721,18 @@ sub modalResult
 	my $self = $_[0];
 	$self-> { modalResult} = $_[1];
 	my $owner = $self-> owner;
-	if ( 
-		$owner-> isa(q(Prima::Window)) && 
-		$owner-> get_modal && 
-		$self-> {modalResult}
-	) {
-		$owner-> modalResult( $self-> { modalResult});
-		$owner-> end_modal;
+	while ( $owner ) {
+		if ( 
+			$owner-> isa(q(Prima::Window)) && 
+			$owner-> get_modal && 
+			$self-> {modalResult}
+		) {
+			$owner-> modalResult( $self-> { modalResult});
+			$owner-> end_modal;
+			last;
+		} else {
+			$owner = $owner-> owner;
+		}
 	}
 }
 
