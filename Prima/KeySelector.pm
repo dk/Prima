@@ -275,28 +275,28 @@ sub shortcut
 sub eval_shortcut
 {
 	my $text = shift;
-	if ( $text =~ m/^'(.*)'$/ ) {
-		$text = $1;
-		my $mod = 0;
-		while ( $text =~ /\|km::(\w+)/ ) {
-			$mod |= km::Alt   if $1 eq 'Alt';
-			$mod |= km::Ctrl  if $1 eq 'Ctrl';
-			$mod |= km::Shift if $1 eq 'Shift';
-		}
-		if ( $text =~ s/^kb::(\w+)// ) {
-			my $vk = $vkeys{$1};
-			return $vk | $mod;
-		} elsif ($text =~ m/^ord\(\'(.)\'\)/) {
-			return ord($1) | $mod;
-		} elsif ($text =~ m/^\(ord\(\'(.)\'\)\s*\-(\d+)\)/) {
-			return (ord($1) - $2) | $mod;
-		} else {
-			return Prima::AbstractMenu-> translate_shortcut( $text );
-		}
-	} elsif ( $text =~ /^(\d+)$/) {
-		return $text;
+	
+	return undef unless defined $text;
+	return $text if $text =~ /^(\d+)$/;
+
+	$text =~ s/^'(.*)'$/$1/;
+	my $mod = 0;
+	while ( $text =~ /\|km::(\w+)/ ) {
+		$mod |= km::Alt   if $1 eq 'Alt';
+		$mod |= km::Ctrl  if $1 eq 'Ctrl';
+		$mod |= km::Shift if $1 eq 'Shift';
+	}
+	
+	if ( $text =~ s/^kb::(\w+)// ) {
+		my $vk = $vkeys{$1};
+		return $vk | $mod;
+	} elsif ($text =~ m/^ord\(\'(.)\'\)/) {
+		return ord($1) | $mod;
+	} elsif ($text =~ m/^\(ord\(\'(.)\'\)\s*\-(\d+)\)/) {
+		return (ord($1) - $2) | $mod;
 	} else {
-		return kb::NoKey;
+		my $v = Prima::AbstractMenu-> translate_shortcut( $text );
+		return ($v == kb::NoKey) ? undef : $v;
 	}
 }
 
@@ -381,14 +381,16 @@ sub menu_to_items
 	while ( 1) {
 		for ( ; $i < @$ptr; $i++) {
 			my ( $id, $text, $accel, $vkey, $ref_or_sub) = @{ $ptr->[$i] };
+			$id =~ s/^[\*\-]*//;
 			if ( ref($ref_or_sub // '') eq 'ARRAY') {
 				push @stack, [ $i + 1, $ptr, $tree ];
 				$ptr = $ref_or_sub;
 				$i = -1;
+				$text =~ s/~//;
 				my $subtree = [];
 				push @$tree, [[ $text, '', '', $id ], $subtree, 1];
 				$tree = $subtree;
-			} else {
+			} elsif (defined $text) {
 				$text =~ s/~//;
 				push @$tree, [[ $text, Prima::KeySelector::describe($vkey), $id, $id ]];
 			}
@@ -486,7 +488,7 @@ sub KeySelector_Change
 		for my $k ( keys %$d) {
 			next if $k eq $id;
 			next unless $value == $self-> get_vkey($k);
-			my $menutext = $self-> menu-> text( $k );
+			my $menutext = $self-> menu-> text( $k ) // '';
 			$menutext =~ s/~//;
 			if ( Prima::MsgBox::message_box(
 				$::application-> name,
@@ -552,11 +554,12 @@ sub _parse_menu_items
 	while ( 1) {
 		for ( ; $i < @$ptr; $i++) {
 			my ( $id, $text, $accel, $vkey, $ref_or_sub) = @{ $ptr->[$i] };
+			$id =~ s/^[\*\-]*//;
 			if ( ref($ref_or_sub // '') eq 'ARRAY') {
 				push @stack, [ $i + 1, $ptr ];
 				$ptr = $ref_or_sub;
 				$i = -1;
-			} else {
+			} elsif ( defined $text) {
 				$text =~ s/~//;
 				$vkeys{$id} = $vkey;
 			}
@@ -581,9 +584,11 @@ sub keys_load
 	my $k = _init_keys($self);
 
 	my %v;
+	# IDs started with # are conventiently ignored here.
 	for my $id ( keys %{ $k-> {defaults} } ) {
 		my $value = $ini->{ $id } // $k-> {defaults}->{ $id };
-		$v{$id} = Prima::KeySelector::eval_shortcut($value);
+		$value  = Prima::KeySelector::eval_shortcut($value);
+		$v{$id} = $value if defined($value) && $value != $k-> {defaults}->{$id};
 	}
 	Prima::KeySelector::apply_to_menu( $self, \%v);
 }
