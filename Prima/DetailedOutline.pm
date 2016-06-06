@@ -65,12 +65,10 @@ sub init {
 	my $bw = $self-> borderWidth;
 	my @sz = $self-> size;
 
-	my $hasv = $self-> {vScroll};
-
 	$self-> {header} = $self-> insert($profile{headerClass} =>
 		name     => 'Header',
 		origin   => [ $bw, $sz[1] - $bw - $hh],
-		size     => [ $sz[0] - $bw * 2 + 1 - ( $hasv ? $self->{vScrollBar}-> width : 0), $hh],
+		size     => [ $sz[0] - $bw * 2 + 1, $hh],
 		vertical => 0,
 		growMode => gm::Ceiling,
 		items    => $profile{headers},
