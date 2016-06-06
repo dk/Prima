@@ -191,10 +191,8 @@ sub on_measureitem {
 }
 
 sub on_stringify {
-	my ($self, $index, $sref) = @_;
-	my $c = $self->{mainColumn};
-	my ($node,$level) = $self->get_item($index);
-	$$sref = $node->[0]->[$c];
+	my ($self, $node, $sref) = @_;
+	$$sref = $node->[0]->[$self->{mainColumn}];
 }
 
 sub recalc_widths {
