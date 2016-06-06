@@ -11,7 +11,7 @@ use Prima;
 use Prima::Buttons;
 use Prima::Label;
 use Prima::ComboBox;
-use Prima::Outlines;
+use Prima::DetailedOutline;
 use Prima::MsgBox;
 
 use vars qw(@ISA %vkeys);
@@ -37,72 +37,62 @@ sub init
 	my $self = shift;
 	my %profile = $self-> SUPER::init( @_);
 	my $fh = $self-> font-> height;
-	$self-> {keys} = $self-> insert( ComboBox =>
+
+
+	$self-> insert( [ComboBox =>
 		name        => 'Keys',
 		delegations => [qw(Change)],
 		pack        => { side => 'top', fill => 'x'},
 		style    => cs::DropDownList,
 		items    => [ sort keys %vkeys, 'A'..'Z', '0'..'9', '+', '-', '*'],
-	);
-
-	$self-> {mod} = $self-> insert( GroupBox =>
+	], [ GroupBox =>
 		pack        => { side => 'top', fill => 'x' },
 		style    => cs::DropDown,
 		text     => '',
-	);
-
-	$self-> {mod}-> insert( Widget =>
-		name        => 'dummy',
-		height      => 0,
-		visible     => 0,
-		pack        => { side => 'top', fill => 'x', pady => (( $fh < 10) ? 5 : ($fh - 5)) },
-	);
-
-	$self-> {modShift} = $self-> {mod}-> insert( CheckBox =>
-		name        => 'Shift',
-		delegations => [$self, qw(Click)],
-		pack        => { side => 'top', fill => 'x', padx => 15 },
-		text        => '~Shift',
-	);
-
-	$self-> {modCtrl} = $self-> {mod}-> insert( CheckBox =>
-		name        => 'Ctrl',
-		delegations => [$self, qw(Click)], 
-		pack        => { side => 'top', fill => 'x', padx => 15 },
-		text        => '~Ctrl',
-	);
-
-	$self-> {modAlt} = $self-> {mod}-> insert( CheckBox =>
-		name        => 'Alt',
-		delegations => [$self, qw(Click)], 
-		pack        => { side => 'top', fill => 'x', padx => 15},
-		text        => '~Alt',
-	);
-	
-	$self-> {mod}-> insert( Widget =>
-		name        => 'dummy',
-		height      => 0,
-		pack        => { side => 'top', fill => 'x', pad => 5 },
-	);
-
-	$self-> insert( Label =>
+		name     => 'GB',
+	], [ Label =>
 		pack        => { side => 'top', fill => 'x'},
 		text       => '~Press shortcut key:',
 		focusLink  => 'Hook',
-	);
-
-	$self-> {keyhook} = $self-> insert( Widget =>
+	], [ Widget =>
 		name          => 'Hook',
 		delegations   => [qw(Paint KeyDown TranslateAccel )],
 		pack          => { side => 'top', fill => 'x'},
 		height        => $fh + 2,
 		selectable    => 1,
-		cursorPos     => [ 4, 1],
-		cursorSize    => [ $::application-> get_default_cursor_width, $fh],
+		cursorPos     => [ 4, 2],
+		cursorSize    => [ $::application-> get_default_cursor_width, $fh - 2],
 		cursorVisible => 1,
 		tabStop       => 1,
-	);
-	
+	] );
+
+	$self-> GB-> insert( [ Widget =>
+		name        => 'dummy1',
+		height      => 0,
+		visible     => 0,
+		pack        => { side => 'top', fill => 'x', pady => (( $fh < 10) ? 5 : ($fh - 5)) },
+	], [ CheckBox =>
+		name        => 'Shift',
+		delegations => [$self, qw(Click)],
+		pack        => { side => 'top', fill => 'x', padx => 15 },
+		text        => '~Shift',
+	], [ CheckBox =>
+		name        => 'Ctrl',
+		delegations => [$self, qw(Click)], 
+		pack        => { side => 'top', fill => 'x', padx => 15 },
+		text        => '~Ctrl',
+	], [ CheckBox =>
+		name        => 'Alt',
+		delegations => [$self, qw(Click)], 
+		pack        => { side => 'top', fill => 'x', padx => 15},
+		text        => '~Alt',
+ 	], [ Widget => 
+		name        => 'dummy2',
+		height      => 0,
+		visible     => 0,
+		pack        => { side => 'top', fill => 'x', pad => 5 },
+	] );
+
 	$self-> key( $profile{key});
 	return %profile;
 }
@@ -117,10 +107,10 @@ sub _gather
 	my $self = $_[0];
 	return if $self-> {blockChange}; 
 
-	my $mod = ( $self-> {modAlt}-> checked ? km::Alt : 0) |
-			( $self-> {modCtrl}-> checked ? km::Ctrl : 0) |
-			( $self-> {modShift}-> checked ? km::Shift : 0);
-	my $tx = $self-> {keys}-> text;
+	my $mod = ( $self-> GB-> Alt-> checked ? km::Alt : 0) |
+			( $self-> GB-> Ctrl-> checked ? km::Ctrl : 0) |
+			( $self-> GB-> Shift-> checked ? km::Shift : 0);
+	my $tx = $self-> Keys-> text;
 	my $vk = exists $vkeys{$tx} ? $vkeys{$tx} : kb::NoKey;
 	my $ck;
 	if ( exists $vkeys{$tx}) {
@@ -152,6 +142,7 @@ sub Hook_Paint
 	my ( $self, $hook, $canvas) = @_;
 	$canvas-> rect3d( 0, 0, $canvas-> width - 1, $canvas-> height - 1, 1,
 		$hook-> dark3DColor, $hook-> light3DColor, $hook-> backColor);
+	$canvas-> text_out( describe($self->key), 2, 2);
 }
 
 sub translate_codes
@@ -173,6 +164,7 @@ sub translate_codes
 		$key  = $data & kb::CodeMask;
 	}
 	$mod = $data & kb::ModMask;   
+	Carp::confess unless defined $data;
 	return $code, $key, $mod;
 }
 
@@ -183,20 +175,21 @@ sub key
 	my ( $code, $key, $mod) = translate_codes( $data, 0);
 	
 	if ( $code) {
-		$self-> {keys}-> text( chr($code));
+		$self-> Keys-> text( chr($code));
 	} else {
 		my $x = 'NoKey';
 		for ( keys %vkeys) {
 			next if $_ eq 'constant';
 			$x = $_, last if $key == $vkeys{$_};
 		}
-		$self-> {keys}-> text( $x);
+		$self-> Keys-> text( $x);
 	}
 	$self-> {key} = $data;
 	$self-> {blockChange} = 1;
-	$self-> {modAlt}-> checked( $mod & km::Alt);
-	$self-> {modCtrl}-> checked( $mod & km::Ctrl);
-	$self-> {modShift}-> checked( $mod & km::Shift);
+	$self-> GB-> Alt-> checked( $mod & km::Alt);
+	$self-> GB-> Ctrl-> checked( $mod & km::Ctrl);
+	$self-> GB-> Shift-> checked( $mod & km::Shift);
+	$self-> Hook-> repaint;
 	delete $self-> {blockChange};
 	$self-> notify(q(Change));
 }
@@ -340,11 +333,14 @@ sub init
 	$self-> {vkeys} = {};
 	my $items = $self-> {menu} ? $self-> menu_to_items( $self-> {menu} ) : [];
 
-	$self-> insert( Outline  =>
-		pack    => { side => 'left', fill => 'both', expand => 1, pad => 10 },
-		name   => 'KeyList',
-		items  => $items,
+	$self-> insert( DetailedOutline  =>
+		pack        => { side => 'left', fill => 'both', expand => 1, pad => 10 },
+		name        => 'KeyList',
+		items       => $items,
 		delegations => [ qw(SelectItem) ],
+		columns     => 3,
+		headers     => ['Name', 'Shortcut', 'ID'],
+		autoRecalc  => 1,
 	);
 
 	$self-> insert( [ Button  =>
@@ -390,11 +386,11 @@ sub menu_to_items
 				$ptr = $ref_or_sub;
 				$i = -1;
 				my $subtree = [];
-				push @$tree, [[ $text, $id ], $subtree, 1];
+				push @$tree, [[ $text, '', '', $id ], $subtree, 1];
 				$tree = $subtree;
 			} else {
 				$text =~ s/~//;
-				push @$tree, [[ $text, $id ]];
+				push @$tree, [[ $text, Prima::KeySelector::describe($vkey), $id, $id ]];
 			}
 		}
 		@stack ? ( $i, $ptr, $tree ) = @{ pop @stack } : last;
@@ -409,16 +405,24 @@ sub get_focused_id
 	my $kl = $self-> KeyList;
 	my ( $item ) = $kl-> get_item( $kl-> focusedItem);
 	return unless $item;
-	my ( undef, $id ) = @{ $item->[0] };
+	my ( undef, undef, undef, $id ) = @{ $item->[0] };
 	return $id;
 }
 
 sub update_focused_item
 {
-	my $self = shift;
-	my $id = $self-> get_focused_id;
+	my ($self, $mark_changed) = @_;
+	my $kl = $self-> KeyList;
+	my ( $item ) = $kl-> get_item( $kl-> focusedItem);
+	return unless $item;
+	my ( undef, undef, undef, $id ) = @{ $item->[0] };
 	return unless defined $id;
-	$self-> KeySelector-> key( $self-> get_vkey( $id ));
+
+	my $vkey = $self-> get_vkey( $id );
+	$self-> KeySelector-> key( $vkey );
+	$item-> [0]-> [1] = ($mark_changed ? '*' : '') . Prima::KeySelector::describe( $vkey );
+	$kl-> redraw_items( $kl-> focusedItem );
+	$self-> notify(q(Change));
 }
 
 sub menu
@@ -426,23 +430,16 @@ sub menu
 	return shift-> {menu} unless $#_;
 	my ( $self, $menu ) = @_;
 	$self-> {menu} = $menu;
-	%{ $self->{vkeys} } = ();
-	$self-> KeyList->items( $self-> menu_to_items( $menu ) );
-	$self-> update_focused_item;
+	$self-> reset;
 }
 
-sub vkeys
-{
-	return shift-> {vkeys} unless $#_;
-	my ($self, $vkeys ) = @_;
-	$self-> {vkeys} = $vkeys;
-	$self-> update_focused_item;
-}
+sub vkeys { shift-> {vkeys} }
 
 sub reset
 {
 	my $self = shift;
 	%{ $self->{vkeys} } = ();
+	$self-> KeyList->items( $self-> menu_to_items( $self-> menu ) );
 	$self-> update_focused_item;
 }
 
@@ -457,7 +454,7 @@ sub KeyList_SelectItem
 	my ( $self, $me, $foc ) = @_;
 	my ( $item, $lev) = $me-> get_item( $foc->[0]->[0]);
 	return unless $item;
-	my ( $text, $id ) = @{ $item->[0] };
+	my ( $text, undef, undef, $id ) = @{ $item->[0] };
 	$self-> {keyMappings_change} = 1;
 	unless ( ref($item-> [1])) {
 		$self-> KeySelector-> enabled(1);
@@ -482,7 +479,7 @@ sub KeySelector_Change
 	my ( $item, $lev) = $kl-> get_item( $kl-> focusedItem);
 	return unless $item;
 
-	my ( $text, $id ) = @{ $item->[0] };
+	my ( $text, undef, undef, $id ) = @{ $item->[0] };
 	my $value = $me-> key;
 	if ( $value != kb::NoKey) {
 		my $d = $self-> menu-> keys_defaults;
@@ -493,20 +490,27 @@ sub KeySelector_Change
 			$menutext =~ s/~//;
 			if ( Prima::MsgBox::message_box(
 				$::application-> name,
-				"This key combination is already occupied by $k ('$menutext'). Apply anyway?",
+				"This key combination is already occupied by $k. Apply anyway?",
 				mb::YesNo) == mb::Yes) {
 				$self->{vkeys}->{$k} = kb::NoKey;
+				$self-> KeyList-> iterate( sub {
+					my ($node, undef, undef, $index) = @_;
+					return unless $node->[0]->[3] eq $k;
+					$node->[0]->[1] = '';
+					$self-> KeyList-> redraw_items($index);
+					return 1;
+				} );
 				last;
 			} else {
-				$self-> {keyMappings_change} = 1;
+				local $self-> {keyMappings_change} = 1;
 				$me-> key( $self-> get_vkey( $id ));
-				delete $self-> {keyMappings_change};
 				return;
 			}
 		}
 	}
 	$self-> {vkeys}-> {$id} = $value;
-	$self-> notify(q(Change));
+	local $self-> {keyMappings_change} = 1;
+	$self-> update_focused_item(1);
 }
 
 sub Clear_Click
@@ -515,8 +519,7 @@ sub Clear_Click
 	my $id = $self-> get_focused_id;
 	return unless defined $id;
 	$self-> {vkeys}->{$id} = kb::NoKey;
-	$self-> KeySelector-> key( $self-> get_vkey( $id ));
-	$self-> notify(q(Change));
+	$self-> update_focused_item(1);
 }
 
 sub Default_Click
@@ -525,14 +528,15 @@ sub Default_Click
 	my $id = $self-> get_focused_id;
 	return unless defined $id;
 	$self-> {vkeys}->{$id} = $self-> menu-> keys_defaults-> {$id};
-	$self-> KeySelector-> key( $self-> get_vkey( $id ));
-	$self-> notify(q(Change));
+	$self-> update_focused_item;
 }
 
 sub apply
 {
 	my $self = shift;
 	Prima::KeySelector::apply_to_menu( $self-> menu, $self-> vkeys );
+	$self-> KeyList-> iterate( sub { shift-> [0]-> [1] =~ s/^\*//; 0 } );
+	$self-> KeyList-> repaint;
 }
 
 sub Apply_Click { shift-> apply }
