@@ -1272,46 +1272,46 @@ sub profile_default
 				['-saveitem2' =>'Save ~as...' =>                sub {$_[0]-> saveas;}],
 				['closeitem' =>'~Close' => 'Ctrl+W' => '^W' =>  sub { $VB::form-> close if $VB::form}],
 				[],
-				['E~xit' => 'Ctrl+Q' => '^Q' => sub{$_[0]-> close;}],
+				[exit => 'E~xit' => 'Ctrl+Q' => '^Q' => sub{$_[0]-> close;}],
 			]],
 			['edit' => '~Edit' => [
-				['Cop~y' => 'Ctrl+C' => '^C' =>       sub { Prima::VB::Form::fm_copy(); }],
-				['~Paste' => 'Ctrl+V' => '^V' =>      sub { Prima::VB::Form::fm_paste(); }],
-				['~Delete' => 'Ctrl-X' => '^X' =>     sub { Prima::VB::Form::fm_delete(); } ], 
-				['~Select all' => 'Ctrl+A' => '^A' => sub { Prima::VB::Form::fm_selectall(); }],
-				['D~uplicate'  => 'Ctrl+D' => '^D' => sub { Prima::VB::Form::fm_duplicate(); }],
+				[copy => 'Cop~y' => 'Ctrl+C' => '^C' =>       sub { Prima::VB::Form::fm_copy(); }],
+				[paste => '~Paste' => 'Ctrl+V' => '^V' =>      sub { Prima::VB::Form::fm_paste(); }],
+				[delete => '~Delete' => 'Ctrl-X' => '^X' =>     sub { Prima::VB::Form::fm_delete(); } ], 
+				[selectall => '~Select all' => 'Ctrl+A' => '^A' => sub { Prima::VB::Form::fm_selectall(); }],
+				[dup => 'D~uplicate'  => 'Ctrl+D' => '^D' => sub { Prima::VB::Form::fm_duplicate(); }],
 				[],
 				['~Align' => [
-					['~Bring to front' => 'Shift+PgUp' => km::Shift|kb::PgUp, sub { Prima::VB::Form::fm_subalign(1);}],
-					['~Send to back'   => 'Shift+PgDn' => km::Shift|kb::PgDn, sub { Prima::VB::Form::fm_subalign(0);}],
-					['Step ~forward'   => 'Ctrl+PgUp' => km::Ctrl|kb::PgUp, sub { Prima::VB::Form::fm_stepalign(1);}],
-					['Step bac~k'      => 'Ctrl+PgDn' => km::Ctrl|kb::PgDn, sub { Prima::VB::Form::fm_stepalign(0);}],
-					['~Restore order'   => 'Shift+Ctrl+PgDn' => km::Shift|km::Ctrl|kb::PgDn, sub { Prima::VB::Form::fm_realign;}],
+					[align0 => '~Bring to front' => 'Shift+PgUp' => km::Shift|kb::PgUp, sub { Prima::VB::Form::fm_subalign(1);}],
+					[align1 => '~Send to back'   => 'Shift+PgDn' => km::Shift|kb::PgDn, sub { Prima::VB::Form::fm_subalign(0);}],
+					[align2 => 'Step ~forward'   => 'Ctrl+PgUp' => km::Ctrl|kb::PgUp, sub { Prima::VB::Form::fm_stepalign(1);}],
+					[align3 => 'Step bac~k'      => 'Ctrl+PgDn' => km::Ctrl|kb::PgDn, sub { Prima::VB::Form::fm_stepalign(0);}],
+					[align_restore => '~Restore order'   => 'Shift+Ctrl+PgDn' => km::Shift|km::Ctrl|kb::PgDn, sub { Prima::VB::Form::fm_realign;}],
 				]],
-				['~Change class...' => sub { Prima::VB::Form::fm_reclass();}],
-				['Creation ~order' => sub { Prima::VB::Form::fm_creationorder(); } ],
-				['To~ggle lock' => 'Ctrl+G' => '^G' => sub { Prima::VB::Form::fm_toggle_lock(); }],
-				['Edit shortcuts...' => 'edit_menu' ], 
+				[setclass => '~Change class...' => sub { Prima::VB::Form::fm_reclass();}],
+				[setorder => 'Creation ~order' => sub { Prima::VB::Form::fm_creationorder(); } ],
+				[togglelock => 'To~ggle lock' => 'Ctrl+G' => '^G' => sub { Prima::VB::Form::fm_toggle_lock(); }],
+				[shortcuts => 'Edit shortcuts...' => 'edit_menu' ], 
 			]],
 			['~View' => [
-			['~Object Inspector' => 'F11' => 'F11' => sub { $_[0]-> bring_inspector; }],
-			['~Code editor'      => 'F12' => 'F12' => sub { $_[0]-> bring_code_editor; }],
-			['Co~lor dialog'  => q(bring_color_dialog) ],
-			['~Font dialog'  => q(bring_font_dialog) ],
-			['~Add widgets...' => q(add_widgets)],
-			[],
-			['Reset ~guidelines' => sub { Prima::VB::Form::fm_resetguidelines(); } ],
-			['*gsnap' => 'Snap to guid~elines' => sub { $VB::main-> {ini}-> {SnapToGuidelines} = $VB::main-> menu-> toggle( 'gsnap') ? 1 : 0; } ],
-			['*dsnap' => 'Snap to gri~d'       => sub { $VB::main-> {ini}-> {SnapToGrid} = $VB::main-> menu-> toggle( 'dsnap') ? 1 : 0; } ],
-			[],
-			['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => \&form_run ],
-			['-breakitem' => '~Break' => \&form_cancel ],
+				[objects => '~Object Inspector' => 'F11' => 'F11' => sub { $_[0]-> bring_inspector; }],
+				[editor => '~Code editor'      => 'F12' => 'F12' => sub { $_[0]-> bring_code_editor; }],
+				[colors => 'Co~lor dialog'  => q(bring_color_dialog) ],
+				[fonts => '~Font dialog'  => q(bring_font_dialog) ],
+				[widgets => '~Add widgets...' => q(add_widgets)],
+				[],
+				[resetlines => 'Reset ~guidelines' => sub { Prima::VB::Form::fm_resetguidelines(); } ],
+				['*gsnap' => 'Snap to guid~elines' => sub { $VB::main-> {ini}-> {SnapToGuidelines} = $VB::main-> menu-> toggle( 'gsnap') ? 1 : 0; } ],
+				['*dsnap' => 'Snap to gri~d'       => sub { $VB::main-> {ini}-> {SnapToGrid} = $VB::main-> menu-> toggle( 'dsnap') ? 1 : 0; } ],
+				[],
+				['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => \&form_run ],
+				['-breakitem' => '~Break' => \&form_cancel ],
 			]],
 			[],
 			['~Help' => [
 				['~About' => sub { Prima::MsgBox::message("Visual Builder for Prima toolkit, version $VBVersion")}],
-				['~Help' => 'F1' => 'F1' => sub { $::application-> open_help('VB/Help')}],
-				['~Widget property' => 'Shift+F1' => '#F1' => sub { Prima::VB::ObjectInspector::help_lookup() }],
+				[help => '~Help' => 'F1' => 'F1' => sub { $::application-> open_help('VB/Help')}],
+				[contexthelp => '~Widget property' => 'Shift+F1' => '#F1' => sub { Prima::VB::ObjectInspector::help_lookup() }],
 			]],
 		],
 	);
@@ -1490,7 +1490,9 @@ sub on_create
 sub on_close
 {
 	return unless $VB::form;
-	$_[0]-> clear_event, return if !$VB::form-> close;
+	my $self = shift;
+	$self-> clear_event, return if !$VB::form-> close;
+	$self-> menu-> keys_save($self->{iniFile}->section('Shortcuts'))
 }
 
 sub on_destroy
@@ -2427,28 +2429,13 @@ sub init_position
 	$window-> rect( @rx);
 }
 
+my $menuDlg;
+
 sub edit_menu
 {
 	my $self = shift;
-	my $d = Prima::Window->new( packPropagate => 0, text => 'Edit shortcuts' );
-	my $me = $d-> insert( 'Prima::KeySelector::MenuEditor' => 
-		pack => { expand => 1, fill => 'both' },
-		menu => $self-> menu,
-		applyButton => 0,
-	);
-	$me-> insert( [ Button => 
-		text        => '~Ok',
-		modalResult => mb::OK,
-		default     => 1,
-		pack        => { side => 'bottom', pad => 20 },
-	], [ Button => 
-		text        => 'Cancel',
-		modalResult => mb::Cancel,
-		pack        => { side => 'bottom', pad => 20 },
-	] );
-	return if $d->execute != mb::Ok;
-	$me-> apply;
-	$self-> menu-> keys_save( $self->{iniFile}->section('Shortcuts'));
+	$menuDlg //= Prima::KeySelector::Dialog-> new(menuTree => $self-> menu);
+	$menuDlg->execute;
 }
 
 package Prima::VB::VisualBuilder;
