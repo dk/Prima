@@ -1817,6 +1817,9 @@ Widget_set_centered( Handle self, Bool x, Bool y)
    Point mysize  = my-> get_size ( self);
    Point mypos   = my-> get_origin( self);
    Point delta   = {0,0};
+
+   if ( !x && !y ) return;
+
    if ( parent == application ) {
         int i, nrects = 0;
         Rect2 *best = nil, *rects = apc_application_get_monitor_rects( application, &nrects);
