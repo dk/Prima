@@ -285,6 +285,20 @@ sub shortcut
 	return "'" . $txt . "'";
 }
 
+# safe eval for key description produced by shortcut
+
+sub eval_shortcut
+{
+	my $text = shift;
+	if ( $text =~ m/^'(.*)'$/ ) {
+		$text = $1;
+		if ( $text =~ s/^kb::(\w+)// ) {
+			my $vk = $vkeys{$1};
+		}
+	}
+	return Prima::AbstractMenu-> translate_shortcut( $text );
+}
+
 sub parse_menu_items
 {
 	my $items = shift;
@@ -499,7 +513,7 @@ sub Default_Click
 	my $self = shift;
 	my $id = $self-> get_focused_id;
 	return unless defined $id;
-	delete $self-> {vkeys}->{$id};
+	$self-> {vkeys}->{$id} = $self-> menu-> keys_defaults-> {$id};
 	$self-> KeySelector-> key( $self-> get_vkey( $id ));
 }
 

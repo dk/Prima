@@ -14,7 +14,6 @@ in ~/.prima/keyselector INI-file.
 
 =cut
 
-use lib 'blib/arch', '.';
 use strict;
 use Prima qw(Application KeySelector IniFile );
 
