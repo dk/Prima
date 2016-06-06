@@ -18,7 +18,7 @@ use vars qw(@ISA %vkeys);
 @ISA = qw(Prima::Widget);
 
 for ( keys %kb::) {
-	next if m/^(constant|AUTOLOAD|CharMask|CodeMask|ModMask|L\d+)$/;
+	next if m/^(constant|AUTOLOAD|CharMask|CodeMask|ModMask|[LR]\d+)$/;
 	$vkeys{$_} = &{$kb::{$_}}();
 }
 
