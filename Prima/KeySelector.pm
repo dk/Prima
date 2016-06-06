@@ -36,78 +36,70 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init( @_);
-	my @sz = $self-> size;
 	my $fh = $self-> font-> height;
-	$sz[1] -= $fh + 4;
 	$self-> {keys} = $self-> insert( ComboBox =>
-		name     => 'Keys',
+		name        => 'Keys',
 		delegations => [qw(Change)],
-		origin   => [ 0, $sz[1]],
-		size     => [ $sz[0], $fh + 4],
-		growMode => gm::GrowHiX, 
+		pack        => { side => 'top', fill => 'x'},
 		style    => cs::DropDownList,
 		items    => [ sort keys %vkeys, 'A'..'Z', '0'..'9', '+', '-', '*'],
 	);
 
-	$sz[1] -= $fh * 4 + 28;
 	$self-> {mod} = $self-> insert( GroupBox =>
-		origin   => [ 0, $sz[1]],
-		size     => [ $sz[0], $fh * 4 + 28],
-		growMode => gm::GrowHiX, 
+		pack        => { side => 'top', fill => 'x' },
 		style    => cs::DropDown,
 		text     => '',
 	);
 
-	my @esz = $self-> {mod}-> size;
-	$esz[1] -= $fh * 2 + 4;
+	$self-> {mod}-> insert( Widget =>
+		name        => 'dummy',
+		height      => 0,
+		visible     => 0,
+		pack        => { side => 'top', fill => 'x', pady => (( $fh < 10) ? 5 : ($fh - 5)) },
+	);
+
 	$self-> {modShift} = $self-> {mod}-> insert( CheckBox =>
 		name        => 'Shift',
 		delegations => [$self, qw(Click)],
-		origin   => [ 8, $esz[1]],
-		size     => [ $esz[0] - 16, $fh + 6],
-		text     => '~Shift',
-		growMode => gm::GrowHiX,
+		pack        => { side => 'top', fill => 'x', padx => 15 },
+		text        => '~Shift',
 	);
 
-	$esz[1] -= $fh + 8;
 	$self-> {modCtrl} = $self-> {mod}-> insert( CheckBox =>
 		name        => 'Ctrl',
 		delegations => [$self, qw(Click)], 
-		origin  => [ 8, $esz[1]],
-		size    => [ $esz[0] - 16, $fh + 6],
-		text    => '~Ctrl',
-		growMode => gm::GrowHiX,
+		pack        => { side => 'top', fill => 'x', padx => 15 },
+		text        => '~Ctrl',
 	);
-	$esz[1] -= $fh + 8;
 
 	$self-> {modAlt} = $self-> {mod}-> insert( CheckBox =>
 		name        => 'Alt',
 		delegations => [$self, qw(Click)], 
-		origin  => [ 8, $esz[1]],
-		size    => [ $esz[0] - 16, $fh + 6],
-		text    => '~Alt',
-		growMode => gm::GrowHiX,
+		pack        => { side => 'top', fill => 'x', padx => 15},
+		text        => '~Alt',
+	);
+	
+	$self-> {mod}-> insert( Widget =>
+		name        => 'dummy',
+		height      => 0,
+		pack        => { side => 'top', fill => 'x', pad => 5 },
 	);
 
-	$sz[1] -= $fh + 8;
 	$self-> insert( Label =>
-		origin     => [ 0, $sz[1]],
-		size       => [ $sz[0], $fh + 2],
-		growMode   => gm::GrowHiX,
-		text       => 'Press shortcut key:',
+		pack        => { side => 'top', fill => 'x'},
+		text       => '~Press shortcut key:',
+		focusLink  => 'Hook',
 	);
 
-	$sz[1] -= $fh + 6;
 	$self-> {keyhook} = $self-> insert( Widget =>
-		name        => 'Hook',
-		delegations => [qw(Paint KeyDown TranslateAccel )],
-		origin     => [ 0, $sz[1]],
-		size       => [ $sz[0], $fh + 2],
-		growMode   => gm::GrowHiX, 
-		selectable => 1,
-		cursorPos  => [ 4, 1],
-		cursorSize => [ 1, $fh],
-		cursorVisible => [ 1, $fh],
+		name          => 'Hook',
+		delegations   => [qw(Paint KeyDown TranslateAccel )],
+		pack          => { side => 'top', fill => 'x'},
+		height        => $fh + 2,
+		selectable    => 1,
+		cursorPos     => [ 4, 1],
+		cursorSize    => [ $::application-> get_default_cursor_width, $fh],
+		cursorVisible => 1,
 		tabStop       => 1,
 	);
 	
@@ -333,6 +325,7 @@ sub profile_default
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
 		menu               => undef,
+		applyButton        => 1,
 		scaleChildren      => 0,
 		autoEnableChildren => 1,
 	}
@@ -345,34 +338,36 @@ sub init
 
 	$self->{$_} = $profile{$_} for qw(menu);
 	$self-> {vkeys} = {};
-
-	my @size = $self-> size;
 	my $items = $self-> {menu} ? $self-> menu_to_items( $self-> {menu} ) : [];
 
-	$self-> insert( [ Outline  =>
-		origin => [ 10, 55],
-		size   => [ $size[0] - 180, $size[1] - 68],
+	$self-> insert( Outline  =>
+		pack    => { side => 'left', fill => 'both', expand => 1, pad => 10 },
 		name   => 'KeyList',
 		items  => $items,
-		growMode => gm::Client,
 		delegations => [ qw(SelectItem) ],
-	] , [ KeySelector =>
-		origin => [ $size[0] - 160, $size[1] - 185],
-		size   => [ 150, 170],
+	);
+
+	$self-> insert( [ Button  =>
+		pack    => { side => 'top', pad => 15 },
+		text    => 'Appl~y',
+		hint    => 'Apply changes',
+		name    => 'Apply',
+		delegations => [ qw(Click) ],
+	] ) if $profile{applyButton};
+
+	$self-> insert( [ KeySelector =>
+		pack    => { side => 'top', pad => 10 },
 		name   => 'KeySelector',
 		visible => 0,
 		delegations => [ qw(Change) ],
-		growMode => gm::GrowLoY|gm::GrowLoX,
 	], [ Button =>
-		origin  => [ 10, 10],
-		size    => [ 96, 36],
+		pack    => { side => 'top', pad => 15 },
 		text    => '~Clear',
 		hint    => 'Clears the key',
 		name    => 'Clear',
 		delegations => [ qw(Click) ],
 	] , [ Button =>
-		origin  => [ 114, 10],
-		size    => [ 96, 36],
+		pack    => { side => 'top', pad => 15 },
 		text    => '~Default',
 		hint    => 'Set default value for a key',
 		name    => 'Default',
@@ -468,7 +463,11 @@ sub KeyList_SelectItem
 		$self-> KeySelector-> enabled(1);
 		$self-> KeySelector-> key( $self-> get_vkey($id));
 		$self-> KeySelector-> show;
+		$self-> Clear-> show;
+		$self-> Default-> show;
 	} else {
+		$self-> Clear-> hide;
+		$self-> Default-> hide;
 		$self-> KeySelector-> hide;
 		$self-> KeySelector-> enabled(0);
 	}
@@ -490,9 +489,11 @@ sub KeySelector_Change
 		for my $k ( keys %$d) {
 			next if $k eq $id;
 			next unless $value == $self-> get_vkey($k);
+			my $menutext = $self-> menu-> text( $k );
+			$menutext =~ s/~//;
 			if ( Prima::MsgBox::message_box(
 				$::application-> name,
-				"This key combination is already occupied by $k. Apply anyway?",
+				"This key combination is already occupied by $k ('$menutext'). Apply anyway?",
 				mb::YesNo) == mb::Yes) {
 				$self->{vkeys}->{$k} = kb::NoKey;
 				last;
@@ -505,6 +506,7 @@ sub KeySelector_Change
 		}
 	}
 	$self-> {vkeys}-> {$id} = $value;
+	$self-> notify(q(Change));
 }
 
 sub Clear_Click
@@ -514,6 +516,7 @@ sub Clear_Click
 	return unless defined $id;
 	$self-> {vkeys}->{$id} = kb::NoKey;
 	$self-> KeySelector-> key( $self-> get_vkey( $id ));
+	$self-> notify(q(Change));
 }
 
 sub Default_Click
@@ -523,6 +526,7 @@ sub Default_Click
 	return unless defined $id;
 	$self-> {vkeys}->{$id} = $self-> menu-> keys_defaults-> {$id};
 	$self-> KeySelector-> key( $self-> get_vkey( $id ));
+	$self-> notify(q(Change));
 }
 
 sub apply
@@ -530,6 +534,8 @@ sub apply
 	my $self = shift;
 	Prima::KeySelector::apply_to_menu( $self-> menu, $self-> vkeys );
 }
+
+sub Apply_Click { shift-> apply }
 
 package
 	Prima::AbstractMenu;
