@@ -292,38 +292,27 @@ sub eval_shortcut
 	my $text = shift;
 	if ( $text =~ m/^'(.*)'$/ ) {
 		$text = $1;
+		my $mod = 0;
+		while ( $text =~ /\|km::(\w+)/ ) {
+			$mod |= km::Alt   if $1 eq 'Alt';
+			$mod |= km::Ctrl  if $1 eq 'Ctrl';
+			$mod |= km::Shift if $1 eq 'Shift';
+		}
 		if ( $text =~ s/^kb::(\w+)// ) {
 			my $vk = $vkeys{$1};
+			return $vk | $mod;
+		} elsif ($text =~ m/^ord\(\'(.)\'\)/) {
+			return ord($1) | $mod;
+		} elsif ($text =~ m/^\(ord\(\'(.)\'\)\s*\-(\d+)\)/) {
+			return (ord($1) - $2) | $mod;
+		} else {
+			return Prima::AbstractMenu-> translate_shortcut( $text );
 		}
+	} elsif ( $text =~ /^(\d+)$/) {
+		return $text;
+	} else {
+		return kb::NoKey;
 	}
-	return Prima::AbstractMenu-> translate_shortcut( $text );
-}
-
-sub parse_menu_items
-{
-	my $items = shift;
-	my %vkeys;
-	my ($i, $ptr, $tree, @stack) = (0, $items, []);
-	while ( 1) {
-		for ( ; $i < @$ptr; $i++) {
-			my ( $id, $text, $accel, $vkey, $ref_or_sub) = @{ $ptr->[$i] };
-			if ( ref($ref_or_sub // '') eq 'ARRAY') {
-				push @stack, [ $i + 1, $ptr, $tree ];
-				$ptr = $ref_or_sub;
-				$i = -1;
-				my $subtree = [];
-				push @$tree, [[ $text, $id ], $subtree];
-				$tree = $subtree;
-			} else {
-				$text =~ s/~//;
-				push @$tree, [[ $text, $id ]];
-				$vkeys{$id} = $vkey;
-			}
-		}
-		@stack ? ( $i, $ptr, $tree ) = @{ pop @stack } : last;
-	}
-
-	return $tree, \%vkeys;
 }
 
 sub apply_to_menu
@@ -396,7 +385,26 @@ sub init
 sub menu_to_items
 {
 	my ( $self, $menu ) = @_;
-	my ( $tree ) = Prima::KeySelector::parse_menu_items( $menu-> get_items('') );
+	my ($i, $ptr, $tree, @stack) = (0, $menu-> get_items(''), []);
+
+	while ( 1) {
+		for ( ; $i < @$ptr; $i++) {
+			my ( $id, $text, $accel, $vkey, $ref_or_sub) = @{ $ptr->[$i] };
+			if ( ref($ref_or_sub // '') eq 'ARRAY') {
+				push @stack, [ $i + 1, $ptr, $tree ];
+				$ptr = $ref_or_sub;
+				$i = -1;
+				my $subtree = [];
+				push @$tree, [[ $text, $id ], $subtree, 1];
+				$tree = $subtree;
+			} else {
+				$text =~ s/~//;
+				push @$tree, [[ $text, $id ]];
+			}
+		}
+		@stack ? ( $i, $ptr, $tree ) = @{ pop @stack } : last;
+	}
+
 	return $tree;
 }
 
@@ -526,13 +534,34 @@ sub apply
 package
 	Prima::AbstractMenu;
 
+sub _parse_menu_items
+{
+	my $items = shift;
+	my %vkeys;
+	my ($i, $ptr, $tree, @stack) = (0, $items, []);
+	while ( 1) {
+		for ( ; $i < @$ptr; $i++) {
+			my ( $id, $text, $accel, $vkey, $ref_or_sub) = @{ $ptr->[$i] };
+			if ( ref($ref_or_sub // '') eq 'ARRAY') {
+				push @stack, [ $i + 1, $ptr ];
+				$ptr = $ref_or_sub;
+				$i = -1;
+			} else {
+				$text =~ s/~//;
+				$vkeys{$id} = $vkey;
+			}
+		}
+		@stack ? ( $i, $ptr ) = @{ pop @stack } : last;
+	}
+
+	return \%vkeys;
+}
+
 sub _init_keys
 {
 	my $self = shift;
-	return $self-> {_key_loader} if $self-> {_key_loader};
-	my ( undef, $keys ) = Prima::KeySelector::parse_menu_items( $self-> get_items('') );
-	return $self-> {_key_loader} = {
-		defaults => $keys,
+	return $self-> {_key_loader} //= {
+		defaults => _parse_menu_items( $self-> get_items('') ),
 	};
 }
 
@@ -542,9 +571,9 @@ sub keys_load
 	my $k = _init_keys($self);
 
 	my %v;
-	for my $key ( keys %{ $k-> {defaults} } ) {
-		my $value = $ini->{ $key } // $k-> {defaults}->{ $key };
-		$v{$key} = Prima::AbstractMenu-> translate_shortcut( eval($value)); # XXX safety!!!
+	for my $id ( keys %{ $k-> {defaults} } ) {
+		my $value = $ini->{ $id } // $k-> {defaults}->{ $id };
+		$v{$id} = Prima::KeySelector::eval_shortcut($value);
 	}
 	Prima::KeySelector::apply_to_menu( $self, \%v);
 }
@@ -554,10 +583,10 @@ sub keys_save
 	my ($self, $ini) = @_;
 	my $k = _init_keys($self);
 
-	my ( undef, $vkeys ) = Prima::KeySelector::parse_menu_items( $self-> get_items('') );
-	for my $key ( keys %{ $k->{ defaults } } ) {
-		my $value = $vkeys->{ $key } // $k-> {defaults}-> {$key};
-		$ini->{$key} = Prima::KeySelector::shortcut( $value );
+	my $vkeys = _parse_menu_items( $self-> get_items('') );
+	for my $id ( keys %{ $k->{ defaults } } ) {
+		my $value = $vkeys->{ $id } // $k-> {defaults}-> {$id};
+		$ini->{$id} = Prima::KeySelector::shortcut( $value );
 	}
 }
 
