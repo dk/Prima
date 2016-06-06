@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Prima qw(StdDlg Notebooks MsgBox ComboBox FontDialog ColorDialog IniFile Utils RubberBand);
+use Prima qw(StdDlg Notebooks MsgBox ComboBox FontDialog ColorDialog IniFile Utils RubberBand KeySelector);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;
@@ -1291,6 +1291,7 @@ sub profile_default
 				['~Change class...' => sub { Prima::VB::Form::fm_reclass();}],
 				['Creation ~order' => sub { Prima::VB::Form::fm_creationorder(); } ],
 				['To~ggle lock' => 'Ctrl+G' => '^G' => sub { Prima::VB::Form::fm_toggle_lock(); }],
+				['Edit shortcuts...' => 'edit_menu' ], 
 			]],
 			['~View' => [
 			['~Object Inspector' => 'F11' => 'F11' => sub { $_[0]-> bring_inspector; }],
@@ -1469,13 +1470,15 @@ sub init
 				'FontSize'        => $font-> size,
 				'FontStyle'       => $font-> style,
 				'FontEncoding'    => $font-> encoding,
-			]
+			],
+			'Shortcuts' => [],
 		],
 	);
 	my $i = $self-> {ini} = $self-> {iniFile}-> section( 'View' );
 	$self-> menu-> dsnap-> checked( $i-> {SnapToGrid});
 	$self-> menu-> gsnap-> checked( $i-> {SnapToGuidelines});
 	$self-> init_position( $self, 'MainPanelRect');
+	$self-> menu-> keys_load( $self->{iniFile}->section('Shortcuts'));
 	return %profile;
 }
 
@@ -1483,7 +1486,6 @@ sub on_create
 {
 	$_[0]-> reset_tabs;
 }
-
 
 sub on_close
 {
@@ -2423,6 +2425,30 @@ sub init_position
 	$rx[3] = $sz[1] if $rx[3] > $sz[1];
 
 	$window-> rect( @rx);
+}
+
+sub edit_menu
+{
+	my $self = shift;
+	my $d = Prima::Window->new( packPropagate => 0, text => 'Edit shortcuts' );
+	my $me = $d-> insert( 'Prima::KeySelector::MenuEditor' => 
+		pack => { expand => 1, fill => 'both' },
+		menu => $self-> menu,
+		applyButton => 0,
+	);
+	$me-> insert( [ Button => 
+		text        => '~Ok',
+		modalResult => mb::OK,
+		default     => 1,
+		pack        => { side => 'bottom', pad => 20 },
+	], [ Button => 
+		text        => 'Cancel',
+		modalResult => mb::Cancel,
+		pack        => { side => 'bottom', pad => 20 },
+	] );
+	return if $d->execute != mb::Ok;
+	$me-> apply;
+	$self-> menu-> keys_save( $self->{iniFile}->section('Shortcuts'));
 }
 
 package Prima::VB::VisualBuilder;
