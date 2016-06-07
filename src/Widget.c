@@ -1869,13 +1869,13 @@ Widget_set_popup_font( Handle self, Font font)
 void
 Widget_on_paint( Handle self, SV * canvas)
 {
-	int i;
+   int i;
    dSP;
    ENTER;
    SAVETMPS;
    PUSHMARK( sp);
    XPUSHs( canvas);
-	for ( i = 0; i < 4; i++)
+   for ( i = 0; i < 4; i++)
       XPUSHs( sv_2mortal( newSViv( -1)));
    PUTBACK;
    PERL_CALL_METHOD( "clear", G_DISCARD);
