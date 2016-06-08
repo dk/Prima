@@ -1,10 +1,10 @@
 =pod 
 
-=item NAME
+=head1 NAME
 
 Interactive key selection and storage
 
-=item FEATURES
+=head1 FEATURES
 
 Contains an example how to use standard key selection and conversion
 features of Prima::KeySelector. A typical program with interactively
