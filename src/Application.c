@@ -54,7 +54,7 @@ Application_init( Handle self, HV * profile)
          warn("Array panic on 'designScale'");
       pdelete( designScale);
    }
-   var->  text = duplicate_string("");
+   var->  text = newSVpv("", 0);
    opt_set( optModalHorizon);
 
    /* store extra info */
@@ -113,11 +113,12 @@ Application_done( Handle self)
    unprotect_object( var-> hintWidget);
    list_destroy( &var->  modalHorizons);
    list_destroy( &var->  widgets);
-   free( var-> text);
+   if ( var-> text ) SvREFCNT_dec( var-> text);
    free( var-> hint);
    free( var-> helpContext);
    var-> accelTable = var-> hintWidget = var-> hintTimer = nilHandle;
-   var-> text = var->  hint = var-> helpContext = nil;
+   var-> hint = var-> helpContext = nil;
+   var-> text = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
    application = nilHandle;
@@ -680,7 +681,6 @@ static void hshow( Handle self)
    apc_widget_map_points( var-> hintUnder, true, 1, &pos);
 
    hintWidget-> set_text( var->  hintWidget, text);
-   sv_free( text);
    hintSize = hintWidget-> get_size( var->  hintWidget);
 
    fin. x = mouse. x - 16;

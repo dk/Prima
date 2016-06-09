@@ -862,6 +862,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
   Bool reset = false;
   ViewProfile vprf;
   int oStage = var stage;
+  WCHAR * saved_caption = NULL;
   WindowData ws;
   HICON icon = (HICON) nilHandle;
   WINDOWPLACEMENT wp = {sizeof(WINDOWPLACEMENT)};
@@ -893,6 +894,9 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
     || ( taskList    != is_apt( aptTaskList))
   ))
   {
+     int len = GetWindowTextLengthW( HANDLE ) + 1;
+     if (( saved_caption = (WCHAR*) malloc( sizeof(WCHAR) * len)) != NULL ) 
+     	GetWindowTextW( HANDLE, saved_caption, len );
      apc_window_set_window_state( self, windowState);
      // prevent cmSize/cmWindowStage message loss if recreate goes with WS_XXX change.
      if ( sys recreateData) {
@@ -919,6 +923,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	         SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 	}
         HWND_lock( false);
+	if ( saved_caption ) free( saved_caption );
         return false;
      }
   ws. borderStyle = sys s. window. borderStyle = borderStyle;
@@ -957,7 +962,8 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
         SetWindowPos( sys handle, HWND_TOPMOST, 0, 0, 0, 0, 
            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
   }
-  apc_window_set_caption( self, var text, is_opt( optUTF8_text));
+  SetWindowTextW( HANDLE, saved_caption );
+  if ( saved_caption ) free( saved_caption );
   HWND_lock( false);
   return apcError == 0;
 }
@@ -969,8 +975,8 @@ apc_window_activate( Handle self)
       HWND w;
       objCheck false;
       w = HANDLE;
-      SetForegroundWindow( w); // no reasonable error description here,
-      SetActiveWindow( w);     // long live M$DN :E
+      SetForegroundWindow( w);
+      SetActiveWindow( w);
       return true;
    }
    return false;

@@ -430,12 +430,17 @@ Bool
 Drawable_text_out( Handle self, SV * text, int x, int y)
 {
    Bool ok;
-   STRLEN dlen;
-   char * c_text = SvPV( text, dlen);
-   Bool   utf8 = prima_is_utf8_sv( text);
-   if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
-   ok = apc_gp_text_out( self, c_text, x, y, dlen, utf8);
-   if ( !ok) perl_error();
+   if ( !SvROK( text )) {
+      STRLEN dlen;
+      char * c_text = SvPV( text, dlen);
+      Bool   utf8 = prima_is_utf8_sv( text);
+      if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
+      ok = apc_gp_text_out( self, c_text, x, y, dlen, utf8);
+      if ( !ok) perl_error();
+   } else {
+      SV * ret = sv_call_perl(text, "text_out", "<Hii", self, x, y);
+      ok = ret && SvTRUE(ret);
+   }
    return ok;
 }
 
@@ -875,13 +880,21 @@ Drawable_get_text_width( Handle self, SV * text, Bool addOverhang)
 {
    gpARGS;
    int res;
-   STRLEN dlen;
-   char * c_text = SvPV( text, dlen);
-   Bool   utf8 = prima_is_utf8_sv( text);
-   if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
-   gpENTER(0);
-   res = apc_gp_get_text_width( self, c_text, dlen, addOverhang, utf8);
-   gpLEAVE;
+   if ( !SvROK( text )) {
+      STRLEN dlen;
+      char * c_text = SvPV( text, dlen);
+      Bool   utf8 = prima_is_utf8_sv( text);
+      if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
+      gpENTER(0);
+      res = apc_gp_get_text_width( self, c_text, dlen, addOverhang, utf8);
+      gpLEAVE;
+   } else {
+      SV * ret;
+      gpENTER(0);
+      ret = sv_call_perl(text, "get_text_width", "<Hi", self, addOverhang);
+      gpLEAVE;
+      res = (ret && SvOK(ret)) ? SvIV(ret) : 0;
+   }
    return res;
 }
 
@@ -892,23 +905,31 @@ Drawable_get_text_box( Handle self, SV * text)
    Point * p;
    AV * av;
    int i;
-   STRLEN dlen;
-   char * c_text = SvPV( text, dlen);
-   Bool   utf8 = prima_is_utf8_sv( text);
-   if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
-   gpENTER( newRV_noinc(( SV *) newAV()));
-   p = apc_gp_get_text_box( self, c_text, dlen, utf8);
-   gpLEAVE;
+   if ( !SvROK( text )) {
+      STRLEN dlen;
+      char * c_text = SvPV( text, dlen);
+      Bool   utf8 = prima_is_utf8_sv( text);
+      if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
+      gpENTER( newRV_noinc(( SV *) newAV()));
+      p = apc_gp_get_text_box( self, c_text, dlen, utf8);
+      gpLEAVE;
 
-   av = newAV();
-   if ( p) {
-      for ( i = 0; i < 5; i++) {
-         av_push( av, newSViv( p[ i]. x));
-         av_push( av, newSViv( p[ i]. y));
-      };
-      free( p);
+      av = newAV();
+      if ( p) {
+         for ( i = 0; i < 5; i++) {
+            av_push( av, newSViv( p[ i]. x));
+            av_push( av, newSViv( p[ i]. y));
+         };
+         free( p);
+      }
+      return newRV_noinc(( SV *) av);
+   } else {
+      SV * ret;
+      gpENTER( newRV_noinc(( SV *) newAV()));
+      ret = newSVsv(sv_call_perl(text, "get_text_box", "<H", self));
+      gpLEAVE;
+      return ret;
    }
-   return newRV_noinc(( SV *) av);
 }
 
 static PFontABC
@@ -1252,6 +1273,9 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
    int i;
    AV * av;
    STRLEN tlen;
+
+   if ( SvROK( text ))
+      return newSVsv(sv_call_perl(text, "text_wrap", "<Hiii", self, width, options, tabIndent));
 
    t. text      = SvPV( text, tlen);
    t. utf8_text = prima_is_utf8_sv( text);

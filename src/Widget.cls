@@ -21,7 +21,7 @@ object Prima::Widget( Prima::Drawable)
    Point     sizeMin;                  # default min size
    Point     sizeMax;                  # default max size
    int       tabOrder;                 # tab ordering number
-   char   *  text;                     # caption text
+   SV     *  text;                     # caption text
    int       widgetClass;              # predefined system class
    List      widgets;		       # list of child widgets
    Handle *  enum_lists;               # list of currently running enumerators

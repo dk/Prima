@@ -248,7 +248,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
 void
 Widget_done( Handle self)
 {
-   free( var-> text);
+   if ( var-> text ) SvREFCNT_dec( var-> text );
    var-> text = nil;
    apc_widget_destroy( self);
    free( var-> helpContext);
@@ -2378,13 +2378,11 @@ Widget_hint( Handle self, Bool set, SV *hint)
       if ( application && (( PApplication) application)-> hintVisible &&
            (( PApplication) application)-> hintUnder == self)
       {
-         SV   * hintText   = my-> get_hint( self);
          Handle hintWidget = (( PApplication) application)-> hintWidget;
          if ( strlen( var-> hint) == 0) 
             my-> set_hintVisible( self, 0);
          if ( hintWidget) 
-            CWidget(hintWidget)-> set_text( hintWidget, hintText);
-         sv_free( hintText);
+            CWidget(hintWidget)-> set_text( hintWidget, my-> get_hint( self));
       }
       opt_clear( optOwnerHint);
    } else {
@@ -2968,16 +2966,13 @@ Widget_text( Handle self, Bool set, SV *text)
 {
    if ( set) {
       if ( var-> stage > csFrozen) return nilSV;
-      free( var-> text);
-      var-> text = nil;
-      var-> text = duplicate_string( SvPV_nolen( text));
-      opt_assign( optUTF8_text, prima_is_utf8_sv(text));
+      if ( var-> text ) SvREFCNT_dec( var-> text );
+      var-> text = text;
+      if ( var-> text ) SvREFCNT_inc( var-> text );
+      return nilSV;
    } else {
-      text = newSVpv( var-> text ? var-> text : "", 0);
-      if ( is_opt( optUTF8_text)) SvUTF8_on( text);
-      return text;
+      return newSVsv(var->text);
    }
-   return nilSV;
 }
 
 int

@@ -47,7 +47,6 @@ sub profile_default
 		selEnd         => 0,
 		selectable     => 1,
 		textDirection  => $Prima::Bidi::default_direction_rtl,
-		textRef        => undef,
 		undoLimit      => 10,
 		widgetClass    => wc::InputLine,
 		width          => 96,
@@ -89,7 +88,7 @@ sub init
 
 	for ( qw(
 		textDirection
-		textRef writeOnly borderWidth passwordChar maxLen alignment 
+		writeOnly borderWidth passwordChar maxLen alignment 
 		autoTab autoSelect readOnly selEnd selStart charOffset 
 		firstChar wordDelimiters ))
 		{ $self-> $_( $profile{ $_}); }
@@ -230,18 +229,13 @@ sub reset
 
 sub text
 {
-	return ( defined($_[0]-> {textRef}) ? 
-				${$_[0]-> {textRef}} :
-				$_[0]-> SUPER::text ) 
-			unless $#_;
+	return $_[0]-> SUPER::text unless $#_;
 	my ( $self, $cap) = @_;
 	$cap = '' unless defined $cap;
 	$cap = substr( $cap, 0, $self-> {maxLen}) 
 		if $self-> {maxLen} >= 0 and length($cap) > $self-> {maxLen};
 
-	defined ( $self-> {textRef} ) ?
-		${$self-> {textRef}} = $cap :
-		$self-> SUPER::text( $cap);
+	$self-> SUPER::text($cap);
 
 	if ($self->is_bidi($cap)) {
 		($self->{bidiData}, $cap) = $self->bidi_paragraph( $cap );
@@ -256,12 +250,6 @@ sub text
 	$self-> reset;
 	$self-> repaint;
 	$self-> notify(q(Change));
-}
-
-sub textRef
-{
-	return $_[0]-> {textRef} unless $#_;
-	$_[0]-> text( $_[0]-> text) if defined ( $_[0]-> {textRef} = $_[1] );
 }
 
 sub on_keydown
@@ -1179,18 +1167,6 @@ Selects the end of text selection.
 =item textDirection BOOLEAN.
 
 If set, indicates RTL text input.
-
-=item textRef SCALAR_REF
-
-If not undef, contains reference to the scalar that holds the text
-of the input line. All changes to ::text property are reflected there.
-The direct write access to the scalar is not recommended because it 
-leaves internal structures inconsistent, and the only way to synchronize
-structures is to set-call either ::textRef or ::text after every such change.
-
-If undef, the internal text container is used.
-
-Default value: undef
 
 =item wordDelimiters STRING
 
