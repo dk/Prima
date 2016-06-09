@@ -77,6 +77,7 @@ examples/label.pl
 examples/launch.pl
 examples/listbox.pl
 examples/macro.pl
+examples/markup.pl
 examples/matrix.gif
 examples/matrix.pl
 examples/mdi.pl
@@ -180,6 +181,7 @@ Prima/DockManager.pm
 Prima/Docks.pm
 Prima/Drawable/Basic.pm
 Prima/Drawable/CurvedText.pm
+Prima/Drawable/Markup.pm
 Prima/Drawable/Subcanvas.pm
 Prima/Edit.pm
 Prima/EditDialog.pm
