@@ -25,7 +25,7 @@ my $Main = Prima::MainWindow->create(
 
 my $tn = $Main->insert('TabbedNotebook',
 	pack   => { expand => 1, fill => 'both' },
-	tabs   => [ M 'B<Basic Controls>', M 'I<Detailed List>', M 'U<Outline>', M 'F<2|Skewed>'],
+	tabs   => [ M 'B<Basic Controls>', M 'I<Detailed List>', M 'U<Outline>', M 'F<2|Custom Paint>'],
 );
 
 $tn->insert_to_page(0,'Label',
