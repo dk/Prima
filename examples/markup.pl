@@ -30,22 +30,22 @@ my $tn = $Main->insert('TabbedNotebook',
 
 $tn->insert_to_page(0,'Label',
 	text   => M 'Some F<1|monospace text> in a label',
-	pack   => { side => 'top', fill => 'x' },
+	pack   => { side => 'top', fill => 'x', anchor => 'w' },
 );
 
 $tn->insert_to_page(0,'Button',
 	text   => M 'Some B<C<cl::LightRed|red text>> in a button',
-	pack   => { side => 'top' },
+	pack   => { side => 'top', anchor => 'w' },
 );
 
 $tn->insert_to_page(0,'Radio',
 	text   => M 'Some S<+2|big text> in a radio button',
-	pack   => { side => 'top' },
+	pack   => { side => 'top' , anchor => 'w'},
 );
 
 $tn->insert_to_page(0,'CheckBox',
 	text   => M 'Some S<-2|small text> in a checkbox',
-	pack   => { side => 'top' },
+	pack   => { side => 'top' , anchor => 'w'},
 );
 
 $tn->insert_to_page(0,'GroupBox',
