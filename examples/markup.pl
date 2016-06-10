@@ -71,8 +71,7 @@ N<0|\xC0> ($enc->[0])
 N<1|\xC0> ($enc->[1])
 N<2|\xC0> ($enc->[2])
 N<3|\xC0> ($enc->[3])",
-	pack   => { side => 'top', fill => 'both' },
-	height => 100,
+	pack   => { side => 'top', fill => 'both', expand => 1 },
 );
 
 $tn->insert_to_page(1,'DetailedList',
