@@ -1728,6 +1728,7 @@ int
 prima_xft_load_font( char* filename, Bool temporary)
 {
    struct stat s;
+   int ret = 0;
    char * fontdir = NULL, *home, *name, *namebuf = NULL;
 
    /* -f $filename or die */
@@ -1742,9 +1743,8 @@ prima_xft_load_font( char* filename, Bool temporary)
       int len  = strlen(filename + 1 + 1);
       while (1) {
          if (!(namebuf = malloc(size + len))) {
-            free( fontdir );
             warn("Not enough memory");
-            return 0;
+            goto EXIT;
          }
          if ( getcwd(namebuf, size + len) == NULL) {
             free(namebuf);
@@ -1752,7 +1752,7 @@ prima_xft_load_font( char* filename, Bool temporary)
                size *= 2;
             } else {
                warn("Cannot query current directory");
-               free( fontdir );
+               goto EXIT;
             }
          } else {
             strcat( namebuf, "/"); 
@@ -1769,11 +1769,11 @@ prima_xft_load_font( char* filename, Bool temporary)
    /* $fontdir = $ENV{HOME} . '/fonts' */
    if (!(home = getenv("HOME"))) {
       warn("$ENV{HOME} not set");
-      return 0;
+      goto EXIT;
    }
    if (!(fontdir = malloc(strlen(home) + strlen("/.fonts/") + strlen(name) + 1))) {
       warn("Not enough memory");
-      return 0;
+      goto EXIT;
    }
    strcpy( fontdir, home);
    strcat( fontdir, "/.fonts");
@@ -1782,13 +1782,11 @@ prima_xft_load_font( char* filename, Bool temporary)
    if (stat( fontdir, &s) < 0) {
       if ( mkdir(fontdir, 0777) < 0) {
          warn("mkdir(%s):%s", fontdir, strerror(errno));
-         free( fontdir );
-         return 0;
+	 goto EXIT;
       }
    } else if (( s.st_mode & S_IFDIR) == 0) {
       warn("%s is not a directory", fontdir);
-      free( fontdir );
-      return 0;
+      goto EXIT;
    }
 
    /* $fontdir .= "/$name" */
@@ -1798,15 +1796,15 @@ prima_xft_load_font( char* filename, Bool temporary)
    /* ln -s $filename $fontdir */
    if ( symlink( filename, fontdir ) < 0) {
       warn("%s", strerror(errno));
-      free( fontdir );
-      free( namebuf );
-      return 0;
+      goto EXIT;
    }
    if ( temporary ) hash_store( myfont_cache, fontdir, strlen(fontdir), NULL);
+   ret = (int) FcInitReinitialize();
+
+EXIT:
    free( fontdir );
    free( namebuf );
-
-   return FcInitReinitialize();
+   return ret;
 }
 
 #else
