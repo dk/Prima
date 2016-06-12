@@ -701,10 +701,10 @@ apc_font_default( PFont font)
 }
 
 int
-apc_font_load( Handle self, const char* filename)
+apc_font_load( Handle self, char* filename, Bool temporary)
 {
-   int ret = AddFontResource( filename );
-   if (ret) hash_store( myfontMan, filename, strlen(filename), (void*)NULL);
+   int ret = AddFontResource(( LPCTSTR) filename );
+   if (ret && temporary) hash_store( myfontMan, filename, strlen(filename), (void*)NULL);
    return ret;
 }
 

@@ -3384,7 +3384,7 @@ extern PFont
 apc_font_default( PFont font);
 
 extern int
-apc_font_load( Handle self, const char* filename);
+apc_font_load( Handle self, char* filename, Bool temporary);
 
 extern Bool
 apc_font_pick( Handle self, PFont source, PFont dest);

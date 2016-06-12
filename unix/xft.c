@@ -113,6 +113,7 @@ static PHash encodings    = nil;
 static PHash mono_fonts   = nil; /* family->mono font mapping */
 static PHash prop_fonts   = nil; /* family->proportional font mapping */
 static PHash mismatch     = nil; /* fonts not present in xft base */
+static PHash myfont_cache = nil; /* fonts loaded temporarily */
 static char  fontspecific[] = "fontspecific";
 static CharSetInfo * locale = nil;
 
@@ -231,6 +232,7 @@ prima_xft_init(void)
    mono_fonts   = hash_create();
    prop_fonts   = hash_create();
    encodings    = hash_create();
+   myfont_cache = hash_create();
    for ( i = 0; i < MAX_CHARSET; i++) {
       int length = 0;
       char upcase[256], *dest = upcase, *src = std_charsets[i].name;
@@ -252,6 +254,13 @@ prima_xft_init(void)
    FcCharSetDestroy( fcs_ascii);
 }
 
+static Bool
+remove_myfonts( void * f, int keyLen, void * key, void * dummy)
+{
+   unlink((char*) key);
+   return false;
+}   
+
 void
 prima_xft_done(void)
 {
@@ -264,6 +273,11 @@ prima_xft_done(void)
    hash_destroy( mismatch, false);
    hash_destroy( prop_fonts, true);
    hash_destroy( mono_fonts, true);
+   
+   hash_first_that( myfont_cache, (void*)remove_myfonts, nil, nil, nil); 
+   hash_destroy( myfont_cache, false);
+   myfont_cache = nil;
+
 }
 
 static unsigned short
@@ -1708,6 +1722,96 @@ prima_xft_update_region( Handle self)
       XftDrawSetClip( XX-> xft_drawable, XX-> current_region);
       XX-> flags. xft_clip = 1;
    }
+}
+
+int
+prima_xft_load_font( char* filename, Bool temporary)
+{
+   struct stat s;
+   char * fontdir = NULL, *home, *name, *namebuf = NULL, *tmp;
+
+   /* -f $filename or die */
+   if (stat( filename, &s) < 0) {
+      warn("%s", strerror(errno));
+      return 0;
+   }
+   /* $fontdir = $ENV{HOME} . '/fonts' */
+   if (!(home = getenv("HOME"))) {
+      warn("$ENV{HOME} not set");
+      return 0;
+   }
+   if (!(fontdir = malloc(strlen(home) + strlen("/.fonts") + 1))) {
+      warn("Not enough memory");
+      return 0;
+   }
+   strcpy( fontdir, home);
+   strcat( fontdir, "/.fonts");
+
+   /* mkdir $fontdir unless -X $fontdir */
+   if (stat( fontdir, &s) < 0) {
+      if ( mkdir(fontdir, 0777) < 0) {
+         warn("mkdir(%s):%s", fontdir, strerror(errno));
+         free( fontdir );
+         return 0;
+      }
+   } else if (( s.st_mode & S_IFDIR) == 0) {
+      warn("%s is not a directory", fontdir);
+      free( fontdir );
+      return 0;
+   }
+
+   /* $namebuf = ($filename =~ [/(.*?)$]) ? "$fontdir/$1" : getcwd.$filename */
+   if (!(name = strrchr(filename, '/'))) {
+      int size = 1024;
+      int len  = strlen(filename + 1 + 1);
+      while (1) {
+         if (!(namebuf = malloc(size + len))) {
+            free( fontdir );
+            warn("Not enough memory");
+            return 0;
+         }
+         if ( getcwd(namebuf, size + len) == NULL) {
+            free(namebuf);
+            if ( errno == ERANGE ) {
+               size *= 2;
+            } else {
+               warn("Cannot query current directory");
+               free( fontdir );
+            }
+         } else {
+            strcat( namebuf, "/"); 
+            strcat( namebuf, filename); 
+            break;
+         }
+      }
+      name = filename;
+      filename = namebuf;
+   } else {
+      name++;
+   }
+
+   /* $fontdir .= "/$name" */
+   if ( !(tmp = realloc(fontdir, strlen(fontdir) + 1 + strlen(name) + 1))) {
+      free(fontdir);
+      warn("Not enough memory");
+      return 0;
+   }
+   fontdir = tmp;
+   strcat(fontdir, "/");
+   strcat(fontdir, name);
+
+   /* ln -s $filename $fontdir */
+   if ( symlink( filename, fontdir ) < 0) {
+      warn("%s", strerror(errno));
+      free( fontdir );
+      free( namebuf );
+      return 0;
+   }
+   if ( temporary ) hash_store( myfont_cache, fontdir, strlen(fontdir), NULL);
+   free( fontdir );
+   free( namebuf );
+
+   return FcInitReinitialize();
 }
 
 #else

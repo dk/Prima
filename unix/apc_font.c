@@ -4,6 +4,8 @@
 /*                                                         */
 /***********************************************************/
 
+#include <sys/stat.h>
+#include <unistd.h>
 #include "unix/guts.h"
 #include <locale.h>
 
@@ -944,9 +946,13 @@ apc_font_default( PFont f)
 }
 
 int
-apc_font_load( Handle self, const char* filename)
+apc_font_load( Handle self, char* filename, Bool temporary)
 {
+#ifdef USE_XFT
+   return prima_xft_load_font(filename, temporary);
+#else
    return 0;
+#endif
 }
 
 static void
