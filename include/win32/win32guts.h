@@ -478,6 +478,7 @@ extern Bool         appDead;
 extern Bool         debug;
 extern DIBMONOBRUSH bmiHatch;
 extern PHash        fontMan;
+extern PHash        myfontMan;
 extern int          FONTSTRUCSIZE;
 extern WinGuts      guts;
 extern PHash        imageMan;

@@ -701,9 +701,11 @@ apc_font_default( PFont font)
 }
 
 int
-apc_font_load( const char* filename)
+apc_font_load( Handle self, const char* filename)
 {
-   return 0;
+   int ret = AddFontResource( filename );
+   if (ret) hash_store( myfontMan, filename, strlen(filename), (void*)NULL);
+   return ret;
 }
 
 #define fgBitmap 0

@@ -944,7 +944,7 @@ apc_font_default( PFont f)
 }
 
 int
-apc_font_load( const char* filename)
+apc_font_load( Handle self, const char* filename)
 {
    return 0;
 }

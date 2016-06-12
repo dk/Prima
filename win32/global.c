@@ -28,6 +28,7 @@ PHash   patMan       = nil; // pattern resource manager
 PHash   menuMan      = nil; // HMENU manager
 PHash   imageMan     = nil; // HBITMAP manager
 PHash   regnodeMan   = nil; // cache for apc_widget_user_profile
+PHash   myfontMan    = nil; // hash of calls to apc_font_load
 HPEN    hPenHollow;
 HBRUSH  hBrushHollow;
 PatResource hPatHollow;
@@ -118,6 +119,7 @@ window_subsystem_init( char * error_buf)
    menuMan    = hash_create();
    imageMan   = hash_create();
    regnodeMan = hash_create();
+   myfontMan  = hash_create();
    create_font_hash();
    {
       LOGBRUSH b = { BS_HOLLOW, 0, 0};
@@ -265,6 +267,11 @@ window_subsystem_set_option( char * option, char * value)
    return false;
 }
 
+static Bool myfont_cleaner( void * value, int keyLen, void * key, void * dummy) {
+   RemoveFontResource((LPCTSTR)key);
+   return false;
+}
+
 void
 window_subsystem_done()
 {
@@ -288,6 +295,9 @@ window_subsystem_done()
    hash_destroy( fontMan,    true);
    hash_destroy( stylusMan,  true);
    hash_destroy( regnodeMan, false);
+
+   hash_first_that( myfontMan, myfont_cleaner, nil, nil, nil);
+   hash_destroy( myfontMan,  false);
    DeleteObject( hPenHollow);
    DeleteObject( hBrushHollow);
    SetErrorMode( guts. errorMode);
