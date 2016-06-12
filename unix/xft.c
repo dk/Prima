@@ -1728,35 +1728,11 @@ int
 prima_xft_load_font( char* filename, Bool temporary)
 {
    struct stat s;
-   char * fontdir = NULL, *home, *name, *namebuf = NULL, *tmp;
+   char * fontdir = NULL, *home, *name, *namebuf = NULL;
 
    /* -f $filename or die */
    if (stat( filename, &s) < 0) {
       warn("%s", strerror(errno));
-      return 0;
-   }
-   /* $fontdir = $ENV{HOME} . '/fonts' */
-   if (!(home = getenv("HOME"))) {
-      warn("$ENV{HOME} not set");
-      return 0;
-   }
-   if (!(fontdir = malloc(strlen(home) + strlen("/.fonts") + 1))) {
-      warn("Not enough memory");
-      return 0;
-   }
-   strcpy( fontdir, home);
-   strcat( fontdir, "/.fonts");
-
-   /* mkdir $fontdir unless -X $fontdir */
-   if (stat( fontdir, &s) < 0) {
-      if ( mkdir(fontdir, 0777) < 0) {
-         warn("mkdir(%s):%s", fontdir, strerror(errno));
-         free( fontdir );
-         return 0;
-      }
-   } else if (( s.st_mode & S_IFDIR) == 0) {
-      warn("%s is not a directory", fontdir);
-      free( fontdir );
       return 0;
    }
 
@@ -1790,13 +1766,32 @@ prima_xft_load_font( char* filename, Bool temporary)
       name++;
    }
 
-   /* $fontdir .= "/$name" */
-   if ( !(tmp = realloc(fontdir, strlen(fontdir) + 1 + strlen(name) + 1))) {
-      free(fontdir);
+   /* $fontdir = $ENV{HOME} . '/fonts' */
+   if (!(home = getenv("HOME"))) {
+      warn("$ENV{HOME} not set");
+      return 0;
+   }
+   if (!(fontdir = malloc(strlen(home) + strlen("/.fonts/") + strlen(name) + 1))) {
       warn("Not enough memory");
       return 0;
    }
-   fontdir = tmp;
+   strcpy( fontdir, home);
+   strcat( fontdir, "/.fonts");
+
+   /* mkdir $fontdir unless -X $fontdir */
+   if (stat( fontdir, &s) < 0) {
+      if ( mkdir(fontdir, 0777) < 0) {
+         warn("mkdir(%s):%s", fontdir, strerror(errno));
+         free( fontdir );
+         return 0;
+      }
+   } else if (( s.st_mode & S_IFDIR) == 0) {
+      warn("%s is not a directory", fontdir);
+      free( fontdir );
+      return 0;
+   }
+
+   /* $fontdir .= "/$name" */
    strcat(fontdir, "/");
    strcat(fontdir, name);
 
