@@ -1728,12 +1728,23 @@ int
 prima_xft_load_font( char* filename, Bool temporary)
 {
    struct stat s;
-   int ret = 0;
+   int ret = 0, count = 0;
    char * fontdir = NULL, *home, *name, *namebuf = NULL;
+   FcPattern * font;
 
    /* -f $filename or die */
    if (stat( filename, &s) < 0) {
       warn("%s", strerror(errno));
+      return 0;
+   }
+
+   if ( !( font = FcFreeTypeQuery (filename, 0, NULL, &count))) {
+      warn("Format not recognized");
+      return 0;
+   }
+   FcPatternDestroy (font);
+   if ( count == 0 ) {
+      warn("No fonts found in file");
       return 0;
    }
 
@@ -1799,7 +1810,8 @@ prima_xft_load_font( char* filename, Bool temporary)
       goto EXIT;
    }
    if ( temporary ) hash_store( myfont_cache, fontdir, strlen(fontdir), NULL);
-   ret = (int) FcInitReinitialize();
+   if ((int) FcInitReinitialize()) 
+      ret = count;
 
 EXIT:
    free( fontdir );
