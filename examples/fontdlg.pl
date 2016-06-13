@@ -349,6 +349,46 @@ onClick   => sub {
 			$p-> text_out( 'face name           : '.$cachedFacename, 2, $sd); $sd -= $fh;
 		},
 	);
+
+	my %wf = ( %$f, direction => 0 );
+	my @gsize= ( $f->maximalWidth + 10 , $f->height + 10 );
+	my $glyph = $ww-> insert( Widget => 
+		text => ' ',
+		font => \%wf,
+		size => \@gsize,
+		origin => [ $ww-> width - $gsize[0] - 10, $ww-> height - $gsize[1] - 10 ],
+		growMode => gm::GrowLoX|gm::GrowLoY,
+		backColor => cl::White,
+		#buffered => 1,
+		name    => 'Glyph',
+		textOutBaseline => 0,
+		onPaint => sub {
+			my $self = shift;
+			$self-> clear;
+			my $C = $self-> text;
+
+			my ( $a, $b, $c ) = @{ $self->get_font_abc( ord($C), ord($C), 1) };
+			
+			my $w = (( $a < 0 ) ? 0 : $a) + $b + (( $c < 0 ) ? 0 : $c);
+			$w = ( $self-> width - $w ) / 2;
+			$self-> translate($w, 5 );
+
+			my $dx = 0;
+			$dx -= $a if $a < 0;
+
+			my $fh = $self-> font->height;
+			$self-> text_out( $C, $dx, 0);
+
+			$dx = abs($a);
+			$self-> linePattern(lp::Dot);
+			$self-> line($dx, 0, $dx, $self->height);
+			$dx = (( $a < 0 ) ? 0 : $a) + $b + (( $c < 0 ) ? 0 : $c) - abs($c);
+			$self-> line($dx, 0, $dx, $self->height);
+			$self-> line(-$w, $self->font->descent, $self->width, $self->font->descent);
+		},
+	);
+
+
 	my @ranges = ([]);
 	for ( @{$w-> Example-> get_font_ranges}) {
 		( 2 > scalar @{$ranges[-1]}) ?
@@ -382,6 +422,8 @@ onClick   => sub {
 				}
 				$self-> hint( $pretty );
 				$self-> hintVisible(1);
+				$glyph->text(chr($c));
+				$glyph->repaint;
 			}
 		},
 		onDrawItem => sub {
