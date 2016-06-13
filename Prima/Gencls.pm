@@ -1903,6 +1903,7 @@ METHODS: 	for ( my $i = 0; $i < scalar @{$methods}; $i++) {
 
 			my $callName = $tempPrefix;
 			$callName .= 'p_' if defined $properties{$id};
+			$callName .= 's_' if defined $staticMethods{$id};
 			$$hashStorageRef{$id} = $callName . join('_', @parms);;
 	} # eo cycle
 	} # eo sub
