@@ -27,11 +27,8 @@ use strict;
 use warnings;
 use Carp;
 use Prima;
-use Prima::Classes;
 use Prima::Application name => "Font Dialog";
-use Prima::Lists;
-use Prima::Sliders;
-use Prima::Buttons;
+use Prima qw(Lists Sliders Buttons FileDialog);
 use Encode;
 
 # try to use perl5.8 glyph names
@@ -155,11 +152,18 @@ $w = Prima::MainWindow-> create( text => "Font Window",
 );
 
 $displayRes = ($w-> resolution)[1];
-for ( sort { $a-> {name} cmp $b-> {name}} @{$::application-> fonts})
-{
-	$fontList{$_-> {name}} = $_;
-	push ( @fontItems, $_-> {name});
-}
+
+my $load_fonts = sub {
+	%fontList = ();
+	@fontItems = ();
+	for ( sort { $a-> {name} cmp $b-> {name}} @{$::application-> fonts})
+	{
+		$fontList{$_-> {name}} = $_;
+		push ( @fontItems, $_-> {name});
+	}
+};
+
+$load_fonts->();
 
 $w-> insert( ListBox =>
 	name   => "NameList",
@@ -402,6 +406,28 @@ onClick   => sub {
 	$ww-> select;
 },
 );
+
+$w-> insert( Button =>
+origin => [ 180, 348],
+size   => [ 32, 32],
+text   => '+',
+hint   => 'Add new font',
+selectable => 0,
+name   => 'Load',
+onClick   => sub {
+	my $d = Prima::FileDialog-> new;
+	my $f = $d->execute;
+	return unless defined $f;
+	my $error = '';
+	local $SIG{__WARN__} = sub { $error = ": @_" };
+	unless ($::application->load_font($d->fileName)) {
+		$error =~ s/at examples.*//;
+		return Prima::message("Error loading font$error");
+	}
+
+	$load_fonts->();
+	$w->NameList->items(\@fontItems);
+});
 
 
 my $csl = $w-> insert( CircularSlider =>
