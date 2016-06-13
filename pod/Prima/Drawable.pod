@@ -1348,6 +1348,14 @@ For detailed explanation of ABC meaning, see L<"Font ABC metrics">;
 
 Context used: font
 
+=item get_font_ranges
+
+Returns array of integer pairs denoting unicode indices of glyphs covered by
+the currently selected font. Each pair is the first and the last index of a
+contiguous range.
+
+Context used: font
+
 =item get_nearest_color COLOR
 
 Returns a nearest possible solid color in representation
