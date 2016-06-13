@@ -71,7 +71,7 @@ object Prima::Application( Prima::Widget)
    c_only void   handle_event ( PEvent event);
    method void   hide();
    method void   init( HV * profile);
-   method int    load_font(char * fontPath, Bool temporary = 1) => apc_font_load;
+   method int    load_font(char * fontPath) => apc_font_load;
    method Bool   lock()                        => apc_application_lock;
    method void   insert_behind( Handle widget);
    method Handle next();

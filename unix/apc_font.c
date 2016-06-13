@@ -946,10 +946,10 @@ apc_font_default( PFont f)
 }
 
 int
-apc_font_load( Handle self, char* filename, Bool temporary)
+apc_font_load( Handle self, char* filename)
 {
 #ifdef USE_XFT
-   return prima_xft_load_font(filename, temporary);
+   return prima_xft_load_font(filename);
 #else
    return 0;
 #endif

@@ -1234,7 +1234,7 @@ extern void
 prima_xft_update_region( Handle self);
 
 extern int
-prima_xft_load_font( char * fontName, Bool temporary );
+prima_xft_load_font( char * fontName );
 
 #endif
 

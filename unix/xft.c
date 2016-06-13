@@ -1725,98 +1725,38 @@ prima_xft_update_region( Handle self)
 }
 
 int
-prima_xft_load_font( char* filename, Bool temporary)
+prima_xft_load_font( char* filename)
 {
+   int count = 0;
    struct stat s;
-   int ret = 0, count = 0;
-   char * fontdir = NULL, *home, *name, *namebuf = NULL;
    FcPattern * font;
-
+   FcConfig * config;
+   FcFontSet *fonts;   
+   
    /* -f $filename or die */
    if (stat( filename, &s) < 0) {
       warn("%s", strerror(errno));
       return 0;
    }
 
-   if ( !( font = FcFreeTypeQuery (filename, 0, NULL, &count))) {
-      warn("Format not recognized");
-      return 0;
-   }
+#define FAIL(msg) { warn(msg); return 0; }
+
+   if (( s.st_mode & S_IFDIR) != 0) 
+      FAIL("Must not be a directory")
+   if ( !( font = FcFreeTypeQuery (filename, 0, NULL, &count))) 
+      FAIL("Format not recognized")
    FcPatternDestroy (font);
-   if ( count == 0 ) {
-      warn("No fonts found in file");
-      return 0;
-   }
 
-   /* $namebuf = ($filename =~ [/(.*?)$]) ? "$fontdir/$1" : getcwd.$filename */
-   if (!(name = strrchr(filename, '/'))) {
-      int size = 1024;
-      int len  = strlen(filename + 1 + 1);
-      while (1) {
-         if (!(namebuf = malloc(size + len))) {
-            warn("Not enough memory");
-            goto EXIT;
-         }
-         if ( getcwd(namebuf, size + len) == NULL) {
-            free(namebuf);
-            if ( errno == ERANGE ) {
-               size *= 2;
-            } else {
-               warn("Cannot query current directory");
-               goto EXIT;
-            }
-         } else {
-            strcat( namebuf, "/"); 
-            strcat( namebuf, filename); 
-            break;
-         }
-      }
-      name = filename;
-      filename = namebuf;
-   } else {
-      name++;
-   }
+   if ( count == 0 ) 
+      FAIL("No fonts found in file")
+   if ( !(config = FcConfigGetCurrent())) 
+      FAIL("FcConfigGetCurrent error")
+   if ( !( fonts = FcConfigGetFonts(config, FcSetSystem))) 
+      FAIL("FcConfigGetFonts(FcSetSystem) error")
+   if ( !( FcFileScan(fonts, NULL, NULL, NULL, filename, FcFalse)))
+      FAIL("FcFileScan error")
 
-   /* $fontdir = $ENV{HOME} . '/fonts' */
-   if (!(home = getenv("HOME"))) {
-      warn("$ENV{HOME} not set");
-      goto EXIT;
-   }
-   if (!(fontdir = malloc(strlen(home) + strlen("/.fonts/") + strlen(name) + 1))) {
-      warn("Not enough memory");
-      goto EXIT;
-   }
-   strcpy( fontdir, home);
-   strcat( fontdir, "/.fonts");
-
-   /* mkdir $fontdir unless -X $fontdir */
-   if (stat( fontdir, &s) < 0) {
-      if ( mkdir(fontdir, 0777) < 0) {
-         warn("mkdir(%s):%s", fontdir, strerror(errno));
-	 goto EXIT;
-      }
-   } else if (( s.st_mode & S_IFDIR) == 0) {
-      warn("%s is not a directory", fontdir);
-      goto EXIT;
-   }
-
-   /* $fontdir .= "/$name" */
-   strcat(fontdir, "/");
-   strcat(fontdir, name);
-
-   /* ln -s $filename $fontdir */
-   if ( symlink( filename, fontdir ) < 0) {
-      warn("%s", strerror(errno));
-      goto EXIT;
-   }
-   if ( temporary ) hash_store( myfont_cache, fontdir, strlen(fontdir), NULL);
-   if ((int) FcInitReinitialize()) 
-      ret = count;
-
-EXIT:
-   free( fontdir );
-   free( namebuf );
-   return ret;
+   return count;
 }
 
 #else

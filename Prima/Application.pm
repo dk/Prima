@@ -668,13 +668,12 @@ latter case, the loop can be safely re-started.
 Effectively blocks the graphic output for all widgets.
 The output can be restored with C<unlock()>.
 
-=item load_font FONTNAME, TEMPORARY = 1
+=item load_font FONTNAME
 
-Registers font resource in system-specific format. If TEMPORARY is set, removes
-the resource when exiting.
+Registers font resource in system-specific format. The resource is
+freed after prgram ends.
 
-Notes for win32: even if TEMPORARY is not set, the changes will be visible
-until next windows restart only. To add a font whose information comes from several
+Notes for win32: To add a font whose information comes from several
 resource files, point FONTNAME to a string with the file names separated by a
 C<|> - for example, C< abcxxxxx.pfm | abcxxxxx.pfb >.
 
