@@ -726,6 +726,7 @@ Application_HintTimer_handle_event( Handle timer, PEvent event)
 void
 Application_set_hint_action( Handle self, Handle view, Bool show, Bool byMouse)
 {
+   if ( var-> stage >= csFrozen) return;
    if ( show && !is_opt( optShowHint)) return;
    if ( show)
    {
