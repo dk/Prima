@@ -183,6 +183,7 @@ Prima/Drawable/Basic.pm
 Prima/Drawable/CurvedText.pm
 Prima/Drawable/Markup.pm
 Prima/Drawable/Subcanvas.pm
+Prima/Drawable/TextBlock.pm
 Prima/Edit.pm
 Prima/EditDialog.pm
 Prima/EventHook.pm
