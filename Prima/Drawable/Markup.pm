@@ -664,6 +664,8 @@ sub escape {
     "divide" =>   "\xF7",   # division sign
 );
 
+=back
+
 =head1 BUGS
 
 Text wrapping with C<text_wrap> is barely supported. For serious text wrapping,
