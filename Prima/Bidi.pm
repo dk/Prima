@@ -27,6 +27,8 @@ our @EXPORT_OK = ( qw(
 ), map { "bidi_$_" } @methods);
 { local $_; eval "sub bidi_$_ { shift; goto &$_ }" for @methods; }
 
+enabled(1);
+
 sub import
 {
 	my $package = shift;
@@ -35,8 +37,6 @@ sub import
 		if ( $p eq ':require' ) {
 			my $error = enabled(1);
 			die $error if $error;
-		} elsif ( $p eq ':enable') {
-			enabled(1);
 		} elsif ( $p eq ':rtl') {
 			$default_direction_rtl = 1;
 		} elsif ( $p eq ':ltr') {
