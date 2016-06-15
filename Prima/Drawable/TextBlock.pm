@@ -861,7 +861,8 @@ sub text_out
 {
 	my ($self, $canvas, $x, $y) = @_;
 
-	my @xy = ($x,$y);
+	my @xy  = ($x,$y);
+	my @ofs = ($x,$y);
 	my @state;
 	my $semaphore;
 
@@ -879,7 +880,10 @@ sub text_out
 		state     => \@state,
 		text      => sub {
 			my ( $ofs, $len, $wid, $tex) = @_;
-			my @coord = $self-> {direction} ? ($xy[0] * $cos - $xy[1] * $sin, $xy[0] * $sin + $xy[1] * $cos) : @xy;
+			my @coord = $self-> {direction} ? (
+				$ofs[0] + ($xy[0]-$ofs[0]) * $cos - ($xy[1]-$ofs[1]) * $sin, 
+				$ofs[1] + ($xy[0]-$ofs[0]) * $sin + ($xy[1]-$ofs[1]) * $cos
+			) : @xy;
 			$semaphore++ unless $canvas-> text_out($tex, @coord);
 			$xy[0] -= $wid; # it's 0 anyway
 			$xy[0] += $canvas-> get_text_width($tex);
