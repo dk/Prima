@@ -323,7 +323,7 @@ sub walk
 	};
 
 	my @commands;
-	$commands[ $opnames{$_} ] = $commands{$_} for keys %commands;
+	$commands[ $opnames{$_} ] = $commands{$_} for grep { exists $opnames{$_} } keys %commands;
 	my $ret;
 
 	my ( $text_offset, $f_taint, $font, $c_taint, $paint_state, %save_properties );
@@ -460,9 +460,9 @@ sub walk
 # convert block with bidicharacters to its visual representation
 sub bidi_visualize
 {
-	my ( $b, $substr ) = @_;
+	my ( $b, %opt ) = @_;
 
-	my ($p, $visual) = Prima::Bidi::paragraph($substr);
+	my ($p, $visual) = Prima::Bidi::paragraph($opt{text});
 	my $map     = $p->map;
 	my $revmap  = Prima::Bidi::revmap($map);
 	my @new     = ( @$b[0..BLK_DATA_END], bidimap( $visual, $map ) );
@@ -520,6 +520,8 @@ sub bidi_visualize
 	}
 
 	my @initialized;
+	@initialized = ((1) x BLK_DATA_END) unless $opt{optimize};
+
 	push @char_states, -1;
 	for ( my $i = 0; $i < @char_states; $i++) {
 		my $char_state = $char_states[$i];
@@ -529,7 +531,8 @@ sub bidi_visualize
 			my $len = $i - $ofs;
 			$current_text_offset = ($char_state < 0) ? $i + 1 : $i;
 			if ( $len > 0 ) {
-				push @new, OP_TEXT, $ofs, $len, substr( $visual, $ofs, $len); # temporarily putting a string there
+				push @new, OP_TEXT, $ofs, $len,
+					($opt{canvas} ? substr( $visual, $ofs, $len) : 0); # putting a string there for later width calc
 			}
 
 			# change to the new font/color
@@ -553,7 +556,7 @@ sub bidi_visualize
 				for ( my $font_mode = BLK_FONT_ID; $font_mode <= BLK_FONT_STYLE; $font_mode++) {
 					next if $$old_state[ $font_mode ] == $$new_state[ $font_mode ];
 					if ( $initialized[ $font_mode ]++ ) {
-						push @new, OP_FONT, $font_mode, 
+						push @new, OP_FONT, $font_mode, $$new_state[ $font_mode ];
 					} else {
 						$new[ $font_mode ] = $$new_state[ $font_mode ];
 					}
@@ -566,6 +569,22 @@ sub bidi_visualize
 		if ( my $ops = $other_ops_after{ $i } ) {
 			push @new, @$ops;
 		}
+	}
+
+	# recalculate widths
+	if ( $opt{canvas} ) {
+		my @xy    = (0,0);
+		my $ptr;
+
+		$new[ BLK_WIDTH] = 0;
+		walk( \@new,
+			%opt,
+			trace    => TRACE_REALIZE_FONTS | TRACE_UPDATE_MARK | TRACE_POSITION,
+			position => \@xy,
+			pointer  => \$ptr,
+			text     => sub { $new[ $ptr + T_WID ] = $opt{canvas}->get_text_width( $_[2], 1 ) },
+		);
+		$new[ BLK_WIDTH] = $xy[0] if $new[ BLK_WIDTH ] < $xy[0];
 	}
 
 	return \@new;
@@ -810,23 +829,14 @@ sub block_wrap
 		my $substr  = substr( $$t, $text_offsets[$j], $text_offsets[$j+1] - $text_offsets[$j]);
 		next unless Prima::Bidi::is_bidi($substr);
 
-		my $new   = bidi_visualize($ret[$j], $substr);
-		my @xy    = (0,0);
-		my $ptr;
-		
-		$new->[ BLK_WIDTH] = 0;
-		walk( $new,
-			textPtr  => $t,
-			canvas   => $canvas,
-			fontmap  => $fontmap,
-			trace    => TRACE_REALIZE_FONTS | TRACE_UPDATE_MARK | TRACE_POSITION,
-			position => \@xy,
-			pointer  => \$ptr,
-			text     => sub { $new-> [ $ptr + T_WID ] = $canvas->get_text_width( $_[2], 1 ) },
+		my $new = bidi_visualize($ret[$j],
+			text         => $substr,
+			canvas       => $canvas,
+			optimize     => 1,
+			fontmap      => $fontmap,
 			baseFontSize => $bfs,
 			resolution   => $resolution,
 		);
-		$new->[ BLK_WIDTH] = $xy[0] if $new->[ BLK_WIDTH ] < $xy[0];
 		splice(@ret, $j, 1, $new);
 	}
 
@@ -975,11 +985,11 @@ sub get_text_box
 	return \@ret;
 }
 
-sub block        { $#_ ? $_[0]->{block}      = $_[1]   : $_[0]->{block} }
-sub text         { $#_ ? $_[0]->{text}       = $_[1]   : $_[0]->{text} }
-sub fontmap      { $#_ ? $_[0]->{fontmap}    = $_[1]   : $_[0]->{fontmap} }
-sub colormap     { $#_ ? $_[0]->{colormap}   = $_[1]   : $_[0]->{colormap} }
-sub resolution   { $#_ ? $_[0]->{resolution} = $_[1]   : $_[0]->{resolution} }
+sub block        { $#_ ? $_[0]->{block}        = $_[1] : $_[0]->{block} }
+sub text         { $#_ ? $_[0]->{text}         = $_[1] : $_[0]->{text} }
+sub fontmap      { $#_ ? $_[0]->{fontmap}      = $_[1] : $_[0]->{fontmap} }
+sub colormap     { $#_ ? $_[0]->{colormap}     = $_[1] : $_[0]->{colormap} }
+sub resolution   { $#_ ? $_[0]->{resolution}   = $_[1] : $_[0]->{resolution} }
 sub baseFontSize { $#_ ? $_[0]->{baseFontSize} = $_[1] : $_[0]->{baseFontSize} }
 
 1;
