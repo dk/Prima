@@ -172,6 +172,7 @@ sub realize_fonts
 		$font->{height} = $$state[ BLK_FONT_SIZE] - F_HEIGHT;
 	} else {
 		$font->{size} = $$state[ BLK_FONT_SIZE];
+		delete @{$font}{qw(height width)};
 	}
 	$font->{style} = $$state[ BLK_FONT_STYLE];
 	return $font;
@@ -872,7 +873,7 @@ sub text_out
 		( map { $_ => $self-> {$_} } qw(resolution baseFontSize fontmap colormap) ),
 		textPtr   => \$self->{text},
 		semaphore => \$semaphore,
-		trace     => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS | tb::TRACE_TEXT,
+		trace     => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS | tb::TRACE_TEXT | tb::TRACE_PAINT_STATE,
 		canvas    => $canvas,
 		position  => \@xy,
 		state     => \@state,
@@ -881,6 +882,7 @@ sub text_out
 			my @coord = $self-> {direction} ? ($xy[0] * $cos - $xy[1] * $sin, $xy[0] * $sin + $xy[1] * $cos) : @xy;
 			$semaphore++ unless $canvas-> text_out($tex, @coord);
 			$xy[0] -= $wid; # it's 0 anyway
+			$xy[0] += $canvas-> get_text_width($tex);
 		},
 		code      => sub {
 			my ( $code, $data ) = @_;
