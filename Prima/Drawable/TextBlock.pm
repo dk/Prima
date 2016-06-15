@@ -305,19 +305,19 @@ sub walk
 {
 	my ( $block, %commands ) = @_;
 
-	my $trace      = delete($commands{trace})      // 0;
-	my $position   = delete($commands{position})   // [0,0];
-	my $resolution = delete($commands{resolution}) // [72,72];
-	my $canvas     = delete($commands{canvas});
-	my $state      = delete($commands{state})      // [];
-	my $other      = delete $commands{other};
-	my $ptr        = delete $commands{pointer}     // \(my $_i);
-	my $def_fs     = delete $commands{baseFontSize} // 10;
-	my $semaphore  = delete $commands{semaphore}   // \(my $_j);
-	my $text       = delete $commands{textPtr}     // \(my $_k);
-	my $fontmap    = delete $commands{fontmap};
-	my $colormap   = delete $commands{colormap};
-	my $realize    = delete $commands{realize}     // sub {
+	my $trace      = $commands{trace}      // 0;
+	my $position   = $commands{position}   // [0,0];
+	my $resolution = $commands{resolution} // [72,72];
+	my $canvas     = $commands{canvas};
+	my $state      = $commands{state}      // [];
+	my $other      = $commands{other};
+	my $ptr        = $commands{pointer}     // \(my $_i);
+	my $def_fs     = $commands{baseFontSize} // 10;
+	my $semaphore  = $commands{semaphore}   // \(my $_j);
+	my $text       = $commands{textPtr}     // \(my $_k);
+	my $fontmap    = $commands{fontmap};
+	my $colormap   = $commands{colormap};
+	my $realize    = $commands{realize}     // sub {
 		$canvas->font(realize_fonts($fontmap, $_[0]))  if $_[1] & REALIZE_FONTS;
 		$canvas->set(realize_colors($colormap, $_[0])) if $_[1] & REALIZE_COLORS;
 	};
