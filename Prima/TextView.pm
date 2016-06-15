@@ -391,7 +391,7 @@ sub block_wrap
 {
 	my ( $self, $canvas, $b, $state, $width) = @_;
 	return tb::block_wrap( $b,
-		textRef      => $self->{text},
+		textPtr      => $self->{text},
 		canvas       => $canvas,
 		state        => $state,
 		width        => $width,
