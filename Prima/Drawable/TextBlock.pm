@@ -1,3 +1,5 @@
+package Prima::Drawable::TextBlock;
+
 use strict;
 use warnings;
 use Prima::Bidi;
@@ -153,6 +155,7 @@ sub color          { return OP_COLOR, $_[0] }
 sub backColor      { return OP_COLOR, $_[0] | BACKCOLOR_FLAG}
 sub colorIndex     { return OP_COLOR, $_[0] | COLOR_INDEX }  
 sub backColorIndex { return OP_COLOR, $_[0] | COLOR_INDEX | BACKCOLOR_FLAG}  
+sub font           { return OP_FONT, $_[0], $_[1] }
 sub fontId         { return OP_FONT, F_ID, $_[0] }
 sub fontSize       { return OP_FONT, F_SIZE, $_[0] }
 sub fontHeight     { return OP_FONT, F_SIZE, $_[0] + F_HEIGHT }
@@ -607,6 +610,7 @@ sub block_wrap
 	my ( @ret, $z, $ptr);
 	my $lastTextOffset = $$b[ BLK_TEXT_OFFSET];
 	my $has_text;
+	my $wrap_opts = $opt{options} || 0;
 
 	my $newblock = sub 
 	{
@@ -668,7 +672,7 @@ sub block_wrap
 					$str =~ s/^\s+//;
 				}
 				my $l = $canvas-> text_wrap( $str, $width - $apx - $x,
-					tw::ReturnFirstLineLength | tw::WordBreak | tw::BreakSingle);
+					tw::ReturnFirstLineLength | $wrap_opts );
 				if ( $l > 0) {
 					if ( $has_text) {
 						push @$z, OP_TEXT, 
@@ -843,153 +847,5 @@ sub block_wrap
 	return @ret;
 }
 
-package Prima::Drawable::TextBlock;
-
-my $RAD = 57.29577951;
-
-sub new {
-	my $class = shift;
-	return bless {
-		text         => '',
-		baseFontSize => 10,
-		fontmap      => [{}],
-		colormap     => [cl::Black],
-		resolution   => [72,72],
-		@_
-	}, $class;
-}
-
-sub clone
-{
-	my ( $self, @opt) = @_;
-	my %opt = ( %$self, @opt);
-	my $text = delete $opt{text};
-	return ref($self)->new( $text, %opt );
-}
-
-sub text_out
-{
-	my ($self, $canvas, $x, $y) = @_;
-
-	my @xy  = ($x,$y);
-	my @ofs = ($x,$y);
-	my @state;
-	my $semaphore;
-
-	my ($sin, $cos);
-	($sin, $cos) = (sin( $self-> {direction} / $RAD ), cos( $self-> {direction} / $RAD ))
-		if $self->{direction};
-
-	tb::walk( $self->{block},
-		( map { $_ => $self-> {$_} } qw(resolution baseFontSize fontmap colormap) ),
-		textPtr   => \$self->{text},
-		semaphore => \$semaphore,
-		trace     => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS | tb::TRACE_TEXT | tb::TRACE_PAINT_STATE,
-		canvas    => $canvas,
-		position  => \@xy,
-		state     => \@state,
-		text      => sub {
-			my ( $ofs, $len, $wid, $tex) = @_;
-			my @coord = $self-> {direction} ? (
-				$ofs[0] + ($xy[0]-$ofs[0]) * $cos - ($xy[1]-$ofs[1]) * $sin, 
-				$ofs[1] + ($xy[0]-$ofs[0]) * $sin + ($xy[1]-$ofs[1]) * $cos
-			) : @xy;
-			$semaphore++ unless $canvas-> text_out($tex, @coord);
-			$xy[0] -= $wid; # it's 0 anyway
-			$xy[0] += $canvas-> get_text_width($tex);
-		},
-		code      => sub {
-			my ( $code, $data ) = @_;
-			my @coord = $self-> {direction} ? ($xy[0] * $cos - $xy[1] * $sin, $xy[0] * $sin + $xy[1] * $cos) : @xy;
-			$code-> ( $self, $canvas, $b, \@state, @coord, $data);
-		},
-	);
-
-	return not $semaphore;
-}
-
-sub get_text_width_with_overhangs
-{
-	my ($self, $canvas) = @_;
-	my $first_a_width = 0;
-	my $last_c_width = 0;
-	my $width = 0;
-	tb::walk( $self->{block},
-		( map { $_ => $self-> {$_} } qw(resolution baseFontSize fontmap) ),
-		textPtr   => \$self->{text},
-		trace     => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_TEXT | tb::TRACE_PAINT_STATE,
-		canvas    => $canvas,
-		text      => sub {
-			my $t = pop;
-			if ( !defined $first_a_width) {
-				my $char = substr( $t, 0, 1 );
-				( $first_a_width ) = @{ $canvas->get_font_abc(ord($char), ord($char), utf8::is_utf8($t)) };
-			}
-			my $char = substr( $t, -1, 1 );
-			( undef, undef, $last_c_width ) = @{ $canvas->get_font_abc(ord($char), ord($char), utf8::is_utf8($t)) };
-			$width += $canvas-> get_text_width($t);
-		},
-	);
-	$first_a_width = ( $first_a_width < 0 ) ? -$first_a_width : 0;
-	$last_c_width  = ( $last_c_width  < 0 ) ? -$last_c_width : 0;
-	return ($width, $first_a_width, $last_c_width);
-}
-
-sub get_text_width
-{
-	my ( $self, $canvas, $add_overhangs) = @_;
-	if ( $add_overhangs ) {
-		my ( $width, $a, $c) = $self-> get_text_width_with_overhangs($canvas);
-		return $width + $a + $c;
-	}
-
-	my $width = 0;
-	tb::walk( $self->{block},
-		( map { $_ => $self-> {$_} } qw(resolution baseFontSize fontmap) ),
-		textPtr   => \$self->{text},
-		trace     => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_TEXT | tb::TRACE_PAINT_STATE,
-		canvas    => $canvas,
-		text      => sub { $width += $canvas-> get_text_width($_[-1]) },
-	);
-
-	return $width;
-}
-
-sub get_text_box
-{
-	my ( $self, $canvas, $text) = @_;
-	my ( $w, $a, $c) = $self-> get_text_width_with_overhangs($canvas);
-
-	my ( $fa, $fd ) = ( $canvas->font->ascent - 1, $canvas->font->descent );
-
-	my @ret = (
-		-$a,      $fa,
-		-$a,     -$fd,
-		$w - $c,  $fa,
-		$w - $c, -$fd,
-		$w, 0
-	);
-	unless ( $canvas-> textOutBaseline) {
-		$ret[$_] += $fd for (1,3,5,7,9);
-	}
-	if ( my $dir = $self-> {direction}) {
-		my $s = sin( $dir / $RAD );
-		my $c = cos( $dir / $RAD );
-		my $i;
-		for ( $i = 0; $i < 10; $i+=2) {
-			my ( $x, $y) = @ret[$i,$i+1];
-			$ret[$i]   = $x * $c - $y * $s;
-			$ret[$i+1] = $x * $s + $y * $c;
-		}
-	}
-	return \@ret;
-}
-
-sub block        { $#_ ? $_[0]->{block}        = $_[1] : $_[0]->{block} }
-sub text         { $#_ ? $_[0]->{text}         = $_[1] : $_[0]->{text} }
-sub fontmap      { $#_ ? $_[0]->{fontmap}      = $_[1] : $_[0]->{fontmap} }
-sub colormap     { $#_ ? $_[0]->{colormap}     = $_[1] : $_[0]->{colormap} }
-sub resolution   { $#_ ? $_[0]->{resolution}   = $_[1] : $_[0]->{resolution} }
-sub baseFontSize { $#_ ? $_[0]->{baseFontSize} = $_[1] : $_[0]->{baseFontSize} }
 
 1;

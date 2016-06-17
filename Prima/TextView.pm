@@ -398,6 +398,7 @@ sub block_wrap
 		fontmap      => $self->{fontPalette},
 		baseFontSize => $self->{defaultFontSize},
 		resolution   => $self->{resolution},
+		options      => tw::WordBreak | tw::BreakSingle,
 	);
 }
 
