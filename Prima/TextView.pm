@@ -399,6 +399,7 @@ sub block_wrap
 		baseFontSize => $self->{defaultFontSize},
 		resolution   => $self->{resolution},
 		options      => tw::WordBreak | tw::BreakSingle,
+		bidi_visualize => 1, 
 	);
 }
 

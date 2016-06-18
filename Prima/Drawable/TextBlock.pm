@@ -615,6 +615,11 @@ sub block_wrap
 	my $lastTextOffset = $$b[ BLK_TEXT_OFFSET];
 	my $has_text;
 	my $wrap_opts = $opt{options} || 0;
+	my ($word_break, $force_break_rx);
+	
+	$force_break_rx = qr/[\n\r]+/ if $wrap_opts & tw::NewLineBreak;
+	$word_break     = 1           if $wrap_opts & tw::WordBreak;
+	$wrap_opts &= ~tw::NewLineBreak;
 
 	my $newblock = sub 
 	{
@@ -650,22 +655,36 @@ sub block_wrap
 		canvas  => $canvas,
 		state   => $state,
 		trace   => TRACE_REALIZE_PENS,
-		realize => sub { $canvas->font(realize_fonts($fontmap, $_[0])) if $_[1] & REALIZE_FONTS },
+		realize => sub { $canvas->font(realize_fonts($subopt{fontmap}, $_[0])) if $_[1] & REALIZE_FONTS },
 		text    => sub {
 			my ( $ofs, $tlen ) = @_;
 			my $state_key = join('.', @$state[BLK_FONT_ID .. BLK_FONT_STYLE]);
 			$state_hash{$state_key} = $canvas->get_font 
 				unless $state_hash{$state_key};
 			$lastTextOffset = $ofs + $tlen unless $wrapmode;
+
+			my $substr = substr( $$t, $o + $ofs, $tlen);
+		
+			# force split by newline
+			my @extra_chunks;
+			if ( $wrapmode && $force_break_rx && $substr =~ /$force_break_rx/ ) {
+				my $rofs = $ofs;
+				while (1) {
+					last unless $substr =~ /\G(.*?)($force_break_rx|$)/gcs;
+					push @extra_chunks, [ $1, $rofs, length($1) ] if length $1;
+					$rofs += length($1) + length($2);
+				};
+				($substr, $ofs, $tlen) = @{ shift @extra_chunks };
+			}
 		REWRAP: 
-			my $tw  = $canvas-> get_text_width( substr( $$t, $o + $ofs, $tlen), 1);
+			my $tw  = $canvas-> get_text_width($substr, 1);
 			my $apx = $state_hash{$state_key}-> {width};
 			if ( $x + $tw + $apx <= $width) {
 				push @$z, OP_TEXT, $ofs, $tlen, $tw;
 				$x += $tw;
 				$has_text = 1;
 			} elsif ( $wrapmode) {
-				return if $tlen <= 0;
+				goto LEAVE if $tlen <= 0;
 				my $str = substr( $$t, $o + $ofs, $tlen);
 				my $leadingSpaces = '';
 				if ( $str =~ /^(\s+)/) {
@@ -710,7 +729,7 @@ sub block_wrap
 					# well, it cannot be fit into width,
 					# but may be some words can be stripped?
 						goto REWRAP if $ox > 0;
-						if ( $str =~ m/^(\S+)(\s*)/) {
+						if ( $word_break && ($str =~ m/^(\S+)(\s*)/)) {
 							$tw = $canvas-> get_text_width( $1, 1);
 							push @$z, OP_TEXT, $ofs, length $1, $tw;
 							$has_text = 1;
@@ -729,6 +748,12 @@ sub block_wrap
 			} else { # unwrappable, cannot be fit, no wrap info! - whole new block
 				push @$z, OP_TEXT, $ofs, $tlen, $tw;
 				$newblock-> ();
+			}
+		LEAVE:
+			if ( @extra_chunks ) {
+				$newblock-> ();
+				($substr, $ofs, $tlen) = @{ shift @extra_chunks };
+				goto REWRAP;
 			}
 		},
 		wrap => sub {
@@ -754,6 +779,9 @@ sub block_wrap
 		},
 		other => sub { push @$z, @_ },
 	);
+	for ( @ret ) {
+		_debug_block($_);
+	}
 
 	# remove eventual empty trailing blocks
 
@@ -825,6 +853,8 @@ sub block_wrap
 		$b = $ret[-1];
 		$$state[$_] = $$b[$_] for BLK_X, BLK_Y, BLK_HEIGHT, BLK_WIDTH;
 	}
+
+	return @ret unless $opt{bidi_visualize};
 
 	# third stage - map bidi characters to visual representation, and update widths and positions etc
 	my @text_offsets = (( map { $$_[  BLK_TEXT_OFFSET ] } @ret ), $lastTextOffset);
