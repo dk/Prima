@@ -316,6 +316,7 @@ sub walk
 	my $other      = $commands{other};
 	my $ptr        = $commands{pointer}     // \(my $_i);
 	my $def_fs     = $commands{baseFontSize} // 10;
+	my $def_fl     = $commands{baseFontStyle} // 0;
 	my $semaphore  = $commands{semaphore}   // \(my $_j);
 	my $text       = $commands{textPtr}     // \(my $_k);
 	my $fontmap    = $commands{fontmap};
@@ -385,6 +386,8 @@ sub walk
 		} elsif (($cmd == OP_FONT) && ($trace & TRACE_FONTS)) {
 			if ( $$block[$i + F_MODE] == F_SIZE && $$block[$i + F_DATA] < F_HEIGHT ) {
 				$$state[ $$block[$i + F_MODE]] = $def_fs + $$block[$i + F_DATA];
+			} elsif ( $$block[$i + F_MODE] == F_STYLE ) {
+				$$state[ $$block[$i + F_MODE]] = $$block[$i + F_DATA] | $def_fl;
 			} else {
 				$$state[ $$block[$i + F_MODE]] = $$block[$i + F_DATA];
 			}
@@ -464,6 +467,7 @@ sub walk
 sub bidi_visualize
 {
 	my ( $b, %opt ) = @_;
+	my %subopt = map { $_ => $opt{$_}} qw(fontmap baseFontSize baseFontStyle resolution);
 
 	my ($p, $visual) = Prima::Bidi::paragraph($opt{text});
 	my $map     = $p->map;
@@ -496,7 +500,7 @@ sub bidi_visualize
 		}
 	};
 
-	walk( $b,
+	walk( $b, %subopt,
 		trace => TRACE_PENS,
 		state => \@current_fc,
 		text => sub {
@@ -580,8 +584,7 @@ sub bidi_visualize
 		my $ptr;
 
 		$new[ BLK_WIDTH] = 0;
-		walk( \@new,
-			%opt,
+		walk( \@new, %subopt,
 			trace    => TRACE_REALIZE_FONTS | TRACE_UPDATE_MARK | TRACE_POSITION,
 			position => \@xy,
 			pointer  => \$ptr,
@@ -596,7 +599,8 @@ sub bidi_visualize
 sub block_wrap
 {
 	my ( $b, %opt) = @_;
-	my ($t, $canvas, $state, $width, $fontmap, $bfs, $resolution) = @opt{qw(textPtr canvas state width fontmap baseFontSize resolution)};
+	my ($t, $canvas, $state, $width) = @opt{qw(textPtr canvas state width)};
+	my %subopt = map { $_ => $opt{$_}} qw(fontmap baseFontSize baseFontStyle resolution);
 
 	$width = 0 if $width < 0;
 
@@ -640,16 +644,13 @@ sub block_wrap
 	my $has_bidi;
 
 	# first state - wrap the block
-	walk( $b,
+	walk( $b, %subopt,
 		textPtr => $t,
 		pointer => \$ptr,
 		canvas  => $canvas,
 		state   => $state,
 		trace   => TRACE_REALIZE_PENS,
-		fontmap => $fontmap,
-		realize => sub { $canvas->font(realize_fonts($fontmap, $_[0]))  if $_[1] & REALIZE_FONTS },
-		baseFontSize => $bfs,
-		resolution   => $resolution,
+		realize => sub { $canvas->font(realize_fonts($fontmap, $_[0])) if $_[1] & REALIZE_FONTS },
 		text    => sub {
 			my ( $ofs, $tlen ) = @_;
 			my $state_key = join('.', @$state[BLK_FONT_ID .. BLK_FONT_STYLE]);
@@ -774,15 +775,13 @@ sub block_wrap
 	
 		my @xy = (0,0);
 		my $ptr;
-		walk( $b,
+		walk( $b, %subopt,
 			textPtr  => $t,
 		        canvas   => $canvas,
 			trace    => TRACE_FONTS | TRACE_POSITION | TRACE_UPDATE_MARK,
 			state    => $state,
 			position => \@xy,
 			pointer  => \$ptr,
-			baseFontSize => $bfs,
-			resolution   => $resolution,
 			text     => sub {
 				my ( $ofs, $len, $wid ) = @_;
 				my $f_taint = $state_hash{ join('.', 
@@ -833,13 +832,10 @@ sub block_wrap
 		my $substr  = substr( $$t, $text_offsets[$j], $text_offsets[$j+1] - $text_offsets[$j]);
 		next unless Prima::Bidi::is_bidi($substr);
 
-		my $new = bidi_visualize($ret[$j],
-			text         => $substr,
-			canvas       => $canvas,
-			optimize     => 1,
-			fontmap      => $fontmap,
-			baseFontSize => $bfs,
-			resolution   => $resolution,
+		my $new = bidi_visualize($ret[$j], %subopt,
+			text          => $substr,
+			canvas        => $canvas,
+			optimize      => 1,
 		);
 		splice(@ret, $j, 1, $new);
 	}
