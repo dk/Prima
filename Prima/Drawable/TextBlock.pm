@@ -484,6 +484,7 @@ sub bidi_visualize
 	my @fonts_and_colors  = ( \@default_fc ); # this is the number #0, default char state
 	my @current_fc        = @default_fc;
 	my $current_state     = 0;
+	my $text_offset       = $b->[BLK_TEXT_OFFSET];
 	
 	my @char_states       = (-1) x length($visual); # not all chars are displayed
 	my $char_offset       = 0;
@@ -496,15 +497,16 @@ sub bidi_visualize
 			$current_state = $state;
 		} else {
 			push @fonts_and_colors, [ @current_fc ];
-			$id_hash{$key} = ++$current_state;
+			$id_hash{$key} = $current_state = $#fonts_and_colors; 
 		}
 	};
 
 	walk( $b, %subopt,
-		trace => TRACE_PENS,
+		trace => TRACE_PENS | TRACE_TEXT,
 		state => \@current_fc,
 		text => sub {
 			my ( $ofs, $len ) = @_;
+			$ofs += $text_offset;
 			for ( my $k = 0; $k < $len; $k++) {
 				$char_states[ $revmap->[ $ofs + $k ]] = $current_state;
 			}
@@ -517,7 +519,7 @@ sub bidi_visualize
 
 	# step 2 - produce RLEs for text and stuff font/colors/other ops in between
 	my $last_char_state = 0;
-	my $current_text_offset;
+	my $current_text_offset = 0;
 
 	# find first character displayed
 	for ( my $i = 0; $i < @char_states; $i++) {
@@ -779,11 +781,9 @@ sub block_wrap
 		},
 		other => sub { push @$z, @_ },
 	);
-	for ( @ret ) {
-		_debug_block($_);
-	}
 
 	# remove eventual empty trailing blocks
+	pop @ret while @ret && @{$ret[-1]} == BLK_START;
 
 	# second stage - position the blocks
 	$state = $stsave;
