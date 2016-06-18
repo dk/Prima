@@ -186,6 +186,7 @@ typedef struct _WinGuts
     HANDLE         socketThread;       // thread id
     Bool           socketPostSync;     // semaphore
     Bool           dont_xlate_message; // one-time stopper to TranslateMessage() call
+    int            utf8_prepend_0x202D;// newer windows do automatic bidi conversion, this is to cancel it
     WCHAR *      (*alloc_utf8_to_wchar_visual)(const char*,int,int*);
 } WinGuts, *PWinGuts;
 
