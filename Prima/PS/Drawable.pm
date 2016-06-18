@@ -1615,8 +1615,8 @@ sub get_text_box
 	my @ret = (
 		-$ovxa,      $self-> {font}-> {ascent} - 1,
 		-$ovxa,     -$self-> {font}-> {descent}, 
-		$w - $ovxb,  $self-> {font}-> {ascent} - 1,
-		$w - $ovxb, -$self-> {font}-> {descent},
+		$w + $ovxb,  $self-> {font}-> {ascent} - 1,
+		$w + $ovxb, -$self-> {font}-> {descent},
 		$w, 0
 	);
 	unless ( $self-> textOutBaseline) {
