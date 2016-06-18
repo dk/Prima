@@ -218,7 +218,12 @@ sub on_fontchanged
 
 sub on_size
 {
-	$_[0]-> reset_lines;
+	my $self = shift;
+	return $self-> reset_lines unless $self->{autoHeight};
+
+	return if $self->{auto_height_adjustment};
+	local $self->{auto_height_adjustment} = 1;
+	$self-> check_auto_size;
 }
 
 sub on_enable { $_[0]-> repaint } sub on_disable { $_[0]-> repaint }
@@ -343,12 +348,10 @@ sub set_show_partial
 	$self-> check_auto_size;
 }
 
-
 sub get_lines
 {
 	return @{$_[0]-> {words}};
 }
-
 
 sub showAccelChar {($#_)?($_[0]-> set_show_accel_char($_[1])) :return $_[0]-> {showAccelChar}}
 sub showPartial   {($#_)?($_[0]-> set_show_partial($_[1]))    :return $_[0]-> {showPartial}}
