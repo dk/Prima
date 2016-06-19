@@ -1267,15 +1267,22 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 SV*
 Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabIndent)
 {
+   gpARGS;
    TextWrapRec t;
    Bool retChunks;
    char** c;
    int i;
    AV * av;
    STRLEN tlen;
+   int returnFirstLine = ( t. options & twReturnFirstLineLength) == twReturnFirstLineLength;
 
-   if ( SvROK( text ))
-      return newSVsv(sv_call_perl(text, "text_wrap", "<Hiii", self, width, options, tabIndent));
+   if ( SvROK( text )) {
+      SV * ret;
+      gpENTER( returnFirstLine ? newSViv(0) : newRV_noinc(( SV *) newAV()));
+      ret = newSVsv(sv_call_perl(text, "text_wrap", "<Hiii", self, width, options, tabIndent));
+      gpLEAVE;
+      return ret;
+   }
 
    t. text      = SvPV( text, tlen);
    t. utf8_text = prima_is_utf8_sv( text);
@@ -1293,7 +1300,9 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
    t. unicode   = &var-> font_abc_unicode;
    t. t_char    = nil;
 
+   gpENTER( returnFirstLine ? newSViv(0) : newRV_noinc(( SV *) newAV()));
    c = Drawable_do_text_wrap( self, &t);
+   gpLEAVE;
 
    if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) {
       IV rlen = 0;
