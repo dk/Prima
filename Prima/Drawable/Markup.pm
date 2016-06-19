@@ -22,7 +22,7 @@ Prima::Markup - Allow markup in Prima Widgets
 C<Prima::Markup> adds the ability to recognize POD-like markup to Prima
 widgets. Supported markup sequences are C<B> (bold text), C<I> (italic text),
 C<U> (underlined text), C<F> (change font), C<S> (change font size), C<C>
-(change color), and C<W> (disable wrapping).
+(change color), C<M> (move pointer), and C<W> (disable wrapping).
 
 The C<F> sequence is used as follows: C<FE<lt>n|textE<gt>>, where C<n> is a
 0-based index into the C<fontPalette>.
@@ -36,6 +36,15 @@ in any form accepted by Prima, including the C<cl> constants (C<Black> C<Blue>
 C<Green> C<Cyan> C<Red> C<Magenta> C<Brown> C<LightGray> C<DarkGray> C<LightBlue>
 C<LightGreen> C<LightCyan> C<LightRed> C<LightMagenta> C<Yellow> C<White> C<Gray>).
 Or, a 0-based index into the C<colorPalette>.
+
+The C<M> command has three paramaters, comma-separated: X, Y, and flags.  X and
+Y are coordinates how much to move the current pointer. By default X and are in
+pixels, and do not extend block width. C<flags> is a set of characters, where
+each is:
+
+    m - set units to font height
+    p - set units to points
+    x - also extend the block width
 
 The text inside C<W> sequence will not be wrapped during C<text_wrap> calls.
 
