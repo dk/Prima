@@ -89,7 +89,8 @@ sub parse_color
 			warn "Bad color: $c";
 			return;
 		}
-		push @{$stacks->{color}}, $state->{color} = $c;
+		push @{$stacks->{color}}, $state->{color};
+		$state->{color} = $c;
 	} else {
 		$state->{color} = pop @{$stacks->{color}};
 	}
@@ -111,7 +112,8 @@ sub parse_font_id
 			warn "Font index outside palette: $f";
 			return;
 		}
-		push @{$stacks->{fontId}}, $state->{fontId} = $f + 1;
+		push @{$stacks->{fontId}}, $state->{fontId};
+		$state->{fontId} = $f + 1;
 	} else {
 		$state->{fontId} = pop @{$stacks->{fontId}};
 	}
