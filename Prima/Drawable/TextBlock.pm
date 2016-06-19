@@ -666,10 +666,8 @@ sub block_wrap
 				unless $state_hash{$state_key};
 			$lastTextOffset = $ofs + $tlen unless $can_wrap;
 
-			my $substr = substr( $$t, $o + $ofs, $tlen);
-		
 		REWRAP: 
-			my $tw  = $canvas-> get_text_width($substr, 1);
+			my $tw  = $canvas-> get_text_width(substr( $$t, $o + $ofs, $tlen), 1);
 			my $apx = $state_hash{$state_key}-> {width};
 			if ( $x + $tw + $apx <= $width) {
 				push @$z, OP_TEXT, $ofs, $tlen, $tw;
