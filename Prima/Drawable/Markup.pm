@@ -447,25 +447,16 @@ Each element of the array should be a hashref suitable for setting a font.
 
 =back
 
-=head1 BUGS
-
-Text wrapping with C<text_wrap> is barely supported. For serious text wrapping,
-look at L<Prima::TextView> and L<Prima::PodView>.
-
 =head1 COPYRIGHT
 
 Copyright 2003 Teo Sankaro
-
-Portions of this code were copied or adapted from L<Pod::Text> by Russ Allbery
-and L<Pod::Parser> by Brad Appleton, both of which derive from the original
-C<Pod::Text> by Tom Christianson.
 
 You may redistribute and/or modify this module under the same terms as Perl itself.
 (Although a credit would be nice.)
 
 =head1 AUTHOR
 
-Teo Sankaro, E<lt>teo_sankaro@hotmail.comE<gt>.
+This module based on work by Teo Sankaro, E<lt>teo_sankaro@hotmail.comE<gt>.
 
 =cut
 
