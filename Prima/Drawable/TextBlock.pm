@@ -44,8 +44,9 @@ use constant F_DATA                => 2;
 # OP_COLOR
 use constant COLOR_INDEX           => 0x01000000; # index in colormap() array
 use constant BACKCOLOR_FLAG        => 0x02000000; # OP_COLOR flag for backColor
-use constant BACKCOLOR_DEFAULT     => BACKCOLOR_FLAG|COLOR_INDEX|1;
-use constant COLOR_MASK            => 0xFCFFFFFF;
+use constant BACKCOLOR_OFF         => 0x04000000; # turn off textOpaque
+use constant BACKCOLOR_DEFAULT     => BACKCOLOR_FLAG | BACKCOLOR_OFF;
+use constant COLOR_MASK            => 0xF8FFFFFF;
 
 # OP_TRANSPOSE - indices
 use constant X_X     => 1;
@@ -194,7 +195,7 @@ sub realize_colors
 		backColor =>  (( $$state[ BLK_BACKCOLOR] & COLOR_INDEX) ? 
 				( $color_palette-> [$$state[ BLK_BACKCOLOR] & COLOR_MASK]) : 
 				( $$state[ BLK_BACKCOLOR] & COLOR_MASK)),
-		textOpaque => (( $$state[ BLK_BACKCOLOR] == BACKCOLOR_DEFAULT) ? 0 : 1),
+		textOpaque => (( $$state[ BLK_BACKCOLOR] & BACKCOLOR_OFF) ? 0 : 1),
 	);
 }
 
@@ -532,7 +533,7 @@ sub bidi_visualize
 	}
 
 	my @initialized;
-	@initialized = ((1) x BLK_DATA_END) unless $opt{optimize};
+	@initialized = ((1) x BLK_START) unless $opt{optimize};
 
 	push @char_states, -1;
 	for ( my $i = 0; $i < @char_states; $i++) {
@@ -982,16 +983,16 @@ sub text_out
 		text      => sub {
 			my ( $ofs, $len, $wid, $tex) = @_;
 			my @coord = $self-> {direction} ? (
-				$ofs[0] + ($xy[0]-$ofs[0]) * $cos - ($xy[1]-$ofs[1]) * $sin,
-				$ofs[1] + ($xy[0]-$ofs[0]) * $sin + ($xy[1]-$ofs[1]) * $cos
+				int($ofs[0] + ($xy[0]-$ofs[0]) * $cos - ($xy[1]-$ofs[1]) * $sin + .5),
+				int($ofs[1] + ($xy[0]-$ofs[0]) * $sin + ($xy[1]-$ofs[1]) * $cos + .5)
 			) : @xy;
 			$semaphore++ unless $canvas-> text_out($tex, @coord);
 		},
 		code      => sub {
 			my ( $code, $data ) = @_;
 			my @coord = $self-> {direction} ? (
-				$ofs[0] + ($xy[0]-$ofs[0]) * $cos - ($xy[1]-$ofs[1]) * $sin,
-				$ofs[1] + ($xy[0]-$ofs[0]) * $sin + ($xy[1]-$ofs[1]) * $cos
+				int($ofs[0] + ($xy[0]-$ofs[0]) * $cos - ($xy[1]-$ofs[1]) * $sin + .5),
+				int($ofs[1] + ($xy[0]-$ofs[0]) * $sin + ($xy[1]-$ofs[1]) * $cos + .5)
 			) : @xy;
 			$code-> ( $self, $canvas, $b, \@state, @coord, $data);
 		},

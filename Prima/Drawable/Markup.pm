@@ -22,7 +22,8 @@ Prima::Markup - Allow markup in Prima Widgets
 C<Prima::Markup> adds the ability to recognize POD-like markup to Prima
 widgets. Supported markup sequences are C<B> (bold text), C<I> (italic text),
 C<U> (underlined text), C<F> (change font), C<S> (change font size), C<C>
-(change color), C<M> (move pointer), and C<W> (disable wrapping).
+(change foreground color), C<Q> (change background color), C<M> (move pointer),
+and C<W> (disable wrapping).
 
 The C<F> sequence is used as follows: C<FE<lt>n|textE<gt>>, where C<n> is a
 0-based index into the C<fontPalette>.
@@ -31,11 +32,14 @@ The C<S> sequence is used as follows: C<SE<lt>n|textE<gt>>, where C<n> is the
 number of points relative to the current font size. The font size may
 optionally be preceded by C<+> or C<->.
 
-The C<C> sequence is used as follows: C<CE<lt>c|textE<gt>>, where C<c> is either: a color
-in any form accepted by Prima, including the C<cl> constants (C<Black> C<Blue>
-C<Green> C<Cyan> C<Red> C<Magenta> C<Brown> C<LightGray> C<DarkGray> C<LightBlue>
-C<LightGreen> C<LightCyan> C<LightRed> C<LightMagenta> C<Yellow> C<White> C<Gray>).
-Or, a 0-based index into the C<colorPalette>.
+The C<C> and C<Q> sequences are used as follows: C<CE<lt>c|textE<gt>>, where
+C<c> is either: a color in any form accepted by Prima, including the C<cl>
+constants (C<Black> C<Blue> C<Green> C<Cyan> C<Red> C<Magenta> C<Brown>
+C<LightGray> C<DarkGray> C<LightBlue> C<LightGreen> C<LightCyan> C<LightRed>
+C<LightMagenta> C<Yellow> C<White> C<Gray>).  Or, a 0-based index into the
+C<colorPalette>. Also, C<default> can be used to set the color that the canvas
+originaly had. For C<Q> a special value C<off> can be used to turn off background
+color and set it as transparent.
 
 The C<M> command has three paramaters, comma-separated: X, Y, and flags.  X and
 Y are coordinates how much to move the current pointer. By default X and are in
@@ -73,6 +77,8 @@ sub parse_color
 {
 	my ( $self, $mode, $command, $stacks, $state, $block, $c ) = @_;
 
+	my $key = ($command eq 'C') ? 'color' : 'backColor';
+
 	if ( $mode ) {
 		if ( $c =~ /^[0-9a-f]{6}$/ ) {
 			$c = hex $c;
@@ -81,20 +87,24 @@ sub parse_color
 		} elsif ( $c =~ /^\d+$/) {
 			if ( $c >= @{ $self->{colorPalette} } ) {
 				warn "Color index outside palette: $c";
-				return 1;
+				return;
 			}
 			$c += 2;
 			$c |= tb::COLOR_INDEX;
+		} elsif ( lc($c) eq 'default' ) {
+			$c = $block->[($command eq 'Q') ? tb::BLK_BACKCOLOR : tb::BLK_COLOR];
+		} elsif ( $command eq 'Q' && lc($c) eq 'off' ) {
+			$c = tb::BACKCOLOR_OFF;
 		} else {
 			warn "Bad color: $c";
 			return;
 		}
-		push @{$stacks->{color}}, $state->{color};
-		$state->{color} = $c;
+		push @{$stacks->{$key}}, $state->{$key};
+		$state->{$key} = $c | (( $command eq 'Q') ? tb::BACKCOLOR_FLAG : 0);
 	} else {
-		$state->{color} = pop @{$stacks->{color}};
+		$state->{$key} = pop @{$stacks->{$key}};
 	}
-	push @$block, tb::color($state->{color});
+	push @$block, tb::color($state->{$key});
 
 	return 1;
 }
@@ -196,6 +206,7 @@ sub commands
 {
 	return (
 		C => [ 1, 1, \&parse_color ],
+		Q => [ 1, 1, \&parse_color ],
 		F => [ 1, 1, \&parse_font_id ],
 		S => [ 1, 1, \&parse_font_size ],
 		I => [ 0, 1, \&parse_font_style ],
@@ -210,6 +221,7 @@ sub init_state
 {
 	return {
 		color     => 0 | tb::COLOR_INDEX,
+		backColor => tb::BACKCOLOR_DEFAULT,
 		fontId    => 0,
 		fontSize  => 0,
 		fontStyle => 0,
@@ -340,8 +352,10 @@ sub acquire
 		$self->{direction} = $font->{direction}; 
 	}
 	if ( $opt{colors}) {
-		$self->{block}->[tb::BLK_COLOR]      = $self->{colormap}->[0] = $canvas->color;
-		$self->{block}->[tb::BLK_BACKCOLOR]  = $self->{colormap}->[1] = tb::BACKCOLOR_DEFAULT;
+		$self->{block}->[tb::BLK_COLOR]     = $self->{colormap}->[0] = $canvas->color;
+		$self->{colormap}->[1] = $canvas-> backColor;
+		$self->{block}->[tb::BLK_BACKCOLOR] = 
+			($canvas-> textOpaque ? $canvas-> backColor : tb::BACKCOLOR_DEFAULT);
 	}
 	if ( $opt{dimensions} ) {
 		my $signature = join('.', @{$font}{qw(name size height width style encoding direction)});
@@ -366,7 +380,7 @@ sub colorPalette
 	return $_[0]->{colorPalette} unless $#_;
 	my ( $self, $cp ) = @_;
 	$self->{colorPalette} = $cp;
-	splice( @{$self->{colormap}}, 1 );
+	splice( @{$self->{colormap}}, 2 );
 	push @{ $self->{colormap}}, @$cp;
 }
 
@@ -422,6 +436,7 @@ sub text_wrap
 		my $b = $block->{block};
 		splice( @$b, tb::BLK_START, 0,
 			tb::color( $$b[tb::BLK_COLOR]),
+			tb::color( $$b[tb::BLK_BACKCOLOR]),
 			tb::fontId( $$b[tb::BLK_FONT_ID]),
 			tb::fontSize( $$b[tb::BLK_FONT_SIZE] - $self->{baseFontSize}),
 			tb::fontStyle( $$b[tb::BLK_FONT_STYLE])
