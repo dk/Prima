@@ -662,11 +662,11 @@ sub add_formatted
 						if defined $cut;
 
 					my @imgop = (
-						tb::wrap(0),
+						tb::wrap(tb::WRAP_MODE_OFF),
 						tb::extend( $w, $h, tb::X_DIMENSION_POINT),
 						tb::code( \&_imgpaint, $src),
 						tb::moveto( $w, 0, tb::X_DIMENSION_POINT),
-						tb::wrap(1)
+						tb::wrap(tb::WRAP_MODE_ON)
 					);
 
 					if ( @{$self-> {model}}) {
@@ -1021,7 +1021,7 @@ sub add
 
 	if ( $style == STYLE_CODE) { 
 		$$g[ M_FONT_ID] = $styles-> [ STYLE_CODE]-> {fontId} || 1; # fixed font 
-		push @$g, tb::wrap(0);
+		push @$g, tb::wrap(tb::WRAP_MODE_OFF);
 	} 
 
 	push @$g, @{$self-> {styleInfo}-> [$style * 2]};
@@ -1031,11 +1031,11 @@ sub add
 		push @$g, tb::text( 0, length $p),
 	} elsif (( $style == STYLE_ITEM) && ( $p =~ /^\*\s*$/ || $p =~ /^\d+\.?$/)) {
 		push @$g, 
-			tb::wrap(0),
+			tb::wrap(tb::WRAP_MODE_OFF),
 			tb::color(0),
 			tb::code( \&_bulletpaint, ($p =~ /^\*\s*$/) ? 1 : 0),
 			tb::moveto( 1, 0, tb::X_DIMENSION_FONT_HEIGHT),
-			tb::wrap(1);
+			tb::wrap(tb::WRAP_MODE_ON);
 		$r-> {bulletMode} = 1;
 		$p = '';
 	} else { # wrapable text
@@ -1143,7 +1143,7 @@ sub add
 					push @$g, tb::fontStyle( $val{fontStyle} |= fs::Italic);
 				} elsif ( $$_[1] eq 'C') {
 					push @{$stack{wrap}}, $val{wrap};
-					push @$g, tb::wrap( $val{wrap} = 0);
+					push @$g, tb::wrap( $val{wrap} = tb::WRAP_MODE_OFF);
 					my $z = $styles-> [STYLE_CODE];
 					for ( qw( fontId fontStyle fontSize color backColor)) {
 						next unless exists $z-> {$_};
@@ -1163,7 +1163,7 @@ sub add
 					}
 				} elsif ( $$_[1] eq 'S') {
 					push @{$stack{wrap}}, $val{wrap};
-					push @$g, tb::wrap( $val{wrap} = 0);
+					push @$g, tb::wrap( $val{wrap} = tb::WRAP_MODE_OFF);
 				} elsif ( $$_[1] eq 'B') {
 					push @{$stack{fontStyle}}, $val{fontStyle};
 					push @$g, tb::fontStyle( $val{fontStyle} |= fs::Bold);

@@ -398,8 +398,8 @@ sub block_wrap
 		fontmap      => $self->{fontPalette},
 		baseFontSize => $self->{defaultFontSize},
 		resolution   => $self->{resolution},
-		options      => tw::WordBreak,
-		bidi_visualize => 1, 
+		wordBreak    => 1,
+		bidi         => 1,
 	);
 }
 
@@ -1413,13 +1413,20 @@ F_ID, F_SIZE, F_STYLE constants are paired to BLK_FONT_ID, BLK_FONT_SIZE and BLK
 
 The SUB code is executed only when the block is about to draw. 
 
-=item OP_WRAP ON_OFF
+=item OP_WRAP mode
 
-C<OP_WRAP> is only in effect in L<block_wrap> method. ON_OFF is a boolean flag,
-selecting if the wrapping is turned on or off. L<block_wrap> does not support 
-stacking for the wrap commands, so the C<(OP_WRAP,1,OP_WRAP,1,OP_WRAP,0)> has 
-same effect as C<(OP_WRAP,0)>. If ON_OFF is 1, wrapping is disabled - all following
-commands treated an non-wrapable until C<(OP_WRAP,0)> is met.
+C<OP_WRAP> is only in effect in L<block_wrap> method. C<mode> is a flag,
+selecting the wrapping command.
+
+   WRAP_MODE_ON   - default, block commands can be wrapped
+   WRAP_MODE_OFF  - cancels WRAP_MODE_ON, commands cannot be wrapped
+   WRAP_IMMEDIATE - proceed with immediate wrapping, unless ignoreImmediateWrap options is set
+
+L<block_wrap> does not support stacking for the wrap commands, so the
+C<(OP_WRAP,WRAP_MODE_ON,OP_WRAP,WRAP_MODE_ON,OP_WRAP,WRAP_MODE_OFF)> has same
+effect as C<(OP_WRAP,WRAP_MODE_OFF)>. If C<mode> is WRAP_MODE_ON, wrapping is
+disabled - all following commands treated an non-wrapable until
+C<(OP_WRAP,WRAP_MODE_OFF)> is met.
 
 =item OP_MARK PARAMETER, X, Y
 

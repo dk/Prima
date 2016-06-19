@@ -17,7 +17,7 @@ use constant OP_TRANSPOSE          =>  3; # (3) move current point to delta X, d
 use constant OP_CODE               =>  4; # (2) code pointer and parameters 
 
 # formatting opcodes
-use constant OP_WRAP               =>  5; # (1) on / off
+use constant OP_WRAP               =>  5; # (1) WRAP_XXX
 use constant OP_MARK               =>  6; # (3) id, x, y
 use constant OP_BIDIMAP            =>  7; # (2) visual, $map
 
@@ -60,6 +60,10 @@ use constant X_DIMENSION_PIXEL       => 0;
 use constant X_DIMENSION_FONT_HEIGHT => 2; # multiply by font height
 use constant X_DIMENSION_POINT       => 4; # multiply by resolution / 72
 
+# OP_WRAP
+use constant WRAP_MODE_OFF           => 0; # mode selectors
+use constant WRAP_MODE_ON            => 1; #
+use constant WRAP_IMMEDIATE          => 2; # not a mode selector
 
 # OP_MARK
 use constant MARK_ID                 => 1;
@@ -286,7 +290,10 @@ sub _debug_block
 			$visual =~ s/([^\x{32}-\x{128}])/sprintf("\\x{%x}", ord($1))/ge;
 			print STDERR ": OP_BIDIMAP: $visual / @$map\n";
 		} elsif ( $cmd == OP_WRAP ) {
-			my $wrap = $$b[ $i + 1 ] ? 'ON' : 'OFF';
+			my $wrap = $$b[ $i + 1 ];
+			$wrap = ( $wrap == WRAP_MODE_OFF ) ? 'OFF' : (
+				($wrap == WRAP_MODE_ON) ? 'ON' : 'IMMEDIATE'
+			);
 			print STDERR ": OP_WRAP $wrap\n";
 		} elsif ( $cmd == OP_MARK ) {
 			my $id = $$b[ $i + MARK_ID ];
@@ -606,19 +613,15 @@ sub block_wrap
 	my $cmd;
 	my ( $o) = ( $$b[ BLK_TEXT_OFFSET]);
 	my ( $x, $y) = (0, 0);
-	my $wrapmode = 1;
+	my $can_wrap = 1;
 	my $stsave = $state;
 	$state = [ @$state ];
 	my ( $haswrapinfo, $wantnewblock, @wrapret);
 	my ( @ret, $z, $ptr);
 	my $lastTextOffset = $$b[ BLK_TEXT_OFFSET];
 	my $has_text;
-	my $wrap_opts = $opt{options} || 0;
-	my ($word_break, $force_break_rx);
-	
-	$force_break_rx = qr/[\n\r]+/ if $wrap_opts & tw::NewLineBreak;
-	$word_break     = 1           if $wrap_opts & tw::WordBreak;
-	$wrap_opts &= ~tw::NewLineBreak;
+	my $word_break = $opt{wordBreak};
+	my $wrap_opts  = $word_break ? tw::WordBreak : 0;
 
 	my $newblock = sub 
 	{
@@ -631,11 +634,11 @@ sub block_wrap
 		$x = 0;
 		undef $has_text;
 		undef $wantnewblock;
+		$haswrapinfo = 0;
 	};
 
 	my $retrace = sub 
 	{
-		$haswrapinfo = 0;
 		splice( @{$ret[-1]}, $wrapret[0]); 
 		@$state = @{$wrapret[1]};
 		$newblock-> ();
@@ -661,34 +664,10 @@ sub block_wrap
 			my $state_key = join('.', @$state[BLK_FONT_ID .. BLK_FONT_STYLE]);
 			$state_hash{$state_key} = $canvas->get_font 
 				unless $state_hash{$state_key};
-			$lastTextOffset = $ofs + $tlen unless $wrapmode;
+			$lastTextOffset = $ofs + $tlen unless $can_wrap;
 
 			my $substr = substr( $$t, $o + $ofs, $tlen);
 		
-			# force split by newline
-			my @extra_chunks;
-			if ( $wrapmode && $force_break_rx && $substr =~ /$force_break_rx/ ) {
-				my $rofs = $ofs;
-				my $accum = '';
-				while (1) {
-					if ( $substr =~ /\G([^\n\r]+)/gcs ) {
-						$accum = $1;
-					} elsif ( $substr =~ /\G(\r*\n\r*)/gcs) {
-						push @extra_chunks, [ $accum, $rofs, length($accum) ];
-						$rofs += length($accum) + length($1);
-						$accum = '';
-					} elsif ( $substr =~ /\G$/ ) {
-						push @extra_chunks, [ $accum, $rofs, length($accum) ];
-						last;
-					}
-				};
-				while ( @extra_chunks ) {
-					($substr, $ofs, $tlen) = @{ shift @extra_chunks };
-					last if $tlen > 0;
-					$newblock->();
-				}
-				return if $tlen == 0 && !@extra_chunks;
-			}
 		REWRAP: 
 			my $tw  = $canvas-> get_text_width($substr, 1);
 			my $apx = $state_hash{$state_key}-> {width};
@@ -696,8 +675,8 @@ sub block_wrap
 				push @$z, OP_TEXT, $ofs, $tlen, $tw;
 				$x += $tw;
 				$has_text = 1;
-			} elsif ( $wrapmode) {
-				goto LEAVE if $tlen <= 0;
+			} elsif ( $can_wrap) {
+				return if $tlen <= 0;
 				my $str = substr( $$t, $o + $ofs, $tlen);
 				my $leadingSpaces = '';
 				if ( $str =~ /^(\s+)/) {
@@ -760,36 +739,32 @@ sub block_wrap
 				$retrace-> ();
 			} else { # unwrappable, cannot be fit, no wrap info! - whole new block
 				push @$z, OP_TEXT, $ofs, $tlen, $tw;
-				if ( $wrapmode ) {
+				if ( $can_wrap ) {
 					$newblock-> ();
 				} else {
 					$wantnewblock = 1;
 				}
 			}
-		LEAVE:
-			if ( @extra_chunks ) {
-				while (@extra_chunks) {
-					$newblock-> ();
-					($substr, $ofs, $tlen) = @{ shift @extra_chunks };
-					last if $tlen > 0;
-				}
-				goto REWRAP;
-			}
 		},
 		wrap => sub {
 			my $mode = shift;
-			if ( $wrapmode == 1 && $mode == 0) {
+			if ( $can_wrap && $mode == WRAP_MODE_OFF) {
 				@wrapret = ( scalar @$z, [ @$state ], $ptr);
 				$haswrapinfo = 1;
-			} elsif ( $wrapmode == 0 && $mode == 1 && $wantnewblock) {
+			} elsif ( !$can_wrap && $mode == WRAP_MODE_ON && $wantnewblock) {
 				$newblock-> ();
 			}
-			$wrapmode = $mode;
+
+			if ( $mode == WRAP_IMMEDIATE ) {
+				$newblock->() unless $opt{ignoreImmediateWrap};
+			} else {
+				$can_wrap = ($mode == WRAP_MODE_ON);
+			}
 		},
 		transpose => sub {
 			my ( $dx, $dy, $flags) = @_;
 			if ( $x + $dx >= $width) {
-				if ( $wrapmode) {
+				if ( $can_wrap) {
 					$newblock-> (); 
 				} elsif ( $haswrapinfo) {
 					return $retrace-> ();
@@ -874,7 +849,7 @@ sub block_wrap
 		$$state[$_] = $$b[$_] for BLK_X, BLK_Y, BLK_HEIGHT, BLK_WIDTH;
 	}
 
-	return @ret unless $opt{bidi_visualize};
+	return @ret unless $opt{bidi};
 
 	# third stage - map bidi characters to visual representation, and update widths and positions etc
 	my @text_offsets = (( map { $$_[  BLK_TEXT_OFFSET ] } @ret ), $lastTextOffset);
