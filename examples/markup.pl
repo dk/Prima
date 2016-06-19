@@ -5,7 +5,7 @@
 # XXX tb:: export
 use strict;
 use warnings;
-use Prima qw(Application Buttons Edit Notebooks Label DetailedList Outlines Drawable::Markup);
+use Prima qw(Application MsgBox Buttons Edit Notebooks Label DetailedList Outlines Drawable::Markup);
 
 my $fp = [
 	{ name   => 'Times New Roman' },
@@ -40,7 +40,7 @@ $tn->insert_to_page(0,'Button',
 	text   => M 'Some B<C<LightRed|U<r>ed text>> in a button',
 	pack   => { side => 'top', anchor => 'w' },
 	hotKey => 'r',
-	onClick => sub { Prima::message("Hello!") },
+	onClick => sub { message(M "Hello! This is the B<msgbox> speaking!") },
 );
 
 $tn->insert_to_page(0,'Radio',
