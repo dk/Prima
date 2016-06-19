@@ -2,7 +2,7 @@ package Prima::Drawable::Markup;
 
 use strict;
 use warnings;
-use Prima qw(Bidi);
+use Prima qw(Bidi Drawable::TextBlock);
 use base qw(Prima::Drawable::TextBlock);
 
 =head1 NAME
