@@ -294,7 +294,9 @@ sub check_auto_size
 			$self-> geomHeight( $self-> {textLines} * $self-> font-> height + 2);
 		}
 	} else {
-		my @lines = split "\n", $cap;
+		my @lines = ref($cap) ? 
+			@{ $self-> text_wrap( $cap, 1000000, tw::NewLineBreak ) } :
+			split "\n", $cap;
 		if ( $self-> {autoWidth}) {
 			$self-> begin_paint_info;
 			$sets{geomWidth} = 0;
