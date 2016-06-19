@@ -1,5 +1,4 @@
 package Prima::Drawable::TextBlock;
-
 use strict;
 use warnings;
 use Prima::Bidi;
@@ -866,6 +865,295 @@ sub block_wrap
 	}
 
 	return @ret;
+}
+
+package Prima::Drawable::TextBlock;
+
+sub new
+{
+	my ($class, %opt) = @_;
+	my $self = bless {
+		restoreCanvas => 1,
+		baseFontSize  => 10,
+		baseFontStyle => 0,
+		direction     => 0,
+		fontmap       => [],
+		colormap      => [],
+		text          => '',
+		block         => undef,
+		resolution    => [72,72],
+		fontSignature => '',
+		%opt,
+	}, $class;
+	return $self;
+}
+
+eval "sub $_ { \$#_ ? \$_[0]->{$_} = \$_[1] : \$_[0]->{$_}}" for qw(
+	fontmap colormap block text resolution direction
+	baseFontSize baseFontStyle restoreCanvas
+);
+
+sub acquire {}
+
+sub calculate_dimensions
+{
+	my ( $self, $canvas ) = @_;
+
+	my @xy = (0,0);
+	my @min = (0,0);
+	my @max = (0,0);
+	my $extra_width = 0;
+	my $ptr = 0;
+	my $b   = $self->{block};
+	tb::walk( $b, $self-> walk_options,
+		position => \@xy,
+		pointer  => \$ptr,
+		canvas   => $canvas,
+		trace    => tb::TRACE_REALIZE_FONTS|tb::TRACE_POSITION|tb::TRACE_PAINT_STATE|tb::TRACE_TEXT,
+		text     => sub {
+			my ( undef, undef, undef, $text ) = @_;
+			$b-> [ $ptr + tb::T_WID ] = $canvas->get_text_width( $text );
+
+			my $f = $canvas->get_font;
+			$max[1] = $f->{ascent}  if $max[1] < $f->{ascent};
+			$min[1] = $f->{descent} if $min[0] < $f->{descent};
+
+			# roughly compensate for uncalculated .A and .C
+			$extra_width = $f->{width} if $extra_width < $f->{width};
+		},
+		transpose => sub {
+			my ($x, $y) = @_;
+			$min[0] = $x if $min[0] > $x;
+			$min[1] = $y if $min[1] > $y;
+		},
+	);
+	$xy[0] += $extra_width;
+	$max[0] = $xy[0] if $max[0] < $xy[0];
+	$max[1] = $xy[1] if $max[1] < $xy[1];
+	$b->[ tb::BLK_WIDTH]  = $max[0]+$min[0] if $b->[ tb::BLK_WIDTH  ] < $max[0]+$min[0];
+	$b->[ tb::BLK_HEIGHT] = $max[1]+$min[1] if $b->[ tb::BLK_HEIGHT ] < $max[1]+$min[1];
+	$b->[ tb::BLK_APERTURE_X] = $min[0];
+	$b->[ tb::BLK_APERTURE_Y] = $min[1];
+}
+
+sub walk_options
+{
+	my $self = shift;
+	return
+		textPtr => \ $self->{text},
+		( map { ($_ , $self->{$_}) } qw(fontmap colormap resolution baseFontSize baseFontSize) ),
+		;
+}
+
+my $RAD = 57.29577951;
+
+sub text_out
+{
+	my ($self, $canvas, $x, $y) = @_;
+
+	my $restore_base_line;
+	unless ( $canvas-> textOutBaseline ) {
+		$canvas-> textOutBaseline(1);
+		$restore_base_line = 1;
+	}
+
+	$self->acquire($canvas,
+		font       => 1,
+		colors     => 1,
+		dimensions => 1,
+	);
+
+	my ($sin, $cos);
+	($sin, $cos) = (sin( $self-> {direction} / $RAD ), cos( $self-> {direction} / $RAD ))
+		if $self->{direction};
+
+	my @xy  = ($x,$y);
+	my @ofs = ($x,$y);
+	my @state;
+	my $semaphore;
+
+	tb::walk( $self->{block}, $self-> walk_options,
+		semaphore => \ $semaphore,
+		trace     => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS | tb::TRACE_TEXT |
+				( $self-> {restoreCanvas} ? tb::TRACE_PAINT_STATE : 0 ),
+		canvas    => $canvas,
+		position  => \@xy,
+		state     => \@state,
+		text      => sub {
+			my ( $ofs, $len, $wid, $tex) = @_;
+			my @coord = $self-> {direction} ? (
+				$ofs[0] + ($xy[0]-$ofs[0]) * $cos - ($xy[1]-$ofs[1]) * $sin,
+				$ofs[1] + ($xy[0]-$ofs[0]) * $sin + ($xy[1]-$ofs[1]) * $cos
+			) : @xy;
+			$semaphore++ unless $canvas-> text_out($tex, @coord);
+		},
+		code      => sub {
+			my ( $code, $data ) = @_;
+			my @coord = $self-> {direction} ? (
+				$ofs[0] + ($xy[0]-$ofs[0]) * $cos - ($xy[1]-$ofs[1]) * $sin,
+				$ofs[1] + ($xy[0]-$ofs[0]) * $sin + ($xy[1]-$ofs[1]) * $cos
+			) : @xy;
+			$code-> ( $self, $canvas, $b, \@state, @coord, $data);
+		},
+	);
+
+	$canvas-> textOutBaseline(0) if $restore_base_line;
+
+	return not $semaphore;
+}
+
+sub get_text_width_with_overhangs
+{
+	my ($self, $canvas) = @_;
+	my $first_a_width;
+	my $last_c_width;
+	my @xy = (0,0);
+	tb::walk( $self->{block}, $self-> walk_options,
+		position  => \@xy,
+		trace     => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE | tb::TRACE_TEXT |
+				( $self-> {restoreCanvas} ? tb::TRACE_PAINT_STATE : 0 ),
+		canvas    => $canvas,
+		text      => sub {
+			my $t = pop;
+			if ( !defined $first_a_width) {
+				my $char = substr( $t, 0, 1 );
+				( $first_a_width ) = @{ $canvas->get_font_abc(ord($char), ord($char), utf8::is_utf8($t)) };
+			}
+			my $char = substr( $t, -1, 1 );
+			( undef, undef, $last_c_width ) = @{ $canvas->get_font_abc(ord($char), ord($char), utf8::is_utf8($t)) };
+		},
+	);
+	return (0,0,0) unless defined $first_a_width;
+	$first_a_width = ( $first_a_width < 0 ) ? -$first_a_width : 0;
+	$last_c_width  = ( $last_c_width  < 0 ) ? -$last_c_width : 0;
+	return ($xy[0], $first_a_width, $last_c_width);
+}
+
+sub get_text_width
+{
+	my ( $self, $canvas, $add_overhangs) = @_;
+
+	$self->acquire($canvas, font => 1, dimensions => 1);
+
+	if ( $add_overhangs ) {
+		my ( $width, $a, $c) = $self-> get_text_width_with_overhangs($canvas);
+		return $width + $a + $c;
+	}
+
+	my @xy = (0,0);
+	tb::walk( $self->{block}, $self-> walk_options,
+		trace     => tb::TRACE_POSITION,
+		position  => \@xy,
+	);
+	return $xy[0];
+}
+
+sub get_text_box
+{
+	my ( $self, $canvas, $text) = @_;
+
+	$self->acquire($canvas, font => 1, dimensions => 1);
+
+	my ($w, $a, $c) = $self-> get_text_width_with_overhangs($canvas);
+
+	my $b = $self->{block};
+	my ( $fa, $fd ) = ( $b->[tb::BLK_HEIGHT] - $b->[tb::BLK_APERTURE_Y] - 1, $b->[tb::BLK_APERTURE_Y]);
+
+	my @ret = (
+		-$a,      $fa,
+		-$a,     -$fd,
+		$w + $c,  $fa,
+		$w + $c, -$fd,
+		$w, 0
+	);
+	unless ( $canvas-> textOutBaseline) {
+		$ret[$_] += $fd for (1,3,5,7,9);
+	}
+	if ( my $dir = $self-> {direction}) {
+		my $s = sin( $dir / $RAD );
+		my $c = cos( $dir / $RAD );
+		my $i;
+		for ( $i = 0; $i < 10; $i+=2) {
+			my ( $x, $y) = @ret[$i,$i+1];
+			$ret[$i]   = $x * $c - $y * $s;
+			$ret[$i+1] = $x * $s + $y * $c;
+		}
+	}
+
+	return \@ret;
+}
+
+sub text_wrap
+{
+	my ( $self, $canvas, $width, $opt, $indent) = @_;
+	$opt //= tw::Default;
+
+	# Ignored options: ExpandTabs, CalcTabs .
+
+	# first, we don't return chunks, period. That's too messy.
+	return $canvas-> text_wrap( $self-> {text}, $width, $opt, $indent)
+		if $opt & tw::ReturnChunks;
+
+	$self->acquire($canvas, font => 1);
+
+	my (@ret, $add_tilde);
+
+	# we don't calculate the underscore position and return none.
+	if ( $opt & (tw::CollapseTilde|tw::CalcMnemonic)) {
+		$add_tilde = {
+			tildeStart => undef,
+			tildeEnd   => undef,
+			tildeLine  => undef,
+		};
+	}
+
+	my @blocks = tb::block_wrap( $self->{block},
+		$self-> walk_options,
+		state     => $self->{block},
+		width     => $width,
+		canvas    => $canvas,
+		optimize  => 0,
+		bidi      => 0,
+		wordBreak => $opt & tw::WordBreak,
+		ignoreImmediateWrap => !($opt & tw::NewLineBreak),
+	);
+
+	# breaksingle is not supported by block_wrap, emulating
+	if ( $opt & tw::BreakSingle ) {
+		for my $b ( @blocks ) {
+			next if $b->[tb::BLK_WIDTH] <= $width;
+			@blocks = ();
+			last;
+		}
+	}
+
+	# linelength has a separate function
+	if ( $opt & tw::ReturnFirstLineLength ) {
+		return 0 unless @blocks;
+
+		my ($semaphore, $retval) = (0,0);
+		tb::walk( $blocks[0]->{block},
+			trace     => tb::TRACE_TEXT,
+			semaphore => \ $semaphore,
+			text      => sub {
+				( undef, $retval ) = @_;
+				$semaphore++;
+			},
+		);
+		return $retval;
+	}
+
+	@ret = map { __PACKAGE__->new( %$self, block => $_ ) } @blocks;
+	push @ret, $add_tilde if $add_tilde;
+
+	return \@ret;
+}
+
+sub height
+{
+	my ( $self, $canvas ) = @_;
+	$self-> acquire( $canvas, dimensions => 1 );
+	return $self->{block}->[tb::BLK_HEIGHT];
 }
 
 
