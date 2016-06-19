@@ -8,8 +8,8 @@ use warnings;
 use Prima qw(Application Buttons Edit Notebooks Label DetailedList Outlines Drawable::Markup);
 
 my $fp = [
-	{ name   => 'Times New Roman', size => 10 },
-	{ name   => 'Courier New',     size => 10 },
+	{ name   => 'Times New Roman' },
+	{ name   => 'Courier New'     },
 	{ direction => 4 },
 ];
 
@@ -23,7 +23,7 @@ my $Main = Prima::MainWindow->create(
 
 my $tn = $Main->insert('TabbedNotebook',
 	pack   => { expand => 1, fill => 'both' },
-	tabs   => [ M 'Q<White|Basic> Controls', M 'I<Detailed List>', M 'U<Outline>', M 'F<2|Rotated> & Bidi>'],
+	tabs   => [ M 'Q<White|Basic> Controls', M 'F<0|I<Detailed List>>', M 'U<Outline>', M 'F<2|Rotated> & Bidi>'],
 );
 
 $tn->insert_to_page(0,'Label',
