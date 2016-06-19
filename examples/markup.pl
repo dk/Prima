@@ -1,4 +1,3 @@
-# XXX button underscore/hotkey
 # XXX textoutbaseline=0 rotated
 # XXX document that block is expected to run text on textOutBaseline(1)
 # XXX document that block_wrap can workbreak only
@@ -28,26 +27,32 @@ my $tn = $Main->insert('TabbedNotebook',
 );
 
 $tn->insert_to_page(0,'Label',
-	text   => M "\x{5e9} Some F<1|monospace text> in a label",
+	text   => M "\x{5e9} Some F<1|U<m>onospace text> in a label",
 	autoHeight => 1,
+	hotKey => 'm',
 	backColor => cl::Yellow,
 	wordWrap => 1,
+	focusLink => 'List',
 	pack   => { side => 'top', fill => 'x', anchor => 'w' },
 );
 
 $tn->insert_to_page(0,'Button',
-	text   => M 'Some B<C<LightRed|red text>> in a button',
+	text   => M 'Some B<C<LightRed|U<r>ed text>> in a button',
 	pack   => { side => 'top', anchor => 'w' },
+	hotKey => 'r',
+	onClick => sub { Prima::message("Hello!") },
 );
 
 $tn->insert_to_page(0,'Radio',
-	text   => M 'Some S<+2|big text> in a radio button',
+	text   => M 'Some S<+2|U<b>ig text> in a radio button',
 	pack   => { side => 'top' , anchor => 'w'},
+	hotKey => 'b',
 );
 
 $tn->insert_to_page(0,'CheckBox',
-	text   => M 'Some S<-2|small text> in a checkbox',
+	text   => M 'Some S<-2|U<s>mall text> in a checkbox',
 	pack   => { side => 'top' , anchor => 'w'},
+	hotKey => 's',
 );
 
 $tn->insert_to_page(0,'GroupBox',
@@ -56,6 +61,8 @@ $tn->insert_to_page(0,'GroupBox',
 );
 
 $tn->insert_to_page(0,'ListBox',
+	name   => 'List',
+	focusedItem => 0,
 	items  => [
 		 M 'Some B<bold text>',
 		 M 'Some I<italic text>',

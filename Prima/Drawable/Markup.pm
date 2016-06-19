@@ -14,7 +14,8 @@ Prima::Markup - Allow markup in Prima Widgets
     use Prima qw(Application Buttons Drawable::Markup);
     Prima::Button->new(
         ...
-	text => Prima::Drawable::Markup->new(text => "B<Bold> button"),
+	text   => Prima::Drawable::Markup->new(text => "B<Bold> bU<u>tton"),
+	hotKey => 'u',
     );
 
 =head1 DESCRIPTION
