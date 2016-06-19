@@ -976,10 +976,10 @@ sub set_text_ref
 {
 	my ( $self, $ref) = @_;
 	return unless defined $ref;
-	$self-> {capLen} = length( $$ref);
+	$self-> {capLen} = length( $$ref) || 0;
 	$#{$self-> {lines}} = $self-> {capLen} / 40;
 	@{$self-> {lines}} = ();
-	@{$self-> {lines}} = split( "\n", $$ref);
+	@{$self-> {lines}} = split( "\n", $$ref // '');
 	$self-> {maxLine} = scalar @{$self-> {lines}} - 1;
 	$self-> reset_syntax;
 	$self-> reset_scrolls;
