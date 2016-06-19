@@ -39,6 +39,7 @@ sub profile_default
 {
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
+		hotKey       => undef,
 		pressed      => 0,
 		selectable   => 1,
 		autoHeight   => 1,
@@ -62,9 +63,17 @@ sub on_translateaccel
 {
 	my ( $self, $code, $key, $mod) = @_;
 	if ( 
-		defined $self-> {accel} && 
-		($key == kb::NoKey) && 
+		defined $self-> {accel} &&
+		($key == kb::NoKey) &&
 		lc chr $code eq $self-> { accel}
+	) {
+		$self-> clear_event;
+		$self-> notify( 'Click');
+	}
+	if (
+		defined $self-> {hotKey} &&
+		($key == kb::NoKey) &&
+		lc chr $code eq $self-> {hotKey}
 	) {
 		$self-> clear_event;
 		$self-> notify( 'Click');
@@ -79,6 +88,7 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
+	$self-> { hotKey}  = $profile{ hotKey};
 	$self-> { pressed} = $profile{ pressed};
 	$self-> { autoHeight} = $profile{ autoHeight};
 	$self-> { autoWidth}  = $profile{ autoWidth};
@@ -323,6 +333,7 @@ sub text
 	return $_[0]-> SUPER::text unless $#_;
 	my ( $self, $caption) = @_;
 	$self-> SUPER::text( $caption );
+	$self-> {accel} = lc($1) if $caption =~ /~([a-z0-9])/i;
 	$self-> check_auto_size;
 	$self-> repaint;
 }
@@ -331,6 +342,8 @@ sub text
 sub on_enable  { $_[0]-> repaint; }
 sub on_disable { $_[0]-> cancel_transaction; $_[0]-> repaint; }
 sub on_enter   { $_[0]-> repaint; }
+
+sub hotKey { $#_ ? $_[0]->{hotKey} = $_[1] : $_[0]->{hotKey} }
 
 sub autoHeight
 {
@@ -1287,6 +1300,10 @@ Called whenever the user presses the button.
 =head2 Properties
 
 =over
+
+=item hotKey CHAR
+
+A key that the button will react to if pressed, even when out of focus.
 
 =item pressed BOOLEAN
 

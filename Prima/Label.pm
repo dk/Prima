@@ -19,6 +19,7 @@ sub profile_default
 		autoWidth      => 1,
 		focusLink      => undef,
 		height         => 4 + $font-> { height},
+		hotKey         => undef,
 		ownerBackColor => 1,
 		selectable     => 0,
 		showAccelChar  => 0,
@@ -59,14 +60,10 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
-	$self-> { alignment}     = $profile{ alignment};
-	$self-> { valignment}    = $profile{ valignment};
-	$self-> { autoHeight}    = $profile{ autoHeight};
-	$self-> { autoWidth}     = $profile{ autoWidth};
-	$self-> { wordWrap}      = $profile{ wordWrap};
-	$self-> { focusLink}     = $profile{ focusLink};
-	$self-> { showAccelChar} = $profile{ showAccelChar};
-	$self-> { showPartial}   = $profile{ showPartial};
+	$self-> {$_} = $profile{$_} for qw(
+		alignment valignment autoHeight autoWidth
+		wordWrap focusLink showAccelChar showPartial hotKey
+	);
 	$self-> check_auto_size;
 	return %profile;
 }
@@ -174,10 +171,18 @@ sub on_translateaccel
 {
 	my ( $self, $code, $key, $mod) = @_;
 	if ( 
-		!$self-> {showAccelChar} && 
-		defined $self-> {accel} && 
-		( $key == kb::NoKey) && 
+		!$self-> {showAccelChar} &&
+		defined $self-> {accel} &&
+		( $key == kb::NoKey) &&
 		lc chr $code eq $self-> { accel}
+	) {
+		$self-> clear_event;
+		$self-> notify( 'Click');
+	}
+	if (
+		defined $self-> {hotKey} &&
+		( $key == kb::NoKey) &&
+		lc chr $code eq $self-> {hotKey}
 	) {
 		$self-> clear_event;
 		$self-> notify( 'Click');
@@ -361,6 +366,7 @@ sub valignment    {($#_)?($_[0]-> set_valignment(    $_[1]))  :return $_[0]-> {v
 sub autoWidth     {($#_)?($_[0]-> set_auto_width(   $_[1]))   :return $_[0]-> {autoWidth}    }
 sub autoHeight    {($#_)?($_[0]-> set_auto_height(  $_[1]))   :return $_[0]-> {autoHeight}   }
 sub wordWrap      {($#_)?($_[0]-> set_word_wrap(    $_[1]))   :return $_[0]-> {wordWrap}     }
+sub hotKey        { $#_ ? $_[0]->{hotKey} = $_[1] : $_[0]->{hotKey} }
 
 1;
 
@@ -432,6 +438,10 @@ hot key value, however it can be read from the C<{accel}> variable.
 
 Default value: C<undef>.
 
+=item hotKey CHAR
+
+A key that the label will react to if pressed, even when out of focus.
+
 =item showAccelChar BOOLEAN
 
 If 0, the tilde ( ~ ) character is collapsed from the text,
@@ -440,7 +450,7 @@ of the escaped character with the C<Alt> key, the C<focusLink>
 widget is explicitly focused.
 
 If 1, the text is showed as is, and no hot character is underlined.
-Key combinations with C<Alt> key are not recognized.
+Key combinations with C<Alt> key are not recognized. See also: C<hotKey>.
 
 Default value: 0
 

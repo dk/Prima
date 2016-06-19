@@ -249,6 +249,7 @@ sub prf_types
 			holdGlyph imageScale )],
 		modalResult  => ['modalResult'],
 		icon    => ['image',],
+		text    => ['hotKey'],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
@@ -346,6 +347,7 @@ sub prf_types
 		valign  => ['valignment',],
 		bool    => [qw(autoWidth autoHeight showAccelChar showPartial wordWrap)],
 		Handle  => ['focusLink',],
+		text    => ['hotKey'],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
