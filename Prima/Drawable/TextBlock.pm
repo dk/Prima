@@ -199,16 +199,13 @@ sub _debug_block
 {
 	my ($b) = @_;
 	print STDERR "FLAGS      : ", (( $$b[BLK_FLAGS] & T_SIZE ) ? "T_SIZE" : ""), (( $$b[BLK_FLAGS] & T_WRAPABLE ) ? "T_WRAPABLE" : ""), "\n";
-	print STDERR "WIDTH      : ", $$b[BLK_WIDTH] // 'undef', "\n";
-	print STDERR "HEIGHT     : ", $$b[BLK_HEIGHT] // 'undef', "\n";
-	print STDERR "X          : ", $$b[BLK_X] // 'undef', "\n";
-	print STDERR "Y          : ", $$b[BLK_Y] // 'undef', "\n";
-	print STDERR "AX         : ", $$b[BLK_APERTURE_X] // 'undef', "\n";
-	print STDERR "AY         : ", $$b[BLK_APERTURE_Y] // 'undef', "\n";
-	print STDERR "TEXT       : ", $$b[BLK_TEXT_OFFSET] // 'undef', "\n";
-	print STDERR "FONT_ID    : ", $$b[BLK_FONT_ID] // 'undef', "\n";
-	print STDERR "FONT_SIZE  : ", $$b[BLK_FONT_SIZE] // 'undef', "\n";
-	print STDERR "FONT_STYLE : ", $$b[BLK_FONT_STYLE] // 'undef', "\n";
+	print STDERR "POSITION   : ", $$b[BLK_X] // 'undef', 'x', $$b[BLK_Y] // 'undef', "\n";
+	print STDERR "SIZE       : ", $$b[BLK_WIDTH] // 'undef', 'x', $$b[BLK_HEIGHT] // 'undef', "\n";
+	print STDERR "APERTURE   : ", $$b[BLK_APERTURE_X] // 'undef', 'x', $$b[BLK_APERTURE_Y] // 'undef', "\n";
+	print STDERR "TEXT_OFS   : ", $$b[BLK_TEXT_OFFSET] // 'undef', "\n";
+	print STDERR "FONT       : ID=", $$b[BLK_FONT_ID] // 'undef', ' ',
+	                           'SIZE=', $$b[BLK_FONT_SIZE] // 'undef', ' ',
+	                           'STYLE=', $$b[BLK_FONT_STYLE] // 'undef', "\n";
 	my $color = $$b[BLK_COLOR];
 	unless ( defined $color ) {
 		$color = "undef";
@@ -217,7 +214,7 @@ sub _debug_block
 	} else {
 		$color = sprintf("%06x", $color);
 	}
-	print STDERR "COLOR      : $color\n";
+	print STDERR "COLORS     : $color ";
 	$color = $$b[BLK_BACKCOLOR];
 	unless ( defined $color ) {
 		$color = "undef";
@@ -226,7 +223,7 @@ sub _debug_block
 	} else {
 		$color = sprintf("%06x", $color);
 	}
-	print STDERR "BACK_COLOR : $color\n";
+	print STDERR "$color\n";
 
 	my ($i, $lim) = (BLK_START, scalar @$b);
 	my $oplen;
@@ -612,7 +609,7 @@ sub block_wrap
 	my $wrapmode = 1;
 	my $stsave = $state;
 	$state = [ @$state ];
-	my ( $haswrapinfo, @wrapret);
+	my ( $haswrapinfo, $wantnewblock, @wrapret);
 	my ( @ret, $z, $ptr);
 	my $lastTextOffset = $$b[ BLK_TEXT_OFFSET];
 	my $has_text;
@@ -633,6 +630,7 @@ sub block_wrap
 		$$z[ BLK_TEXT_OFFSET] = $$b [ BLK_TEXT_OFFSET];
 		$x = 0;
 		undef $has_text;
+		undef $wantnewblock;
 	};
 
 	my $retrace = sub 
@@ -671,12 +669,25 @@ sub block_wrap
 			my @extra_chunks;
 			if ( $wrapmode && $force_break_rx && $substr =~ /$force_break_rx/ ) {
 				my $rofs = $ofs;
+				my $accum = '';
 				while (1) {
-					last unless $substr =~ /\G(.*?)($force_break_rx|$)/gcs;
-					push @extra_chunks, [ $1, $rofs, length($1) ] if length $1;
-					$rofs += length($1) + length($2);
+					if ( $substr =~ /\G([^\n\r]+)/gcs ) {
+						$accum = $1;
+					} elsif ( $substr =~ /\G(\r*\n\r*)/gcs) {
+						push @extra_chunks, [ $accum, $rofs, length($accum) ];
+						$rofs += length($accum) + length($1);
+						$accum = '';
+					} elsif ( $substr =~ /\G$/ ) {
+						push @extra_chunks, [ $accum, $rofs, length($accum) ];
+						last;
+					}
 				};
-				($substr, $ofs, $tlen) = @{ shift @extra_chunks };
+				while ( @extra_chunks ) {
+					($substr, $ofs, $tlen) = @{ shift @extra_chunks };
+					last if $tlen > 0;
+					$newblock->();
+				}
+				return if $tlen == 0 && !@extra_chunks;
 			}
 		REWRAP: 
 			my $tw  = $canvas-> get_text_width($substr, 1);
@@ -694,7 +705,7 @@ sub block_wrap
 					$str =~ s/^\s+//;
 				}
 				my $l = $canvas-> text_wrap( $str, $width - $apx - $x,
-					tw::ReturnFirstLineLength | $wrap_opts );
+					tw::ReturnFirstLineLength | tw::BreakSingle | $wrap_opts );
 				if ( $l > 0) {
 					if ( $has_text) {
 						push @$z, OP_TEXT, 
@@ -749,12 +760,19 @@ sub block_wrap
 				$retrace-> ();
 			} else { # unwrappable, cannot be fit, no wrap info! - whole new block
 				push @$z, OP_TEXT, $ofs, $tlen, $tw;
-				$newblock-> ();
+				if ( $wrapmode ) {
+					$newblock-> ();
+				} else {
+					$wantnewblock = 1;
+				}
 			}
 		LEAVE:
 			if ( @extra_chunks ) {
-				$newblock-> ();
-				($substr, $ofs, $tlen) = @{ shift @extra_chunks };
+				while (@extra_chunks) {
+					$newblock-> ();
+					($substr, $ofs, $tlen) = @{ shift @extra_chunks };
+					last if $tlen > 0;
+				}
 				goto REWRAP;
 			}
 		},
@@ -763,6 +781,8 @@ sub block_wrap
 			if ( $wrapmode == 1 && $mode == 0) {
 				@wrapret = ( scalar @$z, [ @$state ], $ptr);
 				$haswrapinfo = 1;
+			} elsif ( $wrapmode == 0 && $mode == 1 && $wantnewblock) {
+				$newblock-> ();
 			}
 			$wrapmode = $mode;
 		},
@@ -782,8 +802,8 @@ sub block_wrap
 		other => sub { push @$z, @_ },
 	);
 
-	# remove eventual empty trailing blocks
-	pop @ret while @ret && @{$ret[-1]} == BLK_START;
+	# remove eventual empty blocks
+	@ret = grep { @$_ != BLK_START } @ret;
 
 	# second stage - position the blocks
 	$state = $stsave;
