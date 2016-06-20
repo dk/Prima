@@ -350,6 +350,14 @@ sub gradient_bar
 	}
 }
 
+sub text_split_lines
+{
+	my ($self, $text) = @_;
+	return ref($text) ? 
+		@{ $self-> text_wrap( $text, 2_000_000_000, tw::NewLineBreak ) } :
+		split "\n", $text;
+}
+
 1;
 
 __DATA__

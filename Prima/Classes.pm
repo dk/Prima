@@ -1358,9 +1358,7 @@ sub profile_default
 sub on_change
 {
 	my $self = $_[0];
-	my @ln = ref($self->text) ? 
-		@{$self-> text_wrap( $self->text, 100000, tw::NewLineBreak )} : 
-		split( '\n', $self-> text);
+	my @ln = $self->text_split_lines($self->text);
 	my $maxLn = 0;
 	for ( @ln) {
 		my $x = $self-> get_text_width( $_);
@@ -1380,9 +1378,7 @@ sub on_paint
 	$canvas-> rectangle( 0, 0, $size[0]-1, $size[1]-1);
 	my $fh = $canvas-> font-> height;
 	my ( $x, $y) = ( 3, $size[1] - 1 - $fh);
-	my @ln = ref($self->text) ? 
-		@{$canvas-> text_wrap( $self->text, 100000, tw::NewLineBreak )} : 
-		split( '\n', $self-> text);
+	my @ln = $canvas->text_split_lines($self->text);
 	for ( @ln) {
 		$canvas-> text_out_bidi( $_, $x, $y);
 		$y -= $fh;
