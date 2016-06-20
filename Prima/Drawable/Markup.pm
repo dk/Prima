@@ -67,11 +67,19 @@ sub new
 	%opt = ( %opt,
 		fontmap       => [{}],
 		colormap      => [0,0],
+		bidi          => $Prima::Bidi::enabled,
 	);
 	my $self = $class->SUPER::new(%opt);
 	$self-> $_( $opt{$_} || [] ) for qw(fontPalette colorPalette);
 	$self-> markup( $opt{markup} || '');
 	return $self;
+}
+
+sub bidi {
+	return $_[0]->{bidi} unless $#_;
+	my ( $self, $bidi ) = @_;
+	$bidi = 0 unless $Prima::Bidi::enabled;
+	$self->{bidi} = $bidi;
 }
 
 sub parse_color
@@ -328,7 +336,7 @@ sub markup
 	my ( $self, $markup ) = @_;
 	my ( $text, $block ) = $self-> parse( $markup );
 
-	if ( Prima::Bidi::is_bidi($text) ) {
+	if ( $self->{bidi} && Prima::Bidi::is_bidi($text) ) {
 		$self-> {nonbidiblock} = $block;
 		$block = tb::bidi_visualize( $block, text => $text );
 	} else {
@@ -411,7 +419,7 @@ sub text_wrap
 	# wrap("bidi . nonbidi") results in ("bidi n", "onbidi"). While the 1st
 	# scalar is okay when bidified, noone knows whether the 2nd will look
 	# the same when in the big string context and when torn away after the wrap.
-	if ( Prima::Bidi::is_bidi($self->{text})) {
+	if ( $self->{bidi} && Prima::Bidi::is_bidi($self->{text})) {
 		my $text_offset = $blocks[-1]->{block}->[tb::BLK_TEXT_OFFSET];
 		my $last_offset = 0;
 		tb::walk( $blocks[-1]->{block}, text => sub {
@@ -462,6 +470,11 @@ Each element of the array should be a C<cl::> constant.
 
 Gets or sets the font palette to be used for C<F> sequences within this widget.
 Each element of the array should be a hashref suitable for setting a font.
+
+=item bidi BOOLEAN = 1
+
+If 0, bidirection text processing if off. If 1, set to 1 iff C<Prima::Bidi> is
+loaded and enabled.
 
 =back
 
