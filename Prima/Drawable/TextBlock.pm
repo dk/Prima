@@ -1155,5 +1155,235 @@ sub height
 	return $self->{block}->[tb::BLK_HEIGHT];
 }
 
-
 1;
+
+__DATA__
+
+=pod
+
+=head1 NAME 
+
+Prima::Drawable::TextBlock - rich text representation
+
+=head1 API
+
+=head2 Block header
+
+A block's fixed header consists of C<tb::BLK_START - 1> integer scalars,
+each of those is accessible via the corresponding C<tb::BLK_XXX> constant.
+The constants are separated into two logical groups:
+
+	BLK_FLAGS        
+	BLK_WIDTH        
+	BLK_HEIGHT      
+	BLK_X           
+	BLK_Y           
+	BLK_APERTURE_X  
+	BLK_APERTURE_Y  
+	BLK_TEXT_OFFSET 
+
+and
+
+	BLK_FONT_ID          
+	BLK_FONT_SIZE        
+	BLK_FONT_STYLE       
+	BLK_COLOR            
+	BLK_BACKCOLOR        
+
+The second group is enclosed in C<tb::BLK_DATA_START> - C<tb::BLK_DATA_END>
+range, like the whole header is contained in 0 - C<tb::BLK_START - 1> range.
+This is done for the backward compatibility, if the future development changes 
+the length of the header. 
+
+The first group fields define the text block dimension, aperture position
+and text offset ( remember, the text is stored as one big chunk ). The second
+defines the initial color and font settings. Prima::TextView needs all fields
+of every block to be initialized before displaying. L<block_wrap> method
+can be used for automated assigning of these fields.
+
+=head2 Block parameters
+
+The scalars, beginning from C<tb::BLK_START>, represent the commands to the renderer.
+These commands have their own parameters, that follow the command. The length of
+a command is located in C<@oplen> array, and must not be changed. The basic command
+set includes C<OP_TEXT>, C<OP_COLOR>, C<OP_FONT>, C<OP_TRANSPOSE>, and C<OP_CODE>.
+The additional codes are C<OP_WRAP> and C<OP_MARK>, not used in drawing but are
+special commands to L<block_wrap>.
+
+=over
+
+=item OP_TEXT - TEXT_OFFSET, TEXT_LENGTH, TEXT_WIDTH
+
+C<OP_TEXT> commands to draw a string, from offset C<tb::BLK_TEXT_OFFSET + TEXT_OFFSET>,
+with a length TEXT_LENGTH. The third parameter TEXT_WIDTH contains the width of the text
+in pixels. Such the two-part offset scheme is made for simplification of an imaginary code,
+that would alter ( insert to, or delete part of ) the big text chunk; the updating procedure
+would not need to traverse all commands, but just the block headers.
+
+Relative to: C<tb::BLK_TEXT_OFFSET> when not preceded by L<OP_BIDIMAP>.
+
+=item OP_COLOR - COLOR
+
+C<OP_COLOR> sets foreground or background color. To set the background,
+COLOR must be or-ed with C<tb::BACKCOLOR_FLAG> value. In addition to the 
+two toolkit supported color values ( RRGGBB and system color index ), 
+COLOR can also be or-ed with C<tb::COLOR_INDEX> flags, in such case it is
+an index in C<::colormap> property array.
+
+Relative to: C<tb::BLK_COLOR>, C<tb::BLK_BACKCOLOR>.
+
+=item OP_FONT - KEY, VALUE
+
+As the font is a complex property, that itself includes font name, size, 
+direction, etc keys, C<OP_FONT> KEY represents one of the three
+parameters - C<tb::F_ID>, C<tb::F_SIZE>, C<tb::F_STYLE>. All three
+have different VALUE meaning. 
+
+Relative to: C<tb::BLK_FONT_ID>, C<tb::BLK_FONT_SIZE>, C<tb::BLK_FONT_STYLE>.  
+
+=over
+
+=item F_STYLE
+
+Contains a combination of C<fs::XXX> constants, such as C<fs::Bold>, C<fs::Italic> etc. 
+
+Default value: 0 
+
+=item F_SIZE
+
+Contains the relative font size. The size is relative to the current widget's font
+size. As such, 0 is a default value, and -2 is the widget's default font decreased by
+2 points. Prima::TextView provides no range checking ( but the toolkit does ), so
+while it is o.k. to set the negative C<F_SIZE> values larger than the default font size,
+one must be vary when relying on the combined font size value .
+
+If C<F_SIZE> value is added to a C<F_HEIGHT> constant, then it is treated as a font height
+in pixels rather than font size in points. The macros for these opcodes are named respectively
+C<tb::fontSize> and C<tb::fontHeight>, while the opcode is the same.
+
+=item F_ID
+
+All other font properties are collected under an 'ID'. ID is a index in
+the C<::fontPalette> property array, which contains font hashes with the other
+font keys initialized - name, encoding, and pitch. These three are minimal required
+set, and the other font keys can be also selected.
+
+=back
+
+=item OP_TRANSPOSE X, Y, FLAGS
+
+Contains a mark for an empty space. The space is extended to the relative coordinates (X,Y), 
+so the block extension algorithms take this opcode in the account. If FLAGS does not contain
+C<tb::X_EXTEND>, then in addition to the block expansion, current coordinate is also
+moved to (X,Y). In this regard, C<(OP_TRANSPOSE,0,0,0)> and C<(OP_TRANSPOSE,0,0,X_EXTEND)> are
+identical and are empty operators. 
+
+There are formatting-only flags,in effect with L<block_wrap> function.
+C<X_DIMENSION_FONT_HEIGHT> indicates that (X,Y) values must be multiplied to
+the current font height.  Another flag C<X_DIMENSION_POINT> does the same but
+multiplies by current value of L<resolution> property divided by 72 (
+basically, treats X and Y not as pixel but point values).
+
+C<OP_TRANSPOSE> can be used for customized graphics, in conjunction with C<OP_CODE>
+to assign a space, so the rendering
+algorithms do not need to be re-written every time the new graphic is invented. As
+an example, see how L<Prima::PodView> deals with the images.
+
+=item OP_CODE - SUB, PARAMETER
+
+Contains a custom code pointer SUB with a parameter PARAMETER, passed when
+a block is about to be drawn. SUB is called with the following format:
+
+	( $widget, $canvas, $text_block, $font_and_color_state, $x, $y, $parameter);
+
+$font_and_color_state ( or $state, through the code ) contains the state of 
+font and color commands in effect, and is changed as the rendering algorithm advances through a block.
+The format of the state is the same as of text block, so one may notice that for readability
+F_ID, F_SIZE, F_STYLE constants are paired to BLK_FONT_ID, BLK_FONT_SIZE and BLK_FONT_STYLE.
+
+The SUB code is executed only when the block is about to draw. 
+
+=item OP_WRAP mode
+
+C<OP_WRAP> is only in effect in L<block_wrap> method. C<mode> is a flag,
+selecting the wrapping command.
+
+   WRAP_MODE_ON   - default, block commands can be wrapped
+   WRAP_MODE_OFF  - cancels WRAP_MODE_ON, commands cannot be wrapped
+   WRAP_IMMEDIATE - proceed with immediate wrapping, unless ignoreImmediateWrap options is set
+
+L<block_wrap> does not support stacking for the wrap commands, so the
+C<(OP_WRAP,WRAP_MODE_ON,OP_WRAP,WRAP_MODE_ON,OP_WRAP,WRAP_MODE_OFF)> has same
+effect as C<(OP_WRAP,WRAP_MODE_OFF)>. If C<mode> is WRAP_MODE_ON, wrapping is
+disabled - all following commands treated an non-wrapable until
+C<(OP_WRAP,WRAP_MODE_OFF)> is met.
+
+=item OP_MARK PARAMETER, X, Y
+
+C<OP_MARK> is only in effect in L<block_wrap> method and is a user command.
+L<block_wrap> only sets (!) X and Y to the current coordinates when the command is met. 
+Thus, C<OP_MARK> can be used for arbitrary reasons, easy marking the geometrical positions
+that undergo the block wrapping.
+
+=item OP_BIDIMAP VISUAL, BIDIMAP
+
+C<OP_BIDIMAP> is used when the text to be displayed is RTL (right-to-left) and requires
+special handling. This opcode is automatically created by C<block_wrap>. It must be 
+present before any C<OP_TEXT> opcode, because when in effect, the C<OP_TEXT> offset calculation
+is different - instead of reading characters from C<< $self->{text} >>, it reads them from
+C<VISUAL>, and C<BLK_TEXT_OFFSET> in the block header is not used.
+
+=back
+
+As can be noticed, these opcodes are far not enough for the full-weight rich text
+viewer. However, the new opcodes can be created using C<tb::opcode>, that accepts
+the opcode length and returns the new opcode value.
+
+=head2 Rendering methods
+
+=over
+
+=item block_wrap
+
+C<block_wrap> is the function, that is used to wrap a block into a given width.
+It returns one or more text blocks with fully assigned headers. The returned blocks
+are located one below another, providing an illusion that the text itself is wrapped.
+It does not only traverses the opcodes and sees if the command fit or not in the given width;
+it also splits the text strings if these do not fit. 
+
+By default the wrapping can occur either on a command boundary or by the spaces or tab characters
+in the text strings. The unsolicited wrapping can be prevented by using C<OP_WRAP>
+command brackets. The commands inside these brackets are not wrapped; C<OP_WRAP> commands
+are removed from the output blocks.
+
+In general, C<block_wrap> copies all commands and their parameters as is, ( as it is supposed
+to do ), but some commands are treated especially:
+
+- C<OP_TEXT>'s third parameter, C<TEXT_WIDTH>, is disregarded, and is recalculated for every
+C<OP_TEXT> met.
+
+- If C<OP_TRANSPOSE>'s third parameter, C<X_FLAGS> contains C<X_DIMENSION_FONT_HEIGHT> flag,
+the command coordinates X and Y are multiplied to the current font height and the flag is
+cleared in the output block.
+
+- C<OP_MARK>'s second and third parameters assigned to the current (X,Y) coordinates.
+
+- C<OP_WRAP> removed from the output.
+
+- C<OP_BIDIMAP> added to the output, if the text to be displayed in the block
+contains right-to-left characters.
+
+=item walk BLOCK, %OPTIONS
+
+Cycles through block opcodes, calls supplied callbacks on each.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima::TextView>, L<Prima::Drawable::Markup>, F<examples/mouse_tale.pl>.
+

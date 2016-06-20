@@ -1,8 +1,8 @@
 # XXX textoutbaseline=0 rotated
 # XXX document that block is expected to run text on textOutBaseline(1)
 # XXX document that block_wrap can workbreak only
-# XXX geomHeight based on BLK_HEIGHT
 # XXX tb:: export
+# XXX backport tb's to TextView
 use strict;
 use warnings;
 use Prima qw(Application MsgBox Buttons Edit Notebooks Label DetailedList Outlines Drawable::Markup);

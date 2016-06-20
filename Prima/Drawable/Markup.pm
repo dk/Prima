@@ -465,6 +465,10 @@ Each element of the array should be a hashref suitable for setting a font.
 
 =back
 
+=head1 SEE ALSO
+
+L<Prima::Drawable::TextBlock>
+
 =head1 COPYRIGHT
 
 Copyright 2003 Teo Sankaro
