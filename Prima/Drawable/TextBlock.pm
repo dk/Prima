@@ -123,8 +123,6 @@ use constant TRACE_REALIZE_FONTS  => TRACE_FONTS | TRACE_REALIZE;
 use constant TRACE_REALIZE_COLORS => TRACE_COLORS | TRACE_REALIZE;
 use constant TRACE_REALIZE_PENS   => TRACE_PENS | TRACE_REALIZE;
 
-use constant YMAX => 1000;
-
 sub block_create
 {
 	my $ret = [ ( 0 ) x BLK_START ];

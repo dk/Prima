@@ -17,6 +17,8 @@ use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
 use Prima::Bidi qw(:methods is_bidi);
 
+use constant YMAX => 1000;
+
 sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
@@ -363,7 +365,7 @@ sub recalc_ymap
 		my $block = $$blocks[$i];
 		my $y1 = $block->[ tb::BLK_Y];
 		my $y2 = $block->[ tb::BLK_HEIGHT] + $y1;
-		for my $y ( int( $y1 / tb::YMAX) .. int ( $y2 / tb::YMAX)) {
+		for my $y ( int( $y1 / YMAX) .. int ( $y2 / YMAX)) {
 			push @{$ymap-> [$y]}, $i;
 		}
 	}
@@ -510,7 +512,7 @@ sub on_paint
 
 	my ( $sx1, $sy1, $sx2, $sy2) = @{$self-> {selection}};
 
-	for my $ymap_i ( int( $cy[0] / tb::YMAX) .. int( $cy[1] / tb::YMAX)) {
+	for my $ymap_i ( int( $cy[0] / YMAX) .. int( $cy[1] / YMAX)) {
 		next unless $self-> {ymap}-> [$ymap_i];
 		for my $j ( @{$self-> {ymap}-> [$ymap_i]}) {
 			$b = $$bx[$j];
@@ -590,7 +592,7 @@ sub xy2info
 	my $xhint = 0;
 
 	# find if there's a block that has $y in its inferior
-	my $ymapix = int( $y / tb::YMAX);
+	my $ymapix = int( $y / YMAX);
 	if ( $self-> {ymap}-> [ $ymapix]) {
 		my ( $minxdist, $bdist, $bdistid) = ( $self-> {paneWidth} * 2, undef, undef);
 		for ( @{$self-> {ymap}-> [ $ymapix]}) {
@@ -643,7 +645,7 @@ sub xy2info
 			last if $b;
 			$ymapix++;
 		}
-		$ymapix = int( $y / tb::YMAX);
+		$ymapix = int( $y / YMAX);
 		$xhint = -1;
 	}
 
