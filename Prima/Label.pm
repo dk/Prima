@@ -248,7 +248,7 @@ sub set_valignment
 
 sub reset_lines
 {
-	my $self = $_[0];
+	my ($self, $nomaxlines) = @_;
 	
 	my @res;
 	my $maxLines = int($self-> height / $self-> font-> height);
@@ -271,7 +271,7 @@ sub reset_lines
 	for( qw( tildeStart tildeEnd tildeLine)) {$self-> {$_} = $lastRef-> {$_}}
 	
 	$self-> {accel} = defined($self-> {tildeStart}) ? lc( $lastRef-> {tildeChar}) : undef;
-	splice( @{$lines}, $maxLines) if scalar @{$lines} > $maxLines;
+	splice( @{$lines}, $maxLines) if scalar @{$lines} > $maxLines && !$nomaxlines;
 	$self-> {words} = $lines;
 
 	my @len;
@@ -289,7 +289,7 @@ sub check_auto_size
 	my %sets;
 
 	if ( $self-> {wordWrap}) {
-		$self-> reset_lines;
+		$self-> reset_lines(1);
 		if ( $self-> {autoHeight}) {
 			$self-> geomHeight( $self-> {textLines} * $self-> font-> height + 2);
 		}
