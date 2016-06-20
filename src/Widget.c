@@ -664,8 +664,9 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmMouseEnter:
         my-> notify( self, "<siP", "MouseEnter", event-> pos. mod, event -> pos. where);
         objCheck;
-        if ( application && is_opt( optShowHint) && ((( PApplication) application)-> options. optShowHint) && var-> hint && SvLEN(var-> hint))
+        if ( application && is_opt( optShowHint) && ((( PApplication) application)-> options. optShowHint) && var-> hint && SvCUR(var-> hint))
         {
+		
            PApplication app = ( PApplication) application;
            app-> self-> set_hint_action( application, self, true, true);
         }
@@ -1738,7 +1739,7 @@ Widget_hintVisible( Handle self, Bool set, int hintVisible)
    wantVisible = ( hintVisible != 0);
    if ( wantVisible == PApplication( application)-> hintVisible) return false;
    if ( wantVisible) {
-      if ( SvLEN( var-> hint) == 0) return false;
+      if ( SvCUR( var-> hint) == 0) return false;
       if ( hintVisible > 0) PApplication(application)-> hintActive = -1; /* immediate */
    }
    CApplication( application)-> set_hint_action( application, self, wantVisible, false);
