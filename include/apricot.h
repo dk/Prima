@@ -1588,8 +1588,6 @@ typedef struct _ObjectOptions_ {
    unsigned optTabStop             : 1;
    unsigned optScaleChildren       : 1;
    unsigned optUTF8_helpContext    : 1;
-   unsigned optUTF8_hint           : 1;
-   unsigned optUTF8_text           : 1;
    unsigned optPreserveType        : 1;   /* Image */
    unsigned optAutoPopup           : 1;   /* Popup */
    unsigned optActive              : 1;   /* Timer */

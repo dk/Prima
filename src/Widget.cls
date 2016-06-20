@@ -10,7 +10,7 @@ object Prima::Widget( Prima::Drawable)
    int       cursorLock;               # cursor lock count
    NPoint    designScale;              # font width and height for view design
    char   *  helpContext;              # help context string
-   char   *  hint;                     # hint tag text
+   SV     *  hint;                     # hint tag text
    int       lockCount;                # lock count
    Font      popupFont;                # font for popup menu
    ColorSet  popupColor;               # colors for popup menu

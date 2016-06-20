@@ -114,11 +114,11 @@ Application_done( Handle self)
    list_destroy( &var->  modalHorizons);
    list_destroy( &var->  widgets);
    if ( var-> text ) SvREFCNT_dec( var-> text);
-   free( var-> hint);
+   if ( var-> hint ) SvREFCNT_dec( var-> hint);
    free( var-> helpContext);
    var-> accelTable = var-> hintWidget = var-> hintTimer = nilHandle;
-   var-> hint = var-> helpContext = nil;
-   var-> text = nil;
+   var-> helpContext = nil;
+   var-> hint = var-> text = nil;
    apc_application_destroy( self);
    CDrawable-> done( self);
    application = nilHandle;

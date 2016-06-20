@@ -41,6 +41,7 @@ $tn->insert_to_page(0,'Button',
 	pack   => { side => 'top', anchor => 'w' },
 	hotKey => 'r',
 	onClick => sub { message(M "Hello! This is the B<msgbox> speaking!") },
+	hint    => M "Hints can I<also> be markupified",
 );
 
 $tn->insert_to_page(0,'Radio',

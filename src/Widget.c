@@ -252,7 +252,7 @@ Widget_done( Handle self)
    var-> text = nil;
    apc_widget_destroy( self);
    free( var-> helpContext);
-   free( var-> hint);
+   if ( var-> hint) SvREFCNT_dec( var-> hint );
    var-> helpContext = nil;
    var-> hint = nil;
 
@@ -664,7 +664,7 @@ void Widget_handle_event( Handle self, PEvent event)
       case cmMouseEnter:
         my-> notify( self, "<siP", "MouseEnter", event-> pos. mod, event -> pos. where);
         objCheck;
-        if ( application && is_opt( optShowHint) && ((( PApplication) application)-> options. optShowHint) && var-> hint[0])
+        if ( application && is_opt( optShowHint) && ((( PApplication) application)-> options. optShowHint) && var-> hint && SvLEN(var-> hint))
         {
            PApplication app = ( PApplication) application;
            app-> self-> set_hint_action( application, self, true, true);
@@ -1738,7 +1738,7 @@ Widget_hintVisible( Handle self, Bool set, int hintVisible)
    wantVisible = ( hintVisible != 0);
    if ( wantVisible == PApplication( application)-> hintVisible) return false;
    if ( wantVisible) {
-      if ( strlen( var-> hint) == 0) return false;
+      if ( SvLEN( var-> hint) == 0) return false;
       if ( hintVisible > 0) PApplication(application)-> hintActive = -1; /* immediate */
    }
    CApplication( application)-> set_hint_action( application, self, wantVisible, false);
@@ -2371,24 +2371,21 @@ Widget_hint( Handle self, Bool set, SV *hint)
    if ( set) {
       if ( var-> stage > csFrozen) return nilSV;
       my-> first_that( self, (void*)hint_notify, (void*)hint);
-      free( var-> hint);
-      var-> hint = nil;
-      var-> hint = duplicate_string( SvPV_nolen( hint));
-      opt_assign( optUTF8_hint, prima_is_utf8_sv(hint));
+      if ( var-> hint ) SvREFCNT_dec( var-> hint );
+      var-> hint = hint;
+      if ( var-> hint ) SvREFCNT_inc( var-> hint );
       if ( application && (( PApplication) application)-> hintVisible &&
            (( PApplication) application)-> hintUnder == self)
       {
          Handle hintWidget = (( PApplication) application)-> hintWidget;
-         if ( strlen( var-> hint) == 0) 
+         if ( SvLEN( var-> hint) == 0) 
             my-> set_hintVisible( self, 0);
          if ( hintWidget) 
             CWidget(hintWidget)-> set_text( hintWidget, my-> get_hint( self));
       }
       opt_clear( optOwnerHint);
    } else {
-      hint = newSVpv( var-> hint ? var-> hint : "", 0);
-      if ( is_opt( optUTF8_hint)) SvUTF8_on( hint);
-      return hint;
+      return newSVsv(var->hint);
    }
    return nilSV;
 }
