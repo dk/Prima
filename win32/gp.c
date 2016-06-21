@@ -965,14 +965,12 @@ apc_gp_get_font_def( Handle self, int first, int last, Bool unicode)
    if ( !f1) return nil;
 
    for ( i = 0; i <= last - first; i++) {
-      ABCFLOAT f2;
       memset(&g, 0, sizeof(g));
       if ( unicode ) {
          ret = GetGlyphOutlineW(sys ps, first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
       } else {
          ret = GetGlyphOutlineA(sys ps, first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
       }
-      GetCharABCWidthsFloatW( sys ps, first, first, &f2);
       if ( ret == GDI_ERROR ) {
          free( f1 );
 	 return nil;
