@@ -3211,6 +3211,9 @@ apc_gp_get_clip_rect( Handle self);
 extern PFontABC
 apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode);
 
+extern PFontABC
+apc_gp_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode);
+
 extern unsigned long *
 apc_gp_get_font_ranges( Handle self, int * count);
 

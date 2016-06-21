@@ -368,23 +368,34 @@ onClick   => sub {
 			my $C = $self-> text;
 
 			my ( $a, $b, $c ) = @{ $self->get_font_abc( ord($C), ord($C), 1) };
+			my ( $d, $e, $f ) = @{ $self->get_font_def( ord($C), ord($C), 1) };
+			print "'$C': $d $e $f\n";
 			
 			my $w = (( $a < 0 ) ? 0 : $a) + $b + (( $c < 0 ) ? 0 : $c);
-			$w = ( $self-> width - $w ) / 2;
-			$self-> translate($w, 5 );
+			my $h = (( $d < 0 ) ? 0 : $d) + $e + (( $f < 0 ) ? 0 : $f);
+			$w = ( $self-> width  - $w ) / 2;
+			$h = ( $self-> height - $h ) / 2;
+			$self-> translate($w, $h);
 
 			my $dx = 0;
+			my $dy = 0;
 			$dx -= $a if $a < 0;
+			$dy -= $d if $d < 0;
 
 			my $fh = $self-> font->height;
-			$self-> text_out( $C, $dx, 0);
+			$self-> text_out( $C, $dx, $dy );
 
 			$dx = abs($a);
+			$dy = abs($d);
 			$self-> linePattern(lp::Dot);
 			$self-> line($dx, 0, $dx, $self->height);
 			$dx = (( $a < 0 ) ? 0 : $a) + $b + (( $c < 0 ) ? 0 : $c) - abs($c);
 			$self-> line($dx, 0, $dx, $self->height);
 			$self-> line(-$w, $self->font->descent, $self->width, $self->font->descent);
+
+			$self-> line(0, $dy, $self->width, $dy);
+			$dy = (( $d < 0 ) ? 0 : $d) + $e + (( $f < 0 ) ? 0 : $f) - abs($f);
+			$self-> line(0, $dy, $self->width, $dy);
 		},
 	);
 

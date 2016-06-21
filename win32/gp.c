@@ -950,6 +950,42 @@ apc_gp_get_font_abc( Handle self, int first, int last, Bool unicode)
    return f1;
 }}
 
+PFontABC
+apc_gp_get_font_def( Handle self, int first, int last, Bool unicode)
+{objCheck nil;{
+   int i;
+   DWORD ret;
+   PFontABC  f1;
+   MAT2 gmat = { {0, 1}, {0, 0}, {0, 0}, {0, 1} };
+   GLYPHMETRICS g;
+   char buf[sizeof(GLYPHMETRICS)];
+
+
+   f1 = ( PFontABC) malloc(( last - first + 1) * sizeof( FontABC));
+   if ( !f1) return nil;
+
+   for ( i = 0; i <= last - first; i++) {
+      ABCFLOAT f2;
+      memset(&g, 0, sizeof(g));
+      if ( unicode ) {
+         ret = GetGlyphOutlineW(sys ps, first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
+      } else {
+         ret = GetGlyphOutlineA(sys ps, first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
+      }
+      GetCharABCWidthsFloatW( sys ps, first, first, &f2);
+      if ( ret == GDI_ERROR ) {
+         free( f1 );
+	 return nil;
+      }
+      if (g.gmCellIncY == 0) g.gmCellIncY = var font.height;
+      f1[i]. a = var font. descent + g.gmptGlyphOrigin. y - g.gmBlackBoxY;
+      f1[i]. b = g.gmBlackBoxY;
+      f1[i]. c = g.gmCellIncY - var font. descent - g.gmptGlyphOrigin. y;
+   }
+
+   return f1;
+}}
+
 static Handle ipa_ranges[] = {
   0x0250 , 0x02AF,	// 4  IPA Extensions
   0x1D00 , 0x1D7F,  //    Phonetic Extensions

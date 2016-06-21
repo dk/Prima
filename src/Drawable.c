@@ -318,7 +318,7 @@ Drawable_get_physical_palette( Handle self)
 }
 
 SV *
-Drawable_get_font_abc( Handle self, int first, int last, Bool unicode)
+Drawable_get_font_abcdef( Handle self, int first, int last, Bool unicode, PFontABC (*func)(Handle, int, int, Bool))
 {
    int i;
    AV * av;
@@ -336,7 +336,7 @@ Drawable_get_font_abc( Handle self, int first, int last, Bool unicode)
    else {
      gpARGS;
      gpENTER( newRV_noinc(( SV *) newAV()));
-     abc = apc_gp_get_font_abc( self, first, last, unicode );
+     abc = func( self, first, last, unicode );
      gpLEAVE;
    }
 
@@ -350,6 +350,18 @@ Drawable_get_font_abc( Handle self, int first, int last, Bool unicode)
       free( abc);
    }
    return newRV_noinc(( SV *) av);
+}
+
+SV *
+Drawable_get_font_abc( Handle self, int first, int last, Bool unicode)
+{
+   return Drawable_get_font_abcdef( self, first, last, unicode, apc_gp_get_font_abc);
+}
+
+SV *
+Drawable_get_font_def( Handle self, int first, int last, Bool unicode)
+{
+   return Drawable_get_font_abcdef( self, first, last, unicode, apc_gp_get_font_def);
 }
 
 SV *
