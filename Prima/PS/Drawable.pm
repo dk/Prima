@@ -1560,7 +1560,7 @@ sub get_font_abc
 	my @ret; 
 	my ( $rmap, $nd) = $self-> get_rmap;
 	my $wmul = $self-> {font}-> {width} / $self-> {fontWidthDivisor};
-	for ( $i = $first; $i < $last; $i++) {
+	for ( $i = $first; $i <= $last; $i++) {
 		my $cd = $rmap-> [ $i] || $nd;
 		push( @ret, map { $_ * $wmul } @$cd[1..3]);
 	}
