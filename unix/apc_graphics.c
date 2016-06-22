@@ -1959,16 +1959,18 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 }   
 
 PFontABC
+prima_xfont2def( Handle self, int firstChar, int lastChar)
+{
+   return nil; 
+}
+
+PFontABC
 apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
 {
    PFontABC abc;
 
    if ( self) {
       DEFXX;
-      /*
-      if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
-      if (!XX-> font) return nil;
-      */
 #ifdef USE_XFT
       if ( XX-> font-> xft)
          return prima_xft_get_font_abc( self, firstChar, lastChar, unicode);
@@ -1977,6 +1979,23 @@ apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
       abc = prima_xfont2abc( XX-> font-> fs, firstChar, lastChar);
    } else
       abc = prima_xfont2abc( guts. font_abc_nil_hack, firstChar, lastChar);
+   return abc;
+}
+
+PFontABC
+apc_gp_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode)
+{
+   PFontABC abc;
+
+   if ( self) {
+      DEFXX;
+#ifdef USE_XFT
+      if ( XX-> font-> xft)
+         return prima_xft_get_font_def( self, firstChar, lastChar, unicode);
+#endif   
+      abc = prima_xfont2def( self, firstChar, lastChar);
+   } else
+      abc = prima_xfont2def( self, firstChar, lastChar);
    return abc;
 }
 

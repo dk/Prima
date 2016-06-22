@@ -1221,6 +1221,9 @@ prima_xft_get_font_ranges( Handle self, int * count);
 extern PFontABC
 prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode);
 
+extern PFontABC
+prima_xft_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode);
+
 extern PCachedFont
 prima_xft_get_cache( PFont font);
          

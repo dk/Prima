@@ -405,7 +405,6 @@ onClick   => sub {
 			push @{$ranges[-1]}, $_ :
 			push @ranges, [$_];
 	}
-   use Data::Dumper; print STDERR Dumper( \@ranges );
 	@ranges = sort { $a->[0] <=> $b-> [0] } @ranges;
 	my %charmap;
 	my $count = 0;

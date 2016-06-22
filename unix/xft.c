@@ -1676,6 +1676,33 @@ prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
    return abc;
 }
 
+PFontABC
+prima_xft_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode)
+{
+   PFontABC abc;
+   int i, len = lastChar - firstChar + 1;
+   XftFont *font = X(self)-> font-> xft_base;
+
+   if ( !( abc = malloc( sizeof( FontABC) * len))) 
+      return nil;
+
+   for ( i = 0; i < len; i++) {
+      FcChar32 c = i + firstChar;
+      FT_UInt ft_index;
+      XGlyphInfo glyph;
+      if ( !unicode && c > 128) {
+         c = X(self)-> xft_map8[ c - 128];
+      }
+      ft_index = XftCharIndex( DISP, font, c);
+      XftGlyphExtents( DISP, font, &ft_index, 1, &glyph);
+      abc[i]. a = X(self)-> font-> font. descent - glyph. height + glyph. y; /* XXX yOff ? */
+      abc[i]. b = glyph. height;
+      abc[i]. c = X(self)-> font-> font. height - abc[i]. a - abc[i]. b;
+   }
+
+   return abc;
+}
+
 uint32_t *
 prima_xft_map8( const char * encoding)
 {
