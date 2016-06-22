@@ -367,9 +367,8 @@ onClick   => sub {
 			$self-> clear;
 			my $C = $self-> text;
 
-			my ( $a, $b, $c ) = @{ $self->get_font_abc( ord($C), ord($C), 1) };
-			my ( $d, $e, $f ) = @{ $self->get_font_def( ord($C), ord($C), 1) };
-			print "'$C': $d $e $f\n";
+			my ( $a, $b, $c ) = @{ $self->get_font_abc( ord($C), ord($C), utf8::is_utf8($C)) };
+			my ( $d, $e, $f ) = @{ $self->get_font_def( ord($C), ord($C), utf8::is_utf8($C)) };
 			
 			my $w = (( $a < 0 ) ? 0 : $a) + $b + (( $c < 0 ) ? 0 : $c);
 			my $h = (( $d < 0 ) ? 0 : $d) + $e + (( $f < 0 ) ? 0 : $f);
@@ -406,6 +405,7 @@ onClick   => sub {
 			push @{$ranges[-1]}, $_ :
 			push @ranges, [$_];
 	}
+   use Data::Dumper; print STDERR Dumper( \@ranges );
 	@ranges = sort { $a->[0] <=> $b-> [0] } @ranges;
 	my %charmap;
 	my $count = 0;

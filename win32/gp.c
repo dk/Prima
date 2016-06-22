@@ -950,16 +950,121 @@ apc_gp_get_font_abc( Handle self, int first, int last, Bool unicode)
    return f1;
 }}
 
+/* extract vertical data from a bitmap */
+Bool
+gp_get_font_def_bitmap( Handle self, int first, int last, Bool unicode, PFontABC abc)
+{
+   Bool ret = true;
+   Font font;
+   int i, j, h, w, lineSize;
+   HBITMAP bm, oldBM;
+   BITMAPINFO bi;
+   HDC dc;
+   LOGFONT logfont;
+   HFONT hfont, oldFont;
+   Byte * glyph, * empty;
+
+   /* don't to need exact dimension, just to fit the glyph is enough */
+   w = var font. maximalWidth * 2;
+   h = var font. height;
+   lineSize = (( w + 31) / 32) * 4;
+   w = lineSize * 8;
+   if ( !( glyph = malloc( lineSize * ( h + 1 ))))
+      return false;
+   empty = glyph + lineSize * h;
+   memset( empty, 0xff, lineSize);
+
+   if ( !( dc = CreateCompatibleDC( NULL ))) {
+      free( glyph );
+      return false;
+   }
+   if ( !( bm = CreateBitmap( w, h, 1, 1, NULL))) {
+      free( glyph );
+      return false;
+   }
+
+   bi. bmiHeader. biSize         = sizeof( bi. bmiHeader);
+   bi. bmiHeader. biPlanes       = 1;
+   bi. bmiHeader. biBitCount     = 1;
+   bi. bmiHeader. biSizeImage    = lineSize * h;
+   bi. bmiHeader. biWidth        = w;
+   bi. bmiHeader. biHeight       = h;
+   bi. bmiHeader. biCompression  = BI_RGB;
+   bi. bmiHeader. biClrUsed      = 2;
+   bi. bmiHeader. biClrImportant = 2;
+
+   oldBM    = SelectObject( dc, bm );
+
+   font = var font;
+   font. direction = 0;
+   font_font2logfont( &font, &logfont);
+   hfont = CreateFontIndirect( &logfont);
+   oldFont = SelectObject( dc, hfont );
+
+   memset( abc, 0, sizeof(FontABC) * (last - first + 1));
+   for ( i = 0; i <= last - first; i++) {
+      Rectangle( dc, -1, -1, w+2, h+2 );
+      if ( unicode ) {
+         WCHAR ch = first + i;
+         TextOutW( dc, var font. maximalWidth, 0, &ch, 1);
+      } else {
+         CHAR ch = first + i;
+         TextOutA( dc, var font. maximalWidth, 0, &ch, 1);
+      }
+
+      if ( !GetDIBits( dc, bm, 0, h, glyph, &bi, DIB_RGB_COLORS)) {
+         ret = false;
+         break;
+      }
+
+/*
+      for ( j = 0; j < h; j++) {
+         int k, l;
+         for ( k = 0; k < lineSize; k++) {
+            Byte * p = glyph + j * lineSize + k;
+            printf(".");
+            for ( l = 0; l < 8; l++) {
+               int z = (*p) & ( 1 << (7-l) );
+               printf("%s", z ? "*" : " ");
+            }
+         }
+         printf("\n");
+      }
+*/      
+
+      for ( j = 0; j < h; j++) {
+         if ( memcmp( glyph + j * lineSize, empty, lineSize) != 0 ) {
+            abc[i]. a = j;
+            break;
+         }
+      }
+      for ( j = h - 1; j >= 0; j--) {
+         if ( memcmp( glyph + j * lineSize, empty, lineSize) != 0 ) {
+            abc[i]. c = h - j - 1;
+            break;
+         }
+      }
+      abc[i]. b = h - abc[i]. a - abc[i]. c;
+   }
+
+   SelectObject( dc, oldFont);
+   SelectObject( dc, oldBM );
+   DeleteObject( hfont );
+   DeleteObject( bm );
+   DeleteDC( dc );
+   free( glyph );
+   return true;
+}
+
 PFontABC
 apc_gp_get_font_def( Handle self, int first, int last, Bool unicode)
 {objCheck nil;{
    int i;
    DWORD ret;
-   PFontABC  f1;
+   PFontABC f1;
    MAT2 gmat = { {0, 1}, {0, 0}, {0, 0}, {0, 1} };
    GLYPHMETRICS g;
    char buf[sizeof(GLYPHMETRICS)];
-
 
    f1 = ( PFontABC) malloc(( last - first + 1) * sizeof( FontABC));
    if ( !f1) return nil;
@@ -972,8 +1077,11 @@ apc_gp_get_font_def( Handle self, int first, int last, Bool unicode)
          ret = GetGlyphOutlineA(sys ps, first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
       }
       if ( ret == GDI_ERROR ) {
-         free( f1 );
-	 return nil;
+         if ( !gp_get_font_def_bitmap( self, first, last, unicode, f1 )) {
+	    free( f1 );
+	    return nil;
+	 }
+	 return f1;
       }
       if (g.gmCellIncY == 0) g.gmCellIncY = var font.height;
       f1[i]. a = var font. descent + g.gmptGlyphOrigin. y - g.gmBlackBoxY;
