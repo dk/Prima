@@ -1044,7 +1044,9 @@ gp_get_font_def_bitmap( Handle self, int first, int last, Bool unicode, PFontABC
             break;
          }
       }
-      abc[i]. b = h - abc[i]. a - abc[i]. c;
+
+      if ( abc[i]. a != 0 || abc[i].c != 0)
+         abc[i]. b = h - abc[i]. a - abc[i]. c;
    }
 
    SelectObject( dc, oldFont);
@@ -1072,9 +1074,9 @@ apc_gp_get_font_def( Handle self, int first, int last, Bool unicode)
    for ( i = 0; i <= last - first; i++) {
       memset(&g, 0, sizeof(g));
       if ( unicode ) {
-         ret = GetGlyphOutlineW(sys ps, first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
+         ret = GetGlyphOutlineW(sys ps, i + first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
       } else {
-         ret = GetGlyphOutlineA(sys ps, first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
+         ret = GetGlyphOutlineA(sys ps, i + first, GGO_METRICS, &g, sizeof(g), NULL, &gmat);
       }
       if ( ret == GDI_ERROR ) {
          if ( !gp_get_font_def_bitmap( self, first, last, unicode, f1 )) {

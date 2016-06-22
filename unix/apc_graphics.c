@@ -1990,6 +1990,7 @@ prima_xfont2def( Handle self, int first, int last)
 
    if ( !( ret = malloc( sizeof(FontABC) * ( last - first + 1 ) )))
       return nil;
+   bzero( ret, sizeof(FontABC) * ( last - first + 1 ));
 
    max = &XX-> font-> fs-> max_bounds;
    w  = max-> width * 3;
@@ -2049,7 +2050,8 @@ prima_xfont2def( Handle self, int first, int last)
 	 }
       }
       FOUND_A:
-      ret[i]. b = h - ret[i]. a - ret[i]. c;
+      if ( ret[i].a != 0 || ret[i].c != 0)
+         ret[i]. b = h - ret[i]. a - ret[i]. c;
       XDestroyImage( xi);
    }
 
