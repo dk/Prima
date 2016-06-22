@@ -1697,7 +1697,7 @@ prima_xft_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode)
       XftGlyphExtents( DISP, font, &ft_index, 1, &glyph);
       abc[i]. a = X(self)-> font-> font. descent - glyph. height + glyph. y; /* XXX yOff ? */
       abc[i]. b = glyph. height;
-      abc[i]. c = X(self)-> font-> font. height - abc[i]. a - abc[i]. b;
+      abc[i]. c = X(self)-> font-> font. ascent - glyph. y;
    }
 
    return abc;

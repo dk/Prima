@@ -1959,12 +1959,6 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 }   
 
 PFontABC
-prima_xfont2def( Handle self, int firstChar, int lastChar)
-{
-   return nil; 
-}
-
-PFontABC
 apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
 {
    PFontABC abc;
@@ -1983,19 +1977,98 @@ apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
 }
 
 PFontABC
+prima_xfont2def( Handle self, int first, int last)
+{
+   DEFXX;
+   XCharStruct *max;
+   Pixmap pixmap;
+   GC gc;
+   XGCValues gcv;
+   int i, j, k, w, h, ls;
+   PFontABC ret;
+   XImage *xi;
+
+   if ( !( ret = malloc( sizeof(FontABC) * ( last - first + 1 ) )))
+      return nil;
+
+   max = &XX-> font-> fs-> max_bounds;
+   w  = max-> width * 3;
+   h  = max-> descent + max-> ascent;
+   ls = (( w + 31) / 32) * 4;
+   w  = ls * 8;
+   pixmap = XCreatePixmap( DISP, guts. root, w, h, 1);
+   gcv. graphics_exposures = false;
+   gc = XCreateGC( DISP, pixmap, GCGraphicsExposures, &gcv);
+   XSetFont( DISP, gc, XX-> font-> id);
+
+   for ( i = 0; i <= last - first; i++) {
+      XChar2b ch;
+      ch. byte1 = (first + i) / 256;
+      ch. byte2 = (first + i) % 256;
+      XSetForeground( DISP, gc, 0);
+      XFillRectangle( DISP, pixmap, gc, 0, 0, w, h);
+      XSetForeground( DISP, gc, 1);
+      XDrawString16( DISP, pixmap, gc, 10, h - XX->font->font. descent, &ch, 1);
+
+      if (!(xi = XGetImage( DISP, pixmap, 0, 0, w, h, 1, XYPixmap))) {
+      	 free( ret );
+	 ret = nil;
+	 break;
+      }
+      /*
+      for ( j = 0; j < h; j++) {
+         int k, l;
+         for ( k = 0; k < ls; k++) {
+            Byte * p = (Byte*)xi-> data + j * xi-> bytes_per_line + k;
+            printf(".");
+            for ( l = 0; l < 8; l++) {
+               int z = (*p) & ( 1 << l );
+               printf("%s", z ? "*" : " ");
+            }
+         }
+         printf("\n");
+      }
+      */
+      for ( j = 0; j < h; j++) {
+         Byte * p = (Byte*)xi-> data + j * xi-> bytes_per_line;
+         for ( k = 0; k < ls; k++, p++) {
+	     if ( *p != 0 ) {
+                ret[i]. c = j;
+                goto FOUND_C;
+	     }
+	 }
+      }
+      FOUND_C:
+      for ( j = h - 1; j >= 0; j--) {
+         Byte * p = (Byte*)xi-> data + j * xi-> bytes_per_line;
+         for ( k = 0; k < ls; k++, p++) {
+	     if ( *p != 0 ) {
+                ret[i]. a = h - j - 1;
+                goto FOUND_A;
+	     }
+	 }
+      }
+      FOUND_A:
+      ret[i]. b = h - ret[i]. a - ret[i]. c;
+      XDestroyImage( xi);
+   }
+
+   XFreeGC( DISP, gc);
+   XFreePixmap( DISP, pixmap);
+
+   return ret; 
+}
+
+PFontABC
 apc_gp_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode)
 {
    PFontABC abc;
-
-   if ( self) {
-      DEFXX;
+   DEFXX;
 #ifdef USE_XFT
-      if ( XX-> font-> xft)
-         return prima_xft_get_font_def( self, firstChar, lastChar, unicode);
-#endif   
-      abc = prima_xfont2def( self, firstChar, lastChar);
-   } else
-      abc = prima_xfont2def( self, firstChar, lastChar);
+   if ( XX-> font-> xft)
+      return prima_xft_get_font_def( self, firstChar, lastChar, unicode);
+#endif
+   abc = prima_xfont2def( self, firstChar, lastChar);
    return abc;
 }
 
@@ -2005,10 +2078,6 @@ apc_gp_get_font_ranges( Handle self, int * count)
    DEFXX;
    unsigned long * ret = nil;
    XFontStruct * fs;
-   /*
-   if (!XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
-   if (!XX-> font) return nil;
-   */
 #ifdef USE_XFT
    if ( XX-> font-> xft)
       return prima_xft_get_font_ranges( self, count);

@@ -1083,10 +1083,9 @@ apc_gp_get_font_def( Handle self, int first, int last, Bool unicode)
 	 }
 	 return f1;
       }
-      if (g.gmCellIncY == 0) g.gmCellIncY = var font.height;
-      f1[i]. a = var font. descent + g.gmptGlyphOrigin. y - g.gmBlackBoxY;
+      f1[i]. a = var font. descent + g.gmptGlyphOrigin. y - g.gmBlackBoxY; /* XXX g.gmCellIncY ? */
       f1[i]. b = g.gmBlackBoxY;
-      f1[i]. c = g.gmCellIncY - var font. descent - g.gmptGlyphOrigin. y;
+      f1[i]. c = var font.ascent - g.gmptGlyphOrigin. y;
    }
 
    return f1;
