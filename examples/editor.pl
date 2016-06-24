@@ -16,7 +16,7 @@ use warnings;
 
 use Prima;
 use Prima::Edit;
-use Prima::Bidi qw(:enable);
+use Prima::Bidi;
 use Prima::Application;
 use Prima::MsgBox;
 use Prima::StdDlg;

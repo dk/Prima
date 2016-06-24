@@ -14,7 +14,7 @@ use strict;
 use warnings;
 
 use Prima 'InputLine', Application => { name => 'InputLine sample', wantUnicodeInput => 1 };
-use Prima::Bidi qw(:enable);
+use Prima::Bidi;
 
 my $w = Prima::MainWindow->create( size => [ 700, 300]);
 
