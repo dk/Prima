@@ -28,7 +28,7 @@ sub query_metrics
 		$file = $files{ $f};
 		unless ( defined $family) {
 		# pick up family
-			for ( keys %enum_families) {
+			for ( sort keys %enum_families) {
 				$family = $_, last if $f =~ m[^$_];
 			}
 		}
@@ -87,11 +87,11 @@ sub enum_fonts
 	$encoding = undef if defined $encoding && !length $encoding;
 	if ( defined $family) {
 		return [] unless defined $enum_families{$family};
-		for ( keys %enum_families) {
+		for ( sort keys %enum_families) {
 			push @names, $_ if $_ eq $family;
 		}
 	} else {
-		@names = keys %enum_families;
+		@names = sort keys %enum_families;
 	}
 	my @ret;
 	for ( @names) {
@@ -130,12 +130,7 @@ sub enum_fonts
 sub enum_family
 {
 	my $family = $_[0];
-	my @names;
-	return unless defined $enum_families{$family};
-	for ( keys %files) {
-		push @names, $_ if m/^$family/;
-	}
-	return @names;
+	return $enum_families{$family} ? grep { $_ eq $family } sort keys %files : ();
 }
 
 
@@ -212,9 +207,9 @@ sub font_pick
 	# scale dimensions
 	my $res = $options{resolution} ? $options{resolution} : $m2-> {yDeviceRes};
 	if ( $bySize) {
-		$dest-> {height} = int(( 1 + $m2->{internalLeading}/$m2->{size} ) * $dest-> {size} * $res / 72.27 + 0.5);
+		$dest-> {height} = $dest->{size} * $m2->{height} * $res / ($m2->{size} * $m2->{yDeviceRes});
 	} else {
-		$dest-> {size} = $dest-> {height} * ( 1 - $m2->{internalLeading}/$m2->{height} ) * 72.27 / $res;
+		$dest-> {size}   = $dest->{height} * $m2->{size} * $m2->{yDeviceRes} / ($m2->{height} * $res);
 	}
 	my $a = $dest-> {height} / $m2-> {height};
 	my %muls = %$m2;
@@ -282,15 +277,15 @@ sub font_pick
 %enum_families = (
 	'Bookman'                => 'Bookman-Light',
 	'Courier'                => 'Courier',
-	'AvantGarde'             => 'AvantGarde-Book',
+	'Avant Garde'            => 'AvantGarde-Book',
 	'Helvetica'              => 'Helvetica',
-	'Helvetica-Narrow'       => 'Helvetica-Narrow',
+	'Helvetica Narrow'       => 'Helvetica-Narrow',
 	'Palatino'               => 'Palatino-Roman',
-	'NewCenturySchlbk'       => 'NewCenturySchlbk-Roman',
+	'New Century Schoolbook' => 'NewCenturySchlbk-Roman',
 	'Times'                  => 'Times-Roman',
 	'Symbol'                 => 'Symbol', 
-	'ZapfChancery'           => 'ZapfChancery-MediumItalic',
-	'ZapfDingbats'           => 'ZapfDingbats',
+	'Zapf Chancery'          => 'ZapfChancery-MediumItalic',
+	'Zapf Dingbats'          => 'ZapfDingbats',
 );
 
 1;

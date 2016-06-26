@@ -169,12 +169,13 @@ sub point2pixel
 
 sub change_transform
 {
-	return if $_[0]-> {delay};
+	my ( $self, $gsave ) = @_;
+	return if $self-> {delay};
 	
-	my @tp = $_[0]-> translate;
-	my @cr = $_[0]-> clipRect;
-	my @sc = $_[0]-> scale;
-	my $ro = $_[0]-> rotate;
+	my @tp = $self-> translate;
+	my @cr = $self-> clipRect;
+	my @sc = $self-> scale;
+	my $ro = $self-> rotate;
 	$cr[2] -= $cr[0];
 	$cr[3] -= $cr[1];
 	my $doClip = grep { $_ != 0 } @cr;
@@ -182,23 +183,23 @@ sub change_transform
 	my $doSC   = grep { $_ != 0 } @sc; 
 
 	if ( !$doClip && !$doTR && !$doSC && !$ro) {
-		$_[0]-> emit(':') if $_[1];
+		$self-> emit(':') if $gsave;
 		return;
 	}
 
-	@cr = $_[0]-> pixel2point( @cr);
-	@tp = $_[0]-> pixel2point( @tp);
+	@cr = $self-> pixel2point( @cr);
+	@tp = $self-> pixel2point( @tp);
 	my $mcr3 = -$cr[3];
 	
-	$_[0]-> emit(';') unless $_[1];
-	$_[0]-> emit(':');
-	$_[0]-> emit(<<CLIP) if $doClip;
+	$self-> emit(';') unless $gsave;
+	$self-> emit(':');
+	$self-> emit(<<CLIP) if $doClip;
 N $cr[0] $cr[1] M 0 $cr[3] L $cr[2] 0 L 0 $mcr3 L X C
 CLIP
-	$_[0]-> emit("@tp T") if $doTR;
-	$_[0]-> emit("@sc Z") if $doSC;
-	$_[0]-> emit("$ro R") if $ro != 0;
-	$_[0]-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd font);
+	$self-> emit("@tp T") if $doTR;
+	$self-> emit("@sc Z") if $doSC;
+	$self-> emit("$ro R") if $ro != 0;
+	$self-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd font);
 }
 
 sub fill
@@ -490,7 +491,10 @@ sub new_page
 	my $self = $_[0];
 	$self-> {pages}++;
 	$self-> emit("; P\n%%Page: $self->{pages} $self->{pages}\n");
-	$self-> $_( @{$self-> {saveState}-> {$_}}) for qw( translate clipRect);
+	{
+		local $self->{delay} = 1;
+		$self-> $_( @{$self-> {saveState}-> {$_}}) for qw( translate clipRect);
+	}
 	$self-> change_transform(1);
 	$self-> emit( $self-> {pagePrefix});
 	return 1;
@@ -1300,8 +1304,6 @@ sub set_font
 	$n = $self-> {useDeviceFonts} ? $Prima::PS::Fonts::defaultFontName : 'Default'
 		unless defined $n;
 
-	$font-> {height} = int(( $font-> {size} * $self-> {resolution}-> [1]) / 72.27 + 0.5)
-		if exists $font-> {size};
 AGAIN:
 	if ( $self-> {useDeviceFontsOnly} || !$::application ||
 			( $self-> {useDeviceFonts} && 
@@ -1371,7 +1373,7 @@ AGAIN:
 		}
 		$self-> {font} = $gui_font;
 		$self-> {font}-> {size} = 
-			int( $self-> {font}-> {height} * 72.27 / $self-> {resolution}-> [1] + 0.5);
+			int(( $self-> {font}-> {height} - $self->{font}->{internalLeading}) * 72.27 / $self-> {resolution}-> [1] + 0.5);
 		$self-> {typeFontMap}-> {$self-> {font}-> {name}} = 2; 
 		$self-> {fontWidthDivisor} = $self-> {font}-> {width};
 		$self-> {font}-> {width} = $wscale if $wscale;
@@ -1550,9 +1552,7 @@ sub get_rmap
 sub get_font_abc
 {
 	my ( $self, $first, $last) = @_;
-	my $lim = ( defined ($self-> {font}-> {encoding}) && 
-			exists($Prima::PS::Encodings::fontspecific{$self-> {font}-> {encoding}})) 
-		? 255 : 127;
+	my $lim = 255;
 	$first = 0    if !defined $first || $first < 0;
 	$first = $lim if $first > $lim;
 	$last  = $lim if !defined $last || $last < 0 || $last > $lim;
@@ -1565,6 +1565,47 @@ sub get_font_abc
 		push( @ret, map { $_ * $wmul } @$cd[1..3]);
 	}
 	return \@ret;
+}
+
+sub get_font_def
+{
+	my ( $self, $first, $last) = @_;
+	my $lim = 255;
+	$first = 0    if !defined $first || $first < 0;
+	$first = $lim if $first > $lim;
+	$last  = $lim if !defined $last || $last < 0 || $last > $lim;
+	my $i;
+	my @ret; 
+	my $fs = $self-> {font}-> {height} / $self-> {fontCharHeight};
+	my $c  = $self-> {font}-> {chardata};
+	my $le = $self-> {localeEncoding};
+	my $nd = $c-> {'.notdef'};
+	if ( defined $nd) {
+		$nd = [ map { $_ * $fs } @$nd[4..6] ];
+	} else {
+		$nd = [0,0,0];
+	}
+
+	my ( $f, $l) = ( $self-> {font}-> {firstChar}, $self-> {font}-> {lastChar});
+	my $def;
+	if ( $self-> {typeFontMap}-> {$self-> {font}-> {name}} == 1) {
+		for ( $i = $first; $i <= $last; $i++) {
+			my @rmap;
+			if (defined($le->[$i]) && ( $le-> [$i] ne '.notdef') && $c-> { $le-> [ $i]}) {
+				push @ret, map { $_ * $fs } @{$c-> { $le-> [ $i]}}[4..6];
+			} elsif ( !$self->{useDeviceFontsOnly} && $i >= $f && $i <= $l) {
+				$def = $self-> plate-> get_font_def($first, $last) unless $def; 
+				my $j = ($i - $first) * 3; 
+				push @ret, @$def[ $j .. $j + 2];
+			} else {
+				push @ret, @$nd;
+			}
+		}
+		return \@ret;
+	} else {
+		return $self-> plate-> get_font_def( $first, $last );
+	}
+	
 }
 
 sub get_font_ranges

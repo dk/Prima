@@ -91,6 +91,7 @@ examples/periodic.pl
 examples/pitch.pl
 examples/pointers.pl
 examples/print.pl
+examples/ps_fonts.pl
 examples/ps_setup.pl
 examples/rot.pl
 examples/rtc.pl
