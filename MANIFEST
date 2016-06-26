@@ -369,6 +369,7 @@ utils/gencls.pl
 utils/makedoc/intro.tex
 utils/makedoc/makedoc.pl
 utils/makedoc/Makefile
+utils/ps/afm2prima.pl
 utils/p-class.pl
 utils/podview.pl
 utils/tmlink.pl
