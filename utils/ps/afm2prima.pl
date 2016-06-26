@@ -11,7 +11,6 @@ for my $afm (<*.afm>) {
 		chomp;
 		m/^FontName\s+(.*)$/      and $fm{name}         = $1;
 		m/^FamilyName\s+(.*)$/    and $fm{family}       = $1;
-		m/^CapHeight\s+(.*)$/     and $fm{capheight}    = $1;
 		m/^IsFixedPitch\s+(.*)$/  and $fm{pitch}        = ($1 eq 'false') ? 'fp::Variable' : 'fp::Fixed';
 		m/^Weight\s+(.*)$/        and $fm{weight}       = $1;
 		m/^ItalicAngle\s+(.*)$/   and $fm{italic}       = ($1 eq '0');
