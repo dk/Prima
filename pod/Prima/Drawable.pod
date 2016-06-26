@@ -556,7 +556,6 @@ Besides these characteristics, every font glyph has an ABC-metric,
 the three integer values that describe horizontal extents of a
 glyph's black part relative to the glyph extent:
 
-
 =for podview <img src="fontabc.gif" cut=1 >
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/fontabc.gif"><!--
@@ -589,7 +588,10 @@ as shown in picture on the left. A and C values are positive, if a glyph contain
 empty space in front or behind the neighbor glyphs, like in picture on the right. 
 As can be seen, B is the width of a glyph's black part.
 
-ABC metrics returned by get_font_abc() method.
+ABC metrics returned by the get_font_abc() method.
+
+Corresponding vertical metrics, called in Prima C<DEF> metrics, are returned
+by the get_font_def() method.
 
 =head2 Raster operations
 
@@ -764,7 +766,7 @@ Synopsis:
 
 See L<"Fonts"> for the detailed descriptions.
 
-Applies to text_out(), get_text_width(), get_text_box(), get_font_abc().
+Applies to text_out(), get_text_width(), get_text_box(), get_font_abc(), get_font_def().
 
 =item lineEnd VALUE
 
@@ -1347,6 +1349,15 @@ A, B and C values.
 For detailed explanation of ABC meaning, see L<"Font ABC metrics">;
 
 Context used: font
+
+=item get_font_def FIRST_CHAR = -1, LAST_CHAR = -1, UNICODE = 0
+
+Same as C<get_font_abc>, but for vertical mertics. Is expensive
+on bitmap fonts, because to find out the correct values Prima
+has to render glyphs on bitmaps and scan for black and white pixels.
+
+Vector fonts are not subject to this, and the call is as effective
+as C<get_font_abc>.
 
 =item get_font_ranges
 
