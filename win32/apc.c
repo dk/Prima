@@ -1590,7 +1590,7 @@ apc_widget_map_color( Handle self, Color color)
 }   
 
 Bool
-apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent, ApiHandle parentHandle)
+apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent, ApiHandle parentHandle, Bool layered)
 {
    Bool reset = false;
    ViewProfile vprf;

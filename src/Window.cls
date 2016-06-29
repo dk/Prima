@@ -11,6 +11,7 @@ object Prima::Window( Prima::Widget)
    property Bool     focused;
    property Point    frameOrigin;
    property Point    frameSize;
+   property Bool     layered;
    property Handle   icon;
    property Bool     mainWindow;
    property Handle   menu;

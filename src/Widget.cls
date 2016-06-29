@@ -68,6 +68,7 @@ object Prima::Widget( Prima::Drawable)
    property  SV *   hint;
    property  int    hintVisible;
    property  int    left;
+   property  Bool   layered;
    property  Handle popup;
    property  SV *   popupItems;
    property  Bool   ownerBackColor;

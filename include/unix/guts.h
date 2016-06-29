@@ -12,6 +12,9 @@
 #include <X11/Xatom.h>
 #include <X11/Xresource.h>
 #include <X11/cursorfont.h>
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+#include <X11/extensions/Xrender.h>
+#endif
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
 #include <X11/extensions/shape.h>
 #endif
@@ -460,6 +463,13 @@ prima_debug( const char *format, ...);
 #define Xdebug if (pguts->debug & DEBUG_XRDB) _debug
 #define _F_DEBUG_PITCH(x) ((x==fpDefault)?"default":(x==fpFixed?"fixed":"variable"))
 
+typedef struct 
+{
+   unsigned int red_shift, green_shift, blue_shift, alpha_shift;
+   unsigned int red_range, green_range, blue_range, alpha_range;
+   unsigned int red_mask,  green_mask,  blue_mask,  alpha_mask;
+} RGBABitDescription, *PRGBABitDescription;
+
 typedef struct _UnixGuts
 {
    /* Event management */
@@ -488,6 +498,7 @@ typedef struct _UnixGuts
    /* Graphics */
    struct gc_head               bitmap_gc_pool;
    struct gc_head               screen_gc_pool;
+   struct gc_head               argb_gc_pool;
    GC                                   menugc;
    TAILQ_HEAD(,_drawable_sys_data)      paintq;
    PHash                                ximages;
@@ -597,6 +608,7 @@ typedef struct _UnixGuts
    XWindow                      root;
    XVisualInfo                  visual;
    int                          visualClass;
+   XVisualInfo                  argb_visual;
    MainColorEntry *             palette;
    int *                        mappingPlace;
    unsigned long                monochromeMap[2];
@@ -610,11 +622,12 @@ typedef struct _UnixGuts
    Bool                         useDithering;
    Bool                         privateColormap;
    Colormap                     defaultColormap;
+   Colormap                     argbColormap;
    FillPattern *                ditherPatterns;
    Point                        displaySize;
    long                         wm_event_timeout;
-   int                          red_shift, green_shift, blue_shift;
-   int                          red_range, green_range, blue_range;
+   RGBABitDescription           screen_bits;
+   RGBABitDescription           argb_bits;
    Point                        ellipseDivergence;
    int                          appLock;
    XGCValues                    cursor_gcv;
@@ -730,6 +743,7 @@ typedef struct _drawable_sys_data
       unsigned force_flush              : 1;
       unsigned grab                 	: 1;
       unsigned has_icon                 : 1;
+      unsigned layered                  : 1;
       unsigned iconic                   : 1;
       unsigned mapped			: 1;
       unsigned modal                    : 1;
@@ -759,6 +773,7 @@ typedef struct _drawable_sys_data
    TAILQ_HEAD(,configure_event_pair)    configure_pairs;
    Byte * palette;
    int borderIcons;
+   XVisualInfo * visual;
 #ifdef USE_XFT
    XftDraw  * xft_drawable;
    uint32_t * xft_map8;
@@ -893,6 +908,7 @@ typedef union _unix_sys_data
 #define DEFCC		PClipboardSysData selfxx = C(self)
 #define XX		selfxx
 #define WHEEL_DELTA	120
+#define GET_RGBA_DESCRIPTION X(self)->flags.layered ? &guts. argb_bits : &guts. screen_bits
 
 typedef U8 ColorComponent;
 

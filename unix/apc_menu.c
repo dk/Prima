@@ -1508,9 +1508,9 @@ apc_menu_get_color( Handle self, int index)
    if ( guts. palSize > 0) 
        return guts. palette[c]. composite;
    return
-      ((((c & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range) |
-     (((((c & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range) << 8) |
-     (((((c & guts. visual. red_mask)   >> guts. red_shift)   << 8) >> guts. red_range) << 16);
+      ((((c & guts. visual. blue_mask)  >> guts. screen_bits. blue_shift) << 8) >> guts. screen_bits. blue_range) |
+     (((((c & guts. visual. green_mask) >> guts. screen_bits. green_shift) << 8) >> guts. screen_bits. green_range) << 8) |
+     (((((c & guts. visual. red_mask)   >> guts. screen_bits. red_shift)   << 8) >> guts. screen_bits. red_range) << 16);
 }
 
 PFont

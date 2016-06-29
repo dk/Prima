@@ -1159,7 +1159,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svColorPointer:         return 0;
    case svCanUTF8_Input:        return 1;
    case svCanUTF8_Output:       return 1;
-   case svCompositeDisplay:     return 0; /* XXX detect compiz */
+   case svCompositeDisplay:     return guts. argb_visual. visual != NULL; /* XXX doesn't check if composition is actually available */
    default:
       return -1;
    }

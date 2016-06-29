@@ -213,22 +213,28 @@ Widget_update_sys_handle( Handle self, HV * profile)
    dPROFILE;
    enter_method;
    Handle    owner;
-   Bool      clipOwner;
+   Bool      clipOwner, layered;
    ApiHandle parentHandle;
    if (!(
        pexist( owner) ||
        pexist( syncPaint) ||
        pexist( clipOwner) ||
+       pexist( layered) ||
        pexist( transparent)
     )) return;
    
    owner        = pexist( owner)        ? pget_H( owner)        : var-> owner;
    clipOwner    = pexist( clipOwner)    ? pget_B( clipOwner)    : my-> get_clipOwner( self);
    parentHandle = pexist( parentHandle) ? pget_i( parentHandle) : apc_widget_get_parent_handle( self);
+   layered      = pexist( layered)      ? pget_i( layered)      : is_opt( optLayered );
 
    if ( parentHandle) {
       if (( owner != application) && clipOwner) 
          croak("Cannot accept 'parentHandle' for non-application child and clip-owner widget");
+   }
+   if ( layered) {
+      if (( owner != application) && clipOwner) 
+         croak("Cannot accept 'layered' for non-application child and clip-owner widget");
    }
    
    if ( !apc_widget_create( self,
@@ -236,13 +242,15 @@ Widget_update_sys_handle( Handle self, HV * profile)
       pexist( syncPaint)  ? pget_B( syncPaint)  : my-> get_syncPaint( self),
       clipOwner,
       pexist( transparent) ? pget_B( transparent): my-> get_transparent( self),
-      parentHandle
+      parentHandle,
+      layered
    ))
      croak( "Cannot create widget");
    pdelete( transparent);
    pdelete( syncPaint);
    pdelete( clipOwner);
    pdelete( parentHandle);
+   pdelete( layered);
 }
 
 void
@@ -2389,6 +2397,20 @@ Widget_hint( Handle self, Bool set, SV *hint)
       return newSVsv(var->hint);
    }
    return nilSV;
+}
+
+Bool
+Widget_layered( Handle self, Bool set, Bool layered)
+{
+   HV * profile;
+   enter_method;
+   if ( !set)
+      return is_opt(optLayered);
+   profile = newHV();
+   pset_i( layered, layered);
+   my-> set( self, profile);
+   sv_free(( SV *) profile);
+   return false;
 }
 
 int

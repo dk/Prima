@@ -18,6 +18,7 @@ object Prima::Application( Prima::Widget)
    property  Color  hintColor;
    property  Color  hintBackColor;
    property  int    hintPause;
+   property  Bool   layered;
    property  Bool   modalHorizon;
    property  SV  *  palette;
    property  Bool   pointerVisible;
