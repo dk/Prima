@@ -205,11 +205,17 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 
    if ( hint) 
       return ( brush-> primary = (( hint == COLORHINT_BLACK) ? LOGCOLOR_BLACK : LOGCOLOR_WHITE));
-   
+
    a[0] = COLOR_R(color);
    a[1] = COLOR_G(color);
    a[2] = COLOR_B(color);
 
+   if ( XX-> flags. layered )
+      return brush->primary = 
+            (((a[0] << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
+            (((a[1] << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |
+            (((a[2] << guts. argb_bits. blue_range ) >> 8) << guts. argb_bits.  blue_shift);
+   
    if ( guts. grayScale) {
       a[0] = a[1] = a[2] = ( a[0] + a[1] + a[2]) / 3;
       color = a[0] * ( 65536 + 256 + 1);
@@ -377,9 +383,9 @@ ENOUGH:;
          }
       } else  
          brush-> primary = 
-            (((a[0] << guts. red_range  ) >> 8) << guts.   red_shift) |
-            (((a[1] << guts. green_range) >> 8) << guts. green_shift) |
-            (((a[2] << guts. blue_range ) >> 8) << guts.  blue_shift);
+            (((a[0] << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+            (((a[1] << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+            (((a[2] << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
    }
    return brush-> primary;
 }
@@ -507,6 +513,39 @@ apply_color_class( int c_class, Color value)
    Mdebug("color: class %d=%06x\n", c_class, value);
 }
 
+/* find color bounds and test if they are contiguous */
+static Bool
+find_color_mask_range( unsigned long mask, unsigned int * shift, unsigned int * range)
+{
+   int i, from = 0, to = 0, stage = 0, lim;
+   for ( i = 0; i < 32; i++) {
+      switch ( stage) {
+      case 0:
+         if (( mask & ( 1 << i)) != 0) {
+            from = i;
+            stage++;
+         }
+         break;
+      case 1:
+         if (( mask & ( 1 << i)) == 0) {
+            to = i;
+            stage++;
+         }
+         break;
+      case 2:
+         if (( mask & ( 1 << i)) != 0) {
+            warn( "panic: unsupported pixel representation (0x%08lx)", mask);
+            return false;
+         }
+      }
+   }
+   if ( to == 0) to = 32;
+   lim = 1 << (to - from);
+   *shift   = from;
+   *range   = to - from;
+   return true;
+}
+
 Bool
 prima_init_color_subsystem(char * error_buf)
 {
@@ -566,6 +605,33 @@ class;
          sprintf( error_buf, "panic: %d bit depth is not true color", guts. depth);
       return false;
    }
+   
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   /* get ARGB visual */
+   {
+		int i;
+      XRenderPictFormat *f;
+      template. depth = 32; /* XXX should try non-32 bit alpha'ed visuals */
+      list = XGetVisualInfo( DISP, VisualDepthMask, &template, &count);
+      for ( i = 0; i < count; i++) {
+         if (!(f = XRenderFindVisualFormat(DISP, list[i].visual))) continue;
+         if (f->direct.alphaMask == 0) continue;
+         guts. argb_visual = list[i];
+         guts. argb_bits. red_mask   = f->direct. redMask   << f->direct. red;
+         guts. argb_bits. green_mask = f->direct. greenMask << f->direct. green;
+         guts. argb_bits. blue_mask  = f->direct. blueMask  << f->direct. blue;
+         guts. argb_bits. alpha_mask = f->direct. alphaMask << f->direct. alpha;
+         find_color_mask_range( guts. argb_bits. red_mask,   &guts. argb_bits. red_shift,   &guts. argb_bits. red_range);
+         find_color_mask_range( guts. argb_bits. green_mask, &guts. argb_bits. green_shift, &guts. argb_bits. green_range);
+         find_color_mask_range( guts. argb_bits. blue_mask,  &guts. argb_bits. blue_shift,  &guts. argb_bits. blue_range);
+         find_color_mask_range( guts. argb_bits. alpha_mask, &guts. argb_bits. alpha_shift, &guts. argb_bits. alpha_range);
+         Pdebug("selected visual 0x%x for ARGB operations\n", list[i].visualid);
+         break;
+      }
+      if ( list) XFree( list);
+   }
+#endif
+   if ( !guts. argb_visual. visual ) Pdebug("no ARGB visual found\n");
 
    guts. useDithering     = true;
    guts. dynamicColors    = false;
@@ -751,45 +817,12 @@ BLACK_WHITE_ALLOCATED:
          return false;
       }
    } else {
-      int i, j, from[3] = {0,0,0}, to[3] = {0,0,0}, stage[3] = {0,0,0}, lim[3]; 
-      unsigned long mask[3];
-      mask[0] = guts. visual. red_mask;
-      mask[1] = guts. visual. green_mask;
-      mask[2] = guts. visual. blue_mask;
-      /* find color bounds and test if they are contiguous */
-      for ( j = 0; j < 3; j++) {
-         for ( i = 0; i < 32; i++) {
-            switch ( stage[j]) {
-            case 0:
-               if (( mask[j] & ( 1 << i)) != 0) {
-                  from[j] = i;
-                  stage[j]++;
-               }
-               break;
-            case 1:
-               if (( mask[j] & ( 1 << i)) == 0) {
-                  to[j] = i;
-                  stage[j]++;
-               }
-               break;
-            case 2:
-               if (( mask[j] & ( 1 << i)) != 0) {
-                  sprintf( error_buf, "panic: unsupported pixel representation (0x%08lx,0x%08lx,0x%08lx)", 
-                     mask[0], mask[1], mask[2]);
-                  return false;
-               }
-            }
-         }
-         if ( to[j] == 0) to[j] = 32;
-         lim[j] = 1 << (to[j] - from[j]);
-      }
-
-      guts. red_shift   = from[0];
-      guts. green_shift = from[1];
-      guts. blue_shift  = from[2];
-      guts. red_range   = to[0] - from[0];
-      guts. green_range = to[1] - from[1];
-      guts. blue_range  = to[2] - from[2];
+      find_color_mask_range( guts. visual. red_mask,   &guts. screen_bits. red_shift,   &guts. screen_bits. red_range);
+      find_color_mask_range( guts. visual. green_mask, &guts. screen_bits. green_shift, &guts. screen_bits. green_range);
+      find_color_mask_range( guts. visual. blue_mask,  &guts. screen_bits. blue_shift,  &guts. screen_bits. blue_range);
+      guts. screen_bits. red_mask   = guts. visual. red_mask;
+      guts. screen_bits. green_mask = guts. visual. green_mask;
+      guts. screen_bits. blue_mask  = guts. visual. blue_mask;
    }
    guts. localPalSize = guts. palSize / 4 + ((guts. palSize % 4) ? 1 : 0);
    hatches = hash_create();
@@ -822,17 +855,18 @@ BLACK_WHITE_ALLOCATED:
       char *value;
       XColor xcolor;
       for ( i = 0; i < color_options-> count; i+=2) {
-	 c_class = (int)   color_options-> items[i];
-	 value   = (char*) color_options-> items[i+1];
+         c_class = (int)   color_options-> items[i];
+         value   = (char*) color_options-> items[i+1];
          if ( XParseColor( DISP, DefaultColormap( DISP, SCREEN), value, &xcolor)) {
-	    apply_color_class( c_class, ARGB(xcolor.red >> 8, xcolor.green >> 8, xcolor.blue >> 8));
-	 } else {
-	    warn("Cannot parse color value `%s`", value);
-	 }
-	 free( value);
+            apply_color_class( c_class, ARGB(xcolor.red >> 8, xcolor.green >> 8, xcolor.blue >> 8));
+         } else {
+            warn("Cannot parse color value `%s`", value);
+         }
+         free( value);
       }
       plist_destroy( color_options);
    }
+
    return true;
 }
 
@@ -899,6 +933,7 @@ prima_done_color_subsystem( void)
       if ( fc. count > 0)
          XFreeColors( DISP, guts. defaultColormap, fc. free, fc. count, 0);
       XFreeColormap( DISP, guts. defaultColormap);
+      if ( guts. argbColormap ) XFreeColormap( DISP, guts. argbColormap );
    }
 
    hash_destroy( hatches, false);

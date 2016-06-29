@@ -639,6 +639,7 @@ sub notification_types { return \%RNT; }
 	hiliteColor       => cl::HiliteText,
 	hint              => '',
 	hintVisible       => 0,
+	layered           => 0,
 	light3DColor      => cl::Light3DColor,
 	left              => 100,
 	ownerColor        => 0,

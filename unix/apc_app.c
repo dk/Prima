@@ -306,6 +306,7 @@ init_x11( char * error_buf )
    TAILQ_INIT( &guts.peventq);
    TAILQ_INIT( &guts.bitmap_gc_pool);
    TAILQ_INIT( &guts.screen_gc_pool);
+   TAILQ_INIT( &guts.argb_gc_pool);
 
    guts. currentFocusTime = CurrentTime;
    guts. windows = hash_create();
@@ -553,6 +554,7 @@ window_subsystem_done( void)
 
    free_gc_pool(&guts.bitmap_gc_pool);
    free_gc_pool(&guts.screen_gc_pool);
+   free_gc_pool(&guts.argb_gc_pool);
    prima_done_color_subsystem();
    free( guts. clipboard_formats);
 

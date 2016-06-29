@@ -179,17 +179,23 @@ flush_events( Display * disp, XEvent * ev, Handle self)
 
 Bool
 apc_widget_create( Handle self, Handle owner, Bool sync_paint,
-		   Bool clip_owner, Bool transparent, ApiHandle parentHandle)
+		   Bool clip_owner, Bool transparent, ApiHandle parentHandle, Bool layered)
 {
    DEFXX;
    Bool reset;
    Handle real_owner;
    XWindow parent, old = X_WINDOW;
    XSetWindowAttributes attrs;
+   unsigned long valuemask;
+
+   if ( !guts. argb_visual. visual || guts. argb_visual. visualid == guts. visual. visualid)
+      layered = false;
+   XX-> visual = layered ? &guts. argb_visual : &guts. visual;
 
    reset = ( old != nilHandle) && ( 
       ( clip_owner != XX-> flags. clip_owner) ||
-      ( parentHandle != XX-> parent)
+      ( parentHandle != XX-> parent) ||
+      ( layered != XX-> flags. layered)
    );
 
    XX-> flags. transparent = !!transparent;
@@ -212,6 +218,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
    XX-> flags. clip_owner = !!clip_owner;
    XX-> flags. sync_paint = !!sync_paint;
+   XX-> flags. layered    = !!layered;
 
    attrs. event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask
       | ButtonReleaseMask | EnterWindowMask | LeaveWindowMask | PointerMotionMask
@@ -250,26 +257,35 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
    if ( old != nilHandle) return true;
 
+   valuemask = 
+      0
+      /* | CWBackPixmap */
+      /* | CWBackPixel */
+      /* | CWBorderPixmap */
+      /* | CWBorderPixel */
+      /* | CWBitGravity */
+      | CWWinGravity
+      /* | CWBackingStore */
+      /* | CWBackingPlanes */
+      /* | CWBackingPixel */
+      | CWOverrideRedirect
+      /* | CWSaveUnder */
+      | CWEventMask
+      /* | CWDontPropagate */
+      | CWColormap 
+      /* | CWCursor */
+   ;
+
+   if ( layered ) {
+      valuemask |= CWBackPixel | CWBorderPixel;
+      if ( !guts. argbColormap ) guts. argbColormap = XCreateColormap( DISP, guts. root, guts. argb_visual. visual, AllocNone);
+      attrs. colormap = guts. argbColormap;
+   }
+
    XX-> client = X_WINDOW = XCreateWindow( DISP, parent,
-                             0, 0, 1, 1, 0, guts. visual. depth,
-                             InputOutput, VISUAL,
-                             0
-                             /* | CWBackPixmap */
-                             /* | CWBackPixel */
-                             /* | CWBorderPixmap */
-                             /* | CWBorderPixel */
-                             /* | CWBitGravity */
-                             | CWWinGravity
-                             /* | CWBackingStore */
-                             /* | CWBackingPlanes */
-                             /* | CWBackingPixel */
-                             | CWOverrideRedirect
-                             /* | CWSaveUnder */
-                             | CWEventMask
-                             /* | CWDontPropagate */
-                             | CWColormap 
-                             /* | CWCursor */
-                             , &attrs);
+                             0, 0, 1, 1, 0, XX-> visual-> depth,
+                             InputOutput, XX-> visual-> visual,
+                             valuemask, &attrs);
    if (!X_WINDOW)
       return false;
    XCHECKPOINT;

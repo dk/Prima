@@ -160,6 +160,7 @@ Application_set( Handle self, HV * profile)
    pdelete( height);
    pdelete( hintClass);
    pdelete( hintVisible);
+   pdelete( layered);
    pdelete( left);
    pdelete( modalHorizon);
    pdelete( origin);
@@ -817,6 +818,12 @@ Application_showHint( Handle self, Bool set, Bool showHint)
 
 Handle Application_next( Handle self) { return self;}
 Handle Application_prev( Handle self) { return self;}
+
+Bool
+Application_layered( Handle self, Bool set, Bool layered)
+{
+   return false;
+}
 
 SV *
 Application_palette( Handle self, Bool set, SV * palette)

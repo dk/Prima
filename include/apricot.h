@@ -1573,6 +1573,7 @@ typedef struct _ObjectOptions_ {
    unsigned optAutoEnableChildren  : 1;   /* Widget */
    unsigned optBriefKeys           : 1;
    unsigned optBuffered            : 1;
+   unsigned optLayered             : 1;
    unsigned optModalHorizon        : 1;
    unsigned optOwnerBackColor      : 1;
    unsigned optOwnerColor          : 1;
@@ -2032,7 +2033,7 @@ typedef struct {
 
 extern Bool
 apc_widget_create( Handle self, Handle owner, Bool syncPaint,
-                   Bool clipOwner, Bool transparent, ApiHandle parentHandle);
+                   Bool clipOwner, Bool transparent, ApiHandle parentHandle, Bool layered);
 
 extern Bool
 apc_widget_begin_paint( Handle self, Bool insideOnPaint);

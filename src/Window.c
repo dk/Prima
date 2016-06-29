@@ -400,6 +400,12 @@ Window_execute_shared( Handle self, Handle insertBefore)
 }
 
 Bool
+Window_layered( Handle self, Bool set, Bool layered)
+{
+   return false;
+}
+
+Bool
 Window_modalHorizon( Handle self, Bool set, Bool modalHorizon)
 {
    if ( !set)
@@ -442,6 +448,8 @@ void Window_set( Handle self, HV * profile)
 {
    dPROFILE;
    Bool owner_icon = false;
+   
+   pdelete( layered);
    
    if ( pexist( menuFont)) {
       SvHV_Font( pget_sv( menuFont), &Font_buffer, "Window::set");

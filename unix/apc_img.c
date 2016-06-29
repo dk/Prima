@@ -512,9 +512,9 @@ create_rgb_to_8_lut( int ncolors, const PRGBColor pal, Pixel8 *lut)
    int i;
    for ( i = 0; i < ncolors; i++) 
       lut[i] = 
-            (((pal[i].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-            (((pal[i].g << guts. green_range) >> 8) << guts. green_shift) |
-            (((pal[i].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+            (((pal[i].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+            (((pal[i].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+            (((pal[i].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
 }
 
 static void
@@ -523,9 +523,9 @@ create_rgb_to_16_lut( int ncolors, const PRGBColor pal, Pixel16 *lut)
    int i;
    for ( i = 0; i < ncolors; i++) 
       lut[i] = 
-            (((pal[i].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-            (((pal[i].g << guts. green_range) >> 8) << guts. green_shift) |
-            (((pal[i].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+            (((pal[i].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+            (((pal[i].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+            (((pal[i].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
    if ( guts.machine_byte_order != guts.byte_order) 
       for ( i = 0; i < ncolors; i++) 
          lut[i] = REVERSE_BYTES_16(lut[i]);
@@ -539,14 +539,14 @@ rank_rgb_shifts( void)
 
    if ( shift_unknown) {
       int xchg;
-      shift[0] = guts. red_shift;
-      shift[1] = guts. green_shift;
+      shift[0] = guts. screen_bits. red_shift;
+      shift[1] = guts. screen_bits. green_shift;
       if ( shift[1] < shift[0]) {
          xchg = shift[0];
          shift[0] = shift[1];
          shift[1] = xchg;
       }
-      shift[2] = guts. blue_shift;
+      shift[2] = guts. screen_bits. blue_shift;
       if ( shift[2] < shift[0]) {
          xchg = shift[2];
          shift[2] = shift[1];
@@ -570,9 +570,9 @@ create_rgb_to_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
    int i;
    for ( i = 0; i < ncolors; i++) 
       lut[i] = 
-            (((pal[i].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-            (((pal[i].g << guts. green_range) >> 8) << guts. green_shift) |
-            (((pal[i].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+            (((pal[i].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+            (((pal[i].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+            (((pal[i].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
    if ( guts.machine_byte_order != guts.byte_order) 
       for ( i = 0; i < ncolors; i++) 
          lut[i] = REVERSE_BYTES_32(lut[i]);
@@ -1352,13 +1352,13 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
                 -1, nil, RANK_NORMAL);
          } else {
             fore = 
-               (((img-> palette[1].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-               (((img-> palette[1].g << guts. green_range) >> 8) << guts. green_shift) |
-               (((img-> palette[1].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+               (((img-> palette[1].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+               (((img-> palette[1].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+               (((img-> palette[1].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
             back = 
-               (((img-> palette[0].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-               (((img-> palette[0].g << guts. green_range) >> 8) << guts. green_shift) |
-               (((img-> palette[0].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+               (((img-> palette[0].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+               (((img-> palette[0].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+               (((img-> palette[0].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
          }
       }
          
@@ -1421,9 +1421,9 @@ convert_16_to_24( XImage *i, PImage img)
       slot value.
     */
 
-   int rmax = 0xff & ( 0xff << ( 8 - guts. red_range));
-   int gmax = 0xff & ( 0xff << ( 8 - guts. green_range));
-   int bmax = 0xff & ( 0xff << ( 8 - guts. blue_range));
+   int rmax = 0xff & ( 0xff << ( 8 - guts. screen_bits. red_range));
+   int gmax = 0xff & ( 0xff << ( 8 - guts. screen_bits. green_range));
+   int bmax = 0xff & ( 0xff << ( 8 - guts. screen_bits. blue_range));
    if ( rmax == 0 ) rmax = 0xff;
    if ( gmax == 0 ) gmax = 0xff;
    if ( bmax == 0 ) bmax = 0xff;
@@ -1435,9 +1435,9 @@ convert_16_to_24( XImage *i, PImage img)
       if ( guts.machine_byte_order != guts.byte_order) {
          for ( x = 0; x < w; x++) {
             register Pixel16 dd = REVERSE_BYTES_16(*d);
-            line-> a0 = (((dd & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range; 
-            line-> a1 = (((dd & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range;
-            line-> a2 = (((dd & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range;
+            line-> a0 = (((dd & guts. visual. blue_mask)  >> guts. screen_bits. blue_shift) << 8)  >> guts. screen_bits. blue_range; 
+            line-> a1 = (((dd & guts. visual. green_mask) >> guts. screen_bits. green_shift) << 8) >> guts. screen_bits. green_range;
+            line-> a2 = (((dd & guts. visual. red_mask)   >> guts. screen_bits. red_shift) << 8)   >> guts. screen_bits. red_range;
             if ( line-> a0 == bmax) line-> a0 = 0xff;
             if ( line-> a1 == gmax) line-> a1 = 0xff;
             if ( line-> a2 == rmax) line-> a2 = 0xff;
@@ -1445,9 +1445,9 @@ convert_16_to_24( XImage *i, PImage img)
          }
       } else {
          for ( x = 0; x < w; x++) {
-            line-> a0 = (((*d & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range; 
-            line-> a1 = (((*d & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range;
-            line-> a2 = (((*d & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range;
+            line-> a0 = (((*d & guts. visual. blue_mask)  >> guts. screen_bits. blue_shift) << 8)  >> guts. screen_bits. blue_range; 
+            line-> a1 = (((*d & guts. visual. green_mask) >> guts. screen_bits. green_shift) << 8) >> guts. screen_bits. green_range;
+            line-> a2 = (((*d & guts. visual. red_mask)   >> guts. screen_bits. red_shift) << 8)   >> guts. screen_bits. red_range;
             if ( line-> a0 == bmax) line-> a0 = 0xff;
             if ( line-> a1 == gmax) line-> a1 = 0xff;
             if ( line-> a2 == rmax) line-> a2 = 0xff;
@@ -1471,9 +1471,9 @@ convert_32_to_24( XImage *i, PImage img)
          line = (Pixel24*)(img-> data + y*img-> lineSize);
          for ( x = 0; x < w; x++) {
             dd = REVERSE_BYTES_32(*d);
-            line-> a0 = (((dd & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range; 
-            line-> a1 = (((dd & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range;
-            line-> a2 = (((dd & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range;
+            line-> a0 = (((dd & guts. visual. blue_mask)  >> guts. screen_bits. blue_shift) << 8)  >> guts. screen_bits. blue_range; 
+            line-> a1 = (((dd & guts. visual. green_mask) >> guts. screen_bits. green_shift) << 8) >> guts. screen_bits. green_range;
+            line-> a2 = (((dd & guts. visual. red_mask)   >> guts. screen_bits. red_shift) << 8)   >> guts. screen_bits. red_range;
             d++; line++;
          }
       }
@@ -1482,9 +1482,9 @@ convert_32_to_24( XImage *i, PImage img)
          d = (Pixel32 *)(i-> data + (h-y-1)*i-> bytes_per_line);
          line = (Pixel24*)(img-> data + y*img-> lineSize);
          for ( x = 0; x < w; x++) {
-            line-> a0 = (((*d & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range; 
-            line-> a1 = (((*d & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range;
-            line-> a2 = (((*d & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range;
+            line-> a0 = (((*d & guts. visual. blue_mask)  >> guts. screen_bits. blue_shift) << 8)  >> guts. screen_bits. blue_range; 
+            line-> a1 = (((*d & guts. visual. green_mask) >> guts. screen_bits. green_shift) << 8) >> guts. screen_bits. green_range;
+            line-> a2 = (((*d & guts. visual. red_mask)   >> guts. screen_bits. red_shift) << 8)   >> guts. screen_bits. red_range;
             d++; line++;
          }
       }
@@ -1623,13 +1623,13 @@ prima_std_pixmap( Handle self, int type)
           -1, nil, RANK_NORMAL);
    } else {
       fore = 
-         (((img-> palette[1].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-         (((img-> palette[1].g << guts. green_range) >> 8) << guts. green_shift) |
-         (((img-> palette[1].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+         (((img-> palette[1].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+         (((img-> palette[1].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+         (((img-> palette[1].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
       back = 
-         (((img-> palette[0].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-         (((img-> palette[0].g << guts. green_range) >> 8) << guts. green_shift) |
-         (((img-> palette[0].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+         (((img-> palette[0].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+         (((img-> palette[0].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+         (((img-> palette[0].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
    }
       
    XSetForeground( DISP, gc, fore);
@@ -2184,13 +2184,13 @@ apc_gp_stretch_image( Handle self, Handle image,
                 -1, nil, RANK_NORMAL);
          } else {
             fore = 
-               (((img-> palette[1].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-               (((img-> palette[1].g << guts. green_range) >> 8) << guts. green_shift) |
-               (((img-> palette[1].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+               (((img-> palette[1].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+               (((img-> palette[1].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+               (((img-> palette[1].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
             back = 
-               (((img-> palette[0].r << guts. red_range  ) >> 8) << guts.   red_shift) |
-               (((img-> palette[0].g << guts. green_range) >> 8) << guts. green_shift) |
-               (((img-> palette[0].b << guts. blue_range ) >> 8) << guts.  blue_shift);
+               (((img-> palette[0].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+               (((img-> palette[0].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+               (((img-> palette[0].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
          }
       }
          

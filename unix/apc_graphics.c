@@ -54,7 +54,7 @@ void
 prima_get_gc( PDrawableSysData selfxx)
 {
    XGCValues gcv;
-   Bool bitmap;
+   Bool bitmap, layered;
    struct gc_head *gc_pool;
 
    if ( XX-> gc && XX-> gcl) return;
@@ -65,13 +65,14 @@ prima_get_gc( PDrawableSysData selfxx)
    }   
 
    bitmap = XT_IS_BITMAP(XX) ? true : false;
-   gc_pool = bitmap ? &guts.bitmap_gc_pool : &guts.screen_gc_pool;
+   layered = XX->flags. layered ? true : false;
+   gc_pool = bitmap ? &guts.bitmap_gc_pool : ( layered ? &guts.argb_gc_pool : &guts.screen_gc_pool );
    XX->gcl = TAILQ_FIRST(gc_pool);
    if (XX->gcl)
       TAILQ_REMOVE(gc_pool, XX->gcl, gc_link);
    if (!XX->gcl) {
       gcv. graphics_exposures = false;
-      XX-> gc = XCreateGC( DISP, bitmap ? XX-> gdrawable : guts. root, GCGraphicsExposures, &gcv);
+      XX-> gc = XCreateGC( DISP, (bitmap || layered) ? XX-> gdrawable : guts. root, GCGraphicsExposures, &gcv);
       XCHECKPOINT;
       if (( XX->gcl = alloc1z( GCList))) 
          XX->gcl->gc = XX-> gc;
@@ -82,14 +83,15 @@ prima_get_gc( PDrawableSysData selfxx)
 void
 prima_release_gc( PDrawableSysData selfxx)
 {
-   Bool bitmap;
+   Bool bitmap, layered;
    struct gc_head *gc_pool;
 
    if ( XX-> gc) {
       if ( XX-> gcl == nil)
          warn( "UAG_011: internal error");
       bitmap = XT_IS_BITMAP(XX) ? true : false;
-      gc_pool = bitmap ? &guts.bitmap_gc_pool : &guts.screen_gc_pool;
+      layered = XX->flags. layered ? true : false;
+      gc_pool = bitmap ? &guts.bitmap_gc_pool : ( layered ? &guts.argb_gc_pool : &guts.screen_gc_pool );
       if ( XX-> gcl) 
          TAILQ_INSERT_HEAD(gc_pool, XX->gcl, gc_link);
       XX->gcl = nil;
@@ -188,11 +190,11 @@ Unbuffered:
    } else {
       XX-> paint_dashes = malloc(1);
       if ( XX-> ndashes < 0) {
-	 XX-> paint_dashes[0] = '\0';
-	 XX-> paint_ndashes = 0;
+         XX-> paint_dashes[0] = '\0';
+         XX-> paint_ndashes = 0;
       } else {
-	 XX-> paint_dashes[0] = '\1';
-	 XX-> paint_ndashes = 1;
+         XX-> paint_dashes[0] = '\1';
+         XX-> paint_ndashes = 1;
       }
       XX-> line_style = LineSolid;
    }
@@ -237,6 +239,16 @@ Unbuffered:
       apc_gp_set_font( self, &PDrawable( self)-> font);
       XX-> flags. reload_font = false;
    }
+   if(0){
+ 			    XGCValues gcv;
+             XCHECKPOINT;
+		       GC gc = XCreateGC(DISP, XX->gdrawable, 0, &gcv);
+             XCHECKPOINT;
+		       XSetForeground( DISP, gc, 0xff000000);
+             XCHECKPOINT;
+		       XFillRectangle( DISP, XX->gdrawable, gc, 0, 0, 100, 100);
+             XFreeGC( DISP, gc);
+             }
 }
 
 void
@@ -931,14 +943,15 @@ color_to_pixel( Handle self, Color color, int depth)
    } else if ( guts.palSize > 0 ) {
       pv = prima_color_find( self, color, -1, nil, RANK_FREE);
    } else {
+      PRGBABitDescription bd = GET_RGBA_DESCRIPTION;
       switch ( depth) {
       case 16:   
       case 24:   
       case 32:   
          pv = 
-            (((COLOR_R(color) << guts. red_range  ) >> 8) << guts.   red_shift) |
-            (((COLOR_G(color) << guts. green_range) >> 8) << guts. green_shift) |
-            (((COLOR_B(color) << guts. blue_range ) >> 8) << guts.  blue_shift);
+            (((COLOR_R(color) << bd-> red_range  ) >> 8) << bd->   red_shift) |
+            (((COLOR_G(color) << bd-> green_range) >> 8) << bd-> green_shift) |
+            (((COLOR_B(color) << bd-> blue_range ) >> 8) << bd->  blue_shift);
          if ( guts.machine_byte_order != guts.byte_order)  
             switch( depth) {
             case 16:
@@ -1206,16 +1219,18 @@ apc_gp_get_pixel( Handle self, int x, int y)
          } else 
             c = guts.palette[pixel]. composite;
       } else {
-         int r, g, b, rmax, gmax, bmax;
+         PRGBABitDescription bd = GET_RGBA_DESCRIPTION;
+         int r, g, b, rmax, gmax, bmax, depth;
          rmax = gmax = bmax = 0xff;
+         depth = XX->flags.layered ? guts. argb_visual. depth : guts. idepth;
          switch ( guts. idepth) {
          case 16:
             p32 = *(( uint16_t*)(im-> data));
             if ( guts.machine_byte_order != guts.byte_order) 
                p32 = REVERSE_BYTES_16(p32);
-            rmax = 0xff & ( 0xff << ( 8 - guts. red_range));
-            gmax = 0xff & ( 0xff << ( 8 - guts. green_range));
-            bmax = 0xff & ( 0xff << ( 8 - guts. blue_range));
+            rmax = 0xff & ( 0xff << ( 8 - bd-> red_range));
+            gmax = 0xff & ( 0xff << ( 8 - bd-> green_range));
+            bmax = 0xff & ( 0xff << ( 8 - bd-> blue_range));
             goto COMP;
          case 24:   
             p32 = (im-> data[0] << 16) | (im-> data[1] << 8) | im-> data[2];
@@ -1227,9 +1242,9 @@ apc_gp_get_pixel( Handle self, int x, int y)
             if ( guts.machine_byte_order != guts.byte_order) 
                p32 = REVERSE_BYTES_32(p32);
          COMP:   
-            r = ((((p32 & guts. visual. red_mask)   >> guts. red_shift) << 8) >> guts. red_range) & 0xff;
-            g = ((((p32 & guts. visual. green_mask) >> guts. green_shift) << 8) >> guts. green_range) & 0xff;
-            b = ((((p32 & guts. visual. blue_mask)  >> guts. blue_shift) << 8) >> guts. blue_range) & 0xff;
+            r = ((((p32 & bd-> red_mask)   >> bd->red_shift) << 8)   >> bd-> red_range) & 0xff;
+            g = ((((p32 & bd-> green_mask) >> bd->green_shift) << 8) >> bd-> green_range) & 0xff;
+            b = ((((p32 & bd-> blue_mask)  >> bd->blue_shift) << 8)  >> bd-> blue_range) & 0xff;
             if ( r == rmax ) r = 0xff;
             if ( g == gmax ) g = 0xff;
             if ( b == bmax ) b = 0xff;
