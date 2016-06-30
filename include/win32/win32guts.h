@@ -38,7 +38,6 @@ typedef HANDLE SOCKETHANDLE;
 #define REG_STORAGE                      "SOFTWARE\\Perl\\Prima"
 #define MAXREGLEN                        1024
 
-
 #define WM_WRITE_TO_LOG                   ( WM_USER + 0)
 #define WM_PRIMA_CREATE                   ( WM_USER + 1)
 #define WM_POSTAL                         ( WM_USER + 2)
@@ -59,6 +58,7 @@ typedef HANDLE SOCKETHANDLE;
 #define WM_HASMATE                        ( WM_USER + 18)
 #define WM_FILE                           ( WM_USER + 19)
 #define WM_CROAK                          ( WM_USER + 20)
+#define WM_REPAINT_LAYERED                ( WM_USER + 21)
 #define WM_TERMINATE                      ( WM_USER + 99)
 #define WM_FIRST_USER_MESSAGE             ( WM_USER +100)
 #define WM_LAST_USER_MESSAGE              ( WM_USER +900)
@@ -137,6 +137,8 @@ typedef struct _HandleOptions_ {
    unsigned aptTextOutBaseline      : 1;       // gp text drawing flag
    unsigned aptWinPosDetermined     : 1;       // 0 when size is set, but position is not
    unsigned aptOnTop                : 1;       // HWND_TOPMOST is set
+   unsigned aptLayered              : 1;       // WS_EX_LAYERED
+   unsigned aptRepaintPending       : 1;       // for optLayered
 } HandleOptions;
 
 typedef struct _WinGuts
@@ -527,6 +529,7 @@ extern Handle       hwnd_frame_top_level( Handle self);
 extern void         hwnd_leave_paint( Handle self);
 extern Handle       hwnd_to_view( HWND win);
 extern Handle       hwnd_top_level( Handle self);
+extern Bool         hwnd_repaint_layered( Handle self, Bool now);
 extern void         image_destroy_cache( Handle self);
 extern Handle       image_enscreen( Handle image, Handle screen);
 extern BITMAPINFO * image_get_binfo( Handle img, XBITMAPINFO * bi);

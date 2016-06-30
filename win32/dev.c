@@ -390,8 +390,8 @@ apc_image_begin_paint( Handle self)
       Handle deja  = image_enscreen( self, self);
       if ( !image_set_cache( deja, self)) {
          DeleteDC( sys ps);
-	 sys ps = nil;
-	 return false;
+         sys ps = nil;
+         return false;
       }
       if ( deja != self) Object_destroy( deja);
    }

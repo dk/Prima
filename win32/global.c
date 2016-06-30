@@ -873,6 +873,9 @@ AGAIN:
    case WM_PRIMA_CREATE:
       ev. cmd = cmSetup;
       break;
+   case WM_REPAINT_LAYERED:
+      hwnd_repaint_layered( self, true );
+      break;
    case WM_SETFOCUS:
       if ( guts. focSysDialog) return 1;
       // dlg protect code - general case

@@ -525,6 +525,12 @@ apc_widget_get_invalid_rect( Handle self)
    return ret;
 }
 
+Bool
+apc_widget_get_layered( Handle self)
+{
+   return X(self)-> flags. layered;
+}
+
 Point
 apc_widget_get_pos( Handle self)
 {

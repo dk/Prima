@@ -1573,7 +1573,6 @@ typedef struct _ObjectOptions_ {
    unsigned optAutoEnableChildren  : 1;   /* Widget */
    unsigned optBriefKeys           : 1;
    unsigned optBuffered            : 1;
-   unsigned optLayered             : 1;
    unsigned optModalHorizon        : 1;
    unsigned optOwnerBackColor      : 1;
    unsigned optOwnerColor          : 1;
@@ -2070,6 +2069,9 @@ apc_widget_get_handle( Handle self);
 
 extern Rect
 apc_widget_get_invalid_rect( Handle self);
+
+extern Bool
+apc_widget_get_layered( Handle self);
 
 extern Handle
 apc_widget_get_z_order( Handle self, int zOrderId);

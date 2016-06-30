@@ -1607,6 +1607,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
       return false;
 
    exstyle = 0;
+   if ( layered ) exstyle |= WS_EX_LAYERED;
    if (( var handle != nilHandle) &&
          (( DHANDLE( owner) != sys owner)                 ||
          (( HWND) parentHandle != sys parentHandle)       ||
@@ -1634,6 +1635,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
    }
    if ( is_apt( aptTransparent) != transparent && !reset) apc_widget_redraw( self);
    apt_assign( aptTransparent, transparent);
+   apt_assign( aptLayered, layered );
    if ( reset) apc_widget_redraw( self);
    return apcError == 0;
 }
@@ -1672,7 +1674,22 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
    sys transform2. x = 0;
    sys transform2. y = 0;
 
-   if ( insideOnPaint) {
+   if ( is_apt( aptLayered )) {
+      RECT r;
+      HDC dc2;
+      HBITMAP bm2;
+      BITMAPINFO bmi;
+      VOID *pvBits;
+      BLENDFUNCTION bf;
+      int x, y;
+
+      insideOnPaint = false;
+      GetWindowRect( HANDLE, &r);
+      sys ps2     = GetDC(NULL);
+      sys ps      = CreateCompatibleDC(sys ps2);
+      sys bm      = CreateCompatibleBitmap(sys ps2, r. right - r. left, r. bottom - r. top);
+      sys stockBM = SelectObject(sys ps, sys bm);
+   } else if ( insideOnPaint) {
       if ( !( sys ps = BeginPaint(( HWND) var handle, &sys paintStruc))) apiErrRet;
    } else {
       if ( !( sys ps = GetDC(( HWND) var handle))) apiErrRet;
@@ -1722,7 +1739,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
          apt_set( aptBitmap);
       } else
          apiErr;
-   } else {
+   } else if ( !is_apt(aptLayered)) {
       if ( sys pal) {
          sys stockPalette = SelectPalette( sys ps, sys pal, 1);
          RealizePalette( sys ps);
@@ -1826,7 +1843,29 @@ Bool
 apc_widget_end_paint( Handle self)
 {
    objCheck false;
-   if ( is_opt( optBuffered)) {
+
+   if ( is_apt( aptLayered )) {
+      RECT r;
+      SIZE size;
+      POINT src;
+      BLENDFUNCTION bf;
+      GetWindowRect( HANDLE, &r);
+
+      size. cx = r. right - r. left;
+      size. cy = r. bottom - r. top;
+      src. x = 0;
+      src. y = 0;
+      bf. AlphaFormat         = AC_SRC_ALPHA;
+      bf. SourceConstantAlpha = 255;
+      bf. BlendFlags          = 0;
+      bf. BlendOp             = AC_SRC_OVER;
+      if ( !UpdateLayeredWindow((HWND) var handle, NULL, NULL, &size, sys ps, &src, 0, &bf, ULW_ALPHA)) 
+         apiErr;
+      SelectObject(sys ps, sys stockBM);
+      DeleteObject(sys bm);
+      DeleteDC(sys ps);
+      DeleteDC(sys ps2);
+   } else if ( is_opt( optBuffered)) {
       apt_clear( aptBitmap);
       if ( sys bm != nil) {
          if ( !SetViewportOrgEx( sys ps, 0, 0, nil)) apiErr;
@@ -1967,6 +2006,13 @@ apc_widget_get_invalid_rect( Handle self)
    return r;
 }
 
+Bool
+apc_widget_get_layered( Handle self)
+{
+   objCheck false;
+   return is_apt( aptLayered);
+}
+
 Point
 apc_widget_get_pos( Handle self)
 {
@@ -2051,7 +2097,6 @@ apc_widget_get_z_order( Handle self, int zOrderId)
 
    return h;
 }
-
 
 Bool
 apc_widget_get_shape( Handle self, Handle mask)
@@ -2198,13 +2243,13 @@ apc_widget_is_exposed( Handle self)
    return ( rgnType == COMPLEXREGION || rgnType == SIMPLEREGION);
 }
 
-
 Bool
 apc_widget_invalidate_rect( Handle self, Rect * rect)
 {
    PRECT pRect = rect ? map_Rect( self, rect) : nil;
    objCheck false;
    if ( !InvalidateRect (( HWND) var handle, pRect, false)) apiErr;
+   hwnd_repaint_layered( self, false );
    if ( is_apt( aptSyncPaint) && !apcUpdateWindow(( HWND) var handle)) apiErr;
    objCheck false;
    process_transparents( self);
@@ -2433,6 +2478,7 @@ apc_widget_set_size( Handle self, int width, int height)
       SWP_NOZORDER | SWP_NOACTIVATE | 
          ( is_apt( aptWinPosDetermined) ? 0 : SWP_NOMOVE)
       )) apiErrRet;
+   hwnd_repaint_layered( self, false );
    if ( sys className != WC_FRAME) sys sizeLockLevel--;
    return true;
 }
@@ -2494,6 +2540,7 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
    
    if ( !SetWindowPos( h, 0, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE)) 
       apiErrRet;
+   hwnd_repaint_layered( self, false );
    if ( sys className != WC_FRAME) sys sizeLockLevel--;
    return true;
 }

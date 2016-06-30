@@ -226,7 +226,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
    owner        = pexist( owner)        ? pget_H( owner)        : var-> owner;
    clipOwner    = pexist( clipOwner)    ? pget_B( clipOwner)    : my-> get_clipOwner( self);
    parentHandle = pexist( parentHandle) ? pget_i( parentHandle) : apc_widget_get_parent_handle( self);
-   layered      = pexist( layered)      ? pget_i( layered)      : is_opt( optLayered );
+   layered      = pexist( layered)      ? pget_i( layered)      : my-> get_layered(self);
 
    if ( parentHandle) {
       if (( owner != application) && clipOwner) 
@@ -2405,7 +2405,7 @@ Widget_layered( Handle self, Bool set, Bool layered)
    HV * profile;
    enter_method;
    if ( !set)
-      return is_opt(optLayered);
+      return apc_widget_get_layered( self);
    profile = newHV();
    pset_i( layered, layered);
    my-> set( self, profile);

@@ -1534,7 +1534,7 @@ hwnd_leave_paint( Handle self)
    stylus_free( sys stylusResource, false);
    if ( sys opaquePen ) {
    	DeleteObject( sys opaquePen );
-	sys opaquePen = nil;
+      sys opaquePen = nil;
    }
    if ( sys psd != nil) {
       var font           = sys psd-> font;
@@ -1553,6 +1553,23 @@ hwnd_leave_paint( Handle self)
       sys psd = nil;
    }
    sys bpp = 0;
+}
+
+Bool
+hwnd_repaint_layered( Handle self, Bool now )
+{
+   Event ev;
+   if ( !now && !is_apt( aptSyncPaint) ) {
+      if ( !is_apt( aptRepaintPending )) {
+         apt_set( aptRepaintPending );
+         PostMessage(( HWND) var handle, WM_REPAINT_LAYERED, 0, 0);
+      }
+      return;
+   }
+ 
+   apt_clear( aptRepaintPending );
+   ev. cmd = cmPaint;
+   CWidget(self)-> message( self, &ev); 
 }
 
 Handle
@@ -1575,7 +1592,6 @@ hwnd_frame_top_level( Handle self)
    }
    return nilHandle;
 }
-
 
 typedef struct _ModData
 {
