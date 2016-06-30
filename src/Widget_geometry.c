@@ -302,6 +302,8 @@ Widget_move_notify( Handle self, Handle child, Point * moveTo)
    int  dy  = moveTo-> y - var-> pos. y;
    Point p;
 
+   if ( his-> geometry != gtGrowMode ) return false;
+
    if ( his-> growMode & gmDontCare) {
       if ( !clp) return false;
       p = his-> self-> get_origin( child);

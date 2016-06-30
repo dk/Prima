@@ -168,7 +168,8 @@ Widget_init( Handle self, HV * profile)
       var-> virtualSize = my-> get_size( self);
    var-> geomSize = var-> virtualSize;
 
-   {
+   int geometry = pget_i(geometry);
+   if ( geometry == gtGrowMode ) {
       Bool x = 0, y = 0;
       if ( pget_B( centered)) { x = 1; y = 1; };
       if ( pget_B( x_centered) || ( var-> growMode & gmXCenter)) x = 1;
@@ -179,7 +180,7 @@ Widget_init( Handle self, HV * profile)
    opt_assign( optPackPropagate, pget_B( packPropagate));
    my-> set_packInfo( self, pget_sv( packInfo));
    my-> set_placeInfo( self, pget_sv( placeInfo));
-   my-> set_geometry( self, pget_i( geometry));
+   my-> set_geometry( self, geometry);
    
    my-> set_shape       ( self, pget_H(  shape));
    my-> set_visible     ( self, pget_B( visible));
@@ -855,7 +856,7 @@ void Widget_handle_event( Handle self, PEvent event)
                   oldP. y != event-> gen. P. y)) {
                my-> notify( self, "<sPP", "Move", oldP, event-> gen. P);
                objCheck;
-               if ( var-> growMode & gmCenter) 
+               if ( var->geometry == gtGrowMode && var-> growMode & gmCenter) 
                   my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
             }
          }
@@ -904,7 +905,7 @@ void Widget_handle_event( Handle self, PEvent event)
               n-> gen. P. y = n-> gen. R. top    = event-> gen. P. y;
            }
         SIZE_EVENT:;  
-           if ( var-> growMode & gmCenter) 
+           if ( var->geometry == gtGrowMode && var-> growMode & gmCenter) 
                my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
            if ( !event-> gen. B)
                my-> first_that( self, (void*) Widget_size_notify, &event-> gen. R);
@@ -1716,7 +1717,7 @@ Widget_growMode( Handle self, Bool set, int growMode)
    var-> growMode = growMode;
    if ( var-> growMode & gmXCenter) x = true;
    if ( var-> growMode & gmYCenter) y = true;
-   if ( x || y) my-> set_centered( self, x, y);
+   if ( var-> geometry == gtGrowMode && (x || y)) my-> set_centered( self, x, y);
    return var-> growMode;
 }
 
