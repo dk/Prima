@@ -6,7 +6,7 @@
 #define POLLUTE_NAME_SPACE 1
 #endif
 
-#define PRIMA_CORE_VERSION 2016053001
+#define PRIMA_CORE_VERSION 2016063001
 
 #define PRIMA_VERSION_BOOTCHECK \
     if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
