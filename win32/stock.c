@@ -1907,6 +1907,7 @@ region_create( Handle mask)
       idata -= PImage( mask)-> lineSize;
    }
 
+
    if ( set) {
       rdata-> rdh. dwSize          = sizeof( RGNDATAHEADER);
       rdata-> rdh. iType           = RDH_RECTANGLES;
@@ -1923,6 +1924,8 @@ region_create( Handle mask)
 
       dsys( mask) s. imgCachedRegion = CreateRectRgn(0,0,0,0);
       CombineRgn( dsys( mask) s. imgCachedRegion, rgn, nil, RGN_COPY);
+   } else {
+      dsys( mask) s. imgCachedRegion = rgn = CreateRectRgn(0,0,0,0);
    }
    free( rdata);
 

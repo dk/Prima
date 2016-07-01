@@ -2576,7 +2576,7 @@ apc_widget_set_shape( Handle self, Handle mask)
       sys extraPos. y = sz. y - p.y - delta.y;
       r1 = CreateRectRgn( 0, 0, 8192, 8192);
       r2 = CreateRectRgn( delta. x, sz. y - delta. y - p.y,
-         delta.x + p.x + 1, sz. y - delta. y + 1);
+         delta.x + p.x, sz. y - delta. y);
       CombineRgn( r1, r1, r2, RGN_XOR);
       CombineRgn( rgn, rgn, r1, RGN_OR);
       DeleteObject( r1);
