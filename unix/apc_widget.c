@@ -280,6 +280,8 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       valuemask |= CWBackPixel | CWBorderPixel;
       if ( !guts. argbColormap ) guts. argbColormap = XCreateColormap( DISP, guts. root, guts. argb_visual. visual, AllocNone);
       attrs. colormap = guts. argbColormap;
+      attrs. background_pixel = 0;
+      attrs. border_pixel = 0;
    }
 
    XX-> client = X_WINDOW = XCreateWindow( DISP, parent,
