@@ -577,14 +577,16 @@ apc_widget_get_shape( Handle self, Handle mask)
    if ( XX-> shape_extent. x == 0 || XX-> shape_extent. y == 0)
       return false;
 
-   r = rc = XShapeGetRectangles( DISP, XX-> client, ShapeBounding, &count, &ordering);
+   r = rc = XShapeGetRectangles( DISP, X_WINDOW, ShapeBounding, &count, &ordering);
   
    CImage(mask)-> create_empty( mask, XX-> shape_extent. x, XX-> shape_extent. y, imBW);
    CImage(mask)-> begin_paint( mask); 
+   XSetForeground( DISP, X(mask)-> gc, 0);
+   XFillRectangle( DISP, X(mask)->gdrawable, X(mask)->gc, 0, 0, XX->shape_extent.x, XX->shape_extent.y);
    XSetForeground( DISP, X(mask)-> gc, 1);
    for ( i = 0; i < count; i++, r++) 
       XFillRectangle( DISP, X(mask)-> gdrawable, X(mask)-> gc, 
-          r-> x - XX-> shape_offset. x, r-> y - XX-> shape_offset. y, 
+          r-> x - XX-> shape_offset. x, r-> y - XX-> shape_offset. y,
           r-> width, r-> height);
    XFree( rc);
    CImage(mask)-> end_paint( mask);  
@@ -1049,7 +1051,7 @@ apc_widget_set_shape( Handle self, Handle mask)
    XGCValues gcv;
    ImageCache * cache;
    int i;
-   Byte * data;
+   XRectangle xr;
 
    if ( !guts. shape_extension) return false; 
    
@@ -1063,38 +1065,30 @@ apc_widget_set_shape( Handle self, Handle mask)
    }
    
    img = PImage(mask);
-   data = img-> data;
-   for ( i = 0; i < img-> dataSize; i++, data++) *data = ~*data;
    cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP);
    if ( !cache) return false;
-   px = XCreatePixmap(DISP, guts. root, img->w, img->h + XX-> menuHeight, 1);
+   px = XCreatePixmap(DISP, guts. root, img->w, img->h, 1);
    gcv. graphics_exposures = false;
    gc = XCreateGC(DISP, px, GCGraphicsExposures, &gcv);
-   if ( XX-> menuHeight > 0) {
-      XSetForeground( DISP, gc, 1);
-      XFillRectangle( DISP, px, gc, 0, 0, img-> w, XX-> menuHeight);
-   }
    XSetForeground( DISP, gc, 0);
-   prima_put_ximage(px, gc, cache->image, 0, 0, 0, XX-> menuHeight, img->w, img->h);
+   prima_put_ximage(px, gc, cache->image, 0, 0, 0, 0, img->w, img->h);
    XFreeGC( DISP, gc);
    /*
       XXX This static shape approach doesn't work when menuHeight is dynamically changed.
           Need to implement something more elaborated.
      */
-   XShapeCombineMask( DISP, X_WINDOW, ShapeBounding, 0, 0, px, ShapeSet);
-   XShapeOffsetShape( DISP, X_WINDOW, ShapeBounding, 0, XX-> size. y - img-> h);
-   if ( XX-> client != X_WINDOW) {
-      XShapeCombineMask( DISP, XX-> client, ShapeBounding, 0, 0, px, ShapeSet);
-      XShapeOffsetShape( DISP, XX-> client, ShapeBounding, 0, XX-> size. y - img-> h - XX-> menuHeight);
-   }
+   xr. x = 0;
+   xr. y = 0;
+   XShapeCombineMask( DISP, X_WINDOW, ShapeBounding, 0, XX->size.y - img->h + XX->menuHeight, px, ShapeSet);
+   xr. width  = XX->size.x;
+   xr. height = XX->size.y + XX->menuHeight;
+   XShapeCombineRectangles( DISP, X_WINDOW, ShapeBounding, 0, 0, &xr, 1, ShapeInvert, 0);
    XFreePixmap( DISP, px);
-   data = img-> data;
-   for ( i = 0; i < img-> dataSize; i++, data++) *data = ~*data;
    apc_image_update_change( mask);
    XX-> shape_extent. x = img-> w; 
    XX-> shape_extent. y = img-> h; 
    XX-> shape_offset. x = 0;
-   XX-> shape_offset. y = XX-> size. y + XX-> menuHeight - img-> h;
+   XX-> shape_offset. y = XX-> menuHeight;
    return true;
 #endif   
 }

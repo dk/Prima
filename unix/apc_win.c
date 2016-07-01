@@ -951,10 +951,16 @@ prima_window_reset_menu( Handle self, int newMenuHeight)
       
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
      if ( XX-> shape_extent. x != 0 || XX-> shape_extent. y != 0) {
-        int ny = XX-> size. y + XX-> menuHeight - XX-> shape_extent. y;
+        int ny = XX-> menuHeight;
         if ( XX-> shape_offset. y != ny) {
+           XRectangle xr;
            XShapeOffsetShape( DISP, X_WINDOW, ShapeBounding, 0, ny - XX-> shape_offset. y);
            XX-> shape_offset. y = ny;
+           xr. x = 0;
+           xr. y = 0;
+           xr. width  = XX->size.x;
+           xr. height = XX->menuHeight;
+           XShapeCombineRectangles( DISP, X_WINDOW, ShapeBounding, 0, 0, &xr, 1, ShapeUnion, 0);
         }
      }
 #endif     
