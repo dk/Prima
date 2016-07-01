@@ -609,7 +609,7 @@ class;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    /* get ARGB visual */
    {
-		int i;
+      int i;
       XRenderPictFormat *f;
       template. depth = 32; /* XXX should try non-32 bit alpha'ed visuals */
       list = XGetVisualInfo( DISP, VisualDepthMask, &template, &count);
@@ -625,6 +625,7 @@ class;
          find_color_mask_range( guts. argb_bits. green_mask, &guts. argb_bits. green_shift, &guts. argb_bits. green_range);
          find_color_mask_range( guts. argb_bits. blue_mask,  &guts. argb_bits. blue_shift,  &guts. argb_bits. blue_range);
          find_color_mask_range( guts. argb_bits. alpha_mask, &guts. argb_bits. alpha_shift, &guts. argb_bits. alpha_range);
+         guts. argb_pic_format = f;
          Pdebug("selected visual 0x%x for ARGB operations\n", list[i].visualid);
          break;
       }

@@ -609,6 +609,9 @@ typedef struct _UnixGuts
    XVisualInfo                  visual;
    int                          visualClass;
    XVisualInfo                  argb_visual;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   XRenderPictFormat *          argb_pic_format;
+#endif
    MainColorEntry *             palette;
    int *                        mappingPlace;
    unsigned long                monochromeMap[2];
