@@ -177,13 +177,56 @@ flush_events( Display * disp, XEvent * ev, Handle self)
    return win == X(self)-> client || win == X_WINDOW;
 }
 
+typedef struct _ViewProfile {
+  Point    pos;
+  Point    size;
+  Bool     visible;
+  Bool     focused;
+  Handle   capture;
+} ViewProfile, *PViewProfile;
+
+static void
+get_view_ex( Handle self, PViewProfile p)
+{
+  int i;
+  if ( !p) return;
+  p-> capture   = apc_widget_is_captured( self);
+  p-> pos       = apc_widget_get_pos( self);
+  p-> size      = apc_widget_get_size( self);
+  p-> focused   = apc_widget_is_focused( self);
+  p-> visible   = apc_widget_is_visible( self);
+}
+
+static void
+set_view_ex( Handle self, PViewProfile p)
+{
+  DEFXX;
+  if ( XX-> flags. falsely_hidden) {
+     if ( p-> size. x == 0) p-> size. x = 1;
+     if ( p-> size. y == 0) p-> size. y = 1;
+     XMoveResizeWindow( DISP, X_WINDOW, p-> pos.x, p->pos. y, p-> size.x, p-> size.y);
+  } else {
+     p-> pos. y = X(XX-> owner)-> size. y - p-> size. y - XX-> origin. y;
+     if ( XX-> parentHandle) {
+        XWindow cld;
+        XTranslateCoordinates( DISP, PWidget(XX-> owner)-> handle, XX-> parentHandle, p->pos.x, p->pos.y, &p->pos.x, &p->pos.y, &cld);
+     } 
+     XMoveResizeWindow( DISP, X_WINDOW, p-> pos.x, p->pos. y, p-> size.x, p-> size.y);
+     if ( p-> visible ) XMapWindow( DISP, X_WINDOW);
+  }
+
+  if ( p-> focused) apc_widget_set_focused( self);
+  if ( p-> capture) apc_widget_set_capture( self, 1, nilHandle);
+}
+
 Bool
 apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		   Bool clip_owner, Bool transparent, ApiHandle parentHandle, Bool layered)
 {
    DEFXX;
-   Bool reset;
-   Handle real_owner;
+   ViewProfile vprf;
+   Bool reparent, recreate;
+   Handle real_owner, old_parent;
    XWindow parent, old = X_WINDOW;
    XSetWindowAttributes attrs;
    unsigned long valuemask;
@@ -192,11 +235,25 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       layered = false;
    XX-> visual = layered ? &guts. argb_visual : &guts. visual;
 
-   reset = ( old != nilHandle) && ( 
+   reparent = ( old != nilHandle) && ( 
       ( clip_owner != XX-> flags. clip_owner) ||
-      ( parentHandle != XX-> parent) ||
-      ( layered != XX-> flags. layered)
+      ( parentHandle != XX-> parent)
    );
+   recreate = ( old != nilHandle) && (
+      ( layered != XX-> flags. layered )
+   );
+   if ( recreate ) {
+      reparent = false;
+      get_view_ex( self, &vprf);
+      if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
+      CWidget( self)-> end_paint_info( self);
+      CWidget( self)-> end_paint( self);
+      hash_delete( guts.windows, (void*)&old, sizeof(old), false);
+      XDestroyWindow( DISP, old);
+      XCHECKPOINT;
+   }
+
+   old_parent = ( old != nilHandle ) ? XX->parent : nilHandle;
 
    XX-> flags. transparent = !!transparent;
    XX-> type.drawable = true;
@@ -231,9 +288,12 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       ? SouthWestGravity : NorthWestGravity;
    attrs. colormap = guts. defaultColormap;
 
-   if ( reset) {
+   if ( reparent) {
       Point pos = PWidget(self)-> pos;
       XEvent dummy_ev;
+
+      if ( old_parent == parent ) return true;
+
       if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
       CWidget( self)-> end_paint_info( self);
       CWidget( self)-> end_paint( self);
@@ -247,15 +307,14 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       
       XChangeWindowAttributes( DISP, X_WINDOW, CWWinGravity, &attrs);
       XReparentWindow( DISP, X_WINDOW, parent, pos. x, 
-         X(owner)-> size.y - pos. y - X(self)-> size. y);
+         X(real_owner)-> size.y - pos. y - X(self)-> size. y);
+
       XX-> ackOrigin = pos;
       XX-> ackSize   = XX-> size;
       XX-> flags. mapped = XX-> flags. want_visible;
       process_transparents( self);
       return true;
    }   
-
-   if ( old != nilHandle) return true;
 
    valuemask = 
       0
@@ -288,9 +347,22 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
                              0, 0, 1, 1, 0, XX-> visual-> depth,
                              InputOutput, XX-> visual-> visual,
                              valuemask, &attrs);
-   if (!X_WINDOW)
-      return false;
    XCHECKPOINT;
+   if (!X_WINDOW) {
+      warn("error creating window");
+      return false;
+   }
+
+   if (recreate) {
+      Point pos = PWidget(self)-> pos;
+      set_view_ex( self, &vprf);
+      XX-> gdrawable = XX-> udrawable = X_WINDOW;
+      XX-> ackOrigin = pos;
+      XX-> ackSize   = XX-> size;
+      XX-> flags. mapped = XX-> flags. want_visible;
+      hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
+      return true;
+   }
 
    XX-> size. x = XX-> size. y = 
    XX-> ackOrigin. x = XX-> ackOrigin. y = 
@@ -428,7 +500,6 @@ apc_widget_destroy( Handle self)
       TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
       XX-> flags. paint_pending = false;
    }
-   if ( XX-> recreateData) free( XX-> recreateData);
    if ( XX-> invalid_region) {
       XDestroyRegion( XX-> invalid_region);
       XX-> invalid_region = nil;
@@ -1204,7 +1275,6 @@ apc_widget_set_size( Handle self, int width, int height)
    return true;
 }
 
-
 Bool
 apc_widget_set_rect( Handle self, int x, int y, int width, int height)
 {
@@ -1245,7 +1315,6 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
       XTranslateCoordinates( DISP, XX-> client, guts. root, 0, 0, 
          &guts. grab_translate_mouse.x, &guts. grab_translate_mouse.y, &rx);
    }
-
 
    XX-> size. x = width;
    XX-> size. y = height;
