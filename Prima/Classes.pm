@@ -483,6 +483,7 @@ sub profile_default
 	my %prf = (
 		autoMasking => am::Auto,
 		mask        => '',
+		maskType    => im::bpp1,
 		maskColor   => 0,
 		maskIndex   => 0,
 	);

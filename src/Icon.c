@@ -22,7 +22,7 @@ produce_mask( Handle self)
    Byte color = 0;
    RGBColor rgbcolor;
    int i, bpp2;
-   int line8Size = (( var-> w * 8 + 31) / 32) * 4, areaLineSize = var-> lineSize;
+   int line8Size = LINE_SIZE(var->w, 8), areaLineSize = var-> lineSize;
    int bpp = var-> type & imBPP;
    int w = var-> w, h = var-> h;
 
@@ -244,6 +244,9 @@ Icon_init( Handle self, HV * profile)
 {
    dPROFILE;
    inherited init( self, profile);
+   my-> set_maskType( self, pget_i( maskType));
+   my-> update_change(self); /* instantiate mask memory */
+
    my-> set_maskColor( self, pget_i( maskColor));
    my-> set_maskIndex( self, pget_i( maskIndex));
    my-> set_autoMasking( self, pget_i( autoMasking));
@@ -281,6 +284,64 @@ Icon_autoMasking( Handle self, Bool set, int autoMasking)
    my-> update_change( self);
    return 0;
 }   
+   
+Byte*
+Icon_convert_mask( Handle self, int type )
+{
+   int i;
+   int srcLine = LINE_SIZE( var-> w, var-> maskType );
+   int dstLine = LINE_SIZE( var-> w, type );
+   Byte colorref[256], *src = var-> mask, *dst;
+   RGBColor palette[2];
+
+   if ( type == var-> maskType ) 
+      croak("invalid usage of Icon::convert_mask");
+
+   if ( !( dst = malloc( dstLine * var-> h)))
+      croak("Icon::convert_mask: cannot allocate %d bytes", dstLine * var-> h);
+   switch (type) {
+   case imbpp1:
+      /* downgrade */
+      memset( colorref,       0, 128 );
+      memset( colorref + 128, 1, 128 );
+      for ( i = 0; i < var->h; i++, src += srcLine, dst += dstLine)
+          bc_byte_mono_cr( src, dst, var-> w, colorref);
+      break;
+   case imbpp8:
+      memset( &palette[0], 0x00, sizeof(RGBColor));
+      memset( &palette[1], 0xff, sizeof(RGBColor));
+      for ( i = 0; i < var->h; i++, src += srcLine, dst += dstLine)
+          bc_mono_graybyte( src, dst, var-> w, palette);
+      break;
+   default:
+      croak("invalid usage of Icon::convert_mask");
+   }
+   return dst;
+}
+
+int
+Icon_maskType( Handle self, Bool set, int type)
+{
+   if ( !set)
+      return var-> maskType;
+
+   type &= ~imGrayScale;
+   if ( var-> maskType == type) return 0;
+   switch ( type ) {
+   case imbpp1:
+   case imbpp8:
+      if ( var-> mask ) {
+	  free( var-> mask );
+	  var-> mask = nil;
+	  var-> mask = Icon_convert_mask(self, type);
+      }
+      break;
+   default:
+      croak("mask type must be either im::bpp1 or im::bpp8");
+   }
+
+   var-> maskType = type;
+}
 
 Color
 Icon_maskColor( Handle self, Bool set, Color color)
@@ -312,8 +373,10 @@ Icon_update_change( Handle self)
 {
    inherited update_change( self);
 
+   if ( var-> maskType == 0) return; /* inside inherited init */
+
    if ( var-> autoMasking == amNone) {
-      int maskLine = (( var-> w + 31) / 32) * 4;
+      int maskLine = LINE_SIZE( var-> w, var-> maskType );
       int maskSize = maskLine * var-> h;
       if ( maskLine != var-> maskLine || maskSize != var-> maskSize) {
          free( var-> mask);
@@ -325,12 +388,13 @@ Icon_update_change( Handle self)
             memset( var-> mask, 0, maskSize);
       }
       return;
-   }   
+   }
    
    free( var-> mask);
    if ( var-> data)
    {
-      var-> maskLine = (( var-> w + 31) / 32) * 4;
+      var-> maskType = imbpp1;
+      var-> maskLine = LINE_SIZE( var-> w, var-> maskType );
       var-> maskSize = var-> maskLine * var-> h;
       if ( !( var-> mask = allocb( var-> maskSize)) && var-> maskSize > 0) {
           my-> make_empty( self);
@@ -389,11 +453,18 @@ Icon_stretch( Handle self, int width, int height)
 void
 Icon_create_empty( Handle self, int width, int height, int type)
 {
+   my-> create_empty_icon( self, width, height, type, imbpp1);
+}
+
+void
+Icon_create_empty_icon( Handle self, int width, int height, int type, int maskType)
+{
    inherited create_empty( self, width, height, type);
    free( var-> mask);
    if ( var-> data)
    {
-      var-> maskLine = (( var-> w + 31) / 32) * 4;
+      var-> maskType = maskType;
+      var-> maskLine = LINE_SIZE( var-> w, var-> maskType );
       var-> maskSize = var-> maskLine * var-> h;
       if ( !( var-> mask = allocb( var-> maskSize)) && var-> maskSize > 0) {
          my-> make_empty( self);
@@ -416,6 +487,7 @@ Icon_dup( Handle self)
    PIcon  i = ( PIcon) h;
    memcpy( i-> mask, var-> mask, var-> maskSize);
    i-> autoMasking = var-> autoMasking;
+   i-> maskType    = var-> maskType;
    i-> maskColor   = var-> maskColor;
    i-> maskIndex   = var-> maskIndex;
    return h;
@@ -432,7 +504,7 @@ Icon_split( Handle self)
    pset_H( owner,        var-> owner);
    pset_i( width,        var-> w);
    pset_i( height,       var-> h);
-   pset_i( type,         imMono|imGrayScale);
+   pset_i( type,         var->maskType|imGrayScale);
    pset_i( conversion,   var->conversion);
    pset_i( scaling,      var->scaling);
    pset_i( preserveType, is_opt( optPreserveType));
@@ -455,16 +527,21 @@ void
 Icon_combine( Handle self, Handle xorMask, Handle andMask)
 {
    Bool killAM = 0;
-   int am = var-> autoMasking;
+   int am = var-> autoMasking, maskType;
    
    if ( !kind_of( xorMask, CImage) || !kind_of( andMask, CImage))
       return;
-   my-> create_empty( self, PImage( xorMask)-> w, PImage( xorMask)-> h, PImage( xorMask)-> type);
-   if (( PImage( andMask)-> type & imBPP) != imMono) {
+
+   maskType = PImage( andMask)-> type & imBPP;
+   if ( maskType != imbpp1 && maskType != imbpp8) {
       killAM = 1;
       andMask = CImage( andMask)-> dup( andMask);
-      CImage( andMask)-> set_type( andMask, imMono);
+      CImage( andMask)-> set_type( andMask, imbpp1);
+      maskType = imbpp1;
    }
+
+   my-> create_empty_icon( self, PImage( xorMask)-> w, PImage( xorMask)-> h, PImage( xorMask)-> type, maskType);
+
    if ( var-> w != PImage( andMask)-> w || var-> h != PImage( andMask)-> h) {
       if ( !killAM) {
          killAM = 1;
@@ -483,6 +560,29 @@ Icon_combine( Handle self, Handle xorMask, Handle andMask)
    var-> autoMasking = amNone;
    my-> update_change( self);
    var-> autoMasking = am;
+}
+
+void
+Icon_set( Handle self, HV * profile)
+{
+   dPROFILE;
+
+   if (pexist( maskType)) {
+      int maskType = pget_i(maskType);
+      if ( maskType == var-> maskType ) pdelete( maskType );
+   }
+
+   if ( pexist( maskType) && pexist( mask ))
+   {
+      free( var-> mask );
+      var-> mask = nil;
+      my-> set_maskType( self, pget_i( maskType));
+      my-> set_mask( self, pget_sv( mask));
+      pdelete( maskType);
+      pdelete( mask);
+   }
+
+   inherited set ( self, profile);
 }
 
 #ifdef __cplusplus

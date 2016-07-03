@@ -196,17 +196,21 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       int dataSize = PImage( src)-> dataSize; 
       int lineSize = PImage( src)-> lineSize; 
       int palSize  = PImage( src)-> palSize; 
+      int palSize2;
       int type     = PImage( src)-> type;
       void *self   = PImage( src)-> self; 
-      RGBColor palette[2];
-      memcpy( palette, PImage( src)-> palette, 6);
-      memcpy( PImage( src)-> palette, stdmono_palette, 6);
+      RGBColor palette[256];
+      if ( PIcon( src)-> maskType == imbpp1) 
+         memcpy( PImage( src)-> palette, stdmono_palette, palSize2 = 6);
+      else
+         memcpy( PImage( src)-> palette, std256gray_palette, palSize2 = 768);
+      memcpy( palette, PImage( src)-> palette, palSize2);
       PImage( src)-> self     =  CImage;
-      PImage( src)-> type     =  imbpp1 | imGrayScale; 
+      PImage( src)-> type     =  PIcon( src)-> maskType | imGrayScale; 
       PImage( src)-> data     =  PIcon( src)-> mask;
       PImage( src)-> lineSize =  PIcon( src)-> maskLine;
       PImage( src)-> dataSize =  PIcon( src)-> maskSize;
-      PImage( src)-> palSize  =  2;
+      PImage( src)-> palSize  =  ( PIcon( src)-> maskType == imbpp1) ? 2 : 256;
       img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut);
       PImage( src)-> self     = self;
       PImage( src)-> type     = type;
@@ -214,7 +218,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       PImage( src)-> lineSize = lineSize; 
       PImage( src)-> dataSize = dataSize; 
       PImage( src)-> palSize  = palSize;
-      memcpy( PImage( src)-> palette, palette, 6);
+      memcpy( PImage( src)-> palette, palette, palSize2);
       rop = ropXorPut;
    }  
    
