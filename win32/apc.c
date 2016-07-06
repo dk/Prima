@@ -1847,7 +1847,7 @@ apc_widget_end_paint( Handle self)
    if ( is_apt( aptLayered )) {
       RECT r;
       SIZE size;
-      POINT src;
+      POINT src, pos, *ppos = NULL;
       BLENDFUNCTION bf;
       GetWindowRect( HANDLE, &r);
 
@@ -1859,7 +1859,13 @@ apc_widget_end_paint( Handle self)
       bf. SourceConstantAlpha = 255;
       bf. BlendFlags          = 0;
       bf. BlendOp             = AC_SRC_OVER;
-      if ( !UpdateLayeredWindow((HWND) var handle, NULL, NULL, &size, sys ps, &src, 0, &bf, ULW_ALPHA)) 
+      if (is_apt(aptMovePending)) {
+         pos. x = sys layeredPos. x;
+         pos. y = sys layeredPos. y;
+	 ppos = &pos;
+         apt_clear(aptMovePending);
+      }
+      if ( !UpdateLayeredWindow((HWND) var handle, NULL, ppos, &size, sys ps, &src, 0, &bf, ULW_ALPHA)) 
          apiErr;
       SelectObject(sys ps, sys stockBM);
       DeleteObject(sys bm);
@@ -2432,7 +2438,13 @@ apc_widget_set_pos( Handle self, int x, int y)
    } else
       y = sz. y - y - r. bottom + r. top;
 
-   if ( !SetWindowPos( HANDLE, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErrRet;
+   if ( is_apt(aptLayered) && is_apt(aptRepaintPending)) {
+      apt_set(aptMovePending);
+      sys layeredPos. x = x;
+      sys layeredPos. y = y;
+   } else {
+      if ( !SetWindowPos( HANDLE, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) apiErrRet;
+   }
    return true;
 }
 
@@ -2478,6 +2490,7 @@ apc_widget_set_size( Handle self, int width, int height)
       SWP_NOZORDER | SWP_NOACTIVATE | 
          ( is_apt( aptWinPosDetermined) ? 0 : SWP_NOMOVE)
       )) apiErrRet;
+   apt_clear(aptMovePending);
    hwnd_repaint_layered( self, false );
    if ( sys className != WC_FRAME) sys sizeLockLevel--;
    return true;
@@ -2540,6 +2553,7 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
    
    if ( !SetWindowPos( h, 0, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE)) 
       apiErrRet;
+   apt_clear(aptMovePending);
    hwnd_repaint_layered( self, false );
    if ( sys className != WC_FRAME) sys sizeLockLevel--;
    return true;

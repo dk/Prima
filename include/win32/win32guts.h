@@ -139,6 +139,7 @@ typedef struct _HandleOptions_ {
    unsigned aptOnTop                : 1;       // HWND_TOPMOST is set
    unsigned aptLayered              : 1;       // WS_EX_LAYERED
    unsigned aptRepaintPending       : 1;       // for optLayered
+   unsigned aptMovePending          : 1;       // for optLayered
 } HandleOptions;
 
 typedef struct _WinGuts
@@ -393,6 +394,7 @@ typedef struct _DrawableData
    Handle         lastMenu;                // last menu activated by WM_INITMENU or WM_INITMENUPOPUP
    Point          extraBounds;             // used in region calculations
    Point          extraPos;                // used in region calculations
+   Point          layeredPos;              // delayed layered window positioning
 
    /* Other class-specific data */
    union {

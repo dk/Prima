@@ -1559,6 +1559,8 @@ Bool
 hwnd_repaint_layered( Handle self, Bool now )
 {
    Event ev;
+   if ( !is_apt( aptLayered)) return;
+
    if ( !now && !is_apt( aptSyncPaint) ) {
       if ( !is_apt( aptRepaintPending )) {
          apt_set( aptRepaintPending );
