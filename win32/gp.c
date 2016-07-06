@@ -683,6 +683,89 @@ static void dc2screen( HDC dc, Handle self)
 }
 */
 
+static Handle
+image_from_dc( Handle image )
+{
+   Handle img      = ( Handle) create_object("Prima::Image", "");
+   HDC adc         = dsys( image) ps;
+   HBITMAP abitmap = dsys( image) bm;
+   dsys( img) ps   = dsys( image) ps;
+   dsys( img) bm   = dsys( image) bm;
+   image_query_bits( img, true);
+   dsys( img) ps   = adc;
+   dsys( img) bm   = abitmap;
+   return img;
+}
+	
+
+static Bool
+put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
+              int dstx, int dsty, int dstw, int dsth,
+              int srcx, int srcy, int srcw, int srch)
+{
+    HDC src;
+    BITMAPINFO bmi;
+    BLENDFUNCTION bf;
+    HBITMAP old, hbitmap;
+    Bool ok;
+    int y;
+    Byte *rgb_bits, *a_bits, *rgba_bits;
+
+    if ( rgb->options. optInDraw ) {
+       Bool ok;
+       Handle img = image_from_dc((Handle) rgb);
+       ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
+          dstx, dsty, dstw, dsth, 
+	  srcx, srcy, srcw, srch);
+       Object_destroy( img);
+       return ok;
+    }
+
+    src = CreateCompatibleDC(dest);
+    ZeroMemory(&bmi, sizeof(BITMAPINFO));
+    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biWidth       = srcw;
+    bmi.bmiHeader.biHeight      = srch;
+    bmi.bmiHeader.biPlanes      = 1;
+    bmi.bmiHeader.biBitCount    = 32;
+    bmi.bmiHeader.biCompression = BI_RGB;
+    bmi.bmiHeader.biSizeImage   = srcw * srch * 4;
+    hbitmap = CreateDIBSection(src, &bmi, DIB_RGB_COLORS, (LPVOID*)&rgba_bits, NULL, 0x0);
+
+    for ( 
+       y = 0, 
+          rgb_bits = rgb->data + rgb->lineSize * srcy + srcx * 3,
+          a_bits   = mask + maskLineSize * srcy + srcx;
+       y < srch;
+       y++,
+          rgb_bits += rgb-> lineSize,
+          a_bits += maskLineSize,
+	  rgba_bits += srcw * 4
+    ) {
+       register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *rgba_ptr = rgba_bits;
+       register int x = srcw;
+       for ( ; x > 0; x--) {
+          *rgba_ptr++ = *rgb_ptr++;
+          *rgba_ptr++ = *rgb_ptr++;
+          *rgba_ptr++ = *rgb_ptr++;
+          *rgba_ptr++ = *a_ptr++;
+       }
+    }
+    old = SelectObject(src, hbitmap);
+
+    bf.BlendOp             = AC_SRC_OVER;
+    bf.BlendFlags          = 0;
+    bf.SourceConstantAlpha = 0xff;
+    bf.AlphaFormat         = AC_SRC_ALPHA;
+    ok = AlphaBlend(dest, dstx, dsty, dstw, dsth, src, 0, 0, srcw, srch, bf);
+
+    SelectObject(src, old);
+    DeleteObject(hbitmap);
+    DeleteDC(src);
+
+    return ok;
+}
+
 Bool
 apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {objCheck false;{
@@ -694,7 +777,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    HBITMAP  b1;
    HDC dc;
    DWORD theRop;
-   Bool ok = true, db, dcmono = false;
+   Bool ok = true, db, dcmono = false, rgba = false;
    POINT tr = {0, 0};
 
    COLORREF oFore = 0, oBack = 0;
@@ -719,14 +802,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          // not when source = CCDC( thirdDC), dest = CCDC( thirdDC) - that's right, I mean it!
          // or just SetDIBits; - latter is slow, stupid, memory-greedy - but surely can be trusted.
          Bool ok;
-         Handle img      = ( Handle) create_object("Prima::Image", "");
-         HDC adc         = dsys( image) ps;
-         HBITMAP abitmap = dsys( image) bm;
-         dsys( img) ps   = dsys( image) ps;
-         dsys( img) bm   = dsys( image) bm;
-         image_query_bits( img, true);
-         dsys( img) ps   = adc;
-         dsys( img) bm   = abitmap;
+         Handle img = image_from_dc(image);
          ok = apc_gp_stretch_image( self, img, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
          Object_destroy( img);
          return ok;
@@ -776,18 +852,22 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    // if image is actually icon, drawing and-mask
    if ( kind_of( deja, CIcon)) {
-      XBITMAPINFO xbi = {
-         { sizeof( BITMAPINFOHEADER), 0, 0, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
-         { {0,0,0,0}, {255,255,255,0}}
-      };
-      xbi. bmiHeader. biWidth = i-> w;
-      xbi. bmiHeader. biHeight = i-> h;
-      if ( StretchDIBits(
-         xdc, x, ly - y - yDestLen, xDestLen, yDestLen, xFrom, yFrom, xLen, yLen,
-         i-> mask, ( BITMAPINFO*) &xbi, DIB_RGB_COLORS, SRCAND
-         ) == GDI_ERROR) {
-         ok = false;
-         apiErr;
+      if ( PIcon(deja)-> maskType == imbpp1 ) {
+         XBITMAPINFO xbi = {
+            { sizeof( BITMAPINFOHEADER), 0, 0, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
+            { {0,0,0,0}, {255,255,255,0}}
+         };
+         xbi. bmiHeader. biWidth = i-> w;
+         xbi. bmiHeader. biHeight = i-> h;
+         if ( StretchDIBits(
+            xdc, x, ly - y - yDestLen, xDestLen, yDestLen, xFrom, yFrom, xLen, yLen,
+            i-> mask, ( BITMAPINFO*) &xbi, DIB_RGB_COLORS, SRCAND
+            ) == GDI_ERROR) {
+            ok = false;
+            apiErr;
+         }
+      } else if ( PIcon(deja)-> maskType == imbpp8 ) {
+         rgba = true;
       }
       theRop = SRCINVERT;
    } else {
@@ -817,7 +897,11 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    }
 
    //
-   if ( dc) {
+   if ( rgba ) {
+       ok = put_rgba_icon(xdc, (PImage) deja, PIcon(deja)->mask, PIcon(deja)->maskLine,
+          x, ly - y - yDestLen, xDestLen, yDestLen, 
+          xFrom, yFrom, xLen, yLen);
+   } else if ( dc) {
       if ( !StretchBlt( xdc, x, ly - y - yDestLen, xDestLen, yDestLen, dc,
             xFrom, i-> h - yFrom - yLen, xLen, yLen, theRop)) {
 	 ok = false;
