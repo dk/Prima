@@ -352,12 +352,12 @@ sub gradient_bar
 
 sub gradient_ellipse
 {
-	my ( $canvas, $x, $y, $dx, $dy, @palette ) = @_;
+	my ( $canvas, $x, $y, $dx, $dy, $request ) = @_;
 	return if $dx <= 0 || $dy <= 0;
 	my $diameter = ($dx > $dy) ? $dx : $dy;
 	my $mx = $dx / $diameter;
 	my $my = $dy / $diameter;
-	my $gradient = $canvas-> gradient_realize3d( $diameter, { palette => \@palette } );
+	my $gradient = $canvas-> gradient_realize3d( $diameter, $request);
 	for ( my $i = 0; $i < @$gradient; $i+=2) {
 		$canvas->color( $gradient->[$i]);
 		$canvas->fill_ellipse( $x, $y, $mx * $diameter, $my * $diameter );

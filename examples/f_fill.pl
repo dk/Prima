@@ -45,9 +45,9 @@ my $w = Prima::MainWindow-> create(
 	onPaint => sub {
 	my ( $self, $canvas) = @_;
 		$canvas->clear;
-		$canvas->gradient_ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0], cl::White, cl::Black);
+		$canvas->gradient_ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0], {palette => [cl::White, cl::Black ]});
 		$canvas-> region( $i);
-		$canvas->gradient_ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0], cl::Black, cl::White);
+		$canvas->gradient_ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0], {palette => [cl::Black, cl::White]});
 	},
 );
 
