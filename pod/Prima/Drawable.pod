@@ -1112,7 +1112,13 @@ Context used: color, backColor, fillPattern, rop, rop2
 
 =item gradient_bar X1, Y1, X2, Y2, GRADIENT
 
-Draws a filled rectangle within (X1,Y1) - (X2,Y2) extents usign a gradient (see L<Gradients>).
+Draws a filled rectangle within (X1,Y1) - (X2,Y2) extents using a gradient (see L<Gradients>).
+
+Context used: splinePrecision, fillPattern, rop, rop2
+
+=item gradient_ellipse X, Y, DIAM_X, DIAM_Y, GRADIENT
+
+Draws a filled ellipse with center in (X,Y) and diameters (DIAM_X,DIAM_Y) using a gradient (see L<Gradients>).
 
 Context used: splinePrecision, fillPattern, rop, rop2
 
