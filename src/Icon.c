@@ -485,11 +485,24 @@ Icon_dup( Handle self)
 {
    Handle h = inherited dup( self);
    PIcon  i = ( PIcon) h;
-   memcpy( i-> mask, var-> mask, var-> maskSize);
+
+   if ( var-> maskType != imbpp1 ) {
+      Byte * p;
+      if ( !(p = realloc( i-> mask, var-> maskSize ))) {
+          warn("Icon::dup: cannot allocate %d bytes", var->maskSize);
+	  Object_destroy(h);
+	  return nilHandle;
+      }
+      i-> mask = p;
+   }
+
    i-> autoMasking = var-> autoMasking;
    i-> maskType    = var-> maskType;
    i-> maskColor   = var-> maskColor;
    i-> maskIndex   = var-> maskIndex;
+   i-> maskSize    = var-> maskSize;
+
+   memcpy( i-> mask, var-> mask, var-> maskSize);
    return h;
 }
 
