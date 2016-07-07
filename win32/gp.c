@@ -714,6 +714,16 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
     if ( rgb->options. optInDraw ) {
        Bool ok;
        Handle img = image_from_dc((Handle) rgb);
+       CImage(img)->set_type(img, imRGB);
+       ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
+          dstx, dsty, dstw, dsth, 
+	  srcx, srcy, srcw, srch);
+       Object_destroy( img);
+       return ok;
+    } else if ( rgb->type != imRGB ) {
+       Bool ok;
+       Handle img = rgb->self->dup((Handle)rgb);
+       CImage(img)->set_type(img, imRGB);
        ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
           dstx, dsty, dstw, dsth, 
 	  srcx, srcy, srcw, srch);
