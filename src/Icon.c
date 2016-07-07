@@ -297,8 +297,11 @@ Icon_convert_mask( Handle self, int type )
    if ( type == var-> maskType ) 
       croak("invalid usage of Icon::convert_mask");
 
-   if ( !( dst = malloc( dstLine * var-> h)))
-      croak("Icon::convert_mask: cannot allocate %d bytes", dstLine * var-> h);
+   if ( !( dst = malloc( dstLine * var-> h))) {
+      warn("Icon::convert_mask: cannot allocate %d bytes", dstLine * var-> h);
+      return NULL;
+   }
+
    switch (type) {
    case imbpp1:
       /* downgrade */
