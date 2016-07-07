@@ -119,6 +119,7 @@ typedef struct _PrimaXImage
 #define CACHE_BITMAP     1
 #define CACHE_PIXMAP     2
 #define CACHE_LOW_RES    3
+#define CACHE_ARGB       4
 
 typedef struct {
    int type;
@@ -1003,18 +1004,18 @@ prima_create_icon_pixmaps( Handle bw_icon, Pixmap *xor, Pixmap *and);
 extern ImageCache*
 prima_create_image_cache( PImage img, Handle drawable, int type);
 
-void
+extern Bool
 prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i,
                   int src_x, int src_y, int dst_x, int dst_y,
                   int width, int height);
 
-Bool
+extern Bool
 prima_query_image( Handle self, XImage * image);
 
-Bool
+extern Bool
 prima_std_query_image( Handle self, Pixmap px);
 
-Pixmap
+extern Pixmap
 prima_std_pixmap( Handle self, int type);
 
 extern void
@@ -1261,12 +1262,12 @@ prima_xft_load_font( char * fontName );
 #endif
 
 #ifdef WITH_GTK2
-Display*
+extern Display*
 prima_gtk_init( void);
 
-Bool
+extern Bool
 prima_gtk_done( void);
 
-char *
+extern char *
 prima_gtk_openfile( char * params);
 #endif
