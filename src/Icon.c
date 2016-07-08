@@ -291,13 +291,12 @@ Icon_convert_mask( Handle self, int type )
    int i;
    int srcLine = LINE_SIZE( var-> w, var-> maskType );
    int dstLine = LINE_SIZE( var-> w, type );
-   Byte colorref[256], *src = var-> mask, *dst;
+   Byte colorref[256], *src = var-> mask, *dst, *ret;
    RGBColor palette[2];
 
    if ( type == var-> maskType ) 
       croak("invalid usage of Icon::convert_mask");
-
-   if ( !( dst = malloc( dstLine * var-> h))) {
+   if ( !( ret = malloc( dstLine * var-> h))) {
       warn("Icon::convert_mask: cannot allocate %d bytes", dstLine * var-> h);
       return NULL;
    }
@@ -307,19 +306,19 @@ Icon_convert_mask( Handle self, int type )
       /* downgrade */
       memset( colorref,       0, 128 );
       memset( colorref + 128, 1, 128 );
-      for ( i = 0; i < var->h; i++, src += srcLine, dst += dstLine)
+      for ( i = 0, dst = ret; i < var->h; i++, src += srcLine, dst += dstLine)
           bc_byte_mono_cr( src, dst, var-> w, colorref);
       break;
    case imbpp8:
       memset( &palette[0], 0x00, sizeof(RGBColor));
       memset( &palette[1], 0xff, sizeof(RGBColor));
-      for ( i = 0; i < var->h; i++, src += srcLine, dst += dstLine)
+      for ( i = 0, dst = ret; i < var->h; i++, src += srcLine, dst += dstLine)
           bc_mono_graybyte( src, dst, var-> w, palette);
       break;
    default:
       croak("invalid usage of Icon::convert_mask");
    }
-   return dst;
+   return ret;
 }
 
 int

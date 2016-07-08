@@ -528,6 +528,9 @@ create_icon_cache8_1(PIcon img, ImageCache * cache)
    prima_copy_xybitmap( data, monomask, img->w, img->h, ls, LINE_SIZE(img->w,imbpp1));
 
    free( monomask );
+   cache->icon = ximage;
+
+   return true;
 }
 
 static void
@@ -1095,7 +1098,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
    if ( XT_IS_ICON(IMG)) {
       if ( cache-> icon == nil && type != CACHE_ARGB) {
          Bool ok;
-	 ok = ( PIcon(img)-> type == imbpp8 ) ?
+	 ok = ( PIcon(img)-> maskType == imbpp8 ) ?
 	    create_icon_cache8_1(( PIcon) img, cache) :
             create_cache1_1( img, cache, true);
 	 if ( !ok ) return nil;
@@ -1179,7 +1182,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
 
       if ( type == CACHE_LOW_RES) /* don't use dynamic colors */
          maxRank = RANK_LOCKED; 
-               
+
       for ( i = 0; i < pass-> palSize; i++) {
          int j = guts. mappingPlace[i] = prima_color_find( nilHandle,
             RGB_COMPOSITE( 
@@ -1252,6 +1255,7 @@ typedef struct {
    int dst_x;
    int dst_y;
    int rop;
+   int old_rop;
 } PutImageRequest;
 
 static void
@@ -1349,29 +1353,23 @@ rop_apply_colors(Handle self, PutImageRequest * req)
    }
 }
 
+#define SET_ROP(x) if ( req->old_rop != x) XSetFunction( DISP, XX-> gc, req->old_rop = x)
+
 static Bool
 img_put_copy_area( Handle self, Handle image, PutImageRequest * req)
 {
    DEFXX;
-   XGCValues gcv;
    PDrawableSysData YY = X(image);
 
    SHIFT( req->dst_x, req->dst_y);
 
-   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
-      warn( "error querying GC values");
-
    XCHECKPOINT;
-   if ( req->rop != gcv. function)
-      XSetFunction( DISP, XX-> gc, req->rop);
+   SET_ROP(req->rop);
 
    XCopyArea( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
               req->src_x, YY->size.y - req->src_y - req->h,
               req->w, req->h,
               req->dst_x, XX->size.y - req->dst_y - req->h);
-
-   if ( req->rop != gcv. function)
-      XSetFunction( DISP, XX-> gc, gcv. function);
 
    XCHECKPOINT;
    XFLUSH;
@@ -1382,6 +1380,7 @@ static Bool
 img_put_ximage( Handle self, PrimaXImage * image, PutImageRequest * req)
 {
    DEFXX;
+   SET_ROP(req->rop);
    return prima_put_ximage(
       XX-> gdrawable, XX-> gc, image,
       req->src_x, image->image->height - req->src_y - req->h,
@@ -1393,16 +1392,18 @@ img_put_ximage( Handle self, PrimaXImage * image, PutImageRequest * req)
 static Bool
 img_put_icon_mask( Handle self, PrimaXImage * icon, PutImageRequest * req)
 {
+   Bool ret;
    DEFXX;
-   XSetFunction( DISP, XX-> gc, GXand);
    XSetForeground( DISP, XX-> gc, 0xFFFFFFFF);
    XSetBackground( DISP, XX-> gc, 0x00000000);
    XX-> flags. brush_fore = 0;
    XX-> flags. brush_back = 0;
 
+   req->rop = GXand;
    XCHECKPOINT;
-   img_put_ximage( self, icon, req);
-   req-> rop = GXxor;
+   ret = img_put_ximage( self, icon, req);
+   req->rop = GXxor;
+   return ret;
 }
 
 static Bool
@@ -1417,7 +1418,22 @@ img_put_bitmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
-img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req);
+img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+{
+   DEFXX;
+   ImageCache *cache;
+   PImage img = (PImage) image;
+   PDrawableSysData YY = X(image);
+
+   if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP)))
+      return false;
+
+   XSetForeground( DISP, XX-> gc, 1);
+   XSetBackground( DISP, XX-> gc, 0);
+   XX-> flags. brush_fore = XX-> flags. brush_back = 0;
+
+   return img_put_ximage( self, cache->image, req);
+}
 
 static Bool
 img_put_pixmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
@@ -1426,9 +1442,6 @@ img_put_pixmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
    PImage img;
    Bool ret;
    XImage *i;
-
-   if ( guts.depth == 1)
-      return img_put_bitmap_on_bitmap(self, image, req);
 
    img = PImage( image);
    XCHECKPOINT;
@@ -1451,23 +1464,6 @@ img_put_pixmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
    return ret;
 }
 
-static Bool
-img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
-{
-   DEFXX;
-   ImageCache *cache;
-   PImage img = (PImage) image;
-   PDrawableSysData YY = X(image);
-
-   if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP)))
-      return false;
-
-   XSetForeground( DISP, XX-> gc, 1);
-   XSetBackground( DISP, XX-> gc, 0);
-   XX-> flags. brush_fore = XX-> flags. brush_back = 0;
-
-   return img_put_ximage( self, cache->image, req);
-}
 
 static Bool
 img_put_icon_on_bitmap( Handle self, Handle image, PutImageRequest * req)
@@ -1485,20 +1481,12 @@ static Bool
 img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
    DEFXX;
-   XGCValues gcv;
    PDrawableSysData YY = X(image);
    
-   if (guts. idepth == 1) 
-      return img_put_bitmap_on_bitmap(self, image, req);
-
    SHIFT( req->dst_x, req->dst_y);
 
-   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
-      warn( "error querying GC values");
-
+   SET_ROP(req->rop);
    XCHECKPOINT;
-   if ( req->rop != gcv. function)
-      XSetFunction( DISP, XX-> gc, req->rop);
 
    if ( XT_IS_DBM(YY) && XT_IS_BITMAP(YY)) {
       /* XCopyPlane uses 0s for background and 1s for foreground */
@@ -1517,19 +1505,10 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
               req->w, req->h,
               req->dst_x, XX->size.y - req->dst_y - req->h, 1);
 
-   if ( req->rop != gcv. function)
-      XSetFunction( DISP, XX-> gc, gcv. function);
-
    XCHECKPOINT;
    XFLUSH;
 
    return true;
-}
-
-static Bool
-img_put_pixmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
-{
-   return img_put_copy_area( self, image, req);
 }
 
 static Bool
@@ -1539,9 +1518,6 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
    ImageCache *cache;
    PImage img = (PImage) image;
    PDrawableSysData YY = X(image);
-   
-   if (guts. idepth == 1) 
-      return img_put_image_on_bitmap(self, image, req);
    
    if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_LOW_RES)))
       return false;
@@ -1565,10 +1541,12 @@ static Bool
 img_put_icon_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
    ImageCache *cache;
+   Bool ok;
 
    if (!(cache = prima_create_image_cache((PImage)image, nilHandle, CACHE_LOW_RES)))
       return false;
-   return
+
+   return 
       img_put_icon_mask( self, cache->icon, req) &&
       img_put_image_on_pixmap( self, image, req);
 }
@@ -1591,7 +1569,7 @@ PutImageFunc (*img_put_bitmap[SRC_NUM]) = {
 
 PutImageFunc (*img_put_pixmap[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
-   img_put_pixmap_on_pixmap,
+   img_put_copy_area,
    img_put_image_on_pixmap,
    img_put_icon_on_pixmap
 };
@@ -1604,6 +1582,8 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    PImage img = PImage( image);
    PutImageRequest req;
    PutImageFunc ** dst = NULL;
+   XGCValues gcv;
+   Bool ok;
    int src = -1;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
@@ -1620,11 +1600,10 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    req. dst_y = y;
    req. w     = xLen;
    req. h     = yLen;
-   req. rop   = prima_rop_map( rop);
    
-   if ( XT_IS_DBM(XX) && XT_IS_BITMAP(XX))
+   if (XT_IS_BITMAP(XX) || ( XT_IS_PIXMAP(XX) && guts.depth==1))
       dst = img_put_bitmap;
-   else if ( XT_IS_DBM(XX) && XT_IS_PIXMAP(XX))
+   else if ( XT_IS_PIXMAP(XX))
       dst = img_put_pixmap;
    if (!dst)
       return false;
@@ -1634,22 +1613,33 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
          src = SRC_BITMAP;
       else if ( XT_IS_PIXMAP(YY))
          src = SRC_PIXMAP;
-   } else if ( XT_IS_IMAGE(YY) || XS_IS_ICON(YY)) {
+   } else if ( XT_IS_IMAGE(YY)) {
       if ( XF_IN_PAINT(YY)) {
          if ( XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1)) {
             src = SRC_BITMAP;
 	 } else if ( XT_IS_PIXMAP(YY)) {
             src = SRC_PIXMAP;
 	 }
-      } else if ( XT_IS_IMAGE(YY)) {
-         src = SRC_IMAGE;
-      } else {
+      } else if ( XT_IS_ICON(YY)) {
          src = SRC_ICON;
+      } else {
+         src = SRC_IMAGE;
       }
    }
 
    if ( src < 0 ) return false;
-   return (*dst[src])(self, image, &req);
+
+   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
+      warn( "error querying GC values");
+   req. old_rop = gcv. function;
+   req. rop     = prima_rop_map( rop);
+
+   ok = (*dst[src])(self, image, &req);
+   
+   if ( gcv. function != req. rop)
+      XSetFunction( DISP, XX->gc, gcv. function);
+
+   return ok;
 
 //   if ( XT_IS_IMAGE(XX) || XT_IS_ICON(XX))
 //      return img_put_on_image( self, image, &req);
