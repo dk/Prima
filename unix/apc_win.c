@@ -612,7 +612,7 @@ apc_window_get_icon( Handle self, Handle icon)
    if ( !prima_std_query_image( icon, xor)) return false;
    
    if ( and) {
-      Handle mask = create_object( "Prima::Image", "");
+      Handle mask = (Handle) create_object( "Prima::Image", "");
       CImage( mask)-> create_empty( mask, ax, ay, ( ad == 1) ? imBW : guts. qdepth);
       ret = prima_std_query_image( mask, and);
       if (( PImage( mask)-> type & imBPP) != 1)
