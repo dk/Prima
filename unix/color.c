@@ -818,6 +818,10 @@ BLACK_WHITE_ALLOCATED:
          return false;
       }
    } else {
+      if (!( guts. mappingPlace = malloc( sizeof( int) * 2))) {
+         sprintf( error_buf, "No memory");
+         return false;
+      }
       find_color_mask_range( guts. visual. red_mask,   &guts. screen_bits. red_shift,   &guts. screen_bits. red_range);
       find_color_mask_range( guts. visual. green_mask, &guts. screen_bits. green_shift, &guts. screen_bits. green_range);
       find_color_mask_range( guts. visual. blue_mask,  &guts. screen_bits. blue_shift,  &guts. screen_bits. blue_range);

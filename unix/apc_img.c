@@ -1199,7 +1199,12 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       case 1: cache_remap_1( img, cache); break;
       default: warn("UAI_019: palette is not supported");
       }
-   }
+    } else if ( target_bpp == 1 ) {
+       RGBColor * p = pass->palette;
+       guts. mappingPlace[0] = (p[0].r + p[0].g + p[0].b > 382) ? 0xff : 0;
+       guts. mappingPlace[1] = (p[1].r + p[1].g + p[1].b > 382) ? 0xff : 0;
+       cache_remap_1( img, cache);
+    }
 
    if ( dup) Object_destroy(dup);
    cache-> type = type;
@@ -1249,37 +1254,103 @@ typedef struct {
    int rop;
 } PutImageRequest;
 
-static Bool
-img_put_copy_plane( Handle self, Handle bitmap, PutImageRequest * req)
+static void
+rop_apply_colors(Handle self, PutImageRequest * req)
 {
    DEFXX;
-   XGCValues gcv;
-   PDrawableSysData YY = X(bitmap);
-
-   /* XXX currently can X-fail in several cases */
-   SHIFT( req->dst_x, req->dst_y);
-
-   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
-      warn( "UAI_016: error querying GC values");
-   XCHECKPOINT;
-   if ( req->rop != gcv. function)
-      XSetFunction( DISP, XX-> gc, req->rop);
-
-   XCopyPlane( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
-              req->src_x, YY->size.y - req->src_y - req->h,
-              req->w, req->h,
-              req->dst_x, XX->size.y - req->dst_y - req->h,
-	      1);
-
-   if ( req->rop != gcv. function)
-      XSetFunction( DISP, XX-> gc, gcv. function);
-   XCHECKPOINT;
-   XFLUSH;
-   return true;
+   /*
+   Special case with current foreground and background colors, see also
+   L<pod/Prima/Drawable.pod | Monochrome bitmaps>.
+   
+   Raster ops can be identified by a fingerprint.  For example, Or's is 14
+   and Noop's is 10:
+   
+                  0 | 0 =    0                      0 | 0 =    0
+                  0 | 1 =   1                       0 | 1 =   1
+                  1 | 0 =  1                        1 | 0 =  0
+                  1 | 1 = 1                         1 | 1 = 1
+                          ---                               ---
+                          1110 = 14                         1010 = 10
+   
+   when this special case uses not actual 0s and 1s, but bit values of
+   foreground and background color instead, the resulting operation can
+   still be expressed in rops, but these needs to be adjusted. Let's
+   consider a case where both colors are 0, and rop = OrPut:
+   
+                  0 | 0 =    0
+                  0 | 1 =   1
+                  0 | 0 =  0
+                  0 | 1 = 1
+                          ---
+                          1010 = 10
+   
+   this means that in these conditions, Or (as well as Xor and AndInverted) becomes Noop.
+   
+   */
+   unsigned long fore = XX-> fore.primary & 1;
+   unsigned long back = XX-> back.primary & 1;
+   if ( fore == 0 && back == 0 ) {
+      switch( req->rop) {
+         case GXand:           
+         case GXandReverse:    
+         case GXclear:         
+         case GXcopy:          req->rop = GXclear;         break;
+         case GXequiv:         
+         case GXinvert:        
+         case GXnor:           
+         case GXorReverse:     req->rop = GXinvert;        break;
+         case GXandInverted:   
+         case GXnoop:          
+         case GXor:            
+         case GXxor:           req->rop = GXnoop;          break;
+         case GXnand:          
+         case GXcopyInverted:  
+         case GXorInverted:    
+         case GXset:           req->rop = GXset;           break;
+      }
+   } else if ( fore == 1 && back == 0 ) {
+      switch( req->rop) {
+         case GXand:           req->rop = GXandInverted;   break;
+         case GXandInverted:   req->rop = GXand;           break;
+         case GXandReverse:    req->rop = GXnor;           break;
+         case GXclear:         req->rop = GXclear;         break;
+         case GXcopy:          req->rop = GXcopyInverted;  break;
+         case GXcopyInverted:  req->rop = GXcopy;          break;
+         case GXequiv:         req->rop = GXxor;           break;
+         case GXinvert:        req->rop = GXinvert;        break;
+         case GXnand:          req->rop = GXorReverse;     break;
+         case GXnoop:          req->rop = GXnoop;          break;
+         case GXnor:           req->rop = GXandReverse;    break;
+         case GXor:            req->rop = GXorInverted;    break;
+         case GXorInverted:    req->rop = GXor;            break;
+         case GXorReverse:     req->rop = GXnand;          break;
+         case GXset:           req->rop = GXset;           break;
+         case GXxor:           req->rop = GXequiv;         break;
+      }
+   } else if ( fore == 1 && back == 1 ) {
+      switch( req->rop) {
+         case GXand:           
+         case GXorInverted:    
+         case GXequiv:         
+         case GXnoop:          req->rop = GXnoop;          break;
+         case GXandInverted:  
+         case GXclear:        
+         case GXcopyInverted: 
+         case GXnor:           req->rop = GXclear;         break;
+         case GXinvert:      
+         case GXnand:        
+         case GXandReverse:  
+         case GXxor:           req->rop = GXinvert;        break;
+         case GXor:         
+         case GXorReverse:  
+         case GXset:        
+         case GXcopy:          req->rop = GXset;           break;
+      }
+   }
 }
 
 static Bool
-img_put_bitmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+img_put_copy_area( Handle self, Handle image, PutImageRequest * req)
 {
    DEFXX;
    XGCValues gcv;
@@ -1290,98 +1361,6 @@ img_put_bitmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
    if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
       warn( "error querying GC values");
 
-   if ( XT_IS_DBM(YY) && XT_IS_BITMAP(YY)) {
-      /*
-      Special case with current foreground and background colors, see also
-      L<pod/Prima/Drawable.pod | Monochrome bitmaps>.
-
-      Raster ops can be identified by a fingerprint.  For example, Or's is 14
-      and Noop's is 10:
-
-                     0 | 0 =    0                      0 | 0 =    0
-                     0 | 1 =   1                       0 | 1 =   1
-                     1 | 0 =  1                        1 | 0 =  0
-                     1 | 1 = 1                         1 | 1 = 1
-                             ---                               ---
-                             1110 = 14                         1010 = 10
-
-      when this special case uses not actual 0s and 1s, but bit values of
-      foreground and background color instead, the resulting operation can
-      still be expressed in rops, but these needs to be adjusted. Let's
-      consider a case where both colors are 0, and rop = OrPut:
-
-                     0 | 0 =    0
-                     0 | 1 =   1
-                     0 | 0 =  0
-                     0 | 1 = 1
-                             ---
-                             1010 = 10
-
-      this means that in these conditions, Or (as well as Xor and AndInverted) becomes Noop.
-
-      */
-      unsigned long fore = XX-> fore.primary & 1;
-      unsigned long back = XX-> back.primary & 1;
-      if ( fore == 0 && back == 0 ) {
-         switch( req->rop) {
-            case GXand:           
-            case GXandReverse:    
-            case GXclear:         
-            case GXcopy:          req->rop = GXclear;         break;
-            case GXequiv:         
-            case GXinvert:        
-            case GXnor:           
-            case GXorReverse:     req->rop = GXinvert;        break;
-            case GXandInverted:   
-            case GXnoop:          
-            case GXor:            
-            case GXxor:           req->rop = GXnoop;          break;
-            case GXnand:          
-            case GXcopyInverted:  
-            case GXorInverted:    
-            case GXset:           req->rop = GXset;           break;
-	 }
-      } else if ( fore == 1 && back == 0 ) {
-         switch( req->rop) {
-            case GXand:           req->rop = GXandInverted;   break;
-            case GXandInverted:   req->rop = GXand;           break;
-            case GXandReverse:    req->rop = GXnor;           break;
-            case GXclear:         req->rop = GXclear;         break;
-            case GXcopy:          req->rop = GXcopyInverted;  break;
-            case GXcopyInverted:  req->rop = GXcopy;          break;
-            case GXequiv:         req->rop = GXxor;           break;
-            case GXinvert:        req->rop = GXinvert;        break;
-            case GXnand:          req->rop = GXorReverse;     break;
-            case GXnoop:          req->rop = GXnoop;          break;
-            case GXnor:           req->rop = GXandReverse;    break;
-            case GXor:            req->rop = GXorInverted;    break;
-            case GXorInverted:    req->rop = GXor;            break;
-            case GXorReverse:     req->rop = GXnand;          break;
-            case GXset:           req->rop = GXset;           break;
-            case GXxor:           req->rop = GXequiv;         break;
-	 }
-      } else if ( fore == 1 && back == 1 ) {
-         switch( req->rop) {
-            case GXand:           
-            case GXorInverted:    
-            case GXequiv:         
-            case GXnoop:          req->rop = GXnoop;          break;
-            case GXandInverted:  
-            case GXclear:        
-            case GXcopyInverted: 
-            case GXnor:           req->rop = GXclear;         break;
-            case GXinvert:      
-            case GXnand:        
-            case GXandReverse:  
-            case GXxor:           req->rop = GXinvert;        break;
-            case GXor:         
-            case GXorReverse:  
-            case GXset:        
-            case GXcopy:          req->rop = GXset;           break;
-	 }
-      }
-   }
-   
    XCHECKPOINT;
    if ( req->rop != gcv. function)
       XSetFunction( DISP, XX-> gc, req->rop);
@@ -1398,6 +1377,43 @@ img_put_bitmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
    XFLUSH;
 
    return true;
+}
+static Bool
+img_put_ximage( Handle self, PrimaXImage * image, PutImageRequest * req)
+{
+   DEFXX;
+   return prima_put_ximage(
+      XX-> gdrawable, XX-> gc, image,
+      req->src_x, image->image->height - req->src_y - req->h,
+      req->dst_x, REVERT(req->dst_y) - req->h + 1,
+      req->w, req->h
+   );
+}
+
+static Bool
+img_put_icon_mask( Handle self, PrimaXImage * icon, PutImageRequest * req)
+{
+   DEFXX;
+   XSetFunction( DISP, XX-> gc, GXand);
+   XSetForeground( DISP, XX-> gc, 0xFFFFFFFF);
+   XSetBackground( DISP, XX-> gc, 0x00000000);
+   XX-> flags. brush_fore = 0;
+   XX-> flags. brush_back = 0;
+
+   XCHECKPOINT;
+   img_put_ximage( self, icon, req);
+   req-> rop = GXxor;
+}
+
+static Bool
+img_put_bitmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+{
+   PDrawableSysData YY = X(image);
+
+   if ( XT_IS_DBM(YY) && XT_IS_BITMAP(YY))
+      rop_apply_colors(self, req);
+
+   return img_put_copy_area( self, image, req);
 }
 
 static Bool
@@ -1443,13 +1459,6 @@ img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
    PImage img = (PImage) image;
    PDrawableSysData YY = X(image);
 
-   if ( XF_IN_PAINT(YY)) {
-      if (( PImage(image)->type & imBPP) == 1)
-         return img_put_bitmap_on_bitmap( self, image, req );
-      else
-         return img_put_pixmap_on_bitmap( self, image, req );
-   }
-
    if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP)))
       return false;
 
@@ -1457,67 +1466,145 @@ img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
    XSetBackground( DISP, XX-> gc, 0);
    XX-> flags. brush_fore = XX-> flags. brush_back = 0;
 
-   return prima_put_ximage(
-      XX-> gdrawable, XX-> gc, cache->image,
-      req->src_x, img-> h - req->src_y - req->h,
-      req->dst_x, REVERT(req->dst_y) - req->h + 1,
-      req->w, req->h
-   );
+   return img_put_ximage( self, cache->image, req);
 }
 
 static Bool
 img_put_icon_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 {
-   DEFXX;
    ImageCache *cache;
-   PImage img = (PImage) image;
 
-   if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP)))
+   if (!(cache = prima_create_image_cache((PImage)image, nilHandle, CACHE_BITMAP)))
       return false;
-
-   XSetFunction( DISP, XX-> gc, GXand);
-   XSetForeground( DISP, XX-> gc, 0xFFFFFFFF);
-   XSetBackground( DISP, XX-> gc, 0x00000000);
-   XX-> flags. brush_fore = 0;
-   XX-> flags. brush_back = 0;
-
-   XCHECKPOINT;
-   prima_put_ximage(
-      XX-> gdrawable, XX-> gc, cache->icon,
-      req->src_x, img-> h - req->src_y - req->h,
-      req->dst_x, REVERT(req->dst_y) - req->h + 1,
-      req->w, req->h
-   );
-
-   req-> rop = GXxor;
-   return img_put_image_on_bitmap( self, image, req);
+   return
+      img_put_icon_mask( self, cache->icon, req) &&
+      img_put_image_on_bitmap( self, image, req);
 }
 
 static Bool
-img_put_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
+   DEFXX;
+   XGCValues gcv;
    PDrawableSysData YY = X(image);
-   if ( XT_IS_DBM(YY)) {
-      if (XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1))
-         return img_put_bitmap_on_bitmap( self, image, req);
-      else if ( XT_IS_DBM(YY) && XT_IS_PIXMAP(YY))
-         return img_put_pixmap_on_bitmap( self, image, req);
-   } else if ( XT_IS_IMAGE(YY) || XT_IS_ICON(YY))
-      return img_put_image_on_bitmap( self, image, req);
-   return false;
+   
+   if (guts. idepth == 1) 
+      return img_put_bitmap_on_bitmap(self, image, req);
+
+   SHIFT( req->dst_x, req->dst_y);
+
+   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
+      warn( "error querying GC values");
+
+   XCHECKPOINT;
+   if ( req->rop != gcv. function)
+      XSetFunction( DISP, XX-> gc, req->rop);
+
+   if ( XT_IS_DBM(YY) && XT_IS_BITMAP(YY)) {
+      /* XCopyPlane uses 0s for background and 1s for foreground */
+      if ( !XX->flags. brush_fore) {
+         XSetBackground( DISP, XX-> gc, XX-> fore. primary);
+         XX->flags.brush_fore = 0;
+      }
+      if ( !XX->flags. brush_back) {
+         XSetForeground( DISP, XX-> gc, XX-> back. primary);
+         XX->flags.brush_back = 0;
+      }
+   }
+
+   XCopyPlane( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
+              req->src_x, YY->size.y - req->src_y - req->h,
+              req->w, req->h,
+              req->dst_x, XX->size.y - req->dst_y - req->h, 1);
+
+   if ( req->rop != gcv. function)
+      XSetFunction( DISP, XX-> gc, gcv. function);
+
+   XCHECKPOINT;
+   XFLUSH;
+
+   return true;
 }
+
+static Bool
+img_put_pixmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+   return img_put_copy_area( self, image, req);
+}
+
+static Bool
+img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+   DEFXX;
+   ImageCache *cache;
+   PImage img = (PImage) image;
+   PDrawableSysData YY = X(image);
+   
+   if (guts. idepth == 1) 
+      return img_put_image_on_bitmap(self, image, req);
+   
+   if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_LOW_RES)))
+      return false;
+
+   if (( img->type & imBPP ) == 1) {
+      RGBColor * p = img->palette;
+      if ( !XX->flags. brush_fore) {
+         XSetBackground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[0].r, p[0].g, p[0].b), nil));
+         XX->flags.brush_fore = 0;
+      }
+      if ( !XX->flags. brush_back) {
+         XSetForeground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[1].r, p[1].g, p[1].b), nil));
+         XX->flags.brush_back = 0;
+      }
+   }
+
+   return img_put_ximage( self, cache->image, req);
+}
+
+static Bool
+img_put_icon_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+   ImageCache *cache;
+
+   if (!(cache = prima_create_image_cache((PImage)image, nilHandle, CACHE_LOW_RES)))
+      return false;
+   return
+      img_put_icon_mask( self, cache->icon, req) &&
+      img_put_image_on_pixmap( self, image, req);
+}
+
+typedef Bool PutImageFunc( Handle self, Handle image, PutImageRequest * req);
+
+#define SRC_BITMAP       0
+#define SRC_PIXMAP       1
+#define SRC_IMAGE        2
+#define SRC_ICON         3
+#define SRC_MAX          3
+#define SRC_NUM          SRC_MAX+1 
+
+PutImageFunc (*img_put_bitmap[SRC_NUM]) = {
+   img_put_bitmap_on_bitmap,
+   img_put_pixmap_on_bitmap,
+   img_put_image_on_bitmap,
+   img_put_icon_on_bitmap
+};
+
+PutImageFunc (*img_put_pixmap[SRC_NUM]) = {
+   img_put_bitmap_on_pixmap,
+   img_put_pixmap_on_pixmap,
+   img_put_image_on_pixmap,
+   img_put_icon_on_pixmap
+};
 
 Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
 {
    DEFXX;
+   PDrawableSysData YY = X(image);
    PImage img = PImage( image);
-   int func, ofunc;
-   XGCValues gcv;
-   ImageCache *cache = nil;
-   Bool mono, icon = false, tempResult = false;
-   PrimaXImage * result = nil;
    PutImageRequest req;
+   PutImageFunc ** dst = NULL;
+   int src = -1;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
@@ -1536,13 +1623,40 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    req. rop   = prima_rop_map( rop);
    
    if ( XT_IS_DBM(XX) && XT_IS_BITMAP(XX))
-      return img_put_on_bitmap( self, image, &req);
-   if ( XT_IS_DBM(XX) && XT_IS_PIXMAP(XX))
-      return img_put_on_pixmap( self, image, &req);
+      dst = img_put_bitmap;
+   else if ( XT_IS_DBM(XX) && XT_IS_PIXMAP(XX))
+      dst = img_put_pixmap;
+   if (!dst)
+      return false;
+
+   if ( XT_IS_DBM(YY)) {
+      if (XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1))
+         src = SRC_BITMAP;
+      else if ( XT_IS_PIXMAP(YY))
+         src = SRC_PIXMAP;
+   } else if ( XT_IS_IMAGE(YY) || XS_IS_ICON(YY)) {
+      if ( XF_IN_PAINT(YY)) {
+         if ( XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1)) {
+            src = SRC_BITMAP;
+	 } else if ( XT_IS_PIXMAP(YY)) {
+            src = SRC_PIXMAP;
+	 }
+      } else if ( XT_IS_IMAGE(YY)) {
+         src = SRC_IMAGE;
+      } else {
+         src = SRC_ICON;
+      }
+   }
+
+   if ( src < 0 ) return false;
+   return (*dst[src])(self, image, &req);
+
 //   if ( XT_IS_IMAGE(XX) || XT_IS_ICON(XX))
 //      return img_put_on_image( self, image, &req);
 //   if ( XX->flags.layered)
 //      return img_put_on_layered( self, image, &req);
+//   if ( XX->flags.buffered)
+//      return img_put_on_buffered( self, image, &req);
 //   return img_put_on_widget( self, image, &req);
 
 /*
@@ -1965,23 +2079,6 @@ apc_image_end_paint( Handle self)
    clear_caches( self);
    return true;
 }
-
-/*
-   static void
-   reverse_buffer_bytes_32( void *buffer, size_t bufsize)
-   {
-      U32 *buf = buffer;
-
-      if ( bufsize % 4) croak( "UAI_018: expect bufsize % 4 == 0");
-      bufsize /= 4;
-
-      while ( bufsize) {
-         *buf = REVERSE_BYTES_32(*buf);
-         buf++;
-         bufsize--;
-      }
-   }
-*/
 
 typedef struct {
    Fixed count;
