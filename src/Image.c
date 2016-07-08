@@ -1049,36 +1049,31 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
             return nilSV;
       }} else
          switch (var->type & imBPP) {
-      case imbpp1:
-         {
+         case imbpp1: {
             Byte p=var->data[var->lineSize*y+(x>>3)];
             p=(p >> (7-(x & 7))) & 1;
             return newSViv(((var->type & imGrayScale) ? (p ? 255 : 0) : BGRto32(p)));
          }
-      case imbpp4:
-         {
+         case imbpp4: {
             Byte p=var->data[var->lineSize*y+(x>>1)];
             p=(x&1) ? p & 0x0f : p>>4;
             return newSViv(((var->type & imGrayScale) ? (p*255L)/15 : BGRto32(p)));
          }
-      case imbpp8:
-         {
+         case imbpp8: {
             Byte p=var->data[var->lineSize*y+x];
             return newSViv(((var->type & imGrayScale) ? p :  BGRto32(p)));
          }
-      case imbpp16:
-         {
+         case imbpp16: {
             return newSViv(*(Short*)(var->data + (var->lineSize*y+x*2)));
          }
-      case imbpp24:
-         {
+         case imbpp24: {
             RGBColor p=*(PRGBColor)(var->data + (var->lineSize*y+x*3));
             return newSViv((p.r<<16) | (p.g<<8) | p.b);
          }
-      case imbpp32:
-         return newSViv(*(Long*)(var->data + (var->lineSize*y+x*4)));
-      default:
-         return newSViv(clInvalid);
+         case imbpp32:
+            return newSViv(*(Long*)(var->data + (var->lineSize*y+x*4)));
+         default:
+            return newSViv(clInvalid);
       }
 #undef BGRto32
    } else {
