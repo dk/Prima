@@ -1290,7 +1290,7 @@ img_put_bitmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
    if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
       warn( "error querying GC values");
 
-   if ( XT_IS_BITMAP(YY)) {
+   if ( XT_IS_DBM(YY) && XT_IS_BITMAP(YY)) {
       /*
       Special case with current foreground and background colors, see also
       L<pod/Prima/Drawable.pod | Monochrome bitmaps>.
@@ -1341,7 +1341,7 @@ img_put_bitmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
             case GXorInverted:    
             case GXset:           req->rop = GXset;           break;
 	 }
-      } else if ( fore == 0 && back == 1 ) {
+      } else if ( fore == 1 && back == 0 ) {
          switch( req->rop) {
             case GXand:           req->rop = GXandInverted;   break;
             case GXandInverted:   req->rop = GXand;           break;
@@ -1453,6 +1453,10 @@ img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
    if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP)))
       return false;
 
+   XSetForeground( DISP, XX-> gc, 1);
+   XSetBackground( DISP, XX-> gc, 0);
+   XX-> flags. brush_fore = XX-> flags. brush_back = 0;
+
    return prima_put_ximage(
       XX-> gdrawable, XX-> gc, cache->image,
       req->src_x, img-> h - req->src_y - req->h,
@@ -1493,11 +1497,12 @@ static Bool
 img_put_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 {
    PDrawableSysData YY = X(image);
-   if ( XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1))
-      return img_put_bitmap_on_bitmap( self, image, req);
-   if ( XT_IS_PIXMAP(YY))
-      return img_put_pixmap_on_bitmap( self, image, req);
-   if ( XT_IS_IMAGE(YY) || XT_IS_ICON(YY))
+   if ( XT_IS_DBM(YY)) {
+      if (XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1))
+         return img_put_bitmap_on_bitmap( self, image, req);
+      else if ( XT_IS_DBM(YY) && XT_IS_PIXMAP(YY))
+         return img_put_pixmap_on_bitmap( self, image, req);
+   } else if ( XT_IS_IMAGE(YY) || XT_IS_ICON(YY))
       return img_put_image_on_bitmap( self, image, req);
    return false;
 }
@@ -1530,22 +1535,17 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    req. h     = yLen;
    req. rop   = prima_rop_map( rop);
    
-   if ( XT_IS_BITMAP(XX))
+   if ( XT_IS_DBM(XX) && XT_IS_BITMAP(XX))
       return img_put_on_bitmap( self, image, &req);
-   if ( XT_IS_PIXMAP(XX))
+   if ( XT_IS_DBM(XX) && XT_IS_PIXMAP(XX))
       return img_put_on_pixmap( self, image, &req);
-   if ( XT_IS_IMAGE(XX) || XT_IS_ICON(XX))
-      return img_put_on_image( self, image, &req);
-   if ( XX->flags.layered)
-      return img_put_on_layered( self, image, &req);
-   return img_put_on_widget( self, image, &req);
+//   if ( XT_IS_IMAGE(XX) || XT_IS_ICON(XX))
+//      return img_put_on_image( self, image, &req);
+//   if ( XX->flags.layered)
+//      return img_put_on_layered( self, image, &req);
+//   return img_put_on_widget( self, image, &req);
 
 /*
-   if ( XS_IS_BITMAP(X(image)) return put_bitmap( self, image, &req);
-   if ( XS_IS_PIXMAP(X(image)) return put_pixmap( self, image, &req);
-   if ( XS_IS_IMAGE(X(image))  return put_image( self, image, &req);
-   if ( XS_IS_ICON(X(image))   return put_icon( self, image, &req);
-   return 0;
   
    if ( XT_IS_DBM(X(image)) || PObject( image)-> options. optInDraw) {
       HV * profile;

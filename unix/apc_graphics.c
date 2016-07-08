@@ -239,16 +239,6 @@ Unbuffered:
       apc_gp_set_font( self, &PDrawable( self)-> font);
       XX-> flags. reload_font = false;
    }
-   if(0){
- 			    XGCValues gcv;
-             XCHECKPOINT;
-		       GC gc = XCreateGC(DISP, XX->gdrawable, 0, &gcv);
-             XCHECKPOINT;
-		       XSetForeground( DISP, gc, 0xff000000);
-             XCHECKPOINT;
-		       XFillRectangle( DISP, XX->gdrawable, gc, 0, 0, 100, 100);
-             XFreeGC( DISP, gc);
-             }
 }
 
 void
