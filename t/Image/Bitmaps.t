@@ -3,8 +3,9 @@ use warnings;
 
 use Test::More;
 use Prima::Test;
+use Prima qw(Application);
 
-plan tests => 674;
+plan tests => 807;
 
 my ($src, $mask, $dst);
 
@@ -31,6 +32,7 @@ sub test_mask
 {
 	my $descr = shift;
 
+	$dst->rop(rop::CopyPut);
 	$dst->pixel(0,0,cl::Black);
 	$dst->pixel(1,0,cl::Black);
 	$dst->pixel(2,0,cl::Black);
@@ -39,6 +41,7 @@ sub test_mask
 	$dst->pixel(1,1,cl::White);
 	$dst->pixel(2,1,cl::White);
 	$dst->pixel(3,1,cl::White);
+	$dst->rop(rop::OrPut); # check that rop doesn't affect icon put
 	
 	$mask->pixel(0,0,cl::Black);
 	$mask->pixel(1,0,cl::White);
@@ -159,7 +162,6 @@ sub test_dst
 		test_mask( "$bit-bit xor mask / 8-bit and mask on $target");
 	}
 }
-
 $dst = Prima::Image->create( width => 4, height => 2, type => im::RGB);
 $src  = Prima::Image->create( width => 4, height => 1, type => im::RGB);
 $mask = Prima::Image->create( width => 4, height => 1, type => im::BW);
@@ -184,4 +186,12 @@ $dst->end_paint;
 $dst = Prima::Image->create( width => 4, height => 2, type => im::RGB);
 $dst->begin_paint;
 test_dst("im::RGB");
+$dst->end_paint;
+
+# Because get_pixel from non-buffered guarantees nothing. 
+# .buffered is also not guaranteed, but for 8 pixel widget that shouldn't be a problem
+$dst = Prima::Widget->create( width => 4, height => 2, buffered => 1); 
+$dst->bring_to_front;
+$dst->begin_paint;
+test_dst("widget");
 $dst->end_paint;

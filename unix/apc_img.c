@@ -286,12 +286,12 @@ Bool
 apc_image_create( Handle self)
 {
    DEFXX;
-   XX-> type.image = true;
-   XX-> type.icon = !!kind_of(self, CIcon);
-   XX-> type.drawable = true;
+   XX-> type.image        = true;
+   XX-> type.icon         = !!kind_of(self, CIcon);
+   XX-> type.drawable     = true;
    XX-> image_cache. type = CACHE_AUTODETECT;
-   XX->size. x                  = PImage(self)-> w;
-   XX->size. y                  = PImage(self)-> h;
+   XX->size. x            = PImage(self)-> w;
+   XX->size. y            = PImage(self)-> h;
    return true;
 }
 
@@ -1361,8 +1361,6 @@ img_put_copy_area( Handle self, Handle image, PutImageRequest * req)
    DEFXX;
    PDrawableSysData YY = X(image);
 
-   SHIFT( req->dst_x, req->dst_y);
-
    XCHECKPOINT;
    SET_ROP(req->rop);
 
@@ -1464,12 +1462,14 @@ img_put_pixmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
    return ret;
 }
 
-
 static Bool
 img_put_icon_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 {
+   DEFXX;
    ImageCache *cache;
 
+   XSetFunction( DISP, XX->gc, GXcopy);
+   req->rop = req->old_rop = GXcopy;
    if (!(cache = prima_create_image_cache((PImage)image, nilHandle, CACHE_BITMAP)))
       return false;
    return
@@ -1482,8 +1482,6 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
    DEFXX;
    PDrawableSysData YY = X(image);
-   
-   SHIFT( req->dst_x, req->dst_y);
 
    SET_ROP(req->rop);
    XCHECKPOINT;
@@ -1551,6 +1549,54 @@ img_put_icon_on_pixmap( Handle self, Handle image, PutImageRequest * req)
       img_put_image_on_pixmap( self, image, req);
 }
 
+static Bool
+img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
+{
+   DEFXX;
+   ImageCache *cache;
+   PImage img = (PImage) image;
+   PDrawableSysData YY = X(image);
+   
+   if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_PIXMAP)))
+      return false;
+
+   if (( img->type & imBPP ) == 1) {
+      RGBColor * p = img->palette;
+      if ( !XX->flags. brush_fore) {
+         XSetBackground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[0].r, p[0].g, p[0].b), nil));
+         XX->flags.brush_fore = 0;
+      }
+      if ( !XX->flags. brush_back) {
+         XSetForeground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[1].r, p[1].g, p[1].b), nil));
+         XX->flags.brush_back = 0;
+      }
+   }
+
+   if ( guts. dynamicColors) {
+      int i;
+      for ( i = 0; i < guts. palSize; i++) 
+         if (( wlpal_get( image, i) == RANK_FREE) &&
+             ( wlpal_get( self,  i) != RANK_FREE))
+            prima_color_add_ref( self, i, RANK_LOCKED);
+   }
+
+   return img_put_ximage( self, cache->image, req);
+}
+
+static Bool
+img_put_icon_on_widget( Handle self, Handle image, PutImageRequest * req)
+{
+   ImageCache *cache;
+   Bool ok;
+
+   if (!(cache = prima_create_image_cache((PImage)image, nilHandle, CACHE_PIXMAP)))
+      return false;
+
+   return 
+      img_put_icon_mask( self, cache->icon, req) &&
+      img_put_image_on_widget( self, image, req);
+}
+
 typedef Bool PutImageFunc( Handle self, Handle image, PutImageRequest * req);
 
 #define SRC_BITMAP       0
@@ -1574,6 +1620,14 @@ PutImageFunc (*img_put_pixmap[SRC_NUM]) = {
    img_put_icon_on_pixmap
 };
 
+PutImageFunc (*img_put_widget[SRC_NUM]) = {
+   img_put_bitmap_on_pixmap,
+   img_put_copy_area,
+   img_put_image_on_widget,
+   img_put_icon_on_widget
+};
+
+
 Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
 {
@@ -1582,9 +1636,9 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    PImage img = PImage( image);
    PutImageRequest req;
    PutImageFunc ** dst = NULL;
-   XGCValues gcv;
    Bool ok;
    int src = -1;
+   XGCValues gcv;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
@@ -1594,6 +1648,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    if ( yFrom + yLen > img-> h) yLen = img-> h - yFrom;
    if ( xLen <= 0 || yLen <= 0) return false;
 
+   SHIFT( x, y);
    req. src_x = xFrom;
    req. src_y = yFrom;
    req. dst_x = x;
@@ -1605,6 +1660,8 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       dst = img_put_bitmap;
    else if ( XT_IS_PIXMAP(XX))
       dst = img_put_pixmap;
+   else if ( !XX->flags. layered)
+      dst = img_put_widget;
    if (!dst)
       return false;
 
@@ -1629,14 +1686,15 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 
    if ( src < 0 ) return false;
 
-   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
-      warn( "error querying GC values");
-   req. old_rop = gcv. function;
+   if ( !XGetGCValues(DISP, XX->gc, GCFunction, &gcv))
+      warn("cannot query XGCValues");
+
+   req. old_rop = gcv.function;
    req. rop     = prima_rop_map( rop);
 
    ok = (*dst[src])(self, image, &req);
    
-   if ( gcv. function != req. rop)
+   if ( gcv.function != req. old_rop)
       XSetFunction( DISP, XX->gc, gcv. function);
 
    return ok;
@@ -1645,8 +1703,6 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 //      return img_put_on_image( self, image, &req);
 //   if ( XX->flags.layered)
 //      return img_put_on_layered( self, image, &req);
-//   if ( XX->flags.buffered)
-//      return img_put_on_buffered( self, image, &req);
 //   return img_put_on_widget( self, image, &req);
 
 /*
