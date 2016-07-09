@@ -595,6 +595,7 @@ typedef struct _UnixGuts
    int                          xft_xrender_major_opcode;
    Bool                         xft_no_antialias;
    Bool				randr_extension;
+   Bool				render_extension;
    struct MsgDlg               *message_boxes;
    XWindow                      grab_redirect;
    Handle                       grab_widget;

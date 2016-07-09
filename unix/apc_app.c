@@ -254,6 +254,13 @@ init_x11( char * error_buf )
          guts. randr_extension = true;
    }	 
 #endif
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   {
+      int dummy;
+      if ( XRenderQueryExtension( DISP, &dummy, &dummy))
+         guts. render_extension = true;
+   }	 
+#endif
    XrmInitialize();
    guts.db = get_database();
    XrmStringToQuarkList( common_quarks, common_quarks_list);

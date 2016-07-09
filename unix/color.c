@@ -608,7 +608,7 @@ class;
    
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    /* get ARGB visual */
-   {
+   if ( guts. render_extension ) {
       int i;
       XRenderPictFormat *f;
       template. depth = 32; /* XXX should try non-32 bit alpha'ed visuals */
