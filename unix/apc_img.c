@@ -1156,13 +1156,14 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
    Handle dup = nilHandle;
    PImage pass = img;
 
+   /* common validity checks */
    if ( img-> w == 0 || img-> h == 0) return nil;
-
    if ( img-> palette == nil) {
       warn( "UAI_014: image has no palette");
       return nil;
    }
 
+   /* test if types are applicable */
    switch ( type) {
    case CACHE_AUTODETECT:
       type = ( drawable == nilHandle || X(drawable) == nil ||
@@ -1184,6 +1185,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       break;
    }
 
+   /* find Prima image depth */
    switch (type) {
    case CACHE_BITMAP:
       target_bpp = 1;
@@ -1197,6 +1199,8 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       target_bpp = guts. idepth;
    }
    
+
+   /* create cache for icon mask, if any */
    if ( XT_IS_ICON(IMG)) {
       if ( cache-> icon == nil && type != CACHE_ARGB) {
          Bool ok;
@@ -1214,6 +1218,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       cache-> image = nil;
    }
 
+   /* convert from funky image types */
    if (( img-> type & ( imRealNumber | imComplexNumber | imTrigComplexNumber)) ||
        ( img-> type == imLong || img-> type == imShort)) {
       if ( !dup) {
@@ -1229,6 +1234,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       pass-> self-> set_type(( Handle) pass, imByte);
    }
 
+   /* treat ARGB separately, and leave */
    if ( type == CACHE_ARGB ) {
       Bool ok;
       PIcon i = (PIcon) pass;
@@ -1254,6 +1260,11 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       return cache;
    }
    
+   /* apply as much of system palette colors as possible to new image, 
+      if we're working on 1-8 bit displays. CACHE_LOW_RES on displays with
+      dynamic colors goes only after conservative strategy, using only
+      immutable colors to be copied to clipboard, icon, etc.
+   */
    if ( target_bpp <= 8 && img-> type != imBW) {
       int bpp, colors = 0;
       RGBColor palbuf[256], *palptr = nil;
@@ -1280,7 +1291,8 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       }
       pass-> self-> reset( dup, bpp, palptr, colors);
    }
-     
+
+   /* convert image bits */
    switch ( pass-> type & imBPP) {
    case 1:   ret = create_cache1( pass, cache, target_bpp); break;
    case 4:   ret = create_cache4( pass, cache, target_bpp); break;
@@ -1295,6 +1307,8 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       return nil;
    }
 
+   /* on paletted displays, acquire actual color indexes, and 
+      remap pixels to match them */
    if (( guts. palSize > 0) && (( pass-> type & imBPP) != 24)) {
       int i, maxRank = RANK_FREE;
       Byte * p = X((Handle)img)-> palette;
