@@ -450,11 +450,11 @@ prima_update_cursor( Handle self)
 	 guts. cursor_save = XCreatePixmap( DISP, XX-> udrawable,
 					    guts. cursor_pixmap_size. x,
 					    guts. cursor_pixmap_size. y,
-					    guts. depth);
+					    XX-> visual-> depth);
 	 guts. cursor_xor  = XCreatePixmap( DISP, XX-> udrawable,
 					    guts. cursor_pixmap_size. x,
 					    guts. cursor_pixmap_size. y,
-					    guts. depth);
+					    XX-> visual-> depth);
       }
 
       prima_get_gc( XX);
