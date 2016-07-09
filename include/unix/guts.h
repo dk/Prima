@@ -115,11 +115,12 @@ typedef struct _PrimaXImage
 } PrimaXImage;
 
 
-#define CACHE_AUTODETECT 0
-#define CACHE_BITMAP     1
-#define CACHE_PIXMAP     2
-#define CACHE_LOW_RES    3
-#define CACHE_ARGB       4
+#define CACHE_AUTODETECT     0
+#define CACHE_BITMAP         1
+#define CACHE_PIXMAP         2
+#define CACHE_LOW_RES        3
+#define CACHE_LAYERED        4
+#define CACHE_LAYERED_ALPHA  5
 
 typedef struct {
    int type;

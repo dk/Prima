@@ -551,11 +551,12 @@ void
 Icon_combine( Handle self, Handle xorMask, Handle andMask)
 {
    Bool killAM = 0;
-   int am = var-> autoMasking, maskType;
+   int maskType;
    
    if ( !kind_of( xorMask, CImage) || !kind_of( andMask, CImage))
       return;
 
+   var-> autoMasking = amNone;
    maskType = PImage( andMask)-> type & imBPP;
    if ( maskType != imbpp1 && maskType != imbpp8) {
       killAM = 1;
@@ -581,9 +582,7 @@ Icon_combine( Handle self, Handle xorMask, Handle andMask)
 
    if ( killAM) Object_destroy( andMask);
 
-   var-> autoMasking = amNone;
    my-> update_change( self);
-   var-> autoMasking = am;
 }
 
 void

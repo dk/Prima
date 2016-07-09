@@ -91,7 +91,7 @@ prima_prepare_ximage( int width, int height, int format)
       visual  = VISUAL;
       pformat = ZPixmap;
       break;
-   case CACHE_ARGB:
+   case CACHE_LAYERED:
       depth   = guts.argb_visual.depth;
       idepth  = guts.argb_pic_format->depth;
       visual  = guts. argb_visual. visual;
@@ -1085,7 +1085,7 @@ create_rgb_to_alpha_xpixel_lut( int ncolors, const Byte * alpha, XPixel *lut)
 }
 
 static Bool
-create_argb_cache(PIcon img, ImageCache * cache)
+create_argb_cache(PIcon img, ImageCache * cache, Bool with_alpha)
 {
    PDrawableSysData IMG = X((Handle)img);
    static XPixel lur[NPalEntries8], lub[NPalEntries8], lug[NPalEntries8], lua[NPalEntries8];
@@ -1117,12 +1117,12 @@ create_argb_cache(PIcon img, ImageCache * cache)
       initialize = false;
    }
 
-   cache->image = prima_prepare_ximage( w, h, CACHE_ARGB);
+   cache->image = prima_prepare_ximage( w, h, CACHE_LAYERED);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
 
-   if ( XT_IS_ICON(IMG)) {
+   if ( XT_IS_ICON(IMG) && with_alpha ) {
       for ( y = h-1; y >= 0; y--) {
          register Pixel24 *line = (Pixel24*)(img-> data + y*img-> lineSize);
          register Pixel8  *mask = (Pixel8 *)(img-> mask + y*img-> maskLine);
@@ -1170,7 +1170,8 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
          XT_IS_BITMAP(X(drawable)) || ( guts. idepth == 1)) ?
          CACHE_BITMAP : CACHE_PIXMAP;
       break;
-   case CACHE_ARGB:
+   case CACHE_LAYERED:
+   case CACHE_LAYERED_ALPHA:
       if ( !guts. argb_visual. visual ) {
          warn("panic: no argb visual");
 	 return nil;
@@ -1191,7 +1192,8 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
       target_bpp = 1;
       break;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-   case CACHE_ARGB:
+   case CACHE_LAYERED:
+   case CACHE_LAYERED_ALPHA:
       target_bpp = guts. argb_pic_format-> depth;
       break;
 #endif
@@ -1202,7 +1204,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
 
    /* create cache for icon mask, if any */
    if ( XT_IS_ICON(IMG)) {
-      if ( cache-> icon == nil && type != CACHE_ARGB) {
+      if ( cache-> icon == nil && type != CACHE_LAYERED_ALPHA) {
          Bool ok;
 	 ok = ( PIcon(img)-> maskType == imbpp8 ) ?
 	    create_icon_cache8_1(( PIcon) img, cache) :
@@ -1235,7 +1237,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
    }
 
    /* treat ARGB separately, and leave */
-   if ( type == CACHE_ARGB ) {
+   if ( type == CACHE_LAYERED || type == CACHE_LAYERED_ALPHA ) {
       Bool ok;
       PIcon i = (PIcon) pass;
       if ( i->type != imRGB ) {
@@ -1245,14 +1247,14 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
 	 i = (PIcon) dup;
          i-> self-> set_type(dup, imRGB);
       }
-      if ( XT_IS_ICON(IMG) && i->maskType != imbpp8 ) {
+      if ( XT_IS_ICON(IMG) && type == CACHE_LAYERED_ALPHA && i->maskType != imbpp8 ) {
          if ( !dup)
             if (!(dup = i-> self-> dup((Handle) i)))
                return nil;
 	 i = (PIcon) dup;
          i-> self-> set_maskType(dup, imbpp8);
       }
-      ok = create_argb_cache(i, cache);
+      ok = create_argb_cache(i, cache, XT_IS_ICON(IMG) && type == CACHE_LAYERED_ALPHA );
       if ( dup) Object_destroy(dup);
       if ( !ok ) return nil;
 
@@ -1776,7 +1778,7 @@ img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    ImageCache *cache;
-   if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_ARGB)))
+   if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED)))
       return false;
    return img_put_ximage( self, cache->image, req);
 #else
@@ -1790,14 +1792,23 @@ img_put_icon_on_layered( Handle self, Handle image, PutImageRequest * req)
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    DEFXX;
    ImageCache *cache;
-   PImage img = (PImage) image;
+   PIcon img = (PIcon) image;
    Pixmap pixmap;
    GC gc;
    XGCValues gcv;
    Bool ret = false;
    Picture picture;
 
-   if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_ARGB)))
+   if ( img-> maskType == imbpp1) {
+       /* standard AND/XOR masking */ 
+       if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED)))
+          return false;
+       return 
+          img_put_icon_mask( self, cache->icon, req) &&
+          img_put_image_on_layered( self, image, req);
+   }
+
+   if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED_ALPHA)))
       return false;
 
    pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts. argb_visual. depth);
