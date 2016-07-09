@@ -551,7 +551,7 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
       }
       if ( lmask ) *data = (lsave & lmask) | (*data & ~lmask);
       if ( rmask ) data[blt_bytes-1] = (rsave & rmask) | (data[blt_bytes-1] & ~rmask);
-      data -= lineSize;
+      data += lineSize;
    }
 }
 
