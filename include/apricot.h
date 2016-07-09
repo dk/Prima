@@ -1827,6 +1827,8 @@ SV(CanUTF8_Input)
 SV(CanUTF8_Output)
 #define   svCompositeDisplay 32
 SV(CompositeDisplay)
+#define   svLayeredWidgets  33
+SV(LayeredWidgets)
 END_TABLE(sv,UV)
 #undef SV
 

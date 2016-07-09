@@ -349,6 +349,7 @@ apc_component_destroy( Handle self)
       free( XX-> q_class_name);
       XX-> q_class_name = nil;
    }
+
    free( PComponent( self)-> sysData);
    PComponent( self)-> sysData = nil;
    X_WINDOW = nilHandle;
@@ -1160,6 +1161,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svCanUTF8_Input:        return 1;
    case svCanUTF8_Output:       return 1;
    case svCompositeDisplay:     return guts. argb_visual. visual != NULL; /* XXX doesn't check if composition is actually available */
+   case svLayeredWidgets:       return guts. argb_visual. visual != NULL;
    default:
       return -1;
    }
