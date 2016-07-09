@@ -55,8 +55,10 @@ sub test_mask
 
 	my $icon = Prima::Icon->new;
 	$icon->combine($src,$mask);
-	$dst->put_image(0,0,$icon);
-	my $ok = $dst->put_image(0,1,$icon);
+
+	my $ok = 1;
+	$ok &= $dst->put_image(0,0,$icon);
+	$ok &= $dst->put_image(0,1,$icon);
 	ok( $ok, "put $descr" );
 
 	bitop( $dst->pixel(0,0), $descr, 0,0,0);
@@ -146,10 +148,9 @@ sub test_dst
 	$src->end_paint;
 	
 	$mask = Prima::Image->create( width => 4, height => 1, type => im::BW);
-
 	$src = Prima::Image->create( width => 4, height => 1, type => im::BW);
 	test_mask( "1-bit grayscale xor mask / 1-bit and mask on $target");
-	for my $bit ( 1, 4, 8, 24) {
+	for my $bit ( 4, 8, 24) {
 		$src = Prima::Image->create( width => 4, height => 1, type => $bit);
 		test_mask( "$bit-bit xor mask / 1-bit and mask on $target");
 	}
@@ -166,7 +167,6 @@ $dst = Prima::Image->create( width => 4, height => 2, type => im::RGB);
 $src  = Prima::Image->create( width => 4, height => 1, type => im::RGB);
 $mask = Prima::Image->create( width => 4, height => 1, type => im::BW);
 test_mask( "reference implementation");
-
 $dst = Prima::DeviceBitmap->create( width => 4, height => 2, monochrome => 1);
 test_dst("bitmap");
 
@@ -195,3 +195,12 @@ $dst->bring_to_front;
 $dst->begin_paint;
 test_dst("widget");
 $dst->end_paint;
+
+SKIP: {
+    skip 1, "no argb capability" unless $::application->get_system_value(sv::LayeredWidgets); 
+    $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1); 
+    $dst->bring_to_front;
+    $dst->begin_paint;
+    test_dst("argb widget");
+    $dst->end_paint;
+}

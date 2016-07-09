@@ -70,14 +70,38 @@ shm_ignore_errors(Display *d, XErrorEvent *ev)
 #endif
 
 PrimaXImage*
-prima_prepare_ximage( int width, int height, Bool bitmap)
+prima_prepare_ximage( int width, int height, int format)
 {
    PrimaXImage *i;
-   int extra_bytes;
+   int extra_bytes, depth, pformat, idepth;
+   Visual *visual;
 
    if (width == 0 || height == 0) return false;
-  
-   switch ( guts.idepth) {
+
+   switch(format) {
+   case CACHE_BITMAP: 
+      depth   = 1;
+      idepth  = 1;
+      visual  = VISUAL;
+      pformat = XYBitmap;
+      break;
+   case CACHE_PIXMAP:
+      idepth  = guts.idepth;
+      depth   = guts.depth;
+      visual  = VISUAL;
+      pformat = ZPixmap;
+      break;
+   case CACHE_ARGB:
+      depth   = guts.argb_visual.depth;
+      idepth  = guts.argb_pic_format->depth;
+      visual  = guts. argb_visual. visual;
+      pformat = ZPixmap;
+      break;
+   default:
+      croak("bad call to prima_prepare_ximage");
+   }
+
+   switch ( idepth) {
    case 16:     extra_bytes = 1;        break;
    case 24:     extra_bytes = 5;        break;
    case 32:     extra_bytes = 7;        break;
@@ -92,10 +116,8 @@ prima_prepare_ximage( int width, int height, Bool bitmap)
    bzero( i, sizeof( PrimaXImage));
 
 #ifdef USE_MITSHM
-   if ( guts. shared_image_extension && !bitmap) {
-      i-> image = XShmCreateImage( DISP, VISUAL, 
-                                   bitmap ? 1 : guts.depth,
-                                   bitmap ? XYBitmap : ZPixmap,
+   if ( guts. shared_image_extension && format != CACHE_BITMAP) {
+      i-> image = XShmCreateImage( DISP, visual, depth, pformat,
                                    nil, &i->xmem, width, height);
       XCHECKPOINT;
       if ( !i-> image) goto normal_way;
@@ -138,16 +160,14 @@ bad_xshm_attach:
    }
 normal_way:
 #endif
-   i-> bytes_per_line_alias = (( width * (bitmap ? 1 : guts.idepth) + 31) / 32) * 4;
+   i-> bytes_per_line_alias = (( width * depth + 31) / 32) * 4;
    i-> data_alias = malloc( height * i-> bytes_per_line_alias + extra_bytes);
    if (!i-> data_alias) {
       warn("No enough memory");
       free(i);
       return nil;
    }
-   i-> image = XCreateImage( DISP, VISUAL, 
-                             bitmap ? 1 : guts.depth,
-                             bitmap ? XYBitmap : ZPixmap,
+   i-> image = XCreateImage( DISP, visual, depth, pformat, 
                              0, i-> data_alias,
                              width, height, 32, i-> bytes_per_line_alias);
    XCHECKPOINT;
@@ -493,7 +513,7 @@ create_cache1_1( Image *img, ImageCache *cache, Bool for_icon)
       idata = img-> data;
    }
 
-   ximage = prima_prepare_ximage( w, h, true);
+   ximage = prima_prepare_ximage( w, h, CACHE_BITMAP);
    if (!ximage) return false;
    ls = get_ximage_bytes_per_line(ximage);
    data = get_ximage_data(ximage);
@@ -518,7 +538,7 @@ create_icon_cache8_1(PIcon img, ImageCache * cache)
    if (!(monomask = img->self->convert_mask((Handle)img, imbpp1)))
       return false;
 
-   ximage = prima_prepare_ximage( img->w, img->h, true);
+   ximage = prima_prepare_ximage( img->w, img->h, CACHE_BITMAP);
    if (!ximage) {
       free(monomask);
       return false;
@@ -625,7 +645,7 @@ create_cache4_8( Image *img, ImageCache *cache)
       }  
    }
 
-   cache->image = prima_prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -657,7 +677,7 @@ create_cache4_16( Image *img, ImageCache *cache)
       lut[i]. a = lut1[(i & MSNibble) >> MSNibbleShift];
       lut[i]. b = lut1[(i & LSNibble) >> LSNibbleShift];
    }
-   cache->image = prima_prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -693,7 +713,7 @@ create_cache4_24( Image *img, ImageCache *cache)
       lut[i]. b2 = (ColorComponent)((lut1[(i & LSNibble) >> LSNibbleShift] >> shift[2]) & ColorComponentMask);
    }
 
-   cache->image = prima_prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -725,7 +745,7 @@ create_cache4_32( Image *img, ImageCache *cache)
       lut[i]. b = lut1[(i & LSNibble) >> LSNibbleShift];
    }
 
-   cache->image = prima_prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -745,7 +765,7 @@ create_cache_equal( Image *img, ImageCache *cache)
 {
    unsigned char *data;
    int y, ls, lls, h = img-> h;
-   cache->image = prima_prepare_ximage( img-> w, h, false);
+   cache->image = prima_prepare_ximage( img-> w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -767,7 +787,7 @@ create_cache8_8_tc( Image *img, ImageCache *cache)
 
    create_rgb_to_8_lut( img-> palSize, img-> palette, lut);
 
-   cache->image = prima_prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -793,7 +813,7 @@ create_cache8_16( Image *img, ImageCache *cache)
 
    create_rgb_to_16_lut( img-> palSize, img-> palette, lut);
 
-   cache->image = prima_prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -827,7 +847,7 @@ create_cache8_24( Image *img, ImageCache *cache)
       lut[i]. a2 = (ColorComponent)((lut1[i] >> shift[2]) & ColorComponentMask);
    }
 
-   cache->image = prima_prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -853,7 +873,7 @@ create_cache8_32( Image *img, ImageCache *cache)
 
    create_rgb_to_xpixel_lut( img-> palSize, img-> palette, lut);
 
-   cache->image = prima_prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -896,7 +916,7 @@ create_cache24_16( Image *img, ImageCache *cache)
       initialize = false;
    }
 
-   cache->image = prima_prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -939,7 +959,7 @@ create_cache24_32( Image *img, ImageCache *cache)
       initialize = false;
    }
 
-   cache->image = prima_prepare_ximage( w, h, false);
+   cache->image = prima_prepare_ximage( w, h, CACHE_PIXMAP);
    if ( !cache->image) return false;
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
@@ -1039,11 +1059,91 @@ cache_remap_1( Image*img, ImageCache* cache)
       }
 }
 
-static Bool
-create_argb_cache(PImage img, ImageCache * cache)
+static void
+create_rgb_to_argb_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
 {
-   croak("unimplemented");
-   return false;
+   int i;
+   for ( i = 0; i < ncolors; i++) 
+      lut[i] = 
+            (((pal[i].r << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
+            (((pal[i].g << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |
+            (((pal[i].b << guts. argb_bits. blue_range ) >> 8) << guts. argb_bits.  blue_shift);
+   if ( guts.machine_byte_order != guts.byte_order) 
+      for ( i = 0; i < ncolors; i++) 
+         lut[i] = REVERSE_BYTES_32(lut[i]);
+}
+
+static void
+create_rgb_to_alpha_xpixel_lut( int ncolors, const Byte * alpha, XPixel *lut)
+{
+   int i;
+   for ( i = 0; i < ncolors; i++) 
+      lut[i] = ((alpha[i] << guts. argb_bits. alpha_range) >> 8) << guts. argb_bits. alpha_shift;
+   if ( guts.machine_byte_order != guts.byte_order) 
+      for ( i = 0; i < ncolors; i++) 
+         lut[i] = REVERSE_BYTES_32(lut[i]);
+}
+
+static Bool
+create_argb_cache(PIcon img, ImageCache * cache)
+{
+   PDrawableSysData IMG = X((Handle)img);
+   static XPixel lur[NPalEntries8], lub[NPalEntries8], lug[NPalEntries8], lua[NPalEntries8];
+   static Bool initialize = true;
+   RGBColor pal[NPalEntries8];
+   Byte alpha[NPalEntries8];
+   Pixel32 *data;
+   int x, y;
+   int i, ls;
+   int h = img-> h, w = img-> w;
+
+   if ( initialize) {
+      for ( i = 0; i < NPalEntries8; i++) {
+	 pal[i]. r = i; pal[i]. g = 0; pal[i]. b = 0;
+      }
+      create_rgb_to_argb_xpixel_lut( NPalEntries8, pal, lur);
+      for ( i = 0; i < NPalEntries8; i++) {
+	 pal[i]. r = 0; pal[i]. g = i; pal[i]. b = 0;
+      }
+      create_rgb_to_argb_xpixel_lut( NPalEntries8, pal, lug);
+      for ( i = 0; i < NPalEntries8; i++) {
+	 pal[i]. r = 0; pal[i]. g = 0; pal[i]. b = i;
+      }
+      create_rgb_to_argb_xpixel_lut( NPalEntries8, pal, lub);
+      for ( i = 0; i < NPalEntries8; i++) {
+	 alpha[i] = i;
+      }
+      create_rgb_to_alpha_xpixel_lut( NPalEntries8, alpha, lua);
+      initialize = false;
+   }
+
+   cache->image = prima_prepare_ximage( w, h, CACHE_ARGB);
+   if ( !cache->image) return false;
+   ls = get_ximage_bytes_per_line( cache->image);
+   data = get_ximage_data( cache->image);
+
+   if ( XT_IS_ICON(IMG)) {
+      for ( y = h-1; y >= 0; y--) {
+         register Pixel24 *line = (Pixel24*)(img-> data + y*img-> lineSize);
+         register Pixel8  *mask = (Pixel8 *)(img-> mask + y*img-> maskLine);
+         register Pixel32 *d = (Pixel32*)(ls*(h-y-1)+(unsigned char *)data);
+         for ( x = 0; x < w; x++) {
+            *d++ = lub[line->a0] | lug[line->a1] | lur[line->a2] | lua[*mask++];
+            line++;
+         }
+      }
+   } else {
+      XPixel alpha = lua[0]; /* RGB without A assumes A=0, transparent */
+      for ( y = h-1; y >= 0; y--) {
+         register Pixel24 *line = (Pixel24*)(img-> data + y*img-> lineSize);
+         register Pixel32 *d = (Pixel32*)(ls*(h-y-1)+(unsigned char *)data);
+         for ( x = 0; x < w; x++) {
+            *d++ = lub[line->a0] | lug[line->a1] | lur[line->a2] | alpha;
+            line++;
+         }
+      }
+   }
+   return true;
 }
 
 ImageCache*
@@ -1088,9 +1188,11 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
    case CACHE_BITMAP:
       target_bpp = 1;
       break;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    case CACHE_ARGB:
       target_bpp = guts. argb_pic_format-> depth;
       break;
+#endif
    default:
       target_bpp = guts. idepth;
    }
@@ -1128,9 +1230,26 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
    }
 
    if ( type == CACHE_ARGB ) {
-      Bool ok = create_argb_cache(pass ? pass : img, cache);
+      Bool ok;
+      PIcon i = (PIcon) pass;
+      if ( i->type != imRGB ) {
+         if ( !dup)
+            if (!(dup = img-> self-> dup(( Handle) i)))
+               return nil;
+	 i = (PIcon) dup;
+         i-> self-> set_type(dup, imRGB);
+      }
+      if ( XT_IS_ICON(IMG) && i->maskType != imbpp8 ) {
+         if ( !dup)
+            if (!(dup = i-> self-> dup((Handle) i)))
+               return nil;
+	 i = (PIcon) dup;
+         i-> self-> set_maskType(dup, imbpp8);
+      }
+      ok = create_argb_cache(i, cache);
       if ( dup) Object_destroy(dup);
       if ( !ok ) return nil;
+
       cache-> type = type;
       return cache;
    }
@@ -1374,6 +1493,7 @@ img_put_copy_area( Handle self, Handle image, PutImageRequest * req)
 
    return true;
 }
+
 static Bool
 img_put_ximage( Handle self, PrimaXImage * image, PutImageRequest * req)
 {
@@ -1483,20 +1603,26 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
    DEFXX;
    PDrawableSysData YY = X(image);
 
-   SET_ROP(req->rop);
-   XCHECKPOINT;
-
-   if ( XT_IS_DBM(YY) && XT_IS_BITMAP(YY)) {
-      /* XCopyPlane uses 0s for background and 1s for foreground */
-      if ( !XX->flags. brush_fore) {
-         XSetBackground( DISP, XX-> gc, XX-> fore. primary);
-         XX->flags.brush_fore = 0;
-      }
-      if ( !XX->flags. brush_back) {
-         XSetForeground( DISP, XX-> gc, XX-> back. primary);
-         XX->flags.brush_back = 0;
+   /* XCopyPlane uses 0s for background and 1s for foreground */
+   if ( XT_IS_BITMAP(YY)) {
+      if ( XT_IS_DBM(YY)) {
+         if ( !XX->flags. brush_fore) {
+            XSetBackground( DISP, XX-> gc, XX-> fore. primary);
+            XX->flags.brush_fore = 0;
+         }
+         if ( !XX->flags. brush_back) {
+            XSetForeground( DISP, XX-> gc, XX-> back. primary);
+            XX->flags.brush_back = 0;
+         }
+      } else {
+         XSetForeground( DISP, XX-> gc, 0x00ffffff);
+         XSetBackground( DISP, XX-> gc, 0x00000000);
+         XX->flags.brush_fore = XX->flags.brush_back = 0;
       }
    }
+
+   SET_ROP(req->rop);
+   XCHECKPOINT;
 
    XCopyPlane( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
               req->src_x, YY->size.y - req->src_y - req->h,
@@ -1561,15 +1687,29 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
       return false;
 
    if (( img->type & imBPP ) == 1) {
+      unsigned int fore, back;
       RGBColor * p = img->palette;
-      if ( !XX->flags. brush_fore) {
-         XSetBackground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[0].r, p[0].g, p[0].b), nil));
-         XX->flags.brush_fore = 0;
+
+      if ( guts. palSize > 0) {
+         fore = prima_color_find( self,
+             RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
+             -1, nil, RANK_NORMAL);
+         back = prima_color_find( self,
+             RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
+             -1, nil, RANK_NORMAL);
+      } else {
+         fore = 
+            (((img-> palette[1].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+            (((img-> palette[1].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+            (((img-> palette[1].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
+         back = 
+            (((img-> palette[0].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
+            (((img-> palette[0].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
+            (((img-> palette[0].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
       }
-      if ( !XX->flags. brush_back) {
-         XSetForeground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[1].r, p[1].g, p[1].b), nil));
-         XX->flags.brush_back = 0;
-      }
+      XSetBackground( DISP, XX-> gc, back);
+      XSetForeground( DISP, XX-> gc, fore);
+      XX->flags.brush_back = XX->flags.brush_fore = 0;
    }
 
    if ( guts. dynamicColors) {
@@ -1595,6 +1735,82 @@ img_put_icon_on_widget( Handle self, Handle image, PutImageRequest * req)
    return 
       img_put_icon_mask( self, cache->icon, req) &&
       img_put_image_on_widget( self, image, req);
+}
+
+static Bool
+img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   DEFXX;
+   PDrawableSysData YY = X(image);
+   Picture picture;
+   picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. argb_compat_format, 0, NULL);
+   /* XXX rop, alpha bit */
+   XRenderComposite( DISP, PictOpSrc, picture, 0, XX-> argb_picture,
+      req->src_x, YY->size.y - req->src_y - req->h, 0, 0,
+      req->dst_x, XX->size.y - req->dst_y - req->h, req->w, req->h
+   );
+   XRenderFreePicture( DISP, picture);
+   return true;
+#else
+   return false;
+#endif
+}
+
+static Bool
+img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   ImageCache *cache;
+   if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_ARGB)))
+      return false;
+   return img_put_ximage( self, cache->image, req);
+#else
+   return false;
+#endif
+}
+
+static Bool
+img_put_icon_on_layered( Handle self, Handle image, PutImageRequest * req)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   DEFXX;
+   ImageCache *cache;
+   PImage img = (PImage) image;
+   Pixmap pixmap;
+   GC gc;
+   XGCValues gcv;
+   Bool ret = false;
+   Picture picture;
+
+   if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_ARGB)))
+      return false;
+
+   pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts. argb_visual. depth);
+   gcv. graphics_exposures = false;
+   gc = XCreateGC( DISP, pixmap, GCGraphicsExposures, &gcv);
+
+   if ( !( prima_put_ximage(
+      pixmap, gc, cache->image,
+      req->src_x, req->src_y, 0, 0,
+      req->w, req->h
+   ))) goto FAIL;
+
+   picture = XRenderCreatePicture( DISP, pixmap, guts. argb_pic_format, 0, NULL);
+   XRenderComposite( DISP, PictOpOver, picture, 0, XX-> argb_picture,
+      0, 0, 0, 0,
+      req->dst_x, req->dst_y, req->w, req->h
+   );
+   XRenderFreePicture( DISP, picture);
+   ret = true;
+
+FAIL:
+   XFreeGC( DISP, gc);
+   XFreePixmap( DISP, pixmap );
+   return ret;
+#else
+   return false;
+#endif
 }
 
 typedef Bool PutImageFunc( Handle self, Handle image, PutImageRequest * req);
@@ -1627,6 +1843,13 @@ PutImageFunc (*img_put_widget[SRC_NUM]) = {
    img_put_icon_on_widget
 };
 
+PutImageFunc (*img_put_layered[SRC_NUM]) = {
+   img_put_bitmap_on_pixmap,
+   img_put_pixmap_on_layered,
+   img_put_image_on_layered,
+   img_put_icon_on_layered
+};
+
 
 Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
@@ -1656,12 +1879,13 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    req. w     = xLen;
    req. h     = yLen;
    
-   if (XT_IS_BITMAP(XX) || ( XT_IS_PIXMAP(XX) && guts.depth==1))
+   if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
       dst = img_put_bitmap;
-   else if ( XT_IS_PIXMAP(XX))
+   else if ( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX))
       dst = img_put_pixmap;
-   else if ( !XX->flags. layered)
-      dst = img_put_widget;
+   else if ( XT_IS_WIDGET(XX)) 
+      dst =  XX->flags. layered ? img_put_layered : img_put_widget;
+
    if (!dst)
       return false;
 
@@ -2373,7 +2597,7 @@ do_stretch( Handle self, PrimaXImage *cache,
    stretch_calculate_seed( src_w, dst_w, &xclipstart, &xclipsize, &xseed);
    stretch_calculate_seed( src_h, dst_h, &yclipstart, &yclipsize, &yseed);
    if ( xclipsize <= 0 || yclipsize <= 0) return nil;
-   stretch = prima_prepare_ximage( xclipsize, yclipsize, bpp == 1);
+   stretch = prima_prepare_ximage( xclipsize, yclipsize, (bpp == 1) ? CACHE_BITMAP : CACHE_PIXMAP);
    if ( !stretch) return false;
 
    tls = get_ximage_bytes_per_line( stretch);

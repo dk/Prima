@@ -630,6 +630,10 @@ class;
          break;
       }
       if ( list) XFree( list);
+      
+      /* find compat format for putting regular pixmaps */
+      if (!(guts. argb_compat_format = XRenderFindVisualFormat(DISP, guts.visual.visual)))
+         guts. argb_pic_format = NULL;
    }
 #endif
    if ( !guts. argb_visual. visual ) Pdebug("no ARGB visual found\n");

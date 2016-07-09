@@ -612,6 +612,7 @@ typedef struct _UnixGuts
    XVisualInfo                  argb_visual;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    XRenderPictFormat *          argb_pic_format;
+   XRenderPictFormat *          argb_compat_format;
 #endif
    MainColorEntry *             palette;
    int *                        mappingPlace;
@@ -783,6 +784,9 @@ typedef struct _drawable_sys_data
    uint32_t * xft_map8;
    double     xft_font_cos;
    double     xft_font_sin;
+#endif
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   Picture    argb_picture;
 #endif
 } DrawableSysData, *PDrawableSysData;
 
@@ -1073,7 +1077,7 @@ extern void
 prima_ximage_event( XEvent*);
 
 extern PrimaXImage*
-prima_prepare_ximage( int width, int height, Bool bitmap);
+prima_prepare_ximage( int width, int height, int format);
 
 extern Bool
 prima_free_ximage( PrimaXImage *i);

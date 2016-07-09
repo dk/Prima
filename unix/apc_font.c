@@ -2032,7 +2032,7 @@ FAILED:
          r-> lineSize,  ximage-> bytes_per_line);
       XDestroyImage( ximage);
       
-      px = prima_prepare_ximage( r-> dimension. x, r-> dimension. y, 1);
+      px = prima_prepare_ximage( r-> dimension. x, r-> dimension. y, CACHE_BITMAP);
       if ( !px) return false;
       ndata = ( Byte*) px-> data_alias;
       bzero( ndata, px-> bytes_per_line_alias * r-> dimension. y); 

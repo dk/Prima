@@ -333,9 +333,9 @@ Icon_maskType( Handle self, Bool set, int type)
    case imbpp1:
    case imbpp8:
       if ( var-> mask ) {
+          Byte * new_mask = Icon_convert_mask(self, type);
 	  free( var-> mask );
-	  var-> mask = nil;
-	  var-> mask = Icon_convert_mask(self, type);
+	  var-> mask = new_mask;
       }
       break;
    default:
