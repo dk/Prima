@@ -47,6 +47,8 @@ sub test_mask
 	$mask->pixel(1,0,cl::White);
 	$mask->pixel(2,0,cl::Black);
 	$mask->pixel(3,0,cl::White);
+	# convert AND-mask to alpha-channel
+	$mask->put_image( 0, 0, $mask, rop::NotPut) if $mask->type == im::Byte;
 
 	$src->pixel(0,0,cl::Black);
 	$src->pixel(1,0,cl::Black);
@@ -166,7 +168,10 @@ sub test_dst
 $dst = Prima::Image->create( width => 4, height => 2, type => im::RGB);
 $src  = Prima::Image->create( width => 4, height => 1, type => im::RGB);
 $mask = Prima::Image->create( width => 4, height => 1, type => im::BW);
-test_mask( "reference implementation");
+test_mask( "reference implementation / 1bit mask");
+
+$mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
+test_mask( "reference implementation / 8bit mask");
 $dst = Prima::DeviceBitmap->create( width => 4, height => 2, monochrome => 1);
 test_dst("bitmap");
 

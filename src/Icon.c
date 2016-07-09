@@ -284,7 +284,15 @@ Icon_autoMasking( Handle self, Bool set, int autoMasking)
    my-> update_change( self);
    return 0;
 }   
-   
+
+/*
+
+1-bit format is a true AND-mask: 0 is alpha=1, 1 is alpha=0
+8-bit format has alpha value from 0 to 255. 
+
+Note that inter-conversion between these negates the pixel values
+
+*/
 Byte*
 Icon_convert_mask( Handle self, int type )
 {
@@ -304,14 +312,15 @@ Icon_convert_mask( Handle self, int type )
    switch (type) {
    case imbpp1:
       /* downgrade */
-      memset( colorref,       0, 128 );
-      memset( colorref + 128, 1, 128 );
+      memset( colorref,     1, 1   );
+      memset( colorref + 1, 0, 255 );
       for ( i = 0, dst = ret; i < var->h; i++, src += srcLine, dst += dstLine)
           bc_byte_mono_cr( src, dst, var-> w, colorref);
       break;
    case imbpp8:
-      memset( &palette[0], 0x00, sizeof(RGBColor));
-      memset( &palette[1], 0xff, sizeof(RGBColor));
+      /* upgrade */
+      memset( &palette[0], 0xff, sizeof(RGBColor));
+      memset( &palette[1], 0x00, sizeof(RGBColor));
       for ( i = 0, dst = ret; i < var->h; i++, src += srcLine, dst += dstLine)
           bc_mono_graybyte( src, dst, var-> w, palette);
       break;
