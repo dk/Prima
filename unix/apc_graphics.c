@@ -65,7 +65,7 @@ prima_get_gc( PDrawableSysData selfxx)
    }   
 
    bitmap = XT_IS_BITMAP(XX) ? true : false;
-   layered = XX->flags. layered ? true : false;
+   layered = XF_IS_LAYERED(XX) ? true : false;
    gc_pool = bitmap ? &guts.bitmap_gc_pool : ( layered ? &guts.argb_gc_pool : &guts.screen_gc_pool );
    XX->gcl = TAILQ_FIRST(gc_pool);
    if (XX->gcl)
@@ -90,7 +90,7 @@ prima_release_gc( PDrawableSysData selfxx)
       if ( XX-> gcl == nil)
          warn( "UAG_011: internal error");
       bitmap = XT_IS_BITMAP(XX) ? true : false;
-      layered = XX->flags. layered ? true : false;
+      layered = XF_IS_LAYERED(XX) ? true : false;
       gc_pool = bitmap ? &guts.bitmap_gc_pool : ( layered ? &guts.argb_gc_pool : &guts.screen_gc_pool );
       if ( XX-> gcl) 
          TAILQ_INSERT_HEAD(gc_pool, XX->gcl, gc_link);
@@ -1212,7 +1212,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
          PRGBABitDescription bd = GET_RGBA_DESCRIPTION;
          int r, g, b, rmax, gmax, bmax, depth;
          rmax = gmax = bmax = 0xff;
-         depth = XX->flags.layered ? guts. argb_visual. depth : guts. idepth;
+         depth = XF_IS_LAYERED(XX) ? guts. argb_visual. depth : guts. idepth;
          switch ( guts. idepth) {
          case 16:
             p32 = *(( uint16_t*)(im-> data));

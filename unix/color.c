@@ -210,7 +210,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
    a[1] = COLOR_G(color);
    a[2] = COLOR_B(color);
 
-   if ( self && XX-> flags. layered )
+   if ( self && XF_IS_LAYERED(XX) )
       return brush->primary = 
             (((a[0] << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
             (((a[1] << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |
@@ -650,7 +650,7 @@ class;
    guts. colorCubeRib     = 0;
 
    if ( id >= 0) {
-      guts. defaultColormap = XCreateColormap( DISP, guts. root, VISUAL, AllocNone);
+      guts. defaultColormap = XCreateColormap( DISP, guts. root, guts.visual.visual, AllocNone);
       guts. privateColormap = 1;
    } else
       guts. defaultColormap  = DefaultColormap( DISP, SCREEN); 

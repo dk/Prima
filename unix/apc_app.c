@@ -633,6 +633,7 @@ apc_application_create( Handle self)
    XX-> origin. y = 0;
    XX-> ackSize = XX-> size = apc_application_get_size( self);
    XX-> owner = nilHandle;
+   XX-> visual = &guts. visual;
 
    XX-> flags. clip_owner = 1;
    XX-> flags. sync_paint = 0;

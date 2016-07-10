@@ -82,13 +82,13 @@ prima_prepare_ximage( int width, int height, int format)
    case CACHE_BITMAP: 
       depth   = 1;
       idepth  = 1;
-      visual  = VISUAL;
+      visual  = guts.visual.visual;
       pformat = XYBitmap;
       break;
    case CACHE_PIXMAP:
       idepth  = guts.idepth;
       depth   = guts.depth;
-      visual  = VISUAL;
+      visual  = guts.visual.visual;
       pformat = ZPixmap;
       break;
    case CACHE_LAYERED:
@@ -1659,7 +1659,8 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
    PImage img = (PImage) image;
    PDrawableSysData YY = X(image);
    
-   if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_LOW_RES)))
+   if (!(cache = prima_create_image_cache(img, nilHandle,
+      XT_IS_DBM(YY) ? CACHE_LOW_RES : CACHE_PIXMAP)))
       return false;
 
    if (( img->type & imBPP ) == 1) {
@@ -1682,8 +1683,10 @@ img_put_icon_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
    ImageCache *cache;
    Bool ok;
+   PDrawableSysData YY = X(image);
 
-   if (!(cache = prima_create_image_cache((PImage)image, nilHandle, CACHE_LOW_RES)))
+   if (!(cache = prima_create_image_cache((PImage)image, nilHandle,
+      XT_IS_DBM(YY) ? CACHE_LOW_RES : CACHE_PIXMAP)))
       return false;
 
    return 
@@ -1909,7 +1912,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    else if ( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX))
       dst = img_put_pixmap;
    else if ( XT_IS_WIDGET(XX)) 
-      dst =  XX->flags. layered ? img_put_layered : img_put_widget;
+      dst =  XF_IS_LAYERED(XX) ? img_put_layered : img_put_widget;
 
    if (!dst)
       return false;
@@ -1968,9 +1971,11 @@ apc_image_begin_paint( Handle self)
    XX-> type. icon = 0;
    prima_prepare_drawable_for_painting( self, false);
    PObject( self)-> options. optInDraw = 0;
+   XX->flags. paint = 0;
    apc_gp_put_image( self, self, 0, 0, 0, 0, img-> w, img-> h, ropCopyPut);
    /*                ^^^^^ ^^^^    :-)))  */
    PObject( self)-> options. optInDraw = 1;
+   XX->flags. paint = 1;
    XX-> type. icon = icon;
    return true;
 }
