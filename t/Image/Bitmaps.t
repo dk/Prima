@@ -87,6 +87,7 @@ sub test_dst
 	test_src( "bitmap on $target");
 
 	$dst->set(color => cl::White, backColor => cl::Black);
+	$dst->clear;
 	$src->pixel(0,0,cl::Black);
 	$dst->put_image(0,0,$src);
 	is( $dst->pixel(0,0), cl::White, "inverse bitmap on $target 0");
@@ -258,22 +259,31 @@ $dst->end_paint;
 
 # Because get_pixel from non-buffered guarantees nothing. 
 # .buffered is also not guaranteed, but for 8 pixel widget that shouldn't be a problem
-$dst = Prima::Widget->create( width => 4, height => 2, buffered => 1); 
+#
+# also, do test inside onPaint to make sure it's on the buffer, not on the screen
+$dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, onPaint => sub {
+	return if get_flag;
+	set_flag;
+	test_dst("widget");
+}); 
 $dst->bring_to_front;
-$dst->begin_paint;
-test_dst("widget");
-$dst->end_paint;
+SKIP: {
+	skip "cannot get widget to paint", 124 unless wait_flag;
+}
 
 SKIP: {
-    skip 1, "no argb capability" unless $::application->get_system_value(sv::LayeredWidgets); 
-    $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1); 
+    skip "no argb capability", 88 unless $::application->get_system_value(sv::LayeredWidgets); 
+    reset_flag;
+    $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1, onPaint => sub {
+	return if get_flag;
+	set_flag;
+        test_dst("argb widget", dont_test_blending => 1); # test separately
+
+        $mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
+        $src = Prima::Image->create( width => 4, height => 1, type => im::Byte);
+        test_blend( "1-bit grayscale image / 8-bit alpha on argb_widget");
+    });
+
     $dst->bring_to_front;
-    $dst->begin_paint;
-    test_dst("argb widget", dont_test_blending => 1); # test separately
-
-    $mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
-    $src = Prima::Image->create( width => 4, height => 1, type => im::Byte);
-    test_blend( "1-bit grayscale image / 8-bit alpha on argb_widget");
-
-    $dst->end_paint;
+    skip "cannot get widget to paint", 88 unless wait_flag;
 }
