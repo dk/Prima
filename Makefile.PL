@@ -459,7 +459,7 @@ sub _find_file
 	my ( $fname, $dir) = @_;
 	my ( $pathname, $found);
 	$pathname = qd( "$dir/$fname");
-	return $pathname if -e $pathname;
+	return $pathname if $pathname !~ /\.\./ && -e $pathname;
 	opendir D, $dir or die "Cannot open dir $dir: $!";
 	my @entries = map { qd( "$dir/$_")} grep { /^[^.]/ && -d qd( "$dir/$_")} readdir D;
 	closedir D;
