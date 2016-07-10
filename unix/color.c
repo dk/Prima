@@ -210,7 +210,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
    a[1] = COLOR_G(color);
    a[2] = COLOR_B(color);
 
-   if ( self && XF_IS_LAYERED(XX) )
+   if ( self && XF_LAYERED(XX) )
       return brush->primary = 
             (((a[0] << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
             (((a[1] << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |

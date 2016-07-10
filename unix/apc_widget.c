@@ -419,7 +419,7 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
    prima_no_cursor( self);
    prima_prepare_drawable_for_painting( self, inside_on_paint);
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-   if ( XF_IS_LAYERED(XX) )
+   if ( XF_LAYERED(XX) )
       XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_pic_format, 0, NULL);
 #endif
    if ( useRPDraw) {
@@ -542,7 +542,7 @@ apc_widget_end_paint( Handle self)
    DEFXX;
    XX-> flags. force_flush = 0;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-   if ( XF_IS_LAYERED(XX) && XX->argb_picture ) {
+   if ( XF_LAYERED(XX) && XX->argb_picture ) {
       XRenderFreePicture( DISP, XX->argb_picture);
       XX->argb_picture = 0;
    }

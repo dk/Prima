@@ -1912,7 +1912,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    else if ( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX))
       dst = img_put_pixmap;
    else if ( XT_IS_WIDGET(XX)) 
-      dst =  XF_IS_LAYERED(XX) ? img_put_layered : img_put_widget;
+      dst =  XF_LAYERED(XX) ? img_put_layered : img_put_widget;
 
    if (!dst)
       return false;
