@@ -154,7 +154,7 @@ prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint)
          XX-> bsize. y = h = XX-> size. y;
       }
       if ( w <= 0 || h <= 0) goto Unbuffered;
-      XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, w, h, guts.depth);
+      XX-> gdrawable = XCreatePixmap( DISP, XX-> udrawable, w, h, XX->visual->depth);
       XCHECKPOINT;
       if (!XX-> gdrawable) goto Unbuffered;
       XX-> gcv. ts_x_origin = -r.x;
