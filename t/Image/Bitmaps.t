@@ -163,7 +163,6 @@ sub test_dst
 	}
 
 	return if $opt{dont_test_blending};
-	
 	$mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
 	$src = Prima::Image->create( width => 4, height => 1, type => im::BW);
 	test_mask( "1-bit grayscale image / 8-bit alpha on $target");

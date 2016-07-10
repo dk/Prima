@@ -776,6 +776,102 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
     return ok;
 }
 
+static int
+rop_reduce(COLORREF fore, COLORREF back, int rop)
+{
+   /*
+   Special case with current foreground and background colors, see also
+   L<pod/Prima/Drawable.pod | Monochrome bitmaps>.
+   
+   Raster ops can be identified by a fingerprint.  For example, Or's is 14
+   and Noop's is 10:
+   
+                  0 | 0 =    0                      0 | 0 =    0
+                  0 | 1 =   1                       0 | 1 =   1
+                  1 | 0 =  1                        1 | 0 =  0
+                  1 | 1 = 1                         1 | 1 = 1
+                          ---                               ---
+                          1110 = 14                         1010 = 10
+   
+   when this special case uses not actual 0s and 1s, but bit values of
+   foreground and background color instead, the resulting operation can
+   still be expressed in rops, but these needs to be adjusted. Let's
+   consider a case where both colors are 0, and rop = OrPut:
+   
+                  0 | 0 =    0
+                  0 | 1 =   1
+                  0 | 0 =  0
+                  0 | 1 = 1
+                          ---
+                          1010 = 10
+   
+   this means that in these conditions, Or (as well as Xor and AndInverted) becomes Noop.
+   
+   */
+
+   fore &= 0xffffff;
+   back &= 0xffffff;
+   if ( fore == 0 && back == 0 ) {
+      switch( rop) {
+         case ropAndPut:           
+         case ropNotDestAnd:    
+         case ropBlackness:         
+         case ropCopyPut:          rop = ropBlackness;         break;
+         case ropNotXor:         
+         case ropInvert:        
+         case ropNotOr:           
+         case ropNotDestOr:     rop = ropInvert;        break;
+         case ropNotSrcAnd:   
+         case ropNoOper:          
+         case ropOrPut:            
+         case ropXorPut:           rop = ropNoOper;          break;
+         case ropNotAnd:          
+         case ropNotPut:  
+         case ropNotSrcOr:    
+         case ropWhiteness:           rop = ropWhiteness;           break;
+      }
+   } else if ( fore != 0 && back == 0 ) {
+      switch( rop) {
+         case ropAndPut:           rop = ropNotSrcAnd;   break;
+         case ropNotSrcAnd:   rop = ropAndPut;           break;
+         case ropNotDestAnd:    rop = ropNotOr;           break;
+         case ropBlackness:         rop = ropBlackness;         break;
+         case ropCopyPut:          rop = ropNotPut;  break;
+         case ropNotPut:  rop = ropCopyPut;          break;
+         case ropNotXor:         rop = ropXorPut;           break;
+         case ropInvert:        rop = ropInvert;        break;
+         case ropNotAnd:          rop = ropNotDestOr;     break;
+         case ropNoOper:          rop = ropNoOper;          break;
+         case ropNotOr:           rop = ropNotDestAnd;    break;
+         case ropOrPut:            rop = ropNotSrcOr;    break;
+         case ropNotSrcOr:    rop = ropOrPut;            break;
+         case ropNotDestOr:     rop = ropNotAnd;          break;
+         case ropWhiteness:           rop = ropWhiteness;           break;
+         case ropXorPut:           rop = ropNotXor;         break;
+      }
+   } else if ( fore != 0 && back != 0 ) {
+      switch( rop) {
+         case ropAndPut:           
+         case ropNotSrcOr:    
+         case ropNotXor:         
+         case ropNoOper:          rop = ropNoOper;          break;
+         case ropNotSrcAnd:  
+         case ropBlackness:        
+         case ropNotPut: 
+         case ropNotOr:           rop = ropBlackness;         break;
+         case ropInvert:      
+         case ropNotAnd:        
+         case ropNotDestAnd:  
+         case ropXorPut:           rop = ropInvert;        break;
+         case ropOrPut:         
+         case ropNotDestOr:  
+         case ropWhiteness:        
+         case ropCopyPut:          rop = ropWhiteness;           break;
+      }
+   }
+   return rop;
+}
+
 Bool
 apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {objCheck false;{
@@ -841,8 +937,14 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    // actions for mono images
    if ( dsys( image) options. aptDeviceBitmap) {
-      if ((( PDeviceBitmap) image)-> monochrome)
+      if ((( PDeviceBitmap) image)-> monochrome) {
          STYLUS_USE_TEXT( sys ps);
+         if (
+	    (( is_apt( aptDeviceBitmap) && (( PDeviceBitmap) self)-> monochrome)) ||
+            (( kind_of( self, CImage) && ( PImage(self)-> type == imBW)))
+	 ) 
+            rop = rop_reduce(GetTextColor( sys ps), GetBkColor( sys ps), rop);
+      }
    } else
       dcmono = i-> options. optInDraw ?  ( dsys( image) bpp == 1) : (( i-> type & imBPP) == 1);
 
@@ -858,27 +960,36 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          i-> palSize > 1
          ? RGB( pal[1].r, pal[1].g, pal[1].b)
          : RGB( 0xff, 0xff, 0xff));
+      SetTextColor( sys ps, RGB(0,0,0));
    }
 
    // if image is actually icon, drawing and-mask
    if ( kind_of( deja, CIcon)) {
-      if ( PIcon(deja)-> maskType == imbpp1 ) {
+      if ( PIcon(deja)-> maskType == imbpp8 && is_apt(aptLayered) ) {
+         rgba = true;
+      } else {
          XBITMAPINFO xbi = {
             { sizeof( BITMAPINFOHEADER), 0, 0, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
             { {0,0,0,0}, {255,255,255,0}}
          };
+	 Byte * mask;
          xbi. bmiHeader. biWidth = i-> w;
          xbi. bmiHeader. biHeight = i-> h;
+
+         mask = ( i-> maskType == imbpp8 ) ?
+  	    CIcon(deja)-> convert_mask( deja, imbpp1) :
+	    i-> mask;
+
          if ( StretchDIBits(
             xdc, x, ly - y - yDestLen, xDestLen, yDestLen, xFrom, yFrom, xLen, yLen,
-            i-> mask, ( BITMAPINFO*) &xbi, DIB_RGB_COLORS, SRCAND
+            mask, ( BITMAPINFO*) &xbi, DIB_RGB_COLORS, SRCAND
             ) == GDI_ERROR) {
             ok = false;
             apiErr;
          }
-      } else if ( PIcon(deja)-> maskType == imbpp8 ) {
-         rgba = true;
-      }
+
+         if ( i-> maskType == imbpp8 ) free( mask );
+      } 
       theRop = SRCINVERT;
    } else {
       theRop = ctx_remap_def( rop, ctx_rop2R4, true, SRCCOPY);
