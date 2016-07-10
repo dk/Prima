@@ -942,7 +942,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          if (
 	    (( is_apt( aptDeviceBitmap) && (( PDeviceBitmap) self)-> monochrome)) ||
             (( kind_of( self, CImage) && ( PImage(self)-> type == imBW)))
-	 ) 
+	 )
             rop = rop_reduce(GetTextColor( sys ps), GetBkColor( sys ps), rop);
       }
    } else
@@ -960,7 +960,6 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          i-> palSize > 1
          ? RGB( pal[1].r, pal[1].g, pal[1].b)
          : RGB( 0xff, 0xff, 0xff));
-      SetTextColor( sys ps, RGB(0,0,0));
    }
 
    // if image is actually icon, drawing and-mask
