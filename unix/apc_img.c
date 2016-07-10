@@ -1202,9 +1202,9 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
    }
    
 
-   /* create cache for icon mask, if any */
-   if ( XT_IS_ICON(IMG)) {
-      if ( cache-> icon == nil && type != CACHE_LAYERED_ALPHA) {
+   /* create icon cache, if any */
+   if ( XT_IS_ICON(IMG) && type != CACHE_LAYERED_ALPHA) {
+      if ( cache-> icon == nil) {
          Bool ok;
 	 ok = ( PIcon(img)-> maskType == imbpp8 ) ?
 	    create_icon_cache8_1(( PIcon) img, cache) :
@@ -1561,6 +1561,9 @@ img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 
    if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP)))
       return false;
+      
+   if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
+      return false;
 
    XSetForeground( DISP, XX-> gc, 1);
    XSetBackground( DISP, XX-> gc, 0);
@@ -1596,21 +1599,6 @@ img_put_pixmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 
    Object_destroy( obj);
    return ret;
-}
-
-static Bool
-img_put_icon_on_bitmap( Handle self, Handle image, PutImageRequest * req)
-{
-   DEFXX;
-   ImageCache *cache;
-
-   XSetFunction( DISP, XX->gc, GXcopy);
-   req->rop = req->old_rop = GXcopy;
-   if (!(cache = prima_create_image_cache((PImage)image, nilHandle, CACHE_BITMAP)))
-      return false;
-   return
-      img_put_icon_mask( self, cache->icon, req) &&
-      img_put_image_on_bitmap( self, image, req);
 }
 
 static Bool
@@ -1662,6 +1650,9 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
    if (!(cache = prima_create_image_cache(img, nilHandle,
       XT_IS_DBM(YY) ? CACHE_LOW_RES : CACHE_PIXMAP)))
       return false;
+   
+   if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
+      return false;
 
    if (( img->type & imBPP ) == 1) {
       RGBColor * p = img->palette;
@@ -1679,22 +1670,6 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
-img_put_icon_on_pixmap( Handle self, Handle image, PutImageRequest * req)
-{
-   ImageCache *cache;
-   Bool ok;
-   PDrawableSysData YY = X(image);
-
-   if (!(cache = prima_create_image_cache((PImage)image, nilHandle,
-      XT_IS_DBM(YY) ? CACHE_LOW_RES : CACHE_PIXMAP)))
-      return false;
-
-   return 
-      img_put_icon_mask( self, cache->icon, req) &&
-      img_put_image_on_pixmap( self, image, req);
-}
-
-static Bool
 img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 {
    DEFXX;
@@ -1703,6 +1678,9 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
    PDrawableSysData YY = X(image);
    
    if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_PIXMAP)))
+      return false;
+   
+   if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
       return false;
 
    if (( img->type & imBPP ) == 1) {
@@ -1743,20 +1721,6 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
-img_put_icon_on_widget( Handle self, Handle image, PutImageRequest * req)
-{
-   ImageCache *cache;
-   Bool ok;
-
-   if (!(cache = prima_create_image_cache((PImage)image, nilHandle, CACHE_PIXMAP)))
-      return false;
-
-   return 
-      img_put_icon_mask( self, cache->icon, req) &&
-      img_put_image_on_widget( self, image, req);
-}
-
-static Bool
 img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
@@ -1781,7 +1745,10 @@ img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    ImageCache *cache;
+   PDrawableSysData YY = X(image);
    if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED)))
+      return false;
+   if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
       return false;
    return img_put_ximage( self, cache->image, req);
 #else
@@ -1790,7 +1757,7 @@ img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
-img_put_icon_on_layered( Handle self, Handle image, PutImageRequest * req)
+img_put_rgba_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    DEFXX;
@@ -1801,15 +1768,6 @@ img_put_icon_on_layered( Handle self, Handle image, PutImageRequest * req)
    XGCValues gcv;
    Bool ret = false;
    Picture picture;
-
-   if ( img-> maskType == imbpp1) {
-       /* standard AND/XOR masking */ 
-       if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED)))
-          return false;
-       return 
-          img_put_icon_mask( self, cache->icon, req) &&
-          img_put_image_on_layered( self, image, req);
-   }
 
    if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED_ALPHA)))
       return false;
@@ -1846,7 +1804,7 @@ typedef Bool PutImageFunc( Handle self, Handle image, PutImageRequest * req);
 #define SRC_BITMAP       0
 #define SRC_PIXMAP       1
 #define SRC_IMAGE        2
-#define SRC_ICON         3
+#define SRC_RGBA         3
 #define SRC_MAX          3
 #define SRC_NUM          SRC_MAX+1 
 
@@ -1854,42 +1812,68 @@ PutImageFunc (*img_put_bitmap[SRC_NUM]) = {
    img_put_bitmap_on_bitmap,
    img_put_pixmap_on_bitmap,
    img_put_image_on_bitmap,
-   img_put_icon_on_bitmap
+   img_put_image_on_bitmap
 };
 
 PutImageFunc (*img_put_pixmap[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_copy_area,
    img_put_image_on_pixmap,
-   img_put_icon_on_pixmap
+   img_put_image_on_pixmap
 };
 
 PutImageFunc (*img_put_widget[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_copy_area,
    img_put_image_on_widget,
-   img_put_icon_on_widget
+   img_put_image_on_widget
 };
 
 PutImageFunc (*img_put_layered[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_pixmap_on_layered,
    img_put_image_on_layered,
-   img_put_icon_on_layered
+   img_put_rgba_on_layered,
 };
 
+static int
+get_image_src_format( Handle image )
+{
+   PDrawableSysData YY = X(image);
+   int src;
+
+   if ( XT_IS_DBM(YY)) {
+      if (XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1))
+         src = SRC_BITMAP;
+      else if ( XT_IS_PIXMAP(YY))
+         src = SRC_PIXMAP;
+   } else if ( XT_IS_IMAGE(YY)) {
+      if ( XF_IN_PAINT(YY)) {
+         if ( XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1)) {
+            src = SRC_BITMAP;
+	 } else if ( XT_IS_PIXMAP(YY)) {
+            src = SRC_PIXMAP;
+	 }
+      } else if ( XT_IS_ICON(YY) && PIcon(image)->maskType == imbpp8) {
+         src = SRC_RGBA;
+      } else {
+         src = SRC_IMAGE;
+      }
+   }
+
+   return src;
+}
 
 Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xLen, int yLen, int rop)
 {
    DEFXX;
-   PDrawableSysData YY = X(image);
    PImage img = PImage( image);
    PutImageRequest req;
    PutImageFunc ** dst = NULL;
    Bool ok;
-   int src = -1;
    XGCValues gcv;
+   int src;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
@@ -1917,25 +1901,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    if (!dst)
       return false;
 
-   if ( XT_IS_DBM(YY)) {
-      if (XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1))
-         src = SRC_BITMAP;
-      else if ( XT_IS_PIXMAP(YY))
-         src = SRC_PIXMAP;
-   } else if ( XT_IS_IMAGE(YY)) {
-      if ( XF_IN_PAINT(YY)) {
-         if ( XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1)) {
-            src = SRC_BITMAP;
-	 } else if ( XT_IS_PIXMAP(YY)) {
-            src = SRC_PIXMAP;
-	 }
-      } else if ( XT_IS_ICON(YY)) {
-         src = SRC_ICON;
-      } else {
-         src = SRC_IMAGE;
-      }
-   }
-
+   src = get_image_src_format(image);
    if ( src < 0 ) return false;
 
    if ( !XGetGCValues(DISP, XX->gc, GCFunction, &gcv))
@@ -2230,365 +2196,17 @@ apc_image_end_paint( Handle self)
    return true;
 }
 
-typedef struct {
-   Fixed count;
-   Fixed step;
-   int source;
-   int last;
-} StretchSeed;
-
-#define ABS(x) (((x)<0)?(-(x)):(x))
-
-static Bool mbsInitialized = false;
-static Byte set_bits[ByteValues];
-static Byte clear_bits[ByteValues];
-
-static void mbs_init_bits(void)
-{
-   if ( !mbsInitialized) {
-      int i;
-      if ( guts.bit_order == MSBFirst) {
-         Byte * mirrored_bits = mirror_bits();
-         for ( i = 0; i < ByteValues; i++) {
-            set_bits[i]   = mirrored_bits[1 << (i%ByteBits)];
-            clear_bits[i] = ~mirrored_bits[(1 << (i%ByteBits))];
-         }
-      } else {
-         for ( i = 0; i < ByteValues; i++) {
-            set_bits[i]   = 1 << (i%ByteBits);
-            clear_bits[i] = ~(1 << (i%ByteBits));
-         }
-      }
-      mbsInitialized = true;
-   }   
-} 
-
-static void 
-mbs_mono_in( Byte * srcData, Byte * dstData, Bool xreverse, 
-    int targetwidth, Fixed step, Fixed count,int first, int last, int targetLineSize )
-{
-    int x   = xreverse ? targetwidth - 1 : 0;
-    int inc = xreverse ? -1 : 1;
-    if ( srcData[first/ByteBits] & set_bits[LOWER_BYTE(first)])
-       dstData[x/ByteBits] |= set_bits[LOWER_BYTE(x)];
-    else
-       dstData[x/ByteBits] &= clear_bits[LOWER_BYTE(x)];
-    
-    x += inc;
-    targetwidth--;
-    while ( targetwidth) {
-       if ( count.i.i > last) {
-           if ( srcData[first/ByteBits] & set_bits[LOWER_BYTE(first)])
-              dstData[x/ByteBits] |= set_bits[LOWER_BYTE(x)];
-           else
-              dstData[x/ByteBits] &= clear_bits[LOWER_BYTE(x)];
-           x += inc;
-           last = count.i.i;
-           targetwidth--;
-       }
-       count.l += step.l;
-       first++;
-    }
-}   
-
-static void 
-mbs_mono_out( Byte * srcData, Byte * dstData, Bool xreverse,   
-    int targetwidth, Fixed step, Fixed count,int first, int last, int targetLineSize)
-{                                                                       
-   int x   = xreverse ? ( targetwidth - 1) : 0;
-   int inc = xreverse ? -1 : 1;
-   while ( targetwidth) {
-      if ( count.i.i > last) {
-         first++;
-         last = count.i.i;
-      }
-      count.l += step.l;
-      if ( srcData[first/ByteBits] & set_bits[LOWER_BYTE(first)])
-         dstData[x/ByteBits] |= set_bits[LOWER_BYTE(x)];
-      else
-         dstData[x/ByteBits] &= clear_bits[LOWER_BYTE(x)];
-      x += inc;
-      targetwidth--;
-   }   
-}   
-
-
-#define BS_BYTEEXPAND( type)                                                        \
-static void mbs_##type##_out( type * srcData, type * dstData, Bool xreverse,    \
-    int targetwidth, Fixed step, Fixed count,int first, int last, int targetLineSize)\
-{                                                                       \
-   int x   = xreverse ? ( targetwidth - 1) : 0;                         \
-   int inc = xreverse ? -1 : 1;                                         \
-   while ( targetwidth) {                                               \
-      if ( count.i.i > last) {                                          \
-         first++;                                                       \
-         last = count.i.i;                                              \
-      }                                                                 \
-      count.l += step.l;                                                \
-      dstData[x] = srcData[first];                                      \
-      x += inc;                                                         \
-      targetwidth--;                                                    \
-   }                                                                    \
-}   
-
-#define BS_BYTEIMPACT( type)                                                        \
-static void mbs_##type##_in( type * srcData, type * dstData, Bool xreverse,    \
-    int targetwidth, Fixed step, Fixed count, int first, int last, int targetLineSize)    \
-{                                                                       \
-    int x   = xreverse ? targetwidth - 1 : 0;                           \
-    int inc = xreverse ? -1 : 1;                                        \
-    dstData[x] = srcData[first];                                        \
-    x += inc;                                                           \
-    targetwidth--;                                                      \
-    while ( targetwidth) {                                              \
-       if ( count.i.i > last) {                                         \
-           dstData[x] = srcData[first];                                 \
-           x += inc;                                                    \
-           last = count.i.i;                                            \
-           targetwidth--;                                               \
-       }                                                                \
-       count.l += step.l;                                               \
-       first++;                                                         \
-    }                                                                   \
-}   
-
-BS_BYTEEXPAND( Pixel8)
-BS_BYTEEXPAND( Pixel16)
-BS_BYTEEXPAND( Pixel24)
-BS_BYTEEXPAND( Pixel32)
-
-BS_BYTEIMPACT( Pixel8)
-BS_BYTEIMPACT( Pixel16)
-BS_BYTEIMPACT( Pixel24)
-BS_BYTEIMPACT( Pixel32)
-
-
-static void mbs_copy( Byte * srcData, Byte * dstData, Bool xreverse,  
-    int targetwidth, Fixed step, Fixed count, int first, int last, int targetLineSize)
-{
-   memcpy( dstData, srcData, targetLineSize);
-}   
-
-
-static void
-stretch_calculate_seed( int ssize, int tsize,
-                        int *clipstart, int *clipsize,
-                        StretchSeed *seed)
-/*
-   ARGUMENTS:
-
-   INP  int ssize       specifies source 1d size
-   INP  int tsize       specifies target size
-   I/O  int *clipstart  on input, desired start of clipped stretched image
-                        on output, adjusted value
-   I/O  int *clipsize   on input, desired size of clipped region
-                        on output, adjusted value
-   OUT  StretchSeed *seed
-                        calculated seed values, should be passed without
-                        modification to the actual stretch routine
- */
-{
-   Fixed count;
-   Fixed step;
-   int last;
-   int asize;
-   int cstart;
-   int cend;
-   int s;
-   int t;
-   int dt;
-
-   count. l = 0;
-   s = 0;
-   asize  =  ABS(tsize);
-   cstart = *clipstart;
-   cend   =  cstart + *clipsize;
-   t      =  0;
-   dt     =  1;
-   if ( cstart < 0)          cstart = 0;
-   if ( cend > asize)        cend = asize;
-   
-   if ( asize < ssize) {
-      step. l = (double) asize / ssize * UINT16_PRECISION;
-      last    = -1;
-      while ( t != cend) {
-         if ( count.i.i > last) {
-            last = count.i.i;
-            if ( t == cstart) {
-               seed-> count  = count;
-               seed-> step   = step;
-               seed-> source = s;
-               seed-> last   = last;
-            }
-            t += dt;
-         }
-         count.l += step.l;
-         s++;
-      }
-   } else {
-      step. l = (double) ssize / asize * UINT16_PRECISION;
-      last    = 0;
-      while ( t != cend) {
-         if ( count.i.i > last) {
-            s++;
-            last = count.i.i;
-         }
-         if ( t == cstart) {
-            seed-> count  = count;
-            seed-> step   = step;
-            seed-> source = s;
-            seed-> last   = last;
-         }
-         count.l += step.l;
-         t += dt;
-      }
-   }
-   *clipstart = cstart;
-   *clipsize  = cend - cstart;
-}
-
-typedef void mStretchProc( void * srcData, void * dstData, Bool xreverse, 
-   int targetwidth, Fixed step, Fixed count, int first, int last, int targetLineSize);
-
-
-static PrimaXImage *
-do_stretch( Handle self, PrimaXImage *cache,
-            int src_x, int src_y, int src_w, int src_h,
-            int dst_x, int dst_y, int dst_w, int dst_h,
-            int *x, int *y, int *w, int *h)
-{
-   Byte *data;
-   PrimaXImage *stretch;
-   StretchSeed xseed, yseed;
-   XRectangle cr;
-   int bpp;
-   int sls;
-   int tls;
-   int xclipstart, xclipsize;
-   int yclipstart, yclipsize;
-
-   prima_gp_get_clip_rect( self, &cr, 1);
-   xclipstart = cr. x - dst_x;
-   xclipsize = cr. width;
-   yclipstart = cr. y - dst_y;
-   yclipsize = cr. height;
-   bpp = ( cache-> image-> format == XYBitmap || cache-> image-> format == XYPixmap) ? 1 : guts. idepth;
-   if ( xclipstart + xclipsize <= 0 || yclipstart + yclipsize <= 0) return nil;
-   stretch_calculate_seed( src_w, dst_w, &xclipstart, &xclipsize, &xseed);
-   stretch_calculate_seed( src_h, dst_h, &yclipstart, &yclipsize, &yseed);
-   if ( xclipsize <= 0 || yclipsize <= 0) return nil;
-   stretch = prima_prepare_ximage( xclipsize, yclipsize, (bpp == 1) ? CACHE_BITMAP : CACHE_PIXMAP);
-   if ( !stretch) return false;
-
-   tls = get_ximage_bytes_per_line( stretch);
-   sls = get_ximage_bytes_per_line( cache);
-   data = get_ximage_data( stretch);
-   
-   {
-      Byte * last_source = nil;
-      Byte * srcData = ( Byte*) get_ximage_data(cache) + ( src_y + yseed. source) * sls;
-      Byte * dstData = data;
-      Bool   xshrink = dst_w < 0 ? -dst_w < src_w : dst_w < src_w;
-      Bool   yshrink = dst_h < 0 ? -dst_h < src_h : dst_h < src_h;
-      mStretchProc * proc = ( mStretchProc*) nil;
-      int targetwidth  = xclipsize;
-      int targetheight = yclipsize;
-      int copyBytes = tls > sls ? sls : tls;
-      switch ( bpp) {
-      case 1:
-          srcData += src_x / ByteBits;
-          xseed. source += src_x % ByteBits;
-          bzero( dstData, targetheight * tls);
-          mbs_init_bits();
-          proc = ( mStretchProc * )( xshrink ? mbs_mono_in : mbs_mono_out);
-          break;
-      case 8: 
-          srcData += src_x * sizeof( Pixel8);
-          proc = ( mStretchProc * )( xshrink ? mbs_Pixel8_in : mbs_Pixel8_out);
-          if ( dst_w == src_w) proc = ( mStretchProc *) mbs_copy;
-          break;          
-      case 16: 
-          srcData += src_x * sizeof( Pixel16);
-          proc = ( mStretchProc * )( xshrink ? mbs_Pixel16_in : mbs_Pixel16_out);
-          if ( dst_w == src_w) proc = ( mStretchProc *) mbs_copy;
-          break;
-      case 24: 
-          srcData += src_x * sizeof( Pixel24); 
-          proc = ( mStretchProc * )( xshrink ? mbs_Pixel24_in : mbs_Pixel24_out);
-          if ( dst_w == src_w) proc = ( mStretchProc *) mbs_copy;
-          break;
-      case 32:    
-          srcData += src_x * sizeof( Pixel32); 
-          proc = ( mStretchProc * )( xshrink ? mbs_Pixel32_in : mbs_Pixel32_out);
-          if ( dst_w == src_w) proc = ( mStretchProc *) mbs_copy;
-          break;
-      default:
-          warn( "UAI_020: %d-bit stretch is not yet implemented", bpp); 
-          prima_free_ximage( stretch);
-          return nil;
-      }   
-      
-      if ( dst_h < 0) {
-         dstData += ( yclipsize - 1) * tls;
-         tls = -tls;
-      }   
-
-      if ( yshrink) {
-         proc( srcData, dstData, dst_w < 0, targetwidth, 
-            xseed.step, xseed.count, xseed.source, xseed.last, copyBytes);
-         dstData += tls;
-         targetheight--;
-         while ( targetheight) {
-            if ( yseed.count.i.i > yseed.last) {  
-               proc( srcData, dstData, dst_w < 0, targetwidth, 
-                     xseed.step, xseed.count, xseed.source, xseed.last, copyBytes);
-               dstData += tls;
-               yseed. last = yseed.count.i.i;
-               targetheight--;
-            }   
-            yseed.count.l += yseed.step.l;
-            srcData += sls;
-         }   
-      } else {
-         while ( targetheight) {
-            if ( yseed.count.i.i > yseed.last) {
-               srcData += sls;
-               yseed.last = yseed.count.i.i;
-            }   
-            yseed.count.l += yseed.step.l;
-            if ( last_source == srcData) 
-               memcpy( dstData, dstData - tls, ABS(tls)); 
-            else {
-               last_source = srcData;
-               proc( srcData, dstData, dst_w < 0, targetwidth, 
-                     xseed.step, xseed.count, xseed.source, xseed. last, copyBytes);
-            }   
-            dstData += tls;
-            targetheight--;
-         }   
-      }   
-   }   
-   *x = dst_x + xclipstart;
-   *y = dst_y + yclipstart;
-   *w = xclipsize;
-   *h = yclipsize;
-   return stretch;
-}
-
 Bool
 apc_gp_stretch_image( Handle self, Handle image,
 		      int dst_x, int dst_y, int src_x, int src_y,
 		      int dst_w, int dst_h, int src_w, int src_h, int rop)
 {
    DEFXX;
-   PImage img = PImage( image);
-   PrimaXImage *stretch;
-   ImageCache *cache = nil;
-   int func, ofunc;
-   XGCValues gcv;
-   int x, y, w, h;
-   Bool mono, icon = false, tempResult = false;
-   PrimaXImage * result;
+   PDrawableSysData YY = X(image);
+   PImage img = (PImage) image;
+   int src;
+   Handle obj;
+   Bool ok;
 
    if ( PObject( self)-> options. optInDrawInfo) return false;
    if ( !XF_IN_PAINT(XX)) return false;
@@ -2624,149 +2242,62 @@ apc_gp_stretch_image( Handle self, Handle image,
       dst_h = (img-> h - src_y) * dst_h / src_h;
       src_h = img-> h - src_y;
    }
-   if ( src_w == 0 || src_h == 0) return false;
-   if ( XT_IS_DBM(X(image)) || PObject( image)-> options. optInDraw) {
-      XImage * i;
-      if ( XT_IS_PIXMAP(X(image)) && XT_IS_BITMAP(X(self))) {
-         Handle obj;
-         HV * profile;
-         if ( !( i = XGetImage( DISP, X(image)-> gdrawable, 
-                src_x, img-> h - src_y - src_h, src_w, src_h, 
-                AllPlanes, ZPixmap)))
-            return false;
-         obj = Object_create("Prima::Image", profile = newHV());
-         CImage( obj)-> create_empty( obj, src_w, src_h, guts. qdepth);
-         if ( prima_query_image( obj, i)) 
-             apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop);
-         sv_free((SV*) profile);
-         Object_destroy( obj);
-         return true;
-      } else {
-         mono = XT_IS_BITMAP(X(image));
-         if ( !( i = XGetImage( DISP, X(image)-> gdrawable, 
-                src_x, img-> h - src_y - src_h, src_w, src_h, 
-                mono ? 1 : AllPlanes, mono ? XYPixmap : ZPixmap)))
-             return false;
-         tempResult = true;  
-         src_x = 0;
-         src_y = img-> h - ABS( src_h);
-         if ( !( result = malloc( sizeof( PrimaXImage)))) {
-            XDestroyImage( i);
-            return false;
+   if ( src_w <= 0 || src_h <= 0) return false;
+
+   src = get_image_src_format(image);
+   if ( src < 0 ) return false;
+
+   /* query xserver bits */
+   if ( src == SRC_BITMAP || src == SRC_PIXMAP ) {
+      XImage *i;
+
+      if ( !( i = XGetImage( DISP, YY-> gdrawable, 
+             src_x, img-> h - src_y - src_h, src_w, src_h, 
+             AllPlanes, (src == SRC_BITMAP) ? XYPixmap : ZPixmap)))
+         return false;
+
+      if ( XT_IS_ICON(YY)) {
+         int height = src_w, width = src_h;
+	 PIcon isrc = (PIcon) image, idst = (PIcon) obj;
+         CIcon( obj)-> create_empty_icon( obj, src_w, src_h,
+	    (src == SRC_BITMAP) ? imBW : guts. qdepth,
+	    isrc-> maskType
+	 );
+         if ( isrc->maskType == imbpp8) {
+            while ( height-- > 0)
+               memcpy(
+	          idst-> mask + height * idst-> maskLine, 
+		  isrc-> mask + ( src_y + height) * isrc-> maskLine + src_x, src_w);
+         } else {
+            while ( height-- > 0)
+               bc_mono_copy(
+	          isrc->mask + ( src_y + height) * isrc->maskLine,
+		  idst-> mask + height * idst-> maskLine, src_x, src_w);
          }
-         bzero( result, sizeof( PrimaXImage));
-         result-> image = i;
-         result-> data_alias = i-> data; 
-         result-> bytes_per_line_alias = i-> bytes_per_line; 
+      } else {
+         obj = ( Handle) create_object("Prima::Image", "");
+         CIcon( obj)-> create_empty( obj, src_w, src_h,
+	    (src == SRC_BITMAP) ? imBW : guts. qdepth
+	 );
       }
+      if (!prima_query_image( obj, i)) {
+         XDestroyImage( i);
+	 Object_destroy( obj);
+	 return false;
+      }
+      XDestroyImage( i);
+      ok = apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop);
    } else {
-      mono = (( img-> type & imBPP) == 1) || ( guts. idepth == 1);
-      cache = prima_create_image_cache( img, self, CACHE_AUTODETECT);
-      if ( !cache) return false;
-      result = cache-> image;
-      icon   = cache-> icon != nil;
+      /* extract local bits */
+      obj = CImage(image)->extract( image, src_x, src_y, src_w, src_h );
+      if ( !obj ) return false;
+      CImage(obj)-> set_scaling( obj, istBox );
+      CImage(obj)-> stretch( obj, dst_w, dst_h );
+      ok  = apc_gp_put_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);
    }
 
-
-   if ( guts. dynamicColors) {
-      int i;
-      for ( i = 0; i < guts. palSize; i++) 
-         if (( wlpal_get( image, i) == RANK_FREE) &&
-             ( wlpal_get( self,  i) != RANK_FREE))
-            prima_color_add_ref( self, i, RANK_LOCKED);
-   }
-  
-   SHIFT( dst_x, dst_y);
-   dst_y = XX->size.y - dst_y - ABS(dst_h);
-   src_y = img-> h - src_y - ABS(src_h);
-
-   if ( XGetGCValues( DISP, XX-> gc, GCFunction, &gcv) == 0) 
-      warn( "UAI_022: error querying GC values");
-   ofunc = gcv. function;
-
-   if ( icon) {
-      func = GXxor;
-      stretch = do_stretch(self, cache-> icon,
-                           src_x, src_y, src_w, src_h,
-                           dst_x, dst_y, dst_w, dst_h,
-                           &x, &y, &w, &h
-                          );
-      if ( stretch != nil) {
-         func = GXand;
-         if ( XT_IS_BITMAP(X(self))) {
-            XSetForeground( DISP, XX-> gc, 1);
-            XSetBackground( DISP, XX-> gc, 0);
-         } else {
-            XSetForeground( DISP, XX-> gc, 0xFFFFFFFF);
-            XSetBackground( DISP, XX-> gc, 0x00000000);
-         }
-         XX-> flags. brush_fore = 0;
-         XX-> flags. brush_back = 0;
-         if ( func != ofunc)
-            XSetFunction( DISP, XX-> gc, func);
-         XCHECKPOINT;
-         prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
-         func = GXxor;
-         if ( func == ofunc)
-            XSetFunction( DISP, XX-> gc, func);
-         XCHECKPOINT;
-         destroy_ximage( stretch);
-         XCHECKPOINT;
-      }
-   } else
-      func = prima_rop_map( rop);
-
-   stretch = do_stretch(self, result,
-                        src_x, src_y, src_w, src_h,
-                        dst_x, dst_y, dst_w, dst_h,
-                        &x, &y, &w, &h
-                       );
-   if ( stretch == nil) goto EXIT; /* nothing to draw */
-   if ( func != ofunc)
-      XSetFunction( DISP, XX-> gc, func);
-   if ( XT_IS_BITMAP(X(self))) {
-      XSetForeground( DISP, XX-> gc, 1);
-      XSetBackground( DISP, XX-> gc, 0);
-      XX-> flags. brush_fore = XX-> flags. brush_back = 0;
-   } else if ( mono) {
-      unsigned long fore, back;
-      if ( XT_IS_DBM(X(image))) {
-         fore = XX-> back. primary;
-         back = XX-> fore. primary;
-      } else {
-         if ( guts. palSize > 0) {
-            fore = prima_color_find( self, 
-                RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
-                -1, nil, RANK_NORMAL);
-            back = prima_color_find( self,
-                RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
-                -1, nil, RANK_NORMAL);
-         } else {
-            fore = 
-               (((img-> palette[1].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
-               (((img-> palette[1].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
-               (((img-> palette[1].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
-            back = 
-               (((img-> palette[0].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
-               (((img-> palette[0].g << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
-               (((img-> palette[0].b << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
-         }
-      }
-         
-      XSetForeground( DISP, XX-> gc, fore);
-      XSetBackground( DISP, XX-> gc, back);
-      XX-> flags. brush_fore = XX-> flags. brush_back = 0;
-   }
-   prima_put_ximage( XX-> gdrawable, XX-> gc, stretch, 0, 0, x, y, w, h);
-   if ( func != ofunc)
-      XSetFunction( DISP, XX-> gc, ofunc);
-   destroy_ximage( stretch);
-   XCHECKPOINT;
-   XFLUSH;
-EXIT:   
-   if ( tempResult)
-      prima_free_ximage( result);
-   return true;
+   Object_destroy( obj );
+   return ok;
 }
 
 Bool

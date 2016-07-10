@@ -640,10 +640,9 @@ Icon_extract( Handle self, int x, int y, int width, int height)
    CIcon(h)->set_maskType(h, var-> maskType);
    CIcon(h)->set_maskColor(h, var-> maskColor);
 
-   if ( var->maskType == imbpp8) {
+   if ( var->maskType == imbpp8)
       while ( height-- > 0) {
          memcpy( i-> mask + height * i-> maskLine, mask + ( y + height) * ls + x, width);
-      }
    } else {
       while ( height-- > 0)
          bc_mono_copy( mask + ( y + height) * ls, i-> mask + height * i-> maskLine, x, width);
