@@ -19,6 +19,7 @@ object Prima::Icon( Prima::Image)
    property int      maskIndex;
    property int      autoMasking;
    method void       init( HV * profile);
+   method Handle     extract( int x, int y, int width, int height);
    method Handle     dup();
    method void       set( HV * profile);
    method IconHandle split();

@@ -345,6 +345,8 @@ Icon_maskType( Handle self, Bool set, int type)
           Byte * new_mask = Icon_convert_mask(self, type);
 	  free( var-> mask );
 	  var-> mask = new_mask;
+	  var-> maskLine = LINE_SIZE( var-> w, type );
+	  var-> maskSize = var-> maskLine * var-> h;
       }
       break;
    default:
@@ -606,6 +608,47 @@ Icon_set( Handle self, HV * profile)
    }
 
    inherited set ( self, profile);
+}
+
+Handle
+Icon_extract( Handle self, int x, int y, int width, int height)
+{
+   int nodata = 0;
+   Handle h = inherited extract( self, x, y, width, height);
+   PIcon i = (PIcon) h;
+   unsigned char * mask = var->mask;
+   int ls = var->maskLine;
+
+   if ( var->w == 0 || var->h == 0) return h;
+   if ( x < 0) x = 0;
+   if ( y < 0) y = 0;
+   if ( x >= var->w) x = var->w - 1;
+   if ( y >= var->h) y = var->h - 1;
+   if ( width  + x > var->w) width  = var->w - x;
+   if ( height + y > var->h) height = var->h - y;
+   if ( width <= 0 ) {
+      width = 1;
+      nodata = 1;
+   }
+   if ( height <= 0 ) {
+      height = 1;
+      nodata = 1;
+   }
+   if ( nodata ) return h;
+
+   CIcon(h)->set_autoMasking(h, amNone);
+   CIcon(h)->set_maskType(h, var-> maskType);
+   CIcon(h)->set_maskColor(h, var-> maskColor);
+
+   if ( var->maskType == imbpp8) {
+      while ( height-- > 0) {
+         memcpy( i-> mask + height * i-> maskLine, mask + ( y + height) * ls + x, width);
+      }
+   } else {
+      while ( height-- > 0)
+         bc_mono_copy( mask + ( y + height) * ls, i-> mask + height * i-> maskLine, x, width);
+   }
+   return h;
 }
 
 #ifdef __cplusplus

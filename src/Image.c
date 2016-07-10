@@ -49,7 +49,8 @@ Image_init( Handle self, HV * profile)
          warn( "Image::init: cannot set type %08x", var-> type);
          var-> type = imBW;
       } 
-   var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
+
+   var->lineSize = LINE_SIZE(var->w, var->type);
    var->dataSize = ( var->lineSize) * var->h;
    if ( var-> dataSize > 0) {
       var->data = allocb( var->dataSize);
@@ -153,7 +154,7 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
         ((new_type != imbpp8 && new_type != imbpp4 && new_type != imbpp1) || !want_palette)
       )) return;
 
-   new_line_size = (( var-> w * ( new_type & imBPP) + 31) / 32) * 4;
+   new_line_size = LINE_SIZE(var->w, new_type);
    new_data_size = new_line_size * var-> h;
    if ( new_data_size > 0) {
       if ( !( new_data = allocb( new_data_size))) {
@@ -199,7 +200,7 @@ Image_stretch( Handle self, int width, int height)
       return;
    }
 
-   lineSize = (( abs( width) * ( var->type & imBPP) + 31) / 32) * 4;
+   lineSize = LINE_SIZE( abs( width) , var->type);
    newData = allocb( lineSize * abs( height));
    if ( newData == nil) 
          croak("Image::stretch: cannot allocate %d bytes", lineSize * abs( height));
@@ -514,7 +515,7 @@ Image_set_extended_data( Handle self, HV * profile)
    else {
       /* if no explicit lineSize set, assuming x4 padding */
       if ( lineSize == 0)
-         lineSize = (( var-> w * ( newType & imBPP) + 31) / 32) * 4;
+         lineSize = LINE_SIZE( var-> w , newType);
       /* copying using repadding routine */
       ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 
               ( newType & imBPP) / 8, ( var-> type & imBPP) / 8, proc, reverse
@@ -971,7 +972,7 @@ Image_create_empty( Handle self, int width, int height, int type)
    var->w = width;
    var->h = height;
    var->type     = type;
-   var->lineSize = (( var->w * ( var->type & imBPP) + 31) / 32) * 4;
+   var->lineSize = LINE_SIZE(var->w, var->type);
    var->dataSize = var->lineSize * var->h;
    var->palSize  = (1 << (var->type & imBPP)) & 0x1ff;
    var->statsCache = 0;
@@ -1633,7 +1634,7 @@ Image_rotate( Handle self, int degrees)
    switch (degrees) {
    case 90:
    case 270:
-      new_line_size = (( var-> h * ( var->type & imBPP) + 31) / 32) * 4 ;
+      new_line_size = LINE_SIZE( var-> h , var->type);
       if (( new_data = allocb( new_line_size * var->w )) == NULL )
          croak("Image::rotate: cannot allocate %d bytes", new_line_size * var->w);
       break;
