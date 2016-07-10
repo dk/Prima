@@ -318,6 +318,7 @@ $y-> pixel( 0, 0, cl::Black);
 $y-> translate( 1, 1);
 $x-> color( cl::White);
 $x-> bar(0,0,8,8);
+$x-> set( color => cl::Black, backColor => cl::White);
 $x-> put_image( 0, 0, $y);
 $y-> destroy;
 is( $x-> pixel( 0, 0), 0, 'dbm(put_image)');
