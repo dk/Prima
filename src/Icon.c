@@ -437,7 +437,7 @@ Icon_stretch( Handle self, int width, int height)
       return;
    }
    
-   lineSize = (( abs( width) + 31) / 32) * 4;
+   lineSize = LINE_SIZE( abs( width), var-> maskType );
    newMask  = allocb( lineSize * abs( height));
    if ( newMask == nil && lineSize > 0) {
       my-> make_empty( self);
@@ -452,7 +452,7 @@ Icon_stretch( Handle self, int width, int height)
       } else {
       	 hScaling = vScaling = 1;
       }
-      ic_stretch( imMono, var-> mask, oldW, oldH, newMask, width, height, hScaling, vScaling);
+      ic_stretch( var->maskType, var-> mask, oldW, oldH, newMask, width, height, hScaling, vScaling);
    }      
    inherited stretch( self, width, height);
    free( var-> mask);
