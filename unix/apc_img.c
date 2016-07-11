@@ -1128,7 +1128,7 @@ create_argb_cache(PIcon img, ImageCache * cache, Bool with_alpha)
          register Pixel8  *mask = (Pixel8 *)(img-> mask + y*img-> maskLine);
          register Pixel32 *d = (Pixel32*)(ls*(h-y-1)+(unsigned char *)data);
          for ( x = 0; x < w; x++) {
-            *d++ = lub[line->a0] | lug[line->a1] | lur[line->a2] | lua[*mask++];
+            *(d++) = lub[line->a0] | lug[line->a1] | lur[line->a2] | lua[*(mask++)];
             line++;
          }
       }
@@ -1500,9 +1500,9 @@ img_put_copy_area( Handle self, Handle image, PutImageRequest * req)
    SET_ROP(req->rop);
 
    XCopyArea( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
-              req->src_x, YY->size.y - req->src_y - req->h,
+              req->src_x, req->src_y,
               req->w, req->h,
-              req->dst_x, XX->size.y - req->dst_y - req->h);
+              req->dst_x, req->dst_y);
 
    XCHECKPOINT;
    XFLUSH;
@@ -1517,8 +1517,8 @@ img_put_ximage( Handle self, PrimaXImage * image, PutImageRequest * req)
    SET_ROP(req->rop);
    return prima_put_ximage(
       XX-> gdrawable, XX-> gc, image,
-      req->src_x, image->image->height - req->src_y - req->h,
-      req->dst_x, REVERT(req->dst_y) - req->h + 1,
+      req->src_x, req->src_y,
+      req->dst_x, req->dst_y,
       req->w, req->h
    );
 }
@@ -1583,7 +1583,7 @@ img_put_pixmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
    img = PImage( image);
    XCHECKPOINT;
    if ( !( i = XGetImage( DISP, X(image)-> gdrawable, 
-          req->src_x, img-> h - req->src_y - req->h, req->w, req->h, AllPlanes, ZPixmap)))
+          req->src_x, req->src_y, req->w, req->h, AllPlanes, ZPixmap)))
       return false;
 
    obj = ( Handle) create_object("Prima::Image", "");
@@ -1624,9 +1624,9 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
    XCHECKPOINT;
 
    XCopyPlane( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
-              req->src_x, YY->size.y - req->src_y - req->h,
+              req->src_x, req->src_y,
               req->w, req->h,
-              req->dst_x, XX->size.y - req->dst_y - req->h, 1);
+              req->dst_x, req->dst_y, 1);
 
    XCHECKPOINT;
    XFLUSH;
@@ -1725,8 +1725,8 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
    picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. argb_compat_format, 0, NULL);
    /* XXX rop, alpha bit */
    XRenderComposite( DISP, PictOpSrc, picture, 0, XX-> argb_picture,
-      req->src_x, YY->size.y - req->src_y - req->h, 0, 0,
-      req->dst_x, XX->size.y - req->dst_y - req->h, req->w, req->h
+      req->src_x, req->src_y, 0, 0,
+      req->dst_x, req->dst_y, req->w, req->h
    );
    XRenderFreePicture( DISP, picture);
    return true;
@@ -1880,9 +1880,9 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
 
    SHIFT( x, y);
    req. src_x = xFrom;
-   req. src_y = yFrom;
+   req. src_y = img->h - yFrom - yLen;
    req. dst_x = x;
-   req. dst_y = y;
+   req. dst_y = XX->size. y - y - yLen;
    req. w     = xLen;
    req. h     = yLen;
    
