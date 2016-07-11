@@ -1613,6 +1613,7 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
          XSetBackground( DISP, XX-> gc, XX-> fore. primary);
          XSetForeground( DISP, XX-> gc, XX-> back. primary);
       } else {
+         /* imBW in paint - no palettes, no colors, just plain black & white */
          XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
          XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
       }
