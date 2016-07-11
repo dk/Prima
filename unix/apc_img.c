@@ -1939,9 +1939,11 @@ apc_image_begin_paint( Handle self)
       req. w   = img-> w;
       req. h   = img-> h;
       req. rop = GXcopy;
-      req. old_rop = -1;
+      req. old_rop = XX-> gcv. function;
       (*dst[SRC_IMAGE])(self, self, &req);
       /*                ^^^^^ ^^^^    :-)))  */
+      if ( req. old_rop != XX-> gcv. function)
+         XSetFunction( DISP, XX-> gc, XX-> gcv. function);
    }
    PObject( self)-> options. optInDraw = 1;
    XX->flags. paint = 1;
