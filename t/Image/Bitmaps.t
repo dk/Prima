@@ -23,7 +23,7 @@ sub test_src
 sub bitop
 {
 	my ( $pix, $descr, $s, $m, $d ) = @_;
-	my $res = ( $s & $m ) ^ $d;
+	my $res = ( $d & $m ) ^ $s;
 	my $clr = $res ? cl::White : cl::Black;
 	is($pix, $clr, "$descr ($s & $m ^ $d == $res)");
 }
@@ -70,11 +70,11 @@ sub test_mask
 
 	bitop( $dst->pixel(0,0), $descr, 0,0,0);
 	bitop( $dst->pixel(1,0), $descr, 0,1,0);
-	bitop( $dst->pixel(2,0), $descr, 0,0,1);
-	bitop( $dst->pixel(3,0), $descr, 0,1,1);
+	bitop( $dst->pixel(2,0), $descr, 1,0,0);
+	bitop( $dst->pixel(3,0), $descr, 1,1,0);
 
-	bitop( $dst->pixel(0,1), $descr, 1,0,0);
-	bitop( $dst->pixel(1,1), $descr, 1,1,0);
+	bitop( $dst->pixel(0,1), $descr, 0,0,1);
+	bitop( $dst->pixel(1,1), $descr, 0,1,1);
 	bitop( $dst->pixel(2,1), $descr, 1,0,1);
 	bitop( $dst->pixel(3,1), $descr, 1,1,1);
 }
@@ -176,7 +176,7 @@ sub test_dst
 sub blendop
 {
 	my ( $pix, $descr, $s, $m, $d ) = @_;
-	my $res = ( $s & $m ) | $d;
+	my $res = $m ? $s : ( $s | $d );
 	my $clr = $res ? cl::White : cl::Black;
 	is($pix, $clr, "$descr (($s + a$m) OVER $d ) == $res)");
 }
@@ -200,10 +200,10 @@ sub test_blend
 	$dst->pixel(3,1,cl::White);
 	$dst->rop(rop::OrPut); # check that rop doesn't affect icon put
 	
-	$mask->pixel(0,0,cl::White);
-	$mask->pixel(1,0,cl::Black);
-	$mask->pixel(2,0,cl::White);
-	$mask->pixel(3,0,cl::Black);
+	$mask->pixel(0,0,cl::Black);
+	$mask->pixel(1,0,cl::White);
+	$mask->pixel(2,0,cl::Black);
+	$mask->pixel(3,0,cl::White);
 
 	$src->pixel(0,0,cl::Black);
 	$src->pixel(1,0,cl::Black);
@@ -220,11 +220,11 @@ sub test_blend
 
 	blendop( $dst->pixel(0,0), $descr, 0,0,0);
 	blendop( $dst->pixel(1,0), $descr, 0,1,0);
-	blendop( $dst->pixel(2,0), $descr, 0,0,1);
-	blendop( $dst->pixel(3,0), $descr, 0,1,1);
+	blendop( $dst->pixel(2,0), $descr, 1,0,0);
+	blendop( $dst->pixel(3,0), $descr, 1,1,0);
 
-	blendop( $dst->pixel(0,1), $descr, 1,0,0);
-	blendop( $dst->pixel(1,1), $descr, 1,1,0);
+	blendop( $dst->pixel(0,1), $descr, 0,0,1);
+	blendop( $dst->pixel(1,1), $descr, 0,1,1);
 	blendop( $dst->pixel(2,1), $descr, 1,0,1);
 	blendop( $dst->pixel(3,1), $descr, 1,1,1);
 }
