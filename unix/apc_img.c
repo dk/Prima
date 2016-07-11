@@ -1892,7 +1892,6 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       dst = img_put_pixmap;
    else if ( XT_IS_WIDGET(XX)) 
       dst =  XF_LAYERED(XX) ? img_put_layered : img_put_widget;
-
    if (!dst)
       return false;
 
@@ -1933,8 +1932,17 @@ apc_image_begin_paint( Handle self)
    prima_prepare_drawable_for_painting( self, false);
    PObject( self)-> options. optInDraw = 0;
    XX->flags. paint = 0;
-   apc_gp_put_image( self, self, 0, 0, 0, 0, img-> w, img-> h, ropCopyPut);
-   /*                ^^^^^ ^^^^    :-)))  */
+   {
+      PutImageRequest req;
+      PutImageFunc ** dst = bitmap ? img_put_bitmap : img_put_pixmap;
+      bzero(&req, sizeof(req));
+      req. w   = img-> w;
+      req. h   = img-> h;
+      req. rop = GXcopy;
+      req. old_rop = -1;
+      (*dst[SRC_IMAGE])(self, self, &req);
+      /*                ^^^^^ ^^^^    :-)))  */
+   }
    PObject( self)-> options. optInDraw = 1;
    XX->flags. paint = 1;
    XX-> type. icon = icon;
