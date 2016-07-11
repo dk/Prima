@@ -1065,7 +1065,7 @@ apc_window_set_icon( Handle self, Handle icon)
          XSetForeground( DISP, gc, 0x00000000);
          prima_put_ximage( and, gc, X(icon)-> image_cache. icon, 0, 0, 0, 0, i-> w, i-> h);
       } else {
-         XSetForeground( DISP, gc, 0xffffffff);
+         XSetForeground( DISP, gc, guts. monochromeMap[1]);
          XFillRectangle( DISP, and, gc, 0, 0, i-> w + 1, i-> h + 1);
       }
       XFreeGC( DISP, gc);

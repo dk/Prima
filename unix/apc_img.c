@@ -1610,19 +1610,13 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
    /* XCopyPlane uses 0s for background and 1s for foreground */
    if ( XT_IS_BITMAP(YY)) {
       if ( XT_IS_DBM(YY)) {
-         if ( !XX->flags. brush_fore) {
-            XSetBackground( DISP, XX-> gc, XX-> fore. primary);
-            XX->flags.brush_fore = 0;
-         }
-         if ( !XX->flags. brush_back) {
-            XSetForeground( DISP, XX-> gc, XX-> back. primary);
-            XX->flags.brush_back = 0;
-         }
+         XSetBackground( DISP, XX-> gc, XX-> fore. primary);
+         XSetForeground( DISP, XX-> gc, XX-> back. primary);
       } else {
-         XSetForeground( DISP, XX-> gc, 0x00ffffff);
-         XSetBackground( DISP, XX-> gc, 0x00000000);
-         XX->flags.brush_fore = XX->flags.brush_back = 0;
+         XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
+         XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
       }
+      XX->flags.brush_fore = XX->flags.brush_back = 0;
    }
 
    SET_ROP(req->rop);
