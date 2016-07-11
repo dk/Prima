@@ -1523,6 +1523,29 @@ img_put_ximage( Handle self, PrimaXImage * image, PutImageRequest * req)
    );
 }
 
+static Handle
+img_get_image( Pixmap pixmap, PutImageRequest * req)
+{
+   XImage *i;
+   Handle obj;
+   Bool ok;
+
+   XCHECKPOINT;
+   if ( !( i = XGetImage( DISP, pixmap, 
+       req->src_x, req->src_y, req->w, req->h, AllPlanes, ZPixmap)))
+       return nilHandle;
+   
+   obj = ( Handle) create_object("Prima::Image", "");
+   CImage( obj)-> create_empty( obj, req->w, req->h, guts. qdepth);
+   ok = prima_query_image( obj, i);
+   XDestroyImage( i);
+   if ( !ok ) {
+      Object_destroy( obj );
+      return nilHandle;
+   }
+   return obj;
+}
+
 static Bool
 img_put_icon_mask( Handle self, PrimaXImage * icon, PutImageRequest * req)
 {
@@ -1575,29 +1598,17 @@ img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 static Bool
 img_put_pixmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 {
-   Handle obj;
-   PImage img;
    Bool ret;
-   XImage *i;
+   Handle obj;
 
-   img = PImage( image);
-   XCHECKPOINT;
-   if ( !( i = XGetImage( DISP, X(image)-> gdrawable, 
-          req->src_x, req->src_y, req->w, req->h, AllPlanes, ZPixmap)))
+   if (!( obj = img_get_image( X(image)-> gdrawable, req )))
       return false;
 
-   obj = ( Handle) create_object("Prima::Image", "");
-   CImage( obj)-> create_empty( obj, req->w, req->h, guts. qdepth);
-   ret = prima_query_image( obj, i);
-   XDestroyImage( i);
-
-   if ( ret ) {
-      CImage( obj)-> set_type( obj, imBW);
-      req->src_x = req->src_y = 0;
-      ret = img_put_image_on_bitmap( self, obj, req);
-   }
-
+   CImage( obj)-> set_type( obj, imBW);
+   req->src_x = req->src_y = 0;
+   ret = img_put_image_on_bitmap( self, obj, req);
    Object_destroy( obj);
+
    return ret;
 }
 
@@ -1716,26 +1727,6 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
-img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
-{
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-   DEFXX;
-   PDrawableSysData YY = X(image);
-   Picture picture;
-   picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. argb_compat_format, 0, NULL);
-   /* XXX rop, alpha bit */
-   XRenderComposite( DISP, PictOpSrc, picture, 0, XX-> argb_picture,
-      req->src_x, req->src_y, 0, 0,
-      req->dst_x, req->dst_y, req->w, req->h
-   );
-   XRenderFreePicture( DISP, picture);
-   return true;
-#else
-   return false;
-#endif
-}
-
-static Bool
 img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
@@ -1746,6 +1737,46 @@ img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
    if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
       return false;
    return img_put_ximage( self, cache->image, req);
+#else
+   return false;
+#endif
+}
+
+static Bool
+img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   DEFXX;
+   PDrawableSysData YY = X(image);
+   Picture picture;
+   int render_rop = PictOpMinimum - 1;
+
+   switch ( req-> rop ) {
+      case GXcopy:  render_rop = PictOpSrc;   break;
+      case GXclear: render_rop = PictOpClear; break;
+      case GXnoop:  render_rop = PictOpDst;   break;
+   }
+
+   if ( render_rop >= PictOpMinimum ) {
+      /* cheap on-server blit */
+      picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. argb_compat_format, 0, NULL);
+      XRenderComposite( DISP, PictOpSrc, picture, 0, XX-> argb_picture,
+         req->src_x, req->src_y, 0, 0,
+         req->dst_x, req->dst_y, req->w, req->h
+      );
+      XRenderFreePicture( DISP, picture);
+      return true;
+   } else {
+      /* expensive bit-transfer and blit with rop */
+      Handle obj;
+      Bool ret;
+      if (!( obj = img_get_image( X(image)-> gdrawable, req )))
+         return false;
+      req-> src_x = req-> src_y = 0;
+      ret = img_put_image_on_layered( self, obj, req );
+      Object_destroy( obj);
+      return ret;
+   }
 #else
    return false;
 #endif
