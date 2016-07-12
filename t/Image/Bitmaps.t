@@ -8,6 +8,7 @@ use Prima qw(Application);
 plan tests => 886;
 
 my ($src, $mask, $dst);
+my $can_argb = $::application->get_system_value(sv::LayeredWidgets);
 
 sub test_src
 {
@@ -167,9 +168,13 @@ sub test_dst
 	$mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
 	$src = Prima::Image->create( width => 4, height => 1, type => im::BW);
 	test_mask( "1-bit grayscale image / 8-bit alpha on $target");
-	for my $bit ( 1, 4, 8, 24) {
+	$src = Prima::Image->create( width => 4, height => 1, type => im::bpp1);
+	test_mask( "1-bit image / 8-bit alpha on $target");
+
+	my $tester = $opt{blend_tester} // \&test_blend;
+	for my $bit ( 4, 8, 24) {
 		$src = Prima::Image->create( width => 4, height => 1, type => $bit);
-		test_mask( "$bit-bit image / 8-bit alpha on $target");
+		$tester->( "$bit-bit image / 8-bit alpha on $target");
 	}
 }
 
@@ -189,10 +194,12 @@ sub blendop
 
 sub test_blend
 {
+	return test_mask(@_) unless $can_argb;
 #  0011 + ALPHA(1010) = 0.1*
 # 
 #  0000      0.1* 0011 ( . - fully transparent )
 #  1111 OVER 0.1* 0111 ( * - transparent white )
+
 	my $descr = shift;
 
 	$dst->rop(rop::CopyPut);
@@ -234,6 +241,7 @@ sub test_blend
 	blendop( $dst->pixel(2,1), $descr, 1,0,1);
 	blendop( $dst->pixel(3,1), $descr, 1,1,1);
 }
+
 $dst = Prima::Image->create( width => 4, height => 2, type => im::RGB);
 $src  = Prima::Image->create( width => 4, height => 1, type => im::RGB);
 $mask = Prima::Image->create( width => 4, height => 1, type => im::BW);
@@ -242,14 +250,14 @@ test_mask( "reference implementation / 1bit mask");
 $mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
 test_mask( "reference implementation / 8bit mask");
 $dst = Prima::DeviceBitmap->create( width => 4, height => 2, monochrome => 1);
-test_dst("bitmap");
+test_dst("bitmap", blend_tester => \&test_mask ); # ARGB over 1-bit degrades to simple masking
 
 $dst = Prima::DeviceBitmap->create( width => 4, height => 2, monochrome => 0);
 test_dst("pixmap");
 
 $dst = Prima::Image->create( width => 4, height => 2, type => im::BW);
 $dst->begin_paint;
-test_dst("im::BW");
+test_dst("im::BW", blend_tester => \&test_mask); # ARGB over 1-bit degrades to simple masking
 $dst->end_paint;
 
 $dst = Prima::Image->create( width => 4, height => 2, type => im::bpp1);
@@ -277,7 +285,7 @@ SKIP: {
 }
 
 SKIP: {
-    skip "no argb capability", 88 unless $::application->get_system_value(sv::LayeredWidgets); 
+    skip "no argb capability", 88 unless $can_argb;
     reset_flag;
     $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1, onPaint => sub {
 	return if get_flag;

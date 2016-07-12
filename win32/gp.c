@@ -964,7 +964,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    // if image is actually icon, drawing and-mask
    if ( kind_of( deja, CIcon)) {
-      if ( PIcon(deja)-> maskType == imbpp8 && is_apt(aptLayered) ) {
+      if ( PIcon(deja)-> maskType == imbpp8 && sys bpp != 1 ) {
          rgba = true;
       } else {
          XBITMAPINFO xbi = {

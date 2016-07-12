@@ -1489,6 +1489,7 @@ rop_apply_colors(Handle self, PutImageRequest * req)
 }
 
 #define SET_ROP(x) if ( req->old_rop != x) XSetFunction( DISP, XX-> gc, req->old_rop = x)
+typedef Bool PutImageFunc( Handle self, Handle image, PutImageRequest * req);
 
 static Bool
 img_put_copy_area( Handle self, Handle image, PutImageRequest * req)
@@ -1652,7 +1653,7 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
    ImageCache *cache;
    PImage img = (PImage) image;
    PDrawableSysData YY = X(image);
-   
+  
    if (!(cache = prima_create_image_cache(img, nilHandle,
       XT_IS_DBM(YY) ? CACHE_LOW_RES : CACHE_PIXMAP)))
       return false;
@@ -1765,6 +1766,7 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
          req->dst_x, req->dst_y, req->w, req->h
       );
       XRenderFreePicture( DISP, picture);
+      XSync(DISP, false);
       return true;
    } else {
       /* expensive bit-transfer and blit with rop */
@@ -1780,6 +1782,68 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 #else
    return false;
 #endif
+}
+
+static Bool
+img_put_rgba_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * req, PutImageFunc fallback)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   DEFXX;
+   ImageCache *cache;
+   PIcon img = (PIcon) image;
+   Pixmap pixmap;
+   GC gc;
+   XGCValues gcv;
+   Bool ret = false;
+   Picture picture, target;
+
+   if ( !guts. render_extension)
+      return fallback( self, image, req);
+
+   if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED_ALPHA)))
+      return false;
+
+   pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts. argb_visual. depth);
+   gcv. graphics_exposures = false;
+   gc = XCreateGC( DISP, pixmap, GCGraphicsExposures, &gcv);
+
+   SET_ROP(GXcopy);
+   if ( !( prima_put_ximage(
+      pixmap, gc, cache->image,
+      req->src_x, req->src_y, 0, 0,
+      req->w, req->h
+   ))) goto FAIL;
+
+   picture = XRenderCreatePicture( DISP, pixmap, guts. argb_pic_format, 0, NULL);
+   target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_compat_format, 0, NULL);
+   XRenderComposite( DISP, PictOpOver, picture, 0, target,
+      0, 0, 0, 0,
+      req->dst_x, req->dst_y, req->w, req->h
+   );
+   XRenderFreePicture( DISP, target);
+   XRenderFreePicture( DISP, picture);
+   XSync(DISP, false);
+   ret = true;
+
+FAIL:
+   XFreeGC( DISP, gc);
+   XFreePixmap( DISP, pixmap );
+   return ret;
+#else
+   return fallback( self, image, req);
+#endif
+}
+
+static Bool
+img_put_rgba_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+   return img_put_rgba_on_pixmap_or_widget( self, image, req, img_put_image_on_pixmap);
+}
+
+static Bool
+img_put_rgba_on_widget( Handle self, Handle image, PutImageRequest * req)
+{
+   return img_put_rgba_on_pixmap_or_widget( self, image, req, img_put_image_on_widget);
 }
 
 static Bool
@@ -1802,6 +1866,7 @@ img_put_rgba_on_layered( Handle self, Handle image, PutImageRequest * req)
    gcv. graphics_exposures = false;
    gc = XCreateGC( DISP, pixmap, GCGraphicsExposures, &gcv);
 
+   SET_ROP(GXcopy);
    if ( !( prima_put_ximage(
       pixmap, gc, cache->image,
       req->src_x, req->src_y, 0, 0,
@@ -1814,6 +1879,7 @@ img_put_rgba_on_layered( Handle self, Handle image, PutImageRequest * req)
       req->dst_x, req->dst_y, req->w, req->h
    );
    XRenderFreePicture( DISP, picture);
+   XSync(DISP, false);
    ret = true;
 
 FAIL:
@@ -1824,8 +1890,6 @@ FAIL:
    return false;
 #endif
 }
-
-typedef Bool PutImageFunc( Handle self, Handle image, PutImageRequest * req);
 
 #define SRC_BITMAP       0
 #define SRC_PIXMAP       1
@@ -1845,14 +1909,14 @@ PutImageFunc (*img_put_pixmap[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_copy_area,
    img_put_image_on_pixmap,
-   img_put_image_on_pixmap
+   img_put_rgba_on_pixmap,
 };
 
 PutImageFunc (*img_put_widget[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_copy_area,
    img_put_image_on_widget,
-   img_put_image_on_widget
+   img_put_rgba_on_widget,
 };
 
 PutImageFunc (*img_put_layered[SRC_NUM]) = {
