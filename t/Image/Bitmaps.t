@@ -165,13 +165,14 @@ sub test_dst
 	}
 
 	return if $opt{dont_test_blending};
+	my $tester = $opt{blend_tester} // \&test_blend;
+
 	$mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
 	$src = Prima::Image->create( width => 4, height => 1, type => im::BW);
-	test_mask( "1-bit grayscale image / 8-bit alpha on $target");
+	$tester->( "1-bit grayscale image / 8-bit alpha on $target");
 	$src = Prima::Image->create( width => 4, height => 1, type => im::bpp1);
-	test_mask( "1-bit image / 8-bit alpha on $target");
+	$tester->( "1-bit image / 8-bit alpha on $target");
 
-	my $tester = $opt{blend_tester} // \&test_blend;
 	for my $bit ( 4, 8, 24) {
 		$src = Prima::Image->create( width => 4, height => 1, type => $bit);
 		$tester->( "$bit-bit image / 8-bit alpha on $target");
