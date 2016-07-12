@@ -780,6 +780,10 @@ Copies information from DATA and MASK images into C<::data>
 and C<::mask> property. DATA and MASK are expected to be images
 of same dimension.
 
+=item create_combined DATA, MASK
+
+Same as C<combine>, but to be called as constructor.
+
 =back
 
 =head2 Prima::DeviceBitmap methods 

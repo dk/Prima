@@ -509,6 +509,13 @@ sub rotate
         $self->combine($xor, $and);
 }
 
+sub create_combined
+{
+	my $self = shift->new;
+	$self->combine(@_);
+	return $self;
+}
+
 # class DeviceBitmap
 package Prima::DeviceBitmap;
 use vars qw( @ISA);
