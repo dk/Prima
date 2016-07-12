@@ -1987,11 +1987,16 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       dst = img_put_pixmap;
    else if ( XT_IS_WIDGET(XX)) 
       dst =  XF_LAYERED(XX) ? img_put_layered : img_put_widget;
-   if (!dst)
+   if (!dst) {
+      warn("cannot guess surface type");
       return false;
+   }
 
    src = get_image_src_format(image);
-   if ( src < 0 ) return false;
+   if ( src < 0 ) {
+      warn("cannot guess image type");
+      return false;
+   }
 
    if ( !XGetGCValues(DISP, XX->gc, GCFunction, &gcv))
       warn("cannot query XGCValues");
