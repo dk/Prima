@@ -939,10 +939,8 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    if ( dsys( image) options. aptDeviceBitmap) {
       if ((( PDeviceBitmap) image)-> monochrome) {
          STYLUS_USE_TEXT( sys ps);
-         if (
-	    (( is_apt( aptDeviceBitmap) && (( PDeviceBitmap) self)-> monochrome)) ||
-            (( kind_of( self, CImage) && ( PImage(self)-> type == imBW)))
-	 )
+         STYLUS_USE_BRUSH( sys ps);
+         if ( sys bpp == 1 )
             rop = rop_reduce(GetTextColor( sys ps), GetBkColor( sys ps), rop);
       }
    } else
@@ -964,7 +962,12 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    // if image is actually icon, drawing and-mask
    if ( kind_of( deja, CIcon)) {
-      if ( PIcon(deja)-> maskType == imbpp8 && sys bpp != 1 ) {
+      if ( PIcon(deja)-> maskType == imbpp8 && (
+          sys bpp != 1 ||
+             // rgba must not be reduced to 1-bit AND mask on bpp1s that
+             // are explicitly non black-and-white
+	     ( kind_of( self, CImage ) && PImage(self)-> type == imbpp1 )
+	)) {
          rgba = true;
       } else {
          XBITMAPINFO xbi = {
