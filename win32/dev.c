@@ -365,7 +365,7 @@ Bool
 apc_image_create( Handle self)
 {
    objCheck false;
-   // apt_set( aptBitmap);
+   apt_set( aptImage);
    image_destroy_cache( self);
    sys lastSize. x = var w;
    sys lastSize. y = var h;

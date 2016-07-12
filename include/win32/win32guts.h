@@ -129,7 +129,8 @@ typedef struct _HandleOptions_ {
    unsigned aptVisible              : 1;       // visibility flag
    unsigned aptTaskList             : 1;       // Window flag - set if in task list
    unsigned aptDeviceBitmap         : 1;       // == kind_of( CDeviceBitmap)
-   unsigned aptBitmap               : 1;       // == kind_of( CImage)
+   unsigned aptBitmap               : 1;       // buffered widget
+   unsigned aptImage                : 1;       // == kind_of( CImage)
    unsigned aptExtraFont            : 1;       // extra font styles ( angle, shear) has been applied
    unsigned aptDCChangeLock         : 1;       // locks SelectObject() calls
    unsigned aptEnabled              : 1;       // enabled flag

@@ -940,7 +940,10 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       if ((( PDeviceBitmap) image)-> monochrome) {
          STYLUS_USE_TEXT( sys ps);
          STYLUS_USE_BRUSH( sys ps);
-         if ( sys bpp == 1 )
+	 if (
+	       ( is_apt( aptDeviceBitmap) && ((PDeviceBitmap)self)->monochrome ) ||
+	       ( is_apt( aptImage) && PImage(self)-> type == imBW )
+	    )
             rop = rop_reduce(GetTextColor( sys ps), GetBkColor( sys ps), rop);
       }
    } else
