@@ -131,6 +131,7 @@ typedef struct _HandleOptions_ {
    unsigned aptDeviceBitmap         : 1;       // == kind_of( CDeviceBitmap)
    unsigned aptBitmap               : 1;       // buffered widget
    unsigned aptImage                : 1;       // == kind_of( CImage)
+   unsigned aptIcon                 : 1;       // == kind_of( CIcon)
    unsigned aptExtraFont            : 1;       // extra font styles ( angle, shear) has been applied
    unsigned aptDCChangeLock         : 1;       // locks SelectObject() calls
    unsigned aptEnabled              : 1;       // enabled flag
@@ -215,6 +216,12 @@ typedef struct _FileData
    SOCKETHANDLE object;
    int          type;
 } FileData;
+
+typedef struct _ImageData
+{
+      HRGN      imgCachedRegion;
+      uint32_t* rgbaBits;
+} ImageData;
 
 typedef struct _PrinterData
 {
@@ -403,7 +410,7 @@ typedef struct _DrawableData
       WindowData    window;
       PrinterData   prn;
       FileData      file;
-      HRGN          imgCachedRegion;      // Image specific field
+      ImageData     image;
    } s;
 } DrawableData, *PDrawableData;
 

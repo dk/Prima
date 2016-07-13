@@ -1861,9 +1861,9 @@ region_create( Handle mask)
 
    w = PImage( mask)-> w;
    h = PImage( mask)-> h;
-   if ( dsys( mask) s. imgCachedRegion) {
+   if ( dsys( mask) s. image. imgCachedRegion) {
       rgn = CreateRectRgn(0,0,0,0);
-      CombineRgn( rgn, dsys( mask) s. imgCachedRegion, nil, RGN_COPY);
+      CombineRgn( rgn, dsys( mask) s. image. imgCachedRegion, nil, RGN_COPY);
       return rgn;
    }
 
@@ -1924,10 +1924,10 @@ region_create( Handle mask)
          apcErr( 900);
       }
 
-      dsys( mask) s. imgCachedRegion = CreateRectRgn(0,0,0,0);
-      CombineRgn( dsys( mask) s. imgCachedRegion, rgn, nil, RGN_COPY);
+      dsys( mask) s. image. imgCachedRegion = CreateRectRgn(0,0,0,0);
+      CombineRgn( dsys( mask) s. image. imgCachedRegion, rgn, nil, RGN_COPY);
    } else {
-      dsys( mask) s. imgCachedRegion = rgn = CreateRectRgn(0,0,0,0);
+      dsys( mask) s. image. imgCachedRegion = rgn = CreateRectRgn(0,0,0,0);
    }
    free( rdata);
 

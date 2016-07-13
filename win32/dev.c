@@ -28,6 +28,11 @@ Bool image_screenable( Handle image, Handle screen, int * bitCount)
       return false;
    }
 
+   if ( dsys(image) options. aptIcon && PIcon(image)->type == imbpp8) {
+      if (bitCount) *bitCount = 32;
+      return i->type == imRGB;
+   }
+
    if ( i-> type == imRGB) {
 
       if ( !screen)
@@ -75,7 +80,9 @@ Handle image_enscreen( Handle image, Handle screen)
    if ( !image_screenable( image, screen, &lower))
    {
       Handle j = i-> self-> dup( image);
-      if ( i-> type == imRGB) {
+      if ( lower == 32 ) {
+         ((( PImage) j)-> self)->set_type( j, imRGB);
+      } else if ( i-> type == imRGB) {
          ((( PImage) j)-> self)->set_type( j, lower);
       } else {
          ((( PImage) j)-> self)->resample( j,
@@ -118,6 +125,9 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
    if ( image_screenable( self, nilHandle, &lower)) {
       nColors  = (( 1 << ( image-> type & imBPP)) & 0x1ff);
       bitCount = image-> type & imBPP;
+   } else if ( is_apt(aptLayered)) {
+      nColors  = 0;
+      bitCount = 32;
    } else {
       nColors  = ( 1 << lower) & 0x1ff;
       bitCount = lower;
@@ -167,6 +177,65 @@ bm_put_zs( HBITMAP hbm, int x, int y, int z)
 }
 */
 
+static void
+rgba_copy_bits( Handle self)
+{
+    PIcon i = (PIcon) self;
+    uint32_t * rgba_bits;
+    Byte * rgb_bits, *a_bits;
+    int y;
+    for ( 
+       y = 0, 
+          rgb_bits = i->data,
+          a_bits   = i->mask,
+          rgba_bits = sys s. image. rgbaBits;
+       y < i->h;
+       y++,
+          rgb_bits  += i-> lineSize,
+          a_bits    += i-> maskLine,
+	  rgba_bits += i-> w
+    ) {
+       register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *rgba_ptr = (Byte*) rgba_bits;
+       register int x = i->w;
+       for ( ; x > 0; x--) {
+          *rgba_ptr++ = *rgb_ptr++;
+          *rgba_ptr++ = *rgb_ptr++;
+          *rgba_ptr++ = *rgb_ptr++;
+          *rgba_ptr++ = *a_ptr++;
+       }
+    }
+}
+
+static void
+rgba_query_bits( Handle self)
+{
+    PIcon i = (PIcon) self;
+    uint32_t * rgba_bits;
+    Byte * rgb_bits, *a_bits;
+    int y;
+    for ( 
+       y = 0, 
+          rgb_bits = i->data,
+          a_bits   = i->mask,
+          rgba_bits = sys s. image. rgbaBits;
+       y < i->h;
+       y++,
+          rgb_bits  += i-> lineSize,
+          a_bits    += i-> maskLine,
+	  rgba_bits += i-> w
+    ) {
+       register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *rgba_ptr = (Byte*) rgba_bits;
+       register int x = i->w;
+       for ( ; x > 0; x--) {
+           *rgb_ptr++ = *rgba_ptr++;
+           *rgb_ptr++ = *rgba_ptr++;
+           *rgb_ptr++ = *rgba_ptr++;
+           *a_ptr++   = *rgba_ptr++;
+       }
+    }
+}
+
+
 HBITMAP
 image_make_bitmap_handle( Handle img, HPALETTE pal)
 {
@@ -191,12 +260,19 @@ image_make_bitmap_handle( Handle img, HPALETTE pal)
       RealizePalette( dc);        
    }
 
-   if ((( PImage) img)-> type != imBW)
-      bm = CreateDIBitmap( dc, &bi-> bmiHeader, CBM_INIT,
-        (( PImage) img)-> data, bi, DIB_RGB_COLORS);
-   else {
+   if ((( PImage) img)-> type == imBW) {
       bm = CreateBitmap( bi-> bmiHeader. biWidth, bi-> bmiHeader. biHeight, 1, 1, NULL);
       SetDIBits( dc, bm, 0, bi-> bmiHeader. biHeight, (( PImage) img)-> data, bi, DIB_RGB_COLORS);
+   } else if ( dsys(img) options. aptIcon && PIcon(img)-> maskType == imbpp8) {
+   int i;
+   bi-> bmiHeader. biBitCount      = 32;
+      bi->bmiHeader.biSizeImage = bi->bmiHeader.biWidth * bi->bmiHeader. biHeight * 4;
+      bm = CreateDIBSection(dc, bi, DIB_RGB_COLORS, 
+              (LPVOID*) &dsys(img) s. image. rgbaBits, NULL, 0x0);
+      rgba_copy_bits( img );
+   } else {
+      bm = CreateDIBitmap( dc, &bi-> bmiHeader, CBM_INIT,
+        (( PImage) img)-> data, bi, DIB_RGB_COLORS);
    }
 
    if ( !bm) {
@@ -289,9 +365,9 @@ image_destroy_cache( Handle self)
       if ( !DeleteObject( sys pal)) apiErr;
       sys pal = nil;
    }
-   if ( sys s. imgCachedRegion) {
-      if ( !DeleteObject( sys s. imgCachedRegion)) apiErr;
-      sys s. imgCachedRegion = nil;
+   if ( sys s. image. imgCachedRegion) {
+      if ( !DeleteObject( sys s. image. imgCachedRegion)) apiErr;
+      sys s. image. imgCachedRegion = nil;
    }
 }
 
@@ -365,6 +441,7 @@ apc_image_create( Handle self)
 {
    objCheck false;
    apt_set( aptImage);
+   if ( kind_of( self, CIcon )) apt_set( aptIcon );
    image_destroy_cache( self);
    sys lastSize. x = var w;
    sys lastSize. y = var h;
@@ -398,7 +475,14 @@ apc_image_begin_paint( Handle self)
    if ( !sys pal)
       sys pal = image_make_bitmap_palette( self);
    hwnd_enter_paint( self);
-   if (( PImage( self)-> type & imBPP) == imbpp1) sys bpp = 1;
+
+   apt_clear( aptLayered );
+   if ( PImage( self)-> type == imBW)
+      sys bpp = 1;
+   else if ( is_apt( aptIcon ) && PIcon(self)-> maskType == imbpp8 ) {
+      sys bpp = 32;
+      apt_set( aptLayered );
+   }
    if ( sys pal) {
       SelectPalette( sys ps, sys pal, 0);
       RealizePalette( sys ps);
@@ -415,10 +499,9 @@ apc_image_begin_paint_info( Handle self)
    if ( !sys pal) sys pal = image_make_bitmap_palette( self);
    if ( sys pal) SelectPalette( sys ps, sys pal, 0);
    hwnd_enter_paint( self);
-   if (( PImage( self)-> type & imBPP) == imbpp1) sys bpp = 1;
+   if ( PImage( self)-> type == imBW) sys bpp = 1;
    return true;
 }
-
 
 Bool
 apc_image_end_paint( Handle self)
@@ -426,7 +509,10 @@ apc_image_end_paint( Handle self)
    apcErrClear;
    objCheck false;
 
-   image_query_bits( self, false);
+   if ( is_apt( aptLayered))
+      rgba_query_bits( self);
+   else
+      image_query_bits( self, false);
    hwnd_leave_paint( self);
    if ( sys stockBM)
       SelectObject( sys ps, sys stockBM);
@@ -625,7 +711,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
    Bool  noBPP  = bpp != 1 && bpp != 4 && bpp != 8 && bpp != 24;
    HDC dc;
    XBITMAPINFO bi;
-   Bool notAnIcon = !kind_of( img, CIcon);
+   Bool notAnIcon = !dsys( img ) options. aptIcon;
 
    ii. fIcon = hotSpot ? false : true;
    ii. xHotspot = hotSpot ? hotSpot-> x : 0;

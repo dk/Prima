@@ -703,77 +703,77 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
               int dstx, int dsty, int dstw, int dsth,
               int srcx, int srcy, int srcw, int srch)
 {
-    HDC src;
-    BITMAPINFO bmi;
-    BLENDFUNCTION bf;
-    HBITMAP old, hbitmap;
-    Bool ok;
-    int y;
-    Byte *rgb_bits, *a_bits, *rgba_bits;
+   HDC src;
+   BITMAPINFO bmi;
+   BLENDFUNCTION bf;
+   HBITMAP old, hbitmap;
+   Bool ok;
+   int y;
+   Byte *rgb_bits, *a_bits, *rgba_bits;
 
-    if ( rgb->options. optInDraw ) {
-       Bool ok;
-       Handle img = image_from_dc((Handle) rgb);
-       CImage(img)->set_type(img, imRGB);
-       ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
-          dstx, dsty, dstw, dsth, 
-	  srcx, srcy, srcw, srch);
-       Object_destroy( img);
-       return ok;
-    } else if ( rgb->type != imRGB ) {
-       Bool ok;
-       Handle img = rgb->self->dup((Handle)rgb);
-       CImage(img)->set_type(img, imRGB);
-       ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
-          dstx, dsty, dstw, dsth, 
-	  srcx, srcy, srcw, srch);
-       Object_destroy( img);
-       return ok;
-    }
+   if ( rgb->options. optInDraw ) {
+      Bool ok;
+      Handle img = image_from_dc((Handle) rgb);
+      CImage(img)->set_type(img, imRGB);
+      ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
+         dstx, dsty, dstw, dsth, 
+         srcx, srcy, srcw, srch);
+      Object_destroy( img);
+      return ok;
+   } else if ( rgb->type != imRGB ) {
+      Bool ok;
+      Handle img = rgb->self->dup((Handle)rgb);
+      CImage(img)->set_type(img, imRGB);
+      ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
+         dstx, dsty, dstw, dsth, 
+         srcx, srcy, srcw, srch);
+      Object_destroy( img);
+      return ok;
+   }
 
-    src = CreateCompatibleDC(dest);
-    ZeroMemory(&bmi, sizeof(BITMAPINFO));
-    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bmi.bmiHeader.biWidth       = srcw;
-    bmi.bmiHeader.biHeight      = srch;
-    bmi.bmiHeader.biPlanes      = 1;
-    bmi.bmiHeader.biBitCount    = 32;
-    bmi.bmiHeader.biCompression = BI_RGB;
-    bmi.bmiHeader.biSizeImage   = srcw * srch * 4;
-    hbitmap = CreateDIBSection(src, &bmi, DIB_RGB_COLORS, (LPVOID*)&rgba_bits, NULL, 0x0);
+   src = CreateCompatibleDC(dest);
+   ZeroMemory(&bmi, sizeof(BITMAPINFO));
+   bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+   bmi.bmiHeader.biWidth       = srcw;
+   bmi.bmiHeader.biHeight      = srch;
+   bmi.bmiHeader.biPlanes      = 1;
+   bmi.bmiHeader.biBitCount    = 32;
+   bmi.bmiHeader.biCompression = BI_RGB;
+   bmi.bmiHeader.biSizeImage   = srcw * srch * 4;
+   hbitmap = CreateDIBSection(src, &bmi, DIB_RGB_COLORS, (LPVOID*)&rgba_bits, NULL, 0x0);
 
-    for ( 
-       y = 0, 
-          rgb_bits = rgb->data + rgb->lineSize * srcy + srcx * 3,
-          a_bits   = mask + maskLineSize * srcy + srcx;
-       y < srch;
-       y++,
-          rgb_bits += rgb-> lineSize,
-          a_bits += maskLineSize,
-	  rgba_bits += srcw * 4
-    ) {
-       register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *rgba_ptr = rgba_bits;
-       register int x = srcw;
-       for ( ; x > 0; x--) {
-          *rgba_ptr++ = *rgb_ptr++;
-          *rgba_ptr++ = *rgb_ptr++;
-          *rgba_ptr++ = *rgb_ptr++;
-          *rgba_ptr++ = *a_ptr++;
-       }
-    }
-    old = SelectObject(src, hbitmap);
+   for ( 
+      y = 0, 
+         rgb_bits = rgb->data + rgb->lineSize * srcy + srcx * 3,
+         a_bits   = mask + maskLineSize * srcy + srcx;
+      y < srch;
+      y++,
+         rgb_bits += rgb-> lineSize,
+         a_bits += maskLineSize,
+         rgba_bits += srcw * 4
+   ) {
+      register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *rgba_ptr = rgba_bits;
+      register int x = srcw;
+      for ( ; x > 0; x--) {
+         *rgba_ptr++ = *rgb_ptr++;
+         *rgba_ptr++ = *rgb_ptr++;
+         *rgba_ptr++ = *rgb_ptr++;
+         *rgba_ptr++ = *a_ptr++;
+      }
+   }
+   old = SelectObject(src, hbitmap);
 
-    bf.BlendOp             = AC_SRC_OVER;
-    bf.BlendFlags          = 0;
-    bf.SourceConstantAlpha = 0xff;
-    bf.AlphaFormat         = AC_SRC_ALPHA;
-    ok = AlphaBlend(dest, dstx, dsty, dstw, dsth, src, 0, 0, srcw, srch, bf);
+   bf.BlendOp             = AC_SRC_OVER;
+   bf.BlendFlags          = 0;
+   bf.SourceConstantAlpha = 0xff;
+   bf.AlphaFormat         = AC_SRC_ALPHA;
+   ok = AlphaBlend(dest, dstx, dsty, dstw, dsth, src, 0, 0, srcw, srch, bf);
 
-    SelectObject(src, old);
-    DeleteObject(hbitmap);
-    DeleteDC(src);
+   SelectObject(src, old);
+   DeleteObject(hbitmap);
+   DeleteDC(src);
 
-    return ok;
+   return ok;
 }
 
 static Bool
@@ -781,13 +781,13 @@ put_alpha_blend(HDC dest, HDC src, int op,
               int dstx, int dsty, int dstw, int dsth,
               int srcx, int srcy, int srcw, int srch)
 {
-    BLENDFUNCTION bf;
+   BLENDFUNCTION bf;
 
-    bf.BlendOp             = op;
-    bf.BlendFlags          = 0;
-    bf.SourceConstantAlpha = 0xff;
-    bf.AlphaFormat         = AC_SRC_ALPHA;
-    return AlphaBlend(dest, dstx, dsty, dstw, dsth, src, 0, 0, srcw, srch, bf);
+   bf.BlendOp             = op;
+   bf.BlendFlags          = 0;
+   bf.SourceConstantAlpha = 0xff;
+   bf.AlphaFormat         = AC_SRC_ALPHA;
+   return AlphaBlend(dest, dstx, dsty, dstw, dsth, src, 0, 0, srcw, srch, bf);
 }
 
 static int
@@ -945,8 +945,9 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 	       dc = nil;
 	    }
          }
-      } else
+      } else {
          deja = image_enscreen( image, self);
+      }
    }
 
    // actions for mono images
@@ -978,7 +979,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    }
 
    // if image is actually icon, drawing and-mask
-   if ( kind_of( deja, CIcon)) {
+   if ( dsys( deja) options. aptIcon) {
       if ( PIcon(deja)-> maskType == imbpp8 && (
           sys bpp != 1 ||
              // rgba must not be reduced to 1-bit AND mask on bpp1s that
