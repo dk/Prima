@@ -701,7 +701,8 @@ image_from_dc( Handle image )
 static Bool
 put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
               int dstx, int dsty, int dstw, int dsth,
-              int srcx, int srcy, int srcw, int srch)
+              int srcx, int srcy, int srcw, int srch,
+	      int rop)
 {
    HDC src;
    BITMAPINFO bmi;
@@ -717,7 +718,7 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
       CImage(img)->set_type(img, imRGB);
       ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
          dstx, dsty, dstw, dsth, 
-         srcx, srcy, srcw, srch);
+         srcx, srcy, srcw, srch, rop);
       Object_destroy( img);
       return ok;
    } else if ( rgb->type != imRGB ) {
@@ -726,7 +727,7 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
       CImage(img)->set_type(img, imRGB);
       ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
          dstx, dsty, dstw, dsth, 
-         srcx, srcy, srcw, srch);
+         srcx, srcy, srcw, srch, rop);
       Object_destroy( img);
       return ok;
    }
@@ -763,7 +764,7 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
    }
    old = SelectObject(src, hbitmap);
 
-   bf.BlendOp             = AC_SRC_OVER;
+   bf.BlendOp             = rop;
    bf.BlendFlags          = 0;
    bf.SourceConstantAlpha = 0xff;
    bf.AlphaFormat         = AC_SRC_ALPHA;
@@ -1043,9 +1044,9 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    if ( rgba_image ) {
        ok = put_rgba_icon(xdc, (PImage) deja, PIcon(deja)->mask, PIcon(deja)->maskLine,
           x, ly - y - yDestLen, xDestLen, yDestLen, 
-          xFrom, yFrom, xLen, yLen);
+          xFrom, yFrom, xLen, yLen, (rop == ropSrcOver) ? AC_SRC_OVER : 0);
    } else if ( rgba_pixmap ) {
-       ok = put_alpha_blend(xdc, dc, AC_SRC_OVER,
+       ok = put_alpha_blend(xdc, dc, (rop == ropSrcOver) ? AC_SRC_OVER : 0,
           x, ly - y - yDestLen, xDestLen, yDestLen, 
           xFrom, i->h - yFrom - yLen, xLen, yLen);
    } else if ( dc) {

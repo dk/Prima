@@ -1418,7 +1418,6 @@ typedef struct {
    int dst_y;
    int rop;
    int old_rop;
-   Bool argb_copy;
 } PutImageRequest;
 
 static void
@@ -1713,7 +1712,7 @@ img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
    Picture target;
 
    target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_compat_format, 0, NULL);
-   XRenderComposite( DISP, req-> argb_copy ? PictOpSrc : PictOpOver, YY-> argb_picture, 0, target,
+   XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, YY-> argb_picture, 0, target,
       req->src_x, req->src_y, 0, 0,
       req->dst_x, req->dst_y, req->w, req->h
    );
@@ -1865,7 +1864,7 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
 
    picture = XRenderCreatePicture( DISP, pixmap, guts. argb_pic_format, 0, NULL);
    target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_compat_format, 0, NULL);
-   XRenderComposite( DISP, req-> argb_copy ? PictOpSrc : PictOpOver, picture, 0, target,
+   XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, target,
       0, 0, 0, 0,
       req->dst_x, req->dst_y, req->w, req->h
    );
@@ -1901,7 +1900,7 @@ img_put_composite_over( Handle self, Handle image, PutImageRequest * req)
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    DEFXX;
    PDrawableSysData YY = X(image);
-   XRenderComposite( DISP, req-> argb_copy ? PictOpSrc : PictOpOver, YY->argb_picture, 0, XX->argb_picture,
+   XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, YY->argb_picture, 0, XX->argb_picture,
       0, 0, 0, 0,
       req->dst_x, req->dst_y, req->w, req->h
    );
@@ -1940,7 +1939,7 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
    ))) goto FAIL;
 
    picture = XRenderCreatePicture( DISP, pixmap, guts. argb_pic_format, 0, NULL);
-   XRenderComposite( DISP, req-> argb_copy ? PictOpSrc : PictOpOver, picture, 0, XX-> argb_picture,
+   XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, XX-> argb_picture,
       0, 0, 0, 0,
       req->dst_x, req->dst_y, req->w, req->h
    );
@@ -2122,9 +2121,8 @@ apc_image_begin_paint( Handle self)
       bzero(&req, sizeof(req));
       req. w   = img-> w;
       req. h   = img-> h;
-      req. rop = GXcopy;
+      req. rop = layered ? ropSrcCopy : GXcopy;
       req. old_rop = XX-> gcv. function;
-      req. argb_copy = 1;
       (*dst[layered ? SRC_ARGB : SRC_IMAGE])(self, self, &req);
       /*                                     ^^^^^ ^^^^    :-)))  */
       if ( req. old_rop != XX-> gcv. function)

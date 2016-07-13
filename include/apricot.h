@@ -2593,13 +2593,18 @@ typedef enum {
 #define ropNotSrcXor  ropNotXor    /* dest ^= !src */
 #define ropNotDestXor ropNotXor    /* dest  = !dest ^ src */
 
+typedef enum {
+   ropSrcOver = 0, /* save value as ropCopy, to serve as a default */
+   ropSrcCopy
+} ROP2;
+
 #define ROP(const_name) CONSTANT(rop,const_name)
 
 START_TABLE(rop,UV)
 ROP(Blackness) ROP(NotOr) ROP(NotSrcAnd) ROP(NotPut) ROP(NotDestAnd)
 ROP(Invert) ROP(XorPut) ROP(NotAnd) ROP(AndPut) ROP(NotXor) ROP(NoOper)
 ROP(NotSrcOr) ROP(CopyPut) ROP(NotDestOr) ROP(OrPut) ROP(Whiteness)
-ROP(NotSrcXor) ROP(NotDestXor)
+ROP(NotSrcXor) ROP(NotDestXor) ROP(SrcOver) ROP(SrcCopy)
 END_TABLE(rop,UV)
 #undef ROP
 
