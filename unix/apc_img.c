@@ -174,7 +174,7 @@ normal_way:
                              width, height, 32, i-> bytes_per_line_alias);
    XCHECKPOINT;
    if ( !i-> image) {
-      warn("XCreateImage(%d,%d,visual=%x,depth=%d/%d) error", width, height, visual->visualid,depth,idepth);
+      warn("XCreateImage(%d,%d,visual=%x,depth=%d/%d) error", width, height, (int)visual->visualid,depth,idepth);
       free( i-> data_alias);
       free( i);
       return nil;
