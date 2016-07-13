@@ -1878,12 +1878,8 @@ int
 apc_gp_get_bpp( Handle self)
 {
    DEFXX;
-   if ( XT_IS_DBM(XX) ) {
-      if ( XT_IS_BITMAP(XX)) return 1;
-      if ( XT_IS_LAYERED_PIXMAP(XX)) return guts. argb_pic_format-> depth;
-   } else if ( XT_IS_IMAGE(XX)) {
-      if ( XT_IS_BITMAP(XX)) return 1;
-   }
+   if ( XT_IS_BITMAP(XX)) return 1;
+   if ( XF_LAYERED(XX)) return guts. argb_pic_format-> depth;
    return guts. depth;
 }
 

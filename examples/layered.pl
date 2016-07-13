@@ -35,7 +35,17 @@ sub icon
 	my $k = Prima::Icon->new;
 	$k->combine($i, $j);
 
-	return $k;
+	my $db = Prima::DeviceBitmap->new(
+		width  => 160,
+		height => 160,
+		type   => dbt::Layered,
+	);
+
+	$db->backColor(cl::Clear);
+	$db->clear;
+	$db->stretch_image( 0, 0, 160, 160, $k);
+
+	return $db;
 }
 
 my ( $r, $g, $b ) = map { icon($_) } (cl::LightRed, cl::LightGreen, cl::LightBlue);
@@ -69,7 +79,8 @@ my $w = Prima::Widget->new(
 			my $yy = $sin + $cos; 
 			$xx -= $x / 2;
 			$yy -= $y / 2;
-			$self->stretch_image( $xx, $yy, $x, $y, $i);
+			#$self->stretch_image( $xx, $yy, $x, $y, $i);
+			$self->put_image( $xx, $yy, $i);
 			$a += $pi * 2 / 3;
 		}
 	}

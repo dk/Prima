@@ -164,7 +164,6 @@ sub test_dst
 		test_mask( "$bit-bit xor mask / 1-bit and mask on $target");
 	}
 
-	return if $opt{dont_test_blending};
 	my $tester = $opt{blend_tester} // \&test_blend;
 
 	$mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
@@ -291,15 +290,7 @@ SKIP: {
     $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1, onPaint => sub {
 	return if get_flag;
 	set_flag;
-        test_dst("argb widget", dont_test_blending => 1); # test separately
-
-        $mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
-        $src = Prima::Image->create( width => 4, height => 1, type => im::BW);
-        test_blend( "1-bit grayscale image / 8-bit alpha on argb_widget");
-	for my $bpp ( 1, 4, 8, 24 ) {
-		$src = Prima::Image->create( width => 4, height => 1, type => $bpp);
-		test_blend( "$bpp-bit image / 8-bit alpha on argb_widget");
-	}
+        test_dst("argb widget");
     });
 
     $dst->bring_to_front;

@@ -409,7 +409,7 @@ apc_dbm_create( Handle self, int type)
       break;
    case dbtLayered:
       if ( guts. argb_pic_format ) {
-         XX-> type.layered = 1;
+         XX-> flags.layered = 1;
          depth = guts. argb_pic_format->depth;
          break;
       }
@@ -428,6 +428,12 @@ apc_dbm_create( Handle self, int type)
    if (XX-> gdrawable == None) return false;
    XCHECKPOINT;
    prima_prepare_drawable_for_painting( self, false);
+
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   if ( XF_LAYERED(XX) )
+      XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_pic_format, 0, NULL);
+#endif
+
    return true;
 }
 
@@ -435,6 +441,12 @@ Bool
 apc_dbm_destroy( Handle self)
 {
    DEFXX;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   if ( XF_LAYERED(XX) && XX->argb_picture ) {
+      XRenderFreePicture( DISP, XX->argb_picture);
+      XX->argb_picture = 0;
+   }
+#endif
    if ( XX->gdrawable) {
       prima_cleanup_drawable_after_painting( self);
       XFreePixmap( DISP, XX->gdrawable);
@@ -1696,16 +1708,14 @@ img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    DEFXX;
    PDrawableSysData YY = X(image);
-   Picture picture, target;
+   Picture target;
 
-   picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. argb_pic_format, 0, NULL);
    target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_compat_format, 0, NULL);
-   XRenderComposite( DISP, PictOpOver, picture, 0, target,
+   XRenderComposite( DISP, PictOpOver, YY-> argb_picture, 0, target,
       req->src_x, req->src_y, 0, 0,
       req->dst_x, req->dst_y, req->w, req->h
    );
    XRenderFreePicture( DISP, target);
-   XRenderFreePicture( DISP, picture);
    XSync(DISP, false);
    return true;
 #else
@@ -1884,21 +1894,16 @@ img_put_rgba_on_widget( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
-img_put_layered_on_widget( Handle self, Handle image, PutImageRequest * req)
+img_put_composite_over( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    DEFXX;
    PDrawableSysData YY = X(image);
-   Picture picture;
-
-   picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. argb_pic_format, 0, NULL);
-   XRenderComposite( DISP, PictOpOver, picture, 0, XX->argb_picture,
+   XRenderComposite( DISP, PictOpOver, YY->argb_picture, 0, XX->argb_picture,
       0, 0, 0, 0,
       req->dst_x, req->dst_y, req->w, req->h
    );
-   XRenderFreePicture( DISP, picture);
    XSync(DISP, false);
-
    return true;
 #else
    return false;
@@ -1958,7 +1963,7 @@ FAIL:
 #define SRC_MAX          4
 #define SRC_NUM          SRC_MAX+1 
 
-PutImageFunc (*img_put_bitmap[SRC_NUM]) = {
+PutImageFunc (*img_put_on_bitmap[SRC_NUM]) = {
    img_put_bitmap_on_bitmap,
    img_put_pixmap_on_bitmap,
    img_put_image_on_bitmap,
@@ -1966,7 +1971,7 @@ PutImageFunc (*img_put_bitmap[SRC_NUM]) = {
    img_put_layered_on_pixmap /* XXX oh really? */
 };
 
-PutImageFunc (*img_put_pixmap[SRC_NUM]) = {
+PutImageFunc (*img_put_on_pixmap[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_copy_area,
    img_put_image_on_pixmap,
@@ -1974,33 +1979,35 @@ PutImageFunc (*img_put_pixmap[SRC_NUM]) = {
    img_put_layered_on_pixmap
 };
 
-PutImageFunc (*img_put_widget[SRC_NUM]) = {
+PutImageFunc (*img_put_on_widget[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_copy_area,
    img_put_image_on_widget,
    img_put_rgba_on_widget,
-   img_put_layered_on_widget
+   img_put_composite_over
 };
 
-PutImageFunc (*img_put_layered[SRC_NUM]) = {
+PutImageFunc (*img_put_on_layered[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_pixmap_on_layered,
    img_put_image_on_layered,
    img_put_rgba_on_layered,
-   img_put_copy_area
+   img_put_composite_over
 };
 
 static int
 get_image_src_format( Handle image )
 {
    PDrawableSysData YY = X(image);
-   int src;
+   int src = -1;
 
    if ( XT_IS_DBM(YY)) {
       if (XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1))
          src = SRC_BITMAP;
       else if ( XT_IS_PIXMAP(YY))
          src = SRC_PIXMAP;
+      else if ( XF_LAYERED(YY))
+         src = SRC_LAYERED;
    } else if ( XT_IS_IMAGE(YY)) {
       if ( XF_IN_PAINT(YY)) {
          if ( XT_IS_BITMAP(YY) || ( XT_IS_PIXMAP(YY) && guts.depth==1)) {
@@ -2046,21 +2053,23 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
    req. h     = yLen;
    
    if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
-      dst = img_put_bitmap;
+      dst = img_put_on_bitmap;
+   else if ( XF_LAYERED(XX))
+      dst =  img_put_on_layered;
    else if ( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX))
-      dst = img_put_pixmap;
+      dst =  img_put_on_pixmap;
    else if ( XT_IS_WIDGET(XX)) 
-      dst =  XF_LAYERED(XX) ? img_put_layered : img_put_widget;
+      dst =  img_put_on_widget;
    if (!dst) {
       warn("cannot guess surface type");
       return false;
    }
-
    src = get_image_src_format(image);
    if ( src < 0 ) {
       warn("cannot guess image type");
       return false;
    }
+   /* printf("dst: %x(%d), b %x, p %x, l %x, w %x\n", dst, src, img_put_on_bitmap, img_put_on_pixmap, img_put_on_widget, img_put_on_layered); */
 
    if ( !XGetGCValues(DISP, XX->gc, GCFunction, &gcv))
       warn("cannot query XGCValues");
@@ -2098,7 +2107,7 @@ apc_image_begin_paint( Handle self)
    XX->flags. paint = 0;
    {
       PutImageRequest req;
-      PutImageFunc ** dst = bitmap ? img_put_bitmap : img_put_pixmap;
+      PutImageFunc ** dst = bitmap ? img_put_on_bitmap : img_put_on_pixmap;
       bzero(&req, sizeof(req));
       req. w   = img-> w;
       req. h   = img-> h;
