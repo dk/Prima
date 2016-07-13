@@ -6,7 +6,7 @@ use Prima::Test;
 
 plan tests => 119;
 
-my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
+my $x = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 8, height => 8);
 # 1
 ok( $x && $x-> get_paint_state, "create");
 $x-> color( cl::White);
@@ -312,7 +312,7 @@ for ( $i = 0; $i < 8; $i++) {
 cmp_ok( $bl, '>', 5, "text_out");
 
 # 21
-my $y = Prima::DeviceBitmap-> create( monochrome => 1, width => 2, height => 2);
+my $y = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 2, height => 2);
 $y-> clear;
 $y-> pixel( 0, 0, cl::Black);
 $y-> translate( 1, 1);

@@ -83,7 +83,7 @@ sub test_mask
 sub test_dst
 {
 	my ($target, %opt) = @_;
-	$src = Prima::DeviceBitmap->create( width => 2, height => 1, monochrome => 1);
+	$src = Prima::DeviceBitmap->create( width => 2, height => 1, type => dbt::Bitmap);
 	$dst->set(color => cl::Black, backColor => cl::White);
 	test_src( "bitmap on $target");
 
@@ -112,7 +112,7 @@ sub test_dst
 	$dst->put_image(0,0,$src);
 	is( $dst->pixel(0,0), cl::White, "set bitmap on $target 1");
 
-	$src = Prima::DeviceBitmap->create( width => 2, height => 1, monochrome => 0);
+	$src = Prima::DeviceBitmap->create( width => 2, height => 1, type => dbt::Pixmap);
 	test_src( "pixmap on $target");
 
 	$src = Prima::Image->create( width => 2, height => 1, type => im::BW);
@@ -250,10 +250,10 @@ test_mask( "reference implementation / 1bit mask");
 
 $mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
 test_mask( "reference implementation / 8bit mask");
-$dst = Prima::DeviceBitmap->create( width => 4, height => 2, monochrome => 1);
+$dst = Prima::DeviceBitmap->create( width => 4, height => 2, type => dbt::Bitmap);
 test_dst("bitmap", blend_tester => \&test_mask ); # ARGB over 1-bit degrades to simple masking
 
-$dst = Prima::DeviceBitmap->create( width => 4, height => 2, monochrome => 0);
+$dst = Prima::DeviceBitmap->create( width => 4, height => 2, type => dbt::Pixmap);
 test_dst("pixmap");
 
 $dst = Prima::Image->create( width => 4, height => 2, type => im::BW);

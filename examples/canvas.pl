@@ -1537,7 +1537,7 @@ sub uses
 	if ( $i) {
 		push @ret, 'rop';
 		push @ret, qw(color backColor) if
-			$i-> isa('Prima::DeviceBitmap') && $i-> monochrome;
+			$i-> isa('Prima::DeviceBitmap') && $i-> type == dbt::Bitmap;
 	}
 	@ret;
 }

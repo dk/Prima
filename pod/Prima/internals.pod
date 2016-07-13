@@ -444,7 +444,7 @@ A piece of real code from DeviceBitmap.c would serve as an example:
       pset_H( owner,        var-> owner);
       pset_i( width,        var-> w);
       pset_i( height,       var-> h);
-      pset_i( type,         var-> monochrome ? imBW : imRGB);
+      pset_i( type,         (var-> type == dbtBitmap) ? imBW : imRGB);
 
       // create object
       h = Object_create( className, profile);

@@ -269,6 +269,7 @@ union       _unix_sys_data;
       unsigned image                 : 1;                                     \
       unsigned menu                  : 1;                                     \
       unsigned pixmap                : 1;                                     \
+      unsigned layered               : 1;                                     \
       unsigned popup                 : 1;                                     \
       unsigned timer                 : 1;                                     \
       unsigned widget                : 1;                                     \
@@ -684,6 +685,7 @@ extern UnixGuts* pguts;
 #define XT_IS_TIMER(x)          ((x)->type.timer)
 #define XT_IS_WIDGET(x)         ((x)->type.widget)
 #define XT_IS_WINDOW(x)         ((x)->type.window)
+#define XT_IS_LAYERED_PIXMAP(x) ((x)->type.layered)
 
 typedef struct _drawable_sys_data
 {

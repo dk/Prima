@@ -6,7 +6,7 @@ use Prima::Test;
 
 plan tests => 8;
 
-my $x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
+my $x = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 8, height => 8);
 
 $x-> color( cl::White);
 $x-> bar( 0, 0, 7, 7);

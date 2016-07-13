@@ -650,6 +650,31 @@ Icon_extract( Handle self, int x, int y, int width, int height)
    return h;
 }
 
+Handle
+Icon_bitmap( Handle self)
+{
+   Handle h;
+   Point s;
+   HV * profile;
+
+   if ( !apc_sys_get_value(svLayeredWidgets))
+      return inherited bitmap(self);
+   
+   profile = newHV();
+   pset_H( owner,        var->owner);
+   pset_i( width,        var->w);
+   pset_i( height,       var->h);
+   pset_sv_noinc( palette,     my->get_palette( self));
+   pset_i( type,         dbtLayered);
+   h = Object_create( "Prima::DeviceBitmap", profile);
+   sv_free(( SV *) profile);
+   s = CDrawable( h)-> get_size( h);
+   CDrawable( h)-> put_image_indirect( h, self, 0, 0, 0, 0, s.x, s.y, s.x, s.y, ropCopyPut);
+   --SvREFCNT( SvRV( PDrawable( h)-> mate));
+
+   return h;
+}
+
 #ifdef __cplusplus
 }
 #endif

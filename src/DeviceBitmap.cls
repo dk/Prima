@@ -1,7 +1,7 @@
 object Prima::DeviceBitmap( Prima::Drawable)
 {
-   Bool monochrome;
-   property Bool monochrome;
+   int type;
+   property int type;
    method Bool   begin_paint();
    method Bool   begin_paint_info();
    method void   done();

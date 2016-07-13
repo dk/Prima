@@ -142,7 +142,7 @@ sub reset
 	$self-> {canvas}  = Prima::DeviceBitmap-> new(
 		width      => $e-> {screenWidth},
 		height     => $e-> {screenHeight},
-		monochrome => 0,
+		type       => dbt::Pixmap,
 		backColor  => 0,
 	);
 	$self-> {canvas}-> clear; # canvas is all-0 initially
@@ -150,7 +150,7 @@ sub reset
 	$self-> {mask}    = Prima::DeviceBitmap-> new(
 		width      => $e-> {screenWidth},
 		height     => $e-> {screenHeight},
-		monochrome => 1,
+		type       => dbt::Bitmap,
 		backColor  => 0xFFFFFF,
 		color      => 0x000000,
 	);
@@ -234,7 +234,7 @@ sub next
 		my $c  = Prima::DeviceBitmap-> new(
 			width      => $sz[0],
 			height     => $sz[1],
-			monochrome => 0,
+			type       => dbt::Pixmap,
 		);
 		$c-> put_image( 0, 0, $self-> {canvas});
 		$self-> {saveCanvas} = $self-> {canvas};
@@ -243,7 +243,7 @@ sub next
 		$c = Prima::DeviceBitmap-> new(
 			width      => $sz[0],
 			height     => $sz[1],
-			monochrome => 1,
+			type       => dbt::Bitmap,
 		);
 		$c-> put_image( 0, 0, $self-> {mask});
 		$self-> {saveMask} = $self-> {mask};

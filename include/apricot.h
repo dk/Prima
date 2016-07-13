@@ -2946,9 +2946,21 @@ apc_image_get_error_message( char *errorMsgBuf, int bufLen);
 extern ApiHandle
 apc_image_get_handle( Handle self);
 
+/* text wrap options */
+#define DBT(const_name) CONSTANT(dbt,const_name)
+START_TABLE(dbt,UV)
+#define dbtBitmap         0    /* 1-bit BW bitmap */
+DBT(Bitmap)
+#define dbtPixmap         1    /* more-than-1 bit color bitmap */
+DBT(Pixmap)
+#define dbtLayered        2    /* ARGB bitmap */
+DBT(Layered)
+END_TABLE(dbt,UV)
+#undef DBT
+
 
 extern Bool
-apc_dbm_create( Handle self, Bool monochrome);
+apc_dbm_create( Handle self, int type);
 
 extern Bool
 apc_dbm_destroy( Handle self);

@@ -236,7 +236,7 @@ sub set_image
 		my $do_cubic;
 
 		if ( $self-> {bitmap}) {
-			$do_cubic = not($img-> monochrome) && $::application-> get_bpp == 8;
+			$do_cubic = $img-> type != dbt::Bitmap && $::application-> get_bpp == 8;
 		} else {
 			$do_cubic = ( $img-> type & im::BPP) > 8;
 		}

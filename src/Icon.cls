@@ -18,6 +18,7 @@ object Prima::Icon( Prima::Image)
    property Color    maskColor;
    property int      maskIndex;
    property int      autoMasking;
+   method Handle     bitmap();
    method void       init( HV * profile);
    method Handle     extract( int x, int y, int width, int height);
    method Handle     dup();

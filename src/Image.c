@@ -1202,7 +1202,7 @@ Image_bitmap( Handle self)
    pset_i( width,        var->w);
    pset_i( height,       var->h);
    pset_sv_noinc( palette,     my->get_palette( self));
-   pset_i( monochrome,   (var-> type & imBPP) == 1);
+   pset_i( type,        (var-> type == imBW) ? dbtBitmap : dbtPixmap);
    h = Object_create( "Prima::DeviceBitmap", profile);
    sv_free(( SV *) profile);
    s = CDrawable( h)-> get_size( h);

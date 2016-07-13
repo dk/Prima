@@ -19,8 +19,8 @@ DeviceBitmap_init( Handle self, HV * profile)
    inherited init( self, profile);
    var-> w = pget_i( width);
    var-> h = pget_i( height);
-   var-> monochrome = pget_B( monochrome);
-   if ( !apc_dbm_create( self, var-> monochrome))
+   var-> type = pget_i( type);
+   if ( !apc_dbm_create( self, var-> type))
       croak("Cannot create device bitmap");
    inherited begin_paint( self);
    opt_set( optInDraw);
@@ -38,12 +38,12 @@ Bool DeviceBitmap_begin_paint      ( Handle self) { return true;}
 Bool DeviceBitmap_begin_paint_info ( Handle self) { return true;}
 void DeviceBitmap_end_paint        ( Handle self) { return;}
 
-Bool
-DeviceBitmap_monochrome( Handle self, Bool set, Bool monochrome)
+int
+DeviceBitmap_type( Handle self, Bool set, int type)
 {
    if ( set)
-      croak("Attempt to write read-only property %s", "DeviceBitmap::monochrome");
-   return var-> monochrome;
+      croak("Attempt to write read-only property %s", "DeviceBitmap::type");
+   return var-> type;
 }
 
 static Handle xdup( Handle self, char * className)
@@ -56,7 +56,7 @@ static Handle xdup( Handle self, char * className)
    pset_H( owner,        var-> owner);
    pset_i( width,        var-> w);
    pset_i( height,       var-> h);
-   pset_i( type,         var-> monochrome ? imMono : imRGB);
+   pset_i( type,         (var-> type == dbtBitmap) ? imBW : imRGB);
 
    h = Object_create( className, profile);
    sv_free(( SV *) profile);

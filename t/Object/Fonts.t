@@ -80,7 +80,7 @@ sub t
 
 my $filter = @ARGV ? qr/$ARGV[0]/ : qr/./;
 
-$x = Prima::DeviceBitmap-> create( monochrome => 1, width => 8, height => 8);
+$x = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 8, height => 8);
 my @fonts;
 for my $f ( @{$::application->fonts} ) {
 	next unless $f->{name} =~ /$filter/;

@@ -396,21 +396,35 @@ apc_image_update_change( Handle self)
 }
 
 Bool
-apc_dbm_create( Handle self, Bool monochrome)
+apc_dbm_create( Handle self, int type)
 {
+   int depth;
    DEFXX;
    if ( !DISP) return false;
-   if ( guts. idepth == 1) monochrome = true;
-   XX-> type.bitmap = !!monochrome;
-   XX-> type.pixmap = !monochrome;
+   if ( guts. idepth == 1) type = dbtBitmap;
+   switch (type) {
+   case dbtBitmap:
+      XX-> type.bitmap = 1;
+      depth = 1;
+      break;
+   case dbtLayered:
+      if ( guts. argb_pic_format ) {
+         XX-> type.layered = 1;
+         depth = guts. argb_pic_format->depth;
+         break;
+      }
+   case dbtPixmap:
+      XX-> type.pixmap = 1;
+      depth = guts.depth;
+      break;
+   }
    XX-> type.dbm = true;
    XX-> type.drawable = true;
    XX->size. x          = ((PDeviceBitmap)(self))-> w;
    XX->size. y          = ((PDeviceBitmap)(self))-> h;
    if ( XX-> size.x == 0) XX-> size.x = 1;
    if ( XX-> size.y == 0) XX-> size.y = 1;
-   XX->gdrawable        = XCreatePixmap( DISP, guts. root, XX->size. x, XX->size. y,
-                                         monochrome ? 1 : guts.depth);
+   XX->gdrawable        = XCreatePixmap( DISP, guts. root, XX->size. x, XX->size. y, depth);
    if (XX-> gdrawable == None) return false;
    XCHECKPOINT;
    prima_prepare_drawable_for_painting( self, false);
@@ -1677,6 +1691,29 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
+img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   DEFXX;
+   PDrawableSysData YY = X(image);
+   Picture picture, target;
+
+   picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. argb_pic_format, 0, NULL);
+   target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_compat_format, 0, NULL);
+   XRenderComposite( DISP, PictOpOver, picture, 0, target,
+      req->src_x, req->src_y, 0, 0,
+      req->dst_x, req->dst_y, req->w, req->h
+   );
+   XRenderFreePicture( DISP, target);
+   XRenderFreePicture( DISP, picture);
+   XSync(DISP, false);
+   return true;
+#else
+   return false;
+#endif
+}
+
+static Bool
 img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 {
    DEFXX;
@@ -1761,7 +1798,7 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
    if ( render_rop >= PictOpMinimum ) {
       /* cheap on-server blit */
       picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. argb_compat_format, 0, NULL);
-      XRenderComposite( DISP, PictOpSrc, picture, 0, XX-> argb_picture,
+      XRenderComposite( DISP, render_rop, picture, 0, XX-> argb_picture,
          req->src_x, req->src_y, 0, 0,
          req->dst_x, req->dst_y, req->w, req->h
       );
@@ -1847,6 +1884,28 @@ img_put_rgba_on_widget( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
+img_put_layered_on_widget( Handle self, Handle image, PutImageRequest * req)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+   DEFXX;
+   PDrawableSysData YY = X(image);
+   Picture picture;
+
+   picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. argb_pic_format, 0, NULL);
+   XRenderComposite( DISP, PictOpOver, picture, 0, XX->argb_picture,
+      0, 0, 0, 0,
+      req->dst_x, req->dst_y, req->w, req->h
+   );
+   XRenderFreePicture( DISP, picture);
+   XSync(DISP, false);
+
+   return true;
+#else
+   return false;
+#endif
+}
+
+static Bool
 img_put_rgba_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
@@ -1895,14 +1954,16 @@ FAIL:
 #define SRC_PIXMAP       1
 #define SRC_IMAGE        2
 #define SRC_RGBA         3
-#define SRC_MAX          3
+#define SRC_LAYERED      4
+#define SRC_MAX          4
 #define SRC_NUM          SRC_MAX+1 
 
 PutImageFunc (*img_put_bitmap[SRC_NUM]) = {
    img_put_bitmap_on_bitmap,
    img_put_pixmap_on_bitmap,
    img_put_image_on_bitmap,
-   img_put_image_on_bitmap
+   img_put_image_on_bitmap,
+   img_put_layered_on_pixmap /* XXX oh really? */
 };
 
 PutImageFunc (*img_put_pixmap[SRC_NUM]) = {
@@ -1910,6 +1971,7 @@ PutImageFunc (*img_put_pixmap[SRC_NUM]) = {
    img_put_copy_area,
    img_put_image_on_pixmap,
    img_put_rgba_on_pixmap,
+   img_put_layered_on_pixmap
 };
 
 PutImageFunc (*img_put_widget[SRC_NUM]) = {
@@ -1917,6 +1979,7 @@ PutImageFunc (*img_put_widget[SRC_NUM]) = {
    img_put_copy_area,
    img_put_image_on_widget,
    img_put_rgba_on_widget,
+   img_put_layered_on_widget
 };
 
 PutImageFunc (*img_put_layered[SRC_NUM]) = {
@@ -1924,6 +1987,7 @@ PutImageFunc (*img_put_layered[SRC_NUM]) = {
    img_put_pixmap_on_layered,
    img_put_image_on_layered,
    img_put_rgba_on_layered,
+   img_put_copy_area
 };
 
 static int

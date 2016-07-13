@@ -527,10 +527,21 @@ sub profile_default
 	my %prf = (
 		height       => 0,
 		width        => 0,
-		monochrome   => 0,
+		type         => dbt::Pixmap,
+		monochrome   => undef, # back-compat
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
+}
+
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+
+	if ( exists $p-> {monochrome} and not exists $p-> {type}) {
+		$p-> {type} = $p->{monochrome} ? dbt::Bitmap : dbt::Pixmap;
+	}
+	$self-> SUPER::profile_check_in( $p, $default);
 }
 
 # class Timer

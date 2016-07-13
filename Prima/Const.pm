@@ -94,6 +94,8 @@ package
     ps; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# paint states
 package 
     scr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# scroll() results
+package 
+    dbt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# DeviceBitmap types
 
 1;
 
