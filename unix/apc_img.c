@@ -162,7 +162,7 @@ bad_xshm_attach:
    }
 normal_way:
 #endif
-   i-> bytes_per_line_alias = (( width * depth + 31) / 32) * 4;
+   i-> bytes_per_line_alias = (( width * idepth + 31) / 32) * 4;
    i-> data_alias = malloc( height * i-> bytes_per_line_alias + extra_bytes);
    if (!i-> data_alias) {
       warn("No enough memory");
@@ -174,7 +174,7 @@ normal_way:
                              width, height, 32, i-> bytes_per_line_alias);
    XCHECKPOINT;
    if ( !i-> image) {
-      warn("XCreateImage(%d,%d) error", width, height);
+      warn("XCreateImage(%d,%d,visual=%x,depth=%d/%d) error", width, height, visual->visualid,depth,idepth);
       free( i-> data_alias);
       free( i);
       return nil;
