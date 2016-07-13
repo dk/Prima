@@ -776,6 +776,20 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
     return ok;
 }
 
+static Bool
+put_alpha_blend(HDC dest, HDC src, int op,
+              int dstx, int dsty, int dstw, int dsth,
+              int srcx, int srcy, int srcw, int srch)
+{
+    BLENDFUNCTION bf;
+
+    bf.BlendOp             = op;
+    bf.BlendFlags          = 0;
+    bf.SourceConstantAlpha = 0xff;
+    bf.AlphaFormat         = AC_SRC_ALPHA;
+    return AlphaBlend(dest, dstx, dsty, dstw, dsth, src, 0, 0, srcw, srch, bf);
+}
+
 static int
 rop_reduce(COLORREF fore, COLORREF back, int rop)
 {
@@ -883,7 +897,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    HBITMAP  b1;
    HDC dc;
    DWORD theRop;
-   Bool ok = true, db, dcmono = false, rgba = false;
+   Bool ok = true, db, dcmono = false, rgba_image = false, rgba_pixmap = false;
    POINT tr = {0, 0};
 
    COLORREF oFore = 0, oBack = 0;
@@ -937,11 +951,11 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    // actions for mono images
    if ( dsys( image) options. aptDeviceBitmap) {
-      if ((( PDeviceBitmap) image)-> monochrome) {
+      if ((( PDeviceBitmap) image)-> type == dbtBitmap) {
          STYLUS_USE_TEXT( sys ps);
          STYLUS_USE_BRUSH( sys ps);
 	 if (
-	       ( is_apt( aptDeviceBitmap) && ((PDeviceBitmap)self)->monochrome ) ||
+	       ( is_apt( aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap ) ||
 	       ( is_apt( aptImage) && PImage(self)-> type == imBW )
 	    )
             rop = rop_reduce(GetTextColor( sys ps), GetBkColor( sys ps), rop);
@@ -971,7 +985,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
              // are explicitly non black-and-white
 	     ( kind_of( self, CImage ) && PImage(self)-> type == imbpp1 )
 	)) {
-         rgba = true;
+         rgba_image = true;
       } else {
          XBITMAPINFO xbi = {
             { sizeof( BITMAPINFOHEADER), 0, 0, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
@@ -996,6 +1010,8 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
          if ( i-> maskType == imbpp8 ) free( mask );
       } 
       theRop = SRCINVERT;
+   } else if ( dsys (image) options. aptLayered ) {
+      rgba_pixmap = true;
    } else {
       theRop = ctx_remap_def( rop, ctx_rop2R4, true, SRCCOPY);
    }
@@ -1023,10 +1039,14 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    }
 
    //
-   if ( rgba ) {
+   if ( rgba_image ) {
        ok = put_rgba_icon(xdc, (PImage) deja, PIcon(deja)->mask, PIcon(deja)->maskLine,
           x, ly - y - yDestLen, xDestLen, yDestLen, 
           xFrom, yFrom, xLen, yLen);
+   } else if ( rgba_pixmap ) {
+       ok = put_alpha_blend(xdc, dc, AC_SRC_OVER,
+          x, ly - y - yDestLen, xDestLen, yDestLen, 
+          xFrom, i->h - yFrom - yLen, xLen, yLen);
    } else if ( dc) {
       if ( !StretchBlt( xdc, x, ly - y - yDestLen, xDestLen, yDestLen, dc,
             xFrom, i-> h - yFrom - yLen, xLen, yLen, theRop)) {

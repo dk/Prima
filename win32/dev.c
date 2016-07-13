@@ -100,7 +100,7 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
    if ( is_apt( aptDeviceBitmap))
    {
       memcpy( bi, &guts. displayBMInfo, sizeof( BITMAPINFO));
-      if ((( PDeviceBitmap) self)-> monochrome) {
+      if ((( PDeviceBitmap) self)-> type == dbtBitmap) {
          bi-> bmiHeader. biPlanes = bi-> bmiHeader. biBitCount = 1;
          bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = 2;
       } else if ( bi-> bmiHeader. biBitCount <= 8) {
@@ -114,7 +114,6 @@ BITMAPINFO * image_get_binfo( Handle self, XBITMAPINFO * bi)
          bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = 0;
       return ( BITMAPINFO *) bi;
    }
-
 
    if ( image_screenable( self, nilHandle, &lower)) {
       nColors  = (( 1 << ( image-> type & imBPP)) & 0x1ff);
@@ -460,8 +459,12 @@ apc_image_update_change( Handle self)
 }
 
 Bool
-apc_dbm_create( Handle self, Bool monochrome)
+apc_dbm_create( Handle self, int type)
 {
+   HDC dc;
+   BITMAPINFO bmi;
+   uint32_t rgba_bits;
+
    Bool palc = 0;
 
    objCheck false;
@@ -474,10 +477,12 @@ apc_dbm_create( Handle self, Bool monochrome)
    sys lastSize. x = var w;
    sys lastSize. y = var h;
 
-   if ( monochrome)
+   switch ( type ) {
+   case dbtBitmap:
+      dc = NULL;
       sys bm = CreateBitmap( var w, var h, 1, 1, nil);
-   else {
-      HDC dc;
+      break;
+   case dbtPixmap:
       if (!( dc = dc_alloc())) {
          DeleteDC( sys ps);
          return false;
@@ -490,11 +495,28 @@ apc_dbm_create( Handle self, Bool monochrome)
       sys bm = CreateCompatibleBitmap( dc, var w, var h);
       if ( guts. displayBMInfo. bmiHeader. biBitCount == 8)
          apt_clear( aptCompatiblePS);
+      break;
+   case dbtLayered:
+      apt_set( aptLayered );
+      if (!( dc = dc_alloc())) {
+         DeleteDC( sys ps);
+         return false;
+      }
+      ZeroMemory(&bmi, sizeof(BITMAPINFO));
+      bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+      bmi.bmiHeader.biWidth       = var w;
+      bmi.bmiHeader.biHeight      = var h;
+      bmi.bmiHeader.biPlanes      = 1;
+      bmi.bmiHeader.biBitCount    = 32;
+      bmi.bmiHeader.biCompression = BI_RGB;
+      bmi.bmiHeader.biSizeImage   = var w * var h * 4;
+      sys bm = CreateDIBSection(dc, &bmi, DIB_RGB_COLORS, (LPVOID*)&rgba_bits, NULL, 0x0);
+      break;
    }
 
    if ( !sys bm) {
       apiErr;
-      if ( !monochrome) dc_free();
+      if ( dc) dc_free();
       if ( palc) {
          SelectPalette( sys ps, sys stockPalette, 1);
          DeleteObject( sys stockPalette);
@@ -503,12 +525,19 @@ apc_dbm_create( Handle self, Bool monochrome)
       DeleteDC( sys ps);
       return false;
    }
-   if ( !monochrome) dc_free();
+   if ( dc) dc_free();
 
    sys stockBM = SelectObject( sys ps, sys bm);
 
    hwnd_enter_paint( self);
-   if ( monochrome) sys bpp = 1;
+   switch ( type ) {
+   case dbtBitmap:
+      sys bpp = 1;
+      break;
+   case dbtLayered:
+      sys bpp = 32;
+      break;
+   }
 
    hash_store( imageMan, &self, sizeof( self), (void*)self);
    return true;
@@ -520,7 +549,7 @@ dbm_recreate( Handle self)
    HBITMAP bm, stock;
    HDC dc, dca;
    HPALETTE p = nil;
-   if ((( PDeviceBitmap) self)-> monochrome) return;
+   if ((( PDeviceBitmap) self)-> type != dbtPixmap ) return;
 
    if ( !( dc = CreateCompatibleDC( 0))) {
       apiErr;
