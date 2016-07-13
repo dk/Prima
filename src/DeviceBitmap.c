@@ -46,7 +46,7 @@ DeviceBitmap_type( Handle self, Bool set, int type)
    return var-> type;
 }
 
-static Handle xdup( Handle self, char * className)
+static Handle xdup( Handle self, Bool icon)
 {
    Handle h;
    PDrawable i;
@@ -56,9 +56,15 @@ static Handle xdup( Handle self, char * className)
    pset_H( owner,        var-> owner);
    pset_i( width,        var-> w);
    pset_i( height,       var-> h);
-   pset_i( type,         (var-> type == dbtBitmap) ? imBW : imRGB);
+   if ( icon && var-> type == dbtLayered) {
+      pset_i( type,      imRGB);
+      pset_i( maskType,  imbpp8);
+      pset_i( autoMasking, 0);
+   } else {
+      pset_i( type,      (var-> type == dbtBitmap) ? imBW : imRGB);
+   }
 
-   h = Object_create( className, profile);
+   h = Object_create( icon ? "Prima::Icon" : "Prima::Image", profile);
    sv_free(( SV *) profile);
    i = ( PDrawable) h;
    s = i-> self-> get_size( h);
@@ -69,8 +75,8 @@ static Handle xdup( Handle self, char * className)
    return h;
 }
 
-Handle DeviceBitmap_image( Handle self) { return xdup( self, "Prima::Image"); }
-Handle DeviceBitmap_icon( Handle self) { return xdup( self, "Prima::Icon"); }
+Handle DeviceBitmap_image( Handle self) { return xdup( self, false); }
+Handle DeviceBitmap_icon( Handle self) { return xdup( self, true); }
 
 SV *
 DeviceBitmap_get_handle( Handle self)

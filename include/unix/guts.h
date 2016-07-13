@@ -563,6 +563,7 @@ typedef struct _UnixGuts
    int                          machine_byte_order;
    int                          idepth; /* image depth; can be 32 if depth == 24 */
    int                          qdepth; /* image depth for querying */
+   int                          argb_depth; /* image depth for xrender RGBA */
    struct {
       long XDrawArcs;
       long XDrawLines;
