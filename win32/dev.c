@@ -28,7 +28,7 @@ Bool image_screenable( Handle image, Handle screen, int * bitCount)
       return false;
    }
 
-   if ( dsys(image) options. aptIcon && PIcon(image)->type == imbpp8) {
+   if ( dsys(image) options. aptIcon && PIcon(image)->maskType == imbpp8) {
       if (bitCount) *bitCount = 32;
       return i->type == imRGB;
    }
@@ -264,8 +264,8 @@ image_make_bitmap_handle( Handle img, HPALETTE pal)
       bm = CreateBitmap( bi-> bmiHeader. biWidth, bi-> bmiHeader. biHeight, 1, 1, NULL);
       SetDIBits( dc, bm, 0, bi-> bmiHeader. biHeight, (( PImage) img)-> data, bi, DIB_RGB_COLORS);
    } else if ( dsys(img) options. aptIcon && PIcon(img)-> maskType == imbpp8) {
-   int i;
-   bi-> bmiHeader. biBitCount      = 32;
+      int i;
+      bi-> bmiHeader. biBitCount      = 32;
       bi->bmiHeader.biSizeImage = bi->bmiHeader.biWidth * bi->bmiHeader. biHeight * 4;
       bm = CreateDIBSection(dc, bi, DIB_RGB_COLORS, 
               (LPVOID*) &dsys(img) s. image. rgbaBits, NULL, 0x0);
