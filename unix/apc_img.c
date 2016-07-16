@@ -290,10 +290,8 @@ prima_put_ximage(
          hash_store( guts.ximages, &i->xmem.shmseg, sizeof(i->xmem.shmseg), i);
       XShmPutImage( DISP, win, gc, i-> image, src_x, src_y, dst_x, dst_y, width, height, true);
       XFlush(DISP);
-      if ( XCheckIfEvent( DISP, &ev, check_ximage_event, NULL) ) {
-          while (XCheckIfEvent( DISP, &ev, check_ximage_event, NULL));
-	  prima_ximage_event(&ev);
-      }
+      while (XCheckIfEvent( DISP, &ev, check_ximage_event, NULL))
+         prima_ximage_event(&ev);
       return true;
    }
 #endif
