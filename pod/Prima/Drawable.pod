@@ -225,18 +225,18 @@ Here are keys understood in the gradient request:
 
 =item palette @COLORS
 
-Each color is a C<cl::> value. When the gradient is calculated as polyline
-where each its vertex corresponds to a certain blend between two neighbour
-colors. F.ex. the simplest palette going from C<cl::White> to C<cl::Black>
-over a polyline C<0..1> (default), produces pure white color at the start and
-pure black color at the end, filling all available shades of gray in between,
-changing monotonically.
+Each color is a C<cl::> value. The gradient is calculated as polyline where
+each its vertex corresponds to a certain blend between two neighbouring colors
+in the palette. F.ex. the simplest palette going from C<cl::White> to
+C<cl::Black> over a polyline C<0..1> (default), produces pure white color at
+the start and pure black color at the end, filling all available shades of gray
+in between, and changing monotonically.
 
 =item poly @VERTEXES
 
-Set of 2-integer polyling vertexes where the first integer is a coordinate (x,
+Set of 2-integer polyline vertexes where the first integer is a coordinate (x,
 y, or whatever required by the drawing primitive) between 0 and 1, and the
-second is the color blend value bteween 0 and 1.
+second is the color blend value between 0 and 1.
 
 Default: ((0,0),(1,1))
 
