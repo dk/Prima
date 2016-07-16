@@ -1845,7 +1845,7 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
    Bool ret = false;
    Picture picture, target;
 
-   if ( !guts. render_extension)
+   if ( !guts. argb_visual. visual)
       return fallback( self, image, req);
 
    if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED_ALPHA)))

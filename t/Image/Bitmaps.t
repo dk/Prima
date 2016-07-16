@@ -285,7 +285,7 @@ SKIP: {
 }
 
 SKIP: {
-    skip "no argb capability", 88 unless $can_argb;
+    skip "no argb capability", 124 unless $can_argb;
     reset_flag;
     $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, layered => 1, onPaint => sub {
 	return if get_flag;
@@ -294,5 +294,5 @@ SKIP: {
     });
 
     $dst->bring_to_front;
-    skip "cannot get widget to paint", 88 unless wait_flag;
+    skip "cannot get widget to paint", 124 unless wait_flag;
 }
