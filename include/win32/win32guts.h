@@ -132,6 +132,7 @@ typedef struct _HandleOptions_ {
    unsigned aptBitmap               : 1;       // buffered widget
    unsigned aptImage                : 1;       // == kind_of( CImage)
    unsigned aptIcon                 : 1;       // == kind_of( CIcon)
+   unsigned aptPrinter              : 1;       // == kind_of( CPrinter)
    unsigned aptExtraFont            : 1;       // extra font styles ( angle, shear) has been applied
    unsigned aptDCChangeLock         : 1;       // locks SelectObject() calls
    unsigned aptEnabled              : 1;       // enabled flag
@@ -217,10 +218,37 @@ typedef struct _FileData
    int          type;
 } FileData;
 
+typedef struct _XLOGPALETTE {
+   WORD         palVersion;
+   WORD         palNumEntries;
+   PALETTEENTRY palPalEntry[ 256];
+} XLOGPALETTE, *PXLOGPALETTE;
+
+typedef struct _XBITMAPINFO {
+   BITMAPINFOHEADER bmiHeader;
+   RGBQUAD          bmiColors[ 256];
+} XBITMAPINFO, *PXBITMAPINFO;
+
+#define BM_NONE    0
+#define BM_BITMAP  1
+#define BM_PIXMAP  2
+#define BM_LAYERED 3
+#define BM_AUTO    4
+
+typedef struct _ImageCache
+{
+      int         cacheType;
+      XBITMAPINFO rawHeader;
+      Byte*       rawBits;
+      Bool        freeBits;
+      HBITMAP     bitmap; /* copy of sys bm, if any */
+} ImageCache;
+
 typedef struct _ImageData
 {
-      HRGN      imgCachedRegion;
-      uint32_t* rgbaBits;
+      HRGN        imgCachedRegion;
+      uint32_t*   argbBits;
+      ImageCache  cache;
 } ImageData;
 
 typedef struct _PrinterData
@@ -302,17 +330,6 @@ typedef struct _DCFont
    HFONT         hfont;
 } DCFont, *PDCFont;
 
-
-typedef struct _XLOGPALETTE {
-   WORD         palVersion;
-   WORD         palNumEntries;
-   PALETTEENTRY palPalEntry[ 256];
-} XLOGPALETTE, *PXLOGPALETTE;
-
-typedef struct _XBITMAPINFO {
-   BITMAPINFOHEADER bmiHeader;
-   RGBQUAD          bmiColors[ 256];
-} XBITMAPINFO, *PXBITMAPINFO;
 
 typedef struct _ItemRegRec {
   int   cmd;
@@ -485,7 +502,7 @@ typedef struct _MusClkRec {
    !dsys(handle)options.aptClipOwner                                                    \
 )
 
-#define palette_create image_make_bitmap_palette
+#define palette_create image_create_palette
 
 extern Bool         appDead;
 extern Bool         debug;
@@ -540,7 +557,6 @@ extern void         hwnd_leave_paint( Handle self);
 extern Handle       hwnd_to_view( HWND win);
 extern Handle       hwnd_top_level( Handle self);
 extern Bool         hwnd_repaint_layered( Handle self, Bool now);
-extern void         image_destroy_cache( Handle self);
 extern Handle       image_enscreen( Handle image, Handle screen);
 extern BITMAPINFO * image_get_binfo( Handle img, XBITMAPINFO * bi);
 extern HBITMAP      image_make_bitmap_handle( Handle img, HPALETTE palette);
@@ -549,6 +565,13 @@ extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotS
 extern void         image_query_bits( Handle self, Bool forceNewImage);
 extern Bool         image_screenable( Handle image, Handle screen, int * bitCount);
 extern Bool         image_set_cache( Handle from, Handle self);
+extern XBITMAPINFO* image_alpha_bitmap_header(int x);
+extern HBITMAP      image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr );
+extern HBITMAP      image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm_type);
+extern HPALETTE     image_create_palette( Handle self);
+extern void         image_destroy_cache( Handle self);
+extern void         image_fill_bitmap_cache( Handle self, int bm_type, Handle optimize_for_surface);
+extern BITMAPINFO*  image_fill_bitmap_info( Handle self, XBITMAPINFO * bi, int bm_type);
 extern void         mod_free( BYTE * modState);
 extern BYTE *       mod_select( int mod);
 extern Bool         palette_change( Handle self);

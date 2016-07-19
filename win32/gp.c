@@ -699,7 +699,7 @@ image_from_dc( Handle image )
 	
 
 static Bool
-put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
+put_argb_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
               int dstx, int dsty, int dstw, int dsth,
               int srcx, int srcy, int srcw, int srch,
 	      int rop)
@@ -710,13 +710,13 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
    HBITMAP old, hbitmap;
    Bool ok;
    int y;
-   Byte *rgb_bits, *a_bits, *rgba_bits;
+   Byte *rgb_bits, *a_bits, *argb_bits;
 
    if ( rgb->options. optInDraw ) {
       Bool ok;
       Handle img = image_from_dc((Handle) rgb);
       CImage(img)->set_type(img, imRGB);
-      ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
+      ok = put_argb_icon( dest, (PImage) img, mask, maskLineSize,
          dstx, dsty, dstw, dsth, 
          srcx, srcy, srcw, srch, rop);
       Object_destroy( img);
@@ -725,7 +725,7 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
       Bool ok;
       Handle img = rgb->self->dup((Handle)rgb);
       CImage(img)->set_type(img, imRGB);
-      ok = put_rgba_icon( dest, (PImage) img, mask, maskLineSize,
+      ok = put_argb_icon( dest, (PImage) img, mask, maskLineSize,
          dstx, dsty, dstw, dsth, 
          srcx, srcy, srcw, srch, rop);
       Object_destroy( img);
@@ -741,7 +741,7 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
    bmi.bmiHeader.biBitCount    = 32;
    bmi.bmiHeader.biCompression = BI_RGB;
    bmi.bmiHeader.biSizeImage   = srcw * srch * 4;
-   hbitmap = CreateDIBSection(src, &bmi, DIB_RGB_COLORS, (LPVOID*)&rgba_bits, NULL, 0x0);
+   hbitmap = CreateDIBSection(src, &bmi, DIB_RGB_COLORS, (LPVOID*)&argb_bits, NULL, 0x0);
 
    for ( 
       y = 0, 
@@ -751,15 +751,15 @@ put_rgba_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
       y++,
          rgb_bits += rgb-> lineSize,
          a_bits += maskLineSize,
-         rgba_bits += srcw * 4
+         argb_bits += srcw * 4
    ) {
-      register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *rgba_ptr = rgba_bits;
+      register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *argb_ptr = argb_bits;
       register int x = srcw;
       for ( ; x > 0; x--) {
-         *rgba_ptr++ = *rgb_ptr++;
-         *rgba_ptr++ = *rgb_ptr++;
-         *rgba_ptr++ = *rgb_ptr++;
-         *rgba_ptr++ = *a_ptr++;
+         *argb_ptr++ = *rgb_ptr++;
+         *argb_ptr++ = *rgb_ptr++;
+         *argb_ptr++ = *rgb_ptr++;
+         *argb_ptr++ = *a_ptr++;
       }
    }
    old = SelectObject(src, hbitmap);
@@ -831,37 +831,37 @@ rop_reduce(COLORREF fore, COLORREF back, int rop)
          case ropAndPut:           
          case ropNotDestAnd:    
          case ropBlackness:         
-         case ropCopyPut:          rop = ropBlackness;         break;
+         case ropCopyPut:          rop = ropBlackness;      break;
          case ropNotXor:         
          case ropInvert:        
          case ropNotOr:           
-         case ropNotDestOr:     rop = ropInvert;        break;
+         case ropNotDestOr:        rop = ropInvert;         break;
          case ropNotSrcAnd:   
          case ropNoOper:          
          case ropOrPut:            
-         case ropXorPut:           rop = ropNoOper;          break;
+         case ropXorPut:           rop = ropNoOper;         break;
          case ropNotAnd:          
          case ropNotPut:  
          case ropNotSrcOr:    
-         case ropWhiteness:           rop = ropWhiteness;           break;
+         case ropWhiteness:        rop = ropWhiteness;      break;
       }
    } else if ( fore != 0 && back == 0 ) {
       switch( rop) {
-         case ropAndPut:           rop = ropNotSrcAnd;   break;
-         case ropNotSrcAnd:   rop = ropAndPut;           break;
-         case ropNotDestAnd:    rop = ropNotOr;           break;
-         case ropBlackness:         rop = ropBlackness;         break;
-         case ropCopyPut:          rop = ropNotPut;  break;
-         case ropNotPut:  rop = ropCopyPut;          break;
-         case ropNotXor:         rop = ropXorPut;           break;
-         case ropInvert:        rop = ropInvert;        break;
-         case ropNotAnd:          rop = ropNotDestOr;     break;
-         case ropNoOper:          rop = ropNoOper;          break;
-         case ropNotOr:           rop = ropNotDestAnd;    break;
-         case ropOrPut:            rop = ropNotSrcOr;    break;
-         case ropNotSrcOr:    rop = ropOrPut;            break;
-         case ropNotDestOr:     rop = ropNotAnd;          break;
-         case ropWhiteness:           rop = ropWhiteness;           break;
+         case ropAndPut:           rop = ropNotSrcAnd;      break;
+         case ropNotSrcAnd:        rop = ropAndPut;         break;
+         case ropNotDestAnd:       rop = ropNotOr;          break;
+         case ropBlackness:        rop = ropBlackness;      break;
+         case ropCopyPut:          rop = ropNotPut;         break;
+         case ropNotPut:           rop = ropCopyPut;        break;
+         case ropNotXor:           rop = ropXorPut;         break;
+         case ropInvert:           rop = ropInvert;         break;
+         case ropNotAnd:           rop = ropNotDestOr;      break;
+         case ropNoOper:           rop = ropNoOper;         break;
+         case ropNotOr:            rop = ropNotDestAnd;     break;
+         case ropOrPut:            rop = ropNotSrcOr;       break;
+         case ropNotSrcOr:         rop = ropOrPut;          break;
+         case ropNotDestOr:        rop = ropNotAnd;         break;
+         case ropWhiteness:        rop = ropWhiteness;      break;
          case ropXorPut:           rop = ropNotXor;         break;
       }
    } else if ( fore != 0 && back != 0 ) {
@@ -869,228 +869,501 @@ rop_reduce(COLORREF fore, COLORREF back, int rop)
          case ropAndPut:           
          case ropNotSrcOr:    
          case ropNotXor:         
-         case ropNoOper:          rop = ropNoOper;          break;
+         case ropNoOper:           rop = ropNoOper;         break;
          case ropNotSrcAnd:  
          case ropBlackness:        
          case ropNotPut: 
-         case ropNotOr:           rop = ropBlackness;         break;
+         case ropNotOr:            rop = ropBlackness;      break;
          case ropInvert:      
          case ropNotAnd:        
          case ropNotDestAnd:  
-         case ropXorPut:           rop = ropInvert;        break;
+         case ropXorPut:           rop = ropInvert;         break;
          case ropOrPut:         
          case ropNotDestOr:  
          case ropWhiteness:        
-         case ropCopyPut:          rop = ropWhiteness;           break;
+         case ropCopyPut:          rop = ropWhiteness;      break;
       }
    }
    return rop;
 }
 
-Bool
-apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
-{objCheck false;{
-   PIcon  i    = ( PIcon) image;
-   Handle deja = image;
-   int    ly   = sys lastSize. y;
-   HDC    xdc  = sys ps;
-   HPALETTE p1, p2 = nil, p3;
-   HBITMAP  b1;
-   HDC dc;
-   DWORD theRop;
-   Bool ok = true, db, dcmono = false, rgba_image = false, rgba_pixmap = false;
+typedef struct {
+   HDC src;
+   int src_x;
+   int src_y;
+   int src_w;
+   int src_h;
+   int dst_x;
+   int dst_y;
+   int dst_w;
+   int dst_h;
+   int rop;
+} PutImageRequest;
+
+typedef Bool PutImageFunc( Handle self, Handle image, PutImageRequest * req);
+
+#define SRC_BITMAP          0
+#define SRC_PIXMAP          1
+#define SRC_LAYERED         2
+#define SRC_IMAGE           3
+#define SRC_ARGB            4
+#define SRC_MAX             4
+#define SRC_NUM            SRC_MAX+1 
+
+static Bool
+img_put_stretch_blt( HDC dst, HDC src, PutImageRequest * req)
+{
+   Bool ok = true;
+   int rop = ctx_remap_def( req->rop, ctx_rop2R4, true, SRCCOPY);
+   if ( !StretchBlt(
+        dst, req-> dst_x, req-> dst_y, req-> dst_w, req-> dst_h,
+        src, req-> src_x, req-> src_y, req-> src_w, req-> src_h,
+        rop)) {
+        apiErr;
+        ok = false;
+   }
+   return ok;
+}
+
+static Bool
+img_put_stretch_blt_viewport( HDC dst, HDC src, PutImageRequest * req)
+{
+   Bool ok;
    POINT tr = {0, 0};
+   SetViewportOrgEx( src, 0, 0, &tr);
+   ok = img_put_stretch_blt( dst, src, req);
+   SetViewportOrgEx( src, tr.x, tr.y, NULL);
+   return ok;
+}
 
-   COLORREF oFore = 0, oBack = 0;
+static Bool
+img_put_stretch_bits( HDC dst, Handle self, PutImageRequest * req)
+{
+   int rop;
 
-   dobjCheck(image) false;
-   db = dsys( image) options. aptDeviceBitmap || i-> options. optInDraw;
-
-   if ( xLen == 0 || yLen == 0) return false;
-
-   // Determinig whether we have bitmap adapted for output or it's just bare bits
-   if ( db) {
-      if (
-          ( guts. displayBMInfo. bmiHeader. biBitCount == 8) &&
-          ( !is_apt( aptCompatiblePS)) &&
-          // ( is_apt( aptWinPS) || is_apt( aptBitmap))
-          is_apt( aptBitmap)
-         )
-      {
-         // There is a big uncertainity about 8-bit BitBlt's, based on fact that
-         // memory DCs aren't really compatible with screen DCs, - correct results
-         // could be guaranteed only when you Blt source DC = CreateCompatibleDC( dest DC),
-         // not when source = CCDC( thirdDC), dest = CCDC( thirdDC) - that's right, I mean it!
-         // or just SetDIBits; - latter is slow, stupid, memory-greedy - but surely can be trusted.
-         Bool ok;
-         Handle img = image_from_dc(image);
-         ok = apc_gp_stretch_image( self, img, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
-         Object_destroy( img);
-         return ok;
-      }
-
-      dc = dsys( image) ps;
-      SetViewportOrgEx( dc, 0, 0, &tr);
-   } else {
-      if ( is_apt( aptCompatiblePS))
-         dc = CreateCompatibleDC( xdc);
-      else
-         dc = nil;
-      if ( dc) {
-         if ( dsys( image) bm == nil) {
-            image_destroy_cache( image); // if palette still exists
-            deja = image_enscreen( image, self);
-            if ( !image_set_cache( deja, image)) {
-	       // we're low on memory, reverting to StretchDIBits
-	       DeleteDC( dc);
-	       dc = nil;
-	    }
-         }
-      } else {
-         deja = image_enscreen( image, self);
-      }
+   if ( !sys s. image. cache. rawBits )
+      return false;
+  
+   rop = ctx_remap_def( req->rop, ctx_rop2R4, true, SRCCOPY);
+   if ( StretchDIBits( dst,
+         req-> dst_x, req-> dst_y, req-> dst_w, req-> dst_h,
+         req-> src_x, req-> src_y, req-> src_w, req-> src_h,
+         sys s. image. cache. rawBits, (BITMAPINFO*) & sys s. image. cache. rawHeader,
+         DIB_RGB_COLORS, rop) == GDI_ERROR) {
+      apiErr;
+      return false;
    }
 
-   // actions for mono images
-   if ( dsys( image) options. aptDeviceBitmap) {
-      if ((( PDeviceBitmap) image)-> type == dbtBitmap) {
-         STYLUS_USE_TEXT( sys ps);
-         STYLUS_USE_BRUSH( sys ps);
-	 if (
-	       ( is_apt( aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap ) ||
-	       ( is_apt( aptImage) && PImage(self)-> type == imBW )
-	    )
-            rop = rop_reduce(GetTextColor( sys ps), GetBkColor( sys ps), rop);
-      }
-   } else
-      dcmono = i-> options. optInDraw ?  ( dsys( image) bpp == 1) : (( i-> type & imBPP) == 1);
+   return true;
+}
 
-   if ( dcmono) {
-      PRGBColor pal = i-> palette;
+static Bool
+img_put_and_mask( HDC dst, Handle image, PutImageRequest * req)
+{
+   XBITMAPINFO * bi = image_alpha_bitmap_header(PIcon(image)->maskType);
+
+   bi-> bmiHeader. biWidth  = ((PImage)image)-> w;
+   bi-> bmiHeader. biHeight = ((PImage)image)-> h;
+   
+   if ( StretchDIBits( dst,
+         req-> dst_x, req-> dst_y, req-> dst_w, req-> dst_h,
+         req-> src_x, req-> src_y, req-> src_w, req-> src_h,
+         PIcon(image)->mask, (BITMAPINFO*) bi, DIB_RGB_COLORS, SRCAND
+      ) == GDI_ERROR) {
+      apiErr;
+      return false;
+   }
+   return true;
+}
+
+static Bool
+img_put_image_on_bitmap_or_pixmap( Handle self, Handle image, PutImageRequest * req, int bm_type)
+{
+   Bool ok;
+   HDC src;
+   HPALETTE pal_src, pal_src_save, pal_dst_save;
+   HBITMAP bm_src_save;
+   COLORREF oFore, oBack;
+   PImage i = (PImage) image;
+  
+   image_fill_bitmap_cache( image, bm_type, self );
+   if ( dsys( image) bm == NULL ) /* we're low on memory, reverting to StretchDIBits */
+      return img_put_stretch_bits( sys ps, image, req);
+
+   /* create and prepare DC */
+   src = CreateCompatibleDC( sys ps);
+
+   if (( pal_src = dsys( image) pal) != NULL)
+      pal_src_save = SelectPalette( src, pal_src, 0);
+   else
+      pal_src_save = NULL;
+
+   bm_src_save = SelectObject( src, dsys( image) bm);
+   if ( pal_src) {
+      pal_dst_save = SelectPalette( sys ps, pal_src, 1);
+      RealizePalette( sys ps);
+   } else
+      pal_dst_save = NULL;
+
+   if ((bm_type == BM_PIXMAP) && (( i->type & imBPP) == 1)) {
       oFore  = GetTextColor( sys ps);
       oBack  = GetBkColor( sys ps);
-      SetTextColor( sys ps,
-         i-> palSize > 0
-         ? RGB( pal[0].r, pal[0].g, pal[0].b)
-         : RGB( 0, 0, 0));
-      SetBkColor( sys ps,
-         i-> palSize > 1
-         ? RGB( pal[1].r, pal[1].g, pal[1].b)
-         : RGB( 0xff, 0xff, 0xff));
+      SetTextColor( sys ps, 0x00000000);
+      SetBkColor  ( sys ps, 0x00FFFFFF);
    }
 
-   // if image is actually icon, drawing and-mask
-   if ( dsys( deja) options. aptIcon) {
-      if ( PIcon(deja)-> maskType == imbpp8 && (
-          sys bpp != 1 ||
-             // rgba must not be reduced to 1-bit AND mask on bpp1s that
-             // are explicitly non black-and-white
-	     ( kind_of( self, CImage ) && PImage(self)-> type == imbpp1 )
-	)) {
-         rgba_image = true;
-      } else {
-         XBITMAPINFO xbi = {
-            { sizeof( BITMAPINFOHEADER), 0, 0, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
-            { {0,0,0,0}, {255,255,255,0}}
-         };
-	 Byte * mask;
-         xbi. bmiHeader. biWidth = i-> w;
-         xbi. bmiHeader. biHeight = i-> h;
-
-         mask = ( i-> maskType == imbpp8 ) ?
-  	    CIcon(deja)-> convert_mask( deja, imbpp1) :
-	    i-> mask;
-
-         if ( StretchDIBits(
-            xdc, x, ly - y - yDestLen, xDestLen, yDestLen, xFrom, yFrom, xLen, yLen,
-            mask, ( BITMAPINFO*) &xbi, DIB_RGB_COLORS, SRCAND
-            ) == GDI_ERROR) {
-            ok = false;
-            apiErr;
-         }
-
-         if ( i-> maskType == imbpp8 ) free( mask );
-      } 
-      theRop = SRCINVERT;
-   } else if ( dsys (image) options. aptLayered ) {
-      rgba_pixmap = true;
-   } else {
-      theRop = ctx_remap_def( rop, ctx_rop2R4, true, SRCCOPY);
-   }
-
-   // saving bitmap and palette ( if available) to both dc and xdc.
-   p3 = dsys( image) pal;
-
-   if ( p3 && !db && dc) 
-      p1 = SelectPalette( dc, p3, 0);
-   else
-      p1 = nil;
-
-   if ( db)
-      b1 = nil;
-   else {
-      if ( dc)
-         b1 = SelectObject( dc, dsys( image) bm);
-      else
-         b1 = nil;
-   }
-
-   if ( p3) {
-      p2 = SelectPalette( xdc, p3, 1);
-      RealizePalette( xdc);
-   }
-
-   //
-   if ( rgba_image ) {
-       ok = put_rgba_icon(xdc, (PImage) deja, PIcon(deja)->mask, PIcon(deja)->maskLine,
-          x, ly - y - yDestLen, xDestLen, yDestLen, 
-          xFrom, yFrom, xLen, yLen, (rop == ropSrcOver) ? AC_SRC_OVER : 0);
-   } else if ( rgba_pixmap ) {
-       ok = put_alpha_blend(xdc, dc, (rop == ropSrcOver) ? AC_SRC_OVER : 0,
-          x, ly - y - yDestLen, xDestLen, yDestLen, 
-          xFrom, i->h - yFrom - yLen, xLen, yLen);
-   } else if ( dc) {
-      if ( !StretchBlt( xdc, x, ly - y - yDestLen, xDestLen, yDestLen, dc,
-            xFrom, i-> h - yFrom - yLen, xLen, yLen, theRop)) {
-	 ok = false;
-         apiErr;
-      }
-   } else {
-      XBITMAPINFO xbi;
-      BITMAPINFO * bi = image_get_binfo( deja, &xbi);
-      if ( bi-> bmiHeader. biClrUsed > 0)
-         bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = PImage(deja)-> palSize;
-      if ( StretchDIBits( xdc, x, ly - y - yDestLen, xDestLen, yDestLen,
-            xFrom, yFrom,
-            xLen, yLen, ((PImage) deja)-> data, bi,
-            DIB_RGB_COLORS, theRop) == GDI_ERROR) {
-         ok = false;
-         apiErr;
-      }
-   }
-
-   // restoring gdiobjects back
-   if ( p3) {
-      if ( p1) SelectPalette( dc,  p1, 1);
-   }
-   if ( p2) SelectPalette( xdc, p2, 1);
-   if ( b1) SelectObject( dc, b1);
-
-   if ( dcmono) {
+   /* draw */
+   ok = img_put_stretch_blt( sys ps, src, req );
+   
+   /* clean up */
+   if ((bm_type == BM_PIXMAP) && (( i->type & imBPP) == 1)) {
       SetTextColor( sys ps, oFore);
       SetBkColor( sys ps, oBack);
    }
 
-   if ( dc && tr. x != 0 && tr. y != 0) 
-      SetViewportOrgEx( dc, tr. x, tr. y, NULL);
-
-   if ( !db) {
-      if ( dc) DeleteDC( dc);
-      if ( deja != image) Object_destroy( deja);
+   if ( pal_src) {
+      if ( pal_src_save) SelectPalette( src, pal_src_save, 1);
    }
+   if ( pal_dst_save) SelectPalette( sys ps, pal_dst_save, 1);
+   if ( bm_src_save) SelectObject( src, bm_src_save);
+   DeleteDC( src);
 
    return ok;
-}}
+}
+
+static Bool
+img_put_alpha_blend( HDC dst, HDC src, PutImageRequest * req)
+{
+   Bool ok;
+   BLENDFUNCTION bf;
+   bf.BlendOp             = AC_SRC_OVER;
+   bf.BlendFlags          = 0;
+   bf.SourceConstantAlpha = 0xff;
+   bf.AlphaFormat         = AC_SRC_ALPHA;
+   ok = AlphaBlend(
+        dst, req-> dst_x, req-> dst_y, req-> dst_w, req-> dst_h,
+        src, req-> src_x, req-> src_y, req-> src_w, req-> src_h,
+	bf);
+
+   if (!ok) apiErr;
+   return ok;
+}
+
+/* on bitmap */
+static Bool
+img_put_bitmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+{
+   STYLUS_USE_TEXT( sys ps);
+   STYLUS_USE_BRUSH( sys ps);
+   if ( dsys( image) options. aptDeviceBitmap )
+      req-> rop = rop_reduce(GetTextColor( sys ps), GetBkColor( sys ps), req-> rop);
+   return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
+}
+
+static Bool
+img_put_pixmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+{
+   return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
+}
+
+static Bool
+img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+{
+   return img_put_image_on_bitmap_or_pixmap( self, image, req, BM_BITMAP);
+}
+
+static Bool
+img_put_argb_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+{
+   if ( !img_put_and_mask( sys ps, image, req))
+      return false;
+   req-> rop = (req->rop == ropSrcCopy) ? ropCopyPut : ropOrPut;
+   return img_put_image_on_bitmap( self, image, req );
+}
+
+static Bool
+img_put_layered_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+{
+   Bool ok;
+   Handle icon;
+   PIcon i;
+   uint32_t * argb_bits;
+   Byte * rgb_bits, *a_bits;
+   int y;
+   
+   icon = (Handle) create_object("Prima::Icon", "");
+   i = (PIcon) icon;
+
+   CIcon(icon)-> create_empty_icon( icon, req->src_w, req->src_h, imRGB, imbpp8);
+   for ( 
+      y = 0, 
+         rgb_bits = i->data,
+         a_bits   = i->mask,
+         argb_bits = dsys(image) s. image. argbBits + req->src_y * i-> w + req-> src_x;
+      y < req-> src_h;
+      y++,
+         rgb_bits  += i-> lineSize,
+         a_bits    += i-> maskLine,
+         argb_bits += i-> w
+   ) {
+      register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *argb_ptr = (Byte*) argb_bits;
+      register int x = req-> src_w;
+      for ( ; x > 0; x--) {
+          *rgb_ptr++ = *argb_ptr++;
+          *rgb_ptr++ = *argb_ptr++;
+          *rgb_ptr++ = *argb_ptr++;
+          *a_ptr++   = *argb_ptr++;
+      }
+   }
+   ok = img_put_argb_on_bitmap( self, icon, req);
+   Object_destroy( icon );
+   return ok;
+}
+
+/* on pixmap */
+static Bool
+img_put_monodc_on_pixmap( HDC dst, HDC src, PutImageRequest * req)
+{
+   Bool ok;
+   COLORREF oFore  = GetTextColor( dst);
+   COLORREF oBack  = GetBkColor( dst);
+   SetTextColor( dst, 0x00000000);
+   SetBkColor  ( dst, 0x00FFFFFF);
+   ok = img_put_stretch_blt_viewport( dst, src, req);
+   SetTextColor( dst, oFore);
+   SetBkColor  ( dst, oBack);
+   return ok;
+}
+
+static Bool
+img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+   if ( dsys( image) options. aptDeviceBitmap ) {
+      STYLUS_USE_TEXT( sys ps);
+      STYLUS_USE_BRUSH( sys ps);
+      return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
+   } else 
+      return img_put_monodc_on_pixmap( sys ps, dsys(image)ps, req);
+}
+
+static Bool
+img_put_pixmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+   if ( dsys( image ) options. aptImage && (( PImage(image)-> type & imBPP ) == 1))
+      return img_put_monodc_on_pixmap( sys ps, dsys(image)ps, req);
+   else
+      return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
+}
+
+static Bool
+img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+   return img_put_image_on_bitmap_or_pixmap( self, image, req, BM_PIXMAP);
+}
+
+static Bool
+img_put_argb_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+   Bool ok;
+   HDC src;
+   HBITMAP old;
+
+   if ( req-> rop == ropSrcCopy ) {
+      req-> rop == ropCopyPut;
+      return img_put_image_on_pixmap( self, image, req);
+   }
+
+   image_fill_bitmap_cache( image, BM_LAYERED, self );
+   if ( dsys(image) bm == NULL)
+      return false;
+
+   src = CreateCompatibleDC(sys ps);
+   old = SelectObject(src, dsys (image) bm);
+   ok = img_put_alpha_blend( sys ps, src, req);
+   SelectObject(src, old);
+   DeleteDC(src);
+
+   return ok;
+}
+
+static Bool
+img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+   if ( req-> rop == ropSrcCopy ) {
+      req-> rop == ropCopyPut;
+      return img_put_pixmap_on_pixmap( self, image, req);
+   } else
+      return img_put_alpha_blend( sys ps, dsys(image)ps, req);
+}
+
+/* layered */
+static Bool
+img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
+{
+   Bool ok;
+   HDC src;
+   HBITMAP old;
+
+   image_fill_bitmap_cache( image, BM_LAYERED, self );
+   if ( dsys(image) bm == NULL)
+      return false;
+
+   src = CreateCompatibleDC(sys ps);
+   old = SelectObject(src, dsys (image) bm);
+   if ( req-> rop == ropSrcCopy ) {
+      req-> rop == ropCopyPut;
+      ok = img_put_stretch_blt_viewport( sys ps, src, req);
+   } else
+      ok = img_put_alpha_blend( sys ps, src, req);
+   SelectObject(src, old);
+   DeleteDC(src);
+
+   return ok;
+}
+
+static Bool
+img_put_layered_on_layered( Handle self, Handle image, PutImageRequest * req)
+{
+   if ( req-> rop == ropSrcCopy ) {
+      req-> rop == ropCopyPut;
+      return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
+   } else
+      return img_put_alpha_blend( sys ps, dsys(image)ps, req);
+}
+
+
+PutImageFunc (*img_put_on_bitmap[SRC_NUM]) = {
+   img_put_bitmap_on_bitmap,
+   img_put_pixmap_on_bitmap,
+   img_put_layered_on_bitmap,
+   img_put_image_on_bitmap,
+   img_put_argb_on_bitmap,
+};
+
+PutImageFunc (*img_put_on_pixmap[SRC_NUM]) = {
+   img_put_bitmap_on_pixmap,
+   img_put_pixmap_on_pixmap,
+   img_put_layered_on_pixmap,
+   img_put_image_on_pixmap,
+   img_put_argb_on_pixmap,
+};
+
+PutImageFunc (*img_put_on_layered[SRC_NUM]) = {
+   img_put_bitmap_on_pixmap,
+   img_put_pixmap_on_pixmap,
+   img_put_layered_on_layered,
+   img_put_image_on_pixmap,
+   img_put_argb_on_layered,
+};
+
+//PutImageFunc (*img_put_on_paletted_buffer[SRC_NUM]) = {
+//   img_put_bitmap_on_bitmap
+//};
+
+Bool
+apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
+{
+   PIcon img = (PIcon) image;
+   PutImageRequest req;
+   PutImageFunc ** dst = NULL;
+   int src = -1;
+   Bool ok, and_mask = false;
+
+   objCheck false;
+   dobjCheck(image) false;
+
+   if ( xLen <= 0 || yLen <= 0) return false;
+ 
+   /*
+   There is a big uncertainity about 8-bit BitBlt's, based on fact that
+   memory DCs aren't really compatible with screen DCs, - correct results
+   could be guaranteed only when you Blt source DC = CreateCompatibleDC( dest DC),
+   not when source = CCDC( thirdDC), dest = CCDC( thirdDC), 
+   or just SetDIBits; - latter is slow and memory-greedy - but surely can be trusted.
+   */
+   //if ( !is_apt( aptCompatiblePS)) {
+   //if (
+   //    ( dsys( image) options. aptDeviceBitmap || img-> options. optInDraw) &&
+   //    !is_apt( aptCompatiblePS) && is_apt( aptBitmap)
+   //) {
+   //   Bool ok;
+   //   Handle img = image_from_dc(image);
+   //   ok = apc_gp_stretch_image( self, img, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+   //   Object_destroy( img);
+   //   return ok;
+   //}
+
+
+   memset( &req, 0, sizeof(req));
+   req. src_x = xFrom;
+   req. src_y = img->h - yFrom - yLen;
+   req. src_w = xLen;
+   req. src_h = yLen;
+   req. dst_x = x;
+   req. dst_y = sys lastSize. y - y - yDestLen;
+   req. dst_w = xDestLen;
+   req. dst_h = yDestLen;
+   req. rop   = rop;
+
+   if ( dsys( image) options. aptDeviceBitmap ) {
+      PDeviceBitmap p = (PDeviceBitmap) image;
+      switch (p->type) {
+      case dbtBitmap:  src = SRC_BITMAP;  break;
+      case dbtPixmap:  src = SRC_PIXMAP;  break;
+      case dbtLayered: src = SRC_LAYERED; break;
+      }
+   } else if ( dsys( image) options. aptIcon ) {
+      Bool src_mono = img-> type == imBW;
+      if ( img-> maskType == imbpp1 ) {
+         if ( img-> options. optInDraw )
+            src = src_mono ? SRC_BITMAP : SRC_PIXMAP;
+         else
+            src = SRC_IMAGE;
+	 and_mask = true;
+      } else if ( img-> maskType == imbpp8 ) {
+         if ( img-> options. optInDraw ) {
+            src = SRC_LAYERED;
+         } else
+            src = SRC_ARGB;
+      }
+   } else if ( dsys( image) options. aptImage ) {
+      Bool src_mono = img-> type == imBW;
+      if ( img-> options. optInDraw )
+         src = src_mono ? SRC_BITMAP : SRC_PIXMAP;
+      else
+         src = SRC_IMAGE;
+   }
+   if ( src < 0 ) {
+      warn("cannot guess image type");
+      return false;
+   }
+
+   if ( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap ||
+        is_apt(aptImage)        && ((PImage)self)-> type == imBW )
+        dst = img_put_on_bitmap;
+   else if ( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtPixmap ||
+        is_apt(aptImage)        && ((PImage)self)-> type != imBW )
+        dst = img_put_on_pixmap;
+   else if ( is_apt(aptLayered)) 
+        dst = img_put_on_layered;
+//   else if ( !is_apt(aptCompatiblePS) && is_apt(aptBitmap) ) 
+//        dst = img_put_on_paletted_buffer;
+   else
+        dst = img_put_on_pixmap;
+   
+   if ( dst[src] == NULL ) {
+   	warn("not implemented");
+	return false;
+   }
+
+   if ( and_mask ) {
+      if ( !img_put_and_mask(sys ps, image, &req))
+         return false;
+      req. rop = ropXorPut;
+   }
+
+   return (*dst[src])(self, image, &req);
+}
 
 Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8 )

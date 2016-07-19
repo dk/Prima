@@ -2,6 +2,7 @@
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
+#include "img_conv.h"
 #include "guts.h"
 #include "Window.h"
 #include "Icon.h"
@@ -19,22 +20,448 @@ extern "C" {
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
+BITMAPINFO *
+image_fill_bitmap_info( Handle self, XBITMAPINFO * bi, int bm_type)
+{
+   int    i;
+   PImage image = ( PImage) self;
+   int    colors, depth;
+
+   switch (bm_type) {
+   case BM_BITMAP:
+      depth   = 1;
+      colors  = 2;
+      break;
+   case BM_PIXMAP:
+      depth   = image-> type & imBPP;
+      colors  = (1 << depth) & 0x1ff;
+      break;
+   case BM_LAYERED:
+      colors  = 0;
+      depth   = 32;
+      break;
+   default:
+      warn("panic: bad use of image_fill_bitmap_info(%d)", bm_type);
+      return NULL;
+   }
+
+   if ( image-> type & ( imSignedInt | imRealNumber | imComplexNumber | imTrigComplexNumber)) {
+      warn("panic: image_fill_bitmap_info called on incompatible image");
+      return NULL;
+   }
+
+   if ( colors > image-> palSize) colors = image-> palSize;
+   memset( bi, 0, sizeof( BITMAPINFOHEADER) + colors * sizeof( RGBQUAD));
+   bi-> bmiHeader. biSize          = sizeof( BITMAPINFOHEADER);
+   bi-> bmiHeader. biWidth         = image-> w;
+   bi-> bmiHeader. biHeight        = image-> h;
+   bi-> bmiHeader. biPlanes        = 1;
+   bi-> bmiHeader. biBitCount      = depth;
+   bi-> bmiHeader. biCompression   = BI_RGB;
+   bi-> bmiHeader. biClrUsed       = colors;
+   bi-> bmiHeader. biClrImportant  = colors;
+
+   for ( i = 0; i < colors; i++) {
+      bi-> bmiColors[ i]. rgbRed    = image-> palette[ i]. r;
+      bi-> bmiColors[ i]. rgbGreen  = image-> palette[ i]. g;
+      bi-> bmiColors[ i]. rgbBlue   = image-> palette[ i]. b;
+   }
+
+   return ( BITMAPINFO *) bi;
+}
+
+HPALETTE
+image_create_palette( Handle self)
+{
+   PDrawable i    = ( PDrawable) self;
+   int j, nColors = i-> palSize;
+   XLOGPALETTE lp;
+   HPALETTE r;
+   RGBColor  dest[ 256];
+   PRGBColor logp = i-> palette;
+
+   lp. palVersion = 0x300;
+   lp. palNumEntries = nColors;
+
+   if ( nColors == 0) return NULL;
+   if ( is_apt(aptImage) && PImage(self)->type == imRGB) return NULL;
+
+   if ( !sys p256) {
+      if ( nColors > 256) {
+         sys p256 = ( PXLOGPALETTE) malloc( sizeof( XLOGPALETTE));
+         cm_squeeze_palette( i-> palette, nColors, dest, 256);
+         nColors = lp. palNumEntries = 256;
+         logp = dest;
+      }
+
+      for ( j = 0; j < nColors; j++) {
+         lp. palPalEntry[ j]. peRed    = logp[ j]. r;
+         lp. palPalEntry[ j]. peGreen  = logp[ j]. g;
+         lp. palPalEntry[ j]. peBlue   = logp[ j]. b;
+         lp. palPalEntry[ j]. peFlags  = 0;
+      }
+
+      if ( sys p256)
+         memcpy( sys p256, &lp, sizeof( XLOGPALETTE));
+      if ( !( r = CreatePalette(( LOGPALETTE*) &lp))) apiErrRet;
+   } else {
+      if ( !( r = CreatePalette(( LOGPALETTE*) sys p256))) apiErrRet;
+   }
+   return r;
+}
+
+HBITMAP
+image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm_type)
+{
+   HBITMAP bm;
+   XBITMAPINFO xbi;
+   BITMAPINFO * bi;
+   HPALETTE old = nil, xpal = pal;
+   HDC dc;
+   PIcon i = (PIcon) self;
+  
+   if ( bitmapinfo == NULL)
+      bitmapinfo = &xbi;
+   bi  = image_fill_bitmap_info( self, bitmapinfo, bm_type);
+   if ( !bi)
+      return NULL;
+
+   dc = GetDC(NULL);
+
+   if ( bi-> bmiHeader. biClrUsed > 0)
+      bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = i-> palSize;
+
+   if ( xpal == nil)
+      xpal = image_create_palette( self);
+
+   if ( xpal) {
+      old = SelectPalette( dc, xpal, 1);
+      RealizePalette( dc);
+   }
+
+   switch (bm_type) {
+   case BM_BITMAP:
+      if ( i-> type != imBW ) 
+         warn("panic: image_create_bitmap(BM_BITMAP) called on not a imBW image");
+      bm = CreateBitmap( bi-> bmiHeader. biWidth, bi-> bmiHeader. biHeight, 1, 1, NULL);
+      if (bm)
+         SetDIBits( dc, bm, 0, bi-> bmiHeader. biHeight, i-> data, bi, DIB_RGB_COLORS);
+      break;
+   case BM_PIXMAP:
+      bm = CreateCompatibleBitmap( dc, i->w, i->h);
+      if (bm)
+         SetDIBits( dc, bm, 0, bi-> bmiHeader. biHeight, i-> data, bi, DIB_RGB_COLORS);
+      break;
+   default:
+      warn("panic: bad use of image_create_bitmap(%d)", bm_type);
+      return NULL;
+   }
+
+   if ( !bm)
+      apiErr;
+
+   if ( old) {
+      SelectPalette( dc, old, 1);
+      RealizePalette( dc);
+   }
+
+   if ( xpal != pal)
+      DeleteObject( xpal);
+
+   ReleaseDC( NULL, dc);
+
+   return bm;
+}
+
+HBITMAP
+image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr )
+{
+   HBITMAP bm;
+   XBITMAPINFO xbi;
+   BITMAPINFO * bi;
+   HDC dc, compat_dc;
+   PIcon i = (PIcon) self;
+   uint32_t * argb_bits;
+   Byte * rgb_bits, *a_bits, *mask;
+   int y, maskLineSize, free_mask;
+
+   if ( !is_apt(aptIcon) || i-> type != imRGB ) {
+      warn("panic: image_create_argb_bitmap called on a non-imRGB icon");
+      return NULL;
+   }
+
+   if ( argb_bits_ptr == NULL )
+      argb_bits_ptr = &argb_bits;
+
+   bm = NULL;
+   
+   bi  = image_fill_bitmap_info( self, &xbi, BM_LAYERED);
+   if ( !bi)
+      return NULL;
+
+   if ( i-> maskType != imbpp8 ) {
+      free_mask    = true; 
+      maskLineSize = LINE_SIZE(i->w, imbpp8);
+      mask         = i->self->convert_mask( self, imbpp8 );
+      if ( !mask ) 
+         return NULL;
+   } else {
+      free_mask    = false;
+      mask         = i-> mask;
+      maskLineSize = i-> maskLine;
+   }
+
+   dc = GetDC(NULL);
+   compat_dc = CreateCompatibleDC(dc);
+
+   bi-> bmiHeader. biBitCount = 32;
+   bi-> bmiHeader. biSizeImage = bi->bmiHeader.biWidth * bi->bmiHeader. biHeight * 4;
+   bm = CreateDIBSection(compat_dc, bi, DIB_RGB_COLORS, 
+           (LPVOID*) argb_bits_ptr, NULL, 0x0);
+   if (!bm) {
+      apiErr;
+      goto EXIT;
+   }
+   for ( 
+      y = 0, 
+         rgb_bits  = i->data,
+         a_bits    = mask,
+         argb_bits = *argb_bits_ptr;
+      y < i->h;
+      y++,
+         rgb_bits  += i-> lineSize,
+         a_bits    += maskLineSize,
+         argb_bits += i-> w
+   ) {
+      register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *argb_ptr = (Byte*) argb_bits;
+      register int x = i->w;
+      for ( ; x > 0; x--) {
+         *argb_ptr++ = *rgb_ptr++;
+         *argb_ptr++ = *rgb_ptr++;
+         *argb_ptr++ = *rgb_ptr++;
+         *argb_ptr++ = *a_ptr++;
+      }
+   }
+
+EXIT:
+   if ( free_mask ) free(mask);
+   DeleteDC( compat_dc);
+   ReleaseDC( NULL, dc);
+   return bm;
+}
+
+static XBITMAPINFO a1_info_header = {
+   { sizeof( BITMAPINFOHEADER), 0, 0, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
+   { {0,0,0,0}, {255,255,255,0}}
+};
+
+static XBITMAPINFO a8_info_header = {
+   { sizeof( BITMAPINFOHEADER), 0, 0, 1, 8, BI_RGB, 0, 0, 0, 256, 256},
+   { {255,255,255,0}, {0,0,0,0}}
+};
+
+static a_info_headers_initialized = false;
+
+XBITMAPINFO * 
+image_alpha_bitmap_header( int type )
+{
+   if ( !a_info_headers_initialized ) {
+      a_info_headers_initialized = true;
+      memset( a8_info_header. bmiColors + 1, 0, 255 * sizeof(RGBQUAD));
+   }
+   return (( type == imbpp1 ) ? &a1_info_header : &a8_info_header);
+}
+
+/* convert from funky types */
+static Handle
+image_convert_for_gdi( Handle image )
+{
+   Handle dup;
+   PImage img = (PImage) image;
+
+   if ( !( img-> type & ( imSignedInt | imRealNumber | imComplexNumber | imTrigComplexNumber)))
+      return nilHandle;
+
+   dup = CImage(image)->dup(image);
+   img = (PImage) dup;
+   img->self->resample(
+      dup,
+      img-> self->stats( dup, false, isRangeLo, 0),
+      img-> self->stats( dup, false, isRangeHi, 0),
+      0, 255
+   );
+   img->self->set_type( dup, imByte );
+   return dup;
+}
+
+/* create a copy with given type, unless it is of this type alredy */
+static Handle
+image_convert_to_type( Handle image, int type, Bool inplace )
+{
+   Handle dup;
+
+   if (((PImage)image)->type == type)
+      return nilHandle;
+
+   dup = inplace ? image : CImage(image)->dup(image);
+   CImage(dup)->set_type(dup, type);
+
+   return dup;   
+}
+
+#define image_convert_for_bitmap(image,inplace) image_convert_to_type(image,imBW,inplace)
+#define image_convert_for_rgb(image,inplace)    image_convert_to_type(image,imRGB,inplace)
+
+static Handle
+image_convert_rgb_for_screen( Handle image, Bool inplace )
+{
+   int bpp;
+   PImage img = (PImage) image;
+
+   if ( img-> type != imRGB)
+      return nilHandle;
+
+   /* use Prima downsampling methods from RGB to 8,4,1 */
+   bpp = guts. displayBMInfo. bmiHeader. biBitCount *
+         guts. displayBMInfo. bmiHeader. biPlanes;
+   if ( bpp == 0 || bpp > 8)
+      return nilHandle;
+   if ( bpp < 4) bpp = 1;
+   else if ( bpp < 8) bpp = 4;
+   return image_convert_to_type( image, bpp, inplace );
+}
+
+static Handle
+image_convert_rgb_for_paletted( Handle image, Handle screen, Bool inplace )
+{
+   int bpp;
+   PImage img = (PImage) image;
+
+   if ( img-> type != imRGB)
+      return nilHandle;
+
+   if ( dsys( screen) bpp == 0) {
+      if ( !dsys(screen) ps)
+         return image_convert_for_bitmap( image, inplace );
+      dsys( screen) bpp = GetDeviceCaps( dsys(screen) ps, BITSPIXEL);
+   }
+
+   if ( dsys( screen) bpp > 8)
+      return nilHandle;
+
+   bpp = dsys( screen) bpp;
+   if ( bpp < 4) bpp = 1;
+   else if ( bpp < 8) bpp = 4;
+   return image_convert_to_type( image, bpp, inplace );
+}
+
+void
+image_fill_bitmap_cache( Handle self, int bm_type, Handle optimize_for_surface)
+{
+   Handle copy;
+
+   if ( bm_type == BM_AUTO ) {
+      if ( is_apt( aptIcon ) && PIcon(self)-> maskType == imbpp8 )
+         bm_type = BM_LAYERED;
+      else if ( PImage( self)-> type == imBW)
+         bm_type = BM_BITMAP;
+      else
+         bm_type = BM_PIXMAP;
+   }
+   if ( bm_type == sys s. image. cache. cacheType )
+      return;
+
+   /* free old stuff */
+   image_destroy_cache( self ); 
+   sys s. image. cache. cacheType = BM_NONE;
+
+   /* create new image, if any */
+   copy = image_convert_for_gdi( self );
+   if ( copy == nilHandle ) 
+      copy = self;
+
+   switch (bm_type) {
+   case BM_BITMAP:
+      copy = image_convert_for_bitmap( copy, copy != self);
+      break;
+   case BM_PIXMAP:
+      if (((PImage)copy)-> type == imRGB) {
+         if (!optimize_for_surface)
+            copy = image_convert_rgb_for_screen( copy, copy != self );
+         else if ( dsys(optimize_for_surface) options. aptPrinter ) {
+            /* do nothing, let printer driver do the downsampling */
+         } else if ( ! dsys(optimize_for_surface)options.aptCompatiblePS && dsys(optimize_for_surface)ps)
+            copy = image_convert_rgb_for_paletted( copy, optimize_for_surface, copy != self );
+         else
+            copy = image_convert_rgb_for_screen( copy, copy != self );
+      }
+      break;
+   case BM_LAYERED:
+      copy = image_convert_for_rgb( copy, copy != self);
+      break;
+   default:
+      warn("panic: bad use of image_fill_bitmap_cache(%d)", bm_type);
+      if ( copy != self )
+        Object_destroy(copy);
+      return;
+   }
+   if ( copy == nilHandle ) 
+      copy = self;
+
+   /* try to create HBITMAP */
+   switch (bm_type) {
+   case BM_LAYERED:
+      sys bm = image_create_argb_bitmap( copy, &sys s. image. argbBits );
+      if ( !sys bm) {
+         warn("panic: couldn't create argb bitmap");
+         if ( copy != self )
+            Object_destroy(copy);
+	 return;
+      }
+      break;
+   default:
+      sys pal = image_create_palette( copy);
+      sys bm  = image_create_bitmap( copy, sys pal, &sys s. image. cache. rawHeader, bm_type );
+      if ( sys bm ) {
+         hash_store( imageMan, &self, sizeof(self), (void*)self);
+      } else {
+         PImage i = (PImage) copy;
+         sys s. image. cache. rawBits = i->data;
+         if ( copy != self ) {
+            i-> data = malloc(1); /* dirty, dirty hack */
+            sys s. image. cache. freeBits = true;
+         }
+      }
+   }
+   if ( copy != self )
+      Object_destroy(copy);
+
+   sys s. image. cache. cacheType = bm_type;
+}
+
 Bool image_screenable( Handle image, Handle screen, int * bitCount)
 {
    PImage i = ( PImage) image;
-   if (( i-> type & ( imRealNumber | imComplexNumber | imTrigComplexNumber)) ||
-       ( i-> type == imLong || i-> type == imShort)) {
+   if ( i-> type & ( imSignedInt | imRealNumber | imComplexNumber | imTrigComplexNumber)) {
       if ( bitCount) *bitCount = 8;
       return false;
    }
 
    if ( dsys(image) options. aptIcon && PIcon(image)->maskType == imbpp8) {
-      if (bitCount) *bitCount = 32;
-      return i->type == imRGB;
+      Bool mono_screen = screen ?
+	       ( dsys( screen) options. aptDeviceBitmap && ((PDeviceBitmap)screen)->type == dbtBitmap ) ||
+	       ( dsys( screen) options. aptImage        && PImage(screen)-> type == imBW ) :
+	       false;
+      if ( mono_screen) {
+         if (bitCount) *bitCount = 1;
+         return i->type == imBW && PIcon(i)-> maskType == imbpp1;
+      } else {
+         if (bitCount) *bitCount = 32;
+         return i->type == imRGB;
+      }
    }
 
    if ( i-> type == imRGB) {
-
       if ( !screen)
          return true;
 
@@ -72,7 +499,6 @@ Bool image_screenable( Handle image, Handle screen, int * bitCount)
    return true;
 }
 
-
 Handle image_enscreen( Handle image, Handle screen)
 {
    PImage i = ( PImage) image;
@@ -80,8 +506,12 @@ Handle image_enscreen( Handle image, Handle screen)
    if ( !image_screenable( image, screen, &lower))
    {
       Handle j = i-> self-> dup( image);
+
       if ( lower == 32 ) {
          ((( PImage) j)-> self)->set_type( j, imRGB);
+      } else if ( dsys(image) options. aptIcon && lower == 1 ) {
+         ((( PIcon) j)-> self)->set_type( j, imBW);
+         ((( PIcon) j)-> self)->set_maskType( j, imbpp1);
       } else if ( i-> type == imRGB) {
          ((( PImage) j)-> self)->set_type( j, lower);
       } else {
@@ -178,63 +608,62 @@ bm_put_zs( HBITMAP hbm, int x, int y, int z)
 */
 
 static void
-rgba_copy_bits( Handle self)
+argb_copy_bits( Handle self)
 {
     PIcon i = (PIcon) self;
-    uint32_t * rgba_bits;
+    uint32_t * argb_bits;
     Byte * rgb_bits, *a_bits;
     int y;
     for ( 
        y = 0, 
           rgb_bits = i->data,
           a_bits   = i->mask,
-          rgba_bits = sys s. image. rgbaBits;
+          argb_bits = sys s. image. argbBits;
        y < i->h;
        y++,
           rgb_bits  += i-> lineSize,
           a_bits    += i-> maskLine,
-	  rgba_bits += i-> w
+	  argb_bits += i-> w
     ) {
-       register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *rgba_ptr = (Byte*) rgba_bits;
+       register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *argb_ptr = (Byte*) argb_bits;
        register int x = i->w;
        for ( ; x > 0; x--) {
-          *rgba_ptr++ = *rgb_ptr++;
-          *rgba_ptr++ = *rgb_ptr++;
-          *rgba_ptr++ = *rgb_ptr++;
-          *rgba_ptr++ = *a_ptr++;
+          *argb_ptr++ = *rgb_ptr++;
+          *argb_ptr++ = *rgb_ptr++;
+          *argb_ptr++ = *rgb_ptr++;
+          *argb_ptr++ = *a_ptr++;
        }
     }
 }
 
 static void
-rgba_query_bits( Handle self)
+argb_query_bits( Handle self)
 {
     PIcon i = (PIcon) self;
-    uint32_t * rgba_bits;
+    uint32_t * argb_bits;
     Byte * rgb_bits, *a_bits;
     int y;
     for ( 
        y = 0, 
           rgb_bits = i->data,
           a_bits   = i->mask,
-          rgba_bits = sys s. image. rgbaBits;
+          argb_bits = sys s. image. argbBits;
        y < i->h;
        y++,
           rgb_bits  += i-> lineSize,
           a_bits    += i-> maskLine,
-	  rgba_bits += i-> w
+	  argb_bits += i-> w
     ) {
-       register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *rgba_ptr = (Byte*) rgba_bits;
+       register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *argb_ptr = (Byte*) argb_bits;
        register int x = i->w;
        for ( ; x > 0; x--) {
-           *rgb_ptr++ = *rgba_ptr++;
-           *rgb_ptr++ = *rgba_ptr++;
-           *rgb_ptr++ = *rgba_ptr++;
-           *a_ptr++   = *rgba_ptr++;
+           *rgb_ptr++ = *argb_ptr++;
+           *rgb_ptr++ = *argb_ptr++;
+           *rgb_ptr++ = *argb_ptr++;
+           *a_ptr++   = *argb_ptr++;
        }
     }
 }
-
 
 HBITMAP
 image_make_bitmap_handle( Handle img, HPALETTE pal)
@@ -259,7 +688,6 @@ image_make_bitmap_handle( Handle img, HPALETTE pal)
       old = SelectPalette( dc, xpal, 1);
       RealizePalette( dc);        
    }
-
    if ((( PImage) img)-> type == imBW) {
       bm = CreateBitmap( bi-> bmiHeader. biWidth, bi-> bmiHeader. biHeight, 1, 1, NULL);
       SetDIBits( dc, bm, 0, bi-> bmiHeader. biHeight, (( PImage) img)-> data, bi, DIB_RGB_COLORS);
@@ -268,8 +696,8 @@ image_make_bitmap_handle( Handle img, HPALETTE pal)
       bi-> bmiHeader. biBitCount      = 32;
       bi->bmiHeader.biSizeImage = bi->bmiHeader.biWidth * bi->bmiHeader. biHeight * 4;
       bm = CreateDIBSection(dc, bi, DIB_RGB_COLORS, 
-              (LPVOID*) &dsys(img) s. image. rgbaBits, NULL, 0x0);
-      rgba_copy_bits( img );
+              (LPVOID*) &dsys(img) s. image. argbBits, NULL, 0x0);
+      argb_copy_bits( img );
    } else {
       bm = CreateDIBitmap( dc, &bi-> bmiHeader, CBM_INIT,
         (( PImage) img)-> data, bi, DIB_RGB_COLORS);
@@ -359,16 +787,23 @@ image_destroy_cache( Handle self)
    if ( sys bm) {
       if ( !DeleteObject( sys bm)) apiErr;
       hash_delete( imageMan, &self, sizeof( self), false);
-      sys bm = nil;
+      sys bm = NULL;
+      sys s. image. cache. bitmap = NULL;
    }
    if ( sys pal) {
       if ( !DeleteObject( sys pal)) apiErr;
-      sys pal = nil;
+      sys pal = NULL;
    }
    if ( sys s. image. imgCachedRegion) {
       if ( !DeleteObject( sys s. image. imgCachedRegion)) apiErr;
-      sys s. image. imgCachedRegion = nil;
+      sys s. image. imgCachedRegion = NULL;
    }
+   if ( sys s. image. cache. freeBits)
+      free( sys s. image. cache. rawBits);
+   sys s. image. cache. rawBits = NULL;
+   sys s. image. cache. freeBits = false;
+   sys s. image. argbBits = NULL;
+   sys s. image. cache. cacheType = BM_NONE;
 }
 
 void
@@ -461,28 +896,22 @@ apc_image_begin_paint( Handle self)
 {
    apcErrClear;
    objCheck false;
-   if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
-   if ( sys bm == nil) {
-      Handle deja  = image_enscreen( self, self);
-      if ( !image_set_cache( deja, self)) {
-         DeleteDC( sys ps);
-         sys ps = nil;
-         return false;
-      }
-      if ( deja != self) Object_destroy( deja);
+   image_fill_bitmap_cache( self, BM_AUTO, nilHandle);
+   if ( sys bm == NULL ) {
+      image_destroy_cache( self );
+      return false;
    }
+   if ( !( sys ps = CreateCompatibleDC( 0))) apiErrRet;
    sys stockBM = SelectObject( sys ps, sys bm);
-   if ( !sys pal)
-      sys pal = image_make_bitmap_palette( self);
    hwnd_enter_paint( self);
 
    apt_clear( aptLayered );
-   if ( PImage( self)-> type == imBW)
-      sys bpp = 1;
-   else if ( is_apt( aptIcon ) && PIcon(self)-> maskType == imbpp8 ) {
+   if ( is_apt( aptIcon ) && PIcon(self)-> maskType == imbpp8 ) {
       sys bpp = 32;
       apt_set( aptLayered );
    }
+   else if ( PImage( self)-> type == imBW)
+      sys bpp = 1;
    if ( sys pal) {
       SelectPalette( sys ps, sys pal, 0);
       RealizePalette( sys ps);
@@ -499,7 +928,12 @@ apc_image_begin_paint_info( Handle self)
    if ( !sys pal) sys pal = image_make_bitmap_palette( self);
    if ( sys pal) SelectPalette( sys ps, sys pal, 0);
    hwnd_enter_paint( self);
-   if ( PImage( self)-> type == imBW) sys bpp = 1;
+   if ( PImage( self)-> type == imBW)
+      sys bpp = 1;
+   else if ( is_apt( aptIcon ) && PIcon(self)-> maskType == imbpp8 ) {
+      sys bpp = 32;
+      apt_set( aptLayered );
+   }
    return true;
 }
 
@@ -510,7 +944,7 @@ apc_image_end_paint( Handle self)
    objCheck false;
 
    if ( is_apt( aptLayered))
-      rgba_query_bits( self);
+      argb_query_bits( self);
    else
       image_query_bits( self, false);
    hwnd_leave_paint( self);
@@ -549,7 +983,6 @@ apc_dbm_create( Handle self, int type)
 {
    HDC dc;
    BITMAPINFO bmi;
-   uint32_t rgba_bits;
 
    Bool palc = 0;
 
@@ -596,7 +1029,7 @@ apc_dbm_create( Handle self, int type)
       bmi.bmiHeader.biBitCount    = 32;
       bmi.bmiHeader.biCompression = BI_RGB;
       bmi.bmiHeader.biSizeImage   = var w * var h * 4;
-      sys bm = CreateDIBSection(dc, &bmi, DIB_RGB_COLORS, (LPVOID*)&rgba_bits, NULL, 0x0);
+      sys bm = CreateDIBSection(dc, &bmi, DIB_RGB_COLORS, (LPVOID*)&sys s. image. argbBits, NULL, 0x0);
       break;
    }
 
@@ -782,8 +1215,7 @@ apc_prn_get_handle( Handle self)
 Bool
 apc_prn_create( Handle self) {
    objCheck false;
-//   sys lastSize. x = var w;
-//   sys lastSize. y = var h;
+   apt_set(aptPrinter); 
    return true;
 }
 

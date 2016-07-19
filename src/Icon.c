@@ -669,7 +669,7 @@ Icon_bitmap( Handle self)
    h = Object_create( "Prima::DeviceBitmap", profile);
    sv_free(( SV *) profile);
    s = CDrawable( h)-> get_size( h);
-   CDrawable( h)-> put_image_indirect( h, self, 0, 0, 0, 0, s.x, s.y, s.x, s.y, ropCopyPut);
+   CDrawable( h)-> put_image_indirect( h, self, 0, 0, 0, 0, s.x, s.y, s.x, s.y, ropSrcCopy);
    --SvREFCNT( SvRV( PDrawable( h)-> mate));
 
    return h;

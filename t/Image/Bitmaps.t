@@ -5,7 +5,7 @@ use Test::More;
 use Prima::Test;
 use Prima qw(Application);
 
-plan tests => 886;
+plan tests => 1826;
 
 my ($src, $mask, $dst);
 my $can_argb = $::application->get_system_value(sv::LayeredWidgets);
@@ -29,15 +29,9 @@ sub bitop
 	is($pix, $clr, "$descr ($s & $m ^ $d == $res)");
 }
 
-sub test_mask
+sub fill_dst
 {
-#  ....   .*.*   ..**   ..**
-#  **** & .*.* ^ ..** = .**.
-#
-#  this doesn't work with RGBA blending because XOR can do inversions, while alpha channel cannot
-#
-	my $descr = shift;
-
+	my $dst = shift;
 	$dst->rop(rop::CopyPut);
 	$dst->pixel(0,0,cl::Black);
 	$dst->pixel(1,0,cl::Black);
@@ -47,7 +41,17 @@ sub test_mask
 	$dst->pixel(1,1,cl::White);
 	$dst->pixel(2,1,cl::White);
 	$dst->pixel(3,1,cl::White);
-	$dst->rop(rop::OrPut); # check that rop doesn't affect icon put
+}
+
+sub test_mask
+{
+#  ....   .*.*   ..**   ..**
+#  **** & .*.* ^ ..** = .**.
+#
+#  this doesn't work with RGBA blending because XOR can do inversions, while alpha channel cannot
+#
+	my $descr = shift;
+
 	
 	$mask->pixel(0,0,cl::Black);
 	$mask->pixel(1,0,cl::White);
@@ -60,6 +64,8 @@ sub test_mask
 	$src->pixel(1,0,cl::Black);
 	$src->pixel(2,0,cl::White);
 	$src->pixel(3,0,cl::White);
+	
+	fill_dst($dst);
 
 	my $icon = Prima::Icon->new;
 	$icon->combine($src,$mask);
@@ -78,6 +84,8 @@ sub test_mask
 	bitop( $dst->pixel(1,1), $descr, 0,1,1);
 	bitop( $dst->pixel(2,1), $descr, 1,0,1);
 	bitop( $dst->pixel(3,1), $descr, 1,1,1);
+	
+	# test 2: test a8 source in paint
 }
 
 sub test_dst
@@ -121,11 +129,20 @@ sub test_dst
 
 	$src->begin_paint;
 	test_src( "im::BW/paint on $target");
+
+	$dst->set(color => cl::White, backColor => cl::Black);
+	test_src( "inverse im::BW/paint on $target");
+	$dst->set(color => cl::Black, backColor => cl::Black);
+	test_src( "clear im::BW/paint on $target");
+	$dst->set(color => cl::White, backColor => cl::White);
+	test_src( "set im::BW/paint on $target");
 	$src->end_paint;
 
 	$src->type(im::bpp1);
+	$src->colormap(cl::Black, cl::White);
+	test_src( "im::bpp1/BW on $target");
 	$src->colormap(cl::White, cl::Black);
-	test_src( "im::bpp1 on $target");
+	test_src( "im::bpp1/WB on $target");
 
 	$src->colormap(cl::White, cl::Black);
 	$src->begin_paint;
@@ -164,17 +181,15 @@ sub test_dst
 		test_mask( "$bit-bit xor mask / 1-bit and mask on $target");
 	}
 
-	my $tester = $opt{blend_tester} // \&test_blend;
-
 	$mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
 	$src = Prima::Image->create( width => 4, height => 1, type => im::BW);
-	$tester->( "1-bit grayscale image / 8-bit alpha on $target");
+	test_blend( "1-bit grayscale image / 8-bit alpha on $target");
 	$src = Prima::Image->create( width => 4, height => 1, type => im::bpp1);
-	$tester->( "1-bit image / 8-bit alpha on $target");
+	test_blend( "1-bit image / 8-bit alpha on $target");
 
 	for my $bit ( 4, 8, 24) {
 		$src = Prima::Image->create( width => 4, height => 1, type => $bit);
-		$tester->( "$bit-bit image / 8-bit alpha on $target");
+		test_blend( "$bit-bit image / 8-bit alpha on $target");
 	}
 }
 
@@ -192,43 +207,14 @@ sub blendop
 	}
 }
 
-sub test_blend
+sub test_blend_pixels
 {
-	return test_mask(@_) unless $can_argb;
-#  0011 + ALPHA(1010) = 0.1*
-# 
-#  0000      0.1* 0011 ( . - fully transparent )
-#  1111 OVER 0.1* 0111 ( * - transparent white )
-
-	my $descr = shift;
-
-	$dst->rop(rop::CopyPut);
-	$dst->pixel(0,0,cl::Black);
-	$dst->pixel(1,0,cl::Black);
-	$dst->pixel(2,0,cl::Black);
-	$dst->pixel(3,0,cl::Black);
-	$dst->pixel(0,1,cl::White);
-	$dst->pixel(1,1,cl::White);
-	$dst->pixel(2,1,cl::White);
-	$dst->pixel(3,1,cl::White);
-	$dst->rop(rop::OrPut); # check that rop doesn't affect icon put
-	
-	$mask->pixel(0,0,cl::Black);
-	$mask->pixel(1,0,cl::White);
-	$mask->pixel(2,0,cl::Black);
-	$mask->pixel(3,0,cl::White);
-
-	$src->pixel(0,0,cl::Black);
-	$src->pixel(1,0,cl::Black);
-	$src->pixel(2,0,cl::White);
-	$src->pixel(3,0,cl::White);
-
-	my $icon = Prima::Icon->new( autoMasking => am::None );
-	$icon->combine($src,$mask);
+	my ($icon, $descr) = @_;
 
 	my $ok = 1;
 	$ok &= $dst->put_image(0,0,$icon);
 	$ok &= $dst->put_image(0,1,$icon);
+
 	ok( $ok, "put $descr" );
 
 	blendop( $dst->pixel(0,0), $descr, 0,0,0);
@@ -242,6 +228,47 @@ sub test_blend
 	blendop( $dst->pixel(3,1), $descr, 1,1,1);
 }
 
+sub test_blend
+{
+SKIP: {
+    	skip "no argb capability", 9 * 3 unless $can_argb;
+#  0011 + ALPHA(1010) = 0.1*
+# 
+#  0000      0.1* 0011 ( . - fully transparent )
+#  1111 OVER 0.1* 0111 ( * - transparent white )
+
+	my $descr = shift;
+
+
+	$mask->pixel(0,0,cl::Black);
+	$mask->pixel(1,0,cl::White);
+	$mask->pixel(2,0,cl::Black);
+	$mask->pixel(3,0,cl::White);
+
+	$src->pixel(0,0,cl::Black);
+	$src->pixel(1,0,cl::Black);
+	$src->pixel(2,0,cl::White);
+	$src->pixel(3,0,cl::White);
+	$src->type(im::RGB);
+
+	my $icon = Prima::Icon->new( autoMasking => am::None );
+	$icon->combine($src,$mask);
+
+	fill_dst($dst);
+	$dst->rop(rop::SrcOver);
+	test_blend_pixels($icon, $descr);
+       
+	fill_dst($dst);
+	$dst->rop(rop::SrcOver);
+	$icon->begin_paint;
+	test_blend_pixels($icon, "$descr (in paint)");
+	$icon->end_paint;
+
+	fill_dst($dst);
+	$dst->rop(rop::SrcOver);
+	test_blend_pixels($icon->bitmap, "$descr (layered)");
+}}
+
 $dst = Prima::Image->create( width => 4, height => 2, type => im::RGB);
 $src  = Prima::Image->create( width => 4, height => 1, type => im::RGB);
 $mask = Prima::Image->create( width => 4, height => 1, type => im::BW);
@@ -250,14 +277,14 @@ test_mask( "reference implementation / 1bit mask");
 $mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
 test_mask( "reference implementation / 8bit mask");
 $dst = Prima::DeviceBitmap->create( width => 4, height => 2, type => dbt::Bitmap);
-test_dst("bitmap", blend_tester => \&test_mask ); # ARGB over 1-bit degrades to simple masking
+test_dst("bitmap");
 
 $dst = Prima::DeviceBitmap->create( width => 4, height => 2, type => dbt::Pixmap);
 test_dst("pixmap");
 
 $dst = Prima::Image->create( width => 4, height => 2, type => im::BW);
 $dst->begin_paint;
-test_dst("im::BW", blend_tester => \&test_mask); # ARGB over 1-bit degrades to simple masking
+test_dst("im::BW");
 $dst->end_paint;
 
 $dst = Prima::Image->create( width => 4, height => 2, type => im::bpp1);
@@ -295,4 +322,10 @@ SKIP: {
 
     $dst->bring_to_front;
     skip "cannot get widget to paint", 124 unless wait_flag;
+}
+
+SKIP: {
+    skip "no argb capability", 124 unless $can_argb;
+    $dst = Prima::DeviceBitmap->create( width => 4, height => 2, type => dbt::Layered);
+    test_dst("layered");
 }
