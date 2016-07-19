@@ -589,6 +589,7 @@ sub bidi_visualize
 
 		$new[ BLK_WIDTH] = 0;
 		walk( \@new, %subopt,
+			canvas   => $opt{canvas},
 			trace    => TRACE_REALIZE_FONTS | TRACE_UPDATE_MARK | TRACE_POSITION,
 			position => \@xy,
 			pointer  => \$ptr,
