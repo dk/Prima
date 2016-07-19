@@ -486,7 +486,6 @@ sub bidi_visualize
 	my @fonts_and_colors  = ( \@default_fc ); # this is the number #0, default char state
 	my @current_fc        = @default_fc;
 	my $current_state     = 0;
-	my $text_offset       = $b->[BLK_TEXT_OFFSET];
 	
 	my @char_states       = (-1) x length($visual); # not all chars are displayed
 	my $char_offset       = 0;
@@ -508,7 +507,6 @@ sub bidi_visualize
 		state => \@current_fc,
 		text => sub {
 			my ( $ofs, $len ) = @_;
-			$ofs += $text_offset;
 			for ( my $k = 0; $k < $len; $k++) {
 				$char_states[ $revmap->[ $ofs + $k ]] = $current_state;
 			}
