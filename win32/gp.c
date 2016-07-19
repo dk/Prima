@@ -1256,10 +1256,6 @@ PutImageFunc (*img_put_on_layered[SRC_NUM]) = {
    img_put_argb_on_layered,
 };
 
-//PutImageFunc (*img_put_on_paletted_buffer[SRC_NUM]) = {
-//   img_put_bitmap_on_bitmap
-//};
-
 Bool
 apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
@@ -1274,26 +1270,6 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 
    if ( xLen <= 0 || yLen <= 0) return false;
  
-   /*
-   There is a big uncertainity about 8-bit BitBlt's, based on fact that
-   memory DCs aren't really compatible with screen DCs, - correct results
-   could be guaranteed only when you Blt source DC = CreateCompatibleDC( dest DC),
-   not when source = CCDC( thirdDC), dest = CCDC( thirdDC), 
-   or just SetDIBits; - latter is slow and memory-greedy - but surely can be trusted.
-   */
-   //if ( !is_apt( aptCompatiblePS)) {
-   //if (
-   //    ( dsys( image) options. aptDeviceBitmap || img-> options. optInDraw) &&
-   //    !is_apt( aptCompatiblePS) && is_apt( aptBitmap)
-   //) {
-   //   Bool ok;
-   //   Handle img = image_from_dc(image);
-   //   ok = apc_gp_stretch_image( self, img, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
-   //   Object_destroy( img);
-   //   return ok;
-   //}
-
-
    memset( &req, 0, sizeof(req));
    req. src_x = xFrom;
    req. src_y = img->h - yFrom - yLen;
@@ -1314,7 +1290,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       }
    } else if ( dsys( image) options. aptIcon ) {
       Bool src_mono = img-> type == imBW;
-      if ( img-> maskType == imbpp1 ) {
+      if ( img-> maskType == imbpp1 || guts. displayBMInfo. bmiHeader. biBitCount <= 8) {
          if ( img-> options. optInDraw )
             src = src_mono ? SRC_BITMAP : SRC_PIXMAP;
          else
@@ -1346,8 +1322,6 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
         dst = img_put_on_pixmap;
    else if ( is_apt(aptLayered)) 
         dst = img_put_on_layered;
-//   else if ( !is_apt(aptCompatiblePS) && is_apt(aptBitmap) ) 
-//        dst = img_put_on_paletted_buffer;
    else
         dst = img_put_on_pixmap;
    

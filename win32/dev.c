@@ -996,6 +996,9 @@ apc_dbm_create( Handle self, int type)
    sys lastSize. x = var w;
    sys lastSize. y = var h;
 
+   if ( type == dbtLayered && guts. displayBMInfo. bmiHeader. biBitCount <= 8)
+      type = dbtPixmap;
+
    switch ( type ) {
    case dbtBitmap:
       dc = NULL;

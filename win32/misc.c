@@ -334,7 +334,7 @@ apc_sys_get_value( int sysValue)
        RegQueryValueEx( hKey, "CompositionPolicy", nil, &valType, ( LPBYTE)&dw, &valSize);
        RegCloseKey( hKey);
        return dw == 0;
-   case svLayeredWidgets: return 1;
+   case svLayeredWidgets: return guts. displayBMInfo. bmiHeader. biBitCount > 8;
    default:
       return -1;
    }

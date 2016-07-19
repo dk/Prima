@@ -1607,6 +1607,8 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
       return false;
 
    exstyle = 0;
+   if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8) layered = false;
+
    if ( layered ) exstyle |= WS_EX_LAYERED;
    if (( var handle != nilHandle) &&
          (( DHANDLE( owner) != sys owner)                 ||
