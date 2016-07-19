@@ -10,6 +10,8 @@ plan tests => 1826;
 my ($src, $mask, $dst);
 my $can_argb = $::application->get_system_value(sv::LayeredWidgets);
 
+my $win32 = $^O =~ /win32/i;
+
 sub test_src
 {
 	my $descr = shift;
@@ -196,7 +198,7 @@ sub test_dst
 sub blendop
 {
 	my ( $pix, $descr, $s, $m, $d ) = @_;
-	if ( $s == 1 && $m == 0 && $d == 0 ) {
+	if ( $win32 && $s == 1 && $m == 0 && $d == 0 ) {
 		# this is win32 specific stuff; not that this behavior is
 		# wrong for practical blending, but still a minor WTF
 		ok( $pix == 0xffffff || $pix == 0, "$descr (($s + a$m) OVER $d ) == either 0 or 1 )");
