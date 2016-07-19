@@ -1208,7 +1208,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
           if ( i-> text) {
              menuItem. dwTypeData = map_text_accel( i);
           } else if ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead)
-             menuItem. dwTypeData = ( LPWSTR) image_make_bitmap_handle( i-> bitmap, nil);
+             menuItem. dwTypeData = ( LPWSTR) image_create_bitmap( i-> bitmap, NULL, NULL, BM_AUTO);
           InsertMenuItemW( m, -1, true, &menuItem);
           if ( i-> text && menuItem. dwTypeData) free( menuItem. dwTypeData);
        }
@@ -2146,7 +2146,7 @@ apc_widget_get_shape( Handle self, Handle mask)
    PaintRgn( dc, rgn);
    DeleteObject( SelectObject( dc, brSave));
 
-   bi = image_get_binfo( mask, &xbi);
+   bi = image_fill_bitmap_info( mask, &xbi, BM_BITMAP);
    if ( !GetDIBits( dc, bm, 0, PImage( mask)-> h, PImage( mask)-> data, bi, DIB_RGB_COLORS)) apiErr;
    SelectObject( dc, bmSave);
    DeleteObject( bm);
@@ -2837,7 +2837,7 @@ apc_menu_item_set_image( Handle self, PMenuItemReg m)
 
    if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
                     m-> id + MENU_ID_AUTOSTART, 
-                    ( LPCWSTR) image_make_bitmap_handle( m-> bitmap, nil))) apiErrRet;
+                    ( LPCWSTR) image_create_bitmap( m-> bitmap, NULL, NULL, BM_AUTO))) apiErrRet;
    return true;
 }
 

@@ -2053,7 +2053,7 @@ apc_gp_get_region( Handle self, Handle mask)
    PaintRgn( dc, rgn);
    DeleteObject( SelectObject( dc, brSave));
 
-   bi = image_get_binfo( mask, &xbi);
+   bi = image_fill_bitmap_info( mask, &xbi, BM_BITMAP);
    if ( !GetDIBits( dc, bm, 0, PImage( mask)-> h, PImage( mask)-> data, bi, DIB_RGB_COLORS)) apiErr;
    SelectObject( dc, bmSave);
    DeleteObject( bm);
