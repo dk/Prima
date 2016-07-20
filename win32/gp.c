@@ -674,15 +674,6 @@ static Handle ctx_rop2R4[] = {
   endCtx
 };
 
-/*
-static void dc2screen( HDC dc, Handle self)
-{
-   HDC xdc = dc_alloc();
-   if ( !BitBlt( xdc, 0, 0, var w, var h, dc, 0, 0, SRCCOPY)) apiErr;
-   dc_free();
-}
-*/
-
 static Handle
 image_from_dc( Handle image )
 {
@@ -695,100 +686,6 @@ image_from_dc( Handle image )
    dsys( img) ps   = adc;
    dsys( img) bm   = abitmap;
    return img;
-}
-	
-
-static Bool
-put_argb_icon(HDC dest, PImage rgb, Byte *mask, int maskLineSize,
-              int dstx, int dsty, int dstw, int dsth,
-              int srcx, int srcy, int srcw, int srch,
-	      int rop)
-{
-   HDC src;
-   BITMAPINFO bmi;
-   BLENDFUNCTION bf;
-   HBITMAP old, hbitmap;
-   Bool ok;
-   int y;
-   Byte *rgb_bits, *a_bits, *argb_bits;
-
-   if ( rgb->options. optInDraw ) {
-      Bool ok;
-      Handle img = image_from_dc((Handle) rgb);
-      CImage(img)->set_type(img, imRGB);
-      ok = put_argb_icon( dest, (PImage) img, mask, maskLineSize,
-         dstx, dsty, dstw, dsth, 
-         srcx, srcy, srcw, srch, rop);
-      Object_destroy( img);
-      return ok;
-   } else if ( rgb->type != imRGB ) {
-      Bool ok;
-      Handle img = rgb->self->dup((Handle)rgb);
-      CImage(img)->set_type(img, imRGB);
-      ok = put_argb_icon( dest, (PImage) img, mask, maskLineSize,
-         dstx, dsty, dstw, dsth, 
-         srcx, srcy, srcw, srch, rop);
-      Object_destroy( img);
-      return ok;
-   }
-
-   src = CreateCompatibleDC(dest);
-   ZeroMemory(&bmi, sizeof(BITMAPINFO));
-   bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-   bmi.bmiHeader.biWidth       = srcw;
-   bmi.bmiHeader.biHeight      = srch;
-   bmi.bmiHeader.biPlanes      = 1;
-   bmi.bmiHeader.biBitCount    = 32;
-   bmi.bmiHeader.biCompression = BI_RGB;
-   bmi.bmiHeader.biSizeImage   = srcw * srch * 4;
-   hbitmap = CreateDIBSection(src, &bmi, DIB_RGB_COLORS, (LPVOID*)&argb_bits, NULL, 0x0);
-
-   for ( 
-      y = 0, 
-         rgb_bits = rgb->data + rgb->lineSize * srcy + srcx * 3,
-         a_bits   = mask + maskLineSize * srcy + srcx;
-      y < srch;
-      y++,
-         rgb_bits += rgb-> lineSize,
-         a_bits += maskLineSize,
-         argb_bits += srcw * 4
-   ) {
-      register Byte *rgb_ptr = rgb_bits, *a_ptr = a_bits, *argb_ptr = argb_bits;
-      register int x = srcw;
-      for ( ; x > 0; x--) {
-         *argb_ptr++ = *rgb_ptr++;
-         *argb_ptr++ = *rgb_ptr++;
-         *argb_ptr++ = *rgb_ptr++;
-         *argb_ptr++ = *a_ptr++;
-      }
-   }
-   old = SelectObject(src, hbitmap);
-
-   bf.BlendOp             = rop;
-   bf.BlendFlags          = 0;
-   bf.SourceConstantAlpha = 0xff;
-   bf.AlphaFormat         = AC_SRC_ALPHA;
-   ok = AlphaBlend(dest, dstx, dsty, dstw, dsth, src, 0, 0, srcw, srch, bf);
-
-   SelectObject(src, old);
-   DeleteObject(hbitmap);
-   DeleteDC(src);
-
-   return ok;
-}
-
-static Bool
-put_alpha_blend(HDC dest, HDC src, int op,
-              int dstx, int dsty, int dstw, int dsth,
-              int srcx, int srcy, int srcw, int srch)
-{
-   BLENDFUNCTION bf;
-
-   bf.BlendOp             = op;
-   bf.BlendFlags          = 0;
-   bf.SourceConstantAlpha = 0xff;
-   bf.AlphaFormat         = AC_SRC_ALPHA;
-   return AlphaBlend(dest, dstx, dsty, dstw, dsth, src, 0, 0, srcw, srch, bf);
 }
 
 static int
@@ -1024,7 +921,14 @@ img_put_image_on_bitmap_or_pixmap( Handle self, Handle image, PutImageRequest * 
    if ( pal_src) {
       if ( pal_src_save) SelectPalette( src, pal_src_save, 1);
    }
-   if ( pal_dst_save) SelectPalette( sys ps, pal_dst_save, 1);
+   if ( pal_dst_save) {
+      if ( is_apt(aptCompatiblePS))
+         SelectPalette( sys ps, pal_dst_save, 1);
+      else {
+         DeleteObject( pal_dst_save );
+         dsys( image) pal = image_create_palette( image);
+      }
+   }
    if ( bm_src_save) SelectObject( src, bm_src_save);
    DeleteDC( src);
 
@@ -1147,18 +1051,24 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
+img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
+{
+   return img_put_image_on_bitmap_or_pixmap( self, image, req, BM_PIXMAP);
+}
+
+static Bool
 img_put_pixmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
    if ( dsys( image ) options. aptImage && (( PImage(image)-> type & imBPP ) == 1))
       return img_put_monodc_on_pixmap( sys ps, dsys(image)ps, req);
-   else
+   else if ( !dsys(image) options. aptCompatiblePS) {
+      Bool ok;
+      Handle img = image_from_dc(image);
+      ok = img_put_image_on_pixmap(self, img, req);
+      Object_destroy( img);
+      return ok;
+   } else
       return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
-}
-
-static Bool
-img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
-{
-   return img_put_image_on_bitmap_or_pixmap( self, image, req, BM_PIXMAP);
 }
 
 static Bool

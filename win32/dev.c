@@ -552,7 +552,6 @@ image_query_bits( Handle self, Bool forceNewImage)
    bi = image_fill_bitmap_info( self, &xbi, BM_PIXMAP);
 
    if ( !GetDIBits( sys ps, sys bm, 0, i-> h, i-> data, bi, DIB_RGB_COLORS)) apiErr;
-
    if (( i-> type & imBPP) < 24) {
       int j, nColors = 1 << ( i-> type & imBPP);
       for ( j = 0; j < nColors; j++) {
