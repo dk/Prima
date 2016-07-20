@@ -1639,6 +1639,53 @@ img_put_pixmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
+img_put_argb_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+{
+   DEFXX;
+   Bool ok;
+   ImageCache *cache;
+   int rop = req->rop;
+   
+   PImage img = (PImage) image;
+   PDrawableSysData YY = X(image);
+
+   if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP)))
+      return false;
+      
+   if ( !img_put_icon_mask( self, cache->icon, req))
+      return false;
+
+   req-> rop = ( rop == ropSrcCopy ) ? GXcopy : GXor;
+   XSetForeground( DISP, XX-> gc, 1);
+   XSetBackground( DISP, XX-> gc, 0);
+   XX-> flags. brush_fore = XX-> flags. brush_back = 0;
+
+   return img_put_ximage( self, cache->image, req);
+}
+
+Bool
+prima_query_argb_rect( Handle self, Pixmap px, int x, int y, int w, int h);
+
+static Bool
+img_put_layered_on_bitmap( Handle self, Handle image, PutImageRequest * req)
+{
+   Handle obj;
+   Bool ok;
+
+   obj = ( Handle) create_object("Prima::Icon", "");
+   ok = prima_query_argb_rect( obj, X(image)-> gdrawable, req-> src_x, req-> src_y, req-> w, req-> h);
+   if ( !ok ) {
+      Object_destroy( obj );
+      return nilHandle;
+   }
+
+   req->src_x = req->src_y = 0;
+   ok = img_put_argb_on_bitmap( self, obj, req );
+   Object_destroy( obj);
+   return ok;
+}
+
+static Bool
 img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
    DEFXX;
@@ -1966,8 +2013,8 @@ PutImageFunc (*img_put_on_bitmap[SRC_NUM]) = {
    img_put_bitmap_on_bitmap,
    img_put_pixmap_on_bitmap,
    img_put_image_on_bitmap,
-   img_put_image_on_bitmap,
-   img_put_layered_on_pixmap /* XXX oh really? */
+   img_put_argb_on_bitmap,
+   img_put_layered_on_bitmap
 };
 
 PutImageFunc (*img_put_on_pixmap[SRC_NUM]) = {
@@ -2076,7 +2123,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       warn("cannot query XGCValues");
 
    req. old_rop = gcv.function;
-   req. rop     = prima_rop_map( rop);
+   req. rop     = (src == SRC_LAYERED || src == SRC_ARGB) ? rop : prima_rop_map( rop);
 
    ok = (*dst[src])(self, image, &req);
    
@@ -2452,25 +2499,20 @@ convert_8_to_mask( XImage *i, PIcon img)
 }
       
 Bool
-prima_query_argb_image( Handle self, Pixmap px)
+prima_query_argb_rect( Handle self, Pixmap px, int x, int y, int w, int h)
 {
    XImage * i;
    Bool mono = PImage(self)-> type == imBW || guts. depth == 1;
    PIcon img = (PIcon) self;
-   Bool ret;
 
-   if (!( i = XGetImage( DISP, px, 0, 0, 
-       PImage(self)-> w, PImage( self)-> h, 
+   if (!( i = XGetImage( DISP, px, x, y, w, h,
        AllPlanes, ZPixmap)))
       return false;
    XCHECKPOINT;
 
    if (( img-> type & imBPP) != 24 || img->maskType != imbpp8)
-      CIcon( self)-> create_empty_icon( self, img-> w, img-> h, guts. qdepth, imbpp8);
+      CIcon( self)-> create_empty_icon( self, w, h, imRGB, imbpp8);
    
-   X(self)-> size. x = img-> w;
-   X(self)-> size. y = img-> h;
-
    switch ( guts. argb_depth) {
    case 8:
       convert_8_to_24( i, (PImage)img, &guts. argb_bits);
@@ -2491,7 +2533,13 @@ slurp_image_unsupported_depth:
    }
    
    XDestroyImage( i);
-   return ret;
+   return true;
+}
+
+Bool
+prima_query_argb_image( Handle self, Pixmap px)
+{
+   return prima_query_argb_rect( self, px, 0, 0, PImage(self)-> w, PImage( self)-> h);
 }
 
 Pixmap
