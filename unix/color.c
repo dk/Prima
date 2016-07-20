@@ -819,17 +819,7 @@ BLACK_WHITE_ALLOCATED:
       sprintf( error_buf, "No memory");
       return false;
    }
-   if ( guts. palSize) {
-      int sz = ( guts. palSize < 256) ? 256 : guts. palSize;
-      if (!( guts. mappingPlace = malloc( sizeof( int) * sz))) {
-         sprintf( error_buf, "No memory");
-         return false;
-      }
-   } else {
-      if (!( guts. mappingPlace = malloc( sizeof( int) * 2))) {
-         sprintf( error_buf, "No memory");
-         return false;
-      }
+   if ( guts. palSize == 0) {
       find_color_mask_range( guts. visual. red_mask,   &guts. screen_bits. red_shift,   &guts. screen_bits. red_range);
       find_color_mask_range( guts. visual. green_mask, &guts. screen_bits. green_shift, &guts. screen_bits. green_range);
       find_color_mask_range( guts. visual. blue_mask,  &guts. screen_bits. blue_shift,  &guts. screen_bits. blue_range);
@@ -951,14 +941,12 @@ prima_done_color_subsystem( void)
 
    hash_destroy( hatches, false);
    guts. defaultColormap = 0;
-   free( guts. mappingPlace);
    free( guts. ditherPatterns);
    free( guts. palette);
    free( guts. systemColorMap);
    guts. palette = nil;
    guts. systemColorMap = nil;
    guts. ditherPatterns = nil;
-   guts. mappingPlace = nil;
 }
 
 /*

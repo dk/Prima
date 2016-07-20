@@ -618,7 +618,7 @@ typedef struct _UnixGuts
    XRenderPictFormat *          argb_compat_format;
 #endif
    MainColorEntry *             palette;
-   int *                        mappingPlace;
+   int                          mappingPlace[256];
    unsigned long                monochromeMap[2];
    int                          palSize;
    int                          localPalSize;
