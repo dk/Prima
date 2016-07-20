@@ -1940,12 +1940,13 @@ img_put_argb_on_widget( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
-img_put_composite_over( Handle self, Handle image, PutImageRequest * req)
+img_put_composite( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    DEFXX;
    PDrawableSysData YY = X(image);
-   XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, YY->argb_picture, 0, XX->argb_picture,
+   XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
+      YY->argb_picture, 0, XX->argb_picture,
       0, 0, 0, 0,
       req->dst_x, req->dst_y, req->w, req->h
    );
@@ -2030,7 +2031,7 @@ PutImageFunc (*img_put_on_widget[SRC_NUM]) = {
    img_put_copy_area,
    img_put_image_on_widget,
    img_put_argb_on_widget,
-   img_put_composite_over
+   img_put_layered_on_pixmap
 };
 
 PutImageFunc (*img_put_on_layered[SRC_NUM]) = {
@@ -2038,7 +2039,7 @@ PutImageFunc (*img_put_on_layered[SRC_NUM]) = {
    img_put_pixmap_on_layered,
    img_put_image_on_layered,
    img_put_argb_on_layered,
-   img_put_composite_over
+   img_put_composite
 };
 
 static int
