@@ -638,6 +638,10 @@ class;
          guts. argb_visual. visual = NULL;
          guts. argb_depth = 0;
       }
+
+      if ( guts. argb_visual. visual ) {
+         guts. argbColormap = XCreateColormap( DISP, guts. root, guts. argb_visual. visual, AllocNone);
+      }
    }
 #endif
    if ( !guts. argb_visual. visual ) Pdebug("no ARGB visual found\n");

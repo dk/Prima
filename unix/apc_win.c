@@ -245,9 +245,14 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XWMHints wmhints;
    XClassHint *class_hint;
    ConfigureEventPair *cep;
-
+   Bool layered = false;
+   unsigned long valuemask;
+   
    if ( border_style != bsSizeable) border_style = bsDialog;
    border_icons &= biAll;
+   
+   if ( !guts. argb_visual. visual || guts. argb_visual. visualid == guts. visual. visualid)
+      layered = false;
 
    if ( X_WINDOW) { /* recreate request */
       Bool destructive_motif_hints = 0; /* KDE 3.1: setting motif hints kills net_wm hints */
@@ -277,7 +282,9 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       return true; 
    }
    
-   XX-> visual = &guts. visual;
+   XX-> visual   = layered ? &guts. argb_visual : &guts. visual;
+   XX-> colormap = layered ? guts. argbColormap : guts. defaultColormap;
+   XX-> flags. layered    = !!layered;
 
    /* create */
    attrs. event_mask = 0
@@ -308,10 +315,8 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       | OwnerGrabButtonMask;
    attrs. override_redirect = false;
    attrs. do_not_propagate_mask = attrs. event_mask;
-   attrs. colormap = guts. defaultColormap;
-   X_WINDOW = XCreateWindow( DISP, guts. root,
-	                     0, 0, 1, 1, 0, guts. visual. depth,
-	                     InputOutput, XX->visual->visual,
+   attrs. colormap = XX-> colormap;
+   valuemask = 
 	                     0
 	                     /* | CWBackPixmap */
 	                     /* | CWBackPixel */
@@ -328,7 +333,16 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	                     /* | CWDontPropagate */
 	                      | CWColormap 
 	                     /* | CWCursor */
-	                     , &attrs);
+			     ;
+   if ( layered ) {
+      valuemask |= CWBackPixel | CWBorderPixel;
+      attrs. background_pixel = 0;
+      attrs. border_pixel = 0;
+   }
+   X_WINDOW = XCreateWindow( DISP, guts. root,
+	                     0, 0, 1, 1, 0, XX-> visual->depth,
+	                     InputOutput, XX->visual->visual,
+	                     valuemask, &attrs);
    if (!X_WINDOW) return false;
 
    attrs. event_mask = 0
@@ -359,11 +373,9 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       | OwnerGrabButtonMask;
    attrs. override_redirect = false;
    attrs. do_not_propagate_mask = attrs. event_mask;
-   attrs. colormap = guts. defaultColormap;
+   attrs. colormap = XX->colormap;
 
-   XX-> client = XCreateWindow( DISP, X_WINDOW,
-	                     0, 0, 1, 1, 0, guts. visual. depth,
-	                     InputOutput, XX-> visual-> visual,
+   valuemask = 
 	                     0
 	                     /* | CWBackPixmap */
 	                     /* | CWBackPixel */
@@ -380,8 +392,19 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	                     /* | CWDontPropagate */
 	                      | CWColormap 
 	                     /* | CWCursor */
-	                     , &attrs);
+			     ;
+   if ( layered ) {
+      valuemask |= CWBackPixel | CWBorderPixel;
+      attrs. background_pixel = 0;
+      attrs. border_pixel = 0;
+   }
+
+   XX-> client = XCreateWindow( DISP, X_WINDOW,
+	                     0, 0, 1, 1, 0, XX->visual->depth,
+	                     InputOutput, XX-> visual-> visual,
+	                     valuemask, &attrs);
    if (!XX-> client) return false;
+
    hash_store( guts.windows, &XX-> client, sizeof(XX-> client), (void*)self);
    hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
    XCHECKPOINT;

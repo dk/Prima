@@ -782,6 +782,7 @@ typedef struct _drawable_sys_data
    Byte * palette;
    int borderIcons;
    XVisualInfo * visual;
+   Colormap colormap;
 #ifdef USE_XFT
    XftDraw  * xft_drawable;
    uint32_t * xft_map8;

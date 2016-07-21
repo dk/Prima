@@ -233,7 +233,8 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
    if ( !guts. argb_visual. visual || guts. argb_visual. visualid == guts. visual. visualid)
       layered = false;
-   XX-> visual = layered ? &guts. argb_visual : &guts. visual;
+   XX-> visual   = layered ? &guts. argb_visual : &guts. visual;
+   XX-> colormap = layered ? guts. argbColormap : guts. defaultColormap;
 
    reparent = ( old != nilHandle) && ( 
       ( clip_owner != XX-> flags. clip_owner) ||
@@ -286,7 +287,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    attrs. do_not_propagate_mask = attrs. event_mask;
    attrs. win_gravity = ( clip_owner && ( owner != application)) 
       ? SouthWestGravity : NorthWestGravity;
-   attrs. colormap = guts. defaultColormap;
+   attrs. colormap = XX->colormap;
 
    if ( reparent) {
       Point pos = PWidget(self)-> pos;
@@ -337,8 +338,6 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
    if ( layered ) {
       valuemask |= CWBackPixel | CWBorderPixel;
-      if ( !guts. argbColormap ) guts. argbColormap = XCreateColormap( DISP, guts. root, guts. argb_visual. visual, AllocNone);
-      attrs. colormap = guts. argbColormap;
       attrs. background_pixel = 0;
       attrs. border_pixel = 0;
    }

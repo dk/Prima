@@ -1440,7 +1440,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
          XX-> xft_drawable = XftDrawCreateBitmap( DISP, XX-> gdrawable ); 
       else
          XX-> xft_drawable = XftDrawCreate( DISP, XX-> gdrawable, 
-                                         guts. visual. visual, guts. defaultColormap);
+                                         XX->visual->visual, XX->colormap);
       XftDrawSetSubwindowMode( XX-> xft_drawable, 
          ( self == application) ? IncludeInferiors : ClipByChildren);
       XCHECKPOINT;
