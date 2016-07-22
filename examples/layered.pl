@@ -1,7 +1,6 @@
 use strict;
 use warnings;
-
-use Prima qw(Application);
+use Prima qw(Application Buttons);
 
 my $j = Prima::Image->new(
 	width => 100,
@@ -57,10 +56,26 @@ my $w = Prima::Widget->new(
 	layered  => 1,
 	buffered => 1,
 	size     => [ 300, 300 ],
+	origin   => [ 100, 100 ],
 	backColor => cl::Black,
 	selectable => 1,
-	onMouseDown => sub { exit },
-	onKeyDown => sub { exit },
+	onMouseDown => sub {
+		$_[0]-> {drag}    = [ $_[3], $_[4]];
+		$_[0]-> {lastPos} = [ $_[0]-> left, $_[0]-> bottom];
+		$_[0]-> capture(1);
+		$_[0]-> repaint;
+	},
+	onMouseMove => sub{
+		return unless exists $_[0]-> { drag};
+		my @org = $_[0]-> origin;
+		my @st  = @{$_[0]-> {drag}};
+		my @new = ( $org[0] + $_[2] - $st[0], $org[1] + $_[3] - $st[1]);
+		$_[0]-> origin( $new[0], $new[1]) if $org[1] != $new[1] || $org[0] != $new[0];
+	},
+	onMouseUp => sub {
+		$_[0]-> capture(0);
+		delete $_[0]-> {drag};
+	},
 	onPaint   => sub {
 		my $self = shift;
 		$self->clear;
@@ -86,6 +101,38 @@ my $w = Prima::Widget->new(
 	}
 );
 
+my $i = Prima::Image-> new(
+	width => 96,
+	height => 36,
+	type => im::BW,
+);
+$i->begin_paint;
+$i->clear;
+$i->fill_ellipse(10,10,10,10);
+$i->end_paint;
+
+my $btn = $w-> insert( Button => 
+	origin  => [10,10],
+	shape   => $i,
+	text    => '~Quit',
+	onClick => sub { $::application-> close },
+);
+
+$btn->insert( Widget => 
+	origin => [10,10],
+	size   => [10,10],
+	onPaint => sub {
+	   my $self = shift;
+	   $self->clipRect(-1000,-1000,2000,2000);
+	   $self->color(cl::LightRed);
+	   $self->bar(-1000,-1000,2000,2000);
+	   $self->color(cl::White);
+	   $self->bar(0,0,$self->width-1,$self->height-1);
+	   $self->color(cl::LightGreen);
+	   $self->rectangle(0,0,$self->width-1,$self->height-1);
+	},
+);
+
 my ($mx, $my) = (1, 1);
 
 $w->insert( Timer => 
@@ -100,7 +147,7 @@ $w->insert( Timer =>
 		$my = 1 if $p[1] < 0 && $my < 0;
 		$mx = -1 if $p[0] > $::application->width-$w->width && $mx > 0;
 		$my = -1 if $p[1] > $::application->height-$w->height && $my > 0;
-		$w->origin(@p);
+		$w->origin(@p) unless $w->{drag};
 		$w->repaint;
 	},
 )->start;

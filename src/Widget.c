@@ -232,15 +232,6 @@ Widget_update_sys_handle( Handle self, HV * profile)
       if (( owner != application) && clipOwner) 
          croak("Cannot accept 'parentHandle' for non-application child and clip-owner widget");
    }
-   if ( layered) {
-      if (( owner != application) && clipOwner) 
-         croak("Cannot accept 'layered' for non-application child and clip-owner widget");
-      if ( var-> widgets. count > 0)
-         croak("Cannot accept 'layered' while there are children on this widget");
-   } else {
-      if ( CWidget(owner)-> get_layered(owner))
-         croak("Cannot be a child of a layered widget");
-   }
    
    if ( !apc_widget_create( self,
       owner,

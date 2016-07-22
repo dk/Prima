@@ -1590,9 +1590,10 @@ apc_widget_map_color( Handle self, Color color)
 }   
 
 Bool
-apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bool transparent, ApiHandle parentHandle, Bool layered)
+apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
+                   Bool transparent, ApiHandle parentHandle, Bool layered)
 {
-   Bool reset = false;
+   Bool reset = false, redraw = false;
    ViewProfile vprf;
    int oStage = var stage;
    int exstyle;
@@ -1609,7 +1610,17 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
    exstyle = 0;
    if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8) layered = false;
 
-   if ( layered ) exstyle |= WS_EX_LAYERED;
+   redraw = is_apt( aptLayeredRequested ) != layered;
+   apt_assign( aptLayeredRequested, layered );
+   apt_clear( aptLayered );
+   if ( layered ) {
+      Handle top = hwnd_layered_top_level( self );
+      if ( top == self ) {
+         apt_set( aptLayered );
+         exstyle |= WS_EX_LAYERED;
+      }
+   }
+
    if (( var handle != nilHandle) &&
          (( DHANDLE( owner) != sys owner)                 ||
          (( HWND) parentHandle != sys parentHandle)       ||
@@ -1635,9 +1646,10 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner, Bo
       var owner = oldOwner;
       var stage = oStage;
    }
-   if ( is_apt( aptTransparent) != transparent && !reset) apc_widget_redraw( self);
+   if ( is_apt( aptTransparent) != transparent && !reset)
+      redraw = true;
+   if ( redraw) apc_widget_redraw( self);
    apt_assign( aptTransparent, transparent);
-   apt_assign( aptLayered, layered );
    if ( reset) apc_widget_redraw( self);
    return apcError == 0;
 }
@@ -1649,8 +1661,9 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
    objCheck false;
    apcErrClear;
 
-   if ( is_apt( aptTransparent))
-   {
+   if ( is_apt( aptLayeredPaint )) {
+      sys transform2 = sys layeredPaintOffset;
+   } else if ( is_apt( aptTransparent)) {
       if ( IsWindowVisible(( HWND) var handle)) {
          HWND parent = GetParent( HANDLE);
          if ( !parent) {
@@ -1667,16 +1680,20 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
          } else
             useRPDraw = true;
       }
+      sys transform2. x = 0;
+      sys transform2. y = 0;
+   } else {
+      sys transform2. x = 0;
+      sys transform2. y = 0;
    }
 
    apt_set( aptWinPS);
    apt_set( aptCompatiblePS);
    apt_assign( aptWM_PAINT, insideOnPaint);
 
-   sys transform2. x = 0;
-   sys transform2. y = 0;
-
-   if ( is_apt( aptLayered )) {
+   if ( is_apt( aptLayeredPaint )) {
+      sys ps = sys layeredPaintSurface;
+   } else if ( is_apt( aptLayered )) {
       RECT r;
       HDC dc2;
       HBITMAP bm2;
@@ -1697,7 +1714,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
       if ( !( sys ps = GetDC(( HWND) var handle))) apiErrRet;
    }
 
-   if ( is_opt( optBuffered) && insideOnPaint) {
+   if ( !is_apt(aptLayeredPaint) && is_opt( optBuffered) && insideOnPaint) {
       RECT r;
       HBITMAP bm;
       HDC dc;
@@ -1741,7 +1758,7 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
          apt_set( aptBitmap);
       } else
          apiErr;
-   } else if ( !is_apt(aptLayered)) {
+   } else if ( !is_apt(aptLayered) && !is_apt(aptLayeredPaint)) {
       if ( sys pal) {
          sys stockPalette = SelectPalette( sys ps, sys pal, 1);
          RealizePalette( sys ps);
@@ -1789,6 +1806,15 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 
    if ( useRPDraw) {
       apc_gp_set_transform( self, sys transform. x, sys transform. y);
+   }
+
+   if ( is_apt(aptLayeredPaint)) {
+      Rect r;
+      r. left   = 0;
+      r. bottom = 0;
+      r. right  = sys lastSize. x - 1;
+      r. top    = sys lastSize. y - 1;
+      apc_gp_set_clip_rect(self, r);
    }
 
    return true;
@@ -1841,17 +1867,108 @@ apc_widget_default_font( PFont copyTo)
    return copyTo;
 }
 
+static void
+subpaint_layered_widgets( HWND self, HDC ps, HDC alpha01_dc, POINT screen_offset, HRGN parent_shape)
+{
+   HWND child = GetTopWindow( self );
+   while ( child != NULL ) {
+      Handle h;
+      RECT r;
+      HRGN shape, rect_shape;
+      Event ev;
+      POINT child_offset, size;
+      
+      h = hwnd_to_view(child);
+      if ( h == nilHandle || !IsWindowVisible(child) || !dsys(h) options. aptClipOwner) {
+         child = GetWindow( child, GW_HWNDPREV);
+	 continue;
+      }
+
+      GetWindowRect( child, &r);
+      r. left   -= screen_offset. x;
+      r. top    -= screen_offset. y;
+      r. right  -= screen_offset. x;
+      r. bottom -= screen_offset. y;
+      size. x = r.right  - r. left;
+      size. y = r.bottom - r. top;
+      child_offset. x = r. left;
+      child_offset. y = r. top;
+
+      dsys(h) options. aptLayeredPaint = 1;
+      dsys(h) layeredPaintOffset. x = -r. left;
+      dsys(h) layeredPaintOffset. y = -r. top;
+      dsys(h) layeredPaintSurface   = ps;
+
+      shape = CreateRectRgn(0,0,0,0);
+      if ( GetWindowRgn( child, shape)) {
+         HRGN rect = CreateRectRgn( 0, 0, size.x, size.y);
+         CombineRgn( shape, shape, rect, RGN_AND);
+         DeleteObject( rect );
+      } else {
+         DeleteObject( shape );
+         shape = CreateRectRgn( 0, 0, size.x, size.y);
+      }
+      OffsetRgn( shape, child_offset. x, child_offset. y);
+      if ( parent_shape ) CombineRgn( shape, shape, parent_shape, RGN_AND );
+      dsys(h) layeredParentRegion = shape;
+
+      ev. cmd = cmPaint;
+      CWidget(h)-> message( h, &ev);
+
+      if ( !dsys(h) options. aptLayeredRequested) {
+         /* assigning alpha=0x01 over the child rect so Windows passes mouse events in */
+         SetViewportOrgEx( ps, 0, 0, NULL);
+         StretchBlt( ps, r.left, r.top, size.x, size.y, alpha01_dc, 0, 0, 1, 1, SRCPAINT);
+      }
+      dsys(h) options. aptLayeredPaint = 0;
+
+      subpaint_layered_widgets( child, ps, alpha01_dc, screen_offset, shape);
+
+      DeleteObject( shape );
+      child = GetWindow( child, GW_HWNDPREV);
+   }
+}
+
 Bool
 apc_widget_end_paint( Handle self)
 {
    objCheck false;
 
-   if ( is_apt( aptLayered )) {
+   if ( is_apt( aptLayeredPaint )) {
+      // do nothing
+   } else if ( is_apt( aptLayered )) {
       RECT r;
       SIZE size;
       POINT src, pos, *ppos = NULL;
       BLENDFUNCTION bf;
+      XBITMAPINFO xbi;
+      HBITMAP alpha01_bm, stock_alpha01_bm;
+      HDC alpha01_dc;
+      uint32_t * alpha01_pixels;
+      
       GetWindowRect( HANDLE, &r);
+
+      xbi. bmiHeader. biSize          = sizeof( BITMAPINFOHEADER);
+      xbi. bmiHeader. biWidth         = 1;
+      xbi. bmiHeader. biHeight        = 1;
+      xbi. bmiHeader. biPlanes        = 1;
+      xbi. bmiHeader. biBitCount      = 32;
+      xbi. bmiHeader. biCompression   = BI_RGB;
+      xbi. bmiHeader. biSizeImage     = 4;
+      alpha01_dc = CreateCompatibleDC( sys ps );
+      alpha01_bm = CreateDIBSection(sys ps, (BITMAPINFO*) &xbi, DIB_RGB_COLORS, 
+           (LPVOID*) &alpha01_pixels, NULL, 0x0);
+      stock_alpha01_bm = SelectObject( alpha01_dc, alpha01_bm);
+      *alpha01_pixels = 0x01000000;
+
+      /* subpaint children */
+      src. x = r. left;
+      src. y = r. top;
+      subpaint_layered_widgets( HANDLE, sys ps, alpha01_dc, src, NULL);
+      
+      SelectObject( alpha01_dc, stock_alpha01_bm);
+      DeleteObject( alpha01_bm );
+      DeleteDC( alpha01_dc );
 
       size. cx = r. right - r. left;
       size. cy = r. bottom - r. top;
@@ -1873,6 +1990,8 @@ apc_widget_end_paint( Handle self)
       DeleteObject(sys bm);
       DeleteDC(sys ps);
       DeleteDC(sys ps2);
+      sys ps = sys ps2 = NULL;
+      sys bm = sys stockBM = NULL;
    } else if ( is_opt( optBuffered)) {
       apt_clear( aptBitmap);
       if ( sys bm != nil) {
@@ -1899,7 +2018,7 @@ apc_widget_end_paint( Handle self)
 
    hwnd_leave_paint( self);
 
-   if ( sys ps != nil) {
+   if ( !is_apt(aptLayeredPaint) && sys ps != nil) {
       if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
          if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
       } else if ( is_apt( aptWinPS))
@@ -2017,8 +2136,14 @@ apc_widget_get_invalid_rect( Handle self)
 Bool
 apc_widget_get_layered( Handle self)
 {
+   Handle top;
    objCheck false;
-   return is_apt( aptLayered);
+
+   if ( is_apt( aptLayered)) return true;
+   if ( !is_apt( aptLayeredRequested)) return false;
+   top = hwnd_layered_top_level(self);
+   if ( top && dsys(top) options. aptLayered ) return true;
+   return false;
 }
 
 Point
@@ -2035,6 +2160,10 @@ apc_widget_get_pos( Handle self)
       if ( !GetWindowPlacement( HANDLE, &w)) apiErr;
       p. x = w. rcNormalPosition. left;
       p. y = sz. y - w. rcNormalPosition. bottom;
+   } else if ( is_apt( aptMovePending)) {
+      GetWindowRect( HANDLE, &r);
+      p. x = sys layeredPos. x;
+      p. y = sys layeredPos. y + r. bottom - r.top;
    } else {
       GetWindowRect( HANDLE, &r);
       if ( is_apt( aptClipOwner) && ( var owner != application))
@@ -2486,13 +2615,21 @@ apc_widget_set_size( Handle self, int width, int height)
    }
    if ( height < 0) height = 0;
    if ( width  < 0) width  = 0;
+   if ( is_apt(aptMovePending)) {
+      int dx = r. right  - r. left;
+      int dy = r. bottom - r. top;
+      r. left = sys layeredPos. x;
+      r. top  = sys layeredPos. y;
+      r. right  = r. left + dx;
+      r. bottom = r. top  + dy;
+      apt_clear(aptMovePending);
+   }
    if ( !SetWindowPos( h, 0,
       r. left, r. bottom - height,
       width, height,
       SWP_NOZORDER | SWP_NOACTIVATE | 
          ( is_apt( aptWinPosDetermined) ? 0 : SWP_NOMOVE)
       )) apiErrRet;
-   apt_clear(aptMovePending);
    hwnd_repaint_layered( self, false );
    if ( sys className != WC_FRAME) sys sizeLockLevel--;
    return true;
@@ -2501,7 +2638,6 @@ apc_widget_set_size( Handle self, int width, int height)
 Bool
 apc_widget_set_rect( Handle self, int x, int y, int width, int height)
 {
-   RECT r;
    HWND h;
    Handle parent;
    Point sz;
@@ -2531,9 +2667,6 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
          return true;
       }
    }
-   if ( !GetWindowRect( h, &r)) apiErrRet;
-   if ( is_apt( aptClipOwner) && ( var owner != application))
-      MapWindowPoints( NULL, ( HWND)((( PWidget) var owner)-> handle), ( LPPOINT)&r, 2);
 
    if ( sys className != WC_FRAME) {
       sys sizeLockLevel++;
@@ -2547,15 +2680,14 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
       ppos. x = x;
       ppos. y = dsys( application) lastSize. y - y;
       MapWindowPoints( NULL, sys parentHandle, ( LPPOINT)&ppos, 1);
-      GetWindowRect( sys parentHandle, &r);
       x = ppos. x;
       y = ppos. y;
    } else
       y = sz. y - y - height;
    
+   apt_clear(aptMovePending);
    if ( !SetWindowPos( h, 0, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE)) 
       apiErrRet;
-   apt_clear(aptMovePending);
    hwnd_repaint_layered( self, false );
    if ( sys className != WC_FRAME) sys sizeLockLevel--;
    return true;

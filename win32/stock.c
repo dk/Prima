@@ -1559,6 +1559,12 @@ Bool
 hwnd_repaint_layered( Handle self, Bool now )
 {
    Event ev;
+   Handle top;
+
+   top = hwnd_layered_top_level( self );
+   if ( top && top != self && dsys(top) options. aptLayered )
+      return hwnd_repaint_layered(top, now);
+
    if ( !is_apt( aptLayered)) return;
 
    if ( !now && !is_apt( aptSyncPaint) ) {
@@ -1590,6 +1596,17 @@ hwnd_frame_top_level( Handle self)
    while ( self && ( self != application)) {
       if (( sys className == WC_FRAME) ||
          ( !is_apt( aptClipOwner) && ( var owner != application))) return self;
+      self = var owner;
+   }
+   return nilHandle;
+}
+
+Handle
+hwnd_layered_top_level( Handle self)
+{
+   while ( self && ( self != application)) {
+      if (( sys className == WC_FRAME) || 
+         (!is_apt( aptClipOwner) || (var owner == application))) return self;
       self = var owner;
    }
    return nilHandle;

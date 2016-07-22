@@ -143,6 +143,8 @@ typedef struct _HandleOptions_ {
    unsigned aptLayered              : 1;       // WS_EX_LAYERED
    unsigned aptRepaintPending       : 1;       // for optLayered
    unsigned aptMovePending          : 1;       // for optLayered
+   unsigned aptLayeredPaint         : 1;       // painting children of layered window
+   unsigned aptLayeredRequested     : 1;       // Prima wants layered
 } HandleOptions;
 
 typedef struct _WinGuts
@@ -421,6 +423,11 @@ typedef struct _DrawableData
    Point          extraPos;                // used in region calculations
    Point          layeredPos;              // delayed layered window positioning
 
+   /* Layered subpaint */
+   Point          layeredPaintOffset;
+   HDC            layeredPaintSurface;
+   HRGN           layeredParentRegion;
+
    /* Other class-specific data */
    union {
       TimerData     timer;
@@ -556,6 +563,7 @@ extern Handle       hwnd_frame_top_level( Handle self);
 extern void         hwnd_leave_paint( Handle self);
 extern Handle       hwnd_to_view( HWND win);
 extern Handle       hwnd_top_level( Handle self);
+extern Handle       hwnd_layered_top_level( Handle self);
 extern Bool         hwnd_repaint_layered( Handle self, Bool now);
 extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotSpot);
 extern void         image_query_bits( Handle self, Bool forceNewImage);

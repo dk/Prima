@@ -1625,6 +1625,8 @@ apc_gp_set_clip_rect( Handle self, Rect c)
    check_swap( c. left, c. right);
    if ( !( rgn = CreateRectRgn( c. left,  sys lastSize. y - c. top,
                                 c. right + 1, sys lastSize. y - c. bottom - 1))) apiErrRet;
+   if ( is_apt(aptLayeredPaint) && sys layeredParentRegion )
+      CombineRgn( rgn, rgn, sys layeredParentRegion, RGN_AND);
    if ( !SelectClipRgn( sys ps, rgn)) apiErr;
    if ( !DeleteObject( rgn)) apiErr;
    return true;
@@ -1833,6 +1835,8 @@ apc_gp_set_region( Handle self, Handle mask)
    }
    OffsetRgn( rgn, -sys transform2. x, -sys transform2. y);
    OffsetRgn( rgn, 0, sys lastSize.y - PImage(mask)-> h);
+   if ( is_apt(aptLayeredPaint) && sys layeredParentRegion )
+      CombineRgn( rgn, rgn, sys layeredParentRegion, RGN_AND);
    SelectClipRgn( sys ps, rgn);
    DeleteObject( rgn);
    return true;
