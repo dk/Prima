@@ -571,6 +571,22 @@ apc_widget_end_paint( Handle self)
 {
    DEFXX;
    XX-> flags. force_flush = 0;
+
+   /* make the unintended layered window opaque */
+   if ( !XX-> flags. layered_requested && XF_LAYERED(XX)) {
+      XGCValues gcv;
+      Point sz;
+      gcv. foreground = 0xFFFFFFFF;
+      gcv. function   = GXcopy;
+      gcv. fill_style = FillSolid;
+      gcv. plane_mask = guts. argb_bits. alpha_mask;
+      XChangeGC( DISP, XX->gc, GCPlaneMask|GCForeground|GCFunction|GCFillStyle, &gcv);
+      sz = apc_widget_get_size( self);
+      XFillRectangle( DISP, XX-> gdrawable, XX-> gc, 0, 0, sz.x, sz.y);
+      gcv. plane_mask = 0xFFFFFFFF;
+      XChangeGC( DISP, XX->gc, GCPlaneMask, &gcv);
+   }
+
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    if ( XF_LAYERED(XX) && XX->argb_picture ) {
       XRenderFreePicture( DISP, XX->argb_picture);
