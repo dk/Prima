@@ -1868,7 +1868,7 @@ apc_widget_default_font( PFont copyTo)
 }
 
 static void
-subpaint_layered_widgets( HWND self, HDC ps, HDC alpha01_dc, POINT screen_offset, HRGN parent_shape)
+subpaint_layered_widgets( HWND self, HDC ps, HDC alpha_dc, POINT screen_offset, HRGN parent_shape)
 {
    HWND child = GetTopWindow( self );
    while ( child != NULL ) {
@@ -1916,13 +1916,13 @@ subpaint_layered_widgets( HWND self, HDC ps, HDC alpha01_dc, POINT screen_offset
       CWidget(h)-> message( h, &ev);
 
       if ( !dsys(h) options. aptLayeredRequested) {
-         /* assigning alpha=0x01 over the child rect so Windows passes mouse events in */
+         /* assigning opaque alpha over the child rect so Windows passes mouse events in */
          SetViewportOrgEx( ps, 0, 0, NULL);
-         StretchBlt( ps, r.left, r.top, size.x, size.y, alpha01_dc, 0, 0, 1, 1, SRCPAINT);
+         StretchBlt( ps, r.left, r.top, size.x, size.y, alpha_dc, 0, 0, 1, 1, SRCPAINT);
       }
       dsys(h) options. aptLayeredPaint = 0;
 
-      subpaint_layered_widgets( child, ps, alpha01_dc, screen_offset, shape);
+      subpaint_layered_widgets( child, ps, alpha_dc, screen_offset, shape);
 
       DeleteObject( shape );
       child = GetWindow( child, GW_HWNDPREV);
@@ -1942,9 +1942,9 @@ apc_widget_end_paint( Handle self)
       POINT src, pos, *ppos = NULL;
       BLENDFUNCTION bf;
       XBITMAPINFO xbi;
-      HBITMAP alpha01_bm, stock_alpha01_bm;
-      HDC alpha01_dc;
-      uint32_t * alpha01_pixels;
+      HBITMAP alpha_bm, stock_alpha_bm;
+      HDC alpha_dc;
+      uint32_t * alpha_pixels;
       
       GetWindowRect( HANDLE, &r);
 
@@ -1955,20 +1955,20 @@ apc_widget_end_paint( Handle self)
       xbi. bmiHeader. biBitCount      = 32;
       xbi. bmiHeader. biCompression   = BI_RGB;
       xbi. bmiHeader. biSizeImage     = 4;
-      alpha01_dc = CreateCompatibleDC( sys ps );
-      alpha01_bm = CreateDIBSection(sys ps, (BITMAPINFO*) &xbi, DIB_RGB_COLORS, 
-           (LPVOID*) &alpha01_pixels, NULL, 0x0);
-      stock_alpha01_bm = SelectObject( alpha01_dc, alpha01_bm);
-      *alpha01_pixels = 0x01000000;
+      alpha_dc = CreateCompatibleDC( sys ps );
+      alpha_bm = CreateDIBSection(sys ps, (BITMAPINFO*) &xbi, DIB_RGB_COLORS, 
+           (LPVOID*) &alpha_pixels, NULL, 0x0);
+      stock_alpha_bm = SelectObject( alpha_dc, alpha_bm);
+      *alpha_pixels = 0xFF000000;
 
       /* subpaint children */
       src. x = r. left;
       src. y = r. top;
-      subpaint_layered_widgets( HANDLE, sys ps, alpha01_dc, src, NULL);
+      subpaint_layered_widgets( HANDLE, sys ps, alpha_dc, src, NULL);
       
-      SelectObject( alpha01_dc, stock_alpha01_bm);
-      DeleteObject( alpha01_bm );
-      DeleteDC( alpha01_dc );
+      SelectObject( alpha_dc, stock_alpha_bm);
+      DeleteObject( alpha_bm );
+      DeleteDC( alpha_dc );
 
       size. cx = r. right - r. left;
       size. cy = r. bottom - r. top;
