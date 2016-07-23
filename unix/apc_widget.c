@@ -250,6 +250,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    if ( recreate ) {
       int i, count;
       Handle * list;
+      XEvent dummy_ev;
 
       list  = PWidget(self)-> widgets. items;
       count = PWidget(self)-> widgets. count;
@@ -269,6 +270,13 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
       CWidget( self)-> end_paint_info( self);
       CWidget( self)-> end_paint( self);
+      if ( XX-> flags. paint_pending) {
+         TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+         XX-> flags. paint_pending = false;
+      }
+      /* flush configure events */
+      XSync( DISP, false);
+      while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)flush_events, (XPointer)self));
       hash_delete( guts.windows, (void*)&old, sizeof(old), false);
       XDestroyWindow( DISP, old);
       XCHECKPOINT;
