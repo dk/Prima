@@ -59,7 +59,7 @@ for ( @codecs) {
        pass("save ".$ci->{fileShortType});
 
        unless ( open F, "<", $name) {
-           fail($ci);
+           fail($ci->{fileShortType});
            unlink $name;
            skip "load ".$ci->{fileShortType}, 1;
        }
