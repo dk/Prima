@@ -1213,7 +1213,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
          int r, g, b, rmax, gmax, bmax, depth;
          rmax = gmax = bmax = 0xff;
          depth = XF_LAYERED(XX) ? guts. argb_visual. depth : guts. idepth;
-         switch ( guts. idepth) {
+         switch ( depth) {
          case 16:
             p32 = *(( uint16_t*)(im-> data));
             if ( guts.machine_byte_order != guts.byte_order) 
@@ -1231,7 +1231,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
             p32 = *(( uint32_t*)(im-> data));
             if ( guts.machine_byte_order != guts.byte_order) 
                p32 = REVERSE_BYTES_32(p32);
-         COMP:   
+         COMP:
             r = ((((p32 & bd-> red_mask)   >> bd->red_shift) << 8)   >> bd-> red_range) & 0xff;
             g = ((((p32 & bd-> green_mask) >> bd->green_shift) << 8) >> bd-> green_range) & 0xff;
             b = ((((p32 & bd-> blue_mask)  >> bd->blue_shift) << 8)  >> bd-> blue_range) & 0xff;
