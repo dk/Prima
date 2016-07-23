@@ -45,11 +45,13 @@ for ( @codecs) {
 	
        my $xi = $i-> dup;
        unless( open F, ">", $name) {
+           warn("Cannot open $name:$!");
            fail("load ".$ci->{fileShortType});
            skip "skipping load ".$ci->{fileShortType}, 2;
        }
        binmode F;
        unless ( $xi-> save( \*F, codecID => $ci-> {codecID})) {
+           warn("Cannot save: $@");
            fail("save ".$ci->{fileShortType});
            skip "skipping save ".$ci->{fileShortType}, 2;
            close F;
@@ -59,6 +61,7 @@ for ( @codecs) {
        pass("save ".$ci->{fileShortType});
 
        unless ( open F, "<", $name) {
+           warn("Cannot open $name:$! / $ci->{versionMajor}.$ci->{versionMinor}");
            fail($ci->{fileShortType});
            unlink $name;
            skip "load ".$ci->{fileShortType}, 1;
@@ -69,6 +72,7 @@ for ( @codecs) {
        close F;
        unlink $name;
        unless ( $xl) {
+           warn("Cannot load:$@");
            fail($ci->{fileShortType});
            skip "load ".$ci->{fileShortType}, 1;
        }
