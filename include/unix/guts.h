@@ -545,6 +545,7 @@ typedef struct _UnixGuts
    Bool                         cursor_shown;
    unsigned int                 cursor_width;
    Pixmap                       cursor_xor;
+   Bool                         cursor_layered;
    Bool                         insert;
    int                          invisible_timeout;
    struct _timer_sys_data      *oldest;
@@ -752,6 +753,7 @@ typedef struct _drawable_sys_data
       unsigned grab                 	: 1;
       unsigned has_icon                 : 1;
       unsigned layered                  : 1;
+      unsigned layered_requested        : 1;
       unsigned iconic                   : 1;
       unsigned mapped			: 1;
       unsigned modal                    : 1;

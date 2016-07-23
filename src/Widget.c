@@ -2401,7 +2401,7 @@ Widget_layered( Handle self, Bool set, Bool layered)
    HV * profile;
    enter_method;
    if ( !set)
-      return apc_widget_get_layered( self);
+      return apc_widget_get_layered_requested( self);
    profile = newHV();
    pset_i( layered, layered);
    my-> set( self, profile);

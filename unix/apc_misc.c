@@ -425,7 +425,9 @@ prima_update_cursor( Handle self)
 
       if ( !guts. cursor_save || !guts. cursor_xor
 	   || w > guts. cursor_pixmap_size. x
-	   || h > guts. cursor_pixmap_size. y)
+	   || h > guts. cursor_pixmap_size. y ||
+	   XX-> flags. layered != guts. cursor_layered
+	   )
       {
 	 if ( !guts. cursor_save) {
 	    guts. cursor_gcv. background = 0;
@@ -455,6 +457,7 @@ prima_update_cursor( Handle self)
 					    guts. cursor_pixmap_size. x,
 					    guts. cursor_pixmap_size. y,
 					    XX-> visual-> depth);
+	 guts. cursor_layered = XX-> flags. layered;
       }
 
       prima_get_gc( XX);

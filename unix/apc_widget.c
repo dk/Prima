@@ -225,7 +225,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 {
    DEFXX;
    ViewProfile vprf;
-   Bool reparent, recreate;
+   Bool reparent, recreate, layered_requested;
    Handle real_owner, old_parent;
    XWindow parent, old = X_WINDOW;
    XSetWindowAttributes attrs;
@@ -233,6 +233,10 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
    if ( !guts. argb_visual. visual || guts. argb_visual. visualid == guts. visual. visualid)
       layered = false;
+
+   layered_requested = layered;
+   layered = ( clip_owner && owner != application ) ? X(owner)->flags. layered : layered_requested;
+
    XX-> visual   = layered ? &guts. argb_visual : &guts. visual;
    XX-> colormap = layered ? guts. argbColormap : guts. defaultColormap;
 
@@ -244,8 +248,24 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       ( layered != XX-> flags. layered )
    );
    if ( recreate ) {
+      int i, count;
+      Handle * list;
+
+      list  = PWidget(self)-> widgets. items;
+      count = PWidget(self)-> widgets. count;
+      CWidget(self)-> end_paint_info( self);
+      CWidget(self)-> end_paint( self);
+      prima_release_gc( XX);
+      for( i = 0; i < count; i++)
+         get_view_ex( list[ i], ( ViewProfile*)( X( list[ i])-> recreateData = malloc( sizeof( ViewProfile))));
+      
       reparent = false;
-      get_view_ex( self, &vprf);
+      if ( XX-> recreateData) {
+         memcpy( &vprf, XX-> recreateData, sizeof( vprf));
+         free( XX-> recreateData);
+         XX-> recreateData = nil;
+      } else
+         get_view_ex( self, &vprf);
       if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
       CWidget( self)-> end_paint_info( self);
       CWidget( self)-> end_paint( self);
@@ -277,6 +297,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    XX-> flags. clip_owner = !!clip_owner;
    XX-> flags. sync_paint = !!sync_paint;
    XX-> flags. layered    = !!layered;
+   XX-> flags. layered_requested = !!layered_requested;
 
    attrs. event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask
       | ButtonReleaseMask | EnterWindowMask | LeaveWindowMask | PointerMotionMask
@@ -474,6 +495,8 @@ apc_widget_destroy( Handle self)
 {
    DEFXX;
    ConfigureEventPair *n1, *n2;
+   
+   if ( XX-> recreateData) free( XX-> recreateData);
 
    n1 = TAILQ_FIRST( &XX-> configure_pairs);
    while (n1 != nil) {
@@ -608,7 +631,13 @@ apc_widget_get_invalid_rect( Handle self)
 }
 
 Bool
-apc_widget_get_layered( Handle self)
+apc_widget_get_layered_requested( Handle self)
+{
+   return X(self)-> flags. layered_requested;
+}
+
+Bool
+apc_widget_is_layered( Handle self)
 {
    return X(self)-> flags. layered;
 }
