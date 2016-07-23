@@ -1698,8 +1698,13 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
          XSetForeground( DISP, XX-> gc, XX-> back. primary);
       } else {
          /* imBW in paint - no palettes, no colors, just plain black & white */
-         XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
-         XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+	 if ( XF_LAYERED(XX)) {
+            XSetForeground( DISP, XX-> gc, 0xFFFFFF);
+            XSetBackground( DISP, XX-> gc, 0x000000);
+	 } else {
+            XSetForeground( DISP, XX-> gc, guts. monochromeMap[1]);
+            XSetBackground( DISP, XX-> gc, guts. monochromeMap[0]);
+	 }
       }
       XX->flags.brush_fore = XX->flags.brush_back = 0;
    }
