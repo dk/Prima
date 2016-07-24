@@ -573,7 +573,7 @@ apc_widget_end_paint( Handle self)
    XX-> flags. force_flush = 0;
 
    /* make the unintended layered window opaque */
-   if ( !XX-> flags. layered_requested && XF_LAYERED(XX)) {
+   if ( !XX-> flags. layered_requested && XF_LAYERED(XX) && XX-> gc) {
       XGCValues gcv;
       Point sz;
       gcv. foreground = 0xFFFFFFFF;

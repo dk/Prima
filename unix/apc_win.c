@@ -234,7 +234,7 @@ set_motif_hints( XWindow window, int border_style, int border_icons)
 Bool
 apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		   int border_style, Bool task_list, int window_state, 
-		   int on_top, Bool use_origin, Bool use_size)
+		   int on_top, Bool use_origin, Bool use_size, Bool layered)
 {
    DEFXX;
    Handle real_owner;
@@ -245,7 +245,6 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XWMHints wmhints;
    XClassHint *class_hint;
    ConfigureEventPair *cep;
-   Bool layered = false;
    unsigned long valuemask;
    
    if ( border_style != bsSizeable) border_style = bsDialog;
@@ -448,6 +447,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XX-> flags. clip_owner = false;
    XX-> flags. sync_paint = sync_paint;
    XX-> flags. task_listed = 1;
+   XX-> flags. layered = XX-> flags. layered_requested = 1;
 
    XX-> above = nilHandle;
    XX-> owner = real_owner;
