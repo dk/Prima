@@ -742,12 +742,13 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
           HWND frame;
           RECT r;
           int  rcp[4] = {0,0,0,0};
+	  Bool layered = is_apt(aptLayered);
           if ( !clipOwner) parentView = HWND_DESKTOP;
           if ( !taskListed && ( parentView == HWND_DESKTOP || parentView == nil))
               parentView = DHANDLE( application);
           if ( !usePos)  rcp[0] = rcp[1] = CW_USEDEFAULT;
           if ( !useSize) rcp[2] = rcp[3] = CW_USEDEFAULT;
-          if ( !( frame = CreateWindowExW( exstyle, L"GenericFrame", &wnull,
+          if ( !( frame = CreateWindowExW( exstyle, layered ? L"LayeredFrame" : L"GenericFrame", &wnull,
                 style | WS_CLIPCHILDREN,
                 rcp[0], rcp[1], rcp[2], rcp[3],
                 parentView, nil, guts. instance, nil)))
@@ -761,11 +762,19 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
                    0,0,0,0,SWP_NOMOVE | SWP_NOSIZE  | SWP_NOACTIVATE))
                 apiErr;
           GetClientRect( frame, &r);
-          if ( !( ret = CreateWindowExW( 0,  L"Generic", &wnull,
-                WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-                0, 0, r. right - r. left, r. bottom - r. top, frame, nil,
-                guts. instance, nil)))
-             apiErr;
+	  if ( layered ) {
+             if ( !( ret = CreateWindowExW( WS_EX_LAYERED|WS_EX_TOOLWINDOW,  L"Generic", &wnull,
+                   WS_VISIBLE | WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+                   r. left, r. top, r. right, r. bottom, nil, nil,
+                   guts. instance, nil)))
+                apiErr;
+	  } else {
+             if ( !( ret = CreateWindowExW( 0,  L"Generic", &wnull,
+                   WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+                   0, 0, r. right - r. left, r. bottom - r. top, frame, nil,
+                   guts. instance, nil)))
+                apiErr;
+          }
           sys lastSize. x = r. right  - r. left;
           sys yOverride = sys lastSize. y = r. bottom - r. top;
           sys handle = frame;
@@ -857,7 +866,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
                    int borderStyle, Bool taskList, int windowState, 
-		   int on_top, Bool usePos, Bool useSize)
+		   int on_top, Bool usePos, Bool useSize, Bool layered)
 {
   Bool reset = false;
   ViewProfile vprf;
@@ -884,6 +893,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 
   objCheck false;
   dobjCheck( owner) false;
+  if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8) layered = false;
 
   if ( !kind_of( self, CWidget)) apcErrRet( errInvObject);
   apcErrClear;
@@ -892,6 +902,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
     || ( borderStyle != sys s. window. borderStyle)
     || ( borderIcons != sys s. window. borderIcons)
     || ( taskList    != is_apt( aptTaskList))
+    || ( layered     != is_apt( aptLayered))
   ))
   {
      int len = GetWindowTextLengthW( HANDLE ) + 1;
@@ -912,6 +923,9 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
      reset = true;
   }
   HWND_lock( true);
+
+  apt_assign( aptLayeredRequested, layered );
+  apt_assign( aptLayered, layered );
 
   if ( reset || ( var handle == nilHandle))
      if ( !create_group( self, owner, syncPaint, false,
@@ -1946,7 +1960,9 @@ apc_widget_end_paint( Handle self)
       HDC alpha_dc;
       uint32_t * alpha_pixels;
       
-      GetWindowRect( HANDLE, &r);
+      GetWindowRect((HWND) var handle, &r);
+      if ( r. right - r. left <= 0 || r. bottom - r. top <= 0)
+         goto SKIP_ALPHA;
 
       xbi. bmiHeader. biSize          = sizeof( BITMAPINFOHEADER);
       xbi. bmiHeader. biWidth         = 1;
@@ -1964,7 +1980,7 @@ apc_widget_end_paint( Handle self)
       /* subpaint children */
       src. x = r. left;
       src. y = r. top;
-      subpaint_layered_widgets( HANDLE, sys ps, alpha_dc, src, NULL);
+      subpaint_layered_widgets( var handle, sys ps, alpha_dc, src, NULL);
       
       SelectObject( alpha_dc, stock_alpha_bm);
       DeleteObject( alpha_bm );
@@ -1986,6 +2002,7 @@ apc_widget_end_paint( Handle self)
       }
       if ( !UpdateLayeredWindow((HWND) var handle, NULL, ppos, &size, sys ps, &src, 0, &bf, ULW_ALPHA)) 
          apiErr;
+   SKIP_ALPHA:
       SelectObject(sys ps, sys stockBM);
       DeleteObject(sys bm);
       DeleteDC(sys ps);
@@ -2714,13 +2731,16 @@ apc_widget_set_shape( Handle self, Handle mask)
 
    rgn = region_create( mask);
    if ( !rgn) {
-      SetWindowRgn( HANDLE, nil, true);
+      if ( sys className == WC_FRAME && is_apt(aptLayered))
+         SetWindowRgn((HWND) var handle, nil, true);
+      else
+         SetWindowRgn( HANDLE, nil, true);
       return true;
    }
 
    sys extraBounds. x = PImage( mask)-> w;
    sys extraBounds. y = PImage( mask)-> h;
-   if ( sys className == WC_FRAME) {
+   if ( sys className == WC_FRAME && !is_apt(aptLayered)) {
       Point delta = get_window_borders( sys s. window. borderStyle);
       Point sz    = apc_widget_get_size( self);
       Point p     = sys extraBounds;
@@ -2735,11 +2755,18 @@ apc_widget_set_shape( Handle self, Handle mask)
       CombineRgn( rgn, rgn, r1, RGN_OR);
       DeleteObject( r1);
       DeleteObject( r2);
-   } else
+      if ( !SetWindowRgn( HANDLE, rgn, true))
+         apiErrRet;
+   } else if ( sys className == WC_FRAME ) {
       sys extraPos. x = sys extraPos. y = 0;
+      if ( !SetWindowRgn((HWND) var handle, rgn, true))
+         apiErrRet;
+   } else {
+      sys extraPos. x = sys extraPos. y = 0;
+      if ( !SetWindowRgn( HANDLE, rgn, true))
+         apiErrRet;
+   }
 
-   if ( !SetWindowRgn( HANDLE, rgn, true))
-      apiErrRet;
    return true;
 }
 

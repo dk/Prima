@@ -103,6 +103,18 @@ window_subsystem_init( char * error_buf)
    wc.hbrBackground = (HBRUSH)NULL;
    wc.lpszClassName = L"GenericFrame";
    RegisterClassW( &wc);
+   
+   memset( &wc, 0, sizeof( wc));
+   wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+   wc.lpfnWndProc   = ( WNDPROC) layered_frame_handler;
+   wc.cbClsExtra    = 0;
+   wc.cbWndExtra    = 0;
+   wc.hInstance     = guts. instance;
+   wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
+   wc.hCursor       = LoadCursor( NULL, IDC_ARROW);
+   wc.hbrBackground = (HBRUSH)NULL;
+   wc.lpszClassName = L"LayeredFrame";
+   RegisterClassW( &wc);
 
    memset( &wc, 0, sizeof( wc));
    wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -456,7 +468,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
         if ( is_declipped_child( self) && !Widget_is_child( hwnd_to_view(( HWND) mp2), hwnd_top_level( self))) {
            Handle x = hwnd_top_level( self);
            if ( x) SendMessage( DHANDLE( x), WM_NCACTIVATE, mp1, mp2);
-        }   
+        }
         break;
    case WM_MOUSEACTIVATE:
        // if pointing to non-active frame, but its declipped child is active at the moment,
@@ -1290,6 +1302,95 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
    return ret;
 }
 
+static void
+update_layered_frame(Handle self)
+{
+   HRGN r1, r2;
+   RECT frame, client;
+   POINT frame_size, client_size;
+   Point delta_upper_left, delta_lower_right, move;
+   HWND win = HANDLE;
+   
+   delta_lower_right = get_window_borders( sys s. window. borderStyle);
+   GetWindowRect(win, &frame);
+   GetClientRect(win, &client);
+   frame_size. x = frame. right  - frame. left;
+   frame_size. y = frame. bottom - frame. top;
+   client_size. x = client. right  - client. left;
+   client_size. y = client. bottom - client. top;
+   r2 = CreateRectRgn( 0, 0, frame_size.x, frame_size.y);
+   r1 = CreateRectRgn( 0, 0, client_size.x, client_size.y);
+   delta_upper_left.x = frame_size.x - client_size.x - delta_lower_right.x;
+   delta_upper_left.y = frame_size.y - client_size.y - delta_lower_right.y;
+   OffsetRgn( r1, delta_upper_left.x, delta_upper_left.y);
+   CombineRgn( r2, r2, r1, RGN_XOR);
+   if (!SetWindowRgn( win, r2, true)) apiErr;
+   DeleteObject(r1);
+   DeleteObject(r2);
+
+   move.x = frame.left + delta_upper_left.x;
+   move.y = frame.top  + delta_upper_left.y;
+   if ( !SetWindowPos(( HWND ) var handle, win, 
+        client.left + move.x, client.top + move.y, client_size.x, client_size.y,
+        SWP_NOACTIVATE)) apiErr;
+   hwnd_repaint_layered( self, false );
+}
+
+LRESULT CALLBACK layered_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
+{
+   Handle  self = GetWindowLongPtr( win, GWLP_USERDATA);
+
+   if ( !self)
+      return DefWindowProcW( win, msg, mp1, mp2);
+
+   switch ( msg) {
+   case WM_SIZE:
+   case WM_MOVE:
+      update_layered_frame(self);
+      return DefWindowProcW( win, msg, mp1, mp2);
+
+   case WM_WINDOWPOSCHANGED: {
+         LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
+	 Bool updated = false;
+
+         if (( l-> flags & SWP_NOSIZE) == 0) {
+            RECT r;
+            update_layered_frame(self);
+	    updated = true;
+
+            GetClientRect( win, &r);
+            sys yOverride = r. bottom - r. top;
+            SendMessage( win, WM_SYNCMOVE, 0, 0);
+	 }
+         if (( l-> flags & SWP_NOMOVE) == 0) {
+            if ( !updated ) {
+	       update_layered_frame(self);
+	       updated = true;
+	    }
+	 }
+         if (( l-> flags & SWP_NOZORDER) == 0) {
+            PostMessage( win, WM_ZORDERSYNC, 0, 0);
+            if ( !updated ) {
+	       update_layered_frame(self);
+	       updated = true;
+	    }
+	 }
+         if ( l-> flags & SWP_HIDEWINDOW) {
+	    ShowWindow((HWND) var handle, SW_HIDE);
+	    SendMessage( win, WM_SETVISIBLE, 0, 0);
+	 }
+         if ( l-> flags & SWP_SHOWWINDOW) {
+	    ShowWindow((HWND) var handle, SW_SHOW);
+	    SendMessage( win, WM_SETVISIBLE, 1, 0);
+	 }
+      }
+
+      return DefWindowProcW( win, msg, mp1, mp2);
+   }
+
+   return generic_frame_handler( win, msg, mp1, mp2 );
+}
+
 static Bool kill_img_cache( Handle self, int keyLen, void * key, void * killDBM)
 {
    if ( is_apt( aptDeviceBitmap)) {
@@ -1298,8 +1399,6 @@ static Bool kill_img_cache( Handle self, int keyLen, void * key, void * killDBM)
       image_destroy_cache( self);
    return false;
 }
-
-
 
 LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
 {

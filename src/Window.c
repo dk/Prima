@@ -95,7 +95,8 @@ void Window_update_sys_handle( Handle self, HV * profile)
       pexist( windowState) ? pget_i( windowState) : my-> get_windowState( self),
       pexist( onTop) ? pget_B( onTop) : -1, /* This is way better. I should've thought of this before! */
       !( pexist( originDontCare) && pget_B( originDontCare)),
-      !( pexist( sizeDontCare)   && pget_B( sizeDontCare))
+      !( pexist( sizeDontCare)   && pget_B( sizeDontCare)),
+      pexist( layered)     ? pget_B( layered) : my-> get_layered( self)
    ))
       croak("Cannot create window");
    pdelete( borderStyle);
@@ -400,12 +401,6 @@ Window_execute_shared( Handle self, Handle insertBefore)
 }
 
 Bool
-Window_layered( Handle self, Bool set, Bool layered)
-{
-   return false;
-}
-
-Bool
 Window_modalHorizon( Handle self, Bool set, Bool modalHorizon)
 {
    if ( !set)
@@ -448,8 +443,6 @@ void Window_set( Handle self, HV * profile)
 {
    dPROFILE;
    Bool owner_icon = false;
-   
-   pdelete( layered);
    
    if ( pexist( menuFont)) {
       SvHV_Font( pget_sv( menuFont), &Font_buffer, "Window::set");

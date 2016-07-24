@@ -1924,7 +1924,7 @@ apc_component_fullname_changed_notify( Handle self);
 /* Window */
 extern Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons, int borderStyle,
-                   Bool taskList, int windowState, int onTop, Bool useOrigin, Bool useSize);
+                   Bool taskList, int windowState, int onTop, Bool useOrigin, Bool useSize, Bool layered);
 
 extern Bool
 apc_window_activate( Handle self);
