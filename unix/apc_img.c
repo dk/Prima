@@ -2706,6 +2706,14 @@ apc_gp_stretch_image( Handle self, Handle image,
       }
       XDestroyImage( i);
       ok = apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop);
+   } else if ( src == SRC_LAYERED ) {
+      obj = ( Handle) create_object("Prima::Icon", "");
+      ok = prima_query_argb_rect( obj, X(image)-> gdrawable, src_x, PDrawable(image)-> h - src_h - src_y, src_w, src_h);
+      if ( !ok ) {
+         Object_destroy( obj );
+         return false;
+      }
+      ok = apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop);
    } else {
       /* extract local bits */
       obj = CImage(image)->extract( image, src_x, src_y, src_w, src_h );
