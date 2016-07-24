@@ -52,7 +52,72 @@ my ( $r, $g, $b ) = map { icon($_) } (cl::LightRed, cl::LightGreen, cl::LightBlu
 my $angle = 0;
 my $pi = 3.14159;
 
-my $w = Prima::Widget->new(
+my $i = Prima::Image-> new(
+	width => 96,
+	height => 36,
+	type => im::BW,
+);
+$i->begin_paint;
+$i->clear;
+$i->fill_ellipse(10,10,10,10);
+$i->end_paint;
+
+my $w = Prima::MainWindow->new(
+	layered  => 1,
+	buffered => 1,
+	text     => 'ARGB example',
+	size     => [ 300, 300 ],
+	origin   => [ 100, 100 ],
+	backColor => cl::Black,
+	onPaint   => sub {
+		my $self = shift;
+		$self->clear;
+		my ($w, $h) = $self->size;
+		$self->color(cl::LightRed);
+		$self->rectangle(4,4,$w-4,$h-4);
+		my $x = $w * 1 / 2;
+		my $y = $h * 1 / 2;
+
+		$self->translate($w/2, $h/2);
+		my ( $x0, $y0 ) = ( $w/12, $h/12);
+		my $r0 = ($x0 < $y0) ? $x0 : $y0;
+		my $a = 0;
+		for my $i ( $r, $g, $b ) {
+			my $sin = sin($a) * $r0;
+			my $cos = cos($a) * $r0;
+			my $xx = $cos - $sin; 
+			my $yy = $sin + $cos; 
+			$xx -= $x / 2;
+			$yy -= $y / 2;
+			$self->stretch_image( $xx, $yy, $x, $y, $i);
+			$a += $pi * 2 / 3;
+		}
+	}
+);
+
+my $btn = $w-> insert( Button => 
+	origin  => [10,10],
+	shape   => $i,
+	text    => '~Quit',
+	onClick => sub { $::application-> close },
+);
+
+$btn->insert( Widget => 
+	origin => [10,10],
+	size   => [10,10],
+	onPaint => sub {
+	   my $self = shift;
+	   $self->clipRect(-1000,-1000,2000,2000);
+	   $self->color(cl::LightRed);
+	   $self->bar(-1000,-1000,2000,2000);
+	   $self->color(cl::White);
+	   $self->bar(0,0,$self->width-1,$self->height-1);
+	   $self->color(cl::LightGreen);
+	   $self->rectangle(0,0,$self->width-1,$self->height-1);
+	},
+);
+
+my $widget = Prima::Widget->new(
 	layered  => 1,
 	buffered => 1,
 	size     => [ 300, 300 ],
@@ -94,43 +159,10 @@ my $w = Prima::Widget->new(
 			my $yy = $sin + $cos; 
 			$xx -= $x / 2;
 			$yy -= $y / 2;
-			#$self->stretch_image( $xx, $yy, $x, $y, $i);
 			$self->put_image( $xx, $yy, $i);
 			$a += $pi * 2 / 3;
 		}
 	}
-);
-
-my $i = Prima::Image-> new(
-	width => 96,
-	height => 36,
-	type => im::BW,
-);
-$i->begin_paint;
-$i->clear;
-$i->fill_ellipse(10,10,10,10);
-$i->end_paint;
-
-my $btn = $w-> insert( Button => 
-	origin  => [10,10],
-	shape   => $i,
-	text    => '~Quit',
-	onClick => sub { $::application-> close },
-);
-
-$btn->insert( Widget => 
-	origin => [10,10],
-	size   => [10,10],
-	onPaint => sub {
-	   my $self = shift;
-	   $self->clipRect(-1000,-1000,2000,2000);
-	   $self->color(cl::LightRed);
-	   $self->bar(-1000,-1000,2000,2000);
-	   $self->color(cl::White);
-	   $self->bar(0,0,$self->width-1,$self->height-1);
-	   $self->color(cl::LightGreen);
-	   $self->rectangle(0,0,$self->width-1,$self->height-1);
-	},
 );
 
 my ($mx, $my) = (1, 1);
@@ -140,15 +172,15 @@ $w->insert( Timer =>
 	onTick => sub {
 		$angle += 0.1;
 		$angle -= $pi*2 if $angle > $pi*2;
-		my @p = $w->origin;
+		my @p = $widget->origin;
 		$p[0] += $mx * 5;
 		$p[1] += $my * 5;
 		$mx = 1 if $p[0] < 0 && $mx < 0;
 		$my = 1 if $p[1] < 0 && $my < 0;
-		$mx = -1 if $p[0] > $::application->width-$w->width && $mx > 0;
-		$my = -1 if $p[1] > $::application->height-$w->height && $my > 0;
-		$w->origin(@p) unless $w->{drag};
-		$w->repaint;
+		$mx = -1 if $p[0] > $::application->width  - $widget->width && $mx > 0;
+		$my = -1 if $p[1] > $::application->height - $widget->height && $my > 0;
+		$widget->origin(@p) unless $widget->{drag};
+		$widget->repaint;
 	},
 )->start;
 

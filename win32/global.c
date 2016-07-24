@@ -1344,6 +1344,11 @@ LRESULT CALLBACK layered_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
       return DefWindowProcW( win, msg, mp1, mp2);
 
    switch ( msg) {
+   case WM_NCACTIVATE:
+   case WM_NCHITTEST:
+   case WM_SETFOCUS:
+      return DefWindowProcW( win, msg, mp1, mp2);
+      
    case WM_SIZE:
    case WM_MOVE:
       update_layered_frame(self);
