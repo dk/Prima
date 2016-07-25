@@ -140,8 +140,8 @@ process_transparents( Handle self)
    }
 }
 
-static int
-flush_events( Display * disp, XEvent * ev, Handle self)
+int
+prima_flush_events( Display * disp, XEvent * ev, Handle self)
 {
    XWindow win;
    /* leave only configuration unrelated commands on the queue */
@@ -177,43 +177,50 @@ flush_events( Display * disp, XEvent * ev, Handle self)
    return win == X(self)-> client || win == X_WINDOW;
 }
 
-typedef struct _ViewProfile {
-  Point    pos;
-  Point    size;
-  Bool     visible;
-  Bool     focused;
-  Handle   capture;
-} ViewProfile, *PViewProfile;
-
-static void
-get_view_ex( Handle self, PViewProfile p)
+void
+prima_get_view_ex( Handle self, PViewProfile p)
 {
-  int i;
+  DEFXX;
   if ( !p) return;
+  if ( XX-> type. window) {
+    p-> pos       = apc_window_get_client_pos( self);
+    p-> size      = apc_window_get_client_size( self);
+  } else {
+    p-> pos       = apc_widget_get_pos( self);
+    p-> size      = apc_widget_get_size( self);
+  }
   p-> capture   = apc_widget_is_captured( self);
-  p-> pos       = apc_widget_get_pos( self);
-  p-> size      = apc_widget_get_size( self);
   p-> focused   = apc_widget_is_focused( self);
   p-> visible   = apc_widget_is_visible( self);
 }
 
-static void
-set_view_ex( Handle self, PViewProfile p)
+void
+prima_set_view_ex( Handle self, PViewProfile p)
 {
   DEFXX;
+
+  if ( p-> visible ) XMapWindow( DISP, X_WINDOW);
+  if ( XX-> type. window ) {
+     XX-> origin. x--; /* force it */
+     apc_window_set_client_rect( self, p-> pos.x, p-> pos.y, p-> size.x, p->size.y);
+  } else {
+     apc_widget_set_rect( self, p-> pos.x, p-> pos.y, p-> size.x, p->size.y);
+  }
+
+  /*
+  p-> pos. y = X(XX-> owner)-> size. y - p-> size. y - p-> pos. y;
   if ( XX-> flags. falsely_hidden) {
      if ( p-> size. x == 0) p-> size. x = 1;
      if ( p-> size. y == 0) p-> size. y = 1;
      XMoveResizeWindow( DISP, X_WINDOW, p-> pos.x, p->pos. y, p-> size.x, p-> size.y);
   } else {
-     p-> pos. y = X(XX-> owner)-> size. y - p-> size. y - XX-> origin. y;
      if ( XX-> parentHandle) {
         XWindow cld;
         XTranslateCoordinates( DISP, PWidget(XX-> owner)-> handle, XX-> parentHandle, p->pos.x, p->pos.y, &p->pos.x, &p->pos.y, &cld);
-     } 
+     }
      XMoveResizeWindow( DISP, X_WINDOW, p-> pos.x, p->pos. y, p-> size.x, p-> size.y);
-     if ( p-> visible ) XMapWindow( DISP, X_WINDOW);
   }
+  */
 
   if ( p-> focused) apc_widget_set_focused( self);
   if ( p-> capture) apc_widget_set_capture( self, 1, nilHandle);
@@ -258,7 +265,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       CWidget(self)-> end_paint( self);
       prima_release_gc( XX);
       for( i = 0; i < count; i++)
-         get_view_ex( list[ i], ( ViewProfile*)( X( list[ i])-> recreateData = malloc( sizeof( ViewProfile))));
+         prima_get_view_ex( list[ i], ( ViewProfile*)( X( list[ i])-> recreateData = malloc( sizeof( ViewProfile))));
       
       reparent = false;
       if ( XX-> recreateData) {
@@ -266,7 +273,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
          free( XX-> recreateData);
          XX-> recreateData = nil;
       } else
-         get_view_ex( self, &vprf);
+         prima_get_view_ex( self, &vprf);
       if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
       CWidget( self)-> end_paint_info( self);
       CWidget( self)-> end_paint( self);
@@ -276,7 +283,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       }
       /* flush configure events */
       XSync( DISP, false);
-      while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)flush_events, (XPointer)self));
+      while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)prima_flush_events, (XPointer)self));
       hash_delete( guts.windows, (void*)&old, sizeof(old), false);
       XDestroyWindow( DISP, old);
       XCHECKPOINT;
@@ -333,7 +340,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       }
       /* flush configure events */
       XSync( DISP, false);
-      while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)flush_events, (XPointer)self));
+      while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)prima_flush_events, (XPointer)self));
       
       XChangeWindowAttributes( DISP, X_WINDOW, CWWinGravity, &attrs);
       XReparentWindow( DISP, X_WINDOW, parent, pos. x, 
@@ -383,7 +390,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
    if (recreate) {
       Point pos = PWidget(self)-> pos;
-      set_view_ex( self, &vprf);
+      prima_set_view_ex( self, &vprf);
       XX-> gdrawable = XX-> udrawable = X_WINDOW;
       XX-> ackOrigin = pos;
       XX-> ackSize   = XX-> size;

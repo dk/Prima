@@ -181,6 +181,8 @@ typedef struct {
    unsigned long pixel;
    XWindow       win;
    GC            gc;
+   Bool          layered;
+   unsigned long * c;
 } MenuDrawRec;
 
 static void
@@ -647,7 +649,6 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
       PMenuWindow w;
       PUnixMenuItem ix;
       PMenuItemReg m;
-      GC gc = guts. menugc;
       int mx, my;
       Bool vertical;
       int sz = 1024, l, i, slen, x, y;
@@ -659,7 +660,8 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
       MenuDrawRec draw;
       unsigned long clr;
       Color rgb;
-     
+      PWindow owner;
+      
       kf = XX-> font;
       XX-> paint_pending = false;
       if ( XX-> wstatic. w == win) {
@@ -677,18 +679,28 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
       ix = w-> um;
       if ( !ix) return;
 
+      owner = ( PWindow)(PComponent( w-> self)-> owner);
       bzero( &draw, sizeof( draw));
       draw. win = win;
-      draw. gc = gc;
+      draw. layered = vertical ? false : X(owner)->flags. layered;
+      if ( draw.layered ) {
+         XGCValues gcv;
+         gcv. graphics_exposures = false;
+         draw. gc = XCreateGC( DISP, X(owner)->gdrawable, GCGraphicsExposures, &gcv);
+	 draw. c  = XX->argb_c;
+      } else {
+         draw. gc = guts. menugc;
+	 draw. c  = XX->c;
+      }
 #ifdef USE_XFT
       if ( kf-> xft) {
-         PWindow owner = ( PWindow)(PComponent( w-> self)-> owner);
          char * encoding = ( XX-> type. popup) ? 
             owner-> popupFont. encoding :
             owner-> menuFont. encoding;
          draw. xft_map8 = prima_xft_map8( encoding);
          draw. xft_drawable = XftDrawCreate( DISP, win, 
-            guts. visual. visual, guts. defaultColormap);
+            draw.layered ? guts. argb_visual. visual : guts. visual. visual, 
+	    draw.layered ? guts. argbColormap : guts. defaultColormap);
          descent = kf-> xft-> descent;
       } else
 #endif
@@ -703,7 +715,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
 	 r. height = ev-> xexpose. height;
          rgn = XCreateRegion();
 	 XUnionRectWithRegion( &r, rgn, rgn);
-         XSetRegion( DISP, gc, rgn);
+         XSetRegion( DISP, draw.gc, rgn);
 #ifdef USE_XFT
          if ( draw. xft_drawable) XftDrawSetClip(( XftDraw*) draw.xft_drawable, rgn);
 #endif         
@@ -713,24 +725,24 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
 #ifdef USE_XFT
       if ( !kf-> xft)
 #endif      
-         XSetFont( DISP, gc, kf-> id);
-      XSetForeground( DISP, gc, XX->c[ciBack]);
-      XSetBackground( DISP, gc, XX->c[ciBack]);
+         XSetFont( DISP, draw.gc, kf-> id);
+      XSetForeground( DISP, draw.gc, draw.c[ciBack]);
+      XSetBackground( DISP, draw.gc, draw.c[ciBack]);
       if ( vertical) {
-         XFillRectangle( DISP, win, gc, 2, 2, mx-1, my-1);
-         XSetForeground( DISP, gc, XX->c[ciDark3DColor]);
-         XDrawLine( DISP, win, gc, 0, 0, 0, my);
-         XDrawLine( DISP, win, gc, 0, 0, mx-1, 0);
-         XDrawLine( DISP, win, gc, mx-1, my-1, 2, my-1);
-         XDrawLine( DISP, win, gc, mx-1, my-1, mx-1, 1);
-         XSetForeground( DISP, gc, guts. monochromeMap[0]);
-         XDrawLine( DISP, win, gc, mx, my, 1, my);
-         XDrawLine( DISP, win, gc, mx, my, mx, 0);
-         XSetForeground( DISP, gc, XX->c[ciLight3DColor]);
-         XDrawLine( DISP, win, gc, 1, 1, 1, my-1);
-         XDrawLine( DISP, win, gc, 1, 1, mx-2, 1);
+         XFillRectangle( DISP, win, draw.gc, 2, 2, mx-1, my-1);
+         XSetForeground( DISP, draw.gc, draw.c[ciDark3DColor]);
+         XDrawLine( DISP, win, draw.gc, 0, 0, 0, my);
+         XDrawLine( DISP, win, draw.gc, 0, 0, mx-1, 0);
+         XDrawLine( DISP, win, draw.gc, mx-1, my-1, 2, my-1);
+         XDrawLine( DISP, win, draw.gc, mx-1, my-1, mx-1, 1);
+         XSetForeground( DISP, draw.gc, guts. monochromeMap[0]);
+         XDrawLine( DISP, win, draw.gc, mx, my, 1, my);
+         XDrawLine( DISP, win, draw.gc, mx, my, mx, 0);
+         XSetForeground( DISP, draw.gc, draw.c[ciLight3DColor]);
+         XDrawLine( DISP, win, draw.gc, 1, 1, 1, my-1);
+         XDrawLine( DISP, win, draw.gc, 1, 1, mx-2, 1);
       } else
-         XFillRectangle( DISP, win, gc, 0, 0, w-> sz.x, w-> sz.y);
+         XFillRectangle( DISP, win, draw.gc, 0, 0, w-> sz.x, w-> sz.y);
       y = vertical ? 2 : 0;
       x = 0;
       if ( !( s = malloc( sz))) goto EXIT;
@@ -741,13 +753,13 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
          if ( last == w-> selected) { 
             Point sz = menu_item_size( XX, w, last);
             Point p = menu_item_offset( XX, w, last);
-            XSetForeground( DISP, gc, XX-> c[ciHilite]);
-            XFillRectangle( DISP, win, gc, p.x, p.y, sz. x, sz.y);
-            clr = XX-> c[ciHiliteText];
+            XSetForeground( DISP, draw.gc, draw.c[ciHilite]);
+            XFillRectangle( DISP, win, draw.gc, p.x, p.y, sz. x, sz.y);
+            clr = draw.c[ciHiliteText];
             rgb = XX-> rgb[ciHiliteText];
             selected = true;
          } else {
-            clr = XX-> c[ciFore];
+            clr = draw.c[ciFore];
             rgb = XX-> rgb[ciFore];
          }
 
@@ -769,11 +781,11 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
          if ( m-> flags. divider) {
             if ( vertical) {
                y += MENU_ITEM_GAP - 1;
-               XSetForeground( DISP, gc, XX->c[ciDark3DColor]);
-               XDrawLine( DISP, win, gc, 1, y, mx-1, y);
+               XSetForeground( DISP, draw.gc, draw.c[ciDark3DColor]);
+               XDrawLine( DISP, win, draw.gc, 1, y, mx-1, y);
                y++;
-               XSetForeground( DISP, gc, XX->c[ciLight3DColor]);
-               XDrawLine( DISP, win, gc, 1, y, mx-1, y);
+               XSetForeground( DISP, draw.gc, draw.c[ciLight3DColor]);
+               XDrawLine( DISP, win, draw.gc, 1, y, mx-1, y);
                y += MENU_ITEM_GAP;
             } else if ( right > 0) {
                x += right;
@@ -783,7 +795,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
             int deltaY = 0;
 
             if ( m-> flags. disabled) {
-               clr = XX-> c[ciDisabledText];
+               clr = draw.c[ciDisabledText];
                rgb = XX-> rgb[ ciDisabledText];
             }
 
@@ -832,7 +844,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                      break;
                }
                if ( m-> flags. disabled && !selected) {
-                  draw. pixel = XX->c[ciLight3DColor]; 
+                  draw. pixel = draw.c[ciLight3DColor]; 
                   draw. rgb   = XX->rgb[ciLight3DColor]; 
                   text_out( kf, s, slen, x+MENU_XOFFSET+xtoffs+1, ay+1, 
                      m-> flags. utf8_text, &draw);
@@ -842,18 +854,18 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                text_out( kf, s, slen, x+MENU_XOFFSET+xtoffs, ay, m-> flags. utf8_text, &draw);
                if ( haveDash) {
                   if ( m-> flags. disabled && !selected) {
-                      XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
-                      XDrawLine( DISP, win, gc, x+MENU_XOFFSET+xtoffs+lineStart+1, ay+descent-1+1, 
+                      XSetForeground( DISP, draw.gc, draw.c[ciLight3DColor]); 
+                      XDrawLine( DISP, win, draw.gc, x+MENU_XOFFSET+xtoffs+lineStart+1, ay+descent-1+1, 
                          x+MENU_XOFFSET+xtoffs+lineEnd+1, ay+descent-1+1);
                   } 
-                  XSetForeground( DISP, gc, clr);
-                  XDrawLine( DISP, win, gc, x+MENU_XOFFSET+xtoffs+lineStart, ay+descent-1, 
+                  XSetForeground( DISP, draw.gc, clr);
+                  XDrawLine( DISP, win, draw.gc, x+MENU_XOFFSET+xtoffs+lineStart, ay+descent-1, 
                      x+MENU_XOFFSET+xtoffs+lineEnd, ay+descent-1);
                }  
             } else if ( m-> bitmap && ix-> pixmap) {
-               if ( selected) XSetFunction( DISP, gc, GXcopyInverted);
-               XCopyArea( DISP, ix-> pixmap, win, gc, 0, 0, ix-> width, ix-> height, x+MENU_XOFFSET+xtoffs, y + MENU_ITEM_GAP);
-               if ( selected) XSetFunction( DISP, gc, GXcopy);
+               if ( selected) XSetFunction( DISP, draw.gc, GXcopyInverted);
+               XCopyArea( DISP, ix-> pixmap, win, draw.gc, 0, 0, ix-> width, ix-> height, x+MENU_XOFFSET+xtoffs, y + MENU_ITEM_GAP);
+               if ( selected) XSetFunction( DISP, draw.gc, GXcopy);
             }
             if ( !vertical) x += ix-> width + MENU_XOFFSET;
 
@@ -878,7 +890,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                for ( i = 0; i < ul; i++)
                   store_char( m-> accel, accel_len, &sl, s, &dl, m-> flags. utf8_accel, &draw);
                if ( m-> flags. disabled && !selected) {
-                  draw. pixel = XX->c[ciLight3DColor]; 
+                  draw. pixel = draw.c[ciLight3DColor]; 
                   draw. rgb   = XX->rgb[ciLight3DColor]; 
                   text_out( kf, s, ul, zx + 1, zy + 1,
                      m-> flags. utf8_accel, &draw);
@@ -904,19 +916,19 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                p[2].y = center + ave * 0.6 + 1;
                if ( m-> flags. disabled && !selected) {
                   int i;
-                  XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
+                  XSetForeground( DISP, draw.gc, draw.c[ciLight3DColor]); 
                   for ( i = 0; i < 3; i++) { 
                      p[i].x++;
                      p[i].y++;
                   }   
-                  XFillPolygon( DISP, win, gc, p, 3, Nonconvex, CoordModeOrigin);   
+                  XFillPolygon( DISP, win, draw.gc, p, 3, Nonconvex, CoordModeOrigin);   
                   for ( i = 0; i < 3; i++) { 
                      p[i].x--;
                      p[i].y--;
                   }   
                } 
-               XSetForeground( DISP, gc, clr);
-               XFillPolygon( DISP, win, gc, p, 3, Nonconvex, CoordModeOrigin);
+               XSetForeground( DISP, draw.gc, clr);
+               XFillPolygon( DISP, win, draw.gc, p, 3, Nonconvex, CoordModeOrigin);
             } 
             if ( m-> flags. checked && vertical) { 
                /* don't draw check marks on horizontal menus - they look ugly */
@@ -924,17 +936,17 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
                int ax = x + MENU_XOFFSET / 2;
                XGCValues gcv;
                gcv. line_width = 3;
-               XChangeGC( DISP, gc, GCLineWidth, &gcv); 
+               XChangeGC( DISP, draw.gc, GCLineWidth, &gcv); 
                if ( m-> flags. disabled && !selected) {
-                  XSetForeground( DISP, gc, XX->c[ciLight3DColor]); 
-                  XDrawLine( DISP, win, gc, ax + 1 + 1 , y + deltaY / 2 + 1, ax + MENU_XOFFSET - 2 + 1, bottom - 1);
-                  XDrawLine( DISP, win, gc, ax + MENU_XOFFSET - 2 + 1, bottom + 1, ax + MENU_CHECK_XOFFSET + 1, y + MENU_ITEM_GAP + ix-> height * 0.2);
+                  XSetForeground( DISP, draw.gc, draw.c[ciLight3DColor]); 
+                  XDrawLine( DISP, win, draw.gc, ax + 1 + 1 , y + deltaY / 2 + 1, ax + MENU_XOFFSET - 2 + 1, bottom - 1);
+                  XDrawLine( DISP, win, draw.gc, ax + MENU_XOFFSET - 2 + 1, bottom + 1, ax + MENU_CHECK_XOFFSET + 1, y + MENU_ITEM_GAP + ix-> height * 0.2);
                } 
-               XSetForeground( DISP, gc, clr);
-               XDrawLine( DISP, win, gc, ax + 1, y + deltaY / 2, ax + MENU_XOFFSET - 2, bottom);
-               XDrawLine( DISP, win, gc, ax + MENU_XOFFSET - 2, bottom, ax + MENU_CHECK_XOFFSET, y + MENU_ITEM_GAP + ix-> height * 0.2);
+               XSetForeground( DISP, draw.gc, clr);
+               XDrawLine( DISP, win, draw.gc, ax + 1, y + deltaY / 2, ax + MENU_XOFFSET - 2, bottom);
+               XDrawLine( DISP, win, draw.gc, ax + MENU_XOFFSET - 2, bottom, ax + MENU_CHECK_XOFFSET, y + MENU_ITEM_GAP + ix-> height * 0.2);
                gcv. line_width = 1;
-               XChangeGC( DISP, gc, GCLineWidth, &gcv); 
+               XChangeGC( DISP, draw.gc, GCLineWidth, &gcv); 
             } 
             if ( vertical) y += deltaY;
          }
@@ -947,7 +959,8 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
 #ifdef USE_XFT
       if ( draw. xft_drawable) 
          XftDrawDestroy( draw. xft_drawable);
-#endif                
+#endif 
+      if ( draw. layered ) XFreeGC( DISP, draw. gc);
    }
    break;
    case ConfigureNotify: {
@@ -1434,6 +1447,7 @@ prima_end_menu(void)
    {
       XRectangle r;
       Region rgn;
+      unsigned long * c = XX->layered ? XX->argb_c : XX->c;
       r. x = 0;
       r. y = 0;
       r. width  = guts. displaySize. x; 
@@ -1442,7 +1456,7 @@ prima_end_menu(void)
       XUnionRectWithRegion( &r, rgn, rgn);
       XSetRegion( DISP, guts. menugc, rgn);
       XDestroyRegion( rgn);
-      XSetForeground( DISP, guts. menugc, XX->c[ciBack]);
+      XSetForeground( DISP, guts. menugc, c[ciBack]);
    }
    w = XX-> w;
    if ( XX-> focus)
@@ -1463,6 +1477,22 @@ prima_end_menu(void)
    guts. currentMenu = nilHandle;
 }
 
+static unsigned long
+argb_color(Color color)
+{
+   int a[3];
+
+   a[0] = COLOR_R(color);
+   a[1] = COLOR_G(color);
+   a[2] = COLOR_B(color);
+
+   return 
+            (((a[0] << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
+            (((a[1] << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |
+            (((a[2] << guts. argb_bits. blue_range ) >> 8) << guts. argb_bits.  blue_shift) |
+            (((0xff << guts. argb_bits. alpha_range ) >> 8) << guts. argb_bits. alpha_shift);
+}
+
 Bool
 apc_menu_create( Handle self, Handle owner)
 {
@@ -1481,6 +1511,13 @@ apc_menu_create( Handle self, Handle owner)
           nilHandle, 
           prima_map_color( PWindow(owner)-> menuColor[i], nil), 
           nil);
+   XX-> layered = X(owner)->flags. layered;
+   if ( XX-> layered ) {
+      for ( i = 0; i <= ciMaxId; i++)
+         XX-> argb_c[i] = argb_color(
+             prima_map_color( PWindow(owner)-> menuColor[i], nil)
+         );
+   }
    apc_menu_set_font( self, &PWindow(owner)-> menuFont);
    return true;
 }
@@ -1541,8 +1578,11 @@ apc_menu_set_color( Handle self, Color color, int i)
             XX-> paint_pending = true;
          }
       }
-   } else 
+   } else {
       XX-> c[i] = prima_allocate_color( nilHandle, XX-> rgb[i], nil);
+      if ( XX-> layered )
+         XX-> argb_c[i] = argb_color( prima_map_color( XX->rgb[i], nil));
+   }
    return true;
 }
 
@@ -1781,16 +1821,23 @@ apc_window_set_menu( Handle self, Handle menu)
    if ( menu) {
       PMenu m = ( PMenu) menu;
       XSetWindowAttributes attrs;
+      unsigned long valuemask;
       attrs. event_mask =           KeyPressMask | ButtonPressMask  | ButtonReleaseMask
          | EnterWindowMask     | LeaveWindowMask | ButtonMotionMask | ExposureMask
          | StructureNotifyMask | FocusChangeMask | OwnerGrabButtonMask
          | PointerMotionMask;
       attrs. do_not_propagate_mask = attrs. event_mask;
       attrs. win_gravity = NorthWestGravity;
+      valuemask = CWWinGravity| CWEventMask;
+      if ( XF_LAYERED(XX)) {
+         valuemask |= CWBackPixel | CWBorderPixel;
+         attrs. background_pixel = 0xFFFFFFFF;
+         attrs. border_pixel     = 0xFFFFFFFF;
+      }
       y = PWindow(self)-> menuFont. height + MENU_ITEM_GAP * 2;
       M(m)-> w-> w = m-> handle = XCreateWindow( DISP, X_WINDOW, 
          0, 0, 1, 1, 0, CopyFromParent, 
-         InputOutput, CopyFromParent, CWWinGravity| CWEventMask, &attrs);
+         InputOutput, CopyFromParent, valuemask, &attrs);
       hash_store( guts. menu_windows, &m-> handle, sizeof( m-> handle), m);
       XResizeWindow( DISP, m-> handle, XX-> size.x, y);
       XMapRaised( DISP, m-> handle);
@@ -1806,9 +1853,19 @@ apc_window_set_menu( Handle self, Handle menu)
    if ( repal) prima_palette_replace( self, false); 
    if ( menu) {
       int i;
+      Bool layered = XF_LAYERED(XX);
+      XX->flags.layered = false; /* we need non-layered colors for popup menus */
       for ( i = 0; i <= ciMaxId; i++) {
          M(menu)-> c[i] = prima_allocate_color( self, 
              prima_map_color( PWindow(self)-> menuColor[i], nil), nil);
+      }
+      XX->flags.layered = layered;
+      M(menu)-> layered = XX->flags. layered;
+      if ( M(menu)-> layered ) {
+         for ( i = 0; i <= ciMaxId; i++)
+            M(menu)-> argb_c[i] = argb_color(
+                prima_map_color( PWindow(self)-> menuColor[i], nil)
+            );
       }
    }
    return true;

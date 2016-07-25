@@ -246,12 +246,53 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XClassHint *class_hint;
    ConfigureEventPair *cep;
    unsigned long valuemask;
+   Bool recreate;
+   ViewProfile vprf;
    
    if ( border_style != bsSizeable) border_style = bsDialog;
    border_icons &= biAll;
    
    if ( !guts. argb_visual. visual || guts. argb_visual. visualid == guts. visual. visualid)
       layered = false;
+
+   recreate = X_WINDOW ? (layered != XX->flags.layered) : false;
+   if ( recreate ) {
+      int i, count;
+      Handle * list;
+      XEvent dummy_ev;
+      XWindow old = X_WINDOW;
+
+      list  = PWidget(self)-> widgets. items;
+      count = PWidget(self)-> widgets. count;
+      CWidget(self)-> end_paint_info( self);
+      CWidget(self)-> end_paint( self);
+      prima_release_gc( XX);
+      for( i = 0; i < count; i++)
+         prima_get_view_ex( list[ i], ( ViewProfile*)( X( list[ i])-> recreateData = malloc( sizeof( ViewProfile))));
+      
+      if ( XX-> recreateData) {
+         memcpy( &vprf, XX-> recreateData, sizeof( vprf));
+         free( XX-> recreateData);
+         XX-> recreateData = nil;
+      } else
+         prima_get_view_ex( self, &vprf);
+      if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
+      apc_window_set_menu( self, nilHandle);
+      CWidget( self)-> end_paint_info( self);
+      CWidget( self)-> end_paint( self);
+      if ( XX-> flags. paint_pending) {
+         TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+         XX-> flags. paint_pending = false;
+      }
+      /* flush configure events */
+      XSync( DISP, false);
+      while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)prima_flush_events, (XPointer)self));
+      hash_delete( guts.windows, (void*)&old, sizeof(old), false);
+      hash_delete( guts.windows, (void*)&(XX->client), sizeof(XX->client), false);
+      XDestroyWindow( DISP, old);
+      X_WINDOW = 0;
+      XCHECKPOINT;
+   }
 
    if ( X_WINDOW) { /* recreate request */
       Bool destructive_motif_hints = 0; /* KDE 3.1: setting motif hints kills net_wm hints */
@@ -451,10 +492,28 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 
    XX-> above = nilHandle;
    XX-> owner = real_owner;
-   apc_component_fullname_changed_notify( self);
-   prima_send_create_event( X_WINDOW);
+
    if ( on_top > 0) NETWM_SET_ON_TOP( X_WINDOW, 1);
    apc_window_task_listed( self, task_list);
+
+   if (recreate) {
+      Point pos = PWidget(self)-> pos;
+      apc_window_set_menu( self, PWindow( self)-> menu);
+      bzero( &hints, sizeof( XSizeHints));
+      hints. flags  = PBaseSize;
+      hints. width  = hints. base_width  = XX-> size. x;
+      hints. height = hints. base_height = XX-> size. y;
+      XSetWMNormalHints( DISP, X_WINDOW, &hints);
+      prima_set_view_ex( self, &vprf);
+      XX-> gdrawable = XX-> udrawable = X_WINDOW;
+      XX-> ackOrigin = pos;
+      XX-> ackSize   = XX-> size;
+      XX-> flags. mapped = XX-> flags. want_visible;
+      return true;
+   }
+
+   apc_component_fullname_changed_notify( self);
+   prima_send_create_event( X_WINDOW);
    if ( border_style == bsSizeable) XX-> flags. sizeable = 1;
 
    /* setting initial size */

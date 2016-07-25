@@ -840,7 +840,9 @@ typedef struct _menu_sys_data
    MenuWindow           wstatic;
    PCachedFont          font;
    int                  guillemots;
+   Bool                 layered;
    unsigned long        c[ciMaxId+1];
+   unsigned long        argb_c[ciMaxId+1];
    Color                rgb[ciMaxId+1];
    XWindow              focus;
    PMenuWindow          focused;
@@ -1282,3 +1284,20 @@ prima_gtk_done( void);
 extern char *
 prima_gtk_openfile( char * params);
 #endif
+
+typedef struct _ViewProfile {
+  Point    pos;
+  Point    size;
+  Bool     visible;
+  Bool     focused;
+  Handle   capture;
+} ViewProfile, *PViewProfile;
+
+extern void
+prima_set_view_ex( Handle self, PViewProfile p);
+
+extern void
+prima_get_view_ex( Handle self, PViewProfile p);
+
+extern int
+prima_flush_events( Display * disp, XEvent * ev, Handle self);
