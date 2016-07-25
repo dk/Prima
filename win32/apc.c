@@ -2162,7 +2162,7 @@ apc_widget_get_invalid_rect( Handle self)
 }
 
 Bool
-apc_widget_get_layered_requested( Handle self)
+apc_widget_get_layered_request( Handle self)
 {
    return is_apt( aptLayeredRequested);
 }

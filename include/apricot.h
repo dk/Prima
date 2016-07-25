@@ -2073,7 +2073,7 @@ extern Rect
 apc_widget_get_invalid_rect( Handle self);
 
 extern Bool
-apc_widget_get_layered_requested( Handle self);
+apc_widget_get_layered_request( Handle self);
 
 extern Handle
 apc_widget_get_z_order( Handle self, int zOrderId);
