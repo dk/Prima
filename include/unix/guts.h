@@ -770,6 +770,7 @@ typedef struct _drawable_sys_data
       unsigned sizemax_set              : 1;
       unsigned sync_paint               : 1;
       unsigned task_listed              : 1;
+      unsigned title_utf8               : 1;
       unsigned transparent              : 1;
       unsigned transparent_busy         : 1;
       unsigned want_visible             : 1;
@@ -1291,6 +1292,7 @@ typedef struct _ViewProfile {
   Bool     visible;
   Bool     focused;
   Handle   capture;
+  char *   title;
 } ViewProfile, *PViewProfile;
 
 extern void

@@ -505,7 +505,6 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       hints. height = hints. base_height = XX-> size. y;
       XSetWMNormalHints( DISP, X_WINDOW, &hints);
       prima_set_view_ex( self, &vprf);
-      XX-> gdrawable = XX-> udrawable = X_WINDOW;
       XX-> ackOrigin = pos;
       XX-> ackSize   = XX-> size;
       XX-> flags. mapped = XX-> flags. want_visible;
@@ -749,6 +748,7 @@ apc_window_set_caption( Handle self, const char *caption, Bool utf8)
          PropModeReplace, ( unsigned char*) caption, strlen( caption) + 1);
       XChangeProperty( DISP, X_WINDOW, NET_WM_ICON_NAME, UTF8_STRING, 8, 
          PropModeReplace, ( unsigned char*) caption, strlen( caption) + 1);
+      X(self)->flags. title_utf8 = 1;
    } else {
       XDeleteProperty( DISP, X_WINDOW, NET_WM_NAME);
       XDeleteProperty( DISP, X_WINDOW, NET_WM_ICON_NAME);
@@ -757,6 +757,7 @@ apc_window_set_caption( Handle self, const char *caption, Bool utf8)
          XSetWMName( DISP, X_WINDOW, &p);
          XFree( p. value);
       }
+      X(self)->flags. title_utf8 = 0;
    }
    XFlush( DISP);
    return true;
@@ -836,8 +837,7 @@ apc_SetWMNormalHints( Handle self, XSizeHints * hints)
    }
    XSetWMNormalHints( DISP, X_WINDOW, hints);
    XCHECKPOINT;
-}   
-
+}
 
 Bool
 apc_window_set_client_pos( Handle self, int x, int y)

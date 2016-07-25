@@ -183,11 +183,14 @@ prima_get_view_ex( Handle self, PViewProfile p)
   DEFXX;
   if ( !p) return;
   if ( XX-> type. window) {
+    
     p-> pos       = apc_window_get_client_pos( self);
     p-> size      = apc_window_get_client_size( self);
+    XFetchName( DISP, X_WINDOW, &p-> title);
   } else {
     p-> pos       = apc_widget_get_pos( self);
     p-> size      = apc_widget_get_size( self);
+    p-> title     = NULL;
   }
   p-> capture   = apc_widget_is_captured( self);
   p-> focused   = apc_widget_is_focused( self);
@@ -203,6 +206,8 @@ prima_set_view_ex( Handle self, PViewProfile p)
   if ( XX-> type. window ) {
      XX-> origin. x--; /* force it */
      apc_window_set_client_rect( self, p-> pos.x, p-> pos.y, p-> size.x, p->size.y);
+     apc_window_set_caption( self, p->title, XX->flags. title_utf8);
+     XFree(p->title);
   } else {
      apc_widget_set_rect( self, p-> pos.x, p-> pos.y, p-> size.x, p->size.y);
   }
