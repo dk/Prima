@@ -497,7 +497,12 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    apc_window_task_listed( self, task_list);
 
    if (recreate) {
-      Point pos = PWidget(self)-> pos;
+      int i;
+      int  count = PWidget(self)->widgets. count;
+      Handle * list = PWidget(self)->widgets. items;
+      Point pos;
+
+      pos = PWidget(self)-> pos;
       apc_window_set_menu( self, PWindow( self)-> menu);
       bzero( &hints, sizeof( XSizeHints));
       hints. flags  = PBaseSize;
@@ -508,6 +513,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       XX-> ackOrigin = pos;
       XX-> ackSize   = XX-> size;
       XX-> flags. mapped = XX-> flags. want_visible;
+      for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
       return true;
    }
 

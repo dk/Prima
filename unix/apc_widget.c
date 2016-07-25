@@ -203,8 +203,8 @@ prima_set_view_ex( Handle self, PViewProfile p)
   DEFXX;
 
   if ( p-> visible ) XMapWindow( DISP, X_WINDOW);
+  XX-> origin. x--; /* force it */
   if ( XX-> type. window ) {
-     XX-> origin. x--; /* force it */
      apc_window_set_client_rect( self, p-> pos.x, p-> pos.y, p-> size.x, p->size.y);
      apc_window_set_caption( self, p->title, XX->flags. title_utf8);
      XFree(p->title);
@@ -394,13 +394,18 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
    }
 
    if (recreate) {
+      int i, count;
+      Handle * list;
       Point pos = PWidget(self)-> pos;
+      list  = PWidget(self)-> widgets. items;
+      count = PWidget(self)-> widgets. count;
       prima_set_view_ex( self, &vprf);
       XX-> gdrawable = XX-> udrawable = X_WINDOW;
       XX-> ackOrigin = pos;
       XX-> ackSize   = XX-> size;
       XX-> flags. mapped = XX-> flags. want_visible;
       hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
+      for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
       return true;
    }
 
