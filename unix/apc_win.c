@@ -447,7 +447,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    XX-> flags. clip_owner = false;
    XX-> flags. sync_paint = sync_paint;
    XX-> flags. task_listed = 1;
-   XX-> flags. layered = XX-> flags. layered_requested = 1;
+   XX-> flags. layered = XX-> flags. layered_requested = layered;
 
    XX-> above = nilHandle;
    XX-> owner = real_owner;
