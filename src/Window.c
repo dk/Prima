@@ -83,6 +83,7 @@ void Window_update_sys_handle( Handle self, HV * profile)
        pexist( taskListed) ||
        pexist( borderIcons) ||
        pexist( onTop) ||
+       pexist( layered) ||
        pexist( borderStyle)
     )) return;
    if ( pexist( owner)) my-> cancel_children( self);
@@ -105,6 +106,7 @@ void Window_update_sys_handle( Handle self, HV * profile)
    pdelete( taskListed);
    pdelete( windowState);
    pdelete( onTop);
+   pdelete( layered);
 }
 
 void Window_handle_event( Handle self, PEvent event)

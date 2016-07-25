@@ -859,7 +859,7 @@ AGAIN:
          return HTERROR;
       break;
    case WM_PAINT:
-   	ev. cmd = cmPaint;
+      ev. cmd = cmPaint;
       if (
            ( sys className == WC_CUSTOM) &&
            ( var stage == csNormal) &&
