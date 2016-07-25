@@ -64,11 +64,18 @@ $i->end_paint;
 
 my $w = Prima::MainWindow->new(
 	layered  => 1,
-	buffered => 1,
 	text     => 'ARGB example',
 	size     => [ 300, 300 ],
 	origin   => [ 100, 100 ],
 	backColor => cl::Black,
+	menuItems  => [
+		[ '~Options' => [
+			[ '*layered' => 'La~yered' => 'Ctrl+Y' => '^Y' => sub {
+				my $self = shift;
+				$self-> layered( $self-> menu-> toggle(shift) );
+			} ],
+		]],
+	],
 	onPaint   => sub {
 		my $self = shift;
 		$self->clear;
