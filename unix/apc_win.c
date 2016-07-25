@@ -248,6 +248,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
    unsigned long valuemask;
    Bool recreate;
    ViewProfile vprf;
+   XWindow old = X_WINDOW;
    
    if ( border_style != bsSizeable) border_style = bsDialog;
    border_icons &= biAll;
@@ -260,7 +261,6 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       int i, count;
       Handle * list;
       XEvent dummy_ev;
-      XWindow old = X_WINDOW;
 
       list  = PWidget(self)-> widgets. items;
       count = PWidget(self)-> widgets. count;
@@ -289,7 +289,6 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)prima_flush_events, (XPointer)self));
       hash_delete( guts.windows, (void*)&old, sizeof(old), false);
       hash_delete( guts.windows, (void*)&(XX->client), sizeof(XX->client), false);
-      XDestroyWindow( DISP, old);
       X_WINDOW = 0;
       XCHECKPOINT;
    }
@@ -514,6 +513,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
       XX-> ackSize   = XX-> size;
       XX-> flags. mapped = XX-> flags. want_visible;
       for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
+      XDestroyWindow( DISP, old);
       return true;
    }
 

@@ -290,7 +290,6 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       XSync( DISP, false);
       while ( XCheckIfEvent( DISP, &dummy_ev, (XIfEventProcType)prima_flush_events, (XPointer)self));
       hash_delete( guts.windows, (void*)&old, sizeof(old), false);
-      XDestroyWindow( DISP, old);
       XCHECKPOINT;
    }
 
@@ -406,6 +405,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
       XX-> flags. mapped = XX-> flags. want_visible;
       hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
       for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
+      XDestroyWindow( DISP, old);
       return true;
    }
 
