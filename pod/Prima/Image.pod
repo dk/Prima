@@ -296,6 +296,63 @@ the mask. On raster displays it is typically simulated by a combination of and-
 and xor- operation modes, therefore attempts to put an icon with C<::rop>,
 different from C<rop::CopyPut>, usually fail.
 
+=head2 Layering
+
+The term I<layered window> is borrowed from Windows world, and means a window
+with transparency. In Prima, the property L<layered> is used to select this
+functionality. The call to C<< $::application->get_system_value(sv::LayeredWidgets) >> 
+can check whether this functionality is available; if not, the property is ignored.
+By default, widgets can not use layering.
+
+A layered drawable uses an extra alpha channel to designate the transparency of
+the widget. Drawing on widgets will also look different - for example, drawing
+with black color will make the black pixels fully transparent, while other
+colors will blend with the underlying background, but never in full. Prima
+provides no functions to draw with alpha effects, and scarce image functions to
+address the alpha surfaces. Drawing lines, text, etc with blending is delegated
+to L<Prima::Cairo> which is a separate module. Prima only provides alpha
+surfaces and bitmaps with an additional alpha channel to draw upon. However,
+C<put_image> / C<stretch_image> functions can operate on surfaces with alpha as
+source and destination drawables. To address the alpha channel on a drawable with
+Prima, one has to send either an C<Prima::Icon> with C<maskType(im::bpp8)>, or
+a layered C<DeviceBitmap> to these functions.
+
+The corresponding C<Prima::DeviceBitmap> type is C<dbt::Layered>, and is fully
+compatible with layered widgets in the same fashion as C<DeviceBitmap> with
+type C<dbt::Pixmap> is fully compatible with normal widgets. One of ways to
+put a constant alpha value over a rectangle is this, for example:
+
+   my $a = Prima::Icon->new(
+       width    => 1,
+       height   => 1,
+       type     => im::RGB,
+       maskType => im::bpp8,
+       data     => "\0\0\0",
+       mask     => chr( $constant_alpha ),
+   );
+   $drawable-> stretch_image( 0, 0, 100, 100, $a, rop::SrcOver );
+
+Even though addressing alpha values of pixels when drawing on layered surfaces is not straighforward,
+the conversion between images and device bitmaps fully supports alpha pixels. This means that:
+
+* When drawing on an icon with 8-bit alpha channel (I<argb> icon), any changes to alpha
+values of pixels will be transferred back to the mask property after C<end_paint>
+
+* Calls to C<icon> function on DeviceBitmap with type C<dbt::Layered> produce identical
+argb icons. Calls to C<bitmap> on argb icos produce identical layered device bitmaps.
+
+* Putting argb icons and layered device bitmap on other drawables yields identical
+results.
+
+Putting of argb source surfaces can be only used with two rops, C<rop::SrcOver> (default)
+and C<rop::SrcCopy>. The former produces blending effect, while the latter copies
+alpha bits over to the destination surface.
+
+Caveats: In Windows, mouse events will not be delivered to the layered widget
+if the pixel under the mouse pointer is fully transparent.
+
+See also: F<examples/layered.pl>.
+
 =head1 API
 
 =head2 Prima::Image properties
@@ -606,6 +663,10 @@ is used as a transparency value.
 When C<::autoMasking> set to C<am::MaskIndex>, INDEXth
 color in teh current palette is used as a transparency value.
 
+=item maskType INTEGER
+
+Is either C<im::bpp1> (1) or C<im::bpp8> (8). The latter can be used 
+as a layered (argb) source surface to draw with blending effect.
 
 =back 
 
@@ -613,12 +674,15 @@ color in teh current palette is used as a transparency value.
 
 =over
 
-=item monochrome BOOLEAN
+=item type INTEGER
 
 A read-only property, that can only be set during creation,
-reflects whether the system bitmap is black-and-white 1-bit (monochrome) or not.
+reflects whether the system bitmap is black-and-white 1-bit (C<dbt::Bitmap>),
+is colored and compatible with widgets (C<dbt::Pixmap>), or is colored with alpha
+channel and compatible with layered widgets (C<dbt::Layered>).
+
 The color depth of a bitmap can be read via C<get_bpp()> method; monochrome
-bitmaps always have bit depth of 1.
+bitmaps always have bit depth of 1, layered bitmaps have bit depth of 32.
 
 =back 
 
@@ -793,7 +857,8 @@ Same as C<combine>, but to be called as constructor.
 =item icon
 
 Returns a newly created I<Prima::Icon> object instance, with the 
-pixel information copied from the object.
+pixel information copied from the object. If the bitmap is layered,
+returns icons with maskType set to C<im::bpp8>.
 
 =item image
 

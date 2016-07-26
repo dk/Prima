@@ -855,6 +855,7 @@ See also L<Prima::Application/get_system_value>
 	sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
 	sv::CanUTF8_Output   - 1 if system can output utf8 text
 	sv::CompositeDisplay - 1 if system uses double-buffering for the desktop
+	sv::LayeredWidgets   - 1 if system supports layering
 
 =head2 ta::  - alignment constants
 

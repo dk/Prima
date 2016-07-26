@@ -1369,6 +1369,18 @@ however, and does not turn on the hint label if the pointer is away.
 
 See also: C<hint>, C<showHint>, C<ownerHint>, C<ownerShowHint>
 
+=item layered BOOLEAN
+
+If set, the widget will try to use alpha transparency available on the system.
+See L<Prima::Image/Layering> for more details.
+
+Default: false
+
+See also: C<is_layered>
+
+Note: In Windows, mouse events will not be delivered to the layered widget
+if the pixel under the mouse pointer is fully transparent.
+
 =item left INTEGER
 
 Maintains the left boundary of a widget. If changed,
@@ -2010,6 +2022,14 @@ Marks the rectangular area of a widget as 'invalid',
 so re-painting of the area happens. See L<"Graphic content">.
 
 See also: C<validate_rect>, C<get_invalid_rect>, C<repaint>, C<Paint>, C<syncPaint>, C<update_view>
+
+=item is_layered
+
+Returns true if both the widget and it's top-most parent are layered.
+If the widget itself is top-most, i.e. a window, a non-clipOwner widget,
+or a child to application, then is the same as C<layered>.
+
+See also: L<layered>
 
 =item key_down CODE, KEY = kb::NoKey, MOD = 0, REPEAT = 1, POST = 0 
 

@@ -627,6 +627,10 @@ supports only Copy and NoOp.
 
 The raster operations apply to all graphic primitives except SetPixel.
 
+Note for layering: using layered images and device bitmaps with
+C<put_image> and C<stretch_image> can only use C<rop::SrcCopy> and C<rop::SrcOver>
+raster operations.
+
 =head2 Coordinates
 
 The Prima toolkit employs a geometrical XY grid, where
