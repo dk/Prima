@@ -1046,7 +1046,7 @@ sub prf_types
 			ownerShowHint ownerPalette scaleChildren
 			selectable selected showHint syncPaint tabStop transparent
 			visible x_centered y_centered originDontCare sizeDontCare
-			packPropagate
+			packPropagate layered
 		)],
 		iv            => [qw(bottom height left right top width)],
 		tabOrder      => ['tabOrder'],
