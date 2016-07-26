@@ -491,6 +491,16 @@ sub profile_default
 	return $def;
 }
 
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+
+	if ( exists $p-> {mask} and not exists $p-> {autoMasking}) {
+		$p-> {autoMasking} = am::None;
+	}
+	$self-> SUPER::profile_check_in( $p, $default);
+}
+
 sub mirror
 {
         my ($self, $vertically) = @_;

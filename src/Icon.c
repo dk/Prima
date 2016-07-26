@@ -379,7 +379,7 @@ Icon_maskIndex( Handle self, Bool set, int index)
    if ( var-> autoMasking == amMaskIndex) 
       my-> update_change( self);
    return -1;
-}   
+}
 
 void
 Icon_update_change( Handle self)
@@ -406,6 +406,7 @@ Icon_update_change( Handle self)
    free( var-> mask);
    if ( var-> data)
    {
+      int oldtype = var-> maskType;
       var-> maskType = imbpp1;
       var-> maskLine = LINE_SIZE( var-> w, var-> maskType );
       var-> maskSize = var-> maskLine * var-> h;
@@ -415,6 +416,8 @@ Icon_update_change( Handle self)
           return;
       }
       produce_mask( self);
+      if ( oldtype != imbpp1 )
+         my-> set_maskType( self, oldtype);
    }
    else
       var-> mask = nil;
