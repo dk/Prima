@@ -10,7 +10,7 @@
 
 #define PRIMA_VERSION_BOOTCHECK \
     if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
-        croak("Prima object version(%ld) doesn't match module version(%ld). Recompile the module", apc_get_core_version(), PRIMA_CORE_VERSION )
+        croak("Prima object version(%ld) doesn't match module version(%ld). Recompile the module", (long int)apc_get_core_version(), (long int)PRIMA_CORE_VERSION )
 
 #include "generic/config.h"
 
