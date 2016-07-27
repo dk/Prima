@@ -735,20 +735,6 @@ Only used for saving.
 
 =over
 
-=item alpha none|split|blend
-
-Affects how to treat aplha channel bits, if any.
-
-If set to C<blend>, mixes the alpha channel with C<background> color.
-
-If set to C<split> (not applicable for C<Prima::Icon>), adds a 8-bit grayscale image
-to C<extras> that contains the separate alpha channel under C<alpha> key. 
-
-Default: blend
-
-Note: PNG alpha channel is 8-bit, but Prima's is 1-bit only. The loaded downsamples the
-alpha channel, if any, when loading to C<Icon>.
-
 =item background COLOR
 
 When PNG file contains alpha channel, and C<alpha> is set to C<blend>,
@@ -758,6 +744,20 @@ default PNG library background color is used.
 Default: clInvalid
 
 Not applicable C<Prima::Icon>.
+
+=item blending BOOLEAN = 1
+
+Affects how to treat aplha channel bits, if any.
+
+If set, mixes the alpha channel with C<background> color in case if loading to
+an image, or premultiplies color bits (either data or palette) with alpha, if
+loading to icon. Note that saving back the object will result in different
+image, but the object is ready to be displayed immediately.
+
+If unset, color and eventual alpha bits, if loaded to an icon, will not be
+affected in any way. Note that saving back the object will result in the same
+image, but the object is not ready to be displayed immediately. See also:
+L<Prima::Image/premultiply_alpha>. 
 
 =item gamma REAL
 
@@ -776,12 +776,6 @@ Default: 2.2
 =head3 Load output and save input
 
 =over
-
-=item alpha IMAGE
-
-8-bit grayscale image with alpha channel, if found
-
-Default: undef
 
 =item background COLOR
 
