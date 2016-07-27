@@ -75,8 +75,8 @@ static char * features[] = {
 };
 
 static char * loadOutput[] = { 
-   "alpha",
    "background",
+   "blending",
    "gamma",
 #ifdef PNG_iCCP_SUPPORTED   
    "iccp_name",
@@ -200,10 +200,6 @@ init( PImgCodecInfo * info, void * param)
 #define outc(x){ strncpy( fi-> errbuf, x, 256); return false;}
 #define outcm(dd){ snprintf( fi-> errbuf, 256, "No enough memory (%d bytes)", (int)(dd)); return false;}
 
-#define ALPHA_OPT_BLEND 2
-#define ALPHA_OPT_SPLIT 1
-#define ALPHA_OPT_NONE  0
-
 static HV *
 load_defaults( PImgCodec c)
 {
@@ -217,13 +213,11 @@ load_defaults( PImgCodec c)
     whatever it is in the file.
     */
    pset_f( background, clInvalid);
-   /* alpha options:
-      blend - combine user or file background with alpha channel
-      split - load alpha channel as an separate 'alpha' extra 
-              ( loadExtras has to be enabled )
-      none  - skip all alpha channel data
+   /* alpha blending:
+      1 - combine user or file background with color channel and alpha channel
+      0 - load color channels and alpha channel as is, without blending
    */
-   pset_c( alpha, "blend"); 
+   pset_i( blending, 1); 
    return profile;
 }
 
@@ -334,9 +328,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    int obd, bit_depth, color_type, interlace_type, bpp, number_passes, pass, filter;
    HV * profile;
    Color background;
-   int alpha_opt, channels, trns_n;
-   Bool icon;
-   Handle alpha_image;
+   int channels, trns_n;
+   Bool icon, blending, post_blending;
+   Byte * alpha;
    png_bytep trns_t;
    png_color_16p trns_p;
 
@@ -422,24 +416,10 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       if ( has_gamma) png_set_gamma(l->png_ptr, screen_gamma, gamma);
    }
 
-   /* alpha option */
-   if ( pexist( alpha)) {
-      char * c = pget_c( alpha);
-      if ( stricmp( c, "blend") == 0) alpha_opt = ALPHA_OPT_BLEND; else
-      if ( stricmp( c, "split") == 0) {
-         if ( icon)
-            outc("Alpha channel cannot be loaded to an Icon object")
-         else
-            alpha_opt = ALPHA_OPT_SPLIT; 
-      } else
-      if ( stricmp( c, "none") == 0)  alpha_opt = ALPHA_OPT_NONE;  else {
-         snprintf( fi-> errbuf, 256, "unknown alpha option '%s'", c);
-         return false;
-      }
-   } else
-      alpha_opt = ALPHA_OPT_BLEND;
-
-   if ( !icon && (alpha_opt == ALPHA_OPT_NONE)) 
+   /* alpha blending */
+   blending = pexist( blending) ? pget_B(blending) : 1;
+   post_blending = false;
+   if ( !icon && !blending)
       png_set_strip_alpha(l-> png_ptr);
 
    /* image background color */
@@ -480,7 +460,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       strcpy( fi-> errbuf, "Option 'background' cannot be set when loading to an Icon object");
       return false;
    }
-   if ( !icon && (alpha_opt == ALPHA_OPT_BLEND)) {
+   if ( !icon && blending ) {
       png_color_16 p;
       /* override with user data */
       if ( pexist( background) && ((pget_i( background) & clSysFlag) == 0)) 
@@ -578,67 +558,54 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    } else if ( color_type & PNG_COLOR_MASK_ALPHA || 
                channels == 2 || 
                channels == 4) {
-      alpha_opt = ALPHA_OPT_NONE;
+      blending = 0;
+      icon     = 0;
       png_set_strip_alpha(l-> png_ptr);
       warn("Unknown alpha channel coding scheme (%d %d %d %x)", channels, color_type, obd, bpp); 
    }
    
-   /* Store reference to alpha_image into 'extras' profile, although the
-      docs do not recommend that. Point is, that even if the reference 
-      will not be passed to high-level code, it will be deleted 
-      automatically before the load() transaction ends. With these png 
-      longjmps it's much easier */
-   if (
-         ( color_type & PNG_COLOR_MASK_ALPHA) && 
-         ( icon || (alpha_opt == ALPHA_OPT_SPLIT))
-      )
-   {
-      HV * profile = fi-> frameProperties;
-      alpha_image = ( Handle) create_object("Prima::Image", "");
-      CImage( alpha_image)-> create_empty( alpha_image, width, height, imByte);
-      pset_H( alpha, alpha_image);
+   if (( color_type & PNG_COLOR_MASK_ALPHA) && icon ) { 
+      CIcon( fi-> object)-> set_autoMasking( fi-> object, amNone );
+      CIcon( fi-> object)-> set_maskType( fi-> object, imbpp8 );
+      alpha = PIcon(fi->object)-> mask;
+      if (( bpp & imBPP ) != 24 ) post_blending = true; /* cannot blend 8 bits inplace */
    } else
-      alpha_image = nilHandle;
+      alpha = NULL;
 
    /* cycle through scanlines  */
    for (pass = 0; pass < number_passes; pass++) {
       int y;
       Byte * data = PImage( fi-> object)-> data;
-      Byte * a_data = nil;
+      Byte * a_data = alpha;
       
       EVENT_SCANLINES_RESET(fi);
       data += ( height - 1) * PImage( fi-> object)-> lineSize;
-      if ( alpha_image) {
-         a_data = PImage( alpha_image)-> data;
-         a_data += ( height - 1) * PImage( alpha_image)-> lineSize;
-      }
+      if ( a_data)
+         a_data += ( height - 1) * PIcon( fi-> object)-> maskLine;
       for (y = 0; y < height; y++) {
-         if ( alpha_image) {
+         if ( a_data ) {
             int i;
             Byte * dst = data, * src = l-> line, *a = a_data;
             png_read_row(l->png_ptr, l-> line, NULL);
-            if ( channels == 4) {
-	       if (icon) {
-	          /* for bad pngs where pixels to be masked out are not 0x000000, they look bad with xor 
-		     icons' masks are 1-bit only; if this is ever to be changed, then this should change too
-		  */
+            if ( channels == 4 ) {
+	       if ( blending ) {
                   for ( i = 0; i < width; i++) {
-		     register Byte r = *src++;
-		     register Byte g = *src++;
-		     register Byte b = *src++;
-		     register Byte A = *src++;
-                     *dst++ = (A > 127) ? r : 0;
-                     *dst++ = (A > 127) ? g : 0;
-                     *dst++ = (A > 127) ? b : 0;
-                     *a++ = A;
-                  }
+	             register uint16_t r = *src++;
+	             register uint16_t g = *src++;
+	             register uint16_t b = *src++;
+	             register uint16_t A = *src++;
+                     *dst++ = r * A >> 8;
+                     *dst++ = g * A >> 8;
+                     *dst++ = b * A >> 8;
+                     *a++   = A;
+		  }
 	       } else {
                   for ( i = 0; i < width; i++) {
                      *dst++ = *src++;
                      *dst++ = *src++;
                      *dst++ = *src++;
-                     *a++ = *src++;
-                  }
+                     *a++   = *src++;
+		  }
 	       }
             } else {
                for ( i = 0; i < width; i++) {
@@ -654,7 +621,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
                png_read_row(l->png_ptr, data, NULL);
          }
          data -= PImage( fi-> object)-> lineSize;
-         if ( alpha_image) a_data -= PImage( alpha_image)-> lineSize;
+         if ( a_data) a_data -= PIcon( fi-> object)-> maskLine;
 
          EVENT_TOPDOWN_SCANLINES_READY(fi,1);
       }
@@ -662,36 +629,27 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
    }
 
    /* adjusting icon mask if possible */
-   if ( icon) {
-      if ( alpha_image) {
-          int i, sz = PIcon( fi-> object)-> maskSize;
-          Byte * mask = PIcon( fi-> object)-> mask;
-          RGBColor dummy[2];
-          int palSize = 0;
-          ic_byte_mono_ictNone( alpha_image, PIcon( fi-> object)-> mask, dummy, imbpp1, &palSize, false);
-          for ( i = 0; i < sz; i++, mask++) *mask = ~*mask;
-          PIcon( fi-> object)-> autoMasking = amNone;
-      } else if ( trns_n) {
-          PRGBColor p = PIcon( fi-> object)-> palette;
-          if ( trns_t) {
-             int i, min_ix = 0, min_val = 255;
-             /* transparency values per pixel table is present, finding best candidate */
-             for ( i = 0; i < trns_n; i++) 
-                if ( trns_t[i] < min_val) {
-                   min_val = trns_t[i];
-                   min_ix = i;
-                }
-             p += min_ix;
-             PIcon( fi-> object)-> maskIndex = min_ix;
-          } else 
-             PIcon( fi-> object)-> maskIndex = trns_p[0].index;
-          PIcon( fi-> object)-> autoMasking = amMaskIndex;
+   if ( icon && !alpha && trns_n ) {
+      if ( trns_t) {
+         if ( blending ) {
+            PRGBColor p = PIcon( fi-> object)-> palette;
+            int i, min_ix = 0, min_val = 255;
+            /* transparency values per pixel table is present */
+            for ( i = 0; i < trns_n; i++) {
+	       p[i]. r = ((uint16_t) p[i]. r * trns_t[i]) >> 8;
+	       p[i]. g = ((uint16_t) p[i]. g * trns_t[i]) >> 8;
+	       p[i]. b = ((uint16_t) p[i]. b * trns_t[i]) >> 8;
+	    }
+	 }
+         PIcon( fi-> object)-> autoMasking = amNone;
+      } else {
+         PIcon( fi-> object)-> maskIndex = trns_p[0].index;
+         PIcon( fi-> object)-> autoMasking = amMaskIndex;
       }
    }
+   if ( post_blending )
+      CIcon( fi-> object )-> premultiply_alpha( fi-> object );
 
-   if ( alpha_image)
-      CImage( alpha_image)-> update_change( alpha_image);
-   
    /* misc extras  */
 READ_END:   
       
@@ -788,7 +746,6 @@ static HV *
 save_defaults( PImgCodec c)
 {
    HV * profile = newHV();
-   pset_H( alpha, nilHandle);
    pset_i( background, clInvalid);
 #ifdef PNG_gAMA_SUPPORTED   
    pset_f( gamma, 0.45455);
@@ -880,11 +837,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
    SaveRec * l = ( SaveRec *) fi-> instance;
    HV * profile = fi-> objectExtras;
    Bool icon;
-   Handle alpha_object;
+   Byte * alpha = NULL;
    
    if ( setjmp( png_jmpbuf( l-> png_ptr)) != 0) return false;
    icon = kind_of( fi-> object, CIcon);
-   alpha_object = nilHandle;
 
    /* header */
    {
@@ -904,8 +860,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       if ( pexist( mng_datastream) && pget_B( mng_datastream))
          filter = PNG_INTRAPIXEL_DIFFERENCING;
 #endif
-      if ( pexist( alpha)) {
-         Handle obj;
+      if ( icon && i-> autoMasking != amMaskIndex && i-> autoMasking != amMaskColor ) {
          Bool autoConvert;
          {
             /* recognize autoConvert as the image subsystem does */
@@ -933,21 +888,15 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
             bit_depth = 8;
          }
          
-         if ( !( obj = pget_H( alpha)))
-            outc("Invalid object refrence passed as 'alpha' option");
-         if ( !kind_of( obj, CImage))
-            outc("Not an image passed as 'alpha' object");
-         if ( i-> w != PImage(obj)-> w || i-> h != PImage(obj)-> h)
-            outc("Image and alpha channel dimensions do not match");
-         if ( PImage(obj)-> type != imByte) {
+         if ( i-> maskType != imbpp8) {
             if ( !autoConvert)
-               outc("Alpha channel image is not of type im::Byte");
-            CImage( obj)-> set_type( obj, imByte);
-            if ( PImage(obj)-> type != imByte) 
-               outc("Failed converting image to type im::Byte");
+               outc("maskType is not of type im::bpp8");
+            i-> self-> set_maskType( fi-> object, imbpp8);
+            if ( i-> maskType != imbpp8 )
+               outc("Failed converting icon mask to type im::bpp8");
          }
          if (( l-> line = malloc( i-> w * (( color_type == PNG_COLOR_TYPE_GRAY) ? 2 : 4)))) {
-            alpha_object = obj;
+            alpha = i-> mask;
             color_type |= PNG_COLOR_MASK_ALPHA;
          }
       }
@@ -1180,13 +1129,11 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
       for (pass = 0; pass < num_pass; pass++) {
          int h = i-> h;
          Byte * data = i-> data + (i-> h - 1) * i-> lineSize;
-         Byte * a_data = nil;
-         if ( alpha_object) {
-            a_data = PImage( alpha_object)-> data;
-            a_data += ( h - 1) * PImage( alpha_object)-> lineSize;
-         }
+         Byte * a_data = alpha;
+         if ( a_data )
+            a_data += ( h - 1) * i-> maskLine;
          while ( h--) {
-            if ( alpha_object) {
+            if ( a_data ) {
                int j;
                Byte * src = data, * dst = l-> line, *a = a_data;
                if ( i-> type == imRGB) {
@@ -1207,7 +1154,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
                png_write_row( l-> png_ptr, data);
             }
             data -= i-> lineSize;
-            if ( alpha_object) a_data -= PImage( alpha_object)-> lineSize;
+            if ( a_data) a_data -= i-> maskLine;
          }
       }
    }

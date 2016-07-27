@@ -678,6 +678,43 @@ Icon_bitmap( Handle self)
    return h;
 }
 
+void
+Icon_premultiply_alpha( Handle self)
+{
+    int i, pixels, oldType;
+    Byte * data, * mask;
+   
+    if ( var-> maskType != imbpp8 ) return;
+
+    oldType = var-> type;
+    if ( var-> type & imGrayScale ) {
+       if ( var-> type != imByte )
+          my-> set_type( self, imByte );
+       pixels = 1;
+    } else { 
+       if ( var-> type != imRGB ) 
+          my-> set_type( self, imRGB );
+       pixels = 3;
+    }
+
+    data = var-> data;
+    mask = var-> mask;
+    for ( i = 0; i < var-> h; i++) {
+       int j;
+       register Byte *d = data, *m = mask, k;
+       for ( j = 0; j < var-> w; j++ ) {
+          register uint16_t alpha = *m++;
+          for ( k = 0; k < pixels; k++, d++)
+	     *d = (alpha * *d) >> 8;
+       }
+       data += var-> lineSize;
+       mask += var-> maskLine;
+    }
+
+    if ( is_opt( optPreserveType ) && var-> type != oldType )
+       my-> set_type( self, oldType );
+}
+
 #ifdef __cplusplus
 }
 #endif

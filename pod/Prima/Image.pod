@@ -848,6 +848,15 @@ of same dimension.
 
 Same as C<combine>, but to be called as constructor.
 
+=item premultiply_alpha
+
+Applies premultiplication formula to each pixel
+
+   pixel = pixel * alpha / 256
+
+where alpha is the corresponding alpha value for each coordinate.
+Only applicable when C<maskType> is <im::bpp8>.
+
 =back
 
 =head2 Prima::DeviceBitmap methods 

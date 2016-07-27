@@ -25,6 +25,7 @@ object Prima::Icon( Prima::Image)
    method void       set( HV * profile);
    method IconHandle split();
    method void       combine( Handle xorMask, Handle andMask);
+   method void       premultiply_alpha();
    c_only void       create_empty( int width, int height, int type);
    c_only void       create_empty_icon( int width, int height, int type, int maskType);
    c_only void       update_change();
