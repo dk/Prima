@@ -178,6 +178,9 @@ find_blt_proc( int rop )
    return proc;
 }
 
+static Bool 
+img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH);
+
 Bool 
 img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
@@ -198,31 +201,42 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       int palSize  = PImage( src)-> palSize; 
       int type     = PImage( src)-> type;
       void *self   = PImage( src)-> self; 
-      RGBColor palette[2];
+      RGBColor palette[256];
       Byte *p;
 
-      PIcon( src)-> data = ( PIcon( src)-> maskType == imbpp8) ?
-	 CIcon( src)-> convert_mask( src, imbpp1) :
-         PIcon( src)-> mask;
-      memcpy( palette, PImage( src)-> palette, 6);
-      memcpy( PImage( src)-> palette, stdmono_palette, 6);
+      if ( PIcon(src)-> maskType != imbpp1) {
+         if ( PIcon(src)-> maskType != imbpp8) croak("panic: bad icon mask type");
+         if ( rop != ropSrcCopy )
+            return img_put_over( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH);
+      }
+
       PImage( src)-> self     =  CImage;
-      PImage( src)-> type     =  imBW;
+      PIcon( src)-> data = PIcon( src)-> mask;
       PImage( src)-> lineSize =  PIcon( src)-> maskLine;
       PImage( src)-> dataSize =  PIcon( src)-> maskSize;
-      PImage( src)-> palSize  = 2;
-      p = PIcon( src)-> data;
-      img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut);
-      if ( PIcon( src)-> maskType == imbpp8)
-         free( PIcon( src)-> data );
+      if ( PIcon(src)-> maskType != imbpp1) {
+         memcpy( palette, PImage( src)-> palette, 768);
+         memcpy( PImage( src)-> palette, std256gray_palette, 768);
+         PImage( src)-> type     =  imByte;
+         PImage( src)-> palSize  = 256;
+         img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut);
+         rop = ropCopyPut;
+         memcpy( PImage( src)-> palette, palette, 768);
+      } else {
+         memcpy( palette, PImage( src)-> palette, 6);
+         memcpy( PImage( src)-> palette, stdmono_palette, 6);
+         PImage( src)-> type     =  imBW;
+         PImage( src)-> palSize  = 2;
+         img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut);
+         rop = ropXorPut;
+         memcpy( PImage( src)-> palette, palette, 6);
+      }
       PImage( src)-> self     = self;
       PImage( src)-> type     = type;
       PImage( src)-> data     = data; 
       PImage( src)-> lineSize = lineSize; 
       PImage( src)-> dataSize = dataSize; 
       PImage( src)-> palSize  = palSize;
-      memcpy( PImage( src)-> palette, palette, 6);
-      rop = ropXorPut;
    }  
    
    srcSz. x = PImage(src)-> w;
@@ -556,6 +570,121 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
       if ( rmask ) data[blt_bytes-1] = (rsave & rmask) | (data[blt_bytes-1] & ~rmask);
       data += lineSize;
    }
+}
+
+
+static Bool 
+img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH)
+{
+   int bpp, sls, dls, mls, als, x, y, px;
+   Byte *s, *d, *m, *a; 
+
+   /* align types and geometry - can only operate over imByte and imRGB */
+   bpp = (( PImage(src)->type & imGrayScale) && ( PImage(dest)->type & imGrayScale)) ? imByte : imRGB;
+
+   /* adjust destination rectangle */
+   if ( dstX < 0 || dstY < 0 || dstX + dstW >= PImage(dest)-> w || dstY + dstH >= PImage(dest)-> h) {
+      if ( dstX < 0) {
+         dstW += dstX;
+         srcX -= dstX;
+         dstX = 0;
+      }
+      if ( dstY < 0) {
+         dstH += dstY;
+         srcY -= dstY;
+         dstY = 0;
+      }
+      if ( dstX + dstW > PImage(dest)-> w)
+         dstW = PImage(dest)-> w - dstX;
+      if ( dstY + dstH > PImage(dest)-> h) 
+         dstH = PImage(dest)-> h - dstY;
+   }
+
+   if (PImage(src)-> type != bpp || srcW != dstW || srcH != dstH ) {
+      Bool ok;
+      Handle dup;
+     
+      if ( srcW != PImage(src)-> w || srcH != PImage(src)-> h)
+         dup = CImage(src)-> extract( src, srcX, srcY, srcW, srcH );
+      else
+         dup = CImage(src)-> dup(src);
+
+      if ( srcW != dstW || srcH != dstH )
+         CImage(dup)->stretch( dup, dstW, dstH );
+      if ( PImage( dup )-> type != bpp )
+         CImage(dup)-> set_type( dup, bpp);
+
+      ok = img_put_over( dest, dup, dstX, dstY, 0, 0, dstW, dstH, dstW, srcH);
+
+      Object_destroy(dup);
+      return ok;
+   }
+
+   if (PImage(dest)-> type != bpp || ( kind_of( dest, CIcon) && PIcon(dest)->maskType != imbpp8 )) {
+      Bool ok;
+      int type = PIcon(dest)->type;
+      int mask = PIcon(dest)->maskType;
+
+      if ( type != bpp )
+         CIcon(dest)-> set_type( dest, bpp );
+      if ( mask != imbpp8 )
+         CIcon(dest)-> set_maskType( dest, imbpp8 );
+      ok = img_put_over( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH);
+      if ( PImage(dest)-> options. optPreserveType ) {
+         if ( type != bpp )
+            CImage(dest)-> set_type( dest, type );
+         if ( mask != imbpp8 )
+            CIcon(dest)-> set_maskType( dest, mask );
+      }
+      return ok;
+   }
+
+   if ( srcW != dstW || srcH != dstH || 
+       PImage(src)->type != PImage(dest)->type || PImage(src)-> type != bpp ||
+       PIcon(src)-> maskType != imbpp8)
+       croak("panic: assert failed for img_put_over");
+   
+   /* blend */
+   bpp = ( bpp == imByte ) ? 1 : 3;
+   sls = PImage(src)-> lineSize;
+   mls = PIcon(src)-> maskLine;
+   dls = PImage(dest)-> lineSize;
+   s = PImage(src)-> data  + srcY * sls + srcX * bpp;
+   m = PIcon(src)-> mask   + srcY * mls + srcX;
+   d = PImage(dest)-> data + dstY * dls + dstX * bpp;
+
+   if ( kind_of(dest, CIcon)) {
+      als = PIcon(dest)-> maskLine;
+      a   = PIcon(dest)-> mask + dstY * als + dstY;
+   } else {
+      a   = NULL;
+      als = 0;
+   }
+
+   for ( y = 0; y < dstH; y++) {
+      register Byte *ss = s, *mm = m, *dd = d, *aa = a;
+      for ( x = 0; x < dstW; x++) {
+         unsigned int alpha       = *mm++;
+         unsigned int minus_alpha = 255 - alpha;
+         unsigned int rr;
+         for ( px = 0; px < bpp; px++, ss++, dd++) {
+            rr = (minus_alpha * *dd + *ss);
+	    if ( rr > 255 ) rr = 255;
+	    *dd = rr;
+	 }
+	 if ( a ) {
+            rr = (minus_alpha * *aa + alpha);
+	    if ( rr > 255 ) rr = 255;
+	    *aa = rr;
+	 }
+      }
+      s += sls;
+      m += mls;
+      d += dls;
+      a += als;
+   }
+
+   return true;
 }
 
 #ifdef __cplusplus

@@ -5,7 +5,7 @@ use Test::More;
 use Prima::Test;
 use Prima qw(Application);
 
-plan tests => 1826;
+plan tests => 1835;
 
 my ($src, $mask, $dst);
 my $can_argb = $::application->get_system_value(sv::LayeredWidgets);
@@ -259,7 +259,7 @@ SKIP: {
 	fill_dst($dst);
 	$dst->rop(rop::SrcOver);
 	test_blend_pixels($icon, $descr);
-       
+
 	fill_dst($dst);
 	$dst->rop(rop::SrcOver);
 	$icon->begin_paint;
@@ -271,13 +271,71 @@ SKIP: {
 	test_blend_pixels($icon->bitmap, "$descr (layered)");
 }}
 
+sub test_blend_native
+{
+#  0011 + ALPHA(1010) = 0.1*
+# 
+#  0000      0.1* 0011 ( . - fully transparent )
+#  1111 OVER 0.1* 0111 ( * - transparent white )
+
+	my $descr = shift;
+
+
+	$mask->pixel(0,0,cl::Black);
+	$mask->pixel(1,0,cl::White);
+	$mask->pixel(2,0,cl::Black);
+	$mask->pixel(3,0,cl::White);
+
+	$src->pixel(0,0,cl::Black);
+	$src->pixel(1,0,cl::Black);
+	$src->pixel(2,0,cl::White);
+	$src->pixel(3,0,cl::White);
+
+	my $icon = Prima::Icon->new( autoMasking => am::None );
+	$icon->combine($src,$mask);
+
+	fill_dst($dst);
+	$dst->rop(rop::SrcOver);
+	
+	my $ok = 1;
+	$ok &= $dst->put_image(0,0,$icon);
+	$ok &= $dst->put_image(0,1,$icon);
+
+	my $save = $dst;
+
+	$dst = $dst->dup;
+	$dst->type(im::RGB); # to convert 0xff into 0xffffff 
+
+	ok( $ok, "put $descr" );
+
+	blendop( $dst->pixel(0,0), $descr, 0,0,0);
+	blendop( $dst->pixel(1,0), $descr, 0,1,0);
+	blendop( $dst->pixel(2,0), $descr, 1,0,0);
+	blendop( $dst->pixel(3,0), $descr, 1,1,0);
+
+	blendop( $dst->pixel(0,1), $descr, 0,0,1);
+	blendop( $dst->pixel(1,1), $descr, 0,1,1);
+	blendop( $dst->pixel(2,1), $descr, 1,0,1);
+	blendop( $dst->pixel(3,1), $descr, 1,1,1);
+
+	$dst = $save;
+}
+
 $dst = Prima::Image->create( width => 4, height => 2, type => im::RGB);
 $src  = Prima::Image->create( width => 4, height => 1, type => im::RGB);
 $mask = Prima::Image->create( width => 4, height => 1, type => im::BW);
 test_mask( "reference implementation / 1bit mask");
 
 $mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
-test_mask( "reference implementation / 8bit mask");
+my $target = "reference implementation / 8bit mask";
+$mask = Prima::Image->create( width => 4, height => 1, type => im::Byte);
+$src = Prima::Image->create( width => 4, height => 1, type => im::Byte);
+$dst = Prima::Image->create( width => 4, height => 2, type => im::Byte);
+test_blend_native( "8-bit grayscale image / 8-bit alpha on $target");
+$dst = Prima::Image->create( width => 4, height => 2, type => im::RGB);
+$src = Prima::Image->create( width => 4, height => 1, type => im::RGB);
+test_blend_native( "24-bit image / 8-bit alpha on $target");
+
 $dst = Prima::DeviceBitmap->create( width => 4, height => 2, type => dbt::Bitmap);
 test_dst("bitmap");
 

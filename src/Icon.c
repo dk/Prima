@@ -705,7 +705,7 @@ Icon_premultiply_alpha( Handle self)
        for ( j = 0; j < var-> w; j++ ) {
           register uint16_t alpha = *m++;
           for ( k = 0; k < pixels; k++, d++)
-	     *d = (alpha * *d) >> 8;
+	     *d = (alpha * *d) / 255.0 + .5;
        }
        data += var-> lineSize;
        mask += var-> maskLine;
@@ -713,6 +713,8 @@ Icon_premultiply_alpha( Handle self)
 
     if ( is_opt( optPreserveType ) && var-> type != oldType )
        my-> set_type( self, oldType );
+    else
+       my-> update_change( self );
 }
 
 #ifdef __cplusplus
