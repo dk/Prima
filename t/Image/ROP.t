@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 112;
+plan tests => 116;
 
 my @alu = qw(
    Blackness
@@ -163,3 +163,39 @@ for ( my $i = 0; $i < @alu; $i++) {
 	}
 	is( $res, $i, "map ". $alu[ $i] );
 }
+
+# test alpha
+sub img($)
+{
+   Prima::Image->create( width => 4, height => 1, type => im::Byte, data => shift);
+}
+
+sub is_bits
+{
+   my ( $x, $y, $t ) = @_;
+   if ( $x eq $y ) {
+      pass($t);
+   } else {
+      fail($t);
+      warn unpack('H*', $x) , ' != ', unpack('H*', $y);
+   }
+}
+
+$src = img("\1\x0f\xf0\xff");
+$dst = img("\0\1\2\3");
+$dst->put_image( 0,0,$src, rop::blend(0));
+is_bits( $dst->data, "\0\1\2\3", "alpha 0");
+
+$dst = img("\0\1\2\3");
+$dst->put_image( 0,0,$src, rop::blend(255));
+is_bits( $dst->data, $src->data, "alpha 1");
+
+$src = img("\0\3\6\x9");
+$dst = img("\xf0\xf0\xf0\xf0");
+$dst->put_image( 0,0,$src, rop::blend(85));
+is_bits( $dst->data, "\xa0\xa1\xa2\xa3", "alpha 1/3");
+
+$src = img("\0\3\6\x9");
+$dst = img("\xf0\xf0\xf0\xf0");
+$dst->put_image_indirect( $src, 2,0,0,0, 2,1,2,1, rop::blend(85));
+is_bits( $dst->data, "\xf0\xf0\xa0\xa1", "alpha 1/3 with src shift");

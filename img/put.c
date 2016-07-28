@@ -179,7 +179,7 @@ find_blt_proc( int rop )
 }
 
 static Bool 
-img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH);
+img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop);
 
 Bool 
 img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
@@ -207,7 +207,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       if ( PIcon(src)-> maskType != imbpp1) {
          if ( PIcon(src)-> maskType != imbpp8) croak("panic: bad icon mask type");
          if ( rop != ropSrcCopy )
-            return img_put_over( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH);
+            return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
       }
 
       PImage( src)-> self     =  CImage;
@@ -237,7 +237,8 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       PImage( src)-> lineSize = lineSize; 
       PImage( src)-> dataSize = dataSize; 
       PImage( src)-> palSize  = palSize;
-   }  
+   } else if ( rop & ropConstantAlpha )
+      return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
    
    srcSz. x = PImage(src)-> w;
    srcSz. y = PImage(src)-> h;
@@ -574,15 +575,31 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
 
 
 static Bool 
-img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH)
+img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
    int bpp, sls, dls, mls, als, x, y, px;
    Byte *s, *d, *m, *a; 
+   unsigned int src_alpha = 0, dst_alpha = 0;
+   Bool use_src_alpha = false, use_dst_alpha = false, multiply_src = false;
+
+   /* differentiate between per-pixel alpha and a global value */
+   if ( rop & ropMultiplySrc ) {
+      multiply_src = true;
+   }
+   if ( rop & ropSrcAlpha ) {
+      use_src_alpha = true;
+      src_alpha = (rop >> ropSrcAlphaShift) & 0xff;
+   }
+   if ( rop & ropDstAlpha ) {
+      use_dst_alpha = true;
+      dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
+   }
+   rop &= ropPorterDuffMask;
 
    /* align types and geometry - can only operate over imByte and imRGB */
    bpp = (( PImage(src)->type & imGrayScale) && ( PImage(dest)->type & imGrayScale)) ? imByte : imRGB;
 
-   /* adjust destination rectangle */
+   /* adjust rectangles */
    if ( dstX < 0 || dstY < 0 || dstX + dstW >= PImage(dest)-> w || dstY + dstH >= PImage(dest)-> h) {
       if ( dstX < 0) {
          dstW += dstX;
@@ -599,6 +616,12 @@ img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, i
       if ( dstY + dstH > PImage(dest)-> h) 
          dstH = PImage(dest)-> h - dstY;
    }
+   if ( srcX + srcW > PImage(src)-> w)
+      srcW = PImage(src)-> w - srcX;
+   if ( srcY + srcH > PImage(src)-> h)
+      srcH = PImage(src)-> h - srcY;
+   if ( srcH <= 0 || srcW <= 0 )
+      return false;
 
    /* adjust source type */
    if (PImage(src)-> type != bpp || srcW != dstW || srcH != dstH ) {
@@ -615,7 +638,7 @@ img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, i
       if ( PImage( dup )-> type != bpp )
          CImage(dup)-> set_type( dup, bpp);
 
-      ok = img_put_over( dest, dup, dstX, dstY, 0, 0, dstW, dstH, dstW, srcH);
+      ok = img_put_alpha( dest, dup, dstX, dstY, 0, 0, dstW, dstH, dstW, srcH, rop);
 
       Object_destroy(dup);
       return ok;
@@ -624,18 +647,19 @@ img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, i
    /* adjust destination type */
    if (PImage(dest)-> type != bpp || ( kind_of( dest, CIcon) && PIcon(dest)->maskType != imbpp8 )) {
       Bool ok;
-      int type = PIcon(dest)->type;
-      int mask = PIcon(dest)->maskType;
+      Bool icon = kind_of(dest, CIcon);
+      int type = PImage(dest)->type;
+      int mask = icon ? PIcon(dest)->maskType : 0;
 
       if ( type != bpp )
          CIcon(dest)-> set_type( dest, bpp );
-      if ( mask != imbpp8 )
+      if ( icon && mask != imbpp8 )
          CIcon(dest)-> set_maskType( dest, imbpp8 );
-      ok = img_put_over( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH);
+      ok = img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
       if ( PImage(dest)-> options. optPreserveType ) {
          if ( type != bpp )
             CImage(dest)-> set_type( dest, type );
-         if ( mask != imbpp8 )
+         if ( icon && mask != imbpp8 )
             CIcon(dest)-> set_maskType( dest, mask );
       }
       return ok;
@@ -643,42 +667,81 @@ img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, i
 
    /* final countdown */
    if ( srcW != dstW || srcH != dstH || 
-       PImage(src)->type != PImage(dest)->type || PImage(src)-> type != bpp ||
-       PIcon(src)-> maskType != imbpp8)
-       croak("panic: assert failed for img_put_over");
+       PImage(src)->type != PImage(dest)->type || PImage(src)-> type != bpp)
+       croak("panic: assert failed for img_put_alpha: %s", "types and geometry");
    
    bpp = ( bpp == imByte ) ? 1 : 3;
    sls = PImage(src)-> lineSize;
-   mls = PIcon(src)-> maskLine;
    dls = PImage(dest)-> lineSize;
-   s = PImage(src)-> data  + srcY * sls + srcX * bpp;
-   m = PIcon(src)-> mask   + srcY * mls + srcX;
+   s = PImage(src )-> data + srcY * sls + srcX * bpp;
    d = PImage(dest)-> data + dstY * dls + dstX * bpp;
+
+   if ( kind_of(src, CIcon)) {
+      mls = PIcon(src)-> maskLine;
+      m   = PIcon(src)-> mask + dstY * mls + dstX;
+      if ( PIcon(src)-> maskType != imbpp8)
+        croak("panic: assert failed for img_put_alpha: %s", "src mask type");
+   } else {
+      m   = NULL;
+      mls = 0;
+   }
 
    if ( kind_of(dest, CIcon)) {
       als = PIcon(dest)-> maskLine;
-      a   = PIcon(dest)-> mask + dstY * als + dstY;
+      a   = PIcon(dest)-> mask + dstY * als + dstX;
+      if ( PIcon(dest)-> maskType != imbpp8)
+        croak("panic: assert failed for img_put_alpha: %s", "dst mask type");
    } else {
       a   = NULL;
       als = 0;
    }
 
+   if ( !use_src_alpha && !m)
+        croak("panic: assert failed for img_put_alpha: %s", "rop is non-alpha, no src mask set");
+   if ( !use_dst_alpha && !a)
+        croak("panic: assert failed for img_put_alpha: %s", "rop is non-alpha, no dst mask set");
+
    /* blend */
    for ( y = 0; y < dstH; y++) {
       register Byte *ss = s, *mm = m, *dd = d, *aa = a;
       for ( x = 0; x < dstW; x++) {
-         unsigned int alpha       = *mm++;
-         unsigned int minus_alpha = 255 - alpha;
-         unsigned int rr;
-         for ( px = 0; px < bpp; px++, ss++, dd++) {
-            rr = (minus_alpha * *dd + *ss);
-	    if ( rr > 255 ) rr = 255;
+         unsigned int as = use_src_alpha ? src_alpha : *mm++;
+         unsigned int ad = use_dst_alpha ? dst_alpha : *aa;
+         unsigned int  s_sum = 0, d_sum = 0;
+	 float rr, sss;
+         for ( px = 0; px < bpp; px++, dd++) {
+	    sss = *ss++;
+	    if ( multiply_src ) sss *= as / 255.0;
+	    s_sum += sss;
+	    d_sum += *dd;
+	    switch ( rop ) {
+            case ropSrcOver : rr = sss + (*dd * (255 - as)) / 255.0              ; break;
+            case ropDstOver : rr = sss * (255 - ad) / 255.0 + *dd                ; break;
+            case ropDstCopy : rr = *dd;                                          ; break;
+            case ropClear   : rr = 0                                             ; break;
+            case ropSrcIn   : rr = sss * ad / 255.0                              ; break;
+            case ropDstIn   : rr = *dd * as / 255.0                              ; break;
+            case ropSrcOut  : rr = sss * (255 - ad) / 255.0                      ; break;
+            case ropDstOut  : rr = *dd * (255 - as) / 255.0                      ; break;
+            case ropSrcAtop : rr = (sss * ad + *dd * (255 - as)) / 255.0         ; break;
+            case ropDstAtop : rr = (sss * (255 - ad) + *dd * as) / 255.0         ; break;
+            case ropXor     : rr = (sss * (255 - ad) + *dd * (255 - as)) / 255.0 ; break;
+            default         : rr = sss;                                          ; break;
+	    }
+	    rr += 0.5;
+	    if ( rr > 255.0 ) rr = 255.0;
 	    *dd = rr;
 	 }
 	 if ( a ) {
-            rr = (minus_alpha * *aa + alpha);
+	    int As = as * ( 255 - ad );
+	    int Ad = ad * ( 255 - as );
+	    int Ab = as * ad;
+	    int sc = (s_sum > 0) ? 1 : 0;
+	    int dc = (d_sum > 0) ? 1 : 0;
+	    int bc = sc & dc;
+	    rr = (As * sc + Ad * dc + Ab * bc) / 255.0 + .5;
 	    if ( rr > 255 ) rr = 255;
-	    *aa = rr;
+	    *aa++ = rr;
 	 }
       }
       s += sls;

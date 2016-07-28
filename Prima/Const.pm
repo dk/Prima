@@ -34,6 +34,13 @@ package
     cm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# commands
 package 
     rop; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# raster operations
+
+sub blend($)
+{
+   my $alpha = shift;
+   return rop::SrcOver | rop::MultiplySrc | rop::ConstantAlpha | ( $alpha << rop::SrcAlphaShift );
+}
+
 package 
     gm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# grow modes
 package 

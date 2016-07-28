@@ -2596,9 +2596,27 @@ typedef enum {
 #define ropNotSrcXor  ropNotXor    /* dest ^= !src */
 #define ropNotDestXor ropNotXor    /* dest  = !dest ^ src */
 
+/* Porter-Duff operators for 32-bit ARGB image operations */
 typedef enum {
    ropSrcOver = 0, /* save value as ropCopy, to serve as a default */
-   ropSrcCopy
+   ropXor = ropXorPut, /* so they have same value */
+   ropDstOver,
+   ropSrcCopy,
+   ropDstCopy,
+   ropClear,
+   ropSrcIn,
+   ropDstIn,
+   ropSrcOut,
+   ropDstOut,
+   ropSrcAtop,
+   ropDstAtop,
+   ropPorterDuffMask     = 0x000000F, /* these are only for Prima's own Image.put */
+   ropMultiplySrc        = 0x1000000,
+   ropSrcAlpha           = 0x2000000, 
+   ropSrcAlphaShift      = 8,
+   ropDstAlpha           = 0x4000000,
+   ropDstAlphaShift      = 16,
+   ropConstantAlpha      = 0x6000000  /* these are only for Prima's own Image.put */
 } ROP2;
 
 #define ROP(const_name) CONSTANT(rop,const_name)
@@ -2607,7 +2625,15 @@ START_TABLE(rop,UV)
 ROP(Blackness) ROP(NotOr) ROP(NotSrcAnd) ROP(NotPut) ROP(NotDestAnd)
 ROP(Invert) ROP(XorPut) ROP(NotAnd) ROP(AndPut) ROP(NotXor) ROP(NoOper)
 ROP(NotSrcOr) ROP(CopyPut) ROP(NotDestOr) ROP(OrPut) ROP(Whiteness)
-ROP(NotSrcXor) ROP(NotDestXor) ROP(SrcOver) ROP(SrcCopy)
+ROP(NotSrcXor) ROP(NotDestXor)
+
+ROP(SrcOver) ROP(SrcCopy) ROP(SrcIn) ROP(SrcOut) ROP(SrcAtop)
+ROP(DstOver) ROP(DstCopy) ROP(DstIn) ROP(DstOut) ROP(DstAtop)
+ROP(Xor) ROP(Clear)
+
+ROP(SrcAlpha) ROP(SrcAlphaShift)
+ROP(DstAlpha) ROP(DstAlphaShift)
+ROP(PorterDuffMask) ROP(ConstantAlpha) ROP(MultiplySrc)
 END_TABLE(rop,UV)
 #undef ROP
 
