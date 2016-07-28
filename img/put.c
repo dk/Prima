@@ -678,7 +678,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 
    if ( kind_of(src, CIcon)) {
       mls = PIcon(src)-> maskLine;
-      m   = PIcon(src)-> mask + dstY * mls + dstX;
+      m   = PIcon(src)-> mask + srcY * mls + srcX;
       if ( PIcon(src)-> maskType != imbpp8)
         croak("panic: assert failed for img_put_alpha: %s", "src mask type");
    } else {
@@ -696,10 +696,14 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
       als = 0;
    }
 
-   if ( !use_src_alpha && !m)
-        croak("panic: assert failed for img_put_alpha: %s", "rop is non-alpha, no src mask set");
-   if ( !use_dst_alpha && !a)
-        croak("panic: assert failed for img_put_alpha: %s", "rop is non-alpha, no dst mask set");
+   if ( !use_src_alpha && !m) {
+      use_src_alpha = true;
+      src_alpha = 0xff;
+   }
+   if ( !use_dst_alpha && !a) {
+      use_dst_alpha = true;
+      dst_alpha = 0xff;
+   }
 
    /* blend */
    for ( y = 0; y < dstH; y++) {
@@ -728,6 +732,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
             case ropXor     : rr = (sss * (255 - ad) + *dd * (255 - as)) / 255.0 ; break;
             default         : rr = sss;                                          ; break;
 	    }
+	    /* warn("%f %d %d/%d(%d) %f\n", sss, *dd, as, 255-as, use_src_alpha, rr); */
 	    rr += 0.5;
 	    if ( rr > 255.0 ) rr = 255.0;
 	    *dd = rr;
