@@ -1678,6 +1678,38 @@ Image_mirror( Handle self, Bool vertically)
    my-> update_change(self);
 }
 
+void
+Image_premultiply_alpha( Handle self, SV * alpha)
+{
+    int oldType;
+
+    oldType = var-> type;
+    if ( var-> type & imGrayScale ) {
+       if ( var-> type != imByte )
+          my-> set_type( self, imByte );
+    } else { 
+       if ( var-> type != imRGB ) 
+          my-> set_type( self, imRGB );
+    }
+
+    if ( SvROK( alpha )) {
+	Handle a = gimme_the_mate( alpha), dup = nilHandle;
+	if ( !a || !kind_of( a, CImage) )
+           croak( "Illegal object reference passed to Prima::Image::%s", "premultiply_alpha");
+	if ( PImage(a)->type != imByte)
+	   a = dup = CImage(a)->dup(a);
+        img_premultiply_alpha_map( self, a);
+	if (dup)
+	   Object_destroy(dup);
+    } else
+        img_premultiply_alpha_constant( self, SvIV( alpha ));
+
+    if ( is_opt( optPreserveType ) && var-> type != oldType )
+       my-> set_type( self, oldType );
+    else
+       my-> update_change( self );
+}
+
 #ifdef __cplusplus
 }
 #endif

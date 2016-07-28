@@ -775,7 +775,7 @@ sub preload_method
 		if defined $defParms[$i] && (
 			$structs{$types[$i]} || $arrays{$types[$i]} ||
 #        ( $types[$i] eq "Handle") || <<<< to enable being Handle default parameters
-			( $types[$i] eq "SV") ||
+#			( $types[$i] eq "SV") ||
 			( $types[$i] eq "HV")
 		);
 	}

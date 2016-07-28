@@ -600,6 +600,7 @@ img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, i
          dstH = PImage(dest)-> h - dstY;
    }
 
+   /* adjust source type */
    if (PImage(src)-> type != bpp || srcW != dstW || srcH != dstH ) {
       Bool ok;
       Handle dup;
@@ -620,6 +621,7 @@ img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, i
       return ok;
    }
 
+   /* adjust destination type */
    if (PImage(dest)-> type != bpp || ( kind_of( dest, CIcon) && PIcon(dest)->maskType != imbpp8 )) {
       Bool ok;
       int type = PIcon(dest)->type;
@@ -639,12 +641,12 @@ img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, i
       return ok;
    }
 
+   /* final countdown */
    if ( srcW != dstW || srcH != dstH || 
        PImage(src)->type != PImage(dest)->type || PImage(src)-> type != bpp ||
        PIcon(src)-> maskType != imbpp8)
        croak("panic: assert failed for img_put_over");
    
-   /* blend */
    bpp = ( bpp == imByte ) ? 1 : 3;
    sls = PImage(src)-> lineSize;
    mls = PIcon(src)-> maskLine;
@@ -661,6 +663,7 @@ img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, i
       als = 0;
    }
 
+   /* blend */
    for ( y = 0; y < dstH; y++) {
       register Byte *ss = s, *mm = m, *dd = d, *aa = a;
       for ( x = 0; x < dstW; x++) {
@@ -685,6 +688,61 @@ img_put_over( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, i
    }
 
    return true;
+}
+
+/* alpha stuff */
+void
+img_premultiply_alpha_constant( Handle self, int alpha)
+{
+    Byte * data;
+    int i, j, pixels;
+    if ( PImage(self)-> type == imByte ) {
+       pixels = 1;
+    } else if ( PImage(self)-> type == imRGB ) {
+       pixels = 3;
+    } else {
+       croak("Not implemented");
+    }
+
+    data = PImage(self)-> data;
+    for ( i = 0; i < PImage(self)-> h; i++) {
+       register Byte *d = data, k;
+       for ( j = 0; j < PImage(self)-> w; j++ ) {
+          for ( k = 0; k < pixels; k++, d++)
+	     *d = (alpha * *d) / 255.0 + .5;
+       }
+       data += PImage(self)-> lineSize;
+    }
+}
+
+void img_premultiply_alpha_map( Handle self, Handle alpha)
+{
+    Byte * data, * mask;
+    int i, j, pixels;
+    if ( PImage(self)-> type == imByte ) {
+       pixels = 1;
+    } else if ( PImage(self)-> type == imRGB ) {
+       pixels = 3;
+    } else {
+       croak("Not implemented");
+    }
+
+    if ( PImage(alpha)-> type != imByte )
+       croak("Not implemented");
+
+    data = PImage(self)-> data;
+    mask = PImage(alpha)-> data;
+    for ( i = 0; i < PImage(self)-> h; i++) {
+       int j;
+       register Byte *d = data, *m = mask, k;
+       for ( j = 0; j < PImage(self)-> w; j++ ) {
+          register uint16_t alpha = *m++;
+          for ( k = 0; k < pixels; k++, d++)
+	     *d = (alpha * *d) / 255.0 + .5;
+       }
+       data += PImage(self)-> lineSize;
+       mask += PImage(alpha)-> lineSize;
+    }
 }
 
 #ifdef __cplusplus

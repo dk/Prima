@@ -255,6 +255,8 @@ extern Bool img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int 
 extern void img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color);
 extern void img_rotate( Handle self, Byte * new_data, int new_line_size, int degrees);
 extern void img_mirror( Handle self, Bool vertically);
+extern void img_premultiply_alpha_constant( Handle self, int alpha);
+extern void img_premultiply_alpha_map( Handle self, Handle alpha);
 
 /* internal maps */
 extern Byte     map_stdcolorref    [ 256];

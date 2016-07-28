@@ -648,7 +648,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
       }
    }
    if ( post_blending )
-      CIcon( fi-> object )-> premultiply_alpha( fi-> object );
+      CIcon( fi-> object )-> premultiply_alpha( fi-> object, (SV*) NULL );
 
    /* misc extras  */
 READ_END:   

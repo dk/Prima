@@ -679,42 +679,29 @@ Icon_bitmap( Handle self)
 }
 
 void
-Icon_premultiply_alpha( Handle self)
+Icon_premultiply_alpha( Handle self, SV * alpha)
 {
-    int i, pixels, oldType;
-    Byte * data, * mask;
-   
-    if ( var-> maskType != imbpp8 ) return;
+    if ( !alpha || ( SvTYPE( alpha ) == SVt_NULL)) {
+       int type = var-> maskType;
+       Image dummy;
+       /* multiply with self */
+       if ( var-> maskType != imbpp8 )
+          my-> set_maskType( self, imbpp8 );
+       
+       dummy. self     = CImage;
+       dummy. w        = var-> w;
+       dummy. h        = var-> h;
+       dummy. data     = var-> mask;
+       dummy. lineSize = var-> maskLine;
+       dummy. dataSize = var-> maskSize;
+       dummy. type     = imByte;
+       dummy. palette  = std256gray_palette;
+       img_premultiply_alpha_map( self, (Handle) &dummy);
 
-    oldType = var-> type;
-    if ( var-> type & imGrayScale ) {
-       if ( var-> type != imByte )
-          my-> set_type( self, imByte );
-       pixels = 1;
-    } else { 
-       if ( var-> type != imRGB ) 
-          my-> set_type( self, imRGB );
-       pixels = 3;
-    }
-
-    data = var-> data;
-    mask = var-> mask;
-    for ( i = 0; i < var-> h; i++) {
-       int j;
-       register Byte *d = data, *m = mask, k;
-       for ( j = 0; j < var-> w; j++ ) {
-          register uint16_t alpha = *m++;
-          for ( k = 0; k < pixels; k++, d++)
-	     *d = (alpha * *d) / 255.0 + .5;
-       }
-       data += var-> lineSize;
-       mask += var-> maskLine;
-    }
-
-    if ( is_opt( optPreserveType ) && var-> type != oldType )
-       my-> set_type( self, oldType );
-    else
-       my-> update_change( self );
+       if ( is_opt( optPreserveType) && var-> maskType != imbpp8 )
+          my-> set_maskType( self, type );
+    } else
+       inherited premultiply_alpha( self, alpha );
 }
 
 #ifdef __cplusplus

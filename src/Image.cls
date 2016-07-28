@@ -51,6 +51,7 @@ object Prima::Image( Prima::Drawable)
    method void   mirror( Bool vertically );
    import SV *   notification_types();
    import SV *   profile_default ();
+   method void   premultiply_alpha(SV * alpha);
    method Bool   put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
    method void   remove_notification( UV id);
    method void   rotate( int degrees );
