@@ -634,6 +634,7 @@ typedef struct _ViewProfile {
   Bool     visible;
   Bool     focused;
   Handle   capture;
+  HRGN     shape;
 } ViewProfile, *PViewProfile;
 
 
@@ -655,6 +656,15 @@ get_view_ex( Handle self, PViewProfile p)
   p-> enabled   = apc_widget_is_enabled( self);
   p-> focused   = apc_widget_is_focused( self);
   p-> visible   = apc_widget_is_visible( self);
+  p-> shape = CreateRectRgn(0,0,0,0);
+  if ( sys className == WC_FRAME && is_apt(aptLayered))
+     i = GetWindowRgn((HWND) var handle, p->shape);
+  else
+     i = GetWindowRgn( HANDLE, p->shape);
+  if (!i) {
+     DeleteObject(p->shape);
+     p->shape = NULL;
+  }
 }
 
 
@@ -663,6 +673,10 @@ set_view_ex( Handle self, PViewProfile p)
 {
   int i;
   HWND wnd = ( HWND) var handle;
+  if ( sys className == WC_FRAME && is_apt(aptLayered)) {
+     SetWindowRgn((HWND) var handle, p-> shape, true);
+  } else
+     SetWindowRgn( HANDLE, p-> shape, true);
   apc_widget_set_visible( self, false);
   for ( i = 0; i <= ciMaxId; i++) apc_widget_set_color( self, p-> colors[i], i);
   apc_widget_set_font( self, &var font);
