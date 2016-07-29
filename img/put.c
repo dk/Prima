@@ -700,42 +700,45 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
    for ( y = 0; y < dstH; y++) {
       register Byte *ss = s, *mm = m, *dd = d, *aa = a;
       for ( x = 0; x < dstW; x++) {
-         unsigned int as = use_src_alpha ? src_alpha : *mm++;
-         unsigned int ad = use_dst_alpha ? dst_alpha : *aa;
-         unsigned int  s_sum = 0, d_sum = 0;
-	 float rr, sss;
-         for ( px = 0; px < bpp; px++, dd++) {
-	    sss = *ss++;
+         int as = use_src_alpha ? src_alpha : *mm++;
+         int ad = use_dst_alpha ? dst_alpha : *aa;
+         int s_sum = 0, d_sum = 0;
+         long rr, sss, ddd;
+         for ( px = 0; px < bpp; px++) {
+	    sss = *ss++ << 8;
+	    ddd = *dd   << 8;
 	    if ( multiply_src ) sss *= as / 255.0;
 	    s_sum += sss;
-	    d_sum += *dd;
+	    d_sum += ddd;
 	    switch ( rop ) {
-            case ropSrcOver : rr = sss + (*dd * (255 - as)) / 255.0              ; break;
-            case ropDstOver : rr = sss * (255 - ad) / 255.0 + *dd                ; break;
-            case ropDstCopy : rr = *dd;                                          ; break;
-            case ropClear   : rr = 0                                             ; break;
-            case ropSrcIn   : rr = sss * ad / 255.0                              ; break;
-            case ropDstIn   : rr = *dd * as / 255.0                              ; break;
-            case ropSrcOut  : rr = sss * (255 - ad) / 255.0                      ; break;
-            case ropDstOut  : rr = *dd * (255 - as) / 255.0                      ; break;
-            case ropSrcAtop : rr = (sss * ad + *dd * (255 - as)) / 255.0         ; break;
-            case ropDstAtop : rr = (sss * (255 - ad) + *dd * as) / 255.0         ; break;
-            case ropXor     : rr = (sss * (255 - ad) + *dd * (255 - as)) / 255.0 ; break;
-            default         : rr = sss;                                          ; break;
+            case ropSrcOver : rr = sss + (ddd * (255 - as)) / 255              ; break;
+            case ropDstOver : rr = sss * (255 - ad) / 255 + ddd                ; break;
+            case ropDstCopy : rr = ddd;                                        ; break;
+            case ropClear   : rr = 0                                           ; break;
+            case ropSrcIn   : rr = sss * ad / 255                              ; break;
+            case ropDstIn   : rr = ddd * as / 255                              ; break;
+            case ropSrcOut  : rr = sss * (255 - ad) / 255                      ; break;
+            case ropDstOut  : rr = ddd * (255 - as) / 255                      ; break;
+            case ropSrcAtop : rr = (sss * ad + ddd * (255 - as)) / 255         ; break;
+            case ropDstAtop : rr = (sss * (255 - ad) + ddd * as) / 255         ; break;
+            case ropXor     : rr = (sss * (255 - ad) + ddd * (255 - as)) / 255 ; break;
+            default         : rr = sss;                                        ; break;
 	    }
 	    /* warn("%f %d %d/%d(%d) %f\n", sss, *dd, as, 255-as, use_src_alpha, rr); */
-	    rr += 0.5;
-	    if ( rr > 255.0 ) rr = 255.0;
-	    *dd = rr;
+	    rr += 127;
+	    rr >>= 8;
+	    if ( rr > 255 ) rr = 255;
+	    *dd++ = rr;
 	 }
 	 if ( a ) {
-	    int As = as * ( 255 - ad );
-	    int Ad = ad * ( 255 - as );
-	    int Ab = as * ad;
+	    int As = as * ( 255 - ad ) << 8;
+	    int Ad = ad * ( 255 - as ) << 8;
+	    int Ab = as * ad << 8;
 	    int sc = (s_sum > 0) ? 1 : 0;
 	    int dc = (d_sum > 0) ? 1 : 0;
 	    int bc = sc & dc;
-	    rr = (As * sc + Ad * dc + Ab * bc) / 255.0 + .5;
+	    rr = (As * sc + Ad * dc + Ab * bc) / 255 + 127;
+	    rr >>= 8;
 	    if ( rr > 255 ) rr = 255;
 	    *aa++ = rr;
 	 }
