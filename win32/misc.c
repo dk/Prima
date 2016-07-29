@@ -330,10 +330,13 @@ apc_sys_get_value( int sysValue)
    case svCompositeDisplay:
        valType = REG_DWORD;
        valSize = sizeof(DWORD);
-       RegOpenKeyEx( HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\DWM", 0, KEY_READ, &hKey);
-       RegQueryValueEx( hKey, "CompositionPolicy", nil, &valType, ( LPBYTE)&dw, &valSize);
-       RegCloseKey( hKey);
-       return dw == 0;
+       if ( RegOpenKeyEx( HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\DWM", 0, KEY_READ, &hKey) == 0 ) {
+          if ( RegQueryValueEx( hKey, "CompositionPolicy", nil, &valType, ( LPBYTE)&dw, &valSize) != 0 )
+	     dw = 1;
+          RegCloseKey( hKey);
+          return dw == 0;
+       } else 
+          return 0;
    case svLayeredWidgets: return guts. displayBMInfo. bmiHeader. biBitCount > 8;
    default:
       return -1;
