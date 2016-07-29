@@ -37,8 +37,8 @@ package
 
 sub blend($)
 {
-   my $alpha = shift;
-   return rop::SrcOver | rop::MultiplySrc | rop::ConstantAlpha | ( $alpha << rop::SrcAlphaShift );
+   my $alpha = 255 - shift;
+   return rop::DstAtop | rop::ConstantAlpha | ( $alpha << rop::SrcAlphaShift ) | ($alpha << rop::DstAlphaShift);
 }
 
 package 

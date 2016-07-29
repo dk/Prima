@@ -564,19 +564,41 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
    }
 }
 
+//src
+//src *= asrc
+//src *= adst
+//src /= 255
+//
+//dst
+//dst *= asrc
+//dst /= 255
+
+static void
+fill_alpha_buf( int32_t * dst, Byte * src, int width, int bpp)
+{
+   register int x = width;
+   if ( bpp == 3 ) {
+      while (x-- > 0) {
+         register Byte a = *src++;
+         *dst++ = a;
+         *dst++ = a;
+         *dst++ = a;
+      }
+   } else {
+      while (x-- > 0) *dst++ = *src++;
+   }
+}
 
 static Bool 
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
-   int bpp, sls, dls, mls, als, x, y, px;
+   int bpp, bytes, sls, dls, mls, als, x, y, px;
    Byte *s, *d, *m, *a; 
    unsigned int src_alpha = 0, dst_alpha = 0;
-   Bool use_src_alpha = false, use_dst_alpha = false, multiply_src = false;
+   Bool use_src_alpha = false, use_dst_alpha = false;
+   int32_t *sbuf, *dbuf;
 
    /* differentiate between per-pixel alpha and a global value */
-   if ( rop & ropMultiplySrc ) {
-      multiply_src = true;
-   }
    if ( rop & ropSrcAlpha ) {
       use_src_alpha = true;
       src_alpha = (rop >> ropSrcAlphaShift) & 0xff;
@@ -696,9 +718,30 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
       dst_alpha = 0xff;
    }
 
+   if ( !(sbuf = malloc(dstW * bpp * sizeof(int32_t)))) {
+      warn("not enough memory");
+      return false;
+   }
+   if ( !(dbuf = malloc(dstW * bpp * sizeof(int32_t)))) {
+      free(sbuf);
+      warn("not enough memory");
+      return false;
+   }
+
+   bytes = dstW * bpp;
+   if ( use_src_alpha )
+      for ( x = 0; x < bytes; x++) sbuf[x] = src_alpha;
+   if ( use_dst_alpha )
+      for ( x = 0; x < bytes; x++) dbuf[x] = dst_alpha;
+
    /* blend */
    for ( y = 0; y < dstH; y++) {
       register Byte *ss = s, *mm = m, *dd = d, *aa = a;
+      if ( !use_src_alpha )
+         fill_alpha_buf( sbuf, m, dstW, bpp);
+      if ( !use_dst_alpha )
+         fill_alpha_buf( sbuf, m, dstW, bpp);
+
       for ( x = 0; x < dstW; x++) {
          int as = use_src_alpha ? src_alpha : *mm++;
          int ad = use_dst_alpha ? dst_alpha : *aa;
@@ -707,7 +750,6 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
          for ( px = 0; px < bpp; px++) {
 	    sss = *ss++ << 8;
 	    ddd = *dd   << 8;
-	    if ( multiply_src ) sss *= as / 255.0;
 	    s_sum += sss;
 	    d_sum += ddd;
 	    switch ( rop ) {
@@ -748,6 +790,9 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
       d += dls;
       a += als;
    }
+
+   free(dbuf);
+   free(sbuf);
 
    return true;
 }

@@ -2605,12 +2605,11 @@ typedef enum {
    ropSrcAtop,
    ropDstAtop,
    ropPorterDuffMask     = 0x000000F, /* these are only for Prima's own Image.put */
-   ropMultiplySrc        = 0x1000000,
-   ropSrcAlpha           = 0x2000000, 
+   ropSrcAlpha           = 0x1000000, 
    ropSrcAlphaShift      = 8,
-   ropDstAlpha           = 0x4000000,
+   ropDstAlpha           = 0x2000000,
    ropDstAlphaShift      = 16,
-   ropConstantAlpha      = 0x6000000  /* these are only for Prima's own Image.put */
+   ropConstantAlpha      = 0x3000000  /* these are only for Prima's own Image.put */
 } ROP;
 
 
@@ -2631,7 +2630,7 @@ ROP(Xor) ROP(Clear)
 
 ROP(SrcAlpha) ROP(SrcAlphaShift)
 ROP(DstAlpha) ROP(DstAlphaShift)
-ROP(PorterDuffMask) ROP(ConstantAlpha) ROP(MultiplySrc)
+ROP(PorterDuffMask) ROP(ConstantAlpha) 
 END_TABLE(rop,UV)
 #undef ROP
 
