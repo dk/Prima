@@ -564,17 +564,8 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
    }
 }
 
-//src
-//src *= asrc
-//src *= adst
-//src /= 255
-//
-//dst
-//dst *= asrc
-//dst /= 255
-
 static void
-fill_alpha_buf( int32_t * dst, Byte * src, int width, int bpp)
+fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp)
 {
    register int x = width;
    if ( bpp == 3 ) {
@@ -584,11 +575,204 @@ fill_alpha_buf( int32_t * dst, Byte * src, int width, int bpp)
          *dst++ = a;
          *dst++ = a;
       }
-   } else {
-      while (x-- > 0) *dst++ = *src++;
+   } else
+      memcpy( dst, src, width * bpp);
+}
+
+#define dBLEND_FUNC(name) void name( const Byte * src, const Byte * src_a, Byte * dst, const Byte * dst_a, int bytes )
+
+typedef dBLEND_FUNC(BlendFunc);
+
+/* sss + (ddd * (255 - as)) / 255 */
+static dBLEND_FUNC(blend_src_over)
+{
+   while ( bytes-- > 0 ) {
+      register int32_t s = 
+            ((int32_t)(*src++) << 8 ) +  
+	    ((int32_t)(*dst) << 8) * (255 - *src_a++) / 255 
+	    + 127;
+      s >>= 8;
+      *dst++ = ( s > 255 ) ? 255 : s;
    }
 }
 
+/* (sss * (255 - ad) + ddd * (255 - as)) / 255 */
+static dBLEND_FUNC(blend_xor)
+{
+   while ( bytes-- > 0 ) {
+      register int32_t s = (
+            ((int32_t)(*src++) << 8) * (255 - *dst_a++) + 
+	    ((int32_t)(*dst)   << 8) * (255 - *src_a++)
+	 ) / 255 + 127;
+      s >>= 8;
+      *dst++ = ( s > 255 ) ? 255 : s;
+   }
+}
+
+/* sss * (255 - ad) / 255 + ddd */
+static dBLEND_FUNC(blend_dst_over)
+{
+   while ( bytes-- > 0 ) {
+      register int32_t s = 
+            ((int32_t)(*dst) << 8 ) +  
+	    ((int32_t)(*src++) << 8) * (255 - *dst_a++) / 255 
+	    + 127;
+      s >>= 8;
+      *dst++ = ( s > 255 ) ? 255 : s;
+   }
+}
+
+/* ddd */
+static dBLEND_FUNC(blend_dst_copy)
+{
+}
+
+/* 0 */
+static dBLEND_FUNC(blend_clear)
+{
+   memset( dst, 0, bytes);
+}
+
+/* sss * ad / 255 */
+static dBLEND_FUNC(blend_src_in)
+{
+   while ( bytes-- > 0 ) {
+      register int32_t s = (((int32_t)(*src++) << 8) * *dst_a++) / 255 + 127;
+      s >>= 8;
+      *dst++ = ( s > 255 ) ? 255 : s;
+   }
+}
+
+/* ddd * as / 255 */
+static dBLEND_FUNC(blend_dst_in)
+{
+   while ( bytes-- > 0 ) { 
+      register int32_t d = (((int32_t)(*dst) << 8) * *src_a++) / 255 + 127;
+      d >>= 8;
+      *dst++ = ( d > 255 ) ? 255 : d;
+   }
+}
+
+/* sss * (255 - ad) / 255 */
+static dBLEND_FUNC(blend_src_out)
+{
+   while ( bytes-- > 0 ) {
+      register int32_t s = (((int32_t)(*src++) << 8) * ( 255 - *dst_a++)) / 255 + 127;
+      s >>= 8;
+      *dst++ = ( s > 255 ) ? 255 : s;
+   }
+}
+
+/* ddd * (255 - as) / 255 */
+static dBLEND_FUNC(blend_dst_out)
+{
+   while ( bytes-- > 0 ) {
+      register int32_t d = (((int32_t)(*dst) << 8) * ( 255 - *src_a++)) / 255 + 127;
+      d >>= 8;
+      *dst++ = ( d > 255 ) ? 255 : d;
+   }
+}
+
+/* (sss * ad + ddd * (255 - as)) / 255 */
+static dBLEND_FUNC(blend_src_atop)
+{
+   while ( bytes-- > 0 ) {
+      register int32_t s = (
+         ((int32_t)(*src++) << 8) * *dst_a++ + 
+	 ((int32_t)(*dst) << 8) * (255 - *src_a++)
+      ) / 255 + 127;
+      s >>= 8;
+      *dst++ = ( s > 255 ) ? 255 : s;
+   }
+}
+
+/* (sss * (255 - ad) + ddd * as) / 255 */
+static dBLEND_FUNC(blend_dst_atop)
+{
+   while ( bytes-- > 0 ) {
+      register int32_t s = (
+         ((int32_t)(*src++) << 8) * ( 255 - *dst_a++) + 
+	 ((int32_t)(*dst) << 8) * *src_a++
+      ) / 255 + 127;
+      s >>= 8;
+      *dst++ = ( s > 255 ) ? 255 : s;
+   }
+}
+
+/* sss */
+static dBLEND_FUNC(blend_src_copy)
+{
+   memcpy( dst, src, bytes);
+}
+
+static BlendFunc* blend_functions[] = {
+   blend_src_over,
+   blend_xor,
+   blend_dst_over,
+   blend_src_copy,
+   blend_dst_copy,
+   blend_clear,
+   blend_src_in,
+   blend_dst_in,
+   blend_src_out,
+   blend_dst_out,
+   blend_src_atop,
+   blend_dst_atop
+};
+
+#define dALPHA_FUNC(name) void name( const Byte * src, const Byte * src_a, const Byte * dst, const Byte * dst_a, int width, Byte * result )
+
+typedef dALPHA_FUNC(AlphaFunc);
+
+static dALPHA_FUNC(alpha24)
+{
+   while ( width-- ) {
+      register int as = *src_a;
+      register int ad = *dst_a;
+      Byte sc = src[0] | src[1] | src[2];
+      Byte dc = dst[0] | dst[1] | dst[2];
+      Byte bc = sc | dc;
+
+
+      int r = 127;
+      if ( sc != 0 ) r += as * ( 255 - ad ) << 8;
+      if ( dc != 0 ) r += ad * ( 255 - as ) << 8;
+      if ( bc != 0 ) r += as * ad << 8;
+      src   += 3;
+      src_a += 3;
+      dst   += 3;
+      dst_a += 3;
+
+      r = (r / 255 + 127) >> 8;
+      if ( r > 255 ) r = 255;
+      *result++ = r;
+   }
+}
+
+static dALPHA_FUNC(alpha8)
+{
+   while ( width-- ) {
+      register int as = *src_a++;
+      register int ad = *dst_a++;
+      Byte sc = *src++;
+      Byte dc = *dst++;
+      Byte bc = sc | dc;
+
+      int r = 0;
+      if ( sc != 0 ) r += (as * ( 255 - ad )) << 8;
+      if ( dc != 0 ) r += (ad * ( 255 - as )) << 8;
+      if ( bc != 0 ) r += (as * ad) << 8;
+
+      r = (r / 255 + 127) >> 8;
+      if ( r > 255 ) r = 255;
+      *result++ = r;
+   }
+}
+
+/* 
+   This is basically a lightweight pixman_image_composite() .
+   Converts images to either 8 or 24 bits before processing
+*/
 static Bool 
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
@@ -596,7 +780,9 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
    Byte *s, *d, *m, *a; 
    unsigned int src_alpha = 0, dst_alpha = 0;
    Bool use_src_alpha = false, use_dst_alpha = false;
-   int32_t *sbuf, *dbuf;
+   Byte *asbuf, *adbuf;
+   BlendFunc * blend_func;
+   AlphaFunc * alpha_func;
 
    /* differentiate between per-pixel alpha and a global value */
    if ( rop & ropSrcAlpha ) {
@@ -608,6 +794,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
       dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
    }
    rop &= ropPorterDuffMask;
+   if ( rop > ropDstAtop || rop < 0 ) return false;
 
    /* align types and geometry - can only operate over imByte and imRGB */
    bpp = (( PImage(src)->type & imGrayScale) && ( PImage(dest)->type & imGrayScale)) ? imByte : imRGB;
@@ -677,8 +864,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
       }
       return ok;
    }
-
-   /* final countdown */
+   
+   /* assign pointers */
    if ( srcW != dstW || srcH != dstH || 
        PImage(src)->type != PImage(dest)->type || PImage(src)-> type != bpp)
        croak("panic: assert failed for img_put_alpha: %s", "types and geometry");
@@ -718,81 +905,46 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
       dst_alpha = 0xff;
    }
 
-   if ( !(sbuf = malloc(dstW * bpp * sizeof(int32_t)))) {
+   /* make buffers for alpha */
+   bytes = dstW * bpp;
+   if ( !(asbuf = malloc(bytes))) {
       warn("not enough memory");
       return false;
    }
-   if ( !(dbuf = malloc(dstW * bpp * sizeof(int32_t)))) {
-      free(sbuf);
+   if ( !(adbuf = malloc(bytes))) {
+      free(asbuf);
       warn("not enough memory");
       return false;
    }
 
-   bytes = dstW * bpp;
    if ( use_src_alpha )
-      for ( x = 0; x < bytes; x++) sbuf[x] = src_alpha;
+      for ( x = 0; x < bytes; x++) asbuf[x] = src_alpha;
    if ( use_dst_alpha )
-      for ( x = 0; x < bytes; x++) dbuf[x] = dst_alpha;
+      for ( x = 0; x < bytes; x++) adbuf[x] = dst_alpha;
+
+   /* select function */
+   blend_func = blend_functions[rop];
+   alpha_func = (bpp == 1) ? alpha8 : alpha24;
 
    /* blend */
    for ( y = 0; y < dstH; y++) {
-      register Byte *ss = s, *mm = m, *dd = d, *aa = a;
       if ( !use_src_alpha )
-         fill_alpha_buf( sbuf, m, dstW, bpp);
+         fill_alpha_buf( asbuf, m, dstW, bpp);
       if ( !use_dst_alpha )
-         fill_alpha_buf( sbuf, m, dstW, bpp);
+         fill_alpha_buf( adbuf, a, dstW, bpp);
+      
+      if (a) alpha_func( s, asbuf, d, adbuf, dstW, a);
+      blend_func( s, asbuf, d, adbuf, bytes);
 
-      for ( x = 0; x < dstW; x++) {
-         int as = use_src_alpha ? src_alpha : *mm++;
-         int ad = use_dst_alpha ? dst_alpha : *aa;
-         int s_sum = 0, d_sum = 0;
-         long rr, sss, ddd;
-         for ( px = 0; px < bpp; px++) {
-	    sss = *ss++ << 8;
-	    ddd = *dd   << 8;
-	    s_sum += sss;
-	    d_sum += ddd;
-	    switch ( rop ) {
-            case ropSrcOver : rr = sss + (ddd * (255 - as)) / 255              ; break;
-            case ropDstOver : rr = sss * (255 - ad) / 255 + ddd                ; break;
-            case ropDstCopy : rr = ddd;                                        ; break;
-            case ropClear   : rr = 0                                           ; break;
-            case ropSrcIn   : rr = sss * ad / 255                              ; break;
-            case ropDstIn   : rr = ddd * as / 255                              ; break;
-            case ropSrcOut  : rr = sss * (255 - ad) / 255                      ; break;
-            case ropDstOut  : rr = ddd * (255 - as) / 255                      ; break;
-            case ropSrcAtop : rr = (sss * ad + ddd * (255 - as)) / 255         ; break;
-            case ropDstAtop : rr = (sss * (255 - ad) + ddd * as) / 255         ; break;
-            case ropXor     : rr = (sss * (255 - ad) + ddd * (255 - as)) / 255 ; break;
-            default         : rr = sss;                                        ; break;
-	    }
-	    /* warn("%f %d %d/%d(%d) %f\n", sss, *dd, as, 255-as, use_src_alpha, rr); */
-	    rr += 127;
-	    rr >>= 8;
-	    if ( rr > 255 ) rr = 255;
-	    *dd++ = rr;
-	 }
-	 if ( a ) {
-	    int As = as * ( 255 - ad ) << 8;
-	    int Ad = ad * ( 255 - as ) << 8;
-	    int Ab = as * ad << 8;
-	    int sc = (s_sum > 0) ? 1 : 0;
-	    int dc = (d_sum > 0) ? 1 : 0;
-	    int bc = sc & dc;
-	    rr = (As * sc + Ad * dc + Ab * bc) / 255 + 127;
-	    rr >>= 8;
-	    if ( rr > 255 ) rr = 255;
-	    *aa++ = rr;
-	 }
-      }
       s += sls;
       m += mls;
       d += dls;
       a += als;
    }
 
-   free(dbuf);
-   free(sbuf);
+   /* cleanup */
+   free(adbuf);
+   free(asbuf);
 
    return true;
 }
