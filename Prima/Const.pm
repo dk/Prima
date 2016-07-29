@@ -779,6 +779,31 @@ See L<Prima::Drawable/Raster operations>
         rop::OrPut          #  |= src 
         rop::Whiteness      #   = 1 
 
+12 Porter-Duff operators
+
+        rop::Clear
+        rop::Xor
+        rop::SrcOver
+        rop::DstOver
+        rop::SrcCopy
+        rop::DstCopy
+        rop::SrcIn
+        rop::DstIn
+        rop::SrcOut
+        rop::DstOut
+        rop::SrcAtop
+        rop::DstAtop
+
+        rop::PorterDuffMask - masks out all bits but the constants above
+
+Constant alpha flags
+
+        rop::SrcAlpha
+        rop::SrcAlphaShift 
+        rop::DstAlpha
+        rop::DstAlphaShift
+	rop::ConstantAlpha
+
 =head2 sbmp:: - system bitmaps indices
 
 See also L<Prima::StdBitmap>.

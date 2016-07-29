@@ -255,6 +255,9 @@ It is yet unclear which primitives have to support ROPs, -
 like FloodFill and SetPixel. Behavior of the current implementation 
 is that they do not.
 
+On win32, BlendAlpha call is used to implement ropSrcOver function on 32-bit
+ARGB drawables. It yields results different to the ones yielded by X11/Xrender,
+that implements the canonic formula by Porter and Duff.
 
 =head2 Arcs
 
@@ -321,6 +324,11 @@ This effect is obviously due that fact that these platforms
 scale the bitmap into a memory before the plotting takes place.
 
 =back
+
+=head2 Layering
+
+On win32, layered widgets with pixels assigned zero alpha component, will not
+receive mouse events. 
 
 =head1 Platform-specific peculiarities
 

@@ -629,7 +629,42 @@ The raster operations apply to all graphic primitives except SetPixel.
 
 Note for layering: using layered images and device bitmaps with
 C<put_image> and C<stretch_image> can only use C<rop::SrcCopy> and C<rop::SrcOver>
-raster operations.
+raster operations on OS-provided surfaces. 
+
+Additionally, Prima implements extra features for compositing on images outside the
+begin_paint/end_paint brackets. It supports the following 12 Porter-Duff operators:
+
+   rop::Clear
+   rop::Xor
+   rop::SrcOver
+   rop::DstOver
+   rop::SrcCopy
+   rop::DstCopy
+   rop::SrcIn
+   rop::DstIn
+   rop::SrcOut
+   rop::DstOut
+   rop::SrcAtop
+   rop::DstAtop
+
+and set of constants to apply a constant source and destination alpha to override the
+existing alpha channel, if any:
+
+   rop::SrcAlpha
+   rop::SrcAlphaShift 
+   rop::DstAlpha
+   rop::DstAlphaShift
+
+To override the alpha channel(s) combine the rop constant using this formula:
+
+   $rop = rop::XXX | 
+      rop::SrcAlpha | ( $src_alpha << rop::SrcAlphaShift ) |
+      rop::DstAlpha | ( $src_alpha << rop::DstAlphaShift ) 
+
+Also, function C<rop::blend($alpha)> creates a rop constant for simple blending of two images
+by the following formula:
+
+   $dst = ( $src * $alpha + $dst * ( 255 - $alpha ) ) / 255
 
 =head2 Coordinates
 
