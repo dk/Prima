@@ -2589,15 +2589,9 @@ typedef enum {
    ropNotXor,           /* dest = !(src ^ dest) */
    ropNotAnd,           /* dest = !(src & dest) */
    ropNotOr,            /* dest = !(src | dest) */
-   ropNoOper            /* dest = dest */
-} ROP;
+   ropNoOper,           /* dest = dest */
 
-
-#define ropNotSrcXor  ropNotXor    /* dest ^= !src */
-#define ropNotDestXor ropNotXor    /* dest  = !dest ^ src */
-
-/* Porter-Duff operators for 32-bit ARGB image operations */
-typedef enum {
+   /* Porter-Duff operators for 32-bit ARGB image operations */
    ropSrcOver = 0, /* save value as ropCopy, to serve as a default */
    ropXor = ropXorPut, /* so they have same value */
    ropDstOver,
@@ -2617,7 +2611,11 @@ typedef enum {
    ropDstAlpha           = 0x4000000,
    ropDstAlphaShift      = 16,
    ropConstantAlpha      = 0x6000000  /* these are only for Prima's own Image.put */
-} ROP2;
+} ROP;
+
+
+#define ropNotSrcXor  ropNotXor    /* dest ^= !src */
+#define ropNotDestXor ropNotXor    /* dest  = !dest ^ src */
 
 #define ROP(const_name) CONSTANT(rop,const_name)
 

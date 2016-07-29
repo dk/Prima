@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 116;
+plan tests => 500;
 
 my @alu = qw(
    Blackness
@@ -181,6 +181,7 @@ sub is_bits
    }
 }
 
+# test constant alpha blending
 $src = img("\1\x0f\xf0\xff");
 $dst = img("\0\1\2\3");
 $dst->put_image( 0,0,$src, rop::blend(0));
@@ -199,3 +200,109 @@ $src = img("\0\3\6\x9");
 $dst = img("\xf0\xf0\xf0\xf0");
 $dst->put_image_indirect( $src, 2,0,0,0, 2,1,2,1, rop::blend(85));
 is_bits( $dst->data, "\xf0\xf0\xa0\xa1", "alpha 1/3 with src shift");
+
+# test porter-duff
+sub pd_color
+{
+	my ( $rop, $s, $as, $d, $ad ) = @_;
+
+	my $dst;
+
+	   if ( $rop == rop::SrcOver ) {  $dst = $s + ($d * (255 - $as)) / 255.0               }
+	elsif ( $rop == rop::DstOver ) {  $dst = $s * (255 - $ad) / 255.0 + $d                 }
+	elsif ( $rop == rop::DstCopy ) {  $dst = $d                                            }
+	elsif ( $rop == rop::Clear   ) {  $dst = 0                                             }
+	elsif ( $rop == rop::SrcIn   ) {  $dst = $s * $ad / 255.0                              }
+	elsif ( $rop == rop::DstIn   ) {  $dst = $d * $as / 255.0                              }
+	elsif ( $rop == rop::SrcOut  ) {  $dst = $s * (255 - $ad) / 255.0                      }
+	elsif ( $rop == rop::DstOut  ) {  $dst = $d * (255 - $as) / 255.0                      }
+	elsif ( $rop == rop::SrcAtop ) {  $dst = ($s * $ad + $d * (255 - $as)) / 255.0         }
+	elsif ( $rop == rop::DstAtop ) {  $dst = ($s * (255 - $ad) + $d * $as) / 255.0         }
+	elsif ( $rop == rop::Xor     ) {  $dst = ($s * (255 - $ad) + $d * (255 - $as)) / 255.0 }
+	elsif ( $rop == rop::SrcCopy ) {  $dst = $s                                            }
+	else  { $dst = -1 }
+
+	$dst += .5;
+	if ( $dst > 255 ) { $dst = 255 };
+	return int( $dst );
+}
+
+sub pd_alpha
+{
+	my ( $s, $as, $d, $ad ) = @_;
+	my $As = $as * ( 255 - $ad );
+	my $Ad = $ad * ( 255 - $as );
+	my $Ab = $as * $ad;
+	my $sc = ($s > 0) ? 1 : 0;
+	my $dc = ($d > 0) ? 1 : 0;
+	my $bc = ($sc && $dc) ? 1 : 0;
+	my $dst = ($As * $sc + $Ad * $dc + $Ab * $bc) / 255.0;
+	
+	$dst += .5;
+
+	if ( $dst > 255 ) { $dst = 255 };
+	return int( $dst );
+}
+
+sub test_rop
+{
+	my ($name) = @_;
+	my $rop = $rop::{$name}->();
+	my @q = (0, 85, 170, 255);
+
+	for my $bytes ( 1, 3 ) {
+		my $subname = ($bytes * 8) . ' bits';
+	
+		my $src = Prima::Icon->new(
+			width    => 8,
+			height   => 1,
+			data     => join('', map { chr } @q, @q),
+			mask     => join('', map { chr } @q, @q),
+			type     => im::Byte,
+			maskType => im::Byte,
+		);
+		
+		my $dst = Prima::Icon->new(
+			width    => 8,
+			height   => 1,
+			data     => join('', map { chr } @q, reverse @q),
+			mask     => join('', map { chr } @q, reverse @q),
+			type     => im::Byte,
+			maskType => im::Byte,
+		);
+
+		if ( $bytes == 3 ) {
+			$src->type(im::RGB);
+			$dst->type(im::RGB);
+		}
+		
+		$dst->put_image(0,0,$src,$rop);
+
+		my ( $cc, $aa ) = $dst->split;
+		$cc->type(im::Byte);
+		$aa->type(im::Byte);
+		
+		for ( my $i = 0; $i < @q; $i++) {
+			my $q = $q[$i];
+			my $c = pd_color( $rop, $q, $q, $q, $q );
+			my $a = pd_alpha( $q, $q, $q, $q );
+			my $pc = $cc->pixel($i, 0);
+			my $pa = $aa->pixel($i, 0);
+			is( $pc, $c, "C(($q/$q) $name ($q/$q)) = $c $subname");
+			is( $pa, $a, "A(($q/$q) $name ($q/$q)) = $a $subname");
+			
+			my $q2 = 255 - $q[$i];
+			$c = pd_color( $rop, $q, $q, $q2, $q2 );
+			$a = pd_alpha( $q, $q, $q2, $q2 );
+			$pc = $cc->pixel($i + 4, 0);
+			$pa = $aa->pixel($i + 4, 0);
+			is( $pc, $c, "C(($q/$q) $name ($q2/$q2)) = $c $subname");
+			is( $pa, $a, "A(($q/$q) $name ($q2/$q2)) = $a $subname");
+		}
+	}
+}
+
+test_rop( $_ ) for qw(
+	SrcOver DstOver DstCopy Clear  SrcIn  DstIn
+	SrcOut DstOut SrcAtop DstAtop Xor    SrcCopy
+);

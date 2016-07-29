@@ -201,36 +201,27 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       int palSize  = PImage( src)-> palSize; 
       int type     = PImage( src)-> type;
       void *self   = PImage( src)-> self; 
-      RGBColor palette[256];
+      RGBColor palette[2];
       Byte *p;
 
       if ( PIcon(src)-> maskType != imbpp1) {
          if ( PIcon(src)-> maskType != imbpp8) croak("panic: bad icon mask type");
-         if ( rop != ropSrcCopy )
-            return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
+         return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
       }
 
       PImage( src)-> self     =  CImage;
       PIcon( src)-> data = PIcon( src)-> mask;
       PImage( src)-> lineSize =  PIcon( src)-> maskLine;
       PImage( src)-> dataSize =  PIcon( src)-> maskSize;
-      if ( PIcon(src)-> maskType != imbpp1) {
-         memcpy( palette, PImage( src)-> palette, 768);
-         memcpy( PImage( src)-> palette, std256gray_palette, 768);
-         PImage( src)-> type     =  imByte;
-         PImage( src)-> palSize  = 256;
-         img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut);
-         rop = ropCopyPut;
-         memcpy( PImage( src)-> palette, palette, 768);
-      } else {
-         memcpy( palette, PImage( src)-> palette, 6);
-         memcpy( PImage( src)-> palette, stdmono_palette, 6);
-         PImage( src)-> type     =  imBW;
-         PImage( src)-> palSize  = 2;
-         img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut);
-         rop = ropXorPut;
-         memcpy( PImage( src)-> palette, palette, 6);
-      }
+      memcpy( palette, PImage( src)-> palette, 6);
+      memcpy( PImage( src)-> palette, stdmono_palette, 6);
+
+      PImage( src)-> type     =  imBW;
+      PImage( src)-> palSize  = 2;
+      img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut);
+      rop = ropXorPut;
+      memcpy( PImage( src)-> palette, palette, 6);
+
       PImage( src)-> self     = self;
       PImage( src)-> type     = type;
       PImage( src)-> data     = data; 
