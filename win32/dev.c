@@ -1142,6 +1142,8 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    if ( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap ||
         is_apt(aptImage)        && ((PImage)self)-> type == imBW )
         dst = img_put_on_bitmap;
+   else if ( is_apt(aptLayered))
+        dst = img_put_on_layered;
    else if ( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtPixmap ||
         is_apt(aptImage)        && ((PImage)self)-> type != imBW )
         dst = img_put_on_pixmap;
