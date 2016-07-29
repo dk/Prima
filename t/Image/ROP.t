@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 500;
+plan tests => 884;
 
 my @alu = qw(
    Blackness
@@ -208,6 +208,9 @@ sub pd_color
 
 	my $dst;
 
+	$s *= $as / 255.0 if $rop & rop::MultiplySrc;
+	$rop &= ~rop::MultiplySrc;
+
 	   if ( $rop == rop::SrcOver ) {  $dst = $s + ($d * (255 - $as)) / 255.0               }
 	elsif ( $rop == rop::DstOver ) {  $dst = $s * (255 - $ad) / 255.0 + $d                 }
 	elsif ( $rop == rop::DstCopy ) {  $dst = $d                                            }
@@ -249,55 +252,60 @@ sub test_rop
 	my ($name) = @_;
 	my $rop = $rop::{$name}->();
 	my @q = (0, 85, 170, 255);
+	$rop |= rop::MultiplySrc;
 
 	for my $bytes ( 1, 3 ) {
-		my $subname = ($bytes * 8) . ' bits';
+		for my $premultiply ( 0, 1 ) {
+ 			my $subname = ($bytes * 8) . ' bits ' . ( $premultiply ? '(mul)' : '');
 	
-		my $src = Prima::Icon->new(
-			width    => 8,
-			height   => 1,
-			data     => join('', map { chr } @q, @q),
-			mask     => join('', map { chr } @q, @q),
-			type     => im::Byte,
-			maskType => im::Byte,
-		);
-		
-		my $dst = Prima::Icon->new(
-			width    => 8,
-			height   => 1,
-			data     => join('', map { chr } @q, reverse @q),
-			mask     => join('', map { chr } @q, reverse @q),
-			type     => im::Byte,
-			maskType => im::Byte,
-		);
-
-		if ( $bytes == 3 ) {
-			$src->type(im::RGB);
-			$dst->type(im::RGB);
-		}
-		
-		$dst->put_image(0,0,$src,$rop);
-
-		my ( $cc, $aa ) = $dst->split;
-		$cc->type(im::Byte);
-		$aa->type(im::Byte);
-		
-		for ( my $i = 0; $i < @q; $i++) {
-			my $q = $q[$i];
-			my $c = pd_color( $rop, $q, $q, $q, $q );
-			my $a = pd_alpha( $q, $q, $q, $q );
-			my $pc = $cc->pixel($i, 0);
-			my $pa = $aa->pixel($i, 0);
-			is( $pc, $c, "C(($q/$q) $name ($q/$q)) = $c $subname");
-			is( $pa, $a, "A(($q/$q) $name ($q/$q)) = $a $subname");
+			my $src = Prima::Icon->new(
+				width    => 8,
+				height   => 1,
+				data     => join('', map { chr } @q, @q),
+				mask     => join('', map { chr } @q, @q),
+				type     => im::Byte,
+				maskType => im::Byte,
+			);
 			
-			my $q2 = 255 - $q[$i];
-			$c = pd_color( $rop, $q, $q, $q2, $q2 );
-			$a = pd_alpha( $q, $q, $q2, $q2 );
-			$pc = $cc->pixel($i + 4, 0);
-			$pa = $aa->pixel($i + 4, 0);
-			is( $pc, $c, "C(($q/$q) $name ($q2/$q2)) = $c $subname");
-			is( $pa, $a, "A(($q/$q) $name ($q2/$q2)) = $a $subname");
+			my $dst = Prima::Icon->new(
+				width    => 8,
+				height   => 1,
+				data     => join('', map { chr } @q, reverse @q),
+				mask     => join('', map { chr } @q, reverse @q),
+				type     => im::Byte,
+				maskType => im::Byte,
+			);
+
+			if ( $bytes == 3 ) {
+				$src->type(im::RGB);
+				$dst->type(im::RGB);
+			}
+
+			$rop |= rop::MultiplySrc if $premultiply;
+			
+			$dst->put_image(0,0,$src,$rop);
+
+			my ( $cc, $aa ) = $dst->split;
+			$cc->type(im::Byte);
+			$aa->type(im::Byte);
+			
+			for ( my $i = 0; $i < @q; $i++) {
+				my $q = $q[$i];
+				my $c = pd_color( $rop, $q, $q, $q, $q );
+				my $a = pd_alpha( $q, $q, $q, $q );
+				my $pc = $cc->pixel($i, 0);
+				my $pa = $aa->pixel($i, 0);
+				is( $pc, $c, "C(($q/$q) $name ($q/$q)) = $c $subname");
+				is( $pa, $a, "A(($q/$q) $name ($q/$q)) = $a $subname");
+				
+				my $q2 = 255 - $q[$i];
+				$c = pd_color( $rop, $q, $q, $q2, $q2 );
+				$a = pd_alpha( $q, $q, $q2, $q2 );
+				$pc = $cc->pixel($i + 4, 0);
+				$pa = $aa->pixel($i + 4, 0);
+				is( $pc, $c, "C(($q/$q) $name ($q2/$q2)) = $c $subname");
+				is( $pa, $a, "A(($q/$q) $name ($q2/$q2)) = $a $subname");
+			}
 		}
 	}
 }
