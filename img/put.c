@@ -907,11 +907,11 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 
    /* make buffers for alpha */
    bytes = dstW * bpp;
-   if ( !(asbuf = malloc(bytes))) {
+   if ( !(asbuf = malloc(bytes * (use_src_alpha ? 1 : OMP_MAX_THREADS)))) {
       warn("not enough memory");
       return false;
    }
-   if ( !(adbuf = malloc(bytes))) {
+   if ( !(adbuf = malloc(bytes * (use_dst_alpha ? 1 : OMP_MAX_THREADS)))) {
       free(asbuf);
       warn("not enough memory");
       return false;
@@ -927,19 +927,31 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
    alpha_func = (bpp == 1) ? alpha8 : alpha24;
 
    /* blend */
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
    for ( y = 0; y < dstH; y++) {
-      if ( !use_src_alpha )
-         fill_alpha_buf( asbuf, m, dstW, bpp);
-      if ( !use_dst_alpha )
-         fill_alpha_buf( adbuf, a, dstW, bpp);
-      
-      if (a) alpha_func( s, asbuf, d, adbuf, dstW, a);
-      blend_func( s, asbuf, d, adbuf, bytes);
+      Byte *asbuf_ptr, *adbuf_ptr, *s_ptr, *m_ptr, *d_ptr, *a_ptr;
 
-      s += sls;
-      m += mls;
-      d += dls;
-      a += als;
+      s_ptr = s + sls * y;
+      d_ptr = d + dls * y;
+      if (m) m_ptr = m + mls * y;
+      if (a) a_ptr = a + als * y;
+
+      if ( !use_src_alpha ) {
+         asbuf_ptr = asbuf + bytes * OMP_THREAD_NUM;
+         fill_alpha_buf( asbuf_ptr, m_ptr, dstW, bpp);
+      } else
+         asbuf_ptr = asbuf;
+
+      if ( !use_dst_alpha ) {
+         adbuf_ptr = adbuf + bytes * OMP_THREAD_NUM;
+         fill_alpha_buf( adbuf, a_ptr, dstW, bpp);
+      } else
+         adbuf_ptr = adbuf;
+      
+      if (a) alpha_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, dstW, a_ptr);
+      blend_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, bytes);
    }
 
    /* cleanup */
