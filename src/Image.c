@@ -1694,7 +1694,7 @@ Image_premultiply_alpha( Handle self, SV * alpha)
 
     if ( SvROK( alpha )) {
 	Handle a = gimme_the_mate( alpha), dup = nilHandle;
-	if ( !a || !kind_of( a, CImage) )
+	if ( !a || !kind_of( a, CImage) || PImage(a)-> w != var-> w || PImage(a)-> h != var-> h )
            croak( "Illegal object reference passed to Prima::Image::%s", "premultiply_alpha");
 	if ( PImage(a)->type != imByte)
 	   a = dup = CImage(a)->dup(a);

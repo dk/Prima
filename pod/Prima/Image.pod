@@ -332,6 +332,9 @@ put a constant alpha value over a rectangle is this, for example:
    );
    $drawable-> stretch_image( 0, 0, 100, 100, $a, rop::SrcOver );
 
+If displaying a picture with pre-existing alpha channel, you'll need to call
+L<premultiply_alpha>, because picture renderer assumes that pixel values are premultiplied. 
+
 Even though addressing alpha values of pixels when drawing on layered surfaces is not straighforward,
 the conversion between images and device bitmaps fully supports alpha pixels. This means that:
 
@@ -781,6 +784,14 @@ Examples:
 
 Mirrors the image depending on boolean flag VERTICAL
 
+=item premultiply_alpha CONSTANT_OR_IMAGE
+
+Applies premultiplication formula to each pixel
+
+   pixel = pixel * alpha / 256
+
+where alpha either is a constant, or a pixel value in an image
+
 =item resample SRC_LOW, SRC_HIGH, DEST_LOW, DEST_HIGH
 
 Performs linear scaling of gray pixel values from range (SRC_LOW - SRC_HIGH)
@@ -853,7 +864,7 @@ of same dimension.
 
 Same as C<combine>, but to be called as constructor.
 
-=item premultiply_alpha
+=item premultiply_alpha CONSTANT_OR_IMAGE = undef
 
 Applies premultiplication formula to each pixel
 
