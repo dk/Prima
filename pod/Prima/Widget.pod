@@ -1381,6 +1381,8 @@ See also: C<is_layered>
 Note: In Windows, mouse events will not be delivered to the layered widget
 if the pixel under the mouse pointer is fully transparent.
 
+In X11, you need to run a composition manager, f.ex. I<compiz> or I<xcompmgr>.
+
 =item left INTEGER
 
 Maintains the left boundary of a widget. If changed,
