@@ -183,7 +183,6 @@ prima_get_view_ex( Handle self, PViewProfile p)
   DEFXX;
   if ( !p) return;
   if ( XX-> type. window) {
-    
     p-> pos       = apc_window_get_client_pos( self);
     p-> size      = apc_window_get_client_size( self);
     XFetchName( DISP, X_WINDOW, &p-> title);
@@ -195,6 +194,12 @@ prima_get_view_ex( Handle self, PViewProfile p)
   p-> capture   = apc_widget_is_captured( self);
   p-> focused   = apc_widget_is_focused( self);
   p-> visible   = apc_widget_is_visible( self);
+
+#ifdef HAVE_X11_EXTENSIONS_SHAPE_H
+  p-> shape_count = 0;
+  if ( XX-> shape_extent. x != 0 && XX-> shape_extent. y != 0)
+     p-> shape_rects = XShapeGetRectangles( DISP, X_WINDOW, ShapeBounding, &p-> shape_count, &p->shape_ordering);
+#endif
 }
 
 void
@@ -212,23 +217,17 @@ prima_set_view_ex( Handle self, PViewProfile p)
      apc_widget_set_rect( self, p-> pos.x, p-> pos.y, p-> size.x, p->size.y);
   }
 
-  /*
-  p-> pos. y = X(XX-> owner)-> size. y - p-> size. y - p-> pos. y;
-  if ( XX-> flags. falsely_hidden) {
-     if ( p-> size. x == 0) p-> size. x = 1;
-     if ( p-> size. y == 0) p-> size. y = 1;
-     XMoveResizeWindow( DISP, X_WINDOW, p-> pos.x, p->pos. y, p-> size.x, p-> size.y);
-  } else {
-     if ( XX-> parentHandle) {
-        XWindow cld;
-        XTranslateCoordinates( DISP, PWidget(XX-> owner)-> handle, XX-> parentHandle, p->pos.x, p->pos.y, &p->pos.x, &p->pos.y, &cld);
-     }
-     XMoveResizeWindow( DISP, X_WINDOW, p-> pos.x, p->pos. y, p-> size.x, p-> size.y);
-  }
-  */
-
   if ( p-> focused) apc_widget_set_focused( self);
   if ( p-> capture) apc_widget_set_capture( self, 1, nilHandle);
+
+#ifdef HAVE_X11_EXTENSIONS_SHAPE_H
+  if ( p-> shape_count > 0 ) {
+     XShapeCombineRectangles( DISP, X_WINDOW, ShapeBounding, 0, 0, p-> shape_rects, p->shape_count, ShapeSet, p->shape_ordering);
+     if ( X_WINDOW != XX-> client)
+        XShapeCombineRectangles( DISP, XX->client, ShapeBounding, 0, 0, p-> shape_rects, p->shape_count, ShapeSet, p->shape_ordering);
+     XFree( p-> shape_rects );
+  }
+#endif
 }
 
 Bool
