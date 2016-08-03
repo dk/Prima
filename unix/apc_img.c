@@ -403,6 +403,10 @@ apc_dbm_create( Handle self, int type)
    DEFXX;
    if ( !DISP) return false;
    if ( guts. idepth == 1) type = dbtBitmap;
+
+   XX-> colormap = guts. defaultColormap;
+   XX-> visual   = &guts. visual;
+
    switch (type) {
    case dbtBitmap:
       XX-> type.bitmap = 1;
@@ -412,6 +416,8 @@ apc_dbm_create( Handle self, int type)
       if ( guts. argb_pic_format ) {
          XX-> flags.layered = 1;
          depth = guts. argb_depth;
+         XX-> colormap = guts. argbColormap;
+         XX-> visual   = &guts. argb_visual;
          break;
       }
    case dbtPixmap:
@@ -2156,9 +2162,14 @@ apc_image_begin_paint( Handle self)
    XX-> type.pixmap = !bitmap;
    XX-> type.bitmap = !!bitmap;
    XX-> flags.layered = layered;
+   XX-> visual      = &guts. visual;
+   XX-> colormap    = guts. defaultColormap;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-   if ( XF_LAYERED(XX) )
+   if ( XF_LAYERED(XX) ) {
       XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_pic_format, 0, NULL);
+      XX-> visual      = &guts. argb_visual;
+      XX-> colormap    = guts. argbColormap;
+   }
 #endif
    XCHECKPOINT;
    XX-> type. icon = 0;
