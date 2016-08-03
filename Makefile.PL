@@ -1461,20 +1461,24 @@ sub setup_gtk
 	}
 }
 
-sub setup_xrandr
+sub setup_x11_extension
 {
+	my $name = shift;
+
+	my $define = 'HAVE_X11_EXTENSIONS_' . uc($name) . '_H';
 	if ( $use_pkgconfig ) {
-		$DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H} = pkgconfig('xrandr') ? 1 : undef;
+		$DEFINES{$define} = pkgconfig($name) ? 1 : undef;
 		return;
 	}
 
-	if ( have_header( "X11/extensions/Xrandr.h")) {
-		printlog "Checking for presence of libXrandr... ";
-		if ( defined find_lib( 'Xrandr', '', '')) {
-			push @LIBS, 'Xrandr';
+	my $libname = ucfirst $name;
+	if ( have_header( "X11/extensions/$libname.h")) {
+		printlog "Checking for presence of lib$libname... ";
+		if ( defined find_lib( $libname, '', '')) {
+			push @LIBS, $libname;
 			printlog "yes\n";
 		} else {
-			$DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H} = undef;
+			$DEFINES{$define} = undef;
 			printlog "no\n";
 		}
 	}
@@ -1487,7 +1491,7 @@ sub setup_xlibs
 	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
 	setup_iconv() if $cmd_options{WITH_ICONV};
 	setup_gtk() if $cmd_options{WITH_GTK2};
-	setup_xrandr();
+	setup_x11_extension($_) for qw(xrandr xcomposite);
 	
 	printlog "Using Xft library\n" if $cmd_options{WITH_XFT};
 	printlog "Using iconv library\n" if $cmd_options{WITH_ICONV};

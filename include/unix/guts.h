@@ -37,6 +37,9 @@
 #ifdef HAVE_X11_EXTENSIONS_XRANDR_H
 #include <X11/extensions/Xrandr.h>
 #endif
+#ifdef HAVE_X11_EXTENSIONS_XCOMPOSITE_H
+#include <X11/extensions/Xcomposite.h>
+#endif
 #undef Font
 #undef Drawable
 #undef Bool
@@ -599,6 +602,9 @@ typedef struct _UnixGuts
    Bool                         xft_no_antialias;
    Bool				randr_extension;
    Bool				render_extension;
+   Bool				composite_extension;
+   int				composite_opcode;
+   Bool				composite_error_triggered;
    struct MsgDlg               *message_boxes;
    XWindow                      grab_redirect;
    Handle                       grab_widget;

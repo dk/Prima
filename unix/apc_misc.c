@@ -1108,6 +1108,43 @@ apc_sys_get_caption_font( PFont f)
    return f;
 }
 
+static int
+is_composite_display(void)
+{
+   if ( guts. argb_visual. visual == NULL ) return false;
+
+#ifndef HAVE_X11_EXTENSIONS_XCOMPOSITE_H
+   /* fall back to dubious schemes */
+   {
+      FILE * p;
+      char buf[1024];
+      p = popen("ps ax -o comm | grep -q -E 'compiz|xcompmgr|compton'", "r");
+      if ( !p ) return 0;
+      while (fgets(buf, sizeof(buf), p) != NULL);
+      return pclose(p) == 0;
+   }
+
+#else
+
+   /* try to become a compmgr */
+   XCHECKPOINT;
+   guts. composite_error_triggered = false;
+   XCompositeRedirectSubwindows( DISP, guts.root, CompositeRedirectManual);
+   XCHECKPOINT;
+   XSync(DISP, false);
+   if ( guts. composite_error_triggered )
+      return true;
+   XCompositeUnredirectSubwindows( DISP, guts.root, CompositeRedirectManual);
+   XCHECKPOINT;
+   XSync(DISP, false);
+   if ( guts. composite_error_triggered )
+      return true;
+   
+   return false;
+
+#endif
+}
+
 int
 apc_sys_get_value( int v)  /* XXX one big XXX */
 {
@@ -1163,7 +1200,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
    case svColorPointer:         return 0;
    case svCanUTF8_Input:        return 1;
    case svCanUTF8_Output:       return 1;
-   case svCompositeDisplay:     return guts. argb_visual. visual != NULL; /* XXX doesn't check if composition is actually available */
+   case svCompositeDisplay:     return is_composite_display();
    case svLayeredWidgets:       return guts. argb_visual. visual != NULL;
    default:
       return -1;

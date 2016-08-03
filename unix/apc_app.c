@@ -66,6 +66,15 @@ x_error_handler( Display *d, XErrorEvent *ev)
       guts. xft_disable_large_fonts = 1;
 #endif
 
+#ifdef HAVE_X11_EXTENSIONS_XCOMPOSITE_H
+   if ( ev-> request_code == guts. composite_opcode &&
+        ev->minor_code == X_CompositeRedirectSubwindows) {
+      /* checking for composite manager */
+      guts. composite_error_triggered = true;
+      return 0;
+   }
+#endif
+
    XGetErrorText( d, ev-> error_code, buf, BUFSIZ);
    XGetErrorDatabaseText( d, name, "XError", "X Error", mesg, BUFSIZ);
    fprintf( stderr, "%s: %s, request: %d", mesg, buf, ev->request_code);
@@ -259,6 +268,13 @@ init_x11( char * error_buf )
       int dummy;
       if ( XRenderQueryExtension( DISP, &dummy, &dummy))
          guts. render_extension = true;
+   }	 
+#endif
+#ifdef HAVE_X11_EXTENSIONS_XCOMPOSITE_H
+   {
+      int dummy;
+      if (XQueryExtension(DISP, COMPOSITE_NAME, &guts.composite_opcode, &dummy, &dummy))
+         guts. composite_extension = true;
    }	 
 #endif
    XrmInitialize();
