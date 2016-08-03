@@ -1114,18 +1114,8 @@ is_composite_display(void)
    if ( guts. argb_visual. visual == NULL ) return false;
 
 #ifndef HAVE_X11_EXTENSIONS_XCOMPOSITE_H
-   /* fall back to dubious schemes */
-   {
-      FILE * p;
-      char buf[1024];
-      p = popen("ps ax -o comm | grep -q -E 'compiz|xcompmgr|compton'", "r");
-      if ( !p ) return 0;
-      while (fgets(buf, sizeof(buf), p) != NULL);
-      return pclose(p) == 0;
-   }
-
+   return -1;
 #else
-
    /* try to become a compmgr */
    XCHECKPOINT;
    guts. composite_error_triggered = false;
@@ -1141,7 +1131,6 @@ is_composite_display(void)
       return true;
    
    return false;
-
 #endif
 }
 

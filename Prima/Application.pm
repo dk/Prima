@@ -637,7 +637,8 @@ of C<sv::XXX> constants. The constants are:
 	sv::ColorPointer     - 1 if system accepts color pointer icons.
 	sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
 	sv::CanUTF8_Output   - 1 if system can output utf8 text
-	sv::CompositeDisplay - 1 if system uses double-buffering for the desktop
+	sv::CompositeDisplay - 1 if system uses double-buffering and alpha composition for the desktop, 
+	                       0 if it doesn't, -1 if unknown
 	sv::LayeredWidgets   - 1 if system supports layering
 
 The method can be called with a class string instead of an object instance.

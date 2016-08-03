@@ -1293,12 +1293,15 @@ prima_gtk_openfile( char * params);
 #endif
 
 typedef struct _ViewProfile {
-  Point    pos;
-  Point    size;
-  Bool     visible;
-  Bool     focused;
-  Handle   capture;
-  char *   title;
+  Point        pos;
+  Point        size;
+  Bool         visible;
+  Bool         focused;
+  Handle       capture;
+  char *       title;
+  int          shape_count;
+  int          shape_ordering;
+  XRectangle * shape_rects;
 } ViewProfile, *PViewProfile;
 
 extern void
