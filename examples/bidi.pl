@@ -53,13 +53,28 @@ sub can_rtl
 $::application->begin_paint_info;
 unless (can_rtl($w->font)) {
 	my $found;
-	for my $f ( @{$::application->fonts} ) {
+	my @f = @{$::application->fonts};
+
+	# fontconfig fonts
+	for my $f ( @f ) {
 		next unless $f->{vector};
+		next unless $f->{name} =~ /^[A-Z]/;
 		next unless can_rtl($f);
 		$found = $f;
 		goto FOUND;
 	}
-	for my $f ( @{$::application->fonts} ) {
+
+	# x11/core vector fonts
+	for my $f ( @f ) {
+		next unless $f->{vector};
+		next if $f->{name} =~ /^[A-Z]/;
+		next unless can_rtl($f);
+		$found = $f;
+		goto FOUND;
+	}
+
+	# bitmap fonts
+	for my $f ( @f ) {
 		next if $f->{vector};
 		next unless can_rtl($f);
 		$found = $f;
