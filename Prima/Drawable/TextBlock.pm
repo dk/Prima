@@ -503,7 +503,7 @@ sub bidi_visualize
 	};
 
 	walk( $b, %subopt,
-		trace => TRACE_PENS | TRACE_TEXT,
+		trace => TRACE_PENS,
 		state => \@current_fc,
 		text => sub {
 			my ( $ofs, $len ) = @_;
