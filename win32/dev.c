@@ -1022,6 +1022,18 @@ img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 }
 
 /* layered */
+static void
+img_draw_black_rect( Handle self, PutImageRequest * req)
+{
+   HGDIOBJ  oldp = SelectObject( sys ps, hPenHollow);
+   HGDIOBJ  oldh = SelectObject( sys ps, CreateSolidBrush( RGB(0,0,0 )));
+   if ( !SetROP2( sys ps, R2_COPYPEN)) apiErr;
+   if ( !Rectangle( sys ps, req-> dst_x, req-> dst_y, req-> dst_x + req-> dst_w + 1, req-> dst_y + req-> dst_h + 1)) apiErr;
+   if ( !SetROP2( sys ps, sys currentROP)) apiErr;
+   SelectObject( sys ps, oldp);
+   DeleteObject( SelectObject( sys ps, oldh));
+}
+
 static Bool
 img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
@@ -1037,6 +1049,7 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
    old = SelectObject(src, dsys (image) bm);
    if ( req-> rop == ropSrcCopy ) {
       req-> rop == ropCopyPut;
+      img_draw_black_rect( self, req );
       ok = img_put_stretch_blt_viewport( sys ps, src, req);
    } else
       ok = img_put_alpha_blend( sys ps, src, req);
@@ -1051,11 +1064,11 @@ img_put_layered_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
    if ( req-> rop == ropSrcCopy ) {
       req-> rop == ropCopyPut;
+      img_draw_black_rect( self, req );
       return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
    } else
       return img_put_alpha_blend( sys ps, dsys(image)ps, req);
 }
-
 
 PutImageFunc (*img_put_on_bitmap[SRC_NUM]) = {
    img_put_bitmap_on_bitmap,
