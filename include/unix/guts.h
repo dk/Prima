@@ -797,6 +797,10 @@ typedef struct _drawable_sys_data
    uint32_t * xft_map8;
    double     xft_font_cos;
    double     xft_font_sin;
+   XftDraw  * xft_shadow_drawable;
+   Point      xft_shadow_extentions;
+   Pixmap     xft_shadow_pixmap;
+   GC         xft_shadow_gc;
 #endif
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    Picture    argb_picture;
@@ -1231,6 +1235,9 @@ prima_xft_init( void);
 
 extern void
 prima_xft_done( void);
+
+extern void
+prima_xft_gp_destroy( Handle self );
 
 extern Bool
 prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, XftFont ** xft_result);

@@ -246,10 +246,7 @@ prima_cleanup_drawable_after_painting( Handle self)
 {
    DEFXX;
 #ifdef USE_XFT
-   if ( XX-> xft_drawable) {
-      XftDrawDestroy( XX-> xft_drawable);
-      XX-> xft_drawable = nil;
-   }
+   prima_xft_gp_destroy( self );
 #endif
    if ( XX-> flags. kill_current_region) {
       XDestroyRegion( XX-> current_region);

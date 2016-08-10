@@ -1279,48 +1279,105 @@ create_no_aa_font( XftFont * font)
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
 #define RANGE4(a,b,c,d) RANGE(a) RANGE(b) RANGE(c) RANGE(d)
 
+/* emulate win32 clearing off alpha bits on any Gdi operation */
+static void
+XftDrawGlyph_layered( PDrawableSysData selfxx, _Xconst XftColor *color, int x, int y, _Xconst FT_UInt glyph)
+{
+   XftColor black;
+   XGCValues old_gcv, gcv;
+   XGlyphInfo extents;
+
+   XftGlyphExtents( DISP, XX-> font-> xft, &glyph, 1, &extents);
+
+   if (
+      !XX-> xft_shadow_pixmap || 
+      extents. width  > XX-> xft_shadow_extentions.x || 
+      extents. height > XX-> xft_shadow_extentions.y
+   ) {
+      int w, h;
+      if ( XX-> xft_shadow_pixmap ) {
+         XFreePixmap( DISP, XX-> xft_shadow_pixmap);
+         XftDrawDestroy( XX-> xft_shadow_drawable);
+         XX-> xft_shadow_pixmap   = 0;
+         XX-> xft_shadow_drawable = nil;
+      }
+      w = extents. width * 4;
+      h = extents. height * 4;
+      if ( w < 32 ) w = 32;
+      if ( h < 32 ) h = 32;
+      XX-> xft_shadow_extentions. x = w;
+      XX-> xft_shadow_extentions. y = h;
+      XX-> xft_shadow_pixmap   = XCreatePixmap( DISP, guts.root, w, h, 1); 
+      XX-> xft_shadow_drawable = XftDrawCreateBitmap( DISP, XX-> xft_shadow_pixmap ); 
+   }
+
+   if ( !XX-> xft_shadow_gc ) {
+      XGCValues gcv;
+      gcv. foreground = 1;
+      XX-> xft_shadow_gc = XCreateGC( DISP, XX-> xft_shadow_pixmap, GCForeground, &gcv);
+   }
+
+   XFillRectangle( DISP, XX-> xft_shadow_pixmap, XX-> xft_shadow_gc,
+      0, 0, XX-> xft_shadow_extentions.x, XX-> xft_shadow_extentions.y);
+
+   black.color.red   = 
+   black.color.green = 
+   black.color.blue  = 
+   black.pixel       = 0x1;
+   black.color.alpha = 0x0;
+   XftDrawGlyphs( XX-> xft_shadow_drawable, &black, XX->font->xft, extents.x, extents.y, &glyph, 1);
+   XftDrawGlyphs( XX-> xft_drawable, color, XX->font->xft, x, y, &glyph, 1);
+
+   XGetGCValues( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &old_gcv);
+   gcv. foreground = 0xffffffff;
+   gcv. background = 0x00000000;
+   gcv. function   = GXand;
+   gcv. plane_mask = guts. argb_bits. alpha_mask;
+   XChangeGC( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &gcv);
+
+   XCopyPlane( DISP, XX-> xft_shadow_pixmap, XX-> gdrawable, XX-> gc, 0, 0, extents.width, extents.height,
+      x - extents.x, y - extents.y, 1);
+   XChangeGC( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &old_gcv);
+}
+
 /* When plotting rotated fonts, xft does not account for the accumulated
    roundoff error, and thus the text line is shown at different angle
    than requested. We track this and align the reference point when it
    deviates from the ideal line */
-void
+static void
 my_XftDrawString32( PDrawableSysData selfxx,
         _Xconst XftColor *color, int x, int y,
         _Xconst FcChar32 *string, int len)
 {
-   int i, lastchar, lx, ly, ox, oy, shift;
-   if ( IS_ZERO(XX-> font-> font. direction)) {
+   int i, ox, oy, shift;
+   if ( IS_ZERO(XX-> font-> font. direction) && !XX-> flags. layered ) {
       XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, x, y, string, len);
       return;
    }
-   lx = ox = x;
-   ly = oy = y;
-   lastchar = 0;
+   ox = x;
+   oy = y;
    shift = 0;
+   if ( XX-> flags. layered ) {
+      FT_UInt ft_index;
+      /* prepare xrender */
+      XftDrawGlyphs( XX-> xft_drawable, color, XX->font->xft, x, y, &ft_index, 0);
+   }
    for ( i = 0; i < len; i++) {
       int cx, cy;
       FT_UInt ft_index;
       XGlyphInfo glyph;
       ft_index = XftCharIndex( DISP, XX-> font-> xft, string[i]);
-      XftGlyphExtents( DISP, XX-> font-> xft, &ft_index, 1, &glyph);
-      lx += glyph. xOff;
-      ly += glyph. yOff;
       XftGlyphExtents( DISP, XX-> font-> xft_base, &ft_index, 1, &glyph);
       shift += glyph. xOff;
       cx = ox + (int)(shift * XX-> xft_font_cos + 0.5);
       cy = oy - (int)(shift * XX-> xft_font_sin + 0.5);
-      if ( cx == lx && cy == ly) continue;
-
-      XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, 
-         x, y, string + lastchar, i - lastchar + 1);
-      lastchar = i + 1;
-      x = lx = cx;
-      y = ly = cy;
+      if ( XX-> flags. layered )
+         XftDrawGlyph_layered( XX, color, x, y, ft_index);
+      else
+         XftDrawGlyphs( XX-> xft_drawable, color, XX->font->xft, x, y, &ft_index, 1);
+      x = cx;
+      y = cy;
    }
-
-   if ( lastchar < len)
-      XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, 
-         x, y, string + lastchar, len - lastchar);
 }
 
 Bool
@@ -1377,7 +1434,9 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
       rop = ropCopyPut;
    }
 
-   if ( XX-> type. bitmap) {
+   if ( XX-> flags. layered) {
+      xftcolor.color.alpha = 0xffff;
+   } else if ( XX-> type. bitmap) {
       xftcolor.color.alpha = 
          ((xftcolor.color.red/3 + xftcolor.color.green/3 + xftcolor.color.blue/3) > (0xff00 / 2)) ?
             0xffff : 0;
@@ -1784,6 +1843,28 @@ prima_xft_load_font( char* filename)
       FAIL("FcFileScan error")
 
    return count;
+}
+
+void
+prima_xft_gp_destroy( Handle self )
+{
+   DEFXX;
+   if ( XX-> xft_drawable) {
+      XftDrawDestroy( XX-> xft_drawable);
+      XX-> xft_drawable = nil;
+   }
+   if ( XX-> xft_shadow_drawable) {
+      XftDrawDestroy( XX-> xft_shadow_drawable);
+      XX-> xft_shadow_drawable = nil;
+   }
+   if ( XX-> xft_shadow_pixmap) {
+      XFreePixmap( DISP, XX-> xft_shadow_pixmap);
+      XX-> xft_shadow_pixmap = 0;
+   }
+   if ( XX-> xft_shadow_gc) {
+      XFreeGC( DISP, XX-> xft_shadow_gc);
+      XX-> xft_shadow_gc = 0;
+   }
 }
 
 #else
