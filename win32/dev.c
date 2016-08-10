@@ -718,8 +718,9 @@ typedef Bool PutImageFunc( Handle self, Handle image, PutImageRequest * req);
 #define SRC_PIXMAP          1
 #define SRC_LAYERED         2
 #define SRC_IMAGE           3
-#define SRC_ARGB            4
-#define SRC_MAX             4
+#define SRC_A8              4
+#define SRC_ARGB            5
+#define SRC_MAX             5
 #define SRC_NUM            SRC_MAX+1 
 
 static Bool
@@ -1060,6 +1061,61 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
+img_put_a8_on_layered( Handle self, Handle image, PutImageRequest * req)
+{
+   Bool ok;
+   HDC dc, buf_dc;
+   HBITMAP buf_bm, old_bm;
+   PImage i;
+   unsigned int dst_lw, src_lw, y;
+   Byte *src, *dst;
+
+   i = (PImage) image;
+   if ( i-> type != imByte || i-> w != req-> dst_w || i-> h != req-> dst_h ) {
+      Handle dup = CImage( image )->dup(image);
+      if ( i-> type != imByte )
+         CImage( dup )->set_type(dup, imByte);
+      if (i-> w != req-> dst_w || i-> h != req-> dst_h )
+         CImage( dup )->stretch(dup, req->dst_w, req-> dst_h);
+      ok = img_put_a8_on_layered( self, dup, req);
+      Object_destroy(dup);
+      return ok;
+   }
+   
+   dc     = GetDC(NULL);
+   buf_dc = CreateCompatibleDC(dc);
+   if ( !(buf_bm = image_create_argb_dib_section(dc, req-> dst_w, req-> dst_h, (uint32_t**) &dst))) {
+      DeleteDC(buf_dc);
+      ReleaseDC(NULL, dc);
+      return false;
+   }
+
+   old_bm = SelectObject(buf_dc, buf_bm);
+
+   BitBlt( buf_dc, 0, 0, req-> dst_w, req-> dst_h, sys ps, req-> dst_x, req-> dst_y, SRCCOPY);
+
+   src    = i-> data;
+   dst_lw = req-> dst_w * 4;
+   src_lw = i-> lineSize;
+   for ( y = 0; y < i-> h; y++, src += src_lw, dst += dst_lw ) {
+      register Byte *ss = src, *dd = dst + 3;
+      register unsigned int w = i-> w;
+      while (w--) {
+         *dd = *ss++;
+	 dd += 4;
+      }
+   }
+
+   BitBlt( sys ps, req-> dst_x, req-> dst_y, req-> dst_w, req-> dst_h, buf_dc, 0, 0, SRCCOPY);
+   
+   SelectObject(buf_dc, old_bm);
+   DeleteDC(buf_dc);
+   DeleteObject(buf_bm);
+   ReleaseDC(NULL, dc);
+   return true;
+}
+
+static Bool
 img_put_layered_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
    if ( req-> rop == ropSrcCopy ) {
@@ -1075,6 +1131,7 @@ PutImageFunc (*img_put_on_bitmap[SRC_NUM]) = {
    img_put_pixmap_on_bitmap,
    img_put_layered_on_bitmap,
    img_put_image_on_bitmap,
+   img_put_image_on_bitmap,
    img_put_argb_on_bitmap,
 };
 
@@ -1082,6 +1139,7 @@ PutImageFunc (*img_put_on_pixmap[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_pixmap_on_pixmap,
    img_put_layered_on_pixmap,
+   img_put_image_on_pixmap,
    img_put_image_on_pixmap,
    img_put_argb_on_pixmap,
 };
@@ -1091,6 +1149,7 @@ PutImageFunc (*img_put_on_layered[SRC_NUM]) = {
    img_put_pixmap_on_pixmap,
    img_put_layered_on_layered,
    img_put_image_on_pixmap,
+   img_put_a8_on_layered,
    img_put_argb_on_layered,
 };
 
@@ -1164,6 +1223,14 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
         dst = img_put_on_layered;
    else
         dst = img_put_on_pixmap;
+   
+   if ( 
+      dst == img_put_on_layered && 
+      src == SRC_IMAGE && 
+      !dsys( image) options. aptIcon && 
+      (((PImage)image)->type & imGrayScale) && 
+      rop == ropAlphaCopy )
+      src = SRC_A8;
    
    if ( dst[src] == NULL ) {
    	warn("not implemented");
@@ -1287,12 +1354,34 @@ apc_image_update_change( Handle self)
    return true;
 }
 
+HBITMAP
+image_create_argb_dib_section( HDC dc, int w, int h, uint32_t ** ptr)
+{
+   HBITMAP bm;
+   BITMAPINFO bmi;
+   uint32_t * dummy;
+   
+   if ( !ptr ) ptr = &dummy;
+   
+   ZeroMemory(&bmi, sizeof(BITMAPINFO));
+   bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+   bmi.bmiHeader.biWidth       = w;
+   bmi.bmiHeader.biHeight      = h;
+   bmi.bmiHeader.biPlanes      = 1;
+   bmi.bmiHeader.biBitCount    = 32;
+   bmi.bmiHeader.biCompression = BI_RGB;
+   bmi.bmiHeader.biSizeImage   = w * h * 4;
+   if ( !( bm = CreateDIBSection(dc, &bmi, DIB_RGB_COLORS, (LPVOID*)ptr, NULL, 0x0))) {
+      apiErr;
+      return NULL;
+   }
+   return bm;
+}   
+
 Bool
 apc_dbm_create( Handle self, int type)
 {
    HDC dc;
-   BITMAPINFO bmi;
-
    Bool palc = 0;
 
    objCheck false;
@@ -1333,15 +1422,7 @@ apc_dbm_create( Handle self, int type)
          DeleteDC( sys ps);
          return false;
       }
-      ZeroMemory(&bmi, sizeof(BITMAPINFO));
-      bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-      bmi.bmiHeader.biWidth       = var w;
-      bmi.bmiHeader.biHeight      = var h;
-      bmi.bmiHeader.biPlanes      = 1;
-      bmi.bmiHeader.biBitCount    = 32;
-      bmi.bmiHeader.biCompression = BI_RGB;
-      bmi.bmiHeader.biSizeImage   = var w * var h * 4;
-      sys bm = CreateDIBSection(dc, &bmi, DIB_RGB_COLORS, (LPVOID*)&sys s. image. argbBits, NULL, 0x0);
+      sys bm = image_create_argb_dib_section( dc, var w, var h, &sys s. image. argbBits);
       break;
    }
 

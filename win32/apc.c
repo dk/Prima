@@ -1980,7 +1980,6 @@ apc_widget_end_paint( Handle self)
       SIZE size;
       POINT src, pos, *ppos = NULL;
       BLENDFUNCTION bf;
-      XBITMAPINFO xbi;
       HBITMAP alpha_bm, stock_alpha_bm;
       HDC alpha_dc;
       uint32_t * alpha_pixels;
@@ -1989,16 +1988,8 @@ apc_widget_end_paint( Handle self)
       if ( r. right - r. left <= 0 || r. bottom - r. top <= 0)
          goto SKIP_ALPHA;
 
-      xbi. bmiHeader. biSize          = sizeof( BITMAPINFOHEADER);
-      xbi. bmiHeader. biWidth         = 1;
-      xbi. bmiHeader. biHeight        = 1;
-      xbi. bmiHeader. biPlanes        = 1;
-      xbi. bmiHeader. biBitCount      = 32;
-      xbi. bmiHeader. biCompression   = BI_RGB;
-      xbi. bmiHeader. biSizeImage     = 4;
       alpha_dc = CreateCompatibleDC( sys ps );
-      alpha_bm = CreateDIBSection(sys ps, (BITMAPINFO*) &xbi, DIB_RGB_COLORS, 
-           (LPVOID*) &alpha_pixels, NULL, 0x0);
+      alpha_bm = image_create_argb_dib_section( alpha_dc, 1, 1, &alpha_pixels);
       stock_alpha_bm = SelectObject( alpha_dc, alpha_bm);
       *alpha_pixels = 0xFF000000;
 
