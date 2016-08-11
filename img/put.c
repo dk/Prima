@@ -228,6 +228,34 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       PImage( src)-> lineSize = lineSize; 
       PImage( src)-> dataSize = dataSize; 
       PImage( src)-> palSize  = palSize;
+   } else if ( rop == ropAlphaCopy ) {
+      Bool ok;
+      Image dummy;
+      PIcon i;
+      if ( !kind_of( dest, CIcon )) return false;
+      if ( PImage(src)-> type != imByte ) {
+         Handle dup = CImage(src)->dup(src);
+	 CImage(dup)->set_type(src, imByte);
+         ok = img_put( dest, dup, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
+	 Object_destroy(dup);
+	 return ok;
+      }
+      if ( PIcon(dest)-> maskType != imbpp8) {
+         CIcon(dest)-> set_maskType(dest, imbpp8);
+         ok = img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
+         if ( PIcon(dest)-> options. optPreserveType )
+            CIcon(dest)-> set_maskType(dest, imbpp1);
+	 return ok;
+      }
+
+      i = (PIcon) dest;
+      dummy. self     = CImage;
+      dummy. w        = i-> w;
+      dummy. h        = i-> h;
+      dummy. type     = imByte;
+      dummy. lineSize = i-> maskLine;
+      dummy. data     = i-> mask;
+      return img_put((Handle)&dummy, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut);
    } else if ( rop & ropConstantAlpha )
       return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
    
