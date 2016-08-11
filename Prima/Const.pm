@@ -804,6 +804,10 @@ Constant alpha flags
         rop::DstAlphaShift
 	rop::ConstantAlpha
 
+Others
+
+        rop::AlphaCopy
+
 =head2 sbmp:: - system bitmaps indices
 
 See also L<Prima::StdBitmap>.

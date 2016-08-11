@@ -666,6 +666,11 @@ by the following formula:
 
    $dst = ( $src * $alpha + $dst * ( 255 - $alpha ) ) / 255
 
+In addition to that, C<rop::AlphaCopy> operation is available for accessing
+alpha bits only.  When used, the source image is treated as alpha mask, and
+therefore it has to be grayscale.  It can be used to apply the alpha bits
+independently, without need to construct an Icon object.
+
 =head2 Coordinates
 
 The Prima toolkit employs a geometrical XY grid, where
