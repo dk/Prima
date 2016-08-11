@@ -720,55 +720,6 @@ static BlendFunc* blend_functions[] = {
    blend_dst_atop
 };
 
-#define dALPHA_FUNC(name) void name( const Byte * src, const Byte * src_a, const Byte * dst, const Byte * dst_a, int width, Byte * result )
-
-typedef dALPHA_FUNC(AlphaFunc);
-
-static dALPHA_FUNC(alpha24)
-{
-   while ( width-- ) {
-      register int as = *src_a;
-      register int ad = *dst_a;
-      Byte sc = src[0] | src[1] | src[2];
-      Byte dc = dst[0] | dst[1] | dst[2];
-      Byte bc = sc | dc;
-
-
-      int r = 127;
-      if ( sc != 0 ) r += as * ( 255 - ad ) << 8;
-      if ( dc != 0 ) r += ad * ( 255 - as ) << 8;
-      if ( bc != 0 ) r += as * ad << 8;
-      src   += 3;
-      src_a += 3;
-      dst   += 3;
-      dst_a += 3;
-
-      r = (r / 255 + 127) >> 8;
-      if ( r > 255 ) r = 255;
-      *result++ = r;
-   }
-}
-
-static dALPHA_FUNC(alpha8)
-{
-   while ( width-- ) {
-      register int as = *src_a++;
-      register int ad = *dst_a++;
-      Byte sc = *src++;
-      Byte dc = *dst++;
-      Byte bc = sc | dc;
-
-      int r = 0;
-      if ( sc != 0 ) r += (as * ( 255 - ad )) << 8;
-      if ( dc != 0 ) r += (ad * ( 255 - as )) << 8;
-      if ( bc != 0 ) r += (as * ad) << 8;
-
-      r = (r / 255 + 127) >> 8;
-      if ( r > 255 ) r = 255;
-      *result++ = r;
-   }
-}
-
 /* 
    This is basically a lightweight pixman_image_composite() .
    Converts images to either 8 or 24 bits before processing
@@ -782,7 +733,6 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
    Bool use_src_alpha = false, use_dst_alpha = false;
    Byte *asbuf, *adbuf;
    BlendFunc * blend_func;
-   AlphaFunc * alpha_func;
 
    /* differentiate between per-pixel alpha and a global value */
    if ( rop & ropSrcAlpha ) {
@@ -924,7 +874,6 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 
    /* select function */
    blend_func = blend_functions[rop];
-   alpha_func = (bpp == 1) ? alpha8 : alpha24;
 
    /* blend */
 #ifdef HAVE_OPENMP
@@ -950,8 +899,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
       } else
          adbuf_ptr = adbuf;
       
-      if (a) alpha_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, dstW, a_ptr);
       blend_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, bytes);
+      if (a) blend_func( asbuf_ptr, asbuf_ptr, a_ptr, a_ptr, bytes);
    }
 
    /* cleanup */
