@@ -1118,7 +1118,7 @@ create_rgb_to_alpha_xpixel_lut( int ncolors, const Byte * alpha, XPixel *lut)
 }
 
 static Bool
-create_argb_cache(PIcon img, ImageCache * cache, Bool with_alpha)
+create_argb_cache(PIcon img, ImageCache * cache, int type)
 {
    PDrawableSysData IMG = X((Handle)img);
    static XPixel lur[NPalEntries8], lub[NPalEntries8], lug[NPalEntries8], lua[NPalEntries8];
@@ -1155,7 +1155,8 @@ create_argb_cache(PIcon img, ImageCache * cache, Bool with_alpha)
    ls = get_ximage_bytes_per_line( cache->image);
    data = get_ximage_data( cache->image);
 
-   if ( XT_IS_ICON(IMG) && with_alpha ) {
+   switch (type) {
+   case CACHE_LAYERED_ALPHA:
       for ( y = h-1; y >= 0; y--) {
          register Pixel24 *line = (Pixel24*)(img-> data + y*img-> lineSize);
          register Pixel8  *mask = (Pixel8 *)(img-> mask + y*img-> maskLine);
@@ -1165,7 +1166,8 @@ create_argb_cache(PIcon img, ImageCache * cache, Bool with_alpha)
             line++;
          }
       }
-   } else {
+      break;
+   case CACHE_LAYERED: {
       XPixel alpha = lua[0]; /* RGB without A assumes A=0, transparent */
       for ( y = h-1; y >= 0; y--) {
          register Pixel24 *line = (Pixel24*)(img-> data + y*img-> lineSize);
@@ -1174,7 +1176,18 @@ create_argb_cache(PIcon img, ImageCache * cache, Bool with_alpha)
             *d++ = lub[line->a0] | lug[line->a1] | lur[line->a2] | alpha;
             line++;
          }
+      }}
+      break;
+   case CACHE_A8:
+      for ( y = h-1; y >= 0; y--) {
+         register Pixel8  *line = (Pixel8*)(img-> data + y*img-> lineSize);
+         register Pixel32 *d = (Pixel32*)(ls*(h-y-1)+(unsigned char *)data);
+         for ( x = 0; x < w; x++)
+            *(d++) = lua[*(line++)];
       }
+      break;
+   default:
+      croak("bad call to create_argb_cache");
    }
    return true;
 }
@@ -1203,6 +1216,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
          XT_IS_BITMAP(X(drawable)) || ( guts. idepth == 1)) ?
          CACHE_BITMAP : CACHE_PIXMAP;
       break;
+   case CACHE_A8:
    case CACHE_LAYERED:
    case CACHE_LAYERED_ALPHA:
       if ( !guts. argb_visual. visual ) {
@@ -1224,6 +1238,7 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
    case CACHE_BITMAP:
       target_bpp = 1;
       break;
+   case CACHE_A8:
    case CACHE_LAYERED:
    case CACHE_LAYERED_ALPHA:
       target_bpp = guts. argb_depth;
@@ -1285,7 +1300,27 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
 	 i = (PIcon) dup;
          i-> self-> set_maskType(dup, imbpp8);
       }
-      ok = create_argb_cache(i, cache, XT_IS_ICON(IMG) && type == CACHE_LAYERED_ALPHA );
+      ok = create_argb_cache(i, cache, 
+         (XT_IS_ICON(IMG) && type == CACHE_LAYERED_ALPHA) ? CACHE_LAYERED_ALPHA : CACHE_LAYERED
+      );
+      if ( dup) Object_destroy(dup);
+      if ( !ok ) return nil;
+
+      cache-> type = type;
+      return cache;
+   }
+   
+   if ( type == CACHE_A8 ) {
+      Bool ok;
+      PImage i = (PImage) pass;
+      if ( i->type != imByte ) {
+         if ( !dup)
+            if (!(dup = img-> self-> dup(( Handle) i)))
+               return nil;
+	 i = (PImage) dup;
+         i-> self-> set_type(dup, imByte);
+      }
+      ok = create_argb_cache((PIcon) i, cache, CACHE_A8);
       if ( dup) Object_destroy(dup);
       if ( !ok ) return nil;
 
@@ -1834,7 +1869,6 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 static Bool
 img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
    ImageCache *cache;
    PDrawableSysData YY = X(image);
    if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED)))
@@ -1842,9 +1876,6 @@ img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
    if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
       return false;
    return img_put_ximage( self, cache->image, req);
-#else
-   return false;
-#endif
 }
 
 static Bool
@@ -1969,6 +2000,22 @@ img_put_composite( Handle self, Handle image, PutImageRequest * req)
 }
 
 static Bool
+img_put_a8_on_layered( Handle self, Handle image, PutImageRequest * req)
+{
+   DEFXX;
+   Bool ok;
+   ImageCache *cache;
+   PDrawableSysData YY = X(image);
+   if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_A8)))
+      return false;
+   XSetPlaneMask( DISP, XX-> gc, guts. argb_bits. alpha_mask);
+   req->rop = GXcopy;
+   ok = img_put_ximage( self, cache->image, req);
+   XSetPlaneMask( DISP, XX-> gc, AllPlanes);
+   return ok;
+}
+
+static Bool
 img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
@@ -2016,14 +2063,16 @@ FAIL:
 #define SRC_BITMAP       0
 #define SRC_PIXMAP       1
 #define SRC_IMAGE        2
-#define SRC_ARGB         3
-#define SRC_LAYERED      4
-#define SRC_MAX          4
+#define SRC_A8           3
+#define SRC_ARGB         4
+#define SRC_LAYERED      5
+#define SRC_MAX          5
 #define SRC_NUM          SRC_MAX+1 
 
 PutImageFunc (*img_put_on_bitmap[SRC_NUM]) = {
    img_put_bitmap_on_bitmap,
    img_put_pixmap_on_bitmap,
+   img_put_image_on_bitmap,
    img_put_image_on_bitmap,
    img_put_argb_on_bitmap,
    img_put_layered_on_bitmap
@@ -2033,6 +2082,7 @@ PutImageFunc (*img_put_on_pixmap[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_copy_area,
    img_put_image_on_pixmap,
+   img_put_image_on_pixmap,
    img_put_argb_on_pixmap,
    img_put_layered_on_pixmap
 };
@@ -2040,6 +2090,7 @@ PutImageFunc (*img_put_on_pixmap[SRC_NUM]) = {
 PutImageFunc (*img_put_on_widget[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_copy_area,
+   img_put_image_on_widget,
    img_put_image_on_widget,
    img_put_argb_on_widget,
    img_put_layered_on_pixmap
@@ -2049,13 +2100,15 @@ PutImageFunc (*img_put_on_layered[SRC_NUM]) = {
    img_put_bitmap_on_pixmap,
    img_put_pixmap_on_layered,
    img_put_image_on_layered,
+   img_put_a8_on_layered,
    img_put_argb_on_layered,
    img_put_composite
 };
 
 static int
-get_image_src_format( Handle image )
+get_image_src_format( Handle self, Handle image, int rop )
 {
+   DEFXX;
    PDrawableSysData YY = X(image);
    int src = -1;
 
@@ -2078,6 +2131,8 @@ get_image_src_format( Handle image )
          src = SRC_ARGB;
       } else {
          src = SRC_IMAGE;
+         if (XF_LAYERED(XX) && !XT_IS_ICON(YY) && (PImage(image)->type & imGrayScale) && rop == ropAlphaCopy )
+	    src = SRC_A8;
       }
    }
 
@@ -2124,7 +2179,7 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       warn("cannot guess surface type");
       return false;
    }
-   src = get_image_src_format(image);
+   src = get_image_src_format(self, image, rop);
    if ( src < 0 ) {
       warn("cannot guess image type");
       return false;
@@ -2674,7 +2729,7 @@ apc_gp_stretch_image( Handle self, Handle image,
    }
    if ( src_w <= 0 || src_h <= 0) return false;
 
-   src = get_image_src_format(image);
+   src = get_image_src_format(self, image, rop);
    if ( src < 0 ) return false;
 
    /* query xserver bits */

@@ -1224,11 +1224,11 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
    else
         dst = img_put_on_pixmap;
    
-   if ( 
-      dst == img_put_on_layered && 
-      src == SRC_IMAGE && 
-      !dsys( image) options. aptIcon && 
-      (((PImage)image)->type & imGrayScale) && 
+   if (
+      dst == img_put_on_layered &&
+      src == SRC_IMAGE &&
+      !dsys( image) options. aptIcon &&
+      (((PImage)image)->type & imGrayScale) &&
       rop == ropAlphaCopy )
       src = SRC_A8;
    

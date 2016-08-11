@@ -124,6 +124,7 @@ typedef struct _PrimaXImage
 #define CACHE_LOW_RES        3
 #define CACHE_LAYERED        4
 #define CACHE_LAYERED_ALPHA  5
+#define CACHE_A8             6
 
 typedef struct {
    int type;
