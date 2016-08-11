@@ -591,8 +591,7 @@ static dBLEND_FUNC(blend_src_over)
             ((int32_t)(*src++) << 8 ) +  
 	    ((int32_t)(*dst) << 8) * (255 - *src_a++) / 255 
 	    + 127;
-      s >>= 8;
-      *dst++ = ( s > 255 ) ? 255 : s;
+      *dst++ = ( s >> 8 ) & 255;
    }
 }
 
@@ -604,8 +603,7 @@ static dBLEND_FUNC(blend_xor)
             ((int32_t)(*src++) << 8) * (255 - *dst_a++) + 
 	    ((int32_t)(*dst)   << 8) * (255 - *src_a++)
 	 ) / 255 + 127;
-      s >>= 8;
-      *dst++ = ( s > 255 ) ? 255 : s;
+      *dst++ = ( s >> 8 ) & 255;
    }
 }
 
@@ -617,8 +615,7 @@ static dBLEND_FUNC(blend_dst_over)
             ((int32_t)(*dst) << 8 ) +  
 	    ((int32_t)(*src++) << 8) * (255 - *dst_a++) / 255 
 	    + 127;
-      s >>= 8;
-      *dst++ = ( s > 255 ) ? 255 : s;
+      *dst++ = ( s >> 8 ) & 255;
    }
 }
 
@@ -638,8 +635,7 @@ static dBLEND_FUNC(blend_src_in)
 {
    while ( bytes-- > 0 ) {
       register int32_t s = (((int32_t)(*src++) << 8) * *dst_a++) / 255 + 127;
-      s >>= 8;
-      *dst++ = ( s > 255 ) ? 255 : s;
+      *dst++ = ( s >> 8 ) & 255;
    }
 }
 
@@ -648,8 +644,7 @@ static dBLEND_FUNC(blend_dst_in)
 {
    while ( bytes-- > 0 ) { 
       register int32_t d = (((int32_t)(*dst) << 8) * *src_a++) / 255 + 127;
-      d >>= 8;
-      *dst++ = ( d > 255 ) ? 255 : d;
+      *dst++ = ( d >> 8 ) & 255;
    }
 }
 
@@ -658,8 +653,7 @@ static dBLEND_FUNC(blend_src_out)
 {
    while ( bytes-- > 0 ) {
       register int32_t s = (((int32_t)(*src++) << 8) * ( 255 - *dst_a++)) / 255 + 127;
-      s >>= 8;
-      *dst++ = ( s > 255 ) ? 255 : s;
+      *dst++ = ( s >> 8 ) & 255;
    }
 }
 
@@ -668,8 +662,7 @@ static dBLEND_FUNC(blend_dst_out)
 {
    while ( bytes-- > 0 ) {
       register int32_t d = (((int32_t)(*dst) << 8) * ( 255 - *src_a++)) / 255 + 127;
-      d >>= 8;
-      *dst++ = ( d > 255 ) ? 255 : d;
+      *dst++ = ( d >> 8 ) & 255;
    }
 }
 
@@ -681,8 +674,7 @@ static dBLEND_FUNC(blend_src_atop)
          ((int32_t)(*src++) << 8) * *dst_a++ + 
 	 ((int32_t)(*dst) << 8) * (255 - *src_a++)
       ) / 255 + 127;
-      s >>= 8;
-      *dst++ = ( s > 255 ) ? 255 : s;
+      *dst++ = ( s >> 8 ) & 255;
    }
 }
 
@@ -694,8 +686,7 @@ static dBLEND_FUNC(blend_dst_atop)
          ((int32_t)(*src++) << 8) * ( 255 - *dst_a++) + 
 	 ((int32_t)(*dst) << 8) * *src_a++
       ) / 255 + 127;
-      s >>= 8;
-      *dst++ = ( s > 255 ) ? 255 : s;
+      *dst++ = ( s >> 8 ) & 255;
    }
 }
 
@@ -831,6 +822,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
       m   = PIcon(src)-> mask + srcY * mls + srcX;
       if ( PIcon(src)-> maskType != imbpp8)
         croak("panic: assert failed for img_put_alpha: %s", "src mask type");
+      use_src_alpha = false;
    } else {
       m   = NULL;
       mls = 0;
@@ -841,6 +833,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
       a   = PIcon(dest)-> mask + dstY * als + dstX;
       if ( PIcon(dest)-> maskType != imbpp8)
         croak("panic: assert failed for img_put_alpha: %s", "dst mask type");
+      use_dst_alpha = false;
    } else {
       a   = NULL;
       als = 0;
@@ -900,7 +893,12 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
          adbuf_ptr = adbuf;
       
       blend_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, bytes);
-      if (a) blend_func( asbuf_ptr, asbuf_ptr, a_ptr, a_ptr, bytes);
+      if (a) {
+         if ( use_src_alpha )
+            blend_func( asbuf, asbuf, a_ptr, a_ptr, dstW);
+	 else
+            blend_func( m_ptr, m_ptr, a_ptr, a_ptr, dstW);
+      }
    }
 
    /* cleanup */

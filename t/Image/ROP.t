@@ -229,19 +229,8 @@ sub pd_color
 
 sub pd_alpha
 {
-	my ( $s, $as, $d, $ad ) = @_;
-	my $As = $as * ( 255 - $ad );
-	my $Ad = $ad * ( 255 - $as );
-	my $Ab = $as * $ad;
-	my $sc = ($s > 0) ? 1 : 0;
-	my $dc = ($d > 0) ? 1 : 0;
-	my $bc = ($sc && $dc) ? 1 : 0;
-	my $dst = ($As * $sc + $Ad * $dc + $Ab * $bc) / 255.0;
-	
-	$dst += .5;
-
-	if ( $dst > 255 ) { $dst = 255 };
-	return int( $dst );
+	my ( $rop, $as, $ad ) = @_;
+	return pd_color( $rop, $as, $as, $ad, $ad);
 }
 
 sub test_rop
@@ -285,7 +274,7 @@ sub test_rop
 		for ( my $i = 0; $i < @q; $i++) {
 			my $q = $q[$i];
 			my $c = pd_color( $rop, $q, $q, $q, $q );
-			my $a = pd_alpha( $q, $q, $q, $q );
+			my $a = pd_alpha( $rop, $q, $q );
 			my $pc = $cc->pixel($i, 0);
 			my $pa = $aa->pixel($i, 0);
 			is( $pc, $c, "C(($q/$q) $name ($q/$q)) = $c $subname");
@@ -293,7 +282,7 @@ sub test_rop
 			
 			my $q2 = 255 - $q[$i];
 			$c = pd_color( $rop, $q, $q, $q2, $q2 );
-			$a = pd_alpha( $q, $q, $q2, $q2 );
+			$a = pd_alpha( $rop, $q, $q2 );
 			$pc = $cc->pixel($i + 4, 0);
 			$pa = $aa->pixel($i + 4, 0);
 			is( $pc, $c, "C(($q/$q) $name ($q2/$q2)) = $c $subname");
