@@ -1053,6 +1053,8 @@ sub rectangle
 	$self-> stroke( "N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X O");
 }
 
+sub alpha {}
+
 sub clear
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_; 

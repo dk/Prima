@@ -3177,6 +3177,9 @@ extern Bool
 apc_gp_done( Handle self);
 
 extern Bool
+apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2);
+
+extern Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY,
             double angleStart, double angleEnd);
 

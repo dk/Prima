@@ -251,6 +251,7 @@ typedef void SimpleConvProc( Byte * srcData, Byte * dstData, int count);
 typedef SimpleConvProc *PSimpleConvProc;
 
 extern void ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int srcDataSize, int dstDataSize, int srcBPP, int dstBPP, void * bit_conv_proc, Bool reverse);
+extern void img_fill_dummy( PImage dummy, int w, int h, int type, Byte * data, RGBColor * palette);
 extern Bool img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop);
 extern void img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color);
 extern void img_rotate( Handle self, Byte * new_data, int new_line_size, int degrees);

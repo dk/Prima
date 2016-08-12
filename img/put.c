@@ -216,6 +216,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       memcpy( palette, PImage( src)-> palette, 6);
       memcpy( PImage( src)-> palette, stdmono_palette, 6);
 
+
       PImage( src)-> type     =  imBW;
       PImage( src)-> palSize  = 2;
       img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut);
@@ -249,12 +250,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
       }
 
       i = (PIcon) dest;
-      dummy. self     = CImage;
-      dummy. w        = i-> w;
-      dummy. h        = i-> h;
-      dummy. type     = imByte;
-      dummy. lineSize = i-> maskLine;
-      dummy. data     = i-> mask;
+      img_fill_dummy( &dummy, i-> w, i-> h, imByte, i-> mask, NULL);
       return img_put((Handle)&dummy, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut);
    } else if ( rop & ropConstantAlpha )
       return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);

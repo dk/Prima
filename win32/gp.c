@@ -193,6 +193,64 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 }}
 
 Bool
+apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
+{objCheck false;{
+   Bool ok;
+   HDC dc, buf_dc;
+   HBITMAP buf_bm, old_bm;
+   unsigned int dst_lw, y, w, h;
+   Byte *dst;
+
+   if ( !is_apt( aptLayered)) return false;
+   
+   if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
+      x1 = y1 = 0;
+      x2 = sys lastSize. x - 1;
+      y2 = sys lastSize. y - 1;
+   }
+   check_swap( x1, x2);
+   check_swap( y1, y2);
+   w = x2 - x1 + 1;
+   h = y2 - y1 + 1;
+   y1 = sys lastSize. y - y2 - 1;
+
+   dc     = GetDC(NULL);
+   buf_dc = CreateCompatibleDC(dc);
+   if ( !(buf_bm = image_create_argb_dib_section(dc, w, h, (uint32_t**) &dst))) {
+      DeleteDC(buf_dc);
+      ReleaseDC(NULL, dc);
+      return false;
+   }
+
+   old_bm = SelectObject(buf_dc, buf_bm);
+   if ( !( ok = BitBlt( buf_dc, 0, 0, w, h, sys ps, x1, y1, SRCCOPY))) {
+      apiErr;
+      goto EXIT;
+   }
+
+   dst_lw = w * 4;
+   for ( y = 0; y < h; y++, dst += dst_lw ) {
+      register Byte *dd = dst + 3;
+      register unsigned int ww = w;
+      while (ww--) {
+         *dd = alpha;
+	 dd += 4;
+      }
+   }
+
+   if ( !( ok = BitBlt( sys ps, x1, y1, w, h, buf_dc, 0, 0, SRCCOPY)))
+      apiErr;
+
+EXIT:
+   SelectObject(buf_dc, old_bm);
+   DeleteDC(buf_dc);
+   DeleteObject(buf_bm);
+   ReleaseDC(NULL, dc);
+
+   return ok;
+}}
+
+Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
    Bool     ok = true;

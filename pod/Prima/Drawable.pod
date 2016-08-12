@@ -1005,6 +1005,13 @@ Selects the width of a canvas.
 
 =over 4
 
+=item alpha ALPHA <X1, Y1, X2, Y2>
+
+Fills rectangle in the alpha channel, filled with ALPHA value (0-255) within (X1,Y1) - (X2,Y2) extents.
+Can be called without parameters, in this case fills all canvas area.
+
+Has only effect on layered surfaces.
+
 =item arc X, Y, DIAMETER_X, DIAMETER_Y, START_ANGLE, END_ANGLE
 
 Plots an arc with center in X, Y and DIAMETER_X and DIAMETER_Y axis

@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 501;
+plan tests => 503;
 
 my @alu = qw(
    Blackness
@@ -210,6 +210,14 @@ $dst = Prima::Icon->new(
 $src = img("5678");
 $dst->put_image( 0,0, $src, rop::AlphaCopy);
 is_bits( $dst->mask, "5678", "ropAlphaCopy");
+
+$dst->alpha(ord("9"), 1, 0, 2, 0);
+is_bits( $dst->mask, "5998", "alpha(x)");
+
+$dst->begin_paint;
+$dst->alpha(ord("0"), 1, 0, 2, 0);
+$dst->end_paint;
+is_bits( $dst->mask, "5008", "alpha(x) in paint");
 
 # test porter-duff
 sub pd_color
