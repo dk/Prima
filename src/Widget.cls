@@ -135,7 +135,7 @@ object Prima::Widget( Prima::Drawable)
    method   void     insert_behind( Handle view);
    method   void     invalidate_rect( Rect rect);
    c_only   Bool     is_child( Handle possibleOwner);
-   method   Bool     is_layered()                    => apc_widget_is_layered;
+   method   Bool     is_surface_layered()                    => apc_widget_surface_is_layered;
    method   void     key_event( int command, int code, int key = kbNoKey, int mod = 0, int repeat = 1, Bool post = 0);
    method   Handle   last();
    method   Bool     lock();

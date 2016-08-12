@@ -2173,7 +2173,7 @@ apc_widget_get_layered_request( Handle self)
 }
 
 Bool
-apc_widget_is_layered( Handle self)
+apc_widget_surface_is_layered( Handle self)
 {
    Handle top;
    objCheck false;

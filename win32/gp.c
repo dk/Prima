@@ -201,7 +201,12 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
    unsigned int dst_lw, y, w, h;
    Byte *dst;
 
-   if ( !is_apt( aptLayered)) return false;
+   if ( !(
+     (is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtLayered) ||
+     is_apt(aptLayered) ||
+     ( apc_widget_get_layered_request(self) && apc_widget_surface_is_layered(self))
+   ))
+     return false;
    
    if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
       x1 = y1 = 0;

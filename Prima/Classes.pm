@@ -388,6 +388,8 @@ sub text_out_bidi
 	}
 }
 
+sub has_alpha_layer { 0 }
+
 # class Image
 package Prima::Image;
 use vars qw( @ISA);
@@ -526,6 +528,8 @@ sub create_combined
 	return $self;
 }
 
+sub has_alpha_layer { shift->maskType == im::bpp8 }
+
 # class DeviceBitmap
 package Prima::DeviceBitmap;
 use vars qw( @ISA);
@@ -553,6 +557,8 @@ sub profile_check_in
 	}
 	$self-> SUPER::profile_check_in( $p, $default);
 }
+
+sub has_alpha_layer { shift->type == dbt::Layered }
 
 # class Timer
 package Prima::Timer;
@@ -1113,6 +1119,8 @@ sub rect_bevel
 	$canvas-> rect3d( $x, $y, $x1, $y1, $hw, @c3d[2,3], $opt{gradient} // $fill);
 	$canvas-> rect3d( $x + $hw, $y + $hw, $x1 - $hw, $y1 - $hw, $width - $hw, @c3d[0,1]);
 }
+
+sub has_alpha_layer { $_[0]-> layered && $_[0]-> is_surface_layered }
 
 # class Window
 package Prima::Window;

@@ -1376,7 +1376,7 @@ See L<Prima::Image/Layering> for more details.
 
 Default: false
 
-See also: C<is_layered>
+See also: C<is_surface_layered>
 
 Note: In Windows, mouse events will not be delivered to the layered widget
 if the pixel under the mouse pointer is fully transparent.
@@ -2025,7 +2025,7 @@ so re-painting of the area happens. See L<"Graphic content">.
 
 See also: C<validate_rect>, C<get_invalid_rect>, C<repaint>, C<Paint>, C<syncPaint>, C<update_view>
 
-=item is_layered
+=item is_surface_layered
 
 Returns true if both the widget and it's top-most parent are layered.
 If the widget itself is top-most, i.e. a window, a non-clipOwner widget,
