@@ -615,6 +615,40 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 }
 
 Bool
+apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
+{
+   DEFXX;
+   int pixel;
+
+   if ( PObject( self)-> options. optInDrawInfo) return false;
+   if ( !XF_IN_PAINT(XX)) return false;
+   if ( !XF_LAYERED(XX)) return false;
+   if ( XT_IS_WIDGET(XX) && !XX->flags. layered_requested) return false;
+   
+   if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
+      x1 = 0; y1 = 0;
+      x2 = XX-> size. x - 1;
+      y2 = XX-> size. y - 1;
+   }
+   SHIFT( x1, y1); SHIFT( x2, y2);
+   SORT( x1, x2); SORT( y1, y2);
+   RANGE4( x1, y1, x2, y2);
+   
+   pixel = ((alpha << guts. argb_bits. alpha_range) >> 8) << guts. argb_bits. alpha_shift;
+   if ( guts.machine_byte_order != guts.byte_order) 
+      pixel = REVERSE_BYTES_32(pixel);
+
+   XSetForeground( DISP, XX-> gc, pixel);
+   XX-> flags. brush_fore = 0;
+   XSetPlaneMask( DISP, XX-> gc, guts. argb_bits. alpha_mask);
+   XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
+   XSetPlaneMask( DISP, XX-> gc, AllPlanes);
+   XFLUSH;	  
+   
+   return true;
+}
+
+Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {
    DEFXX;
