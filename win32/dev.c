@@ -1229,8 +1229,12 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
       src == SRC_IMAGE &&
       !dsys( image) options. aptIcon &&
       (((PImage)image)->type & imGrayScale) &&
-      rop == ropAlphaCopy )
+      rop == ropAlphaCopy ) {
       src = SRC_A8;
+      rop = ropCopyPut;
+   }
+
+   if ( rop > ropNoOper ) return false;
    
    if ( dst[src] == NULL ) {
    	warn("not implemented");
