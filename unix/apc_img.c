@@ -2106,7 +2106,7 @@ PutImageFunc (*img_put_on_layered[SRC_NUM]) = {
 };
 
 static int
-get_image_src_format( Handle self, Handle image, int rop )
+get_image_src_format( Handle self, Handle image, int * rop )
 {
    DEFXX;
    PDrawableSysData YY = X(image);
@@ -2131,8 +2131,10 @@ get_image_src_format( Handle self, Handle image, int rop )
          src = SRC_ARGB;
       } else {
          src = SRC_IMAGE;
-         if (XF_LAYERED(XX) && !XT_IS_ICON(YY) && (PImage(image)->type & imGrayScale) && rop == ropAlphaCopy )
+         if (XF_LAYERED(XX) && !XT_IS_ICON(YY) && (PImage(image)->type & imGrayScale) && *rop == ropAlphaCopy ) {
 	    src = SRC_A8;
+	    *rop = ropCopyPut;
+	 }
       }
    }
 
@@ -2179,7 +2181,8 @@ apc_gp_put_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom,
       warn("cannot guess surface type");
       return false;
    }
-   src = get_image_src_format(self, image, rop);
+   src = get_image_src_format(self, image, &rop);
+   if ( rop > ropNoOper ) return false;
    if ( src < 0 ) {
       warn("cannot guess image type");
       return false;
@@ -2729,7 +2732,8 @@ apc_gp_stretch_image( Handle self, Handle image,
    }
    if ( src_w <= 0 || src_h <= 0) return false;
 
-   src = get_image_src_format(self, image, rop);
+   src = get_image_src_format(self, image, &rop);
+   if ( rop > ropNoOper ) return false;
    if ( src < 0 ) return false;
 
    /* query xserver bits */
