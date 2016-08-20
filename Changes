@@ -1,5 +1,22 @@
 Revision history for Perl module Prima
 
+1.48 2016-08-21
+ - Support dynamic font loading
+ - Added support for invividual horizontal font glyph metrics
+ - Added afm2prima script to convert .afm PostScript font headers to Prima format
+ - Add Markup (rich text) widget support, originally implemented by Teo Sankaro
+ - Add KeySelector integration with menu shortcuts
+ - Add alpha layering and blending with native win32 and XRender support:
+   -- New Drawable call .alpha()
+   -- New Icon.maskType property containing either im::bpp1 or im::bpp8; the latter represents ARGB image
+   -- Widgets and Windows can request per-pixel alpha transparency with new .layered property
+   -- DeviceBitmap.monochrome property changed to .type(Bitmap/Pixmap/Layered)
+   -- put_image and stretch_image support new rops rop::SrcCopy and rop::SrcOver with ARGB images and surfaces
+   -- put_image and stretch_image support new rop::AlphaCopy with grayscale images to address alpha channel only
+   -- Image bit operations support 12 Porter-Duff rops and alpha pre-multiplication on ARGB images
+      and RGB images with constant alpha value
+   -- PNG codec supports ARGB icons
+
 1.47 2016-06-03
  - Add OpenMP support for image scaling and conversion
  - Add custom image scaling algorithms
