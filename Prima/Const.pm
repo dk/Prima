@@ -312,6 +312,12 @@ See L<Prima::Widget/pointerType>
 	cr::Invalid                 invalid action pointer
 	cr::User                    user-defined icon
 
+=head2 dbt::  - device bitmap types
+
+        dbt::Bitmap                 monochrome 1 bit bitmap
+        dbt::Pixmap                 bitmap compatible with display format
+        dbt::Layered                bitmap compatible with display format with alpha channel
+
 =head2 dt::  - drive types
 
 See L<Prima::Utils/query_drive_type>
