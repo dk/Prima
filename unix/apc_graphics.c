@@ -635,9 +635,6 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
    RANGE4( x1, y1, x2, y2);
    
    pixel = ((alpha << guts. argb_bits. alpha_range) >> 8) << guts. argb_bits. alpha_shift;
-   if ( guts.machine_byte_order != guts.byte_order) 
-      pixel = REVERSE_BYTES_32(pixel);
-
    XSetForeground( DISP, XX-> gc, pixel);
    XX-> flags. brush_fore = 0;
    XSetPlaneMask( DISP, XX-> gc, guts. argb_bits. alpha_mask);
