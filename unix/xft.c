@@ -1284,7 +1284,7 @@ static void
 XftDrawGlyph_layered( PDrawableSysData selfxx, _Xconst XftColor *color, int x, int y, _Xconst FT_UInt glyph)
 {
    XftColor black;
-   XGCValues old_gcv, gcv;
+   XGCValues gcv;
    XGlyphInfo extents;
 
    XftGlyphExtents( DISP, XX-> font-> xft, &glyph, 1, &extents);
@@ -1328,16 +1328,8 @@ XftDrawGlyph_layered( PDrawableSysData selfxx, _Xconst XftColor *color, int x, i
    XftDrawGlyphs( XX-> xft_shadow_drawable, &black, XX->font->xft, extents.x, extents.y, &glyph, 1);
    XftDrawGlyphs( XX-> xft_drawable, color, XX->font->xft, x, y, &glyph, 1);
 
-   XGetGCValues( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &old_gcv);
-   gcv. foreground = 0xffffffff;
-   gcv. background = 0x00000000;
-   gcv. function   = GXand;
-   gcv. plane_mask = guts. argb_bits. alpha_mask;
-   XChangeGC( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &gcv);
-
    XCopyPlane( DISP, XX-> xft_shadow_pixmap, XX-> gdrawable, XX-> gc, 0, 0, extents.width, extents.height,
       x - extents.x, y - extents.y, 1);
-   XChangeGC( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &old_gcv);
 }
 
 /* When plotting rotated fonts, xft does not account for the accumulated
@@ -1349,6 +1341,8 @@ my_XftDrawString32( PDrawableSysData selfxx,
         _Xconst XftColor *color, int x, int y,
         _Xconst FcChar32 *string, int len)
 {
+
+   XGCValues old_gcv, gcv;
    int i, ox, oy, shift;
    if ( IS_ZERO(XX-> font-> font. direction) && !XX-> flags. layered ) {
       XftDrawString32( XX-> xft_drawable, color, XX-> font-> xft, x, y, string, len);
@@ -1361,7 +1355,15 @@ my_XftDrawString32( PDrawableSysData selfxx,
       FT_UInt ft_index;
       /* prepare xrender */
       XftDrawGlyphs( XX-> xft_drawable, color, XX->font->xft, x, y, &ft_index, 0);
+
+      XGetGCValues( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &old_gcv);
+      gcv. foreground = 0xffffffff;
+      gcv. background = 0x00000000;
+      gcv. function   = GXand;
+      gcv. plane_mask = guts. argb_bits. alpha_mask;
+      XChangeGC( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &gcv);
    }
+
    for ( i = 0; i < len; i++) {
       int cx, cy;
       FT_UInt ft_index;
@@ -1378,6 +1380,9 @@ my_XftDrawString32( PDrawableSysData selfxx,
       x = cx;
       y = cy;
    }
+   
+   if ( XX-> flags. layered )
+      XChangeGC( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &old_gcv);
 }
 
 Bool
