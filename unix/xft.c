@@ -1280,6 +1280,9 @@ create_no_aa_font( XftFont * font)
 #define RANGE4(a,b,c,d) RANGE(a) RANGE(b) RANGE(c) RANGE(d)
 
 /* emulate win32 clearing off alpha bits on any Gdi operation */
+
+#define EMULATE_ALPHA_CLEARING 0
+
 static void
 XftDrawGlyph_layered( PDrawableSysData selfxx, _Xconst XftColor *color, int x, int y, _Xconst FT_UInt glyph)
 {
@@ -1351,7 +1354,7 @@ my_XftDrawString32( PDrawableSysData selfxx,
    ox = x;
    oy = y;
    shift = 0;
-   if ( XX-> flags. layered ) {
+   if ( XX-> flags. layered && EMULATE_ALPHA_CLEARING) {
       FT_UInt ft_index;
       /* prepare xrender */
       XftDrawGlyphs( XX-> xft_drawable, color, XX->font->xft, x, y, &ft_index, 0);
@@ -1373,7 +1376,7 @@ my_XftDrawString32( PDrawableSysData selfxx,
       shift += glyph. xOff;
       cx = ox + (int)(shift * XX-> xft_font_cos + 0.5);
       cy = oy - (int)(shift * XX-> xft_font_sin + 0.5);
-      if ( XX-> flags. layered )
+      if ( XX-> flags. layered && EMULATE_ALPHA_CLEARING)
          XftDrawGlyph_layered( XX, color, x, y, ft_index);
       else
          XftDrawGlyphs( XX-> xft_drawable, color, XX->font->xft, x, y, &ft_index, 1);
@@ -1381,7 +1384,7 @@ my_XftDrawString32( PDrawableSysData selfxx,
       y = cy;
    }
    
-   if ( XX-> flags. layered )
+   if ( XX-> flags. layered && EMULATE_ALPHA_CLEARING)
       XChangeGC( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &old_gcv);
 }
 
