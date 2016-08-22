@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Prima qw(Themes);
 
-package Round3D;
+package Prima::Themes::Round3D;
 use vars qw(@ISA);
 @ISA=qw(Prima::Themes::Proxy);
 
@@ -81,7 +81,7 @@ sub oval3d
 
 my %wrap_paint = (
 	onPaint => sub {
-		$_[0]-> on_paint( Round3D-> new($_[1]));
+		$_[0]-> on_paint( Prima::Themes::Round3D-> new($_[1]));
 	}
 );
 
