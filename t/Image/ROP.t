@@ -214,10 +214,13 @@ is_bits( $dst->mask, "5678", "ropAlphaCopy");
 $dst->alpha(ord("9"), 1, 0, 2, 0);
 is_bits( $dst->mask, "5998", "alpha(x)");
 
-$dst->begin_paint;
-$dst->alpha(ord("0"), 1, 0, 2, 0);
-$dst->end_paint;
-is_bits( $dst->mask, "5008", "alpha(x) in paint");
+SKIP: {
+	skip "no argb support", 1 unless Prima::Application->get_system_value(sv::LayeredWidgets);
+	$dst->begin_paint;
+	$dst->alpha(ord("0"), 1, 0, 2, 0);
+	$dst->end_paint;
+	is_bits( $dst->mask, "5008", "alpha(x) in paint");
+}
 
 # test porter-duff
 sub pd_color
