@@ -459,6 +459,10 @@ argb_query_bits( Handle self)
     uint32_t * argb_bits;
     Byte * rgb_bits, *a_bits;
     int y;
+
+    if ( i-> type != imRGB || i-> maskType != imbpp8)
+       i-> self-> create_empty_icon( self, i-> w, i-> h, imRGB, imbpp8);
+
     for ( 
        y = 0, 
           rgb_bits = i->data,
