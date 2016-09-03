@@ -84,17 +84,17 @@ typedef StretchProc *PStretchProc;
 #pragma pack(1)
 #endif
 typedef union _Fixed {
-   int32_t l;
+	int32_t l;
 #if (BYTEORDER==0x4321) || (BYTEORDER==0x87654321)
-   struct {
-     int16_t  i;
-     uint16_t f;
-   } i;
+	struct {
+		int16_t  i;
+		uint16_t f;
+	} i;
 #else   
-   struct {
-     uint16_t f;
-     int16_t  i;
-   } i;
+	struct {
+		uint16_t f;
+		int16_t  i;
+	} i;
 #endif
 } Fixed;
 #if !defined(sgi) || defined(__GNUC__)
@@ -278,24 +278,24 @@ extern Byte     map_halftone8x8_64 [  64];
 /* internal macros */
 
 #define dBCARGS                                                   \
-   int i;                                                         \
-   int width = var->w, height = var->h;                           \
-   int srcType = var->type;                                       \
-   int srcLine = LINE_SIZE(width,srcType);                        \
-   int dstLine = LINE_SIZE(width,dstType);                        \
-   Byte * srcData = var->data;                                    \
-   Byte colorref[ 256]
+	int i;                                                         \
+	int width = var->w, height = var->h;                           \
+	int srcType = var->type;                                       \
+	int srcLine = LINE_SIZE(width,srcType);                        \
+	int dstLine = LINE_SIZE(width,dstType);                        \
+	Byte * srcData = var->data;                                    \
+	Byte colorref[ 256]
 
 #define dBCLOOP \
-   Byte * srcDataLoop = srcData + i * srcLine;\
-   Byte * dstDataLoop = dstData + i * dstLine
+	Byte * srcDataLoop = srcData + i * srcLine;\
+	Byte * dstDataLoop = dstData + i * dstLine
 
 #if defined (__BORLANDC__)
 #define BCWARN
 #else
 #define BCWARN                                                   \
-   (void)srcType; (void)srcLine; (void)dstLine;                  \
-   (void)srcData; (void)colorref; (void)i;
+	(void)srcType; (void)srcLine; (void)dstLine;                  \
+	(void)srcData; (void)colorref; (void)i;
 #endif
 
 

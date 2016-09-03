@@ -106,14 +106,14 @@ extern int XShmGetEventBase( Display*);
 
 typedef struct _PrimaXImage
 {
-   Bool shm;
-   Bool can_free;
-   int ref_cnt;
-   void *data_alias;
-   int bytes_per_line_alias;
-   XImage *image;
+	Bool shm;
+	Bool can_free;
+	int ref_cnt;
+	void *data_alias;
+	int bytes_per_line_alias;
+	XImage *image;
 #ifdef USE_MITSHM
-   XShmSegmentInfo xmem;
+	XShmSegmentInfo xmem;
 #endif
 } PrimaXImage;
 
@@ -127,16 +127,16 @@ typedef struct _PrimaXImage
 #define CACHE_A8             6
 
 typedef struct {
-   int type;
-   PrimaXImage *image;
-   PrimaXImage *icon;
+	int type;
+	PrimaXImage *image;
+	PrimaXImage *icon;
 } ImageCache;
 
 typedef struct _RequestInformation
 {
-   unsigned long request;
-   char *file;
-   int line;
+	unsigned long request;
+	char *file;
+	int line;
 } RequestInformation, *PRequestInformation;
 
 #define REQUEST_RING_SIZE 512
@@ -147,107 +147,107 @@ typedef struct _RequestInformation
 #define kbFunctionMask	0x00080000
 
 typedef struct _FontFlags {
-   unsigned height           : 1;
-   unsigned width            : 1;
-   unsigned style            : 1;
-   unsigned pitch            : 1;
-   unsigned direction        : 1;
-   unsigned resolution       : 1;
-   unsigned name             : 1;
-   unsigned encoding         : 1;
-   unsigned size             : 1;
-   unsigned codepage         : 1;
-   unsigned family           : 1;
-   unsigned vector           : 1;
-   unsigned ascent           : 1;
-   unsigned descent          : 1;
-   unsigned weight           : 1;
-   unsigned maximalWidth     : 1;
-   unsigned internalLeading  : 1;
-   unsigned externalLeading  : 1;
-   unsigned xDeviceRes       : 1;
-   unsigned yDeviceRes       : 1;
-   unsigned firstChar        : 1;
-   unsigned lastChar         : 1;
-   unsigned breakChar        : 1;
-   unsigned defaultChar      : 1;
-   /* extras */
-   unsigned bad_vector	     : 1;
-   unsigned sloppy           : 1;
-   unsigned disabled         : 1;
-   unsigned funky            : 1;
-   unsigned heights_cache    : 1;
+	unsigned height           : 1;
+	unsigned width            : 1;
+	unsigned style            : 1;
+	unsigned pitch            : 1;
+	unsigned direction        : 1;
+	unsigned resolution       : 1;
+	unsigned name             : 1;
+	unsigned encoding         : 1;
+	unsigned size             : 1;
+	unsigned codepage         : 1;
+	unsigned family           : 1;
+	unsigned vector           : 1;
+	unsigned ascent           : 1;
+	unsigned descent          : 1;
+	unsigned weight           : 1;
+	unsigned maximalWidth     : 1;
+	unsigned internalLeading  : 1;
+	unsigned externalLeading  : 1;
+	unsigned xDeviceRes       : 1;
+	unsigned yDeviceRes       : 1;
+	unsigned firstChar        : 1;
+	unsigned lastChar         : 1;
+	unsigned breakChar        : 1;
+	unsigned defaultChar      : 1;
+	/* extras */
+	unsigned bad_vector	     : 1;
+	unsigned sloppy           : 1;
+	unsigned disabled         : 1;
+	unsigned funky            : 1;
+	unsigned heights_cache    : 1;
 } FontFlags;
 
 typedef struct _FontInfo {
-   FontFlags    flags;
-   Font         font;
-   char        *vecname;
-   char        *xname;
-   short int    name_offset;
-   short int    info_offset;
-   int          heights_cache[2];
+	FontFlags    flags;
+	Font         font;
+	char        *vecname;
+	char        *xname;
+	short int    name_offset;
+	short int    info_offset;
+	int          heights_cache[2];
 } FontInfo, *PFontInfo;
 
 typedef struct _RotatedFont {
-   double       direction;
-   int          first1;
-   int          first2;
-   int          height;
-   int          width;
-   int          length;
-   PrimaXImage**map;
-   Point        shift;
-   Point        dimension;
-   Point        orgBox;
-   Pixmap       arena;
-   GC           arena_gc;
-   Byte        *arena_bits;
-   int          lineSize;
-   int          defaultChar1;
-   int          defaultChar2;
-   Fixed        sin, cos, sin2, cos2;
-   struct       RotatedFont *next;
+	double       direction;
+	int          first1;
+	int          first2;
+	int          height;
+	int          width;
+	int          length;
+	PrimaXImage**map;
+	Point        shift;
+	Point        dimension;
+	Point        orgBox;
+	Pixmap       arena;
+	GC           arena_gc;
+	Byte        *arena_bits;
+	int          lineSize;
+	int          defaultChar1;
+	int          defaultChar2;
+	Fixed        sin, cos, sin2, cos2;
+	struct       RotatedFont *next;
 } RotatedFont, *PRotatedFont;
 
 typedef struct CachedFont {
-   FontFlags    flags;
-   Font         font;
-   XFontStruct *fs;
-   XFont        id;
-   PRotatedFont rotated;
-   int          underlinePos;
-   int          underlineThickness;
-   int          refCnt;
+	FontFlags    flags;
+	Font         font;
+	XFontStruct *fs;
+	XFont        id;
+	PRotatedFont rotated;
+	int          underlinePos;
+	int          underlineThickness;
+	int          refCnt;
 #ifdef USE_XFT
-   XftFont     *xft;
-   XftFont     *xft_no_aa;
-   XftFont     *xft_base;
+	XftFont     *xft;
+	XftFont     *xft_no_aa;
+	XftFont     *xft_base;
 #endif
 } CachedFont, *PCachedFont;
 
 typedef struct _FontKey
 {
-   int height;
-   int width;
-   int style;
-   int pitch;
-   int direction;
-   char name[ 256];
+	int height;
+	int width;
+	int style;
+	int pitch;
+	int direction;
+	char name[ 256];
 } FontKey, *PFontKey;
 
 #define MAX_HGS_SIZE 5
 
 typedef struct
 {
-   int sp;
-   int locked;
-   int target;
-   int xlfd[MAX_HGS_SIZE];
-   int prima[MAX_HGS_SIZE];
+	int sp;
+	int locked;
+	int target;
+	int xlfd[MAX_HGS_SIZE];
+	int prima[MAX_HGS_SIZE];
 } HeightGuessStack;
 
-union       _unix_sys_data;
+union _unix_sys_data;
 
 #define FIRST_SYS_TIMER         ((Handle)11)
 #define CURSOR_TIMER	        ((Handle)11)
@@ -262,72 +262,72 @@ union       _unix_sys_data;
 #define COMPONENT_SYS_DATA_ALIGN
 #endif
 
-#define COMPONENT_SYS_DATA                                                    \
-   Handle self;                                                               \
-   struct {                                                                   \
-      unsigned application           : 1;                                     \
-      unsigned bitmap                : 1;                                     \
-      unsigned dbm                   : 1;                                     \
-      unsigned drawable              : 1;                                     \
-      unsigned icon                  : 1;                                     \
-      unsigned image                 : 1;                                     \
-      unsigned menu                  : 1;                                     \
-      unsigned pixmap                : 1;                                     \
-      unsigned popup                 : 1;                                     \
-      unsigned timer                 : 1;                                     \
-      unsigned widget                : 1;                                     \
-      unsigned window                : 1;                                     \
-      COMPONENT_SYS_DATA_ALIGN                                                \
-   } type;                                                                    \
-   XrmQuarkList q_class_name;                                                 \
-   XrmQuarkList q_instance_name;                                              \
-   int n_class_name;                                                          \
-   int n_instance_name
+#define COMPONENT_SYS_DATA                                                  \
+	Handle self;                                                        \
+	struct {                                                            \
+		unsigned application           : 1;                         \
+		unsigned bitmap                : 1;                         \
+		unsigned dbm                   : 1;                         \
+		unsigned drawable              : 1;                         \
+		unsigned icon                  : 1;                         \
+		unsigned image                 : 1;                         \
+		unsigned menu                  : 1;                         \
+		unsigned pixmap                : 1;                         \
+		unsigned popup                 : 1;                         \
+		unsigned timer                 : 1;                         \
+		unsigned widget                : 1;                         \
+		unsigned window                : 1;                         \
+		COMPONENT_SYS_DATA_ALIGN                                    \
+	} type;                                                             \
+	XrmQuarkList q_class_name;                                          \
+	XrmQuarkList q_instance_name;                                       \
+	int n_class_name;                                                   \
+	int n_instance_name
 
 typedef struct _timer_sys_data
 {
-   COMPONENT_SYS_DATA;
-   int timeout;
-   Handle who;
-   struct _timer_sys_data *older;
-   struct _timer_sys_data *younger;
-   struct timeval when;
+	COMPONENT_SYS_DATA;
+	int timeout;
+	Handle who;
+	struct _timer_sys_data *older;
+	struct _timer_sys_data *younger;
+	struct timeval when;
 } TimerSysData, *PTimerSysData;
 
 struct  _drawable_sys_data;
 
 #define VIRGIN_GC_MASK  (       GCBackground    \
-                        |       GCCapStyle      \
-                        |       GCClipMask      \
-                        |       GCForeground    \
-                        |       GCFunction      \
-                        |       GCJoinStyle     \
-                        |       GCFillRule      \
-                        |       GCTileStipXOrigin \
-                        |       GCTileStipYOrigin \
-                        |       GCLineStyle     \
-                        |       GCLineWidth     \
-                        |       GCSubwindowMode )
+			|       GCCapStyle      \
+			|       GCClipMask      \
+			|       GCForeground    \
+			|       GCFunction      \
+			|       GCJoinStyle     \
+			|       GCFillRule      \
+			|       GCTileStipXOrigin \
+			|       GCTileStipYOrigin \
+			|       GCLineStyle     \
+			|       GCLineWidth     \
+			|       GCSubwindowMode )
 
 typedef struct gc_list
 {
-   GC gc;
-   TAILQ_ENTRY(gc_list) gc_link;
+	GC gc;
+	TAILQ_ENTRY(gc_list) gc_link;
 } GCList;
 
 TAILQ_HEAD(gc_head,gc_list);
 
 typedef struct pending_event
 {
-   Handle recipient;
-   Event event;
-   TAILQ_ENTRY(pending_event) peventq_link;
+	Handle recipient;
+	Event event;
+	TAILQ_ENTRY(pending_event) peventq_link;
 } PendingEvent;
 
 typedef struct configure_event_pair
 {
-   TAILQ_ENTRY(configure_event_pair) link;
-   int w, h, match;
+	TAILQ_ENTRY(configure_event_pair) link;
+	int w, h, match;
 } ConfigureEventPair;
 
 #define COLOR_R(x) (((x)>>16)&0xFF)
@@ -352,8 +352,8 @@ prima_lpal_set( Byte * palette, int index, int rank);
 #define wlpal_set(widget,index,rank) prima_lpal_set(X(widget)->palette,index,rank)
 
 /* Every color cell in guts.palette is assigned a rank. Its purpose
- is to maintain reasonable sharing of available system colors.
- See prima_palette_replace which preforms sharing. */
+is to maintain reasonable sharing of available system colors.
+See prima_palette_replace which preforms sharing. */
 #define RANK_IMMUTABLE 4 /* Static color for 'cubic' filtering - or for Static visuals */
 #define RANK_LOCKED    3 /* Colors used in Pixmaps - cannot participate in palette managing, therefore 'locked' */
 #define RANK_PRIORITY  2 /* Colors explicitly set by Widget::set_palette */
@@ -363,18 +363,18 @@ prima_lpal_set( Byte * palette, int index, int rank);
 #define RGB_COMPOSITE(R,G,B) ((((R)&0xFF)<<16)|(((G)&0xFF)<<8)|((B)&0xFF))
 
 typedef struct {
-   Byte  r, g, b;
-   Byte  rank;
-   Bool  touched;
-   long  composite;
-   List  users;
+	Byte  r, g, b;
+	Byte  rank;
+	Bool  touched;
+	long  composite;
+	List  users;
 } MainColorEntry;
 
 typedef struct {
-   unsigned long  primary;
-   unsigned long  secondary;
-   Color          color;
-   Byte           balance; /* 0-63 */
+	unsigned long  primary;
+	unsigned long  secondary;
+	Color          color;
+	Byte           balance; /* 0-63 */
 } Brush;
 
 #define AI_FXA_RESOLUTION_X               0
@@ -471,211 +471,211 @@ prima_debug( const char *format, ...);
 
 typedef struct 
 {
-   unsigned int red_shift, green_shift, blue_shift, alpha_shift;
-   unsigned int red_range, green_range, blue_range, alpha_range;
-   unsigned int red_mask,  green_mask,  blue_mask,  alpha_mask;
+	unsigned int red_shift, green_shift, blue_shift, alpha_shift;
+	unsigned int red_range, green_range, blue_range, alpha_range;
+	unsigned int red_mask,  green_mask,  blue_mask,  alpha_mask;
 } RGBABitDescription, *PRGBABitDescription;
 
 typedef struct _UnixGuts
 {
-   /* Event management */
-   Time                         click_time_frame;
-   Time                         double_click_time_frame;
-   PHash                        clipboards;
-   PHash                        clipboard_xfers;
-   Atom *                       clipboard_formats;
-   int                          clipboard_formats_count;
-   long                         clipboard_event_timeout;
-   fd_set                       excpt_set;
-   PList                        files;
-   long                         handled_events;
-   XButtonEvent                 last_button_event;
-   XButtonEvent                 last_click;
-   Time                         last_time;
-   int (*                       main_error_handler   )(Display*,XErrorEvent*);
-   int                          max_fd;
-   int                          modal_count;
-   TAILQ_HEAD(,pending_event)   peventq;
-   fd_set                       read_set;
-   long                         total_events;
-   long                         skipped_events;
-   long                         unhandled_events;
-   fd_set                       write_set;
-   /* Graphics */
-   struct gc_head               bitmap_gc_pool;
-   struct gc_head               screen_gc_pool;
-   struct gc_head               argb_gc_pool;
-   GC                                   menugc;
-   TAILQ_HEAD(,_drawable_sys_data)      paintq;
-   PHash                                ximages;
-   /* Font management */
-   PHash                        font_hash;
-   PFontInfo                    font_info;
-   char                       **font_names;
-   int                          n_fonts;
-   XFontStruct                 *pointer_font;
-   Bool                         default_font_ok;
-   Font                         default_font;
-   Font                         default_menu_font;
-   Font                         default_widget_font;
-   Font                         default_msg_font;
-   Font                         default_caption_font;
-   int                          no_scaled_fonts;
-   /* Resource management */
-   XrmDatabase                  db;
-   XrmQuark                     qBlinkinvisibletime;
-   XrmQuark                     qblinkinvisibletime;
-   XrmQuark                     qBlinkvisibletime;
-   XrmQuark                     qblinkvisibletime;
-   XrmQuark                     qClicktimeframe;
-   XrmQuark                     qclicktimeframe;
-   XrmQuark                     qDoubleclicktimeframe;
-   XrmQuark                     qdoubleclicktimeframe;
-   XrmQuark                     qString;
-   XrmQuark                     qWheeldown;
-   XrmQuark                     qwheeldown;
-   XrmQuark                     qWheelup;
-   XrmQuark                     qwheelup;
-   XrmQuark                     qSubmenudelay;
-   XrmQuark                     qsubmenudelay;
-   XrmQuark                     qScrollfirst;
-   XrmQuark                     qscrollfirst;
-   XrmQuark                     qScrollnext;
-   XrmQuark                     qscrollnext;
-   /* Timers & cursors */
-   unsigned int                 cursor_height;
-   Point                        cursor_pixmap_size;
-   Pixmap                       cursor_save;
-   Bool                         cursor_shown;
-   unsigned int                 cursor_width;
-   Pixmap                       cursor_xor;
-   Bool                         cursor_layered;
-   Bool                         insert;
-   int                          invisible_timeout;
-   struct _timer_sys_data      *oldest;
-   int                          visible_timeout;
-   /* Window management */
-   Handle                       focused;
-   PHash                        menu_windows;
-   PHash                        windows;
-   /* XServer info */
-   int                          bit_order;
-   unsigned char                buttons_map[256];
-   int                          byte_order;
-   int                          connection;
-   int                          depth;
-   Display                     *display;
-   int                          machine_byte_order;
-   int                          idepth; /* image depth; can be 32 if depth == 24 */
-   int                          qdepth; /* image depth for querying */
-   int                          argb_depth; /* image depth for xrender RGBA */
-   struct {
-      long XDrawArcs;
-      long XDrawLines;
-      long XDrawRectangles;
-      long XDrawSegments;
-      long XFillArcs;
-      long XFillPolygon;
-      long XFillRectangles;
-      long request_length;
-   }                            limits;
-   Bool                         local_connection;
-   Cursor                       null_pointer;
-   int                          pointer_invisible_count; /* 0 is visible, > 0 is not, can't be <0 */
-   int                          mouse_buttons;
-   int                          mouse_wheel_down;
-   int                          mouse_wheel_up;
-   Point                        resolution;
-   RequestInformation           ri[REQUEST_RING_SIZE];
-   int                          ri_head;
-   int                          ri_tail;
-   int                          screen_number;
-   Bool                         shape_extension;
-   int                          shape_event;
-   int                          shape_error;
-   Bool                         shared_image_extension;
-   int                          shared_image_completion_event;
-   Bool                         xshmattach_failed;
-   int                          use_xft;
-   Bool                         xft_priority;
-   Bool                         xft_disable_large_fonts;
-   int                          xft_xrender_major_opcode;
-   Bool                         xft_no_antialias;
-   Bool				randr_extension;
-   Bool				render_extension;
-   Bool				composite_extension;
-   int				composite_opcode;
-   Bool				composite_error_triggered;
-   struct MsgDlg               *message_boxes;
-   XWindow                      grab_redirect;
-   Handle                       grab_widget;
-   Point                        grab_translate_mouse;
-   Handle                       grab_confine;
-   int                          scroll_first;
-   int                          scroll_next;
-   Handle                       currentMenu;
-   Time                         currentFocusTime;
-   Handle                       unfocusedMenu;
-   int                          menu_timeout;
-   XWindow                      root;
-   XVisualInfo                  visual;
-   int                          visualClass;
-   XVisualInfo                  argb_visual;
+	/* Event management */
+	Time                         click_time_frame;
+	Time                         double_click_time_frame;
+	PHash                        clipboards;
+	PHash                        clipboard_xfers;
+	Atom *                       clipboard_formats;
+	int                          clipboard_formats_count;
+	long                         clipboard_event_timeout;
+	fd_set                       excpt_set;
+	PList                        files;
+	long                         handled_events;
+	XButtonEvent                 last_button_event;
+	XButtonEvent                 last_click;
+	Time                         last_time;
+	int (*                       main_error_handler   )(Display*,XErrorEvent*);
+	int                          max_fd;
+	int                          modal_count;
+	TAILQ_HEAD(,pending_event)   peventq;
+	fd_set                       read_set;
+	long                         total_events;
+	long                         skipped_events;
+	long                         unhandled_events;
+	fd_set                       write_set;
+	/* Graphics */
+	struct gc_head               bitmap_gc_pool;
+	struct gc_head               screen_gc_pool;
+	struct gc_head               argb_gc_pool;
+	GC                                   menugc;
+	TAILQ_HEAD(,_drawable_sys_data)      paintq;
+	PHash                                ximages;
+	/* Font management */
+	PHash                        font_hash;
+	PFontInfo                    font_info;
+	char                       **font_names;
+	int                          n_fonts;
+	XFontStruct                 *pointer_font;
+	Bool                         default_font_ok;
+	Font                         default_font;
+	Font                         default_menu_font;
+	Font                         default_widget_font;
+	Font                         default_msg_font;
+	Font                         default_caption_font;
+	int                          no_scaled_fonts;
+	/* Resource management */
+	XrmDatabase                  db;
+	XrmQuark                     qBlinkinvisibletime;
+	XrmQuark                     qblinkinvisibletime;
+	XrmQuark                     qBlinkvisibletime;
+	XrmQuark                     qblinkvisibletime;
+	XrmQuark                     qClicktimeframe;
+	XrmQuark                     qclicktimeframe;
+	XrmQuark                     qDoubleclicktimeframe;
+	XrmQuark                     qdoubleclicktimeframe;
+	XrmQuark                     qString;
+	XrmQuark                     qWheeldown;
+	XrmQuark                     qwheeldown;
+	XrmQuark                     qWheelup;
+	XrmQuark                     qwheelup;
+	XrmQuark                     qSubmenudelay;
+	XrmQuark                     qsubmenudelay;
+	XrmQuark                     qScrollfirst;
+	XrmQuark                     qscrollfirst;
+	XrmQuark                     qScrollnext;
+	XrmQuark                     qscrollnext;
+	/* Timers & cursors */
+	unsigned int                 cursor_height;
+	Point                        cursor_pixmap_size;
+	Pixmap                       cursor_save;
+	Bool                         cursor_shown;
+	unsigned int                 cursor_width;
+	Pixmap                       cursor_xor;
+	Bool                         cursor_layered;
+	Bool                         insert;
+	int                          invisible_timeout;
+	struct _timer_sys_data      *oldest;
+	int                          visible_timeout;
+	/* Window management */
+	Handle                       focused;
+	PHash                        menu_windows;
+	PHash                        windows;
+	/* XServer info */
+	int                          bit_order;
+	unsigned char                buttons_map[256];
+	int                          byte_order;
+	int                          connection;
+	int                          depth;
+	Display                     *display;
+	int                          machine_byte_order;
+	int                          idepth; /* image depth; can be 32 if depth == 24 */
+	int                          qdepth; /* image depth for querying */
+	int                          argb_depth; /* image depth for xrender RGBA */
+	struct {
+		long XDrawArcs;
+		long XDrawLines;
+		long XDrawRectangles;
+		long XDrawSegments;
+		long XFillArcs;
+		long XFillPolygon;
+		long XFillRectangles;
+		long request_length;
+	}                            limits;
+	Bool                         local_connection;
+	Cursor                       null_pointer;
+	int                          pointer_invisible_count; /* 0 is visible, > 0 is not, can't be <0 */
+	int                          mouse_buttons;
+	int                          mouse_wheel_down;
+	int                          mouse_wheel_up;
+	Point                        resolution;
+	RequestInformation           ri[REQUEST_RING_SIZE];
+	int                          ri_head;
+	int                          ri_tail;
+	int                          screen_number;
+	Bool                         shape_extension;
+	int                          shape_event;
+	int                          shape_error;
+	Bool                         shared_image_extension;
+	int                          shared_image_completion_event;
+	Bool                         xshmattach_failed;
+	int                          use_xft;
+	Bool                         xft_priority;
+	Bool                         xft_disable_large_fonts;
+	int                          xft_xrender_major_opcode;
+	Bool                         xft_no_antialias;
+	Bool                         randr_extension;
+	Bool                         render_extension;
+	Bool                         composite_extension;
+	int                          composite_opcode;
+	Bool                         composite_error_triggered;
+	struct MsgDlg               *message_boxes;
+	XWindow                      grab_redirect;
+	Handle                       grab_widget;
+	Point                        grab_translate_mouse;
+	Handle                       grab_confine;
+	int                          scroll_first;
+	int                          scroll_next;
+	Handle                       currentMenu;
+	Time                         currentFocusTime;
+	Handle                       unfocusedMenu;
+	int                          menu_timeout;
+	XWindow                      root;
+	XVisualInfo                  visual;
+	int                          visualClass;
+	XVisualInfo                  argb_visual;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-   XRenderPictFormat *          argb_pic_format;
-   XRenderPictFormat *          argb_compat_format;
+	XRenderPictFormat *          argb_pic_format;
+	XRenderPictFormat *          argb_compat_format;
 #endif
-   MainColorEntry *             palette;
-   int                          mappingPlace[256];
-   unsigned long                monochromeMap[2];
-   int                          palSize;
-   int                          localPalSize;
-   int *                        systemColorMap;
-   int                          systemColorMapSize;
-   int                          colorCubeRib;
-   Bool                         dynamicColors;
-   Bool                         grayScale;
-   Bool                         useDithering;
-   Bool                         privateColormap;
-   Colormap                     defaultColormap;
-   Colormap                     argbColormap;
-   FillPattern *                ditherPatterns;
-   Point                        displaySize;
-   long                         wm_event_timeout;
-   RGBABitDescription           screen_bits;
-   RGBABitDescription           argb_bits;
-   Point                        ellipseDivergence;
-   int                          appLock;
-   XGCValues                    cursor_gcv;
-   TimerSysData                 sys_timers[ LAST_SYS_TIMER - FIRST_SYS_TIMER + 1];
-   Bool                         applicationClose;
-   char                         locale[32];
-   XFontStruct *                font_abc_nil_hack;
-   Atom                         atoms[AI_count];
-   XTextProperty                hostname;
-   unsigned int			debug;
-   Bool                         icccm_only;
-   Bool                         net_wm_maximization;
-   int                          net_wm_maximize_HORZ_vs_HORIZ;
+	MainColorEntry *             palette;
+	int                          mappingPlace[256];
+	unsigned long                monochromeMap[2];
+	int                          palSize;
+	int                          localPalSize;
+	int *                        systemColorMap;
+	int                          systemColorMapSize;
+	int                          colorCubeRib;
+	Bool                         dynamicColors;
+	Bool                         grayScale;
+	Bool                         useDithering;
+	Bool                         privateColormap;
+	Colormap                     defaultColormap;
+	Colormap                     argbColormap;
+	FillPattern *                ditherPatterns;
+	Point                        displaySize;
+	long                         wm_event_timeout;
+	RGBABitDescription           screen_bits;
+	RGBABitDescription           argb_bits;
+	Point                        ellipseDivergence;
+	int                          appLock;
+	XGCValues                    cursor_gcv;
+	TimerSysData                 sys_timers[ LAST_SYS_TIMER - FIRST_SYS_TIMER + 1];
+	Bool                         applicationClose;
+	char                         locale[32];
+	XFontStruct *                font_abc_nil_hack;
+	Atom                         atoms[AI_count];
+	XTextProperty                hostname;
+	unsigned int			debug;
+	Bool                         icccm_only;
+	Bool                         net_wm_maximization;
+	int                          net_wm_maximize_HORZ_vs_HORIZ;
 } UnixGuts;
 
 extern UnixGuts  guts;
 extern UnixGuts* pguts;
 
 #define XCHECKPOINT						\
-   STMT_START {							\
-      pguts-> ri[ pguts-> ri_head]. line = __LINE__;			\
-      pguts-> ri[ pguts-> ri_head]. file = __FILE__;			\
-      pguts-> ri[ pguts-> ri_head]. request = NextRequest(DISP);	\
-      pguts-> ri_head++;						\
-      if ( pguts-> ri_head >= REQUEST_RING_SIZE)			\
-	 pguts-> ri_head = 0;					\
-      if ( pguts-> ri_tail == pguts-> ri_head) {			\
-	 pguts-> ri_tail++;					\
-	 if ( pguts-> ri_tail >= REQUEST_RING_SIZE)		\
-	    pguts-> ri_tail = 0;					\
-      }								\
-   } STMT_END
+	STMT_START {							\
+		pguts-> ri[ pguts-> ri_head]. line = __LINE__;			\
+		pguts-> ri[ pguts-> ri_head]. file = __FILE__;			\
+		pguts-> ri[ pguts-> ri_head]. request = NextRequest(DISP);	\
+		pguts-> ri_head++;						\
+		if ( pguts-> ri_head >= REQUEST_RING_SIZE)			\
+			pguts-> ri_head = 0;					\
+		if ( pguts-> ri_tail == pguts-> ri_head) {			\
+			pguts-> ri_tail++;					\
+			if ( pguts-> ri_tail >= REQUEST_RING_SIZE)		\
+				pguts-> ri_tail = 0;					\
+		}								\
+	} STMT_END
 
 #define APC_BAD_SIZE INT_MAX
 #define APC_BAD_ORIGIN INT_MAX
@@ -696,115 +696,115 @@ extern UnixGuts* pguts;
 
 typedef struct _drawable_sys_data
 {
-   COMPONENT_SYS_DATA;
-   XDrawable udrawable;
-   XDrawable gdrawable;
-   XWindow parent;
-   Point resolution;
-   Point origin, size, bsize;
-   Point transform, gtransform, btransform;
-   Point ackOrigin, ackSize, ackFrameSize;   
-   int menuHeight; 
-   int menuColorImmunity;
-   Point decorationSize;
-   Handle owner;  /* The real one */
-   XWindow real_parent; /* top levels */
-   XWindow parentHandle; /* top levels */
-   XWindow above;
-   Rect zoomRect;
-   XGCValues gcv;
-   GC gc;
-   GCList *gcl;
-   Brush fore, back;
-   Color saved_fore, saved_back;
-   ColorSet colors;
-   Region invalid_region, paint_region, current_region, cached_region;
-   XRectangle clip_rect;
-   FillPattern fill_pattern, saved_fill_pattern;
-   Pixmap fp_pixmap;
+	COMPONENT_SYS_DATA;
+	XDrawable udrawable;
+	XDrawable gdrawable;
+	XWindow parent;
+	Point resolution;
+	Point origin, size, bsize;
+	Point transform, gtransform, btransform;
+	Point ackOrigin, ackSize, ackFrameSize;   
+	int menuHeight; 
+	int menuColorImmunity;
+	Point decorationSize;
+	Handle owner;  /* The real one */
+	XWindow real_parent; /* top levels */
+	XWindow parentHandle; /* top levels */
+	XWindow above;
+	Rect zoomRect;
+	XGCValues gcv;
+	GC gc;
+	GCList *gcl;
+	Brush fore, back;
+	Color saved_fore, saved_back;
+	ColorSet colors;
+	Region invalid_region, paint_region, current_region, cached_region;
+	XRectangle clip_rect;
+	FillPattern fill_pattern, saved_fill_pattern;
+	Pixmap fp_pixmap;
 #if defined(sgi) && !defined(__GNUC__)
 /* multiple compilation and runtime errors otherwise. must be some alignment tricks */
-   char dummy_b_1[2];
+	char dummy_b_1[2];
 #endif
-   int rop, paint_rop;
-   int rop2, paint_rop2;
-   int line_style, line_width;
-   unsigned char *dashes, *paint_dashes;
-   int ndashes, paint_ndashes;
-   Point clip_mask_extent, shape_extent, shape_offset;
-   PCachedFont font;
-   Font saved_font;
-   Point cursor_pos;
-   Point cursor_size;
-   Point pointer_hot_spot;
-   int pointer_id;
-   Cursor actual_pointer;
-   Cursor user_pointer;
-   Pixmap user_p_source;
-   Pixmap user_p_mask;
-   void * recreateData;
-   XWindow client;
-   struct {
-      unsigned base_line                : 1;
-      unsigned brush_fore               : 1;
-      unsigned brush_back               : 1;
-      unsigned brush_null_hatch         : 1;
-      unsigned clip_owner	        : 1;
-      unsigned configured               : 1;
-      unsigned cursor_visible		: 1;
-      unsigned enabled               	: 1;
-      unsigned exposed			: 1;
-      unsigned falsely_hidden           : 1;
-      unsigned first_click              : 1;
-      unsigned force_flush              : 1;
-      unsigned grab                 	: 1;
-      unsigned has_icon                 : 1;
-      unsigned layered                  : 1;
-      unsigned layered_requested        : 1;
-      unsigned iconic                   : 1;
-      unsigned mapped			: 1;
-      unsigned modal                    : 1;
-      unsigned kill_current_region      : 1;
-      unsigned opaque                	: 1;
-      unsigned paint                    : 1;
-      unsigned paint_base_line          : 1;
-      unsigned paint_opaque             : 1;
-      unsigned paint_pending            : 1;
-      unsigned pointer_obscured         : 1;
-      unsigned position_determined      : 1;
-      unsigned reload_font		: 1;
-      unsigned sizeable                 : 1;
-      unsigned sizemax_set              : 1;
-      unsigned sync_paint               : 1;
-      unsigned task_listed              : 1;
-      unsigned title_utf8               : 1;
-      unsigned transparent              : 1;
-      unsigned transparent_busy         : 1;
-      unsigned want_visible             : 1;
-      unsigned withdrawn                : 1;
-      unsigned zoomed                   : 1;
-      unsigned xft_clip                 : 1;
-   } flags;
-   ImageCache image_cache;
-   Handle preexec_focus;
-   TAILQ_ENTRY(_drawable_sys_data) paintq_link;
-   TAILQ_HEAD(,configure_event_pair)    configure_pairs;
-   Byte * palette;
-   int borderIcons;
-   XVisualInfo * visual;
-   Colormap colormap;
+	int rop, paint_rop;
+	int rop2, paint_rop2;
+	int line_style, line_width;
+	unsigned char *dashes, *paint_dashes;
+	int ndashes, paint_ndashes;
+	Point clip_mask_extent, shape_extent, shape_offset;
+	PCachedFont font;
+	Font saved_font;
+	Point cursor_pos;
+	Point cursor_size;
+	Point pointer_hot_spot;
+	int pointer_id;
+	Cursor actual_pointer;
+	Cursor user_pointer;
+	Pixmap user_p_source;
+	Pixmap user_p_mask;
+	void * recreateData;
+	XWindow client;
+	struct {
+		unsigned base_line                : 1;
+		unsigned brush_fore               : 1;
+		unsigned brush_back               : 1;
+		unsigned brush_null_hatch         : 1;
+		unsigned clip_owner	          : 1;
+		unsigned configured               : 1;
+		unsigned cursor_visible		  : 1;
+		unsigned enabled               	  : 1;
+		unsigned exposed                  : 1;
+		unsigned falsely_hidden           : 1;
+		unsigned first_click              : 1;
+		unsigned force_flush              : 1;
+		unsigned grab                     : 1;
+		unsigned has_icon                 : 1;
+		unsigned layered                  : 1;
+		unsigned layered_requested        : 1;
+		unsigned iconic                   : 1;
+		unsigned mapped                   : 1;
+		unsigned modal                    : 1;
+		unsigned kill_current_region      : 1;
+		unsigned opaque                   : 1;
+		unsigned paint                    : 1;
+		unsigned paint_base_line          : 1;
+		unsigned paint_opaque             : 1;
+		unsigned paint_pending            : 1;
+		unsigned pointer_obscured         : 1;
+		unsigned position_determined      : 1;
+		unsigned reload_font              : 1;
+		unsigned sizeable                 : 1;
+		unsigned sizemax_set              : 1;
+		unsigned sync_paint               : 1;
+		unsigned task_listed              : 1;
+		unsigned title_utf8               : 1;
+		unsigned transparent              : 1;
+		unsigned transparent_busy         : 1;
+		unsigned want_visible             : 1;
+		unsigned withdrawn                : 1;
+		unsigned zoomed                   : 1;
+		unsigned xft_clip                 : 1;
+	} flags;
+	ImageCache image_cache;
+	Handle preexec_focus;
+	TAILQ_ENTRY(_drawable_sys_data) paintq_link;
+	TAILQ_HEAD(,configure_event_pair)    configure_pairs;
+	Byte * palette;
+	int borderIcons;
+	XVisualInfo * visual;
+	Colormap colormap;
 #ifdef USE_XFT
-   XftDraw  * xft_drawable;
-   uint32_t * xft_map8;
-   double     xft_font_cos;
-   double     xft_font_sin;
-   XftDraw  * xft_shadow_drawable;
-   Point      xft_shadow_extentions;
-   Pixmap     xft_shadow_pixmap;
-   GC         xft_shadow_gc;
+	XftDraw  * xft_drawable;
+	uint32_t * xft_map8;
+	double     xft_font_cos;
+	double     xft_font_sin;
+	XftDraw  * xft_shadow_drawable;
+	Point      xft_shadow_extentions;
+	Pixmap     xft_shadow_pixmap;
+	GC         xft_shadow_gc;
 #endif
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-   Picture    argb_picture;
+	Picture    argb_picture;
 #endif
 } DrawableSysData, *PDrawableSysData;
 
@@ -819,45 +819,45 @@ typedef struct _drawable_sys_data
 
 typedef struct _menu_item
 {
-   int          x;
-   int          y;
-   int          width;
-   int          height;
-   int          accel_width;
-   Pixmap       pixmap;
+	int          x;
+	int          y;
+	int          width;
+	int          height;
+	int          accel_width;
+	Pixmap       pixmap;
 } UnixMenuItem, *PUnixMenuItem;
 
 typedef struct _menu_window
 {
-   Handle               self;
-   XWindow              w;
-   Point                sz;
-   Point                pos;
-   PMenuItemReg         m;
-   int                  num;
-   PUnixMenuItem        um;
-   struct _menu_window *next;
-   struct _menu_window *prev;
-   int                  selected;
-   int                  right;
-   int                  last;
-   int                  first;
+	Handle               self;
+	XWindow              w;
+	Point                sz;
+	Point                pos;
+	PMenuItemReg         m;
+	int                  num;
+	PUnixMenuItem        um;
+	struct _menu_window *next;
+	struct _menu_window *prev;
+	int                  selected;
+	int                  right;
+	int                  last;
+	int                  first;
 } MenuWindow, *PMenuWindow;
 
 typedef struct _menu_sys_data
 {
-   COMPONENT_SYS_DATA;
-   Bool                 paint_pending;
-   PMenuWindow          w;
-   MenuWindow           wstatic;
-   PCachedFont          font;
-   int                  guillemots;
-   Bool                 layered;
-   unsigned long        c[ciMaxId+1];
-   unsigned long        argb_c[ciMaxId+1];
-   Color                rgb[ciMaxId+1];
-   XWindow              focus;
-   PMenuWindow          focused;
+	COMPONENT_SYS_DATA;
+	Bool                 paint_pending;
+	PMenuWindow          w;
+	MenuWindow           wstatic;
+	PCachedFont          font;
+	int                  guillemots;
+	Bool                 layered;
+	unsigned long        c[ciMaxId+1];
+	unsigned long        argb_c[ciMaxId+1];
+	Color                rgb[ciMaxId+1];
+	XWindow              focus;
+	PMenuWindow          focused;
 } MenuSysData, *PMenuSysData;
 
 #define cfTargets    (cfCustom  + 0)
@@ -870,58 +870,58 @@ typedef struct _menu_sys_data
 */
 
 typedef struct {
-   IV size;
-   unsigned char * data;
-   Atom name;
+	IV size;
+	unsigned char * data;
+	Atom name;
 } ClipboardDataItem, *PClipboardDataItem;
 
 typedef struct _clipboard_sys_data
 {
-   COMPONENT_SYS_DATA;
-   Atom                 selection;
-   Atom                 target;
-   Bool                 opened;
-   Bool                 inside_event;
-   Bool                 need_write;
-   Handle               selection_owner;
-   PClipboardDataItem   external;
-   PClipboardDataItem   internal;
-   PList                xfers;
+	COMPONENT_SYS_DATA;
+	Atom                 selection;
+	Atom                 target;
+	Bool                 opened;
+	Bool                 inside_event;
+	Bool                 need_write;
+	Handle               selection_owner;
+	PClipboardDataItem   external;
+	PClipboardDataItem   internal;
+	PList                xfers;
 } ClipboardSysData, *PClipboardSysData;
 
 typedef struct 
 {
-   Handle               self;
-   unsigned char      * data;  
-   unsigned long        size;
-   unsigned int         blocks;
-   unsigned int         offset;
-   Bool                 data_detached;
-   Bool                 data_master;
-   long                 id;
-   XWindow              requestor;
-   Atom                 property;
-   Atom                 target;
-   int                  format;
-   struct timeval       time;
-   unsigned long        delay;
+	Handle               self;
+	unsigned char      * data;  
+	unsigned long        size;
+	unsigned int         blocks;
+	unsigned int         offset;
+	Bool                 data_detached;
+	Bool                 data_master;
+	long                 id;
+	XWindow              requestor;
+	Atom                 property;
+	Atom                 target;
+	int                  format;
+	struct timeval       time;
+	unsigned long        delay;
 } ClipboardXfer;
 
 typedef unsigned char ClipboardXferKey[sizeof(XWindow)+sizeof(Atom)];
 
 #define CLIPBOARD_XFER_KEY(key,window,property) \
-   memcpy(key,&window,sizeof(XWindow));\
-   memcpy(((unsigned char*)key) + sizeof(XWindow),&property,sizeof(Atom))
+	memcpy(key,&window,sizeof(XWindow));\
+	memcpy(((unsigned char*)key) + sizeof(XWindow),&property,sizeof(Atom))
 
 typedef union _unix_sys_data
 {
-   ClipboardSysData             clipboard;
-   struct {
-      COMPONENT_SYS_DATA;
-   }                            component;
-   DrawableSysData              drawable;
-   MenuSysData                  menu;
-   TimerSysData                 timer;
+	ClipboardSysData             clipboard;
+	struct {
+		COMPONENT_SYS_DATA;
+	}                            component;
+	DrawableSysData              drawable;
+	MenuSysData                  menu;
+	TimerSysData                 timer;
 } UnixSysData, *PUnixSysData;
 
 #define DISP		(pguts-> display)
@@ -970,7 +970,7 @@ prima_init_clipboard_subsystem( char * error_buf);
 
 extern Bool
 prima_init_font_subsystem( char * error_buf);
-   
+	
 extern Bool
 prima_font_subsystem_set_option( char *, char *);
 
@@ -1031,8 +1031,8 @@ prima_create_image_cache( PImage img, Handle drawable, int type);
 
 extern Bool
 prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i,
-                  int src_x, int src_y, int dst_x, int dst_y,
-                  int width, int height);
+		int src_x, int src_y, int dst_x, int dst_y,
+		int width, int height);
 
 extern Bool
 prima_query_image( Handle self, XImage * image);
@@ -1071,8 +1071,8 @@ extern void
 prima_update_cursor( Handle self);
 
 extern Bool
-prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, double direction, PRotatedFont *result, 
-   Bool * ok_to_not_rotate);
+prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, 
+	double direction, PRotatedFont *result, Bool * ok_to_not_rotate);
 
 extern void
 prima_free_rotated_entry( PCachedFont f);
@@ -1138,7 +1138,7 @@ prima_end_menu(void);
 
 extern int
 prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym); 
-   
+	
 extern void
 prima_wm_sync( Handle self, int eventType);
 
@@ -1147,7 +1147,7 @@ prima_wm_net_state_read_maximization( XWindow window, Atom property);
 
 extern unsigned char * 
 prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * actual_type,
-                           int * actual_format, unsigned long * nitems);
+			int * actual_format, unsigned long * nitems);
 
 extern PFontABC
 prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar);
@@ -1192,27 +1192,27 @@ extern Color**
 prima_standard_colors(void);
 
 struct MsgDlg {
-   struct MsgDlg * next;
-   Font  * font;
-   Point   btnPos;
-   Point   btnSz;
-   Bool    wide;
-   char ** wrapped;
-   int     wrappedCount;
-   int    *widths, *lengths;
-   int     OKwidth;
-   Point   textPos;
-   Bool    active;
-   Bool    pressed;
-   Bool    grab;
-   int     fontId;
-   Point   winSz;
-   GC      gc;
-   unsigned long fg, l3d, d3d;
-   Brush   bg;
-   XWindow w;
-   int     focus_revertTo;
-   XWindow focus;
+	struct MsgDlg * next;
+	Font  * font;
+	Point   btnPos;
+	Point   btnSz;
+	Bool    wide;
+	char ** wrapped;
+	int     wrappedCount;
+	int    *widths, *lengths;
+	int     OKwidth;
+	Point   textPos;
+	Bool    active;
+	Bool    pressed;
+	Bool    grab;
+	int     fontId;
+	Point   winSz;
+	GC      gc;
+	unsigned long fg, l3d, d3d;
+	Brush   bg;
+	XWindow w;
+	int     focus_revertTo;
+	XWindow focus;
 };
 
 extern void
@@ -1248,14 +1248,14 @@ prima_xft_set_font( Handle self, PFont font);
 
 extern PFont
 prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *retCount);
-      
+		
 extern void
 prima_xft_font_encodings( PHash hash);
 
 extern int
 prima_xft_get_text_width( PCachedFont self, const char * text, int len, 
-                          Bool addOverhang, Bool utf8, uint32_t * map8, 
-                          Point * overhangs);
+			Bool addOverhang, Bool utf8, uint32_t * map8, 
+			Point * overhangs);
 
 extern Point *
 prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8);
@@ -1274,7 +1274,7 @@ prima_xft_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode);
 
 extern PCachedFont
 prima_xft_get_cache( PFont font);
-         
+			
 extern uint32_t *
 prima_xft_map8( const char * encoding);
 
@@ -1301,15 +1301,15 @@ prima_gtk_openfile( char * params);
 #endif
 
 typedef struct _ViewProfile {
-  Point        pos;
-  Point        size;
-  Bool         visible;
-  Bool         focused;
-  Handle       capture;
-  char *       title;
-  int          shape_count;
-  int          shape_ordering;
-  XRectangle * shape_rects;
+Point        pos;
+Point        size;
+Bool         visible;
+Bool         focused;
+Handle       capture;
+char *       title;
+int          shape_count;
+int          shape_ordering;
+XRectangle * shape_rects;
 } ViewProfile, *PViewProfile;
 
 extern void

@@ -10,13 +10,13 @@ extern "C" {
 #endif
 
 typedef struct _ImgIORequest {
-  ssize_t (*read)      ( void * handle, size_t busize, void * buffer);
-  ssize_t (*write)     ( void * handle, size_t busize, void * buffer);
-  int    (*seek)       ( void * handle, long offset, int whence);
-  long   (*tell)       ( void * handle);
-  int    (*flush)      ( void * handle);
-  int    (*error)      ( void * handle);
-  void   * handle;
+	ssize_t (*read)      ( void * handle, size_t busize, void * buffer);
+	ssize_t (*write)     ( void * handle, size_t busize, void * buffer);
+	int    (*seek)       ( void * handle, long offset, int whence);
+	long   (*tell)       ( void * handle);
+	int    (*flush)      ( void * handle);
+	int    (*error)      ( void * handle);
+	void   * handle;
 } ImgIORequest, *PImgIORequest;
 
 #define req_read(req,size,buf)       ((req)->read(((req)->handle),(size),(buf)))
@@ -32,69 +32,69 @@ typedef struct _ImgIORequest {
 #define IMG_EVENTS_DATA_READY   2
 
 typedef struct _ImgLoadFileInstance {
-  /* instance data, filled by core */
-  char          * fileName;
-  PImgIORequest   req; 
-  Bool            req_is_stdio;
-  int             eventMask;      /* IMG_EVENTS_XXX / if set, Image:: events are issued */
-
-  /* instance data, filled by open_load */
-  int             frameCount;     /* total frames in the file; can return -1 if unknown */
-  HV            * fileProperties; /* specific file data */
-  void          * instance;       /* user instance */
-  Bool            wasTruncated;   /* if codec can recover from EOF */
-
-  /* user-specified data - applied to whole file */
-  Bool            loadExtras; 
-  Bool            loadAll;
-  Bool            noImageData;
-  Bool            iconUnmask;
-  Bool            noIncomplete;
-  HV            * extras;         /* profile applied to all frames */
-
-  /* user-specified data - applied to every frame */
-  HV            * profile;         /* frame-specific profile, in */
-  HV            * frameProperties; /* frame-specific properties, out */
-  
-  int             frame;          /* request frame index */
-  Bool            jointFrame;     /* true, if last frame was a previous one */
-  Handle          object;         /* to be used by load */
-
-  /* internal variables */
-  int             frameMapSize;   
-  int           * frameMap;
-  Bool            stop;
-  char          * errbuf;         /* $! value */
-  
-  /* scanline event progress */
-  unsigned int    eventDelay;     /* in milliseconds */
-  struct timeval  lastEventTime;
-  int             lastEventScanline;
-  int             lastCachedScanline;
+	/* instance data, filled by core */
+	char          * fileName;
+	PImgIORequest   req; 
+	Bool            req_is_stdio;
+	int             eventMask;      /* IMG_EVENTS_XXX / if set, Image:: events are issued */
+	
+	/* instance data, filled by open_load */
+	int             frameCount;     /* total frames in the file; can return -1 if unknown */
+	HV            * fileProperties; /* specific file data */
+	void          * instance;       /* user instance */
+	Bool            wasTruncated;   /* if codec can recover from EOF */
+	
+	/* user-specified data - applied to whole file */
+	Bool            loadExtras; 
+	Bool            loadAll;
+	Bool            noImageData;
+	Bool            iconUnmask;
+	Bool            noIncomplete;
+	HV            * extras;         /* profile applied to all frames */
+	
+	/* user-specified data - applied to every frame */
+	HV            * profile;         /* frame-specific profile, in */
+	HV            * frameProperties; /* frame-specific properties, out */
+	
+	int             frame;          /* request frame index */
+	Bool            jointFrame;     /* true, if last frame was a previous one */
+	Handle          object;         /* to be used by load */
+	
+	/* internal variables */
+	int             frameMapSize;   
+	int           * frameMap;
+	Bool            stop;
+	char          * errbuf;         /* $! value */
+	
+	/* scanline event progress */
+	unsigned int    eventDelay;     /* in milliseconds */
+	struct timeval  lastEventTime;
+	int             lastEventScanline;
+	int             lastCachedScanline;
 } ImgLoadFileInstance, *PImgLoadFileInstance;
-
+	
 /* common data, request for a whole file save */
-
+	
 typedef struct _ImgSaveFileInstance {
-  /* instance data, filled by core */
-  char          * fileName;
-  PImgIORequest   req; 
-  Bool            req_is_stdio;
-  Bool            append;         /* true if append, false if rewrite */
-
-  /* instance data, filled by open_save */
-  void          * instance;       /* result of open, user data for save session */
-  HV            * extras;         /* profile applied to whole save session */
-
-  /* user-specified data - applied to every frame */
-  int             frame;
-  Handle          object;         /* to be used by save */
-  HV            * objectExtras;   /* extras supplied to image object */
-  
-  /* internal variables */
-  int             frameMapSize;   
-  Handle        * frameMap;
-  char          * errbuf;         /* $! value */
+	/* instance data, filled by core */
+	char          * fileName;
+	PImgIORequest   req; 
+	Bool            req_is_stdio;
+	Bool            append;         /* true if append, false if rewrite */
+	
+	/* instance data, filled by open_save */
+	void          * instance;       /* result of open, user data for save session */
+	HV            * extras;         /* profile applied to whole save session */
+	
+	/* user-specified data - applied to every frame */
+	int             frame;
+	Handle          object;         /* to be used by save */
+	HV            * objectExtras;   /* extras supplied to image object */
+	
+	/* internal variables */
+	int             frameMapSize;   
+	Handle        * frameMap;
+	char          * errbuf;         /* $! value */
 } ImgSaveFileInstance, *PImgSaveFileInstance;
 
 #define IMG_LOAD_FROM_FILE           0x0000001
@@ -107,19 +107,19 @@ typedef struct _ImgSaveFileInstance {
 
 /* codec info */
 typedef struct _ImgCodecInfo {
-   char  * name;              /* DUFF codec */
-   char  * vendor;            /* Duff & Co. */ 
-   int     versionMaj;        /* 1 */
-   int     versionMin;        /* 0 */
-   char ** fileExtensions;    /* duf, duff */
-   char  * fileType;          /* Dumb File Format  */
-   char  * fileShortType;     /* DUFF */
-   char ** featuresSupported; /* duff-version 1, duff-rgb, duff-cmyk */
-   char  * primaModule;       /* Prima::ImgPlugins::duff.pm */
-   char  * primaPackage;      /* Prima::ImgPlugins::duff */
-   unsigned int IOFlags;      /* IMG_XXX */
-   int   * saveTypes;         /* imMono, imBW ... 0 */
-   char ** loadOutput;        /* hash keys reported by load  */
+	char  * name;              /* DUFF codec */
+	char  * vendor;            /* Duff & Co. */ 
+	int     versionMaj;        /* 1 */
+	int     versionMin;        /* 0 */
+	char ** fileExtensions;    /* duf, duff */
+	char  * fileType;          /* Dumb File Format  */
+	char  * fileShortType;     /* DUFF */
+	char ** featuresSupported; /* duff-version 1, duff-rgb, duff-cmyk */
+	char  * primaModule;       /* Prima::ImgPlugins::duff.pm */
+	char  * primaPackage;      /* Prima::ImgPlugins::duff */
+	unsigned int IOFlags;      /* IMG_XXX */
+	int   * saveTypes;         /* imMono, imBW ... 0 */
+	char ** loadOutput;        /* hash keys reported by load  */
 } ImgCodecInfo, *PImgCodecInfo;
 
 struct ImgCodec;
@@ -129,26 +129,26 @@ typedef struct ImgCodecVMT *PImgCodecVMT;
 typedef struct ImgCodec    *PImgCodec;
 
 struct ImgCodec {
-   struct ImgCodecVMT * vmt;
-   PImgCodecInfo info;
-   void         *instance;
-   void         *initParam;
+	struct ImgCodecVMT * vmt;
+	PImgCodecInfo info;
+	void         *instance;
+	void         *initParam;
 };
 
 struct ImgCodecVMT {
-  int       size;
-  void * (* init)            ( PImgCodecInfo * info, void * param);
-  void   (* done)            ( PImgCodec instance);
-  HV *   (* load_defaults)   ( PImgCodec instance);
-  void   (* load_check_in)   ( PImgCodec instance, HV * system, HV * user);
-  void * (* open_load)       ( PImgCodec instance, PImgLoadFileInstance fi);
-  Bool   (* load)            ( PImgCodec instance, PImgLoadFileInstance fi);
-  void   (* close_load)      ( PImgCodec instance, PImgLoadFileInstance fi);
-  HV *   (* save_defaults)   ( PImgCodec instance);
-  void   (* save_check_in)   ( PImgCodec instance, HV * system, HV * user);
-  void * (* open_save)       ( PImgCodec instance, PImgSaveFileInstance fi);
-  Bool   (* save)            ( PImgCodec instance, PImgSaveFileInstance fi);
-  void   (* close_save)      ( PImgCodec instance, PImgSaveFileInstance fi);
+	int       size;
+	void * (* init)            ( PImgCodecInfo * info, void * param);
+	void   (* done)            ( PImgCodec instance);
+	HV *   (* load_defaults)   ( PImgCodec instance);
+	void   (* load_check_in)   ( PImgCodec instance, HV * system, HV * user);
+	void * (* open_load)       ( PImgCodec instance, PImgLoadFileInstance fi);
+	Bool   (* load)            ( PImgCodec instance, PImgLoadFileInstance fi);
+	void   (* close_load)      ( PImgCodec instance, PImgLoadFileInstance fi);
+	HV *   (* save_defaults)   ( PImgCodec instance);
+	void   (* save_check_in)   ( PImgCodec instance, HV * system, HV * user);
+	void * (* open_save)       ( PImgCodec instance, PImgSaveFileInstance fi);
+	Bool   (* save)            ( PImgCodec instance, PImgSaveFileInstance fi);
+	void   (* close_save)      ( PImgCodec instance, PImgSaveFileInstance fi);
 };
 
 extern List               imgCodecs;
@@ -179,21 +179,21 @@ extern void  apc_img_notify_header_ready( PImgLoadFileInstance fi);
 extern void  apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines, int direction);
 
 #define EVENT_HEADER_READY(fi) \
-  if ( fi-> eventMask & IMG_EVENTS_HEADER_READY) \
-    apc_img_notify_header_ready((fi))
+if ( fi-> eventMask & IMG_EVENTS_HEADER_READY) \
+	apc_img_notify_header_ready((fi))
 
 #define EVENT_SCANLINES_RESET(fi) \
-  (fi)-> lastEventScanline = (fi)-> lastCachedScanline = 0; \
-  gettimeofday( &(fi)-> lastEventTime, nil)
+(fi)-> lastEventScanline = (fi)-> lastCachedScanline = 0; \
+gettimeofday( &(fi)-> lastEventTime, nil)
 
 #define EVENT_SCANLINES_READY(fi,scanlines,dir) \
-  if ( (fi)-> eventMask & IMG_EVENTS_DATA_READY) \
-    apc_img_notify_scanlines_ready((fi),scanlines,dir)
+if ( (fi)-> eventMask & IMG_EVENTS_DATA_READY) \
+	apc_img_notify_scanlines_ready((fi),scanlines,dir)
 #define EVENT_SCANLINES_FINISHED(fi,dir) \
-  if ( (fi)-> eventMask & IMG_EVENTS_DATA_READY) {\
-    fi-> lastEventTime.tv_sec = fi-> lastEventTime.tv_usec = 0;\
-    apc_img_notify_scanlines_ready((fi),0,dir); \
-  }
+if ( (fi)-> eventMask & IMG_EVENTS_DATA_READY) {\
+	fi-> lastEventTime.tv_sec = fi-> lastEventTime.tv_usec = 0;\
+	apc_img_notify_scanlines_ready((fi),0,dir); \
+}
 #define EVENT_TOPDOWN_SCANLINES_READY(fi,scanlines) EVENT_SCANLINES_READY(fi,scanlines,SCANLINES_DIR_TOP_TO_BOTTOM)
 #define EVENT_TOPDOWN_SCANLINES_FINISHED(fi) EVENT_SCANLINES_FINISHED(fi,SCANLINES_DIR_TOP_TO_BOTTOM)
 

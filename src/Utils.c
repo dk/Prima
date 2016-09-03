@@ -9,69 +9,69 @@ extern "C" {
 
 SV *Utils_query_drives_map( char *firstDrive)
 {
-   char map[ 256];
-   apc_query_drives_map( firstDrive, map, sizeof( map));
-   return newSVpv( map, 0);
+	char map[ 256];
+	apc_query_drives_map( firstDrive, map, sizeof( map));
+	return newSVpv( map, 0);
 }
 
 int
 Utils_get_os()
 {
-   return apc_application_get_os_info( nil, 0, nil, 0, nil, 0, nil, 0);
+	return apc_application_get_os_info( nil, 0, nil, 0, nil, 0, nil, 0);
 }
 
 int
 Utils_get_gui()
 {
-   return apc_application_get_gui_info( nil, 0);
+	return apc_application_get_gui_info( nil, 0);
 }
 
 long Utils_ceil( double x)
 {
-    return ceil( x);
+	return ceil( x);
 }
 
 long Utils_floor( double x)
 {
-    return floor( x);
+	return floor( x);
 }
 
 XS(Utils_getdir_FROMPERL) {
-   dXSARGS;
-   Bool wantarray = ( GIMME_V == G_ARRAY);
-   char *dirname;
-   PList dirlist;
-   int i;
+	dXSARGS;
+	Bool wantarray = ( GIMME_V == G_ARRAY);
+	char *dirname;
+	PList dirlist;
+	int i;
 
-   if ( items >= 2) {
-      croak( "invalid usage of Prima::Utils::getdir");
-   }
-   dirname = SvPV_nolen( ST( 0));
-   dirlist = apc_getdir( dirname);
-   SPAGAIN;
-   SP -= items;
-   if ( wantarray) {
-      if ( dirlist) {
-         EXTEND( sp, dirlist-> count);
-         for ( i = 0; i < dirlist-> count; i++) {
-            PUSHs( sv_2mortal(newSVpv(( char *)dirlist-> items[i], 0)));
-            free(( char *)dirlist-> items[i]);
-         }
-         plist_destroy( dirlist);
-      }
-   } else {
-      if ( dirlist) {
-         XPUSHs( sv_2mortal( newSViv( dirlist-> count / 2)));
-         for ( i = 0; i < dirlist-> count; i++) {
-            free(( char *)dirlist-> items[i]);
-         }
-         plist_destroy( dirlist);
-      } else {
-         XPUSHs( &PL_sv_undef);
-      }
-   }
-   PUTBACK;
-   return;
+	if ( items >= 2) {
+		croak( "invalid usage of Prima::Utils::getdir");
+	}
+	dirname = SvPV_nolen( ST( 0));
+	dirlist = apc_getdir( dirname);
+	SPAGAIN;
+	SP -= items;
+	if ( wantarray) {
+		if ( dirlist) {
+			EXTEND( sp, dirlist-> count);
+			for ( i = 0; i < dirlist-> count; i++) {
+				PUSHs( sv_2mortal(newSVpv(( char *)dirlist-> items[i], 0)));
+				free(( char *)dirlist-> items[i]);
+			}
+			plist_destroy( dirlist);
+		}
+	} else {
+		if ( dirlist) {
+			XPUSHs( sv_2mortal( newSViv( dirlist-> count / 2)));
+			for ( i = 0; i < dirlist-> count; i++) {
+				free(( char *)dirlist-> items[i]);
+			}
+			plist_destroy( dirlist);
+		} else {
+			XPUSHs( &PL_sv_undef);
+		}
+	}
+	PUTBACK;
+	return;
 }
 
 #ifdef __cplusplus

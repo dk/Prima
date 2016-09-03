@@ -14,11 +14,11 @@ extern "C" {
 
 #define dG_EVAL_ARGS SV * errSave = nil
 #define OPEN_G_EVAL \
-  errSave = SvTRUE( GvSV( PL_errgv)) ? newSVsv( GvSV( PL_errgv)) : nil;\
-  sv_setsv( GvSV( PL_errgv), nilSV)
+errSave = SvTRUE( GvSV( PL_errgv)) ? newSVsv( GvSV( PL_errgv)) : nil;\
+sv_setsv( GvSV( PL_errgv), nilSV)
 #define CLOSE_G_EVAL \
- if ( errSave) sv_catsv( GvSV( PL_errgv), errSave);\
- if ( errSave) sv_free( errSave)
+if ( errSave) sv_catsv( GvSV( PL_errgv), errSave);\
+if ( errSave) sv_free( errSave)
 
 extern long   apcError;
 extern List   postDestroys;

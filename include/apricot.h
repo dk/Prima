@@ -9,23 +9,23 @@
 #define PRIMA_CORE_VERSION 2016063001
 
 #define PRIMA_VERSION_BOOTCHECK \
-    if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
-        croak("Prima object version(%ld) doesn't match module version(%ld). Recompile the module", (long int)apc_get_core_version(), (long int)PRIMA_CORE_VERSION )
+	if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
+		croak("Prima object version(%ld) doesn't match module version(%ld). Recompile the module", (long int)apc_get_core_version(), (long int)PRIMA_CORE_VERSION )
 
 #include "generic/config.h"
 
 #ifdef _MSC_VER
-   #define BROKEN_COMPILER       1
-   #define BROKEN_PERL_PLATFORM  1
-   #define snprintf              _snprintf
-   #define vsnprintf             _vsnprintf
-   #define stricmp               _stricmp
-   #define strnicmp              _strnicmp
-   #define HAVE_SNPRINTF         1
-   #define HAVE_STRICMP          1
-   #define HAVE_STRNICMP         1
+	#define BROKEN_COMPILER       1
+	#define BROKEN_PERL_PLATFORM  1
+	#define snprintf              _snprintf
+	#define vsnprintf             _vsnprintf
+	#define stricmp               _stricmp
+	#define strnicmp              _strnicmp
+	#define HAVE_SNPRINTF         1
+	#define HAVE_STRICMP          1
+	#define HAVE_STRNICMP         1
 #elif defined(WIN32)
-   #define BROKEN_PERL_PLATFORM  1
+	#define BROKEN_PERL_PLATFORM  1
 #endif
 
 #ifdef WORD
@@ -54,23 +54,23 @@
 #include <XSUB.h>
 
 #ifdef PERL_OBJECT
-   #define XS_STARTPARAMS   CV* cv, CPerlObj* pPerl
-   #define XS_CALLPARAMS    cv, pPerl
+	#define XS_STARTPARAMS   CV* cv, CPerlObj* pPerl
+	#define XS_CALLPARAMS    cv, pPerl
 #else
-   #define XS_STARTPARAMS   CV* cv
-   #define XS_CALLPARAMS    cv
+	#define XS_STARTPARAMS   CV* cv
+	#define XS_CALLPARAMS    cv
 #endif
 
 #if defined(_MSC_VER) && defined(PERL_OBJECT)
 class XSLockManager
 {
 public:
-        XSLockManager() { InitializeCriticalSection(&cs); };
-        ~XSLockManager() { DeleteCriticalSection(&cs); };
-        void Enter(void) { EnterCriticalSection(&cs); };
-        void Leave(void) { LeaveCriticalSection(&cs); };
+		XSLockManager() { InitializeCriticalSection(&cs); };
+		~XSLockManager() { DeleteCriticalSection(&cs); };
+		void Enter(void) { EnterCriticalSection(&cs); };
+		void Leave(void) { LeaveCriticalSection(&cs); };
 protected:
-        CRITICAL_SECTION cs;
+		CRITICAL_SECTION cs;
 };
 
 extern XSLockManager g_XSLock;
@@ -79,21 +79,21 @@ extern CPerlObj* pPerl;
 class XSLock
 {
 public:
-        XSLock(CPerlObj *p) {
-            g_XSLock.Enter();
-            ::pPerl = p;
-        };
-        ~XSLock() { g_XSLock.Leave(); };
+		XSLock(CPerlObj *p) {
+				g_XSLock.Enter();
+				::pPerl = p;
+		};
+		~XSLock() { g_XSLock.Leave(); };
 };
 
 /* PERL_CAPI does its own locking in xs_handler() */
 #if defined(PERL_OBJECT) && !defined(PERL_CAPI)
 #undef dXSARGS
 #define dXSARGS \
-        XSLock localLock(pPerl);                        \
-        dSP; dMARK;                                     \
-        I32 ax = mark - PL_stack_base + 1;              \
-        I32 items = sp - mark
+		XSLock localLock(pPerl);                        \
+		dSP; dMARK;                                     \
+		I32 ax = mark - PL_stack_base + 1;              \
+		I32 items = sp - mark
 #endif  /* PERL_OBJECT && !PERL_CAPI */
 #endif
 
@@ -102,10 +102,10 @@ extern "C" {
 #endif
 
 #if defined (package)
-   #undef mod
-   #undef list
-   #undef package
-   #undef ref
+	#undef mod
+	#undef list
+	#undef package
+	#undef ref
 #endif
 
 #if defined(WORD) && (WORD==257)
@@ -114,91 +114,91 @@ extern "C" {
 #include <stdlib.h>
 
 #ifdef BROKEN_PERL_PLATFORM
-   #undef open
-   #undef fopen
-   #undef vfprintf
-   #undef fclose
-   #undef feof
-   #undef ferror
-   #undef environ
-   #undef strerror
-   #undef fread
-   #undef fwrite
-   #undef fopen
-   #undef fdopen
-   #undef freopen
-   #undef fclose
-   #undef fputc
-   #undef ungetc
-   #undef getc
-   #undef fileno
-   #undef clearerr
-   #undef fflush
-   #undef ftell
-   #undef fseek
-   #undef fgetpos
-   #undef fsetpos
-   #undef rewind
-   #undef tmpfile
-   #undef abort
-   #undef fstat
-   #undef stat
-   #undef rename
-   #undef setmode
-   #undef lseek
-   #undef tell
-   #undef dup
-   #undef dup2
-   #undef open
-   #undef close
-   #undef eof
-   #undef read
-   #undef write
-   #undef _open_osfhandle
-   #undef _get_osfhandle
-   #undef spawnvp
-   #undef mkdir
-   #undef rmdir
-   #undef chdir
-   #undef flock
-   #undef execv
-   #undef execvp
-   #undef perror
-   #undef setbuf
-   #undef setvbuf
-   #undef flushall
-   #undef fcloseall
-   #undef fgets
-   #undef gets
-   #undef fgetc
-   #undef putc
-   #undef puts
-   #undef getchar
-   #undef putchar
-   #undef close
-   #undef dup
-   #ifdef win32_close
-      #define close  win32_close
-      #define dup    win32_dup
-   #endif
-   #ifdef PerlIO_stderr    /* ActiveState quirks */
-      #if (PERL_VERSION == 8) /* broken stderr definition */
-         #undef stderr
-         #define stderr PerlIO_stderr()
-      #endif
-      #if (PERL_VERSION >= 6) /* broken fprintf definition */
-         #define fprintf PerlIO_printf
-      #else
-      #endif
-   #elif (PERL_VERSION == 7)
-      #define fprintf PerlIO_printf
-   #else
-      #undef fprintf
-      #ifdef win32_stderr
-         #undef stderr
-         #define stderr win32_stderr()
-      #endif
-   #endif
+	#undef open
+	#undef fopen
+	#undef vfprintf
+	#undef fclose
+	#undef feof
+	#undef ferror
+	#undef environ
+	#undef strerror
+	#undef fread
+	#undef fwrite
+	#undef fopen
+	#undef fdopen
+	#undef freopen
+	#undef fclose
+	#undef fputc
+	#undef ungetc
+	#undef getc
+	#undef fileno
+	#undef clearerr
+	#undef fflush
+	#undef ftell
+	#undef fseek
+	#undef fgetpos
+	#undef fsetpos
+	#undef rewind
+	#undef tmpfile
+	#undef abort
+	#undef fstat
+	#undef stat
+	#undef rename
+	#undef setmode
+	#undef lseek
+	#undef tell
+	#undef dup
+	#undef dup2
+	#undef open
+	#undef close
+	#undef eof
+	#undef read
+	#undef write
+	#undef _open_osfhandle
+	#undef _get_osfhandle
+	#undef spawnvp
+	#undef mkdir
+	#undef rmdir
+	#undef chdir
+	#undef flock
+	#undef execv
+	#undef execvp
+	#undef perror
+	#undef setbuf
+	#undef setvbuf
+	#undef flushall
+	#undef fcloseall
+	#undef fgets
+	#undef gets
+	#undef fgetc
+	#undef putc
+	#undef puts
+	#undef getchar
+	#undef putchar
+	#undef close
+	#undef dup
+	#ifdef win32_close
+		#define close  win32_close
+		#define dup    win32_dup
+	#endif
+	#ifdef PerlIO_stderr    /* ActiveState quirks */
+		#if (PERL_VERSION == 8) /* broken stderr definition */
+			#undef stderr
+			#define stderr PerlIO_stderr()
+		#endif
+		#if (PERL_VERSION >= 6) /* broken fprintf definition */
+			#define fprintf PerlIO_printf
+		#else
+		#endif
+	#elif (PERL_VERSION == 7)
+		#define fprintf PerlIO_printf
+	#else
+		#undef fprintf
+		#ifdef win32_stderr
+			#undef stderr
+			#define stderr win32_stderr()
+		#endif
+	#endif
 #endif
 
 #ifdef PTRV
@@ -364,9 +364,9 @@ typedef int32_t         Long;
 
 typedef struct _RGBColor
 {
-   unsigned char b;
-   unsigned char g;
-   unsigned char r;
+	unsigned char b;
+	unsigned char g;
+	unsigned char r;
 } RGBColor, *PRGBColor;
 
 typedef struct { float  re, im; } Complex;
@@ -376,10 +376,10 @@ typedef struct { double r,  ph; } TrigDComplex;
 
 typedef struct _Rect2
 {
-    int x;
-    int y;
-    int width;
-    int height;
+	int x;
+	int y;
+	int width;
+	int height;
 } Rect2, *PRect2;
 
 #ifdef __cplusplus
@@ -405,13 +405,13 @@ typedef struct _Rect2
 #endif
 
 typedef struct _KeyEvent {
-   int    cmd;
-   int    subcmd;
-   Handle source;
-   int    code;
-   int    key;
-   int    mod;
-   int    repeat;
+	int    cmd;
+	int    subcmd;
+	Handle source;
+	int    code;
+	int    key;
+	int    mod;
+	int    repeat;
 } KeyEvent, *PKeyEvent;
 
 #ifdef PositionalEvent
@@ -419,13 +419,13 @@ typedef struct _KeyEvent {
 #endif
 
 typedef struct _PositionalEvent {
-   int    cmd;
-   int    subcmd;
-   Handle source;
-   Point  where;
-   int    button;
-   int    mod;
-   Bool   dblclk;
+	int    cmd;
+	int    subcmd;
+	Handle source;
+	Point  where;
+	int    button;
+	int    mod;
+	Bool   dblclk;
 } PositionalEvent, *PPositionalEvent;
 
 #ifdef GenericEvent
@@ -433,30 +433,30 @@ typedef struct _PositionalEvent {
 #endif
 
 typedef struct _GenericEvent {
-   int    cmd;
-   int    subcmd;
-   Handle source;
-   int    i;
-   long   l;
-   Bool   B;
-   Point  P;
-   Rect   R;
-   void*  p;
-   Handle H;
+	int    cmd;
+	int    subcmd;
+	Handle source;
+	int    i;
+	long   l;
+	Bool   B;
+	Point  P;
+	Rect   R;
+	void*  p;
+	Handle H;
 } GenericEvent, *PGenericEvent;
 
 typedef union _Event {
-  int             cmd;
-  GenericEvent    gen;
-  PositionalEvent pos;
-  KeyEvent        key;
+int             cmd;
+GenericEvent    gen;
+PositionalEvent pos;
+KeyEvent        key;
 } Event, *PEvent;
 
 typedef struct _PostMsg {
-   int     msgId;
-   Handle  h;
-   SV   *  info1;
-   SV   *  info2;
+	int     msgId;
+	Handle  h;
+	SV   *  info1;
+	SV   *  info2;
 } PostMsg, *PPostMsg;
 
 /* hashes support */
@@ -498,7 +498,7 @@ prima_hash_store( PHash self, const void *key, int keyLen, void *val);
 
 extern void*
 prima_hash_first_that( PHash self, void *action, void *params,
-                       int *pKeyLen, void **pKey);
+							int *pKeyLen, void **pKey);
 
 extern char *
 prima_normalize_resource_string( char *name, Bool isClass);
@@ -511,73 +511,73 @@ prima_normalize_resource_string( char *name, Bool isClass);
 static SV*
 newSVstring( char *s)
 {
-   return newSVpv( s, 0);
+	return newSVpv( s, 0);
 }
 #endif
 #define START_TABLE(package,type) \
 typedef struct { \
-   char *name;   \
-   type value;  \
+	char *name;   \
+	type value;  \
 } ConstTable_##package; \
 ConstTable_##package Prima_Autoload_##package##_constants[] = {
 #define CONSTANT(package,const_name) \
-   { #const_name , package##const_name },
+	{ #const_name , package##const_name },
 #define CONSTANT2(package,const_name,string_name) \
-   { #string_name , package##const_name },
+	{ #string_name , package##const_name },
 #define END_TABLE4(package,type,suffix,conversion) \
 }; /* end of table */ \
 static SV* newSVstring( char *s); \
 XS(prima_autoload_##package##_constant) \
 { \
-   static PHash table = nil; \
-   dXSARGS; \
-   char *name; \
-   int i; \
-   type *r; \
- \
-   if (!table) { \
-      table = hash_create(); \
-      if (!table) croak( #package "::constant: cannot create hash"); \
-      for ( i = 0; i < sizeof( Prima_Autoload_##package##_constants) \
-               / sizeof( ConstTable_##package); i++) \
-         hash_store( table, \
-                     Prima_Autoload_##package##_constants[i]. name, \
-                     (I32) strlen( Prima_Autoload_##package##_constants[i]. name), \
-                     &Prima_Autoload_##package##_constants[i]. value); \
-   } \
- \
-   if ( items != 1) croak( "invalid call to " #package "::constant"); \
-   name = SvPV_nolen( ST( 0)); \
-   SPAGAIN; \
-   SP -= items; \
-   r = (type *)hash_fetch( table, name, (I32) strlen( name)); \
-   if ( !r) croak( "invalid value: " #package "::%s", name); \
-   XPUSHs( sv_2mortal( newSV##suffix((conversion)*r))); \
-   PUTBACK; \
-   return; \
+	static PHash table = nil; \
+	dXSARGS; \
+	char *name; \
+	int i; \
+	type *r; \
+\
+	if (!table) { \
+		table = hash_create(); \
+		if (!table) croak( #package "::constant: cannot create hash"); \
+		for ( i = 0; i < sizeof( Prima_Autoload_##package##_constants) \
+					/ sizeof( ConstTable_##package); i++) \
+			hash_store( table, \
+							Prima_Autoload_##package##_constants[i]. name, \
+							(I32) strlen( Prima_Autoload_##package##_constants[i]. name), \
+							&Prima_Autoload_##package##_constants[i]. value); \
+	} \
+\
+	if ( items != 1) croak( "invalid call to " #package "::constant"); \
+	name = SvPV_nolen( ST( 0)); \
+	SPAGAIN; \
+	SP -= items; \
+	r = (type *)hash_fetch( table, name, (I32) strlen( name)); \
+	if ( !r) croak( "invalid value: " #package "::%s", name); \
+	XPUSHs( sv_2mortal( newSV##suffix((conversion)*r))); \
+	PUTBACK; \
+	return; \
 } \
 void register_##package##_constants( void) { \
-   HV *unused_hv; \
-   GV *unused_gv; \
-   SV *sv; \
-   CV *cv; \
-   int i; \
- \
-   newXS( #package "::constant", prima_autoload_##package##_constant, #package); \
-   sv = newSVpv("", 0); \
-   for ( i = 0; i < sizeof( Prima_Autoload_##package##_constants) \
-            / sizeof( ConstTable_##package); i++) { \
-      sv_setpvf( sv, "%s::%s", #package, Prima_Autoload_##package##_constants[i]. name); \
-      cv = sv_2cv(sv, &unused_hv, &unused_gv, true); \
-      sv_setpv((SV*)cv, ""); \
-   } \
-   sv_free( sv); \
+	HV *unused_hv; \
+	GV *unused_gv; \
+	SV *sv; \
+	CV *cv; \
+	int i; \
+\
+	newXS( #package "::constant", prima_autoload_##package##_constant, #package); \
+	sv = newSVpv("", 0); \
+	for ( i = 0; i < sizeof( Prima_Autoload_##package##_constants) \
+				/ sizeof( ConstTable_##package); i++) { \
+		sv_setpvf( sv, "%s::%s", #package, Prima_Autoload_##package##_constants[i]. name); \
+		cv = sv_2cv(sv, &unused_hv, &unused_gv, true); \
+		sv_setpv((SV*)cv, ""); \
+	} \
+	sv_free( sv); \
 }
 #else
 #define START_TABLE(package,type) \
 typedef struct { \
-   char *name;   \
-   type value;  \
+	char *name;   \
+	type value;  \
 } ConstTable_##package;
 #define CONSTANT(package,const_name) /* nothing */
 #define CONSTANT2(package,const_name,string_name) /* nothing */
@@ -592,10 +592,10 @@ typedef struct { \
 #define csNormal         0         /* normal during life stage */
 #define csDestroying     1         /* destroy() started */
 #define csFrozen         2         /* cleanup() started - no messages
-                                      available at this point */
+												available at this point */
 #define csFinalizing     3         /* done() started */
 #define csDead           4         /* destroy() finished - no methods
-                                      available at this point */
+												available at this point */
 
 /* Notification types */
 #define NT(const_name) CONSTANT(nt,const_name)
@@ -648,12 +648,12 @@ END_TABLE(mt,UV)
 
 /* Command event types */
 #define ctQueueMask      0x00070000     /* masks bits that defines behavior
-                                           in !csNormal stages: */
+														in !csNormal stages: */
 #define ctCacheable      0x00000000     /* Command caches in the queue */
 #define ctDiscardable    0x00010000     /* Command should be discarded */
 #define ctPassThrough    0x00020000     /* Command passes as normal */
 #define ctSingle         0x00040000     /* Command caches in the queue only
-                                           once, then changes ct bits to */
+														once, then changes ct bits to */
 #define ctSingleResponse 0x00050000     /* ctSingleResponse */
 #define ctNoInhibit      0x00080000     /* Valid for csDestroying and csFrozen */
 
@@ -684,14 +684,14 @@ CM(ReleaseFocus)
 #define cmPaint         (0x00000010|ctSingle)      /* WM_PAINT analog */
 CM(Paint)
 #define cmRepaint       (0x00000010|ctSingleResponse) /* and it's response
-                                                         action */
+																			action */
 CM(Repaint)
 #define cmSize          (0x00000011|ctPassThrough) /* WM_SIZE analog */
 CM(Size)
 #define cmMove          (0x00000012|ctPassThrough) /* WM_MOVE analog */
 CM(Move)
 #define cmColorChanged  (0x00000013|ctDiscardable) /* generates when color
-                                                      changed */
+																		changed */
 CM(ColorChanged)
 #define cmZOrderChanged (0x00000014|ctDiscardable) /* z-order change command */
 CM(ZOrderChanged)
@@ -704,10 +704,10 @@ CM(Activate)
 #define cmDeactivate    (0x00000018)               /* active stage change */
 CM(Deactivate)
 #define cmFontChanged   (0x00000019|ctDiscardable) /* generates when font
-                                                      changed */
+																		changed */
 CM(FontChanged)
 #define cmWindowState   (0x0000001A|ctDiscardable) /* generates when window
-                                                      state changed */
+																		state changed */
 CM(WindowState)
 #define cmTimer          0x0000001C                /* WM_TIMER analog */
 CM(Timer)
@@ -718,12 +718,12 @@ CM(CalcBounds)
 #define cmPost           0x0000001F                /* posted message */
 CM(Post)
 #define cmPopup          0x00000020                /* interactive popup
-                                                      request */
+																		request */
 CM(Popup)
 #define cmExecute        0x00000021                /* dialog execution start */
 CM(Execute)
 #define cmSetup          0x00000022                /* first message for alive
-                                                      and active widget */
+																		and active widget */
 CM(Setup)
 #define cmHint           0x00000023                /* hint show/hide message */
 CM(Hint)
@@ -1173,26 +1173,26 @@ END_TABLE(ta,UV)
 
 typedef struct _VmtPatch
 {
-   void *vmtAddr;
-   void *procAddr;
-   char *name;
+	void *vmtAddr;
+	void *procAddr;
+	char *name;
 } VmtPatch;
 
 typedef struct _VMT {         /* Whatever VMT */
-   char *className;
-   struct _VMT *super;
-   struct _VMT *base;
-   int instanceSize;
-   VmtPatch *patch;
-   int patchLength;
-   int vmtSize;
+	char *className;
+	struct _VMT *super;
+	struct _VMT *base;
+	int instanceSize;
+	VmtPatch *patch;
+	int patchLength;
+	int vmtSize;
 } VMT, *PVMT;
 
 typedef struct _AnyObject {   /* Whatever Object */
-   PVMT self;
-   PVMT *super;
-   SV   *mate;
-   struct _AnyObject *killPtr;
+	PVMT self;
+	PVMT *super;
+	SV   *mate;
+	struct _AnyObject *killPtr;
 } AnyObject, *PAnyObject;
 
 extern FillPattern fillPatterns[];
@@ -1242,7 +1242,7 @@ query_method( Handle object, char *methodName, Bool cacheIt);
 
 extern SV*
 call_perl_indirect( Handle self, char *subName, const char *format,
-                    Bool cdecl, Bool coderef, va_list params);
+						Bool cdecl, Bool coderef, va_list params);
 
 extern SV*
 call_perl( Handle self, char *subName, const char *format, ...);
@@ -1272,13 +1272,13 @@ extern void
 kill_zombies( void);
 
 /*
- exception_* functions are solely needed as a workaround of a Win64 bug when running 32-bit programs.
- It can be manifested when a perl code dies in f.ex. onPaint, and the triggered longjmp is
- expected to land somewhere in perl guts. Except it doesn't, and the next 32-bit executed code
- is right after DispatchMessage.
+exception_* functions are solely needed as a workaround of a Win64 bug when running 32-bit programs.
+It can be manifested when a perl code dies in f.ex. onPaint, and the triggered longjmp is
+expected to land somewhere in perl guts. Except it doesn't, and the next 32-bit executed code
+is right after DispatchMessage.
 
- Discussion on stackoverflow here:
- http://stackoverflow.com/questions/32525561/64-bit-windows-longjmp-lands-in-a-wrong-place
+Discussion on stackoverflow here:
+http://stackoverflow.com/questions/32525561/64-bit-windows-longjmp-lands-in-a-wrong-place
 */
 
 extern void
@@ -1302,7 +1302,7 @@ exception_check_raise( void );
 
 extern HV*
 parse_hv( I32 ax, SV **sp, I32 items, SV **mark,
-          int expected, const char *methodName);
+			int expected, const char *methodName);
 
 extern void
 push_hv( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv);
@@ -1325,7 +1325,7 @@ create_object( const char *objClass, const char *types, ...);
 __INLINE__ Bool
 SvBOOL( SV *sv)
 {
-   return SvTRUE(sv);
+	return SvTRUE(sv);
 }
 #endif
 
@@ -1349,12 +1349,12 @@ SvBOOL( SV *sv)
 #define pset_H( key, value)  pset_sv_noinc( key, (value) ? newSVsv((( PAnyObject) (value))-> mate) : nilSV)
 
 #define create_instance( obj)  (                                   \
-   temporary_prf_Sv = ( SV **) Object_create( obj, profile),       \
-   ( temporary_prf_Sv ?                                            \
-       --SvREFCNT( SvRV((( PAnyObject) temporary_prf_Sv)-> mate))  \
-       : 0),                                                       \
-   ( Handle) temporary_prf_Sv                                      \
-   )
+	temporary_prf_Sv = ( SV **) Object_create( obj, profile),       \
+	( temporary_prf_Sv ?                                            \
+		--SvREFCNT( SvRV((( PAnyObject) temporary_prf_Sv)-> mate))  \
+		: 0),                                                       \
+	( Handle) temporary_prf_Sv                                      \
+	)
 
 #ifdef POLLUTE_NAME_SPACE
 #define TransmogrifyHandle(c,h)         ((P##c)(h))
@@ -1407,10 +1407,10 @@ duplicate_string( const char *);
 
 typedef struct _List
 {
-   Handle * items;
-   int    count;
-   int    size;
-   int    delta;
+	Handle * items;
+	int    count;
+	int    size;
+	int    delta;
 } List, *PList;
 
 typedef Bool ListProc ( Handle item, void * params);
@@ -1564,44 +1564,44 @@ END_TABLE(dt,UV)
 
 /* system-independent object option flags */
 typedef struct _ObjectOptions_ {
-   unsigned optInDestroyList       : 1;   /* Object */
-   unsigned optcmDestroy           : 1;   /* Component */
-   unsigned optUTF8_name           : 1;
-   unsigned optInDraw              : 1;   /* Drawable */
-   unsigned optInDrawInfo          : 1;
-   unsigned optTextOutBaseLine     : 1;
-   unsigned optAutoEnableChildren  : 1;   /* Widget */
-   unsigned optBriefKeys           : 1;
-   unsigned optBuffered            : 1;
-   unsigned optModalHorizon        : 1;
-   unsigned optOwnerBackColor      : 1;
-   unsigned optOwnerColor          : 1;
-   unsigned optOwnerFont           : 1;
-   unsigned optOwnerHint           : 1;
-   unsigned optOwnerShowHint       : 1;
-   unsigned optOwnerPalette        : 1;
-   unsigned optPackPropagate       : 1;
-   unsigned optSetupComplete       : 1;
-   unsigned optSelectable          : 1;
-   unsigned optShowHint            : 1;
-   unsigned optSystemSelectable    : 1;
-   unsigned optTabStop             : 1;
-   unsigned optScaleChildren       : 1;
-   unsigned optUTF8_helpContext    : 1;
-   unsigned optPreserveType        : 1;   /* Image */
-   unsigned optAutoPopup           : 1;   /* Popup */
-   unsigned optActive              : 1;   /* Timer */
-   unsigned optOwnerIcon           : 1;   /* Window */
-   unsigned optMainWindow          : 1;
+	unsigned optInDestroyList       : 1;   /* Object */
+	unsigned optcmDestroy           : 1;   /* Component */
+	unsigned optUTF8_name           : 1;
+	unsigned optInDraw              : 1;   /* Drawable */
+	unsigned optInDrawInfo          : 1;
+	unsigned optTextOutBaseLine     : 1;
+	unsigned optAutoEnableChildren  : 1;   /* Widget */
+	unsigned optBriefKeys           : 1;
+	unsigned optBuffered            : 1;
+	unsigned optModalHorizon        : 1;
+	unsigned optOwnerBackColor      : 1;
+	unsigned optOwnerColor          : 1;
+	unsigned optOwnerFont           : 1;
+	unsigned optOwnerHint           : 1;
+	unsigned optOwnerShowHint       : 1;
+	unsigned optOwnerPalette        : 1;
+	unsigned optPackPropagate       : 1;
+	unsigned optSetupComplete       : 1;
+	unsigned optSelectable          : 1;
+	unsigned optShowHint            : 1;
+	unsigned optSystemSelectable    : 1;
+	unsigned optTabStop             : 1;
+	unsigned optScaleChildren       : 1;
+	unsigned optUTF8_helpContext    : 1;
+	unsigned optPreserveType        : 1;   /* Image */
+	unsigned optAutoPopup           : 1;   /* Popup */
+	unsigned optActive              : 1;   /* Timer */
+	unsigned optOwnerIcon           : 1;   /* Window */
+	unsigned optMainWindow          : 1;
 } ObjectOptions;
 
 #define opt_set( option)           (PObject(self)-> options. option = 1)
 #define opt_clear( option)         (PObject(self)-> options. option = 0)
 #define is_opt( option)            (PObject(self)-> options. option)
 #define opt_assign( option, value) (PObject(self)->options. option = \
-                                    (value) ? 1 : 0)
+												(value) ? 1 : 0)
 #define opt_InPaint                ( is_opt( optInDraw) \
-                                     || is_opt( optInDrawInfo))
+												|| is_opt( optInDrawInfo))
 
 /* apc class constants */
 #define WC(const_name) CONSTANT(wc,const_name)
@@ -1886,9 +1886,9 @@ apc_application_get_indents( Handle self);
 
 extern int
 apc_application_get_os_info( char *system, int slen,
-                             char *release, int rlen,
-                             char *vendor, int vlen,
-                             char *arch, int alen);
+									char *release, int rlen,
+									char *vendor, int vlen,
+									char *arch, int alen);
 
 extern Point
 apc_application_get_size( Handle self);
@@ -1924,7 +1924,7 @@ apc_component_fullname_changed_notify( Handle self);
 /* Window */
 extern Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons, int borderStyle,
-                   Bool taskList, int windowState, int onTop, Bool useOrigin, Bool useSize, Bool layered);
+						Bool taskList, int windowState, int onTop, Bool useOrigin, Bool useSize, Bool layered);
 
 extern Bool
 apc_window_activate( Handle self);
@@ -1999,42 +1999,42 @@ apc_window_end_modal( Handle self);
 /* Widget management */
 
 typedef struct {
-   /* common geometry fields */
-   Handle         next;           /* dynamically filled linked list of pack slaves */
-   Handle         in;             /* 'in' option */
-   /* pack */
-   Point          pad;            /* border padding */
-   Point          ipad;           /* size increaze */
-   Handle         order;          /* if non-nil, BEFORE or AFTER a widget */
-   /* place */ 
-   int x, y;
-   float relX, relY;
-   float relWidth, relHeight;
+	/* common geometry fields */
+	Handle         next;           /* dynamically filled linked list of pack slaves */
+	Handle         in;             /* 'in' option */
+	/* pack */
+	Point          pad;            /* border padding */
+	Point          ipad;           /* size increaze */
+	Handle         order;          /* if non-nil, BEFORE or AFTER a widget */
+	/* place */ 
+	int x, y;
+	float relX, relY;
+	float relWidth, relHeight;
 
-   /* bitwise fields */
-   /* common */
-   unsigned int   anchorx    : 2; /* 0 - left, 1 - center, 2 - right */
-   unsigned int   anchory    : 2; /* 0 - bottom, 1 - center, 2 - top */
-   /* pack */
-   unsigned int   after      : 1; /* 0 - order is BEFORE; 1 - order is AFTER */
-   unsigned int   expand     : 1; /* causes the allocation rectange to fill all remaining space */
-   unsigned int   fillx      : 1; /* fill horizontal extent */
-   unsigned int   filly      : 1; /* fill vertical extent */ 
-   unsigned int   side       : 2; /* 0 - left, 1 - bottom, 2 - right, 3 - top */
-   /* place */ 
-   unsigned int   use_x      : 1;
-   unsigned int   use_y      : 1;
-   unsigned int   use_w      : 1;
-   unsigned int   use_h      : 1;
-   unsigned int   use_rx     : 1;
-   unsigned int   use_ry     : 1;
-   unsigned int   use_rw     : 1;
-   unsigned int   use_rh     : 1;
+	/* bitwise fields */
+	/* common */
+	unsigned int   anchorx    : 2; /* 0 - left, 1 - center, 2 - right */
+	unsigned int   anchory    : 2; /* 0 - bottom, 1 - center, 2 - top */
+	/* pack */
+	unsigned int   after      : 1; /* 0 - order is BEFORE; 1 - order is AFTER */
+	unsigned int   expand     : 1; /* causes the allocation rectange to fill all remaining space */
+	unsigned int   fillx      : 1; /* fill horizontal extent */
+	unsigned int   filly      : 1; /* fill vertical extent */ 
+	unsigned int   side       : 2; /* 0 - left, 1 - bottom, 2 - right, 3 - top */
+	/* place */ 
+	unsigned int   use_x      : 1;
+	unsigned int   use_y      : 1;
+	unsigned int   use_w      : 1;
+	unsigned int   use_h      : 1;
+	unsigned int   use_rx     : 1;
+	unsigned int   use_ry     : 1;
+	unsigned int   use_rw     : 1;
+	unsigned int   use_rh     : 1;
 } GeomInfo, *PGeomInfo;
 
 extern Bool
 apc_widget_create( Handle self, Handle owner, Bool syncPaint,
-                   Bool clipOwner, Bool transparent, ApiHandle parentHandle, Bool layered);
+						Bool clipOwner, Bool transparent, ApiHandle parentHandle, Bool layered);
 
 extern Bool
 apc_widget_begin_paint( Handle self, Bool insideOnPaint);
@@ -2143,8 +2143,8 @@ END_TABLE(scr,UV)
 
 extern int
 apc_widget_scroll( Handle self, int horiz, int vert,
-                   Rect *confine, Rect *clip,
-                   Bool scrollChildren);
+						Rect *confine, Rect *clip,
+						Bool scrollChildren);
 
 extern Bool
 apc_widget_set_capture( Handle self, Bool capture, Handle confineTo);
@@ -2307,9 +2307,9 @@ apc_kbd_get_state( Handle self);
 #define cfCustom   3
 
 typedef struct {
-   Handle image;
-   Byte * data;
-   STRLEN length;
+	Handle image;
+	Byte * data;
+	STRLEN length;
 } ClipboardDataRec, *PClipboardDataRec;
 
 extern PList
@@ -2351,28 +2351,28 @@ apc_clipboard_deregister_format( Handle self, Handle id);
 /* Menus & popups */
 
 typedef struct _MenuItemReg {   /* Menu item registration record */
-   char * variable;             /* perl variable name */
-   char * text;                 /* menu text */
-   char * accel;                /* accelerator text */
-   int    key;                  /* accelerator key, kbXXX */
-   int    id;                   /* unique id */
-   char * perlSub;              /* sub name */
-   Handle bitmap;               /* bitmap if not nil */
-   SV *   code;                 /* code if not nil */
-   SV *   data;                 /* use data if not nil */
-   struct _MenuItemReg* down;   /* pointer to submenu */
-   struct _MenuItemReg* next;   /* pointer to next item */
-   struct {
-      unsigned int checked       : 1;  /* true if item is checked */
-      unsigned int disabled      : 1;  /* true if item is disabled */
-      unsigned int rightAdjust   : 1;  /* true if right adjust ordered */
-      unsigned int divider       : 1;  /* true if it's line divider */
-      unsigned int utf8_variable : 1;
-      unsigned int utf8_text     : 1;
-      unsigned int utf8_accel    : 1;
-      unsigned int utf8_perlSub  : 1;
-      unsigned int autotoggle    : 1;  /* true if menu is toggled automatially */
-   } flags;
+	char * variable;             /* perl variable name */
+	char * text;                 /* menu text */
+	char * accel;                /* accelerator text */
+	int    key;                  /* accelerator key, kbXXX */
+	int    id;                   /* unique id */
+	char * perlSub;              /* sub name */
+	Handle bitmap;               /* bitmap if not nil */
+	SV *   code;                 /* code if not nil */
+	SV *   data;                 /* use data if not nil */
+	struct _MenuItemReg* down;   /* pointer to submenu */
+	struct _MenuItemReg* next;   /* pointer to next item */
+	struct {
+		unsigned int checked       : 1;  /* true if item is checked */
+		unsigned int disabled      : 1;  /* true if item is disabled */
+		unsigned int rightAdjust   : 1;  /* true if right adjust ordered */
+		unsigned int divider       : 1;  /* true if it's line divider */
+		unsigned int utf8_variable : 1;
+		unsigned int utf8_text     : 1;
+		unsigned int utf8_accel    : 1;
+		unsigned int utf8_perlSub  : 1;
+		unsigned int autotoggle    : 1;  /* true if menu is toggled automatially */
+	} flags;
 } MenuItemReg, *PMenuItemReg;
 
 extern Bool
@@ -2574,47 +2574,47 @@ typedef Color ColorSet[ ciMaxId + 1];
 
 /* raster operations */
 typedef enum {
-   ropCopyPut = 0,      /* dest  = src */
-   ropXorPut,           /* dest ^= src */
-   ropAndPut,           /* dest &= src */
-   ropOrPut,            /* dest |= src */
-   ropNotPut,           /* dest = !src */
-   ropInvert,           /* dest = !dest*/
-   ropBlackness,        /* dest = 0 */
-   ropNotDestAnd,       /* dest = (!dest) & src */
-   ropNotDestOr,        /* dest = (!dest) | src */
-   ropWhiteness,        /* dest = 1 */
-   ropNotSrcAnd,        /* dest &= !src */
-   ropNotSrcOr,         /* dest |= !src */
-   ropNotXor,           /* dest = !(src ^ dest) */
-   ropNotAnd,           /* dest = !(src & dest) */
-   ropNotOr,            /* dest = !(src | dest) */
-   ropNoOper,           /* dest = dest */
+	ropCopyPut = 0,      /* dest  = src */
+	ropXorPut,           /* dest ^= src */
+	ropAndPut,           /* dest &= src */
+	ropOrPut,            /* dest |= src */
+	ropNotPut,           /* dest = !src */
+	ropInvert,           /* dest = !dest*/
+	ropBlackness,        /* dest = 0 */
+	ropNotDestAnd,       /* dest = (!dest) & src */
+	ropNotDestOr,        /* dest = (!dest) | src */
+	ropWhiteness,        /* dest = 1 */
+	ropNotSrcAnd,        /* dest &= !src */
+	ropNotSrcOr,         /* dest |= !src */
+	ropNotXor,           /* dest = !(src ^ dest) */
+	ropNotAnd,           /* dest = !(src & dest) */
+	ropNotOr,            /* dest = !(src | dest) */
+	ropNoOper,           /* dest = dest */
 
-   /* Porter-Duff operators for 32-bit ARGB image operations */
-   ropSrcOver = 0, /* save value as ropCopy, to serve as a default */
-   ropXor = ropXorPut, /* so they have same value */
-   ropDstOver,
-   ropSrcCopy,
-   ropDstCopy,
-   ropClear,
-   ropSrcIn,
-   ropDstIn,
-   ropSrcOut,
-   ropDstOut,
-   ropSrcAtop,
-   ropDstAtop,
+	/* Porter-Duff operators for 32-bit ARGB image operations */
+	ropSrcOver = 0, /* save value as ropCopy, to serve as a default */
+	ropXor = ropXorPut, /* so they have same value */
+	ropDstOver,
+	ropSrcCopy,
+	ropDstCopy,
+	ropClear,
+	ropSrcIn,
+	ropDstIn,
+	ropSrcOut,
+	ropDstOut,
+	ropSrcAtop,
+	ropDstAtop,
 
-   /* 8-bit standalone alpha */
-   ropAlphaCopy          = 0x0000100, 
+	/* 8-bit standalone alpha */
+	ropAlphaCopy          = 0x0000100, 
 
-   /* extensions for Prima's own Image.put */
-   ropPorterDuffMask     = 0x000000F, 
-   ropSrcAlpha           = 0x1000000, 
-   ropSrcAlphaShift      = 8,
-   ropDstAlpha           = 0x2000000,
-   ropDstAlphaShift      = 16,
-   ropConstantAlpha      = 0x3000000  /* these are only for Prima's own Image.put */
+	/* extensions for Prima's own Image.put */
+	ropPorterDuffMask     = 0x000000F, 
+	ropSrcAlpha           = 0x1000000, 
+	ropSrcAlphaShift      = 8,
+	ropDstAlpha           = 0x2000000,
+	ropDstAlphaShift      = 16,
+	ropConstantAlpha      = 0x3000000  /* these are only for Prima's own Image.put */
 } ROP;
 
 
@@ -2823,23 +2823,23 @@ IM(Category)
 
 
 #define    imFMT                 0xFF0000
- IM(FMT)
+IM(FMT)
 
 /* imbpp24 subformats */
 #define    imfmtRGB              0x000000
- IM(fmtRGB)
+IM(fmtRGB)
 #define    imfmtBGR              0x010000
- IM(fmtBGR)
+IM(fmtBGR)
 
 /* imbpp32 subformats */
 #define    imfmtRGBI             0x000000
- IM(fmtRGBI)
+IM(fmtRGBI)
 #define    imfmtIRGB             0x010000
- IM(fmtIRGB)
+IM(fmtIRGB)
 #define    imfmtBGRI             0x020000
- IM(fmtBGRI)
+IM(fmtBGRI)
 #define    imfmtIBGR             0x030000
- IM(fmtIBGR)
+IM(fmtIBGR)
 
 /* Shortcuts and composites */
 #define    imMono           imbpp1
@@ -3146,27 +3146,27 @@ END_TABLE(sbmp,UV)
 
 typedef struct _FontABC
 {
-   float a;
-   float b;
-   float c;
+	float a;
+	float b;
+	float c;
 } FontABC, *PFontABC;
 
 typedef struct _TextWrapRec {
-   char * text;                        /* text to be wrapped */
-   Bool   utf8_text;                   /* is utf8 */
-   int    textLen;                     /* text length in bytes */
-   int    utf8_textLen;                /* text length in characters */
-   int    width;                       /* width to wrap with */
-   int    tabIndent;                   /* \t replace to tabIndent spaces */
-   int    options;                     /* twXXX constants */
-   int    count;                       /* count of lines returned */
-   int    t_start;                     /* ~ starting point */
-   int    t_end;                       /* ~ ending point */
-   int    t_line;                      /* ~ line */
-   char * t_char;                      /* letter next to ~ */
+	char * text;                        /* text to be wrapped */
+	Bool   utf8_text;                   /* is utf8 */
+	int    textLen;                     /* text length in bytes */
+	int    utf8_textLen;                /* text length in characters */
+	int    width;                       /* width to wrap with */
+	int    tabIndent;                   /* \t replace to tabIndent spaces */
+	int    options;                     /* twXXX constants */
+	int    count;                       /* count of lines returned */
+	int    t_start;                     /* ~ starting point */
+	int    t_end;                       /* ~ ending point */
+	int    t_line;                      /* ~ line */
+	char * t_char;                      /* letter next to ~ */
 
-   PFontABC * ascii;                   /* eventual abc caches, to be freed after call. */
-   PList    * unicode;                 /* NB - .ascii can be present in .unicode ! */
+	PFontABC * ascii;                   /* eventual abc caches, to be freed after call. */
+	PList    * unicode;                 /* NB - .ascii can be present in .unicode ! */
 } TextWrapRec, *PTextWrapRec;
 
 /* gpi functions underplace */
@@ -3181,7 +3181,7 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2);
 
 extern Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY,
-            double angleStart, double angleEnd);
+				double angleStart, double angleEnd);
 
 extern Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2);
@@ -3194,7 +3194,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
 apc_gp_chord( Handle self, int x, int y, int dX, int dY,
-              double angleStart, double angleEnd);
+				double angleStart, double angleEnd);
 
 extern Bool
 apc_gp_draw_poly( Handle self, int numPts, Point * points);
@@ -3207,7 +3207,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY);
 
 extern Bool
 apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY,
-                   double angleStart, double angleEnd);
+						double angleStart, double angleEnd);
 
 extern Bool
 apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY);
@@ -3217,11 +3217,11 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points);
 
 extern Bool
 apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY,
-                    double angleStart, double angleEnd);
+						double angleStart, double angleEnd);
 
 extern Bool
 apc_gp_flood_fill( Handle self, int x, int y, Color borderColor,
-                   Bool singleBorder);
+						Bool singleBorder);
 
 extern Color
 apc_gp_get_pixel( Handle self, int x, int y);
@@ -3231,22 +3231,22 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
 apc_gp_put_image( Handle self, Handle image, int x, int y,
-                  int xFrom, int yFrom, int xLen, int yLen, int rop);
+						int xFrom, int yFrom, int xLen, int yLen, int rop);
 extern Bool
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
 apc_gp_sector( Handle self, int x, int y, int dX, int dY,
-               double angleStart, double angleEnd);
+					double angleStart, double angleEnd);
 
 extern Bool
 apc_gp_set_pixel( Handle self, int x, int y, Color color);
 
 extern Bool
 apc_gp_stretch_image( Handle self, Handle image,
-                      int x, int y, int xFrom, int yFrom,
-                      int xDestLen, int yDestLen, int xLen, int yLen,
-                      int rop);
+							int x, int y, int xFrom, int yFrom,
+							int xDestLen, int yDestLen, int xLen, int yLen,
+							int rop);
 
 extern Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8);
@@ -3510,9 +3510,9 @@ END_TABLE(fr,UV)
 
 extern Bool
 apc_fetch_resource( const char *className, const char *name,
-                    const char *resClass, const char *res,
-                    Handle owner, int resType,
-                    void *val);
+						const char *resClass, const char *res,
+						Handle owner, int resType,
+						void *val);
 
 extern Color
 apc_lookup_color( const char *colorName);

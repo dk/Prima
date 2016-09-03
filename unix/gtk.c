@@ -33,15 +33,15 @@ static GdkDisplay * display = NULL;
 static Color 
 gdk_color(GdkColor * c)
 {
-	return ((c->red >> 8) << 16) | ((c->green >> 8) << 8) | (c->blue >> 8);
+		return ((c->red >> 8) << 16) | ((c->green >> 8) << 8) | (c->blue >> 8);
 }
 
 typedef struct {
-	GType (*func)(void);
-	char * name;
-	char * gtk_class;
-	int    prima_class;
-	Font * prima_font;
+		GType (*func)(void);
+		char * name;
+		char * gtk_class;
+		int    prima_class;
+		Font * prima_font;
 } GTFStruct;
 
 #define GT(x) gtk_##x##_get_type, #x
@@ -49,22 +49,22 @@ typedef struct {
 static GType gtf_type_null(void) { return G_TYPE_NONE; }
 
 static GTFStruct widget_types[] = {
-	{ GT(button),       "GtkButton",         wcButton      , NULL },  
-	{ GT(check_button), "GtkCheckButton",    wcCheckBox    , NULL },  
-	{ GT(combo_box),    "GtkCombo",          wcCombo       , NULL },  
-	{ GT(dialog),       "GtkDialog",         wcDialog      , NULL },  
-	{ GT(entry),        "GtkEditable",       wcEdit        , NULL },  
-	{ GT(entry),        "GtkEntry",          wcInputLine   , NULL },  
-	{ GT(label),        "GtkLabel",          wcLabel       , &guts. default_msg_font },  
-	{ GT(list),         "GtkList",           wcListBox     , NULL },  
-	{ GT(menu),         "GtkMenuItem",       wcMenu        , &guts. default_menu_font },  
-	{ GT(menu_item),    "GtkMenuItem",       wcPopup       , NULL },  
-	{ GT(check_button), "GtkRadioButton",    wcRadio       , NULL },  
-	{ GT(scrollbar),    "GtkScrollBar",      wcScrollBar   , NULL },  
-	{ GT(ruler),        "GtkRuler",          wcSlider      , NULL },  
-	{ GT(widget),       "GtkWidget",         wcWidget      , &guts. default_widget_font },
-	{ GT(window),       "GtkWindow",         wcWindow      , &guts. default_caption_font },  
-	{ GT(widget),       "GtkWidget",         wcApplication , &guts. default_font },  
+		{ GT(button),       "GtkButton",         wcButton      , NULL },  
+		{ GT(check_button), "GtkCheckButton",    wcCheckBox    , NULL },  
+		{ GT(combo_box),    "GtkCombo",          wcCombo       , NULL },  
+		{ GT(dialog),       "GtkDialog",         wcDialog      , NULL },  
+		{ GT(entry),        "GtkEditable",       wcEdit        , NULL },  
+		{ GT(entry),        "GtkEntry",          wcInputLine   , NULL },  
+		{ GT(label),        "GtkLabel",          wcLabel       , &guts. default_msg_font },  
+		{ GT(list),         "GtkList",           wcListBox     , NULL },  
+		{ GT(menu),         "GtkMenuItem",       wcMenu        , &guts. default_menu_font },  
+		{ GT(menu_item),    "GtkMenuItem",       wcPopup       , NULL },  
+		{ GT(check_button), "GtkRadioButton",    wcRadio       , NULL },  
+		{ GT(scrollbar),    "GtkScrollBar",      wcScrollBar   , NULL },  
+		{ GT(ruler),        "GtkRuler",          wcSlider      , NULL },  
+		{ GT(widget),       "GtkWidget",         wcWidget      , &guts. default_widget_font },
+		{ GT(window),       "GtkWindow",         wcWindow      , &guts. default_caption_font },  
+		{ GT(widget),       "GtkWidget",         wcApplication , &guts. default_font },  
 };
 #undef GT
 
@@ -94,7 +94,7 @@ prima_gtk_init(void)
 		return false;
 	} else {
 		gtk_initialized = 1;
-   		XSetErrorHandler( guts.main_error_handler );
+		XSetErrorHandler( guts.main_error_handler );
 		ret = gdk_x11_display_get_xdisplay(display);
 	}
 
@@ -125,7 +125,7 @@ prima_gtk_init(void)
 		c[ciLight3DColor] = gdk_color( t-> light + GTK_STATE_NORMAL );
 		c[ciDark3DColor]  = gdk_color( t-> dark  + GTK_STATE_NORMAL );
 		*/
-   		Pdebug("gtk-color: %s %06x %06x %06x %06x %06x\n", s->name, c[0], c[1], c[2], c[3], c[4], c[5]);
+		Pdebug("gtk-color: %s %06x %06x %06x %06x %06x\n", s->name, c[0], c[1], c[2], c[3], c[4], c[5]);
 
 		if ( !f) continue;
 		bzero(f, sizeof(Font));
@@ -136,13 +136,13 @@ prima_gtk_init(void)
 		if ( weight <= PANGO_WEIGHT_LIGHT ) f-> style |= fsThin;
 		if ( weight >= PANGO_WEIGHT_BOLD  ) f-> style |= fsBold;
 		if ( pango_font_description_get_style(t->font_desc) == PANGO_STYLE_ITALIC)
-			f-> style |= fsItalic;
-   		strcpy( f->encoding, "Default" );
-   		f-> width = f-> height = f->pitch = C_NUMERIC_UNDEF;
-   		apc_font_pick( application, f, f);
+					f-> style |= fsItalic;
+		strcpy( f->encoding, "Default" );
+		f-> width = f-> height = f->pitch = C_NUMERIC_UNDEF;
+		apc_font_pick( application, f, f);
 #define DEBUG_FONT(font) f->height,f->width,f->size,f->name,f->encoding
-   		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", s->name, DEBUG_FONT(f));
-		
+		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", s->name, DEBUG_FONT(f));
+				
 	}
 
 	return ret;
@@ -174,7 +174,7 @@ gtk_openfile( Bool open)
 {
 
 	char *result = NULL;
-   	struct MsgDlg message_dlg, **storage;
+	struct MsgDlg message_dlg, **storage;
 
 	if ( gtk_dialog) return NULL; /* we're not reentrant */
 
@@ -229,9 +229,9 @@ gtk_openfile( Bool open)
 			int size;
 			char * ptr;
 			GSList *names, *iter;
-
+	
 			names = gtk_file_chooser_get_filenames ( GTK_FILE_CHOOSER (gtk_dialog));
-
+	
 			/* count total length with escaped spaces and backslashes */
 			size = 1;
 			iter = names;
@@ -246,7 +246,7 @@ gtk_openfile( Bool open)
 				size++;
 				iter = iter-> next;
 			}
-
+	
 			if (( result = ptr = malloc( size))) {
 				/* copy and encode */
 				iter = names;
@@ -263,9 +263,9 @@ gtk_openfile( Bool open)
 				}
 				*(ptr - 1) = 0;
 			} else {
-				warn("gtk_openfile: cannot allocate %d bytes of memory", size);
+					warn("gtk_openfile: cannot allocate %d bytes of memory", size);
 			}
-
+	
 			/* free */
 			iter = names;
 			while ( iter) {
@@ -278,7 +278,7 @@ gtk_openfile( Bool open)
 			result = duplicate_string( filename);
 			g_free (filename);
 		}
-
+	
 		/* directory */
 		{
 			char * d = gtk_file_chooser_get_current_folder( GTK_FILE_CHOOSER (gtk_dialog));
@@ -290,7 +290,7 @@ gtk_openfile( Bool open)
 				gtk_current_folder_ptr = NULL;
 			}
 		}
-
+	
 		/* filter index */
 		gtk_filter_index = 0;
 		if ( gtk_filters) {
@@ -302,12 +302,12 @@ gtk_openfile( Bool open)
 					break;
 				}
 			
-		} 
+		}
 	}
-		
+				
 	if ( gtk_filters) {
-		plist_destroy( gtk_filters);
-		gtk_filters = NULL;
+				plist_destroy( gtk_filters);
+				gtk_filters = NULL;
 	}
 
 	*storage = message_dlg. next; /* unlock */
