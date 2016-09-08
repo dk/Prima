@@ -517,6 +517,7 @@ Icon_dup( Handle self)
 	i-> maskColor   = var-> maskColor;
 	i-> maskIndex   = var-> maskIndex;
 	i-> maskSize    = var-> maskSize;
+	i-> maskLine    = var-> maskLine;
 
 	memcpy( i-> mask, var-> mask, var-> maskSize);
 	return h;
