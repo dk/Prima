@@ -6,14 +6,18 @@
 use strict;
 use warnings;
 use Prima qw(Application MsgBox Buttons Edit Notebooks Label DetailedList Outlines Drawable::Markup);
+use FindBin qw($Bin);
 
 my $fp = [
 	{ name   => 'Times New Roman' },
 	{ name   => 'Courier New'     },
 	{ direction => 4 },
 ];
+my $img = [
+    Prima::Icon->load("$Bin/Hand.gif")
+];
 
-sub M($) { Prima::Drawable::Markup->new(markup => $_[0], fontPalette => $fp ) }
+sub M($) { Prima::Drawable::Markup->new(markup => $_[0], fontPalette => $fp, picturePalette => $img ) }
 
 my $Main = Prima::MainWindow->create(
 	name   => 'Main',
@@ -45,13 +49,13 @@ $tn->insert_to_page(0,'Button',
 );
 
 $tn->insert_to_page(0,'Radio',
-	text   => M 'Some S<+2|U<b>ig text> in a radio button',
+	text   => M 'P<0>Some S<+2|U<b>ig text> in a radio button',
 	pack   => { side => 'top' , anchor => 'w'},
 	hotKey => 'b',
 );
 
 $tn->insert_to_page(0,'CheckBox',
-	text   => M 'Some S<-2|U<s>mall text> in a checkbox',
+	text   => M 'P<0>Some S<-2|U<s>mall text> in a checkbox',
 	pack   => { side => 'top' , anchor => 'w'},
 	hotKey => 's',
 );

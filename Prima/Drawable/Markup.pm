@@ -24,7 +24,7 @@ C<Prima::Markup> adds the ability to recognize POD-like markup to Prima
 widgets. Supported markup sequences are C<B> (bold text), C<I> (italic text),
 C<U> (underlined text), C<F> (change font), C<S> (change font size), C<C>
 (change foreground color), C<Q> (change background color), C<M> (move pointer),
-and C<W> (disable wrapping).
+C<W> (disable wrapping), and C<P> (picture).
 
 The C<F> sequence is used as follows: C<FE<lt>n|textE<gt>>, where C<n> is a
 0-based index into the C<fontPalette>.
@@ -53,6 +53,9 @@ each is:
 
 The text inside C<W> sequence will not be wrapped during C<text_wrap> calls.
 
+The C<P> sequence is used as follows: C<< P<n> >>, where C<n> is a
+0-based index into the C<picturePalette>.
+
 The methods C<text_out> and C<get_text_width> are affected by C<Prima::Markup>.
 C<text_out> will write formatted text to the canvas, and C<get_text_width> will
 return the width of the formatted text.  B<NOTE>: These methods do not save state
@@ -70,7 +73,7 @@ sub new
 		bidi          => $Prima::Bidi::enabled,
 	);
 	my $self = $class->SUPER::new(%opt);
-	$self-> $_( $opt{$_} || [] ) for qw(fontPalette colorPalette);
+	$self-> $_( $opt{$_} || [] ) for qw(fontPalette colorPalette picturePalette);
 	$self-> markup( $opt{markup} || '');
 	return $self;
 }
@@ -211,9 +214,41 @@ sub parse_wrap
 	return 1;
 }
 
+sub paint_picture
+{
+	my ( $self, $canvas, $block, $state, $x, $y, $r) = @_;
+	my ( $img, $zoom ) = @$r;
+	$y += ($block->[tb::BLK_HEIGHT] - $img->height * $zoom ) / 2 - $block->[tb::BLK_APERTURE_Y];
+	$canvas-> stretch_image( $x, $y, $img-> width * $zoom, $img-> height * $zoom, $img);
+}
+
+sub parse_picture
+{
+	my ( $self, $mode, $command, $stacks, $state, $block, $pic, $zoom ) = @_;
+	unless ($pic =~ /^\d+$/ && $pic < @{ $self->{picturePalette} } ) {
+		warn "Bad picture id: $pic";
+		return;
+	}
+	if ( defined $zoom && $zoom !~ /^\d+(\.\d+)?$/) {
+		warn "Bad picture zoom: $zoom";
+		return;
+	}
+	$pic = $self->{picturePalette}->[$pic];
+	$zoom //= 1;
+
+	push @$block,
+		tb::wrap(tb::WRAP_MODE_OFF),
+		tb::extend( $pic->width * $zoom, $pic->height * $zoom, 0),
+		tb::code( \&paint_picture, [$pic, $zoom]),
+		tb::moveto( $pic->width * $zoom, 0, 0),
+		tb::wrap(tb::WRAP_MODE_ON)
+		;
+}
+
 sub commands
 {
 	return (
+		# has params, has text, callback
 		C => [ 1, 1, \&parse_color ],
 		Q => [ 1, 1, \&parse_color ],
 		F => [ 1, 1, \&parse_font_id ],
@@ -223,6 +258,7 @@ sub commands
 		U => [ 0, 1, \&parse_font_style ],
 		M => [ 1, 0, \&parse_transpose ],
 		W => [ 0, 1, \&parse_wrap ],
+		P => [ 1, 0, \&parse_picture ],
 	);
 }
 
@@ -393,6 +429,13 @@ sub colorPalette
 	push @{ $self->{colormap}}, @$cp;
 }
 
+sub picturePalette
+{
+	return $_[0]->{picturePalette} unless $#_;
+	my ( $self, $pp ) = @_;
+	$self->{picturePalette} = $pp;
+}
+
 sub text_wrap
 {
 	my ( $self, $canvas, $width, $opt, $indent) = @_;
@@ -470,6 +513,11 @@ Each element of the array should be a C<cl::> constant.
 
 Gets or sets the font palette to be used for C<F> sequences within this widget.
 Each element of the array should be a hashref suitable for setting a font.
+
+=item picturePalette([@picturePalette])
+
+Gets or sets the picture palette to be used for C<P> sequences within this widget.
+Each element of the array should be a C<Prima::Image> descendant.
 
 =item bidi BOOLEAN = 1
 

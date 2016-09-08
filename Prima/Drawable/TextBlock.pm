@@ -989,7 +989,7 @@ sub text_out
 				int($ofs[0] + ($xy[0]-$ofs[0]) * $cos - ($xy[1]-$ofs[1]) * $sin + .5),
 				int($ofs[1] + ($xy[0]-$ofs[0]) * $sin + ($xy[1]-$ofs[1]) * $cos + .5)
 			) : @xy;
-			$code-> ( $self, $canvas, $b, \@state, @coord, $data);
+			$code-> ( $self, $canvas, $self->{block}, \@state, @coord, $data);
 		},
 	);
 
