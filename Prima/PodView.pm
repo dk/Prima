@@ -113,6 +113,7 @@ sub profile_default
 			cl::Blue,               # code foreground
 			$def-> {backColor},     # code background
 		],
+		images => [],
 		styles => [
 			{ fontId    => 1,                         # STYLE_CODE
 			color     => COLOR_CODE_FOREGROUND }, 
@@ -157,7 +158,7 @@ sub init
 	$font{pitch} = fp::Fixed; 
 	$self-> {fontPalette}-> [1] = \%font;
 
-	$self-> $_($profile{$_}) for qw( styles pageName topicView);
+	$self-> $_($profile{$_}) for qw( styles images pageName topicView);
 	
 	return %profile;
 }
@@ -457,6 +458,14 @@ sub styles
 
 }
 
+sub images
+{
+	return $_[0]-> {images} unless $#_;
+	my ( $self, $images) = @_;
+	$self-> {images} = $images;
+	$self-> repaint;
+}
+
 sub update_styles # used for the direct {styles} hacking
 {
 	my $self = $_[0];
@@ -611,6 +620,54 @@ sub open_read
 	};
 }
 
+sub load_image
+{
+	my ( $self, $src, $frame ) = @_;
+	my $index = 0;
+	unless ( -f $src) {
+		local @INC =
+			map {( "$_", "$_/pod")}
+			grep { defined && length && -d }
+			( length($self-> {manpath}) ? $self-> {manpath} : (),
+				@INC, split( $Config::Config{path_sep}, $ENV{PATH}));
+		$src = Prima::Utils::find_image( $src);
+		return unless $src;
+	}
+	return Prima::Image-> load( $src, index => $frame);
+}
+
+sub add_image
+{
+	my ( $self, $src, $w, $h, $cut ) = @_;
+
+	$w = $src-> width unless $w;
+	$h = $src-> height unless $h;
+	my @resolution = $self-> resolution;
+	$w *= 72 / $resolution[0];
+	$h *= 72 / $resolution[1];
+	$src-> {stretch} = [$w, $h];
+	$self-> {readState}-> {pod_cutting} = $cut ? 0 : 1
+		if defined $cut;
+
+	my @imgop = (
+		tb::wrap(tb::WRAP_MODE_OFF),
+		tb::extend( $w, $h, tb::X_DIMENSION_POINT),
+		tb::code( \&_imgpaint, $src),
+		tb::moveto( $w, 0, tb::X_DIMENSION_POINT),
+		tb::wrap(tb::WRAP_MODE_ON)
+	);
+
+	if ( @{$self-> {model}}) {
+		push @{$self-> {model}-> [-1]}, @imgop;
+	} else {
+		push @{$self-> {model}}, [
+			$self-> {readState}-> {indent},
+			$self-> {readState}-> {bigofs}, 0,
+			@imgop
+		];
+	}
+}
+
 sub add_formatted
 {
 	my ( $self, $format, $text) = @_;
@@ -640,44 +697,10 @@ sub add_formatted
 					elsif ( $option eq 'cut' ) { $cut = $value }
 				}
 				if ( defined $src) {
-					my $index = 0;
-					unless ( -f $src) {
-						local @INC = 
-							map {( "$_", "$_/pod")} 
-							grep { defined && length && -d } 
-							( length($self-> {manpath}) ? $self-> {manpath} : (), 
-								@INC, split( $Config::Config{path_sep}, $ENV{PATH}));
-						$src = Prima::Utils::find_image( $src);
-						next unless $src;
-					}
-					$src = Prima::Image-> load( $src, index => $frame);
-					next unless $src;
-					$w = $src-> width unless $w;
-					$h = $src-> height unless $h;
-					my @resolution = $self-> resolution;
-					$w *= 72 / $resolution[0];
-					$h *= 72 / $resolution[1];
-					$src-> {stretch} = [$w, $h];
-					$self-> {readState}-> {pod_cutting} = $cut ? 0 : 1
-						if defined $cut;
-
-					my @imgop = (
-						tb::wrap(tb::WRAP_MODE_OFF),
-						tb::extend( $w, $h, tb::X_DIMENSION_POINT),
-						tb::code( \&_imgpaint, $src),
-						tb::moveto( $w, 0, tb::X_DIMENSION_POINT),
-						tb::wrap(tb::WRAP_MODE_ON)
-					);
-
-					if ( @{$self-> {model}}) {
-						push @{$self-> {model}-> [-1]}, @imgop;
-					} else {
-						push @{$self-> {model}}, [ 
-							$self-> {readState}-> {indent}, 
-							$self-> {readState}-> {bigofs}, 0,
-							@imgop
-						];
-					}
+					my $img = $self->load_image($src, $frame);
+					$self->add_image($img, $w, $h, $cut) if $img;
+				} elsif ( defined $frame && defined $self->{images}->[$frame]) {
+					$self->add_image($self->{images}->[$frame], $w, $h, $cut);
 				}
 			}
 		}
@@ -1757,7 +1780,7 @@ It is used in conjunction with the following command, L<img>, to allow
 a POD manpage provide both graphic ('podview', 'html', etc ) and text ( 'text' )
 content. 
 
-=item img src="SRC" [width="WIDTH"] [height="HEIGHT"] [cut="CUT"] [frame="FRAME"]
+=item img [src="SRC"] [width="WIDTH"] [height="HEIGHT"] [cut="CUT"] [frame="FRAME"]
 
 An image inclusion command, where src is a relative or an absolute path to
 an image file. In case if scaling is required, C<width> and C<height> options
@@ -1781,6 +1804,8 @@ This makes possible simultaneous use of 'podview' and 'text' :
 
 In the example above 'graphic.gif' will be shown if it can be found and loaded,
 otherwise the poor-man-drawings would be selected.
+
+If "src" is omitted, image is retrieved from C<images> array, from the index C<frame>.
 
 =back
 
