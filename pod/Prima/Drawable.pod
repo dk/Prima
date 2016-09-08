@@ -601,6 +601,10 @@ with the foreground color drawing, and C<::rop2> with the background.
 
 The toolkit defines the following operations:
 
+=for podview <img src="rop1.gif" cut=1 >
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop1.gif"><!--
+
    rop::Blackness      #   = 0 
    rop::NotOr          #   = !(src | dest) 
    rop::NotSrcAnd      #  &= !src 
@@ -620,6 +624,10 @@ The toolkit defines the following operations:
    rop::OrPut          #  |= src 
    rop::Whiteness      #   = 1 
 
+=for html -->
+
+=for podview </cut>
+
 Usually, however, graphic devices support only a small part
 of the above set, limiting C<::rop> to the most important operations:
 Copy, And, Or, Xor, NoOp. C<::rop2> is usually even more restricted,
@@ -634,6 +642,10 @@ raster operations on OS-provided surfaces.
 Additionally, Prima implements extra features for compositing on images outside the
 begin_paint/end_paint brackets. It supports the following 12 Porter-Duff operators:
 
+=for podview <img src="rop2.gif" cut=1 >
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop2.gif"><!--
+
    rop::Clear
    rop::Xor
    rop::SrcOver
@@ -646,6 +658,10 @@ begin_paint/end_paint brackets. It supports the following 12 Porter-Duff operato
    rop::DstOut
    rop::SrcAtop
    rop::DstAtop
+
+=for html -->
+
+=for podview </cut>
 
 and set of constants to apply a constant source and destination alpha to override the
 existing alpha channel, if any:
