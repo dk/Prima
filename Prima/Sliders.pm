@@ -962,12 +962,10 @@ sub set_scheme
 					my $v = $i + $inc / 5 * $_;
 					last if $v > $max;
 					push ( @t, { value => $v, height => 3 });
-					push ( @t, { value => $v, height => 3 });
-					push ( @t, { value => $v, height => 3 });
-					push ( @t, { value => $v, height => 3 });
 				}
 			}
 		}
+		push ( @t, { value => $max, height => 6,   text => $max }) if $i != $max;
 	} elsif ( $s == ss::StdMinMax) {
 		push ( @t, { value => $min, height => 6,   text => "Min" });
 		push ( @t, { value => $max, height => 6,   text => "Max" });
