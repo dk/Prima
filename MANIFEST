@@ -50,6 +50,7 @@ examples/animate.pl
 examples/async.pl
 examples/buttons.pl
 examples/bidi.pl
+examples/blend.pl
 examples/buttons2.pl
 examples/calendar.pl
 examples/canvas.pl
