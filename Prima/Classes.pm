@@ -438,6 +438,12 @@ sub profile_check_in
 		} @{$p-> {colormap}} ];
 		delete $p-> {colormap};
 	}
+
+	if ( exists $p->{size} ) {
+		$p->{width}  //= $p->{size}->[0];
+		$p->{height} //= $p->{size}->[1];
+	}
+
 	$self-> SUPER::profile_check_in( $p, $default);
 }
 
@@ -554,6 +560,10 @@ sub profile_check_in
 
 	if ( exists $p-> {monochrome} and not exists $p-> {type}) {
 		$p-> {type} = $p->{monochrome} ? dbt::Bitmap : dbt::Pixmap;
+	}
+	if ( exists $p->{size} ) {
+		$p->{width}  //= $p->{size}->[0];
+		$p->{height} //= $p->{size}->[1];
 	}
 	$self-> SUPER::profile_check_in( $p, $default);
 }
