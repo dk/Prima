@@ -1524,14 +1524,14 @@ gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Boo
 		if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
 			ABC abc[2];
 			if ( wide) {
+				WCHAR * t = (WCHAR*) text;
 				if ( guts. utf8_prepend_0x202D ) {
 					/* the 1st character is 0x202D, skip it */
-					text++;
+					t++;
 					len--;
 				}
-
-				GetCharABCWidthsW( sys ps, *((WCHAR*)text), *((WCHAR*)text), &abc[0]);
-				GetCharABCWidthsW( sys ps, *((WCHAR*)text + len - 1), *((WCHAR*)text + len - 1), &abc[1]);
+				GetCharABCWidthsW( sys ps, *t, *t, &abc[0]);
+				GetCharABCWidthsW( sys ps, t[len-1], t[len-1], &abc[1]);
 			} else {
 				GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
 				GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
@@ -1589,13 +1589,14 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
 	if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
 		ABC abc[2];
 		if ( utf8) {
+			WCHAR * t = (WCHAR*) text;
 			if ( guts. utf8_prepend_0x202D ) {
 				/* the 1st character is 0x202D, skip it */
-				text++;
+				t++;
 				len--;
 			}
-			GetCharABCWidthsW( sys ps, *((WCHAR*)text), *((WCHAR*)text), &abc[0]);
-			GetCharABCWidthsW( sys ps, *((WCHAR*)text + len - 1), *((WCHAR*)text + len - 1), &abc[1]);
+			GetCharABCWidthsW( sys ps, *t, *t, &abc[0]);
+			GetCharABCWidthsW( sys ps, t[len-1], t[len-1], &abc[1]);
 		} else {
 			GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
 			GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
