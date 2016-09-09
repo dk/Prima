@@ -1003,8 +1003,6 @@ sub on_click
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

@@ -370,8 +370,6 @@ sub hotKey        { $#_ ? $_[0]->{hotKey} = $_[1] : $_[0]->{hotKey} }
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

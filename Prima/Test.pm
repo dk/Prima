@@ -53,10 +53,7 @@ sub wait_flag  { get_flag || &__wait }
 
 1;
 
-__DATA__
-
 =pod
-
 
 =head1 NAME
 

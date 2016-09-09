@@ -2750,8 +2750,6 @@ sub wordWrap        {($#_)?($_[0]-> set_word_wrap(    $_[1]))               :ret
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

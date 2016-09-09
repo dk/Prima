@@ -28,8 +28,6 @@ sub get_default_font
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

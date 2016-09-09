@@ -545,8 +545,6 @@ sub pressed
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::Header - a multi-tabbed header widget.

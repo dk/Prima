@@ -289,8 +289,6 @@ sub OK_Click
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

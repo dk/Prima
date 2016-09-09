@@ -485,8 +485,6 @@ EXIT:
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::ImageDialog - file open and save dialogs.

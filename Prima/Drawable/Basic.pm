@@ -376,8 +376,6 @@ sub text_split_lines
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::Drawable::Basic

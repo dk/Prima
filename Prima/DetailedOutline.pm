@@ -321,8 +321,6 @@ sub autoRecalc {($#_)?$_[0]->set_auto_recalc ($_[1]):return $_[0]->{autoRecalc} 
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

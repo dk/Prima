@@ -708,8 +708,6 @@ sub vertical     {($#_)?$_[0]-> set_vertical  ($_[1])                   : return
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::ScrollBar - standard scroll bars class

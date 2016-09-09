@@ -455,8 +455,6 @@ sub sampleText       { ($#_)? shift-> {sampleText} = $_[1]  : return $_[0]-> {sa
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::FontDialog - standard font dialog

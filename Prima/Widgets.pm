@@ -155,8 +155,6 @@ sub raise        {($#_)?$_[0]-> set_raise($_[1]):return $_[0]-> {raise}}
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

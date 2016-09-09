@@ -639,8 +639,6 @@ sub literal      {($#_)?$_[0]-> {literal} =      $_[1] :return $_[0]-> {literal}
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

@@ -2069,8 +2069,6 @@ sub showDotDirs
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

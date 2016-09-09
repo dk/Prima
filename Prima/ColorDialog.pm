@@ -937,8 +937,6 @@ sub colors       {($#_)?$_[0]-> set_colors      ($_[1]):return $_[0]-> {colors};
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

@@ -249,8 +249,6 @@ sub profile_default
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::FindDialog, Prima::ReplaceDialog - standard interface dialogs

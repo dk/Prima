@@ -245,8 +245,6 @@ sub import
 
 1;
 
-__DATA__
-
 
 =pod
 

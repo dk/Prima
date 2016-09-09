@@ -1644,8 +1644,6 @@ sub showDotDirs
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::FileDialog - File system related widgets and dialogs.

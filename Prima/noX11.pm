@@ -16,8 +16,6 @@ sub XOpenDisplay
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::noX11 - Use Prima without X11

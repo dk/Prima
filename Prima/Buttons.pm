@@ -1189,8 +1189,6 @@ package Prima::CheckBoxGroup; use vars qw(@ISA); @ISA=qw(Prima::GroupBox);
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

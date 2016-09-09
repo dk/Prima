@@ -55,8 +55,6 @@ sub image{ return load_std_bmp( $_[0], 0, 0, $sysimage); }
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

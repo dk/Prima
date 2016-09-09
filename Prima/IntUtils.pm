@@ -466,8 +466,6 @@ sub draw_item_background
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::IntUtils - internal functions

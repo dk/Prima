@@ -885,8 +885,6 @@ sub insert_to_frame
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

@@ -297,8 +297,6 @@ sub profile_default
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::sys::gtk2::FileDialog - GTK2 file system dialogs.

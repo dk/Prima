@@ -518,8 +518,6 @@ sub unwatch_load_progress
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

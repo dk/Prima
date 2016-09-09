@@ -1308,8 +1308,6 @@ sub icon        {($#_)?$_[0]-> set_icon        ($_[1])   :return $_[0]-> {icon} 
 
 1;
 
-__DATA__
-
 =pod
 
 =head1 NAME

@@ -248,8 +248,6 @@ sub profile_default
 
 1;
 
-__DATA__
-
 =head1 NAME
 
 Prima::sys::win32::FileDialog - Windows file system dialogs.

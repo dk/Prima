@@ -220,8 +220,6 @@ if ( $cmd[0] eq 'a') {
 
 assert( Prima::VB::CfgMaint::write_cfg) unless $ro;
 
-__DATA__
-
 =pod
 
 =head1 NAME
