@@ -354,6 +354,7 @@ Icon_maskType( Handle self, Bool set, int type)
 	}
 
 	var-> maskType = type;
+	return 1;
 }
 
 Color

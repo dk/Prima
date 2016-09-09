@@ -532,7 +532,6 @@ read_bmp_header( PImgLoadFileInstance fi)
 
 					case BCA_BITFIELDS: {
 								Bool ok = 1;
-								RGBTriplet bytes;
 
 								/* Read BI_BITFIELDS color masks from the header (where usually the palette is) */
 								/* These are strangely stored as dwords in the order of R-G-B. */

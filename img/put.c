@@ -202,7 +202,6 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 		int type     = PImage( src)-> type;
 		void *self   = PImage( src)-> self; 
 		RGBColor palette[2];
-		Byte *p;
 
 		if ( PIcon(src)-> maskType != imbpp1) {
 			if ( PIcon(src)-> maskType != imbpp8) croak("panic: bad icon mask type");
@@ -751,7 +750,7 @@ static BlendFunc* blend_functions[] = {
 static Bool 
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
-	int bpp, bytes, sls, dls, mls, als, x, y, px;
+	int bpp, bytes, sls, dls, mls, als, x, y;
 	Byte *s, *d, *m, *a; 
 	unsigned int src_alpha = 0, dst_alpha = 0;
 	Bool use_src_alpha = false, use_dst_alpha = false;
@@ -969,7 +968,7 @@ img_premultiply_alpha_constant( Handle self, int alpha)
 void img_premultiply_alpha_map( Handle self, Handle alpha)
 {
 	Byte * data, * mask;
-	int i, j, pixels;
+	int i, pixels;
 	if ( PImage(self)-> type == imByte ) {
 		pixels = 1;
 	} else if ( PImage(self)-> type == imRGB ) {

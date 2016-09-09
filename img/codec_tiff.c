@@ -857,7 +857,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	TIFF * tiff = ( TIFF *) fi-> instance;
 	HV * profile = fi-> frameProperties;
 	PIcon i = ( PIcon) fi-> object;
-	uint16 resunit;
 	char * photometric_descr = nil;
 	unsigned short photometric, comp_method;
 	int x, y, w, h, icon, tiled, rgba_striped = 0,
@@ -1092,7 +1091,6 @@ VALID_COMBINATION:
 			xres > 0 && yres > 0 && 
 			xres / yres > 1.9 && xres / yres < 2.1
 		) {
-			int try_faxpect;
 			comp_method = 0;
 			TIFFGetField( tiff, TIFFTAG_COMPRESSION, &comp_method);
 			if ( 
@@ -1244,7 +1242,7 @@ VALID_COMBINATION:
 					dd   = w * source_samples;
 					if ( rgba_striped) {
 						/* RGBATiles are reversed */
-						sd   = - (tile_width * source_samples);
+						sd   = - ((int)tile_width * source_samples);
 						src  = tifftile - sd * (tile_height - 1); 
 					} else {
 						sd   = tilesz / tile_height;

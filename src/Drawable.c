@@ -1286,7 +1286,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 	int i;
 	AV * av;
 	STRLEN tlen;
-	int returnFirstLine = ( t. options & twReturnFirstLineLength) == twReturnFirstLineLength;
+	int returnFirstLine = ( options & twReturnFirstLineLength) == twReturnFirstLineLength;
 
 	if ( SvROK( text )) {
 		SV * ret;
