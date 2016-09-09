@@ -79,6 +79,7 @@ $self-> {imgConvProc} = sub {
   my $a = $self-> image-> dup;
   $a-> set( rop => rop::Whiteness, rop2 => rop::Blackness);
   $a-> map( $a-> pixel( $a-> width - 1, $a-> height - 1));
+  $a->type(1);
   my $x = $self-> image-> dup;
   $x-> set( rop2 => rop::NoOper, rop => rop::Blackness);
   $x-> map( $x-> pixel( $x-> width - 1, $a-> height - 1));
