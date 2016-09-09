@@ -894,7 +894,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 						int borderStyle, Bool taskList, int windowState, 
 						int on_top, Bool usePos, Bool useSize, Bool layered)
 {
-	Bool reset = false, redraw;
+	Bool reset = false;
 	ViewProfile vprf;
 	int oStage = var stage;
 	WCHAR * saved_caption = NULL;
@@ -1726,12 +1726,6 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		sys ps = sys layeredPaintSurface;
 	} else if ( is_apt( aptLayered )) {
 		RECT r;
-		HDC dc2;
-		HBITMAP bm2;
-		BITMAPINFO bmi;
-		VOID *pvBits;
-		BLENDFUNCTION bf;
-		int x, y;
 
 		insideOnPaint = false;
 		GetWindowRect( HANDLE, &r);
@@ -1906,7 +1900,7 @@ subpaint_layered_widgets( HWND self, HDC ps, HDC alpha_dc, POINT screen_offset, 
 	while ( child != NULL ) {
 		Handle h;
 		RECT r;
-		HRGN shape, rect_shape;
+		HRGN shape;
 		Event ev;
 		POINT child_offset, size;
 		

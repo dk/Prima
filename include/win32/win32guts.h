@@ -608,6 +608,24 @@ extern int          apcUpdateWindow( HWND wnd );
 #	define SetWindowLongPtr SetWindowLong
 #endif
 
+#ifndef WS_EX_LAYERED
+#define ULW_ALPHA 0x00000002
+#define WS_EX_LAYERED 0x00080000
+WINUSERAPI
+BOOL
+WINAPI
+UpdateLayeredWindow(
+    __in HWND hWnd,
+    __in_opt HDC hdcDst,
+    __in_opt POINT* pptDst,
+    __in_opt SIZE* psize,
+    __in_opt HDC hdcSrc,
+    __in_opt POINT* pptSrc,
+    __in COLORREF crKey,
+    __in_opt BLENDFUNCTION* pblend,
+    __in DWORD dwFlags);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

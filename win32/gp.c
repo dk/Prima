@@ -923,7 +923,6 @@ apc_gp_get_font_def( Handle self, int first, int last, Bool unicode)
 	PFontABC f1;
 	MAT2 gmat = { {0, 1}, {0, 0}, {0, 0}, {0, 1} };
 	GLYPHMETRICS g;
-	char buf[sizeof(GLYPHMETRICS)];
 
 	f1 = ( PFontABC) malloc(( last - first + 1) * sizeof( FontABC));
 	if ( !f1) return nil;

@@ -369,6 +369,7 @@ apc_last_error(void)
 	case errInvPrinter            : return "Bad printer request";
 	case errNoPrinters            : return "No printers";
 	case errUserCancelled         : return "User cancelled";
+	default                       : return "Unknown error";
 	}
 }
 
@@ -452,7 +453,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 	UINT    orgMsg = msg;
 	Event   ev;
 	Bool    hiStage   = false;
-	int     i, orgCmd;
+	int     orgCmd;
 	Bool    message_result = true;
 
 	if ( !self || appDead)
@@ -1037,7 +1038,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 	UINT    orgMsg = msg;
 	Event   ev;
 	Bool    hiStage   = false;
-	int     i, orgCmd;
+	int     orgCmd;
 
 	if ( !self)
 		return DefWindowProcW( win, msg, mp1, mp2);

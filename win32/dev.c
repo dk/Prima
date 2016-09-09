@@ -999,7 +999,7 @@ img_put_argb_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	HBITMAP old;
 
 	if ( req-> rop == ropSrcCopy ) {
-		req-> rop == ropCopyPut;
+		req-> rop = ropCopyPut;
 		return img_put_image_on_pixmap( self, image, req);
 	}
 
@@ -1020,7 +1020,7 @@ static Bool
 img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 {
 	if ( req-> rop == ropSrcCopy ) {
-		req-> rop == ropCopyPut;
+		req-> rop = ropCopyPut;
 		return img_put_pixmap_on_pixmap( self, image, req);
 	} else
 		return img_put_alpha_blend( sys ps, dsys(image)ps, req);
@@ -1053,7 +1053,7 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 	src = CreateCompatibleDC(sys ps);
 	old = SelectObject(src, dsys (image) bm);
 	if ( req-> rop == ropSrcCopy ) {
-		req-> rop == ropCopyPut;
+		req-> rop = ropCopyPut;
 		img_draw_black_rect( self, req );
 		ok = img_put_stretch_blt_viewport( sys ps, src, req);
 	} else
@@ -1123,7 +1123,7 @@ static Bool
 img_put_layered_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 	if ( req-> rop == ropSrcCopy ) {
-		req-> rop == ropCopyPut;
+		req-> rop = ropCopyPut;
 		img_draw_black_rect( self, req );
 		return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
 	} else
@@ -1164,7 +1164,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 	PutImageRequest req;
 	PutImageFunc ** dst = NULL;
 	int src = -1;
-	Bool ok, and_mask = false;
+	Bool and_mask = false;
 
 	objCheck false;
 	dobjCheck(image) false;

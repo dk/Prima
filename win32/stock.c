@@ -742,7 +742,6 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, PFEnumStruc es)
 	Font * font = es-> font;
 	int ret = 1, copy = 0;
 	long hei, res;
-	ENUMLOGFONTEXW elx;
 
 	es-> passedCount++;
 			
@@ -1565,19 +1564,21 @@ hwnd_repaint_layered( Handle self, Bool now )
 	if ( top && top != self && dsys(top) options. aptLayered )
 		return hwnd_repaint_layered(top, now);
 
-	if ( !is_apt( aptLayered)) return;
+	if ( !is_apt( aptLayered)) return false;
 
 	if ( !now && !is_apt( aptSyncPaint) ) {
 		if ( !is_apt( aptRepaintPending )) {
 			apt_set( aptRepaintPending );
 			PostMessage(( HWND) var handle, WM_REPAINT_LAYERED, 0, 0);
 		}
-		return;
+		return false;
 	}
 
 	apt_clear( aptRepaintPending );
 	ev. cmd = cmPaint;
 	CWidget(self)-> message( self, &ev); 
+
+	return true;
 }
 
 Handle

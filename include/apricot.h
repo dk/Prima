@@ -1294,9 +1294,9 @@ extern void
 exception_check_raise( void );
 
 #if PRIMA_PLATFORM_X11
-#define EXCEPTION_CHECK_RAISE(v) exception_check_raise()
+#define EXCEPTION_CHECK_RAISE exception_check_raise()
 #else
-#define EXCEPTION_CHECK_RAISE(v) if ( exception_charged()) return v;
+#define EXCEPTION_CHECK_RAISE if ( exception_charged()) return
 #endif
 
 

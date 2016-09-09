@@ -48,6 +48,7 @@ Widget_init( Handle self, HV * profile)
 	dPROFILE;
 	enter_method;
 	SV * sv;
+	int geometry;
 
 	inherited-> init( self, profile);
 
@@ -168,7 +169,7 @@ Widget_init( Handle self, HV * profile)
 		var-> virtualSize = my-> get_size( self);
 	var-> geomSize = var-> virtualSize;
 
-	int geometry = pget_i(geometry);
+	geometry = pget_i(geometry);
 	if ( geometry == gtGrowMode ) {
 		Bool x = 0, y = 0;
 		if ( pget_B( centered)) { x = 1; y = 1; };
@@ -574,7 +575,7 @@ void Widget_handle_event( Handle self, PEvent event)
 						my-> notify( self, "<sH", "Paint", self);
 						exception_block(flag);
 						if ( var-> stage == csNormal ) apc_widget_end_paint( self);
-						EXCEPTION_CHECK_RAISE();
+						EXCEPTION_CHECK_RAISE;
 						objCheck;
 						inherited-> end_paint( self);
 					} else
