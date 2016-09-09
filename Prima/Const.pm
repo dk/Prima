@@ -38,6 +38,8 @@ package
 sub blend($)
 {
    my $alpha = 255 - shift;
+   $alpha = 0 if $alpha < 0;
+   $alpha = 255 if $alpha > 255;
    return rop::DstAtop | rop::ConstantAlpha | ( $alpha << rop::SrcAlphaShift ) | ($alpha << rop::DstAlphaShift);
 }
 
