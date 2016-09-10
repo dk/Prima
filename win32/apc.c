@@ -2011,7 +2011,7 @@ apc_widget_end_paint( Handle self)
 		SelectObject(sys ps, sys stockBM);
 		DeleteObject(sys bm);
 		DeleteDC(sys ps);
-		DeleteDC(sys ps2);
+		ReleaseDC(( HWND) var handle, sys ps2);
 		sys ps = sys ps2 = NULL;
 		sys bm = sys stockBM = NULL;
 	} else if ( is_opt( optBuffered)) {
