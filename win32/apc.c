@@ -1960,6 +1960,8 @@ apc_widget_end_paint( Handle self)
 {
 	objCheck false;
 
+	hwnd_leave_paint( self);
+
 	if ( is_apt( aptLayeredPaint )) {
 		// do nothing
 	} else if ( is_apt( aptLayered )) {
@@ -2035,8 +2037,6 @@ apc_widget_end_paint( Handle self)
 		sys ps2 = nil;
 		sys stockBM = nil;
 	}
-
-	hwnd_leave_paint( self);
 
 	if ( !is_apt(aptLayeredPaint) && sys ps != nil) {
 		if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
