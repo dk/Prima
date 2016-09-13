@@ -692,7 +692,7 @@ STRETCH_HORIZONTAL_OPEN(Long)
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
 #endif
-STRETCH_HORIZONTAL_LOOP(Long,register long pixel = 0,pixel,0,contributions[j],+.5)
+STRETCH_HORIZONTAL_LOOP(Long,register int64_t pixel = 0,pixel,0,contributions[j],+.5)
 STRETCH_CLAMP(INT32_MIN,INT32_MAX)
 STRETCH_HORIZONTAL_CLOSE(Long)
 
@@ -700,7 +700,7 @@ STRETCH_VERTICAL_OPEN(Long)
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
 #endif
-STRETCH_VERTICAL_LOOP(Long,register long pixel = 0,pixel,0,contributions[j],+.5)
+STRETCH_VERTICAL_LOOP(Long,register int64_t pixel = 0,pixel,0,contributions[j],+.5)
 STRETCH_CLAMP(INT32_MIN,INT32_MAX)
 STRETCH_VERTICAL_CLOSE(Long)
 
