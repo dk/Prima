@@ -920,7 +920,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 
 		if ( !use_dst_alpha ) {
 			adbuf_ptr = adbuf + bytes * OMP_THREAD_NUM;
-			fill_alpha_buf( adbuf, a_ptr, dstW, bpp);
+			fill_alpha_buf( adbuf_ptr, a_ptr, dstW, bpp);
 		} else
 			adbuf_ptr = adbuf;
 		
