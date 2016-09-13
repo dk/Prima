@@ -432,31 +432,31 @@ filter_sinc_fast(const double x)
 
 	If outside of the interval of approximation, use the standard trig formula.
 */
-if (x > 4.0)
+	if (x > 4.0)
 	{
 		const double alpha=(double) (PI*x);
 		return(sin((double) alpha)/alpha);
 	}
-{
-	/*
-		The approximations only depend on x^2 (sinc is an even function).
-	*/
-	const double xx = x*x;
-	/*
-		Maximum absolute relative error 6.3e-6 < 1/2^17.
-	*/
-	const double c0 = 0.173610016489197553621906385078711564924e-2L;
-	const double c1 = -0.384186115075660162081071290162149315834e-3L;
-	const double c2 = 0.393684603287860108352720146121813443561e-4L;
-	const double c3 = -0.248947210682259168029030370205389323899e-5L;
-	const double c4 = 0.107791837839662283066379987646635416692e-6L;
-	const double c5 = -0.324874073895735800961260474028013982211e-8L;
-	const double c6 = 0.628155216606695311524920882748052490116e-10L;
-	const double c7 = -0.586110644039348333520104379959307242711e-12L;
-	const double p =
-		c0+xx*(c1+xx*(c2+xx*(c3+xx*(c4+xx*(c5+xx*(c6+xx*c7))))));
-	return((xx-1.0)*(xx-4.0)*(xx-9.0)*(xx-16.0)*p);
-}
+	{
+		/*
+			The approximations only depend on x^2 (sinc is an even function).
+		*/
+		const double xx = x*x;
+		/*
+			Maximum absolute relative error 6.3e-6 < 1/2^17.
+		*/
+		const double c0 = 0.173610016489197553621906385078711564924e-2L;
+		const double c1 = -0.384186115075660162081071290162149315834e-3L;
+		const double c2 = 0.393684603287860108352720146121813443561e-4L;
+		const double c3 = -0.248947210682259168029030370205389323899e-5L;
+		const double c4 = 0.107791837839662283066379987646635416692e-6L;
+		const double c5 = -0.324874073895735800961260474028013982211e-8L;
+		const double c6 = 0.628155216606695311524920882748052490116e-10L;
+		const double c7 = -0.586110644039348333520104379959307242711e-12L;
+		const double p =
+			c0+xx*(c1+xx*(c2+xx*(c3+xx*(c4+xx*(c5+xx*(c6+xx*c7))))));
+		return((xx-1.0)*(xx-4.0)*(xx-9.0)*(xx-16.0)*p);
+	}
 }
 
 static double filter_triangle(const double x)
@@ -465,9 +465,9 @@ static double filter_triangle(const double x)
 	1st order (linear) B-Spline, bilinear interpolation, Tent 1D filter, or
 	a Bartlett 2D Cone filter.  
 */
-if (x < 1.0)
-	return(1.0-x);
-return(0.0);
+	if (x < 1.0)
+		return(1.0-x);
+	return(0.0);
 }
 
 
@@ -477,11 +477,11 @@ filter_quadratic(const double x)
 /*
 	2rd order (quadratic) B-Spline approximation of Gaussian.
 */
-if (x < 0.5)
-	return (0.75-x*x);
-if (x < 1.5)
-	return (0.5*(x-1.5)*(x-1.5));
-return(0.0);
+	if (x < 0.5)
+		return (0.75-x*x);
+	if (x < 1.5)
+		return (0.5*(x-1.5)*(x-1.5));
+	return(0.0);
 }
 
 /*
@@ -516,25 +516,25 @@ which ensures function is continuous in value and derivative (slope).
 static double 
 filter_cubic_spline0(const double x)
 {
-if (x < 1.0) return 1+x*(x*(-3.0+x*2));
-return 0.0;
+	if (x < 1.0) return 1+x*(x*(-3.0+x*2));
+	return 0.0;
 }
 
 static double 
 filter_cubic_spline1(const double x)
 {
-if (x < 1.0)
-	return(2.0/3.0+x*(x*(-1.0+x/2.0)));
-if (x < 2.0)
-	return(4.0/3.0+x*(-2.0+x*(1.0-x/6.0)));
-return(0.0);
+	if (x < 1.0)
+		return(2.0/3.0+x*(x*(-1.0+x/2.0)));
+	if (x < 2.0)
+		return(4.0/3.0+x*(-2.0+x*(1.0-x/6.0)));
+	return(0.0);
 }
 
 static double
 filter_gaussian(const double x)
 {
 /* Gaussian with a sigma = 1/2 */
-return exp((double)(x*x*-2.0));
+	return exp((double)(x*x*-2.0));
 }
 
 
