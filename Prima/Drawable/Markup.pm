@@ -53,7 +53,7 @@ each is:
 
 The text inside C<W> sequence will not be wrapped during C<text_wrap> calls.
 
-The C<P> sequence is used as follows: C<< P<n> >>, where C<n> is a
+The C<P> sequence is used as follows:C<< PE<lt>nE<gt> >>, where C<n> is a
 0-based index into the C<picturePalette>.
 
 The methods C<text_out> and C<get_text_width> are affected by C<Prima::Markup>.
