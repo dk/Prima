@@ -1186,6 +1186,10 @@ sub pkgconfig
 
 	%h = map { $_ => 1 } @INCPATH;
 	my $inc  = `pkg-config --cflags-only-I $package`;
+	if ( $? != 0 ) { # package has error?
+	   printlog "misconfigured\n";
+	   return 0;
+	}
 	chomp $inc;
 	$inc =~ s/\-I//g;
 	for ( split " ", $inc ) {
@@ -1194,6 +1198,10 @@ sub pkgconfig
 
 	%h = map { $_ => 1 } @LIBS;
 	my $libs    = `pkg-config --libs-only-l $package`;
+	if ( $? != 0 ) {
+	   printlog "misconfigured\n";
+	   return 0;
+	}
 	chomp $libs;
 	$libs =~ s/\-l//g;
 	for ( split " ", $libs ) {
@@ -1202,6 +1210,10 @@ sub pkgconfig
 	
 	%h = map { $_ => 1 } @LIBPATH;
 	my $libpath    = `pkg-config --libs-only-L $package`;
+	if ( $? != 0 ) {
+	   printlog "misconfigured\n";
+	   return 0;
+	}
 	chomp $libpath;
 	$libpath =~ s/\-[LR]//g;
 	for ( split " ", $libpath ) {
