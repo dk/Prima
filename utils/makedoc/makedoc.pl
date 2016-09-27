@@ -110,6 +110,7 @@ if ( $build) {
 		for ( <W>) {
 			if ( m/^=for\s*podview\s*<\s*img\s*src=\"?([^\"\s]+)\"?\s*(cut\s*=\s*1)?\s*>/) {
 				my ( $gif, $eps, $do_cut) = ( $1, $1, $2);
+				$eps =~ s/\.\.\///g;
 				$eps =~ s/\//_/g;
 				$eps =~ s/\.[^\.]+$/.eps/;
 				unless ( -f $eps) {
