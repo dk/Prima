@@ -1,5 +1,8 @@
 Revision history for Perl module Prima
 
+1.49 2016-09-27
+ - Fixes for new development bugs in 1.48
+
 1.48 2016-08-21
  - Support dynamic font loading
  - Added support for invividual horizontal font glyph metrics
