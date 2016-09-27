@@ -899,9 +899,9 @@ void Widget_handle_event( Handle self, PEvent event)
 			}
 		SIZE_EVENT:;  
 			if ( var->geometry == gtGrowMode && var-> growMode & gmCenter) 
-					my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
+				my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
 			if ( !event-> gen. B)
-					my-> first_that( self, (void*) Widget_size_notify, &event-> gen. R);
+				my-> first_that( self, (void*) Widget_size_notify, &event-> gen. R);
 			if ( doNotify) {
 				Point oldSize;
 				oldSize. x = event-> gen. R. left;
