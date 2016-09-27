@@ -25,7 +25,7 @@ sub t
 	       $x-> font( $_ => $x-> font-> $_() * 3 + 12);
 	       my $fx2 = $x-> font-> $_();
 	       SKIP: {
-	           if ( $fx2 == $fx) {
+	           if ( $fx2 == $fx || $x->font->name ne $f->{name}) {
 	               skip "$_", 1;
 	               next;
 	           }
@@ -43,7 +43,7 @@ sub t
 		$x-> font( $_ => $fh, width => $fw * 3 + 12);
 		my $fw2 = $x-> font-> width;
 		SKIP: {
-		    if ( $fw2 == $fw) {
+		    if ( $fw2 == $fw || $x->font->name ne $f->{name}) {
 		        skip "width / $f->{name}", 1;
 		        next;
 		    }
@@ -59,11 +59,11 @@ sub t
 	$x-> font( style => $newfx);
 	my $fx2 = $x-> font-> style;
 	SKIP : {
-	    if ( $fx2 == $fx) {
+	    if ( $fx2 == $fx || $x->font->name ne $f->{name}) {
 	        skip "style", 1;
 	    }
 	    $x-> font( style => $fx);
-	    is( $fx, $x-> font-> style, "style / $f->{name}");
+	    is( $x-> font-> style, $fx, "style / $f->{name}");
 	};
 	
 	# wrapping

@@ -977,8 +977,8 @@ prima_build_font_key( PFontKey key, PFont f, Bool bySize)
 	bzero( key, sizeof( FontKey));
 	key-> height = bySize ? -f-> size : f-> height;
 	key-> width = f-> width;
-	key-> style = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut);
-	key-> pitch = f-> pitch;
+	key-> style = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut) & fsMask;
+	key-> pitch = f-> pitch & fpMask;
 	key-> direction = 0;
 	strcpy( key-> name, f-> name);
 	strcat( key-> name, "\1");
@@ -1013,7 +1013,8 @@ add_font_to_cache( PFontKey key, PFontInfo f, const char *name, XFontStruct *s, 
 	kf-> id = s-> fid;
 	kf-> fs = s;
 	memcpy( &kf-> font, &f-> font, sizeof( Font));
-	kf-> font. style &= ~(fsUnderlined|fsOutline|fsStruckOut);
+	kf-> font. style &= ~(fsUnderlined|fsOutline|fsStruckOut) & fsMask;
+	kf-> font. pitch &= fpMask;
 	kf-> flags = f-> flags;
 	kf-> underlinePos = uPos;
 	kf-> underlineThickness = uThinkness;
@@ -1334,7 +1335,7 @@ AGAIN:
 			underlinePos = -s-> max_bounds. descent + underlineThickness / 2;
 
 		prima_build_font_key( &key, font, bySize); 
-		Fdebug("font cache add: %d(%d)x%d.%x.%s %s/%s\n", f-> font.height, f-> font.size, f->font.width, f-> font. style, _F_DEBUG_PITCH(f->font. pitch), f-> font.name, f-> font.encoding);
+		Fdebug("font cache add: %d(%d)x%d.%s.%s %s/%s\n", f-> font.height, f-> font.size, f->font.width, _F_DEBUG_STYLE(f-> font. style), _F_DEBUG_PITCH(f->font. pitch), f-> font.name, f-> font.encoding);
 		if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
 			return;
 		askedDefaultPitch = font-> pitch == fpDefault;
@@ -1477,7 +1478,7 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 			diff += 3000;
 	}
 	return diff;
-}   
+}
 
 Bool
 prima_core_font_pick( Handle self, PFont source, PFont dest)
@@ -1506,9 +1507,9 @@ prima_core_font_pick( Handle self, PFont source, PFont dest)
 	}
 
 	if ( by_size) {
-		Fdebug("font reqS:%d(h=%d)x%d.%x.%s %s/%s\n", dest-> size, dest-> height, dest->width, dest-> style, _F_DEBUG_PITCH(dest-> pitch), dest-> name, dest-> encoding);
+		Fdebug("font reqS:%d(h=%d)x%d.%s.%s %s/%s\n", dest-> size, dest-> height, dest->width, _F_DEBUG_STYLE(dest-> style), _F_DEBUG_PITCH(dest-> pitch), dest-> name, dest-> encoding);
 	} else {
-		Fdebug("font reqH:%d(s=%d)x%d.%x.%s %s/%s\n", dest-> height, dest-> size, dest->width, dest-> style, _F_DEBUG_PITCH(dest-> pitch), dest-> name, dest-> encoding);
+		Fdebug("font reqH:%d(s=%d)x%d.%s.%s %s/%s\n", dest-> height, dest-> size, dest->width, _F_DEBUG_STYLE(dest-> style), _F_DEBUG_PITCH(dest-> pitch), dest-> name, dest-> encoding);
 	}
 
 	if ( !hash_fetch( encodings, dest-> encoding, strlen( dest-> encoding)))
@@ -1536,7 +1537,7 @@ AGAIN:
 	i = index;
 
 	Fdebug("font: #%d (diff=%g): %s\n", i, minDiff, info[i].xname); 
-	Fdebug("font: pick:%d(%d)x%d.%x.%s %s/%s %s.%s\n", info[i].font. height, info[i].font. size, info[i].font. width, info[i].font. style, _F_DEBUG_PITCH(info[i].font. pitch), info[i].font. name, info[i].font. encoding, info[i].flags.sloppy?"sloppy":"", info[i].vecname?"vector":"");
+	Fdebug("font: pick:%d(%d)x%d.%s.%s %s/%s %s.%s\n", info[i].font. height, info[i].font. size, info[i].font. width, _F_DEBUG_STYLE(info[i].font. style), _F_DEBUG_PITCH(info[i].font. pitch), info[i].font. name, info[i].font. encoding, info[i].flags.sloppy?"sloppy":"", info[i].vecname?"vector":"");
 	
 	if ( !by_size && info[ i]. flags. sloppy && !info[ i]. vecname) {
 		detail_font_info( info + i, dest, false, by_size); 
@@ -2129,4 +2130,23 @@ prima_char_struct( XFontStruct * xs, void * c, Bool wide)
 		( index2 - xs-> min_char_or_byte2) : 
 		&(xs-> min_bounds);
 	return cs;
-}   
+}
+
+const char *
+prima_font_debug_style(int style)
+{
+	static char buf[256];
+	char * p = buf;
+
+	if ( style & fsBold) *p++ = 'B';
+	if ( style & fsThin) *p++ = 'T';
+	if ( style & fsItalic) *p++ = 'I';
+	if ( style & fsUnderlined) *p++ = 'U';
+	if ( style & fsStruckOut) *p++ = 'S';
+	if ( style & fsOutline) *p++ = 'O';
+	if ( style & ~fsMask) *p++ = '+';
+	if ( style == 0) *p++ = '0';
+	*p++ = 0;
+
+	return buf;
+}

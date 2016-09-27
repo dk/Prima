@@ -468,6 +468,7 @@ prima_debug( const char *format, ...);
 #define Pdebug if (pguts->debug & DEBUG_COLOR) _debug
 #define Xdebug if (pguts->debug & DEBUG_XRDB) _debug
 #define _F_DEBUG_PITCH(x) ((x==fpDefault)?"default":(x==fpFixed?"fixed":"variable"))
+#define _F_DEBUG_STYLE(x) prima_font_debug_style(x)
 
 typedef struct 
 {
@@ -1320,3 +1321,6 @@ prima_get_view_ex( Handle self, PViewProfile p);
 
 extern int
 prima_flush_events( Display * disp, XEvent * ev, Handle self);
+
+extern const char *
+prima_font_debug_style(int style);

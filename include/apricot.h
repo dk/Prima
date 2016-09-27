@@ -2704,6 +2704,7 @@ FS(Underlined)
 FS(StruckOut)
 #define    fsOutline        0x0020
 FS(Outline)
+#define    fsMask           0x003F
 END_TABLE(fs,UV)
 #undef FS
 
@@ -2716,6 +2717,7 @@ FP(Default)
 FP(Variable)
 #define    fpFixed          0x0002
 FP(Fixed)
+#define    fpMask           0x0003
 
 /* fill constants */
 #define    fpEmpty          0 /*   Uses background color */

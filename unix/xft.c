@@ -425,8 +425,8 @@ xft_build_font_key( PFontKey key, PFont f, Bool bySize)
 	bzero( key, sizeof( FontKey));
 	key-> height = bySize ? -f-> size : f-> height;
 	key-> width = f-> width;
-	key-> style = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut);
-	key-> pitch = f-> pitch;
+	key-> style = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut) & fsMask;
+	key-> pitch = f-> pitch & fpMask;
 	key-> direction = ROUGHLY(f-> direction);
 	strcpy( key-> name, f-> name);
 }
@@ -541,11 +541,11 @@ xft_store_font(Font * k, Font * v, Bool by_size, XftFont * xft, XftFont * xft_ba
 		if (( kf = malloc( sizeof( CachedFont)))) {
 			bzero( kf, sizeof( CachedFont));
 			memcpy( &kf-> font, v, sizeof( Font));
-			kf-> font. style &= ~(fsUnderlined|fsOutline|fsStruckOut);
+			kf-> font. style &= ~(fsUnderlined|fsOutline|fsStruckOut) & fsMask;
 			kf-> xft      = xft;
 			kf-> xft_base = xft_base;
 			hash_store( guts. font_hash, &key, sizeof( FontKey), kf);
-			XFTdebug("store %x(%x):%dx%d.%x.%s.%s^%g", xft, xft_base, key.height, key.width, key.style, _F_DEBUG_PITCH(key.pitch), key.name, ROUGHLY(key.direction));
+			XFTdebug("store %x(%x):%dx%d.%s.%s.%s^%g", xft, xft_base, key.height, key.width, _F_DEBUG_STYLE(key.style), _F_DEBUG_PITCH(key.pitch), key.name, ROUGHLY(key.direction));
 		}
 	}
 }
@@ -592,7 +592,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	/* see if the font is not present in xft - the hashed negative matches
 			are stored with width=0, as the width alterations are derived */
 	xft_build_font_key( &key, &requested_font, by_size);
-	XFTdebug("want %dx%d.%x.%s.%s/%s^%g", key.height, key. width, key.style, _F_DEBUG_PITCH(key.pitch), key.name, requested_font.encoding, ROUGHLY(requested_font.direction));
+	XFTdebug("want %dx%d.%s.%s.%s/%s^%g", key.height, key. width, _F_DEBUG_STYLE(key.style), _F_DEBUG_PITCH(key.pitch), key.name, requested_font.encoding, ROUGHLY(requested_font.direction));
 	
 	key. width = 0;
 	if ( hash_fetch( mismatch, &key, sizeof( FontKey))) {
