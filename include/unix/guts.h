@@ -623,8 +623,8 @@ typedef struct _UnixGuts
 	int                          visualClass;
 	XVisualInfo                  argb_visual;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	XRenderPictFormat *          argb_pic_format;
-	XRenderPictFormat *          argb_compat_format;
+	XRenderPictFormat *          xrender_argb_pic_format;
+	XRenderPictFormat *          xrender_argb_compat_format;
 #endif
 	MainColorEntry *             palette;
 	int                          mappingPlace[256];

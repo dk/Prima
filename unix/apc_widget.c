@@ -464,7 +464,7 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 	prima_prepare_drawable_for_painting( self, inside_on_paint);
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	if ( XF_LAYERED(XX) )
-		XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_pic_format, 0, NULL);
+		XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_pic_format, 0, NULL);
 #endif
 	if ( useRPDraw) {
 		Handle owner = PWidget(self)->owner;

@@ -625,7 +625,7 @@ class;
 			find_color_mask_range( guts. argb_bits. green_mask, &guts. argb_bits. green_shift, &guts. argb_bits. green_range);
 			find_color_mask_range( guts. argb_bits. blue_mask,  &guts. argb_bits. blue_shift,  &guts. argb_bits. blue_range);
 			find_color_mask_range( guts. argb_bits. alpha_mask, &guts. argb_bits. alpha_shift, &guts. argb_bits. alpha_range);
-			guts. argb_pic_format = f;
+			guts. xrender_argb_pic_format = f;
 			guts. argb_depth = f-> depth;
 			Pdebug("selected visual 0x%x for ARGB operations\n", list[i].visualid);
 			break;
@@ -633,8 +633,8 @@ class;
 		if ( list) XFree( list);
 		
 		/* find compat format for putting regular pixmaps */
-		if (!(guts. argb_compat_format = XRenderFindVisualFormat(DISP, guts.visual.visual))) {
-			guts. argb_pic_format = NULL;
+		if (!(guts. xrender_argb_compat_format = XRenderFindVisualFormat(DISP, guts.visual.visual))) {
+			guts. xrender_argb_pic_format = NULL;
 			guts. argb_visual. visual = NULL;
 			guts. argb_depth = 0;
 		}

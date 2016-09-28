@@ -86,7 +86,7 @@ prima_prepare_ximage( int width, int height, int format)
 		pformat = XYBitmap;
 		break;
 	case CACHE_LAYERED:
-		if ( guts. argb_pic_format ) {
+		if ( guts. argb_depth ) {
 			depth   = guts. argb_visual.depth;
 			idepth  = guts. argb_depth;
 			visual  = guts. argb_visual. visual;
@@ -413,7 +413,7 @@ apc_dbm_create( Handle self, int type)
 		depth = 1;
 		break;
 	case dbtLayered:
-		if ( guts. argb_pic_format ) {
+		if ( guts. argb_depth ) {
 			XX-> flags.layered = 1;
 			depth = guts. argb_depth;
 			XX-> colormap = guts. argbColormap;
@@ -438,7 +438,7 @@ apc_dbm_create( Handle self, int type)
 
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	if ( XF_LAYERED(XX) )
-		XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_pic_format, 0, NULL);
+		XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_pic_format, 0, NULL);
 #endif
 
 	return true;
@@ -1802,7 +1802,7 @@ img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	PDrawableSysData YY = X(image);
 	Picture target;
 
-	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_compat_format, 0, NULL);
+	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
 	XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, YY-> argb_picture, 0, target,
 		req->src_x, req->src_y, 0, 0,
 		req->dst_x, req->dst_y, req->w, req->h
@@ -1895,7 +1895,7 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 
 	if ( render_rop >= PictOpMinimum ) {
 		/* cheap on-server blit */
-		picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. argb_compat_format, 0, NULL);
+		picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
 		XRenderComposite( DISP, render_rop, picture, 0, XX-> argb_picture,
 			req->src_x, req->src_y, 0, 0,
 			req->dst_x, req->dst_y, req->w, req->h
@@ -1949,8 +1949,8 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
 		req->w, req->h
 	))) goto FAIL;
 
-	picture = XRenderCreatePicture( DISP, pixmap, guts. argb_pic_format, 0, NULL);
-	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_compat_format, 0, NULL);
+	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb_pic_format, 0, NULL);
+	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
 	XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, target,
 		0, 0, 0, 0,
 		req->dst_x, req->dst_y, req->w, req->h
@@ -2042,7 +2042,7 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 		req->w, req->h
 	))) goto FAIL;
 
-	picture = XRenderCreatePicture( DISP, pixmap, guts. argb_pic_format, 0, NULL);
+	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb_pic_format, 0, NULL);
 	XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, XX-> argb_picture,
 		0, 0, 0, 0,
 		req->dst_x, req->dst_y, req->w, req->h
@@ -2224,7 +2224,7 @@ apc_image_begin_paint( Handle self)
 	XX-> colormap    = guts. defaultColormap;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	if ( XF_LAYERED(XX) ) {
-		XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. argb_pic_format, 0, NULL);
+		XX-> argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_pic_format, 0, NULL);
 		XX-> visual      = &guts. argb_visual;
 		XX-> colormap    = guts. argbColormap;
 	}
@@ -2603,7 +2603,7 @@ prima_query_argb_rect( Handle self, Pixmap px, int x, int y, int w, int h)
 		break;
 slurp_image_unsupported_depth:
 	default:
-		warn("UAI_023: unsupported backing image conversion from %d to %d\n", guts.argb_depth, guts. qdepth);
+		warn("UAI_023: unsupported backing image conversion from %d to %d\n", guts. argb_depth, guts. qdepth);
 		return false;
 	}
 	
