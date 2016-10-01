@@ -981,7 +981,7 @@ Component_unlink_notifier( Handle self, Handle referer)
 		int j;
 	AGAIN:
 		for ( j = 0; j < list-> count; j += 2) {
-			if ((( long) list-> items[ j]) != referer) continue;
+			if ( list-> items[ j] != referer) continue;
 			sv_free(( SV *) list-> items[ j + 1]);
 			list_delete_at( list, j + 1);
 			list_delete_at( list, j);

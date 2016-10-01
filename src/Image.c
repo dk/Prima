@@ -413,7 +413,7 @@ Image_data( Handle self, Bool set, SV * svdata)
 	data = SvPV( svdata, dataSize);
 	if ( is_opt( optInDraw) || dataSize <= 0) return nilSV;
 
-	memcpy( var->data, data, dataSize > var->dataSize ? var->dataSize : dataSize);
+	memcpy( var->data, data, (dataSize > (STRLEN)var->dataSize) ? (STRLEN)var->dataSize : dataSize);
 	my-> update_change( self);
 	return nilSV;
 }
@@ -511,7 +511,7 @@ Image_set_extended_data( Handle self, HV * profile)
 	/* copying user data */
 	if ( supp && lineSize == 0 && !reverse) 
 		/* same code as in ::set_data */
-		memcpy( var->data, data, dataSize > var->dataSize ? var->dataSize : dataSize);
+		memcpy( var->data, data, (dataSize > (STRLEN)var->dataSize) ? (STRLEN)var->dataSize : dataSize);
 	else {
 		/* if no explicit lineSize set, assuming x4 padding */
 		if ( lineSize == 0)
@@ -1176,7 +1176,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			*(Short*)(var->data+(var->lineSize*y+(x<<1)))=color;
 			break;
 		case imbpp24 :
-			LONGtoBGR(color,rgb);
+			(void) LONGtoBGR(color,rgb);
 			memcpy((var->data + (var->lineSize*y+x*3)),&rgb,sizeof(RGBColor));
 			break;
 		case imbpp32 :
@@ -1634,6 +1634,7 @@ Image_rotate( Handle self, int degrees)
 	switch (degrees) {
 	case 90:
 	case 270:
+		new_data = NULL;
 		new_line_size = LINE_SIZE( var-> h , var->type);
 		if (( new_data = allocb( new_line_size * var->w )) == NULL )
 			croak("Image::rotate: cannot allocate %d bytes", new_line_size * var->w);

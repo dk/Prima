@@ -661,10 +661,12 @@ sub preload_method
 	#checking 'proc(void) & proc()' cases
 	$tok = getidsym(")*...");
 	$acc .= ', ' unless ($tok eq "void") || ($tok eq ")") || (! $useHandle);
+	my $isVoid;
 	if ($tok eq "void") {
 		if ($words[-1] eq "*") {
 			$acc .= ', ';
 		} else {
+			$isVoid = 1;
 			expect(')');
 			$tok = ')';
 		}
@@ -751,6 +753,7 @@ sub preload_method
 		error "Ellipsis (...) could be defined only in the end of parameters list"
 			if $hasEllipsis > 1 || ( $hasEllipsis == 1 && $ellipsis == 0);
 	} else {
+		$acc .= 'void' if !$useHandle && $isVoid;
 		$acc .= "$proptype value" if $asProperty;
 		$acc .= $tok; # should be closing parenthesis
 	};
@@ -835,7 +838,7 @@ sub parse_parms
 	$acc =~ s/\(/,/;               # separating ( to ,
 	$acc =~ s/\)\;$//;             # eliminating ending );
 	$acc =~ s/\,\s*$//;            # eliminating tailing commas, if any
-	@chunks = split(",", $acc);
+	@chunks = grep { !/^\s*void$/ } split(",", $acc);
 	$acc  = "";
 	$hvUsed = 0;
 	my $i = 0;
@@ -1988,7 +1991,7 @@ for ( sort { $structs{$a}-> [PROPS]-> {order} <=> $structs{$b}-> [PROPS]-> {orde
 		print HEADER "} $_, *P$_;\n\n";
 		if ( ${$structs{$_}[PROPS]}{hash})
 		{
-			print HEADER "extern $_ * SvHV_$_( SV * hashRef, $_ * strucRef, char * errorAt);\n";
+			print HEADER "extern $_ * SvHV_$_( SV * hashRef, $_ * strucRef, const char * errorAt);\n";
 			print HEADER "extern SV * sv_${_}2HV( $_ * strucRef);\n";
 		}
 		print HEADER "extern $_ ${_}_buffer;\n\n";
@@ -2157,8 +2160,8 @@ SD
 	{
 		if ( ${$structs{$_}[2]}{genh} && ${$structs{$_}[2]}{hash})
 		{
-			print HEADER "$_ * SvHV_$_( SV * hashRef, $_ * strucRef, char * errorAt)\n{\n";
-			print HEADER "\tchar * err = errorAt ? errorAt : \"$_\";\n";
+			print HEADER "$_ * SvHV_$_( SV * hashRef, $_ * strucRef, const char * errorAt)\n{\n";
+			print HEADER "\tconst char * err = errorAt ? errorAt : \"$_\";\n";
 			print HEADER "\tHV * $incHV = ( HV*)\n\t".
 				"(( SvROK( hashRef) && ( SvTYPE( SvRV( hashRef)) == SVt_PVHV)) ? SvRV( hashRef)\n\t\t".
 				": ( croak( \"Illegal hash reference passed to %s\", err), nil));\n";

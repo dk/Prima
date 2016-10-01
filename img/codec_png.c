@@ -833,14 +833,18 @@ static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	dPROFILE;
-	PIcon i = ( PIcon) fi-> object;
-	SaveRec * l = ( SaveRec *) fi-> instance;
-	HV * profile = fi-> objectExtras;
+	PIcon i;
+	SaveRec * l;
+	HV * profile;
 	Bool icon;
-	Byte * alpha = NULL;
+	Byte * alpha;
 	
 	if ( setjmp( png_jmpbuf( l-> png_ptr)) != 0) return false;
 	icon = kind_of( fi-> object, CIcon);
+	i = ( PIcon) fi-> object;
+	l = ( SaveRec *) fi-> instance;
+	profile = fi-> objectExtras;
+	alpha = NULL;
 
 	/* header */
 	{

@@ -532,7 +532,7 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
 		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
 		blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
 		memset( blt_buffer, filler, blt_step);
-		lmask = ( x & 7 ) ? 255 << ( 8 - x & 7) : 0;
+		lmask = ( x & 7 ) ? 255 << ( 8 - (x & 7)) : 0;
 		rmask = (( x + w) & 7 ) ? 255 >> ((x + w) & 7) : 0;
 		offset = x >> 3;
 		break;
@@ -909,8 +909,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 
 		s_ptr = s + sls * y;
 		d_ptr = d + dls * y;
-		if (m) m_ptr = m + mls * y;
-		if (a) a_ptr = a + als * y;
+		m_ptr = m ? m + mls * y : NULL;
+		a_ptr = a ? a + als * y : NULL;
 
 		if ( !use_src_alpha ) {
 			asbuf_ptr = asbuf + bytes * OMP_THREAD_NUM;

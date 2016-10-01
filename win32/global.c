@@ -453,7 +453,6 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 	UINT    orgMsg = msg;
 	Event   ev;
 	Bool    hiStage   = false;
-	int     orgCmd;
 	Bool    message_result = true;
 
 	if ( !self || appDead)
@@ -869,7 +868,7 @@ AGAIN:
 			return 0;
 		if ( is_apt( aptLayered )) {
 			PAINTSTRUCT ps;
-			HDC hdc = BeginPaint(win, &ps);
+			BeginPaint(win, &ps);
 			EndPaint(win, &ps);
 			return 0;
 		}
@@ -978,7 +977,6 @@ AGAIN:
 	if ( hiStage)
 		ret = DefWindowProcW( win, msg, mp1, mp2);
 
-	orgCmd = ev. cmd;
 	if ( ev. cmd) 
 		message_result = v-> self-> message( self, &ev); 
 	else 
@@ -1038,7 +1036,6 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 	UINT    orgMsg = msg;
 	Event   ev;
 	Bool    hiStage   = false;
-	int     orgCmd;
 
 	if ( !self)
 		return DefWindowProcW( win, msg, mp1, mp2);
@@ -1278,7 +1275,6 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 	if ( hiStage)
 		ret = DefWindowProcW( win, msg, mp1, mp2);
 
-	orgCmd = ev. cmd;
 	if ( ev. cmd) v-> self-> message( self, &ev); else ev. cmd = orgMsg;
 
 	if ( var stage == csDead) orgMsg = 0;

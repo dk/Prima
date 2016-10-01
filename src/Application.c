@@ -348,11 +348,10 @@ Application_font_encodings( Handle self, char * encoding)
 	hv_iterinit(( HV*) h);
 	for (;;)
 	{
-		void *value, *key;
+		void *key;
 		STRLEN  keyLen;
 		if (( he = hv_iternext( h)) == nil)
 			break;
-		value  = HeVAL( he);
 		key    = HeKEY( he);
 		keyLen = HeKLEN( he);
 		av_push( glo, newSVpvn(( char*) key, keyLen));

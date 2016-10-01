@@ -546,14 +546,18 @@ static Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	dPROFILE;
-	LoadRec * l = ( LoadRec *) fi-> instance;
-	PImage i = ( PImage) fi-> object;
-	int bpp, orientation = 0, width, height;
+	LoadRec * l;
+	PImage i;
+	int bpp, orientation, width, height;
+	HV * profile;
 	jmp_buf j;
-	HV * profile = fi-> profile;
 
 	if ( setjmp( j) != 0) return false;
 	memcpy( l->j, j, sizeof(jmp_buf));
+	l = ( LoadRec *) fi-> instance;
+	i = ( PImage) fi-> object;
+	orientation = 0;
+	profile = fi-> profile;
 
 	((my_source_mgr*)(l-> d. src))-> fp = fi-> frameProperties;
 	jpeg_read_header( &l-> d, true);
@@ -854,14 +858,18 @@ static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	dPROFILE;
-	PImage i = ( PImage) fi-> object;
-	SaveRec * l = ( SaveRec *) fi-> instance;
-	AV * appdata = NULL;
-	HV * profile = fi-> objectExtras;
+	PImage i;
+	SaveRec * l;
+	AV * appdata;
+	HV * profile;
 	jmp_buf j;
 	
 	if ( setjmp( j) != 0) return false;
 	memcpy( l->j, j, sizeof(jmp_buf));
+	i = ( PImage) fi-> object;
+	l = ( SaveRec *) fi-> instance;
+	appdata = NULL;
+	profile = fi-> objectExtras;
 
 	l-> c. image_width  = i-> w;
 	l-> c. image_height = i-> h;

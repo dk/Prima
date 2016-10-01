@@ -516,7 +516,7 @@ newSVstring( char *s)
 #endif
 #define START_TABLE(package,type) \
 typedef struct { \
-	char *name;   \
+	const char *name;   \
 	type value;  \
 } ConstTable_##package; \
 ConstTable_##package Prima_Autoload_##package##_constants[] = {
@@ -532,7 +532,7 @@ XS(prima_autoload_##package##_constant) \
 	static PHash table = nil; \
 	dXSARGS; \
 	char *name; \
-	int i; \
+	unsigned int i; \
 	type *r; \
 \
 	if (!table) { \
@@ -561,7 +561,7 @@ void register_##package##_constants( void) { \
 	GV *unused_gv; \
 	SV *sv; \
 	CV *cv; \
-	int i; \
+	unsigned int i; \
 \
 	newXS( #package "::constant", prima_autoload_##package##_constant, #package); \
 	sv = newSVpv("", 0); \
@@ -576,7 +576,7 @@ void register_##package##_constants( void) { \
 #else
 #define START_TABLE(package,type) \
 typedef struct { \
-	char *name;   \
+	const char *name;   \
 	type value;  \
 } ConstTable_##package;
 #define CONSTANT(package,const_name) /* nothing */
@@ -1175,7 +1175,7 @@ typedef struct _VmtPatch
 {
 	void *vmtAddr;
 	void *procAddr;
-	char *name;
+	const char *name;
 } VmtPatch;
 
 typedef struct _VMT {         /* Whatever VMT */
@@ -1285,7 +1285,7 @@ extern void
 exception_remember( char * text);
 
 extern Bool
-exception_charged();
+exception_charged( void );
 
 extern Bool
 exception_block( Bool block );
@@ -1293,7 +1293,7 @@ exception_block( Bool block );
 extern void
 exception_check_raise( void );
 
-#if PRIMA_PLATFORM_X11
+#ifdef PRIMA_PLATFORM_X11
 #define EXCEPTION_CHECK_RAISE exception_check_raise()
 #else
 #define EXCEPTION_CHECK_RAISE if ( exception_charged()) return
@@ -1839,10 +1839,10 @@ extern Handle application;
 ***************** */
 
 extern Handle
-apc_get_core_version();
+apc_get_core_version(void);
 
 extern char *
-apc_last_error();
+apc_last_error(void);
 
 extern Handle
 apc_get_application(void);

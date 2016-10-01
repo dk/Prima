@@ -266,7 +266,7 @@ Icon_mask( Handle self, Bool set, SV * svmask)
 		return newSVpvn(( char *) var-> mask, var-> maskSize);
 	mask = SvPV( svmask, maskSize);
 	if ( is_opt( optInDraw) || maskSize <= 0) return nilSV;
-	memcpy( var-> mask, mask, maskSize > var-> maskSize ? var-> maskSize : maskSize);
+	memcpy( var-> mask, mask, (maskSize > (STRLEN)var-> maskSize) ? (STRLEN)var-> maskSize : maskSize);
 	var-> autoMasking = amNone;
 	my-> update_change( self);
 	var-> autoMasking = am;

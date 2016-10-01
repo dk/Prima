@@ -135,7 +135,7 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
 Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 { objCheck false; {
-	int compl, needf, drawState = 0;
+	int compl, needf;
 	HDC     ps = sys ps;
 
 	y = sys lastSize. y - y - 1;
@@ -287,7 +287,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
 	Bool ok = true;
 	HDC     ps = sys ps;
 	HGDIOBJ old = SelectObject( ps, hBrushHollow);
-	int compl, needf, drawState = 0;
+	int compl, needf;
 	compl = arc_completion( &angleStart, &angleEnd, &needf);
 	y = sys lastSize. y - y - 1;
 
@@ -669,7 +669,7 @@ apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, dou
 {objCheck false;{
 	Bool ok = true;
 	HDC     ps = sys ps;
-	int compl, needf, newY = sys lastSize. y - y - 1, drawState = 0;
+	int compl, needf, newY = sys lastSize. y - y - 1;
 	POINT   pts[ 2];
 	HGDIOBJ old;
 

@@ -1,12 +1,7 @@
 #include "img.h"
 #include "img_conv.h"
 #include "Icon.h"
-
-#if PRIMA_PLATFORM == apcUnix
-#include <unistd.h>
-#else
 #include <stdlib.h>
-#endif 
 
 #ifdef __cplusplus
 extern "C" {

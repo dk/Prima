@@ -589,7 +589,7 @@ U+200F (RLM)	RIGHT-TO-LEFT MARK	Right-to-left strong zero-width character.
 	ret[0] = 0x202D; 
 	MultiByteToWideChar(CP_UTF8, 0, utf8, length, ret + 1, size);
 	for ( i = 1; i < size + 1; i++) {
-		if ( ret[i] >= 0x202A && ret[i] <= 0x202E || ret[i] == 0x200F ) 
+		if (( ret[i] >= 0x202A && ret[i] <= 0x202E) || ret[i] == 0x200F ) 
 			ret[i] = 0x200E; 
 	}
 	if ( mb_len ) *mb_len = size + 1;

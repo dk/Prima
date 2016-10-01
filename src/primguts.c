@@ -1441,7 +1441,7 @@ apc_get_application(void)
 }
 
 Handle
-apc_get_core_version()
+apc_get_core_version(void)
 {
 	return PRIMA_CORE_VERSION;
 }

@@ -218,7 +218,7 @@ hwnd_to_view( HWND win)
 		( ll == ( LONG_PTR) generic_frame_handler)
 		) return h;
 
-	if ( SendMessage( win, WM_HASMATE, 0, ( LPARAM) &h) == HASMATE_MAGIC)
+	if ( SendMessage( win, WM_HASMATE, 0, ( LPARAM) &h) == (LRESULT) HASMATE_MAGIC)
 		return h;
 	return nilHandle;
 }
@@ -365,9 +365,9 @@ process_msg( MSG * msg)
 		return false;
 	case WM_CROAK:
 		if ( msg-> wParam)
-			croak(( char *) msg-> lParam);
+			croak("%s", ( char *) msg-> lParam);
 		else
-			warn(( char *) msg-> lParam);
+			warn("%s", ( char *) msg-> lParam);
 		return true;
 	case WM_SYSKEYDOWN:
 		/*
