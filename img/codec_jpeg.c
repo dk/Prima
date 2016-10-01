@@ -553,8 +553,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	jmp_buf j;
 
 	if ( setjmp( j) != 0) return false;
-	memcpy( l->j, j, sizeof(jmp_buf));
 	l = ( LoadRec *) fi-> instance;
+	memcpy( l->j, j, sizeof(jmp_buf));
 	i = ( PImage) fi-> object;
 	orientation = 0;
 	profile = fi-> profile;

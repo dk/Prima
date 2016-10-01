@@ -839,10 +839,12 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	Bool icon;
 	Byte * alpha;
 	
+	l = ( SaveRec *) fi-> instance;
 	if ( setjmp( png_jmpbuf( l-> png_ptr)) != 0) return false;
+
+	l = ( SaveRec *) fi-> instance;
 	icon = kind_of( fi-> object, CIcon);
 	i = ( PIcon) fi-> object;
-	l = ( SaveRec *) fi-> instance;
 	profile = fi-> objectExtras;
 	alpha = NULL;
 
