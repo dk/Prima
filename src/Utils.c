@@ -15,13 +15,13 @@ SV *Utils_query_drives_map( char *firstDrive)
 }
 
 int
-Utils_get_os()
+Utils_get_os(void)
 {
 	return apc_application_get_os_info( nil, 0, nil, 0, nil, 0, nil, 0);
 }
 
 int
-Utils_get_gui()
+Utils_get_gui(void)
 {
 	return apc_application_get_gui_info( nil, 0);
 }
