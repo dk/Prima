@@ -511,7 +511,6 @@ save_defaults( PImgCodec c)
 	AV * av = newAV();
 	pset_i( screenWidth,  -1);
 	pset_i( screenHeight, -1);
-	pset_i( screenColorResolution, 256);
 	pset_i( screenBackGroundColor, 0);
 
 		av_push( av, newSViv(0));
@@ -598,14 +597,13 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 
 	if ( fi-> frame == 0) {
 		/* put screen description */
-		int w = i-> w, h = i-> h, cr = i-> palSize, bg = 0, ps = i-> palSize;
+		int w = i-> w, h = i-> h, bg = 0, ps = i-> palSize;
 		RGBColor * r = i-> palette;
 		RGBColor rgbc[ 256];
 		ColorMapObject * c;
 	
 		if ( pexist( screenWidth))           w  = pget_i( screenWidth);
 		if ( pexist( screenHeight))          h  = pget_i( screenHeight);
-		if ( pexist( screenColorResolution)) cr = pget_i( screenColorResolution);
 		if ( pexist( screenBackGroundColor)) bg = pget_i( screenBackGroundColor);
 		if ( pexist( screenPalette)) 
 			ps = apc_img_read_palette( r = rgbc, pget_sv( screenPalette), true);
