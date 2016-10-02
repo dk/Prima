@@ -864,7 +864,9 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	HV * profile;
 	jmp_buf j;
 	
+	l = ( SaveRec *) fi-> instance;
 	if ( setjmp( j) != 0) return false;
+
 	memcpy( l->j, j, sizeof(jmp_buf));
 	i = ( PImage) fi-> object;
 	l = ( SaveRec *) fi-> instance;
