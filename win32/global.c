@@ -48,6 +48,7 @@ WCHAR lastDeadKey = 0;
 Bool debug = false;
 
 
+
 BOOL APIENTRY
 DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
 {
@@ -58,6 +59,25 @@ DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
 	}
 	return TRUE;
 }
+
+typedef enum _PROCESS_DPI_AWARENESS { 
+  PROCESS_DPI_UNAWARE=0,
+  PROCESS_SYSTEM_DPI_AWARE=1,
+  PROCESS_PER_MONITOR_DPI_AWARE=2
+} PROCESS_DPI_AWARENESS;
+
+typedef enum _MONITOR_DPI_TYPE {
+  MDT_EFFECTIVE_DPI=0,
+  MDT_ANGULAR_DPI=1,
+  MDT_RAW_DPI=2,
+} MONITOR_DPI_TYPE;
+
+typedef HRESULT SPDA(PROCESS_DPI_AWARENESS value);
+static SPDA* SetProcessDpiAwareness = NULL;
+typedef UINT GDFS(void);
+static GDFS* GetDpiForSystem = NULL;
+typedef UINT GDFM(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*);
+static GDFM* GetDpiForMonitor = NULL;
 
 Bool
 window_subsystem_init( char * error_buf)
@@ -149,12 +169,39 @@ window_subsystem_init( char * error_buf)
 	if (!( dc = dc_alloc())) return false; 
 	guts. displayResolution. x = GetDeviceCaps( dc, LOGPIXELSX);
 	guts. displayResolution. y = GetDeviceCaps( dc, LOGPIXELSY);
+	if (( os.dwMajorVersion > 5) || (os.dwMajorVersion == 5 && os.dwMinorVersion > 1)) {
+		HMODULE shcore = LoadLibrary("SHCORE.DLL");
+		if ( shcore ) {
+			SetProcessDpiAwareness = (SPDA*) GetProcAddress(shcore, "SetProcessDpiAwareness");
+			if ( SetProcessDpiAwareness ) {
+				if ( SetProcessDpiAwareness( PROCESS_PER_MONITOR_DPI_AWARE) == S_OK ) {
+					warn("ok\n");
+				}
+			}
+			GetDpiForSystem = (GDFS*) GetProcAddress(LoadLibrary("USER32.DLL"), "GetDpiForSystem");
+			if ( GetDpiForSystem ) {
+				warn("dpi: %d\n", GetDpiForSystem());
+			}
+			GetDpiForMonitor = (GDFM*) GetProcAddress(shcore, "GetDpiForMonitor");
+			if ( GetDpiForMonitor ) {
+				UINT dx, dy;
+				POINT pt = {1,1};
+				HMONITOR m = MonitorFromPoint(pt, 2);//MONITORDEFAULTTONEAREST);
+				if ( GetDpiForMonitor( m, MDT_EFFECTIVE_DPI, &dx, &dy) == S_OK ) {
+					warn("mon: %d %d\n", dx, dy);
+				}
+			}
+		}
+	}
+
 	{
 		LOGFONT lf;
 		HFONT   sfont;
+	TEXTMETRICW tm;
 
 		// getting most common font name
 		memset( &lf, 0, sizeof( lf));
+		lf. lfHeight = -100;
 		lf. lfCharSet        = OEM_CHARSET;
 		lf. lfOutPrecision   = OUT_DEFAULT_PRECIS;
 		lf. lfClipPrecision  = CLIP_DEFAULT_PRECIS;
@@ -162,6 +209,8 @@ window_subsystem_init( char * error_buf)
 		lf. lfPitchAndFamily = DEFAULT_PITCH;
 		sfont = SelectObject( dc, CreateFontIndirect( &lf));
 		GetTextFace( dc, 256, guts. defaultSystemFont);
+	GetTextMetricsW( dc, &tm);
+	warn("%s: %d => %d\n", guts.defaultSystemFont, lf.lfHeight, tm.tmHeight);
 
 		// getting common fixed font name
 		lf. lfHeight = 320;
