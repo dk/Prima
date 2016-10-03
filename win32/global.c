@@ -18,8 +18,6 @@ extern "C" {
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
-// #define FONT_CHECK
-
 WinGuts guts;
 DWORD   rc;
 PHash   stylusMan    = nil; // pen & brush manager
@@ -225,21 +223,7 @@ window_subsystem_init( char * error_buf)
 		DeleteObject( SelectObject( dc, sfont));
 
 		// getting system font presets
-		memset( &guts. windowFont, 0, sizeof( Font));
-		strcpy( guts. windowFont. name, DEFAULT_WIDGET_FONT);
-		guts. windowFont. size  = DEFAULT_WIDGET_FONT_SIZE;
-		guts. windowFont. width = guts. windowFont. height = C_NUMERIC_UNDEF;
-#ifdef FONT_CHECK
-		guts. windowFont. size = 12;
-#endif
-		apc_font_pick( nilHandle, &guts. windowFont, &guts. windowFont);
-
-		guts. ncmData. cbSize = sizeof( NONCLIENTMETRICS);
-		SystemParametersInfo( SPI_GETNONCLIENTMETRICS, sizeof( NONCLIENTMETRICS),
-			( PVOID) &guts. ncmData, 0);
-		font_logfont2font( &guts. ncmData. lfMenuFont, &guts. menuFont, &guts. displayResolution);
-		font_logfont2font( &guts. ncmData. lfMessageFont, &guts. msgFont, &guts. displayResolution);
-		font_logfont2font( &guts. ncmData. lfCaptionFont, &guts. capFont, &guts. displayResolution);
+		reset_system_fonts();
 	}
 
 	memset( &guts. displayBMInfo, 0, sizeof( guts. displayBMInfo));

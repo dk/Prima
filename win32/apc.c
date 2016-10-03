@@ -3636,6 +3636,24 @@ apc_system_action( const char * params)
 		} else if ( strncmp( params, "win32.OpenFile.", 15) == 0) {
 			params += 15;
 			return win32_openfile( params);
+		} else if ( strncmp( params, "win32.SetDPI", 12) == 0) {
+			int dx, dy, flag;
+			int i = sscanf( params + 12, "%u %u %u", &dx, &dy, &flag);
+			if ( i != 3 || (flag == 1 && (dx < 1 || dy < 1))) {
+				warn("Bad dpi\n");
+				return 0;
+			}
+			if ( dx == 0 || dy == 0) {
+				HDC dc = dc_alloc();
+				if ( dx == 0 ) dx = GetDeviceCaps( dc, LOGPIXELSX); 
+				if ( dy == 0 ) dy = GetDeviceCaps( dc, LOGPIXELSY); 
+				dc_free();
+			}
+			guts. displayResolution. x = dx;
+			guts. displayResolution. y = dy;
+			guts. high_dpi = flag;
+			reset_system_fonts();
+			destroy_font_hash();
 		} else
 			goto DEFAULT;
 		break;

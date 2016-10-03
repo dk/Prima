@@ -23,7 +23,6 @@ apc_gp_init( Handle self)
 {
 	objCheck false;
 	sys lineWidth = 1;
-	sys res = guts. displayResolution;
 	return true;
 }
 
@@ -1448,7 +1447,7 @@ apc_gp_get_resolution( Handle self)
 	Point p = guts. displayResolution;
 	if ( !self) return p;
 	objCheck p;
-	return sys res;
+	return is_apt( aptPrinter ) ? sys res : p;
 }
 
 static Handle ctx_rop2R2[] = {

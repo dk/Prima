@@ -194,6 +194,7 @@ typedef struct _WinGuts
 	Bool           dont_xlate_message; // one-time stopper to TranslateMessage() call
 	int            utf8_prepend_0x202D;// newer windows do automatic bidi conversion, this is to cancel it
 	WCHAR *      (*alloc_utf8_to_wchar_visual)(const char*,int,int*);
+	int            high_dpi;           // use Win8 high-def DPI model
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
@@ -596,6 +597,7 @@ extern void         wchar2char( char * dest, WCHAR * src, int lim);
 extern void         char2wchar( WCHAR * dest, char * src, int lim);
 extern void         textmetric_c2w( LPTEXTMETRICA from, LPTEXTMETRICW to);
 extern int          apcUpdateWindow( HWND wnd );
+extern void         reset_system_fonts(void);
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA

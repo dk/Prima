@@ -471,9 +471,11 @@ font_change( Handle self, Font * font)
 {
 	PDCFont p;
 	PDCFont newP;
+	Point res;
 	if ( is_apt( aptDCChangeLock)) return;
 	p    = sys fontResource;
-	newP = ( sys fontResource = font_alloc( font, &sys res));
+	res = apc_gp_get_resolution( self );
+	newP = ( sys fontResource = font_alloc( font, &res));
 	font_free( p, false);
 	if ( sys ps)
 		SelectObject( sys ps, newP-> hfont);
@@ -579,6 +581,22 @@ font_encoding2charset( const char * encoding)
 	return DEFAULT_CHARSET;
 }
 
+void
+reset_system_fonts(void)
+{
+	memset( &guts. windowFont, 0, sizeof( Font));
+	strcpy( guts. windowFont. name, DEFAULT_WIDGET_FONT);
+	guts. windowFont. size  = DEFAULT_WIDGET_FONT_SIZE;
+	guts. windowFont. width = guts. windowFont. height = C_NUMERIC_UNDEF;
+	apc_font_pick( nilHandle, &guts. windowFont, &guts. windowFont);
+
+	guts. ncmData. cbSize = sizeof( NONCLIENTMETRICS);
+	SystemParametersInfo( SPI_GETNONCLIENTMETRICS, sizeof( NONCLIENTMETRICS),
+		( PVOID) &guts. ncmData, 0);
+	font_logfont2font( &guts. ncmData. lfMenuFont, &guts. menuFont, &guts. displayResolution);
+	font_logfont2font( &guts. ncmData. lfMessageFont, &guts. msgFont, &guts. displayResolution);
+	font_logfont2font( &guts. ncmData. lfCaptionFont, &guts. capFont, &guts. displayResolution);
+}		
 
 void
 font_logfont2font( LOGFONT * lf, Font * f, Point * res)
@@ -1037,7 +1055,7 @@ Bool
 apc_font_pick( Handle self, PFont source, PFont dest)
 {
 	if ( self) objCheck false;
-	font_font2gp( dest, self ? sys res : guts. displayResolution,
+	font_font2gp( dest, apc_gp_get_resolution(self),
 		Drawable_font_add( self, source, dest), self ? sys ps : 0);
 	return true;
 }
@@ -1461,6 +1479,7 @@ void dc_compat_free()
 void
 hwnd_enter_paint( Handle self)
 {
+	Point res;
 	GetObject( sys stockPen   = GetCurrentObject( sys ps, OBJ_PEN),
 		sizeof( LOGPEN), &sys stylus. pen);
 	GetObject( sys stockBrush = GetCurrentObject( sys ps, OBJ_BRUSH),
@@ -1515,7 +1534,8 @@ hwnd_enter_paint( Handle self)
 	apt_clear( aptDCChangeLock);
 	stylus_change( self);
 	apc_gp_set_font( self, &var font);
-	var font. resolution = sys res. y * 0x10000 + sys res. x;
+	res = apc_gp_get_resolution(self);
+	var font. resolution = res. y * 0x10000 + res. x;
 	SetStretchBltMode( sys ps, COLORONCOLOR);
 }
 
