@@ -59,23 +59,43 @@ DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
 }
 
 typedef enum _PROCESS_DPI_AWARENESS { 
-  PROCESS_DPI_UNAWARE=0,
-  PROCESS_SYSTEM_DPI_AWARE=1,
-  PROCESS_PER_MONITOR_DPI_AWARE=2
+	PROCESS_DPI_UNAWARE            = 0,
+	PROCESS_SYSTEM_DPI_AWARE       = 1,
+	PROCESS_PER_MONITOR_DPI_AWARE  = 2
 } PROCESS_DPI_AWARENESS;
 
 typedef enum _MONITOR_DPI_TYPE {
-  MDT_EFFECTIVE_DPI=0,
-  MDT_ANGULAR_DPI=1,
-  MDT_RAW_DPI=2,
+	MDT_EFFECTIVE_DPI              = 0,
+	MDT_ANGULAR_DPI                = 1,
+	MDT_RAW_DPI                    = 2
 } MONITOR_DPI_TYPE;
 
-typedef HRESULT SPDA(PROCESS_DPI_AWARENESS value);
-static SPDA* SetProcessDpiAwareness = NULL;
-typedef UINT GDFS(void);
-static GDFS* GetDpiForSystem = NULL;
-typedef UINT GDFM(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*);
-static GDFM* GetDpiForMonitor = NULL;
+#ifndef MONITOR_DEFAULTTONEAREST
+#define MONITOR_DEFAULTTONULL            0
+#define MONITOR_DEFAULTTOPRIMARY         1
+#define MONITOR_DEFAULTTONEAREST         2
+#endif
+
+static HRESULT (*SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS)  = NULL;
+static HRESULT (*GetDpiForMonitor)(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*) = NULL;
+
+static void
+dpi_change(void)
+{
+	UINT dx, dy;
+	POINT pt = {1,1};
+	HMONITOR m = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+	if ( GetDpiForMonitor && (GetDpiForMonitor( m, MDT_EFFECTIVE_DPI, &dx, &dy) == S_OK )) {
+		guts. displayResolution. x = dx;
+		guts. displayResolution. x = dy;
+	}
+}
+
+static void
+load_function(HMODULE module, void ** ptr, const char * name)
+{
+	(*ptr) = (void*) GetProcAddress(module, name);
+}
 
 Bool
 window_subsystem_init( char * error_buf)
@@ -167,39 +187,30 @@ window_subsystem_init( char * error_buf)
 	if (!( dc = dc_alloc())) return false; 
 	guts. displayResolution. x = GetDeviceCaps( dc, LOGPIXELSX);
 	guts. displayResolution. y = GetDeviceCaps( dc, LOGPIXELSY);
+
+	/* Win8 - high dpi awareness stuff */
 	if (( os.dwMajorVersion > 5) || (os.dwMajorVersion == 5 && os.dwMinorVersion > 1)) {
 		HMODULE shcore = LoadLibrary("SHCORE.DLL");
 		if ( shcore ) {
-			SetProcessDpiAwareness = (SPDA*) GetProcAddress(shcore, "SetProcessDpiAwareness");
-			if ( SetProcessDpiAwareness ) {
-				if ( SetProcessDpiAwareness( PROCESS_PER_MONITOR_DPI_AWARE) == S_OK ) {
-					warn("ok\n");
-				}
-			}
-			GetDpiForSystem = (GDFS*) GetProcAddress(LoadLibrary("USER32.DLL"), "GetDpiForSystem");
-			if ( GetDpiForSystem ) {
-				warn("dpi: %d\n", GetDpiForSystem());
-			}
-			GetDpiForMonitor = (GDFM*) GetProcAddress(shcore, "GetDpiForMonitor");
-			if ( GetDpiForMonitor ) {
-				UINT dx, dy;
-				POINT pt = {1,1};
-				HMONITOR m = MonitorFromPoint(pt, 2);//MONITORDEFAULTTONEAREST);
-				if ( GetDpiForMonitor( m, MDT_EFFECTIVE_DPI, &dx, &dy) == S_OK ) {
-					warn("mon: %d %d\n", dx, dy);
-				}
-			}
+#define LOAD_FUNC(f) load_function(shcore, (void**) &f, #f)
+			LOAD_FUNC(SetProcessDpiAwareness);
+			LOAD_FUNC(GetDpiForMonitor);
+#undef LOAD_FUNC
 		}
+		if (
+			SetProcessDpiAwareness && GetDpiForMonitor &&
+			(SetProcessDpiAwareness( PROCESS_PER_MONITOR_DPI_AWARE) == S_OK )
+		)
+			dpi_change();
+	
 	}
 
 	{
 		LOGFONT lf;
 		HFONT   sfont;
-	TEXTMETRICW tm;
 
 		// getting most common font name
 		memset( &lf, 0, sizeof( lf));
-		lf. lfHeight = -100;
 		lf. lfCharSet        = OEM_CHARSET;
 		lf. lfOutPrecision   = OUT_DEFAULT_PRECIS;
 		lf. lfClipPrecision  = CLIP_DEFAULT_PRECIS;
@@ -207,8 +218,6 @@ window_subsystem_init( char * error_buf)
 		lf. lfPitchAndFamily = DEFAULT_PITCH;
 		sfont = SelectObject( dc, CreateFontIndirect( &lf));
 		GetTextFace( dc, 256, guts. defaultSystemFont);
-	GetTextMetricsW( dc, &tm);
-	warn("%s: %d => %d\n", guts.defaultSystemFont, lf.lfHeight, tm.tmHeight);
 
 		// getting common fixed font name
 		lf. lfHeight = 320;
@@ -1097,6 +1106,9 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		ev. cmd = cmClose;
 		break;
 	case WM_COMMAND:
+	case WM_DPICHANGED:
+		ev. cmd = cmFontChanged;
+		break;
 	// case WM_MENUSELECT:
 	case WM_INITMENUPOPUP:
 	case WM_INITMENU:

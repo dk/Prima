@@ -61,6 +61,9 @@ typedef HANDLE SOCKETHANDLE;
 #define WM_FIRST_USER_MESSAGE             ( WM_USER +100)
 #define WM_LAST_USER_MESSAGE              ( WM_USER +900)
 
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED                     0x02E0
+#endif
 
 #define WC_CUSTOM       0
 #define WC_DLG          1
