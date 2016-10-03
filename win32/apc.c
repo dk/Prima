@@ -3654,6 +3654,7 @@ apc_system_action( const char * params)
 			guts. high_dpi = flag;
 			reset_system_fonts();
 			destroy_font_hash();
+			font_clean();
 		} else
 			goto DEFAULT;
 		break;

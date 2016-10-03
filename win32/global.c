@@ -79,7 +79,7 @@ typedef enum _MONITOR_DPI_TYPE {
 static HRESULT (*SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS)  = NULL;
 static HRESULT (*GetDpiForMonitor)(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*) = NULL;
 
-static void
+void
 dpi_change(void)
 {
 	UINT dx, dy;
@@ -87,7 +87,7 @@ dpi_change(void)
 	HMONITOR m = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
 	if ( GetDpiForMonitor && (GetDpiForMonitor( m, MDT_EFFECTIVE_DPI, &dx, &dy) == S_OK )) {
 		guts. displayResolution. x = dx;
-		guts. displayResolution. x = dy;
+		guts. displayResolution. y = dy;
 	}
 }
 
@@ -1106,10 +1106,6 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		ev. cmd = cmClose;
 		break;
 	case WM_COMMAND:
-	case WM_DPICHANGED:
-		ev. cmd = cmFontChanged;
-		break;
-	// case WM_MENUSELECT:
 	case WM_INITMENUPOPUP:
 	case WM_INITMENU:
 	case WM_MENUCHAR:
@@ -1328,11 +1324,11 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 	case WM_CLOSE:
 		if ( ev. cmd) {
 			if ( sys className == WC_FRAME && PWindow(self)->modal) {
-			CWindow( self)-> cancel( self);
-			return 0;
+				CWindow( self)-> cancel( self);
+				return 0;
 			} else {
-			SetWindowLongPtr( win, GWLP_USERDATA, 0);
-			Object_destroy(( Handle) v);
+				SetWindowLongPtr( win, GWLP_USERDATA, 0);
+				Object_destroy(( Handle) v);
 			}
 			break;
 		} else
@@ -1396,7 +1392,8 @@ LRESULT CALLBACK layered_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		update_layered_frame(self);
 		return DefWindowProcW( win, msg, mp1, mp2);
 
-	case WM_WINDOWPOSCHANGED: {
+	case WM_WINDOWPOSCHANGED: 
+		{
 			LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
 			Bool updated = false;
 
@@ -1477,6 +1474,16 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
 			break;
 		case WM_FONTCHANGE:
 			destroy_font_hash();
+			break;
+		case WM_DPICHANGED:
+			{
+				Event ev = {cmFontChanged};
+				dpi_change();
+				reset_system_fonts();
+				destroy_font_hash();
+				font_clean();
+				PComponent(application)-> self-> message( application, &ev);
+			}
 			break;
 		case WM_COMPACTING:
 			stylus_clean();

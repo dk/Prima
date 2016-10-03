@@ -601,6 +601,7 @@ extern void         char2wchar( WCHAR * dest, char * src, int lim);
 extern void         textmetric_c2w( LPTEXTMETRICA from, LPTEXTMETRICW to);
 extern int          apcUpdateWindow( HWND wnd );
 extern void         reset_system_fonts(void);
+extern void         dpi_change(void);
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA
