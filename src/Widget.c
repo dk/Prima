@@ -619,10 +619,10 @@ void Widget_handle_event( Handle self, PEvent event)
 			break;
 		case cmColorChanged:
 			if ( !kind_of( event-> gen. source, CPopup))
-					my-> notify( self, "<si", "ColorChanged", event-> gen. i);
+				my-> notify( self, "<si", "ColorChanged", event-> gen. i);
 			else
-					var-> popupColor[ event-> gen. i] =
-						apc_menu_get_color( event-> gen. source, event-> gen. i);
+				var-> popupColor[ event-> gen. i] =
+					apc_menu_get_color( event-> gen. source, event-> gen. i);
 			break;
 		case cmFontChanged:
 			if ( !kind_of( event-> gen. source, CPopup))
