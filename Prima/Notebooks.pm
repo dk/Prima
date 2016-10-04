@@ -73,25 +73,26 @@ sub reset
 {
 	my $self = $_[0];
 	my @size = $self-> size;
-	my $w = DefLeftX * 2 + DefGapX;
-	for ( @{$self-> {widths}}) { $w += $_ + DefGapX; }
+	my $s = $::application-> uiScaling;
+	my $w = $s * (DefLeftX * 2 + DefGapX);
+	for ( @{$self-> {widths}}) { $w += $_ + $s * DefGapX; }
 	$self-> {arrows} = (( $w > $size[0]) and ( scalar( @{$self-> {widths}}) > 1));
 	if ( $self-> {arrows}) {
 		my $ft = $self-> {firstTab};
-		$w  = DefLeftX * 2 + DefGapX;
-		$w += DefArrowX if $ft > 0;
+		$w  = $s * DefLeftX * 2 + $s * DefGapX;
+		$w += $s * DefArrowX if $ft > 0;
 		my $w2 = $w;
 		my $la = $ft > 0;
 		my $i;
 		my $ra = 0;
 		my $ww = $self-> {widths};
 		for ( $i = $ft; $i < scalar @{$ww}; $i++) {
-			$w += DefGapX + $$ww[$i];
-			if ( $w + DefGapX + DefLeftX >= $size[0]) {
+			$w += $s * DefGapX + $$ww[$i];
+			if ( $w + $s * (DefGapX + DefLeftX) >= $size[0]) {
 				$ra = 1;
 				$i-- if 
 					$i > $ft && 
-					$w - $$ww[$i] >= $size[0] - DefLeftX - DefArrowX - DefGapX;
+					$w - $$ww[$i] >= $size[0] - $s * (DefLeftX + DefArrowX + DefGapX);
 				last;
 			}
 		}
@@ -131,18 +132,21 @@ sub x2pos
 	my ( $a, $ww, $ft, $lt) = (
 		$self-> {arrows}, $self-> {widths}, $self-> {firstTab}, $self-> {lastTab}
 	);
-	return -1 if ( $a & 1) and ( $x < DefLeftX + DefGapX * 2 + DefArrowX);
+
+	my $s = $::application-> uiScaling;
+	return -1 if ( $a & 1) and ( $x < $s * (DefLeftX + DefGapX * 2 + DefArrowX));
 
 	my @size = $self-> size;
-	return -2 if ( $a & 2) and ( $x >= $size[0] - DefLeftX - DefGapX * 2 - DefArrowX);
+	return -2 if ( $a & 2) and ( $x >= $size[0] - $s * ( DefLeftX + DefGapX * 2 + DefArrowX ));
 
 	my $w = DefLeftX;
 	$w += DefGapX + DefArrowX if $a & 1;
+	$w *= $s;
 	my $i;
 	my $found = undef;
 	for ( $i = $ft; $i <= $lt; $i++) {
-		$found = $i, last if $x < $w + $$ww[$i] + DefGapX;
-		$w += $$ww[$i] + DefGapX;
+		$found = $i, last if $x < $w + $$ww[$i] + $s * DefGapX;
+		$w += $$ww[$i] + $s * DefGapX;
 	}
 	return $found;
 }
@@ -287,24 +291,27 @@ sub on_paint
 	my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(DrawTab));
 	$self-> push_event;
 
+
+	my $s = $::application-> uiScaling;
 	my $atX = DefLeftX;
 	$atX += DefArrowX + DefGapX if $a & 1;
+	$atX *= $s;
 	my $atXti = undef;
 	for ( $i = $ft; $i <= $lt; $i++) {
-		$atX += $$ww[$i] + DefGapX;
+		$atX += $$ww[$i] + $s * DefGapX;
 	}
 	my @colorSet = ( @clr, @c3d);
 
-	$canvas-> clipRect( 0, 0, $size[0] - DefArrowX - DefGapX - DefLeftX, $size[1]) if $a & 2;
+	$canvas-> clipRect( 0, 0, $size[0] - $s * (DefArrowX + DefGapX + DefLeftX), $size[1]) if $a & 2;
 
 	for ( $i = $lt; $i >= $ft; $i--) {
-		$atX -= $$ww[$i] + DefGapX;
+		$atX -= $$ww[$i] + $s * DefGapX;
 		$atXti = $atX, next if $i == $ti;
 		my @poly = (
-			$atX, DefGapY, 
-			$atX + DefGapX, $size[1] - DefGapY - 1,
-			$atX + DefGapX + $$ww[$i], $size[1] - DefGapY - 1,
-			$atX + DefGapX * 2 + $$ww[$i], DefGapY
+			$atX, $s * DefGapY, 
+			$atX + $s * DefGapX, $size[1] - $s * DefGapY - 1,
+			$atX + $s * DefGapX + $$ww[$i], $size[1] - $s * DefGapY - 1,
+			$atX + $s * DefGapX * 2 + $$ww[$i], $s * DefGapY
 		);
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
 		$notifier-> ( @notifyParms, $canvas, $i, \@colorSet, \@poly);
@@ -316,30 +323,30 @@ sub on_paint
 PaintEarsThen:
 	$canvas-> clipRect( 0, 0, @size) if $a & 2;
 	if ( $a & 1) {
-		my $x = DefLeftX;
+		my $x = $s * DefLeftX;
 		my @poly = (
-			$x, DefGapY, 
-			$x + DefGapX, $size[1] - DefGapY - 1,
-			$x + DefGapX + DefArrowX, $size[1] - DefGapY - 1,
-			$x + DefGapX * 2 + DefArrowX, DefGapY
+			$x, $s * DefGapY, 
+			$x + $s * DefGapX, $size[1] - $s * DefGapY - 1,
+			$x + $s * DefGapX + $s * DefArrowX, $size[1] - $s * DefGapY - 1,
+			$x + $s * DefGapX * 2 + $s * DefArrowX, $s * DefGapY
 		);
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
 		$notifier-> ( @notifyParms, $canvas, -1, \@colorSet, \@poly);
 	}
 	if ( $a & 2) {
-		my $x = $size[0] - DefLeftX - DefArrowX - DefGapX * 2;
+		my $x = $size[0] - $s * (DefLeftX + DefArrowX + DefGapX * 2);
 		my @poly = (
-			$x, DefGapY, 
-			$x + DefGapX, $size[1] - DefGapY - 1,
-			$x + DefGapX + DefArrowX, $size[1] - DefGapY - 1,
-			$x + DefGapX * 2 + DefArrowX, DefGapY
+			$x, $s * DefGapY, 
+			$x + $s * DefGapX, $size[1] - $s * DefGapY - 1,
+			$x + $s * (DefGapX + DefArrowX), $size[1] - $s * DefGapY - 1,
+			$x + $s * (DefGapX * 2 + DefArrowX), $s * DefGapY
 		);
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
 		$notifier-> ( @notifyParms, $canvas, -2, \@colorSet, \@poly);
 	}
 
 	$canvas-> color( $c3d[0]);
-	my @ld = $tm ? ( 0, DefGapY) : ( $size[1] - 0, $size[1] - DefGapY - 1);
+	my @ld = $tm ? ( 0, $s * DefGapY) : ( $size[1] - 0, $size[1] - $s * DefGapY - 1);
 	$canvas-> line( $size[0] - 1, $ld[0], $size[0] - 1, $ld[1]);
 	
 	if ($tm) {
@@ -359,27 +366,27 @@ PaintEarsThen:
 PaintSelTabBefore:
 	if ( defined $atXti) {
 		my @poly = (
-			$atXti, DefGapY, 
-			$atXti + DefGapX, $size[1] - DefGapY - 1,
-			$atXti + DefGapX + $$ww[$ti], $size[1] - DefGapY - 1,
-			$atXti + DefGapX * 2 + $$ww[$ti], DefGapY
+			$atXti, $s * DefGapY, 
+			$atXti + $s * DefGapX, $size[1] - $s * DefGapY - 1,
+			$atXti + $s * DefGapX + $$ww[$ti], $size[1] - $s * DefGapY - 1,
+			$atXti + $s * DefGapX * 2 + $$ww[$ti], $s * DefGapY
 		);
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
 		
 		my @poly2 = $tm ? (
-			$atXti, DefGapY, 
-			$atXti + DefGapX * 2 + $$ww[$ti], DefGapY,
-			$atXti + DefGapX * 2 + $$ww[$ti] - 4, 0, 
+			$atXti, $s * DefGapY, 
+			$atXti + $s * DefGapX * 2 + $$ww[$ti], $s * DefGapY,
+			$atXti + $s * DefGapX * 2 + $$ww[$ti] - 4, 0, 
 			$atXti + 4, 0
 		) : (
-			$atXti, $size[1] - 1 - DefGapY, 
-			$atXti + DefGapX * 2 + $$ww[$ti], $size[1] - 1 - DefGapY,
+			$atXti, $size[1] - 1 - $s * DefGapY, 
+			$atXti + $s * DefGapX * 2 + $$ww[$ti], $size[1] - 1 - $s * DefGapY,
 			$atXti + DefGapX * 2 + $$ww[$ti] - 4, $size[1]-1, 
 			$atXti + 4, $size[1]-1
 		);
 		$canvas-> clipRect( 
 			0, 0, 
-			$size[0] - DefArrowX - DefGapX - DefLeftX, $size[1]
+			$size[0] - $s * (DefArrowX + DefGapX + DefLeftX), $size[1]
 		) if $a & 2;
 		$notifier-> ( 
 			@notifyParms, $canvas, $ti, \@colorSet, \@poly, 
@@ -396,15 +403,16 @@ sub on_size
 {
 	my ( $self, $ox, $oy, $x, $y) = @_;
 	
+	my $s = $::application-> uiScaling;
 	if ( $x > $ox && (( $self-> {arrows} & 2) == 0)) {
-		my $w  = DefLeftX * 2 + DefGapX;
+		my $w  = $s * (DefLeftX * 2 + DefGapX);
 		my $ww = $self-> {widths};
-		$w += DefArrowX + DefGapX if $self-> {arrows} & 1;
+		$w += $s * (DefArrowX + DefGapX) if $self-> {arrows} & 1;
 		my $i;
 		my $set = 0;
 		
 		for ( $i = scalar @{$ww} - 1; $i >= 0; $i--) {
-			$w += $$ww[$i] + DefGapX;
+			$w += $$ww[$i] + $s * DefGapX;
 			$set = 1, $self-> firstTab( $i + 1), last if $w >= $x;
 		}
 		$self-> firstTab(0) unless $set;
@@ -419,7 +427,7 @@ sub on_leave       { $_[0]-> repaint; }
 sub on_measuretab
 {
 	my ( $self, $index, $sref) = @_;
-	$$sref = $self-> get_text_width( $self-> {tabs}-> [$index]) + DefGapX * 4;
+	$$sref = $self-> get_text_width( $self-> {tabs}-> [$index]) + $::application-> uiScaling * DefGapX * 4;
 }
 
 # see L<DrawTab> below for more info
@@ -440,15 +448,16 @@ sub on_drawtab
 	$canvas-> polyline( [@{$poly}[($self-> {topMost}?4:2)..7]]);
 	$canvas-> line( $$poly[4]+1, $$poly[5], $$poly[6]+1, $$poly[7]);
 	$canvas-> color( $$clr[0]);
+	my $s = $::application-> uiScaling;
 	
 	if ( $i >= 0) {
 		my  @tx = (
-			$$poly[0] + ( $$poly[6] - $$poly[0] - $self-> {widths}-> [$i]) / 2 + DefGapX * 2,
+			$$poly[0] + ( $$poly[6] - $$poly[0] - $self-> {widths}-> [$i]) / 2 + $s * DefGapX * 2,
 			$$poly[1] + ( $$poly[3] - $$poly[1] - $canvas-> font-> height) / 2
 		);
 		$canvas-> text_out_bidi( $self-> {tabs}-> [$i], @tx);
 		$canvas-> rect_focus( $tx[0] - 1, $tx[1] - 1,
-			$tx[0] + $self-> {widths}-> [$i] - DefGapX * 4 + 1, $tx[1] + $canvas-> font-> height + 1)
+			$tx[0] + $self-> {widths}-> [$i] - $s * DefGapX * 4 + 1, $tx[1] + $canvas-> font-> height + 1)
 				if ( $i == $self-> {focusedTab}) && $self-> focused;
 	} elsif ( $i == -1) {
 		$canvas-> fillpoly([
@@ -480,6 +489,7 @@ sub tab2firstTab
 {
 	my ( $self, $ti) = @_;
 	
+	my $s = $::application-> uiScaling;
 	if (
 		( $ti >= $self-> {lastTab}) and 
 		( $self-> {arrows} & 2) and 
@@ -487,26 +497,27 @@ sub tab2firstTab
 	) {
 		my $w = DefLeftX;
 		$w += DefArrowX + DefGapX if $self-> {arrows} & 1;
+		$w *= $s;
 		my $i;
 		my $W = $self-> width;
 		my $ww = $self-> {widths};
 		my $moreThanOne = ( $ti - $self-> {firstTab}) > 0;
 		
 		for ( $i = $self-> {firstTab}; $i <= $ti; $i++) {
-			$w += $$ww[$i] + DefGapX;
+			$w += $$ww[$i] + $s * DefGapX;
 		}
 		
-		my $lim = $W - DefLeftX - DefArrowX - DefGapX * 2;
-		$lim -= DefGapX * 2 if $moreThanOne;
+		my $lim = $W - $s * (DefLeftX + DefArrowX + DefGapX) * 2;
+		$lim -= $s * DefGapX * 2 if $moreThanOne;
 
 		if ( $w >= $lim) {
-			my $leftw = DefLeftX * 2 + DefGapX + DefArrowX;
-			$leftw += DefArrowX + DefGapX if $self-> {arrows} & 1;
+			my $leftw = $s * ( DefLeftX * 2 + DefGapX + DefArrowX );
+			$leftw += $s * (DefArrowX + DefGapX) if $self-> {arrows} & 1;
 			$leftw = $W - $leftw;
 			$leftw -= $$ww[$ti] if $moreThanOne;
 			$w = 0;
 			for ( $i = $ti; $i >= 0; $i--) {
-				$w += $$ww[$i] + DefGapX;
+				$w += $$ww[$i] + $s * DefGapX;
 				last if $w > $leftw;
 			}
 			return $i + 1;
@@ -542,19 +553,21 @@ sub set_first_tab
 	unless ( $self-> {arrows}) {
 		$ft = 0;
 	} else {
+		my $s = $::application-> uiScaling;
 		my $w = DefLeftX * 2 + DefGapX * 2;
 		$w += DefArrowX if $ft > 0;
+		$w *= $s;
 		my $haveRight = 0;
 		my $i;
 		my @size = $self-> size;
 		for ( $i = $ft; $i < scalar @{$self-> {widths}}; $i++) {
-			$w += DefGapX + $self-> {widths}-> [$i];
+			$w += $s * DefGapX + $self-> {widths}-> [$i];
 			$haveRight = 1, last if $w >= $size[0];
 		}
 		unless ( $haveRight) {
-			$w += DefGapX;
+			$w += $s * DefGapX;
 			for ( $i = $ft - 1; $i >= 0; $i--) {
-				$w += DefGapX + $self-> {widths}-> [$i];
+				$w += $s * DefGapX + $self-> {widths}-> [$i];
 				if ( $w >= $size[0]) {
 					$i++;
 					$ft = $i if $ft > $i;
@@ -1058,13 +1071,14 @@ sub init
 		delegations => $profile{tabsetDelegations},
 		%{$profile{tabsetProfile}},
 	);
-	
+
+	my $s = $::application-> uiScaling;
 	$self-> {notebook} = $profile{notebookClass}-> create(
 		owner      => $self,
 		name       => 'Notebook',
-		origin     => [ DefBorderX + 1, DefBorderX + 1],
-		size       => [ $size[0] - DefBorderX * 2 - 5,
-			$size[1] - DefBorderX * 2 - $self-> {tabSet}-> height - DefBookmarkX - 4],
+		origin     => [ $s * DefBorderX + 1, $s * DefBorderX + 1],
+		size       => [ $size[0] - $s * DefBorderX * 2 - 5,
+			$size[1] - $s * DefBorderX * 2 - $self-> {tabSet}-> height - $s * DefBookmarkX - 4],
 		growMode   => gm::Client,
 		scaleChildren => $scaleChildren,
 		(map { $_  => $profile{$_}} keys %notebookProps),
@@ -1102,6 +1116,7 @@ sub on_paint
 	$canvas-> color( $clr[1]);
 	$canvas-> bar( 0, 0, @size);
 
+	my $s = $::application-> uiScaling;
 	if ($self-> {style} == tns::Standard) {
 		if ($on_top) {
 			$size[1] -= $self-> {tabSet}-> height;
@@ -1110,20 +1125,20 @@ sub on_paint
 		}
 
 		$canvas-> rect3d( 
-			0, 0, $size[0] - 1, $size[1] - 1 + Prima::TabSet::DefGapY, 
+			0, 0, $size[0] - 1, $size[1] - 1 + $s * Prima::TabSet::DefGapY, 
 			1, reverse @c3d
 		);
 		$canvas-> rect3d( 
-			DefBorderX, $on_top ? 
-				DefBorderX : $self-> {notebook}-> bottom - 1, 
-			$size[0] - 1 - DefBorderX,
-			$size[1] - DefBorderX + Prima::TabSet::DefGapY, 
+			$s * DefBorderX, $on_top ? 
+				$s * DefBorderX : $self-> {notebook}-> bottom - 1, 
+			$size[0] - 1 - $s * DefBorderX,
+			$size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY, 
 			1, @c3d
 		);
 
-		my $y = $size[1] - DefBorderX + Prima::TabSet::DefGapY;
-		my $x = $size[0] - DefBorderX - DefBookmarkX;
-		return if $y < DefBorderX * 2 + DefBookmarkX;
+		my $y = $size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY;
+		my $x = $size[0] - $s * DefBorderX - $s * DefBookmarkX;
+		return if $y < $s * DefBorderX * 2 + $s * DefBookmarkX;
 		
 		my $a  = 0;
 		my ($pi, $mpi) = ( 
@@ -1138,68 +1153,67 @@ sub on_paint
 			if ( $p < 0 && $a & 1) {
 				$canvas->fillpoly([
 					$x - 2, $y - 2,
-					$x + DefBookmarkX - 4, $y - DefBookmarkX,
-					$x - 2, $y - DefBookmarkX,  
+					$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX,
+					$x - 2, $y - $s * DefBookmarkX,  
 				]);
 			} elsif ( $p > 0 && $a & 2 ) {
 				$canvas->fillpoly([
 					$x - 2, $y - 2,
-					$x + DefBookmarkX - 4, $y - DefBookmarkX,
-					$x + DefBookmarkX - 4, $y - 2,
+					$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX,
+					$x + $s * DefBookmarkX - 4, $y - 2,
 				]);
 			}
 		}
 
 		$canvas-> color( $c3d[0]);
 		$canvas-> line( 
-			DefBorderX + 2,  $y - 2, 
+			$s * DefBorderX + 2,  $y - 2, 
 			$x - 2,          $y - 2
 		);
 		$canvas-> line( 
-			$x + DefBookmarkX - 4, $y - DefBookmarkX + 1, 
-			$x + DefBookmarkX - 4, $on_top ? 
-						(DefBorderX + 2) : 
+			$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 1, 
+			$x + $s * DefBookmarkX - 4, $on_top ? 
+						($s * DefBorderX + 2) : 
 						($self-> {notebook}-> bottom + 1)
 		);
 
-		my $fh = 24;
-		
+		my $fh = $canvas-> font-> height + 8;
 		$canvas-> line( 
-			DefBorderX + 4, $y - $fh * 1.6, 
+			$s * DefBorderX + 4, $y - $fh * 1.6, 
 			$x - 6, $y - $fh * 1.6
 		);
 		$canvas-> polyline([ 
 			$x - 2, $y - 2, 
-			$x - 2, $y - DefBookmarkX, 
-			$x + DefBookmarkX - 4, $y - DefBookmarkX
+			$x - 2, $y - $s * DefBookmarkX, 
+			$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX
 		]);
-		$canvas-> line( $x - 1, $y - 3, $x + DefBookmarkX - 5, $y - DefBookmarkX + 1);
-		$canvas-> line( $x - 1, $y - 4, $x + DefBookmarkX - 6, $y - DefBookmarkX + 1);
-		$canvas-> line( $x - 0, $y - 2, $x + DefBookmarkX - 4, $y - DefBookmarkX + 2);
-		$canvas-> line( $x + 5, $y - DefBookmarkX - 2, $x + DefBookmarkX - 5, $y - DefBookmarkX - 2);
+		$canvas-> line( $x - 1, $y - 3, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX + 1);
+		$canvas-> line( $x - 1, $y - 4, $x + $s * DefBookmarkX - 6, $y - $s * DefBookmarkX + 1);
+		$canvas-> line( $x - 0, $y - 2, $x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 2);
+		$canvas-> line( $x + 5, $y - $s * DefBookmarkX - 2, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX - 2);
 
 		$canvas-> polyline([
-			$x + 4, $y - DefBookmarkX + 6,
-			$x + 10, $y - DefBookmarkX + 6,
-			$x + 10, $y - DefBookmarkX + 8]) if $a & 1;
+			$x + $s * 4, $y - $s * DefBookmarkX + $s * 6,
+			$x + $s * 10, $y - $s * DefBookmarkX + $s * 6,
+			$x + $s * 10, $y - $s * DefBookmarkX + $s * 8]) if $a & 1;
 
-		my $dx = DefBookmarkX / 2;
+		my $dx = $s * DefBookmarkX / 2;
 		my ( $x1, $y1) = ( $x + $dx, $y - $dx);
-		$canvas-> line( $x1 + 1, $y1 + 4, $x1 + 3, $y1 + 4) if $a & 2;
-		$canvas-> line( $x1 + 5, $y1 + 6, $x1 + 5, $y1 + 8) if $a & 2;
-		$canvas-> polyline([ $x1 + 3, $y1 + 2, $x1 + 5, $y1 + 2,
-			$x1 + 5, $y1 + 4, $x1 + 7, $y1 + 4, $x1 + 7, $y1 + 6]) if $a & 2;
+		$canvas-> line( $x1 + $s * 1, $y1 + $s * 4, $x1 + $s * 3, $y1 + $s * 4) if $a & 2;
+		$canvas-> line( $x1 + $s * 5, $y1 + $s * 6, $x1 + $s * 5, $y1 + $s * 8) if $a & 2;
+		$canvas-> polyline([ $x1 + $s * 3, $y1 + $s * 2, $x1 + $s * 5, $y1 + $s * 2,
+			$x1 + $s * 5, $y1 + $s * 4, $x1 + $s * 7, $y1 + $s * 4, $x1 + $s * 7, $y1 + $s * 6]) if $a & 2;
 		$canvas-> color( $c3d[1]);
-		$canvas-> line( $x - 1, $y - 7, $x + DefBookmarkX - 9, $y - DefBookmarkX + 1);
-		$canvas-> line( DefBorderX + 4, $y - $fh * 1.6 - 1, $x - 6, $y - $fh * 1.6 - 1);
-		$canvas-> polyline([ $x + 4, $y1 - 9, $x + 4, $y1 - 8, $x + 10, $y1 - 8]) if $a & 1;
-		$canvas-> line( $x1 + 3, $y1 + 2, $x1 + 3, $y1 + 3) if $a & 2;
-		$canvas-> line( $x1 + 6, $y1 + 6, $x1 + 7, $y1 + 6) if $a & 2;
-		$canvas-> polyline([ $x1 + 1, $y1 + 4, $x1 + 1, $y1 + 6,
-			$x1 + 3, $y1 + 6, $x1 + 3, $y1 + 8, $x1 + 5, $y1 + 8]) if $a & 2;
+		$canvas-> line( $x - 1, $y - 7, $x + $s * DefBookmarkX - 9, $y - $s * DefBookmarkX + 1);
+		$canvas-> line( $s * DefBorderX + 4, $y - $fh * 1.6 - 1, $x - $s * 6, $y - $fh * 1.6 - 1);
+		$canvas-> polyline([ $x + $s * 4, $y1 - $s * 9, $x + $s * 4, $y1 - $s * 8, $x + $s * 10, $y1 - $s * 8]) if $a & 1;
+		$canvas-> line( $x1 + $s * 3, $y1 + $s * 2, $x1 + $s * 3, $y1 + $s * 3) if $a & 2;
+		$canvas-> line( $x1 + $s * 6, $y1 + $s * 6, $x1 + $s * 7, $y1 + $s * 6) if $a & 2;
+		$canvas-> polyline([ $x1 + $s * 1, $y1 + $s * 4, $x1 + $s * 1, $y1 + $s * 6,
+			$x1 + $s * 3, $y1 + $s * 6, $x1 + $s * 3, $y1 + $s * 8, $x1 + $s * 5, $y1 + $s * 8]) if $a & 2;
 		$canvas-> color( cl::Black);
-		$canvas-> line( $x - 1, $y - 2, $x + DefBookmarkX - 4, $y - DefBookmarkX + 1);
-		$canvas-> line( $x + 5, $y - DefBookmarkX - 1, $x + DefBookmarkX - 5, $y - DefBookmarkX - 1);
+		$canvas-> line( $x - 1, $y - 2, $x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 1);
+		$canvas-> line( $x + 5, $y - $s * DefBookmarkX - 1, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX - 1);
 		$canvas-> color( $clr[0]);
 
 		my $t = $self-> {tabs};
@@ -1207,12 +1221,12 @@ sub on_paint
 			my $tx = $self-> {tabSet}-> tabIndex;
 			my $t1 = $$t[ $tx * 2];
 			my $yh = $y - $fh * 0.8 - $self-> font-> height / 2;
-			$canvas-> clipRect( DefBorderX + 1, $y - $fh * 1.6 + 1, $x - 4, $y - 3);
-			$canvas-> text_out_bidi( $t1, DefBorderX + 4, $yh);
+			$canvas-> clipRect( $s * DefBorderX + 1, $y - $fh * 1.6 + 1, $x - 4, $y - 3);
+			$canvas-> text_out_bidi( $t1, $s * DefBorderX + 4, $yh);
 			if ( $$t[ $tx * 2 + 1] > 1) {
 				$t1 = sprintf("Page %d of %d ", $self-> pageIndex - $self-> tab2page( $tx) + 1, $$t[ $tx * 2 + 1]);
-				my $tl1 = $size[0] - DefBorderX - 3 - DefBookmarkX - $self-> get_text_width( $t1);
-				$canvas-> text_out( $t1, $tl1, $yh) if $tl1 > 4 + DefBorderX + $fh * 3;
+				my $tl1 = $size[0] - $s * DefBorderX - 3 - $s * DefBookmarkX - $self-> get_text_width( $t1);
+				$canvas-> text_out( $t1, $tl1, $yh) if $tl1 > 4 + $s * DefBorderX + $fh * 3;
 			}
 		}
 	} else {	
@@ -1228,10 +1242,11 @@ sub event_in_page_flipper
 	return if $self-> {style} != tns::Standard;
 	
 	my @size = $self-> size;
+	my $s = $::application->uiScaling;
 	my $th = ($self-> {orientation} == tno::Top) ? $self-> {tabSet}-> height : 5;
-	$x -= $size[0] - DefBorderX - DefBookmarkX - 1;
-	$y -= $size[1] - DefBorderX - $th - DefBookmarkX + 4;
-	return if $x < 0 || $x > DefBookmarkX || $y < 0 || $y > DefBookmarkX;
+	$x -= $size[0] - $s * DefBorderX - $s * DefBookmarkX - 1;
+	$y -= $size[1] - $s * DefBorderX - $th - $s * DefBookmarkX + 4;
+	return if $x < 0 || $x > $s * DefBookmarkX || $y < 0 || $y > $s * DefBookmarkX;
 
 	return ( $x, $y);
 }
@@ -1241,17 +1256,20 @@ sub on_mousedown
 	my ( $self, $btn, $mod, $x, $y) = @_;
 	$self-> clear_event;
 	return unless ( $x, $y) = $self-> event_in_page_flipper( $x, $y);
-	$self-> pageIndex( $self-> pageIndex + (( -$x + DefBookmarkX < $y) ? 1 : -1));
+	my $s = $::application->uiScaling;
+	$self-> pageIndex( $self-> pageIndex + (( -$x + $s * DefBookmarkX < $y) ? 1 : -1));
 }
 
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
 	my $prelight;
+
 	if (( $x, $y) = $self-> event_in_page_flipper( $x, $y)) {
-		if (-$x + DefBookmarkX < $y && $self->pageIndex < $self->pageCount - 1) {
+		my $s = $::application->uiScaling;
+		if (-$x + $s * DefBookmarkX < $y && $self->pageIndex < $self->pageCount - 1) {
 			$prelight = 1;
-		} elsif (-$x + DefBookmarkX >= $y && $self->pageIndex > 0 ){
+		} elsif (-$x + $s * DefBookmarkX >= $y && $self->pageIndex > 0 ){
 			$prelight = -1;
 		}
 	}
@@ -1382,10 +1400,11 @@ sub set_page_index
 	$newA |= 1 if $pi > 0;
 	$newA |= 2 if $pi < $mpi;
 
+	my $s = $::application->uiScaling;
 	$self-> invalidate_rect(
-		DefBorderX + 1, $size[1] - DefBorderX - $th - DefBookmarkX - 1,
-		$size[0] - DefBorderX - (( $a == $newA) ? DefBookmarkX + 2 : 0),
-		$size[1] - DefBorderX - $th + 3
+		$s * DefBorderX + 1, $size[1] - $s * DefBorderX - $th - $s * DefBookmarkX - 1,
+		$size[0] - $s * DefBorderX - (( $a == $newA) ? $s * DefBookmarkX + 2 : 0),
+		$size[1] - $s * DefBorderX - $th + 3
 	);
 	$self-> notify(q(Change), $pix, $pi);
 }
@@ -1424,11 +1443,12 @@ sub adjust_widgets
 	my @pos = (0,0);
 
 	$size[1] -= $ts-> height;
+	my $s = $::application->uiScaling;
 	if ($self-> {style} == tns::Standard) {
-		$size[0] -= 2 * DefBorderX + 6;
-		$size[1] -= 2 * DefBorderX + DefBookmarkX + 4;
-		$pos[0] += DefBorderX + 1;
-		$pos[1] += DefBorderX + 1;
+		$size[0] -= 2 * $s * DefBorderX + 6;
+		$size[1] -= 2 * $s * DefBorderX + $s * DefBookmarkX + 4;
+		$pos[0] += $s * DefBorderX + 1;
+		$pos[1] += $s * DefBorderX + 1;
 	}
 	else {
 		$size[0] -= 2;

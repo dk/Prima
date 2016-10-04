@@ -67,7 +67,7 @@ sub profile_default
 		autoVScroll    => 1,
 		listVisible    => 0,
 		editHeight     => $f-> {height} + 2,
-		listHeight     => 100,
+		listHeight     => $::application-> uiScaling * 100,
 		ownerBackColor => 1,
 		selectable     => 0,
 		literal        => 1,
@@ -132,7 +132,7 @@ sub init
 	$self-> {edit} = $self-> insert( $profile{editClass} =>
 		name        => 'InputLine',
 		origin      => [ 0, $h - $eh],
-		size        => [ $w - (( $self-> {style} == cs::Simple) ? 0 : DefButtonX), $eh],
+		size        => [ $w - (( $self-> {style} == cs::Simple) ? 0 : ( $::application-> uiScaling * DefButtonX)), $eh],
 		growMode    => gm::GrowHiX | gm::GrowLoY,
 		selectable  => 1,
 		tabStop     => 1,
@@ -172,8 +172,8 @@ sub init
 	$self-> {button} = $self-> insert( $profile{buttonClass} =>
 		ownerBackColor => 1,
 		name           => 'Button',
-		origin         => [ $w - DefButtonX, $h - $eh],
-		size           => [ DefButtonX, $eh],
+		origin         => [ $w - $::application-> uiScaling * DefButtonX, $h - $eh],
+		size           => [ $::application-> uiScaling * DefButtonX, $eh],
 		visible        => $self-> {style} != cs::Simple,
 		growMode       => gm::GrowLoX | gm::GrowLoY,
 		tabStop        => 0,
@@ -546,7 +546,7 @@ sub set_style
 	}
 	$self-> {edit}-> set(
 		bottom => $self-> height - $self-> editHeight ,
-		width  => $self-> { edit}-> width + DefButtonX * $decr *
+		width  => $self-> { edit}-> width + $::application-> uiScaling * DefButtonX * $decr *
 			(( $style == cs::Simple) ? 1 : -1),
 		height => $self-> editHeight ,
 	);

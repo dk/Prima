@@ -23,6 +23,7 @@ my $Main = Prima::MainWindow->create(
 	name   => 'Main',
 	text   => 'Markup test',
 	size   => [500,500],
+	designScale => [7, 16],
 );
 
 my $tn = $Main->insert('TabbedNotebook',

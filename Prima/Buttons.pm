@@ -766,7 +766,7 @@ use vars qw(@ISA @images);
 
 my @images;
 
-{
+Prima::Application::add_startup_notification( sub {
 	my $i = 0;
 	for (  
 		sbmp::CheckBoxUnchecked, sbmp::CheckBoxUncheckedPressed,
@@ -779,7 +779,7 @@ my @images;
 			Prima::StdBitmap::image( $_);
 		$i++;
 	}
-}
+});
 
 sub profile_default
 {

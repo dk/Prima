@@ -1549,17 +1549,18 @@ sub open
 	my $i = $self-> {container};
 	my @sz = $i-> size;
 	my $fh = $i-> font-> height;
+	my $sz = 27 * $::application->uiScaling;
 	$self-> {A} = $i-> insert( Edit =>
 		origin   => [ 5, 5],
-		size     => [ $sz[0]-10, $sz[1] - 34],
+		size     => [ $sz[0]-10, $sz[1] - $sz - 10 ],
 		growMode => gm::Client,
 		onChange => sub {
 			$self-> change;
 		},
 	);
 	$i-> insert( SpeedButton =>
-		origin => [5, $sz[1] - 28],
-		size   => [27, 27],
+		origin => [5, $sz[1] - $sz - 1],
+		size   => [$sz, $sz],
 		hint   => 'Load',
 		growMode => gm::GrowLoY,
 		image  => $VB::main-> {openbutton}-> image,
@@ -1581,8 +1582,8 @@ sub open
 		},
 	);
 	$self-> {B} = $i-> insert( SpeedButton =>
-		origin => [ 33, $sz[1] - 28],
-		size   => [27, 27],
+		origin => [ 5 + 1 + $sz, $sz[1] - $sz - 1],
+		size   => [$sz, $sz],
 		hint   => 'Save',
 		growMode => gm::GrowLoY,
 		image  => $VB::main-> {savebutton}-> image,
@@ -1606,8 +1607,8 @@ sub open
 		},
 	);
 	$i-> insert( SpeedButton =>
-		origin => [ 62, $sz[1] - 28],
-		size   => [27, 27],
+		origin => [ 5 + (1 + $sz) * 2, $sz[1] - $sz - 1],
+		size   => [$sz, $sz],
 		hint   => 'Clear',
 		growMode => gm::GrowLoY,
 		image  => $VB::main-> {newbutton}-> image,
@@ -2651,9 +2652,10 @@ sub open
 	my @sz = $i-> size;
 
 	my $fh = $i-> font-> height;
+	my $sz = 27 * $::application-> uiScaling;
 	$self-> {A} = $i-> insert( Widget =>
 		origin   => [ 5, 5],
-		size     => [ $sz[0]-10, $sz[1] - 34],
+		size     => [ $sz[0]-10, $sz[1] - 10 - $sz],
 		growMode => gm::Client,
 		onPaint  => sub {
 			my ( $self, $canvas) = @_;
@@ -2676,8 +2678,8 @@ sub open
 	);
 
 	$i-> insert( SpeedButton =>
-		origin => [ 5, $sz[1] - 28],
-		size   => [ 27, 27],
+		origin => [ 5 + 0 * ( 1 + $sz), $sz[1] - $sz - 1],
+		size   => [ $sz, $sz],
 		hint   => 'Load',
 		image  => $VB::main-> {openbutton}-> image,
 		glyphs => $VB::main-> {openbutton}-> glyphs,
@@ -2746,8 +2748,8 @@ sub open
 		},
 	);
 	$self-> {B} = $i-> insert( SpeedButton =>
-		origin => [33, $sz[1]- 28],
-		size   => [27, 27],
+		origin => [ 5 + 1 * ( 1 + $sz), $sz[1] - $sz - 1],
+		size   => [ $sz, $sz],
 		hint   => 'Save',
 		image  => $VB::main-> {savebutton}-> image,
 		glyphs => $VB::main-> {savebutton}-> glyphs,
@@ -2757,8 +2759,8 @@ sub open
 		},
 	);
 	$self-> {C} = $i-> insert( SpeedButton =>
-		origin => [62, $sz[1] - 28],
-		size   => [27, 27],
+		origin => [ 5 + 2 * ( 1 + $sz), $sz[1] - $sz - 1],
+		size   => [ $sz, $sz],
 		hint   => 'Clear',
 		glyphs => $VB::main-> {newbutton}-> glyphs,
 		image  => $VB::main-> {newbutton}-> image,

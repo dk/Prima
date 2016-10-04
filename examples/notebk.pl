@@ -70,6 +70,7 @@ package Generic;
 my $w = Bla-> create(
 	size => [ 600, 300],
 	y_centered  => 1,
+	designScale => [7, 16],
 	menuItems => [[ '~Action' => [
 		[ '~New tab', 'Ctrl+N', '^N', sub {
 			my $book   = shift->book;

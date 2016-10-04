@@ -576,8 +576,8 @@ sub paint_exterior
 	$vs ||= $avs;
 	$canvas-> rect3d( 0,0,$sz[0]-1,$sz[1]-1,$bw,
 		$self-> dark3DColor,$self-> light3DColor,$self-> backColor);
-	my $sw = 12;
-	my $sl = 16;
+	my $sw = 12 * $::application-> uiScaling;
+	my $sl = 16 * $::application-> uiScaling;
 	$hs = $hs ? $sw : 0;
 	$vs = $vs ? $sw : 0;
 	my @r = ( $bw, $bw+$hs, $sz[0]-$bw-1-$vs,$sz[1]-$bw-1);
