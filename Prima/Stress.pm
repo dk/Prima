@@ -83,12 +83,14 @@ of UI defaults.
 =head2 Font size
 
    use Prima::Stress q(fs=18);
+   perl -MPrima::Stress=fs=18 program
 
 This syntax changes the default font size to 18 points.
 
 =head2 Display resolution
 
    use Prima::Stress q(dpi=192);
+   perl -MPrima::Stress=dpi=192 program
 
 This syntax changes the display resolution to 192 pixels per inch.
 
