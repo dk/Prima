@@ -27,7 +27,29 @@ sub scale
 	my $i = shift or return;
 	my $s = $::application->uiScaling;
 	return if $s == 1.0;
-	$i->set(scaling => ist::Box);
+	if ( $i->isa("Prima::Icon")) {
+		if ($::application-> get_system_value( sv::LayeredWidgets )) {
+			$i->maskType(im::Byte);
+			my ( $x, $a ) = $i-> split;
+			$x->set(
+				scaling => ist::Quadratic,
+				size    => [ $x-> width * $s, $x-> height * $s ],
+			);
+			$a->set(
+				scaling => ist::Quadratic,
+				size    => [ $a-> width * $s, $a-> height * $s ],
+			);
+			$i-> combine( $x, $a );
+			return;
+		} else {
+			# don't uglify bitmaps here
+			$s = int($s + .5);
+			return if $s == 1.0;
+			$i->scaling(ist::Box);
+		}
+	} else {
+		$i->scaling(ist::Quadratic);
+	}
 	$i->size( $i-> width * $s, $i->height * $s);
 }
 
