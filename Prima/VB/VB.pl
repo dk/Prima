@@ -161,8 +161,8 @@ sub profile_default
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
 		text           => 'Object Inspector',
-		width          => 280,
-		height         => 350,
+		width          => 280 * $::application-> uiScaling,
+		height         => 350 * $::application-> uiScaling,
 		left           => 6,
 		sizeDontCare   => 0,
 		originDontCare => 0,
@@ -193,16 +193,17 @@ sub init
 		delegations => [qw(Change)],
 	);
 
+	my $step = $self-> font-> width * 25;
 	$self-> {monger} = $self-> insert( Notebook =>
 		origin  => [ 0, $fh],
-		size    => [ 100,  $sz[1] - $fh * 2],
+		size    => [ $step,  $sz[1] - $fh * 2],
 		growMode => gm::Client,
 		pageCount => 2,
 	);
 
 	$self-> {mtabs} = $self-> insert( Button =>
 		origin   => [ 0, 0],
-		size     => [ 100, $fh],
+		size     => [ $step, $fh],
 		text     => '~Events',
 		growMode => gm::Floor,
 		name     => 'MTabs',
@@ -212,14 +213,14 @@ sub init
 
 	$self-> {plist} = $self-> {monger}-> insert_to_page( 0, 'Prima::VB::OPropListViewer' =>
 		origin   => [ 0, 0],
-		size     => [ 100, $sz[1] - $fh * 2],
+		size     => [ $step, $sz[1] - $fh * 2],
 		name       => 'PList',
 		growMode   => gm::Client,
 	);
 
 	$self-> {elist} = $self-> {monger}-> insert_to_page( 1, 'Prima::VB::OPropListViewer' =>
 		origin   => [ 0, 0],
-		size     => [ 100, $sz[1] - $fh * 2],
+		size     => [ $step, $sz[1] - $fh * 2],
 		name       => 'EList',
 		growMode   => gm::Client,
 	);
@@ -227,7 +228,7 @@ sub init
 
 	$self-> insert( 'Prima::VB::Divider' =>
 		vertical => 1,
-		origin => [ 100, 0],
+		origin => [ $step, 0],
 		size   => [ 6, $sz[1] - $fh],
 		min    => 50,
 		max    => 50,
@@ -236,8 +237,8 @@ sub init
 	);
 
 	$self-> {panel} = $self-> insert( Notebook =>
-		origin    => [ 106, 0],
-		size      => [ $sz[0]-106, $sz[1] - $fh],
+		origin    => [ $step + 6, 0],
+		size      => [ $sz[0] - $step - 6, $sz[1] - $fh],
 		growMode  => gm::Right,
 		name      => 'Panel',
 		pageCount => 1,
@@ -1257,12 +1258,12 @@ sub profile_default
 		text           => $::application-> name,
 		width          => $::application-> width - 12,
 		left           => 6,
-		bottom         => $::application-> height - 106 -
+		bottom         => $::application-> height - $::application->uiScaling * 106 -
 			$::application-> get_system_value(sv::YTitleBar) - 
 			$::application-> get_system_value(sv::YMenu),
 		sizeDontCare   => 0,
 		originDontCare => 0,
-		height         => 100,
+		height         => 100 * $::application->uiScaling,
 		icon           => $VB::ico,
 		menuItems      => [
 			['~File' => [
@@ -1332,14 +1333,17 @@ sub init
 	my %classes = %Prima::VB::CfgMaint::classes;
 	my @pages   = @Prima::VB::CfgMaint::pages;
 
+	my $s = $::application->uiScaling;
 	$self-> set(
-		sizeMin => [ 350, $self-> height],
+		sizeMin => [ $s*350, $self-> height],
 		sizeMax => [ 16384, $self-> height],
 	);
 
+	my ( $dx, $dy ) = map { $s * $_ } (26,30);
+
 	$self-> {newbutton} = $self-> insert( SpeedButton =>
-		origin    => [ 4, $self-> height - 30],
-		size      => [ 26, 26],
+		origin    => [ 4, $self-> height - $dy],
+		size      => [ $dx, $dx],
 		hint      => 'New',
 		imageFile => Prima::Utils::find_image( 'VB::VB.gif').':1',
 		glyphs    => 2,
@@ -1347,8 +1351,8 @@ sub init
 	);
 
 	$self-> {openbutton} = $self-> insert( SpeedButton =>
-		origin    => [ 32, $self-> height - 30],
-		size      => [ 26, 26],
+		origin    => [ 4 + $dx, $self-> height - $dy],
+		size      => [ $dx, $dx],
 		hint      => 'Open',
 		imageFile => Prima::Utils::find_image( 'VB::VB.gif').':2',
 		glyphs    => 2,
@@ -1356,8 +1360,8 @@ sub init
 	);
 
 	$self-> {savebutton} = $self-> insert( SpeedButton =>
-		origin    => [ 60, $self-> height - 30],
-		size      => [ 26, 26],
+		origin    => [ 4 + $dx*2, $self-> height - $dy],
+		size      => [ $dx, $dx],
 		hint      => 'Save',
 		imageFile => Prima::Utils::find_image( 'VB::VB.gif').':3',
 		glyphs    => 2,
@@ -1365,20 +1369,20 @@ sub init
 	);
 
 	$self-> {runbutton} = $self-> insert( SpeedButton =>
-		origin    => [ 88, $self-> height - 30],
-		size      => [ 26, 26],
+		origin    => [ 4 + $dx*3, $self-> height - $dy],
+		size      => [ $dx, $dx],
 		hint      => 'Run',
 		imageFile => Prima::Utils::find_image( 'VB::VB.gif').':4',
 		glyphs    => 2,
 		onClick   => sub { $VB::main-> form_run} ,
 	);
 
-
+	my $ts_x = 8 + $dx * 5;
 	$self-> {tabset} = $self-> insert( TabSet =>
-		left   => 150,
+		left   => $ts_x,
 		name   => 'TabSet',
 		top    => $self-> height,
-		width  => $self-> width - 150,
+		width  => $self-> width - $ts_x,
 		growMode => gm::Ceiling,
 		topMost  => 1,
 		tabs     => [ @pages],
@@ -1387,8 +1391,8 @@ sub init
 	);
 
 	$self-> {nb} = $self-> insert( Widget =>
-		origin => [ 150, 0],
-		size   => [$self-> width - 150, $self-> height - $self-> {tabset}-> height],
+		origin => [ $ts_x, 0],
+		size   => [$self-> width - $ts_x, $self-> height - $self-> {tabset}-> height],
 		growMode => gm::Client,
 		name    => 'TabbedNotebook',
 		onPaint => sub {
@@ -1400,8 +1404,8 @@ sub init
 	);
 
 	$self-> {nbpanel} = $self-> {nb}-> insert( Notebook =>
-		origin     => [12,1],
-		size       => [$self-> {nb}-> width-24,44],
+		origin     => [$s*12,1],
+		size       => [$self-> {nb}-> width-$s*24,36*$s+8],
 		growMode   => gm::Floor,
 		backColor  => cl::Gray,
 		name       => 'NBPanel',
@@ -1411,33 +1415,34 @@ sub init
 			$canvas-> rect3d(0,0,$sz[0]-1,$sz[1]-1,
 				1,cl::Black,cl::Black,$self-> backColor);
 			my $i = 0;
-			$canvas-> rectangle($i-38,2,$i,40) while (($i+=40)<($sz[0]+36));
+			my $sz = $s * 36;
+			$canvas-> rectangle($i-$sz-2,2,$i,$sz+4) while (($i+=$sz+4)<($sz[0]+$sz));
 		},
 	);
 
 	$self-> {leftScroll} = $self-> {nb}-> insert( SpeedButton =>
 		origin  => [1,5],
-		size    => [11,36],
+		size    => [map { $s * $_ } 11,36],
 		name    => 'LeftScroll',
 		autoRepeat => 1,
 		onPaint => sub {
 			$_[0]-> on_paint( $_[1]);
 			$_[1]-> color( $_[0]-> enabled ? cl::Black : cl::Gray);
-			$_[1]-> fillpoly([7,4,7,32,3,17]);
+			$_[1]-> fillpoly([map { $s * $_ } 7,4,7,32,3,17]);
 		},
 		delegations => [ $self, qw(Click)],
 	);
 
 	$self-> {rightScroll} = $self-> {nb}-> insert( SpeedButton =>
-		origin  => [$self-> {nb}-> width-11,5],
-		size    => [11,36],
+		origin  => [$self-> {nb}-> width-11*$s,5],
+		size    => [map { $s * $_ } 11,36],
 		name    => 'RightScroll',
 		growMode => gm::Right,
 		autoRepeat => 1,
 		onPaint => sub {
 			$_[0]-> on_paint( $_[1]);
 			$_[1]-> color( $_[0]-> enabled ? cl::Black : cl::Gray);
-			$_[1]-> fillpoly([3,4,3,32,7,17]);
+			$_[1]-> fillpoly([map { $s * $_ } 3,4,3,32,7,17]);
 		},
 		delegations => [ $self, qw(Click)],
 	);
@@ -1540,6 +1545,7 @@ sub reset_tabs
 
 	my %iconfails = ();
 	my %icongtx   = ();
+	my $s = $::application->uiScaling;
 	for ( keys %{$self-> {classes}}) {
 		my ( $class, %info) = ( $_, %{$self-> {classes}-> {$_}});
 		$offsets{$info{page}} = 4 unless exists $offsets{$info{page}};
@@ -1560,12 +1566,12 @@ sub reset_tabs
 			name   => 'ClassSelector',
 			image  => $i,
 			origin => [ $offsets{$info{page}}, 4],
-			size   => [ 36, 36],
+			size   => [ map { $s * $_ } 36, 36],
 			delegations => [$self, qw(Click)],
 		);
 		$j-> {orgLeft}   = $offsets{$info{page}};
 		$j-> {className} = $class;
-		$offsets{$info{page}} += 40;
+		$offsets{$info{page}} += 36 * $s + 4;
 	}
 	$self-> {nbIndex} = 0;
 	$nb-> unlock;

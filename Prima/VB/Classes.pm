@@ -296,14 +296,17 @@ sub common_paint
 		$canvas-> rop( rop::XorPut);
 		$canvas-> color( cl::Set);
 		my ( $hw, $hh) = ( int($sz[0]/2), int($sz[1]/2));
-		$canvas-> bar( 0,0,4,4);
-		$canvas-> bar( $hw-2,0,$hw+2,4);
-		$canvas-> bar( $sz[0]-5,0,$sz[0]-1,4);
-		$canvas-> bar( 0,$sz[1]-5,4,$sz[1]-1);
-		$canvas-> bar( $hw-2,$sz[1]-5,$hw+2,$sz[1]-1);
-		$canvas-> bar( $sz[0]-5,$sz[1]-5,$sz[0]-1,$sz[1]-1);
-		$canvas-> bar( 0,$hh-2,2,$hh+2);
-		$canvas-> bar( $sz[0]-5,$hh-2,$sz[0]-1,$hh+2);
+		my $mark = 2 * $::application->uiScaling;
+		$mark = 2 if $mark < 2;
+		my $dmark = $mark * 2;
+		$canvas-> bar( 0,0,$dmark,$dmark);
+		$canvas-> bar( $hw-$mark,0,$hw+$mark,$dmark);
+		$canvas-> bar( $sz[0]-$dmark-1,0,$sz[0]-1,$dmark);
+		$canvas-> bar( 0,$sz[1]-$dmark-1,$dmark,$sz[1]-1);
+		$canvas-> bar( $hw-$mark,$sz[1]-$dmark-1,$hw+$mark,$sz[1]-1);
+		$canvas-> bar( $sz[0]-$dmark-1,$sz[1]-$dmark-1,$sz[0]-1,$sz[1]-1);
+		$canvas-> bar( 0,$hh-$mark,$dmark,$hh+$mark);
+		$canvas-> bar( $sz[0]-$dmark-1,$hh-$mark,$sz[0]-1,$hh+$mark);
 		$canvas-> rop( rop::CopyPut);
 	} elsif ( $self-> {locked}) {
 		my $x = $VB::form->{guidelineX} - $self-> left;

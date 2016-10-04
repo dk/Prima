@@ -419,6 +419,7 @@ sub profile_default
 sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
+	$p-> {imageScale} = $::application->uiScaling if !exists $p->{imageScale};
 	$self-> SUPER::profile_check_in( $p, $default);
 	my $checkable = exists $p-> {checkable} ? $p-> {checkable} : $default-> {checkable};
 	$p-> { checked} = 0 unless $checkable;
@@ -1068,15 +1069,17 @@ use vars qw(@ISA);
 sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
-	@$def{qw(selectable width height text)} = (0, 36, 36, "");
+	my $s = $::application->uiScaling;
+	@$def{qw(selectable width height text)} = (0, $s*36, $s*36, "");
 	return $def;
 }
 
 sub calc_geom_size
 {  
 	my @sz = $_[0]-> std_calc_geom_size;
-	$sz[0] = 36 if $sz[0] < 36;
-	$sz[1] = 36 if $sz[1] < 36;
+	my $s = $::application->uiScaling;
+	$sz[0] = $s*36 if $sz[0] < $s*36;
+	$sz[1] = $s*36 if $sz[1] < $s*36;
 	return @sz;
 }
 
