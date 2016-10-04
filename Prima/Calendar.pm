@@ -56,9 +56,10 @@ sub init
 	my ( $w, $h) = $self-> size;
 	$self-> reset_days;
 
+	my $right_offset = $self-> font-> width * 9;
 	$self-> insert( ComboBox => 
 		origin   => [ 5, $h - $fh * 2 - 10 ],
-		size     => [ $w - 115, $fh + 4],
+		size     => [ $w - $right_offset - 15, $fh + 4],
 		name     => 'Month',
 		items    => $self-> make_months,
 		style    => cs::DropDownList,
@@ -68,15 +69,15 @@ sub init
 
 	$self-> insert( Label => 
 		origin => [ 5, $h - $fh - 4],
-		size   => [ $w - 115, $fh + 2],
+		size   => [ $w - $right_offset - 15, $fh + 2],
 		text   => '~Month',
 		focusLink => $self-> Month,
 		growMode => gm::GrowHiX | gm::GrowLoY,
 	);
 	
 	$self-> insert( SpinEdit => 
-		origin => [ $w - 105, $h - $fh * 2 - 10 ],
-		size   => [ 100, $fh + 4],
+		origin => [ $w - $right_offset - 5, $h - $fh * 2 - 10 ],
+		size   => [ $right_offset, $fh + 4],
 		name   => 'Year',
 		min    => 1900,
 		max    => 2099,
@@ -85,8 +86,8 @@ sub init
 	);
 
 	$self-> insert( Label => 
-		origin => [ $w - 105, $h - $fh - 4],
-		size   => [ 100, $fh + 2],
+		origin => [ $w - $right_offset - 5, $h - $fh - 4],
+		size   => [ $right_offset, $fh + 2],
 		text   => '~Year',
 		focusLink => $self-> Year,
 		growMode => gm::GrowLoX | gm::GrowLoY,

@@ -419,7 +419,6 @@ sub profile_default
 sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
-	$p-> {imageScale} = $::application->uiScaling if !exists $p->{imageScale};
 	$self-> SUPER::profile_check_in( $p, $default);
 	my $checkable = exists $p-> {checkable} ? $p-> {checkable} : $default-> {checkable};
 	$p-> { checked} = 0 unless $checkable;
@@ -618,10 +617,12 @@ sub std_calc_geom_size
 }
 
 sub calc_geom_size
-{  
-	my @sz = $_[0]-> std_calc_geom_size;
-	$sz[0] = 96 if $sz[0] < 96;
-	$sz[1] = 36 if $sz[1] < 36;
+{
+	my $self = shift;
+	my @sz = $self-> std_calc_geom_size;
+	my ($dx, $dy) = ( $self->font->width/7, $self->font->height/16);
+	$sz[0] = $dx * 96 if $sz[0] < $dx * 96;
+	$sz[1] = $dy * 36 if $sz[1] < $dy * 36;
 	return @sz;
 }
 
@@ -860,12 +861,13 @@ sub calc_geom_size
 	if ( $images[0]) {
 		@static_image0_size = $images[0]-> size 
 			unless @static_image0_size;
-		$sz[0] += $static_image0_size[0] + 2;
+		$sz[0] += $static_image0_size[0] * 1.5 + 2;
 		$sz[1] = $static_image0_size[1] 
 			if $sz[1] < $static_image0_size[1];
 	} else {
-		$sz[0] += 16;
-		$sz[1] = 16 if $sz[1] < 16;
+		my $s = $::application->uiScaling;
+		$sz[0] += 16 * 1.5 * $s;
+		$sz[1] = 16 * $s if $sz[1] < 16 * $s;
 	}
 	return @sz;
 }
@@ -1070,7 +1072,7 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my $s = $::application->uiScaling;
-	@$def{qw(selectable width height text)} = (0, $s*36, $s*36, "");
+	@$def{qw(selectable width height text imageScaling)} = (0, $s*36, $s*36, "", $s);
 	return $def;
 }
 
@@ -1115,7 +1117,6 @@ sub on_radioclick
 		$_-> checked(0);
 	}
 }
-
 
 sub on_paint
 {

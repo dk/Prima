@@ -15,6 +15,7 @@ my $font_dialog;
 
 $w = Prima::MainWindow-> create(
 	size => [ 430, 200],
+	designScale => [7, 16],
 	text => "Bidirectional texts",
 	menuItems => [
 		[ "~Options" => [

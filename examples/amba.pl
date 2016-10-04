@@ -36,13 +36,17 @@ $d =~ s/([h-r])/q(0)x(ord($1)-ord('h'))/ge;
 $d =~ s/([s-z])/q(f)x(ord($1)-ord('s'))/ge;
 $d =~ s/(..)/chr hex qq(0x$1)/ge;
 #
+my $sc = $::application-> uiScaling;
 my @images = map { Prima::Image-> create(
 	width    => 40,
 	height   => 40,
 	type     => im::BW,
 	data     => $_,
 	lineSize => 5,
-)-> bitmap } grep { length } split "(.{200})", $d;
+) } grep { length } split "(.{200})", $d;
+
+$_->set( size => [ map { $_ * $sc } $_->size ]) for @images;
+@images = map { $_-> bitmap } @images;
 
 # figures mnemonic names ( incorrect :)
 my %figs = (
@@ -83,11 +87,11 @@ my @colors = (
 my @pointer= map { 
 	$::application-> get_system_value( $_ )
 } sv::XPointer, sv::YPointer;
-$pointer[$_] = ( $pointer[$_] - 40 ) / 2 for 0,1;
+$pointer[$_] = ( $pointer[$_] - 40 * $sc ) / 2 for 0,1;
 
 my $w = Prima::MainWindow-> create(
 	name => 'Chess puzzle',
-	size => [ 360, 360],
+	size => [ 360 * $sc, 360 * $sc],
 	font => { style => fs::Bold, size => 11,},
 	buffered => 1,
 	menuItems => [
@@ -113,9 +117,10 @@ my $w = Prima::MainWindow-> create(
 		$self-> color( cl::Back);
 		$self-> bar ( 0, 0, $self-> size);
 		$self-> color( cl::Black);
+		my $d = 40 * $sc;
 		for ( $i = 0; $i < 9; $i++) {
-			$self-> line( $i * 40, 0, $i * 40, 40 * 8);
-			$self-> line( 0, $i * 40, 40 * 8, $i * 40);
+			$self-> line( $i * $d, 0, $i * $d, $d * 8);
+			$self-> line( 0, $i * $d, $d * 8, $i * $d);
 		}
 		my @boy = (0) x 64;
 		my @busy = (0) x 64;
@@ -177,7 +182,7 @@ my $w = Prima::MainWindow-> create(
 		for ( grep $boy[$_], 0..63) {
 			my ( $x, $y) = ($_ % 8, int($_/8));
 			$self-> color( $colors[$boy[$_]] );
-			$self-> bar( $x * 40+1, $y * 40+1, $x * 40+39, $y * 40+39);
+			$self-> bar( $x * $d+1, $y * $d+1, ($x + 1) * $d - 1, ($y + 1 ) * $d - 1);
 		}
 		
 		for ( keys %figs) {
@@ -187,20 +192,21 @@ my $w = Prima::MainWindow-> create(
 				backColor => cl::Black,
 				rop       => rop::AndPut,
 			);
-			$self-> put_image( $x * 40, $y * 40, $images{$_});
+			$self-> put_image( $x * $d, $y * $d, $images{$_});
 			$self-> set(
 				color     => cl::Black,
 				backColor => $boy[ $y * 8 + $x] ? cl::LightGreen : cl::Green,
 				rop       => rop::XorPut,
 			);
-			$self-> put_image( $x * 40, $y * 40, $images{$_});
+			$self-> put_image( $x * $d, $y * $d, $images{$_});
 		}
 	},
 	onMouseDown => sub {
 		my ( $self, $btn, $mod, $x, $y) = @_;
 		return if $self-> {cap};
-		$x = int( $x / 40);
-		$y = int( $y / 40);
+		my $d = 40 * $sc;
+		$x = int( $x / $d);
+		$y = int( $y / $d);
 		return if $x < 0 || $x > 8 || $y < 0 || $y > 8;
 		my $i = '';
 		for ( keys %figs) {
@@ -235,8 +241,9 @@ my $w = Prima::MainWindow-> create(
 	onMouseUp => sub {
 		my ( $self, $btn, $mod, $x, $y) = @_;
 		return unless $self-> {cap};
-		$x = int( $x / 40);
-		$y = int( $y / 40);
+		my $d = 40 * $sc;
+		$x = int( $x / $d);
+		$y = int( $y / $d);
 		$self-> capture(0);
 		$self-> pointer( cr::Default);
 		my $fg = $self-> {cap};

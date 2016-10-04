@@ -22,7 +22,7 @@ my $w = Prima::MainWindow-> create(
 	size => [ 300, 200],
 	centered => 1,
 	popupItems => [['Hallo!' => '']],
-	designScale => [7,16],
+	designScale => [6,16],
 );
 
 $w-> insert( CheckBox =>

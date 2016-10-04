@@ -97,10 +97,10 @@ my $w = Prima::MainWindow-> create(
 	centered  => 1,
 	height    => 300,
 	width     => 400,
+	designScale => [7, 16],
 );
 $w->insert( "Button"     , origin => [  50,180], pressed => 1);
 my $l = $w->insert( "UserButton" , origin => [ 250,180], autoRepeat => 1);
-$l->clone( origin => [ 250, 290]);
 $w->insert( "Radio"      , origin => [  50,140]);
 
 run Prima;

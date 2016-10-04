@@ -17,6 +17,7 @@ use Prima qw(Application Sliders ImageViewer);
 
 my $w = Prima::MainWindow->new(
 	size => [ 300, 200 ],
+	designScale => [7, 16],
 	text => 'Blending example',
 );
 

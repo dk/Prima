@@ -34,9 +34,10 @@ sub import
 			$::application->sys_action("resolution $stress{dpi} $stress{dpi}");
 			$::application->uiScaling(0);
 			$::application->font( $::application-> get_default_font );
+			$::application->HintWidget->font( $::application-> get_default_font );
 		}
 		if ($stress{fs}) {
-			$::application->font->size( $stress{fs}) 
+			$::application->font->size( $stress{fs});
 		}
 	});
 

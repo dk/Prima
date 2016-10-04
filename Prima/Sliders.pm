@@ -1262,7 +1262,7 @@ sub on_paint
 				$val - $kb / 2, $bh + $sb + 3,
 				$val + $kb / 2, $bh + $sb + 3,
 				$val + $kb / 2, $bh - 2,
-				$val,                  $bh - $sb - 1,
+				$val,           $bh - $sb - 1,
 			);
 			$canvas-> color( $self->{prelight} ? $prelight : $clr[1]);
 			$canvas-> fillpoly( \@jp);
@@ -1515,7 +1515,7 @@ sub value
 			my $xd = 0;
 			$xd = (( $self-> {tickAlign} == tka::Normal) ? 1 : -1) *
 			( $bw - $sb - $self->knobBreadth) if $self-> {tickAlign} != tka::Dual;
-			$self-> invalidate_rect( $bw - 4 + $xd, $v1, $bw + $sb + 9 + $xd, $v2);
+			$self-> invalidate_rect( $bw - 4 + $xd, $v1, $bw + $sb * 2 + 3 + $xd, $v2);
 		} else {
 			$sb = $size[1] / 6 unless $sb;
 			$sb = 2 unless $sb;
@@ -1531,7 +1531,7 @@ sub value
 			my $yd = 0;
 			$yd = (( $self-> {tickAlign} == tka::Normal) ? -1 : 1) *
 			( $bh - $sb - $self->knobBreadth) if $self-> {tickAlign} != tka::Dual;
-			$self-> invalidate_rect( $v1, $bh - 9 + $yd, $v2, $bh + $sb + 4 + $yd);
+			$self-> invalidate_rect( $v1, $bh - 3 - $sb + $yd, $v2, $bh + $sb + 4 + $yd);
 		}
 		$self-> notify(q(Change)) unless $self-> {suppressNotify};
 	} else {
