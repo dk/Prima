@@ -917,23 +917,24 @@ sub on_paint
 		$canvas-> put_image( 0, ( $size[1] - $image-> height) / 2, $image);
 		$xStart = $image-> width;
 	} else {
-		$xStart = 16;
+		my $s = $::application->uiScaling;
+		$xStart = $s * 16;
 		push ( @c3d, shift @c3d) 
 			if $self-> { pressed};
-		$canvas-> rect3d( 1, ( $size[1] - 14) / 2, 15, ( $size[1] + 14) / 2, 1, 
+		$canvas-> rect3d( 1, ( $size[1] - $s*14) / 2, $s*15, ( $size[1] + $s*14) / 2, 1, 
 			@c3d, $clr[ 1]);
 		if ( $self-> { checked}) {
 			my $at = $self-> { pressed} ? 1 : 0;
 			$canvas-> color( cl::Black);
 			$canvas-> lineWidth( 2);
-			my $yStart = ( $size[1] - 14) / 2;
+			my $yStart = ( $size[1] - $s*14) / 2;
 			$canvas-> line( 
-				$at + 4, $yStart - $at +  8, 
-				$at + 5 , $yStart - $at + 3  
+				$at + $s*4, $yStart - $at +  $s*8, 
+				$at + $s*5 , $yStart - $at + $s*3  
 			);
 			$canvas-> line( 
-				$at + 5 , $yStart - $at + 3, 
-				$at + 12, $yStart - $at + 12 
+				$at + $s*5 , $yStart - $at + $s*3, 
+				$at + $s*12, $yStart - $at + $s*12 
 			);
 			$canvas-> lineWidth( 0);
 		}
@@ -990,10 +991,11 @@ sub on_paint
 		$canvas-> put_image( 0, ( $size[1] - $image-> height) / 2, $image);
 		$xStart = $image-> width;
 	} else {
-		$xStart = 16;
-		my $y = ( $size[1] - 16) / 2;
-		my @xs = ( 0, 8, 16, 8);
-		my @ys = ( 8, 16, 8, 0);
+		my $s = $::application->uiScaling;
+		$xStart = $s * 16;
+		my $y = ( $size[1] - $s * 16) / 2;
+		my @xs = map { $s * $_ } ( 0, 8, 16, 8);
+		my @ys = map { $s * $_ } ( 8, 16, 8, 0);
 		for ( @ys) {$_+=$y};
 		my $i;
 		if ( $self-> { pressed}) {
@@ -1025,7 +1027,7 @@ sub on_paint
 		}
 		if ( $self-> checked) {
 			$canvas-> color( cl::Black);
-			$canvas-> fillpoly( [ 6, $y+8, 8, $y+10, 10, $y+8, 8, $y+6]);
+			$canvas-> fillpoly( [ $s*6, $y+$s*8, $s*8, $y+$s*10, $s*10, $y+$s*8, $s*8, $y+$s*6]);
 		}
 	}
 	$canvas-> color( $clr[ 0]);

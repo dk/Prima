@@ -104,7 +104,7 @@ sub init
 			@imageSize = $images[0]-> size;
 		} else {
 			# if compiled without gif support
-			@imageSize = (11,11);
+			@imageSize = map { $::application->uiScaling * $_ } (11,11);
 			for my $i (0,1) {
 				$images[$i] = Prima::DeviceBitmap->new(
 					width     => $imageSize[0],

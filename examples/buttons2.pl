@@ -18,10 +18,11 @@ use warnings;
 use Prima qw(Buttons StdBitmap), Application => { name => 'Buttons sample' };
 
 my $w = Prima::MainWindow-> create(
-text=> "Handmade buttons",
-size => [ 300, 200],
-centered => 1,
-popupItems => [['Hallo!' => '']],
+	text=> "Handmade buttons",
+	size => [ 300, 200],
+	centered => 1,
+	popupItems => [['Hallo!' => '']],
+	designScale => [7,16],
 );
 
 $w-> insert( CheckBox =>
