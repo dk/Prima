@@ -5,6 +5,7 @@ object Prima::Application( Prima::Widget)
 	Handle    hintWidget;
 	Handle    icon;
 	Bool      autoClose;
+	double    uiScaling;
 
 	property  Bool   autoClose;
 	property  Bool   buffered;
@@ -38,6 +39,7 @@ object Prima::Application( Prima::Widget)
 	property  Bool   tabStop;
 	property  Bool   transparent;
 	property  SV *   text;
+	property  double uiScaling;
 	property  Bool   visible;
 	property  Bool   wantUnicodeInput;
 

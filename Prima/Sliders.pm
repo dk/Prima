@@ -1025,8 +1025,6 @@ package Prima::Slider;
 use vars qw(@ISA);
 @ISA = qw(Prima::AbstractSlider);
 
-use constant DefButtonX => 12;
-
 sub profile_default
 {
 	return {
@@ -1034,6 +1032,7 @@ sub profile_default
 		borderWidth    => 0,
 		ribbonStrip    => 0,
 		shaftBreadth   => 6,
+		knobBreadth    => 12,
 		tickAlign      => tka::Normal,
 		vertical       => 0,
 	}
@@ -1052,6 +1051,8 @@ sub profile_check_in
 	$p-> { autoWidth} = 0
 		if exists $p-> {width} || exists $p-> {size} || exists $p-> {rect} || 
 			( exists $p-> {left} && exists $p-> {right});
+	my $sc = $::application->uiScaling;
+	$p->{$_} = ( exists($p->{$_}) ? $p->{$_} : $default->{$_} ) * $sc for qw(shaftBreadth knobBreadth );
 	$self-> SUPER::profile_check_in( $p, $default);
 }
 
@@ -1059,10 +1060,10 @@ sub init
 {
 	my $self = shift;
 	$self-> {$_} = 0 
-		for qw( vertical tickAlign ribbonStrip shaftBreadth borderWidth);
+		for qw( vertical tickAlign ribbonStrip shaftBreadth borderWidth knobBreadth);
 	my %profile = $self-> SUPER::init( @_);
 	$self-> $_($profile{$_}) 
-		for qw( vertical tickAlign ribbonStrip shaftBreadth borderWidth);
+		for qw( vertical tickAlign ribbonStrip shaftBreadth borderWidth knobBreadth);
 	return %profile;
 }
 
@@ -1084,12 +1085,12 @@ sub on_paint
 		$sb, $v, 
 		$range, $min, 
 		$tval, $tlen, $ttxt, 
-		$ta
+		$ta, $kb
 	) = ( 
 		$self-> {shaftBreadth}, $self-> {vertical}, 
 		abs($self-> {max} - $self-> {min}) || 1, $self-> {min},
 		$self-> {tickVal}, $self-> {tickLen}, $self-> {tickTxt}, 
-		$self-> {tickAlign}
+		$self-> {tickAlign}, $self->{knobBreadth},
 	);
 	if ( $ta == tka::Normal) { 
 		$ta = 1; 
@@ -1108,9 +1109,9 @@ sub on_paint
 	if ( $v) {
 		my $bh = $canvas-> font-> height;
 		my $bw  = ( $size[0] - $sb) / 2;
-		return if $size[1] <= DefButtonX * ($self-> {readOnly} ? 1 : 0) + 2 * $bh + 2;
+		return if $size[1] <= $kb * ($self-> {readOnly} ? 1 : 0) + 2 * $bh + 2;
 
-		$canvas-> translate((( $ta == 1) ? 1 : -1) * ( $bw - $sb - DefButtonX), 0) 
+		$canvas-> translate((( $ta == 1) ? 1 : -1) * ( $bw - $sb - $kb), 0) 
 			if $ta < 3;
 		my $br  = $size[1] - 2 * $bh - 2;
 		$canvas-> rect3d( 
@@ -1155,11 +1156,11 @@ sub on_paint
 		}
 		unless ( $self-> {readOnly}) {
 			my @jp = (
-				$bw - 4,       $val - DefButtonX / 2,
-				$bw - 4,       $val + DefButtonX / 2,
-				$bw + $sb + 1, $val + DefButtonX / 2,
-				$bw + $sb + 8, $val,
-				$bw + $sb + 1, $val - DefButtonX / 2,
+				$bw - 4,       $val - $kb / 2,
+				$bw - 4,       $val + $kb / 2,
+				$bw + $sb + 1, $val + $kb / 2,
+				$bw + $sb * 2 + 2, $val,
+				$bw + $sb + 1, $val - $kb / 2,
 			);
 			$canvas-> color( $self->{prelight} ? $prelight : $clr[1]);
 			$canvas-> fillpoly( \@jp);
@@ -1174,9 +1175,9 @@ sub on_paint
 		my $bw = $canvas-> font-> width + $self-> {borderWidth};
 		my $bh  = ( $size[1] - $sb) / 2;
 		my $fh = $canvas-> font-> height;
-		return if $size[0] <= DefButtonX * ($self-> {readOnly} ? 1 : 0) + 2 * $bw + 2;
+		return if $size[0] <= $kb * ($self-> {readOnly} ? 1 : 0) + 2 * $bw + 2;
 
-		$canvas-> translate( 0, (( $ta == 1) ? -1 : 1) * ( $bh - $sb - DefButtonX)) 
+		$canvas-> translate( 0, (( $ta == 1) ? -1 : 1) * ( $bh - $sb - $kb)) 
 			if $ta < 3;
 		my $br  = $size[0] - 2 * $bw - 2;
 		$canvas-> rect3d( $bw, $bh, $bw + $br - 1, $bh + $sb - 1, 1, @c3d, $cht[1]), return 
@@ -1257,11 +1258,11 @@ sub on_paint
 
 		unless ( $self-> {readOnly}) {
 			my @jp = (
-				$val - DefButtonX / 2, $bh - 2,
-				$val - DefButtonX / 2, $bh + $sb + 3,
-				$val + DefButtonX / 2, $bh + $sb + 3,
-				$val + DefButtonX / 2, $bh - 2,
-				$val,                  $bh - 9,
+				$val - $kb / 2, $bh - 2,
+				$val - $kb / 2, $bh + $sb + 3,
+				$val + $kb / 2, $bh + $sb + 3,
+				$val + $kb / 2, $bh - 2,
+				$val,                  $bh - $sb - 1,
 			);
 			$canvas-> color( $self->{prelight} ? $prelight : $clr[1]);
 			$canvas-> fillpoly( \@jp);
@@ -1299,11 +1300,11 @@ sub update_geom_sizes
 			$maxtwid = $w if $maxtwid < $w;
 		}
 		$self->end_paint_info;
-		my $x = $maxtlen + $maxtwid * 2 + $self->shaftBreadth + $self->borderWidth + 5 + DefButtonX;
+		my $x = $maxtlen + $maxtwid * 2 + $self->shaftBreadth + $self->borderWidth + 5 + $self->knobBreadth;
 		$self->geomWidth($x);
 	} else {
 		return unless $self->autoHeight;
-		my $y = $maxtlen + $self->font->height * 2 + $self->shaftBreadth + $self->borderWidth + 5 + DefButtonX;
+		my $y = $maxtlen + $self->font->height * 2 + $self->shaftBreadth + $self->borderWidth + 5 + $self->knobBreadth;
 		$self->geomHeight($y);
 	}
 }
@@ -1327,7 +1328,7 @@ sub pos2info
 				abs($self-> {max} - $self-> {min}) / 
 				(( $size[1] - 2 * $bh - 5) || 1);
 
-		if ( $y < $val - DefButtonX / 2 or $y >= $val + DefButtonX / 2) {
+		if ( $y < $val - $self->knobBreadth / 2 or $y >= $val + $self->knobBreadth / 2) {
 			return 0, $ret1;
 		} else {
 			return 1, $ret1, $y - $val;
@@ -1346,7 +1347,7 @@ sub pos2info
 				abs($self-> {max} - $self-> {min}) / 
 				(( $size[0] - 2 * $bw - 5) || 1);
 
-		if ( $x < $val - DefButtonX / 2 or $x >= $val + DefButtonX / 2) {
+		if ( $x < $val - $self->knobBreadth / 2 or $x >= $val + $self->knobBreadth / 2) {
 			return 0, $ret1;
 		} else {
 			return 1, $ret1, $x - $val;
@@ -1509,11 +1510,11 @@ sub value
 			my $v2  = $bh + 1 + abs( $old - $self-> {min}) *
 				( $size[1] - 2 * $bh - 5) / (abs($self-> {max} - $self-> {min})||1);
 			( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
-			$v1 -= DefButtonX / 2;
-			$v2 += DefButtonX / 2 + 1;
+			$v1 -= $self->knobBreadth / 2;
+			$v2 += $self->knobBreadth / 2 + 1;
 			my $xd = 0;
 			$xd = (( $self-> {tickAlign} == tka::Normal) ? 1 : -1) *
-			( $bw - $sb - DefButtonX) if $self-> {tickAlign} != tka::Dual;
+			( $bw - $sb - $self->knobBreadth) if $self-> {tickAlign} != tka::Dual;
 			$self-> invalidate_rect( $bw - 4 + $xd, $v1, $bw + $sb + 9 + $xd, $v2);
 		} else {
 			$sb = $size[1] / 6 unless $sb;
@@ -1525,11 +1526,11 @@ sub value
 			my $v2  = $bw + 1 + abs( $old - $self-> {min}) *
 				( $size[0] - 2 * $bw - 5) / (abs($self-> {max} - $self-> {min})||1);
 			( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
-			$v1 -= DefButtonX / 2;
-			$v2 += DefButtonX / 2 + 1;
+			$v1 -= $self->knobBreadth / 2;
+			$v2 += $self->knobBreadth / 2 + 1;
 			my $yd = 0;
 			$yd = (( $self-> {tickAlign} == tka::Normal) ? -1 : 1) *
-			( $bh - $sb - DefButtonX) if $self-> {tickAlign} != tka::Dual;
+			( $bh - $sb - $self->knobBreadth) if $self-> {tickAlign} != tka::Dual;
 			$self-> invalidate_rect( $v1, $bh - 9 + $yd, $v2, $bh + $sb + 4 + $yd);
 		}
 		$self-> notify(q(Change)) unless $self-> {suppressNotify};
@@ -1541,6 +1542,17 @@ sub vertical    {($#_)?$_[0]-> set_vertical    ($_[1]):return $_[0]-> {vertical}
 sub tickAlign   {($#_)?$_[0]-> set_tick_align  ($_[1]):return $_[0]-> {tickAlign};}
 sub ribbonStrip {($#_)?$_[0]-> set_ribbon_strip($_[1]):return $_[0]-> {ribbonStrip};}
 sub shaftBreadth{($#_)?$_[0]-> set_shaft_breadth($_[1]):return $_[0]-> {shaftBreadth};}
+
+sub knobBreadth
+{
+	return $_[0]->{knobBreadth} unless $#_;
+	my ( $self, $kb) = @_;
+	$kb = 1 if $kb < 1;
+	return if $kb == $self-> {knobBreadth};
+	$self-> {knobBreadth} = $kb;
+	$self-> update_geom_sizes;
+	$self-> repaint;
+}
 
 sub borderWidth
 {
@@ -1564,26 +1576,32 @@ my %RNT = (
 sub notification_types { return \%RNT; }
 }
 
-use constant DefButtonX => 10;
-
 sub profile_default
 {
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
 		buttons        => 1,
 		stdPointer     => 0,
+		buttonWidth    => 10,
 	}
+}
+
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+
+	my $sc = $::application->uiScaling;
+	$p->{$_} = ( exists($p->{$_}) ? $p->{$_} : $default->{$_} ) * $sc for qw(buttonWidth);
+	$self-> SUPER::profile_check_in( $p, $default);
 }
 
 sub init
 {
 	my $self = shift;
-	for ( qw( buttons pressState circX circY br butt1X butt1Y butt2X))
-		{$self-> {$_}=0}
+	$self-> {$_}=0 for qw( buttons pressState circX circY br butt1X butt1Y butt2X buttonWidth);
 	$self-> {string} = '';
 	my %profile = $self-> SUPER::init( @_);
-	for ( qw( buttons stdPointer))
-	{$self-> $_($profile{$_});}
+	$self-> $_($profile{$_}) for qw( buttons stdPointer buttonWidth);
 	$self-> reset;
 	return %profile;
 }
@@ -1611,10 +1629,10 @@ sub reset
 	$self-> {br}        = $br;
 	$self-> {circX}     = $size[0]/2;
 	$self-> {circY}     = ($size[1] + $fh) / 2;
-	$self-> {butt1X}    = $size[0] / 2 - $br * 0.4 - DefButtonX / 2;
+	$self-> {butt1X}    = $size[0] / 2 - $br * 0.4 - $self->buttonWidth / 2;
 	$self-> {butt1Y}    = ( $size[1] + $fh) / 2 - $br * 0.4;
-	$self-> {butt2X}    = $size[0] / 2 + $br * 0.4 - DefButtonX / 2;
-	$self-> {circAlive} = $br > DefButtonX * 5;
+	$self-> {butt2X}    = $size[0] / 2 + $br * 0.4 - $self->buttonWidth / 2;
+	$self-> {circAlive} = $br > $self->buttonWidth * 5;
 }
 
 sub offset2pt
@@ -1648,9 +1666,9 @@ sub on_paint
 	my @c3d  = ( $self-> dark3DColor, $self-> light3DColor);
 	my @cht  = ( $self-> hiliteColor, $self-> hiliteBackColor);
 	my @size = $canvas-> size;
-	my ( $range, $min, $tval, $tlen, $ttxt) =
+	my ( $range, $min, $tval, $tlen, $ttxt, $bw) =
 	( abs($self-> {max} - $self-> {min}), $self-> {min}, $self-> {tickVal},
-	$self-> {tickLen}, $self-> {tickTxt} );
+	$self-> {tickLen}, $self-> {tickTxt}, $self->{buttonWidth} );
 
 	if ( defined $self-> {singlePaint}) {
 		my @clip1 = @{$self-> {expectedClip}};
@@ -1667,66 +1685,63 @@ sub on_paint
 	my $br  = $self-> {br};
 	my $rad = $br * 0.3;
 	my @cpt = ( $self-> {circX}, $self-> {circY}, $rad*2+1, $rad*2+1);
-	if ( $self-> {circAlive}) {
-		if ( defined $self-> {singlePaint}) {
-			$canvas-> color( $prelight ) if $self->{prelight};
-			$canvas-> fill_ellipse( @cpt[0..1], $rad*2-5, $rad*2-5);
-			$canvas-> color( $clr[0]);
-		} else {
-			if ($self->{prelight}) {
-				$canvas-> color( $prelight );
-				$canvas-> fill_ellipse( @cpt[0..1], $rad*2-5, $rad*2-5);
-			}
-			$canvas-> color( $c3d[1]);
-			$canvas-> lineWidth(2);
-			$canvas-> arc( @cpt[0..1], $cpt[2]-2, $cpt[3]-2, 65, 235);
-			$canvas-> color( $c3d[0]);
-			$canvas-> arc( @cpt[0..1], $cpt[2]-2, $cpt[3]-2, 255, 405);
-			$canvas-> lineWidth(0);
-			$canvas-> color( $clr[0]);
-			$canvas-> ellipse( @cpt);
-		}
-
-		if ( $self-> {stdPointer}) {
-			my $dev = $range * 0.03;
-			my @j = (
-				$self-> offset2pt( @cpt[0,1], $self-> {value}, $rad * 0.8),
-				$self-> offset2pt( @cpt[0,1], $self-> {value} + $dev, $rad * 0.6),
-				$self-> offset2pt( @cpt[0,1], $self-> {value} - $dev, $rad * 0.6),
-			);
-			$self-> fillpoly( \@j);
-		} else {
-			my @cxt = ( $self-> offset2pt( @cpt[0,1], $self-> {value}, $rad - 10), 4, 4);
-			$canvas-> lineWidth(2);
-			$canvas-> color( $c3d[0]);
-			$canvas-> arc( @cxt[0..1], 3, 3, 65, 235);
-			$canvas-> color( $c3d[1]);
-			$canvas-> arc( @cxt[0..1], 3, 3, 255, 405);
-			$canvas-> lineWidth(0);
-			$canvas-> color( $clr[0]);
-		}
-
-		my $i;
-		unless ( defined $self-> {singlePaint}) {
-			for ( $i = 0; $i < scalar @{$tval}; $i++) {
-				my $r = $rad + 3 + $$tlen[ $i];
-				my ( $cos, $sin) = $self-> offset2data( $$tval[$i]);
-				$canvas-> line( $self-> offset2pt( @cpt[0,1], $$tval[$i], $rad + 3),
-					$cpt[0] + $r * $cos, $cpt[1] + $r * $sin
-				) if $$tlen[ $i];
-				$r += 3;
-				if ( defined $$ttxt[ $i]) {
-					my $y = $cpt[1] + $r * $sin - $fh / 2 * ( 1 - $sin);
-					my $x = $cpt[0] + $r * $cos - 
-						( 1 - $cos) * 
-						$canvas-> get_text_width( $$ttxt[ $i]) / 2;
-					$canvas-> text_out_bidi( $$ttxt[ $i], $x, $y);
-				}
-			}
-		}
-	} else {
-		$canvas-> bar( 0, 0, @size);
+	
+	if ( defined $self-> {singlePaint}) {
+		$canvas-> color( $prelight ) if $self->{prelight};
+		$canvas-> fill_ellipse( @cpt[0..1], $rad*2-5, $rad*2-5);
 		$canvas-> color( $clr[0]);
+	} else {
+		if ($self->{prelight}) {
+			$canvas-> color( $prelight );
+			$canvas-> fill_ellipse( @cpt[0..1], $rad*2-5, $rad*2-5);
+		}
+		$canvas-> color( $c3d[1]);
+		$canvas-> lineWidth(2);
+		$canvas-> arc( @cpt[0..1], $cpt[2]-2, $cpt[3]-2, 65, 235);
+		$canvas-> color( $c3d[0]);
+		$canvas-> arc( @cpt[0..1], $cpt[2]-2, $cpt[3]-2, 255, 405);
+		$canvas-> lineWidth(0);
+		$canvas-> color( $clr[0]);
+		$canvas-> ellipse( @cpt);
+	}
+
+	if ( $self-> {stdPointer}) {
+		my $dev = $range * 0.03;
+		my @j = (
+			$self-> offset2pt( @cpt[0,1], $self-> {value}, $rad * 0.8),
+			$self-> offset2pt( @cpt[0,1], $self-> {value} + $dev, $rad * 0.6),
+			$self-> offset2pt( @cpt[0,1], $self-> {value} - $dev, $rad * 0.6),
+		);
+		$self-> fillpoly( \@j);
+	} else {
+		my @cxt = ( $self-> offset2pt( @cpt[0,1], $self-> {value}, $rad - 10), 4, 4);
+		my $knob = $::application->uiScaling * 3;
+		$canvas-> lineWidth(2);
+		$canvas-> color( $c3d[0]);
+		$canvas-> arc( @cxt[0..1], $knob, $knob, 65, 235);
+		$canvas-> color( $c3d[1]);
+		$canvas-> arc( @cxt[0..1], $knob, $knob, 255, 405);
+		$canvas-> lineWidth(0);
+		$canvas-> color( $clr[0]);
+	}
+
+	if ( $self-> {circAlive} && !defined $self-> {singlePaint}) {
+		my $i;
+		for ( $i = 0; $i < scalar @{$tval}; $i++) {
+			my $r = $rad + 3 + $$tlen[ $i];
+			my ( $cos, $sin) = $self-> offset2data( $$tval[$i]);
+			$canvas-> line( $self-> offset2pt( @cpt[0,1], $$tval[$i], $rad + 3),
+				$cpt[0] + $r * $cos, $cpt[1] + $r * $sin
+			) if $$tlen[ $i];
+			$r += 3;
+			if ( defined $$ttxt[ $i]) {
+				my $y = $cpt[1] + $r * $sin - $fh / 2 * ( 1 - $sin);
+				my $x = $cpt[0] + $r * $cos - 
+					( 1 - $cos) * 
+					$canvas-> get_text_width( $$ttxt[ $i]) / 2;
+				$canvas-> text_out_bidi( $$ttxt[ $i], $x, $y);
+			}
+		}
 	}
 
 	my $ttw = $canvas-> get_text_width( $self-> {string});
@@ -1744,27 +1759,27 @@ sub on_paint
 		$at = 1, @cbd = reverse @cbd if $s & 1;
 		
 		$canvas-> rect3d( 
-			$self-> { butt1X}, $self-> { butt1Y}, $self-> { butt1X} + DefButtonX,
-			$self-> { butt1Y} + DefButtonX, 1, @cbd, $clr[1]
+			$self-> { butt1X}, $self-> { butt1Y}, $self-> { butt1X} + $bw,
+			$self-> { butt1Y} + $bw, 1, @cbd, $clr[1]
 		);
 		$canvas-> line( 
-			$self-> { butt1X} + 2 + $at, $self-> { butt1Y} + DefButtonX / 2 - $at,
-			$self-> { butt1X} - 2 + + DefButtonX + $at, $self-> {butt1Y} + DefButtonX / 2 - $at
+			$self-> { butt1X} + 2 + $at, $self-> { butt1Y} + $bw / 2 - $at,
+			$self-> { butt1X} - 2 + + $bw + $at, $self-> {butt1Y} + $bw / 2 - $at
 		);
 
 		@cbd = reverse @c3d; $at = 0;
 		$at = 1, @cbd = reverse @cbd if $s & 2;
 		$canvas-> rect3d( 
-			$self-> { butt2X}, $self-> { butt1Y}, $self-> { butt2X} + DefButtonX,
-			$self-> { butt1Y} + DefButtonX, 1, @cbd, $clr[1]
+			$self-> { butt2X}, $self-> { butt1Y}, $self-> { butt2X} + $bw,
+			$self-> { butt1Y} + $bw, 1, @cbd, $clr[1]
 		);
 		$canvas-> line( 
-			$self-> { butt2X} + 2 + $at, $self-> { butt1Y} + DefButtonX / 2 - $at,
-			$self-> { butt2X} - 2 + + DefButtonX + $at, $self-> {butt1Y} + DefButtonX / 2 - $at
+			$self-> { butt2X} + 2 + $at, $self-> { butt1Y} + $bw / 2 - $at,
+			$self-> { butt2X} - 2 + + $bw + $at, $self-> {butt1Y} + $bw / 2 - $at
 		);
 		$canvas-> line( 
-			$self-> { butt2X} + DefButtonX / 2 + $at, $self-> { butt1Y} + 2 - $at,
-			$self-> { butt2X} + DefButtonX / 2 + $at, $self-> { butt1Y} - 2 - $at + DefButtonX
+			$self-> { butt2X} + $bw / 2 + $at, $self-> { butt1Y} + 2 - $at,
+			$self-> { butt2X} + $bw / 2 + $at, $self-> { butt1Y} - 2 - $at + $bw
 		);
 	}
 
@@ -1819,8 +1834,8 @@ sub on_mousedown
 	return if $btn != mb::Left;
 	my @butt = ( 
 		$self-> {butt1X}, $self-> {butt1Y}, 
-		$self-> {butt2X}, $self-> {butt1X} + DefButtonX, 
-		$self-> {butt1Y} + DefButtonX, $self-> {butt2X} + DefButtonX
+		$self-> {butt2X}, $self-> {butt1X} + $self->buttonWidth, 
+		$self-> {butt1Y} + $self->buttonWidth, $self-> {butt2X} + $self->buttonWidth
 	);
 	if ( $self-> {buttons} and $y >= $butt[1] and $y < $butt[4]) {
 		if ( $x >= $butt[0] and $x < $butt[3]) {
@@ -1858,8 +1873,8 @@ sub on_mouseup
 	return unless $self-> {mouseTransaction};
 	my @butt = ( 
 		$self-> {butt1X}, $self-> {butt1Y}, $self-> {butt2X},
-		$self-> {butt1X} + DefButtonX, $self-> {butt1Y} + DefButtonX, 
-		$self-> {butt2X} + DefButtonX
+		$self-> {butt1X} + $self->buttonWidth, $self-> {butt1Y} + $self->buttonWidth, 
+		$self-> {butt2X} + $self->buttonWidth
 	);
 	$self-> scroll_timer_stop;
 	$self-> {pressState} = 0;
@@ -1989,6 +2004,16 @@ sub value
 	$self-> notify(q(Stringify), $value, \$self-> {string});
 	$self-> repaint_circle;
 	$self-> notify(q(Change)) unless $self-> {suppressNotify};
+}
+
+sub buttonWidth
+{
+	return $_[0]->{buttonWidth} unless $#_;
+	my ( $self, $bw) = @_;
+	$bw = 1 if $bw < 1;
+	return if $bw == $self-> {buttonWidth};
+	$self-> {buttonWidth} = $bw;
+	$self-> repaint;
 }
 
 1;

@@ -1,30 +1,52 @@
 #  
 #  Module for simulated extreme situations, useful for testing.
 #
+package Prima::Stress;
 use strict;
 no warnings;
 use Prima;
 
-my $rtfs = (  5, 7, 14, 18) [ int(rand(4)) ] ;
-my $dpif = ( 96, 192, 288 ) [int(rand(3)) ];
+our %stress = (
+	fs  => undef,
+	dpi => undef,
+);
 
-Prima::Application::add_startup_notification( sub {
-	$::application->sys_action("resolution $dpif $dpif");
-	$::application-> font-> size( $rtfs);
-});
-
-package Prima::Widget;
-
-sub get_default_font
+sub import
 {
-	return Prima::Drawable-> font_match( { size => $rtfs }, {});
-}
+	shift;
 
-package Prima::Application;
+	for my $p ( @_ ) {
+		if ( $p =~ /^(\w+)=(\d+)$/ && exists $stress{$1}) {
+			$stress{$1} = $2;
+		} else {
+			warn "bad command: '$p'\n";
+		}
+	}
 
-sub get_default_font
-{
-	return Prima::Drawable-> font_match( { size => $rtfs }, {});
+	unless ( @_ ) {
+		$stress{fs}  = ( 5, 7, 14, 18) [ int(rand(4)) ] ;
+		$stress{dpi} = ( 48, 96, 192, 288 ) [int(rand(4)) ];
+		warn "** Prima::Stress: fs=$stress{fs} dpi=$stress{dpi}\n";
+	}
+
+	Prima::Application::add_startup_notification( sub {
+		if ( $stress{dpi}) {
+			$::application->sys_action("resolution $stress{dpi} $stress{dpi}");
+			$::application->uiScaling(0);
+		}
+		if ($stress{fs}) {
+			$::application->font->size( $stress{fs}) 
+		}
+	});
+
+	if ( $stress{fs}) {
+		*Prima::Widget::get_default_font = sub {
+			Prima::Drawable-> font_match( { size => $Prima::Stress::stress{fs} }, {});
+		};
+		*Prima::Application::get_default_font = sub {
+			Prima::Drawable-> font_match( { size => $Prima::Stress::stress{fs} }, {});
+		};
+	}
 }
 
 
@@ -52,7 +74,22 @@ code, or, if the program is invoked by calling perl, by using
 
 	perl -MPrima::Stress program
 
-syntax. The module does not provide any methods.
+syntax. The module does not provide any methods, however one may address individual aspects
+of UI defaults.
+
+=head1 API
+
+=head2 Font size
+
+   use Prima::Stress q(fs=18);
+
+This syntax changes the default font size to 18 points.
+
+=head2 Display resolution
+
+   use Prima::Stress q(dpi=192);
+
+This syntax changes the display resolution to 192 pixels per inch.
 
 =head1 AUTHOR
 

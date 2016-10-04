@@ -976,6 +976,19 @@ Application_modalHorizon( Handle self, Bool set, Bool modalHorizon)
 	return true;
 }
 
+#define UISCALING_STEP 4
+double
+Application_uiScaling( Handle self, Bool set, double uiScaling)
+{
+	if ( !set ) return var->uiScaling;
+	if ( uiScaling < 0.00001 ) {
+		Point res = my-> get_resolution(self);
+		uiScaling  = (double)((int)((double) res.x/ (96.0/UISCALING_STEP) + 0.5)) / UISCALING_STEP; /* 96-143 = 1.5, 144-191 = 1.5 etc */
+		if ( uiScaling < 0.25 ) uiScaling = 0.25;
+	}
+	return var-> uiScaling = uiScaling;
+}
+
 Bool
 Application_wantUnicodeInput( Handle self, Bool set, Bool want_ui)
 {

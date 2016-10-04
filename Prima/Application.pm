@@ -323,6 +323,20 @@ is another layer of hint visibility control - if it is 0,
 all hint actions are disabled, disregarding C<::showHint> value
 in widgets.
 
+=item uiScaling FLOAT
+
+The property contains an advisory multiplier factor, useful for UI elements
+that have a fixed pixel value, but that would like to be represented in a
+useful manner when the display resolution is too high (on modern High-DPI
+displays) or too low (on ancient monitors).
+
+By default, it acquires the system display resolution, and sets the scaling
+factor so that when the DPI is 96 it is 1.0, 192 it is 2.0, etc. The increase
+step is 0.25, so that bitmaps may look not that distorted. However, when the
+value is manually set, there is no such step, any value can be set.
+
+See also: L<Prima/Stress>.
+
 =item wantUnicodeInput BOOLEAN
 
 Selects if the system is allowed to generate key codes in unicode. 
