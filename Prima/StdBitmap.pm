@@ -21,6 +21,16 @@ sub _warn
 	}
 }
 
+sub scale
+{
+	return unless $::application;
+	my $i = shift or return;
+	my $s = $::application->uiScaling;
+	return if $s == 1.0;
+	$i->set(scaling => ist::Box);
+	$i->size( $i-> width * $s, $i->height * $s);
+}
+
 sub load_std_bmp
 {
 	my ( $index, $asIcon, $copy, $imageFile) = @_;
@@ -31,6 +41,7 @@ sub load_std_bmp
 		my $i = $class-> create(name => $index);
 		undef $i unless $i-> load( $imageFile, index => $index);
 		_warn($imageFile, $@) unless $i;
+		scale($i);
 		return $i;
 	}
 	$bmCache{$imageFile} = {} unless exists $bmCache{$imageFile};
@@ -39,6 +50,7 @@ sub load_std_bmp
 	$x-> {$index} = [ undef, undef] unless exists $x-> {$index};
 	my $i = $class-> create(name => $index);
 	undef $i unless $i-> load( $imageFile, index => $index);
+	scale($i);
 	_warn($imageFile, $@) unless $i;
 	$x-> {$index}-> [$asIcon] = $i;
 	return $i;
@@ -75,8 +87,8 @@ To discriminate, two methods are used, correspondingly C<image> and C<icon>.
 
 =head1 SYNOPSIS
 
-	use Prima::StdBitmap;
-	my $logo = Prima::StdBitmap::icon( sbmp::Logo );
+   use Prima::StdBitmap;
+   my $logo = Prima::StdBitmap::icon( sbmp::Logo );
 
 =head1 API
 
@@ -153,6 +165,12 @@ C<$sysimage> scalar is initialized to the file name to be used
 as a source of standard image frames by default. It is possible
 to alter this scalar at run-time, which causes all subsequent
 image frame request to be redirected to the new file.
+
+=head2 Scaling
+
+Note: the module scales the images automatically with the resolution.
+Therefore it is advisable to use the module's function after Application object
+is loaded.
 
 =head1 AUTHOR
 

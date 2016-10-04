@@ -14,10 +14,11 @@ use strict;
 use warnings;
 use Prima qw(Application Grids);
 
+my $scaling = $::application->uiScaling;
 
 my $w = Prima::MainWindow-> create(
 	text => "Periodic table of elements",
-	size => [ 50 * 14 + 25, 50 * 13 + 25],
+	size => [ map { $scaling * $_ } 50 * 14 + 25, 50 * 13 + 25],
 );
 
 my @layers = ( 2, 8, 8, 10, 9, 10, 9, 10, 9, 10, 0, 14, 14);
@@ -48,16 +49,16 @@ my %colors = (
 	}
 );
 my %sides = (
-'9:0' => 4, '9:1' => 4, '9:2' => 4,
-'7:4' => 8, '8:4' => 8, '9:4' => 12,
-'7:6' => 8, '8:6' => 8, '9:6' => 12,
-'7:8' => 8, '8:8' => 8, '9:8' => 12,
-'10:3' => 8, '10:5' => 8, '10:7' => 8, '10:9' => 8,
-'0:10' => 8, '1:10' => 8, '2:10' => 8, '3:10' => 8, '4:10' => 8,
-'5:10' => 8, '6:10' => 8, '7:10' => 8, '8:10' => 8, '9:10' => 8,
-#  '11:4' => 8, '12:4' => 8, '13:4' => 12,
-#  '10:5' => 12, '13:5' => 4, '13:6' => 4,
-#  '11:7' => 8, '12:7' => 8, '13:7' => 8,
+	'9:0' => 4, '9:1' => 4, '9:2' => 4,
+	'7:4' => 8, '8:4' => 8, '9:4' => 12,
+	'7:6' => 8, '8:6' => 8, '9:6' => 12,
+	'7:8' => 8, '8:8' => 8, '9:8' => 12,
+	'10:3' => 8, '10:5' => 8, '10:7' => 8, '10:9' => 8,
+	'0:10' => 8, '1:10' => 8, '2:10' => 8, '3:10' => 8, '4:10' => 8,
+	'5:10' => 8, '6:10' => 8, '7:10' => 8, '8:10' => 8, '9:10' => 8,
+	#  '11:4' => 8, '12:4' => 8, '13:4' => 12,
+	#  '10:5' => 12, '13:5' => 4, '13:6' => 4,
+	#  '11:7' => 8, '12:7' => 8, '13:7' => 8,
 );
 
 package Periodic;
@@ -219,8 +220,8 @@ my $g = $w-> insert( Periodic =>
 	],
 	drawHGrid => 0,
 	drawVGrid => 0,
-	constantCellWidth => 50,
-	constantCellHeight => 50,
+	constantCellWidth => 50 * $scaling,
+	constantCellHeight => 50 * $scaling,
 	multiSelect => 0,
 	onDrawCell => sub {
 		my ( $self, $canvas, 
@@ -246,7 +247,7 @@ my $g = $w-> insert( Periodic =>
 			} else {
 				$canvas-> color( $color);
 			}
-			$canvas-> text_out( $item, $cx1 + 10, $cy1 + 10);
+			$canvas-> text_out( $item, $cx1 + 10 * $scaling, $cy1 + 10 * $scaling);
 			my $f = $canvas-> font;
 			$canvas-> font( height => 12);
 				@small_font_metrics = ( $canvas-> get_text_width('3'), $f-> height)

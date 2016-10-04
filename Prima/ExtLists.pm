@@ -13,13 +13,16 @@ package Prima::CheckList;
 use vars qw(@ISA);
 @ISA = qw(Prima::ListBox);
 
-my @images = (
-	Prima::StdBitmap::image(sbmp::CheckBoxUnchecked),
-	Prima::StdBitmap::image(sbmp::CheckBoxChecked),
-);
+my (@images, @imgSize);
 
-my @imgSize = (0,0);
-@imgSize = $images[0]-> size if $images[0];
+Prima::Application::add_startup_notification( sub {
+	@images = (
+		Prima::StdBitmap::image(sbmp::CheckBoxUnchecked),
+		Prima::StdBitmap::image(sbmp::CheckBoxChecked),
+	);
+	@imgSize = (0,0);
+	@imgSize = $images[0]-> size if $images[0];
+});
 
 sub profile_default
 {

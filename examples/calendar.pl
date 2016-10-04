@@ -21,6 +21,7 @@ my $cal;
 my $w = new Prima::MainWindow(
 	text => "Calendar example",
 	size => [ 200, 200],
+	designScale => [7,16],
 	menuItems => [[ "~Options" => [
 		[ 'locale', 'Use ~locale', 'Ctrl+L', '^L', sub {
 			my ( $self, $mid) = @_;

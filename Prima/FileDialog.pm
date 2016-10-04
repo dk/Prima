@@ -468,7 +468,7 @@ sub profile_default
 	};
 }
 
-{
+Prima::Application::add_startup_notification( sub {
 	my $i = 0;
 	for ( 
 		sbmp::DriveFloppy, sbmp::DriveHDD,    sbmp::DriveNetwork,
@@ -476,7 +476,7 @@ sub profile_default
 	) {
 		$images[ $i++] = Prima::StdBitmap::icon($_);
 	}
-}
+});
 
 sub profile_check_in
 {

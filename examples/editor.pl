@@ -39,7 +39,7 @@ sub profile_default
 		growMode => gm::Floor,
 		left     => 0,
 		bottom   => 0,
-		height   => 21,
+		height   => $::application->font->height + 2,
 	}
 }
 
@@ -195,11 +195,12 @@ sub init
 		}
 	}
 	$fn = '.Untitled' unless defined $fn;
+	my $fh = $::application->font->height + 1;
 	$self-> {editor} = $self-> insert( Editor =>
 		name      => 'Edit',
 		textRef   => \$cap,
-		origin    => [ 0, 22],
-		size      => [ $self-> width, $self-> height - 22],
+		origin    => [ 0, $fh],
+		size      => [ $self-> width, $self-> height - $fh],
 		hScroll   => 1,
 		vScroll   => 1,
 		growMode  => gm::Client,
