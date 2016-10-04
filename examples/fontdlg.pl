@@ -148,6 +148,7 @@ my $re_size = sub {
 $w = Prima::MainWindow-> create( text => "Font Window",
 	origin => [ 200, 200],
 	size   => [ 500, 530],
+	designScale => [7,16],
 	borderStyle => bs::Dialog,
 );
 

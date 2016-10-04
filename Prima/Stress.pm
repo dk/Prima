@@ -6,8 +6,10 @@ no warnings;
 use Prima;
 
 my $rtfs = (  5, 7, 14, 18) [ int(rand(4)) ] ;
+my $dpif = ( 96, 192, 288 ) [int(rand(3)) ];
 
 Prima::Application::add_startup_notification( sub {
+	$::application->sys_action("resolution $dpif $dpif");
 	$::application-> font-> size( $rtfs);
 });
 

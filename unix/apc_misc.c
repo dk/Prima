@@ -1287,6 +1287,18 @@ apc_system_action( const char *s)
 #endif
 		}
 		break;
+	case 'r':
+		if ( strncmp( s, "resolution", 10) == 0) {
+			int dx, dy;
+			int i = sscanf( params + 10, "%u %u", &dx, &dy);
+			if ( i != 2 || (dx < 1 || dy < 1)) {
+				warn("Bad resolution\n");
+				return 0;
+			}
+			guts. resolution. x = dx;
+			guts. resolution. y = dy;
+		}
+		break;
 	case 's':
 		if ( strcmp( "synchronize", s) == 0) {
 			XSynchronize( DISP, true);

@@ -586,7 +586,6 @@ typedef struct _UnixGuts
 	int                          mouse_buttons;
 	int                          mouse_wheel_down;
 	int                          mouse_wheel_up;
-	Point                        resolution;
 	RequestInformation           ri[REQUEST_RING_SIZE];
 	int                          ri_head;
 	int                          ri_tail;

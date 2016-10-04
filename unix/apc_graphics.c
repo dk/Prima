@@ -429,7 +429,6 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
 Bool
 apc_gp_init( Handle self)
 {
-	X(self)-> resolution = guts. resolution;
 	if ( guts. dynamicColors && !prima_palette_alloc( self)) return false;
 	return true;
 }
@@ -2245,15 +2244,7 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 Point
 apc_gp_get_resolution( Handle self)
 {
-	Point ret;
-	if ( self) {
-		ret.x = X(self)-> resolution.x;
-		ret.y = X(self)-> resolution.y;
-	} else {
-		ret.x = guts.resolution.x;
-		ret.y = guts.resolution.y;
-	}
-	return ret;
+	return guts. resolution;
 }
 
 int
