@@ -3,8 +3,7 @@ use vars qw($sysimage);
 
 use strict;
 use warnings;
-use Prima;
-use Prima::Utils;
+use Prima qw(Utils);
 
 my %bmCache;
 my $warned;
@@ -24,6 +23,7 @@ sub _warn
 sub scale
 {
 	return unless $::application;
+	my $index = shift;
 	my $i = shift or return;
 	my $s = $::application->uiScaling;
 	return if $s == 1.0;
@@ -48,7 +48,10 @@ sub scale
 			$i->scaling(ist::Box);
 		}
 	} else {
-		$i->scaling(ist::Quadratic);
+		$i->scaling(
+			( $index == sbmp::OutlineCollapse || $index == sbmp::OutlineExpand) ?
+				ist::Box : ist::Quadratic
+		);
 	}
 	$i->size( $i-> width * $s, $i->height * $s);
 }
@@ -63,7 +66,7 @@ sub load_std_bmp
 		my $i = $class-> create(name => $index);
 		undef $i unless $i-> load( $imageFile, index => $index);
 		_warn($imageFile, $@) unless $i;
-		scale($i);
+		scale($index, $i);
 		return $i;
 	}
 	$bmCache{$imageFile} = {} unless exists $bmCache{$imageFile};
@@ -72,7 +75,7 @@ sub load_std_bmp
 	$x-> {$index} = [ undef, undef] unless exists $x-> {$index};
 	my $i = $class-> create(name => $index);
 	undef $i unless $i-> load( $imageFile, index => $index);
-	scale($i);
+	scale($index, $i);
 	_warn($imageFile, $@) unless $i;
 	$x-> {$index}-> [$asIcon] = $i;
 	return $i;
