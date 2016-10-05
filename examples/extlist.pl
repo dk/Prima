@@ -20,6 +20,7 @@ use Prima::Application;
 
 my $w = Prima::MainWindow-> create(
 	size => [ 200, 200],
+	designScale => [7,16],
 );
 my $v = '';
 vec($v, 0, 8) = 0x77;

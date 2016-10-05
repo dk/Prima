@@ -152,113 +152,9 @@ $w = Prima::MainWindow-> create( text => "Font Window",
 	borderStyle => bs::Dialog,
 );
 
-$displayRes = ($w-> resolution)[1];
-
-my $load_fonts = sub {
-	%fontList = ();
-	@fontItems = ();
-	for ( sort { $a-> {name} cmp $b-> {name}} @{$::application-> fonts})
-	{
-		$fontList{$_-> {name}} = $_;
-		push ( @fontItems, $_-> {name});
-	}
-};
-
-$load_fonts->();
-
-$w-> insert( ListBox =>
-	name   => "NameList",
-	origin => [25, 25],
-	size   => [ 225, 315],
-	items => [@fontItems],
-	onSelectItem => sub {
-		&$re_size(1);
-		&$re_sample;
-	},
-);
-
-$w-> insert( ListBox =>
-	name   => 'SizeList',
-	origin => [ 270, 230],
-	size   => [ 200, 110],
-	onSelectItem => sub {
-		$lastSizeSel = $_[0]-> get_item_text( $_[0]-> focusedItem);
-		&$re_sample;
-	},
-);
-
-$w-> insert( ListBox => 
-	origin      => [ 270, 160],
-	size        => [ 200, 55],
-	name        => 'Encoding',
-	onSelectItem => sub {
-		$lastEncSel = $_[0]-> get_item_text( $_[0]-> focusedItem);
-		&$re_size(0);
-		&$re_sample;
-	},
-	
-);
-
-$w-> insert( Button =>
-origin => [ 24, 348],
-size   => [ 32, 32],
-text   => 'B',
-name   => 'Bold',
-selectable => 0,
-font   => {
-	height => 20,
-	style  => fs::Bold,
-},
-checkable => 1,
-onClick   => sub {
-	$fs = ( $fs & fs::Bold ? $fs & ~fs::Bold : $fs | fs::Bold);
-	&$re_sample;
-},
-);
-
-$w-> insert( Button =>
-origin => [ 60, 348],
-size   => [ 32, 32],
-text   => 'I',
-name   => 'Italic',
-selectable => 0,
-font   => {
-	height => 20,
-	style  => fs::Italic,
-},
-checkable => 1,
-onClick   => sub {
-	$fs = (( $fs & fs::Italic) ? ($fs & ~fs::Italic) : ($fs | fs::Italic));
-	&$re_sample;
-},
-);
-
-$w-> insert( Button =>
-origin => [ 96, 348],
-size   => [ 32, 32],
-text   => 'U',
-selectable => 0,
-name   => 'Underlined',
-font   => {
-	height => 20,
-	style  => fs::Underlined,
-},
-checkable => 1,
-onClick   => sub {
-	$fs = (( $fs & fs::Underlined) ? ($fs & ~fs::Underlined) : ($fs | fs::Underlined));
-	&$re_sample;
-},
-);
-
-$w-> insert( Button =>
-origin => [ 142, 348],
-size   => [ 32, 32],
-text   => 'i',
-selectable => 0,
-name   => 'Info',
-color  => cl::Blue,
-font   => { height => 28, style => fs::Bold, name => "Tms Rmn"},
-onClick   => sub {
+sub create_info_window
+{
+	my $w = shift;
 	my $f = $w-> Example-> font;
 	my $ww = Prima::Window-> create(
 		size => [ 500, $f-> height * 3 + $f-> externalLeading + $f-> descent + 450 ],
@@ -457,30 +353,142 @@ onClick   => sub {
 	);
 	$l-> count( $count);
 	$ww-> select;
-},
+}
+
+$displayRes = ($w-> resolution)[1];
+
+my $load_fonts = sub {
+	%fontList = ();
+	@fontItems = ();
+	for ( sort { $a-> {name} cmp $b-> {name}} @{$::application-> fonts})
+	{
+		$fontList{$_-> {name}} = $_;
+		push ( @fontItems, $_-> {name});
+	}
+};
+
+$load_fonts->();
+
+$w-> insert( ListBox =>
+	name   => "NameList",
+	origin => [25, 25],
+	size   => [ 225, 315],
+	items => [@fontItems],
+	onSelectItem => sub {
+		&$re_size(1);
+		&$re_sample;
+	},
+);
+
+$w-> insert( ListBox =>
+	name   => 'SizeList',
+	origin => [ 270, 230],
+	size   => [ 200, 110],
+	onSelectItem => sub {
+		$lastSizeSel = $_[0]-> get_item_text( $_[0]-> focusedItem);
+		&$re_sample;
+	},
+);
+
+$w-> insert( ListBox => 
+	origin      => [ 270, 160],
+	size        => [ 200, 55],
+	name        => 'Encoding',
+	onSelectItem => sub {
+		$lastEncSel = $_[0]-> get_item_text( $_[0]-> focusedItem);
+		&$re_size(0);
+		&$re_sample;
+	},
+	
+);
+
+my $scaling = $::application->font->height / ($w->designScale)[1];
+
+$w-> insert( Button =>
+	origin => [ 24, 348],
+	size   => [ 32, 32],
+	text   => 'B',
+	name   => 'Bold',
+	selectable => 0,
+	font   => {
+		height => 20 * $scaling,
+		style  => fs::Bold,
+	},
+	checkable => 1,
+	onClick   => sub {
+		$fs = ( $fs & fs::Bold ? $fs & ~fs::Bold : $fs | fs::Bold);
+		&$re_sample;
+	},
 );
 
 $w-> insert( Button =>
-origin => [ 180, 348],
-size   => [ 32, 32],
-text   => '+',
-hint   => 'Add new font',
-selectable => 0,
-name   => 'Load',
-onClick   => sub {
-	my $d = Prima::FileDialog-> new;
-	my $f = $d->execute;
-	return unless defined $f;
-	my $error = '';
-	local $SIG{__WARN__} = sub { $error = ": @_" };
-	unless ($::application->load_font($d->fileName)) {
-		$error =~ s/at examples.*//;
-		return Prima::message("Error loading font$error");
-	}
+	origin => [ 60, 348],
+	size   => [ 32, 32],
+	text   => 'I',
+	name   => 'Italic',
+	selectable => 0,
+	font   => {
+		height => 20 * $scaling,
+		style  => fs::Italic,
+	},
+	checkable => 1,
+	onClick   => sub {
+		$fs = (( $fs & fs::Italic) ? ($fs & ~fs::Italic) : ($fs | fs::Italic));
+		&$re_sample;
+	},
+);
 
-	$load_fonts->();
-	$w->NameList->items(\@fontItems);
-});
+$w-> insert( Button =>
+	origin => [ 96, 348],
+	size   => [ 32, 32],
+	text   => 'U',
+	selectable => 0,
+	name   => 'Underlined',
+	font   => {
+		height => 20 * $scaling,
+		style  => fs::Underlined,
+	},
+	checkable => 1,
+	onClick   => sub {
+		$fs = (( $fs & fs::Underlined) ? ($fs & ~fs::Underlined) : ($fs | fs::Underlined));
+		&$re_sample;
+	},
+);
+
+$w-> insert( Button =>
+	origin => [ 142, 348],
+	size   => [ 32, 32],
+	text   => 'i',
+	selectable => 0,
+	name   => 'Info',
+	color  => cl::Blue,
+	font   => { height => 28 * $scaling, style => fs::Bold },
+	onClick   => sub { create_info_window($w) },
+);
+
+$w-> insert( Button =>
+	origin => [ 180, 348],
+	size   => [ 32, 32],
+	text   => '+',
+	hint   => 'Add new font',
+	selectable => 0,
+	name   => 'Load',
+	font   => { height => 20 * $scaling },
+	onClick   => sub {
+		my $d = Prima::FileDialog-> new;
+		my $f = $d->execute;
+		return unless defined $f;
+		my $error = '';
+		local $SIG{__WARN__} = sub { $error = ": @_" };
+		unless ($::application->load_font($d->fileName)) {
+			$error =~ s/at examples.*//;
+			return Prima::message("Error loading font$error");
+		}
+	
+		$load_fonts->();
+		$w->NameList->items(\@fontItems);
+	}
+);
 
 
 my $csl = $w-> insert( CircularSlider =>
