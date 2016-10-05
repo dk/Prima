@@ -21,6 +21,7 @@ my ( $tab );
 
 my $w = Prima::MainWindow-> create(
 	text => 'Theme selector',
+	designScale => [7, 16],
 	menuItems => [
 		[ 'Options' => [
 			[ 'Save configuration' => sub { 
@@ -44,6 +45,7 @@ my @list = Prima::Themes::list;
 my $checklist = $w-> insert( CheckList => 
 	pack => { side => 'left', fill => 'y', padx => 5, pady => 5},
 	items => \@list,
+	width => 100,
 	onChange => \&test,
 	vector => '',
 );

@@ -18,8 +18,10 @@ use Prima qw( StdBitmap Buttons Application);
 package UserInit;
 
 my $ph = Prima::Application-> get_system_value(sv::YPointer);
+my $sc = $::application-> uiScaling;
+$ph = $::application->font->height * 2 if $ph < $::application->font->height * 2;
 my $w = Prima::MainWindow-> create(
-	size    => [ 350, 20 + ($ph+8)*11],
+	size    => [ 350 * $sc, 20 + ($ph+8)*11],
 	left    => 200,
 	text    => 'Pointers',
 );
@@ -42,8 +44,8 @@ for my $c ( @a[0..$#a-1])
 	$w-> pointer( $p);
 	my $b = $w-> insert( Button =>
 		flat => 1,
-		left    => 10 + (($i-1) % 2)*170,
-		width   => 160,
+		left    => (10 + (($i-1) % 2)*170) * $sc,
+		width   => 160 * $sc,
 		height  => $ph + 4,
 		bottom  => $w-> height - int(($i+1)/2) * ($ph+8) - 10,
 		pointer => $p,
@@ -54,7 +56,7 @@ for my $c ( @a[0..$#a-1])
 	$i++;
 };
 
-my $ptr = Prima::StdBitmap::icon( sbmp::DriveCDROM);
+my $ptr = Prima::StdBitmap::icon( sbmp::DriveCDROM, argb => 0, copy => 1);
 
 my @mapset = map {
 	my ($x,$a) = $ptr-> split;
@@ -71,8 +73,8 @@ my @mapset = map {
 my $mapsetID = 0;
 
 my $b = $w-> insert( SpeedButton =>
-	left    => 10 + (($i-1) % 2)*170,
-	width   => 160,
+	left    => $sc * ( 10 + (($i-1) % 2)*170 ),
+	width   => 160 * $sc,
 	height  => $ph+4,
 	bottom  => $w-> height - int(($i+1)/2) * ($ph+8) - 10,
 	pointer => $ptr,
