@@ -23,12 +23,14 @@ sub _warn
 sub scale
 {
 	return unless $::application;
+
+	my ($i, %opt) = @_;
 	my $index = shift;
-	my $i = shift or return;
 	my $s = $::application->uiScaling;
 	return if $s == 1.0;
+
 	if ( $i->isa("Prima::Icon")) {
-		if ($::application-> get_system_value( sv::LayeredWidgets )) {
+		if ($::application-> get_system_value( sv::LayeredWidgets ) && ($opt{argb} // 1)) {
 			$i->maskType(im::Byte);
 			my ( $x, $a ) = $i-> split;
 			$x->set(
@@ -56,29 +58,32 @@ sub scale
 	$i->size( $i-> width * $s, $i->height * $s);
 }
 
-sub load_std_bmp
+sub load_image
 {
-	my ( $index, $asIcon, $copy, $imageFile) = @_;
-	my $class = ( $asIcon ? q(Prima::Icon) : q(Prima::Image));
-	return undef if !defined $index || !defined $imageFile || $index < 0;
-	$asIcon = ( $asIcon ? 1 : 0);
-	if ( $copy) {
-		my $i = $class-> create(name => $index);
-		undef $i unless $i-> load( $imageFile, index => $index);
-		_warn($imageFile, $@) unless $i;
-		scale($index, $i);
+	my %opt = @_;
+	my $i = $opt{class}-> create(name => $opt{index});
+	unless ($i-> load( $opt{file}, index => $opt{index})) {
+		_warn($opt{file}, $@);
+		undef $i;
+		return undef;
+	} else {
+		scale($i, %opt) unless $opt{raw};
 		return $i;
 	}
-	$bmCache{$imageFile} = {} unless exists $bmCache{$imageFile};
-	my $x = $bmCache{$imageFile};
-	return $x-> {$index}-> [$asIcon] if exists $x-> {$index} && defined $x-> {$index}-> [$asIcon];
-	$x-> {$index} = [ undef, undef] unless exists $x-> {$index};
-	my $i = $class-> create(name => $index);
-	undef $i unless $i-> load( $imageFile, index => $index);
-	scale($index, $i);
-	_warn($imageFile, $@) unless $i;
-	$x-> {$index}-> [$asIcon] = $i;
-	return $i;
+}
+
+sub load_std_bmp
+{
+	my %opt = @_;
+	$opt{class} = $opt{icon} ? q(Prima::Icon) : q(Prima::Image);
+	
+	return undef if !defined $opt{index} || !defined $opt{file} || $opt{index} < 0;
+	return load_image(%opt) if $opt{copy};
+
+	my $icon   = $opt{icon} ? 1 : 0;
+	my $index  = $opt{index};
+	my $cache  = $bmCache{$opt{file}} //= {};
+	return $cache-> {$index}-> [$icon] //= load_image(%opt); 
 }
 
 $sysimage = Prima::Utils::find_image(
@@ -87,8 +92,8 @@ $sysimage = Prima::Utils::find_image(
 	unless defined $sysimage;
 _warn('sysimage.gif') unless defined $sysimage;
 
-sub icon { return load_std_bmp( $_[0], 1, 0, $sysimage); }
-sub image{ return load_std_bmp( $_[0], 0, 0, $sysimage); }
+sub icon { return load_std_bmp( index => shift, file => $sysimage, icon => 1, @_); }
+sub image{ return load_std_bmp( index => shift, file => $sysimage, icon => 0, @_); }
 
 1;
 
@@ -129,15 +134,20 @@ Loads INDEXth image frame and returns C<Prima::Icon> instance.
 
 Loads INDEXth image frame and returns C<Prima::Image> instance.
 
-=item load_std_bmp INDEX, AS_ICON, USE_CACHED_VALUE, IMAGE_FILE 
+=item load_std_bmp %OPTIONS
 
-Loads INDEXth image frame from IMAGE_FILE and returns it as either a C<Prima::Image> or
-as a C<Prima::Icon> instance, depending on value of boolean AS_ICON flag. If
-USE_CACHED_VALUE boolean flag is set, the cached images loaded previously 
-can be used. If this flag is unset, the cached value is never used, and the
+Loads C<index>th image frame from C<file> and returns it as either a C<Prima::Image> or
+as a C<Prima::Icon> instance, depending on value of boolean C<icon> flag. If
+C<copy> boolean flag is unset, the cached images loaded previously 
+can be used. If this flag is set, the cached value is never used, and the
 created image is not stored in the cache. Since the module's intended use
-is to provide shared and read-only access to the image library, USE_CACHED_VALUE
-set to 0 can be used to return non-shared images.
+is to provide shared and read-only access to the image library, C<copy>
+set to 1 can be used to return non-shared images.
+
+The loader automatically scales images if system dpi suggests so. If layering
+is supported, the icon scaling will use that. To disable these optimizations
+use C<< raw => 1 >> (to disable all) construct, or C<< argb => 0 >> ( to
+disable ARGB icons ).
 
 =back
 
