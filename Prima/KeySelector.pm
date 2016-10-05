@@ -280,7 +280,7 @@ sub eval_shortcut
 
 	$text =~ s/^'(.*)'$/$1/;
 	my $mod = 0;
-	while ( $text =~ /\|km::(\w+)/ ) {
+	while ( $text =~ s/\|km::(\w+)// ) {
 		$mod |= km::Alt   if $1 eq 'Alt';
 		$mod |= km::Ctrl  if $1 eq 'Ctrl';
 		$mod |= km::Shift if $1 eq 'Shift';
