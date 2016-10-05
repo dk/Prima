@@ -124,18 +124,18 @@ sub xy2hs
 
 sub hs2xy
 {
-	my ( $h, $s) = @_;
+	my ( $self, $h, $s) = @_;
 	my ( $r, $a) = ( 128 * $s, ($h - 180) / 57.295779513);
-	return 128 + $r * sin( $a), 128 + $r * cos( $a);
+	return map { $self->{scaling} * $_ } 128 + $r * sin( $a), 128 + $r * cos( $a);
 }
 
 sub create_wheel
 {
-	my ($id, $color)   = @_;
-	my $imul = 256 / $id;
+	my ($id, $pix, $color)   = @_;
+	my $imul = 256 * $pix / $id;
 	my $i = Prima::DeviceBitmap-> create(
-		width  => 256,
-		height => 256,
+		width  => 256 * $pix,
+		height => 256 * $pix,
 		name => '',
 	);
 
@@ -164,8 +164,8 @@ sub create_wheel
 
 
 	my $a = Prima::DeviceBitmap-> create(
-		width  => 256,
-		height => 256,
+		width  => 256 * $pix,
+		height => 256 * $pix,
 		name   => 'ColorWheel',
 	);
 
@@ -177,9 +177,9 @@ sub create_wheel
 	$a-> rop( rop::CopyPut);
 	$a-> color( cl::Black);
 	$a-> fill_ellipse(
-		128, 128,
-		255 - $imul * 2,
-		255 - $imul * 2
+		128 * $pix, 128 * $pix,
+		(256 * $pix) - $imul * 2 - 1,
+		(256 * $pix) - $imul * 2 - 1
 	);
 	$a-> rop( rop::XorPut);
 	$a-> put_image( 0, 0, $i);
@@ -193,18 +193,19 @@ sub create_wheel
 sub create_wheel_shape
 {
 	return unless $shapext;
-	my $id = $_[0];
-	my $imul = 256 / $id;
+	my ($id, $pix) = @_;
+	my $imul = 256 * $pix / $id;
 	my $a = Prima::Image-> create(
-		width => 256,
-		height => 256,
+		width => 256 * $pix,
+		height => 256 * $pix,
 		type => im::BW,
 	);
 	$a-> begin_paint;
 	$a-> color( cl::Black);
-	$a-> bar( 0, 0, 255, 255);
+	my $last = 256 * $pix - 1;
+	$a-> bar( 0, 0, $last, $last);
 	$a-> color( cl::White);
-	$a-> fill_ellipse( 128, 128, 255 - $imul * 2, 255 - $imul * 2);
+	$a-> fill_ellipse( 128 * $pix, 128 * $pix, $last - $imul * 2, $last - $imul * 2);
 	$a-> end_paint;
 	return $a;
 }
@@ -218,7 +219,8 @@ sub profile_default
 		height        => 450,
 		centered      => 1,
 		visible       => 0,
-		scaleChildren => 0,
+		scaleChildren => 1,
+		designScale   => [7, 16],
 		text          => 'Select color',
 
 		quality       => 0,
@@ -242,19 +244,28 @@ sub init
 	$s = int($s);
 	$v = int($v);
 
-	$colorWheel = create_wheel(32, $self-> backColor) unless $colorWheel;
-	$colorWheelShape = create_wheel_shape(32) unless $colorWheelShape;
+	my $dx = $Prima::Widget::default_font_box[0] / ($self-> designScale)[0];
+	my $dy = $Prima::Widget::default_font_box[1] / ($self-> designScale)[1];
+	my $pix = ( $dx < $dy ) ? $dx : $dy;
+	$colorWheel = create_wheel(32, $pix, $self-> backColor) unless $colorWheel;
+	$colorWheelShape = create_wheel_shape(32, $pix) unless $colorWheelShape;
 
 	$self-> {wheel} = $self-> insert( Widget =>
-		origin         => [ 20, 172],
-		width          => 256,
-		height         => 256,
+		designScale    => undef,
+		origin         => [ 
+			20 * $dx  + ($dx - $pix) * 256 / 2,
+			172 * $dy + ($dy - $pix) * 256 / 2 
+		],
+		width          => 256 * $pix,
+		height         => 256 * $pix,
 		name           => 'Wheel',
 		shape          => $colorWheelShape,
 		ownerBackColor => 1,
 		syncPaint      => 1,
 		delegations    => [qw(Paint MouseDown MouseUp MouseMove)],
 	);
+
+	$self-> {scaling} = $pix;
 
 	$self-> {roller} = $self-> insert( Widget =>
 		origin    => [ 288, 164],
@@ -280,7 +291,6 @@ sub init
 	);
 	my %labelprf = (
 		width      => 20,
-		height     => $self-> {R}-> height,
 		autoWidth  => 0,
 		autoHeight => 0,
 		valignment => ta::Center,
@@ -440,7 +450,7 @@ sub Wheel_Paint
 {
 	my ( $owner, $self, $canvas) = @_;
 	$canvas-> put_image( 0, 0, $colorWheel);
-	my ( $x, $y) = hs2xy( $owner-> {H}-> value, $owner-> {S}-> value/273);
+	my ( $x, $y) = $owner-> hs2xy( $owner-> {H}-> value, $owner-> {S}-> value/273);
 	$canvas-> color( cl::White);
 	$canvas-> rop( rop::XorPut);
 	if ( $shapext) {
@@ -459,7 +469,8 @@ sub Wheel_MouseDown
 	my ( $owner, $self, $btn, $mod, $x, $y) = @_;
 	return if $self-> {mouseTransation};
 	return if $btn != mb::Left;
-	my ( $h, $s, $ok) = xy2hs( $x-9, $y-9, 119);
+	my $scale = $owner->{scaling};
+	my ( $h, $s, $ok) = xy2hs( $x-9*$scale, $y-9*$scale, 119*$scale);
 	return if $ok;
 	$self-> {mouseTransation} = $btn;
 	$self-> capture(1);
@@ -489,7 +500,8 @@ sub Wheel_MouseMove
 {
 	my ( $owner, $self, $mod, $x, $y) = @_;
 	return if !$self-> {mouseTransation} or $self-> {drag_color};
-	my ( $h, $s, $ok) = xy2hs( $x-9, $y-9, 119);
+	my $scale = $owner->{scaling};
+	my ( $h, $s, $ok) = xy2hs( $x-9*$scale, $y-9*$scale, 119*$scale);
 	$owner-> {setTransaction} = 1;
 	$owner-> {HSVPin} = Lum|Hue|Sat;
 	$owner-> {H}-> value( int( $h));
@@ -518,8 +530,9 @@ sub Roller_Paint
 	my @size = $self-> size;
 	$canvas-> clear;
 	my $i;
+	my $step = 8 * $owner->{scaling};
 	my ( $h, $s, $v, $d) = ( $owner-> {H}-> value, $owner-> {S}-> value,
-		$owner-> {V}-> value, ($size[1]-16) / 32);
+		$owner-> {V}-> value, ($size[1] - $step * 2) / 32);
 	$s /= 255;
 	$v /= 255;
 	my ( $r, $g, $b);
@@ -527,15 +540,15 @@ sub Roller_Paint
 	for $i (0..31) {
 		( $r, $g, $b) = hsv2rgb( $h, $s, $i / 31);
 		$canvas-> color( rgb2value( $r, $g, $b));
-		$canvas-> bar( 8, 8 + $i * $d, $size[0] - 8, 8 + ($i + 1) * $d);
+		$canvas-> bar( $step, $step + $i * $d, $size[0] - $step, $step + ($i + 1) * $d);
 	}
 
 	$canvas-> color( cl::Black);
-	$canvas-> rectangle( 8, 8, $size[0] - 8, $size[1] - 8);
-	$d = int( $v * ($size[1]-16));
-	$canvas-> rectangle( 0, $d, $size[0]-1, $d + 15);
+	$canvas-> rectangle( $step, $step, $size[0] - $step, $size[1] - $step);
+	$d = int( $v * ($size[1]-$step * 2));
+	$canvas-> rectangle( 0, $d, $size[0]-1, $d + $step * 2 - 1);
 	$canvas-> color( $owner-> {value});
-	$canvas-> bar( 1, $d + 1, $size[0]-2, $d + 14);
+	$canvas-> bar( 1, $d + 1, $size[0]-2, $d + $step * 2 - 2);
 	$self-> {paintPoll} = 2 if exists $self-> {paintPoll};
 }
 
@@ -582,9 +595,10 @@ sub Roller_MouseMove
 	return unless $self-> {mouseTransation};
 	$owner-> {setTransaction} = 1;
 	$owner-> {HSVPin} = Hue|Sat|Wheel|Roller;
+	my $step = 8 * $owner->{scaling};
 	$owner-> value( rgb2value( hsv2rgb(
 		$owner-> {H}-> value, $owner-> {S}-> value/255,
-		($y - 8) / ( $self-> height - 16))));
+		($y - $step) / ( $self-> height - $step * 2))));
 	$owner-> {HSVPin} = undef;
 	$owner-> {setTransaction} = undef;
 	$self-> update_view;
@@ -658,12 +672,13 @@ sub profile_default
 {
 	my %sup = %{$_[ 0]-> SUPER::profile_default};
 	my @std = Prima::Application-> get_default_scrollbar_metrics;
+	my $scaling = $::application-> uiScaling;
 	return {
 		%sup,
 		style            => cs::DropDownList,
 		height           => $sup{ editHeight},
 		value            => cl::White,
-		width            => 56,
+		width            => 56 * $scaling,
 		literal          => 0,
 		colors           => 20 + 128,
 		editClass        => 'Prima::Widget',
@@ -672,8 +687,8 @@ sub profile_default
 			selectingButtons => 0,
 		},
 		listProfile      => {
-			width    => 78 + $std[0],
-			height   => 130,
+			width    => $scaling * 78 + $std[0],
+			height   => $scaling * 130,
 			growMode => 0,
 		},
 	};
@@ -779,10 +794,11 @@ sub InputLine_MouseWheel
 sub List_Create
 {
 	my ($combo,$self) = @_;
+	$self-> {scaling} = $::application-> uiScaling;
 	$combo-> {btn} = $self-> insert( Button =>
-		origin     => [ 3, 3],
-		width      => $self-> width - 6,
-		height     => 28,
+		origin     => [ map { $_ * $self->{scaling} } 3, 3],
+		width      => $self-> width - 6 * $self->{scaling},
+		height     => $self->{scaling} * 28,
 		text       => '~More...',
 		selectable => 0,
 		name       => 'MoreBtn',
@@ -791,8 +807,8 @@ sub List_Create
 	
 	my $c = $combo-> colors;
 	$combo-> {scr} = $self-> insert( ScrollBar =>
-		origin     => [ 75, $combo-> {btn}-> height + 8],
-		top        => $self-> height - 3,
+		origin     => [ 75 * $self->{scaling}, $combo-> {btn}-> height + 8 * $self->{scaling}],
+		top        => $self-> height - 3 * $self->{scaling},
 		vertical   => 1,
 		name       => 'Scroller',
 		max        => $c > 20 ? $c - 20 : 0,
@@ -813,29 +829,30 @@ sub List_Paint
 	$canvas-> rect3d( 0, 0, $w-1, $h-1, 1, @c3d, cl::Back)
 		unless exists $self-> {inScroll};
 	my $i;
-	my $pc = 18;
+	my $pc = 18 * $self->{scaling};
 	my $dy = $combo-> {btn}-> height;
 
 	my $maxc = $combo-> colors;
 	my $shft = $combo-> {scr}-> value;
 	for ( $i = 0; $i < 20; $i++) {
 		next if $i >= $maxc;
-		my ( $x, $y) = (($i % 4) * $pc + 3, ( 4 - int( $i / 4)) * $pc + 9 + $dy);
+		my ( $x, $y) = (($i % 4) * $pc + 3 * $self->{scaling}, ( 4 - int( $i / 4)) * $pc + 9 * $self->{scaling} + $dy);
 		my $clr = 0;
 		$combo-> notify('Colorify', $i + $shft, \$clr);
-		$canvas-> rect3d( $x, $y, $x + $pc - 2, $y + $pc - 2, 1, @c3d, $clr);
+		$canvas-> rect3d( $x, $y, $x + $pc - 2 * $self->{scaling}, $y + $pc - 2 * $self->{scaling}, 1, @c3d, $clr);
 	}
 }
 
 sub List_MouseDown
 {
 	my ( $combo, $self, $btn, $mod, $x, $y) = @_;
-	$x -= 3;
-	$y -= $combo-> {btn}-> height + 9;
+	$x -= 3 * $self->{scaling};
+	$y -= $combo-> {btn}-> height + 9 * $self->{scaling};
 	return if $x < 0 || $y < 0;
-	$x = int($x / 18);
-	$y = int($y / 18);
-	return if $x > 3 || $y > 4;
+	my $pc = 18 * $self->{scaling};
+	$x = int($x / $pc);
+	$y = int($y / $pc);
+	return if $x > 3 * $self->{scaling} || $y > 4 * $self->{scaling};
 	$y = 4 - $y;
 	$combo-> listVisible(0);
 	my $shft = $combo-> {scr}-> value;
@@ -865,10 +882,11 @@ sub Scroller_Change
 	my ($combo,$self) = @_;
 	$self = $combo-> List;
 	$self-> {inScroll} = 1;
+	my $s = $::application-> uiScaling;
 	$self-> invalidate_rect(
-		4, $combo-> {btn}-> top+6,
+		3*$s, $combo-> {btn}-> top+6*$s,
 		$self-> width - $combo-> {scr}-> width,
-		$self-> height - 3,
+		$self-> height - 3*$s,
 	);
 	delete $self-> {inScroll};
 }

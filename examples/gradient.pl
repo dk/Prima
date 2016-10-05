@@ -6,6 +6,7 @@ use Prima qw(Application ColorDialog Label Buttons Sliders);
 my $w = Prima::MainWindow->new(
 	size => [ 400, 300 ],
 	text => 'Gradient',
+	designScale => [ 7, 16 ],
 );
 
 my $panel = $w-> insert( Widget => 

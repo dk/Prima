@@ -70,8 +70,8 @@ sub profile_default
 {
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
-		width        => 17,
-		height       => 24,
+		width        => 17 * $::application-> uiScaling,
+		height       => 24 * $::application-> uiScaling,
 	}
 }
 
@@ -233,8 +233,8 @@ sub profile_default
 {
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
-		width        => 18,
-		height       => 18,
+		width        => 18 * $::application-> uiScaling,
+		height       => 18 * $::application-> uiScaling,
 	}
 }
 
