@@ -154,7 +154,7 @@ An index value passed to the methods must be one of C<sbmp::> constants:
 	sbmp::Warning
 	sbmp::Information
 	sbmp::Question
-	sbmp::OutlineCollaps
+	sbmp::OutlineCollapse
 	sbmp::OutlineExpand
 	sbmp::Error
 	sbmp::SysMenu

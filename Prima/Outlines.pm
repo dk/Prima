@@ -97,7 +97,7 @@ sub init
 	my $self = shift;
 	unless ( @images) {
 		my $i = 0;
-		for ( sbmp::OutlineCollaps, sbmp::OutlineExpand) {
+		for ( sbmp::OutlineCollapse, sbmp::OutlineExpand) {
 			$images[ $i++] = Prima::StdBitmap::image($_);
 		}
 		if ( $images[0]) {

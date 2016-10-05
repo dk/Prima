@@ -3091,8 +3091,8 @@ SBMP(Warning)
 SBMP(Information)
 #define sbmpQuestion                    11
 SBMP(Question)
-#define sbmpOutlineCollaps              12
-SBMP(OutlineCollaps)
+#define sbmpOutlineCollapse             12
+SBMP(OutlineCollapse)
 #define sbmpOutlineExpand               13
 SBMP(OutlineExpand)
 #define sbmpError                       14

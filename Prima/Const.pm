@@ -830,7 +830,7 @@ See also L<Prima::StdBitmap>.
 	sbmp::Warning
 	sbmp::Information
 	sbmp::Question
-	sbmp::OutlineCollaps
+	sbmp::OutlineCollapse
 	sbmp::OutlineExpand
 	sbmp::Error
 	sbmp::SysMenu
