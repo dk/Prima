@@ -53,8 +53,8 @@ my $angle = 0;
 my $pi = 3.14159;
 
 my $i = Prima::Image-> new(
-	width => 96,
-	height => 36,
+	width  => 96 * $::application-> font-> width  / 7,  # poor man's calculations of
+	height => 36 * $::application-> font-> height / 16, # button size
 	type => im::BW,
 );
 $i->begin_paint;

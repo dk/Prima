@@ -23,6 +23,7 @@ use Prima::Application;
 my $w = Prima::MainWindow-> create(
 	size => [ 430, 200],
 	text => "Static texts",
+	designScale => [7, 16],
 );
 
 my $b1 = $w->insert( Button => left => 20 => bottom => 0);

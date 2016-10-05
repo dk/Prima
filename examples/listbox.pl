@@ -106,6 +106,7 @@ my $w = TestWindow-> create(
 	name    =>  "Window1",
 	origin  => [ 100, 100],
 	size    => [ 600, 230],
+	designScale => [ 7, 16 ],
 	text => "List & edit boxes example",
 	menuItems => TestWindow::create_menu,
 );

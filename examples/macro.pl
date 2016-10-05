@@ -79,6 +79,7 @@ sub msave
 my $w = Prima::MainWindow-> create(
 	text => $wtx,
 	size => [ 436, 54],
+	designScale => [ 7, 16 ],
 	menuItems => [[ '~File' => [
 			['~Open...' => 'F3' => 'F3' => \&mopen],
 			['~Save...' => 'F2' => 'F2' => \&msave],
