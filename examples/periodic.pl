@@ -249,7 +249,7 @@ my $g = $w-> insert( Periodic =>
 			}
 			$canvas-> text_out( $item, $cx1 + 10 * $scaling, $cy1 + 10 * $scaling);
 			my $f = $canvas-> font;
-			$canvas-> font( height => 12);
+			$canvas-> font( height => 12 * $scaling );
 				@small_font_metrics = ( $canvas-> get_text_width('3'), $f-> height)
 					unless @small_font_metrics;
 					

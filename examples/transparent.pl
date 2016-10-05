@@ -73,11 +73,7 @@ $w-> insert(
 my $string = "Hello from Prima::OnScreenDisplay!";
 my $tt = Prima::Widget-> create(
 	name => 'W1',
-	onPaint => sub {
-		$_[1]-> color( cl::LightRed);
-		$_[1]-> font-> size( 36);
-		$_[1]-> text_out( $string, 0, 0);
-	},
+	backColor => cl::LightRed,
 	onMouseDown => sub {
 		$_[0]-> {drag}    = [ $_[3], $_[4]];
 		$_[0]-> {lastPos} = [ $_[0]-> left, $_[0]-> bottom];
@@ -98,7 +94,7 @@ my $tt = Prima::Widget-> create(
 );
 
 $tt-> begin_paint_info;
-$tt-> font-> size(36);
+$tt-> font-> height( $tt-> height * 0.7 );
 my $font = $tt-> font;
 $tt-> width( $tt-> get_text_width( $string));
 $tt-> end_paint_info;

@@ -173,6 +173,7 @@ my $w = TestWindow-> create(
 	bottom    => 300,
 	size      => [ 360, 120],
 	menuItems => TestWindow::create_menu,
+	designScale => [ 7, 16 ],
 	onDestroy => sub {$::application-> close},
 );
 $w-> insert( "InputLine",

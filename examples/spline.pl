@@ -44,7 +44,7 @@ my @rgb_vectors = (
 	1.38,
 );
 my $capture;
-my $aperture = 6;
+my $aperture = 6 * $::application-> uiScaling;
 
 my $w = Prima::MainWindow-> create(
 	text => 'Spline demo',

@@ -45,6 +45,7 @@ my $w = MyWindow-> create(
 	bottom  => 100,
 	width   => 300,
 	height  => 300,
+	designScale => [7, 16],
 	borderStyle => bs::Sizeable,
 );
 
@@ -54,7 +55,7 @@ $w-> insert(
 	 origin   => [ 2, 20],
 	 vertical => 0,
 	 max      => 255,
-	 width    => $w-> width - 2,
+	 width    => 298,
 	 onChange => sub { $w-> updateArea },
 );
 $w-> insert(
@@ -63,7 +64,7 @@ $w-> insert(
 	 origin   => [ 2, 40],
 	 vertical => 0,
 	 max      => 255,
-	 width    => $w-> width - 2,
+	 width    => 298,
 	 onChange => sub { $w-> updateArea },
 );
 $w-> insert(
@@ -72,7 +73,7 @@ $w-> insert(
 	 origin   => [ 2, 60],
 	 vertical => 0,
 	 max      => 255,
-	 width    => $w-> width - 2,
+	 width    => 298,
 	 onChange => sub { $w-> updateArea },
 );
 
@@ -82,7 +83,7 @@ $w-> insert(
 	 origin   => [ 2, 80],
 	 vertical => 1,
 	 max      => 255,
-	 height    => $w-> height - 80,
+	 height    => 218,
 );
 
 

@@ -15,7 +15,10 @@ use strict;
 use warnings;
 use Prima qw(Application Outlines);
 
-my $w = Prima::MainWindow-> create( size => [ 200, 200]);
+my $w = Prima::MainWindow-> create( 
+	size => [ 200, 200],
+	designScale => [7, 16],
+);
 my $o = $w-> insert(
 	DirectoryOutline =>
 	#StringOutline =>

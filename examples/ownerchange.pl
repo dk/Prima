@@ -21,6 +21,7 @@ my $w = Prima::Window-> create(
 	name       => "D1",
 	text    => "Window Number One",
 	origin     =>  [ 100, 300],
+	designScale => [7, 16],
 	borderStyle=> bs::Sizeable,
 	size       =>  [ 350, 100],
 	backColor  => cl::Green,
@@ -36,6 +37,7 @@ my $w = Prima::Window-> create(
 my $w2 = Prima::Window-> create(
 	name      => "D2",
 	text   => "Window Number Two",
+	designScale => [7, 16],
 	origin    =>  [ 500, 300],
 	size      =>  [ 450, 200],
 	font      => { name=>"System VIO",size=>18},
@@ -49,13 +51,11 @@ my $w2 = Prima::Window-> create(
 $w-> insert( Button =>
 	rect => [ 10 ,10, 50, 30],
 	text => "<",
-	font => { height => 18},
 	onClick => sub { $_[0]-> owner-> borderIcons(bi::Minimize|bi::TitleBar)},
 );
 $w-> insert( Button =>
 	rect => [ 60 , 10, 100, 30],
 	text => ">",
-	font => { height => 18},
 	onClick => sub { $_[0]-> owner-> borderIcons(
 		bi::TitleBar|bi::SystemMenu|bi::Minimize|bi::Maximize)},
 );
