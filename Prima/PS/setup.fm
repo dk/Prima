@@ -240,6 +240,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 "wwwww\xdd\xdd\xdd".
 ''),
 			size => [ 24, 29],
+			stretch => 1,
 			autoHScroll => 0,
 			autoVScroll => 0,
 	}},
@@ -287,6 +288,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 ''),
 			autoHScroll => 0,
 			autoVScroll => 0,
+			stretch => 1,
 			size => [ 29, 24],
 	}},
 	'Radio2' => {
@@ -351,6 +353,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 ''),
 			autoHScroll => 0,
 			autoVScroll => 0,
+			stretch => 1,
 			size => [ 26, 32],
 			onMouseClick => Prima::VB::VBLoader::GO_SUB('my ($self, $btn, $mod, $x, $y, $dblclk) = @_;
 ','ImageViewer3', 'onMouseClick'),
@@ -396,6 +399,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 ''),
 			autoHScroll => 0,
 			autoVScroll => 0,
+			stretch => 1,
 			size => [ 26, 32],
 	}},
 	'Radio3' => {
