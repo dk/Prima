@@ -1082,13 +1082,11 @@ sub init
 		growMode   => gm::Client,
 		scaleChildren => $scaleChildren,
 		(map { $_  => $profile{$_}} keys %notebookProps),
-		designScale => undef,
 		pageCount  => scalar @{$profile{tabs}},
 		delegations => $profile{notebookDelegations},
 		%{$profile{notebookProfile}},
 	);
-	
-	$self-> {notebook}-> designScale( $self-> designScale); # propagate designScale
+
 	$self-> tabs( $profile{tabs});
 	$self-> pageIndex( $profile{pageIndex});
 	$self-> style($profile{style});
