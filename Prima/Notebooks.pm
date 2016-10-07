@@ -1059,38 +1059,31 @@ sub init
 	my $maxh = $self-> font-> height * 2;
 	
 	$self-> {tabSet} = $profile{tabsetClass}-> create(
-		owner     => $self,
-		name      => 'TabSet',
-		left      => 0,
-		width     => $size[0],
-		top       => $size[1] - 1,
-		growMode  => gm::Ceiling,
-		height    => $maxh > 28 ? $maxh : 28,
-		buffered  => 1,
-		designScale => undef,
-		delegations => $profile{tabsetDelegations},
+		owner         => $self,
+		name          => 'TabSet',
+		left          => 0,
+		width         => $size[0],
+		top           => $size[1] - 1,
+		growMode      => gm::Ceiling,
+		height        => $maxh > 28 ? $maxh : 28,
+		buffered      => 1,
+		designScale   => undef,
+		delegations   => $profile{tabsetDelegations},
 		%{$profile{tabsetProfile}},
 	);
 
-	my $s = $::application-> uiScaling;
 	$self-> {notebook} = $profile{notebookClass}-> create(
-		owner      => $self,
-		name       => 'Notebook',
-		origin     => [ $s * DefBorderX + 1, $s * DefBorderX + 1],
-		size       => [ $size[0] - $s * DefBorderX * 2 - 5,
-			$size[1] - $s * DefBorderX * 2 - $self-> {tabSet}-> height - $s * DefBookmarkX - 4],
-		growMode   => gm::Client,
+		owner         => $self,
+		name          => 'Notebook',
+		growMode      => gm::Client,
 		scaleChildren => $scaleChildren,
-		(map { $_  => $profile{$_}} keys %notebookProps),
-		pageCount  => scalar @{$profile{tabs}},
-		delegations => $profile{notebookDelegations},
+		(map { $_     => $profile{$_}} keys %notebookProps),
+		pageCount     => scalar @{$profile{tabs}},
+		delegations   => $profile{notebookDelegations},
 		%{$profile{notebookProfile}},
 	);
 
-	$self-> tabs( $profile{tabs});
-	$self-> pageIndex( $profile{pageIndex});
-	$self-> style($profile{style});
-	$self-> orientation($profile{orientation});
+	$self-> $_( $profile{$_}) for qw(tabs pageIndex style orientation);
 	$self-> visible( $visible);
 
 	return %profile;
@@ -1463,8 +1456,7 @@ sub adjust_widgets
 		$pos[1] += $ts-> height - 5;
 	}
 
-	$nb-> size(@size);
-	$nb-> origin(@pos);
+	$nb-> rect(@pos, $pos[0] + $size[0], $pos[1] + $size[1]);
 
 	$self-> repaint;
 }
