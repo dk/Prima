@@ -1943,34 +1943,34 @@ MEDI
 		my %extras    = $_-> ext_profile;
 		if ( scalar keys %extras) {
 			$c .= "\t\textras => {\n";
-			for ( keys %extras) {
+			for ( sort keys %extras) {
 				my $val  = $extras{$_};
 				my $type = $self-> get_typerec( $types-> {$_}, \$val);
 				$val = defined($val) ? $type-> write( $_, $val) : 'undef';
-				$c .= "\t\t$_ => $val,\n";
+				$c .= "\t\t\t$_ => $val,\n";
 			}
 			$c .= "\t\t},\n";
 		}
 		%extras    = $_-> act_profile;
 		if ( scalar keys %extras) {
 			$c .= "\t\tactions => {\n";
-			for ( keys %extras) {
+			for ( sort keys %extras) {
 				my $val  = $extras{$_};
 				my $type = $self-> get_typerec( $types-> {$_}, \$val);
 				$val = defined($val) ? $type-> write( $_, $val) : 'undef';
-				$c .= "\t\t$_ => $val,\n";
+				$c .= "\t\t\t$_ => $val,\n";
 			}
 			$c .= "\t\t},\n";
 		}
 		my %Handle_props = map { $_ => 1 } $_-> {prf_types}-> {Handle} ? @{$_-> {prf_types}-> {Handle}} : ();
 		delete $Handle_props{owner};
 		if ( scalar keys %Handle_props) {
-			$c .= "\t\tsiblings => [qw(" . join(' ', keys %Handle_props) . ")],\n";
+			$c .= "\t\tsiblings => [qw(" . join(' ', sort keys %Handle_props) . ")],\n";
 		}
 		$c .= "\t\tprofile => {\n";
 		my ( $x,$prf) = ($_, $_-> {profile});
 		my @o = $_-> get_o_delta;
-		for( keys %{$prf}) {
+		for( sort keys %{$prf}) {
 			my $val = $prf-> {$_};
 			if ( $_ eq 'origin' && defined $val) {
 				my @nval = (
@@ -2027,7 +2027,7 @@ sub profile_default
 PREHEAD
 	my $prf   = $VB::form-> {profile};
 	my $types = $VB::form-> {types};
-	for ( keys %$prf) {
+	for ( sort keys %$prf) {
 		my $val = $prf-> {$_};
 		my $type = $self-> get_typerec( $types-> {$_}, \$val);
 		$val = defined($val) ? $type-> write( $_, $val) : 'undef';
@@ -2081,7 +2081,7 @@ HEAD3
 		my %extras = $obj-> ext_profile;
 		next unless scalar keys %extras;
 		$c .= "\t\$instances{$_}->{extras} = {\n";
-		for ( keys %extras) {
+		for ( sort keys %extras) {
 			my $val  = $extras{$_};
 			my $type = $self-> get_typerec( $types-> {$_}, \$val);
 			$val = defined($val) ? $type-> write( $_, $val) : 'undef';
@@ -2091,7 +2091,7 @@ HEAD3
 	}
 
 	$c .= "\t".$actions{onBegin}->{$_}."(q($_), \$instances{$_});\n"
-		for keys %{$actions{onBegin}};
+		for sort keys %{$actions{onBegin}};
 	$c .= <<HEAD4;
 	my \%profile = \$self-> SUPER::init(\@_);
 	my \%names   = ( q($main) => \$self);
@@ -2104,7 +2104,7 @@ HEAD4
 	my @re_cmp = ();
 
 	$c .= "\t".$actions{onFormCreate}->{$_}."(q($_), \$instances{$_}, \$self);\n"
-		for keys %{$actions{onFormCreate}};
+		for sort keys %{$actions{onFormCreate}};
 	$c .= "\t".$actions{onCreate}->{$main}."(q($main), \$instances{$main}, \$self);\n"
 		if $actions{onCreate}->{$main};
 AGAIN:
@@ -2127,7 +2127,7 @@ AGAIN:
 		$c .= "\t\$names{$name} = \$names{$owner}-> insert( qq($class) => \n";
 		my ( $x,$prf) = ($_, $_-> {profile});
 		my @o = $_-> get_o_delta;
-		for ( keys %{$prf}) {
+		for ( sort keys %{$prf}) {
 			my $val = $prf-> {$_};
 			if ( $_ eq 'origin' && defined $val) {
 				my @nval = (
@@ -2158,7 +2158,7 @@ AGAIN:
 	}
 
 	$c .= "\t".$actions{onEnd}-> {$_}."(q($_), \$instances{$_}, \$names{$_});\n"
-		for keys %{$actions{onEnd}};
+		for sort keys %{$actions{onEnd}};
 $c .= <<POSTHEAD;
 	\$self-> unlock;
 	return \%profile;
