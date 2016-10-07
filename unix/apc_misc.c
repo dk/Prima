@@ -1290,13 +1290,14 @@ apc_system_action( const char *s)
 	case 'r':
 		if ( strncmp( s, "resolution", 10) == 0) {
 			int dx, dy;
-			int i = sscanf( params + 10, "%u %u", &dx, &dy);
+			int i = sscanf( s + 10, "%u %u", &dx, &dy);
 			if ( i != 2 || (dx < 1 || dy < 1)) {
 				warn("Bad resolution\n");
 				return 0;
 			}
 			guts. resolution. x = dx;
 			guts. resolution. y = dy;
+			return nil;
 		}
 		break;
 	case 's':
