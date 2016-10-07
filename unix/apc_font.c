@@ -223,9 +223,9 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 			strcpy( info-> font. name, b);
 		
 			if (
-					( info-> font.family[0] == '*' && info-> font.family[1] == 0)  ||
-					( b[0] == '*' && b[1] == 0)
-				) {
+				( info-> font.family[0] == '*' && info-> font.family[1] == 0)  ||
+				( b[0] == '*' && b[1] == 0)
+			) {
 				Font xf;
 				int noname =  ( b[0] == '*' && b[1] == 0);
 				int nofamily = ( info-> font.family[0] == '*' && info-> font.family[1] == 0);
@@ -245,9 +245,11 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 			/* advance through WEIGHT_NAME */
 			b = ++c;
 			while ( *c && *c != '-') c++;
-			if ( c-b == 0 ||
-		 (c-b == 6 && strncasecmp( b, "medium", 6) == 0) ||
-		 (c-b == 7 && strncasecmp( b, "regular", 7) == 0)) {
+			if ( 
+				c-b == 0 ||
+		 		(c-b == 6 && strncasecmp( b, "medium", 6) == 0) ||
+		 		(c-b == 7 && strncasecmp( b, "regular", 7) == 0)
+			) {
 				info-> font. style = fsNormal;
 				style++;
 				info-> font. weight = fwMedium;
@@ -306,9 +308,9 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				info-> font. height = strtol( c, &b, 10);
 			if ( c != b) {
 				if ( info-> font. height) {
-		       info-> flags. height = true;
+		       			info-> flags. height = true;
 				} else {
-		       vector++;
+		       			vector++;
 				}
 				c = b;
 			} else if ( strncmp( c, "*-", 2) == 0) c++;

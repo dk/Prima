@@ -576,8 +576,8 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		/* xft is unable to deal with large polygon requests. 
 			we must cut the large fonts here, before Xlib croaks */
 		if (
-				( by_size && ( requested_font. size >= MAX_GLYPH_SIZE)) ||
-				(!by_size && ( requested_font. height >= MAX_GLYPH_SIZE / 72.27 * guts. resolution. y))
+			( by_size && ( requested_font. size >= MAX_GLYPH_SIZE)) ||
+			(!by_size && ( requested_font. height >= MAX_GLYPH_SIZE / 72.27 * guts. resolution. y))
 		) 
 			return false;
 	}
