@@ -821,6 +821,14 @@ See L<Prima::image-load> for details.
 
 NB! When saving to streams on win32, mind C<binmode>.
 
+=item ui_scale %OPTIONS
+
+Resizes the image with smooth scaling. Understands C<zoom> and C<scaling>
+options. The C<zoom> default value is the one in C<< $::application->uiScaling >>,
+the C<scaling> default value is C<ist::Quadratic> .
+
+See also: L<Application/uiScaling>
+
 =back
 
 =head2 Prima::Image events
@@ -852,12 +860,6 @@ event.
 
 =over
 
-=item split
-
-Returns two new I<Prima::Image> objects of same dimension.
-Pixels in the first is are duplicated from C<::data> storage,
-in the second - from C<::mask> storage.
-
 =item combine DATA, MASK
 
 Copies information from DATA and MASK images into C<::data>
@@ -876,6 +878,21 @@ Applies premultiplication formula to each pixel
 
 where alpha is the corresponding alpha value for each coordinate.
 Only applicable when C<maskType> is <im::bpp8>.
+
+=item split
+
+Returns two new I<Prima::Image> objects of same dimension.
+Pixels in the first is are duplicated from C<::data> storage,
+in the second - from C<::mask> storage.
+
+=item ui_scale %OPTIONS
+
+Same as C<ui_scale> from C<Prima::Image>, but with few exceptions: It tries to
+use C<ist::Quadratic> only when the system supports ARGB layering. Otherwise,
+falls back on C<ist::Box> scaling algorithm, and also limits the zoom factor to
+integers (2x, 3x etc) only, because when displayed, the smooth-scaled color
+plane will not match mask plane downgraded to 0/1 mask, and because box-scaling
+with non-integer zooms looks ugly.
 
 =back
 

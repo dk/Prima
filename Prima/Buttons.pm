@@ -403,6 +403,7 @@ sub profile_default
 		image         => undef,
 		imageFile     => undef,
 		imageScale    => 1,
+		smoothScaling => 1,
 		modalResult   => 0,
 		vertical      => 0,
 		width         => 96,
@@ -439,7 +440,7 @@ sub init
 		$self-> image( $profile{image}) :
 		$self-> imageFile( $profile{imageFile});
 	$self-> $_( $profile{$_}) for ( qw(
-		borderWidth checkable checked default imageScale glyphs vertical 
+		borderWidth checkable checked default smoothScaling imageScale glyphs vertical 
 		defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph
 		flat modalResult autoRepeat
 	));
@@ -488,10 +489,11 @@ sub on_paint
 	my ( $textAtX, $textAtY);
 
 	if ( defined $self-> {image}) {
+		my $is = $self->{imageScale};
 		my $pw = $self-> {image}-> width / $self-> { glyphs};
 		my $ph = $self-> {image}-> height;
-		my $sw = $pw * $self-> {imageScale};
-		my $sh = $ph * $self-> {imageScale};
+		my $sw = $pw * $is;
+		my $sh = $ph * $is;
 		my $imgNo = $self-> {defaultGlyph};
 		my $useVeil = 0;
 		if ( $self-> {hilite}) {
@@ -535,8 +537,28 @@ sub on_paint
 			$imAtY = ( $size[1] - $sh) / 2 - $shift;
 		}
 
+		my $image = $self->{image};
+		if ( $self-> {smoothScaling} && $is != 1.0 ) {
+			my $c = $self->{smooth_cache} //= {
+				zoom  => -1,
+				obj   => "$image",
+				cache => undef,
+			};
+			if ( $c->{zoom} != $is || $c->{obj} ne $image ) {
+				$c->{cache} = ( $self->{glyphs} == 1 ) ? 
+					$image->dup : $image->extract( $imgNo * $pw, 0, $pw, $ph);
+				$c->{cache}->ui_scale( zoom => $is );
+				$c->{zoom} = $is;
+				$c->{obj}  = "$image";
+
+				$image = $c->{cache};
+				$imgNo = 0;
+				($pw,$ph) = $image->size;
+				($sw,$sh) = $image->size;
+			}
+		}
 		$canvas-> put_image_indirect(
-			$self-> {image},
+			$image,
 			$imAtX, $imAtY,
 			$imgNo * $pw, 0,
 			$sw, $sh,
@@ -689,6 +711,7 @@ sub image
 	return $_[0]-> {image} unless $#_;
 	my ( $self, $image) = @_;
 	$self-> {image} = $image;
+	delete $self-> {smooth_cache};
 	$self-> check_auto_size;
 	$self-> repaint;
 }   
@@ -712,11 +735,19 @@ sub imageScale
 	return $_[0]-> {imageScale} unless $#_;
 	my ( $self, $imageScale) = @_;
 	$self-> {imageScale} = $imageScale;
+	delete $self-> {smooth_cache};
 	if ( $self-> {image}) {
 		$self-> check_auto_size;
 		$self-> repaint;
 	}
-}   
+}
+
+sub smoothScaling
+{
+	return $_[0]-> {smoothScaling} unless $#_;
+	my ( $self, $smoothScaling) = @_;
+	$self-> {smoothScaling} = $smoothScaling ? 1 : 0;
+}
 
 sub vertical
 {
@@ -1515,6 +1546,17 @@ The toolkit defines the following constants for C<modalResult> use:
 However, any other integer value can be safely used.
 
 Default value: 0
+
+=item smoothScaling BOOL
+
+Tries to represent the image as smooth as possible. When the system doesn't support ARGB layering,
+icon objects smooth scaling will be restricted to integer-scaling only (i.e. 2x, 3x etc) because 
+smooth color plane will not match pixelated mask plane, and because box-scaling
+with non-integer zooms looks ugly.
+
+Default value: true
+
+See also: L<Prima::Image/ui_scale> .
 
 =item pressedGlyph INTEGER
 

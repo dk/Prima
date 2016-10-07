@@ -22,26 +22,12 @@ sub _warn
 
 sub scale
 {
-	return unless $::application;
-
 	my ($i, %opt) = @_;
-	my $index = shift;
-	my $s = $::application->uiScaling;
-	return if $s == 1.0;
-
-	my $scaling = ist::Quadratic; # with exceptions below
-	if ( $i->isa("Prima::Icon")) {
-		unless ($::application-> get_system_value( sv::LayeredWidgets ) && ($opt{argb} // 1)) {
-			# don't uglify bitmaps here
-			$s = int($s + .5);
-			return if $s == 1.0;
-			$scaling = ist::Box;
-		}
-	} else {
-		$scaling = ist::Box if $index == sbmp::OutlineCollapse || $index == sbmp::OutlineExpand;
-	}
-	$i->scaling( $scaling );
-	$i->size( $i-> width * $s, $i->height * $s);
+	my $scaling; # with exceptions below
+	my $index = delete $opt{index};
+	delete @opt{qw(class file icon)};
+	$scaling = ist::Box if $index == sbmp::OutlineCollapse || $index == sbmp::OutlineExpand;
+	$i->ui_scale( scaling => $scaling, %opt );
 }
 
 sub load_image

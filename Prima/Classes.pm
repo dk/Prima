@@ -480,6 +480,22 @@ sub clone
 	return $i;
 }
 
+sub ui_scale
+{
+	my ($self, %opt) = @_;
+
+	my $zoom = delete($opt{zoom}) // ( $::application ? $::application->uiScaling : 1 );
+	return $self if $zoom == 1.0;
+
+	my $scaling = delete($opt{scaling}) // ist::Quadratic;
+	$self->set(
+		%opt,
+		scaling => $scaling,
+		size => [ map { $_ * $zoom } $self->size ],
+	);
+	return $self;
+}
+
 # class Icon
 package Prima::Icon;
 use vars qw( @ISA);
@@ -535,6 +551,31 @@ sub create_combined
 }
 
 sub has_alpha_layer { shift->maskType == im::bpp8 }
+
+sub ui_scale
+{
+	my ($self, %opt) = @_;
+	
+	my $zoom = delete($opt{zoom}) // ( $::application ? $::application->uiScaling : 1 );
+	return $self if $zoom == 1.0;
+
+	my $argb    = delete($opt{argb})    // ($::application ? $::application-> get_system_value( sv::LayeredWidgets ) : 0);
+	my $scaling = delete($opt{scaling}) // ($argb ? ist::Quadratic : ist::Box );
+
+	if ( $scaling <= ist::Box ) {
+		# don't uglify bitmaps with box scaling where zoom is 1.25 or 2.75
+		$zoom = int($zoom + .5);
+		return if $zoom <= 1.0;
+	}
+
+	$self->set(
+		%opt,
+		scaling => $scaling,
+		size => [ map { $_ * $zoom } $self->size ],
+	);
+
+	return $self;
+}
 
 # class DeviceBitmap
 package Prima::DeviceBitmap;
