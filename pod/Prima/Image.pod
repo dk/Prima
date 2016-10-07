@@ -492,6 +492,10 @@ Can be one of C<ist:::XXX> constants:
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/scalings.gif">
 
+Note: Resampling scaling algorithms (those greater than C<ist::Box>), when applied to Icons with 1-bit
+icon mask, will silently convert the mask in 8-bit and apply the same scaling algorithm to it. This
+will have great smoothing effect on mask edges if the system supports ARGB layering (see L<Layering> ).
+
 =item size WIDTH, HEIGHT 
 
 Manages dimensions of the image. On set-call,

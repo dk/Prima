@@ -441,6 +441,12 @@ Icon_stretch( Handle self, int width, int height)
 		return;
 	}
 	
+	if ( var-> mask && var-> maskType == imbpp1 && var-> scaling > istBox ) {
+		/* upgrade to bpp8 */
+		my-> set_maskType( self, imbpp8 );
+	}
+	
+	
 	lineSize = LINE_SIZE( abs( width), var-> maskType );
 	newMask  = allocb( lineSize * abs( height));
 	if ( newMask == nil && lineSize > 0) {
@@ -449,14 +455,12 @@ Icon_stretch( Handle self, int width, int height)
 	}
 	var-> autoMasking = amNone;
 	if ( var-> mask) {
-		Bool hScaling, vScaling;
-		if ( var-> scaling <= istBox ) {
-			 hScaling = var->scaling & istBoxX;
-			 vScaling = var->scaling & istBoxY;
-		} else {
-			 hScaling = vScaling = 1;
+		char error[256];
+		if ( !ic_stretch( var->maskType | imGrayScale, var-> mask, oldW, oldH, newMask, width, height, var->scaling, error)) {
+			free(newMask);
+			my-> make_empty( self);
+			croak("%s", error);
 		}
-		ic_stretch( var->maskType, var-> mask, oldW, oldH, newMask, width, height, hScaling, vScaling);
 	}      
 	inherited stretch( self, width, height);
 	free( var-> mask);

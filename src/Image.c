@@ -182,7 +182,7 @@ void
 Image_stretch( Handle self, int width, int height)
 {
 	Byte * newData = nil;
-	int lineSize;
+	int lineSize, oldType, newType;
 	if ( var->stage > csFrozen) return;
 	if ( width  >  65535) width  =  65535;
 	if ( height >  65535) height =  65535;
@@ -194,22 +194,25 @@ Image_stretch( Handle self, int width, int height)
 		my->create_empty( self, 0, 0, var->type);
 		return;
 	}
-	if ( var-> scaling > istBox ) {
-		ic_stretch_filtered( self, width, height, var-> scaling );
-		my->update_change( self);
-		return;
-	}
+
+	oldType = var->type;
+	newType = ic_stretch_suggest_type( var-> type, var-> scaling );
+	if ( newType != var->type) 
+		my->set_type(self, newType);
 
 	lineSize = LINE_SIZE( abs( width) , var->type);
 	newData = allocb( lineSize * abs( height));
-	if ( newData == nil) 
-			croak("Image::stretch: cannot allocate %d bytes", lineSize * abs( height));
+	if ( newData == NULL) 
+		croak("Image::stretch: cannot allocate %d bytes", lineSize * abs( height));
 	memset( newData, 0, lineSize * abs( height));
 	if ( var-> data) {
-		ic_stretch( var-> type, var-> data, var-> w, var-> h, 
-						newData, width, height, 
-						var->scaling & istBoxX, var->scaling & istBoxY);
-	}
+		char error[256];
+		if (!ic_stretch( var-> type, var-> data, var-> w, var-> h, newData, width, height, var->scaling, error)) {
+			free( var->data);
+			my-> make_empty( self);
+			croak("%s", error);
+		}
+	}						
 
 	free( var->data);
 	var->data = newData;
@@ -217,6 +220,10 @@ Image_stretch( Handle self, int width, int height)
 	var->dataSize = lineSize * abs( height);
 	var->w = abs( width);
 	var->h = abs( height);
+
+	if ( is_opt( optPreserveType) && var-> type != oldType )
+		my-> set_type( self, oldType );
+
 	my->update_change( self);
 }
 

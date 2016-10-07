@@ -29,32 +29,18 @@ sub scale
 	my $s = $::application->uiScaling;
 	return if $s == 1.0;
 
+	my $scaling = ist::Quadratic; # with exceptions below
 	if ( $i->isa("Prima::Icon")) {
-		if ($::application-> get_system_value( sv::LayeredWidgets ) && ($opt{argb} // 1)) {
-			$i->maskType(im::Byte);
-			my ( $x, $a ) = $i-> split;
-			$x->set(
-				scaling => ist::Quadratic,
-				size    => [ $x-> width * $s, $x-> height * $s ],
-			);
-			$a->set(
-				scaling => ist::Quadratic,
-				size    => [ $a-> width * $s, $a-> height * $s ],
-			);
-			$i-> combine( $x, $a );
-			return;
-		} else {
+		unless ($::application-> get_system_value( sv::LayeredWidgets ) && ($opt{argb} // 1)) {
 			# don't uglify bitmaps here
 			$s = int($s + .5);
 			return if $s == 1.0;
-			$i->scaling(ist::Box);
+			$scaling = ist::Box;
 		}
 	} else {
-		$i->scaling(
-			( $index == sbmp::OutlineCollapse || $index == sbmp::OutlineExpand) ?
-				ist::Box : ist::Quadratic
-		);
+		$scaling = ist::Box if $index == sbmp::OutlineCollapse || $index == sbmp::OutlineExpand;
 	}
+	$i->scaling( $scaling );
 	$i->size( $i-> width * $s, $i->height * $s);
 }
 

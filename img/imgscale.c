@@ -220,7 +220,7 @@ void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx
 #define STEP(x) ((double)x * (double)(UINT16_PRECISION) + .5)
 
 void
-ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch)
+ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch)
 {
 	int  absh = h < 0 ? -h : h;
 	int  absw = w < 0 ? -w : w;
@@ -732,13 +732,12 @@ STRETCH_VERTICAL_OPEN(double)
 STRETCH_VERTICAL_LOOP(double,register double pixel = 0,pixel,0,contributions[j],)
 STRETCH_VERTICAL_CLOSE(double)
 
-Bool
-ic_stretch_filtered( Handle self, int w, int h, int scaling )
+static Bool
+stretch_filtered( int type, Byte * oldData, int oldW, int oldH, Byte * newData, int w, int h, int scaling, char * error )
 {
-	int absw, absh, channels, target_ls, target_ds, target_type, org_type, channel2_type, fw, fh, flw, i, support_size;
-	Bool mirror_x, mirror_y;
+	int channels, target_ls, target_ds, fw, fh, flw, i, support_size;
 	double factor_x, factor_y, scale_x, scale_y, *contributions, support_x, support_y ;
-	Byte * target_data, * filter_data;
+	Byte * filter_data;
 	FilterRec * filter = NULL;
 
 	for ( i = 0; i < sizeof(filters) / sizeof(FilterRec); i++) {
@@ -747,36 +746,28 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
 			break;
 		}
 	}
-	if ( !filter ) 
-		croak("no appropriate scaling filter found");
-
-	org_type = var-> type;
-	absw = abs(w);
-	absh = abs(h);
-	mirror_x = w < 0;
-	mirror_y = h < 0;
-
-	/* if it's cheaper to mirror before the conversion, do it */
-	if ( mirror_y && var-> h < h ) {
-		img_mirror( self, 1 );
-		mirror_y = 0;
+	if ( !filter ) {
+		strncpy( error, "no appropriate scaling filter found", 255);
+		return false;
 	}
-	
-	/* convert to closest type, and use last chance to mirror horizontally */
-	target_type = var->type;
-	switch (var-> type) {
+	if ( w <= 0 || h <= 0) {
+		strncpy(error, "image dimensions must be positive", 255);
+		return false;
+	}
+
+	switch (type) {
 	case imMono: 
+	case imBW:
 	case imNibble: 
-	case im256: 
+	case im256:
+	case imNibble | imGrayScale:
+		strncpy(error, "type not supported", 255);
+		return false;
 	case imRGB: 
 		channels = 3;
-		target_type = imRGB;
 		break;
-	case imBW:
-	case imNibble | imGrayScale:
 	case imByte:
 		channels = 1;
-		target_type = imByte;
 		break;
 	case imComplex:
 	case imDComplex:
@@ -788,45 +779,35 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
 		channels = 1;
 	}
 
-	if ( var-> type != target_type) my-> set_type( self, target_type );
-	if ( mirror_x ) {
-		if ( var-> lineSize < LINE_SIZE( absw, target_type)) {
-			img_mirror( self, 0 );
-			mirror_x = 0;
-		}
-	}
-
 	/* convert to multi-channel structures */
-	if ( var-> type == imRGB ) {
-		var-> type = imByte;
-		var-> w *= 3;
-		absw *= 3;
+	if ( type == imRGB ) {
+		type = imByte;
+		w *= 3;
+		oldW *= 3;
 	}
 	if ( channels == 2 ) {
-		var-> w *= 2;
-		absw *= 2;
-		channel2_type = var-> type;
-		var-> type = (( var-> type & imBPP ) / 2) | imGrayScale | imRealNumber;
+		w *= 2;
+		oldW *= 2;
+		type = (( type & imBPP ) / 2) | imGrayScale | imRealNumber;
 	}
 
 	/* allocate space for semi-filtered and target data */
-	factor_x = (double) absw / (double) var-> w;
-	factor_y = (double) absh / (double) var-> h;
+	factor_x = (double) w / (double) oldW;
+	factor_y = (double) h / (double) oldH;
 	if (factor_x > factor_y) {
-		fw = absw;
-		fh = var-> h;
+		fw = w;
+		fh = oldH;
 	} else {
-		fw = var-> w;
-		fh = absh;
+		fw = oldW;
+		fh = h;
 	}
-	flw = LINE_SIZE( fw, var-> type);
-	if ( !( filter_data = malloc( flw * fh )))
-		croak("not enough memory: %d bytes", flw * fh);
-	target_ls = LINE_SIZE( absw, var-> type);
-	target_ds = absh * target_ls;
-	if ( !( target_data = malloc( target_ds ))) {
-		free( filter_data );
-		croak("not enough memory: %d bytes", target_ds);
+	flw = LINE_SIZE( fw, type);
+	target_ls = LINE_SIZE( w, type);
+	target_ds = h * target_ls;
+	
+	if ( !( filter_data = malloc( flw * fh ))) {
+		snprintf(error, 255, "not enough memory: %d bytes", flw * fh);
+		return false;
 	}
 
 	scale_x = 1.0 / factor_x;
@@ -844,31 +825,31 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
 	support_size *= (sizeof(Fixed) > sizeof(double)) ? sizeof(Fixed) : sizeof(double);
 	if (!(contributions = malloc(support_size * OMP_MAX_THREADS))) {
 		free( filter_data );
-		free( target_data );
-		croak("not enough memory: %d bytes", support_size);
+		snprintf(error, 255, "not enough memory: %d bytes", support_size);
+		return false;
 	}
 
 	/* stretch */
 	if (factor_x > factor_y) {
 #define HORIZONTAL(type) stretch_horizontal_##type( \
 		filter, scale_x, contributions, support_x, channels, \
-		var-> data, var-> w / channels, var-> h, filter_data, fw / channels, fh, factor_x, support_size)
+		oldData, oldW / channels, oldH, filter_data, fw / channels, fh, factor_x, support_size)
 #define VERTICAL(type)   stretch_vertical_##type  ( \
 		filter, scale_y, contributions, support_y, \
-		filter_data, fw, fh, target_data, absw, absh, factor_y, support_size )
+		filter_data, fw, fh, newData, w, h, factor_y, support_size )
 #define HANDLE_TYPE(type,name) \
 		case name: \
 			HORIZONTAL(type);\
 			VERTICAL(type);\
 			break
-		switch ( var-> type ) {
+		switch ( type ) {
 			HANDLE_TYPE(Byte, imByte);
 			HANDLE_TYPE(Short, imShort);
 			HANDLE_TYPE(Long, imLong);
 			HANDLE_TYPE(float, imFloat);
 			HANDLE_TYPE(double, imDouble);
 		default:
-			croak("bad image type: %x", var->type);
+			croak("panic: bad image type: %x", type);
 		}
 #undef HORIZONTAL
 #undef VERTICAL
@@ -876,23 +857,23 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
 	} else {
 #define VERTICAL(type)   stretch_vertical_##type  ( \
 		filter, scale_y, contributions, support_y, \
-		var-> data, var-> w, var-> h, filter_data, fw, fh, factor_y, support_size)
+		oldData, oldW, oldH, filter_data, fw, fh, factor_y, support_size)
 #define HORIZONTAL(type) stretch_horizontal_##type( \
 		filter, scale_x, contributions, support_x, channels, \
-		filter_data, fw / channels, fh, target_data, absw / channels, absh, factor_x, support_size)
+		filter_data, fw / channels, fh, newData, w / channels, h, factor_x, support_size)
 #define HANDLE_TYPE(type,name) \
 		case name: \
 			VERTICAL(type);\
 			HORIZONTAL(type);\
 			break
-		switch ( var-> type ) {
+		switch ( type ) {
 			HANDLE_TYPE(Byte, imByte);
 			HANDLE_TYPE(Short, imShort);
 			HANDLE_TYPE(Long, imLong);
 			HANDLE_TYPE(float, imFloat);
 			HANDLE_TYPE(double, imDouble);
 		default:
-			croak("bad image type: %x", var->type);
+			croak("panic: bad image type: %x", type);
 		}
 #undef HORIZONTAL
 #undef VERTICAL
@@ -900,29 +881,69 @@ ic_stretch_filtered( Handle self, int w, int h, int scaling )
 	}
 	free( contributions );
 	free( filter_data );
-
-	/* convert back */
-	if ( channels == 2 ) {
-		absw /= 2;
-		var-> w /= 2;
-		var-> type = channel2_type;
-	}
-	var-> w = absw;
-	var-> h = absh;
-	var-> lineSize = LINE_SIZE( absw, var-> type );
-	var-> dataSize = var-> lineSize * absh;
-	free( var-> data );
-	var-> data = target_data;
-	if ( channels == 3 ) {
-		var-> type = imRGB;
-		var-> w /= 3;
-		w /= 3;
-	}
-	if ( is_opt( optPreserveType) && var-> type != org_type )
-		my-> set_type( self, org_type );
-	if ( mirror_x ) img_mirror( self, 0 );
-	if ( mirror_y ) img_mirror( self, 1 );
 	return true;
+}
+
+Bool
+ic_stretch_filtered( int type, Byte * oldData, int oldW, int oldH, Byte * newData, int w, int h, int scaling, char * error )
+{
+	int absw, absh;
+	Bool mirror_x, mirror_y;
+
+	absw = abs(w);
+	absh = abs(h);
+	mirror_x = w < 0;
+	mirror_y = h < 0;
+
+	/* if it's cheaper to mirror before the conversion, do it */
+	if ( mirror_y && oldH < absh ) {
+		img_mirror_raw( type, oldW, oldH, oldData, 1 );
+		mirror_y = 0;
+	}
+	if ( mirror_x && oldW < absw) {
+		img_mirror_raw( type, oldW, oldH, oldData, 0 );
+		mirror_x = 0;
+	}
+
+	if ( !stretch_filtered( type, oldData, oldW, oldH, newData, w, h, scaling, error ))
+		return false;
+	
+	if ( mirror_x ) img_mirror_raw( type, w, h, newData, 0 );
+	if ( mirror_y ) img_mirror_raw( type, w, h, newData, 1 );
+
+	return true;
+}
+
+int
+ic_stretch_suggest_type( int type, int scaling )
+{
+	if ( scaling <= istBox ) return type;
+	
+	switch (type) {
+	case imMono: 
+	case imNibble: 
+	case im256: 
+	case imRGB: 
+		return imRGB;
+	case imBW:
+	case imNibble | imGrayScale:
+	case imByte:
+		return imByte;
+		break;
+	default:
+		return type;
+	}
+}
+
+Bool
+ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, int scaling, char * error)
+{
+	if ( scaling <= istBox ) {
+		ic_stretch_box( type, srcData, srcW, srcH, dstData, w, h, scaling & istBoxX, scaling & istBoxY);
+		return true;
+	} else {
+		return ic_stretch_filtered( type, srcData, srcW, srcH, dstData, w, h, scaling, error );
+	}
 }
 
 #ifdef __cplusplus
