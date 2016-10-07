@@ -308,9 +308,9 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				info-> font. height = strtol( c, &b, 10);
 			if ( c != b) {
 				if ( info-> font. height) {
-		       			info-> flags. height = true;
+					info-> flags. height = true;
 				} else {
-		       			vector++;
+					vector++;
 				}
 				c = b;
 			} else if ( strncmp( c, "*-", 2) == 0) c++;
@@ -352,9 +352,9 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				info-> font. yDeviceRes = strtol( c, &b, 10);
 			if ( c != b) {
 				if ( info-> font. yDeviceRes) {
-		       info-> flags. yDeviceRes = true;
+					info-> flags. yDeviceRes = true;
 				} else {
-		       vector++;
+					vector++;
 				}
 				c = b;
 			} else if ( strncmp( c, "*-", 2) == 0) c++;
@@ -383,11 +383,11 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				info-> font. width = strtol( c, &b, 10);
 			if ( c != b) {
 				if ( info-> font. width) {
-		       info-> flags. width = true;
+					info-> flags. width = true;
 					info-> font. width  = ( info-> font. width < 10) ? 
 						1 : ( info-> font. width / 10);
 				} else {
-		       vector++;
+					vector++;
 				}
 				c = b;
 			} else if ( strncmp( c, "*-", 2) == 0) c++;
@@ -555,7 +555,7 @@ prima_init_font_subsystem( char * error_buf)
 	ignore_encodings = nil;
 	s_ignore_encodings = nil;
 	if ( apc_fetch_resource( "Prima", "", "IgnoreEncodings", "ignoreEncodings", 
-									nilHandle, frString, &s_ignore_encodings)) 
+				nilHandle, frString, &s_ignore_encodings)) 
 	{
 		char *e = s_ignore_encodings;
 		char *s = e;
@@ -1266,8 +1266,9 @@ AGAIN:
 		f-> flags. direction       = true;
 		f-> font.  direction       = 0;
 		f-> flags. externalLeading = true;
-		f-> font.  externalLeading = abs( s-> max_bounds. ascent - s-> ascent) + 
-											abs( s-> max_bounds. descent - s-> descent);
+		f-> font.  externalLeading = 
+						abs( s-> max_bounds. ascent  - s-> ascent) + 
+						abs( s-> max_bounds. descent - s-> descent);
 		f-> font.  utf8_flags      = 0;				  
 
 		/* detailing width */
