@@ -66,10 +66,18 @@ sub init
 sub reset_scrolls
 {
 	my $self = $_[0];
+
+	# protect against the worst case where it goes like this:
+	# vScroll(0) -> hScroll(1) -> vScroll(0) -> hScroll(1) -> ... etc
+	# which means that if we're deeper than 4 calls, we're never out of it
+	local $self->{reentrant_scroll_calls} = 1 + (exists($self->{reentrant_scroll_calls}) ? $self->{reentrant_scroll_calls} : 0);
+	return if $self->{reentrant_scroll_calls} > 4;
+
 	my ($x, $y) = $self-> get_active_area(2);
 	my ($w, $h) = $self-> limits;
 	my $reread;
 	@{$self}{qw(winX winY)} = ($x, $y);
+
 
 	if ( $self-> {autoHScroll} and $self->{autoVScroll} and 
 			( $self-> {hScroll} or $self-> {vScroll})
@@ -274,12 +282,12 @@ sub reset_indents
 
 sub ClientWindow_Size
 {
-	$_[0]-> reset;
+	$_[0]-> reset unless $_[0]->{client_notification_block};
 }
 
 sub ClientWindow_Move
 {
-	$_[0]-> reset;
+	$_[0]-> reset unless $_[0]->{client_notification_block};
 }
 
 sub ClientWindow_geomSize
@@ -310,8 +318,10 @@ sub reset
 	return unless $self-> {client};
 
 	my @size = $self-> size;
-	$self-> {slave}-> rect( $self-> get_active_area(0, @size))
-		if $forced;
+	if ($forced) {
+		local $self->{client_notification_block} = 1;
+		$self-> {slave}-> rect( $self-> get_active_area(0, @size));
+	}
 
 	my @l = $self-> limits;
 	my @s = $self-> {client}-> size;
@@ -322,7 +332,6 @@ sub reset
 		$self-> reset_scrolls : 
 		$self-> limits( $s[0], $s[1]);
 	$self-> deltas( -$o[0], $o[1] - $self-> {slave}-> height + $s[1]);
-		
 }
 
 sub children_extensions
