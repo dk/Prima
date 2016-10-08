@@ -1586,7 +1586,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 	else 
 		mask = i-> self-> convert_mask((Handle)i, imbpp1);
 	if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-		i-> mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+		mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
 
 	if ( !notAnIcon && i-> maskType == imbpp8)
 		free(mask);
