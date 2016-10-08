@@ -1081,6 +1081,7 @@ sub init
 		pageCount     => scalar @{$profile{tabs}},
 		delegations   => $profile{notebookDelegations},
 		%{$profile{notebookProfile}},
+		packPropagate => 0,
 	);
 
 	$self-> $_( $profile{$_}) for qw(tabs pageIndex style orientation);
