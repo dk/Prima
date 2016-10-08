@@ -1341,11 +1341,23 @@ sub init
 
 	my ( $dx, $dy ) = map { $s * $_ } (26,30);
 
+	my @images = map {
+		my $i = Prima::Icon->new;
+		if ( my $f = Prima::Utils::find_image( 'VB::VB.gif')) {
+			if ( $i->load($f, index => $_)) {
+				$i-> ui_scale;
+			}
+		} else {
+			$i = undef;
+		}
+		$i
+	} 1..4;
+
 	$self-> {newbutton} = $self-> insert( SpeedButton =>
 		origin    => [ 4, $self-> height - $dy],
 		size      => [ $dx, $dx],
 		hint      => 'New',
-		imageFile => Prima::Utils::find_image( 'VB::VB.gif').':1',
+		image     => $images[0],
 		glyphs    => 2,
 		onClick   => sub { $VB::main-> new; } ,
 	);
@@ -1354,7 +1366,7 @@ sub init
 		origin    => [ 4 + $dx, $self-> height - $dy],
 		size      => [ $dx, $dx],
 		hint      => 'Open',
-		imageFile => Prima::Utils::find_image( 'VB::VB.gif').':2',
+		image     => $images[1],
 		glyphs    => 2,
 		onClick   => sub { $VB::main-> open; } ,
 	);
@@ -1363,7 +1375,7 @@ sub init
 		origin    => [ 4 + $dx*2, $self-> height - $dy],
 		size      => [ $dx, $dx],
 		hint      => 'Save',
-		imageFile => Prima::Utils::find_image( 'VB::VB.gif').':3',
+		image     => $images[2],
 		glyphs    => 2,
 		onClick   => sub { $VB::main-> save; } ,
 	);
@@ -1372,7 +1384,7 @@ sub init
 		origin    => [ 4 + $dx*3, $self-> height - $dy],
 		size      => [ $dx, $dx],
 		hint      => 'Run',
-		imageFile => Prima::Utils::find_image( 'VB::VB.gif').':4',
+		image     => $images[3],
 		glyphs    => 2,
 		onClick   => sub { $VB::main-> form_run} ,
 	);
@@ -1560,6 +1572,7 @@ sub reset_tabs
 				$iconfails{$info{icon}} = 1;
 				$i = undef;
 			}
+			$i-> ui_scale if $i;
 		};
 		my $j = $nb-> insert_to_page( $pagofs{$info{page}}, SpeedButton =>
 			hint   => $class,
