@@ -326,10 +326,10 @@ requested width and height of the master to these dimensions.
 This causes geometry information to propagate up through a
 window hierarchy to a top-level window so that the entire
 sub-tree sizes itself to fit the needs of the leaf windows.
-However, the B<geometryPropagate> method may be used to
+However, the B<packPropagate> method may be used to
 turn off propagation for one or more masters.
 If propagation is disabled then the packer will not set
-the requested width and height of the packer.
+the requested width and height.
 This may be useful if, for example, you wish for a master
 window to have a fixed size that you specify.
 
