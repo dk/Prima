@@ -158,6 +158,7 @@ sub open_dockmanaging
 	my $wpanel = Prima::Window-> create(
 		name => 'Customize tools',
 		size => [ 400, 100],
+		designScale => [ 7, 16 ],
 		onClose => sub {
 			$self-> {toolBarPopup}-> customize-> enabled(1); 
 			$i-> interactiveDrag(0);

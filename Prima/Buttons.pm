@@ -1103,7 +1103,7 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my $s = $::application->uiScaling;
-	@$def{qw(selectable width height text imageScale)} = (0, $s*36, $s*36, "", $s);
+	@$def{qw(selectable width height text)} = (0, $s*36, $s*36, "");
 	return $def;
 }
 

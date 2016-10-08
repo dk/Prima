@@ -985,10 +985,7 @@ sub class
 	my $i = Prima::Icon-> create;
 	undef($i) unless $i-> load(Prima::Utils::find_image($image), index => $index);
 	my $s = $::application ? $::application->uiScaling : 1;
-	$i->set(
-		scaling => ist::Box,
-		size    => [ map { $_ * $s } $i-> size ],
-	) if $s;
+	$i->ui_scale if $i;
 	return $action, {
 		class   => 'Prima::SpeedButton',
 		profile => {
