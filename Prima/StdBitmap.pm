@@ -25,7 +25,7 @@ sub scale
 	my ($i, %opt) = @_;
 	my $scaling; # with exceptions below
 	my $index = delete $opt{index};
-	delete @opt{qw(class file icon)};
+	delete @opt{qw(class file icon copy)};
 	$scaling = ist::Box if $index == sbmp::OutlineCollapse || $index == sbmp::OutlineExpand;
 	$i->ui_scale( scaling => $scaling, %opt );
 }
