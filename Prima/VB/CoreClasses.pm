@@ -1710,7 +1710,7 @@ sub on_show
 
 sub on_hook
 {
-	my ( $self, $who, $prop, $old, $new) = @_;
+	my ( $self, $who, $prop, $old, $new, $widget) = @_;
 	if ( $prop eq 'name') {
 		return unless exists $self-> {list}-> {$old};
 		$self-> {list}-> {$new} = $self-> {list}-> {$old};
@@ -1892,15 +1892,9 @@ sub prf_adjust_default
 	);
 }
 
-sub act_profile
-{
-	my $self = $_[0];
-	return (
-		$self-> SUPER::act_profile,
-		onChildCreate  => '$_[3]-> origin( $_[3]-> left-$_[3]-> owner-> left, $_[3]-> bottom-$_[3]-> owner-> bottom);',
-	);
-}
+use constant OFFSET => 11;
 
+sub o_delta_aperture { OFFSET, OFFSET }
 
 sub on_paint
 {
@@ -1958,7 +1952,7 @@ sub on_paint
 		$canvas-> rect3d( 2, 2, $sz[0] - 3, $sz[1] - $mh, 1, @c3d);
 	}
 	$canvas-> linePattern( lp::Dash);
-	$canvas-> rectangle( 12, 12, $sz[0] - 17, $sz[1] - ($self-> prf('style') ? 48 : -4) - $mh);
+	$canvas-> rectangle( OFFSET+1, OFFSET+1, $sz[0] - 17, $sz[1] - ($self-> prf('style') ? 48 : -4) - $mh);
 	$canvas-> linePattern( lp::Solid);
 	$canvas-> translate(@tr);
 	$self-> common_paint( $canvas);

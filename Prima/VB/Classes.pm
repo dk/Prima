@@ -20,7 +20,6 @@ use Prima::Classes;
 package Prima::VB::Object;
 use strict;
 
-
 my %hooks = ();
 
 sub init_profiler
@@ -93,7 +92,7 @@ sub prf_set
 		next unless $hooks{$key};
 		my $o = exists $self-> {profile}-> {$key} ? 
 			$self-> {profile}-> {$key} : $self-> {default}-> {$key};
-		$_-> on_hook( $name, $key, $o, $profile{$key}) for @{$hooks{$key}};
+		$_-> on_hook( $name, $key, $o, $profile{$key}, $self) for @{$hooks{$key}};
 	}
 	$self-> {profile} = {%{$self-> {profile}}, %profile};
 	my $check = $VB::inspector && 
@@ -189,6 +188,7 @@ sub profile_default
 				$_[0]-> clear_event;
 			}],
 		],
+		o_delta    => [0,0],
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -266,6 +266,7 @@ sub init
 		$self-> {$_}=0;
 	};
 	my %profile = $self-> SUPER::init(@_);
+	$self->{o_delta} = $profile{o_delta};
 	for ( qw( marked sizeable mainEvent)) {
 		$self-> $_( $profile{$_});
 	}
@@ -335,6 +336,13 @@ sub on_paint
 	$self-> common_paint( $canvas);
 }
 
+sub add_o_delta
+{
+	my ( $self, $dx, $dy ) = @_;
+	$self->{o_delta}->[0] += $dx;
+	$self->{o_delta}->[1] += $dy;
+}
+
 sub get_o_delta
 {
 	my $w = $_[0];
@@ -343,11 +351,12 @@ sub get_o_delta
 	my $ownerName = $w-> prf( 'owner');
 	return ( 0, 0) if ( $ownerName eq '') || ( $ownerName eq $VB::form-> name);
 
-	my $owidget = $VB::form-> bring( $ownerName);
-
-	return $owidget-> origin;
+	my @o = $VB::form-> bring( $ownerName)->origin;
+	$o[$_] += $w->{o_delta}->[$_] for 0, 1;
+	return @o;
 }
 
+sub o_delta_aperture { 0, 0 }
 
 sub xy2part
 {
@@ -896,10 +905,12 @@ sub owner_changed
 		$from = $VB::form-> bring( $from);
 		$from = $VB::form unless defined $from;
 		$from-> prf_detach( $self);
+		$self-> add_o_delta( map { -1 * $_ } $from-> o_delta_aperture);
 	}
 	if ( defined $to) {
 		$to = $VB::form-> bring( $to);
 		$to = $VB::form unless defined $to;
+		$self-> add_o_delta( $to-> o_delta_aperture);
 		$to-> prf_attach( $self);
 	}
 }
@@ -921,7 +932,7 @@ sub on_destroy
 	$self-> name_changed( $n, $VB::form-> name) if $VB::form;
 	$self-> owner_changed( $self-> prf('owner'), undef);
 	if ( $hooks{DESTROY}) {
-		$_-> on_hook( $self-> name, 'DESTROY') for @{$hooks{DESTROY}};
+		$_-> on_hook( $self-> name, 'DESTROY', undef, undef, $self) for @{$hooks{DESTROY}};
 	}
 	$VB::main-> update_markings();
 }
@@ -4128,7 +4139,7 @@ Cancels watch for set of PROPERTIES.
 
 =over
 
-=item on_hook NAME, PROPERTY, OLD_VALUE, NEW_VALUE
+=item on_hook NAME, PROPERTY, OLD_VALUE, NEW_VALUE, WIDGET
 
 Called for all objects, registered as watchers
 by C<add_hooks> when PROPERTY on object NAME is changed

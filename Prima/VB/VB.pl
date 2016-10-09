@@ -36,10 +36,12 @@ use vars qw($inspector
 	$form
 	$fastLoad
 	$writeMode
+	$dpi
 );
 
 $fastLoad = 1;
 $writeMode = 0;
+$dpi = 0;
 
 my $openFileDlg;
 my $saveFileDlg;
@@ -1307,6 +1309,13 @@ sub profile_default
 				[],
 				['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => \&form_run ],
 				['-breakitem' => '~Break' => \&form_cancel ],
+				['~Emulate resolution' => [
+					["*dpi0" => '~Native' => \&dpi_toggle ],
+					[],
+					map {
+						["dpi$_" => "$_ PPI", \&dpi_toggle ]
+					} (48, 72, 96, 120, 144, 168, 192, 216, 240, 264, 288, 312)
+				]],
 			]],
 			[],
 			['~Help' => [
@@ -1811,10 +1820,13 @@ sub push_widgets
 					$dep{$_}-> {profile}-> {owner} = $main;
 				}
 				my @ndelta = $owners{$_} eq $main ? (0,0) : (
-				$widgets{$owners{$_}}-> left,
-				$widgets{$owners{$_}}-> bottom
+					$widgets{$owners{$_}}-> left,
+					$widgets{$owners{$_}}-> bottom
 				);
-				$norg[$_] += $ndelta[$_] for 0..1;
+				my @aperture = $owners{$_} eq $main ? (0,0) : (
+					$widgets{$owners{$_}}-> o_delta_aperture
+				);
+				$norg[$_] += $ndelta[$_] + $aperture[$_] for 0..1;
 				$dep{$_}-> {profile}-> {origin} = \@norg;
 			}
 			$c-> prf_set( %{$dep{$_}-> {profile}});
@@ -1888,8 +1900,7 @@ sub load_file
 	$VB::inspector-> {selectorChanging} = 1 if $VB::inspector;
 	my $loaded;
 	$self-> push_widgets( sub {
-	$loaded++;
-	$self-> text( sprintf( "Loaded %d%%", ($loaded / $maxwij) * 100)); 
+		$self-> text( sprintf( "Loaded %d%%", ($loaded++ / $maxwij) * 100)); 
 	}, @seq);
 	$VB::form-> show;
 	$VB::inspector-> {selectorChanging}-- if $VB::inspector;
@@ -2299,16 +2310,33 @@ sub form_run
 	my $okCreate = 0;
 	$VB::main-> {topLevel} = { map { ("$_" => 1) } $::application-> get_components };
 	@Prima::VB::VBLoader::eventContext = ('', '');
+	my $uiScaling = $::application->uiScaling;
+	my @saved_font = @Prima::Widget::default_font_box;
 	eval{
 		local $SIG{__WARN__} = sub { 
 			return if $_[0] =~ /^Subroutine.*redefined/;
 			die $_[0] 
 		};
+		my $n = $VB::form-> prf('name');
+		my %param;
+		if ( $VB::dpi > 0 ) {
+			my $sc = $VB::dpi / 96.0;
+			$::application->uiScaling($sc);
+			my %emulated_font;
+			%emulated_font = %{ $::application->get_default_font };
+			$emulated_font{$_} *= $sc for qw(size height width);
+			$param{$n}->{font} = \%emulated_font;
+			unless ( @Prima::Widget::default_font_box ) {
+				my $f = $::application-> get_default_font;
+				@Prima::Widget::default_font_box = ( $f-> { width}, $f-> { height});
+			}
+			$Prima::Widget::default_font_box[$_] *= $sc for 0,1;
+		}
 		my $sub = eval("$c");
 		die "Error loading module $@" if $@;
 		my @d = $sub-> ();
-		my %r = Prima::VB::VBLoader::AUTOFORM_REALIZE( \@d, {});
-		my $f = $r{$VB::form-> prf('name')};
+		my %r = Prima::VB::VBLoader::AUTOFORM_REALIZE( \@d, \%param );
+		my $f = $r{$n};
 		$okCreate = 1;
 		if ( $f) {
 			$f-> set( onClose => \&form_cancel );
@@ -2320,8 +2348,13 @@ sub form_run
 			$VB::editor-> hide if $VB::editor;
 		};
 	};
-	if ( $@) {
-		my $msg = "$@";
+	my $error = $@;
+	if ( $VB::dpi > 0 ) {
+		$::application->uiScaling($uiScaling);
+		@Prima::Widget::default_font_box = @saved_font;
+	}
+	if ( $error ) {
+		my $msg = "$error";
 		$msg =~ s/ \(eval \d+\)//g;
 		if ( defined( $Prima::VB::VBLoader::eventContext[0]) && 
 			length ($Prima::VB::VBLoader::eventContext[0])) {
@@ -2346,6 +2379,17 @@ sub form_run
 		}
 		$VB::main-> {topLevel} = undef;
 	}
+}
+
+sub dpi_toggle
+{
+	my $old = $VB::dpi;
+	my ( $self, $id ) = @_;
+	$id =~ s/^dpi//;
+	return if $id eq $old;
+	$self->menu->uncheck("dpi$old");
+	$self->menu->check("dpi$id");
+	$VB::dpi = $id;
 }
 
 sub wait
