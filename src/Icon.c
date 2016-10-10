@@ -308,14 +308,17 @@ Icon_convert_mask( Handle self, int type )
 		warn("Icon::convert_mask: cannot allocate %d bytes", dstLine * var-> h);
 		return NULL;
 	}
+	bzero( ret, dstLine * var-> h);
 
 	switch (type) {
 	case imbpp1:
 		/* downgrade */
 		memset( colorref,     1, 1   );
 		memset( colorref + 1, 0, 255 );
-		for ( i = 0, dst = ret; i < var->h; i++, src += srcLine, dst += dstLine)
+		for ( i = 0, dst = ret; i < var->h; i++, src += srcLine, dst += dstLine) {
+			memset( dst, 0, dstLine );
 			bc_byte_mono_cr( src, dst, var-> w, colorref);
+		}
 		break;
 	case imbpp8:
 		/* upgrade */
@@ -416,6 +419,7 @@ Icon_update_change( Handle self)
 			warn("Not enough memory: %d bytes", var-> maskSize);
 			return;
 		}
+		bzero( var-> mask, var-> maskSize );
 		produce_mask( self);
 		if ( oldtype != imbpp1 )
 			my-> set_maskType( self, oldtype);
