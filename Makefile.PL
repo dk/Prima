@@ -146,6 +146,7 @@ if ( defined($ARGV[0]) and $ARGV[0] =~ /^--(.*)$/) {
 }
 
 unlink "showlog";
+rename "makefile.log", "makefile.log.old";
 open MAKELOG, ">", "makepl.log";
 
 setup_argv();
