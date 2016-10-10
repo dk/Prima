@@ -172,9 +172,12 @@ cm_nearest_color( RGBColor color, int palSize, PRGBColor palette)
 void
 cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette, int toColorCount, Byte * colorref)
 {
-	while( fromColorCount--)
+	
+	while( fromColorCount--) {
+		RGBColor x = fromPalette[fromColorCount]; /* don't optimize this away, register reading reads past the array bounds */
 		colorref[ fromColorCount] =
-			cm_nearest_color( fromPalette[ fromColorCount], toColorCount, toPalette);
+			cm_nearest_color( x, toColorCount, toPalette);
+	}
 }
 
 /*

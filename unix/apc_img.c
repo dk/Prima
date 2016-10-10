@@ -507,13 +507,12 @@ prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int
 		}
 	} else {
 		mirrored_bits = mirror_bits();
-		w = ( w + 7) / 8;
 		for ( y = h-1; y >= 0; y--) {
 			register const unsigned char *s = idata+y*ils;
 			register unsigned char *t = ls*(h-y-1)+data;
-			for ( x = 0; x < w; x++) {
+			x = ls;
+			while (x--)
 				*t++ = mirrored_bits[*s++];
-			}
 		}
 	}
 }

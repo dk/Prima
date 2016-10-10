@@ -45,14 +45,14 @@ fill_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSiz
 	} else if ( var-> palSize > maxPalSize) {
 		cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize = maxPalSize);
 	} else {
-		memcpy( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
+		memmove( dstPal, var-> palette, (*dstPalSize = var-> palSize) * sizeof(RGBColor));
 		do_colormap = 0;
 	}
 	if ( colorref) {
 		if ( do_colormap)
 			cm_fill_colorref( var->palette, var-> palSize, dstPal, *dstPalSize, colorref);
 		else
-			memcpy( colorref, map_stdcolorref, 256);
+			memmove( colorref, map_stdcolorref, 256);
 	}
 }
 
