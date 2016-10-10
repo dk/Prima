@@ -1072,26 +1072,35 @@ sub add
 		my @ids = ( [-2, 'Z', 2], [ length($m), 'z', 1]);
 		while ( $maxnest--) {
 			while ( $m =~ m/([A-Z])<([^<>]*)>/gcs) {
-				push @ids, 
-					[ pos($m) - length($2) - 3, $1, 2],
-					[ pos($m) - 1, lc $1, 1];
-				substr $m, $ids[$_][0], $ids[$_][2], '_' x $ids[$_][2] for -2,-1;
+				if ( $1 eq 'X') {
+					my $d = length($2) + length($1) + 2;
+					substr( $m, pos($m) - $d, $d, '');
+				} else {
+					push @ids,
+						[ pos($m) - length($2) - 3, $1, 2],
+						[ pos($m) - 1, lc $1, 1];
+					substr $m, $ids[$_][0], $ids[$_][2], '_' x $ids[$_][2] for -2,-1;
+				}
 			}
 			while ( $m =~ m/([A-Z])(<<+) /gcs) {
 				my ( $pos, $cmd, $left, $right) = ( pos($m), $1, $2, ('>' x ( length($2))));
 				if ( $m =~ m/\G.*? $right(?!>)/gcs) {
-					push @ids, 
-						[ 
+					if ( $cmd eq 'X') {
+						my $d = length($cmd) + length($left) + 1;
+						substr( $m, $pos - $d, pos($m) - $pos + $d, '');
+					} else {
+						push @ids, [
 							$pos - length($left) - 2,
-							$cmd, 
+							$cmd,
 							length($cmd)+length($left)
-						], [ 
+						], [
 							pos($m) - length($right), 
-							lc $cmd, 
+							lc $cmd,
 							length($right)
 						];
-					substr $m, $ids[$_][0], $ids[$_][2], '_' x $ids[$_][2] 
-						for -2,-1;
+						substr $m, $ids[$_][0], $ids[$_][2], '_' x $ids[$_][2]
+							for -2,-1;
+					}
 				}
 			}
 			last unless $m =~ m/[A-Z]</;
