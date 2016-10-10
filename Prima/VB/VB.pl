@@ -2540,12 +2540,12 @@ Visual Builder is a RAD-style suite for designing forms under
 the Prima toolkit. It provides rich set of perl-composed widgets,
 whose can be inserted into a form by simple actions. The form
 can be stored in a file and loaded by either user program or
-a simple wrapper, C<utils/fmview.pl>; the form can be also stored as
+a simple wrapper, C<utils/prima-fmview.pl>; the form can be also stored as
 a valid perl program. 
 
 A form file typically has I<.fm> extension, an can be loaded
 by using L<Prima::VB::VBLoader> module. The following example
-is the only content of C<fmview.pl>:
+is the only content of C<prima-fmview.pl>:
 
 	use Prima qw(Application VB::VBLoader);
 	my $ret = Prima::VBLoad( $ARGV[0] );
@@ -2733,7 +2733,7 @@ the form window grid granularity instead of the pixel granularity.
 =item Run
 
 This command hides the form and object inspector windows and
-'executes' the form, as if it would be run by C<fmview.pl>.
+'executes' the form, as if it would be run by C<prima-fmview.pl>.
 The execution session ends either by closing the form window
 or by calling L<Break> command.
 

@@ -59,7 +59,7 @@ sub load_file
 # Main
 unless ( $ARGV[ 0]) {
 print "Tml file linker for Prima\n";
-print "format: tmlink.pl [ options] filename.tml [filename2.tml...]\n";
+print "format: prima-tmlink.pl [ options] filename.tml [filename2.tml...]\n";
 print "options: -Iinclude_path\n";
 print "options: -Ofilename.inc\n";
 die "\n";

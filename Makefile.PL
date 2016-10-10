@@ -1871,8 +1871,8 @@ use vars qw(%Config %Config_inst);
 
 %Config_inst = (
 	incpaths              => [ $ippi ],
-	gencls                => '\$(bin)${ifs}gencls$SCRIPT_EXT',
-	tmlink                => '\$(bin)${ifs}tmlink$SCRIPT_EXT',
+	gencls                => '\$(bin)${ifs}prima-gencls$SCRIPT_EXT',
+	tmlink                => '\$(bin)${ifs}prima-tmlink$SCRIPT_EXT',
 	libname               => '\$(lib)${ifs}auto${ifs}Prima${ifs}${LIB_PREFIX}Prima$LIB_EXT',
 	dlname                => '\$(lib)${ifs}auto${ifs}Prima${ifs}Prima.$Config{dlext}',
 	ldpaths               => [$libpathi],
@@ -1886,8 +1886,8 @@ use vars qw(%Config %Config_inst);
 	quote                 => '\\$SHQUOTE',
 	platform              => '$platform',
 	incpaths              => [ $ipp ],
-	gencls                => ${_quotepath("$cwd/blib/script/gencls$SCRIPT_EXT")},
-	tmlink                => ${_quotepath("$cwd/blib/script/tmlink$SCRIPT_EXT")},
+	gencls                => ${_quotepath("$cwd/blib/script/prima-gencls$SCRIPT_EXT")},
+	tmlink                => ${_quotepath("$cwd/blib/script/prima-tmlink$SCRIPT_EXT")},
 	scriptext             => ${_quote($SCRIPT_EXT)},
 	genclsoptions         => '--tml --h --inc',
 	cobjflag              => ${_quote($COUTOFLAG)},
@@ -2177,7 +2177,7 @@ SHOWMORE
 	  	$t .= <<H;
 
 include/generic/$base.h: \$(FIRST_MAKEFILE) $showlog src/$base.cls $ancestors
-\t$^X -I. utils/gencls.pl --inc --h -Isrc --tml $clsfile include/generic
+\t$^X -I. utils/prima-gencls.pl --inc --h -Isrc --tml $clsfile include/generic
 
 H
 		push @alltml, "include/generic/$base.tml";
@@ -2187,7 +2187,7 @@ H
 
 	$t .= <<H;
 include/generic/thunks.tinc: \$(FIRST_MAKEFILE) @alltmldeps
-\t$^X utils/tmlink.pl -Iinclude/generic -oinclude/generic/thunks.tinc @alltml
+\t$^X utils/prima-tmlink.pl -Iinclude/generic -oinclude/generic/thunks.tinc @alltml
 
 H
 
@@ -2223,9 +2223,9 @@ H
 		push @rm, $f;
 	}
 	push @rm, 
-		'$(DESTINSTALLSITEMAN3DIR)/gencls.$(MAN3EXT)',
+		'$(DESTINSTALLSITEMAN3DIR)/prima-gencls.$(MAN3EXT)',
 		'$(DESTINSTALLSITEMAN1DIR)/VB.$(MAN1EXT)',
-		'$(DESTINSTALLSITEMAN1DIR)/cfgmaint.$(MAN1EXT)',
+		'$(DESTINSTALLSITEMAN1DIR)/prima-cfgmaint.$(MAN1EXT)',
 		'$(DESTINSTALLSITEARCH)/auto/Prima/' . $LIB_PREFIX . '$(BASEEXT)$(LIB_EXT)',
 		'$(DESTINSTALLSITEARCH)/auto/Prima/$(DLBASE).$(DLEXT)',
 		'$(DESTINSTALLSITEARCH)/auto/Prima/$(BASEEXT).bs',

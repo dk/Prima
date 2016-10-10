@@ -7,7 +7,7 @@ use Prima::Gencls;
 unless ( $ARGV[ 0]) {
 print <<TEXT;
 Perl+C interface parser for Prima
-format  : gencls.pl [ options] filename.cls [ out_directory]
+format  : prima-gencls.pl [ options] filename.cls [ out_directory]
 options :
    --h          generates .h file
    --inc        generates .inc file

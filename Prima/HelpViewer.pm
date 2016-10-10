@@ -183,7 +183,7 @@ sub profile_default
 			['~Go to...' => 'G' => 'G' => 'goto' ],
 			['~New window' => 'Ctrl+N' => '^N' => 'new_window'],
 			['~Run' => [
-				['p-class' => 'filter_p_class'],
+				['prima-class' => 'filter_p_class'],
 			]],
 			[],
 			['~Print ...' => 'Ctrl+P' => '^P' => 'print'],
@@ -438,14 +438,14 @@ sub filter_p_class
 	eval "use Prima::MsgBox"; die "$@\n" if $@;
 	my $self = $_[0];
 	my $ret = Prima::MsgBox::input_box(
-		'Run p-class', 
+		'Run prima-class', 
 		'Enter Prima class, or leave empty to see the options list:', 
 		''
 	);
 	return unless defined $ret;
-	my $content = `p-class $ret`;
+	my $content = `prima-class $ret`;
 	unless ( length $content) {
-		Prima::message("'p-class $ret' returned no data");
+		Prima::message("'prima-class $ret' returned no data");
 		return;
 	}
 	$content = "=pod\n\n$content\n\n=cut" if $content !~ /=pod/m;
@@ -1047,9 +1047,9 @@ Commands in this group call external processes
 
 =over
 
-=item p-class
+=item prima-class
 
-p-class is Prima utility for displaying the widget class hierachies.
+prima-class is Prima utility for displaying the widget class hierachies.
 The command asks for Prima class to display the hierachy information 
 for.
 

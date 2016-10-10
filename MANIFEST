@@ -129,7 +129,7 @@ include/img_conv.h
 include/unix/guts.h
 include/unix/queue.h
 include/win32/win32guts.h
-pod/gencls.pod
+pod/prima-gencls.pod
 pod/Prima/Clipboard.pod
 pod/Prima/codecs.pod
 pod/Prima/conversions.gif
@@ -303,7 +303,7 @@ Prima/themes/tabset.pm
 Prima/Themes.pm
 Prima/Tie.pm
 Prima/Utils.pm
-Prima/VB/cfgmaint.pl
+Prima/VB/prima-cfgmaint.pl
 Prima/VB/CfgMaint.pm
 Prima/VB/classes.gif
 Prima/VB/Classes.pm
@@ -370,15 +370,15 @@ unix/apc_win.c
 unix/color.c
 unix/gtk.c
 unix/xft.c
-utils/fmview.pl
-utils/gencls.pl
+utils/prima-fmview.pl
+utils/prima-gencls.pl
 utils/makedoc/intro.tex
 utils/makedoc/makedoc.pl
 utils/makedoc/Makefile
 utils/ps/afm2prima.pl
-utils/p-class.pl
+utils/prima-class.pl
 utils/podview.pl
-utils/tmlink.pl
+utils/prima-tmlink.pl
 win32/apc.c
 win32/clip.c
 win32/cursor.c

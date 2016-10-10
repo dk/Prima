@@ -72,7 +72,7 @@ sub Link
 			return "the B<$2> entry in the I<$1> section";
 		} else {
 			$x =~ s/\///g;
-			if ( $x =~ /^Prima|VB|cfgmaint|gencls/) {
+			if ( $x =~ /^Prima|VB|prima\-cfgmaint|prima\-gencls/) {
 				return "the I<$x> section";
 			} else {
 				return "the I<$x> entry";

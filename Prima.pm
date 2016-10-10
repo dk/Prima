@@ -402,7 +402,7 @@ L<VB> - Visual Builder for the Prima toolkit
 
 L<Prima::VB::VBLoader> - Visual Builder file loader
 
-L<cfgmaint> - configuration tool for Visual Builder
+L<prima-cfgmaint> - configuration tool for Visual Builder
 
 L<Prima::VB::CfgMaint> - maintains visual builder widget palette configuration
 
@@ -422,7 +422,7 @@ L<Prima::internals> - Internal architecture
 
 L<Prima::codecs>    - Step-by-step image codec creation
 
-L<gencls>           - C<gencls>, a class compiler tool.
+L<prima-gencls>     - C<prima-gencls>, a class compiler tool.
 
 =item Miscellaneous
 
@@ -458,9 +458,9 @@ L<Prima::X11> - usage guide for X11 environment
 
 The Prima manual pages often provide information for more than one Prima class.
 To quickly find out the manual page of a desired class, as well as display the
-inheritance information, use C<p-class> command. The command can produce output in
+inheritance information, use C<prima-class> command. The command can produce output in
 text and pod formats; the latter feature is used by the standard Prima documentation
-viewer C<podview> ( see File/Run/p-class ).
+viewer C<podview> ( see File/Run/prima-class ).
 
 =back
 
