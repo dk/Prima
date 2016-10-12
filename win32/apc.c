@@ -3505,7 +3505,7 @@ win32_openfile( const char * params)
 		o. Flags = 0;
 		while ( *params) {
 			char * cp = ( char *) params, pp;
-			while ( *cp && *cp != ',') *cp++;
+			while ( *cp && *cp != ',') cp++;
 			pp = *cp;
 			*cp = 0;
 			if ( stricmp( params, "READONLY") == 0) o. Flags |=              OFN_READONLY; else

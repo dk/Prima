@@ -629,7 +629,7 @@ read_source_bits( PImgLoadFileInstance fi, int * source_bits)
 		return true;
 	}
 	
-	if ( bits > 64 || bits < 0 ) {
+	if ( bits > 64 ) {
 		sprintf( fi-> errbuf, "Unexpected BITSPERSAMPLE: %d", bits);
 		return false;
 	}

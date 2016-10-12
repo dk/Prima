@@ -513,7 +513,7 @@ XReadBitmapFileData (
 		else
 			type++;
 
-		if (strcmp("bits[]", type))
+		if (strcmp("bits[]", type) != 0)
 			continue;
 	
 		if (!ww || !hh)

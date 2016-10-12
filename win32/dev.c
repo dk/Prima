@@ -2092,7 +2092,7 @@ apc_prn_set_option( Handle self, char * option, char * value)
 	/* DM_FORMNAME string is special because it's a literal string */
 	if ( v == DM_FORMNAME) {
 		strncpy( dev-> dmFormName, value, CCHFORMNAME);
-		dev-> dmFormName[CCHFORMNAME] = 0;
+		dev-> dmFormName[CCHFORMNAME-1] = 0;
 		return true;
 	}
 

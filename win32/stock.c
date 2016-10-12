@@ -110,7 +110,7 @@ stylus_free( PDCStylus res, Bool permanent)
 	}
 	if ( res-> hpen)   DeleteObject( res-> hpen);
 	if ( res-> hbrush) DeleteObject( res-> hbrush);
-	res-> hpen = res-> hpen = nil;
+	res-> hbrush = res-> hpen = nil;
 	hash_delete( stylusMan, &res-> s, sizeof( Stylus) - ( res-> s. extPen. actual ? 0 : sizeof( EXTPEN)), true);
 }
 
@@ -616,7 +616,7 @@ font_logfont2font( LOGFONT * lf, Font * f, Point * res)
 	f-> height              = tm. tmHeight;
 	f-> size                = ( f-> height - tm. tmInternalLeading) * 72.0 / res-> y + 0.5;
 	f-> width               = lf-> lfWidth;
-	f-> direction           = lf-> lfEscapement / 10;
+	f-> direction           = (double)(lf-> lfEscapement) / 10.0;
 	f-> style               = 0 |
 		( lf-> lfItalic     ? fsItalic     : 0) |
 		( lf-> lfUnderline  ? fsUnderlined : 0) |
@@ -863,7 +863,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 	memset( &es, 0, sizeof( es));
 	es. resValue       = es. heiValue = es. widValue = INT_MAX;
 	es. useWidth       = font-> width != 0;
-	es. useVector      = font-> direction != 0;
+	es. useVector      = fabs(font-> direction) > 0.0001;
 	es. usePitch       = font-> pitch != fpDefault;
 	es. res            = res;
 	es. forceSize      = forceSize;
@@ -1976,7 +1976,7 @@ int
 arc_completion( double * angleStart, double * angleEnd, int * needFigure)
 {
 	int max;
-	double diff = ((long)( fabs( *angleEnd - *angleStart) * 1000 + 0.5)) / 1000;
+	long diff = ((long)( fabs( *angleEnd - *angleStart) * 1000 + 0.5)) / 1000;
 
 	if ( diff == 0) {
 		*needFigure = false;
