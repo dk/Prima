@@ -10,7 +10,8 @@
 
 #define PRIMA_VERSION_BOOTCHECK \
 	if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
-		croak("Prima object version(%ld) doesn't match module version(%ld). Recompile the module", (long int)apc_get_core_version(), (long int)PRIMA_CORE_VERSION )
+		croak("Prima object version(%ld) doesn't match module version(%ld). Recompile the module", \
+			(long int)apc_get_core_version(), (long int)PRIMA_CORE_VERSION )
 
 #include "generic/config.h"
 
@@ -497,8 +498,7 @@ prima_hash_store( PHash self, const void *key, int keyLen, void *val);
 #define prima_hash_count(hash) (HvKEYS(( HV*) hash))
 
 extern void*
-prima_hash_first_that( PHash self, void *action, void *params,
-							int *pKeyLen, void **pKey);
+prima_hash_first_that( PHash self, void *action, void *params, int *pKeyLen, void **pKey);
 
 extern char *
 prima_normalize_resource_string( char *name, Bool isClass);
@@ -591,11 +591,9 @@ typedef struct { \
 #define csConstructing  -1         /* before create() finished */
 #define csNormal         0         /* normal during life stage */
 #define csDestroying     1         /* destroy() started */
-#define csFrozen         2         /* cleanup() started - no messages
-												available at this point */
+#define csFrozen         2         /* cleanup() started - no messages available at this point */
 #define csFinalizing     3         /* done() started */
-#define csDead           4         /* destroy() finished - no methods
-												available at this point */
+#define csDead           4         /* destroy() finished - no methods available at this point */
 
 /* Notification types */
 #define NT(const_name) CONSTANT(nt,const_name)
@@ -647,13 +645,11 @@ END_TABLE(mt,UV)
 
 
 /* Command event types */
-#define ctQueueMask      0x00070000     /* masks bits that defines behavior
-														in !csNormal stages: */
+#define ctQueueMask      0x00070000     /* masks bits that defines behavior in !csNormal stages: */
 #define ctCacheable      0x00000000     /* Command caches in the queue */
 #define ctDiscardable    0x00010000     /* Command should be discarded */
 #define ctPassThrough    0x00020000     /* Command passes as normal */
-#define ctSingle         0x00040000     /* Command caches in the queue only
-														once, then changes ct bits to */
+#define ctSingle         0x00040000     /* Command caches in the queue only once, then changes ct bits to */
 #define ctSingleResponse 0x00050000     /* ctSingleResponse */
 #define ctNoInhibit      0x00080000     /* Valid for csDestroying and csFrozen */
 
@@ -683,15 +679,13 @@ CM(ReceiveFocus)
 CM(ReleaseFocus)
 #define cmPaint         (0x00000010|ctSingle)      /* WM_PAINT analog */
 CM(Paint)
-#define cmRepaint       (0x00000010|ctSingleResponse) /* and it's response
-																			action */
+#define cmRepaint       (0x00000010|ctSingleResponse) /* and it's response action */
 CM(Repaint)
 #define cmSize          (0x00000011|ctPassThrough) /* WM_SIZE analog */
 CM(Size)
 #define cmMove          (0x00000012|ctPassThrough) /* WM_MOVE analog */
 CM(Move)
-#define cmColorChanged  (0x00000013|ctDiscardable) /* generates when color
-																		changed */
+#define cmColorChanged  (0x00000013|ctDiscardable) /* generates when color changed */
 CM(ColorChanged)
 #define cmZOrderChanged (0x00000014|ctDiscardable) /* z-order change command */
 CM(ZOrderChanged)
@@ -703,11 +697,9 @@ CM(Disable)
 CM(Activate)
 #define cmDeactivate    (0x00000018)               /* active stage change */
 CM(Deactivate)
-#define cmFontChanged   (0x00000019|ctDiscardable) /* generates when font
-																		changed */
+#define cmFontChanged   (0x00000019|ctDiscardable) /* generates when font changed */
 CM(FontChanged)
-#define cmWindowState   (0x0000001A|ctDiscardable) /* generates when window
-																		state changed */
+#define cmWindowState   (0x0000001A|ctDiscardable) /* generates when window state changed */
 CM(WindowState)
 #define cmTimer          0x0000001C                /* WM_TIMER analog */
 CM(Timer)
@@ -717,13 +709,11 @@ CM(Click)
 CM(CalcBounds)
 #define cmPost           0x0000001F                /* posted message */
 CM(Post)
-#define cmPopup          0x00000020                /* interactive popup
-																		request */
+#define cmPopup          0x00000020                /* interactive popup request */
 CM(Popup)
 #define cmExecute        0x00000021                /* dialog execution start */
 CM(Execute)
-#define cmSetup          0x00000022                /* first message for alive
-																		and active widget */
+#define cmSetup          0x00000022                /* first message for alive and active widget */
 CM(Setup)
 #define cmHint           0x00000023                /* hint show/hide message */
 CM(Hint)
@@ -1332,8 +1322,10 @@ SvBOOL( SV *sv)
 #define pexist( key) hv_exists( profile, # key, (I32) strlen( #key))
 #define pdelete( key) (void) hv_delete( profile, # key, (I32) strlen( #key), G_DISCARD)
 #define dPROFILE  SV ** temporary_prf_Sv
-#define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ), &PL_sv_undef : *temporary_prf_Sv)
-#define pget_sv_void( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == nil) ? croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ) : (void)NULL)
+#define pget_sv( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == nil) ? \
+	croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ), &PL_sv_undef : *temporary_prf_Sv)
+#define pget_sv_void( key) ((( temporary_prf_Sv = hv_fetch( profile, # key, (I32) strlen( # key), 0)) == nil) ? \
+	croak( "Panic: bad profile key (``%s'') requested in ``%s'', line %d\n", # key, __FILE__, __LINE__ ) : (void)NULL)
 #define pget_i( key)  ( pget_sv_void( key), SvIV( *temporary_prf_Sv))
 #define pget_f( key)  ( pget_sv_void( key), SvNV( *temporary_prf_Sv))
 #define pget_c( key)  ( pget_sv_void( key), SvPV_nolen( *temporary_prf_Sv))
@@ -1598,10 +1590,8 @@ typedef struct _ObjectOptions_ {
 #define opt_set( option)           (PObject(self)-> options. option = 1)
 #define opt_clear( option)         (PObject(self)-> options. option = 0)
 #define is_opt( option)            (PObject(self)-> options. option)
-#define opt_assign( option, value) (PObject(self)->options. option = \
-												(value) ? 1 : 0)
-#define opt_InPaint                ( is_opt( optInDraw) \
-												|| is_opt( optInDrawInfo))
+#define opt_assign( option, value) (PObject(self)->options. option = (value) ? 1 : 0)
+#define opt_InPaint                ( is_opt( optInDraw) || is_opt( optInDrawInfo))
 
 /* apc class constants */
 #define WC(const_name) CONSTANT(wc,const_name)
@@ -1886,9 +1876,9 @@ apc_application_get_indents( Handle self);
 
 extern int
 apc_application_get_os_info( char *system, int slen,
-									char *release, int rlen,
-									char *vendor, int vlen,
-									char *arch, int alen);
+			char *release, int rlen,
+			char *vendor, int vlen,
+			char *arch, int alen);
 
 extern Point
 apc_application_get_size( Handle self);
@@ -1924,7 +1914,7 @@ apc_component_fullname_changed_notify( Handle self);
 /* Window */
 extern Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons, int borderStyle,
-						Bool taskList, int windowState, int onTop, Bool useOrigin, Bool useSize, Bool layered);
+	Bool taskList, int windowState, int onTop, Bool useOrigin, Bool useSize, Bool layered);
 
 extern Bool
 apc_window_activate( Handle self);
@@ -2034,7 +2024,7 @@ typedef struct {
 
 extern Bool
 apc_widget_create( Handle self, Handle owner, Bool syncPaint,
-						Bool clipOwner, Bool transparent, ApiHandle parentHandle, Bool layered);
+	Bool clipOwner, Bool transparent, ApiHandle parentHandle, Bool layered);
 
 extern Bool
 apc_widget_begin_paint( Handle self, Bool insideOnPaint);
@@ -3182,8 +3172,7 @@ extern Bool
 apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2);
 
 extern Bool
-apc_gp_arc( Handle self, int x, int y, int dX, int dY,
-				double angleStart, double angleEnd);
+apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd);
 
 extern Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2);
@@ -3195,8 +3184,7 @@ extern Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2);
 
 extern Bool
-apc_gp_chord( Handle self, int x, int y, int dX, int dY,
-				double angleStart, double angleEnd);
+apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd);
 
 extern Bool
 apc_gp_draw_poly( Handle self, int numPts, Point * points);
@@ -3208,8 +3196,7 @@ extern Bool
 apc_gp_ellipse( Handle self, int x, int y, int dX, int dY);
 
 extern Bool
-apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY,
-						double angleStart, double angleEnd);
+apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd);
 
 extern Bool
 apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY);
@@ -3218,12 +3205,10 @@ extern Bool
 apc_gp_fill_poly( Handle self, int numPts, Point * points);
 
 extern Bool
-apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY,
-						double angleStart, double angleEnd);
+apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd);
 
 extern Bool
-apc_gp_flood_fill( Handle self, int x, int y, Color borderColor,
-						Bool singleBorder);
+apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBorder);
 
 extern Color
 apc_gp_get_pixel( Handle self, int x, int y);
@@ -3246,9 +3231,9 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color);
 
 extern Bool
 apc_gp_stretch_image( Handle self, Handle image,
-							int x, int y, int xFrom, int yFrom,
-							int xDestLen, int yDestLen, int xLen, int yLen,
-							int rop);
+	int x, int y, int xFrom, int yFrom,
+	int xDestLen, int yDestLen, int xLen, int yLen,
+	int rop);
 
 extern Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8);
@@ -3512,9 +3497,9 @@ END_TABLE(fr,UV)
 
 extern Bool
 apc_fetch_resource( const char *className, const char *name,
-						const char *resClass, const char *res,
-						Handle owner, int resType,
-						void *val);
+	const char *resClass, const char *res,
+	Handle owner, int resType,
+	void *val);
 
 extern Color
 apc_lookup_color( const char *colorName);
