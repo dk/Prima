@@ -890,7 +890,7 @@ apc_application_get_monitor_rects( Handle self, int * nrects)
 		XRRFreeScreenResources(sr);
 		XCHECKPOINT;
 	} else {
-		*nrects = sr->ncrtc;
+		*nrects = 0;
 	}
 	return ret;
 #else   

@@ -455,7 +455,7 @@ static int
 arc_completion( double * angleStart, double * angleEnd, int * needFigure)
 {
 	int max;
-	double diff = ((long)( fabs( *angleEnd - *angleStart) * 1000 + 0.5)) / 1000;
+	long diff = ((long)( fabs( *angleEnd - *angleStart) * 1000 + 0.5)) / 1000;
 
 	if ( diff == 0) {
 		*needFigure = false;
@@ -1776,7 +1776,6 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
 		}
 
 		if ( PDrawable( self)-> font. style & fsStruckOut) {
-			ay =  PDrawable( self)-> font.height/2 + ( XX-> flags. paint_base_line ? 0 : XX-> font-> font. descent);
 			ay = (PDrawable( self)-> font.ascent - PDrawable( self)-> font.internalLeading)/2 +
 				+ ( XX-> flags. paint_base_line ? 0 : XX-> font-> font. descent);
 			rx. l = -ovx.x * r-> cos2. l - ay * r-> sin2. l + 0.5;

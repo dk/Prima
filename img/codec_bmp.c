@@ -359,8 +359,6 @@ count_mask_bits(dword mask, dword * bitoffset)
 		dword counter  = 0;
 		dword index    = 0;
 		
-		*bitoffset = 0;
-		
 		/* find offset of first bit */
 		while (((mask & testmask) == 0) && (index < 31)) {
 					index++;

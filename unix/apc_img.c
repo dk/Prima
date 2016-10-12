@@ -135,7 +135,7 @@ prima_prepare_ximage( int width, int height, int format)
 		if ( i-> xmem. shmaddr == (void*)-1 || i-> xmem. shmaddr == nil) {
 			i-> image-> data = nil;
 			XDestroyImage( i-> image);
-			shmctl( i-> xmem. shmid, IPC_RMID, 0);
+			shmctl( i-> xmem. shmid, IPC_RMID, NULL);
 			goto normal_way;
 		}
 		i-> xmem. readOnly = false;
@@ -148,14 +148,14 @@ bad_xshm_attach:
 			i-> image-> data = nil;
 			XDestroyImage( i-> image);
 			shmdt( i-> xmem. shmaddr);
-			shmctl( i-> xmem. shmid, IPC_RMID, 0);
+			shmctl( i-> xmem. shmid, IPC_RMID, NULL);
 			goto normal_way;
 		}
 		XCHECKPOINT;
 		XSync(DISP,false);
 		XCHECKPOINT;
 		if (guts.xshmattach_failed)       goto bad_xshm_attach;
-		shmctl( i-> xmem. shmid, IPC_RMID, 0);
+		shmctl( i-> xmem. shmid, IPC_RMID, NULL);
 		i-> data_alias = i-> image-> data;
 		i-> shm = true;
 		return i;
@@ -1716,7 +1716,7 @@ img_put_layered_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 	ok = prima_query_argb_rect( obj, X(image)-> gdrawable, req-> src_x, req-> src_y, req-> w, req-> h);
 	if ( !ok ) {
 		Object_destroy( obj );
-		return nilHandle;
+		return false;
 	}
 
 	req->src_x = req->src_y = 0;
@@ -2685,8 +2685,8 @@ apc_image_end_paint( Handle self)
 
 Bool
 apc_gp_stretch_image( Handle self, Handle image,
-							int dst_x, int dst_y, int src_x, int src_y,
-							int dst_w, int dst_h, int src_w, int src_h, int rop)
+	int dst_x, int dst_y, int src_x, int src_y,
+	int dst_w, int dst_h, int src_w, int src_h, int rop)
 {
 	DEFXX;
 	PDrawableSysData YY = X(image);
@@ -2746,7 +2746,9 @@ apc_gp_stretch_image( Handle self, Handle image,
 
 		if ( XT_IS_ICON(YY)) {
 			int height = src_w, width = src_h;
-			PIcon isrc = (PIcon) image, idst = (PIcon) obj;
+			PIcon isrc = (PIcon) image, idst;
+			obj = ( Handle) create_object("Prima::Icon", "");
+			idst = (PIcon) obj;
 			CIcon( obj)-> create_empty_icon( obj, src_w, src_h,
 				(src == SRC_BITMAP) ? imBW : guts. qdepth,
 				isrc-> maskType

@@ -1578,13 +1578,13 @@ list_at( PList slf, int index)
 int
 list_first_that( PList slf, void * action, void * params)
 {
-	int toRet = -1, i, cnt = slf-> count;
+	int toRet = -1, i, cnt;
 	Handle * list;
-	if ( !action || !slf || !cnt) return -1;
+	if ( !action || !slf || !slf->count) return -1;
 	if ( !( list = allocn( Handle, slf-> count)))
 		return -1;
 	memcpy( list, slf-> items, slf-> count * sizeof( Handle));
-	for ( i = 0; i < cnt; i++)
+	for ( i = 0; i < slf->count; i++)
 		if ((( PListProc) action)( list[ i], params)) {
 			toRet = i;
 			break;
@@ -1710,9 +1710,10 @@ exception_remember(char * text)
 	if ( !exception_blocking ) croak( "%s", text );
 
 	if ( exception_text ) {
-		if ( !( exception_text = realloc(exception_text, strlen(text) + strlen(exception_text) + 1)))
+		char * new_text = realloc(exception_text, strlen(text) + strlen(exception_text) + 1);
+		if ( !new_text )
 			croak("not enough memory");
-		strcat( exception_text, text );
+		strcat( exception_text = new_text, text );
 	} else {
 		exception_text = duplicate_string( text );
 	}

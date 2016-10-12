@@ -561,7 +561,7 @@ if ( layered ) {
 	}
 	XX-> origin. x = XX-> origin. y = 
 	XX-> ackOrigin. x = XX-> ackOrigin. y = 
-	XX-> ackSize. x = XX-> ackOrigin. y = 
+	XX-> ackSize. x = XX-> ackSize. y = 
 	XX-> ackFrameSize. x = XX-> ackFrameSize.y = 0;
 	
 	bzero( &hints, sizeof( XSizeHints));

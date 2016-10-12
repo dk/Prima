@@ -397,7 +397,7 @@ cm_optimized_palette( Byte * data, int lineSize, int width, int height, RGBColor
 
 	if ( !( map = malloc( MAP1_SIDE3))) return false;
 
-REPEAT_CALC:   
+REPEAT_CALC:
 	count = 0;
 	memset( map, 0, MAP1_SIDE3);
 
@@ -494,7 +494,7 @@ REPEAT_CALC:
 		Even /64 scale though can result in up to 4K colors */
 	countB = countL = 0;
 	if ( count > *max_pal_size) {
-		if ( count > *max_pal_size * 2 && map2scale == 0) { 
+		if ( count > *max_pal_size * 2) { 
 			for ( i = 0; i < sz; i++)
 				if ( i == map0index || map[i] != 0) {
 					Byte * k = map2 + map[i] * MAP2_ITEM_SIZE;

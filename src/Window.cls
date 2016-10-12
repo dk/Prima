@@ -7,7 +7,7 @@ object Prima::Window( Prima::Widget)
 	int      modalResult;
 
 	property int      borderIcons;
-	property int	     borderStyle;
+	property int	  borderStyle;
 	property Bool     focused;
 	property Point    frameOrigin;
 	property Point    frameSize;

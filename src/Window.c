@@ -73,9 +73,14 @@ Window_cleanup( Handle self)
 	inherited cleanup( self);
 }
 
-void Window_update_sys_handle( Handle self, HV * profile)
+void 
+Window_update_sys_handle( Handle self, HV * profile)
 {
 	dPROFILE;
+	Handle owner;
+	int borderIcons, borderStyle, windowState, onTop;
+	Bool taskListed, syncPaint, originDontCare, sizeDontCare, layered;
+
 	var-> widgetClass = wcWindow;
 	if (!(
 		pexist( owner) ||
@@ -86,20 +91,25 @@ void Window_update_sys_handle( Handle self, HV * profile)
 		pexist( layered) ||
 		pexist( borderStyle)
 	)) return;
+
+	owner          = pexist( owner )      ? pget_H( owner )       : var-> owner;
+	syncPaint      = pexist( syncPaint)   ? pget_B( syncPaint)    : my-> get_syncPaint( self);
+	borderIcons    = pexist( borderIcons) ? pget_i( borderIcons)  : my-> get_borderIcons( self);
+	borderStyle    = pexist( borderStyle) ? pget_i( borderStyle)  : my-> get_borderStyle( self);
+	taskListed     = pexist( taskListed)  ? pget_B( taskListed)   : my-> get_taskListed( self);
+	windowState    = pexist( windowState) ? pget_i( windowState)  : my-> get_windowState( self);
+	onTop          = pexist( onTop)       ? (Bool) pget_B( onTop) : -1;
+	originDontCare = !( pexist( originDontCare) && pget_B( originDontCare));
+	sizeDontCare   = !( pexist( sizeDontCare)   && pget_B( sizeDontCare));
+	layered        = pexist( layered)     ? pget_B( layered) : my-> get_layered( self);
+	
 	if ( pexist( owner)) my-> cancel_children( self);
-	if ( !apc_window_create( self,
-		pexist( owner )      ? pget_H( owner )      : var-> owner ,
-		pexist( syncPaint)   ? pget_B( syncPaint)   : my-> get_syncPaint( self),
-		pexist( borderIcons) ? pget_i( borderIcons) : my-> get_borderIcons( self),
-		pexist( borderStyle) ? pget_i( borderStyle) : my-> get_borderStyle( self),
-		pexist( taskListed)  ? pget_B( taskListed)  : my-> get_taskListed( self),
-		pexist( windowState) ? pget_i( windowState) : my-> get_windowState( self),
-		pexist( onTop) ? pget_B( onTop) : -1, /* This is way better. I should've thought of this before! */
-		!( pexist( originDontCare) && pget_B( originDontCare)),
-		!( pexist( sizeDontCare)   && pget_B( sizeDontCare)),
-		pexist( layered)     ? pget_B( layered) : my-> get_layered( self)
-	))
+
+	if ( !apc_window_create( self, 
+		owner, syncPaint, borderIcons, borderStyle, taskListed, windowState, 
+		onTop, originDontCare, sizeDontCare, layered))
 		croak("Cannot create window");
+
 	pdelete( borderStyle);
 	pdelete( borderIcons);
 	pdelete( syncPaint);
@@ -655,8 +665,11 @@ Window_ownerIcon( Handle self, Bool set, Bool ownerIcon)
 Bool
 Window_process_accel( Handle self, int key)
 {
-	return var-> modal ? my-> first_that_component( self, (void*)find_accel, &key)
-	: inherited process_accel( self, key);
+	return (
+		var-> modal ? 
+			my-> first_that_component( self, (void*)find_accel, &key)
+			: inherited process_accel( self, key)
+		) != nilHandle;
 }
 
 void  Window_on_execute( Handle self) {}
@@ -762,7 +775,7 @@ Window_taskListed( Handle self, Bool set, Bool taskListed)
 	pset_i( taskListed, taskListed);
 	my-> set( self, profile);
 	sv_free(( SV *) profile);
-	return nilHandle;
+	return false;
 }
 
 

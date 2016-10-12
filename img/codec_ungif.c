@@ -144,9 +144,10 @@ copy_palette( PImage i, ColorMapObject * pal)
 {
 	int j, last_non_null = -1, first_null = -1;
 	PRGBColor r = i-> palette;
-	GifColorType * c = pal-> Colors;
+	GifColorType * c;
 	
 	if ( !pal) return;
+	c = pal-> Colors;
 	memset( r, 0, 768);
 	i-> palSize = ( pal-> ColorCount > 256) ? 256 : pal-> ColorCount;
 	for ( j = 0; j < i-> palSize; j++) {

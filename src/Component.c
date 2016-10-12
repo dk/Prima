@@ -831,7 +831,7 @@ Component_notify( Handle self, char * format, ...)
 	SAVETMPS;
 	ret = call_perl_indirect( self, "notify", format, true, false, args);
 	va_end( args);
-	r = ( ret && SvIOK( ret)) ? SvIV( ret) : 0;
+	r = ( ret && SvIOK( ret)) ? (SvIV( ret) != 0) : 0;
 	if ( ret) my-> set_eventFlag( self, r);
 	FREETMPS;
 	LEAVE;
@@ -849,7 +849,7 @@ Component_notify_REDEFINED( Handle self, char * format, ...)
 	SAVETMPS;
 	ret = call_perl_indirect( self, "notify", format, true, false, args);
 	va_end( args);
-	r = ( ret && SvIOK( ret)) ? SvIV( ret) : 0;
+	r = ( ret && SvIOK( ret)) ? (SvIV( ret) != 0) : 0;
 	if ( ret) my-> set_eventFlag( self, r);
 	FREETMPS;
 	LEAVE;

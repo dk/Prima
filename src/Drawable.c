@@ -292,8 +292,7 @@ Drawable_resolution( Handle self, Bool set, Point resolution)
 {
 	if ( set)
 		croak("Attempt to write read-only property %s", "Drawable::resolution");
-	resolution = apc_gp_get_resolution( self);
-	return resolution;
+	return apc_gp_get_resolution( self);
 }
 
 SV *

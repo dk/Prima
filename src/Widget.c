@@ -104,7 +104,7 @@ Widget_init( Handle self, HV * profile)
 	my-> set_selectable         ( self, pget_B( selectable));
 	my-> set_showHint           ( self, pget_B( showHint));
 	my-> set_tabOrder           ( self, pget_i( tabOrder));
-	my-> set_tabStop            ( self, pget_i( tabStop));
+	my-> set_tabStop            ( self, pget_B( tabStop));
 	my-> set_text               ( self, pget_sv( text));
 
 	opt_assign( optScaleChildren, pget_B( scaleChildren));
@@ -214,7 +214,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
 	dPROFILE;
 	enter_method;
 	Handle    owner;
-	Bool      clipOwner, layered;
+	Bool      clipOwner, layered, syncPaint, transparent;
 	ApiHandle parentHandle;
 	if (!(
 		pexist( owner) ||
@@ -227,22 +227,18 @@ Widget_update_sys_handle( Handle self, HV * profile)
 	owner        = pexist( owner)        ? pget_H( owner)        : var-> owner;
 	clipOwner    = pexist( clipOwner)    ? pget_B( clipOwner)    : my-> get_clipOwner( self);
 	parentHandle = pexist( parentHandle) ? pget_i( parentHandle) : apc_widget_get_parent_handle( self);
-	layered      = pexist( layered)      ? pget_i( layered)      : my-> get_layered(self);
+	layered      = pexist( layered)      ? pget_B( layered)      : my-> get_layered(self);
+	syncPaint    = pexist( syncPaint)    ? pget_B( syncPaint)    : my-> get_syncPaint( self);
+	transparent  = pexist( transparent)  ? pget_B( transparent)  : my-> get_transparent( self);
 
 	if ( parentHandle) {
 		if (( owner != application) && clipOwner) 
 			croak("Cannot accept 'parentHandle' for non-application child and clip-owner widget");
 	}
 	
-	if ( !apc_widget_create( self,
-		owner,
-		pexist( syncPaint)  ? pget_B( syncPaint)  : my-> get_syncPaint( self),
-		clipOwner,
-		pexist( transparent) ? pget_B( transparent): my-> get_transparent( self),
-		parentHandle,
-		layered
-	))
-	croak( "Cannot create widget");
+	if ( !apc_widget_create( self, owner, syncPaint, clipOwner, transparent, parentHandle, layered))
+		croak( "Cannot create widget");
+
 	pdelete( transparent);
 	pdelete( syncPaint);
 	pdelete( clipOwner);
@@ -639,7 +635,7 @@ void Widget_handle_event( Handle self, PEvent event)
 			break;
 		case cmMouseClick:
 			my-> notify( self, "<siiPi", "MouseClick",
-				event-> pos. button, event-> pos. mod, event -> pos. where, event-> pos. dblclk);
+				event-> pos. button, event-> pos. mod, event-> pos. where, event-> pos. dblclk);
 			break;
 		case cmMouseDown:
 			if ((( PApplication) application)-> hintUnder == self)
@@ -649,11 +645,11 @@ void Widget_handle_event( Handle self, PEvent event)
 				my-> set_selected( self, true);
 			objCheck;
 			my-> notify( self, "<siiP", "MouseDown",
-				event-> pos. button, event-> pos. mod, event -> pos. where);
+				event-> pos. button, event-> pos. mod, event-> pos. where);
 			break;
 		case cmMouseUp:
 			my-> notify( self, "<siiP", "MouseUp",
-				event-> pos. button, event-> pos. mod, event -> pos. where);
+				event-> pos. button, event-> pos. mod, event-> pos. where);
 			break;
 		case cmMouseMove:
 			if ((( PApplication) application)-> hintUnder == self)
@@ -2080,7 +2076,7 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 static Bool
 auto_enable_children( Handle self, Handle child, void * enable)
 {
-	apc_widget_set_enabled( child, PTR2UV( enable));
+	apc_widget_set_enabled( child, PTR2UV( enable) != 0);
 	return false;
 }
 /* properties section */

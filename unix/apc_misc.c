@@ -1155,8 +1155,8 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 	case svYSmallIcon: 
 		{
 			int ret[4], n;
-			XIconSize * sz = nil; 
-			if ( XGetIconSizes( DISP, guts.root, &sz, &n) && ( n > 0)) {
+			XIconSize * sz = NULL; 
+			if ( XGetIconSizes( DISP, guts.root, &sz, &n) && ( n > 0) && (sz != NULL)) {
 				ret[0] = sz-> max_width; 
 				ret[1] = sz-> max_height;
 				ret[2] = sz-> min_width; 

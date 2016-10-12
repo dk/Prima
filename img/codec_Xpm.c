@@ -567,7 +567,6 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			goto EXIT;
 		}
 		memset( extholder, 0, strholder + ptrs * sizeof( char*));
-		c = extholder;
 		ptr = ( char**) extholder;
 		c   = extholder + ptrs * sizeof( char*);
 		for ( i = 0; i < info. nextensions; i++) {

@@ -293,8 +293,10 @@ Application_fonts( Handle self, char * name, char * encoding)
 {
 	int count, i;
 	AV * glo = newAV();
-	PFont fmtx = apc_fonts( self, name[0] ? name : nil,
-		encoding[0] ? encoding : nil, &count);
+	PFont fmtx = apc_fonts( self, 
+		(name && name[0])         ? name : NULL,
+		(encoding && encoding[0]) ? encoding : NULL,
+		&count);
 	for ( i = 0; i < count; i++) {
 		SV * sv      = sv_Font2HV( &fmtx[ i]);
 		HV * profile = ( HV*) SvRV( sv);

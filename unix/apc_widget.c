@@ -410,7 +410,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 
 	XX-> size. x = XX-> size. y = 
 	XX-> ackOrigin. x = XX-> ackOrigin. y = 
-	XX-> ackSize. x = XX-> ackOrigin. y = 0;
+	XX-> ackSize. x = XX-> ackSize. y = 0;
 
 	hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
 
