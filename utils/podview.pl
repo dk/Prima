@@ -1,12 +1,20 @@
 use strict;
 use warnings;
+use Getopt::Long;
 use Prima;
 use Prima::HelpViewer;
 use Prima::Application;
 
 package SoleHelpViewer;
-use vars qw(@ISA);
+use vars qw(@ISA %profile_default);
 @ISA = qw(Prima::PodViewWindow);
+
+sub profile_default
+{
+	my $def  = $_[ 0]-> SUPER::profile_default;
+	@$def{keys %profile_default} = values %profile_default;
+	return $def;
+}
 
 sub on_destroy
 {
@@ -15,6 +23,45 @@ sub on_destroy
 }
 
 package main;
+
+my %opt = (
+	help     => 0,
+	geometry => undef,
+);
+
+sub usage
+{
+	print <<USAGE;
+$0 - POD viewer
+
+options:
+   help  - this information
+   geometry=WIDTHxHEIGHT+XOFF+YOFF - set window size and position (see man x(7))
+
+USAGE
+	exit;
+}
+
+GetOptions(\%opt,
+	"help|h",
+	"geometry|g=s"
+) or usage;
+
+if ( defined $opt{geometry} ) {
+	$opt{geometry} =~ /^(\d+)x(\d+)([\+\-])(-?\d+)([\+\-])(-?\d+)$/ or usage;
+	my ( $w, $h, $sx, $x, $sy, $y ) = ( $1, $2, $3, $4, $5, $6 );
+	my @desktop = $::application-> size;
+	my $p = \ %SoleHelpViewer::profile_default;
+	$p->{width}  = $w;
+	$p->{height} = $h;
+	$p->{left}   = $x;
+	$p->{bottom} = $y;
+	$p->{left}   = $desktop[0] - $w - $x if $sx eq '-';
+	$p->{bottom} = $desktop[1] - $h - $y - $::application-> get_system_value(sv::YTitleBar) - $::application-> get_system_value(sv::YMenu)
+		if $sy eq '+';
+	$p->{originDontCare} = 0;
+	$p->{sizeDontCare}   = 0;
+}
 
 $Prima::HelpViewer::windowClass = 'SoleHelpViewer';
 
