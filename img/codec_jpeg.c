@@ -98,11 +98,11 @@ load_error_exit(j_common_ptr cinfo)
 
 /* begin ripoff from jdatasrc.c */
 typedef struct {
-struct jpeg_source_mgr pub;	/* public fields */
-JOCTET * buffer;		/* start of buffer */
-boolean start_of_file;	/* have we gotten any data yet? */
-ImgIORequest  *req;
-HV * fp;                      /* frame properties */
+	struct jpeg_source_mgr pub;	/* public fields */
+	JOCTET * buffer;		/* start of buffer */
+	boolean start_of_file;	        /* have we gotten any data yet? */
+	ImgIORequest  *req;
+	HV * fp;                        /* frame properties */
 } my_source_mgr;
 
 typedef my_source_mgr * my_src_ptr;
@@ -118,47 +118,47 @@ init_source (j_decompress_ptr cinfo)
 boolean
 fill_input_buffer (j_decompress_ptr cinfo)
 {
-unsigned long nbytes;
-my_src_ptr src = (my_src_ptr) cinfo->src;
-
-nbytes = req_read( src->req, INPUT_BUF_SIZE, src->buffer);
-if (nbytes <= 0) {
-	if (src->start_of_file)	/* Treat empty input file as fatal error */
-		ERREXIT(cinfo, JERR_INPUT_EMPTY);
-	WARNMS(cinfo, JWRN_JPEG_EOF);
-	/* Insert a fake EOI marker */
-	src->buffer[0] = (JOCTET) 0xFF;
-	src->buffer[1] = (JOCTET) JPEG_EOI;
-	nbytes = 2;
-}
-
-src->pub.next_input_byte = src->buffer;
-src->pub.bytes_in_buffer = nbytes;
-src->start_of_file = false;
-
-return true;
+	unsigned long nbytes;
+	my_src_ptr src = (my_src_ptr) cinfo->src;
+	
+	nbytes = req_read( src->req, INPUT_BUF_SIZE, src->buffer);
+	if (nbytes <= 0) {
+		if (src->start_of_file)	/* Treat empty input file as fatal error */
+			ERREXIT(cinfo, JERR_INPUT_EMPTY);
+		WARNMS(cinfo, JWRN_JPEG_EOF);
+		/* Insert a fake EOI marker */
+		src->buffer[0] = (JOCTET) 0xFF;
+		src->buffer[1] = (JOCTET) JPEG_EOI;
+		nbytes = 2;
+	}
+	
+	src->pub.next_input_byte = src->buffer;
+	src->pub.bytes_in_buffer = nbytes;
+	src->start_of_file = false;
+	
+	return true;
 }
 
 void
 skip_input_data (j_decompress_ptr cinfo, long num_bytes)
 {
-my_src_ptr src = (my_src_ptr) cinfo->src;
-
-/* Just a dumb implementation for now.  Could use fseek() except
-	* it doesn't work on pipes.  Not clear that being smart is worth
-	* any trouble anyway --- large skips are infrequent.
-	*/
-if (num_bytes > 0) {
-	while (num_bytes > (long) src->pub.bytes_in_buffer) {
-		num_bytes -= (long) src->pub.bytes_in_buffer;
-		(void) fill_input_buffer(cinfo);
-		/* note we assume that fill_input_buffer will never return FALSE,
-		* so suspension need not be handled.
+	my_src_ptr src = (my_src_ptr) cinfo->src;
+	
+	/* Just a dumb implementation for now.  Could use fseek() except
+		* it doesn't work on pipes.  Not clear that being smart is worth
+		* any trouble anyway --- large skips are infrequent.
 		*/
+	if (num_bytes > 0) {
+		while (num_bytes > (long) src->pub.bytes_in_buffer) {
+			num_bytes -= (long) src->pub.bytes_in_buffer;
+			(void) fill_input_buffer(cinfo);
+			/* note we assume that fill_input_buffer will never return FALSE,
+			* so suspension need not be handled.
+			*/
+		}
+		src->pub.next_input_byte += (size_t) num_bytes;
+		src->pub.bytes_in_buffer -= (size_t) num_bytes;
 	}
-	src->pub.next_input_byte += (size_t) num_bytes;
-	src->pub.bytes_in_buffer -= (size_t) num_bytes;
-}
 }
 
 /*
@@ -172,7 +172,7 @@ if (num_bytes > 0) {
 void
 term_source (j_decompress_ptr cinfo)
 {
-/* no work necessary here */
+	/* no work necessary here */
 }
 
 static boolean j_read_profile(j_decompress_ptr jpeg_info);
@@ -181,27 +181,26 @@ static boolean j_read_comment(j_decompress_ptr jpeg_info);
 static void
 custom_src( j_decompress_ptr cinfo, PImgLoadFileInstance fi)
 {
-my_src_ptr src;
-
-cinfo->src = (struct jpeg_source_mgr *) malloc(sizeof(my_source_mgr));
-src = (void*) cinfo-> src;			 
-src-> buffer = (JOCTET *) malloc( INPUT_BUF_SIZE * sizeof(JOCTET));
-src-> pub.init_source = init_source;
-src-> pub.fill_input_buffer = fill_input_buffer;
-src-> pub.skip_input_data = skip_input_data;
-src-> pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
-src-> pub.term_source = term_source;
-src-> pub.bytes_in_buffer = 0; /* forces fill_input_buffer on first read */
-src-> pub.next_input_byte = NULL; /* until buffer loaded */
-
-if ( fi-> loadExtras) { 
-	int i;
-	jpeg_set_marker_processor( cinfo, JPEG_COM, j_read_comment);
-	for ( i = 1; i < 16; i++)
-		jpeg_set_marker_processor( cinfo, (int) (JPEG_APP0+i), j_read_profile);
-}
-
-src-> req    = fi-> req;
+	my_src_ptr src;
+	
+	cinfo->src = (struct jpeg_source_mgr *) malloc(sizeof(my_source_mgr));
+	src = (void*) cinfo-> src;			 
+	src-> buffer = (JOCTET *) malloc( INPUT_BUF_SIZE * sizeof(JOCTET));
+	src-> pub.init_source = init_source;
+	src-> pub.fill_input_buffer = fill_input_buffer;
+	src-> pub.skip_input_data = skip_input_data;
+	src-> pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
+	src-> pub.term_source = term_source;
+	src-> pub.bytes_in_buffer = 0; /* forces fill_input_buffer on first read */
+	src-> pub.next_input_byte = NULL; /* until buffer loaded */
+	
+	if ( fi-> loadExtras) { 
+		int i;
+		jpeg_set_marker_processor( cinfo, JPEG_COM, j_read_comment);
+		for ( i = 1; i < 16; i++)
+			jpeg_set_marker_processor( cinfo, (int) (JPEG_APP0+i), j_read_profile);
+	}
+	src-> req    = fi-> req;
 }
 /* end ripoff from jdatasrc.c */
 
@@ -244,9 +243,9 @@ j_read_profile(j_decompress_ptr jpeg_info)
 		(void) hv_store( fp, "appdata", 7, newRV_noinc((SV*) av), 0); 
 	} else {
 		if ( SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVAV) {
-	   av = (AV*) SvRV( *sv);
+	   		av = (AV*) SvRV( *sv);
 		} else {
-	   croak("bad profile 'appdata': expected array");
+	   		croak("bad profile 'appdata': expected array");
 		}
 	}
 
@@ -394,19 +393,19 @@ exif_find_orientation_tag( unsigned char * c, STRLEN len, int wipe)
 
 	/* Check through IFD0 for tags of interest */
 	while (ntags--) {
-	/*  The tags are listed in consecutive 12-byte blocks */
-	int tag   = READ_WORD ( c + 0, len - 0, byteorder);
-	int type  = READ_WORD ( c + 2, len - 2, byteorder);
-	int count = READ_DWORD( c + 4, len - 4, byteorder);
-	int value = READ_WORD ( c + 8, len - 8, byteorder);
-	/* Is this the orientation tag? */
-	if ( tag != 0x112 ) {
+		/*  The tags are listed in consecutive 12-byte blocks */
+		int tag   = READ_WORD ( c + 0, len - 0, byteorder);
+		int type  = READ_WORD ( c + 2, len - 2, byteorder);
+		int count = READ_DWORD( c + 4, len - 4, byteorder);
+		int value = READ_WORD ( c + 8, len - 8, byteorder);
+		/* Is this the orientation tag? */
+		if ( tag != 0x112 ) {
 			ADVANCE(12);
-	   continue;
-	}
-	if ( type != 3 || count != 1 || value > 8 ) return 0;
-	if ( wipe ) c[8 + byteorder] = 0;
-	return value;
+			continue;
+		}
+		if ( type != 3 || count != 1 || value > 8 ) return 0;
+		if ( wipe ) c[8 + byteorder] = 0;
+		return value;
 	}
 
 	return 0;
@@ -417,7 +416,7 @@ exif_find_angle_tag( unsigned char * c, STRLEN len, int wipe)
 {
 	int i;
 	char * c2, buf[256], sig[] = "AngleInfoRoll>";
-	if ((c  = strstr((char*)c, sig)) == NULL) return 0;
+	if ((c  = (char*) memmem((const void*)c, len, sig, strlen(sig))) == NULL) return 0;
 	c += strlen( sig );
 	if ((c2 = strstr((char*)c, "<")) == NULL) return 0;
 	strncpy( buf, (char*)c, c2 - (char*)c);
@@ -449,11 +448,11 @@ exif_detect_orientation( HV * fp, int wipe )
 		if ( !ssv || !SvPOK( *ssv)) continue;
 		c = (unsigned char *) SvPV( *ssv, len );
 		if ((orientation = exif_find_orientation_tag( c, len, wipe )) > 0) {
-			 if ( ret == 0 ) ret = orientation;
+			if ( ret == 0 ) ret = orientation;
 			if ( !wipe ) break;
 		}
 		if ((orientation = exif_find_angle_tag( c, len, wipe )) > 0) {
-			 if ( ret == 0 ) ret = orientation;
+			if ( ret == 0 ) ret = orientation;
 			if ( !wipe ) break;
 		}
 	}
