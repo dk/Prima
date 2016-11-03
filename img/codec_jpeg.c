@@ -370,11 +370,11 @@ exif_find_orientation_tag( unsigned char * c, STRLEN len, int wipe)
 	for ( i = 0; i < 12; i++, c++, len--) {
 		if (memcmp( c, le_sig, 4) == 0 ) {
 			byteorder = BYTEORDER_LE;
-	  break;
+	  		break;
 		} 
 		if (memcmp( c, be_sig, 4) == 0 ) {
 			byteorder = BYTEORDER_BE;
-	  break;
+	  		break;
 		} 
 	}
 	if ( byteorder == BYTEORDER_UNKNOWN ) return 0;
@@ -416,9 +416,11 @@ exif_find_angle_tag( unsigned char * c, STRLEN len, int wipe)
 {
 	int i;
 	char * c2, buf[256], sig[] = "AngleInfoRoll>";
+
 	if ((c  = (char*) memmem((const void*)c, len, sig, strlen(sig))) == NULL) return 0;
 	c += strlen( sig );
 	if ((c2 = strstr((char*)c, "<")) == NULL) return 0;
+
 	strncpy( buf, (char*)c, c2 - (char*)c);
 	buf[255] = 0;
 	i = atoi(buf);
@@ -617,7 +619,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				sprintf( fi-> errbuf, "Not enough memory");
 				return false;
 			}
-			 exif_setup_rotation( i, &rotation, &dest, orientation, &direction );
+			exif_setup_rotation( i, &rotation, &dest, orientation, &direction );
 	 		rotation. data = l-> transformbuf;
 		}
 
