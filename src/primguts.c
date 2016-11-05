@@ -1617,7 +1617,8 @@ list_first_that( PList slf, void * action, void * params)
 	if ( !( list = allocn( Handle, slf-> count)))
 		return -1;
 	memcpy( list, slf-> items, slf-> count * sizeof( Handle));
-	for ( i = 0; i < slf->count; i++)
+	cnt = slf->count;
+	for ( i = 0; i < cnt; i++)
 		if ((( PListProc) action)( list[ i], params)) {
 			toRet = i;
 			break;
