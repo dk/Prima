@@ -414,8 +414,15 @@ Image_data( Handle self, Bool set, SV * svdata)
 
 	if ( var->stage > csFrozen) return nilSV;
 
-	if ( !set)
-		return newSVpvn(( char *) var-> data, var-> dataSize);
+	if ( !set) {
+		SV * sv = newSV_type(SVt_PV);
+		SvREADONLY_on(sv);
+		SvLEN_set(sv, 0); /* So Perl won't free it. */
+		SvPV_set(sv, var-> data);
+		SvCUR_set(sv, var-> dataSize);
+		SvPOK_only(sv);
+		return sv;
+	}
 
 	data = SvPV( svdata, dataSize);
 	if ( is_opt( optInDraw) || dataSize <= 0) return nilSV;

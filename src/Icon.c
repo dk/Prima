@@ -262,8 +262,15 @@ Icon_mask( Handle self, Bool set, SV * svmask)
 	void * mask;
 	int am = var-> autoMasking;
 	if ( var-> stage > csFrozen) return nilSV;
-	if ( !set)
-		return newSVpvn(( char *) var-> mask, var-> maskSize);
+	if ( !set) {
+		SV * sv = newSV_type(SVt_PV);
+		SvREADONLY_on(sv);
+		SvLEN_set(sv, 0); /* So Perl won't free it. */
+		SvPV_set(sv, var-> mask);
+		SvCUR_set(sv, var-> maskSize);
+		SvPOK_only(sv);
+		return sv;
+	}
 	mask = SvPV( svmask, maskSize);
 	if ( is_opt( optInDraw) || maskSize <= 0) return nilSV;
 	memcpy( var-> mask, mask, (maskSize > (STRLEN)var-> maskSize) ? (STRLEN)var-> maskSize : maskSize);
