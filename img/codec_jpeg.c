@@ -367,15 +367,10 @@ exif_find_orientation_tag( unsigned char * c, STRLEN len, int wipe)
 	ADVANCE(6);
 
 	/* find out byteorder */
-	for ( i = 0; i < 12; i++, c++, len--) {
-		if (memcmp( c, le_sig, 4) == 0 ) {
-			byteorder = BYTEORDER_LE;
-	  		break;
-		} 
-		if (memcmp( c, be_sig, 4) == 0 ) {
-			byteorder = BYTEORDER_BE;
-	  		break;
-		} 
+	if (memmem( c, 16, le_sig, 4) != NULL ) {
+		byteorder = BYTEORDER_LE;
+	} else if (memmem( c, 16, be_sig, 4) != NULL ) {
+		byteorder = BYTEORDER_BE;
 	}
 	if ( byteorder == BYTEORDER_UNKNOWN ) return 0;
 	ADVANCE(4);
