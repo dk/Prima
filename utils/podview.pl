@@ -36,7 +36,7 @@ $0 - POD viewer
 
 options:
    help  - this information
-   geometry=WIDTHxHEIGHT+XOFF+YOFF - set window size and position (see man x(7))
+   geometry=WIDTHxHEIGHT[+XOFF+YOFF] - set window size and optionally position in pixels (see man x(7))
 
 USAGE
 	exit;
@@ -48,19 +48,28 @@ GetOptions(\%opt,
 ) or usage;
 
 if ( defined $opt{geometry} ) {
-	$opt{geometry} =~ /^(\d+)x(\d+)([\+\-])(-?\d+)([\+\-])(-?\d+)$/ or usage;
-	my ( $w, $h, $sx, $x, $sy, $y ) = ( $1, $2, $3, $4, $5, $6 );
+	my ( $w, $h, $sx, $x, $sy, $y );
+	if ( $opt{geometry} =~ /^(\d+)x(\d+)$/) {
+		( $w, $h ) = ( $1, $2 );
+	} elsif ( $opt{geometry} =~ /^(\d+)x(\d+)([\+\-])(-?\d+)([\+\-])(-?\d+)$/ ) {
+		( $w, $h, $sx, $x, $sy, $y ) = ( $1, $2, $3, $4, $5, $6 );
+	} else {
+		usage;
+	}
 	my @desktop = $::application-> size;
 	my $p = \ %SoleHelpViewer::profile_default;
 	$p->{width}  = $w;
 	$p->{height} = $h;
-	$p->{left}   = $x;
-	$p->{bottom} = $y;
-	$p->{left}   = $desktop[0] - $w - $x if $sx eq '-';
-	$p->{bottom} = $desktop[1] - $h - $y - $::application-> get_system_value(sv::YTitleBar) - $::application-> get_system_value(sv::YMenu)
-		if $sy eq '+';
-	$p->{originDontCare} = 0;
 	$p->{sizeDontCare}   = 0;
+
+	if ( defined $x ) {
+		$p->{left}   = $x;
+		$p->{bottom} = $y;
+		$p->{left}   = $desktop[0] - $w - $x if $sx eq '-';
+		$p->{bottom} = $desktop[1] - $h - $y - $::application-> get_system_value(sv::YTitleBar) - $::application-> get_system_value(sv::YMenu)
+			if $sy eq '+';
+		$p->{originDontCare} = 0;
+	}
 }
 
 $Prima::HelpViewer::windowClass = 'SoleHelpViewer';
