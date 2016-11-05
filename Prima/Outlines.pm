@@ -926,10 +926,9 @@ sub reset_scrolls
 	}
 }
 
-sub reset_tree
+sub reset_item_cache
 {
 	my ( $self, $i) = ( $_[0], 0);
-	$self-> makehint(0);
 	$self-> {stackFrames} = [];
 	$self-> {lineDefs}    = [];
 	my @stack;
@@ -965,6 +964,13 @@ sub reset_tree
 
 	$self-> {count} = $i;
 
+}
+
+sub reset_tree
+{
+	my $self = shift;
+	$self-> makehint(0);
+	$self-> reset_item_cache;
 	my $fullc = $self-> {fullCalibrate};
 	my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureItem));
 	my $maxWidth = 0;

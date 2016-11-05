@@ -308,6 +308,7 @@ sub item_sort {
 	for my $i (@$items) {
 		if (defined $i->[1]) { $self->item_sort($i->[1], $col, $dir) }
 	}
+	$self->reset_item_cache;
 }
 
 sub on_expand {
