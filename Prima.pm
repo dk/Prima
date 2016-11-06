@@ -73,13 +73,11 @@ sub import
 	my @module = @_;
 	while (@module) {
 		my $module = shift @module;
-		my %parameters = ();
-		%parameters = %{shift @module} if @module && ref($module[0]) eq 'HASH';
 		next if $module eq 'Prima' || $module eq '';
 		$module = "Prima::$module" unless $module =~ /^Prima::/;
 		$__import = caller;
 		if ( $module) {
-			eval "use $module \%parameters;";
+			eval "use $module;";
 			die $@ if $@;
 		}
 		$__import = 0;

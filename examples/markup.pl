@@ -5,7 +5,8 @@
 # XXX backport tb's to TextView
 use strict;
 use warnings;
-use Prima qw(Application MsgBox Buttons Edit Notebooks Label DetailedList Outlines Drawable::Markup);
+use Prima qw(Application Buttons Edit Notebooks Label DetailedList Outlines Drawable::Markup);
+use Prima::MsgBox;
 use FindBin qw($Bin);
 
 my $fp = [
