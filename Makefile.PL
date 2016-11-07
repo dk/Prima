@@ -1163,6 +1163,23 @@ sub setup_pkgconfig
 		printlog "no\n";
 		return;
 	}
+
+	# is your cygwin's pkg-config shading over old strawberry?
+	if ( $Win32 && $flavor =~ /^sb/ && $DEFINES{PERL_PATCHLEVEL} < 20) {
+		$v = `pkg-config --real-version 2>&1`;
+		if ( $? ) {
+			printlog "no, it's cygwin's\n";
+			$END .= <<MIXED;
+
+** Warning: it seems that your setup has old perl and cygwin mixed.
+
+This is a bad idea, and no guarantees are made that Prima will build.
+Please take cygwin away from your PATH or upgrade your perl to 5.20 at least.
+MIXED
+			return;
+		}
+	}
+
 	$use_pkgconfig = 1;
 	printlog "yes\n";
 }
