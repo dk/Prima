@@ -274,6 +274,12 @@ extern int
 vsnprintf( char *, size_t, const char *, va_list);
 #endif
 
+#ifndef HAVE_MEMMEM
+extern void *
+memmem(const void *l, size_t l_len, const void *s, size_t s_len);
+#endif
+
+
 #define alloc1(typ)     ((typ*)malloc(sizeof(typ)))
 #define allocn(typ,n)   ((typ*)malloc((n)*sizeof(typ)))
 #define allocs(n)       ((char*)malloc(n))
