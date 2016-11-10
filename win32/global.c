@@ -76,8 +76,8 @@ typedef enum _MONITOR_DPI_TYPE {
 #define MONITOR_DEFAULTTONEAREST         2
 #endif
 
-static HRESULT (*SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS)  = NULL;
-static HRESULT (*GetDpiForMonitor)(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*) = NULL;
+static __stdcall HRESULT (*SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS)  = NULL;
+static __stdcall HRESULT (*GetDpiForMonitor)(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*) = NULL;
 
 void
 dpi_change(void)
