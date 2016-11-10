@@ -13,7 +13,7 @@ Demonstrates use of a standard L<Prima::InputLine> widget
 use strict;
 use warnings;
 
-use Prima 'InputLine', Application => { name => 'InputLine sample', wantUnicodeInput => 1 };
+use Prima 'InputLine', 'Application';
 use Prima::Bidi;
 
 my $w = Prima::MainWindow->create( size => [ 700, 300]);

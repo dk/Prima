@@ -1,4 +1,4 @@
-use Prima 'MsgBox', Application => { name => 'Chess puzzle' };
+use Prima 'MsgBox', 'Application';
 
 =pod
 

@@ -15,7 +15,7 @@ pastes its image into the clipboard.
 use strict;
 use warnings;
 
-use Prima qw(Buttons StdBitmap), Application => { name => 'Buttons sample' };
+use Prima qw(Buttons StdBitmap Application);
 
 my $w = Prima::MainWindow-> create(
 	text=> "Handmade buttons",

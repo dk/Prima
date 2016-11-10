@@ -1,8 +1,6 @@
 use strict;
 use warnings;
-use Prima Application => {name => 'Frames sample'};
-use Prima::FrameSet;
-use Prima qw(Buttons);
+use Prima qw(Buttons FrameSet Application);
 
 my $w = Prima::MainWindow-> create(
 	text   => "Frames example",

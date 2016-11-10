@@ -16,7 +16,7 @@ A customized button creation with subclassing is exemplified
 use strict;
 use warnings;
 
-use Prima 'Buttons', Application => { name => 'Buttons sample' };
+use Prima 'Buttons', 'Application';
 
 package UserButton;
 use vars qw(@ISA);
