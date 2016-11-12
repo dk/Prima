@@ -71,8 +71,8 @@ sub t
 		$x-> font-> height( 16);
 		my ($a,$b,$c) = @{$x->get_font_abc(ord('e'),ord('e'))};
 		my $w = $a + $b + $c;
-		skip "text wrap $f->{name}", 1 if $w <= 0; # some non-latin or symbol font
-		cmp_ok( scalar @{$x-> text_wrap( "ein zwei drei fir funf sechs seben acht neun zehn", $w * 5)}, '>', 4, "text wrap $f->{name}");
+		skip "text wrap $f->{name}", 1 if $w <= 1; # some non-latin or symbol font
+		cmp_ok( scalar @{$x-> text_wrap( "eeee eeee eeee eeee eeee", $w * 5)}, '>', 4, "text wrap $f->{name}");
 	}
 
 	return $ok;
