@@ -312,12 +312,12 @@ apc_clipboard_clear( Handle self)
 	}
 	
 	if ( XX-> inside_event) { 
-	XX-> need_write = true; 
+		XX-> need_write = true; 
 	} else {
-	XWindow owner = XGetSelectionOwner( DISP, XX-> selection);
-	XX-> need_write = false;
-	if ( owner != None && owner != WIN)
-		XSetSelectionOwner( DISP, XX-> selection, None, CurrentTime);
+		XWindow owner = XGetSelectionOwner( DISP, XX-> selection);
+		XX-> need_write = false;
+		if ( owner != None && owner != WIN)
+			XSetSelectionOwner( DISP, XX-> selection, None, CurrentTime);
 	}
 
 	return true;
@@ -778,7 +778,7 @@ apc_clipboard_deregister_format( Handle self, Handle id)
 ApiHandle
 apc_clipboard_get_handle( Handle self)
 {
-return C(self)-> selection;
+	return C(self)-> selection;
 }
 
 static Bool
