@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 use Getopt::Long;
+use Prima::noARGV;
 use Prima;
 use Prima::HelpViewer;
 use Prima::Application;
@@ -46,6 +47,8 @@ GetOptions(\%opt,
 	"help|h",
 	"geometry|g=s"
 ) or usage;
+
+usage if $opt{help};
 
 if ( defined $opt{geometry} ) {
 	my ( $w, $h, $sx, $x, $sy, $y );
