@@ -178,7 +178,7 @@ sub freopen
 		$self-> image( $i);
 		status( $_[0]);
 	} else {
-		Prima::MsgBox::message("Cannot reload ". $self-> {fileName}. ":$@");
+		message("Cannot reload ". $self-> {fileName}. ":$@");
 	}
 	$self-> unwatch_load_progress(0);
 }
@@ -233,7 +233,7 @@ sub fload
 		$self-> {fileName} = $f;
 		status( $_[0]);
 	} else {
-		Prima::MsgBox::message("Cannot load $f:$@");
+		message("Cannot load $f:$@");
 	}
 	
 	$self-> unwatch_load_progress(0);
@@ -243,7 +243,7 @@ sub fload
 sub fsave
 {
 	my $iv = $_[0]-> IV;
-	Prima::MsgBox::message('Cannot save '.$iv-> {fileName}. ":$@")
+	message('Cannot save '.$iv-> {fileName}. ":$@")
 		unless $iv-> image-> save( $iv-> {fileName});
 }
 
@@ -286,7 +286,7 @@ sub icvt
 sub iinfo
 {
 	my $i = $_[0]-> IV-> image;
-	Prima::MsgBox::message_box(
+	message_box(
 		'',
 		"File: ".$_[0]-> IV-> {fileName}."\n".
 		"Width: ".$i-> width."\nHeight: ".$i-> height."\nBPP:".($i-> type&im::BPP)."\n".
@@ -372,7 +372,7 @@ if ( @ARGV && $ARGV[0] =~ /^-z(\d+(\.\d*)?)$/) {
 fload( $w, $ARGV[0]), shift if @ARGV;
 for ( @ARGV) {
 	my $i = Prima::Image-> load($_);
-	Prima::MsgBox::message("Cannot load $_:$@"), next unless $i;
+	message("Cannot load $_:$@"), next unless $i;
 	newwindow( $w, $_, $i);
 }
 

@@ -15,12 +15,7 @@ Prima::PS modules set usage.
 
 use strict;
 use warnings;
-use Prima;
-use Prima::Lists;
-use Prima::Const;
-use Prima::Label;
-use Prima::MsgBox;
-use Prima::PS::Printer;
+use Prima qw(Lists Label MsgBox PS::Printer);
 
 $::application = Prima::Application-> create( name => "Generic.pm");
 my $p = $::application-> get_printer;

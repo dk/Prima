@@ -14,12 +14,7 @@ and, in lesser extent, of standard find/replace dialogs.
 use strict;
 use warnings;
 
-use Prima;
-use Prima::Edit;
-use Prima::Bidi;
-use Prima::Application;
-use Prima::MsgBox;
-use Prima::StdDlg;
+use Prima qw(Edit Bidi Application MsgBox StdDlg);
 
 eval "use Encode;";
 my $can_utf8 = $@ ? 0 : 1;

@@ -75,7 +75,7 @@ sub import
 		my $module = shift @module;
 		next if $module eq 'Prima' || $module eq '';
 		$module = "Prima::$module" unless $module =~ /^Prima::/;
-		$__import = caller;
+		local $__import = caller;
 		if ( $module) {
 			eval "use $module;";
 			die $@ if $@;

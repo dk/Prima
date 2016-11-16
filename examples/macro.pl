@@ -12,13 +12,7 @@ Demonstration and test of mouse_event() function usage.
 
 use strict;
 use warnings;
-use Prima;
-use Prima::Classes;
-use Prima::Buttons;
-use Prima::MsgBox;
-use Prima::StdDlg;
-use Prima::Application;
-
+use Prima qw(Buttons MsgBox StdDlg Application);
 
 my $state = 'empty';
 my $wtx   = 'Macros';
@@ -46,7 +40,7 @@ sub mopen
 		close F;
 		update();
 	} else {
-		MsgBox::message("Cannot load $f");
+		message("Cannot load $f");
 	}
 }
 
@@ -55,7 +49,7 @@ sub mopen
 sub msave
 {
 	unless ( scalar @data) {
-		MsgBox::message("Nothing to save");
+		message("Nothing to save");
 		return;
 	}
 	my $f = Prima::save_file(
@@ -71,7 +65,7 @@ sub msave
 		}
 		close F;
 	} else {
-		MsgBox::message("Cannot save $f");
+		message("Cannot save $f");
 	}
 }
 
