@@ -15,7 +15,7 @@ Note that the toolkit interface is alive during the download.
 
 use strict;
 use warnings;
-use Prima 'InputLine', 'Edit', Application => { name => 'WebSource' };
+use Prima qw(InputLine Edit Application);
 use Socket;
 
 
