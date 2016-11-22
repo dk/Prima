@@ -1,5 +1,11 @@
 Revision history for Perl module Prima
 
+1.50 2016-11-XX
+ - Renamed utils after debian standard
+ - Support high-dpi monitors and uiScaling, also with smooth bitmap scaling
+ - Image.data/Icon.mask made faster by returning a read-only scalar
+ - Support multiple monitors for win32
+
 1.49 2016-09-27
  - Fixes for new development bugs in 1.48
 
