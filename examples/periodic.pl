@@ -220,8 +220,8 @@ my $g = $w-> insert( Periodic =>
 	],
 	drawHGrid => 0,
 	drawVGrid => 0,
-	constantCellWidth => 50 * $scaling,
-	constantCellHeight => 50 * $scaling,
+	constantCellWidth => int( 50 * $scaling + .5),
+	constantCellHeight => int( 50 * $scaling + .5),
 	multiSelect => 0,
 	onDrawCell => sub {
 		my ( $self, $canvas, 
