@@ -336,6 +336,8 @@ gimme_the_mate( SV *perlObject)
 XS( create_from_Perl)
 {
 	dXSARGS;
+	if ( prima_init_ok <= 2 )
+		croak("Prima is not initialized%s.", PL_minus_c ? " under -c mode" : "");
 	if (( items - 2 + 1) % 2 != 0)
 		croak("Invalid usage of Prima::Object::create");
 	{

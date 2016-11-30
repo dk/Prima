@@ -9,6 +9,7 @@ use vars qw($uses);
 
 sub import {
 	shift;
+	return if $^C;
 	my %profile = ( name => q(Prima), @_);
 	$::application ||= Prima::Application-> create( %profile);
 	$uses++;
