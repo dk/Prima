@@ -54,7 +54,7 @@ sub parse_argv
 	@ARGV = parse_argv( @ARGV) if @ARGV and not $skip_argv;
 }
 
-Prima::init($VERSION);
+Prima::init($VERSION) unless $^C;
 
 sub END
 {
