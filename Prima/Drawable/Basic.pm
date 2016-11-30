@@ -8,6 +8,7 @@ sub rect3d
 {
 	my ( $self, $x, $y, $x1, $y1, $width, $lColor, $rColor, $backColor) = @_;
 	my $c = $self-> color;
+	$_ = int($_) for $x1, $y1, $x, $y, $width;
 	if ( defined $backColor)
 	{
 		if ( ref $backColor ) {
@@ -324,6 +325,8 @@ sub gradient_bar
 {
 	my ( $self, $x1, $y1, $x2, $y2, $request ) = @_;
 
+	$_ = int($_) for $x1, $y1, $x2, $y2;
+
 	($x1,$x2)=($x2,$x1) if $x1 > $x2;
 	($y1,$y2)=($y2,$y1) if $y1 > $y2;
 
@@ -354,6 +357,8 @@ sub gradient_ellipse
 {
 	my ( $canvas, $x, $y, $dx, $dy, $request ) = @_;
 	return if $dx <= 0 || $dy <= 0;
+
+	$_ = int($_) for $x, $y, $dx, $dy;
 	my $diameter = ($dx > $dy) ? $dx : $dy;
 	my $mx = $dx / $diameter;
 	my $my = $dy / $diameter;
