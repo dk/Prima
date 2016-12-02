@@ -1469,6 +1469,8 @@ dbm_recreate( Handle self)
 	HBITMAP bm, stock;
 	HDC dc, dca;
 	HPALETTE p = nil;
+	Event ev = {cmSysHandle};
+
 	if ((( PDeviceBitmap) self)-> type != dbtPixmap ) return;
 
 	if ( !( dc = CreateCompatibleDC( 0))) {
@@ -1510,6 +1512,9 @@ dbm_recreate( Handle self)
 	sys bm = bm;
 	sys stockBM = stock;
 	dc_free();
+
+	ev. gen. source = self;
+	var self-> message( self, &ev);
 }
 
 Bool
