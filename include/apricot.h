@@ -733,6 +733,8 @@ CM(EndDrag)
 CM(Menu)
 #define cmEndModal       0x00000028                /* dialog execution end */
 CM(EndModal)
+#define cmSysHandle      0x00000029                /* system handle recreated */
+CM(SysHandle)
 
 #define cmMenuCmd        0x00000050                /* interactive menu command */
 CM(MenuCmd)

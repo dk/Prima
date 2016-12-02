@@ -514,6 +514,7 @@ if ( layered ) {
 		XX-> flags. mapped = XX-> flags. want_visible;
 		for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
 		XDestroyWindow( DISP, old);
+		prima_notify_sys_handle( self );
 		return true;
 	}
 

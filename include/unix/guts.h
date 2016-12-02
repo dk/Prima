@@ -1318,6 +1318,9 @@ prima_set_view_ex( Handle self, PViewProfile p);
 extern void
 prima_get_view_ex( Handle self, PViewProfile p);
 
+extern void
+prima_notify_sys_handle( Handle self );
+
 extern int
 prima_flush_events( Display * disp, XEvent * ev, Handle self);
 

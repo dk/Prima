@@ -927,6 +927,15 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 	return true;
 }
 
+static void
+notify_sys_handle( Handle self )
+{
+	Event ev = {cmSysHandle};
+	objCheck false;
+	ev. gen. source = self;
+	var self-> message( self, &ev);
+}
+
 // Window
 Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
@@ -1037,6 +1046,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	SetWindowTextW( HANDLE, saved_caption );
 	if ( saved_caption ) free( saved_caption );
 	HWND_lock( false);
+	if ( reset ) notify_sys_handle( self );
 	if ( reset && layered ) hwnd_repaint_layered(self, false);
 	return apcError == 0;
 }
@@ -1720,7 +1730,10 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 		redraw = true;
 	if ( redraw) apc_widget_redraw( self);
 	apt_assign( aptTransparent, transparent);
-	if ( reset) apc_widget_redraw( self);
+	if ( reset) {
+		notify_sys_handle( self );
+		apc_widget_redraw( self);
+	}
 	return apcError == 0;
 }
 

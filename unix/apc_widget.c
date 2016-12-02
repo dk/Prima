@@ -230,6 +230,15 @@ prima_set_view_ex( Handle self, PViewProfile p)
 #endif
 }
 
+void
+prima_notify_sys_handle( Handle self )
+{
+	Event ev = {cmSysHandle};
+	objCheck false;
+	ev. gen. source = self;
+	var self-> message( self, &ev);
+}
+
 Bool
 apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 						Bool clip_owner, Bool transparent, ApiHandle parentHandle, Bool layered)
@@ -405,6 +414,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		hash_store( guts.windows, &X_WINDOW, sizeof(X_WINDOW), (void*)self);
 		for ( i = 0; i < count; i++) ((( PComponent) list[ i])-> self)-> recreate( list[ i]);
 		XDestroyWindow( DISP, old);
+		prima_notify_sys_handle( self );
 		return true;
 	}
 

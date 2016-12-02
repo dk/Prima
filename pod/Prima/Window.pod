@@ -602,6 +602,12 @@ Called before a window leaves modal state.
 
 Called after a window enters modal state.
 
+=item SysHandle
+
+Same as in C<Widget>, but it addition to the Widget properties that may trigger
+the event, the following C<Window> properties can trigger it as well:
+L<taskListed>, L<borderIcons>, L<borderStyle>, L<onTop>
+
 =item WindowState STATE
 
 Triggered when window state is changed, either by

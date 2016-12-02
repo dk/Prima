@@ -690,6 +690,7 @@ my %RNT = (
 	Show           => nt::Default,
 	Size           => nt::Default,
 	TranslateAccel => nt::Default,
+	SysHandle      => nt::Default,
 	ZOrderChanged  => nt::Default,
 );
 
