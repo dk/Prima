@@ -908,9 +908,6 @@ void Widget_handle_event( Handle self, PEvent event)
 			Widget_place_slaves( self);
 		}
 		break;
-		case cmSysHandle:
-			my-> notify( self, "<s", "SysHandle");
-			break;
 	}
 }
 

@@ -1043,6 +1043,22 @@ Called after post_message() call is issued, not inside post_message() but at
 the next idle event loop.  SCALAR1 and SCALAR2 are the data passed to
 post_message().
 
+=item SysHandle
+
+Sometimes Prima needs to implicitly re-create the system handle of a component.
+The re-creation is not seen on the toolkit level, except for some repaints when
+widgets on screen are affected, but under the hood, when it happens, Prima
+creates a whole new system resource. This happens when the underlying system
+either doesn't have API to change a certain property during the runtime, or
+when such a re-creation happens on one of component's parent, leading to a
+downward cascade of children re-creation. Also, it may happen when the user
+changes some system settings resolution, so that some resources have to be changed
+accordingly.
+
+This event will be only needed when the system handle (that can be acquired by
+C<get_handle> ) is used further, or in case when Prima doesn't restore some 
+properties bound to the system handle.
+
 =back
 
 =head1 AUTHOR

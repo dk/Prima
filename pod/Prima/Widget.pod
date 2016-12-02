@@ -2767,15 +2767,9 @@ C<sizeMax>, C<sizeMin>, C<rect>, C<clipOwner>
 
 =item SysHandle
 
-Sometimes Prima needs to implicitly re-create the system handle of the widget.
-The re-creation is not seen on the toolkit level, except for some repaints, but
-under the hood, when it happens, Prima creates a whole new system resource when
-the underlying system either doesn't have API to change a certaint property
-during the runtime, or when such a re-creation happens on one of widget's
-parent, leading to a downward cascade of children re-creation. 
+Same as in C<Component>, but introduces the following C<Widget> properties can trigger it:
 
-The list of properties, that when changed, may tigger this event: L<owner>,
-L<clipOwner>, L<syncPaint>, L<clipOwner>, L<layered>, L<transparent>
+L<clipOwner>, L<syncPaint>, L<layered>, L<transparent>
 
 This event will be only needed when the system handle (that can be acquired by
 C<get_handle> ) is needed.

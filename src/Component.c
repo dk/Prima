@@ -450,6 +450,9 @@ Component_handle_event( Handle self, PEvent event)
 	case cmChildLeave:
 		my-> notify( self, "<sH", "ChildLeave", event-> gen. H);
 		break;
+	case cmSysHandle:
+		my-> notify( self, "<s", "SysHandle");
+		break;
 	}
 }
 
