@@ -234,7 +234,6 @@ void
 prima_notify_sys_handle( Handle self )
 {
 	Event ev = {cmSysHandle};
-	objCheck false;
 	ev. gen. source = self;
 	apc_message( self, &ev, false);
 }
