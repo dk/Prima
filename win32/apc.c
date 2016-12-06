@@ -931,7 +931,7 @@ static void
 notify_sys_handle( Handle self )
 {
 	Event ev = {cmSysHandle};
-	objCheck false;
+	objCheck;
 	ev. gen. source = self;
 	var self-> message( self, &ev);
 }
@@ -3467,6 +3467,7 @@ win32_openfile( const char * params)
 	} else if ( strncmp( params, "directory", 9) == 0) {
 		params += 9;
 		if ( *params == '=') {
+			params += 1;
 			if ( strcmp( params, "NULL") == 0) {
 				o. lpstrInitialDir = NULL;
 			} else {

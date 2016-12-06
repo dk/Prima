@@ -198,8 +198,9 @@ sub execute
 		join("\0", map { "$$_[0] ($$_[1])\0$$_[1]" } @{$self->{filter}}) . "\0");
 	Prima::Application-> sys_action( 'win32.OpenFile.filterindex=' . 
 		($self->{filterIndex}+1));
-	Prima::Application-> sys_action( 'win32.OpenFile.directory=' . 
-		$self->{directory});
+	my $dir = $self->{directory};
+	$dir =~ s/\//\\/g;
+	Prima::Application-> sys_action( 'win32.OpenFile.directory=' . $dir);
 	Prima::Application-> sys_action( 'win32.OpenFile.defext=' . 
 		$self->{defaultExt});
 	Prima::Application-> sys_action( 'win32.OpenFile.title=' . 
