@@ -899,6 +899,7 @@ See also L<Prima::Application/get_system_value>
 	sv::CompositeDisplay - 1 if system uses double-buffering and alpha composition for the desktop, 
 	                       0 if it doesn't, -1 if unknown
 	sv::LayeredWidgets   - 1 if system supports layering
+	sv::DWM              - 1 if system supports DWM API
 
 =head2 ta::  - alignment constants
 

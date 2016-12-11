@@ -5,9 +5,11 @@ object Prima::Window( Prima::Widget)
 	ColorSet menuColor;
 	int      modal;
 	int      modalResult;
+	SV *     effects;
 
 	property int      borderIcons;
 	property int	  borderStyle;
+	property SV *     effects;
 	property Bool     focused;
 	property Point    frameOrigin;
 	property Point    frameSize;

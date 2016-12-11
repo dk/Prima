@@ -655,6 +655,7 @@ of C<sv::XXX> constants. The constants are:
 	sv::CompositeDisplay - 1 if system uses double-buffering and alpha composition for the desktop, 
 	                       0 if it doesn't, -1 if unknown
 	sv::LayeredWidgets   - 1 if system supports layering
+	sv::DWM              - 1 if system supports DWM API
 
 The method can be called with a class string instead of an object instance.
 

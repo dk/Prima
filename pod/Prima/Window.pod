@@ -258,6 +258,35 @@ disallow interactive resizing.
 Not all systems recognize all these hints, although many recognize
 interactive resizing flag.
 
+=item effects HASH or undef
+
+This generic property implements system-specific window effects, not necessarily portable. The format of the hash
+is also system-specific. The only portable behavior here is that setting the value to C<undef> cancels all effects.
+
+Example:
+
+   $window->effects({
+       effect1 => {
+          key1 => $value1,
+          ...
+       },
+   });
+
+Currently, the following effects are implemented:
+
+=over
+
+=item dwm_blur enable => $BOOL, transition_on_maximized => $BOOL, mask => $Prima::Image
+
+This effect is implemented only on Win32 version 7 or later, using Win32 API call 
+L<DwmEnableBlurBehindWindow|http://msdn.microsoft.com/en-us/library/windows/desktop/aa969508>.
+See the MS reference for details.
+
+To determine whether this effect is available or not, use C<< $::application->get_system_value(sv::DWM) >>
+call. See F<examples/dwm_blur.pl> for example of use.
+
+=back
+
 =item frameHeight HEIGHT
 
 Maintains the height of a window, including 

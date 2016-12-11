@@ -1200,6 +1200,7 @@ sub profile_default
 		borderStyle           => bs::Sizeable,
 		clipOwner             => 0,
 		growMode              => gm::DontCare,
+		effects               => undef,
 		icon                  => 0,
 		mainWindow            => 0,
 		menu                  => undef,

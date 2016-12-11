@@ -1827,6 +1827,8 @@ SV(CanUTF8_Output)
 SV(CompositeDisplay)
 #define   svLayeredWidgets  33
 SV(LayeredWidgets)
+#define   svDWM             34
+SV(DWM)
 END_TABLE(sv,UV)
 #undef SV
 
@@ -1974,6 +1976,9 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height);
 
 extern Bool
 apc_window_set_client_size( Handle self, int x, int y);
+
+extern Bool
+apc_window_set_effects( Handle self, HV* effects );
 
 extern Bool
 apc_window_set_menu( Handle self, Handle menu);

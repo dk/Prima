@@ -1046,8 +1046,11 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	SetWindowTextW( HANDLE, saved_caption );
 	if ( saved_caption ) free( saved_caption );
 	HWND_lock( false);
-	if ( reset ) notify_sys_handle( self );
-	if ( reset && layered ) hwnd_repaint_layered(self, false);
+	if ( reset ) {
+		apc_window_set_effects( self, sys s. window. effects );
+		notify_sys_handle( self );
+		if ( layered ) hwnd_repaint_layered(self, false);
+	}
 	return apcError == 0;
 }
 
@@ -1508,6 +1511,26 @@ apc_window_set_menu( Handle self, Handle menu)
 	return apcError == 0;
 }
 
+Bool
+apc_window_set_effects( Handle self, HV * effects )
+{
+	dPROFILE;
+	HV * profile = effects;
+	SV * sv;
+	int enable = -1, transition_on_maximized = -1;
+	HRGN mask = (HRGN) -1;
+	Bool ok;
+
+	if ( effects && pexist(dwm_blur) && (sv = pget_sv(dwm_blur)) != NULL && SvROK(sv) && SvTYPE(SvRV(sv)) == SVt_PVHV) {
+		profile = (HV*) SvRV(sv);
+		if ( pexist(enable) )                  enable                  = pget_B(enable);
+		if ( pexist(transition_on_maximized) ) transition_on_maximized = pget_B(transition_on_maximized);
+		if ( pexist(mask) )                    mask                    = region_create( pget_H(mask));
+	}
+	sys s. window. effects = effects;
+
+	return set_dwm_blur( HANDLE, enable, mask, transition_on_maximized);
+}
 
 Bool
 apc_window_set_icon( Handle self, Handle icon)

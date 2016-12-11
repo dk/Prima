@@ -41,6 +41,7 @@ Window_init( Handle self, HV * profile)
 		my-> set_menuItems( self, sv);
 	my-> set_modalResult( self, pget_i( modalResult));
 	my-> set_modalHorizon( self, pget_B( modalHorizon));
+	my-> set_effects( self, pget_sv( effects));
 	CORE_INIT_TRANSIENT(Window);
 }
 
@@ -708,6 +709,29 @@ Window_borderStyle( Handle self, Bool set, int borderStyle)
 	my-> set( self, profile);
 	sv_free(( SV *) profile);
 	return nilHandle;
+}
+
+SV *
+Window_effects( Handle self, Bool set, SV * effects)
+{
+	if ( !set )
+		return var->effects ? newSVsv(var->effects) : &PL_sv_undef;
+
+	if ( var-> effects ) SvREFCNT_dec( var-> effects );
+	if ( effects ) {
+		if (SvROK( effects) && ( SvTYPE( SvRV( effects)) == SVt_PVHV)) {
+			var-> effects = effects;
+			SvREFCNT_inc( var-> effects );
+			apc_window_set_effects( self, (HV*) SvRV(var-> effects));
+		} else if (!SvROK(effects) || SvTYPE(SvRV(effects)) == SVt_NULL) {
+			var-> effects = NULL;
+			apc_window_set_effects( self, NULL );
+		} else {
+			croak("Not a hash or undef passed to Window.effects");
+		}
+	}
+
+	return nilSV;
 }
 
 Point

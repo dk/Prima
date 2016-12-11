@@ -1389,3 +1389,8 @@ apc_window_get_on_top( Handle self)
 
 	return on_top;
 }
+
+Bool
+apc_window_set_effects( Handle self, PHash effects )
+{
+}

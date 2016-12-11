@@ -45,8 +45,6 @@ char * keyLayouts[]   = {  "0409", "0403", "0405", "0406", "0407",
 WCHAR lastDeadKey = 0;
 Bool debug = false;
 
-
-
 BOOL APIENTRY
 DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
 {
@@ -76,8 +74,22 @@ typedef enum _MONITOR_DPI_TYPE {
 #define MONITOR_DEFAULTTONEAREST         2
 #endif
 
+typedef struct _DWM_BLURBEHIND {
+	DWORD dwFlags;
+	BOOL  fEnable;
+	HRGN  hRgnBlur;
+	BOOL  fTransitionOnMaximized;
+} DWM_BLURBEHIND;
+
+#ifndef DWM_BB_ENABLE
+#define DWM_BB_ENABLE 0x00000001
+#define DWM_BB_BLURREGION 0x00000002
+#define DWM_BB_TRANSITIONONMAXIMIZED 0x00000004
+#endif
+
 static HRESULT (__stdcall *SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS)  = NULL;
 static HRESULT (__stdcall *GetDpiForMonitor)(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*) = NULL;
+static HRESULT (__stdcall *DwmEnableBlurBehindWindow)(HWND hWnd, const DWM_BLURBEHIND *pBlurBehind) = NULL;
 
 void
 dpi_change(void)
@@ -89,6 +101,39 @@ dpi_change(void)
 		guts. displayResolution. x = dx;
 		guts. displayResolution. y = dy;
 	}
+}
+
+Bool
+set_dwm_blur( HWND win, int enable, HRGN mask, int transition_on_maximized)
+{
+	DWM_BLURBEHIND b;
+
+	if ( !win )
+		return DwmEnableBlurBehindWindow != NULL;
+
+	if ( !DwmEnableBlurBehindWindow ) return;
+
+	b. dwFlags = 0;
+	if ( enable >= 0 ) {
+		b. dwFlags |= DWM_BB_ENABLE;
+		b. fEnable = enable;
+	}
+	if (( HRGN) mask != (HRGN)-1) {
+		b. dwFlags |= DWM_BB_BLURREGION;
+		b. hRgnBlur = mask;
+	}
+	if ( transition_on_maximized >= 0 ) {
+		b. dwFlags |= DWM_BB_TRANSITIONONMAXIMIZED;
+		b. fTransitionOnMaximized = transition_on_maximized;
+	}
+
+	if ( DwmEnableBlurBehindWindow(win, &b) != S_OK ) {
+		apiErr;
+		apcErrClear;
+		return false;
+	}
+
+	return true;
 }
 
 static void
@@ -188,22 +233,29 @@ window_subsystem_init( char * error_buf)
 	guts. displayResolution. x = GetDeviceCaps( dc, LOGPIXELSX);
 	guts. displayResolution. y = GetDeviceCaps( dc, LOGPIXELSY);
 
+	/* Win7 DWM */
+#define LOAD_FUNC(m,f) load_function(m, (void**) &f, #f)
+	if ( os.dwMajorVersion >= 5) {
+		HMODULE dwm = LoadLibrary("DWMAPI.DLL");
+		if ( dwm ) {
+			LOAD_FUNC(dwm, DwmEnableBlurBehindWindow);
+		}
+	}
+
 	/* Win8 - high dpi awareness stuff */
 	if (( os.dwMajorVersion > 5) || (os.dwMajorVersion == 5 && os.dwMinorVersion > 1)) {
 		HMODULE shcore = LoadLibrary("SHCORE.DLL");
 		if ( shcore ) {
-#define LOAD_FUNC(f) load_function(shcore, (void**) &f, #f)
-			LOAD_FUNC(SetProcessDpiAwareness);
-			LOAD_FUNC(GetDpiForMonitor);
-#undef LOAD_FUNC
+			LOAD_FUNC(shcore, SetProcessDpiAwareness);
+			LOAD_FUNC(shcore, GetDpiForMonitor);
 		}
 		if (
 			SetProcessDpiAwareness && GetDpiForMonitor &&
 			(SetProcessDpiAwareness( PROCESS_PER_MONITOR_DPI_AWARE) == S_OK )
 		)
 			dpi_change();
-	
 	}
+#undef LOAD_FUNC
 
 	{
 		LOGFONT lf;

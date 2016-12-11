@@ -58,6 +58,7 @@ examples/cv.pl
 examples/detailedoutline.pl
 examples/dock.pl
 examples/drivecombo.pl
+examples/dwm_blur.pl
 examples/e.pl
 examples/edit.pl
 examples/editor.pl

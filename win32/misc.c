@@ -338,6 +338,7 @@ apc_sys_get_value( int sysValue)
 		} else 
 			return 0;
 	case svLayeredWidgets: return guts. displayBMInfo. bmiHeader. biBitCount > 8;
+	case svDWM: return set_dwm_blur((HWND) 0, 0, (HRGN)0, 0);
 	default:
 		return -1;
 	}
