@@ -1045,9 +1045,11 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
 		}
 	} else {
 		timeout. tv_sec = 0;
-		if ( wait)
+		if ( wait) {
+			XNoOp( DISP);
+			XFlush( DISP);
 			ptimeout = NULL;
-		else
+		} else
 			timeout. tv_usec = 0;
 	}
 	if (( r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, ptimeout)) > 0 &&
