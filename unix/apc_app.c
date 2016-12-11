@@ -979,7 +979,7 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
 {
 	XEvent ev, next_event;
 	fd_set read_set, write_set, excpt_set;
-	struct timeval timeout;
+	struct timeval timeout, *ptimeout = &timeout;
 	int r, i, queued_events;
 	PTimerSysData timer;
 
@@ -1046,11 +1046,11 @@ prima_one_loop_round( Bool wait, Bool careOfApplication)
 	} else {
 		timeout. tv_sec = 0;
 		if ( wait)
-			timeout. tv_usec = 200000;
+			ptimeout = NULL;
 		else
 			timeout. tv_usec = 0;
 	}
-	if (( r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, &timeout)) > 0 &&
+	if (( r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, ptimeout)) > 0 &&
 		FD_ISSET( guts.connection, &read_set)) {
 		if (( queued_events = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
 			/* just like tcl/perl tk do, to avoid an infinite loop */
