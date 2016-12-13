@@ -1153,6 +1153,14 @@ Bool
 apc_application_yield( Bool wait_for_event)
 {
 	if (!application) return false;
+	if ( wait_for_event ) {
+		while (1) {
+			long save_total_events = guts. total_events;
+			if ( !prima_one_loop_round( false, true )) return false;
+			if ( save_total_events == guts. total_events ) break;
+			wait_for_event = false;
+		}
+	}
 	XSync( DISP, false);
 	prima_one_loop_round( wait_for_event, true);
 	XSync( DISP, false);

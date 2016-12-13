@@ -705,6 +705,7 @@ apc_message( Handle self, PEvent e, Bool is_post)
 			pe-> recipient = self;
 			TAILQ_INSERT_TAIL( &guts.peventq, pe, peventq_link);
 		} else {
+			guts. total_events++;
 			CComponent(self)->message( self, e);
 			if ( PObject( self)-> stage == csDead) return false; 
 		}
