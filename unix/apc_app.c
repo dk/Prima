@@ -366,9 +366,12 @@ init_x11( char * error_buf )
 	guts. menu_timeout = 200;
 	guts. scroll_first = 200;
 	guts. scroll_next = 50;
-	apc_timer_create( CURSOR_TIMER, nilHandle, 2);
-	apc_timer_create( MENU_TIMER,   nilHandle, guts. menu_timeout);
-	apc_timer_create( MENU_UNFOCUS_TIMER,   nilHandle, 50);
+	apc_timer_create( CURSOR_TIMER);
+	apc_timer_set_timeout(CURSOR_TIMER, 2);
+	apc_timer_create( MENU_TIMER);
+	apc_timer_set_timeout( MENU_TIMER,  guts. menu_timeout);
+	apc_timer_create( MENU_UNFOCUS_TIMER);
+	apc_timer_set_timeout( MENU_UNFOCUS_TIMER, 50);
 	if ( !prima_init_clipboard_subsystem( error_buf)) return false;
 	if ( !prima_init_color_subsystem( error_buf)) return false;
 	if ( !prima_init_font_subsystem( error_buf)) return false;
