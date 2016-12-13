@@ -5,7 +5,7 @@ use Test::More;
 use Prima::Test;
 use Prima::Application;
 
-plan tests => 5;
+plan tests => 8;
 
 my $a = $::application;
 
@@ -37,3 +37,24 @@ ok( $a-> visible && $a-> width == $sz[0] && $a-> height == $sz[1], "width and he
 
 my $msz = $a->get_monitor_rects;
 ok( $msz && ref($msz) eq 'ARRAY' && @$msz > 0, "monitor configuration" );
+
+# test yield
+alarm(10);
+my $t = Prima::Timer->new( timeout => 50, onTick => \&set_flag );
+$::application->yield(0); # clear up accumulated events
+$t->start;
+my $e = $::application->yield(1);
+ok( $e && get_flag, "timer triggers yield return");
+$t->stop;
+
+alarm(1);
+reset_flag;
+$SIG{ALRM} = \&set_flag;
+$::application->yield(1);
+ok( get_flag, "yield without events sleeps, but still is alive");
+
+$SIG{ALRM} = 'DEFAULT';
+alarm(10);
+$::application->close;
+$e = $::application->yield(1);
+ok(!$e, "yield returns 0 on application.close");

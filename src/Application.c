@@ -215,10 +215,10 @@ Application_sync( char * dummy)
 	apc_application_sync();
 }
 
-void
-Application_yield( char * dummy)
+Bool
+Application_yield( char * dummy, Bool wait_for_event)
 {
-	apc_application_yield();
+	return apc_application_yield(wait_for_event);
 }
 
 Bool

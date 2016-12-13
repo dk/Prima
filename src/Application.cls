@@ -89,7 +89,7 @@ object Prima::Application( Prima::Widget)
 	method Bool   unlock()                      => apc_application_unlock;
 	c_only void   update_sys_handle( HV * profile);
 	c_only Bool   validate_owner( Handle * newOwner, HV * profile);
-	static void   yield( char *dummy = "");
+	static Bool   yield( char *dummy = "", Bool wait_for_event = false);
 
 	method Bool   get_capture();
 	method Font   get_hint_font();

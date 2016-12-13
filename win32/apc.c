@@ -570,15 +570,22 @@ apc_application_sync( void)
 }
 
 Bool
-apc_application_yield()
+apc_application_yield(Bool wait_for_event)
 {
 	MSG msg;
-	while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE))
+	Bool got_events = false;
+	while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE)) {
+		got_events = true;
 		if ( !process_msg( &msg)) {
 			PostThreadMessage( guts. mainThreadId, appDead ? WM_QUIT : WM_TERMINATE, 0, 0);
-			break;
+			return false;
 		}
-	return true;
+	}
+	if ( application && wait_for_event && !got_events ) {
+		GetMessage( &msg, NULL, 0, 0);
+		process_msg( &msg);
+	}
+	return application != nilHandle;
 }
 
 Handle

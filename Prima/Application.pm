@@ -726,7 +726,7 @@ I<apc_system_action> tag.
 Unblocks the graphic output for all widgets,
 previously locked with C<lock()>.
 
-=item yield
+=item yield $wait_for_event=0
 
 An event dispatcher, called from within the event loop.
 If the event loop can be schematized, then in
@@ -735,12 +735,13 @@ If the event loop can be schematized, then in
 		yield
 	}
 
-draft yield() is the only function, called repeatedly
-within the event loop. yield() cannot be used to
-organize event loops, but it can be employed to
-process stacked system events explicitly, to 
-increase responsiveness of a program, for example,
-inside a long calculation cycle.
+draft yield() is the only function, called repeatedly within the event loop.
+yield(0) shouldn't be used to organize event loops, but it can be employed to
+process stacked system events explicitly, to increase responsiveness of a
+program, for example, inside a long calculation cycle. 
+yield(1) though is adapted exactly for external implementation of event loops;
+it does exactly the same as yeild(0), but if there are no events, it sleeps
+until there comes at least one, processes it, and then returns.
 
 The method can be called with a class string instead of an object instance;
 however, the $::application object must be initialized.

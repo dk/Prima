@@ -1909,7 +1909,7 @@ extern Bool
 apc_application_unlock( Handle self);
 
 extern Bool
-apc_application_yield( void);
+apc_application_yield( Bool wait_for_event );
 
 /* Component */
 extern Bool

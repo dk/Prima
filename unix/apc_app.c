@@ -1150,12 +1150,12 @@ apc_application_sync(void)
 }
 
 Bool
-apc_application_yield( void)
+apc_application_yield( Bool wait_for_event)
 {
 	if (!application) return false;
 	XSync( DISP, false);
-	prima_one_loop_round( false, true);
+	prima_one_loop_round( wait_for_event, true);
 	XSync( DISP, false);
 	prima_one_loop_round( false, true);
-	return true;
+	return application != nilHandle;
 }
