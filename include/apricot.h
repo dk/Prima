@@ -2437,7 +2437,7 @@ apc_popup( Handle self, int x, int y, Rect * anchor);
 
 /* Timer */
 extern Bool
-apc_timer_create( Handle self, Handle owner, int timeout);
+apc_timer_create( Handle self);
 
 extern Bool
 apc_timer_destroy( Handle self);

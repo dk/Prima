@@ -7,17 +7,19 @@ use Prima::Application;
 
 plan tests => 4;
 
-my $window = create_window;
-my $t = $window->insert( Timer =>
-                   timeout => 20,
-                   onTick => \&set_flag);
+my $t;
+$t = Prima::Timer->new(
+                   onTick => \&set_flag,
+		   timeout => 20,
+		   owner => undef,
+		   onDestroy => \&set_flag,
+		);
 ok( $t, "create" );
 $t-> start;
 ok( $t-> get_active, "start" );
 reset_flag;
 ok( wait_flag, "onTick" );
-$t-> owner( $::application );
-$t-> owner( $window );
 reset_flag;
-ok( wait_flag, "recreate" );
-$t-> destroy;
+$t->stop;
+undef $t;
+ok( wait_flag, "destroy by refcnt" );

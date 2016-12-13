@@ -16,22 +16,12 @@ extern "C" {
 void
 Timer_init( Handle self, HV * profile)
 {
-	inherited init( self, profile);
-	my-> update_sys_handle( self, profile);
-	CORE_INIT_TRANSIENT(Timer);
-}
-
-void
-Timer_update_sys_handle( Handle self, HV * profile)
-{
 	dPROFILE;
-	Handle xOwner = pexist( owner) ? pget_H( owner) : var-> owner;
-	if (!( pexist( owner))) return;
-	if ( !apc_timer_create( self, xOwner, pexist( timeout)
-									? pget_i( timeout)
-									: my-> get_timeout( self)))
+	inherited init( self, profile);
+	if ( !apc_timer_create( self))
 		croak("cannot create timer");
-	if ( pexist( timeout)) pdelete( timeout);
+	my-> set_timeout( self, pget_i( timeout));
+	CORE_INIT_TRANSIENT(Timer);
 }
 
 void
@@ -62,15 +52,6 @@ Timer_done( Handle self)
 {
 	apc_timer_destroy( self);
 	inherited done( self);
-}
-
-Bool
-Timer_validate_owner( Handle self, Handle * owner, HV * profile)
-{
-	dPROFILE;
-	*owner = pget_H( owner);
-	if ( !kind_of( *owner, CWidget)) return false;
-	return inherited validate_owner( self, owner, profile);
 }
 
 void

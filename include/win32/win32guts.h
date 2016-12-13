@@ -334,12 +334,6 @@ typedef struct _DCFont
 	HFONT         hfont;
 } DCFont, *PDCFont;
 
-
-typedef struct _ItemRegRec {
-int   cmd;
-void *item;
-} ItemRegRec, *PItemRegRec;
-
 typedef struct _DrawableData
 {
 	/* Drawable basic data*/
@@ -413,8 +407,6 @@ typedef struct _DrawableData
 	int            yOverride;               // special cached height value. Used in WM_SIZE<->WM_MOVE interactions
 
 	/* Widget attributes - timers, cursor, pointers, menu, shape */
-	int            timeDefsCount;           // count of timers attached.
-	PItemRegRec    timeDefs;                // timer list
 	Point          cursorPos;               // cursor position
 	Point          cursorSize;              // cursor size
 	HCURSOR        pointer;                 // pointer handle
@@ -513,6 +505,11 @@ typedef struct _MusClkRec {
 
 #define palette_create image_create_palette
 
+typedef struct _ItemRegRec {
+	int   cmd;
+	void *item;
+} ItemRegRec, *PItemRegRec;
+
 extern Bool         appDead;
 extern Bool         debug;
 extern DIBMONOBRUSH bmiHatch;
@@ -531,6 +528,9 @@ extern PatResource  hPatHollow;
 extern HPEN         hPenHollow;
 extern PHash        regnodeMan;
 extern Handle       lastMouseOver;
+extern int          timeDefsCount;
+extern PItemRegRec  timeDefs;
+
 
 LRESULT CALLBACK    generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);

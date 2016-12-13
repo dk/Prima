@@ -43,6 +43,8 @@ char * keyLayouts[]   = {  "0409", "0403", "0405", "0406", "0407",
 	"0417","0418","041A","041D"
 };
 WCHAR lastDeadKey = 0;
+int          timeDefsCount = 0;
+PItemRegRec  timeDefs = NULL;
 Bool debug = false;
 
 BOOL APIENTRY
@@ -1026,16 +1028,6 @@ AGAIN:
 		if ( sys sizeLockLevel == 0 && var stage <= csNormal)
 			var virtualSize = sys lastSize;
 		break;
-	case WM_TIMER:
-		{
-			int id = mp1 - 1;
-			if ( id >= 0 && id < sys timeDefsCount) ev. gen. H = ( Handle) sys timeDefs[ id]. item;
-			if ( ev. gen. H) {
-				v = ( PWidget)( self = ev. gen. H);
-				ev. cmd = cmTimer;
-			}
-		}
-		break;
 	case WM_WINDOWPOSCHANGING:
 		{
 			LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
@@ -1291,41 +1283,47 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		break;
 // case WM_SYSCHAR:return 1;
 	case WM_TIMER:
-		if ( mp1 == TID_USERMAX)
-		// application local timer
-		{
-		POINT p;
-		HWND wp;
-		if ( lastMouseOver && !GetCapture() && ( PObject( lastMouseOver)-> stage == csNormal))
-		{
-			HWND desktop = HWND_DESKTOP;
-			GetCursorPos( &p);
-			wp = WindowFromPoint( p);
-			if ( wp) {
-				POINT xp = p;
-				MapWindowPoints( desktop, wp, &xp, 1);
-				wp = ChildWindowFromPointEx( wp, xp, CWP_SKIPINVISIBLE);
-			} else
-				wp = ChildWindowFromPointEx( wp, p, CWP_SKIPINVISIBLE);
-			if ( wp != ( HWND)(( PWidget) lastMouseOver)-> handle)
-			{
-				HWND old = ( HWND)(( PWidget) lastMouseOver)-> handle;
-				Handle s;
-				lastMouseOver = nilHandle;
-				SendMessage( old, WM_MOUSEEXIT, 0, 0);
-				s = hwnd_to_view( wp);
-				if ( s && ( HWND)(( PWidget) s)-> handle == wp)
+		if ( mp1 == TID_USERMAX) {
+			POINT p;
+			HWND wp;
+			if ( lastMouseOver && !GetCapture() && ( PObject( lastMouseOver)-> stage == csNormal)) {
+				HWND desktop = HWND_DESKTOP;
+				GetCursorPos( &p);
+				wp = WindowFromPoint( p);
+				if ( wp) {
+					POINT xp = p;
+					MapWindowPoints( desktop, wp, &xp, 1);
+					wp = ChildWindowFromPointEx( wp, xp, CWP_SKIPINVISIBLE);
+				} else
+					wp = ChildWindowFromPointEx( wp, p, CWP_SKIPINVISIBLE);
+				if ( wp != ( HWND)(( PWidget) lastMouseOver)-> handle)
 				{
-					MapWindowPoints( desktop, wp, &p, 1);
-					SendMessage( wp, WM_MOUSEENTER, 0, MAKELPARAM( p. x, p. y));
-					lastMouseOver = s;
-				} else if ( guts. mouseTimer) {
-					guts. mouseTimer = 0;
-					if ( !KillTimer( dsys(application)handle, TID_USERMAX)) apiErr;
+					HWND old = ( HWND)(( PWidget) lastMouseOver)-> handle;
+					Handle s;
+					lastMouseOver = nilHandle;
+					SendMessage( old, WM_MOUSEEXIT, 0, 0);
+					s = hwnd_to_view( wp);
+					if ( s && ( HWND)(( PWidget) s)-> handle == wp)
+					{
+						MapWindowPoints( desktop, wp, &p, 1);
+						SendMessage( wp, WM_MOUSEENTER, 0, MAKELPARAM( p. x, p. y));
+						lastMouseOver = s;
+					} else if ( guts. mouseTimer) {
+						guts. mouseTimer = 0;
+						if ( !KillTimer( dsys(application)handle, TID_USERMAX)) apiErr;
+					}
 				}
 			}
-		}
-		return 0;
+			return 0;
+		} else {
+			int id = mp1 - 1;
+			if ( id >= 0 && id < timeDefsCount) {
+				ev. gen. H = ( Handle) timeDefs[ id]. item;
+				if ( ev. gen. H) {
+					v = ( PWidget)( self = ev. gen. H);
+					ev. cmd = cmTimer;
+				}
+			}
 		}
 		break;
 	case WM_GETMINMAXINFO:

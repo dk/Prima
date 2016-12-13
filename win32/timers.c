@@ -10,16 +10,15 @@
 extern "C" {
 #endif
 
-
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
-
+#define OWNER DHANDLE(application)
 
 static int
-add_timer( Handle timerObject, Handle self)
+add_timer( Handle timerObject)
 {
 	PItemRegRec pTime;
 	int i;
@@ -27,33 +26,35 @@ add_timer( Handle timerObject, Handle self)
 		apcErr( errInvObject);
 		return 0;
 	}
+	if ( timeDefsCount >= TID_USERMAX - 1 )
+		return 0;
 
-	if ( sys timeDefs) for ( i = 0; i < sys timeDefsCount; i++)
-	if ( sys timeDefs[ i]. item == nil)
+	if ( timeDefs) for ( i = 0; i < timeDefsCount; i++)
+	if ( timeDefs[ i]. item == nil)
 	{
-		sys timeDefs[ i]. item = ( void*) timerObject;
+		timeDefs[ i]. item = ( void*) timerObject;
 		return i + 1;
 	}
 
-	if ( !(pTime = ( PItemRegRec) malloc (( sys timeDefsCount + 1) * sizeof( ItemRegRec))))
+	if ( !(pTime = ( PItemRegRec) malloc (( timeDefsCount + 1) * sizeof( ItemRegRec))))
 		return 0;
 
-	if ( sys timeDefs) {
-		memcpy( pTime, sys timeDefs, sys timeDefsCount* sizeof( ItemRegRec));
-		free( sys timeDefs);
+	if ( timeDefs) {
+		memcpy( pTime, timeDefs, timeDefsCount * sizeof( ItemRegRec));
+		free( timeDefs);
 	}
-	sys timeDefs = pTime;
-	pTime += sys timeDefsCount++;
+	timeDefs = pTime;
+	pTime += timeDefsCount++;
 	pTime-> item = ( void*) timerObject;
-	return sys timeDefsCount;
+	return timeDefsCount;
 }
 
 static void
-remove_timer( Handle timerObject, Handle self)
+remove_timer( Handle timerObject)
 {
 	int i;
-	PItemRegRec list = sys timeDefs;
-	for ( i = 0; i < sys timeDefsCount; i++)
+	PItemRegRec list = timeDefs;
+	for ( i = 0; i < timeDefsCount; i++)
 	{
 		if (( Handle)( list-> item) == timerObject)
 		{
@@ -65,26 +66,11 @@ remove_timer( Handle timerObject, Handle self)
 }
 
 Bool
-apc_timer_create( Handle self, Handle owner, int timeout)
+apc_timer_create( Handle self)
 {
-	Bool reset = false;
 	objCheck false;
-	dobjCheck( owner) false;
 
-	if (( DHANDLE( owner) != sys owner) && ( var handle != nilHandle) && is_opt( optActive)) {
-		if ( !KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle)) apiErr;
-		remove_timer( self, var owner);
-		reset = true;
-	}
-	sys owner = DHANDLE( owner);
-	if ( !( var handle = add_timer( self, owner))) return false;
-	sys s. timer. timeout = timeout;
-	if ( reset) {
-		if ( !SetTimer(( HWND)(( PWidget) owner)-> handle, var handle, sys s. timer. timeout, nil)) {
-			opt_clear( optActive);
-			apiErrRet;
-		}
-	}
+	if ( !( var handle = add_timer( self))) return false;
 	return true;
 }
 
@@ -92,10 +78,10 @@ Bool
 apc_timer_destroy( Handle self)
 {
 	objCheck false;
-	if ( is_opt( optActive) && var handle && IsWindow(( HWND)(( PWidget) var owner)-> handle)) {
-		if ( !KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle)) apiErr;
+	if ( is_opt( optActive) && var handle ) {
+		if ( !KillTimer( OWNER, var handle)) apiErr;
 	}
-	remove_timer( self, var owner);
+	remove_timer( self);
 	return true;
 }
 
@@ -111,8 +97,7 @@ apc_timer_set_timeout( Handle self, int timeout)
 {
 	objCheck false;
 	if ( is_opt( optActive)) {
-		KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle);
-		if ( !SetTimer(( HWND)(( PWidget) var owner)-> handle, var handle, timeout, nil)) {
+		if ( !SetTimer( OWNER, var handle, timeout, nil)) {
 			opt_clear( optActive);
 			apiErr;
 			return false;
@@ -126,7 +111,7 @@ Bool
 apc_timer_start( Handle self)
 {
 	objCheck false;
-	if ( !SetTimer(( HWND)(( PWidget) var owner)-> handle, var handle, sys s. timer. timeout, nil))
+	if ( !SetTimer( OWNER, var handle, sys s. timer. timeout, nil))
 		apiErrRet;
 	return true;
 }
@@ -135,7 +120,7 @@ Bool
 apc_timer_stop( Handle self)
 {
 	objCheck false;
-	KillTimer(( HWND)(( PWidget) var owner)-> handle, var handle);
+	KillTimer( OWNER, var handle);
 	return true;
 }
 

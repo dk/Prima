@@ -38,21 +38,15 @@ fetch_sys_timer( Handle self, PTimerSysData *s, Bool *real_timer)
 		fetch_sys_timer( self, &sys, &real)
 
 Bool
-apc_timer_create( Handle self, Handle owner, int timeout)
+apc_timer_create( Handle self)
 {
-	Bool recreate;
 	ENTERTIMER;
 
 	sys-> type.timer = true;
-	recreate = real && sys-> who != nilHandle;
 	inactivate_timer( sys);
-	sys-> timeout = timeout;
 	sys-> who = self;
-	if (real) {
-		if ( !recreate) opt_clear( optActive);
+	if (real) 
 		apc_component_fullname_changed_notify( self);
-		if ( is_opt( optActive)) apc_timer_start( self);
-	}
 	return true;
 }
 

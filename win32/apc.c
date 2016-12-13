@@ -106,7 +106,8 @@ apc_application_destroy( Handle self)
 		}
 		if ( !DestroyWindow( sys handle)) apiErr;
 	}
-	free( sys timeDefs);
+	free( timeDefs);
+	timeDefs = NULL;
 	PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
 	PostQuitMessage(0);
 	return true;
@@ -729,17 +730,6 @@ set_view_ex( Handle self, PViewProfile p)
 	if ( p-> focused) apc_widget_set_focused( self);
 	apc_widget_set_visible( self, p-> visible);
 	if ( p-> capture) apc_widget_set_capture( self, 1, nilHandle);
-	if ( sys timeDefs) for ( i = 0; i < sys timeDefsCount; i++)
-	if ( sys timeDefs[ i]. item)
-	{
-		Handle xs   = ( Handle) sys timeDefs[ i]. item;
-		Handle self = xs;
-		if ( is_opt( optActive))
-			if ( !SetTimer( wnd, var handle, sys s. timer. timeout, nil)) {
-				opt_clear( optActive);
-				apiErr;
-			}
-	}
 	if ( !InvalidateRect(( HWND) var handle, nil, false)) apiErr;
 	process_transparents( self);
 }
@@ -1949,7 +1939,6 @@ apc_widget_destroy( Handle self)
 	}
 	if ( sys recreateData) free( sys recreateData);
 	if ( self == lastMouseOver) lastMouseOver = nilHandle;
-	free( sys timeDefs);
 	if ( var handle == nilHandle) return true;
 
 	if ( sys className == WC_FRAME)
