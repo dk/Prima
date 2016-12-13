@@ -475,17 +475,16 @@ Component_is_owner( Handle self, Handle objectHandle)
 Bool
 Component_migrate( Handle self, Handle attachTo)
 {
-	PComponent detachFrom = PComponent( var-> owner ? var-> owner : application);
-	PComponent attachTo_  = PComponent( attachTo  ? attachTo  : application);
+	Handle detachFrom = var-> owner;
 
-	if ( detachFrom != attachTo_) {
-		if ( attachTo_)
-			attachTo_ -> self-> attach(( Handle) attachTo_, self);
+	if ( detachFrom != attachTo) {
+		if ( attachTo)
+			PComponent(attachTo)  -> self-> attach( attachTo, self);
 		if ( detachFrom)
-			detachFrom-> self-> detach(( Handle) detachFrom, self, false);
+			PComponent(detachFrom)-> self-> detach( detachFrom, self, false);
 	}
 
-	return detachFrom != attachTo_;
+	return detachFrom != attachTo;
 }
 
 void
