@@ -1157,5 +1157,5 @@ apc_application_yield( Bool wait_for_event)
 	prima_one_loop_round( wait_for_event, true);
 	XSync( DISP, false);
 	prima_one_loop_round( false, true);
-	return application != nilHandle;
+	return application != nilHandle && !guts. applicationClose;
 }

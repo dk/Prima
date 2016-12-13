@@ -736,12 +736,21 @@ If the event loop can be schematized, then in
 	}
 
 draft yield() is the only function, called repeatedly within the event loop.
-yield(0) shouldn't be used to organize event loops, but it can be employed to
+yield(0) call shouldn't be used to organize event loops, but it can be employed to
 process stacked system events explicitly, to increase responsiveness of a
 program, for example, inside a long calculation cycle. 
+
 yield(1) though is adapted exactly for external implementation of event loops;
 it does exactly the same as yeild(0), but if there are no events, it sleeps
-until there comes at least one, processes it, and then returns.
+until there comes at least one, processes it, and then returns. The return
+value is 0 if the application doesn't need more event processins, because of shutting down.
+The corresponding code will be 
+
+	while ( yield(1)) {
+	    ...
+	}
+
+but in turn, this call cannot be used for UI responsiveness inside tight cycles.
 
 The method can be called with a class string instead of an object instance;
 however, the $::application object must be initialized.
