@@ -110,7 +110,8 @@ stylus_free( PDCStylus res, Bool permanent)
 	}
 	if ( res-> hpen)   DeleteObject( res-> hpen);
 	if ( res-> hbrush) DeleteObject( res-> hbrush);
-	res-> hbrush = res-> hpen = nil;
+	res-> hbrush = nil;
+	res-> hpen = nil;
 	hash_delete( stylusMan, &res-> s, sizeof( Stylus) - ( res-> s. extPen. actual ? 0 : sizeof( EXTPEN)), true);
 }
 
