@@ -81,6 +81,11 @@ Selects a file handle, that is to be monitored for stream I/O events.
 If HANDLE is C<undef>, object is returned to a passive state, and
 the previously binded file handle is de-selected.
 
+=item fd INTEGER
+
+Same as file(), but to be used for file descriptiors. When this property is used,
+consequent get-calls to file() will return undef.
+
 =item mask EVENT_MASK
 
 Selects a event mask, that is a combination of C<fe::XXX> integer constants,

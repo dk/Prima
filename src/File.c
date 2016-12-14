@@ -33,6 +33,7 @@ File_init( Handle self, HV * profile)
 		( query_method( self, "on_write",   0) ? feWrite     : 0) |
 		( query_method( self, "on_exception", 0) ? feException : 0);
 	File_reset_notifications( self);
+	my-> set_fd( self, pget_i( fd));
 	my-> set_file( self, pget_sv( file));
 	CORE_INIT_TRANSIENT(File);
 }
@@ -101,6 +102,25 @@ File_file( Handle self, Bool set, SV * file)
 		}
 	}
 	return nilSV;
+}
+
+int
+File_fd( Handle self, Bool set, int fd)
+{
+	if ( !set)
+		return var-> fd;
+	if ( var-> file) {
+		apc_file_detach( self);
+		sv_free( var-> file);
+	}
+	var-> file = nil;
+	var-> fd = -1;
+	if ( fd >= 0 ) {
+		var-> fd = fd;
+		if ( !apc_file_attach( self))
+			var-> fd  = -1;
+	}
+	return var-> fd;
 }
 
 SV *

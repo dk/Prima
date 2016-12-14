@@ -251,6 +251,7 @@ sub profile_default
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
 		file  => undef,
+		fd    => -1,
 		mask  => fe::Read | fe::Write | fe::Exception,
 		owner => undef,
 	);

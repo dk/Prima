@@ -7,6 +7,7 @@ object Prima::File( Prima::Component)
 	SV *  file;
 
 	property SV *      file;
+	property int       fd;
 	property int       mask;
 
 	method   UV        add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
