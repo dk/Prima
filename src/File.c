@@ -81,7 +81,7 @@ File_file( Handle self, Bool set, SV * file)
 {
 	if ( !set)
 		return var-> file ? newSVsv( var-> file) : nilSV;
-	if ( var-> fd) {
+	if ( var-> fd >= 0) {
 		apc_file_detach( self);
 		if ( var-> file ) sv_free( var-> file);
 	}
@@ -184,7 +184,7 @@ File_reset_notifications( Handle self)
 
 	if ( var-> eventMask != mask) {
 		var-> eventMask = mask;
-		if ( var-> fd)
+		if ( var-> fd >= 0)
 			apc_file_change_mask( self);
 	}
 }
