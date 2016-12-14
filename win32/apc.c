@@ -106,8 +106,6 @@ apc_application_destroy( Handle self)
 		}
 		if ( !DestroyWindow( sys handle)) apiErr;
 	}
-	free( timeDefs);
-	timeDefs = NULL;
 	PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
 	PostQuitMessage(0);
 	return true;

@@ -386,6 +386,8 @@ static Bool myfont_cleaner( void * value, int keyLen, void * key, void * dummy) 
 void
 window_subsystem_done()
 {
+	free( timeDefs);
+	timeDefs = NULL;
 	list_destroy( &guts. files);
 
 	if ( guts. socketMutex) {
