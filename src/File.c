@@ -48,9 +48,9 @@ File_cleanup( Handle self)
 Bool
 File_is_active( Handle self, Bool autoDetach)
 {
-	if (!var-> file || SvTYPE( var-> file) != SVt_NULL)
+	if (var-> fd < 0)
 		return false;
-	if ( !IoIFP( sv_2io( var-> file))) {
+	if (var->file && !IoIFP( sv_2io( var-> file))) {
 		if ( autoDetach)
 			my-> set_file( self, nilSV);
 		return false;
@@ -81,9 +81,9 @@ File_file( Handle self, Bool set, SV * file)
 {
 	if ( !set)
 		return var-> file ? newSVsv( var-> file) : nilSV;
-	if ( var-> file) {
+	if ( var-> fd) {
 		apc_file_detach( self);
-		sv_free( var-> file);
+		if ( var-> file ) sv_free( var-> file);
 	}
 	var-> file = nil;
 	var-> fd = -1;
@@ -109,9 +109,9 @@ File_fd( Handle self, Bool set, int fd)
 {
 	if ( !set)
 		return var-> fd;
-	if ( var-> file) {
+	if ( var-> fd >= 0) {
 		apc_file_detach( self);
-		sv_free( var-> file);
+		if ( var-> file ) sv_free( var-> file);
 	}
 	var-> file = nil;
 	var-> fd = -1;
@@ -184,7 +184,7 @@ File_reset_notifications( Handle self)
 
 	if ( var-> eventMask != mask) {
 		var-> eventMask = mask;
-		if ( var-> file)
+		if ( var-> fd)
 			apc_file_change_mask( self);
 	}
 }
