@@ -7,7 +7,6 @@
 #include "apricot.h"
 #include "unix/guts.h"
 #include "Application.h"
-#include "File.h"
 #include <sys/utsname.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -902,216 +901,6 @@ apc_application_get_monitor_rects( Handle self, int * nrects)
 #endif
 }
 
-typedef struct {
-	int no;
-	void *sub;
-	void *glob;
-} FileList, *PFileList;
-
-Bool
-apc_watch_filehandle( int no, void *sub, void *glob)
-{
-	PFileList f = malloc( sizeof( FileList));
-	if ( !f) return false;
-	f->no = no;
-	f->sub = sub;
-	f->glob = glob;
-	list_add( guts.files, (Handle)f);
-	return true;
-}
-
-#ifdef PerlIO
-typedef PerlIO *FileStream;
-#else
-#define PERLIO_IS_STDIO 1
-typedef FILE *FileStream;
-#define PerlIO_fileno(f) fileno(f)
-#endif
-
-static Bool
-purge_invalid_watchers( Handle self, void *dummy)
-{
-	((PFile)self)->self->is_active(self,true);
-	return false;
-}
-
-static void
-perform_pending_paints( void)
-{
-	PDrawableSysData selfxx, next;
-
-	for ( XX = TAILQ_FIRST( &guts.paintq); XX != nil; ) {
-		next = TAILQ_NEXT( XX, paintq_link);
-		if ( XX-> flags. paint_pending && (guts. appLock == 0) &&
-			(PWidget( XX->self)-> stage == csNormal)) {
-			TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
-			XX-> flags. paint_pending = false;
-			prima_simple_message( XX-> self, cmPaint, false);
-			/* handle the case where this widget is locked */
-			if (XX->invalid_region) {
-				XDestroyRegion(XX->invalid_region);
-				XX->invalid_region = nil;
-			}
-		} 
-		XX = next;
-	}
-}
-
-static void
-send_pending_events( void)
-{
-	PendingEvent *pe, *next;
-	int stage;
-
-	for ( pe = TAILQ_FIRST( &guts.peventq); pe != nil; ) {
-		next = TAILQ_NEXT( pe, peventq_link);
-		if (( stage = PComponent( pe->recipient)-> stage) != csConstructing) {
-			TAILQ_REMOVE( &guts.peventq, pe, peventq_link);
-		}
-		if ( stage == csNormal)
-			apc_message( pe-> recipient, &pe-> event, false);
-		if ( stage != csConstructing) {
-			free( pe);
-		}
-		pe = next;
-	}
-}
-
-Bool
-prima_one_loop_round( Bool wait, Bool careOfApplication)
-{
-	XEvent ev, next_event;
-	fd_set read_set, write_set, excpt_set;
-	struct timeval timeout, *ptimeout = &timeout;
-	int r, i, queued_events;
-	PTimerSysData timer;
-
-	if ( guts. applicationClose) return false;
-
-	if (( queued_events = XEventsQueued( DISP, QueuedAlready))) {
-		goto FetchAndProcess;
-	}
-	read_set = guts.read_set;
-	write_set = guts.write_set;
-	excpt_set = guts.excpt_set;
-	if ( guts. oldest) {
-		gettimeofday( &timeout, nil);
-		if ( guts. oldest-> when. tv_sec < timeout. tv_sec ||
-			( guts. oldest-> when. tv_sec == timeout. tv_sec &&
-				guts. oldest-> when. tv_usec <= timeout. tv_usec)) {
-			timer = guts. oldest;
-			apc_timer_start( timer-> who);
-			if ( timer-> who == CURSOR_TIMER) {
-				prima_cursor_tick();
-			} else if ( timer-> who == MENU_TIMER) {
-				apc_timer_stop( MENU_TIMER);
-				if ( guts. currentMenu) {
-					XEvent ev;
-					ev. type = MenuTimerMessage;
-					prima_handle_menu_event( &ev, M(guts. currentMenu)-> w-> w, guts. currentMenu);
-				}
-			} else if ( timer-> who == MENU_UNFOCUS_TIMER) {
-				prima_end_menu();
-			} else {
-				prima_simple_message( timer-> who, cmTimer, false);
-			}
-			gettimeofday( &timeout, nil);
-		}
-		if ( guts. oldest && wait) {
-			if ( guts. oldest-> when. tv_sec < timeout. tv_sec) {
-				timeout. tv_sec = 0;
-				timeout. tv_usec = 0;
-			} else {
-				timeout. tv_sec = guts. oldest-> when. tv_sec - timeout. tv_sec;
-				if ( guts. oldest-> when. tv_usec < timeout. tv_usec) {
-					if ( timeout. tv_sec == 0) {
-						timeout. tv_sec = 0;
-						timeout. tv_usec = 0;
-					} else {
-						timeout. tv_sec--;
-						timeout. tv_usec = 1000000 - (timeout. tv_usec - guts. oldest-> when. tv_usec);
-					}
-				} else {
-					timeout. tv_usec = guts. oldest-> when. tv_usec - timeout. tv_usec;
-				}
-			}
-			if ( timeout. tv_sec > 0 || timeout. tv_usec > 200000) {
-				timeout. tv_sec = 0;
-				timeout. tv_usec = 200000;
-			}
-		} else {
-			timeout. tv_sec = 0;
-			if ( wait)
-				timeout. tv_usec = 200000;
-			else
-				timeout. tv_usec = 0;
-		}
-	} else {
-		timeout. tv_sec = 0;
-		if ( wait) {
-			XNoOp( DISP);
-			XFlush( DISP);
-			ptimeout = NULL;
-		} else
-			timeout. tv_usec = 0;
-	}
-	if (( r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, ptimeout)) > 0 &&
-		FD_ISSET( guts.connection, &read_set)) {
-		if (( queued_events = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
-			/* just like tcl/perl tk do, to avoid an infinite loop */
-			RETSIGTYPE oldHandler = signal( SIGPIPE, SIG_IGN);
-			XNoOp( DISP);
-			XFlush( DISP);
-			(void) signal( SIGPIPE, oldHandler);
-		}
-FetchAndProcess:
-		if ( queued_events && ( application || !careOfApplication)) {
-			XNextEvent( DISP, &ev);
-			XCHECKPOINT;
-			queued_events--;
-			while ( queued_events > 0) {
-				if (!application && careOfApplication) return false;
-				XNextEvent( DISP, &next_event);
-				XCHECKPOINT;
-				prima_handle_event( &ev, &next_event);
-				guts. total_events++;
-				queued_events = XEventsQueued( DISP, QueuedAlready);
-				memcpy( &ev, &next_event, sizeof( XEvent));
-			}
-			if (!application && careOfApplication) return false;
-			guts. total_events++;
-			prima_handle_event( &ev, nil);
-		}
-		XNoOp( DISP);
-		XFlush( DISP);
-	} else if ( r < 0) {
-		list_first_that( guts.files, (void*)purge_invalid_watchers, nil);
-	} else {
-		if ( r > 0) {
-			for ( i = 0; i < guts.files->count; i++) {
-				PFile f = (PFile)list_at( guts.files,i);
-				if ( FD_ISSET( f->fd, &read_set) && (f->eventMask & feRead)) {
-					prima_simple_message((Handle)f, cmFileRead, false);
-					break;
-				} else if ( FD_ISSET( f->fd, &write_set) && (f->eventMask & feWrite)) {
-					prima_simple_message((Handle)f, cmFileWrite, false);
-					break;
-				} else if ( FD_ISSET( f->fd, &excpt_set) && (f->eventMask & feException)) {
-					prima_simple_message((Handle)f, cmFileException, false);
-					break;
-				}
-			}
-		} else {
-			XNoOp( DISP);
-			XFlush( DISP);
-		}
-	}
-	send_pending_events();
-	perform_pending_paints();
-	kill_zombies();
-	return application != nilHandle;
-}
-
 Bool
 apc_application_go( Handle self)
 {
@@ -1120,7 +909,7 @@ apc_application_go( Handle self)
 	XNoOp( DISP);
 	XFlush( DISP);
 
-	while ( prima_one_loop_round( true, true))
+	while ( prima_one_loop_round( WAIT_ALWAYS, true))
 		;
 
 	if ( application) Object_destroy( application);
@@ -1153,17 +942,7 @@ Bool
 apc_application_yield( Bool wait_for_event)
 {
 	if (!application) return false;
-	if ( wait_for_event ) {
-		while (1) {
-			long save_total_events = guts. total_events;
-			if ( !prima_one_loop_round( false, true )) return false;
-			if ( save_total_events == guts. total_events ) break;
-			wait_for_event = false;
-		}
-	}
+	prima_one_loop_round(wait_for_event ? WAIT_IF_NONE : WAIT_NEVER, true);
 	XSync( DISP, false);
-	prima_one_loop_round( wait_for_event, true);
-	XSync( DISP, false);
-	prima_one_loop_round( false, true);
 	return application != nilHandle && !guts. applicationClose;
 }

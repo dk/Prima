@@ -1058,8 +1058,12 @@ prima_no_cursor( Handle self);
 extern Cursor
 prima_null_pointer( void);
 
+#define WAIT_NEVER   0
+#define WAIT_ALWAYS  1
+#define WAIT_IF_NONE 2
+
 extern Bool
-prima_one_loop_round( Bool wait, Bool careOfApplication);
+prima_one_loop_round( int wait, Bool careOfApplication);
 
 extern void
 prima_prepare_drawable_for_painting( Handle self, Bool inside_on_paint);

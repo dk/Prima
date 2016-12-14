@@ -208,6 +208,8 @@ apc_file_attach( Handle self)
 	int fhtype;
 	objCheck false;
 
+	if ( PFile(self)->fd > FD_SETSIZE ) return false;
+
 	if ( guts. socket_version == 0) {
 		int  _data, _sz = sizeof( int);
 		(void)_data;

@@ -618,6 +618,8 @@ prima_rebuild_watchers( void)
 Bool
 apc_file_attach( Handle self)
 {
+	if ( PFile(self)->fd >= FD_SETSIZE ) return false;
+
 	if ( list_index_of( guts.files, self) >= 0) {
 		prima_rebuild_watchers();
 		return true;
@@ -674,44 +676,6 @@ apc_kbd_get_state( Handle self)
 		(( mask & ShiftMask)   ? kmShift : 0) |
 		(( mask & ControlMask) ? kmCtrl  : 0) |
 		(( mask & Mod1Mask)    ? kmAlt   : 0);
-}
-
-/* Messages */
-
-Bool
-prima_simple_message( Handle self, int cmd, Bool is_post)
-{
-	Event e;
-
-	bzero( &e, sizeof(e));
-	e. cmd = cmd;
-	e. gen. source = self;
-	return apc_message( self, &e, is_post);
-}
-
-Bool
-apc_message( Handle self, PEvent e, Bool is_post)
-{
-	PendingEvent *pe;
-
-	switch ( e-> cmd) {
-	/* XXX  insert more messages here */
-	case cmPost:
-		/* FALLTHROUGH */
-	default:
-		if ( is_post) {
-			if (!( pe = alloc1(PendingEvent))) return false;
-			memcpy( &pe->event, e, sizeof(pe->event));
-			pe-> recipient = self;
-			TAILQ_INSERT_TAIL( &guts.peventq, pe, peventq_link);
-		} else {
-			guts. total_events++;
-			CComponent(self)->message( self, e);
-			if ( PObject( self)-> stage == csDead) return false; 
-		}
-		break;
-	}
-	return true;
 }
 
 static void 
@@ -1072,7 +1036,7 @@ apc_show_message( const char * message, Bool utf8)
 	XNoOp( DISP);
 	XFlush( DISP);
 	while ( md. active && !guts. applicationClose) 
-		prima_one_loop_round( true, false);
+		prima_one_loop_round( WAIT_ALWAYS, false);
 	
 	XFreeGC( DISP, md. gc);
 	XDestroyWindow( DISP, md. w);
