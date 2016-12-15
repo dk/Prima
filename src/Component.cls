@@ -23,6 +23,7 @@ object Prima::Component( Prima::Object)
 	method   SV      * get_handle();
 	public   void      get_notification( char * name, int index);
 	c_only   void      handle_event ( PEvent event);
+	method   void      idle_message();
 	method   void      init( HV * profile);
 	method   int       is_owner( Handle objectHandle);
 	c_only   Bool      message( PEvent event);

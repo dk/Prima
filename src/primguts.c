@@ -1526,6 +1526,17 @@ plist_create( int size, int delta)
 	return new_list;
 }
 
+PList 
+plist_dup( PList slf )
+{
+	PList n = plist_create( slf-> count, slf-> delta );
+	if ( n ) {
+		n-> count = slf->count;
+		memcpy( n-> items, slf-> items, n->count * sizeof(Handle));
+	}
+	return n;
+}
+
 void
 list_destroy( PList slf)
 {

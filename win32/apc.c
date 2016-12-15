@@ -580,8 +580,13 @@ apc_application_yield(Bool wait_for_event)
 		}
 	}
 	if ( application && wait_for_event && !got_events ) {
-		GetMessage( &msg, NULL, 0, 0);
-		process_msg( &msg);
+		Event ev;
+		ev. cmd = cmIdle;
+		CComponent( application)-> message( application, &ev);
+		if ( application ) {
+			GetMessage( &msg, NULL, 0, 0);
+			process_msg( &msg);
+		}
 	}
 	return application != nilHandle;
 }

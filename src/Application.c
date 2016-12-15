@@ -32,6 +32,7 @@ Application_init( Handle self, HV * profile)
 	CDrawable-> init( self, profile);
 	list_create( &var->  widgets, 16, 16);
 	list_create( &var->  modalHorizons, 0, 8);
+	list_create( &var->  idleHandlers, 0, 8);
 	application = self;
 	if ( !apc_application_create( self))
 		croak( "Error creating application");
@@ -111,6 +112,7 @@ Application_done( Handle self)
 	if ( self != application) return;
 	unprotect_object( var-> hintTimer);
 	unprotect_object( var-> hintWidget);
+	list_destroy( &var->  idleHandlers);
 	list_destroy( &var->  modalHorizons);
 	list_destroy( &var->  widgets);
 	if ( var-> text ) SvREFCNT_dec( var-> text);
@@ -198,13 +200,36 @@ void Application_handle_event( Handle self, PEvent event)
 	switch ( event-> cmd)
 	{
 		case cmPost:
-		if ( event-> gen. H != self)
-		{
-			((( PComponent) event-> gen. H)-> self)-> message( event-> gen. H, event);
-			event-> cmd = 0;
-			if ( var->  stage > csNormal) return;
-		}
-		break;
+			if ( event-> gen. H != self)
+			{
+				((( PComponent) event-> gen. H)-> self)-> message( event-> gen. H, event);
+				event-> cmd = 0;
+				if ( var->  stage > csNormal) return;
+			}
+			break;
+		case cmIdle:
+			if ( var-> idleHandlers. count ) {
+				int i;
+				PList dup;
+				dup = plist_dup( &var-> idleHandlers );
+				var-> idleHandlers. count = 0;
+				if ( !dup ) return;
+				for ( i = 0; i < dup-> count; i++)
+					protect_object( list_at(dup, i));
+				for ( i = 0; i < dup-> count; i++) {
+					Handle handle;
+					handle = list_at(dup, i);
+					if ( handle == self ) {
+						inherited handle_event ( self, event);
+					} else {
+						CComponent(handle)-> message( handle, event);
+					}
+					unprotect_object( handle );
+				}
+				plist_destroy(dup);
+			}
+			return;
+
 	}
 	inherited handle_event ( self, event);
 }
@@ -956,6 +981,17 @@ Application_pointerVisible( Handle self, Bool set, Bool pointerVisible)
 	if ( !set)
 		return apc_pointer_get_visible( self);
 	return apc_pointer_set_visible( self, pointerVisible);
+}
+
+void
+Application_register_idle_handler( Handle self, Handle handle, Bool set)
+{
+	if ( set ) {
+		if ( list_index_of( &var-> idleHandlers, handle) < 0 )
+			list_add( &var-> idleHandlers, handle );
+	} else {
+		list_delete( &var-> idleHandlers, handle );
+	}
 }
 
 Point

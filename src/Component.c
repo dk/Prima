@@ -1,6 +1,7 @@
 #include "apricot.h"
 #include <ctype.h>
 #include "Component.h"
+#include "Application.h"
 #include <Component.inc>
 
 #ifdef __cplusplus
@@ -129,6 +130,7 @@ free_eventref( Handle self, Handle * org)
 void
 Component_done( Handle self)
 {
+	CApplication(application)-> register_idle_handler(application, self, false);
 	if ( var-> owner) 
 		CComponent( var-> owner)-> detach( var-> owner, self, false);
 	if ( var-> eventIDs) {
@@ -453,7 +455,16 @@ Component_handle_event( Handle self, PEvent event)
 	case cmSysHandle:
 		my-> notify( self, "<s", "SysHandle");
 		break;
+	case cmIdle:
+		my-> notify( self, "<s", "Idle");
+		break;
 	}
+}
+
+void
+Component_idle_message( Handle self)
+{
+	CApplication(application)-> register_idle_handler(application, self, true);
 }
 
 int

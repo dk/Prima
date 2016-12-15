@@ -1965,13 +1965,13 @@ process_file_events(Bool * x_events_pending, struct timeval * t)
 		if ( FD_ISSET( f->fd, &excpt_set) && (f->eventMask & feException))
 			e = true;
 		if ( r || w || e ) {
+			if ( files >= FD_SETSIZE - 1 ) break;
 			cur = queue + files++;
 			cur-> file = (Handle) f;
 			cur-> r = r;
 			cur-> w = w;
 			cur-> e = e;
 			protect_object((Handle) f);
-			break;
 		}
 	}
 
@@ -2076,6 +2076,7 @@ prima_one_loop_round( int wait, Bool careOfApplication)
 	}
 
 	/* wait for events */
+	prima_simple_message( application, cmIdle, false);
 	process_file_events(&x_events_pending, select_timeout(&timeout));
 	if ( x_events_pending && ( application || !careOfApplication) ) 
 		x_flush();

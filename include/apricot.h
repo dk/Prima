@@ -453,10 +453,10 @@ typedef struct _GenericEvent {
 } GenericEvent, *PGenericEvent;
 
 typedef union _Event {
-int             cmd;
-GenericEvent    gen;
-PositionalEvent pos;
-KeyEvent        key;
+	int             cmd;
+	GenericEvent    gen;
+	PositionalEvent pos;
+	KeyEvent        key;
 } Event, *PEvent;
 
 typedef struct _PostMsg {
@@ -734,6 +734,8 @@ CM(Menu)
 #define cmEndModal       0x00000028                /* dialog execution end */
 CM(EndModal)
 #define cmSysHandle      0x00000029                /* system handle recreated */
+CM(SysHandle)
+#define cmIdle           0x0000002A                /* idle handler */
 CM(SysHandle)
 
 #define cmMenuCmd        0x00000050                /* interactive menu command */
@@ -1421,6 +1423,9 @@ list_create( PList self, int size, int delta);
 
 extern PList
 plist_create( int size, int delta);
+
+extern PList
+plist_dup( PList self );
 
 extern void
 list_destroy( PList self);

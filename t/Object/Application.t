@@ -5,7 +5,7 @@ use Test::More;
 use Prima::Test;
 use Prima::Application;
 
-plan tests => 8;
+plan tests => 9;
 
 my $a = $::application;
 
@@ -50,8 +50,14 @@ $t->stop;
 alarm(1);
 reset_flag;
 $SIG{ALRM} = \&set_flag;
+my $p = 0;
+$t->onIdle(sub { $p++ } );
+$t->idle_message;
+$::application->onIdle( sub { $p++ } );
+$::application->idle_message;
 $::application->yield(1);
 ok( get_flag, "yield without events sleeps, but still is alive");
+ok( $p == 2, "idle event"); 
 
 $SIG{ALRM} = 'DEFAULT';
 alarm(10);
