@@ -736,7 +736,7 @@ CM(EndModal)
 #define cmSysHandle      0x00000029                /* system handle recreated */
 CM(SysHandle)
 #define cmIdle           0x0000002A                /* idle handler */
-CM(SysHandle)
+CM(Idle)
 
 #define cmMenuCmd        0x00000050                /* interactive menu command */
 CM(MenuCmd)

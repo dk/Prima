@@ -130,7 +130,8 @@ free_eventref( Handle self, Handle * org)
 void
 Component_done( Handle self)
 {
-	CApplication(application)-> register_idle_handler(application, self, false);
+	if ( application ) 
+		CApplication(application)-> register_idle_handler(application, self, false);
 	if ( var-> owner) 
 		CComponent( var-> owner)-> detach( var-> owner, self, false);
 	if ( var-> eventIDs) {
@@ -464,7 +465,8 @@ Component_handle_event( Handle self, PEvent event)
 void
 Component_idle_message( Handle self)
 {
-	CApplication(application)-> register_idle_handler(application, self, true);
+	if ( application ) 
+		CApplication(application)-> register_idle_handler(application, self, true);
 }
 
 int
@@ -538,6 +540,7 @@ Component_post_message( Handle self, SV * info1, SV * info2)
 {
 	PPostMsg p;
 	Event ev = { cmPost};
+	if ( !application ) return;
 	if ( var-> stage > csNormal) return;
 	if (!( p = alloc1( PostMsg))) return;
 	p-> info1  = newSVsv( info1);
