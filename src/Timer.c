@@ -28,7 +28,7 @@ void
 Timer_handle_event( Handle self, PEvent event)
 {
 	inherited handle_event ( self, event);
-	if ( event-> cmd == cmTimer) my-> notify( self, "<s", "Tick");
+	if ( event-> cmd == cmTimer && is_opt( optActive) ) my-> notify( self, "<s", "Tick");
 }
 
 Bool
