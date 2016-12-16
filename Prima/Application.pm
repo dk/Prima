@@ -363,6 +363,11 @@ The notification stores C<$IMAGE> in clipboard.
 
 The notification stores C<$TEXT> in clipboard.
 
+=item Idle
+
+Called when the event loop handled all pending events, and
+is about to sleep waiting for more.
+
 =item PasteImage $CLIPBOARD, $$IMAGE_REF
 
 The notification queries C<$CLIPBOARD> for image content and stores in
