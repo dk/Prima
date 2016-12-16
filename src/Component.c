@@ -130,8 +130,6 @@ free_eventref( Handle self, Handle * org)
 void
 Component_done( Handle self)
 {
-	if ( application ) 
-		CApplication(application)-> register_idle_handler(application, self, false);
 	if ( var-> owner) 
 		CComponent( var-> owner)-> detach( var-> owner, self, false);
 	if ( var-> eventIDs) {
@@ -456,17 +454,7 @@ Component_handle_event( Handle self, PEvent event)
 	case cmSysHandle:
 		my-> notify( self, "<s", "SysHandle");
 		break;
-	case cmIdle:
-		my-> notify( self, "<s", "Idle");
-		break;
 	}
-}
-
-void
-Component_idle_message( Handle self)
-{
-	if ( application ) 
-		CApplication(application)-> register_idle_handler(application, self, true);
 }
 
 int

@@ -51,14 +51,11 @@ alarm(1);
 reset_flag;
 $SIG{ALRM} = \&set_flag;
 my $p = 0;
-$t->onIdle(sub { $p++ } );
-$t->onIdle(sub { $p++ } );
-$t->idle_message;
-$::application->onIdle( sub { $p++ } );
-$::application->idle_message;
+$::application->onIdle( sub { $p+=1 } );
+$::application->onIdle( sub { $p+=8 } );
 $::application->yield(1);
 ok( get_flag, "yield without events sleeps, but still is alive");
-ok( $p == 3, "idle event"); 
+ok( $p == 9, "idle event"); 
 
 $SIG{ALRM} = 'DEFAULT';
 alarm(10);

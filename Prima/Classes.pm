@@ -140,7 +140,6 @@ my %RNT = (
 	Create      => nt::Default,
 	Destroy     => nt::Default,
 	PostMessage => nt::Default,
-	Idle        => nt::Default,
 );
 
 sub notification_types { return \%RNT; }
@@ -1498,6 +1497,7 @@ my %RNT = (
 	PasteText   => nt::Action,
 	CopyImage   => nt::Action,
 	PasteImage  => nt::Action,
+	Idle        => nt::Default,
 );
 
 sub notification_types { return \%RNT; }

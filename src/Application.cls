@@ -112,10 +112,8 @@ object Prima::Application( Prima::Widget)
 	Handle  sharedModal;
 	List    modalHorizons;
 	Bool    wantUnicodeInput;
-	List    idleHandlers;
 
 	c_only  Handle map_focus( Handle from);
 	c_only  Handle top_frame( Handle from);
 	c_only  Handle popup_modal();
-	c_only  void register_idle_handler(Handle handle, Bool set);
 }
