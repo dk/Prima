@@ -16,6 +16,9 @@
 
 package Prima::VB::examples::Widgety;
 
+use strict;
+use warnings;
+
 sub classes
 {
 	return (

@@ -1,5 +1,8 @@
 package Prima::VB::Config;
 
+use strict;
+use warnings;
+
 sub pages
 {
 	return qw(General Additional Sliders Abstract);
