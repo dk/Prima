@@ -1885,6 +1885,8 @@ sub create_config_pm
 # This file was automatically generated.
 # Do not edit, you'll loose your changes anyway.
 package Prima::Config;
+use strict;
+use warnings;
 use vars qw(%Config %Config_inst);
 
 %Config_inst = (

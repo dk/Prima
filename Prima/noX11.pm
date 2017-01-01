@@ -2,9 +2,14 @@
 
 package Prima::noX11; # for metacpan
 package Prima;
+use strict;
+use warnings;
 use Prima::Config;
 
+{
+no strict 'vars';
 push @preload, argv => '--no-x11' if $Prima::Config::Config{platform} eq 'unix';
+}
 
 sub XOpenDisplay
 {

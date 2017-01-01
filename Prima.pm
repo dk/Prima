@@ -4,6 +4,7 @@
 package Prima;
 
 use strict;
+use warnings;
 require DynaLoader;
 use vars qw($VERSION @ISA $__import @preload);
 @ISA = qw(DynaLoader);
