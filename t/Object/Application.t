@@ -43,7 +43,8 @@ alarm(10);
 $::application->yield(0); # clear up accumulated events
 my $t = Prima::Timer->new( timeout => 50, onTick => \&set_flag );
 $t->start;
-my $e = $::application->yield(1);
+my $e = 1;
+$e &= $::application->yield(1) while !get_flag;
 ok( $e && get_flag, "timer triggers yield return");
 $t->stop;
 

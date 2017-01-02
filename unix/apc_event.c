@@ -1896,32 +1896,34 @@ process_timers(void)
 	struct timeval t;
 	PTimerSysData timer;
 
-	if ( !guts. oldest) return 0;
-
 	gettimeofday( &t, nil);
-	if ( guts. oldest-> when. tv_sec > t. tv_sec || (
-		guts. oldest-> when. tv_sec == t. tv_sec &&
-		guts. oldest-> when. tv_usec > t. tv_usec
-	))
-		return 0;
-	
-	timer = guts. oldest;
-	apc_timer_start( timer-> who);
-	if ( timer-> who == CURSOR_TIMER) {
-		prima_cursor_tick();
-	} else if ( timer-> who == MENU_TIMER) {
-		apc_timer_stop( MENU_TIMER);
-		if ( guts. currentMenu) {
-			XEvent ev;
-			ev. type = MenuTimerMessage;
-			prima_handle_menu_event( &ev, M(guts. currentMenu)-> w-> w, guts. currentMenu);
+	while (1) {
+		if ( !guts. oldest) return 0;
+
+		if ( guts. oldest-> when. tv_sec > t. tv_sec || (
+			guts. oldest-> when. tv_sec == t. tv_sec &&
+			guts. oldest-> when. tv_usec > t. tv_usec
+		))
+			return 0;
+		
+		timer = guts. oldest;
+		apc_timer_start( timer-> who);
+		if ( timer-> who == CURSOR_TIMER) {
+			prima_cursor_tick();
+		} else if ( timer-> who == MENU_TIMER) {
+			apc_timer_stop( MENU_TIMER);
+			if ( guts. currentMenu) {
+				XEvent ev;
+				ev. type = MenuTimerMessage;
+				prima_handle_menu_event( &ev, M(guts. currentMenu)-> w-> w, guts. currentMenu);
+				events++;
+			}
+		} else if ( timer-> who == MENU_UNFOCUS_TIMER) {
+			prima_end_menu();
+		} else {
+			prima_simple_message( timer-> who, cmTimer, false);
 			events++;
 		}
-	} else if ( timer-> who == MENU_UNFOCUS_TIMER) {
-		prima_end_menu();
-	} else {
-		prima_simple_message( timer-> who, cmTimer, false);
-		events++;
 	}
 	return events;
 }
@@ -2059,7 +2061,6 @@ prima_one_loop_round( int wait, Bool careOfApplication)
 	while ( 1 ) {
 		int events;
 		events = handle_queued_events(careOfApplication);
-
 		t. tv_sec = 0;
 		t. tv_usec = 0;
 		events += process_file_events(&x_events_pending, &t);
@@ -2078,7 +2079,7 @@ prima_one_loop_round( int wait, Bool careOfApplication)
 	/* wait for events */
 	prima_simple_message( application, cmIdle, false);
 	process_file_events(&x_events_pending, select_timeout(&timeout));
-	if ( x_events_pending && ( application || !careOfApplication) ) 
+	if ( x_events_pending && ( application || !careOfApplication) )
 		x_flush();
 	handle_queued_events(careOfApplication);
 
