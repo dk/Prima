@@ -15,7 +15,7 @@ use warnings;
 use Prima;
 use Prima::Application name => 'Generic';
 
-my $w = new Prima::MainWindow(
+my $w = Prima::MainWindow->new(
 	text => "Hello, world!",
 	onClose => sub {
 		$::application-> destroy;

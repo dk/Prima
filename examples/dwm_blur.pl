@@ -54,7 +54,7 @@ sub dwm_reset
 	}});
 }
 
-my $w = new Prima::MainWindow(
+my $w = Prima::MainWindow->new(
 	text => "Hello, world!",
 	backColor => cl::Black,
 	onSize => sub { dwm_reset(shift) },

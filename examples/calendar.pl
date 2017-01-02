@@ -18,7 +18,7 @@ use Prima::Application name => 'Calendar';
 use Prima::Calendar;
 
 my $cal;
-my $w = new Prima::MainWindow(
+my $w = Prima::MainWindow->new(
 	text => "Calendar example",
 	size => [ 200, 200],
 	designScale => [6,16],
