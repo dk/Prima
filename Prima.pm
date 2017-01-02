@@ -99,7 +99,7 @@ Prima - a perl graphic toolkit
 
 	use Prima qw(Application Buttons);
 
-	new Prima::MainWindow(
+	Prima::MainWindow->new(
 		text     => 'Hello world!',
 		size     => [ 200, 200],
 	)-> insert( Button =>
@@ -177,7 +177,7 @@ is finished.
 
 The window is created by invoking 
 
-	new Prima::MainWindow();
+	Prima::MainWindow->new();
 
 or
 
@@ -189,7 +189,7 @@ of parameters is passed afterwards. These parameters are usually
 represented in a hash syntax, although actually passed as an array.
 The hash syntax is preferred for the code readability:
 
-	$new_object = new Class(
+	$new_object = Class->new(
 		parameter => value,
 		parameter => value,
 		...
