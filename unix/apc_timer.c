@@ -86,6 +86,8 @@ apc_timer_start( Handle self)
 	ENTERTIMER;
 
 	inactivate_timer( sys);
+	if ( real && !application ) return false;
+
 	gettimeofday( &sys-> when, nil);
 	sys-> when. tv_sec += sys-> timeout / 1000;
 	sys-> when. tv_usec += (sys-> timeout % 1000) * 1000;
@@ -117,8 +119,8 @@ apc_timer_start( Handle self)
 		guts. oldest = sys;
 	}
 
-	if ( real && application ) opt_set( optActive);
-	return real ? (application != nilHandle) : true;
+	if ( real ) opt_set( optActive);
+	return true;
 }
 
 Bool
