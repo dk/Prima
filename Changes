@@ -5,6 +5,7 @@ Revision history for Perl module Prima
  - Support high-dpi monitors and uiScaling, also with smooth bitmap scaling
  - Image.data/Icon.mask made faster by returning a read-only scalar
  - Support multiple monitors for win32
+ - Adapt event loop for AnyEvent integration ( add onIdle and yield(1) )
 
 1.49 2016-09-27
  - Fixes for new development bugs in 1.48
