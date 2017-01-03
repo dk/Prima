@@ -78,7 +78,7 @@ Bool
 apc_timer_destroy( Handle self)
 {
 	objCheck false;
-	if ( is_opt( optActive) && var handle ) {
+	if ( application && is_opt( optActive) && var handle ) {
 		if ( !KillTimer( OWNER, var handle)) apiErr;
 	}
 	remove_timer( self);
@@ -96,6 +96,7 @@ Bool
 apc_timer_set_timeout( Handle self, int timeout)
 {
 	objCheck false;
+	if ( !application ) return false;
 	if ( is_opt( optActive)) {
 		if ( !SetTimer( OWNER, var handle, timeout, nil)) {
 			opt_clear( optActive);
@@ -111,6 +112,7 @@ Bool
 apc_timer_start( Handle self)
 {
 	objCheck false;
+	if ( !application ) return false;
 	if ( !SetTimer( OWNER, var handle, sys s. timer. timeout, nil))
 		apiErrRet;
 	return true;
@@ -120,6 +122,7 @@ Bool
 apc_timer_stop( Handle self)
 {
 	objCheck false;
+	if ( !application ) return false;
 	KillTimer( OWNER, var handle);
 	return true;
 }
