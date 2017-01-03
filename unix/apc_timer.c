@@ -76,7 +76,7 @@ apc_timer_set_timeout( Handle self, int timeout)
 	sys-> timeout = timeout;
 	if ( !real || is_opt( optActive))
 		apc_timer_start( self);
-	return true;
+	return real ? (application != nilHandle) : true;
 }
 
 Bool
@@ -117,8 +117,8 @@ apc_timer_start( Handle self)
 		guts. oldest = sys;
 	}
 
-	if ( real) opt_set( optActive);
-	return true;
+	if ( real && application ) opt_set( optActive);
+	return real ? (application != nilHandle) : true;
 }
 
 Bool
