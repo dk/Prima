@@ -746,7 +746,13 @@ apc_window_set_caption( Handle self, const char *caption, Bool utf8)
 	XTextProperty p;
 
 	if ( utf8) {
-		if ( XStringListToTextProperty(( char **) &caption, 1, &p) != 0) {
+		if ( Xutf8TextListToTextProperty(DISP, ( char **) &caption, 1, 
+#ifdef X_HAVE_UTF8_STRING
+			XUTF8StringStyle,
+#else
+			XCompoundTextStyle,
+#endif
+			&p) >= Success) {
 			XSetWMIconName( DISP, X_WINDOW, &p);
 			XSetWMName( DISP, X_WINDOW, &p);
 			XFree( p. value);
