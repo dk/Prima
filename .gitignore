@@ -32,7 +32,7 @@ img/codec_bmp.o
 img/codec_jpeg.o
 img/codec_png.o
 img/codec_tiff.o
-img/codec_ungif.o
+img/codec_gif.o
 img/codecs.c
 img/codecs.o
 img/conv.o

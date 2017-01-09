@@ -95,7 +95,7 @@ Example:
         }
 
 The code above loads and prints extra information read from a file.
-Typical output, for example, from a gif codec based on libungif would look
+Typical output, for example, from a gif codec based on libgif would look
 like:
 
     codecID : 1

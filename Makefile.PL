@@ -1629,7 +1629,7 @@ sub setup_codecs
 				$found = 1 if pkgconfig('libtiff-5') || pkgconfig('libtiff-4');
 			} elsif ( $codec eq 'Xpm') {
 				$found = 1 if pkgconfig('xpm');
-			} # gif/ungif and jpeg -- I've never seen yet these libs shipped with .pc file, so don't check them so far
+			} # gif and jpeg -- I've never seen yet these libs shipped with .pc file, so don't check them so far
 					
 			if ( $found ) {
 				push( @ACTIVE_CODECS, $codec);
@@ -1671,11 +1671,6 @@ sub setup_codecs
 			printlog "yes";
 			printlog ", in $foundlib" if defined($foundlib) and length($foundlib);
 			printlog "\n";
-		} elsif ( $codec eq 'ungif') {
-			$codec = 'gif';
-			$lib = $codec.$version;
-			printlog "no\n";
-			goto AGAIN;
 		} elsif ( $codec eq 'X11') {
 			$DEFINES{EMULATE_X11_CODEC} = 1;
 			push( @ACTIVE_CODECS, $codec);

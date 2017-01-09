@@ -113,7 +113,7 @@ img/codec_bmp.c
 img/codec_jpeg.c
 img/codec_png.c
 img/codec_tiff.c
-img/codec_ungif.c
+img/codec_gif.c
 img/codec_X11.c
 img/codec_Xpm.c
 img/conv.c

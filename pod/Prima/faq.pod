@@ -96,13 +96,13 @@ Makefile.PL may report that is cannot find Perl library, for example, where
 there actually it invokes the compiler in a wrong way.
 
 Note, that in order to get Prima working from sources, your system must contain
-graphic libraries, such as libungif or ligjpeg, for Prima to load graphic
+graphic libraries, such as libgif or ligjpeg, for Prima to load graphic
 files.
 
 =head2 What's about the graphic libraries?
 
 To load and save images, Prima employs graphic libraries. Such as, to load GIF
-files, libungif library is used, etc. Makefile.PL finds available libraries and
+files, libgif library is used, etc. Makefile.PL finds available libraries and
 links Prima against these. It is possible to compile Prima without any, but this
 is not really useful. 
 
@@ -112,7 +112,7 @@ libraries:
    libX11   - XBM bitmaps
    libXpm   - Xpm pixmaps
    libjpeg  - JPEG images
-   libungif - GIF images
+   libgif   - GIF images
    libpng   - PNG images
    libtiff  - tiff images
 

@@ -19,7 +19,7 @@ libraries can be compiled in on all platforms:
    - libXpm
    - libpng
    - libjpeg
-   - libungif
+   - libgif
    - libtiff
    - libX11  - support for native X11 bitmap files
 
