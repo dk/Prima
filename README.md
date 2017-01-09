@@ -70,11 +70,11 @@ Makefile.PL about these. Check ExtUtils::MakeMaker for more.
 GTK2
 ----
 
-Prima can be compiled width GTK2 on unix systems. To do so run
+It is recommended to build Prima with GTK2 on X11 installations,
+because in that case Prima will use standard GTK fonts, colors, and file dialogs.
+By default Prima tries to build with it, but if you don't want it, run
 
-    perl Makefile.PL WITH_GTK2=1
-
-If successful, Prima will display GTK file dialogs. 
+    perl Makefile.PL WITH_GTK2=0
 
 BINARY DISTRIBUTION INSTALLATION
 ================================

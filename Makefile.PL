@@ -1470,10 +1470,7 @@ sub setup_gtk
 	$cmd_options{WITH_GTK2} = 0;
 	unless ( $use_pkgconfig ) {
 		printlog "Checking for presence of gtk2... no, can only check with pkg-config installed\n";
-		return;
-	}
-	
-	if ( pkgconfig('gtk+-2.0')) {
+	} elsif ( pkgconfig('gtk+-2.0')) {
 		my $version = `pkg-config --modversion gtk+-2.0`;
 		printlog "Checking if can compile and link with gtk2... ";
 		my $minversion = 7;
@@ -1490,6 +1487,14 @@ sub setup_gtk
 	NO_GTK:
 		printlog "no\n";
 	}
+
+	$END .= <<WARNING unless $DEFINES{WITH_GTK2};
+
+** Warning: not compiling with GTK2. Fonts and colors will look
+differently from Gnome environment. You might want to install
+'libgtk+-2.0-dev' package.
+
+WARNING
 }
 
 sub setup_x11_extension
@@ -1697,6 +1702,7 @@ sub setup_codecs
 Note that in this configuration Prima will not be 
 able to work with graphic files. Please follow the 
 instructions in README file.
+
 NOCODECS
 		$END .= <<BROKEN_CODECS if $have_binary_prereq;
 
@@ -1709,6 +1715,7 @@ BROKEN_CODECS
 If you are under CPAN shell and are asked to install 
 Prima::codecs::$binary_prereq dependency, do so. Otherwise,
 install it manually.
+
 NOCODECS_BIN
 
 		$END .= <<NOCODECS_CYGWIN if $cygwin;
@@ -1754,6 +1761,7 @@ BAD_VERSION:
 ** Warning: Text::Bidi v2.10 is needed for working with bidirectional text.
 
 Note that Prima will work fine, except with Hebrew and Arabic text.
+
 BIDI
 }
 
