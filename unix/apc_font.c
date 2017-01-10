@@ -259,11 +259,6 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				style++;
 				info-> font. weight = fwBold;
 				info-> flags. weight = true;
-			} else if ( c-b == 8 && strncasecmp( b, "condensed", 9) == 0) {
-				info-> font. style = fsThin;
-				style++;
-				info-> font. weight = fwMedium;
-				info-> flags. weight = true;
 			} else if ( c-b == 8 && strncasecmp( b, "demibold", 8) == 0) {
 				info-> font. style = fsBold;
 				style++;
@@ -297,9 +292,13 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 			}
 		}
 		if ( *c == '-') {
-			/* advance through SETWIDTH_NAME; just skip it;  XXX */
-			++c;
+			/* advance through SETWIDTH_NAME */
+			b = ++c;
 			while ( *c && *c != '-') c++;
+			if ( c-b == 9 && strncasecmp( b, "condensed", 9) == 0) {
+				info-> font. style |= fsThin;
+				style++;
+			}
 		}
 		if ( *c == '-') {
 			/* advance through ADD_STYLE_NAME; just skip it;  XXX */
