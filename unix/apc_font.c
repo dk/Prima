@@ -633,6 +633,8 @@ prima_init_font_subsystem( char * error_buf)
 					guts. locale[0] = 0;
 			}
 		}
+		if ( strcmp( guts. locale, "utf-8" ) == 0 )
+			strcpy( guts. locale, "iso10646-1");
 	}
 	
 #ifdef USE_XFT
@@ -649,7 +651,7 @@ prima_init_font_subsystem( char * error_buf)
 		free( do_default_font);
 		do_default_font = nil;
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "font", 
-									nilHandle, frFont, &guts. default_font)) {
+		nilHandle, frFont, &guts. default_font)) {
 		fill_default_font( &guts. default_font);
 		apc_font_pick( application, &guts. default_font, &guts. default_font);
 		guts. default_font. pitch = fpDefault;
