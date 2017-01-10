@@ -259,6 +259,11 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				style++;
 				info-> font. weight = fwBold;
 				info-> flags. weight = true;
+			} else if ( c-b == 8 && strncasecmp( b, "condensed", 9) == 0) {
+				info-> font. style = fsThin;
+				style++;
+				info-> font. weight = fwMedium;
+				info-> flags. weight = true;
 			} else if ( c-b == 8 && strncasecmp( b, "demibold", 8) == 0) {
 				info-> font. style = fsBold;
 				style++;
@@ -1477,6 +1482,8 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 	} else if ( !fi->  flags. style) {
 		diff += 2000.0;
 	} else {
+		if (( f-> style & fsThin) != ( fi-> font. style & fsThin))
+			diff += 1500;
 		if (( f-> style & fsBold) != ( fi-> font. style & fsBold))
 			diff += 3000;
 		if (( f-> style & fsItalic) != ( fi-> font. style & fsItalic))
