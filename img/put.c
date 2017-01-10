@@ -271,17 +271,19 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 	asrcW = abs( srcW);
 	asrcH = abs( srcH);
 
-	if ( srcX >= srcSz. x || srcX + srcW <= 0 ||
+	if ( 
+		srcX >= srcSz. x || srcX + srcW <= 0 ||
 		srcY >= srcSz. y || srcY + srcH <= 0 ||
 		dstX >= dstSz. x || dstX + dstW <= 0 ||
-		dstY >= dstSz. y || dstY + dstH <= 0)
+		dstY >= dstSz. y || dstY + dstH <= 0
+	)
 		return true;
 
 	/* check if we can do it without expensive scalings and extractions */
 	if ( 
-			( srcW == dstW) && ( srcH == dstH) &&
-			( srcX >= 0) && ( srcY >= 0) && ( srcX + srcW <= srcSz. x) && ( srcY + srcH <= srcSz. y) 
-		) 
+		( srcW == dstW) && ( srcH == dstH) &&
+		( srcX >= 0) && ( srcY >= 0) && ( srcX + srcW <= srcSz. x) && ( srcY + srcH <= srcSz. y) 
+	) 
 		goto NOSCALE;
 
 	if ( srcX != 0 || srcY != 0 || asrcW != srcSz. x || asrcH != srcSz. y) {
@@ -853,7 +855,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		mls = PIcon(src)-> maskLine;
 		m   = PIcon(src)-> mask + srcY * mls + srcX;
 		if ( PIcon(src)-> maskType != imbpp8)
-		croak("panic: assert failed for img_put_alpha: %s", "src mask type");
+			croak("panic: assert failed for img_put_alpha: %s", "src mask type");
 		use_src_alpha = false;
 	} else {
 		m   = NULL;
@@ -864,7 +866,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		als = PIcon(dest)-> maskLine;
 		a   = PIcon(dest)-> mask + dstY * als + dstX;
 		if ( PIcon(dest)-> maskType != imbpp8)
-		croak("panic: assert failed for img_put_alpha: %s", "dst mask type");
+			croak("panic: assert failed for img_put_alpha: %s", "dst mask type");
 		use_dst_alpha = false;
 	} else {
 		a   = NULL;
