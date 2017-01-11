@@ -433,6 +433,7 @@ sub init
 		my $frame = $me-> insert(
 			$profile{frameClass} =>
 			name => "Frame$i",
+			packPropagate => 0,
 			%xp,
 		);
 		push @{$me-> {frames}}, $frame;
