@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Prima;
 use Prima::Const;
+use Prima::IntUtils;
 
 package 
     fra; # Frame arragement constants.
@@ -405,7 +406,7 @@ sub profile_check_in
 	my $me = shift;
 	my ($profile, $default) = @_;
 	$me-> SUPER::profile_check_in(@_);
-	$profile-> {frameCount} = @{$profile-> {frameSizes}} unless exists $profile-> {frameCount};
+	$profile-> {frameCount} = @{$profile-> {frameSizes} // $default->{frameSizes}} unless exists $profile-> {frameCount};
 	$profile-> {frameCount} = 2 if $profile-> {frameCount} < 2;
 	if (! exists($profile-> {sliders}) && ! exists($profile-> {flexible})) {
 		$profile-> {sliders} = [(1) x ($profile-> {frameCount} - 1)];
