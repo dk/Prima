@@ -455,7 +455,7 @@ sub init
 					thickness => $profile{sliderWidth},
 					enabled => 1,
 					) : (
-					thickness => 1,
+					thickness => $profile{separatorWidth},
 					enabled => 0,
 					),
 # Horizontal arrangement of frames means we need a vertically oriented slider.
