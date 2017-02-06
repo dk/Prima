@@ -13,6 +13,7 @@ sub profile_default
 		active      => 1,
 		buffered    => 1,
 		value       => 50,
+		showPercent => 1,
 		color       => cl::White, 
 		hiliteColor => cl::Black
 	}
@@ -32,7 +33,7 @@ sub init
 	# Init the Spinner
 	my %profile = $self-> SUPER::init(@_);
 	$self->{start_angle} = 0;
-	$self-> $_($profile{$_}) for qw( value style active color hiliteColor);
+	$self-> $_($profile{$_}) for qw( value showPercent style active color hiliteColor);
 	
 	return %profile;
 }
@@ -90,13 +91,28 @@ sub on_paint
 
 	if ($self->{style} eq "circle") {
 		$canvas->color($color1);
-		$canvas->fill_ellipse($x, $y, 20*$scale_factor,20*$scale_factor);
-		$canvas->color($self->backColor);
-		$canvas->fill_ellipse($x, $y, 14*$scale_factor,14*$scale_factor);
+		$canvas->lineWidth(3*$scale_factor);
+		$canvas->ellipse($x, $y, 17.5*$scale_factor,17.5*$scale_factor);
+		
 		$canvas->lineWidth(1.5*$scale_factor);
 		$canvas->color($color2);
 		$canvas->lineEnd(le::Square);
-		$canvas->arc($x, $y, 17.5*$scale_factor,17.5*$scale_factor,$self->{start_angle}, $self->{end_angle});
+		$canvas->arc($x, $y, 17.5*$scale_factor,17.5*$scale_factor,$self->{angle1}, $self->{angle2});
+
+		if ( $self->{showPercent} ) {
+			my $ref_text = '800%';
+			my $ext = 10 * $scale_factor;
+			my $attempts = 3;
+			$canvas-> font-> height( 5 * $scale_factor );
+			while ( $attempts-- ) {
+				my $tw = $canvas-> get_text_width( $ref_text );
+				last if $tw <= $ext;
+				$canvas-> font-> height( $canvas-> font-> height - $scale_factor );
+			}
+			$ref_text = $self-> value . '%';
+			my $tw = $canvas-> get_text_width( $ref_text );
+			$canvas->text_out( $ref_text, $x - $tw/2, $y - $canvas->font->height / 2 );
+		}
 	}
 	else {
                 my @petal1 = (
@@ -199,10 +215,12 @@ sub style
 sub update_value     
 {
 	my $self = shift;
-	$self->{end_angle} = $self->{start_angle} + $self->{value} * 360 / 100;
+	$self->{angle1} = (360 + $self->{start_angle} - $self->{value} * 360 / 100) % 360;
+	$self->{angle2} = $self->{start_angle};
+	$self->{angle2} += 360 if $self->{value} >= 100.0;
 }
 
-sub value     
+sub value
 {
 	my ( $self, $value ) = @_;
 	return $self->{value} unless $#_;
@@ -211,6 +229,14 @@ sub value
 	$value = 100 if $value > 100;
 	$self->{value} = $value;
 	$self-> update_value;
+	$self-> repaint;
+}
+
+sub showPercent
+{
+	my ( $self, $sp ) = @_;
+	return $self->{showPercent} unless $#_;
+	$self->{showPercent} = $sp;
 	$self-> repaint;
 }
 
@@ -292,6 +318,10 @@ Inherited from L<Prima::Widget>. The color used to draw alternate foreground
 areas with high contrast. For the spinner widget this means the color of the
 arc in the circle style or the color of the active drops in the drops style.
 
+=item showPercent BOOLEAN
+
+If set, displays completion percent as text. Only for I<circle> style.
+
 =item start
 
 Same as C< active(1) >
@@ -305,6 +335,10 @@ Same as C< active(0) >
 C<style> can be 'circle' or 'drops'. With C<'circle'> an arc moving around a
 circle is shown. C<'drops'> shows drops are shown that switches consecutively
 the color.
+
+=item value INT
+
+Integer between 0 and 100, showing completion perentage. Only for I<circle> style.
 
 =item toggle
 
