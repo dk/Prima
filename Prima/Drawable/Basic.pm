@@ -376,29 +376,28 @@ sub gradient_sector
 	my $angle = $end - $start;
 	$angle += 360 while $angle < 0;
 	$angle %= 360;
-	my $min_angle = 1/64; # x11 limitation
+	my $min_angle = 1.0 / 64; # x11 limitation
 
-	if ( $dx == $dy ) { # simple case, circle
-		my $df = $dx * 3.14 / 360;
-		my $arclen = int($df * $angle + .5);
-		my $gradient = $canvas-> gradient_realize3d( $arclen, $request );
-		my $accum = 0;
-		for ( my $i = 0; $i < @$gradient - 2; $i+=2) {
-			$canvas->color( $gradient->[$i]);
-			my $d = $gradient->[$i+1] / $df;
-			if ( $accum + $d < $min_angle ) {
-				$accum += $d;
-				next;
-			}
-			$d += $accum;
-			$accum = 0;
-			$canvas->fill_sector( $x, $y, $dx, $dx, $start, $start + $d + $min_angle);
-			$start += $d;
+    my $max = ($dx < $dy) ? $dy : $dx;
+	my $df  = $max * 3.14 / 360;
+	my $arclen = int($df * $angle + .5);
+	my $gradient = $canvas-> gradient_realize3d( $arclen, $request );
+	my $accum = 0;
+	for ( my $i = 0; $i < @$gradient - 2; $i+=2) {
+		$canvas->color( $gradient->[$i]);
+		my $d = $gradient->[$i+1] / $df;
+		if ( $accum + $d < $min_angle ) {
+			$accum += $d;
+			next;
 		}
-		if ( @$gradient ) {
-			$canvas->color( $gradient->[-2]);
-			$canvas->fill_sector( $x, $y, $dx, $dy, $start, $end);
-		}
+		$d += $accum;
+		$accum = 0;
+		$canvas->fill_sector( $x, $y, $dx, $dy, $start, $start + $d + $min_angle);
+		$start += $d;
+	}
+	if ( @$gradient ) {
+		$canvas->color( $gradient->[-2]);
+		$canvas->fill_sector( $x, $y, $dx, $dy, $start, $end);
 	}
 }
 

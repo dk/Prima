@@ -1189,6 +1189,13 @@ Draws a filled ellipse with center in (X,Y) and diameters (DIAM_X,DIAM_Y) using 
 
 Context used: splinePrecision, fillPattern, rop, rop2
 
+=item gradient_sector X, Y, DIAM_X, DIAM_Y, START_ANGLE, END_ANGLE, GRADIENT
+
+Draws a filled sector with center in (X,Y) and diameters (DIAM_X,DIAM_Y) from START_ANGLE to END_ANGLE (see sector())
+using a gradient (see L<Gradients>).
+
+Context used: splinePrecision, fillPattern, rop, rop2
+
 =item gradient_realize3d BREADTH, GRADIENT
 
 Returns an array consisting of integer pairs, where the first one is
