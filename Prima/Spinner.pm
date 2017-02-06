@@ -103,7 +103,7 @@ sub on_paint
 			my $ref_text = '800%';
 			my $ext = 10 * $scale_factor;
 			my $attempts = 3;
-			$canvas-> font-> height( 5 * $scale_factor );
+			$canvas-> font-> height( 4 * $scale_factor );
 			while ( $attempts-- ) {
 				my $tw = $canvas-> get_text_width( $ref_text );
 				last if $tw <= $ext;

@@ -178,3 +178,4 @@ CREDITS
  - Myra Nelson
  - Sean Healy
  - Ali Yassen
+ - Maximilian Lika
