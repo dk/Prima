@@ -279,19 +279,15 @@ sub gradient_calculate_single
 	my @start = map { $_ & 0xff } ($start_color >> 16), ($start_color >> 8), $start_color;
 	my @end   = map { $_ & 0xff } ($end_color   >> 16), ($end_color   >> 8), $end_color;
 	my @color = @start;
+	return $start_color, 1 if $breadth == 1;
 	
-	my @delta = map { ( $end[$_] - $start[$_] ) / $breadth } 0..2;
+	my @delta = map { ( $end[$_] - $start[$_] ) / ($breadth - 1) } 0..2;
 
 	my $last_color = $start_color;
 	my $color      = $start_color;
 	my $width      = 0;
 	my @ret;
 	for ( my $i = 0; $i < $breadth; $i++) {
-		if ( $last_color != $color ) {
-			push @ret, $last_color = $color, $width;
-			$width = 0;
-		}
-
 		my @c;
 		my $j = $function ? $function->( $offset + $i ) - $offset : $i;
 		for ( 0..2 ) {
@@ -301,6 +297,12 @@ sub gradient_calculate_single
 			$c[$_] = 0    if $c[$_] < 0;
 		}
 		$color = ( $c[0] << 16 ) | ( $c[1] << 8 ) | $c[2];
+		if ( $last_color != $color ) {
+			push @ret, $last_color, $width;
+			$last_color = $color;
+			$width = 0;
+		}
+
 		$width++;
 	}
 
