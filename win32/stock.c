@@ -1977,12 +1977,13 @@ int
 arc_completion( double * angleStart, double * angleEnd, int * needFigure)
 {
 	int max;
-	long diff = ((long)( fabs( *angleEnd - *angleStart) * 1000 + 0.5)) / 1000;
+	long diff = ((long)( fabs( *angleEnd - *angleStart) * 1000 + 0.5));
 
 	if ( diff == 0) {
 		*needFigure = false;
 		return 0;
 	}
+	diff /= 1000;
 
 	while ( *angleStart > *angleEnd)
 		*angleEnd += 360;
