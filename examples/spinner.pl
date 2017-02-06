@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Prima qw(Application Buttons Spinner);
+use Prima qw(Application Buttons Spinner Sliders);
 
 my $mw = Prima::MainWindow->new(
 		size => [400, 400],
@@ -23,13 +23,22 @@ my $spinner2 = $mw->insert('Spinner',
 	pack => { side => 'left', fill => 'both', expand => 1 },
 );
 
-my $button = $mw->insert(
+$mw->insert(
 	'Button',
 	text => 'Start/Stop',
 	checkable => 1,
 	checked => 0,
 	origin => [0,0],
 	onClick => sub { $_->toggle for $spinner, $spinner2 },
+	growMode => gm::XCenter
+);
+
+$spinner->insert(
+	'Slider',
+	min => 0,
+	max => 100,
+	origin => [0,0],
+	onChange => sub { $spinner->value( shift->value ) },
 	growMode => gm::XCenter
 );
 

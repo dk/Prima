@@ -12,6 +12,7 @@ sub profile_default
 		style       => 'circle',
 		active      => 1,
 		buffered    => 1,
+		value       => 50,
 		color       => cl::White, 
 		hiliteColor => cl::Black
 	}
@@ -31,8 +32,7 @@ sub init
 	# Init the Spinner
 	my %profile = $self-> SUPER::init(@_);
 	$self->{start_angle} = 0;
-	$self->{end_angle} = 150;
-	$self-> $_($profile{$_}) for qw( style active color hiliteColor);
+	$self-> $_($profile{$_}) for qw( value style active color hiliteColor);
 	
 	return %profile;
 }
@@ -41,7 +41,6 @@ sub Timer_Tick
 {
 	my $self = shift;
 	my $startang = $self->{start_angle}; #|| 0;
-	my $endang = $self->{end_angle}; #|| 360;
 	if ($self->{style} eq 'drops') {
 		$self->{start_angle} = $startang + 1 if $startang < 7;
 		$self->{start_angle} = 0 if $startang == 7;
@@ -50,9 +49,8 @@ sub Timer_Tick
 		$self->{start_angle} = $startang - 1 if $startang > 0;
 		$self->{start_angle} = 360 if $startang == 0;
 	}
-	$self->{end_angle} = $endang - 1 if $endang > 0;
-	$self->{end_angle} = 360 if $endang == 0;
-	
+
+	$self->update_value;
 	$self->repaint;
 }
 
@@ -97,6 +95,7 @@ sub on_paint
 		$canvas->fill_ellipse($x, $y, 14*$scale_factor,14*$scale_factor);
 		$canvas->lineWidth(1.5*$scale_factor);
 		$canvas->color($color2);
+		$canvas->lineEnd(le::Square);
 		$canvas->arc($x, $y, 17.5*$scale_factor,17.5*$scale_factor,$self->{start_angle}, $self->{end_angle});
 	}
 	else {
@@ -193,7 +192,26 @@ sub style
 	}
 	$self->{style}       = $style;
 	$self->{start_angle} = 0;
-	$self->{end_angle}   = 150;
+	$self-> update_value;
+	$self-> repaint;
+}
+
+sub update_value     
+{
+	my $self = shift;
+	$self->{end_angle} = $self->{start_angle} + $self->{value} * 360 / 100;
+}
+
+sub value     
+{
+	my ( $self, $value ) = @_;
+	return $self->{value} unless $#_;
+
+	$value = 0   if $value < 0;
+	$value = 100 if $value > 100;
+	$self->{value} = $value;
+	$self-> update_value;
+	$self-> repaint;
 }
 
 sub active
