@@ -1,9 +1,6 @@
-package main;
-
-use Prima;
-use Prima::Application;
-use Prima::Buttons;
-use Prima::Spinner;
+use strict;
+use warnings;
+use Prima qw(Application Buttons Spinner);
 
 my $mw = Prima::MainWindow->new(
 		size => [400, 400],
@@ -28,7 +25,7 @@ my $spinner2 = $mw->insert('Spinner',
 
 my $button = $mw->insert(
 	'Button',
-	text => 'Start/Stopp',
+	text => 'Start/Stop',
 	checkable => 1,
 	checked => 0,
 	origin => [0,0],
