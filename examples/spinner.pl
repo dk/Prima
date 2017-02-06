@@ -9,8 +9,8 @@ my $mw = Prima::MainWindow->new(
 my $spinner = $mw->insert('Spinner',
 	size => [200,400],
 	origin => [0,0],
-	color => cl::White,
-	hiliteColor => cl::Blue,
+	color => cl::Blue,
+	hiliteColor => cl::White,
 	pack => { side => 'left', fill => 'both', expand => 1 },
 );
 
@@ -18,9 +18,8 @@ my $spinner2 = $mw->insert('Spinner',
 	style => 'drops',
 	size => [200,400],
 	origin => [200,0],
-	color => cl::White,
-	hiliteColor => cl::Green,
 	pack => { side => 'left', fill => 'both', expand => 1 },
+	color => cl::Green,
 );
 
 $mw->insert(

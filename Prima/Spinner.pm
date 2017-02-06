@@ -9,13 +9,11 @@ sub profile_default
 	my $self = shift;
 	return {
 		%{$self-> SUPER::profile_default},
-		style       => 'circle',
-		active      => 1,
+		style	    => 'circle',
+		active	    => 1,
 		buffered    => 1,
-		value       => 50,
+		value	    => 50,
 		showPercent => 1,
-		color       => cl::White, 
-		hiliteColor => cl::Black
 	}
 }
 
@@ -25,7 +23,7 @@ sub init
 	
 	# Create the timer for the motion of the spinner
 	$self->{timer} = $self->insert( Timer => 
-		name        => 'Timer',
+		name	    => 'Timer',
 		timeout     => 200,
 		delegations => ['Tick'],
 	);
@@ -59,9 +57,9 @@ sub _pairwise(&$)
 {
 	my ($sub, $p) = @_;
 	my @p;
-    	for ( my $i = 0; $i < @$p; $i += 2 ) {
-    		push @p, $sub->($p->[$i], $p->[$i+1]);
-    	}
+	for ( my $i = 0; $i < @$p; $i += 2 ) {
+		push @p, $sub->($p->[$i], $p->[$i+1]);
+	}
 	return \@p;
 }
 
@@ -71,8 +69,8 @@ sub _scale
 	_pairwise { $xmul * $_[0], $ymul * $_[1] } $p
 }
 
-sub _v_flip($) { _scale(shift, 1, -1)   }
-sub _h_flip($) { _scale(shift, -1, 1)   }
+sub _v_flip($) { _scale(shift, 1, -1)	}
+sub _h_flip($) { _scale(shift, -1, 1)	}
 sub _rotate($) { _pairwise { pop, pop } shift }
 
 # Events
@@ -82,20 +80,20 @@ sub on_paint
 
 	$canvas->clear;
 		
-	my $x            = $self->width/2; 
-	my $y            = $self->height/2;
-	my $min          = ( $x < $y ) ? $x : $y;
+	my $x		 = $self->width/2; 
+	my $y		 = $self->height/2;
+	my $min		 = ( $x < $y ) ? $x : $y;
 	my $scale_factor = $min / 12;
-	my $color1       = $self->color;
-	my $color2       = $self->hiliteColor;
 
 	if ($self->{style} eq "circle") {
-		$canvas->color($color1);
+		my $color1  = $self->color;
+		my $color2  = $self->hiliteColor;
+		$canvas->color($color2);
 		$canvas->lineWidth(3*$scale_factor);
 		$canvas->ellipse($x, $y, 17.5*$scale_factor,17.5*$scale_factor);
 		
 		$canvas->lineWidth(1.5*$scale_factor);
-		$canvas->color($color2);
+		$canvas->color($color1);
 		$canvas->lineEnd(le::Square);
 		$canvas->arc($x, $y, 17.5*$scale_factor,17.5*$scale_factor,$self->{angle1}, $self->{angle2});
 
@@ -115,79 +113,43 @@ sub on_paint
 		}
 	}
 	else {
-                my @petal1 = (
+		my @petal1 = (
 			0, 2,
 			-2, 8,
 			0, 10,
 			2, 8,
 			0, 2
-                );
-                my @petal2 = (
+		);
+		my @petal2 = (
 			1, 1,
 			3, 7,
 			6, 7,
 			6, 4,
 			1, 1
-                );
-	
-		$canvas->translate($x, $y);
-		my $fill_spline = sub { $canvas->fill_spline(_scale(shift, $scale_factor, $scale_factor)) };
+		);
 
-		# top
-		if ($self->{start_angle} == 6  || $self->{start_angle} == 7 || $self->{start_angle} == 0) {
-			$canvas->color($color2);
+		$canvas->translate($x, $y);
+
+		my $gradient = $canvas->gradient_realize3d( 8, { palette => [ $self->color, $self->backColor ] });
+		my @colors;
+		for ( my $i = 0; $i < @$gradient; $i+=2 ) {
+			push @colors, $gradient->[$i] for 1 .. $gradient->[$i+1];
 		}
-		else { $canvas->color($color1); }  
-		$fill_spline->( \@petal1 );
-	
-		# top right
-		if ($self->{start_angle} == 7 || $self->{start_angle} == 0 || $self->{start_angle} == 1) {
-			$canvas->color($color2);
-		}
-		else { $canvas->color($color1); }
-		$fill_spline->(\@petal2);
-		
-		# right
-		if ($self->{start_angle} == 0 || $self->{start_angle} == 1 || $self->{start_angle} == 2) {
-			$canvas->color($color2);
-		}
-		else { $canvas->color($color1); }
-                $fill_spline->(_rotate \@petal1);
-		
-		# right bottom
-		if ($self->{start_angle} == 1 || $self->{start_angle} == 2 || $self->{start_angle} == 3) {
-			$canvas->color($color2);
-		}
-		else { $canvas->color($color1); }
-		$fill_spline->( _v_flip \@petal2 );
-	
-		# bottom
-		if ($self->{start_angle} == 2 || $self->{start_angle} == 3 || $self->{start_angle} == 4) {
-			$canvas->color($color2);
-		}
-		else { $canvas->color($color1); }
-		$fill_spline->( _v_flip \@petal1);
-	
-		# bottom left
-		if ($self->{start_angle} == 3 || $self->{start_angle} == 4 || $self->{start_angle} == 5) {
-			$canvas->color($color2);
-		}
-		else { $canvas->color($color1); }
-		$fill_spline->( _h_flip _v_flip \@petal2);
-		
-		# left
-		if ($self->{start_angle} == 4 || $self->{start_angle} == 5 || $self->{start_angle} == 6) {
-			$canvas->color($color2);
-		}
-		else { $canvas->color($color1); }
-		$fill_spline->( _h_flip _rotate \@petal1);
-		
-		# top left
-		if ($self->{start_angle} == 5 || $self->{start_angle} == 6 || $self->{start_angle} == 7) {
-			$canvas->color($color2);
-		}
-		else { $canvas->color($color1); }
-		$fill_spline->( _h_flip \@petal2);
+
+		my $fill_spline = sub { 
+			my ( $n, $p ) = @_;
+			$canvas->color( $colors[( $self->{start_angle} + $n) % 8] );
+			$canvas->fill_spline(_scale($p, $scale_factor, $scale_factor));
+		};
+
+		$fill_spline->(7, \@petal2);
+		$fill_spline->(6, _rotate \@petal1);
+		$fill_spline->(5, _v_flip \@petal2 );
+		$fill_spline->(4, _v_flip \@petal1);
+		$fill_spline->(3, _h_flip _v_flip \@petal2);
+		$fill_spline->(2, _h_flip _rotate \@petal1);
+		$fill_spline->(1, _h_flip \@petal2);
+		$fill_spline->(0, \@petal1 );
 	}
 }
 
@@ -206,7 +168,7 @@ sub style
 	} else {
 		Carp::croak("bad style: $style");
 	}
-	$self->{style}       = $style;
+	$self->{style}	     = $style;
 	$self->{start_angle} = 0;
 	$self-> update_value;
 	$self-> repaint;
