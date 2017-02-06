@@ -4,7 +4,7 @@ use Prima qw(Application Buttons Spinner Sliders);
 
 my $mw = Prima::MainWindow->new(
 		size => [400, 400],
-		text => 'Button Example');
+		text => 'Spinners');
 
 my $spinner = $mw->insert('Spinner',
 	size => [200,400],
