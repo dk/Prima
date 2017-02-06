@@ -31,36 +31,35 @@ sub init
 	
 	# Init the Spinner
 	my %profile = $self-> SUPER::init(@_);
-
-	for (qw( style scaleFactor active color hiliteColor))
-	{$self-> $_($profile{$_}); }
-	
 	$self->{start_angle} = 0;
 	$self->{end_angle} = 150;
+	$self-> $_($profile{$_}) for qw( style scaleFactor active color hiliteColor);
 	
 	return %profile;
 }
 
-sub Timer_Tick {
+sub Timer_Tick
+{
 	my $self = shift;
 	my $startang = $self->{start_angle}; #|| 0;
 	my $endang = $self->{end_angle}; #|| 360;
 	if ($self->{style} eq 'drops') {
-		$self->{start_angle} = $startang + 1 if ($startang < 7);
-		$self->{start_angle} = 0 if ($startang == 7);
+		$self->{start_angle} = $startang + 1 if $startang < 7;
+		$self->{start_angle} = 0 if $startang == 7;
 	}
 	else {
-		$self->{start_angle} = $startang - 1 if ($startang > 0);
-		$self->{start_angle} = 360 if ($startang == 0);
+		$self->{start_angle} = $startang - 1 if $startang > 0;
+		$self->{start_angle} = 360 if $startang == 0;
 	}
-	$self->{end_angle} = $endang - 1 if ($endang > 0);
-	$self->{end_angle} = 360 if ($endang == 0);
+	$self->{end_angle} = $endang - 1 if $endang > 0;
+	$self->{end_angle} = 360 if $endang == 0;
 	
-	$self->repaint();
+	$self->repaint;
 }
 
 # Events
-sub on_paint {
+sub on_paint
+{
 	my ($self,$canvas) = @_;
 
 	$canvas->clear;
@@ -197,44 +196,42 @@ sub on_paint {
 }
 
 # properties
-sub style {
-	my ($self) = @_;
+sub style
+{
+	my ($self, $style) = @_;
 	return $self-> {style} unless $#_;
-	$self->{style} = $_[1];
-	
+
 	# When the style property is changed, reset the timer frequency
 	# and the start_angle and for style circle the end_angle, too
-	$self->{timer}->timeout(200) if ($_[1] eq 'drops');
-	$self->{timer}->timeout(8) if ($_[1] eq 'circle');
+	if ( $style eq 'drops') {
+		$self->{timer}->timeout(200);
+	} elsif ( $style eq 'circle') {
+		$self->{timer}->timeout(8);
+	} else {
+		Carp::croak("bad style: $style");
+	}
+	$self->{style}       = $style;
 	$self->{start_angle} = 0;
-	$self->{end_angle} = 150;
+	$self->{end_angle}   = 150;
 }
 
-sub scaleFactor {
+sub scaleFactor
+{
 	my ($self) = @_;
 	return $self-> {scaleFactor} unless $#_;
 	$self->{scaleFactor} = $_[1];
 }
 
-sub active {
-	if ($#_) {
-		my $self = shift;
-		my $active = shift;
-		if ($active == 0) {
-			$self->{timer}->stop;
-			$self->{active} = 0;
-		}
-		else {
-			$self->{timer}->start;
-			$self->{active} = 1;
-		}
-	}
-	else
-	{
-		my $self = shift;
-		return $self->{active};
-	}
+sub active
+{
+	return $_[0]->{timer}->get_active unless $#_;
+	my ($self, $active) = @_;
+	$active ? $self->{timer}->start : $self->{timer}->stop;
 }
+
+sub start  { shift->active(1) }
+sub stop   { shift->active(0) }
+sub toggle { $_[0]->active(!$_[0]->active) }
 
 1;
 __END__
@@ -246,9 +243,7 @@ Prima::Spinner - Show a spinner animation
 
 =head1 SYNOPSIS
 
-  use Prima;
-  use Prima::Application;
-  use Prima::Buttons;
+  use Prima qw(Application Buttons Spinner);
 
   my $mw = Prima::MainWindow->new(
 		size => [200, 400],
@@ -262,25 +257,15 @@ Prima::Spinner - Show a spinner animation
 
   my $button = $mw->insert(
 	'Button',
-	text => 'Start/Stopp',
+	text => 'Start/Stop',
 	checkable => 1,
 	checked => 1,
 	origin => [0,0],
-	onClick => \&do_clicked,
+	onClick => sub { $spinner->toggle },
 	growMode => gm::XCenter
   );
 
   run Prima;
-
-  sub do_clicked {
-	my ($self) = @_;
-	if ($spinner->active) {
-		$spinner->active(0);
-	}
-	else {
-		$spinner->active(1);
-	}
-  };
 
 =head1 DESCRIPTION
 
@@ -296,11 +281,12 @@ You can determine the following properties:
 
 =over
 
-=item style CHAR
+=item active [BOOLEAN]
 
-C<style> can be 'circle' or 'drops'. With C<'circle'> an arc moving around a
-circle is shown. C<'drops'> shows drops are shown that switches consecutively
-the color.
+If now parameter is passed, by this method you can get the active state of the
+spinning widget. '1' means that the spinner is running, '0' that it is stopped.
+With C<active(1)> you can start the spinner animation, with C<active(0)> you
+can stop it.
 
 =item color COLOR
 
@@ -314,12 +300,23 @@ Inherited from L<Prima::Widget>. The color used to draw alternate foreground
 areas with high contrast. For the spinner widget this means the color of the
 arc in the circle style or the color of the active drops in the drops style.
 
-=item active [BOOLEAN]
+=item start
 
-If now parameter is passed, by this method you can get the active state of the
-spinning widget. '1' means that the spinner is running, '0' that it is stopped.
-With C<active(1)> you can start the spinner animation, with C<active(0)> you
-can stop it.
+Same as C< active(1) >
+
+=item stop
+
+Same as C< active(0) >
+
+=item style STRING
+
+C<style> can be 'circle' or 'drops'. With C<'circle'> an arc moving around a
+circle is shown. C<'drops'> shows drops are shown that switches consecutively
+the color.
+
+=item toggle
+
+Same as C< active(!active) >
 
 =back
 

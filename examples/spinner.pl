@@ -29,20 +29,9 @@ my $button = $mw->insert(
 	checkable => 1,
 	checked => 0,
 	origin => [0,0],
-	onClick => \&do_clicked,
+	onClick => sub { $_->toggle for $spinner, $spinner2 },
 	growMode => gm::XCenter
 );
 
 run Prima;
 
-sub do_clicked {
-	my ($self) = @_;
-	if ($spinner->active) {
-		$spinner->active(0);
-		$spinner2->active(0);
-	}
-	else {
-		$spinner->active(1);
-		$spinner2->active(1);
-	}
-};
