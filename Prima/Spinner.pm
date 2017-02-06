@@ -100,7 +100,7 @@ sub on_paint
 		$canvas->arc($x, $y, 17.5*$scale_factor,17.5*$scale_factor,$self->{angle1}, $self->{angle2});
 
 		if ( $self->{showPercent} ) {
-			my $ref_text = '800%';
+			my $ref_text = '100%';
 			my $ext = 10 * $scale_factor;
 			my $attempts = 3;
 			$canvas-> font-> height( 4 * $scale_factor );
@@ -109,7 +109,7 @@ sub on_paint
 				last if $tw <= $ext;
 				$canvas-> font-> height( $canvas-> font-> height - $scale_factor );
 			}
-			$ref_text = $self-> value . '%';
+			$ref_text = int($self-> value + .5) . '%';
 			my $tw = $canvas-> get_text_width( $ref_text );
 			$canvas->text_out( $ref_text, $x - $tw/2, $y - $canvas->font->height / 2 );
 		}
