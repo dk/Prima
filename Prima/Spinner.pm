@@ -44,7 +44,7 @@ sub Timer_Tick
 		$self->{start_angle} = $startang + 1 if $startang < 7;
 		$self->{start_angle} = 0 if $startang == 7;
 	}
-	else {
+	elsif ( $self->{style} eq 'circle' || $self->{style} eq 'yinyang') {
 		$self->{start_angle} = $startang - 1 if $startang > 0;
 		$self->{start_angle} = 360 if $startang == 0;
 	}
@@ -113,8 +113,7 @@ sub on_paint
 				$canvas->text_out( $ref_text, $x - $tw/2, $y - $canvas->font->height / 2 );
 			}
 		}
-	}
-	else {
+	} elsif ( $self->{style} eq 'drops') {
 		my @petal1 = (
 			0, 1.5,
 			-2, 7.5,
@@ -152,6 +151,56 @@ sub on_paint
 		$fill_spline->(2, _h_flip _rotate \@petal1);
 		$fill_spline->(1, _h_flip \@petal2);
 		$fill_spline->(0, \@petal1 );
+	} elsif ( $self->{style} eq 'yinyang') {
+		my $sin = sin( -$self->{start_angle} / (2 * 3.14159265358));
+		my $cos = cos( -$self->{start_angle} / (2 * 3.14159265358));
+		$canvas->translate($x, $y);
+		$canvas->fill_spline( 
+			_pairwise {
+				$_[0] * $cos - $_[1] * $sin,
+				$_[0] * $sin + $_[1] * $cos,
+			} [ map { 
+				$_ * $scale_factor * 12
+			} (
+				 .81, -.04,
+				 .81,  .37,
+
+				 .30,  .85,
+				-.33,  .85,
+
+				-.90,  .35,
+				-.90, -.37,
+
+				-.37, -.95,
+				 .38, -.95,
+				 
+				 .82, -.59,
+			 	1.02, -.08,
+
+				 .63, -.00,
+				 .57, -.35,
+
+				 .20, -.65,
+				-.30, -.65,
+
+				-.70, -.30,
+				-.70,  .30,
+
+				-.30,  .75,
+				 .30,  .75,
+
+				 .79,  .33,
+				 .79, -.03
+
+			) ]
+		);
+		# $canvas->line(-900, 0, 900, 0);
+		# $canvas->line(-900, -$scale_factor * 1, 900, -$scale_factor * 1);
+		# $canvas->line(0, 900, 0, -900);
+		# $canvas->color(cl::White);
+		# $canvas->ellipse( 0, 0, ( 1.6 * 12 * $scale_factor ) x 2 );
+		# $canvas->ellipse( 0, 0, ( 1.8 * 12 * $scale_factor ) x 2 );
+		# $canvas->ellipse( 0, 0, ( 1.4 * 12 * $scale_factor ) x 2 );
 	}
 }
 
@@ -165,7 +214,7 @@ sub style
 	# and the start_angle and for style circle the end_angle, too
 	if ( $style eq 'drops') {
 		$self->{timer}->timeout(200);
-	} elsif ( $style eq 'circle') {
+	} elsif ( $style eq 'circle' || $style eq 'yinyang') {
 		$self->{timer}->timeout(8);
 	} else {
 		Carp::croak("bad style: $style");

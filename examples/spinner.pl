@@ -7,8 +7,6 @@ my $mw = Prima::MainWindow->new(
 		text => 'Spinners');
 
 my $spinner = $mw->insert('Spinner',
-	size => [200,400],
-	origin => [0,0],
 	color => cl::Blue,
 	hiliteColor => cl::White,
 	pack => { side => 'left', fill => 'both', expand => 1 },
@@ -16,19 +14,22 @@ my $spinner = $mw->insert('Spinner',
 
 my $spinner2 = $mw->insert('Spinner',
 	style => 'drops',
-	size => [200,400],
-	origin => [200,0],
 	pack => { side => 'left', fill => 'both', expand => 1 },
 	color => cl::Green,
 );
 
+my $spinner3 = $mw->insert('Spinner',
+	style => 'yinyang',
+	pack => { side => 'left', fill => 'both', expand => 1 },
+);
+
 $mw->insert(
 	'Button',
-	text => 'Start/Stop',
+	text => '~Start/Stop',
 	checkable => 1,
 	checked => 0,
 	origin => [0,0],
-	onClick => sub { $_->toggle for $spinner, $spinner2 },
+	onClick => sub { $_->toggle for $spinner, $spinner2, $spinner3 },
 	growMode => gm::XCenter
 );
 
@@ -38,7 +39,8 @@ $spinner->insert(
 	max => 100,
 	origin => [0,0],
 	onChange => sub { $spinner->value( shift->value ) },
-	growMode => gm::XCenter
+	growMode => gm::XCenter,
+	current => 1,
 );
 
 run Prima;
