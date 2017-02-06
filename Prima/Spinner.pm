@@ -100,16 +100,18 @@ sub on_paint
 		if ( $self->{showPercent} ) {
 			my $ref_text = '100%';
 			my $ext = 10 * $scale_factor;
-			my $attempts = 3;
+			my $attempts = 2;
 			$canvas-> font-> height( 4 * $scale_factor );
 			while ( $attempts-- ) {
 				my $tw = $canvas-> get_text_width( $ref_text );
 				last if $tw <= $ext;
 				$canvas-> font-> height( $canvas-> font-> height - $scale_factor );
 			}
-			$ref_text = int($self-> value + .5) . '%';
-			my $tw = $canvas-> get_text_width( $ref_text );
-			$canvas->text_out( $ref_text, $x - $tw/2, $y - $canvas->font->height / 2 );
+			if ( $attempts >= 0 ) {
+				$ref_text = int($self-> value + .5) . '%';
+				my $tw = $canvas-> get_text_width( $ref_text );
+				$canvas->text_out( $ref_text, $x - $tw/2, $y - $canvas->font->height / 2 );
+			}
 		}
 	}
 	else {
@@ -130,7 +132,7 @@ sub on_paint
 
 		$canvas->translate($x, $y);
 
-		my $gradient = $canvas->gradient_realize3d( 8, { palette => [ $self->color, $self->backColor ] });
+		my $gradient = $canvas->gradient_realize3d( 8+1, { palette => [ $self->color, $self->backColor ] });
 		my @colors;
 		for ( my $i = 0; $i < @$gradient; $i+=2 ) {
 			push @colors, $gradient->[$i] for 1 .. $gradient->[$i+1];

@@ -380,7 +380,7 @@ sub gradient_sector
 	$angle %= 360;
 	my $min_angle = 1.0 / 64; # x11 limitation
 
-    my $max = ($dx < $dy) ? $dy : $dx;
+	my $max = ($dx < $dy) ? $dy : $dx;
 	my $df  = $max * 3.14 / 360;
 	my $arclen = int($df * $angle + .5);
 	my $gradient = $canvas-> gradient_realize3d( $arclen, $request );
