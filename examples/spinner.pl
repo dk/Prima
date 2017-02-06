@@ -11,7 +11,7 @@ my $spinner = $mw->insert('Spinner',
 	origin => [0,0],
 	color => cl::White,
 	hiliteColor => cl::Blue,
-	growMode => gm::Left
+	pack => { side => 'left', fill => 'both', expand => 1 },
 );
 
 my $spinner2 = $mw->insert('Spinner',
@@ -20,7 +20,7 @@ my $spinner2 = $mw->insert('Spinner',
 	origin => [200,0],
 	color => cl::White,
 	hiliteColor => cl::Green,
-	growMode => gm::Left
+	pack => { side => 'left', fill => 'both', expand => 1 },
 );
 
 my $button = $mw->insert(
