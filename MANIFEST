@@ -102,6 +102,7 @@ examples/scrollbar.pl
 examples/sheet.pl
 examples/socket.pl
 examples/socket_anyevent.pl
+examples/spinner.pl
 examples/spline.pl
 examples/theme.pl
 examples/transparent.pl
@@ -286,6 +287,7 @@ Prima/RubberBand.pm
 Prima/ScrollBar.pm
 Prima/ScrollWidget.pm
 Prima/Sliders.pm
+Prima/Spinner.pm
 Prima/StartupWindow.pm
 Prima/StdBitmap.pm
 Prima/StdDlg.pm

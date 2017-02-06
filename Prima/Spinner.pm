@@ -215,7 +215,6 @@ sub toggle { $_[0]->active(!$_[0]->active) }
 
 1;
 __END__
-# Below is stub documentation for your module. You'd better edit it!
 
 =head1 NAME
 

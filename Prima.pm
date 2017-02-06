@@ -365,6 +365,8 @@ L<Prima::ScrollWidget> - scrollable generic document widget
 
 L<Prima::Sliders> - sliding bars, spin buttons and input lines, dial widget etc.
 
+L<Prima::Spinner> - spinner animation
+
 L<Prima::StartupWindow> - a simplistic startup banner window
 
 L<Prima::TextView> - rich text browser widget
