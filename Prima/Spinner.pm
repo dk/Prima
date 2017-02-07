@@ -311,13 +311,13 @@ can stop it.
 
 Inherited from L<Prima::Widget>. C<color> manages the basic foreground color.
 Concrete for the spinner widget this means the background color of the circle
-or the color of the inactive drops.
+or the color of the active drops.
 
 =item hiliteColor COLOR
 
 Inherited from L<Prima::Widget>. The color used to draw alternate foreground
 areas with high contrast. For the spinner widget this means the color of the
-arc in the circle style or the color of the active drops in the drops style.
+arc. Only for I<circle> style.
 
 =item showPercent BOOLEAN
 
