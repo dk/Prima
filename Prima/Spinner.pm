@@ -155,13 +155,11 @@ sub on_paint
 		my $sin = sin( -$self->{start_angle} / (2 * 3.14159265358));
 		my $cos = cos( -$self->{start_angle} / (2 * 3.14159265358));
 		my $render = sub {
-			@{ $canvas-> render_spline( 
-				_pairwise { 
-					$_[0] * $cos - $_[1] * $sin, 
-					$_[0] * $sin + $_[1] * $cos 
-				}
-				[ map { $_ * $scale_factor * 11 } @{$_[0]} ] 
-			) }
+			_pairwise { 
+				$_[0] * $cos - $_[1] * $sin, 
+				$_[0] * $sin + $_[1] * $cos 
+			}
+			[ map { $_ * $scale_factor * 11 } @_ ]
 		};
 
 		my $f	 = 0.415;
@@ -174,27 +172,24 @@ sub on_paint
 
         	$canvas->fillWinding(1);
 		$canvas->translate($x, $y);
-        	$canvas->fillpoly( [ 
-			map { $render->($_) } 
-			[
-				$apx1->($d1, $d1),
-				@{ _h_flip( [ $quad->( $d1 + 1 * $dx) ] ) },
-				@{ _rotate( [ $quad->(-$d1 - 2 * $dx) ] ) },
-				@{ _v_flip( [ $quad->( $d1 + 3 * $dx) ] ) },
-				$apx2->($d1 + 4 * $dx, -1 * $d1 - 4 * $dx)
-			], [
-				$apx1->($d1 + 4 * $dx, $d2),
-				$d1 + $d2 * $f, $d2,
-				$d1 - $d2 * $f, $d2,
-				$apx2->($d1 - 4 * $dx, $d2),
-			], [
-				$apx1->($d1 - 4 * $dx, -$d1 + 4 * $dx),
-				$quad->(-$d1 + 3 * $dx),
-				@{ _rotate _v_flip ( [ $quad->($d1 - 2 * $dx) ] ) },
-				$quad->($d1 - 1 * $dx),
-				$apx2->($d1, $d1)
-			]
-		]);
+		$canvas-> new_path-> spline( $render->(
+			$apx1->($d1, $d1),
+			@{ _h_flip( [ $quad->( $d1 + 1 * $dx) ] ) },
+			@{ _rotate( [ $quad->(-$d1 - 2 * $dx) ] ) },
+			@{ _v_flip( [ $quad->( $d1 + 3 * $dx) ] ) },
+			$apx2->($d1 + 4 * $dx, -1 * $d1 - 4 * $dx)
+		))->spline( $render->(
+			$apx1->($d1 + 4 * $dx, $d2),
+			$d1 + $d2 * $f, $d2,
+			$d1 - $d2 * $f, $d2,
+			$apx2->($d1 - 4 * $dx, $d2),
+		))->spline( $render-> (
+			$apx1->($d1 - 4 * $dx, -$d1 + 4 * $dx),
+			$quad->(-$d1 + 3 * $dx),
+			@{ _rotate _v_flip ( [ $quad->($d1 - 2 * $dx) ] ) },
+			$quad->($d1 - 1 * $dx),
+			$apx2->($d1, $d1)
+		))->fill;
 	}
 }
 

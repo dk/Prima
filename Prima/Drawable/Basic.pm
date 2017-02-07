@@ -411,6 +411,12 @@ sub text_split_lines
 		split "\n", $text;
 }
 
+sub new_path
+{
+	require Prima::Drawable::Path;
+	return Prima::Drawable::Path->new(@_);
+}
+
 1;
 
 =head1 NAME

@@ -187,6 +187,7 @@ Prima/DetailedOutline.pm
 Prima/DockManager.pm
 Prima/Docks.pm
 Prima/Drawable/Basic.pm
+Prima/Drawable/Path.pm
 Prima/Drawable/CurvedText.pm
 Prima/Drawable/Markup.pm
 Prima/Drawable/Subcanvas.pm
