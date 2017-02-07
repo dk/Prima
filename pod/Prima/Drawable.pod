@@ -242,8 +242,8 @@ Default: ((0,0),(1,1))
 
 =item spline @VERTEXES
 
-Serving same purpose as C<poly> but vertexes are projected first to a cubic
-spline using L<render_spline> and current value of C<splinePrecision>. The
+Serving same purpose as C<poly> but vertexes are projected first to a quadratic
+Bezier curve using L<render_spline> and current value of C<splinePrecision>. The
 resulting polyline is treated as C<poly>.
 
 =item vertical BOOLEAN
@@ -1147,7 +1147,7 @@ Context used: color, backColor, fillPattern, rop, rop2
 =item fill_spline \@POLYGON
 
 Fills a polygonal area defined by a curve, projected by applying 
-cubic spline interpolation to POLYGON set of points.
+quadratic Bezier curve interpolation to POLYGON set of points.
 Number of vertices between each polygon equals to current value of C<splinePrecision> property.
 POLYGON must present an array of integer pair in (X,Y) format.
 Example:
@@ -1297,7 +1297,7 @@ Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
 
 =item spline \@POLYGON
 
-Draws a cubic spline defined by set of POLYGON points.
+Draws a quadratic Berizer curve defined by set of POLYGON points.
 Number of vertices between each polygon equals to current value of C<splinePrecision> property.
 POLYGON must present an array of integer pair in (X,Y) format.
 
@@ -1533,7 +1533,7 @@ Context used: font, textOutBaseline
 
 =item render_spline VERTICES, [ PRECISION ]
 
-Renders cubic spline from set of VERTICES to a polyline with given precision.
+Renders quadratic Bezier curve from set of VERTICES to a polyline with given precision.
 The method can be called as static, i.e.  with no object initialized. PRECISION
 integer, if not given, is read from C<splinePrecision> property if the method
 was called on an alive object; in case of static call, default value 24 is
