@@ -154,53 +154,47 @@ sub on_paint
 	} elsif ( $self->{style} eq 'yinyang') {
 		my $sin = sin( -$self->{start_angle} / (2 * 3.14159265358));
 		my $cos = cos( -$self->{start_angle} / (2 * 3.14159265358));
+		my $render = sub {
+			@{ $canvas-> render_spline( 
+				_pairwise { 
+					$_[0] * $cos - $_[1] * $sin, 
+					$_[0] * $sin + $_[1] * $cos 
+				}
+				[ map { $_ * $scale_factor * 11 } @{$_[0]} ] 
+			) }
+		};
+
+		my $f	 = 0.415;
+		my $d1	 = 0.8;
+		my $dx	 = 0.05;
+		my $d2	 = $dx * 4;
+		my $apx1 = sub {  $_[0], 0.00, $_[0], $_[1] * $f };
+		my $apx2 = sub {  $_[0], $_[1] * $f,  $_[0], 0.0 };
+		my $quad = sub { -$_[0] * $f, $_[0], $_[0] * $f, $_[0] };
+
+        	$canvas->fillWinding(1);
 		$canvas->translate($x, $y);
-		$canvas->fill_spline( 
-			_pairwise {
-				$_[0] * $cos - $_[1] * $sin,
-				$_[0] * $sin + $_[1] * $cos,
-			} [ map { 
-				$_ * $scale_factor * 12
-			} (
-				 .81, -.04,
-				 .81,  .37,
-
-				 .30,  .85,
-				-.33,  .85,
-
-				-.90,  .35,
-				-.90, -.37,
-
-				-.37, -.95,
-				 .38, -.95,
-				 
-				 .82, -.59,
-			 	1.02, -.08,
-
-				 .63, -.00,
-				 .57, -.35,
-
-				 .20, -.65,
-				-.30, -.65,
-
-				-.70, -.30,
-				-.70,  .30,
-
-				-.30,  .75,
-				 .30,  .75,
-
-				 .79,  .33,
-				 .79, -.03
-
-			) ]
-		);
-		# $canvas->line(-900, 0, 900, 0);
-		# $canvas->line(-900, -$scale_factor * 1, 900, -$scale_factor * 1);
-		# $canvas->line(0, 900, 0, -900);
-		# $canvas->color(cl::White);
-		# $canvas->ellipse( 0, 0, ( 1.6 * 12 * $scale_factor ) x 2 );
-		# $canvas->ellipse( 0, 0, ( 1.8 * 12 * $scale_factor ) x 2 );
-		# $canvas->ellipse( 0, 0, ( 1.4 * 12 * $scale_factor ) x 2 );
+        	$canvas->fillpoly( [ 
+			map { $render->($_) } 
+			[
+				$apx1->($d1, $d1),
+				@{ _h_flip( [ $quad->( $d1 + 1 * $dx) ] ) },
+				@{ _rotate( [ $quad->(-$d1 - 2 * $dx) ] ) },
+				@{ _v_flip( [ $quad->( $d1 + 3 * $dx) ] ) },
+				$apx2->($d1 + 4 * $dx, -1 * $d1 - 4 * $dx)
+			], [
+				$apx1->($d1 + 4 * $dx, $d2),
+				$d1 + $d2 * $f, $d2,
+				$d1 - $d2 * $f, $d2,
+				$apx2->($d1 - 4 * $dx, $d2),
+			], [
+				$apx1->($d1 - 4 * $dx, -$d1 + 4 * $dx),
+				$quad->(-$d1 + 3 * $dx),
+				@{ _rotate _v_flip ( [ $quad->($d1 - 2 * $dx) ] ) },
+				$quad->($d1 - 1 * $dx),
+				$apx2->($d1, $d1)
+			]
+		]);
 	}
 }
 
