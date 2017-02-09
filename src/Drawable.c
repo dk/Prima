@@ -600,28 +600,36 @@ Drawable_bars( Handle self, SV * rects)
 *--------------------------------------------------------------
 */
 
-static void
+static int
 TkBezierScreenPoints(
-	double control[],			/* Array of coordinates for four
-													* control points:  x0, y0, x1, y1,
-													* ... x3 y3. */
-	int numSteps,			/* Number of curve points to
-													* generate.  */
-	register Point *xPointPtr)		/* Where to put new points. */
+	double control[],          /* Array of coordinates for four
+	                            * control points:  x0, y0, x1, y1,
+	                            * ... x3 y3. */
+	int numSteps,              /* Number of curve points to
+	                            * generate.  */
+	register Point *xPointPtr) /* Where to put new points. */
 {
-	int i;
+	int i, nPoints = 0;
 	double u, u2, u3, t, t2, t3;
+	Point * last = NULL;
 
-	for (i = 1; i <= numSteps; i++, xPointPtr++) {
+	for (i = 1; i <= numSteps; i++) {
+		Point p;
 		t = ((double) i)/((double) numSteps);
 		t2 = t*t;
 		t3 = t2*t;
 		u = 1.0 - t;
 		u2 = u*u;
 		u3 = u2*u;
-		xPointPtr-> x =	control[0]*u3 + 3.0 * (control[2]*t*u2 + control[4]*t2*u) + control[6]*t3;
-		xPointPtr-> y =	control[1]*u3 + 3.0 * (control[3]*t*u2 + control[5]*t2*u) + control[7]*t3;
+		p. x = control[0] * u3 + 3.0 * (control[2] * t * u2 + control[4] * t2 * u) + control[6] * t3 + .5;
+		p. y = control[1] * u3 + 3.0 * (control[3] * t * u2 + control[5] * t2 * u) + control[7] * t3 + .5;
+		if ( !last || last->x != p.x || last->y != p.y) {
+			last = xPointPtr;
+			*(xPointPtr++) = p;
+			nPoints++;
+		}
 	}
+	return nPoints;
 }
 
 /*
@@ -652,15 +660,15 @@ TkBezierScreenPoints(
 
 static int
 TkMakeBezierCurve(
-	int *pointPtr,			/* Array of input coordinates:  x0,
-													* y0, x1, y1, etc.. */
-	int numPoints,			/* Number of points at pointPtr. */
-	int numSteps,			/* Number of steps to use for each
-													* spline segments (determines
-													* smoothness of curve). */
-	Point xPoints[])			/* Array of Points to fill in (e.g.
-													* for display.  NULL means don't
-													* fill in any Points. */
+	int *pointPtr,     /* Array of input coordinates:  x0,
+	                    * y0, x1, y1, etc.. */
+	int numPoints,     /* Number of points at pointPtr. */
+	int numSteps,      /* Number of steps to use for each
+	                    * spline segments (determines
+	                    * smoothness of curve). */
+	Point xPoints[])   /* Array of Points to fill in (e.g.
+	                    * for display.  NULL means don't
+	                    * fill in any Points. */
 {
 	int closed, outputPoints, i;
 	int numCoords = numPoints*2;
@@ -674,107 +682,99 @@ TkMakeBezierCurve(
 
 	if (!pointPtr) {
 		/* Of pointPtr == NULL, this function returns an upper limit.
-			* of the array size to store the coordinates. This can be
-			* used to allocate storage, before the actual coordinates
-			* are calculated. */
+		* of the array size to store the coordinates. This can be
+		* used to allocate storage, before the actual coordinates
+		* are calculated. */
 		return 1 + numPoints * numSteps;
 	}
 
 	outputPoints = 0;
-	if ((pointPtr[0] == pointPtr[numCoords-2])
-				&& (pointPtr[1] == pointPtr[numCoords-1])) {
+	if (
+		(pointPtr[0] == pointPtr[numCoords-2]) &&
+		(pointPtr[1] == pointPtr[numCoords-1])
+	) {
+		int n;
 		closed = 1;
-		control[0] = 0.5*pointPtr[numCoords-4] + 0.5*pointPtr[0];
-		control[1] = 0.5*pointPtr[numCoords-3] + 0.5*pointPtr[1];
-		control[2] = 0.167*pointPtr[numCoords-4] + 0.833*pointPtr[0];
-		control[3] = 0.167*pointPtr[numCoords-3] + 0.833*pointPtr[1];
-		control[4] = 0.833*pointPtr[0] + 0.167*pointPtr[2];
-		control[5] = 0.833*pointPtr[1] + 0.167*pointPtr[3];
-		control[6] = 0.5*pointPtr[0] + 0.5*pointPtr[2];
-		control[7] = 0.5*pointPtr[1] + 0.5*pointPtr[3];
-		if (xPoints != NULL) {
-				xPoints-> x = control[0];
-				xPoints-> y = control[1];
-				TkBezierScreenPoints( control, numSteps, xPoints+1);
-				xPoints += numSteps+1;
-		}
-		outputPoints += numSteps+1;
+		control[0] = 0.5   * pointPtr[numCoords-4] + 0.5   * pointPtr[0];
+		control[1] = 0.5   * pointPtr[numCoords-3] + 0.5   * pointPtr[1];
+		control[2] = 0.167 * pointPtr[numCoords-4] + 0.833 * pointPtr[0];
+		control[3] = 0.167 * pointPtr[numCoords-3] + 0.833 * pointPtr[1];
+		control[4] = 0.833 * pointPtr[0]           + 0.167 * pointPtr[2];
+		control[5] = 0.833 * pointPtr[1]           + 0.167 * pointPtr[3];
+		control[6] = 0.5   * pointPtr[0]           + 0.5   * pointPtr[2];
+		control[7] = 0.5   * pointPtr[1]           + 0.5   * pointPtr[3];
+
+		xPoints-> x = control[0];
+		xPoints-> y = control[1];
+		n = TkBezierScreenPoints( control, numSteps, xPoints+1);
+		xPoints += n;
+		outputPoints += n;
 	} else {
 		closed = 0;
-		if (xPoints != NULL) {
-				xPoints->x = pointPtr[0];
-				xPoints->y = pointPtr[1];
-				xPoints += 1;
-		}
-		outputPoints += 1;
+		xPoints->x = pointPtr[0];
+		xPoints->y = pointPtr[1];
+		xPoints++;
+		outputPoints++;
 	}
 
 	for (i = 2; i < numPoints; i++, pointPtr += 2) {
+		int n;
 		/*
-			* Set up the first two control points.  This is done
-			* differently for the first spline of an open curve
-			* than for other cases.
-			*/
+		* Set up the first two control points.  This is done
+		* differently for the first spline of an open curve
+		* than for other cases.
+		*/
 
 		if ((i == 2) && !closed) {
-				control[0] = pointPtr[0];
-				control[1] = pointPtr[1];
-				control[2] = 0.333*pointPtr[0] + 0.667*pointPtr[2];
-				control[3] = 0.333*pointPtr[1] + 0.667*pointPtr[3];
+			control[0] = pointPtr[0];
+			control[1] = pointPtr[1];
+			control[2] = 0.333 * pointPtr[0] + 0.667 * pointPtr[2];
+			control[3] = 0.333 * pointPtr[1] + 0.667 * pointPtr[3];
 		} else {
-				control[0] = 0.5*pointPtr[0] + 0.5*pointPtr[2];
-				control[1] = 0.5*pointPtr[1] + 0.5*pointPtr[3];
-				control[2] = 0.167*pointPtr[0] + 0.833*pointPtr[2];
-				control[3] = 0.167*pointPtr[1] + 0.833*pointPtr[3];
+			control[0] = 0.5   * pointPtr[0] + 0.5   * pointPtr[2];
+			control[1] = 0.5   * pointPtr[1] + 0.5   * pointPtr[3];
+			control[2] = 0.167 * pointPtr[0] + 0.833 * pointPtr[2];
+			control[3] = 0.167 * pointPtr[1] + 0.833 * pointPtr[3];
 		}
 
 		/*
-			* Set up the last two control points.  This is done
-			* differently for the last spline of an open curve
-			* than for other cases.
-			*/
+		* Set up the last two control points.  This is done
+		* differently for the last spline of an open curve
+		* than for other cases.
+		*/
 
-		if ((i == (numPoints-1)) && !closed) {
-				control[4] = .667*pointPtr[2] + .333*pointPtr[4];
-				control[5] = .667*pointPtr[3] + .333*pointPtr[5];
-				control[6] = pointPtr[4];
-				control[7] = pointPtr[5];
+		if ((i == (numPoints - 1)) && !closed) {
+			control[4] = 0.667 * pointPtr[2] + 0.333 * pointPtr[4];
+			control[5] = 0.667 * pointPtr[3] + 0.333 * pointPtr[5];
+			control[6] = pointPtr[4];
+			control[7] = pointPtr[5];
 		} else {
-				control[4] = .833*pointPtr[2] + .167*pointPtr[4];
-				control[5] = .833*pointPtr[3] + .167*pointPtr[5];
-				control[6] = 0.5*pointPtr[2] + 0.5*pointPtr[4];
-				control[7] = 0.5*pointPtr[3] + 0.5*pointPtr[5];
+			control[4] = 0.833 * pointPtr[2] + 0.167 * pointPtr[4];
+			control[5] = 0.833 * pointPtr[3] + 0.167 * pointPtr[5];
+			control[6] = 0.5   * pointPtr[2] + 0.5   * pointPtr[4];
+			control[7] = 0.5   * pointPtr[3] + 0.5   * pointPtr[5];
 		}
 
 		/*
-			* If the first two points coincide, or if the last
-			* two points coincide, then generate a single
-			* straight-line segment by outputting the last control
-			* point.
-			*/
-
-		if (((pointPtr[0] == pointPtr[2]) && (pointPtr[1] == pointPtr[3]))
-					|| ((pointPtr[2] == pointPtr[4])
-					&& (pointPtr[3] == pointPtr[5]))) {
-				if (xPoints != NULL) {
-					xPoints[0].x = control[6];
-					xPoints[0].y = control[7];
-					xPoints++;
-				}
-				outputPoints += 1;
-				continue;
+		* If the first two points coincide, or if the last
+		* two points coincide, then generate a single
+		* straight-line segment by outputting the last control
+		* point.
+		*/
+		if (
+			((pointPtr[0] == pointPtr[2]) && (pointPtr[1] == pointPtr[3])) || 
+			((pointPtr[2] == pointPtr[4]) && (pointPtr[3] == pointPtr[5]))
+		) {
+			xPoints[0].x = control[6];
+			xPoints[0].y = control[7];
+			xPoints++;
+			outputPoints++;
 		}
 
-		/*
-			* Generate a Bezier spline using the control points.
-			*/
-
-
-		if (xPoints != NULL) {
-				TkBezierScreenPoints(control, numSteps, xPoints);
-				xPoints += numSteps;
-		}
-		outputPoints += numSteps;
+		/* Generate a Bezier spline using the control points */
+		n = TkBezierScreenPoints(control, numSteps, xPoints);
+		xPoints += n;
+		outputPoints += n;
 	}
 	return outputPoints;
 }
