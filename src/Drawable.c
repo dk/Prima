@@ -621,8 +621,8 @@ TkBezierScreenPoints(
 		u = 1.0 - t;
 		u2 = u*u;
 		u3 = u2*u;
-		p. x = control[0] * u3 + 3.0 * (control[2] * t * u2 + control[4] * t2 * u) + control[6] * t3 + .5;
-		p. y = control[1] * u3 + 3.0 * (control[3] * t * u2 + control[5] * t2 * u) + control[7] * t3 + .5;
+		p. x = control[0] * u3 + 3.0 * (control[2] * t * u2 + control[4] * t2 * u) + control[6] * t3 ;
+		p. y = control[1] * u3 + 3.0 * (control[3] * t * u2 + control[5] * t2 * u) + control[7] * t3 ;
 		if ( !last || last->x != p.x || last->y != p.y) {
 			last = xPointPtr;
 			*(xPointPtr++) = p;
