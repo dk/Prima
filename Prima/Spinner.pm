@@ -9,7 +9,7 @@ sub profile_default
 	my $self = shift;
 	return {
 		%{$self-> SUPER::profile_default},
-		style	    => 'circle',
+		style	    => 'drops',
 		active	    => 1,
 		buffered    => 1,
 		value	    => 50,
@@ -44,7 +44,7 @@ sub Timer_Tick
 		$self->{start_angle} = $startang + 1 if $startang < 7;
 		$self->{start_angle} = 0 if $startang == 7;
 	}
-	elsif ( $self->{style} eq 'circle' || $self->{style} eq 'yinyang') {
+	elsif ( $self->{style} eq 'circle' || $self->{style} eq 'spiral') {
 		$self->{start_angle} = $startang - 1 if $startang > 0;
 		$self->{start_angle} = 360 if $startang == 0;
 	}
@@ -151,7 +151,7 @@ sub on_paint
 		$fill_spline->(2, _h_flip _rotate \@petal1);
 		$fill_spline->(1, _h_flip \@petal2);
 		$fill_spline->(0, \@petal1 );
-	} elsif ( $self->{style} eq 'yinyang') {
+	} elsif ( $self->{style} eq 'spiral') {
 		$scale_factor *= 11;
 		my $sin = sin( -$self->{start_angle} / (180 / 3.14159265358));
 		my $cos = cos( -$self->{start_angle} / (180 / 3.14159265358));
@@ -203,7 +203,7 @@ sub style
 	# and the start_angle and for style circle the end_angle, too
 	if ( $style eq 'drops') {
 		$self->{timer}->timeout(200);
-	} elsif ( $style eq 'circle' || $style eq 'yinyang') {
+	} elsif ( $style eq 'circle' || $style eq 'spiral') {
 		$self->{timer}->timeout(8);
 	} else {
 		Carp::croak("bad style: $style");
@@ -333,9 +333,7 @@ Same as C< active(0) >
 
 =item style STRING
 
-C<style> can be 'circle' or 'drops'. With C<'circle'> an arc moving around a
-circle is shown. C<'drops'> shows drops are shown that switches consecutively
-the color.
+C<style> can be 'drops', 'circle' or 'spiral'. C<'drops'> shows drops that switches consecutively the color. With C<'circle'> an arc moving around a circle is shown. C<'spiral'> shows a spinning spiral. The default is 'drops'.
 
 =item value INT
 
