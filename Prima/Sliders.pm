@@ -828,7 +828,6 @@ sub indeterminate    {
 	# Create the timer for the motion in indeterminate mode
 	# if it is not still created
 	unless ( $self->{timer} ) {
-		print "CREATE TIMER \n";
 		$self->{timer} = $self->insert( Timer => 
 		name	    => 'Timer',
 		timeout     => 25,
