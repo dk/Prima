@@ -647,6 +647,11 @@ sub profile_default
 		value          => 0,
 		threshold      => 0,
 		vertical       => 0,
+		# additional properties for indeterminate mode
+		indeterminate	=> '1',
+		direction	=> 'right',
+		buffered 	=> 1,
+		sliderLength	=> 30,
 	}
 }
 
@@ -659,6 +664,11 @@ sub init
 	$self-> {string} = '';
 	for (qw( vertical threshold min max relief indent value))
 	{$self-> $_($profile{$_}); }
+	# additional properties for indeterminate mode
+	for (qw( indeterminate direction sliderLength))
+	{$self-> $_($profile{$_}); }
+	# If indeterminate is true, the start value must be > sliderLength
+	$self->value($self->{sliderLength}) if ($self->indeterminate);
 	return %profile;
 }
 
@@ -672,6 +682,8 @@ sub on_paint
 {
 	my ($self,$canvas) = @_;
 	my ($x, $y) = $canvas-> size;
+	
+	$canvas->clear();
 	my $i = $self-> indent;
 	my ($clComplete,$clBack,$clFore,$clHilite) = ($self-> hiliteBackColor, $self-> backColor, $self-> color, $self-> hiliteColor);
 	my $v = $self-> {vertical};
@@ -680,9 +692,32 @@ sub on_paint
 	$complete = int(($complete - $i*2) * $self-> {value} / $range + 0.5);
 	my ( $l3, $d3) = ( $self-> light3DColor, $self-> dark3DColor);
 	$canvas-> color( $clComplete);
-	$canvas-> bar ( $v ? ($i, $i, $x-$i-1, $i+$complete) : ( $i, $i, $i + $complete, $y-$i-1));
+	
+	# INDETERMINATE STYLE HACK
+	if ($self->indeterminate) {
+		my $left_bound;
+		if ($v) {
+			$left_bound = $complete - ($self->{sliderLength} * $y / $range + 0.5)
+		}
+		else {
+			$left_bound = $complete - ($self->{sliderLength} * $x / $range + 0.5)
+		}
+
+	 	
+		$canvas-> bar ( $v ? ($i, $left_bound, $x-$i-1, $i+$complete) : ($left_bound, $i, $i + $complete, $y-$i-1));
+		
+	}
+	
+	
+	else {
+		$canvas-> bar ( $v ? ($i, $i, $x-$i-1, $i+$complete) : ( $i, $i, $i + $complete, $y-$i-1));
+
+	}
+	
+	
 	$canvas-> color( $clBack);
 	$canvas-> bar ( $v ? ($i, $i+$complete+1, $x-$i-1, $y-$i-1) : ( $i+$complete+1, $i, $x-$i-1, $y-$i-1));
+
 	# draw the border
 	my $relief = $self-> relief;
 	$canvas-> color(( $relief == gr::Sink) ? $d3 : (( $relief == gr::Border) ? cl::Black : $l3));
@@ -696,7 +731,8 @@ sub on_paint
 	{
 		$canvas-> line( $j + 1, $j, $x - $j - 1, $j);
 		$canvas-> line( $x - $j - 1, $j, $x - $j - 1, $y - $j - 1);
-	}
+	}	
+	
 
 	# draw the text, if neccessary
 	my $s = $self-> {string};
@@ -741,25 +777,30 @@ sub set_bounds
 	$self-> value( $min) if $self-> {value} < $min;
 }
 
-sub value
-{
+sub value {
 	return $_[0]-> {value} unless $#_;
 	my $v = $_[1] < $_[0]-> {min} ? $_[0]-> {min} : ($_[1] > $_[0]-> {max} ? $_[0]-> {max} : $_[1]);
 	$v -= $_[0]-> {min};
-	my $old = $_[0]-> {value};
-	if (abs($old - $v) >= $_[0]-> {threshold}) {
-		my ($x, $y) = $_[0]-> size;
-		my $i = $_[0]-> {indent};
-		my $range = ( $_[0]-> {max} - $_[0]-> {min}) || 1;
-		my $x1 = $i + ($x - $i*2) * $old / $range;
-		my $x2 = $i + ($x - $i*2) * $v   / $range;
-		($x1, $x2) = ( $x2, $x1) if $x1 > $x2;
-		my $s = $_[0]-> {string};
+	if ($_[0]->indeterminate) {
 		$_[0]-> {value} = $v;
-		$_[0]-> notify(q(Stringify), $v, \$_[0]-> {string});
-		( $_[0]-> {string} eq $s) ?
-			$_[0]-> invalidate_rect( $x1, 0, $x2+1, $y) :
-			$_[0]-> repaint;
+		$_[0]-> repaint;
+	}
+	else {
+		my $old = $_[0]-> {value};
+		if (abs($old - $v) >= $_[0]-> {threshold}) {
+			my ($x, $y) = $_[0]-> size;
+			my $i = $_[0]-> {indent};
+			my $range = ( $_[0]-> {max} - $_[0]-> {min}) || 1;
+			my $x1 = $i + ($x - $i*2) * $old / $range;
+			my $x2 = $i + ($x - $i*2) * $v   / $range;
+			($x1, $x2) = ( $x2, $x1) if $x1 > $x2;
+			my $s = $_[0]-> {string};
+			$_[0]-> {value} = $v;
+			$_[0]-> notify(q(Stringify), $v, \$_[0]-> {string});
+			( $_[0]-> {string} eq $s) ?
+				$_[0]-> invalidate_rect( $x1, 0, $x2+1, $y) :
+				$_[0]-> repaint;
+		}
 	}
 }
 
@@ -776,6 +817,9 @@ sub vertical  {($#_)?($_[0]-> {vertical} = $_[1],$_[0]-> repaint):return $_[0]->
 sub min       {($#_)?$_[0]-> set_bounds($_[1], $_[0]-> {'max'})  : return $_[0]-> {min};}
 sub max       {($#_)?$_[0]-> set_bounds($_[0]-> {'min'}, $_[1])  : return $_[0]-> {max};}
 sub threshold {($#_)?($_[0]-> {threshold} = $_[1]):return $_[0]-> {threshold};}
+sub indeterminate    {($#_)?($_[0]-> {indeterminate} = $_[1])  :return $_[0]-> {indeterminate};}
+sub direction    {($#_)?($_[0]-> {direction} = $_[1])  :return $_[0]-> {direction};}
+sub sliderLength    {($#_)?($_[0]-> {sliderLength} = $_[1])  :return $_[0]-> {sliderLength};}
 
 # slider standard schemes
 package 
