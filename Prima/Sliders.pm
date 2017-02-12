@@ -670,7 +670,7 @@ sub init
 	# Create the timer for the motion in indeterminate mode
 	$self->{timer} = $self->insert( Timer => 
 		name	    => 'Timer',
-		timeout     => 30,
+		timeout     => 25,
 		delegations => ['Tick'],
 	);
 	# init the properties for the indeterminate mode
