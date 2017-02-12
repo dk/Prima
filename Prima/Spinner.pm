@@ -152,14 +152,15 @@ sub on_paint
 		$fill_spline->(1, _h_flip \@petal2);
 		$fill_spline->(0, \@petal1 );
 	} elsif ( $self->{style} eq 'yinyang') {
-		my $sin = sin( -$self->{start_angle} / (2 * 3.14159265358));
-		my $cos = cos( -$self->{start_angle} / (2 * 3.14159265358));
+		$scale_factor *= 11;
+		my $sin = sin( -$self->{start_angle} / (180 / 3.14159265358));
+		my $cos = cos( -$self->{start_angle} / (180 / 3.14159265358));
 		my $render = sub {
 			_pairwise { 
 				$_[0] * $cos - $_[1] * $sin, 
 				$_[0] * $sin + $_[1] * $cos 
 			}
-			[ map { $_ * $scale_factor * 11 } @_ ]
+			[ map { $_ * $scale_factor } @_ ]
 		};
 
 		my $f	 = 0.415;
@@ -172,18 +173,17 @@ sub on_paint
 
         	$canvas->fillWinding(1);
 		$canvas->translate($x, $y);
-		$canvas-> new_path-> spline( $render->(
+		$canvas-> new_path->spline( $render->(
 			$apx1->($d1, $d1),
 			@{ _h_flip( [ $quad->( $d1 + 1 * $dx) ] ) },
 			@{ _rotate( [ $quad->(-$d1 - 2 * $dx) ] ) },
 			@{ _v_flip( [ $quad->( $d1 + 3 * $dx) ] ) },
 			$apx2->($d1 + 4 * $dx, -1 * $d1 - 4 * $dx)
-		))->spline( $render->(
-			$apx1->($d1 + 4 * $dx, $d2),
-			$d1 + $d2 * $f, $d2,
-			$d1 - $d2 * $f, $d2,
-			$apx2->($d1 - 4 * $dx, $d2),
-		))->spline( $render-> (
+		))->arc(
+			@{ $render->( $d1, 0 ) },
+			(( $d2 * 2 * $scale_factor ) x 2),
+			-$self->{start_angle}, -$self->{start_angle} + 180,
+		)->spline( $render-> (
 			$apx1->($d1 - 4 * $dx, -$d1 + 4 * $dx),
 			$quad->(-$d1 + 3 * $dx),
 			@{ _rotate _v_flip ( [ $quad->($d1 - 2 * $dx) ] ) },

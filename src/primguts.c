@@ -1852,6 +1852,79 @@ prima_omp_set_num_threads(int num)
 #endif
 }
 
+SV *
+prima_array_new( size_t size)
+{
+	SV * sv = newSV( size );
+	SvPOK_only(sv);
+	return sv;
+}
+
+void
+prima_array_truncate( SV * array, size_t length )
+{
+	SvCUR_set(array, length );
+	SvPOK_only(array);
+}
+
+SV *
+prima_array_tie( SV * array, size_t size_of_entry, char * letter)
+{
+	SV * tie;
+	AV * av1, * av2;
+
+	av1 = newAV();
+	av_push(av1, array);
+	av_push(av1, newSViv(size_of_entry));
+	av_push(av1, newSVpv(letter, 1));
+	tie = newRV_noinc((SV*) av1);
+	sv_bless(tie, gv_stashpv("Prima::array", GV_ADD));
+
+	av2 = newAV();
+	hv_magic(av2, (GV*)tie, PERL_MAGIC_tied);
+	return newRV_noinc((SV*) av2);
+}
+
+Bool
+prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter)
+{
+	SV * tied;
+	const MAGIC * mg;
+	SV ** ssv;
+	AV * av;
+	int cur;
+
+	if ( !SvROK(sv) || SvTYPE( SvRV( sv)) != SVt_PVAV)
+		return false;
+	av = (AV *) SvRV(sv);
+
+	if (( mg = SvTIED_mg(( SV*) av, PERL_MAGIC_tied )) == NULL)
+		return false;
+
+	tied = SvTIED_obj(( SV* ) av, mg );
+	if ( !tied || !SvROK(tied) || !sv_isa( tied, "Prima::array" ))
+		return false;
+
+	av = (AV*) SvRV(tied);
+	if ( SvTYPE((SV*) av) != SVt_PVAV)
+		croak("panic: corrupted array");
+
+	ssv = av_fetch( av, 0, 0);
+	if ( ssv == NULL ) croak("panic: corrupted array");
+	*ref = SvPVX(*ssv);
+	cur  = SvCUR(*ssv);
+
+	ssv = av_fetch( av, 1, 0);
+	if ( ssv == NULL || SvIV(*ssv) <= 0 ) croak("panic: corrupted array");
+	*length = cur / SvIV(*ssv);
+
+	ssv = av_fetch( av, 2, 0);
+	if ( ssv == NULL ) croak("panic: corrupted array");
+	*letter = SvPV(*ssv, PL_na);
+
+	return true;
+}
+
 #ifdef __cplusplus
 }
 #endif

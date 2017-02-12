@@ -1464,6 +1464,20 @@ prima_utf8_length( const char * utf8);
 extern Bool
 prima_is_utf8_sv( SV * sv);
 
+extern SV *
+prima_array_new( size_t size);
+
+#define prima_array_get_storage(array) SvPVX(array)
+
+extern void
+prima_array_truncate( SV * array, size_t length );
+
+extern SV *
+prima_array_tie( SV * array, size_t size_of_entry, char * letter);
+
+extern Bool
+prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter);
+
 /* OS types */
 #define APC(const_name) CONSTANT(apc,const_name)
 START_TABLE(apc,UV)

@@ -455,12 +455,17 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 	return ok;
 }
 
-Point *
-Drawable_polypoints( SV * points, char * procName, int mod, int * n_points)
+typedef struct _FPoint {
+	double x;
+	double y;
+} FPoint;
+
+static void *
+Drawable_polypoints( SV * points, char * procName, Bool integer, int mod, int * n_points, Bool * do_free )
 {
 	AV * av;
-	int i, count;
-	Point * p;
+	int i, count, psize;
+	void * p;
 
 	if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
 		warn("Invalid array reference passed to %s", procName);
@@ -473,9 +478,23 @@ Drawable_polypoints( SV * points, char * procName, int mod, int * n_points)
 			procName, mod);
 		return nil;
 	}
+
+	{
+		void * ref;
+		size_t len;
+		char * pack, req = integer ? 'i' : 'd';
+		if ( prima_array_parse( points, &ref, &len, &pack ) && *pack == req) {
+			*n_points = len / 2;
+			*do_free = false;
+			return ref;
+		}
+	}
+
+
 	count /= 2;
 	if ( count < 1) return nil;
-	if (!( p = allocn( Point, count))) return false;
+	psize = integer ? sizeof(Point) : sizeof(FPoint);
+	if (!( p = malloc( psize * count))) return false;
 	for ( i = 0; i < count; i++)
 	{
 		SV** psvx = av_fetch( av, i * 2, 0);
@@ -485,10 +504,18 @@ Drawable_polypoints( SV * points, char * procName, int mod, int * n_points)
 			warn("Array panic on item pair %d on Drawable::%s", i, procName);
 			return nil;
 		}
-		p[ i]. x = SvIV( *psvx);
-		p[ i]. y = SvIV( *psvy);
+		if ( integer ) {
+			Point * pp = ((Point*)p) + i;
+			pp->x = SvIV( *psvx);
+			pp->y = SvIV( *psvy);
+		} else {
+			FPoint * pp = ((FPoint*)p) + i;
+			pp->x = SvNV( *psvx);
+			pp->y = SvNV( *psvy);
+		}
 	}
 	*n_points = count;
+	*do_free = true;
 	return p;
 }
 
@@ -534,35 +561,47 @@ Drawable_polyrects( SV * rects, char * procName, int * n_rects)
 }
 
 static Bool
-polypoints( Handle self, SV * points, char * procName, int mod, Bool (*procPtr)(Handle,int,Point*))
+polypoints( Handle self, SV * points, char * procName, Bool integer, int mod, Bool (*procPtr)(Handle,int,void*))
 {
 	int count;
-	Point * p;
-	Bool ret = false;
-	if (( p = Drawable_polypoints( points, procName, mod, &count))) {
+	void * p;
+	Bool ret = false, do_free;
+	if (( p = Drawable_polypoints( points, procName, integer, mod, &count, &do_free))) {
 		ret = procPtr( self, count, p);
 		if ( !ret) perl_error();
-		free( p);
+		if (do_free) free( p);
 	}
 	return ret;
+}
+
+static Bool
+polypoints_int( Handle self, SV * points, char * procName, int mod, Bool (*procPtr)(Handle,int,Point*))
+{
+	return polypoints(self, points, procName, true, mod, (void*)procPtr);
+}
+
+static Bool
+polypoints_double( Handle self, SV * points, char * procName, int mod, Bool (*procPtr)(Handle,int,FPoint*))
+{
+	return polypoints(self, points, procName, false, mod, (void*)procPtr);
 }
 
 Bool
 Drawable_polyline( Handle self, SV * points)
 {
-	return polypoints( self, points, "Drawable::polyline", 2, apc_gp_draw_poly);
+	return polypoints_int( self, points, "Drawable::polyline", 2, apc_gp_draw_poly);
 }
 
 Bool
 Drawable_lines( Handle self, SV * points)
 {
-	return polypoints( self, points, "Drawable::lines", 4, apc_gp_draw_poly2);
+	return polypoints_int( self, points, "Drawable::lines", 4, apc_gp_draw_poly2);
 }
 
 Bool
 Drawable_fillpoly( Handle self, SV * points)
 {
-	return polypoints( self, points, "Drawable::fillpoly", 2, apc_gp_fill_poly);
+	return polypoints_int( self, points, "Drawable::fillpoly", 2, apc_gp_fill_poly);
 }
 
 Bool
@@ -660,7 +699,7 @@ TkBezierScreenPoints(
 
 static int
 TkMakeBezierCurve(
-	int *pointPtr,     /* Array of input coordinates:  x0,
+	double *pointPtr,     /* Array of input coordinates:  x0,
 	                    * y0, x1, y1, etc.. */
 	int numPoints,     /* Number of points at pointPtr. */
 	int numSteps,      /* Number of steps to use for each
@@ -772,6 +811,7 @@ TkMakeBezierCurve(
 		}
 
 		/* Generate a Bezier spline using the control points */
+
 		n = TkBezierScreenPoints(control, numSteps, xPoints);
 		xPoints += n;
 		outputPoints += n;
@@ -782,7 +822,7 @@ TkMakeBezierCurve(
 #define STATIC_ARRAY_SIZE 200
 
 static Bool
-plot_spline( Handle self, int count, Point * points, Bool fill)
+plot_spline( Handle self, int count, FPoint * points, Bool fill)
 {
 	Bool ret;
 	int array_size;
@@ -797,7 +837,7 @@ plot_spline( Handle self, int count, Point * points, Bool fill)
 	} else 
 		array = static_array;
 
-	array_size = TkMakeBezierCurve((int*) points, count, var-> splinePrecision, array);
+	array_size = TkMakeBezierCurve((double*) points, count, var-> splinePrecision, array);
 
 	if ( fill && ( my-> fillpoly == Drawable_fillpoly)) {
 		ret = apc_gp_fill_poly( self, array_size, array);
@@ -825,13 +865,13 @@ plot_spline( Handle self, int count, Point * points, Bool fill)
 }  
 
 static Bool
-spline( Handle self, int count, Point * points)
+spline( Handle self, int count, FPoint * points)
 {
 	return plot_spline( self, count, points, false);
 }
 
 static Bool
-fill_spline( Handle self, int count, Point * points)
+fill_spline( Handle self, int count, FPoint * points)
 {
 	return plot_spline( self, count, points, true);
 }
@@ -839,21 +879,22 @@ fill_spline( Handle self, int count, Point * points)
 Bool
 Drawable_spline( Handle self, SV * points)
 {
-	return polypoints( self, points, "Drawable::spline", 2, spline);
+	return polypoints_double( self, points, "Drawable::spline", 2, spline);
 }
 
 Bool
 Drawable_fill_spline( Handle self, SV * points)
 {
-	return polypoints( self, points, "Drawable::fill_spline", 2, fill_spline);
+	return polypoints_double( self, points, "Drawable::fill_spline", 2, fill_spline);
 }
 
-SV * 
+SV *
 Drawable_render_spline( SV * obj, SV * points, int precision)
 {
-	int i, n_p, array_size;
-	Point static_array[STATIC_ARRAY_SIZE], *array, *p;
-	AV * av;
+	int n_p, array_size;
+	FPoint *p;
+	SV *array;
+	Bool do_free;
 	
 	if ( precision < 0) {
 		Handle self;
@@ -861,29 +902,23 @@ Drawable_render_spline( SV * obj, SV * points, int precision)
 		precision = self ? var-> splinePrecision : 24;
 	}
 
-	av = newAV();
-	p = Drawable_polypoints( points, "Drawable::render_spline", 2, &n_p);
-	if ( p) {
-		array_size = TkMakeBezierCurve( NULL, n_p, precision, NULL);
-		if ( array_size >= STATIC_ARRAY_SIZE) {
-			if ( !( array = malloc( array_size * sizeof( Point)))) {
-				warn("Not enough memory");
-				free( p);
-				return newRV_noinc(( SV *) av);
-			}
-		} else 
-		array = static_array;
-
-		array_size = TkMakeBezierCurve((int*) p, n_p, precision, array);
-		for ( i = 0; i < array_size; i++) {
-			av_push( av, newSViv( array[i]. x));
-			av_push( av, newSViv( array[i]. y));
-		}
-		if ( array != static_array) free( array);
-		free( p);
+	p = (FPoint*) Drawable_polypoints( points, "Drawable::render_spline", false, 2, &n_p, &do_free);
+	if ( !p)
+		return newRV_noinc(( SV *) newAV());
+	if ( n_p < 3 ) {
+		warn("Need at least 3 points");
+		if ( do_free ) free(p);
+		return newRV_noinc(( SV *) newAV());
 	}
+	array_size = TkMakeBezierCurve( NULL, n_p, precision, NULL);
 
-	return newRV_noinc(( SV *) av);
+	array = prima_array_new( array_size * sizeof( Point) );
+	array_size = TkMakeBezierCurve((double*) p, n_p, precision, (Point*) prima_array_get_storage(array));
+	prima_array_truncate( array, array_size * sizeof( Point) );
+
+	if ( do_free ) free(p);
+
+	return prima_array_tie( array, sizeof(int), "i");
 }
 
 int

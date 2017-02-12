@@ -1,17 +1,61 @@
 #
 #  Created by:
 #     Anton Berezin  <tobez@tobez.org>
-#     Dmitry Karasik <dk@plab.ku.dk> 
+#     Dmitry Karasik <dmitry@karasik.eu.org>
 #
 package Prima::Classes;
+use strict;
+use warnings;
 use Prima;
 use Prima::Const;
+
+package Prima::array;
+use base 'Tie::Array';
+
+sub new
+{
+	my ($class, $letter) = @_;
+	die "bad array type" if $letter !~ /^[id]$/;
+	my @tie;
+	my $size = length pack $letter, 0;
+	my $buf = '';
+	tie @tie, $class, $buf, $size, $letter;
+	return \@tie;
+}
+
+sub new_int    { shift->new('i') }
+sub new_double { shift->new('d') }
+
+use constant REF  => 0;
+use constant SIZE => 1;
+use constant PACK => 2;
+
+sub is_array { ((ref tied @{$_[0]}) // '') eq 'Prima::array' }
+
+sub append
+{
+	die "bad array" if grep { !is_array($_) } @_;
+	my ( $a1, $a2 ) = map { tied @$_ } @_;
+	die "bad array" if $a1->[PACK] ne $a2->[PACK];
+	$a1->[REF] .= $a2->[REF];
+}
+
+sub TIEARRAY  { bless \@_, shift }
+sub FETCH     { unpack( $_[0]->[PACK], substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE] )) }
+sub STORE     { substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE], pack( $_[0]->[PACK], $_[2] )) }
+sub FETCHSIZE { length( $_[0]->[REF] ) / $_[0]->[SIZE] }
+sub EXISTS    { $_[1] < FETCHSIZE($_[0]) }
+sub STORESIZE {
+	( $_[1] > FETCHSIZE($_[0]) ) ?
+		(STORE($_[0], $_[1] - 1, 0)) :
+		(substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE] ) = '' )
+}
+sub DELETE    { warn "This array does not implement delete functionaly" }
+
 
 # class Object; base class of all Prima classes
 package Prima::Object;
 use vars qw(@hooks);
-use strict;
-use warnings;
 use Carp;
 
 sub CLONE_SKIP { 1 }
