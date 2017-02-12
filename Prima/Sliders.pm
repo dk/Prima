@@ -649,7 +649,6 @@ sub profile_default
 		vertical       => 0,
 		# additional properties for indeterminate mode
 		indeterminate	=> '1',
-		direction	=> 'right',
 		buffered 	=> 1,
 		sliderLength	=> 30,
 	}
@@ -666,15 +665,8 @@ sub init
 	{$self-> $_($profile{$_}); }
 	
 	# additional properties for indeterminate mode
-	
-	# Create the timer for the motion in indeterminate mode
-	$self->{timer} = $self->insert( Timer => 
-		name	    => 'Timer',
-		timeout     => 25,
-		delegations => ['Tick'],
-	);
-	# init the properties for the indeterminate mode
-	for (qw( indeterminate direction sliderLength))
+	$self->{direction} = 1;
+	for (qw( indeterminate sliderLength))
 	{$self-> $_($profile{$_}); }
 	# If indeterminate is true, the start value must be > sliderLength
 	$self->value($self->{sliderLength}) if ($self->indeterminate);
@@ -822,30 +814,26 @@ sub on_stringify
 	$self-> clear_event;
 }
 
-sub Timer_Tick
-{
-	my $self = shift;
-	my $newval = $self->value;
-	my $sliderLength = $self->sliderLength;
-	$newval = $newval+1 if ($self->direction eq 'right');
-	$newval = $newval-1 if ($self->direction eq 'left');
-	$self->value($newval);
-	$self->direction('left') if ($newval == 100);
-	$self->direction('right') if ($newval == $sliderLength);
-	$self->repaint;
-}
-
 sub indent    {($#_)?($_[0]-> {indent} = $_[1],$_[0]-> repaint)  :return $_[0]-> {indent};}
 sub relief    {($#_)?($_[0]-> {relief} = $_[1],$_[0]-> repaint)  :return $_[0]-> {relief};}
 sub vertical  {($#_)?($_[0]-> {vertical} = $_[1],$_[0]-> repaint):return $_[0]-> {vertical};}
 sub min       {($#_)?$_[0]-> set_bounds($_[1], $_[0]-> {'max'})  : return $_[0]-> {min};}
 sub max       {($#_)?$_[0]-> set_bounds($_[0]-> {'min'}, $_[1])  : return $_[0]-> {max};}
 sub threshold {($#_)?($_[0]-> {threshold} = $_[1]):return $_[0]-> {threshold};}
+
 sub indeterminate    {
-	($#_)?($_[0]-> {indeterminate} = $_[1])  :return $_[0]-> {indeterminate};
-	
 	my ($self, $indeterminate) = @_;
 	return $self-> {indeterminate} unless $#_;
+
+	# Create the timer for the motion in indeterminate mode
+	# if it is not still created
+	unless ( $self->{timer} ) {
+		$self->{timer} = $self->insert( Timer => 
+		name	    => 'Timer',
+		timeout     => 25,
+		delegations => ['Tick'],
+		);
+	}
 
 	# When the style property is changed, reset the timer frequency
 	# and the start_angle and for style circle the end_angle, too
@@ -858,6 +846,19 @@ sub indeterminate    {
 	}
 	$self->{indeterminate} = $indeterminate;
 	
+}
+
+sub Timer_Tick
+{
+	my $self = shift;
+	my $newval = $self->value;
+	my $sliderLength = $self->sliderLength;
+	$newval = $newval+1 if ($self->direction == 1);
+	$newval = $newval-1 if ($self->direction == 0);
+	$self->value($newval);
+	$self->direction(0) if ($newval == 100);
+	$self->direction(1) if ($newval == $sliderLength);
+	$self->repaint;
 }
 
 sub direction    {($#_)?($_[0]-> {direction} = $_[1])  :return $_[0]-> {direction};}
