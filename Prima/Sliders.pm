@@ -664,11 +664,22 @@ sub init
 	$self-> {string} = '';
 	for (qw( vertical threshold min max relief indent value))
 	{$self-> $_($profile{$_}); }
+	
 	# additional properties for indeterminate mode
+	
+	# Create the timer for the motion in indeterminate mode
+	$self->{timer} = $self->insert( Timer => 
+		name	    => 'Timer',
+		timeout     => 30,
+		delegations => ['Tick'],
+	);
+	# init the properties for the indeterminate mode
 	for (qw( indeterminate direction sliderLength))
 	{$self-> $_($profile{$_}); }
 	# If indeterminate is true, the start value must be > sliderLength
 	$self->value($self->{sliderLength}) if ($self->indeterminate);
+	
+	
 	return %profile;
 }
 
@@ -811,13 +822,44 @@ sub on_stringify
 	$self-> clear_event;
 }
 
+sub Timer_Tick
+{
+	my $self = shift;
+	my $newval = $self->value;
+	my $sliderLength = $self->sliderLength;
+	$newval = $newval+1 if ($self->direction eq 'right');
+	$newval = $newval-1 if ($self->direction eq 'left');
+	$self->value($newval);
+	$self->direction('left') if ($newval == 100);
+	$self->direction('right') if ($newval == $sliderLength);
+	$self->repaint;
+}
+
 sub indent    {($#_)?($_[0]-> {indent} = $_[1],$_[0]-> repaint)  :return $_[0]-> {indent};}
 sub relief    {($#_)?($_[0]-> {relief} = $_[1],$_[0]-> repaint)  :return $_[0]-> {relief};}
 sub vertical  {($#_)?($_[0]-> {vertical} = $_[1],$_[0]-> repaint):return $_[0]-> {vertical};}
 sub min       {($#_)?$_[0]-> set_bounds($_[1], $_[0]-> {'max'})  : return $_[0]-> {min};}
 sub max       {($#_)?$_[0]-> set_bounds($_[0]-> {'min'}, $_[1])  : return $_[0]-> {max};}
 sub threshold {($#_)?($_[0]-> {threshold} = $_[1]):return $_[0]-> {threshold};}
-sub indeterminate    {($#_)?($_[0]-> {indeterminate} = $_[1])  :return $_[0]-> {indeterminate};}
+sub indeterminate    {
+	($#_)?($_[0]-> {indeterminate} = $_[1])  :return $_[0]-> {indeterminate};
+	
+	my ($self, $indeterminate) = @_;
+	return $self-> {indeterminate} unless $#_;
+
+	# When the style property is changed, reset the timer frequency
+	# and the start_angle and for style circle the end_angle, too
+	if ( $indeterminate) {
+		$self->{timer}->start;
+	} 
+	
+	else {
+		$self->{timer}->stop;
+	}
+	$self->{indeterminate} = $indeterminate;
+	
+}
+
 sub direction    {($#_)?($_[0]-> {direction} = $_[1])  :return $_[0]-> {direction};}
 sub sliderLength    {($#_)?($_[0]-> {sliderLength} = $_[1])  :return $_[0]-> {sliderLength};}
 
