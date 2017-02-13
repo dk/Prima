@@ -649,7 +649,6 @@ sub profile_default
 		vertical       => 0,
 		# additional properties for indeterminate mode
 		indeterminate	=> '1',
-		buffered 	=> 1,
 		sliderLength	=> 30,
 	}
 }
