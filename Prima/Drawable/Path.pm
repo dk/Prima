@@ -26,7 +26,6 @@ sub new
 	return bless {
 		canvas          => $canvas,
 		commands        => [],
-		arcPrecision    => 100,
 		splinePrecision => ref($canvas) ? $canvas->splinePrecision : 24,
 		%opt
 	}, $class;
@@ -51,11 +50,11 @@ sub rcmd
 	);
 }
 
+sub append           { push @{shift->{commands}, @{shift->{commands} }
 sub commands         { shift->{commands} }
 sub save             { shift->cmd('save', 0) }
 sub path             { shift->cmd('save', 1) }
-sub restore          { shift->cmd('restore') } # no checks for underflow here, to allow copying
-sub arc_precision    { shift->cmd( set => arcPrecision    => shift ) }
+sub restore          { shift->cmd('restore') } # no checks for underflow here, to allow append paths
 sub spline_precision { shift->cmd( set => splinePrecision => shift ) }
 
 sub matrix_multiply
@@ -186,7 +185,7 @@ sub points
 			matrix_inner  => [ identity ],
 			matrix_outer  => [ identity ],
 			matrix_actual => [ identity ],
-			( map { $_, $self->{$_} } qw(arcPrecision splinePrecision) )
+			( map { $_, $self->{$_} } qw(splinePrecision) )
 		};
 		$self->{points} = Prima::array->new_int;
 		my @c = @{ $self->{commands} };
@@ -318,7 +317,7 @@ sub _spline
 
 sub arc2splines
 {
-	my ( $self, $a1, $a2, $precision ) = @_;
+	my ( $self, $a1, $a2, $min, $max ) = @_;
 	return if $a1 == $a2;
 
 	my $reverse = 0;
@@ -330,8 +329,20 @@ sub arc2splines
 	my @out;
 	$a1 += 360, $a2 += 360 while $a2 < 0 || $a1 < 0;
 	my $a0 = $a1;
-	my $break_c = $precision;
-	my $break_a = $break_c / $RAD;
+
+	#
+	# According to the paper, maximal approximation error is
+	#
+	# e = F( (b/a)^2, exp( dh ) )
+	#
+	# where F is linear. This means that we can calcular the angle step dh
+	# depending on min/max axes ratio, but also limiting it to the sane
+	# amount of steps so that minimal arc will not be shorter than 5 pixels,
+	# because splines are represented by 3 points anyway
+	#
+	my $break_a   = 2.718 * ($min / $max) * ($min / $max); # multiplication by e though is purely experimental :)
+	my $max_c     = 5 * 180 / ( $PI * $max ) ;
+	$break_a = $max_c if $break_a < $max_c;
 
 	push @out, $a0;
 	while ($a0 < $a2) {
@@ -372,9 +383,15 @@ sub _arc
 	my $from = shift @$cmd;
 	my $to   = shift @$cmd;
 	my $rel  = shift @$cmd;
+			
+	my ($x0,$y0,$x1,$y1,$x2,$y2) = $self->matrix_apply( 0, 0, 0, 1, 1, 0 );
+	$_ -= $x0 for $x1, $x2;
+	$_ -= $y0 for $y1, $y2;
+	my $a = sqrt( $x1 * $x1 + $y1 * $y1 );
+	my $b = sqrt( $x2 * $x2 + $y2 * $y2 );
+	($a, $b) = ($b, $a) if $a > $b;
 
-	my @splines = $self->arc2splines( $from, $to, $self->{arcPrecision} );
-
+	my @splines = $self->arc2splines( $from, $to, $a, $b);
 	if ( $rel ) {
 		my $p  = $self->{points};
 		if ( @$p ) {
