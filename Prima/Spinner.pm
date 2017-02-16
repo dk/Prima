@@ -152,44 +152,25 @@ sub on_paint
 		$fill_spline->(1, _h_flip \@petal2);
 		$fill_spline->(0, \@petal1 );
 	} elsif ( $self->{style} eq 'spiral') {
-		$scale_factor *= 11;
-		my $sin = sin( -$self->{start_angle} / (180 / 3.14159265358));
-		my $cos = cos( -$self->{start_angle} / (180 / 3.14159265358));
-		my $render = sub {
-			_pairwise { 
-				$_[0] * $cos - $_[1] * $sin, 
-				$_[0] * $sin + $_[1] * $cos 
-			}
-			[ map { $_ * $scale_factor } @_ ]
-		};
-
-		my $f	 = 0.415;
 		my $d1	 = 0.8;
-		my $dx	 = 0.05;
-		my $d2	 = $dx * 4;
-		my $apx1 = sub {  $_[0], 0.00, $_[0], $_[1] * $f };
-		my $apx2 = sub {  $_[0], $_[1] * $f,  $_[0], 0.0 };
-		my $quad = sub { -$_[0] * $f, $_[0], $_[0] * $f, $_[0] };
+		my $d2	 = 0.2;
+		my $dx	 = $d2 / 4;
 
         	$canvas->fillWinding(1);
 		$canvas->translate($x, $y);
-		$canvas-> new_path->spline( $render->(
-			$apx1->($d1, $d1),
-			@{ _h_flip( [ $quad->( $d1 + 1 * $dx) ] ) },
-			@{ _rotate( [ $quad->(-$d1 - 2 * $dx) ] ) },
-			@{ _v_flip( [ $quad->( $d1 + 3 * $dx) ] ) },
-			$apx2->($d1 + 4 * $dx, -1 * $d1 - 4 * $dx)
-		))->arc(
-			@{ $render->( $d1, 0 ) },
-			(( $d2 * 2 * $scale_factor ) x 2),
-			-$self->{start_angle}, -$self->{start_angle} + 180,
-		)->spline( $render-> (
-			$apx1->($d1 - 4 * $dx, -$d1 + 4 * $dx),
-			$quad->(-$d1 + 3 * $dx),
-			@{ _rotate _v_flip ( [ $quad->($d1 - 2 * $dx) ] ) },
-			$quad->($d1 - 1 * $dx),
-			$apx2->($d1, $d1)
-		))->fill;
+		$canvas-> new_path->
+			scale($scale_factor * 22)->
+			rotate(-$self->{start_angle})->
+			arc( 0, 0, $d1 + $dx * 0, $d1 + $dx * 1, 0, 90)->
+			arc( 0, 0, $d1 + $dx * 2, $d1 + $dx * 1, 90, 180)->
+			arc( 0, 0, $d1 + $dx * 2, $d1 + $dx * 3, 180, 270)->
+			arc( 0, 0, $d1 + $dx * 4, $d1 + $dx * 3, 270, 360)->
+			arc( $d1/2, 0, $d2, $d2, 0, 180)->
+			arc( 0, 0, $d1 - $dx * 4, $d1 - $dx * 3, 360, 270)->
+			arc( 0, 0, $d1 - $dx * 2, $d1 - $dx * 3, 270, 180)->
+			arc( 0, 0, $d1 - $dx * 2, $d1 - $dx * 1, 180, 90)->
+			arc( 0, 0, $d1 - $dx * 0, $d1 - $dx * 1, 90, 0)->
+		fill;
 	}
 }
 

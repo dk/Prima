@@ -7,6 +7,7 @@ my $mw = Prima::MainWindow->new(
 		text => 'Spinners');
 
 my $spinner = $mw->insert('Spinner',
+	style => 'circle',
 	color => cl::Blue,
 	hiliteColor => cl::White,
 	pack => { side => 'left', fill => 'both', expand => 1 },
@@ -19,7 +20,7 @@ my $spinner2 = $mw->insert('Spinner',
 );
 
 my $spinner3 = $mw->insert('Spinner',
-	style => 'yinyang',
+	style => 'spiral',
 	pack => { side => 'left', fill => 'both', expand => 1 },
 );
 
