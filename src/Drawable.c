@@ -461,12 +461,13 @@ typedef struct _FPoint {
 } FPoint;
 
 static void *
-Drawable_polypoints( SV * points, char * procName, Bool integer, int mod, int * n_points, Bool * do_free )
+Drawable_polypoints( SV * points, char * procName, Bool integer, int mod, int * n_points )
 {
 	AV * av;
 	int i, count, psize;
 	void * p;
 
+	psize = integer ? sizeof(Point) : sizeof(FPoint);
 	if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
 		warn("Invalid array reference passed to %s", procName);
 		return nil;
@@ -485,15 +486,15 @@ Drawable_polypoints( SV * points, char * procName, Bool integer, int mod, int * 
 		char * pack, req = integer ? 'i' : 'd';
 		if ( prima_array_parse( points, &ref, &len, &pack ) && *pack == req) {
 			*n_points = len / 2;
-			*do_free = false;
-			return ref;
+			if (!( p = malloc( psize * len))) return false;
+			memcpy( p, ref, psize * len);
+			return p;
 		}
 	}
 
 
 	count /= 2;
 	if ( count < 1) return nil;
-	psize = integer ? sizeof(Point) : sizeof(FPoint);
 	if (!( p = malloc( psize * count))) return false;
 	for ( i = 0; i < count; i++)
 	{
@@ -515,7 +516,6 @@ Drawable_polypoints( SV * points, char * procName, Bool integer, int mod, int * 
 		}
 	}
 	*n_points = count;
-	*do_free = true;
 	return p;
 }
 
@@ -565,11 +565,11 @@ polypoints( Handle self, SV * points, char * procName, Bool integer, int mod, Bo
 {
 	int count;
 	void * p;
-	Bool ret = false, do_free;
-	if (( p = Drawable_polypoints( points, procName, integer, mod, &count, &do_free))) {
+	Bool ret = false;
+	if (( p = Drawable_polypoints( points, procName, integer, mod, &count)) != NULL) {
 		ret = procPtr( self, count, p);
 		if ( !ret) perl_error();
-		if (do_free) free( p);
+		free(p);
 	}
 	return ret;
 }
@@ -894,7 +894,6 @@ Drawable_render_spline( SV * obj, SV * points, int precision)
 	int n_p, array_size;
 	FPoint *p;
 	SV *array;
-	Bool do_free;
 	
 	if ( precision < 0) {
 		Handle self;
@@ -902,12 +901,12 @@ Drawable_render_spline( SV * obj, SV * points, int precision)
 		precision = self ? var-> splinePrecision : 24;
 	}
 
-	p = (FPoint*) Drawable_polypoints( points, "Drawable::render_spline", false, 2, &n_p, &do_free);
+	p = (FPoint*) Drawable_polypoints( points, "Drawable::render_spline", false, 2, &n_p);
 	if ( !p)
 		return newRV_noinc(( SV *) newAV());
 	if ( n_p < 3 ) {
 		warn("Need at least 3 points");
-		if ( do_free ) free(p);
+		free(p);
 		return newRV_noinc(( SV *) newAV());
 	}
 	array_size = TkMakeBezierCurve( NULL, n_p, precision, NULL);
@@ -916,7 +915,7 @@ Drawable_render_spline( SV * obj, SV * points, int precision)
 	array_size = TkMakeBezierCurve((double*) p, n_p, precision, (Point*) prima_array_get_storage(array));
 	prima_array_truncate( array, array_size * sizeof( Point) );
 
-	if ( do_free ) free(p);
+	free(p);
 
 	return prima_array_tie( array, sizeof(int), "i");
 }
