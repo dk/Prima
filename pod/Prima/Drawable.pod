@@ -209,7 +209,7 @@ employs this scheme.
 
 Prima offers primitive gradient services to draw gradually changing colors.
 A gradient is requested by setting of at least two colors and optionally
-a set of cubic spline points that, when, projected, generate the transition curve
+a set of quadratic spline points that, when, projected, generate the transition curve
 between the colors.
 
 The example below fills a rectangle with a gradient calculated between a
@@ -232,7 +232,7 @@ C<cl::Black> over a polyline C<0..1> (default), produces pure white color at
 the start and pure black color at the end, filling all available shades of gray
 in between, and changing monotonically.
 
-=item poly @VERTEXES
+=item poly @VERTICES
 
 Set of 2-integer polyline vertexes where the first integer is a coordinate (x,
 y, or whatever required by the drawing primitive) between 0 and 1, and the
@@ -240,7 +240,7 @@ second is the color blend value between 0 and 1.
 
 Default: ((0,0),(1,1))
 
-=item spline @VERTEXES
+=item spline @VERTICES
 
 Serving same purpose as C<poly> but vertexes are projected first to a quadratic
 Bezier curve using L<render_spline> and current value of C<splinePrecision>. The
@@ -957,11 +957,11 @@ See also: C<::rop>, L<"Raster operations">.
 
 =item splinePrecision INT
 
-Selects number of steps to use for each spline segment in C<spline>
-and C<fill_spline> calls. In other words, determines smoothness of 
-a curve. Minimum accepted value, 1, produces straight lines; maximum
-value is not present, though it is hardly practical to set it higher
-than the output device resolution.
+Selects number of steps to use for each spline segment in C<spline>,
+C<fill_spline>, C<poly_bezier>, and C<fill_poly_bezier> calls. In other words,
+determines smoothness of a curve. Minimum accepted value, 1, produces straight
+lines; maximum value is not present, though it is hardly practical to set it
+higher than the output device resolution.
 
 Default value: 24
 
@@ -1137,6 +1137,24 @@ Returns success flag; if failed, C<$@> contains the error.
 
 See also: polyline().
 
+=item fill_poly_bezier \@KNOTS
+
+Fills a polygonal area defined by a curve, projected by applying 
+set of cubic Bezier curves based on set of KNOTS. Number of knots
+should be 1 plus 3 timer number of curves, where last point of
+a curve segment will be also first point of the next curve segment.
+
+KNOTS must present an array of integer pair in (X,Y) format.
+Example:
+
+   $d-> fill_poly_bezier([ 0, 0, 0, 100, 100, 100, 100, 0]);
+
+Context used: color, backColor, fillPattern, rop, rop2, splinePrecision
+
+Returns success flag; if failed, C<$@> contains the error.
+
+See also: poly_bezier, splinePrecision, render_poly_bezier
+
 =item fill_sector X, Y, DIAMETER_X, DIAMETER_Y, START_ANGLE, END_ANGLE 
 
 Fills a sector outline with center in X, Y and DIAMETER_X and DIAMETER_Y axis
@@ -1144,12 +1162,11 @@ from START_ANGLE to END_ANGLE (see sector()).
 
 Context used: color, backColor, fillPattern, rop, rop2
 
-=item fill_spline \@POLYGON
+=item fill_spline \@VERTICES
 
 Fills a polygonal area defined by a curve, projected by applying 
-quadratic Bezier curve interpolation to POLYGON set of points.
-Number of vertices between each polygon equals to current value of C<splinePrecision> property.
-POLYGON must present an array of integer pair in (X,Y) format.
+quadratic Bezier curve based on set of VERTICES.
+VERTICES must present an array of integer pair in (X,Y) format.
 Example:
 
    $d-> fill_spline([ 0, 0, 15, 20, 30, 0]);
@@ -1239,6 +1256,24 @@ Returns success flag; if failed, C<$@> contains the error.
 
 See also: fillpoly().
 
+=item poly_bezier \@KNOTS
+
+Draws a polygonal area defined by a curve, projected by applying 
+set of cubic Bezier curves based on set of KNOTS. Number of knots
+should be 1 plus 3 timer number of curves, where last point of
+a curve segment will be also first point of the next curve segment.
+
+KNOTS must present an array of integer pair in (X,Y) format.
+Example:
+
+   $d-> poly_bezier([ 0, 0, 0, 100, 100, 100, 100, 0]);
+
+Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
+
+Returns success flag; if failed, C<$@> contains the error.
+
+See also: fill_poly_bezier, splinePrecision, render_poly_bezier.
+
 =item put_image X, Y, OBJECT, [ ROP ]
 
 Draws an OBJECT at coordinates (X,Y). OBJECT must be Prima::Image,
@@ -1295,15 +1330,12 @@ two straight lines.
 
 Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
 
-=item spline \@POLYGON
+=item spline \@VERTICES
 
-Draws a quadratic Berizer curve defined by set of POLYGON points.
-Number of vertices between each polygon equals to current value of C<splinePrecision> property.
-POLYGON must present an array of integer pair in (X,Y) format.
+Draws a quadratic Berizer curve defined by set of VERTICES points.
+VERTICES must present an array of integer pair in (X,Y) format.
 
 Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
-
-Returns success flag; if failed, C<$@> contains the error.
 
 See also: fill_spline, splinePrecision, render_spline.
 
@@ -1530,6 +1562,17 @@ Context used: font, textOutBaseline
 =for podview </cut>
 
 =for html -->
+
+=item render_poly_bezier KNOTS, [ PRECISION ]
+
+Renders set of cubic Bezier curves from set of VERTICES to a polyline with given precision.
+The method can be called as static, i.e.  with no object initialized. PRECISION
+integer, if not given, is read from C<splinePrecision> property if the method
+was called on an alive object; in case of static call, default value 24 is
+used.
+
+The method is internally used by C<poly_bezier> and C<fill_poly_bezier>, and is provided
+for cases when these are insufficient.
 
 =item render_spline VERTICES, [ PRECISION ]
 

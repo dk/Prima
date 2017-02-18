@@ -60,6 +60,7 @@ object Prima::Drawable ( Prima::Component)
 	method int   get_text_width( SV * text, Bool addOverhang = 0);
 	method SV *  get_text_box( SV * text);
 	static SV *  render_spline( SV * obj, SV * points, int precision = -1);
+	static SV *  render_poly_bezier( SV * obj, SV * points, int precision = -1);
 
 	# operators
 	method Bool  alpha(int alpha, int x1=-1, int y1=-1, int x2=-1, int y2=-1)        => apc_gp_alpha;
@@ -73,11 +74,13 @@ object Prima::Drawable ( Prima::Component)
 	method Bool  fill_ellipse(int x, int y, int dX, int dY) => apc_gp_fill_ellipse;
 	method Bool  fillpoly( SV * points);
 	method Bool  fill_sector( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_fill_sector;
+	method Bool  fill_poly_bezier( SV * points);
 	method Bool  fill_spline( SV * points);
 	method Bool  flood_fill( int x, int y, Color color, Bool singleBorder = 1) => apc_gp_flood_fill;
 	method Bool  line(int x1, int y1, int x2, int y2)       => apc_gp_line;
 	method Bool  lines( SV * points);
 	method Bool  polyline( SV * points);
+	method Bool  poly_bezier( SV * points);
 	method Bool  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
 	method Bool  rectangle(int x1, int y1, int x2, int y2)  => apc_gp_rectangle;
 	method Bool  sector( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_sector;

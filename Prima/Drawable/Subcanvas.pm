@@ -99,12 +99,13 @@ sub palette
 
 # Primitives must apply the clipping and translating before calling on the
 # parent.
-my @primitives = qw(arc bar chord draw_text ellipse fill_chord
-					fill_ellipse fillpoly fill_sector fill_spline flood_fill
-					line lines polyline put_image put_image_indirect
-					rect3d rect_focus rectangle sector spline stretch_image
-					text_out clear
-					); 
+my @primitives = qw(
+	arc bar chord draw_text ellipse 
+	fill_chord fill_ellipse fillpoly fill_sector fill_spline flood_fill fill_poly_bezier
+	line lines polyline put_image put_image_indirect
+	poly_bezier rect3d rect_focus rectangle sector spline stretch_image
+	text_out clear
+); 
 
 for my $primitive_name (@primitives) {
 	no strict 'refs';
