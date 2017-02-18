@@ -143,6 +143,22 @@ sub rspline
 	$self->rcmd( spline => $p );
 }
 
+sub curve
+{
+	my $self = shift;
+	my $p = $#_ ? [@_] : $_[0];
+	@$p == 8 or Carp::croak('bad parameters to bezier');
+	$self-> cmd( curve => $p );
+}
+
+sub rcurve
+{
+	my $self = shift;
+	my $p = $#_ ? [@_] : $_[0];
+	@$p == 8 or Carp::croak('bad parameters to bezier');
+	$self-> rcmd( curve => $p );
+}
+
 sub circular_arc
 {
 	my $self = shift;
@@ -288,6 +304,18 @@ sub _spline
 	)
 }
 
+sub _curve
+{
+	my ( $self, $cmd ) = @_;
+	my $knots = shift @$cmd;
+	Prima::array::append( $self->{points},
+		Prima::Drawable->render_poly_bezier(
+			$self-> matrix_apply( $knots ),
+			$self->{curr}->{splinePrecision}
+		)
+	)
+}
+
 # Reference:
 #
 # Drawing an elliptical arc using polylines, quadratic or cubic Bezier curves
@@ -351,6 +379,7 @@ sub arc2splines
 	# because spline is represented by 4 points, and roughly 3 points between each
 	# should be sufficient for even most sharp tips
 	#
+	# XXX I still don't like it though
 	my $break_a   = 2.718 * ($min / $max) * ($min / $max); # multiplication by e though is purely experimental :)
 	my $max_c     = 13 * 180 / ( $PI * $max ) ;
 	$break_a = $max_c if $break_a < $max_c;
