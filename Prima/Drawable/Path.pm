@@ -50,7 +50,7 @@ sub rcmd
 	);
 }
 
-sub append           { push @{shift->{commands}, @{shift->{commands} }
+sub append           { push @{shift->{commands}}, @{shift->{commands}} }
 sub commands         { shift->{commands} }
 sub save             { shift->cmd('save', 0) }
 sub path             { shift->cmd('save', 1) }
@@ -408,7 +408,7 @@ sub _arc
 				$self-> matrix_apply( $spline ),
 				$self->{curr}->{splinePrecision}
 			)
-		)
+		);
 	}
 }
 

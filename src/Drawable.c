@@ -486,8 +486,8 @@ Drawable_polypoints( SV * points, char * procName, Bool integer, int mod, int * 
 		char * pack, req = integer ? 'i' : 'd';
 		if ( prima_array_parse( points, &ref, &len, &pack ) && *pack == req) {
 			*n_points = len / 2;
-			if (!( p = malloc( psize * len))) return false;
-			memcpy( p, ref, psize * len);
+			if (!( p = malloc( psize * len / 2))) return false;
+			memcpy( p, ref, psize * len / 2);
 			return p;
 		}
 	}
@@ -619,49 +619,46 @@ Drawable_bars( Handle self, SV * rects)
 }
 
 /*
-*--------------------------------------------------------------
-*
-* TkBezierScreenPoints --
-*
-*	Given four control points, create a larger set of XPoints
-*	for a Bezier spline based on the points.
-*
-* Results:
-*	The array at *xPointPtr gets filled in with numSteps XPoints
-*	corresponding to the Bezier spline defined by the four 
-*	control points.  Note:  no output point is generated for the
-*	first input point, but an output point *is* generated for
-*	the last input point.
-*
-* Side effects:
-*	None.
-*
-*--------------------------------------------------------------
+
+Given four control points, create a larger set of XPoints
+for a Bezier spline based on the points using De Casteljau's algorithm
+
+The array at *xPointPtr gets filled in with numSteps XPoints
+corresponding to the Bezier spline defined by the four
+control points.  Note:  no output point is generated for the
+first input point, but an output point *is* generated for
+the last input point.
+
 */
 
 static int
-TkBezierScreenPoints(
-	double control[],          /* Array of coordinates for four
-	                            * control points:  x0, y0, x1, y1,
-	                            * ... x3 y3. */
-	int numSteps,              /* Number of curve points to
-	                            * generate.  */
+bezier2polyline
+(
+	double control[],          /* Array of 4  control points:  x0, y0, .. , x3 y3 */
+	int numSteps,              /* Number of curve points to generate */
 	register Point *xPointPtr) /* Where to put new points. */
 {
 	int i, nPoints = 0;
-	double u, u2, u3, t, t2, t3;
 	Point * last = NULL;
 
 	for (i = 1; i <= numSteps; i++) {
+		double t = ((double) i)/((double) numSteps);
+
+#define INTERPOLATE(a,b,dest) \
+	dest[0] = (a)[0] + ( (b)[0] - (a)[0] ) * t;\
+	dest[1] = (a)[1] + ( (b)[1] - (a)[1] ) * t
+
+		double ab[2], bc[2], cd[2], abbc[2], bccd[2], dest[2];
 		Point p;
-		t = ((double) i)/((double) numSteps);
-		t2 = t*t;
-		t3 = t2*t;
-		u = 1.0 - t;
-		u2 = u*u;
-		u3 = u2*u;
-		p. x = control[0] * u3 + 3.0 * (control[2] * t * u2 + control[4] * t2 * u) + control[6] * t3 ;
-		p. y = control[1] * u3 + 3.0 * (control[3] * t * u2 + control[5] * t2 * u) + control[7] * t3 ;
+		INTERPOLATE( control    , control + 2, ab);
+		INTERPOLATE( control + 2, control + 4, bc);
+		INTERPOLATE( control + 4, control + 6, cd);
+		INTERPOLATE( ab, bc, abbc );
+		INTERPOLATE( bc, cd, bccd );
+		INTERPOLATE( abbc, bccd, dest );
+		p. x = dest[0];
+		p. y = dest[1];
+
 		if ( !last || last->x != p.x || last->y != p.y) {
 			last = xPointPtr;
 			*(xPointPtr++) = p;
@@ -745,7 +742,7 @@ TkMakeBezierCurve(
 
 		xPoints-> x = control[0];
 		xPoints-> y = control[1];
-		n = TkBezierScreenPoints( control, numSteps, xPoints+1);
+		n = bezier2polyline( control, numSteps, xPoints+1);
 		xPoints += n;
 		outputPoints += n;
 	} else {
@@ -812,7 +809,7 @@ TkMakeBezierCurve(
 
 		/* Generate a Bezier spline using the control points */
 
-		n = TkBezierScreenPoints(control, numSteps, xPoints);
+		n = bezier2polyline(control, numSteps, xPoints);
 		xPoints += n;
 		outputPoints += n;
 	}
