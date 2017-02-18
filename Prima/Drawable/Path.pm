@@ -295,13 +295,18 @@ sub _spline
 # July 21, 2003
 # 
 # Quote:
-# "The control points P1, Q and P2 of a quadratic Bezier curve
+# "The control points P1, Q1, Q2 and P2 of a cubic Bezier curve
 # approximating an elliptical arc should be chosen as follows:
 #    P1 = E(h1)
 #    P2 = E(h2)
-#    Q = P1+tan((h2-h1)/2)E'(h1) 
-# 
-# .. where ..
+#    Q1 = P1 + alpha * E'(h1)
+#    Q2 = P2 - alpha * E'(h1)
+#
+# where
+#
+#    alpha = sin(h2 - h1) / 3 * ( sqrt(4 + 3 * tan^2 ((h2 - h1)/2) ) - 1 )
+#
+# and
 # 
 #    E(h) = { 
 #        cx + a*cos(theta)*cos(h) - b*sin(theta)*sin(h)
@@ -313,7 +318,12 @@ sub _spline
 #    }    
 # "
 #
-# And in our case of the circular arc h === theta
+# In our case where we're plotting the arc first and transform it later, we can use the most simple
+# case where cx = cy = rx = ry = 0, theta = 0, and thus h === a and
+#
+# E(a)  = {  cos(a), sin(a) }
+# E'(a) = { -sin(a), cos(a) }
+#
 
 sub arc2splines
 {
@@ -337,11 +347,12 @@ sub arc2splines
 	#
 	# where F is linear. This means that we can calcular the angle step dh
 	# depending on min/max axes ratio, but also limiting it to the sane
-	# amount of steps so that minimal arc will not be shorter than 5 pixels,
-	# because splines are represented by 3 points anyway
+	# amount of steps so that minimal arc will not be shorter than 13
+	# because spline is represented by 4 points, and roughly 3 points between each
+	# should be sufficient for even most sharp tips
 	#
 	my $break_a   = 2.718 * ($min / $max) * ($min / $max); # multiplication by e though is purely experimental :)
-	my $max_c     = 5 * 180 / ( $PI * $max ) ;
+	my $max_c     = 13 * 180 / ( $PI * $max ) ;
 	$break_a = $max_c if $break_a < $max_c;
 
 	push @out, $a0;
@@ -360,21 +371,23 @@ sub arc2splines
 	$a0   = $out[0];
 	my $sin0 = sin($a0);
 	my $cos0 = cos($a0);
+	push @splines, $cos0, $sin0;
 
 	for my $a ( @out[1..$#out] ) {
 		my $cos = cos($a);
 		my $sin = sin($a);
 		my $det = ($a - $a0) / 2;
-		my $tan  = sin($det)/cos($det);
-		push @splines, [
-			$cos0, $sin0,                              # P1
-			-$sin * $tan + $cos0, $cos * $tan + $sin0, # Q
-			$cos, $sin,                                # P2
-		];
+		my $tan   = sin($det/2)/cos($det/2);
+		my $alpha = sin($det) * (sqrt( 4 + 3 * $tan * $tan  ) - 1 ) / 3;
+		push @splines,
+			$cos0 - $sin0 * $alpha, $sin0 + $cos0 * $alpha, # Q1
+			$cos  + $sin  * $alpha, $sin  -  $cos * $alpha, # Q2
+			$cos, $sin,                                     # P2
+		;
 		($a0, $sin0, $cos0) = ($a, $sin, $cos);
 	}
 
-	return @splines;
+	return \@splines;
 }
 
 sub _arc
@@ -391,25 +404,23 @@ sub _arc
 	my $b = sqrt( $x2 * $x2 + $y2 * $y2 );
 	($a, $b) = ($b, $a) if $a > $b;
 
-	my @splines = $self->arc2splines( $from, $to, $a, $b);
+	my $spline = $self->arc2splines( $from, $to, $a, $b);
 	if ( $rel ) {
 		my $p  = $self->{points};
 		if ( @$p ) {
 			my $m = $self->{curr}->{matrix_actual};
-			my @s = $self->matrix_apply( $splines[0]->[0], $splines[0]->[1]);
+			my @s = $self->matrix_apply( $spline->[0], $spline->[1]);
 			$m->[X] += $p->[-2] - $s[0];
 			$m->[Y] += $p->[-1] - $s[1];
 		}
 	}
 
-	for my $spline ( @splines ) {
-		Prima::array::append( $self->{points},
-			Prima::Drawable->render_spline(
-				$self-> matrix_apply( $spline ),
-				$self->{curr}->{splinePrecision}
-			)
-		);
-	}
+	Prima::array::append( $self->{points},
+		Prima::Drawable->render_poly_bezier(
+			$self-> matrix_apply( $spline ),
+			$self->{curr}->{splinePrecision}
+		)
+	);
 }
 
 sub stroke { $_[0]->{canvas} ? $_[0]->{canvas}->polyline( $_[0]->points ) : 0 }
