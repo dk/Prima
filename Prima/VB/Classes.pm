@@ -973,7 +973,6 @@ sub prf_types
 		point         => ['translate'],
 		palette       => ['palette'],
 		image         => ['region'],
-		uiv           => ['splinePrecision'],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
@@ -1023,7 +1022,6 @@ sub prf_adjust_default
 		region
 		rop
 		rop2
-		splinePrecision
 		textOpaque
 		textOutBaseline
 		translate

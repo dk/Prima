@@ -1,5 +1,4 @@
 package Prima::Drawable::Path;
-# XXX local splinePrecision
 
 use strict;
 use warnings;
@@ -26,7 +25,6 @@ sub new
 	return bless {
 		canvas          => $canvas,
 		commands        => [],
-		splinePrecision => ref($canvas) ? $canvas->splinePrecision : 24,
 		%opt
 	}, $class;
 }
@@ -55,7 +53,6 @@ sub commands         { shift->{commands} }
 sub save             { shift->cmd('save', 0) }
 sub path             { shift->cmd('save', 1) }
 sub restore          { shift->cmd('restore') } # no checks for underflow here, to allow append paths
-sub spline_precision { shift->cmd( set => splinePrecision => shift ) }
 
 sub matrix_multiply
 {
@@ -201,7 +198,7 @@ sub points
 			matrix_inner  => [ identity ],
 			matrix_outer  => [ identity ],
 			matrix_actual => [ identity ],
-			( map { $_, $self->{$_} } qw(splinePrecision) )
+			( map { $_, $self->{$_} } qw() )
 		};
 		$self->{points} = Prima::array->new_int;
 		my @c = @{ $self->{commands} };
@@ -298,8 +295,7 @@ sub _spline
 	my $spline = shift @$cmd;
 	Prima::array::append( $self->{points},
 		Prima::Drawable->render_spline(
-			$self-> matrix_apply( $spline ),
-			$self->{curr}->{splinePrecision}
+			$self-> matrix_apply( $spline )
 		)
 	)
 }
@@ -311,7 +307,6 @@ sub _curve
 	Prima::array::append( $self->{points},
 		Prima::Drawable->render_poly_bezier(
 			$self-> matrix_apply( $knots ),
-			$self->{curr}->{splinePrecision}
 		)
 	)
 }
@@ -447,7 +442,6 @@ sub _arc
 	Prima::array::append( $self->{points},
 		Prima::Drawable->render_poly_bezier(
 			$self-> matrix_apply( $spline ),
-			$self->{curr}->{splinePrecision}
 		)
 	);
 }

@@ -514,7 +514,7 @@ use vars qw(%defaults @uses %list_properties);
 
 {
 	@uses = qw( backColor color fillPattern font lineEnd linePattern
-					lineWidth region rop rop2 splinePrecision textOpaque
+					lineWidth region rop rop2 textOpaque
 					textOutBaseline lineJoin fillWinding);
 	my $pd = Prima::Drawable-> profile_default();
 	%defaults = map { $_ => $pd-> {$_} } @uses;
@@ -992,13 +992,6 @@ sub rop2
 	$_[0]-> repaint;
 }
 
-sub splinePrecision
-{
-	return $_[0]-> {splinePrecision} unless $#_;
-	$_[0]-> {splinePrecision} = $_[1];
-	$_[0]-> repaint;
-}
-
 sub textOutBaseline
 {
 	return $_[0]-> {textOutBaseline} unless $#_;
@@ -1339,7 +1332,7 @@ sub uses
 {
 	my $self = $_[0];
 	my @ret = $self-> SUPER::uses;
-	push @ret, ( $self-> {smooth} ? 'splinePrecision' : 'lineJoin');
+	push @ret, 'lineJoin';
 	@ret;
 }
 
@@ -1484,8 +1477,7 @@ sub uses
 {
 	my $self = $_[0];
 	my @ret = $self-> SUPER::uses;
-	push @ret, 'splinePrecision' if $self-> {smooth};
-	push @ret, 'lineJoin' if $self-> {outline} && !$self-> {smooth};
+	push @ret, 'lineJoin' if $self-> {outline};
 	push @ret, 'fillWinding' if $self-> {fill};
 	@ret;
 }

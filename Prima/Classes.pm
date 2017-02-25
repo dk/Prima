@@ -378,7 +378,6 @@ sub profile_default
 		region          => undef,
 		rop             => rop::CopyPut,
 		rop2            => rop::NoOper,
-		splinePrecision => 24,
 		textOutBaseline => 0,
 		textOpaque      => 0,
 		translate       => [ 0, 0],
@@ -434,6 +433,18 @@ sub text_out_bidi
 }
 
 sub has_alpha_layer { 0 }
+
+sub spline
+{
+	my $self = shift;
+	$self->polyline( $self->render_spline(@_) );
+}
+
+sub fill_spline
+{
+	my $self = shift;
+	$self->fillpoly( $self->render_spline(@_) );
+}
 
 # class Image
 package Prima::Image;

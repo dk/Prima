@@ -7,12 +7,12 @@ use Prima::Application;
 
 my $db = Prima::DeviceBitmap->new(width => 1, height => 1);
 
-my $p1 = $db->render_spline([0,0,1,0,1,1], 2);
+my $p1 = $db->render_spline([0,0,2,0,2,2], precision => 2);
 ok($p1);
 is(ref($p1), 'ARRAY');
 is(@$p1, 6);
 is($p1->[0], 0);
-is($p1->[5], 1);
+is($p1->[5], 2);
 ok(Prima::array::is_array($p1));
 
 Prima::array::append($p1, $p1);

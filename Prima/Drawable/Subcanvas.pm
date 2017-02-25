@@ -19,7 +19,7 @@ sub profile_default {
 # needs to be handled with a tied hash at some point.
 my @easy_props = qw(color backColor fillWinding fillPattern font lineEnd
 					lineJoin linePattern lineWidth rop rop2
-					splinePrecision textOpaque textOutBaseline);
+					textOpaque textOutBaseline);
 
 sub init {
 	my $self = shift;
@@ -101,9 +101,9 @@ sub palette
 # parent.
 my @primitives = qw(
 	arc bar chord draw_text ellipse 
-	fill_chord fill_ellipse fillpoly fill_sector fill_spline flood_fill fill_poly_bezier
+	fill_chord fill_ellipse fillpoly fill_sector flood_fill 
 	line lines polyline put_image put_image_indirect
-	poly_bezier rect3d rect_focus rectangle sector spline stretch_image
+	rectangle sector stretch_image
 	text_out clear
 ); 
 

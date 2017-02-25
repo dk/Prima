@@ -240,11 +240,11 @@ second is the color blend value between 0 and 1.
 
 Default: ((0,0),(1,1))
 
-=item spline @VERTICES
+=item spline \@VERTICES, %OPTIONS
 
-Serving same purpose as C<poly> but vertexes are projected first to a quadratic
-Bezier curve using L<render_spline> and current value of C<splinePrecision>. The
-resulting polyline is treated as C<poly>.
+Serving same purpose as C<poly> but vertexes are projected first to a B-spline
+curve using L<render_spline> and C<%OPTIONS>. The resulting polyline is treated
+as C<poly>.
 
 =item vertical BOOLEAN
 
@@ -955,16 +955,6 @@ Selects raster operation that applies to background color plotting routines.
 
 See also: C<::rop>, L<"Raster operations">.
 
-=item splinePrecision INT
-
-Selects number of steps to use for each spline segment in C<spline>,
-C<fill_spline>, C<poly_bezier>, and C<fill_poly_bezier> calls. In other words,
-determines smoothness of a curve. Minimum accepted value, 1, produces straight
-lines; maximum value is not present, though it is hardly practical to set it
-higher than the output device resolution.
-
-Default value: 24
-
 =item textOpaque FLAG
 
 If FLAG is 1, then text_out() fills the text background area
@@ -1137,24 +1127,6 @@ Returns success flag; if failed, C<$@> contains the error.
 
 See also: polyline().
 
-=item fill_poly_bezier \@KNOTS
-
-Fills a polygonal area defined by a curve, projected by applying 
-set of cubic Bezier curves based on set of KNOTS. Number of knots
-should be 1 plus 3 timer number of curves, where last point of
-a curve segment will be also first point of the next curve segment.
-
-KNOTS must present an array of integer pair in (X,Y) format.
-Example:
-
-   $d-> fill_poly_bezier([ 0, 0, 0, 100, 100, 100, 100, 0]);
-
-Context used: color, backColor, fillPattern, rop, rop2, splinePrecision
-
-Returns success flag; if failed, C<$@> contains the error.
-
-See also: poly_bezier, splinePrecision, render_poly_bezier
-
 =item fill_sector X, Y, DIAMETER_X, DIAMETER_Y, START_ANGLE, END_ANGLE 
 
 Fills a sector outline with center in X, Y and DIAMETER_X and DIAMETER_Y axis
@@ -1162,20 +1134,19 @@ from START_ANGLE to END_ANGLE (see sector()).
 
 Context used: color, backColor, fillPattern, rop, rop2
 
-=item fill_spline \@VERTICES
+=item fill_spline \@VERTICES, %OPTIONS
 
-Fills a polygonal area defined by a curve, projected by applying 
-quadratic Bezier curve based on set of VERTICES.
-VERTICES must present an array of integer pair in (X,Y) format.
-Example:
+Fills a polygonal area defined by a curve, projected by applying B-spline curve
+based on set of VERTICES. VERTICES must present an array of integer pair in
+(X,Y) format.  Example:
 
    $d-> fill_spline([ 0, 0, 15, 20, 30, 0]);
 
-Context used: color, backColor, fillPattern, rop, rop2, splinePrecision
+Context used: color, backColor, fillPattern, rop, rop2 
 
 Returns success flag; if failed, C<$@> contains the error.
 
-See also: spline, splinePrecision, render_spline
+See also: spline, render_spline
 
 =item flood_fill X, Y, COLOR, SINGLEBORDER = 1
 
@@ -1198,20 +1169,20 @@ Context used: color, backColor, fillPattern, rop, rop2
 
 Draws a filled rectangle within (X1,Y1) - (X2,Y2) extents using a gradient (see L<Gradients>).
 
-Context used: splinePrecision, fillPattern, rop, rop2
+Context used: fillPattern, rop, rop2
 
 =item gradient_ellipse X, Y, DIAM_X, DIAM_Y, GRADIENT
 
 Draws a filled ellipse with center in (X,Y) and diameters (DIAM_X,DIAM_Y) using a gradient (see L<Gradients>).
 
-Context used: splinePrecision, fillPattern, rop, rop2
+Context used: , fillPattern, rop, rop2
 
 =item gradient_sector X, Y, DIAM_X, DIAM_Y, START_ANGLE, END_ANGLE, GRADIENT
 
 Draws a filled sector with center in (X,Y) and diameters (DIAM_X,DIAM_Y) from START_ANGLE to END_ANGLE (see sector())
 using a gradient (see L<Gradients>).
 
-Context used: splinePrecision, fillPattern, rop, rop2
+Context used: fillPattern, rop, rop2
 
 =item gradient_realize3d BREADTH, GRADIENT
 
@@ -1220,8 +1191,6 @@ a color value, and the second is the breadth of the color strip.
 L<gradient_bar> uses this information to draw a gradient fill, where
 each color strip is drawn with its own color. Can be used for implementing
 other gradient-aware primitives (see F<examples/f_fill.pl> )
-
-Context used: splinePrecision
 
 =item line X1, Y1, X2, Y2
 
@@ -1255,24 +1224,6 @@ Context used: color, backColor, linePattern, lineWidth, lineJoin, lineEnd, rop, 
 Returns success flag; if failed, C<$@> contains the error.
 
 See also: fillpoly().
-
-=item poly_bezier \@KNOTS
-
-Draws a polygonal area defined by a curve, projected by applying 
-set of cubic Bezier curves based on set of KNOTS. Number of knots
-should be 1 plus 3 timer number of curves, where last point of
-a curve segment will be also first point of the next curve segment.
-
-KNOTS must present an array of integer pair in (X,Y) format.
-Example:
-
-   $d-> poly_bezier([ 0, 0, 0, 100, 100, 100, 100, 0]);
-
-Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
-
-Returns success flag; if failed, C<$@> contains the error.
-
-See also: fill_poly_bezier, splinePrecision, render_poly_bezier.
 
 =item put_image X, Y, OBJECT, [ ROP ]
 
@@ -1330,14 +1281,48 @@ two straight lines.
 
 Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
 
-=item spline \@VERTICES
+=item spline \@VERTICES, %OPTIONS
 
-Draws a quadratic Berizer curve defined by set of VERTICES points.
-VERTICES must present an array of integer pair in (X,Y) format.
+Draws a B-spline curve defined by set of VERTICES control points.  VERTICES
+must present an array of integer pair in (X,Y) format.  If the first and the
+last vertices point to the same point, draws closed spline shape ( Note - by
+adding degree minus two points to the set; this is important if C<weight> or
+C<knots> are specificed).
+
+The following options are supported:
+
+=over
+
+=item degree INTEGER = 2
+
+The B-spline degree. Default is 2 (quadratic). Number of points supplied must be
+at least degree plus one.
+
+=item knots \@INTEGERS
+
+Array of integers, number of points plus degree plus one, which makes the
+result a Bezier curve. By default, if the shape is opened (i.e. first and last
+points are different), is set to a clamped array, so that the first and last
+points of the final curve match the first and the last control points. If the
+shape is closed, set to an unclamped array, so that no control points lie directly
+on the curve.
+
+=item precision INTEGER = 24
+
+Defines number of steps to split the curve into. The value is multiplied to the number
+of points and the result is used as number of steps.
+
+=item weight \@INTEGERS = [ 1, 1, 1, ... ]
+
+Array of integers, one for each point supplied. Assigning these can be used to
+convert B-spline into a NURBS. By default set of ones.
+
+
+=back
 
 Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
 
-See also: fill_spline, splinePrecision, render_spline.
+See also: fill_spline, render_spline.
 
 =item stretch_image X, Y, DEST_WIDTH, DEST_HEIGHT, OBJECT, [ ROP ]
 
@@ -1563,24 +1548,9 @@ Context used: font, textOutBaseline
 
 =for html -->
 
-=item render_poly_bezier KNOTS, [ PRECISION ]
-
-Renders set of cubic Bezier curves from set of VERTICES to a polyline with given precision.
-The method can be called as static, i.e.  with no object initialized. PRECISION
-integer, if not given, is read from C<splinePrecision> property if the method
-was called on an alive object; in case of static call, default value 24 is
-used.
-
-The method is internally used by C<poly_bezier> and C<fill_poly_bezier>, and is provided
-for cases when these are insufficient.
-
-=item render_spline VERTICES, [ PRECISION ]
+=item render_spline VERTICES, XXX
 
 Renders quadratic Bezier curve from set of VERTICES to a polyline with given precision.
-The method can be called as static, i.e.  with no object initialized. PRECISION
-integer, if not given, is read from C<splinePrecision> property if the method
-was called on an alive object; in case of static call, default value 24 is
-used.
 
 The method is internally used by C<spline> and C<fill_spline>, and is provided
 for cases when these are insufficient.

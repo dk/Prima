@@ -1911,16 +1911,16 @@ prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter)
 
 	ssv = av_fetch( av, 0, 0);
 	if ( ssv == NULL ) croak("panic: corrupted array");
-	*ref = SvPVX(*ssv);
+	if( ref) *ref = SvPVX(*ssv);
 	cur  = SvCUR(*ssv);
 
 	ssv = av_fetch( av, 1, 0);
 	if ( ssv == NULL || SvIV(*ssv) <= 0 ) croak("panic: corrupted array");
-	*length = cur / SvIV(*ssv);
+	if( length) *length = cur / SvIV(*ssv);
 
 	ssv = av_fetch( av, 2, 0);
 	if ( ssv == NULL ) croak("panic: corrupted array");
-	*letter = SvPV(*ssv, PL_na);
+	if( letter) *letter = SvPV(*ssv, PL_na);
 
 	return true;
 }
