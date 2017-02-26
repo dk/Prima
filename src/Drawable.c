@@ -437,115 +437,83 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 }
 
 static void *
-Drawable_polypoints( SV * points, char * procName, Bool integer, int min, int * n_points )
+read_array( SV * points, char * procName, Bool integer, int div, int min, int max, int * n_points )
 {
 	AV * av;
 	int i, count, psize;
 	void * p;
 
-	psize = integer ? sizeof(Point) : sizeof(NPoint);
+	psize = integer ? sizeof(int) : sizeof(double);
 	if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
 		warn("Invalid array reference passed to %s", procName);
-		return nil;
+		return NULL;
 	}
 	av = ( AV *) SvRV( points);
 	count = av_len( av) + 1;
-	if ( count < min * 2 ) {
-		warn("Drawable::%s: array must contain at least %d points", procName, min);
-		return nil;
+	if ( min == max && count != min * div ) {
+		warn("Drawable::%s: array must contain %d elements", procName, min * div);
+		return NULL;
 	}
-	if ( count % 2 != 0 ) {
-		warn("Drawable::%s: number of elements in an array must be a multiple of 2", procName);
-		return nil;
+	if ( count < min * div ) {
+		warn("Drawable::%s: array must contain at least %d elements", procName, min * div);
+		return NULL;
 	}
+	if ( max >= 0 && count > max * div ) {
+		warn("Drawable::%s: array must contain maximum %d elements", procName, max * div);
+		return NULL;
+	}
+	if ( count % div != 0 ) {
+		warn("Drawable::%s: number of elements in an array must be a multiple of %d", procName, div);
+		return NULL;
+	}
+	if ( n_points) 
+		*n_points = count / div;
+	if ( count == 0)
+		return NULL;
 
 	{
 		void * ref;
-		size_t len;
 		char * pack, req = integer ? 'i' : 'd';
-		if ( prima_array_parse( points, &ref, &len, &pack ) && *pack == req) {
-			*n_points = len / 2;
-			if (!( p = malloc( psize * len / 2))) return false;
-			memcpy( p, ref, psize * len / 2);
+		if ( prima_array_parse( points, &ref, NULL, &pack ) && *pack == req) {
+			if (!( p = malloc( psize * count))) {
+				warn("not enough memory");
+				return false;
+			}
+			memcpy( p, ref, psize * count);
 			return p;
 		}
 	}
 
 
-	count /= 2;
-	if ( count < 1) return nil;
-	if (!( p = malloc( psize * count))) return false;
+	if (!( p = malloc( psize * count))) {
+		warn("not enough memory");
+		return NULL;
+	}
+
 	for ( i = 0; i < count; i++)
 	{
-		SV** psvx = av_fetch( av, i * 2, 0);
-		SV** psvy = av_fetch( av, i * 2 + 1, 0);
-		if (( psvx == nil) || ( psvy == nil)) {
+		SV** psv = av_fetch( av, i, 0);
+		if ( psv == NULL) {
 			free( p);
-			warn("Array panic on item pair %d on Drawable::%s", i, procName);
-			return nil;
+			warn("Array panic on item %d on Drawable::%s", i, procName);
+			return NULL;
 		}
-		if ( integer ) {
-			Point * pp = ((Point*)p) + i;
-			pp->x = SvIV( *psvx);
-			pp->y = SvIV( *psvy);
-		} else {
-			NPoint * pp = ((NPoint*)p) + i;
-			pp->x = SvNV( *psvx);
-			pp->y = SvNV( *psvy);
-		}
+		if ( integer )
+			*(((int*)p) + i) = SvIV( *psv);
+		else
+			*(((double*)p) + i) = SvNV( *psv);
 	}
-	*n_points = count;
-	return p;
-}
 
-static Rect *
-Drawable_polyrects( SV * rects, char * procName, int * n_rects)
-{
-	AV * av;
-	int i, count;
-	Rect * p;
-
-	if ( !SvROK( rects) || ( SvTYPE( SvRV( rects)) != SVt_PVAV)) {
-		warn("Invalid array reference passed to %s", procName);
-		return nil;
-	}
-	av = ( AV *) SvRV( rects);
-	count = av_len( av) + 1;
-	if ( count % 4) {
-		warn("Drawable::%s: Number of elements in an array must be a multiple of 4",
-			procName);
-		return nil;
-	}
-	count /= 4;
-	if ( count < 1) return nil;
-	if (!( p = allocn( Rect, count))) return false;
-	for ( i = 0; i < count; i++)
-	{
-		SV** psvx1 = av_fetch( av, i * 4, 0);
-		SV** psvy1 = av_fetch( av, i * 4 + 1, 0);
-		SV** psvx2 = av_fetch( av, i * 4 + 2, 0);
-		SV** psvy2 = av_fetch( av, i * 4 + 3, 0);
-		if (( psvx1 == nil) || ( psvy1 == nil) || (psvx2 == nil) || (psvy2 == nil)) {
-			free( p);
-			warn("Array panic on item pair %d on Drawable::%s", i, procName);
-			return nil;
-		}
-		p[ i]. left   = SvIV( *psvx1);
-		p[ i]. bottom = SvIV( *psvy1);
-		p[ i]. right  = SvIV( *psvx2);
-		p[ i]. top = SvIV( *psvy2);
-	}
-	*n_rects = count;
 	return p;
 }
 
 static Bool
-polypoints_int( Handle self, SV * points, char * procName, int min, Bool (*procPtr)(Handle,int,Point*))
+read_polypoints( Handle self, SV * points, char * procName, int min, Bool (*procPtr)(Handle,int,Point*))
 {
 	int count;
 	Point * p;
 	Bool ret = false;
-	if (( p = Drawable_polypoints( points, procName, true, min, &count)) != NULL) {
+	if (( p = (Point*) read_array( points, procName, true, 2, min, -1, &count)) != NULL) {
 		ret = procPtr( self, count, p);
 		if ( !ret) perl_error();
 		free(p);
@@ -556,7 +524,7 @@ polypoints_int( Handle self, SV * points, char * procName, int min, Bool (*procP
 #define DEF_LINE_PROCESSOR(name,func) Bool \
 Drawable_##name( Handle self, SV * points)\
 {\
-	return polypoints_int( self, points, "Drawable::" #name, 2, func);\
+	return read_polypoints( self, points, "Drawable::" #name, 2, func);\
 }
 
 DEF_LINE_PROCESSOR(polyline, apc_gp_draw_poly)
@@ -569,7 +537,7 @@ Drawable_bars( Handle self, SV * rects)
 	int count;
 	Rect * p;
 	Bool ret = false;
-	if (( p = Drawable_polyrects( rects, "Drawable::bars", &count))) {
+	if (( p = read_array( rects, "Drawable::bars", true, 4, 0, -1, &count)) != NULL) {
 		ret = apc_gp_bars( self, count, p);
 		if ( !ret) perl_error();
 		free( p);
@@ -590,51 +558,6 @@ Thibaut Séguy for bspline.js
 Carl-Wilhelm Reinhold de Boor for the rendering algorithm
 
 */
-
-static double *
-read_array( char * array_name, SV * points, int n_points )
-{
-	AV * av;
-	int i, count;
-	double * p;
-
-	if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
-		warn("Invalid array reference passed to %s.%s", procName, array_name);
-		return NULL;
-	}
-	av = ( AV *) SvRV( points);
-	count = av_len( av) + 1;
-	if ( count != n_points ) {
-		warn("Drawable::%s: %s array must contain %d items", procName, array_name, n_points);
-		return NULL;
-	}
-	
-	{
-		void * ref;
-		char * pack;
-		if ( prima_array_parse( points, &ref, NULL, &pack ) && *pack == 'd') {
-			if (!( p = malloc( sizeof(double) * count))) return false;
-			memcpy( p, ref, sizeof(double) * count);
-			return p;
-		}
-	}
-
-
-	if ( count < 1) return NULL;
-
-	if (!( p = malloc( sizeof(double) * count))) return NULL;
-	for ( i = 0; i < count; i++) {
-		SV** psv = av_fetch( av, i, 0);
-		if ( psv == NULL ) {
-			free( p);
-			warn("Array panic on item pair %d on Drawable::%s.%s", i, procName, array_name);
-			return NULL;
-		}
-		p[i] = SvNV(*psv);
-	}
-
-	return p;
-}
 
 /* fill default set of knots for curve */
 static double *
@@ -755,7 +678,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	} else 
 		precision = 24;
 	
-	p = (NPoint*) Drawable_polypoints( points, procName, false, degree + 1, &n_points);
+	p = (NPoint*) read_array( points, procName, false, 2, degree + 1, -1, &n_points);
 	if ( !p) goto EXIT;
 
 	/* closed curve will need at least one extra point and unclamped default knot set */
@@ -764,13 +687,15 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	n_points += n_add_points;
 
 	if ( pexist( knots )) {
-		knots = read_array("knots", pget_sv(knots), n_points + degree + 1);
+		knots = (double*) read_array( pget_sv(knots), "knots", false, 1, 
+			n_points + degree + 1, n_points + degree + 1, NULL);
 		if (!knots) goto EXIT;
 	} else
 		knots = default_knots(n_points, degree, !closed);
 	
 	if ( pexist( weights )) {
-		weights = read_array("weight", pget_sv(weights), n_points);
+		weights = (double*) read_array(pget_sv(weights), "weights", false, 1, 
+			n_points, n_points, NULL);
 		if (!weights) goto EXIT;
 		dim = 3;
 	} else {

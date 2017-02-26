@@ -1284,6 +1284,9 @@ if (sizeof(s1) != (s2)) { \
 	TYPECHECK( uint32_t, 4);
 	TYPECHECK( int32_t,  4);
 	TYPECHECK( void*, (int)sizeof(Handle));
+	TYPECHECK( Point, 2*(int)sizeof(int));
+	TYPECHECK( NPoint, 2*(int)sizeof(double));
+	TYPECHECK( Rect, 4*(int)sizeof(int));
 #undef TYPECHECK
 
 	list_create( &staticObjects, 16, 16);
