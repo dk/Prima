@@ -25,6 +25,7 @@ sub new
 	return bless {
 		canvas          => $canvas,
 		commands        => [],
+		precision       => 24,
 		%opt
 	}, $class;
 }
@@ -53,6 +54,7 @@ sub commands         { shift->{commands} }
 sub save             { shift->cmd('save', 0) }
 sub path             { shift->cmd('save', 1) }
 sub restore          { shift->cmd('restore') } # no checks for underflow here, to allow append paths
+sub precision        { shift->cmd(set => precision => shift) }
 
 sub matrix_multiply
 {
@@ -140,22 +142,6 @@ sub rspline
 	$self->rcmd( spline => $p );
 }
 
-sub curve
-{
-	my $self = shift;
-	my $p = $#_ ? [@_] : $_[0];
-	@$p == 8 or Carp::croak('bad parameters to bezier');
-	$self-> cmd( curve => $p );
-}
-
-sub rcurve
-{
-	my $self = shift;
-	my $p = $#_ ? [@_] : $_[0];
-	@$p == 8 or Carp::croak('bad parameters to bezier');
-	$self-> rcmd( curve => $p );
-}
-
 sub circular_arc
 {
 	my $self = shift;
@@ -198,7 +184,7 @@ sub points
 			matrix_inner  => [ identity ],
 			matrix_outer  => [ identity ],
 			matrix_actual => [ identity ],
-			( map { $_, $self->{$_} } qw() )
+			( map { $_, $self->{$_} } qw(precision) )
 		};
 		$self->{points} = Prima::array->new_int;
 		my @c = @{ $self->{commands} };
@@ -300,118 +286,60 @@ sub _spline
 	)
 }
 
-sub _curve
-{
-	my ( $self, $cmd ) = @_;
-	my $knots = shift @$cmd;
-	Prima::array::append( $self->{points},
-		Prima::Drawable->render_poly_bezier(
-			$self-> matrix_apply( $knots ),
-		)
-	)
-}
-
 # Reference:
 #
-# Drawing an elliptical arc using polylines, quadratic or cubic Bezier curves
-# L. Maisonobe
-# July 21, 2003
-# 
-# Quote:
-# "The control points P1, Q1, Q2 and P2 of a cubic Bezier curve
-# approximating an elliptical arc should be chosen as follows:
-#    P1 = E(h1)
-#    P2 = E(h2)
-#    Q1 = P1 + alpha * E'(h1)
-#    Q2 = P2 - alpha * E'(h1)
-#
-# where
-#
-#    alpha = sin(h2 - h1) / 3 * ( sqrt(4 + 3 * tan^2 ((h2 - h1)/2) ) - 1 )
-#
-# and
-# 
-#    E(h) = { 
-#        cx + a*cos(theta)*cos(h) - b*sin(theta)*sin(h)
-#        cy + a*sin(theta)*cos(h) + b*cos(theta)*sin(h)
-#    }    
-#    E'(h) = { 
-#        -a*cos(theta)*sin(h) - b*sin(theta)*cos(h)
-#        -a*sin(theta)*sin(h) + b*cos(theta)*cos(h)
-#    }    
-# "
-#
-# In our case where we're plotting the arc first and transform it later, we can use the most simple
-# case where cx = cy = rx = ry = 0, theta = 0, and thus h === a and
-#
-# E(a)  = {  cos(a), sin(a) }
-# E'(a) = { -sin(a), cos(a) }
-#
+# One method for representing an arc of ellipse by a NURBS curve
+# E. Petkov, L.Cekov
+# Jan 2005
 
-sub arc2splines
+sub arc2nurbs
 {
-	my ( $self, $a1, $a2, $min, $max ) = @_;
-	return if $a1 == $a2;
-
-	my $reverse = 0;
-	if ( $a1 > $a2 ) {
-		($a1, $a2) = ($a2, $a1);
-		$reverse = 1;
+	my ( $self, $a1, $a2 ) = @_;
+	my ($reverse, @out);
+	($a1, $a2, $reverse) = ( $a2, $a1, 1 ) if $a1 > $a2;
+	
+	push @out, $a1;
+	while (1) {
+		if ( $a2 - $a1 > 180 ) {
+			push @out, $a1 += 180;
+		} else {
+			push @out, $a2;
+			last;
+		}
 	}
-
-	my @out;
-	$a1 += 360, $a2 += 360 while $a2 < 0 || $a1 < 0;
-	my $a0 = $a1;
-
-	#
-	# According to the paper, maximal approximation error is
-	#
-	# e = F( (b/a)^2, exp( dh ) )
-	#
-	# where F is linear. This means that we can calcular the angle step dh
-	# depending on min/max axes ratio, but also limiting it to the sane
-	# amount of steps so that minimal arc will not be shorter than 13
-	# because spline is represented by 4 points, and roughly 3 points between each
-	# should be sufficient for even most sharp tips
-	#
-	# XXX I still don't like it though
-	my $break_a   = 2.718 * ($min / $max) * ($min / $max); # multiplication by e though is purely experimental :)
-	my $max_c     = 13 * 180 / ( $PI * $max ) ;
-	$break_a = $max_c if $break_a < $max_c;
-
-	push @out, $a0;
-	while ($a0 < $a2) {
-		my $q  = int($a0 / 90 + 1) * 90;
-		my $an = $a0 + $break_a;
-		$an = $a2 if $an > $a2;
-		$a0 = ( $an < $q ) ? $an : $q;
-		push @out, $a0;
-	}
-	@out = reverse @out if $reverse;
-
-	my @splines;
 	@out = map { $_ / $RAD } @out;
 
-	$a0   = $out[0];
-	my $sin0 = sin($a0);
-	my $cos0 = cos($a0);
-	push @splines, $cos0, $sin0;
+	my @set;
+	my @knots = (0,0,0,1,1,1);
+	my ( $cosa1, $sina1 );
 
-	for my $a ( @out[1..$#out] ) {
-		my $cos = cos($a);
-		my $sin = sin($a);
-		my $det = ($a - $a0) / 2;
-		my $tan   = sin($det/2)/cos($det/2);
-		my $alpha = sin($det) * (sqrt( 4 + 3 * $tan * $tan  ) - 1 ) / 3;
-		push @splines,
-			$cos0 - $sin0 * $alpha, $sin0 + $cos0 * $alpha, # Q1
-			$cos  + $sin  * $alpha, $sin  -  $cos * $alpha, # Q2
-			$cos, $sin,                                     # P2
-		;
-		($a0, $sin0, $cos0) = ($a, $sin, $cos);
+	for ( my $i = 0; $i < $#out; $i++) {
+		( $a1, $a2 ) = @out[$i,$i+1];
+		my $b        = $a2 - $a1;
+		my $cosb2    = cos($b/2);
+		my $d        = 1 / $cosb2;
+		$cosa1     //= cos($a1);
+		$sina1     //= sin($a1);
+		my @points = (
+			$cosa1, $sina1,
+			cos($a1 + $b/2) * $d, sin($a1 + $b/2) * $d,
+			cos($a2), sin($a2),
+		);
+		($cosa1, $sina1) = @points[4,5];
+		my @weights = (1,$cosb2,1);
+		@points[0,1,4,5] = @points[4,5,0,1] if $reverse;
+		
+		push @set, [
+			\@points, 
+			degree    => 2,
+			precision => $self->{curr}->{precision},
+			weights   => \@weights,
+			knots     => \@knots,
+		];
 	}
+	@set = reverse @set if $reverse;
 
-	return \@splines;
+	return \@set;
 }
 
 sub _arc
@@ -421,29 +349,27 @@ sub _arc
 	my $to   = shift @$cmd;
 	my $rel  = shift @$cmd;
 			
-	my ($x0,$y0,$x1,$y1,$x2,$y2) = $self->matrix_apply( 0, 0, 0, 1, 1, 0 );
-	$_ -= $x0 for $x1, $x2;
-	$_ -= $y0 for $y1, $y2;
-	my $a = sqrt( $x1 * $x1 + $y1 * $y1 );
-	my $b = sqrt( $x2 * $x2 + $y2 * $y2 );
-	($a, $b) = ($b, $a) if $a > $b;
-
-	my $spline = $self->arc2splines( $from, $to, $a, $b);
+	my $nurbset = $self->arc2nurbs( $from, $to);
 	if ( $rel ) {
 		my $p  = $self->{points};
 		if ( @$p ) {
+			my $pts = $nurbset->[0]->[0];
 			my $m = $self->{curr}->{matrix_actual};
-			my @s = $self->matrix_apply( $spline->[0], $spline->[1]);
+			my @s = $self->matrix_apply( $pts->[0], $pts->[1]);
 			$m->[X] += $p->[-2] - $s[0];
 			$m->[Y] += $p->[-1] - $s[1];
 		}
 	}
 
-	Prima::array::append( $self->{points},
-		Prima::Drawable->render_poly_bezier(
-			$self-> matrix_apply( $spline ),
-		)
-	);
+	for my $set ( @$nurbset ) {
+		my ( $points, @options ) = @$set;
+		Prima::array::append( $self->{points},
+			Prima::Drawable->render_spline( 
+				$self-> matrix_apply( $points ),
+				@options
+			)
+		);
+	}
 }
 
 sub stroke { $_[0]->{canvas} ? $_[0]->{canvas}->polyline( $_[0]->points ) : 0 }

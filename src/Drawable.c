@@ -656,6 +656,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	double *knots, *weights, t, dt, *weighted, *temp;
 
 	knots = weights = weighted = NULL;
+	p = NULL;
 	ret = NULL;
 	ok = false;
 
@@ -702,8 +703,6 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 		weights = NULL; /* all ones */
 		dim = 2;
 	}
-
-	hv_clear(profile); /* old gencls bork */
 
 	/* allocate result storage */
 	precision *= n_points - n_add_points;
@@ -760,6 +759,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	prima_array_truncate( ret, final_size * sizeof( Point) );
 
 EXIT:
+	hv_clear(profile); /* old gencls bork */
 	if (weighted) free(weighted);
 	if (p)        free(p);
 	if (knots)    free(knots);
