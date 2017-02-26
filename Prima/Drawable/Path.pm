@@ -25,7 +25,7 @@ sub new
 	return bless {
 		canvas          => $canvas,
 		commands        => [],
-		precision       => 24,
+		precision       => undef,
 		%opt
 	}, $class;
 }
@@ -128,18 +128,16 @@ sub rline
 
 sub spline
 {
-	my $self = shift;
-	my $p = $#_ ? [@_] : $_[0];
+	my ($self, $p, %opt) = @_;
 	(@$p % 2 || @$p < 6) and Carp::croak('bad parameters to spline');
-	$self-> cmd( spline => $p );
+	$self-> cmd( spline => $p, \%opt );
 }
 
 sub rspline
 {
-	my $self = shift;
-	my $p = $#_ ? [@_] : $_[0];
-	(@$p % 2 || @$p < 6) and Carp::croak('bad parameters to rspline');
-	$self->rcmd( spline => $p );
+	my ($self, $p, %opt) = @_;
+	(@$p % 2 || @$p < 6) and Carp::croak('bad parameters to spline');
+	$self-> rcmd( spline => $p, \%opt );
 }
 
 sub circular_arc
@@ -184,7 +182,7 @@ sub points
 			matrix_inner  => [ identity ],
 			matrix_outer  => [ identity ],
 			matrix_actual => [ identity ],
-			( map { $_, $self->{$_} } qw(precision) )
+			( map { $_, $self->{$_} } qw(precision ) )
 		};
 		$self->{points} = Prima::array->new_int;
 		my @c = @{ $self->{commands} };
@@ -278,10 +276,12 @@ sub _line
 sub _spline
 {
 	my ( $self, $cmd ) = @_;
-	my $spline = shift @$cmd;
+	my $points  = shift @$cmd;
+	my $options = shift @$cmd;
 	Prima::array::append( $self->{points},
 		Prima::Drawable->render_spline(
-			$self-> matrix_apply( $spline )
+			$self-> matrix_apply( $points ),
+			%$options
 		)
 	)
 }
@@ -332,7 +332,6 @@ sub arc2nurbs
 		push @set, [
 			\@points, 
 			degree    => 2,
-			precision => $self->{curr}->{precision},
 			weights   => \@weights,
 			knots     => \@knots,
 		];
@@ -361,12 +360,16 @@ sub _arc
 		}
 	}
 
+	my %xopt;
+	$xopt{precision} = $self->{curr}->{precision} if defined $self->{curr}->{precision};
+
 	for my $set ( @$nurbset ) {
 		my ( $points, @options ) = @$set;
 		Prima::array::append( $self->{points},
 			Prima::Drawable->render_spline( 
 				$self-> matrix_apply( $points ),
-				@options
+				@options,
+				%xopt
 			)
 		);
 	}
@@ -381,7 +384,7 @@ sub extents
 	my $p = $self->points;
 	return unless @$p;
 	my ( $x1, $y1, $x2, $y2 ) = @{$p}[0,1,0,1];
-	for ( my $i = 1; $i < $#$p; $i+=2) {
+	for ( my $i = 2; $i < $#$p; $i+=2) {
 		my ($x, $y) = @{$p}[$i,$i+1];
 		$x1 = $x if $x < $x1;
 		$y1 = $y if $y < $y1;
@@ -393,11 +396,16 @@ sub extents
 
 sub clip
 {
-	my $self = shift;
+	my ($self, %opt) = @_;
 	my ( $x1, $y1, $x2, $y2 ) = $self-> extents;
+	my ( $tx, $ty ) = (0,0);
+	$x2 -= $x1, $tx -= $x1 if $x1 < 0;
+	$y2 -= $y1, $ty -= $y1 if $y1 < 0;
 
 	my $p = Prima::DeviceBitmap->new( width => $x2, height => $y2, type => dbt::Bitmap );
 	$p->clear;
+	$p->set(%opt) if scalar keys %opt;
+	$p->translate($tx, $ty);
 	$p->fillpoly( $self->{points} );
 	return $p->image;
 }
@@ -413,8 +421,201 @@ Prima::Drawable::Path - stroke and fill complex paths
 =head1 DESCRIPTION
 
 The module augments the C<Prima::Drawable> drawing and plotting functionality by
-implementing paths that allow arbitrary combination of polylines, splines, and arc,
+implementing paths that allow arbitrary combination of polylines, splines, and arcs,
 to be used for drawing or clipping shapes.
+
+=head1 SYNOPSIS
+
+	# draws elliptic spiral
+	my ( $d1, $dx ) = ( 0.8, 0.05 );
+	$canvas-> new_path->
+		scale(5, 10)->
+		rotate(45)->
+		arc( 0, 0, $d1 + $dx * 0, $d1 + $dx * 1, 0, 90)->
+		arc( 0, 0, $d1 + $dx * 2, $d1 + $dx * 1, 90, 180)->
+		arc( 0, 0, $d1 + $dx * 2, $d1 + $dx * 3, 180, 270)->
+		arc( 0, 0, $d1 + $dx * 4, $d1 + $dx * 3, 270, 360)->
+	stroke;
+
+=for podview <img src="../../pod/Prima/path.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/path.gif">
+
+=head1 API
+
+=head2 Primitives
+
+All primitives come in two versions, with absolute and relative coordinates.
+The absolute version draws a graphic primitive so that its starting point
+(or a reference point) is at (0,0). The relative version, called with an 'r'
+(f.ex. C<line> vs C<rline>) has its starting point as the ending point of
+the previous primitive (or (0,0) if there's none).
+
+=over
+
+=item arc CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END, TILT = 0
+
+Adds elliptic arc to path centered around (CENTER_X,CENTER_Y).
+
+=item circular_arc ANGLE_START, ANGLE_END
+
+Adds circular arc to the path. Note that adding transformations will effectively
+make it into elliptic arc, which is used internally by C<arc> and C<rarc>.
+
+=item line, rline @POINTS
+
+Adds a polyline to path
+
+=item rarc DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END, TILT = 0
+
+Adds elliptic arc to path so that the first point of the arc starts on the last
+point of the previous primitive, or (0,0) if there's none.
+
+=item spline, rspline $POINTS, %OPTIONS.
+
+Adds B-spline to path. See L<Prima::Drawable/spline> for C<%OPTIONS> descriptions.
+
+=back
+
+=head2 Transformations
+
+Transformation calls change the current path properties (matrix etc)
+so that all subsequent calls will use them until a call to C<restore>
+is used. C<save>/C<path> and C<restore> implement a stacking mechanism, so that
+local transformations can be made.
+
+The final transformations calculate coordinates using two matrices, inner and outer,
+so that final point becomes
+
+  P' = P * M_inner * M_outer
+
+where translation calls C<rotate>, C<scale> etc operate on the inner matrix only:
+
+  M_inner' = M_inner * scaling
+
+while C<path> operates on M_outer as well.
+
+=over
+
+=item matrix A, B, C, D, Tx, Ty
+
+Applies transformation matrix to the path. The matrix, as used by the module,
+is formed as such:
+
+  A  B  0 
+  C  D  0 
+  Tx Ty 1
+
+and when applied to 2D coordinates, is calculated as 
+
+  X' = AX + CY + Tx
+  Y' = BX + DY + Ty
+
+=item path
+
+Duplicates the current matrix and graphic properties and pushes them to the stack.
+Sets the inner matrix to identity, and the outer matrix to the previous current matrix:
+
+   M_outer   = M_current
+   M_inner   = identity
+   M_current = M_inner * M_outer
+
+Can be used used to create own primitives, f.ex:
+
+  sub my_symbol {
+     $self-> path-> spline( ... )-> restore;
+  }
+
+  $path->rotate(45);
+  my_symbol($path, ..);
+  $path->rotate(90);
+  my_symbol($path, ..);
+  $path->stroke;
+
+will draw same spline twice but rotated 45 and 135 degrees.
+
+=item precision INTEGER
+
+Selectes current precision for splines and arcs. See L<Prima::Drawable/spline>, C<precision> entry.
+
+=item restore
+
+Pops the stack entry and replaces the current matrix and graphic properties with it.
+
+=item rotate ANGLE
+
+Adds rotation to the current matrix
+
+=item save
+
+Duplicates the current matrix and graphic properties and pushes them to the stack.
+
+=item shear X, Y = X
+
+Adds shearing to the current matrix
+
+=item scale X, Y = X
+
+Adds scaling to the current matrix
+
+=item translate X, Y = X
+
+Adds offset to the current matrix
+
+=back
+
+=head2 Operations
+
+These methods perform actual path rendering, that was delayed until that, and will
+create an array of points that can be used for actual drawing.
+
+=over
+
+=item clip %options
+
+Returns 1-bit image with clipping mask of the path. C<%options> can be used to
+pass C<fillWinding> property that affects the result of the filled shape.
+
+=item extents
+
+Returns 2 points that box the path.
+
+=item points
+
+Runs all allcumulated commands, and returns rendered set of points, suitable
+for further calls to C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly>.
+
+=item fill
+
+Paints a filled shape over the path
+
+=item stroke
+
+Draws a polyline over the path
+
+=back
+
+=head2 Methods for custom primitives
+
+=over
+
+=item append PATH
+
+Copies all commands from another PATH object. The PATH object doesn't need to
+have balanced stacking brackets C<save>/C<path> and C<restore>, and can be viewed
+as a macro.
+
+=item identity
+
+Returns identity matrix
+
+=item matrix_apply @POINTS
+
+Applies current matrix to POINTS, returns the transformed points. 
+If @POINTS is a list, returns list; if it is an array reference, returns
+array reference.
+
+=back
 
 =head1 AUTHOR
 
@@ -422,6 +623,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Object>, L<Prima::Widget>, L<Prima::Window>
+L<Prima::Drawable>
 
 =cut

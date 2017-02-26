@@ -397,6 +397,8 @@ L<Prima::Drawable::CurvedText> - fit text to path
 
 L<Prima::Drawable::Subcanvas> - paint a hierarchy of widgets to any drawable
 
+L<Prima::Drawable::Path> - stroke and fill complex paths
+
 =item Visual Builder
 
 L<VB> - Visual Builder for the Prima toolkit
