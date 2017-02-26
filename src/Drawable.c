@@ -436,19 +436,14 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 	return ok;
 }
 
-typedef struct _FPoint {
-	double x;
-	double y;
-} FPoint;
-
 static void *
-Drawable_polypoints( SV * points, char * procName, Bool integer, int mod, int rem, int min, int * n_points )
+Drawable_polypoints( SV * points, char * procName, Bool integer, int min, int * n_points )
 {
 	AV * av;
 	int i, count, psize;
 	void * p;
 
-	psize = integer ? sizeof(Point) : sizeof(FPoint);
+	psize = integer ? sizeof(Point) : sizeof(NPoint);
 	if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
 		warn("Invalid array reference passed to %s", procName);
 		return nil;
@@ -459,11 +454,8 @@ Drawable_polypoints( SV * points, char * procName, Bool integer, int mod, int re
 		warn("Drawable::%s: array must contain at least %d points", procName, min);
 		return nil;
 	}
-	if ( count % mod != rem ) {
-		if ( rem != 0 ) 
-			warn("Drawable::%s: number of elements in an array must be %d plus a multiple of %d", procName, rem, mod);
-		else
-			warn("Drawable::%s: number of elements in an array must be a multiple of %d", procName, mod);
+	if ( count % 2 != 0 ) {
+		warn("Drawable::%s: number of elements in an array must be a multiple of 2", procName);
 		return nil;
 	}
 
@@ -497,7 +489,7 @@ Drawable_polypoints( SV * points, char * procName, Bool integer, int mod, int re
 			pp->x = SvIV( *psvx);
 			pp->y = SvIV( *psvy);
 		} else {
-			FPoint * pp = ((FPoint*)p) + i;
+			NPoint * pp = ((NPoint*)p) + i;
 			pp->x = SvNV( *psvx);
 			pp->y = SvNV( *psvy);
 		}
@@ -548,12 +540,12 @@ Drawable_polyrects( SV * rects, char * procName, int * n_rects)
 }
 
 static Bool
-polypoints( Handle self, SV * points, char * procName, Bool integer, int mod, int rem, int min, Bool (*procPtr)(Handle,int,void*))
+polypoints_int( Handle self, SV * points, char * procName, int min, Bool (*procPtr)(Handle,int,Point*))
 {
 	int count;
-	void * p;
+	Point * p;
 	Bool ret = false;
-	if (( p = Drawable_polypoints( points, procName, integer, mod, rem, min, &count)) != NULL) {
+	if (( p = Drawable_polypoints( points, procName, true, min, &count)) != NULL) {
 		ret = procPtr( self, count, p);
 		if ( !ret) perl_error();
 		free(p);
@@ -561,22 +553,10 @@ polypoints( Handle self, SV * points, char * procName, Bool integer, int mod, in
 	return ret;
 }
 
-static Bool
-polypoints_int( Handle self, SV * points, char * procName, int mod, int rem, int min, Bool (*procPtr)(Handle,int,Point*))
-{
-	return polypoints(self, points, procName, true, mod, rem, min, (void*)procPtr);
-}
-
-static Bool
-polypoints_double( Handle self, SV * points, char * procName, int mod, int rem, int min, Bool (*procPtr)(Handle,int,FPoint*))
-{
-	return polypoints(self, points, procName, false, mod, rem, min, (void*)procPtr);
-}
-
 #define DEF_LINE_PROCESSOR(name,func) Bool \
 Drawable_##name( Handle self, SV * points)\
 {\
-	return polypoints_int( self, points, "Drawable::" #name, 2, 0, 2, func);\
+	return polypoints_int( self, points, "Drawable::" #name, 2, func);\
 }
 
 DEF_LINE_PROCESSOR(polyline, apc_gp_draw_poly)
@@ -745,7 +725,7 @@ SV *
 Drawable_render_spline( SV * obj, SV * points, HV * profile)
 {
 	dPROFILE;
-	FPoint *p, *pp;
+	NPoint *p, *pp;
 	Point *rendered, *storage;
 	SV *ret;
 	Bool ok, closed;
@@ -775,7 +755,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	} else 
 		precision = 24;
 	
-	p = (FPoint*) Drawable_polypoints( points, procName, false, 2, 0, degree + 1, &n_points);
+	p = (NPoint*) Drawable_polypoints( points, procName, false, degree + 1, &n_points);
 	if ( !p) goto EXIT;
 
 	/* closed curve will need at least one extra point and unclamped default knot set */
