@@ -159,7 +159,6 @@ sub on_paint
         	$canvas->fillWinding(1);
 		$canvas->translate($x, $y);
 		$canvas-> new_path->
-			precision($scale_factor/2)->
 			scale($scale_factor * 22)->
 			rotate(-$self->{start_angle})->
 			arc( 0, 0, $d1 + $dx * 0, $d1 + $dx * 1, 0, 90)->
