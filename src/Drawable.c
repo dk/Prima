@@ -682,22 +682,11 @@ default_knots( int n_points, int degree, Bool clamped )
 	return ret;
 }
 
-static double *
-default_weights( int n_points )
-{
-	int i;
-	double * ret;
-	if ( !( ret = malloc( sizeof(double) * n_points )))
-		return NULL;
-	for ( i = 0; i < n_points; i++ ) ret[i] = 1.0;
-	return ret;
-}
-	
 /* render single point on a spline with de Boor's algorithm */
 static Bool
 render_point( 
 	double t, 
-	int degree, int n_points, double * v, 
+	int degree, int n_points, int dimensions, double * v, 
 	double * knots, int * last_found_knot, Point * result
 ) {
 	double lo, hi, *pt;
@@ -734,15 +723,20 @@ render_point(
 			a_hat = 1.0 - a;
 			ix = i * 3;
       			/* interpolate each component */
-			for ( j = 0; j < 3; j++, ix++)
+			for ( j = 0; j < dimensions; j++, ix++)
 				v[ix] = a_hat * v[ix - 3] + a * v[ix];
 		}
 	}
 
 	/* convert back to cartesian and return */
 	s *= 3;
-	result-> x = v[s] / v[s+2];
-	result-> y = v[s+1] / v[s+2];
+	if ( dimensions == 3 ) {
+		result-> x = v[s] / v[s+2];
+		result-> y = v[s+1] / v[s+2];
+	} else {
+		result-> x = v[s];
+		result-> y = v[s+1];
+	}
 
 	return true;
 }
@@ -751,17 +745,18 @@ SV *
 Drawable_render_spline( SV * obj, SV * points, HV * profile)
 {
 	dPROFILE;
-	FPoint *p;
+	FPoint *p, *pp;
 	Point *rendered, *storage;
 	SV *ret;
 	Bool ok, closed;
-	int i, j, degree, precision, n_points, final_size, k;
-	double *knots, *weights, t, dt, *weighed, *temp;
+	int i, j, degree, precision, n_points, final_size, k, dim, n_add_points, temp_size;
+	double *knots, *weights, t, dt, *weighted, *temp;
 
-	/* parse input */
-	temp = knots = weights = weighed = NULL;
+	knots = weights = weighted = NULL;
 	ret = NULL;
 	ok = false;
+
+	/* parse input */
 	if ( pexist( degree )) {
 		degree = pget_i(degree);
 		if ( degree < 2 ) {
@@ -783,18 +778,10 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	p = (FPoint*) Drawable_polypoints( points, procName, false, 2, 0, degree + 1, &n_points);
 	if ( !p) goto EXIT;
 
-	/* closed curve will need one extra point and unclamped default knot set */
+	/* closed curve will need at least one extra point and unclamped default knot set */
 	closed = p[0].x == p[n_points-1].x && p[0].y == p[n_points-1].y;
-	if ( closed ) {
-		FPoint * np;
-		if ( !( np = (FPoint*) realloc(p, sizeof(FPoint) * (n_points + degree - 1)))) {
-			warn("not enough memory");
-			goto EXIT;
-		}
-		p = np; /* easy, huh? :) */
-		for ( i = 1; i < degree; i++)
-			p[n_points++] = p[i];
-	}
+	n_add_points = closed ? degree - 1 : 0;
+	n_points += n_add_points;
 
 	if ( pexist( knots )) {
 		knots = read_array("knots", pget_sv(knots), n_points + degree + 1);
@@ -805,51 +792,57 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	if ( pexist( weights )) {
 		weights = read_array("weight", pget_sv(weights), n_points);
 		if (!weights) goto EXIT;
-	} else
-		weights = default_weights(n_points);
+		dim = 3;
+	} else {
+		weights = NULL; /* all ones */
+		dim = 2;
+	}
 
 	hv_clear(profile); /* old gencls bork */
 
 	/* allocate result storage */
-	precision *= n_points - (closed ? 2 : 0);
+	precision *= n_points - n_add_points;
 	ret = prima_array_new(( precision + 1) * sizeof(Point) );
 
-	/* convert to weighed points */
-	if ( !(weighed = malloc( sizeof(double) * 3 * n_points ))) {
+	temp_size = sizeof(double) * 3 * n_points;
+	if ( !(weighted = malloc( 2 * temp_size ))) {
 		warn("not enough memory");
 		goto EXIT;
 	}
-	if ( !(temp = malloc( sizeof(double) * 3 * n_points ))) {
-		warn("not enough memory");
-		goto EXIT;
+	
+	/* convert to weighted points */
+	for ( i = j = 0, pp = p; i < n_points; i++, pp++) {
+		register double w = weights ? weights[i] : 1.0;
+		weighted[j++] = pp->x * w;
+		weighted[j++] = pp->y * w;
+		weighted[j++] = w;
+		if ( i == n_points - n_add_points - 1 ) pp = p;
 	}
-	for ( i = j = 0; i < n_points; i++) {
-		register double w = weights[i];
-		weighed[j++] = p[i].x * w;
-		weighed[j++] = p[i].y * w;
-		weighed[j++] = w;
-	}
+	temp = weighted + 3 * n_points;
 
 	/* render */
 	final_size = 0;
 	rendered = storage = (Point*) prima_array_get_storage(ret);
 	k = -1;
 	for ( i = 0, t = 0.0, dt = 1.0 / precision; i < precision - 1; i++, t += dt) {
-		memcpy( temp, weighed, sizeof(double) * 3 * n_points);
-		if (!render_point(t, degree, n_points, temp, knots, &k, rendered))
+		memcpy( temp, weighted, temp_size);
+		if (!render_point(t, degree, n_points, dim, temp, knots, &k, rendered))
 			goto EXIT;
 		if ( i > 0 && rendered->x == rendered[-1].x && rendered->y == rendered[-1].y)
 			continue;
 		final_size++;
 		rendered++;
 	}
-	memcpy( temp, weighed, sizeof(double) * 3 * n_points);
-	if ( !render_point(1.0, degree, n_points, temp, knots, &k, rendered))
+	memcpy( temp, weighted, temp_size);
+	if ( !render_point(1.0, degree, n_points, dim, temp, knots, &k, rendered))
 		goto EXIT;
 	if ( !( i > 0 && rendered->x == rendered[-1].x && rendered->y == rendered[-1].y)) {
 		final_size++;
 		rendered++;
 	}
+
+	/* looks good */
+	ok = true;
 	if ( closed ) {
 		final_size++;
 		*rendered = storage[0];
@@ -859,16 +852,13 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 		final_size = 2;
 		storage[1] = storage[0];
 	}
-
-	ok = true;
 	prima_array_truncate( ret, final_size * sizeof( Point) );
 
 EXIT:
-	if (weighed) free(weighed);
-	if (temp)    free(temp);
-	if (p)       free(p);
-	if (knots)   free(knots);
-	if (weights) free(weights);
+	if (weighted) free(weighted);
+	if (p)        free(p);
+	if (knots)    free(knots);
+	if (weights)  free(weights);
 	if ( ok ) {
 		return prima_array_tie( ret, sizeof(int), "i");
 	} else {
