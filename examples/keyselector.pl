@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Interactive key selection and storage
+examples/keyselector.pl - Interactive key selection and storage
 
 =head1 FEATURES
 
