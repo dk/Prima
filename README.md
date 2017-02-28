@@ -8,6 +8,13 @@ Perl program using PRIMA looks and behaves identically on X11 and Win32.
 PREREQUISITES
 =============
 
+Debian/Ubuntu
+-------------
+
+For easy setup, run this:
+
+apt-get install libgtk2.0-dev libtext-bidi-perl libgif-dev libjpeg-dev libtiff-dev libxpm-dev
+
 Graphic libraries
 -----------------
 
