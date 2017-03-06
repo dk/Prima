@@ -959,9 +959,12 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		} else
 			loaded_font. width = loaded_font. maximalWidth;
 	}
-	
-	loaded_font. descent = xf-> descent;
-	loaded_font. ascent  = xf-> ascent;
+
+	{
+		XftFont * base = kf_base ? kf_base-> xft : xf;
+		loaded_font. descent = base-> descent;
+		loaded_font. ascent  = base-> ascent;
+	}
 	
 	if ( cache_results ) {
 		/* create hash entry for subsequent loads of same font */
