@@ -119,14 +119,18 @@ prima_prepare_ximage( int width, int height, int format)
 
 #ifdef USE_MITSHM
 	if ( guts. shared_image_extension && format != CACHE_BITMAP) {
-		i-> image = XShmCreateImage( DISP, visual, depth, pformat,
-											nil, &i->xmem, width, height);
+		i-> image = XShmCreateImage( 
+			DISP, visual, depth, pformat,
+			nil, &i->xmem, width, height
+		);
 		XCHECKPOINT;
 		if ( !i-> image) goto normal_way;
 		i-> bytes_per_line_alias = i-> image-> bytes_per_line;
-		i-> xmem. shmid = shmget( IPC_PRIVATE,
-										i-> image-> bytes_per_line * height + extra_bytes,
-										IPC_CREAT | 0666);
+		i-> xmem. shmid = shmget( 
+			IPC_PRIVATE,
+			i-> image-> bytes_per_line * height + extra_bytes,
+			IPC_CREAT | 0666
+		);
 		if ( i-> xmem. shmid < 0) {
 			XDestroyImage( i-> image);
 			goto normal_way;
@@ -169,9 +173,11 @@ normal_way:
 		free(i);
 		return nil;
 	}
-	i-> image = XCreateImage( DISP, visual, depth, pformat, 
-									0, i-> data_alias,
-									width, height, 32, i-> bytes_per_line_alias);
+	i-> image = XCreateImage( 
+		DISP, visual, depth, pformat, 
+		0, i-> data_alias,
+		width, height, 32, i-> bytes_per_line_alias
+	);
 	XCHECKPOINT;
 	if ( !i-> image) {
 		warn("XCreateImage(%d,%d,visual=%x,depth=%d/%d) error", width, height, (int)visual->visualid,depth,idepth);
@@ -269,8 +275,9 @@ check_ximage_event( Display * disp, XEvent * ev, XPointer data)
 
 Bool
 prima_put_ximage( 
-		XDrawable win, GC gc, PrimaXImage *i, 
-		int src_x, int src_y, int dst_x, int dst_y, int width, int height
+	XDrawable win, GC gc, PrimaXImage *i, 
+	int src_x, int src_y, int dst_x, int dst_y, 
+	int width, int height
 ) {
 	if ( src_x < 0) {
 		width += src_x;
@@ -977,15 +984,21 @@ create_cache24_32( Image *img, ImageCache *cache)
 
 	if ( initialize) {
 		for ( i = 0; i < NPalEntries8; i++) {
-			pal[i]. r = i; pal[i]. g = 0; pal[i]. b = 0;
+			pal[i]. r = i; 
+			pal[i]. g = 0; 
+			pal[i]. b = 0;
 		}
 		create_rgb_to_xpixel_lut( NPalEntries8, pal, lur);
 		for ( i = 0; i < NPalEntries8; i++) {
-			pal[i]. r = 0; pal[i]. g = i; pal[i]. b = 0;
+			pal[i]. r = 0; 
+			pal[i]. g = i; 
+			pal[i]. b = 0;
 		}
 		create_rgb_to_xpixel_lut( NPalEntries8, pal, lug);
 		for ( i = 0; i < NPalEntries8; i++) {
-			pal[i]. r = 0; pal[i]. g = 0; pal[i]. b = i;
+			pal[i]. r = 0; 
+			pal[i]. g = 0; 
+			pal[i]. b = i;
 		}
 		create_rgb_to_xpixel_lut( NPalEntries8, pal, lub);
 		initialize = false;
@@ -1030,14 +1043,14 @@ static Bool
 create_cache8( Image* img, ImageCache *cache, int bpp)
 {
 	switch (bpp) {
-	case 8:      
+	case 8:
 		return ( guts. visualClass == TrueColor || guts. visualClass == DirectColor) ?
-					create_cache8_8_tc( img, cache) :
-					create_cache_equal( img, cache);
-	case 16:     return create_cache8_16( img, cache);
-	case 24:     return create_cache8_24( img, cache);
-	case 32:     return create_cache8_32( img, cache);
-	default:     warn( "UAI_012: unsupported image conversion: %d => %d", 8, bpp);
+			create_cache8_8_tc( img, cache) :
+			create_cache_equal( img, cache);
+	case 16: return create_cache8_16( img, cache);
+	case 24: return create_cache8_24( img, cache);
+	case 32: return create_cache8_32( img, cache);
+	default: warn( "UAI_012: unsupported image conversion: %d => %d", 8, bpp);
 	}
 	return false;
 }
@@ -1046,9 +1059,9 @@ static Bool
 create_cache24( Image* img, ImageCache *cache, int bpp)
 {
 	switch (bpp) {
-	case 16:     return create_cache24_16( img, cache); break;
-	case 32:     return create_cache24_32( img, cache); break;
-	default:     warn( "UAI_013: unsupported image conversion: %d => %d", 24, bpp);
+	case 16: return create_cache24_16( img, cache); break;
+	case 32: return create_cache24_32( img, cache); break;
+	default: warn( "UAI_013: unsupported image conversion: %d => %d", 24, bpp);
 	}
 	return false;
 }
@@ -1097,9 +1110,9 @@ create_rgb_to_argb_xpixel_lut( int ncolors, const PRGBColor pal, XPixel *lut)
 	int i;
 	for ( i = 0; i < ncolors; i++) 
 		lut[i] = 
-				(((pal[i].r << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
-				(((pal[i].g << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |
-				(((pal[i].b << guts. argb_bits. blue_range ) >> 8) << guts. argb_bits.  blue_shift);
+			(((pal[i].r << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
+			(((pal[i].g << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |
+			(((pal[i].b << guts. argb_bits. blue_range ) >> 8) << guts. argb_bits.  blue_shift);
 	if ( guts.machine_byte_order != guts.byte_order) 
 		for ( i = 0; i < ncolors; i++) 
 			lut[i] = REVERSE_BYTES_32(lut[i]);
@@ -1131,20 +1144,25 @@ create_argb_cache(PIcon img, ImageCache * cache, int type)
 
 	if ( initialize) {
 		for ( i = 0; i < NPalEntries8; i++) {
-			pal[i]. r = i; pal[i]. g = 0; pal[i]. b = 0;
+			pal[i]. r = i;
+			pal[i]. g = 0;
+			pal[i]. b = 0;
 		}
 		create_rgb_to_argb_xpixel_lut( NPalEntries8, pal, lur);
 		for ( i = 0; i < NPalEntries8; i++) {
-			pal[i]. r = 0; pal[i]. g = i; pal[i]. b = 0;
+			pal[i]. r = 0;
+			pal[i]. g = i;
+			pal[i]. b = 0;
 		}
 		create_rgb_to_argb_xpixel_lut( NPalEntries8, pal, lug);
 		for ( i = 0; i < NPalEntries8; i++) {
-			pal[i]. r = 0; pal[i]. g = 0; pal[i]. b = i;
+			pal[i]. r = 0;
+			pal[i]. g = 0;
+			pal[i]. b = i;
 		}
 		create_rgb_to_argb_xpixel_lut( NPalEntries8, pal, lub);
-		for ( i = 0; i < NPalEntries8; i++) {
+		for ( i = 0; i < NPalEntries8; i++)
 			alpha[i] = i;
-		}
 		create_rgb_to_alpha_xpixel_lut( NPalEntries8, alpha, lua);
 		initialize = false;
 	}
@@ -1327,7 +1345,8 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
 		return cache;
 	}
 	
-	/* apply as much of system palette colors as possible to new image, 
+	/* 
+		apply as much of system palette colors as possible to new image, 
 		if we're working on 1-8 bit displays. CACHE_LOW_RES on displays with
 		dynamic colors goes only after conservative strategy, using only
 		immutable colors to be copied to clipboard, icon, etc.
@@ -1463,30 +1482,30 @@ rop_apply_colors(Handle self, PutImageRequest * req)
 {
 	DEFXX;
 	/*
-	Special case with current foreground and background colors, see also
+	Special case with current foreground and background colors for 1-bit bitmaps/pixmaps, see also
 	L<pod/Prima/Drawable.pod | Monochrome bitmaps>.
 	
 	Raster ops can be identified by a fingerprint.  For example, Or's is 14
 	and Noop's is 10:
 	
-						0 | 0 =    0                      0 | 0 =    0
-						0 | 1 =   1                       0 | 1 =   1
-						1 | 0 =  1                        1 | 0 =  0
-						1 | 1 = 1                         1 | 1 = 1
-								---                               ---
-								1110 = 14                         1010 = 10
+        0 | 0 =    0                      0 | 0 =    0
+        0 | 1 =   1                       0 | 1 =   1
+        1 | 0 =  1                        1 | 0 =  0
+        1 | 1 = 1                         1 | 1 = 1
+        ---     ----                      ---     ----
+                1110 = 14                         1010 = 10
 	
 	when this special case uses not actual 0s and 1s, but bit values of
 	foreground and background color instead, the resulting operation can
 	still be expressed in rops, but these needs to be adjusted. Let's
 	consider a case where both colors are 0, and rop = OrPut:
 	
-						0 | 0 =    0
-						0 | 1 =   1
-						0 | 0 =  0
-						0 | 1 = 1
-								---
-								1010 = 10
+        0 | 0 =    0
+        0 | 1 =   1
+        0 | 0 =  0
+        0 | 1 = 1
+        ---     ----
+                1010 = 10
 	
 	this means that in these conditions, Or (as well as Xor and AndInverted) becomes Noop.
 	
@@ -1565,10 +1584,12 @@ img_put_copy_area( Handle self, Handle image, PutImageRequest * req)
 	XCHECKPOINT;
 	SET_ROP(req->rop);
 
-	XCopyArea( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
-				req->src_x, req->src_y,
-				req->w, req->h,
-				req->dst_x, req->dst_y);
+	XCopyArea( 
+		DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
+		req->src_x, req->src_y,
+		req->w, req->h,
+		req->dst_x, req->dst_y
+	);
 
 	XCHECKPOINT;
 	XFLUSH;
@@ -1752,10 +1773,12 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	SET_ROP(req->rop);
 	XCHECKPOINT;
 
-	XCopyPlane( DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
-				req->src_x, req->src_y,
-				req->w, req->h,
-				req->dst_x, req->dst_y, 1);
+	XCopyPlane( 
+		DISP, YY-> gdrawable, XX-> gdrawable, XX-> gc,
+		req->src_x, req->src_y,
+		req->w, req->h,
+		req->dst_x, req->dst_y, 1
+	);
 
 	XCHECKPOINT;
 	XFLUSH;
@@ -1802,7 +1825,8 @@ img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	Picture target;
 
 	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
-	XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, YY-> argb_picture, 0, target,
+	XRenderComposite( 
+		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, YY-> argb_picture, 0, target,
 		req->src_x, req->src_y, 0, 0,
 		req->dst_x, req->dst_y, req->w, req->h
 	);
@@ -1895,7 +1919,8 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 	if ( render_rop >= PictOpMinimum ) {
 		/* cheap on-server blit */
 		picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
-		XRenderComposite( DISP, render_rop, picture, 0, XX-> argb_picture,
+		XRenderComposite(
+			DISP, render_rop, picture, 0, XX-> argb_picture,
 			req->src_x, req->src_y, 0, 0,
 			req->dst_x, req->dst_y, req->w, req->h
 		);
@@ -1950,7 +1975,8 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
 
 	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb_pic_format, 0, NULL);
 	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
-	XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, target,
+	XRenderComposite(
+		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, target,
 		0, 0, 0, 0,
 		req->dst_x, req->dst_y, req->w, req->h
 	);
@@ -1986,7 +2012,8 @@ img_put_composite( Handle self, Handle image, PutImageRequest * req)
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	DEFXX;
 	PDrawableSysData YY = X(image);
-	XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
+	XRenderComposite(
+		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver,
 		YY->argb_picture, 0, XX->argb_picture,
 		0, 0, 0, 0,
 		req->dst_x, req->dst_y, req->w, req->h
@@ -2042,7 +2069,8 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 	))) goto FAIL;
 
 	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb_pic_format, 0, NULL);
-	XRenderComposite( DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, XX-> argb_picture,
+	XRenderComposite(
+		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, XX-> argb_picture,
 		0, 0, 0, 0,
 		req->dst_x, req->dst_y, req->w, req->h
 	);
