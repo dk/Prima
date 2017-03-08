@@ -171,7 +171,6 @@ GENPROC
 
 sub DESTROY {}
 
-# class Component
 package Prima::Component;
 use vars qw(@ISA);
 @ISA = qw(Prima::Object);
@@ -273,7 +272,6 @@ sub find_component
 	return undef;
 }
 
-# class File
 package Prima::File;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
@@ -344,7 +342,10 @@ sub image
 	}
 }
 
-# class Drawable
+package Prima::Region;
+use vars qw(@ISA);
+@ISA = qw(Prima::Component);
+
 package Prima::Drawable;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
@@ -446,7 +447,6 @@ sub fill_spline
 	$self->fillpoly( $self->render_spline(@_) );
 }
 
-# class Image
 package Prima::Image;
 use vars qw( @ISA);
 @ISA = qw(Prima::Drawable);
@@ -552,7 +552,6 @@ sub ui_scale
 	return $self;
 }
 
-# class Icon
 package Prima::Icon;
 use vars qw( @ISA);
 @ISA = qw(Prima::Image);
@@ -633,7 +632,6 @@ sub ui_scale
 	return $self;
 }
 
-# class DeviceBitmap
 package Prima::DeviceBitmap;
 use vars qw( @ISA);
 @ISA = qw(Prima::Drawable);
@@ -667,7 +665,6 @@ sub profile_check_in
 
 sub has_alpha_layer { shift->type == dbt::Layered }
 
-# class Timer
 package Prima::Timer;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
@@ -691,7 +688,6 @@ sub profile_default
 	return $def;
 }
 
-# class Printer
 package Prima::Printer;
 use vars qw(@ISA);
 @ISA = qw(Prima::Drawable);
@@ -707,7 +703,6 @@ sub profile_default
 	return $def;
 }
 
-# class Widget
 package Prima::Widget;
 use vars qw(@ISA %WidgetProfile @default_font_box);
 @ISA = qw(Prima::Drawable);
@@ -1230,7 +1225,6 @@ sub rect_bevel
 
 sub has_alpha_layer { $_[0]-> layered && $_[0]-> is_surface_layered }
 
-# class Window
 package Prima::Window;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
@@ -1352,7 +1346,6 @@ sub menuDark3DColor      { return shift-> menuColorIndex( ci::Dark3DColor  , @_)
 sub menuLight3DColor     { return shift-> menuColorIndex( ci::Light3DColor , @_);}
 
 
-# class Dialog
 package Prima::Dialog;
 use vars qw(@ISA);
 @ISA = qw(Prima::Window);
@@ -1389,7 +1382,6 @@ sub profile_default
 sub on_create  { $::main_window = $_[0] }
 sub on_destroy { $::application-> close; undef $::main_window }
 
-# class MenuItem
 package Prima::MenuItem;
 
 sub create
@@ -1422,7 +1414,6 @@ sub toggle  {
 	return $i
 }
 
-# class AbstractMenu
 package Prima::AbstractMenu;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
@@ -1464,17 +1455,14 @@ sub AUTOLOAD
 	return Prima::MenuItem-> create( $self, $itemName);
 }
 
-# class AccelTable
 package Prima::AccelTable;
 use vars qw(@ISA);
 @ISA = qw(Prima::AbstractMenu);
 
-# class Menu
 package Prima::Menu;
 use vars qw(@ISA);
 @ISA = qw(Prima::AbstractMenu);
 
-# class Popup
 package Prima::Popup;
 use vars qw(@ISA);
 @ISA = qw(Prima::AbstractMenu);

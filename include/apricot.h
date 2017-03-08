@@ -1382,6 +1382,8 @@ SvBOOL( SV *sv)
 #define CPopup(h)                       (PPopup(h)-> self)
 #define PPrinter(h)                     TransmogrifyHandle(Printer,(h))
 #define CPrinter(h)                     (PPrinter(h)-> self)
+#define PRegion(h)                      TransmogrifyHandle(Region,(h))
+#define CRegion(h)                      (PRegion(h)-> self)
 #define PTimer(h)                       TransmogrifyHandle(Timer,(h))
 #define CTimer(h)                       (PTimer(h)-> self)
 #define PWidget(h)                      TransmogrifyHandle(Widget,(h))
@@ -3193,7 +3195,88 @@ typedef struct _TextWrapRec {
 	PList    * unicode;                 /* NB - .ascii can be present in .unicode ! */
 } TextWrapRec, *PTextWrapRec;
 
-/* gpi functions underplace */
+/* regions */
+
+#define rgnEmpty    0
+#define rgnRects    1
+#define rgnEllipse  2
+#define rgnPolyline 3
+#define rgnImage    4
+
+typedef struct {
+	int type;
+} EmptyRegionRec;
+
+typedef struct {
+	int type;
+	int n_rects;
+	Rect * rects;
+} RectRegionRec;
+
+typedef struct {
+	int type;
+	int dx;
+	int dy;
+} EllipticRegionRec;
+
+typedef struct {
+	int type;
+	int n_points;
+	Bool winding;
+	Point * points;
+} PolylineRegionRec;
+
+typedef struct {
+	int type;
+	Handle image;
+} ImageRegionRec;
+
+typedef union {
+	int type;
+	EmptyRegionRec empty;
+	RectRegionRec rects;
+	EllipticRegionRec elliptic;
+	PolylineRegionRec polyline;
+	ImageRegionRec image;
+} RegionRec, *PRegionRec;
+
+#define RGNOP(const_name) CONSTANT(rgnop,const_name)
+START_TABLE(rgnop,UV)
+#define rgnopCopy       0
+RGNOP(Copy)
+#define rgnopIntersect  1
+RGNOP(Intersect)
+#define rgnopUnion      2
+RGNOP(Union)
+#define rgnopXor        3
+RGNOP(Xor)
+#define rgnopDiff       4
+RGNOP(Diff)
+END_TABLE(rgnop,UV)
+#undef RGNOP
+
+extern Bool
+apc_region_create( Handle self, PRegionRec rec);
+
+extern Bool
+apc_region_destroy( Handle self);
+
+extern Bool
+apc_region_offset( Handle self, int dx, int dy);
+
+extern Bool
+apc_region_combine( Handle self, Handle other_region, int rgnop);
+
+extern Bool
+apc_region_point_inside( Handle self, Point p);
+
+extern int
+apc_region_rect_inside( Handle self, Rect r);
+
+extern Bool
+apc_region_equals( Handle self, Handle other_region);
+
+/* gp functions */
 extern Bool
 apc_gp_init( Handle self);
 

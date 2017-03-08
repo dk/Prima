@@ -371,6 +371,7 @@ unix/apc_img.c
 unix/apc_menu.c
 unix/apc_misc.c
 unix/apc_pointer.c
+unix/apc_region.c
 unix/apc_timer.c
 unix/apc_widget.c
 unix/apc_win.c
@@ -394,5 +395,6 @@ win32/files.c
 win32/global.c
 win32/gp.c
 win32/misc.c
+win32/region.c
 win32/stock.c
 win32/timers.c

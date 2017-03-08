@@ -26,6 +26,7 @@
 #include "Timer.h"
 #include "Utils.h"
 #include "Printer.h"
+#include "Region.h"
 #include "img_conv.h"
 
 
@@ -627,6 +628,7 @@ XS(Prima_init)
 		register_notifications((PVMT)CWindow);
 		register_notifications((PVMT)CApplication);
 		register_notifications((PVMT)CPrinter);
+		register_notifications((PVMT)CRegion);
 		prima_init_ok++;
 	}
 	
@@ -1328,6 +1330,7 @@ if (sizeof(s1) != (s2)) { \
 	register_Application_Class();
 	register_Timer_Class();
 	register_Printer_Class();
+	register_Region_Class();
 
 	ST(0) = &PL_sv_yes;
 	XSRETURN(1);
