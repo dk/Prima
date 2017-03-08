@@ -35,6 +35,8 @@ src/Popup.cls
 src/primguts.c
 src/Printer.c
 src/Printer.cls
+src/Region.c
+src/Region.cls
 src/Timer.c
 src/Timer.cls
 src/Types.cls
