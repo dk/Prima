@@ -922,6 +922,7 @@ typedef union _unix_sys_data
 	DrawableSysData              drawable;
 	MenuSysData                  menu;
 	TimerSysData                 timer;
+	Region                       region;
 } UnixSysData, *PUnixSysData;
 
 #define DISP		(pguts-> display)
