@@ -104,7 +104,7 @@ rgn_rect(Handle self, Rect2 r)
 }
 
 static Bool
-rgn_ellipse(Handle self, Point d)
+rgn_ellipse(Handle self, Rect2 ellipse)
 {
 	return true;
 }
@@ -133,10 +133,10 @@ apc_region_create( Handle self, PRegionRec rec)
 		ok = rgn_empty(self);
 		break;
 	case rgnRectangle:
-		ok = rgn_rect(self, rec->data.rectangle);
+		ok = rgn_rect(self, rec->data.box);
 		break;
 	case rgnEllipse:
-		ok = rgn_ellipse(self, rec->data.ellipse);
+		ok = rgn_ellipse(self, rec->data.box);
 		break;
 	case rgnPolyline:
 		ok = rgn_polyline(self, &rec->data.polyline);
@@ -222,3 +222,97 @@ apc_region_equals( Handle self, Handle other_region)
 {
 	return false;
 }
+
+Rect
+apc_region_get_box( Handle self)
+{
+	return (Rect){0,0,0,0};
+}
+
+Bool
+apc_gp_set_region( Handle self, Handle rgn)
+{
+	DEFXX;
+	Region region;
+	PImage img;
+	PRegionSysData r;
+
+	if ( PObject( self)-> options. optInDrawInfo) return false;
+	if ( !XF_IN_PAINT(XX)) return false;
+
+	if (rgn == nilHandle) {
+		Rect r;
+	EMPTY:
+		r. left   = 0;
+		r. bottom = 0;
+		r. right  = XX-> size. x;
+		r. top    = XX-> size. y;
+		return apc_gp_set_clip_rect( self, r);
+	}
+
+	r = GET_REGION(rgn);
+
+	XClipBox( r-> region, &XX-> clip_rect);
+	XX-> clip_rect. y = REVERT( r-> top - XX-> clip_rect. y);
+	XX-> clip_mask_extent. x = XX-> clip_rect. width;
+	XX-> clip_mask_extent. y = XX-> clip_rect. height;
+	if ( XX-> clip_rect. width == 0 || XX-> clip_rect. height == 0) goto EMPTY;
+
+	region = XCreateRegion();
+	XUnionRegion( region, r-> region, region);
+	/* offset region if drawable is buffered */
+	XOffsetRegion( region, XX-> btransform. x, XX-> size.y - r-> top - XX-> btransform. y);
+	/* otherwise ( and only otherwise ), and if there's a
+		X11 clipping, intersect the region with it. X11 clipping
+		must not mix with the buffer clipping */
+	if (( !XX-> udrawable || XX-> udrawable == XX-> gdrawable) && 
+		XX-> paint_region) 
+		XIntersectRegion( region, XX-> paint_region, region);
+	XSetRegion( DISP, XX-> gc, region);
+	if ( XX-> flags. kill_current_region) 
+		XDestroyRegion( XX-> current_region);
+	XX-> flags. kill_current_region = 1;
+	XX-> current_region = region;
+	XX-> flags. xft_clip = 0;
+#ifdef USE_XFT
+	if ( XX-> xft_drawable) prima_xft_update_region( self);
+#endif
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	if ( XX-> argb_picture ) XRenderSetPictureClipRegion(DISP, XX->argb_picture, region);
+#endif
+	return true;
+}
+
+Bool
+apc_gp_get_region( Handle self, Handle rgn)
+{
+	DEFXX;
+	int depth;
+
+	if ( !XF_IN_PAINT(XX)) return false;
+
+	if ( !rgn) 
+		return XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0;
+		
+	if ( XX-> clip_mask_extent. x == 0 || XX-> clip_mask_extent. y == 0)
+		return false;
+
+	XSetClipOrigin( DISP, XX-> gc, 0, 0);
+
+	depth = XT_IS_BITMAP(XX) ? 1 : guts. qdepth;
+	CImage( rgn)-> create_empty( rgn, XX-> clip_mask_extent. x, XX-> clip_mask_extent. y, depth);
+	CImage( rgn)-> begin_paint( rgn);
+	XCHECKPOINT;
+	XSetForeground( DISP, XX-> gc, ( depth == 1) ? 1 : guts. monochromeMap[1]);
+	XFillRectangle( DISP, X(rgn)-> gdrawable, XX-> gc, 0, 0, XX-> clip_mask_extent.x + 1, XX-> clip_mask_extent.y + 1);
+	XCHECKPOINT;
+	XX-> flags. brush_fore = 0;
+	CImage( rgn)-> end_paint( rgn);
+	XCHECKPOINT;
+	if ( depth != 1) CImage( rgn)-> set_type( rgn, imBW);
+
+	XSetClipOrigin( DISP, XX-> gc, XX-> btransform.x, 
+		- XX-> btransform. y + XX-> size. y - XX-> clip_mask_extent.y);
+	return true;
+}
+

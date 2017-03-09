@@ -20,14 +20,19 @@ Region_init( Handle self, HV * profile)
 
 	inherited-> init( self, profile);
 
-	if ( pexist( rect )) {
+	if ( pexist( rect ) || pexist(ellipse) ) {
 		int rect[4];
-		prima_read_point( pget_sv( rect), rect, 4, "Array panic on 'rect'");
-		r. data. rectangle. x      = rect[0];
-		r. data. rectangle. y      = rect[1];
-		r. data. rectangle. width  = rect[2];
-		r. data. rectangle. height = rect[3];
-		r. type = rgnRectangle;
+		if ( pexist(rect)) {
+			prima_read_point( pget_sv( rect), rect, 4, "Array panic on 'rect'");
+			r. type = rgnRectangle;
+		} else {
+			prima_read_point( pget_sv( ellipse), rect, 4, "Array panic on 'ellipse'");
+			r. type = rgnEllipse;
+		}
+		r. data. box. x      = rect[0];
+		r. data. box. y      = rect[1];
+		r. data. box. width  = rect[2];
+		r. data. box. height = rect[3];
 	}
 	if ( !apc_region_create( self, &r))
 		croak("Cannot create region");

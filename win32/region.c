@@ -51,6 +51,12 @@ apc_region_equals( Handle self, Handle other_region)
 	return false;
 }
 
+Rect
+apc_region_get_box( Handle self)
+{
+	return (Rect){0,0,0,0};
+}
+
 #ifdef __cplusplus
 }
 #endif

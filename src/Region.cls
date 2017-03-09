@@ -3,6 +3,7 @@ object Prima::Region( Prima::Component)
 {
 	method   void      init( HV * profile);
 	method   void      done();
+	method   Rect      box() => apc_region_get_box;
 	method   Bool      offset(int dx, int dy) => apc_region_offset;
 	method   Bool      equals(Handle other_region);
 	method   Bool      combine(Handle other_region, int rgnop = rgnopCopy);

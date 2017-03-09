@@ -3215,8 +3215,7 @@ typedef struct {
 typedef struct {
 	int type;
 	union {
-		Rect2 rectangle;
-		Point ellipse;
+		Rect2 box;
 		PolylineRegionRec polyline;
 		Handle image;
 	} data;
@@ -3257,6 +3256,9 @@ apc_region_rect_inside( Handle self, Rect r);
 
 extern Bool
 apc_region_equals( Handle self, Handle other_region);
+
+extern Rect
+apc_region_get_box( Handle self);
 
 /* gp functions */
 extern Bool
@@ -3385,7 +3387,7 @@ extern PRGBColor
 apc_gp_get_physical_palette( Handle self, int * colors);
 
 extern Bool
-apc_gp_get_region( Handle self, Handle mask);
+apc_gp_get_region( Handle self, Handle rgn);
 
 extern Point
 apc_gp_get_resolution( Handle self);
@@ -3445,7 +3447,7 @@ extern Bool
 apc_gp_set_palette( Handle self);
 
 extern Bool
-apc_gp_set_region( Handle self, Handle mask);
+apc_gp_set_region( Handle self, Handle rgn);
 
 extern Bool
 apc_gp_set_rop( Handle self, int rop);
