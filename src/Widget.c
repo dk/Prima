@@ -1822,9 +1822,9 @@ Widget_set_centered( Handle self, Bool x, Bool y)
 
 	if ( parent == application ) {
 		int i, nrects = 0;
-		Rect2 *best = nil, *rects = apc_application_get_monitor_rects( application, &nrects);
+		Box *best = nil, *rects = apc_application_get_monitor_rects( application, &nrects);
 		for ( i = 0; i < nrects; i++) {
-			Rect2 * curr = rects + i;
+			Box * curr = rects + i;
 			if ( best == nil || best-> x > curr->x || best->y > curr->y)
 				best = curr;
 		}

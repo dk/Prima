@@ -630,7 +630,7 @@ SV *
 Application_get_monitor_rects( Handle self)
 {
 	int i, nrects;
-	Rect2 * rects = apc_application_get_monitor_rects(self, &nrects);
+	Box * rects = apc_application_get_monitor_rects(self, &nrects);
 	AV * ret = newAV();
 	for ( i = 0; i < nrects; i++) {
 		AV * rect = newAV();

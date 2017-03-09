@@ -327,14 +327,14 @@ apc_application_get_size( Handle self)
 typedef struct {
 	int nrects;
 	int max_height;
-	Rect2 rects[PRIMA_MAX_MONITORS];
+	Box rects[PRIMA_MAX_MONITORS];
 } EnumMonitorData;
 
 static BOOL
 _enum_monitors( HMONITOR monitor, HDC dc, LPRECT rect, LPARAM data)
 {
 	EnumMonitorData * d;
-	Rect2 * current;
+	Box * current;
 
 	d = ( EnumMonitorData * ) data;
 	if ( d-> nrects >= PRIMA_MAX_MONITORS ) return false;
@@ -350,21 +350,21 @@ _enum_monitors( HMONITOR monitor, HDC dc, LPRECT rect, LPARAM data)
 	return true;
 }
 
-Rect2 *
+Box *
 apc_application_get_monitor_rects( Handle self, int * nrects)
 {
 	int i;
-	Rect2 * ret;
+	Box * ret;
 	EnumMonitorData d = {0,0};
 
 	EnumDisplayMonitors( NULL, NULL, (MONITORENUMPROC) _enum_monitors, (LPARAM) &d);
 	if ( d. nrects == 0) return NULL;
-	if (!(ret = malloc( d.nrects * sizeof(Rect2) )))
+	if (!(ret = malloc( d.nrects * sizeof(Box) )))
 		return NULL;
 
 	for ( i = 0; i < d.nrects; i++)
 		d.rects[i]. y = d.max_height - d.rects[i]. y;
-	memcpy( ret, d.rects, d.nrects * sizeof(Rect2));
+	memcpy( ret, d.rects, d.nrects * sizeof(Box));
 	*nrects = d.nrects;
 	return ret;
 }

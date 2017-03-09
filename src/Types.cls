@@ -10,6 +10,14 @@ global @Rect {
 	int top;
 }
 
+global @Box
+{
+	int x;
+	int y;
+	int width;
+	int height;
+}
+
 global %Font {
 	int         height            ;
 	int         width             ;

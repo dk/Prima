@@ -525,7 +525,7 @@ if ( layered ) {
 	/* setting initial size */
 	{
 		int nrects;
-		Rect2 * monitors;
+		Box * monitors;
 		monitors = apc_application_get_monitor_rects( nilHandle, &nrects);
 		if ( nrects > 0 ) {
 			int i, min_x = monitors[0].x, min_y = monitors[0].y;

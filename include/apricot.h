@@ -6,7 +6,7 @@
 #define POLLUTE_NAME_SPACE 1
 #endif
 
-#define PRIMA_CORE_VERSION 2016063001
+#define PRIMA_CORE_VERSION 2017030901
 
 #define PRIMA_VERSION_BOOTCHECK \
 	if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
@@ -380,14 +380,6 @@ typedef struct { float  re, im; } Complex;
 typedef struct { double re, im; } DComplex;
 typedef struct { float  r,  ph; } TrigComplex;
 typedef struct { double r,  ph; } TrigDComplex;
-
-typedef struct _Rect2
-{
-	int x;
-	int y;
-	int width;
-	int height;
-} Rect2, *PRect2;
 
 #ifdef __cplusplus
 #define nil       NULL
@@ -1917,7 +1909,7 @@ apc_application_get_os_info( char *system, int slen,
 extern Point
 apc_application_get_size( Handle self);
 
-extern Rect2 *
+extern Box *
 apc_application_get_monitor_rects( Handle self, int * nrects);
 
 extern Bool
@@ -3215,7 +3207,7 @@ typedef struct {
 typedef struct {
 	int type;
 	union {
-		Rect2 box;
+		Box box;
 		PolylineRegionRec polyline;
 		Handle image;
 	} data;
@@ -3257,7 +3249,7 @@ apc_region_rect_inside( Handle self, Rect r);
 extern Bool
 apc_region_equals( Handle self, Handle other_region);
 
-extern Rect
+extern Box
 apc_region_get_box( Handle self);
 
 /* gp functions */
