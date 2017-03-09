@@ -344,6 +344,7 @@ t/Object/GP.t
 t/Object/GPExtra.t
 t/Object/GPState.t
 t/Object/Object.t
+t/Object/Region.t
 t/Object/Timer.t
 t/Object/Unicode.t
 t/Widget/Basic.t

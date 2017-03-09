@@ -863,12 +863,12 @@ apc_application_get_size( Handle self)
 	return guts. displaySize;
 }
 
-Rect2 *
+Box *
 apc_application_get_monitor_rects( Handle self, int * nrects)
 {
 #ifdef HAVE_X11_EXTENSIONS_XRANDR_H
 	XRRScreenResources * sr;
-	Rect2 * ret = nil;
+	Box * ret = nil;
 
 	if ( !guts. randr_extension) {
 		*nrects = 0;
@@ -879,7 +879,7 @@ apc_application_get_monitor_rects( Handle self, int * nrects)
 	sr = XRRGetScreenResources(DISP,guts.root);
 	if ( sr ) {
 		int i;
-		ret = malloc(sizeof(Rect2) * sr->ncrtc);
+		ret = malloc(sizeof(Box) * sr->ncrtc);
 		*nrects = sr->ncrtc;
 		for ( i = 0; i < sr->ncrtc; i++) {
 			XRRCrtcInfo * ci = XRRGetCrtcInfo (DISP, sr, sr->crtcs[i]);

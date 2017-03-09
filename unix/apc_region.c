@@ -2,7 +2,7 @@
 #include "Image.h"
 
 #define REGION GET_REGION(self)->region
-#define TOP GET_REGION(self)->top
+#define HEIGHT GET_REGION(self)->height
 
 Region
 prima_region_create( Handle mask)
@@ -91,7 +91,7 @@ rgn_empty(Handle self)
 }
 
 static Bool
-rgn_rect(Handle self, Rect2 r)
+rgn_rect(Handle self, Box r)
 {
 	XRectangle xr;
 	xr. x = r. x;
@@ -99,13 +99,76 @@ rgn_rect(Handle self, Rect2 r)
 	xr. width  = r. width;
 	xr. height = r. height;
 	XUnionRectWithRegion( &xr, REGION, REGION);
-	TOP = r.height + r.y;
+	HEIGHT = r.y + r.height;
 	return true;
 }
 
 static Bool
-rgn_ellipse(Handle self, Rect2 ellipse)
+rgn_ellipse(Handle self, Box ellipse)
 {
+	int w  = ellipse. width;
+	int h  = ellipse. height;
+	int rx = w / 2;
+	int ry = h / 2;
+	int a  = rx * rx;
+	int b  = ry * ry;
+	int d  = b - a * ry + a / 4;
+	int dx = 0;
+	int dy = a * ry * 2;
+	int sx = 0;
+	int sy = ry;
+	int ay = h % 2 - 1;
+	int ax = w % 2 - 1;
+
+	HEIGHT = ellipse. y + sy + 1;
+	while ( dx < dy ) {
+		XRectangle xr;
+		xr. x      = ellipse. x - sx - ax;
+		xr. y      = ry + sy + ay;
+		xr. width  = sx + sx;
+		xr. height = 1;
+		XUnionRectWithRegion( &xr, REGION, REGION);
+		xr. y      = ry - sy;
+		XUnionRectWithRegion( &xr, REGION, REGION);
+		if ( d > 0 ) {
+			sy--;
+			dy -= a + a;
+			d  -= dy;
+		}
+		sx++;
+		dx += b + b;
+		d += b + dx;
+	}
+
+	d = ( a - b + (a - b)/2 - dx - dy ) / 2;
+
+	while ( sy > 0 ) {
+		XRectangle xr;
+		xr. x      = ellipse. x - sx - ax;
+		xr. y      = ry + sy + ay;
+		xr. width  = sx + sx;
+		xr. height = 1;
+		XUnionRectWithRegion( &xr, REGION, REGION);
+		xr. y      = ry - sy;
+		XUnionRectWithRegion( &xr, REGION, REGION);
+		if ( d < 0 ) {
+			sx++;
+			dx += b + b;
+			d += dx;
+		}
+		sy--;
+		dy -= a + a;
+		d += a - dy;
+	}
+
+	if ( ay == 0 ) {
+		XRectangle xr;
+		xr. x      = ellipse. x - rx - ax;
+		xr. y      = ry;
+		xr. width  = w;
+		xr. height = 1;
+		XUnionRectWithRegion( &xr, REGION, REGION);
+	}
 	return true;
 }
 
@@ -127,7 +190,7 @@ apc_region_create( Handle self, PRegionRec rec)
 	Bool ok;
 	
 	REGION = XCreateRegion();
-	
+
 	switch( rec-> type ) {
 	case rgnEmpty:
 		ok = rgn_empty(self);
@@ -179,7 +242,7 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 	int d;
 	
 	r2 = GET_REGION(other_region);
-	d = TOP - r2-> top;
+	d = HEIGHT - r2-> height;
 
 	switch (rgnop) {
 	case rgnopCopy:
@@ -194,7 +257,7 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 		} else {
 			XOffsetRegion( REGION, 0, -d);
 			XUnionRegion( REGION, r2->region, REGION);
-			TOP = r2-> top;
+			HEIGHT = r2-> height;
 		}
 		break;
 	case rgnopXor:
@@ -220,14 +283,23 @@ apc_region_rect_inside( Handle self, Rect r)
 Bool
 apc_region_equals( Handle self, Handle other_region)
 {
-	return false;
+	return XEqualRegion( REGION, GET_REGION(other_region)->region);
 }
 
-Rect
+Box
 apc_region_get_box( Handle self)
 {
-	return (Rect){0,0,0,0};
+	Box box;
+	XRectangle xr;
+	XClipBox( REGION, &xr);
+	box. x      = xr. x;
+	box. y      = HEIGHT - xr. height - xr.y;
+	box. width  = xr. width;
+	box. height = xr. height;
+	return box;
 }
+
+#define REVERT(a)	(XX-> size. y - (a) - 1)
 
 Bool
 apc_gp_set_region( Handle self, Handle rgn)
@@ -253,7 +325,7 @@ apc_gp_set_region( Handle self, Handle rgn)
 	r = GET_REGION(rgn);
 
 	XClipBox( r-> region, &XX-> clip_rect);
-	XX-> clip_rect. y = REVERT( r-> top - XX-> clip_rect. y);
+	XX-> clip_rect. y = REVERT( r-> height - XX-> clip_rect. y);
 	XX-> clip_mask_extent. x = XX-> clip_rect. width;
 	XX-> clip_mask_extent. y = XX-> clip_rect. height;
 	if ( XX-> clip_rect. width == 0 || XX-> clip_rect. height == 0) goto EMPTY;
@@ -261,7 +333,7 @@ apc_gp_set_region( Handle self, Handle rgn)
 	region = XCreateRegion();
 	XUnionRegion( region, r-> region, region);
 	/* offset region if drawable is buffered */
-	XOffsetRegion( region, XX-> btransform. x, XX-> size.y - r-> top - XX-> btransform. y);
+	XOffsetRegion( region, XX-> btransform. x, XX-> size.y - r-> height - XX-> btransform. y);
 	/* otherwise ( and only otherwise ), and if there's a
 		X11 clipping, intersect the region with it. X11 clipping
 		must not mix with the buffer clipping */

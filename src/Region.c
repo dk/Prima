@@ -16,23 +16,40 @@ Region_init( Handle self, HV * profile)
 {
 	dPROFILE;
 	RegionRec r;
+	char *t;
+
 	r.type = rgnEmpty;
 
 	inherited-> init( self, profile);
 
-	if ( pexist( rect ) || pexist(ellipse) ) {
+	if ( pexist(rect)) {
+		t = "rect";
+		r.type = rgnRectangle;
+	} else if (pexist(box)) {
+		t = "box";
+		r.type = rgnRectangle;
+	} else if (pexist(ellipse)) {
+		t = "ellipse";
+		r.type = rgnEllipse;
+	}
+	
+
+	if ( r. type != rgnEmpty ) {
 		int rect[4];
-		if ( pexist(rect)) {
-			prima_read_point( pget_sv( rect), rect, 4, "Array panic on 'rect'");
-			r. type = rgnRectangle;
-		} else {
-			prima_read_point( pget_sv( ellipse), rect, 4, "Array panic on 'ellipse'");
-			r. type = rgnEllipse;
-		}
+		SV ** val = hv_fetch( profile, t, (I32) strlen( t), 0);
+		prima_read_point( *val, rect, 4, "Array panic");
+
 		r. data. box. x      = rect[0];
 		r. data. box. y      = rect[1];
-		r. data. box. width  = rect[2];
-		r. data. box. height = rect[3];
+		if ( strncmp(t, "rect", 4) == 0 ) {
+			r. data. box. width  = rect[2] - rect[0];
+			r. data. box. height = rect[3] - rect[1];
+		} else {
+			r. data. box. width  = rect[2];
+			r. data. box. height = rect[3];
+		}
+		if ( r.data.box.width <= 0 || r.data.box.height <= 0 )
+			r. type = rgnEmpty;
 	}
 	if ( !apc_region_create( self, &r))
 		croak("Cannot create region");
