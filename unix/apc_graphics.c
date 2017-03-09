@@ -1455,88 +1455,8 @@ apc_gp_set_palette( Handle self)
 	return prima_palette_replace( self, false);
 }
 
-Region
-region_create( Handle mask)
-{
-	unsigned long w, h, x, y, size = 256, count = 0;
-	Region    rgn = None;
-	Byte       * idata;
-	XRectangle * current, * rdata;
-	Bool      set = 0;
-
-	if ( !mask)
-		return None;
-
-	w = PImage( mask)-> w;
-	h = PImage( mask)-> h;
-	/*
-		XUnionRegion is actually SLOWER than the image scan - 
-		- uncomment if this is wrong
-	if ( X( mask)-> cached_region) {
-		rgn = XCreateRegion();
-		XUnionRegion( rgn, X( mask)-> cached_region, rgn);
-		return rgn;
-	}
-	*/
-
-	idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
-
-	rdata = ( XRectangle*) malloc( size * sizeof( XRectangle));
-	if ( !rdata) return None;
-
-	count = 0;
-	current = rdata;
-	current--;
-
-	for ( y = 0; y < h; y++) {
-		for ( x = 0; x < w; x++) {
-			if ( idata[ x >> 3] == 0) {
-				x += 7;
-				continue;
-			}
-			if ( idata[ x >> 3] & ( 1 << ( 7 - ( x & 7)))) {
-				if ( set && current-> y == y && current-> x + current-> width == x)
-					current-> width++;
-				else {
-					set = 1;
-					if ( count >= size) {
-						void * xrdata = realloc( rdata, ( size *= 3) * sizeof( XRectangle));
-						if ( !xrdata) {
-							free( rdata); 
-							return None;
-						}
-						rdata = xrdata;
-						current = rdata;
-						current += count - 1;
-					}
-					count++;
-					current++;
-					current-> x   = x;
-					current-> y   = y;
-					current-> width  = 1;
-					current-> height = 1;
-				}
-			}
-		}
-		idata -= PImage( mask)-> lineSize;
-	}
-
-	if ( set) {
-		rgn = XCreateRegion();
-		for ( x = 0, current = rdata; x < count; x++, current++) 
-			XUnionRectWithRegion( current, rgn, rgn);
-		/*
-		X( mask)-> cached_region = XCreateRegion();
-		XUnionRegion( X( mask)-> cached_region, rgn, X( mask)-> cached_region);
-		*/
-	}
-	free( rdata);
-
-	return rgn;
-}
-
 Bool
-apc_gp_set_region( Handle self, Handle mask)
+apc_gp_set_region_old( Handle self, Handle mask)
 {
 	DEFXX;
 	Region region;
@@ -1559,9 +1479,63 @@ apc_gp_set_region( Handle self, Handle mask)
 	XX-> clip_rect. height = XX-> clip_mask_extent. y = img-> h;
 	XX-> clip_rect. x = 0;
 	XX-> clip_rect. y = REVERT(img-> h);
-	if ( !( region = region_create( mask))) goto EMPTY;
+	if ( !( region = prima_region_create( mask))) goto EMPTY;
 	/* offset region if drawable is buffered */
 	XOffsetRegion( region, XX-> btransform. x, XX-> size.y - img-> h - XX-> btransform. y);
+	/* otherwise ( and only otherwise ), and if there's a
+		X11 clipping, intersect the region with it. X11 clipping
+		must not mix with the buffer clipping */
+	if (( !XX-> udrawable || XX-> udrawable == XX-> gdrawable) && 
+		XX-> paint_region) 
+		XIntersectRegion( region, XX-> paint_region, region);
+	XSetRegion( DISP, XX-> gc, region);
+	if ( XX-> flags. kill_current_region) 
+		XDestroyRegion( XX-> current_region);
+	XX-> flags. kill_current_region = 1;
+	XX-> current_region = region;
+	XX-> flags. xft_clip = 0;
+#ifdef USE_XFT
+	if ( XX-> xft_drawable) prima_xft_update_region( self);
+#endif
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	if ( XX-> argb_picture ) XRenderSetPictureClipRegion(DISP, XX->argb_picture, region);
+#endif
+	return true;
+}
+
+Bool
+apc_gp_set_region( Handle self, Handle mask)
+{
+	DEFXX;
+	Region region;
+	PImage img;
+	PRegionSysData r;
+
+	if ( PObject( self)-> options. optInDrawInfo) return false;
+	if ( !XF_IN_PAINT(XX)) return false;
+
+	if (mask == nilHandle) {
+		Rect r;
+	EMPTY:
+		r. left   = 0;
+		r. bottom = 0;
+		r. right  = XX-> size. x;
+		r. top    = XX-> size. y;
+		return apc_gp_set_clip_rect( self, r);
+	}
+
+	r = GET_REGION(mask);
+
+	XClipBox( r-> region, &XX-> clip_rect);
+	XX-> clip_rect. y = REVERT( r-> top - XX-> clip_rect. y);
+	XX-> clip_mask_extent. x = XX-> clip_rect. width;
+	XX-> clip_mask_extent. y = XX-> clip_rect. height;
+	if ( XX-> clip_rect. width == 0 || XX-> clip_rect. height == 0) goto EMPTY;
+
+	region = XCreateRegion();
+	XUnionRegion( region, r-> region, region);
+	/* offset region if drawable is buffered */
+	XOffsetRegion( region, XX-> btransform. x, XX-> size.y - r-> top - XX-> btransform. y);
 	/* otherwise ( and only otherwise ), and if there's a
 		X11 clipping, intersect the region with it. X11 clipping
 		must not mix with the buffer clipping */

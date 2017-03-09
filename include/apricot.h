@@ -1480,6 +1480,9 @@ prima_array_tie( SV * array, size_t size_of_entry, char * letter);
 extern Bool
 prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter);
 
+extern Bool
+prima_read_point( SV *rv_av, int * pt, int number, char * error);
+
 /* OS types */
 #define APC(const_name) CONSTANT(apc,const_name)
 START_TABLE(apc,UV)
@@ -3197,47 +3200,26 @@ typedef struct _TextWrapRec {
 
 /* regions */
 
-#define rgnEmpty    0
-#define rgnRects    1
-#define rgnEllipse  2
-#define rgnPolyline 3
-#define rgnImage    4
+#define rgnEmpty     0
+#define rgnRectangle 1
+#define rgnEllipse   2
+#define rgnPolyline  3
+#define rgnImage     4
 
 typedef struct {
-	int type;
-} EmptyRegionRec;
-
-typedef struct {
-	int type;
-	int n_rects;
-	Rect * rects;
-} RectRegionRec;
-
-typedef struct {
-	int type;
-	int dx;
-	int dy;
-} EllipticRegionRec;
-
-typedef struct {
-	int type;
 	int n_points;
 	Bool winding;
-	Point * points;
+	Point* points;
 } PolylineRegionRec;
 
 typedef struct {
 	int type;
-	Handle image;
-} ImageRegionRec;
-
-typedef union {
-	int type;
-	EmptyRegionRec empty;
-	RectRegionRec rects;
-	EllipticRegionRec elliptic;
-	PolylineRegionRec polyline;
-	ImageRegionRec image;
+	union {
+		Rect2 rectangle;
+		Point ellipse;
+		PolylineRegionRec polyline;
+		Handle image;
+	} data;
 } RegionRec, *PRegionRec;
 
 #define RGNOP(const_name) CONSTANT(rgnop,const_name)

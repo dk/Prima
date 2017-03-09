@@ -1261,6 +1261,7 @@ register_constants( void)
 	register_ps_constants();
 	register_scr_constants();
 	register_dbt_constants();
+	register_rgnop_constants();
 }
 
 XS( Object_alive_FROMPERL);
@@ -1930,6 +1931,34 @@ prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter)
 
 	return true;
 }
+
+Bool
+prima_read_point( SV *rv_av, int * pt, int number, char * error)
+{
+	SV ** holder;
+	int i;
+	AV *av;
+	Bool result = true;
+
+	if ( !rv_av || !SvROK( rv_av) || ( SvTYPE( SvRV( rv_av)) != SVt_PVAV)) {
+		result = false;
+		if ( error) croak( "%s", error);
+	} else {
+		av = (AV*)SvRV(rv_av);
+		for ( i = 0; i < number; i++) {
+			holder = av_fetch( av, i, 0);
+			if ( holder)
+				pt[i] = SvIV( *holder);
+			else {
+				pt[i] = 0;
+				result = false;
+				if ( error) croak( "%s", error);
+			}
+		}
+	}
+	return result;
+}
+
 
 #ifdef __cplusplus
 }

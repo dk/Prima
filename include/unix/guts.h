@@ -294,6 +294,12 @@ typedef struct _timer_sys_data
 	struct timeval when;
 } TimerSysData, *PTimerSysData;
 
+typedef struct 
+{
+	Region region;
+	int top;
+} RegionSysData, *PRegionSysData;
+
 struct  _drawable_sys_data;
 
 #define VIRGIN_GC_MASK  (       GCBackground    \
@@ -922,7 +928,7 @@ typedef union _unix_sys_data
 	DrawableSysData              drawable;
 	MenuSysData                  menu;
 	TimerSysData                 timer;
-	Region                       region;
+	RegionSysData                region;
 } UnixSysData, *PUnixSysData;
 
 #define DISP		(pguts-> display)
@@ -939,6 +945,7 @@ typedef union _unix_sys_data
 #define XX		selfxx
 #define WHEEL_DELTA	120
 #define GET_RGBA_DESCRIPTION X(self)->flags.layered ? &guts. argb_bits : &guts. screen_bits
+#define GET_REGION(obj) (&((PUnixSysData)(PComponent((obj))-> sysData))->region)
 
 typedef U8 ColorComponent;
 
@@ -1331,3 +1338,6 @@ prima_flush_events( Display * disp, XEvent * ev, Handle self);
 
 extern const char *
 prima_font_debug_style(int style);
+
+extern Region
+prima_region_create( Handle mask);

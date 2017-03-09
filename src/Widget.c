@@ -2046,33 +2046,6 @@ single_color_notify ( Handle self, Handle child, void * color)
 	return false;
 }
 
-Bool
-prima_read_point( SV *rv_av, int * pt, int number, char * error)
-{
-	SV ** holder;
-	int i;
-	AV *av;
-	Bool result = true;
-
-	if ( !rv_av || !SvROK( rv_av) || ( SvTYPE( SvRV( rv_av)) != SVt_PVAV)) {
-		result = false;
-		if ( error) croak( "%s", error);
-	} else {
-		av = (AV*)SvRV(rv_av);
-		for ( i = 0; i < number; i++) {
-			holder = av_fetch( av, i, 0);
-			if ( holder)
-				pt[i] = SvIV( *holder);
-			else {
-				pt[i] = 0;
-				result = false;
-				if ( error) croak( "%s", error);
-			}
-		}
-	}
-	return result;
-}
-
 static Bool
 auto_enable_children( Handle self, Handle child, void * enable)
 {

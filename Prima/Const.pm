@@ -105,6 +105,8 @@ package
     scr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# scroll() results
 package 
     dbt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# DeviceBitmap types
+package 
+    rgnop; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# Region operations
 
 1;
 

@@ -1,6 +1,7 @@
 #include "apricot.h"
 #include "Drawable.h"
 #include "Image.h"
+#include "Region.h"
 #include <Drawable.inc>
 
 #ifdef __cplusplus
@@ -1372,10 +1373,16 @@ Drawable_region( Handle self, Bool set, Handle mask)
 	if ( var-> stage > csFrozen) return nilHandle;
 
 	if ( set) {
-		if ( mask && !kind_of( mask, CImage)) {
+		if ( mask && kind_of( mask, CRegion)) {
+			apc_gp_set_region( self, mask);
+			return nilHandle;
+		}
+
+		if ( mask && !kind_of( mask, CRegion)) {
 			warn("Illegal object reference passed to Drawable::region");
 			return nilHandle;
 		}
+			return nilHandle;
 
 		if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
 			Handle i = CImage( mask)-> dup( mask);

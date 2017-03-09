@@ -19,6 +19,16 @@ Region_init( Handle self, HV * profile)
 	r.type = rgnEmpty;
 
 	inherited-> init( self, profile);
+
+	if ( pexist( rect )) {
+		int rect[4];
+		prima_read_point( pget_sv( rect), rect, 4, "Array panic on 'rect'");
+		r. data. rectangle. x      = rect[0];
+		r. data. rectangle. y      = rect[1];
+		r. data. rectangle. width  = rect[2];
+		r. data. rectangle. height = rect[3];
+		r. type = rgnRectangle;
+	}
 	if ( !apc_region_create( self, &r))
 		croak("Cannot create region");
 	CORE_INIT_TRANSIENT(Region);
