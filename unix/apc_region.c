@@ -1,5 +1,5 @@
 #include "unix/guts.h"
-#include "Image.h"
+#include "Icon.h"
 
 #define REGION GET_REGION(self)->region
 #define HEIGHT GET_REGION(self)->height
@@ -361,7 +361,6 @@ apc_gp_set_region( Handle self, Handle rgn)
 		XX-> paint_region) 
 		XIntersectRegion( region, XX-> paint_region, region);
 	XSetRegion( DISP, XX-> gc, region);
-	printf("setrgn %x\n", XX->gc);
 	if ( XX-> flags. kill_current_region) 
 		XDestroyRegion( XX-> current_region);
 	XX-> flags. kill_current_region = 1;
@@ -380,6 +379,9 @@ Bool
 apc_gp_get_region( Handle self, Handle rgn)
 {
 	DEFXX;
+	Bool bitmap, layered;
+	GC gc;
+	XGCValues gcv;
 
 	if ( !XF_IN_PAINT(XX)) return false;
 
@@ -389,20 +391,50 @@ apc_gp_get_region( Handle self, Handle rgn)
 	if ( XX-> clip_mask_extent. x == 0 || XX-> clip_mask_extent. y == 0)
 		return false;
 
-	XSetClipOrigin( DISP, XX-> gc, 0, 0);
+	bitmap  = XT_IS_BITMAP(XX) ? true : false;
+	layered = XF_LAYERED(XX) ? true : false;
 
-	CImage( rgn)-> create_empty( rgn, XX-> clip_mask_extent. x, XX-> clip_mask_extent. y, imBW | imGrayScale);
-	CImage( rgn)-> begin_paint( rgn);
-	XCHECKPOINT;
-	XSetForeground( DISP, XX-> gc, 1);
-	XFillRectangle( DISP, X(rgn)-> gdrawable, XX-> gc, 0, 0, XX-> clip_mask_extent.x + 1, XX-> clip_mask_extent.y + 1);
-	XCHECKPOINT;
-	XX-> flags. brush_fore = 0;
-	CImage( rgn)-> end_paint( rgn);
+	CIcon( rgn)-> create_empty_icon(
+		rgn, XX-> clip_mask_extent. x, XX-> clip_mask_extent. y, 
+		layered ? 24 : (bitmap ? imBW : guts. qdepth),
+		layered ? 8 : 1
+	);
+	CIcon( rgn)-> begin_paint( rgn);
 	XCHECKPOINT;
 
-	XSetClipOrigin( DISP, XX-> gc, XX-> btransform.x, 
-		- XX-> btransform. y + XX-> size. y - XX-> clip_mask_extent.y);
+	gcv. graphics_exposures = false;
+	gcv. fill_style = FillSolid;
+	gcv. foreground = (layered || bitmap) ? 0xffffffff : guts.monochromeMap[1];
+	gcv. clip_y_origin = XX-> clip_mask_extent. y - XX-> size. y;
+	gc = XCreateGC( DISP, XX->gdrawable, GCGraphicsExposures|GCFillStyle|GCForeground|GCClipYOrigin, &gcv);
+	XCopyGC( DISP, XX->gc, GCClipMask, gc);
+	XFillRectangle( DISP, X(rgn)-> gdrawable, gc, 0, 0, XX-> clip_mask_extent.x, XX-> clip_mask_extent.y);
+	XFreeGC( DISP, gc);
+	XCHECKPOINT;
+
+	CIcon( rgn)-> end_paint( rgn);
+	if ( !bitmap || layered) CIcon( rgn)-> set_type( rgn, imBW);
+	XCHECKPOINT;
+
 	return true;
 }
 
+Box
+apc_gp_get_region_box( Handle self)
+{
+	DEFXX;
+	Box box = {0,0,0,0};
+
+	if ( !XF_IN_PAINT(XX)) return box;
+	if ( XX-> clip_mask_extent. x == 0 || XX-> clip_mask_extent. y == 0)
+		return box;
+	
+	box. x      = XX-> clip_rect. x;
+	box. y      = REVERT( XX-> clip_mask_extent. y + XX-> clip_rect. y);
+//	printf("%d %d %d\n", XX->size.x, XX->clip_mask_extent.x, XX->clip_rect.x);
+//	printf("%d %d %d\n", XX->size.y, XX->clip_mask_extent.y, XX->clip_rect.y);
+	box. width  = XX-> clip_mask_extent. x;
+	box. height = XX-> clip_mask_extent. y;
+
+	return box;
+}

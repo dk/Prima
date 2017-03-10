@@ -5,7 +5,7 @@ use Test::More;
 use Prima::Test;
 use Prima::Application;
 
-my $dbm = Prima::DeviceBitmap->new( size => [5, 5], monochrome => 1 );
+my $dbm = Prima::DeviceBitmap->new( size => [5, 5], monochrome => 1);
 my $r;
 
 sub try($$)
@@ -92,9 +92,15 @@ my $image = Prima::Image->new(
 $r = Prima::Region->new(image => $image);
 is_deeply([$r->box], [0,0,3,2], 'image');
 
-#$dbm->region($image);
-#$dbm->region->save('1.bmp');
-#$r2 = Prima::Region->new(image => $dbm->region);
-#ok($r->equals($r2), 'set/get region');
+$dbm->region($image);
+@box = $dbm->get_region_box;
+is_deeply(\@box, [0,0,3,2], 'region box');
+
+$r2 = Prima::Region->new(image => $dbm->region);
+is_deeply([$r2->box], [0,0,3,2], 'image reused');
+
+#$dbm->region( undef );
+#@box = $dbm->get_region_box;
+#is_deeply(\@box, [0,0,0,0], 'empty region box');
 
 done_testing;

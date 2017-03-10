@@ -57,6 +57,14 @@ apc_region_get_box( Handle self)
 	return (Box){0,0,0,0};
 }
 
+Box
+apc_gp_get_region_box( Handle self)
+{
+	DEFXX;
+	Box box = {0,0,0,0};
+	return box;
+}
+
 #ifdef __cplusplus
 }
 #endif

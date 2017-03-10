@@ -1,6 +1,6 @@
 #include "apricot.h"
 #include "Drawable.h"
-#include "Image.h"
+#include "Icon.h"
 #include "Region.h"
 #include <Drawable.inc>
 
@@ -1410,7 +1410,7 @@ Drawable_region( Handle self, Bool set, Handle mask)
 
 	} else if ( apc_gp_get_region( self, nilHandle)) {
 		HV * profile = newHV();
-		Handle i = Object_create( "Prima::Image", profile);
+		Handle i = Object_create( "Prima::Icon", profile);
 		sv_free(( SV *) profile);
 		apc_gp_get_region( self, i);
 		--SvREFCNT( SvRV((( PAnyObject) i)-> mate));

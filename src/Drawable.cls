@@ -54,6 +54,7 @@ object Prima::Drawable ( Prima::Component)
 	method Color get_nearest_color( Color color);
 	method int   get_paint_state();
 	method SV *  get_physical_palette();
+	method Box   get_region_box() => apc_gp_get_region_box;
 	method int   get_text_width( SV * text, Bool addOverhang = 0);
 	method SV *  get_text_box( SV * text);
 	static SV *  render_spline( SV * obj, SV * points, HV * profile);
