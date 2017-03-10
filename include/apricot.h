@@ -3195,20 +3195,20 @@ typedef struct _TextWrapRec {
 #define rgnEmpty     0
 #define rgnRectangle 1
 #define rgnEllipse   2
-#define rgnPolyline  3
+#define rgnPolygon   3
 #define rgnImage     4
 
 typedef struct {
 	int n_points;
 	Bool winding;
 	Point* points;
-} PolylineRegionRec;
+} PolygonRegionRec;
 
 typedef struct {
 	int type;
 	union {
 		Box box;
-		PolylineRegionRec polyline;
+		PolygonRegionRec polygon;
 		Handle image;
 	} data;
 } RegionRec, *PRegionRec;

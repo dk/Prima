@@ -437,7 +437,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 	return ok;
 }
 
-static void *
+void *
 read_array( SV * points, char * procName, Bool integer, int div, int min, int max, int * n_points )
 {
 	AV * av;
@@ -452,19 +452,19 @@ read_array( SV * points, char * procName, Bool integer, int div, int min, int ma
 	av = ( AV *) SvRV( points);
 	count = av_len( av) + 1;
 	if ( min == max && count != min * div ) {
-		warn("Drawable::%s: array must contain %d elements", procName, min * div);
+		warn("%s: array must contain %d elements", procName, min * div);
 		return NULL;
 	}
 	if ( count < min * div ) {
-		warn("Drawable::%s: array must contain at least %d elements", procName, min * div);
+		warn("%s: array must contain at least %d elements", procName, min * div);
 		return NULL;
 	}
 	if ( max >= 0 && count > max * div ) {
-		warn("Drawable::%s: array must contain maximum %d elements", procName, max * div);
+		warn("%s: array must contain maximum %d elements", procName, max * div);
 		return NULL;
 	}
 	if ( count % div != 0 ) {
-		warn("Drawable::%s: number of elements in an array must be a multiple of %d", procName, div);
+		warn("%s: number of elements in an array must be a multiple of %d", procName, div);
 		return NULL;
 	}
 	if ( n_points) 
@@ -496,7 +496,7 @@ read_array( SV * points, char * procName, Bool integer, int div, int min, int ma
 		SV** psv = av_fetch( av, i, 0);
 		if ( psv == NULL) {
 			free( p);
-			warn("Array panic on item %d on Drawable::%s", i, procName);
+			warn("Array panic on item %d on %s", i, procName);
 			return NULL;
 		}
 		if ( integer )
@@ -545,8 +545,6 @@ Drawable_bars( Handle self, SV * rects)
 	}
 	return ret;
 }
-
-#define procName "Drawable::render_spline"
 
 /* 
 
@@ -680,7 +678,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	} else 
 		precision = 24;
 	
-	p = (NPoint*) read_array( points, procName, false, 2, degree + 1, -1, &n_points);
+	p = (NPoint*) read_array( points, "Drawable::render_spline", false, 2, degree + 1, -1, &n_points);
 	if ( !p) goto EXIT;
 
 	/* closed curve will need at least one extra point and unclamped default knot set */
@@ -772,7 +770,6 @@ EXIT:
 		return newRV_noinc(( SV *) newAV());
 	}
 }
-#undef procName
 
 int
 Drawable_get_text_width( Handle self, SV * text, Bool addOverhang)

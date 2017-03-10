@@ -346,6 +346,14 @@ package Prima::Region;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
 
+sub origin { (shift->box)[0,1] }
+sub size   { (shift->box)[2,3] }
+sub rect
+{
+	my @box = shift->box;
+	return @box[0,1], $box[0] + $box[2], $box[1] + $box[3];
+}
+
 package Prima::Drawable;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);

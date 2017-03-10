@@ -87,6 +87,7 @@ prima_region_create( Handle mask)
 static Bool
 rgn_empty(Handle self)
 {
+	REGION = XCreateRegion();
 	return true;
 }
 
@@ -94,6 +95,7 @@ static Bool
 rgn_rect(Handle self, Box r)
 {
 	XRectangle xr;
+	REGION = XCreateRegion();
 	xr. x = r. x;
 	xr. y = 0;
 	xr. width  = r. width;
@@ -120,6 +122,7 @@ rgn_ellipse(Handle self, Box ellipse)
 	int ay = h % 2 - 1;
 	int ax = w % 2 - 1;
 
+	REGION = XCreateRegion();
 	HEIGHT = ellipse. y + sy + 1;
 	while ( dx < dy ) {
 		XRectangle xr;
@@ -169,12 +172,34 @@ rgn_ellipse(Handle self, Box ellipse)
 		xr. height = 1;
 		XUnionRectWithRegion( &xr, REGION, REGION);
 	}
+
 	return true;
 }
 
 static Bool
-rgn_polyline(Handle self, PolylineRegionRec * r)
+rgn_polygon(Handle self, PolygonRegionRec * r)
 {
+	int i, max;
+	XPoint * xp;
+
+	if ( !( xp = malloc( sizeof(XPoint) * r->n_points ))) {
+		warn("Not enough memory");
+		return false;
+	}
+
+	for ( i = 0, max = 0; i < r->n_points; i++) {
+		if ( max < r->points[i].y) 
+			max = r->points[i].y;
+	}
+	for ( i = 0; i < r->n_points; i++) {
+		xp[i].x = r->points[i].x;
+		xp[i].y = max - r->points[i].y;
+	}
+	
+	HEIGHT = max;
+	REGION = XPolygonRegion( xp, r->n_points, r-> winding ? WindingRule : EvenOddRule );
+
+	free( xp );
 	return true;
 }
 
@@ -187,36 +212,20 @@ rgn_image(Handle self, Handle image)
 Bool
 apc_region_create( Handle self, PRegionRec rec)
 {
-	Bool ok;
-	
-	REGION = XCreateRegion();
-
 	switch( rec-> type ) {
 	case rgnEmpty:
-		ok = rgn_empty(self);
-		break;
+		return rgn_empty(self);
 	case rgnRectangle:
-		ok = rgn_rect(self, rec->data.box);
-		break;
+		return rgn_rect(self, rec->data.box);
 	case rgnEllipse:
-		ok = rgn_ellipse(self, rec->data.box);
-		break;
-	case rgnPolyline:
-		ok = rgn_polyline(self, &rec->data.polyline);
-		break;
+		return rgn_ellipse(self, rec->data.box);
+	case rgnPolygon:
+		return rgn_polygon(self, &rec->data.polygon);
 	case rgnImage:
-		ok = rgn_image(self, rec->data.image);
-		break;
+		return rgn_image(self, rec->data.image);
 	default:
-		ok = false;
+		return false;
 	}
-	
-	if ( !ok ) {
-		XDestroyRegion(REGION);
-		REGION = NULL;
-	}
-
-	return true;
 }
 
 Bool
@@ -232,7 +241,8 @@ apc_region_destroy( Handle self)
 Bool
 apc_region_offset( Handle self, int dx, int dy)
 {
-	return false;
+	XOffsetRegion(REGION, dx, -dy);
+	return true;
 }
 
 Bool

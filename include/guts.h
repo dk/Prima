@@ -50,6 +50,7 @@ extern Bool font_notify ( Handle self, Handle child, void * font);
 extern Bool find_accel( Handle self, Handle item, int * key);
 extern Bool single_color_notify ( Handle self, Handle child, void * color);
 extern Bool kill_all( Handle self, Handle child, void * dummy);
+extern void *read_array( SV * points, char * procName, Bool integer, int div, int min, int max, int * n_points );
 
 #ifdef __cplusplus
 }

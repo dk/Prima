@@ -156,7 +156,7 @@ sub on_paint
 		my $d2	 = 0.2;
 		my $dx	 = $d2 / 4;
 
-       	$canvas->fillWinding(1);
+		$canvas->fillWinding(1);
 		$canvas->translate($x, $y);
 		$canvas-> new_path->
 			scale($scale_factor * 22)->

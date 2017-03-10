@@ -70,4 +70,14 @@ is_deeply([$r->box], [1,1,5,5], 'ellipse 5x5');
 $r = Prima::Region->new( ellipse => [ 3, 3, 6, 6]);
 is_deeply([$r->box], [1,1,6,6], 'ellipse 6x6');
 
+my @star = (0, 0, 2, 5, 5, 0, 0, 3, 5, 3);
+$r = Prima::Region->new(polygon => \@star, winding => 0);
+my @box = $r->box;
+ok($box[0] < $box[2] && $box[1] < $box[3], 'star 1');
+
+$r2 = Prima::Region->new(polygon => \@star, winding => 1);
+@box = $r->box;
+ok($box[0] < $box[2] && $box[1] < $box[3], 'star 2');
+ok( !$r-> equals($r2), 'poly winding');
+
 done_testing;
