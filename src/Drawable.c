@@ -1364,6 +1364,23 @@ Drawable_pixel( Handle self, Bool set, int x, int y, SV * color)
 	return nilSV;
 }
 
+static void
+set_image_region(Handle self, Handle mask)
+{
+	if ( mask ) {
+		Handle region;
+		HV * profile = newHV();
+
+		pset_H( image, mask );
+		region = Object_create("Prima::Region", profile);
+		sv_free(( SV *) profile);
+
+		apc_gp_set_region(self, region);
+		Object_destroy(region);
+	} else
+		apc_gp_set_region(self, nilHandle);
+}
+
 Handle
 Drawable_region( Handle self, Bool set, Handle mask)
 {
@@ -1375,22 +1392,21 @@ Drawable_region( Handle self, Bool set, Handle mask)
 			return nilHandle;
 		}
 
-		if ( mask && !kind_of( mask, CRegion)) {
+		if ( mask && !kind_of( mask, CImage)) {
 			warn("Illegal object reference passed to Drawable::region");
 			return nilHandle;
 		}
-			return nilHandle;
 
 		if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
 			Handle i = CImage( mask)-> dup( mask);
 			++SvREFCNT( SvRV( PImage( i)-> mate));
 			CImage( i)-> set_conversion( i, ictNone);
-			CImage( i)-> set_type( i, imBW);
-			apc_gp_set_region( self, i);
+			CImage( i)-> set_type( i, imBW|imGrayScale);
+			set_image_region( self, i);
 			--SvREFCNT( SvRV( PImage( i)-> mate));
 			Object_destroy( i);
 		} else
-			apc_gp_set_region( self, mask);
+			set_image_region( self, mask);
 
 	} else if ( apc_gp_get_region( self, nilHandle)) {
 		HV * profile = newHV();

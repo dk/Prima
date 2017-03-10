@@ -2244,6 +2244,7 @@ apc_image_begin_paint( Handle self)
 	if (img-> w == 0 || img-> h == 0) return false;
 
 	XX-> gdrawable = XCreatePixmap( DISP, guts. root, img-> w, img-> h, depth);
+
 	XX-> type.pixmap = !bitmap;
 	XX-> type.bitmap = !!bitmap;
 	XX-> flags.layered = layered;

@@ -80,4 +80,21 @@ $r2 = Prima::Region->new(polygon => \@star, winding => 1);
 ok($box[0] < $box[2] && $box[1] < $box[3], 'star 2');
 ok( !$r-> equals($r2), 'poly winding');
 
+my $image = Prima::Image->new(
+	size => [4,4],
+	type => im::Byte,
+	data => 
+		"\xff\xff\xff\x00". # y=0
+		"\xff\xff\xff\x00".
+		"\x00\x00\x00\x00".
+		"\x00\x00\x00\x00"  # y=3
+);
+$r = Prima::Region->new(image => $image);
+is_deeply([$r->box], [0,0,3,2], 'image');
+
+#$dbm->region($image);
+#$dbm->region->save('1.bmp');
+#$r2 = Prima::Region->new(image => $dbm->region);
+#ok($r->equals($r2), 'set/get region');
+
 done_testing;

@@ -31,7 +31,10 @@ prima_region_create( Handle mask)
 	idata  = PImage( mask)-> data + PImage( mask)-> dataSize - PImage( mask)-> lineSize;
 
 	rdata = ( XRectangle*) malloc( size * sizeof( XRectangle));
-	if ( !rdata) return None;
+	if ( !rdata) {
+		warn("Not enough memory");
+		return None;
+	}
 
 	count = 0;
 	current = rdata;
@@ -51,6 +54,7 @@ prima_region_create( Handle mask)
 					if ( count >= size) {
 						void * xrdata = realloc( rdata, ( size *= 3) * sizeof( XRectangle));
 						if ( !xrdata) {
+							warn("Not enough memory");
 							free( rdata); 
 							return None;
 						}
@@ -206,6 +210,12 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 static Bool
 rgn_image(Handle self, Handle image)
 {
+	REGION = prima_region_create(image);
+
+	if ( !REGION )
+		REGION = XCreateRegion();
+	else
+		HEIGHT = PImage(image)->h;
 	return true;
 }
 
@@ -351,6 +361,7 @@ apc_gp_set_region( Handle self, Handle rgn)
 		XX-> paint_region) 
 		XIntersectRegion( region, XX-> paint_region, region);
 	XSetRegion( DISP, XX-> gc, region);
+	printf("setrgn %x\n", XX->gc);
 	if ( XX-> flags. kill_current_region) 
 		XDestroyRegion( XX-> current_region);
 	XX-> flags. kill_current_region = 1;
@@ -369,7 +380,6 @@ Bool
 apc_gp_get_region( Handle self, Handle rgn)
 {
 	DEFXX;
-	int depth;
 
 	if ( !XF_IN_PAINT(XX)) return false;
 
@@ -381,17 +391,15 @@ apc_gp_get_region( Handle self, Handle rgn)
 
 	XSetClipOrigin( DISP, XX-> gc, 0, 0);
 
-	depth = XT_IS_BITMAP(XX) ? 1 : guts. qdepth;
-	CImage( rgn)-> create_empty( rgn, XX-> clip_mask_extent. x, XX-> clip_mask_extent. y, depth);
+	CImage( rgn)-> create_empty( rgn, XX-> clip_mask_extent. x, XX-> clip_mask_extent. y, imBW | imGrayScale);
 	CImage( rgn)-> begin_paint( rgn);
 	XCHECKPOINT;
-	XSetForeground( DISP, XX-> gc, ( depth == 1) ? 1 : guts. monochromeMap[1]);
+	XSetForeground( DISP, XX-> gc, 1);
 	XFillRectangle( DISP, X(rgn)-> gdrawable, XX-> gc, 0, 0, XX-> clip_mask_extent.x + 1, XX-> clip_mask_extent.y + 1);
 	XCHECKPOINT;
 	XX-> flags. brush_fore = 0;
 	CImage( rgn)-> end_paint( rgn);
 	XCHECKPOINT;
-	if ( depth != 1) CImage( rgn)-> set_type( rgn, imBW);
 
 	XSetClipOrigin( DISP, XX-> gc, XX-> btransform.x, 
 		- XX-> btransform. y + XX-> size. y - XX-> clip_mask_extent.y);

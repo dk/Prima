@@ -1,5 +1,6 @@
 #include "apricot.h"
 #include "Region.h"
+#include "Image.h"
 #include <Region.inc>
 
 #ifdef __cplusplus
@@ -17,6 +18,7 @@ Region_init( Handle self, HV * profile)
 	dPROFILE;
 	RegionRec r;
 	char *t;
+	Bool free_image = false, ok;
 
 	r.type = rgnEmpty;
 
@@ -32,10 +34,10 @@ Region_init( Handle self, HV * profile)
 		t = "ellipse";
 		r.type = rgnEllipse;
 	} else if (pexist(polygon)) {
-		t = "polygon";
 		r.type = rgnPolygon;
+	} else if (pexist(image)) {
+		r.type = rgnImage;
 	}
-	
 
 	switch (r.type) {
 	case rgnRectangle:
@@ -68,15 +70,22 @@ Region_init( Handle self, HV * profile)
 		break;
 	case rgnEmpty:
 		break;
-	default:
-		croak("Not implemented");
+	case rgnImage:
+		r. data. image = pget_H(image);
+		if ( !kind_of( r. data. image, CImage ))
+			croak("Not an image passed");
+		if (( PImage(r.data.image)->type & imBPP ) != 1 ) {
+			r.data.image = CImage(r.data.image)->dup(r.data.image);
+			CImage(r.data.image)->set_type(r.data.image, imbpp1 | imGrayScale);
+			free_image = true;
+		}
 	}
-	if ( !apc_region_create( self, &r)) {
-		if ( r. type == rgnPolygon ) free( r. data. polygon. points );
-		croak("Cannot create region");
-	}
+	ok = apc_region_create( self, &r);
 	if ( r. type == rgnPolygon ) free( r. data. polygon. points );
+	if ( free_image ) Object_destroy(r.data.image);
 	CORE_INIT_TRANSIENT(Region);
+	if (!ok)
+		croak("Cannot create region");
 }
 
 void
