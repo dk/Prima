@@ -113,6 +113,14 @@ Region_combine( Handle self, Handle other_region, int rgnop)
 	return apc_region_combine( self, other_region, rgnop );
 }
 
+SV *
+Region_get_handle( Handle self)
+{
+	char buf[ 256];
+	snprintf( buf, 256, "0x%08lx", apc_region_get_handle( self));
+	return newSVpv( buf, 0);
+}
+
 #ifdef __cplusplus
 }
 #endif

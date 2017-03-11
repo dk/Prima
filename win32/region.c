@@ -65,6 +65,12 @@ apc_gp_get_region_box( Handle self)
 	return box;
 }
 
+ApiHandle
+apc_region_get_handle( Handle self)
+{
+	return NULL;
+}
+
 #ifdef __cplusplus
 }
 #endif

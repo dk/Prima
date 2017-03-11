@@ -3252,6 +3252,9 @@ apc_region_equals( Handle self, Handle other_region);
 extern Box
 apc_region_get_box( Handle self);
 
+extern ApiHandle
+apc_region_get_handle( Handle self);
+
 /* gp functions */
 extern Bool
 apc_gp_init( Handle self);

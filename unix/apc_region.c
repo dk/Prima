@@ -248,6 +248,12 @@ apc_region_destroy( Handle self)
 	return true;
 }
 
+ApiHandle
+apc_region_get_handle( Handle self)
+{
+	return (ApiHandle) REGION;
+}
+
 Bool
 apc_region_offset( Handle self, int dx, int dy)
 {
@@ -522,3 +528,4 @@ apc_gp_get_region_box( Handle self)
 
 	return box;
 }
+
