@@ -86,21 +86,37 @@ my $image = Prima::Image->new(
 	data => 
 		"\xff\xff\xff\x00". # y=0
 		"\xff\xff\xff\x00".
-		"\x00\x00\x00\x00".
+		"\xff\xff\xff\x00".
 		"\x00\x00\x00\x00"  # y=3
 );
 $r = Prima::Region->new(image => $image);
-is_deeply([$r->box], [0,0,3,2], 'image');
+is_deeply([$r->box], [0,0,3,3], 'image');
 
 $dbm->region($image);
 @box = $dbm->get_region_box;
-is_deeply(\@box, [0,0,3,2], 'region box');
+is_deeply(\@box, [0,0,3,3], 'region box');
+@box = $dbm->clipRect;
+is_deeply(\@box, [0,0,2,2], 'region clip rect');
+
+my $dbm2 = Prima::DeviceBitmap->new( size => [5,5], type => dbt::Pixmap );
+$dbm2->region($image);
+@box = $dbm->get_region_box;
+is_deeply(\@box, [0,0,3,3], 'region box on pixmap');
+
+if ( $::application->get_system_value(sv::LayeredWidgets)) {
+	$dbm2 = Prima::DeviceBitmap->new( size => [5,5], type => dbt::Layered );
+	$dbm2->region($image);
+	@box = $dbm->get_region_box;
+	is_deeply(\@box, [0,0,3,3], 'region box on layered');
+}
 
 $r2 = Prima::Region->new(image => $dbm->region);
-is_deeply([$r2->box], [0,0,3,2], 'image reused');
+is_deeply([$r2->box], [0,0,3,3], 'image reused');
 
-#$dbm->region( undef );
-#@box = $dbm->get_region_box;
-#is_deeply(\@box, [0,0,0,0], 'empty region box');
+$dbm->region( undef );
+@box = $dbm->get_region_box;
+is_deeply(\@box, [0,0,5,5], 'empty region box');
+@box = $dbm->clipRect;
+is_deeply(\@box, [0,0,4,4], 'empty clip rect');
 
 done_testing;

@@ -1756,49 +1756,6 @@ apc_gp_get_color( Handle self)
 	return ( XF_IN_PAINT(XX)) ? XX-> fore. color : prima_map_color(XX-> saved_fore, nil);
 }
 
-/* returns rect in X coordinates BUT without menuHeight deviation */
-void
-prima_gp_get_clip_rect( Handle self, XRectangle *cr, Bool for_internal_paints)
-{
-	DEFXX;
-	XRectangle r;
-
-	cr-> x = 0;
-	cr-> y = 0;
-	cr-> width = XX-> size.x;
-	cr-> height = XX-> size.y;
-	if ( XF_IN_PAINT(XX) && XX-> paint_region) {
-		XClipBox( XX-> paint_region, &r);
-		prima_rect_intersect( cr, &r);
-	}
-	if ( XX-> clip_rect. x != 0
-		|| XX-> clip_rect. y != 0
-		|| XX-> clip_rect. width != XX-> size.x
-		|| XX-> clip_rect. height != XX-> size.y) {
-		prima_rect_intersect( cr, &XX-> clip_rect);
-	}
-
-	if ( for_internal_paints) {
-		cr-> x += XX-> btransform. x;
-		cr-> y -= XX-> btransform. y;
-	}
-}
-
-Rect
-apc_gp_get_clip_rect( Handle self)
-{
-	DEFXX;
-	XRectangle cr;
-	Rect r;
-
-	prima_gp_get_clip_rect( self, &cr, 0);
-	r. left = cr. x;
-	r. top = XX-> size. y - cr. y - 1;
-	r. bottom = r. top - cr. height + 1;
-	r. right = cr. x + cr. width - 1;
-	return r;
-}
-
 PFontABC
 prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 {
@@ -2241,47 +2198,6 @@ apc_gp_get_text_out_baseline( Handle self)
 	} else {
 		return XX-> flags. base_line ? true : false;
 	}
-}
-
-Bool
-apc_gp_set_clip_rect( Handle self, Rect clipRect)
-{
-	DEFXX;
-	Region region;
-	XRectangle r;
-
-	if ( !XF_IN_PAINT(XX))
-		return false;
-
-	SORT( clipRect. left, clipRect. right);
-	SORT( clipRect. bottom, clipRect. top);
-	r. x = clipRect. left;
-	r. y = REVERT( clipRect. top);
-	r. width = clipRect. right - clipRect. left+1;
-	r. height = clipRect. top - clipRect. bottom+1;
-	XX-> clip_rect = r;
-	XX-> clip_mask_extent. x = r. width;
-	XX-> clip_mask_extent. y = r. height;
-	region = XCreateRegion();
-	XUnionRectWithRegion( &r, region, region);
-	if ( XX-> paint_region)
-		XIntersectRegion( region, XX-> paint_region, region);
-	if ( XX-> btransform. x != 0 || XX-> btransform. y != 0) {
-		XOffsetRegion( region, XX-> btransform. x, -XX-> btransform. y);
-	}
-	XSetRegion( DISP, XX-> gc, region);
-	if ( XX-> flags. kill_current_region) 
-		XDestroyRegion( XX-> current_region);
-	XX-> flags. kill_current_region = 1;
-	XX-> current_region = region;
-	XX-> flags. xft_clip = 0;
-#ifdef USE_XFT
-	if ( XX-> xft_drawable) prima_xft_update_region( self);
-#endif   
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XX-> argb_picture ) XRenderSetPictureClipRegion(DISP, XX->argb_picture, region);
-#endif
-	return true;
 }
 
 Bool
