@@ -354,6 +354,12 @@ sub rect
 	return @box[0,1], $box[0] + $box[2], $box[1] + $box[3];
 }
 
+sub dup { 
+	my $r = ref($_[0])->new;
+	$r->combine($_[0], rgnop::Copy);
+	return $r;
+}
+
 package Prima::Drawable;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);

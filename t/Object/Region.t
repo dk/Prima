@@ -129,4 +129,55 @@ is_deeply(\@box, [0,0,5,5], 'empty region box');
 @box = $dbm->clipRect;
 is_deeply(\@box, [0,0,4,4], 'empty clip rect');
 
+$r2 = Prima::Region->new( box => [1, 1, 2, 2]);
+$r = $r2->dup;
+try('rgnop::Copy',
+	"     ".
+	"     ".
+	" **  ".
+	" **  ".
+	"     "
+);
+
+my $r3 = Prima::Region->new( box => [2, 2, 2, 2]);
+$r = $r2->dup;
+$r->combine( $r3, rgnop::Union);
+try('rgnop::Union',
+	"     ".
+	"  ** ".
+	" *** ".
+	" **  ".
+	"     "
+);
+
+$r = $r2->dup;
+$r->combine( $r3, rgnop::Intersect);
+try('rgnop::Intersect',
+	"     ".
+	"     ".
+	"  *  ".
+	"     ".
+	"     "
+);
+
+$r = $r2->dup;
+$r->combine( $r3, rgnop::Xor);
+try('rgnop::Xor',
+	"     ".
+	"  ** ".
+	" * * ".
+	" **  ".
+	"     "
+);
+
+$r = $r2->dup;
+$r->combine( $r3, rgnop::Diff);
+try('rgnop::Diff',
+	"     ".
+	"     ".
+	" *   ".
+	" **  ".
+	"     "
+);
+
 done_testing;

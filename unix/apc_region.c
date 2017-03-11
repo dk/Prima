@@ -92,6 +92,7 @@ static Bool
 rgn_empty(Handle self)
 {
 	REGION = XCreateRegion();
+	HEIGHT = 0;
 	return true;
 }
 
@@ -266,32 +267,46 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 {
 	PRegionSysData r2;
 	int d;
+	Bool ok = true;
 	
 	r2 = GET_REGION(other_region);
+
+	if ( rgnop == rgnopCopy ) {
+		if ( REGION ) XDestroyRegion( REGION );
+		REGION = XCreateRegion();
+		XUnionRegion( REGION, r2->region, REGION);
+		HEIGHT = r2-> height;
+		return true;
+	}
+
 	d = HEIGHT - r2-> height;
+	if ( d > 0 ) 
+		XOffsetRegion( r2-> region, 0, d);
+	else
+		XOffsetRegion( REGION, 0, -d);
 
 	switch (rgnop) {
-	case rgnopCopy:
-		break;
 	case rgnopIntersect:
+		XIntersectRegion( REGION, r2->region, REGION);
 		break;
 	case rgnopUnion:
-		if ( d > 0 ) {
-			XOffsetRegion( r2-> region, 0, d);
-			XUnionRegion( REGION, r2->region, REGION);
-			XOffsetRegion( r2-> region, 0, -d);
-		} else {
-			XOffsetRegion( REGION, 0, -d);
-			XUnionRegion( REGION, r2->region, REGION);
-			HEIGHT = r2-> height;
-		}
+		XUnionRegion( REGION, r2->region, REGION);
 		break;
 	case rgnopXor:
+		XXorRegion( REGION, r2->region, REGION);
 		break;
 	case rgnopDiff:
+		XSubtractRegion( REGION, r2->region, REGION);
 		break;
+	default:
+		ok = false;
 	}
-	return false;
+	if ( d > 0 ) 
+		XOffsetRegion( r2-> region, 0, -d);
+	else
+		HEIGHT = r2-> height;
+
+	return ok;
 }
 
 Bool
