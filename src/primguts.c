@@ -1261,6 +1261,7 @@ register_constants( void)
 	register_ps_constants();
 	register_scr_constants();
 	register_dbt_constants();
+	register_rgn_constants();
 	register_rgnop_constants();
 }
 

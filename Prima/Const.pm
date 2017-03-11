@@ -107,6 +107,8 @@ package
     dbt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# DeviceBitmap types
 package 
     rgnop; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# Region operations
+package 
+    rgn; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# Region.rect_inside() results
 
 1;
 

@@ -3228,6 +3228,17 @@ RGNOP(Diff)
 END_TABLE(rgnop,UV)
 #undef RGNOP
 
+#define RGN(const_name) CONSTANT(rgn,const_name)
+START_TABLE(rgn,UV)
+#define rgnOutside      0
+RGN(Outside)
+#define rgnInside       1
+RGN(Inside)
+#define rgnPartially    2
+RGN(Partially)
+END_TABLE(rgn,UV)
+#undef RGN
+
 extern Bool
 apc_region_create( Handle self, PRegionRec rec);
 

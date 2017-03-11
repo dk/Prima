@@ -92,6 +92,16 @@ my $image = Prima::Image->new(
 $r = Prima::Region->new(image => $image);
 is_deeply([$r->box], [0,0,3,3], 'image');
 
+ok( $r-> point_inside(0,0), "point inside 0,0");
+ok( $r-> point_inside(2,2), "point inside 2,2");
+ok( !$r-> point_inside(2,3), "point inside 2,3");
+ok( !$r-> point_inside(3,2), "point inside 3,2");
+
+is( $r-> rect_inside(0,0,0,0), rgn::Inside, "rect inside 0,0,0,0");
+is( $r-> rect_inside(1,1,2,2), rgn::Inside, "rect inside 1,1,2,2");
+is( $r-> rect_inside(2,2,3,3), rgn::Partially, "rect partially inside 2,2,3,3");
+is( $r-> rect_inside(3,3,3,3), rgn::Outside, "rect outside 3,3,3,3");
+
 $dbm->region($image);
 @box = $dbm->get_region_box;
 is_deeply(\@box, [0,0,3,3], 'region box');

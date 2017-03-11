@@ -297,13 +297,22 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 Bool
 apc_region_point_inside( Handle self, Point p)
 {
-	return false;
+	return XPointInRegion( REGION, p.x, HEIGHT - p.y - 1);
 }
 
 int
 apc_region_rect_inside( Handle self, Rect r)
 {
-	return false;
+	int res = XRectInRegion(
+		REGION,
+		r. left, HEIGHT - r. bottom - 1,
+		r. right - r.left + 1, r.top - r.bottom + 1
+	);
+	switch (res) {
+	case RectangleIn:   return rgnInside;
+	case RectanglePart: return rgnPartially;
+	default:            return rgnOutside;
+	}
 }
 
 Bool
