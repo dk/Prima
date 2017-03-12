@@ -3,6 +3,7 @@ Revision history for Perl module Prima
 1.51 2017-XX-XX
  - Add graphic paths support
  - Add spinner widgets by Maximilian Lika
+ - Use Region objects for shape and clipping
 
 1.50 2017-01-03
  - Renamed utils after debian standard
