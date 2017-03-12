@@ -192,6 +192,7 @@ apc_region_get_handle( Handle self)
 Bool
 apc_region_offset( Handle self, int dx, int dy)
 {
+	HEIGHT += dy;
 	XOffsetRegion(REGION, dx, -dy);
 	return true;
 }
@@ -275,7 +276,6 @@ apc_region_is_empty( Handle self)
 {
 	return XEmptyRegion( REGION );
 }
-
 
 Box
 apc_region_get_box( Handle self)

@@ -44,6 +44,17 @@ try('box 1x1',
 	"*    "
 );
 is_deeply([$r->box], [0,0,1,1], 'box 1x1/box');
+$r->offset(2,2);
+try('box 1x1 + 2.2',
+	"     ".
+	"     ".
+	"  *  ".
+	"     ".
+	"     "
+);
+is_deeply([$r->box], [2,2,1,1], 'box 1x1/box + 2.2');
+$r->offset(-4,-4);
+is_deeply([$r->box], [-2,-2,1,1], 'box 1x1/box - 2.2');
 
 $r = Prima::Region->new( box => [1, 1, 3, 3]);
 try('box 3x3',

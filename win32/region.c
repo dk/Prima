@@ -199,6 +199,7 @@ apc_region_destroy( Handle self)
 Bool
 apc_region_offset( Handle self, int dx, int dy)
 {
+	HEIGHT += dy;
 	OffsetRgn(REGION, dx, -dy);
 	return false;
 }
@@ -296,7 +297,6 @@ apc_region_get_box( Handle self)
 		memset(&box, 0, sizeof(box));
 		return box;
 	}
-	//printf("box %d: %d %d %d %d\n", HEIGHT, xr.left, xr.top, xr.right, xr.bottom);
 	box. x      = xr. left;
 	box. y      = HEIGHT - xr. bottom;
 	box. width  = xr. right - xr. left;
@@ -447,7 +447,6 @@ apc_gp_set_region( Handle self, Handle region)
 	CombineRgn(rgn, GET_REGION(region)->region, NULL, RGN_COPY);
 	OffsetRgn( rgn, -sys transform2. x, -sys transform2. y);
 	OffsetRgn( rgn, 0, sys lastSize.y - GET_REGION(region)->height);
-	GetRgnBox( rgn, &xr);
 	if ( is_apt(aptLayeredPaint) && sys layeredParentRegion )
 		CombineRgn( rgn, rgn, sys layeredParentRegion, RGN_AND);
 	SelectClipRgn( sys ps, rgn);
