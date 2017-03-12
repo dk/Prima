@@ -31,7 +31,7 @@ try('empty undef',"*" x 25);
 $r = Prima::Region->new;
 ok($r, 'empty rgn');
 ok($r->is_empty, 'is empty');
-try('empty def',"*" x 25);
+try('empty def'," " x 25);
 
 # rect
 $r = Prima::Region->new( box => [0, 0, 1, 1]);

@@ -91,7 +91,14 @@ prima_region_create( Handle mask)
 static Bool
 rgn_empty(Handle self)
 {
+	XRectangle xr;
 	REGION = XCreateRegion();
+	xr. x = 0;
+	xr. y = 0;
+	xr. width  = 1;
+	xr. height = 1;
+	XUnionRectWithRegion( &xr, REGION, REGION);
+	XXorRegion( REGION, REGION, REGION);
 	HEIGHT = 0;
 	return true;
 }
@@ -384,7 +391,6 @@ apc_gp_set_region( Handle self, Handle rgn)
 
 	if (rgn == nilHandle) {
 		Rect r;
-	EMPTY:
 		r. left   = 0;
 		r. bottom = 0;
 		r. right  = XX-> size. x - 1;
@@ -398,7 +404,14 @@ apc_gp_set_region( Handle self, Handle rgn)
 	XX-> clip_rect. y += XX-> size. y - r-> height;
 	XX-> clip_mask_extent. x = XX-> clip_rect. width;
 	XX-> clip_mask_extent. y = XX-> clip_rect. height;
-	if ( XX-> clip_rect. width == 0 || XX-> clip_rect. height == 0) goto EMPTY;
+	if ( XX-> clip_rect. width == 0 || XX-> clip_rect. height == 0) {
+		Rect r;
+		r. left   = -1;
+		r. bottom = -1;
+		r. right  = -1;
+		r. top    = -1;
+		return apc_gp_set_clip_rect( self, r);
+	}
 
 	region = XCreateRegion();
 	XUnionRegion( region, r-> region, region);
