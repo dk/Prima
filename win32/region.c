@@ -199,7 +199,6 @@ apc_region_destroy( Handle self)
 Bool
 apc_region_offset( Handle self, int dx, int dy)
 {
-	HEIGHT += dy;
 	OffsetRgn(REGION, dx, -dy);
 	return false;
 }
