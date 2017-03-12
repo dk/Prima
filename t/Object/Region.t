@@ -30,10 +30,12 @@ sub try($$)
 try('empty undef',"*" x 25);
 $r = Prima::Region->new;
 ok($r, 'empty rgn');
+ok($r->is_empty, 'is empty');
 try('empty def',"*" x 25);
 
 # rect
 $r = Prima::Region->new( box => [0, 0, 1, 1]);
+ok(!$r->is_empty, 'not empty');
 try('box 1x1',
 	"     ".
 	"     ".
@@ -41,6 +43,8 @@ try('box 1x1',
 	"     ".
 	"*    "
 );
+is_deeply([$r->box], [0,0,1,1], 'box 1x1/box');
+
 $r = Prima::Region->new( box => [1, 1, 3, 3]);
 try('box 3x3',
 	"     ".
@@ -49,26 +53,10 @@ try('box 3x3',
 	" *** ".
 	"     "
 );
+is_deeply([$r->box], [1,1,3,3], 'box 3x3/box');
+
 my $r2 = Prima::Region->new( rect => [1, 1, 4, 4]);
 ok( $r->equals($r2), 'equals');
-
-$r = Prima::Region->new( ellipse => [ 3, 3, 1, 1]);
-is_deeply([$r->box], [3,3,1,1], 'ellipse 1x1');
-
-$r = Prima::Region->new( ellipse => [ 3, 3, 2, 2]);
-is_deeply([$r->box], [3,3,2,2], 'ellipse 2x2');
-
-$r = Prima::Region->new( ellipse => [ 3, 3, 3, 3]);
-is_deeply([$r->box], [2,2,3,3], 'ellipse 3x3');
-
-$r = Prima::Region->new( ellipse => [ 3, 3, 4, 4]);
-is_deeply([$r->box], [2,2,4,4], 'ellipse 4x4');
-
-$r = Prima::Region->new( ellipse => [ 3, 3, 5, 5]);
-is_deeply([$r->box], [1,1,5,5], 'ellipse 5x5');
-
-$r = Prima::Region->new( ellipse => [ 3, 3, 6, 6]);
-is_deeply([$r->box], [1,1,6,6], 'ellipse 6x6');
 
 my @star = (0, 0, 2, 5, 5, 0, 0, 3, 5, 3);
 $r = Prima::Region->new(polygon => \@star, winding => 0);

@@ -10,4 +10,5 @@ object Prima::Region( Prima::Component)
 	method   Bool      combine(Handle other_region, int rgnop = rgnopCopy);
 	method   Bool      point_inside(Point p) => apc_region_point_inside;
 	method   int       rect_inside(Rect p) => apc_region_rect_inside;
+	method   Bool      is_empty() => apc_region_is_empty;
 }

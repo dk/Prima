@@ -3194,9 +3194,8 @@ typedef struct _TextWrapRec {
 
 #define rgnEmpty     0
 #define rgnRectangle 1
-#define rgnEllipse   2
-#define rgnPolygon   3
-#define rgnImage     4
+#define rgnPolygon   2
+#define rgnImage     3
 
 typedef struct {
 	int n_points;
@@ -3262,6 +3261,9 @@ apc_region_equals( Handle self, Handle other_region);
 
 extern Box
 apc_region_get_box( Handle self);
+
+extern Bool
+apc_region_is_empty( Handle self);
 
 extern ApiHandle
 apc_region_get_handle( Handle self);

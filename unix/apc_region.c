@@ -111,77 +111,6 @@ rgn_rect(Handle self, Box r)
 }
 
 static Bool
-rgn_ellipse(Handle self, Box ellipse)
-{
-	int w  = ellipse. width;
-	int h  = ellipse. height;
-	int rx = w / 2;
-	int ry = h / 2;
-	int a  = rx * rx;
-	int b  = ry * ry;
-	int d  = b - a * ry + a / 4;
-	int dx = 0;
-	int dy = a * ry * 2;
-	int sx = 0;
-	int sy = ry;
-	int ay = h % 2 - 1;
-	int ax = w % 2 - 1;
-
-	REGION = XCreateRegion();
-	HEIGHT = ellipse. y + sy + 1;
-	while ( dx < dy ) {
-		XRectangle xr;
-		xr. x      = ellipse. x - sx - ax;
-		xr. y      = ry + sy + ay;
-		xr. width  = sx + sx;
-		xr. height = 1;
-		XUnionRectWithRegion( &xr, REGION, REGION);
-		xr. y      = ry - sy;
-		XUnionRectWithRegion( &xr, REGION, REGION);
-		if ( d > 0 ) {
-			sy--;
-			dy -= a + a;
-			d  -= dy;
-		}
-		sx++;
-		dx += b + b;
-		d += b + dx;
-	}
-
-	d = ( a - b + (a - b)/2 - dx - dy ) / 2;
-
-	while ( sy > 0 ) {
-		XRectangle xr;
-		xr. x      = ellipse. x - sx - ax;
-		xr. y      = ry + sy + ay;
-		xr. width  = sx + sx;
-		xr. height = 1;
-		XUnionRectWithRegion( &xr, REGION, REGION);
-		xr. y      = ry - sy;
-		XUnionRectWithRegion( &xr, REGION, REGION);
-		if ( d < 0 ) {
-			sx++;
-			dx += b + b;
-			d += dx;
-		}
-		sy--;
-		dy -= a + a;
-		d += a - dy;
-	}
-
-	if ( ay == 0 ) {
-		XRectangle xr;
-		xr. x      = ellipse. x - rx - ax;
-		xr. y      = ry;
-		xr. width  = w;
-		xr. height = 1;
-		XUnionRectWithRegion( &xr, REGION, REGION);
-	}
-
-	return true;
-}
-
-static Bool
 rgn_polygon(Handle self, PolygonRegionRec * r)
 {
 	int i, max;
@@ -228,8 +157,6 @@ apc_region_create( Handle self, PRegionRec rec)
 		return rgn_empty(self);
 	case rgnRectangle:
 		return rgn_rect(self, rec->data.box);
-	case rgnEllipse:
-		return rgn_ellipse(self, rec->data.box);
 	case rgnPolygon:
 		return rgn_polygon(self, &rec->data.polygon);
 	case rgnImage:
@@ -335,6 +262,13 @@ apc_region_equals( Handle self, Handle other_region)
 {
 	return XEqualRegion( REGION, GET_REGION(other_region)->region);
 }
+
+Bool
+apc_region_is_empty( Handle self)
+{
+	return XEmptyRegion( REGION );
+}
+
 
 Box
 apc_region_get_box( Handle self)

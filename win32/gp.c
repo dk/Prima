@@ -1162,30 +1162,6 @@ apc_gp_get_color( Handle self)
 	return remap_color( sys ps ? sys stylus. pen. lopnColor : sys lbs[0], false);
 }
 
-Rect
-apc_gp_get_clip_rect( Handle self)
-{
-	RECT r;
-	Point p;
-	Rect rr = {0,0,0,0};
-	objCheck rr;
-	if ( !is_opt( optInDraw) || !sys ps) return rr;
-	if ( !GetClipBox( sys ps, &r)) apiErr;
-	if ( IsRectEmpty( &r)) return rr;
-	rr. left   = r. left;
-	rr. right  = r. right - 1;
-	rr. bottom = sys lastSize. y - r. bottom;
-	rr. top    = sys lastSize. y - r. top    - 1;
-
-	p = apc_gp_get_transform(self);
-	rr. left   += p.x;
-	rr. right  += p.x;
-	rr. top    += p.y;
-	rr. bottom += p.y;
-
-	return rr;
-}
-
 Bool
 apc_gp_get_fill_winding( Handle self)
 {
@@ -1382,64 +1358,6 @@ apc_gp_get_physical_palette( Handle self, int * color)
 	}
 	return r;
 }
-
-Bool
-apc_gp_get_region( Handle self, Handle mask)
-{
-	HRGN rgn;
-	int res;
-	HBITMAP bm, bmSave;
-	HBRUSH  brSave;
-	HDC dc;
-	XBITMAPINFO xbi;
-	BITMAPINFO * bi;
-	RECT clipEx;
-
-	objCheck false;
-	if ( !is_opt( optInDraw) || !sys ps) return false;
-
-	rgn = CreateRectRgn(0,0,0,0);
-
-	res = GetClipRgn( sys ps, rgn);
-	if ( res <= 0) {        // error or just no region
-		DeleteObject( rgn);
-		return false;
-	}
-	if ( !mask) {
-		DeleteObject( rgn);
-		return true;
-	}
-
-	GetClipBox( sys ps, &clipEx);
-	OffsetRgn( rgn, sys transform2. x, sys transform2. y);
-	OffsetRgn( rgn, 0,  clipEx. bottom - clipEx. top - sys lastSize.y);
-
-	CImage( mask)-> create_empty( mask, clipEx. right, sys lastSize.y - clipEx. top, imBW);
-
-	if ( !( dc = dc_compat_alloc(0))) return true;
-	if ( !( bm = CreateBitmap( PImage( mask)-> w, PImage( mask)-> h, 1, 1, nil))) {
-		dc_compat_free();
-		return true;
-	}
-
-	bmSave = SelectObject( dc, bm);
-	brSave = SelectObject( dc, CreateSolidBrush( RGB(0,0,0)));
-	Rectangle( dc, 0, 0, PImage( mask)-> w, PImage( mask)-> h);
-	DeleteObject( SelectObject( dc, CreateSolidBrush( RGB( 255, 255, 255))));
-	PaintRgn( dc, rgn);
-	DeleteObject( SelectObject( dc, brSave));
-
-	bi = image_fill_bitmap_info( mask, &xbi, BM_BITMAP);
-	if ( !GetDIBits( dc, bm, 0, PImage( mask)-> h, PImage( mask)-> data, bi, DIB_RGB_COLORS)) apiErr;
-	SelectObject( dc, bmSave);
-	DeleteObject( bm);
-	dc_compat_free();
-
-	DeleteObject( rgn);
-
-	return true;
-}
-
 
 Point
 apc_gp_get_resolution( Handle self)
@@ -1673,28 +1591,6 @@ apc_gp_set_back_color( Handle self, Color color)
 }
 
 Bool
-apc_gp_set_clip_rect( Handle self, Rect c)
-{
-	HRGN rgn;
-	objCheck false;
-	if ( !is_opt( optInDraw) || !sys ps) return true;
-	// inclusive-exclusive
-	c. left   -= sys transform2. x;
-	c. right  -= sys transform2. x;
-	c. top    += sys transform2. y;
-	c. bottom += sys transform2. y;
-	check_swap( c. top, c. bottom);
-	check_swap( c. left, c. right);
-	if ( !( rgn = CreateRectRgn( c. left,  sys lastSize. y - c. top,
-										c. right + 1, sys lastSize. y - c. bottom - 1))) apiErrRet;
-	if ( is_apt(aptLayeredPaint) && sys layeredParentRegion )
-		CombineRgn( rgn, rgn, sys layeredParentRegion, RGN_AND);
-	if ( !SelectClipRgn( sys ps, rgn)) apiErr;
-	if ( !DeleteObject( rgn)) apiErr;
-	return true;
-}
-
-Bool
 apc_gp_set_color( Handle self, Color color)
 {
 	long clr = remap_color( color, true);
@@ -1879,28 +1775,6 @@ apc_gp_set_palette( Handle self)
 	}
 	if ( sys pal) DeleteObject( sys pal);
 	sys pal = pal;
-	return true;
-}
-
-Bool
-apc_gp_set_region( Handle self, Handle mask)
-{
-	HRGN rgn = nil;
-	objCheck false;
-
-	if ( !is_opt( optInDraw) || !sys ps) return true;
-
-	rgn = region_create( mask);
-	if ( !rgn) {
-		SelectClipRgn( sys ps, nil);
-		return true;
-	}
-	OffsetRgn( rgn, -sys transform2. x, -sys transform2. y);
-	OffsetRgn( rgn, 0, sys lastSize.y - PImage(mask)-> h);
-	if ( is_apt(aptLayeredPaint) && sys layeredParentRegion )
-		CombineRgn( rgn, rgn, sys layeredParentRegion, RGN_AND);
-	SelectClipRgn( sys ps, rgn);
-	DeleteObject( rgn);
 	return true;
 }
 

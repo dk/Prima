@@ -222,6 +222,13 @@ typedef struct _FileData
 	int          type;
 } FileData;
 
+typedef struct 
+{
+	HRGN region;
+	int height;
+} RegionData;
+
+
 typedef struct _XLOGPALETTE {
 	WORD         palVersion;
 	WORD         palNumEntries;
@@ -429,6 +436,7 @@ typedef struct _DrawableData
 		PrinterData   prn;
 		FileData      file;
 		ImageData     image;
+		RegionData    region;
 	} s;
 } DrawableData, *PDrawableData;
 

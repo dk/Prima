@@ -30,9 +30,6 @@ Region_init( Handle self, HV * profile)
 	} else if (pexist(box)) {
 		t = "box";
 		r.type = rgnRectangle;
-	} else if (pexist(ellipse)) {
-		t = "ellipse";
-		r.type = rgnEllipse;
 	} else if (pexist(polygon)) {
 		r.type = rgnPolygon;
 	} else if (pexist(image)) {
@@ -40,8 +37,7 @@ Region_init( Handle self, HV * profile)
 	}
 
 	switch (r.type) {
-	case rgnRectangle:
-	case rgnEllipse: {
+	case rgnRectangle: {
 		int rect[4];
 		SV ** val = hv_fetch( profile, t, (I32) strlen( t), 0);
 		prima_read_point( *val, rect, 4, "Array panic");
