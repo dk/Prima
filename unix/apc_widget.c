@@ -1201,6 +1201,7 @@ apc_widget_set_pos( Handle self, int x, int y)
 Bool
 apc_widget_set_shape( Handle self, Handle mask)
 {
+	return false; /* XXX */
 #ifndef HAVE_X11_EXTENSIONS_SHAPE_H
 	return false;
 #else

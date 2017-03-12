@@ -1690,11 +1690,12 @@ C<select()> is called.
 
 See also: C<MouseDown>, C<firstClick>, C<selectable>, C<selected>, C<focused>
 
-=item shape IMAGE
+=item shape REGION
 
 Maintains the non-rectangular shape of a widget.
-IMAGE is monochrome Prima::Image, with 0 bits treated 
-as transparent pixels, and 1 bits as opaque pixels.
+When setting, REGION is either a Prima::Image object, with 0 bits treated 
+as transparent pixels, and 1 bits as opaque pixels, or a Prima::Region object.
+When getting, it is a Prima::Image object.
 
 Successive only if C<sv::ShapeExtension> value is true.
 

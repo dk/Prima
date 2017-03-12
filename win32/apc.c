@@ -21,6 +21,7 @@ extern "C" {
 #define var (( PWidget) self)->
 #define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
+#define GET_REGION(obj) (&(dsys(obj)s.region))
 
 #define WinShowWindow(WND) SetWindowPos( WND, nil, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_SHOWWINDOW|SWP_NOACTIVATE);
 #define WinHideWindow(WND) SetWindowPos( WND, nil, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_HIDEWINDOW);
@@ -1530,8 +1531,8 @@ apc_window_set_effects( Handle self, HV * effects )
 			Handle region = pget_H(mask);
 			if ( region && kind_of(region, CRegion)){
 				mask = CreateRectRgn(0,0,0,0);
-				CombineRgn( mask, dsys(region) s.region.region, NULL, RGN_COPY);
-				OffsetRgn( mask, 0, sys lastSize.y - dsys(region) s.region.height );
+				CombineRgn( mask, GET_REGION(region)->region, NULL, RGN_COPY);
+				OffsetRgn( mask, 0, sys lastSize.y - GET_REGION(region)->height );
 			}
 		}
 	}
@@ -2814,10 +2815,10 @@ Bool
 apc_widget_set_shape( Handle self, Handle mask)
 {
 	HRGN rgn = nil;
+	RECT xr;
 	objCheck false;
 
-	rgn = region_create( mask);
-	if ( !rgn) {
+	if ( !mask) {
 		if ( sys className == WC_FRAME && is_apt(aptLayered))
 			SetWindowRgn((HWND) var handle, nil, true);
 		else
@@ -2826,13 +2827,18 @@ apc_widget_set_shape( Handle self, Handle mask)
 		return true;
 	}
 
-	sys extraBounds. x = PImage( mask)-> w;
-	sys extraBounds. y = PImage( mask)-> h;
+
+	rgn = CreateRectRgn(0,0,0,0);
+	CombineRgn( rgn, GET_REGION(mask)->region, NULL, RGN_COPY);
+	GetRgnBox( rgn, &xr);
+	sys extraBounds. x = xr. right - 1;
+	sys extraBounds. y = GET_REGION(mask)->height;
 	if ( sys className == WC_FRAME && !is_apt(aptLayered)) {
 		Point delta = get_window_borders( sys s. window. borderStyle);
 		Point sz    = apc_widget_get_size( self);
 		Point p     = sys extraBounds;
 		HRGN  r1, r2;
+
 		OffsetRgn( rgn, delta.x, sz. y - p.y - delta.y);
 		sys extraPos. x = delta.x;
 		sys extraPos. y = sz. y - p.y - delta.y;
@@ -2845,6 +2851,7 @@ apc_widget_set_shape( Handle self, Handle mask)
 		DeleteObject( r2);
 		if ( !SetWindowRgn( HANDLE, rgn, true))
 			apiErrRet;
+		DeleteObject(rgn);
 	} else if ( sys className == WC_FRAME ) {
 		sys extraPos. x = sys extraPos. y = 0;
 		if ( !SetWindowRgn((HWND) var handle, rgn, true))
@@ -2854,6 +2861,7 @@ apc_widget_set_shape( Handle self, Handle mask)
 		if ( !SetWindowRgn( HANDLE, rgn, true))
 			apiErrRet;
 	}
+	DeleteObject(rgn);
 
 	if ( is_apt(aptMovePending)) {
 		apt_clear(aptMovePending);

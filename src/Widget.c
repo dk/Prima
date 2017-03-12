@@ -2,6 +2,7 @@
 #include "Application.h"
 #include "Icon.h"
 #include "Popup.h"
+#include "Region.h"
 #include "Widget.h"
 #include "Window.h"
 #include <Widget.inc>
@@ -2801,21 +2802,28 @@ Widget_shape( Handle self, Bool set, Handle mask)
 			return nilHandle;
 	}
 
-	if ( mask && !kind_of( mask, CImage)) {
-		warn("Illegal object reference passed to Widget::shape");
+	if ( mask && kind_of( mask, CRegion)) {
+		apc_widget_set_shape( self, mask);
 		return nilHandle;
 	}
 
-	if ( mask && (( PImage( mask)-> type & imBPP) != imbpp1)) {
-		Handle i = CImage( mask)-> dup( mask);
-		++SvREFCNT( SvRV( PImage( i)-> mate));
-		CImage( i)-> set_conversion( i, ictNone);
-		CImage( i)-> set_type( i, imBW);
-		apc_widget_set_shape( self, i);
-		--SvREFCNT( SvRV( PImage( i)-> mate));
-		Object_destroy( i);
+	if ( mask && !kind_of( mask, CImage)) {
+		warn("Illegal object reference passed to Drawable::region");
+		return nilHandle;
+	}
+
+	if ( mask ) {
+		Handle region;
+		HV * profile = newHV();
+
+		pset_H( image, mask );
+		region = Object_create("Prima::Region", profile);
+		sv_free(( SV *) profile);
+
+		apc_widget_set_shape( self, region);
+		Object_destroy(region);
 	} else
-		apc_widget_set_shape( self, mask);
+		apc_widget_set_shape( self, nilHandle);
 
 	return nilHandle;
 }

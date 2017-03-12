@@ -72,6 +72,7 @@ Region_init( Handle self, HV * profile)
 			croak("Not an image passed");
 		if (( PImage(r.data.image)->type & imBPP ) != 1 ) {
 			r.data.image = CImage(r.data.image)->dup(r.data.image);
+			CImage(r.data.image)->set_conversion(r.data.image, ictNone);
 			CImage(r.data.image)->set_type(r.data.image, imbpp1 | imGrayScale);
 			free_image = true;
 		}
