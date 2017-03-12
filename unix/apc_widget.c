@@ -1201,7 +1201,6 @@ apc_widget_set_pos( Handle self, int x, int y)
 Bool
 apc_widget_set_shape( Handle self, Handle mask)
 {
-	return false; /* XXX */
 #ifndef HAVE_X11_EXTENSIONS_SHAPE_H
 	return false;
 #else
@@ -1225,29 +1224,21 @@ apc_widget_set_shape( Handle self, Handle mask)
 		return true;
 	}
 	
-	img = PImage(mask);
-	cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP);
-	if ( !cache) return false;
-	px = XCreatePixmap(DISP, guts. root, img->w, img->h, 1);
-	gcv. graphics_exposures = false;
-	gc = XCreateGC(DISP, px, GCGraphicsExposures, &gcv);
-	XSetForeground( DISP, gc, 0);
-	prima_put_ximage(px, gc, cache->image, 0, 0, 0, 0, img->w, img->h);
-	XFreeGC( DISP, gc);
+	XShapeCombineRegion( DISP, X_WINDOW, ShapeBounding, 0, XX->size.y - GET_REGION(mask)->height + XX->menuHeight, GET_REGION(mask)->region, ShapeSet);
+	if ( XX-> menuHeight > 0 ) {
 	/*
 		XXX This static shape approach doesn't work when menuHeight is dynamically changed.
 			Need to implement something more elaborated.
 	*/
-	xr. x = 0;
-	xr. y = 0;
-	XShapeCombineMask( DISP, X_WINDOW, ShapeBounding, 0, XX->size.y - img->h + XX->menuHeight, px, ShapeSet);
-	xr. width  = XX->size.x;
-	xr. height = XX->size.y + XX->menuHeight;
-	XShapeCombineRectangles( DISP, X_WINDOW, ShapeBounding, 0, 0, &xr, 1, ShapeInvert, 0);
-	XFreePixmap( DISP, px);
-	apc_image_update_change( mask);
-	XX-> shape_extent. x = img-> w; 
-	XX-> shape_extent. y = img-> h; 
+		xr. x = 0;
+		xr. y = 0;
+		xr. width  = XX->size.x;
+		xr. height = XX->menuHeight;
+		XShapeCombineRectangles( DISP, X_WINDOW, ShapeBounding, 0, 0, &xr, 1, ShapeUnion, 0);
+	}
+	XClipBox( GET_REGION(mask)->region, &xr);
+	XX-> shape_extent. x = xr. x + xr. width;
+	XX-> shape_extent. y = GET_REGION(mask)->height;
 	XX-> shape_offset. x = 0;
 	XX-> shape_offset. y = XX-> menuHeight;
 	return true;
