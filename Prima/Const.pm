@@ -766,6 +766,20 @@ get/set graphical properties on an object.
 
 See L<Drawable/get_paint_state>.
 
+=head2 rgn:: - result of Prima::Region.rect_inside
+
+	rgn::Inside
+	rgn::Outside    - rectangle is fully outside the region
+	rgn::Partially
+
+=head2 rgnop:: - Prima::Region.combine set operations
+
+	rgnop::Copy
+	rgnop::Intersect
+	rgnop::Union
+	rgnop::Xor
+	rgnop::Diff
+
 =head2 rop:: - raster operation codes
 
 See L<Prima::Drawable/Raster operations>

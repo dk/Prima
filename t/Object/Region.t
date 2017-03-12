@@ -32,6 +32,7 @@ $r = Prima::Region->new;
 ok($r, 'empty rgn');
 ok($r->is_empty, 'is empty');
 try('empty def'," " x 25);
+is_deeply([$r->box], [0,0,0,0], 'empty/box');
 
 # rect
 $r = Prima::Region->new( box => [0, 0, 1, 1]);

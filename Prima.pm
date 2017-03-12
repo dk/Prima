@@ -279,6 +279,8 @@ L<Prima::Classes> - binder module for the core classes
 
 L<Prima::Drawable> - 2-D graphic interface 
 
+L<Prima::Region> - generic shape for clipping and hit testing
+
 L<Prima::Image>  - bitmap routines 
 
 L<Prima::image-load> - image subsystem and file operations

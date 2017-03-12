@@ -1,0 +1,131 @@
+=head1 NAME
+
+Prima::Region - generic shape for clipping and hit testing
+
+=head1 SYNOPSIS
+
+   $empty = Prima::Region->new;
+
+   $rect  = Prima::Region->new( rect => [ 10, 10, 20, 20 ]);
+   $rect  = Prima::Region->new( box  => [ 10, 10, 10, 10 ]); # same
+
+   $poly  = Prima::Region->new( polygon => [ 0, 0, 100, 0, 100, 100 ]);
+
+   $bits  = Prima::Region->new( image => $image );
+
+   $drawable-> region( $rect ); 
+
+=head1 DESCRIPTION
+
+Prima::Region is a descendant of Prima::Component. It serves a representation
+of a generic shape, that can be applied to a drawable, and checked whether points
+are within its boundaries.
+
+=head1 API
+
+=over
+
+=item new %OPTIONS
+
+Creates new region object. Without options, the region is empty.
+Following options can be used:
+
+=over
+
+=item rect => [ X1, Y1, X2, Y2 ]
+
+Create rectangular region with inclusive-inclusive coordinates.
+
+=item box => [ X, Y, WIDTH, HEIGHT ]
+
+Same as C<rect> but using other semantics.
+
+=item polygon => \@POINTS, winding = 0
+
+Creates a polygon shape with vertices given in C<@POINTS>, and using
+an optional winding flag ( see L<Drawable/fillWinding> ).
+
+=item image => IMAGE
+
+Creates a region that mirrors 1-bits in the image. If no pixels are set to 1,
+the region will be effecively empty.
+
+=back
+
+=item box
+
+Returns (X,Y,WIDTH,HEIGHT) bounding box, that encloses smallest possible
+rectangle, or (0,0,0,0) if the region is empty.
+
+=item combine REGION, OPERATION = rgnop::Copy
+
+Applies one of the following set operation to the region:
+
+=over
+
+=item rgnop::Copy
+
+Makes a copy of the REGION
+
+=item rgnop::Intersect
+
+The resulting region is an interesection of the two regions.
+
+=item rgnop::Union
+
+The resulting region is a union of the two regions.
+
+=item rgnop::Xor
+
+Performs XOR operation on the two regions.
+
+=item rgnop::Diff
+
+The resulting region is a difference of the two regions.
+
+=back
+
+=item dup
+
+Creates a duplicate region object
+
+=item get_handle
+
+Returns a system handle for the region
+
+=item equals REGION
+
+Returns true if the regions are equal, false otherwise.
+
+=item is_empty
+
+Returns true if the region is empty, false otherwise.
+
+=item offset DX, DY
+
+Shifts the region vertically and/or horizontally
+
+=item point_inside X, Y
+
+Returns true if the (X,Y) point is inside the region
+
+=item rect_inside X1,Y1,X2,Y2
+
+Checks whether a rectangle given by inclusive-inclusive coordiates is inside, outside,
+or partially covered by the region. Return values are:
+
+   rgn::Inside
+   rgn::Outside
+   rgn::Partially
+
+where C<rgn::Outside> has value of 0.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima>, L<Prima::Drawable>, L<Prima::Drawable::Path>
