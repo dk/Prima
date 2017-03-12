@@ -173,6 +173,19 @@ sub rarc
 	$self->restore;
 }
 
+sub ellipse
+{
+	my $self = shift;
+	@_ > 2 or Carp::croak('bad parameters to ellipse');
+	my ( $cx, $cy, $dx, $dy, $tilt) = @_;
+	$dy //= $dx;
+	$self-> path->
+		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
+		rotate( $tilt // 0.0)->
+		circular_arc( 0.0, 360.0 )->
+		restore;
+}
+
 sub points
 {
 	my $self = shift;
@@ -410,6 +423,14 @@ sub clip
 	return $p->image;
 }
 
+sub region
+{
+	my $self = shift;
+	my %opt = ( polygon => $self->points );
+	$opt{winding} = 1 if shift;
+	return Prima::Region->new( %opt );
+}
+
 1;
 
 __END__
@@ -461,6 +482,10 @@ Adds elliptic arc to path centered around (CENTER_X,CENTER_Y).
 
 Adds circular arc to the path. Note that adding transformations will effectively
 make it into elliptic arc, which is used internally by C<arc> and C<rarc>.
+
+=item ellipse CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y = DIAMETER_X, TILT = 0
+
+Adds full ellipse to the path.
 
 =item line, rline @POINTS
 
@@ -592,6 +617,11 @@ Paints a filled shape over the path
 =item stroke
 
 Draws a polyline over the path
+
+=item region WINDING=0
+
+Creates a region object from polygonal shape. If WINDING is set, applies fill winding
+mode (see L<Drawable/fillWinding> for more).
 
 =back
 

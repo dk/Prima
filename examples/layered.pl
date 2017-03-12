@@ -52,15 +52,12 @@ my ( $r, $g, $b ) = map { icon($_) } (cl::LightRed, cl::LightGreen, cl::LightBlu
 my $angle = 0;
 my $pi = 3.14159;
 
-my $i = Prima::Image-> new(
-	width  => 96 * $::application-> font-> width  / 7,  # poor man's calculations of
-	height => 36 * $::application-> font-> height / 16, # button size
-	type => im::BW,
-);
-$i->begin_paint;
-$i->clear;
-$i->fill_ellipse(10,10,10,10);
-$i->end_paint;
+my $i = Prima::Region-> new( box => [ 0, 0,
+	96 * $::application-> font-> width  / 7,  # poor man's calculations of
+	36 * $::application-> font-> height / 16, # button size
+]);
+
+$i-> combine( Prima::Drawable->new_path->ellipse( 10, 10, 10 )->region, rgnop::Diff);
 
 my $w = Prima::MainWindow->new(
 	layered  => 1,
