@@ -276,7 +276,7 @@ Currently, the following effects are implemented:
 
 =over
 
-=item dwm_blur enable => $BOOL, transition_on_maximized => $BOOL, mask => $Prima::Image
+=item dwm_blur enable => $BOOL, transition_on_maximized => $BOOL, mask => $Prima::Region
 
 This effect is implemented only on Win32 version 7 or later, using Win32 API call 
 L<DwmEnableBlurBehindWindow|http://msdn.microsoft.com/en-us/library/windows/desktop/aa969508>.

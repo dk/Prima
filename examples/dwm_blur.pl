@@ -24,10 +24,6 @@ sub dwm_reset
 {
 	my $win  = shift;
 	my @sz = $win->size;
-	my $i = Prima::Image->create( size => \@sz, type => im::BW );
-
-	$i-> begin_paint;
-	$i-> clear;
 
 	my ($w, $h) = @sz;
 	my $sz = ($w > $h ? $h : $w) * 0.8 * 0.5;
@@ -44,13 +40,10 @@ sub dwm_reset
 	push @lines, $cos*$x-$sin*$y+$w, $sin*$x+$cos*$y+$h;
 	($x, $y) = ($x+sqrt(3)*$y,0);
 	push @lines, $cos*$x-$sin*$y+$w, $sin*$x+$cos*$y+$h;
-	$i->fillpoly(\@lines);
-		
-	$i->end_paint;
 
 	$win->effects({ dwm_blur => {
 		enable  => 1,
-		mask    => $i,
+		mask    => Prima::Region->new( polygon => \@lines ),
 	}});
 }
 

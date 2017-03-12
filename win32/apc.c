@@ -7,6 +7,7 @@
 #include "File.h"
 #include "Menu.h"
 #include "Image.h"
+#include "Region.h"
 #include "Window.h"
 #include "Application.h"
 
@@ -1525,11 +1526,21 @@ apc_window_set_effects( Handle self, HV * effects )
 		profile = (HV*) SvRV(sv);
 		if ( pexist(enable) )                  enable                  = pget_B(enable);
 		if ( pexist(transition_on_maximized) ) transition_on_maximized = pget_B(transition_on_maximized);
-		if ( pexist(mask) )                    mask                    = region_create( pget_H(mask));
+		if ( pexist(mask) ) {
+			Handle region = pget_H(mask);
+			if ( region && kind_of(region, CRegion)){
+				mask = CreateRectRgn(0,0,0,0);
+				CombineRgn( mask, dsys(region) s.region.region, NULL, RGN_COPY);
+				OffsetRgn( mask, 0, sys lastSize.y - dsys(region) s.region.height );
+			}
+		}
 	}
 	sys s. window. effects = effects;
 
-	return set_dwm_blur( HANDLE, enable, mask, transition_on_maximized);
+	ok = set_dwm_blur( HANDLE, enable, mask, transition_on_maximized);
+	if ( mask != (HRGN) -1 )
+		DeleteObject(mask);
+	return ok;
 }
 
 Bool
