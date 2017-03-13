@@ -566,6 +566,8 @@ sub ui_scale
 	return $self;
 }
 
+sub to_region { Prima::Region->new( image => shift ) }
+
 package Prima::Icon;
 use vars qw( @ISA);
 @ISA = qw(Prima::Image);

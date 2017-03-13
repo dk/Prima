@@ -35,6 +35,7 @@ $i-> bar(0,0,@is);
 $i-> color( cl::White);
 $i-> text_out( "PRIMA", 0,0);
 $i-> end_paint;
+$i = $i->to_region;
 
 
 my $w = Prima::MainWindow-> create(
