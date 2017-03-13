@@ -821,6 +821,10 @@ See L<Prima::image-load> for details.
 
 NB! When saving to streams on win32, mind C<binmode>.
 
+=item to_region
+
+Creates a new L<Prima::Region> object with the image as the data source.
+
 =item ui_scale %OPTIONS
 
 Resizes the image with smooth scaling. Understands C<zoom> and C<scaling>
