@@ -376,56 +376,26 @@ Bool
 apc_gp_get_region( Handle self, Handle mask)
 {
 	HRGN rgn;
+	RECT rect;
 	int res;
-	HBITMAP bm, bmSave;
-	HBRUSH  brSave;
-	HDC dc;
-	XBITMAPINFO xbi;
-	BITMAPINFO * bi;
-	RECT clipEx;
 
 	objCheck false;
 	if ( !is_opt( optInDraw) || !sys ps) return false;
 
-	rgn = CreateRectRgn(0,0,0,0);
+	if ( !mask ) {
+		rgn = CreateRectRgn(0,0,0,0);
+		res = GetClipRgn( sys ps, rgn );
+		DeleteObject(rgn);
+		return res > 0;
+	}
 
-	res = GetClipRgn( sys ps, rgn);
-	if ( res <= 0) {        // error or just no region
-		DeleteObject( rgn);
+	rgn = GET_REGION(mask)-> region;
+	res = GetClipRgn( sys ps, rgn );
+	if ( res <= 0)        // error or just no region
 		return false;
-	}
-	if ( !mask) {
-		DeleteObject( rgn);
-		return true;
-	}
-
-	GetClipBox( sys ps, &clipEx);
-	OffsetRgn( rgn, sys transform2. x, sys transform2. y);
-	OffsetRgn( rgn, 0,  clipEx. bottom - clipEx. top - sys lastSize.y);
-
-	CImage( mask)-> create_empty( mask, clipEx. right, sys lastSize.y - clipEx. top, imBW);
-
-	if ( !( dc = dc_compat_alloc(0))) return true;
-	if ( !( bm = CreateBitmap( PImage( mask)-> w, PImage( mask)-> h, 1, 1, nil))) {
-		dc_compat_free();
-		return true;
-	}
-
-	bmSave = SelectObject( dc, bm);
-	brSave = SelectObject( dc, CreateSolidBrush( RGB(0,0,0)));
-	Rectangle( dc, 0, 0, PImage( mask)-> w, PImage( mask)-> h);
-	DeleteObject( SelectObject( dc, CreateSolidBrush( RGB( 255, 255, 255))));
-	PaintRgn( dc, rgn);
-	DeleteObject( SelectObject( dc, brSave));
-
-	bi = image_fill_bitmap_info( mask, &xbi, BM_BITMAP);
-	if ( !GetDIBits( dc, bm, 0, PImage( mask)-> h, PImage( mask)-> data, bi, DIB_RGB_COLORS)) apiErr;
-	SelectObject( dc, bmSave);
-	DeleteObject( bm);
-	dc_compat_free();
-
-	DeleteObject( rgn);
-
+	GetRgnBox(rgn, &rect);
+	OffsetRgn( rgn, sys transform2. x, sys transform2. y - rect.top);
+	GET_REGION(mask)-> height = sys lastSize. y - rect.top;
 	return true;
 }
 
