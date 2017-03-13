@@ -460,7 +460,11 @@ apc_gp_get_region( Handle self, Handle rgn)
 
 	w = XX-> clip_mask_extent. x;
 	h = XX-> clip_mask_extent. y;
-	pixmap = XCreatePixmap( DISP, guts. root, w, h, 1);
+
+	pixmap = XCreatePixmap( DISP, guts.root, w, h,
+		XF_LAYERED(XX) ? guts. argb_depth : 
+		( XT_IS_BITMAP(XX) ? 1 : guts. depth )
+	);
 	XCHECKPOINT;
 
 	gcv. graphics_exposures = false;
@@ -468,7 +472,8 @@ apc_gp_get_region( Handle self, Handle rgn)
 	gcv. foreground = 0;
 	gcv. clip_y_origin = -XX-> clip_rect. y;
 	gcv. clip_x_origin = -XX-> clip_rect. x;
-	gc = XCreateGC( DISP, XX->gdrawable, GCGraphicsExposures|GCFillStyle|GCForeground|GCClipXOrigin|GCClipYOrigin, &gcv);
+	XCHECKPOINT;
+	gc = XCreateGC( DISP, pixmap, GCGraphicsExposures|GCFillStyle|GCForeground|GCClipXOrigin|GCClipYOrigin, &gcv);
 	XFillRectangle( DISP, pixmap, gc, 0, 0, w, h);
 	XSetForeground( DISP, gc, 1 );
 	XCopyGC( DISP, XX->gc, GCClipMask, gc);
