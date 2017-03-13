@@ -120,8 +120,17 @@ if ( $::application->get_system_value(sv::LayeredWidgets)) {
 	is_deeply(\@box, [0,0,3,3], 'region box on layered');
 }
 
-$r2 = Prima::Region->new(image => $dbm->region);
-is_deeply([$r2->box], [0,0,3,3], 'image reused');
+$r2 = $dbm->region;
+is_deeply([$r2->box], [0,0,3,3], 'region reused');
+$r = $r2;
+try('reused check 2',
+	"     ".
+	"     ".
+	"***  ".
+	"***  ".
+	"***  "
+);
+
 
 $dbm->region( undef );
 @box = $dbm->get_region_box;
@@ -173,6 +182,15 @@ try('rgnop::Xor',
 $r = $r2->dup;
 $r->combine( $r3, rgnop::Diff);
 try('rgnop::Diff',
+	"     ".
+	"     ".
+	" *   ".
+	" **  ".
+	"     "
+);
+
+$r = $dbm->region;
+try('region re-reuse', 
 	"     ".
 	"     ".
 	" *   ".

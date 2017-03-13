@@ -934,7 +934,7 @@ smaller than the drawable, its exterior is assigned to clipped area as well.
 Discards the previous C<::clipRect> value; successive get-calls to
 C<::clipRect> return the boundaries of the region.
 
-On getting, OBJECT is either undef or Prima::Image object.
+On getting, OBJECT is either undef or Prima::Region object.
 
 Note: C<::region> can not be used while the object is in the paint-disabled state,
 its context is neither recorded nor used as a template 

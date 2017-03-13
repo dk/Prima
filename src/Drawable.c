@@ -1395,7 +1395,7 @@ Drawable_region( Handle self, Bool set, Handle mask)
 
 	} else if ( apc_gp_get_region( self, nilHandle)) {
 		HV * profile = newHV();
-		Handle i = Object_create( "Prima::Icon", profile);
+		Handle i = Object_create( "Prima::Region", profile);
 		sv_free(( SV *) profile);
 		apc_gp_get_region( self, i);
 		--SvREFCNT( SvRV((( PAnyObject) i)-> mate));
