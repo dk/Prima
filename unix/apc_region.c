@@ -260,7 +260,7 @@ apc_region_rect_inside( Handle self, Rect r)
 	switch (res) {
 	case RectangleIn:   return rgnInside;
 	case RectanglePart: return rgnPartially;
-	default:            return rgnOutside;
+	default:	    return rgnOutside;
 	}
 }
 
@@ -282,8 +282,8 @@ apc_region_get_box( Handle self)
 	Box box;
 	XRectangle xr;
 	XClipBox( REGION, &xr);
-	box. x      = xr. x;
-	box. y      = HEIGHT - xr. height - xr.y;
+	box. x	    = xr. x;
+	box. y	    = HEIGHT - xr. height - xr.y;
 	box. width  = xr. width;
 	box. height = xr. height;
 	return box;
@@ -370,7 +370,7 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
 	XX-> flags. xft_clip = 0;
 #ifdef USE_XFT
 	if ( XX-> xft_drawable) prima_xft_update_region( self);
-#endif   
+#endif	 
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	if ( XX-> argb_picture ) XRenderSetPictureClipRegion(DISP, XX->argb_picture, region);
 #endif
@@ -393,7 +393,7 @@ apc_gp_set_region( Handle self, Handle rgn)
 		r. left   = 0;
 		r. bottom = 0;
 		r. right  = XX-> size. x - 1;
-		r. top    = XX-> size. y - 1;
+		r. top	  = XX-> size. y - 1;
 		return apc_gp_set_clip_rect( self, r);
 	}
 
@@ -408,7 +408,7 @@ apc_gp_set_region( Handle self, Handle rgn)
 		r. left   = -1;
 		r. bottom = -1;
 		r. right  = -1;
-		r. top    = -1;
+		r. top	  = -1;
 		return apc_gp_set_clip_rect( self, r);
 	}
 
@@ -441,9 +441,14 @@ Bool
 apc_gp_get_region( Handle self, Handle rgn)
 {
 	DEFXX;
-	Bool bitmap, layered;
 	GC gc;
 	XGCValues gcv;
+	int w, h;
+	Pixmap pixmap;
+	XImage * i;
+	Image pi;
+	Byte * data;
+	Region rgn2;
 
 	if ( !XF_IN_PAINT(XX)) return false;
 
@@ -453,31 +458,54 @@ apc_gp_get_region( Handle self, Handle rgn)
 	if ( XX-> clip_mask_extent. x == 0 || XX-> clip_mask_extent. y == 0)
 		return false;
 
-	bitmap  = XT_IS_BITMAP(XX) ? true : false;
-	layered = XF_LAYERED(XX) ? true : false;
-
-	CIcon( rgn)-> create_empty_icon(
-		rgn, XX-> clip_mask_extent. x, XX-> clip_mask_extent. y, 
-		layered ? 24 : (bitmap ? imBW : guts. qdepth),
-		layered ? 8 : 1
-	);
-	CIcon( rgn)-> begin_paint( rgn);
+	w = XX-> clip_mask_extent. x;
+	h = XX-> clip_mask_extent. y;
+	pixmap = XCreatePixmap( DISP, guts. root, w, h, 1);
 	XCHECKPOINT;
 
 	gcv. graphics_exposures = false;
 	gcv. fill_style = FillSolid;
-	gcv. foreground = (layered || bitmap) ? 0xffffffff : guts.monochromeMap[1];
-	gcv. clip_y_origin = XX-> clip_mask_extent. y - XX-> size. y;
-	gc = XCreateGC( DISP, XX->gdrawable, GCGraphicsExposures|GCFillStyle|GCForeground|GCClipYOrigin, &gcv);
+	gcv. foreground = 0;
+	gcv. clip_y_origin = -XX-> clip_rect. y;
+	gcv. clip_x_origin = -XX-> clip_rect. x;
+	gc = XCreateGC( DISP, XX->gdrawable, GCGraphicsExposures|GCFillStyle|GCForeground|GCClipXOrigin|GCClipYOrigin, &gcv);
+	XFillRectangle( DISP, pixmap, gc, 0, 0, w, h);
+	XSetForeground( DISP, gc, 1 );
 	XCopyGC( DISP, XX->gc, GCClipMask, gc);
-	XFillRectangle( DISP, X(rgn)-> gdrawable, gc, 0, 0, XX-> clip_mask_extent.x, XX-> clip_mask_extent.y);
+	XFillRectangle( DISP, pixmap, gc, 0, 0, w, h);
 	XFreeGC( DISP, gc);
 	XCHECKPOINT;
+	
+	i = XGetImage( DISP, pixmap, 0, 0, w, h, 1, XYPixmap);
+	XFreePixmap( DISP, pixmap);
+	if ( !i ) {
+		warn("Cannot query image");
+		return false;
+	}
 
-	CIcon( rgn)-> end_paint( rgn);
-	if ( !bitmap || layered) CIcon( rgn)-> set_type( rgn, imBW);
-	XCHECKPOINT;
+	img_fill_dummy( &pi, w, h, imBW | imGrayScale, NULL, NULL);
+	if ( !( pi.data = malloc(pi.lineSize * h))) {
+		XDestroyImage( i);
+		warn("Not enough memory");
+		return false;
+	}
 
+	prima_copy_xybitmap( pi.data, (Byte*)i-> data, w, h, pi.lineSize, i-> bytes_per_line);
+	XDestroyImage( i);
+
+	rgn2 = prima_region_create((Handle) &pi);
+	free(pi.data);
+
+	if ( GET_REGION(rgn)-> region )
+		XDestroyRegion(  GET_REGION(rgn)-> region );
+	if ( rgn2 ) {
+		XOffsetRegion( rgn2, XX-> clip_rect.x, 0);
+		GET_REGION(rgn)-> height = XX-> size.y - XX-> clip_rect.y;
+		GET_REGION(rgn)-> region = rgn2;
+	} else {
+		GET_REGION(rgn)-> height = 0;
+		GET_REGION(rgn)-> region = XCreateRegion();
+	}
 	return true;
 }
 
@@ -491,8 +519,8 @@ apc_gp_get_region_box( Handle self)
 	if ( XX-> clip_mask_extent. x == 0 || XX-> clip_mask_extent. y == 0)
 		return box;
 	
-	box. x      = XX-> clip_rect. x;
-	box. y      = XX-> size. y - XX-> clip_mask_extent. y - XX-> clip_rect. y;
+	box. x	    = XX-> clip_rect. x;
+	box. y	    = XX-> size. y - XX-> clip_mask_extent. y - XX-> clip_rect. y;
 	box. width  = XX-> clip_mask_extent. x;
 	box. height = XX-> clip_mask_extent. y;
 

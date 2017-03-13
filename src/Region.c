@@ -68,8 +68,11 @@ Region_init( Handle self, HV * profile)
 		break;
 	case rgnImage:
 		r. data. image = pget_H(image);
-		if ( !kind_of( r. data. image, CImage ))
-			croak("Not an image passed");
+		if ( !kind_of( r. data. image, CImage )) {
+			warn("Not an image passed");
+			r. type = rgnEmpty;
+			goto CREATE;
+		}
 		if (( PImage(r.data.image)->type & imBPP ) != 1 ) {
 			r.data.image = CImage(r.data.image)->dup(r.data.image);
 			CImage(r.data.image)->set_conversion(r.data.image, ictNone);
@@ -77,12 +80,13 @@ Region_init( Handle self, HV * profile)
 			free_image = true;
 		}
 	}
+CREATE:
 	ok = apc_region_create( self, &r);
 	if ( r. type == rgnPolygon ) free( r. data. polygon. points );
 	if ( free_image ) Object_destroy(r.data.image);
 	CORE_INIT_TRANSIENT(Region);
 	if (!ok)
-		croak("Cannot create region");
+		warn("Cannot create region");
 }
 
 void
