@@ -303,22 +303,6 @@ apc_region_get_box( Handle self)
 	return box;
 }
 
-Box
-apc_gp_get_region_box( Handle self)
-{
-	Box box;
-	RECT xr;
-	if ( GetClipBox( sys ps, &xr) == NULLREGION ) {
-		memset(&box, 0, sizeof(box));
-		return box;
-	}
-	box. x      = xr. left;
-	box. y      = sys lastSize.y - xr. bottom;
-	box. width  = xr. right - xr. left;
-	box. height = xr. bottom - xr. top;
-	return box;
-}
-
 ApiHandle
 apc_region_get_handle( Handle self)
 {

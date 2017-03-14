@@ -103,21 +103,19 @@ is( $r-> rect_inside(2,2,3,3), rgn::Partially, "rect partially inside 2,2,3,3");
 is( $r-> rect_inside(3,3,3,3), rgn::Outside, "rect outside 3,3,3,3");
 
 $dbm->region($image);
-@box = $dbm->get_region_box;
-is_deeply(\@box, [0,0,3,3], 'region box');
 @box = $dbm->clipRect;
 is_deeply(\@box, [0,0,2,2], 'region clip rect');
 
 my $dbm2 = Prima::DeviceBitmap->new( size => [5,5], type => dbt::Pixmap );
 $dbm2->region($image);
-@box = $dbm->get_region_box;
-is_deeply(\@box, [0,0,3,3], 'region box on pixmap');
+@box = $dbm->clipRect;
+is_deeply(\@box, [0,0,2,2], 'region clip rect on pixmap');
 
 if ( $::application->get_system_value(sv::LayeredWidgets)) {
 	$dbm2 = Prima::DeviceBitmap->new( size => [5,5], type => dbt::Layered );
 	$dbm2->region($image);
-	@box = $dbm->get_region_box;
-	is_deeply(\@box, [0,0,3,3], 'region box on layered');
+	@box = $dbm->clipRect;
+	is_deeply(\@box, [0,0,2,2], 'region box on layered');
 }
 
 $r2 = $dbm->region;
@@ -133,8 +131,6 @@ try('reused check 2',
 
 
 $dbm->region( undef );
-@box = $dbm->get_region_box;
-is_deeply(\@box, [0,0,5,5], 'empty region box');
 @box = $dbm->clipRect;
 is_deeply(\@box, [0,0,4,4], 'empty clip rect');
 

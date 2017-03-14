@@ -470,8 +470,8 @@ apc_gp_get_region( Handle self, Handle rgn)
 	gcv. graphics_exposures = false;
 	gcv. fill_style = FillSolid;
 	gcv. foreground = 0;
-	gcv. clip_y_origin = -XX-> clip_rect. y;
-	gcv. clip_x_origin = -XX-> clip_rect. x;
+	gcv. clip_y_origin = -XX-> clip_rect. y + XX-> btransform. y;
+	gcv. clip_x_origin = -XX-> clip_rect. x - XX-> btransform. x;
 	XCHECKPOINT;
 	gc = XCreateGC( DISP, pixmap, GCGraphicsExposures|GCFillStyle|GCForeground|GCClipXOrigin|GCClipYOrigin, &gcv);
 	XFillRectangle( DISP, pixmap, gc, 0, 0, w, h);
@@ -512,23 +512,5 @@ apc_gp_get_region( Handle self, Handle rgn)
 		GET_REGION(rgn)-> region = XCreateRegion();
 	}
 	return true;
-}
-
-Box
-apc_gp_get_region_box( Handle self)
-{
-	DEFXX;
-	Box box = {0,0,0,0};
-
-	if ( !XF_IN_PAINT(XX)) return box;
-	if ( XX-> clip_mask_extent. x == 0 || XX-> clip_mask_extent. y == 0)
-		return box;
-	
-	box. x	    = XX-> clip_rect. x;
-	box. y	    = XX-> size. y - XX-> clip_mask_extent. y - XX-> clip_rect. y;
-	box. width  = XX-> clip_mask_extent. x;
-	box. height = XX-> clip_mask_extent. y;
-
-	return box;
 }
 

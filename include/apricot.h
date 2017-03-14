@@ -3397,9 +3397,6 @@ apc_gp_get_physical_palette( Handle self, int * colors);
 extern Bool
 apc_gp_get_region( Handle self, Handle rgn);
 
-extern Box
-apc_gp_get_region_box( Handle self);
-
 extern Point
 apc_gp_get_resolution( Handle self);
 
