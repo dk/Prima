@@ -2351,48 +2351,24 @@ apc_widget_get_shape( Handle self, Handle mask)
 {
 	HRGN rgn;
 	int res;
-	HBITMAP bm, bmSave;
-	HBRUSH  brSave;
-	HDC dc;
-	XBITMAPINFO xbi;
-	BITMAPINFO * bi;
+	RECT rect;
 
-	objCheck false;
-	rgn = CreateRectRgn(0,0,0,0);
+	if ( !mask ) {
+		rgn = CreateRectRgn(0,0,0,0);
+		res = GetWindowRgn( HANDLE, rgn);
+		res = GetClipRgn( sys ps, rgn );
+		DeleteObject(rgn);
+		return res != ERROR;
+	}
 
+	rgn = GET_REGION(mask)-> region;
 	res = GetWindowRgn( HANDLE, rgn);
-	if ( res == ERROR) {
-		DeleteObject( rgn);
+	if ( res == ERROR)
 		return false;
-	}
-	if ( !mask) {
-		DeleteObject( rgn);
-		return true;
-	}
 
-	CImage( mask)-> create_empty( mask, sys extraBounds. x, sys extraBounds. y, imBW);
-
-	if (!( dc = dc_compat_alloc(0))) return true;
-	if ( !( bm = CreateBitmap( PImage( mask)-> w, PImage( mask)-> h, 1, 1, nil))) {
-		dc_compat_free();
-		return true;
-	}
-
-	bmSave = SelectObject( dc, bm);
-	brSave = SelectObject( dc, CreateSolidBrush( RGB(0,0,0)));
-	Rectangle( dc, 0, 0, PImage( mask)-> w, PImage( mask)-> h);
-	DeleteObject( SelectObject( dc, CreateSolidBrush( RGB( 255, 255, 255))));
-	SetViewportOrgEx( dc, -sys extraPos. x, -sys extraPos. y, NULL);
-	PaintRgn( dc, rgn);
-	DeleteObject( SelectObject( dc, brSave));
-
-	bi = image_fill_bitmap_info( mask, &xbi, BM_BITMAP);
-	if ( !GetDIBits( dc, bm, 0, PImage( mask)-> h, PImage( mask)-> data, bi, DIB_RGB_COLORS)) apiErr;
-	SelectObject( dc, bmSave);
-	DeleteObject( bm);
-	dc_compat_free();
-
-	DeleteObject( rgn);
+	GetRgnBox(rgn, &rect);
+	OffsetRgn( rgn, -sys extraPos. x, -sys extraPos. y);
+	GET_REGION(mask)-> height = sys lastSize. y - rect.top;
 
 	return true;
 }
