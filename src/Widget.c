@@ -2793,7 +2793,7 @@ Widget_shape( Handle self, Bool set, Handle mask)
 	if ( !set) {
 		if ( apc_widget_get_shape( self, nilHandle)) {
 			HV * profile = newHV();
-			Handle i = Object_create( "Prima::Image", profile);
+			Handle i = Object_create( "Prima::Region", profile);
 			sv_free(( SV *) profile);
 			apc_widget_get_shape( self, i);
 			--SvREFCNT( SvRV((( PAnyObject) i)-> mate));

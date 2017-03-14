@@ -1695,7 +1695,7 @@ See also: C<MouseDown>, C<firstClick>, C<selectable>, C<selected>, C<focused>
 Maintains the non-rectangular shape of a widget.
 When setting, REGION is either a Prima::Image object, with 0 bits treated 
 as transparent pixels, and 1 bits as opaque pixels, or a Prima::Region object.
-When getting, it is a Prima::Image object.
+When getting, it is either undef or a Prima::Region object.
 
 Successive only if C<sv::ShapeExtension> value is true.
 

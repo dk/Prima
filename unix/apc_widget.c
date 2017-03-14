@@ -727,7 +727,8 @@ apc_widget_get_shape( Handle self, Handle mask)
 #else
 	DEFXX;
 	XRectangle *r, *rc;
-	int i, count, ordering;
+	int i, count, ordering, height;
+	Region rgn;
 
 	if ( !guts. shape_extension) return false;
 
@@ -739,17 +740,14 @@ apc_widget_get_shape( Handle self, Handle mask)
 
 	r = rc = XShapeGetRectangles( DISP, X_WINDOW, ShapeBounding, &count, &ordering);
 
-	CImage(mask)-> create_empty( mask, XX-> shape_extent. x, XX-> shape_extent. y, imBW);
-	CImage(mask)-> begin_paint( mask); 
-	XSetForeground( DISP, X(mask)-> gc, 0);
-	XFillRectangle( DISP, X(mask)->gdrawable, X(mask)->gc, 0, 0, XX->shape_extent.x, XX->shape_extent.y);
-	XSetForeground( DISP, X(mask)-> gc, 1);
-	for ( i = 0; i < count; i++, r++) 
-		XFillRectangle( DISP, X(mask)-> gdrawable, X(mask)-> gc, 
-			r-> x - XX-> shape_offset. x, r-> y - XX-> shape_offset. y,
-			r-> width, r-> height);
+	rgn = GET_REGION(mask)-> region;
+	for ( i = height = 0; i < count; i++, r++) {
+		int h = r-> y + r-> height;
+		if ( height < h ) height = h;
+		XUnionRectWithRegion( r, rgn, rgn);
+	}
+	GET_REGION(mask)-> height = height;
 	XFree( rc);
-	CImage(mask)-> end_paint( mask);  
 	return true;
 #endif   
 }
