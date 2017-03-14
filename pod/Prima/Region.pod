@@ -15,6 +15,9 @@ Prima::Region - generic shape for clipping and hit testing
 
    $drawable-> region( $rect ); 
 
+   my $rgn = $drawable->region;
+   $rgn->bitmap->image->save('region.png') if $rgn;
+
 =head1 DESCRIPTION
 
 Prima::Region is a descendant of Prima::Component. It serves a representation
@@ -51,6 +54,11 @@ Creates a region that mirrors 1-bits in the image. If no pixels are set to 1,
 the region will be effecively empty.
 
 =back
+
+=item bitmap WITH_OFFSET = 0, TYPE = dbt::Bitmap
+
+Paints the region on a newly created bitmap and returns it. By default,
+region offset is not included.
 
 =item box
 

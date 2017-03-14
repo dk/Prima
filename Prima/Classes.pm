@@ -354,10 +354,30 @@ sub rect
 	return @box[0,1], $box[0] + $box[2], $box[1] + $box[3];
 }
 
-sub dup { 
+sub dup
+{
 	my $r = ref($_[0])->new;
 	$r->combine($_[0], rgnop::Copy);
 	return $r;
+}
+
+sub bitmap
+{
+	my ($self, $with_offset, $type) = @_;
+	return undef if $self-> is_empty;
+	my @box = $self->box;
+	my @size = @box[2,3];
+	if ( $with_offset ) {
+		$size[0] += $box[0];
+		$size[1] += $box[1];
+	}
+	my $dbm = Prima::DeviceBitmap->new( size => \@size, type => $type // dbt::Bitmap );
+	$dbm-> clear;
+	$self-> offset( -$box[0], -$box[1]) unless $with_offset;
+	$dbm-> region($self);
+	$self-> offset( $box[0], $box[1]) unless $with_offset;
+	$dbm-> bar(0,0,@size);
+	return $dbm;
 }
 
 package Prima::Drawable;
