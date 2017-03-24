@@ -80,6 +80,7 @@ sub init
 		(map { $_ => $profile{$_}} keys %hdrProps),
 		%{$profile{headerProfile}},
 	);
+	$self-> {header}-> send_to_back;
 
 	my $x = $self-> {header}-> items;
 	$self-> {umap} = [ 0 .. $#$x];
