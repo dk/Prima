@@ -424,9 +424,9 @@ exif_find_angle_tag( unsigned char * c, STRLEN len, int wipe)
 	if ( wipe ) {
 		for ( ; (char*)c < c2; c++) *c = '0';
 	}
-	if ( i == 180 ) return 3;
-	if ( i == 90  ) return 8;
-	if ( i == 270 ) return 6;
+	if ( i >=  45 && i < 135 ) return 8;
+	if ( i >= 135 && i < 225 ) return 3;
+	if ( i >= 225 && i < 315 ) return 6;
 	return 1;
 }
 
