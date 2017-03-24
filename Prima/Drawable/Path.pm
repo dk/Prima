@@ -561,7 +561,7 @@ will draw same spline twice but rotated 45 and 135 degrees.
 
 =item precision INTEGER
 
-Selectes current precision for splines and arcs. See L<Prima::Drawable/spline>, C<precision> entry.
+Selects current precision for splines and arcs. See L<Prima::Drawable/spline>, C<precision> entry.
 
 =item restore
 
