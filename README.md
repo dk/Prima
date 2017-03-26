@@ -30,8 +30,13 @@ libraries can be compiled in on all platforms:
    - libtiff
    - libX11  - support for native X11 bitmap files
 
-For Win32, CPAN contains binary distributions that can
-be installed just for this purpose:
+Win32
+-----
+
+Modern Strawberry perl come with all of these libraries already, so nothing
+specific needs to be done. However for the older distributions, or ActiveState,
+or custom builds, CPAN contains binary distributions that can be installed just
+for this purpose:
 
  - http://search.cpan.org/~karasik/Prima-codecs-win32/
  - http://search.cpan.org/~karasik/Prima-codecs-win64/
