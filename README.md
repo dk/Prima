@@ -48,6 +48,7 @@ external fribidi library to build. On windows the library is not installed by
 default, you can grab it here:
 
   http://prima.eu.org/download/fribidi-win32.zip
+  http://prima.eu.org/download/fribidi-win64.zip
 
 SOURCE DISTRIBUTION INSTALLATION
 ================================
