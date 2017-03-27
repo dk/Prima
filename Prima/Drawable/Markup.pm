@@ -42,7 +42,7 @@ C<colorPalette>. Also, C<default> can be used to set the color that the canvas
 originaly had. For C<Q> a special value C<off> can be used to turn off background
 color and set it as transparent.
 
-The C<M> command has three paramaters, comma-separated: X, Y, and flags.  X and
+The C<M> command has three parameters, comma-separated: X, Y, and flags.  X and
 Y are coordinates how much to move the current pointer. By default X and are in
 pixels, and do not extend block width. C<flags> is a set of characters, where
 each is:
