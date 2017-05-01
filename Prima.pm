@@ -6,10 +6,12 @@ package Prima;
 use strict;
 use warnings;
 require DynaLoader;
-use vars qw($VERSION @ISA $__import @preload);
+use vars qw($VERSION @ISA $__import @preload $pid $cleanup);
 @ISA = qw(DynaLoader);
 sub dl_load_flags { 0x00 }
 $VERSION = '1.51';
+$pid = $$;
+$cleanup = 1;
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {
 	$::application = 0;
@@ -57,9 +59,11 @@ sub parse_argv
 
 Prima::init($VERSION) unless $^C;
 
+sub CLONE { undef $cleanup }
+
 sub END
 {
-	&Prima::cleanup() if UNIVERSAL::can('Prima', 'cleanup');
+	&Prima::cleanup() if $cleanup && $pid == $$ && UNIVERSAL::can('Prima', 'cleanup');
 }
 
 sub run
