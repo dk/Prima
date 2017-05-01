@@ -52,8 +52,8 @@ module from CPAN. The module is not a prerequisite; it'll need the
 external fribidi library to build. On windows the library is not installed by
 default, you can grab it here:
 
-  http://prima.eu.org/download/fribidi-win32.zip
-  http://prima.eu.org/download/fribidi-win64.zip
+ - http://prima.eu.org/download/fribidi-win32.zip
+ - http://prima.eu.org/download/fribidi-win64.zip
 
 SOURCE DISTRIBUTION INSTALLATION
 ================================
@@ -192,3 +192,5 @@ CREDITS
  - Sean Healy
  - Ali Yassen
  - Maximilian Lika
+ - kmx
+ - Mario Roy
