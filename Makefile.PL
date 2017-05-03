@@ -1180,6 +1180,19 @@ MIXED
 		}
 	}
 
+	# it is mac's broken XQuartz setup?
+	my $xquartz_pkgconfig_path = '/opt/X11/lib/pkgconfig';
+	if ( $^O eq 'darwin' && !exists $ENV{PKG_CONFIG_PATH} && -d $xquartz_pkgconfig_path) {
+		my $add_path;
+		null_output;
+		if ( system "pkg-config --exists x11" ) {
+			local $ENV{PKG_CONFIG_PATH} = $xquartz_pkgconfig_path;
+			$add_path = 1 unless system "pkg-config --exists x11";
+		}
+		restore_output;
+		$ENV{PKG_CONFIG_PATH} = $xquartz_pkgconfig_path if $add_path;
+	}
+
 	$use_pkgconfig = 1;
 	printlog "yes\n";
 }
