@@ -81,21 +81,21 @@ typedef struct {
 } CharSetInfo;
 
 static CharSetInfo std_charsets[] = {
-	{ "iso8859-1",  nil, 0, 1 }
+	{ "iso8859-1",  NULL, 0, 1 }
 #ifdef HAVE_ICONV_H    
 	,
-	{ "iso8859-2",  nil, 0, 0 },
-	{ "iso8859-3",  nil, 0, 0 },
-	{ "iso8859-4",  nil, 0, 0 },
-	{ "iso8859-5",  nil, 0, 0 },
-	{ "iso8859-7",  nil, 0, 0 },
-	{ "iso8859-8",  nil, 0, 0 },
-	{ "iso8859-9",  nil, 0, 0 },
-	{ "iso8859-10", nil, 0, 0 },
-	{ "iso8859-13", nil, 0, 0 },
-	{ "iso8859-14", nil, 0, 0 },
-	{ "iso8859-15", nil, 0, 0 },
-	{ "koi8-r",     nil, 0, 0 }  /* this is special - change the constant
+	{ "iso8859-2",  NULL, 0, 0 },
+	{ "iso8859-3",  NULL, 0, 0 },
+	{ "iso8859-4",  NULL, 0, 0 },
+	{ "iso8859-5",  NULL, 0, 0 },
+	{ "iso8859-7",  NULL, 0, 0 },
+	{ "iso8859-8",  NULL, 0, 0 },
+	{ "iso8859-9",  NULL, 0, 0 },
+	{ "iso8859-10", NULL, 0, 0 },
+	{ "iso8859-13", NULL, 0, 0 },
+	{ "iso8859-14", NULL, 0, 0 },
+	{ "iso8859-15", NULL, 0, 0 },
+	{ "koi8-r",     NULL, 0, 0 }  /* this is special - change the constant
 					KOI8_INDEX as well when updating
 					the table */
 /* You are welcome to add more 8-bit charsets here - just keep in mind
@@ -103,19 +103,21 @@ static CharSetInfo std_charsets[] = {
 #endif    
 };
 
-static CharSetInfo fontspecific_charset = { "fontspecific", nil, 0, 1 };
+static CharSetInfo fontspecific_charset = { "fontspecific", NULL, 0, 1 };
+static CharSetInfo utf8_charset         = { "iso10646-1",   NULL, 0, 1 };
 
 #define KOI8_INDEX 12
 #define MAX_CHARSET (sizeof(std_charsets)/sizeof(CharSetInfo))
 #define MAX_GLYPH_SIZE (guts.limits.request_length / 256)
 
-static PHash encodings    = nil;
-static PHash mono_fonts   = nil; /* family->mono font mapping */
-static PHash prop_fonts   = nil; /* family->proportional font mapping */
-static PHash mismatch     = nil; /* fonts not present in xft base */
-static PHash myfont_cache = nil; /* fonts loaded temporarily */
+static PHash encodings    = NULL;
+static PHash mono_fonts   = NULL; /* family->mono font mapping */
+static PHash prop_fonts   = NULL; /* family->proportional font mapping */
+static PHash mismatch     = NULL; /* fonts not present in xft base */
+static PHash myfont_cache = NULL; /* fonts loaded temporarily */
 static char  fontspecific[] = "fontspecific";
-static CharSetInfo * locale = nil;
+static char  utf8_encoding[] = "iso10646-1";
+static CharSetInfo * locale = NULL;
 
 #ifdef NEED_X11_EXTENSIONS_XRENDER_H
 /* piece of Xrender guts */
@@ -247,6 +249,10 @@ prima_xft_init(void)
 	fontspecific_charset. fcs = FcCharSetCreate();
 	for ( i = 128; i < 256; i++) fontspecific_charset. map[i - 128] = i;
 	hash_store( encodings, fontspecific, strlen(fontspecific), (void*) &fontspecific_charset);
+	
+	utf8_charset. fcs = FcCharSetCreate();
+	for ( i = 128; i < 256; i++) utf8_charset. map[i - 128] = i;
+	hash_store( encodings, utf8_encoding, strlen(utf8_encoding), (void*) &utf8_charset);
 
 	locale = hash_fetch( encodings, guts. locale, strlen( guts.locale));
 	if ( !locale) locale = std_charsets;
@@ -273,9 +279,9 @@ prima_xft_done(void)
 	hash_destroy( prop_fonts, true);
 	hash_destroy( mono_fonts, true);
 	
-	hash_first_that( myfont_cache, (void*)remove_myfonts, nil, nil, nil); 
+	hash_first_that( myfont_cache, (void*)remove_myfonts, NULL, NULL, NULL); 
 	hash_destroy( myfont_cache, false);
-	myfont_cache = nil;
+	myfont_cache = NULL;
 
 }
 
@@ -323,7 +329,7 @@ fcpattern2font( FcPattern * pattern, PFont font)
 	FcChar8 * s;
 	int i, j;
 	double d = 1.0, ds;
-	FcCharSet *c = nil;
+	FcCharSet *c = NULL;
 
 	/* FcPatternPrint( pattern); */
 	fcpattern2fontnames(pattern, font);
@@ -435,7 +441,7 @@ static XftFont *
 try_size( Handle self, Font f, double size)
 {
 	FontKey key;
-	XftFont * xft = nil;
+	XftFont * xft = NULL;
 	f. size = size + 0.5;
 	f. height = f. width = C_NUMERIC_UNDEF;
 	f. direction = 0.0;
@@ -479,7 +485,7 @@ find_good_font_by_family( Font * f, int fc_spacing )
 		ppat = s-> fonts; 
 		for ( i = 0; i < s->nfont; i++, ppat++) {
 			Font f;
-			FcCharSet *c = nil;
+			FcCharSet *c = NULL;
 			int spacing = FC_PROPORTIONAL, slant, len, weight;
 			PHash font_hash;
 
@@ -562,7 +568,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	CharSetInfo * csi;
 	XftFont * xf;
 	FontKey key; 
-	PCachedFont kf, kf_base = nil;
+	PCachedFont kf, kf_base = NULL;
 	int i, base_width = 1, exact_pixel_size = 0, cache_results = 1;
 	double pixel_size;
 
@@ -627,7 +633,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			s. width = d. width = 0;
 			XFTdebug("try nonscaled font");
 			xft_debug_indent++;
-			prima_xft_font_pick( self, &s, &d, size, nil);
+			prima_xft_font_pick( self, &s, &d, size, NULL);
 			xft_debug_indent--;
 		}
 		if ( kf || ( kf = hash_fetch( guts. font_hash, &key, sizeof( FontKey)))) {
@@ -650,7 +656,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			s. direction = d. direction = 0.0;
 			XFTdebug("try nonrotated font");
 			xft_debug_indent++;
-			prima_xft_font_pick( self, &s, &d, size, nil);
+			prima_xft_font_pick( self, &s, &d, size, NULL);
 			xft_debug_indent--;
 			/* if fails, cancel rotation and see if the base font is banned  */
 			if ( !( kf_base = hash_fetch( guts. font_hash, &key, sizeof( FontKey))))
@@ -752,7 +758,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	} else if ( requested_font.pitch == fpVariable ) {
 		/*
 			xft picks a monospaced font when a proportional one is requested if the name points at it.
-			Not that this is wrong, but in Prima terms pich is heavier than name (this concept was borrowed from win32).
+			Not that this is wrong, but in Prima terms pitch is heavier than name (this concept was borrowed from win32).
 			So try to pick a variable font of the same family, if there is one. Same algorithm as with fixed fonts,
 			but not as strict - if we can't find a proportional font within same family, so be it then
 		*/
@@ -783,18 +789,13 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 
 	/* Manually check if font contains wanted encoding - matching by FcCharSet 
 		can't set threshold on how many glyphs can be omitted */
-	{
-		FcCharSet *c = nil;
+	if ( !( 
+		(strcmp( requested_font. encoding, fontspecific) != 0) ||
+		(strcmp( requested_font. encoding, utf8_encoding) != 0)
+	)) {
+		FcCharSet *c = NULL;
 		FcPatternGetCharSet( match, FC_CHARSET, 0, &c);
-		if ( c && (
-				( FcCharSetCount(c) == 0) ||
-				
-				(
-					requested_font. encoding[0] && 
-					( strcmp( requested_font. encoding, fontspecific) != 0) &&
-					( FcCharSetIntersectCount( csi-> fcs, c) < csi-> glyphs - 1)
-				)
-			)) {
+		if ( c && (FcCharSetCount(c) == 0)) {
 			XFTdebug("charset mismatch (%s)", requested_font. encoding);
 			FcPatternDestroy( match);
 			return false;
@@ -831,7 +832,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 
 	/* check name match */
 	{
-		FcChar8 * s = nil;
+		FcChar8 * s = NULL;
 		FcPatternGetString( match, FC_FAMILY, 0, &s);
 		if ( !s || strcmp(( const char*) s, requested_font. name) != 0) {
 			int i, n = guts. n_fonts;
@@ -898,7 +899,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			*/
 			HeightGuessStack hgs;
 			int h, sz, last_sz = -1;
-			XftFont * guessed_font = nil;
+			XftFont * guessed_font = NULL;
 	
 			sz = 10.0 * (float) loaded_font. size * (float) loaded_font. height / (float) xf->height;
 			XFTdebug("need to figure the corresponding size - try %g first...", ( double) sz / 10.0);
@@ -1007,7 +1008,7 @@ prima_xft_get_cache( PFont font)
 	PCachedFont kf;
 	xft_build_font_key( &key, font, false);
 	kf = ( PCachedFont) hash_fetch( guts. font_hash, &key, sizeof( FontKey));
-	if ( !kf || !kf-> xft) return nil;
+	if ( !kf || !kf-> xft) return NULL;
 	return kf;
 }
 
@@ -1029,8 +1030,8 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 	FcPattern   *pat, **ppat;
 	FcObjectSet *os;
 	PFont newarray, f;
-	PHash names = nil;
-	CharSetInfo * csi = nil;
+	PHash names = NULL;
+	CharSetInfo * csi = NULL;
 	int i;
 
 	if ( encoding) {
@@ -1064,7 +1065,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 	names = hash_create();
 	
 	for ( i = 0; i < s->nfont; i++, ppat++) {
-		FcCharSet *c = nil;
+		FcCharSet *c = NULL;
 		fcpattern2font( *ppat, f);
 		FcPatternGetCharSet( *ppat, FC_CHARSET, 0, &c);
 		if ( c && FcCharSetCount(c) == 0) continue;
@@ -1096,6 +1097,9 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 				strcpy( f-> encoding, fontspecific);
 				f++;
 			}
+			/* always report utf8 encoding */
+			strcpy( f-> encoding, utf8_encoding);
+			f++;
 		} else if ( !facename && !encoding) { 
 			/* case 3 - report unique facenames and store list of encodings
 				into the hack array */
@@ -1119,6 +1123,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 				}
 				if ( !found)
 					*(enc + ++(*shift)) = fontspecific;
+				*(enc + ++(*shift)) = utf8_encoding;
 			}
 			f++;
 		}
@@ -1151,7 +1156,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 		(void)bytelen;
 
 		if ( len < 0) len = prima_utf8_length(( char*) text);
-		if ( !( r = ret = malloc( len * sizeof( FcChar32)))) return nil;
+		if ( !( r = ret = malloc( len * sizeof( FcChar32)))) return NULL;
 		while ( len--) {
 			*(r++) = 
 #if PERL_PATCHLEVEL >= 16
@@ -1166,7 +1171,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 	} else {
 		int i;
 		if ( len < 0) len = strlen(( char*) text);
-		if ( !( ret = malloc( len * sizeof( FcChar32)))) return nil;
+		if ( !( ret = malloc( len * sizeof( FcChar32)))) return NULL;
 		for ( i = 0; i < len; i++) 
 			ret[i] = ( text[i] < 128) ? text[i] : map8[ text[i] - 128];
 	}
@@ -1231,7 +1236,7 @@ prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8)
 	Point ovx;
 	int width;
 	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
-	if ( !pt) return nil;
+	if ( !pt) return NULL;
 
 	width = prima_xft_get_text_width( XX-> font, text, len, 
 		false, utf8, X(self)-> xft_map8, &ovx);
@@ -1267,7 +1272,7 @@ static XftFont *
 create_no_aa_font( XftFont * font)
 {
 	FcPattern * request;
-	if (!( request = FcPatternDuplicate( font-> pattern))) return nil;
+	if (!( request = FcPatternDuplicate( font-> pattern))) return NULL;
 	FcPatternDel( request, FC_ANTIALIAS);
 	FcPatternAddBool( request, FC_ANTIALIAS, 0);
 	return XftFontOpenPattern( DISP, request);
@@ -1304,7 +1309,7 @@ XftDrawGlyph_layered( PDrawableSysData selfxx, _Xconst XftColor *color, int x, i
 			XFreePixmap( DISP, XX-> xft_shadow_pixmap);
 			XftDrawDestroy( XX-> xft_shadow_drawable);
 			XX-> xft_shadow_pixmap   = 0;
-			XX-> xft_shadow_drawable = nil;
+			XX-> xft_shadow_drawable = NULL;
 		}
 		w = extents. width * 4;
 		h = extents. height * 4;
@@ -1528,7 +1533,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 		XGCValues gcv;
 		GC gc;
 		int dx  = prima_xft_get_text_width( XX-> font, text, len, 
-			true, utf8, X(self)-> xft_map8, nil);
+			true, utf8, X(self)-> xft_map8, NULL);
 		int dy  = XX-> font-> font. height;
 		int i, width, height;
 		Rect rc;
@@ -1681,7 +1686,7 @@ prima_xft_get_font_ranges( Handle self, int * count)
 
 	*count = 0;
 	if ( !c) return false;
-	if ( !( ret = malloc( sizeof( unsigned long) * size))) return nil;
+	if ( !( ret = malloc( sizeof( unsigned long) * size))) return NULL;
 
 	if ( FcCharSetCount(c) == 0) {
 		/* better than nothing */
@@ -1726,7 +1731,7 @@ prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
 	XftFont *font = X(self)-> font-> xft_base;
 
 	if ( !( abc = malloc( sizeof( FontABC) * len))) 
-		return nil;
+		return NULL;
 
 	for ( i = 0; i < len; i++) {
 		FcChar32 c = i + firstChar;
@@ -1753,7 +1758,7 @@ prima_xft_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode)
 	XftFont *font = X(self)-> font-> xft_base;
 
 	if ( !( abc = malloc( sizeof( FontABC) * len))) 
-		return nil;
+		return NULL;
 
 	for ( i = 0; i < len; i++) {
 		FcChar32 c = i + firstChar;
@@ -1785,7 +1790,7 @@ Bool
 prima_xft_parse( char * ppFontNameSize, Font * font)
 {
 	FcPattern * p = FcNameParse(( FcChar8*) ppFontNameSize);
-	FcCharSet * c = nil;
+	FcCharSet * c = NULL;
 	Font f, def = guts. default_font;
 
 	bzero( &f, sizeof( Font));
@@ -1804,7 +1809,7 @@ prima_xft_parse( char * ppFontNameSize, Font * font)
 		}
 	}
 	FcPatternDestroy( p);
-	if ( !prima_xft_font_pick( nilHandle, &f, &def, nil, nil)) return false;
+	if ( !prima_xft_font_pick( nilHandle, &f, &def, NULL, NULL)) return false;
 	*font = def;
 	XFTdebug( "parsed ok: %d.%s", def.size, def.name);
 	return true;
@@ -1861,11 +1866,11 @@ prima_xft_gp_destroy( Handle self )
 	DEFXX;
 	if ( XX-> xft_drawable) {
 		XftDrawDestroy( XX-> xft_drawable);
-		XX-> xft_drawable = nil;
+		XX-> xft_drawable = NULL;
 	}
 	if ( XX-> xft_shadow_drawable) {
 		XftDrawDestroy( XX-> xft_shadow_drawable);
-		XX-> xft_shadow_drawable = nil;
+		XX-> xft_shadow_drawable = NULL;
 	}
 	if ( XX-> xft_shadow_pixmap) {
 		XFreePixmap( DISP, XX-> xft_shadow_pixmap);
