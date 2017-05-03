@@ -136,17 +136,15 @@ prima_gtk_init(void)
 		if ( weight <= PANGO_WEIGHT_LIGHT ) f-> style |= fsThin;
 		if ( weight >= PANGO_WEIGHT_BOLD  ) f-> style |= fsBold;
 		if ( pango_font_description_get_style(t->font_desc) == PANGO_STYLE_ITALIC)
-					f-> style |= fsItalic;
+			f-> style |= fsItalic;
 		strcpy( f->encoding, "Default" );
 		f-> width = f-> height = f->pitch = C_NUMERIC_UNDEF;
 		apc_font_pick( application, f, f);
 #define DEBUG_FONT(font) f->height,f->width,f->size,f->name,f->encoding
 		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", s->name, DEBUG_FONT(f));
-				
 	}
 
 	return ret;
-
 }
 
 Bool
@@ -172,7 +170,6 @@ static gboolean do_events(gpointer data)
 static char *
 gtk_openfile( Bool open)
 {
-
 	char *result = NULL;
 	struct MsgDlg message_dlg, **storage;
 
@@ -306,8 +303,8 @@ gtk_openfile( Bool open)
 	}
 				
 	if ( gtk_filters) {
-				plist_destroy( gtk_filters);
-				gtk_filters = NULL;
+		plist_destroy( gtk_filters);
+		gtk_filters = NULL;
 	}
 
 	*storage = message_dlg. next; /* unlock */
