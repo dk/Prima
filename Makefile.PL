@@ -68,7 +68,6 @@ use vars qw(
 	$platform
 	$flavor
 	$path_sep
-	$dir_sep
 	%alldeps
 	@pm_files
 	@prima_files
@@ -228,8 +227,6 @@ sub setup_variables
 	}
 
 	$DL_LOAD_FLAGS = $cmd_options{DL_LOAD_FLAGS} if defined $cmd_options{DL_LOAD_FLAGS};
-
-	$dir_sep = '/';
 }
 
 sub extmap
@@ -448,21 +445,14 @@ sub qtilde
 	return $ENV{HOME} . $path;
 }
 
-sub qd
-{
-	my ( $path_str) = @_;
-	$path_str =~ s[/][$dir_sep]g;
-	return $path_str;
-}
-
 sub _find_file
 {
 	my ( $fname, $dir) = @_;
 	my ( $pathname, $found);
-	$pathname = qd( "$dir/$fname");
+	$pathname = "$dir/$fname";
 	return $pathname if $pathname !~ /\.\./ && -e $pathname;
 	opendir D, $dir or die "Cannot open dir $dir: $!";
-	my @entries = map { qd( "$dir/$_")} grep { /^[^.]/ && -d qd( "$dir/$_")} readdir D;
+	my @entries = map { "$dir/$_"} grep { /^[^.]/ && -d "$dir/$_"} readdir D;
 	closedir D;
 	foreach my $entry ( @entries) {
 		$pathname = _find_file( $fname, $entry);
@@ -476,7 +466,6 @@ sub find_file
 {
 	my ( $fname) = @_;
 	$fname =~ s/\\/\//g;
-	$fname = qd($fname);
 	return $cache_find_files{$fname} if exists $cache_find_files{$fname};
 	return $cache_find_files{$fname} = _find_file( $fname, '.');
 }
@@ -484,7 +473,7 @@ sub find_file
 sub canon_name
 {
 	my ( $fname) = @_;
-	my $qdirsep = quotemeta( $dir_sep);
+	my $qdirsep = quotemeta('/');
 	$fname =~ s{[^$qdirsep]+$qdirsep\.\.(?:$qdirsep|\Z)}{}
 		while $fname =~ /(?:$qdirsep|\A)\.\.(?:$qdirsep|\Z)/;
 	$fname =~ s{(?:(?<=$qdirsep)|(?<=\A))\.(?=$qdirsep|\Z)$qdirsep?}{}g;
@@ -511,7 +500,7 @@ sub find_cdeps
 		next unless /^\s*\#\s*include\s+"([^\"]+)"/;
 		my $incfile = $1;
 		my $i = find_file( $incfile);
-		$incfile = defined($i) ? $i : qd( "include/generic/$incfile");
+		$incfile = defined($i) ? $i : "include/generic/$incfile";
 		$incfile = canon_name( $incfile);
 		unless ( exists $included->{ $incfile}) {
 			push @{ $alldeps{ $cfile}}, $incfile;
@@ -618,9 +607,9 @@ sub tempfile
 sub compile
 {
 	my ( $text, $compile_only, @extra) = @_;
-	my $tmpsrc = qd( tempfile( "$TMPDIR/pmts%04d.c"));
-	my $tmpo = qd( tempfile( "$TMPDIR/pmts%04d$Config{_o}"));
-	my $tmpexe = qd( tempfile( "$TMPDIR/pmts%04d$Config{_exe}"));
+	my $tmpsrc = tempfile( "$TMPDIR/pmts%04d.c");
+	my $tmpo = tempfile( "$TMPDIR/pmts%04d$Config{_o}");
+	my $tmpexe = tempfile( "$TMPDIR/pmts%04d$Config{_exe}");
 	my @tmpextras = ( $tmpsrc, $tmpsrc);
 	$tmpextras[0] =~ s/\.[^\.+]$/.ilk/;
 	$tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
@@ -646,9 +635,9 @@ sub compile
 sub compile_and_run
 {
 	my ( $text) = @_;
-	my $tmpsrc = qd( tempfile( "$TMPDIR/pmts%04d.c"));
-	my $tmpo = qd( tempfile( "$TMPDIR/pmts%04d$Config{_o}"));
-	my $tmpexe = qd( tempfile( "$TMPDIR/pmts%04d$Config{_exe}"));
+	my $tmpsrc = tempfile( "$TMPDIR/pmts%04d.c");
+	my $tmpo = tempfile( "$TMPDIR/pmts%04d$Config{_o}");
+	my $tmpexe = tempfile( "$TMPDIR/pmts%04d$Config{_exe}");
 	my @tmpextras = ( $tmpsrc, $tmpsrc);
 	$tmpextras[0] =~ s/\.[^\.+]$/.ilk/;
 	$tmpextras[1] =~ s/\.[^\.+]$/.pdb/;
@@ -763,7 +752,7 @@ sub have_define
 	my ( $defname) = @_;
 	my $cwd = cwd;
 	chdir $TMPDIR;
-	my $tmpsrc = qd( tempfile( "pmts%04d.c"));
+	my $tmpsrc = tempfile( "pmts%04d.c");
 	my $tmpo = $tmpsrc;
 	$tmpo =~ s/\.c$/\.$Config{_o}/;
 	open TMPSRC, ">$tmpsrc" or die "Creation of temporary file $tmpsrc failed";
@@ -1058,17 +1047,17 @@ sub setup_dl_loadflags
 
 	printlog "Determining dl_load_flags... ";
 	
-	local @INCPATH = ( qtilde($Config{archlib}) . qd( "/CORE"));
+	local @INCPATH = ( qtilde($Config{archlib}) . "/CORE");
 
-	my $c1  = qd( tempfile( "$TMPDIR/pmts%04d.c"));
+	my $c1  = tempfile( "$TMPDIR/pmts%04d.c");
 	$c1 =~ m/pmts([^\.]*).c$/;
 	my ( $n1, $n2) = ( $1, sprintf("%04d", 1 + $1));
 
-	my $o1  = qd( "$TMPDIR/pmts$n1$Config{_o}");
-	my $o2  = qd( "$TMPDIR/pmts$n2$Config{_o}");
-	my $dl1 = qd( "$TMPDIR/pmts$n1.$Config{dlext}");
-	my $dl2 = qd( "$TMPDIR/pmts$n2.$Config{dlext}");
-	my @ex = map { qd("$TMPDIR/pmts$_")} map { ("$n1$_", "$n2$_") } ('.ilk', '.pdb');
+	my $o1  = "$TMPDIR/pmts$n1$Config{_o}";
+	my $o2  = "$TMPDIR/pmts$n2$Config{_o}";
+	my $dl1 = "$TMPDIR/pmts$n1.$Config{dlext}";
+	my $dl2 = "$TMPDIR/pmts$n2.$Config{dlext}";
+	my @ex = map { "$TMPDIR/pmts$_"} map { ("$n1$_", "$n2$_") } ('.ilk', '.pdb');
 
 	open TMPSRC, ">$c1" or die "Creation of temporary file $c1 failed";
 	print TMPSRC <<D;
@@ -1085,7 +1074,7 @@ XS(boot_pmts$n1) {
 D
 	close TMPSRC;
 
-	my $c2  = qd( tempfile( "$TMPDIR/pmts%04d.c"));
+	my $c2  = tempfile( "$TMPDIR/pmts%04d.c");
 	open TMPSRC, ">$c2" or die "Creation of temporary file $c2 failed";
 	print TMPSRC <<D;
 #include <EXTERN.h>
@@ -1219,8 +1208,8 @@ sub pkgconfig
 	%h = map { $_ => 1 } @INCPATH;
 	my $inc  = `pkg-config --cflags-only-I $package`;
 	if ( $? != 0 ) { # package has error?
-	   printlog "misconfigured\n";
-	   return 0;
+		printlog "misconfigured\n";
+		return 0;
 	}
 	chomp $inc;
 	$inc =~ s/\-I//g;
@@ -1231,8 +1220,8 @@ sub pkgconfig
 	%h = map { $_ => 1 } @LIBS;
 	my $libs    = `pkg-config --libs-only-l $package`;
 	if ( $? != 0 ) {
-	   printlog "misconfigured\n";
-	   return 0;
+		   printlog "misconfigured\n";
+		   return 0;
 	}
 	chomp $libs;
 	$libs =~ s/\-l//g;
@@ -1243,8 +1232,8 @@ sub pkgconfig
 	%h = map { $_ => 1 } @LIBPATH;
 	my $libpath    = `pkg-config --libs-only-L $package`;
 	if ( $? != 0 ) {
-	   printlog "misconfigured\n";
-	   return 0;
+		   printlog "misconfigured\n";
+		   return 0;
 	}
 	chomp $libpath;
 	$libpath =~ s/\-[LR]//g;
@@ -1273,14 +1262,14 @@ sub setup_X11
 	push @INCPATH, "$cmd_options{X11BASE}/include"
 		if defined($cmd_options{X11BASE}) and -d "$cmd_options{X11BASE}/include";
 	for ( 'local/', 'freeware/', 'gnu/', 'opt/') {
-		push @INCPATH, qd( "/usr/${_}include") if -d "/usr/${_}include";
+		push @INCPATH, "/usr/${_}include" if -d "/usr/${_}include";
 	}
-	my $incpath = find_header( qd( "X11/Xlib.h"), 
-		qd( "/usr/X11R6/include"), 
-		qd( "/usr/X11/include"), 
-		qd("/usr/X/include"), 
-		qd("/usr/openwin/include"),
-		qd("/opt/X11/include")
+	my $incpath = find_header( "X11/Xlib.h", 
+		"/usr/X11R6/include",
+		"/usr/X11/include",
+		"/usr/X/include",
+		"/usr/openwin/include",
+		"/opt/X11/include"
 	);
 
 	unless ( defined $incpath) {
@@ -1366,25 +1355,25 @@ sub setup_xft
 	}
 
 	my @ft_incpaths = ( "",
-		( defined($cmd_options{X11BASE}) ? qd("$cmd_options{X11BASE}/include/freetype2") : ()),
-		qd("/usr/include/freetype2"),
-		qd("/usr/X11R6/include/freetype2"),
-		qd("/usr/X11/include/freetype2"),
-		qd("/usr/X/include/freetype2"),
-		qd("/usr/openwin/include/freetype2"),
-		qd("/opt/X11/include/freetype2"),
-		qd("/usr/local/include/freetype2"),
-		qd("/usr/gnu/include/freetype2"),
-		qd("/usr/freeware/include/freetype2"),
-		qd("/usr/opt/include/freetype2")
+		( defined($cmd_options{X11BASE}) ? "$cmd_options{X11BASE}/include/freetype2" : ()),
+		"/usr/include/freetype2",
+		"/usr/X11R6/include/freetype2",
+		"/usr/X11/include/freetype2",
+		"/usr/X/include/freetype2",
+		"/usr/openwin/include/freetype2",
+		"/opt/X11/include/freetype2",
+		"/usr/local/include/freetype2",
+		"/usr/gnu/include/freetype2",
+		"/usr/freeware/include/freetype2",
+		"/usr/opt/include/freetype2"
 	);
-	my $have_ft2build_h = defined find_header( qd("ft2build.h"), @ft_incpaths );
+	my $have_ft2build_h = defined find_header( "ft2build.h", @ft_incpaths );
 
 	printlog "Checking for presence of freetype/freetype.h... ";
 	my $incpath;
 	if ($have_ft2build_h) {
 		$incpath = find_header( 
-			qd("freetype/freetype.h"), {
+			"freetype/freetype.h", {
 				Code => <<EOF,
 #include "ft2build.h"
 #include FT_FREETYPE_H
@@ -1393,7 +1382,7 @@ EOF
 			@ft_incpaths,
 		);
 	} else {
-		$incpath = find_header( qd("freetype/freetype.h"), @ft_incpaths);
+		$incpath = find_header( "freetype/freetype.h", @ft_incpaths);
 	}
 	if (defined $incpath) {
 		printlog "yes";
@@ -1606,8 +1595,8 @@ sub setup_codecs
 			$have_binary_prereq++;
 			my $f = $INC{"Prima/codecs/$prereq.pm"};
 			$f =~ s/.pm$//;
-			push @LIBPATH, qd("$f/lib");
-			push @INCPATH, qd("$f/include");
+			push @LIBPATH, "$f/lib";
+			push @INCPATH, "$f/include";
 
 		} else {
 			printlog "no\n";
@@ -1626,7 +1615,7 @@ sub setup_codecs
 		}
 	}
 
-	my @codec_libpath = qd( $Config{installsitearch});
+	my @codec_libpath = $Config{installsitearch};
 	my @warn_codecs;
 	for my $cx ( @codecs) {
 		my @inc;
@@ -1852,22 +1841,21 @@ sub _quote
 	return \ "'$name'";
 }
 
-sub _quotepath { _quote(qd(@_)) }
+sub _quotepath { _quote(@_) }
 
 sub create_config_pm
 {
 	my $cwd = cwd;
-	my $qcwd = qd($cwd);
-	my $ifs = $dir_sep;
+	my $ifs = '/';
 
 	# includes
-	my @ip = map { qd($_) } @INCPATH;
+	my @ip = @INCPATH;
 	$ip[0] = "$cwd${ifs}include";
 	$ip[1] = "$cwd${ifs}include${ifs}generic";
 	my $ipp = join(',', map {"\'$_\'"} @ip);
 	my $inc    = join(' ', map { "-I$_" } @ip);
-	$ip[0] = '$(lib)' . qd("/Prima/CORE");
-	$ip[1] = '$(lib)' . qd("/Prima/CORE/generic");
+	$ip[0] = '$(lib)' . "/Prima/CORE";
+	$ip[1] = '$(lib)' . "/Prima/CORE/generic";
 	my $ippi = join(',', map {"\'$_\'"} @ip);
 	my $inci = join(' ', map { "-I$_" } @ip);
 
@@ -1878,20 +1866,20 @@ sub create_config_pm
 		push @libpath, "$cwd/auto/Prima";
 		push @libs, "Prima$LD_LIB_EXT";
 	}
-	my $libpath = qd(join( ',', map {"'$_'"} @libpath));
+	my $libpath = join( ',', map {"'$_'"} @libpath);
 	unless ( $unix or $compiler_type eq 'gcc') {
 		$libpath[-1] = '$(lib)/auto/Prima';
 	}
-	my $libpathi = qd(join( ',', map {"'$_'"} @libpath));
-	my $ldlibs  = qd(join( ',', map {"'$_'"} @libs));
+	my $libpathi = join( ',', map {"'$_'"} @libpath);
+	my $ldlibs  = join( ',', map {"'$_'"} @libs);
 
 	my ($libs, $libsi) = ('','');
 	if ( $cygwin) {
 		$libs  = "-L$cwd/blib/arch/auto/Prima -lPrima";
 		$libsi = '-L$(lib)/auto/Prima -lPrima';
 	} elsif ( $Win32) {
-		$libs  = qd("$cwd/blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT");
-		$libsi = '$(lib)' . qd("/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT");
+		$libs  = "$cwd/blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT";
+		$libsi = '$(lib)' . "/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT";
 	}
 	
 	my $cc_openmp = $cmd_options{WITH_OPENMP} ? $OPENMP : '';
@@ -2096,7 +2084,7 @@ sub command_bindist
 		my $f = "$File::Find::dir/$_";
 		return if $f =~ /include.generic|\.git|\.swp|\.log|blib|dll.base|dll.exp|Prima.bs|Prima.def/;
 		return if $f =~ /\.(c|cls|h)$/i;
-		return if $f =~ /$CWD.(img|include|win32|unix|Makefile.PL|Makefile.old)/i;
+		return if $f =~ /$CWD.(img|include|win32|unix|Makefile.old)/i;
 		if ( -d $f) {
 			$f =~ s/^$CWD/$DISTNAME/;
 			push @dirs, $f;
@@ -2307,7 +2295,7 @@ sub dynamic_lib
 	my $self = shift;
 	my $t = $self->SUPER::dynamic_lib(@_);
 	if ( $win32_use_dlltool ) {
-		my $lib  = qd("blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT");
+		my $lib  = "blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT";
 		my $line = "\t$win32_use_dlltool -l $lib -d Prima.def -D PRIMA.$Config{dlext} \$\@\n";
 		$END .= <<BAD_MAKEFILE unless $t =~ s/(^\$\(INST_DYNAMIC\)\s*\:.*?\n(?:\t.*?\n)*)/$1$line/m;
 

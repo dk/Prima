@@ -44,7 +44,7 @@ my $mswin32 = ($^O =~ /MSWin32/);
 my $cygwin = ($^O =~ /cygwin/);
 
 my $iarc = $Config{ installsitearch};
-my $ibin = $Config{ installbin};
+my $ibin = $Config{ installsitebin};
 my $perlpath = $Config{ perlpath};
 
 unless ( $cygwin) {
@@ -151,6 +151,9 @@ ENDP
 			close DSTPL;
 		}
 	}
+
+	print "Updating config ...\n";
+	system "perl Makefile.PL --postinstall dest=$iarc bin=$ibin";
 
 	if ( open F, "> install.log") {
 		print F "f:$_\n" for @instfiles;
