@@ -103,7 +103,7 @@ prima_gtk_init(void)
 	} else {
 		gtk_initialized = 1;
 		XSetErrorHandler( guts.main_error_handler );
-#ifdef GTK2_XQUARTZ
+#ifdef WITH_GTK2_NONX11
 		ret = (void*)1;
 #else
 		ret = gdk_x11_display_get_xdisplay(display);
