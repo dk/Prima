@@ -8,11 +8,15 @@
 
 #ifdef WITH_GTK2
 
+#undef GT
+
 #undef dirty
 
 #define Window  XWindow
 
+#ifndef WITH_GTK2_NONX11
 #include <gdk/gdkx.h>
+#endif
 #include <gtk/gtk.h>
 
 static int gtk_initialized = 0;
@@ -82,7 +86,11 @@ prima_gtk_init(void)
 	case -1:
 		return NULL;
 	case 1:
+#ifdef WITH_GTK2_NONX11
+		return (void*)1;
+#else
 		return gdk_x11_display_get_xdisplay(display);
+#endif
 	}
 
 #if PERL_REVISION == 5 && PERL_VERSION == 20
@@ -95,7 +103,11 @@ prima_gtk_init(void)
 	} else {
 		gtk_initialized = 1;
 		XSetErrorHandler( guts.main_error_handler );
+#ifdef GTK2_XQUARTZ
+		ret = (void*)1;
+#else
 		ret = gdk_x11_display_get_xdisplay(display);
+#endif
 	}
 
 	settings  = gtk_settings_get_default();

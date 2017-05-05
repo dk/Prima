@@ -1147,7 +1147,7 @@ sub setup_pkgconfig
 {
 	my $v = `pkg-config --version`;
 	chomp $v;
-	printlog "Checking for pkg-config...";
+	printlog "Checking for pkg-config... ";
 	unless ($v =~ /^[\d\.]+$/) {
 		printlog "no\n";
 		return;
@@ -1172,6 +1172,7 @@ MIXED
 	# it is mac's broken XQuartz setup?
 	my $xquartz_pkgconfig_path = '/opt/X11/lib/pkgconfig';
 	if ( $^O eq 'darwin' && !exists $ENV{PKG_CONFIG_PATH} && -d $xquartz_pkgconfig_path) {
+		printlog "trying PKG_CONFIG_PATH=$xquartz_pkgconfig_path... ";
 		my $add_path;
 		null_output;
 		if ( system "pkg-config --exists x11" ) {
@@ -1483,6 +1484,10 @@ sub setup_gtk
 		# now, try to compile with GTK. I've got lots of CPAN build failures
 		# because GTK wasn't willing to compile or god knows what.
 		goto NO_GTK unless compile( "#include <gtk/gtk.h>\nint main() { return 0; }\n");
+		if ( $^O eq 'darwin') {
+			printlog "without X11... ";
+			$DEFINES{WITH_GTK2_NONX11} = 1 unless compile( "#include <gdk/gdkx.h>\nint main() { return 0; }\n");
+		}
 		$DEFINES{WITH_GTK2} = 1;
 		printlog "yes\n";
 	} else {
