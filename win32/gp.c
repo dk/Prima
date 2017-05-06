@@ -109,6 +109,104 @@ adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth)
 	}
 }
 
+static Bool
+gp_Arc(
+  Handle self,
+  int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
+  int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
+  double angleStart, double angleEnd
+) {
+	if ( nXRadial1 == nXRadial2 && nYRadial1 == nYRadial2 && fabs(angleStart - angleEnd) < 360 ) {
+		int cx, cy;
+		Bool ret;
+		HGDIOBJ old;
+
+		old = SelectObject( sys ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
+		cx  = ( nLeftRect + nRightRect ) / 2;
+		cy  = ( nTopRect  + nBottomRect ) / 2;
+		adjust_line_end( nXRadial1, nYRadial1, &nXRadial2, &nYRadial2, true);
+		MoveToEx( sys ps, nXRadial1, nYRadial1, nil);
+		ret = LineTo( sys ps, nXRadial2, nYRadial2);
+		DeleteObject(SelectObject( sys ps, old) );
+		return ret;
+	} else {
+		return Arc(
+			sys ps,
+			nLeftRect,  nTopRect,  nRightRect,  nBottomRect,
+			nXRadial1,  nYRadial1,  nXRadial2,  nYRadial2
+		);
+	}
+}
+
+static Bool
+gp_Chord(
+  Handle self,
+  int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
+  int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
+  double angleStart, double angleEnd, Bool filled
+) {
+	if ( 
+		(abs(nXRadial1 - nXRadial2) < 2) &&
+		(abs(nYRadial1 == nYRadial2) < 2) &&
+		(fabs(angleStart - angleEnd) < 360 )
+	) {
+		int cx, cy;
+		Bool ret;
+		HGDIOBJ old;
+
+		if ( filled ) {
+			nXRadial2--;
+			nYRadial2--;
+		}
+
+		old = SelectObject( sys ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
+		adjust_line_end( nXRadial1, nYRadial1, &nXRadial2, &nYRadial2, true);
+		MoveToEx( sys ps, nXRadial1, nYRadial1, nil);
+		ret = LineTo( sys ps, nXRadial2, nYRadial2);
+		DeleteObject(SelectObject( sys ps, old) );
+		return ret;
+	} else {
+		return Chord(
+			sys ps,
+			nLeftRect,  nTopRect,  nRightRect,  nBottomRect,
+			nXRadial1,  nYRadial1,  nXRadial2,  nYRadial2
+		);
+	}
+}
+
+static Bool
+gp_Pie(
+  Handle self,
+  int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
+  int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
+  double angleStart, double angleEnd, Bool filled
+) {
+	if ( nXRadial1 == nXRadial2 && nYRadial1 == nYRadial2 && fabs(angleStart - angleEnd) < 360 ) {
+		int cx, cy;
+		Bool ret;
+		HGDIOBJ old;
+
+		old = SelectObject( sys ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
+		cx  = ( nLeftRect + nRightRect ) / 2;
+		cy  = ( nTopRect  + nBottomRect ) / 2;
+		adjust_line_end( cx, cy, &nXRadial1, &nYRadial1, true);
+		if ( filled ) {
+			if ( nXRadial2 > cx ) nXRadial1 = nXRadial2;
+			if ( nYRadial2 > cy ) nYRadial1 = nYRadial2;
+		}
+		MoveToEx( sys ps, cx, cy, nil);
+		ret = LineTo( sys ps, nXRadial1, nYRadial1);
+		DeleteObject(SelectObject( sys ps, old) );
+		return ret;
+	} else {
+		return Pie(
+			sys ps,
+			nLeftRect,  nTopRect,  nRightRect,  nBottomRect,
+			nXRadial1,  nYRadial1,  nXRadial2,  nYRadial2
+		);
+	}
+}
+
 
 #define GRAD 57.29577951
 
@@ -145,7 +243,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
 		if ( compl )
 			Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
 		else
-			Arc( ps, ELLIPSE_RECT, ARC_ANGLED);
+			gp_Arc( self, ELLIPSE_RECT, ARC_ANGLED, angleStart, angleEnd);
 		STYLUS_RESTORE_OPAQUE_LINE;
 	}
 
@@ -153,7 +251,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
 	while( compl--) 
 		Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
 	if ( !needf) return true;
-	if ( !Arc( ps, ELLIPSE_RECT, ARC_ANGLED)) apiErrRet;
+	if ( !gp_Arc( self, ELLIPSE_RECT, ARC_ANGLED, angleStart, angleEnd)) apiErrRet;
 	return true;
 }}
 
@@ -293,7 +391,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
 	if (EMULATE_OPAQUE_LINE) {
 		STYLUS_USE_OPAQUE_LINE;
 		if ( compl ) Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-		Chord( ps, ELLIPSE_RECT, ARC_ANGLED);
+		gp_Chord( self, ELLIPSE_RECT, ARC_ANGLED, angleStart, angleEnd, false);
 		STYLUS_RESTORE_OPAQUE_LINE;
 	}
 
@@ -301,7 +399,7 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
 	while( compl--)
 		Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
 	if ( needf) {
-		if ( !( ok = Chord( ps, ELLIPSE_RECT, ARC_ANGLED))) apiErr;
+		if ( !( ok = gp_Chord( self, ELLIPSE_RECT, ARC_ANGLED, angleStart, angleEnd, false))) apiErr;
 	}
 	SelectObject( ps, old);
 	return ok;
@@ -389,19 +487,20 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
 	comp = stylus_complex( &sys stylus, ps);
 	y = sys lastSize. y - y - 1;
 	STYLUS_USE_BRUSH( ps);
+
 	if ( comp) {
 		old  = SelectObject( ps, hPenHollow);
 		while ( compl--)
 			if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
-		if ( !( ok = !needf || Chord(
-			ps, ELLIPSE_RECT_SUPERINCLUSIVE, ARC_ANGLED_SUPERINCLUSIVE
+		if ( !( ok = !needf || gp_Chord(
+			self, ELLIPSE_RECT_SUPERINCLUSIVE, ARC_ANGLED_SUPERINCLUSIVE, angleStart, angleEnd, true
 		))) apiErr;
 	} else {
 		old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
 		while ( compl--)
 			if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
-		if ( !( ok = !needf || Chord(
-			ps, ELLIPSE_RECT, ARC_ANGLED_SUPERINCLUSIVE
+		if ( !( ok = !needf || gp_Chord(
+			self, ELLIPSE_RECT, ARC_ANGLED_SUPERINCLUSIVE, angleStart, angleEnd, true
 		))) apiErr;
 	}
 	old = SelectObject( ps, old);
@@ -533,6 +632,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 	}
 }return ok;}
 
+
 Bool
 apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {objCheck false;{
@@ -558,19 +658,21 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 		old = SelectObject( ps, hPenHollow);
 		while ( compl--)
 			if ( !( ok = Ellipse( ps, ELLIPSE_RECT_SUPERINCLUSIVE))) apiErr;
-		if ( !( ok = !needf || Pie(
-			ps, ELLIPSE_RECT_SUPERINCLUSIVE,
+		if ( !( ok = !needf || gp_Pie(
+			self, ELLIPSE_RECT_SUPERINCLUSIVE,
 			pts[ 1]. x, pts[ 1]. y,
-			pts[ 0]. x, pts[ 0]. y
+			pts[ 0]. x, pts[ 0]. y,
+			angleStart, angleEnd, true
 		))) apiErr;
 	} else {
 		old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
 		while ( compl--)
 			if ( !( ok = Ellipse( ps, ELLIPSE_RECT))) apiErr;
-		if ( !( ok = !needf || Pie(
-			ps, ELLIPSE_RECT,
+		if ( !( ok = !needf || gp_Pie(
+			self, ELLIPSE_RECT,
 			pts[ 1]. x, pts[ 1]. y,
-			pts[ 0]. x, pts[ 0]. y
+			pts[ 0]. x, pts[ 0]. y,
+			angleStart, angleEnd, true
 		))) apiErr;
 	}
 	old = SelectObject( ps, old);
@@ -683,10 +785,11 @@ apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, dou
 	if (EMULATE_OPAQUE_LINE) {
 		STYLUS_USE_OPAQUE_LINE;
 		if ( compl ) Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
-		Pie(
-			ps, ELLIPSE_RECT,
+		gp_Pie(
+			self, ELLIPSE_RECT,
 			pts[ 1]. x, pts[ 1]. y,
-			pts[ 0]. x, pts[ 0]. y
+			pts[ 0]. x, pts[ 0]. y,
+			angleStart, angleEnd, false
 		);
 		STYLUS_RESTORE_OPAQUE_LINE;
 	}
@@ -696,10 +799,11 @@ apc_gp_sector( Handle self, int x, int y, int dX, int dY, double angleStart, dou
 	while( compl--)
 		Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
 	if ( needf) {
-		if ( !( ok = Pie(
-			ps, ELLIPSE_RECT,
+		if ( !( ok = gp_Pie(
+			self, ELLIPSE_RECT,
 			pts[ 1]. x, pts[ 1]. y,
-			pts[ 0]. x, pts[ 0]. y
+			pts[ 0]. x, pts[ 0]. y,
+			angleStart, angleEnd, false
 		))) apiErr;
 	}
 
