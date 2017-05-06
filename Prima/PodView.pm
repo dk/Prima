@@ -633,7 +633,7 @@ sub load_image
 		$src = Prima::Utils::find_image( $src);
 		return unless $src;
 	}
-	return Prima::Image-> load( $src, index => $frame);
+	return Prima::Icon-> load( $src, index => $frame, iconUnmask => 1);
 }
 
 sub add_image
