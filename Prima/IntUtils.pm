@@ -452,11 +452,10 @@ sub draw_item_background
 	if ( $prelight ) {
 		$back_color //= $canvas-> backColor;
 		my $c = $self-> color;
-		$canvas-> gradient_bar( $left, $bottom, $right, $top, {
-			vertical => 0,
+		$canvas-> new_gradient(
 			spline   => [ 0.75, 0.25 ],
 			palette  => [ $self->prelight_color($back_color), $back_color ],
-		});
+		)-> bar( $left, $bottom, $right, $top, 0 );
 		$self-> color($c);
 	} else {
 		$canvas-> backColor($back_color) if $back_color;

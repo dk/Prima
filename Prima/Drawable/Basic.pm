@@ -11,8 +11,8 @@ sub rect3d
 	$_ = int($_) for $x1, $y1, $x, $y, $width;
 	if ( defined $backColor)
 	{
-		if ( ref $backColor ) {
-			$self-> gradient_bar($x + $width, $y + $width, $x1 - $width, $y1 - $width, $backColor);
+		if ( ref($backColor)) {
+			$backColor->clone(canvas => $self)->bar($x + $width, $y + $width, $x1 - $width, $y1 - $width);
 		} elsif ( $backColor == cl::Back) {
 			$self-> clear( $x + $width, $y + $width, $x1 - $width, $y1 - $width);
 		} else {
@@ -204,205 +204,6 @@ sub prelight_color
 	return ( $channels[0] << 16 ) | ( $channels[1] << 8 ) | $channels[2];
 }
 
-sub gradient_polyline_to_points
-{
-	my ($self, $p) = @_;
-	my @map;
-	for ( my $i = 0; $i < @$p - 2; $i+=2) {
-		my ($x1,$y1,$x2,$y2) = @$p[$i..$i+3];
-		$x1 = 0 if $x1 < 0;
-		my $dx = $x2 - $x1;
-		if ( $dx > 0 ) {
-			my $dy = ($y2 - $y1) / $dx;
-			my $y = $y1;
-			for ( my $x = $x1; $x <= $x2; $x++) {
-				$map[$x] = $y;
-				$y += $dy;
-			}
-		} else {
-			$map[$x1] = $y1;
-		}
-	}
-	return \@map;
-}
-
-sub gradient_realize3d
-{
-	my ( $self, $breadth, $request) = @_;
-
-	my ($offsets, $points);
-
-	unless ( $points = $request->{points}) {
-		my @spline = (0,0);
-		if ( my $s = $request->{spline} ) {
-			push @spline, map { $_ * $breadth } @$s;
-		}
-		if ( my $s = $request->{poly} ) {
-			push @spline, map { $_ * $breadth } @$s;
-		}
-		push @spline, $breadth, $breadth;
-		my $polyline = ( @spline > 4 && $request->{spline} ) ? $self-> render_spline( \@spline ) : \@spline;
-		$points = $self-> gradient_polyline_to_points($polyline);
-	}
-
-	unless ($offsets = $request->{offsets}) {
-		my @o;
-		my $n = scalar(@{$request->{palette}}) - 1;
-		my $d = 0;
-		for ( my $i = 0; $i < $n; $i++) {
-			$d += 1/$n;
-			push @o, $d;
-		}
-		push @o, 1;
-		$offsets = \@o;
-	}
-	
-	$request->{points}  = $points;
-	$request->{offsets} = $offsets;
-
-	return $self-> gradient_calculate(
-		$request->{palette},
-		[ map { $_ * $breadth } @$offsets ],
-		sub { $points->[shift] }
-	);
-}
-
-sub gradient_calculate_single
-{
-	my ( $self, $breadth, $start_color, $end_color, $function, $offset ) = @_;
-
-	return if $breadth <= 0;
-
-	$offset //= 0;
-	$start_color = $self->map_color($start_color) if $start_color & cl::SysFlag;
-	$end_color   = $self->map_color($end_color)   if $end_color   & cl::SysFlag;
-	my @start = map { $_ & 0xff } ($start_color >> 16), ($start_color >> 8), $start_color;
-	my @end   = map { $_ & 0xff } ($end_color   >> 16), ($end_color   >> 8), $end_color;
-	my @color = @start;
-	return $start_color, 1 if $breadth == 1;
-	
-	my @delta = map { ( $end[$_] - $start[$_] ) / ($breadth - 1) } 0..2;
-
-	my $last_color = $start_color;
-	my $color      = $start_color;
-	my $width      = 0;
-	my @ret;
-	for ( my $i = 0; $i < $breadth; $i++) {
-		my @c;
-		my $j = $function ? $function->( $offset + $i ) - $offset : $i;
-		for ( 0..2 ) {
-			$color[$_] = $start[$_] + $j * $delta[$_] for 0..2;
-			$c[$_] = int($color[$_] + .5);
-			$c[$_] = 0xff if $c[$_] > 0xff;
-			$c[$_] = 0    if $c[$_] < 0;
-		}
-		$color = ( $c[0] << 16 ) | ( $c[1] << 8 ) | $c[2];
-		if ( $last_color != $color ) {
-			push @ret, $last_color, $width;
-			$last_color = $color;
-			$width = 0;
-		}
-
-		$width++;
-	}
-
-	return @ret, $color, $width;
-}
-
-sub gradient_calculate
-{
-	my ( $self, $palette, $offsets, $function ) = @_;
-	my @ret;
-	my $last_offset = 0;
-	$offsets = [ $offsets ] unless ref $offsets;
-	for ( my $i = 0; $i < @$offsets; $i++) {
-		my $breadth = $offsets->[$i] - $last_offset;
-		push @ret, $self-> gradient_calculate_single( $breadth, $palette->[$i], $palette->[$i+1], $function, $last_offset);
-		$last_offset = $offsets->[$i];
-	}
-	return \@ret;
-}
-
-sub gradient_bar
-{
-	my ( $self, $x1, $y1, $x2, $y2, $request ) = @_;
-
-	$_ = int($_) for $x1, $y1, $x2, $y2;
-
-	($x1,$x2)=($x2,$x1) if $x1 > $x2;
-	($y1,$y2)=($y2,$y1) if $y1 > $y2;
-
-	my $gradient = $request->{gradient} //= $self-> gradient_realize3d( 
-		$request->{vertical} ? 
-			$x2 - $x1 + 1 :
-			$y2 - $y1 + 1, 
-		$request
-	);
-
-	my @bar        = ($x1,$y1,$x2,$y2);
-	my ($ptr1,$ptr2) = $request->{vertical} ? (0,2) : (1,3);
-	my $max          = $bar[$ptr2];
-	for ( my $i = 0; $i < @$gradient; $i+=2) {
-		$bar[$ptr2] = $bar[$ptr1] + $gradient->[$i+1] - 1;
-		$self->color( $gradient->[$i]);
-		$self->bar( @bar );
-		$bar[$ptr1] = $bar[$ptr2] + 1;
-		last if $bar[$ptr1] > $max;
-	}
-	if ( $bar[$ptr1] <= $max ) {
-		$bar[$ptr2] = $max;
-		$self->bar(@bar);
-	}
-}
-
-sub gradient_ellipse
-{
-	my ( $canvas, $x, $y, $dx, $dy, $request ) = @_;
-	return if $dx <= 0 || $dy <= 0;
-
-	$_ = int($_) for $x, $y, $dx, $dy;
-	my $diameter = ($dx > $dy) ? $dx : $dy;
-	my $mx = $dx / $diameter;
-	my $my = $dy / $diameter;
-	my $gradient = $canvas-> gradient_realize3d( $diameter, $request);
-	for ( my $i = 0; $i < @$gradient; $i+=2) {
-		$canvas->color( $gradient->[$i]);
-		$canvas->fill_ellipse( $x, $y, $mx * $diameter, $my * $diameter );
-		$diameter -= $gradient->[$i+1];
-	}
-}
-
-sub gradient_sector
-{
-	my ( $canvas, $x, $y, $dx, $dy, $start, $end, $request ) = @_; 
-	my $angle = $end - $start;
-	$angle += 360 while $angle < 0;
-	$angle %= 360;
-	my $min_angle = 1.0 / 64; # x11 limitation
-
-	my $max = ($dx < $dy) ? $dy : $dx;
-	my $df  = $max * 3.14 / 360;
-	my $arclen = int($df * $angle + .5);
-	my $gradient = $canvas-> gradient_realize3d( $arclen, $request );
-	my $accum = 0;
-	for ( my $i = 0; $i < @$gradient - 2; $i+=2) {
-		$canvas->color( $gradient->[$i]);
-		my $d = $gradient->[$i+1] / $df;
-		if ( $accum + $d < $min_angle ) {
-			$accum += $d;
-			next;
-		}
-		$d += $accum;
-		$accum = 0;
-		$canvas->fill_sector( $x, $y, $dx, $dy, $start, $start + $d + $min_angle);
-		$start += $d;
-	}
-	if ( @$gradient ) {
-		$canvas->color( $gradient->[-2]);
-		$canvas->fill_sector( $x, $y, $dx, $dy, $start, $end);
-	}
-}
-
 sub text_split_lines
 {
 	my ($self, $text) = @_;
@@ -415,6 +216,12 @@ sub new_path
 {
 	require Prima::Drawable::Path;
 	return Prima::Drawable::Path->new(@_);
+}
+
+sub new_gradient
+{
+	require Prima::Drawable::Gradient;
+	return Prima::Drawable::Gradient->new(@_);
 }
 
 1;

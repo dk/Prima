@@ -95,20 +95,20 @@ my $gradient = $w->insert( Widget =>
 	buffered => 1,
 	onPaint => sub {
 		my ( $self, $canvas ) = @_;
-		my $spline = [ 0, 0, @points, $self->size ];
-		$spline = $canvas-> render_spline( $spline ) if $splined->checked;
-		$spline = [ 0, 0, $self->size ] unless @points;
-		my $v      = $vertical->checked;
-		my $points = convert_polyline2points($self, $spline, $v, $self-> size);
-		my $gradient = $self-> gradient_calculate(
-			[map { $_-> value } @colors ],
-			[ @offsets, breadth ],
-			sub { $points->[shift] }
-		);
-		$canvas->gradient_bar( 0,0,$self->size, {
-			vertical => $v, 
-			gradient => $gradient
-		});
+		my ( $w, $h ) = $self-> size;
+		my $v = $vertical->checked;
+		my $b = breadth;
+		my @xpoints = @points;
+		for ( my $i = 0; $i < @xpoints; $i+=2) {
+			$xpoints[$i]   /= $w;
+			$xpoints[$i+1] /= $h;
+		}
+		$canvas->new_gradient(
+			vertical => $v,
+			palette  => [map { $_-> value } @colors ],
+			offsets  => [ map { $_ / $b } @offsets, $b ],
+			( $splined->checked ? 'spline' : 'poly') => \@xpoints,
+		)->bar( 0, 0, $w, $h);
 
 		my $i;
 		$canvas->lineWidth(2);
@@ -146,19 +146,22 @@ my $gradient = $w->insert( Widget =>
 
 		$canvas->color(cl::Black);
 		$canvas->lineWidth(3);
-		$canvas->line(0,0,$self->size);
+		$canvas->line(0,0,$w,$h);
 		$canvas->color(cl::White);
 		$canvas->linePattern(lp::Dot);
 		$canvas->lineWidth(1);
-		$canvas->line(0,0,$self->size);
+		$canvas->line(0,0,$w,$h);
 		
 		$canvas->color(cl::Black);
 		$canvas->lineWidth(3);
-		$canvas-> polyline( $spline);
+		my $method = $splined->checked ? 'spline' : 'polyline';
+		$method = 'polyline' unless @points;
+		@xpoints = ( 0, 0, @points, $w, $h);
+		$canvas-> $method( \@xpoints);
 		$canvas->color(cl::White);
 		$canvas->lineWidth(1);
 		$canvas->linePattern(lp::Solid);
-		$canvas-> polyline( $spline);
+		$canvas-> $method( \@xpoints);
 	},
 	onSize   => sub {
 		my ( $self, $ox, $oy, $x, $y) = @_;
@@ -280,24 +283,6 @@ sub reset
 }
 
 reset();
-
-sub convert_polyline2points
-{
-	my ($self, $p, $vertical, $width, $height) = @_;
-	unless ($vertical) {
-		($width, $height) = ($height, $width);
-		my @p = @$p;
-		for ( my $i = 0; $i < @$p; $i+=2) {
-			@p[$i+1,$i] = @p[$i,$i+1];
-		}
-		$p = \@p;
-	}
-	my $map = $self-> gradient_polyline_to_points($p, $width);
-	unless ($vertical) {
-		$_ = $_ / $height * $width for @$map;
-	}
-	return $map;
-}
 
 sub breadth()
 {

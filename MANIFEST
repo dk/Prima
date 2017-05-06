@@ -145,6 +145,7 @@ pod/Prima/fills.gif
 pod/Prima/fontabc.gif
 pod/Prima/gettextbox.gif
 pod/Prima/gp-problems.pod
+pod/Prima/gradient.gif
 pod/Prima/image-load.pod
 pod/Prima/Image.pod
 pod/Prima/internals.pod
@@ -190,9 +191,10 @@ Prima/DetailedOutline.pm
 Prima/DockManager.pm
 Prima/Docks.pm
 Prima/Drawable/Basic.pm
-Prima/Drawable/Path.pm
 Prima/Drawable/CurvedText.pm
+Prima/Drawable/Gradient.pm
 Prima/Drawable/Markup.pm
+Prima/Drawable/Path.pm
 Prima/Drawable/Subcanvas.pm
 Prima/Drawable/TextBlock.pm
 Prima/Edit.pm

@@ -6,12 +6,11 @@ package Prima;
 use strict;
 use warnings;
 require DynaLoader;
-use vars qw($VERSION @ISA $__import @preload $pid $cleanup);
+use vars qw($VERSION @ISA $__import @preload $pid);
 @ISA = qw(DynaLoader);
 sub dl_load_flags { 0x00 }
 $VERSION = '1.51';
 $pid = $$;
-$cleanup = 1;
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {
 	$::application = 0;
@@ -59,11 +58,11 @@ sub parse_argv
 
 Prima::init($VERSION) unless $^C;
 
-sub CLONE { undef $cleanup }
+sub CLONE { $pid = 0 }
 
 sub END
 {
-	&Prima::cleanup() if $cleanup && $pid == $$ && UNIVERSAL::can('Prima', 'cleanup');
+	&Prima::cleanup() if $pid == $$ && UNIVERSAL::can('Prima', 'cleanup');
 }
 
 sub run
@@ -401,9 +400,11 @@ L<Prima::StdDlg> - wrapper module to the toolkit standard dialogs
 
 L<Prima::Drawable::CurvedText> - fit text to path
 
-L<Prima::Drawable::Subcanvas> - paint a hierarchy of widgets to any drawable
+L<Prima::Drawable::Gradient> - gradient fills for primitives
 
 L<Prima::Drawable::Path> - stroke and fill complex paths
+
+L<Prima::Drawable::Subcanvas> - paint a hierarchy of widgets to any drawable
 
 =item Visual Builder
 

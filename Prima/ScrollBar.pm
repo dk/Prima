@@ -124,29 +124,15 @@ sub draw_pad
 		@spline  = reverse @spline;
 	}
 
-	my %gradient = (
-		palette    => \@palette,
-		spline     => \@spline,
-		vertical   => $self->{vertical},
-		points     => $cache->{points},
-		offsets    => $cache->{offsets},
-	);
-
-	if ( defined($cache->{base_color}) && $base_color == $cache->{base_color}) {
-		$gradient{gradient} = $cache->{gradient};
-	}
-
 	$self-> rect_bevel( $canvas, @{$self-> {$part}-> {rect}},
-		gradient=> \%gradient,
 		width   => 2, 
-		fill    => $base_color,
 		concave => $self->{$part}->{pressed},
+		fill    => $canvas->new_gradient(
+			palette   => \@palette,
+			spline    => \@spline,
+			vertical  => $self->{vertical},
+		),
 	);
-
-	$cache->{points}     = $gradient{points};
-	$cache->{offsets}    = $gradient{offsets};
-	$cache->{gradient}   = $gradient{gradient};
-	$cache->{base_color} = $base_color;
 }
 
 sub on_paint
@@ -169,9 +155,8 @@ sub on_paint
 	$canvas-> color( $c3d[1]);
 	$canvas-> line( 0, $maxy, $maxx, $maxy);
 	$canvas-> line( 0, 0, 0, $maxy);
-	my %pad_cache;
 	{
-		$self-> draw_pad( $canvas, b1 => $clr[1], \%pad_cache);
+		$self-> draw_pad( $canvas, b1 => $clr[1]);
 		$canvas-> color( $self-> {b1}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b1}-> { pressed} ? 1 : 0;
 		my @spot = $v ? (
@@ -186,7 +171,7 @@ sub on_paint
 		$canvas-> fillpoly( [ @spot]);
 	}
 	{
-		$self-> draw_pad( $canvas, b2 => $clr[1], \%pad_cache);
+		$self-> draw_pad( $canvas, b2 => $clr[1]);
 		$canvas-> color( $self-> {b2}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b2}-> { pressed} ? 1 : 0;
 		my @spot = $v ? (
@@ -226,7 +211,7 @@ sub on_paint
 			}
 		}
 
-		$self-> draw_pad( $canvas, tab => $clr[1], \%pad_cache);
+		$self-> draw_pad( $canvas, tab => $clr[1]);
 		if ( $self-> {minThumbSize} > 8 && $self->{style} ne 'xp')
 		{
 			if ( $v)

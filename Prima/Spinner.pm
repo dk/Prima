@@ -131,10 +131,10 @@ sub on_paint
 
 		$canvas->translate($x, $y);
 
-		my $gradient = $canvas->gradient_realize3d( 8+1, { palette => [ $self->color, $self->backColor ] });
+		my $stripes = $canvas->new_gradient( palette => [ $self->color, $self->backColor ] )->stripes(8+1);
 		my @colors;
-		for ( my $i = 0; $i < @$gradient; $i+=2 ) {
-			push @colors, $gradient->[$i] for 1 .. $gradient->[$i+1];
+		for ( my $i = 0; $i < @$stripes; $i+=2 ) {
+			push @colors, $stripes->[$i] for 1 .. $stripes->[$i+1];
 		}
 
 		my $fill_spline = sub { 
