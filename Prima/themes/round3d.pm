@@ -15,7 +15,7 @@ sub rect3d
 	if ( defined $backColor) {
 		my $c = $canvas-> color;
 		if ( ref($backColor)) {
-			$canvas->gradient_bar( $x, $y, $x1, $y1, $backColor);
+			$backColor->clone(canvas => $self)->bar($x, $y, $x1, $y1);
 		} else {
 			$canvas-> color( $backColor);
 			$canvas-> bar( $x, $y, $x1, $y1);

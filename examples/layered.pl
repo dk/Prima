@@ -10,7 +10,7 @@ my $j = Prima::Image->new(
 $j->begin_paint;
 $j->backColor(cl::Clear);
 $j->clear;
-$j->gradient_ellipse(50, 50, 100, 100, {palette => [cl::Black, cl::White]});
+$j->new_gradient(palette => [cl::Black, cl::White])->ellipse(50, 50, 100, 100);
 $j->end_paint;
 $j->type(im::Byte);
 
@@ -25,10 +25,10 @@ sub icon
 	$i->begin_paint;
 	$i->backColor(cl::Clear);
 	$i->clear;
-	$i->gradient_ellipse(50, 50, 100, 100, {
+	$i->new_gradient(
 		palette => [cl::Black, $color],
 		spline  => [0.2,0.8],
-	});
+	)-> ellipse( 50, 50, 100, 100 );
 	$i->end_paint;
 
 	my $k = Prima::Icon->new;

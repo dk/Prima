@@ -26,12 +26,12 @@ my $a = Prima::Image->new(
 	type => im::RGB,
 );
 $a->begin_paint;
-$a->gradient_ellipse($a->width/2,$a->height/2, $a->width, $a->height, {palette => [cl::LightRed, cl::Yellow ]});
+$a->new_gradient( palette => [cl::LightRed, cl::Yellow ])-> ellipse($a->width/2,$a->height/2, $a->width, $a->height);
 $a->end_paint;
 
 my $b = $a->dup;
 $b->begin_paint;
-$b->gradient_bar(0, 0, $b->width,$b->height, {palette => [cl::LightGreen, cl::Blue ]});
+$b->new_gradient( palette => [cl::LightGreen, cl::Blue ])->bar(0, 0, $b->width,$b->height);
 $b->end_paint;
 
 my $canvas = $a->dup;
