@@ -20,7 +20,6 @@ sub clone
 
 sub canvas  { shift->{canvas} }
 sub palette { shift->{palette} }
-sub mapper  { $_[0]->{mapper} // $_[0]->{canvas} // $::application }
 
 sub polyline_to_points
 {
@@ -83,6 +82,18 @@ sub stripes
 	);
 }
 
+sub map_color
+{
+	my ( $self, $color ) = @_;
+	return $color unless $color & cl::SysFlag;
+	$color |= 
+		$self->{widgetClass} // 
+		( $self->{canvas}->isa('Prima::Widget') ? $self->{canvas}->widgetClass : undef ) //
+		wc::Undef
+		unless $color & wc::Mask;
+	return $::application->map_color($color);
+}
+
 sub calculate_single
 {
 	my ( $self, $breadth, $start_color, $end_color, $function, $offset ) = @_;
@@ -90,8 +101,8 @@ sub calculate_single
 	return if $breadth <= 0;
 
 	$offset //= 0;
-	$start_color = $self->mapper->map_color($start_color) if $start_color & cl::SysFlag;
-	$end_color   = $self->mapper->map_color($end_color)   if $end_color   & cl::SysFlag;
+	$start_color = $self-> map_color( $start_color);
+	$end_color   = $self-> map_color( $end_color);
 	my @start = map { $_ & 0xff } ($start_color >> 16), ($start_color >> 8), $start_color;
 	my @end   = map { $_ & 0xff } ($end_color   >> 16), ($end_color   >> 8), $end_color;
 	my @color = @start;
@@ -264,10 +275,10 @@ Here are %OPTIONS understood in the gradient request:
 
 Creates a new gradient object with %OPTIONS replaced.
 
-=item mapper $DRAWABLE
+=item widgetClass INTEGER
 
-Points to a drawable or widget that will resolve generic colors like C<cl::Back>,
-that may differ from widget class to widget class. If none set, canvas is used.
+Points to a widget class to resolve generic colors like C<cl::Back>,
+that may differ from widget class to widget class. 
 
 =item palette @COLORS
 

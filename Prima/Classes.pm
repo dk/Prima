@@ -1248,7 +1248,7 @@ sub rect_bevel
 		push @c3d, $back, 0x404040;
 	}
 
-	$fill = $fill->clone( mapper => $self ) if $fill && ref($fill);
+	$fill = $fill->clone( widgetClass => $self->widgetClass ) if $fill && ref($fill);
 
 	my $hw = int( $width / 2);
 	$canvas-> rect3d( $x, $y, $x1, $y1, $hw, @c3d[2,3], $fill);
