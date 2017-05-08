@@ -37,6 +37,7 @@ $i-> text_out( "PRIMA", 0,0);
 $i-> end_paint;
 $i = $i->to_region;
 
+my ($g1, $g2);
 
 my $w = Prima::MainWindow-> create(
 	size   => [ @is],
@@ -46,10 +47,13 @@ my $w = Prima::MainWindow-> create(
 	onPaint => sub {
 	my ( $self, $canvas) = @_;
 		$canvas->clear;
-		$canvas->gradient_ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0], {palette => [cl::White, cl::Black ]});
+		$g1->ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0]);
 		$canvas-> region( $i);
-		$canvas->gradient_ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0], {palette => [cl::Black, cl::White]});
+		$g2->ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0]);
 	},
 );
+
+$g1 = $w->new_gradient( palette => [cl::White, cl::Black ] );
+$g2 = $w->new_gradient( palette => [cl::Black, cl::White ] );
 
 run Prima;
