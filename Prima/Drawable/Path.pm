@@ -607,7 +607,7 @@ Returns 2 points that box the path.
 
 =item points
 
-Runs all allcumulated commands, and returns rendered set of points, suitable
+Runs all accumulated commands, and returns rendered set of points, suitable
 for further calls to C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly>.
 
 =item fill
