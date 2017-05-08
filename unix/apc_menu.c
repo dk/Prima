@@ -148,6 +148,7 @@ menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
 	}
 	wx-> next = nil;
 	XX-> focused = wx;
+	XFlush(DISP);
 }
 
 #define MENU_XOFFSET 5
@@ -527,6 +528,8 @@ menu_enter_item( PMenuSysData XX, PMenuWindow w, int index, int type)
 
 		if ( w-> next && w-> next-> m == m-> down) {
 			XX-> focused = w-> next;
+			XMapRaised( DISP, w-> next-> w);
+			XFlush(DISP);
 			return true;
 		}
 		
@@ -589,6 +592,7 @@ menu_enter_item( PMenuSysData XX, PMenuWindow w, int index, int type)
 		XMapRaised( DISP, w2-> w);
 		w2-> pos = n;
 		XX-> focused = w2;
+		XFlush(DISP);
 	} else {
 		Handle self = w-> self;
 		if (( &XX-> wstatic == w) && ( type == 0)) {
@@ -961,6 +965,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
 			XftDrawDestroy( draw. xft_drawable);
 #endif 
 		if ( draw. layered ) XFreeGC( DISP, draw. gc);
+		XFlush(DISP);
 	}
 	break;
 	case ConfigureNotify: {
@@ -1475,6 +1480,7 @@ prima_end_menu(void)
 		menu_select_item( XX, XX-> w, -100);
 	}
 	guts. currentMenu = nilHandle;
+	XFlush(DISP);
 }
 
 static unsigned long

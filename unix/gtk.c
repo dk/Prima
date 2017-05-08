@@ -175,6 +175,13 @@ prima_gtk_done(void)
 
 static gboolean do_events(gpointer data)
 {
+#ifdef WITH_GTK2_NONX11
+	int* stage = ( int*) data;
+	if ( gtk_dialog != NULL && !*stage ) {
+		*stage = 1;
+		gtk_window_present(GTK_WINDOW(gtk_dialog));
+	}
+#endif
 	prima_one_loop_round( WAIT_NEVER, true);
 	return gtk_dialog != NULL;
 }
@@ -184,6 +191,7 @@ gtk_openfile( Bool open)
 {
 	char *result = NULL;
 	struct MsgDlg message_dlg, **storage;
+	int stage = 0;
 
 	if ( gtk_dialog) return NULL; /* we're not reentrant */
 
@@ -232,7 +240,7 @@ gtk_openfile( Bool open)
 	while ( *storage) storage = &((*storage)-> next);
 	*storage = &message_dlg;
 
-	g_idle_add( do_events, NULL);
+	g_idle_add( do_events, &stage);
 
 	if (gtk_dialog_run (GTK_DIALOG (gtk_dialog)) == GTK_RESPONSE_ACCEPT) {
 

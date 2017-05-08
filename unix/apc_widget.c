@@ -581,6 +581,7 @@ apc_widget_destroy( Handle self)
 		hash_delete( guts.windows, (void*)&X_WINDOW, sizeof(X_WINDOW), false);
 		X_WINDOW = nilHandle;
 	}
+	XFlush( DISP);
 	return true;
 }
 

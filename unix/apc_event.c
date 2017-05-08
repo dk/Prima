@@ -1550,7 +1550,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 					M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
 					M(PWindow( self)-> menu)-> w-> pos. y = ev-> xconfigure. y;
 				}
-				if ( size_changed) prima_end_menu();
+				prima_end_menu();
 			} else {
 				XX-> ackSize. x = ev-> xconfigure. width;
 				XX-> ackSize. y = ev-> xconfigure. height;
