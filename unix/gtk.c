@@ -197,7 +197,7 @@ gtk_openfile( Bool open)
 		GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 		NULL);
 #ifdef WITH_GTK2_NONX11
-	gtk_window_set_position(( GtkWindow*) gtk_dialog, GTK_WIN_POS_CENTER);
+	gtk_window_set_position( GTK_WINDOW(gtk_dialog), GTK_WIN_POS_CENTER);
 #endif
 
 	gtk_file_chooser_set_local_only( GTK_FILE_CHOOSER (gtk_dialog), TRUE);
