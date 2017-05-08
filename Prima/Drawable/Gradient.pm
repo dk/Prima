@@ -58,7 +58,7 @@ sub stripes
 			push @spline, map { $_ * $breadth } @$s;
 		}
 		push @spline, $breadth, $breadth;
-		my $polyline = ( @spline > 4 && $self->{spline} ) ? $self-> canvas-> render_spline( \@spline ) : \@spline;
+		my $polyline = ( @spline > 4 && $self->{spline} ) ? Prima::Drawable-> render_spline( \@spline ) : \@spline;
 		$points = $self-> polyline_to_points($polyline);
 	}
 
@@ -88,7 +88,7 @@ sub map_color
 	return $color unless $color & cl::SysFlag;
 	$color |= 
 		$self->{widgetClass} // 
-		( $self->{canvas}->isa('Prima::Widget') ? $self->{canvas}->widgetClass : undef ) //
+		(( $self->{canvas} && $self->{canvas}->isa('Prima::Widget')) ? $self->{canvas}->widgetClass : undef ) //
 		wc::Undef
 		unless $color & wc::Mask;
 	return $::application->map_color($color);
@@ -169,16 +169,17 @@ sub bar
 	my @bar        = ($x1,$y1,$x2,$y2);
 	my ($ptr1,$ptr2) = $vertical ? (0,2) : (1,3);
 	my $max          = $bar[$ptr2];
+	my $canvas       = $self->canvas;
 	for ( my $i = 0; $i < @$stripes; $i+=2) {
 		$bar[$ptr2] = $bar[$ptr1] + $stripes->[$i+1] - 1;
-		$self->canvas->color( $stripes->[$i]);
-		$self->canvas->bar( @bar );
+		$canvas->color( $stripes->[$i]);
+		$canvas->bar( @bar );
 		$bar[$ptr1] = $bar[$ptr2] + 1;
 		last if $bar[$ptr1] > $max;
 	}
 	if ( $bar[$ptr1] <= $max ) {
 		$bar[$ptr2] = $max;
-		$self->canvas->bar(@bar);
+		$canvas->bar(@bar);
 	}
 }
 
@@ -192,9 +193,10 @@ sub ellipse
 	my $mx = $dx / $diameter;
 	my $my = $dy / $diameter;
 	my $stripes = $self-> stripes( $diameter);
+	my $canvas  = $self->canvas;
 	for ( my $i = 0; $i < @$stripes; $i+=2) {
-		$self->canvas->color( $stripes->[$i]);
-		$self->canvas->fill_ellipse( $x, $y, $mx * $diameter, $my * $diameter );
+		$canvas->color( $stripes->[$i]);
+		$canvas->fill_ellipse( $x, $y, $mx * $diameter, $my * $diameter );
 		$diameter -= $stripes->[$i+1];
 	}
 }
@@ -213,8 +215,9 @@ sub sector
 	my $arclen = int($df * $angle + .5);
 	my $stripes = $self-> stripes( $arclen );
 	my $accum = 0;
+	my $canvas = $self->canvas;
 	for ( my $i = 0; $i < @$stripes - 2; $i+=2) {
-		$self->canvas->color( $stripes->[$i]);
+		$canvas->color( $stripes->[$i]);
 		my $d = $stripes->[$i+1] / $df;
 		if ( $accum + $d < $min_angle ) {
 			$accum += $d;
@@ -222,12 +225,12 @@ sub sector
 		}
 		$d += $accum;
 		$accum = 0;
-		$self->canvas->fill_sector( $x, $y, $dx, $dy, $start, $start + $d + $min_angle);
+		$canvas->fill_sector( $x, $y, $dx, $dy, $start, $start + $d + $min_angle);
 		$start += $d;
 	}
 	if ( @$stripes ) {
-		$self->canvas->color( $stripes->[-2]);
-		$self->canvas->fill_sector( $x, $y, $dx, $dy, $start, $end);
+		$canvas->color( $stripes->[-2]);
+		$canvas->fill_sector( $x, $y, $dx, $dy, $start, $end);
 	}
 }
 
