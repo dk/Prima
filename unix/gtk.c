@@ -103,7 +103,7 @@ prima_gtk_init(void)
 		if ((stat( display_str, &s) < 0) || !S_ISSOCK(s.st_mode))  /* not a socket */
 			return (void*)0;
 #else
-		putenv("DISPLAY", display_str, 1);
+		setenv("DISPLAY", display_str, 1);
 #endif
 	}
 
