@@ -173,30 +173,28 @@ prima_gtk_done(void)
 	return true;
 }
 
-static void
-set_transient_for(Bool set)
-{
 #ifndef WITH_GTK2_NONX11
+static void
+set_transient_for(void)
+{
 	static GdkWindow * gdk_toplevel = NULL;
-	if ( set ) {
-		Handle toplevel = prima_find_toplevel_window(nilHandle);
-		if ( toplevel ) {
-			GdkWindow * g = NULL;
+	Handle toplevel = prima_find_toplevel_window(nilHandle);
+	if ( toplevel ) {
+		GdkWindow * g = NULL;
 
 #if GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 14
-			g = gtk_widget_get_window(GTK_WIDGET(gtk_dialog));
+		g = gtk_widget_get_window(GTK_WIDGET(gtk_dialog));
 #else
-			g = gtk_dialog->window;
+		g = gtk_dialog->window;
 #endif
-			if ( g ) {
-				Window w = gdk_x11_drawable_get_xid(g);
-				if ( w )
-					XSetTransientForHint( DISP, w, PWidget(toplevel)-> handle);
-			}
+		if ( g ) {
+			Window w = gdk_x11_drawable_get_xid(g);
+			if ( w )
+				XSetTransientForHint( DISP, w, PWidget(toplevel)-> handle);
 		}
 	}
-#endif
 }
+#endif
 
 
 static gboolean
@@ -205,9 +203,10 @@ do_events(gpointer data)
 	int* stage = ( int*) data;
 	if ( gtk_dialog != NULL && !*stage ) {
 		*stage = 1;
-		set_transient_for(1);
 #ifdef WITH_GTK2_NONX11
 		gtk_window_present(GTK_WINDOW(gtk_dialog));
+#else
+		set_transient_for();
 #endif
 	}
 	prima_one_loop_round( WAIT_NEVER, true);
@@ -353,8 +352,6 @@ gtk_openfile( Bool open)
 		}
 	}
 		
-	set_transient_for(0);
-
 	if ( gtk_filters) {
 		plist_destroy( gtk_filters);
 		gtk_filters = NULL;
