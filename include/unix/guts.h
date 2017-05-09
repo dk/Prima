@@ -664,6 +664,7 @@ typedef struct _UnixGuts
 	Bool                         icccm_only;
 	Bool                         net_wm_maximization;
 	int                          net_wm_maximize_HORZ_vs_HORIZ;
+	int                          use_gtk;
 } UnixGuts;
 
 extern UnixGuts  guts;
@@ -1344,3 +1345,6 @@ prima_region_create( Handle mask);
 
 extern Handle
 prima_find_toplevel_window(Handle self);
+
+extern const char *
+prima_x11_display_string(void);

@@ -1427,4 +1427,5 @@ apc_window_get_on_top( Handle self)
 Bool
 apc_window_set_effects( Handle self, PHash effects )
 {
+	return false;
 }

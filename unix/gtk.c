@@ -81,15 +81,29 @@ prima_gtk_init(void)
 	Color ** stdcolors;
 	PangoWeight weight;
 	PangoStyle style;
+	const char * display_str;
 
 	switch ( gtk_initialized) {
 	case -1:
 		return NULL;
 	case 1:
 #ifdef WITH_GTK2_NONX11
+		{
+		}
 		return (void*)1;
 #else
 		return gdk_x11_display_get_xdisplay(display);
+#endif
+	}
+
+	display_str = prima_x11_display_string();
+	if ( display_str ) {
+#ifdef WITH_GTK2_NONX11
+		struct stat s;
+		if ((stat( display_str, &s) < 0) || !S_ISSOCK(s.st_mode))  /* not a socket */
+			return (void*)0;
+#else
+		putenv("DISPLAY", display_str, 1);
 #endif
 	}
 

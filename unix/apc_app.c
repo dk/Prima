@@ -143,6 +143,13 @@ static char* do_display = NULL;
 static int   do_debug   = 0;
 static Bool  do_icccm_only = false;
 static Bool  do_no_shmem   = false;
+static Bool  do_no_gtk   = false;
+
+const char *
+prima_x11_display_string(void)
+{
+	return (const char*) (do_display ? do_display : getenv("DISPLAY"));
+}
 
 static Bool
 init_x11( char * error_buf )
@@ -375,7 +382,7 @@ init_x11( char * error_buf )
 	if ( !prima_init_color_subsystem( error_buf)) return false;
 	if ( !prima_init_font_subsystem( error_buf)) return false;
 #ifdef WITH_GTK2
-	if (!prima_gtk_init()) return false;
+	guts. use_gtk = do_no_gtk ? false : ( prima_gtk_init() != NULL );
 #endif
 	bzero( &guts. cursor_gcv, sizeof( guts. cursor_gcv));
 	guts. cursor_gcv. cap_style = CapButt;
@@ -448,7 +455,10 @@ window_subsystem_get_options( int * argc, char *** argv)
 	"no-xft",        "do not use XFT",
 	"no-aa",         "do not anti-alias XFT fonts",
 	"font-priority", "match unknown fonts against: 'xft' (default) or 'core'",
-#endif   
+#endif
+#ifdef WITH_GTK2
+	"no-gtk",        "do not use GTK2",
+#endif
 	"font", 
 #ifdef USE_XFT
 				"default prima font in XLFD (-helv-misc-*-*-) or XFT(Helv-12) format",
@@ -496,6 +506,10 @@ window_subsystem_set_option( char * option, char * value)
 	} else if ( strcmp( option, "no-shmem") == 0) {
 		if ( value) warn("`--no-shmem' option has no parameters");
 		do_no_shmem = true;
+		return true;
+	} else if ( strcmp( option, "no-gtk") == 0) {
+		if ( value) warn("`--no-gtk' option has no parameters");
+		do_no_gtk = true;
 		return true;
 	} else if ( strcmp( option, "debug") == 0) {
 		if ( !value) {
@@ -546,7 +560,7 @@ window_subsystem_cleanup( void)
 	/*XXX*/
 	prima_end_menu();
 #ifdef WITH_GTK2
-	prima_gtk_done();
+	if ( guts. use_gtk) prima_gtk_done();
 #endif
 }
 
@@ -709,18 +723,23 @@ int
 apc_application_get_gui_info( char * description, int len)
 {
 #ifdef WITH_GTK2
-	if ( description) {
-		strncpy( description, "X Window System + GTK2", len);
-		description[len-1] = 0;
-	}
-	return guiGTK2;
+	if ( guts. use_gtk ) {
+		if ( description) {
+#ifdef WITH_GTK_NONX11
+			strncpy( description, "X Window System + GTK2", len);
 #else
+			strncpy( description, "X Window System + XQuartz + GTK2", len);
+#endif
+			description[len-1] = 0;
+		}
+		return guiGTK2;
+	}
+#endif
 	if ( description) {
 		strncpy( description, "X Window System", len);
 		description[len-1] = 0;
 	}
 	return guiXLib;
-#endif
 }
 
 Handle
