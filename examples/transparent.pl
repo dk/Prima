@@ -22,6 +22,7 @@ use Prima;
 use Prima::Const;
 use Prima::Application name => 'Generic.pm';
 
+
 my $w = Prima::MainWindow-> create(
 	size => [ 300, 300],
 	borderStyle => bs::Dialog,
@@ -70,6 +71,7 @@ $w-> insert(
 );
 
 
+goto NOSHAPE unless $::application-> get_system_value( sv::ShapeExtension);
 my $string = "Hello from Prima::OnScreenDisplay!";
 my $tt = Prima::Widget-> create(
 	name => 'W1',
@@ -110,5 +112,6 @@ $i-> text_out( $string, 0, 0);
 $i-> end_paint;
 $tt-> shape($i);
 $tt-> bring_to_front;
+NOSHAPE:
 
 run Prima;
