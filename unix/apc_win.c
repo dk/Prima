@@ -1319,20 +1319,6 @@ prima_find_toplevel_window(Handle self)
 		}
 	}
 	
-	/* find any window */
-	if ( toplevel == nilHandle) {
-		int i;
-		PList l = & PWidget(application)-> widgets;
-		for ( i = 0; i < l-> count; i++) {
-			if ( self != l->items[i]) {
-				if ( XT_IS_WINDOW( X(PWidget( l-> items[i] )))) {
-					toplevel = l-> items[i];
-					break;
-				}
-			}
-		}
-	}
-	
 	return toplevel;
 }
 
