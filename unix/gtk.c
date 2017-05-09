@@ -176,6 +176,7 @@ prima_gtk_done(void)
 static void
 set_transient_for(Bool set)
 {
+#ifndef WITH_GTK2_NONX11
 	static GdkWindow * gdk_toplevel = NULL;
 	if ( set ) {
 		Handle toplevel = prima_find_toplevel_window(nilHandle);
@@ -188,16 +189,13 @@ set_transient_for(Bool set)
 			g = gtk_dialog->window;
 #endif
 			if ( g ) {
-				gdk_toplevel = gdk_window_foreign_new_for_display(display, PWidget(toplevel)-> handle);
-				gdk_window_set_transient_for(g, gdk_toplevel);
+				Window w = gdk_x11_drawable_get_xid(g);
+				if ( w )
+					XSetTransientForHint( DISP, w, PWidget(toplevel)-> handle);
 			}
 		}
-	} else {
-		if ( gdk_toplevel ) {
-			g_object_unref(gdk_toplevel);
-			gdk_toplevel = NULL;
-		}
 	}
+#endif
 }
 
 
