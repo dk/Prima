@@ -1341,3 +1341,6 @@ prima_font_debug_style(int style);
 
 extern Region
 prima_region_create( Handle mask);
+
+extern Handle
+prima_find_toplevel_window(Handle self);

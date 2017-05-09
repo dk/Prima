@@ -1291,6 +1291,51 @@ window_start_modal( Handle self, Bool shared, Handle insert_before)
 	return true;
 }
 
+Handle
+prima_find_toplevel_window(Handle self)
+{
+	Handle toplevel = nilHandle;
+	
+	if (!application) return nilHandle;
+
+	toplevel = CApplication(application)-> get_modal_window(application, mtExclusive, true);
+	if ( toplevel == nilHandle && self != nilHandle) {
+		if ( 
+			PWindow(self)-> owner && 
+			PWindow(self)-> owner != application
+		) 
+			toplevel = PWindow(self)-> owner;
+	}
+
+	/* find main window */
+	if ( toplevel == nilHandle) {
+		int i;
+		PList l = & PWidget(application)-> widgets;
+		for ( i = 0; i < l-> count; i++) {
+			if ( PObject(l-> items[i])-> options. optMainWindow && self != l->items[i]) {
+				toplevel = l-> items[i];
+				break;
+			}
+		}
+	}
+	
+	/* find any window */
+	if ( toplevel == nilHandle) {
+		int i;
+		PList l = & PWidget(application)-> widgets;
+		for ( i = 0; i < l-> count; i++) {
+			if ( self != l->items[i]) {
+				if ( XT_IS_WINDOW( X(PWidget( l-> items[i] )))) {
+					toplevel = l-> items[i];
+					break;
+				}
+			}
+		}
+	}
+	
+	return toplevel;
+}
+
 Bool
 apc_window_execute( Handle self, Handle insert_before)
 {
@@ -1299,24 +1344,7 @@ apc_window_execute( Handle self, Handle insert_before)
 	
 	if (!application) return false;
 
-	toplevel = CApplication(application)-> get_modal_window(application, mtExclusive, true);
-	if ( toplevel == nilHandle) {
-		if ( 
-			PWindow(self)-> owner && 
-			PWindow(self)-> owner != application
-		) 
-			toplevel = PWindow(self)-> owner;
-	}
-	/* find main window */
-	if ( toplevel == nilHandle) {
-		int i;
-		PList l = & PWidget(application)-> widgets;
-		for ( i = 0; i < l-> count; i++)
-				if ( PObject(l-> items[i])-> options. optMainWindow && self != l->items[i]) {
-					toplevel = l-> items[i];
-					break;
-				}
-	}
+	toplevel = prima_find_toplevel_window(self);
 	if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, PWidget(toplevel)-> handle);
 
 	XX-> flags.modal = true;
