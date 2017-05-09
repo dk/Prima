@@ -1399,7 +1399,7 @@ sub on_paint
 	# draw grid
 	$canvas-> color( $self-> {gridColor});
 	$canvas-> clipRect( @a);
-	$canvas-> lines( \@grid);
+	$canvas-> lines( \@grid) if @grid;
 }
 
 #sub on_stringify
