@@ -145,12 +145,6 @@ static Bool  do_icccm_only = false;
 static Bool  do_no_shmem   = false;
 static Bool  do_no_gtk   = false;
 
-const char *
-prima_x11_display_string(void)
-{
-	return (const char*) (do_display ? do_display : getenv("DISPLAY"));
-}
-
 static Bool
 init_x11( char * error_buf )
 {
@@ -498,6 +492,7 @@ window_subsystem_set_option( char * option, char * value)
 	} else if ( strcmp( option, "display") == 0) {
 		free( do_display);
 		do_display = duplicate_string( value);
+        setenv("DISPLAY", value, 1);
 		return true;
 	} else if ( strcmp( option, "icccm") == 0) {
 		if ( value) warn("`--icccm' option has no parameters");

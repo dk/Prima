@@ -1345,6 +1345,3 @@ prima_region_create( Handle mask);
 
 extern Handle
 prima_find_toplevel_window(Handle self);
-
-extern const char *
-prima_x11_display_string(void);

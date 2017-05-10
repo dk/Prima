@@ -81,7 +81,6 @@ prima_gtk_init(void)
 	Color ** stdcolors;
 	PangoWeight weight;
 	PangoStyle style;
-	const char * display_str;
 
 	switch ( gtk_initialized) {
 	case -1:
@@ -96,16 +95,16 @@ prima_gtk_init(void)
 #endif
 	}
 
-	display_str = prima_x11_display_string();
-	if ( display_str ) {
 #ifdef WITH_GTK2_NONX11
-		struct stat s;
-		if ((stat( display_str, &s) < 0) || !S_ISSOCK(s.st_mode))  /* not a socket */
-			return (void*)0;
-#else
-		setenv("DISPLAY", display_str, 1);
-#endif
+	{
+		char * display_str = getenv("DISPLAY");
+		if ( display_str ) {
+			struct stat s;
+			if ((stat( display_str, &s) < 0) || !S_ISSOCK(s.st_mode))  /* not a socket */
+				return (void*)0;
+		}
 	}
+#endif
 
 #if PERL_REVISION == 5 && PERL_VERSION == 20
 /* perl bug in 5.20.0, see more at https://rt.perl.org/Ticket/Display.html?id=122105 */
