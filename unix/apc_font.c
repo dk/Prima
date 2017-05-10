@@ -1137,7 +1137,7 @@ detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize)
 
 AGAIN:
 	if ( f-> vecname) {
-		memcpy( &fi, f, sizeof( fi));
+		memmove( &fi, f, sizeof( fi));
 		fi. flags. size = fi. flags. height = fi. flags. width = fi. flags. ascent =
 			fi. flags. descent = fi. flags. internalLeading = fi. flags. externalLeading = 0;
 		f = &fi;
