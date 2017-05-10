@@ -108,7 +108,9 @@ static CharSetInfo utf8_charset         = { "iso10646-1",   NULL, 0, 1 };
 
 #define KOI8_INDEX 12
 #define MAX_CHARSET (sizeof(std_charsets)/sizeof(CharSetInfo))
-#define ALL_CHARSETS (MAX_CHARSET+2)
+#define STD_CHARSETS MAX_CHARSET
+#define EXTRA_CHARSETS 1
+#define ALL_CHARSETS (STD_CHARSETS+EXTRA_CHARSETS)
 #define MAX_GLYPH_SIZE (guts.limits.request_length / 256)
 
 static PHash encodings    = NULL;
@@ -191,7 +193,7 @@ prima_xft_init(void)
 		
 #ifdef HAVE_ICONV_H
 	sprintf( ucs4, "UCS-4%cE", (guts.machine_byte_order == LSBFirst) ? 'L' : 'B');
-	for ( i = 1; i < MAX_CHARSET; i++) {
+	for ( i = 1; i < STD_CHARSETS; i++) {
 		memset( std_charsets[i]. map, 0, sizeof(std_charsets[i]. map));
 
 		ii = iconv_open(ucs4, std_charsets[i]. name);
@@ -235,7 +237,7 @@ prima_xft_init(void)
 	prop_fonts   = hash_create();
 	encodings    = hash_create();
 	myfont_cache = hash_create();
-	for ( i = 0; i < MAX_CHARSET; i++) {
+	for ( i = 0; i < STD_CHARSETS; i++) {
 		int length = 0;
 		char upcase[256], *dest = upcase, *src = std_charsets[i].name;
 		if ( !std_charsets[i]. enabled) continue;
@@ -272,7 +274,7 @@ prima_xft_done(void)
 {
 	int i;
 	if ( !guts. use_xft) return;
-	for ( i = 0; i < MAX_CHARSET; i++)
+	for ( i = 0; i < STD_CHARSETS; i++)
 		if ( std_charsets[i]. fcs)
 			FcCharSetDestroy( std_charsets[i]. fcs);
 	FcCharSetDestroy( fontspecific_charset. fcs);
@@ -1088,7 +1090,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 			/* case 2 - facename only is set, report each facename with every encoding */
 			int j;
 			Font * tmpl = f;
-			for ( j = 0; j < MAX_CHARSET; j++) {
+			for ( j = 0; j < STD_CHARSETS; j++) {
 				if ( !std_charsets[j]. enabled) continue;
 				if ( FcCharSetIntersectCount( c, std_charsets[j]. fcs) >= std_charsets[j]. glyphs - 1) {
 					*f = *tmpl;
@@ -1096,12 +1098,8 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 					f++;
 				}
 			}
-			if ( f == tmpl) {/* no encodings found */
-				strcpy( f-> encoding, fontspecific);
-				f++;
-			}
-			/* always report utf8 encoding */
-			strcpy( f-> encoding, utf8_encoding);
+			/* if no encodings found, assume fontspecific, otherwise always provide iso10646 */
+			strcpy( f-> encoding, (f == tmpl) ? fontspecific : utf8_encoding);
 			f++;
 		} else if ( !facename && !encoding) { 
 			/* case 3 - report unique facenames and store list of encodings
@@ -1112,9 +1110,9 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 				int j, found = 0;
 				char ** enc = (char**) f-> encoding;
 				unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;
-				for ( j = 0; j < MAX_CHARSET; j++) {
+				for ( j = 0; j < STD_CHARSETS; j++) {
 					if ( !std_charsets[j]. enabled) continue;
-					if ( *shift + 2 >= 254 / sizeof(char*)) break;
+					if ( *shift + 2 >= 256 / sizeof(char*)) break;
 					if ( FcCharSetIntersectCount( c, std_charsets[j]. fcs) >= std_charsets[j]. glyphs - 1) {
 						char buf[ 512];
 						int len = snprintf( buf, 511, "%s-charset-%s", f-> name, std_charsets[j]. name);
@@ -1124,9 +1122,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 						found = 1;
 					}
 				}
-				if ( !found)
-					*(enc + ++(*shift)) = fontspecific;
-				*(enc + ++(*shift)) = utf8_encoding;
+				*(enc + ++(*shift)) = found ? utf8_encoding : fontspecific;
 			}
 			f++;
 		}
@@ -1144,10 +1140,11 @@ void
 prima_xft_font_encodings( PHash hash)
 {
 	int i;
-	for ( i = 0; i < MAX_CHARSET; i++) {
+	for ( i = 0; i < STD_CHARSETS; i++) {
 		if ( !std_charsets[i]. enabled) continue;
 		hash_store( hash, std_charsets[i]. name, strlen(std_charsets[i]. name), (void*) (std_charsets + i));
 	}
+	hash_store( hash, utf8_encoding, strlen(utf8_encoding), (void*) &utf8_charset);
 }
 	
 static FcChar32 *
@@ -1803,7 +1800,7 @@ prima_xft_parse( char * ppFontNameSize, Font * font)
 	FcPatternGetCharSet( p, FC_CHARSET, 0, &c);
 	if ( c && (FcCharSetCount(c) > 0)) {
 		int i;
-		for ( i = 0; i < MAX_CHARSET; i++) {
+		for ( i = 0; i < STD_CHARSETS; i++) {
 			if ( !std_charsets[i]. enabled) continue;
 			if ( FcCharSetIntersectCount( std_charsets[i]. fcs, c) >= std_charsets[i]. glyphs - 1) {
 				strcpy( f. encoding, std_charsets[i]. name);
