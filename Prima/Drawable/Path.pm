@@ -30,6 +30,16 @@ sub new
 	}, $class;
 }
 
+sub dup
+{
+	my $self = shift;
+	return $self->new( 
+		%$self,
+		canvas   => $self->{canvas},
+		commands => [ @{ $self->{commands} } ],
+	);
+}
+
 sub cmd
 {
 	my $self = shift;
@@ -53,6 +63,7 @@ sub append           { push @{shift->{commands}}, @{shift->{commands}} }
 sub commands         { shift->{commands} }
 sub save             { shift->cmd('save', 0) }
 sub path             { shift->cmd('save', 1) }
+sub close            { shift->cmd('close') }
 sub restore          { shift->cmd('restore') } # no checks for underflow here, to allow append paths
 sub precision        { shift->cmd(set => precision => shift) }
 
@@ -277,6 +288,13 @@ sub _relative
 	my ( $x0, $y0 ) = $self-> matrix_apply(0, 0);
 	$m->[X] += $p->[-2] - $x0;
 	$m->[Y] += $p->[-1] - $y0;
+}
+
+sub _close
+{
+	my $self = shift;
+	my $p = $self->{points};
+	push @$p, $p->[0], $p->[1] if @$p;
 }
 
 sub _line
