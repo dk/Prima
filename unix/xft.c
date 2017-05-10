@@ -108,6 +108,7 @@ static CharSetInfo utf8_charset         = { "iso10646-1",   NULL, 0, 1 };
 
 #define KOI8_INDEX 12
 #define MAX_CHARSET (sizeof(std_charsets)/sizeof(CharSetInfo))
+#define ALL_CHARSETS (MAX_CHARSET+2)
 #define MAX_GLYPH_SIZE (guts.limits.request_length / 256)
 
 static PHash encodings    = NULL;
@@ -274,6 +275,8 @@ prima_xft_done(void)
 	for ( i = 0; i < MAX_CHARSET; i++)
 		if ( std_charsets[i]. fcs)
 			FcCharSetDestroy( std_charsets[i]. fcs);
+	FcCharSetDestroy( fontspecific_charset. fcs);
+	FcCharSetDestroy( utf8_charset. fcs);
 	hash_destroy( encodings, false);
 	hash_destroy( mismatch, false);
 	hash_destroy( prop_fonts, true);
@@ -1054,13 +1057,13 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 	if ( !s) return array;
 
 	/* make dynamic */
-	if (( *retCount + s->nfont == 0) || !( newarray = realloc( array, sizeof(Font) * (*retCount + s-> nfont * MAX_CHARSET)))) {
+	if (( *retCount + s->nfont == 0) || !( newarray = realloc( array, sizeof(Font) * (*retCount + s-> nfont * ALL_CHARSETS)))) {
 		FcFontSetDestroy(s);
 		return array;
 	}
 	ppat = s-> fonts; 
 	f = newarray + *retCount;
-	bzero( f, sizeof( Font) * s-> nfont * MAX_CHARSET);
+	bzero( f, sizeof( Font) * s-> nfont * ALL_CHARSETS);
 
 	names = hash_create();
 	
@@ -1111,7 +1114,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 				unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;
 				for ( j = 0; j < MAX_CHARSET; j++) {
 					if ( !std_charsets[j]. enabled) continue;
-					if ( *shift + 2 >= 256 / sizeof(char*)) break;
+					if ( *shift + 2 >= 254 / sizeof(char*)) break;
 					if ( FcCharSetIntersectCount( c, std_charsets[j]. fcs) >= std_charsets[j]. glyphs - 1) {
 						char buf[ 512];
 						int len = snprintf( buf, 511, "%s-charset-%s", f-> name, std_charsets[j]. name);
