@@ -33,7 +33,7 @@ sub new
 sub dup
 {
 	my $self = shift;
-	return $self->new( 
+	return ref($self)->new( undef,
 		%$self,
 		canvas   => $self->{canvas},
 		commands => [ @{ $self->{commands} } ],
