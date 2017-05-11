@@ -212,7 +212,11 @@ sub on_paint
 		}
 
 		$self-> draw_pad( $canvas, tab => $clr[1]);
-		if ( $self-> {minThumbSize} > 8 && $self->{style} ne 'xp')
+		if ( 
+			$self-> {minThumbSize} > 8 && 
+			$self->{style} ne 'xp' && 
+			(( $v ? $maxx : $maxy) > 10)
+		)
 		{
 			if ( $v)
 			{
@@ -222,6 +226,7 @@ sub on_paint
 					( $self-> { tab} -> { pressed} ? 1 : 0);
 				my $stx = int($maxx / 3) + ( $self-> { tab} -> { pressed} ? 1 : 0);
 				my $lnx = int($maxx / 3);
+				$lnx += $maxx - $lnx * 3;
 				$canvas-> color( $c3d[ 0]);
 				$canvas-> bar( $stx, $sty - 1, $stx + $lnx, $sty + 9);
 				$canvas-> color( $clr[ 0]);
@@ -236,6 +241,7 @@ sub on_paint
 					( $self-> { tab}-> { pressed} ? 1 : 0) ;
 				my $sty = int($maxy / 3) - ( $self-> { tab} -> { pressed} ? 1 : 0);
 				my $lny = int($maxy / 3);
+				$lny += $maxy - $lny * 3;
 				$canvas-> color( $c3d[ 0]);
 				$canvas-> bar( $stx + 1, $sty, $stx + 11, $sty + $lny);
 				$canvas-> color( $clr[ 0]);
