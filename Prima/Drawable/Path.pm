@@ -52,7 +52,7 @@ sub rcmd
 {
 	my $self = shift;
 	$self->cmd(
-		save     => (),
+		save     => 0,
 		relative => (),
 		@_,
 		restore  => (),
@@ -177,7 +177,7 @@ sub rarc
 	@_ > 3 or Carp::croak('bad parameters to arcto');
 	my ( $dx, $dy, $from, $to, $tilt) = @_;
 	return $self if $from == $to;
-	$self->save;
+	$self->save(0);
 	$self->scale( $dx / 2, $dy / 2);
 	$self->rotate( $tilt // 0.0);
 	$self->cmd( arc => $from, $to, 1 );
@@ -213,9 +213,17 @@ sub points
 		while ( my $cmd = shift @c ) {
 			$self-> can("_$cmd")-> ( $self, \@c );
 		}
+		$self->{last_matrix} = $self->{curr}->{matrix_actual};
 	}
 
 	return $self->{points};
+}
+
+sub last_matrix
+{
+	my $self = shift;
+	$self->points;
+	return $self->{last_matrix};
 }
 
 sub matrix_apply
@@ -240,7 +248,7 @@ sub _save
 
 	push @{ $self->{stack} }, $self->{curr};
 
-	my ( $m1, $m2, $m3 ) = @_;
+	my ( $m1, $m2, $m3 );
 	if ( shift @$cmd ) {
 		$m1 = [ identity ];
 		$m2 = [ @{ $self->{curr}->{matrix_actual} } ];
@@ -589,9 +597,11 @@ Pops the stack entry and replaces the current matrix and graphic properties with
 
 Adds rotation to the current matrix
 
-=item save
+=item save SUBPATH=0
 
 Duplicates the current matrix and graphic properties and pushes them to the stack.
+If SUBPATH is set, the current transformation matrix is set to identity, so 
+that further commands are treated as subpath.
 
 =item shear X, Y = X
 
@@ -627,6 +637,10 @@ Returns 2 points that box the path.
 
 Runs all accumulated commands, and returns rendered set of points, suitable
 for further calls to C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly>.
+
+=item last_matrix
+
+Return CTM resulted after running all commands
 
 =item fill
 
