@@ -1136,8 +1136,8 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 		break;
 	case svXPointer:		return guts. cursor_width;
 	case svYPointer:		return guts. cursor_height;
-	case svXScrollbar:		return 16;
-	case svYScrollbar:		return 16;
+	case svXScrollbar:		return 18;
+	case svYScrollbar:		return 18;
 	case svXCursor:		return 1;
 	case svAutoScrollFirst:	return guts. scroll_first;
 	case svAutoScrollNext:	return guts. scroll_next;
