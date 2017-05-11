@@ -107,6 +107,8 @@ examples/socket_anyevent.pl
 examples/spinner.pl
 examples/spline.pl
 examples/theme.pl
+examples/tiger.pl
+examples/tiger.eps
 examples/transparent.pl
 examples/triangle.pl
 img/bc_color.c
