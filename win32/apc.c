@@ -678,15 +678,15 @@ process_transparents( Handle self)
 }
 
 typedef struct _ViewProfile {
-ColorSet colors;
-Point    pos;
-Point    size;
-Point    virtSize;
-Bool     enabled;
-Bool     visible;
-Bool     focused;
-Handle   capture;
-HRGN     shape;
+	ColorSet colors;
+	Point    pos;
+	Point    size;
+	Point    virtSize;
+	Bool     enabled;
+	Bool     visible;
+	Bool     focused;
+	Handle   capture;
+	HRGN     shape;
 } ViewProfile, *PViewProfile;
 
 
@@ -719,11 +719,11 @@ get_view_ex( Handle self, PViewProfile p)
 	}
 }
 
-
 static void
 set_view_ex( Handle self, PViewProfile p)
 {
 	int i;
+	Bool clip_by_children;
 	HWND wnd = ( HWND) var handle;
 	if ( sys className == WC_FRAME && is_apt(aptLayered)) {
 		SetWindowRgn((HWND) var handle, p-> shape, true);
@@ -740,6 +740,11 @@ set_view_ex( Handle self, PViewProfile p)
 	var virtualSize = p-> virtSize;
 	apc_widget_set_enabled( self, p-> enabled);
 	if ( p-> focused) apc_widget_set_focused( self);
+
+	clip_by_children = is_apt(aptClipByChildren);
+	apt_set(aptClipByChildren); /* by default widget created with clipping */
+	apc_widget_set_clip_by_children(self, clip_by_children);
+
 	apc_widget_set_visible( self, p-> visible);
 	if ( p-> capture) apc_widget_set_capture( self, 1, nilHandle);
 	if ( !InvalidateRect(( HWND) var handle, nil, false)) apiErr;
@@ -999,6 +1004,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	}
 	HWND_lock( true);
 	
+	if ( !reset) apt_set( aptClipByChildren );
 	apt_assign( aptLayeredRequested, layered );
 	apt_assign( aptLayered, layered );
 	
@@ -1750,6 +1756,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 			get_view_ex( self, &vprf);
 		reset = true;
 	}
+	if ( !reset) apt_set( aptClipByChildren );
 	if ( reset || ( var handle == nilHandle))
 		create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM,
 			WS_CHILD, exstyle, 1, 1, &vprf, ( HWND) parentHandle);
@@ -2152,6 +2159,13 @@ apc_widget_end_paint_info( Handle self)
 }
 
 Bool
+apc_widget_get_clip_by_children( Handle self)
+{
+	objCheck false;
+	return is_apt(aptClipByChildren);
+}
+
+Bool
 apc_widget_get_clip_owner( Handle self)
 {
 	objCheck false;
@@ -2548,6 +2562,38 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 }
 
 #define check_swap( parm1, parm2) if ( parm1 > parm2) { int parm3 = parm1; parm1 = parm2; parm2 = parm3;}
+
+Bool
+apc_widget_set_clip_by_children( Handle self, Bool clip_by_children)
+{
+	objCheck false;
+	LONG f;
+	MSG  msg;
+	Bool is_clipped;
+
+	is_clipped = is_apt(aptClipByChildren);
+	clip_by_children = !!clip_by_children;
+	if ( is_clipped == clip_by_children )
+		return true;
+
+	if ( sys className == WC_FRAME) {
+		f = GetWindowLong(( HWND ) var handle, GWL_STYLE);
+		if ( clip_by_children )
+			f |= WS_CLIPCHILDREN;
+		else
+			f &= ~WS_CLIPCHILDREN;
+		SetWindowLong(( HWND ) var handle, GWL_STYLE, f);
+		while ( PeekMessage( &msg, (HWND) var handle, WM_MOUSEMOVE, WM_MOUSEMOVE, PM_REMOVE));
+	}
+
+	f = GetWindowLong(HANDLE, GWL_STYLE);
+	if ( clip_by_children )
+		f |= WS_CLIPCHILDREN;
+	else
+		f &= ~WS_CLIPCHILDREN;
+	SetWindowLong( HANDLE, GWL_STYLE, f);
+	while ( PeekMessage( &msg, HANDLE, WM_MOUSEMOVE, WM_MOUSEMOVE, PM_REMOVE));
+}
 
 Bool
 apc_widget_set_color( Handle self, Color color, int index)

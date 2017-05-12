@@ -6,7 +6,7 @@
 #define POLLUTE_NAME_SPACE 1
 #endif
 
-#define PRIMA_CORE_VERSION 2017030901
+#define PRIMA_CORE_VERSION 2017050901
 
 #define PRIMA_VERSION_BOOTCHECK \
 	if(apc_get_core_version()!=PRIMA_CORE_VERSION) \
@@ -2074,6 +2074,9 @@ extern Bool
 apc_widget_end_paint_info( Handle self);
 
 extern Bool
+apc_widget_get_clip_by_children( Handle self);
+
+extern Bool
 apc_widget_get_clip_owner( Handle self);
 
 extern Color
@@ -2170,6 +2173,9 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo);
 
 extern Bool
 apc_widget_set_color( Handle self, Color color, int index);
+
+extern Bool
+apc_widget_set_clip_by_children( Handle self, Bool clip_by_children);
 
 extern Bool
 apc_widget_set_enabled( Handle self, Bool enable);

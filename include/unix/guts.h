@@ -756,6 +756,7 @@ typedef struct _drawable_sys_data
 		unsigned brush_fore               : 1;
 		unsigned brush_back               : 1;
 		unsigned brush_null_hatch         : 1;
+		unsigned clip_by_children	  : 1;
 		unsigned clip_owner	          : 1;
 		unsigned configured               : 1;
 		unsigned cursor_visible		  : 1;

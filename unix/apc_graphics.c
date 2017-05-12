@@ -174,7 +174,7 @@ Unbuffered:
 	XX-> gtransform = XX-> transform;
 
 	prima_get_gc( XX);
-	XX-> gcv. subwindow_mode = (self == application ? IncludeInferiors : ClipByChildren);
+	XX-> gcv. subwindow_mode = (XX->flags.clip_by_children ? ClipByChildren : IncludeInferiors);
 	
 	XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
 	XCHECKPOINT;

@@ -6,7 +6,7 @@ object Prima::Widget( Prima::Drawable)
 {
 #	user variables
 	Handle    accelTable;	            # accelerator table
-	Handle    currentWidget;	         # current widget pointer
+	Handle    currentWidget;	    # current widget pointer
 	int       cursorLock;               # cursor lock count
 	NPoint    designScale;              # font width and height for view design
 	char   *  helpContext;              # help context string
@@ -47,6 +47,7 @@ object Prima::Widget( Prima::Drawable)
 	property  int    bottom;
 	property  Bool   briefKeys;
 	property  Bool   buffered;
+	property  Bool   clipChildren;
 	property  Bool   clipOwner;
 	property  Color  color;
 	property  Color  colorIndex( int index);

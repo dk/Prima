@@ -85,6 +85,7 @@ Widget_init( Handle self, HV * profile)
 	my-> set_autoEnableChildren ( self, pget_B( autoEnableChildren));
 	my-> set_briefKeys          ( self, pget_B( briefKeys));
 	my-> set_buffered           ( self, pget_B( buffered));
+	my-> set_clipChildren       ( self, pget_B( clipChildren));
 	my-> set_cursorVisible      ( self, pget_B( cursorVisible));
 	my-> set_growMode           ( self, pget_i( growMode));
 	my-> set_helpContext        ( self, pget_sv( helpContext));
@@ -2137,6 +2138,15 @@ Widget_buffered( Handle self, Bool set, Bool buffered)
 	if ( !opt_InPaint)
 		opt_assign( optBuffered, buffered);
 	return false;
+}
+
+Bool
+Widget_clipChildren( Handle self, Bool set, Bool clip_by_children)
+{
+	if ( set)
+		return apc_widget_set_clip_by_children(self, clip_by_children);
+	else
+		return apc_widget_get_clip_by_children(self);
 }
 
 Bool

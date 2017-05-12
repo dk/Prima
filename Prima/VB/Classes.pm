@@ -394,19 +394,16 @@ sub xorrect
 		);
 	}
 
-	my $o = $::application;
+	my $o = $self->owner;
 	$o-> begin_paint;
-	my @cr = $self-> owner-> rect;
-	$o-> clipRect( @cr);
-	$cr[2]--;
-	$cr[3]--;
+	$o-> clipChildren(0);
 	my $dsize = $self-> {sizeable} ? 5 : 1;
 
 	$o-> rect_focus( $r0,$r1,$r2-1,$r3-1,$dsize);
 
 	if ( defined $self-> {extraRects}) {
 		my ( $ax, $ay) = @{$self-> {sav}};
-		my @org = $self-> owner-> client_to_screen( $ax, $ay);
+		my @org = ( $ax, $ay);
 		$org[0] = $r0 - $org[0];
 		$org[1] = $r1 - $org[1];
 		$o-> rect_focus( 
@@ -414,6 +411,7 @@ sub xorrect
 			$dsize
 		) for @{$self-> {extraRects}};
 	}
+	$o-> clipChildren(1);
 	$o-> end_paint;
 }
 
@@ -504,14 +502,14 @@ sub on_mousedown
 			for ( @mw) {
 				next if $_ == $self;
 				$_-> marked(1);
-				push( @rects, [$_-> client_to_screen(0,0,$_-> size)]);
+				push( @rects, [$_->rect]);
 			}
 			$self-> {sav} = [$self-> origin];
 			$self-> {drag} = 1;
 			$VB::form-> dm_init( $self);
 			$self-> {extraWidgets} = \@mw;
 			$self-> {extraRects}   = \@rects;
-			$self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
+			$self-> {prevRect} = [$self->rect];
 			$self-> update_view;
 			$VB::form-> {saveHdr} = $VB::form-> text;
 			$self-> xorrect( @{$self-> {prevRect}}, 1);
@@ -532,7 +530,7 @@ sub on_mousedown
 			elsif ( $part eq q(NW)) { ( $xa, $ya) = (-1, 1); }
 			elsif ( $part eq q(SE)) { ( $xa, $ya) = ( 1,-1); }
 			$self-> {dirData} = [$xa, $ya];
-			$self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
+			$self-> {prevRect} = [$self->rect];
 			$self-> update_view;
 			$VB::form-> {saveHdr} = $VB::form-> text;
 			$self-> xorrect( @{$self-> {prevRect}}, 1);
@@ -591,9 +589,10 @@ sub on_mousemove
 	if ( $self-> {drag}) {
 		my $dm = $VB::form-> dragMode;
 		if ( $dm != 3) {
-			my @o = $self-> screen_to_client( @{$self-> {prevRect}}[0,1]);
-			$y = $o[1] + $self-> {spotY} if $dm == 1;
-			$x = $o[0] + $self-> {spotX} if $dm == 2;
+			my @o = @{$self-> {prevRect}}[0,1];
+			my $rx = $x;
+			$y = $o[1] - $self->bottom + $self-> {spotY} if $dm == 1;
+			$x = $o[0] - $self->left   + $self-> {spotX} if $dm == 2;
 		}
 		my @sz = $self-> size;
 		my @og = $self-> origin;
@@ -621,7 +620,7 @@ sub on_mousemove
 				if abs( $yline - $y + $self-> {spotY} - $sz[1]) < 8;
 		}
 		$self-> xorrect( @{$self-> {prevRect}});
-		my @xorg = $self-> client_to_screen( $x - $self-> {spotX}, $y - $self-> {spotY});
+		my @xorg = ( $self-> left + $x - $self-> {spotX}, $self->bottom + $y - $self-> {spotY});
 		$self-> {prevRect} = [ @xorg, $sz[0] + $xorg[0], $sz[1] + $xorg[1]];
 		$self-> xorrect( @{$self-> {prevRect}}, 1);
 	} elsif ( $self-> {sizeable}) {
@@ -686,7 +685,7 @@ sub on_mousemove
 				$org[2] != $new[2] || $org[3] != $new[3]
 			) {
 				$self-> xorrect( @{$self-> {prevRect}});
-				$self-> {prevRect} = [$self-> owner-> client_to_screen( @new)];
+				$self-> {prevRect} = [@new];
 				$self-> xorrect( @{$self-> {prevRect}}, 1);
 			}
 			return;
@@ -724,11 +723,7 @@ sub on_mouseup
 			$self-> {drag} = 0;
 			$self-> xorrect( @{$self-> {prevRect}});
 			my @o = $self-> origin;
-			$self-> origin( 
-				$self-> owner-> screen_to_client(
-					@{$self-> {prevRect}}[0,1]
-				)
-			);
+			$self-> origin( @{$self-> {prevRect}}[0,1] );
 			if ( defined $self-> {extraRects}) {
 				# get all children, and do _not_ move them together with us
 				my @allchildren = ($self-> name);
@@ -740,7 +735,7 @@ sub on_mouseup
 				}
 				my %allchildren = map { $_ => 1 } @allchildren;
 
-				my @org = $self-> owner-> client_to_screen( @{$self-> {sav}});
+				my @org = @{$self-> {sav}};
 				$org[0] = $self-> {prevRect}-> [0] - $org[0];
 				$org[1] = $self-> {prevRect}-> [1] - $org[1];
 				for my $wij ( @{$self-> {extraWidgets}}) {
@@ -755,7 +750,6 @@ sub on_mouseup
 		if ( $self-> {sizeAction}) {
 			my @r = @{$self-> {prevRect}};
 			$self-> xorrect( @r);
-			@r = $self-> owner-> screen_to_client(@r);
 			my @o = $self-> origin;
 			$self-> rect( @r);
 			$self-> pointer( cr::Default);
@@ -811,7 +805,7 @@ sub on_keydown
 	}
 	if ( $key == kb::Tab && $self-> {drag}) {
 		$VB::form-> dm_next( $self);
-		my @pp = $::application-> pointerPos;
+		my @pp = $self->owner-> pointerPos;
 		$self-> {spotX} = $pp[0] - $self-> {prevRect}-> [0];
 		$self-> {spotY} = $pp[1] - $self-> {prevRect}-> [1];
 		$self-> clear_event;
@@ -1058,7 +1052,7 @@ sub prf_types
 			ownerShowHint ownerPalette scaleChildren
 			selectable selected showHint syncPaint tabStop transparent
 			visible x_centered y_centered originDontCare sizeDontCare
-			packPropagate layered
+			packPropagate layered clipChildren
 		)],
 		iv            => [qw(bottom height left right top width)],
 		tabOrder      => ['tabOrder'],

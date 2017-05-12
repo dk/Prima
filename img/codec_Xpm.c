@@ -4,6 +4,7 @@
 #define Window          XWindow
 #undef FUNC
 #undef Bool
+#define Bool BOOL
 #include <X11/xpm.h>
 #undef Font
 #undef Drawable

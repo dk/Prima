@@ -791,6 +791,7 @@ sub notification_types { return \%RNT; }
 	backColor         => cl::Normal,
 	briefKeys         => 1,
 	buffered          => 0,
+	clipChildren      => 1,
 	capture           => 0,
 	clipOwner         => 1,
 	color             => cl::NormalText,

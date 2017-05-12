@@ -1025,7 +1025,8 @@ Bool   Application_ownerBackColor( Handle self, Bool set, Bool ownerBackColor) {
 Bool   Application_ownerFont( Handle self, Bool set, Bool ownerFont)   { return false; }
 Bool   Application_ownerShowHint( Handle self, Bool set, Bool ownerShowHint) { return false; }
 Bool   Application_ownerPalette( Handle self, Bool set, Bool ownerPalette) { return false; }
-Bool   Application_clipOwner( Handle self, Bool set, Bool clipOwner)   { return true; }
+Bool   Application_clipChildren( Handle self, Bool set, Bool clip)   { return true; }
+Bool   Application_clipOwner( Handle self, Bool set, Bool clip_by_children)   { return false; }
 int    Application_tabOrder( Handle self, Bool set, int tabOrder)      { return 0; }
 SV   * Application_text    ( Handle self, Bool set, SV * text)       { return nilSV; }
 Bool   Application_transparent( Handle self, Bool set, Bool transparent) { return false; }

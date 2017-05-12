@@ -1088,6 +1088,15 @@ axis relative to its owner.
 
 See also: C<x_centered>, C<y_centered>, C<growMode>, C<origin>, C<Move>.
 
+=item clipChildren BOOLEAN
+
+Affects the drawing mode when children widgets are present and obscuring the
+drawing area.  If set, the children widgets are automatically added to the
+clipping area, and drawing over them will not happen. If unset, the painting
+can be done over the children widgets.
+
+Default: 1
+
 =item clipOwner BOOLEAN
 
 If 1, a widget is clipped by its owner boundaries. 

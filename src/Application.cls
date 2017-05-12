@@ -9,6 +9,7 @@ object Prima::Application( Prima::Widget)
 
 	property  Bool   autoClose;
 	property  Bool   buffered;
+	property  Bool   clipChildren;
 	property  Bool   clipOwner;
 	property  Color  colorIndex( int index);
 	property  Bool   enabled;

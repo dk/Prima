@@ -633,6 +633,12 @@ apc_widget_end_paint_info( Handle self)
 }
 
 Bool
+apc_widget_get_clip_by_children( Handle self)
+{
+	return X(self)->flags. clip_by_children;
+}
+
+Bool
 apc_widget_get_clip_owner( Handle self)
 {
 	return X(self)-> flags. clip_owner;
@@ -1065,6 +1071,17 @@ AGAIN:
 	}
 	XFlush( DISP);
 	return true;
+}
+
+Bool
+apc_widget_set_clip_by_children( Handle self, Bool clip_by_children)
+{
+	DEFXX;
+	XX->flags. clip_by_children = clip_by_children;
+	if ( XF_IN_PAINT(XX) ) {
+		XX-> gcv. subwindow_mode = (XX->flags.clip_by_children ? ClipByChildren : IncludeInferiors);
+		XChangeGC( DISP, XX-> gc, GCSubwindowMode, &XX-> gcv);
+	}
 }
 
 Bool
