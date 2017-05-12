@@ -418,7 +418,7 @@ Image_data( Handle self, Bool set, SV * svdata)
 		SV * sv = newSV_type(SVt_PV);
 		SvREADONLY_on(sv);
 		SvLEN_set(sv, 0); /* So Perl won't free it. */
-		SvPV_set(sv, var-> data);
+		SvPV_set(sv, (char*)var-> data);
 		SvCUR_set(sv, var-> dataSize);
 		SvPOK_only(sv);
 		return sv;

@@ -1844,7 +1844,7 @@ prima_xft_load_font( char* filename)
 
 	if (( s.st_mode & S_IFDIR) != 0) 
 		FAIL("Must not be a directory")
-	if ( !( font = FcFreeTypeQuery (filename, 0, NULL, &count))) 
+	if ( !( font = FcFreeTypeQuery ((const FcChar8*)filename, 0, NULL, &count))) 
 		FAIL("Format not recognized")
 	FcPatternDestroy (font);
 
@@ -1854,7 +1854,7 @@ prima_xft_load_font( char* filename)
 		FAIL("FcConfigGetCurrent error")
 	if ( !( fonts = FcConfigGetFonts(config, FcSetSystem))) 
 		FAIL("FcConfigGetFonts(FcSetSystem) error")
-	if ( !( FcFileScan(fonts, NULL, NULL, NULL, filename, FcFalse)))
+	if ( !( FcFileScan(fonts, NULL, NULL, NULL, (const FcChar8*)filename, FcFalse)))
 		FAIL("FcFileScan error")
 
 	return count;

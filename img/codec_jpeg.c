@@ -412,7 +412,7 @@ exif_find_angle_tag( unsigned char * c, STRLEN len, int wipe)
 	int i;
 	char * c2, buf[256], sig[] = "AngleInfoRoll>";
 
-	if ((c  = (char*) memmem((const void*)c, len, sig, strlen(sig))) == NULL) return 0;
+	if ((c = (unsigned char*) memmem((const void*)c, len, sig, strlen(sig))) == NULL) return 0;
 	c += strlen( sig );
 	if ((c2 = strstr((char*)c, "<")) == NULL) return 0;
 

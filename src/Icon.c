@@ -266,7 +266,7 @@ Icon_mask( Handle self, Bool set, SV * svmask)
 		SV * sv = newSV_type(SVt_PV);
 		SvREADONLY_on(sv);
 		SvLEN_set(sv, 0); /* So Perl won't free it. */
-		SvPV_set(sv, var-> mask);
+		SvPV_set(sv, (char*)var-> mask);
 		SvCUR_set(sv, var-> maskSize);
 		SvPOK_only(sv);
 		return sv;
