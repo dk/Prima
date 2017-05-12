@@ -670,7 +670,6 @@ sub init
 	# If indeterminate is true, the start value must be > sliderLength
 	$self->value($self->{sliderLength}) if ($self->indeterminate);
 	
-	
 	return %profile;
 }
 
@@ -696,26 +695,13 @@ sub on_paint
 	$canvas-> color( $clComplete);
 	
 	# INDETERMINATE STYLE HACK
-	if ($self->indeterminate) {
-		my $left_bound;
-		if ($v) {
-			$left_bound = $complete - ($self->{sliderLength} * $y / $range + 0.5)
-		}
-		else {
-			$left_bound = $complete - ($self->{sliderLength} * $x / $range + 0.5)
-		}
-
-	 	
-		$canvas-> bar ( $v ? ($i, $left_bound, $x-$i-1, $i+$complete) : ($left_bound, $i, $i + $complete, $y-$i-1));
-		
-	}
-	
-	
-	else {
-		$canvas-> bar ( $v ? ($i, $i, $x-$i-1, $i+$complete) : ( $i, $i, $i + $complete, $y-$i-1));
-
-	}
-	
+	my $left_bound = 
+		$self->indeterminate ? 
+			$complete - ($self->{sliderLength} * ($v ? $y : $x) / $range + 0.5) :
+			$i;
+	$canvas-> bar ( $v ? 
+		($i, $left_bound, $x-$i-1, $i+$complete) : 
+		($left_bound, $i, $i + $complete, $y-$i-1));
 	
 	$canvas-> color( $clBack);
 	$canvas-> bar ( $v ? ($i, $i+$complete+1, $x-$i-1, $y-$i-1) : ( $i+$complete+1, $i, $x-$i-1, $y-$i-1));
@@ -1258,7 +1244,8 @@ sub on_paint
 			$canvas-> line($bw - 3, $jp[7]-1, $jp[6]-1, $jp[7]-1);
 		}
 	} else {
-		my $bw = $canvas-> font-> width + $self-> {borderWidth};
+		my $mw = $canvas-> font-> width;
+		my $bw = $mw + $self-> {borderWidth};
 		my $bh  = ( $size[1] - $sb) / 2;
 		my $fh = $canvas-> font-> height;
 		return if $size[0] <= $kb * ($self-> {readOnly} ? 1 : 0) + 2 * $bw + 2;
@@ -1300,7 +1287,8 @@ sub on_paint
 			next if $x >= $size[0] or $val + $tw < 0;
 			push @texts, [
 				$$ttxt[$i], $val, $tw,
-				( $ta == 2) ? $bh - $$tlen[ $i] - 5 - $fh : $bh + $sb + $$tlen[ $i] + 5
+				( $ta == 2) ? $bh - $$tlen[ $i] - 5 - $fh : $bh + $sb + $$tlen[ $i] + 5,
+				$size[0]
 			];
 		}
 
@@ -1324,19 +1312,19 @@ sub on_paint
 				pop @texts;
 				goto NO_LABELS unless @texts;
 			} else {
-				my $dx = $texts[-1]->[1] - $rightmost_val;
 				$texts[-1]->[1] = $rightmost_val;
-				# push the label next to it (but not the 1st one)
-				$texts[-2]->[1] -= $dx if 2 < @texts;
+				my $lv = 2 * $rightmost_label_width + $mw;
+				$$_[-1] -= $lv for @texts[0..$#texts-1];
+				$texts[-1][-1] += $mw;
 			}
 
 			# draw labels
 			my $lastx = 0;
 			for ( @texts) {
-				my ( $text, $val, $width, $y) = @$_;
-				my $x = $val - $width;
-				next if $x < $lastx or $x < 0 or $val + $width >= $size[0];
-				$lastx = $val + $width;
+				my ( $text, $val, $half_width, $y, $xlim) = @$_;
+				my $x = $val - $half_width;
+				next if $x < $lastx or $x < 0 or $val + $half_width >= $xlim;
+				$lastx = $val + $half_width + $mw;
 				$canvas-> text_out_bidi( $text, $x, $y);
 			}
 		}

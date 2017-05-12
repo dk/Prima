@@ -1265,7 +1265,7 @@ sub prf_types
 {
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
-		bool         => ['vertical'],
+		bool         => [qw(vertical indeterminate)],
 		uiv          => [qw(min max value threshold indent)],
 		gaugeRelief  => ['relief'],
 	);
