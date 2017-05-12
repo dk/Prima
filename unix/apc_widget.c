@@ -1082,6 +1082,7 @@ apc_widget_set_clip_by_children( Handle self, Bool clip_by_children)
 		XX-> gcv. subwindow_mode = (XX->flags.clip_by_children ? ClipByChildren : IncludeInferiors);
 		XChangeGC( DISP, XX-> gc, GCSubwindowMode, &XX-> gcv);
 	}
+	return true;
 }
 
 Bool
