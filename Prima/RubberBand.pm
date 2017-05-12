@@ -291,6 +291,9 @@ sub _visible
 				$self->{_widgets}->[$i]->visible( defined $requests[$i] );
 			}
 		}
+		for ( my $i = 0; $i < 4; $i++) {
+			$self->{_widgets}->[$i]->bring_to_front;
+		}
 	} else {
 		$_->hide for @{$self->{_widgets}};
 	}
