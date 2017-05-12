@@ -1567,7 +1567,7 @@ sub reset_tabs
 	my %iconfails = ();
 	my %icongtx   = ();
 	my $s = $::application->uiScaling;
-	for ( keys %{$self-> {classes}}) {
+	for ( sort keys %{$self-> {classes}}) {
 		my ( $class, %info) = ( $_, %{$self-> {classes}-> {$_}});
 		$offsets{$info{page}} = 4 unless exists $offsets{$info{page}};
 		next unless $modules{$info{module}};
