@@ -16,7 +16,7 @@ interpreter is very dumb and minimal, to parse F<tiger.eps> file only.
 use strict;
 use warnings;
 use FindBin qw($Bin);
-use Prima qw(Application ImageViewer);
+use Prima qw(Application);
 
 my ( $device, %globals, %sym, %def, $line, @stack, @code_stack, @array_stack, @graphics_stack);
 my $debug = 0;
@@ -269,34 +269,58 @@ die "No code\n" unless @code_stack;
 
 # execute
 my @bb = split ' ', ($globals{BoundingBox} // '0 0 1000 1000');
-$device = Prima::DeviceBitmap->new(
-	type  => dbt::Pixmap,
-	width  => $bb[2] - $bb[0],
-	height => $bb[3] - $bb[1],
-	backColor => cl::White,
-	color => cl::Black,
-);
-$device->clear;
-$device->translate( -$bb[0], -$bb[1]);
 
-push @graphics_stack, {
-	color       => 0,
-	point       => [0,0],
-	path        => $device->new_path,
-	path_actual => 0,
-	lw          => 0,
-};
-execute( $code_stack[0] );
+#$device = Prima::DeviceBitmap->new(
+#	type  => dbt::Pixmap,
+#	width  => $bb[2] - $bb[0],
+#	height => $bb[3] - $bb[1],
+#	backColor => cl::White,
+#	color => cl::Black,
+#);
+#$device->clear;
+#$device->translate( -$bb[0], -$bb[1]);
+#execute( $code_stack[0] );
+
+sub init
+{
+	@graphics_stack = ({
+		color       => 0,
+		point       => [0,0],
+		path        => $device->new_path,
+		path_actual => 0,
+		lw          => 0,
+	});
+	@stack = ();
+}
 
 my $w = Prima::MainWindow->new(
 	text => 'Tiger',
-	size => [ $device->size],
-);
-$w->insert( ImageViewer =>
-	origin => [0,0],
-	size   => [$w->size],
-	image  => $device,
-	growMode => gm::Client,
+	backColor => cl::White,
+	color => cl::Black,
+	onPaint => sub {
+		my ( $self, $canvas ) = @_;
+		$canvas->clear;
+
+		my @sz = $canvas-> size;
+		my @ps = ( $bb[2] - $bb[0], $bb[3] - $bb[1] );
+		my @ratios = map { $sz[$_] / $ps[$_] } 0, 1;
+		my ( $dx, $dy ) = (0,0);
+		my $r;
+		if ( $ratios[0] < $ratios[1] ) {
+			$r = $ratios[0];
+			$dy = ( $sz[1] - $ps[1] * $r ) / 2;
+		} else {
+			$r = $ratios[1];
+			$dx = ( $sz[0] - $ps[0] * $r ) / 2;
+		}
+
+		$device = $canvas;
+		$device->translate( $dx - $r * $bb[0], $dy - $r * $bb[1]);
+
+		init;
+		path->scale($r);
+		execute( $code_stack[0] );
+	}
 );
 
 run Prima;
