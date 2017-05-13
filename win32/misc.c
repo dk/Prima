@@ -328,6 +328,8 @@ apc_sys_get_value( int sysValue)
 	case svCanUTF8_Input   : return 1;
 	case svCanUTF8_Output  : return 1;
 	case svCompositeDisplay:
+		if ( LOBYTE(LOWORD(guts.version)) > 5 )
+			return 1;
 		valType = REG_DWORD;
 		valSize = sizeof(DWORD);
 		if ( RegOpenKeyEx( HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\DWM", 0, KEY_READ, &hKey) == 0 ) {
