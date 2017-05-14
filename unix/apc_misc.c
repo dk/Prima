@@ -1034,9 +1034,10 @@ apc_show_message( const char * message, Bool utf8)
 	XMoveResizeWindow( DISP, md. w, 
 		appPos.x + ( appSz.x - winSz.x) / 2, appPos.y + ( appSz.y - winSz.y) / 2, winSz.x, winSz.y);
 	XNoOp( DISP);
-	XFlush( DISP);
-	while ( md. active && !guts. applicationClose) 
+	while ( md. active && !guts. applicationClose) {
+		XFlush( DISP);
 		prima_one_loop_round( WAIT_ALWAYS, false);
+	}
 	
 	XFreeGC( DISP, md. gc);
 	XDestroyWindow( DISP, md. w);
