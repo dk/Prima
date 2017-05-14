@@ -142,7 +142,7 @@ sub fix_triangle
 		my $d = $$spot[4] - $$spot[2];
 		if ($d % 2) {
 			$$spot[0] = $$spot[2] + ($d - 1) / 2;
-			$spot[4]--;
+			$$spot[4]--;
 		}
 	} else {
 		my $d = $$spot[3] - $$spot[5];
