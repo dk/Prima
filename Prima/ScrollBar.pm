@@ -168,7 +168,8 @@ sub on_paint
 			$btx * 0.55 + $a, $maxy * 0.7 - $a,
 			$btx * 0.55 + $a, $maxy * 0.3 - $a
 		);
-		$canvas-> fillpoly( [ @spot]);
+		$canvas-> fillpoly( [ @spot])
+			if $maxx > 10 && $maxy > 10;
 	}
 	{
 		$self-> draw_pad( $canvas, b2 => $clr[1]);
@@ -183,7 +184,8 @@ sub on_paint
 			$maxx - $btx * 0.60 + 1 + $a, $maxy * 0.7 - $a,
 			$maxx - $btx * 0.60 + 1 + $a, $maxy * 0.3 - $a
 		);
-		$canvas-> fillpoly( [ @spot]);
+		$canvas-> fillpoly( [ @spot])
+			if $maxx > 10 && $maxy > 10;
 		$canvas-> color( $clr[ 1]);
 	}
 	if ( $self-> { tab}-> { enabled})
