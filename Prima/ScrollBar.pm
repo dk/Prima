@@ -135,6 +135,25 @@ sub draw_pad
 	);
 }
 
+sub fix_triangle
+{
+	my ( $v, $spot ) = @_;
+	if ( $v ) {
+		my $d = $$spot[4] - $$spot[2];
+		if ($d % 2) {
+			$$spot[0] = $$spot[2] + ($d - 1) / 2;
+			$spot[4]--;
+		}
+	} else {
+		my $d = $$spot[3] - $$spot[5];
+		if ($d % 2) {
+			$$spot[1] = $$spot[5] + ($d - 1) / 2;
+			$$spot[5]--;
+		}
+	}
+}
+
+
 sub on_paint
 {
 	my ($self,$canvas) = @_;
@@ -159,7 +178,7 @@ sub on_paint
 		$self-> draw_pad( $canvas, b1 => $clr[1]);
 		$canvas-> color( $self-> {b1}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b1}-> { pressed} ? 1 : 0;
-		my @spot = $v ? (
+		my @spot = map { int($_ + .5) } $v ? (
 			$maxx * 0.5 + $a, $maxy - $btx * 0.40 - $a,
 			$maxx * 0.3 + $a, $maxy - $btx * 0.55 - $a,
 			$maxx * 0.7 + $a, $maxy - $btx * 0.55 - $a,
@@ -168,6 +187,7 @@ sub on_paint
 			$btx * 0.55 + $a, $maxy * 0.7 - $a,
 			$btx * 0.55 + $a, $maxy * 0.3 - $a
 		);
+		fix_triangle($v, \@spot);
 		$canvas-> fillpoly( [ @spot])
 			if $maxx > 10 && $maxy > 10;
 	}
@@ -175,7 +195,7 @@ sub on_paint
 		$self-> draw_pad( $canvas, b2 => $clr[1]);
 		$canvas-> color( $self-> {b2}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b2}-> { pressed} ? 1 : 0;
-		my @spot = $v ? (
+		my @spot = map { int($_ + .5) } $v ? (
 			$maxx * 0.5 + $a, $btx * 0.40 + 1 - $a,
 			$maxx * 0.3 + $a, $btx * 0.55 + 1 - $a,
 			$maxx * 0.7 + $a, $btx * 0.55 + 1 - $a
@@ -184,6 +204,7 @@ sub on_paint
 			$maxx - $btx * 0.60 + 1 + $a, $maxy * 0.7 - $a,
 			$maxx - $btx * 0.60 + 1 + $a, $maxy * 0.3 - $a
 		);
+		fix_triangle($v, \@spot);
 		$canvas-> fillpoly( [ @spot])
 			if $maxx > 10 && $maxy > 10;
 		$canvas-> color( $clr[ 1]);
