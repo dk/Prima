@@ -1821,6 +1821,7 @@ perform_pending_paints( void)
 		if ( XX-> flags. paint_pending && (guts. appLock == 0) &&
 			(PWidget( XX->self)-> stage == csNormal)) {
 			TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+			XX-> flags. paint_pending = false;
 			list_add( &list, (Handle) XX->self);
 			list_add( &list, (Handle) XX);
 			protect_object(XX->self);
@@ -1832,11 +1833,15 @@ perform_pending_paints( void)
 		Handle self;
 
 		self = list_at(&list, i);
-		if ( (PWidget( self)-> stage != csNormal)) goto NEXT;
+		if ( PWidget( self)-> stage != csNormal)
+			goto NEXT;
 
 		selfxx = (PDrawableSysData) list_at(&list, i+1);
-		XX-> flags. paint_pending = false;
-		prima_simple_message( XX-> self, cmPaint, false);
+		if ( XX-> flags. paint_pending) {
+			TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
+			XX-> flags. paint_pending = false;
+		}
+		prima_simple_message( self, cmPaint, false);
 		events++;
 		
 		if ( (PWidget( self)-> stage != csNormal)) goto NEXT;
