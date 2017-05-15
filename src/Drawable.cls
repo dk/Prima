@@ -13,6 +13,7 @@ object Prima::Drawable ( Prima::Component)
 	property     Rect          clipRect;
 	property     Bool          fillWinding;
 	property     SV *          fillPattern;
+	property     Point         fillPatternOffset;
 	property     int           height;
 	property     int           lineEnd;
 	property     int           lineJoin;

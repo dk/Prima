@@ -1956,6 +1956,12 @@ apc_gp_get_fill_pattern( Handle self)
 	return &(X(self)-> fill_pattern);
 }
 
+Point
+apc_gp_get_fill_pattern_offset( Handle self)
+{
+	return X(self)-> fill_pattern_offset;
+}
+
 int
 apc_gp_get_line_end( Handle self)
 {
@@ -2252,6 +2258,27 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 	( memcmp( pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
 	memcpy( XX-> fill_pattern, pattern, sizeof( FillPattern));
 	return true;
+}
+
+Bool
+apc_gp_set_fill_pattern_offset( Handle self, Point fpo)
+{
+	DEFXX;
+	XGCValues gcv;
+	if ( fpo. x == XX->fill_pattern_offset. x && fpo. y == XX->fill_pattern_offset. y)
+		return true;
+	
+	XX-> fill_pattern_offset = fpo;
+	fpo. y = 8 - fpo.y;
+	if ( XF_IN_PAINT(XX)) {
+		gcv. ts_x_origin = fpo. x;
+		gcv. ts_y_origin = fpo. y;
+		XChangeGC( DISP, XX-> gc, GCTileStipXOrigin | GCTileStipYOrigin, &gcv);
+		XCHECKPOINT;
+	} else {
+		XX-> gcv. ts_x_origin = fpo. x;
+		XX-> gcv. ts_y_origin = fpo. y;
+	}
 }
 
 /*- see apc_font.c

@@ -964,7 +964,7 @@ sub prf_types
 		lineWidth     => ['lineWidth'],
 		rop           => ['rop', 'rop2'],
 		bool          => ['textOutBaseline', 'textOpaque', 'fillWinding'],
-		point         => ['translate'],
+		point         => ['translate', 'fillPatternOffset'],
 		palette       => ['palette'],
 		image         => ['region'],
 	);
@@ -1012,6 +1012,7 @@ sub prf_adjust_default
 		linePattern
 		lineWidth
 		fillPattern
+		fillPatternOffset
 		fillWinding
 		region
 		rop

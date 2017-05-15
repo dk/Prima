@@ -565,6 +565,14 @@ PATTERNDEF
 	$self-> {changed}-> {fill} = 1; 
 }
 
+sub fillPatternOffset
+{
+	return $_[0]-> SUPER::fillPatternOffset unless $#_;
+	$_[0]-> SUPER::fillPatternOffset($_[1], $_[2]);
+	return unless $_[0]-> {canDraw};
+	$_[0]-> {changed}-> {fillPatternOffset} = 1; 
+}
+
 sub lineEnd
 {
 	return $_[0]-> SUPER::lineEnd unless $#_;

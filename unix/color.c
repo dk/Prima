@@ -1452,12 +1452,17 @@ prima_get_hatch( FillPattern * fp)
 	int i;
 	Pixmap p;
 	FillPattern fprev;
+	Byte *mirrored_bits;
 	if ( memcmp( fp, fillPatterns[fpSolid], sizeof( FillPattern)) == 0)
 		return nilHandle;
 	if (( p = ( Pixmap) hash_fetch( hatches, fp, sizeof( FillPattern))))
 		return p;
-	for ( i = 0; i < sizeof( FillPattern); i++)
+	
+	mirrored_bits = ( guts.bit_order == MSBFirst) ? NULL : prima_mirror_bits();
+	for ( i = 0; i < sizeof( FillPattern); i++) {
 		fprev[i] = (*fp)[ sizeof(FillPattern) - i - 1];
+		if ( guts.bit_order != MSBFirst) fprev[i] = mirrored_bits[fprev[i]];
+	}
 	if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fprev, 8, 8)) == None) {
 		hash_first_that( hatches, (void*)kill_hatches, nil, nil, nil);
 		hash_destroy( hatches, false);

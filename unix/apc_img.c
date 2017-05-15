@@ -475,8 +475,8 @@ apc_dbm_get_handle( Handle self)
 	return (ApiHandle) X(self)-> gdrawable;
 }
 
-static Byte*
-mirror_bits( void)
+Byte*
+prima_mirror_bits( void)
 {
 	static Bool initialized = false;
 	static Byte bits[256];
@@ -513,7 +513,7 @@ prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int
 			memcpy( ls*(h-y-1)+data, idata+y*ils, ls);
 		}
 	} else {
-		mirrored_bits = mirror_bits();
+		mirrored_bits = prima_mirror_bits();
 		for ( y = h-1; y >= 0; y--) {
 			register const unsigned char *s = idata+y*ils;
 			register unsigned char *t = ls*(h-y-1)+data;
@@ -527,7 +527,7 @@ prima_copy_xybitmap( unsigned char *data, const unsigned char *idata, int w, int
 void
 prima_mirror_bytes( unsigned char *data, int dataSize)
 {
-	Byte *mirrored_bits = mirror_bits();
+	Byte *mirrored_bits = prima_mirror_bits();
 	while ( dataSize--) {
 		*data = mirrored_bits[*data];
 		data++;

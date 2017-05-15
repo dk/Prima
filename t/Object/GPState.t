@@ -4,7 +4,7 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 26;
+plan tests => 28;
 
 my $a = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 
@@ -17,6 +17,11 @@ is( $a-> backColor, 0x654321, 'backColor' );
 $a-> fillPattern( [0..7]); my $i = 0;
 my $fillPatternCount = scalar grep { $i++ != $_ } @{$a-> fillPattern};
 is( $fillPatternCount, 0, 'fillPattern' );
+
+$a-> fillPatternOffset( 5,4);
+my @fpo = $a-> fillPatternOffset;
+is( $fpo[0], 5, 'fillPatternOffset.x' );
+is( $fpo[1], 4, 'fillPatternOffset.y' );
 
 $a-> lineEnd( le::Square);
 is( $a-> lineEnd, le::Square, 'lineEnd' );

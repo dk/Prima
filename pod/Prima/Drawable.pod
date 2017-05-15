@@ -761,6 +761,10 @@ An example below shows encoding of fp::Parquet pattern:
 
 On a get-call always returns an array, never a C<fp::> constant.
 
+=item fillPatternOffset X, Y
+
+Origin coordinates for the C<fillPattern>, from 0 to 7.
+
 =item font \%FONT
 
 Manages font context. FONT hash acceptable values are
@@ -982,14 +986,14 @@ Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
 
 Draws a filled rectangle within (X1,Y1) - (X2,Y2) extents.
 
-Context used: color, backColor, fillPattern, rop, rop2
+Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2
 
 =item bars @RECTS
 
 Draws a set of filled rectangles.
 RECTS is an array of integer quartets in format (X1,Y1,X2,Y2).
 
-Context used: color, backColor, fillPattern, rop, rop2
+Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2
 
 =item chord X, Y, DIAMETER_X, DIAMETER_Y, START_ANGLE, END_ANGLE 
 
@@ -1058,13 +1062,13 @@ Context used: color, backColor, linePattern, lineWidth, rop, rop2
 Fills a chord outline with center in X, Y and DIAMETER_X and DIAMETER_Y axis
 from START_ANGLE to END_ANGLE (see chord()).
 
-Context used: color, backColor, fillPattern, rop, rop2
+Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2
 
 =item fill_ellipse X, Y, DIAMETER_X, DIAMETER_Y
 
 Fills an elliptical outline with center in X, Y and DIAMETER_X and DIAMETER_Y axis.
 
-Context used: color, backColor, fillPattern, rop, rop2
+Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2
 
 =item fillpoly \@POLYGON
 
@@ -1074,7 +1078,7 @@ Example:
 
    $d-> fillpoly([ 0, 0, 15, 20, 30, 0]); # triangle
 
-Context used: color, backColor, fillPattern, rop, rop2, fillWinding
+Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2, fillWinding
 
 Returns success flag; if failed, C<$@> contains the error.
 
@@ -1085,7 +1089,7 @@ See also: polyline().
 Fills a sector outline with center in X, Y and DIAMETER_X and DIAMETER_Y axis
 from START_ANGLE to END_ANGLE (see sector()).
 
-Context used: color, backColor, fillPattern, rop, rop2
+Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2
 
 =item fill_spline \@VERTICES, %OPTIONS
 
@@ -1095,7 +1099,7 @@ based on set of VERTICES. VERTICES must present an array of integer pair in
 
    $d-> fill_spline([ 0, 0, 15, 20, 30, 0]);
 
-Context used: color, backColor, fillPattern, rop, rop2 
+Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2 
 
 Returns success flag; if failed, C<$@> contains the error.
 
@@ -1116,7 +1120,7 @@ Filling continues outward in all directions as long as the color
 is encountered. This style is useful for filling areas with 
 multicolored boundaries.
 
-Context used: color, backColor, fillPattern, rop, rop2
+Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2
 
 =item line X1, Y1, X2, Y2
 

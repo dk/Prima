@@ -728,6 +728,7 @@ typedef struct _drawable_sys_data
 	Region invalid_region, paint_region, current_region, cached_region;
 	XRectangle clip_rect;
 	FillPattern fill_pattern, saved_fill_pattern;
+	Point fill_pattern_offset;
 	Pixmap fp_pixmap;
 #if defined(sgi) && !defined(__GNUC__)
 /* multiple compilation and runtime errors otherwise. must be some alignment tricks */
@@ -1346,3 +1347,6 @@ prima_region_create( Handle mask);
 
 extern Handle
 prima_find_toplevel_window(Handle self);
+
+extern Byte*
+prima_mirror_bits( void);

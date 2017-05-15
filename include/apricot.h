@@ -3379,6 +3379,9 @@ apc_gp_get_fill_winding( Handle self);
 extern FillPattern *
 apc_gp_get_fill_pattern( Handle self);
 
+extern Point
+apc_gp_get_fill_pattern_offset( Handle self);
+
 extern ApiHandle
 apc_gp_get_handle( Handle self);
 
@@ -3441,6 +3444,9 @@ apc_gp_set_fill_winding( Handle self, Bool fillWinding);
 
 extern Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern);
+
+extern Bool
+apc_gp_set_fill_pattern_offset( Handle self, Point offset);
 
 extern Bool
 apc_gp_set_font( Handle self, PFont font);

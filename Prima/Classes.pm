@@ -394,6 +394,7 @@ sub profile_default
 		backColor       => cl::White,
 		fillWinding     => 0,
 		fillPattern     => fp::Solid,
+		fillPatternOffset => [0,0],
 		font            => {
 			height      => 16,
 			width       => 0,
