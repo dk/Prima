@@ -2076,6 +2076,7 @@ prima_one_loop_round( int wait, Bool careOfApplication)
 	struct timeval t;
 
 	if ( guts. applicationClose) return false;
+	kill_zombies();
 
 	/* handle queued events */
 	while ( 1 ) {
