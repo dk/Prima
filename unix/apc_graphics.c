@@ -231,6 +231,8 @@ Unbuffered:
 	memcpy( XX-> saved_fill_pattern, XX-> fill_pattern, sizeof( FillPattern));
 	XX-> fill_pattern[0]++; /* force  */
 	apc_gp_set_fill_pattern( self, XX-> saved_fill_pattern);
+	XX-> saved_fill_pattern_offset = XX-> fill_pattern_offset;
+	apc_gp_set_fill_pattern_offset( self, XX-> saved_fill_pattern_offset);
 
 	if ( !XX-> flags. reload_font && XX-> font && XX-> font-> id) {
 		XSetFont( DISP, XX-> gc, XX-> font-> id);
@@ -282,6 +284,7 @@ prima_cleanup_drawable_after_painting( Handle self)
 	}
 	prima_release_gc(XX);
 	memcpy( XX-> fill_pattern, XX-> saved_fill_pattern, sizeof( FillPattern));
+	XX-> fill_pattern_offset = XX-> saved_fill_pattern_offset;
 	if ( XX-> font && ( --XX-> font-> refCnt <= 0)) {
 		prima_free_rotated_entry( XX-> font);
 		XX-> font-> refCnt = 0;
@@ -2265,11 +2268,10 @@ apc_gp_set_fill_pattern_offset( Handle self, Point fpo)
 {
 	DEFXX;
 	XGCValues gcv;
-	if ( fpo. x == XX->fill_pattern_offset. x && fpo. y == XX->fill_pattern_offset. y)
-		return true;
 	
-	XX-> fill_pattern_offset = fpo;
 	fpo. y = 8 - fpo.y;
+	XX-> fill_pattern_offset = fpo;
+
 	if ( XF_IN_PAINT(XX)) {
 		gcv. ts_x_origin = fpo. x;
 		gcv. ts_y_origin = fpo. y;
