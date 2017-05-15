@@ -241,6 +241,8 @@ sub on_paint
 			(( $v ? $maxx : $maxy) > 10)
 		)
 		{
+			$canvas-> color( $clr[ 0]);
+			$canvas-> backColor( $c3d[ 0]);
 			if ( $v)
 			{
 				my $sty = $rect[1] + 
@@ -250,13 +252,9 @@ sub on_paint
 				my $stx = int($maxx / 3) + ( $self-> { tab} -> { pressed} ? 1 : 0);
 				my $lnx = int($maxx / 3);
 				$lnx += $maxx - $lnx * 3;
-				$canvas-> color( $c3d[ 0]);
+				$canvas-> fillPattern([(0xff, 0) x 4]);
+				$canvas-> fillPatternOffset($stx, $sty);
 				$canvas-> bar( $stx, $sty - 1, $stx + $lnx, $sty + 9);
-				$canvas-> color( $clr[ 0]);
-				$canvas-> lines( [ map { 
-					$stx,        $sty + $_ * 2, 
-					$stx + $lnx, $sty + $_ * 2 
-				} 0..5 ] );
 			} else {
 				my $stx = $rect[0] + 
 					int($lenx / 2) - 
@@ -265,13 +263,9 @@ sub on_paint
 				my $sty = int($maxy / 3) - ( $self-> { tab} -> { pressed} ? 1 : 0);
 				my $lny = int($maxy / 3);
 				$lny += $maxy - $lny * 3;
-				$canvas-> color( $c3d[ 0]);
+				$canvas-> fillPattern([(0xAA) x 8]);
+				$canvas-> fillPatternOffset($stx, $sty);
 				$canvas-> bar( $stx - 1, $sty, $stx + 9, $sty + $lny);
-				$canvas-> color( $clr[ 0]);
-				$canvas-> lines( [ map { 
-					$stx + $_ * 2, $sty, 
-					$stx + $_ * 2, $sty + $lny
-				} 0..5 ] );
 			}
 		}
 	} else {
