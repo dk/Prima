@@ -282,6 +282,7 @@ typedef struct _PaintSaveData
 	unsigned char * linePattern;
 	int         linePatternLen;
 	FillPattern fillPattern;
+	Point       fillPatternOffset;
 	int         rop;
 	int         rop2;
 	Point       transform;
@@ -386,6 +387,7 @@ typedef struct _DrawableData
 	int            linePatternLen;
 	FillPattern    fillPattern;
 	FillPattern    fillPattern2;
+	Point          fillPatternOffset;
 	int            rop;
 	int            rop2;
 	Point          transform;

@@ -1760,6 +1760,18 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 }}
 
 Bool
+apc_gp_set_fill_pattern_offset( Handle self, Point offset)
+{
+	objCheck false;
+	offset. y = 8 - offset. y;
+	if ( sys ps)
+		SetBrushOrgEx( sys ps, offset.x, offset.y, NULL);
+	else
+		sys fillPatternOffset = offset;
+	return true;
+}
+
+Bool
 apc_gp_set_font( Handle self, PFont font)
 {
 	TEXTMETRICW tm;
@@ -1777,6 +1789,18 @@ apc_gp_get_fill_pattern( Handle self)
 {
 	objCheck nil;
 	return sys ps ? &sys fillPattern : &sys fillPattern2;
+}
+
+Point
+apc_gp_get_fill_pattern_offset( Handle self)
+{
+	Point p = {0,0};
+	POINT wp;
+	objCheck p;
+	GetBrushOrgEx( sys ps, &wp);
+	p. x = wp. x;
+	p. y = 8 - wp. y;
+	return p;
 }
 
 Bool
