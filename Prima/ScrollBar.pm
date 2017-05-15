@@ -142,7 +142,7 @@ sub fix_triangle
 		my $d = $$spot[4] - $$spot[2];
 		if ($d % 2) {
 			$$spot[0] = $$spot[2] + ($d - 1) / 2;
-			$$spot[4]--;
+			$$spot[2]--;
 		}
 	} else {
 		my $d = $$spot[3] - $$spot[5];
@@ -196,13 +196,13 @@ sub on_paint
 		$canvas-> color( $self-> {b2}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b2}-> { pressed} ? 1 : 0;
 		my @spot = map { int($_ + .5) } $v ? (
-			$maxx * 0.5 + $a, $btx * 0.40 + 1 - $a,
-			$maxx * 0.3 + $a, $btx * 0.55 + 1 - $a,
-			$maxx * 0.7 + $a, $btx * 0.55 + 1 - $a
+			$maxx * 0.5 + $a, $btx * 0.40 - $a,
+			$maxx * 0.3 + $a, $btx * 0.55 - $a,
+			$maxx * 0.7 + $a, $btx * 0.55 - $a
 		) : (
-			$maxx - $btx * 0.45 + 1 + $a, $maxy * 0.5 - $a,
-			$maxx - $btx * 0.60 + 1 + $a, $maxy * 0.7 - $a,
-			$maxx - $btx * 0.60 + 1 + $a, $maxy * 0.3 - $a
+			$maxx - $btx * 0.40 + $a, $maxy * 0.5 - $a,
+			$maxx - $btx * 0.55 + $a, $maxy * 0.7 - $a,
+			$maxx - $btx * 0.55 + $a, $maxy * 0.3 - $a
 		);
 		fix_triangle($v, \@spot);
 		$canvas-> fillpoly( [ @spot])
@@ -583,7 +583,7 @@ sub reset
 		@rect = $v ? (
 			1, $maxy - $btx - $lenx - $atx, $maxx - 1, $maxy - $btx - $atx
 		) : (
-			$btx + $atx, 1, $btx + $atx + $lenx - 1, $maxy - 1
+			$btx + $atx, 1, $btx + $atx + $lenx, $maxy - 1
 		);
 		$self-> set(
 			cursorPos  => [ $rect[0] + 1, $rect[1] + 1],
