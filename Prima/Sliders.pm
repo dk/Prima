@@ -62,6 +62,7 @@ sub state         {($#_)?$_[0]-> set_state ($_[1]):return $_[0]-> {pressState}}
 #  my ( $self, $increment) = @_;
 #}
 
+
 package Prima::SpinButton;
 use vars qw(@ISA);
 @ISA = qw(Prima::AbstractSpinButton);
@@ -203,13 +204,13 @@ sub on_paint
 
 	$canvas-> color( $clr[0]);
 	my $p1 = ( $p == 1) ? 1 : 0;
-	$canvas-> fillpoly([
+	$canvas-> fillpoly( [
 		$size[0] * 0.3 + $p1, $size[1] * 0.73 - $p1,
 		$size[0] * 0.5 + $p1, $size[1] * 0.87 - $p1,
 		$size[0] * 0.7 + $p1, $size[1] * 0.73 - $p1
 	]);
 	$p1 = ( $p == 2) ? 1 : 0;
-	$canvas-> fillpoly([
+	$canvas-> fillpoly( [
 		$size[0] * 0.3 + $p1, $size[1] * 0.27 - $p1,
 		$size[0] * 0.5 + $p1, $size[1] * 0.13 - $p1,
 		$size[0] * 0.7 + $p1, $size[1] * 0.27 - $p1
@@ -312,6 +313,18 @@ sub on_mouseleave
 	$self-> repaint if defined( delete $self->{prelight} );
 }
 
+sub fix_triangle
+{
+	my @spot = map { int($_ + .5) } @_;
+	my $d = $spot[4] - $spot[0];
+	if ($d % 2) {
+		$spot[2] = $spot[0] + ($d - 1) / 2;
+		$spot[4]--;
+	}
+	return \@spot;
+}
+
+
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
@@ -365,17 +378,17 @@ sub on_paint
 
 	$canvas-> color( $clr[0]);
 	my $p1 = ( $p == 1) ? 1 : 0;
-	$canvas-> fillpoly([ 
+	$canvas-> fillpoly( fix_triangle( 
 		$size[0] * 0.2 + $p1, $size[1] * 0.65 - $p1,
 		$size[0] * 0.3 + $p1, $size[1] * 0.77 - $p1,
 		$size[0] * 0.4 + $p1, $size[1] * 0.65 - $p1
-	]);
+	));
 	$p1 = ( $p == 2) ? 1 : 0;
-	$canvas-> fillpoly([ 
-		$size[0] * 0.6 + $p1, $size[1] * 0.35 - $p1,
-		$size[0] * 0.7 + $p1, $size[1] * 0.27 - $p1,
-		$size[0] * 0.8 + $p1, $size[1] * 0.35 - $p1
-	]);
+	$canvas-> fillpoly( fix_triangle(
+		$size[0] * 0.59 + $p1, $size[1] * 0.35 - $p1,
+		$size[0] * 0.69 + $p1, $size[1] * 0.23 - $p1,
+		$size[0] * 0.79 + $p1, $size[1] * 0.35 - $p1
+	));
 }
 
 sub set_state
