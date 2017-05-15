@@ -492,7 +492,7 @@ window_subsystem_set_option( char * option, char * value)
 	} else if ( strcmp( option, "display") == 0) {
 		free( do_display);
 		do_display = duplicate_string( value);
-        setenv("DISPLAY", value, 1);
+		setenv("DISPLAY", value, 1);
 		return true;
 	} else if ( strcmp( option, "icccm") == 0) {
 		if ( value) warn("`--icccm' option has no parameters");

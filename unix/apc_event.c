@@ -1809,27 +1809,47 @@ purge_invalid_watchers( Handle self, void *dummy)
 static int
 perform_pending_paints( void)
 {
-	PDrawableSysData selfxx, next;
-	int events = 0;
+	PDrawableSysData selfxx;
+	int i, events = 0;
+	List list;
 
 	if ( !application ) return 0;
 
+	list_create(&list, 256, 1024);
 	for ( XX = TAILQ_FIRST( &guts.paintq); XX != nil; ) {
-		next = TAILQ_NEXT( XX, paintq_link);
+		PDrawableSysData next = TAILQ_NEXT( XX, paintq_link);
 		if ( XX-> flags. paint_pending && (guts. appLock == 0) &&
 			(PWidget( XX->self)-> stage == csNormal)) {
 			TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
-			XX-> flags. paint_pending = false;
-			prima_simple_message( XX-> self, cmPaint, false);
-			events++;
-			/* handle the case where this widget is locked */
-			if (XX->invalid_region) {
-				XDestroyRegion(XX->invalid_region);
-				XX->invalid_region = nil;
-			}
-		} 
-		XX = next;
-	}
+			list_add( &list, (Handle) XX->self);
+			list_add( &list, (Handle) XX);
+			protect_object(XX->self);
+		}
+ 		XX = next;
+        }
+
+	for ( i = 0; i < list.count; i+=2) {
+		Handle self;
+
+		self = list_at(&list, i);
+		if ( (PWidget( self)-> stage != csNormal)) goto NEXT;
+
+		selfxx = (PDrawableSysData) list_at(&list, i+1);
+		XX-> flags. paint_pending = false;
+		prima_simple_message( XX-> self, cmPaint, false);
+		events++;
+		
+		if ( (PWidget( self)-> stage != csNormal)) goto NEXT;
+		
+		/* handle the case where this widget is locked */
+		if (XX->invalid_region) {
+			XDestroyRegion(XX->invalid_region);
+			XX->invalid_region = nil;
+		}
+
+	NEXT:
+		unprotect_object(self);
+	}		
 
 	return events;
 }
