@@ -260,13 +260,13 @@ sub on_paint
 			} else {
 				my $stx = $rect[0] + 
 					int($lenx / 2) - 
-					6 + 
+					4 + 
 					( $self-> { tab}-> { pressed} ? 1 : 0) ;
 				my $sty = int($maxy / 3) - ( $self-> { tab} -> { pressed} ? 1 : 0);
 				my $lny = int($maxy / 3);
 				$lny += $maxy - $lny * 3;
 				$canvas-> color( $c3d[ 0]);
-				$canvas-> bar( $stx + 1, $sty, $stx + 11, $sty + $lny);
+				$canvas-> bar( $stx - 1, $sty, $stx + 9, $sty + $lny);
 				$canvas-> color( $clr[ 0]);
 				$canvas-> lines( [ map { 
 					$stx + $_ * 2, $sty, 
