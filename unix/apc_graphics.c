@@ -2281,6 +2281,7 @@ apc_gp_set_fill_pattern_offset( Handle self, Point fpo)
 		XX-> gcv. ts_x_origin = fpo. x;
 		XX-> gcv. ts_y_origin = fpo. y;
 	}
+	return true;
 }
 
 /*- see apc_font.c
