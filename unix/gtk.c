@@ -131,7 +131,7 @@ prima_gtk_init(void)
 		Font      * f = s->prima_font;
 		GtkStyle  * t = gtk_rc_get_style_by_paths(settings, NULL, s->gtk_class, s->func());
 		int selected  = ( 
-			s-> prima_class == wcRadio || 
+			s->prima_class == wcRadio || 
 			s->prima_class == wcCheckBox || 
 			s->prima_class == wcButton
 		) ? GTK_STATE_ACTIVE : GTK_STATE_SELECTED;
@@ -142,10 +142,34 @@ prima_gtk_init(void)
 		}
 		c[ciFore]         = gdk_color( t-> fg + GTK_STATE_NORMAL );
 		c[ciBack]         = gdk_color( t-> bg + GTK_STATE_NORMAL );
-		c[ciHiliteText]   = gdk_color( t-> fg + selected );
-		c[ciHilite]       = gdk_color( t-> bg + selected );
 		c[ciDisabledText] = gdk_color( t-> fg + GTK_STATE_INSENSITIVE );
 		c[ciDisabled]     = gdk_color( t-> bg + GTK_STATE_INSENSITIVE );
+		{
+			/* Observed on Centos7 - GTK_STATE_SELECTED gives white 
+			on white, while GTK_STATE_PRELIGHT gives correct colors.
+			OTOH, on Ubuntu it is other way around. Without digging
+			too much into GTK guts, just select the one that gives
+			best contrast */
+
+			int da, db;
+			Color ca1, ca2, cb1, cb2;
+			ca1 = gdk_color( t-> fg + selected );
+			ca2 = gdk_color( t-> bg + selected );
+			da = 
+				abs( (ca1 & 0xff)-(ca2 & 0xff) ) +
+				abs( ((ca1 & 0xff00)>>8)-((ca2 & 0xff00)>>8) ) +
+				abs( ((ca1 & 0xff0000)>>16)-((ca2 & 0xff0000)>>16) )
+			;
+			cb1 = gdk_color( t-> fg + GTK_STATE_PRELIGHT );
+			cb2 = gdk_color( t-> bg + GTK_STATE_PRELIGHT );
+			db = 
+				abs( (cb1 & 0xff)-(cb2 & 0xff) ) +
+				abs( ((cb1 & 0xff00)>>8)-((cb2 & 0xff00)>>8) ) +
+				abs( ((cb1 & 0xff0000)>>16)-((cb2 & 0xff0000)>>16) )
+			;
+			c[ciHiliteText]   = (da > db) ? ca1 : cb1;
+			c[ciHilite]       = (da > db) ? ca2 : cb2;
+		}
 		/*
 		c[ciLight3DColor] = gdk_color( t-> light + GTK_STATE_NORMAL );
 		c[ciDark3DColor]  = gdk_color( t-> dark  + GTK_STATE_NORMAL );
