@@ -1649,6 +1649,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
 	if ( !XF_IN_PAINT(XX)) return false;
 
 	if ( len == 0) return true;
+	if ( len > 65535 ) len = 65535;
 	
 #ifdef USE_XFT
 	if ( XX-> font-> xft) 
@@ -2097,6 +2098,8 @@ apc_gp_get_text_width( Handle self, const char * text, int len, Bool addOverhang
 {
 	int ret;
 
+	if ( len > 65535 ) len = 65535;
+
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
 		return prima_xft_get_text_width( X(self)-> font, text, len, addOverhang, utf8, 
@@ -2164,6 +2167,9 @@ Point *
 apc_gp_get_text_box( Handle self, const char * text, int len, Bool utf8)
 {
 	Point * ret;
+	
+	if ( len > 65535 ) len = 65535;
+
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
 		return prima_xft_get_text_box( self, text, len, utf8);

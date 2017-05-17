@@ -1182,11 +1182,20 @@ int
 prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool addOverhang, 
 								Bool utf8, uint32_t * map8, Point * overhangs)
 {
-	int i, ret = 0, bytelen;
+	int i, ret = 0, bytelen, div;
 	XftFont * font = self-> xft_base;
 
 	if ( overhangs) overhangs-> x = overhangs-> y = 0;
 	if ( utf8 ) bytelen = strlen(text);
+	
+	/* x11 has problems with text_out strings that are wider than
+	64K pixel - it wraps the coordinates and produces mess. This hack is
+	although ugly, but is better that X11 default behaviour, and
+	at least can be excused by the fact that all GP spaces have
+	their geometrical limits. */
+	div = 65535L / (self-> font. maximalWidth ? self-> font. maximalWidth : 1);
+	if ( div <= 0) div = 1;
+	if ( len > div) len = div;
 
 	for ( i = 0; i < len; i++) {
 		FcChar32 c;
@@ -1402,10 +1411,19 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 	FcChar32 *ucs4;
 	XftColor xftcolor;
 	XftFont *font = XX-> font-> xft;
-	int rop = XX-> paint_rop;
+	int rop = XX-> paint_rop, div;
 	Point baseline;
 
 	if ( len == 0) return true;
+	
+	/* x11 has problems with text_out strings that are wider than
+	64K pixel - it wraps the coordinates and produces mess. This hack is
+	although ugly, but is better that X11 default behaviour, and
+	at least can be excused by the fact that all GP spaces have
+	their geometrical limits. */
+	div = 65535L / (PDrawable(self)-> font. maximalWidth ? PDrawable(self)-> font. maximalWidth : 1);
+	if ( div <= 0) div = 1;
+	if ( len > div) len = div;
 
 	/* filter out unsupported rops */
 	switch ( rop) {
