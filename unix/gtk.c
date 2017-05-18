@@ -156,16 +156,16 @@ prima_gtk_init(void)
 			ca1 = gdk_color( t-> fg + selected );
 			ca2 = gdk_color( t-> bg + selected );
 			da = 
-				abs( (ca1 & 0xff)-(ca2 & 0xff) ) +
-				abs( ((ca1 & 0xff00)>>8)-((ca2 & 0xff00)>>8) ) +
-				abs( ((ca1 & 0xff0000)>>16)-((ca2 & 0xff0000)>>16) )
+				abs( (int)(ca1 & 0xff)-(int)(ca2 & 0xff) ) +
+				abs( (int)((ca1 & 0xff00)>>8)-(int)((ca2 & 0xff00)>>8) ) +
+				abs( (int)((ca1 & 0xff0000)>>16)-(int)((ca2 & 0xff0000)>>16) )
 			;
 			cb1 = gdk_color( t-> fg + GTK_STATE_PRELIGHT );
 			cb2 = gdk_color( t-> bg + GTK_STATE_PRELIGHT );
 			db = 
-				abs( (cb1 & 0xff)-(cb2 & 0xff) ) +
-				abs( ((cb1 & 0xff00)>>8)-((cb2 & 0xff00)>>8) ) +
-				abs( ((cb1 & 0xff0000)>>16)-((cb2 & 0xff0000)>>16) )
+				abs( (int)(cb1 & 0xff)-(int)(cb2 & 0xff) ) +
+				abs( (int)((cb1 & 0xff00)>>8)-(int)((cb2 & 0xff00)>>8) ) +
+				abs( (int)((cb1 & 0xff0000)>>16)-(int)((cb2 & 0xff0000)>>16) )
 			;
 			c[ciHiliteText]   = (da > db) ? ca1 : cb1;
 			c[ciHilite]       = (da > db) ? ca2 : cb2;
