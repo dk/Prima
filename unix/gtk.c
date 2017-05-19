@@ -144,7 +144,8 @@ prima_gtk_init(void)
 		c[ciBack]         = gdk_color( t-> bg + GTK_STATE_NORMAL );
 		c[ciDisabledText] = gdk_color( t-> fg + GTK_STATE_INSENSITIVE );
 		c[ciDisabled]     = gdk_color( t-> bg + GTK_STATE_INSENSITIVE );
-		{
+
+		if ( s-> prima_class == wcMenu || s-> prima_class == wcPopup) {
 			/* Observed on Centos7 - GTK_STATE_SELECTED gives white 
 			on white, while GTK_STATE_PRELIGHT gives correct colors.
 			OTOH, on Ubuntu it is other way around. Without digging
@@ -169,11 +170,10 @@ prima_gtk_init(void)
 			;
 			c[ciHiliteText]   = (da > db) ? ca1 : cb1;
 			c[ciHilite]       = (da > db) ? ca2 : cb2;
+		} else {
+			c[ciHiliteText]   = gdk_color( t-> fg + selected );
+			c[ciHilite]       = gdk_color( t-> bg + selected );
 		}
-		/*
-		c[ciLight3DColor] = gdk_color( t-> light + GTK_STATE_NORMAL );
-		c[ciDark3DColor]  = gdk_color( t-> dark  + GTK_STATE_NORMAL );
-		*/
 		Pdebug("gtk-color: %s %06x %06x %06x %06x %06x\n", s->name, c[0], c[1], c[2], c[3], c[4], c[5]);
 
 		if ( !f) continue;
