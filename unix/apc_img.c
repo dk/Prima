@@ -2805,6 +2805,16 @@ apc_gp_stretch_image( Handle self, Handle image,
 			return false;
 		}
 		XDestroyImage( i);
+		if ( src == SRC_BITMAP && !XT_IS_IMAGE(YY)) {
+			PImage o = (PImage) obj;
+			o->type = imbpp1;
+			o->palette[0].r = XX->fore. color & 0xff;
+			o->palette[0].g = (XX->fore. color >> 8) & 0xff;
+			o->palette[0].b = (XX->fore. color >> 16) & 0xff;
+			o->palette[1].r = XX->back. color & 0xff;
+			o->palette[1].g = (XX->back. color >> 8) & 0xff;
+			o->palette[1].b = (XX->back. color >> 16) & 0xff;
+		}
 		ok = apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop);
 	} else if ( src == SRC_LAYERED ) {
 		obj = ( Handle) create_object("Prima::Icon", "");
@@ -2814,13 +2824,15 @@ apc_gp_stretch_image( Handle self, Handle image,
 			return false;
 		}
 		ok = apc_gp_stretch_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, src_w, src_h, rop);
-	} else {
+	} else if ( img->w != dst_w || img->h != dst_h || src_x != 0 || src_y != 0) {
 		/* extract local bits */
 		obj = CImage(image)->extract( image, src_x, src_y, src_w, src_h );
 		if ( !obj ) return false;
 		CImage(obj)-> set_scaling( obj, istBox );
 		CImage(obj)-> stretch( obj, dst_w, dst_h );
 		ok  = apc_gp_put_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);
+	} else {
+		return apc_gp_put_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);
 	}
 
 	Object_destroy( obj );
