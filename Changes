@@ -1,5 +1,13 @@
 Revision history for Perl module Prima
 
+1.52 2017-XX-XX
+ - Better support for multi-threading
+ - Better support of MacOS/XQuartz
+ - Aesthetic fixes for scrollbars, spin edits, and sliders
+ - Fixes for paths; path demo with PS interpreter
+ - Add Widget.clipChildren and Drawable.fillPatternOffset
+ - Coredump fix for Data::Dumper::GUI usage pattern
+
 1.51 2017-03-28
  - Add graphic paths support
  - Add spinner widgets by Maximilian Lika
