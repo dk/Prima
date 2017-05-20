@@ -40,6 +40,9 @@
 #ifdef HAVE_X11_EXTENSIONS_XCOMPOSITE_H
 #include <X11/extensions/Xcomposite.h>
 #endif
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+#include <X11/Xcursor/Xcursor.h>
+#endif
 #undef Font
 #undef Drawable
 #undef Bool

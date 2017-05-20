@@ -318,11 +318,15 @@ init_x11( char * error_buf )
 	guts. root = RootWindow( DISP, SCREEN);
 	guts. displaySize. x = DisplayWidth( DISP, SCREEN);
 	guts. displaySize. y = DisplayHeight( DISP, SCREEN);
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+	guts. cursor_width = guts. cursor_height = XcursorGetDefaultSize(DISP);
+#else
 	XQueryBestCursor( DISP, guts. root,
 							guts. displaySize. x,     /* :-) */
 							guts. displaySize. y,
 							&guts. cursor_width,
 							&guts. cursor_height);
+#endif
 	XCHECKPOINT;
 	
 	TAILQ_INIT( &guts.paintq);

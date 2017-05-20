@@ -1441,7 +1441,7 @@ EOF
 			$DEFINES{HAVE_X11_XFT_XFT_H} = undef;
 		}
 	}
-
+	
 	$cmd_options{WITH_XFT} = 0 unless $HAVE_XFT == $NEED_XFT;
 	@LIBS = @pre_xft_libs unless $cmd_options{WITH_XFT};
 }
@@ -1535,6 +1535,19 @@ sub setup_xlibs
 	setup_iconv() if $cmd_options{WITH_ICONV};
 	setup_gtk() if $cmd_options{WITH_GTK2};
 	setup_x11_extension($_) for qw(xrandr xcomposite);
+
+	if ( $use_pkgconfig ) {
+		$DEFINES{HAVE_X11_XCURSOR_XCURSOR_H} = pkgconfig('xcursor');
+	} elsif ( have_header( "X11/Xcursor/Xcursor.h", "X11/Xlib.h")) {
+		printlog "Checking for presence of libXcursor... ";
+		if ( defined find_lib( 'Xcursor', '', '')) {
+			printlog "yes\n";
+			push @LIBS, 'Xcursor';
+		} else {
+			printlog "no\n";
+			$DEFINES{HAVE_X11_XCURSOR_XCURSOR_H} = undef;
+		}
+	}
 	
 	printlog "Using Xft library\n" if $cmd_options{WITH_XFT};
 	printlog "Using iconv library\n" if $cmd_options{WITH_ICONV};
