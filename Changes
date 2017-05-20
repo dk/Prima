@@ -7,6 +7,7 @@ Revision history for Perl module Prima
  - Fixes for paths; path demo with PS interpreter
  - Add Widget.clipChildren and Drawable.fillPatternOffset
  - Coredump fix for Data::Dumper::GUI usage pattern
+ - Support colored cursors on X11
 
 1.51 2017-03-28
  - Add graphic paths support
