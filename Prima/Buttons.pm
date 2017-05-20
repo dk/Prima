@@ -549,12 +549,11 @@ sub on_paint
 				$c->{cache}->ui_scale( zoom => $is );
 				$c->{zoom} = $is;
 				$c->{obj}  = "$image";
-
-				$image = $c->{cache};
-				$imgNo = 0;
-				($pw,$ph) = $image->size;
-				($sw,$sh) = $image->size;
 			}
+			$image = $c->{cache};
+			$imgNo = 0;
+			($pw,$ph) = $image->size;
+			($sw,$sh) = $image->size;
 		}
 		$canvas-> put_image_indirect(
 			$image,
