@@ -21,6 +21,28 @@ cursor_map[] = {
 	/* crInvalid         => */   XC_X_cursor,
 };
 
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+static const char *
+xcursor_map[] = {
+	/* crArrow           => */   "left_ptr",
+	/* crText            => */   "xterm",
+	/* crWait            => */   "watch",
+	/* crSize            => */   "sizing",
+	/* crMove            => */   "fleur",
+	/* crSizeWest        => */   "left_side",
+	/* crSizeEast        => */   "right_side",
+	/* crSizeNE          => */   "sb_h_double_arrow",
+	/* crSizeNorth       => */   "top_side",
+	/* crSizeSouth       => */   "bottom_side",
+	/* crSizeNS          => */   "sb_v_double_arrow",
+	/* crSizeNW          => */   "top_left_corner",
+	/* crSizeSE          => */   "bottom_right_corner",
+	/* crSizeNE          => */   "top_right_corner",
+	/* crSizeSW          => */   "bottom_left_corner",
+	/* crInvalid         => */   "X_cursor"
+};
+#endif
+
 Cursor
 predefined_cursors[] = {
 	None,
@@ -137,17 +159,63 @@ apc_pointer_get_size( Handle self)
 	return p;
 }
 
-Bool
-apc_pointer_get_bitmap( Handle self, Handle icon)
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+static Bool
+xcursor_load( Handle self, Handle icon)
+{
+	DEFXX;
+	int id;
+	PIcon c;
+	int x, y;
+	XcursorPixel * src;
+	XcursorImage* i;
+	Byte * dst_data, * dst_mask;
+	Bool kill;
+
+	id = get_cursor( self, nil, nil, nil, nil);
+	if ( id < crDefault || id > crUser)  return false;
+
+	if ( id != crUser ) {
+		if (( i = XcursorLibraryLoadImage( xcursor_map[id] , NULL, guts. cursor_width )) == NULL)
+			return false;
+		kill = true;
+	} else {
+		i = XX-> user_xcursor;
+		kill = false;
+	}
+	
+	c = PIcon(icon);
+	CIcon(icon)-> create_empty_icon( icon, i->width, i->height, imRGB, imbpp8);
+	dst_data = c->data + c->lineSize * ( c-> h - 1 );
+	dst_mask = c->mask + c->maskLine * ( c-> h - 1 );
+	src = i->pixels;
+	for ( y = 0; y < c-> h; y++) {
+		Byte * d_data = dst_data, * d_mask = dst_mask;
+		for ( x = 0; x < c-> w; x++) {
+			*d_data++ = *src & 0xff;
+			*d_data++ = (*src >> 8) & 0xff;
+			*d_data++ = (*src >> 16) & 0xff;
+			*d_mask++ = (*src >> 24) & 0xff;
+			src++;
+		}
+		dst_mask -= c->maskLine;
+		dst_data -= c->lineSize;
+	}
+	if ( kill ) XcursorImageDestroy(i);
+	return true;
+}
+#endif
+
+static Bool
+xlib_cursor_load( Handle self, Handle icon)
 {
 	XImage *im;
-	int id;
 	Pixmap p1 = None, p2 = None;
 	Bool free_pixmap = true;
 	GC gc;
 	XGCValues gcv;
 	char c;
-	int w = guts.cursor_width, h = guts.cursor_height;
+	int id, w = guts.cursor_width, h = guts.cursor_height;
 
 	id = get_cursor( self, &p1, &p2, nil, nil);
 	if ( id < crDefault || id > crUser)  return false;
@@ -203,11 +271,11 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 	prima_copy_xybitmap( PIcon(icon)-> mask, (Byte*)im-> data,
 								PIcon(icon)-> w, PIcon(icon)-> h,
 								PIcon(icon)-> maskLine, im-> bytes_per_line);
-if ( id == crUser) {
-	int i;
-	Byte * mask = PIcon(icon)-> mask;
-	for ( i = 0; i < PIcon(icon)-> maskSize; i++) 
-		mask[i] = ~mask[i];
+	if ( id == crUser) {
+		int i;
+		Byte * mask = PIcon(icon)-> mask;
+		for ( i = 0; i < PIcon(icon)-> maskSize; i++) 
+			mask[i] = ~mask[i];
 	}   
 	XDestroyImage( im);
 	if ( free_pixmap) {
@@ -215,6 +283,16 @@ if ( id == crUser) {
 		XFreePixmap( DISP, p2);
 	}
 	return true;
+}
+
+Bool
+apc_pointer_get_bitmap( Handle self, Handle icon)
+{
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+	if (xcursor_load(self, icon))
+		return true;
+#endif
+	return xlib_cursor_load(self, icon);
 }
 
 Bool
@@ -341,11 +419,12 @@ create_cursor(Handle self, Handle icon, Point hot_spot)
 	if ( kill ) Object_destroy(icon);
 
 	XX-> user_pointer = XcursorImageLoadCursor(DISP, i);
-	XcursorImageDestroy(i);
 	if ( XX-> user_pointer == None) {
+		XcursorImageDestroy(i);
 		warn( "error creating cursor");
 		return false;
 	}
+	XX-> user_xcursor = i;
 
 	return true;
 
@@ -430,6 +509,12 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
 		XFreePixmap( DISP, XX-> user_p_mask);
 		XX-> user_p_mask = None;
 	}
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+	if ( XX-> user_xcursor != NULL) {
+		XcursorImageDestroy(XX-> user_xcursor);
+		XX-> user_xcursor = NULL;
+	}
+#endif
 	if ( icon != nilHandle) {
 		Bool ok = create_cursor(self, icon, hot_spot);
 		if ( !ok ) return false;

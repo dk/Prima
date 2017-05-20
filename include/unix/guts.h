@@ -753,6 +753,9 @@ typedef struct _drawable_sys_data
 	Cursor user_pointer;
 	Pixmap user_p_source;
 	Pixmap user_p_mask;
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+	XcursorImage * user_xcursor;
+#endif
 	void * recreateData;
 	XWindow client;
 	struct {

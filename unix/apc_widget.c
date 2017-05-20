@@ -550,6 +550,12 @@ apc_widget_destroy( Handle self)
 		XFreePixmap( DISP, XX-> user_p_mask);
 		XX-> user_p_mask = None;
 	}
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+	if ( XX-> user_xcursor != NULL) {
+		XcursorImageDestroy(XX-> user_xcursor);
+		XX-> user_xcursor = NULL;
+	}
+#endif
 	if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self)
 		prima_end_menu();
 	if ( guts. focused == self)
