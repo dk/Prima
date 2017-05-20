@@ -475,6 +475,8 @@ Icon_stretch( Handle self, int width, int height)
 	}      
 	inherited stretch( self, width, height);
 	free( var-> mask);
+
+
 	var->mask = newMask;
 	var->maskLine = lineSize;
 	var->maskSize = lineSize * abs( height);
@@ -668,6 +670,14 @@ Icon_extract( Handle self, int x, int y, int width, int height)
 			bc_mono_copy( mask + ( y + height) * ls, i-> mask + height * i-> maskLine, x, width);
 	}
 	return h;
+}
+
+void
+Icon_make_empty( Handle self)
+{
+	inherited make_empty(self);
+	free( var->mask);
+	var->mask = nil;
 }
 
 Handle
