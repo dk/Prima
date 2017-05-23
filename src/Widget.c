@@ -178,6 +178,8 @@ Widget_init( Handle self, HV * profile)
 		if ( pget_B( x_centered) || ( var-> growMode & gmXCenter)) x = 1;
 		if ( pget_B( y_centered) || ( var-> growMode & gmYCenter)) y = 1;
 		if ( x || y) my-> set_centered( self, x, y);
+		var-> geomInfo. x = x;
+		var-> geomInfo. y = y;
 	}
 
 	opt_assign( optPackPropagate, pget_B( packPropagate));
@@ -1601,6 +1603,8 @@ void
 Widget_setup( Handle self)
 {
 	enter_method;
+	if ( var-> geometry == gtGrowMode && ( var-> geomInfo.x != 0 || var-> geomInfo. y != 0 ))
+		my-> set_centered( self, var-> geomInfo. x, var-> geomInfo. y);
 	if ( get_top_current( self) &&
 		my-> get_enabled( self) &&
 		my-> get_visible( self))
