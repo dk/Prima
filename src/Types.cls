@@ -19,15 +19,15 @@ global @Box
 }
 
 global %Font {
-	int         height            ;
-	int         width             ;
-	int         style             ;
-	int         pitch             ;
-	double      direction         ;
+	int         height            with undef;
+	int         width             with undef;
+	int         style             with undef;
+	int         pitch             with undef;
+	double      direction         with undef;
+	string      name              with undef;
+	int         size              with undef;
+	string      encoding          with undef;
 	long        resolution        ;
-	string      name              ;
-	int         size              ;
-	string      encoding          ;
 	string      family            ;
 	int         vector            ;
 	int         ascent            ;

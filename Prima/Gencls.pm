@@ -530,7 +530,11 @@ sub parse_struc
 			( $type eq 'char*')  { $def = 'C_STRING_UNDEF'; } elsif
 			( $type eq 'string') { $def = 'C_STRING_UNDEF'; };
 			$tok = gettok;
-			if ( $tok eq '=') {
+			if ( $tok eq 'with' ) {
+				expect('undef');
+				expect(';');
+				$def = "undef:$def";
+			} elsif ( $tok eq '=') {
 				$def = gettok;
 				expect(';');
 			} else {
@@ -1377,13 +1381,13 @@ sub out_method_profile
 		print HEADER "CALL_POINT:\n" if $property;
 		print HEADER "\n\tPUTBACK;\n\n";
 		if ( exists( $structs{ $resSub}) && ${$structs{ $resSub}[2]}{hash}) {
-		$retType = "G_SCALAR";
+			$retType = "G_SCALAR";
 		} elsif ( exists( $structs{ $resSub}) || exists( $arrays{ $resSub}) || $hvName) {
-		$retType = "G_ARRAY";
+			$retType = "G_ARRAY";
 		} elsif ( $resSub eq "void") {
-		$retType = "G_DISCARD";
+			$retType = "G_DISCARD";
 		} else {
-		$retType = "G_SCALAR";
+			$retType = "G_SCALAR";
 		};
 
 		$retType = "set ? G_DISCARD : $retType" if $property;
@@ -1977,8 +1981,10 @@ for ( sort { $structs{$a}-> [PROPS]-> {order} <=> $structs{$b}-> [PROPS]-> {orde
 	if ( ${$structs{$_}[PROPS]}{genh})
 	{
 		my @types = @{$structs{$_}-> [TYPES]};
-		my @ids = @{$structs{$_}-> [IDS]};
+		my @ids   = @{$structs{$_}-> [IDS]};
+		my @def   = @{$structs{$_}-> [DEFS]};
 		print HEADER "typedef struct _$_ {\n";
+		my ($maxw_undefs, @undefs) = (0);
 		for ( my $j = 0; $j < @types; $j++) {
 			if ( ref $types[$j]) {
 				print HEADER "\t$types[$j]->[PROPS]->{name} $ids[$j];\n";
@@ -1987,6 +1993,16 @@ for ( sort { $structs{$a}-> [PROPS]-> {order} <=> $structs{$b}-> [PROPS]-> {orde
 			} else {
 				print HEADER "\t$types[$j] $ids[$j];\n";
 			}
+
+			if (($def[$j] // '') =~ /^undef:/) {
+				push @undefs, $ids[$j];
+				$maxw_undefs = length $ids[$j] if length($ids[$j]) > $maxw_undefs;
+			}
+		}
+		if ( @undefs ) {
+			print HEADER "\tstruct {\n";
+			printf HEADER "\t\tunsigned %\-${maxw_undefs}s : 1;\n", $_ for @undefs;
+			print HEADER "\t} undef;\n";
 		}
 		print HEADER "} $_, *P$_;\n\n";
 		if ( ${$structs{$_}[PROPS]}{hash})
@@ -2189,9 +2205,13 @@ SD
 	}
 CONTAINED_STRUCTURE
 				} else {
-					$inter = "( $incSV = hv_fetch( $incHV, \"$lName\", $lNameLen, 0)) ? \n\t".
-						sv2type( $lType, "*$incSV")." : $def";
-					print HEADER "\t", cwrite( $lType, $inter, "strucRef-> $lName"), "\n";
+					print HEADER "\t$incSV = hv_fetch( $incHV, \"$lName\", $lNameLen, 0);\n";
+					if ($def =~ /^undef:(.*)$/) {
+						print HEADER "\tstrucRef-> undef.$lName = ($incSV == NULL);\n";
+						$def = $1;
+					}
+					$inter = "$incSV ? " . sv2type( $lType, "*$incSV") . " : $def";
+					print HEADER "\t", cwrite( $lType, $inter, "strucRef-> $lName"), "\n\n";
 				}
 			}
 			print HEADER "\treturn strucRef;\n";
@@ -2205,7 +2225,11 @@ CONTAINED_STRUCTURE
 				my $lNameLen = length $lName;
 				my $lType = @{$structs{$_}[TYPES]}[$k];
 				my $inter = type2sv( $lType, "strucRef-> $lName");
-				print HEADER "\t(void) hv_store( $incHV, \"$lName\", $lNameLen, $inter, 0);\n";
+				my $prefix = 
+					($structs{$_}->[DEFS]->[$k] =~ /^undef:/) ?
+						"if (!strucRef-> undef.$lName)" :
+						"(void)";
+				print HEADER "\t$prefix hv_store( $incHV, \"$lName\", $lNameLen, $inter, 0);\n";
 			}
 			print HEADER "\treturn newRV_noinc(( SV*) $incHV);\n";
 			print HEADER "}\n\n";
