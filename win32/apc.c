@@ -519,7 +519,7 @@ process_msg( MSG * msg)
 		else
 			TranslateMessage( msg);
 	}
-	kill_zombies();
+	prima_kill_zombies();
 	return true;
 }
 

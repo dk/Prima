@@ -34,7 +34,7 @@ extern Bool window_subsystem_get_options( int * argc, char *** argv);
 extern void window_subsystem_cleanup( void);
 extern void window_subsystem_done( void);
 extern void build_static_vmt( void *vmt);
-extern void kill_zombies( void);
+extern void prima_kill_zombies( void);
 extern void prima_init_image_subsystem( void);
 extern void prima_cleanup_image_subsystem( void);
 
@@ -43,14 +43,14 @@ extern Handle  gimme_the_real_mate( SV *perlObject);
 /* kernel exports */
 extern XS( Component_set_notification_FROMPERL);
 
-extern PRGBColor read_palette( int * palSize, SV * palette);
+extern PRGBColor prima_read_palette( int * palSize, SV * palette);
 extern Bool prima_read_point( SV *rvav, int * pt, int number, char * error);
-extern Bool accel_notify ( Handle group, Handle self, PEvent event);
-extern Bool font_notify ( Handle self, Handle child, void * font);
-extern Bool find_accel( Handle self, Handle item, int * key);
-extern Bool single_color_notify ( Handle self, Handle child, void * color);
-extern Bool kill_all( Handle self, Handle child, void * dummy);
-extern void *read_array( SV * points, char * procName, Bool integer, int div, int min, int max, int * n_points );
+extern Bool prima_accel_notify ( Handle group, Handle self, PEvent event);
+extern Bool prima_font_notify ( Handle self, Handle child, void * font);
+extern Bool prima_find_accel( Handle self, Handle item, int * key);
+extern Bool prima_single_color_notify ( Handle self, Handle child, void * color);
+extern Bool prima_kill_all_objects( Handle self, Handle child, void * dummy);
+extern void *prima_read_array( SV * points, char * procName, Bool integer, int div, int min, int max, int * n_points );
 
 #ifdef __cplusplus
 }

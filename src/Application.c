@@ -136,7 +136,7 @@ Application_cleanup( Handle self)
 		my-> detach( self, var-> icon, true);
 	var-> icon = nilHandle;
 
-	my-> first_that_component( self, (void*)kill_all, nil);
+	my-> first_that_component( self, (void*)prima_kill_all_objects, nil);
 
 	CDrawable-> cleanup( self);
 }
@@ -576,7 +576,7 @@ Application_colorIndex( Handle self, Bool set, int index, Color color)
 		SingleColor s;
 		s. color = color;
 		s. index = index;
-		if ( !opt_InPaint) my-> first_that( self, (void*)single_color_notify, &s);
+		if ( !opt_InPaint) my-> first_that( self, (void*)prima_single_color_notify, &s);
 		if ( opt_InPaint) switch ( index) {
 			case ciFore:
 				CDrawable-> set_color ( self, color);
@@ -593,7 +593,7 @@ Application_colorIndex( Handle self, Bool set, int index, Color color)
 void
 Application_set_font( Handle self, Font font)
 {
-	if ( !opt_InPaint) my-> first_that( self, (void*)font_notify, &font);
+	if ( !opt_InPaint) my-> first_that( self, (void*)prima_font_notify, &font);
 	apc_font_pick( self, &font, & var-> font);
 	if ( opt_InPaint) apc_gp_set_font ( self, &var-> font);
 }

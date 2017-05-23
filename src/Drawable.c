@@ -457,7 +457,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 }
 
 void *
-read_array( SV * points, char * procName, Bool integer, int div, int min, int max, int * n_points )
+prima_read_array( SV * points, char * procName, Bool integer, int div, int min, int max, int * n_points )
 {
 	AV * av;
 	int i, count, psize;
@@ -533,7 +533,7 @@ read_polypoints( Handle self, SV * points, char * procName, int min, Bool (*proc
 	int count;
 	Point * p;
 	Bool ret = false;
-	if (( p = (Point*) read_array( points, procName, true, 2, min, -1, &count)) != NULL) {
+	if (( p = (Point*) prima_read_array( points, procName, true, 2, min, -1, &count)) != NULL) {
 		ret = procPtr( self, count, p);
 		if ( !ret) perl_error();
 		free(p);
@@ -557,7 +557,7 @@ Drawable_bars( Handle self, SV * rects)
 	int count;
 	Rect * p;
 	Bool ret = false;
-	if (( p = read_array( rects, "Drawable::bars", true, 4, 0, -1, &count)) != NULL) {
+	if (( p = prima_read_array( rects, "Drawable::bars", true, 4, 0, -1, &count)) != NULL) {
 		ret = apc_gp_bars( self, count, p);
 		if ( !ret) perl_error();
 		free( p);
@@ -697,7 +697,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	} else 
 		precision = 24;
 	
-	p = (NPoint*) read_array( points, "Drawable::render_spline", false, 2, degree + 1, -1, &n_points);
+	p = (NPoint*) prima_read_array( points, "Drawable::render_spline", false, 2, degree + 1, -1, &n_points);
 	if ( !p) goto EXIT;
 
 	/* closed curve will need at least one extra point and unclamped default knot set */
@@ -706,14 +706,14 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	n_points += n_add_points;
 
 	if ( pexist( knots )) {
-		knots = (double*) read_array( pget_sv(knots), "knots", false, 1, 
+		knots = (double*) prima_read_array( pget_sv(knots), "knots", false, 1, 
 			n_points + degree + 1, n_points + degree + 1, NULL);
 		if (!knots) goto EXIT;
 	} else
 		knots = default_knots(n_points, degree, !closed);
 	
 	if ( pexist( weights )) {
-		weights = (double*) read_array(pget_sv(weights), "weights", false, 1, 
+		weights = (double*) prima_read_array(pget_sv(weights), "weights", false, 1, 
 			n_points, n_points, NULL);
 		if (!weights) goto EXIT;
 		dim = 3;
@@ -1267,7 +1267,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 
 
 PRGBColor
-read_palette( int * palSize, SV * palette)
+prima_read_palette( int * palSize, SV * palette)
 {
 	AV * av;
 	int i, count;
@@ -1361,7 +1361,7 @@ Drawable_palette( Handle self, Bool set, SV * palette)
 	colors = var-> palSize;
 	if ( set) {
 		free( var-> palette);
-		var-> palette = read_palette( &var-> palSize, palette);
+		var-> palette = prima_read_palette( &var-> palSize, palette);
 		if ( colors == 0 && var-> palSize == 0) return nilSV; /* do not bother apc */
 		apc_gp_set_palette( self);
 	} else {

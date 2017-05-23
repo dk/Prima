@@ -755,14 +755,14 @@ void Widget_handle_event( Handle self, PEvent event)
 				}
 				objCheck;
 
-				if ( my-> first_that( self, (void*)accel_notify, &ev)) {
+				if ( my-> first_that( self, (void*)prima_accel_notify, &ev)) {
 					my-> clear_event( self);
 					return;
 				}
 				objCheck;
 				ev. cmd         = cmDelegateKey;
 				ev. key. subcmd = 1;
-				if ( my-> first_that( self, (void*)accel_notify, &ev)) {
+				if ( my-> first_that( self, (void*)prima_accel_notify, &ev)) {
 					my-> clear_event( self);
 					return;
 				}
@@ -784,13 +784,13 @@ void Widget_handle_event( Handle self, PEvent event)
 			case 1: {
 				Event ev = *event;
 				ev. cmd  = cmTranslateAccel;
-				if ( my-> first_that( self, (void*)accel_notify, &ev)) {
+				if ( my-> first_that( self, (void*)prima_accel_notify, &ev)) {
 					my-> clear_event( self);
 					return;
 				}
 				objCheck;
 				ev = *event;
-				if ( my-> first_that( self, (void*)accel_notify, &ev)) {
+				if ( my-> first_that( self, (void*)prima_accel_notify, &ev)) {
 					my-> clear_event( self);
 					return;
 				}
@@ -801,7 +801,7 @@ void Widget_handle_event( Handle self, PEvent event)
 		case cmTranslateAccel:
 		{
 			int key = CAbstractMenu-> translate_key( nilHandle, event-> key. code, event-> key. key, event-> key. mod);
-			if ( my-> first_that_component( self, (void*)find_accel, &key)) {
+			if ( my-> first_that_component( self, (void*)prima_find_accel, &key)) {
 				my-> clear_event( self);
 				return;
 			}
@@ -1265,7 +1265,7 @@ Bool
 Widget_process_accel( Handle self, int key)
 {
 	enter_method;
-	if ( my-> first_that_component( self, (void*)find_accel, &key)) return true;
+	if ( my-> first_that_component( self, (void*)prima_find_accel, &key)) return true;
 	return kind_of( var-> owner, CWidget) ?
 			((( PWidget) var-> owner)-> self)->process_accel( var-> owner, key) : false;
 }
@@ -1851,7 +1851,7 @@ Widget_set_font( Handle self, Font font)
 {
 	enter_method;
 	if ( var-> stage > csFrozen) return;
-	if ( !opt_InPaint) my-> first_that( self, (void*)font_notify, &font);
+	if ( !opt_InPaint) my-> first_that( self, (void*)prima_font_notify, &font);
 	if ( var-> handle == nilHandle) return; /* aware of call from Drawable::init */
 	if ( opt_InPaint) {
 		inherited->set_font(self, font);
@@ -1927,7 +1927,7 @@ void Widget_on_leave( Handle self) {}
 
 
 /* static iterators */
-Bool kill_all( Handle self, Handle child, void * dummy)
+Bool prima_kill_all_objects( Handle self, Handle child, void * dummy)
 {
 	Object_destroy( child); return 0;
 }
@@ -1935,7 +1935,7 @@ Bool kill_all( Handle self, Handle child, void * dummy)
 static Bool find_dup_msg( PEvent event, int * cmd) { return event-> cmd == *cmd; }
 
 Bool
-accel_notify ( Handle group, Handle self, PEvent event)
+prima_accel_notify ( Handle group, Handle self, PEvent event)
 {
 	enter_method;
 	if (( self != event-> key. source) && my-> get_enabled( self))
@@ -1953,7 +1953,7 @@ pquery ( Handle window, Handle self, void * v)
 }
 
 Bool
-find_accel( Handle self, Handle item, int * key)
+prima_find_accel( Handle self, Handle item, int * key)
 {
 	return ( kind_of( item, CAbstractMenu)
 				&& CAbstractMenu(item)-> sub_call_key( item, *key));
@@ -2006,7 +2006,7 @@ sptr( Handle window, Handle self, void * v)
 /* static iterators for ownership notifications */
 
 Bool
-font_notify ( Handle self, Handle child, void * font)
+prima_font_notify ( Handle self, Handle child, void * font)
 {
 	if ( his-> options. optOwnerFont) {
 		his-> self-> set_font ( child, *(( PFont) font));
@@ -2036,7 +2036,7 @@ hint_notify ( Handle self, Handle child, SV * hint)
 }
 
 Bool
-single_color_notify ( Handle self, Handle child, void * color)
+prima_single_color_notify ( Handle self, Handle child, void * color)
 {
 	PSingleColor s = ( PSingleColor) color;
 	if ( his-> options. optOwnerColor && ( s-> index == ciFore))
@@ -2195,7 +2195,7 @@ Widget_colorIndex( Handle self, Bool set, int index, Color color)
 		s. color = color;
 		s. index = index;
 		if (( index < 0) || ( index > ciMaxId)) return clInvalid;
-		if ( !opt_InPaint) my-> first_that( self, (void*)single_color_notify, &s);
+		if ( !opt_InPaint) my-> first_that( self, (void*)prima_single_color_notify, &s);
 
 		if ( var-> handle == nilHandle) return clInvalid; /* aware of call from Drawable::init */
 		if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0))
@@ -2514,7 +2514,7 @@ Widget_palette( Handle self, Bool set, SV * palette)
 
 	colors = var-> palSize;
 	free( var-> palette);
-	var-> palette = read_palette( &var-> palSize, palette);
+	var-> palette = prima_read_palette( &var-> palSize, palette);
 	opt_clear( optOwnerPalette);
 	if ( colors == 0 && var-> palSize == 0)
 		return nilSV; /* do not bother apc */

@@ -382,7 +382,7 @@ static PAnyObject killChain = nil;
 static PObject ghostChain = nil;
 
 void
-kill_zombies( void)
+prima_kill_zombies( void)
 {
 	while ( killChain != nil)
 	{
@@ -1207,7 +1207,7 @@ XS( prima_cleanup)
 	list_delete_all( &staticObjects, true);
 	list_destroy( &staticObjects);
 	list_destroy( &postDestroys);
-	kill_zombies();
+	prima_kill_zombies();
 	if ( prima_init_ok > 2) window_subsystem_done();
 	list_first_that( &staticHashes, (void*)kill_hashes, nil);
 	list_destroy( &staticHashes);

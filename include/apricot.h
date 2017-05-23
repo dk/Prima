@@ -1260,9 +1260,6 @@ protect_object( Handle obj);
 extern void
 unprotect_object( Handle obj);
 
-extern void
-kill_zombies( void);
-
 /*
 exception_* functions are solely needed as a workaround of a Win64 bug when running 32-bit programs.
 It can be manifested when a perl code dies in f.ex. onPaint, and the triggered longjmp is

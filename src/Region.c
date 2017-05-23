@@ -56,7 +56,7 @@ Region_init( Handle self, HV * profile)
 		break;
 	}
 	case rgnPolygon:
-		if (( r. data. polygon. points = (Point*) read_array( 
+		if (( r. data. polygon. points = (Point*) prima_read_array( 
 			pget_sv(polygon), "Region::polygon", true, 
 			2, 2, -1, 
 			&r. data. polygon. n_points)
