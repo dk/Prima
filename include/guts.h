@@ -33,12 +33,8 @@ extern Bool window_subsystem_set_option( char * option, char * value);
 extern Bool window_subsystem_get_options( int * argc, char *** argv);
 extern void window_subsystem_cleanup( void);
 extern void window_subsystem_done( void);
-extern void build_static_vmt( void *vmt);
-extern void prima_kill_zombies( void);
 extern void prima_init_image_subsystem( void);
 extern void prima_cleanup_image_subsystem( void);
-
-extern Handle  gimme_the_real_mate( SV *perlObject);
 
 /* kernel exports */
 extern XS( Component_set_notification_FROMPERL);

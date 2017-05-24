@@ -1221,6 +1221,9 @@ extern Handle
 gimme_the_mate( SV *perlObject);
 
 extern Handle
+gimme_the_real_mate( SV *perlObject);
+
+extern Handle
 create_mate( SV *perlObject);
 
 extern SV*
@@ -1259,6 +1262,9 @@ protect_object( Handle obj);
 
 extern void
 unprotect_object( Handle obj);
+
+extern void
+prima_kill_zombies( void);
 
 /*
 exception_* functions are solely needed as a workaround of a Win64 bug when running 32-bit programs.
