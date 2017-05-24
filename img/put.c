@@ -752,12 +752,14 @@ static BlendFunc* blend_functions[] = {
 static Bool 
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
-	int bpp, bytes, sls, dls, mls, als, x, y;
+	int bpp, bytes, sls, dls, mls, als, x, y, xrop;
 	Byte *s, *d, *m, *a; 
 	unsigned int src_alpha = 0, dst_alpha = 0;
 	Bool use_src_alpha = false, use_dst_alpha = false;
 	Byte *asbuf, *adbuf;
 	BlendFunc * blend_func;
+
+	xrop = rop;
 
 	/* differentiate between per-pixel alpha and a global value */
 	if ( rop & ropSrcAlpha ) {
@@ -813,7 +815,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		if ( PImage( dup )-> type != bpp )
 			CImage(dup)-> set_type( dup, bpp);
 
-		ok = img_put_alpha( dest, dup, dstX, dstY, 0, 0, dstW, dstH, dstW, srcH, rop);
+		ok = img_put_alpha( dest, dup, dstX, dstY, 0, 0, dstW, dstH, dstW, srcH, xrop);
 
 		Object_destroy(dup);
 		return ok;
@@ -830,7 +832,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 			CIcon(dest)-> set_type( dest, bpp );
 		if ( icon && mask != imbpp8 )
 			CIcon(dest)-> set_maskType( dest, imbpp8 );
-		ok = img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
+		ok = img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, xrop);
 		if ( PImage(dest)-> options. optPreserveType ) {
 			if ( type != bpp )
 				CImage(dest)-> set_type( dest, type );
