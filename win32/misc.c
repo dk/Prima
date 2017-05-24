@@ -327,18 +327,7 @@ apc_sys_get_value( int sysValue)
 	case svColorPointer    : return guts. displayBMInfo. bmiHeader. biBitCount > 4;
 	case svCanUTF8_Input   : return 1;
 	case svCanUTF8_Output  : return 1;
-	case svCompositeDisplay:
-		if ( LOBYTE(LOWORD(guts.version)) > 5 )
-			return 1;
-		valType = REG_DWORD;
-		valSize = sizeof(DWORD);
-		if ( RegOpenKeyEx( HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\DWM", 0, KEY_READ, &hKey) == 0 ) {
-			if ( RegQueryValueEx( hKey, "CompositionPolicy", nil, &valType, ( LPBYTE)&dw, &valSize) != 0 )
-				dw = 1;
-			RegCloseKey( hKey);
-			return dw == 0;
-		} else 
-			return 0;
+	case svCompositeDisplay: return is_dwm_enabled();
 	case svLayeredWidgets: return guts. displayBMInfo. bmiHeader. biBitCount > 8;
 	case svDWM: return set_dwm_blur((HWND) 0, 0, (HRGN)0, 0);
 	default:

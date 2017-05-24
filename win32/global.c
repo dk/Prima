@@ -92,6 +92,7 @@ typedef struct _DWM_BLURBEHIND {
 static HRESULT (__stdcall *SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS)  = NULL;
 static HRESULT (__stdcall *GetDpiForMonitor)(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*) = NULL;
 static HRESULT (__stdcall *DwmEnableBlurBehindWindow)(HWND hWnd, const DWM_BLURBEHIND *pBlurBehind) = NULL;
+static HRESULT (__stdcall *DwmIsCompositionEnabled)(BOOL *pfEnabled) = NULL;
 
 void
 dpi_change(void)
@@ -136,6 +137,31 @@ set_dwm_blur( HWND win, int enable, HRGN mask, int transition_on_maximized)
 	}
 
 	return true;
+}
+
+Bool
+is_dwm_enabled( void )
+{
+	if ( DwmIsCompositionEnabled ) {
+		BOOL b;
+		if ( DwmIsCompositionEnabled(&b) != S_OK) goto NOPE;
+		return b;
+	} else {
+		HKEY hKey;
+		DWORD valSize = 256, valType = REG_SZ, dw = 0;
+	NOPE:
+		if ( LOBYTE(LOWORD(guts.version)) > 5 )
+			return 1;
+		valType = REG_DWORD;
+		valSize = sizeof(DWORD);
+		if ( RegOpenKeyEx( HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\DWM", 0, KEY_READ, &hKey) == 0 ) {
+			if ( RegQueryValueEx( hKey, "CompositionPolicy", nil, &valType, ( LPBYTE)&dw, &valSize) != 0 )
+				dw = 1;
+			RegCloseKey( hKey);
+			return dw == 0;
+		} else 
+			return 0;
+	}
 }
 
 static void
@@ -241,6 +267,7 @@ window_subsystem_init( char * error_buf)
 		HMODULE dwm = LoadLibrary("DWMAPI.DLL");
 		if ( dwm ) {
 			LOAD_FUNC(dwm, DwmEnableBlurBehindWindow);
+			LOAD_FUNC(dwm, DwmIsCompositionEnabled);
 		}
 	}
 
