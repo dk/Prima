@@ -187,17 +187,18 @@ Drawable_font_match( char * dummy, Font * source, Font * dest, Bool pick)
 Bool
 Drawable_font_add( Handle self, Font * source, Font * dest)
 {
-	Bool useHeight = source-> height    != C_NUMERIC_UNDEF;
-	Bool useWidth  = source-> width     != C_NUMERIC_UNDEF;
-	Bool useSize   = source-> size      != C_NUMERIC_UNDEF;
-	Bool usePitch  = source-> pitch     != C_NUMERIC_UNDEF;
-	Bool useStyle  = source-> style     != C_NUMERIC_UNDEF;
-	Bool useDir    = source-> direction != C_NUMERIC_UNDEF;
-	Bool useName   = strcmp( source-> name, C_STRING_UNDEF) != 0;
-	Bool useEnc    = strcmp( source-> encoding, C_STRING_UNDEF) != 0;
+	Bool useHeight = !source-> undef. height;
+	Bool useWidth  = !source-> undef. width;
+	Bool useSize   = !source-> undef. size;
+	Bool usePitch  = !source-> undef. pitch;
+	Bool useStyle  = !source-> undef. style;
+	Bool useDir    = !source-> undef. direction;
+	Bool useName   = !source-> undef. name;
+	Bool useEnc    = !source-> undef. encoding;
 
 	/* assignning values */
 	if ( dest != source) {
+		dest-> undef = source-> undef;
 		if ( useHeight) dest-> height    = source-> height;
 		if ( useWidth ) dest-> width     = source-> width;
 		if ( useDir   ) dest-> direction = source-> direction;
@@ -231,10 +232,11 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 		strcpy( dest-> name, "Default");
 	if ( dest-> pitch < fpDefault || dest-> pitch > fpFixed)
 		dest-> pitch = fpDefault;
-	if ( dest-> direction == C_NUMERIC_UNDEF)
+	if ( dest-> undef. direction )
 		dest-> direction = 0;
-	if ( dest-> style == C_NUMERIC_UNDEF)
+	if ( dest-> undef. style )
 		dest-> style = 0;
+	memset(&dest->undef, 0, sizeof(&dest->undef));
 
 	return useSize && !useHeight;
 }
@@ -1249,9 +1251,9 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 			STRLEN len = t. utf8_text ? utf8_hop(( U8*) t. t_char, 1) - ( U8*) t. t_char : 1;
 			sv_char = newSVpv( t. t_char, len);
 			if ( t. utf8_text) SvUTF8_on( sv_char);
-			pset_i( tildeStart, t. t_start);
-			pset_i( tildeEnd,   t. t_end);
-			pset_i( tildeLine,  t. t_line);
+			if ( t. t_start != C_NUMERIC_UNDEF) pset_i( tildeStart, t. t_start);
+			if ( t. t_end   != C_NUMERIC_UNDEF) pset_i( tildeEnd,   t. t_end);
+			if ( t. t_line  != C_NUMERIC_UNDEF) pset_i( tildeLine,  t. t_line);
 		} else {
 			sv_char = newSVsv( nilSV);
 			pset_sv( tildeStart, nilSV);

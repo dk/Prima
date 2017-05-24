@@ -588,7 +588,7 @@ reset_system_fonts(void)
 	memset( &guts. windowFont, 0, sizeof( Font));
 	strcpy( guts. windowFont. name, DEFAULT_WIDGET_FONT);
 	guts. windowFont. size  = DEFAULT_WIDGET_FONT_SIZE;
-	guts. windowFont. width = guts. windowFont. height = C_NUMERIC_UNDEF;
+	guts. windowFont. undef. width = guts. windowFont. undef. height = 1;
 	apc_font_pick( nilHandle, &guts. windowFont, &guts. windowFont);
 
 	guts. ncmData. cbSize = sizeof( NONCLIENTMETRICS);
@@ -707,7 +707,7 @@ font_pp2font( char * presParam, Font * f)
 			p[ i] = 0;
 		}
 	}
-	f-> width = f-> height = C_NUMERIC_UNDEF;
+	f-> undef. width = f-> undef. height = 1;
 	f-> direction = 0;
 }
 

@@ -340,6 +340,7 @@ fcpattern2font( FcPattern * pattern, PFont font)
 	fcpattern2fontnames(pattern, font);
 
 	font-> style = 0;
+	font-> undef. style = 0;
 	if ( FcPatternGetInteger( pattern, FC_SLANT, 0, &i) == FcResultMatch) 
 		if ( i == FC_SLANT_ITALIC || i == FC_SLANT_OBLIQUE)
 			font-> style |= fsItalic;
@@ -357,11 +358,14 @@ fcpattern2font( FcPattern * pattern, PFont font)
 	if ( FcPatternGetDouble( pattern, FC_ASPECT, 0, &d) == FcResultMatch)
 		font-> xDeviceRes = font-> yDeviceRes * d;
 
-	if ( FcPatternGetInteger( pattern, FC_SPACING, 0, &i) == FcResultMatch)
+	if ( FcPatternGetInteger( pattern, FC_SPACING, 0, &i) == FcResultMatch) {
 		font-> pitch = (( i == FC_PROPORTIONAL) ? fpVariable : fpFixed);
+		font-> undef. pitch = 0;
+	}
 
 	if ( FcPatternGetDouble( pattern, FC_PIXEL_SIZE, 0, &d) == FcResultMatch) {
 		font->height = d + 0.5;
+		font-> undef. height = 0;
 		XFTdebug("height factor read:%d (%g)", font-> height, d);
 	}
 
@@ -371,12 +375,15 @@ fcpattern2font( FcPattern * pattern, PFont font)
 		XFTdebug("width factor read:%d (%g)", font-> width, d);
 	}
 	font-> width = ( font-> width * font-> height) / 100.0 + .5;
+	font->undef. width = 0;
 
 	if ( FcPatternGetDouble( pattern, FC_SIZE, 0, &d) == FcResultMatch) {
 		font->size = d + 0.5;
+		font->undef. size = 0;
 		XFTdebug("size factor read:%d (%g)", font-> size, d);
-	} else if (font-> height != C_NUMERIC_UNDEF && font->yDeviceRes != 0) {
+	} else if (!font-> undef.height && font->yDeviceRes != 0) {
 		font-> size = font-> height * 72.27 / font-> yDeviceRes + .5;
+		font-> undef. size = 0;
 		XFTdebug("size calculated:%d", font-> size);
 	} else {
 		XFTdebug("size unknown");
@@ -447,8 +454,9 @@ try_size( Handle self, Font f, double size)
 {
 	FontKey key;
 	XftFont * xft = NULL;
+	bzero( &f.undef, sizeof(f.undef));
+	f. undef. height = f. undef. width = 1;
 	f. size = size + 0.5;
-	f. height = f. width = C_NUMERIC_UNDEF;
 	f. direction = 0.0;
 	xft_debug_indent++;
 	prima_xft_font_pick( self, &f, &f, &size, &xft);
@@ -1812,9 +1820,9 @@ prima_xft_parse( char * ppFontNameSize, Font * font)
 	Font f, def = guts. default_font;
 
 	bzero( &f, sizeof( Font));
-	f. height = f. width = f. size = C_NUMERIC_UNDEF;
+	f. undef. height = f. undef. width = f. undef. size = 1;
 	fcpattern2font( p, &f);
-	f. width = C_NUMERIC_UNDEF;
+	f. undef. width = 1;
 	FcPatternGetCharSet( p, FC_CHARSET, 0, &c);
 	if ( c && (FcCharSetCount(c) > 0)) {
 		int i;

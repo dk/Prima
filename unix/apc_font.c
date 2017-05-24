@@ -44,11 +44,10 @@ fill_default_font( Font * font )
 {
 	bzero( font, sizeof( Font));
 	strcpy( font-> name, "Default");
-	font-> height = C_NUMERIC_UNDEF;
 	font-> size = 12;
-	font-> width = C_NUMERIC_UNDEF;
 	font-> style = fsNormal;
 	font-> pitch = fpDefault;
+	font-> undef. height = font-> undef. width = 1;
 }
 
 /* Extracts font name, charset, foundry etc from X properties, if available.
