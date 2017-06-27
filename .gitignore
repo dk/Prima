@@ -13,6 +13,7 @@ Makefile
 src/Menu.o
 src/Object.o
 src/Popup.o
+src/Region.o
 Prima/Config.pm
 src/Printer.o
 src/Timer.o
@@ -145,6 +146,7 @@ src/Menu.obj
 src/Object.obj
 src/Popup.obj
 src/Printer.obj
+src/Region.obj
 src/Timer.obj
 src/Utils.obj
 src/Widget.obj
@@ -197,3 +199,16 @@ utils/prima-tmlink
 Prima.def
 makepl.log
 *.swp
+unix/apc_region.o
+*.log
+*.eps
+include/generic
+Prima/VB/cfgmaint
+utils/fmview
+utils/gencls
+utils/makedoc/Prima.cache.tex
+utils/makedoc/Prima.tex
+utils/makedoc/out.tex
+utils/p-class
+utils/tmlink
+makefile.log.old
