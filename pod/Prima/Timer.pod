@@ -87,6 +87,10 @@ a system timer instance, 0 is returned.
 
 Sets object in inactive state.
 
+=item toggle
+
+Toggles the timer state
+
 =back
 
 =head2 Events

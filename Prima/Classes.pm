@@ -725,6 +725,8 @@ sub profile_default
 	return $def;
 }
 
+sub toggle { $_[0]->get_active ? $_[0]->stop : $_[0]->start }
+
 package Prima::Printer;
 use vars qw(@ISA);
 @ISA = qw(Prima::Drawable);
