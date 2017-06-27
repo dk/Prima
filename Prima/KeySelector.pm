@@ -337,8 +337,8 @@ sub init
 		name        => 'KeyList',
 		items       => $items,
 		delegations => [ qw(SelectItem) ],
-		columns     => 3,
-		headers     => ['Name', 'Shortcut', 'ID'],
+		columns     => 2,
+		headers     => ['Name', 'Shortcut'],
 		autoRecalc  => 1,
 		width       => 300,
 	);
