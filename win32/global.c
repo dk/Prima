@@ -114,7 +114,7 @@ set_dwm_blur( HWND win, int enable, HRGN mask, int transition_on_maximized)
 	if ( !win )
 		return DwmEnableBlurBehindWindow != NULL;
 
-	if ( !DwmEnableBlurBehindWindow ) return;
+	if ( !DwmEnableBlurBehindWindow ) return false;
 
 	b. dwFlags = 0;
 	if ( enable >= 0 ) {

@@ -1090,6 +1090,7 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
 	}
 	fm = ( PFont) malloc( sizeof( Font));
 	if ( !fm) return 1;
+	memset( fm, 0, sizeof(Font));
 	font_textmetric2font(( TEXTMETRICW*) &t-> ntmTm, fm, false);
 	if ( f-> hash) { /* multi-encoding format */
 		char ** enc = (char**) fm-> encoding;
