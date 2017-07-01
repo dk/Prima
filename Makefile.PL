@@ -1537,7 +1537,7 @@ sub setup_xlibs
 	setup_x11_extension($_) for qw(xrandr xcomposite);
 
 	if ( $use_pkgconfig ) {
-		$DEFINES{HAVE_X11_XCURSOR_XCURSOR_H} = pkgconfig('xcursor');
+		$DEFINES{HAVE_X11_XCURSOR_XCURSOR_H} = 1 if pkgconfig('xcursor');
 	} elsif ( have_header( "X11/Xcursor/Xcursor.h", "X11/Xlib.h")) {
 		printlog "Checking for presence of libXcursor... ";
 		if ( defined find_lib( 'Xcursor', '', '')) {
