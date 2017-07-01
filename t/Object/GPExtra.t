@@ -37,8 +37,8 @@ $x-> backColor( cl::White);
 $x-> fillPattern( fp::SimpleDots);
 $x-> bar( 0, 0, 7, 7);
 $bl = $x-> image;
-my $bl1 = $bl->data;
 $bl-> type( im::Byte);
+my $bl1 = $bl->data;
 $bl = $bl-> sum;
 cmp_ok( $bl, '>', 6000, "fillPattern" );
 cmp_ok( $bl, '<', 10000, "fillPattern" );
@@ -47,12 +47,14 @@ $x-> fillPattern( fp::SimpleDots);
 $x-> fillPatternOffset(1,0);
 $x-> bar( 0, 0, 7, 7);
 $bl = $x-> image;
+$bl->type(im::Byte);
 my $bl2 = $bl->data;
 isnt( $bl1, $bl2, 'fillPatternOffset not same');
 
 $x-> fillPatternOffset(2,2);
 $x-> bar( 0, 0, 7, 7);
 $bl = $x-> image;
+$bl->type(im::Byte);
 $bl2 = $bl->data;
 is( $bl1, $bl2, 'fillPatternOffset same');
 
