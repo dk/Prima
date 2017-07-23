@@ -1002,6 +1002,8 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 			get_view_ex( self, &vprf);
 		ws = sys s. window;
 		if ( !GetWindowPlacement( HANDLE, &wp)) apiErr;
+		if ( wp. showCmd == SW_SHOWMINIMIZED && windowState != wsMinimized ) 
+			wp. showCmd = ( windowState == wsMaximized ) ? SW_SHOWMAXIMIZED : SW_NORMAL;
 		usePos = useSize = 1; // prevent using shell-position flags for recreate
 		icon = ( HICON) SendMessage( HANDLE, WM_GETICON, ICON_BIG, 0);
 		reset = true;
