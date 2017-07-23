@@ -1371,7 +1371,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		}
 		break;
 	case WM_WINDOWPOSCHANGED:
-		{
+		if ( !is_apt(aptIgnoreSizeMessages)) {
 			LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
 			if (( l-> flags & SWP_NOZORDER) == 0)
 				PostMessage( win, WM_ZORDERSYNC, 0, 0);

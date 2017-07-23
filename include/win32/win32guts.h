@@ -147,6 +147,7 @@ typedef struct _HandleOptions_ {
 	unsigned aptLayeredPaint         : 1;       // painting children of layered window
 	unsigned aptLayeredRequested     : 1;       // Prima wants layered
 	unsigned aptClipByChildren       : 1;       // cached clipping by children
+	unsigned aptIgnoreSizeMessages   : 1;       // during window recreation
 } HandleOptions;
 
 typedef struct _WinGuts

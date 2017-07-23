@@ -988,7 +988,11 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 		int len = GetWindowTextLengthW( HANDLE ) + 1;
 		if (( saved_caption = (WCHAR*) malloc( sizeof(WCHAR) * len)) != NULL ) 
 			GetWindowTextW( HANDLE, saved_caption, len );
+		// Windows 8 shell is observed to send WM_SIZE(0,0) on ShowWindow(SW_SHOWNORMAL)
+		// when application started with /min flag
+		apt_set( aptIgnoreSizeMessages );
 		apc_window_set_window_state( self, windowState);
+		apt_clear( aptIgnoreSizeMessages );
 		// prevent cmSize/cmWindowStage message loss if recreate goes with WS_XXX change.
 		if ( sys recreateData) {
 			memcpy( &vprf, sys recreateData, sizeof( vprf));
