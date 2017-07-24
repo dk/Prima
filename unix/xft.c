@@ -570,6 +570,7 @@ xft_store_font(Font * k, Font * v, Bool by_size, XftFont * xft, XftFont * xft_ba
 }
 
 static int force_xft_monospace_emulation = 0;
+static int try_xft_monospace_emulation_by_name = 0;
 
 Bool
 prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, XftFont ** xft_result)
@@ -753,12 +754,16 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			fcpattern2fontnames(match, &font_with_family);
 			FcPatternDestroy( match);
 
-			if (( monospace_font = find_good_font_by_family(&font_with_family, FC_MONO))) {
+			if (!try_xft_monospace_emulation_by_name && ( monospace_font = find_good_font_by_family(&font_with_family, FC_MONO))) {
 				/* try a good mono font, again */
+				Bool ret;
 				Font s = *source;
 				strcpy(s.name, monospace_font);
 				XFTdebug("try fixed pitch");
-				return prima_xft_font_pick( self, &s, dest, size, xft_result);
+				try_xft_monospace_emulation_by_name++;
+				ret = prima_xft_font_pick( self, &s, dest, size, xft_result);
+				try_xft_monospace_emulation_by_name--;
+				return ret;
 			} else {
 				Bool ret;
 				XFTdebug("force ugly monospace");
