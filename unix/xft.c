@@ -1501,7 +1501,6 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 	} else {
 		xftcolor.color.alpha = 0xffff;
 	}
-
 	/* paint background if opaque */
 	if ( XX-> flags. paint_opaque) {
 		int i;
@@ -1544,10 +1543,9 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 		if ( XX-> type. bitmap) 
 			XX-> xft_drawable = XftDrawCreateBitmap( DISP, XX-> gdrawable ); 
 		else
-			XX-> xft_drawable = XftDrawCreate( DISP, XX-> gdrawable, 
-													XX->visual->visual, XX->colormap);
+			XX-> xft_drawable = XftDrawCreate( DISP, XX-> gdrawable, XX->visual->visual, XX->colormap);
 		XftDrawSetSubwindowMode( XX-> xft_drawable, 
-			( self == application) ? IncludeInferiors : ClipByChildren);
+			XX-> flags.clip_by_children ? ClipByChildren : IncludeInferiors);
 		XCHECKPOINT;
 	}
 	if ( !XX-> flags. xft_clip) {
@@ -1589,8 +1587,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 		width  = rc. right  - rc. left   + 1;
 		height = rc. top    - rc. bottom + 1;
 
-		canvas = XCreatePixmap( DISP, guts. root, width, height, 
-												XX-> type. bitmap ? 1 : guts. depth);
+		canvas = XCreatePixmap( DISP, guts. root, width, height, XX-> type. bitmap ? 1 : guts. depth);
 		if ( !canvas) goto COPY_PUT;
 		dx = -rc. left;
 		dy = -rc. bottom;
