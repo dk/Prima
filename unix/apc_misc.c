@@ -1246,7 +1246,7 @@ apc_system_action( const char *s)
 				return duplicate_string( buf);
 			return duplicate_string("");
 		} else if ( strncmp( s, "gtk.OpenFile.", 13) == 0) {
-			s += 14;
+			s += 13;
 #ifdef WITH_GTK
 			if ( guts. use_gtk ) 
 				return prima_gtk_openfile(( char*) s);
