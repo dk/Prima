@@ -694,10 +694,10 @@ C<--sync> command-line argument, and can be used to ease the debugging.
 
 =head2 GTK
 
-Prima can be compiled with GTK2, and can use its colos and font scheme, and
+Prima can be compiled with GTK, and can use its colos and font scheme, and
 GTK file dialogs. This can be disabled with C<--no-gtk> command line switch.
 
-On MacOSX, GTK2 usually comes with Quartz implementation, which means that
+On MacOSX, GTK usually comes with Quartz implementation, which means that
 Prima will get into problems with remote X11 connections. Prima tries to detect
 this condition, but if trouble persists, please use C<--no-gtk> switch (and
 please file a bug report so this can be fixed, too).

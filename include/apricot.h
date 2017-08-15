@@ -1499,8 +1499,10 @@ GUI(PM)
 GUI(Windows)
 #define guiXLib                 3
 GUI(XLib)
-#define guiGTK2                 4
+#define guiGTK2                 4 /* back-compat */
+#define guiGTK                  4
 GUI(GTK2)
+GUI(GTK)
 END_TABLE(gui,UV)
 #undef GUI
 

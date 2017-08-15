@@ -125,6 +125,7 @@ options:
     WITH_XFT          - compile with/without Xft (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
     WITH_GTK2         - compile with/without GTK2 (default 1), X only
+    WITH_GTK3         - compile with/without GTK3 (default 0), X only
     WITH_OPENMP       - compile with/without openmp (default 1)
     CYGWIN_WINAPI     - Winapi build in cygwin environment
     DEBUG             - build with debug information
@@ -174,6 +175,7 @@ sub setup_argv
 		WITH_XFT      => 1,
 		WITH_ICONV    => 1,
 		WITH_GTK2     => 1,
+		WITH_GTK3     => 0,
 		WITH_OPENMP   => 1,
 		CYGWIN_WINAPI => 0,
 		DEBUG         => 0,
@@ -1470,10 +1472,27 @@ sub setup_iconv
 
 sub setup_gtk
 {
+	my $use_gtk3 = $cmd_options{WITH_GTK3};
+	my $use_gtk2 = $cmd_options{WITH_GTK2};
+	$cmd_options{WITH_GTK3} = 0;
 	$cmd_options{WITH_GTK2} = 0;
+
 	unless ( $use_pkgconfig ) {
-		printlog "Checking for presence of gtk2... no, can only check with pkg-config installed\n";
-	} elsif ( pkgconfig('gtk+-2.0')) {
+		printlog "Checking for presence of gtk... no, can only check with pkg-config installed\n";
+		return;
+	} 
+	
+	if ( $use_gtk3 && pkgconfig('gtk+-3.0')) {
+		my $version = `pkg-config --modversion gtk+-3.0`;
+		printlog "Checking if can compile and link with gtk3... ";
+		my $minversion = 9;
+		unless ( $version =~ m/^3\.(\d+)/ && $1 > $minversion ) {
+			printlog "no, need at least v3.$minversion.0\n";
+			return;
+		}
+		$use_gtk2 = 0;
+	} 
+	if ( $use_gtk2 && pkgconfig('gtk+-2.0')) {
 		my $version = `pkg-config --modversion gtk+-2.0`;
 		printlog "Checking if can compile and link with gtk2... ";
 		my $minversion = 7;
@@ -1481,27 +1500,28 @@ sub setup_gtk
 			printlog "no, need at least v2.$minversion.0\n";
 			return;
 		}
-		# now, try to compile with GTK. I've got lots of CPAN build failures
-		# because GTK wasn't willing to compile or god knows what.
-		goto NO_GTK unless compile( "#include <gtk/gtk.h>\nint main() { return 0; }\n");
-		if ( $^O eq 'darwin') {
-			printlog "without X11... ";
-			$DEFINES{WITH_GTK2_NONX11} = 1 unless compile( "#include <gdk/gdkx.h>\nint main() { return 0; }\n");
-		}
-		$DEFINES{WITH_GTK2} = 1;
-		printlog "yes\n";
-	} else {
-	NO_GTK:
+		$use_gtk3 = 0;
+	}		
+	# now, try to compile with GTK. I've got lots of CPAN build failures
+	# because GTK wasn't willing to compile or god knows what.
+	unless (compile( "#include <gtk/gtk.h>\nint main() { return 0; }\n")) {
 		printlog "no\n";
-	}
-
-	$END .= <<WARNING unless $DEFINES{WITH_GTK2};
+		$END .= <<WARNING;
 
 ** Warning: not compiling with GTK2. Fonts and colors will look
 differently from Gnome environment. You might want to install
-'libgtk+-2.0-dev' package.
+'libgtk+-3.0-dev' or 'libgtk+-2.0-dev' package.
 
 WARNING
+		return;
+	}
+	if ( $^O eq 'darwin') {
+		printlog "without X11... ";
+		$DEFINES{WITH_GTK2_NONX11} = 1 unless compile( "#include <gdk/gdkx.h>\nint main() { return 0; }\n");
+	}
+	printlog "yes\n";
+	$DEFINES{WITH_GTK} = $use_gtk3 ? 3 : 2;
+	$cmd_options{$use_gtk3 ? 'WITH_GTK3' : 'WITH_GTK2'} = 1;
 }
 
 sub setup_x11_extension
@@ -1533,7 +1553,7 @@ sub setup_xlibs
 
 	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
 	setup_iconv() if $cmd_options{WITH_ICONV};
-	setup_gtk() if $cmd_options{WITH_GTK2};
+	setup_gtk() if $cmd_options{WITH_GTK2} || $cmd_options{WITH_GTK3};
 	setup_x11_extension($_) for qw(xrandr xcomposite);
 
 	if ( $use_pkgconfig ) {
@@ -1552,6 +1572,7 @@ sub setup_xlibs
 	printlog "Using Xft library\n" if $cmd_options{WITH_XFT};
 	printlog "Using iconv library\n" if $cmd_options{WITH_ICONV};
 	printlog "Using gtk2 library\n" if $cmd_options{WITH_GTK2};
+	printlog "Using gtk3 library\n" if $cmd_options{WITH_GTK3};
 	printlog "Using Xrandr library\n" if $DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H};
 }
 

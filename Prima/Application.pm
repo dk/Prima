@@ -584,7 +584,7 @@ user interface used in the system:
 	gui::PM  
 	gui::Windows
 	gui::XLib 
-	gui::GTK2
+	gui::GTK
 
 =item guiDescription
 

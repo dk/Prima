@@ -1,8 +1,8 @@
 use Prima::Utils;
 
-return 1 if gui::GTK2 != Prima::Utils::get_gui;
+return 1 if gui::GTK != Prima::Utils::get_gui;
 
-package Prima::sys::gtk2::FileDialog;
+package Prima::sys::gtk::FileDialog;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
 
@@ -205,26 +205,26 @@ sub execute
 	my $self = $_[0];
 
 	DIALOG: while ( 1) {
-		Prima::Application-> sys_action( "gtk2.OpenFile.$_=". $self-> {$_})
+		Prima::Application-> sys_action( "gtk.OpenFile.$_=". $self-> {$_})
 			for qw(multi_select overwrite_prompt show_hidden);
-		Prima::Application-> sys_action( 'gtk2.OpenFile.filters=' . 
+		Prima::Application-> sys_action( 'gtk.OpenFile.filters=' . 
 			join("\0", map { "$$_[0] ($$_[1])\0$$_[1]" } @{$self->{filter}}) . "\0\0");
-		Prima::Application-> sys_action( 'gtk2.OpenFile.filterindex=' . 
+		Prima::Application-> sys_action( 'gtk.OpenFile.filterindex=' . 
 			($self->{filterIndex}));
-		Prima::Application-> sys_action( 'gtk2.OpenFile.directory=' . 
+		Prima::Application-> sys_action( 'gtk.OpenFile.directory=' . 
 			$self->{directory});
-		Prima::Application-> sys_action( 'gtk2.OpenFile.title=' . 
+		Prima::Application-> sys_action( 'gtk.OpenFile.title=' . 
 			(defined $self->{text} ? $self->{text} : ''));
-		my $ret = Prima::Application-> sys_action( 'gtk2.OpenFile.'.
+		my $ret = Prima::Application-> sys_action( 'gtk.OpenFile.'.
 			($self->{openMode}?'open':'save'));
 		if ( !defined $ret) {
 			$self-> cancel;
 			return wantarray ? () : undef;
 		}
-		$self-> {directory}   = Prima::Application-> sys_action( 'gtk2.OpenFile.directory');
+		$self-> {directory}   = Prima::Application-> sys_action( 'gtk.OpenFile.directory');
 		$self-> {directory}  .= '/' unless $self-> {directory} =~ /\/$/;
 		$self-> {fileName}    = $ret;
-		$self-> {filterIndex} = Prima::Application-> sys_action( 'gtk2.OpenFile.filterindex');
+		$self-> {filterIndex} = Prima::Application-> sys_action( 'gtk.OpenFile.filterindex');
 
 		# emulate some flags now
 		if ( $self-> {pathMustExist}) {
@@ -279,13 +279,13 @@ sub execute
 	return $self-> fileName;
 }
 
-package Prima::sys::gtk2::OpenDialog;
+package Prima::sys::gtk::OpenDialog;
 use vars qw(@ISA);
-@ISA = qw(Prima::sys::gtk2::FileDialog);
+@ISA = qw(Prima::sys::gtk::FileDialog);
 
-package Prima::sys::gtk2::SaveDialog;
+package Prima::sys::gtk::SaveDialog;
 use vars qw(@ISA);
-@ISA = qw(Prima::sys::gtk2::FileDialog);
+@ISA = qw(Prima::sys::gtk::FileDialog);
 
 sub profile_default
 {
@@ -299,13 +299,13 @@ sub profile_default
 
 =head1 NAME
 
-Prima::sys::gtk2::FileDialog - GTK2 file system dialogs.
+Prima::sys::gtk::FileDialog - GTK file system dialogs.
 
 =head1 DESCRIPTION 
 
 The module mimics Prima file dialog classes C<Prima::OpenDialog> and
 C<Prima::SaveDialog>, defined in L<Prima::FileDialog>. The class names
-registered in the module are the same, but in C<Prima::sys::gtk2> namespace.
+registered in the module are the same, but in C<Prima::sys::gtk> namespace.
 
 =head1 AUTHOR
 

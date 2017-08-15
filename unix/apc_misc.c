@@ -1245,9 +1245,9 @@ apc_system_action( const char *s)
 				snprintf( buf, sizeof(buf), "%d %d %d %d", r.left, r.bottom, r.right, r.top) < sizeof(buf))
 				return duplicate_string( buf);
 			return duplicate_string("");
-		} else if ( strncmp( s, "gtk2.OpenFile.", 14) == 0) {
+		} else if ( strncmp( s, "gtk.OpenFile.", 13) == 0) {
 			s += 14;
-#ifdef WITH_GTK2
+#ifdef WITH_GTK
 			if ( guts. use_gtk ) 
 				return prima_gtk_openfile(( char*) s);
 #endif

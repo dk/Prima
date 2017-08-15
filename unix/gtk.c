@@ -6,7 +6,7 @@
 
 #include "unix/guts.h"
 
-#ifdef WITH_GTK2
+#ifdef WITH_GTK
 
 #undef GT
 
@@ -14,7 +14,7 @@
 
 #define Window  XWindow
 
-#ifndef WITH_GTK2_NONX11
+#ifndef WITH_GTK_NONX11
 #include <gdk/gdkx.h>
 #endif
 #include <gtk/gtk.h>
@@ -39,6 +39,8 @@ gdk_color(GdkColor * c)
 {
 		return ((c->red >> 8) << 16) | ((c->green >> 8) << 8) | (c->blue >> 8);
 }
+
+#if GTK_MAJOR_VERSION == 2 
 
 typedef struct {
 		GType (*func)(void);
@@ -72,6 +74,8 @@ static GTFStruct widget_types[] = {
 };
 #undef GT
 
+#endif
+
 Display*
 prima_gtk_init(void)
 {
@@ -86,7 +90,7 @@ prima_gtk_init(void)
 	case -1:
 		return NULL;
 	case 1:
-#ifdef WITH_GTK2_NONX11
+#ifdef WITH_GTK_NONX11
 		{
 		}
 		return (void*)1;
@@ -95,7 +99,7 @@ prima_gtk_init(void)
 #endif
 	}
 
-#ifdef WITH_GTK2_NONX11
+#ifdef WITH_GTK_NONX11
 	{
 		char * display_str = getenv("DISPLAY");
 		if ( display_str ) {
@@ -116,7 +120,7 @@ prima_gtk_init(void)
 	} else {
 		gtk_initialized = 1;
 		XSetErrorHandler( guts.main_error_handler );
-#ifdef WITH_GTK2_NONX11
+#ifdef WITH_GTK_NONX11
 		ret = (void*)1;
 #else
 		ret = gdk_x11_display_get_xdisplay(display);
@@ -125,6 +129,7 @@ prima_gtk_init(void)
 
 	settings  = gtk_settings_get_default();
 	stdcolors = prima_standard_colors();
+#if GTK_MAJOR_VERSION == 2 
 	for ( i = 0; i < sizeof(widget_types)/sizeof(GTFStruct); i++) {
 		GTFStruct * s = widget_types + i;
 		Color     * c = stdcolors[ s-> prima_class >> 16 ]; 
@@ -192,6 +197,7 @@ prima_gtk_init(void)
 #define DEBUG_FONT(font) f->height,f->width,f->size,f->name,f->encoding
 		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", s->name, DEBUG_FONT(f));
 	}
+#endif
 
 	return ret;
 }
@@ -210,7 +216,7 @@ prima_gtk_done(void)
 	return true;
 }
 
-#ifndef WITH_GTK2_NONX11
+#ifndef WITH_GTK_NONX11
 static void
 set_transient_for(void)
 {
@@ -219,7 +225,7 @@ set_transient_for(void)
 	if ( toplevel ) {
 		GdkWindow * g = NULL;
 
-#if GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 14
+#if GTK_MAJOR_VERSION == 3 || (GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 14)
 		g = gtk_widget_get_window(GTK_WIDGET(gtk_dialog));
 #else
 		g = gtk_dialog->window;
@@ -240,7 +246,7 @@ do_events(gpointer data)
 	int* stage = ( int*) data;
 	if ( gtk_dialog != NULL && !*stage ) {
 		*stage = 1;
-#ifdef WITH_GTK2_NONX11
+#ifdef WITH_GTK_NONX11
 		gtk_window_present(GTK_WINDOW(gtk_dialog));
 #else
 		set_transient_for();
@@ -268,7 +274,7 @@ gtk_openfile( Bool open)
 		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 		NULL);
-#ifdef WITH_GTK2_NONX11
+#ifdef WITH_GTK_NONX11
 	gtk_window_set_position( GTK_WINDOW(gtk_dialog), GTK_WIN_POS_CENTER);
 #endif
 
@@ -276,7 +282,7 @@ gtk_openfile( Bool open)
 	if (open)
 		gtk_file_chooser_set_select_multiple( GTK_FILE_CHOOSER (gtk_dialog), gtk_select_multiple);
 
-#if GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 8
+#if GTK_MAJOR_VERSION == 3 || (GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 8)
 	gtk_file_chooser_set_do_overwrite_confirmation( GTK_FILE_CHOOSER (gtk_dialog), gtk_overwrite_prompt);
 	gtk_file_chooser_set_show_hidden( GTK_FILE_CHOOSER (gtk_dialog), gtk_show_hidden_files);
 #endif
@@ -499,7 +505,7 @@ prima_gtk_openfile( char * params)
 			gtk_dialog_title[255] = 0;
 		}
 	} else {
-		warn("gtk2.OpenFile: Unknown function %s", params);
+		warn("gtk.OpenFile: Unknown function %s", params);
 	}
 
 	return NULL;

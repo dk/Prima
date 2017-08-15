@@ -1310,7 +1310,7 @@ prima_xft_load_font( char * fontName );
 
 #endif
 
-#ifdef WITH_GTK2
+#ifdef WITH_GTK
 extern Display*
 prima_gtk_init( void);
 

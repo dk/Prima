@@ -13,7 +13,7 @@ Debian/Ubuntu
 
 For easy setup, run this:
 
-apt-get install libgtk2.0-dev libtext-bidi-perl libgif-dev libjpeg-dev libtiff-dev libxpm-dev
+apt-get install libgtk3.0-dev libtext-bidi-perl libgif-dev libjpeg-dev libtiff-dev libxpm-dev
 
 Graphic libraries
 -----------------
@@ -80,14 +80,14 @@ If some of the required libraries or include files can not be found,
 INC=-I/some/include and LIBS=-L/some/lib semantics should be used to tell
 Makefile.PL about these. Check ExtUtils::MakeMaker for more.
 
-GTK2
-----
+GTK3/GTK2
+---------
 
-It is recommended to build Prima with GTK2 on X11 installations,
+It is recommended to build Prima with GTK3/GTK2 on X11 installations,
 because in that case Prima will use standard GTK fonts, colors, and file dialogs.
 By default Prima tries to build with it, but if you don't want it, run
 
-    perl Makefile.PL WITH_GTK2=0
+    perl Makefile.PL WITH_GTK2=0 WITH_GTK3=0
 
 BINARY DISTRIBUTION INSTALLATION
 ================================
