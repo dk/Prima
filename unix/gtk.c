@@ -40,7 +40,6 @@ gdk_color(GdkColor * c)
 		return ((c->red >> 8) << 16) | ((c->green >> 8) << 8) | (c->blue >> 8);
 }
 
-#if GTK_MAJOR_VERSION == 2 
 
 typedef struct {
 		GType (*func)(void);
@@ -62,18 +61,37 @@ static GTFStruct widget_types[] = {
 		{ GT(entry),        "GtkEditable",       wcEdit        , NULL },  
 		{ GT(entry),        "GtkEntry",          wcInputLine   , NULL },  
 		{ GT(label),        "GtkLabel",          wcLabel       , &guts. default_msg_font },  
-		{ GT(list),         "GtkList",           wcListBox     , NULL },  
 		{ GT(menu),         "GtkMenuItem",       wcMenu        , &guts. default_menu_font },  
 		{ GT(menu_item),    "GtkMenuItem",       wcPopup       , NULL },  
 		{ GT(check_button), "GtkRadioButton",    wcRadio       , NULL },  
 		{ GT(scrollbar),    "GtkScrollBar",      wcScrollBar   , NULL },  
-		{ GT(ruler),        "GtkRuler",          wcSlider      , NULL },  
 		{ GT(widget),       "GtkWidget",         wcWidget      , &guts. default_widget_font },
 		{ GT(window),       "GtkWindow",         wcWindow      , &guts. default_caption_font },  
 		{ GT(widget),       "GtkWidget",         wcApplication , &guts. default_font },  
+#if GTK_MAJOR_VERSION == 2 
+		{ GT(list),         "GtkList",           wcListBox     , NULL },
+		{ GT(ruler),        "GtkRuler",          wcSlider      , NULL },  
+#else
+		{ GT(list_box),     "GtkListBox",        wcListBox     , NULL },
+		{ GT(spin_button),  "GtkSpinButton",     wcSlider      , NULL },  
+#endif
 };
 #undef GT
 
+#if GTK_MAJOR_VERSION == 3
+GdkDisplay *
+my_gdk_display_open_default (void)
+{
+  GdkDisplay *display;
+
+  display = gdk_display_get_default ();
+  if (display)
+    return display;
+
+  display = gdk_display_open (gdk_get_display_arg_name ());
+
+  return display;
+}
 #endif
 
 Display*
@@ -114,7 +132,14 @@ prima_gtk_init(void)
 /* perl bug in 5.20.0, see more at https://rt.perl.org/Ticket/Display.html?id=122105 */
 	gtk_disable_setlocale();
 #endif
-	if ( !gtk_parse_args (&argc, NULL) || (display = gdk_display_open_default_libgtk_only()) == NULL) {
+	if ( !gtk_parse_args (&argc, NULL) || (
+		display = 
+#if GTK_MAJOR_VERSION == 2 
+			gdk_display_open_default_libgtk_only()
+#else
+			my_gdk_display_open_default()
+#endif
+		) == NULL) {
 		gtk_initialized = -1;
 		return false;
 	} else {
@@ -198,7 +223,6 @@ prima_gtk_init(void)
 		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", s->name, DEBUG_FONT(f));
 	}
 #endif
-
 	return ret;
 }
 
@@ -231,7 +255,7 @@ set_transient_for(void)
 		g = gtk_dialog->window;
 #endif
 		if ( g ) {
-			Window w = gdk_x11_drawable_get_xid(g);
+			Window w = GDK_WINDOW_XID(g);
 			if ( w )
 				XSetTransientForHint( DISP, w, PWidget(toplevel)-> handle);
 		}
@@ -244,6 +268,7 @@ static gboolean
 do_events(gpointer data)
 {
 	int* stage = ( int*) data;
+	static struct timeval last_event = {0,0}, t;
 	if ( gtk_dialog != NULL && !*stage ) {
 		*stage = 1;
 #ifdef WITH_GTK_NONX11
@@ -252,7 +277,10 @@ do_events(gpointer data)
 		set_transient_for();
 #endif
 	}
-	prima_one_loop_round( WAIT_NEVER, true);
+	if (( t.tv_sec - last_event.tv_sec) * 1000000 + t.tv_usec - last_event.tv_usec > 10000) {
+		last_event = t;
+		prima_one_loop_round( WAIT_NEVER, true);
+	}
 	return gtk_dialog != NULL;
 }
 
