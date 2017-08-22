@@ -1517,7 +1517,7 @@ WARNING
 	}
 	if ( $^O eq 'darwin') {
 		printlog "without X11... ";
-		$DEFINES{WITH_GTK2_NONX11} = 1 unless compile( "#include <gdk/gdkx.h>\nint main() { return 0; }\n");
+		$DEFINES{WITH_GTK_NONX11} = 1 unless compile( "#include <gdk/gdkx.h>\nint main() { return 0; }\n");
 	}
 	printlog "yes\n";
 	$DEFINES{WITH_GTK} = $use_gtk3 ? 3 : 2;
