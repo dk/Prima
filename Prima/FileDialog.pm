@@ -30,7 +30,7 @@ sub profile_default
 		closedGlyphs   => 1,
 		openedIcon     => undef,
 		closedIcon     => undef,
-		indent         => 12,
+		indent         => 12 * $::application->uiScaling,
 		multiSelect    => 0,
 		showDotDirs    => 1,
 	}
@@ -164,7 +164,7 @@ sub on_drawitem
 		int(($top + $bottom - $iconHeight) / 2+0.5),
 		0, 0,
 		$iconWidth, $iconHeight,
-		$iconWidth, $iconHeight, rop::CopyPut);
+		$iconWidth, $iconHeight, rop::CopyPut) if 1;
 
 	$canvas-> text_out_bidi( $text,
 		$left + 2 + $indent + $self-> {oneSpaceWidth} + $iconWidth,

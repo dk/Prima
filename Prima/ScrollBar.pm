@@ -26,7 +26,7 @@ sub profile_default
 		growMode      => gm::GrowHiX,
 		height        => $stdMetrics[1],
 		min           => 0,
-		minThumbSize  => 21,
+		minThumbSize  => 21 * $::application->uiScaling,
 		max           => 100,
 		pageStep      => 10,
 		partial       => 10,

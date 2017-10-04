@@ -9,6 +9,7 @@ use Prima;
 our %stress = (
 	fs  => undef,
 	dpi => undef,
+	scr => undef,
 );
 
 sub import
@@ -25,8 +26,9 @@ sub import
 
 	unless ( @_ ) {
 		$stress{fs}  = ( 5, 7, 14, 18) [ int(rand(4)) ] ;
+		$stress{scr}  = ( 7, 14, 30, 40) [ int(rand(4)) ] ;
 		$stress{dpi} = ( 48, 96, 192, 288 ) [int(rand(4)) ];
-		warn "** Prima::Stress: fs=$stress{fs} dpi=$stress{dpi}\n";
+		warn "** Prima::Stress: fs=$stress{fs} dpi=$stress{dpi} scr=$stress{scr}\n";
 	}
 
 	Prima::Application::add_startup_notification( sub {
@@ -49,8 +51,17 @@ sub import
 			Prima::Drawable-> font_match( { size => $Prima::Stress::stress{fs} }, {});
 		};
 	}
+	
+	if ( $stress{scr}) {
+		my $gsv = \&Prima::Application::get_system_value;
+		*Prima::Application::get_system_value = sub {
+			my ( undef, $val ) = @_;
+			return $stress{scr} if $val == sv::XScrollbar || $val == sv::YScrollbar;
+			goto $gsv;
+		};
+		*Prima::Application::get_default_scrollbar_metrics = sub { $stress{scr}, $stress{scr} };
+	}
 }
-
 
 1;
 
