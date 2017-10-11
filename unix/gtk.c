@@ -299,8 +299,18 @@ gtk_openfile( Bool open)
 			( open ? "Open File" : "Save File"),
 		NULL,
 		open ? GTK_FILE_CHOOSER_ACTION_OPEN : GTK_FILE_CHOOSER_ACTION_SAVE,
-		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-		GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+#if GTK_MAJOR_VERSION == 3
+		"_Cancel",
+#else
+		GTK_STOCK_CANCEL, 
+#endif		
+		GTK_RESPONSE_CANCEL,
+#if GTK_MAJOR_VERSION == 3
+		"_Open",
+#else
+		GTK_STOCK_OPEN, 
+#endif
+		GTK_RESPONSE_ACCEPT,
 		NULL);
 #ifdef WITH_GTK_NONX11
 	gtk_window_set_position( GTK_WINDOW(gtk_dialog), GTK_WIN_POS_CENTER);
