@@ -494,10 +494,18 @@ $TabbedNotebook-> Notebook-> MyButton >>.
 
 =head2 How to compile a Prima-based module using XS?
 
-Take a look at L<IPA>, L<Prima::OpenGL>, L<Prima::Image::Magick>, L<PDL::PrimaImage>,
+Take a look at L<Prima::IPA>, L<Prima::OpenGL>, L<Prima::Image::Magick>, L<PDL::PrimaImage>,
 and L<PDL::Drawing::Prima> . These modules compile against Prima dynamic module,
 start from there. Note - it's important to include PRIMA_VERSION_BOOTCHECK in the "BOOT:"
 section, to avoid binary incompatibilites, if there should be any.
+
+=head2 How do I generate Prima executables with PAR?
+
+You'll need some files that PAR cannot detect automatically. During the compilation
+phase Makefile.PL creates utils/par.txt file that contains these files. Include them with this
+command:
+
+   pp -A utils/par.txt -o a.out my_prgram
 
 =head1 AUTHOR
 

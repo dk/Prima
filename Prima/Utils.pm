@@ -37,11 +37,13 @@ sub xcolor {
 
 sub find_image
 {
+	print STDERR "find image: @_\n";
 	my $mod = @_ > 1 ? shift : 'Prima';
 	my $name = shift;
 	$name =~ s!::!/!g;
 	$mod =~ s!::!/!g;
 	for (@INC) {
+		print STDERR "? $_/$mod/$name\n";
 		return "$_/$mod/$name" if -f "$_/$mod/$name" && -r _;
 	}
 	return undef;

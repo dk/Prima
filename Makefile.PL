@@ -164,6 +164,7 @@ setup_modules();
 create_codecs_c();
 create_config_h();
 create_config_pm();
+create_par_list();
 setup_files();
 
 sub setup_argv
@@ -1980,6 +1981,19 @@ use vars qw(%Config %Config_inst);
 
 1;
 CONFIG
+	close F;
+}
+
+sub create_par_list
+{
+	open F, ">", "utils/par.txt" or die "Cannot open utils/par.txt:$!";
+	find( sub {
+		return unless -f;
+		return if /\.p[lm]$/i || /^(VB|prima-cfgmaint)$/;
+		my $d = $File::Find::dir;
+		return if $d =~ /examples/;
+		print F "$d/$_\n";
+	}, 'Prima');
 	close F;
 }
 
