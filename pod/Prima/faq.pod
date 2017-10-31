@@ -505,7 +505,7 @@ You'll need some files that PAR cannot detect automatically. During the compilat
 phase Makefile.PL creates utils/par.txt file that contains these files. Include them with this
 command:
 
-   pp -A utils/par.txt -o a.out my_prgram
+   pp -A utils/par.txt -o a.out my_program
 
 =head1 AUTHOR
 
