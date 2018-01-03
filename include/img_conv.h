@@ -1,3 +1,5 @@
+#ifndef _IMG_IMG_CONV_H_
+#define _IMG_IMG_CONV_H_
 #include "Image.h"
 #include <sys/types.h>
 #include <limits.h>
@@ -314,4 +316,6 @@ extern Byte     map_halftone8x8_64 [  64];
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
