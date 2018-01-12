@@ -365,7 +365,7 @@ L<Prima::Clipboard/Unicode>.
 
 =head2 Is there a way to display POD text that comes with my program / package ?
 
-   $::application-> open_help( $0 );
+   $::application-> open_help( "file://$0" );
    $::application-> open_help( 'My::Package/BUGS' );
 
 =head2 How to implement parallel processing?

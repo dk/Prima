@@ -21,7 +21,7 @@ Prima::Menu - pull-down and pop-up menu objects
            ]],
            [],
            [ '~Help' => [
-              [ 'Show help' => sub { $::application-> open_help($0); }],
+              [ 'Show help' => sub { $::application-> open_help("file://$0"); }],
            ]],
         ],
     );

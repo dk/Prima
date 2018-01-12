@@ -37,7 +37,7 @@ my $w = Prima::MainWindow-> create(
 				}],
 			]],
 			[],
-			[ Help => sub { $::application-> open_help($0) } ],
+			[ Help => sub { $::application-> open_help("file://$0") } ],
 		],
 		onClose => sub { $_[0]-> menu-> keys_save( $_[0]-> {iniFile}-> section('Options')) if $_[0]-> {saveOnExit}},
 );
