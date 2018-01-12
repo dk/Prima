@@ -899,6 +899,7 @@ SECTOR
 sub text_out
 {
 	my ( $self, $text, $x, $y) = @_;
+	return $text->text_out($self, $x, $y) if ref $text;
 	return 0 unless $self-> {canDraw} and length $text;
 	$y += $self-> {font}-> {descent} if !$self-> textOutBaseline;
 	( $x, $y) = $self-> pixel2point( $x, $y); 
@@ -1627,6 +1628,7 @@ sub get_font_ranges
 sub get_text_width
 {
 	my ( $self, $text, $addOverhang) = @_;
+	return $text->get_text_width($self, $addOverhang) if ref $text;
 
 	my $i;
 	my $len = length $text;
@@ -1652,6 +1654,7 @@ sub get_text_width
 sub get_text_box
 {
 	my ( $self, $text) = @_;
+	return $text->get_text_box($self) if ref $text;
 	my ( $rmap, $nd) = $self-> get_rmap;
 	my $len = length $text;
 	return [ (0) x 10 ] unless $len; 
