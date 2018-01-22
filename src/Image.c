@@ -202,7 +202,6 @@ Image_stretch( Handle self, int width, int height)
 
 	lineSize = LINE_SIZE( abs( width) , var->type);
 	newData = allocb( lineSize * abs( height));
-	printf("alloc %x: %d\n", newData, lineSize * abs(height));
 	if ( newData == NULL) 
 		croak("Image::stretch: cannot allocate %d bytes", lineSize * abs( height));
 	memset( newData, 0, lineSize * abs( height));
