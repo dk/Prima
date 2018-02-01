@@ -1857,7 +1857,8 @@ perform_pending_paints( void)
 
 	NEXT:
 		unprotect_object(self);
-	}		
+	}
+	list_destroy(&list);
 
 	return events;
 }
