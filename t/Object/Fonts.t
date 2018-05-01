@@ -79,10 +79,14 @@ sub t
 }
 
 my $filter = @ARGV ? qr/$ARGV[0]/ : qr/./;
+my $bad_guys = qr/(
+	Apple\sColor\sEmoji       # fontconfig doesn't support this .ttc, reports crazy numbers and cannot display it
+)/x;
 
 $x = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 8, height => 8);
 my @fonts;
 for my $f ( @{$::application->fonts} ) {
+	next if $f->{name} =~ /$bad_guys/;
 	next unless $f->{name} =~ /$filter/;
 	push @fonts, $f;
 }
