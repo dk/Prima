@@ -13,7 +13,7 @@ Debian/Ubuntu
 
 For easy setup, run this:
 
-apt-get install libgtk3.0-dev libtext-bidi-perl libgif-dev libjpeg-dev libtiff-dev libxpm-dev
+apt-get install libgtk2.0-dev libtext-bidi-perl libgif-dev libjpeg-dev libtiff-dev libxpm-dev
 
 Graphic libraries
 -----------------
