@@ -82,6 +82,18 @@ sub stripes
 	);
 }
 
+sub colors
+{
+	my ( $self, $breadth) = @_;
+
+	my $stripes = $self->stripes($breadth);
+	my @colors;
+	for ( my $i = 0; $i < @$stripes; $i+=2 ) {
+		push @colors, $stripes->[$i] for 1 .. $stripes->[$i+1];
+	}
+	return @colors;
+}
+
 sub map_color
 {
 	my ( $self, $color ) = @_;
@@ -319,6 +331,10 @@ See also: L<bar>, L<stripes> .
 Draws a filled rectangle within (X1,Y1) - (X2,Y2) extents
 
 Context used: fillPattern, rop, rop2
+
+=item colors BREADTH
+
+Returns a list of gradient colors for each step from 1 to BREADTH.
 
 =item ellipse X, Y, DIAM_X, DIAM_Y
 

@@ -131,12 +131,7 @@ sub on_paint
 
 		$canvas->translate($x, $y);
 
-		my $stripes = $canvas->new_gradient( palette => [ $self->color, $self->backColor ] )->stripes(8+1);
-		my @colors;
-		for ( my $i = 0; $i < @$stripes; $i+=2 ) {
-			push @colors, $stripes->[$i] for 1 .. $stripes->[$i+1];
-		}
-
+		my @colors = $canvas->new_gradient( palette => [ $self->color, $self->backColor ] )->colors(8+1);
 		my $fill_spline = sub { 
 			my ( $n, $p ) = @_;
 			$canvas->color( $colors[( $self->{start_angle} + $n) % 8] );
