@@ -144,7 +144,7 @@ programming interfaces.  Run 'podview Prima' or 'perldoc Prima' command to
 start with the main manual page.
 
 Visit http://www.prima.eu.org/ for the recent versions of the toolkit. You can
-use cvs update feature to keep in touch. The mailing list on the toolkit is
+use github.com/dk/Prima to keep in touch. The mailing list on the toolkit is
 available, you can ask questions there. See the Prima homepage for details.
 
 COPYRIGHT
@@ -175,7 +175,6 @@ CREDITS
  - Waldemar Biernacki
  - Andreas Hernitscheck
  - David Mertens
- - Teo Sankaro
  - Gabor Szabo
  - Fabio D'Alfonso
  - Rob "Sisyphus"
