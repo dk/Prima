@@ -711,17 +711,24 @@ Window_borderStyle( Handle self, Bool set, int borderStyle)
 	return nilHandle;
 }
 
+void
+Window_done( Handle self)
+{
+	if ( var-> effects ) sv_free( var->effects);
+	var-> effects = nil;
+	inherited done( self);
+}
+
 SV *
 Window_effects( Handle self, Bool set, SV * effects)
 {
 	if ( !set )
 		return var->effects ? newSVsv(var->effects) : &PL_sv_undef;
 
-	if ( var-> effects ) SvREFCNT_dec( var-> effects );
+	if ( var-> effects ) sv_free( var-> effects );
 	if ( effects ) {
 		if (SvROK( effects) && ( SvTYPE( SvRV( effects)) == SVt_PVHV)) {
-			var-> effects = effects;
-			SvREFCNT_inc( var-> effects );
+			var-> effects = newSVsv(effects);
 			apc_window_set_effects( self, (HV*) SvRV(var-> effects));
 		} else if (!SvROK(effects) || SvTYPE(SvRV(effects)) == SVt_NULL) {
 			var-> effects = NULL;

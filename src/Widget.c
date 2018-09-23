@@ -253,13 +253,13 @@ Widget_update_sys_handle( Handle self, HV * profile)
 void
 Widget_done( Handle self)
 {
-	if ( var-> text ) SvREFCNT_dec( var-> text );
+	if ( var-> text ) sv_free( var->text);
 	var-> text = nil;
 	apc_widget_destroy( self);
-	free( var-> helpContext);
-	if ( var-> hint) SvREFCNT_dec( var-> hint );
-	var-> helpContext = nil;
+	if ( var-> hint ) sv_free( var->hint);
 	var-> hint = nil;
+	free( var-> helpContext);
+	var-> helpContext = nil;
 
 	if ( var-> owner) {
 		Handle * enum_lists = PWidget( var-> owner)-> enum_lists;
@@ -2359,9 +2359,8 @@ Widget_hint( Handle self, Bool set, SV *hint)
 	if ( set) {
 		if ( var-> stage > csFrozen) return nilSV;
 		my-> first_that( self, (void*)hint_notify, (void*)hint);
-		if ( var-> hint ) SvREFCNT_dec( var-> hint );
-		var-> hint = hint;
-		if ( var-> hint ) SvREFCNT_inc( var-> hint );
+		if ( var-> hint ) sv_free( var-> hint );
+		var-> hint = newSVsv( hint);
 		if ( application && (( PApplication) application)-> hintVisible &&
 			(( PApplication) application)-> hintUnder == self)
 		{
@@ -2972,9 +2971,8 @@ Widget_text( Handle self, Bool set, SV *text)
 {
 	if ( set) {
 		if ( var-> stage > csFrozen) return nilSV;
-		if ( var-> text ) SvREFCNT_dec( var-> text );
-		var-> text = text;
-		if ( var-> text ) SvREFCNT_inc( var-> text );
+		if ( var-> text ) sv_free( var-> text );
+		var-> text = newSVsv(text);
 		return nilSV;
 	} else {
 		return newSVsv(var->text);

@@ -34,6 +34,7 @@ object Prima::Window( Prima::Widget)
 	c_only   Bool     can_propagate_key();
 	method   void     cancel();
 	method   void     cleanup();
+	method   void     done();
 	method   void     end_modal();
 	method   int      execute( Handle insertBefore = nilHandle);
 	method   Bool     execute_shared( Handle insertBefore = nilHandle);
