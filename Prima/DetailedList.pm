@@ -473,7 +473,8 @@ header widget.
 
 use Prima::DetailedList;
 
-	my $l = $w-> insert( 'Prima::DetailedList', 
+	use Prima qw(DetailedList Application);
+	my $l = Prima::DetailedList->new(
 		columns => 2,
 		headers => [ 'Column 1', 'Column 2' ],
 		items => [
@@ -482,6 +483,11 @@ use Prima::DetailedList;
 		],
 	);
 	$l-> sort(1);
+	run Prima;
+
+=for podview <img src="detailedlist.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/detailedlist.gif">
 
 =head1 DESCRIPTION
 
