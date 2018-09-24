@@ -2758,12 +2758,16 @@ Prima::Edit - standard text editing widget
 
 =head1 SYNOPSIS
 
-	use Prima::Edit;
-	my $e = Prima::Edit-> create(
+	use Prima qw(Edit Application);
+	my $e = Prima::Edit->new(
 		text         => 'Hello $world',
 		syntaxHilite => 1,
 	);
-	$e-> selection( 1, 1, 1, 2);
+	run Prima;
+
+=for podview <img src="edit.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/edit.gif">
 
 =head1 DESCRIPTION
 
