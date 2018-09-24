@@ -215,8 +215,9 @@ sub Day_Paint
 	$canvas-> color($c);
 	$canvas-> clipRect( 2, 2, $sz[0] - 3, $sz[1] - 3);
 	for ( $i = 0; $i < 7; $i++) {
+		my $tw = $canvas->get_text_width( $owner-> {days}-> [$i] );
 		$canvas-> text_out_bidi( $owner-> {days}-> [$i], 
-			$i * $zs[0] + $self-> {CX3}, $sz[1]-$zs[1]+$zs[3],
+			$i * $zs[0] + ($self->{X} - $tw)/2, $sz[1]-$zs[1]+$zs[3],
 		);
 	}
 
@@ -362,6 +363,7 @@ sub day_reset
 		$self-> get_text_width('28'),
 		$self-> get_text_width( $owner-> {days}-> [0])
 	);
+	$x3 += $x1/2;
 	$y = $self-> font-> height;
 	$self-> end_paint_info;
 	$self-> {X} = $x2 if $self-> {X} < $x2;
@@ -369,7 +371,6 @@ sub day_reset
 	$self-> {Y} = $y if $self-> {Y} < $y;
 	$self-> {CX1} = int(( $self-> {X} - $x1 ) / 2) + 4;
 	$self-> {CX2} = int(( $self-> {X} - $x2 ) / 2) + 4;
-	$self-> {CX3} = int(( $self-> {X} - $x3 ) / 2) + 4;
 	$self-> {CY} = int(( $self-> {Y} - $y ) / 2);
 }
 
@@ -477,15 +478,21 @@ Prima::Calendar - standard calendar widget
 
 =head1 SYNOPSIS
 
-	use Prima::Calendar;
+	use Prima qw(Calendar Application);
 	my $cal = Prima::Calendar-> create(
 		useLocale => 1,
+		size      => [ 150, 150 ],
 		onChange  => sub {
 			print $_[0]-> date_as_string, "\n";
 		},
 	);
 	$cal-> date_from_time( localtime );
 	$cal-> month( 5);
+	run Prima;
+
+=for podview <img src="calendar.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/calendar.gif">
 
 =head1 DESCRIPTION
 
