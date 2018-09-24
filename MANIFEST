@@ -137,6 +137,7 @@ include/unix/guts.h
 include/unix/queue.h
 include/win32/win32guts.h
 pod/prima-gencls.pod
+pod/Prima/buttons.gif
 pod/Prima/Clipboard.pod
 pod/Prima/codecs.pod
 pod/Prima/conversions.gif

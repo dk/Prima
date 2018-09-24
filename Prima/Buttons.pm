@@ -1247,6 +1247,10 @@ Prima::Buttons - button widgets and grouping widgets.
 
 	run Prima;
 
+=for podview <img src="buttons.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/buttons.gif">
+
 =head1 DESCRIPTION
 
 Prima::Buttons provides two separate sets of classes:
