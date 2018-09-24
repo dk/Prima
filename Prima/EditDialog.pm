@@ -256,7 +256,7 @@ to find and replace options selection.
 
 =head1 SYNOPSIS
 
-	use Prima::StdDlg;
+	use Prima qw(StdDlg Application);
 
 	my $dlg = Prima::FindDialog-> create( findStyle => 0);
 	my $res = $dlg-> execute;
@@ -266,6 +266,10 @@ to find and replace options selection.
 		print "all occurences of ", $dlg-> findText, 
 			" is to be replaced by ", $dlg-> replaceText;
 	} 
+
+=for podview <img src="editdlg.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/editdlg.gif">
 
 The C<mb::ChangeAll> constant, one of possible results of C<execute> method, is
 defined in L<Prima::StdDlg> module. Therefore it is recommended to include this
