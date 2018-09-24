@@ -332,11 +332,12 @@ header widget.
 
 =head1 SYNOPSIS
 
-  use Prima::DetailedOutline;
+  use Prima qw(DetailedOutline Application);
 
-  my $l = $w-> insert( 'Prima::DetailedList', 
+  my $l = Prima::DetailedOutline->new(
         columns => 2,
         headers => [ 'Column 1', 'Column 2' ],
+	size    => [200, 100],
         items => [
               [ ['Item 1, Col 1', 'Item 1, Col 2'], [
                     [ ['Item 1-1, Col 1', 'Item 1-1, Col 2'] ],
@@ -350,6 +351,11 @@ header widget.
         ],
   );
   $l-> sort(1);
+  run Prima;
+
+=for podview <img src="detailedoutline.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/detailedoutline.gif">
 
 =head1 DESCRIPTION
 
