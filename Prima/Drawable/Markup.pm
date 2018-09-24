@@ -13,10 +13,14 @@ Prima::Markup - Allow markup in Prima Widgets
 
     use Prima qw(Application Buttons Drawable::Markup);
     Prima::Button->new(
-        ...
-	text   => Prima::Drawable::Markup->new(text => "B<Bold> bU<u>tton"),
+	text   => Prima::Drawable::Markup->new(markup => "B<Bold> bU<u>tton"),
 	hotKey => 'u',
     );
+    run Prima;
+
+=for podview <img src="markup.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/markup.gif">
 
 =head1 DESCRIPTION
 
