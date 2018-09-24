@@ -647,11 +647,17 @@ Prima::ComboBox - standard combo box widget
 
 =head1 SYNOPSIS
 
-	use Prima::ComboBox;
+	use Prima qw(Application ComboBox);
 
-	my $combo = Prima::ComboBox-> create( style => cs::DropDown, items => [ 1 .. 10 ]);
+	my $combo = Prima::ComboBox-> new( style => cs::DropDown, items => [ 1 .. 10 ]);
 	$combo-> style( cs::DropDownList );
 	print $combo-> text;
+
+	run Prima;
+
+=for podview <img src="combo.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/combo.gif">
 
 =head1 DESCRIPTION
 
