@@ -1335,11 +1335,18 @@ window class ( see L<Prima::DockManager>.
 
 =head1 SYNOPSIS
 
-	use Prima::MDI;
+	use Prima qw(Application MDI Buttons);
 
-	my $owner = Prima::MDIWindowOwner-> create();
+	my $owner = Prima::MDIWindowOwner-> new;
 	my $mdi   = $owner-> insert( 'Prima::MDI');
 	$mdi-> client-> insert( 'Prima::Button' => centered => 1 );
+
+	run Prima;
+
+=for podview <img src="mdi.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/mdi.gif">
+
 
 =head1 Prima::MDI
 
