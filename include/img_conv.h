@@ -77,6 +77,7 @@ extern void bc_rgb_byte( Byte * source, register Byte * dest, register int count
 extern void bc_rgb_byte_ht( Byte * source, register Byte * dest, register int count, int lineSeqNo);
 extern void bc_rgb_byte_ed( Byte * source, Byte * dest, int count, int * err_buf);
 extern void bc_rgb_byte_op( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * palette, int * err_buf);
+extern void bc_rgb_byte_nop( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * palette);
 extern void bc_rgb_graybyte( Byte * source, register Byte * dest, register int count);
 
 /* bitstroke stretching types */

@@ -1045,7 +1045,29 @@ bc_rgb_byte_op( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * p
 		}
 	} 
 }
-	
+
+/* rgb -> 8bit optimized not dithered */
+void
+bc_rgb_byte_nop( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * palette)
+{
+	while ( count--) {
+		int table = 0, shift = 6, index;
+		while ( 1) {
+			index = (((src->r >> shift) & 3) << 4) +
+				(((src->g >> shift) & 3) << 2) +
+				 ((src->b >> shift) & 3);
+			if ( tree[ table + index] & PAL_REF) {
+				table = (tree[ table + index] & ~PAL_REF) * CELL_SIZE;
+				shift -= 2;
+			} else {
+				*(dest++) = tree[ table + index];
+				break;
+			}
+		}
+		src++;
+	}
+}
+
 /* bitstroke copiers */
 void
 bc_nibble_copy( Byte * source, Byte * dest, unsigned int from, unsigned int width)

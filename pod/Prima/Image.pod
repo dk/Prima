@@ -168,7 +168,7 @@ inside C<end_paint()> call, and reverts it to its previous pixel format.
 
 There are situations, when pixel format must be changed together while
 down-sampling the image. One of four down-sampling methods can be selected -
-normal, 8x8 ordered halftoning, error diffusion, and error diffusion
+no halftoning, 8x8 ordered halftoning, error diffusion, and error diffusion
 combined with optimized palette. These can be set to
 the C<::conversion> property with one of C<ict::XXX> constants.
 When there is no information loss, C<::conversion> property is not used.
@@ -194,7 +194,7 @@ data, but overwrites palette information. A proper call syntax here would be
   );
 
 This call produces also palette pixel mapping.  This syntax is most powerful
-when conversion is set to C<ict::Optimized> ( by default ). It not
+when conversion is set to C<ict::Optimized> ( by default ) and C<ict::None>. It not
 only allows remapping or downsampling to a predefined colors set, but also can
 be used to limit palette size to a particular number, without knowing the actual 
 values of the final color palette. For example, for an 24-bit image,
@@ -381,8 +381,8 @@ See also C<palette>.
 Selects the type of dithering algorithm to be used for pixel down-sampling.
 TYPE is one of C<ict::XXX> constants:
 
-   ict::None            - no dithering
-   ict::Ordered         - 8x8 ordered halftone dithering
+   ict::None            - no dithering, either with static or optimized palette
+   ict::Ordered         - 8x8 ordered halftone dithering with static palette
    ict::ErrorDiffusion  - error diffusion dithering with static palette
    ict::Optimized       - error diffusion dithering with optimized palette
 

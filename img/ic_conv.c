@@ -27,9 +27,9 @@ fill_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSiz
 {
 	Bool do_colormap = 1;
 	if ( palSize_only) { 
-		if ( var-> palSize > *dstPalSize)
+		if ( var-> palSize > *dstPalSize) {
 			cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
-		else if ( *dstPalSize > fillPalSize + var-> palSize) {
+		} else if ( *dstPalSize > fillPalSize + var-> palSize) {
 			memcpy( dstPal, var-> palette, var-> palSize * sizeof(RGBColor));
 			memcpy( dstPal + var-> palSize, fillPalette, fillPalSize * sizeof(RGBColor));
 			memset( dstPal + var-> palSize + fillPalSize, 0, (*dstPalSize - fillPalSize - var-> palSize) * sizeof(RGBColor));
@@ -694,22 +694,59 @@ BC( graybyte, rgb, None)
 BC( rgb, mono, None)
 {
 	dBCARGS;
-	Byte * convBuf = allocb( width * OMP_MAX_THREADS);
 	BCWARN;
-	if ( !convBuf) return;
-	cm_fill_colorref(( PRGBColor) map_RGB_gray, 256, stdmono_palette, 2, colorref);
+	if ( *dstPalSize != 0 || palSize_only ) {
+		RGBColor new_palette[2], *curr_palette;
+		int new_pal_size;
+		U16 * tree;
+		Byte * buf;
+
+		new_pal_size = *dstPalSize;
+		if ( palSize_only ) {
+			if ( !cm_optimized_palette( srcData, srcLine, width, height, new_palette, &new_pal_size))
+				goto DEFAULT;
+			curr_palette = new_palette;
+		} else {
+			curr_palette = dstPal;
+		}
+		if ( !( buf = malloc( width * OMP_MAX_THREADS)))
+			goto DEFAULT;
+		if (!( tree = cm_study_palette( new_palette, new_pal_size))) {
+			free(buf);
+			goto DEFAULT;
+		}
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
 #endif
-	for ( i = 0; i < height; i++)
-	{
-		dBCLOOP;
-		Byte * buf_t = convBuf + width * OMP_THREAD_NUM;
-		bc_rgb_graybyte( srcDataLoop, buf_t, width);
-		bc_byte_mono_cr( buf_t, dstDataLoop, width, colorref);
+		for ( i = 0; i < height; i++) {
+			dBCLOOP;
+			Byte * buf_t = buf + width * OMP_THREAD_NUM;
+			bc_rgb_byte_nop(( RGBColor *) srcDataLoop, buf_t, width, tree, dstPal);
+			bc_byte_mono_cr( buf_t, dstDataLoop, width, map_stdcolorref);
+		}
+		free( tree);
+		free( buf);
+		*dstPalSize = new_pal_size;
+		if ( palSize_only)
+			memcpy( dstPal, new_palette, new_pal_size * 3);
+	} else {
+		Byte * convBuf;
+DEFAULT:
+		if ( !( convBuf = allocb( width * OMP_MAX_THREADS))) return;
+		cm_fill_colorref(( PRGBColor) map_RGB_gray, 256, stdmono_palette, 2, colorref);
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+		for ( i = 0; i < height; i++)
+		{
+			dBCLOOP;
+			Byte * buf_t = convBuf + width * OMP_THREAD_NUM;
+			bc_rgb_graybyte( srcDataLoop, buf_t, width);
+			bc_byte_mono_cr( buf_t, dstDataLoop, width, colorref);
+		}
+		free( convBuf);
+		memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 	}
-	free( convBuf);
-	memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 }
 
 BC( rgb, mono, Ordered)
@@ -781,15 +818,52 @@ BC( rgb, nibble, None)
 {
 	dBCARGS;
 	BCWARN;
-	memcpy( dstPal, cubic_palette16, sizeof( cubic_palette16));
+	if ( *dstPalSize != 0 || palSize_only ) {
+		RGBColor new_palette[16], *curr_palette;
+		int new_pal_size;
+		U16 * tree;
+		Byte * buf;
+
+		new_pal_size = *dstPalSize;
+		if ( palSize_only ) {
+			if ( !cm_optimized_palette( srcData, srcLine, width, height, new_palette, &new_pal_size))
+				goto DEFAULT;
+			curr_palette = new_palette;
+		} else {
+			curr_palette = dstPal;
+		}
+		if ( !( buf = malloc( width * OMP_MAX_THREADS)))
+			goto DEFAULT;
+		if (!( tree = cm_study_palette( new_palette, new_pal_size))) {
+			free(buf);
+			goto DEFAULT;
+		}
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
 #endif
-	for ( i = 0; i < height; i++) {
-		dBCLOOP;
-		bc_rgb_nibble(BCCONVLOOP);
+		for ( i = 0; i < height; i++) {
+			dBCLOOP;
+			Byte * buf_t = buf + width * OMP_THREAD_NUM;
+			bc_rgb_byte_nop(( RGBColor *) srcDataLoop, buf_t, width, tree, dstPal);
+			bc_byte_nibble_cr( buf_t, dstDataLoop, width, map_stdcolorref);
+		}
+		free( tree);
+		free( buf);
+		*dstPalSize = new_pal_size;
+		if ( palSize_only)
+			memcpy( dstPal, new_palette, new_pal_size * 3);
+	} else {
+DEFAULT:
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+		for ( i = 0; i < height; i++) {
+			dBCLOOP;
+			bc_rgb_nibble(BCCONVLOOP);
+		}
+		memcpy( dstPal, cubic_palette16, sizeof( cubic_palette16));
+		*dstPalSize = 16;
 	}
-	*dstPalSize = 16;
 }
 
 BC( rgb, nibble, Ordered)
@@ -862,23 +936,53 @@ BC( rgb, nibble, Optimized)
 	free( buf);
 	EDIFF_DONE;
 	return;
-	
-FAIL:  
+
+FAIL:
 	ic_rgb_nibble_ictErrorDiffusion(BCPARMS);
-} 
+}
 
 BC( rgb, byte, None)
 {
 	dBCARGS;
 	BCWARN;
+
+	if ( *dstPalSize != 0 || palSize_only ) {
+		RGBColor new_palette[256], *curr_palette;
+		int new_pal_size;
+		U16 * tree;
+		new_pal_size = *dstPalSize;
+
+		if ( palSize_only ) {
+			if ( !cm_optimized_palette( srcData, srcLine, width, height, new_palette, &new_pal_size))
+				goto DEFAULT;
+			curr_palette = new_palette;
+		} else {
+			curr_palette = dstPal;
+		}
+		if (!( tree = cm_study_palette( curr_palette, new_pal_size)))
+			goto DEFAULT;
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
 #endif
-	for ( i = 0; i < height; i++) {
-		dBCLOOP;
-		bc_rgb_byte( BCCONVLOOP);
+		for ( i = 0; i < height; i++) {
+			dBCLOOP;
+			bc_rgb_byte_nop(( RGBColor *) srcDataLoop, dstDataLoop, width, tree, dstPal);
+		}
+		free( tree);
+		*dstPalSize = new_pal_size;
+		if ( palSize_only)
+			memcpy( dstPal, new_palette, new_pal_size * 3);
+	} else {
+DEFAULT:
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+		for ( i = 0; i < height; i++) {
+			dBCLOOP;
+			bc_rgb_byte( BCCONVLOOP);
+		}
+		memcpy( dstPal, cubic_palette, (*dstPalSize = 216) * sizeof(RGBColor));
 	}
-	memcpy( dstPal, cubic_palette, (*dstPalSize = 216) * sizeof(RGBColor));
 }
 
 BC( rgb, byte, Ordered)
@@ -940,14 +1044,14 @@ BC( rgb, byte, Optimized)
 	for ( i = 0; i < height; i++) {
 		dBCLOOP;
 		bc_rgb_byte_op(( RGBColor *) srcDataLoop, dstDataLoop, width, tree, dstPal, EDIFF_CONV);
-	}      
+	}
 	free( tree);
 	EDIFF_DONE;
 	return;
-	
-FAIL:  
+
+FAIL:
 	ic_rgb_byte_ictErrorDiffusion(BCPARMS);
-} 
+}
 
 BC( rgb, graybyte, None)
 {
