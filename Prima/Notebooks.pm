@@ -1671,15 +1671,22 @@ these two into a ready-to-use multipage control with interactive navigation.
 
 =head1 SYNOPSIS
 
-	my $nb = Prima::TabbedNotebook-> create(
+	use Prima qw(Notebooks Buttons Application);
+	my $nb = Prima::TabbedNotebook-> new(
 		tabs => [ 'First page', 'Second page', 'Second page' ],
+		size => [ 300, 200 ],
 	);
 	$nb-> insert_to_page( 1, 'Prima::Button' );
-	$nb-> insert_to_page( 2, [
+	$nb-> insert_to_page( 2,
 		[ 'Prima::Button', bottom => 10  ],
 		[ 'Prima::Button', bottom => 150 ],
-	]);
+	);
 	$nb-> Notebook-> backColor( cl::Green );
+	run Prima;
+
+=for podview <img src="notebook.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/notebook.gif">
 
 =head1 Prima::Notebook
 

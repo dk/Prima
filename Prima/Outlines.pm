@@ -2083,16 +2083,19 @@ Prima::Outlines - tree view widgets
 
 =head1 SYNOPSIS
 
-	use Prima::Outlines;
-
+	use Prima qw(Outlines Application);
 	my $outline = Prima::StringOutline-> create(
 		items => [
-			[  'Simple item' ],
-			[[ 'Embedded item ']],
-			[[ 'More embedded items', [ '#1', '#2' ]]],
+			[ 'Simple item' ],
+			[ 'Embedded items', [['#1'], ['#2']]],
 		],
 	);
 	$outline-> expand_all;
+	run Prima;
+
+=for podview <img src="outline.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/outline.gif">
 
 =head1 DESCRIPTION
 

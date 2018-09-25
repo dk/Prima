@@ -1052,6 +1052,16 @@ sub selText    {
 
 Prima::InputLine - standard input line widget
 
+=head2 SYNOPSIS
+
+	use Prima qw(InputLine Application);
+	Prima::InputLine-> new( text => 'Hello world!');
+	run Prima;
+
+=for podview <img src="inputline.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/inputline.gif">
+
 =head1 DESCRIPTION
 
 The class provides basic functionality of an input line,

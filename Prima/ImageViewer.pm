@@ -524,6 +524,19 @@ sub unwatch_load_progress
 
 Prima::ImageViewer - standard image, icon, and bitmap viewer class.
 
+=head2 SYNOPSIS
+
+	use Prima qw(ImageViewer StdBitmap Application);
+	Prima::ImageViewer-> new(
+		image => Prima::StdBitmap::image(0),
+		zoom  => 2.718,
+	);
+	run Prima;
+
+=for podview <img src="imageviewer.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/imageviewer.gif">
+
 =head1 DESCRIPTION
 
 The module contains C<Prima::ImageViewer> class, which provides
