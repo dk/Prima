@@ -387,11 +387,24 @@ is useful for dialog design.
 
 =head1 SYNOPSIS
 
-	my $label = Prima::Label-> create(
+	use Prima qw(Label InputLine Application);
+	my $w = Prima::MainWindow->new;
+	$w->insert( 'Prima::Label',
 		text      => 'Enter ~name:',
-		focusLink => $name_inputline,
+		focusLink => 'InputLine1',
 		alignment => ta::Center,
+		pack => { fill => 'x', side => 'top', pad => 10 },
 	);
+	$w->insert(
+		'Prima::InputLine',
+		text => '',
+		pack => { fill => 'x', side => 'top', pad => 10 },
+	);
+	run Prima;
+
+=for podview <img src="label.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/label.gif">
 
 =head1 API
 
