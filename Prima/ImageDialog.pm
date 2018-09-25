@@ -506,10 +506,15 @@ information.
 
 =head2 SYNOPSIS
 
-	my $dlg = Prima::ImageOpenDialog-> create;
+	use Prima qw(Application ImageDialog);
+	my $dlg = Prima::ImageOpenDialog-> new;
 	my $img = $dlg-> load;
 	return unless $img;
 	print "$_:$img->{extras}->{$_}\n" for sort keys %{$img-> {extras}};
+
+=for podview <img src="imagedlg.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/imagedlg.gif">
 
 =head2 Proprties
 

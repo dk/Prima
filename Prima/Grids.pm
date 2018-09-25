@@ -2356,9 +2356,9 @@ Prima::Grids - grid widgets
 
 =head2 SYNOPSIS
 
-	use Prima::Grids;
+	use Prima qw(Grids Application);
 
-	$grid = Prima::Grid-> create(
+	my $grid = Prima::Grid-> new(
 		cells       => [
 			[qw(1.First 1.Second 1.Third)],
 			[qw(2.First 2.Second 2.Third)],
@@ -2368,6 +2368,11 @@ Prima::Grids - grid widgets
 			print $_[0]-> get_cell_text( $_[0]-> focusedCell), " is selected\n";
 		}
 	);
+	run Prima;
+
+=for podview <img src="grid.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/grid.gif">
 
 =head1 DESCRIPTION
 

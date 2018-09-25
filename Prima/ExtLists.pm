@@ -171,7 +171,7 @@ Prima::ExtLists - extended functionality for list boxes
 
 =head1 SYNOPSIS
 
-	use Prima::ExtLists;
+	use Prima qw(ExtLists Application);
 
 	my $vec = '';
 	vec( $vec, 0, 8) = 0x55;
@@ -179,6 +179,11 @@ Prima::ExtLists - extended functionality for list boxes
 		items  => [1..10],
 		vector => $vec,
 	);
+	run Prima;
+
+=for podview <img src="extlist.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/extlist.gif">
 
 =head1 DESCRIPTION 
 

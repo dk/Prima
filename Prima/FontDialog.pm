@@ -461,11 +461,15 @@ Prima::FontDialog - standard font dialog
 
 =head1 SYNOPSIS
 
-	use Prima::FontDialog;
+	use Prima qw(Application FontDialog);
 	my $f = Prima::FontDialog-> create;
 	return unless $f-> execute == mb::OK;
 	$f = $f-> logFont;
 	print "$_:$f->{$_}\n" for sort keys %$f;
+
+=for podview <img src="fontdlg.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/fontdlg.gif">
 
 =head1 DESCRIPTION
 

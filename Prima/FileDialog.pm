@@ -1651,8 +1651,7 @@ Prima::FileDialog - File system related widgets and dialogs.
 =head1 SYNOPSIS
 
 # open a file
-	use Prima qw(Application);
-	use Prima::StdDlg;
+	use Prima qw(Application StdDlg);
 
 	my $open = Prima::OpenDialog-> new(
 		filter => [
@@ -1671,6 +1670,10 @@ Prima::FileDialog - File system related widgets and dialogs.
 	# open several files
 	$open-> multiSelect(1);
 	print $open-> fileName, " are to be opened\n" if $open-> execute;
+
+=for podview <img src="filedlg.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/filedlg.gif">
 
 =head1 DESCRIPTION 
 
