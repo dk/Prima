@@ -278,7 +278,7 @@ static XBITMAPINFO a8_info_header = {
 	{ {255,255,255,0}, {0,0,0,0}}
 };
 
-static a_info_headers_initialized = false;
+static int a_info_headers_initialized = false;
 
 static XBITMAPINFO * 
 image_alpha_bitmap_header( int type )
