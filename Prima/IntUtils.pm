@@ -182,9 +182,9 @@ sub insert_bone
 sub set_h_scroll
 {
 	my ( $self, $hs) = @_;
-	return if $hs == $self-> {hScroll};
+	return if ($hs ? 1 : 0) == $self-> {hScroll};
 	my $bw = $self-> {borderWidth} || 0;
-	if ( $self-> {hScroll} = $hs) {
+	if ( $hs) {
 		$self-> {hScrollBar} = $self->{scrollBarClass}-> new(
 			owner       => $self,
 			name        => q(HScroll),
@@ -201,6 +201,7 @@ sub set_h_scroll
 			designScale => undef,
 			%{ $self->{hScrollBarProfile} || {} },
 		);
+		$self-> {hScroll} = 1;
 		
 		$self-> setup_indents;
 
@@ -213,6 +214,7 @@ sub set_h_scroll
 			$self-> insert_bone;
 		}
 	} else {
+		$self-> {hScroll} = 0;
 		$self-> setup_indents;
 		$self-> {hScrollBar}-> destroy;
 		
@@ -232,12 +234,12 @@ sub set_h_scroll
 sub set_v_scroll
 {
 	my ( $self, $vs) = @_;
-	return if $vs == $self-> {vScroll};
+	return if ($vs ? 1 : 0) == $self-> {vScroll};
 
 	my $bw = $self-> {borderWidth} || 0;
 	my @size = $self-> size;
 	
-	if ( $self-> {vScroll} = $vs) {
+	if ( $vs) {
 		my $width = exists( $self->{vScrollBarProfile}->{width} ) ? 
 			$self->{vScrollBarProfile}->{width} : 
 			$Prima::ScrollBar::stdMetrics[0];
@@ -254,7 +256,8 @@ sub set_v_scroll
 			designScale => undef,
 			%{ $self->{vScrollBarProfile} || {} },
 		);
-		
+		$self-> {vScroll} = 1;
+
 		$self-> setup_indents;
 
 		if ( $self-> {hScroll}) {
@@ -265,6 +268,7 @@ sub set_v_scroll
 			$self-> insert_bone;
 		}
 	} else {
+		$self-> {vScroll} = 0;
 		$self-> setup_indents;
 		$self-> {vScrollBar}-> destroy;
 		if ( $self-> {hScroll})
