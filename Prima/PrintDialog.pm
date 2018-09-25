@@ -158,9 +158,9 @@ selection process.
 
 =head1 SYNOPSIS
 
-	use Prima::PrintDialog;
+	use Prima qw(PrintDialog Application);
 
-	$dlg = Prima::PrintSetupDialog-> create;
+	my $dlg = Prima::PrintSetupDialog-> new;
 	if ( $dlg-> execute) {
 		my $p = $::application-> get_printer;
 		if ( $p-> begin_doc ) {
@@ -169,6 +169,10 @@ selection process.
 		}
 	}
 	$dlg-> destroy;
+
+=for podview <img src="printdialog.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/printdialog.gif">
 
 =head1 AUTHOR
 

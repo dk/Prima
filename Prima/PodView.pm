@@ -1706,8 +1706,7 @@ Prima::PodView - POD browser widget
 
 =head1 SYNOPSIS
 
-	use Prima qw(Application);
-	use Prima::PodView;
+	use Prima qw(Application PodView);
 
 	my $window = Prima::MainWindow-> create;
 	my $podview = $window-> insert( 'Prima::PodView',
@@ -1718,6 +1717,10 @@ Prima::PodView - POD browser widget
 	$podview-> close_read;
 
 	run Prima;
+
+=for podview <img src="podview.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/podview.gif">
 
 =head1 DESCRIPTION
 

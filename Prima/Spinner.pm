@@ -262,6 +262,10 @@ Prima::Spinner - Show a spinner animation
 
   run Prima;
 
+=for podview <img src="spinner.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/spinner.gif">
+
 =head1 DESCRIPTION
 
 Prima::Spinner provides a simple spinning animation with two designs and the
