@@ -711,7 +711,7 @@ BC( rgb, mono, None)
 		}
 		if ( !( buf = malloc( width * OMP_MAX_THREADS)))
 			goto DEFAULT;
-		if (!( tree = cm_study_palette( new_palette, new_pal_size))) {
+		if (!( tree = cm_study_palette( curr_palette, new_pal_size))) {
 			free(buf);
 			goto DEFAULT;
 		}
@@ -834,7 +834,7 @@ BC( rgb, nibble, None)
 		}
 		if ( !( buf = malloc( width * OMP_MAX_THREADS)))
 			goto DEFAULT;
-		if (!( tree = cm_study_palette( new_palette, new_pal_size))) {
+		if (!( tree = cm_study_palette( curr_palette, new_pal_size))) {
 			free(buf);
 			goto DEFAULT;
 		}
