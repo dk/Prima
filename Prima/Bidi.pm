@@ -444,8 +444,6 @@ Prima::Bidi - helper routines for bi-directional text input and output
 
    '123ספא'
 
-=encoding latin1
-
 or same, for classes
 
    use Prima::Bidi qw(:methods);
