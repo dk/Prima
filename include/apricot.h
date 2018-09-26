@@ -2931,16 +2931,44 @@ IS(MaxIndex)
 END_TABLE(is,UV)
 #undef IS
 
+/* Image conversion types: dithering */
+#define ICTD(const_name) CONSTANT(ictd,const_name)
+START_TABLE(ictd,UV)
+#define    ictdNone               0
+ICTD(None)
+#define    ictdOrdered            1
+ICTD(Ordered)
+#define    ictdErrorDiffusion     2
+ICTD(ErrorDiffusion)
+#define    ictdMask               0x0f
+ICTD(Mask)
+END_TABLE(ictd,UV)
+#undef ICTD
+
+/* Image conversion types: palette optimization */
+#define ICTP(const_name) CONSTANT(ictp,const_name)
+START_TABLE(ictp,UV)
+#define    ictpCubic              0
+ICTP(Cubic)
+#define    ictpRepresentative     0x10
+ICTP(Representative)
+#define    ictpMask               0xf0
+ICTP(Mask)
+END_TABLE(ictp,UV)
+#undef ICTP
+
 /* Image conversion types */
 #define ICT(const_name) CONSTANT(ict,const_name)
 START_TABLE(ict,UV)
-#define    ictNone               0
+#define    ictNone               (ictdNone|ictpCubic)
 ICT(None)
-#define    ictOrdered            1
+#define    ictPosterization      (ictdNone|ictpRepresentative)
+ICT(Posterization)
+#define    ictOrdered            (ictdOrdered|ictpCubic)
 ICT(Ordered)
-#define    ictErrorDiffusion     2
+#define    ictErrorDiffusion     (ictdErrorDiffusion|ictpCubic)
 ICT(ErrorDiffusion)
-#define    ictOptimized          3
+#define    ictOptimized          (ictdErrorDiffusion|ictpRepresentative)
 ICT(Optimized)
 END_TABLE(ict,UV)
 #undef ICT

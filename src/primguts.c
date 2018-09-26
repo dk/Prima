@@ -1242,6 +1242,8 @@ register_constants( void)
 	register_ws_constants();
 	register_sv_constants();
 	register_im_constants();
+	register_ictp_constants();
+	register_ictd_constants();
 	register_ict_constants();
 	register_ist_constants();
 	register_is_constants();

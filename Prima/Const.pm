@@ -68,6 +68,10 @@ package
 package 
     im; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# image types
 package 
+    ictp; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image conversion types: dithering
+package 
+    ictd; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image conversion types: palette optimization
+package 
     ict; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image conversion types
 package 
     is; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Image statistics types

@@ -126,7 +126,7 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 	RGBColor new_palette[256];
 	Byte * new_data = nil;
 	int new_pal_size = 0, new_line_size, new_data_size, want_only_palette_colors = 0;
-	
+
 	if ( var->stage > csFrozen) return;
 
 	want_palette = (!( new_type & imGrayScale)) && ( new_type != imRGB) && (palSize > 0);
@@ -150,6 +150,7 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 		var->type = new_type;
 		return;
 	}
+	if (( var->conversion & ictpMask ) == ictpCubic) want_palette = true;
 	if ( var-> type == new_type && (
 		((new_type != imbpp8 && new_type != imbpp4 && new_type != imbpp1) || !want_palette)
 		)) return;
