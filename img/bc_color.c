@@ -1115,7 +1115,7 @@ bc_rgb_byte_ed( Byte * source, Byte * dest, int count, int * err_buf)
 		*(dest++) = div51[r] * 36 + div51[g] * 6 + div51[b];
 		EDIFF_END_PIXEL_EX( mod51[r], mod51[g], mod51[b]);
 	}   
-}   
+}
 
 /* rgb -> 8bit optimized */
 void
@@ -1129,8 +1129,8 @@ bc_rgb_byte_op( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * p
 		src++;
 		while ( 1) {
 			index = (((r >> shift) & 3) << 4) + 
-					(((g >> shift) & 3) << 2) +
-						((b >> shift) & 3);
+				(((g >> shift) & 3) << 2) +
+				 ((b >> shift) & 3);
 			if ( tree[ table + index] & PAL_REF) {
 				table = (tree[ table + index] & ~PAL_REF) * CELL_SIZE;
 				shift -= 2;

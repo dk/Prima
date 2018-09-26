@@ -47,7 +47,7 @@ ic_raize_palette( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, in
 {
 	Byte * odata = var-> data;
 	int otype = var-> type, dummy_pal_size = 0, oconv = var->conversion;
-	var->conversion = ictPosterization;
+	var->conversion = ictNone;
 	ic_type_convert( self, dstData, var-> palette, dstType, &dummy_pal_size, false);
 	var-> palSize = dummy_pal_size;
 	var-> type = dstType;
@@ -100,7 +100,10 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 			*dstPalSize = 256;
 			break;
 		}
-	} else if (( var->conversion & ictpMask ) == ictpCubic) {
+	} else if (
+		(( var->conversion & ictpMask ) == ictpCubic) &&
+		( orgDstType & imBPP <= srcType & imBPP)
+	) {
 		palSize_only = false;
 		switch( orgDstType & imBPP) {
 		case imbpp1:
@@ -119,12 +122,18 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 	}
 
 	/* no palette conversion, same type, - out */
-	if ( srcType == dstType && (*dstPalSize == 0 || (
-		(srcType != imbpp1) && (srcType != imbpp4) && (srcType != imbpp8)
-	))) {
+	if (
+		srcType == dstType && (
+			*dstPalSize == 0 || (
+				(srcType != imbpp1) &&
+				(srcType != imbpp4) &&
+				(srcType != imbpp8)
+			)
+		)
+	) {
 		memcpy( dstData, var->data, var->dataSize);
 		if (( orgDstType & imGrayScale) == 0) {
-			memcpy( dstPal, var->palette, var->palSize);
+			memcpy( dstPal, var->palette, var->palSize * 3);
 			*dstPalSize = var-> palSize;
 		}
 		return;
@@ -207,6 +216,7 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 				switch ( var->conversion)
 				{
 					case ictNone:
+					case ictPosterization:
 						ic_nibble_nibble_ictNone(BCPARMS);
 						break;
 					case ictOrdered:
@@ -214,8 +224,6 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 						break;
 					case ictErrorDiffusion:
 						ic_nibble_nibble_ictErrorDiffusion(BCPARMS);
-						break;
-					case ictPosterization:
 						break;
 					case ictOptimized:
 						ic_nibble_nibble_ictOptimized(BCPARMS);

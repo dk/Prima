@@ -103,9 +103,7 @@ BC( mono, mono, Optimized)
 	BCWARN;
 
 	FILL_PALETTE( stdmono_palette, 2, 2, nil);
-
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
-
 	EDIFF_INIT;
 	if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
 		EDIFF_DONE;
@@ -775,26 +773,38 @@ BC( rgb, mono, None)
 	memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 }
 
+#define OPTIMIZE_PALETTE(_new_pal_size) optimize_palette(self,palSize_only,dstPal,dstPalSize,_new_pal_size)
+
+static U16*
+optimize_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSize, int new_pal_size)
+{
+	RGBColor new_palette[256];
+	U16 * tree;
+
+	if ( *dstPalSize == 0 || palSize_only) {
+		if ( palSize_only) new_pal_size = *dstPalSize;
+		if ( !cm_optimized_palette( var->data, var->lineSize, var->w, var->h, new_palette, &new_pal_size)) 
+			return NULL;
+	} else
+		memcpy( new_palette, dstPal, ( new_pal_size = *dstPalSize) * sizeof(RGBColor));
+	if (!( tree = cm_study_palette( new_palette, new_pal_size)))
+		return NULL;
+	memcpy( dstPal, new_palette, new_pal_size * 3);
+	*dstPalSize = new_pal_size;
+	return tree;
+}
+
 BC( rgb, mono, Posterization)
 {
 	dBCARGS;
 	BCWARN;
-	RGBColor new_palette[2], *curr_palette;
-	int new_pal_size;
+	int new_pal_size = 2;
 	U16 * tree;
 	Byte * buf;
 
-	new_pal_size = *dstPalSize;
-	if ( palSize_only ) {
-		if ( !cm_optimized_palette( srcData, srcLine, width, height, new_palette, &new_pal_size))
-			goto FAIL;
-		curr_palette = new_palette;
-	} else {
-		curr_palette = dstPal;
-	}
 	if ( !( buf = malloc( width * OMP_MAX_THREADS)))
 		goto FAIL;
-	if (!( tree = cm_study_palette( curr_palette, new_pal_size))) {
+	if ( !( tree = OPTIMIZE_PALETTE(2))) {
 		free(buf);
 		goto FAIL;
 	}
@@ -809,9 +819,6 @@ BC( rgb, mono, Posterization)
 	}
 	free( tree);
 	free( buf);
-	*dstPalSize = new_pal_size;
-	if ( palSize_only)
-		memcpy( dstPal, new_palette, new_pal_size * 3);
 	return;
 
 FAIL:
@@ -857,12 +864,14 @@ BC( rgb, mono, Optimized)
 	dEDIFF_ARGS;
 	BCWARN;
 
-	if ( palSize_only) goto FAIL;
-	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
 	EDIFF_INIT;
-	if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
+	if ( !( buf = malloc( width * OMP_MAX_THREADS))) {
 		EDIFF_DONE;
-		free( buf);
+		goto FAIL;
+	}
+	if ( !( tree = OPTIMIZE_PALETTE(2))) {
+		EDIFF_DONE;
+		free(buf);
 		goto FAIL;
 	}
 #ifdef HAVE_OPENMP
@@ -902,22 +911,12 @@ BC( rgb, nibble, Posterization)
 {
 	dBCARGS;
 	BCWARN;
-	RGBColor new_palette[16], *curr_palette;
-	int new_pal_size;
 	U16 * tree;
 	Byte * buf;
-
-	new_pal_size = *dstPalSize;
-	if ( palSize_only ) {
-		if ( !cm_optimized_palette( srcData, srcLine, width, height, new_palette, &new_pal_size))
-			goto FAIL;
-		curr_palette = new_palette;
-	} else {
-		curr_palette = dstPal;
-	}
-	if ( !( buf = malloc( width * OMP_MAX_THREADS)))
+	
+	if ( !( buf = malloc( width * OMP_MAX_THREADS))) 
 		goto FAIL;
-	if (!( tree = cm_study_palette( curr_palette, new_pal_size))) {
+	if ( !( tree = OPTIMIZE_PALETTE(16))) {
 		free(buf);
 		goto FAIL;
 	}
@@ -932,9 +931,6 @@ BC( rgb, nibble, Posterization)
 	}
 	free( tree);
 	free( buf);
-	*dstPalSize = new_pal_size;
-	if ( palSize_only)
-		memcpy( dstPal, new_palette, new_pal_size * 3);
 	return;
 
 FAIL:
@@ -977,27 +973,18 @@ BC( rgb, nibble, Optimized)
 	dBCARGS;
 	U16 * tree;
 	Byte * buf;
-	RGBColor new_palette[16];
-	int new_pal_size = 16;
 	dEDIFF_ARGS;
-	BCWARN;
 
-	if ( *dstPalSize == 0 || palSize_only) {
-		if ( palSize_only) new_pal_size = *dstPalSize;
-		if ( !cm_optimized_palette( srcData, srcLine, width, height, new_palette, &new_pal_size)) 
-			goto FAIL;
-	} else
-		memcpy( new_palette, dstPal, ( new_pal_size = *dstPalSize) * sizeof(RGBColor));
-
-	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
 	EDIFF_INIT;
-	if (!( tree = cm_study_palette( new_palette, new_pal_size))) {
+	if ( !( buf = malloc( width * OMP_MAX_THREADS))) {
 		EDIFF_DONE;
-		free( buf);
 		goto FAIL;
 	}
-	memcpy( dstPal, new_palette, new_pal_size * 3);
-	*dstPalSize = new_pal_size;
+	if ( !( tree = OPTIMIZE_PALETTE(16))) {
+		EDIFF_DONE;
+		free(buf);
+		goto FAIL;
+	}
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
 #endif
@@ -1034,20 +1021,10 @@ BC( rgb, byte, None)
 BC( rgb, byte, Posterization)
 {
 	dBCARGS;
-	RGBColor new_palette[256], *curr_palette;
-	int new_pal_size;
 	U16 * tree;
 
 	BCWARN;
-	new_pal_size = *dstPalSize;
-	if ( palSize_only ) {
-		if ( !cm_optimized_palette( srcData, srcLine, width, height, new_palette, &new_pal_size))
-			goto FAIL;
-		curr_palette = new_palette;
-	} else {
-		curr_palette = dstPal;
-	}
-	if (!( tree = cm_study_palette( curr_palette, new_pal_size)))
+	if ( !( tree = OPTIMIZE_PALETTE(256)))
 		goto FAIL;
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
@@ -1057,9 +1034,6 @@ BC( rgb, byte, Posterization)
 		bc_rgb_byte_nop(( RGBColor *) srcDataLoop, dstDataLoop, width, tree, dstPal);
 	}
 	free( tree);
-	*dstPalSize = new_pal_size;
-	if ( palSize_only)
-		memcpy( dstPal, new_palette, new_pal_size * 3);
 
 FAIL:
 	ic_rgb_byte_ictNone( BCPARMS );
@@ -1100,24 +1074,14 @@ BC( rgb, byte, Optimized)
 {
 	dBCARGS;
 	U16 * tree;
-	RGBColor new_palette[768];
-	int new_pal_size = 256;
 	dEDIFF_ARGS;
 	BCWARN;
-	if ( *dstPalSize == 0 || palSize_only) {
-		if ( palSize_only) new_pal_size = *dstPalSize;
-		if ( !cm_optimized_palette( srcData, srcLine, width, height, new_palette, &new_pal_size)) 
-			goto FAIL;
-	} else
-		memcpy( new_palette, dstPal, ( new_pal_size = *dstPalSize) * sizeof(RGBColor));
 
 	EDIFF_INIT;
-	if (!( tree = cm_study_palette( new_palette, new_pal_size))) {
+	if ( !( tree = OPTIMIZE_PALETTE(256))) {
 		EDIFF_DONE;
 		goto FAIL;
 	}
-	memcpy( dstPal, new_palette, new_pal_size * 3);
-	*dstPalSize = new_pal_size;
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
 #endif

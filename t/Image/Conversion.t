@@ -19,7 +19,7 @@ my @types = (
 );
 
 my @filters;
-for ( keys %ict:: ) { 
+for ( sort keys %ict:: ) { 
 	next if /^(AUTOLOAD|Constant)$/i;
 	push @filters, [ $_, &{$ict::{$_}}() ];
 }
