@@ -37,6 +37,8 @@ extern Byte cm_nearest_color( RGBColor color, int palSize, PRGBColor palette);
 extern void cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette, int toColorCount, Byte * colorref);
 extern U16* cm_study_palette( RGBColor * palette, int pal_size);
 extern Bool cm_optimized_palette( Byte * data, int lineSize, int width, int height, RGBColor * palette, int * max_pal_size);
+extern void cm_reduce_palette4( Byte * srcData, int srcLine, int width, int height, RGBColor * srcPalette, int srcPalSize, RGBColor * dstPalette, int * dstPalSize);
+extern void cm_reduce_palette8( Byte * srcData, int srcLine, int width, int height, RGBColor * srcPalette, int srcPalSize, RGBColor * dstPalette, int * dstPalSize);
 
 /* bitstroke conversion routines */
 extern void bc_mono_nibble( register Byte * source, register Byte * dest, register int count);
@@ -65,6 +67,7 @@ extern void bc_byte_byte_ht( register Byte * source, Byte * dest, register int c
 extern void bc_byte_byte_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int * err_buf);
 extern void bc_byte_cr( register Byte * source, register Byte * dest, register int count, register Byte * colorref);
 extern void bc_byte_op( Byte * source, Byte * dest, int count, U16 * tree, PRGBColor src_palette, PRGBColor dst_palette, int * err_buf);
+extern void bc_byte_nop( Byte * source, Byte * dest, int count, U16 * tree, PRGBColor src_palette, PRGBColor dst_palette);
 extern void bc_byte_graybyte( register Byte * source, register Byte * dest, register int count, register PRGBColor palette);
 extern void bc_byte_rgb( register Byte * source, Byte * dest, register int count, register PRGBColor palette);
 extern void bc_graybyte_mono_ht( register Byte * source, register Byte * dest, register int count, int lineSeqNo);
@@ -153,6 +156,7 @@ extern BC(nibble,mono,Ordered);
 extern BC(nibble,mono,ErrorDiffusion);
 extern BC(nibble,mono,Optimized);
 extern BC(nibble,nibble,None);
+extern BC(nibble,nibble,Posterization);
 extern BC(nibble,nibble,Ordered);
 extern BC(nibble,nibble,ErrorDiffusion);
 extern BC(nibble,nibble,Optimized);
@@ -164,11 +168,13 @@ extern BC(byte,mono,Ordered);
 extern BC(byte,mono,ErrorDiffusion);
 extern BC(byte,mono,Optimized);
 extern BC(byte,nibble,None);
+extern BC(byte,nibble,Posterization);
 extern BC(byte,nibble,Ordered);
 extern BC(byte,nibble,ErrorDiffusion);
 extern BC(byte,nibble,Optimized);
 extern BC(byte,byte,None);
 extern BC(byte,byte,Ordered);
+extern BC(byte,byte,Posterization);
 extern BC(byte,byte,ErrorDiffusion);
 extern BC(byte,graybyte,None);
 extern BC(byte,rgb,None);

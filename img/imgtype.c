@@ -216,8 +216,10 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 				switch ( var->conversion)
 				{
 					case ictNone:
-					case ictPosterization:
 						ic_nibble_nibble_ictNone(BCPARMS);
+						break;
+					case ictPosterization:
+						ic_nibble_nibble_ictPosterization(BCPARMS);
 						break;
 					case ictOrdered:
 						ic_nibble_nibble_ictOrdered(BCPARMS);
@@ -277,8 +279,10 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 				switch ( var->conversion)
 				{
 					case ictNone:
-					case ictPosterization:
 						ic_byte_nibble_ictNone(BCPARMS);
+						break;
+					case ictPosterization:
+						ic_byte_nibble_ictPosterization(BCPARMS);
 						break;
 					case ictOrdered:
 						ic_byte_nibble_ictOrdered(BCPARMS);
@@ -295,8 +299,10 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 				switch ( var->conversion)
 				{
 					case ictNone:
-					case ictPosterization:
 						ic_byte_byte_ictNone(BCPARMS);
+						break;
+					case ictPosterization:
+						ic_byte_byte_ictPosterization(BCPARMS);
 						break;
 					case ictOrdered:
 						ic_byte_byte_ictOrdered(BCPARMS);
@@ -350,8 +356,10 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 				switch ( var->conversion)
 				{
 					case ictNone:
-					case ictPosterization:
 						ic_byte_nibble_ictNone(BCPARMS);
+						break;
+					case ictPosterization:
+						ic_byte_nibble_ictPosterization(BCPARMS);
 						break;
 					case ictOrdered:
 						ic_graybyte_nibble_ictOrdered(BCPARMS);
@@ -368,8 +376,10 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 				switch ( var->conversion)
 				{
 					case ictNone:
-					case ictPosterization:
 						ic_byte_byte_ictNone(BCPARMS);
+						break;
+					case ictPosterization:
+						ic_byte_byte_ictPosterization(BCPARMS);
 						break;
 					case ictOrdered:
 						ic_byte_byte_ictOrdered(BCPARMS);

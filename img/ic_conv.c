@@ -56,6 +56,50 @@ fill_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSiz
 	}
 }
 
+#define OPTIMIZE_PALETTE_INDEXED optimize_palette_indexed(self,palSize_only,dstPal,dstPalSize)
+
+static U16*
+optimize_palette_indexed( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSize)
+{
+	if ( *dstPalSize == 0 || palSize_only) {
+		int lim;
+		if (( var->type & imBPP) == 4) {
+			lim = palSize_only ? *dstPalSize : 16;
+			cm_reduce_palette4( var->data, var->lineSize, var->w, var->h, var->palette, var->palSize, dstPal, dstPalSize);
+		} else {
+			lim = palSize_only ? *dstPalSize : 256;
+			cm_reduce_palette8( var->data, var->lineSize, var->w, var->h, var->palette, var->palSize, dstPal, dstPalSize);
+		}
+		if ( *dstPalSize > lim) {
+			cm_squeeze_palette( dstPal, *dstPalSize, dstPal, lim);
+			*dstPalSize = lim;
+		}
+	}
+
+	return cm_study_palette( dstPal, *dstPalSize);
+}
+
+#define OPTIMIZE_PALETTE_RGB(_new_pal_size) optimize_palette_rgb(self,palSize_only,dstPal,dstPalSize,_new_pal_size)
+
+static U16*
+optimize_palette_rgb( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSize, int new_pal_size)
+{
+	RGBColor new_palette[256];
+	U16 * tree;
+
+	if ( *dstPalSize == 0 || palSize_only) {
+		if ( palSize_only) new_pal_size = *dstPalSize;
+		if ( !cm_optimized_palette( var->data, var->lineSize, var->w, var->h, new_palette, &new_pal_size)) 
+			return NULL;
+	} else
+		memcpy( new_palette, dstPal, ( new_pal_size = *dstPalSize) * sizeof(RGBColor));
+	if (!( tree = cm_study_palette( new_palette, new_pal_size)))
+		return NULL;
+	memcpy( dstPal, new_palette, new_pal_size * 3);
+	*dstPalSize = new_pal_size;
+	return tree;
+}
+
 BC( mono, mono, None)
 {
 	int ws, mask;
@@ -283,6 +327,34 @@ BC( nibble, nibble, None)
 	}
 }
 
+BC( nibble, nibble, Posterization)
+{
+	dBCARGS;
+	U16 * tree;
+	Byte * buf;
+	BCWARN;
+
+	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED))
+		goto FAIL;
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+	for ( i = 0; i < height; i++) {
+		dBCLOOP;
+		Byte * buf_t = buf + width * OMP_THREAD_NUM;
+		bc_nibble_byte( srcDataLoop, buf_t, width); 
+		bc_byte_nop( buf_t, buf_t, width, tree, var-> palette, dstPal);
+		bc_byte_nibble_cr( buf_t, dstDataLoop, width, map_stdcolorref); 
+	}
+	free( tree);
+	free( buf);
+	return;
+
+FAIL:
+	ic_nibble_nibble_ictNone(BCPARMS);
+}
+
 BC( nibble, nibble, Ordered)
 {
 	dBCARGS;
@@ -322,14 +394,10 @@ BC( nibble, nibble, Optimized)
 	dEDIFF_ARGS;
 	BCWARN;
 
-	FILL_PALETTE( cubic_palette16, 16, 16, nil);
-
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
-
 	EDIFF_INIT;
-	if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED)) {
 		EDIFF_DONE;
-		free( buf);
 		goto FAIL;
 	}
 #ifdef HAVE_OPENMP
@@ -486,6 +554,35 @@ BC( byte, nibble, None)
 	}
 }
 
+BC( byte, nibble, Posterization)
+{
+	dBCARGS;
+	U16 * tree;
+	Byte * buf;
+	BCWARN;
+
+	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED)) {
+		free( buf);
+		goto FAIL;
+	}
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+	for ( i = 0; i < height; i++) {
+		dBCLOOP;
+		Byte * buf_t = buf + width * OMP_THREAD_NUM;
+		bc_byte_nop( srcDataLoop, buf_t, width, tree, var-> palette, dstPal);
+		bc_byte_nibble_cr( buf_t, dstDataLoop, width, map_stdcolorref);
+	}
+	free( tree);
+	free( buf);
+	return;
+
+FAIL:
+	ic_byte_nibble_ictErrorDiffusion(BCPARMS);
+}
+
 BC( byte, nibble, Ordered)
 {
 	dBCARGS;
@@ -521,35 +618,13 @@ BC( byte, nibble, Optimized)
 {
 	dBCARGS;
 	U16 * tree;
-	Byte * buf, hist[256];
-	RGBColor new_palette[256];
-	int j, new_pal_size = 0;
+	Byte * buf;
 	dEDIFF_ARGS;
 	BCWARN;
 
-	if ( *dstPalSize == 0 || palSize_only) {
-		int lim = palSize_only ? *dstPalSize : 16;
-		memset( hist, 0, sizeof( hist));
-		for ( i = 0; i < height; i++) {
-			Byte * d = srcData + srcLine * i;
-			for ( j = 0; j < width; j++, d++) 
-				if ( hist[*d] == 0) {
-					hist[*d] = 1;
-					new_palette[new_pal_size++] = var-> palette[*d];
-					if ( new_pal_size == 256) goto END_HIST_LOOP;
-				}
-		}
-	END_HIST_LOOP:
-		if ( new_pal_size > lim) {
-			cm_squeeze_palette( new_palette, new_pal_size, new_palette, lim);
-			new_pal_size = lim;
-		}
-	} else
-		memcpy( new_palette, dstPal, ( new_pal_size = *dstPalSize) * sizeof(RGBColor));
-
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
 	EDIFF_INIT;
-	if (!( tree = cm_study_palette( new_palette, new_pal_size))) {
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED)) {
 		EDIFF_DONE;
 		free( buf);
 		goto FAIL;
@@ -560,11 +635,9 @@ BC( byte, nibble, Optimized)
 	for ( i = 0; i < height; i++) {
 		dBCLOOP;
 		Byte * buf_t = buf + width * OMP_THREAD_NUM;
-		bc_byte_op( srcDataLoop, buf_t, width, tree, var-> palette, new_palette, EDIFF_CONV);
+		bc_byte_op( srcDataLoop, buf_t, width, tree, var-> palette, dstPal, EDIFF_CONV);
 		bc_byte_nibble_cr( buf_t, dstDataLoop, width, map_stdcolorref);
 	}
-	memcpy( dstPal, new_palette, new_pal_size * sizeof(RGBColor));
-	*dstPalSize = new_pal_size;
 	free( tree);
 	free( buf);
 	EDIFF_DONE;
@@ -584,6 +657,34 @@ BC( byte, byte, None)
 		for ( j = 0; j < width; j++)
 			dstData[j] = colorref[srcData[j]];
 	}
+}
+
+BC( byte, byte, Posterization)
+{
+	dBCARGS;
+	U16 * tree;
+	dEDIFF_ARGS;
+	BCWARN;
+
+
+	EDIFF_INIT;
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED)) {
+		EDIFF_DONE;
+		goto FAIL;
+	}
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+	for ( i = 0; i < height; i++) {
+		dBCLOOP;
+		bc_byte_nop( srcDataLoop, dstDataLoop, width, tree, var-> palette, dstPal);
+	}
+	free( tree);
+	EDIFF_DONE;
+	return;
+
+FAIL:
+	ic_byte_byte_ictNone(BCPARMS);
 }
 
 BC( byte, byte, Ordered)
@@ -624,10 +725,9 @@ BC( byte, byte, Optimized)
 	dEDIFF_ARGS;
 	BCWARN;
 
-	FILL_PALETTE( cubic_palette, 216, 256, nil);
 
 	EDIFF_INIT;
-	if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED)) {
 		EDIFF_DONE;
 		goto FAIL;
 	}
@@ -773,27 +873,6 @@ BC( rgb, mono, None)
 	memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof(RGBColor));
 }
 
-#define OPTIMIZE_PALETTE(_new_pal_size) optimize_palette(self,palSize_only,dstPal,dstPalSize,_new_pal_size)
-
-static U16*
-optimize_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSize, int new_pal_size)
-{
-	RGBColor new_palette[256];
-	U16 * tree;
-
-	if ( *dstPalSize == 0 || palSize_only) {
-		if ( palSize_only) new_pal_size = *dstPalSize;
-		if ( !cm_optimized_palette( var->data, var->lineSize, var->w, var->h, new_palette, &new_pal_size)) 
-			return NULL;
-	} else
-		memcpy( new_palette, dstPal, ( new_pal_size = *dstPalSize) * sizeof(RGBColor));
-	if (!( tree = cm_study_palette( new_palette, new_pal_size)))
-		return NULL;
-	memcpy( dstPal, new_palette, new_pal_size * 3);
-	*dstPalSize = new_pal_size;
-	return tree;
-}
-
 BC( rgb, mono, Posterization)
 {
 	dBCARGS;
@@ -804,7 +883,7 @@ BC( rgb, mono, Posterization)
 
 	if ( !( buf = malloc( width * OMP_MAX_THREADS)))
 		goto FAIL;
-	if ( !( tree = OPTIMIZE_PALETTE(2))) {
+	if ( !( tree = OPTIMIZE_PALETTE_RGB(2))) {
 		free(buf);
 		goto FAIL;
 	}
@@ -869,7 +948,7 @@ BC( rgb, mono, Optimized)
 		EDIFF_DONE;
 		goto FAIL;
 	}
-	if ( !( tree = OPTIMIZE_PALETTE(2))) {
+	if ( !( tree = OPTIMIZE_PALETTE_RGB(2))) {
 		EDIFF_DONE;
 		free(buf);
 		goto FAIL;
@@ -916,7 +995,7 @@ BC( rgb, nibble, Posterization)
 	
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) 
 		goto FAIL;
-	if ( !( tree = OPTIMIZE_PALETTE(16))) {
+	if ( !( tree = OPTIMIZE_PALETTE_RGB(16))) {
 		free(buf);
 		goto FAIL;
 	}
@@ -980,7 +1059,7 @@ BC( rgb, nibble, Optimized)
 		EDIFF_DONE;
 		goto FAIL;
 	}
-	if ( !( tree = OPTIMIZE_PALETTE(16))) {
+	if ( !( tree = OPTIMIZE_PALETTE_RGB(16))) {
 		EDIFF_DONE;
 		free(buf);
 		goto FAIL;
@@ -1024,7 +1103,7 @@ BC( rgb, byte, Posterization)
 	U16 * tree;
 
 	BCWARN;
-	if ( !( tree = OPTIMIZE_PALETTE(256)))
+	if ( !( tree = OPTIMIZE_PALETTE_RGB(256)))
 		goto FAIL;
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
@@ -1078,7 +1157,7 @@ BC( rgb, byte, Optimized)
 	BCWARN;
 
 	EDIFF_INIT;
-	if ( !( tree = OPTIMIZE_PALETTE(256))) {
+	if ( !( tree = OPTIMIZE_PALETTE_RGB(256))) {
 		EDIFF_DONE;
 		goto FAIL;
 	}

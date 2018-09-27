@@ -746,14 +746,36 @@ bc_byte_op( Byte * source, Byte * dest, int count, U16 * tree,
 		EDIFF_BEGIN_PIXEL(src_pal->r,src_pal->g,src_pal->b);
 		while ( 1) {
 			index = (((r >> shift) & 3) << 4) + 
-					(((g >> shift) & 3) << 2) +
-						((b >> shift) & 3);
+				(((g >> shift) & 3) << 2) +
+				((b >> shift) & 3);
 			if ( tree[ table + index] & PAL_REF) {
 				table = (tree[ table + index] & ~PAL_REF) * CELL_SIZE;
 				shift -= 2;
 			} else {
 				PRGBColor dst_pal = dst_palette + (*(dest++) = tree[ table + index]);
 				EDIFF_END_PIXEL( dst_pal->r, dst_pal->g, dst_pal->b);
+				break;
+			}
+		}
+	} 
+}
+
+/* 256, remap one palette to another, not dithered */
+void
+bc_byte_nop( Byte * source, Byte * dest, int count, U16 * tree, PRGBColor src_palette, PRGBColor dst_palette)
+{
+	while ( count--) {
+		int table = 0, shift = 6, index;
+		PRGBColor src_pal = src_palette + *(source++);
+		while ( 1) {
+			index = (((src_pal->r >> shift) & 3) << 4) + 
+				(((src_pal->g >> shift) & 3) << 2) +
+				((src_pal->b >> shift) & 3);
+			if ( tree[ table + index] & PAL_REF) {
+				table = (tree[ table + index] & ~PAL_REF) * CELL_SIZE;
+				shift -= 2;
+			} else {
+				*(dest++) = tree[ table + index];
 				break;
 			}
 		}

@@ -372,6 +372,66 @@ cm_sort_palette( RGBColor * palette, int size)
 	qsort( palette, size, sizeof(RGBColor), sort_palette);
 }
 
+void
+cm_reduce_palette4( Byte * srcData, int srcLine, int width, int height, RGBColor * srcPalette, int srcPalSize, RGBColor * dstPalette, int * dstPalSize)
+{
+	Byte hist[16];
+	int i, j, tail, w;
+
+	w = width / 2;
+	tail = width % 2;
+
+	memset( hist, 0, sizeof( hist));
+	*dstPalSize = 0;
+	for ( i = 0; i < height; i++) {
+		Byte * d = srcData;
+		srcData += srcLine;
+		for ( j = 0; j < w; j++, d++) {
+			Byte c = *d >> 4;
+			if ( hist[c] == 0) {
+				hist[c] = 1;
+				dstPalette[(*dstPalSize)++] = srcPalette[c];
+				if ( *dstPalSize >= srcPalSize) return;
+			}
+			c = *d & 0x0f;
+			if ( hist[c] == 0) {
+				hist[c] = 1;
+				dstPalette[(*dstPalSize)++] = srcPalette[c];
+				if ( *dstPalSize >= srcPalSize) return;
+			}
+		}
+		if (tail) {
+			Byte c = *d >> 4;
+			if ( hist[c] == 0) {
+				hist[c] = 1;
+				dstPalette[(*dstPalSize)++] = srcPalette[c];
+				if ( *dstPalSize >= srcPalSize) return;
+			}
+		}
+	}
+}
+
+void
+cm_reduce_palette8( Byte * srcData, int srcLine, int width, int height, RGBColor * srcPalette, int srcPalSize, RGBColor * dstPalette, int * dstPalSize)
+{
+	Byte hist[256];
+	int i, j;
+
+	memset( hist, 0, sizeof( hist));
+	*dstPalSize = 0;
+	for ( i = 0; i < height; i++) {
+		Byte * d = srcData;
+		srcData += srcLine;
+		for ( j = 0; j < width; j++, d++) {
+			if ( hist[*d] == 0) {
+				hist[*d] = 1;
+				dstPalette[(*dstPalSize)++] = srcPalette[*d];
+				if ( *dstPalSize >= srcPalSize) return;
+			}
+		}
+	}
+}
+
 /*
 
 cm_optimized_palette scans a RGB image and builds a palette that best represents colors found in the image.
