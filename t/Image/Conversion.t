@@ -24,8 +24,6 @@ for ( sort keys %ict:: ) {
 	push @filters, [ $_, &{$ict::{$_}}() ];
 }
 
-plan tests => @filters * @types * @types;
-
 sub bytes { unpack('H*', shift ) }
 sub is_bytes
 {
@@ -54,6 +52,16 @@ for ( @types ) {
 			my $k = $j-> clone( type => $type2, conversion => $filter);
 			$k-> set( type => im::Byte, conversion => ict::None);
 			is_bytes( $i->data, $k-> data, "$typename -> $typename2 $filtername");
+			
+			my $k = $j-> clone( type => $type2, conversion => $filter, palette => 2); # will be reduced automatically
+			$k-> set( type => im::Byte, conversion => ict::None);
+			is_bytes( $i->data, $k-> data, "$typename -> $typename2 $filtername with reduced palette colors");
+			
+			my $k = $j-> clone( type => $type2, conversion => $filter, palette => [0,0,0,255,255,255]); # will be reduced automatically
+			$k-> set( type => im::Byte, conversion => ict::None);
+			is_bytes( $i->data, $k-> data, "$typename -> $typename2 $filtername with predefined palette");
 		}			
 	}
 }
+
+done_testing;
