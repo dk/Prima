@@ -101,4 +101,36 @@ for ( @types ) {
 	}
 }
 
+# check dithering capacity to sustain image statistics (grayscale, easy)
+$i = Prima::Image->create(
+	width   => 16, 
+	height  => 16, 
+	type    => im::Byte,
+	data    => join '', map { chr } 0..255,
+);
+$i->size(128,128);
+
+for (
+	['bpp1 gray', im::BW], 
+	['bpp4 gray', im::bpp4|im::GrayScale], 
+) {
+	my ( $typename, $type ) = @$_;
+	for (@filters) {
+		my ( $filtername, $filter ) = @$_;
+		my $j = $i->clone(type => $type, conversion => $filter)->clone(type => im::Byte);
+		for (qw(rangeHi rangeLo)) {
+			is( $i->$_(), $j->$_(), "dithering 8->$typename with $filtername, $_ ok");
+		}
+		my $diff = abs($i->mean - $j->mean);
+		# src  dst err
+		# 0 -> 0   0
+		# 1 -> 0   1
+		# 2 -> 0   2
+		# 3 -> 0   3
+		# 4 -> 1   0
+		# etc      7*64 per 256 pixels = 1.75 per pixel
+		cmp_ok( $diff, '<', 1.75, "dithering 8->$typename with $filtername, mean ok");
+	}
+}
+
 done_testing;

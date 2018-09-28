@@ -808,7 +808,7 @@ bc_byte_rgb( register Byte * source, Byte * dest, register int count, register P
 void
 bc_graybyte_mono_ht( register Byte * source, register Byte * dest, register int count, int lineSeqNo)
 {
-#define gb64cmp  (((*source+++1) >> 2) > map_halftone8x8_64[ index++])
+#define gb64cmp  ((*source++ >> 2) > map_halftone8x8_64[ index++])
 	int count8 = count & 7;
 	lineSeqNo = ( lineSeqNo & 7) << 3;
 	count >>= 3;
@@ -875,24 +875,26 @@ bc_graybyte_nibble_ed( Byte * source, Byte * dest, int count, int * err_buf)
 	EDIFF_INIT;
 	while ( count--)
 	{
-		Byte dst, c, rm;
+		Byte dst, c;
+		int rm;
 		c = *source++;
 		EDIFF_BEGIN_PIXEL(c,c,c);
-		dst = div17[r] << 4;
-		rm = r % 17;
+		rm = (r & 0x0f) - (r >> 4);
+		dst = r & 0xf0;
 		EDIFF_END_PIXEL_EX(rm,rm,rm);
 		c = *source++;
 		EDIFF_BEGIN_PIXEL(c,c,c);
-		rm = r % 17;
-		*dest++ = dst | div17[r];
+		rm = (r & 0x0f) - (r >> 4);
+		*dest++ = dst | (r >> 4);
 		EDIFF_END_PIXEL_EX(rm,rm,rm);
 	}
 	if ( tail)
 	{
-		Byte c = *source++, rm; 
+		Byte c = *source++;
+		int rm;
 		EDIFF_BEGIN_PIXEL(c,c,c);
-		rm = r % 17;
-		*dest = div17[r] << 4;
+		rm = (r & 0x0f) - (r >> 4);
+		*dest = r & 0xf0;
 		EDIFF_END_PIXEL_EX(rm,rm,rm);
 	}
 }   

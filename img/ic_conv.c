@@ -56,18 +56,16 @@ fill_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSiz
 	}
 }
 
-#define OPTIMIZE_PALETTE_INDEXED optimize_palette_indexed(self,palSize_only,dstPal,dstPalSize)
+#define OPTIMIZE_PALETTE_INDEXED(_max_pal_size) optimize_palette_indexed(self,palSize_only,dstPal,dstPalSize,_max_pal_size)
 
 static U16*
-optimize_palette_indexed( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSize)
+optimize_palette_indexed( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSize, int max_pal_size)
 {
 	if ( *dstPalSize == 0 || palSize_only) {
-		int lim;
+		int lim = palSize_only ? *dstPalSize : max_pal_size;
 		if (( var->type & imBPP) == 4) {
-			lim = palSize_only ? *dstPalSize : 16;
 			cm_reduce_palette4( var->data, var->lineSize, var->w, var->h, var->palette, var->palSize, dstPal, dstPalSize);
 		} else {
-			lim = palSize_only ? *dstPalSize : 256;
 			cm_reduce_palette8( var->data, var->lineSize, var->w, var->h, var->palette, var->palSize, dstPal, dstPalSize);
 		}
 		if ( *dstPalSize > lim) {
@@ -335,7 +333,7 @@ BC( nibble, nibble, Posterization)
 	BCWARN;
 
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
-	if (!( tree = OPTIMIZE_PALETTE_INDEXED))
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED(16)))
 		goto FAIL;
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
@@ -396,7 +394,7 @@ BC( nibble, nibble, Optimized)
 
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
 	EDIFF_INIT;
-	if (!( tree = OPTIMIZE_PALETTE_INDEXED)) {
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED(16))) {
 		EDIFF_DONE;
 		goto FAIL;
 	}
@@ -562,7 +560,7 @@ BC( byte, nibble, Posterization)
 	BCWARN;
 
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
-	if (!( tree = OPTIMIZE_PALETTE_INDEXED)) {
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED(16))) {
 		free( buf);
 		goto FAIL;
 	}
@@ -624,7 +622,7 @@ BC( byte, nibble, Optimized)
 
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
 	EDIFF_INIT;
-	if (!( tree = OPTIMIZE_PALETTE_INDEXED)) {
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED(16))) {
 		EDIFF_DONE;
 		free( buf);
 		goto FAIL;
@@ -668,7 +666,7 @@ BC( byte, byte, Posterization)
 
 
 	EDIFF_INIT;
-	if (!( tree = OPTIMIZE_PALETTE_INDEXED)) {
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED(256))) {
 		EDIFF_DONE;
 		goto FAIL;
 	}
@@ -727,7 +725,7 @@ BC( byte, byte, Optimized)
 
 
 	EDIFF_INIT;
-	if (!( tree = OPTIMIZE_PALETTE_INDEXED)) {
+	if (!( tree = OPTIMIZE_PALETTE_INDEXED(256))) {
 		EDIFF_DONE;
 		goto FAIL;
 	}
