@@ -285,8 +285,10 @@ extern void img_premultiply_alpha_map( Handle self, Handle alpha);
 /* internal maps */
 extern Byte     map_stdcolorref    [ 256];
 extern Byte     div51              [ 256];
+extern Byte     div51f             [ 256];
 extern Byte     div17              [ 256];
 extern Byte     mod51              [ 256];
+extern int8_t   mod51f             [ 256];
 extern Byte     mod17mul3          [ 256];
 extern RGBColor cubic_palette      [ 256];
 extern RGBColor cubic_palette8     [   8];

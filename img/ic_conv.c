@@ -1111,6 +1111,7 @@ BC( rgb, byte, Posterization)
 		bc_rgb_byte_nop(( RGBColor *) srcDataLoop, dstDataLoop, width, tree, dstPal);
 	}
 	free( tree);
+	return;
 
 FAIL:
 	ic_rgb_byte_ictNone( BCPARMS );

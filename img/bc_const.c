@@ -8,8 +8,10 @@ extern "C" {
 
 Byte     map_stdcolorref    [ 256];
 Byte     div51              [ 256];
+Byte     div51f             [ 256];
 Byte     div17              [ 256];
 Byte     mod51              [ 256];
+int8_t   mod51f             [ 256];
 Byte     mod17mul3          [ 256];
 RGBColor cubic_palette      [ 256];
 RGBColor cubic_palette8     [   8];
@@ -52,6 +54,8 @@ cm_init_colormap( void)
 	{
 		map_RGB_gray[ i * 3] = map_RGB_gray[ i * 3 + 1] = map_RGB_gray[ i * 3 + 2] = i;
 		map_stdcolorref[ i] = i;
+		div51f[ i] = (float) i / 51.0 + .5;
+		mod51f[ i] = (i + 25) % 51 - 25;
 		div51[ i] = i / 51;
 		div17[ i] = i / 17;
 		mod51[ i] = i % 51;

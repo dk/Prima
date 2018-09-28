@@ -375,9 +375,9 @@ void
 bc_nibble_nibble_ht( register Byte * source, Byte * dest, register int count, register PRGBColor palette, int lineSeqNo)
 {
 #define b8cmp (                                      \
-					(((( r. b+1) >> 2) > cmp))      +  \
-					(((( r. g+1) >> 2) > cmp) << 1) +  \
-					(((( r. r+1) >> 2) > cmp) << 2)    \
+					(((r. b >> 2) > cmp))      +  \
+					(((r. g >> 2) > cmp) << 1) +  \
+					(((r. r >> 2) > cmp) << 2)    \
 					)
 	Byte tail = count & 1;
 	lineSeqNo = ( lineSeqNo & 7) << 3;
@@ -632,9 +632,9 @@ void
 bc_byte_nibble_ht( register Byte * source, Byte * dest, register int count, register PRGBColor palette, int lineSeqNo)
 {
 #define b8cmp (                                      \
-					(((( r. b+1) >> 2) > cmp))      +  \
-					(((( r. g+1) >> 2) > cmp) << 1) +  \
-					(((( r. r+1) >> 2) > cmp) << 2)    \
+					(((r. b >> 2) > cmp))      +  \
+					(((r. g >> 2) > cmp) << 1) +  \
+					(((r. r >> 2) > cmp) << 2)    \
 					)
 	Byte tail = count & 1;
 	lineSeqNo = ( lineSeqNo & 7) << 3;
@@ -719,8 +719,8 @@ bc_byte_byte_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int *
 		Byte dst, c;
 		c = *source++;
 		EDIFF_BEGIN_PIXEL(palette[c].r, palette[c].g, palette[c].b);
-		*(dest++) = div51[r] * 36 + div51[g] * 6 + div51[b];
-		EDIFF_END_PIXEL_EX( mod51[r], mod51[g], mod51[b]);
+		*(dest++) = div51f[r] * 36 + div51f[g] * 6 + div51f[b];
+		EDIFF_END_PIXEL_EX( mod51f[r], mod51f[g], mod51f[b]);
 	}
 }
 
@@ -1047,9 +1047,9 @@ void
 bc_rgb_nibble_ht( register Byte * source, Byte * dest, register int count, int lineSeqNo)
 {
 #define tc8cmp  ( source+=3,                          \
-					(((( source[-3]+1) >>2) > cmp))      +  \
-					(((( source[-2]+1) >>2) > cmp) << 1) +  \
-					(((( source[-1]+1) >>2) > cmp) << 2)    \
+					(((source[-3]>>2) > cmp))      +  \
+					(((source[-2]>>2) > cmp) << 1) +  \
+					(((source[-1]>>2) > cmp) << 2)    \
 					)
 	Byte tail = count & 1;
 	lineSeqNo = ( lineSeqNo & 7) << 3;
@@ -1101,12 +1101,11 @@ bc_rgb_byte( Byte * source, register Byte * dest, register int count)
 {
 	while ( count--)
 	{
-		register Byte dst = ( div51 [ *source++]);
-		dst += ( div51[ *source++]) * 6;
-		*dest++ = dst + div51[ *source++] * 36;
+		register Byte dst = ( div51f[ *source++]);
+		dst += ( div51f[ *source++]) * 6;
+		*dest++ = dst + div51f[ *source++] * 36;
 	}
 }
-
 
 /* rgb-> 256 cubic, halftoned */
 void
@@ -1136,9 +1135,9 @@ bc_rgb_byte_ed( Byte * source, Byte * dest, int count, int * err_buf)
 	EDIFF_INIT;
 	while ( count--) {
 		EDIFF_BEGIN_PIXEL(*(source++), *(source++), *(source++));
-		*(dest++) = div51[r] * 36 + div51[g] * 6 + div51[b];
-		EDIFF_END_PIXEL_EX( mod51[r], mod51[g], mod51[b]);
-	}   
+		*(dest++) = div51f[r] * 36 + div51f[g] * 6 + div51f[b];
+		EDIFF_END_PIXEL_EX( mod51f[r], mod51f[g], mod51f[b]);
+	}
 }
 
 /* rgb -> 8bit optimized */
