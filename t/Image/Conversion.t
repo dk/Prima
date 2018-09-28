@@ -42,6 +42,7 @@ my $i = Prima::Image->create(
 );
 $i-> size( 32, 32 );
 
+# generic conversion
 for ( @types ) {
 	my ( $typename, $type ) = @$_;
 	my $j = $i-> clone( type => $type, conversion => ict::None);
@@ -52,15 +53,51 @@ for ( @types ) {
 			my $k = $j-> clone( type => $type2, conversion => $filter);
 			$k-> set( type => im::Byte, conversion => ict::None);
 			is_bytes( $i->data, $k-> data, "$typename -> $typename2 $filtername");
-			
-			my $k = $j-> clone( type => $type2, conversion => $filter, palette => 2); # will be reduced automatically
+
+			$k = $j-> clone( type => $type2, conversion => $filter, palette => 2); # will be reduced automatically
 			$k-> set( type => im::Byte, conversion => ict::None);
 			is_bytes( $i->data, $k-> data, "$typename -> $typename2 $filtername with reduced palette colors");
-			
-			my $k = $j-> clone( type => $type2, conversion => $filter, palette => [0,0,0,255,255,255]); # will be reduced automatically
+
+			$k = $j-> clone( type => $type2, conversion => $filter, palette => [0,0,0,255,255,255]); # will be reduced automatically
 			$k-> set( type => im::Byte, conversion => ict::None);
 			is_bytes( $i->data, $k-> data, "$typename -> $typename2 $filtername with predefined palette");
-		}			
+		}
+	}
+}
+
+$i = Prima::Image->create( 
+	width   => 4, 
+	height  => 4, 
+	type    => im::bpp8,
+	data    => "\0\1\2\3\4\5\6\7\x{8}\x{9}\x{a}\x{b}\x{c}\x{d}\x{e}\x{f}",
+	colormap => [ map { $_*17 } 0..15 ],
+);
+
+# check palette stability during color reduction
+for ( @types ) {
+	my ( $typename, $type ) = @$_;
+	is_deeply( [$i->clone(type => $type)-> clone( type => im::BW )->colormap], [0, 0xffffff], "color $typename->BW");
+	if ( $type & im::GrayScale ) {
+		is_deeply( [$i->clone(type => $type)-> clone( type => im::Mono )->colormap], [0, 0xffffff], "color $typename->mono is gray");
+		if (( $type & im::BPP ) > 1 ) {
+			my @cm = $i->clone(type => $type)-> clone( type => im::bpp4, palette => 2 )->colormap;
+			# 0xff/3(blue)=0x55, but 0x55+/-0x11 is good too, color tree is unstable on unexact matches as palette size changes
+			$cm[1] = 0x555555 if $cm[1] == 0x666666 || $cm[1] == 0x444444;
+			is_deeply( \@cm, [0, 0x555555], "color $typename->nibble is gray");
+			if (( $type & im::BPP ) > 4 ) {
+				@cm = $i->clone(type => $type)-> clone( type => im::bpp8, palette => 2 )->colormap;
+				$cm[1] = 0x555555 if $cm[1] == 0x666666 || $cm[1] == 0x444444;
+				is_deeply( \@cm, [0, 0x555555], "color $typename->byte is gray");
+			}
+		}
+	} else {
+		is_deeply( [$i->clone(type => $type)-> clone( type => im::Mono )->colormap], [0, 0x0000ff], "color $typename->mono is blue");
+		if (( $type & im::BPP ) > 1 ) {
+			is_deeply( [$i->clone(type => $type)-> clone( type => im::bpp4, palette => 2 )->colormap], [0, 0x0000ff], "color $typename->nibble is blue");
+			if (( $type & im::BPP ) > 4 ) {
+				is_deeply( [$i->clone(type => $type)-> clone( type => im::bpp8, palette => 2 )->colormap], [0, 0x0000ff], "color $typename->byte is blue");
+			}
+		}
 	}
 }
 
