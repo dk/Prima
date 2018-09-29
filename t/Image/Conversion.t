@@ -110,7 +110,7 @@ $i = Prima::Image->create(
 );
 $i->size(128,128);
 
-for my $src_type (im::RGB, im::Byte, im::bpp4|im::GrayScale) {
+for my $src_type (im::RGB, im::Byte, im::bpp4|im::GrayScale, im::BW) {
 	my $src = $i->clone(type => $src_type);
 	for (
 		['bpp1', im::Mono], 
@@ -126,10 +126,13 @@ for my $src_type (im::RGB, im::Byte, im::bpp4|im::GrayScale) {
 			my ( $filtername, $filter ) = @$_;
 			my %extras;
 			my $src_type = $src->type & im::BPP;
-			$extras{palette} = $src_type if ($type & im::BPP) == $src_type; # noop otheriwse
+			if (($type & im::BPP) == $src_type) { # noop otheriwse
+				$extras{palette} = 1 << $src_type;
+				$extras{palette}-- if $extras{palette} > 2;
+			}
 			my $j = $src->clone(type => $type, conversion => $filter, %extras)->clone(type => im::Byte);
 			for (qw(rangeHi rangeLo)) {
-				is( $i->$_(), $j->$_(), "dithering $src_type->$typename with $filtername, $_ ok");
+				is( $j->$_(), $i->$_(), "dithering $src_type->$typename with $filtername, $_ ok");
 			}
 			my $diff = abs($i->mean - $j->mean);
 			# src  dst err
