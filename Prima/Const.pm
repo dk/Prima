@@ -598,11 +598,29 @@ See L<Prima::Image/type>.
 
 See L<Prima::Image/conversion>.
 
-	ict::None            - no dithering
+	ict::None            - no dithering, with static palette or palette optimized by source palette
+	ict::Posterization   - no dithering, with optimized palette by source pixels
 	ict::Ordered         - 8x8 ordered halftone dithering
 	ict::ErrorDiffusion  - error diffusion dithering with static palette
 	ict::Optimized       - error diffusion dithering with optimized palette
 
+Their values are combinations of C<ictp::> and C<ictd::> constants, see below.
+
+=head2 ictd:: - image conversion types, dithering
+
+These constants select color correction (dithering) algorithm when downsampling
+an image
+
+	ictd::None            - no dithering, pure colors only
+	ictd::Ordered         - 8x8 ordered halftone dithering (checkerboard)
+	ictd::ErrorDiffusion  - error diffusion dithering (2/5 down, 2/5 right, 1/5 down/right)
+
+=head2 ictp:: - image conversion types, palette optimization
+
+These constants select how the target palette is made up when downsampling an image.
+
+	ictp::Cubic          - use static cubic palette
+	ictp::Representative - collect available colors in the image
 
 =head2 is::  - image statistics indices
 

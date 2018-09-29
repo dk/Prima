@@ -194,10 +194,12 @@ data, but overwrites palette information. A proper call syntax here would be
   );
 
 This call produces also palette pixel mapping.  This syntax is most powerful
-when conversion is set to C<ict::Optimized> ( by default ) and C<ict::None>. It not
-only allows remapping or downsampling to a predefined colors set, but also can
-be used to limit palette size to a particular number, without knowing the actual 
-values of the final color palette. For example, for an 24-bit image,
+when conversion is set to those algorithms that can take in the account the
+existing image pixels, to produce an optimized palette. These are
+C<ict::Optimized> ( by default ) and C<ict::Posterization>. This syntax not only allows
+remapping or downsampling to a predefined colors set, but also can be used to
+limit palette size to a particular number, without knowing the actual values of
+the final color palette. For example, for an 24-bit image,
 
   $image-> set( type => im::bpp8, palette => 32);
 
@@ -381,15 +383,16 @@ See also C<palette>.
 Selects the type of dithering algorithm to be used for pixel down-sampling.
 TYPE is one of C<ict::XXX> constants:
 
-   ict::None            - no dithering, either with static or optimized palette
-   ict::Ordered         - 8x8 ordered halftone dithering with static palette
+   ict::None            - no dithering, with static palette or palette optimized by source palette
+   ict::Posterization   - no dithering, with optimized palette by source pixels
+   ict::Ordered         - fast 8x8 ordered halftone dithering with static palette
    ict::ErrorDiffusion  - error diffusion dithering with static palette
    ict::Optimized       - error diffusion dithering with optimized palette
 
 As an example, if a 4x4 color image with every pixel set to RGB(32,32,32),
 converted to a 1-bit image, the following results occur:
 
-   ict::None:
+   ict::None, ict::Posterization:
      [ 0 0 0 0 ]
      [ 0 0 0 0 ]
      [ 0 0 0 0 ]
@@ -406,6 +409,8 @@ converted to a 1-bit image, the following results occur:
      [ 0 0 0 1 ]
      [ 0 0 0 0 ]
      [ 0 0 0 0 ]
+
+Values of these constants are made from L<Prima::Const/ictp::> and L<Prima::Const/ictd::> constansts.
 
 =for podview <img src="conversions.gif">
 
