@@ -1157,14 +1157,15 @@ sub on_paint
 	my ( $self, $canvas) = @_;
 	my @clr;
 	my $prelight;
+	my @cht;
 	if ( $self-> enabled) {
 		@clr  = ( $self-> color, $self-> backColor);
+		@cht = ( $self-> hiliteColor, $self-> hiliteBackColor);
 		$prelight = $self-> prelight_color($clr[1], 1.5) if $self->{prelight};
 	} else {
-		@clr = ( $self-> disabledColor, $self-> disabledBackColor) 
+		@cht = @clr = ( $self-> disabledColor, $self-> disabledBackColor) 
 	}
 	my @c3d  = ( $self-> dark3DColor, $self-> light3DColor);
-	my @cht  = ( $self-> hiliteColor, $self-> hiliteBackColor);
 	my @size = $canvas-> size;
 	my ( 
 		$sb, $v, 
