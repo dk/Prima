@@ -7,7 +7,6 @@ sub new
 {
 	my ( $class, %profile ) = @_;
 	my $ref = {
-	        mode     => 'auto',  # auto, full, xor
 		canvas   => $::application,
 		rect     => [-1,-1,-1,-1],
 		clipRect => [-1,-1,-1,-1],
@@ -52,13 +51,13 @@ sub set
 	if ( exists $profile{clipRect} ) {
 		$other_changed = 1 if _rect_changed($profile{clipRect}, $self->{clipRect});
 	}
-	for my $accessor (grep { exists $profile{$_} } qw(mode canvas breadth)) {
+	for my $accessor (grep { exists $profile{$_} } qw(canvas breadth)) {
 		my $old = $self->$accessor();
 		next if $old eq $profile{$accessor};
 		$other_changed = 1;
 		last;
 	}
-	$other_changed = 1 if $rect_changed and ( !$visible or !$self->_gfx_mode );
+	$other_changed = 1 if $rect_changed and !$visible;
 	$rect_changed  = 0 if $other_changed;
 	return unless $rect_changed or $other_changed;
 
@@ -88,33 +87,12 @@ sub hide
 	$self-> _visible(0) if $self-> _visible;
 }
 
-sub _gfx_mode
-{
-	my $self = shift;
-	if ( $self-> {mode} eq 'auto') {
-		return (
-			$self-> {canvas} && 
-			$self-> {canvas}-> isa('Prima::Widget')) ? 1 : 0;
-	} else {
-		return ( $self-> {mode} eq 'full' ) ? 1 : 0;
-	}
-}
-
 sub canvas
 {
 	return $_[0]-> {canvas} unless $#_;
 
 	my ( $self, $canvas ) = @_;
 	$self-> {canvas} = $canvas // $::application;
-}
-
-sub mode
-{
-	return $_[0]-> {mode} unless $#_;
-
-	my ( $self, $mode ) = @_;
-	Carp::confess "mode(auto,full,xor)" unless $mode =~ /^(auto|full|xor)$/;
-	$self-> {mode} = $mode;
 }
 
 # geometry handlers
@@ -200,17 +178,6 @@ sub _visible
 	$self-> {visible} = $visible;
 
 	my $canvas = $self-> {canvas};
-		
-	# just a regular xor
-	unless ( $self-> _gfx_mode ) {
-		my $ps = $canvas->get_paint_state;
-		$canvas-> begin_paint if $ps == ps::Disabled;
-		$canvas-> clipRect( $self-> clipRect ) if $self-> has_clip_rect;
-		$canvas-> rect_focus( $self-> rect, $self-> breadth );
-		$canvas-> end_paint if $ps == ps::Disabled;
-		return;
-	}
-
 	if ( $visible ) {
 		my @clip = $self-> has_clip_rect ? 
 			$canvas-> client_to_screen( $self-> clipRect ) :
@@ -321,7 +288,7 @@ sub rubberband
 
 =head1 NAME
 
-Prima::RubberBand - draw rubberbands 
+Prima::RubberBand - draw rubberbands
 
 =head1 DESCRIPTION
 
@@ -335,14 +302,14 @@ thing it can do is to draw a static rubberband - but also remember the last
 coordinates drawn, so cleaning comes for free.
 
 The idea is that a rubberband object is meant to be a short-lived one: as soon
-as it get instantiatet it draws itself on the screen. When it is destroyed, the
+as it get instantiated it draws itself on the screen. When it is destroyed, the
 rubberband is erased too.
 
 =head1 SYNOPSIS
 
 	use strict;
 	use Prima qw(Application RubberBand);
-	
+
 	sub xordraw
 	{
 		my ($self, @new_rect) = @_;
@@ -351,7 +318,7 @@ rubberband is erased too.
 			( destroy => 1 )
 		);
 	}
-	
+
 	Prima::MainWindow-> create(
 		onMouseDown => sub {
 			my ( $self, $btn, $mod, $x, $y) = @_;
@@ -369,7 +336,7 @@ rubberband is erased too.
 			$self-> capture(0);
 		},
 	);
-	
+
 	run Prima;
 
 =head1 API
@@ -399,14 +366,6 @@ Sets the painting surface, and also the widget (it must be a widget) used for dr
 Defines the clipping rectangle, in inclusive-inclusive coordinates. If set to [-1,-1,-1,-1],
 means no clipping is done.
 
-=item mode STRING = 'auto'
-
-The module implements two techniques, standard classic 'xor' (using .rect_focus method) 
-and a conservative method that uses widgets instead of drawing on a canvas ('full').
-The 'auto' mode checks the system and selects the appropriate mode.
-
-Allowed modes: auto, xor, full
-
 =item rect X1, Y1, X2, Y2
 
 Defines the band geometry, in inclusive-inclusive coordinates. The band is drawn so that its body
@@ -424,7 +383,7 @@ Hides the band, if drawn
 
 =item has_clip_rect
 
-Cheks whether clipRect contains an actual clippring rectange or it is empty.
+Checks whether clipRect contains an actual clippring rectange or it is empty.
 
 =item set %profile
 
@@ -437,7 +396,6 @@ Same shortcuts as in C<Prima::Widget>, but read-only.
 =item show
 
 Show the band, if invisible
-
 
 =back
 
@@ -487,9 +445,7 @@ application exits)"
 This quote seems to explain the effect why screen sometimes gets badly
 corrupted when using a normal xor rubberband. UCE ( Update Compatibility
 Evaluator ?? ) seems to be hacky enough to recognize some situations, but not
-all.  It seems that depending on which widget received mouse button just before
-initialting rubberband drawing matters somehow. Anyway, the module tries to
-see if we're under Windows 7 aero, and if so, turns the 'full' mode on.
+all.
 
 =cut
 
