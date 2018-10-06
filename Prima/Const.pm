@@ -943,7 +943,7 @@ See also L<Prima::Application/get_system_value>
 
 =head2 ta::  - alignment constants
 
-Used in: L<Prima::InputLine>, L<Prima::ImageViewer>, L<Prima::Label>, L<Prima::Terminals>.
+Used in: L<Prima::InputLine>, L<Prima::ImageViewer>, L<Prima::Label>.
 
 	ta::Left
 	ta::Right
