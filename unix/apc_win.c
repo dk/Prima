@@ -269,7 +269,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		prima_release_gc( XX);
 		for( i = 0; i < count; i++)
 			prima_get_view_ex( list[ i], ( ViewProfile*)( X( list[ i])-> recreateData = malloc( sizeof( ViewProfile))));
-		
+
 		if ( XX-> recreateData) {
 			memcpy( &vprf, XX-> recreateData, sizeof( vprf));
 			free( XX-> recreateData);
@@ -295,32 +295,32 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 
 	if ( X_WINDOW) { /* recreate request */
 		Bool destructive_motif_hints = 0; /* KDE 3.1: setting motif hints kills net_wm hints */
-		if ( !guts.icccm_only && (
-			( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
-			( border_icons != XX-> borderIcons) || 
-		( on_top >= 0)
-	)) {
-		Bool visible = XX-> flags. mapped;
-		if (( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
-			( border_icons != XX-> borderIcons))
-			destructive_motif_hints = 1;
-		if ( destructive_motif_hints && on_top < 0)
-			on_top = apc_window_get_on_top( self);
-		if ( destructive_motif_hints)
-			set_motif_hints( X_WINDOW, border_style, border_icons);
-		if ( on_top >= 0)
-			NETWM_SET_ON_TOP( X_WINDOW, on_top);
-		XX-> borderIcons = border_icons;
-		XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
+		if ( 
+			!guts.icccm_only && (
+				( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
+				( border_icons != XX-> borderIcons) || 
+			( on_top >= 0)
+		)) {
+			if (( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
+				( border_icons != XX-> borderIcons))
+				destructive_motif_hints = 1;
+			if ( destructive_motif_hints && on_top < 0)
+				on_top = apc_window_get_on_top( self);
+			if ( destructive_motif_hints)
+				set_motif_hints( X_WINDOW, border_style, border_icons);
+			if ( on_top >= 0)
+				NETWM_SET_ON_TOP( X_WINDOW, on_top);
+			XX-> borderIcons = border_icons;
+			XX-> flags. sizeable = ( border_style == bsSizeable) ? 1 : 0;
+		}
+		if (
+			(( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0))
+			|| destructive_motif_hints
+		)
+			apc_window_task_listed( self, task_list);
+		return true;
 	}
-	if (
-		(( task_list ? 1 : 0) != ( XX-> flags. task_listed ? 1 : 0)) 
-		|| destructive_motif_hints
-	)
-		apc_window_task_listed( self, task_list);
-		return true; 
-	}
-	
+
 	XX-> visual   = layered ? &guts. argb_visual : &guts. visual;
 	XX-> colormap = layered ? guts. argbColormap : guts. defaultColormap;
 	XX-> flags. layered    = !!layered;
@@ -373,7 +373,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 			| CWColormap 
 		/* | CWCursor */
 		;
-if ( layered ) {
+	if ( layered ) {
 		valuemask |= CWBackPixel | CWBorderPixel;
 		attrs. background_pixel = 0;
 		attrs. border_pixel = 0;
@@ -807,11 +807,11 @@ prima_get_frame_info( Handle self, PRect r)
 	if ( p == nilHandle) {
 		r-> left = XX-> decorationSize. x;
 		r-> top  = XX-> decorationSize. y;
-	} else if ( p != X_WINDOW) 
+	} else if ( p != X_WINDOW)
 		if ( !XTranslateCoordinates( DISP, X_WINDOW, p, 0, 0, &r-> left, &r-> bottom, &dummy))
 			warn( "error in XTranslateCoordinates()");
-		if ( !XGetGeometry( DISP, p, &dummy, &px, &py, &pw, &ph, &pb, &pd)) {
-			warn( "error in XGetGeometry()");
+	if ( !XGetGeometry( DISP, p, &dummy, &px, &py, &pw, &ph, &pb, &pd)) {
+		warn( "error in XGetGeometry()");
 		r-> right = pw - r-> left  - XX-> size. x;
 		r-> top   = ph - r-> right - XX-> size. y;
 	}

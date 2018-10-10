@@ -230,10 +230,10 @@ init_x11( char * error_buf )
 
 	{
 		struct sockaddr name;
-		unsigned int l = sizeof( name);
+		int l = sizeof( name);
 		guts. local_connection = getsockname( guts.connection, &name, &l) >= 0 && l == 0;
 	}
-	
+
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
 	if ( XShapeQueryExtension( DISP, &guts.shape_event, &guts.shape_error)) {
 		guts. shape_extension = true;
@@ -838,22 +838,14 @@ apc_application_get_os_info( char *system, int slen,
 	static struct utsname name;
 	static Bool fetched = false;
 
-#ifndef SYS_NMLN
-#ifdef _SYS_NAMELEN
-#define SYS_NMLN _SYS_NAMELEN
-#else
-#define SYS_NMLN 64
-#endif
-#endif   
-
 	if (!fetched) {
 		if ( uname(&name)!=0) {
-			strncpy( name. sysname, "Some UNIX", SYS_NMLN);
-			name. sysname[ SYS_NMLN-1] = 0;
-			strncpy( name. release, "Unknown version of UNIX", SYS_NMLN);
-			name. release[ SYS_NMLN-1] = 0;
-			strncpy( name. machine, "Unknown architecture", SYS_NMLN);
-			name. machine[ SYS_NMLN-1] = 0;
+			strncpy( name. sysname, "Some UNIX", sizeof(name.sysname));
+			name. sysname[ sizeof(name.sysname)-1] = 0;
+			strncpy( name. release, "Unknown version of UNIX", sizeof(name.release));
+			name. release[ sizeof(name.release)-1] = 0;
+			strncpy( name. machine, "Unknown architecture", sizeof(name.machine));
+			name. machine[ sizeof(name.machine)-1] = 0;
 		}
 		fetched = true;
 	}

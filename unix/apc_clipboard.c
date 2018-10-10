@@ -619,7 +619,6 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 	DEFCC;
 	STRLEN size;
 	unsigned char * data;
-	Atom name;
 
 	if ( id >= guts. clipboard_formats_count) return false;
 
@@ -636,11 +635,9 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 	if ( XX-> internal[id]. size > 0) {
 		size = XX-> internal[id]. size;
 		data = XX-> internal[id]. data;
-		name = XX-> internal[id]. name;
 	} else {
 		size = XX-> external[id]. size;
 		data = XX-> external[id]. data;
-		name = XX-> external[id]. name;
 	}
 	if ( size == 0 || data == nil) return false;
 

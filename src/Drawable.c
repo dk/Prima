@@ -236,7 +236,7 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 		dest-> direction = 0;
 	if ( dest-> undef. style )
 		dest-> style = 0;
-	memset(&dest->undef, 0, sizeof(&dest->undef));
+	memset(&dest->undef, 0, sizeof(dest->undef));
 
 	return useSize && !useHeight;
 }
@@ -612,7 +612,7 @@ render_point(
 	int degree, int n_points, int dimensions, double * v, 
 	double * knots, int * last_found_knot, Point * result
 ) {
-	double lo, hi, *pt;
+	double lo, hi;
 	int l, i, n_knots = n_points + degree + 1, s, found = false;
 
 	lo = knots[degree];

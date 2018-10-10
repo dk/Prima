@@ -151,7 +151,6 @@ xft_debug( const char *format, ...)
 void
 prima_xft_init(void)
 {
-	CharSetInfo *csi;
 	int i;
 	FcCharSet * fcs_ascii;
 #ifdef HAVE_ICONV_H
@@ -181,7 +180,6 @@ prima_xft_init(void)
 	if ( !guts. use_xft) return;
 	XFTdebug("XFT ok");
 
-	csi = std_charsets;
 	fcs_ascii = FcCharSetCreate();
 	for ( i = 32; i < 127; i++)  FcCharSetAddChar( fcs_ascii, i);
 
@@ -331,9 +329,8 @@ fcpattern2fontnames( FcPattern * pattern, Font * font)
 static void
 fcpattern2font( FcPattern * pattern, PFont font)
 {
-	FcChar8 * s;
 	int i, j;
-	double d = 1.0, ds;
+	double d = 1.0;
 	FcCharSet *c = NULL;
 
 	/* FcPatternPrint( pattern); */
@@ -452,7 +449,6 @@ xft_build_font_key( PFontKey key, PFont f, Bool bySize)
 static XftFont *
 try_size( Handle self, Font f, double size)
 {
-	FontKey key;
 	XftFont * xft = NULL;
 	bzero( &f.undef, sizeof(f.undef));
 	f. undef. height = f. undef. width = 1;
@@ -472,11 +468,10 @@ find_good_font_by_family( Font * f, int fc_spacing )
 
 	if ( !initialized ) {
 		/* iterate over all monospace and proportional font, build family->name (i.e best default match) hash */
-		int i,j;
+		int i;
 		FcFontSet * s;
 		FcPattern   *pat, **ppat;
 		FcObjectSet *os;
-		CharSetInfo *csi;
 
 		initialized = 1;
 
@@ -492,13 +487,10 @@ find_good_font_by_family( Font * f, int fc_spacing )
 		FcObjectSetDestroy( os);
 		FcPatternDestroy( pat);
 		if ( !s) return NULL;
-	
-		csi = ( CharSetInfo*) hash_fetch( encodings, std_charsets[0].name, strlen(std_charsets[0].name));
 
 		ppat = s-> fonts; 
 		for ( i = 0; i < s->nfont; i++, ppat++) {
 			Font f;
-			FcCharSet *c = NULL;
 			int spacing = FC_PROPORTIONAL, slant, len, weight;
 			PHash font_hash;
 
@@ -506,7 +498,7 @@ find_good_font_by_family( Font * f, int fc_spacing )
 			if (
 				( FcPatternGetInteger( *ppat, FC_SLANT, 0, &slant) != FcResultMatch) ||
 				( slant == FC_SLANT_ITALIC || slant == FC_SLANT_OBLIQUE)
-			)            
+			)
 				continue;
 			if (
 				( FcPatternGetInteger( *ppat, FC_WEIGHT, 0, &weight) != FcResultMatch) ||
@@ -535,8 +527,7 @@ find_good_font_by_family( Font * f, int fc_spacing )
 	/* try to find same family and same 1st word in font name */
 	{
 		char *c, *w, word1[255], word2[255];
-		int p;
-		PHash font_hash = (fc_spacing == FC_MONO) ? mono_fonts : prop_fonts;            
+		PHash font_hash = (fc_spacing == FC_MONO) ? mono_fonts : prop_fonts;
 		c = hash_fetch( font_hash, f->family, strlen(f->family));
 		if ( !c ) return NULL;
 		if ( strcmp( c, f->name) == 0) return NULL; /* same font */
@@ -1316,7 +1307,6 @@ static void
 XftDrawGlyph_layered( PDrawableSysData selfxx, _Xconst XftColor *color, int x, int y, _Xconst FT_UInt glyph)
 {
 	XftColor black;
-	XGCValues gcv;
 	XGlyphInfo extents;
 
 	XftGlyphExtents( DISP, XX-> font-> xft, &glyph, 1, &extents);

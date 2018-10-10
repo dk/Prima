@@ -51,8 +51,6 @@ typedef struct {
 
 #define GT(x) gtk_##x##_get_type, #x
 
-static GType gtf_type_null(void) { return G_TYPE_NONE; }
-
 static GTFStruct widget_types[] = {
 		{ GT(button),       "GtkButton",         wcButton      , NULL },  
 		{ GT(check_button), "GtkCheckButton",    wcCheckBox    , NULL },  
@@ -102,7 +100,6 @@ prima_gtk_init(void)
 	GtkSettings * settings;
 	Color ** stdcolors;
 	PangoWeight weight;
-	PangoStyle style;
 
 	switch ( gtk_initialized) {
 	case -1:
@@ -244,7 +241,6 @@ prima_gtk_done(void)
 static void
 set_transient_for(void)
 {
-	static GdkWindow * gdk_toplevel = NULL;
 	Handle toplevel = prima_find_toplevel_window(nilHandle);
 	if ( toplevel ) {
 		GdkWindow * g = NULL;

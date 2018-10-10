@@ -495,7 +495,6 @@ Bool
 apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
 {
 	DEFXX;
-	Handle cursor;
 
 	if ( XX-> user_pointer != None) {
 		XFreeCursor( DISP, XX-> user_pointer);

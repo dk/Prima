@@ -656,9 +656,8 @@ XS( Component_notify_FROMPERL)
 
 	if ( eventHook) {
 		dSP;
-		dPUB_ARGS;
 		dG_EVAL_ARGS;
-		
+
 		int flag;
 		ENTER;
 		SAVETMPS;
@@ -671,7 +670,6 @@ XS( Component_notify_FROMPERL)
 		SPAGAIN;
 		if ( SvTRUE( GvSV( PL_errgv))) {
 			(void)POPs;
-			PUB_CHECK;
 			CLOSE_G_EVAL;
 			exception_remember(SvPV_nolen( GvSV( PL_errgv)));
 			return;
@@ -778,7 +776,6 @@ XS( Component_notify_FROMPERL)
 	evPtr = var-> evPtr;
 	for ( i = 0; i < seqCount; i += 2) {
 		dSP;
-		dPUB_ARGS;
 		dG_EVAL_ARGS;
 		int j;
 
@@ -793,7 +790,6 @@ XS( Component_notify_FROMPERL)
 		OPEN_G_EVAL;
 		perl_call_sv(( SV*) sequence[ i + 1], G_DISCARD | G_EVAL);
 		if ( SvTRUE( GvSV( PL_errgv))) {
-			PUB_CHECK;
 			CLOSE_G_EVAL;
 			if ( privMethod) sv_free( privMethod);
 			free( argsv);

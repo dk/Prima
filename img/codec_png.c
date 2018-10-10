@@ -633,7 +633,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		if ( trns_t) {
 			if ( blending ) {
 				PRGBColor p = PIcon( fi-> object)-> palette;
-				int i, min_ix = 0, min_val = 255;
+				int i;
 				/* transparency values per pixel table is present */
 				for ( i = 0; i < trns_n; i++) {
 					p[i]. r = ((uint16_t) p[i]. r * trns_t[i]) >> 8;
@@ -930,7 +930,6 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	if ( pexist( render_intent)) {
 		char * c = pget_c( render_intent);
 		if ( stricmp( c, "none") != 0) {
-			int i;
 			if ( stricmp( c, "saturation") == 0) i = PNG_sRGB_INTENT_SATURATION; else
 			if ( stricmp( c, "perceptual") == 0) i = PNG_sRGB_INTENT_PERCEPTUAL; else
 			if ( stricmp( c, "relative")   == 0) i = PNG_sRGB_INTENT_RELATIVE; else

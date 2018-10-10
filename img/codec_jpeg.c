@@ -357,7 +357,7 @@ Normal structure relative to APP1 marker -
 static int
 exif_find_orientation_tag( unsigned char * c, STRLEN len, int wipe)
 {
-	int i, byteorder = BYTEORDER_UNKNOWN, ifd_offset, ntags;
+	int byteorder = BYTEORDER_UNKNOWN, ifd_offset, ntags;
 	unsigned char le_sig[] = { 0x49, 0x49, 0x2a, 0x00 };
 	unsigned char be_sig[] = { 0x4d, 0x4d, 0x00, 0x2a };
 	if ( len < 36 ) return 0;
@@ -504,7 +504,6 @@ exif_setup_rotation( PImage i, PImage d, Byte ** dest, int orientation, int * di
 static void
 exif_transform_scanline( PImage i, PImage d, Byte ** dest, int orientation)
 {
-	int ls = i-> lineSize;
 	switch (orientation) {
 	case 2:
 		img_mirror((Handle) d, 0);
@@ -620,7 +619,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 		while ( l-> d.output_scanline < l-> d.output_height ) {
 			JSAMPROW sarray[1];
-			int scanlines, offset = 0;
+			int scanlines;
 	 		Byte * prima_pixels = (orientation > 1) ? rotation. data : dest;
 			sarray[0] = (l-> d. output_components == 4) ? l->channelbuf : prima_pixels;
 			scanlines = jpeg_read_scanlines(&l-> d, sarray, 1);

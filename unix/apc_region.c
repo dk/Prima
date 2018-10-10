@@ -382,7 +382,6 @@ apc_gp_set_region( Handle self, Handle rgn)
 {
 	DEFXX;
 	Region region;
-	PImage img;
 	PRegionSysData r;
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
@@ -447,7 +446,6 @@ apc_gp_get_region( Handle self, Handle rgn)
 	Pixmap pixmap;
 	XImage * i;
 	Image pi;
-	Byte * data;
 	Region rgn2;
 
 	if ( !XF_IN_PAINT(XX)) return false;

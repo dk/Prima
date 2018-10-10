@@ -735,7 +735,7 @@ STRETCH_VERTICAL_CLOSE(double)
 static Bool
 stretch_filtered( int type, Byte * oldData, int oldW, int oldH, Byte * newData, int w, int h, int scaling, char * error )
 {
-	int channels, target_ls, target_ds, fw, fh, flw, i, support_size;
+	int channels, fw, fh, flw, i, support_size;
 	double factor_x, factor_y, scale_x, scale_y, *contributions, support_x, support_y ;
 	Byte * filter_data;
 	FilterRec * filter = NULL;
@@ -802,9 +802,7 @@ stretch_filtered( int type, Byte * oldData, int oldW, int oldH, Byte * newData, 
 		fh = h;
 	}
 	flw = LINE_SIZE( fw, type);
-	target_ls = LINE_SIZE( w, type);
-	target_ds = h * target_ls;
-	
+
 	if ( !( filter_data = malloc( flw * fh ))) {
 		snprintf(error, 255, "not enough memory: %d bytes", flw * fh);
 		return false;

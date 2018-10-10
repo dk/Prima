@@ -547,6 +547,8 @@ invert_scanline( Byte * src, int source_bits, int type, int pixels)
 	}
 }
 
+#if (BYTEORDER==0x4321) || (BYTEORDER==0x87654321)
+
 static void
 convert_abgr_to_rgba( Byte * buffer, int quads)
 {
@@ -562,13 +564,15 @@ convert_abgr_to_rgba( Byte * buffer, int quads)
 	}
 }
 
+#endif
+
 static Bool
 read_source_format( PImgLoadFileInstance fi, int source_bits, int * source_format)
 {
 	TIFF * tiff = ( TIFF *) fi-> instance;
 	HV * profile = fi-> frameProperties;
 	uint16_t sample_format;
-	int i, found = 0;
+	int i;
 
 	*source_format = 0;
 
@@ -579,7 +583,6 @@ read_source_format( PImgLoadFileInstance fi, int source_bits, int * source_forma
 		if ( pixeltype[i].tag == sample_format) {
 			if ( fi-> loadExtras) 
 				pset_c( SampleFormat, pixeltype[i].name);
-			found = 1;
 			break;
 		}
 	}

@@ -517,7 +517,7 @@ apply_color_class( int c_class, Color value)
 static Bool
 find_color_mask_range( unsigned long mask, unsigned int * shift, unsigned int * range)
 {
-	int i, from = 0, to = 0, stage = 0, lim;
+	int i, from = 0, to = 0, stage = 0;
 	for ( i = 0; i < 32; i++) {
 		switch ( stage) {
 		case 0:
@@ -540,7 +540,6 @@ find_color_mask_range( unsigned long mask, unsigned int * shift, unsigned int * 
 		}
 	}
 	if ( to == 0) to = 32;
-	lim = 1 << (to - from);
 	*shift   = from;
 	*range   = to - from;
 	return true;

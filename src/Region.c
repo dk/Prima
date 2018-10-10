@@ -17,7 +17,7 @@ Region_init( Handle self, HV * profile)
 {
 	dPROFILE;
 	RegionRec r;
-	char *t;
+	char *t = NULL;
 	Bool free_image = false, ok;
 
 	r.type = rgnEmpty;

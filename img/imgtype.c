@@ -102,7 +102,7 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 		}
 	} else if (
 		(( var->conversion & ictpMask ) == ictpCubic) &&
-		( orgDstType & imBPP <= srcType & imBPP)
+		(( orgDstType & imBPP) <= (srcType & imBPP))
 	) {
 		palSize_only = false;
 		switch( orgDstType & imBPP) {

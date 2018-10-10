@@ -1717,7 +1717,6 @@ prima_wm_sync( Handle self, int eventType)
 	struct timeval start_time, timeout;
 	PList events;
 	WMSyncData wmsd;
-	Bool quit_by_timeout = false;
 
 	open_wm_sync_data( self, &wmsd);
 
@@ -1768,7 +1767,6 @@ prima_wm_sync( Handle self, int eventType)
 		}
 		if ( r == 0) {
 			Edebug("event: timeout\n");
-			quit_by_timeout = true;
 			break; 
 		}
 		if (( evx = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {

@@ -716,7 +716,7 @@ bc_byte_byte_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int *
 	EDIFF_INIT;
 	while ( count--)
 	{
-		Byte dst, c;
+		Byte c;
 		c = *source++;
 		EDIFF_BEGIN_PIXEL(palette[c].r, palette[c].g, palette[c].b);
 		*(dest++) = div51f[r] * 36 + div51f[g] * 6 + div51f[b];

@@ -40,8 +40,10 @@ fill_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSiz
 			do_colormap = 0;
 		}
 	} else if ( *dstPalSize != 0) {
-		if ( *dstPalSize > maxPalSize) 
-			cm_squeeze_palette( dstPal, *dstPalSize, dstPal, *dstPalSize = maxPalSize);
+		if ( *dstPalSize > maxPalSize) {
+			*dstPalSize = maxPalSize;
+			cm_squeeze_palette( dstPal, *dstPalSize, dstPal, *dstPalSize);
+		}
 	} else if ( var-> palSize > maxPalSize) {
 		cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize = maxPalSize);
 	} else {
@@ -875,7 +877,6 @@ BC( rgb, mono, Posterization)
 {
 	dBCARGS;
 	BCWARN;
-	int new_pal_size = 2;
 	U16 * tree;
 	Byte * buf;
 

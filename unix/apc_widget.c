@@ -1228,12 +1228,6 @@ apc_widget_set_shape( Handle self, Handle mask)
 	return false;
 #else
 	DEFXX;
-	PImage img;
-	Pixmap px;
-	GC gc;
-	XGCValues gcv;
-	ImageCache * cache;
-	int i;
 	XRectangle xr;
 
 	if ( !guts. shape_extension) return false; 

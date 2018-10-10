@@ -100,7 +100,6 @@ EGifPutExtensionLast(GifFileType * GifFile,
 static void * 
 init( ImgCodecInfo ** info, void * param)
 {
-	char vd[1024];
 	*info = &codec_info;
 
 #if defined(GIFLIB_MAJOR)

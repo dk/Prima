@@ -230,13 +230,11 @@ I32
 clean_perl_call_method( char* methname, I32 flags)
 {
 	I32 ret;
-	dPUB_ARGS;
 	dG_EVAL_ARGS;
 
 	if ( !( flags & G_EVAL)) { OPEN_G_EVAL; }
 	ret = perl_call_method( methname, flags | G_EVAL);
 	if ( SvTRUE( GvSV( PL_errgv))) {
-		PUB_CHECK;
 		if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR) {
 			dSP;
 			SPAGAIN;
@@ -255,13 +253,11 @@ I32
 clean_perl_call_pv( char* subname, I32 flags)
 {
 	I32 ret;
-	dPUB_ARGS;
 	dG_EVAL_ARGS;
 
 	if ( !( flags & G_EVAL)) { OPEN_G_EVAL; }
 	ret = perl_call_pv( subname, flags | G_EVAL);
 	if ( SvTRUE( GvSV( PL_errgv))) {
-		PUB_CHECK;
 		if (( flags & (G_SCALAR|G_DISCARD|G_ARRAY)) == G_SCALAR) {
 			dSP;
 			SPAGAIN;
@@ -954,7 +950,6 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
 		PUTBACK;
 		if ( returns)
 		{
-			dPUB_ARGS;
 			dG_EVAL_ARGS;
 			OPEN_G_EVAL;
 			retCount = ( coderef) ?
@@ -964,7 +959,6 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
 			if ( SvTRUE( GvSV( PL_errgv)))
 			{
 				(void)POPs;
-				PUB_CHECK;
 				CLOSE_G_EVAL;
 				croak( "%s", SvPV_nolen( GvSV( PL_errgv)));    /* propagate */
 			}
@@ -981,14 +975,12 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
 		}
 		else
 		{
-			dPUB_ARGS;
 			dG_EVAL_ARGS;
 			OPEN_G_EVAL;
 			if ( coderef) perl_call_sv(( SV *) subName, G_DISCARD|G_EVAL);
 				else perl_call_method( subName, G_DISCARD|G_EVAL);
 			if ( SvTRUE( GvSV( PL_errgv)))
 			{
-				PUB_CHECK;
 				CLOSE_G_EVAL;
 				croak( "%s", SvPV_nolen( GvSV( PL_errgv)));    /* propagate */
 			}
@@ -1013,12 +1005,11 @@ parse_hv( I32 ax, SV **sp, I32 items, SV **mark, int expected, const char *metho
 	order = newAV();
 	for ( i = expected; i < items; i += 2)
 	{
-		HE *he;
 		/* check the validity of a key */
 		if (!( SvPOK( ST( i)) && ( !SvROK( ST( i)))))
 			croak( "GUTS011: Illegal value for a profile key (argument #%d) passed to ``%s''", i, methodName);
 		/* and add the pair */
-		he = hv_store_ent( hv, ST( i), newSVsv( ST( i+1)), 0);
+		hv_store_ent( hv, ST( i), newSVsv( ST( i+1)), 0);
 		av_push( order, newSVsv( ST( i)));
 	}
 	(void) hv_store( hv, "__ORDER__", 9, newRV_noinc((SV *)order), 0);

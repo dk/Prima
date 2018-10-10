@@ -505,9 +505,7 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
 {
 	PImage i     = (PImage) dest;
 	Byte * data  = i-> data;
-	int dataSize = i-> dataSize; 
 	int lineSize = i-> lineSize; 
-	int palSize  = i-> palSize; 
 	int type     = i-> type;
 	int pixSize  = (type & imBPP) / 8;
 	PBitBltProc proc;
