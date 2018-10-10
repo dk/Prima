@@ -1,4 +1,8 @@
 Revision history for Perl module Prima
+1.53 2018-10-10
+ - Image downsampling made consistent; added ict::Posterization; 
+ - Added images to documentations
+ - Support gtk3 (but prefer gtk2)
 
 1.52 2017-06-28
  - Better support for multi-threading
