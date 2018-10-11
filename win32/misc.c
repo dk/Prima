@@ -275,7 +275,7 @@ int
 apc_sys_get_value( int sysValue)
 {
 	HKEY hKey;
-	DWORD valSize = 256, valType = REG_SZ, dw = 0;
+	DWORD valSize = 256, valType = REG_SZ;
 	char buf[ 256] = "";
 
 	switch ( sysValue) {

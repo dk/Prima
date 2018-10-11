@@ -144,7 +144,6 @@ stylus_clean()
 Bool
 stylus_extpenned( PStylus s)
 {
-	Bool ext = false;
 	if ( s-> pen. lopnWidth. x > 1) {
 		if ( s-> pen. lopnStyle == PS_NULL)
 			return false;
@@ -419,7 +418,7 @@ PDCFont
 font_alloc( Font * data, Point * resolution)
 {
 	char key[sizeof(Font)];
-	int keyLen = build_dcfont_key( data, key);
+	int keyLen = build_dcfont_key( data, (unsigned char*)key);
 	PDCFont ret = ( PDCFont) hash_fetch( fontMan, key, keyLen);
 
 	if ( ret == nil) {
@@ -441,7 +440,7 @@ font_alloc( Font * data, Point * resolution)
 			memset( &lf, 0, sizeof( lf));
 			ret-> hfont = CreateFontIndirect( &lf);
 		}
-		keyLen = build_dcfont_key( &ret-> font, key);
+		keyLen = build_dcfont_key( &ret-> font, (unsigned char*)key);
 		hash_store( fontMan, key, keyLen, ret);
 	}
 	ret-> refcnt++;
@@ -463,7 +462,7 @@ font_free( PDCFont res, Bool permanent)
 		DeleteObject( res-> hfont);
 		res-> hfont = nil;
 	}
-	keyLen = build_dcfont_key( &res-> font, key);
+	keyLen = build_dcfont_key( &res-> font, (unsigned char*)key);
 	hash_delete( fontMan, key, keyLen, true);
 }
 
@@ -1751,7 +1750,6 @@ palette_change( Handle self)
 	HPALETTE pal;
 	XLOGPALETTE xlp = {0x300};
 	HDC dc;
-	int rCol = 0;
 
 	if ( nColors == 0)
 		return false;
@@ -1810,7 +1808,7 @@ palette_change( Handle self)
 
 	dc  = GetDC( HANDLE);
 	pal  = SelectPalette( dc, pal, 0);
-	rCol = RealizePalette( dc);
+	RealizePalette( dc);
 	DeleteObject( SelectPalette( dc, pal, 0));
 	ReleaseDC( HANDLE, dc);
 

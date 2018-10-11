@@ -293,18 +293,27 @@ prima_mallocz( size_t sz);
 typedef I32 Bool;
 #if PTRSIZE==LONGSIZE
 typedef unsigned long Handle;
+#define PR_HANDLE "lu"
 #elif PTRSIZE==INTSIZE
 typedef unsigned int Handle;
+#define PR_HANDLE "u"
 #elif PTRSIZE==SHORTSIZE
 typedef unsigned short Handle;
+#define PR_HANDLE "hu"
 #elif defined(HAS_LONG_LONG) && PTRSIZE==LONGLONGSIZE
 typedef unsigned long long Handle;
+#define PR_HANDLE "llu"
 #elif defined(HAS_QUAD) && PTRSIZE==8
 typedef Uquad_t Handle;
+#define PR_HANDLE "U64d"
 #else
 #error "Cannot find adequate integer type"
 #endif
 typedef Handle ApiHandle;
+
+#define __xstr1(x) #x
+#define __xstr2(x) __xstr1(x)
+#define PR_HANDLE_FMT "0x%0" __xstr2(PTRSIZE) PR_HANDLE
 
 #include "Types.h"
 

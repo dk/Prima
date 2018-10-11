@@ -127,7 +127,7 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 				WCHAR *ptr;
 				Bool ret = false;
 				void *ph;
-				
+
 				ph = GetClipboardData( CF_UNICODETEXT);
 				if ( ph == nil) {
 					apcErr( errInvClipboardData);
@@ -138,7 +138,7 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 				apcErrClear;
 				c->length = WideCharToMultiByte(CP_UTF8, 0, ptr, -1, NULL, 0, NULL, 0);
 				if (( c->data = malloc( c-> length ) )) {
-					WideCharToMultiByte(CP_UTF8, 0, ptr, -1, c->data, c->length, NULL, 0); 
+					WideCharToMultiByte(CP_UTF8, 0, ptr, -1, (LPSTR)c->data, c->length, NULL, 0); 
 					if ( c->length > 0) c->length--; // terminating 0
 					ret = true;
 				} else {
@@ -161,7 +161,7 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 				if ( !( ptr = ( Byte*) GlobalLock( ph)))
 					apiErrRet;
 				apcErrClear;
-				len = strlen( ptr);
+				len = strlen(( char*) ptr);
 				c-> length = 0;
 				if ((c-> data = ( Byte *) malloc( len))) {
 					for ( i = 0; i < len; i++) 
@@ -225,7 +225,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 
 				if (( glob = GlobalAlloc( GMEM_DDESHARE, ( ulen + 0) * sizeof( WCHAR)))) {
 					if (( ptr = GlobalLock( glob))) {
-						MultiByteToWideChar(CP_UTF8, 0, c-> data, c-> length, ptr, ulen);
+						MultiByteToWideChar(CP_UTF8, 0, (LPSTR)c-> data, c-> length, ptr, ulen);
 						GlobalUnlock( glob);
 						if ( !SetClipboardData( CF_UNICODETEXT, glob)) apiErr;
 					} else {
@@ -233,7 +233,6 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 						apiErr;
 					}
 				} else apiErr;
-				
 			}
 			return true;
 		case CF_TEXT:

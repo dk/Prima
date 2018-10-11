@@ -391,7 +391,7 @@ SV *
 Drawable_get_handle( Handle self)
 {
 	char buf[ 256];
-	snprintf( buf, 256, "0x%08lx", apc_gp_get_handle( self));
+	snprintf( buf, 256, PR_HANDLE_FMT, apc_gp_get_handle( self));
 	return newSVpv( buf, 0);
 }
 

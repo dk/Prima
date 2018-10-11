@@ -800,7 +800,7 @@ img_put_image_on_bitmap_or_pixmap( Handle self, Handle image, PutImageRequest * 
 	HDC src;
 	HPALETTE pal_src, pal_src_save, pal_dst_save;
 	HBITMAP bm_src_save;
-	COLORREF oFore, oBack;
+	COLORREF oFore = 0, oBack = 0;
 	PImage i = (PImage) image;
 
 	image_fill_bitmap_cache( image, bm_type, self );
@@ -831,7 +831,7 @@ img_put_image_on_bitmap_or_pixmap( Handle self, Handle image, PutImageRequest * 
 
 	/* draw */
 	ok = img_put_stretch_blt( sys ps, src, req );
-	
+
 	/* clean up */
 	if ((bm_type == BM_PIXMAP) && (( i->type & imBPP) == 1)) {
 		SetTextColor( sys ps, oFore);
@@ -1432,6 +1432,9 @@ apc_dbm_create( Handle self, int type)
 		}
 		sys bm = image_create_argb_dib_section( dc, var w, var h, &sys s. image. argbBits);
 		break;
+	default:
+		DeleteDC( sys ps);
+		return false;
 	}
 
 	if ( !sys bm) {
@@ -2096,7 +2099,7 @@ apc_prn_set_option( Handle self, char * option, char * value)
 
 	/* DM_FORMNAME string is special because it's a literal string */
 	if ( v == DM_FORMNAME) {
-		strncpy( dev-> dmFormName, value, CCHFORMNAME);
+		strncpy((char*) dev-> dmFormName, value, CCHFORMNAME);
 		dev-> dmFormName[CCHFORMNAME-1] = 0;
 		return true;
 	}
@@ -2239,7 +2242,7 @@ apc_prn_get_option( Handle self, char * option, char ** value)
 		sprintf( c = buf, "%d", dev-> dmCollate);
 		break;
 	case DM_FORMNAME:
-		strncpy( c = buf, dev-> dmFormName, CCHFORMNAME);
+		strncpy( c = buf, (char*)dev-> dmFormName, CCHFORMNAME);
 		break;
 	default:
 		return false;
@@ -2247,7 +2250,7 @@ apc_prn_get_option( Handle self, char * option, char ** value)
 
 	if ( c) 
 		*value = duplicate_string( c);
-		
+
 	return true; 
 }
 

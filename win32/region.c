@@ -388,7 +388,6 @@ apc_gp_set_region( Handle self, Handle region)
 {
 	HRGN rgn = nil;
 	objCheck false;
-	RECT xr;
 
 	if ( !is_opt( optInDraw) || !sys ps) return true;
 

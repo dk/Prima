@@ -724,7 +724,6 @@ set_view_ex( Handle self, PViewProfile p)
 {
 	int i;
 	Bool clip_by_children;
-	HWND wnd = ( HWND) var handle;
 	if ( sys className == WC_FRAME && is_apt(aptLayered)) {
 		SetWindowRgn((HWND) var handle, p-> shape, true);
 	} else
@@ -1221,7 +1220,7 @@ map_text_accel( PMenuItemReg i)
 {
 	char * c;
 	int l1, l2 = 0, amps = 0;
-	WCHAR *buf, *text, *accel;
+	WCHAR *buf, *text, *accel = NULL;
 
 	c = i-> text;
 	while (*c++) if ( *c == '&') amps++;
@@ -2599,6 +2598,7 @@ apc_widget_set_clip_by_children( Handle self, Bool clip_by_children)
 		f &= ~WS_CLIPCHILDREN;
 	SetWindowLong( HANDLE, GWL_STYLE, f);
 	while ( PeekMessage( &msg, HANDLE, WM_MOUSEMOVE, WM_MOUSEMOVE, PM_REMOVE));
+	return true;
 }
 
 Bool
@@ -3633,10 +3633,10 @@ win32_openfile( const char * params)
 			DWORD error;
 			error = CommDlgExtendedError();
 			if ( error != 0) {
-				warn("win32.OpenFile: Get%sFileName error %d at line %d at %s\n", 
-			 (strncmp( params, "open", 4) == 0) ? "Open" : "Save",
+				warn("win32.OpenFile: Get%sFileName error %lu at line %d at %s\n", 
+			 		(strncmp( params, "open", 4) == 0) ? "Open" : "Save",
 					error,
-			 __LINE__, __FILE__
+			 		__LINE__, __FILE__
 				);
 			}
 		}
@@ -3708,7 +3708,7 @@ apc_system_action( const char * params)
 			RECT r;
 			Handle win;
 			Handle self;
-			int i = sscanf( params + 20, "%lu %ld %ld %ld %ld", &win, &r.left, &r.bottom, &r.right, &r.top);
+			int i = sscanf( params + 20, "%" PR_HANDLE " %ld %ld %ld %ld", &win, &r.left, &r.bottom, &r.right, &r.top);
 
 			if ( i != 5 || !( self = hwnd_to_view(( HWND) win))) {
 				warn( "Bad parameters to sysaction win32.DrawFocusRect");
@@ -3745,7 +3745,7 @@ apc_system_action( const char * params)
 
 			if ( strcmp( params, " exists") == 0) {
 				char * p = ( char *) malloc(12);
-				if ( p) sprintf( p, "0x%08lx", ( Handle) guts. console);
+				if ( p) sprintf( p, "0x%08" PR_HANDLE, ( Handle) guts. console);
 				return p;
 			} else
 			if ( strcmp( params, " hide") == 0)     { ShowWindow( guts. console, SW_HIDE); } else

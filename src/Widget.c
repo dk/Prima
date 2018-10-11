@@ -1721,7 +1721,7 @@ SV *
 Widget_get_handle( Handle self)
 {
 	char buf[ 256];
-	snprintf( buf, 256, "0x%08lx", apc_widget_get_handle( self));
+	snprintf( buf, 256, PR_HANDLE_FMT, apc_widget_get_handle( self));
 	return newSVpv( buf, 0);
 }
 
@@ -1730,7 +1730,7 @@ SV *
 Widget_get_parent_handle( Handle self)
 {
 	char buf[ 256];
-	snprintf( buf, 256, "0x%08lx", apc_widget_get_parent_handle( self));
+	snprintf( buf, 256, PR_HANDLE_FMT, apc_widget_get_parent_handle( self));
 	return newSVpv( buf, 0);
 }
 

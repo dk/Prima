@@ -902,7 +902,7 @@ SV *
 AbstractMenu_get_handle( Handle self)
 {
 	char buf[ 256];
-	snprintf( buf, 256, "0x%08lx", var-> system ? apc_menu_get_handle( self) : self);
+	snprintf( buf, 256, PR_HANDLE_FMT, var-> system ? apc_menu_get_handle( self) : self);
 	return newSVpv( buf, 0);
 }
 

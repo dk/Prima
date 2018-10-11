@@ -117,13 +117,10 @@ gp_Arc(
   double angleStart, double angleEnd
 ) {
 	if ( nXRadial1 == nXRadial2 && nYRadial1 == nYRadial2 && fabs(angleStart - angleEnd) < 360 ) {
-		int cx, cy;
 		Bool ret;
 		HGDIOBJ old;
 
 		old = SelectObject( sys ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
-		cx  = ( nLeftRect + nRightRect ) / 2;
-		cy  = ( nTopRect  + nBottomRect ) / 2;
 		adjust_line_end( nXRadial1, nYRadial1, &nXRadial2, &nYRadial2, true);
 		MoveToEx( sys ps, nXRadial1, nYRadial1, nil);
 		ret = LineTo( sys ps, nXRadial2, nYRadial2);
@@ -150,7 +147,6 @@ gp_Chord(
 		(abs(nYRadial1 == nYRadial2) < 2) &&
 		(fabs(angleStart - angleEnd) < 360 )
 	) {
-		int cx, cy;
 		Bool ret;
 		HGDIOBJ old;
 
@@ -1015,7 +1011,7 @@ gp_get_font_def_bitmap( Handle self, int first, int last, Bool unicode, PFontABC
 	DeleteObject( bm );
 	DeleteDC( dc );
 	free( glyph );
-	return true;
+	return ret;
 }
 
 PFontABC
