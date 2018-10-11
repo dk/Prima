@@ -41,8 +41,8 @@ fill_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSiz
 		}
 	} else if ( *dstPalSize != 0) {
 		if ( *dstPalSize > maxPalSize) {
+			cm_squeeze_palette( dstPal, *dstPalSize, dstPal, maxPalSize);
 			*dstPalSize = maxPalSize;
-			cm_squeeze_palette( dstPal, *dstPalSize, dstPal, *dstPalSize);
 		}
 	} else if ( var-> palSize > maxPalSize) {
 		cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize = maxPalSize);
