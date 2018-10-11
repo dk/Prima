@@ -367,6 +367,8 @@ sub setup_environment
 		$LD_LIB_EXT   = '';
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
 		$OPENMP       = '-fopenmp';
+		$OPTIMIZE    .= ' -Wall';
+
 	}
 	
 	$DEFFILE    = 'Prima.def';
@@ -989,7 +991,6 @@ MSCVER
 	push @LIBPATH, '/usr/lib/w32api' if $cygwin;
 	if ($^O eq 'solaris') {
 		push @LIBPATH, '/opt/csw/lib';
-		$OPTIMIZE .= ' -Wall' if $compiler_type eq 'gcc';
 	}
 }
 

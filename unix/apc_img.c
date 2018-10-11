@@ -431,6 +431,8 @@ apc_dbm_create( Handle self, int type)
 		XX-> type.pixmap = 1;
 		depth = guts.depth;
 		break;
+	default:
+		return false;
 	}
 	XX-> type.dbm = true;
 	XX-> type.drawable = true;
@@ -2822,7 +2824,7 @@ apc_gp_stretch_image( Handle self, Handle image,
 		CImage(obj)-> stretch( obj, dst_w, dst_h );
 		ok  = apc_gp_put_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);
 	} else {
-		return apc_gp_put_image( self, obj, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);
+		return apc_gp_put_image( self, image, dst_x, dst_y, 0, 0, dst_w, dst_h, rop);
 	}
 
 	Object_destroy( obj );

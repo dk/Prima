@@ -930,6 +930,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	if ( pexist( render_intent)) {
 		char * c = pget_c( render_intent);
 		if ( stricmp( c, "none") != 0) {
+			int i;
 			if ( stricmp( c, "saturation") == 0) i = PNG_sRGB_INTENT_SATURATION; else
 			if ( stricmp( c, "perceptual") == 0) i = PNG_sRGB_INTENT_PERCEPTUAL; else
 			if ( stricmp( c, "relative")   == 0) i = PNG_sRGB_INTENT_RELATIVE; else
@@ -937,6 +938,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 				snprintf( fi-> errbuf, 256, "Unknown render_intent option '%s'", c);
 				return false;
 			}
+			png_set_sRGB( l-> png_ptr, l-> info_ptr, i);
 		}
 	}
 #endif   

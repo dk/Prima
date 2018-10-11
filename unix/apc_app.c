@@ -230,7 +230,7 @@ init_x11( char * error_buf )
 
 	{
 		struct sockaddr name;
-		int l = sizeof( name);
+		socklen_t l = sizeof( name);
 		guts. local_connection = getsockname( guts.connection, &name, &l) >= 0 && l == 0;
 	}
 

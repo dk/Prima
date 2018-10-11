@@ -1312,6 +1312,7 @@ sub out_method_profile
 			print HEADER "\t$result $eptr $incRes;\n\n";
 		}
 		}
+		print HEADER "\t(void)$incCount;\n";
 		print HEADER "\tENTER;\n";
 		print HEADER "\tSAVETMPS;\n";
 		print HEADER "\tPUSHMARK( sp);\n\n";

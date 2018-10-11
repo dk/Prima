@@ -150,7 +150,8 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 		var->type = new_type;
 		return;
 	}
-	if (( var->conversion & ictpMask ) == ictpCubic) want_palette = true;
+	if (( var->conversion & ictpMask) == ictpCubic)
+		want_palette = true;
 	if ( var-> type == new_type && (
 		((new_type != imbpp8 && new_type != imbpp4 && new_type != imbpp1) || !want_palette)
 		)) return;
@@ -1621,7 +1622,7 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 void
 Image_rotate( Handle self, int degrees)
 {
-	Byte * new_data;
+	Byte * new_data = NULL;
 	int new_line_size = 0;
 
 	switch (degrees) {
@@ -1649,7 +1650,6 @@ Image_rotate( Handle self, int degrees)
 	switch (degrees) {
 	case 90:
 	case 270:
-		new_data = NULL;
 		new_line_size = LINE_SIZE( var-> h , var->type);
 		if (( new_data = allocb( new_line_size * var->w )) == NULL )
 			croak("Image::rotate: cannot allocate %d bytes", new_line_size * var->w);
