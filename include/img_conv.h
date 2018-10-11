@@ -28,6 +28,7 @@ extern Bool ic_stretch_filtered( int type, Byte * oldData, int oldW, int oldH, B
 extern void ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int * palSize, Bool palSize_only);
 extern Bool itype_supported( int type);
 extern Bool itype_importable( int type, int *newtype, void **from_proc, void **to_proc);
+extern Bool iconvtype_supported( int conv);
 
 /* palette routines */
 extern void cm_init_colormap( void);

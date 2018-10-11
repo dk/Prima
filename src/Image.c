@@ -42,8 +42,15 @@ Image_init( Handle self, HV * profile)
 	Image_reset_notifications( self);
 	var->w = pget_i( width);
 	var->h = pget_i( height);
-	var->conversion = pget_i( conversion);
+	if ( !iconvtype_supported( var->conversion = pget_i( conversion) )) {
+		warn("Invalid conversion: %d\n", var->conversion);
+		var->conversion = ictNone;
+	}
 	var->scaling = pget_i( scaling);
+	if ( var->scaling < istNone || var-> scaling > istMax) {
+		warn("Invalid scaling: %d\n", var->scaling);
+		var-> scaling = istNone;
+	}
 	if ( !itype_supported( var-> type = pget_i( type))) 
 		if ( !itype_importable( var-> type, &var-> type, nil, nil)) {
 			warn( "Image::init: cannot set type %08x", var-> type);
@@ -977,6 +984,8 @@ int
 Image_conversion( Handle self, Bool set, int conversion)
 {
 	if ( !set)
+		return var-> conversion;
+	if ( !iconvtype_supported(conversion))
 		return var-> conversion;
 	return var-> conversion = conversion;
 }

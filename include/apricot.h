@@ -2948,10 +2948,12 @@ END_TABLE(ictd,UV)
 /* Image conversion types: palette optimization */
 #define ICTP(const_name) CONSTANT(ictp,const_name)
 START_TABLE(ictp,UV)
-#define    ictpCubic              0
+#define    ictpUnoptimized        0
+ICTP(Unoptimized)
+#define    ictpCubic              0x10
 ICTP(Cubic)
-#define    ictpRepresentative     0x10
-ICTP(Representative)
+#define    ictpOptimized          0x20
+ICTP(Optimized)
 #define    ictpMask               0xf0
 ICTP(Mask)
 END_TABLE(ictp,UV)
@@ -2960,15 +2962,15 @@ END_TABLE(ictp,UV)
 /* Image conversion types */
 #define ICT(const_name) CONSTANT(ict,const_name)
 START_TABLE(ict,UV)
-#define    ictNone               (ictdNone|ictpCubic)
+#define    ictNone               (ictdNone|ictpUnoptimized)
 ICT(None)
-#define    ictPosterization      (ictdNone|ictpRepresentative)
+#define    ictPosterization      (ictdNone|ictpOptimized)
 ICT(Posterization)
 #define    ictOrdered            (ictdOrdered|ictpCubic)
 ICT(Ordered)
 #define    ictErrorDiffusion     (ictdErrorDiffusion|ictpCubic)
 ICT(ErrorDiffusion)
-#define    ictOptimized          (ictdErrorDiffusion|ictpRepresentative)
+#define    ictOptimized          (ictdErrorDiffusion|ictpOptimized)
 ICT(Optimized)
 END_TABLE(ict,UV)
 #undef ICT

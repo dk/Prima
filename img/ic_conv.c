@@ -1052,6 +1052,7 @@ BC( rgb, nibble, Optimized)
 	U16 * tree;
 	Byte * buf;
 	dEDIFF_ARGS;
+	BCWARN;
 
 	EDIFF_INIT;
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) {

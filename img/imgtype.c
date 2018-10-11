@@ -85,7 +85,7 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 
 	/* fill grayscale palette, if any */
 	if ( orgDstType & imGrayScale) {
-		/* XXX check ictpCubic on dst grayscales */
+		/* XXX check ictpUnoptimized on dst grayscales */
 		switch( orgDstType & imBPP) {
 		case imbpp1:
 			memcpy( dstPal, stdmono_palette, sizeof( stdmono_palette));
@@ -102,7 +102,6 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 		}
 	} else if ( 
 		(( var->conversion & ictpMask ) == ictpCubic) &&
-		( var->conversion != ictNone) &&
 		(( orgDstType & imBPP) <= (srcType & imBPP)) &&
 		(*dstPalSize == 0 || palSize_only)
 	) {
@@ -480,6 +479,23 @@ itype_supported( int type)
 	int i = 0;
 	while( imTypes[i] != type && imTypes[i] != -1) i++;
 	return imTypes[i] != -1;
+}   
+
+static int imConversions[] = {
+	ictNone,
+	ictPosterization,
+	ictOrdered,
+	ictErrorDiffusion,
+	ictOptimized,
+	-1
+};
+
+Bool
+iconvtype_supported( int conv)
+{
+	int i = 0;
+	while( imConversions[i] != conv && imConversions[i] != -1) i++;
+	return imConversions[i] != -1;
 }   
 
 void

@@ -619,8 +619,14 @@ an image
 
 These constants select how the target palette is made up when downsampling an image.
 
-	ictp::Cubic          - use static cubic palette
-	ictp::Representative - collect available colors in the image
+	ictp::Unoptimized  - use whatever color mapping method is fastest,
+	                     image quality can be severely compromized
+	ictp::Cubic        - use static cubic palette; a bit slower,
+	                     guaranteed mediocre quality
+	ictp::Optimized    - collect available colors in the image;
+	                     slowest, gives best results
+
+Not all combination of ictp and ictd constants are valid
 
 =head2 is::  - image statistics indices
 
