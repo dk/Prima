@@ -911,7 +911,7 @@ EOF
 				$OPENMP .= " $1";
 				goto YES_OPENMP if compile($text);
 			}
-				
+
 			@LIBS = @savelibs;
 			$cmd_options{WITH_OPENMP} = 0;
 			$cmd_options{EXTRA_CCFLAGS} = $save;
@@ -933,11 +933,25 @@ EOF
 				printlog "yes\n";
 				$DEFINES{HAVE_OPENMP} = 1;
 			} else {
-				@LIBS = @savelibs;
-				$cmd_options{WITH_OPENMP} = 0;
-				$cmd_options{EXTRA_CCFLAGS} = $save;
-				printlog "no, config is broken\n";
-				$END .= <<OPENMP;
+				my $gcc_lib_path;
+				if ( $compiler_type eq 'gcc') {
+					printlog "no, looking it up ...";
+					for ( split "\n", `gcc --print-search-dirs`) {
+						next unless /^install:\s+(.*)/;
+						$gcc_lib_path = $1;
+						last;
+					}
+				}
+				if ( -d $gcc_lib_path ) {
+					unshift @LIBPATH, $gcc_lib_path;
+					printlog "yes, in $gcc_lib_path\n";
+					$DEFINES{HAVE_OPENMP} = 1;
+				} else {
+					@LIBS = @savelibs;
+					$cmd_options{WITH_OPENMP} = 0;
+					$cmd_options{EXTRA_CCFLAGS} = $save;
+					printlog "no, config is broken\n";
+					$END .= <<OPENMP;
 
 ** Warning: Your system has OpenMP libraries and Prima can use them.
 
@@ -947,6 +961,7 @@ system perl location so that it points to location of complier-specific
 libraries where libgomp is located.
 
 OPENMP
+				}
 			}
 		}
 	}
