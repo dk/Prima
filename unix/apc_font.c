@@ -160,9 +160,10 @@ font_query_name( XFontStruct * s, PFontInfo f)
 					strcpy( f-> font. name, fx. name);
 				}
 			} else {
-				char c[256];
-				snprintf( c, 256, "%s %s", f-> font. family, f-> font. name);
-				strcpy( f-> font. name, c);
+				char c[512];
+				snprintf( c, 512, "%s %s", f-> font. family, f-> font. name);
+				strncpy( f-> font. name, c, 256);
+				f-> font.name[255] = 0;
 			}
 		}
 		str_lwr( f-> font. family, f-> font. family);
@@ -1777,11 +1778,11 @@ apc_gp_set_font( Handle self, PFont font)
 #ifdef USE_XFT
 	if ( guts. use_xft && prima_xft_set_font( self, font)) return true;
 #endif
-	
+
 	kf = prima_find_known_font( font, false, false);
 	if ( !kf || !kf-> id) {
 		dump_font( font);
-		if ( DISP) warn( "internal error (kf:%08lx)", PTR2UV(kf)); /* the font was not cached, can't be */
+		if ( DISP) warn( "internal error (kf:%p)", kf); /* the font was not cached, can't be */
 		return false;
 	}
 
@@ -1792,8 +1793,8 @@ apc_gp_set_font( Handle self, PFont font)
 		if ( XX-> font && ( --XX-> font-> refCnt <= 0)) {
 			prima_free_rotated_entry( XX-> font);
 			XX-> font-> refCnt = 0;
-		}   
-	}   
+		}
+	}
 
 	XX-> font = kf;
 
@@ -1802,7 +1803,7 @@ apc_gp_set_font( Handle self, PFont font)
 		XSetFont( DISP, XX-> gc, XX-> font-> id);
 		XCHECKPOINT;
 	}
-	
+
 	return true;
 }
 
@@ -1826,7 +1827,7 @@ apc_menu_set_font( Handle self, PFont font)
 		kf = prima_find_known_font( font, false, false);
 		if ( !kf || !kf-> id) {
 			dump_font( font);
-			warn( "internal error (kf:%08lx)", PTR2UV(kf)); /* the font was not cached, can't be */
+			warn( "internal error (kf:%p)", kf); /* the font was not cached, can't be */
 			return false;
 		}
 	}
