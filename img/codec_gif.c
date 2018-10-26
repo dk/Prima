@@ -108,6 +108,7 @@ init( ImgCodecInfo ** info, void * param)
 #else
 	sscanf( GIF_LIB_VERSION, "%*s %d.%d", &codec_info.versionMaj, &codec_info.versionMin);
 	if (codec_info.versionMaj > 4) EGifSetGifVersion( "89a");
+
 #endif
 
 	return (void*)1;
