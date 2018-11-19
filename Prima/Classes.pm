@@ -657,7 +657,7 @@ sub ui_scale
 	if ( $scaling <= ist::Box ) {
 		# don't uglify bitmaps with box scaling where zoom is 1.25 or 2.75
 		$zoom = int($zoom + .5);
-		return if $zoom <= 1.0;
+		return $self if $zoom <= 1.0;
 	}
 
 	$self->set(
