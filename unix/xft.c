@@ -563,6 +563,27 @@ xft_store_font(Font * k, Font * v, Bool by_size, XftFont * xft, XftFont * xft_ba
 static int force_xft_monospace_emulation = 0;
 static int try_xft_monospace_emulation_by_name = 0;
 
+/* Bug #128146: libXft might use another shared libfontconfig library, as
+ * observed on a badly configured macos, and thus FcPattern* returned by it 
+ * can crash everything */
+static FcPattern *
+my_XftFontMatch(Display        *dpy,
+              int               screen,
+              _Xconst FcPattern *pattern,
+              FcResult          *result)
+{
+    FcPattern   *new;
+    FcPattern   *match;
+    new = FcPatternDuplicate (pattern);
+    if (!new)
+        return NULL;
+    FcConfigSubstitute (NULL, new, FcMatchPattern);
+    XftDefaultSubstitute (dpy, screen, new);
+    match = FcFontMatch (NULL, new, result);
+    FcPatternDestroy (new);
+    return match;
+}
+
 Bool
 prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, XftFont ** xft_result)
 {
@@ -719,7 +740,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		FcPatternAddBool( request, FC_ANTIALIAS, 0);
 
 	/* match best font - must return something useful; the match is statically allocated */
-	match = XftFontMatch( DISP, SCREEN, request, &res);
+	match = my_XftFontMatch( DISP, SCREEN, request, &res);
 	if ( !match) {
 		XFTdebug("XftFontMatch error");   
 		FcPatternDestroy( request);
