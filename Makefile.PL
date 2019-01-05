@@ -1038,8 +1038,6 @@ sub setup_defines
 	if ( $unix) {
 		have_header( "sys/ipc.h", "sys/types.h");
 		have_header( "sys/shm.h", "sys/types.h");
-		have_header( "X11/extensions/shape.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
-		have_header( "X11/extensions/XShm.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
 	}
 
 	if ( !have_funcs_in( 'strings.h', 'strcasecmp')) {
@@ -1566,6 +1564,9 @@ sub setup_x11_extension
 
 sub setup_xlibs
 {
+	have_header( "X11/extensions/shape.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
+	have_header( "X11/extensions/XShm.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
+
 	setup_xft() if $cmd_options{WITH_XFT};
 
 	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
