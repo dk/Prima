@@ -220,7 +220,7 @@ sub reset_transaction
 	$self-> {maxwidth} -= $self-> {minTabWidth} if $self-> {tabId} < $self-> {count} - 1;
 	if ( $self-> {swidth} < 0) {
 		$self-> {minwidth} = -$self-> {swidth} - 1;
-		$self-> {minwidth} = $self-> {minTabWidth} 
+		$self-> {minwidth} = $self-> {minTabWidth}
 			if $self-> {minwidth} > $self-> {minTabWidth};
 	} else {
 		$self-> {minwidth} = $self-> {minTabWidth};
@@ -516,7 +516,7 @@ sub widths
 	if ( scalar @widths > $self-> {count}) {
 		splice( @{$self-> {widths}}, $self-> {count});
 	} elsif ( scalar @widths < $self-> {count}) {
-		push( @{$self-> {widths}}, 
+		push( @{$self-> {widths}},
 			(( $self-> {minTabWidth}) x ( $self-> {count} - scalar @widths)));
 	}
 	for ( @{$self-> {widths}}) {
@@ -590,7 +590,7 @@ updated.
 Called when the user resizes a tab in INDEX position. OLD_EXTENT and NEW_EXTENT
 are either width or height of the tab, depending on L<vertical> property value.
 
-=item SizeItems 
+=item SizeItems
 
 Called when more than one tab has changed its extent. This might happen as a result
 of user action, as well as an effect of set-calling to some properties.
@@ -626,10 +626,10 @@ Default value: 2
 
 =item offset INTEGER
 
-An offset on the major axis ( depends on L<vertical> property value ) 
+An offset on the major axis ( depends on L<vertical> property value )
 that the widget is drawn with. Used for the conjunction with list widgets
-( see L<Prima::DetailedList> ), when the list is horizontally or 
-vertically scrolled. 
+( see L<Prima::DetailedList> ), when the list is horizontally or
+vertically scrolled.
 
 Default value: 0
 
@@ -652,7 +652,7 @@ If 1, the tabs are aligned vertically;
 the L<offset>, L<widths> property and extent parameters of the callback
 notification assume heights of the tabs.
 
-If 0, the tabs are aligned horizontally, and the extent properties 
+If 0, the tabs are aligned horizontally, and the extent properties
 and parameters assume tab widths.
 
 =item widths ARRAY

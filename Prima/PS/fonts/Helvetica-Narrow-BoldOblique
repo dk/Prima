@@ -1,8 +1,8 @@
-('Helvetica-Narrow-BoldOblique' => { 
+('Helvetica-Narrow-BoldOblique' => {
   name            => 'Helvetica-Narrow-BoldOblique',
   family          => 'Helvetica Narrow',
   height          => 1190,
-  weight          => fw::Bold,   
+  weight          => fw::Bold,
   style           => fs::Bold,
   pitch           => fp::Variable,
   vector          => 1,

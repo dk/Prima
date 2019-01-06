@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -63,11 +63,11 @@ my $w = Prima::MainWindow->new(
 
 $w-> insert( Timer =>
 	timeout => 50,
-	onTick => sub { 
+	onTick => sub {
 		$angle += 10;
 		$angle -= 360 if $angle >= 360;
 		dwm_reset($w);
-	},   
+	},
 ) -> start;
 
 run Prima;

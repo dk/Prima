@@ -14,9 +14,9 @@ sub filtered_codecs
 	return map {
 		my $n = uc $_-> {fileExtensions}->[0];
 		my $x = join( ';', map {"*.$_"} @{$_-> {fileExtensions}});
-		[ "$n - $_->{fileType}" => $x ] 
+		[ "$n - $_->{fileType}" => $x ]
 	} sort {
-		$a-> {fileExtensions}->[0] cmp $b-> {fileExtensions}->[0] 
+		$a-> {fileExtensions}->[0] cmp $b-> {fileExtensions}->[0]
 	} @$codecs;
 }
 
@@ -43,7 +43,7 @@ sub notification_types { return \%RNT; }
 
 sub profile_default {
 	my $codecs = [ grep { $_-> {canLoad} } @{Prima::Image-> codecs}];
-	return { 
+	return {
 		%{$_[ 0]-> SUPER::profile_default},
 		preview  => 1,
 		sizeMin  => [380,400],
@@ -62,8 +62,8 @@ sub init
 	my $self = shift;
 	$self-> {preview} = 0;
 	my %profile = $self-> SUPER::init(@_);
-	
-	my $pk = $self-> insert( ImageViewer => 
+
+	my $pk = $self-> insert( ImageViewer =>
 		origin     => [ 524, 120],
 		name       => 'PickHole',
 		borderWidth=> 1,
@@ -76,7 +76,7 @@ sub init
 	);
 	$pk-> size(($self-> Cancel-> width) x 2); # force square dimension
 
-	$self-> insert( ScrollBar => 
+	$self-> insert( ScrollBar =>
 		origin      => [ $pk-> left, $pk-> top + 2],
 		width       => $pk-> width,
 		selectable  => 1,
@@ -89,7 +89,7 @@ sub init
 		growMode    => gm::GrowLoX | gm::GrowLoY,
 	);
 
-	$self-> {Preview} = $self-> insert( CheckBox => 
+	$self-> {Preview} = $self-> insert( CheckBox =>
 		origin => [ 524, 80],
 		text   => '~Preview',
 		size   => [ 96, 36],
@@ -98,7 +98,7 @@ sub init
 		growMode    => gm::GrowLoX | gm::GrowLoY,
 	);
 
-	$self-> insert( Label => 
+	$self-> insert( Label =>
 		origin => [ 524, 5],
 		size   => [ 96, 76],
 		name   => 'Info',
@@ -108,7 +108,7 @@ sub init
 		wordWrap => 1,
 		growMode   => gm::GrowLoX | gm::GrowHiY,
 	);
-	
+
 	$self-> preview( $profile{preview});
 	$self-> {frameIndex} = 0;
 	return %profile;
@@ -127,18 +127,18 @@ sub update_preview
 	$s-> hide unless $s-> {block};
 	$self-> {frameIndex} = 0;
 	return unless $self-> preview;
-	
+
 	my $x = $self-> Files;
 	$x = $x-> get_items( $x-> focusedItem);
 	$i-> image( undef);
 	return unless defined $x;
-	
+
 	$x = $self-> directory . $x;
 	return unless -f $x;
-	
-	$x = Prima::Icon-> load( $x, 
-		loadExtras => 1, 
-		wantFrames => 1, 
+
+	$x = Prima::Icon-> load( $x,
+		loadExtras => 1,
+		wantFrames => 1,
 		iconUnmask => 1,
 		index => $s-> {block} ? $s-> value : 0,
 	);
@@ -183,7 +183,7 @@ sub preview
 sub Preview_Click
 {
 	$_[0]-> update_preview;
-}   
+}
 
 sub on_endmodal
 {
@@ -218,13 +218,13 @@ sub FrameSelector_Change
 }
 
 sub PreviewImage_HeaderReady
-{ 
+{
 	my ( $self, $image) = @_;
 	$self-> notify(q(HeaderReady), $image);
 }
 
 sub PreviewImage_DataReady
-{ 
+{
 	my ( $self, $image, $x, $y, $w, $h) = @_;
 	$self-> notify(q(DataReady), $x, $y, $w, $h);
 }
@@ -262,7 +262,7 @@ use vars qw( @ISA);
 
 sub profile_default  {
 	my $codecs = [ grep { $_-> {canSave} } @{Prima::Image-> codecs}];
-	return { 
+	return {
 		%{$_[ 0]-> SUPER::profile_default},
 		text     => 'Save image',
 		filter   => [ Prima::ImageDialog::filtered_codecs($codecs) ],
@@ -276,7 +276,7 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
-	$self-> {ConvertTo} = $self-> insert( ComboBox => 
+	$self-> {ConvertTo} = $self-> insert( ComboBox =>
 		origin => [ 524, 80],
 		items  => [],
 		enabled => 0,
@@ -284,8 +284,8 @@ sub init
 		style => cs::DropDownList,
 		size  => [ 96, 25],
 		growMode   => gm::GrowLoX,
-	);   
-	$self-> insert( Label => 
+	);
+	$self-> insert( Label =>
 		origin => [ 524, 110],
 		text   => '~Convert to:',
 		size  => [ 96, 20],
@@ -293,7 +293,7 @@ sub init
 		focusLink => $self-> {ConvertTo},
 		growMode   => gm::GrowLoX,
 	);
-	$self-> {UseFilter} = $self-> insert( CheckBox => 
+	$self-> {UseFilter} = $self-> insert( CheckBox =>
 		origin => [ 524, 20],
 		text   => '~Use filter',
 		size   => [ 96, 36],
@@ -301,15 +301,15 @@ sub init
 		delegations => [qw(Click)],
 		growMode   => gm::GrowLoX,
 	);
-	
+
 	$self-> {codecFilters} = [];
 	$self-> {allCodecs} = Prima::Image-> codecs;
-	$self-> {codecs} = [ 
-		sort { $a-> {fileExtensions}->[0] cmp $b-> {fileExtensions}->[0] } 
+	$self-> {codecs} = [
+		sort { $a-> {fileExtensions}->[0] cmp $b-> {fileExtensions}->[0] }
 		grep { $_-> {canSave}} @{$self-> {allCodecs}}
 		];
 	my $codec = $self-> {codecs}-> [$self-> filterIndex];
-	
+
 	$self-> image( $profile{image});
 	$self-> filterDialog( $profile{filterDialog});
 	$self-> ExtensionsLabel-> text("Sav~e as type ($codec->{fileShortType})");
@@ -331,21 +331,21 @@ sub update_conversion
 	my $i = $self-> {image};
 	my $x = $self-> {ConvertTo};
 	my $xl = $self-> ConvertToLabel;
-	
+
 	$x-> items([]);
 	$x-> text('');
 	$x-> enabled(0);
 	$xl-> enabled(0);
 	return unless $i;
-	
+
 	my $t = $i-> type;
 	my @st = @{$codec-> {types}};
 	return unless @st;
 
 	my $max = 0;
 	my $j = 0;
-	for ( @st) { 
-		return if $_ == $t; 
+	for ( @st) {
+		return if $_ == $t;
 		$max = $j if ( $st[$max] & im::BPP) < ( $_ & im::BPP);
 		$j++;
 	}
@@ -383,10 +383,10 @@ sub image
 	return $_[0]-> {image} unless $#_;
 	my ( $self, $image) = @_;
 	$self-> {image} = $image;
-	if ( 
-		$image && 
-		exists($image-> {extras}) && 
-		(ref($image-> {extras}) eq 'HASH') && 
+	if (
+		$image &&
+		exists($image-> {extras}) &&
+		(ref($image-> {extras}) eq 'HASH') &&
 		defined($image-> {extras}-> {codecID})
 	) {
 		my $c = $self-> {allCodecs}-> [$image-> {extras}-> {codecID}];
@@ -411,7 +411,7 @@ sub save
 	my $ret;
 	my $dup;
 	return 0 unless $image;
-	
+
 	$dup = $image;
 	my $extras = $image-> {extras};
 	$self-> image( $image);
@@ -424,15 +424,15 @@ sub save
 
 	my $fi = $self-> filterIndex;
 	my $codec = $self-> {codecs}-> [ $fi];
-	
+
 
 # loading filter dialog, if any
 	if ( $self-> filterDialog) {
 		unless ( $self-> {codecFilters}-> [ $fi]) {
-			if ( 
-				$image && 
-				$codec && 
-				length($codec-> {module}) && 
+			if (
+				$image &&
+				$codec &&
+				length($codec-> {module}) &&
 				length( $codec-> {package})
 			) {
 				my $x = "use $codec->{module};";
@@ -442,11 +442,11 @@ sub save
 						"Error invoking $codec->{fileShortType} filter dialog:$@"
 					);
 				} else {
-					$self-> {codecFilters}-> [$fi] = 
+					$self-> {codecFilters}-> [$fi] =
 						$codec-> {package}-> save_dialog( $codec);
 				}
 			}
-		}    
+		}
 	}
 
 	if ( $self-> ConvertTo-> enabled) {
@@ -476,8 +476,8 @@ sub save
 	} else {
 		Prima::MsgBox::message("Error saving " . $self-> fileName . ":$@");
 	}
-	
-EXIT:   
+
+EXIT:
 	$self-> image( undef);
 	$image-> {extras} = $extras;
 	return $ret;
@@ -491,8 +491,8 @@ Prima::ImageDialog - file open and save dialogs.
 
 =head1 DESCRIPTION
 
-The module provides dialogs specially adjusted for image 
-loading and saving. 
+The module provides dialogs specially adjusted for image
+loading and saving.
 
 =head1 Prima::ImageOpenDialog
 
@@ -522,7 +522,7 @@ information.
 
 =item preview BOOLEAN
 
-Selects if the preview functionality is active. 
+Selects if the preview functionality is active.
 The user can switch it on and off interactively.
 
 Default value: 1
@@ -570,12 +570,12 @@ See L<Prima::Image/DataReady>.
 
 =head1 Prima::ImageSaveDialog
 
-Provides a save dialog where the user can select image format, 
+Provides a save dialog where the user can select image format,
 the bit depth and other format-specific options. The format-specific
 options can be set if a dialog for the file format is provided.
 The standard toolkit dialogs reside under in C<Prima::Image> namespace,
 in F<Prima/Image> subdirectory. For example, C<Prima::Image::gif> provides
-the selection of transparency color, and C<Prima::Image::jpeg> the image 
+the selection of transparency color, and C<Prima::Image::jpeg> the image
 quality control. If the image passed to the L<image> property contains
 C<{extras}> variable, the data are read and used as the default values.
 In particular, C<{extras}-E<gt>-{codecID}> field, responsible for the
@@ -606,11 +606,11 @@ needed when the execution and saving is invoked via L<save> method.
 =item save IMAGE, %PROFILE
 
 Invokes the dialog, and, if the execution was successful, saves
-the IMAGE according to the user selection and PROFILE hash. 
+the IMAGE according to the user selection and PROFILE hash.
 PROFILE is not used for the default options, but is passed
-directly to C<Prima::Image::save> call, possibly overriding 
+directly to C<Prima::Image::save> call, possibly overriding
 selection of the user.
-Returns 1 in case of success, 0 in case of error. 
+Returns 1 in case of success, 0 in case of error.
 If the error occurs, the user is notified before the method returns.
 
 =back

@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -19,7 +19,7 @@ use Prima::Application;
 
 my @tale = split( "\n", <<TALE);
 Fury said to
-a mouse, That 
+a mouse, That
 he met
 in the
 house,
@@ -86,13 +86,13 @@ $w = Prima::MainWindow-> create(
 	menuItems => [
 		['~Font' => [
 			[ '~Increase' , 'Ctrl+Plus' , km::Ctrl|ord('+') , sub {
-				return if $initfs >= 100; 
-				$initfs += 2; 
+				return if $initfs >= 100;
+				$initfs += 2;
 				typeset();
 			}],
 			[ '~Decrease' , 'Ctrl+Minus' , km::Ctrl|ord('-') , sub {
-				return if $initfs < 12; 
-				$initfs -= 2; 
+				return if $initfs < 12;
+				$initfs -= 2;
 				typeset();
 			}],
 		]],
@@ -116,7 +116,7 @@ sub typeset
 	$t-> {blocks} = [];
 
 	# Since we need to calculate text widths, this way it goes faster
-	$t-> begin_paint_info; 
+	$t-> begin_paint_info;
 	my $fontstate = $t-> create_state;
 
 	# select initial font size and page width
@@ -138,9 +138,9 @@ sub typeset
 			$fh = $t-> font-> height;
 			$fd = $t-> font-> descent;
 		}
-		
+
 		my ( $from, $width) = ( $indent * $indents[$i], $indent * $len);
-	
+
 		# set block position and attributes - each block contains single line and single text op
 		$$tb[ tb::BLK_TEXT_OFFSET] = $pos;
 		$$tb[ tb::BLK_WIDTH]  = $t-> get_text_width( $tale[$i]);
@@ -157,7 +157,7 @@ sub typeset
 			my $w1 = $t-> get_text_width( 'you');
 			my $w2 = $t-> get_text_width( '.');
 			my $w3 = $t-> get_text_width( '--');
-			push @$tb, 
+			push @$tb,
 				tb::fontStyle( fs::Italic),
 				tb::text( 0, 3, $w1),
 				tb::extend($fh / 3, $fh),
@@ -181,8 +181,8 @@ sub typeset
 		}
 		push @{$t-> {blocks}}, $tb;
 
-		$maxw = $$tb[ tb::BLK_WIDTH] + $$tb[ tb::BLK_X] 
-			if $maxw < $$tb[ tb::BLK_WIDTH] + $$tb[ tb::BLK_X]; 
+		$maxw = $$tb[ tb::BLK_WIDTH] + $$tb[ tb::BLK_X]
+			if $maxw < $$tb[ tb::BLK_WIDTH] + $$tb[ tb::BLK_X];
 		$pos += $len + $cr;
 		$old_x = $$tb[ tb::BLK_X];
 		$old_from = $from;

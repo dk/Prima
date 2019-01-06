@@ -3,7 +3,7 @@ use warnings;
 use Prima;
 use Prima::Utils;
 
-=pod 
+=pod
 
 =head1 NAME
 
@@ -36,8 +36,8 @@ $_ = 'E2D#EF2E2  G#2A4';
 
 for ( m/\G([A-G\s][\#\d]*)/g) {
 	my $d = (s/(\d+)$//) ? $1 : 1;
-	$octave{$_} ? 
-		Prima::Utils::sound( $octave{$_}, 100 * $d) : 
+	$octave{$_} ?
+		Prima::Utils::sound( $octave{$_}, 100 * $d) :
 		select(undef,undef,undef,0.1 * $d);
 }
 

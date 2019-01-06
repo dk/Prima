@@ -1,6 +1,6 @@
 #  Created by:
 #     Anton Berezin  <tobez@tobez.org>
-#     Dmitry Karasik <dk@plab.ku.dk> 
+#     Dmitry Karasik <dk@plab.ku.dk>
 #
 
 # Contains stubs for load-on-demand of the following modules:
@@ -68,7 +68,7 @@ sub AUTOLOAD
 package Prima;
 
 my ($openFileDlg, $saveFileDlg);
-	
+
 my @fileDlgProps = qw( defaultExt fileName filter filterIndex
 directory createPrompt multiSelect noReadOnly noTestFileCreate overwritePrompt
 pathMustExist fileMustExist sorted showDotFiles);
@@ -76,7 +76,7 @@ pathMustExist fileMustExist sorted showDotFiles);
 sub open_file
 {
 	my %profile = @_;
-	$openFileDlg = Prima::OpenDialog-> create( 
+	$openFileDlg = Prima::OpenDialog-> create(
 		system => exists($profile{system}) ? $profile{system} : 1,
 		onDestroy => sub { undef $openFileDlg},
 	) unless $openFileDlg;
@@ -89,7 +89,7 @@ sub open_file
 sub save_file
 {
 	my %profile = @_;
-	$saveFileDlg = Prima::SaveDialog-> create( 
+	$saveFileDlg = Prima::SaveDialog-> create(
 		system => exists($profile{system}) ? $profile{system} : 1,
 		onDestroy => sub { undef $saveFileDlg},
 	) unless $saveFileDlg;
@@ -111,7 +111,7 @@ sub AUTOLOAD
 	shift-> $method(@_);
 }
 
-package 
+package
     mb;
 
 use constant ChangeAll => 0xCA11;
@@ -200,12 +200,12 @@ The module accesses the following dialog classes:
 
 =over
 
-=item Prima::open_file 
+=item Prima::open_file
 
 Invokes standard file open dialog and return the selected file(s).
 Uses system-specific standard file open dialog, if available.
 
-=item Prima::save_file 
+=item Prima::save_file
 
 Invokes standard file save dialog and return the selected file(s).
 Uses system-specific standard file save dialog, if available.
@@ -232,7 +232,7 @@ See L<Prima::FileDialog/Prima::ChDirDialog>
 
 Font selection dialog.
 
-See L<Prima::FontDialog>. 
+See L<Prima::FontDialog>.
 
 =item Prima::FindDialog
 

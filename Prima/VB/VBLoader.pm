@@ -101,9 +101,9 @@ sub AUTOFORM_REALIZE
 			delete $parms-> {$main}-> {$_};
 		}
 	}
-	
+
 	delete $dep{$main}-> {profile}-> {owner};
-	
+
 	$dep{$main}-> {code}-> () if defined $dep{$main}-> {code} ;
 
 	$ret{$main} = $dep{$main}-> {class}-> create(
@@ -125,7 +125,7 @@ sub AUTOFORM_REALIZE
 			my $name = $$seq[$i];
 			next unless $owners{$name} eq $id;
 			# validating owner entry
-			$owners{$name} = $main unless exists $ret{$owners{$name}}; 
+			$owners{$name} = $main unless exists $ret{$owners{$name}};
 
 			my $o = $owners{$name};
 			$actions{onChild}-> {$o}-> ($o, $instances{$o}, $ret{$o}, $name)
@@ -134,7 +134,7 @@ sub AUTOFORM_REALIZE
 			for ( @{$dep{$name}-> {siblings}}) {
 				if ( exists $dep{$name}-> {profile}-> {$_}) {
 					if ( exists $ret{$dep{$name}-> {profile}-> {$_}}) {
-						$dep{$name}-> {profile}-> {$_} = 
+						$dep{$name}-> {profile}-> {$_} =
 							$ret{$dep{$name}-> {profile}-> {$_}}
 					} else {
 						$siblings{$name}-> {$_} = $dep{$name}-> {profile}-> {$_};
@@ -194,8 +194,8 @@ sub AUTOFORM_CREATE
 		while (<F>) {
 			$contents = $_, last unless /^#/;
 			next unless /^#\s*\[([^\]]+)\](.*)$/;
-			if ( $1 eq 'preload') { 
-				push( @preload_modules, split( ' ', $2)); 
+			if ( $1 eq 'preload') {
+				push( @preload_modules, split( ' ', $2));
 			}
 		}
 		local $/;
@@ -214,7 +214,7 @@ sub AUTOFORM_CREATE
 	return AUTOFORM_REALIZE( \@dep, \%parms);
 }
 
-package Prima; 
+package Prima;
 use strict;
 
 sub VBLoad
@@ -341,7 +341,7 @@ Visual Builder use the module interface without actual SUB evaluation.
 =item AUTOFORM_REALIZE WIDGETS, PARAMETERS
 
 WIDGETS is an array reference that contains evaluated data of
-the read content of .fm file ( its data format is preserved).  
+the read content of .fm file ( its data format is preserved).
 PARAMETERS is a hash reference with custom parameters passed to
 widgets during creation. The widgets are distinguished by the names.
 Visual Builder ensures that no widgets have equal names.
@@ -351,7 +351,7 @@ window, which is usually named C<Form1>. It automatically resolves
 parent-child relations, so the order of WIDGETS does not matter.
 Moreover, if a parent widget is passed as a parameter to
 a children widget, the parameter is deferred and passed after
-the creation using C<::set> call. 
+the creation using C<::set> call.
 
 During the parsing and creation process internal notifications can be invoked.
 These notifications (events) are stored in .fm file and usually provide
@@ -374,7 +374,7 @@ path name, or as a relative module name. In a way,
 
 and
 
-	Prima::VBLoad( 
+	Prima::VBLoad(
 		Prima::Utils::find_image( 'Module' 'form.fm'))
 
 are identical. If the procedure finds that FILENAME is a relative
@@ -494,11 +494,11 @@ Contains name of a class to be instantiated.
 
 =item extras HASH
 
-Contains a class-specific parameters, used by events. 
+Contains a class-specific parameters, used by events.
 
 =item module STRING
 
-Contains name of perl module that contains the class. The module 
+Contains name of perl module that contains the class. The module
 will be C<use>'d by the loader.
 
 =item parent BOOLEAN

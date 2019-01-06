@@ -18,7 +18,7 @@ SKIP: {
 	skip "xquartz doesn't support this", 2 if $^O eq 'darwin';
 	my $pix = $a-> pixel( 10, 10);
 	skip "rdesktop", 2 if $^O =~ /win32/i && $pix == cl::Invalid;
-	
+
 	$a-> pixel( 10, 10, 0);
 	my $bl = $a-> pixel( 10, 10);
 	$a-> pixel( 10, 10, 0xFFFFFF);
@@ -56,7 +56,7 @@ $::application->onIdle( sub { $p+=1 } );
 $::application->onIdle( sub { $p+=8 } );
 $::application->yield(1);
 ok( get_flag, "yield without events sleeps, but still is alive");
-ok( $p == 9, "idle event"); 
+ok( $p == 9, "idle event");
 
 $SIG{ALRM} = 'DEFAULT';
 alarm(10);

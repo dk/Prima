@@ -36,13 +36,13 @@ sub load
 		my $hash = ($k =~ /^on[A-Z]/ ? \%events : \%args);
 		$hash-> {$k} = $v;
 	}
-	
+
 	my $i = Prima::Icon-> new(%events); # dummy object
 
 	my @i = $i-> load(
 		$where,
-		loadExtras => 1, 
-		loadAll    => 1, 
+		loadExtras => 1,
+		loadAll    => 1,
 		iconUnmask => 1,
 		%args,
 	);
@@ -70,9 +70,9 @@ sub get_extras
 	$e-> {screenWidth}      ||= $ix-> width;
 	$e-> {$_} ||= 0 for qw(disposalMethod useScreenPalette delayTime left top);
 
-	$e-> {iconic} = 
-		$ix-> isa('Prima::Icon') 
-		&& $ix-> autoMasking != am::None; 
+	$e-> {iconic} =
+		$ix-> isa('Prima::Icon')
+		&& $ix-> autoMasking != am::None;
 		# gif doesn't support explicit masks, therefore
 		# when image actually has a mask, autoMaskign is set to am::Index
 
@@ -117,8 +117,8 @@ sub reset
 	my $self = shift;
 	$self-> {current} = -1;
 
-	delete @{$self}{qw(canvas bgColor saveCanvas 
-		saveMask image info 
+	delete @{$self}{qw(canvas bgColor saveCanvas
+		saveMask image info
 		screenWidth screenHeight
 		loopCount changedRect
 		)};
@@ -163,8 +163,8 @@ sub reset
 				$self-> {images}-> [0]-> palette;
 		my $i = $e-> {screenBackGroundColor} * 3;
 		$self-> {bgColor} = (
-			($$cm[$i+2] || 0) | 
-			(($$cm[$i+1] || 0) << 8) | 
+			($$cm[$i+2] || 0) |
+			(($$cm[$i+1] || 0) << 8) |
 			(($$cm[$i] || 0) << 16)
 		);
 	}
@@ -186,7 +186,7 @@ sub next
 		$self-> {canvas}-> clear;
 		$self-> {mask}-> backColor(cl::Set);
 		$self-> {mask}-> clear;
-		
+
 		%ret = %{ $self-> {changedRect} };
 		$self-> {changedRect} = {};
 	} elsif ( $info-> {disposalMethod} == DISPOSE_RESTORE_PREVIOUS) {
@@ -201,7 +201,7 @@ sub next
 		delete $self-> {saveRect};
 		%ret = %{ $info-> {rect} };
 	}
-	
+
 	# advance frame
 	delete @{$self}{qw(image info)};
 	if ( ++$self-> {current} >= @{$self-> {images}}) {
@@ -214,7 +214,7 @@ sub next
 	$self-> {image} = $self-> {images}-> [$self-> {current}];
 	my $old_info = $info;
 	$info = $self-> {info} = $self-> get_extras( $self-> {current} );
-	$self-> fixup_rect( $info, $self-> {image}); 
+	$self-> fixup_rect( $info, $self-> {image});
 	my @is = $self-> {image}-> size;
 
 	# load global extension data
@@ -358,8 +358,8 @@ sub total   { scalar @{$_[0]-> {images}} }
 sub length
 {
 	my $length = 0;
-	$length += $_-> {delayTime} || 0 for 
-		map { $_-> {extras} || {} } 
+	$length += $_-> {delayTime} || 0 for
+		map { $_-> {extras} || {} }
 		@{$_[0]-> {images}};
 	return $length / 100;
 }
@@ -416,7 +416,7 @@ details).
 
 Loads GIF animation sequence from file or stream C<$SOURCE>. Options
 are the same as understood by C<Prima::Image::load>, and are passed
-down to it. 
+down to it.
 
 =head2 add $IMAGE
 
@@ -466,7 +466,7 @@ Sets and returns number of loops left, undef for indefinite.
 
 =head2 masks
 
-Return the AND and XOR masks, that can be used to display the current 
+Return the AND and XOR masks, that can be used to display the current
 composite frame.
 
 =head2 next

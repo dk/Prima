@@ -26,7 +26,7 @@ Application_init( Handle self, HV * profile)
 	SV * hintFont = pget_sv( hintFont);
 	SV * sv;
 	char * hintClass      = pget_c( hintClass);
-	if ( application != nilHandle) 
+	if ( application != nilHandle)
 		croak( "Attempt to create more than one application instance");
 
 	CDrawable-> init( self, profile);
@@ -131,7 +131,7 @@ Application_cleanup( Handle self)
 
 	for ( i = 0; i < var-> widgets. count; i++)
 		Object_destroy( var-> widgets. items[i]);
-		
+
 	if ( var-> icon)
 		my-> detach( self, var-> icon, true);
 	var-> icon = nilHandle;
@@ -297,7 +297,7 @@ Application_fonts( Handle self, char * name, char * encoding)
 {
 	int count, i;
 	AV * glo = newAV();
-	PFont fmtx = apc_fonts( self, 
+	PFont fmtx = apc_fonts( self,
 		(name && name[0])         ? name : NULL,
 		(encoding && encoding[0]) ? encoding : NULL,
 		&count);
@@ -308,17 +308,17 @@ Application_fonts( Handle self, char * name, char * encoding)
 			SV ** entry = hv_fetch(( HV*) SvRV( sv), "name", 4, 0);
 			if ( entry && SvOK( *entry))
 				SvUTF8_on( *entry);
-		}	 
+		}
 		if ( fmtx[i]. utf8_flags & FONT_UTF8_FAMILY) {
 			SV ** entry = hv_fetch(( HV*) SvRV( sv), "family", 6, 0);
 			if ( name && SvOK( *entry))
 				SvUTF8_on( *entry);
-		}	 
+		}
 		if ( fmtx[i]. utf8_flags & FONT_UTF8_ENCODING) {
 			SV ** entry = hv_fetch(( HV*) SvRV( sv), "encoding", 8, 0);
 			if ( name && SvOK( *entry))
 				SvUTF8_on( *entry);
-		}	 
+		}
 		if ( name[0] == 0 && encoding[0] == 0) {
 			/* Read specially-coded (const char*) encodings[] vector,
 			stored in fmtx[i].encoding. First pointer is filled with 0s,
@@ -615,18 +615,18 @@ Application_insertMode( Handle self, Bool set, Bool insMode)
 }
 
 
-Handle 
+Handle
 Application_get_modal_window( Handle self, int modalFlag, Bool topMost)
 {
 	if ( modalFlag == mtExclusive) {
 		return topMost ? var-> topExclModal   : var-> exclModal;
 	} else if ( modalFlag == mtShared) {
 		return topMost ? var-> topSharedModal : var-> sharedModal;
-	} 
+	}
 	return nilHandle;
 }
 
-SV * 
+SV *
 Application_get_monitor_rects( Handle self)
 {
 	int i, nrects;
@@ -840,7 +840,7 @@ Application_top_frame( Handle self, Handle from)
 {
 	while ( from) {
 		if ( kind_of( from, CWindow) && (
-			( PWidget( from)-> owner == application) || 
+			( PWidget( from)-> owner == application) ||
 			!CWidget( from)-> get_clipOwner(from)
 		))
 			return from;
@@ -999,7 +999,7 @@ Bool
 Application_wantUnicodeInput( Handle self, Bool set, Bool want_ui)
 {
 	if ( !set) return var-> wantUnicodeInput;
-	if ( apc_sys_get_value( svCanUTF8_Input)) 
+	if ( apc_sys_get_value( svCanUTF8_Input))
 		var-> wantUnicodeInput = want_ui;
 	return 0;
 }

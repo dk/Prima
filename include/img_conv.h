@@ -103,7 +103,7 @@ typedef union _Fixed {
 		int16_t  i;
 		uint16_t f;
 	} i;
-#else   
+#else
 	struct {
 		uint16_t f;
 		int16_t  i;

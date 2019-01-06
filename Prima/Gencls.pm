@@ -1,6 +1,6 @@
 #  Created by:
 #     Anton Berezin  <tobez@tobez.org>
-#     Dmitry Karasik <dk@plab.ku.dk> 
+#     Dmitry Karasik <dk@plab.ku.dk>
 #     Vadim Belman   <voland@plab.ku.dk>
 
 package Prima::Gencls;
@@ -197,7 +197,7 @@ sub init_variables
 
 	%typedefs = ();
 
-	%xsConv = (             
+	%xsConv = (
 		# declare   access      set          unused   unused      extra2sv POPx     newXXxx extrasv2
 		# 0         1            2           3        4           5        6        7       8
 		'int'     => ['int',    'SvIV',      'sv_setiv',  '',      '(IV)',     '',    'POPi',    'SViv', ''     ],
@@ -299,7 +299,7 @@ sub getObjName
 	$tok = gettok;
 	for ( split( '::', $tok))
 	{
-		error "Expecting object identifier but found ``$_''" 
+		error "Expecting object identifier but found ``$_''"
 			unless $_ =~ /^\w+$/;
 	}
 	return $tok;
@@ -521,7 +521,7 @@ sub parse_struc
 		if ( $strucId eq "%")
 		{
 			my $def;
-			if 
+			if
 			( $type eq 'Handle') { $def = '( Handle) C_POINTER_UNDEF'; } elsif
 			( $type eq 'SV*')    { $def = '( SV*) C_POINTER_UNDEF'; } elsif
 			( $type eq 'int')    { $def = 'C_NUMERIC_UNDEF'; } elsif
@@ -717,10 +717,10 @@ sub preload_method
 			if ( $tok eq '...') {
 				$ellipsis  = 1;
 				$hasEllipsis++;
-				error "Property can not contain ellipsis into parameter list" 
+				error "Property can not contain ellipsis into parameter list"
 					if $asProperty;
 			} else {
-				error "Invalid parameter $parmNo description" 
+				error "Invalid parameter $parmNo description"
 					unless defined $gp[0];
 			}
 			my $hasEqState = 0;
@@ -732,7 +732,7 @@ sub preload_method
 				error "Indirect function and array parameters are unsupported. Error"
 					if /^[\(\)\[\]\&]$/;
 				error "Unexpected semicolon" if /^[\;]$/;
-				error "End of default parameter description expected but found $_" 
+				error "End of default parameter description expected but found $_"
 					if $hasEqState > 1;
 				if ( $hasEqState == 1)
 				{
@@ -741,9 +741,9 @@ sub preload_method
 				}
 				# default parameter add
 				if ( $_ eq "=") {
-					error "Invalid default parameter $parmNo description" 
+					error "Invalid default parameter $parmNo description"
 						if $hasEqState;
-					error "Property can not contain default parameters" 
+					error "Property can not contain default parameters"
 						if $asProperty;
 					$hasEqState = 1;
 				}
@@ -859,27 +859,27 @@ sub parse_parms
 		{
 			my $keyType = $lxmz[ $j];
 			my $orgType = $keyType;
-			if ( 
-				exists( $structs{ $keyType}) || 
-				exists( $arrays{ $keyType}) || 
+			if (
+				exists( $structs{ $keyType}) ||
+				exists( $arrays{ $keyType}) ||
 				( $keyType = $mapTypes{ $lxmz[ $j]})
 			) {
 				last if exists( $mapPointers{ $lxmz[ $j]}) && ( $lxmz[$j+1] ne "*");
 				if ($lxmz[ $j+1] eq "*") {
 					if ( exists( $mapPointers{ $lxmz[ $j]})) {
-						if ( $lxmz[ $j+2] eq "*") { 
-							last 
+						if ( $lxmz[ $j+2] eq "*") {
+							last
 						} else {
 							$orgType = $keyType = $mapPointers{ $lxmz[ $j]}
 						}
 					} else {
-						if ( 
-							exists( $structs{ $keyType}) || 
+						if (
+							exists( $structs{ $keyType}) ||
 							exists( $arrays{ $keyType})
 						) {
 							$orgType = $keyType = "*".$lxmz[$j];
-						} else { 
-							last 
+						} else {
+							last
 						};
 					}
 				}
@@ -948,9 +948,9 @@ sub load_single_part
 			}
 			expect ")";
 			$tok = gettok;
-			error "Cyclic inheritance detected.  Watch out ``$superClass''" 
+			error "Cyclic inheritance detected.  Watch out ``$superClass''"
 				if $definedClasses{ $superClass};
-				
+
 			do {
 				$level++;
 				if ( $suppress & (!$sayparent || $level==1)) {
@@ -961,9 +961,9 @@ sub load_single_part
 				putback( $tok);
 				my ( $superFile, $inhDyna) = find_file( "$superClass.cls");
 				$tok = gettok;
-				error "Cannot find file corresponding to ''$superClass''" 
+				error "Cannot find file corresponding to ''$superClass''"
 					unless defined $superFile;
-				error "Static object cannot inherit dynamic module $superClass" 
+				error "Static object cannot inherit dynamic module $superClass"
 					if !$genDyna && $inhDyna;
 				parse_file( $superFile) unless $sayparent;
 				$level--;
@@ -985,10 +985,10 @@ sub load_single_part
 				unless ($level) {
 					if ( parse_parms) {
 						push (@portableMethods, "${id}${acc}");
-						push (@newMethods, "${id}${acc}") 
+						push (@newMethods, "${id}${acc}")
 							unless $inherit;
 					}  else {
-						print "Warning: method $id has not been published\n" 
+						print "Warning: method $id has not been published\n"
 							if $warnings;
 					}
 				};
@@ -999,7 +999,7 @@ sub load_single_part
 					if ( parse_parms) {
 						push (@newMethods, "${id}${acc}") unless $inherit;
 					}  else {
-						print "Warning: method $id has not been published\n" 
+						print "Warning: method $id has not been published\n"
 							if $warnings;
 					}
 				};
@@ -1007,7 +1007,7 @@ sub load_single_part
 				preload_method( 1, 0);
 				store_method;
 				unless ($level) {
-					error "Invalid types in import function $id declaration" 
+					error "Invalid types in import function $id declaration"
 						unless parse_parms;
 					push (@portableImports, "${id}${acc}");
 					push (@newMethods, "${id}${acc}") unless $inherit;
@@ -1021,7 +1021,7 @@ sub load_single_part
 						push (@portableMethods, "${id}${acc}");
 						push (@newMethods, "${id}${acc}") unless $inherit;
 					} else {
-						print "Warning: static $id has not been published\n" 
+						print "Warning: static $id has not been published\n"
 							if $warnings;
 					}
 				};
@@ -1055,14 +1055,14 @@ sub load_single_part
 						push (@portableMethods, "$id$acc");
 						push (@newMethods, "$id$acc") unless $inherit;
 					} else {
-						print "Warning: property $id has not been published\n" 
+						print "Warning: property $id has not been published\n"
 							if $warnings;
 					}
 				}
 				$properties{$id} = $proptype;
 			} else {
 			# variable workaround
-				error "Expecting identifier but found ``$tok''" 
+				error "Expecting identifier but found ``$tok''"
 					unless $tok =~ /^\w+$/;
 				$acc = $tok;
 				until (($tok = getidsym("*;[]()+")) eq ";")
@@ -1087,7 +1087,7 @@ sub load_single_part
 					push (@portableMethods, "${id}${acc}");
 					push (@newMethods, "${id}${acc}") unless $inherit;
 				} else {
-					print "Warning: function $id has not been published\n" 
+					print "Warning: function $id has not been published\n"
 						if $warnings;
 				}
 			};
@@ -1241,13 +1241,13 @@ sub out_method_profile
 		my $useHandle = !exists( $staticMethods{ $id});
 		my $tok = $allMethodsBodies[$allMethods{$id}];
 		my $exStr = eval( "\"$substring\"");
-		
+
 		$tok =~ s/$id(?=\()/$exStr/;      # incorporating class name
 		$tok =~ s/;([^;]*)$/$1/;          # adding ; to the end
-		
+
 		print( HEADER "$tok;\n\n"), next if $publicMethods{$id} && $full;
 		my $castedResult = $parms[0];
-		$castedResult = exists $typedefs{$castedResult} && $typedefs{$castedResult}{cast} 
+		$castedResult = exists $typedefs{$castedResult} && $typedefs{$castedResult}{cast}
 			? " ( $castedResult)" :
 			'';
 		my $subId = $full ? ( $imports ? "\"$ownOClass\:\:$id\"" : "\"$id\"") : 'subName';
@@ -1321,7 +1321,7 @@ sub out_method_profile
 		# writing other parameters
 		for ( my $j = 0; $j < scalar @parm_ids; $j++) {
 			$j = 1 if $j == 0 && $property;
-			print HEADER " \n\tif ( !set) goto CALL_POINT;\n" 
+			print HEADER " \n\tif ( !set) goto CALL_POINT;\n"
 				if $property && $j == $#parm_ids;
 
 			my $lVar = $parm_ids[ $j];
@@ -1329,8 +1329,8 @@ sub out_method_profile
 			my $ptr  = $type =~ /^\*/ ? "*" : "";
 			$type =~ s[^\*][];
 
-			my $hashStruc = 
-				exists($structs{ $type}) && 
+			my $hashStruc =
+				exists($structs{ $type}) &&
 				defined ${$structs{ $type}[2]}{hash};
 			if ( $hashStruc) {
 			# take down the reference in this case
@@ -1359,12 +1359,12 @@ sub out_method_profile
 				my $lCount = $arrays{ $type}[0];
 				my $mc = mortal( $lType);
 				my $adx = ( $lCount > 1) ? "\t" : "";
-				print HEADER "\t{\n\t\tint $incCount;\n" 
+				print HEADER "\t{\n\t\tint $incCount;\n"
 					if $adx;
-				print HEADER "\t\tfor ( $incCount = 0; $incCount < $lCount; ${incCount}++)\n" 
+				print HEADER "\t\tfor ( $incCount = 0; $incCount < $lCount; ${incCount}++)\n"
 					if $adx;
 				print HEADER "$adx\tXPUSHs( $mc( ", type2sv( $lType, "$lVar\[$incCount\]"), "));\n";
-				print HEADER "\t}\n" 
+				print HEADER "\t}\n"
 					if $adx;
 				# scalars
 			} else {
@@ -1419,20 +1419,20 @@ sub out_method_profile
 			) : $arrays{ $resSub}[0];
 			my $resVar = $lpr.$eptr.$incRes.$rpr;
 			print HEADER "\tSPAGAIN;\n";
-			print HEADER "\t$incCount = pop_hv_for_REDEFINED( sp, $incCount, $hvName, $popParams);\n" 
+			print HEADER "\t$incCount = pop_hv_for_REDEFINED( sp, $incCount, $hvName, $popParams);\n"
 				if $hvName;
-			print HEADER "\tif ( set) {\n\t\tFREETMPS;\n\t\tLEAVE;\n\t\treturn $incRes;\n\t}\n\n" 
+			print HEADER "\tif ( set) {\n\t\tFREETMPS;\n\t\tLEAVE;\n\t\treturn $incRes;\n\t}\n\n"
 				if $property;
 			print HEADER "\tif ( $incCount != $lParams) croak( \"Sub result corrupted\");\n\n";
 			if ( exists $structs{ $resSub}) {
 				# struct
 				if ( defined ${$structs{ $resSub}[2]}{hash}) {
-					print HEADER "\t$incRes = \& $castedResult ${result}_buffer;\n" 
+					print HEADER "\t$incRes = \& $castedResult ${result}_buffer;\n"
 						if $eptr;
 					my $xref = $eptr ? '' : '&';
 					print HEADER "\tSvHV_$resSub( POPs, $castedResult $xref$incRes, $subId);\n";
 				} else {
-					print HEADER "\t$incRes = $castedResult ${result}_buffer;\n" 
+					print HEADER "\t$incRes = $castedResult ${result}_buffer;\n"
 						if $eptr;
 					for ( my $j = 0; $j < $lParams; $j++) {
 						my $lType = @{ $structs{ $resSub}[ 0]}[ $lParams - $j - 1];
@@ -1446,13 +1446,13 @@ sub out_method_profile
 				print HEADER "\t$incRes =$castedResult \&${result}_buffer;\n" if $eptr;
 				my $lType   = $arrays{ $resSub}[1];
 				my $adx = ( $lParams > 1) ? "\t" : "";
-				print HEADER "\t{\n\tint $incCount;\n" 
+				print HEADER "\t{\n\tint $incCount;\n"
 					if $adx;
-				print HEADER "\tfor ( $incCount = 0; $incCount < $lParams; ${incCount}++)\n" 
+				print HEADER "\tfor ( $incCount = 0; $incCount < $lParams; ${incCount}++)\n"
 					if $adx;
-				print HEADER "$adx\t", 
-					cwrite( $lType, sv2type_pop( $lType), 
-					"$resVar\[$incCount\]"), 
+				print HEADER "$adx\t",
+					cwrite( $lType, sv2type_pop( $lType),
+					"$resVar\[$incCount\]"),
 					"\n";
 				print HEADER "\t}\n" if $adx;
 			}
@@ -1472,9 +1472,9 @@ sub out_method_profile
 		} else {
 		# 1 param to return
 			print HEADER "\tSPAGAIN;\n";
-			print HEADER "\t$incCount = pop_hv_for_REDEFINED( sp, $incCount, $hvName, 1);\n" 
+			print HEADER "\t$incCount = pop_hv_for_REDEFINED( sp, $incCount, $hvName, 1);\n"
 				if $hvName;
-			print HEADER "\tif ( set) {\n\t\tFREETMPS;\n\t\tLEAVE;\n\t\treturn ( $resSub$eptr) 0;\n\t}\n\n" 
+			print HEADER "\tif ( set) {\n\t\tFREETMPS;\n\t\tLEAVE;\n\t\treturn ( $resSub$eptr) 0;\n\t}\n\n"
 				if $property;
 			print HEADER "\tif ( $incCount != 1) croak( \"Something really bad happened!\");\n\n";
 			if ( $resSub eq 'Handle') {
@@ -1525,8 +1525,8 @@ sub out_FROMPERL_methods
 				$thunks{$templates_xs{$id}} = 1;
 				print HEADER "extern void $templates_xs{$id}( XS_STARTPARAMS, char* subName, void* func);\n\n";
 			}
-			my $func = ( exists $pipeMethods{ $id}) ? 
-				$pipeMethods{$id} : 
+			my $func = ( exists $pipeMethods{ $id}) ?
+				$pipeMethods{$id} :
 				"${ownCType}_$id";
 			print HEADER <<LABEL;
 XS( ${ownCType}_${id}_FROMPERL) {
@@ -1639,7 +1639,7 @@ LABEL
 		print HEADER "\t{\n\t\t";
 		my $structCount = 0;
 		my $stn = $useHandle ? 1 : 0;
-		unless ($resSub eq "void") { 
+		unless ($resSub eq "void") {
 			print HEADER "$result $eptr $incRes;\n\t\t"
 		};
 		# generating struct local vars
@@ -1651,22 +1651,22 @@ LABEL
 			my $lVar = $_; $lVar =~ s[^\*][];
 			my ( $lp, $rp) = $ptr ? ('(',')') : ('','');
 			if ( exists $structs{$lVar} && defined ${$structs{$lVar}[2]}{hash}) {
-				$reuseStructVar = 1, last 
+				$reuseStructVar = 1, last
 					if $property && $idparm == $#parms && ( $ptr eq "");
 				print HEADER "$lVar $incRes$structCount;\n\t\t";
 				$structCount++;
 			} elsif ( exists $arrays{$lVar} || exists $structs{$lVar}) {
-				$reuseStructVar = 1, last 
+				$reuseStructVar = 1, last
 					if $property && $idparm == $#parms && ( $ptr eq "");
 				print HEADER "$lVar $incRes$structCount;\n\t\t";
 				$structCount++;
-			} else { 
-				$stn++ 
+			} else {
+				$stn++
 			};
 			$idparm++;
 		}
 		my $subId = $full ? "\"${ownClass}_$id\"" : 'subName';
-		print HEADER "HV *hv = parse_hv( ax, sp, items, mark, $nParam - 1, $subId);\n\t\t" 
+		print HEADER "HV *hv = parse_hv( ax, sp, items, mark, $nParam - 1, $subId);\n\t\t"
 			if $useHV;
 		# initializing strings and additional parameters, if any
 		$stn = $useHandle ? 1 : 0;
@@ -1714,8 +1714,8 @@ LABEL
 				my $str;
 				$paramAuxSet .= "{\n\t\t\tint $incCount;\n\t\t\t";
 				$paramAuxSet .= "for ( $incCount = 0; $incCount < $arrays{$lVar}[0]; $incCount++)\n\t\t\t";
-				if ( $lName eq 'SV*') { 
-					$str = "$incRes$structCount\[$incCount\] = ST( $stn + $incCount)" 
+				if ( $lName eq 'SV*') {
+					$str = "$incRes$structCount\[$incCount\] = ST( $stn + $incCount)"
 				} elsif ( $lName eq 'string') {
 					$str = "strncpy( $incRes$structCount\[$incCount\], ( char*) SvPV_nolen( ST( $stn + $incCount)), 255);$incRes$structCount\[$incCount\]\[255\]=0"
 				} else {
@@ -1724,8 +1724,8 @@ LABEL
 				$paramAuxSet .= "\t$str;\n\t\t}\n\t\t";
 				$stn += $arrays{$lVar}[0];
 				$structCount++;
-			} else { 
-				$stn++ 
+			} else {
+				$stn++
 			};
 			$idparm++;
 		}
@@ -1741,14 +1741,14 @@ LABEL
 		}
 		print HEADER "$incRes = " unless $resSub eq "void";
 		if ( $full) {
-			print HEADER ( exists $pipeMethods{ $id}) ? 
-				$pipeMethods{$id} : 
+			print HEADER ( exists $pipeMethods{ $id}) ?
+				$pipeMethods{$id} :
 				"${ownCType}_$id";
 		} else {
 			my @parmList = @parms;
 			unshift( @parmList, 'Bool') if $property;
 			unshift( @parmList, 'Handle') if $useHandle;
-			for ( @parmList) { 
+			for ( @parmList) {
 				s/^\*(.*)/$1\*/;
 			}  # since "*Struc" if way to know it's user ptr, map it back
 			my $parmz = join( ', ', @parmList);
@@ -1776,14 +1776,14 @@ LABEL
 			$structCount = '' if $property && $reuseStructVar && $idparm == $#parms;
 			print HEADER ",\n" if $stn > 0;
 			print HEADER "\t\t\t";
-			print HEADER "( $ifpropset) ? ( " if 
+			print HEADER "( $ifpropset) ? ( " if
 				$property && !$reuseStructVar && $idparm == $#parms;
 			my $defPropParm;
 			if ( exists $structs{$lVar} || exists $arrays{$lVar})
 			{
 				if ( exists $structs{$lVar}) {
-					$stn += defined ${$structs{$lVar}[2]}{hash} ? 
-						1 : 
+					$stn += defined ${$structs{$lVar}[2]}{hash} ?
+						1 :
 						scalar @{ $structs{ $lVar}[ 0]};
 				} else {
 					$stn += $arrays{$lVar}[0];
@@ -1802,15 +1802,15 @@ LABEL
 				$defPropParm = "($lVar)0";
 				$stn++;
 			}
-			print HEADER ") : $defPropParm" if 
+			print HEADER ") : $defPropParm" if
 				$property && !$reuseStructVar && $idparm == $#parms;
 			$idparm++;
 		}
 		print HEADER "\n";
 		print HEADER "\t\t);\n";
-		print HEADER "\t\tSPAGAIN;\n\t\tSP -= items;\n" 
+		print HEADER "\t\tSPAGAIN;\n\t\tSP -= items;\n"
 			if (!( $resSub eq "void") || $useHV);
-		print HEADER "\t\tif ( $ifpropset) {\n\t\t\tXSRETURN_EMPTY;\n\t\t\treturn;\n\t\t}\n" 
+		print HEADER "\t\tif ( $ifpropset) {\n\t\t\tXSRETURN_EMPTY;\n\t\t\treturn;\n\t\t}\n"
 			if $property;
 
 		my $pphv = 0;
@@ -1840,9 +1840,9 @@ LABEL
 			$lType = $mapTypes{$lType}||$lType;
 			print HEADER "\t\tEXTEND(sp, $rParms);\n";
 			my $adx = ( $rParms > 1) ? "\t\t" : "";
-			print HEADER "\t\t{\n\t\t\tint $incCount;\n" 
+			print HEADER "\t\t{\n\t\t\tint $incCount;\n"
 				if $adx;
-			print HEADER "\t\t\tfor ( $incCount = 0; $incCount < $rParms; ${incCount}++)\n" 
+			print HEADER "\t\t\tfor ( $incCount = 0; $incCount < $rParms; ${incCount}++)\n"
 				if $adx;
 			my $mc = mortal( $lType);
 			my $inter = type2sv( $lType, "$lpr$eptr$incRes$rpr\[$incCount\]");
@@ -1866,7 +1866,7 @@ LABEL
 				print HEADER "\t\tXPUSHs( sv_2mortal( new$xsConv{$resSub}[7]( $incRes$xsConv{$resSub}[5])));\n";
 			}
 		};
-		print HEADER "\t\tpush_hv( ax, sp, items, mark, $pphv, hv);\n\t\treturn;\n" 
+		print HEADER "\t\tpush_hv( ax, sp, items, mark, $pphv, hv);\n\t\treturn;\n"
 			if $useHV;
 		print HEADER "\t}\n";
 		print HEADER $pphv ? "\tPUTBACK;\n\treturn;\n" : "\tXSRETURN_EMPTY;\n";
@@ -1942,7 +1942,7 @@ LABEL
 print HEADER "#include \"$baseFile.h\"\n" if $baseClass;
 {
 	my %toInclude = ();
-	for ( sort { 
+	for ( sort {
 		$structs{$a}-> [PROPS]-> {order} <=> $structs{$b}-> [PROPS]-> {order}
 	} keys %structs) {
 		my $f = ${$structs{$_}[2]}{incl};
@@ -1953,7 +1953,7 @@ print HEADER "#include \"$baseFile.h\"\n" if $baseClass;
 		my $f = ${$arrays{$_}[2]}{incl};
 		$toInclude{$f}=1 if $f;
 	}
-	
+
 	for ( keys %defines) {
 		my $f = $defines{$_}{incl};
 		$toInclude{$f}=1 if $f;
@@ -2098,7 +2098,7 @@ if ( $genPackage)
 		my $id = $allMethods[$i];
 		my $body = $allMethodsBodies[$i];
 		$body =~ s{$id\(}{${ownCType}_$id\(};
-		print HEADER "extern $body\n" 
+		print HEADER "extern $body\n"
 			if ( $allMethodsHosts{$id} eq $ownOClass) && !exists( $pipeMethods{$id});
 	}
 }
@@ -2113,8 +2113,8 @@ my %propBody = map {
 
 for ( keys %properties) {
 	my $type = $properties{$_};
-	my $def  = ( exists $structs{ $type} || exists( $arrays{ $type})) ? 
-		"${type}_buffer" : 
+	my $def  = ( exists $structs{ $type} || exists( $arrays{ $type})) ?
+		"${type}_buffer" :
 		"($type)0";
 	my @lval;
 	my @rval;
@@ -2226,7 +2226,7 @@ CONTAINED_STRUCTURE
 				my $lNameLen = length $lName;
 				my $lType = @{$structs{$_}[TYPES]}[$k];
 				my $inter = type2sv( $lType, "strucRef-> $lName");
-				my $prefix = 
+				my $prefix =
 					($structs{$_}->[DEFS]->[$k] =~ /^undef:/) ?
 						"if (!strucRef-> undef.$lName)" :
 						"(void)";
@@ -2289,7 +2289,7 @@ XS( $incBuild$ownCType)
 	dXSARGS;
 	$ownCType *$incRes;
 	char *$incClass;
-	
+
 	if ( items != 1)
 		croak ("Invalid usage of $ownOClass\:\:\%s", "$incBuild$ownCType");
 	{
@@ -2298,7 +2298,7 @@ XS( $incBuild$ownCType)
 		$incClass = HvNAME( SvSTASH( SvRV( ST(0))));
 		$incRes-> self = ( P${ownCType}_vmt) $incGetVmt( $incClass, ( PVMT)C${ownCType}, sizeof( ${ownCType}Vmt));
 		$incRes-> $hSuper = $incRes-> self-> super;
-		
+
 		ST( 0) = sv_newmortal();
 		sv_setiv( ST(0), (IV)( Handle)$incRes);
 	}

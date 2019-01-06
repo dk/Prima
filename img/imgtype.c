@@ -100,7 +100,7 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 			*dstPalSize = 256;
 			break;
 		}
-	} else if ( 
+	} else if (
 		(( var->conversion & ictpMask ) == ictpCubic) &&
 		(( orgDstType & imBPP) <= (srcType & imBPP)) &&
 		(*dstPalSize == 0 || palSize_only)
@@ -464,10 +464,10 @@ ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int
 }
 
 static int imTypes[] = {
-	imbpp1, imbpp1|imGrayScale, 
+	imbpp1, imbpp1|imGrayScale,
 	imbpp4, imbpp4|imGrayScale,
 	imbpp8, imbpp8|imGrayScale,
-	imRGB, 
+	imRGB,
 	imShort, imLong, imFloat, imDouble,
 	imComplex, imDComplex, imTrigComplex, imTrigDComplex,
 	-1
@@ -479,7 +479,7 @@ itype_supported( int type)
 	int i = 0;
 	while( imTypes[i] != type && imTypes[i] != -1) i++;
 	return imTypes[i] != -1;
-}   
+}
 
 static int imConversions[] = {
 	ictNone,
@@ -496,7 +496,7 @@ iconvtype_supported( int conv)
 	int i = 0;
 	while( imConversions[i] != conv && imConversions[i] != -1) i++;
 	return imConversions[i] != -1;
-}   
+}
 
 void
 init_image_support(void)

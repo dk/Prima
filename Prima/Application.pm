@@ -29,7 +29,7 @@ Prima::Application - root of widget objects hierarchy
 
 Prima::Application class serves as a hierarchy root for
 all objects with child-owner relationship. All toolkit
-objects, existing with non-null owner property, belong 
+objects, existing with non-null owner property, belong
 by their top-level parental relationship to Prima::Application
 object. There can be only one instance of Prima::Application
 class at a time.
@@ -39,7 +39,7 @@ class at a time.
 	use Prima;
 	use Prima::Application;
 
-or 
+or
 
 	use Prima qw(Application);
 
@@ -49,16 +49,16 @@ or
 
 =head1 USAGE
 
-Prima::Application class, and its only instance are 
+Prima::Application class, and its only instance are
 treated specially throughout the toolkit. The object
-instance is contained in 
+instance is contained in
 
 	$::application
 
-scalar, defined in I<Prima.pm> module. 
+scalar, defined in I<Prima.pm> module.
 The application instance must be created whenever
 widget and window, or event loop functionality is
-desired. Usually 
+desired. Usually
 
 	use Prima::Application;
 
@@ -73,7 +73,7 @@ alike the general create() syntax:
 In addition to this functionality Prima::Application
 is also a wrapper to a set of system functions, not
 directly related to object classes. This functionality
-is generally explained in L<"API">. 
+is generally explained in L<"API">.
 
 =head2 Inherited functionality
 
@@ -94,8 +94,8 @@ same are C<::buffered>, C<::clipOwner>, C<::enabled>, C<::growMode>,
 C<::owner> and owner-inheritance properties, C<::selectable>, C<::shape>,
 C<::syncPaint>, C<::tabOrder>, C<::tabStop>, C<::transparent>, C<::visible>.
 To this group also belongs C<::modalHorizon>, Prima::Window class property,
-but defined for consistency and returning always 1. 
-Other methods and properties, like C<::size>, that provide different 
+but defined for consistency and returning always 1.
+Other methods and properties, like C<::size>, that provide different
 functionality are described in L<"API">.
 
 =head2 Global functionality
@@ -110,14 +110,14 @@ API, an therefore is considered global. All such functionality is gathered
 in the Prima::Application class.
 
 These topics enumerated below, related to the global scope, but
-occupying more than one method or property - such functions 
+occupying more than one method or property - such functions
 described in L<"API">.
 
 =over
 
-=item Painting  
+=item Painting
 
-As stated above, Prima::Application provides interface to the 
+As stated above, Prima::Application provides interface to the
 on-screen painting. This mode is triggered by begin_paint()/end_paint()
 methods pair, and the other pair, begin_paint_info()/end_paint_info()
 triggers the information mode. This three-state paint functionality
@@ -140,7 +140,7 @@ object is created, using C<::hintClass> create-only property.
 
 Result of L<get_printer> method points to an automatically
 created printer object, responsible for the system-driven
-printing. Depending on the operating system, it is either 
+printing. Depending on the operating system, it is either
 Prima::Printer, if the system provides GUI printing capabilities,
 or generic Prima::PS::Printer, the PostScript document interface.
 
@@ -148,10 +148,10 @@ See L<Prima::Printer> for details.
 
 =item Clipboard
 
-$::application hosts set of Prima::Clipboard objects, created 
+$::application hosts set of Prima::Clipboard objects, created
 automatically to reflect the system-provided clipboard IPC
 functionality. Their number depends on the system, - under X11
-environment there is three clipboard objects, and only one 
+environment there is three clipboard objects, and only one
 under Win32.
 
 These are no methods to access these clipboard objects, except
@@ -167,7 +167,7 @@ code.
 
 See L<Prima::Clipboard> for details.
 
-=item Help subsystem 
+=item Help subsystem
 
 The toolkit has a built-in help viewer, that understands
 perl's native POD ( plain old documentation ) format.
@@ -190,11 +190,11 @@ extra system information, returned by Prima::Application methods.
 C<get_system_value> returns a system value for one of C<sv::XXX> constants,
 so the program can read the system-specific information. As well as
 C<get_system_info> method, that returns the short description of the system,
-it is the portable call. 
+it is the portable call.
 To the contrary, C<sys_action> method is a wrapper to system-dependent
 functionality, called in non-portable way. This method is never used
 within the toolkit, and its usage is discouraged, primarily because
-its options do not serve the toolkit design, are subject to changes 
+its options do not serve the toolkit design, are subject to changes
 and cannot be relied upon.
 
 =back
@@ -208,10 +208,10 @@ and cannot be relied upon.
 =item autoClose BOOLEAN
 
 If set to 1, issues C<close()> after the last top-level window
-is destroyed. Does not influence anything if set to 0. 
+is destroyed. Does not influence anything if set to 0.
 
-This feature is designed to help with general 'one main window' 
-application layouts. 
+This feature is designed to help with general 'one main window'
+application layouts.
 
 Default value: 0
 
@@ -298,15 +298,15 @@ C<Prima::Printer> or C<Prima::PS::Printer>.
 Create-only property.
 
 Specifies a perl module, loaded indirectly before
-a printer object of C<::printerClass> class is created. 
+a printer object of C<::printerClass> class is created.
 Used when C<::printerClass> property is overridden and
 the new class is contained in a third-party module.
 
 =item pointerVisible BOOLEAN
 
 Governs the system pointer visibility.
-If 0, hides the pointer so it is not visible in all 
-system windows. Therefore this property usage must be considered 
+If 0, hides the pointer so it is not visible in all
+system windows. Therefore this property usage must be considered
 with care.
 
 =item size WIDTH, HEIGHT
@@ -317,7 +317,7 @@ Returns two integers, width and height of the screen.
 
 =item showHint BOOLEAN
 
-If 1, the toolkit is allowed to show the hint label over 
+If 1, the toolkit is allowed to show the hint label over
 a widget. If 0, the display of the hint is forbidden. In addition to functionality
 of C<::showHint> property in Prima::Widget, Prima::Application::showHint
 is another layer of hint visibility control - if it is 0,
@@ -340,9 +340,9 @@ See also: L<Prima/Stress>.
 
 =item wantUnicodeInput BOOLEAN
 
-Selects if the system is allowed to generate key codes in unicode. 
+Selects if the system is allowed to generate key codes in unicode.
 Returns the effective state of the unicode input flag, which cannot be
-changed if perl or operating system do not support UTF8. 
+changed if perl or operating system do not support UTF8.
 
 If 1, C<Prima::Clipboard::text> property may return UTF8 text
 from system clipboards is available.
@@ -375,7 +375,7 @@ C<$$IMAGE_REF>. Default action is that C<'Image'> format is queried.
 On unix, encoded formats C<'image/bmp'>, C<'image/png'> etc are queried if
 the default C<'Image'> is not found.
 
-The C<PasteImage> mechanism is devised to read images from clipboard in 
+The C<PasteImage> mechanism is devised to read images from clipboard in
 GTK environment.
 
 =item PasteText $CLIPBOARD, $$TEXT_REF
@@ -397,7 +397,7 @@ conversion between clipboard and standard widgets, in a standard way.
 =item add_startup_notification @CALLBACK
 
 CALLBACK is an array of anonymous subs, which is executed when
-Prima::Application object is created. If the application object 
+Prima::Application object is created. If the application object
 is already created during the call, CALLBACKs called immediately.
 
 Useful for add-on packages initialization.
@@ -405,7 +405,7 @@ Useful for add-on packages initialization.
 =item begin_paint
 
 Enters the enabled ( active paint ) state, returns success flag.
-Once the object is in enabled state, painting and drawing 
+Once the object is in enabled state, painting and drawing
 methods can perform write operations on the whole screen.
 
 =item begin_paint_info
@@ -427,11 +427,11 @@ Closes the help viewer window.
 
 =item end_paint
 
-Quits the enabled state and returns application object to the normal state. 
+Quits the enabled state and returns application object to the normal state.
 
 =item end_paint_info
 
-Quits the information state and returns application object to the normal state. 
+Quits the information state and returns application object to the normal state.
 
 =item font_encodings
 
@@ -473,7 +473,7 @@ The method can be called with a class string instead of an object instance.
 Returns width of the system cursor in pixels.
 The method can be called with a class string instead of an object instance.
 
-=item get_default_font 
+=item get_default_font
 
 Returns the default system font.
 The method can be called with a class string instead of an object instance.
@@ -555,7 +555,7 @@ scrolling timeouts. The first is the initial timeout,
 that is applied when the user drags the mouse from
 a scrollable widget ( a text field, for example ), and
 the widget is about to scroll, but the actual scroll
-is performed after the timeout is expired. The second 
+is performed after the timeout is expired. The second
 is the repetitive timeout, - if the dragging condition
 did not change, the scrolling performs automatically
 after this timeout. The timeout values are in milliseconds.
@@ -572,18 +572,18 @@ The hash result contains the following keys:
 One of C<apc::XXX> constants, reflecting the platform.
 Currently, the list of the supported platforms is:
 
-	apc::Win32  
-	apc::Unix   
+	apc::Win32
+	apc::Unix
 
-=item gui  
+=item gui
 
 One of C<gui::XXX> constants, reflecting the graphic
 user interface used in the system:
 
 	gui::Default
-	gui::PM  
+	gui::PM
 	gui::Windows
-	gui::XLib 
+	gui::XLib
 	gui::GTK
 
 =item guiDescription
@@ -613,25 +613,25 @@ The machine architecture string
 
 The method can be called with a class string instead of an object instance.
 
-=item get_system_value 
+=item get_system_value
 
-Returns the system integer value, associated with one 
+Returns the system integer value, associated with one
 of C<sv::XXX> constants. The constants are:
 
 	sv::YMenu            - height of menu bar in top-level windows
 	sv::YTitleBar        - height of title bar in top-level windows
-	sv::XIcon            - width and height of main icon dimensions, 
+	sv::XIcon            - width and height of main icon dimensions,
 	sv::YIcon              acceptable by the system
-	sv::XSmallIcon       - width and height of alternate icon dimensions,  
-	sv::YSmallIcon         acceptable by the system 
+	sv::XSmallIcon       - width and height of alternate icon dimensions,
+	sv::YSmallIcon         acceptable by the system
 	sv::XPointer         - width and height of mouse pointer icon
-	sv::YPointer           acceptable by the system  
+	sv::YPointer           acceptable by the system
 	sv::XScrollbar       - width of the default vertical scrollbar
-	sv::YScrollbar       - height of the default horizontal scrollbar 
+	sv::YScrollbar       - height of the default horizontal scrollbar
 								( see get_default_scrollbar_metrics() )
 	sv::XCursor          - width of the system cursor
 								( see get_default_cursor_width() )
-	sv::AutoScrollFirst  - the initial and the repetitive 
+	sv::AutoScrollFirst  - the initial and the repetitive
 	sv::AutoScrollNext     scroll timeouts
 								( see get_scroll_rate() )
 	sv::InsertMode       - the system insert mode
@@ -639,7 +639,7 @@ of C<sv::XXX> constants. The constants are:
 	sv::XbsNone          - widths and heights of the top-level window
 	sv::YbsNone            decorations, correspondingly, with borderStyle
 	sv::XbsSizeable        bs::None, bs::Sizeable, bs::Single, and
-	sv::YbsSizeable        bs::Dialog. 
+	sv::YbsSizeable        bs::Dialog.
 	sv::XbsSingle          ( see get_default_window_borders() )
 	sv::YbsSingle
 	sv::XbsDialog
@@ -647,17 +647,17 @@ of C<sv::XXX> constants. The constants are:
 	sv::MousePresent     - 1 if the mouse is present, 0 otherwise
 	sv::MouseButtons     - number of the mouse buttons
 	sv::WheelPresent     - 1 if the mouse wheel is present, 0 otherwise
-	sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on 
+	sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on
 								an implicit selection
-	sv::FullDrag         - 1 if the top-level windows are dragged dynamically, 
+	sv::FullDrag         - 1 if the top-level windows are dragged dynamically,
 								0 - with marquee mode
 	sv::DblClickDelay    - mouse double-click timeout in milliseconds
-	sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 
+	sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported,
 								0 otherwise
 	sv::ColorPointer     - 1 if system accepts color pointer icons.
-	sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
+	sv::CanUTF8_Input    - 1 if system can generate key codes in unicode
 	sv::CanUTF8_Output   - 1 if system can output utf8 text
-	sv::CompositeDisplay - 1 if system uses double-buffering and alpha composition for the desktop, 
+	sv::CompositeDisplay - 1 if system uses double-buffering and alpha composition for the desktop,
 	                       0 if it doesn't, -1 if unknown
 	sv::LayeredWidgets   - 1 if system supports layering
 	sv::DWM              - 1 if system supports DWM API
@@ -668,7 +668,7 @@ The method can be called with a class string instead of an object instance.
 
 HANDLE is an integer value of a toolkit widget. It is usually
 passed to the program by other IPC means, so it returns
-the associated widget. If no widget is associated with 
+the associated widget. If no widget is associated with
 HANDLE, C<undef> is returned.
 
 =item get_widget_from_point X_OFFSET, Y_OFFSET
@@ -678,7 +678,7 @@ coordinates. If no toolkit widget are found, C<undef> is returned.
 
 =item go
 
-The main event loop. Called by 
+The main event loop. Called by
 
 run Prima;
 
@@ -706,9 +706,9 @@ Returns number of font resources added.
 
 =item open_help TOPIC
 
-Opens the help viewer window with TOPIC string in 
+Opens the help viewer window with TOPIC string in
 link POD format ( see L<perlpod> ) - the string is treated
-as "manpage/section", where 'manpage' is the file with POD 
+as "manpage/section", where 'manpage' is the file with POD
 content and 'section' is the topic inside the manpage.
 
 =item sync
@@ -743,13 +743,13 @@ If the event loop can be schematized, then in
 draft yield() is the only function, called repeatedly within the event loop.
 yield(0) call shouldn't be used to organize event loops, but it can be employed to
 process stacked system events explicitly, to increase responsiveness of a
-program, for example, inside a long calculation cycle. 
+program, for example, inside a long calculation cycle.
 
 yield(1) though is adapted exactly for external implementation of event loops;
 it does exactly the same as yeild(0), but if there are no events, it sleeps
 until there comes at least one, processes it, and then returns. The return
 value is 0 if the application doesn't need more event processins, because of shutting down.
-The corresponding code will be 
+The corresponding code will be
 
 	while ( yield(1)) {
 	    ...

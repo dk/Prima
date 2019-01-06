@@ -27,7 +27,7 @@ sub profile_default
 		autoVScroll       => 0,
 		borderWidth     => 2,
 		colorMap        => [ $def-> {color}, $def-> {backColor} ],
-		fontPalette     => [ { 
+		fontPalette     => [ {
 			name     => $def-> {font}-> {name},
 			encoding => '',
 			pitch    => fp::Default,
@@ -57,7 +57,7 @@ sub profile_default
 sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
-	if ( exists $p->{owner} && !exists $p->{font} && !exists $p->{fontPalette} && 
+	if ( exists $p->{owner} && !exists $p->{font} && !exists $p->{fontPalette} &&
 		(( $p->{ownerFont} // $default->{ownerFont} // 1 ) == 1 )) {
 		$p-> {fontPalette}-> [0]-> {name} = $p->{owner}->font->name;
 	}
@@ -69,12 +69,12 @@ sub profile_check_in
 	$p-> { text} = '' if exists( $p-> { textRef});
 	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
 	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
-}   
+}
 
 sub init
 {
 	my $self = shift;
-	for ( qw( topLine scrollTransaction hScroll vScroll offset 
+	for ( qw( topLine scrollTransaction hScroll vScroll offset
 		paneWidth paneHeight borderWidth autoVScroll autoHScroll))
 		{ $self-> {$_} = 0; }
 	my %profile = $self-> SUPER::init(@_);
@@ -90,8 +90,8 @@ sub init
 	$self-> setup_indents;
 	$self-> resolution( @{$profile{resolution}});
 	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
-	for ( qw( autoHScroll autoVScroll colorMap fontPalette 
-				hScroll vScroll borderWidth paneWidth paneHeight 
+	for ( qw( autoHScroll autoVScroll colorMap fontPalette
+				hScroll vScroll borderWidth paneWidth paneHeight
 				offset topLine textRef))
 		{ $self-> $_( $profile{ $_}); }
 	return %profile;
@@ -122,7 +122,7 @@ sub reset_scrolls
 		if ( $self-> {autoHScroll}) {
 			my $hs = ($self-> {paneWidth} > $sz[0]) ? 1 : 0;
 			if ( $hs != $self-> {hScroll}) {
-				$self-> hScroll( $hs); 
+				$self-> hScroll( $hs);
 				@sz = $self-> get_active_area( 2, @_);
 			}
 		}
@@ -170,7 +170,7 @@ sub text
 	}
 }
 
-sub textRef 
+sub textRef
 {
 	return $_[0]-> {text} unless $#_;
 	$_[0]-> {text} = $_[1] if $_[1];
@@ -334,7 +334,7 @@ sub realize_state
 
 	if ( $mode & tb::REALIZE_FONTS) {
 		my $f = tb::realize_fonts($self-> {fontPalette}, $state);
-		goto SKIP if 
+		goto SKIP if
 			exists $self->{currentFont} &&
 			_hash($self->{currentFont}) eq _hash($f);
 		$self->{currentFont} = $f;
@@ -378,14 +378,14 @@ sub block_walk
 	my ( $self, $block, %commands ) = @_;
 	local $self-> {blockWalk} = 0;
 	my $canvas = $commands{canvas} // $self;
-	return tb::walk( $block, 
+	return tb::walk( $block,
 		textPtr      => $self->{text},
 		canvas       => $canvas,
 		realize      => sub { $self-> realize_state($canvas, @_) },
 		baseFontSize => $self-> {defaultFontSize},
 		semaphore    => \ $self-> {blockWalk},
 		resolution   => $self->{resolution},
-		%commands 
+		%commands
 	);
 }
 
@@ -433,7 +433,7 @@ sub paint_selection
 		my ( $x, $text ) = @_;
 		my $f = $canvas->get_font;
 		my $w = $canvas->get_text_width($text);
-		$self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS); 
+		$self-> realize_state( $canvas, \@state, tb::REALIZE_COLORS);
 		$canvas->clear(
 			$x, $xy[1] - $f->{descent},
 			$x + $w - 1, $xy[1] + $f->{ascent} + $f->{externalLeading} - 1
@@ -463,7 +463,7 @@ sub paint_selection
 		},
 		code     => sub {
 			my ( $code, $data ) = @_;
-			$self-> realize_state( $canvas, \@state, tb::REALIZE_ALL); 
+			$self-> realize_state( $canvas, \@state, tb::REALIZE_ALL);
 			$code-> ( $self, $canvas, $block, \@state, @xy, $data);
 		},
 		transpose => sub {
@@ -506,7 +506,7 @@ sub on_paint
 	$cy[$_] += $t for 0,1;
 
 	$self-> clipRect( $self-> get_active_area( 1, @size));
-	@clipRect = $self-> clipRect; 
+	@clipRect = $self-> clipRect;
 	my $i = 0;
 	my $b;
 
@@ -516,15 +516,15 @@ sub on_paint
 		next unless $self-> {ymap}-> [$ymap_i];
 		for my $j ( @{$self-> {ymap}-> [$ymap_i]}) {
 			$b = $$bx[$j];
-			my ( $x, $y) = ( 
-				$aa[0] - $offset + $$b[ tb::BLK_X], 
-				$aa[3] + $t - $$b[ tb::BLK_Y] - $$b[ tb::BLK_HEIGHT] 
+			my ( $x, $y) = (
+				$aa[0] - $offset + $$b[ tb::BLK_X],
+				$aa[3] + $t - $$b[ tb::BLK_Y] - $$b[ tb::BLK_HEIGHT]
 			);
-			next if 
+			next if
 				$x + $$b[ tb::BLK_WIDTH]  < $clipRect[0] || $x > $clipRect[2] ||
 				$y + $$b[ tb::BLK_HEIGHT] < $clipRect[1] || $y > $clipRect[3] ||
 				$$b[ tb::BLK_WIDTH] == 0 || $$b[ tb::BLK_HEIGHT] == 0;
-					
+
 			if ( $j == $sy1 && $j == $sy2 ) {
 				# selection within one line
 				$self->paint_selection( $canvas, $b, $j, $x, $y, $sx1, $sx2 - 1);
@@ -558,7 +558,7 @@ sub block_draw
 
 	my @xy = ($x, $y);
 	my @state;
-	$self-> block_walk( $b, 
+	$self-> block_walk( $b,
 		trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS | tb::TRACE_TEXT,
 		canvas   => $canvas,
 		position => \@xy,
@@ -571,7 +571,7 @@ sub block_draw
 			$code-> ( $self, $canvas, $b, \@state, @xy, $data);
 		},
 	);
-	
+
 	return $ret;
 }
 
@@ -586,7 +586,7 @@ sub xy2info
 
 	return (0,0) if $y < 0 || !scalar(@$bx) ;
 	$x = $pw, $y = $ph if $y > $ph;
-	
+
 	my ( $b, $bid);
 
 	my $xhint = 0;
@@ -598,18 +598,18 @@ sub xy2info
 		for ( @{$self-> {ymap}-> [ $ymapix]}) {
 			my $z = $$bx[$_];
 			if ( $y >= $$z[ tb::BLK_Y] && $y < $$z[ tb::BLK_Y] + $$z[ tb::BLK_HEIGHT]) {
-				if ( 
-					$x >= $$z[ tb::BLK_X] && 
+				if (
+					$x >= $$z[ tb::BLK_X] &&
 					$x < $$z[ tb::BLK_X] + $$z[ tb::BLK_WIDTH]
 				) {
 					$b = $z;
 					$bid = $_;
 					last;
-				} elsif ( 
-					abs($$z[ tb::BLK_X] - $x) < $minxdist || 
+				} elsif (
+					abs($$z[ tb::BLK_X] - $x) < $minxdist ||
 					abs($$z[ tb::BLK_X] + $$z[ tb::BLK_WIDTH] - $x) < $minxdist
 				) {
-					$minxdist = ( abs( $$z[ tb::BLK_X] - $x) < $minxdist) ? 
+					$minxdist = ( abs( $$z[ tb::BLK_X] - $x) < $minxdist) ?
 						abs( $$z[ tb::BLK_X] - $x) :
 						abs( $$z[ tb::BLK_X] + $$z[ tb::BLK_WIDTH] - $x);
 					$bdist = $z;
@@ -624,7 +624,7 @@ sub xy2info
 		}
 	}
 
-	# if still no block found, find the closest block down 
+	# if still no block found, find the closest block down
 	unless ( $b) {
 		my $minydist = $self-> {paneHeight} * 2;
 		my $ymax = scalar @{$self-> {ymap}};
@@ -632,8 +632,8 @@ sub xy2info
 			if ( $self-> {ymap}-> [ $ymapix]) {
 				for ( @{$self-> {ymap}-> [ $ymapix]}) {
 					my $z = $$bx[$_];
-					if ( 
-						$minydist > $$z[ tb::BLK_Y] - $y && 
+					if (
+						$minydist > $$z[ tb::BLK_Y] - $y &&
 						$$z[ tb::BLK_Y] >= $y
 					) {
 						$minydist = $$z[ tb::BLK_Y] - $y;
@@ -660,8 +660,8 @@ sub xy2info
 		return ( 0, $bid);
 	} elsif ( $xhint > 0) { # end of line
 		if ( $bid < ( scalar @{$bx} - 1)) {
-			return ( 
-				$$bx[ $bid + 1]-> [ tb::BLK_TEXT_OFFSET] - $$b[ tb::BLK_TEXT_OFFSET], 
+			return (
+				$$bx[ $bid + 1]-> [ tb::BLK_TEXT_OFFSET] - $$b[ tb::BLK_TEXT_OFFSET],
 				$bid
 			);
 		} else {
@@ -755,7 +755,7 @@ sub get_block_text_length
 {
 	my ( $self, $block ) = @_;
 	my $ptr1 = $self-> {blocks}-> [$block]-> [tb::BLK_TEXT_OFFSET];
-	my $ptr2 = ( $block + 1 < @{$self-> {blocks}}) ? 
+	my $ptr2 = ( $block + 1 < @{$self-> {blocks}}) ?
 		$self-> {blocks}-> [$block+1]-> [tb::BLK_TEXT_OFFSET] :
 		length ${$self-> {text}};
 	return $ptr2 - $ptr1;
@@ -801,7 +801,7 @@ sub info2xy
 sub text_offset2block
 {
 	my ( $self, $ofs) = @_;
-	
+
 	my $bx = $self-> {blocks};
 	my $end = length ${$self-> {text}};
 	my $ret = 0;
@@ -816,7 +816,7 @@ sub text_offset2block
 
 		last if $ofs == $$b1[ tb::BLK_TEXT_OFFSET];
 
-		if ( $ofs > $$b1[ tb::BLK_TEXT_OFFSET]) { 
+		if ( $ofs > $$b1[ tb::BLK_TEXT_OFFSET]) {
 			if ( $b2) {
 				last if $ofs < $$b2[ tb::BLK_TEXT_OFFSET];
 				$l = $i;
@@ -850,11 +850,11 @@ sub on_mousedown
 	}
 
 	return if $btn != mb::Left;
-	
+
 	my ( $text_offset, $bid) = $self-> xy2info( $x, $y);
 
 	$self-> {mouseTransaction} = 1;
-	$self-> {mouseAnchor} = [ $text_offset, $bid ]; 
+	$self-> {mouseAnchor} = [ $text_offset, $bid ];
 	$self-> selection( -1, -1, -1, -1);
 
 	$self-> capture(1);
@@ -867,7 +867,7 @@ sub on_mouseclick
 	return unless $dbl;
 	return if $self-> {mouseTransaction};
 	return if $btn != mb::Left;
-	
+
 	my @size = $self-> size;
 	my @aa = $self-> get_active_area( 0, @size);
 	if ( $x < $aa[0] || $x >= $aa[2] || $y < $aa[1] || $y >= $aa[3]) {
@@ -881,11 +881,11 @@ sub on_mouseclick
 
 	( $x, $y) = $self-> screen2point( $x, $y, @size);
 	my ( $text_offset, $bid) = $self-> xy2info( $x, $y);
-	my $ln = ( $bid + 1 == scalar @{$self-> {blocks}}) ? 
+	my $ln = ( $bid + 1 == scalar @{$self-> {blocks}}) ?
 		length ${$self-> {text}} : $self-> {blocks}-> [$bid+1]-> [tb::BLK_TEXT_OFFSET];
 	$self-> selection( 0, $bid, $ln - $self-> {blocks}-> [$bid]-> [tb::BLK_TEXT_OFFSET], $bid);
 	$self-> clear_event;
-	
+
 	my $cp = $::application-> bring('Primary');
 	$cp-> text( $self-> get_selected_text) if $cp;
 }
@@ -909,7 +909,7 @@ sub on_mouseup
 	# Prima::Bidi::debug_str($p) if defined $p;
 
 	return if $btn != mb::Left;
-	
+
 	$self-> capture(0);
 	$self-> {mouseTransaction} = undef;
 	$self-> clear_event;
@@ -981,8 +981,8 @@ sub on_keydown
 	$mod &= km::Alt|km::Ctrl|km::Shift;
 	return if $mod & km::Alt;
 
-	if ( grep { $key == $_ } ( 
-		kb::Up, kb::Down, kb::Left, kb::Right, 
+	if ( grep { $key == $_ } (
+		kb::Up, kb::Down, kb::Left, kb::Right,
 		kb::Space, kb::PgDn, kb::PgUp, kb::Home, kb::End
 	)) {
 		my ( $dx, $dy) = (0,0);
@@ -1002,11 +1002,11 @@ sub on_keydown
 			$dy = 5 if $dy < 5;
 			$dy *= $repeat;
 			$dy = -$dy if $key == kb::PgUp;
-		} 
+		}
 
 		$dx += $self-> {offset};
 		$dy += $self-> {topLine};
-		
+
 		if ( $key == kb::Home) {
 			$dy = 0;
 		} elsif ( $key == kb::End) {
@@ -1014,7 +1014,7 @@ sub on_keydown
 		}
 		$self-> offset( $dx);
 		$self-> topLine( $dy);
-		$self-> clear_event; 
+		$self-> clear_event;
 	}
 
 	if (((( $key == kb::Insert) && ( $mod & km::Ctrl)) ||
@@ -1048,7 +1048,7 @@ sub selection
 
 	unless ( grep { $_ != -1 } $sx1, $sy1, $sx2, $sy2 ) { # new empty selection
 	EMPTY:
-		return if $empty;     
+		return if $empty;
 		$y1 = $osy1;
 		$y2 = $osy2;
 		if ( $y1 == $y2) {
@@ -1058,7 +1058,7 @@ sub selection
 	} else {
 		( $sy1, $sy2, $sx1, $sx2) = ( $sy2, $sy1, $sx2, $sx1) if $sy2 < $sy1;
 		( $sx1, $sx2) = ( $sx2, $sx1) if $sy2 == $sy1 && $sx2 < $sx1;
-		( $sx1, $sx2, $sy1, $sy2) = ( -1, -1, -1, -1), goto EMPTY 
+		( $sx1, $sx2, $sy1, $sy2) = ( -1, -1, -1, -1), goto EMPTY
 			if $sy1 == $sy2 && $sx1 == $sx2;
 		if ( $empty) {
 			$y1 = $sy1;
@@ -1115,9 +1115,9 @@ sub selection
 	$clipRect[3] = $aa[3] + $self-> {topLine} - $a[3] - 1;
 
 	for ( 0, 1) {
-		@clipRect[$_,$_+2] = @clipRect[$_+2,$_] 
+		@clipRect[$_,$_+2] = @clipRect[$_+2,$_]
 			if $clipRect[$_] > $clipRect[$_+2];
-		$clipRect[$_] = $aa[$_] if $clipRect[$_] < $aa[$_]; 
+		$clipRect[$_] = $aa[$_] if $clipRect[$_] < $aa[$_];
 		$clipRect[$_+2] = $aa[$_+2] if $clipRect[$_+2] > $aa[$_+2];
 	}
 
@@ -1141,7 +1141,7 @@ sub get_selected_text
 	my $self = $_[0];
 	return unless $self-> has_selection;
 	my ( $sx1, $sy1, $sx2, $sy2) = $self-> selection;
-	my ( $a1, $a2) = ( 
+	my ( $a1, $a2) = (
 		$self-> info2text_offset( $sx1    , $sy1 ),
 		$self-> info2text_offset( $sx2 - 1, $sy2 ),
 	);
@@ -1174,13 +1174,13 @@ sub new
 	my %profile = @_;
 	my $self = {};
 	bless( $self, $class);
-	$self-> {$_} = $profile{$_} ? $profile{$_} : [] 
+	$self-> {$_} = $profile{$_} ? $profile{$_} : []
 		for qw( rectangles references);
 	return $self;
 }
 
-sub contains 
-{ 
+sub contains
+{
 	my ( $self, $x, $y) = @_;
 	my $rec = 0;
 	for ( @{$self-> {rectangles}}) {
@@ -1208,7 +1208,7 @@ __END__
 
 =pod
 
-=head1 NAME 
+=head1 NAME
 
 Prima::TextView - rich text browser widget
 
@@ -1217,16 +1217,16 @@ Prima::TextView - rich text browser widget
  use strict;
  use warnings;
  use Prima qw(TextView Application);
- 
+
  my $w = Prima::MainWindow-> create(
      name => 'TextView example',
  );
- 
+
  my $t = $w->insert(TextView =>
      text     => 'Hello from TextView!',
      pack     => { expand => 1, fill => 'both' },
  );
- 
+
  # Create a single block that renders all the text using the default font
  my $tb = tb::block_create();
  my $text_width_px = $t->get_text_width($t->text);
@@ -1237,15 +1237,15 @@ Prima::TextView - rich text browser widget
  $tb->[tb::BLK_FONT_SIZE] = int($font_height_px) + tb::F_HEIGHT;
  # Add an operation that draws the text:
  push @$tb, tb::text(0, length($t->text), $text_width_px);
- 
+
  # Set the markup block(s) and recalculate the ymap
  $t->{blocks} = [$tb];
  $t->recalc_ymap;
- 
+
  # Additional step needed for horizontal scroll as well as per-character
  # selection:
  $t->paneSize($text_width_px, $font_height_px);
- 
+
  run Prima;
 
 =for podview <img src="textview.gif" cut=1>
@@ -1257,11 +1257,11 @@ Prima::TextView - rich text browser widget
 Prima::TextView accepts blocks of formatted text, and provides
 basic functionality - scrolling and user selection. The text strings
 are stored as one large text chunk, available by the C<::text> and C<::textRef> properties.
-A block of a formatted text is an array with fixed-length header and 
-the following instructions. 
+A block of a formatted text is an array with fixed-length header and
+the following instructions.
 
 A special package C<tb::> provides the block constants and simple functions
-for text block access. 
+for text block access.
 
 =head2 Capabilities
 
@@ -1270,14 +1270,14 @@ function for wrapping text block, calculating block dimensions, drawing
 and converting coordinates from (X,Y) to a block position. Prima::TextView
 is centered around the text functionality, and although any custom graphic of
 arbitrary complexity can be embedded in a text block, the internal coordinate
-system is used ( TEXT_OFFSET, BLOCK ), where TEXT_OFFSET is a text offset from 
+system is used ( TEXT_OFFSET, BLOCK ), where TEXT_OFFSET is a text offset from
 the beginning of a block and BLOCK is an index of a block.
 
 The functionality does not imply any text layout - this is up to the class
 descendants, they must provide they own layout policy. The only policy
 Prima::TextView requires is that blocks' BLK_TEXT_OFFSET field must be
 strictly increasing, and the block text chunks must not overlap. The text gaps
-are allowed though. 
+are allowed though.
 
 A text block basic drawing function includes change of color, backColor and font,
 and the painting of text strings. Other types of graphics can be achieved by
@@ -1300,9 +1300,9 @@ Cycles through block opcodes, calls supplied callbacks on each.
 =head2 Coordinate system methods
 
 Prima::TextView employs two its own coordinate systems:
-(X,Y)-document and (TEXT_OFFSET,BLOCK)-block. 
+(X,Y)-document and (TEXT_OFFSET,BLOCK)-block.
 
-The document coordinate system is isometric and measured in pixels. Its origin is located 
+The document coordinate system is isometric and measured in pixels. Its origin is located
 into the imaginary point of the beginning of the document ( not of the first block! ),
 in the upper-left pixel. X increases to the right, Y increases down.
 The block header values BLK_X and BLK_Y are in document coordinates, and
@@ -1339,12 +1339,12 @@ Returns X coordinate where TEXT_OFFSET begins in a BLOCK index.
 
 =item info2text_offset
 
-Accepts (TEXT_OFFSET,BLOCK) coordinates and returns the text offset 
+Accepts (TEXT_OFFSET,BLOCK) coordinates and returns the text offset
 with regard to the big text chunk.
 
 =item text_offset2info TEXT_OFFSET
 
-Accepts big text offset and returns (TEXT_OFFSET,BLOCK) coordinates 
+Accepts big text offset and returns (TEXT_OFFSET,BLOCK) coordinates
 
 =item text_offset2block TEXT_OFFSET
 
@@ -1361,26 +1361,26 @@ If its value is assigned to (-1,-1,-1,-1) this indicates that there is
 no selection. For convenience the C<has_selection> method is introduced.
 
 Also, C<get_selected_text> returns the text within the selection
-(or undef with no selection ), and C<copy> copies automatically 
-the selected text into the clipboard. The latter action is bound to 
+(or undef with no selection ), and C<copy> copies automatically
+the selected text into the clipboard. The latter action is bound to
 C<Ctrl+Insert> key combination.
 
 =head2 Event rectangles
 
 Partly as an option for future development, partly as a hack a
 concept of 'event rectangles' was introduced. Currently, C<{contents}>
-private variable points to an array of objects, equipped with 
+private variable points to an array of objects, equipped with
 C<on_mousedown>, C<on_mousemove>, and C<on_mouseup> methods. These
 are called within the widget's mouse events, so the overloaded classes
 can define the interactive content without overloading the actual
-mouse events ( which is although easy but is dependent on Prima::TextView 
+mouse events ( which is although easy but is dependent on Prima::TextView
 own mouse reactions ).
 
 As an example L<Prima::PodView> uses the event rectangles to catch
 the mouse events over the document links. Theoretically, every 'content'
 is to be bound with a separate logical layer; when the concept was designed,
-a html-browser was in mind, so such layers can be thought as 
-( in the html world ) links, image maps, layers, external widgets. 
+a html-browser was in mind, so such layers can be thought as
+( in the html world ) links, image maps, layers, external widgets.
 
 Currently, C<Prima::TextView::EventRectangles> class is provided
 for such usage. Its property C<::rectangles> contains an array of

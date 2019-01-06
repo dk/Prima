@@ -10,14 +10,14 @@ sub page
 	$p->translate(0,0);
 	$p-> font-> set( size=>100,name=>$name);
 	my $h100 = $p->font->height;
-	
+
 	my $m = $p-> get_font;
-	my $xtext = Encode::decode('latin1', "\x{c5}Mg"); 
+	my $xtext = Encode::decode('latin1', "\x{c5}Mg");
 	my $s = $size[1] - $m-> {height} - $m-> {externalLeading} - 220;
 	my $w = $p-> get_text_width($xtext) + 66;
 	$p-> textOutBaseline(1);
 	$p-> text_out($xtext, 20, $s);
-	
+
 	my $cachedFacename = $p-> font-> name;
 	my $hsf = $p-> font-> height / 6;
 	$hsf = 10 if $hsf < 10;
@@ -27,7 +27,7 @@ sub page
 		name     => '',
 		encoding => '',
 	);
-	
+
 	$p-> line( 2, $s, $w, $s);
 	$p-> textOutBaseline(0);
 	$p-> text_out( "Baseline", $w - 8, $s);
@@ -38,7 +38,7 @@ sub page
 	$p-> line( 2, $sd, $w, $sd);
 	$p-> text_out( "Ascent",  $w - 8, $sd);
 	$sd = $s + $m-> {ascent} + $m-> {externalLeading};
-	
+
 	if ( $m-> {ascent} > 4) {
 		$p-> line( $w - 12, $s + 1, $w - 12, $s + $m-> {ascent});
 		$p-> line( $w - 12, $s + $m-> {ascent}, $w - 14, $s + $m-> {ascent} - 2);
@@ -55,7 +55,7 @@ sub page
 		$p-> line( $w - 13, $s - $m-> {descent}, $w - 15, $s - $m-> {descent} + 2);
 		$p-> line( $w - 13, $s - $m-> {descent}, $w - 11, $s - $m-> {descent} + 2)
 	}
-	
+
 	my $str;
 	$p-> text_out( "External Leading",  2, $sd);
 	$p-> line( 2, $sd, $w, $sd);
@@ -64,7 +64,7 @@ sub page
 	$p-> text_out( $str,  $w - 16 - $p-> get_text_width( $str), $sd);
 	$p-> linePattern( lp::Dash);
 	$p-> line( 2, $sd, $w, $sd);
-	
+
 	$p-> font-> set(
 		size => 10,
 		pitch  => fp::Fixed,
@@ -88,9 +88,9 @@ sub page
 	$p-> text_out( 'default char        : '.$m-> {defaultChar}, 2, $sd); $sd -= $fh;
 	$p-> text_out( 'family              : '.$m-> {family   }, 2, $sd); $sd -= $fh;
 	$p-> text_out( 'face name           : '.$cachedFacename, 2, $sd); $sd -= $fh;
-	
+
 	my $C = 'f';
-	
+
 	$sd -= $h100 - 20;
 	#delete $m->{height};
 	#delete $m->{width};
@@ -101,7 +101,7 @@ sub page
 	for my $C ( split //, $xtext ) {
 		my ( $a, $b, $c ) = @{ $p->get_font_abc( ord($C), ord($C), utf8::is_utf8($C)) };
 		my ( $d, $e, $f ) = @{ $p->get_font_def( ord($C), ord($C), utf8::is_utf8($C)) };
-		
+
 		my $w = (( $a < 0 ) ? 0 : $a) + $b + (( $c < 0 ) ? 0 : $c);
 		my $h = (( $d < 0 ) ? 0 : $d) + $e + (( $f < 0 ) ? 0 : $f);
 		# print ord($C), "/$C: $a $b $c ($w) / $d $e $f \n";
@@ -109,21 +109,21 @@ sub page
 		$p-> translate(350 + $ddx, $h);
 		$ddx += $w + 20;
 		$w = 50;
-		
+
 		my $dx = 0;
 		my $dy = 0;
 		$dx -= $a if $a < 0;
 		$dy -= $d if $d < 0;
-		
+
 		my $fh = $p-> font->height;
 		$p-> text_out( $C, $dx, $dy );
-		
+
 		$dx = abs($a);
 		$dy = abs($d);
 		$p-> line($dx, 0, $dx, $m->{height});
 		$dx = (( $a < 0 ) ? 0 : $a) + $b + (( $c < 0 ) ? 0 : $c) - abs($c);
 		$p-> line($dx, 0, $dx, $m->{height});
-		
+
 		$p-> line(0, $dy, $m->{width}, $dy);
 		$dy = (( $d < 0 ) ? 0 : $d) + $e + (( $f < 0 ) ? 0 : $f) - abs($f);
 		$p-> line(0, $dy, $m->{width}, $dy);

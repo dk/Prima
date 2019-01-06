@@ -39,7 +39,7 @@ extern "C" {
 #undef  FD_SET
 #define FD_SET my_fd_set
 
-#endif   
+#endif
 
 static Bool            socketThreadStarted = false;
 static Bool            socketSetChanged    = false;
@@ -52,8 +52,8 @@ static int    socketCommands[3] = { feRead, feWrite, feException};
 
 void
 #ifdef __CYGWIN__
-*   
-#endif   
+*
+#endif
 socket_select( void *dummy)
 {
 	int count;
@@ -73,7 +73,7 @@ socket_select( void *dummy)
 		}
 
 		// calling select()
-#ifndef __CYGWIN__      
+#ifndef __CYGWIN__
 		count = socketSet1[0]. fd_count + socketSet1[1]. fd_count + socketSet1[2]. fd_count;
 #else
 		count = 0;
@@ -87,18 +87,18 @@ socket_select( void *dummy)
 					}
 END:;
 		}
-#endif      
+#endif
 		if ( count > 0) {
 			int i, j, result = select( FD_SETSIZE-1, &socketSet1[0], &socketSet1[1], &socketSet1[2], &socketTimeout);
 			socketSetChanged = true;
 			if ( result == 0) continue;
 			if ( result < 0) {
 				int err;
-#ifndef __CYGWIN__	    
-				if (( err = WSAGetLastError()) == WSAENOTSOCK) 
+#ifndef __CYGWIN__
+				if (( err = WSAGetLastError()) == WSAENOTSOCK)
 #else
-				if (( err = errno) == EBADF) 
-#endif	    
+				if (( err = errno) == EBADF)
+#endif
 				{
 					// possibly some socket was closed
 					guts. socketPostSync = 1;
@@ -107,7 +107,7 @@ END:;
 				} else {
 					// some error
 					char * msg;
-#ifndef __CYGWIN__	    
+#ifndef __CYGWIN__
 					msg = err_msg( err, socketErrBuf);
 #else
 					strncpy( msg = socketErrBuf, strerror(err), 255);
@@ -119,15 +119,15 @@ END:;
 			}
 			// posting select() results
 			for ( j = 0; j < 3; j++)
-#ifndef __CYGWIN__	    
+#ifndef __CYGWIN__
 				for ( i = 0; i < socketSet1[j]. fd_count; i++) {
 #else
 				for ( i = 0; i < FD_SETSIZE; i++) {
 					if ( !FD_ISSET( i, socketSet1 + j)) continue;
-#endif	       
+#endif
 					guts. socketPostSync = 1;
 					PostThreadMessage( guts. mainThreadId, WM_SOCKET, socketCommands[j],
-#ifndef __CYGWIN__	    
+#ifndef __CYGWIN__
 						( LPARAM) socketSet1[j]. fd_array[i]
 #else
 						( LPARAM) i
@@ -144,7 +144,7 @@ END:;
 	socketThreadStarted = false;
 #ifdef __CYGWIN__
 	return NULL;
-#endif   
+#endif
 }
 
 
@@ -185,7 +185,7 @@ reset_sockets( void)
 		guts. socketThread = ( HANDLE) _beginthread( socket_select, 40960, NULL);
 #else
 		pthread_create(( pthread_t*) &guts. socketThread, 0, socket_select, NULL);
-#endif      
+#endif
 		socketThreadStarted = true;
 	} else
 		ReleaseMutex( guts. socketMutex);
@@ -217,7 +217,7 @@ apc_file_attach( Handle self)
 #ifdef __CYGWIN__
 		_sz = htons(80);
 		guts. socket_version = 2;
-#else      
+#else
 #ifdef PERL_OBJECT     // init perl socket library, if any
 		PL_piSock-> Htons( 80);
 #else
@@ -245,17 +245,17 @@ apc_file_attach( Handle self)
 	{
 		int  _data, _sz = sizeof( int);
 		int result =
-#ifndef __CYGWIN__	 
+#ifndef __CYGWIN__
 			SOCKETS_AS_HANDLES ?
 			WSAAsyncSelect((SOCKET) sys s. file. object, (HWND) NULL, 0, 0) :
-#endif	  
+#endif
 			getsockopt(( SOCKET) sys s. file. object, SOL_SOCKET, SO_TYPE, (char*)&_data, &_sz);
 		if ( result != 0)
-#ifndef __CYGWIN__	 
+#ifndef __CYGWIN__
 			fhtype = ( WSAGetLastError() == WSAENOTSOCK) ? FHT_OTHER : FHT_SOCKET;
 #else
 			fhtype = ( errno == EBADF) ? FHT_OTHER : FHT_SOCKET;
-#endif	  
+#endif
 		else
 			fhtype = FHT_SOCKET;
 	}

@@ -37,8 +37,8 @@ static Handle find_tabfoc( Handle self);
 static Bool showhint_notify ( Handle self, Handle child, void * data);
 static Bool hint_notify ( Handle self, Handle child, SV * hint);
 
-extern void Widget_pack_slaves( Handle self); 
-extern void Widget_place_slaves( Handle self); 
+extern void Widget_pack_slaves( Handle self);
+extern void Widget_place_slaves( Handle self);
 extern Bool Widget_size_notify( Handle self, Handle child, const Rect* metrix);
 extern Bool Widget_move_notify( Handle self, Handle child, Point * moveTo);
 
@@ -186,7 +186,7 @@ Widget_init( Handle self, HV * profile)
 	my-> set_packInfo( self, pget_sv( packInfo));
 	my-> set_placeInfo( self, pget_sv( placeInfo));
 	my-> set_geometry( self, geometry);
-	
+
 	my-> set_shape       ( self, pget_H(  shape));
 	my-> set_visible     ( self, pget_B( visible));
 	if ( pget_B( capture)) my-> set_capture( self, 1, nilHandle);
@@ -227,7 +227,7 @@ Widget_update_sys_handle( Handle self, HV * profile)
 		pexist( layered) ||
 		pexist( transparent)
 	)) return;
-	
+
 	owner        = pexist( owner)        ? pget_H( owner)        : var-> owner;
 	clipOwner    = pexist( clipOwner)    ? pget_B( clipOwner)    : my-> get_clipOwner( self);
 	parentHandle = pexist( parentHandle) ? pget_i( parentHandle) : apc_widget_get_parent_handle( self);
@@ -236,10 +236,10 @@ Widget_update_sys_handle( Handle self, HV * profile)
 	transparent  = pexist( transparent)  ? pget_B( transparent)  : my-> get_transparent( self);
 
 	if ( parentHandle) {
-		if (( owner != application) && clipOwner) 
+		if (( owner != application) && clipOwner)
 			croak("Cannot accept 'parentHandle' for non-application child and clip-owner widget");
 	}
-	
+
 	if ( !apc_widget_create( self, owner, syncPaint, clipOwner, transparent, parentHandle, layered))
 		croak( "Cannot create widget");
 
@@ -267,7 +267,7 @@ Widget_done( Handle self)
 			unsigned int i, count;
 			count = (unsigned int) enum_lists[1];
 			for ( i = 2; i < count + 2; i++) {
-				if ( self == enum_lists[i]) 
+				if ( self == enum_lists[i])
 					enum_lists[i] = nilHandle;
 			}
 			enum_lists = ( Handle*) enum_lists[0];
@@ -364,9 +364,9 @@ Widget_cleanup( Handle self)
 		ptr = PWidget( ptr)-> geomInfo. next;
 	}
 	var-> placeSlaves = nilHandle;
-	
+
 	my-> set_geometry( self, gtDefault);
-	
+
 	if ( application && (( PApplication) application)-> hintUnder == self)
 		my-> set_hintVisible( self, 0);
 
@@ -714,16 +714,16 @@ void Widget_handle_event( Handle self, PEvent event)
 					my-> help( self);
 					my-> clear_event( self);
 					return;
-				case kbLeft: 
+				case kbLeft:
 					next = my-> next_positional( self, -1, 0);
 					break;
-				case kbRight: 
+				case kbRight:
 					next = my-> next_positional( self, 1, 0);
 					break;
-				case kbUp: 
+				case kbUp:
 					next = my-> next_positional( self, 0, 1);
 					break;
-				case kbDown: 
+				case kbDown:
 					next = my-> next_positional( self, 0, -1);
 					break;
 				case kbTab:
@@ -732,8 +732,8 @@ void Widget_handle_event( Handle self, PEvent event)
 				case kbBackTab:
 					next = my-> next_tab( self, false);
 					break;
-				default:;   
-				}   
+				default:;
+				}
 				if ( next) {
 					CWidget( next)-> set_selected( next, true);
 					objCheck;
@@ -844,12 +844,12 @@ void Widget_handle_event( Handle self, PEvent event)
 					my-> first_that( self, (void*) Widget_move_notify, &event-> gen. P);
 				if ( doNotify) oldP = var-> pos;
 				var-> pos = event-> gen. P;
-				if ( doNotify && 
-					(oldP. x != event-> gen. P. x || 
+				if ( doNotify &&
+					(oldP. x != event-> gen. P. x ||
 						oldP. y != event-> gen. P. y)) {
 					my-> notify( self, "<sPP", "Move", oldP, event-> gen. P);
 					objCheck;
-					if ( var->geometry == gtGrowMode && var-> growMode & gmCenter) 
+					if ( var->geometry == gtGrowMode && var-> growMode & gmCenter)
 						my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
 				}
 			}
@@ -897,8 +897,8 @@ void Widget_handle_event( Handle self, PEvent event)
 				n-> gen. P. x = n-> gen. R. right  = event-> gen. P. x;
 				n-> gen. P. y = n-> gen. R. top    = event-> gen. P. y;
 			}
-		SIZE_EVENT:;  
-			if ( var->geometry == gtGrowMode && var-> growMode & gmCenter) 
+		SIZE_EVENT:;
+			if ( var->geometry == gtGrowMode && var-> growMode & gmCenter)
 				my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
 			if ( !event-> gen. B)
 				my-> first_that( self, (void*) Widget_size_notify, &event-> gen. R);
@@ -1005,7 +1005,7 @@ Widget_mouse_event( Handle self, int command, int button, int mod, int x, int y,
 		&& command != cmMouseEnter
 		&& command != cmMouseLeave
 	) return;
-	
+
 	memset( &ev, 0, sizeof( ev));
 	ev. cmd = command;
 	ev. pos. where. x = x;
@@ -1023,7 +1023,7 @@ Widget_next( Handle self)
 	return apc_widget_get_z_order( self, zoNext);
 }
 
-static void 
+static void
 fill_tab_candidates( PList list, Handle level)
 {
 	int i;
@@ -1035,40 +1035,40 @@ fill_tab_candidates( PList list, Handle level)
 				list_add( list, x);
 			fill_tab_candidates( list, x);
 		}
-	}   
+	}
 }
 
-Handle 
+Handle
 Widget_next_positional( Handle self, int dx, int dy)
 {
 	Handle horizon = self;
-	
+
 	int i, maxDiff = INT_MAX;
 	Handle max = nilHandle;
 	List candidates;
 	Point p[2];
-	
+
 	int minor[2], major[2], axis, extraDiff, ir[4];
 
 	/*
 		In order to compute positional difference, using four penalties.
 		To simplify algorithm, Rect will be translated to int[4] and
-		minor, major and extraDiff assigned to array indices for those 
+		minor, major and extraDiff assigned to array indices for those
 		steps - minor for first and third, major for second and extraDiff for last one.
 	*/
-	
+
 	axis = ( dx == 0) ? dy : dx;
 	minor[0] = ( dx == 0) ? 0 : 1;
 	minor[1] = minor[0] + 2;
 	extraDiff = major[(axis < 0) ? 0 : 1] = ( dx == 0) ? 1 : 0;
 	major[(axis < 0) ? 1 : 0] = extraDiff + 2;
 	extraDiff = ( dx == 0) ? (( axis < 0) ? 0 : 2) : (( axis < 0) ? 1 : 3);
-	
+
 	while ( PWidget( horizon)-> owner) {
 		if (
 			( PWidget( horizon)-> options. optSystemSelectable) || /* fast check for CWindow */
-			( PWidget( horizon)-> options. optModalHorizon) 
-			) break; 
+			( PWidget( horizon)-> options. optModalHorizon)
+			) break;
 		horizon = PWidget( horizon)-> owner;
 	}
 
@@ -1077,7 +1077,7 @@ Widget_next_positional( Handle self, int dx, int dy)
 
 	list_create( &candidates, 64, 64);
 	fill_tab_candidates( &candidates, horizon);
-	
+
 	p[0].x = p[0].y = 0;
 	p[1] = CWidget( self)-> get_size( self);
 	apc_widget_map_points( self, true, 2, p);
@@ -1089,7 +1089,7 @@ Widget_next_positional( Handle self, int dx, int dy)
 		Handle x = candidates. items[i];
 
 		if ( x == self) continue;
-		
+
 		p[0].x = p[0].y = 0;
 		p[1] = CWidget( x)-> get_size( x);
 		apc_widget_map_points( x, true, 2, p);
@@ -1099,13 +1099,13 @@ Widget_next_positional( Handle self, int dx, int dy)
 		/* First step - checking if the widget is subject to comparison. It is not,
 			if it's minor axis is not contiguous with self's */
 
-		if ( ix[ minor[0]] > ir[ minor[1]] || ix[ minor[1]] < ir[ minor[0]]) 
+		if ( ix[ minor[0]] > ir[ minor[1]] || ix[ minor[1]] < ir[ minor[0]])
 			continue;
 
-		/* Using x100 penalty for distance in major axis - and discarding those that 
+		/* Using x100 penalty for distance in major axis - and discarding those that
 			of different sign */
 		diff = ( ix[ major[ 1]] - ir[ major[0]]) * 100 * axis;
-		if ( diff < 0) 
+		if ( diff < 0)
 			continue;
 
 		/* Adding x10 penalty for incomplete minor axis congruence. Addition goes in tenths,
@@ -1116,15 +1116,15 @@ Widget_next_positional( Handle self, int dx, int dy)
 			diff += ( ir[ minor[1]] - ix[ minor[1]]) * 100 / ( ir[ minor[1]] - ir[ minor[0]]);
 
 		/* Adding 'distance from level' x1 penalty */
-		if (( ix[ extraDiff] - ir[ extraDiff]) * axis < 0) 
+		if (( ix[ extraDiff] - ir[ extraDiff]) * axis < 0)
 			diff += abs( ix[ extraDiff] - ir[ extraDiff]);
 
 		if ( diff < maxDiff) {
 			max = x;
 			maxDiff = diff;
-		}   
-	}   
-	
+		}
+	}
+
 	list_destroy( &candidates);
 
 	return max;
@@ -1135,24 +1135,24 @@ static int compare_taborders_forward( const void *a, const void *b)
 	if ((*(PWidget*) a)-> tabOrder < (*(PWidget*) b)-> tabOrder)
 		return -1; else
 	if ((*(PWidget*) a)-> tabOrder > (*(PWidget*) b)-> tabOrder)
-		return 1; 
+		return 1;
 	else
 		return 0;
-}   
+}
 
 static int compare_taborders_backward( const void *a, const void *b)
 {
 	if ((*(PWidget*) a)-> tabOrder < (*(PWidget*) b)-> tabOrder)
 		return 1; else
 	if ((*(PWidget*) a)-> tabOrder > (*(PWidget*) b)-> tabOrder)
-		return -1; 
+		return -1;
 	else
 		return 0;
-}   
+}
 
 static int
-do_taborder_candidates( Handle level, Handle who, 
-	int (*compareProc)(const void *, const void *), 
+do_taborder_candidates( Handle level, Handle who,
+	int (*compareProc)(const void *, const void *),
 	int * stage, Handle * result)
 {
 	int i, fsel = -1;
@@ -1160,10 +1160,10 @@ do_taborder_candidates( Handle level, Handle who,
 	Handle * ordered;
 
 	if ( w-> count == 0) return true;
-		
+
 	ordered = ( Handle *) malloc( w-> count * sizeof( Handle));
 	if ( !ordered) return true;
-	
+
 	memcpy( ordered, w-> items, w-> count * sizeof( Handle));
 	qsort( ordered, w-> count, sizeof( Handle), compareProc);
 
@@ -1173,21 +1173,21 @@ do_taborder_candidates( Handle level, Handle who,
 		if ( CWidget( x)-> get_current( x)) {
 			fsel = i;
 			break;
-		}   
-	}   
+		}
+	}
 	if ( fsel < 0) fsel = 0;
-	
+
 	for ( i = 0; i < w-> count; i++) {
 		int j;
 		Handle x;
 
 		j = i + fsel;
 		if ( j >= w-> count) j -= w-> count;
-		
+
 		x = ordered[j];
 		if ( CWidget( x)-> get_visible( x) && CWidget( x)-> get_enabled( x)) {
 			if ( CWidget( x)-> get_selectable( x) && CWidget( x)-> get_tabStop( x)) {
-				if ( *result == nilHandle) *result = x; 
+				if ( *result == nilHandle) *result = x;
 				switch( *stage) {
 				case 0: /* nothing found yet */
 					if ( x == who) *stage = 1;
@@ -1197,19 +1197,19 @@ do_taborder_candidates( Handle level, Handle who,
 					*result = x;
 					free( ordered);
 					return false;
-				}   
-			}   
+				}
+			}
 			if ( !do_taborder_candidates( x, who, compareProc, stage, result)) {
 				free( ordered);
 				return false; /* fall through */
-			}   
+			}
 		}
-	}   
+	}
 	free( ordered);
 	return true;
 }
 
-Handle 
+Handle
 Widget_next_tab( Handle self, Bool forward)
 {
 	Handle horizon = self, result = nilHandle;
@@ -1218,16 +1218,16 @@ Widget_next_tab( Handle self, Bool forward)
 	while ( PWidget( horizon)-> owner) {
 		if (
 			( PWidget( horizon)-> options. optSystemSelectable) || /* fast check for CWindow */
-			( PWidget( horizon)-> options. optModalHorizon) 
-			) break; 
+			( PWidget( horizon)-> options. optModalHorizon)
+			) break;
 		horizon = PWidget( horizon)-> owner;
 	}
 
 	if ( !CWidget( horizon)-> get_visible( horizon) ||
 		!CWidget( horizon)-> get_enabled( horizon)) return nilHandle;
-	
-	do_taborder_candidates( horizon, self, 
-		forward ? compare_taborders_forward : compare_taborders_backward, 
+
+	do_taborder_candidates( horizon, self,
+		forward ? compare_taborders_forward : compare_taborders_backward,
 		&stage, &result);
 	if ( result == self) result = nilHandle;
 	return result;
@@ -1395,7 +1395,7 @@ Widget_set( Handle self, HV * profile)
 
 	/* geometry manipulations */
 	{
-#define iLEFT   0      
+#define iLEFT   0
 #define iRIGHT  1
 #define iTOP    2
 #define iBOTTOM 3
@@ -1495,7 +1495,7 @@ Widget_set( Handle self, HV * profile)
 					sz = my-> get_size( self);
 					if ( !exists[ iWIDTH])  values[ iWIDTH]  = sz. x;
 					if ( !exists[ iHEIGHT]) values[ iHEIGHT] = sz. y;
-					exists[ iWIDTH] = exists[ iHEIGHT] = 1; 
+					exists[ iWIDTH] = exists[ iHEIGHT] = 1;
 				}
 				if ( ( !exists[ iLEFT]   && !exists[ iRIGHT]) ||
 					( !exists[ iBOTTOM] && !exists[ iTOP])) {
@@ -1503,7 +1503,7 @@ Widget_set( Handle self, HV * profile)
 					pos = my-> get_origin( self);
 					if ( !exists[ iLEFT])   values[ iLEFT]   = pos. x;
 					if ( !exists[ iBOTTOM]) values[ iBOTTOM] = pos. y;
-					exists[ iLEFT] = exists[ iBOTTOM] = 1; 
+					exists[ iLEFT] = exists[ iBOTTOM] = 1;
 				}
 				if ( !exists[ iLEFT]) {
 					exists[ iLEFT] = 1;
@@ -2295,9 +2295,9 @@ Bool
 Widget_enabled( Handle self, Bool set, Bool enabled)
 {
 	if ( !set) return apc_widget_is_enabled( self);
-	if ( !apc_widget_set_enabled( self, enabled)) 
+	if ( !apc_widget_set_enabled( self, enabled))
 		return false;
-	if ( is_opt( optAutoEnableChildren)) 
+	if ( is_opt( optAutoEnableChildren))
 		CWidget(self)-> first_that( self, (void*)auto_enable_children, INT2PTR(void*,enabled));
 	return true;
 }
@@ -2365,9 +2365,9 @@ Widget_hint( Handle self, Bool set, SV *hint)
 			(( PApplication) application)-> hintUnder == self)
 		{
 			Handle hintWidget = (( PApplication) application)-> hintWidget;
-			if ( SvLEN( var-> hint) == 0) 
+			if ( SvLEN( var-> hint) == 0)
 				my-> set_hintVisible( self, 0);
-			if ( hintWidget) 
+			if ( hintWidget)
 				CWidget(hintWidget)-> set_text( hintWidget, my-> get_hint( self));
 		}
 		opt_clear( optOwnerHint);
@@ -2654,7 +2654,7 @@ Widget_rect( Handle self, Bool set, Rect r)
 		r. bottom = p. y;
 		r. right  = p. x + s. x;
 		r. top    = p. y + s. y;
-	} else 
+	} else
 		apc_widget_set_rect( self, r. left, r. bottom, r. right - r. left, r. top - r. bottom);
 	return r;
 }

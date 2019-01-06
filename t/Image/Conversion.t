@@ -5,21 +5,21 @@ use Test::More;
 use Prima::Test qw(noX11);
 
 my @types = (
-	['bpp1', im::Mono], 
-	['bpp1 gray', im::BW], 
-	['bpp4', im::bpp4], 
-	['bpp4 gray', im::bpp4|im::GrayScale], 
-	['bpp8', im::bpp8], 
-	['bpp8 gray', im::Byte], 
-	['rgb', im::RGB], 
-	['int16', im::Short], 
-	['int32', im::Long], 
-	['float', im::Float], 
-	['double', im::Double], 
+	['bpp1', im::Mono],
+	['bpp1 gray', im::BW],
+	['bpp4', im::bpp4],
+	['bpp4 gray', im::bpp4|im::GrayScale],
+	['bpp8', im::bpp8],
+	['bpp8 gray', im::Byte],
+	['rgb', im::RGB],
+	['int16', im::Short],
+	['int32', im::Long],
+	['float', im::Float],
+	['double', im::Double],
 );
 
 my @filters;
-for ( sort keys %ict:: ) { 
+for ( sort keys %ict:: ) {
 	next if /^(AUTOLOAD|Constant)$/i;
 	push @filters, [ $_, &{$ict::{$_}}() ];
 }
@@ -34,9 +34,9 @@ sub is_bytes
 #	exit unless $ok;
 }
 
-my $i = Prima::Image->create( 
-	width  => 2, 
-	height => 2, 
+my $i = Prima::Image->create(
+	width  => 2,
+	height => 2,
 	type   => im::Byte,
 	data   => "\x{00}\x{ff}**\x{ff}\x{00}**",
 );
@@ -65,9 +65,9 @@ for ( @types ) {
 	}
 }
 
-$i = Prima::Image->create( 
-	width   => 4, 
-	height  => 4, 
+$i = Prima::Image->create(
+	width   => 4,
+	height  => 4,
 	type    => im::bpp8,
 	data    => "\0\1\2\3\4\5\6\7\x{8}\x{9}\x{a}\x{b}\x{c}\x{d}\x{e}\x{f}",
 	colormap => [ map { $_*17 } 0..15 ],
@@ -103,8 +103,8 @@ for ( @types ) {
 
 # check dithering capacity to sustain image statistics (grayscale, easy)
 $i = Prima::Image->create(
-	width   => 16, 
-	height  => 16, 
+	width   => 16,
+	height  => 16,
 	type    => im::Byte,
 	data    => join '', map { chr } 0..255,
 );
@@ -113,11 +113,11 @@ $i->size(128,128);
 for my $src_type (im::RGB, im::Byte, im::bpp4|im::GrayScale, im::BW) {
 	my $src = $i->clone(type => $src_type);
 	for (
-		['bpp1', im::Mono], 
-		['bpp1 gray', im::BW], 
-		['bpp4', im::bpp4], 
-		['bpp4 gray', im::bpp4|im::GrayScale], 
-		['bpp8', im::bpp8], 
+		['bpp1', im::Mono],
+		['bpp1 gray', im::BW],
+		['bpp4', im::bpp4],
+		['bpp4 gray', im::bpp4|im::GrayScale],
+		['bpp8', im::bpp8],
 		['bpp8 gray', im::Byte]
 	) {
 		my ($typename, $type) = @$_;

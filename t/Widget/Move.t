@@ -13,7 +13,7 @@ my $dong2 = 0;
 my @p_rep;
 my @c_rep;
 my $p = create_window(
-	onMove => sub { 
+	onMove => sub {
 		$dong1 = 1;
 		set_flag;
 		shift;
@@ -78,7 +78,7 @@ is_deeply( \@p_or, \@nor, "recreate consistency" );
 
 $c-> clipOwner(1);
 @p_or = map { $_ + 10 } $c-> origin;
-$p->scroll( 10, 10, withChildren => 1); 
+$p->scroll( 10, 10, withChildren => 1);
 @c_or = $c-> origin;
 is_deeply( \@p_or, \@c_or, "scroll childrren" );
 

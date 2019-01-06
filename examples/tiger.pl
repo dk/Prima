@@ -103,7 +103,7 @@ sub _currentpoint {
 sub _curveto {
 	gc->{path_actual} = 1;
 	my @p = spopnx 6;
-	path->spline( [ @{ gc->{point} }, @p ], degree => 3 ); 
+	path->spline( [ @{ gc->{point} }, @p ], degree => 3 );
 	gc->{point} = [ @p[4,5] ];
 }
 sub _def {
@@ -121,12 +121,12 @@ sub _eq {
 sub _exch { push @stack, spop, spop }
 sub _fill { path-> fill if gc->{path_actual}; newpath }
 sub _get { spush ntok fun => "_" . spopy }
-sub _grestore { 
+sub _grestore {
 	pop @graphics_stack;
 	$device->lineWidth(gc->{lw});
 	$device->color(gc->{color});
 }
-sub _gsave { 
+sub _gsave {
 	my %last = %{ gc() };
 	$last{path} = $last{path}->dup;
 	$last{point} = [ @{$last{point}} ];
@@ -149,7 +149,7 @@ sub _lineto {
 	}
 	path->line( @{gc->{point}} = spopnx 2 );
 }
-sub _load { 
+sub _load {
 	my $arg = spopy;
 	return spush $def{$arg} if exists $def{$arg};
 	return spush ntok fun => "_$arg" if main->can("_$arg");
@@ -158,7 +158,7 @@ sub _load {
 sub _lt { spushn( spopn() >= spopn()) }
 sub _mark { }
 sub _moveto {
-	newpath if gc->{path_actual}; 
+	newpath if gc->{path_actual};
 	gc->{point} = [spopnx 2];
 }
 sub _neg { spushn - spopn }

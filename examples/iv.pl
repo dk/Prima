@@ -235,7 +235,7 @@ sub fload
 	} else {
 		message("Cannot load $f:$@");
 	}
-	
+
 	$self-> unwatch_load_progress(0);
 }
 
@@ -262,13 +262,13 @@ sub setconv
 	$self-> menu-> uncheck( $self-> {omenuID});
 	$self-> menu-> check( $menuID);
 	$self-> {omenuID}    = $menuID;
-	$self-> {conversion} = ( 
+	$self-> {conversion} = (
 	( $menuID eq 'N') ? ict::None : (
 	( $menuID eq 'O') ? ict::Ordered : (
 	( $menuID eq 'E') ? ict::ErrorDiffusion : ict::Optimized
 	))
-	);  
-}   
+	);
+}
 
 sub icvt
 {

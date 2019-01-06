@@ -96,8 +96,8 @@ sub draw_text
 		(( $flags & dt::ExpandTabs    ) ? ( tw::ExpandTabs | tw::CalcTabs) : 0)
 	;
 
-	my @lines = @{$canvas-> text_wrap( $string, 
-		( $flags & dt::NoWordWrap) ? 1000000 : $w, 
+	my @lines = @{$canvas-> text_wrap( $string,
+		( $flags & dt::NoWordWrap) ? 1000000 : $w,
 		$twFlags, $tabIndent
 	)};
 
@@ -112,8 +112,8 @@ sub draw_text
 
 	my @clipSave;
 	my $fh = $canvas-> font-> height +
-		(( $flags & dt::UseExternalLeading) ? 
-			$canvas-> font-> externalLeading : 
+		(( $flags & dt::UseExternalLeading) ?
+			$canvas-> font-> externalLeading :
 			0
 		);
 	my ( $linesToDraw, $retVal);
@@ -124,11 +124,11 @@ sub draw_text
 		$h = $retVal = $linesToDraw * $fh;
 	} else {
 		$linesToDraw = int( $retVal = ( $h / $fh));
-		$linesToDraw++ 
+		$linesToDraw++
 			if (( $h % $fh) > 0) and ( $flags & dt::DrawPartial);
-		$valign      = dt::Top 
+		$valign      = dt::Top
 			if $linesToDraw < scalar @lines;
-		$linesToDraw = $retVal = scalar @lines 
+		$linesToDraw = $retVal = scalar @lines
 			if $linesToDraw > scalar @lines;
 	}
 
@@ -170,7 +170,7 @@ sub draw_text
 			$xx = $x2 - $canvas-> get_text_width( $lines[ $tl]);
 		}
 		$tl++;
-		$canvas-> line( 
+		$canvas-> line(
 			$xx + $tildes-> {tildeStart}, $starty - $fh * $tl,
 			$xx + $tildes-> {tildeEnd}  , $starty - $fh * $tl
 		);
@@ -205,7 +205,7 @@ sub prelight_color
 sub text_split_lines
 {
 	my ($self, $text) = @_;
-	return ref($text) ? 
+	return ref($text) ?
 		@{ $self-> text_wrap( $text, 2_000_000_000, tw::NewLineBreak ) } :
 		split "\n", $text;
 }

@@ -64,7 +64,7 @@ use constant T_MODEL_END   => 1; # end of a topic
 use constant T_DESCRIPTION => 2; # topic name
 use constant T_STYLE       => 3; # style of STYLE_XXX
 use constant T_ITEM_DEPTH  => 4; # depth of =item recursion
-use constant T_LINK_OFFSET => 5; # 
+use constant T_LINK_OFFSET => 5; #
 
 # formatting constants
 use constant FORMAT_LINES    => 100;
@@ -83,9 +83,9 @@ XDATA
 	my @sz = map { Prima::Application-> get_system_value($_)} ( sv::XPointer, sv::YPointer);
 	$xor-> size( @sz);
 	$and-> rop( rop::Invert);
-	$and-> put_image( 0, 0, $and); 
+	$and-> put_image( 0, 0, $and);
 	$and-> size( @sz);
-	$and-> put_image( 0, 0, $and); 
+	$and-> put_image( 0, 0, $and);
 	$xor-> type(1);
 	$handIcon-> combine( $xor, $and);
 	$handIcon-> {__pointerHotSpot} = [ 8, 23 ];
@@ -105,8 +105,8 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
-		colorMap => [ 
-			$def-> {color}, 
+		colorMap => [
+			$def-> {color},
 			$def-> {backColor},
 			cl::Green,              # link foreground
 			$def-> {backColor},     # link background
@@ -116,7 +116,7 @@ sub profile_default
 		images => [],
 		styles => [
 			{ fontId    => 1,                         # STYLE_CODE
-			color     => COLOR_CODE_FOREGROUND }, 
+			color     => COLOR_CODE_FOREGROUND },
 			{ },                                      # STYLE_TEXT
 			{ fontSize => 4, fontStyle => fs::Bold }, # STYLE_HEAD_1
 			{ fontSize => 2, fontStyle => fs::Bold }, # STYLE_HEAD_2
@@ -124,7 +124,7 @@ sub profile_default
 			{ fontSize => 1, fontStyle => fs::Bold }, # STYLE_HEAD_4
 			{ fontStyle => fs::Bold },                # STYLE_ITEM
 			{ color     => COLOR_LINK_FOREGROUND,     # STYLE_LINK
-			fontStyle => fs::Underlined   },  
+			fontStyle => fs::Underlined   },
 		],
 		pageName      => '',
 		topicView     => 0,
@@ -155,11 +155,11 @@ sub init
 	$self-> {contents} = [ Prima::PodView::Link-> new ];
 
 	my %font = %{$self-> fontPalette-> [0]};
-	$font{pitch} = fp::Fixed; 
+	$font{pitch} = fp::Fixed;
 	$self-> {fontPalette}-> [1] = \%font;
 
 	$self-> $_($profile{$_}) for qw( styles images pageName topicView);
-	
+
 	return %profile;
 }
 
@@ -218,12 +218,12 @@ sub make_bookmark
 				$t = $self-> {topics}-> [$tid]-> [T_MODEL_START];
 				return "$self->{pageName}|$t|0";
 			}
-			
+
 			return "$self->{pageName}|0|0" unless defined $t;
 			return undef if $tid + 1 >= scalar @{$self-> {topics}}; # already on top
 			if ( $$t[ T_STYLE] >= STYLE_HEAD_1 && $$t[ T_STYLE] <= STYLE_HEAD_4) {
 				$t = $self-> {topics}-> [-1];
-				return "$self->{pageName}|$$t[T_MODEL_START]|0" 
+				return "$self->{pageName}|$$t[T_MODEL_START]|0"
 			}
 			my $state = $$t[ T_STYLE] - STYLE_HEAD_1 + $$t[ T_ITEM_DEPTH];
 			$state-- if $state > 0;
@@ -238,8 +238,8 @@ sub make_bookmark
 			# return index
 			$t = $self-> {topics}-> [-1]-> [T_MODEL_START];
 			return "$self->{pageName}|$t|0";
-		} 
-	} 
+		}
+	}
 	return undef;
 }
 
@@ -266,7 +266,7 @@ sub load_bookmark
 		}
 	}
 	$self-> select_text_offset( $ofs);
-		
+
 	return 1;
 }
 
@@ -326,7 +326,7 @@ sub load_link
 		}
 		if ( length $page and $page ne $self-> {pageName}) { # new page?
 			if ( $self-> load_file( $page) != 1) {
-				$self-> notify(q(Bookmark), $mark) if $mark; 
+				$self-> notify(q(Bookmark), $mark) if $mark;
 				return 0;
 			}
 			$doBookmark = 1;
@@ -359,15 +359,15 @@ sub load_link
 			if ( $self-> {topicView}) {
 				$self-> select_topic($t);
 			} else {
-				$self-> select_text_offset( 
+				$self-> select_text_offset(
 					$self-> {model}-> [ $$t[ T_MODEL_START]]-> [ M_TEXT_OFFSET]
 				);
 			}
-			$self-> notify(q(Bookmark), $mark) if $mark; 
+			$self-> notify(q(Bookmark), $mark) if $mark;
 			return 1;
 		}
 	} elsif ( $doBookmark) {
-		$self-> notify(q(Bookmark), $mark) if $mark; 
+		$self-> notify(q(Bookmark), $mark) if $mark;
 		return 1;
 	}
 
@@ -399,7 +399,7 @@ sub select_topic
 		$self-> {modelRange} = [ 0, scalar @{$self-> {model}} - 1, 0 ]
 	}
 	my @mr2 = @{$self-> {modelRange}};
-	
+
 	if ( grep { $mr1[$_] != $mr2[$_] } 0 .. 2) {
 		$self-> lock;
 		$self-> topLine(0);
@@ -445,7 +445,7 @@ sub styles
 	if ( $#styles < STYLE_MAX_ID) {
 		my @as = @{$_[0]-> {styles}};
 		my @pd = @{$_[0]-> profile_default-> {styles}};
-		while ( $#styles < STYLE_MAX_ID) {    
+		while ( $#styles < STYLE_MAX_ID) {
 			if ( $as[ $#styles]) {
 				$styles[ $#styles + 1] = $as[ $#styles + 1];
 			} else {
@@ -504,7 +504,7 @@ sub message
 	$self-> {manpath} = '';
 }
 
-sub load_file 
+sub load_file
 {
 	my ( $self, $manpage) = @_;
 	my $pageName = $manpage;
@@ -515,9 +515,9 @@ sub load_file
 		my @ext =  ( '.pod', '.pm', '.pl' );
 		push @ext, ( '.bat' ) if $^O =~ /win32/i;
 		push @ext, ( '.com' ) if $^O =~ /VMS/;
-		for ( map { $_, "$_/pod", "$_/pods" } 
-				grep { defined && length && -d } 
-					@INC, 
+		for ( map { $_, "$_/pod", "$_/pods" }
+				grep { defined && length && -d }
+					@INC,
 					split( $Config::Config{path_sep}, $ENV{PATH})) {
 			if ( -f "$_/$manpage") {
 				$manpage = "$_/$manpage";
@@ -537,7 +537,7 @@ sub load_file
 			}
 		}
 	}
-FOUND:   
+FOUND:
 
 	unless ( open F, "< $manpage") {
 		my $m = <<ERROR;
@@ -578,7 +578,7 @@ ERROR
 	return 1;
 }
 
-sub load_content 
+sub load_content
 {
 	my ( $self, $content) = @_;
 	my $path = '';
@@ -600,7 +600,7 @@ sub open_read
 		pod_cutting   => 1,
 		begun         => '',
 		bulletMode    => 0,
-		
+
 		indent        => DEF_INDENT,
 		indentStack   => [],
 
@@ -673,7 +673,7 @@ sub add_formatted
 	my ( $self, $format, $text) = @_;
 
 	return unless $self-> {readState};
-	
+
 	if ( $format eq 'text') {
 		$self-> add($text,STYLE_CODE,0);
 		$self-> add_new_line;
@@ -728,7 +728,7 @@ sub _bulletpaint
 	my ( $self, $canvas, $block, $state, $x, $y, $filled) = @_;
 	$y -= $$block[ tb::BLK_APERTURE_Y];
 	my $fh = $canvas-> font-> height * 0.3;
-	$filled ? 
+	$filled ?
 		$canvas-> fill_ellipse( $x + $fh / 2, $y + $$block[ tb::BLK_HEIGHT] / 2, $fh, $fh) :
 		$canvas-> ellipse     ( $x + $fh / 2, $y + $$block[ tb::BLK_HEIGHT] / 2, $fh, $fh);
 }
@@ -752,7 +752,7 @@ sub read_paragraph
 			my $begun = $r-> {begun};
 			if (/^=end\s+$begun/ || /^=cut/) {
 					$r-> {begun} = '';
-					$self-> add_new_line; # end paragraph 
+					$self-> add_new_line; # end paragraph
 					$r-> {cutting} = 1 if /^=cut/;
 			} else {
 					$self-> add_formatted( $r-> {begun}, $_);
@@ -767,7 +767,7 @@ sub read_paragraph
 		}me;
 
 		# Translate verbatim paragraph
-		if (/^\s/) { 
+		if (/^\s/) {
 			$self-> add($_,STYLE_CODE,$r-> {indent}) for split "\n", $_;
 			$self-> add_new_line;
 			next;
@@ -817,7 +817,7 @@ sub read_paragraph
 			elsif ($Cmd eq 'encoding') {
 				$r->{encoding} = Encode::find_encoding($args); # or undef
 			}
-		}			
+		}
 		else {
 			s/\n/ /g;
 			$self-> add($_, STYLE_TEXT, $r-> {indent});
@@ -858,7 +858,7 @@ sub read
 		    $r->{paragraph_buffer} = $_;
 		    next;
 		}
-	}        
+	}
 }
 
 sub close_read
@@ -883,9 +883,9 @@ sub close_read
 	my $msecid = scalar(@{$self-> {topics}});
 
 	unless ( $msecid) {
-		push @{$self-> {topics}}, [ 
+		push @{$self-> {topics}}, [
 			0, scalar @{$self-> {model}} - 1,
-			"Document", STYLE_HEAD_1, 0, 0 
+			"Document", STYLE_HEAD_1, 0, 0
 		] if scalar @{$self-> {model}} > 2; # no =head's, but some info
 		goto NO_INDEX;
 	}
@@ -894,8 +894,8 @@ sub close_read
 	## and then uses black magic to put it in the front.
 
 	# remember the current end state
-	my @text_ends_at = ( 
-		$r-> {bigofs}, 
+	my @text_ends_at = (
+		$r-> {bigofs},
 		scalar @{$self->{model}},
 		scalar @{$self->{topics}},
 		scalar @{$self->{links}},
@@ -904,10 +904,10 @@ sub close_read
 	# generate index list
 	my $ofs = $self-> {model}-> [$self-> {topics}-> [0]-> [T_MODEL_START]]-> [M_TEXT_OFFSET];
 	my $firstText = substr( ${$self-> {text}}, 0, ( $ofs > 0) ? $ofs : 0);
-	if ( $firstText =~ /[^\n\s\t]/) { # the 1st lines of text are not =head 
-		unshift @{$self-> {topics}}, [ 
+	if ( $firstText =~ /[^\n\s\t]/) { # the 1st lines of text are not =head
+		unshift @{$self-> {topics}}, [
 			0, $self-> {topics}-> [0]-> [T_MODEL_START] - 1,
-			"Preface", STYLE_HEAD_1, 0, 0 
+			"Preface", STYLE_HEAD_1, 0, 0
 		];
 		$text_ends_at[2]++;
 		$msecid++;
@@ -926,8 +926,8 @@ sub close_read
 	$self-> _close_topic( STYLE_HEAD_1);
 
 	# remember the state after index is added
-	my @index_ends_at = ( 
-		$r-> {bigofs}, 
+	my @index_ends_at = (
+		$r-> {bigofs},
 		scalar @{$self->{model}},
 		scalar @{$self->{topics}},
 		scalar @{$self->{links}},
@@ -961,8 +961,8 @@ sub close_read
 	unshift @$t, splice( @$t, $text_ends_at[2]);
 	# update the map of blocks that contain OP_LINKs
 	$self-> {postBlocks} = {
-		map { 
-			( $_ >= $text_ends_at[1]) ? 
+		map {
+			( $_ >= $text_ends_at[1]) ?
 			( $_ - $text_ends_at[1] ) :
 			( $_ + $offsets[1] ),
 			1
@@ -984,18 +984,18 @@ NO_INDEX:
 
 	$self-> notify(q(NewPage));
 
-	return scalar @{$self-> {model}} > 1; # if non-empty 
+	return scalar @{$self-> {model}} > 1; # if non-empty
 }
 
 # internal sub, called when a new topic is emerged.
 # responsible to what topics can include others ( =headX to =item)
 sub _close_topic
 {
-	my ( $self, $style, $topicToPush) = @_; 
+	my ( $self, $style, $topicToPush) = @_;
 
 	my $r = $self-> {readState};
 	my $t = $r-> { topicStack};
-	my $state = ( $style >= STYLE_HEAD_1 && $style <= STYLE_HEAD_4) ? 
+	my $state = ( $style >= STYLE_HEAD_1 && $style <= STYLE_HEAD_4) ?
 		0 : scalar @{$r-> {indentStack}};
 
 	if ( $state <= $$t[-1]-> [0]) {
@@ -1004,10 +1004,10 @@ sub _close_topic
 			$nt = $$nt[1];
 			$$nt[ T_MODEL_END] = scalar @{$self-> {model}} - 1;
 		}
-		push @$t, [ $state, $topicToPush ] if $topicToPush; 
+		push @$t, [ $state, $topicToPush ] if $topicToPush;
 	} else {
 		# assert defined $topicToPush
-		push @$t, [ $state, $topicToPush ]; 
+		push @$t, [ $state, $topicToPush ];
 	}
 }
 
@@ -1025,7 +1025,7 @@ sub add
 	my $r = $self-> {readState};
 	return unless $r;
 
-	$p =~ s/\n//g; 
+	$p =~ s/\n//g;
 	my $g = [ $indent, $r-> {bigofs}, 0];
 	my $styles = $self-> {styles};
 	my $no_push_block;
@@ -1042,18 +1042,18 @@ sub add
 		$r-> {bulletMode} = 0;
 	}
 
-	if ( $style == STYLE_CODE) { 
-		$$g[ M_FONT_ID] = $styles-> [ STYLE_CODE]-> {fontId} || 1; # fixed font 
+	if ( $style == STYLE_CODE) {
+		$$g[ M_FONT_ID] = $styles-> [ STYLE_CODE]-> {fontId} || 1; # fixed font
 		push @$g, tb::wrap(tb::WRAP_MODE_OFF);
-	} 
+	}
 
 	push @$g, @{$self-> {styleInfo}-> [$style * 2]};
 	$cstyle = $styles-> [$style]-> {fontStyle} || 0;
 
-	if ( $style == STYLE_CODE) { 
+	if ( $style == STYLE_CODE) {
 		push @$g, tb::text( 0, length $p),
 	} elsif (( $style == STYLE_ITEM) && ( $p =~ /^\*\s*$/ || $p =~ /^\d+\.?$/)) {
-		push @$g, 
+		push @$g,
 			tb::wrap(tb::WRAP_MODE_OFF),
 			tb::color(0),
 			tb::code( \&_bulletpaint, ($p =~ /^\*\s*$/) ? 1 : 0),
@@ -1083,7 +1083,7 @@ sub add
 							$cmd,
 							length($cmd)+length($left)
 						], [
-							pos($m) - length($right), 
+							pos($m) - length($right),
 							lc $cmd,
 							length($right)
 						];
@@ -1112,7 +1112,7 @@ sub add
 			fontId    => 0,
 			fontSize  => 0,
 			wrap      => 1,
-			color     => tb::COLOR_INDEX, 
+			color     => tb::COLOR_INDEX,
 			backColor => tb::BACKCOLOR_DEFAULT,
 		);
 		my ( $link, $linkHREF) = ( 0, '');
@@ -1130,7 +1130,7 @@ sub add
 							( \d+ )
 							| ( [A-Za-z]+ )
 						)
-						>	
+						>
 				} {
 					do {
 							defined $2
@@ -1216,7 +1216,7 @@ sub add
 						next unless exists $z-> {$_};
 						push @$g, $tb::{$_}-> ( $val{$_} = pop @{$stack{$_}});
 					}
-					if ( $link) { 
+					if ( $link) {
 						push @$g, $OP_LINK, $link = 0;
 						push @{$self-> {links}}, $linkHREF;
 						$self-> {postBlocks}-> { $itemid} = 1;
@@ -1233,7 +1233,7 @@ sub add
 		}
 
 		# add topic
-		if ( 
+		if (
 	        	( $style >= STYLE_HEAD_1 && $style <= STYLE_HEAD_4 ) ||
 			(( $style == STYLE_ITEM) && $p !~ /^[0-9*]+\.?$/)
 		) {
@@ -1246,7 +1246,7 @@ sub add
 				$pp =~ s/([\s\)\(\[\]\{\}].*)$/C<$1>/; # seems like function entry?
 			}
 			my $newTopic = [ $itemid, 0, $pp, $style, $itemDepth, $linkStart];
-			$self-> _close_topic( $style, $newTopic); 
+			$self-> _close_topic( $style, $newTopic);
 			push @{$self-> {topics}}, $newTopic;
 		}
 	}
@@ -1258,7 +1258,7 @@ sub add
 
 	# all-string format options - close brackets
 	push @$g, @{$self-> {styleInfo}-> [$style * 2 + 1]};
-	
+
 	# finish block
 	$r-> {bigofs} += length $p;
 	push @{$self-> {model}}, $g unless $no_push_block;
@@ -1365,7 +1365,7 @@ sub format
 
 sub FormatTimer_Tick
 {
-	$_[0]-> format_chunks 
+	$_[0]-> format_chunks
 }
 
 sub format_chunks
@@ -1406,11 +1406,11 @@ sub format_chunks
 			} else {
 				$$_[ tb::BLK_X] += $indent;
 			}
-			$f-> {paneWidth} = $$_[ tb::BLK_X] + $$_[ tb::BLK_WIDTH] 
+			$f-> {paneWidth} = $$_[ tb::BLK_X] + $$_[ tb::BLK_WIDTH]
 				if $$_[ tb::BLK_X] + $$_[ tb::BLK_WIDTH] > $f-> {paneWidth};
 		}
 
-		# check links 
+		# check links
 		if ( $postBlocks-> {$mid}) {
 			my $linkState = 0;
 			my $linkStart = 0;
@@ -1455,7 +1455,7 @@ sub format_chunks
 	if ( scalar @{$self-> {blocks}}) {
 		my $b = $self-> {blocks}-> [-1];
 		$paneHeight = $$b[ tb::BLK_Y] + $$b[ tb::BLK_HEIGHT];
-		if ( defined $f-> {position} && 
+		if ( defined $f-> {position} &&
 			! $f-> {positionSet} &&
 			$self-> {topLine} == 0 &&
 			$self-> {offset} == 0 &&
@@ -1481,7 +1481,7 @@ sub format_chunks
 		my $oph = $self-> {paneHeight};
 		$self-> {paneHeight} = $paneHeight; # direct nasty hack
 		$self-> reset_scrolls;
-		$self-> repaint if $oph >= $self-> {topLine} && 
+		$self-> repaint if $oph >= $self-> {topLine} &&
 			$oph <= $self-> {topLine} + $self-> height;
 	}
 
@@ -1497,7 +1497,7 @@ sub format_chunks
 sub print
 {
 	my ( $self, $canvas, $callback) = @_;
-	
+
 	my ( $min, $max, $linkIdStart) = @{$self-> {modelRange}};
 	return 1 if $min >= $max;
 	my $ret = 0;
@@ -1553,13 +1553,13 @@ sub print
 
 		# paint
 		for ( @blocks) {
-			my $b = $_; 
+			my $b = $_;
 			if ( $y < $$b[ tb::BLK_HEIGHT]) {
 				if ( $$b[ tb::BLK_HEIGHT] < $formatHeight) {
 					$new_page->();
 					$y = $formatHeight - $$b[ tb::BLK_HEIGHT];
 					$self-> block_draw( $canvas, $b, $indent, $y);
-				} else { 
+				} else {
 					$y -= $$b[ tb::BLK_HEIGHT];
 					while ( $y < 0) {
 						$new_page->();
@@ -1587,7 +1587,7 @@ sub select_text_offset
 		my $last = $self-> {blocks}-> [-1];
 		$self-> {formatData}-> {position} = $pos;
 		return if ! $last || $$last[tb::BLK_TEXT_OFFSET] < $pos;
-	} 
+	}
 	my $b = $self-> text_offset2block( $pos);
 	if ( defined $b) {
 		$b = $self-> {blocks}-> [$b];
@@ -1615,7 +1615,7 @@ sub text_range
 	my @range;
 	$range[0] = $self-> {model}-> [ $self-> {modelRange}-> [0]]-> [M_TEXT_OFFSET];
 	$range[1] = ( $self-> {modelRange}-> [1] + 1 >= scalar @{$self-> {model}}) ?
-		length ( ${$self-> {text}} ) : 
+		length ( ${$self-> {text}} ) :
 		$self-> {model}-> [ $self-> {modelRange}-> [1] + 1]-> [M_TEXT_OFFSET];
 	$range[1]-- if $range[1] > $range[0];
 	return @range;
@@ -1700,7 +1700,7 @@ __END__
 
 =pod
 
-=head1 NAME 
+=head1 NAME
 
 Prima::PodView - POD browser widget
 
@@ -1725,7 +1725,7 @@ Prima::PodView - POD browser widget
 =head1 DESCRIPTION
 
 Prima::PodView contains a formatter ( in terms of L<perlpod> ) and viewer of
-POD content. It heavily employs its ascendant class L<Prima::TextView>, 
+POD content. It heavily employs its ascendant class L<Prima::TextView>,
 and is in turn base for the toolkit's default help viewer L<Prima::HelpViewer>.
 
 =head1 USAGE
@@ -1758,7 +1758,7 @@ Must be called only within open_read/close_read brackets
 =item add TEXT, STYLE, INDENT
 
 Formats TEXT string of a given STYLE ( one of C<STYLE_XXX> constants) with
-INDENT space. 
+INDENT space.
 
 Must be called only within open_read/close_read brackets.
 
@@ -1767,7 +1767,7 @@ Must be called only within open_read/close_read brackets.
 Adds a pre-formatted TEXT with a given FORMAT, supplied by C<=begin> or C<=for>
 POD directives. Prima::PodView understands 'text' and 'podview' FORMATs;
 the latter format is for Prima::PodView itself and contains small number
-of commands, aimed at inclusion of images into the document. 
+of commands, aimed at inclusion of images into the document.
 
 The 'podview' commands are:
 
@@ -1790,14 +1790,14 @@ Example:
 The E<lt>cut<gt> clause skips all POD input until cancelled.
 It is used in conjunction with the following command, L<img>, to allow
 a POD manpage provide both graphic ('podview', 'html', etc ) and text ( 'text' )
-content. 
+content.
 
 =item img [src="SRC"] [width="WIDTH"] [height="HEIGHT"] [cut="CUT"] [frame="FRAME"]
 
 An image inclusion command, where src is a relative or an absolute path to
 an image file. In case if scaling is required, C<width> and C<height> options
 can be set. When the image is a multiframe image, the frame index can be
-set by C<frame> option. Special C<cut> option, if set to a true value, activates the 
+set by C<frame> option. Special C<cut> option, if set to a true value, activates the
 L<cut> behavior if ( and only if ) the image load operation was unsuccessful.
 This makes possible simultaneous use of 'podview' and 'text' :
 
@@ -1838,8 +1838,8 @@ remembers the current location on a page, and when the rendered text approaches
 the location, scrolls the document automatically.
 
 The rendering is based an a document model, generated by open_read/close_read session.
-The model is a set of same text blocks defined by L<Prima::TextView>, except 
-that the header length is only three integers: 
+The model is a set of same text blocks defined by L<Prima::TextView>, except
+that the header length is only three integers:
 
 	M_INDENT       - the block X-axis indent
 	M_TEXT_OFFSET  - same as BLK_TEXT_OFFSET
@@ -1889,10 +1889,10 @@ This functionality provides another layer of accessibility to the pod formatter.
 In addition to styles, Prima::PodView defined C<colormap> entries for
 C<STYLE_LINK> and C<STYLE_CODE>:
 
-	COLOR_LINK_FOREGROUND 
-	COLOR_LINK_BACKGROUND 
-	COLOR_CODE_FOREGROUND 
-	COLOR_CODE_BACKGROUND 
+	COLOR_LINK_FOREGROUND
+	COLOR_LINK_BACKGROUND
+	COLOR_CODE_FOREGROUND
+	COLOR_CODE_BACKGROUND
 
 The default colors in the styles are mapped into these entries.
 
@@ -1923,12 +1923,12 @@ Loads the manpage, if necessary, and selects the section.
 
 =item load_bookmark BOOKMARK
 
-Loads a bookmark string, prepared by L<make_bookmark> function. 
+Loads a bookmark string, prepared by L<make_bookmark> function.
 Used internally.
 
 =item load_content CONTENT
 
-Loads content into the viewer. Returns C<undef> is there is no POD 
+Loads content into the viewer. Returns C<undef> is there is no POD
 context, 1 otherwise.
 
 =item make_bookmark [ WHERE ]

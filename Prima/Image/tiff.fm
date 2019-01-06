@@ -52,7 +52,7 @@ if ( $new ne $old) {
    $o-> {TextFields}-> {$old} = $o-> TextField-> text;
    $new = $o-> {TextFields}-> {$new};
    $new = \'\' unless defined $new;
-   $o-> TextField-> text( $new);   
+   $o-> TextField-> text( $new);
 }
 ','TextSelector', 'onChange'),
 			items => ['Artist', 'Copyright', 'DateTime', 'DocumentName', 'HostComputer', 'ImageDescription', 'Make', 'Model', 'PageName', 'Software', ],

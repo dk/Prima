@@ -98,8 +98,8 @@ sub map_color
 {
 	my ( $self, $color ) = @_;
 	return $color unless $color & cl::SysFlag;
-	$color |= 
-		$self->{widgetClass} // 
+	$color |=
+		$self->{widgetClass} //
 		(( $self->{canvas} && $self->{canvas}->isa('Prima::Widget')) ? $self->{canvas}->widgetClass : undef ) //
 		wc::Undef
 		unless $color & wc::Mask;
@@ -293,7 +293,7 @@ Creates a new gradient object with %OPTIONS replaced.
 =item widgetClass INTEGER
 
 Points to a widget class to resolve generic colors like C<cl::Back>,
-that may differ from widget class to widget class. 
+that may differ from widget class to widget class.
 
 =item palette @COLORS
 

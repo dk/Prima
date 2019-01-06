@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -191,7 +191,7 @@ my $w = Prima::MainWindow-> create(
 		if ( $showBitmaps) {
 			for ( $ymans = 0; $ymans < $vlines; $ymans++) {
 				my $y = $sz[1] - $vlbminst[ $ymans] * $fh;
-				$c-> put_image( $sz[0] - $vlbmxcol[ $ymans], $y, 
+				$c-> put_image( $sz[0] - $vlbmxcol[ $ymans], $y,
 					$dbms[ $vlbms[ $ymans]]);
 				if ( ++$vlbminst[ $ymans] >= $ymaxstep) {
 					$vlbminst[ $ymans] = 1;
@@ -258,7 +258,7 @@ my $w = Prima::MainWindow-> create(
 				ecolor( $c, $cc, cl::Yellow, 0.5) if $vlsped[ $ymans] > 1;
 				$y = $sz[1] - ($vlinst[ $ymans] - $maxln) * $fh;
 				for ( $i = 0; $i < $maxln; $i++) {
-					$c-> text_out( substr( $smp, $i, 1), 
+					$c-> text_out( substr( $smp, $i, 1),
 						$vlxcol[ $ymans] / $textToBMRatio, $y);
 					$y -= $fh;
 				}

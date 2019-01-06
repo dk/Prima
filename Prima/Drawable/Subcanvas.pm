@@ -23,7 +23,7 @@ my @easy_props = qw(color backColor fillWinding fillPattern font lineEnd
 
 sub init {
 	my $self = shift;
-	
+
 	# We need to set up the parent canvas before calling the parent initializer
 	# code. This is because the superclass will call the various setters during
 	# its init, and our setters need the parent canvas.
@@ -33,7 +33,7 @@ sub init {
 
 	$self->{offset} = [0, 0];
 	$self->{translate} = [0, 0];
-	
+
 	# OK, now we can call the SUPER's init()
 	%profile = $self->SUPER::init(%profile);
 	$self->offset(@{delete $profile{offset}});
@@ -60,8 +60,8 @@ sub resolution { $#_ ? $_[0]->raise_ro('resolution') : $_[0]->{parent_canvas}->r
 # we're always in the paint state
 sub begin_paint		 { 0 }
 sub begin_paint_info { 0 }
-sub end_paint		 {} 
-sub end_paint_info	 {} 
+sub end_paint		 {}
+sub end_paint_info	 {}
 sub get_paint_state  { ps::Enabled }
 
 ### For these methods, just call the method on the parent widget directly
@@ -73,11 +73,11 @@ for my $direct_method (qw(
 	*{$direct_method} = sub {
 		use strict 'refs';
 		my $self = shift;
-		
+
 		# Indicate the property name subref we're writing (thanks to
 		# http://www.perlmonks.org/?node_id=304883 for the idea)
 		*__ANON__ = $direct_method;
-		
+
 		# use goto to make this as transparent (or hidden) as possible
 		unshift @_, $self->{parent_canvas};
 		goto &{$self->{parent_canvas}->can($direct_method)};
@@ -100,26 +100,26 @@ sub palette
 # Primitives must apply the clipping and translating before calling on the
 # parent.
 my @primitives = qw(
-	arc bar chord draw_text ellipse 
-	fill_chord fill_ellipse fillpoly fill_sector flood_fill 
+	arc bar chord draw_text ellipse
+	fill_chord fill_ellipse fillpoly fill_sector flood_fill
 	line lines polyline put_image put_image_indirect
 	rectangle sector stretch_image
 	text_out clear
-); 
+);
 
 for my $primitive_name (@primitives) {
 	no strict 'refs';
 	*{$primitive_name} = sub {
 		use strict 'refs';
 		my ($self, @args_for_method) = @_;
-		
+
 		# Indicate the name of the subref we're writing (thanks to
 		# http://www.perlmonks.org/?node_id=304883 for the idea)
 		*__ANON__ = $primitive_name;
 
 		# Do not perform the draw if we are in a null clip region.
 		return if $self->{null_clip_region};
-		
+
 		# Otherwise apply the method, working under the assumption that the
 		# clipRect and translate will do their job.
 		$self->{parent_canvas}->$primitive_name(@args_for_method);
@@ -128,7 +128,7 @@ for my $primitive_name (@primitives) {
 
 sub pixel {
 	my ($self, $x, $y, @color_arg) = @_;
-	
+
 	# This could be wrong since we could inquire about the pixel at a
 	# covered location, in which case we don't have the value (it was
 	# never stored in the first place if it was covered). But then
@@ -141,10 +141,10 @@ sub pixel {
 # Apply the subcanvas's clipRect, using the internal translation and boundaries
 sub clipRect {
 	my ($self, @r) = @_;
-	
+
 	# If we are called as a getter, return what we have
 	return @{$self->{clipRect}} unless @r;
-	
+
 	# validate
 	my ($left, $bottom, $right, $top) = @r;
 	my $width  = $right - $left;
@@ -165,18 +165,18 @@ sub clipRect {
 		$self->{null_clip_region} = 1;
 		return;
 	}
-	
+
 	# If we're here, we are going to clip, so remove that flag.
 	delete $self->{null_clip_region};
-	
+
 	# Trim the translated boundaries so that they are clipped by the widget's
 	# actual edges.
 	$left  = 0    if $left	<  0;   $bottom = 0    if $bottom < 0;
 	$right = 0    if $right <  0;   $top    = 0    if $top	  < 0;
 	$left  = $w-1 if $left	>= $w;  $bottom = $h-1 if $bottom >= $h;
 	$right = $w-1 if $right >= $w;	$top    = $h-1 if $top	  >= $h;
-	
-	# Finally, calculate the clipping rectangle with respect to the parent's origin. 
+
+	# Finally, calculate the clipping rectangle with respect to the parent's origin.
 	my ($x_off, $y_off) = $self->offset;
 	$left  += $x_off; $bottom += $y_off;
 	$right += $x_off; $top	  += $y_off;
@@ -186,13 +186,13 @@ sub clipRect {
 
 sub translate {
 	my ($self, @new_trans) = @_;
-	
+
 	# As getter, return what we have
 	return @{$self->{translate}} unless @new_trans;
-	
+
 	# store the new translation in case it's inquired about
 	$self->{translate} = [@new_trans];
-	
+
 	# Apply (to the parent's canvas)
 	my ($left, $bottom) = $self->offset;
 	$self->{parent_canvas}->translate(
@@ -224,10 +224,10 @@ sub region {
 
 sub AUTOLOAD {
 	my $self = shift;
-	
+
 	# Remove qualifier from original method name...
 	(my $called = our $AUTOLOAD) =~ s/.*:://;
-	
+
 	my $parent_canvas = $self->{parent_canvas};
 	if (my $subref = $parent_canvas->can($called)) {
 		return $subref->($parent_canvas, @_);
@@ -245,14 +245,14 @@ sub paint_widgets
 	$self->offset($x,$y);
 	$self->{size} = [ $root->size ];
 	$self->{current_widget} = $root;
-	
+
 	for my $property (@easy_props) {
-		next if $property eq 'font'; 
+		next if $property eq 'font';
 		$self->$property($root->$property);
 	}
 
 	# font is special because widget and canvas resolution can differ - and if they do,
-	# font.size(in points) and font.width(in pixels) will get in conflict, because 
+	# font.size(in points) and font.width(in pixels) will get in conflict, because
 	# if there's .size, .height is ignored (but .width isn't)
 	my %font = %{$root->font};
 	delete $font{size} if exists $font{size} && exists $font{height};
@@ -268,20 +268,20 @@ sub paint_widgets
 	$self->color(cl::White);
 	$root->end_paint_info;
 	$root->pop_event;
-	
+
 	$self->{current_widget} = undef;
-		
+
 	# Paint children in z-order
 	my @widgets = $root->get_widgets;
 	if ( $widgets[0] ) {
 		my $w = $widgets[0]->last;
 		@widgets = ();
 		while ( $w ) {
-			push @widgets, $w; 
+			push @widgets, $w;
 			$w = $w->prev;
 		}
 	}
-	
+
 	for my $widget (@widgets) {
 		$self->paint_widgets( $widget, $x + $widget->left, $y + $widget->bottom );
 	}

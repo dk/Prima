@@ -144,7 +144,7 @@ sub init
 		name       => 'Sample',
 		growMode   => gm::Floor,
 	);
-	
+
 	$j = $gr-> insert( Widget =>
 		origin     => [ 5, 5],
 		size       => [ 345, 90],
@@ -163,13 +163,13 @@ sub init
 		growMode   => gm::Floor,
 	);
 
-	$self-> insert( Label => 
+	$self-> insert( Label =>
 		origin     => [ 175, 10],
 		size       => [ 96, 18],
 		text       => '~Encoding',
 		focusLink  => $enc,
 	);
-	
+
 	$self-> insert( Button =>
 		origin      => [ 435, 280],
 		size        => [ 96, 36],
@@ -229,10 +229,10 @@ sub reset_sizelist
 	my @sizes;
 
 	if ( defined $fn) {
-		my $current_encoding = $self-> Encoding-> List-> get_items( 
+		my $current_encoding = $self-> Encoding-> List-> get_items(
 			$self-> Encoding-> List-> focusedItem
 		) || '';
-		
+
 		my @list = @{$::application-> fonts( $fn, $name_changed ? '' : $current_encoding)};
 
 		if ( $name_changed) {
@@ -245,7 +245,7 @@ sub reset_sizelist
 			}
 			my $found = 0;
 			my $i = 0;
-			
+
 			for ( @enc_items) {
 				$found = $i, last if $_ eq $current_encoding;
 				$i++;
@@ -253,7 +253,7 @@ sub reset_sizelist
 			$self-> Encoding-> List-> items( \@enc_items);
 			$self-> Encoding-> text( $current_encoding = $enc_items[ $found]);
 		}
-		
+
 		for ( @list)
 		{
 			next if $current_encoding ne $_-> {encoding};
@@ -297,8 +297,8 @@ sub apply
 	delete $hash{$_} for ( qw( width height direction));
 	$self-> {logFont} = $self-> font_match( \%hash, $self-> {logFont}, 0);
 	delete $self-> {logFont}-> {$_} for ( qw( width height direction));
-	$self-> {fixedOnly} ? 
-		$self-> {logFont}-> {pitch} = fp::Fixed : 
+	$self-> {fixedOnly} ?
+		$self-> {logFont}-> {pitch} = fp::Fixed :
 		delete $self-> {logFont}-> {pitch};
 	$self-> { normalFontSet} = 1;
 	$self-> Sample-> Example-> font( $self-> {logFont});
@@ -375,7 +375,7 @@ sub Example_FontChanged
 sub Example_MouseDown
 {
 	my ( $owner, $self, $btn, $mod, $x, $y) = @_;
-	return if $btn != mb::Left or $self-> {drag_font}; 
+	return if $btn != mb::Left or $self-> {drag_font};
 	$self-> {drag_font} = 1;
 	$self-> capture(1);
 	$owner-> notify( 'BeginDragFont', $self-> {drag_color});

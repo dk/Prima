@@ -1,8 +1,8 @@
-('AvantGarde-Demi' => { 
+('AvantGarde-Demi' => {
   name            => 'AvantGarde-Demi',
   family          => 'Avant Garde',
   height          => 1272,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,

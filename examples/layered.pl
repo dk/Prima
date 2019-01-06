@@ -89,8 +89,8 @@ my $w = Prima::MainWindow->new(
 		for my $i ( $r, $g, $b ) {
 			my $sin = sin($a) * $r0;
 			my $cos = cos($a) * $r0;
-			my $xx = $cos - $sin; 
-			my $yy = $sin + $cos; 
+			my $xx = $cos - $sin;
+			my $yy = $sin + $cos;
 			$xx -= $x / 2;
 			$yy -= $y / 2;
 			$self->stretch_image( $xx, $yy, $x, $y, $i);
@@ -99,14 +99,14 @@ my $w = Prima::MainWindow->new(
 	}
 );
 
-my $btn = $w-> insert( Button => 
+my $btn = $w-> insert( Button =>
 	origin  => [10,10],
 	shape   => $i,
 	text    => '~Quit',
 	onClick => sub { $::application-> close },
 );
 
-$btn->insert( Widget => 
+$btn->insert( Widget =>
 	origin => [10,10],
 	size   => [10,10],
 	onPaint => sub {
@@ -159,8 +159,8 @@ my $widget = Prima::Widget->new(
 		for my $i ( $r, $g, $b ) {
 			my $sin = sin($a) * $r0;
 			my $cos = cos($a) * $r0;
-			my $xx = $cos - $sin; 
-			my $yy = $sin + $cos; 
+			my $xx = $cos - $sin;
+			my $yy = $sin + $cos;
 			$xx -= $x / 2;
 			$yy -= $y / 2;
 			$self->put_image( $xx, $yy, $i);
@@ -171,7 +171,7 @@ my $widget = Prima::Widget->new(
 
 my ($mx, $my) = (1, 1);
 
-$w->insert( Timer => 
+$w->insert( Timer =>
 	timeout => 100,
 	onTick => sub {
 		$angle += 0.1;

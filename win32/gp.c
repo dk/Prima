@@ -142,7 +142,7 @@ gp_Chord(
   int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
   double angleStart, double angleEnd, Bool filled
 ) {
-	if ( 
+	if (
 		(abs(nXRadial1 - nXRadial2) < 2) &&
 		(abs(nYRadial1 == nYRadial2) < 2) &&
 		(fabs(angleStart - angleEnd) < 360 )
@@ -244,7 +244,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
 	}
 
 	STYLUS_USE_PEN( ps);
-	while( compl--) 
+	while( compl--)
 		Arc( ps, ELLIPSE_RECT, ARC_COMPLETE);
 	if ( !needf) return true;
 	if ( !gp_Arc( self, ELLIPSE_RECT, ARC_ANGLED, angleStart, angleEnd)) apiErrRet;
@@ -300,7 +300,7 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	( apc_widget_get_layered_request(self) && apc_widget_surface_is_layered(self))
 	))
 	return false;
-	
+
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
 		x1 = y1 = 0;
 		x2 = sys lastSize. x - 1;
@@ -706,7 +706,7 @@ Bool
 apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
 	HDC ps = sys ps;
-	
+
 	adjust_line_end( x1, y1, &x2, &y2, true);
 	y1 = sys lastSize. y - y1 - 1;
 	y2 = sys lastSize. y - y2 - 1;
@@ -837,12 +837,12 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
 		int mb_len;
 		if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) return false;
 		len = mb_len;
-	}      
+	}
 
 	if ( GetROP2( sys ps) != R2_COPYPEN) {
 		STYLUS_USE_BRUSH( ps);
 		BeginPath(ps);
-		if ( utf8) 
+		if ( utf8)
 			TextOutW( ps, x, sys lastSize. y - y, ( U16*)text, len);
 		else
 			TextOutA( ps, x, sys lastSize. y - y, text, len);
@@ -986,7 +986,7 @@ gp_get_font_def_bitmap( Handle self, int first, int last, Bool unicode, PFontABC
 			}
 			printf("\n");
 		}
-*/      
+*/
 
 		for ( j = 0; j < h; j++) {
 			if ( memcmp( glyph + j * lineSize, empty, lineSize) != 0 ) {
@@ -1055,8 +1055,8 @@ static Handle ipa_ranges[] = {
 };
 
 static Handle bopomoto_ranges[] = {
-	0x3100 , 0x312f,  // 51 Bopomofo  
-	0x31a0 , 0x31bf,  //    Extended Bopomofo 
+	0x3100 , 0x312f,  // 51 Bopomofo
+	0x31a0 , 0x31bf,  //    Extended Bopomofo
 };
 
 static Handle cjk_ranges[] = {
@@ -1064,100 +1064,100 @@ static Handle cjk_ranges[] = {
 	0x2e80 , 0x2eff,  //    CJK Radicals Supplement
 	0x2f00 , 0x2fdf,  //    Kangxi Radicals
 	0x2ff0 , 0x2fff,  //    Ideographic Description
-	0x3400 , 0x4dbf,  //    CJK Unified Ideograph Extension A 
-};  
+	0x3400 , 0x4dbf,  //    CJK Unified Ideograph Extension A
+};
 
 static Handle unicode_subranges[ 84 * 2] = {
-	0x0020 , 0x007e,  // 0  Basic Latin 
-	0x0080 , 0x00ff,  // 1  Latin-1 Supplement 
-	0x0100 , 0x017f,  // 2  Latin Extended-A 
-	0x0180 , 0x024f,  // 3  Latin Extended-B 
+	0x0020 , 0x007e,  // 0  Basic Latin
+	0x0080 , 0x00ff,  // 1  Latin-1 Supplement
+	0x0100 , 0x017f,  // 2  Latin Extended-A
+	0x0180 , 0x024f,  // 3  Latin Extended-B
 	3, (Handle) &ipa_ranges,
-	0x02b0 , 0x02ff,  // 5  Spacing Modifier Letters 
-	0x0300 , 0x036f,  // 6  Combining Diacritical Marks 
-	0x0370 , 0x03ff,  // 7  Basic Greek 
-	0 ,      0,       // 8  Reserved  
-	0x0400 , 0x04ff,  // 9  Cyrillic 
-	0x0530 , 0x058f,  // 10 Armenian 
-	0x0590 , 0x05ff,  // 11 Basic Hebrew 
-	0 ,      0,       // 12 Reserved  
-	0x0600 , 0x06ff,  // 13 Basic Arabic 
-	0 ,      0,       // 14 Reserved  
-	0x0900 , 0x097f,  // 15 Devanagari 
-	0x0980 , 0x09ff,  // 16 Bengali 
-	0x0a00 , 0x0a7f,  // 17 Gurmukhi 
-	0x0a80 , 0x0aff,  // 18 Gujarati 
-	0x0b00 , 0x0b7f,  // 19 Oriya 
-	0x0b80 , 0x0bff,  // 20 Tamil 
-	0x0c00 , 0x0c7f,  // 21 Telugu 
-	0x0c80 , 0x0cff,  // 22 Kannada 
-	0x0d00 , 0x0d7f,  // 23 Malayalam 
-	0x0e00 , 0x0e7f,  // 24 Thai 
-	0x0e80 , 0x0eff,  // 25 Lao 
-	0x10a0 , 0x10ff,  // 26 Basic Georgian 
-	0 ,      0,       // 27 Reserved  
-	0x1100 , 0x11ff,  // 28 Hangul Jamo 
-	0x1e00 , 0x1eff,  // 29 Latin Extended Additional 
-	0x1f00 , 0x1fff,  // 30 Greek Extended 
-	0x2000 , 0x206f,  // 31 General Punctuation 
-	0x2070 , 0x209f,  // 32 Subscripts and Superscripts 
-	0x20a0 , 0x20cf,  // 33 Currency Symbols 
-	0x20d0 , 0x20ff,  // 34 Combining Diacritical Marks for Symbols 
-	0x2100 , 0x214f,  // 35 Letter-like Symbols 
-	0x2150 , 0x218f,  // 36 Number Forms 
-	0x2190 , 0x21ff,  // 37 Arrows 
-	0x2200 , 0x22ff,  // 38 Mathematical Operators 
-	0x2300 , 0x23ff,  // 39 Miscellaneous Technical 
-	0x2400 , 0x243f,  // 40 Control Pictures 
-	0x2440 , 0x245f,  // 41 Optical Character Recognition 
-	0x2460 , 0x24ff,  // 42 Enclosed Alphanumerics 
-	0x2500 , 0x257f,  // 43 Box Drawing 
-	0x2580 , 0x259f,  // 44 Block Elements 
-	0x25a0 , 0x25ff,  // 45 Geometric Shapes 
-	0x2600 , 0x26ff,  // 46 Miscellaneous Symbols 
-	0x2700 , 0x27bf,  // 47 Dingbats 
-	0x3000 , 0x303f,  // 48 Chinese, Japanese, and Korean (CJK) Symbols and Punctuation 
-	0x3040 , 0x309f,  // 49 Hiragana 
-	0x30a0 , 0x30ff,  // 50 Katakana 
+	0x02b0 , 0x02ff,  // 5  Spacing Modifier Letters
+	0x0300 , 0x036f,  // 6  Combining Diacritical Marks
+	0x0370 , 0x03ff,  // 7  Basic Greek
+	0 ,      0,       // 8  Reserved
+	0x0400 , 0x04ff,  // 9  Cyrillic
+	0x0530 , 0x058f,  // 10 Armenian
+	0x0590 , 0x05ff,  // 11 Basic Hebrew
+	0 ,      0,       // 12 Reserved
+	0x0600 , 0x06ff,  // 13 Basic Arabic
+	0 ,      0,       // 14 Reserved
+	0x0900 , 0x097f,  // 15 Devanagari
+	0x0980 , 0x09ff,  // 16 Bengali
+	0x0a00 , 0x0a7f,  // 17 Gurmukhi
+	0x0a80 , 0x0aff,  // 18 Gujarati
+	0x0b00 , 0x0b7f,  // 19 Oriya
+	0x0b80 , 0x0bff,  // 20 Tamil
+	0x0c00 , 0x0c7f,  // 21 Telugu
+	0x0c80 , 0x0cff,  // 22 Kannada
+	0x0d00 , 0x0d7f,  // 23 Malayalam
+	0x0e00 , 0x0e7f,  // 24 Thai
+	0x0e80 , 0x0eff,  // 25 Lao
+	0x10a0 , 0x10ff,  // 26 Basic Georgian
+	0 ,      0,       // 27 Reserved
+	0x1100 , 0x11ff,  // 28 Hangul Jamo
+	0x1e00 , 0x1eff,  // 29 Latin Extended Additional
+	0x1f00 , 0x1fff,  // 30 Greek Extended
+	0x2000 , 0x206f,  // 31 General Punctuation
+	0x2070 , 0x209f,  // 32 Subscripts and Superscripts
+	0x20a0 , 0x20cf,  // 33 Currency Symbols
+	0x20d0 , 0x20ff,  // 34 Combining Diacritical Marks for Symbols
+	0x2100 , 0x214f,  // 35 Letter-like Symbols
+	0x2150 , 0x218f,  // 36 Number Forms
+	0x2190 , 0x21ff,  // 37 Arrows
+	0x2200 , 0x22ff,  // 38 Mathematical Operators
+	0x2300 , 0x23ff,  // 39 Miscellaneous Technical
+	0x2400 , 0x243f,  // 40 Control Pictures
+	0x2440 , 0x245f,  // 41 Optical Character Recognition
+	0x2460 , 0x24ff,  // 42 Enclosed Alphanumerics
+	0x2500 , 0x257f,  // 43 Box Drawing
+	0x2580 , 0x259f,  // 44 Block Elements
+	0x25a0 , 0x25ff,  // 45 Geometric Shapes
+	0x2600 , 0x26ff,  // 46 Miscellaneous Symbols
+	0x2700 , 0x27bf,  // 47 Dingbats
+	0x3000 , 0x303f,  // 48 Chinese, Japanese, and Korean (CJK) Symbols and Punctuation
+	0x3040 , 0x309f,  // 49 Hiragana
+	0x30a0 , 0x30ff,  // 50 Katakana
 	2,  (Handle) &bopomoto_ranges,
-	0x3130 , 0x318f,  // 52 Hangul Compatibility Jamo 
-	0x3190 , 0x319f,  // 53 CJK Miscellaneous 
-	0x3200 , 0x32ff,  // 54 Enclosed CJK Letters and Months 
-	0x3300 , 0x33ff,  // 55 CJK Compatibility 
-	0xac00 , 0xd7a3,  // 56 Hangul 
+	0x3130 , 0x318f,  // 52 Hangul Compatibility Jamo
+	0x3190 , 0x319f,  // 53 CJK Miscellaneous
+	0x3200 , 0x32ff,  // 54 Enclosed CJK Letters and Months
+	0x3300 , 0x33ff,  // 55 CJK Compatibility
+	0xac00 , 0xd7a3,  // 56 Hangul
 	0xd800 , 0xdfff,  // 57 Surrogates
-	0 ,      0,       // 58 Reserved  
+	0 ,      0,       // 58 Reserved
 	5,  (Handle) &cjk_ranges,
-	0xe000 , 0xf8ff,  // 60 Private Use Area 
-	0xf900 , 0xfaff,  // 61 CJK Compatibility Ideographs 
-	0xfb00 , 0xfb4f,  // 62 Alphabetic Presentation Forms 
-	0xfb50 , 0xfdff,  // 63 Arabic Presentation Forms-A 
-	0xfe20 , 0xfe2f,  // 64 Combining Half Marks 
-	0xfe30 , 0xfe4f,  // 65 CJK Compatibility Forms 
-	0xfe50 , 0xfe6f,  // 66 Small Form Variants 
-	0xfe70 , 0xfefe,  // 67 Arabic Presentation Forms-B 
-	0xff00 , 0xffef,  // 68 Halfwidth and Fullwidth Forms 
-	0xfff0 , 0xfffd,  // 69 Specials 
-	0x0f00 , 0x0fcf,  // 70 Tibetan 
-	0x0700 , 0x074f,  // 71 Syriac 
-	0x0780 , 0x07bf,  // 72 Thaana 
-	0x0d80 , 0x0dff,  // 73 Sinhala 
-	0x1000 , 0x109f,  // 74 Myanmar 
-	0x1200 , 0x12bf,  // 75 Ethiopic 
-	0x13a0 , 0x13ff,  // 76 Cherokee 
-	0x1400 , 0x14df,  // 77 Canadian Aboriginal Syllabics 
-	0x1680 , 0x169f,  // 78 Ogham 
-	0x16a0 , 0x16ff,  // 79 Runic 
-	0x1780 , 0x17ff,  // 80 Khmer 
-	0x1800 , 0x18af,  // 81 Mongolian 
-	0x2800 , 0x28ff,  // 82 Braille 
-	0xa000 , 0xa48c   // 83 YI, Yi Radicals 
+	0xe000 , 0xf8ff,  // 60 Private Use Area
+	0xf900 , 0xfaff,  // 61 CJK Compatibility Ideographs
+	0xfb00 , 0xfb4f,  // 62 Alphabetic Presentation Forms
+	0xfb50 , 0xfdff,  // 63 Arabic Presentation Forms-A
+	0xfe20 , 0xfe2f,  // 64 Combining Half Marks
+	0xfe30 , 0xfe4f,  // 65 CJK Compatibility Forms
+	0xfe50 , 0xfe6f,  // 66 Small Form Variants
+	0xfe70 , 0xfefe,  // 67 Arabic Presentation Forms-B
+	0xff00 , 0xffef,  // 68 Halfwidth and Fullwidth Forms
+	0xfff0 , 0xfffd,  // 69 Specials
+	0x0f00 , 0x0fcf,  // 70 Tibetan
+	0x0700 , 0x074f,  // 71 Syriac
+	0x0780 , 0x07bf,  // 72 Thaana
+	0x0d80 , 0x0dff,  // 73 Sinhala
+	0x1000 , 0x109f,  // 74 Myanmar
+	0x1200 , 0x12bf,  // 75 Ethiopic
+	0x13a0 , 0x13ff,  // 76 Cherokee
+	0x1400 , 0x14df,  // 77 Canadian Aboriginal Syllabics
+	0x1680 , 0x169f,  // 78 Ogham
+	0x16a0 , 0x16ff,  // 79 Runic
+	0x1780 , 0x17ff,  // 80 Khmer
+	0x1800 , 0x18af,  // 81 Mongolian
+	0x2800 , 0x28ff,  // 82 Braille
+	0xa000 , 0xa48c   // 83 YI, Yi Radicals
 };
 
 static Handle ctx_CHARSET2index[] = {
 	// SHIFTJIS_CHARSET   ??
-	HANGEUL_CHARSET     , 28, 
-	// GB2312_CHARSET     ?? 
+	HANGEUL_CHARSET     , 28,
+	// GB2312_CHARSET     ??
 	// CHINESEBIG5_CHARSET ??
 #ifdef JOHAB_CHARSET
 	GREEK_CHARSET       , 7,
@@ -1170,7 +1170,7 @@ static Handle ctx_CHARSET2index[] = {
 	RUSSIAN_CHARSET     , 9,
 	// MAC_CHARSET        ??
 	BALTIC_CHARSET      , 2,
-#endif  
+#endif
 	endCtx
 };
 
@@ -1209,7 +1209,7 @@ apc_gp_get_font_ranges( Handle self, int * count)
 		return ret;
 	}
 
-	for ( i = 0; i < 84; i++) 
+	for ( i = 0; i < 84; i++)
 		if ( f. fsUsb[ i / 32] & ( 1 << (i % 32))) {
 			Handle x = unicode_subranges[i * 2];
 			if ( x < 0x20)
@@ -1220,9 +1220,9 @@ apc_gp_get_font_ranges( Handle self, int * count)
 
 	if ( !( ret = malloc( sizeof( long) * (*count))))
 		return nil;
-	
+
 	*count = 0;
-	for ( i = 0; i < 84; i++) 
+	for ( i = 0; i < 84; i++)
 		if ( f. fsUsb[ i / 32] & ( 1 << (i % 32))) {
 			Handle x = unicode_subranges[i * 2];
 			if ( x < 0x20) {
@@ -1518,7 +1518,7 @@ gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Boo
 {
 	SIZE  sz;
 	int   div, offset = 0, ret = 0;
-	
+
 	objCheck 0;
 	if ( len == 0) return 0;
 
@@ -1536,7 +1536,7 @@ gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang, Boo
 		ret += sz. cx;
 		offset += div;
 	}
-	
+
 	if ( addOverhang) {
 		if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
 			ABC abc[2];
@@ -1569,12 +1569,12 @@ apc_gp_get_text_width( Handle self, const char* text, int len, Bool addOverhang,
 		int mb_len;
 		if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) return 0;
 		len = mb_len;
-	}      
+	}
 	ret = gp_get_text_width( self, text, len, addOverhang, utf8);
 	if ( utf8)
 		free(( char*) text);
 	return ret;
-}   
+}
 
 Point *
 apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
@@ -1641,7 +1641,7 @@ apc_gp_get_text_box( Handle self, const char* text, int len, Bool utf8)
 	}
 
 	if ( utf8) free(( char*) text);
-	
+
 	return pt;
 }}
 
@@ -1711,7 +1711,7 @@ Bool
 apc_gp_set_fill_winding( Handle self, Bool fillWinding)
 {
 	objCheck false;
-	if ( sys ps) 
+	if ( sys ps)
 		SetPolyFillMode( sys ps, fillWinding ? WINDING : ALTERNATE);
 	else
 		sys fillWinding = fillWinding;
@@ -1792,7 +1792,7 @@ apc_gp_get_fill_pattern_offset( Handle self)
 	Point p = {0,0};
 	POINT wp;
 	objCheck p;
-	if ( !sys ps) 
+	if ( !sys ps)
 		return sys fillPatternOffset;
 	GetBrushOrgEx( sys ps, &wp);
 	p. x = wp. x;

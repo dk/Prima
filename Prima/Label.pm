@@ -35,23 +35,23 @@ sub profile_default
 sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
-	$p-> { autoWidth} = 0 if 
+	$p-> { autoWidth} = 0 if
 		! exists $p->{autoWidth} and (
-		exists $p-> {width} || 
-		exists $p-> {size} || 
-		exists $p-> {rect} || 
+		exists $p-> {width} ||
+		exists $p-> {size} ||
+		exists $p-> {rect} ||
 		( exists $p-> {left} && exists $p-> {right})
 	);
-	$p-> {autoHeight} = 0 if 
+	$p-> {autoHeight} = 0 if
 		! exists $p-> {autoHeight} and (
-		exists $p-> {height} || 
-		exists $p-> {size} || 
-		exists $p-> {rect} || 
+		exists $p-> {height} ||
+		exists $p-> {size} ||
+		exists $p-> {rect} ||
 		( exists $p-> {top} && exists $p-> {bottom})
 	);
 	$self-> SUPER::profile_check_in( $p, $default);
-	my $vertical = exists $p-> {vertical} ? 
-		$p-> {vertical} : 
+	my $vertical = exists $p-> {vertical} ?
+		$p-> {vertical} :
 		$default-> { vertical};
 }
 
@@ -76,11 +76,11 @@ sub on_paint
 	if ( $self-> enabled) {
 		if ( $self-> focused) {
 			@clr = ($self-> hiliteColor, $self-> hiliteBackColor);
-		} else { 
-			@clr = ($self-> color, $self-> backColor); 
+		} else {
+			@clr = ($self-> color, $self-> backColor);
 		}
-	} else { 
-		@clr = ($self-> disabledColor, $self-> disabledBackColor); 
+	} else {
+		@clr = ($self-> disabledColor, $self-> disabledBackColor);
 	}
 
 	unless ( $self-> transparent) {
@@ -93,15 +93,15 @@ sub on_paint
 	my $wx = $self-> {widths};
 	my $ws = $self-> {words};
 	my ($starty,$ycommon) = (0, scalar @{$ws} * $fh);
-	
-	if ( $self-> {valignment} == ta::Top)  { 
+
+	if ( $self-> {valignment} == ta::Top)  {
 		$starty = $size[1] - $fh;
-	} elsif ( $self-> {valignment} == ta::Bottom) { 
+	} elsif ( $self-> {valignment} == ta::Bottom) {
 		$starty = $ycommon - $fh;
-	} else { 
-		$starty = ( $size[1] + $ycommon)/2 - $fh; 
+	} else {
+		$starty = ( $size[1] + $ycommon)/2 - $fh;
 	}
-	
+
 	my $y   = $starty;
 	my $tl  = $self-> {tildeLine};
 	my $i;
@@ -111,10 +111,10 @@ sub on_paint
 		$canvas-> color( $self-> light3DColor);
 		for ( $i = 0; $i < scalar @{$ws}; $i++) {
 			my $x = 0;
-			if ( $ta == ta::Center) { 	
-				$x = ( $size[0] - $$wx[$i]) / 2; 
-			} elsif ( $ta == ta::Right) { 
-				$x = $size[0] - $$wx[$i]; 
+			if ( $ta == ta::Center) {
+				$x = ( $size[0] - $$wx[$i]) / 2;
+			} elsif ( $ta == ta::Right) {
+				$x = $size[0] - $$wx[$i];
 			}
 			$canvas-> text_out( $$ws[$i], $x + 1, $y - 1);
 			$y -= $fh;
@@ -122,12 +122,12 @@ sub on_paint
 		$y   = $starty;
 		if ( $paintLine) {
 			my $x = 0;
-			if ( $ta == ta::Center) { 
-				$x = ( $size[0] - $$wx[$tl]) / 2; 
-			} elsif ( $ta == ta::Right) { 
-				$x = $size[0] - $$wx[$tl]; 
+			if ( $ta == ta::Center) {
+				$x = ( $size[0] - $$wx[$tl]) / 2;
+			} elsif ( $ta == ta::Right) {
+				$x = $size[0] - $$wx[$tl];
 			}
-			$canvas-> line( 
+			$canvas-> line(
 				$x + $self-> {tildeStart} + 1, $starty - $fh * $tl - 1,
 				$x + $self-> {tildeEnd} + 1,   $starty - $fh * $tl - 1
 			);
@@ -137,10 +137,10 @@ sub on_paint
 	$canvas-> color( $clr[0]);
 	for ( $i = 0; $i < scalar @{$ws}; $i++) {
 		my $x = 0;
-		if ( $ta == ta::Center) { 
-			$x = ( $size[0] - $$wx[$i]) / 2; 
-		} elsif ( $ta == ta::Right) { 
-			$x = $size[0] - $$wx[$i]; 
+		if ( $ta == ta::Center) {
+			$x = ( $size[0] - $$wx[$i]) / 2;
+		} elsif ( $ta == ta::Right) {
+			$x = $size[0] - $$wx[$i];
 		}
 		$canvas-> text_out( $$ws[$i], $x, $y);
 		$y -= $fh;
@@ -149,7 +149,7 @@ sub on_paint
 		my $x = 0;
 		if ( $ta == ta::Center) { $x = ( $size[0] - $$wx[$tl]) / 2; }
 		elsif ( $ta == ta::Right) { $x = $size[0] - $$wx[$tl]; }
-		$canvas-> line( 
+		$canvas-> line(
 			$x + $self-> {tildeStart}, $starty - $fh * $tl,
 			$x + $self-> {tildeEnd},   $starty - $fh * $tl
 		);
@@ -170,7 +170,7 @@ sub text
 sub on_translateaccel
 {
 	my ( $self, $code, $key, $mod) = @_;
-	if ( 
+	if (
 		!$self-> {showAccelChar} &&
 		defined $self-> {accel} &&
 		( $key == kb::NoKey) &&
@@ -199,9 +199,9 @@ sub on_click
 sub on_keydown
 {
 	my ( $self, $code, $key, $mod) = @_;
-	if ( 
-		defined $self-> {accel} && 
-		( $key == kb::NoKey) && 
+	if (
+		defined $self-> {accel} &&
+		( $key == kb::NoKey) &&
 		lc chr $code eq $self-> { accel}
 	) {
 		$self-> notify( 'Click');
@@ -249,27 +249,27 @@ sub set_valignment
 sub reset_lines
 {
 	my ($self, $nomaxlines) = @_;
-	
+
 	my @res;
 	my $maxLines = int($self-> height / $self-> font-> height);
 	$maxLines++ if $self-> {showPartial} and (($self-> height % $self-> font-> height) > 0);
-	
+
 	my $opt   = tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::CalcMnemonic|tw::ExpandTabs|tw::CalcTabs;
 	my $width = 1000000;
 	$opt |= tw::CollapseTilde unless $self-> {showAccelChar};
 	$width = $self-> width if $self-> {wordWrap};
-	
+
 	$self-> begin_paint_info;
 
 	my $lines = $self-> text_wrap( $self-> text, $width, $opt);
 	my $lastRef = pop @{$lines};
-	
+
 	if ( $Prima::Bidi::enabled) {
 		$_ = Prima::Bidi::visual($_) for grep { is_bidi $_ } @$lines;
 	}
 	$self-> {textLines} = scalar @$lines;
 	for( qw( tildeStart tildeEnd tildeLine)) {$self-> {$_} = $lastRef-> {$_}}
-	
+
 	$self-> {accel} = defined($self-> {tildeStart}) ? lc( $lastRef-> {tildeChar}) : undef;
 	splice( @{$lines}, $maxLines) if scalar @{$lines} > $maxLines && !$nomaxlines;
 	$self-> {words} = $lines;
@@ -300,13 +300,13 @@ sub check_auto_size
 			$sets{geomWidth} = 0;
 			for my $line ( @lines) {
 				my $width = $self-> get_text_width( $line);
-				$sets{geomWidth} = $width if 
+				$sets{geomWidth} = $width if
 					$sets{geomWidth} < $width;
 			}
 			$sets{geomWidth} += 6;
 			$self-> end_paint_info;
 		}
-		$sets{ geomHeight} = scalar(@lines) * $self-> font-> height  + 2 
+		$sets{ geomHeight} = scalar(@lines) * $self-> font-> height  + 2
 			if $self-> {autoHeight};
 		$self-> set( %sets);
 		$self-> reset_lines;
@@ -374,15 +374,15 @@ sub hotKey        { $#_ ? $_[0]->{hotKey} = $_[1] : $_[0]->{hotKey} }
 
 =head1 NAME
 
-Prima::Label - static text widget 
+Prima::Label - static text widget
 
 =head1 DESCRIPTION
 
 The class is designed for display of text, and assumes no
 user interaction. The text output capabilities include wrapping,
-horizontal and vertical alignment, and automatic widget resizing to 
+horizontal and vertical alignment, and automatic widget resizing to
 match text extension. If text contains a tilde-escaped ( hot ) character, the label can
-explicitly focus the specified widget upon press of the character key, what feature 
+explicitly focus the specified widget upon press of the character key, what feature
 is useful for dialog design.
 
 =head1 SYNOPSIS
@@ -417,7 +417,7 @@ is useful for dialog design.
 One of the following C<ta::XXX> constants:
 
 	ta::Left
-	ta::Center 
+	ta::Center
 	ta::Right
 
 Selects the horizontal text alignment.
@@ -468,8 +468,8 @@ Default value: 0
 =item showPartial BOOLEAN
 
 Used to determine if the last line of text should be drawn if
-it can not be vertically fit in the widget interior. If 1, the 
-last line is shown even if not visible in full. If 0, only full 
+it can not be vertically fit in the widget interior. If 1, the
+last line is shown even if not visible in full. If 0, only full
 lines are drawn.
 
 Default value: 1
@@ -477,7 +477,7 @@ Default value: 1
 =item wordWrap BOOLEAN
 
 If 1, the text is wrapped if it can not be horizontally fit in the
-widget interior. 
+widget interior.
 
 If 0, the text is not wrapped unless new line characters are present
 in the text.

@@ -1,8 +1,8 @@
-('ZapfDingbats' => { 
+('ZapfDingbats' => {
   name            => 'ZapfDingbats',
   family          => 'Zapf Dingbats',
   height          => 963,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,

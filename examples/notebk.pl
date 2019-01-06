@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ sub init
 		growMode => gm::XCenter,
 		onClick => sub { $n-> orientation($n-> orientation ? 0 : 1) },
 	);
-	
+
 	$n-> insert_transparent('Button',
 		name   => 'StyleButton',
 		text   => 'Toggle Style',
@@ -76,8 +76,8 @@ my $w = Bla-> create(
 			my $book   = shift->book;
 			my $tabid  = scalar(@{$book->TabSet->tabs}) + 1;
 			my $pageno = $book->insert_page("tab$tabid");
-			$book->insert_to_page($pageno, Button => 
-				origin  => [ 20, 20 ], 
+			$book->insert_to_page($pageno, Button =>
+				origin  => [ 20, 20 ],
 				text    => "$tabid",
 			),
 		}],
@@ -86,15 +86,15 @@ my $w = Bla-> create(
 			my $tabid  = $book->page2tab($book->pageIndex) + 1;
 			my $pageid = $book->pageIndex + 1;
 			my $pageno = $book->insert_page("tab$tabid", $pageid - 1);
-			$book->insert_to_page($pageno, Button => 
-				origin  => [ 20, 20 ], 
+			$book->insert_to_page($pageno, Button =>
+				origin  => [ 20, 20 ],
 				text    => "$tabid/$pageid",
 			),
 		}],
 		[ '~Delete tab', 'Ctrl+W', '^W', sub {
 			my $book = shift->book;
 			$book->delete_page($book->pageIndex, 1);
-		}],			
+		}],
 	]]],
 );
 

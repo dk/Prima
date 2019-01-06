@@ -72,7 +72,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 				f-> flags. encoding = true;
 				str_lwr( f-> font. encoding, c);
 				XFree( c);
-			} 
+			}
 		}
 
 		if ( c) {
@@ -85,17 +85,17 @@ font_query_name( XFontStruct * s, PFontInfo f)
 					strcat( f-> font. encoding, "-");
 					str_lwr( f-> font. encoding + strlen( f-> font. encoding), c);
 					XFree( c);
-				} 
+				}
 			}
 		}
-		
+
 		if ( !c) {
 			f-> flags. encoding = false;
 			f-> font. encoding[0] = 0;
 		}
 	}
 
-	/* detailing family */   
+	/* detailing family */
 	if ( ! f-> flags. family && XGetFontProperty( s, FXA_FOUNDRY, &v) && v) {
 		XCHECKPOINT;
 		c = XGetAtomName( DISP, (Atom)v);
@@ -106,7 +106,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 			str_lwr( f-> font. family, f-> font. family);
 			XFree( c);
 		}
-	} 
+	}
 
 	/* detailing name */
 	if ( ! f-> flags. name && XGetFontProperty( s, FXA_FAMILY_NAME, &v) && v) {
@@ -118,7 +118,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 			strncpy( f-> font. name, c, 255);  f-> font. name[255] = '\0';
 			str_lwr( f-> font. name, f-> font. name);
 			XFree( c);
-		} 
+		}
 	}
 
 	if ( ! f-> flags. family && ! f-> flags. name) {
@@ -141,7 +141,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 						lim = ( c - d > 255 ) ? 255 : c - d;
 						strncpy( f-> font. name, d, lim);
 						break;
-					} else 
+					} else
 						break;
 					d = c + 1;
 				}
@@ -177,7 +177,7 @@ font_query_name( XFontStruct * s, PFontInfo f)
 		str_lwr( f-> font. name, f-> font. family);
 		f-> flags. name = true;
 	}
-}   
+}
 
 static Bool
 xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
@@ -208,7 +208,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 		t = info-> font. family;
 		if ( *c == '-') {
 			/* advance through FOUNDRY */
-			++c; 
+			++c;
 			while ( *c && *c != '-') { *t++ = *c++; }
 			*t++ = '\0';
 		}
@@ -221,7 +221,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 			info-> flags. name = true;
 			info-> flags. family = true;
 			strcpy( info-> font. name, b);
-		
+
 			if (
 				( info-> font.family[0] == '*' && info-> font.family[1] == 0)  ||
 				( b[0] == '*' && b[1] == 0)
@@ -245,7 +245,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 			/* advance through WEIGHT_NAME */
 			b = ++c;
 			while ( *c && *c != '-') c++;
-			if ( 
+			if (
 				c-b == 0 ||
 		 		(c-b == 6 && strncasecmp( b, "medium", 6) == 0) ||
 		 		(c-b == 7 && strncasecmp( b, "regular", 7) == 0)
@@ -327,7 +327,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 			if ( c != b) {
 				if ( info-> font. size) {
 					info-> flags. size = true;
-					info-> font. size  = ( info-> font. size < 10) ? 
+					info-> font. size  = ( info-> font. size < 10) ?
 						1 : ( info-> font. size / 10);
 				} else {
 					vector++;
@@ -388,7 +388,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 			if ( c != b) {
 				if ( info-> font. width) {
 					info-> flags. width = true;
-					info-> font. width  = ( info-> font. width < 10) ? 
+					info-> font. width  = ( info-> font. width < 10) ?
 						1 : ( info-> font. width / 10);
 				} else {
 					vector++;
@@ -412,7 +412,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				( strncasecmp( c, "misc",        strlen("misc")) == 0)
 				)
 				info-> flags. funky = 1;
-			
+
 			while ( *c && *c != '-') c++;
 		}
 		if ( *c == '-') {
@@ -422,17 +422,17 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				if (strcmp(c, ignore_encodings[m]) == 0)
 					goto skip_font;
 			}
-			if ( 
-				(strncmp( c, "0",  strlen("0")) == 0) || 
+			if (
+				(strncmp( c, "0",  strlen("0")) == 0) ||
 				(strncmp( c, "fontspecific", strlen("fontspecific")) == 0) ||
 				(strncmp( c, "special", strlen("special")) == 0)
-				) 
-				info-> flags. funky = 1; 
-			
+				)
+				info-> flags. funky = 1;
+
 			/* advance through CHARSET_ENCODING; just skip it;  XXX */
 			while ( *c && *c != '-') c++;
-			if ( !*c && info-> flags. pitch && 
-		      ( !do_vector_fonts || vector == 5 || vector == 3 || 
+			if ( !*c && info-> flags. pitch &&
+		      ( !do_vector_fonts || vector == 5 || vector == 3 ||
 				( info-> flags. height &&
 					info-> flags. size &&
 					info-> flags. xDeviceRes &&
@@ -504,7 +504,7 @@ pick_default_font_with_encoding(void)
 				weight+=2;
 			if (
 				( strcmp( info-> font.name, "lucida") == 0 ) ||
-				( strcmp( info-> font.name, "verdana") == 0 ) 
+				( strcmp( info-> font.name, "verdana") == 0 )
 			)
 				weight++;
 			if ( weight > best_weight) {
@@ -535,12 +535,12 @@ prima_init_font_subsystem( char * error_buf)
 
 	if ( do_core_fonts) {
 		int nocorefonts = 0;
-		apc_fetch_resource( "Prima", "", "Nocorefonts", "nocorefonts", 
+		apc_fetch_resource( "Prima", "", "Nocorefonts", "nocorefonts",
 			nilHandle, frUnix_int, &nocorefonts);
 		if ( nocorefonts) do_core_fonts = false;
 	}
 
-	guts. font_names = names = XListFonts( DISP, 
+	guts. font_names = names = XListFonts( DISP,
 		do_core_fonts ? "*" : "-*-fixed-*",
 		INT_MAX, &count);
 	if ( !names) {
@@ -552,14 +552,14 @@ prima_init_font_subsystem( char * error_buf)
 	if ( !info) {
 		sprintf( error_buf, "No memory (%d bytes)", (int)sizeof(FontInfo)*count);
 		return false;
-	}   
+	}
 	bzero( info,  sizeof( FontInfo) * count);
 
 	n_ignore_encodings = 0;
 	ignore_encodings = nil;
 	s_ignore_encodings = nil;
-	if ( apc_fetch_resource( "Prima", "", "IgnoreEncodings", "ignoreEncodings", 
-				nilHandle, frString, &s_ignore_encodings)) 
+	if ( apc_fetch_resource( "Prima", "", "IgnoreEncodings", "ignoreEncodings",
+				nilHandle, frString, &s_ignore_encodings))
 	{
 		char *e = s_ignore_encodings;
 		char *s = e;
@@ -579,7 +579,7 @@ prima_init_font_subsystem( char * error_buf)
 		if ( !ignore_encodings) {
 			sprintf( error_buf, "No memory");
 			return false;
-		}   
+		}
 		bzero( ignore_encodings,  sizeof( char*) * n_ignore_encodings);
 		s = s_ignore_encodings;
 		for (i = 0; i < n_ignore_encodings; i++) {
@@ -591,7 +591,7 @@ prima_init_font_subsystem( char * error_buf)
 
 	encodings = hash_create();
 
-	apc_fetch_resource( "Prima", "", "Noscaledfonts", "noscaledfonts", 
+	apc_fetch_resource( "Prima", "", "Noscaledfonts", "noscaledfonts",
 		nilHandle, frUnix_int, &guts. no_scaled_fonts);
 	if ( do_no_scaled_fonts) guts. no_scaled_fonts = 1;
 
@@ -622,7 +622,7 @@ prima_init_font_subsystem( char * error_buf)
 		len = strlen( guts. locale);
 		if ( !hash_fetch( encodings, guts. locale, len)) {
 			str_lwr( guts. locale, guts. locale);
-			if ( !hash_fetch( encodings, guts. locale, len) && 
+			if ( !hash_fetch( encodings, guts. locale, len) &&
 				(
 					( strncmp( guts. locale, "iso-", 4) == 0)||
 					( strncmp( guts. locale, "iso_", 4) == 0)
@@ -640,7 +640,7 @@ prima_init_font_subsystem( char * error_buf)
 		if ( strcmp( guts. locale, "utf-8" ) == 0 )
 			strcpy( guts. locale, "iso10646-1");
 	}
-	
+
 #ifdef USE_XFT
 	guts. xft_no_antialias = do_xft_no_antialias;
 	guts. xft_priority     = do_xft_priority;
@@ -654,7 +654,7 @@ prima_init_font_subsystem( char * error_buf)
 		prima_font_pp2font( do_default_font, &guts. default_font);
 		free( do_default_font);
 		do_default_font = nil;
-	} else if ( !apc_fetch_resource( "Prima", "", "Font", "font", 
+	} else if ( !apc_fetch_resource( "Prima", "", "Font", "font",
 		nilHandle, frFont, &guts. default_font)) {
 		fill_default_font( &guts. default_font);
 		apc_font_pick( application, &guts. default_font, &guts. default_font);
@@ -668,7 +668,7 @@ prima_init_font_subsystem( char * error_buf)
 			encoding, and has more or less reasonable metrics.
 		*/
 		if ( guts. locale[0] && (strcmp( guts. locale, guts. default_font. encoding) != 0)) {
-			pick_default_font_with_encoding(); 
+			pick_default_font_with_encoding();
 		}
 	}
 	guts. default_font_ok = 1;
@@ -679,40 +679,40 @@ prima_init_font_subsystem( char * error_buf)
 		prima_font_pp2font( do_menu_font, &guts. default_menu_font);
 		free( do_menu_font);
 		do_menu_font = nil;
-	} else if ( !apc_fetch_resource( "Prima", "", "Font", "menu_font", 
+	} else if ( !apc_fetch_resource( "Prima", "", "Font", "menu_font",
 									nilHandle, frFont, &guts. default_menu_font)) {
 		memcpy( &guts. default_menu_font, &guts. default_font, sizeof( Font));
 	}
 	Fdebug("menu font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_menu_font));
-	
+
 	if ( do_widget_font) {
 		XrmPutStringResource( &guts.db, "Prima.widget_font", do_widget_font);
 		prima_font_pp2font( do_widget_font, &guts. default_widget_font);
 		free( do_widget_font);
 		do_widget_font = nil;
-	} else if ( !apc_fetch_resource( "Prima", "", "Font", "widget_font", 
+	} else if ( !apc_fetch_resource( "Prima", "", "Font", "widget_font",
 									nilHandle, frFont, &guts. default_widget_font)) {
 		memcpy( &guts. default_widget_font, &guts. default_font, sizeof( Font));
 	}
 	Fdebug("widget font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_widget_font));
-	
+
 	if ( do_msg_font) {
 		XrmPutStringResource( &guts.db, "Prima.message_font", do_widget_font);
 		prima_font_pp2font( do_msg_font, &guts. default_msg_font);
 		free( do_msg_font);
 		do_msg_font = nil;
-	} else if ( !apc_fetch_resource( "Prima", "", "Font", "message_font", 
+	} else if ( !apc_fetch_resource( "Prima", "", "Font", "message_font",
 									nilHandle, frFont, &guts. default_msg_font)) {
 		memcpy( &guts. default_msg_font, &guts. default_font, sizeof( Font));
 	}
 	Fdebug("msg font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_msg_font));
-	
+
 	if ( do_caption_font) {
 		XrmPutStringResource( &guts.db, "Prima.caption_font", do_widget_font);
 		prima_font_pp2font( do_caption_font, &guts. default_caption_font);
 		free( do_caption_font);
 		do_caption_font = nil;
-	} else if ( !apc_fetch_resource( "Prima", "", "Font", "caption_font", 
+	} else if ( !apc_fetch_resource( "Prima", "", "Font", "caption_font",
 												nilHandle, frFont, &guts. default_caption_font)) {
 		memcpy( &guts. default_caption_font, &guts. default_font, sizeof( Font));
 	}
@@ -720,7 +720,7 @@ prima_init_font_subsystem( char * error_buf)
 
 	return true;
 }
-	
+
 Bool
 prima_font_subsystem_set_option( char * option, char * value)
 {
@@ -762,31 +762,31 @@ prima_font_subsystem_set_option( char * option, char * value)
 		do_default_font = duplicate_string( value);
 		Mdebug( "set default font: %s\n", do_default_font);
 		return true;
-	} else 
+	} else
 	if ( strcmp( option, "menu-font") == 0) {
 		free( do_menu_font);
 		do_menu_font = duplicate_string( value);
 		Mdebug( "set menu font: %s\n", do_menu_font);
 		return true;
-	} else 
+	} else
 	if ( strcmp( option, "widget-font") == 0) {
 		free( do_widget_font);
 		do_widget_font = duplicate_string( value);
 		Mdebug( "set menu font: %s\n", do_widget_font);
 		return true;
-	} else 
+	} else
 	if ( strcmp( option, "msg-font") == 0) {
 		free( do_msg_font);
 		do_msg_font = duplicate_string( value);
 		Mdebug( "set msg font: %s\n", do_msg_font);
 		return true;
-	} else 
+	} else
 	if ( strcmp( option, "caption-font") == 0) {
 		free( do_caption_font);
 		do_caption_font = duplicate_string( value);
 		Mdebug( "set caption font: %s\n", do_caption_font);
 		return true;
-	}  
+	}
 	return false;
 }
 
@@ -800,7 +800,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
 	char buf[512], *p;
 
 	if ( !font) font = &dummy;
-	
+
 
 	/* check if font is XLFD and ends in -*-*, so we can replace it with $LANG */
 	len = strlen( ppFontNameSize);
@@ -823,7 +823,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
 			return;
 		}
 	}
-	
+
 	xf = ( XFontStruct * ) hash_fetch( xfontCache, ppFontNameSize, len);
 
 	if ( !xf ) {
@@ -837,7 +837,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
 			}
 #ifdef USE_XFT
 			if ( !guts. use_xft || !prima_xft_parse( ppFontNameSize, font))
-#endif         
+#endif
 				if ( font != &guts. default_font)
 					*font = guts. default_font;
 			return;
@@ -868,7 +868,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
 		( stricmp( font-> family, fi. font. family) == 0) &&
 		( stricmp( font-> name, fi. font. name) == 0)
 		) newEntry = 0;
-	
+
 	if ( newEntry ) {
 		PFontInfo n = realloc( guts. font_info, sizeof( FontInfo) * (guts. n_fonts + 1));
 		if ( n) {
@@ -877,7 +877,7 @@ prima_font_pp2font( char * ppFontNameSize, PFont font)
 			guts. font_info[ guts. n_fonts++] = fi;
 		}
 	}
-	Fdebug("font: %s%s parsed to: %d.[w=%d,s=%d].%s.%s\n", 
+	Fdebug("font: %s%s parsed to: %d.[w=%d,s=%d].%s.%s\n",
 			newEntry ? "new " : "", ppFontNameSize, DEBUG_FONT((*font)));
 }
 
@@ -890,25 +890,25 @@ prima_free_rotated_entry( PCachedFont f)
 			if ( r-> map[ r-> length]) {
 				prima_free_ximage( r-> map[ r-> length]);
 				r-> map[ r-> length] = nil;
-			}      
-		}   
+			}
+		}
 		f-> rotated = ( PRotatedFont) r-> next;
 		XFreeGC( DISP, r-> arena_gc);
-		if ( r-> arena) 
+		if ( r-> arena)
 			XFreePixmap( DISP, r-> arena);
 		if ( r-> arena_bits)
 			free( r-> arena_bits);
 		free( r);
 	}
-}   
+}
 
 static Bool
 free_rotated_entries( PCachedFont f, int keyLen, void * key, void * dummy)
 {
 	prima_free_rotated_entry( f);
-	free( f);   
+	free( f);
 	return false;
-}   
+}
 
 void
 prima_cleanup_font_subsystem( void)
@@ -926,12 +926,12 @@ prima_cleanup_font_subsystem( void)
 	guts. font_names = nil;
 	guts. n_fonts = 0;
 	guts. font_info = nil;
-	
+
 	free(ignore_encodings);
 	free(s_ignore_encodings);
 
 	if ( guts. font_hash) {
-		hash_first_that( guts. font_hash, (void*)free_rotated_entries, nil, nil, nil); 
+		hash_first_that( guts. font_hash, (void*)free_rotated_entries, nil, nil, nil);
 		hash_destroy( guts. font_hash, false);
 		guts. font_hash = nil;
 	}
@@ -943,7 +943,7 @@ prima_cleanup_font_subsystem( void)
 #ifdef USE_XFT
 	prima_xft_done();
 #endif
-	
+
 }
 
 PFont
@@ -1044,7 +1044,7 @@ int
 prima_try_height( HeightGuessStack * p, int height)
 {
 	int ret = -1;
-	
+
 	if ( p-> locked != 0) return p-> locked;
 	if ( p-> sp >= MAX_HGS_SIZE) goto DONT_ADVISE;
 
@@ -1082,19 +1082,19 @@ prima_try_height( HeightGuessStack * p, int height)
 
 	if ( ret > 0) {
 		int i;
-		for ( i = 0; i < p-> sp; i++) 
+		for ( i = 0; i < p-> sp; i++)
 			if ( p-> xlfd[ i] == ret) { /* advised already? */
 				ret = -1;
 				break;
 			}
 		p-> xlfd[ p-> sp] = ret;
-	} 
+	}
 
 	p-> sp++;
-	
-DONT_ADVISE:   
+
+DONT_ADVISE:
 	if ( ret < 0) { /* select closest match */
-		int i, best_i = -1, best_diff = INT_MAX, diff, sp = p-> sp - 1; 
+		int i, best_i = -1, best_diff = INT_MAX, diff, sp = p-> sp - 1;
 		for ( i = 0; i < sp; i++) {
 			diff = p-> target - p-> prima[i];
 			if ( diff < 0) diff += 1000;
@@ -1103,7 +1103,7 @@ DONT_ADVISE:
 				best_i = i;
 			}
 		}
-		if ( best_i >= 0 && p-> xlfd[best_i] != p-> xlfd[ sp - 1]) 
+		if ( best_i >= 0 && p-> xlfd[best_i] != p-> xlfd[ sp - 1])
 			ret = p-> xlfd[best_i];
 		p-> locked = -1;
 	}
@@ -1153,27 +1153,27 @@ AGAIN:
 	} else {
 		strcpy( name, f-> xname);
 	}
-	
+
 	Fdebug( "font: loading %s\n", name);
 	s = hash_fetch( xfontCache, name, strlen( name));
-	
+
 	if ( !s) {
 		s = XLoadQueryFont( DISP, name);
 		XCHECKPOINT;
 		if ( !s) {
-			if ( !font) 
+			if ( !font)
 				warn( "font %s load error", name);
-			if ( of-> flags. disabled) 
+			if ( of-> flags. disabled)
 				warn( "font %s pick-up error", name);
 			of-> flags. disabled = true;
-				
+
 			Fdebug( "font: kill %s\n", name);
 			if ( font) apc_font_pick( nilHandle, font, font);
 			of-> flags. disabled = false;
 			return;
 		} else {
 			hash_store( xfontCache, name, strlen( name), s);
-		}   
+		}
 	}
 
 	if ( f-> flags. sloppy || f-> vecname) {
@@ -1190,9 +1190,9 @@ AGAIN:
 				}
 				height = h;
 				goto AGAIN;
-			} 
+			}
 		}
-		
+
 		/* detailing y-resolution */
 		if ( !f-> flags. yDeviceRes) {
 			if ( XGetFontProperty( s, FXA_RESOLUTION_Y, &v) && v) {
@@ -1203,7 +1203,7 @@ AGAIN:
 			}
 			f-> flags. yDeviceRes = true;
 		}
-		
+
 		/* detailing x-resolution */
 		if ( !f-> flags. xDeviceRes) {
 			if ( XGetFontProperty( s, FXA_RESOLUTION_X, &v) && v) {
@@ -1221,10 +1221,10 @@ AGAIN:
 				XCHECKPOINT;
 				f-> font. internalLeading = s-> max_bounds. ascent - v;
 			} else {
-				if ( f-> flags. height) { 
+				if ( f-> flags. height) {
 					f-> font. internalLeading = s-> max_bounds. ascent + s-> max_bounds. descent - f-> font. height;
 				} else if ( f-> flags. size) {
-					f-> font. internalLeading = s-> max_bounds. ascent + s-> max_bounds. descent - 
+					f-> font. internalLeading = s-> max_bounds. ascent + s-> max_bounds. descent -
 						( f-> font. size * f-> font. yDeviceRes) / 72.27 + 0.5;
 				} else {
 					f-> font. internalLeading = 0;
@@ -1250,7 +1250,7 @@ AGAIN:
 				if ( XGetFontProperty( s, FXA_POINT_SIZE, &v) && v) {
 					XCHECKPOINT;
 					f-> font. size = ( v < 10) ? 1 : ( v / 10);
-				} else 
+				} else
 					f-> font. size = ( f-> font. height - f-> font. internalLeading) * 72.27 / f-> font. height + 0.5;
 			}
 		}
@@ -1262,7 +1262,7 @@ AGAIN:
 		f-> flags. ascent          = true;
 		f-> font. ascent           = f-> font. height - s-> max_bounds. descent;
 		f-> flags. descent         = true;
-		f-> font. descent          = s-> max_bounds. descent; 
+		f-> font. descent          = s-> max_bounds. descent;
 		f-> flags. defaultChar     = true;
 		f-> font. defaultChar      = s-> default_char;
 		f-> flags. firstChar       = true;
@@ -1272,10 +1272,10 @@ AGAIN:
 		f-> flags. direction       = true;
 		f-> font.  direction       = 0;
 		f-> flags. externalLeading = true;
-		f-> font.  externalLeading = 
-						abs( s-> max_bounds. ascent  - s-> ascent) + 
+		f-> font.  externalLeading =
+						abs( s-> max_bounds. ascent  - s-> ascent) +
 						abs( s-> max_bounds. descent - s-> descent);
-		f-> font.  utf8_flags      = 0;				  
+		f-> font.  utf8_flags      = 0;
 
 		/* detailing width */
 		if ( f-> font. width == 0 || !f-> flags. width) {
@@ -1295,7 +1295,7 @@ AGAIN:
 
 		/* detailing maximalWidth */
 		if ( !f-> flags. maximalWidth) {
-			f-> flags. maximalWidth = true;   
+			f-> flags. maximalWidth = true;
 			if ( s-> per_char) {
 				int kl = 0, kr = 255, k;
 				int rl = 0, rr = 255, r, d;
@@ -1305,7 +1305,7 @@ AGAIN:
 				if ( kl < s-> min_char_or_byte2) kl = s-> min_char_or_byte2;
 				if ( kr > s-> max_char_or_byte2) kr = s-> max_char_or_byte2;
 				d = kr - kl + 1;
-				for ( r = rl; r <= rr; r++) 
+				for ( r = rl; r <= rr; r++)
 					for ( k = kl; k <= kr; k++) {
 						int x = s-> per_char[( r - s-> min_byte1) * d + k - s-> min_char_or_byte2]. width;
 						if ( f-> font. maximalWidth < x)
@@ -1317,7 +1317,7 @@ AGAIN:
 			}
 		}
 		of-> flags. sloppy = false;
-	} 
+	}
 
 	if ( addToCache && font) {
 		/* detailing stuff */
@@ -1330,9 +1330,9 @@ AGAIN:
 		if ( XGetFontProperty( s, XA_UNDERLINE_POSITION, &v) && v) {
 			XCHECKPOINT;
 			underlinePos =  -s-> max_bounds. descent + v;
-		} else 
+		} else
 			underlinePos = - s-> max_bounds. descent + 1;
-		
+
 		if ( XGetFontProperty( s, XA_UNDERLINE_THICKNESS, &v) && v) {
 			XCHECKPOINT;
 			underlineThickness = v;
@@ -1340,10 +1340,10 @@ AGAIN:
 			underlineThickness = 1;
 
 		underlinePos -= underlineThickness;
-		if ( -underlinePos + underlineThickness / 2 > s-> max_bounds. descent) 
+		if ( -underlinePos + underlineThickness / 2 > s-> max_bounds. descent)
 			underlinePos = -s-> max_bounds. descent + underlineThickness / 2;
 
-		prima_build_font_key( &key, font, bySize); 
+		prima_build_font_key( &key, font, bySize);
 		Fdebug("font cache add: %d(%d)x%d.%s.%s %s/%s\n", f-> font.height, f-> font.size, f->font.width, _F_DEBUG_STYLE(f-> font. style), _F_DEBUG_PITCH(f->font. pitch), f-> font.name, f-> font.encoding);
 		if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
 			return;
@@ -1354,7 +1354,7 @@ AGAIN:
 			if ( !add_font_to_cache( &key, f, name, s, underlinePos, underlineThickness))
 				return;
 		}
-		
+
 		if ( askedDefaultPitch && font-> pitch != fpDefault) {
 			int pitch = font-> pitch;
 			font-> pitch = fpDefault;
@@ -1371,7 +1371,7 @@ AGAIN:
 #define QUERYDIFF_BY_SIZE        (-1)
 #define QUERYDIFF_BY_HEIGHT      (-2)
 
-static double 
+static double
 query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 {
 	double diff = 0.0;
@@ -1388,7 +1388,7 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 		if ( strcmp( fi-> font. encoding, guts. locale) != 0)
 			diff += 50;
 	}
-	
+
 	if ( fi->  flags. pitch) {
 		if ( f-> pitch == fpDefault && fi-> font. pitch == fpFixed) {
 			diff += 1.0;
@@ -1400,7 +1400,7 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 	} else if ( f-> pitch != fpDefault) {
 		diff += 10000.0;  /* 2/3 of the worst case */
 	}
-	
+
 	if ( fi-> flags. name && stricmp( lcname, fi-> font. name) == 0) {
 		diff += 0.0;
 	} else if ( fi-> flags. family && stricmp( lcname, fi-> font. family) == 0) {
@@ -1413,14 +1413,14 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 		diff += 7000.0;
 	} else {
 		diff += 10000.0;
-		if ( fi-> flags. funky && !enc_match) diff += 10000.0; 
+		if ( fi-> flags. funky && !enc_match) diff += 10000.0;
 	}
 
 	if ( fi-> font. vector) {
 		if ( fi-> flags. bad_vector) {
-			diff += 20.0;    
-		}   
-	} else {   
+			diff += 20.0;
+		}
+	} else {
 		int a, b;
 		switch ( selector) {
 		case QUERYDIFF_BY_SIZE:
@@ -1438,31 +1438,31 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 		}
 		if ( a > b) {
 			if ( have_vector_fonts) diff += 1000000.0;
-			diff += 600.0; 
+			diff += 600.0;
 			diff += 150.0 * (a - b);
 		} else if ( a < b) {
 			if ( have_vector_fonts) diff += 1000000.0;
 			diff += 150.0 * ( b - a);
 		}
-	} 
+	}
 
 	if ( f-> width) {
 		if ( fi-> font. vector) {
 			if ( fi-> flags. bad_vector) {
-				diff += 20.0;    
-			}   
+				diff += 20.0;
+			}
 		} else {
 			if ( fi-> font. width > f-> width) {
 				if ( have_vector_fonts) diff += 1000000.0;
 				diff += 200.0;
-				diff += 50.0 * (fi->  font. width - f-> width); 
+				diff += 50.0 * (fi->  font. width - f-> width);
 			} else if ( fi-> font. width < f-> width) {
 				if ( have_vector_fonts) diff += 1000000.0;
 				diff += 50.0 * (f-> width - fi->  font. width);
-			}   
-		}   
-	}   
-	
+			}
+		}
+	}
+
 	if ( fi->  flags. xDeviceRes && fi-> flags. yDeviceRes) {
 		diff += 30.0 * (int)fabs( 0.5 +
 			(float)( 100.0 * guts. resolution. y / guts. resolution. x) -
@@ -1529,7 +1529,7 @@ prima_core_font_pick( Handle self, PFont source, PFont dest)
 	if ( !by_size) prima_init_try_height( &hgs, dest-> height, dest-> height);
 
 	str_lwr( lcname, dest-> name);
-AGAIN:   
+AGAIN:
 	index = lastIndex = -1;
 	minDiff = INT_MAX;
 	for ( i = 0; i < n; i++) {
@@ -1540,17 +1540,17 @@ AGAIN:
 			lastIndex = index;
 			index = i;
 			minDiff = diff;
-		}   
+		}
 		if ( diff < 1) break;
 	}
 
 	i = index;
 
-	Fdebug("font: #%d (diff=%g): %s\n", i, minDiff, info[i].xname); 
+	Fdebug("font: #%d (diff=%g): %s\n", i, minDiff, info[i].xname);
 	Fdebug("font: pick:%d(%d)x%d.%s.%s %s/%s %s.%s\n", info[i].font. height, info[i].font. size, info[i].font. width, _F_DEBUG_STYLE(info[i].font. style), _F_DEBUG_PITCH(info[i].font. pitch), info[i].font. name, info[i].font. encoding, info[i].flags.sloppy?"sloppy":"", info[i].vecname?"vector":"");
-	
+
 	if ( !by_size && info[ i]. flags. sloppy && !info[ i]. vecname) {
-		detail_font_info( info + i, dest, false, by_size); 
+		detail_font_info( info + i, dest, false, by_size);
 		if ( minDiff < query_diff( info + i, dest, lcname, by_size)) {
 			int h = prima_try_height( &hgs, info[i]. font. height);
 			if ( h > 0) {
@@ -1558,7 +1558,7 @@ AGAIN:
 				goto AGAIN;
 			}
 		}
-	} 
+	}
 
 	detail_font_info( info + index, dest, true, by_size);
 
@@ -1579,7 +1579,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 {
 #ifdef USE_XFT
 	if ( guts. use_xft) {
-		if ( prima_xft_font_pick( self, source, dest, nil, nil)) 
+		if ( prima_xft_font_pick( self, source, dest, nil, nil))
 			return true;
 	}
 #endif
@@ -1599,7 +1599,7 @@ spec_fonts( int *retCount)
 	list_create( &list, 256, 256);
 
 	*retCount = 0;
-	
+
 
 	if ( !( hash = hash_create())) {
 		list_destroy( &list);
@@ -1611,7 +1611,7 @@ spec_fonts( int *retCount)
 		int len;
 		PFont fm;
 		if ( info[ i]. flags. disabled) continue;
-		
+
 		len = strlen( info[ i].font.name);
 
 		fm = hash_fetch( hash, info[ i].font.name, len);
@@ -1657,11 +1657,11 @@ spec_fonts( int *retCount)
 	if ( list. count == 0) goto Nothing;
 	fmtx = ( PFont) malloc( list. count * sizeof( Font));
 	if ( !fmtx) {
-		list_delete_all( &list, true);   
+		list_delete_all( &list, true);
 		list_destroy( &list);
 		return nil;
 	}
-	
+
 	*retCount = list. count;
 		for ( i = 0; i < list. count; i++)
 			memcpy( fmtx + i, ( void *) list. items[ i], sizeof( Font));
@@ -1669,14 +1669,14 @@ spec_fonts( int *retCount)
 
 Nothing:
 	list_destroy( &list);
-	
+
 #ifdef USE_XFT
 	if ( guts. use_xft)
 		fmtx = prima_xft_fonts( fmtx, nil, nil, retCount);
 #endif
 
 	return fmtx;
-}   
+}
 
 PFont
 apc_fonts( Handle self, const char *facename, const char * encoding, int *retCount)
@@ -1702,7 +1702,7 @@ apc_fonts( Handle self, const char *facename, const char * encoding, int *retCou
 			int len;
 			if ( info[ i]. flags. disabled) continue;
 			len = strlen( info[ i].font.name);
-			if ( hash_fetch( hash, info[ i].font.name, len) || 
+			if ( hash_fetch( hash, info[ i].font.name, len) ||
 				strcmp( info[ i].xname + info[ i].info_offset, encoding) != 0)
 				continue;
 			hash_store( hash, info[ i].font.name, len, (void*)1);
@@ -1715,8 +1715,8 @@ apc_fonts( Handle self, const char *facename, const char * encoding, int *retCou
 			if ( info[ i]. flags. disabled) continue;
 			if (
 					( stricmp( info[ i].font.name, facename) == 0) &&
-					( 
-						!encoding || 
+					(
+						!encoding ||
 						( strcmp( info[ i].xname + info[ i].info_offset, encoding) == 0)
 					)
 				)
@@ -1834,7 +1834,7 @@ apc_menu_set_font( Handle self, PFont font)
 
 	XX-> font = kf;
 	if ( !xft_metrics) {
-		XX-> guillemots = XTextWidth( kf-> fs, ">>", 2); 
+		XX-> guillemots = XTextWidth( kf-> fs, ">>", 2);
 	} else {
 #ifdef USE_XFT
 		XX-> guillemots = prima_xft_get_text_width( kf, ">>", 2, true, false, nil, nil);
@@ -1859,7 +1859,7 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 	PRotatedFont * pr = &f-> rotated;
 	PRotatedFont r = nil;
 	int i;
-	
+
 	while ( direction < 0)     direction += 360.0;
 	while ( direction > 360.0) direction -= 360.0;
 
@@ -1884,9 +1884,9 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 		if ((*pr)-> direction == direction) {
 			r = *pr;
 			break;
-		}      
+		}
 		pr = ( PRotatedFont *) &((*pr)-> next);
-	}  
+	}
 
 	if ( !r) { /* creating startup values for new entry */
 		double sin1, cos1, sin2, cos2, rad;
@@ -1897,23 +1897,23 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 		if ( !r) {
 			warn("Not enough memory");
 			return false;
-		}   
+		}
 		bzero( r, sizeof( RotatedFont));
 		r-> direction = direction;
-		r-> first1  = f-> fs-> min_byte1; 
-		r-> first2  = f-> fs-> min_char_or_byte2; 
-		r-> width   = ( f-> fs-> max_char_or_byte2 > 255 ? 255 : f-> fs-> max_char_or_byte2) 
+		r-> first1  = f-> fs-> min_byte1;
+		r-> first2  = f-> fs-> min_char_or_byte2;
+		r-> width   = ( f-> fs-> max_char_or_byte2 > 255 ? 255 : f-> fs-> max_char_or_byte2)
 			- r-> first2 + 1;
 		if ( r-> width < 0) r-> width = 0;
 		r-> height = f-> fs-> max_byte1 - f-> fs-> min_byte1 + 1;
 		r-> length = r-> width * r-> height;
 		r-> defaultChar1 = f-> fs-> default_char >> 8;
 		r-> defaultChar2 = f-> fs-> default_char & 0xff;
-				
+
 		if ( r-> defaultChar1 < r-> first1 || r-> defaultChar1 >= r-> first1 + r-> height ||
 			r-> defaultChar2 < r-> first2 || r-> defaultChar2 >= r-> first2 + r-> width)
 			r-> defaultChar1 = r-> defaultChar2 = -1;
-			
+
 		if ( r-> length > 0) {
 			if ( !( r-> map = malloc( r-> length * sizeof( void*)))) {
 				*pr = nil;
@@ -1922,57 +1922,57 @@ prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide
 				return false;
 			}
 			bzero( r-> map, r-> length * sizeof( void*));
-		}    
+		}
 		rad = direction * 3.14159265358 / 180.0;
 		r-> sin. l = ( sin1 = sin( -rad)) * UINT16_PRECISION;
 		r-> cos. l = ( cos1 = cos( -rad)) * UINT16_PRECISION;
 		r-> sin2.l = ( sin2 = sin(  rad)) * UINT16_PRECISION;
 		r-> cos2.l = ( cos2 = cos(  rad)) * UINT16_PRECISION;
-		
+
 /*
 	1(0,y)  2(x,y)
 	0(0,0)  3(x,0)
-*/   
+*/
 		box_x[0] = box_y[0] = box_x[1] = box_y[3] = 0;
 		r-> orgBox. x = box_x[2] = box_x[3] = f-> fs-> max_bounds. width;
 		r-> orgBox. y = box_y[1] = box_y[2] = f-> fs-> max_bounds. ascent + f-> fs-> max_bounds. descent;
 		for ( i = 0; i < 4; i++) {
 			rbox_x[i] = box_x[i] * cos2 - box_y[i] * sin2 + 0.5;
 			rbox_y[i] = box_x[i] * sin2 + box_y[i] * cos2 + 0.5;
-			box[i] = 0; 
-		}   
+			box[i] = 0;
+		}
 		for ( i = 0; i < 4; i++) {
 			if ( rbox_x[i] < box[0]) box[0] = rbox_x[i];
 			if ( rbox_y[i] < box[1]) box[1] = rbox_y[i];
-			if ( rbox_x[i] > box[2]) box[2] = rbox_x[i]; 
-			if ( rbox_y[i] > box[3]) box[3] = rbox_y[i]; 
-		}   
-		r-> dimension. x = box[2] - box[0] + 1; 
-		r-> dimension. y = box[3] - box[1] + 1; 
+			if ( rbox_x[i] > box[2]) box[2] = rbox_x[i];
+			if ( rbox_y[i] > box[3]) box[3] = rbox_y[i];
+		}
+		r-> dimension. x = box[2] - box[0] + 1;
+		r-> dimension. y = box[3] - box[1] + 1;
 		r-> shift. x = box[0];
 		r-> shift. y = box[1];
-	
+
 		r-> lineSize = (( r-> orgBox. x + 31) / 32) * 4;
 		if ( !( r-> arena_bits = malloc( r-> lineSize * r-> orgBox. y)))
 			goto FAILED;
 
-		r-> arena = XCreatePixmap( DISP, guts. root, r-> orgBox.x, r-> orgBox. y, 1);  
+		r-> arena = XCreatePixmap( DISP, guts. root, r-> orgBox.x, r-> orgBox. y, 1);
 		if ( !r-> arena) {
 			free( r-> arena_bits);
-FAILED:         
+FAILED:
 			*pr = nil;
 			free( r-> map);
 			free( r);
 			warn("Cannot create pixmap");
 			return false;
-		}   
+		}
 		XCHECKPOINT;
 		r-> arena_gc = XCreateGC( DISP, r-> arena, 0, &xgv);
 		XCHECKPOINT;
 		XSetFont( DISP, r-> arena_gc, f-> id);
 		XCHECKPOINT;
 		XSetBackground( DISP, r-> arena_gc, 0);
-	}   
+	}
 
 	/* processing character records */
 	for ( i = 0; i < len; i++) {
@@ -1981,55 +1981,55 @@ FAILED:
 		XImage * ximage;
 		PrimaXImage * px;
 		Byte * ndata;
-		
+
 		index. byte1 = wide ? (( XChar2b*) text + i)-> byte1 : 0;
 		index. byte2 = wide ? (( XChar2b*) text + i)-> byte2 : *((unsigned char*)text + i);
-		
+
 		/* querying character */
 		if ( index. byte1 < r-> first1 || index. byte1 >= r-> first1 + r-> height ||
 			index. byte2 < r-> first2 || index. byte2 >= r-> first2 + r-> width) {
 			if ( r-> defaultChar1 < 0 || r-> defaultChar2 < 0) continue;
 			index. byte1 = ( unsigned char) r-> defaultChar1;
 			index. byte2 = ( unsigned char) r-> defaultChar2;
-		}   
-				
+		}
+
 		if ( r-> map[( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]) continue;
-		cs = f-> fs-> per_char ? 
-			f-> fs-> per_char + 
-				( index. byte1 - f-> fs-> min_byte1) * r-> width + 
+		cs = f-> fs-> per_char ?
+			f-> fs-> per_char +
+				( index. byte1 - f-> fs-> min_byte1) * r-> width +
 				index. byte2 - f-> fs-> min_char_or_byte2 :
 			&(f-> fs-> min_bounds);
 		XSetForeground( DISP, r-> arena_gc, 0);
 		XFillRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x, r-> orgBox .y);
 		XSetForeground( DISP, r-> arena_gc, 1);
 		if ( wide)
-			XDrawString16( DISP, r-> arena, r-> arena_gc, 
-				( cs-> lbearing < 0) ? -cs-> lbearing : 0, 
+			XDrawString16( DISP, r-> arena, r-> arena_gc,
+				( cs-> lbearing < 0) ? -cs-> lbearing : 0,
 				r-> orgBox. y - f-> fs-> max_bounds. descent,
 				&index, 1);
 		else
-			XDrawString( DISP, r-> arena, r-> arena_gc, 
-				( cs-> lbearing < 0) ? -cs-> lbearing : 0, 
+			XDrawString( DISP, r-> arena, r-> arena_gc,
+				( cs-> lbearing < 0) ? -cs-> lbearing : 0,
 				r-> orgBox. y - f-> fs-> max_bounds. descent,
 				(const char *)&index. byte2, 1);
 		XCHECKPOINT;
 
 		/* getting glyph bits */
-		ximage = XGetImage( DISP, r-> arena, 0, 0, r-> orgBox. x, r-> orgBox. y, 1, XYPixmap); 
+		ximage = XGetImage( DISP, r-> arena, 0, 0, r-> orgBox. x, r-> orgBox. y, 1, XYPixmap);
 		if ( !ximage) {
 			warn("Can't get image %dx%d", r-> orgBox.x, r-> orgBox.y);
 			return false;
-		}   
+		}
 		XCHECKPOINT;
-		prima_copy_xybitmap( r-> arena_bits, (Byte*)ximage-> data, r-> orgBox. x, r-> orgBox. y, 
+		prima_copy_xybitmap( r-> arena_bits, (Byte*)ximage-> data, r-> orgBox. x, r-> orgBox. y,
 			r-> lineSize,  ximage-> bytes_per_line);
 		XDestroyImage( ximage);
-		
+
 		px = prima_prepare_ximage( r-> dimension. x, r-> dimension. y, CACHE_BITMAP);
 		if ( !px) return false;
 		ndata = ( Byte*) px-> data_alias;
-		bzero( ndata, px-> bytes_per_line_alias * r-> dimension. y); 
-		
+		bzero( ndata, px-> bytes_per_line_alias * r-> dimension. y);
+
 		/* rotating */
 		{
 			int x, y, fast = r-> orgBox. y * r-> orgBox. x > 600;
@@ -2046,51 +2046,51 @@ FAILED:
 					if ( ly. i. i >= 0 && ly. i. i < r-> orgBox. y &&
 						lx. i. i >= 0 && lx. i. i < r-> orgBox. x) {
 							Byte * src = r-> arena_bits + r-> lineSize * ly. i. i;
-							if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7)))) 
+							if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))
 								dst[ x >> 3] |= 1 << ( 7 - ( x & 7));
-						}  
+						}
 						lx. l += r-> cos. l;
 						ly. l += r-> sin. l;
-					} 
+					}
 				} else {
 					for ( x = 0; x < r-> dimension. x; x++) {
 						if ( ly. i. i >= 0 && ly. i. i < r-> orgBox. y && lx. i. i >= 0 && lx. i. i < r-> orgBox. x) {
 							long pv;
 							Byte * src = r-> arena_bits + r-> lineSize * ly. i. i;
 							pv = 0;
-							if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))  
+							if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))
 								pv += ( UINT16_PRECISION - lx. i. f);
 							if ( lx. i. i < r-> orgBox. x - 1) {
-								if ( src[( lx. i. i + 1) >> 3] & ( 1 << ( 7 - (( lx. i. i + 1) & 7))))  
-									pv += lx. i. f; 
+								if ( src[( lx. i. i + 1) >> 3] & ( 1 << ( 7 - (( lx. i. i + 1) & 7))))
+									pv += lx. i. f;
 							} else {
-								if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))  
+								if ( src[ lx . i. i >> 3] & ( 1 << ( 7 - ( lx . i. i & 7))))
 									pv += UINT16_PRECISION/2;
-							}   
+							}
 							if ( pv >= UINT16_PRECISION/2)
-								dst[ x >> 3] |= 1 << ( 7 - ( x & 7)); 
-						} 
+								dst[ x >> 3] |= 1 << ( 7 - ( x & 7));
+						}
 						lx. l += r-> cos. l;
 						ly. l += r-> sin. l;
 					}
-				}   
+				}
 				dst -= px-> bytes_per_line_alias;
-			}   
-		}   
+			}
+		}
 
 		if ( guts. bit_order != MSBFirst)
 			prima_mirror_bytes( ndata, r-> dimension.y * px-> bytes_per_line_alias);
 		r-> map[( index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] = px;
-	}   
+	}
 
 	if ( result)
 		*result = r;
-	
-	return true;
-}   
 
-XCharStruct * 
-prima_char_struct( XFontStruct * xs, void * c, Bool wide) 
+	return true;
+}
+
+XCharStruct *
+prima_char_struct( XFontStruct * xs, void * c, Bool wide)
 {
 	XCharStruct * cs;
 	int d = xs-> max_char_or_byte2 - xs-> min_char_or_byte2 + 1;
@@ -2105,21 +2105,21 @@ prima_char_struct( XFontStruct * xs, void * c, Bool wide)
 	if ( default_char2 < xs-> min_char_or_byte2 ||
 		default_char2 > xs-> max_char_or_byte2)
 		default_char2 = xs-> min_char_or_byte2;
-	
-	if ( index1 < xs-> min_byte1 || 
-		index1 > xs-> max_byte1) { 
+
+	if ( index1 < xs-> min_byte1 ||
+		index1 > xs-> max_byte1) {
 		index1 = default_char1;
 		index2 = default_char2;
 	}
-	if ( index2 < xs-> min_char_or_byte2 || 
-		index2 > xs-> max_char_or_byte2) { 
+	if ( index2 < xs-> min_char_or_byte2 ||
+		index2 > xs-> max_char_or_byte2) {
 		index1 = default_char1;
 		index2 = default_char2;
 	}
-	cs = xs-> per_char ? 
-		xs-> per_char + 
+	cs = xs-> per_char ?
+		xs-> per_char +
 		( index1 - xs-> min_byte1) * d +
-		( index2 - xs-> min_char_or_byte2) : 
+		( index2 - xs-> min_char_or_byte2) :
 		&(xs-> min_bounds);
 	return cs;
 }

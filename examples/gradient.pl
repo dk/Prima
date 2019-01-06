@@ -9,38 +9,38 @@ my $w = Prima::MainWindow->new(
 	designScale => [ 7, 16 ],
 );
 
-my $panel = $w-> insert( Widget => 
+my $panel = $w-> insert( Widget =>
 	maxSize=> [undef, 150],
 	pack   => { fill => 'x' },
 );
 
-my $vertical = $panel-> insert( CheckBox => 
+my $vertical = $panel-> insert( CheckBox =>
 	pack   => { side => 'left', padx => 20 },
 	text   => '~Vertical',
-	onClick => \&repaint, 
+	onClick => \&repaint,
 );
 
-my $splined = $panel-> insert( CheckBox => 
+my $splined = $panel-> insert( CheckBox =>
 	pack   => { side => 'left', padx => 20 },
 	text   => '~Splines',
 	checked => 1,
-	onClick => \&repaint, 
+	onClick => \&repaint,
 );
 
-$panel-> insert( Button => 
+$panel-> insert( Button =>
 	text   => '~Reset',
 	pack   => { side => 'left', padx => 20 },
 	onClick => \&reset,
 );
 
-my $c1 = $panel-> insert( ColorComboBox => 
+my $c1 = $panel-> insert( ColorComboBox =>
 	name   => 'C1',
 	pack   => { side => 'right',  },
 	value  => cl::White,
-	onChange => \&repaint, 
+	onChange => \&repaint,
 );
 
-$panel-> insert( Label => 
+$panel-> insert( Label =>
 	text  => '~To',
 	focusLink => 'C1',
 	pack   => { side => 'right', },
@@ -51,16 +51,16 @@ sub breadth ();
 my @colors;
 my @offsets;
 my $add_color;
-$add_color = $panel-> insert( AltSpinButton => 
+$add_color = $panel-> insert( AltSpinButton =>
 	pack   => { side => 'right', padx => 20 },
 	onIncrement => sub {
 		my ( $self, $increment ) = @_;
 		if ( $increment > 0 ) {
 			return if @colors > 10;
-			splice(@colors, -1, 0, $panel-> insert( ColorComboBox => 
+			splice(@colors, -1, 0, $panel-> insert( ColorComboBox =>
 				pack   => { side => 'right', padx => 20, after => $add_color },
 				value  => cl::Black,
-				onChange => \&repaint, 
+				onChange => \&repaint,
 			));
 			push @offsets, ( @offsets ? ((breadth - $offsets[-1]) / 2) : (breadth * 0.3) );
 		} elsif ( @colors > 2 ) {
@@ -72,14 +72,14 @@ $add_color = $panel-> insert( AltSpinButton =>
 	}
 );
 
-my $c2 = $panel-> insert( ColorComboBox => 
+my $c2 = $panel-> insert( ColorComboBox =>
 	pack   => { side => 'right', padx => 20 },
 	value  => cl::Black,
 	name   => 'C2',
-	onChange => \&repaint, 
+	onChange => \&repaint,
 );
 
-$panel-> insert( Label => 
+$panel-> insert( Label =>
 	text  => '~From',
 	focusLink => 'C2',
 	pack   => { side => 'right', },
@@ -88,8 +88,8 @@ $panel-> insert( Label =>
 my $aperture = 12;
 my $capture;
 my $prelight;
-my @points; 
-my $gradient = $w->insert( Widget => 
+my @points;
+my $gradient = $w->insert( Widget =>
 	name   => 'Gradient',
 	pack   => { fill => 'both', expand => 1 },
 	buffered => 1,
@@ -116,17 +116,17 @@ my $gradient = $w->insert( Widget =>
 		for ( $i = 0; $i < @points; $i+=2) {
 			$canvas-> color(($i == $c) ? cl::White : cl::Black);
 			$canvas-> fill_ellipse(
-				$points[$i], $points[$i+1], 
+				$points[$i], $points[$i+1],
 				$aperture, $aperture
 			);
 			$canvas-> color(($i == $c) ? cl::Black : cl::White);
 			$canvas-> fill_ellipse(
-				$points[$i], $points[$i+1], 
+				$points[$i], $points[$i+1],
 				$aperture/2, $aperture/2
 			);
 		}
 
-		my $triangle = $v ? 
+		my $triangle = $v ?
 			[ $aperture, 0, 0, -$aperture, -$aperture, 0, $aperture, 0 ] :
 			[ 0, $aperture, $aperture, 0, 0, -$aperture, 0, $aperture  ];
 		$c = -1 * ( $prelight // $capture // 1 ) - 1;
@@ -138,7 +138,7 @@ my $gradient = $w->insert( Widget =>
 			$canvas->lineWidth(3);
 			$canvas->polyline($triangle);
 			$canvas->lineWidth(1);
-			
+
 			$canvas->color(($i == $c) ? cl::Black : cl::White);
 			$canvas->fillpoly($triangle);
 		}
@@ -151,7 +151,7 @@ my $gradient = $w->insert( Widget =>
 		$canvas->linePattern(lp::Dot);
 		$canvas->lineWidth(1);
 		$canvas->line(0,0,$w,$h);
-		
+
 		$canvas->color(cl::Black);
 		$canvas->lineWidth(3);
 		my $method = $splined->checked ? 'spline' : 'polyline';
@@ -166,12 +166,12 @@ my $gradient = $w->insert( Widget =>
 	onSize   => sub {
 		my ( $self, $ox, $oy, $x, $y) = @_;
 		my $i;
-		for ( $i = 0; $i < @points; $i+=2) { 
+		for ( $i = 0; $i < @points; $i+=2) {
 			$points[$i] = $x   if $points[$i] > $x;
-			$points[$i+1] = $y if $points[$i+1] > $y; 
+			$points[$i+1] = $y if $points[$i+1] > $y;
 		}
 		my $b = $vertical->checked ? $x : $y;
-		for ( $i = 0; $i < @offsets; $i++) { 
+		for ( $i = 0; $i < @offsets; $i++) {
 			$offsets[$i] = $b  if $offsets[$i] > $b;
 		}
 	},
@@ -180,7 +180,7 @@ my $gradient = $w->insert( Widget =>
 		my $i;
 		$capture = undef;
 		for ( $i = 0; $i < @points; $i+=2) {
-			if ( $points[$i] > $x - $aperture && $points[$i] < $x + $aperture && 
+			if ( $points[$i] > $x - $aperture && $points[$i] < $x + $aperture &&
 				$points[$i+1] > $y - $aperture && $points[$i+1] < $y + $aperture) {
 				if ( $btn == mb::Left ) {
 					$capture = $i;
@@ -194,7 +194,7 @@ my $gradient = $w->insert( Widget =>
 
 		for ( $i = 0; $i < @offsets; $i++) {
 			my ($ax, $ay) = $vertical->checked ? ( $offsets[$i], $self->height - $aperture/2 ) : ( $aperture/2, $offsets[$i]);
-			if ( $ax > $x - $aperture/2 && $ax < $x + $aperture/2 && 
+			if ( $ax > $x - $aperture/2 && $ax < $x + $aperture/2 &&
 				$ay > $y - $aperture/2 && $ay < $y + $aperture/2) {
 				if ( $btn == mb::Left ) {
 					$capture = -$i - 1;
@@ -238,7 +238,7 @@ my $gradient = $w->insert( Widget =>
 			my $i;
 			my $p;
 			for ( $i = 0; $i < @points; $i+=2) {
-				if ( $points[$i] > $x - $aperture && $points[$i] < $x + $aperture && 
+				if ( $points[$i] > $x - $aperture && $points[$i] < $x + $aperture &&
 					$points[$i+1] > $y - $aperture && $points[$i+1] < $y + $aperture) {
 					$p = $i;
 					goto FOUND;
@@ -246,7 +246,7 @@ my $gradient = $w->insert( Widget =>
 			}
 			for ( $i = 0; $i < @offsets; $i++) {
 				my ($ax, $ay) = $vertical->checked ? ( $offsets[$i], $self->height - $aperture/2 ) : ( $aperture/2, $offsets[$i]);
-				if ( $ax > $x - $aperture/2 && $ax < $x + $aperture/2 && 
+				if ( $ax > $x - $aperture/2 && $ax < $x + $aperture/2 &&
 					$ay > $y - $aperture/2 && $ay < $y + $aperture/2) {
 					$p = -$i - 1;
 					last;

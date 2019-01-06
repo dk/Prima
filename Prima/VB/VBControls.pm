@@ -314,15 +314,15 @@ sub profile_default
 			]],
 			['~Selection' => [
 				[ 'bt-0', '~Normal'     => q(blockType)],
-				[ 'bt-1', '~Vertical'   => q(blockType)], 
-				[ 'bt-2', '~Horizontal' => q(blockType)], 
+				[ 'bt-1', '~Vertical'   => q(blockType)],
+				[ 'bt-2', '~Horizontal' => q(blockType)],
 				[],
-				[ '~Remove'        => 'Alt+U' => '@U' => sub { $_[0]-> Editor-> cancel_block }], 
-				[ '~Mark vertical' => 'Alt+B' => '@B' => sub { 
+				[ '~Remove'        => 'Alt+U' => '@U' => sub { $_[0]-> Editor-> cancel_block }],
+				[ '~Mark vertical' => 'Alt+B' => '@B' => sub {
 					$_[0]-> Editor-> mark_vertical;
 					$_[0]-> blockType(1);
-				}], 
-				[ 'Mark horizontal' => 'Alt+L' => '@L' => sub { 
+				}],
+				[ 'Mark horizontal' => 'Alt+L' => '@L' => sub {
 					$_[0]-> Editor-> mark_horizontal;
 					$_[0]-> blockType(2);
 				}],
@@ -331,8 +331,8 @@ sub profile_default
 			]],
 			['~Options' => [
 				[ '*syntaxHilite'   => '~Syntax hilite'     => q(bool_set)],
-				[ '*autoIndent'      => '~Auto indent'      => q(bool_set)], 
-				[ 'persistentBlock' => '~Presistent blocks' => q(bool_set)], 
+				[ '*autoIndent'      => '~Auto indent'      => q(bool_set)],
+				[ 'persistentBlock' => '~Presistent blocks' => q(bool_set)],
 				[],
 				[ 'Set ~font' => q(setfont)],
 			]],
@@ -350,7 +350,7 @@ sub sync_code
 sub load_code
 {
 	if ( $_[0]-> {modified}) {
-		my $r = Prima::MsgBox::message( "Save changes?", 
+		my $r = Prima::MsgBox::message( "Save changes?",
 			mb::YesNoCancel|mb::Warning);
 		if ( $r == mb::Yes) {
 			return unless save_code($_[0]);
@@ -439,7 +439,7 @@ sub find_dialog
 		$self-> {findData}-> {result} = $rf;
 		$self-> {findData}-> {asFind} = $findStyle;
 		@{$self-> {findData}-> {findItems}} = @{$findDialog-> Find-> items};
-		@{$self-> {findData}-> {replaceItems}} = @{$findDialog-> Replace-> items} 
+		@{$self-> {findData}-> {replaceItems}} = @{$findDialog-> Replace-> items}
 			unless $findStyle;
 		$ret = 1;
 	}
@@ -458,11 +458,11 @@ sub do_find
 		if ( $$p{scope} != fds::Cursor) {
 			if ( $e-> has_selection) {
 				my @sel = $e-> selection;
-				@scope = ($$p{scope} == fds::Top) ? 
-					($sel[0],$sel[1]) : 
+				@scope = ($$p{scope} == fds::Top) ?
+					($sel[0],$sel[1]) :
 					($sel[2], $sel[3]);
 			} else {
-				@scope = ($$p{scope} == fds::Top) ? 
+				@scope = ($$p{scope} == fds::Top) ?
 					(0,0) : (-1,-1);
 			}
 		} else {
@@ -527,7 +527,7 @@ sub init
 	my $fh = $self-> font-> height + 6;
 
 	my $indicator;
-	my $editor = $self-> insert( 'Prima::VB::Editor' => 
+	my $editor = $self-> insert( 'Prima::VB::Editor' =>
 		origin   => [ 0, $fh],
 		size     => [ $sz[0], $sz[1] - $fh],
 		growMode => gm::Client,
@@ -541,15 +541,15 @@ sub init
 		growMode => gm::Floor,
 		name     => 'Indicator',
 		onPaint  => sub {
-			my ( $me, $canvas) = @_; 
-			$canvas-> rect3d( 0, 0, $me-> width - 1, $me-> height - 1, 1, 
+			my ( $me, $canvas) = @_;
+			$canvas-> rect3d( 0, 0, $me-> width - 1, $me-> height - 1, 1,
 				$me-> dark3DColor, $me-> light3DColor, $me-> backColor);
 			my @c = $editor-> cursorLog;
-			$canvas-> text_out( sprintf("%s %d:%d", ($self-> {modified} ? '*' : ' '), 
+			$canvas-> text_out( sprintf("%s %d:%d", ($self-> {modified} ? '*' : ' '),
 				$c[0]+1,$c[1]+1), 4, ( $me-> height - $canvas-> font-> height) / 2);
 		}
 	);
-	
+
 	for ( qw( syntaxHilite autoIndent persistentBlock)) {
 		next unless exists $i-> {$_};
 		$self-> menu-> checked( $_, $i-> {$_});

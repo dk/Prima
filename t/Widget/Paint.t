@@ -39,7 +39,7 @@ SKIP: {
 
 	$ww-> update_view;
 	ok( get_flag, "scroll" );
-	
+
 	$ww-> invalidate_rect( 0, 0, 2, 2);
 	my @cr = $ww-> get_invalid_rect;
 	is_deeply( \@cr, [0,0,2,2], "query invalid area" );
@@ -62,7 +62,7 @@ SKIP: {
 		$x-> clipRect( 0, 0, $x-> size);
 		is( $x-> pixel( 2,2), 0, "clipRect" );
 		is( $x-> pixel( 1,1), $white, "clipRect" );
-	
+
 		$x-> color( cl::White);
 		$x-> bar( 0, 0, 7, 7);
 		$x-> color( cl::Black);

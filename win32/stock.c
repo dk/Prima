@@ -280,7 +280,7 @@ elf( Font * font, Bool bySize)
 		seed = elf_hash( (const char*)&font-> height, (char *)(&(font-> name)) - (char *)&(font-> height), seed);
 		seed = elf_hash( font-> name, -1, seed);
 		seed = elf_hash( font-> encoding, -1, seed);
-	} 
+	}
 	return seed % FONTHASH_SIZE;
 }
 
@@ -314,7 +314,7 @@ find_node( const PFont font, Bool bySize)
 		sz = (char *)(&(font-> name)) - (char *)&(font-> height);
 		while ( node != nil)
 		{
-			if (( memcmp( font, &(node-> key), sz) == 0) && 
+			if (( memcmp( font, &(node-> key), sz) == 0) &&
 				( strcmp( font-> name, node-> key. name) == 0 )&&
 				( strcmp( font-> encoding, node-> key. encoding) == 0 ))
 				return node;
@@ -397,14 +397,14 @@ build_dcfont_key( Font * src, unsigned char * key)
 	memcpy( key, src, FONTSTRUCSIZE);
 	key += FONTSTRUCSIZE;
 	p = src-> name;
-	while ( *p) { 
+	while ( *p) {
 		*(key++) = *(p++);
 		sz++;
 	}
 	*(key++) = 0;
 	sz++;
 	p = src-> encoding;
-	while ( *p) { 
+	while ( *p) {
 		*(key++) = *(p++);
 		sz++;
 	}
@@ -496,13 +496,13 @@ static char* encodings[] = {
 	"GB 2312",
 	"Chinese Big 5",
 	"OEM DOS",
-	"Johab", 
-	"Hebrew", 
-	"Arabic", 
-	"Greek", 
-	"Turkish", 
-	"Vietnamese", 
-	"Thai", 
+	"Johab",
+	"Hebrew",
+	"Arabic",
+	"Greek",
+	"Turkish",
+	"Vietnamese",
+	"Thai",
 	"Eastern Europe",
 	"Cyrillic",
 	"Mac",
@@ -512,13 +512,13 @@ static char* encodings[] = {
 
 static Handle ctx_CHARSET2index[] = {
 	ANSI_CHARSET        , 0,
-	DEFAULT_CHARSET     , 1, 
-	SYMBOL_CHARSET      , 2,  
-	SHIFTJIS_CHARSET    , 3, 
-	HANGEUL_CHARSET     , 4, 
-	GB2312_CHARSET      , 5, 
-	CHINESEBIG5_CHARSET , 6, 
-	OEM_CHARSET         , 7, 
+	DEFAULT_CHARSET     , 1,
+	SYMBOL_CHARSET      , 2,
+	SHIFTJIS_CHARSET    , 3,
+	HANGEUL_CHARSET     , 4,
+	GB2312_CHARSET      , 5,
+	CHINESEBIG5_CHARSET , 6,
+	OEM_CHARSET         , 7,
 #ifdef JOHAB_CHARSET
 	JOHAB_CHARSET       , 8,
 	HEBREW_CHARSET      , 9,
@@ -531,7 +531,7 @@ static Handle ctx_CHARSET2index[] = {
 	RUSSIAN_CHARSET     , 16,
 	MAC_CHARSET         , 17,
 	BALTIC_CHARSET      , 18,
-#endif  
+#endif
 	endCtx
 };
 
@@ -542,7 +542,7 @@ static Handle ctx_CHARSET2index[] = {
 static char *
 font_charset2encoding( int charset)
 {
-#define SYNCPLEN 7   
+#define SYNCPLEN 7
 	static char buf[ SYNCPLEN * 256], initialized = false;
 	char *str;
 	int index = ctx_remap_end( charset, ctx_CHARSET2index, true);
@@ -556,7 +556,7 @@ font_charset2encoding( int charset)
 		str = buf + charset * SYNCPLEN;
 	} else
 		str = encodings[ index];
-	return str; 
+	return str;
 }
 
 static int
@@ -566,9 +566,9 @@ font_encoding2charset( const char * encoding)
 	char ** e = encodings;
 
 	if ( !encoding || encoding[0] == 0) return DEFAULT_CHARSET;
-	
+
 	while ( *e) {
-		if ( strcmp( *e, encoding) == 0) 
+		if ( strcmp( *e, encoding) == 0)
 			return ctx_remap_def( index, ctx_CHARSET2index, false, DEFAULT_CHARSET);
 		index++;
 		e++;
@@ -596,7 +596,7 @@ reset_system_fonts(void)
 	font_logfont2font( &guts. ncmData. lfMenuFont, &guts. menuFont, &guts. displayResolution);
 	font_logfont2font( &guts. ncmData. lfMessageFont, &guts. msgFont, &guts. displayResolution);
 	font_logfont2font( &guts. ncmData. lfCaptionFont, &guts. capFont, &guts. displayResolution);
-}		
+}
 
 void
 font_logfont2font( LOGFONT * lf, Font * f, Point * res)
@@ -643,7 +643,7 @@ font_font2logfont( Font * f, LOGFONT * lf)
 	lf-> lfOutPrecision     = OUT_TT_PRECIS;
 	lf-> lfClipPrecision    = CLIP_DEFAULT_PRECIS;
 	lf-> lfQuality          = PROOF_QUALITY;
-	lf-> lfPitchAndFamily   = FF_DONTCARE;  
+	lf-> lfPitchAndFamily   = FF_DONTCARE;
 	strncpy( lf-> lfFaceName, f-> name, LF_FACESIZE);
 	lf-> lfCharSet          = font_encoding2charset( f-> encoding);
 }
@@ -762,7 +762,7 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, PFEnumStruc es)
 	long hei, res;
 
 	es-> passedCount++;
-			
+
 	if ( es-> usePitch)
 	{
 		int fpitch = ( t-> ntmTm. tmPitchAndFamily & TMPF_FIXED_PITCH) ? fpVariable : fpFixed;
@@ -823,10 +823,10 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, PFEnumStruc es)
 		copy = 1;
 	}
 
-EXIT:   
+EXIT:
 
 	if ( copy) {
-		es-> count++; 
+		es-> count++;
 		es-> fType = type;
 		memcpy( &es-> tm, &t-> ntmTm, sizeof( TEXTMETRICW));
 		wchar2char( es-> family, e-> elfFullName, LF_FULLFACESIZE);
@@ -1062,7 +1062,7 @@ apc_font_pick( Handle self, PFont source, PFont dest)
 
 typedef struct {
 	List  lst;
-	PHash hash; 
+	PHash hash;
 } Fep2;
 
 int CALLBACK
@@ -1093,10 +1093,10 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
 	font_textmetric2font(( TEXTMETRICW*) &t-> ntmTm, fm, false);
 	if ( f-> hash) { /* multi-encoding format */
 		char ** enc = (char**) fm-> encoding;
-		unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;      
+		unsigned char * shift = (unsigned char*)enc + sizeof(char *) - 1;
 		memset( fm-> encoding, 0, 256);
 		*(enc + ++(*shift)) = font_charset2encoding( e-> elfLogFont. lfCharSet); /* lfCharSet is A/W-safe */
-		hash_store( f-> hash, name, strlen( name), fm); 
+		hash_store( f-> hash, name, strlen( name), fm);
 	}
 	fm-> direction = fm-> resolution = 0;
 	fm-> utf8_flags = 0;
@@ -1131,13 +1131,13 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
 		return nil;
 
 	f. hash = nil;
-	if ( !facename && !encoding) 
+	if ( !facename && !encoding)
 		if ( !( f. hash = hash_create()))
 			return nil;
 	list_create( &f. lst, 256, 256);
 	memset( &elf, 0, sizeof( elf));
 	char2wchar( elf. lfFaceName, (char*)(facename ? facename : ""), LF_FACESIZE);
-	elf. lfCharSet = font_encoding2charset( encoding); 
+	elf. lfCharSet = font_encoding2charset( encoding);
 	EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep2, ( LPARAM) &f, 0);
 	if ( f. hash) {
 		hash_destroy( f. hash, false);
@@ -1600,7 +1600,7 @@ hwnd_repaint_layered( Handle self, Bool now )
 
 	apt_clear( aptRepaintPending );
 	ev. cmd = cmPaint;
-	CWidget(self)-> message( self, &ev); 
+	CWidget(self)-> message( self, &ev);
 
 	return true;
 }
@@ -1630,7 +1630,7 @@ Handle
 hwnd_layered_top_level( Handle self)
 {
 	while ( self && ( self != application)) {
-		if (( sys className == WC_FRAME) || 
+		if (( sys className == WC_FRAME) ||
 			(!is_apt( aptClipOwner) || (var owner == application))) return self;
 		self = var owner;
 	}
@@ -1780,7 +1780,7 @@ palette_change( Handle self)
 		hwnd_repaint( self);
 		return false;
 	}
-	
+
 	d = ( PRGBColor) malloc( sizeof( RGBColor) * nColors);
 	if ( !d) {
 		free( p);

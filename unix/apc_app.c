@@ -33,7 +33,7 @@ prima_unix_guts(void)
 static int
 x_error_handler( Display *d, XErrorEvent *ev)
 {
-	int tail = guts. ri_tail; 
+	int tail = guts. ri_tail;
 	int prev = tail;
 	char *name = "Prima";
 	char buf[BUFSIZ];
@@ -59,9 +59,9 @@ x_error_handler( Display *d, XErrorEvent *ev)
 
 #ifdef NEED_X11_EXTENSIONS_XRENDER_H
 	if ( ev-> request_code == guts. xft_xrender_major_opcode &&
-		ev-> request_code > 127 && 
+		ev-> request_code > 127 &&
 		ev-> error_code == BadLength)
-		/* Xrender large polygon request failed */ 
+		/* Xrender large polygon request failed */
 		guts. xft_disable_large_fonts = 1;
 #endif
 
@@ -211,10 +211,10 @@ init_x11( char * error_buf )
 
 	guts. ri_head = guts. ri_tail = 0;
 	DISP = XOpenDisplay( do_display);
-	
+
 	if (!DISP) {
 		char * disp = getenv("DISPLAY");
-		snprintf( error_buf, 256, "Error: Can't open display '%s'", 
+		snprintf( error_buf, 256, "Error: Can't open display '%s'",
 					do_display ? do_display : (disp ? disp : ""));
 		free( do_display);
 		do_display = nil;
@@ -261,21 +261,21 @@ init_x11( char * error_buf )
 		int dummy;
 		if ( XRRQueryExtension( DISP, &dummy, &dummy))
 			guts. randr_extension = true;
-	}	 
+	}
 #endif
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	{
 		int dummy;
 		if ( XRenderQueryExtension( DISP, &dummy, &dummy))
 			guts. render_extension = true;
-	}	 
+	}
 #endif
 #ifdef HAVE_X11_EXTENSIONS_XCOMPOSITE_H
 	{
 		int dummy;
 		if (XQueryExtension(DISP, COMPOSITE_NAME, &guts.composite_opcode, &dummy, &dummy))
 			guts. composite_extension = true;
-	}	 
+	}
 #endif
 	XrmInitialize();
 	guts.db = get_database();
@@ -328,7 +328,7 @@ init_x11( char * error_buf )
 							&guts. cursor_height);
 #endif
 	XCHECKPOINT;
-	
+
 	TAILQ_INIT( &guts.paintq);
 	TAILQ_INIT( &guts.peventq);
 	TAILQ_INIT( &guts.bitmap_gc_pool);
@@ -358,7 +358,7 @@ init_x11( char * error_buf )
 	else {
 		sprintf( error_buf, "UAA_001: weird machine byte order: %08x", BYTEORDER);
 		return false;
-	}  
+	}
 
 	XInternAtoms( DISP, atom_names, AI_count, 0, guts. atoms);
 
@@ -389,7 +389,7 @@ init_x11( char * error_buf )
 	gethostname( hostname, 256);
 	hostname[255] = '\0';
 	XStringListToTextProperty((char **)&hostname, 1, &guts. hostname);
-	
+
 	guts. net_wm_maximization = prima_wm_net_state_read_maximization( guts. root, NET_SUPPORTED);
 
 	if ( do_sync) XSynchronize( DISP, true);
@@ -402,7 +402,7 @@ window_subsystem_init( char * error_buf)
 	bzero( &guts, sizeof( guts));
 	guts. debug = do_debug;
 	guts. icccm_only = do_icccm_only;
-	Mdebug("init x11:%d, debug:%x, sync:%d, display:%s\n", do_x11, guts.debug, 
+	Mdebug("init x11:%d, debug:%x, sync:%d, display:%s\n", do_x11, guts.debug,
 			do_sync, do_display ? do_display : "(default)");
 	if ( do_x11) {
 		Bool ret = init_x11( error_buf );
@@ -457,10 +457,10 @@ window_subsystem_get_options( int * argc, char *** argv)
 #ifdef WITH_GTK
 	"no-gtk",        "do not use GTK",
 #endif
-	"font", 
+	"font",
 #ifdef USE_XFT
 				"default prima font in XLFD (-helv-misc-*-*-) or XFT(Helv-12) format",
-#else      
+#else
 				"default prima font in XLFD (-helv-misc-*-*-) format",
 #endif
 	"menu-font", "default menu font",
@@ -604,7 +604,7 @@ window_subsystem_done( void)
 	}
 	XCloseDisplay( DISP);
 	DISP = nil;
-	
+
 	plist_destroy( guts. files);
 	guts. files = nil;
 
@@ -780,15 +780,15 @@ wm_net_get_current_workarea( Rect * r)
 
 	if ( guts. icccm_only) return false;
 
-	desktop = ( unsigned long *) prima_get_window_property( guts. root, 
-					NET_CURRENT_DESKTOP, XA_CARDINAL, 
+	desktop = ( unsigned long *) prima_get_window_property( guts. root,
+					NET_CURRENT_DESKTOP, XA_CARDINAL,
 					NULL, NULL,
 					&n);
 	if ( desktop == NULL || n < 1) goto EXIT;
 	Mdebug("wm: current desktop = %d\n", *desktop);
-	
-	workarea = ( unsigned long *) prima_get_window_property( guts. root, 
-					NET_WORKAREA, XA_CARDINAL, 
+
+	workarea = ( unsigned long *) prima_get_window_property( guts. root,
+					NET_WORKAREA, XA_CARDINAL,
 					NULL, NULL,
 					&n);
 	if ( desktop == NULL || n < 1 || n <= *desktop ) goto EXIT;
@@ -908,7 +908,7 @@ apc_application_get_monitor_rects( Handle self, int * nrects)
 		*nrects = 0;
 	}
 	return ret;
-#else   
+#else
 	*nrects = 0;
 	return nil;
 #endif

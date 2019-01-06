@@ -34,7 +34,7 @@ sub t
 	           $ok &= is( $x-> font-> $_(), $fx, "$_ / $f->{name}");
 	       };
 	}
-	
+
 	# width is a bit special, needs height or size
 	for (qw( height size)) {
 		my $fh = $x-> font-> $_();
@@ -52,8 +52,8 @@ sub t
 		    $ok &= is( $x-> font-> width, $fw, "width by $_ / $f->{name}");
 		};
 	}
-	
-	
+
+
 	# style
 	my $fx = $x-> font-> style;
 	my $newfx = ~$fx;
@@ -66,7 +66,7 @@ sub t
 	    $x-> font( style => $fx);
 	    is( $x-> font-> style, $fx, "style / $f->{name}");
 	};
-	
+
 	# wrapping
 	SKIP : {
 		$x-> font-> height( 16);

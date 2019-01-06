@@ -524,7 +524,7 @@ Prima::IniFile - support of Windows-like initialization files
 The module contains a class, that provides mapping of text initialization file to
 a two-level hash structure. The first level
 is called sections, which groups the second level hashes, called items.
-Sections must have unique keys. The items hashes values are arrays of 
+Sections must have unique keys. The items hashes values are arrays of
 text strings. The methods, operated on these arrays are L<get_values>,
 L<set_values>, L<add_values> and L<replace_values>.
 
@@ -581,7 +581,7 @@ Cleans all internal data in the object, including the name of the file.
 =item create PROFILE
 
 Creates an instance of the class. The PROFILE is treated partly as
-an array, partly as a hash. If PROFILE consists of a single item, 
+an array, partly as a hash. If PROFILE consists of a single item,
 the item is treated as a filename. Otherwise, PROFILE is treated as a hash,
 where the following keys are allowed:
 
@@ -604,10 +604,10 @@ with the file data.
 Returns array of values for ITEM in SECTION. If called in scalar context,
 and there is more than one value, the first value in list is returned.
 
-=item items SECTION [ HINTS ] 
+=item items SECTION [ HINTS ]
 
 Returns items in SECTION. HINTS parameters is used to tell if a multiple-valued
-item must be returned as several items of the same name; 
+item must be returned as several items of the same name;
 HINTS can be supplied in the following forms:
 
 items( $section, 1 )

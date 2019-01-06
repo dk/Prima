@@ -94,31 +94,31 @@ prima_standard_colors(void)
 }
 
 /* maps RGB or cl-constant value to RGB value.  */
-Color 
+Color
 prima_map_color( Color clr, int * hint)
 {
 	long cls;
 	if ( hint) *hint = COLORHINT_NONE;
 	if (( clr & clSysFlag) == 0) return clr;
-	
+
 	cls = (clr & wcMask) >> 16;
 	if ( cls <= 0 || cls > MAX_COLOR_CLASS) cls = (wcWidget) >> 16;
 	if (( clr = ( clr & ~wcMask)) > clMaxSysColor) clr = clMaxSysColor;
 	if ( clr == clSet)   {
 		if ( hint) *hint = COLORHINT_WHITE;
-		return 0xffffff; 
+		return 0xffffff;
 	} else if ( clr == clClear) {
 		if ( hint) *hint = COLORHINT_BLACK;
-		return 0; 
+		return 0;
 	} else return standard_colors[cls][(clr & clSysMask) - 1];
-}   
+}
 
 Color
 apc_widget_map_color( Handle self, Color color)
 {
 	if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0)) color |= PWidget(self)-> widgetClass;
 	return prima_map_color( color, nil);
-}   
+}
 
 static PHash  hatches;
 static Bool   kill_hatches( Pixmap pixmap, int keyLen, void * key, void * dummy);
@@ -135,11 +135,11 @@ my_XAllocColor( Display * disp, Colormap cm, XColor * xc, int line)
 		bzero( card, 256*sizeof(int));
 	}
 	if ( !XAllocColor(disp, cm, xc)) {
-		printf("Failed alloc of %02x%02x%02x, at %d\n", 
+		printf("Failed alloc of %02x%02x%02x, at %d\n",
 			xc-> red>>8, xc-> green>>8, xc-> blue>>8, line);
 		return false;
 	}
-	printf("Alloc %02x%02x%02x, at %d: %d\n", 
+	printf("Alloc %02x%02x%02x, at %d: %d\n",
 			xc-> red>>8, xc-> green>>8, xc-> blue>>8,
 			line, xc-> pixel);
 	card[xc-> pixel]++;
@@ -166,14 +166,14 @@ my_XFreeColors( Display * disp, Colormap cm, long * ls, int count, long pal, int
 */
 
 static Bool
-alloc_color( XColor * c) 
+alloc_color( XColor * c)
 {
 	int diff = 5 * 256,
 	r = c-> red,
 	g = c-> green,
 	b = c-> blue;
 	if ( !XAllocColor( DISP, guts. defaultColormap, c)) return false;
-	if ( 
+	if (
 		diff > abs( c-> red   - r) &&
 		diff > abs( c-> green - g) &&
 		diff > abs( c-> blue  - b)
@@ -188,7 +188,7 @@ brush.secondary and brush.balance are set. Tries to
 get new colors via XAllocColor, assigns new color cells
 to self if successfull.
 	If no brush structure is given, no dithering is
-preformed. 
+preformed.
 	Returns closest matching color, always the same as
 brush-> primary.
 */
@@ -203,7 +203,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 	brush-> balance = 0;
 	brush-> color = color = prima_map_color( color, &hint);
 
-	if ( hint) 
+	if ( hint)
 		return ( brush-> primary = (( hint == COLORHINT_BLACK) ? LOGCOLOR_BLACK : LOGCOLOR_WHITE));
 
 	a[0] = COLOR_R(color);
@@ -211,11 +211,11 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 	a[2] = COLOR_B(color);
 
 	if ( self && XF_LAYERED(XX) )
-		return brush->primary = 
+		return brush->primary =
 			(((a[0] << guts. argb_bits. red_range  ) >> 8) << guts. argb_bits.   red_shift) |
 			(((a[1] << guts. argb_bits. green_range) >> 8) << guts. argb_bits. green_shift) |
 			(((a[2] << guts. argb_bits. blue_range ) >> 8) << guts. argb_bits.  blue_shift);
-	
+
 	if ( guts. grayScale) {
 		a[0] = a[1] = a[2] = ( a[0] + a[1] + a[2]) / 3;
 		color = a[0] * ( 65536 + 256 + 1);
@@ -234,7 +234,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 			int ab2;
 			Bool dyna = guts. dynamicColors && self && X(self)-> type. widget && ( self != application);
 			brush-> primary = prima_color_find( self, color, -1, &ab2, RANK_FREE);
-			
+
 			if ( dyna && ab2 > 12) {
 				XColor xc;
 				xc. red   = COLOR_R16(color);
@@ -252,7 +252,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 
 			if ( guts. useDithering && (brush != &b) && (ab2 > 12)) {
 				if ( guts. grayScale && guts. systemColorMapSize > guts. palSize / 2) {
-					int clr = ( COLOR_R(color) + COLOR_G(color) + 
+					int clr = ( COLOR_R(color) + COLOR_G(color) +
 							COLOR_B(color)) / 3;
 					int grd  = 256 / ( guts. systemColorMapSize - 1);
 					int left = clr / grd;
@@ -263,7 +263,7 @@ prima_allocate_color( Handle self, Color color, Brush * brush)
 					int i;
 					Bool cubic = (XX-> type.dbm && guts. dynamicColors) ||
 									( guts. colorCubeRib > 4);
-DITHER:               
+DITHER:
 					if ( cubic) {
 /* fast search of dithering colors - based on color cube.
 	used either on restricted drawables ( as dbm) or when
@@ -276,7 +276,7 @@ DITHER:
     *---------- G      it's RG-point. (y=sqrt(2)-1=0.41; y=0.41x and y=1.41x are
 R'G' , B=0             maximal error lines). balance is computed as diff between
                        R'G' and R"G"
-*/              
+*/
 						int base[3], l[3], z[3], r[3], cnt = 0, sum = 0;
 						int grd = 256 / ( guts. colorCubeRib - 1);
 						for ( i = 0; i < 3; i++) {
@@ -297,23 +297,23 @@ R'G' , B=0             maximal error lines). balance is computed as diff between
 						} else if ( z[0] > 1) {
 							r[0] = r[0] ? 0 : 1;
 						}
-						for ( i = 0; i < 3; i++) 
+						for ( i = 0; i < 3; i++)
 							if ( r[i] != l[i]) {
 								sum += z[i];
 								cnt++;
 							}
-						brush-> primary = guts. systemColorMap[ 
-							l[2] + base[2] + 
-						( l[1] + base[1]) * guts.colorCubeRib + 
+						brush-> primary = guts. systemColorMap[
+							l[2] + base[2] +
+						( l[1] + base[1]) * guts.colorCubeRib +
 						( l[0] + base[0]) * guts.colorCubeRib * guts.colorCubeRib];
-						brush-> secondary = guts. systemColorMap[ 
-							r[2] + base[2] + 
-						( r[1] + base[1]) * guts.colorCubeRib + 
+						brush-> secondary = guts. systemColorMap[
+							r[2] + base[2] +
+						( r[1] + base[1]) * guts.colorCubeRib +
 						( r[0] + base[0]) * guts.colorCubeRib * guts.colorCubeRib];
 						brush-> balance = cnt ? (sum / cnt) * 64 / grd : 0;
 					} else {
 /*  slow search for dithering counterpart color; takes long time
-	but gives closest possible colors. 
+	but gives closest possible colors.
 
            A*          A - color to be expressed by B and D
            /|  .       B - closest color
@@ -321,7 +321,7 @@ R'G' , B=0             maximal error lines). balance is computed as diff between
          /  |      .   C - closest color that can be expressed using B and D
 *---*-------*  The objective is to find such D whose AC is minimal and
 B   C       D  CD>BD. ( CD = (AD*AD-AB*AB+BD*BD)/2BD, AC=sqrt(AD*AD-CD*CD))
-*/   
+*/
 						int b[3], d[3], i;
 						int ab2, bd2, ac2, ad2;
 						float cd, bd, BMcd=0, BMbd=0;
@@ -363,26 +363,26 @@ B   C       D  CD>BD. ( CD = (AD*AD-AB*AB+BD*BD)/2BD, AC=sqrt(AD*AD-CD*CD))
 								}
 							}
 						}
-ENOUGH:;                  
+ENOUGH:;
 						if ( !guts. grayScale && maxDiff > (64/(guts.colorCubeRib-1))) {
 							cubic = true;
 							goto DITHER;
-						} 
+						}
 						brush-> secondary = bestMatch;
 						brush-> balance   = 63 - BMcd * 64 / BMbd;
 					}
 				}
 			}
-			
+
 			if ( dyna) {
-				if ( wlpal_get( self, brush-> primary) == RANK_FREE) 
+				if ( wlpal_get( self, brush-> primary) == RANK_FREE)
 					prima_color_add_ref( self, brush-> primary, RANK_NORMAL);
 				if (( brush-> balance > 0) &&
-					( wlpal_get( self, brush->secondary) == RANK_FREE)) 
+					( wlpal_get( self, brush->secondary) == RANK_FREE))
 					prima_color_add_ref( self, brush-> secondary, RANK_NORMAL);
 			}
-		} else  
-			brush-> primary = 
+		} else
+			brush-> primary =
 				(((a[0] << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
 				(((a[1] << guts. screen_bits. green_range) >> 8) << guts. screen_bits. green_shift) |
 				(((a[2] << guts. screen_bits. blue_range ) >> 8) << guts. screen_bits.  blue_shift);
@@ -399,24 +399,24 @@ alloc_main_color_range( XColor * xc, int count, int maxDiff)
 
 	if ( count > guts. palSize) return false;
 
-	for ( idx = 0; idx < count; idx++) 
+	for ( idx = 0; idx < count; idx++)
 		xc[idx]. pixel = 0xFFFFFFFF;
-	
+
 	for ( idx = 0; idx < count; idx++) {
 		int R = xc[idx]. red;
 		int G = xc[idx]. green;
 		int B = xc[idx]. blue;
 		if ( !XAllocColor( DISP, guts. defaultColormap, &xc[idx])) {
-			err = true; 
+			err = true;
 			break;
 		}
 		if ( xc[idx]. pixel >= guts. palSize) {
 			warn("color index out of range returned from XAllocColor()\n");
-			return false; 
+			return false;
 		}
 		if (( xc[idx]. blue / 256 - B / 256) * ( xc[idx]. blue / 256 - B / 256) +
 			( xc[idx]. green / 256 - G / 256) * ( xc[idx]. green / 256 - G / 256) +
-			( xc[idx]. red / 256 - R / 256) * ( xc[idx]. red / 256 - R / 256) > 
+			( xc[idx]. red / 256 - R / 256) * ( xc[idx]. red / 256 - R / 256) >
 			maxDiff) {
 			err = true;
 			break;
@@ -425,7 +425,7 @@ alloc_main_color_range( XColor * xc, int count, int maxDiff)
 
 	if ( err) {
 		unsigned long cnt = 0, free[32];
-		for ( idx = 0; idx < count; idx++) 
+		for ( idx = 0; idx < count; idx++)
 			if ( xc[idx]. pixel != 0xFFFFFFFF) {
 				free[ cnt++] = xc[idx]. pixel;
 				if ( cnt == 32) {
@@ -452,25 +452,25 @@ create_std_palettes( XColor * xc, int count)
 		return false;
 	}
 	bzero( guts. palette, sizeof( MainColorEntry) * guts. palSize);
-	
+
 	for ( idx = 0; idx < guts. palSize; idx++) {
 		guts. palette[ idx]. rank = RANK_FREE;
-		list_create( &guts. palette[idx]. users, 0, 16); 
+		list_create( &guts. palette[idx]. users, 0, 16);
 	}
 
 	for ( idx = 0; idx < count; idx++) {
 		int pixel = xc[idx]. pixel;
-		guts. palette[ pixel]. r = xc[idx]. red / 256; 
-		guts. palette[ pixel]. g = xc[idx]. green / 256; 
+		guts. palette[ pixel]. r = xc[idx]. red / 256;
+		guts. palette[ pixel]. g = xc[idx]. green / 256;
 		guts. palette[ pixel]. b = xc[idx]. blue / 256;
-		guts. palette[ pixel]. composite = RGB_COMPOSITE( 
+		guts. palette[ pixel]. composite = RGB_COMPOSITE(
 			guts. palette[ pixel]. r,
 			guts. palette[ pixel]. g,
 			guts. palette[ pixel]. b);
 		guts. palette[ pixel]. rank = RANK_IMMUTABLE;
 		guts. systemColorMap[ idx] = pixel;
 	}
-	
+
 	guts. systemColorMapSize = count;
 
 	return true;
@@ -502,10 +502,10 @@ set_color_class( int class, char * option, char * value)
 	if ( !color_options) return;
 	list_add( color_options, ( Handle) class);
 	list_add( color_options, ( Handle) duplicate_string(value));
-}   
+}
 
 static void
-apply_color_class( int c_class, Color value) 
+apply_color_class( int c_class, Color value)
 {
 	int i;
 	Color ** t = standard_colors + 1;
@@ -550,13 +550,13 @@ prima_init_color_subsystem(char * error_buf)
 {
 	int id, count, mask = VisualScreenMask|VisualDepthMask|VisualIDMask;
 	XVisualInfo template, *list = nil;
-	
+
 	/* check if non-default depth is selected */
 	id = -1;
 	{
 		char * c, * end;
-		if (( c = do_visual) || 
-			apc_fetch_resource( "Prima", "", "Visual", "visual", 
+		if (( c = do_visual) ||
+			apc_fetch_resource( "Prima", "", "Visual", "visual",
 										nilHandle, frString, &c)) {
 			id = strtol( c, &end, 0);
 			if ( *end) id = -1;
@@ -585,9 +585,9 @@ FALLBACK_TO_DEFAULT_VISUAL:
 			return false;
 		}
 	}
-	
+
 	guts. visual = list[0];
-	guts. visualClass = guts. visual. 
+	guts. visualClass = guts. visual.
 #if defined(__cplusplus) || defined(c_plusplus)
 c_class;
 #else
@@ -604,7 +604,7 @@ class;
 			sprintf( error_buf, "panic: %d bit depth is not true color", guts. depth);
 		return false;
 	}
-	
+
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	/* get ARGB visual */
 	if ( guts. render_extension ) {
@@ -630,7 +630,7 @@ class;
 			break;
 		}
 		if ( list) XFree( list);
-		
+
 		/* find compat format for putting regular pixmaps */
 		if (!(guts. xrender_argb_compat_format = XRenderFindVisualFormat(DISP, guts.visual.visual))) {
 			guts. xrender_argb_pic_format = NULL;
@@ -658,7 +658,7 @@ class;
 		guts. defaultColormap = XCreateColormap( DISP, guts. root, guts.visual.visual, AllocNone);
 		guts. privateColormap = 1;
 	} else
-		guts. defaultColormap  = DefaultColormap( DISP, SCREEN); 
+		guts. defaultColormap  = DefaultColormap( DISP, SCREEN);
 
 	guts. monochromeMap[0] = BlackPixel( DISP, SCREEN);
 	guts. monochromeMap[1] = WhitePixel( DISP, SCREEN);
@@ -690,7 +690,7 @@ class;
 			guts. colorCubeRib = max;
 		}
 		break;
-		
+
 	case StaticColor:
 		{
 			int d = 6, cd = 1;
@@ -706,7 +706,7 @@ class;
 						break;
 					}
 				}
-				d--; 
+				d--;
 				cd += 2;
 			}
 			if ( !guts. palette) goto BLACK_WHITE;
@@ -743,7 +743,7 @@ class;
 			guts. grayScale = true;
 		}
 		break;
-	default:      
+	default:
 BLACK_WHITE:
 		{
 			XColor xc[2];
@@ -760,20 +760,20 @@ BLACK_WHITE:
 				XQueryColors( DISP, guts. defaultColormap, xc, 2);
 			}
 			XCHECKPOINT;
-			if ( !alloc_main_color_range( xc, 2, 65536) || 
+			if ( !alloc_main_color_range( xc, 2, 65536) ||
 				!create_std_palettes( xc, 2)) {
 				sprintf( error_buf, "panic: unable to initialize color system");
 				return false;
 			}
-		}   
-BLACK_WHITE_ALLOCATED:         
+		}
+BLACK_WHITE_ALLOCATED:
 		guts. useDithering = true;
 		guts. grayScale    = true;
 		guts. colorCubeRib = 1;
-		break;   
+		break;
 	}
 
-	if ( guts. palSize > 0 && 
+	if ( guts. palSize > 0 &&
 		(guts. visualClass == StaticColor ||
 		guts. visualClass == StaticGray)) {
 		int i;
@@ -812,12 +812,12 @@ BLACK_WHITE_ALLOCATED:
 			42, 26, 38, 22, 41, 25, 37, 21
 		};
 		bzero( p, sizeof( FillPattern) * 65);
-		for ( i = 0; i < 65; i++, p++) 
-			for ( y = 0; y < 8; y++) 
-				for ( x = 0; x < 8; x++) 
+		for ( i = 0; i < 65; i++, p++)
+			for ( y = 0; y < 8; y++)
+				for ( x = 0; x < 8; x++)
 					if ( i <= map[y * 8 + x])
 						(*p)[y] |= 1 << x;
-		
+
 	} else {
 		sprintf( error_buf, "No memory");
 		return false;
@@ -884,7 +884,7 @@ prima_color_subsystem_set_option( char * option, char * value)
 			free( do_visual);
 			do_visual = duplicate_string( value);
 			Mdebug( "set visual: %s\n", do_visual);
-		} else 
+		} else
 			warn("`--visual' must be given value");
 		return true;
 	} else if ( strcmp( option, "fg") == 0) {
@@ -905,9 +905,9 @@ prima_color_subsystem_set_option( char * option, char * value)
 		set_color_class( ciDark3DColor, option, value);
 	}
 	return false;
-}   
+}
 
-typedef struct 
+typedef struct
 {
 	int count;
 	unsigned long free[256];
@@ -922,12 +922,12 @@ prima_done_color_subsystem( void)
 	if ( DISP) {
 		hash_first_that( hatches, (void*)kill_hatches, nil, nil, nil);
 		fc. count = 0;
-		
+
 		for ( i = 0; i < guts. palSize; i++) {
 			list_destroy( &guts. palette[i]. users);
-			if ( 
+			if (
 				!guts. privateColormap &&
-				guts. palette[i]. rank > RANK_FREE && 
+				guts. palette[i]. rank > RANK_FREE &&
 				guts. palette[i]. rank <= RANK_IMMUTABLE) {
 				fc. free[ fc. count++] = i;
 				if ( fc. count == 256) {
@@ -981,7 +981,7 @@ prima_color_find( Handle self, long color, int maxDiff, int * diff, int maxRank)
 		for ( i = 0; i < guts. palSize; i++) {
 			if ( guts. palette[i]. rank > maxRank) {
 				if ( lossy) {
-					int d = 
+					int d =
 						( b - guts. palette[i].b) * ( b - guts. palette[i].b) +
 						( g - guts. palette[i].g) * ( g - guts. palette[i].g) +
 						( r - guts. palette[i].r) * ( r - guts. palette[i].r);
@@ -1000,14 +1000,14 @@ prima_color_find( Handle self, long color, int maxDiff, int * diff, int maxRank)
 		}
 	} else {
 		for ( j = 0; j < guts. systemColorMapSize + guts. palSize; j++) {
-			if ( j < guts. systemColorMapSize) 
+			if ( j < guts. systemColorMapSize)
 				i = guts. systemColorMap[j];
 			else {
 				i = j - guts. systemColorMapSize;
 				if ( wlpal_get( self, i) == RANK_FREE) continue;
 			}
 			if ( lossy) {
-				int d = 
+				int d =
 					( b - guts. palette[i].b) * ( b - guts. palette[i].b) +
 					( g - guts. palette[i].g) * ( g - guts. palette[i].g) +
 					( r - guts. palette[i].r) * ( r - guts. palette[i].r);
@@ -1047,7 +1047,7 @@ prima_color_new( XColor * xc)
 	Adds reference to widget that is responsible
 	for a color cell with given rank. Main palette
 	rank can be risen in response, but not lowered -
-	that is accomplished by prima_color_sync. 
+	that is accomplished by prima_color_sync.
 	*/
 Bool
 prima_color_add_ref( Handle self, int index, int rank)
@@ -1066,7 +1066,7 @@ prima_color_add_ref( Handle self, int index, int rank)
 	return true;
 }
 
-/* Frees stale color references */ 
+/* Frees stale color references */
 int
 prima_color_sync( void)
 {
@@ -1120,7 +1120,7 @@ prima_palette_replace( Handle self, Bool fast)
 
 	if ( !guts. dynamicColors) return true;
 	if ( self == application) return true;
-	
+
 	if ( XX-> type.widget) rank = RANK_PRIORITY; else
 	if ( XX-> type.image || XX-> type. dbm) rank = RANK_LOCKED; else
 		return false;
@@ -1128,35 +1128,35 @@ prima_palette_replace( Handle self, Bool fast)
 	if ( !fast) prima_palette_free( self, true); /* remove old entries */
 
 	psz = PDrawable( self)-> palSize + menu;
-	if ( XT_IS_WINDOW(X(self)) && PWindow(self)-> menu) 
+	if ( XT_IS_WINDOW(X(self)) && PWindow(self)-> menu)
 		psz += (menu = ciMaxId + 1);
 	if ( psz == 0) {
 		prima_color_sync();
-		return true; 
+		return true;
 	}
-	
-	if ( !( req = malloc( sizeof( unsigned long) * psz))) 
+
+	if ( !( req = malloc( sizeof( unsigned long) * psz)))
 		return false;
 
-	for ( i = 0; i < psz - menu; i++) 
-		req[i] = RGB_COMPOSITE( 
+	for ( i = 0; i < psz - menu; i++)
+		req[i] = RGB_COMPOSITE(
 			PWidget( self)-> palette[i].r,
 			PWidget( self)-> palette[i].g,
 			PWidget( self)-> palette[i].b);
-	for ( i = psz - menu; i < psz; i++) 
-		req[i] = PWindow(self)-> menuColor[ i - psz + menu]; 
-	
+	for ( i = psz - menu; i < psz; i++)
+		req[i] = PWindow(self)-> menuColor[ i - psz + menu];
+
 	granted = 0;
 
 	if ( !restricted) XGrabServer( DISP);
-	
+
 	/* fetch actual colors - they are useful when no free colorcells
 		available, but colormap has some good colors, which we don't
 		possess */
 	if ( !restricted) {
 		int count = 0, j;
 		XColor xc[32];
-		for ( i = 0; i < guts.palSize; i++) 
+		for ( i = 0; i < guts.palSize; i++)
 			if ( guts.palette[i].rank == RANK_FREE) {
 				xc[count++].pixel = i;
 				if ( count == 32) {
@@ -1170,10 +1170,10 @@ prima_palette_replace( Handle self, Bool fast)
 			for ( j = 0; j < count; j++) prima_color_new( &xc[j]);
 		}
 	}
-	
+
 	Pdebug("color replace:%s find match for %d colors\n", PWidget(self)-> name, psz);
 	/* find out if any allocated entries are present already */
-	for ( i = 0; i < psz; i++) 
+	for ( i = 0; i < psz; i++)
 		if (( req[i] & 0x80000000) == 0) {
 			unsigned long c = req[i];
 			for ( j = 0; j < guts. palSize; j++) {
@@ -1188,7 +1188,7 @@ prima_palette_replace( Handle self, Bool fast)
 						if ( alloc_color(&xc)) {
 							if ( prima_color_new( &xc))
 								/* to protect from sync - give actual status on SUCCESS */
-								guts.palette[xc.pixel].rank = RANK_IMMUTABLE + 1; 
+								guts.palette[xc.pixel].rank = RANK_IMMUTABLE + 1;
 							pixel = xc.pixel;
 						} else
 							continue;
@@ -1215,11 +1215,11 @@ prima_palette_replace( Handle self, Bool fast)
 		goto SUCCESS;
 	}
 
-ALLOC_STAGE:   
+ALLOC_STAGE:
 	/* allocate some colors */
 	prima_color_sync();
 	XCHECKPOINT;
-	for ( i = 0; i < psz; i++) 
+	for ( i = 0; i < psz; i++)
 		if (( req[i] & 0x80000000) == 0) {
 			XColor xc;
 			xc. red   = COLOR_R16(req[i]);
@@ -1230,7 +1230,7 @@ ALLOC_STAGE:
 				prima_color_add_ref( self, xc. pixel, rank);
 				granted++;
 				req[i] |= 0x80000000;
-			} else 
+			} else
 				break;
 		}
 		Pdebug("color replace :ok - now %d are granted\n", granted);
@@ -1239,7 +1239,7 @@ ALLOC_STAGE:
 		free( req);
 		goto SUCCESS;
 	}
-		
+
 	if ( stage == RANK_NORMAL) {
 		/* try to remove RANK_NORMAL colors */
 		p = guts. palette;
@@ -1250,8 +1250,8 @@ ALLOC_STAGE:
 					Handle wij = p-> users. items[j];
 					if ( list_index_of( &widgets, wij) < 0)
 						list_add( &widgets, wij);
-					if ( wlpal_get(wij, i) == RANK_NORMAL) 
-						wlpal_set( wij, i, RANK_FREE); 
+					if ( wlpal_get(wij, i) == RANK_NORMAL)
+						wlpal_set( wij, i, RANK_FREE);
 				}
 				list_delete_all( &p-> users, false);
 				p-> touched = true;
@@ -1259,10 +1259,10 @@ ALLOC_STAGE:
 			}
 		}
 		if ( stage == RANK_PRIORITY) goto ALLOC_STAGE;
-	} 
+	}
 
 	free( req);
-	
+
 	if ( XX-> type. image) goto SUCCESS;
 
 	/* try to remove RANK_PRIORITY entries */
@@ -1280,7 +1280,7 @@ ALLOC_STAGE:
 			p-> touched = true;
 		}
 	}
-	
+
 	psz = prima_color_sync();
 	if ( psz == 0) goto SUCCESS; /* free no RANK_PRIORITY colors :(  */
 	XCHECKPOINT;
@@ -1288,22 +1288,22 @@ ALLOC_STAGE:
 	/* collect big palette */
 	j = 0;
 	for ( i = 0; i < guts. palSize; i++)
-		if ( guts. palette[i]. rank != RANK_FREE) 
+		if ( guts. palette[i]. rank != RANK_FREE)
 			j++;
 	stage = j; /* immutable and locked colors */
 	for ( i = 0; i < widgets. count; i++) {
 		j += PWidget( widgets. items[i])-> palSize;
-		if ( XT_IS_WINDOW(X(widgets. items[i])) && 
+		if ( XT_IS_WINDOW(X(widgets. items[i])) &&
 			PWindow(widgets. items[i])-> menu)
 			j += ciMaxId + 1;
 	}
-	
+
 	Pdebug("color: BIG:%d vs %d\n", j, psz);
 	if ( !( rqx = malloc( sizeof( RGBColor) * j))) goto SUCCESS; /* :O */
-	
+
 	{
 		RGBColor * r = rqx;
-		for ( i = 0; i < guts. palSize; i++) 
+		for ( i = 0; i < guts. palSize; i++)
 			if ( guts. palette[i]. rank != RANK_FREE) {
 				r-> r = guts. palette[i]. r;
 				r-> g = guts. palette[i]. g;
@@ -1311,10 +1311,10 @@ ALLOC_STAGE:
 				r++;
 			}
 		for ( i = 0; i < widgets. count; i++) {
-			memcpy( r, PWidget( widgets. items[i])-> palette, 
+			memcpy( r, PWidget( widgets. items[i])-> palette,
 				PWidget( widgets. items[i])-> palSize * sizeof( RGBColor));
 			r += PWidget( widgets. items[i])-> palSize;
-			if ( XT_IS_WINDOW(X(widgets. items[i])) && 
+			if ( XT_IS_WINDOW(X(widgets. items[i])) &&
 				PWindow(widgets. items[i])-> menu) {
 				int k;
 				for ( k = 0; k <= ciMaxId; k++, r++) {
@@ -1325,7 +1325,7 @@ ALLOC_STAGE:
 			}
 		}
 	}
-	
+
 	/* squeeze palette */
 	if ( j > psz + stage) {
 		int k, tolerance = 0, t2 = 0, lim = psz + stage;
@@ -1333,10 +1333,10 @@ ALLOC_STAGE:
 			for ( i = 0; i < j; i++) {
 				RGBColor r = rqx[i];
 				for ( k = (( i + 1) > stage) ? i + 1 : stage; k < j; ) {
-					if ( 
+					if (
 						( r.r - rqx[k].r) * ( r.r - rqx[k].r) +
 						( r.g - rqx[k].g) * ( r.g - rqx[k].g) +
-						( r.b - rqx[k].b) * ( r.b - rqx[k].b) 
+						( r.b - rqx[k].b) * ( r.b - rqx[k].b)
 						<= t2) {
 						if ( k < j - 1) rqx[k] = rqx[j-1];
 						if ( --j <= lim) goto ENOUGH;
@@ -1347,9 +1347,9 @@ ALLOC_STAGE:
 			tolerance += 2;
 			t2 = tolerance * tolerance;
 		}
-ENOUGH:;    
+ENOUGH:;
 	}
-	
+
 	Pdebug("color replace: ok. XAllocColor again\n");
 	granted = 0;
 	for ( i = stage; i < stage + psz; i++) {
@@ -1364,35 +1364,35 @@ ENOUGH:;
 				guts. palette[xc. pixel]. touched = 1;
 				guts. palette[xc. pixel]. rank = RANK_NORMAL;
 				granted++;
-			} 
+			}
 		} else
 			break;
 	}
 	free( rqx);
 	Pdebug("color replace: ok - %d out of %d \n", granted, psz);
 	XCHECKPOINT;
-	
+
 	/* now give away colors that can be mapped to reduced palette */
 	prima_palette_replace( self, true);
-	for ( i = 0; i < widgets. count; i++) 
+	for ( i = 0; i < widgets. count; i++)
 		prima_palette_replace( widgets. items[i], true);
 	XCHECKPOINT;
-	
+
 SUCCESS:
 
 	/* restore status of pre-fetched colors */
 	for ( i = 0; i < guts. palSize; i++)
 		if ( guts.palette[i].rank == RANK_IMMUTABLE + 1)
 			guts.palette[i].rank = RANK_PRIORITY;
-			
-	prima_color_sync(); 
+
+	prima_color_sync();
 
 	XUngrabServer( DISP);
-	
+
 	for ( i = 0; i < widgets. count; i++)
 		if ( PWidget( widgets. items[i])-> stage < csDead)
 			apc_widget_invalidate_rect( widgets. items[i], nil);
-	
+
 	Pdebug("color replace: exit\n");
 	list_destroy( &widgets);
 	return true;
@@ -1403,7 +1403,7 @@ prima_palette_alloc( Handle self)
 {
 	if ( !guts. dynamicColors) return true;
 	if ( !( X(self)-> palette = malloc( guts. localPalSize)))
-		return false;        
+		return false;
 	bzero( X(self)-> palette,  guts. localPalSize);
 	return true;
 }
@@ -1431,13 +1431,13 @@ prima_lpal_get( Byte * palette, int index)
 	return LPAL_GET( index, palette[ LPAL_ADDR( index ) ]);
 }
 
-void 
+void
 prima_lpal_set( Byte * palette, int index, int rank )
 {
 	palette[ LPAL_ADDR( index ) ] &=~ LPAL_MASK( index);
 	palette[ LPAL_ADDR( index ) ] |=  LPAL_SET( index, rank);
 }
-			
+
 
 static Bool kill_hatches( Pixmap pixmap, int keyLen, void * key, void * dummy)
 {
@@ -1445,7 +1445,7 @@ static Bool kill_hatches( Pixmap pixmap, int keyLen, void * key, void * dummy)
 	return false;
 }
 
-Pixmap 
+Pixmap
 prima_get_hatch( FillPattern * fp)
 {
 	int i;
@@ -1456,7 +1456,7 @@ prima_get_hatch( FillPattern * fp)
 		return nilHandle;
 	if (( p = ( Pixmap) hash_fetch( hatches, fp, sizeof( FillPattern))))
 		return p;
-	
+
 	mirrored_bits = ( guts.bit_order == MSBFirst) ? NULL : prima_mirror_bits();
 	for ( i = 0; i < sizeof( FillPattern); i++) {
 		fprev[i] = (*fp)[ sizeof(FillPattern) - i - 1];
@@ -1466,7 +1466,7 @@ prima_get_hatch( FillPattern * fp)
 		hash_first_that( hatches, (void*)kill_hatches, nil, nil, nil);
 		hash_destroy( hatches, false);
 		hatches = hash_create();
-		if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fprev, 8, 8)) == None) 
+		if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fprev, 8, 8)) == None)
 			return nilHandle;
 	}
 	hash_store( hatches, fp, sizeof( FillPattern), ( void*) p);

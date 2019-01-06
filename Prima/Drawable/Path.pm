@@ -321,7 +321,7 @@ sub arc2nurbs
 	my ( $self, $a1, $a2 ) = @_;
 	my ($reverse, @out);
 	($a1, $a2, $reverse) = ( $a2, $a1, 1 ) if $a1 > $a2;
-	
+
 	push @out, $a1;
 	while (1) {
 		if ( $a2 - $a1 > 180 ) {
@@ -352,9 +352,9 @@ sub arc2nurbs
 		($cosa1, $sina1) = @points[4,5];
 		my @weights = (1,$cosb2,1);
 		@points[0,1,4,5] = @points[4,5,0,1] if $reverse;
-		
+
 		push @set, [
-			\@points, 
+			\@points,
 			degree    => 2,
 			weights   => \@weights,
 			knots     => \@knots,
@@ -371,7 +371,7 @@ sub _arc
 	my $from = shift @$cmd;
 	my $to   = shift @$cmd;
 	my $rel  = shift @$cmd;
-			
+
 	my $nurbset = $self->arc2nurbs( $from, $to);
 	if ( $rel ) {
 		my $p  = $self->{points};
@@ -390,7 +390,7 @@ sub _arc
 	for my $set ( @$nurbset ) {
 		my ( $points, @options ) = @$set;
 		Prima::array::append( $self->{points},
-			Prima::Drawable->render_spline( 
+			Prima::Drawable->render_spline(
 				$self-> matrix_apply( $points ),
 				@options,
 				%xopt
@@ -531,11 +531,11 @@ The final transformations calculate coordinates the new and the existing matrice
 Applies transformation matrix to the path. The matrix, as used by the module,
 is formed as such:
 
-  A  B  0 
-  C  D  0 
+  A  B  0
+  C  D  0
   Tx Ty 1
 
-and when applied to 2D coordinates, is calculated as 
+and when applied to 2D coordinates, is calculated as
 
   X' = AX + CY + Tx
   Y' = BX + DY + Ty
@@ -626,7 +626,7 @@ Returns identity matrix
 
 =item matrix_apply @POINTS
 
-Applies current matrix to POINTS, returns the transformed points. 
+Applies current matrix to POINTS, returns the transformed points.
 If @POINTS is a list, returns list; if it is an array reference, returns
 array reference.
 

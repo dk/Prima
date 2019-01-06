@@ -13,7 +13,7 @@ Prima::Region - generic shape for clipping and hit testing
 
    $bits  = Prima::Region->new( image => $image );
 
-   $drawable-> region( $rect ); 
+   $drawable-> region( $rect );
 
    my $rgn = $drawable->region;
    $rgn->bitmap->image->save('region.png') if $rgn;

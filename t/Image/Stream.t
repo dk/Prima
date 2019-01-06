@@ -31,7 +31,7 @@ my $i = Prima::Image-> create(
 	height => 16,
 	type => im::bpp1,
 	palette => [0,0,0,255,0,0],
-	data => 
+	data =>
 	"\x00\x00\x00\x00\x7f\xfe\x00\x00\@\x02\x00\x00_\xfa\x00\x00P\x0a\x00\x00".
 	"W\xea\x00\x00T\*\x00\x00U\xaa\x00\x00U\xaa\x00\x00T\*\x00\x00".
 	"W\xea\x00\x00P\x0a\x00\x00_\xfa\x00\x00\@\x02\x00\x00\x7f\xfe\x00\x00".
@@ -42,7 +42,7 @@ for ( @codecs) {
     SKIP : {
        my $ci = $_;
        my $name = "./test.test." . $ci-> {fileExtensions}->[0];
-	
+
        my $xi = $i-> dup;
        unless( open F, ">", $name) {
            warn("Cannot open $name:$!");

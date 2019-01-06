@@ -11,7 +11,7 @@ Prima::Object - Prima toolkit base classes
 	$obj->name( 'an object' );
 
 	# set a notification callback
-	$obj-> onPostMessage( sub { 
+	$obj-> onPostMessage( sub {
 	    shift;
 	    print "hey! I've received this: @_\n";
 	});
@@ -52,7 +52,7 @@ whereas this document is wholly about perl programming.
 
 =head2 Creation
 
-Object creation has fixed syntax: 
+Object creation has fixed syntax:
 
    $new_object = Class-> create(
      parameter => value,
@@ -101,7 +101,7 @@ ones, but in case the specification is incomplete or ambiguous, the
 profile_check_in()'s task is to determine actual parameter values. In case of
 Component, this method maintains a simple automatic naming of the newly created
 objects. If the object name was not specified with create(), it is assigned to
-a concatenated class name with an integer - Component1, Component2 etc. 
+a concatenated class name with an integer - Component1, Component2 etc.
 
 Another example can be taken from Prima::Widget::profile_check_in().
 Prima::Widget horizontal position can be specified by using basic C<left> and
@@ -119,7 +119,7 @@ init() duty is to map the profile content into object, e.g., assign C<name>
 property to C<name> parameter value, and so on - for all relevant parameters.
 After that, it has to return the profile in order the overridden subsequent
 init() methods can perform same actions. This stage along with the previous is
-exemplified in almost all Prima modules. 
+exemplified in almost all Prima modules.
 
 Note: usually init() attaches the object to its owner in order to keep the
 newly-created object instance from being deleted by garbage-collection
@@ -132,7 +132,7 @@ After init() finishes, create() calls setup() method
 setup() method is a convenience function, it is used when some post-init
 actions must be taken. It is seldom overloaded, primarily because the
 Component::setup() method calls C<onCreate> notification, which is more
-convenient to overload than setup(). 
+convenient to overload than setup().
 
 =back
 
@@ -150,7 +150,7 @@ subject to a runtime error handling as are not the syntax errors.
 
 After create(), the object is subject to the event flow.  As C<onCreate> event
 is the first event the object receives, only after that stage other events can
-be circulated. 
+be circulated.
 
 =head2 Destruction
 
@@ -179,7 +179,7 @@ easier.
 =back
 
 The typical conditions that lead to object destructions are
-direct destroy() call, garbage collections mechanisms, 
+direct destroy() call, garbage collections mechanisms,
 user-initiated window close ( on C<Prima::Window> only ), and
 exception during init() stage. Thus, one must be careful implementing
 done() which is called after init() throws an exception.
@@ -211,10 +211,10 @@ another that changes it.  For example, for managing the object name, set_name()
 and get_name() methods are needed. Indeed, the early Prima implementation dealt
 with large amount of these get's and set's, but later these method pairs were
 deprecated in the favor of properties.  Currently, there is only one method
-name() ( referred as C<::name> later in the documentation ). 
+name() ( referred as C<::name> later in the documentation ).
 
 The property returns a value if no parameters ( except the object) are passed,
-and changes the internal data to the passed parameters otherwise. Here's 
+and changes the internal data to the passed parameters otherwise. Here's
 a sketch code for C<::name> property implementation:
 
  sub name
@@ -255,7 +255,7 @@ calls
     $image-> type( $a);
     $image-> palette( $b);
 
-and 
+and
 
     $image-> palette( $b);
     $image-> type( $a);
@@ -268,7 +268,7 @@ to call for such a change using
        palette => $b
     );
 
-when it is known beforehand that C<Prima::Image::set> is aware of such 
+when it is known beforehand that C<Prima::Image::set> is aware of such
 combinations and calls neither C<::type> nor C<::palette> but
 performs another image conversion instead.
 
@@ -314,16 +314,16 @@ located in and clipped by its inferior. The owner widget is more than that, its
 children can be located outside its owner boundaries.
 
 The special convenience variety of create(), the insert() method is used
-to explicitly select owner of the newly created object. insert() can 
+to explicitly select owner of the newly created object. insert() can
 be considered a 'constructor' in OO-terms. It makes the construct
 
    $obj = Class-> create( owner => $owner, name => 'name);
 
-more readable by introducing 
+more readable by introducing
 
    $obj = $owner-> insert( 'Class', name => 'name');
 
-scheme. These two code blocks are identical to each other. 
+scheme. These two code blocks are identical to each other.
 
 There is another type of relation, where objects can hold references to each
 other. Internally this link level is used to keep objects from deletion by
@@ -341,7 +341,7 @@ a new object is created or before it gets destroyed. These two events, and the
 described below onPostMessage are present in namespaces of all Prima objects.
 New classes can register their own events and define their execution flow,
 using notification_types() method.  This method returns all available
-information about the events registered in a class. 
+information about the events registered in a class.
 
 Prima defines also a non-object event dispatching and filtering mechanism,
 available through L<"event_hook"> static method.
@@ -351,7 +351,7 @@ available through L<"event_hook"> static method.
 The event propagation mechanism has three layers of user-defined callback
 registration, that are called in different order and contexts when an event is
 triggered. The examples below show the usage of these layers. It is assumed
-that an implicit 
+that an implicit
 
   $obj-> notify("PostMessage", $data1, $data2);
 
@@ -367,7 +367,7 @@ so if a class method with name C<on_postmessage> is present,
 it will be called as a method ( i.e., in the object context )
 when C<onPostMessage> event is triggered. Example:
 
- sub on_postmessage 
+ sub on_postmessage
  {
     my ( $self, $data1, $data2) = @_;
     ...
@@ -399,7 +399,7 @@ register the notification callback by
 
 where the actual callback sub will be
 
- sub Obj_PostMessage 
+ sub Obj_PostMessage
  {
     my ( $self, $obj, $data1, $data2) = @_;
  }
@@ -438,7 +438,7 @@ sets a hook on $obj using each syntax for a different situation:
 - during create():
 
    $obj = Class-> create(
-    ... 
+    ...
     onPostMessage => sub {
        my ( $self, $data1, $data2) = @_;
     },
@@ -486,7 +486,7 @@ on prototyping events, by using notification_types() event type description.
 This function returns a hash, where keys are the event names and the values are
 the constants that describe the event flow. The constant can be a bitwise OR
 combination of several basic flow constants, that control the three aspects of
-the event flow. 
+the event flow.
 
 =over 4
 
@@ -506,7 +506,7 @@ Almost the same as order, but for finer granulation of event flow, the
 direction constants C<nt::FluxNormal> and C<nt::FluxReverse> are used. The
 'normal flux' defines FIFO ( first in first out ) direction. That means, that
 the sooner the callback is registered, the greater priority it would possess
-during the execution.  The code block shown above 
+during the execution.  The code block shown above
 
    $obj-> onPostMessage( sub { print "1" });
    $obj-> onPostMessage( sub { print "2" });
@@ -534,7 +534,7 @@ this constant is somewhat limited.
 
 In contrary of C<nt::Single>, the C<nt::Multiple> constant sets the execution
 control to call all the available callbacks, with respect to direction and
-order bits. 
+order bits.
 
 The third constant, C<nt::Event>, is the  impact as C<nt::Multiple>, except
 that the event flow can be stopped at any time by calling clear_event() method.
@@ -656,7 +656,7 @@ into PARAMETERS to the object properties. Is never called directly.
 =item insert CLASS, %PARAMETERS
 
 A convenience wrapper for create(), that explicitly sets
-the owner property for a newly created object. 
+the owner property for a newly created object.
 
    $obj = $owner-> insert( 'Class', name => 'name');
 
@@ -667,7 +667,7 @@ is adequate to
 code. insert() has another syntax that allows simultaneous
 creation of several objects:
 
-   @objects = $owner-> insert( 
+   @objects = $owner-> insert(
      [ 'Class', %parameters],
      [ 'Class', %parameters],
      ...
@@ -726,7 +726,7 @@ The default behavior is an equivalent to
 
 code. Assigns object properties correspondingly to PARAMETERS hash.  Many
 Prima::Component descendants overload set() to make it more efficient for
-particular parameter key patterns. 
+particular parameter key patterns.
 
 As the code above, raises an exception if the key in PARAMETERS has no
 correspondent object property.
@@ -757,15 +757,15 @@ bit set, the newly inserted SUB will be called first. If it has
 nt::FluxReverse, it is called last, correspondingly.
 
 Returns positive integer value on success, 0 on failure.  This value can be
-later used to refer to the SUB in remove_notification(). 
+later used to refer to the SUB in remove_notification().
 
 See also: C<remove_notification>, C<get_notification>.
 
-=item attach OBJECT 
+=item attach OBJECT
 
 Inserts OBJECT to the attached objects list and increases OBJECT's reference
 count. The list can not hold more than one reference to the same object. The
-warning is issued on such an attempt. 
+warning is issued on such an attempt.
 
 See also: C<detach>.
 
@@ -795,7 +795,7 @@ Signals the event execution stop for nt::Event-prototyped events.
 
 See also: L<"Events">, C<push_event>, C<pop_event>, C<::eventFlag>, C<notify>.
 
-=item detach OBJECT, KILL 
+=item detach OBJECT, KILL
 
 Removes OBJECT from the attached objects list and decreases OBJECT's reference
 count. If KILL is true, destroys OBJECT.
@@ -827,7 +827,7 @@ object as a first parameter.
 
 Performs a depth-first search on children tree hierarchy, matching the object
 that has name equal to NAME.  Returns its reference on success, undef
-otherwise. 
+otherwise.
 
 See also: C<bring>
 
@@ -851,7 +851,7 @@ interprocess communication scheme.
 For each index in INDEX_LIST return three scalars, bound at the index position
 in the NAME event notification list.  These three scalars are REFERER, SUB and
 ID. REFERER and SUB are those passed to C<add_notification>, and ID is its
-result.  
+result.
 
 See also: C<remove_notification>, C<add_notification>.
 
@@ -915,7 +915,7 @@ eventual context object gets implicitly detached from the storage object.
 
 See also: C<add_notification>, C<get_notification>.
 
-=item set_notification NAME, SUB 
+=item set_notification NAME, SUB
 
 Adds SUB to the event NAME notification list. Almost never used directly, but
 is a key point in enabling the following notification add syntax
@@ -933,7 +933,7 @@ that are shortcuts for
 
 =item unlink_notifier REFERER
 
-Removes all notification subs from all event lists bound to REFERER object. 
+Removes all notification subs from all event lists bound to REFERER object.
 
 =back
 
@@ -1015,7 +1015,7 @@ owner about the new child.
 
 =item ChangeOwner OLD_OWNER
 
-Called at runtime when the object changes its owner. 
+Called at runtime when the object changes its owner.
 
 =item ChildEnter CHILD
 
@@ -1056,7 +1056,7 @@ changes some system settings resolution, so that some resources have to be chang
 accordingly.
 
 This event will be only needed when the system handle (that can be acquired by
-C<get_handle> ) is used further, or in case when Prima doesn't restore some 
+C<get_handle> ) is used further, or in case when Prima doesn't restore some
 properties bound to the system handle.
 
 =back

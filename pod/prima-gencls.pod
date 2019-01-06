@@ -88,11 +88,11 @@ The types are:
 
 There are also some derived built-in types, which are
 
-   long 
-   short 
-   char  
-   Color 
-   U8    
+   long
+   short
+   char
+   Color
+   U8
 
 that are mapped to int. The data undergo no conversion to int in transfer
 process, but it is stored instead to perl scalar using newSViv() function,
@@ -108,7 +108,7 @@ A scope can be one of two pragmas, C<global> or C<local>.
 They hint the usage of a new data type, whether the type
 will be used only for one or more objects. Usage of
 C<local> is somewhat resembles C pragma static.
-Currently the only difference is that a function 
+Currently the only difference is that a function
 using a complex local type in the parameter list or
 as the result is not a subject for C<-O> optimization.
 
@@ -134,7 +134,7 @@ The new type id will not be visible in C files, but the type
 will be substituted over all .cls files that include
 this definition.
 
-=item C macro 
+=item C macro
 
 Syntax:
 
@@ -176,11 +176,11 @@ when passing parameters to a function.
 
 Syntax:
 
-  <scope> @id <basic_scalar_type>[dimension]; 
+  <scope> @id <basic_scalar_type>[dimension];
 
 Example:
 
-  global @FillPattern U8[8]; 
+  global @FillPattern U8[8];
 
 Example of functions using arrays:
 
@@ -188,14 +188,14 @@ Example of functions using arrays:
 
 Perl code:
 
-  @ret = func( @array1, @array2); 
+  @ret = func( @array1, @array2);
 
 Note that array references are not used, and
 the number of items in all array parameters must
 be exactly as the dimensions of the arrays.
 
 Note: the following declaration will not compile
-with C compiler, as C cannot return arrays. However 
+with C compiler, as C cannot return arrays. However
 it is not treated as an error by gencls:
 
   Array func();
@@ -225,12 +225,12 @@ Example of functions using structs:
 
 Perl code:
 
-  @ret = func1( @struc1, @struc2); 
-  @ret = func2( @struc1, @struc2); 
+  @ret = func1( @struc1, @struc2);
+  @ret = func2( @struc1, @struc2);
 
 Note that array references are not used, and
-both number and order of items in all array parameters 
-must be set exactly as dimensions and order 
+both number and order of items in all array parameters
+must be set exactly as dimensions and order
 of the structs. Struct field names are not used
 in perl code as well.
 
@@ -317,7 +317,7 @@ can be used:
 
 or a bare root object description ( with no ancestor )
 
-    object <Class ID> { ... } 
+    object <Class ID> { ... }
 
 for the object class declaration.
 
@@ -329,7 +329,7 @@ Syntax:
 
 Examples:
 
-        int   package_func1( int a, int b = 1) => c_func_2; 
+        int   package_func1( int a, int b = 1) => c_func_2;
         Point package_func2( Struc * x, ...);
  method void  object_func3( HV * profile);
 
@@ -338,7 +338,7 @@ More on the prefix in L<Methods> section.
 
 A function can return nothing ( void ), a scalar ( int, string, etc )
 or a complex ( array, hash ) type. It can as well accept
-scalar and complex parameters, with type conversion that 
+scalar and complex parameters, with type conversion that
 corresponds to the rules described above in L<Basic scalar data types>
 section.
 
@@ -346,15 +346,15 @@ If a function has parameters and/or result of a type that
 cannot be converted automatically between C and perl,
 it gets declared but not exposed to perl namespace.
 The corresponding warning is issued.
-It is not possible using gencls syntax to declare 
+It is not possible using gencls syntax to declare
 a function with custom parameters or result data.
-For such a purpose the explicit C declaration 
+For such a purpose the explicit C declaration
 of code along with C<newXS> call must be made.
 
 Example: ellipsis (...) cannot be converted by gencls,
 however it is a legal C construction.
 
-  Point package_func2( Struc * x, ...); 
+  Point package_func2( Struc * x, ...);
 
 
 The function syntax has several convenience additions:
@@ -369,7 +369,7 @@ Example:
 
 A function declared in such way can be called both
 with 0 or 1 parameters. If it is called with 0 parameters,
-an integer value of 15 will be automatically used. 
+an integer value of 15 will be automatically used.
 The syntax allows default parameters for types int,
 pointer and string and their scalar aliases.
 
@@ -413,11 +413,11 @@ The hash content can be modified inside the C function.
 This declaration is used heavily in constructors,
 which perl code is typical
 
-   sub init 
+   sub init
    {
       my %ret = shift-> SUPER::init( @_);
       ...
-      return %ret; 
+      return %ret;
    }
 
 and C code is usually
@@ -444,12 +444,12 @@ cls method declaration
 
    method void a( int x)
 
-for an object class Object is reflected in C as 
+for an object class Object is reflected in C as
 
    void Object_a( Handle self, int x)
 
 function declaration. Contrary to package functions, that gencls
-is unable to publish if it is unable to deal with the 
+is unable to publish if it is unable to deal with the
 unsupported on unconvertible parameters, there is a way
 to issue such a declaration with a method. The primary use for that
 is the method name gets reserved in the object's VMT.
@@ -461,7 +461,7 @@ structure:
     ((( PSampleObject) self)-> self)-> sample_method( self, ...);
 
 A method can have one of six prefixes that govern C code
-generation: 
+generation:
 
 =over
 
@@ -483,11 +483,11 @@ converts its parameters and a result between C and perl.
 
 =item public
 
-When the methods that have parameters and/or result that 
+When the methods that have parameters and/or result that
 cannot be automatically converted between C and perl need to be declared,
 or the function declaration does not fit into C syntax,
 a C<public> prefix is used. The methods declared with C<public>
-is expected to communicate with perl by means of XS ( see L<perlxs> 
+is expected to communicate with perl by means of XS ( see L<perlxs>
 ) interface. It is also expected that a C<public> method creates both
 REDEFINED and FROMPERL functions ( see L<Prima::internals>  for
 details). Examples are many throughout Prima source, and
@@ -554,7 +554,7 @@ independent from each other - the overloading will not take place.
 
 NB: methods that have result and/or parameters data types that
 can not be converted automatically, change their prefix to C<c_only>.
-Probably this is the wrong behavior, and such condition have to signal 
+Probably this is the wrong behavior, and such condition have to signal
 an error.
 
 =back
@@ -564,7 +564,7 @@ an error.
 Prima toolkit introduces an entity named property,
 that is expected to replace method pairs whose function
 is to acquire and assign some internal object variable,
-for example, an object name, color etc. Instead of 
+for example, an object name, color etc. Instead of
 having pair of methods like Object::set_color and Object::get_color,
 a property Object::color is devised. A property is
 a method with the special considerations, in particular,

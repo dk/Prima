@@ -263,9 +263,9 @@ to find and replace options selection.
 	if ( $res == mb::Ok) {
 		print $dlg-> findText, " is to be found\n";
 	} elsif ( $res == mb::ChangeAll) {
-		print "all occurences of ", $dlg-> findText, 
+		print "all occurences of ", $dlg-> findText,
 			" is to be replaced by ", $dlg-> replaceText;
-	} 
+	}
 
 =for podview <img src="editdlg.gif" cut=1>
 
@@ -278,13 +278,13 @@ module instead.
 =head1 DESCRIPTION
 
 The module provides two classes - Prima::FindDialog and Prima::ReplaceDialog;
-Prima::ReplaceDialog is exactly same as Prima::FindDialog except that 
+Prima::ReplaceDialog is exactly same as Prima::FindDialog except that
 its default L<findStyle> property value is set to 0. One can use a dialog-caching
 technique, arbitrating between L<findStyle> value 0 and 1, and use only one
 instance of Prima::FindDialog.
 
 The module does not provide the actual search algorithm; this must be implemented
-by the programmer. The toolkit currently include some facilitation to the problem - 
+by the programmer. The toolkit currently include some facilitation to the problem -
 the part of algorithm for C<Prima::Edit> class is found in L<Prima::Edit/find>,
 and the another part - in F<examples/editor.pl> example program. L<Prima::HelpWindow>
 also uses the module, and realizes its own searching algorithm.
@@ -300,7 +300,7 @@ L<findStyle>.
 
 =item findText STRING
 
-Selects the text string to be found. 
+Selects the text string to be found.
 
 Default value: ''
 
@@ -350,4 +350,4 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 L<Prima>, L<Prima::Window>, L<Prima::StdDlg>, L<Prima::Edit>, L<Prima::HelpWindow>, F<examples/editor.pl>
 
-=cut 
+=cut

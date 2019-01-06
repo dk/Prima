@@ -46,7 +46,7 @@ SKIP : {
     if ( $ww-> focused) {
        ok(wait_flag, "enter" );
        reset_flag;
-	
+
        $ww-> focused(0);
        ok( wait_flag, "leave" );
        is( $ww-> focused, 0, "leave" );

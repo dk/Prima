@@ -81,7 +81,7 @@ unless (can_rtl($w->font)) {
 		$found = $f;
 		goto FOUND;
 	}
-FOUND:	
+FOUND:
 	$w->font->name($found->{name}) if $found;
 
 }
@@ -95,7 +95,7 @@ $w->insert( InputLine =>
 	growMode => gm::Floor,
 );
 
-$w-> insert( Button => 
+$w-> insert( Button =>
 	name => 'Farsi',
 	text => 'ترک',
 	origin => [ 320, 10 ],
@@ -116,7 +116,7 @@ my $arabic_text = "الفالح حلمه كبير.
 بفيتها إ حتمى الفالح
 الفالح حلمه كبير";
 
-$editor = $panel-> insert( Edit => 
+$editor = $panel-> insert( Edit =>
 	packInfo => { fill => 'both', expand => 1, pad => 10 , side => 'left'},
 	geometry => gt::Pack,
 	name => 'Editor',
@@ -133,7 +133,7 @@ $arabic = $panel->insert( Label =>
 	showPartial => 0,
 );
 
-$pod = $panel-> insert( PodView => 
+$pod = $panel-> insert( PodView =>
 	packInfo => { fill => 'both', expand => 1, pad => 10 , side => 'left'},
 	geometry => gt::Pack,
 	name => 'Pod',

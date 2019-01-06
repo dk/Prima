@@ -42,7 +42,7 @@ sub import
 		} elsif ( $p eq ':ltr') {
 			$default_direction_rtl = 0;
 		} elsif ( $p eq ':locale') {
-			# http://stackoverflow.com/questions/18996183/identifyng-rtl-language-in-android 
+			# http://stackoverflow.com/questions/18996183/identifyng-rtl-language-in-android
 			$default_direction_rtl = ( $ENV{LANG} =~ /^(
 				ar| # arabic
 				dv| # divehi
@@ -316,13 +316,13 @@ sub edit_insert
 	if ( defined $tl ) {
 		my $vp = $visual_pos - 1;
 		$vp-- while $vp >= 0 && is_weak($tl = $t->[$map->[$vp]]);
-		# right to a weak, adjacent to a strong LTR further right 
+		# right to a weak, adjacent to a strong LTR further right
 		return $pl + 1, 1 if is_strong $tl && is_ltr $tl;
 	}
 	if ( defined $tr ) {
 		my $vp = $visual_pos;
 		$vp++ while $vp < $limit && is_weak($tr = $t->[$map->[$vp]]);
-		# left to a weak, adjacent to a strong LTR further left 
+		# left to a weak, adjacent to a strong LTR further left
 		return $pr, 0     if is_strong $tr && is_ltr $tr;
 	}
 
@@ -575,7 +575,7 @@ non-bidi text.
 =item bidi_selection_walk $CHUNKS, $FROM, $TO = length, $SUB
 
 Walks the selection chunks array, returned by C<bidi_selection_chunks>, between
-C<$FROM> and C<$TO> visual positions, and for each chunk calls the provided 
+C<$FROM> and C<$TO> visual positions, and for each chunk calls the provided
 C<< $SUB->($offset, $length, $selected) >>, where each call contains 2 integers to
 chunk offset and length, and a boolean flag whether the chunk is selected or
 not.

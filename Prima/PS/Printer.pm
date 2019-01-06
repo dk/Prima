@@ -13,7 +13,7 @@ use Prima::PS::Printer;
 
 Realizes the Prima printer interface to PostScript level 2 document language
 through Prima::PS::Drawable module. Allows different user profiles to be
-created and managed with GUI setup dialog. The module is designed to be 
+created and managed with GUI setup dialog. The module is designed to be
 compliant with Prima::Printer interface.
 
 Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
@@ -72,27 +72,27 @@ sub profile_default
 			portrait       => 1,
 			useDeviceFonts => 1,
 			useDeviceFontsOnly => 0,
-			spoolerType    => $unix ? lpr : file, 
+			spoolerType    => $unix ? lpr : file,
 			spoolerData    => '',
 			devParms       => {
-				MediaType                   => '', 
-				MediaColor                  => '', 
-				MediaWeight                 => '',       
-				MediaClass                  => '', 
-				InsertSheet                 => 0,  
-				LeadingEdge                 => 0, 
-				ManualFeed                  => 0, 
-				TraySwitch                  => 0, 
-				MediaPosition               => '', 
-				DeferredMediaSelection      => 0, 
-				MatchAll                    => 0, 
+				MediaType                   => '',
+				MediaColor                  => '',
+				MediaWeight                 => '',
+				MediaClass                  => '',
+				InsertSheet                 => 0,
+				LeadingEdge                 => 0,
+				ManualFeed                  => 0,
+				TraySwitch                  => 0,
+				MediaPosition               => '',
+				DeferredMediaSelection      => 0,
+				MatchAll                    => 0,
 			},
 		},
-	);   
+	);
 	@$def{keys %prf} = values %prf;
 	return $def;
 }
-						
+
 
 sub init
 {
@@ -103,7 +103,7 @@ sub init
 	$self-> $_($profile{$_}) for qw(defaultData resFile);
 	$self-> {printers} = {};
 	$self-> {gui} = $profile{gui};
-	
+
 	my $pr = $profile{printer} if defined $profile{printer};
 
 	if ( open F, $self-> {resFile}) {
@@ -113,7 +113,7 @@ sub init
 		eval "$fc";
 		$self-> {printers} = $fc if !$@ && defined($fc) && ref($fc) eq 'HASH';
 	}
-	
+
 	unless ( scalar keys %{$self-> {printers}}) {
 		$self-> {printers}-> {'Default printer'} = deepcopy( $self-> {defaultData});
 		if ( $unix) {
@@ -125,7 +125,7 @@ sub init
 		$self-> {printers}-> {File} = deepcopy( $self-> {defaultData});
 		$self-> {printers}-> {File}-> {spoolerType} = file;
 	}
-		
+
 
 	unless ( defined $pr) {
 		if ( defined  $self-> {printers}-> {'Default printer'}) {
@@ -137,7 +137,7 @@ sub init
 	}
 
 	$self-> printer( $pr);
-	return %profile;   
+	return %profile;
 }
 
 sub import_printers
@@ -185,8 +185,8 @@ sub printers
 		my $d = $self-> {printers}-> {$_};
 		push @res, {
 			name    => $_,
-			device  => 
-			(( $d-> {spoolerType} == lpr ) ? "lp $d->{spoolerData}"  : 
+			device  =>
+			(( $d-> {spoolerType} == lpr ) ? "lp $d->{spoolerData}"  :
 			(( $d-> {spoolerType} == file) ? 'file' : $d-> {spoolerData})),
 			defaultPrinter =>  ( $self-> {current} eq $_) ? 1 : 0,
 		},
@@ -242,13 +242,13 @@ sub data
 			$p-> {devParms}-> {$_} = $dv-> {$_};
 		}
 	}
-	$self-> SUPER::resolution( $p-> {resolution}, $p-> {resolution}) 
+	$self-> SUPER::resolution( $p-> {resolution}, $p-> {resolution})
 		if exists $dd-> {resolution};
 	$self-> scale( $p-> {scaling}, $p-> {scaling}) if exists $dd-> {scaling};
 	$self-> isEPS( $p-> {isEPS}) if exists $dd-> {isEPS};
 	$self-> reversed( $p-> {portrait} ? 0 : 1) if exists $dd-> {portrait};
-	$self-> pageSize( 
-		@{exists($pageSizes{$p-> {page}}) ? 
+	$self-> pageSize(
+		@{exists($pageSizes{$p-> {page}}) ?
 			$pageSizes{$p-> {page}} : $pageSizes{A4}}
 	) if exists $dd-> {page};
 	if ( exists $dd-> {page}) {
@@ -260,7 +260,7 @@ sub data
 		for ( keys %dp) {
 			delete $dp{$_} unless length $dp{$_};
 		}
-		for ( qw( LeadingEdge InsertSheet ManualFeed 
+		for ( qw( LeadingEdge InsertSheet ManualFeed
 			DeferredMediaSelection TraySwitch MatchAll)) {
 			delete $dp{$_} unless $dp{$_};
 		}
@@ -270,7 +270,7 @@ sub data
 			$dp{$_} =~ s/(\\|\(|\))/\\$1/g;
 			$dp{$_} = '(' . $dp{$_} . ')';
 		}
-		for ( qw( InsertSheet ManualFeed TraySwitch 
+		for ( qw( InsertSheet ManualFeed TraySwitch
 			DeferredMediaSelection MatchAll)) {
 			next unless exists $dp{$_};
 			$dp{$_} = $dp{$_} ? 'true' : 'false';
@@ -355,7 +355,7 @@ sub begin_doc
 		if ( $self-> {gui}) {
 			eval "use Prima::MsgBox"; die "$@\n" if $@;
 			my $f = Prima::MsgBox::input_box( 'Print to file', 'Output file name:', '', mb::OKCancel, buttons => {
-				mb::OK, { 
+				mb::OK, {
 				modalResult => undef,
 				onClick => sub {
 					$_[0]-> clear_event;
@@ -363,16 +363,16 @@ sub begin_doc
 					if ( -f $f) {
 						return 0 if Prima::MsgBox::message(
 							"File $f already exists. Overwrite?",
-							mb::Warning|mb::OKCancel) != mb::OK;         
+							mb::Warning|mb::OKCancel) != mb::OK;
 					} else {
 						unless ( open F, "> $f") {
 							Prima::MsgBox::message(
-							"Error opening $f:$!", mb::Error|mb::OK);           
+							"Error opening $f:$!", mb::Error|mb::OK);
 							return 0;
-						}   
+						}
 						close F;
 						unlink $f;
-					} 
+					}
 					$_[0]-> owner-> modalResult( mb::OK);
 					$_[0]-> owner-> end_modal;
 			}}});
@@ -404,7 +404,7 @@ sub begin_doc
 	}
 
 	return $self-> SUPER::begin_doc( $docName);
-}   
+}
 
 my ( $sigpipe);
 
@@ -446,7 +446,7 @@ sub spool
 				lp lpr /bin/lp /bin/lpr /usr/bin/lp /usr/bin/lpr));
 		} else {
 			push( @cmds, $self-> {data}-> {spoolerData});
-		} 
+		}
 		my $ok = 0;
 		$sigpipe = $SIG{PIPE};
 		$SIG{PIPE} = 'IGNORE';
@@ -466,7 +466,7 @@ sub spool
 		return $ok;
 	}
 
-	if ( !(print {$self-> {spoolHandle}} $data) || 
+	if ( !(print {$self-> {spoolHandle}} $data) ||
 			( $piped && $self-> {data}-> {spoolerType} != file )
 		) {
 		Prima::message( "Error printing to '$self->{spoolName}'") if $self-> {gui};
@@ -540,7 +540,7 @@ sub profile_default
 	my %prf = (
 		file => 'out.ps',
 		gui  => 0,
-	);   
+	);
 	@$def{keys %prf} = values %prf;
 	return $def;
 }
@@ -569,7 +569,7 @@ sub profile_default
 	my %prf = (
 		gui  => 0,
 		args => '',
-	);   
+	);
 	@$def{keys %prf} = values %prf;
 	return $def;
 }
@@ -598,7 +598,7 @@ sub profile_default
 	my %prf = (
 		gui  => 0,
 		command => '',
-	);   
+	);
 	@$def{keys %prf} = values %prf;
 	return $def;
 }
@@ -684,7 +684,7 @@ of a color rendering dictionary. Devices should use the value of this
 parameter to trigger such media-related actions, reserving the MediaType
 parameter (above) for generic attributes requiring no device-specific action.
 The MediaClass entry in the output device dictionary defines the allowable
-values for this parameter on a given device; attempting to set it to an unsupported 
+values for this parameter on a given device; attempting to set it to an unsupported
 value will cause a configuration error.
 
 =item InsertSheet BOOLEAN
@@ -694,14 +694,14 @@ medium directly into the output document. Media coming from a source
 for which this attribute is Yes are sent directly to the output bin without
 passing through the device's usual imaging mechanism (such as the fuser
 assembly on a laser printer). Consequently, nothing painted on the current
-page is actually imaged on the inserted medium.   
+page is actually imaged on the inserted medium.
 
 =item LeadingEdge BOOLEAN
 
 (Level 3) A value specifying the edge of the input medium that will
 enter the printing engine or imager first and across which data will be imaged.
 Values reflect positions relative to a canonical page in portrait orientation
-(width smaller than height). When duplex printing is enabled, the canonical 
+(width smaller than height). When duplex printing is enabled, the canonical
 page orientation refers only to the front (recto) side of the medium.
 
 =item ManualFeed BOOLEAN
@@ -709,10 +709,10 @@ page orientation refers only to the front (recto) side of the medium.
 Flag indicating whether the input medium is to be fed manually by a human
 operator (Yes) or automatically (No). A Yes value asserts that the
 human operator will manually feed media conforming to the specified attributes
-( MediaColor, MediaWeight, MediaType, MediaClass, and InsertSheet). Thus, those 
-attributes are not used to select from available media sources in the normal way, 
-although their values may be presented to the human operator as an aid in selecting 
-the correct medium. On devices that offer more than one manual feeding mechanism, 
+( MediaColor, MediaWeight, MediaType, MediaClass, and InsertSheet). Thus, those
+attributes are not used to select from available media sources in the normal way,
+although their values may be presented to the human operator as an aid in selecting
+the correct medium. On devices that offer more than one manual feeding mechanism,
 the attributes may select among them.
 
 =item TraySwitch BOOLEAN
@@ -721,7 +721,7 @@ the attributes may select among them.
 automatic switching of media sources. When the originally selected source
 runs out of medium, some devices with multiple media sources can switch
 automatically, without human intervention, to an alternate source with the
-same attributes (such as PageSize and MediaColor) as the original.   
+same attributes (such as PageSize and MediaColor) as the original.
 
 =item MediaPosition STRING
 

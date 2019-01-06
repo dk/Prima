@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# dumps hierarchy of widget classes. 
+# dumps hierarchy of widget classes.
 #
 # Used by podview ( see File/Run/p-class )
 #
@@ -39,7 +39,7 @@ for ( @ARGV) {
 	}
 }
 
-die "The '--all' option and explicit classes names cannnot be set together\n" 
+die "The '--all' option and explicit classes names cannnot be set together\n"
 if $want_all && @want_class;
 
 usage() if !$want_all && !@want_class;
@@ -48,7 +48,7 @@ sub usage
 {
 		print <<HELP;
 
-p-class - generates documentation on Prima classes hierarchy 
+p-class - generates documentation on Prima classes hierarchy
 
 format:
    p-class [--option] [--option=VALUE] class_name
@@ -64,10 +64,10 @@ options:
   [-c|--perldoc] - run perldoc
 
 examples:
-    p-class -p Edit 
+    p-class -p Edit
     p-class -t --hier Button
     p-class --all --hier -c
-   
+
 HELP
 		exit;
 }
@@ -84,7 +84,7 @@ die "Cannot find Prima.pm\n" unless defined $glob_path;
 print "Using $glob_path as root\n" if $debug;
 
 my %paths = (
-	'pod/Prima/*.pod' => { # source tree 
+	'pod/Prima/*.pod' => { # source tree
 		type      => 'pod',
 		classes   => 'kernel',
 		exclude   => qr/\/([a-z]|X11)[^\s\/]*\.pod$/, # no lowercase
@@ -145,7 +145,7 @@ while ( my ($path, $path_hints) = each %paths) {
 	my @glob = glob "$glob_path/$path";
 	next unless @glob;
 	$invariants{$path_hints->{invariant}} = 1 if $path_hints->{invariant};
-	
+
 	for ( @glob) {
 		next if $path_hints->{exclude} && m/$path_hints->{exclude}/;
 		my $filename = $_;
@@ -164,12 +164,12 @@ while ( my ($path, $path_hints) = each %paths) {
 		$pod_root =~ s/\//::/g;
 		$pod_root =~ s/\.[\w]+$//;
 		my $class_priority = (( $path_hints->{classes} eq 'kernel' ) ? 1 : 0);
-	
+
 		@stack = ($root);
 		my $over = 0;
 		@itemgroups = ($root);
 		my $last_package;
-		
+
 		while (<F>) {
 			if ( $path_hints->{type} ne 'pod') {
 				unless ( m/^=(pod|head)/ .. m/^=cut/) {
@@ -184,7 +184,7 @@ while ( my ($path, $path_hints) = each %paths) {
 					next;
 				}
 			}
-	
+
 			# store pod commands in a hierarchy
 			my ($head,$topic,$parent,$entry); # any entry created?
 			if ( m/^=(\S+)\s*(.*?)\s*$/) {
@@ -223,7 +223,7 @@ while ( my ($path, $path_hints) = each %paths) {
 					next unless m/^\S+/m;
 					chomp;
 					$cap_name = 0;
-					
+
 					$entry = new_entry( type => 'head1', topic => $topic = $_, root_class => 1);
 					$parent = $root;
 				}
@@ -238,7 +238,7 @@ while ( my ($path, $path_hints) = each %paths) {
 				if ( $topic =~ /(method)|(propert)|(event)/oi) {
 					$entry->{property} = ( $1 ? 'Methods' : ( $2 ? 'Properties' : 'Events'));
 				} elsif ( defined $parent->{property}) {
-					$entry->{property} = $parent->{property} 
+					$entry->{property} = $parent->{property}
 				}
 
 				# classes
@@ -279,7 +279,7 @@ while ( my ($path, $path_hints) = each %paths) {
 				$class = $i->{class};
 			}
 			$prop = $i->{property};
-			
+
 			for (@{$_->{children}}) {
 				next if ref($_) eq 'HASH';
 				if ( $otype_pod) {
@@ -356,7 +356,7 @@ if ( @want_class) {
 sub dump_class
 {
 	my $class = $_[0];
-	my %items; 
+	my %items;
 	my @traverse = ( $class);
 	my @all_classes;
 	# run inheritance traversal
@@ -380,7 +380,7 @@ sub dump_class
 	}
 
 	return if $want_hier;
-	
+
 	for ( @all_classes) {
 		my $curr_class = $_;
 		print "-> $curr_class\n" if $debug;
@@ -388,7 +388,7 @@ sub dump_class
 		if ( $all_items{$curr_class}) {
 			while ( my ( $prop, $items) = each %{$all_items{$curr_class}}) { # e.g. METHOD, EVENT, PROPERTY
 				print "  -> $prop\n" if $debug;
-				$links_body .= ( $otype_pod ? "B<$prop>\n\n=over 4\n\n" : "\n - $prop\n"); 
+				$links_body .= ( $otype_pod ? "B<$prop>\n\n=over 4\n\n" : "\n - $prop\n");
 				for ( @$items) {
 					my ( $topic, $root, $name) = @$_;
 					$items{$prop}->{$name} = "L<$topic|$root/$name>";

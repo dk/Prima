@@ -12,7 +12,7 @@ BASE_ERROR:
 
 my @names;
 for ( @$codecs) {
-	goto BASE_ERROR if ref($_) ne 'HASH' || ! defined $$_{fileShortType}; 
+	goto BASE_ERROR if ref($_) ne 'HASH' || ! defined $$_{fileShortType};
 	push @names, $$_{fileShortType};
 }
 
@@ -63,7 +63,7 @@ SKIP : {
         SKIP : {
             skip "can't save, hence skipping". $names[ $cid ], 1,  unless $ci-> {canSave};
             my $name = "./test.test." . $ci-> {fileExtensions}->[0];
-	
+
             my $xi = $i-> dup;
             fail($names[ $cid ]), unlink( $name), next unless $xi-> save( $name);
             my $xl = Prima::Image-> load( $name, loadExtras => 1);

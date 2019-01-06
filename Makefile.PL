@@ -118,7 +118,7 @@ sub usage
 $0 - configuration script for Prima
 
 syntax:
-    perl Makefile.PL [options] 
+    perl Makefile.PL [options]
 
 options:
     X11BASE           - path where X11 includes and libraries are installed
@@ -182,7 +182,7 @@ sub setup_argv
 		DEBUG         => 0,
 		EXTRA_CCFLAGS => '',
 		EXTRA_LDFLAGS => '',
-		
+
 		# service vars
 		AUTOMATED_RUN => 0,
 		DL_LOAD_FLAGS => undef,
@@ -195,7 +195,7 @@ sub setup_argv
 		LD            => $Config{ld},
 		LDDLFLAGS     => $Config{lddlflags},
 	);
-	
+
 	@ARGV = grep {
 		my ( $k, $v) = split( '=', $_, 2 );
 		exists($cmd_options{$k}) ? ($cmd_options{$k} = $v, 0) : 1;
@@ -260,13 +260,13 @@ sub setup_files
 	@prima_files   = ('Prima.pm', ffind( qr/./, 'Prima' ));
 	@pod_files  = ffind( qr/./, 'pod' );
 	@pm_files  = ffind( qr/\.pm$/ );
-	@c_files    = ( 
+	@c_files    = (
 		<src/*.c>,
 		(grep { not $PASSIVE_CODECS{$_} } <img/*.c>),
 		(grep { !m/xft.c/ || $cmd_options{WITH_XFT} } <$platform/*.c>),
 	);
 	@cls_files  = ( <src/*.cls> );
-	@h_files    = ( 
+	@h_files    = (
 		<include/*.h>,
 		<include/generic/*.h>,
 		<include/$platform/*.h>,
@@ -303,10 +303,10 @@ sub setup_files
 			( $_ => '$(INST_LIBDIR)/Prima/CORE/' . $k )
 		} @h_files ),
 		# POD
-		( map { 
+		( map {
 			my $k = $_;
 			$k =~ s/^pod\///;
-			$_ => '$(INST_LIBDIR)/' . $k 
+			$_ => '$(INST_LIBDIR)/' . $k
 		} @pod_files ),
 		# examples
 		( map { $_ => '$(INST_LIBDIR)/Prima/' . $_ } <examples/*> ),
@@ -370,11 +370,11 @@ sub setup_environment
 		$OPTIMIZE    .= ' -Wall';
 
 	}
-	
+
 	$DEFFILE    = 'Prima.def';
 	$LIB_EXT    = ($cygwin ? '.dll' : '') . $Config{ _a};
 	$LIB_PREFIX = ($cygwin || $mingw) ? 'lib' : '';
-	
+
 	open F, 'Prima.pm' or die "Cannot open Prima.pm:$!\n";
 	my ($ver1, $ver2);
 	while (<F>) {
@@ -403,7 +403,7 @@ sub setup_environment
 	} else {
 		$DEFINES{PRIMA_PLATFORM_X11} = 1;
 	}
-	
+
 	$TMPDIR  = $ENV{ TMPDIR} || $ENV{ TEMPDIR} || ( $Win32 ? ( $ENV{ TEMP} || "$ENV{SystemDrive}\\TEMP") : "/tmp");
 	$NULLDEV = 'makefile.log';
 
@@ -429,10 +429,10 @@ sub setup_environment
 
 	$flavor =~ s/strawberry/sb/;
 	$flavor =~ s/activestate/as/;
-	
+
 	$DISTNAME = "Prima-$ver1.$ver2-$flavor-$REVISION.$PATCHLEVEL.$SUBVERSION";
 	printlog "Build: $DISTNAME\n";
-   
+
 	if ( $cygwin and $] > 5.010 ) {
 		# 5.10 was shipped with a hack in ExtUtils/Liblist/Kid.pm where having auto/Prima.dll was ok
 		# 5.14 is not patched that way, do it ourselves
@@ -839,7 +839,7 @@ sub find_inline
 	printlog "Checking for inline... ";
 	for ( qw( inline __inline inline__ __inline__
 				INLINE __INLINE INLINE__ __INLINE__)) {
-		my $i = $_;    
+		my $i = $_;
 		my $rc = compile( <<EOF);
 
 $_ void a( void) {};
@@ -970,8 +970,8 @@ OPENMP
 		printlog "Checking MSVC version... ";
 		$compiler_version = compile_and_run(<<'MSCVER');
 #include <stdio.h>
-int main() { 
-	printf("%d\n", _MSC_VER); 
+int main() {
+	printf("%d\n", _MSC_VER);
 	return 0;
 }
 MSCVER
@@ -988,7 +988,7 @@ MSCVER
 			$OPTIMIZE .= " /wd4018"; #  '<' : signed/unsigned mismatch";
 		}
 	}
-	
+
 	if ($Win32) {
 		printlog "Checking windows subsystem...";
 		$Win64 = have_define('_WIN64');
@@ -1063,7 +1063,7 @@ sub setup_dl_loadflags
 	return if $DL_LOAD_FLAGS >= 0;
 
 	printlog "Determining dl_load_flags... ";
-	
+
 	local @INCPATH = ( qtilde($Config{archlib}) . "/CORE");
 
 	my $c1  = tempfile( "$TMPDIR/pmts%04d.c");
@@ -1084,7 +1084,7 @@ sub setup_dl_loadflags
 
 int test( void ) { return 1; }
 
-XS(boot_pmts$n1) { 
+XS(boot_pmts$n1) {
    dXSARGS;
    XSRETURN(1);
 }
@@ -1125,7 +1125,7 @@ package pmts$n2;
 \@ISA = q(DynaLoader);
 bootstrap pmts$n2 0;
 DN
-		
+
 	null_output;
 	print STDERR "$cc1\n";
 	goto FAIL if system($cc1);
@@ -1246,7 +1246,7 @@ sub pkgconfig
 	for ( split " ", $libs ) {
 		push @LIBS, $_ unless $h{$_};
 	}
-	
+
 	%h = map { $_ => 1 } @LIBPATH;
 	my $libpath    = `pkg-config --libs-only-L $package`;
 	if ( $? != 0 ) {
@@ -1266,7 +1266,7 @@ sub setup_X11
 {
 	if ($use_pkgconfig) {
 		unless (pkgconfig('x11')) {
-			warn 
+			warn
 				"Prima needs package with x11 development file for compilation! ".
 				"Please install it with your system installer tool.\n";
 			exit(0);
@@ -1282,7 +1282,7 @@ sub setup_X11
 	for ( 'local/', 'freeware/', 'gnu/', 'opt/') {
 		push @INCPATH, "/usr/${_}include" if -d "/usr/${_}include";
 	}
-	my $incpath = find_header( "X11/Xlib.h", 
+	my $incpath = find_header( "X11/Xlib.h",
 		"/usr/X11R6/include",
 		"/usr/X11/include",
 		"/usr/X/include",
@@ -1292,7 +1292,7 @@ sub setup_X11
 
 	unless ( defined $incpath) {
 		printlog "no\n";
-		warn 
+		warn
 			"Prima needs X11 headers for compilation! ".
 			"Set X11BASE='/path/to/X' or INCPATH+='/path/to/X/include' ".
 			"if you have a non-standard path to X. $see_makefile_log\n";
@@ -1307,9 +1307,9 @@ sub setup_X11
 	printlog "\n";
 
 	# find X11 libraries
-	my @libpath = ( "X11", '', 
-		(defined($cmd_options{X11BASE}) ? "$cmd_options{X11BASE}/lib" : ()), 
-		"/usr/X11R6/lib", 
+	my @libpath = ( "X11", '',
+		(defined($cmd_options{X11BASE}) ? "$cmd_options{X11BASE}/lib" : ()),
+		"/usr/X11R6/lib",
 		"/usr/X11/lib",
 		"/usr/X/lib",
 		"/usr/openwin/lib",
@@ -1325,7 +1325,7 @@ sub setup_X11
 	unless ( defined $libpath) {
 		printlog "no\n";
 	NO_X:
-		warn 
+		warn
 			"Prima needs X11 libraries for compilation! ".
 			"Set X11BASE='/path/to/X' ".
 			"if you have a non-standard path to X. $see_makefile_log\n";
@@ -1362,10 +1362,10 @@ sub setup_xft
 			@LIBPATH = @pre_xft_libpath;
 			@INCPATH = @pre_xft_incpath;
 		} else {
-			$DEFINES{$_} = 1 for qw( 
-				HAVE_FREETYPE_FREETYPE_H 
-				HAVE_FONTCONFIG_FONTCONFIG_H 
-				HAVE_X11_EXTENSIONS_XRENDER_H 
+			$DEFINES{$_} = 1 for qw(
+				HAVE_FREETYPE_FREETYPE_H
+				HAVE_FONTCONFIG_FONTCONFIG_H
+				HAVE_X11_EXTENSIONS_XRENDER_H
 				HAVE_X11_XFT_XFT_H
 			);
 		}
@@ -1390,7 +1390,7 @@ sub setup_xft
 	printlog "Checking for presence of freetype/freetype.h... ";
 	my $incpath;
 	if ($have_ft2build_h) {
-		$incpath = find_header( 
+		$incpath = find_header(
 			"freetype/freetype.h", {
 				Code => <<EOF,
 #include "ft2build.h"
@@ -1433,7 +1433,7 @@ EOF
 		}
 	}
 
-	if ( have_header( "X11/extensions/Xrender.h", "X11/X.h", 
+	if ( have_header( "X11/extensions/Xrender.h", "X11/X.h",
 			"X11/Xlib.h", "X11/extensions/Xext.h")) {
 		printlog "Checking for presence of libXrender... ";
 		if ( defined find_lib( 'Xrender', '', '')) {
@@ -1446,7 +1446,7 @@ EOF
 		}
 	}
 
-	if ( have_header( "X11/Xft/Xft.h", "X11/X.h", "X11/Xlib.h", 
+	if ( have_header( "X11/Xft/Xft.h", "X11/X.h", "X11/Xlib.h",
 			"X11/extensions/Xext.h", "X11/extensions/Xrender.h")) {
 		printlog "Checking for presence of libXft... ";
 		if ( defined find_lib( 'Xft', '', '')) {
@@ -1458,7 +1458,7 @@ EOF
 			$DEFINES{HAVE_X11_XFT_XFT_H} = undef;
 		}
 	}
-	
+
 	$cmd_options{WITH_XFT} = 0 unless $HAVE_XFT == $NEED_XFT;
 	@LIBS = @pre_xft_libs unless $cmd_options{WITH_XFT};
 }
@@ -1495,8 +1495,8 @@ sub setup_gtk
 	unless ( $use_pkgconfig ) {
 		printlog "Checking for presence of gtk... no, can only check with pkg-config installed\n";
 		return;
-	} 
-	
+	}
+
 	if ( $use_gtk3 && pkgconfig('gtk+-3.0')) {
 		my $version = `pkg-config --modversion gtk+-3.0`;
 		printlog "Checking if can compile and link with gtk3... ";
@@ -1506,7 +1506,7 @@ sub setup_gtk
 			return;
 		}
 		$use_gtk2 = 0;
-	} 
+	}
 	if ( $use_gtk2 && pkgconfig('gtk+-2.0')) {
 		my $version = `pkg-config --modversion gtk+-2.0`;
 		printlog "Checking if can compile and link with gtk2... ";
@@ -1516,7 +1516,7 @@ sub setup_gtk
 			return;
 		}
 		$use_gtk3 = 0;
-	}		
+	}
 	# now, try to compile with GTK. I've got lots of CPAN build failures
 	# because GTK wasn't willing to compile or god knows what.
 	unless (compile( "#include <gtk/gtk.h>\nint main() { return 0; }\n")) {
@@ -1586,7 +1586,7 @@ sub setup_xlibs
 			$DEFINES{HAVE_X11_XCURSOR_XCURSOR_H} = undef;
 		}
 	}
-	
+
 	printlog "Using Xft library\n" if $cmd_options{WITH_XFT};
 	printlog "Using iconv library\n" if $cmd_options{WITH_ICONV};
 	printlog "Using gtk2 library\n" if $cmd_options{WITH_GTK2};
@@ -1694,7 +1694,7 @@ sub setup_codecs
 			} elsif ( $codec eq 'Xpm') {
 				$found = 1 if pkgconfig('xpm');
 			} # gif and jpeg -- I've never seen yet these libs shipped with .pc file, so don't check them so far
-					
+
 			if ( $found ) {
 				push( @ACTIVE_CODECS, $codec);
 				next;
@@ -1720,8 +1720,8 @@ sub setup_codecs
 
 	AGAIN:
 		printlog "Checking for $codec$version library... ";
-		if ( 
-			$libs{$lib} || 
+		if (
+			$libs{$lib} ||
 			defined ( $foundlib = find_lib( $lib, join('', @inc), '', @codec_libpath))
 		) {
 			if ( defined $foundlib and length $foundlib) {
@@ -1756,22 +1756,22 @@ sub setup_codecs
 		$PREREQ{"Prima::codecs::$prereq"} = 0;
 		$END .= <<NOCODECS;
 
-** No image codecs found. 
+** No image codecs found.
 
-Note that in this configuration Prima will not be 
-able to work with graphic files. Please follow the 
+Note that in this configuration Prima will not be
+able to work with graphic files. Please follow the
 instructions in README file.
 
 NOCODECS
 		$END .= <<BROKEN_CODECS if $have_binary_prereq;
 
-** Prima::codecs::$binary_prereq is found in 
+** Prima::codecs::$binary_prereq is found in
 $Config{installsitearch}, but is broken. Please reinstall it.
 
 BROKEN_CODECS
 		$END .= <<NOCODECS_BIN if $binary_prereq;
 
-If you are under CPAN shell and are asked to install 
+If you are under CPAN shell and are asked to install
 Prima::codecs::$binary_prereq dependency, do so. Otherwise,
 install it manually.
 
@@ -1784,12 +1784,12 @@ Install these libraries and re-run Makefile.PL
 NOCODECS_CYGWIN
 	} elsif ( @warn_codecs) {
 		$END .= <<NOCODECS;
-          
+
 ** Warning: the following image libraries weren't found:
 
 @warn_codecs
 
-Note that in this configuration Prima will not be 
+Note that in this configuration Prima will not be
 able to work with the corresponding image formats.
 Please follow the instructions in README file.
 
@@ -1938,7 +1938,7 @@ sub create_config_pm
 		$libs  = "$cwd/blib/arch/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT";
 		$libsi = '$(lib)' . "/auto/Prima/${LIB_PREFIX}Prima$LIB_EXT";
 	}
-	
+
 	my $cc_openmp = $cmd_options{WITH_OPENMP} ? $OPENMP : '';
 
 	open F, "> Prima/Config.pm" or die "cannot open Prima/Config.pm:$!\n";
@@ -2025,7 +2025,7 @@ sub command_postinstall
 		open F, ">", $f or warn "** warning: Cannot write to a fake lib '$f': Prima extensions won't build\n";
 		close F;
 	}
-	
+
 	my $fn_cfg = "$opt{dest}/Prima/Config.pm";
 	print "Updating config $fn_cfg\n";
 	open F, $fn_cfg or die "cannot open $fn_cfg:$!\n";
@@ -2104,7 +2104,7 @@ sub command_dl
 	local $/;
 	my $ct = <F>;
 	close F;
-	
+
 	$ct =~ m/dl_load_flags\s*\{\s*0x0(\d)/;
 	return if $1 eq $DL_LOAD_FLAGS;
 
@@ -2147,8 +2147,8 @@ sub command_bindist
 	my @dirs;
 	my @files;
 	finddepth( sub {
-		return if $_ eq '.' || 
-			($_ eq 'Makefile' && $File::Find::dir eq $CWD) || 
+		return if $_ eq '.' ||
+			($_ eq 'Makefile' && $File::Find::dir eq $CWD) ||
 			m/^\./;
 		return if /\.(pdb|ncb|opt|dsp|dsw)$/i; # MSVC
 		my $f = "$File::Find::dir/$_";
@@ -2262,7 +2262,7 @@ showlog:
 
 SHOWMORE
 	}
-	
+
     	printlog "Finding .cls dependencies...\n";
 
 	for my $clsfile ( @cls_files) {
@@ -2316,7 +2316,7 @@ H
 		$f =~ s/INST_MAN3DIR/DESTINSTALLSITEMAN3DIR/;
 		push @rm, $f;
 	}
-	push @rm, 
+	push @rm,
 		'$(DESTINSTALLSITEMAN3DIR)/prima-gencls.$(MAN3EXT)',
 		'$(DESTINSTALLSITEMAN1DIR)/VB.$(MAN1EXT)',
 		'$(DESTINSTALLSITEMAN1DIR)/prima-cfgmaint.$(MAN1EXT)',
@@ -2331,7 +2331,7 @@ H
 		$pm_deinstall .= "\t\$(ABSPERL) -e ${SHQUOTE}unlink \@ARGV${SHQUOTE} @part\n";
 	}
 	chomp $pm_deinstall;
-	$pm_deinstall_dir = 
+	$pm_deinstall_dir =
 		"\t\$(ABSPERL) -e ${SHQUOTE}rmdir for \@ARGV${SHQUOTE} ".
 		join( ' ', sort { length $b <=> length $a } keys %pm_deinstall_dir)
 		;
@@ -2345,12 +2345,12 @@ devclean:
 
 deinstall:
 $pm_deinstall
-$pm_deinstall_dir 
+$pm_deinstall_dir
 
 H
 
 	if ($unix or $cygwin) {
-		$t .= <<H for @exe_files; # .pl -> . 
+		$t .= <<H for @exe_files; # .pl -> .
 $_: $_.pl
 \t$^X $0 --cpbin $_.pl $_
 
@@ -2370,7 +2370,7 @@ sub dynamic_lib
 		$END .= <<BAD_MAKEFILE unless $t =~ s/(^\$\(INST_DYNAMIC\)\s*\:.*?\n(?:\t.*?\n)*)/$1$line/m;
 
 ** Warning: expected format of Makefile generated by ExtUtils::MakeMaker is
-changed, so making of library Prima.a will not be performed correctly.  
+changed, so making of library Prima.a will not be performed correctly.
 Prima will run OK, but modules dependent on it may not build.
 Please notify the author by sending a report with Makefile and
 noting that ExtUtils\:\:MakeMaker version $ExtUtils::MakeMaker::VERSION was used.
@@ -2426,10 +2426,10 @@ WriteMakefile(
 	OPTIMIZE          => $OPTIMIZE,
 	PREREQ_PM         => \%PREREQ,
 	OBJECT            => "@o_files",
-	INC               => 
+	INC               =>
 		join(' ', map { "-I$_" } @INCPATH ).
 		' ' . $cmd_options{EXTRA_CCFLAGS},
-	LIBS              => [ 
+	LIBS              => [
 		$cmd_options{EXTRA_LDFLAGS} . ' ' .
 		':nosearch ' .
 		join(' ', map { "-L$_" } @LIBPATH) . ' ' .

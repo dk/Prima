@@ -44,7 +44,7 @@ When the system generates timer event, no callback
 is called immediately, - an event is pushed into
 stack instead, to be delivered during next event loop.
 Therefore, timeout value is not held accurately, and events
-may take longer time to pass. More accurate timing scheme, 
+may take longer time to pass. More accurate timing scheme,
 as well as timing with precision less than a millisecond,
 is not supported by the toolkit.
 
@@ -58,7 +58,7 @@ is not supported by the toolkit.
 
 Manages time interval between C<Tick> events.
 In set-mode call, if the timer is in active state ( see C<get_active()>,
-the new timeout value is applied immediately. 
+the new timeout value is applied immediately.
 
 =back
 
@@ -66,7 +66,7 @@ the new timeout value is applied immediately.
 
 =over
 
-=item get_active 
+=item get_active
 
 Returns a boolean flag, whether object is in active
 state or not. In the active state C<Tick> events are
@@ -100,7 +100,7 @@ Toggles the timer state
 =item Tick
 
 A system generated event, spawned every C<::timeout>
-milliseconds if object is in active state. 
+milliseconds if object is in active state.
 
 =back
 

@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Prima::Bidi;
 
-package 
+package
     tb;
 use vars qw(@oplen %opnames);
 
@@ -13,7 +13,7 @@ use constant OP_TEXT               =>  0; # (3) text offset, text length, text w
 use constant OP_COLOR              =>  1; # (1) 0xRRGGBB or COLOR_INDEX | palette_index
 use constant OP_FONT               =>  2; # (2) op_font_mode, font info
 use constant OP_TRANSPOSE          =>  3; # (3) move current point to delta X, delta Y
-use constant OP_CODE               =>  4; # (2) code pointer and parameters 
+use constant OP_CODE               =>  4; # (2) code pointer and parameters
 
 # formatting opcodes
 use constant OP_WRAP               =>  5; # (1) WRAP_XXX
@@ -32,7 +32,7 @@ use constant OP_BIDIMAP            =>  7; # (2) visual, $map
 );
 
 
-# OP_TEXT 
+# OP_TEXT
 use constant T_OFS                => 1;
 use constant T_LEN                => 2;
 use constant T_WID                => 3;
@@ -84,10 +84,10 @@ use constant  BLK_APERTURE_X       => 5;
 use constant  BLK_APERTURE_Y       => 6;
 use constant  BLK_TEXT_OFFSET      => 7;
 use constant  BLK_DATA_START       => 8;
-use constant  BLK_FONT_ID          => BLK_DATA_START; 
-use constant  BLK_FONT_SIZE        => 9; 
+use constant  BLK_FONT_ID          => BLK_DATA_START;
+use constant  BLK_FONT_SIZE        => 9;
 use constant  BLK_FONT_STYLE       => 10;
-use constant  BLK_COLOR            => 11; 
+use constant  BLK_COLOR            => 11;
 use constant  BLK_DATA_END         => 12;
 use constant  BLK_BACKCOLOR        => BLK_DATA_END;
 use constant  BLK_START            => BLK_DATA_END + 1;
@@ -96,7 +96,7 @@ use constant  BLK_START            => BLK_DATA_END + 1;
 use constant  F_ID    => BLK_FONT_ID;
 use constant  F_SIZE  => BLK_FONT_SIZE;
 use constant  F_STYLE => BLK_FONT_STYLE;
-use constant  F_HEIGHT=> 1000000; 
+use constant  F_HEIGHT=> 1000000;
 
 # BLK_FLAGS constants
 use constant T_SIZE      => 0x1;
@@ -153,20 +153,20 @@ sub opcode
 
 
 sub text           { return OP_TEXT, $_[0], $_[1], $_[2] || 0 }
-sub color          { return OP_COLOR, $_[0] } 
+sub color          { return OP_COLOR, $_[0] }
 sub backColor      { return OP_COLOR, $_[0] | BACKCOLOR_FLAG}
-sub colorIndex     { return OP_COLOR, $_[0] | COLOR_INDEX }  
-sub backColorIndex { return OP_COLOR, $_[0] | COLOR_INDEX | BACKCOLOR_FLAG}  
+sub colorIndex     { return OP_COLOR, $_[0] | COLOR_INDEX }
+sub backColorIndex { return OP_COLOR, $_[0] | COLOR_INDEX | BACKCOLOR_FLAG}
 sub font           { return OP_FONT, $_[0], $_[1] }
 sub fontId         { return OP_FONT, F_ID, $_[0] }
 sub fontSize       { return OP_FONT, F_SIZE, $_[0] }
 sub fontHeight     { return OP_FONT, F_SIZE, $_[0] + F_HEIGHT }
 sub fontStyle      { return OP_FONT, F_STYLE, $_[0] }
-sub moveto         { return OP_TRANSPOSE, $_[0], $_[1],  $_[2] || 0 } 
-sub extend         { return OP_TRANSPOSE, $_[0], $_[1], ($_[2] || 0) | X_EXTEND } 
-sub code           { return OP_CODE, $_[0], $_[1] } 
-sub wrap           { return OP_WRAP, $_[0] } 
-sub mark           { return OP_MARK, $_[0], 0, 0 } 
+sub moveto         { return OP_TRANSPOSE, $_[0], $_[1],  $_[2] || 0 }
+sub extend         { return OP_TRANSPOSE, $_[0], $_[1], ($_[2] || 0) | X_EXTEND }
+sub code           { return OP_CODE, $_[0], $_[1] }
+sub wrap           { return OP_WRAP, $_[0] }
+sub mark           { return OP_MARK, $_[0], 0, 0 }
 sub bidimap        { return OP_BIDIMAP, $_[0], $_[1] }
 
 sub realize_fonts
@@ -187,11 +187,11 @@ sub realize_colors
 {
 	my ( $color_palette, $state ) = @_;
 	return (
-		color     =>  (( $$state[ BLK_COLOR] & COLOR_INDEX) ? 
+		color     =>  (( $$state[ BLK_COLOR] & COLOR_INDEX) ?
 				( $color_palette-> [$$state[ BLK_COLOR] & COLOR_MASK]) :
 				( $$state[ BLK_COLOR] & COLOR_MASK)),
-		backColor =>  (( $$state[ BLK_BACKCOLOR] & COLOR_INDEX) ? 
-				( $color_palette-> [$$state[ BLK_BACKCOLOR] & COLOR_MASK]) : 
+		backColor =>  (( $$state[ BLK_BACKCOLOR] & COLOR_INDEX) ?
+				( $color_palette-> [$$state[ BLK_BACKCOLOR] & COLOR_MASK]) :
 				( $$state[ BLK_BACKCOLOR] & COLOR_MASK)),
 		textOpaque => (( $$state[ BLK_BACKCOLOR] & BACKCOLOR_OFF) ? 0 : 1),
 	);
@@ -301,7 +301,7 @@ sub _debug_block
 		} else {
 			my $oplen = $oplen[ $cmd ];
 			my @o = ($oplen > 1) ? @$b[ $i + 1 .. $i + $oplen - 1] : ();
-			print STDERR ": OP($cmd) @o\n"; 
+			print STDERR ": OP($cmd) @o\n";
 		}
 	}
 }
@@ -479,14 +479,14 @@ sub bidi_visualize
 	my $oplen;
 	my ($x, $y, $i, $lim) = (0,0,BLK_START, scalar @$b);
 
-	# step 1 - record how each character is drawn with font/color, and also 
+	# step 1 - record how each character is drawn with font/color, and also
 	# where other ops are positioned
 	my @default_fc        = @$b[ 0 .. BLK_DATA_END ]; # fc == fonts and colors
 	my %id_hash           = ( join(".", @default_fc[BLK_DATA_START .. BLK_DATA_END]) => 0 );
 	my @fonts_and_colors  = ( \@default_fc ); # this is the number #0, default char state
 	my @current_fc        = @default_fc;
 	my $current_state     = 0;
-	
+
 	my @char_states       = (-1) x length($visual); # not all chars are displayed
 	my $char_offset       = 0;
 	my %other_ops_after;
@@ -498,7 +498,7 @@ sub bidi_visualize
 			$current_state = $state;
 		} else {
 			push @fonts_and_colors, [ @current_fc ];
-			$id_hash{$key} = $current_state = $#fonts_and_colors; 
+			$id_hash{$key} = $current_state = $#fonts_and_colors;
 		}
 	};
 
@@ -620,10 +620,10 @@ sub block_wrap
 	my $word_break = $opt{wordBreak};
 	my $wrap_opts  = $word_break ? tw::WordBreak : 0;
 
-	my $newblock = sub 
+	my $newblock = sub
 	{
 		push @ret, $z = block_create();
-		@$z[ BLK_DATA_START .. BLK_DATA_END ] = 
+		@$z[ BLK_DATA_START .. BLK_DATA_END ] =
 			@$state[ BLK_DATA_START .. BLK_DATA_END];
 		$$z[ BLK_X] = $$b[ BLK_X];
 		$$z[ BLK_FLAGS] &= ~ T_SIZE;
@@ -634,9 +634,9 @@ sub block_wrap
 		$haswrapinfo = 0;
 	};
 
-	my $retrace = sub 
+	my $retrace = sub
 	{
-		splice( @{$ret[-1]}, $wrapret[0]); 
+		splice( @{$ret[-1]}, $wrapret[0]);
 		@$state = @{$wrapret[1]};
 		$newblock-> ();
 		$ptr = $wrapret[2];
@@ -659,11 +659,11 @@ sub block_wrap
 		text    => sub {
 			my ( $ofs, $tlen ) = @_;
 			my $state_key = join('.', @$state[BLK_FONT_ID .. BLK_FONT_STYLE]);
-			$state_hash{$state_key} = $canvas->get_font 
+			$state_hash{$state_key} = $canvas->get_font
 				unless $state_hash{$state_key};
 			$lastTextOffset = $ofs + $tlen unless $can_wrap;
 
-		REWRAP: 
+		REWRAP:
 			my $tw  = $canvas-> get_text_width(substr( $$t, $o + $ofs, $tlen), 1);
 			my $apx = $state_hash{$state_key}-> {width};
 			if ( $x + $tw + $apx <= $width) {
@@ -682,15 +682,15 @@ sub block_wrap
 					tw::ReturnFirstLineLength | tw::BreakSingle | $wrap_opts );
 				if ( $l > 0) {
 					if ( $has_text) {
-						push @$z, OP_TEXT, 
-							$ofs, $l + length $leadingSpaces, 
-							$tw = $canvas-> get_text_width( 
+						push @$z, OP_TEXT,
+							$ofs, $l + length $leadingSpaces,
+							$tw = $canvas-> get_text_width(
 								$leadingSpaces . substr( $str, 0, $l), 1
 							);
 					} else {
-						push @$z, OP_TEXT, 
-							$ofs + length $leadingSpaces, $l, 
-							$tw = $canvas-> get_text_width( 
+						push @$z, OP_TEXT,
+							$ofs + length $leadingSpaces, $l,
+							$tw = $canvas-> get_text_width(
 								substr( $str, 0, $l), 1
 							);
 						$has_text = 1;
@@ -711,8 +711,8 @@ sub block_wrap
 					my $ox = $x;
 					$newblock-> ();
 					$ofs  += length $leadingSpaces;
-					$tlen -= length $leadingSpaces; 
-					if ( length $str) { 
+					$tlen -= length $leadingSpaces;
+					if ( length $str) {
 					# well, it cannot be fit into width,
 					# but may be some words can be stripped?
 						goto REWRAP if $ox > 0;
@@ -760,10 +760,10 @@ sub block_wrap
 			my ( $dx, $dy, $flags) = @_;
 			if ( $x + $dx >= $width) {
 				if ( $can_wrap) {
-					$newblock-> (); 
+					$newblock-> ();
 				} elsif ( $haswrapinfo) {
 					return $retrace-> ();
-				} 
+				}
 			} else {
 				$x += $dx;
 			}
@@ -778,7 +778,7 @@ sub block_wrap
 	# second stage - position the blocks
 	$state = $stsave;
 	my $start;
-	if ( !defined $$b[ BLK_Y]) { 
+	if ( !defined $$b[ BLK_Y]) {
 		# auto position the block if the creator didn't care
 		$start = $$state[ BLK_Y] + $$state[ BLK_HEIGHT];
 	} else {
@@ -790,7 +790,7 @@ sub block_wrap
 
 	for my $b ( @ret) {
 		$$b[ BLK_Y] = $start;
-	
+
 		my @xy = (0,0);
 		my $ptr;
 		walk( $b, %subopt,
@@ -802,19 +802,19 @@ sub block_wrap
 			pointer  => \$ptr,
 			text     => sub {
 				my ( $ofs, $len, $wid ) = @_;
-				my $f_taint = $state_hash{ join('.', 
+				my $f_taint = $state_hash{ join('.',
 					@$state[BLK_FONT_ID .. BLK_FONT_STYLE]
 				) };
 				my $x = $xy[0] + $wid;
 				my $y = $xy[1];
-				$$b[ BLK_WIDTH] = $x 
+				$$b[ BLK_WIDTH] = $x
 					if $$b[ BLK_WIDTH ] < $x;
-				$$b[ BLK_APERTURE_Y] = $f_taint-> {descent} - $y 
+				$$b[ BLK_APERTURE_Y] = $f_taint-> {descent} - $y
 					if $$b[ BLK_APERTURE_Y] < $f_taint-> {descent} - $y;
-				$$b[ BLK_APERTURE_X] = $f_taint-> {width}   - $x 
+				$$b[ BLK_APERTURE_X] = $f_taint-> {width}   - $x
 					if $$b[ BLK_APERTURE_X] < $f_taint-> {width}   - $x;
 				my $newY = $y + $f_taint-> {ascent} + $f_taint-> {externalLeading};
-				$$b[ BLK_HEIGHT] = $newY if $$b[ BLK_HEIGHT] < $newY; 
+				$$b[ BLK_HEIGHT] = $newY if $$b[ BLK_HEIGHT] < $newY;
 				$lastTextOffset = $$b[ BLK_TEXT_OFFSET] + $ofs + $len;
 
 				$$b[ $ptr + T_OFS] -= $lastBlockOffset - $$b[ BLK_TEXT_OFFSET];
@@ -822,13 +822,13 @@ sub block_wrap
 			transpose => sub {
 				my ( $dx, $dy, $f ) = @_;
 				my ( $newX, $newY) = ( $xy[0] + $dx, $xy[1] + $dy);
-				$$b[ BLK_WIDTH]  = $newX 
+				$$b[ BLK_WIDTH]  = $newX
 					if $$b[ BLK_WIDTH ] < $newX;
-				$$b[ BLK_HEIGHT] = $newY 
+				$$b[ BLK_HEIGHT] = $newY
 					if $$b[ BLK_HEIGHT] < $newY;
-				$$b[ BLK_APERTURE_X] = -$newX 
+				$$b[ BLK_APERTURE_X] = -$newX
 					if $newX < 0 && $$b[ BLK_APERTURE_X] > -$newX;
-				$$b[ BLK_APERTURE_Y] = -$newY 
+				$$b[ BLK_APERTURE_Y] = -$newY
 					if $newY < 0 && $$b[ BLK_APERTURE_Y] > -$newY;
 			},
 		);
@@ -1156,7 +1156,7 @@ sub height
 
 =pod
 
-=head1 NAME 
+=head1 NAME
 
 Prima::Drawable::TextBlock - rich text representation
 
@@ -1168,27 +1168,27 @@ A block's fixed header consists of C<tb::BLK_START - 1> integer scalars,
 each of those is accessible via the corresponding C<tb::BLK_XXX> constant.
 The constants are separated into two logical groups:
 
-	BLK_FLAGS        
-	BLK_WIDTH        
-	BLK_HEIGHT      
-	BLK_X           
-	BLK_Y           
-	BLK_APERTURE_X  
-	BLK_APERTURE_Y  
-	BLK_TEXT_OFFSET 
+	BLK_FLAGS
+	BLK_WIDTH
+	BLK_HEIGHT
+	BLK_X
+	BLK_Y
+	BLK_APERTURE_X
+	BLK_APERTURE_Y
+	BLK_TEXT_OFFSET
 
 and
 
-	BLK_FONT_ID          
-	BLK_FONT_SIZE        
-	BLK_FONT_STYLE       
-	BLK_COLOR            
-	BLK_BACKCOLOR        
+	BLK_FONT_ID
+	BLK_FONT_SIZE
+	BLK_FONT_STYLE
+	BLK_COLOR
+	BLK_BACKCOLOR
 
 The second group is enclosed in C<tb::BLK_DATA_START> - C<tb::BLK_DATA_END>
 range, like the whole header is contained in 0 - C<tb::BLK_START - 1> range.
-This is done for the backward compatibility, if the future development changes 
-the length of the header. 
+This is done for the backward compatibility, if the future development changes
+the length of the header.
 
 The first group fields define the text block dimension, aperture position
 and text offset ( remember, the text is stored as one big chunk ). The second
@@ -1220,8 +1220,8 @@ Relative to: C<tb::BLK_TEXT_OFFSET> when not preceded by L<OP_BIDIMAP>.
 =item OP_COLOR - COLOR
 
 C<OP_COLOR> sets foreground or background color. To set the background,
-COLOR must be or-ed with C<tb::BACKCOLOR_FLAG> value. In addition to the 
-two toolkit supported color values ( RRGGBB and system color index ), 
+COLOR must be or-ed with C<tb::BACKCOLOR_FLAG> value. In addition to the
+two toolkit supported color values ( RRGGBB and system color index ),
 COLOR can also be or-ed with C<tb::COLOR_INDEX> flags, in such case it is
 an index in C<::colormap> property array.
 
@@ -1229,20 +1229,20 @@ Relative to: C<tb::BLK_COLOR>, C<tb::BLK_BACKCOLOR>.
 
 =item OP_FONT - KEY, VALUE
 
-As the font is a complex property, that itself includes font name, size, 
+As the font is a complex property, that itself includes font name, size,
 direction, etc keys, C<OP_FONT> KEY represents one of the three
 parameters - C<tb::F_ID>, C<tb::F_SIZE>, C<tb::F_STYLE>. All three
-have different VALUE meaning. 
+have different VALUE meaning.
 
-Relative to: C<tb::BLK_FONT_ID>, C<tb::BLK_FONT_SIZE>, C<tb::BLK_FONT_STYLE>.  
+Relative to: C<tb::BLK_FONT_ID>, C<tb::BLK_FONT_SIZE>, C<tb::BLK_FONT_STYLE>.
 
 =over
 
 =item F_STYLE
 
-Contains a combination of C<fs::XXX> constants, such as C<fs::Bold>, C<fs::Italic> etc. 
+Contains a combination of C<fs::XXX> constants, such as C<fs::Bold>, C<fs::Italic> etc.
 
-Default value: 0 
+Default value: 0
 
 =item F_SIZE
 
@@ -1267,11 +1267,11 @@ set, and the other font keys can be also selected.
 
 =item OP_TRANSPOSE X, Y, FLAGS
 
-Contains a mark for an empty space. The space is extended to the relative coordinates (X,Y), 
+Contains a mark for an empty space. The space is extended to the relative coordinates (X,Y),
 so the block extension algorithms take this opcode in the account. If FLAGS does not contain
 C<tb::X_EXTEND>, then in addition to the block expansion, current coordinate is also
 moved to (X,Y). In this regard, C<(OP_TRANSPOSE,0,0,0)> and C<(OP_TRANSPOSE,0,0,X_EXTEND)> are
-identical and are empty operators. 
+identical and are empty operators.
 
 There are formatting-only flags,in effect with L<block_wrap> function.
 C<X_DIMENSION_FONT_HEIGHT> indicates that (X,Y) values must be multiplied to
@@ -1291,12 +1291,12 @@ a block is about to be drawn. SUB is called with the following format:
 
 	( $widget, $canvas, $text_block, $font_and_color_state, $x, $y, $parameter);
 
-$font_and_color_state ( or $state, through the code ) contains the state of 
+$font_and_color_state ( or $state, through the code ) contains the state of
 font and color commands in effect, and is changed as the rendering algorithm advances through a block.
 The format of the state is the same as of text block, so one may notice that for readability
 F_ID, F_SIZE, F_STYLE constants are paired to BLK_FONT_ID, BLK_FONT_SIZE and BLK_FONT_STYLE.
 
-The SUB code is executed only when the block is about to draw. 
+The SUB code is executed only when the block is about to draw.
 
 =item OP_WRAP mode
 
@@ -1316,14 +1316,14 @@ C<(OP_WRAP,WRAP_MODE_OFF)> is met.
 =item OP_MARK PARAMETER, X, Y
 
 C<OP_MARK> is only in effect in L<block_wrap> method and is a user command.
-L<block_wrap> only sets (!) X and Y to the current coordinates when the command is met. 
+L<block_wrap> only sets (!) X and Y to the current coordinates when the command is met.
 Thus, C<OP_MARK> can be used for arbitrary reasons, easy marking the geometrical positions
 that undergo the block wrapping.
 
 =item OP_BIDIMAP VISUAL, BIDIMAP
 
 C<OP_BIDIMAP> is used when the text to be displayed is RTL (right-to-left) and requires
-special handling. This opcode is automatically created by C<block_wrap>. It must be 
+special handling. This opcode is automatically created by C<block_wrap>. It must be
 present before any C<OP_TEXT> opcode, because when in effect, the C<OP_TEXT> offset calculation
 is different - instead of reading characters from C<< $self->{text} >>, it reads them from
 C<VISUAL>, and C<BLK_TEXT_OFFSET> in the block header is not used.
@@ -1344,7 +1344,7 @@ C<block_wrap> is the function, that is used to wrap a block into a given width.
 It returns one or more text blocks with fully assigned headers. The returned blocks
 are located one below another, providing an illusion that the text itself is wrapped.
 It does not only traverses the opcodes and sees if the command fit or not in the given width;
-it also splits the text strings if these do not fit. 
+it also splits the text strings if these do not fit.
 
 By default the wrapping can occur either on a command boundary or by the spaces or tab characters
 in the text strings. The unsolicited wrapping can be prevented by using C<OP_WRAP>

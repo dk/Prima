@@ -123,7 +123,7 @@ cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destCol
 		{
 			int i;
 			int tt2 = tolerance*tolerance;
-		
+
 			for ( i = 0; i < colors - 1; i++)
 			{
 				register int r = buf[i]. r;
@@ -131,7 +131,7 @@ cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destCol
 				register int b = buf[i]. b;
 				int j;
 				register PRGBColor next = buf + i + 1;
-		
+
 				for ( j = i + 1; j < colors; j++)
 				{
 					if (( ( next-> r - r)*( next-> r - r) +
@@ -176,7 +176,7 @@ cm_nearest_color( RGBColor color, int palSize, PRGBColor palette)
 void
 cm_fill_colorref( PRGBColor fromPalette, int fromColorCount, PRGBColor toPalette, int toColorCount, Byte * colorref)
 {
-	
+
 	while( fromColorCount--) {
 		RGBColor x = fromPalette[fromColorCount]; /* don't optimize this away, register reading reads past the array bounds */
 		colorref[ fromColorCount] =
@@ -194,7 +194,7 @@ order except the 1st table:
 Table 0   Table 1
 [U16 x 64][U16 x 64] ...
 
-so that it forms one chunk of memory. 
+so that it forms one chunk of memory.
 
 Each table can reference up to 64 colors, using a table-specific resolution.
 In order to map a RGB value to a palette index, one splits 8-bit channel values
@@ -233,7 +233,7 @@ cm_study_palette( RGBColor * palette, int pal_size)
 	RGBColor * org_palette = palette;
 	int i, pal2count = 1, pal2size = 64;
 	int sz = CELL_SIZE * pal2size;
-	
+
 	U16 * p = malloc( sz * sizeof( U16));
 	if ( !p) return nil;
 	for ( i = 0; i < sz; i++) p[i] = PAL_FREE;
@@ -242,7 +242,7 @@ cm_study_palette( RGBColor * palette, int pal_size)
 		if there is already an index, promote the cell into PAL_REF and realloc the tableset.
 		If there's alreay a PAL_REF, just go down and repeat the procesure on the next level */
 	for ( i = 0; i < pal_size; i++, palette++) {
-		int table = 0, index = 
+		int table = 0, index =
 			((palette-> r >> 6) << 4) +
 			((palette-> g >> 6) << 2) +
 			(palette-> b >> 6);
@@ -255,8 +255,8 @@ cm_study_palette( RGBColor * palette, int pal_size)
 			} else if ( p[table + index] & PAL_REF) {
 				/* do down one level */
 				table = (p[table + index] & ~PAL_REF) * CELL_SIZE;
-				index = 
-					(((palette-> r >> shift) & 3) << 4) + 
+				index =
+					(((palette-> r >> shift) & 3) << 4) +
 					(((palette-> g >> shift) & 3) << 2) +
 					((palette-> b >> shift) & 3);
 				shift -= 2;
@@ -284,13 +284,13 @@ cm_study_palette( RGBColor * palette, int pal_size)
 
 				/* this color value */
 				sub_index =
-					(((palette-> r >> shift) & 3) << 4) + 
+					(((palette-> r >> shift) & 3) << 4) +
 					(((palette-> g >> shift) & 3) << 2) +
 					((palette-> b >> shift) & 3);
 				/* the value that was previously assigned - now both are moved
 				to the subtable */
-				old_sub_index = 
-					(((org_palette[old].r >> shift) & 3) << 4) + 
+				old_sub_index =
+					(((org_palette[old].r >> shift) & 3) << 4) +
 					(((org_palette[old].g >> shift) & 3) << 2) +
 					((org_palette[old].b >> shift) & 3);
 				new_table = pal2count * CELL_SIZE;
@@ -310,7 +310,7 @@ cm_study_palette( RGBColor * palette, int pal_size)
 					}
 					/* just a duplicate */
 					p[ table + index] = i;
-					break; 
+					break;
 				}
 			}
 		}
@@ -337,9 +337,9 @@ cm_study_palette( RGBColor * palette, int pal_size)
 				p[stack[sp].table + stack[sp].i] = cm_nearest_color( cell, pal_size, org_palette);
 			} else if ( p[stack[sp].table + stack[sp].i] & PAL_REF) {
 				int shift = 6 - sp * 2;
-				stack[sp + 1].r = stack[sp]. r + ((( stack[sp].i >> 4) & 3) << shift); 
-				stack[sp + 1].g = stack[sp]. g + ((( stack[sp].i >> 2) & 3) << shift); 
-				stack[sp + 1].b = stack[sp]. b + (( stack[sp].i & 3) << shift); 
+				stack[sp + 1].r = stack[sp]. r + ((( stack[sp].i >> 4) & 3) << shift);
+				stack[sp + 1].g = stack[sp]. g + ((( stack[sp].i >> 2) & 3) << shift);
+				stack[sp + 1].b = stack[sp]. b + (( stack[sp].i & 3) << shift);
 				stack[sp + 1].table = (p[stack[sp].table + stack[sp].i] & ~PAL_REF) * CELL_SIZE;
 				stack[++sp].i = -1;
 			}
@@ -352,17 +352,17 @@ cm_study_palette( RGBColor * palette, int pal_size)
 static int
 sort_palette( const void * a, const void * b)
 {
-	register unsigned int A = 
+	register unsigned int A =
 		((PRGBColor)a)->r +
 		((PRGBColor)a)->g +
 		((PRGBColor)a)->b
 	;
-	register unsigned int B = 
+	register unsigned int B =
 		((PRGBColor)b)->r +
 		((PRGBColor)b)->g +
 		((PRGBColor)b)->b
 	;
-	if ( A < B) 
+	if ( A < B)
 		return -1;
 	else if ( A > B)
 		return 1;
@@ -445,10 +445,10 @@ cm_optimized_palette scans a RGB image and builds a palette that best represents
 #define MAP1_SIDE  32
 #define MAP1_SHIFT  3
 #define MAP1_SIDE3 (MAP1_SIDE*MAP1_SIDE*MAP1_SIDE)
-#define MAP2_SIDE   8 
+#define MAP2_SIDE   8
 #define MAP2_SHIFT  3
 #define MAP2_MASK   7
-#define MAP2_ITEM_SIZE  64 
+#define MAP2_ITEM_SIZE  64
 #define MAP2_ITEM_SHIFT 6
 
 Bool
@@ -484,7 +484,7 @@ REPEAT_CALC:
 	/* if too many colors, extract only max_pal_size and return */
 	if ( count > *max_pal_size) {
 		if (( count > 512) && ( side > 8) && !force_squeeze) {
-			side >>= 1; 
+			side >>= 1;
 			shift++;
 			goto REPEAT_CALC;
 		}
@@ -530,13 +530,13 @@ REPEAT_CALC:
 	/* calculate colors with full resolution */
 	sz = MAP1_SIDE * MAP1_SIDE * MAP1_SIDE;
 	count = 0;
-	for ( i = 0; i < sz; i++)  
+	for ( i = 0; i < sz; i++)
 		if ( map[i]) {
 			if ( count == 0) map0index = i;
 			map[i] = count++;
 		}
 	count = 0;
-		
+
 	for ( i = 0; i < height; i++) {
 		RGBColor * p = ( RGBColor*)( data + i * lineSize );
 		for ( j = 0; j < width; j++, p++) {
@@ -558,14 +558,14 @@ REPEAT_CALC:
 		Even /64 scale though can result in up to 4K colors */
 	countB = countL = 0;
 	if ( count > *max_pal_size) {
-		if ( count > *max_pal_size * 2) { 
+		if ( count > *max_pal_size * 2) {
 			for ( i = 0; i < sz; i++)
 				if ( i == map0index || map[i] != 0) {
 					Byte * k = map2 + map[i] * MAP2_ITEM_SIZE;
 					U32 * l = ( U32 *) k;
-					for ( j = 0; j < MAP2_ITEM_SIZE / 4; j+=2) 
+					for ( j = 0; j < MAP2_ITEM_SIZE / 4; j+=2)
 						if ( l[j] || l[j+1]) countL++;
-					for ( j = 0; j < MAP2_ITEM_SIZE; j++) 
+					for ( j = 0; j < MAP2_ITEM_SIZE; j++)
 						if ( k[j]) countB++;
 				}
 			if ( countB > *max_pal_size * 2) {

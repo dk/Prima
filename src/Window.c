@@ -74,7 +74,7 @@ Window_cleanup( Handle self)
 	inherited cleanup( self);
 }
 
-void 
+void
 Window_update_sys_handle( Handle self, HV * profile)
 {
 	dPROFILE;
@@ -103,11 +103,11 @@ Window_update_sys_handle( Handle self, HV * profile)
 	originDontCare = !( pexist( originDontCare) && pget_B( originDontCare));
 	sizeDontCare   = !( pexist( sizeDontCare)   && pget_B( sizeDontCare));
 	layered        = pexist( layered)     ? pget_B( layered) : my-> get_layered( self);
-	
+
 	if ( pexist( owner)) my-> cancel_children( self);
 
-	if ( !apc_window_create( self, 
-		owner, syncPaint, borderIcons, borderStyle, taskListed, windowState, 
+	if ( !apc_window_create( self,
+		owner, syncPaint, borderIcons, borderStyle, taskListed, windowState,
 		onTop, originDontCare, sizeDontCare, layered))
 		croak("Cannot create window");
 
@@ -215,7 +215,7 @@ Window_get_modal_window( Handle self, int modalFlag, Bool next)
 		return next ? var-> nextExclModal   : var-> prevExclModal;
 	} else if ( modalFlag == mtShared) {
 		return next ? var-> nextSharedModal : var-> prevSharedModal;
-	} 
+	}
 	return nilHandle;
 }
 
@@ -456,7 +456,7 @@ void Window_set( Handle self, HV * profile)
 {
 	dPROFILE;
 	Bool owner_icon = false;
-	
+
 	if ( pexist( menuFont)) {
 		SvHV_Font( pget_sv( menuFont), &Font_buffer, "Window::set");
 		my-> set_menu_font( self, Font_buffer);
@@ -493,7 +493,7 @@ void Window_set( Handle self, HV * profile)
 		}
 		if ( is && io)
 			apc_widget_set_rect( self, o. x, o. y, s. x, s. y);
-		else if ( io) 
+		else if ( io)
 			my-> set_frameOrigin( self, o);
 		else
 			my-> set_frameSize( self, s);
@@ -667,7 +667,7 @@ Bool
 Window_process_accel( Handle self, int key)
 {
 	return (
-		var-> modal ? 
+		var-> modal ?
 			my-> first_that_component( self, (void*)prima_find_accel, &key)
 			: inherited process_accel( self, key)
 		) != nilHandle;
@@ -771,8 +771,8 @@ Window_origin( Handle self, Bool set, Point origin)
 Rect
 Window_rect( Handle self, Bool set, Rect r)
 {
-	if ( !set) 
-		return inherited rect( self, set, r); 
+	if ( !set)
+		return inherited rect( self, set, r);
 	apc_window_set_client_rect( self, r. left, r. bottom, r. right - r. left, r. top - r. bottom);
 	return r;
 }

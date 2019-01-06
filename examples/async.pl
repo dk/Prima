@@ -41,7 +41,7 @@ $file = Prima::File-> new(
 );
 
 $window = Prima::MainWindow-> new( text => 'async' );
-$label = $window-> insert( 'Prima::Label' => 
+$label = $window-> insert( 'Prima::Label' =>
 	pack		=> { fill => 'both' },
 	autoHeight	=> 1,
 	wordWrap	=> 1,

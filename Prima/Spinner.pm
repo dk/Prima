@@ -20,19 +20,19 @@ sub profile_default
 sub init
 {
 	my $self = shift;
-	
+
 	# Create the timer for the motion of the spinner
-	$self->{timer} = $self->insert( Timer => 
+	$self->{timer} = $self->insert( Timer =>
 		name	    => 'Timer',
 		timeout     => 200,
 		delegations => ['Tick'],
 	);
-	
+
 	# Init the Spinner
 	my %profile = $self-> SUPER::init(@_);
 	$self->{start_angle} = 0;
 	$self-> $_($profile{$_}) for qw( value showPercent style active color hiliteColor);
-	
+
 	return %profile;
 }
 
@@ -79,8 +79,8 @@ sub on_paint
 	my ($self,$canvas) = @_;
 
 	$canvas->clear;
-		
-	my $x		 = $self->width/2; 
+
+	my $x		 = $self->width/2;
 	my $y		 = $self->height/2;
 	my $min		 = ( $x < $y ) ? $x : $y;
 	my $scale_factor = $min / 12;
@@ -91,7 +91,7 @@ sub on_paint
 		$canvas->color($color2);
 		$canvas->lineWidth(3*$scale_factor);
 		$canvas->ellipse($x, $y, 17.5*$scale_factor,17.5*$scale_factor);
-		
+
 		$canvas->lineWidth(1.5*$scale_factor);
 		$canvas->color($color1);
 		$canvas->lineEnd(le::Square);
@@ -132,7 +132,7 @@ sub on_paint
 		$canvas->translate($x, $y);
 
 		my @colors = $canvas->new_gradient( palette => [ $self->color, $self->backColor ] )->colors(8+1);
-		my $fill_spline = sub { 
+		my $fill_spline = sub {
 			my ( $n, $p ) = @_;
 			$canvas->color( $colors[( $self->{start_angle} + $n) % 8] );
 			$canvas->fill_spline(_scale($p, $scale_factor, $scale_factor));
@@ -190,7 +190,7 @@ sub style
 	$self-> repaint;
 }
 
-sub update_value     
+sub update_value
 {
 	my $self = shift;
 	$self->{angle1} = (360 + $self->{start_angle} - $self->{value} * 360 / 100) % 360;

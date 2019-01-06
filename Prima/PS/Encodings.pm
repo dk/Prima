@@ -73,7 +73,7 @@ sub load
 
 	return $cache{$fx} if exists $cache{$fx};
 
-	my $f = Prima::Utils::find_image( $fx); 
+	my $f = Prima::Utils::find_image( $fx);
 	unless ( $f) {
 		warn("Prima::PS::Encodings: cannot find encoding file for $cp\n");
 		return load('default') unless $cp eq 'default';
@@ -106,10 +106,10 @@ Prima::PS::Encodings -  manage latin-based encodings
 
 =head1 DESCRIPTION
 
-This module provides code tables for major latin-based encodings, for 
+This module provides code tables for major latin-based encodings, for
 the glyphs that usually provided by every PS-based printer or interpreter.
 Prima::PS::Drawable uses these encodings when it decides whether the document
-have to be supplied with a bitmap character glyph or a character index, 
+have to be supplied with a bitmap character glyph or a character index,
 thus relying on PS interpreter capabilities. Latter is obviously preferable,
 but as it's not possible to know beforehand what glyphs are supported by
 PS interpreter, the Latin glyph set was selected as a ground level.

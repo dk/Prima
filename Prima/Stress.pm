@@ -1,4 +1,4 @@
-#  
+#
 #  Module for simulated extreme situations, useful for testing.
 #
 package Prima::Stress;
@@ -51,7 +51,7 @@ sub import
 			Prima::Drawable-> font_match( { size => $Prima::Stress::stress{fs} }, {});
 		};
 	}
-	
+
 	if ( $stress{scr}) {
 		my $gsv = \&Prima::Application::get_system_value;
 		*Prima::Application::get_system_value = sub {
@@ -76,7 +76,7 @@ Prima::Stress - stress test module
 The module is intended for use in test purposes, to check the functionality of
 a program or a module under particular conditions that
 might be overlooked during the design. Currently, the only stress factor implemented
-is change of the default font size, which is set to different value every time 
+is change of the default font size, which is set to different value every time
 the module is invoked.
 
 To use the module functionality it is enough to include a typical

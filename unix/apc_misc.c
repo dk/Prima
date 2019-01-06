@@ -161,7 +161,7 @@ apc_fetch_resource( const char *className, const char *name,
 		}
 		_debug( "\n");
 	}
-	
+
 	if ( XrmQGetResource( guts.db,
 				instances,
 				classes,
@@ -204,7 +204,7 @@ apc_lookup_color( const char * colorName)
 	char buf[ 256];
 	char *b;
 	int len;
-	XColor clr; 
+	XColor clr;
 
 	if ( DISP && XParseColor( DISP, DefaultColormap( DISP, SCREEN), colorName, &clr))
 		return X_COLOR_TO_RGB(clr);
@@ -488,7 +488,7 @@ void
 prima_cursor_tick( void)
 {
 	if (
-		guts. focused && 
+		guts. focused &&
 		X(guts. focused)-> flags. cursor_visible &&
 		!(XF_IN_PAINT(X(guts. focused)))
 	) {
@@ -678,12 +678,12 @@ apc_kbd_get_state( Handle self)
 		(( mask & Mod1Mask)    ? kmAlt   : 0);
 }
 
-static void 
+static void
 close_msgdlg( struct MsgDlg * md)
 {
 	md-> active  = false;
 	md-> pressed = false;
-	if ( md-> grab) 
+	if ( md-> grab)
 		XUngrabPointer( DISP, CurrentTime);
 	md-> grab    = false;
 	XUnmapWindow( DISP, md-> w);
@@ -691,8 +691,8 @@ close_msgdlg( struct MsgDlg * md)
 	if ( md-> next == nil) {
 		XSetInputFocus( DISP, md-> focus, md-> focus_revertTo, CurrentTime);
 		XCHECKPOINT;
-	}   
-}   
+	}
+}
 
 void
 prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
@@ -702,54 +702,54 @@ prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
 	case ConfigureNotify:
 		md-> winSz. x = ev-> xconfigure. width;
 		md-> winSz. y = ev-> xconfigure. height;
-		break;   
+		break;
 	case Expose:
 		{
 			int i, y = md-> textPos. y;
 			int d = md-> pressed ? 2 : 0;
-			XSetForeground( DISP, md-> gc, md-> bg. primary); 
+			XSetForeground( DISP, md-> gc, md-> bg. primary);
 			if ( md-> bg. balance > 0) {
 				Pixmap p = prima_get_hatch( &guts. ditherPatterns[ md-> bg. balance]);
 				if ( p) {
 					XSetStipple( DISP, md-> gc, p);
 					XSetFillStyle( DISP, md-> gc, FillOpaqueStippled);
 					XSetBackground( DISP, md-> gc, md-> bg. secondary);
-				} 
-			} 
+				}
+			}
 			XFillRectangle( DISP, w, md-> gc, 0, 0, md-> winSz.x, md-> winSz.y);
-			if ( md-> bg. balance > 0) 
+			if ( md-> bg. balance > 0)
 				XSetFillStyle( DISP, md-> gc, FillSolid);
-			XSetForeground( DISP, md-> gc, md-> fg); 
+			XSetForeground( DISP, md-> gc, md-> fg);
 			for ( i = 0; i < md-> wrappedCount; i++) {
 				if ( md-> wide)
-					XDrawString16( DISP, w, md-> gc, 
-					( md-> winSz.x - md-> widths[i]) / 2, y, 
+					XDrawString16( DISP, w, md-> gc,
+					( md-> winSz.x - md-> widths[i]) / 2, y,
 						( XChar2b*) md-> wrapped[i], md-> lengths[i]);
 				else
-					XDrawString( DISP, w, md-> gc, 
-					( md-> winSz.x - md-> widths[i]) / 2, y, 
+					XDrawString( DISP, w, md-> gc,
+					( md-> winSz.x - md-> widths[i]) / 2, y,
 						md-> wrapped[i], md-> lengths[i]);
 				y += md-> font-> height + md-> font-> externalLeading;
-			}   
-			XDrawRectangle( DISP, w, md-> gc, 
+			}
+			XDrawRectangle( DISP, w, md-> gc,
 				md-> btnPos.x-1, md-> btnPos.y-1, md-> btnSz.x+2, md-> btnSz.y+2);
-			XDrawString( DISP, w, md-> gc, 
+			XDrawString( DISP, w, md-> gc,
 				md-> btnPos.x + ( md-> btnSz.x - md-> OKwidth) / 2 + d,
 				md-> btnPos.y + md-> font-> height + md-> font-> externalLeading +
 				( md-> btnSz.y - md-> font-> height - md-> font-> externalLeading) / 2 - 2 + d,
 				"OK", 2);
-			XSetForeground( DISP, md-> gc, 
-				md-> pressed ? md-> d3d : md-> l3d); 
+			XSetForeground( DISP, md-> gc,
+				md-> pressed ? md-> d3d : md-> l3d);
 			XDrawLine( DISP, w, md-> gc,
-				md-> btnPos.x, md-> btnPos.y + md-> btnSz.y - 1, 
+				md-> btnPos.x, md-> btnPos.y + md-> btnSz.y - 1,
 				md-> btnPos.x, md-> btnPos. y);
 			XDrawLine( DISP, w, md-> gc,
 				md-> btnPos.x + 1, md-> btnPos. y,
 				md-> btnPos.x + md-> btnSz.x - 1, md-> btnPos. y);
-			XSetForeground( DISP, md-> gc, 
-				md-> pressed ? md-> l3d : md-> d3d); 
+			XSetForeground( DISP, md-> gc,
+				md-> pressed ? md-> l3d : md-> d3d);
 			XDrawLine( DISP, w, md-> gc,
-				md-> btnPos.x, md-> btnPos.y + md-> btnSz.y, 
+				md-> btnPos.x, md-> btnPos.y + md-> btnSz.y,
 				md-> btnPos.x + md-> btnSz.x, md-> btnPos.y + md-> btnSz.y);
 			XDrawLine( DISP, w, md-> gc,
 				md-> btnPos.x + md-> btnSz.x, md-> btnPos.y + md-> btnSz.y - 1,
@@ -757,7 +757,7 @@ prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
 		}
 		break;
 	case ButtonPress:
-		if ( !md-> grab && 
+		if ( !md-> grab &&
 			( ev-> xbutton. button == Button1) &&
 			( ev-> xbutton. x >= md-> btnPos. x ) &&
 			( ev-> xbutton. x < md-> btnPos. x + md-> btnSz.x) &&
@@ -766,15 +766,15 @@ prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
 			md-> pressed = true;
 			md-> grab = true;
 			XClearArea( DISP, w, md-> btnPos.x, md-> btnPos.y,
-				md-> btnSz.x, md-> btnSz.y, true); 
-			XGrabPointer( DISP, w, false, 
+				md-> btnSz.x, md-> btnSz.y, true);
+			XGrabPointer( DISP, w, false,
 				ButtonReleaseMask | PointerMotionMask | ButtonMotionMask,
 				GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
-		}   
-		break;   
+		}
+		break;
 	case MotionNotify:
 		if ( md-> grab) {
-			Bool np = 
+			Bool np =
 			(( ev-> xmotion. x >= md-> btnPos. x ) &&
 				( ev-> xmotion. x < md-> btnPos. x + md-> btnSz.x) &&
 				( ev-> xmotion. y >= md-> btnPos. y ) &&
@@ -782,9 +782,9 @@ prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
 			if ( np != md-> pressed) {
 				md-> pressed = np;
 				XClearArea( DISP, w, md-> btnPos.x, md-> btnPos.y,
-					md-> btnSz.x, md-> btnSz.y, true); 
+					md-> btnSz.x, md-> btnSz.y, true);
 			}
-		}      
+		}
 		break;
 	case KeyPress:
 		{
@@ -797,26 +797,26 @@ prima_msgdlg_event( XEvent * ev, struct MsgDlg * md)
 				( keysym == XK_KP_Enter) ||
 				( keysym == XK_KP_Space) ||
 				(( str_len == 1) && ( str_buf[0] == ' '))
-				) 
+				)
 				close_msgdlg( md);
-		}   
-		break;   
+		}
+		break;
 	case ButtonRelease:
-		if ( md-> grab && 
+		if ( md-> grab &&
 			( ev-> xbutton. button == Button1)) {
 			md-> grab = false;
 			XUngrabPointer( DISP, CurrentTime);
 			if ( md-> pressed) close_msgdlg( md);
-		}   
+		}
 		break;
 	case ClientMessage:
 		if (( ev-> xclient. message_type == WM_PROTOCOLS) &&
-			(( Atom) ev-> xclient. data. l[0] == WM_DELETE_WINDOW)) 
+			(( Atom) ev-> xclient. data. l[0] == WM_DELETE_WINDOW))
 			close_msgdlg( md);
-		break;   
+		break;
 	}
-}   
-	
+}
+
 extern char ** Drawable_do_text_wrap( Handle, TextWrapRec *);
 
 Bool
@@ -824,7 +824,7 @@ apc_show_message( const char * message, Bool utf8)
 {
 	char ** wrapped;
 	Font f;
-	Point appSz, appPos; 
+	Point appSz, appPos;
 	Point textSz;
 	Point winSz;
 	TextWrapRec twr;
@@ -837,8 +837,8 @@ apc_show_message( const char * message, Bool utf8)
 	if ( !DISP) {
 		warn( "%s", message);
 		return true;
-	}   
-		
+	}
+
 	if ( guts. grab_widget)
 		apc_widget_set_capture( guts. grab_widget, 0, 0);
 
@@ -868,7 +868,7 @@ apc_show_message( const char * message, Bool utf8)
 		PCachedFont cf;
 		XFontStruct *fs;
 		int max;
-		
+
 		apc_sys_get_msg_font( &f);
 		prima_core_font_pick( nilHandle, &f, &f);
 		cf = prima_find_known_font( &f, false, false);
@@ -880,8 +880,8 @@ apc_show_message( const char * message, Bool utf8)
 		if (!fs) {
 			warn( "%s", message);
 			return false;
-		}   
-		
+		}
+
 		twr. text      = ( char *) message;
 		twr. utf8_text = utf8;
 		twr. textLen   = strlen( message);
@@ -897,7 +897,7 @@ apc_show_message( const char * message, Bool utf8)
 		if ( font_abc_ascii) free( font_abc_ascii);
 		if ( font_abc_unicode) {
 			int i;
-			for ( i = 0; i < font_abc_unicode-> count; i += 2) 
+			for ( i = 0; i < font_abc_unicode-> count; i += 2)
 				free(( void*) font_abc_unicode-> items[ i + 1]);
 			plist_destroy( font_abc_unicode);
 		}
@@ -907,7 +907,7 @@ apc_show_message( const char * message, Bool utf8)
 			warn( "%s", message);
 			return false;
 		}
-			
+
 		if ( !( md. lengths = malloc( twr. count * sizeof(int)))) {
 			free( md. widths);
 			XFreeFontInfo( nil, fs, 1);
@@ -927,14 +927,14 @@ apc_show_message( const char * message, Bool utf8)
 				wrapped[i] = w;
 				md. widths[i] = XTextWidth16( fs, ( XChar2b*) wrapped[i], md. lengths[i]);
 			} else {
-				md. widths[i] = XTextWidth( fs, wrapped[i], 
+				md. widths[i] = XTextWidth( fs, wrapped[i],
 					md. lengths[i] = strlen( wrapped[i]));
-			} 
+			}
 			if ( md. widths[i] > max) max = md. widths[i];
-		}   
+		}
 		textSz. x = max;
 		textSz. y = twr. count * ( f. height + f. externalLeading);
-		
+
 		md. wrapped       = wrapped;
 		md. wrappedCount  = twr. count;
 		md. font          = &f;
@@ -943,7 +943,7 @@ apc_show_message( const char * message, Bool utf8)
 		md. btnSz.x       = md. OKwidth + 2 + 10;
 		if ( md. btnSz. x < 56) md. btnSz. x = 56;
 		md. btnSz.y       = f. height + f. externalLeading + 2 + 12;
-			
+
 		winSz. x = textSz. x + 4;
 		if ( winSz. x < md. btnSz. x + 2) winSz. x = md. btnSz.x + 2;
 		winSz. x += f. width * 4;
@@ -951,13 +951,13 @@ apc_show_message( const char * message, Bool utf8)
 		while ( winSz. y + 12 >= appSz.y) {
 			winSz. y -= f. height + f. externalLeading;
 			md. wrappedCount--;
-		}      
+		}
 		md. btnPos. x = ( winSz. x - md. btnSz. x) / 2;
 		md. btnPos. y = winSz. y - 2 - md. btnSz. y - f. height / 2;
 		md. textPos. x = 2;
 		md. textPos. y = f. height * 3 / 2 + 2;
 		md. winSz = winSz;
-		
+
 		XFreeFontInfo( nil, fs, 1);
 	}
 
@@ -984,16 +984,16 @@ apc_show_message( const char * message, Bool utf8)
 			| ExposureMask;
 		attrs. override_redirect = false;
 		attrs. do_not_propagate_mask = attrs. event_mask;
-			
+
 		md. w = XCreateWindow( DISP, guts. root,
 			appPos.x + ( appSz.x - winSz.x) / 2, appPos.y + ( appSz.y - winSz.y) / 2,
-			winSz.x, winSz.y, 0, CopyFromParent, InputOutput, 
-			CopyFromParent, CWEventMask | CWOverrideRedirect, &attrs);  
+			winSz.x, winSz.y, 0, CopyFromParent, InputOutput,
+			CopyFromParent, CWEventMask | CWOverrideRedirect, &attrs);
 		XCHECKPOINT;
 		if ( !md. w) {
 			ret = false;
 			goto EXIT;
-		}   
+		}
 		XSetWMProtocols( DISP, md. w, &WM_DELETE_WINDOW, 1);
 		XCHECKPOINT;
 		xs. flags = PMinSize | PMaxSize | USPosition;
@@ -1026,29 +1026,29 @@ apc_show_message( const char * message, Bool utf8)
 		prima_allocate_color( nilHandle, prima_map_color(clBack | wcDialog,nil), &md. bg);
 		md. l3d = CLR(clLight3DColor | wcDialog);
 		md. d3d = CLR(clDark3DColor  | wcDialog);
-#undef CLR      
+#undef CLR
 	}
-	
-	
+
+
 	XMapWindow( DISP, md. w);
-	XMoveResizeWindow( DISP, md. w, 
+	XMoveResizeWindow( DISP, md. w,
 		appPos.x + ( appSz.x - winSz.x) / 2, appPos.y + ( appSz.y - winSz.y) / 2, winSz.x, winSz.y);
 	XNoOp( DISP);
 	while ( md. active && !guts. applicationClose) {
 		XFlush( DISP);
 		prima_one_loop_round( WAIT_ALWAYS, false);
 	}
-	
+
 	XFreeGC( DISP, md. gc);
 	XDestroyWindow( DISP, md. w);
 	*storage = md. next;
-EXIT:   
+EXIT:
 	free( md. widths);
 	free( md. lengths);
 	for ( i = 0; i < twr. count; i++)
 		free( wrapped[i]);
 	free( wrapped);
-	
+
 	return ret;
 }
 
@@ -1095,7 +1095,7 @@ is_composite_display(void)
 	XSync(DISP, false);
 	if ( guts. composite_error_triggered )
 		return true;
-	
+
 	return false;
 #endif
 }
@@ -1108,24 +1108,24 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 		Font f;
 		apc_menu_default_font( &f);
 		return f. height + MENU_ITEM_GAP * 2;
-	} 
+	}
 	case svYTitleBar: /* XXX */ return 20;
 	case svMousePresent:		return guts. mouse_buttons > 0;
 	case svMouseButtons:		return guts. mouse_buttons;
 	case svSubmenuDelay:  /* XXX ? */ return guts. menu_timeout;
 	case svFullDrag: /* XXX ? */ return false;
 	case svWheelPresent:		return guts.mouse_wheel_up || guts.mouse_wheel_down;
-	case svXIcon: 
-	case svYIcon: 
-	case svXSmallIcon: 
-	case svYSmallIcon: 
+	case svXIcon:
+	case svYIcon:
+	case svXSmallIcon:
+	case svYSmallIcon:
 		{
 			int ret[4], n;
-			XIconSize * sz = NULL; 
+			XIconSize * sz = NULL;
 			if ( XGetIconSizes( DISP, guts.root, &sz, &n) && ( n > 0) && (sz != NULL)) {
-				ret[0] = sz-> max_width; 
+				ret[0] = sz-> max_width;
 				ret[1] = sz-> max_height;
-				ret[2] = sz-> min_width; 
+				ret[2] = sz-> min_width;
 				ret[3] = sz-> min_height;
 			} else {
 				ret[0] = ret[1] = 64;
@@ -1187,21 +1187,21 @@ apc_beep_tone( int freq, int duration)
 	XKeyboardControl xkc;
 	XKeyboardState   xks;
 	struct timeval timeout;
-	
+
 	if ( !DISP) return false;
-	
+
 	XGetKeyboardControl( DISP, &xks);
 	xkc. bell_pitch    = freq;
 	xkc. bell_duration = duration;
 	XChangeKeyboardControl( DISP, KBBellPitch | KBBellDuration, &xkc);
-	
+
 	XBell( DISP, 100);
 	XFlush( DISP);
-	
+
 	xkc. bell_pitch    = xks. bell_pitch;
 	xkc. bell_duration = xks. bell_duration;
 	XChangeKeyboardControl( DISP, KBBellPitch | KBBellDuration, &xkc);
-	
+
 	timeout. tv_sec  = duration / 1000;
 	timeout. tv_usec = 1000 * (duration % 1000);
 	select( 0, nil, nil, nil, &timeout);
@@ -1240,7 +1240,7 @@ apc_system_action( const char *s)
 			char buf[ 80];
 
 			if (*end == '\0' &&
-				( self = prima_xw2h( w)) && 
+				( self = prima_xw2h( w)) &&
 				prima_get_frame_info( self, &r) &&
 				snprintf( buf, sizeof(buf), "%d %d %d %d", r.left, r.bottom, r.right, r.top) < sizeof(buf))
 				return duplicate_string( buf);
@@ -1248,7 +1248,7 @@ apc_system_action( const char *s)
 		} else if ( strncmp( s, "gtk.OpenFile.", 13) == 0) {
 			s += 13;
 #ifdef WITH_GTK
-			if ( guts. use_gtk ) 
+			if ( guts. use_gtk )
 				return prima_gtk_openfile(( char*) s);
 #endif
 			return nil;
@@ -1271,7 +1271,7 @@ apc_system_action( const char *s)
 		if ( strcmp( "synchronize", s) == 0) {
 			XSynchronize( DISP, true);
 			return nil;
-		}   
+		}
 		if ( strncmp( "setfont ", s, 8) == 0) {
 			Handle self = nilHandle;
 			char font[1024];
@@ -1305,7 +1305,7 @@ apc_system_action( const char *s)
 		}
 		break;
 	case 'u':
-		if ( strcmp( s, "unix_guts") == 0) 
+		if ( strcmp( s, "unix_guts") == 0)
 			return (char*) &guts;
 		break;
 	case 'X':
@@ -1378,7 +1378,7 @@ apc_getdir( const char *dirname)
 			case DT_WHT:	type = "wht";	break;
 #endif
 			default:
-#endif 
+#endif
 								snprintf( path, 2047, "%s/%s", dirname, de-> d_name);
 								type = nil;
 								if ( stat( path, &s) == 0) {
@@ -1464,7 +1464,7 @@ prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len_bytes, int ta
 		if ( u < 0x10000) {
 			u16-> byte1 = u >> 8;
 			u16-> byte2 = u & 0xff;
-		} else 
+		} else
 			u16-> byte1 = u16-> byte2 = 0xff;
 		u16++;
 		utf8 += charlen;
@@ -1483,7 +1483,7 @@ prima_alloc_utf8_to_wchar( const char * utf8, int length_chars)
 	return ret;
 }
 
-void 
+void
 prima_wchar2char( char * dest, XChar2b * src, int lim)
 {
 	if ( lim < 1) return;
@@ -1492,7 +1492,7 @@ prima_wchar2char( char * dest, XChar2b * src, int lim)
 	*dest = 0;
 }
 
-void 
+void
 prima_char2wchar( XChar2b * dest, char * src, int lim)
 {
 	int l = strlen( src) + 1;
@@ -1526,27 +1526,27 @@ char * apc_prn_get_default( Handle self) { return nil; }
 Bool   apc_prn_setup( Handle self) { return false; }
 Bool   apc_prn_begin_doc( Handle self, const char* docName) { return false; }
 Bool   apc_prn_begin_paint_info( Handle self) { return false; }
-Bool   apc_prn_end_doc( Handle self) { return true; } 
-Bool   apc_prn_end_paint_info( Handle self) { return true; } 
+Bool   apc_prn_end_doc( Handle self) { return true; }
+Bool   apc_prn_end_paint_info( Handle self) { return true; }
 Bool   apc_prn_new_page( Handle self) { return true; }
 Bool   apc_prn_abort_doc( Handle self) { return true; }
 ApiHandle   apc_prn_get_handle( Handle self) { return ( ApiHandle) 0; }
 Bool   apc_prn_set_option( Handle self, char * option, char * value) { return false; }
 
-Bool apc_prn_get_option( Handle self, char * option, char ** value) 
-{ 
+Bool apc_prn_get_option( Handle self, char * option, char ** value)
+{
 	*value = nil;
-	return false; 
+	return false;
 }
 
-Bool apc_prn_enum_options( Handle self, int * count, char *** options) 
-{ 
+Bool apc_prn_enum_options( Handle self, int * count, char *** options)
+{
 	*count = 0;
-	return false; 
+	return false;
 }
 
-PrinterInfo * 
-apc_prn_enumerate( Handle self, int * count) 
+PrinterInfo *
+apc_prn_enumerate( Handle self, int * count)
 {
 	*count = 0;
 	return nil;

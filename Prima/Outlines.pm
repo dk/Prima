@@ -79,14 +79,14 @@ sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
 	$self-> SUPER::profile_check_in( $p, $default);
-	$p-> { autoHeight} = 0 if 
-		exists $p-> { itemHeight} 
+	$p-> { autoHeight} = 0 if
+		exists $p-> { itemHeight}
 		&& !exists $p-> {autoHeight};
 	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
 	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
-	$p-> {multiSelect} = 1 if 
-		exists $p-> { extendedSelect} 
-		&& $p-> {extendedSelect} 
+	$p-> {multiSelect} = 1 if
+		exists $p-> { extendedSelect}
+		&& $p-> {extendedSelect}
 		&& !exists $p-> {multiSelect};
 }
 
@@ -122,7 +122,7 @@ sub init
 	}
 	for ( qw( topItem focusedItem))
 		{ $self-> {$_} = -1; }
-	for ( qw( autoHScroll autoVScroll scrollTransaction dx dy hScroll vScroll 
+	for ( qw( autoHScroll autoVScroll scrollTransaction dx dy hScroll vScroll
 		offset count autoHeight borderWidth multiSelect extendedSelect
 		rows maxWidth hintActive showItemHint dragable))
 		{ $self-> {$_} = 0; }
@@ -132,7 +132,7 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
 	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
-	for ( qw( autoHScroll autoVScroll hScroll vScroll offset itemHeight autoHeight borderWidth 
+	for ( qw( autoHScroll autoVScroll hScroll vScroll offset itemHeight autoHeight borderWidth
 		indent items focusedItem topItem showItemHint dragable multiSelect extendedSelect))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> reset;
@@ -161,7 +161,7 @@ sub iterate
 	my $traverse;
 	$traverse = sub {
 		my ( $current, $parent, $index, $level, $lastChild) = @_;
-		return $current if $sub-> ( $current, $parent, $index, $position, $level, 
+		return $current if $sub-> ( $current, $parent, $index, $position, $level,
 			$lastChild, $visible ? $visual_position : undef);
 		$position++;
 		$level++;
@@ -206,7 +206,7 @@ sub adjust
 	$self-> reset_tree;
 
 	my ( $ih, @a) = ( $self-> {itemHeight}, $self-> get_active_area);
-	$self-> scroll( 
+	$self-> scroll(
 		0, ( $c - $self-> {count}) * $ih,
 		clipRect => [ @a[0..2], $a[3] - $ih * ( $index - $self-> {topItem} + 1)]
 	);
@@ -269,10 +269,10 @@ sub on_paint
 	my $j;
 	my $locWidth = $a[2] - $a[0] + 1;
 	my @clipRect = $canvas-> clipRect;
-	if ( 
-		$clipRect[0] > $a[0] && 
-		$clipRect[1] > $a[1] && 
-		$clipRect[2] < $a[2] && 
+	if (
+		$clipRect[0] > $a[0] &&
+		$clipRect[1] > $a[1] &&
+		$clipRect[2] < $a[2] &&
 		$clipRect[3] < $a[3]
 	) {
 		$canvas-> clipRect( @a);
@@ -317,8 +317,8 @@ sub on_paint
 	my $prelight = $self->{prelight} // -1;
 
 # preparing stack
-	$i = int(( $timin + 1) / STACK_FRAME) * STACK_FRAME - 1; 
-#   $i = int( $timin / STACK_FRAME) * STACK_FRAME - 1; 
+	$i = int(( $timin + 1) / STACK_FRAME) * STACK_FRAME - 1;
+#   $i = int( $timin / STACK_FRAME) * STACK_FRAME - 1;
 	if ( $i >= 0) {
 #  if ( $i > 0) {
 		$position = $i;
@@ -374,7 +374,7 @@ sub on_paint
 			};
 			push ( @texts, [ $node, $l + $indent * 1.5, $lineY,
 				$l + $indent * 1.5 + $node-> [WIDTH] - 1, $lineY + $ih - 1,
-				$position, 
+				$position,
 				$self-> {multiSelect} ? $node-> [SELECTED] : ($foc == $position),
 				$foc == $position,
 				$prelight == $position,
@@ -430,7 +430,7 @@ sub on_size
 sub on_fontchanged
 {
 	my $self = $_[0];
-	$self-> itemHeight( $self-> font-> height), $self-> {autoHeight} = 1 
+	$self-> itemHeight( $self-> font-> height), $self-> {autoHeight} = 1
 		if $self-> { autoHeight};
 	$self-> calibrate;
 }
@@ -455,17 +455,17 @@ sub on_mousedown
 	$self-> clear_event;
 	my ($o,$i,@a) = ( $self-> {offset}, $self-> {indent}, $self-> get_active_area(0, @size));
 	return if $btn != mb::Left;
-	return if 
+	return if
 		defined $self-> {mouseTransaction} ||
-		$y < $a[1] || 
-		$y >= $a[3] || 
-		$x < $a[0] || 
+		$y < $a[1] ||
+		$y >= $a[3] ||
+		$x < $a[0] ||
 		$x >= $a[2];
 
 	my $item   = $self-> point2item( $y, $size[1]);
 	my ( $rec, $lev) = $self-> get_item( $item);
-	
-	if ( 
+
+	if (
 		$rec &&
 		( $x >= ( 1 + $lev) * $i + $a[0] - $o - $imageSize[0] / 2) &&
 		( $x <  ( 1 + $lev) * $i + $a[0] - $o + $imageSize[0] / 2)
@@ -473,7 +473,7 @@ sub on_mousedown
 		$self-> adjust( $item, $rec-> [2] ? 0 : 1) if $rec-> [1];
 		return;
 	}
-	
+
 	my $foc = $item >= 0 ? $item : 0;
 	if ( $self-> {multiSelect}) {
 		if ( $self-> {extendedSelect}) {
@@ -490,7 +490,7 @@ sub on_mousedown
 		}
 	}
 
-	$self-> {mouseTransaction} = 
+	$self-> {mouseTransaction} =
 		(( $mod & ( km::Alt | ($self-> {multiSelect} ? 0 : km::Ctrl))) && $self-> {dragable}) ? 2 : 1;
 	$self-> focusedItem( $item >= 0 ? $item : 0);
 	$self-> {mouseTransaction} = 1 if $self-> focusedItem < 0;
@@ -512,7 +512,7 @@ sub on_mouseclick
 	my $item   = $self-> point2item( $y, $size[1]);
 	my ($o,$i) = ( $self-> {offset}, $self-> {indent});
 	my ( $rec, $lev) = $self-> get_item( $item);
-	if ( 
+	if (
 		$rec &&
 		( $x >= ( 1 + $lev) * $i + $self-> {indents}-> [0] - $o - $imageSize[0] / 2) &&
 		( $x <  ( 1 + $lev) * $i + $self-> {indents}-> [0] - $o + $imageSize[0] / 2)
@@ -571,7 +571,7 @@ sub makehint
 	$self-> {hinter}-> {node} = $item;
 	my @org = $self-> client_to_screen(0,0);
 	$self-> {hinter}-> set(
-		origin  => [ 
+		origin  => [
 			$org[0] + $ofs - 2,
 			$org[1] + $self-> height - $self-> {indents}-> [3] -
 				$self-> {itemHeight} * ( $itemid - $self-> {topItem} + 1),
@@ -625,18 +625,18 @@ sub update_prelight
 
 	my $item   = $self-> point2item( $y, $size[1]);
 	my ( $rec, $lev) = $self-> get_item( $item);
-	if ( 
-		!$rec || 
+	if (
+		!$rec ||
 		( $x < -$self-> {offset} + ($lev + 2) * $self-> {indent} + $self-> {indents}-> [0])
 	) {
 		$self-> makehint( 0);
 	} elsif (( $y >= $a[3]) || ( $y <= $a[1] + $self-> {itemHeight} / 2)) {
 		$self-> makehint( 0);
 	} else {
-		$y = $a[3] - $y; 
-		$item = $self-> {topItem} + int( $y / $self-> {itemHeight}); 
+		$y = $a[3] - $y;
+		$item = $self-> {topItem} + int( $y / $self-> {itemHeight});
 	}
-	
+
 	if ( $self-> {showItemHint} ) {
 		if ( defined $item ) {
 			$self-> makehint( 1, $self-> {topItem} + int( $y / $self-> {itemHeight}));
@@ -644,7 +644,7 @@ sub update_prelight
 			$self-> makehint( 0);
 		}
 	}
-	
+
 	if (( $self->{prelight} // -1) != ( $item // -1)) {
 		my @redraw = (
 			$self->{prelight} // (),
@@ -660,7 +660,7 @@ sub on_mousemove
 	my ( $self, $mod, $x, $y) = @_;
 	$self->update_prelight($x,$y);
 	return unless $self-> {mouseTransaction};
-	
+
 	my @size = $self-> size;
 	my @a    = $self-> get_active_area( 0, @size);
 
@@ -673,12 +673,12 @@ sub on_mousemove
 	} else {
 		$self-> scroll_timer_stop;
 	}
-	
+
 	if ( $self-> {multiSelect} && $self-> {extendedSelect} && exists $self-> {anchor})
 	{
 		my ( $a, $b, $c) = ( $self-> {anchor}, $item, $self-> {focusedItem});
 		my $globSelect = 0;
-		if (( $b <= $a && $c > $a) || ( $b >= $a && $c < $a)) { 
+		if (( $b <= $a && $c > $a) || ( $b >= $a && $c < $a)) {
 			$globSelect = 1
 		} elsif ( $b > $a) {
 			if ( $c < $b) { $self-> add_selection([$c + 1..$b], 1) }
@@ -688,18 +688,18 @@ sub on_mousemove
 			if ( $c < $b) { $self-> add_selection([$c..$b], 0) }
 			elsif ( $c > $b) { $self-> add_selection([$b..$c], 1) }
 			else { $globSelect = 1 }
-		} else { 
-			$globSelect = 1 
+		} else {
+			$globSelect = 1
 		}
-	
+
 		if ( $globSelect ) {
 			( $a, $b) = ( $b, $a) if $a > $b;
 			$self-> selectedItems([$a..$b]);
 		}
 	}
-	
+
 	$self-> focusedItem( $item >= 0 ? $item : 0);
-	$self-> offset( $self-> {offset} + 5 * (( $x < $a[0]) ? -1 : 1)) 
+	$self-> offset( $self-> {offset} + 5 * (( $x < $a[0]) ? -1 : 1))
 		if $x >= $a[2] || $x < $a[0];
 }
 
@@ -765,7 +765,7 @@ sub on_keydown
 	return unless $self-> {count};
 
 	if (
-		( $key == kb::NoKey) && 
+		( $key == kb::NoKey) &&
 		( $code >= ord(' '))
 	) {
 		if ( chr($code) eq '+') {
@@ -818,11 +818,11 @@ sub on_keydown
 	)) {
 		my $doSelect = 0;
 		my $newItem = $self-> {focusedItem};
-		if ( 
-			$mod == 0 || 
+		if (
+			$mod == 0 ||
 			(
-				( $mod & km::Shift) && 
-				$self-> {multiSelect} && 
+				( $mod & km::Shift) &&
+				$self-> {multiSelect} &&
 				$self-> { extendedSelect}
 			)
 		) {
@@ -840,8 +840,8 @@ sub on_keydown
 		if (
 			( $mod & km::Ctrl) ||
 			(
-				(( $mod & ( km::Shift|km::Ctrl))==(km::Shift|km::Ctrl)) && 
-				$self-> {multiSelect} && 
+				(( $mod & ( km::Shift|km::Ctrl))==(km::Shift|km::Ctrl)) &&
+				$self-> {multiSelect} &&
 				$self-> { extendedSelect}
 			)
 		) {
@@ -849,10 +849,10 @@ sub on_keydown
 			if ( $key == kb::PgDn || $key == kb::End)  { $newItem = $self-> {count} - 1};
 			$doSelect = $mod & km::Shift;
 		}
-		
+
 		if ( $doSelect ) {
-			my ( $a, $b) = ( 
-				defined $self-> {anchor} ? $self-> {anchor} : $self-> {focusedItem}, 
+			my ( $a, $b) = (
+				defined $self-> {anchor} ? $self-> {anchor} : $self-> {focusedItem},
 				$newItem
 			);
 			( $a, $b) = ( $b, $a) if $a > $b;
@@ -862,9 +862,9 @@ sub on_keydown
 			$self-> selectedItems([$self-> focusedItem]) if exists $self-> {anchor};
 			delete $self-> {anchor};
 		}
-		
-		$self-> offset( 
-			$self-> {offset} + 
+
+		$self-> offset(
+			$self-> {offset} +
 				$self-> {indent} * (( $key == kb::Left) ? -1 : 1
 			)) if $key == kb::Left || $key == kb::Right;
 		$self-> focusedItem( $newItem >= 0 ? $newItem : 0);
@@ -906,7 +906,7 @@ sub reset_scrolls
 		) if $self-> {vScroll};
 	}
 
-	if ( $self-> {scrollTransaction} != 2) { 
+	if ( $self-> {scrollTransaction} != 2) {
 		my @sz = $self-> get_active_area( 2);
 		my $iw = $self-> {maxWidth};
 		if ( $self-> {autoHScroll}) {
@@ -1020,7 +1020,7 @@ sub redraw_items
 		next unless $i >= 0 && $i >= $self-> {topItem} && $i <= $self-> {topItem} + $self-> {rows};
 		next if $match{$i}++;
 		$i -= $self->{topItem};
-		$self-> invalidate_rect( 
+		$self-> invalidate_rect(
 			$a[0], $a[3] - ( $i + 1) * $ih,
 			$a[2], $a[3] - $i * $ih
 		);
@@ -1059,11 +1059,11 @@ sub set_focused_item
 	return if $foc < -1;
 
 	$self-> {focusedItem} = $foc;
-	$self-> selectedItems([$foc]) 
+	$self-> selectedItems([$foc])
 		if $self-> {multiSelect} && $self-> {extendedSelect} && ! exists $self-> {anchor};
 	$self-> notify(q(SelectItem), [[$foc, undef, 1]]) if $foc >= 0;
 	return if $self-> {doingExpand};
-	
+
 	my $topSet = undef;
 	if ( $foc >= 0) {
 		my $rows = $self-> {rows} ? $self-> {rows} : 1;
@@ -1140,12 +1140,12 @@ sub insert_items
 {
 	my ( $self, $where, $at, @items) = @_;
 	return unless scalar @items;
-	
+
 	my $forceReset = 0;
 	$where = [0, $self-> {items}], $forceReset = 1 unless $where;
 	$self-> validate_items( $_) for @items;
 	return unless $where-> [DOWN];
-	
+
 	my $ch = scalar @{$where-> [DOWN]};
 	$at = 0 if $at < 0;
 	$at = $ch if $at > $ch;
@@ -1153,7 +1153,7 @@ sub insert_items
 	my ( $x, $l) = $self-> get_index( $where);
 	splice( @{$where-> [DOWN]}, $at, 0, @items);
 	return if $x < 0 && !$forceReset;
-	
+
 	$self-> reset_tree;
 	$self-> update_tree;
 	$self-> repaint;
@@ -1165,14 +1165,14 @@ sub delete_items
 	my ( $self, $where, $at, $amount) = @_;
 	$where = [0, $self-> {items}] unless $where;
 	return unless $where-> [DOWN];
-	
+
 	my ( $x, $l) = $self-> get_index( $where);
 	$at = 0 unless defined $at;
-	
+
 	$amount = scalar @{$where-> [DOWN]} unless defined $amount;
 	splice( @{$where-> [DOWN]}, $at, $amount);
 	return if $x < 0;
-	
+
 	my $f = $self-> {focusedItem};
 	$self-> focusedItem( -1) if $f >= $x && $f < $x + $amount;
 
@@ -1244,10 +1244,10 @@ sub set_offset
 		$offset = 0;
 	}
 	return if $self-> {offset} == $offset;
-	
+
 	my $oldOfs = $self-> {offset};
 	$self-> {offset} = $offset;
-	
+
 	if ( $self-> {hScroll} && $self-> {scrollTransaction} != 2) {
 		$self-> {scrollTransaction} = 2;
 		$self-> {hScrollBar}-> value( $offset);
@@ -1266,7 +1266,7 @@ sub set_top_item
 	$topItem = $self-> {count} - 1 if $topItem >= $self-> {count};
 	$topItem = 0 if $topItem < 0;   # count = 0 case
 	return if $topItem == $self-> {topItem};
-	
+
 	my $oldTop = $self-> {topItem};
 	$self-> {topItem} = $topItem;
 	my ($ih, @a) = ( $self-> {itemHeight}, $self-> get_active_area);
@@ -1365,7 +1365,7 @@ sub get_item
 			$idx   = $$i[$k];
 			$lim   = scalar @{$array-> [DOWN]};
 			$level = scalar @$i - 1;
-		}   
+		}
 	}
 
 	die "Internal error\n" if $position > $item;
@@ -1387,7 +1387,7 @@ sub get_item
 			( $array, $idx, $lim) = @{pop @stack};
 			$lastChild = $idx == $lim;
 		}
-	}   
+	}
 }
 
 sub get_item_text
@@ -1487,8 +1487,8 @@ sub on_dragitem
 	$self-> clear_event;
 }
 
-sub is_selected 
-{ 
+sub is_selected
+{
 	my ( $self, $index, $item, $sel) = @_;
 	unless ( defined $item) {
 		my ($node, $lev) = $self-> get_item( $index);
@@ -1549,7 +1549,7 @@ sub add_selection
 	$flag ||= 0;
 	my ( $ih, @a) = ( $self-> {itemHeight}, $self-> get_active_area);
 	my @sel;
-	
+
 	$self-> iterate( sub {
 		my ( $current, $parent, $index, $position, $level, $lastChild) = @_;
 		return 0 unless $items{$position};
@@ -1604,7 +1604,7 @@ sub set_selection
 }
 
 sub toggle_item
-{  
+{
 	my ( $self, $index, $item) = @_;
 	unless ( defined $item) {
 		my ($node, $lev) = $self-> get_item( $index);
@@ -1639,7 +1639,7 @@ sub draw_items
 		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused, $prelight) = @$_;
 		if ( $selected || $prelight) {
 			my $bc = $self->backColor;
-			$self-> draw_item_background($canvas, 
+			$self-> draw_item_background($canvas,
 				$left, $bottom, $right, $top, $prelight,
 				$selected ? $self-> hiliteBackColor : $self-> backColor
 			);
@@ -1678,7 +1678,7 @@ sub draw_items
 		my ( $node, $left, $bottom, $right, $top, $position, $selected, $focused, $prelight) = @$_;
 		if ( $selected || $prelight ) {
 			my $bc = $self->backColor;
-			$self-> draw_item_background($canvas, 
+			$self-> draw_item_background($canvas,
 				$left, $bottom, $right, $top, $prelight,
 				$selected ? $self-> hiliteBackColor : $bc,
 			);
@@ -1727,7 +1727,7 @@ my @drvImages;
 	$images[ $i++] = Prima::StdBitmap::icon( $_) for @idx;
 	unless ( $unix) {
 		$i = 0;
-		for ( 
+		for (
 			sbmp::DriveFloppy, sbmp::DriveHDD,    sbmp::DriveNetwork,
 			sbmp::DriveCDROM,  sbmp::DriveMemory, sbmp::DriveUnknown
 		) {
@@ -1804,7 +1804,7 @@ sub draw_items
 		if ( $selected || $prelight) {
 			$c = $canvas-> color;
 			my $bc = $self->backColor;
-			$self-> draw_item_background($canvas, 
+			$self-> draw_item_background($canvas,
 				$left - $self-> {indent} / 4, $bottom, $right, $top, $prelight,
 				$selected ? $self-> hiliteBackColor : $self-> backColor
 			);
@@ -1812,20 +1812,20 @@ sub draw_items
 			$canvas-> color( $selected ? $self-> hiliteColor : $c );
 		}
 		my $icon = (length( $node-> [0]-> [1]) || $unix) ?
-			( $node-> [2] ? $self-> {openedIcon} : $self-> {closedIcon}) : 
+			( $node-> [2] ? $self-> {openedIcon} : $self-> {closedIcon}) :
 			$node-> [0]-> [3];
 		$canvas-> put_image(
 			$left - $self-> {indent} / 4,
 			int($bottom + ( $self-> {itemHeight} - $self-> {iconSizes}-> [1]) / 2),
 			$icon
 		);
-		$canvas-> text_out_bidi( 
-			$node-> [0]-> [0], 
+		$canvas-> text_out_bidi(
+			$node-> [0]-> [0],
 			$left + $dw,
 			int($bottom + ( $self-> {itemHeight} - $self-> {fontHeight}) / 2)
 		);
 		$canvas-> color( $c) if $selected || $prelight;
-		$canvas-> rect_focus( $left - $self-> {indent} / 4, $bottom, $right, $top) 
+		$canvas-> rect_focus( $left - $self-> {indent} / 4, $bottom, $right, $top)
 			if $focused;
 	}
 }
@@ -1987,7 +1987,7 @@ sub path
 		$p = '' if !$self-> {showDotDirs} && $p =~ /\./;
 		$p .= '/' unless $p =~ m{[/\\]$};
 	}
-	
+
 	$self-> {path} = $p;
 	if ( $p eq '/') {
 		$self-> focusedItem(0);
@@ -2115,8 +2115,8 @@ with the following definitions of indices:
 
 =item #0
 
-Item id with non-defined format. The simplest implementation, C<Prima::StringOutline>, 
-treats the scalar as a text string. The more complex classes store 
+Item id with non-defined format. The simplest implementation, C<Prima::StringOutline>,
+treats the scalar as a text string. The more complex classes store
 references to arrays or hashes here. See C<items> article of a concrete class
 for the format of a node record.
 
@@ -2136,10 +2136,10 @@ Width of an item in pixels.
 =back
 
 The indices above 3 should not be used, because eventual changes to the
-implementation of the class may use these. It should be enough item 0 to store 
+implementation of the class may use these. It should be enough item 0 to store
 any value.
 
-To support a custom format of node, it is sufficient to overload the following 
+To support a custom format of node, it is sufficient to overload the following
 notifications: C<DrawItem>, C<MeasureItem>, C<Stringify>. Since C<DrawItem> is
 called for every item, a gross method C<draw_items> can be overloaded instead.
 See also L<Prima::StringOutline> and L<Prima::Outline>.
@@ -2148,10 +2148,10 @@ The class employs two addressing methods, index-wise and item-wise. The index-wi
 counts only the visible ( non-expanded ) items, and is represented by an integer index.
 The item-wise addressing cannot be expressed by an integer index, and the full
 node structure is used as a reference. It is important to use a valid reference here,
-since the class does not always perform the check if the node belongs to internal node list due to 
+since the class does not always perform the check if the node belongs to internal node list due to
 the speed reasons.
 
-C<Prima::OutlineViewer> is a descendant of C<Prima::GroupScroller> and C<Prima::MouseScroller>, 
+C<Prima::OutlineViewer> is a descendant of C<Prima::GroupScroller> and C<Prima::MouseScroller>,
 so some properties and methods are not described here. See L<Prima::IntUtils> for these.
 
 The class is not usable directly.
@@ -2163,7 +2163,7 @@ The class is not usable directly.
 =item autoHeight INTEGER
 
 If set to 1, changes C<itemHeight> automatically according to the widget font height.
-If 0, does not influence anything.  When C<itemHeight> is set explicitly, 
+If 0, does not influence anything.  When C<itemHeight> is set explicitly,
 changes value to 0.
 
 Default value: 1
@@ -2189,7 +2189,7 @@ Default value: 0
 
 Selects the focused item index. If -1, no item is focused.
 It is mostly a run-time property, however, it can be set
-during the widget creation stage given that the item list is 
+during the widget creation stage given that the item list is
 accessible on this stage as well.
 
 =item indent INTEGER
@@ -2200,8 +2200,8 @@ Default value: 12
 
 =item itemHeight INTEGER
 
-Selects the height of the items in pixels. Since the outline classes do 
-not support items with different vertical dimensions, changes to this property 
+Selects the height of the items in pixels. Since the outline classes do
+not support items with different vertical dimensions, changes to this property
 affect all items.
 
 Default value: default font height
@@ -2216,7 +2216,7 @@ Default value: []
 =item multiSelect BOOLEAN
 
 If 0, the user can only select one item, and it is reported by
-the C<focusedItem> property. If 1, the user can select more than one item. 
+the C<focusedItem> property. If 1, the user can select more than one item.
 In this case, C<focusedItem>'th item is not necessarily selected.
 To access selected item list, use C<selectedItems> property.
 
@@ -2275,13 +2275,13 @@ boolean flag value.
 
 =item calibrate
 
-Recalculates the node tree and the item dimensions. 
+Recalculates the node tree and the item dimensions.
 Used internally.
 
 =item delete_items [ NODE = undef, OFFSET = 0, LENGTH = undef ]
 
-Deletes LENGTH children items of NODE at OFFSET. 
-If NODE is C<undef>, the root node is assumed. If LENGTH 
+Deletes LENGTH children items of NODE at OFFSET.
+If NODE is C<undef>, the root node is assumed. If LENGTH
 is C<undef>, all items after OFFSET are deleted.
 
 =item delete_item NODE
@@ -2328,7 +2328,7 @@ under index #3 in node.
 
 =item get_item INDEX
 
-Returns two scalars corresponding to INDEXth item: 
+Returns two scalars corresponding to INDEXth item:
 node reference and its depth level. If INDEX is outside
 the list boundaries, empty array is returned.
 
@@ -2400,9 +2400,9 @@ set to 0 otherwise.
 
 Visibility index. When C<iterate> is called with C<FULL = 1>, the index is
 the item index as seen of the screen. If the item is not visible, the index
-is C<undef>. 
+is C<undef>.
 
-When C<iterate> is called with C<FULL = 1>, the index is always the same 
+When C<iterate> is called with C<FULL = 1>, the index is always the same
 as C<node index>.
 
 =back
@@ -2418,7 +2418,7 @@ by its INDEX in the screen position.
 
 Controls hint label upon INDEXth item. If a boolean flag SHOW is set to 1,
 and C<showItemHint> property is 1, and the item index does not fit horizontally
-in the widget inferiors then the hint label is shown. 
+in the widget inferiors then the hint label is shown.
 By default the label is removed automatically as the user moves the mouse pointer
 away from the item. If SHOW is set to 0, the hint label is hidden immediately.
 
@@ -2467,7 +2467,7 @@ by its INDEX in the screen position. Only for multi-select mode.
 
 =item validate_items ITEMS
 
-Traverses the array of ITEMS and puts every node to 
+Traverses the array of ITEMS and puts every node to
 the common format: cuts scalars above index #3, if there are any,
 or adds default values to a node if it contains less than 3 scalars.
 
@@ -2479,7 +2479,7 @@ or adds default values to a node if it contains less than 3 scalars.
 
 =item Expand NODE, EXPAND
 
-Called when NODE is expanded ( 1 ) or collapsed ( 0 ). 
+Called when NODE is expanded ( 1 ) or collapsed ( 0 ).
 The EXPAND boolean flag reflects the action taken.
 
 =item DragItem OLD_INDEX, NEW_INDEX
@@ -2490,14 +2490,14 @@ rearranges the item list in accord with the dragging action.
 
 =item DrawItem CANVAS, NODE, X1, Y1, X2, Y2, INDEX, SELECTED, FOCUSED, PRELIGHT
 
-Called when INDEXth item, contained in NODE is to be drawn on 
+Called when INDEXth item, contained in NODE is to be drawn on
 CANVAS. X1, Y1, X2, Y2 coordinated define the exterior rectangle
 of the item in widget coordinates. SELECTED, FOCUSED, and PRELIGHT boolean flags are set to
 1 if the item is selected, focused, or pre-lighted, respectively; 0 otherwise.
 
 =item MeasureItem NODE, LEVEL, REF
 
-Puts width of NODE item in pixels into REF scalar reference. LEVEL is the node 
+Puts width of NODE item in pixels into REF scalar reference. LEVEL is the node
 depth as returned by C<get_item> for the reference. This notification
 must be called from within C<begin_paint_info/end_paint_info> block.
 
@@ -2520,7 +2520,7 @@ scalar reference.
 
 =head1 Prima::StringOutline
 
-Descendant of C<Prima::OutlineViewer> class, provides standard 
+Descendant of C<Prima::OutlineViewer> class, provides standard
 single-text items widget. The items can be set by merely
 supplying a text as the first scalar in node array structure:
 
@@ -2538,7 +2538,7 @@ class.
 =head1 Prima::DirectoryOutline
 
 Provides a standard widget with the item tree mapped to the directory
-structure, so each item is mapped to a directory. Depending on the type 
+structure, so each item is mapped to a directory. Depending on the type
 of the host OS, there is either single root directory ( unix ), or
 one or more disk drive root items ( win32 ).
 
@@ -2619,7 +2619,7 @@ returned by C<Prima::Utils::getdir> ( see L<Prima::Utils/getdir> ).
 
 =item get_directory_tree PATH
 
-Reads the file structure under PATH and returns a newly created hierarchy 
+Reads the file structure under PATH and returns a newly created hierarchy
 structure in the class node format. If C<showDotDirs> property value is 0,
 the dot-prefixed names are not included.
 

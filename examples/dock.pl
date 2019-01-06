@@ -94,20 +94,20 @@ sub init
 	$self-> instance-> add_notification( 'PanelChange',   \&on_toolbarchange, $self);
 	$self-> instance-> add_notification( 'Command',   \&on_command, $self);
 	return %profile;
-}  
+}
 
 sub make_popupitems
 {
 	my $items = $_[0]-> instance-> toolbar_menuitems( \&Menu_Check_Toolbars);
 	# actually DockManager doesn't care if panel CLSID and toolbar name intermix.
-	# this is the demonstration of resolving that clash   
+	# this is the demonstration of resolving that clash
 	$$_[0] .= ',toolbar' for @$items;
 	push ( @$items, []);
 	push ( @$items, @{$_[0]-> instance-> panel_menuitems( \&Menu_Check_Panels)});
 	push ( @$items, []);
 	push ( @$items, ['customize' => "~Customize..." => q(open_dockmanaging)]);
 	return $items;
-}   
+}
 
 
 sub Menu_Check_Toolbars
@@ -115,30 +115,30 @@ sub Menu_Check_Toolbars
 	my ( $self, $var) = @_;
 	my $toolname = $var;
 	$toolname =~ s/\,toolbar$//;
-	$self-> instance-> toolbar_visible( 
-		$self-> instance-> toolbar_by_name($toolname), 
+	$self-> instance-> toolbar_visible(
+		$self-> instance-> toolbar_by_name($toolname),
 		$self-> {toolBarPopup}-> toggle( $var)
 	);
-}   
+}
 
 sub Menu_Check_Panels
 {
 	my ( $self, $var) = @_;
-	$self-> instance-> panel_visible( 
+	$self-> instance-> panel_visible(
 		$var, $self-> {toolBarPopup}-> toggle( $var));
-}   
+}
 
 sub instance
 {
 	return $_[0]-> {instance} unless $#_;
 	$_[0]-> {instance} = $_[1];
-}   
+}
 
 
 sub on_toolbarchange
 {
 	$_[0]-> {toolBarPopup}-> items( $_[0]-> make_popupitems());
-}   
+}
 
 sub on_command
 {
@@ -147,7 +147,7 @@ sub on_command
 	my $x = $self-> can( $command);
 	return unless $x;
 	$x-> ( $self);
-}   
+}
 
 # we'll take our actions we need to reflect the state.
 sub open_dockmanaging
@@ -160,16 +160,16 @@ sub open_dockmanaging
 		size => [ 400, 100],
 		designScale => [ 7, 16 ],
 		onClose => sub {
-			$self-> {toolBarPopup}-> customize-> enabled(1); 
+			$self-> {toolBarPopup}-> customize-> enabled(1);
 			$i-> interactiveDrag(0);
-		},   
+		},
 	);
 	$i-> create_manager( $wpanel,  dockerProfile => {
 		hint => 'Drag here unneeded buttons',
 	});
 	$i-> interactiveDrag(1);
 	$self-> {toolBarPopup}-> customize-> enabled(0);
-}  
+}
 
 sub get_docks
 {
@@ -186,11 +186,11 @@ sub get_docks
 			last unless $x;
 			next if $x-> isa(q(Prima::DockManager::LaunchPad));
 			push ( @docks, $x);
-		}   
+		}
 		$self-> {mainDock}-> close_session( $sid);
 	}
-	return @docks;   
-}   
+	return @docks;
+}
 
 sub init_read
 {
@@ -202,7 +202,7 @@ sub init_read
 
 	while ( <$fd>) {
 		$state = 1, last if m/^DOCK_STMT_START/;
-	}    
+	}
 	return unless $state;
 	my $i = $self-> instance;
 	my %audocks;
@@ -215,12 +215,12 @@ sub init_read
 		if ( m/^MYSELF\[(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\]/) {
 			$self-> rect( $1,$2,$3,$4);
 			next;
-		}   
+		}
 		if ( m/^TOOLBAR\:(\w*)\:(\d)\:(\d)\:\[(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\]\:(.*)$/) {
-			my ( $dockID, $vertical, $visible, $x1, $y1, $x2, $y2, $name) = 
+			my ( $dockID, $vertical, $visible, $x1, $y1, $x2, $y2, $name) =
 				($1,$2,$3,$4,$5,$6,$7,$8);
 			my $auto = $name =~ /^ToolBar/;
-			
+
 			my ( $x, $xcl) = $i-> create_toolbar(
 				visible   => $visible,
 				vertical  => $vertical,
@@ -242,9 +242,9 @@ sub init_read
 			next;
 		} elsif ( m/^PANEL\:(\w*)\:([^\s]+)\s\[(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\]/) {
 			my ( $dockID, $CLSID, $x1, $y1, $x2, $y2) = ($1,$2,$3,$4,$5,$6);
-			my ( $x, $xcl) = $i-> create_panel( $CLSID, dockerProfile => { 
+			my ( $x, $xcl) = $i-> create_panel( $CLSID, dockerProfile => {
 				dock => $docks{$dockID},
-				origin => [$x1, $y1], # because original profile uses size 
+				origin => [$x1, $y1], # because original profile uses size
 				size   => [$x2 - $x1, $y2 - $y1], # this is hack to override it
 				rect   => [ $x1, $y1, $x2, $y2],
 			});
@@ -253,7 +253,7 @@ sub init_read
 	}
 	$_-> dock_bunch( @{$audocks{$_}}) for keys %audocks;
 	$i-> notify(q(ToolbarChange));
-}   
+}
 
 sub init_write
 {
@@ -269,13 +269,13 @@ sub init_write
 		if ( $p-> dock) {
 			$e = $p;
 			$n = $p-> dock-> name;
-			$n =~ s/(\W)/\%sprintf("%02x",$1)/g; 
+			$n =~ s/(\W)/\%sprintf("%02x",$1)/g;
 			@rect = $p-> dock-> screen_to_client( $p-> client_to_screen( @rect));
 		} else {
 			$n = '';
 			$e = $p-> externalDocker;
 			@rect = $x-> client_to_screen( @rect);
-		}   
+		}
 		my $vis  = $e-> visible ? 1 : 0;
 		my $ver  = $x-> vertical ? 1 : 0;
 		print $fd "TOOLBAR:$n:$ver:$vis:[@rect]:".$p-> text."\n";
@@ -285,30 +285,30 @@ sub init_write
 			my $CLSID = $_-> {CLSID};
 			next unless defined $CLSID;
 			print $fd "TOOL:$CLSID [@rect]:$ena\n";
-		}   
-	}   
+		}
+	}
 	for ( $self-> instance-> panels) {
 		my @r = $_-> dock() ? $_-> rect : $_-> externalDocker-> rect;
 		my $n = '';
 		if ( $_-> dock) {
 			$n = $_-> dock-> name;
-			$n =~ s/(\W)/\%sprintf("%02x",$1)/g; 
+			$n =~ s/(\W)/\%sprintf("%02x",$1)/g;
 		}
 		my $CLSID = $_-> {CLSID};
 		print $fd "PANEL:$n:$CLSID [@r]\n";
-	}   
+	}
 	print $fd "DOCK_STMT_END\n";
-}   
+}
 
 sub FileOpen
 {
 	$_[0]-> open_dockmanaging;
-}   
+}
 
 sub FileClose
 {
 	$_[0]-> close;
-}   
+}
 
 package Banner;
 use vars qw(@ISA);
@@ -323,26 +323,26 @@ sub on_create
 	$self-> {maxOffset} = $self-> width;
 	$self-> {textLen} = $self-> get_text_width( $self-> text);
 	$self-> insert( Timer => timeout => 100 => onTick => sub {
-		$self-> {offset} = $self-> {maxOffset} 
+		$self-> {offset} = $self-> {maxOffset}
 			if ( $self-> {offset} -= 5) < -$self-> {textLen};
 		$self-> repaint;
-	})-> start;   
-}   
+	})-> start;
+}
 
 sub on_size
 {
 	my ( $self, $ox, $oy, $x, $y) = @_;
 	$self-> {maxOffset} = $x;
-}   
+}
 
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
 	$canvas-> clear;
 	my @sz = $self-> size;
-	$canvas-> text_out( $self-> text, 
+	$canvas-> text_out( $self-> text,
 		$self-> {offset}, ( $sz[1] - $canvas-> font-> height) / 2);
-}   
+}
 
 package X;
 
@@ -351,16 +351,16 @@ my $i = Prima::DockManager-> create(
 	commands  => {
 		'Edit::OK' => 0,
 		'Edit::Cancel' => 0,
-	},   
+	},
 );
 
 # registering buttons
 sub reg
 {
 	my ( $id, $name, $hint, %profile) = @_;
-	$i-> register_tool( Prima::DockManager::S::SpeedButton::class( "sysimage.gif:$id", 
+	$i-> register_tool( Prima::DockManager::S::SpeedButton::class( "sysimage.gif:$id",
 		$name, hint => $hint, %profile));
-}   
+}
 
 reg( sbmp::SFolderOpened, 'File::Open',  'Rearrange buttons');
 reg( sbmp::SFolderClosed, 'File::Close', 'Close document');
@@ -380,20 +380,20 @@ $i-> register_panel( 'Edit' => {
 	dockerProfile => {
 		fingerprint => dmfp::Edit,
 		growMode    => gm::Client,
-	},   
+	},
 	profile => {
 		vScroll => 1,
 		text    => '',
-	},   
+	},
 });
 $i-> register_panel( 'Banner' => {
 	class => 'Banner',
 	text  => 'Banner window',
-	dockerProfile => { 
+	dockerProfile => {
 		fingerprint => dmfp::Horizontal,
 		size => [ 200, 30]
 	},
-});   
+});
 
 
 my $resFile = Prima::Utils::path('demo_dock');
@@ -426,7 +426,7 @@ if ( open F, $resFile) {
 	close F;
 } else {
 	$i-> predefined_panels( "Edit" => $ww-> {mainDock}-> ClientDocker);
-}   
+}
 
 $i-> predefined_toolbars( {
 	name => "File",
@@ -436,7 +436,7 @@ $i-> predefined_toolbars( {
 }, {
 	name => "Edit",
 	list => [ "Edit::OK", "Edit::Cancel", ],
-	dock => $ww-> {mainDock}-> TopDocker, 
+	dock => $ww-> {mainDock}-> TopDocker,
 	origin => [ 0, 0],
 });
 

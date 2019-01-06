@@ -63,7 +63,7 @@ sub profile_default
 	return $def;
 }
 
-package 
+package
     mbi;
 
 use constant SystemMenu => bi::SystemMenu;
@@ -190,15 +190,15 @@ sub on_paint
 
 	$canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, 1, $c3d[1], cl::Black) if $bb > 0;
 	$canvas-> rect3d( 1, 1, $size[0]-2, $size[1]-2, 1, $c3d[0], $c3d[1]) if $bb > 1;
-	$canvas-> rect3d( 2, 2, $size[0]-3, $size[1]-3, $bb - 2, 
+	$canvas-> rect3d( 2, 2, $size[0]-3, $size[1]-3, $bb - 2,
 		cl::Back|wc::Window, cl::Back|wc::Window) if $bb > 2;
 
 	$csize[0] -= $bb * 2;
 	$csize[1] -= $bb * 2;
 	$csize[1] -= $dy if $bi & mbi::TitleBar;
 
-	my $ico = $self-> {icon} ? 
-		$self-> {icon} : 
+	my $ico = $self-> {icon} ?
+		$self-> {icon} :
 		Prima::StdBitmap::image( sbmp::SysMenu);
 
 	my $dicon = 4;
@@ -307,7 +307,7 @@ sub client
 	$c-> clipOwner(1);
 	$c-> rect( $self-> get_client_rect);
 	$self-> {client} = $c;
-}   
+}
 
 sub mdis
 {
@@ -336,9 +336,9 @@ sub arrange_icons
 sub cascade
 {
 	my $self = $_[0]-> owner;
-	my @mdis = grep { 
-		(($_-> windowState != ws::Minimized) and $_-> tileable && $_-> clipOwner) ? 
-			$_ : 
+	my @mdis = grep {
+		(($_-> windowState != ws::Minimized) and $_-> tileable && $_-> clipOwner) ?
+			$_ :
 			0
 	} $_[0]-> mdis;
 	return unless scalar @mdis;
@@ -348,14 +348,14 @@ sub cascade
 		last if $_-> selected;
 		$i++;
 	}
-	
+
 	if ( $i < scalar @mdis) {
 		$i = splice( @mdis, $i, 1);
 		push( @mdis, $i);
 	}
-	
+
 	$_-> lock for @mdis;
-	
+
 	my @r = (0,0,$self-> size);
 	for ( @mdis) {
 		$_-> restore if $_-> windowState != ws::Normal;
@@ -376,7 +376,7 @@ sub tile
 	my $self = $_[0]-> owner;
 	my @mdis = grep { (($_-> windowState != ws::Minimized) and $_-> tileable && $_-> clipOwner) ? $_ : 0} $_[0]-> mdis;
 	return unless scalar @mdis;
-	
+
 	my $n = scalar @mdis;
 	my $i = int( sqrt( $n));
 	$i++ if $n % $i and (( $n % ( $i + 1)) == 0);
@@ -384,10 +384,10 @@ sub tile
 	my ( $col, $row) = ( int($n / $i), $i);
 	my @sz = $self-> size;
 	return if $sz[0] < $col or $sz[1] < $row;
-	
+
 	( $i, $n) = ( scalar @mdis % $col, $#mdis);
 	$_-> lock for @mdis;
-	
+
 	for ( @mdis) {
 		my $a = ( $col - $i) * $row;
 		my $x = ( $n < $a) ? int( $n / $row) : int(( $n - $a) / ( $row + 1)) + ( $col - $i);
@@ -611,7 +611,7 @@ sub xorrect
 	$o-> begin_paint;
 	my $oo = $self-> clipOwner ? $self-> owner : $::application;
 	$o-> clipRect( $oo-> client_to_screen( 0,0,$oo-> size));
-	$o-> rubberband( @r ? ( 
+	$o-> rubberband( @r ? (
 			rect    => \@r,
 			breadth => $self-> {border}
 		) : (
@@ -651,10 +651,10 @@ sub on_mousedown
 				$_[0]-> destroy;
 				delete $self-> {exTimer};
 				return unless $self-> alive || ! defined ( $self-> popup);
-				
+
 				my ( $w, $y, $bw)  = ( $self-> height, $self-> {titleY}, $self-> {border});
-				$self-> popup-> popup( 
-					$bw, $w - $y - $bw, 
+				$self-> popup-> popup(
+					$bw, $w - $y - $bw,
 					$bw, $w - $y - $bw, $bw + $y, $w - $bw
 				);
 			},
@@ -694,11 +694,11 @@ sub on_mousedown
 		elsif ( $part eq q(NE)) { ( $xa, $ya) = ( 1, 1); }
 		elsif ( $part eq q(NW)) { ( $xa, $ya) = (-1, 1); }
 		elsif ( $part eq q(SE)) { ( $xa, $ya) = ( 1,-1); }
-		
+
 		$self-> {dirData} = [$xa, $ya];
 		$self-> capture(1, $self-> clipOwner ? $self-> owner : ());
 		$self-> check_drag;
-		
+
 		unless ($self-> {fullDrag}) {
 			$self-> {prevRect} = [$self-> client_to_screen(0,0,$self-> size)];
 			$self-> xorrect($self-> client_to_screen(0,0,$self-> size));
@@ -765,13 +765,13 @@ sub on_translateaccel
 			}
 			$self-> clear_event;
 		} if (
-			( $key == kb::Space) && 
-			( $mod & km::Ctrl) && 
+			( $key == kb::Space) &&
+			( $mod & km::Ctrl) &&
 			( $self-> { borderIcons} & mbi::SystemMenu)
 		) {
 			my ( $w, $y, $bw)  = ( $self-> height, $self-> {titleY}, $self-> {border});
-			$self-> popup-> popup( 
-				$bw, $w - $y - $bw, 
+			$self-> popup-> popup(
+				$bw, $w - $y - $bw,
 				$bw, $w - $y - $bw, $bw + $y, $w - $bw
 			);
 			$self-> clear_event;
@@ -794,7 +794,7 @@ sub on_keydown
 	if ( $self-> {mouseTransaction} eq q(keyMove)) {
 		my ( $dx, $dy) = (0,0);
 
-		if 
+		if
 		( $key == kb::Down)  { $dy -= 5; } elsif
 		( $key == kb::Up)    { $dy += 5; } elsif
 		( $key == kb::Left)  { $dx -= 5; } elsif
@@ -806,14 +806,14 @@ sub on_keydown
 			unless ( $self-> {fullDrag}) {
 				$self-> xorrect;
 				my $oo = $self-> clipOwner ? $self-> owner : $::application;
-				$self-> origin( 
+				$self-> origin(
 					$oo-> screen_to_client(@{$self-> {prevRect}}[0,1])
 				);
 			}
-			$self-> {mouseTransaction} = 
-				$self-> {mouseTransactionArea} = 
+			$self-> {mouseTransaction} =
+				$self-> {mouseTransactionArea} =
 				$self-> {dirData} =
-				$self-> {spotX} = 
+				$self-> {spotX} =
 				$self-> {spotY} = undef;
 			return;
 		}
@@ -838,7 +838,7 @@ sub on_keydown
 
 	if ( $self-> {mouseTransaction} eq q(keySize)) {
 		my ( $dx, $dy) = (0,0);
-		if 
+		if
 			( $key == kb::Down)  { $dy += 5; } elsif
 			( $key == kb::Up)    { $dy -= 5; } elsif
 			( $key == kb::Left)  { $dx -= 5; } elsif
@@ -850,8 +850,8 @@ sub on_keydown
 				$self-> clear_event;
 				unless ( $self-> {fullDrag}) {
 					$self-> xorrect;
-					my $oo = $self-> clipOwner ? 
-						$self-> owner : 
+					my $oo = $self-> clipOwner ?
+						$self-> owner :
 						$::application;
 					$self-> rect( $oo-> screen_to_client(@{$self-> {prevRect}}));
 				}
@@ -871,7 +871,7 @@ sub on_keydown
 				my @r = @{$self-> {prevRect}};
 				$r[1] -= $dy;
 				$r[2] += $dx;
-				
+
 				my @min = $self-> sizeMin;
 				$r[1] = $r[3] - $min[1] if $r[3] - $r[1] < $min[1];
 				$r[2] = $r[0] + $min[0] if $r[2] < $r[0] + $min[0];
@@ -945,20 +945,20 @@ sub on_mousemove
 		if ( $self-> {mouseTransaction} eq q(caption)) {
 			if ( $self-> {fullDrag}) {
 				my @org = $_[0]-> origin;
-				my @new = ( 
-					$org[0] + $x - $self-> {spotX}, 
+				my @new = (
+					$org[0] + $x - $self-> {spotX},
 					$org[1] + $y - $self-> {spotY}
 				);
-				$self-> origin( $new[0], $new[1]) 
+				$self-> origin( $new[0], $new[1])
 					if $org[1] != $new[1] || $org[0] != $new[0];
 			} else {
-				my @xorg = $self-> client_to_screen( 
-					$x - $self-> {spotX}, 
+				my @xorg = $self-> client_to_screen(
+					$x - $self-> {spotX},
 					$y - $self-> {spotY}
 				);
 				my @sz   = $self-> size;
-				$self-> {prevRect} = [ 
-					@xorg, 
+				$self-> {prevRect} = [
+					@xorg,
 					$sz[0] + $xorg[0], $sz[1] + $xorg[1]
 				];
 				$self-> xorrect( @{$self-> {prevRect}});
@@ -969,11 +969,11 @@ sub on_mousemove
 		if ( $self-> {mouseTransaction} eq q(keyMove)) {
 			if ( $self-> {fullDrag}) {
 				my @org = $_[0]-> origin;
-				my @new = ( 
-					$org[0] + $x - $self-> {spotX}, 
+				my @new = (
+					$org[0] + $x - $self-> {spotX},
 					$org[1] + $y - $self-> {spotY}
 				);
-				$self-> origin( $new[0], $new[1]) 
+				$self-> origin( $new[0], $new[1])
 					if $org[1] != $new[1] || $org[0] != $new[0];
 			} else {
 			#  works also, but is confusing slightly
@@ -994,8 +994,8 @@ sub on_mousemove
 					( $part eq q(max)     ? mbi::Maximize : 0)  |
 					( $part eq q(close)   ? mbi::Close    : 0)|
 					( $part eq q(restore) ? (
-						( $self-> {windowState} == ws::Minimized) ? 
-							mbi::Minimize : 
+						( $self-> {windowState} == ws::Minimized) ?
+							mbi::Minimize :
 							mbi::Maximize
 					) : 0)) : 0;
 				$self-> { lastMouseOver} = $mouseOver;
@@ -1035,10 +1035,10 @@ sub on_mousemove
 					$self-> {spotY} = $y if $self-> {fullDrag};
 				}
 			}
-			if ( 
-				$org[0] != $new[0] || 
-				$org[1] != $new[1] || 
-				$org[2] != $new[2] || 
+			if (
+				$org[0] != $new[0] ||
+				$org[1] != $new[1] ||
+				$org[2] != $new[2] ||
 				$org[3] != $new[3]
 			) {
 				if ( $self-> {fullDrag}) {
@@ -1079,14 +1079,14 @@ sub update_size_min
 {
 	my $self = $_[0];
 	my @a = Prima::Application-> get_default_window_borders( $self-> {borderStyle});
-	my $ic = $self-> { iconsAtRight} + 
-		1 + 
+	my $ic = $self-> { iconsAtRight} +
+		1 +
 		(($self-> {borderIcons} & mbi::SystemMenu) ? 1 : 0);
-	$self-> sizeMin( 
-		$self-> {titleY} * $ic + $a[0] * 2, 
+	$self-> sizeMin(
+		$self-> {titleY} * $ic + $a[0] * 2,
 		$self-> {titleY} + $a[1] * 2
-	); 
-}   
+	);
+}
 
 sub set_border_icons
 {
@@ -1131,7 +1131,7 @@ sub update_popup_commands
 	my $popup = $self-> popup;
 
 	my ( $bi, $bs, $ws) = ( $self-> {borderIcons}, $self-> {borderStyle}, $self-> {windowState});
-	
+
 	$popup-> max-> enabled(( $bi & mbi::Maximize) && ( $ws != ws::Maximized));
 	$popup-> min-> enabled(( $bi & mbi::Minimize) && ( $ws != ws::Minimized));
 	$popup-> restore-> enabled(( $bi & (mbi::Minimize|mbi::Maximize)) && ( $ws != ws::Normal));
@@ -1153,15 +1153,15 @@ sub set_window_state
 		my @szMin = $self-> sizeMin;
 		my ($x, $y) = ( $self-> {miniRect}-> [0], $self-> {miniRect}-> [1]);
 		$self-> clipOwner(1) unless ($self-> {saveClipOwner} = $self-> clipOwner);
-		
+
 		# start calculating position for min-widnow
 		my @sz = $self-> clipOwner ? $self-> owner-> size : $::application-> size;
 		$x = $sz[0] - $szMin[0] if $x > $sz[0] - $szMin[0];
 		$y = $sz[1] - $szMin[1] if $y > $sz[1] - $szMin[1];
 
 		my @mdis = grep {
-			(( $_ ne $self) and ( $_-> windowState == ws::Minimized)) ? 
-				$_ : 
+			(( $_ ne $self) and ( $_-> windowState == ws::Minimized)) ?
+				$_ :
 				0
 		} $self-> mdis;
 
@@ -1178,7 +1178,7 @@ sub set_window_state
 			push ( @maps, $id + $szmaxids[0]) if $ay > int( $ay);
 			push ( @maps, $id + $szmaxids[0] + 1) if $ay > int( $ay) and $ax > int( $ax);
 		}
-		
+
 		my $id = int( $y / $szMin[1]) * $szmaxids[0] + int( $x / $szMin[0]);
 		if ( scalar grep { $_ == $id ? 1 : 0} @maps) {
 			my $i;
@@ -1197,31 +1197,31 @@ sub set_window_state
 		$self-> {miniRect}-> [2] = $self-> {miniRect}-> [0] + $szMin[0];
 		$self-> {miniRect}-> [3] = $self-> {miniRect}-> [1] + $szMin[1];
 		$self-> rect( @{$self-> {miniRect}});
-		
+
 		$popup-> enable( $_)  for ( qw( max restore move));
 		$popup-> disable( $_) for ( qw( min size));
 	} elsif ( $ws == ws::Maximized) {
 		return unless $self-> {borderIcons} & mbi::Maximize;
-		
-		$self-> clipOwner(0) 
+
+		$self-> clipOwner(0)
 			if $ows == ws::Minimized && !$self-> {saveClipOwner};
 		delete $self-> {saveClipOwner};
-		
+
 		$self-> {miniRect} = [ $self-> rect] if $ows == ws::Minimized;
 		$self-> {zoomRect} = [ $self-> rect] if $ows == ws::Normal;
 		$self-> rect( 0, 0, $self-> clipOwner ? $self-> owner-> size : $::application-> size);
 		$self-> {zoomGrowMode} = $self-> growMode;
 		$self-> growMode( gm::Client);
-		
+
 		$popup-> enable( $_)  for ( qw( min restore));
 		$popup-> disable( $_) for ( qw( max move size));
 	} else {
 		$self-> {windowState} = ws::Normal;
 		return unless $self-> {borderIcons} & (mbi::Maximize|mbi::Minimize);
-		
-		$self-> clipOwner(0) 
+
+		$self-> clipOwner(0)
 			if $ows == ws::Minimized && !$self-> {saveClipOwner};
-			
+
 		delete $self-> {saveClipOwner};
 		$self-> {miniRect} = [ $self-> rect] if $ows == ws::Minimized;
 		$self-> growMode( $self-> {zoomGrowMode}) if $ows == ws::Maximized;
@@ -1272,7 +1272,7 @@ sub titleHeight
 	$self-> {titleY} = $th;
 	$self-> sync_client;
 	$self-> repaint;
-}   
+}
 
 sub __icon
 {
@@ -1280,7 +1280,7 @@ sub __icon
 	return $self-> {icons}-> [$id] unless @_;
 	$self-> {icons}-> [$id] = shift;
 	$self-> repaint_title;
-}   
+}
 
 sub iconMin            { return shift-> __icon( cMIN,     @_)};
 sub iconMax            { return shift-> __icon( cMAX,     @_)};
@@ -1360,7 +1360,7 @@ via the toolbar-anchored popup menu. The default set of commands is as follows:
 
 	Close window              - Ctrl+F4
 	Restore window            - Ctrl+F5 or a double click on the titlebar
-	Maximize window           - Ctrl+F10 or a double click on the titlebar 
+	Maximize window           - Ctrl+F10 or a double click on the titlebar
 	Go to next MDI window     - Ctrl+Tab
 	Go to previous MDI window - Ctrl+Shift+Tab
 	Invoke popup menu         - Ctrl+Space
@@ -1379,9 +1379,9 @@ Can be 0 or a combination of the following C<mbi::XXX> constants, which are supr
 of C<bi::XXX> constants ( see L<Prima::Window/borderIcons> ) and are interchangeable.
 
 	mbi::SystemMenu  - system menu button with icon is shown
-	mbi::Minimize    - minimize button 
+	mbi::Minimize    - minimize button
 	mbi::Maximize    - maximize ( and eventual restore )
-	mbi::TitleBar    - window title 
+	mbi::TitleBar    - window title
 	mbi::Close       - close button
 	mbi::All         - all of the above
 
@@ -1405,10 +1405,10 @@ Default value: C<bs::Sizeable>
 
 =item client OBJECT
 
-Selects the client widget at runtime. When changing the client, the old client 
+Selects the client widget at runtime. When changing the client, the old client
 children are not reparented to the new client. The property cannot be used to
 set the client during the MDI window creation; use
-C<clientClass> and C<clientProfile> properties instead. 
+C<clientClass> and C<clientProfile> properties instead.
 
 When setting new client object, note that is has to be named C<MDIClient>
 and the window is automatically destroyed after the client is destroyed.
@@ -1437,15 +1437,15 @@ actually positioned and / or resized after the dragging session is successfully
 finished. If C<undef>, the system-dependant dragging style is used. ( See
 L<Prima::Application/get_system_value> ).
 
-The dragging session can be aborted by 
-hitting Esc key or calling C<sizemove_cancel> method. 
+The dragging session can be aborted by
+hitting Esc key or calling C<sizemove_cancel> method.
 
 Default value: C<undef>.
 
 =item icon HANDLE
 
 Selects a custom image to be drawn in the left corner of the toolbar.  If 0,
-the default image ( menu button icon ) is drawn. 
+the default image ( menu button icon ) is drawn.
 
 Default value: 0
 
@@ -1524,26 +1524,26 @@ See also: C<WindowState>
 
 =item arrange_icons
 
-Arranges geometrically the minimized sibling MDI windows. 
+Arranges geometrically the minimized sibling MDI windows.
 
 =item cascade
 
 Arranges sibling MDI windows so they form a cascade-like structure: the lowest
 window is expanded to the full owner window inferior rectangle, window next to
-the lowest occupies the inferior rectangle of the lowest window, etc. 
+the lowest occupies the inferior rectangle of the lowest window, etc.
 
 Only windows with C<tileable> property set to 1 are processed.
 
 =item client2frame X1, Y1, X2, Y2
 
 Returns a rectangle that the window would occupy if
-its client rectangle is assigned to X1, Y1, X2, Y2 
+its client rectangle is assigned to X1, Y1, X2, Y2
 rectangle.
 
 =item frame2client X1, Y1, X2, Y2
 
 Returns a rectangle that the window client would occupy if
-the window rectangle is assigned to X1, Y1, X2, Y2 
+the window rectangle is assigned to X1, Y1, X2, Y2
 rectangle.
 
 =item get_client_rect [ WIDTH, HEIGHT ]

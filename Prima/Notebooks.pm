@@ -90,13 +90,13 @@ sub reset
 			$w += $s * DefGapX + $$ww[$i];
 			if ( $w + $s * (DefGapX + DefLeftX) >= $size[0]) {
 				$ra = 1;
-				$i-- if 
-					$i > $ft && 
+				$i-- if
+					$i > $ft &&
 					$w - $$ww[$i] >= $size[0] - $s * (DefLeftX + DefArrowX + DefGapX);
 				last;
 			}
 		}
-		$i = scalar @{$self-> {widths}} - 1 
+		$i = scalar @{$self-> {widths}} - 1
 			if $i >= scalar @{$self-> {widths}};
 		$self-> {lastTab} = $i;
 		$self-> {arrows} = ( $la ? 1 : 0) | ( $ra ? 2 : 0);
@@ -197,7 +197,7 @@ sub on_mouseup
 {
 	my ( $self, $btn, $mod, $x, $y) = @_;
 	return unless $self-> {mouseTransaction};
-	
+
 	$self-> capture(0);
 	$self-> scroll_timer_stop;
 	$self-> {mouseTransaction} = undef;
@@ -249,7 +249,7 @@ sub on_keydown
 		$self-> clear_event;
 		return;
 	}
-	
+
 	if ( $key == kb::PgUp || $key == kb::PgDn) {
 		$self-> tabIndex( $self-> tabIndex + (( $key == kb::PgUp) ? -1 : 1));
 		$self-> clear_event;
@@ -287,7 +287,7 @@ sub on_paint
 		$self-> {widths}, $self-> {topMost}
 	);
 	my $i;
-	
+
 	my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(DrawTab));
 	$self-> push_event;
 
@@ -308,7 +308,7 @@ sub on_paint
 		$atX -= $$ww[$i] + $s * DefGapX;
 		$atXti = $atX, next if $i == $ti;
 		my @poly = (
-			$atX, $s * DefGapY, 
+			$atX, $s * DefGapY,
 			$atX + $s * DefGapX, $size[1] - $s * DefGapY - 1,
 			$atX + $s * DefGapX + $$ww[$i], $size[1] - $s * DefGapY - 1,
 			$atX + $s * DefGapX * 2 + $$ww[$i], $s * DefGapY
@@ -325,7 +325,7 @@ PaintEarsThen:
 	if ( $a & 1) {
 		my $x = $s * DefLeftX;
 		my @poly = (
-			$x, $s * DefGapY, 
+			$x, $s * DefGapY,
 			$x + $s * DefGapX, $size[1] - $s * DefGapY - 1,
 			$x + $s * DefGapX + $s * DefArrowX, $size[1] - $s * DefGapY - 1,
 			$x + $s * DefGapX * 2 + $s * DefArrowX, $s * DefGapY
@@ -336,7 +336,7 @@ PaintEarsThen:
 	if ( $a & 2) {
 		my $x = $size[0] - $s * (DefLeftX + DefArrowX + DefGapX * 2);
 		my @poly = (
-			$x, $s * DefGapY, 
+			$x, $s * DefGapY,
 			$x + $s * DefGapX, $size[1] - $s * DefGapY - 1,
 			$x + $s * (DefGapX + DefArrowX), $size[1] - $s * DefGapY - 1,
 			$x + $s * (DefGapX * 2 + DefArrowX), $s * DefGapY
@@ -348,7 +348,7 @@ PaintEarsThen:
 	$canvas-> color( $c3d[0]);
 	my @ld = $tm ? ( 0, $s * DefGapY) : ( $size[1] - 0, $size[1] - $s * DefGapY - 1);
 	$canvas-> line( $size[0] - 1, $ld[0], $size[0] - 1, $ld[1]);
-	
+
 	if ($tm) {
 		$canvas-> color( $c3d[1]);
 		$canvas-> line( 0, $ld[1], $size[0] - 1, $ld[1]);
@@ -358,7 +358,7 @@ PaintEarsThen:
 		$canvas-> color( $c3d[1]);
 		$canvas-> line( 0, $ld[0], 0, $ld[1]);
 	}
-	
+
 	$canvas-> color( $clr[0]);
 
 	goto EndOfSwappedPaint if $swapDraw;
@@ -366,30 +366,30 @@ PaintEarsThen:
 PaintSelTabBefore:
 	if ( defined $atXti) {
 		my @poly = (
-			$atXti, $s * DefGapY, 
+			$atXti, $s * DefGapY,
 			$atXti + $s * DefGapX, $size[1] - $s * DefGapY - 1,
 			$atXti + $s * DefGapX + $$ww[$ti], $size[1] - $s * DefGapY - 1,
 			$atXti + $s * DefGapX * 2 + $$ww[$ti], $s * DefGapY
 		);
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
-		
+
 		my @poly2 = $tm ? (
-			$atXti, $s * DefGapY, 
+			$atXti, $s * DefGapY,
 			$atXti + $s * DefGapX * 2 + $$ww[$ti], $s * DefGapY,
-			$atXti + $s * DefGapX * 2 + $$ww[$ti] - 4, 0, 
+			$atXti + $s * DefGapX * 2 + $$ww[$ti] - 4, 0,
 			$atXti + 4, 0
 		) : (
-			$atXti, $size[1] - 1 - $s * DefGapY, 
+			$atXti, $size[1] - 1 - $s * DefGapY,
 			$atXti + $s * DefGapX * 2 + $$ww[$ti], $size[1] - 1 - $s * DefGapY,
-			$atXti + DefGapX * 2 + $$ww[$ti] - 4, $size[1]-1, 
+			$atXti + DefGapX * 2 + $$ww[$ti] - 4, $size[1]-1,
 			$atXti + 4, $size[1]-1
 		);
-		$canvas-> clipRect( 
-			0, 0, 
+		$canvas-> clipRect(
+			0, 0,
 			$size[0] - $s * (DefArrowX + DefGapX + DefLeftX), $size[1]
 		) if $a & 2;
-		$notifier-> ( 
-			@notifyParms, $canvas, $ti, \@colorSet, \@poly, 
+		$notifier-> (
+			@notifyParms, $canvas, $ti, \@colorSet, \@poly,
 			$swapDraw ? undef : \@poly2
 		);
 	}
@@ -402,7 +402,7 @@ EndOfSwappedPaint:
 sub on_size
 {
 	my ( $self, $ox, $oy, $x, $y) = @_;
-	
+
 	my $s = $::application-> uiScaling;
 	if ( $x > $ox && (( $self-> {arrows} & 2) == 0)) {
 		my $w  = $s * (DefLeftX * 2 + DefGapX);
@@ -410,7 +410,7 @@ sub on_size
 		$w += $s * (DefArrowX + DefGapX) if $self-> {arrows} & 1;
 		my $i;
 		my $set = 0;
-		
+
 		for ( $i = scalar @{$ww} - 1; $i >= 0; $i--) {
 			$w += $$ww[$i] + $s * DefGapX;
 			$set = 1, $self-> firstTab( $i + 1), last if $w >= $x;
@@ -449,7 +449,7 @@ sub on_drawtab
 	$canvas-> line( $$poly[4]+1, $$poly[5], $$poly[6]+1, $$poly[7]);
 	$canvas-> color( $$clr[0]);
 	my $s = $::application-> uiScaling;
-	
+
 	if ( $i >= 0) {
 		my  @tx = (
 			$$poly[0] + ( $$poly[6] - $$poly[0] - $self-> {widths}-> [$i]) / 2 + $s * DefGapX * 2,
@@ -488,11 +488,11 @@ sub get_item_width
 sub tab2firstTab
 {
 	my ( $self, $ti) = @_;
-	
+
 	my $s = $::application-> uiScaling;
 	if (
-		( $ti >= $self-> {lastTab}) and 
-		( $self-> {arrows} & 2) and 
+		( $ti >= $self-> {lastTab}) and
+		( $self-> {arrows} & 2) and
 		( $ti != $self-> {firstTab})
 	) {
 		my $w = DefLeftX;
@@ -502,11 +502,11 @@ sub tab2firstTab
 		my $W = $self-> width;
 		my $ww = $self-> {widths};
 		my $moreThanOne = ( $ti - $self-> {firstTab}) > 0;
-		
+
 		for ( $i = $self-> {firstTab}; $i <= $ti; $i++) {
 			$w += $$ww[$i] + $s * DefGapX;
 		}
-		
+
 		my $lim = $W - $s * (DefLeftX + DefArrowX + DefGapX) * 2;
 		$lim -= $s * DefGapX * 2 if $moreThanOne;
 
@@ -535,11 +535,11 @@ sub set_tab_index
 	my $mx = scalar @{$self-> {tabs}} - 1;
 	$ti = $mx if $ti > $mx;
 	return if $ti == $self-> {tabIndex};
-	
+
 	$self-> {tabIndex} = $ti;
 	$self-> {focusedTab} = $ti;
 	my $newFirstTab = $self-> tab2firstTab( $ti);
-	
+
 	defined $newFirstTab ?
 		$self-> firstTab( $newFirstTab) :
 		$self-> repaint;
@@ -693,9 +693,9 @@ sub init
 	my $self = shift;
 	$self-> {pageIndex} = -1;
 	$self-> {pageCount} = 0;
-	
+
 	my %profile = $self-> SUPER::init(@_);
-	
+
 	$self-> {pageCount} = $profile{pageCount};
 	$self-> {pageCount} = 0 if $self-> {pageCount} < 0;
 	my $j = $profile{pageCount};
@@ -711,9 +711,9 @@ sub set_page_index
 	$pi = $self-> {pageCount} - 1 if $pi > $self-> {pageCount} - 1;
 	my $sel = $self-> selected;
 	return if $pi == $self-> {pageIndex};
-	
+
 	$self-> lock;
-	
+
 	my $cp = $self-> {widgets}-> [$self-> {pageIndex}];
 	if ( defined $cp) {
 		for ( @$cp) {
@@ -726,7 +726,7 @@ sub set_page_index
 			$$_[0]-> geometry(gt::Default);
 		}
 	}
-	
+
 	$cp = $self-> {widgets}-> [$pi];
 	if ( defined $cp) {
 		my $hasSel;
@@ -741,7 +741,7 @@ sub set_page_index
 			$$_[0]-> current($$_[3]);
 		}
 	}
-	
+
 	my $i = $self-> {pageIndex};
 	$self-> {pageIndex} = $pi;
 	$self-> notify(q(Change), $i, $pi);
@@ -752,10 +752,10 @@ sub set_page_index
 sub insert_page
 {
 	my ( $self, $at) = @_;
-	
+
 	$at = -1 unless defined $at;
 	$at = $self-> {pageCount} if $at < 0 || $at > $self-> {pageCount};
-	
+
 	splice( @{$self-> {widgets}}, $at, 0, []);
 	$self-> {pageCount}++;
 	$self-> pageIndex(0) if $self-> {pageCount} == 1;
@@ -768,7 +768,7 @@ sub delete_page
 	my ( $self, $at, $removeChildren) = @_;
 
 	return unless $self->{pageCount};
-	
+
 	$removeChildren = 1 unless defined $removeChildren;
 	$at = -1 unless defined $at;
 	$at = $self-> {pageCount} - 1 if $at < 0 || $at >= $self-> {pageCount};
@@ -786,7 +786,7 @@ sub delete_page
 		$idx--;
 	}
 	$idx = 0 if $idx < 0;
-	
+
 	my $r = splice( @{$self-> {widgets}}, $at, 1);
 	$self-> {pageCount}--;
 	$self-> {pageIndex} = $idx;
@@ -800,11 +800,11 @@ sub attach_to_page
 {
 	my $self  = shift;
 	my $page  = shift;
-	
+
 	$self-> insert_page if $self-> {pageCount} == 0;
 	$page = $self-> {pageCount} - 1 if $page > $self-> {pageCount} - 1 || $page < 0;
 	my $cp = $self-> {widgets}-> [$page];
-	
+
 	for ( @_) {
 		next unless $_-> isa('Prima::Widget');
 		# $_->add_notification( Enable  => \&_enable  => $self);
@@ -824,8 +824,8 @@ sub attach_to_page
 sub insert
 {
 	my $self = shift;
-	my $page = defined $self-> {defaultInsertPage} ? 
-		$self-> {defaultInsertPage} : 
+	my $page = defined $self-> {defaultInsertPage} ?
+		$self-> {defaultInsertPage} :
 		$self-> pageIndex;
 
 	return $self-> insert_to_page( $page, @_);
@@ -837,15 +837,15 @@ sub insert_to_page
 	my $page  = shift;
 	my $sel   = $self-> selected;
 	$page = $self-> {pageCount} - 1 if $page > $self-> {pageCount} - 1 || $page < 0;
-	
+
 	$self-> lock;
 	my @ctrls = $self-> SUPER::insert( @_);
 
 	$self-> attach_to_page( $page, @ctrls);
-	$ctrls[0]-> select if $sel && scalar @ctrls && $page == $self-> {pageIndex} && 
+	$ctrls[0]-> select if $sel && scalar @ctrls && $page == $self-> {pageIndex} &&
 		$ctrls[0]-> isa('Prima::Widget');
 	$self-> unlock;
-	
+
 	return wantarray ? @ctrls : $ctrls[0];
 }
 
@@ -860,7 +860,7 @@ sub contains_widget
 	my $i;
 	my $j;
 	my $cptr = $self-> {widgets};
-	
+
 	for ( $i = 0; $i < $self-> {pageCount}; $i++) {
 		my $cp = $$cptr[$i];
 		my $j = 0;
@@ -876,7 +876,7 @@ sub widgets_from_page
 {
 	my ( $self, $page) = @_;
 	return if $page < 0 or $page >= $self-> {pageCount};
-	
+
 	my @r;
 	push( @r, $$_[0]) for @{$self-> {widgets}-> [$page]};
 	return @r;
@@ -943,9 +943,9 @@ sub widget_get
 {
 	my ( $self, $widget, $property) = @_;
 	return $widget-> $property() if ! $virtual_properties{$property};
-	
+
 	my ( $page, $number) = $self-> contains_widget( $widget);
-	return $widget-> $property() 
+	return $widget-> $property()
 		if ! defined $page || $page == $self-> {pageIndex};
 
 	return $self-> {widgets}-> [$page]-> [$number]-> [$virtual_properties{$property}];
@@ -991,13 +991,13 @@ sub pageIndex     {($#_)?($_[0]-> set_page_index   ( $_[1]))    :return $_[0]-> 
 sub pageCount     {($#_)?($_[0]-> set_page_count   ( $_[1]))    :return $_[0]-> {pageCount}}
 
 # TabbedNotebook styles
-package 
+package
     tns;
 use constant Simple   => 0;
 use constant Standard => 1;
 
 # TabbedNotebook orientations
-package 
+package
     tno;
 use constant Top    => 0;
 use constant Bottom => 1;
@@ -1045,19 +1045,19 @@ sub init
 {
 	my $self = shift;
 	my %profile = @_;
-	
+
 	my $visible       = $profile{visible};
 	my $scaleChildren = $profile{scaleChildren};
 	$profile{visible} = 0;
 	$self-> {style}    = tns::Standard;
 	$self-> {orientation} = tno::Top;
 	$self-> {tabs}     = [];
-	
+
 	%profile = $self-> SUPER::init(%profile);
-	
+
 	my @size = $self-> size;
 	my $maxh = $self-> font-> height * 2;
-	
+
 	$self-> {tabSet} = $profile{tabsetClass}-> create(
 		owner         => $self,
 		name          => 'TabSet',
@@ -1116,25 +1116,25 @@ sub on_paint
 			$size[1] -= 5;
 		}
 
-		$canvas-> rect3d( 
-			0, 0, $size[0] - 1, $size[1] - 1 + $s * Prima::TabSet::DefGapY, 
+		$canvas-> rect3d(
+			0, 0, $size[0] - 1, $size[1] - 1 + $s * Prima::TabSet::DefGapY,
 			1, reverse @c3d
 		);
-		$canvas-> rect3d( 
-			$s * DefBorderX, $on_top ? 
-				$s * DefBorderX : $self-> {notebook}-> bottom - 1, 
+		$canvas-> rect3d(
+			$s * DefBorderX, $on_top ?
+				$s * DefBorderX : $self-> {notebook}-> bottom - 1,
 			$size[0] - 1 - $s * DefBorderX,
-			$size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY, 
+			$size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY,
 			1, @c3d
 		);
 
 		my $y = $size[1] - $s * DefBorderX + $s * Prima::TabSet::DefGapY;
 		my $x = $size[0] - $s * DefBorderX - $s * DefBookmarkX;
 		return if $y < $s * DefBorderX * 2 + $s * DefBookmarkX;
-		
+
 		my $a  = 0;
-		my ($pi, $mpi) = ( 
-			$self-> {notebook}-> pageIndex, 
+		my ($pi, $mpi) = (
+			$self-> {notebook}-> pageIndex,
 			$self-> {notebook}-> pageCount - 1
 		);
 		$a |= 1 if $pi > 0;
@@ -1146,7 +1146,7 @@ sub on_paint
 				$canvas->fillpoly([
 					$x - 2, $y - 2,
 					$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX,
-					$x - 2, $y - $s * DefBookmarkX,  
+					$x - 2, $y - $s * DefBookmarkX,
 				]);
 			} elsif ( $p > 0 && $a & 2 ) {
 				$canvas->fillpoly([
@@ -1158,25 +1158,25 @@ sub on_paint
 		}
 
 		$canvas-> color( $c3d[0]);
-		$canvas-> line( 
-			$s * DefBorderX + 2,  $y - 2, 
+		$canvas-> line(
+			$s * DefBorderX + 2,  $y - 2,
 			$x - 2,          $y - 2
 		);
-		$canvas-> line( 
-			$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 1, 
-			$x + $s * DefBookmarkX - 4, $on_top ? 
-						($s * DefBorderX + 2) : 
+		$canvas-> line(
+			$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 1,
+			$x + $s * DefBookmarkX - 4, $on_top ?
+						($s * DefBorderX + 2) :
 						($self-> {notebook}-> bottom + 1)
 		);
 
 		my $fh = $canvas-> font-> height + 8;
-		$canvas-> line( 
-			$s * DefBorderX + 4, $y - $fh * 1.6, 
+		$canvas-> line(
+			$s * DefBorderX + 4, $y - $fh * 1.6,
 			$x - 6, $y - $fh * 1.6
 		);
-		$canvas-> polyline([ 
-			$x - 2, $y - 2, 
-			$x - 2, $y - $s * DefBookmarkX, 
+		$canvas-> polyline([
+			$x - 2, $y - 2,
+			$x - 2, $y - $s * DefBookmarkX,
 			$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX
 		]);
 		$canvas-> line( $x - 1, $y - 3, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX + 1);
@@ -1221,7 +1221,7 @@ sub on_paint
 				$canvas-> text_out( $t1, $tl1, $yh) if $tl1 > 4 + $s * DefBorderX + $fh * 3;
 			}
 		}
-	} else {	
+	} else {
 		# tns::Simple
 		$canvas-> rect3d(0, 0, $size[0]-1, $size[1]-1, 1, reverse @c3d);
 	}
@@ -1232,7 +1232,7 @@ sub event_in_page_flipper
 	my ( $self, $x, $y) = @_;
 
 	return if $self-> {style} != tns::Standard;
-	
+
 	my @size = $self-> size;
 	my $s = $::application->uiScaling;
 	my $th = ($self-> {orientation} == tno::Top) ? $self-> {tabSet}-> height : 5;
@@ -1305,7 +1305,7 @@ sub page2tab
 		$j++;
 		my $n = $$t[ $j*2 + 1];
 		last unless defined $n;
-		$i += $n; 
+		$i += $n;
 	}
 	return $j;
 }
@@ -1375,13 +1375,13 @@ sub get_tabs
 sub set_page_index
 {
 	my ( $self, $pi) = @_;
-	
+
 	my ($pix, $mpi) = ( $self-> {notebook}-> pageIndex, $self-> {notebook}-> pageCount - 1);
 	$self-> {changeLock} = 1;
 	$self-> {notebook}-> pageIndex( $pi);
 	$self-> {tabSet}-> tabIndex( $self-> page2tab( $self-> {notebook}-> pageIndex));
 	delete $self-> {changeLock};
-	
+
 	my @size = $self-> size;
 	my $th = ($self-> {orientation} == tno::Top) ? $self-> {tabSet}-> height : 5;
 	my $a  = 0;
@@ -1401,7 +1401,7 @@ sub set_page_index
 	$self-> notify(q(Change), $pix, $pi);
 }
 
-sub orientation 
+sub orientation
 {
 	my ($self, $tno) = @_;
 	return $self-> {orientation} unless (defined $tno);
@@ -1414,7 +1414,7 @@ sub orientation
 	return $tno;
 }
 
-sub style 
+sub style
 {
 	my ($self, $style) = @_;
 	return $self-> {style} unless (defined $style);
@@ -1425,7 +1425,7 @@ sub style
 	return $style;
 }
 
-sub adjust_widgets 
+sub adjust_widgets
 {
 	my ($self) = @_;
 	my $nb = $self-> {notebook};
@@ -1470,7 +1470,7 @@ sub insert_page
 	$at = -1 unless defined $at;
 	$at = $book->pageCount + $at + 1 if $at < 0;
 	return if $at > $book->pageCount || $at < 0;
-	
+
 	local $self-> {changeLock} = 1;
 	$self-> {notebook}->insert_page($at);
 
@@ -1558,7 +1558,7 @@ package Prima::ScrollNotebook;
 use vars qw(@ISA);
 @ISA = qw(Prima::ScrollGroup);
 
-for ( qw(pageIndex insert_page delete_page), 
+for ( qw(pageIndex insert_page delete_page),
 		keys %Prima::TabbedNotebook::notebookProps) {
 		eval <<GENPROC;
 	sub $_ { return shift-> {client}-> $_(\@_); }
@@ -1693,8 +1693,8 @@ these two into a ready-to-use multipage control with interactive navigation.
 =head2 Properties
 
 Provides basic widget container functionality. Acts as merely
-a grouping widget, hiding and showing the children widgets when 
-C<pageIndex> property is changed. 
+a grouping widget, hiding and showing the children widgets when
+C<pageIndex> property is changed.
 
 =over
 
@@ -1708,9 +1708,9 @@ Default value: C<undef>.
 
 =item pageCount INTEGER
 
-Selects number of pages. If the number of pages is reduced, 
+Selects number of pages. If the number of pages is reduced,
 the widgets that belong to the rejected pages are removed
-from the notebook's storage. 
+from the notebook's storage.
 
 =item pageIndex INTEGER
 
@@ -1726,21 +1726,21 @@ from 0 to C<pageCount - 1>.
 =item attach_to_page INDEX, @WIDGETS
 
 Attaches list of WIDGETS to INDEXth page. The widgets are not
-necessarily must be children of the notebook widget. If the 
+necessarily must be children of the notebook widget. If the
 page is not current, the widgets get hidden and disabled;
 otherwise their state is not changed.
 
 =item contains_widget WIDGET
 
 Searches for WIDGET in the attached widgets list. If
-found, returns two integers: location page index and 
+found, returns two integers: location page index and
 widget list index. Otherwise returns an empty list.
 
 =item delete_page [ INDEX = -1, REMOVE_CHILDREN = 1 ]
 
 Deletes INDEXth page, and detaches the widgets associated with
 it. If REMOVE_CHILDREN is 1, the detached widgets are
-destroyed. 
+destroyed.
 
 =item delete_widget WIDGET
 
@@ -1752,11 +1752,11 @@ Detaches WIDGET from the widget list.
 
 =item insert CLASS, %PROFILE [[ CLASS, %PROFILE], ... ]
 
-Creates one or more widgets with C<owner> property set to the 
-caller widget, and returns the list of references to the newly 
-created widgets. 
+Creates one or more widgets with C<owner> property set to the
+caller widget, and returns the list of references to the newly
+created widgets.
 
-See L<Prima::Widget/insert> for details. 
+See L<Prima::Widget/insert> for details.
 
 =item insert_page [ INDEX = -1 ]
 
@@ -1780,7 +1780,7 @@ add widgets to the widget list, so the widgets are not flipped
 together with pages. Useful for setting omnipresent ( or
 transparent ) widgets, visible on all pages.
 
-The semantics of setting CLASS and PROFILE, as well as 
+The semantics of setting CLASS and PROFILE, as well as
 the return values are fully equivalent to C<insert> method.
 
 See L<Prima::Widget/insert> for details.
@@ -1799,9 +1799,9 @@ flag value is returned instead.
 
 Calls C<set> on WIDGET with PROFILE and
 updates the internal C<visible>, C<enabled>, C<current>, and C<geometry> properties
-if these are present in PROFILE. 
+if these are present in PROFILE.
 
-See L<Prima::Object/set>.   
+See L<Prima::Object/set>.
 
 =item widgets_from_page INDEX
 
@@ -1827,7 +1827,7 @@ the notification execution.
 
 Since the notebook operates directly on children widgets'
 C<::visible> and C<::enable> properties, there is a problem when
-a widget associated with a non-active page must be explicitly hidden 
+a widget associated with a non-active page must be explicitly hidden
 or disabled. As a result, such a widget would become visible and enabled anyway.
 This happens because Prima API does not cache property requests. For example,
 after execution of the following code
@@ -1839,7 +1839,7 @@ after execution of the following code
 
 C<$widget> will still be visible. As a workaround, C<widget_set> method
 can be suggested, to be called together with the explicit state calls.
-Changing 
+Changing
 
 	$widget-> visible(0);
 
@@ -1853,7 +1853,7 @@ solves the problem, but introduces an inconsistency in API.
 
 C<Prima::TabSet> class implements functionality of an interactive
 page switcher. A widget is presented as a set of horizontal
-bookmark-styled tabs with text identifiers.  
+bookmark-styled tabs with text identifiers.
 
 =head2 Properties
 
@@ -1875,7 +1875,7 @@ Selects the first ( leftmost ) visible tab.
 Selects the currently focused tab. This property value is almost
 always equals to C<tabIndex>, except when the widget is navigated
 by arrow keys, and tab selection does not occur until the user
-presses the return key. 
+presses the return key.
 
 =item topMost BOOLEAN
 
@@ -1887,7 +1887,7 @@ Default value: 1
 
 =item tabIndex INDEX
 
-Selects the INDEXth tab. When changed, C<Change> notification 
+Selects the INDEXth tab. When changed, C<Change> notification
 is triggered.
 
 =item tabs ARRAY
@@ -1933,7 +1933,7 @@ Triggered when C<tabIndex> property is changed.
 
 Called when INDEXth tab is to be drawn on CANVAS. COLOR_SET is an array
 reference, and consists of the four cached color values: foreground, background,
-dark 3d color, and light 3d color. POLYGON1 and POLYGON2 are array references, 
+dark 3d color, and light 3d color. POLYGON1 and POLYGON2 are array references,
 and contain four points as integer pairs in (X,Y)-coordinates. POLYGON1
 keeps coordinates of the larger polygon of a tab, while POLYGON2 of the smaller. Text is
 displayed inside the larger polygon:
@@ -1953,7 +1953,7 @@ displayed inside the larger polygon:
        o................o
    [6,7]o..............o[4,5]
 
-Depending on C<topMost> property value, POLYGON1 and POLYGON2 change 
+Depending on C<topMost> property value, POLYGON1 and POLYGON2 change
 their mutual vertical orientation.
 
 The notification is always called from within C<begin_paint/end_paint> block.
@@ -1961,7 +1961,7 @@ The notification is always called from within C<begin_paint/end_paint> block.
 =item MeasureTab INDEX, REF
 
 Puts width of INDEXth tab in pixels into REF scalar value.
-This notification must be called from within C<begin_paint_info/end_paint_info> 
+This notification must be called from within C<begin_paint_info/end_paint_info>
 block.
 
 =back
@@ -1970,7 +1970,7 @@ block.
 
 The class combines functionality of C<Prima::TabSet> and C<Prima::Notebook>,
 providing the interactive multipage widget functionality. The page indexing
-scheme is two-leveled: the first level is equivalent to the C<Prima::TabSet> - 
+scheme is two-leveled: the first level is equivalent to the C<Prima::TabSet> -
 provided tab scheme. Each first-level tab, in turn, contains one or more second-level
 pages, which can be switched using native C<Prima::TabbedNotebook> controls.
 

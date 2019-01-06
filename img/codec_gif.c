@@ -11,14 +11,14 @@ extern "C" {
 
 static char * gifext[] = { "gif", nil };
 static char * gifver[] = { "gif87a", "gif89a", nil };
-static int    gifbpp[] = { 
+static int    gifbpp[] = {
 	imbpp1, imbpp1 | imGrayScale,
-	imbpp4, 
+	imbpp4,
 	imbpp8, imbpp8 | imGrayScale,
-	0   
-};   
-static char * loadOutput[] = { 
-	"screenWidth", 
+	0
+};
+static char * loadOutput[] = {
+	"screenWidth",
 	"screenHeight",
 	"screenColorResolution",
 	"screenBackGroundColor",
@@ -33,7 +33,7 @@ static char * loadOutput[] = {
 	"interlaced",
 	"loopCount",
 	nil
-};   
+};
 
 static ImgCodecInfo codec_info = {
 	"GIFLIB",
@@ -45,7 +45,7 @@ static ImgCodecInfo codec_info = {
 	gifver,    /* features  */
 	"Prima::Image::gif",     /* module */
 	"Prima::Image::gif",     /* package */
-	IMG_LOAD_FROM_FILE | IMG_LOAD_MULTIFRAME | IMG_LOAD_FROM_STREAM | 
+	IMG_LOAD_FROM_FILE | IMG_LOAD_MULTIFRAME | IMG_LOAD_FROM_STREAM |
 	IMG_SAVE_TO_FILE | IMG_SAVE_MULTIFRAME | IMG_SAVE_TO_STREAM,
 	gifbpp, /* save types */
 	loadOutput
@@ -77,7 +77,7 @@ EGifPutExtensionFirst(GifFileType * GifFile,
 							const void * Extension) {
 	int r = EGifPutExtensionLeader( GifFile, ExtCode );
 	if ( r != GIF_OK ) return r;
-	return EGifPutExtensionBlock( GifFile, ExtLen, Extension ); 
+	return EGifPutExtensionBlock( GifFile, ExtLen, Extension );
 }
 
 static int
@@ -87,17 +87,17 @@ EGifPutExtensionLast(GifFileType * GifFile,
 							const void * Extension) {
 	int r = EGifPutExtensionBlock( GifFile, ExtLen, Extension );
 	if ( r != GIF_OK ) return r;
-	return EGifPutExtensionTrailer( GifFile); 
+	return EGifPutExtensionTrailer( GifFile);
 }
 
 #else
 #define GIF_ERROR_ARG
 #define GIF_ERROR_ARG_51
 #endif
-#define GIF_CALL        img_gif_error_code = 
+#define GIF_CALL        img_gif_error_code =
 #define GIF_CALL_FAILED img_gif_error_code != GIF_OK
 
-static void * 
+static void *
 init( ImgCodecInfo ** info, void * param)
 {
 	*info = &codec_info;
@@ -112,7 +112,7 @@ init( ImgCodecInfo ** info, void * param)
 #endif
 
 	return (void*)1;
-}  
+}
 
 typedef struct _LoadRec {
 	GifFileType * gft;
@@ -121,7 +121,7 @@ typedef struct _LoadRec {
 	int           transparent;
 } LoadRec;
 
-static SV * 
+static SV *
 make_palette_sv( ColorMapObject * pal)
 {
 	AV * av = newAV();
@@ -134,10 +134,10 @@ make_palette_sv( ColorMapObject * pal)
 			av_push( av, newSViv(( int) c-> Green));
 			av_push( av, newSViv(( int) c-> Red));
 			c++;
-		}   
-	}   
+		}
+	}
 	return sv;
-}   
+}
 
 static void
 copy_palette( PImage i, ColorMapObject * pal)
@@ -145,7 +145,7 @@ copy_palette( PImage i, ColorMapObject * pal)
 	int j, last_non_null = -1, first_null = -1;
 	PRGBColor r = i-> palette;
 	GifColorType * c;
-	
+
 	if ( !pal) return;
 	c = pal-> Colors;
 	memset( r, 0, 768);
@@ -160,11 +160,11 @@ copy_palette( PImage i, ColorMapObject * pal)
 			first_null = j;
 		c++;
 		r++;
-	}  
+	}
 	/* optimize palette, since gif palette must be **2 only */
 	i-> palSize = last_non_null + 1;
 	if ( first_null > last_non_null && i-> palSize < 256) i-> palSize++;
-}   
+}
 
 static void
 format_error( int errorID, char * errbuf, int line)
@@ -224,15 +224,15 @@ my_gif_read( GifFileType * gif, GifByteType * buf, int size)
 	return req_read( ( PImgIORequest) (gif-> UserData), size, buf);
 }
 
-static void * 
+static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l = malloc( sizeof( LoadRec));
 	HV * profile = fi-> fileProperties;
-	
+
 	if ( !l) return nil;
 	memset( l, 0, sizeof( LoadRec));
-	
+
 	GIF_CALL 0;
 	if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read GIF_ERROR_ARG))) {
 		free( l);
@@ -279,7 +279,7 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data)
 {
 	LoadRec * l = ( LoadRec *) fi-> instance;
 	HV * profile = fi-> frameProperties;
-	
+
 	switch( code) {
 	case GRAPHICS_EXT_FUNC_CODE: {
 		PGIFGraphControlExt ext = ( PGIFGraphControlExt) (data + 1);
@@ -293,13 +293,13 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data)
 			if ( fi-> loadExtras)
 				pset_i( transparentColorIndex, ext-> transparentColorIndex);
 			l-> transparent = ext-> transparentColorIndex;
-		}    
+		}
 		break;
 	}
 
 	case COMMENT_EXT_FUNC_CODE: if ( fi-> loadExtras) {
 		SV *sv, *mainsv = newSVpv((char*) data + 1, *data);
-		pset_sv_noinc( comment, mainsv); 
+		pset_sv_noinc( comment, mainsv);
 		while ( 1) {
 			if (( GIF_CALL DGifGetExtensionNext( l-> gft, &data)) != GIF_OK ) out;
 		 if ( data == NULL) break;
@@ -310,7 +310,7 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data)
 		break;
 	}
 
-	case NETSCAPE_EXT_FUNC_CODE: 
+	case NETSCAPE_EXT_FUNC_CODE:
 		if ( *data == 11 && memcmp( data + 1, "NETSCAPE2.0", 11) == 0) {
 			LoadRec * l = ( LoadRec *) fi-> instance;
 			if ((GIF_CALL DGifGetExtensionNext( l-> gft, &data)) != GIF_OK) out;
@@ -324,20 +324,20 @@ load_extension( PImgLoadFileInstance fi, int code, Byte * data)
 
 	while ( data) {
 		if (( GIF_CALL DGifGetExtensionNext( l-> gft, &data)) != GIF_OK) out;
-	}      
+	}
 
 	return true;
-} 
+}
 
 static int interlaceOffs[] = { 0, 4, 2, 1};
 static int interlaceStep[] = { 8, 8, 4, 2};
 
-static Bool   
+static Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	PImage i = ( PImage) fi-> object;
 	LoadRec * l = ( LoadRec *) fi-> instance;
-	HV * profile = fi-> frameProperties; 
+	HV * profile = fi-> frameProperties;
 	Bool loop = true;
 
 	/* Reopen file if rewind requested */
@@ -352,7 +352,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read GIF_ERROR_ARG))) out;
 		l-> passed  = -1;
 		l-> transparent = -1;
-	}   
+	}
 
 	while ( loop) {
 		GIF_CALL DGifGetRecordType( l-> gft, &l-> grt);
@@ -364,14 +364,14 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		}
 
 		switch( l-> grt) {
-			
-		case SCREEN_DESC_RECORD_TYPE: 
-			break;   
-			
+
+		case SCREEN_DESC_RECORD_TYPE:
+			break;
+
 		case TERMINATE_RECORD_TYPE:
 			fi-> frameCount = l-> passed + 1; /* can report how many frames now */
 			outc("Frame index out of range");
-			
+
 		case IMAGE_DESC_RECORD_TYPE:
 			if (( GIF_CALL DGifGetImageDesc( l-> gft)) != GIF_OK) out;
 
@@ -381,18 +381,18 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				if ((GIF_CALL DGifGetCode( l-> gft, &sz, &block)) != GIF_OK) out;
 				while ( block) {
 					if (( GIF_CALL DGifGetCodeNext( l-> gft, &block)) != GIF_OK) out;
-				}  
+				}
 				break;
-			}   
+			}
 
 			/* loading palette */
-			{ 
-				int type = l-> gft-> Image.ColorMap ? l-> gft-> Image.ColorMap-> BitsPerPixel : 
+			{
+				int type = l-> gft-> Image.ColorMap ? l-> gft-> Image.ColorMap-> BitsPerPixel :
 							( l-> gft-> SColorMap      ? l-> gft-> SColorMap-> BitsPerPixel : imbpp1);
 				if ( type != 1) type = ( type <= 4) ? 4 : 8;
 				i-> self-> create_empty(( Handle) i, 1, 1, type);
 			}
-			
+
 			if ( l-> gft-> Image.ColorMap != nil)
 				copy_palette( i, l-> gft-> Image. ColorMap);
 			else if ( l-> gft-> SColorMap) {
@@ -404,8 +404,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			if ( fi-> loadExtras) {
 				pset_i( interlaced, l-> gft-> Image. Interlace ? 1 : 0);
 				pset_i( left,       l-> gft-> Image. Left);
-				pset_i( top,        l-> gft-> Image. Top); 
-			}   
+				pset_i( top,        l-> gft-> Image. Top);
+			}
 
 			if ( fi-> noImageData) {
 				int sz;
@@ -413,16 +413,16 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 				pset_i( width,      l-> gft-> Image. Width);
 				pset_i( height,     l-> gft-> Image. Height);
-				
+
 				/* skip block */
 				if (( GIF_CALL DGifGetCode( l-> gft, &sz, &block)) != GIF_OK) out;
 				while ( block) {
 					if (( GIF_CALL DGifGetCodeNext( l-> gft, &block)) != GIF_OK) out;
-				}  
+				}
 			} else {
 				GifPixelType * data;
 				int ls = sizeof( GifPixelType) * l-> gft-> Image. Width, ps = i-> palSize;
-				i-> self-> create_empty(( Handle) i, 
+				i-> self-> create_empty(( Handle) i,
 					l-> gft-> Image. Width, l-> gft-> Image. Height, i-> type);
 				i-> palSize = ps;
 				data = ( GifPixelType *) malloc( ls * i-> h);
@@ -443,12 +443,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 						for ( k = 0; k < i-> w; k++)
 							if ( src[k] >= i-> palSize) i-> palSize = src[k] + 1;
-						
+
 						if ( l-> gft-> Image. Interlace) {
 							idst += interlaceStep[ pass];
 							if ( idst >= i-> h && pass < 3)
 								idst = interlaceOffs[ ++pass];
-						} else 
+						} else
 							idst++;
 
 						switch( i-> type & imBPP) {
@@ -458,26 +458,26 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 							bc_byte_nibble_cr( src, dst, i-> w, map_stdcolorref); break;
 						default:
 							memcpy( dst, src, i-> w);
-						}   
+						}
 						src += ls;
-					}   
+					}
 				}
 
 				free( data);
 
 				/* applying transparent index to Icon */
-				if ( kind_of( fi-> object, CIcon) && 
+				if ( kind_of( fi-> object, CIcon) &&
 					( l-> transparent >= 0) &&
 					( l-> transparent < PIcon( fi-> object)-> palSize)) {
 					PIcon( fi-> object)-> maskIndex = l-> transparent;
 					PIcon( fi-> object)-> autoMasking = amMaskIndex;
-				}   
-			}   
-			
+				}
+			}
+
 			loop = false;
 			break;
-			
-		case EXTENSION_RECORD_TYPE:   
+
+		case EXTENSION_RECORD_TYPE:
 			{
 				int code = -1;
 				Byte * data = nil;
@@ -488,11 +488,11 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 					if ( !load_extension( fi, code, data))
 							return false;
 				}
-			}   
+			}
 			break;
 		default:;
-		}   
-	}   
+		}
+	}
 
 	return true;
 }
@@ -503,7 +503,7 @@ close_load( PImgCodec instance, PImgLoadFileInstance fi)
 	LoadRec * l = ( LoadRec *) fi-> instance;
 	if ( l-> gft) DGifCloseFile( l-> gft GIF_ERROR_ARG_51);
 	free( l);
-}   
+}
 
 static HV *
 save_defaults( PImgCodec c)
@@ -533,7 +533,7 @@ save_defaults( PImgCodec c)
 	pset_i( left, 0);
 	pset_i( top,  0);
 	pset_i( interlaced, 0);
-	
+
 	return profile;
 }
 
@@ -543,11 +543,11 @@ my_gif_write( GifFileType * gif, const GifByteType * buf, int size)
 	return req_write( (( PImgIORequest) (gif-> UserData)), size, ( void*) buf);
 }
 
-static void * 
+static void *
 open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	GifFileType * g;
-	
+
 	GIF_CALL 0;
 	if ( !( g = EGifOpen( fi-> req, my_gif_write GIF_ERROR_ARG)))
 		return nil;
@@ -555,12 +555,12 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 	return g;
 }
 
-static ColorMapObject * 
+static ColorMapObject *
 make_colormap( PRGBColor r, int sz)
 {
 	int j, psz;
 	ColorMapObject * ret;
-	GifColorType   * c;  
+	GifColorType   * c;
 
 	if ( sz <= 2)  psz = 2;  else
 	if ( sz <= 4)  psz = 4;  else
@@ -579,20 +579,20 @@ make_colormap( PRGBColor r, int sz)
 		c-> Blue  = r-> b;
 		c++;
 		r++;
-	}   
+	}
 	for ( j = sz; j < psz; j++) {
 		c-> Red = c-> Green = c-> Blue = 0;
 		c++;
 	}
 	return ret;
-}   
+}
 
 
-static Bool   
+static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	dPROFILE;
-	GifFileType * g = ( GifFileType *) fi-> instance; 
+	GifFileType * g = ( GifFileType *) fi-> instance;
 	PImage i = ( PImage) fi-> object;
 	HV * profile = fi-> objectExtras;
 
@@ -602,11 +602,11 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		RGBColor * r = i-> palette;
 		RGBColor rgbc[ 256];
 		ColorMapObject * c;
-	
+
 		if ( pexist( screenWidth))           w  = pget_i( screenWidth);
 		if ( pexist( screenHeight))          h  = pget_i( screenHeight);
 		if ( pexist( screenBackGroundColor)) bg = pget_i( screenBackGroundColor);
-		if ( pexist( screenPalette)) 
+		if ( pexist( screenPalette))
 			ps = apc_img_read_palette( r = rgbc, pget_sv( screenPalette), true);
 		c = make_colormap( r, ps);
 		if ( !c) outcm( ps * 3);
@@ -625,20 +625,20 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	/* comments  */
 	if ( pexist( comment))
 		EGifPutComment( g, pget_c( comment));
-	
+
 	/* graphics control block */
-	if ( pexist( delayTime)      || 
+	if ( pexist( delayTime)      ||
 		pexist( disposalMethod) ||
 		pexist( userInput)      ||
 		pexist( transparentColorIndex)) {
 
 		GIFGraphControlExt ext = { 0, 0, 0};
 		int disposalMethod = 0, userInput = 0, transparent = 0;
-		
+
 		if ( pexist( delayTime))  {
 			int dt = pget_i( delayTime);
-			ext. delayTimeLo = dt % 256;	 
-			ext. delayTimeHi = dt / 256;	 
+			ext. delayTimeLo = dt % 256;
+			ext. delayTimeHi = dt / 256;
 		}
 		if ( pexist( disposalMethod)) disposalMethod = pget_i( disposalMethod);
 		if ( pexist( userInput))      userInput      = pget_i( userInput);
@@ -648,13 +648,13 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 				transparent = 1;
 				ext. transparentColorIndex = t;
 			}
-		}   
+		}
 		if ( disposalMethod < 0 || disposalMethod > 3) outc("disposalMethod not in 0..3");
-		ext. packedFields = 
+		ext. packedFields =
 			( transparent    ? 1 : 0) |
 			( userInput      ? 2 : 0) |
 			(( disposalMethod & 7) << 2);
-		if (( GIF_CALL EGifPutExtension( g, GRAPHICS_EXT_FUNC_CODE, 
+		if (( GIF_CALL EGifPutExtension( g, GRAPHICS_EXT_FUNC_CODE,
 			sizeof( GIFGraphControlExt), &ext)) != GIF_OK) out;
 	}
 
@@ -662,9 +662,9 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	if ( pexist( loopCount)) {
 		int lc = pget_i( loopCount);
 		GIFNetscapeLoopExt ext = { 1, lc % 256, lc / 256};
-		if (( GIF_CALL EGifPutExtensionFirst( g, NETSCAPE_EXT_FUNC_CODE, 
+		if (( GIF_CALL EGifPutExtensionFirst( g, NETSCAPE_EXT_FUNC_CODE,
 			11, "NETSCAPE2.0")) != GIF_OK) out;
-		if (( GIF_CALL EGifPutExtensionLast( g, 0, 
+		if (( GIF_CALL EGifPutExtensionLast( g, 0,
 			sizeof( GIFNetscapeLoopExt), &ext)) != GIF_OK) out;
 	}
 
@@ -677,12 +677,12 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		int ls = sizeof( GifPixelType) * i-> w;
 		int j, pass = 0, idst = 0;
 		Byte * src, * dst;
-		
+
 		if ( !c) outcm( i-> palSize * 3);
 		if ( pexist( left)) ox = pget_i( left);
 		if ( pexist( top )) oy = pget_i( top);
 		if ( pexist( interlaced )) interlaced = pget_i( interlaced);
-		
+
 		GIF_CALL EGifPutImageDesc( g, ox, oy, i-> w, i-> h, interlaced, c);
 		if ( GIF_CALL_FAILED ) {
 			FreeMapObject( c);
@@ -703,17 +703,17 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 					idst = interlaceOffs[ ++pass];
 			} else
 				idst++;
-			
+
 			switch( i-> type & imBPP) {
 			case imbpp1:
 				bc_mono_byte( src, dst, i-> w); break;
 			case imbpp4:
 				bc_nibble_byte( src, dst, i-> w); break;
 			default:
-				memcpy( dst, src, i-> w);         
-			} 
-			dst += ls;   
-		}   
+				memcpy( dst, src, i-> w);
+			}
+			dst += ls;
+		}
 		GIF_CALL EGifPutLine( g, data, i-> w * i-> h);
 		if ( GIF_CALL_FAILED ) {
 			free( data);
@@ -722,33 +722,33 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		free( data);
 	}
 	return true;
-}   
+}
 
 
 static void
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	EGifCloseFile(( GifFileType *) fi-> instance GIF_ERROR_ARG_51);
-}   
+}
 
-void 
+void
 apc_img_codec_gif( void )
 {
 	struct ImgCodecVMT vmt;
 	memcpy( &vmt, &CNullImgCodecVMT, sizeof( CNullImgCodecVMT));
 	vmt. init          = init;
 	vmt. open_load     = open_load;
-	vmt. load          = load; 
-	vmt. close_load    = close_load; 
+	vmt. load          = load;
+	vmt. close_load    = close_load;
 	vmt. save_defaults = save_defaults;
 	vmt. open_save     = open_save;
-	vmt. save          = save; 
+	vmt. save          = save;
 	vmt. close_save    = close_save;
 	apc_img_register( &vmt, nil);
 }
 
-#undef out   
-#undef outc   
+#undef out
+#undef outc
 
 #ifdef __cplusplus
 }

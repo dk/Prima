@@ -15,18 +15,18 @@ rotate90( PImage i, Byte * new_data, int new_line_size)
 	Byte * src = i->data, * dst0;
 
 	switch (i->type & imBPP) {
-	case 8: 
+	case 8:
 		dst0 = new_data + i->w * new_line_size;
 		for ( y = 0; y < i-> h; y++) {
 			register int x = w;
 			register Byte * dst = dst0++;
-			while (x--) 
+			while (x--)
 				*(dst -= new_line_size) = *src++;
 			src += tail;
 		}
 		return;
 
-	default: 
+	default:
 		dst0 = new_data + ( i-> w - 1) * new_line_size;
 		new_line_size += pixel_size;
 		for ( y = 0; y < i-> h; y++) {
@@ -34,7 +34,7 @@ rotate90( PImage i, Byte * new_data, int new_line_size)
 			register Byte * dst = dst0;
 			while (x--) {
 				register int b = pixel_size;
-				while ( b--) 
+				while ( b--)
 					*dst++ = *src++;
 				dst -= new_line_size;
 			}
@@ -42,7 +42,7 @@ rotate90( PImage i, Byte * new_data, int new_line_size)
 			dst0 += pixel_size;
 		}
 		return ;
-	}     
+	}
 }
 
 static void
@@ -55,23 +55,23 @@ rotate180( PImage i, Byte * new_data)
 	Byte * src = i->data, *dst = new_data + i-> h * i-> lineSize - tail - pixel_size;
 
 	switch (i->type & imBPP) {
-	case 8: 
+	case 8:
 		for ( y = 0; y < i-> h; y++) {
 			register int x = w;
-			while (x--) 
+			while (x--)
 				*dst-- = *src++;
 			src += tail;
 			dst -= tail;
 		}
 		return;
 
-	default: 
+	default:
 		bs2 = pixel_size + pixel_size;
 		for ( y = 0; y < i-> h; y++) {
 			register int x = w;
 			while (x--) {
 				register int b = pixel_size;
-				while ( b--) 
+				while ( b--)
 					*dst++ = *src++;
 				dst -= bs2;
 			}
@@ -79,7 +79,7 @@ rotate180( PImage i, Byte * new_data)
 			dst -= tail;
 		}
 		return ;
-	}     
+	}
 }
 
 static void
@@ -92,18 +92,18 @@ rotate270( PImage i, Byte * new_data, int new_line_size)
 	Byte * src = i->data, *dst0;
 
 	switch (i->type & imBPP) {
-	case 8: 
+	case 8:
 		dst0 = new_data + i->h - new_line_size - 1;
 		for ( y = 0; y < i-> h; y++) {
 			register int x = w;
 			register Byte * dst = dst0--;
-			while (x--) 
+			while (x--)
 				*(dst += new_line_size) = *(src++);
 			src += tail;
 		}
 		return;
 
-	default: 
+	default:
 		dst0 = new_data + (i->h - 1) * pixel_size;
 		new_line_size -= pixel_size;
 		for ( y = 0; y < i-> h; y++) {
@@ -111,7 +111,7 @@ rotate270( PImage i, Byte * new_data, int new_line_size)
 			register Byte * dst = dst0;
 			while (x--) {
 				register int b = pixel_size;
-				while ( b--) 
+				while ( b--)
 					*(dst++) = *(src++);
 				dst += new_line_size;
 			}
@@ -119,10 +119,10 @@ rotate270( PImage i, Byte * new_data, int new_line_size)
 			dst0 -= pixel_size;
 		}
 		return ;
-	}     
+	}
 }
 
-void 
+void
 img_rotate( Handle self, Byte * new_data, int new_line_size, int degrees)
 {
 	PImage i = ( PImage ) self;
@@ -192,7 +192,7 @@ img_mirror_raw( int type, int w, int h, Byte * data, Bool vertically)
 					}
 				}
 			}
-		} 	    
+		}
 	}
 	return true;
 }

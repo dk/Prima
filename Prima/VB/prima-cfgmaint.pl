@@ -140,7 +140,7 @@ if ( $cmd[0] eq 'a') {
 		for ( @Prima::VB::CfgMaint::pages) {
 			push ( @p, $_) unless $cmd[2] eq $_;
 		}
-		die "Page '$cmd[2]' doesn't exist\n" 
+		die "Page '$cmd[2]' doesn't exist\n"
 			if scalar @Prima::VB::CfgMaint::pages == scalar @p;
 		@Prima::VB::CfgMaint::pages = @p;
 		for ( keys %Prima::VB::CfgMaint::classes) {
@@ -240,8 +240,8 @@ classes and pages in the Visual Builder widget palette.
 =head1 USAGE
 
 C<cfgmaint> is invoked with C<command> and C<object> arguments,
-where C<command> defines the action to be taken, and C<object> - 
-the object to be handled. 
+where C<command> defines the action to be taken, and C<object> -
+the object to be handled.
 
 =head2 Options
 
@@ -285,7 +285,7 @@ Selects a page. Valid for all commands.
 
 =item w
 
-Selects a widget. Valid for list, remove, rename, and move commands. 
+Selects a widget. Valid for list, remove, rename, and move commands.
 
 =back
 
@@ -293,7 +293,7 @@ Selects a widget. Valid for list, remove, rename, and move commands.
 
 =over
 
-=item a  
+=item a
 
 Adds a new object to the configuration. Can be either a page or
 a module.
@@ -326,7 +326,7 @@ or to the end if no additional page specified.
 
 Add a new module to the system-wide configuration:
 
-	cfgmaint -r a m CPAN/Prima/VB/New/MyCtrls.pm 
+	cfgmaint -r a m CPAN/Prima/VB/New/MyCtrls.pm
 
 List widgets, present in both config files:
 

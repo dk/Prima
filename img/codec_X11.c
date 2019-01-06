@@ -51,9 +51,9 @@ extern "C" {
 #endif
 
 static char * xbmext[] = { "xbm", nil };
-static int    xbmbpp[] = { imbpp1 | imGrayScale, 0 };   
+static int    xbmbpp[] = { imbpp1 | imGrayScale, 0 };
 
-static char * loadOutput[] = { 
+static char * loadOutput[] = {
 	"hotSpotX",
 	"hotSpotY",
 	nil
@@ -75,12 +75,12 @@ static ImgCodecInfo codec_info = {
 };
 
 
-static void * 
+static void *
 init( PImgCodecInfo * info, void * param)
 {
 	*info = &codec_info;
 	return (void*)1;
-}   
+}
 
 typedef struct _LoadRec {
 	int w, h, yh, yw;
@@ -122,7 +122,7 @@ mirror_bytes( unsigned char *data, int dataSize)
 	}
 }
 
-static void * 
+static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l;
@@ -135,7 +135,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 
 	fi-> stop = true;
 	fi-> frameCount = 1;
-	
+
 	l = malloc( sizeof( LoadRec));
 	if ( !l) return nil;
 
@@ -148,7 +148,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	return l;
 }
 
-static Bool   
+static Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l = ( LoadRec *) fi-> instance;
@@ -160,15 +160,15 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	if ( fi-> loadExtras) {
 		pset_i( hotSpotX, l-> yw);
 		pset_i( hotSpotY, l-> yh);
-	}  
+	}
 
 	if ( fi-> noImageData) {
 		CImage( fi-> object)-> set_type( fi-> object, imbpp1 | imGrayScale);
 		pset_i( width,      l-> w);
 		pset_i( height,     l-> h);
-		return true;      
+		return true;
 	}
-	
+
 	CImage( fi-> object)-> create_empty( fi-> object, l-> w, l-> h, imbpp1 | imGrayScale);
 	ls = ( l-> w >> 3) + (( l-> w & 7) ? 1 : 0);
 	src = l-> data;
@@ -182,17 +182,17 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		while ( w--) *(d++) = ~ *(s++);
 		src += ls;
 		dst -= i-> lineSize;
-	}   
+	}
 	mirror_bytes( i-> data, i-> dataSize);
 	return true;
-}   
+}
 
 static void
 close_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l = ( LoadRec *) fi-> instance;
 	XFree( l-> data);
-	free( fi-> instance);  
+	free( fi-> instance);
 }
 
 static HV *
@@ -222,7 +222,7 @@ myprintf( PImgIORequest req, const char *format, ...)
 		req_write( req, len, buf);
 }
 
-static Bool   
+static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	dPROFILE;
@@ -242,22 +242,22 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	if ( xc == NULL) xc = "xbm";
 	name = xc;
 	while ( *xc) {
-		if ( *xc == '/') 
+		if ( *xc == '/')
 			name = xc + 1;
 		xc++;
-	}   
+	}
 	xc = malloc( strlen( name) + 1);
 	if ( xc) strcpy( xc, name);
 	name = xc;
-	
+
 	while (*xc) {
 		if ( *xc == '.') {
 			*xc = 0;
 			break;
-		}   
+		}
 		xc++;
-	} 
-	
+	}
+
 	myprintf( fi-> req, "#define %s_width %d\n", name, i-> w);
 	myprintf( fi-> req, "#define %s_height %d\n", name, i-> h);
 	if ( pexist( hotSpotX))
@@ -270,49 +270,49 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	while ( h--) {
 		Byte * s1 = l;
 		int w = ls;
-		
+
 		memcpy( s1, s, ls);
 		mirror_bytes( s1, ls);
-		
+
 		while ( w--) {
 			if ( first) {
 			first = 0;
 			} else {
 			myprintf( fi-> req, ", ");
-			}  
+			}
 			if ( col++ == 11) {
 				col = 0;
 				myprintf( fi-> req, "\n  ");
-			}   
+			}
 			myprintf( fi-> req, "0x%02x", (Byte)~(*(s1++)));
-		}   
+		}
 		s -= i-> lineSize;
-	}  
+	}
 
 	myprintf( fi-> req, "};\n");
-	
+
 	free( l);
 	free( name);
 	return true;
-}   
+}
 
-static void 
+static void
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 }
 
-void 
+void
 apc_img_codec_X11( void )
 {
 	struct ImgCodecVMT vmt;
 	memcpy( &vmt, &CNullImgCodecVMT, sizeof( CNullImgCodecVMT));
 	vmt. init          = init;
 	vmt. open_load     = open_load;
-	vmt. load          = load; 
-	vmt. close_load    = close_load; 
+	vmt. load          = load;
+	vmt. close_load    = close_load;
 	vmt. save_defaults = save_defaults;
 	vmt. open_save     = open_save;
-	vmt. save          = save; 
+	vmt. save          = save;
 	vmt. close_save    = close_save;
 	apc_img_register( &vmt, nil);
 }
@@ -350,17 +350,17 @@ from The Open Group.
 /* $XFree86: xc/lib/X11/RdBitF.c,v 3.6 2003/04/13 19:22:17 dawes Exp $ */
 
 /*
-*	Code to read bitmaps from disk files. Interprets 
+*	Code to read bitmaps from disk files. Interprets
 *	data from X10 and X11 bitmap files and creates
 *	Pixmap representations of files. Returns Pixmap
 *	ID and specifics about image.
 *
 *	Modified for speedup by Jim Becker, changed image
-*	data parsing logic (removed some fscanf()s). 
+*	data parsing logic (removed some fscanf()s).
 *	Aug 5, 1988
 *
 * Note that this file and ../Xmu/RdBitF.c look very similar....  Keep them
-* that way (but don't use common source code so that people can have one 
+* that way (but don't use common source code so that people can have one
 * without the other).
 */
 
@@ -401,7 +401,7 @@ static void initHexTable(void)
 	hexTable[' '] = -1;	hexTable[','] = -1;
 	hexTable['}'] = -1;	hexTable['\n'] = -1;
 	hexTable['\t'] = -1;
-		
+
 	initialized = True;
 }
 
@@ -416,7 +416,7 @@ NextInt (
 	int	value = 0;
 	int gotone = 0;
 	int done = 0;
-	
+
 	/* loop, accumulate hex value until find delimiter  */
 	/* skip any initial delimiters found in read stream */
 
@@ -498,7 +498,7 @@ XReadBitmapFileData (
 				}
 				continue;
 		}
-	
+
 		if (sscanf(line, "static short %s = {", name_and_type) == 1)
 			version10p = 1;
 		else if (sscanf(line,"static unsigned char %s = {",name_and_type) == 1)
@@ -515,7 +515,7 @@ XReadBitmapFileData (
 
 		if (strcmp("bits[]", type) != 0)
 			continue;
-	
+
 		if (!ww || !hh)
 			RETURN (BitmapFileInvalid);
 
@@ -528,7 +528,7 @@ XReadBitmapFileData (
 
 		size = bytes_per_line * hh;
 		bits = (unsigned char *) Xmalloc ((unsigned int) size);
-		if (!bits) 
+		if (!bits)
 			RETURN (BitmapNoMemory);
 
 		if (version10p) {
@@ -547,7 +547,7 @@ XReadBitmapFileData (
 				int bytes;
 
 				for (bytes=0, ptr=bits; bytes<size; bytes++, ptr++) {
-					if ((value = NextInt(fstream)) < 0) 
+					if ((value = NextInt(fstream)) < 0)
 						RETURN (BitmapFileInvalid);
 					*ptr=value;
 				}

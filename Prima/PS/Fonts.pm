@@ -6,7 +6,7 @@ use warnings;
 use Prima;
 use Prima::Utils;
 use Prima::PS::Encodings;
-use vars qw(%files %enum_families $defaultFontName 
+use vars qw(%files %enum_families $defaultFontName
 	$variablePitchName $fixedPitchName $symbolFontName);
 
 my %cache;
@@ -22,7 +22,7 @@ sub query_metrics
 	if ( exists $enum_families{$f}) {
 		$family = $f;
 		$f = $enum_families{$f};
-	} 
+	}
 	$name = $f;
 	if ( exists $files{$f}) {
 		$file = $files{ $f};
@@ -38,7 +38,7 @@ sub query_metrics
 		$name   = $enum_families{$family};
 		$file   = $files{ $name};
 	}
-	
+
 	return $cache{$file} if exists $cache{$file};
 
 	my $defFN = $files{ $defaultFontName};
@@ -49,10 +49,10 @@ sub query_metrics
 			warn("Prima::PS::Fonts: can't load default font\n");
 			return undef;
 		} else {
-			warn("Broken Prima::PS::Fonts installation: $name not found\n"), 
-				return query_metrics( $defaultFontName) 
-		}   
-	}   
+			warn("Broken Prima::PS::Fonts installation: $name not found\n"),
+				return query_metrics( $defaultFontName)
+		}
+	}
 	unless ( open F, $fx) {
 		warn( "Prima::PS::Fonts: cannot open file: $fx\n") ;
 		return undef if $f eq $defaultFontName;
@@ -64,7 +64,7 @@ sub query_metrics
 		my $z = '@ra = ' . <F>;
 		close F;
 		eval($z);
-		
+
 		if ( $@ || scalar(@ra) < 2) {
 			warn( "Prima::PS::Fonts: invalid file: $fx\n");
 			return undef if $name eq $defaultFontName;
@@ -102,19 +102,19 @@ sub enum_fonts
 		$_ = \%x;
 		my $latin = exists( $Prima::PS::Encodings::files{$x{encoding}});
 		next if defined($encoding) && (
-			$latin ? 
+			$latin ?
 			! exists $Prima::PS::Encodings::files{$encoding} :
 			($x{encoding} ne $encoding)
 			);
 		if ( !defined $family && !defined $encoding) {
 			$x{encodings} = $latin ?  [ Prima::PS::Encodings::unique ] : [ $x{encoding} ];
 		}
-		if ( 
-			defined $family && 
-			!defined $encoding && 
+		if (
+			defined $family &&
+			!defined $encoding &&
 			exists( $Prima::PS::Encodings::files{$x{encoding}})
 		) {
-			push @ret, map { 
+			push @ret, map {
 				my %n = %x;
 				$n{encoding} = $_;
 				\%n;
@@ -140,17 +140,17 @@ sub font_pick
 	my $bySize = exists( $src-> {size}) && !exists( $src-> {height});
 	$dest = Prima::Drawable-> font_match( $src, $dest, 0);
 
-	$dest-> {encoding} = '' 
-		if ( ! exists ( $Prima::PS::Encodings::fontspecific{ $dest-> {encoding}}) && 
+	$dest-> {encoding} = ''
+		if ( ! exists ( $Prima::PS::Encodings::fontspecific{ $dest-> {encoding}}) &&
 			! exists ( $Prima::PS::Encodings::files{ $dest-> {encoding}}));
 
 	# find name
 	my $m1   = query_metrics( $dest-> {name});
 
 	# find encoding
-	if ( length $dest-> {encoding}) { 
+	if ( length $dest-> {encoding}) {
 		if ( defined $dest-> {encoding}) {
-			if ( exists ( $Prima::PS::Encodings::files{ $dest-> {encoding}} ) && 
+			if ( exists ( $Prima::PS::Encodings::files{ $dest-> {encoding}} ) &&
 				! exists ( $Prima::PS::Encodings::files{ $m1-> {encoding}})) {
 					$m1 = query_metrics( $fixedPitchName);
 					$dest-> {encoding} = $m1-> {encoding};
@@ -158,7 +158,7 @@ sub font_pick
 					$dest-> {family}   = $m1-> {family};
 			} elsif (
 				exists ( $Prima::PS::Encodings::fontspecific{ $dest-> {encoding}}) &&
-			! exists ( $Prima::PS::Encodings::fontspecific{ $m1-> {encoding}}) 
+			! exists ( $Prima::PS::Encodings::fontspecific{ $m1-> {encoding}})
 			) {
 				$m1 = query_metrics( $symbolFontName);
 				$dest-> {encoding} = $m1-> {encoding};
@@ -169,7 +169,7 @@ sub font_pick
 	} else {
 		$dest-> {encoding} = $m1-> {encoding};
 	}
-	
+
 	# find pitch
 	if ( $dest-> {pitch} != fp::Default && $dest-> {pitch} != $m1-> {pitch}) {
 		if ( $dest-> {pitch} == fp::Variable) {
@@ -178,24 +178,24 @@ sub font_pick
 			$m1 = query_metrics( $fixedPitchName);
 		}
 	}
-	
+
 	# get all family members
 	my @famx = map { query_metrics( $_) } enum_family( $m1-> {family});
-	
+
 	# find style
-	my $m2; 
+	my $m2;
 	for ( @famx) { # exact match
 		$m2 = $_, last if $_-> {style} == $dest-> {style};
 	}
 	unless ( $m2) { # second pass
 		my $maxDiff = 1000;
 		my ( $italic, $bold) = (
-			( $dest-> {style} & fs::Italic) ? 1 : 0, 
+			( $dest-> {style} & fs::Italic) ? 1 : 0,
 			($dest-> {style} & fs::Bold) ? 1 :0
 		);
 		for ( @famx) {
 			my ( $i, $b) = (
-				( $_-> {style} & fs::Italic) ? 1 : 0, 
+				( $_-> {style} & fs::Italic) ? 1 : 0,
 				( $_-> {style} & fs::Bold) ? 1 : 0
 			);
 			my $diff = (( $i == $italic) ? 0 : 2) + (( $b == $bold) ? 0 : 1);
@@ -227,7 +227,7 @@ sub font_pick
 	$dest-> {style} |= fs::Underlined if $du;
 	$dest-> {style} |= fs::StruckOut if $ds;
 	$dest->{ maximalWidth} = $dest-> {width} = $dw if $dw != 0;
-	$dest-> {charheight} = $charheight; 
+	$dest-> {charheight} = $charheight;
 	return $dest;
 }
 
@@ -265,13 +265,13 @@ sub font_pick
 	'Times-Bold'                  ,
 	'Times-BoldItalic'            ,
 	'Symbol'                      ,
-	'ZapfChancery-MediumItalic'   , 
+	'ZapfChancery-MediumItalic'   ,
 	'ZapfDingbats'                ,
 );
 
 
 # The keys of %enum_families are only font names, - in Prima terms.
-# The only problem that the family field is always the same as the 
+# The only problem that the family field is always the same as the
 # font name
 
 %enum_families = (
@@ -283,7 +283,7 @@ sub font_pick
 	'Palatino'               => 'Palatino-Roman',
 	'New Century Schoolbook' => 'NewCenturySchlbk-Roman',
 	'Times'                  => 'Times-Roman',
-	'Symbol'                 => 'Symbol', 
+	'Symbol'                 => 'Symbol',
 	'Zapf Chancery'          => 'ZapfChancery-MediumItalic',
 	'Zapf Dingbats'          => 'ZapfDingbats',
 );
@@ -308,9 +308,9 @@ Prima::PS::Fonts - PostScript device fonts metrics
 This module primary use is to be invoked from Prima::PS::Drawable module.
 Assumed that some common fonts like Times and Courier are supported by PS
 interpreter, and it is assumed that typeface is preserved more-less the
-same, so typesetting based on font's a-b-c metrics can be valid. 
+same, so typesetting based on font's a-b-c metrics can be valid.
 35 font files are supplied with 11 font families. Font files with metrics
-located into 'fonts' subdirectory. 
+located into 'fonts' subdirectory.
 
 =over
 
@@ -318,11 +318,11 @@ located into 'fonts' subdirectory.
 
 Returns font metric hash with requested font data, uses $defaultFontName
 if give name is not found. Metric hash is the same as Prima::Types::Font
-record, plus 3 extra fields: 'docname' containing font name ( equals 
-always to 'name'), 'chardata' - hash of named glyphs, 'charheight' - 
+record, plus 3 extra fields: 'docname' containing font name ( equals
+always to 'name'), 'chardata' - hash of named glyphs, 'charheight' -
 the height that 'chardata' is rendered to. Every hash
-entry in 'chardata' record contains four numbers - suggested character 
-index and a, b and c glyph dimensions with height equals 'charheight'. 
+entry in 'chardata' record contains four numbers - suggested character
+index and a, b and c glyph dimensions with height equals 'charheight'.
 
 =item enum_fonts( $fontFamily)
 
@@ -337,7 +337,7 @@ Hash with paths to font metric files. File names not necessarily
 should be as font names, and it is possible to override font name
 contained in the file just by specifying different font key - this
 case will be recognized on loading stage and loaded font structure
-patched correspondingly. 
+patched correspondingly.
 
 Example:
 
@@ -355,7 +355,7 @@ $fixedPitchName used on this stage.
 
 Options can include the following fields:
 
-- resolution - vertical resolution. The default value is taken from 
+- resolution - vertical resolution. The default value is taken from
 font resolution.
 
 =item enum_family( $fontFamily)

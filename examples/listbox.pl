@@ -2,7 +2,7 @@
 #  Example of listbox extended usage
 #
 
-=pod 
+=pod
 
 =head1 NAME
 
@@ -11,7 +11,7 @@ examples/listbox.pl - Prima listbox, combobox and widget example
 =head1 FEATURES
 
 Demonstrates the usage of Prima::Edit, Prima::ComboBox
-and Prima::ListBox widgets. 
+and Prima::ListBox widgets.
 
 =cut
 

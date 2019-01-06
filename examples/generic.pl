@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -32,9 +32,9 @@ my $w = Prima::MainWindow->new(
 
 $w-> insert( Timer =>
 timeout => 2000,
-onTick => sub { 
+onTick => sub {
 	$w-> width( $w-> width - 50);
-},   
+},
 ) -> start;
 
 run Prima;

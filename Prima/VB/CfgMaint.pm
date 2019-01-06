@@ -196,7 +196,7 @@ C<Prima::VB::Config> and the user C<~/.prima/vbconfig>. The user config file tak
 when loaded by the Visual Builder. The module can select either configuration
 by assigning C<$systemWide> boolean property.
 
-The widgets are grouped in pages, which are accessible by names. 
+The widgets are grouped in pages, which are accessible by names.
 
 New widgets can be added to the palette by calling C<add_module> method,
 which accepts a perl module file as its first parameter. The module must
@@ -208,7 +208,7 @@ This section describes format of a module with VB-loadable widgets.
 
 The module must define a package with same name as the module.
 In the package, C<class> sub must be declared, that returns an array
-or paired scalars, where each first item in a pair corresponds to the 
+or paired scalars, where each first item in a pair corresponds to the
 widget class and the second to a hash, that contains the class loading information,
 and must contain the following keys:
 
@@ -223,8 +223,8 @@ class, but is capable of visually reflecting changes to the class properties.
 
 =item icon PATH
 
-Sets an image file, where the class icon is contained. 
-PATH provides an extended syntax for indicating a frame index, if the image file 
+Sets an image file, where the class icon is contained.
+PATH provides an extended syntax for indicating a frame index, if the image file
 is multiframed: the frame index is appended to the path name
 with C<:> character prefix, for example: C<"NewWidget::icons.gif:2">.
 
@@ -247,7 +247,7 @@ Sets the module name, that contains the original class.
 =back
 
 The reader is urged to explore F<Prima::VB::examples::Widgety> file,
-which contains an example class C<Prima::SampleWidget>, its 
+which contains an example class C<Prima::SampleWidget>, its
 VB-representation, and a property C<lineRoundStyle> definition example.
 
 =head1 API
@@ -282,7 +282,7 @@ Reads information from both system-wide and user configuration files,
 and merges the information. If succeeds, returns 1. If fails, returns 0
 and string with the error explanation.
 
-=item reset_cfg 
+=item reset_cfg
 
 Erases all information about pages and classes.
 

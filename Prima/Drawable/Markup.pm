@@ -363,7 +363,7 @@ sub parse
 			}
 		} # end of else block after if block for open sequence
 	} # end of while loop
-	
+
 	push @$block, tb::wrap(tb::WRAP_MODE_ON) if $state->{wrap} == tb::WRAP_MODE_OFF;
 
 	return $plaintext, $block;
@@ -386,7 +386,7 @@ sub markup
 	$self-> {markup} = $markup;
 	$self-> text( $text );
 	$self-> {block} = $block;
-}	
+}
 
 sub acquire
 {
@@ -398,12 +398,12 @@ sub acquire
 		$self->{block}->[tb::BLK_FONT_ID]    = 0;
 		$self->{block}->[tb::BLK_FONT_SIZE]  = $self->{baseFontSize}  = $font->{size};
 		$self->{block}->[tb::BLK_FONT_STYLE] = $self->{baseFontStyle} = $font->{style};
-		$self->{direction} = $font->{direction}; 
+		$self->{direction} = $font->{direction};
 	}
 	if ( $opt{colors}) {
 		$self->{block}->[tb::BLK_COLOR]     = $self->{colormap}->[0] = $canvas->color;
 		$self->{colormap}->[1] = $canvas-> backColor;
-		$self->{block}->[tb::BLK_BACKCOLOR] = 
+		$self->{block}->[tb::BLK_BACKCOLOR] =
 			($canvas-> textOpaque ? $canvas-> backColor : tb::BACKCOLOR_DEFAULT);
 	}
 	if ( $opt{dimensions} ) {

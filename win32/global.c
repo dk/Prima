@@ -58,7 +58,7 @@ DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
 	return TRUE;
 }
 
-typedef enum _PROCESS_DPI_AWARENESS { 
+typedef enum _PROCESS_DPI_AWARENESS {
 	PROCESS_DPI_UNAWARE            = 0,
 	PROCESS_SYSTEM_DPI_AWARE       = 1,
 	PROCESS_PER_MONITOR_DPI_AWARE  = 2
@@ -159,7 +159,7 @@ is_dwm_enabled( void )
 				dw = 1;
 			RegCloseKey( hKey);
 			return dw == 0;
-		} else 
+		} else
 			return 0;
 	}
 }
@@ -214,7 +214,7 @@ window_subsystem_init( char * error_buf)
 	wc.hbrBackground = (HBRUSH)NULL;
 	wc.lpszClassName = L"GenericFrame";
 	RegisterClassW( &wc);
-	
+
 	memset( &wc, 0, sizeof( wc));
 	wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
 	wc.lpfnWndProc   = ( WNDPROC) layered_frame_handler;
@@ -257,7 +257,7 @@ window_subsystem_init( char * error_buf)
 		FONTSTRUCSIZE    = (char *)(&(f. name)) - (char *)(&f);
 	}
 
-	if (!( dc = dc_alloc())) return false; 
+	if (!( dc = dc_alloc())) return false;
 	guts. displayResolution. x = GetDeviceCaps( dc, LOGPIXELSX);
 	guts. displayResolution. y = GetDeviceCaps( dc, LOGPIXELSY);
 
@@ -692,7 +692,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 				(( GetKeyState( VK_MENU)    < 0) ? kmAlt   : 0);
 
 			keyState = guts. keyState;
-AGAIN:             
+AGAIN:
 			if ( PApplication(application)-> wantUnicodeInput) {
 				WCHAR keys[ 2];
 				// unicode mapping
@@ -716,7 +716,7 @@ AGAIN:
 								will give same character code ...  */
 							ev. key. mod &= ~(kmAlt|kmCtrl|kmShift);
 						}
-					}   
+					}
 					if (!up) lastDeadKey = 0;
 					break;
 				case 2: { // dead key
@@ -765,7 +765,7 @@ AGAIN:
 								will give same character code ...  */
 							ev. key. mod &= ~(kmAlt|kmCtrl|kmShift);
 						}
-					}   
+					}
 					break;
 				case 2: { // dead key
 						lastDeadKey = keys[0];
@@ -782,7 +782,7 @@ AGAIN:
 					} else {
 					/* same meaning without mods, no code anyway */
 						keys[ 0] = 0;
-					}   
+					}
 					if (!up) lastDeadKey = 0;
 					break;
 				default:
@@ -795,7 +795,7 @@ AGAIN:
 			// simulated key codes
 			if ( ev. key. key == kbTab && ( ev. key. mod & kmShift))
 				ev. key. key = kbBackTab;
-			
+
 			if ( ev. key. code >= 'A' && ev. key. code <= 'z' && ev. key. mod & kmCtrl) {
 				ev. key. code = toupper(ev. key. code & 0xFF) - '@';
 				if (!( ev. key. mod & kmShift)) ev. key. code = tolower( ev. key. code);
@@ -1092,9 +1092,9 @@ AGAIN:
 	if ( hiStage)
 		ret = DefWindowProcW( win, msg, mp1, mp2);
 
-	if ( ev. cmd) 
-		message_result = v-> self-> message( self, &ev); 
-	else 
+	if ( ev. cmd)
+		message_result = v-> self-> message( self, &ev);
+	else
 		ev. cmd = orgMsg;
 
 	if ( v-> stage > csNormal) orgMsg = 0; // protect us from dead body
@@ -1208,12 +1208,12 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		return 1;
 	case WM_NCACTIVATE:
 		if ( guts. focSysDialog) return 1;
-		
+
 		if (( mp1 == 0) && ( mp2 != 0)) {
 			Handle x = hwnd_to_view(( HWND) mp2);
 			if ( is_declipped_child( x) && Widget_is_child( x, self)) {
 				return 1;
-			}   
+			}
 		}
 		// dlg protect code - protecting from window activation
 		if ( mp1 && !guts. focSysDisabled) {
@@ -1234,12 +1234,12 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 			Handle foc = Application_map_focus( application, self);
 			if ( foc != self) {
 				return ( foc == apc_window_get_active()) ? HTERROR : HTCLIENT;
-			}   
+			}
 		}
 		break;
 	case WM_SETFOCUS:
 		if ( guts. focSysDialog) return 1;
-		
+
 		// dlg protect code - general case
 		if ( !guts. focSysDisabled && !guts. focSysGranted) {
 			Handle hf = Application_map_focus( application, self);
@@ -1264,7 +1264,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 			}
 			if ( !hasCO) {
 				var self-> set_selected( self, true);
-			}   
+			}
 			// else we do not select any widget, but still have a chance to resize frame :)
 		}
 		break;
@@ -1427,7 +1427,7 @@ update_layered_frame(Handle self)
 	POINT frame_size, client_size;
 	Point delta_upper_left, delta_lower_right, move;
 	HWND win = HANDLE;
-	
+
 	delta_lower_right = get_window_borders( sys s. window. borderStyle);
 	GetWindowRect(win, &frame);
 	GetClientRect(win, &client);
@@ -1447,7 +1447,7 @@ update_layered_frame(Handle self)
 
 	move.x = frame.left + delta_upper_left.x;
 	move.y = frame.top  + delta_upper_left.y;
-	if ( !SetWindowPos(( HWND ) var handle, win, 
+	if ( !SetWindowPos(( HWND ) var handle, win,
 		client.left + move.x, client.top + move.y, client_size.x, client_size.y,
 		SWP_NOACTIVATE)) apiErr;
 	hwnd_repaint_layered( self, false );
@@ -1465,13 +1465,13 @@ LRESULT CALLBACK layered_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 	case WM_NCHITTEST:
 	case WM_SETFOCUS:
 		return DefWindowProcW( win, msg, mp1, mp2);
-		
+
 	case WM_SIZE:
 	case WM_MOVE:
 		update_layered_frame(self);
 		return DefWindowProcW( win, msg, mp1, mp2);
 
-	case WM_WINDOWPOSCHANGED: 
+	case WM_WINDOWPOSCHANGED:
 		{
 			LPWINDOWPOS l = ( LPWINDOWPOS) mp2;
 			Bool updated = false;

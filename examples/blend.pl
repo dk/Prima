@@ -36,13 +36,13 @@ $b->end_paint;
 
 my $canvas = $a->dup;
 
-$w-> insert( ImageViewer => 
+$w-> insert( ImageViewer =>
 	pack => {side => 'top', fill => 'both', pad => 10, expand => 1},
 	image => $canvas,
 	stretch => 1,
 );
 
-$w->insert( Slider => 
+$w->insert( Slider =>
 	min => 0,
 	max => 255,
 	scheme => ss::Axis,

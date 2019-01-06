@@ -1,8 +1,8 @@
-('NewCenturySchlbk-Roman' => { 
+('NewCenturySchlbk-Roman' => {
   name            => 'NewCenturySchlbk-Roman',
   family          => 'New Century Schoolbook',
   height          => 1215,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,

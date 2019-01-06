@@ -1,8 +1,8 @@
-('Times-Roman' => { 
+('Times-Roman' => {
   name            => 'Times-Roman',
   family          => 'Times',
   height          => 1116,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,

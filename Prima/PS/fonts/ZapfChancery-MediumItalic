@@ -1,8 +1,8 @@
-('ZapfChancery-MediumItalic' => { 
+('ZapfChancery-MediumItalic' => {
   name            => 'ZapfChancery-MediumItalic',
   family          => 'Zapf Chancery',
   height          => 1145,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Normal,
   pitch           => fp::Variable,
   vector          => 1,

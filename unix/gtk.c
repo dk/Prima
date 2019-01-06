@@ -34,7 +34,7 @@ static int	gtk_filter_index       = 0;
 
 static GdkDisplay * display = NULL;
 
-static Color 
+static Color
 gdk_color(GdkColor * c)
 {
 		return ((c->red >> 8) << 16) | ((c->green >> 8) << 8) | (c->blue >> 8);
@@ -52,26 +52,26 @@ typedef struct {
 #define GT(x) gtk_##x##_get_type, #x
 
 static GTFStruct widget_types[] = {
-		{ GT(button),       "GtkButton",         wcButton      , NULL },  
-		{ GT(check_button), "GtkCheckButton",    wcCheckBox    , NULL },  
-		{ GT(combo_box),    "GtkCombo",          wcCombo       , NULL },  
-		{ GT(dialog),       "GtkDialog",         wcDialog      , NULL },  
-		{ GT(entry),        "GtkEditable",       wcEdit        , NULL },  
-		{ GT(entry),        "GtkEntry",          wcInputLine   , NULL },  
-		{ GT(label),        "GtkLabel",          wcLabel       , &guts. default_msg_font },  
-		{ GT(menu),         "GtkMenuItem",       wcMenu        , &guts. default_menu_font },  
-		{ GT(menu_item),    "GtkMenuItem",       wcPopup       , NULL },  
-		{ GT(check_button), "GtkRadioButton",    wcRadio       , NULL },  
-		{ GT(scrollbar),    "GtkScrollBar",      wcScrollBar   , NULL },  
+		{ GT(button),       "GtkButton",         wcButton      , NULL },
+		{ GT(check_button), "GtkCheckButton",    wcCheckBox    , NULL },
+		{ GT(combo_box),    "GtkCombo",          wcCombo       , NULL },
+		{ GT(dialog),       "GtkDialog",         wcDialog      , NULL },
+		{ GT(entry),        "GtkEditable",       wcEdit        , NULL },
+		{ GT(entry),        "GtkEntry",          wcInputLine   , NULL },
+		{ GT(label),        "GtkLabel",          wcLabel       , &guts. default_msg_font },
+		{ GT(menu),         "GtkMenuItem",       wcMenu        , &guts. default_menu_font },
+		{ GT(menu_item),    "GtkMenuItem",       wcPopup       , NULL },
+		{ GT(check_button), "GtkRadioButton",    wcRadio       , NULL },
+		{ GT(scrollbar),    "GtkScrollBar",      wcScrollBar   , NULL },
 		{ GT(widget),       "GtkWidget",         wcWidget      , &guts. default_widget_font },
-		{ GT(window),       "GtkWindow",         wcWindow      , &guts. default_caption_font },  
-		{ GT(widget),       "GtkWidget",         wcApplication , &guts. default_font },  
-#if GTK_MAJOR_VERSION == 2 
+		{ GT(window),       "GtkWindow",         wcWindow      , &guts. default_caption_font },
+		{ GT(widget),       "GtkWidget",         wcApplication , &guts. default_font },
+#if GTK_MAJOR_VERSION == 2
 		{ GT(list),         "GtkList",           wcListBox     , NULL },
-		{ GT(ruler),        "GtkRuler",          wcSlider      , NULL },  
+		{ GT(ruler),        "GtkRuler",          wcSlider      , NULL },
 #else
 		{ GT(list_box),     "GtkListBox",        wcListBox     , NULL },
-		{ GT(spin_button),  "GtkSpinButton",     wcSlider      , NULL },  
+		{ GT(spin_button),  "GtkSpinButton",     wcSlider      , NULL },
 #endif
 };
 #undef GT
@@ -130,8 +130,8 @@ prima_gtk_init(void)
 	gtk_disable_setlocale();
 #endif
 	if ( !gtk_parse_args (&argc, NULL) || (
-		display = 
-#if GTK_MAJOR_VERSION == 2 
+		display =
+#if GTK_MAJOR_VERSION == 2
 			gdk_display_open_default_libgtk_only()
 #else
 			my_gdk_display_open_default()
@@ -151,15 +151,15 @@ prima_gtk_init(void)
 
 	settings  = gtk_settings_get_default();
 	stdcolors = prima_standard_colors();
-#if GTK_MAJOR_VERSION == 2 
+#if GTK_MAJOR_VERSION == 2
 	for ( i = 0; i < sizeof(widget_types)/sizeof(GTFStruct); i++) {
 		GTFStruct * s = widget_types + i;
-		Color     * c = stdcolors[ s-> prima_class >> 16 ]; 
+		Color     * c = stdcolors[ s-> prima_class >> 16 ];
 		Font      * f = s->prima_font;
 		GtkStyle  * t = gtk_rc_get_style_by_paths(settings, NULL, s->gtk_class, s->func());
-		int selected  = ( 
-			s->prima_class == wcRadio || 
-			s->prima_class == wcCheckBox || 
+		int selected  = (
+			s->prima_class == wcRadio ||
+			s->prima_class == wcCheckBox ||
 			s->prima_class == wcButton
 		) ? GTK_STATE_ACTIVE : GTK_STATE_SELECTED;
 		if ( t == NULL ) {
@@ -173,7 +173,7 @@ prima_gtk_init(void)
 		c[ciDisabled]     = gdk_color( t-> bg + GTK_STATE_INSENSITIVE );
 
 		if ( s-> prima_class == wcMenu || s-> prima_class == wcPopup) {
-			/* Observed on Centos7 - GTK_STATE_SELECTED gives white 
+			/* Observed on Centos7 - GTK_STATE_SELECTED gives white
 			on white, while GTK_STATE_PRELIGHT gives correct colors.
 			OTOH, on Ubuntu it is other way around. Without digging
 			too much into GTK guts, just select the one that gives
@@ -183,14 +183,14 @@ prima_gtk_init(void)
 			Color ca1, ca2, cb1, cb2;
 			ca1 = gdk_color( t-> fg + selected );
 			ca2 = gdk_color( t-> bg + selected );
-			da = 
+			da =
 				abs( (int)(ca1 & 0xff)-(int)(ca2 & 0xff) ) +
 				abs( (int)((ca1 & 0xff00)>>8)-(int)((ca2 & 0xff00)>>8) ) +
 				abs( (int)((ca1 & 0xff0000)>>16)-(int)((ca2 & 0xff0000)>>16) )
 			;
 			cb1 = gdk_color( t-> fg + GTK_STATE_PRELIGHT );
 			cb2 = gdk_color( t-> bg + GTK_STATE_PRELIGHT );
-			db = 
+			db =
 				abs( (int)(cb1 & 0xff)-(int)(cb2 & 0xff) ) +
 				abs( (int)((cb1 & 0xff00)>>8)-(int)((cb2 & 0xff00)>>8) ) +
 				abs( (int)((cb1 & 0xff0000)>>16)-(int)((cb2 & 0xff0000)>>16) )
@@ -228,7 +228,7 @@ prima_gtk_done(void)
 {
 	if ( gtk_filters) {
 		int i;
-		for ( i = 0; i < gtk_filters-> count; i++) 
+		for ( i = 0; i < gtk_filters-> count; i++)
 			g_object_unref(( GObject*) gtk_filters-> items[i]);
 		plist_destroy( gtk_filters);
 		gtk_filters = NULL;
@@ -290,7 +290,7 @@ gtk_openfile( Bool open)
 	if ( gtk_dialog) return NULL; /* we're not reentrant */
 
 	gtk_dialog = gtk_file_chooser_dialog_new (
-		gtk_dialog_title_ptr ? 
+		gtk_dialog_title_ptr ?
 			gtk_dialog_title_ptr :
 			( open ? "Open File" : "Save File"),
 		NULL,
@@ -298,13 +298,13 @@ gtk_openfile( Bool open)
 #if GTK_MAJOR_VERSION == 3
 		"_Cancel",
 #else
-		GTK_STOCK_CANCEL, 
-#endif		
+		GTK_STOCK_CANCEL,
+#endif
 		GTK_RESPONSE_CANCEL,
 #if GTK_MAJOR_VERSION == 3
 		"_Open",
 #else
-		GTK_STOCK_OPEN, 
+		GTK_STOCK_OPEN,
 #endif
 		GTK_RESPONSE_ACCEPT,
 		NULL);
@@ -326,13 +326,13 @@ gtk_openfile( Bool open)
 	if ( gtk_filters) {
 		int i;
 		for ( i = 0; i < gtk_filters-> count; i++) {
-			gtk_file_chooser_add_filter( 
-				GTK_FILE_CHOOSER (gtk_dialog), 
+			gtk_file_chooser_add_filter(
+				GTK_FILE_CHOOSER (gtk_dialog),
 				GTK_FILE_FILTER (gtk_filters-> items[i])
 			);
 			if ( i == gtk_filter_index)
-				gtk_file_chooser_set_filter( 
-					GTK_FILE_CHOOSER (gtk_dialog), 
+				gtk_file_chooser_set_filter(
+					GTK_FILE_CHOOSER (gtk_dialog),
 					GTK_FILE_FILTER (gtk_filters-> items[i])
 				);
 		}
@@ -353,16 +353,16 @@ gtk_openfile( Bool open)
 			int size;
 			char * ptr;
 			GSList *names, *iter;
-	
+
 			names = gtk_file_chooser_get_filenames ( GTK_FILE_CHOOSER (gtk_dialog));
-	
+
 			/* count total length with escaped spaces and backslashes */
 			size = 1;
 			iter = names;
 			while ( iter) {
 				char * c = (char*) iter-> data;
 				while ( *c) {
-					if ( *c == ' ' || *c == '\\') 
+					if ( *c == ' ' || *c == '\\')
 						size++;
 					size++;
 					c++;
@@ -370,7 +370,7 @@ gtk_openfile( Bool open)
 				size++;
 				iter = iter-> next;
 			}
-	
+
 			if (( result = ptr = malloc( size))) {
 				/* copy and encode */
 				iter = names;
@@ -389,7 +389,7 @@ gtk_openfile( Bool open)
 			} else {
 					warn("gtk_openfile: cannot allocate %d bytes of memory", size);
 			}
-	
+
 			/* free */
 			iter = names;
 			while ( iter) {
@@ -402,7 +402,7 @@ gtk_openfile( Bool open)
 			result = duplicate_string( filename);
 			g_free (filename);
 		}
-	
+
 		/* directory */
 		{
 			char * d = gtk_file_chooser_get_current_folder( GTK_FILE_CHOOSER (gtk_dialog));
@@ -414,7 +414,7 @@ gtk_openfile( Bool open)
 				gtk_current_folder_ptr = NULL;
 			}
 		}
-	
+
 		/* filter index */
 		gtk_filter_index = 0;
 		if ( gtk_filters) {
@@ -425,10 +425,10 @@ gtk_openfile( Bool open)
 					gtk_filter_index = i;
 					break;
 				}
-			
+
 		}
 	}
-		
+
 	if ( gtk_filters) {
 		plist_destroy( gtk_filters);
 		gtk_filters = NULL;
@@ -447,9 +447,9 @@ gtk_openfile( Bool open)
 char *
 prima_gtk_openfile( char * params)
 {
-	if ( !DISP) 
+	if ( !DISP)
 		return NULL;
-	if( !prima_gtk_init()) 
+	if( !prima_gtk_init())
 		return NULL;
 
 	if ( strncmp( params, "directory", 9) == 0) {
@@ -469,7 +469,7 @@ prima_gtk_openfile( char * params)
 		params += 8;
 		if ( gtk_filters) {
 			int i;
-			for ( i = 0; i < gtk_filters-> count; i++) 
+			for ( i = 0; i < gtk_filters-> count; i++)
 				g_object_unref(( GObject*) gtk_filters-> items[i]);
 			plist_destroy( gtk_filters);
 			gtk_filters = NULL;
@@ -522,7 +522,7 @@ prima_gtk_openfile( char * params)
 		params += 17;
 		gtk_overwrite_prompt = (*params != '0');
 	} else if (
-		( strncmp( params, "open", 4) == 0) || 
+		( strncmp( params, "open", 4) == 0) ||
 		( strncmp( params, "save", 4) == 0)
 	) {
 		return gtk_openfile( strncmp( params, "open", 4) == 0);

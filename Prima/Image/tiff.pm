@@ -59,12 +59,12 @@ sub Cancel_Click
 sub save_dialog
 {
 	my $codec = $_[1];
-	return Prima::VBLoad( 'Prima::Image::tiff.fm', 
-		Form1 => { 
+	return Prima::VBLoad( 'Prima::Image::tiff.fm',
+		Form1 => {
 			visible => 0,
 			onChange  => \&on_change,
 		},
-		Compression => { items => [ qw(NONE), 
+		Compression => { items => [ qw(NONE),
 			map { m/^Compression-(.*)$/ ? $1 : () } @{$codec-> {featuresSupported}} ]},
 		OK      => { onClick => \&OK_Click },
 		Cancel  => { onClick => \&Cancel_Click },

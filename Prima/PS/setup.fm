@@ -71,9 +71,9 @@ sub
 			height => 430,
 			left => 440,
 			name => 'Form1',
-			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];      
+			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 $self-> {imgConvProc} = sub {
-  my $self = $_[0];        
+  my $self = $_[0];
   my $a = $self-> image-> dup;
   $a-> set( rop => rop::Whiteness, rop2 => rop::Blackness);
   $a-> map( $a-> pixel( $a-> width - 1, $a-> height - 1));
@@ -88,8 +88,8 @@ $self-> {imgConvProc} = sub {
 ','Form1', 'onCreate'),
 			onExecute => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 my $x = $self-> TabbedNotebook1-> Notebook;
-$x-> HelpBtn-> notify(\'Click\') if 
-   $x-> ValueBox-> ValueBook-> pageIndex == 3; 
+$x-> HelpBtn-> notify(\'Click\') if
+   $x-> ValueBox-> ValueBook-> pageIndex == 3;
 ','Form1', 'onExecute'),
 			origin => [ 795, 325],
 			originDontCare => 0,
@@ -215,9 +215,9 @@ $x-> HelpBtn-> notify(\'Click\') if
 		profile => {
 			autoHScroll => 0,
 			autoVScroll => 0,
-			image => Prima::Image-> create( width=>24, height=>29, type => im::bpp4, 
+			image => Prima::Image-> create( width=>24, height=>29, type => im::bpp4,
 palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
- data => 
+ data =>
 "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00x\x88\x88\x88\x88\x88\x88\x88".
 "\x88\x88\x88\x80\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80\x7f\xff\xff\xff".
 "\xff\xff\xff\xff\xff\xff\xff\x80\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80".
@@ -238,7 +238,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 "wwwww\xdd\xdd\xdd".
 ''),
 			name => 'ImageViewer1',
-			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); 
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]);
 ','ImageViewer1', 'onCreate'),
 			origin => [ 12, 17],
 			owner => 'Orientation',
@@ -261,9 +261,9 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 		profile => {
 			autoHScroll => 0,
 			autoVScroll => 0,
-			image => Prima::Image-> create( width=>29, height=>23, type => im::bpp4, 
+			image => Prima::Image-> create( width=>29, height=>23, type => im::bpp4,
 palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
- data => 
+ data =>
 "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01x\x88\x88\x88".
 "\x88\x88\x88\x88\x88\x88\x88\x88\x88\x88\x00\x01\x7f\xff\xff\xff\xff\xff\xff\xff".
 "\xff\xff\xff\xff\xff\xf8\x00\x01\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff".
@@ -285,7 +285,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 "www}\xdd\xdd\xd0\x01".
 ''),
 			name => 'ImageViewer2',
-			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); 
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]);
 ','ImageViewer2', 'onCreate'),
 			origin => [ 138, 19],
 			owner => 'Orientation',
@@ -319,9 +319,9 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 		profile => {
 			autoHScroll => 0,
 			autoVScroll => 0,
-			image => Prima::Image-> create( width=>26, height=>32, type => im::bpp4, 
+			image => Prima::Image-> create( width=>26, height=>32, type => im::bpp4,
 palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
- data => 
+ data =>
 "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00x\x88\x88\x88".
 "\x88\x88\x88\x88\x88\x88\x88\x88\x80\x00\x00\x00\x7f\xff\xff\xff\xff\xff\xff\xff".
 "\xff\xff\xff\xff\x80\x00\x00\x00\x7f\xf8\x88\x88\x88\x8f\xff\x00\x00\x00\x00\xff".
@@ -350,7 +350,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 "wwwwww\xdd\xdd\xdd\x00\x00\x00".
 ''),
 			name => 'ImageViewer3',
-			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); 
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]);
 ','ImageViewer3', 'onCreate'),
 			origin => [ 11, 18],
 			owner => 'Color',
@@ -363,9 +363,9 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 		profile => {
 			autoHScroll => 0,
 			autoVScroll => 0,
-			image => Prima::Image-> create( width=>26, height=>32, type => im::bpp4, 
+			image => Prima::Image-> create( width=>26, height=>32, type => im::bpp4,
 palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128,128,192,192,192,0,0,255,0,255,0,0,255,255,255,0,0,255,0,255,255,255,0,255,255,255],
- data => 
+ data =>
 "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00x\x88\x88\x88".
 "\x88\x88\x88\x88\x88\x88\x88\x88\x80\x00\x00\x00\x7f\xff\xff\xff\xff\xff\xff\xff".
 "\xff\xff\xff\xff\x80\x00\x80\@\x7f\xfe\xee\xee\xee\xef\xff\x11\x11\x11\x11\xff".
@@ -394,7 +394,7 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 "wwwwww\xdd\xdd\xdd\x00\x00\x00".
 ''),
 			name => 'ImageViewer4',
-			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]); 
+			onCreate => Prima::VB::VBLoader::GO_SUB('$_[0]-> owner-> owner-> owner-> owner-> {imgConvProc}->($_[0]);
 ','ImageViewer4', 'onCreate'),
 			origin => [ 138, 18],
 			owner => 'Color',
@@ -432,8 +432,8 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 			headers => ['Item', 'Setting', ],
 			items => [['UseDeviceFonts', ' ', '1', '1', ],['UseDeviceFontsOnly', ' ', '1', '0', ],['IsEPS', ' ', '1', '0', ],['MediaType', ' ', '0', ' ', ],['MediaColor', ' ', '0', ' ', ],['MediaWeight', ' ', '0', ' ', ],['MediaClass', ' ', '0', ' ', ],['InsertSheet', ' ', '1', '0', ],['LeadingEdge', ' ', '2', '0', ],['ManualFeed', ' ', '1', '0', ],['TraySwitch', ' ', '1', '0', ],['MediaPosition', ' ', '0', ' ', ],['DeferredMediaSelection', ' ', '1', '0', ],['MatchAll', ' ', '1', '0', ],],
 			name => 'VList',
-			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];        
-$self-> widths([($self->width / 2 ) x 2]);             
+			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
+$self-> widths([($self->width / 2 ) x 2]);
 
 $self-> {helpData} = {
    UseDeviceFonts => <<A,
@@ -459,7 +459,7 @@ of a color rendering dictionary. Devices should use the value of this
 parameter to trigger such media-related actions, reserving the MediaType
 parameter (above) for generic attributes requiring no device-specific action.
 The MediaClass entry in the output device dictionary defines the allowable
-values for this parameter on a given device; attempting to set it to an unsupported 
+values for this parameter on a given device; attempting to set it to an unsupported
 value will cause a configuration error.
 A
    InsertSheet => <<A,
@@ -468,23 +468,23 @@ medium directly into the output document. Media coming from a source
 for which this attribute is Yes are sent directly to the output bin without
 passing through the device\'s usual imaging mechanism (such as the fuser
 assembly on a laser printer). Consequently, nothing painted on the current
-page is actually imaged on the inserted medium.   
+page is actually imaged on the inserted medium.
 A
    LeadingEdge => <<A,
 (Level 3) A value specifying the edge of the input medium that will
 enter the printing engine or imager first and across which data will be imaged.
 Values reflect positions relative to a canonical page in portrait orientation
-(width smaller than height). When duplex printing is enabled, the canonical 
+(width smaller than height). When duplex printing is enabled, the canonical
 page orientation refers only to the front (recto) side of the medium.
 A
    ManualFeed => <<A,
 Flag indicating whether the input medium is to be fed manually by a human
 operator (Yes) or automatically (No). A Yes value asserts that the
 human operator will manually feed media conforming to the specified attributes
-( MediaColor, MediaWeight, MediaType, MediaClass, and InsertSheet). Thus, those 
-attributes are not used to select from available media sources in the normal way, 
-although their values may be presented to the human operator as an aid in selecting 
-the correct medium. On devices that offer more than one manual feeding mechanism, 
+( MediaColor, MediaWeight, MediaType, MediaClass, and InsertSheet). Thus, those
+attributes are not used to select from available media sources in the normal way,
+although their values may be presented to the human operator as an aid in selecting
+the correct medium. On devices that offer more than one manual feeding mechanism,
 the attributes may select among them.
 A
    TraySwitch => <<A,
@@ -492,7 +492,7 @@ A
 automatic switching of media sources. When the originally selected source
 runs out of medium, some devices with multiple media sources can switch
 automatically, without human intervention, to an alternate source with the
-same attributes (such as PageSize and MediaColor) as the original.   
+same attributes (such as PageSize and MediaColor) as the original.
 A
    MediaPosition => <<A,
 (Level 3) The position number of the media source to be used.
@@ -523,9 +523,9 @@ A
 
 };
 $self->{helpData}->{$_} =~ s/\\n/ /g for keys %{$self->{helpData}};
-   
+
 ','VList', 'onCreate'),
-			onSelectItem => Prima::VB::VBLoader::GO_SUB('my ( $self, $index, $selectState) = @_; 
+			onSelectItem => Prima::VB::VBLoader::GO_SUB('my ( $self, $index, $selectState) = @_;
 my @i = @{$self-> get_items( $$index[0])};
 my $vbox = $self-> owner-> ValueBox;
 $vbox-> text( "Change \'$i[0]\' setting");
@@ -535,11 +535,11 @@ if ( $vbox-> ValueBook-> pageIndex == 3) {
     $self-> owner-> HelpBtn-> notify(q(Click));
     $vbox-> ValueBook-> unlock;
     return;
-} 
+}
 $vbox-> ValueBook-> pageIndex( $i[2]);
 my @vdt = qw(VText VBool VCombo);
 my @vdv = qw(text checked focusedItem);
-$vbox-> ValueBook-> bring($vdt[$i[2]])-> set( $vdv[$i[2]] => $i[3]);    
+$vbox-> ValueBook-> bring($vdt[$i[2]])-> set( $vdv[$i[2]] => $i[3]);
 ','VList', 'onSelectItem'),
 			origin => [ 5, 78],
 			owner => 'TabbedNotebook1',
@@ -586,17 +586,17 @@ $vbox-> ValueBook-> bring($vdt[$i[2]])-> set( $vdv[$i[2]] => $i[3]);
 			font => {style => fs::Bold, },
 			growMode => gm::GrowLoX,
 			name => 'HelpBtn',
-			onClick => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];        
+			onClick => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 my $x = $self-> owner-> ValueBox-> ValueBook;
-if ( $x-> pageIndex == 3) {       
+if ( $x-> pageIndex == 3) {
    $x-> pageIndex( $self-> {opa});
-} else {                 
+} else {
    my $y = $self-> owner-> VList;
-   my $i  = $y-> get_items( $y-> focusedItem); 
+   my $i  = $y-> get_items( $y-> focusedItem);
    $self-> {opa} = $x-> pageIndex;
    if ( exists $y-> {helpData}-> {$$i[0]}) {
        $x-> VHint-> text( $y-> {helpData}-> {$$i[0]});
-       $x-> pageIndex( 3); 
+       $x-> pageIndex( 3);
    }
 }
 ','HelpBtn', 'onClick'),
@@ -611,11 +611,11 @@ if ( $x-> pageIndex == 3) {
 		profile => {
 			growMode => gm::GrowHiX | gm::GrowHiY,
 			name => 'VText',
-			onChange => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];        
+			onChange => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 my $x = $self-> owner-> owner-> owner-> VList;
 my $i = $x-> get_items( $x-> focusedItem);
 my $t = $self-> text;
-if (  $i-> [0] eq \'MediaPosition\' || 
+if (  $i-> [0] eq \'MediaPosition\' ||
       $i-> [0] eq \'MediaWeight\' ) {
     $t =~ s/^\\s*//; $t =~ s/\\s*$//;
     if ( length $t) {
@@ -623,11 +623,11 @@ if (  $i-> [0] eq \'MediaPosition\' ||
              return unless $t =~ m/^\\s*([+-]?)(?=\\d|\\.\\d)\\d*(\\.\\d*)?([Ee]([+-]?\\d+))?\\s*$/;
          } else {
              return unless $t =~ m/^\\d+$/;
-         }        
-    }    
+         }
+    }
 }
 $i-> [1] = $i-> [3] = $t;
-$x-> redraw_items( $x-> focusedItem); 
+$x-> redraw_items( $x-> focusedItem);
 ','VText', 'onChange'),
 			origin => [ 9, 15],
 			owner => 'ValueBook',
@@ -646,7 +646,7 @@ my $x = $self-> owner-> owner-> owner-> VList;
 my $i = $x-> get_items( $x-> focusedItem);
 $i->[1] = $self-> text;
 $i-> [3] = $self-> focusedItem;
-$x-> redraw_items( $x-> focusedItem); 
+$x-> redraw_items( $x-> focusedItem);
 ','VCombo', 'onChange'),
 			origin => [ 13, 14],
 			owner => 'ValueBook',
@@ -664,7 +664,7 @@ my $x = $self-> owner-> owner-> owner-> VList;
 my $i = $x-> get_items( $x-> focusedItem);
 $i-> [3] = $self-> checked;
 $i->[1] = $i-> [3] ? \'Yes\' : \'No\';
-$x-> redraw_items( $x-> focusedItem); 
+$x-> redraw_items( $x-> focusedItem);
 ','VBool', 'onCheck'),
 			origin => [ 10, 8],
 			owner => 'ValueBook',
@@ -692,7 +692,7 @@ $x-> redraw_items( $x-> focusedItem);
 		profile => {
 			growMode => gm::GrowHiX,
 			name => 'LPRadio',
-			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];     
+			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 $self-> enabled( 0) if
   Prima::Application-> get_system_info->{apc} != apc::Unix;
 ','LPRadio', 'onCreate'),
@@ -743,7 +743,7 @@ $self-> enabled( 0) if
 		profile => {
 			growMode => gm::GrowHiX,
 			name => 'LParams',
-			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];    
+			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 $self-> enabled( 0) if
   Prima::Application-> get_system_info->{apc} != apc::Unix;
 ','LParams', 'onCreate'),
@@ -860,7 +860,7 @@ $self-> enabled( 0) if
 		module  => 'Prima::Buttons',
 		profile => {
 			name => 'Cancel',
-			onClick => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];    
+			onClick => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 $self-> owner-> cancel;
 ','Cancel', 'onClick'),
 			origin => [ 110, 5],

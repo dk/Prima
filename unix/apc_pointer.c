@@ -138,7 +138,7 @@ apc_pointer_get_pos( Handle self)
 
 	if ( !XQueryPointer( DISP, guts. root,
 			&root, &child, &p. x, &p. y,
-			&x, &y, &mask)) 
+			&x, &y, &mask))
 		return guts. displaySize;
 	p. y = guts. displaySize. y - p. y - 1;
 	return p;
@@ -183,7 +183,7 @@ xcursor_load( Handle self, Handle icon)
 		i = XX-> user_xcursor;
 		kill = false;
 	}
-	
+
 	c = PIcon(icon);
 	CIcon(icon)-> create_empty_icon( icon, i->width, i->height, imRGB, imbpp8);
 	dst_data = c->data + c->lineSize * ( c-> h - 1 );
@@ -241,7 +241,7 @@ xlib_cursor_load( Handle self, Handle icon)
 			cs = fs-> per_char + default_char - fs-> min_char_or_byte2;
 		} else
 			cs = fs-> per_char + idx - fs-> min_char_or_byte2;
-		
+
 		p1 = XCreatePixmap( DISP, guts. root, w, h, 1);
 		p2 = XCreatePixmap( DISP, guts. root, w, h, 1);
 		gcv. background = 1;
@@ -274,9 +274,9 @@ xlib_cursor_load( Handle self, Handle icon)
 	if ( id == crUser) {
 		int i;
 		Byte * mask = PIcon(icon)-> mask;
-		for ( i = 0; i < PIcon(icon)-> maskSize; i++) 
+		for ( i = 0; i < PIcon(icon)-> maskSize; i++)
 			mask[i] = ~mask[i];
-	}   
+	}
 	XDestroyImage( im);
 	if ( free_pixmap) {
 		XFreePixmap( DISP, p1);
@@ -305,14 +305,14 @@ Bool
 apc_pointer_set_pos( Handle self, int x, int y)
 {
 	XEvent ev;
-	if ( !XWarpPointer( DISP, None, guts. root, 
+	if ( !XWarpPointer( DISP, None, guts. root,
 		0, 0, guts. displaySize.x, guts. displaySize.y, x, guts. displaySize.y - y - 1))
 		return false;
 	XCHECKPOINT;
 	XSync( DISP, false);
 	while ( XCheckMaskEvent( DISP, PointerMotionMask|EnterWindowMask|LeaveWindowMask, &ev))
 		prima_handle_event( &ev, nil);
-	return true;   
+	return true;
 }
 
 Bool
@@ -329,10 +329,10 @@ apc_pointer_set_shape( Handle self, int id)
 			if ( self != application) {
 				if ( guts. pointer_invisible_count < 0) {
 					if ( !XX-> flags. pointer_obscured) {
-						XDefineCursor( DISP, XX-> udrawable, prima_null_pointer());   
+						XDefineCursor( DISP, XX-> udrawable, prima_null_pointer());
 						XX-> flags. pointer_obscured = 1;
-					}   
-				} else {   
+					}
+				} else {
 					XDefineCursor( DISP, XX-> udrawable, uc);
 					XX-> flags. pointer_obscured = 0;
 				}
@@ -351,10 +351,10 @@ apc_pointer_set_shape( Handle self, int id)
 		if ( self != application) {
 			if ( guts. pointer_invisible_count < 0) {
 				if ( !XX-> flags. pointer_obscured) {
-					XDefineCursor( DISP, XX-> udrawable, prima_null_pointer());   
+					XDefineCursor( DISP, XX-> udrawable, prima_null_pointer());
 					XX-> flags. pointer_obscured = 1;
-				}   
-			} else {   
+				}
+			} else {
 				XDefineCursor( DISP, XX-> udrawable, predefined_cursors[id]);
 				XX-> flags. pointer_obscured = 0;
 			}
@@ -396,7 +396,7 @@ create_cursor(Handle self, Handle icon, Point hot_spot)
 		kill = true;
 		CIcon(icon)-> set_type( icon, imRGB );
 		CIcon(icon)-> set_maskType( icon, imbpp8 );
-	} else 
+	} else
 		kill = false;
 	c = PIcon(icon);
 	src_data = c->data + c->lineSize * ( c-> h - 1 );
@@ -405,7 +405,7 @@ create_cursor(Handle self, Handle icon, Point hot_spot)
 	for ( y = 0; y < c-> h; y++) {
 		Byte * s_data = src_data, * s_mask = src_mask;
 		for ( x = 0; x < c-> w; x++) {
-			*(dst++) = 
+			*(dst++) =
 				s_data[0]|
 				(s_data[1] << 8)|
 				(s_data[2] << 16)|
@@ -451,7 +451,7 @@ create_cursor(Handle self, Handle icon, Point hot_spot)
 				Object_destroy( cursor);
 				return false;
 			}
-		}   
+		}
 		if ( noBPP) {
 			CIcon(cursor)-> set_type( cursor, imMono);
 			if ((c-> type & imBPP) != 1) {
@@ -475,13 +475,13 @@ create_cursor(Handle self, Handle icon, Point hot_spot)
 	if ( hot_spot. x >= guts. cursor_width)  hot_spot. x = guts. cursor_width  - 1;
 	if ( hot_spot. y >= guts. cursor_height) hot_spot. y = guts. cursor_height - 1;
 	XX-> pointer_hot_spot = hot_spot;
-	xcb. red = xcb. green = xcb. blue = 0; 
-	xcw. red = xcw. green = xcw. blue = 0xFFFF; 
+	xcb. red = xcb. green = xcb. blue = 0;
+	xcw. red = xcw. green = xcw. blue = 0xFFFF;
 	xcb. pixel = guts. monochromeMap[0];
 	xcw. pixel = guts. monochromeMap[1];
 	xcb. flags = xcw. flags = DoRed | DoGreen | DoBlue;
 	XX-> user_pointer = XCreatePixmapCursor( DISP, XX-> user_p_source,
-		XX-> user_p_mask, &xcw, &xcb, 
+		XX-> user_p_mask, &xcw, &xcb,
 		hot_spot. x, guts.cursor_height - hot_spot. y - 1);
 	if ( XX-> user_pointer == None) {
 		warn( "error creating cursor from pixmaps");
@@ -523,13 +523,13 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
 				if ( !XX-> flags. pointer_obscured) {
 					XDefineCursor( DISP, XX-> udrawable, prima_null_pointer());
 					XX-> flags. pointer_obscured = 1;
-				}   
-			} else {   
+				}
+			} else {
 				XDefineCursor( DISP, XX-> udrawable, XX-> user_pointer);
 				XX-> flags. pointer_obscured = 0;
 			}
 			XCHECKPOINT;
-		}      
+		}
 	}
 	XFlush( DISP);
 	if ( guts. grab_widget)
@@ -544,7 +544,7 @@ apc_pointer_set_visible( Handle self, Bool visible)
 {
 	/* maintaining hide/show count */
 	if ( visible) {
-		if ( guts. pointer_invisible_count == 0) 
+		if ( guts. pointer_invisible_count == 0)
 			return true;
 		if ( ++guts. pointer_invisible_count < 0)
 			return true;
@@ -559,12 +559,12 @@ apc_pointer_set_visible( Handle self, Bool visible)
 		Handle wij = apc_application_get_widget_from_point( application, p);
 		if ( wij) {
 			X(wij)-> flags. pointer_obscured = (visible ? 0 : 1);
-			XDefineCursor( DISP, X(wij)-> udrawable, 
-				visible ? (( X(wij)-> pointer_id == crUser) ? 
-								X(wij)-> user_pointer : X(wij)-> actual_pointer) 
-						: prima_null_pointer());  
-		}   
-	}   
+			XDefineCursor( DISP, X(wij)-> udrawable,
+				visible ? (( X(wij)-> pointer_id == crUser) ?
+								X(wij)-> user_pointer : X(wij)-> actual_pointer)
+						: prima_null_pointer());
+		}
+	}
 	XFlush( DISP);
 	if ( guts. grab_widget)
 		apc_widget_set_capture( guts. grab_widget, true, guts. grab_confine);
@@ -578,30 +578,30 @@ prima_null_pointer( void)
 		Handle nullc = ( Handle) create_object( "Prima::Icon", "", nil);
 		PIcon  n = ( PIcon) nullc;
 		Pixmap xor, and;
-		XColor xc;      
+		XColor xc;
 		if ( nullc == nilHandle) {
 			warn("Error creating icon object");
 			return nilHandle;
-		}   
+		}
 		n-> self-> create_empty( nullc, 16, 16, imBW);
 		memset( n-> mask, 0xFF, n-> maskSize);
 		if ( !prima_create_icon_pixmaps( nullc, &xor, &and)) {
-			warn( "Error creating null cursor pixmaps"); 
+			warn( "Error creating null cursor pixmaps");
 			Object_destroy( nullc);
 			return nilHandle;
-		}  
+		}
 		Object_destroy( nullc);
 		xc. red = xc. green = xc. blue = 0;
 		xc. pixel = guts. monochromeMap[0];
 		xc. flags = DoRed | DoGreen | DoBlue;
-		guts. null_pointer = XCreatePixmapCursor( DISP, xor, and, &xc, &xc, 0, 0);                                      
+		guts. null_pointer = XCreatePixmapCursor( DISP, xor, and, &xc, &xc, 0, 0);
 		XCHECKPOINT;
 		XFreePixmap( DISP, xor);
 		XFreePixmap( DISP, and);
 		if ( !guts. null_pointer) {
 			warn( "Error creating null cursor from pixmaps");
 			return nilHandle;
-		}   
+		}
 	}
 	return guts. null_pointer;
 }

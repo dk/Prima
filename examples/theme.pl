@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Prima qw(Application Themes ScrollBar Buttons InputLine ExtLists Notebooks ScrollWidget);
 
-=pod 
+=pod
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ my $w = Prima::MainWindow-> create(
 	designScale => [7, 16],
 	menuItems => [
 		[ 'Options' => [
-			[ 'Save configuration' => sub { 
+			[ 'Save configuration' => sub {
 				Prima::message( Prima::Themes::save_rc() ? "Saved ok, restart to reload" : "Error saving:$!");
 			} ],
 		]],
@@ -34,7 +34,7 @@ my $w = Prima::MainWindow-> create(
 for (@INC) {
 	next unless -d "$_/Prima/themes";
 	next unless opendir D, "$_/Prima/themes";
-	for ( readdir D) { 
+	for ( readdir D) {
 		next unless m/^(.*)\.pm$/;
 		eval "use Prima::themes::$1";
 	}
@@ -42,7 +42,7 @@ for (@INC) {
 }
 
 my @list = Prima::Themes::list;
-my $checklist = $w-> insert( CheckList => 
+my $checklist = $w-> insert( CheckList =>
 	pack => { side => 'left', fill => 'y', padx => 5, pady => 5},
 	items => \@list,
 	width => 100,
@@ -50,7 +50,7 @@ my $checklist = $w-> insert( CheckList =>
 	vector => '',
 );
 
-my $playground = $w-> insert( Widget => 
+my $playground = $w-> insert( Widget =>
 	size => [ 250, 250],
 	pack => { side => 'right', padx => 5, pady => 5, expand => 1, fill => 'both'},
 	packPropagate => 0,
@@ -71,57 +71,57 @@ exit;
 sub test
 {
 	$tab-> destroy if $tab;
-	my @themes;	
+	my @themes;
 	if (  $checklist-> count) {
-		for ( 0 .. $checklist-> count - 1) { 
+		for ( 0 .. $checklist-> count - 1) {
 			push @themes, $checklist-> get_item_text($_) if $checklist-> button($_);
 		}
 	}
 	Prima::Themes::select( @themes);
 	my $failed = join(',', grep { ! Prima::Themes::active $_ } @themes);
 	Prima::message("Theme(s) $failed failed to load") if length $failed;
-	$tab = $playground-> insert( TabbedScrollNotebook => 
+	$tab = $playground-> insert( TabbedScrollNotebook =>
 		pack => { fill => 'both', expand => 1},
 		tabs => ['Tab'],
 	);
 
-	$tab-> insert( ScrollBar => 
+	$tab-> insert( ScrollBar =>
 		vertical => 0,
 		pack => { side => 'bottom', fill => 'x', },
 	);
-	$tab-> insert( ScrollBar => 
+	$tab-> insert( ScrollBar =>
 		vertical => 1,
 		partial  => 50,
 		pack => { side => 'right', fill => 'y', },
 	);
-	$tab-> insert( ListBox => 
+	$tab-> insert( ListBox =>
 		pack => { side => 'right', fill => 'both', expand => 1, padx => 5, pady => 5},
 		items => [ qw(1 2 3 4 5)],
 		focusedItem => 1,
 	);
-	$tab-> insert( Button => 
+	$tab-> insert( Button =>
 		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
 		text => 'Normal',
 	);
-	$tab-> insert( Button => 
+	$tab-> insert( Button =>
 		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
 		text => 'Disabled',
 		enabled => 0,
 	);
-	$tab-> insert( Button => 
+	$tab-> insert( Button =>
 		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
 		text => 'Default',
 		default => 1,
 	);
-	$tab-> insert( Radio => 
+	$tab-> insert( Radio =>
 		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
 		text => 'Radio',
 	);
-	$tab-> insert( CheckBox => 
+	$tab-> insert( CheckBox =>
 		pack => { side => 'top', anchor => 'w', padx => 5, pady => 5},
 		text => 'CheckBox',
 	);
-	$tab-> insert( InputLine => 
+	$tab-> insert( InputLine =>
 		pack => { side => 'bottom', anchor => 's', fill => 'x', expand => 1, padx => 5, pady => 5},
 	);
 }

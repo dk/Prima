@@ -31,39 +31,39 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
-	my $a = $self-> insert( qq(Prima::CheckBox) => 
+	my $a = $self-> insert( qq(Prima::CheckBox) =>
 		origin => [ 4, 261],
 		name => 'Transparent',
 		size => [ 133, 36],
 		text => '~Transparent',
 		delegations => ['Check'],
 	);
-	my $b = $self-> insert( qq(Prima::CheckBox) => 
+	my $b = $self-> insert( qq(Prima::CheckBox) =>
 		origin => [ 144, 261],
 		name => 'Interlaced',
 		size => [ 100, 36],
 		text => '~Interlaced',
 	);
-	$self-> insert( qq(Prima::Image::TransparencyControl) => 
+	$self-> insert( qq(Prima::Image::TransparencyControl) =>
 		origin => [ 4, 100],
 		size => [ 364, 158],
 		text => '',
 		name => 'TC',
 	);
-	my $se = $self-> insert( qq(Prima::Edit) => 
+	my $se = $self-> insert( qq(Prima::Edit) =>
 		origin => [ 10, 10],
 		name => 'Comment',
 		size => [ 350, 71],
 		vScroll => 1,
 		text => '',
 	);
-	$self-> insert( qq(Prima::Label) => 
+	$self-> insert( qq(Prima::Label) =>
 		origin => [ 10, 85],
 		size => [ 100, 20],
 		text => '~Comment',
 		focusLink => $se,
 	);
-	$self-> insert( qq(Prima::Button) => 
+	$self-> insert( qq(Prima::Button) =>
 		origin => [ 380, 259],
 		name => 'OK',
 		size => [ 96, 36],
@@ -72,7 +72,7 @@ sub init
 		modalResult => mb::OK,
 		delegations => ['Click'],
 	);
-	$self-> insert( qq(Prima::Button) => 
+	$self-> insert( qq(Prima::Button) =>
 		origin => [ 380, 213],
 		size => [ 96, 36],
 		text => 'Cancel',
@@ -100,13 +100,13 @@ sub on_change
 	my ( $self, $codec, $image) = @_;
 	$self-> {image} = $image;
 	return unless $image;
-	$self-> Interlaced-> checked( exists( $image-> {extras}-> {interlaced}) ? 
+	$self-> Interlaced-> checked( exists( $image-> {extras}-> {interlaced}) ?
 		$image-> {extras}-> {interlaced} : $codec-> {saveInput}-> {interlaced});
 	$self-> transparent( $image-> {extras}-> {transparentColorIndex} ? 1 : 0);
 	$self-> TC-> image( $image);
-	$self-> TC-> index( exists( $image-> {extras}-> {transparentColorIndex}) ? 
+	$self-> TC-> index( exists( $image-> {extras}-> {transparentColorIndex}) ?
 		$image-> {extras}-> {transparentColorIndex} : 0);
-	$self-> Comment-> text( exists( $image-> {extras}-> {comment}) ? 
+	$self-> Comment-> text( exists( $image-> {extras}-> {comment}) ?
 		$image-> {extras}-> {comment} : ($codec-> {saveInput}-> {comment}));
 }
 

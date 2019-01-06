@@ -188,7 +188,7 @@ typedef struct _WinGuts
 	List           files;              // List of active File objects
 	int            mouseTimer;         // is mouse timer started
 	Bool           popupActive;        // flag to avoid double popup activation
-	Bool           pointerInvisible;      
+	Bool           pointerInvisible;
 	HWND           console;            // win32-bound console window
 	Byte           msgMask[100];       // 800 user-defined messages allowed
 // socket variables
@@ -224,7 +224,7 @@ typedef struct _FileData
 	int          type;
 } FileData;
 
-typedef struct 
+typedef struct
 {
 	HRGN region;
 	int height;
@@ -398,7 +398,7 @@ typedef struct _DrawableData
 	HWND           handle;                  // Windows handle of a widget
 	HWND           owner;                   // Windows owner of a widget
 	HWND           parent;                  // Windows parent of a widget
-	HWND           parentHandle;            
+	HWND           parentHandle;
 	int            className;               // class name ( WC_XXX)
 
 	/* Widget properties */
@@ -619,9 +619,9 @@ extern Bool         is_dwm_enabled(void);
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA
-#	define GWLP_USERDATA GWL_USERDATA 
-#	define GWLP_WNDPROC  GWL_WNDPROC 
-#	define LONG_PTR      LONG 
+#	define GWLP_USERDATA GWL_USERDATA
+#	define GWLP_WNDPROC  GWL_WNDPROC
+#	define LONG_PTR      LONG
 #	define GetWindowLongPtr GetWindowLong
 #	define SetWindowLongPtr SetWindowLong
 #endif

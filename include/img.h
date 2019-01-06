@@ -34,65 +34,65 @@ typedef struct _ImgIORequest {
 typedef struct _ImgLoadFileInstance {
 	/* instance data, filled by core */
 	char          * fileName;
-	PImgIORequest   req; 
+	PImgIORequest   req;
 	Bool            req_is_stdio;
 	int             eventMask;      /* IMG_EVENTS_XXX / if set, Image:: events are issued */
-	
+
 	/* instance data, filled by open_load */
 	int             frameCount;     /* total frames in the file; can return -1 if unknown */
 	HV            * fileProperties; /* specific file data */
 	void          * instance;       /* user instance */
 	Bool            wasTruncated;   /* if codec can recover from EOF */
-	
+
 	/* user-specified data - applied to whole file */
-	Bool            loadExtras; 
+	Bool            loadExtras;
 	Bool            loadAll;
 	Bool            noImageData;
 	Bool            iconUnmask;
 	Bool            noIncomplete;
 	HV            * extras;         /* profile applied to all frames */
-	
+
 	/* user-specified data - applied to every frame */
 	HV            * profile;         /* frame-specific profile, in */
 	HV            * frameProperties; /* frame-specific properties, out */
-	
+
 	int             frame;          /* request frame index */
 	Bool            jointFrame;     /* true, if last frame was a previous one */
 	Handle          object;         /* to be used by load */
-	
+
 	/* internal variables */
-	int             frameMapSize;   
+	int             frameMapSize;
 	int           * frameMap;
 	Bool            stop;
 	char          * errbuf;         /* $! value */
-	
+
 	/* scanline event progress */
 	unsigned int    eventDelay;     /* in milliseconds */
 	struct timeval  lastEventTime;
 	int             lastEventScanline;
 	int             lastCachedScanline;
 } ImgLoadFileInstance, *PImgLoadFileInstance;
-	
+
 /* common data, request for a whole file save */
-	
+
 typedef struct _ImgSaveFileInstance {
 	/* instance data, filled by core */
 	char          * fileName;
-	PImgIORequest   req; 
+	PImgIORequest   req;
 	Bool            req_is_stdio;
 	Bool            append;         /* true if append, false if rewrite */
-	
+
 	/* instance data, filled by open_save */
 	void          * instance;       /* result of open, user data for save session */
 	HV            * extras;         /* profile applied to whole save session */
-	
+
 	/* user-specified data - applied to every frame */
 	int             frame;
 	Handle          object;         /* to be used by save */
 	HV            * objectExtras;   /* extras supplied to image object */
-	
+
 	/* internal variables */
-	int             frameMapSize;   
+	int             frameMapSize;
 	Handle        * frameMap;
 	char          * errbuf;         /* $! value */
 } ImgSaveFileInstance, *PImgSaveFileInstance;
@@ -108,7 +108,7 @@ typedef struct _ImgSaveFileInstance {
 /* codec info */
 typedef struct _ImgCodecInfo {
 	char  * name;              /* DUFF codec */
-	char  * vendor;            /* Duff & Co. */ 
+	char  * vendor;            /* Duff & Co. */
 	int     versionMaj;        /* 1 */
 	int     versionMin;        /* 0 */
 	char ** fileExtensions;    /* duf, duff */

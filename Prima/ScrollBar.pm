@@ -1,6 +1,6 @@
 #
 #  Created by:
-#     Dmitry Karasik <dk@plab.ku.dk> 
+#     Dmitry Karasik <dk@plab.ku.dk>
 #  Modifications by:
 #     Anton Berezin  <tobez@tobez.org>
 #  Documentation by:
@@ -125,7 +125,7 @@ sub draw_pad
 	}
 
 	$self-> rect_bevel( $canvas, @{$self-> {$part}-> {rect}},
-		width   => 2, 
+		width   => 2,
 		concave => $self->{$part}->{pressed},
 		fill    => $canvas->new_gradient(
 			palette   => \@palette,
@@ -235,9 +235,9 @@ sub on_paint
 		}
 
 		$self-> draw_pad( $canvas, tab => $clr[1]);
-		if ( 
-			$self-> {minThumbSize} > 8 && 
-			$self->{style} ne 'xp' && 
+		if (
+			$self-> {minThumbSize} > 8 &&
+			$self->{style} ne 'xp' &&
 			(( $v ? $maxx : $maxy) > 10)
 		)
 		{
@@ -245,9 +245,9 @@ sub on_paint
 			$canvas-> backColor( $c3d[ 0]);
 			if ( $v)
 			{
-				my $sty = $rect[1] + 
-					int($lenx / 2) - 
-					4 - 
+				my $sty = $rect[1] +
+					int($lenx / 2) -
+					4 -
 					( $self-> { tab} -> { pressed} ? 1 : 0);
 				my $stx = int($maxx / 3) + ( $self-> { tab} -> { pressed} ? 1 : 0);
 				my $lnx = int($maxx / 3);
@@ -256,9 +256,9 @@ sub on_paint
 				$canvas-> fillPatternOffset($stx, $sty);
 				$canvas-> bar( $stx, $sty - 1, $stx + $lnx, $sty + 9);
 			} else {
-				my $stx = $rect[0] + 
-					int($lenx / 2) - 
-					4 + 
+				my $stx = $rect[0] +
+					int($lenx / 2) -
+					4 +
 					( $self-> { tab}-> { pressed} ? 1 : 0) ;
 				my $sty = int($maxy / 3) - ( $self-> { tab} -> { pressed} ? 1 : 0);
 				my $lny = int($maxy / 3);
@@ -271,7 +271,7 @@ sub on_paint
 	} else {
 		my @r = @{$self-> {groove}-> {rect}};
 		$canvas-> color( $c3d[1]);
-		$v ? 
+		$v ?
 			( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
 			( $canvas-> line( $r[0], $r[3]+1, $r[2], $r[3]+1));
 		$canvas-> color( $clr[1]);
@@ -439,11 +439,11 @@ sub on_mouseup
 	return unless defined $self-> {mouseTransaction};
 
 	my $who = $self-> {mouseTransaction};
-	if ( 
-		$who eq q(b1) || 
-		$who eq q(b2) || 
-		$who eq q(left) || 
-		$who eq q(right) || 
+	if (
+		$who eq q(b1) ||
+		$who eq q(b2) ||
+		$who eq q(left) ||
+		$who eq q(right) ||
 		$who eq q(tab)
 	) {
 		$self-> {$who}-> {pressed} = 0;
@@ -495,10 +495,10 @@ sub on_mousemove
 			$self-> {suppressNotify} = undef;
 			$self-> notify(q(Track)) if !$self-> {autoTrack} && $ov != $self-> {value};
 		}
-	} elsif ( 
-		$who eq q(b1) || 
-		$who eq q(b2) || 
-		$who eq q(left) || 
+	} elsif (
+		$who eq q(b1) ||
+		$who eq q(b2) ||
+		$who eq q(left) ||
 		$who eq q(right)
 	) {
 		my $upon  = $self-> translate_point( $x, $y);
@@ -525,29 +525,29 @@ sub on_mousewheel
 sub reset
 {
 	my $self = $_[0];
-	
+
 	$self-> { b1} -> { enabled} = $self-> { value} > $self-> { min};
 	$self-> { b2} -> { enabled} = $self-> { value} < $self-> { max};
 	my $fullDisable = $self-> { partial} == $self-> { whole};
 	$self-> { tab}-> { enabled} = ( $self-> { min} != $self-> { max}) && !$fullDisable;
 	$self-> { b1}-> { enabled} = 0 if ( $self-> { value} == $self-> { min});
 	$self-> { b2}-> { enabled} = 0 if ( $self-> { value} == $self-> { max});
-	
+
 	my $btx  = $self-> { minThumbSize};
 	my $v    = $self-> { vertical};
 	my @size = $self-> size;
 	my ( $maxx, $maxy) = ( $size[0]-1, $size[1]-1);
-	
-	if ( $v) { 
-		$btx = int($size[1] / 2) if $btx * 2 >= $maxy; 
-	} else { 
-		$btx = int($size[0] / 2) if $btx * 2 >= $maxx; 
+
+	if ( $v) {
+		$btx = int($size[1] / 2) if $btx * 2 >= $maxy;
+	} else {
+		$btx = int($size[0] / 2) if $btx * 2 >= $maxx;
 	}
-	my @rect = $v ? 
-		( 1, $maxy - $btx + 1, $maxx - 1, $maxy - 1) : 
+	my @rect = $v ?
+		( 1, $maxy - $btx + 1, $maxx - 1, $maxy - 1) :
 		( 1, 1, $btx - 1, $maxy - 1);
 	$self-> { b1}-> { rect} = [ @rect];
-	@rect  = $v ? 
+	@rect  = $v ?
 		( 1, 1, $maxx - 1, $btx - 1) :
 		( $maxx - $btx + 1, 1, $maxx - 1, $maxy - 1);
 	$self-> { b2}-> { rect} = [ @rect];
@@ -563,13 +563,13 @@ sub reset
 	my $startx  = $v ? $size[1]: $size[0];
 	my $groovex = $startx - $btx * 2;
 	$self-> { tab}-> { enabled} = 0 if $groovex < $self-> {minThumbSize};
-	
+
 	if ( $self-> { tab}-> { enabled}) {
 		my $lenx = int( $groovex * $self-> { partial} / $self-> { whole});
 		$lenx = $self-> {minThumbSize} if $lenx < $self-> {minThumbSize};
-		my $atx  = 
-			int(( $self-> { value} - $self-> {min}) * 
-			( $groovex - $lenx) / 
+		my $atx  =
+			int(( $self-> { value} - $self-> {min}) *
+			( $groovex - $lenx) /
 			( $self-> { max} - $self-> { min}));
 		$atx = $groovex - $lenx if $lenx + $atx > $groovex;
 		( $lenx, $atx) = ( $groovex - 1, 0) if $atx < 0;
@@ -585,7 +585,7 @@ sub reset
 		);
 		$self-> { tab}-> { rect} = [@rect];
 		$self-> { tab}-> { q(length)} = $lenx;
-		
+
 		if ( $v) {
 			my @r2 = ( 2, $btx, $maxx - 1, $rect[1] - 1);
 			my @r1 = ( 2, $rect[3], $maxx - 1, $maxy - $btx);
@@ -606,7 +606,7 @@ sub set_bounds
 	my ( $self, $min, $max) = @_;
 	$max = $min if $max < $min;
 	( $self-> { min}, $self-> { max}) = ( $min, $max);
-	
+
 	my $oldValue = $self-> {value};
 	$self-> value( $max) if $self-> {value} > $max;
 	$self-> value( $min) if $self-> {value} < $min;
@@ -769,7 +769,7 @@ C-implemented parts except those inherited from C<Prima::Widget>.
 
 =head2 Properties
 
-=over 
+=over
 
 =item autoTrack BOOLEAN
 
@@ -808,7 +808,7 @@ Default value: 0
 
 =item minThumbSize INTEGER
 
-A minimal thumb breadth in pixels. The thumb cannot have 
+A minimal thumb breadth in pixels. The thumb cannot have
 main dimension lesser than this.
 
 Default value: 21
@@ -879,8 +879,8 @@ Default value is 100.
 
 =item get_default_size
 
-Returns two integers, the default platform dependant width 
-of a vertical scrollbar and height of a horizontal scrollbar.  
+Returns two integers, the default platform dependant width
+of a vertical scrollbar and height of a horizontal scrollbar.
 
 =back
 

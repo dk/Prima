@@ -50,9 +50,9 @@ sub init
 sub on_paint
 {
 	my ($self,$canvas) = @_;
-	$canvas-> rect3d( 0, 0, $self-> width - 1, $self-> height - 1, 
+	$canvas-> rect3d( 0, 0, $self-> width - 1, $self-> height - 1,
 		1, $self-> dark3DColor, $self-> light3DColor, $self-> backColor);
-	$canvas-> text_out( $self-> text, 
+	$canvas-> text_out( $self-> text,
 		4, ( $self-> height - $canvas-> font-> height) / 2);
 }
 
@@ -61,7 +61,7 @@ sub reset
 	my $self    = $_[0];
 	my $editor  = $self-> {editor};
 	my @c = $editor-> cursorLog;
-	$self-> text( sprintf("%s %d:%d", ($editor-> modified ? '*' : ' '), 
+	$self-> text( sprintf("%s %d:%d", ($editor-> modified ? '*' : ' '),
 		$c[0]+1,$c[1]+1));
 	$self-> repaint;
 }
@@ -92,7 +92,7 @@ sub set_cursor
 	my @c = $self-> cursor;
 	$self-> SUPER::set_cursor(@_);
 	return if $c[0] == $_[0] && $c[1] == $_[1];
-	$self-> owner-> {status}-> reset 
+	$self-> owner-> {status}-> reset
 		if $self-> owner-> {status} && !$self-> change_locked;
 }
 
@@ -154,7 +154,7 @@ sub profile_default
 				[ '@*vsc' => '~Vertical scrollbar'   => sub{ $_[0]-> {editor}-> vScroll( $_[2])}],
 				[],
 				(
-					$can_utf8 ? 
+					$can_utf8 ?
 					['utf'  => 'UTF-8 mode' => sub {
 						my $utf8_mode = $_[0]-> menu-> utf-> toggle;
 						$_[0]-> {utf8} = $utf8_mode;
@@ -277,8 +277,8 @@ sub save_file
 		unless (defined $swr && $swr==length($cap)) {
 			undef $cap;
 			unlink $fn;
-			Prima::MsgBox::message_box( 
-				$self-> text, 
+			Prima::MsgBox::message_box(
+				$self-> text,
 				"Cannot save to $fn", mb::Error|mb::OK);
 			return 0;
 		}
@@ -287,7 +287,7 @@ sub save_file
 		$self-> {status}-> reset;
 		return 1;
 	} else {
-		Prima::MsgBox::message_box( 
+		Prima::MsgBox::message_box(
 			$self-> text, "Cannot save to $fn", mb::Error|mb::OK);
 	}
 	return 0;
@@ -317,8 +317,8 @@ sub save_as
 		$ret = 1;
 		last;
 	} continue {
-		last SAVE unless 
-			mb::Retry == Prima::MsgBox::message_box( 
+		last SAVE unless
+			mb::Retry == Prima::MsgBox::message_box(
 				$self-> text, "Cannot save to $fn",
 				mb::Error|mb::Retry|mb::Cancel
 			);
@@ -355,7 +355,7 @@ sub find_dialog
 		$self-> {findData}-> {result} = $rf;
 		$self-> {findData}-> {asFind} = $findStyle;
 		@{$self-> {findData}-> {findItems}} = @{$findDialog-> Find-> items};
-		@{$self-> {findData}-> {replaceItems}} = @{$findDialog-> Replace-> items} 
+		@{$self-> {findData}-> {replaceItems}} = @{$findDialog-> Replace-> items}
 			unless $findStyle;
 		$ret = 1;
 	}

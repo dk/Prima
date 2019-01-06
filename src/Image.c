@@ -51,11 +51,11 @@ Image_init( Handle self, HV * profile)
 		warn("Invalid scaling: %d\n", var->scaling);
 		var-> scaling = istNone;
 	}
-	if ( !itype_supported( var-> type = pget_i( type))) 
+	if ( !itype_supported( var-> type = pget_i( type)))
 		if ( !itype_importable( var-> type, &var-> type, nil, nil)) {
 			warn( "Image::init: cannot set type %08x", var-> type);
 			var-> type = imBW;
-		} 
+		}
 
 	var->lineSize = LINE_SIZE(var->w, var->type);
 	var->dataSize = ( var->lineSize) * var->h;
@@ -66,19 +66,19 @@ Image_init( Handle self, HV * profile)
 			my-> make_empty( self);
 			croak("Image::init: cannot allocate %d bytes", var-> dataSize);
 		}
-	} else 
+	} else
 		var-> data = nil;
 	var->palette = allocn( RGBColor, 256);
 	if ( var-> palette == nil) {
 		free( var-> data);
 		var-> data = nil;
 		croak("Image::init: cannot allocate %d bytes", 768);
-	}   
+	}
 	if ( !Image_set_extended_data( self, profile))
 		my-> set_data( self, pget_sv( data));
 	opt_assign( optPreserveType, pget_B( preserveType));
 	var->palSize = (1 << (var->type & imBPP)) & 0x1ff;
-	if (!( var->type & imGrayScale) && 
+	if (!( var->type & imGrayScale) &&
 		pexist( palette)) { /* palette might be killed by set_extended_data() */
 		int ps = apc_img_read_palette( var->palette, pget_sv( palette), true);
 		if ( ps) var-> palSize = ps;
@@ -117,7 +117,7 @@ Image_handle_event( Handle self, PEvent event)
 		break;
 	case cmImageDataReady:
 		my-> update_change( self);
-		my-> notify( self, "<siiii", "DataReady", 
+		my-> notify( self, "<siiii", "DataReady",
 			event-> gen. R. left,
 			event-> gen. R. bottom,
 			event-> gen. R. right - event-> gen. R. left   + 1,
@@ -172,7 +172,7 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 		}
 		memset( new_data, 0, new_data_size);
 		if ( new_pal_size != 1)
-			ic_type_convert( self, new_data, new_palette, new_type, 
+			ic_type_convert( self, new_data, new_palette, new_type,
 					&new_pal_size, want_only_palette_colors);
 	}
 	if ( new_pal_size > 0) {
@@ -206,12 +206,12 @@ Image_stretch( Handle self, int width, int height)
 
 	oldType = var->type;
 	newType = ic_stretch_suggest_type( var-> type, var-> scaling );
-	if ( newType != var->type) 
+	if ( newType != var->type)
 		my->set_type(self, newType);
 
 	lineSize = LINE_SIZE( abs( width) , var->type);
 	newData = allocb( lineSize * abs( height));
-	if ( newData == NULL) 
+	if ( newData == NULL)
 		croak("Image::stretch: cannot allocate %d bytes", lineSize * abs( height));
 	memset( newData, 0, lineSize * abs( height));
 	if ( var-> data) {
@@ -221,7 +221,7 @@ Image_stretch( Handle self, int width, int height)
 			my-> make_empty( self);
 			croak("%s", error);
 		}
-	}						
+	}
 
 	free( var->data);
 	var->data = newData;
@@ -248,7 +248,7 @@ Image_reset_sv( Handle self, int new_type, SV * palette, Bool triplets)
 		colors = apc_img_read_palette( pal_ptr = pal_buf, palette, triplets);
 	} else {
 		pal_ptr = nil;
-		colors  = SvIV( palette); 
+		colors  = SvIV( palette);
 	}
 	my-> reset( self, new_type, pal_ptr, colors);
 }
@@ -276,7 +276,7 @@ Image_set( Handle self, HV * profile)
 		int newType = pget_i( type);
 		if ( !itype_supported( newType))
 			warn("Invalid image type requested (%08x) in Image::set_type", newType);
-		else 
+		else
 			if ( !opt_InPaint) {
 				SV * palette;
 				Bool triplets;
@@ -401,8 +401,8 @@ Image_get_nearest_color( Handle self, Color color)
 		break;
 	case imGrayScale:
 		rgb. r = rgb. g = rgb. b = (
-			(color & 0xFF) + 
-			((color >> 8)  & 0xFF) + 
+			(color & 0xFF) +
+			((color >> 8)  & 0xFF) +
 			((color >> 16) & 0xFF)
 		) / 3;
 		break;
@@ -448,7 +448,7 @@ line ::init or ::set. Returns true if relevant fields were found and
 data extracted and set, and false if user data should be set throught ::set_data.
 Image itself may undergo conversion during the routine; in that case 'palette'
 property may be used also. All these fields, if used, or meant to be used but
-erroneously set, will be deleted regardless of routine success. 
+erroneously set, will be deleted regardless of routine success.
 */
 Bool
 Image_set_extended_data( Handle self, HV * profile)
@@ -465,8 +465,8 @@ Image_set_extended_data( Handle self, HV * profile)
 			pdelete( lineSize);
 		}
 		return false;
-	}   
-	
+	}
+
 	data = SvPV( pget_sv( data), dataSize);
 
 	/* parameters check */
@@ -477,10 +477,10 @@ Image_set_extended_data( Handle self, HV * profile)
 	pdelete( lineSize);
 	pdelete( type);
 	pdelete( reverse);
-	
+
 	if ( !pexistLine && !pexistType && !pexistReverse) return false;
 
-	if ( is_opt( optInDraw) || dataSize <= 0) 
+	if ( is_opt( optInDraw) || dataSize <= 0)
 		goto GOOD_RETURN;
 
 	/* determine line size, if any */
@@ -488,12 +488,12 @@ Image_set_extended_data( Handle self, HV * profile)
 		if ( lineSize <= 0) {
 			warn( "Image::set_data: invalid lineSize:%d passed", lineSize);
 			goto GOOD_RETURN;
-		}   
+		}
 		if ( !pexistType) { /* plain repadding */
 			ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 1, 1, nil, reverse);
 			my-> update_change( self);
 			goto GOOD_RETURN;
-		}   
+		}
 	}
 
 	/* pre-fetch auto conversion, if set in same clause */
@@ -510,7 +510,7 @@ Image_set_extended_data( Handle self, HV * profile)
 		warn( "Image::set_data: invalid image type %08x", newType);
 		goto GOOD_RETURN;
 	}
-		
+
 	/* fixing image and maybe palette - for known type it's same code as in ::set, */
 	/* but here's no sense calling it, just doing what we need. */
 	if ( fixType != var-> type || pexist( palette) || pexist( colormap)) {
@@ -529,10 +529,10 @@ Image_set_extended_data( Handle self, HV * profile)
 		Image_reset_sv( self, fixType, palette, triplets);
 		pdelete( palette);
 		pdelete( colormap);
-	}   
+	}
 
 	/* copying user data */
-	if ( supp && lineSize == 0 && !reverse) 
+	if ( supp && lineSize == 0 && !reverse)
 		/* same code as in ::set_data */
 		memcpy( var->data, data, (dataSize > (STRLEN)var->dataSize) ? (STRLEN)var->dataSize : dataSize);
 	else {
@@ -540,16 +540,16 @@ Image_set_extended_data( Handle self, HV * profile)
 		if ( lineSize == 0)
 			lineSize = LINE_SIZE( var-> w , newType);
 		/* copying using repadding routine */
-		ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 
+		ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize,
 				( newType & imBPP) / 8, ( var-> type & imBPP) / 8, proc, reverse
 		);
-	}   
+	}
 	my-> update_change( self);
 	/* if want to keep original type, restoring */
 	if ( is_opt( optPreserveType))
 		my-> set_type( self, oldType);
-	
-GOOD_RETURN:   
+
+GOOD_RETURN:
 	pdelete(data);
 	return true;
 }
@@ -584,7 +584,7 @@ img_perlio_seek( void * f, long offset, int whence)
 #endif
 }
 
-static long 
+static long
 img_perlio_tell( void * f)
 {
 #ifdef PerlIO
@@ -614,7 +614,7 @@ img_perlio_error( void * f)
 #endif
 }
 
-XS( Image_load_FROMPERL) 
+XS( Image_load_FROMPERL)
 {
 	dXSARGS;
 	Handle self;
@@ -629,7 +629,7 @@ XS( Image_load_FROMPERL)
 
 	if (( items < 2) || (( items % 2) != 0))
 		croak("Invalid usage of Prima::Image::load");
-	
+
 	self = gimme_the_mate( ST( 0));
 
 	sv   = ST(1);
@@ -650,9 +650,9 @@ XS( Image_load_FROMPERL)
 		fn            = ( char *) SvPV_nolen( ST( 1));
 		pioreq        = NULL;
 	}
-	
+
 	profile = parse_hv( ax, sp, items, mark, 2, "Image::load");
-	if ( !pexist( className)) 
+	if ( !pexist( className))
 		pset_c( className, self ? my-> className : ( char*) SvPV_nolen( ST( 0)));
 	pset_i( eventMask, self ? var-> eventMask2 : 0);
 	ret = apc_img_load( self, fn, pioreq, profile, error);
@@ -668,15 +668,15 @@ XS( Image_load_FROMPERL)
 				if (( Handle) o != self)
 				--SvREFCNT( SvRV( o-> mate));
 			} else {
-				XPUSHs( &PL_sv_undef);    
+				XPUSHs( &PL_sv_undef);
 				err = true;
-			}   
+			}
 		}
 		plist_destroy( ret);
 	} else {
-		XPUSHs( &PL_sv_undef);   
+		XPUSHs( &PL_sv_undef);
 		err = true;
-	}   
+	}
 
 	/* This code breaks exception propagation chain
 		since it uses $@ for its own needs  */
@@ -687,7 +687,7 @@ XS( Image_load_FROMPERL)
 
 	PUTBACK;
 	return;
-}   
+}
 
 int
 Image_lineSize( Handle self, Bool set, int dummy)
@@ -710,14 +710,14 @@ Image_load( SV * who, char *filename, HV * profile)
 	PList ret;
 	Handle self = gimme_the_mate( who);
 	char error[ 256];
-	if ( !pexist( className)) 
+	if ( !pexist( className))
 		pset_c( className, self ? my-> className : ( char*) SvPV_nolen( who));
 	ret = apc_img_load( self, filename, NULL, profile, error);
 	return ret;
 }
 
 
-XS( Image_save_FROMPERL) 
+XS( Image_save_FROMPERL)
 {
 	dXSARGS;
 	Handle self;
@@ -731,7 +731,7 @@ XS( Image_save_FROMPERL)
 
 	if (( items < 2) || (( items % 2) != 0))
 		croak("Invalid usage of Prima::Image::save");
-	
+
 	self = gimme_the_mate( ST( 0));
 
 	sv   = ST(1);
@@ -759,7 +759,7 @@ XS( Image_save_FROMPERL)
 	SPAGAIN;
 	SP -= items;
 	XPUSHs( sv_2mortal( newSViv(( ret > 0) ? ret : -ret)));
-	
+
 	/* This code breaks exception propagation chain
 		since it uses $@ for its own needs  */
 	if ( ret <= 0)
@@ -768,7 +768,7 @@ XS( Image_save_FROMPERL)
 		sv_setsv( GvSV( PL_errgv), nilSV);
 	PUTBACK;
 	return;
-}   
+}
 
 int
 Image_save_REDEFINED( SV * who, char *filename, HV * profile)
@@ -781,7 +781,7 @@ Image_save( SV * who, char *filename, HV * profile)
 {
 	Handle self = gimme_the_mate( who);
 	char error[ 256];
-	if ( !pexist( className)) 
+	if ( !pexist( className))
 		pset_c( className, self ? my-> className : ( char*) SvPV_nolen( who));
 	return apc_img_save( self, filename, NULL, profile, error);
 }
@@ -961,7 +961,7 @@ Image_palette( Handle self, Bool set, SV * palette)
 		if ( var->type & imGrayScale) return nilSV;
 		if ( !var->palette)           return nilSV;
 		ps = apc_img_read_palette( var->palette, palette, true);
-		
+
 		if ( ps)
 			var-> palSize = ps;
 		else
@@ -1047,7 +1047,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			return newSViv( clInvalid);
 
 		if ( var-> type & (imComplexNumber|imTrigComplexNumber)) {
-			AV * av = newAV(); 
+			AV * av = newAV();
 			switch ( var-> type) {
 			case imComplex:
 			case imTrigComplex: {
@@ -1067,9 +1067,9 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			return newRV_noinc(( SV*) av);
 		} else if ( var-> type & imRealNumber) {
 			switch ( var-> type) {
-			case imFloat: 
+			case imFloat:
 				return newSVnv(*(float*)(var->data + (var->lineSize*y+x*sizeof(float))));
-			case imDouble: 
+			case imDouble:
 				return newSVnv(*(double*)(var->data + (var->lineSize*y+x*sizeof(double))));
 			default:
 				return nilSV;
@@ -1106,10 +1106,10 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 		Color color;
 		RGBColor rgb;
 #define LONGtoBGR(lv,clr)   ((clr).b=(lv)&0xff,(clr).g=((lv)>>8)&0xff,(clr).r=((lv)>>16)&0xff,(clr))
-		if ( is_opt( optInDraw)) 
+		if ( is_opt( optInDraw))
 			return inherited pixel(self,true,x,y,pixel);
 
-		if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0)) 
+		if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0))
 			return nilSV;
 
 		if ( var-> type & (imComplexNumber|imTrigComplexNumber)) {
@@ -1131,7 +1131,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 				SV **sv[2];
 				sv[0] = av_fetch( av, 0, 0);
 				sv[1] = av_fetch( av, 1, 0);
-				
+
 				switch ( var-> type) {
 				case imComplex:
 				case imTrigComplex:
@@ -1149,10 +1149,10 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			}
 		} else if ( var-> type & imRealNumber) {
 			switch ( var-> type) {
-			case imFloat:  
+			case imFloat:
 				*(float*)(var->data+(var->lineSize*y+x*sizeof(float)))=SvNV(pixel);
 				break;
-			case imDouble: 
+			case imDouble:
 				*(double*)(var->data+(var->lineSize*y+x*sizeof(double)))=SvNV(pixel);
 				break;
 			default:
@@ -1161,7 +1161,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			my->update_change( self);
 			return nilSV;
 		}
-		
+
 		color = SvIV( pixel);
 		switch (var->type & imBPP) {
 		case imbpp1  :
@@ -1269,7 +1269,7 @@ Image_dup( Handle self)
 		if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV)
 			(void) hv_store(( HV*)SvRV( i-> mate), "extras", 6, newSVsv( *sv), 0);
 	}
-	
+
 	--SvREFCNT( SvRV( i-> mate));
 	return h;
 }
@@ -1338,13 +1338,13 @@ Image_extract( Handle self, int x, int y, int width, int height)
 			bc_mono_copy( data + ( y + height) * ls, i-> data + height * i-> lineSize, x, width);
 		}
 	}
-NODATA:   
+NODATA:
 	--SvREFCNT( SvRV( i-> mate));
 	return h;
 }
 
 /*
-divide the pixels, by whether they match color or not on two 
+divide the pixels, by whether they match color or not on two
 groups, F and B. Both are converted correspondingly to the settings
 of color/backColor and rop/rop2. Possible variations:
 rop == rop::NoOper,    pixel value remains ths same
@@ -1353,15 +1353,15 @@ rop == rop::Blackness, use black pixel
 rop == rop::Whiteness, use white pixel
 rop == rop::AndPut   , result is dest & color value
 etc...
-*/   
+*/
 
 void
 Image_map( Handle self, Color color)
 {
 	Byte * d, b[2];
-	RGBColor c;   
+	RGBColor c;
 	int   type = var-> type, height = var-> h, i, ls;
-	int   rop[2]; 
+	int   rop[2];
 	RGBColor r[2];
 	int bc = 0;
 
@@ -1373,7 +1373,7 @@ Image_map( Handle self, Color color)
 
 	for ( i = 0; i < 2; i++) {
 		int not = 0;
-		
+
 		switch( rop[i]) {
 		case ropBlackness:
 			r[i]. r = r[i]. g = r[i]. b = 0;
@@ -1385,36 +1385,36 @@ Image_map( Handle self, Color color)
 			break;
 		case ropNoOper:
 			r[i]. r = r[i]. g = r[i]. b = 0;
-			break;   
-		default: {   
+			break;
+		default: {
 			Color c = i ? my-> get_backColor( self) : my-> get_color( self);
 			r[i]. r = ( c >> 16) & 0xff;
 			r[i]. g = ( c >> 8) & 0xff;
 			r[i]. b = c & 0xff;
-		}} 
-					
+		}}
+
 		if (( type & imBPP) <= 8) {
 			b[i] = cm_nearest_color( r[i], var-> palSize, var-> palette);
 		}
-		
+
 		switch ( rop[i]) {
 		case ropNotPut:
 			rop[i] = ropCopyPut; not = 1; break;
 		case ropNotSrcXor: /* same as ropNotDestXor and ropNotXor */
-			rop[i] = ropXorPut; not = 1; break;    
+			rop[i] = ropXorPut; not = 1; break;
 		case ropNotSrcAnd:
-			rop[i] = ropAndPut; not = 1; break;    
+			rop[i] = ropAndPut; not = 1; break;
 		case ropNotSrcOr:
-			rop[i] = ropOrPut; not = 1; break;    
-		}  
-		
+			rop[i] = ropOrPut; not = 1; break;
+		}
+
 		if ( not) {
 			r[i]. r = ~ r[i]. r;
 			r[i]. g = ~ r[i]. g;
 			r[i]. b = ~ r[i]. b;
 			b[i]    = ~ b[i];
 		}
-	}         
+	}
 
 	c. r = ( color >> 16) & 0xff;
 	c. g = ( color >> 8) & 0xff;
@@ -1441,90 +1441,90 @@ Image_map( Handle self, Color color)
 
 	d = ( Byte * ) var-> data;
 	ls = var-> lineSize;
-	
+
 	while ( height--) {
 		if (( type & imBPP) == 24) {
 			PRGBColor data = ( PRGBColor) d;
 			for ( i = 0; i < var-> w; i++) {
 				int z = ( data-> r == c.r && data-> g == c.g && data-> b == c.b) ? 0 : 1;
 				switch( rop[z]) {
-				case ropAndPut:     
+				case ropAndPut:
 					data-> r &= r[z]. r; data-> g &= r[z]. g; data-> b &= r[z]. b; break;
-				case ropXorPut:     
+				case ropXorPut:
 					data-> r ^= r[z]. r; data-> g ^= r[z]. g; data-> b ^= r[z]. b; break;
-				case ropOrPut:      
+				case ropOrPut:
 					data-> r |= r[z]. r; data-> g |= r[z]. g; data-> b |= r[z]. b; break;
-				case ropNotDestAnd: 
+				case ropNotDestAnd:
 					data-> r = ( ~data-> r) & r[z].r; data-> g = ( ~data-> g) & r[z].g; data-> b = ( ~data-> b) & r[z].b; break;
-				case ropNotDestOr:  
+				case ropNotDestOr:
 					data-> r = ( ~data-> r) | r[z].r; data-> g = ( ~data-> g) | r[z].g; data-> b = ( ~data-> b) | r[z].b; break;
-				case ropNotAnd:     
+				case ropNotAnd:
 					data-> r = ~(data-> r & r[z].r); data-> g = ~(data-> g & r[z].g); data-> b = ~(data-> b & r[z].b); break;
-				case ropNotOr:      
+				case ropNotOr:
 					data-> r = ~(data-> r | r[z].r); data-> g = ~(data-> g | r[z].g); data-> b = ~(data-> b | r[z].b); break;
-				case ropNoOper:     
-					break;   
-				case ropInvert:     
+				case ropNoOper:
+					break;
+				case ropInvert:
 					data-> r = ~data-> r; data-> g = ~data-> g; data-> b = ~data-> b; break;
-				default:            
+				default:
 					data-> r = r[z]. r; data-> g = r[z]. g; data-> b = r[z]. b;
-				}      
+				}
 				data++;
-			}   
+			}
 			d += ls;
 		} else {
 			Byte * data = d;
 			for ( i = 0; i < var-> w; i++) {
 				int z = ( *data == bc) ? 0 : 1;
 				switch( rop[z]) {
-				case ropAndPut:     
+				case ropAndPut:
 					*data &= b[z]; break;
-				case ropXorPut:     
+				case ropXorPut:
 					*data ^= b[z]; break;
-				case ropOrPut:      
+				case ropOrPut:
 					*data |= b[z]; break;
-				case ropNotDestAnd: 
+				case ropNotDestAnd:
 					*data = (~(*data)) & b[z]; break;
-				case ropNotDestOr:  
+				case ropNotDestOr:
 					*data = (~(*data)) | b[z]; break;
-				case ropNotAnd:     
+				case ropNotAnd:
 					*data = ~(*data & b[z]); break;
-				case ropNotOr:      
+				case ropNotOr:
 					*data = ~(*data | b[z]); break;
-				case ropNoOper:     
-					break;   
-				case ropInvert:     
+				case ropNoOper:
+					break;
+				case ropInvert:
 					*data = ~(*data); break;
-				default:            
+				default:
 					*data = b[z]; break;
-				}      
+				}
 				data++;
-			}   
+			}
 			d += ls;
 		}
-	}   
+	}
 
-	if ( is_opt( optPreserveType) && var->type != type) 
+	if ( is_opt( optPreserveType) && var->type != type)
 		my-> set_type( self, type);
 	else
 		my-> update_change( self);
-}   
+}
 
-SV * 
+SV *
 Image_codecs( SV * dummy)
 {
 	int i;
 	AV * av = newAV();
 	PList p = plist_create( 16, 16);
-	apc_img_codecs( p);  
+	apc_img_codecs( p);
 	for ( i = 0; i < p-> count; i++) {
 		PImgCodec c = ( PImgCodec ) p-> items[ i];
 		HV * profile = apc_img_info2hash( c);
 		pset_i( codecID, i);
-		av_push( av, newRV_noinc(( SV *) profile)); 
-	}  
+		av_push( av, newRV_noinc(( SV *) profile));
+	}
 	plist_destroy( p);
-	return newRV_noinc(( SV *) av); 
+	return newRV_noinc(( SV *) av);
 }
 
 Bool
@@ -1595,7 +1595,7 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 		case imBW:
 			colorbuf[0] = (int)( (rgb.r + rgb.g + rgb.b) / 768.0 + .5);
 			break;
-		case imbpp1: 
+		case imbpp1:
 			colorbuf[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 1;
 			break;
 		case imbpp4 | imGrayScale :
@@ -1622,7 +1622,7 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 		default:
 			croak("Not implemented yet");
 		}
-		img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, my-> get_rop(self), colorbuf);  
+		img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, my-> get_rop(self), colorbuf);
 		my-> update_change(self);
 		return true;
 	}
@@ -1654,8 +1654,8 @@ Image_rotate( Handle self, int degrees)
 			my-> set_conversion( self, conv);
 		}
 		return;
-	}      
-	
+	}
+
 	switch (degrees) {
 	case 90:
 	case 270:
@@ -1697,7 +1697,7 @@ Image_mirror( Handle self, Bool vertically)
 			my-> set_conversion( self, conv );
 		}
 		return;
-	}      
+	}
 
 	img_mirror( self, vertically );
 	my-> update_change(self);
@@ -1712,8 +1712,8 @@ Image_premultiply_alpha( Handle self, SV * alpha)
 	if ( var-> type & imGrayScale ) {
 		if ( var-> type != imByte )
 			my-> set_type( self, imByte );
-	} else { 
-		if ( var-> type != imRGB ) 
+	} else {
+		if ( var-> type != imRGB )
 			my-> set_type( self, imRGB );
 	}
 

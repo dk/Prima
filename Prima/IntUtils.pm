@@ -119,33 +119,33 @@ sub set_border_width
 	$bw = 1 if $bw > $size[1] / 2;
 	$bw = 1 if $bw > $size[0] / 2;
 	return if $bw == $self-> {borderWidth};
-	
+
 	my $obw  = $self-> {borderWidth};
 	$self-> {borderWidth} = $bw;
-	
+
 	$self-> {hScrollBar}-> set(
 		left   => $bw - 1,
 		bottom => $bw - 1,
-		width  => $size[0] - 
-			$bw * 2 + 
-			2 - 
-			( $self-> {vScroll} ? 
-				$self-> {vScrollBar}-> width - 2 : 
+		width  => $size[0] -
+			$bw * 2 +
+			2 -
+			( $self-> {vScroll} ?
+				$self-> {vScrollBar}-> width - 2 :
 				0
 			),
 	) if $self-> {hScroll};
-	
+
 	$self-> {vScrollBar}-> set(
 		top    => $size[1] - $bw + 1,
 		right  => $size[0] - $bw + 1,
-		bottom => $bw + ( $self-> {hScroll} ? 
-			$self-> {hScrollBar}-> height - 2 : 
+		bottom => $bw + ( $self-> {hScroll} ?
+			$self-> {hScrollBar}-> height - 2 :
 			0
 		),
 	) if $self-> {vScroll};
-	
+
 	$self-> insert_bone if defined $self-> {bone};
-	
+
 	$self-> setup_indents;
 	$self-> reset_indents;
 }
@@ -168,7 +168,7 @@ sub insert_bone
 		widgetClass => wc::ScrollBar,
 		designScale => undef,
 		onPaint   => sub {
-			my ( $self, $canvas, $owner, $w, $h) = 
+			my ( $self, $canvas, $owner, $w, $h) =
 				($_[0], $_[1], $_[0]-> owner, $_[0]-> size);
 			$canvas-> color( $self-> backColor);
 			$canvas-> bar( 0, 1, $w - 2, $h - 1);
@@ -192,17 +192,17 @@ sub set_h_scroll
 			origin      => [ $bw-1, $bw-1],
 			growMode    => gm::GrowHiX,
 			pointerType => cr::Arrow,
-			width       => $self-> width - 
-				2 * $bw + 2 - 
-				( $self-> {vScroll} ? 
-					$self-> {vScrollBar}-> width - 2 : 
+			width       => $self-> width -
+				2 * $bw + 2 -
+				( $self-> {vScroll} ?
+					$self-> {vScrollBar}-> width - 2 :
 					0),
 			delegations => ['Change'],
 			designScale => undef,
 			%{ $self->{hScrollBarProfile} || {} },
 		);
 		$self-> {hScroll} = 1;
-		
+
 		$self-> setup_indents;
 
 		if ( $self-> {vScroll}) {
@@ -217,7 +217,7 @@ sub set_h_scroll
 		$self-> {hScroll} = 0;
 		$self-> setup_indents;
 		$self-> {hScrollBar}-> destroy;
-		
+
 		if ( $self-> {vScroll})
 		{
 			$self-> {vScrollBar}-> set(
@@ -238,10 +238,10 @@ sub set_v_scroll
 
 	my $bw = $self-> {borderWidth} || 0;
 	my @size = $self-> size;
-	
+
 	if ( $vs) {
-		my $width = exists( $self->{vScrollBarProfile}->{width} ) ? 
-			$self->{vScrollBarProfile}->{width} : 
+		my $width = exists( $self->{vScrollBarProfile}->{width} ) ?
+			$self->{vScrollBarProfile}->{width} :
 			$Prima::ScrollBar::stdMetrics[0];
 		$self-> {vScrollBar} = $self->{scrollBarClass}-> new(
 			owner    => $self,
@@ -326,8 +326,8 @@ sub init_undo
 	$self-> {undoLimit} = $profile->{undoLimit};
 }
 
-sub begin_undo_group 
-{ 
+sub begin_undo_group
+{
 	my $self = $_[0];
 	return if !$self-> {undoLimit};
 	if ( $self-> {undo_in_action}) {
@@ -338,23 +338,23 @@ sub begin_undo_group
 	}
 }
 
-sub end_undo_group   
-{ 
+sub end_undo_group
+{
 	my $self = $_[0];
 	return if !$self-> {undoLimit};
 
 	my $ref = $self-> {undo_in_action} ? 'redo' : 'undo';
 	$self-> {grouped_undo}-- if $self-> {grouped_undo} > 0;
 	# skip last record if empty
-	pop @{$self-> {$ref}} 
-		if !$self-> {grouped_undo} && 
-			@{$self-> {$ref}} && 
+	pop @{$self-> {$ref}}
+		if !$self-> {grouped_undo} &&
+			@{$self-> {$ref}} &&
 			0 == @{$self-> {$ref}-> [-1]};
 	shift @{$self-> {$ref}} if @{$self-> {$ref}} > $self-> {undoLimit};
 }
 
-sub push_undo_action   
-{ 
+sub push_undo_action
+{
 	my $self = shift;
 	return if !$self-> {undoLimit};
 
@@ -366,7 +366,7 @@ sub push_undo_action
 	} else {
 		push @{$self-> {$ref}}, [ $action ];
 		shift @{$self-> {$ref}} if @{$self-> {$ref}} > $self-> {undoLimit};
-		$self-> {redo} = [] 
+		$self-> {redo} = []
 			if !$self-> {redo_in_action} && !$self-> {undo_in_action};
 	}
 }
@@ -376,7 +376,7 @@ sub has_undo_action
 	my ($self, $method) = @_;
 	my $has = 0;
 	if ( !$self-> {undo_in_action} && @{$self-> {undo} // []} && @{$self-> {undo}-> [-1]}) {
-		my $ok = 1;   
+		my $ok = 1;
 		for ( @{$self-> {undo}-> [-1]}) {
 			$ok = 0, last if $$_[0] ne $method;
 		}
@@ -385,8 +385,8 @@ sub has_undo_action
 	return $has;
 }
 
-sub push_group_undo_action   
-{ 
+sub push_group_undo_action
+{
 	my $self = shift;
 	return if !$self-> {undoLimit};
 	my $ref = $self-> {undo_in_action} ? 'redo' : 'undo';
@@ -477,7 +477,7 @@ Prima::IntUtils - internal functions
 
 The module provides packages, containing common functionality
 for some standard classes. The packages are designed as a code
-containers, not as widget classes, and are to be used as 
+containers, not as widget classes, and are to be used as
 secondary ascendants in the widget inheritance declaration.
 
 =head1 Prima::MouseScroller
@@ -495,7 +495,7 @@ the following scheme:
 	}
 
 The class uses a semaphore C<{mouseTransaction}>, which should
-be set to non-zero if a widget is in mouse capture state, and set 
+be set to non-zero if a widget is in mouse capture state, and set
 to zero or C<undef> otherwise.
 
 The class starts an internal timer, which sets a semaphore and
@@ -521,7 +521,7 @@ the real mouse movement. If VALUE is specified, it is assigned to the semaphore.
 
 Starts the internal timer.
 
-=item scroll_timer_stop 
+=item scroll_timer_stop
 
 Stops the internal timer.
 
@@ -553,7 +553,7 @@ an anonymous array of four scalars.
 
 =over
 
-=item get_active_area [ TYPE = 0, WIDTH, HEIGHT ] 
+=item get_active_area [ TYPE = 0, WIDTH, HEIGHT ]
 
 Calculates and returns the extension of the area without the border elements,
 or the active area.
@@ -599,11 +599,11 @@ A class may provide C<autoHScroll> and C<autoVScroll> property keys in profile_d
 
 =item *
 
-A class' init() method must set C<{borderWidth}>, C<{hScroll}>, and C<{vScroll}> 
+A class' init() method must set C<{borderWidth}>, C<{hScroll}>, and C<{vScroll}>
 variables to 0 before the initialization, call C<setup_indents> method,
 and then assign the properties from the object profile.
 
-If a class provides C<autoHScroll> and C<autoVScroll> properties, these must be set to 
+If a class provides C<autoHScroll> and C<autoVScroll> properties, these must be set to
 0 before the initialization.
 
 =item *
@@ -732,12 +732,12 @@ undo is disabled.
 
 =item begin_undo_group
 
-Opens bracket for group of actions, undone as single operation. 
-The bracket is closed by calling C<end_undo_group>.  
+Opens bracket for group of actions, undone as single operation.
+The bracket is closed by calling C<end_undo_group>.
 
 =item end_undo_group
 
-Closes bracket for group of actions, opened by C<begin_undo_group>.  
+Closes bracket for group of actions, opened by C<begin_undo_group>.
 
 =item redo
 
@@ -759,4 +759,4 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 L<Prima>, L<Prima::Widget>, L<Prima::InputLine>, L<Prima::Lists>, L<Prima::Edit>,
 L<Prima::Outlines>, L<Prima::ScrollBar>.
 
-=cut 
+=cut

@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -7,7 +7,7 @@ examples/cv.pl - Standard color dialog
 =head1 FEATURES
 
 Demonstrates usage of a standard color dialog.
-Note the left-button drag effect from the color wheel with 
+Note the left-button drag effect from the color wheel with
 compbinations of Shift,Alt,and Control.
 
 =cut
@@ -22,7 +22,7 @@ my $p = Prima::ColorDialog-> create(
 	quality => 1,
 );
 
-my $banner = $p-> {wheel}-> insert( Label => 
+my $banner = $p-> {wheel}-> insert( Label =>
 	text => <<MSG,
 Drag colors from the color wheel by left mouse button together with combinations of Alt, Shift, and Control
 MSG
@@ -35,7 +35,7 @@ MSG
 	width => $p-> {wheel}-> width * 0.75,
 );
 
-$p-> insert( Timer => 
+$p-> insert( Timer =>
 	timeout => 100,
 	onTick  => sub {
 		if ( $banner-> bottom > $p->{wheel}-> height) {

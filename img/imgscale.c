@@ -240,7 +240,7 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 	if ( !xStretch && !yStretch && ( w > 0))
 	{
 		int y;
-		int xMin = (( type & imBPP) < 8) ? 
+		int xMin = (( type & imBPP) < 8) ?
 						( srcLine > dstLine) ? dstLine : srcLine :
 						(((( srcW > absw) ? absw : srcW) * ( type & imBPP)) / 8);
 		if ( srcW < w || srcH < absh) memset( dstData, 0, dstLine * absh);
@@ -249,7 +249,7 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 			dstData += dstLine * ( yMin - 1);
 			dstLine = -dstLine;
 		}
-		for ( y = 0; y < yMin; y++, srcData += srcLine, dstData += dstLine) 
+		for ( y = 0; y < yMin; y++, srcData += srcLine, dstData += dstLine)
 			memcpy( dstData, srcData, xMin);
 		return;
 	}
@@ -257,7 +257,7 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 /* y-only stretch case */
 	if ( !xStretch && yStretch && ( w > 0))
 	{
-		int xMin = (( type & imBPP) < 8) ? 
+		int xMin = (( type & imBPP) < 8) ?
 			( srcLine > dstLine) ? dstLine : srcLine :
 			(((( srcW > absw) ? absw : srcW) * ( type & imBPP)) / 8);
 		count. l = 0;
@@ -402,10 +402,10 @@ typedef struct {
 	double support;
 } FilterRec;
 
-#define PI  3.14159265358979323846264338327950288419716939937510 
+#define PI  3.14159265358979323846264338327950288419716939937510
 #define PI2 1.57079632679489661923132169163975144209858469968755
 
-static double 
+static double
 filter_sinc_fast(const double x)
 {
 /*
@@ -463,7 +463,7 @@ static double filter_triangle(const double x)
 {
 /*
 	1st order (linear) B-Spline, bilinear interpolation, Tent 1D filter, or
-	a Bartlett 2D Cone filter.  
+	a Bartlett 2D Cone filter.
 */
 	if (x < 1.0)
 		return(1.0-x);
@@ -471,7 +471,7 @@ static double filter_triangle(const double x)
 }
 
 
-static double 
+static double
 filter_quadratic(const double x)
 {
 /*
@@ -513,14 +513,14 @@ which are used to define the filter:
 
 which ensures function is continuous in value and derivative (slope).
 */
-static double 
+static double
 filter_cubic_spline0(const double x)
 {
 	if (x < 1.0) return 1+x*(x*(-3.0+x*2));
 	return 0.0;
 }
 
-static double 
+static double
 filter_cubic_spline1(const double x)
 {
 	if (x < 1.0)
@@ -552,19 +552,19 @@ fill_contributions( FilterRec * filter, double * contributions, int * start, int
 {
 	double bisect, density;
 	int n, stop;
-	
+
 	bisect = (double) (offset + 0.5) / factor;
 	*start  = bisect - support + 0.5;
 	if ( *start < 0 ) *start = 0;
 	stop   = bisect + support + 0.5;
 	if ( stop > max ) stop = max;
-	
+
 	density = 0.0;
 	for (n = 0; n < (stop-*start); n++) {
 		contributions[n] = filter->filter(fabs((double) (*start+n)-bisect+0.5));
 		density += contributions[n];
 	}
-	
+
 	if ( density != 0.0 && density != 1.0 ) {
 		int i;
 		for ( i = 0; i < n; i++) contributions[i] /= density;
@@ -574,10 +574,10 @@ fill_contributions( FilterRec * filter, double * contributions, int * start, int
 		int i    = (sizeof(Fixed) > sizeof(double)) ? (n - 1) : 0;
 		int to   = (sizeof(Fixed) > sizeof(double)) ? -1 : n;
 		int incr = (sizeof(Fixed) > sizeof(double)) ? -1 : 1;
-		for ( ; i != to; i += incr ) 
+		for ( ; i != to; i += incr )
 			((Fixed*)(contributions))[i].l = contributions[i] * 65536.0 + .5;
 	}
-	
+
 	return n;
 }
 
@@ -687,7 +687,7 @@ STRETCH_VERTICAL_OPEN(Short)
 STRETCH_VERTICAL_LOOP(Short,register long pixel = 0,pixel,0,contributions[j],+.5)
 STRETCH_CLAMP(INT16_MIN,INT16_MAX)
 STRETCH_VERTICAL_CLOSE(Short)
-		
+
 STRETCH_HORIZONTAL_OPEN(Long)
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
@@ -756,14 +756,14 @@ stretch_filtered( int type, Byte * oldData, int oldW, int oldH, Byte * newData, 
 	}
 
 	switch (type) {
-	case imMono: 
+	case imMono:
 	case imBW:
-	case imNibble: 
+	case imNibble:
 	case im256:
 	case imNibble | imGrayScale:
 		strncpy(error, "type not supported", 255);
 		return false;
-	case imRGB: 
+	case imRGB:
 		channels = 3;
 		break;
 	case imByte:
@@ -905,7 +905,7 @@ ic_stretch_filtered( int type, Byte * oldData, int oldW, int oldH, Byte * newDat
 
 	if ( !stretch_filtered( type, oldData, oldW, oldH, newData, w, h, scaling, error ))
 		return false;
-	
+
 	if ( mirror_x ) img_mirror_raw( type, w, h, newData, 0 );
 	if ( mirror_y ) img_mirror_raw( type, w, h, newData, 1 );
 
@@ -916,12 +916,12 @@ int
 ic_stretch_suggest_type( int type, int scaling )
 {
 	if ( scaling <= istBox ) return type;
-	
+
 	switch (type) {
-	case imMono: 
-	case imNibble: 
-	case im256: 
-	case imRGB: 
+	case imMono:
+	case imNibble:
+	case im256:
+	case imRGB:
 		return imRGB;
 	case imBW:
 	case imNibble | imGrayScale:

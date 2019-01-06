@@ -6,13 +6,13 @@ use Prima;
 use Prima::Const;
 use Prima::IntUtils;
 
-package 
+package
     fra; # Frame arragement constants.
 
 use constant Vertical => 0;
 use constant Horizontal => 1;
 
-package 
+package
     frr; # Frame resize method constants.
 
 use constant Simple => 0;
@@ -271,7 +271,7 @@ sub xorrect
 {
 	my ( $self, @r) = @_;
 	my $p = $self->get_parent;
-	$::application-> rubberband( 
+	$::application-> rubberband(
 		clipRect => [ $p->client_to_screen( 0,0,$p-> size) ],
 		@r ?
 			( rect => \@r, breadth => $self->{thickness} ) :
@@ -427,8 +427,8 @@ sub init
 
 	for (my $i = 0; $i < $profile{frameCount}; $i++) {
 		my %xp = %{$profile{frameProfile}};
-		%xp = ( %xp, %{$profile{frameProfiles}-> [$i]}) 
-			if $profile{frameProfiles}-> [$i] && 
+		%xp = ( %xp, %{$profile{frameProfiles}-> [$i]})
+			if $profile{frameProfiles}-> [$i] &&
 			ref($profile{frameProfiles}-> [$i]) eq 'HASH';
 		my $frame = $me-> insert(
 			$profile{frameClass} =>
@@ -444,8 +444,8 @@ sub init
 		my $moveable = $profile{sliders}-> [$sn] ? 1 : 0;
 		$moveable = $profile{flexible};
 		my %xp = %{$profile{sliderProfile}};
-		%xp = ( %xp, %{$profile{sliderProfiles}-> [$sn]}) 
-			if $profile{sliderProfiles}-> [$sn] && 
+		%xp = ( %xp, %{$profile{sliderProfiles}-> [$sn]})
+			if $profile{sliderProfiles}-> [$sn] &&
 			ref($profile{sliderProfiles}-> [$sn]) eq 'HASH';
 		my $slider = $me-> insert(
 				$profile{sliderClass} =>
@@ -504,7 +504,7 @@ sub recalc_frames
 	my (%profile) = @_;
 
 	return unless $me-> owner;
-	
+
 	my @sizes = @{$me-> {sizes} || []};
 	if ($profile{initial}) {
 
@@ -620,7 +620,7 @@ sub recalc_frames
 			$me-> {sizes} = \@nsizes;
 			$me-> {virtual_sizes} = \@vsizes;
 		}
-		
+
 	}
 	return (wantarray ? @sizes : \@sizes);
 }
@@ -875,11 +875,11 @@ sub insert_to_frame
 	my $frameIdx = shift;
 
 	$frameIdx = $me-> {frameCount} - 1 if $frameIdx > ($me-> {frameCount} - 1);
-	
+
 	$me-> lock;
 	my @ctrls = $me-> {frames}-> [$frameIdx]-> insert(@_);
 	$me-> unlock;
-	
+
 	return wantarray ? @ctrls : $ctrls[0];
 }
 

@@ -62,13 +62,13 @@ my %figs = (
 
 my %images = (
 	'K'  => $images[1],
-	'B1' => $images[0], 
-	'B2' => $images[0], 
-	'Q'  => $images[3], 
-	'T1' => $images[4], 
-	'T2' => $images[4], 
-	'R1' => $images[2], 
-	'R2' => $images[2], 
+	'B1' => $images[0],
+	'B2' => $images[0],
+	'Q'  => $images[3],
+	'T1' => $images[4],
+	'T2' => $images[4],
+	'R1' => $images[2],
+	'R2' => $images[2],
 );
 
 # colors shade the degree of fugure coverage
@@ -84,7 +84,7 @@ my @colors = (
 	0x000000,
 );
 
-my @pointer= map { 
+my @pointer= map {
 	$::application-> get_system_value( $_ )
 } sv::XPointer, sv::YPointer;
 $pointer[$_] = ( $pointer[$_] - 40 * $sc ) / 2 for 0,1;
@@ -96,14 +96,14 @@ my $w = Prima::MainWindow-> create(
 	buffered => 1,
 	menuItems => [
 		["~Help" => sub{
-			Prima::MsgBox::message( 
+			Prima::MsgBox::message(
 				'Chess puzzle. Objective is to put figures so they could reach every cell upon the board',
 				mb::OK | mb::Cancel,
 				buttons => { mb::Cancel , {
 					text => '~Solution',
 					onClick => sub {
 						Prima::MsgBox::message(
-							'Use Ctrl + mouse doubleclick on the board ', 
+							'Use Ctrl + mouse doubleclick on the board ',
 							mb::OK
 						);
 					}
@@ -184,7 +184,7 @@ my $w = Prima::MainWindow-> create(
 			$self-> color( $colors[$boy[$_]] );
 			$self-> bar( $x * $d+1, $y * $d+1, ($x + 1) * $d - 1, ($y + 1 ) * $d - 1);
 		}
-		
+
 		for ( keys %figs) {
 			my ( $x, $y) = @{$figs{$_}};
 			$self-> set(
@@ -228,8 +228,8 @@ my $w = Prima::MainWindow-> create(
 		$xor-> begin_paint;
 		$xor-> set(
 			color      => cl::Black,
-			backColor  => $::application-> get_system_value( sv::ColorPointer) ? 
-					cl::Green : cl::White, 
+			backColor  => $::application-> get_system_value( sv::ColorPointer) ?
+					cl::Green : cl::White,
 			rop        => rop::OrPut,
 		);
 		$xor-> put_image( @pointer, $images{$i});

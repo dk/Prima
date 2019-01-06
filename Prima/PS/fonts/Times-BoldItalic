@@ -1,8 +1,8 @@
-('Times-BoldItalic' => { 
+('Times-BoldItalic' => {
   name            => 'Times-BoldItalic',
   family          => 'Times',
   height          => 1139,
-  weight          => fw::Bold,   
+  weight          => fw::Bold,
   style           => fs::Bold,
   pitch           => fp::Variable,
   vector          => 1,

@@ -1,4 +1,4 @@
-=head1 NAME 
+=head1 NAME
 
 Prima::gp-problems - Problems, questionable or intricate topics in 2-D Graphics
 
@@ -8,14 +8,14 @@ One of the most important goals of the Prima project
 is portability between different operating systems. Independently to
 efforts in keeping Prima internal code that
 it behaves more or less identically on different platforms, it is always possible
-to write non-portable and platform-dependent code. 
+to write non-portable and platform-dependent code.
 Here are some guidelines and suggestions for 2-D graphics
 programming.
 
 =head1 Minimal display capabilities
 
 A compliant display is expected to have minimal set
-of capabilities, that programmer can rely upon. 
+of capabilities, that programmer can rely upon.
 Following items are guaranteedly supported by Prima:
 
 =over
@@ -82,15 +82,15 @@ textOpaque
 clipRect
 
 All these properties must be present, however it is not
-required for them to be changeable. Even if an underlying platform-specific code 
-can only support one mode for a property, it have to follow all 
+required for them to be changeable. Even if an underlying platform-specific code
+can only support one mode for a property, it have to follow all
 obligations for the mode. For example, if platform supports
 full functionality for black color but limited functionality for the other colors,
 the wrapping code should not allow color property to be writable then.
 
 =back
 
-=head1 Inevident issues 
+=head1 Inevident issues
 
 =head2 Colors
 
@@ -98,14 +98,14 @@ the wrapping code should not allow color property to be writable then.
 
 =item Black and white colors on paletted displays
 
-Due the fact that paletted displays employ indexed color 
+Due the fact that paletted displays employ indexed color
 representation, 'black' and 'white' indices are not always
 0 and 2^n-1, so result of raster image operations may look garbled (X).
-Win32 protects themselves from this condition by 
+Win32 protects themselves from this condition by
 forcing white to be the last color in the system palette.
 
-Example: if white color on 8-bit display occupies palette index 15 
-then desired masking effect wouldn't work 
+Example: if white color on 8-bit display occupies palette index 15
+then desired masking effect wouldn't work
 for xoring transparent areas with cl::White.
 
 Workaround: Use two special color constants
@@ -115,8 +115,8 @@ for bit-sensitive raster operations.
 =item Black might be not 0, and white not 0xffffff
 
 This inevident issue happens mostly on 15- and 16-bits
-pixel displays. Internal color representation for the white color 
-on a 15-color display ( assuming R,G and B are 5-bits fields) is 
+pixel displays. Internal color representation for the white color
+on a 15-color display ( assuming R,G and B are 5-bits fields) is
 
  11111000 11111000 11111000
  --R----- --G----- --B-----
@@ -130,7 +130,7 @@ merely by comparing a pixel value.
 
 Status: internal
 
-It is not checked how does Prima behave when a pixel value and 
+It is not checked how does Prima behave when a pixel value and
 a platform integer use different bit and/or byte priority (X).
 
 =back
@@ -143,20 +143,20 @@ a platform integer use different bit and/or byte priority (X).
 
 If a non-solid pattern is
 selected and a background and/or a foreground color
-cannot be drawn as a solid, the correct rendering requires 
+cannot be drawn as a solid, the correct rendering requires
 correspondingly 3 or 4 colors.  Some rendering engines (Win9X)
 fail to produce correct results.
 
 =item Pattern offset
 
-For a widget that contains a pattern-filled shape, 
-its picture will be always garbled after scrolling, 
+For a widget that contains a pattern-filled shape,
+its picture will be always garbled after scrolling,
 because it is impossible to provide an algorithm
 for a correct rendering without a prior knowledge of the
 widget nature. (All)
 
-Workaround: Do not use patterned backgrounds. 
-Since the same effect is visible on dithered 
+Workaround: Do not use patterned backgrounds.
+Since the same effect is visible on dithered
 backgrounds, routine check for pure color might be applied.
 
 =back
@@ -171,11 +171,11 @@ It is not clear, whether
 gaps between dashes should be a multiple to a line width or
 not. For example, lp::DotDot looks almost as a solid line when
 lineWidth is over 10 if the first (non-multiple) tactic is chosen.
-From the other hand it is hardly possible to predict the plotting 
-strategy from a high-level code. The problem is related more to Prima 
+From the other hand it is hardly possible to predict the plotting
+strategy from a high-level code. The problem is related more to Prima
 design rather than to a platform-specific code. (All)
 
-Workaround: use predefined patterns (lp::XXX) 
+Workaround: use predefined patterns (lp::XXX)
 
 =item Dithering
 
@@ -210,7 +210,7 @@ No internal function for drawing transparent bitmaps (like fonts).
 Therefore, if a font emulation is desired, special ROPs cannot be
 reproduced. (Win9X, WinNT)
 
-Impact: font emulation is laborsome, primarily because the glyphs 
+Impact: font emulation is laborsome, primarily because the glyphs
 have to be plotted by consequential anding and xoring a bitmap.
 Full spectrum of the raster operations cannot be achieved with this
 approach.
@@ -221,13 +221,13 @@ approach.
 Prima do not use text kernings, nor
 encourages underlying platform-specific code to use it - primarily
 because of its complexity.
-From the other hand, sometimes glyph position cannot be 
-determined correctly if no information for the text kerning 
-is provided. (Win9X) 
+From the other hand, sometimes glyph position cannot be
+determined correctly if no information for the text kerning
+is provided. (Win9X)
 
 =item Text background
 
-If a text is drawn with non-CopyPut raster operation, text background 
+If a text is drawn with non-CopyPut raster operation, text background
 is not expected to be mixed with symbols - however this is hardly reachable,
 so results differs for different platforms.
 
@@ -252,7 +252,7 @@ can be emulated for certain primitives, like fonts,
 complex shapes, and patterned shapes.
 
 It is yet unclear which primitives have to support ROPs, -
-like FloodFill and SetPixel. Behavior of the current implementation 
+like FloodFill and SetPixel. Behavior of the current implementation
 is that they do not.
 
 On win32, BlendAlpha call is used to implement ropSrcOver function on 32-bit
@@ -261,12 +261,12 @@ that implements the canonic formula by Porter and Duff.
 
 =head2 Arcs
 
-Platforms tend to produce different results for 
-angles outside 0 and 2pi. Although Prima assures that 
+Platforms tend to produce different results for
+angles outside 0 and 2pi. Although Prima assures that
 correct plotting would be performed for any angle,
 minor inconsistencies may be noticed.
 If emulating, note that 2 and 4-pi arcs
-are not the same - for example, they look differently 
+are not the same - for example, they look differently
 with rop::Xor.
 
 
@@ -282,7 +282,7 @@ palette is writable.(X)
 
 =item Widget::palette
 
-Widget::palette property is used for explicit declaration of extra 
+Widget::palette property is used for explicit declaration of extra
 color needs for a widget. The request might be satisfacted in different
 ways, or might not at all. It is advisable not to rely onto platform
 behavior for the palette operations.
@@ -290,12 +290,12 @@ behavior for the palette operations.
 =item Dynamic palette change
 
 It is possible (usually on 8-bits displays) for a display to
-change asynchronously its hardware palette in order to process 
+change asynchronously its hardware palette in order to process
 different color requests. All platforms behave differently.
 
-Win9X/WinNT - only one top-level window at a time 
+Win9X/WinNT - only one top-level window at a time
 and its direct children ( not ::clipOwner(0)) can benefit
-from using Widget::palette. System palette is switched every time 
+from using Widget::palette. System palette is switched every time
 as different windows moved to the front.
 
 X - Any application can easily ruin system color table.
@@ -318,7 +318,7 @@ Workaround: none
 
 =item Large scale factors
 
-Request for drawing a bitmap might fail 
+Request for drawing a bitmap might fail
 if large scaling factor is selected. (Win9X,WinNT).
 This effect is obviously due that fact that these platforms
 scale the bitmap into a memory before the plotting takes place.
@@ -328,7 +328,7 @@ scale the bitmap into a memory before the plotting takes place.
 =head2 Layering
 
 On win32, layered widgets with pixels assigned zero alpha component, will not
-receive mouse events. 
+receive mouse events.
 
 =head1 Platform-specific peculiarities
 

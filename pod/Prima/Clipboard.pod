@@ -47,7 +47,7 @@ uses only three of these - ascii text, utf8 text, and image. It does not limit,
 however, the data format being one of these three types - an application is
 free to register its own formats. Both predefined and newly defined data
 formats are described by a string, and the three predefined formats are
-represented by C<'Text'>, C<'UTF8'>, and C<'Image'> string constants. 
+represented by C<'Text'>, C<'UTF8'>, and C<'Image'> string constants.
 
 The most frequent usage of Prima::Clipboard is to preform two tasks - copying
 and pasting. Both can be exemplified by the following:
@@ -81,7 +81,7 @@ C<fetch()> and C<store()> implicitly call C<open()> and C<close()>, but these
 functions must be called explicitly for the multi-format data handling. The
 code below illustrates the said:
 
-    # copy text and image 
+    # copy text and image
     if ( $c-> open) {
        $c-> clear;
        $c-> store('Text', $string);
@@ -89,8 +89,8 @@ code below illustrates the said:
        $c-> close;
     }
 
-    # check present formats and paste 
-   if ( $c-> open) { 
+    # check present formats and paste
+   if ( $c-> open) {
       if ( $c-> format_exists('Text')) {
          $string = $c-> fetch('Text');
       }
@@ -159,7 +159,7 @@ lowest level is raw pixel data in display-based format, whereas GTK-based
 applications can also exchange images in file-based formats, such as bmp, png
 etc. To avoid further complications in the implementations, C<PasteImage>
 action was introduced to handle these cases, together with a symmetrical
-C<CopyImage>. 
+C<CopyImage>.
 
 The default action of C<PasteImage> is to query first if C<'Image'> format is
 available, and if so, return the Image object. This by default reads data from
@@ -215,7 +215,7 @@ before a clipboard object is destroyed.
 
 Returns the data of FORMAT_STRING data format,
 if present in the clipboard. Depending on FORMAT_STRING,
-data is either text string for C<'Text'> format, 
+data is either text string for C<'Text'> format,
 Prima::Image object for C<'Image'> format and a binary scalar
 value for all custom formats.
 
@@ -239,7 +239,7 @@ way to see if a format, not registered before, is present.
 
 =item get_registered_formats
 
-Returns array of strings, each representing 
+Returns array of strings, each representing
 a registered format. C<Text> and C<Image>
 are returned also.
 
@@ -258,7 +258,7 @@ must refer to this function first.
 Opens a system clipboard and locks it for the process
 single use; returns a success flag. Subsequent C<open>
 calls are possible, and always return 1. Each C<open()>
-must correspond to C<close()>, otherwise the clipboard 
+must correspond to C<close()>, otherwise the clipboard
 will stay locked until the blocking process is finished.
 
 =item register_format FORMAT_STRING

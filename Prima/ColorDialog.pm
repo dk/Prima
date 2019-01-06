@@ -154,8 +154,8 @@ sub create_wheel
 			next if $ok;
 			my ( $r, $g, $b) = hsv2rgb( $h, $s, 1);
 			$i-> color( $b | ($g << 8) | ($r << 16));
-			$i-> bar( 
-				$x * $imul, $y * $imul, 
+			$i-> bar(
+				$x * $imul, $y * $imul,
 				( $x + 1) * $imul - 1, ( $y + 1) * $imul - 1
 			);
 		}
@@ -252,9 +252,9 @@ sub init
 
 	$self-> {wheel} = $self-> insert( Widget =>
 		designScale    => undef,
-		origin         => [ 
+		origin         => [
 			20 * $dx  + ($dx - $pix) * 256 / 2,
-			172 * $dy + ($dy - $pix) * 256 / 2 
+			172 * $dy + ($dy - $pix) * 256 / 2
 		],
 		width          => 256 * $pix,
 		height         => 256 * $pix,
@@ -520,7 +520,7 @@ sub Wheel_MouseUp
 	if ( $self-> {drag_color}) {
 		$owner-> notify('EndDragColor', $self-> {drag_color},
 			$::application-> get_widget_from_point( $self-> client_to_screen( $x, $y)));
-		delete $self-> {drag_color};	 
+		delete $self-> {drag_color};
 	}
 }
 
@@ -804,7 +804,7 @@ sub List_Create
 		name       => 'MoreBtn',
 		onClick    => sub { $combo-> MoreBtn_Click( @_)},
 	);
-	
+
 	my $c = $combo-> colors;
 	$combo-> {scr} = $self-> insert( ScrollBar =>
 		origin     => [ 75 * $self->{scaling}, $combo-> {btn}-> height + 8 * $self->{scaling}],
@@ -935,11 +935,11 @@ sub on_colorify
 		my $i = $index - 20;
 		my ( $r, $g, $b);
 		if ( $i < 64) {
-			( $r, $g, $b) = Prima::ColorDialog::hsv2rgb( 
+			( $r, $g, $b) = Prima::ColorDialog::hsv2rgb(
 				$i * 4, 0.25 + ($i % 4) * 0.25, 1
 			);
 		} else {
-			( $r, $g, $b) = Prima::ColorDialog::hsv2rgb( 
+			( $r, $g, $b) = Prima::ColorDialog::hsv2rgb(
 				$i * 4, 1, 0.25 + ($i % 4) * 0.25
 			);
 		}
@@ -1070,7 +1070,7 @@ Default action reflects the property to be changes in the dialog title
 
 =item Change
 
-The notification is called when the L<value> property is changed, either 
+The notification is called when the L<value> property is changed, either
 interactively or as a result of direct call.
 
 =item EndDragColor $PROPERTY, $WIDGET

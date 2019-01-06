@@ -59,8 +59,8 @@ lines:
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello2.gif">
 
-but it is not illustrative and not useful. C<Prima::message> is rarely used, 
-and is one of few methods contained in C<Prima::> namespace. To display a 
+but it is not illustrative and not useful. C<Prima::message> is rarely used,
+and is one of few methods contained in C<Prima::> namespace. To display a
 message, the I<MsgBox> module is often preferred, with its control over message
 buttons and pre-defined icons. With its use, the code above can be rewritten
 as
@@ -74,7 +74,7 @@ as
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/tutorial/hello3.gif">
 
 but where C<Prima::message> accepts the only text scalar parameters, C<Prima::MsgBox::message>
-can do lot more. For example 
+can do lot more. For example
 
 	use Prima qw(Application MsgBox);
 	message('Hello world', mb::OkCancel|mb::Information);
@@ -87,12 +87,12 @@ can do lot more. For example
 displays two buttons and an icon. A small achievement, but the following is a bit more interesting:
 
 	use Prima qw(Application MsgBox);
-	message('Hello world', mb::OkCancel|mb::Information, 
+	message('Hello world', mb::OkCancel|mb::Information,
 		buttons => {
 			mb::Cancel => {
 				# there are predefined color constants to use
 				backColor => cl::LightGreen,
-				# but RGB integers are also o.k. 
+				# but RGB integers are also o.k.
 				color     => 0xFFFFFF,
 			},
 			mb::Ok => {
@@ -111,7 +111,7 @@ throughout the toolkit. Returning back to the very first example, we can demonst
 the manipulation of the window properties in the same fashion:
 
 	use Prima qw(Application);
-	my $window = Prima::MainWindow-> new( 
+	my $window = Prima::MainWindow-> new(
 		text => 'Hello world!',
 		backColor => cl::Yellow,
 		size => [ 200, 200],
@@ -142,7 +142,7 @@ action is performed; the events have syntax identical to the properties. Changin
 we can catch a mouse click on the window:
 
 	use Prima qw(Application MsgBox);
-	my $window = Prima::MainWindow-> new( 
+	my $window = Prima::MainWindow-> new(
 		text => 'Hello world!',
 		size => [ 200, 200],
 		onMouseDown => sub {
@@ -153,15 +153,15 @@ we can catch a mouse click on the window:
 	run Prima;
 
 While an interesting concept, it is not really practical if the only thing
-you want is to catch a click, and this is the part where a standard button 
+you want is to catch a click, and this is the part where a standard button
 probably should be preferred:
 
 	use Prima qw(Application Buttons MsgBox);
-	my $window = Prima::MainWindow-> new( 
+	my $window = Prima::MainWindow-> new(
 		text     => 'Hello world!',
 		size     => [ 200, 200],
 	);
-	$window-> insert( Button => 
+	$window-> insert( Button =>
 		text     => 'Click me',
 		growMode => gm::Center,
 		onClick  => sub { message("Hello!") }
@@ -178,7 +178,7 @@ provides I<pack> and I<place> interfaces. Here one can replace the line
 
 	growMode => gm::Center,
 
-to 
+to
 
 	pack     => { expand => 1 },
 
@@ -193,11 +193,11 @@ or docking windows. Technically, these are collected in C<Prima/*.pm>
 modules and each contains its own manual page, but for informational
 reasons here is the table of these, an excerpt of C<Prima> manpage:
 
-L<Prima::Buttons> - buttons and button grouping widgets 
+L<Prima::Buttons> - buttons and button grouping widgets
 
-L<Prima::Calendar> - calendar widget 
+L<Prima::Calendar> - calendar widget
 
-L<Prima::ComboBox> - combo box widget 
+L<Prima::ComboBox> - combo box widget
 
 L<Prima::DetailedList> - multi-column list viewer with controlling header widget
 
@@ -221,7 +221,7 @@ L<Prima::ImageViewer> - bitmap viewer
 
 L<Prima::InputLine> - input line widget
 
-L<Prima::Label> - static text widget 
+L<Prima::Label> - static text widget
 
 L<Prima::Lists> - user-selectable item list widgets
 
@@ -246,7 +246,7 @@ each array corresponds to a single menu entry. Such as, to modify the
 hello-world program to contain a simple menu, it is enough to write this:
 
 	use Prima qw(Application MsgBox);
-	my $window = Prima::MainWindow-> new( 
+	my $window = Prima::MainWindow-> new(
 		text => 'Hello world!',
 		menuItems => [
 			[ '~File' => [
@@ -275,7 +275,7 @@ separator:
 	[ 'my_separator' ]
 
 The one-item syntax is needed when the separator menu item need to be later addressed
-explicitly. This means that each menu item after it is created is assigned a 
+explicitly. This means that each menu item after it is created is assigned a
 (unique) identifier, and that identifier looks like C<'#1'>, C<'#2'>, etc,
 unless it is given by the programmer. Here, for example, it is possible to delete the
 separator, after the menu is created:
@@ -319,7 +319,7 @@ Five items - [ ID, text, hot key text, hot key, action ]
 
 Six items - [ ID, text, hot key text, hot key, action, data ]
 
-Image items are fully analogous to the text items, except that instead of the text 
+Image items are fully analogous to the text items, except that instead of the text
 string, an image object is supplied:
 
 	use Prima qw(Application MsgBox);
@@ -328,7 +328,7 @@ string, an image object is supplied:
 	my $i = Prima::Image-> load( find_image( 'examples/Hand.gif'));
 	$i ||= 'No image found or can be loaded';
 
-	my $window = Prima::MainWindow-> new( 
+	my $window = Prima::MainWindow-> new(
 		text => 'Hello world!',
 		menuItems => [
 			[ '~File' => [
@@ -350,18 +350,18 @@ be useful when constructing a generic class with menu actions that can be
 overridden:
 
 	use Prima qw(Application);
-	
+
 	package MyWindow;
 	use vars qw(@ISA);
 	@ISA = qw(Prima::MainWindow);
 
-	sub action 
-	{ 
+	sub action
+	{
 		my ( $self, $menu_item) = @_;
-		print "hey! $menu_item called me!\n" 
+		print "hey! $menu_item called me!\n"
 	}
 
-	my $window = MyWindow-> new( 
+	my $window = MyWindow-> new(
 		menuItems => [
 			[ '~File' => [
 				['~Action', q(action) ],

@@ -20,10 +20,10 @@ sub insert_buttons
 	my ( $dlg, $buttons, $extras) = @_;
 	my ( $left, $right) = ( 10, 425);
 	my $i;
-	my @bConsts =  ( 
+	my @bConsts =  (
 		mb::Help, mb::Cancel, mb::Ignore, mb::Retry, mb::Abort, mb::No, mb::Yes, mb::Ok
 	);
-	my @bTexts  = qw( 
+	my @bTexts  = qw(
 		~Help    ~Cancel     ~Ignore     ~Retry     ~Abort     ~No     ~Yes     ~OK
 	);
 	my $helpTopic = defined $$extras{helpTopic} ? $$extras{helpTopic} : 'Prima';
@@ -40,7 +40,7 @@ sub insert_buttons
 		next unless $buttons & $bConsts[$i];
 		my %epr;
 
-		%epr = %{$extras-> {buttons}-> {$bConsts[$i]}} 
+		%epr = %{$extras-> {buttons}-> {$bConsts[$i]}}
 			if $extras-> {buttons} && $extras-> {buttons}-> {$bConsts[$i]};
 
 		my %hpr = (
@@ -74,14 +74,14 @@ sub insert_buttons
 		last if ++$btns > 3;
 	}
 	$fresh = $freshFirst unless $dir;
-	return $fresh;   
+	return $fresh;
 }
 
 sub message_box
 {
 	my ( $title, $text, $options, @extras) = @_;
-	
-	my $extras = 
+
+	my $extras =
 		( 1 == @extras and (ref($extras[0])||'') eq 'HASH') ?
 	   	$extras[0] : # old style
 		{ @extras }; # new style
@@ -129,8 +129,8 @@ sub message_box
 		$icon = Prima::StdBitmap::icon( $icon);
 		if ( defined $icon) {
 			$iconView = $dlg-> insert( Widget =>
-				origin         => [ 
-					20, 
+				origin         => [
+					20,
 					($dlg-> height + $fresh-> height - $icon-> height)/2
 				],
 				size           => [ $icon-> width, $icon-> height],
@@ -160,16 +160,16 @@ sub message_box
 	);
 
 	my $gl = int( $label-> height / $label-> font-> height);
-	my $lc = scalar @{ $label-> text_wrap( 
-		$text, 
-		$label-> width, 
+	my $lc = scalar @{ $label-> text_wrap(
+		$text,
+		$label-> width,
 		tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::ExpandTabs|tw::CalcTabs
 	)};
 
 	if ( $lc > $gl) {
 		my $delta = ( $lc - $gl) * $label-> font-> height;
 		my $dh = $dlg-> height;
-		$delta = $::application-> height - $dh 
+		$delta = $::application-> height - $dh
 			if $dh + $delta > $::application-> height;
 		$dlg-> height( $dh + $delta);
 		$dlg-> centered(1);
@@ -191,8 +191,8 @@ sub input_box
 {
 	my ( $title, $text, $string, $buttons, @extras) = @_;
 	$buttons = mb::Ok|mb::Cancel unless defined $buttons;
-	
-	my $extras = 
+
+	my $extras =
 		( 1 == @extras and (ref($extras[0])||'') eq 'HASH') ?
 	   	$extras[0] : # old style
 		{ @extras }; # new style
@@ -217,7 +217,7 @@ sub input_box
 	);
 
 	my $input = $dlg-> insert( InputLine =>
-		size          => [ 415, 20],   
+		size          => [ 415, 20],
 		origin        => [ 10, 56],
 		text          => $string,
 		current       => 1,
@@ -226,8 +226,8 @@ sub input_box
 
 	my @ret = ( $dlg-> execute, $input-> text);
 	$dlg-> destroy;
-	return wantarray ? 
-		@ret : 
+	return wantarray ?
+		@ret :
 		(( $ret[0] == mb::OK || $ret[0] == mb::Yes) ? $ret[1] : undef);
 }
 
@@ -256,7 +256,7 @@ Prima::MsgBox - standard message and input dialog boxes
 
 The module contains two methods, C<message_box> and C<input_box>,
 that invoke correspondingly the standard message and one line text input
-dialog boxes. 
+dialog boxes.
 
 =head1 SYNOPSIS
 
@@ -368,7 +368,7 @@ displayed.
 
 Only for C<input_box>.
 
-Contains a profile hash, passed to the input line as creation parameters. 
+Contains a profile hash, passed to the input line as creation parameters.
 
 =item buttons HASH
 

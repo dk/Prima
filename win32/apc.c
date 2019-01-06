@@ -69,7 +69,7 @@ apc_application_create( Handle self)
 	objCheck false;
 
 	// make sure that no leftover messages, esp.WM_QUIT, are floating around
-	while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE)); 
+	while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE));
 
 	if ( !( h = CreateWindowExW( 0, L"GenericApp", &wnull, 0, 0, 0, 0, 0,
 			nil, nil, guts. instance, nil))) apiErrRet;
@@ -280,7 +280,7 @@ apc_application_get_indents( Handle self)
 		UINT rc;
 		Rect ret = {0,0,0,0};
 		APPBARDATA d;
-		
+
 		size = apc_application_get_size( self);
 
 		memset( &d, 0, sizeof(d));
@@ -309,7 +309,7 @@ apc_application_get_indents( Handle self)
 				break;
 			}
 		}
-		
+
 		return ret;
 }
 
@@ -510,10 +510,10 @@ process_msg( MSG * msg)
 		}
 		return true;
 	}
-	if ( !postpone_msg_translation) 
+	if ( !postpone_msg_translation)
 		TranslateMessage( msg);
 	apcDispatchMessage( msg);
-	if ( postpone_msg_translation) { 
+	if ( postpone_msg_translation) {
 		if ( guts. dont_xlate_message)
 			guts. dont_xlate_message = false;
 		else
@@ -904,7 +904,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 		if ( var postList) list_first_that( var postList, repost_msgs, ( void*)self);
 	}
 	PostMessage( ret, WM_PRIMA_CREATE, 0, 0);
-	
+
 	if ( !reset) {
 		/* set manually cmMove and cmSize when windows are configured automatically */
 		if ( !usePos) {
@@ -916,7 +916,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 			e. gen. P. x = sz. x;
 			e. gen. P. y = sz. y;
 			CComponent(self)->message( self, &e);
-			if ( PObject( self)-> stage == csDead) return false; 
+			if ( PObject( self)-> stage == csDead) return false;
 		}
 		if ( !useSize) {
 			Event e;
@@ -927,7 +927,7 @@ create_group( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 			e. gen. P. x = e. gen. R. right = sz. x;
 			e. gen. P. y = e. gen. R. top = sz. y;
 			CComponent(self)->message( self, &e);
-			if ( PObject( self)-> stage == csDead) return false; 
+			if ( PObject( self)-> stage == csDead) return false;
 		}
 	}
 	return true;
@@ -945,7 +945,7 @@ notify_sys_handle( Handle self )
 // Window
 Bool
 apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
-						int borderStyle, Bool taskList, int windowState, 
+						int borderStyle, Bool taskList, int windowState,
 						int on_top, Bool usePos, Bool useSize, Bool layered)
 {
 	Bool reset = false;
@@ -969,11 +969,11 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	DWORD exstyle = 0
 		| (( borderStyle == bsDialog  )   ? WS_EX_DLGMODALFRAME : 0)
 	;
-	
+
 	objCheck false;
 	dobjCheck( owner) false;
 	if ( guts. displayBMInfo. bmiHeader. biBitCount <= 8) layered = false;
-	
+
 	if ( !kind_of( self, CWidget)) apcErrRet( errInvObject);
 	apcErrClear;
 	if (( var handle != nilHandle) && (
@@ -985,7 +985,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	))
 	{
 		int len = GetWindowTextLengthW( HANDLE ) + 1;
-		if (( saved_caption = (WCHAR*) malloc( sizeof(WCHAR) * len)) != NULL ) 
+		if (( saved_caption = (WCHAR*) malloc( sizeof(WCHAR) * len)) != NULL )
 			GetWindowTextW( HANDLE, saved_caption, len );
 		// Windows 8 shell is observed to send WM_SIZE(0,0) on ShowWindow(SW_SHOWNORMAL)
 		// when application started with /min flag
@@ -1001,25 +1001,25 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 			get_view_ex( self, &vprf);
 		ws = sys s. window;
 		if ( !GetWindowPlacement( HANDLE, &wp)) apiErr;
-		if ( wp. showCmd == SW_SHOWMINIMIZED && windowState != wsMinimized ) 
+		if ( wp. showCmd == SW_SHOWMINIMIZED && windowState != wsMinimized )
 			wp. showCmd = ( windowState == wsMaximized ) ? SW_SHOWMAXIMIZED : SW_NORMAL;
 		usePos = useSize = 1; // prevent using shell-position flags for recreate
 		icon = ( HICON) SendMessage( HANDLE, WM_GETICON, ICON_BIG, 0);
 		reset = true;
 	}
 	HWND_lock( true);
-	
+
 	if ( !reset) apt_set( aptClipByChildren );
 	apt_assign( aptLayeredRequested, layered );
 	apt_assign( aptLayered, layered );
-	
+
 	if ( reset || ( var handle == nilHandle))
 		if ( !create_group( self, owner, syncPaint, false,
 				taskList, WC_FRAME, style, exstyle, usePos, useSize, &vprf, NULL)) {
 			if ( on_top >= 0) {
 				apt_assign( aptOnTop, on_top);
 				if ( on_top > 0)
-					SetWindowPos( sys handle, HWND_TOPMOST, 0, 0, 0, 0, 
+					SetWindowPos( sys handle, HWND_TOPMOST, 0, 0, 0, 0,
 						SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 			}
 			HWND_lock( false);
@@ -1034,8 +1034,8 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	if ( usePos) apt_set( aptWinPosDetermined);
 	if ( reset)
 	{
-		Handle oldOwner = var owner; 
-		
+		Handle oldOwner = var owner;
+
 		var owner = owner;
 		apc_window_set_window_state( self, windowState);
 		var owner = oldOwner;
@@ -1053,7 +1053,7 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	if ( on_top >= 0) {
 		apt_assign( aptOnTop, on_top);
 		if ( on_top > 0)
-			SetWindowPos( sys handle, HWND_TOPMOST, 0, 0, 0, 0, 
+			SetWindowPos( sys handle, HWND_TOPMOST, 0, 0, 0, 0,
 				SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 	}
 	SetWindowTextW( HANDLE, saved_caption );
@@ -1214,7 +1214,7 @@ map_tildas( WCHAR * buf, int len)
 		}
 	}
 }
-		
+
 static WCHAR *
 map_text_accel( PMenuItemReg i)
 {
@@ -1229,10 +1229,10 @@ map_text_accel( PMenuItemReg i)
 	} else {
 		l1 = strlen( i-> text);
 		text = alloc_ascii_to_wchar( i-> text, l1);
-	}      
+	}
 
 	if ( i-> accel ) {
-		c = i-> accel; 
+		c = i-> accel;
 		while (*c++) if ( *c == '&') amps++;
 		if ( i-> flags. utf8_accel ) {
 			accel = alloc_utf8_to_wchar( i-> accel, prima_utf8_length( i-> accel), &l2);
@@ -1253,10 +1253,10 @@ map_text_accel( PMenuItemReg i)
 		free(accel);
 		l2++;
 	}
-	
+
 	buf[l1 + l2] = 0;
 	map_tildas( buf, l1 + l2);
-	
+
 	return buf;
 }
 
@@ -1282,7 +1282,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 	mwd = ( PMenuWndData) malloc( sizeof( MenuWndData));
 	if ( !mwd) {
 		DestroyMenu( m);
-		return nil;  
+		return nil;
 	}
 	mwd-> menu = menu;
 	first      = i;
@@ -1438,7 +1438,7 @@ apc_window_set_client_size( Handle self, int x, int y)
 			r. top - y + ( c. bottom - c. top),
 			x + r. right  - r. left - c. right + c. left,
 			y + r. bottom - r. top  - c. bottom + c. top,
-			SWP_NOZORDER | SWP_NOACTIVATE | 
+			SWP_NOZORDER | SWP_NOACTIVATE |
 				( is_apt( aptWinPosDetermined) ? 0 : SWP_NOMOVE)
 			);
 		sys sizeLockLevel--;
@@ -1715,8 +1715,8 @@ Color
 apc_widget_map_color( Handle self, Color color)
 {
 	if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0)) color |= var widgetClass;
-	return remap_color( remap_color( color, true), false);  
-}   
+	return remap_color( remap_color( color, true), false);
+}
 
 Bool
 apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
@@ -1765,7 +1765,7 @@ apc_widget_create( Handle self, Handle owner, Bool syncPaint, Bool clipOwner,
 	if ( reset || ( var handle == nilHandle))
 		create_group( self, owner, syncPaint, clipOwner, 0, WC_CUSTOM,
 			WS_CHILD, exstyle, 1, 1, &vprf, ( HWND) parentHandle);
-	apt_set( aptWinPosDetermined); 
+	apt_set( aptWinPosDetermined);
 	if ( reset)
 	{
 		Handle oldOwner = var owner; var owner = owner;
@@ -2001,7 +2001,7 @@ subpaint_layered_widgets( HWND self, HDC ps, HDC alpha_dc, POINT screen_offset, 
 		HRGN shape;
 		Event ev;
 		POINT child_offset, size;
-		
+
 		h = hwnd_to_view(child);
 		if ( h == nilHandle || !IsWindowVisible(child) || !dsys(h) options. aptClipOwner) {
 			child = GetWindow( child, GW_HWNDPREV);
@@ -2070,7 +2070,7 @@ apc_widget_end_paint( Handle self)
 		HBITMAP alpha_bm, stock_alpha_bm;
 		HDC alpha_dc;
 		uint32_t * alpha_pixels;
-		
+
 		GetWindowRect((HWND) var handle, &r);
 		if ( r. right - r. left <= 0 || r. bottom - r. top <= 0)
 			goto SKIP_ALPHA;
@@ -2084,7 +2084,7 @@ apc_widget_end_paint( Handle self)
 		src. x = r. left;
 		src. y = r. top;
 		subpaint_layered_widgets((HWND) var handle, sys ps, alpha_dc, src, NULL);
-		
+
 		SelectObject( alpha_dc, stock_alpha_bm);
 		DeleteObject( alpha_bm );
 		DeleteDC( alpha_dc );
@@ -2103,7 +2103,7 @@ apc_widget_end_paint( Handle self)
 			ppos = &pos;
 			apt_clear(aptMovePending);
 		}
-		if ( !UpdateLayeredWindow((HWND) var handle, NULL, ppos, &size, sys ps, &src, 0, &bf, ULW_ALPHA)) 
+		if ( !UpdateLayeredWindow((HWND) var handle, NULL, ppos, &size, sys ps, &src, 0, &bf, ULW_ALPHA))
 			apiErr;
 	SKIP_ALPHA:
 		SelectObject(sys ps, sys stockBM);
@@ -2529,14 +2529,14 @@ apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Rect *cr, Bool sc
 			RECT rc;
 			UnionRect( &rc, (RECT*)pRect, (RECT*)pClipRect);
 			InvalidateRect(( HWND) var handle, &rc, false);
-		} else 
+		} else
 			InvalidateRect(( HWND) var handle, pRect ? pRect : pClipRect, false);
 		ret = scrExpose;
 	} else {
 		int rr = ScrollWindowEx(( HWND) var handle,
 			horiz, -vert, pRect, pClipRect, NULL, NULL,
 			SW_INVALIDATE | ( scrollChildren ? SW_SCROLLCHILDREN : 0)
-		); 
+		);
 		if (!rr) apiErr;
 		ret = ( rr == 1 ) ? scrNoExpose : scrExpose;
 	}
@@ -2766,7 +2766,7 @@ apc_widget_set_size( Handle self, int width, int height)
 	if ( !SetWindowPos( h, 0,
 		r. left, r. bottom - height,
 		width, height,
-		SWP_NOZORDER | SWP_NOACTIVATE | 
+		SWP_NOZORDER | SWP_NOACTIVATE |
 			( is_apt( aptWinPosDetermined) ? 0 : SWP_NOMOVE)
 		)) apiErrRet;
 	hwnd_repaint_layered( self, false );
@@ -2823,9 +2823,9 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
 		y = ppos. y;
 	} else
 		y = sz. y - y - height;
-	
+
 	apt_clear(aptMovePending);
-	if ( !SetWindowPos( h, 0, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE)) 
+	if ( !SetWindowPos( h, 0, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE))
 		apiErrRet;
 	hwnd_repaint_layered( self, false );
 	if ( sys className != WC_FRAME) sys sizeLockLevel--;
@@ -2837,7 +2837,7 @@ Bool
 apc_widget_set_size_bounds( Handle self, Point min, Point max)
 {
 	return true;
-}   
+}
 
 Bool
 apc_widget_set_shape( Handle self, Handle mask)
@@ -3061,7 +3061,7 @@ apc_menu_item_set_accel( Handle self, PMenuItemReg m)
 	apcErrClear;
 	buf = map_text_accel( m);
 	if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-						m-> id + MENU_ID_AUTOSTART, buf)) 
+						m-> id + MENU_ID_AUTOSTART, buf))
 		apiErr;
 	free( buf);
 	return rc == errOk;
@@ -3132,7 +3132,7 @@ apc_menu_item_set_image( Handle self, PMenuItemReg m)
 	flags |= MF_BITMAP;
 
 	if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
-		m-> id + MENU_ID_AUTOSTART, 
+		m-> id + MENU_ID_AUTOSTART,
 		( LPCWSTR) image_create_bitmap( m-> bitmap, NULL, NULL, BM_AUTO))) apiErrRet;
 	return true;
 }
@@ -3492,7 +3492,7 @@ duplicate_zz_string( const char * c)
 			c++;
 			continue;
 		}
-		if ( *c == ' ' || *c == '\\') 
+		if ( *c == ' ' || *c == '\\')
 			*d++ = '\\';
 		*d++ = *c++;
 	}
@@ -3528,7 +3528,7 @@ win32_openfile( const char * params)
 			/* copy \0\0-terminated string */
 			char * fb = filters;
 			int fbsz = 20477;
-			while (( params[0] || params[1]) && fbsz--) 
+			while (( params[0] || params[1]) && fbsz--)
 				*fb++ = *params++;
 			*fb = *params;
 			o. lpstrFilter = filters;
@@ -3611,7 +3611,7 @@ win32_openfile( const char * params)
 #define OFN_EXPLORER 0
 #define OFN_NODEREFERENCELINKS 0
 #define OFN_LONGNAMES 0
-#endif	    
+#endif
 			if ( stricmp( params, "EXPLORER") == 0) o. Flags |=              OFN_EXPLORER; else
 			if ( stricmp( params, "NODEREFERENCELINKS") == 0) o. Flags |=    OFN_NODEREFERENCELINKS; else
 			if ( stricmp( params, "LONGNAMES") == 0) o. Flags |=             OFN_LONGNAMES; else
@@ -3619,21 +3619,21 @@ win32_openfile( const char * params)
 			params = cp + 1;
 			if ( !pp) break;
 		}
-	} else if (( strncmp( params, "open", 4) == 0) || 
+	} else if (( strncmp( params, "open", 4) == 0) ||
 				( strncmp( params, "save", 4) == 0)) {
 		Bool ret;
 		char filename[20480] = "";
 
 		guts. focSysDialog = 1;
 		o. lpstrFile = filename;
-		ret = (strncmp( params, "open", 4) == 0) ? 
+		ret = (strncmp( params, "open", 4) == 0) ?
 			GetOpenFileName( &o) :
 			GetSaveFileName( &o);
 		if ( ret == 0) {
 			DWORD error;
 			error = CommDlgExtendedError();
 			if ( error != 0) {
-				warn("win32.OpenFile: Get%sFileName error %lu at line %d at %s\n", 
+				warn("win32.OpenFile: Get%sFileName error %lu at line %d at %s\n",
 			 		(strncmp( params, "open", 4) == 0) ? "Open" : "Save",
 					error,
 			 		__LINE__, __FILE__
@@ -3653,7 +3653,7 @@ win32_openfile( const char * params)
 	} else {
 		warn("win32.OpenFile: Unknown function %s", params);
 	}
-	
+
 	return 0;
 }
 

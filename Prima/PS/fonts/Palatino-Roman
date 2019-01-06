@@ -1,8 +1,8 @@
-('Palatino-Roman' => { 
+('Palatino-Roman' => {
   name            => 'Palatino-Roman',
   family          => 'Palatino',
   height          => 1210,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,

@@ -1,8 +1,8 @@
-('AvantGarde-BookOblique' => { 
+('AvantGarde-BookOblique' => {
   name            => 'AvantGarde-BookOblique',
   family          => 'Avant Garde',
   height          => 1177,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Normal,
   pitch           => fp::Variable,
   vector          => 1,

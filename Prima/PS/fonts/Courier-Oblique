@@ -1,8 +1,8 @@
-('Courier-Oblique' => { 
+('Courier-Oblique' => {
   name            => 'Courier-Oblique',
   family          => 'Courier',
   height          => 1055,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Normal,
   pitch           => fp::Fixed,
   vector          => 1,

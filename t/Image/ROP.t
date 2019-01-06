@@ -262,7 +262,7 @@ sub test_rop
 
 	for my $bytes ( 1, 3 ) {
  		my $subname = ($bytes * 8) . ' bits ';
-	
+
 		my $src = Prima::Icon->new(
 			width    => 8,
 			height   => 1,
@@ -271,7 +271,7 @@ sub test_rop
 			type     => im::Byte,
 			maskType => im::Byte,
 		);
-		
+
 		my $dst = Prima::Icon->new(
 			width    => 8,
 			height   => 1,
@@ -291,7 +291,7 @@ sub test_rop
 		my ( $cc, $aa ) = $dst->split;
 		$cc->type(im::Byte);
 		$aa->type(im::Byte);
-		
+
 		for ( my $i = 0; $i < @q; $i++) {
 			my $q = $q[$i];
 			my $c = pd_color( $rop, $q, $q, $q, $q );
@@ -300,7 +300,7 @@ sub test_rop
 			my $pa = $aa->pixel($i, 0);
 			is( $pc, $c, "C(($q/$q) $name ($q/$q)) = $c $subname");
 			is( $pa, $a, "A(($q/$q) $name ($q/$q)) = $a $subname");
-			
+
 			my $q2 = 255 - $q[$i];
 			$c = pd_color( $rop, $q, $q, $q2, $q2 );
 			$a = pd_alpha( $rop, $q, $q2 );

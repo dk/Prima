@@ -83,8 +83,8 @@ sub draw_text_items
 		next if $self-> {widths}-> [$i] + $self-> {offset} + $x + 1 < $clipRect-> [0];
 		$canvas-> text_out_bidi( $self-> {items}-> [$i], $x + 2 + $imgSize[0],
 			$y + $textShift - $j * $self-> {itemHeight} + 1);
-		$canvas-> put_image( $x + 1, 
-			$y + int(( $self-> {itemHeight} - $imgSize[1]) / 2) - 
+		$canvas-> put_image( $x + 1,
+			$y + int(( $self-> {itemHeight} - $imgSize[1]) / 2) -
 				$j * $self-> {itemHeight} + 1,
 			$images[ vec($self-> {vector}, $i, 1)],
 		);
@@ -149,7 +149,7 @@ sub button
 	my $current = vec( $self-> {vector}, $index, 1);
 	return $current unless defined $state;
 	$state = ( $state < 0) ? !$current : ( $state ? 1 : 0);
-	return $current if $current == $state; 
+	return $current if $current == $state;
 	vec( $self-> {vector}, $index, 1) = $state;
 	$self-> notify(q(Change), $index, $state);
 	$self-> redraw_items( $index);
@@ -185,7 +185,7 @@ Prima::ExtLists - extended functionality for list boxes
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/extlist.gif">
 
-=head1 DESCRIPTION 
+=head1 DESCRIPTION
 
 The module is intended to be a collection of list boxes with
 particular enhancements. Currently the only package is contained
@@ -211,7 +211,7 @@ Returns the new state of the button.
 =item vector VEC
 
 VEC is a vector scalar, where each bit corresponds to the check state
-of each list box item. 
+of each list box item.
 
 See also: L<perlfunc/vec>.
 
@@ -239,5 +239,5 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 L<Prima>, L<Prima::Lists>, F<examples/extlist.pl>
 
-=cut 
+=cut
 

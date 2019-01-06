@@ -37,7 +37,7 @@ produce_mask( Handle self)
 		if ( bpp <= 8)
 			color = cm_nearest_color( rgbcolor, var-> palSize, var-> palette);
 	} else if ( var-> autoMasking == amMaskIndex) {
-		if ( bpp > 8) return;	 
+		if ( bpp > 8) return;
 		color = var-> maskIndex;
 		bzero( &rgbcolor, sizeof(rgbcolor));
 	}
@@ -190,7 +190,7 @@ produce_mask( Handle self)
 				}
 		}
 colorFound:;
-	} 
+	}
 
 	/* processing transparency */
 	memset( var-> mask, 0, var-> maskSize);
@@ -290,12 +290,12 @@ Icon_autoMasking( Handle self, Bool set, int autoMasking)
 	if ( is_opt( optInDraw)) return 0;
 	my-> update_change( self);
 	return 0;
-}   
+}
 
 /*
 
 1-bit format is a true AND-mask: 0 is alpha=1, 1 is alpha=0
-8-bit format has alpha value from 0 to 255. 
+8-bit format has alpha value from 0 to 255.
 
 Note that inter-conversion between these negates the pixel values
 
@@ -309,7 +309,7 @@ Icon_convert_mask( Handle self, int type )
 	Byte colorref[256], *src = var-> mask, *dst, *ret;
 	RGBColor palette[2];
 
-	if ( type == var-> maskType ) 
+	if ( type == var-> maskType )
 		croak("invalid usage of Icon::convert_mask");
 	if ( !( ret = malloc( dstLine * var-> h))) {
 		warn("Icon::convert_mask: cannot allocate %d bytes", dstLine * var-> h);
@@ -375,10 +375,10 @@ Icon_maskColor( Handle self, Bool set, Color color)
 	if ( var-> maskColor == color) return 0;
 	var-> maskColor = color;
 	if ( is_opt( optInDraw)) return 0;
-	if ( var-> autoMasking == amMaskColor) 
+	if ( var-> autoMasking == amMaskColor)
 		my-> update_change( self);
 	return clInvalid;
-}   
+}
 
 int
 Icon_maskIndex( Handle self, Bool set, int index)
@@ -387,7 +387,7 @@ Icon_maskIndex( Handle self, Bool set, int index)
 		return var-> maskIndex;
 	var-> maskIndex = index;
 	if ( is_opt( optInDraw)) return 0;
-	if ( var-> autoMasking == amMaskIndex) 
+	if ( var-> autoMasking == amMaskIndex)
 		my-> update_change( self);
 	return -1;
 }
@@ -413,7 +413,7 @@ Icon_update_change( Handle self)
 		}
 		return;
 	}
-	
+
 	free( var-> mask);
 	if ( var-> data)
 	{
@@ -451,13 +451,13 @@ Icon_stretch( Handle self, int width, int height)
 		my->create_empty( self, 0, 0, var->type);
 		return;
 	}
-	
+
 	if ( var-> mask && var-> maskType == imbpp1 && var-> scaling > istBox ) {
 		/* upgrade to bpp8 */
 		my-> set_maskType( self, imbpp8 );
 	}
-	
-	
+
+
 	lineSize = LINE_SIZE( abs( width), var-> maskType );
 	newMask  = allocb( lineSize * abs( height));
 	if ( newMask == nil && lineSize > 0) {
@@ -472,7 +472,7 @@ Icon_stretch( Handle self, int width, int height)
 			my-> make_empty( self);
 			croak("%s", error);
 		}
-	}      
+	}
 	inherited stretch( self, width, height);
 	free( var-> mask);
 
@@ -576,7 +576,7 @@ Icon_combine( Handle self, Handle xorMask, Handle andMask)
 {
 	Bool killAM = 0;
 	int maskType;
-	
+
 	if ( !kind_of( xorMask, CImage) || !kind_of( andMask, CImage))
 		return;
 
@@ -689,7 +689,7 @@ Icon_bitmap( Handle self)
 
 	if ( !apc_sys_get_value(svLayeredWidgets))
 		return inherited bitmap(self);
-	
+
 	profile = newHV();
 	pset_H( owner,        var->owner);
 	pset_i( width,        var->w);
@@ -714,7 +714,7 @@ Icon_premultiply_alpha( Handle self, SV * alpha)
 		/* multiply with self */
 		if ( var-> maskType != imbpp8 )
 			my-> set_maskType( self, imbpp8 );
-		
+
 		img_fill_dummy( &dummy, var-> w, var-> h, imByte, var-> mask, std256gray_palette);
 		img_premultiply_alpha_map( self, (Handle) &dummy);
 

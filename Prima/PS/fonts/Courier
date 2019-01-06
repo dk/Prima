@@ -1,8 +1,8 @@
-('Courier' => { 
+('Courier' => {
   name            => 'Courier',
   family          => 'Courier',
   height          => 1055,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Italic,
   pitch           => fp::Fixed,
   vector          => 1,

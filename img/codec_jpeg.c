@@ -26,13 +26,13 @@ extern "C" {
 #endif
 
 static char * jpgext[] = { "jpg", "jpe", "jpeg", nil };
-static int    jpgbpp[] = { imbpp8 | imGrayScale, imbpp24, 0 };   
+static int    jpgbpp[] = { imbpp8 | imGrayScale, imbpp24, 0 };
 
-static char * loadOutput[] = { 
+static char * loadOutput[] = {
 	"comment",
 	"appdata",
 	nil
-};   
+};
 
 static ImgCodecInfo codec_info = {
 	"JPEG",
@@ -49,14 +49,14 @@ static ImgCodecInfo codec_info = {
 	loadOutput
 };
 
-static void * 
+static void *
 init( PImgCodecInfo * info, void * param)
 {
 	*info = &codec_info;
 	codec_info. versionMaj = JPEG_LIB_VERSION / 10;
 	codec_info. versionMin = JPEG_LIB_VERSION % 10;
 	return (void*)1;
-}   
+}
 
 static HV *
 load_defaults( PImgCodec c)
@@ -80,7 +80,7 @@ static void
 load_output_message(j_common_ptr cinfo)
 {
 	char buffer[JMSG_LENGTH_MAX];
-	PImgLoadFileInstance fi = ( PImgLoadFileInstance)( cinfo-> client_data); 
+	PImgLoadFileInstance fi = ( PImgLoadFileInstance)( cinfo-> client_data);
 	LoadRec *l = (LoadRec*)( fi-> instance);
 	if ( !l-> init) {
 		(*cinfo->err->format_message) (cinfo, buffer);
@@ -88,7 +88,7 @@ load_output_message(j_common_ptr cinfo)
 	}
 }
 
-static void 
+static void
 load_error_exit(j_common_ptr cinfo)
 {
 	LoadRec *l = (LoadRec*)((( PImgLoadFileInstance)( cinfo-> client_data))-> instance);
@@ -120,7 +120,7 @@ fill_input_buffer (j_decompress_ptr cinfo)
 {
 	unsigned long nbytes;
 	my_src_ptr src = (my_src_ptr) cinfo->src;
-	
+
 	nbytes = req_read( src->req, INPUT_BUF_SIZE, src->buffer);
 	if (nbytes <= 0) {
 		if (src->start_of_file)	/* Treat empty input file as fatal error */
@@ -131,11 +131,11 @@ fill_input_buffer (j_decompress_ptr cinfo)
 		src->buffer[1] = (JOCTET) JPEG_EOI;
 		nbytes = 2;
 	}
-	
+
 	src->pub.next_input_byte = src->buffer;
 	src->pub.bytes_in_buffer = nbytes;
 	src->start_of_file = false;
-	
+
 	return true;
 }
 
@@ -143,7 +143,7 @@ void
 skip_input_data (j_decompress_ptr cinfo, long num_bytes)
 {
 	my_src_ptr src = (my_src_ptr) cinfo->src;
-	
+
 	/* Just a dumb implementation for now.  Could use fseek() except
 		* it doesn't work on pipes.  Not clear that being smart is worth
 		* any trouble anyway --- large skips are infrequent.
@@ -182,9 +182,9 @@ static void
 custom_src( j_decompress_ptr cinfo, PImgLoadFileInstance fi)
 {
 	my_src_ptr src;
-	
+
 	cinfo->src = (struct jpeg_source_mgr *) malloc(sizeof(my_source_mgr));
-	src = (void*) cinfo-> src;			 
+	src = (void*) cinfo-> src;
 	src-> buffer = (JOCTET *) malloc( INPUT_BUF_SIZE * sizeof(JOCTET));
 	src-> pub.init_source = init_source;
 	src-> pub.fill_input_buffer = fill_input_buffer;
@@ -193,8 +193,8 @@ custom_src( j_decompress_ptr cinfo, PImgLoadFileInstance fi)
 	src-> pub.term_source = term_source;
 	src-> pub.bytes_in_buffer = 0; /* forces fill_input_buffer on first read */
 	src-> pub.next_input_byte = NULL; /* until buffer loaded */
-	
-	if ( fi-> loadExtras) { 
+
+	if ( fi-> loadExtras) {
 		int i;
 		jpeg_set_marker_processor( cinfo, JPEG_COM, j_read_comment);
 		for ( i = 1; i < 16; i++)
@@ -240,7 +240,7 @@ j_read_profile(j_decompress_ptr jpeg_info)
 	sv = hv_fetch( fp, "appdata", 7, 0);
 	if ( sv == NULL) {
 		av = newAV();
-		(void) hv_store( fp, "appdata", 7, newRV_noinc((SV*) av), 0); 
+		(void) hv_store( fp, "appdata", 7, newRV_noinc((SV*) av), 0);
 	} else {
 		if ( SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVAV) {
 	   		av = (AV*) SvRV( *sv);
@@ -260,7 +260,7 @@ j_read_comment(j_decompress_ptr jpeg_info)
 {
 	char *comment, *p;
 	int l, length;
-	
+
 	length  = j_read_octet( jpeg_info) << 8;
 	length += j_read_octet( jpeg_info);
 	if (length <= 2) return true;
@@ -275,8 +275,8 @@ j_read_comment(j_decompress_ptr jpeg_info)
 	*p = 0;
 
 	(void) hv_store(
-		((my_source_mgr *)(jpeg_info-> src))-> fp, 
-		"comment",  7, 
+		((my_source_mgr *)(jpeg_info-> src))-> fp,
+		"comment",  7,
 		newSVpv( comment, length), 0);
 	free( comment);
 
@@ -285,7 +285,7 @@ j_read_comment(j_decompress_ptr jpeg_info)
 /* end ripoff from imagemagick/coders/jpeg.c */
 
 
-static void * 
+static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l;
@@ -299,13 +299,13 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	}
 	if ( memcmp( "\xff\xd8", buf, 2) != 0) {
 		req_seek( fi-> req, 0, SEEK_SET);
-		return false;   
+		return false;
 	}
 	if ( req_seek( fi-> req, 0, SEEK_SET) < 0) return false;
 
 	fi-> stop = true;
 	fi-> frameCount = 1;
-	
+
 	l = malloc( sizeof( LoadRec));
 	if ( !l) return nil;
 	memset( l, 0, sizeof( LoadRec));
@@ -320,7 +320,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 		jpeg_destroy_decompress(&l-> d);
 		free( l);
 		return false;
-	} 
+	}
 	memcpy( l->j, j, sizeof(jmp_buf));
 	jpeg_create_decompress( &l-> d);
 	custom_src( &l-> d, fi);
@@ -337,7 +337,7 @@ Normal structure relative to APP1 marker -
 	0x0000: APP1 marker entry = 2 bytes
 	0x0002: APP1 length entry = 2 bytes
 	0x0004: Exif Identifier entry = 6 bytes
-	0x000A: Start of exif header (Byte order entry) - 4 bytes  
+	0x000A: Start of exif header (Byte order entry) - 4 bytes
 		- This is what we look for, to determine endianess.
 	0x000E: 0th IFD offset pointer - 4 bytes
 
@@ -361,7 +361,7 @@ exif_find_orientation_tag( unsigned char * c, STRLEN len, int wipe)
 	unsigned char le_sig[] = { 0x49, 0x49, 0x2a, 0x00 };
 	unsigned char be_sig[] = { 0x4d, 0x4d, 0x00, 0x2a };
 	if ( len < 36 ) return 0;
-#define ADVANCE(x) c += x; len -= x    
+#define ADVANCE(x) c += x; len -= x
 
 	if ( memcmp((void*)c, (void*)"Exif\0\0", 6) != 0 ) return 0;
 	ADVANCE(6);
@@ -537,7 +537,7 @@ exif_transform_scanline( PImage i, PImage d, Byte ** dest, int orientation)
 	}
 }
 
-static Bool   
+static Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	dPROFILE;
@@ -558,7 +558,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	jpeg_read_header( &l-> d, true);
 
 	jpeg_start_decompress( &l-> d);
-	bpp = l-> d. output_components * 8;   
+	bpp = l-> d. output_components * 8;
 	if ( bpp != 8 && bpp != 24 && bpp != 32) {
 		sprintf( fi-> errbuf, "Bit depth %d is not supported", bpp);
 		return false;
@@ -656,12 +656,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				dest -= i-> lineSize;
 			}
 			EVENT_SCANLINES_READY(fi,1,direction);
-		}   
-	}   
+		}
+	}
 	EVENT_TOPDOWN_SCANLINES_FINISHED(fi);
 	jpeg_finish_decompress(&l-> d);
 	return true;
-}   
+}
 
 
 static void
@@ -691,7 +691,7 @@ static void
 save_output_message(j_common_ptr cinfo)
 {
 	char buffer[JMSG_LENGTH_MAX];
-	PImgSaveFileInstance fi = ( PImgSaveFileInstance)( cinfo-> client_data); 
+	PImgSaveFileInstance fi = ( PImgSaveFileInstance)( cinfo-> client_data);
 	SaveRec *l = (SaveRec*)( fi-> instance);
 	if ( !l-> init) {
 		(*cinfo->err->format_message) (cinfo, buffer);
@@ -699,7 +699,7 @@ save_output_message(j_common_ptr cinfo)
 	}
 }
 
-static void 
+static void
 save_error_exit(j_common_ptr cinfo)
 {
 	SaveRec *l = (SaveRec*)((( PImgSaveFileInstance)( cinfo-> client_data))-> instance);
@@ -736,7 +736,7 @@ void
 init_destination (j_compress_ptr cinfo)
 {
 	my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
-	
+
 	/* Allocate the output buffer --- it will be released when done with image */
 	dest->buffer = (JOCTET *) malloc( OUTPUT_BUF_SIZE * sizeof(JOCTET));
 	dest->pub.next_output_byte = dest->buffer;
@@ -750,14 +750,14 @@ boolean
 empty_output_buffer (j_compress_ptr cinfo)
 {
 	my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
-	
+
 	if ( req_write(dest->req, OUTPUT_BUF_SIZE, dest->buffer) !=
 			(size_t) OUTPUT_BUF_SIZE)
 		ERREXIT(cinfo, JERR_FILE_WRITE);
-	
+
 	dest->pub.next_output_byte = dest->buffer;
 	dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
-	
+
 	return true;
 }
 
@@ -776,7 +776,7 @@ term_destination (j_compress_ptr cinfo)
 {
 	my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
 	size_t datacount = OUTPUT_BUF_SIZE - dest->pub.free_in_buffer;
-	
+
 	/* Write any data remaining in the buffer */
 	if (datacount > 0) {
 		if (req_write(dest->req, datacount, dest->buffer) != datacount)
@@ -792,7 +792,7 @@ void
 custom_dest(j_compress_ptr cinfo, PImgIORequest req)
 {
 	my_dest_ptr dest;
-	
+
 	cinfo->dest = (struct jpeg_destination_mgr *) malloc( sizeof(my_destination_mgr));
 	dest = (my_dest_ptr) cinfo->dest;
 	dest->pub.init_destination = init_destination;
@@ -809,10 +809,10 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	SaveRec * l;
 	jmp_buf j;
-	
+
 	l = malloc( sizeof( SaveRec));
 	if ( !l) return nil;
-	
+
 	memset( l, 0, sizeof( SaveRec));
 	l-> c. client_data = ( void*) fi;
 	l-> c. err = jpeg_std_error( &l-> e);
@@ -849,7 +849,7 @@ j_write_extras( j_compress_ptr j, int marker, SV * data)
 	}
 }
 
-static Bool   
+static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	dPROFILE;
@@ -858,7 +858,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	AV * appdata;
 	HV * profile;
 	jmp_buf j;
-	
+
 	l = ( SaveRec *) fi-> instance;
 	if ( setjmp( j) != 0) return false;
 
@@ -879,12 +879,12 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		if ( q < 0 || q > 100) {
 			strcpy( fi-> errbuf, "quality must be in 0..100");
 			return false;
-		}   
-		jpeg_set_quality(&l-> c, q, true /* limit to baseline-JPEG values */);      
-	}   
+		}
+		jpeg_set_quality(&l-> c, q, true /* limit to baseline-JPEG values */);
+	}
 
 	/* Optionally allow simple progressive output. */
-	if ( pexist( progressive) && pget_B( progressive)) 
+	if ( pexist( progressive) && pget_B( progressive))
 		jpeg_simple_progression(&l-> c);
 
 	if ( l-> c. input_components == 3) { /* RGB */
@@ -892,9 +892,9 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		if ( !l-> buf) {
 			strcpy( fi-> errbuf, "not enough memory");
 			return false;
-		}   
-	}                    
-	
+		}
+	}
+
 	if ( pexist( appdata)) {
 		SV * sv = pget_sv( appdata);
 		if ( !SvROK(sv) || SvTYPE(SvRV(sv)) != SVt_PVAV) {
@@ -907,7 +907,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	jpeg_start_compress( &l-> c, true);
 
 	/* write extras */
-	if ( pexist( comment)) 
+	if ( pexist( comment))
 		j_write_extras( &l-> c, JPEG_COM, pget_sv( comment));
 
 	if ( appdata) {
@@ -918,9 +918,9 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			if ( sv && *sv && SvOK( *sv))
 	     			j_write_extras( &l-> c, JPEG_APP0 + marker, *sv);
 		}
-	} 
+	}
 
-	/* write pixels */ 
+	/* write pixels */
 	{
 		Byte * src = i-> data + ( i-> h - 1) * i-> lineSize;
 		while ( l-> c.next_scanline < i-> h ) {
@@ -928,17 +928,17 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			if ( l-> buf) {
 				cm_reverse_palette(( PRGBColor) src, (PRGBColor) l-> buf, i-> w);
 				sarray[0] = l-> buf;
-			} else 
+			} else
 				sarray[0] = src;
 	 		jpeg_write_scanlines(&l-> c, sarray, 1);
 			src -= i-> lineSize;
-		}   
-	} 
+		}
+	}
 	jpeg_finish_compress( &l-> c);
 	return true;
-}   
+}
 
-static void 
+static void
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	SaveRec * l = ( SaveRec *) fi-> instance;
@@ -951,7 +951,7 @@ close_save( PImgCodec instance, PImgSaveFileInstance fi)
 	free( l);
 }
 
-void 
+void
 apc_img_codec_jpeg( void )
 {
 	struct ImgCodecVMT vmt;
@@ -959,11 +959,11 @@ apc_img_codec_jpeg( void )
 	vmt. init          = init;
 	vmt. load_defaults = load_defaults;
 	vmt. open_load     = open_load;
-	vmt. load          = load; 
-	vmt. close_load    = close_load; 
+	vmt. load          = load;
+	vmt. close_load    = close_load;
 	vmt. save_defaults = save_defaults;
 	vmt. open_save     = open_save;
-	vmt. save          = save; 
+	vmt. save          = save;
 	vmt. close_save    = close_save;
 	apc_img_register( &vmt, nil);
 }

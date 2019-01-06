@@ -1,8 +1,8 @@
-('Helvetica-Narrow-Oblique' => { 
+('Helvetica-Narrow-Oblique' => {
   name            => 'Helvetica-Narrow-Oblique',
   family          => 'Helvetica Narrow',
   height          => 1156,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Normal,
   pitch           => fp::Variable,
   vector          => 1,

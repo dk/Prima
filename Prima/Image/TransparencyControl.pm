@@ -30,7 +30,7 @@ sub init
 	$self-> {imageColors} = 0;
 	my %profile = $self-> SUPER::init(@_);
 
-	$self-> insert( qq(Prima::ImageViewer) => 
+	$self-> insert( qq(Prima::ImageViewer) =>
 		origin => [ 10, 40],
 		name => 'Panel',
 		size => [ 100, 100],
@@ -39,37 +39,37 @@ sub init
 		valignment => ta::Center,
 		delegations => [ 'MouseDown'],
 	);
-	my $p = $self-> insert( qq(Prima::Widget) => 
+	my $p = $self-> insert( qq(Prima::Widget) =>
 		origin => [ 120, 40],
 		name => 'Palette',
 		size => [ 235, 100],
 		delegations => [ 'Paint', 'MouseDown'],
 		buffered => 1,
 	);
-	my $se = $self-> insert( qq(Prima::SpinEdit) => 
+	my $se = $self-> insert( qq(Prima::SpinEdit) =>
 		origin => [ 120, 10],
 		name => 'Index',
 		size => [ 100, 20],
 		delegations => [ 'Change'],
 	);
-	$self-> insert( qq(Prima::Label) => 
+	$self-> insert( qq(Prima::Label) =>
 		origin => [ 10, 10],
 		size => [ 105, 19],
 		text => 'Color inde~x',
 		focusLink => $se,
 	);
-	
+
 	my @sz = $p-> size;
 	my $sqd = 20;
 	$sz[$_] -= 5 for 0,1;
 	while ( $sqd-- > 1) {
 		my @d = map { int($sz[$_] / $sqd)} 0, 1;
-		last if $d[0] * $d[1] >= 256;      
+		last if $d[0] * $d[1] >= 256;
 	}
 	$p-> {sqd} = $sqd;
 	$p-> {columns} = int( $sz[0] / $sqd);
 	$p-> width( 4 + $p-> {columns} * $sqd);
-	
+
 	$self-> image( $profile{image});
 	$self-> index( $profile{index});
 	return %profile;
@@ -174,7 +174,7 @@ sub Palette_Paint
 	$se = -1 unless $owner-> enabled;
 	my $bwo = ( $s > 7) ? 1 : 0;
 	for ( $i = 0; $i < $c; $i++) {
-		$canvas-> rect3d( $x, $y, $x + $s - 1, $y + $s - 1, 
+		$canvas-> rect3d( $x, $y, $x + $s - 1, $y + $s - 1,
 		$bwo + (($se == $i) ? 1 : 0),
 			( $se == $i) ? reverse(@c3d) : @c3d,
 			$e ? ( $p->[$i*3] + $p-> [$i*3+1] * 256 + $p-> [$i*3+2] * 65536) : ()
@@ -219,20 +219,20 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
-	$self-> insert( qq(Prima::CheckBox) => 
+	$self-> insert( qq(Prima::CheckBox) =>
 		origin => [ 3, 167],
 		name => 'Transparent',
 		size => [ 133, 36],
 		text => '~Transparent',
 		delegations => ['Check'],
 	);
-	$self-> insert( qq(Prima::Image::TransparencyControl) => 
+	$self-> insert( qq(Prima::Image::TransparencyControl) =>
 		origin => [ 3, 6],
 		size => [ 364, 158],
 		text => '',
 		name => 'TC',
 	);
-	$self-> insert( qq(Prima::Button) => 
+	$self-> insert( qq(Prima::Button) =>
 		origin => [ 379, 165],
 		name => 'OK',
 		size => [ 96, 36],
@@ -241,7 +241,7 @@ sub init
 		modalResult => mb::OK,
 		delegations => ['Click'],
 	);
-	$self-> insert( qq(Prima::Button) => 
+	$self-> insert( qq(Prima::Button) =>
 		origin => [ 379, 120],
 		size => [ 96, 36],
 		text => 'Cancel',
@@ -271,7 +271,7 @@ sub on_change
 	return unless $image;
 	$self-> transparent( $image-> {extras}-> {transparentColorIndex} ? 1 : 0);
 	$self-> TC-> image( $image);
-	$self-> TC-> index( exists( $image-> {extras}-> {transparentColorIndex}) ? 
+	$self-> TC-> index( exists( $image-> {extras}-> {transparentColorIndex}) ?
 		$image-> {extras}-> {transparentColorIndex} : 0);
 }
 
@@ -309,7 +309,7 @@ index selection.
 
 =head2 Properties
 
-=over 
+=over
 
 =item index INTEGER
 
@@ -317,7 +317,7 @@ Selects the palette index.
 
 =item image IMAGE
 
-Selects image which palette is displayed, and the color 
+Selects image which palette is displayed, and the color
 index can be selected from.
 
 =back

@@ -146,7 +146,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 	if ( !GetIconInfo( sys pointer, &ii))
 		apiErrRet;
 	i-> self-> create_empty( icon, guts. pointerSize. x, guts. pointerSize. y, 1);
-	if (!( dc = dc_alloc())) return false; 
+	if (!( dc = dc_alloc())) return false;
 	if ( ii. hbmColor) {
 		HDC ops = dsys( icon) ps;
 		HBITMAP obm = dsys( icon) bm;
@@ -239,7 +239,7 @@ apc_pointer_set_shape( Handle self, int sysPtrId)
 		LoadCursor( NULL, MAKEINTRESOURCE(
 		ctx_remap_def( sysPtrId, ctx_cr2IDC, true, ( Handle)IDC_ARROW)));
 
-	if ( direct_pointer_change( self)) 
+	if ( direct_pointer_change( self))
 		SetCursor( sys pointer);
 	return true;
 }
@@ -250,19 +250,19 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
 	Bool direct;
 	HCURSOR cursor;
 	objCheck false;
-	
+
 	apcErrClear;
 	direct = direct_pointer_change( self);
 	hotSpot. y = guts. pointerSize. y - hotSpot. y - 1;
 	cursor = icon ? image_make_icon_handle( icon, guts. pointerSize, &hotSpot) : nil;
 	if ( apcError) return false;
-	
+
 	if ( sys pointer2) {
 		if ( direct) SetCursor( NULL);
 		if ( !DestroyCursor( sys pointer2)) apiErr;
 	}
 	sys pointer2 = cursor;
-	
+
 	if ( sys pointerId == crUser)
 	{
 		sys pointer = sys pointer2;

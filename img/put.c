@@ -178,10 +178,10 @@ find_blt_proc( int rop )
 	return proc;
 }
 
-static Bool 
+static Bool
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop);
 
-Bool 
+Bool
 img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
 	Point srcSz, dstSz;
@@ -192,15 +192,15 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 	if ( rop == ropNoOper) return false;
 
 	if ( kind_of( src, CIcon)) {
-		/* since src is always treated as read-only, 
+		/* since src is always treated as read-only,
 			employ a nasty hack here, re-assigning
 			all mask values to data */
 		Byte * data  = PImage( src)-> data;
-		int dataSize = PImage( src)-> dataSize; 
-		int lineSize = PImage( src)-> lineSize; 
-		int palSize  = PImage( src)-> palSize; 
+		int dataSize = PImage( src)-> dataSize;
+		int lineSize = PImage( src)-> lineSize;
+		int palSize  = PImage( src)-> palSize;
 		int type     = PImage( src)-> type;
-		void *self   = PImage( src)-> self; 
+		void *self   = PImage( src)-> self;
 		RGBColor palette[2];
 
 		if ( PIcon(src)-> maskType != imbpp1) {
@@ -224,9 +224,9 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 
 		PImage( src)-> self     = self;
 		PImage( src)-> type     = type;
-		PImage( src)-> data     = data; 
-		PImage( src)-> lineSize = lineSize; 
-		PImage( src)-> dataSize = dataSize; 
+		PImage( src)-> data     = data;
+		PImage( src)-> lineSize = lineSize;
+		PImage( src)-> dataSize = dataSize;
 		PImage( src)-> palSize  = palSize;
 	} else if ( rop == ropAlphaCopy ) {
 		Bool ok;
@@ -253,7 +253,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 		return img_put((Handle)&dummy, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut);
 	} else if ( rop & ropConstantAlpha )
 		return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
-	
+
 	srcSz. x = PImage(src)-> w;
 	srcSz. y = PImage(src)-> h;
 	dstSz. x = PImage(dest)-> w;
@@ -267,11 +267,11 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 		dstH = abs( dstH);
 		srcH = -srcH;
 	}
-	
+
 	asrcW = abs( srcW);
 	asrcH = abs( srcH);
 
-	if ( 
+	if (
 		srcX >= srcSz. x || srcX + srcW <= 0 ||
 		srcY >= srcSz. y || srcY + srcH <= 0 ||
 		dstX >= dstSz. x || dstX + dstW <= 0 ||
@@ -280,10 +280,10 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 		return true;
 
 	/* check if we can do it without expensive scalings and extractions */
-	if ( 
+	if (
 		( srcW == dstW) && ( srcH == dstH) &&
-		( srcX >= 0) && ( srcY >= 0) && ( srcX + srcW <= srcSz. x) && ( srcY + srcH <= srcSz. y) 
-	) 
+		( srcX >= 0) && ( srcY >= 0) && ( srcX + srcW <= srcSz. x) && ( srcY + srcH <= srcSz. y)
+	)
 		goto NOSCALE;
 
 	if ( srcX != 0 || srcY != 0 || asrcW != srcSz. x || asrcH != srcSz. y) {
@@ -345,7 +345,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 		src = x;
 		newObject = true;
 		srcX = srcY = 0;
-	} 
+	}
 
 	if ( srcW != dstW || srcH != dstH) {
 		/* stretch & reverse */
@@ -354,11 +354,11 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 			if ( !src) goto EXIT;
 			newObject = true;
 		}
-		if ( srcW != asrcW) { 
+		if ( srcW != asrcW) {
 			dstW = -dstW;
 			srcW = asrcW;
 		}
-		if ( srcH != asrcH) { 
+		if ( srcH != asrcH) {
 			dstH = -dstH;
 			srcH = asrcH;
 		}
@@ -368,12 +368,12 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 		dstH = abs( dstH);
 	}
 
-NOSCALE:   
+NOSCALE:
 
 	if (( PImage( dest)-> type & imBPP) < 8) {
 		PImage i = ( PImage) dest;
 		int type = i-> type;
-		if (rop != ropCopyPut || i-> conversion == ictNone) { 
+		if (rop != ropCopyPut || i-> conversion == ictNone) {
 			Handle b8 = i-> self-> dup( dest);
 			PImage j  = ( PImage) b8;
 			int mask  = (1 << (type & imBPP)) - 1;
@@ -394,7 +394,7 @@ NOSCALE:
 			di = i-> data;
 
 			for ( sz = 0; sz < i-> h; sz++, dj += j-> lineSize, di += i-> lineSize) {
-				if (( type & imBPP) == 1) 
+				if (( type & imBPP) == 1)
 					bc_byte_mono_cr( dj, di, i-> w, colorref);
 				else
 					bc_byte_nibble_cr( dj, di, i-> w, colorref);
@@ -409,7 +409,7 @@ NOSCALE:
 			i-> conversion = conv;
 		}
 		goto EXIT;
-	} 
+	}
 
 	if ( PImage( dest)-> type != PImage( src)-> type) {
 		int type = PImage( src)-> type & imBPP;
@@ -421,7 +421,7 @@ NOSCALE:
 			newObject = true;
 		}
 		CImage( src)-> reset( src, PImage( dest)-> type, nil, 0);
-		if ( type < 8 && rop != ropCopyPut) { 
+		if ( type < 8 && rop != ropCopyPut) {
 			/* change 0/1 to 0x000/0xfff for correct masking */
 			int sz   = PImage( src)-> dataSize;
 			Byte * d = PImage( src)-> data;
@@ -442,7 +442,7 @@ NOSCALE:
 			if ( !src) goto EXIT;
 			newObject = true;
 		}
-		cm_fill_colorref( 
+		cm_fill_colorref(
 			PImage( src)-> palette, PImage( src)-> palSize,
 			PImage( dest)-> palette, PImage( dest)-> palSize,
 			colorref);
@@ -470,7 +470,7 @@ NOSCALE:
 		}
 		if ( dstX + dstW > dstSz. x)
 			dstW = dstSz. x - dstX;
-		if ( dstY + dstH > dstSz. y) 
+		if ( dstY + dstH > dstSz. y)
 			dstH = dstSz. y - dstY;
 	}
 
@@ -489,8 +489,8 @@ NOSCALE:
 
 		if ( proc == bitblt_copy && dest == src) /* incredible */
 			proc = bitblt_move;
-		
-		for ( y = 0; y < dstH; y++, sptr += dys, dptr += dyd) 
+
+		for ( y = 0; y < dstH; y++, sptr += dys, dptr += dyd)
 			proc( sptr, dptr, count);
 	}
 
@@ -500,12 +500,12 @@ EXIT:
 	return true;
 }
 
-void 
+void
 img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
 {
 	PImage i     = (PImage) dest;
 	Byte * data  = i-> data;
-	int lineSize = i-> lineSize; 
+	int lineSize = i-> lineSize;
 	int type     = i-> type;
 	int pixSize  = (type & imBPP) / 8;
 	PBitBltProc proc;
@@ -569,9 +569,9 @@ img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
 
 #define DEBUG_ 1
 #ifdef DEBUG
-	warn("%d/%d, blt_bytes:%d, blt_step:%d, lmask:%02x, rmask:%02x, buf:%02x%02x%02x%02x\n", 
+	warn("%d/%d, blt_bytes:%d, blt_step:%d, lmask:%02x, rmask:%02x, buf:%02x%02x%02x%02x\n",
 		x, w, blt_bytes, blt_step, lmask, rmask, blt_buffer[0], blt_buffer[1], blt_buffer[2], blt_buffer[3]);
-#endif	
+#endif
 
 	for ( j = 0; j < h; j++) {
 		int bytes = blt_bytes;
@@ -610,9 +610,9 @@ typedef dBLEND_FUNC(BlendFunc);
 static dBLEND_FUNC(blend_src_over)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = 
-				((int32_t)(*src++) << 8 ) +  
-				((int32_t)(*dst) << 8) * (255 - *src_a++) / 255 
+		register int32_t s =
+				((int32_t)(*src++) << 8 ) +
+				((int32_t)(*dst) << 8) * (255 - *src_a++) / 255
 				+ 127;
 		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
@@ -624,7 +624,7 @@ static dBLEND_FUNC(blend_xor)
 {
 	while ( bytes-- > 0 ) {
 		register int32_t s = (
-				((int32_t)(*src++) << 8) * (255 - *dst_a++) + 
+				((int32_t)(*src++) << 8) * (255 - *dst_a++) +
 				((int32_t)(*dst)   << 8) * (255 - *src_a++)
 			) / 255 + 127;
 		s >>= 8;
@@ -636,9 +636,9 @@ static dBLEND_FUNC(blend_xor)
 static dBLEND_FUNC(blend_dst_over)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = 
-				((int32_t)(*dst) << 8 ) +  
-				((int32_t)(*src++) << 8) * (255 - *dst_a++) / 255 
+		register int32_t s =
+				((int32_t)(*dst) << 8 ) +
+				((int32_t)(*src++) << 8) * (255 - *dst_a++) / 255
 				+ 127;
 		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
@@ -669,7 +669,7 @@ static dBLEND_FUNC(blend_src_in)
 /* ddd * as / 255 */
 static dBLEND_FUNC(blend_dst_in)
 {
-	while ( bytes-- > 0 ) { 
+	while ( bytes-- > 0 ) {
 		register int32_t d = (((int32_t)(*dst) << 8) * *src_a++) / 255 + 127;
 		d >>= 8;
 		*dst++ = ( d > 255 ) ? 255 : d;
@@ -701,7 +701,7 @@ static dBLEND_FUNC(blend_src_atop)
 {
 	while ( bytes-- > 0 ) {
 		register int32_t s = (
-			((int32_t)(*src++) << 8) * *dst_a++ + 
+			((int32_t)(*src++) << 8) * *dst_a++ +
 			((int32_t)(*dst) << 8) * (255 - *src_a++)
 		) / 255 + 127;
 		s >>= 8;
@@ -714,7 +714,7 @@ static dBLEND_FUNC(blend_dst_atop)
 {
 	while ( bytes-- > 0 ) {
 		register int32_t s = (
-			((int32_t)(*src++) << 8) * ( 255 - *dst_a++) + 
+			((int32_t)(*src++) << 8) * ( 255 - *dst_a++) +
 			((int32_t)(*dst) << 8) * *src_a++
 		) / 255 + 127;
 		s >>= 8;
@@ -743,15 +743,15 @@ static BlendFunc* blend_functions[] = {
 	blend_dst_atop
 };
 
-/* 
+/*
 	This is basically a lightweight pixman_image_composite() .
 	Converts images to either 8 or 24 bits before processing
 */
-static Bool 
+static Bool
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
 {
 	int bpp, bytes, sls, dls, mls, als, x, y, xrop;
-	Byte *s, *d, *m, *a; 
+	Byte *s, *d, *m, *a;
 	unsigned int src_alpha = 0, dst_alpha = 0;
 	Bool use_src_alpha = false, use_dst_alpha = false;
 	Byte *asbuf, *adbuf;
@@ -788,7 +788,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		}
 		if ( dstX + dstW > PImage(dest)-> w)
 			dstW = PImage(dest)-> w - dstX;
-		if ( dstY + dstH > PImage(dest)-> h) 
+		if ( dstY + dstH > PImage(dest)-> h)
 			dstH = PImage(dest)-> h - dstY;
 	}
 	if ( srcX + srcW > PImage(src)-> w)
@@ -802,7 +802,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	if (PImage(src)-> type != bpp || srcW != dstW || srcH != dstH ) {
 		Bool ok;
 		Handle dup;
-	
+
 		if ( srcW != PImage(src)-> w || srcH != PImage(src)-> h)
 			dup = CImage(src)-> extract( src, srcX, srcY, srcW, srcH );
 		else
@@ -839,12 +839,12 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		}
 		return ok;
 	}
-	
+
 	/* assign pointers */
-	if ( srcW != dstW || srcH != dstH || 
+	if ( srcW != dstW || srcH != dstH ||
 		PImage(src)->type != PImage(dest)->type || PImage(src)-> type != bpp)
 		croak("panic: assert failed for img_put_alpha: %s", "types and geometry");
-	
+
 	bpp = ( bpp == imByte ) ? 1 : 3;
 	sls = PImage(src)-> lineSize;
 	dls = PImage(dest)-> lineSize;
@@ -925,7 +925,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 			fill_alpha_buf( adbuf_ptr, a_ptr, dstW, bpp);
 		} else
 			adbuf_ptr = adbuf;
-		
+
 		blend_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, bytes);
 		if (a) {
 			if ( use_src_alpha )

@@ -82,7 +82,7 @@ SKIP: {
 	is( $pp[1], 10, "positioning" );
 	$c-> pointerPos( 11, 11);
 	ok( wait_flag, "simulated movement" );
-	
+
 	$c-> pointerPos( @ppx);
 	$c-> capture(0);
 }

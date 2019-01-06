@@ -88,7 +88,7 @@ AbstractMenu_dispose_menu( Handle self, void * menu)
 	if ( m-> data) sv_free( m-> data);
 	if ( m-> bitmap) {
 		if ( PObject( m-> bitmap)-> stage < csDead)
-			SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate)); 
+			SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate));
 		unprotect_object( m-> bitmap);
 	}
 	my-> dispose_menu( self, m-> next);
@@ -117,7 +117,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 	}
 	av = (AV *) SvRV( sv);
 	n = av_len( av);
-	
+
 	if ( n == -1) {
 		if ( level == 0) return nil; /* null menu */
 		warn("menu build error: empty array passed");
@@ -417,18 +417,18 @@ new_av(  PMenuItemReg m, int level)
 						if ( m-> flags. checked)    name[ --shift] = '*';
 						if ( m-> flags. autotoggle) name[ --shift] = '@';
 						sv = newSVpv( name, slen);
-					} else 
+					} else
 						sv = newSVpv( m-> variable, len);
 				} else /* has name but no flags */
 					sv = newSVpv( m-> variable, 0);
 
-				if ( m-> flags. utf8_variable) 
+				if ( m-> flags. utf8_variable)
 					SvUTF8_on( sv);
 				av_push( loc, sv);
 			} else { /* has flags but no name - autogenerate */
 				int len;
 				char buffer[20];
-				len = sprintf( buffer, "%s%s%s#%d", 
+				len = sprintf( buffer, "%s%s%s#%d",
 					m-> flags. disabled   ? "-" : "",
 					m-> flags. checked    ? "*" : "",
 					m-> flags. autotoggle ? "@" : "",
@@ -459,7 +459,7 @@ new_av(  PMenuItemReg m, int level)
 			if ( m-> down) {
 				av_push( loc, new_av( m-> down, level + 1));
 			} else if ( m-> code) {
-				av_push( loc, newSVsv( m-> code)); 
+				av_push( loc, newSVsv( m-> code));
 			} else if ( m-> perlSub) {
 				SV * sv = newSVpv( m-> perlSub, 0);
 				if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
@@ -468,7 +468,7 @@ new_av(  PMenuItemReg m, int level)
 				av_push( loc, newSVpv( "", 0));
 			}
 
-			if ( m-> data) 
+			if ( m-> data)
 				av_push( loc, newSVsv( m-> data));
 		} else {
 			/* divider */
@@ -551,7 +551,7 @@ AbstractMenu_get_items( Handle self, char * varName)
 			return nilSV;
 		}
 	} else {
-		return var-> tree ? 
+		return var-> tree ?
 			new_av( var-> tree, 0) :
 			newRV_noinc(( SV *) newAV());
 	}
@@ -608,7 +608,7 @@ AbstractMenu_accel( Handle self, Bool set, char * varName, SV * accel)
 	if ( var-> stage > csFrozen) return nilSV;
 	m = find_menuitem( self, varName, true);
 	if ( !m) return nilSV;
-	if ( !set) { 
+	if ( !set) {
 		SV * sv = newSVpv( m-> accel ? m-> accel : "", 0);
 		if ( m-> flags. utf8_accel) SvUTF8_on( sv);
 		return sv;
@@ -725,7 +725,7 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 	m = find_menuitem( self, varName, true);
 	if ( m == nil) return nilHandle;
 	if ( !m-> bitmap) return nilHandle;
-	if ( !set) { 
+	if ( !set) {
 		if ( PObject( m-> bitmap)-> stage == csDead) return nilHandle;
 		return m-> bitmap;
 	}
@@ -741,7 +741,7 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 
 	SvREFCNT_inc( SvRV(( PObject( image))-> mate));
 	protect_object( image);
-	if ( PObject( m-> bitmap)-> stage < csDead) 
+	if ( PObject( m-> bitmap)-> stage < csDead)
 		SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate));
 	unprotect_object( m-> bitmap);
 	m-> bitmap = image;
@@ -913,7 +913,7 @@ AbstractMenu_translate_accel( Handle self, char * accel)
 	while ( *accel) {
 		if ( *(accel++) == '~') {
 			switch ( *accel) {
-			case '~' : 
+			case '~' :
 				accel++;
 				break;
 			case 0:

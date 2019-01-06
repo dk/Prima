@@ -38,7 +38,7 @@ image_fill_bitmap_info( Handle self, XBITMAPINFO * bi, int bm_type)
 	int    i;
 	PImage image = ( PImage) self;
 	int    colors, depth;
-	
+
 	if ( bm_type == BM_AUTO )
 		bm_type = image_guess_bitmap_type( self );
 
@@ -134,7 +134,7 @@ image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm
 	HPALETTE old = nil, xpal = pal;
 	HDC dc;
 	PIcon i = (PIcon) self;
-	
+
 	if ( bm_type == BM_AUTO )
 		bm_type = image_guess_bitmap_type( self );
 
@@ -159,7 +159,7 @@ image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm
 
 	switch (bm_type) {
 	case BM_BITMAP:
-		if ( i-> type != imBW ) 
+		if ( i-> type != imBW )
 			warn("panic: image_create_bitmap(BM_BITMAP) called on not a imBW image");
 		bm = CreateBitmap( bi-> bmiHeader. biWidth, bi-> bmiHeader. biHeight, 1, 1, NULL);
 		if (bm)
@@ -212,16 +212,16 @@ image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr )
 		argb_bits_ptr = &argb_bits;
 
 	bm = NULL;
-	
+
 	bi  = image_fill_bitmap_info( self, &xbi, BM_LAYERED);
 	if ( !bi)
 		return NULL;
 
 	if ( i-> maskType != imbpp8 ) {
-		free_mask    = true; 
+		free_mask    = true;
 		maskLineSize = LINE_SIZE(i->w, imbpp8);
 		mask         = i->self->convert_mask( self, imbpp8 );
-		if ( !mask ) 
+		if ( !mask )
 			return NULL;
 	} else {
 		free_mask    = false;
@@ -234,14 +234,14 @@ image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr )
 
 	bi-> bmiHeader. biBitCount = 32;
 	bi-> bmiHeader. biSizeImage = bi->bmiHeader.biWidth * bi->bmiHeader. biHeight * 4;
-	bm = CreateDIBSection(compat_dc, bi, DIB_RGB_COLORS, 
+	bm = CreateDIBSection(compat_dc, bi, DIB_RGB_COLORS,
 			(LPVOID*) argb_bits_ptr, NULL, 0x0);
 	if (!bm) {
 		apiErr;
 		goto EXIT;
 	}
-	for ( 
-		y = 0, 
+	for (
+		y = 0,
 			rgb_bits  = i->data,
 			a_bits    = mask,
 			argb_bits = *argb_bits_ptr;
@@ -280,7 +280,7 @@ static XBITMAPINFO a8_info_header = {
 
 static int a_info_headers_initialized = false;
 
-static XBITMAPINFO * 
+static XBITMAPINFO *
 image_alpha_bitmap_header( int type )
 {
 	if ( !a_info_headers_initialized ) {
@@ -324,7 +324,7 @@ image_convert_to_type( Handle image, int type, Bool inplace )
 	dup = inplace ? image : CImage(image)->dup(image);
 	CImage(dup)->set_type(dup, type);
 
-	return dup;   
+	return dup;
 }
 
 #define image_convert_for_bitmap(image,inplace) image_convert_to_type(image,imBW,inplace)
@@ -385,12 +385,12 @@ image_fill_bitmap_cache( Handle self, int bm_type, Handle optimize_for_surface)
 		return;
 
 	/* free old stuff */
-	image_destroy_cache( self ); 
+	image_destroy_cache( self );
 	sys s. image. cache. cacheType = BM_NONE;
 
 	/* create new image, if any */
 	copy = image_convert_for_gdi( self );
-	if ( copy == nilHandle ) 
+	if ( copy == nilHandle )
 		copy = self;
 
 	switch (bm_type) {
@@ -418,7 +418,7 @@ image_fill_bitmap_cache( Handle self, int bm_type, Handle optimize_for_surface)
 		Object_destroy(copy);
 		return;
 	}
-	if ( copy == nilHandle ) 
+	if ( copy == nilHandle )
 		copy = self;
 
 	/* try to create HBITMAP */
@@ -463,8 +463,8 @@ argb_query_bits( Handle self)
 	if ( i-> type != imRGB || i-> maskType != imbpp8)
 		i-> self-> create_empty_icon( self, i-> w, i-> h, imRGB, imbpp8);
 
-	for ( 
-		y = 0, 
+	for (
+		y = 0,
 			rgb_bits = i->data,
 			a_bits   = i->mask,
 			argb_bits = sys s. image. argbBits;
@@ -644,21 +644,21 @@ this means that in these conditions, Or (as well as Xor and AndInverted) becomes
 	back &= 0xffffff;
 	if ( fore == 0 && back == 0 ) {
 		switch( rop) {
-			case ropAndPut:           
-			case ropNotDestAnd:    
-			case ropBlackness:         
+			case ropAndPut:
+			case ropNotDestAnd:
+			case ropBlackness:
 			case ropCopyPut:          rop = ropBlackness;      break;
-			case ropNotXor:         
-			case ropInvert:        
-			case ropNotOr:           
+			case ropNotXor:
+			case ropInvert:
+			case ropNotOr:
 			case ropNotDestOr:        rop = ropInvert;         break;
-			case ropNotSrcAnd:   
-			case ropNoOper:          
-			case ropOrPut:            
+			case ropNotSrcAnd:
+			case ropNoOper:
+			case ropOrPut:
 			case ropXorPut:           rop = ropNoOper;         break;
-			case ropNotAnd:          
-			case ropNotPut:  
-			case ropNotSrcOr:    
+			case ropNotAnd:
+			case ropNotPut:
+			case ropNotSrcOr:
 			case ropWhiteness:        rop = ropWhiteness;      break;
 		}
 	} else if ( fore != 0 && back == 0 ) {
@@ -682,21 +682,21 @@ this means that in these conditions, Or (as well as Xor and AndInverted) becomes
 		}
 	} else if ( fore != 0 && back != 0 ) {
 		switch( rop) {
-			case ropAndPut:           
-			case ropNotSrcOr:    
-			case ropNotXor:         
+			case ropAndPut:
+			case ropNotSrcOr:
+			case ropNotXor:
 			case ropNoOper:           rop = ropNoOper;         break;
-			case ropNotSrcAnd:  
-			case ropBlackness:        
-			case ropNotPut: 
+			case ropNotSrcAnd:
+			case ropBlackness:
+			case ropNotPut:
 			case ropNotOr:            rop = ropBlackness;      break;
-			case ropInvert:      
-			case ropNotAnd:        
-			case ropNotDestAnd:  
+			case ropInvert:
+			case ropNotAnd:
+			case ropNotDestAnd:
 			case ropXorPut:           rop = ropInvert;         break;
-			case ropOrPut:         
-			case ropNotDestOr:  
-			case ropWhiteness:        
+			case ropOrPut:
+			case ropNotDestOr:
+			case ropWhiteness:
 			case ropCopyPut:          rop = ropWhiteness;      break;
 		}
 	}
@@ -725,7 +725,7 @@ typedef Bool PutImageFunc( Handle self, Handle image, PutImageRequest * req);
 #define SRC_A8              4
 #define SRC_ARGB            5
 #define SRC_MAX             5
-#define SRC_NUM            SRC_MAX+1 
+#define SRC_NUM            SRC_MAX+1
 
 static Bool
 img_put_stretch_blt( HDC dst, HDC src, PutImageRequest * req)
@@ -781,7 +781,7 @@ img_put_and_mask( HDC dst, Handle image, PutImageRequest * req)
 
 	bi-> bmiHeader. biWidth  = ((PImage)image)-> w;
 	bi-> bmiHeader. biHeight = ((PImage)image)-> h;
-	
+
 	if ( StretchDIBits( dst,
 			req-> dst_x, req-> dst_y, req-> dst_w, req-> dst_h,
 			req-> src_x, req-> src_y, req-> src_w, req-> src_h,
@@ -914,13 +914,13 @@ img_put_layered_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 	uint32_t * argb_bits;
 	Byte * rgb_bits, *a_bits;
 	int y;
-	
+
 	icon = (Handle) create_object("Prima::Icon", "");
 	i = (PIcon) icon;
 
 	CIcon(icon)-> create_empty_icon( icon, req->src_w, req->src_h, imRGB, imbpp8);
-	for ( 
-		y = 0, 
+	for (
+		y = 0,
 			rgb_bits = i->data,
 			a_bits   = i->mask,
 			argb_bits = dsys(image) s. image. argbBits + req->src_y * i-> w + req-> src_x;
@@ -966,7 +966,7 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 		STYLUS_USE_TEXT( sys ps);
 		STYLUS_USE_BRUSH( sys ps);
 		return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
-	} else 
+	} else
 		return img_put_monodc_on_pixmap( sys ps, dsys(image)ps, req);
 }
 
@@ -1085,7 +1085,7 @@ img_put_a8_on_layered( Handle self, Handle image, PutImageRequest * req)
 		Object_destroy(dup);
 		return ok;
 	}
-	
+
 	dc     = GetDC(NULL);
 	buf_dc = CreateCompatibleDC(dc);
 	if ( !(buf_bm = image_create_argb_dib_section(dc, req-> dst_w, req-> dst_h, (uint32_t**) &dst))) {
@@ -1111,7 +1111,7 @@ img_put_a8_on_layered( Handle self, Handle image, PutImageRequest * req)
 	}
 
 	BitBlt( sys ps, req-> dst_x, req-> dst_y, req-> dst_w, req-> dst_h, buf_dc, 0, 0, SRCCOPY);
-	
+
 	SelectObject(buf_dc, old_bm);
 	DeleteDC(buf_dc);
 	DeleteObject(buf_bm);
@@ -1227,7 +1227,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 		dst = img_put_on_layered;
 	else
 		dst = img_put_on_pixmap;
-	
+
 	if (
 		dst == img_put_on_layered &&
 		src == SRC_IMAGE &&
@@ -1239,7 +1239,7 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 	}
 
 	if ( rop > ropNoOper ) return false;
-	
+
 	if ( dst[src] == NULL ) {
 		warn("not implemented");
 		return false;
@@ -1368,9 +1368,9 @@ image_create_argb_dib_section( HDC dc, int w, int h, uint32_t ** ptr)
 	HBITMAP bm;
 	BITMAPINFO bmi;
 	uint32_t * dummy;
-	
+
 	if ( !ptr ) ptr = &dummy;
-	
+
 	ZeroMemory(&bmi, sizeof(BITMAPINFO));
 	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bmi.bmiHeader.biWidth       = w;
@@ -1384,7 +1384,7 @@ image_create_argb_dib_section( HDC dc, int w, int h, uint32_t ** ptr)
 		return NULL;
 	}
 	return bm;
-}   
+}
 
 Bool
 apc_dbm_create( Handle self, int type)
@@ -1591,14 +1591,14 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 		mask = NULL;
 	else if ( i-> maskType == imbpp1)
 		mask = i-> mask;
-	else 
+	else
 		mask = i-> self-> convert_mask((Handle)i, imbpp1);
 	if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
 		mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
 
 	if ( !notAnIcon && i-> maskType == imbpp8)
 		free(mask);
-	
+
 	dc_free();
 
 	if ( !( r = CreateIconIndirect( &ii))) apiErr;
@@ -1634,7 +1634,7 @@ apc_prn_get_handle( Handle self)
 Bool
 apc_prn_create( Handle self) {
 	objCheck false;
-	apt_set(aptPrinter); 
+	apt_set(aptPrinter);
 	return true;
 }
 
@@ -2065,7 +2065,7 @@ ctx_prn_find_string( PrnKey * table, int table_size, long value)
 {
 	int i;
 	for ( i = 0; i < table_size; i++, table++) {
-		if ( table-> value == value) 
+		if ( table-> value == value)
 			return table-> name;
 	}
 	return nil;
@@ -2073,7 +2073,7 @@ ctx_prn_find_string( PrnKey * table, int table_size, long value)
 
 #define BADVAL -16384
 
-static long 
+static long
 ctx_prn_find_value( PrnKey * table, int table_size, char * name)
 {
 	int i;
@@ -2084,9 +2084,9 @@ ctx_prn_find_value( PrnKey * table, int table_size, char * name)
 	return BADVAL;
 }
 
-Bool  
-apc_prn_set_option( Handle self, char * option, char * value) 
-{ 
+Bool
+apc_prn_set_option( Handle self, char * option, char * value)
+{
 	long v, num;
 	char * e;
 	LPDEVMODE dev = sys s. prn. ppi. pDevMode;
@@ -2115,7 +2115,7 @@ apc_prn_set_option( Handle self, char * option, char * value)
 	} else { \
 		v = num;\
 	}
-	
+
 	switch ( v) {
 	case DM_ORIENTATION:
 		LOOKUP_INT( ctx_orientation);
@@ -2173,19 +2173,19 @@ apc_prn_set_option( Handle self, char * option, char * value)
 		return false;
 	}
 
-	return true; 
+	return true;
 }
 
 
-Bool 
-apc_prn_get_option( Handle self, char * option, char ** value) 
+Bool
+apc_prn_get_option( Handle self, char * option, char ** value)
 {
 	long v;
 	char * c = nil, buf[256];
 	LPDEVMODE dev = sys s. prn. ppi. pDevMode;
 
 	*value = nil;
-	
+
 	objCheck false;
 	if ( !dev) return false;
 
@@ -2200,7 +2200,7 @@ apc_prn_get_option( Handle self, char * option, char ** value)
 		/* return just a number */ \
 		sprintf( c = buf, "%d", value); \
 	}
-	
+
 	switch ( v) {
 	case DM_ORIENTATION:
 		LOOKUP_STR( ctx_orientation, dev-> dmOrientation);
@@ -2248,15 +2248,15 @@ apc_prn_get_option( Handle self, char * option, char ** value)
 		return false;
 	}
 
-	if ( c) 
+	if ( c)
 		*value = duplicate_string( c);
 
-	return true; 
+	return true;
 }
 
-Bool 
-apc_prn_enum_options( Handle self, int * count, char *** options) 
-{ 
+Bool
+apc_prn_enum_options( Handle self, int * count, char *** options)
+{
 	LPDEVMODE dev = sys s. prn. ppi. pDevMode;
 	int i, size;
 	PrnKey * table;
@@ -2268,8 +2268,8 @@ apc_prn_enum_options( Handle self, int * count, char *** options)
 	if ( !(*options = malloc( sizeof(char*) * 32)))
 		return false;
 
-	for ( 
-		i = 0, 
+	for (
+		i = 0,
 			size = sizeof( ctx_options) / sizeof( PrnKey),
 			table = ctx_options;
 		i < size;
@@ -2279,7 +2279,7 @@ apc_prn_enum_options( Handle self, int * count, char *** options)
 			(*options)[(*count)++] = table-> name;
 	}
 
-	return true; 
+	return true;
 }
 
 

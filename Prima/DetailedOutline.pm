@@ -229,7 +229,7 @@ sub reset_scrolls {
 		) if $self-> {vScroll};
 	}
 
-	if ( $self->{scrollTransaction} != 2) { 
+	if ( $self->{scrollTransaction} != 2) {
 		my @sz = $self-> get_active_area( 2);
 		my @widths = @{ $self->{header}->{widths} or [] };
 		my $iw = $#widths * 2;
@@ -327,7 +327,7 @@ sub autoRecalc {($#_)?$_[0]->set_auto_recalc ($_[1]):return $_[0]->{autoRecalc} 
 
 =head1 NAME
 
-Prima::DetailedOutline - a multi-column outline viewer with controlling 
+Prima::DetailedOutline - a multi-column outline viewer with controlling
 header widget.
 
 =head1 SYNOPSIS

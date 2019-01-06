@@ -20,11 +20,11 @@ use Prima qw(Application Drawable::CurvedText);
 
 my @bounds;
 my @points = (
-	10, 10, 
-	130, 30, 
-	20, 20, 
-	20, 300, 
-	50, 300, 
+	10, 10,
+	130, 30,
+	20, 20,
+	20, 300,
+	50, 300,
 );
 my @vectors = (
 	2, 2,
@@ -35,12 +35,12 @@ my @vectors = (
 );
 my @rgb = (
 	0,
-	0, 
+	0,
 	0,
 );
 my @rgb_vectors = (
 	-1.04,
-	1.79, 
+	1.79,
 	1.38,
 );
 my $capture;
@@ -57,8 +57,8 @@ my $w = Prima::MainWindow-> create(
 		my $spline = $canvas-> render_spline( [ @points, @points[0,1]]);
 		$canvas-> fillpoly( $spline);
 		if ( defined $capture) {
-			$canvas-> fill_ellipse( 
-				$points[$capture], $points[$capture+1], 
+			$canvas-> fill_ellipse(
+				$points[$capture], $points[$capture+1],
 				$aperture, $aperture
 			);
 		}
@@ -68,8 +68,8 @@ my $w = Prima::MainWindow-> create(
 
 		my $i;
 		for ( $i = 0; $i < @points; $i+=2) {
-			$canvas-> ellipse( 
-				$points[$i], $points[$i+1], 
+			$canvas-> ellipse(
+				$points[$i], $points[$i+1],
 				$aperture, $aperture
 			);
 		}
@@ -83,7 +83,7 @@ my $w = Prima::MainWindow-> create(
 		my $i;
 		$capture = undef;
 		for ( $i = 0; $i < @points; $i+=2) {
-			if ( $points[$i] > $x - $aperture && $points[$i] < $x + $aperture && 
+			if ( $points[$i] > $x - $aperture && $points[$i] < $x + $aperture &&
 				$points[$i+1] > $y - $aperture && $points[$i+1] < $y + $aperture) {
 				$capture = $i;
 				last;

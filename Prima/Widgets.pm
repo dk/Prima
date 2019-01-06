@@ -202,8 +202,8 @@ Default value: 1
 
 =item zoom INTEGER
 
-Selects zoom level for image display. 
-The acceptable value range is between 1 and 10. 
+Selects zoom level for image display.
+The acceptable value range is between 1 and 10.
 
 Default value: 1
 

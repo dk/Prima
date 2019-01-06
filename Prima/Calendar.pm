@@ -57,7 +57,7 @@ sub init
 	$self-> reset_days;
 
 	my $right_offset = $self-> font-> width * 9;
-	$self-> insert( ComboBox => 
+	$self-> insert( ComboBox =>
 		origin   => [ 5, $h - $fh * 2 - 10 ],
 		size     => [ $w - $right_offset - 15, $fh + 4],
 		name     => 'Month',
@@ -67,15 +67,15 @@ sub init
 		delegations => [ 'Change' ],
 	);
 
-	$self-> insert( Label => 
+	$self-> insert( Label =>
 		origin => [ 5, $h - $fh - 4],
 		size   => [ $w - $right_offset - 15, $fh + 2],
 		text   => '~Month',
 		focusLink => $self-> Month,
 		growMode => gm::GrowHiX | gm::GrowLoY,
 	);
-	
-	$self-> insert( SpinEdit => 
+
+	$self-> insert( SpinEdit =>
 		origin => [ $w - $right_offset - 5, $h - $fh * 2 - 10 ],
 		size   => [ $right_offset, $fh + 4],
 		name   => 'Year',
@@ -85,7 +85,7 @@ sub init
 		delegations => [ 'Change' ],
 	);
 
-	$self-> insert( Label => 
+	$self-> insert( Label =>
 		origin => [ $w - $right_offset - 5, $h - $fh - 4],
 		size   => [ $right_offset, $fh + 2],
 		text   => '~Year',
@@ -99,14 +99,14 @@ sub init
 		name        => 'Day',
 		selectable  => 1,
 		current     => 1,
-		delegations => [ qw( 
+		delegations => [ qw(
 			Paint MouseDown MouseMove MouseUp MouseWheel MouseLeave
 			KeyDown Size FontChanged Enter Leave
 		)],
 		growMode    => gm::Client,
 	);
-	
-	$self-> insert( Label => 
+
+	$self-> insert( Label =>
 		origin => [ 5, $h - $fh * 3 - 15],
 		size   => [ $w - 10, $fh + 2],
 		text   => '~Day',
@@ -121,7 +121,7 @@ sub can_use_locale
 {
 	return $posix_state if defined $posix_state;
 	undef $@;
-	eval "use POSIX q(strftime);"; 
+	eval "use POSIX q(strftime);";
 	return $posix_state = 1 unless $@;
 	return $posix_state = 0;
 }
@@ -156,7 +156,7 @@ sub day_of_week
 	$useFirstDayOfWeek = 1 unless defined $useFirstDayOfWeek;
 
 	if ( $month < 3) {
-		$month += 10; 
+		$month += 10;
 		$year--;
 	} else {
 		$month -= 2;
@@ -164,8 +164,8 @@ sub day_of_week
 	my $century = int($year / 100);
 	$year %= 100;
 	my $dow = ( int(( 26 * $month - 2) / 10) + $day + $year + int($year / 4) +
-		int($century / 4) - ( 2 * $century) - 
-		(( $useFirstDayOfWeek ? 1 : 0) * $self-> {firstDayOfWeek}) + 7) 
+		int($century / 4) - ( 2 * $century) -
+		(( $useFirstDayOfWeek ? 1 : 0) * $self-> {firstDayOfWeek}) + 7)
 		% 7;
 	return ($dow < 0) ? $dow + 7 : $dow;
 }
@@ -190,21 +190,21 @@ sub useLocale
 	$self-> Month-> text( $self-> Month-> List-> get_item_text( $self-> Month-> focusedItem));
 	$self-> reset_days;
 	my $day = $self-> Day;
-	$self-> day_reset( $day, $day-> size); 
+	$self-> day_reset( $day, $day-> size);
 	$day-> repaint;
 }
 
-sub Day_Paint 
+sub Day_Paint
 {
 	my ( $owner, $self, $canvas) = @_;
 
 	my @sz = $self-> size;
-	$canvas-> set( color => $self-> disabledColor, backColor => $self-> disabledBackColor) 
+	$canvas-> set( color => $self-> disabledColor, backColor => $self-> disabledBackColor)
 		unless $self-> enabled;
-	$canvas-> rect3d( 0, 0, $sz[0]-1, $sz[1]-1, 2, 
+	$canvas-> rect3d( 0, 0, $sz[0]-1, $sz[1]-1, 2,
 		$self-> dark3DColor, $self-> light3DColor, $self-> backColor);
 
-	my @zs = ( $self-> {X}, $self-> {Y}, $self-> {CX1}, $self-> {CY}); 
+	my @zs = ( $self-> {X}, $self-> {Y}, $self-> {CX1}, $self-> {CY});
 	my $i;
 	my $c = $canvas-> color;
 	my $b = $canvas-> backColor;
@@ -216,7 +216,7 @@ sub Day_Paint
 	$canvas-> clipRect( 2, 2, $sz[0] - 3, $sz[1] - 3);
 	for ( $i = 0; $i < 7; $i++) {
 		my $tw = $canvas->get_text_width( $owner-> {days}-> [$i] );
-		$canvas-> text_out_bidi( $owner-> {days}-> [$i], 
+		$canvas-> text_out_bidi( $owner-> {days}-> [$i],
 			$i * $zs[0] + ($self->{X} - $tw)/2, $sz[1]-$zs[1]+$zs[3],
 		);
 	}
@@ -232,14 +232,14 @@ sub Day_Paint
 			my $bk = ($d == $i) ? cl::Hilite : cl::Back;
 			$bk = $self->prelight_color($bk) if $prelight == $i;
 			$canvas-> color($bk);
-			$canvas-> bar( 
-				$dow * $zs[0] + 2, $y - $zs[3], 
+			$canvas-> bar(
+				$dow * $zs[0] + 2, $y - $zs[3],
 				( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1
 			);
 			$canvas-> color(( $d == $i) ? cl::HiliteText : cl::Fore);
 			$canvas-> text_out_bidi( $i + 1, $dow * $zs[0] + $zs[2], $y);
-			$canvas-> rect_focus( 
-				$dow * $zs[0] + 2, $y - $zs[3], 
+			$canvas-> rect_focus(
+				$dow * $zs[0] + 2, $y - $zs[3],
 				( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1
 			) if $d == $i && $self-> focused;
 			$canvas-> color( $c);
@@ -282,7 +282,7 @@ sub xy2day
 	my @zs = ( $widget-> {X}, $widget-> {Y});
 	my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
 	my @sz = $widget-> size;
-	$day = (int(($sz[1] - $y - 2) / $zs[1]) - 1) * 7 + 
+	$day = (int(($sz[1] - $y - 2) / $zs[1]) - 1) * 7 +
 		int(($x - 2) / $zs[0]) - $self-> day_of_week( 1, $month, $year) + 1;
 	return ($day <= 0 || $day > $v) ? undef : $day;
 }
@@ -377,7 +377,7 @@ sub day_reset
 sub Day_Size
 {
 	my ( $owner, $self, $ox, $oy, $x, $y) = @_;
-	$owner-> day_reset( $self, $x, $y); 
+	$owner-> day_reset( $self, $x, $y);
 }
 
 sub Day_FontChanged
@@ -410,7 +410,7 @@ sub date
 	$year = 0 if $year < 0;
 	$year = 199 if $year > 199;
 	$day = 1 if $day < 1;
-	my $v = $days_in_months[ $month] + 
+	my $v = $days_in_months[ $month] +
 		(((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
 	$day = $v if $day > $v;
 	my @od = @{$self-> {date}};
@@ -465,7 +465,7 @@ sub firstDayOfWeek
 	return if $dow == $self-> {firstDayOfWeek};
 	$self-> {firstDayOfWeek} = $dow;
 	$self-> reset_days;
-	$self-> Day-> repaint; 
+	$self-> Day-> repaint;
 }
 
 1;
@@ -498,7 +498,7 @@ Prima::Calendar - standard calendar widget
 
 Provides interactive selection of date between 1900 and 2099 years.
 The main property, L<date>, is a three-integer array, day, month, and year,
-in the format of perl localtime ( see L<perlfunc/localtime> ) - 
+in the format of perl localtime ( see L<perlfunc/localtime> ) -
 day can be in range from 1 to 31,month from 0 to 11, year from 0 to 199.
 
 =head1 API

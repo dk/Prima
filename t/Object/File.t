@@ -19,7 +19,7 @@ my ($serv_port) = sockaddr_in(getsockname($serv_sock));
 ok( $serv_sock, "Listening on port $serv_port");
 my ($handle_sock, $handle_file, $serv_file);
 
-eval { $serv_file = Prima::File->new( 
+eval { $serv_file = Prima::File->new(
 	file   => $serv_sock,
 	mask   => fe::Read,
 	onRead => sub {

@@ -20,20 +20,20 @@
 extern "C" {
 #endif
 
-static char * xpmext[] = { "xpm", 
+static char * xpmext[] = { "xpm",
 #if PRIMA_PLATFORM == apcUnix
 	"xpm.gz", "xpm.Z", /* libXpm claims that it can run gzip */
-#endif   
+#endif
 	nil };
 
-static int    xpmbpp[] = { 
+static int    xpmbpp[] = {
 	imbpp8,
 	imbpp24,
 	imbpp4,
 	imbpp1,
-	0 };   
+	0 };
 
-static char * loadOutput[] = { 
+static char * loadOutput[] = {
 	"hotSpotX",
 	"hotSpotY",
 	"hintsComment",
@@ -59,12 +59,12 @@ static ImgCodecInfo codec_info = {
 	loadOutput
 };
 
-static void * 
+static void *
 init( PImgCodecInfo * info, void * param)
 {
 	*info = &codec_info;
 	return (void*)1;
-}   
+}
 
 typedef struct _LoadRec {
 	XpmImage image;
@@ -77,7 +77,7 @@ typedef struct _LoadRec {
 #define outcm(dd) snprintf( fi-> errbuf, 256, "No enough memory (%d bytes)", (int)(dd))
 #define outc(x)   strncpy( fi-> errbuf, x, 256)
 
-static void * 
+static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l;
@@ -101,12 +101,12 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 
 	fi-> frameCount = 1;
 	fi-> stop = true;
-	
+
 	l = malloc( sizeof( LoadRec) + ( sizeof( RGBColor) + 1) * image. ncolors);
 	if ( !l) {
 		XpmFreeXpmImage( &image);
 		XpmFreeXpmInfo( &info);
-		outcm( sizeof( LoadRec) + ( sizeof( RGBColor) + 1) * image. ncolors); 
+		outcm( sizeof( LoadRec) + ( sizeof( RGBColor) + 1) * image. ncolors);
 		return nil;
 	}
 
@@ -119,7 +119,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	return l;
 }
 
-static Bool   
+static Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l = ( LoadRec *) fi-> instance;
@@ -209,12 +209,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 					av_push( av, newSViv( i));
 			pset_sv_noinc( transparentColors, newRV_noinc(( SV*) av));
 		}
-		
+
 		if ( l-> info. valuemask & XpmHotspot) {
 			pset_i( hotSpotX, l-> info. x_hotspot);
 			pset_i( hotSpotY, l-> info. y_hotspot);
 		}
-		
+
 		if ( l-> info. valuemask & XpmComments) {
 			if ( l-> info. hints_cmt)
 				pset_c( hintsComment, l-> info. hints_cmt);
@@ -233,14 +233,14 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				SV * string = newSVpv("", 0);
 				for ( j = 0; j < e-> nlines; j++) {
 					sv_catpv( string, e-> lines[j]);
-					if ( j + 1 < e-> nlines) 
+					if ( j + 1 < e-> nlines)
 						sv_catpv( string, "\n");
 				}
 				(void) hv_store( hash, e-> name, strlen( e-> name), string, 0);
 			}
 			pset_sv_noinc( extensions, newRV_noinc((SV*)hash));
 		}
-	} 
+	}
 
 
 	if ( fi-> noImageData) {
@@ -251,7 +251,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			memcpy( i-> palette, l-> palette, l-> image. ncolors * sizeof( RGBColor));
 			i-> palSize = l-> image. ncolors;
 		}
-		return true;      
+		return true;
 	}
 
 	CImage( fi-> object)-> create_empty( fi-> object, l-> image. width, l-> image. height, type);
@@ -273,9 +273,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 					if (( x % 8) == 7) d++;
 					break;
 				case imbpp4:
-					if ( x % 2) 
+					if ( x % 2)
 						*(d++) |= (*data) & 0xf;
-					else 
+					else
 						*d = ((*data) & 0xf) << 4;
 					break;
 				case imbpp8:
@@ -286,7 +286,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 					*(d++) = l-> palette[ *data]. g;
 					*(d++) = l-> palette[ *data]. r;
 					break;
-				} 
+				}
 			}
 			dst -= i-> lineSize;
 		}
@@ -306,9 +306,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		}
 		i-> autoMasking = amNone;
 	}
-	
+
 	return true;
-}   
+}
 
 static void
 close_load( PImgCodec instance, PImgLoadFileInstance fi)
@@ -316,7 +316,7 @@ close_load( PImgCodec instance, PImgLoadFileInstance fi)
 	LoadRec * l = ( LoadRec *) fi-> instance;
 	XpmFreeXpmImage( &l-> image);
 	XpmFreeXpmInfo( &l-> info);
-	free( fi-> instance);  
+	free( fi-> instance);
 }
 
 static HV *
@@ -353,23 +353,23 @@ prepare_xpm_color( void * value, int keyLen, Color * color_ptr, CalcData * cd)
 	IV v = PTR2IV(value) - 1, cpp = cd-> image-> cpp, lpp = 6;
 	char * c;
 
-	c = cd-> image-> colorTable[ v]. c_color = 
+	c = cd-> image-> colorTable[ v]. c_color =
 		(char*) cd-> image-> colorTable + cd-> delta;
 
 	if ( color != clInvalid) {
 		/* optimized snprintf( c, 8, "#%06x", (unsigned int)color); */
-		c += 7; 
+		c += 7;
 		*(c--) = 0;
 		while ( lpp--) {
 			*(c--) = hex[ color % 16];
 			color /= 16;
 		}
 		*c = '#';
-	} else 
+	} else
 		strcpy( c, "None");
 	cd-> delta += 8;
 
-	c = cd-> image-> colorTable[ v]. string = 
+	c = cd-> image-> colorTable[ v]. string =
 		(char*) cd-> image-> colorTable + cd-> delta;
 	if ( color != clInvalid) {
 		while ( cpp--) {
@@ -385,7 +385,7 @@ prepare_xpm_color( void * value, int keyLen, Color * color_ptr, CalcData * cd)
 	return false;
 }
 
-static Bool   
+static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	dPROFILE;
@@ -393,7 +393,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	XpmImage image;
 	HV * profile = fi-> objectExtras;
 	PIcon i = ( PIcon) fi-> object;
-	int ret = XpmOpenFailed; 
+	int ret = XpmOpenFailed;
 	char * extholder = nil;
 	Bool icon = kind_of( fi-> object, CIcon);
 
@@ -409,7 +409,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		return false;
 	}
 	memset( image. data, 0, i-> w * i-> h * sizeof(int));
-	
+
 	/* prepare pixels and palette */
 	if ( image. ncolors > 256) { /* reduce colors altogether */
 		CalcData cd;
@@ -418,14 +418,14 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		unsigned int *dest = image. data;
 		Byte * p = i-> data + ( i-> h - 1) * i-> lineSize;
 		Byte * mask = icon ? i-> mask + ( i-> h - 1) * i-> maskLine : nil;
-		
+
 		for ( y = 0; y < i-> h; y++) {
 			RGBColor * pp = ( RGBColor *) p;
 			for ( x = 0; x < i-> w; x++, pp++) {
 				if ( !icon || !( mask[ x >> 3] & ( 0x80 >> ( x & 7)))) {
 					Color key = ARGB(pp->r,pp->g,pp->b);
 					Handle val = (Handle) hash_fetch( hash, &key, sizeof(key));
-					if ( val == 0) 
+					if ( val == 0)
 						hash_store( hash, &key, sizeof(key), (void*)(val = (hash_count( hash) + 1)));
 					*(dest++) = val - 1;
 				} else {
@@ -463,7 +463,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		Byte * mask = icon ? i-> mask + ( i-> h - 1) * i-> maskLine : nil;
 
 		if ( mask) transcolor = image. ncolors++;
-		
+
 		for ( y = 0; y < i-> h; y++) {
 			Byte * s = p;
 			for ( x = 0; x < i-> w; x++) {
@@ -523,7 +523,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 
 
 	if ( pexist( hotSpotX) || pexist( hotSpotY)) {
-		info. valuemask |= XpmHotspot; 
+		info. valuemask |= XpmHotspot;
 		info. x_hotspot = pexist( hotSpotX) ? pget_i( hotSpotX) : 0;
 		info. y_hotspot = pexist( hotSpotY) ? pget_i( hotSpotY) : 0;
 	}
@@ -554,7 +554,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			if (( he = hv_iternext( hv)) == nil) break;
 			info. extensions[i]. name  = (char*) HeKEY( he);
 			c = (char*) SvPV( HeVAL( he), vlen);
-			info. extensions[i]. lines = (char**)c; 
+			info. extensions[i]. lines = (char**)c;
 			strholder += vlen + 1;
 			info. extensions[i]. nlines = 1;
 			while (*c) if ( *(c++) == '\n') info. extensions[i]. nlines++;
@@ -594,37 +594,37 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			}
 			*(c++) = 0;
 		}
-		info. valuemask |= XpmExtensions; 
+		info. valuemask |= XpmExtensions;
 	}
-	
+
 	ret = XpmWriteFileFromXpmImage( fi-> fileName, &image, &info);
 
-EXIT: 
+EXIT:
 	free( extholder);
 	free( info. extensions);
 	free( image. colorTable);
 	free( image. data);
 
 	return ret == XpmSuccess;
-}   
+}
 
-static void 
+static void
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 }
 
-void 
+void
 apc_img_codec_Xpm( void )
 {
 	struct ImgCodecVMT vmt;
 	memcpy( &vmt, &CNullImgCodecVMT, sizeof( CNullImgCodecVMT));
 	vmt. init          = init;
 	vmt. open_load     = open_load;
-	vmt. load          = load; 
-	vmt. close_load    = close_load; 
+	vmt. load          = load;
+	vmt. close_load    = close_load;
 	vmt. save_defaults = save_defaults;
 	vmt. open_save     = open_save;
-	vmt. save          = save; 
+	vmt. save          = save;
 	vmt. close_save    = close_save;
 	apc_img_register( &vmt, nil);
 }

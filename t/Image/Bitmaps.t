@@ -54,7 +54,7 @@ sub test_mask
 #
 	my $descr = shift;
 
-	
+
 	$mask->pixel(0,0,cl::Black);
 	$mask->pixel(1,0,cl::White);
 	$mask->pixel(2,0,cl::Black);
@@ -66,7 +66,7 @@ sub test_mask
 	$src->pixel(1,0,cl::Black);
 	$src->pixel(2,0,cl::White);
 	$src->pixel(3,0,cl::White);
-	
+
 	fill_dst($dst);
 
 	my $icon = Prima::Icon->new;
@@ -86,7 +86,7 @@ sub test_mask
 	bitop( $dst->pixel(1,1), $descr, 0,1,1);
 	bitop( $dst->pixel(2,1), $descr, 1,0,1);
 	bitop( $dst->pixel(3,1), $descr, 1,1,1);
-	
+
 	# test 2: test a8 source in paint
 }
 
@@ -174,7 +174,7 @@ sub test_dst
 	$src->begin_paint;
 	test_src( "im::RGB/paint on $target");
 	$src->end_paint;
-	
+
 	$mask = Prima::Image->create( width => 4, height => 1, type => im::BW);
 	$src = Prima::Image->create( width => 4, height => 1, type => im::BW);
 	test_mask( "1-bit grayscale xor mask / 1-bit and mask on $target");
@@ -235,7 +235,7 @@ sub test_blend
 SKIP: {
     	skip "no argb capability", 9 * 3 unless $can_argb;
 #  0011 + ALPHA(1010) = 0.1*
-# 
+#
 #  0000      0.1* 0011 ( . - fully transparent )
 #  1111 OVER 0.1* 0111 ( * - transparent white )
 
@@ -274,7 +274,7 @@ SKIP: {
 sub test_blend_native
 {
 #  0011 + ALPHA(1010) = 0.1*
-# 
+#
 #  0000      0.1* 0011 ( . - fully transparent )
 #  1111 OVER 0.1* 0111 ( * - transparent white )
 
@@ -296,7 +296,7 @@ sub test_blend_native
 
 	fill_dst($dst);
 	$dst->rop(rop::SrcOver);
-	
+
 	my $ok = 1;
 	$ok &= $dst->put_image(0,0,$icon);
 	$ok &= $dst->put_image(0,1,$icon);
@@ -304,7 +304,7 @@ sub test_blend_native
 	my $save = $dst;
 
 	$dst = $dst->dup;
-	$dst->type(im::RGB); # to convert 0xff into 0xffffff 
+	$dst->type(im::RGB); # to convert 0xff into 0xffffff
 
 	ok( $ok, "put $descr" );
 
@@ -357,7 +357,7 @@ $dst->begin_paint;
 test_dst("im::RGB");
 $dst->end_paint;
 
-# Because get_pixel from non-buffered guarantees nothing. 
+# Because get_pixel from non-buffered guarantees nothing.
 # .buffered is also not guaranteed, but for 8 pixel widget that shouldn't be a problem
 #
 # also, do test inside onPaint to make sure it's on the buffer, not on the screen
@@ -365,7 +365,7 @@ $dst = Prima::Widget->create( width => 4, height => 2, buffered => 1, onPaint =>
 	return if get_flag;
 	set_flag;
 	test_dst("widget");
-}); 
+});
 $dst->bring_to_front;
 SKIP: {
 	skip "cannot get widget to paint", 226 unless wait_flag;

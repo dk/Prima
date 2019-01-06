@@ -17,18 +17,18 @@ sub open
 {
 	shift;
 	my $topic = $_[0];
-	
+
 	$windowClass-> create unless scalar @helpWindows;
 	$helpWindows[0]-> bring_to_front;
 	$helpWindows[0]-> {text}-> update_view;
-	$helpWindows[0]-> {text}-> load_link( $topic); 
+	$helpWindows[0]-> {text}-> load_link( $topic);
 	$helpWindows[0]-> {text}-> select;
 
 	if (
-		( 
+		(
 			$::application-> get_modal_window( mt::Exclusive) ||
 			$::application-> get_modal_window( mt::Shared)
-		) && 
+		) &&
 		!$helpWindows[0]-> get_modal
 	) {
 		$helpWindows[0]-> execute;
@@ -88,7 +88,7 @@ sub link_click
 sub load_link
 {
 	my ( $self, $link) = @_;
-	
+
 	if ( $link =~ /^(http|ftp):\//) {
 		$self-> owner-> status("Starting browser for $link...");
 		if ( Prima::Application-> get_system_info-> {apc} == apc::Win32) {
@@ -101,9 +101,9 @@ sub load_link
 					$pg = "$_/$cmd", last CMD if -x "$_/$cmd";
 				}
 			}
-			$self-> owner-> status("Cannot start browser"), return 
+			$self-> owner-> status("Cannot start browser"), return
 				unless defined $pg && ! system( "$pg $link &");
-		}   
+		}
 		return;
 	}
 
@@ -156,7 +156,7 @@ sub on_keydown
 		$self-> clear_event;
 		return;
 	}
-	
+
 	$self-> SUPER::on_keydown( $code, $key, $mod, $r);
 }
 
@@ -177,7 +177,7 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
-	menuItems => 
+	menuItems =>
 		[[ '~File' => [
 			['~Open' => 'Ctrl+O' => '^O' => 'load_dialog' ],
 			['~Go to...' => 'G' => 'G' => 'goto' ],
@@ -250,7 +250,7 @@ sub init
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
 	my $t = $self-> font-> height + 2;
-	$self-> {text} = $self-> insert( 'Prima::CustomPodView' => 
+	$self-> {text} = $self-> insert( 'Prima::CustomPodView' =>
 		origin => [ 0, $t],
 		size   => [ $self-> width, $self-> height - $t * 2 - 4],
 		growMode => gm::Client,
@@ -261,13 +261,13 @@ sub init
 		$defaultVariableFont = $self-> {text}-> {fontPalette}-> [0]-> {name};
 		$defaultFixedFont    = $self-> {text}-> {fontPalette}-> [1]-> {name};
 	}
-	
+
 	my $enc = ((Prima::Application-> get_system_info-> {apc} == apc::Win32) ?
-		'Western' : 
+		'Western' :
 		'iso8859-1'
 	); # set a fall-back latin-1 encoding
 
-	$enc = $::application-> font_encodings-> [0] unless 
+	$enc = $::application-> font_encodings-> [0] unless
 		grep { $_ eq $enc } @{$::application-> font_encodings};
 	if ( defined $enc) {
 		$self-> {text}-> {fontPalette}-> [$_]-> {encoding} = $enc for 0, 1;
@@ -289,7 +289,7 @@ sub init
 			enabled => 0,
 			growMode => gm::GrowLoY,
 			onClick => sub { $self-> $lc(); }
-			
+
 		);
 		$x += $b-> width;
 	}
@@ -325,7 +325,7 @@ sub init
 			$_[0]-> stop;
 		},
 	);
-	
+
 	$self-> {forwardLinks} = [];
 	$self-> $_($profile{$_}) for qw(history);
 
@@ -337,7 +337,7 @@ sub init
 			$self-> {text}-> {defaultFontSize} = $fs;
 		}
 	}
-	
+
 	if ( exists $sec-> {FontEncoding} ) {
 		my $fe = $sec-> {FontEncoding};
 		if ( $self-> menu-> has_item( "ENC$fe")) {
@@ -349,7 +349,7 @@ sub init
 	}
 
 	if ( $sec-> {FullText}) {
-		$self-> menu-> fullView-> check; 
+		$self-> menu-> fullView-> check;
 		$self-> {text}-> topicView(0);
 	} else {
 		$self-> {text}-> topicView(1);
@@ -420,7 +420,7 @@ sub goto
 {
 	eval "use Prima::MsgBox"; die "$@\n" if $@;
 	my $self = $_[0];
-	my $ret = Prima::MsgBox::input_box('Go to location', 'Enter manpage:', ''); 
+	my $ret = Prima::MsgBox::input_box('Go to location', 'Enter manpage:', '');
 	$self-> {text}-> load_link( $ret) if defined $ret;
 }
 
@@ -438,8 +438,8 @@ sub filter_p_class
 	eval "use Prima::MsgBox"; die "$@\n" if $@;
 	my $self = $_[0];
 	my $ret = Prima::MsgBox::input_box(
-		'Run prima-class', 
-		'Enter Prima class, or leave empty to see the options list:', 
+		'Run prima-class',
+		'Enter Prima class, or leave empty to see the options list:',
 		''
 	);
 	return unless defined $ret;
@@ -537,7 +537,7 @@ sub doc_goto
 	my $topic = $self-> menu-> data( $item);
 	$self-> {text}-> load_link("topic://$topic");
 }
-	
+
 sub update_menu
 {
 	my ( $self, $loaded_ok) = @_;
@@ -557,7 +557,7 @@ sub update_menu
 			my ( $start, $end, $text, $style, $depth, $offset) = @$_;
 			$depth = $style - Prima::PodView::STYLE_HEAD_1 + $depth;
 			$text =~ s/([A-Z]<|>)//g;
-		AGAIN: 
+		AGAIN:
 			if ( $level == $depth) {
 			} elsif ( $level < $depth) {
 				my $last = $$current[-1];
@@ -566,7 +566,7 @@ sub update_menu
 				$level = $depth;
 				@$last = (@$last[0,1], $current = [[@$last],[]]);
 			} elsif ( scalar @stack) {
-				($level, $current) = @{pop @stack} 
+				($level, $current) = @{pop @stack}
 					while $level > $depth && @stack;
 			} else {
 				$level = 0;
@@ -584,7 +584,7 @@ sub update_menu
 }
 
 sub status
-{ 
+{
 	my ( $self, $text) = @_;
 	$self-> {status}-> text( $text);
 	$self-> {status}-> repaint;
@@ -634,7 +634,7 @@ sub find_text
 	$offset = $range[0] if $offset < $range[0];
 	$offset = $range[1] if $offset > $range[1];
 	return if $offset < $range[0];
-	
+
 	my ( $re, $re2, $esub);
 	$re  = '/';
 	$re .= '\\b' if $options & fdo::WordsOnly;
@@ -645,12 +645,12 @@ sub find_text
 	$re2.= 'i' unless $options & fdo::MatchCase;
 
 	my $dir = ( $options & fdo::BackwardSearch) ? 0 : 1;
-	my @opt = $dir ? ( $offset, $range[1] - $offset + 1) : 
+	my @opt = $dir ? ( $offset, $range[1] - $offset + 1) :
 					( $range[0], $offset - $range[0]);
 	my @text = split('(\n)', substr( ${$self-> {text}}, $opt[0], $opt[1]));
 	@text = reverse @text unless $dir;
 
-	
+
 	local $SIG{__WARN__}=sub{};
 	$esub = eval(<<FINDER);
 sub {
@@ -675,7 +675,7 @@ sub do_find
 	my $t = $self-> {text};
 	my $p = $self-> {findData};
 	my $flags = ( defined $search_flags) ? $search_flags : $$p{options};
-	
+
 	my ( $offset, $offset2);
 	if ( defined $self-> {find_offset}) {
 	$offset = $self-> {find_offset};
@@ -693,7 +693,7 @@ sub do_find
 		$self-> {find_offset} = $t-> info2text_offset(
 			( $flags & fdo::BackwardSearch) ?
 				(-1,-1):(0,0));
-		$self-> status("No text found - new search will continue from " . 
+		$self-> status("No text found - new search will continue from " .
 		(( $flags & fdo::BackwardSearch) ? 'bottom' : 'top'));
 		return;
 	}
@@ -727,7 +727,7 @@ sub fastfind_close
 	$self-> {text}-> selection(-1,-1,-1,-1);
 }
 
-sub fastfind 
+sub fastfind
 {
 	my ( $self, $dir) = @_;
 	return if $self-> {fastfinder}-> visible;
@@ -757,7 +757,7 @@ sub fastfind_repeat
 	) unless defined $self-> {findData};
 
 	$self-> {findData}-> {findText} = $self-> {fastfinder}-> text;
-	$dir = $self-> {fasttrack}-> [2] ? 
+	$dir = $self-> {fasttrack}-> [2] ?
 		( $dir ? fdo::BackwardSearch : 0) :
 		( $dir ? 0 : fdo::BackwardSearch);
 	$self-> do_find( $dir | fdo::RegularExpression);
@@ -791,13 +791,13 @@ sub FastFinder_Change
 	my $t = $self-> {text};
 	$t-> selection(-1,-1,-1,-1);
 	if ( length $tx) {
-		my ( $o1, $o2) = $self-> find_text( $tx, $self-> {find_offset}, 
+		my ( $o1, $o2) = $self-> find_text( $tx, $self-> {find_offset},
 			$self-> {fasttrack}-> [2] | fdo::RegularExpression);
 		return unless defined $o1;
 		$self-> select_findout( $o1, $o2);
 	} else {
-		$t-> offset( $self-> {fasttrack}-> [0]); 
-		$t-> topLine( $self-> {fasttrack}-> [1]);      
+		$t-> offset( $self-> {fasttrack}-> [0]);
+		$t-> topLine( $self-> {fasttrack}-> [1]);
 	}
 }
 
@@ -811,8 +811,8 @@ sub FastFinder_KeyDown
 	} elsif ( $key == kb::Esc) {
 		$ff-> clear_event;
 		$self-> fastfind_close;
-		$self-> {text}-> offset( $self-> {fasttrack}-> [0]); 
-		$self-> {text}-> topLine( $self-> {fasttrack}-> [1]);      
+		$self-> {text}-> offset( $self-> {fasttrack}-> [0]);
+		$self-> {text}-> topLine( $self-> {fasttrack}-> [1]);
 	}
 }
 
@@ -824,7 +824,7 @@ sub print
 
 	$prndlg = Prima::PrintSetupDialog-> create unless $prndlg;
 	return unless $prndlg-> execute;
-	
+
 	my $p = $::application-> get_printer;
 	return unless $p-> begin_doc( $self-> {text}-> pageName);
 
@@ -854,9 +854,9 @@ sub print
 		return 0 if $self-> {printing} < 0;
 		1;
 	});
-	
+
 	$self-> {text}-> resolution( @old_res);
-	
+
 	if ( $ok) {
 		$p-> end_doc;
 		$self-> status("Printing done");
@@ -868,7 +868,7 @@ sub print
 	for ( 0, 1) {
 		$self-> {text}-> {fontPalette}-> [$_]-> {name} = $font[$_] if defined $font[$_];
 	}
-	
+
 	$self-> {printing} = undef;
 }
 
@@ -878,7 +878,7 @@ sub setup_dialog
 	my $self = $_[0];
 	my $t = $self-> {text};
 	unless ( defined $setupdlg) {
-		Prima::message("$@"), return 
+		Prima::message("$@"), return
 			unless $setupdlg = Prima::VBLoad( 'Prima::HelpViewer.fm');
 	}
 
@@ -890,14 +890,14 @@ sub setup_dialog
 
 	my $fe = $t-> {fontPalette}-> [0]-> {encoding};
 	my $fonts = $::application-> fonts;
-	$setupdlg-> FixFont-> items( ['Default', sort map { 
-		$_-> {name}} grep { 
+	$setupdlg-> FixFont-> items( ['Default', sort map {
+		$_-> {name}} grep {
 			my $x;
 			$x = grep { $fe eq $_ } @{$_-> {encodings}} if $_-> {pitch} == fp::Fixed;
 			$x;
 		} @$fonts ]);
-	$setupdlg-> VarFont-> items( [ 'Default', sort map { 
-		$_-> {name}} grep { 
+	$setupdlg-> VarFont-> items( [ 'Default', sort map {
+		$_-> {name}} grep {
 			my $x = grep { $fe eq $_ } @{$_-> {encodings}};
 			$x;
 		} @$fonts ]);
@@ -909,7 +909,7 @@ sub setup_dialog
 		$t-> {colorMap}-> [ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ]);
 	$setupdlg-> CodeColor-> value( defined($sec-> {ColorCode}) ? $sec-> {ColorCode} :
 		$t-> {colorMap}-> [ Prima::PodView::COLOR_CODE_FOREGROUND & ~tb::COLOR_INDEX ]);
-	
+
 	return if $setupdlg-> execute != mb::OK;
 
 	$t-> {colorMap}-> [ Prima::PodView::COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX ] = $setupdlg-> LinkColor-> value;
@@ -925,7 +925,7 @@ sub setup_dialog
 
 	$f1 = $defaultVariableFont if $f1 eq 'Default';
 	$f2 = $defaultFixedFont if $f2 eq 'Default';
-	
+
 	if ( $f1 ne $of1 || $f2 ne $of2) {
 		$t-> {fontPalette}-> [0]-> {name} = $f1;
 		$t-> {fontPalette}-> [1]-> {name} = $f2;
@@ -941,7 +941,7 @@ sub set_encoding
 
 	my $t = $self-> {text};
 	my $m = $self-> menu;
-	
+
 	$fe =~ s/^ENC//;
 	return unless $m-> has_item( "ENC$fe");
 
@@ -1035,7 +1035,7 @@ otherwise a warning is displayed.
 =item Goto
 
 Asks for a manpage, that is searched in PATH and the installation
-directories. 
+directories.
 
 =item New window
 
@@ -1050,29 +1050,29 @@ Commands in this group call external processes
 =item prima-class
 
 prima-class is Prima utility for displaying the widget class hierachies.
-The command asks for Prima class to display the hierachy information 
+The command asks for Prima class to display the hierachy information
 for.
 
 =back
 
 =item Print
 
-Provides a dialog, when the user can select the appropriate 
+Provides a dialog, when the user can select the appropriate
 printer device and its options.
 
-Prints the current topic to the selected printer. 
+Prints the current topic to the selected printer.
 
 If L<Full text view> menu item is checked, prints the whole manpage.
 
 =item Close window
 
-Closes the window. 
+Closes the window.
 
 =item Close all windows
 
 Closes all help viewer windows.
 
-=back 
+=back
 
 =item View
 
@@ -1112,7 +1112,7 @@ character keys ?,/,n,N bound to the commands below:
 
 =item Forward
 
-Presents an input line where a text can be entered; the text search is 
+Presents an input line where a text can be entered; the text search is
 performed parallel to the input.
 
 =item Backward

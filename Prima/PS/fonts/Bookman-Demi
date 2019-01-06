@@ -1,8 +1,8 @@
-('Bookman-Demi' => { 
+('Bookman-Demi' => {
   name            => 'Bookman-Demi',
   family          => 'Bookman',
   height          => 1184,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,

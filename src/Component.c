@@ -58,7 +58,7 @@ Component_setup( Handle self)
 	ev. gen. source = self;
 	my-> message( self, &ev);
 
-	if ( var-> owner) {   
+	if ( var-> owner) {
 		ev. cmd = cmChildEnter;
 		ev. gen. source = var-> owner;
 		ev. gen. H      = self;
@@ -88,8 +88,8 @@ void
 Component_cleanup( Handle self)
 {
 	Event ev = {cmDestroy};
-	
-	if ( var-> owner) {   
+
+	if ( var-> owner) {
 		Event ev = {cmChildLeave};
 		ev. gen. source = var-> owner;
 		ev. gen. H      = self;
@@ -130,7 +130,7 @@ free_eventref( Handle self, Handle * org)
 void
 Component_done( Handle self)
 {
-	if ( var-> owner) 
+	if ( var-> owner)
 		CComponent( var-> owner)-> detach( var-> owner, self, false);
 	if ( var-> eventIDs) {
 		int i;
@@ -268,7 +268,7 @@ Component_set( Handle self, HV * profile)
 
 		my-> migrate( self, owner);
 		var-> owner = owner;
-		pdelete( owner); 
+		pdelete( owner);
 
 		if ( oldOwner != owner) {
 			Event ev;
@@ -278,7 +278,7 @@ Component_set( Handle self, HV * profile)
 			ev. gen. H      = self;
 			if ( owner)
 				CComponent( owner)-> message( owner, &ev);
-			
+
 			ev. cmd = cmChangeOwner;
 			ev. gen. source = self;
 			ev. gen. H      = oldOwner;
@@ -311,7 +311,7 @@ ForceProcess:
 	} else if ( var-> stage == csConstructing) {
 		if ( var-> evQueue == nil)
 			croak("Object set twice to constructing stage");
-Constructing:      
+Constructing:
 		switch ( event-> cmd & ctQueueMask) {
 		case ctDiscardable:
 			break;
@@ -461,7 +461,7 @@ int
 Component_is_owner( Handle self, Handle objectHandle)
 {
 	int depth = 1;
-	if ( !objectHandle || !kind_of( objectHandle, CComponent)) 
+	if ( !objectHandle || !kind_of( objectHandle, CComponent))
 		return 0;
 	if ( objectHandle == self) return -1;
 	while ( PComponent(objectHandle)-> owner) {
@@ -556,7 +556,7 @@ Component_validate_owner( Handle self, Handle * owner, HV * profile)
 
 	if ( *owner != nilHandle) {
 		Handle x = *owner;
-		
+
 		if (((( PObject) x)-> stage > csNormal) || !kind_of( x, CComponent))
 			return false;
 
@@ -617,9 +617,9 @@ XS( Component_event_hook_FROMPERL)
 	if ( !SvROK( hook) || ( SvTYPE( SvRV( hook)) != SVt_PVCV)) {
 		warn("Not a CODE reference passed to Prima::Component::event_hook");
 		PUTBACK;
-		return; 
+		return;
 	}
-		
+
 	if ( eventHook) sv_free( eventHook);
 	eventHook = newSVsv( hook);
 	PUTBACK;
@@ -673,7 +673,7 @@ XS( Component_notify_FROMPERL)
 			CLOSE_G_EVAL;
 			exception_remember(SvPV_nolen( GvSV( PL_errgv)));
 			return;
-		} 
+		}
 		CLOSE_G_EVAL;
 		SPAGAIN;
 		flag = POPi;
@@ -796,7 +796,7 @@ XS( Component_notify_FROMPERL)
 			free( sequence);
 			exception_remember(SvPV_nolen( GvSV( PL_errgv)));
 			return;
-		} 
+		}
 		CLOSE_G_EVAL;
 		SPAGAIN;
 		FREETMPS;
@@ -873,7 +873,7 @@ XS( Component_get_components_FROMPERL)
 		count = var-> components-> count;
 		list  = var-> components-> items;
 		EXTEND( sp, count);
-		for ( i = 0; i < count; i++) 
+		for ( i = 0; i < count; i++)
 			PUSHs( sv_2mortal( newSVsv((( PAnyObject) list[ i])-> mate)));
 	}
 	PUTBACK;

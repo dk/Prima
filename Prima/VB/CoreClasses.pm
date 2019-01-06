@@ -245,7 +245,7 @@ sub prf_types
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
 		bool    => [qw(flat vertical default checkable checked autoRepeat autoHeight autoWidth)],
-		uiv     => [qw(glyphs borderWidth defaultGlyph hiliteGlyph disabledGlyph pressedGlyph 
+		uiv     => [qw(glyphs borderWidth defaultGlyph hiliteGlyph disabledGlyph pressedGlyph
 			holdGlyph imageScale )],
 		modalResult  => ['modalResult'],
 		icon    => ['image',],
@@ -552,8 +552,8 @@ sub on_paint
 	my $c = $self-> text;
 	if ( length( $c) > 0) {
 		$canvas-> color( $clr[1]);
-		$canvas-> bar  ( 
-			8, $size[1] - $fh - 1, 
+		$canvas-> bar  (
+			8, $size[1] - $fh - 1,
 			16 + $canvas-> get_text_width( $c), $size[1] - 1
 		);
 		$canvas-> color( $clr[0]);
@@ -570,7 +570,7 @@ sub paint_exterior
 	my ( $self, $canvas) = @_;
 	my @sz = $canvas-> size;
 	my $cl = $self-> color;
-	my ( $bw, $hs, $vs, $ahs, $avs) = 
+	my ( $bw, $hs, $vs, $ahs, $avs) =
 		$self-> prf(qw( borderWidth hScroll vScroll autoHScroll autoVScroll));
 	$hs ||= $ahs;
 	$vs ||= $avs;
@@ -637,7 +637,7 @@ sub prf_types
 	my $pt = $_[ 0]-> SUPER::prf_types;
 	my %de = (
 		bool    => [qw(autoWidth vScroll hScroll multiSelect extendedSelect
-				autoHeight integralWidth integralHeight multiColumn 
+				autoHeight integralWidth integralHeight multiColumn
 				autoHScroll autoVScroll drawGrid vertical)],
 		uiv     => [qw(itemHeight itemWidth focusedItem borderWidth offset topItem)],
 		color   => [qw(gridColor)],
@@ -1170,12 +1170,12 @@ sub on_paint
 	$canvas-> line( 1, 0, $size[0], $size[1] - 1);
 
 	$canvas-> color( $clr[0]);
-	$canvas-> fillpoly([ 
+	$canvas-> fillpoly([
 		$size[0] * 0.2, $size[1] * 0.65,
 		$size[0] * 0.3, $size[1] * 0.77,
 		$size[0] * 0.4, $size[1] * 0.65
 	]);
-	$canvas-> fillpoly([ 
+	$canvas-> fillpoly([
 		$size[0] * 0.6, $size[1] * 0.35,
 		$size[0] * 0.7, $size[1] * 0.27,
 		$size[0] * 0.8, $size[1] * 0.35
@@ -1279,20 +1279,20 @@ sub on_paint
 	my ($x, $y) = $canvas-> size;
 	my ($i, $relief, $v, $val, $min, $max, $l3, $d3) =
 		$self-> prf(qw(indent relief vertical value min max light3DColor dark3DColor));
-	my ($clComplete,$clHilite,$clBack,$clFore) = 
+	my ($clComplete,$clHilite,$clBack,$clFore) =
 		($self-> prf('hiliteBackColor', 'hiliteColor'), $self-> backColor, $self-> color);
 	my $complete = $v ? $y : $x;
 	my $ediv = $max - $min;
 	$ediv = 1 unless $ediv;
 	$complete = int(($complete - $i*2) * $val / $ediv + 0.5);
 	$canvas-> color( $clComplete);
-	$canvas-> bar ( $v ? 
-		($i, $i, $x-$i-1, $i+$complete) : 
+	$canvas-> bar ( $v ?
+		($i, $i, $x-$i-1, $i+$complete) :
 		( $i, $i, $i + $complete, $y-$i-1)
 	);
 	$canvas-> color( $clBack);
-	$canvas-> bar ( $v ? 
-		($i, $i+$complete+1, $x-$i-1, $y-$i-1) : 
+	$canvas-> bar ( $v ?
+		($i, $i+$complete+1, $x-$i-1, $y-$i-1) :
 		( $i+$complete+1, $i, $x-$i-1, $y-$i-1)
 	);
 	# draw the border
@@ -1329,13 +1329,13 @@ sub on_paint
 	}
 	else
 	{
-		$canvas-> clipRect( $v ? 
-			( 0, 0, $x, $i + $complete) : 
+		$canvas-> clipRect( $v ?
+			( 0, 0, $x, $i + $complete) :
 			( 0, 0, $i + $complete, $y));
 		$canvas-> color( $clHilite);
 		$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
-		$canvas-> clipRect( $v ? 
-			( 0, $i + $complete + 1, $x, $y) : 
+		$canvas-> clipRect( $v ?
+			( 0, $i + $complete + 1, $x, $y) :
 			( $i + $complete + 1, 0, $x, $y));
 		$canvas-> color( $clFore);
 		$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
@@ -1684,7 +1684,7 @@ sub act_profile
 	);
 }
 
-sub repage 
+sub repage
 {
 	$_[0]-> {pageIndex} = -1; # force repage
 	$_[0]-> prf_pageIndex($_[0]-> prf('pageIndex'));
@@ -1844,14 +1844,14 @@ sub on_paint
 		$canvas-> text_out_bidi( $_, $x + 5, $y);
 		my $tx = $canvas-> get_text_width( $_);
 		$canvas-> polyline( $topMost ? [
-			$x, 2, 
-			$x + 5, $sz[1] - 2, 
-			$x + $tx + 5, $sz[1] - 2, 
+			$x, 2,
+			$x + 5, $sz[1] - 2,
+			$x + $tx + 5, $sz[1] - 2,
 			$x + $tx + 10, 2
 		] : [
-			$x, $sz[1] - 2, 
-			$x + 5, 2, 
-			$x + $tx + 5, 2, 
+			$x, $sz[1] - 2,
+			$x + 5, 2,
+			$x + $tx + 5, 2,
 			$x + $tx + 10, $sz[1] - 2
 		]);
 		$x += $tx + 20;
@@ -1910,38 +1910,38 @@ sub on_paint
 	my @tabs = @{$self-> prf('tabs')};
 	my $earx = 16;
 
-	my ( $page, $last, $x, $maxx, $ix) = 
+	my ( $page, $last, $x, $maxx, $ix) =
 		(0,'', $earx * 3, $sz[0] - $earx * 3 - 1, $self-> prf('pageIndex'));
 	my $y = $self-> prf('orientation') ? 0 : $sz[1] - $mh;
 	for ( @tabs) {
 		next unless $page++ >= $ix;
 		next if $_ eq $last;
 		$last = $_;
-		
+
 		my $w = $canvas-> get_text_width( $last);
 		$canvas-> text_out_bidi( $last, $x + $earx + 2, $y + $fh/2 + 2);
 		$canvas-> rectangle( $x+1, $y + $fh/2+1, $x + $earx * 2 + $w + 2, $y + $fh*3/2+2);
-		$canvas-> rectangle( $x, $y + $fh/2, $x + $earx * 2 + $w + 3, $y + $fh*3/2+3) 
+		$canvas-> rectangle( $x, $y + $fh/2, $x + $earx * 2 + $w + 3, $y + $fh*3/2+3)
 			if $page == $ix+1;
 		$x += $w + $earx * 2 + 4;
 		last if $x > $maxx;
 	}
-	$canvas-> rect3d( 
-		$earx/2, $y + $fh/2, 
-		$earx * 2.5, $y + $fh * 3/2+4, 
+	$canvas-> rect3d(
+		$earx/2, $y + $fh/2,
+		$earx * 2.5, $y + $fh * 3/2+4,
 		2, @c3d, $canvas-> backColor);
-	$canvas-> rect3d( 
-		$maxx + $earx/2, $y + $fh/2, 
-		$maxx + $earx * 2.5, $y + $fh * 3/2+4, 
+	$canvas-> rect3d(
+		$maxx + $earx/2, $y + $fh/2,
+		$maxx + $earx * 2.5, $y + $fh * 3/2+4,
 		2, @c3d, $canvas-> backColor);
 	$canvas-> fillpoly([
-		$earx, $y + $fh, 
-		$earx*2, $y + $fh*0.5+3, 
+		$earx, $y + $fh,
+		$earx*2, $y + $fh*0.5+3,
 		$earx*2, $y + $fh*1.5-1
 	]);
 	$canvas-> fillpoly([
-		$maxx + $earx*2, $y + $fh, 
-		$maxx + $earx, $y + $fh*0.5+3, 
+		$maxx + $earx*2, $y + $fh,
+		$maxx + $earx, $y + $fh*0.5+3,
 		$maxx + $earx, $y + $fh*1.5-1
 	]);
 
@@ -1983,7 +1983,7 @@ sub on_mousedown
 sub prf_tabs    { $_[0]-> repaint; }
 sub prf_orientation { $_[0]-> repaint }
 sub prf_style { $_[0]-> repaint }
-sub prf_pageIndex { 
+sub prf_pageIndex {
 	$_[0]-> SUPER::prf_pageIndex( $_[1]);
 	$_[0]-> repaint;
 }
@@ -2061,7 +2061,7 @@ sub prf_types
 		string => ['headerClass'],
 		bool   => ['clickable', 'dragable', 'vertical', 'scalable'],
 	);
-	$_[0]-> prf_types_delete( $pt, qw(items)); 
+	$_[0]-> prf_types_delete( $pt, qw(items));
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;
 }
@@ -2070,7 +2070,7 @@ sub prf_adjust_default
 {
 	my ( $self, $p, $pf) = @_;
 	$self-> SUPER::prf_adjust_default( $p, $pf);
-	delete $pf-> {$_} for qw ( pressed headerProfile headerDelegations multiColumn autoWidth 
+	delete $pf-> {$_} for qw ( pressed headerProfile headerDelegations multiColumn autoWidth
 	vertical offset pressed gridColor);
 }
 
@@ -2092,15 +2092,15 @@ sub on_paint
 			my $j;
 			for ( $j = 0; $j < $c; $j++) {
 				my $ww = $w[$j];
-				$ww = $canvas-> get_text_width( $h[$j]) 
+				$ww = $canvas-> get_text_width( $h[$j])
 					if !(defined($ww)) || !($ww =~ m/^\s*\d+\s*$/);
 				my @z = ( $z, $r[1], ( $z + $ww > $r[2]) ? $r[2] : $z + $ww, $r[3]);
 				$z[2]++; $canvas-> rectangle( @z); $z[2]--;
-				$canvas-> draw_text( join("\n", $h[$j], map { 
-					defined($i[$_]-> [$j]) ? $i[$_]-> [$j] : '' 
-					} 0..$#i), 
-					@z, 
-					dt::NoWordWrap | dt::NewLineBreak | dt::Left | 
+				$canvas-> draw_text( join("\n", $h[$j], map {
+					defined($i[$_]-> [$j]) ? $i[$_]-> [$j] : ''
+					} 0..$#i),
+					@z,
+					dt::NoWordWrap | dt::NewLineBreak | dt::Left |
 						dt::Top | dt::UseClip
 				);
 				$z += $ww + 1;
@@ -2111,15 +2111,15 @@ sub on_paint
 	$self-> common_paint($canvas);
 }
 
-sub prf_items   
-{ 
+sub prf_items
+{
 	my ( $self, $data) = @_;
 	my $c = $self-> prf('columns');
 	for ( @$data) {
 		next if scalar @$_ >= $c;
 		push( @$_, ('') x ( $c - scalar @$_));
 	}
-	$self-> repaint; 
+	$self-> repaint;
 }
 
 sub prf_columns { $_[0]-> prf_items( $_[0]-> prf('items')); }
@@ -2190,8 +2190,8 @@ sub prf_events
 		$_[0]-> SUPER::prf_events,
 		onSelectCell  => 'my ( $self, $column, $row) = @_;',
 		onDrawCell    => <<DRAWCELL,
-my ( \$self, \$canvas, 
-     \$column, \$row, \$indent, 
+my ( \$self, \$canvas,
+     \$column, \$row, \$indent,
      \$sx1, \$sy1, \$sx2, \$sy2,
      \$cx1, \$cy1, \$cx2, \$cy2,
      \$selected, \$focused, \$prelight
@@ -2245,15 +2245,15 @@ sub on_paint
 		my $lowline = $r[3] - $r * $f;
 		$lowline = $r[1] if $lowline < $r[1];
 		for ( $j = 0; $j < $c; $j++) {
-			my $ww = $canvas-> get_text_width( 
+			my $ww = $canvas-> get_text_width(
 				defined($i[0]-> [$j]) ? $i[0]-> [$j] : ''
 			);
 			my @z = ( $z, $r[1], ( $z + $ww > $r[2]) ? $r[2] : $z + $ww, $r[3]);
 			push @polyline, $z[2]+1, $lowline, $z[2]+1, $r[3];
-			$canvas-> draw_text( join("\n", map { 
-				defined($i[$_]-> [$j]) ? $i[$_]-> [$j] : '' 
-				} 0..($r-1)), 
-				@z, 
+			$canvas-> draw_text( join("\n", map {
+				defined($i[$_]-> [$j]) ? $i[$_]-> [$j] : ''
+				} 0..($r-1)),
+				@z,
 				dt::NoWordWrap | dt::NewLineBreak | dt::Left | dt::Top | dt::UseClip
 			);
 			$z += $ww + 1;
@@ -2266,8 +2266,8 @@ sub on_paint
 	$self-> common_paint($canvas);
 }
 
-sub prf_cells 
-{ 
+sub prf_cells
+{
 	my ( $self, $data) = @_;
 	my $c = $self-> prf('columns');
 	my $r = $self-> prf('rows');
@@ -2279,8 +2279,8 @@ sub prf_cells
 		$r -= @$data;
 		push @$data, [('') x $c] while $r--;
 	}
-		
-	$self-> repaint; 
+
+	$self-> repaint;
 }
 
 sub prf_columns { $_[0]-> prf_cells( $_[0]-> prf('cells')); }

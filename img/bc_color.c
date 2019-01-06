@@ -335,7 +335,7 @@ bc_nibble_mono_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int
 			EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
 		}
 		*(dest++) = dst;
-	}   
+	}
 	count &= 7;
 	if ( count) {
 		Byte c, dst = 0, shift = 8;
@@ -354,7 +354,7 @@ bc_nibble_mono_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int
 		}
 		*(dest++) = dst;
 	}
-}   
+}
 
 /* map 16 */
 void
@@ -427,7 +427,7 @@ bc_nibble_nibble_ed( Byte * source, Byte * dest, int count, PRGBColor palette, i
 	}
 	if ( tail)
 	{
-		Byte c = *source >> 4; 
+		Byte c = *source >> 4;
 		EDIFF_BEGIN_PIXEL(palette[c].r, palette[c].g, palette[c].b);
 		*dest = (( r > 127) * 4 + (g > 127) * 2 + (b > 127)) << 4;
 		EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
@@ -611,7 +611,7 @@ bc_byte_mono_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int *
 		}
 		*dest = dst;
 	}
-}   
+}
 
 /* 256-> 16 */
 void
@@ -684,7 +684,7 @@ bc_byte_nibble_ed( Byte * source, Byte * dest, int count, PRGBColor palette, int
 	}
 	if ( tail)
 	{
-		Byte c = *source++; 
+		Byte c = *source++;
 		EDIFF_BEGIN_PIXEL(palette[c].r, palette[c].g, palette[c].b);
 		*dest = (( r > 127) * 4 + (g > 127) * 2 + (b > 127)) << 4;
 		EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
@@ -735,7 +735,7 @@ bc_byte_cr( register Byte * source, register Byte * dest, register int count, re
 
 /* 256, remap one palette to another */
 void
-bc_byte_op( Byte * source, Byte * dest, int count, U16 * tree, 
+bc_byte_op( Byte * source, Byte * dest, int count, U16 * tree,
 				PRGBColor src_palette, PRGBColor dst_palette, int * err_buf)
 {
 	dEDIFF_ARGS;
@@ -745,7 +745,7 @@ bc_byte_op( Byte * source, Byte * dest, int count, U16 * tree,
 		PRGBColor src_pal = src_palette + *(source++);
 		EDIFF_BEGIN_PIXEL(src_pal->r,src_pal->g,src_pal->b);
 		while ( 1) {
-			index = (((r >> shift) & 3) << 4) + 
+			index = (((r >> shift) & 3) << 4) +
 				(((g >> shift) & 3) << 2) +
 				((b >> shift) & 3);
 			if ( tree[ table + index] & PAL_REF) {
@@ -757,7 +757,7 @@ bc_byte_op( Byte * source, Byte * dest, int count, U16 * tree,
 				break;
 			}
 		}
-	} 
+	}
 }
 
 /* 256, remap one palette to another, not dithered */
@@ -768,7 +768,7 @@ bc_byte_nop( Byte * source, Byte * dest, int count, U16 * tree, PRGBColor src_pa
 		int table = 0, shift = 6, index;
 		PRGBColor src_pal = src_palette + *(source++);
 		while ( 1) {
-			index = (((src_pal->r >> shift) & 3) << 4) + 
+			index = (((src_pal->r >> shift) & 3) << 4) +
 				(((src_pal->g >> shift) & 3) << 2) +
 				((src_pal->b >> shift) & 3);
 			if ( tree[ table + index] & PAL_REF) {
@@ -779,7 +779,7 @@ bc_byte_nop( Byte * source, Byte * dest, int count, U16 * tree, PRGBColor src_pa
 				break;
 			}
 		}
-	} 
+	}
 }
 
 /* 256-> gray */
@@ -897,7 +897,7 @@ bc_graybyte_nibble_ed( Byte * source, Byte * dest, int count, int * err_buf)
 		*dest = r & 0xf0;
 		EDIFF_END_PIXEL_EX(rm,rm,rm);
 	}
-}   
+}
 
 /* gray-> rgb */
 void
@@ -993,7 +993,7 @@ bc_rgb_mono_ed( Byte * source, Byte * dest, int count, int * err_buf)
 		}
 		*dest = dst;
 	}
-}   
+}
 
 /* rgb -> nibble, no halftoning */
 Byte
@@ -1087,13 +1087,13 @@ bc_rgb_nibble_ed( Byte * source, Byte * dest, int count, int * err_buf)
 		EDIFF_BEGIN_PIXEL(*(source++), *(source++), *(source++));
 		*dest++ = dst + (( r > 127) * 4 + (g > 127) * 2 + (b > 127));
 		EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
-	}   
+	}
 	if ( tail) {
 		EDIFF_BEGIN_PIXEL(*(source++), *(source++), *(source++));
 		*dest++ = (( r > 127) * 4 + (g > 127) * 2 + (b > 127)) << 4;
 		EDIFF_END_PIXEL(( r > 127) ? 255 : 0, ( g > 127) ? 255 : 0, ( b > 127) ? 255 : 0);
 	}
-}   
+}
 
 /* rgb-> 256 cubic */
 void
@@ -1151,7 +1151,7 @@ bc_rgb_byte_op( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * p
 		EDIFF_BEGIN_PIXEL(src->r,src->g,src->b);
 		src++;
 		while ( 1) {
-			index = (((r >> shift) & 3) << 4) + 
+			index = (((r >> shift) & 3) << 4) +
 				(((g >> shift) & 3) << 2) +
 				 ((b >> shift) & 3);
 			if ( tree[ table + index] & PAL_REF) {
@@ -1164,7 +1164,7 @@ bc_rgb_byte_op( RGBColor * src, Byte * dest, int count, U16 * tree, RGBColor * p
 				break;
 			}
 		}
-	} 
+	}
 }
 
 /* rgb -> 8bit optimized not dithered */

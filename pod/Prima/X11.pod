@@ -24,7 +24,7 @@ Prints the command-line arguments available and exits.
 Sets X display address in Xlib notation. If not set, standard Xlib (
 C<XOpenDisplay(null)> ) behavior applies.
 
-Example: 
+Example:
 
    --display=:0.1
 
@@ -118,7 +118,7 @@ automatically converts these to _ ( underscore ) characters.
 Prima defines its all set of resources, divided in two parts: general toolkit
 settings and per-widget settings. The general settings functionality is
 partially overloaded by command-line arguments. Per-widget settings are fonts
-and colors, definable for each Prima widget. 
+and colors, definable for each Prima widget.
 
 All of the general settings are applicable to the top-level item of widget
 hierarchy, named after the application, and C<Prima> class. Some of these,
@@ -136,7 +136,7 @@ with
 The former syntax is a general setting, and sets the default Prima font.  The
 latter is a per-widget assignment, and explicitly sets font to B<all> Prima
 widgets, effectively ruining the toolkit font inheritance scheme. The same is
-valid for an even more oppressive 
+valid for an even more oppressive
 
    *font: some-font
 
@@ -150,7 +150,7 @@ enumeration of all properties for each widget takes place.
 
 All global settings have identical class and name, varied in the case of the
 first letter. For example, to set C<Submenudelay> value, one can do it either
-by 
+by
 
    Prima.Submenudelay: 10
 
@@ -223,7 +223,7 @@ otherwise it may clash with LANG environment variable, which is used by Prima
 font subsystem to determine which font to select when no encoding is given.
 This advice, though, is correct only when both LANG and encoding part of a
 desired font match. In order to force a particular font encoding, the property
-C<Prima.font> must contain one. 
+C<Prima.font> must contain one.
 
 Alternatively, and/or to reduce X font traffic, one may set
 C<IgnoreEncodings.ignoreEncodings> property, which is a semicolon- separated
@@ -257,7 +257,7 @@ Prima can make use only of font name, size, and style flags.
 
 =item C<--no-xft>
 
-C<--no-xft> command-line argument, and boolean C<UseXFT.usexft> XRDB property 
+C<--no-xft> command-line argument, and boolean C<UseXFT.usexft> XRDB property
 can be used to disable use of the Xft library.
 
 =item C<--no-core-fonts>
@@ -290,7 +290,7 @@ X traditionally contains a color names database, usually a text file named
 F<rgb.txt>.  Check your X manual where exactly this file resides and what is
 its format.  The idea behind it is that users can benefit from portable literal
 color names, with color values transparently adjustable to displays
-capabilities.  Thus, it is customary to write 
+capabilities.  Thus, it is customary to write
 
    color: green
 
@@ -436,7 +436,7 @@ The clipboard exchange of images is incompletely implemented, since Prima does
 not accompany ( and neither reads ) COLORMAP, FOREGROUND, and BACKGROUND
 clipboard data, which contains pixel RGB values for a paletted image. As a
 palliative, the clipboard-bound images are downgraded to a safe set of colors,
-locked immutable either by X server or Prima core. 
+locked immutable either by X server or Prima core.
 
 On images in the clipboard: contrary to the text in the clipboard, which can be
 used several times, images seemingly cannot. The Bitmap or Pixmap descriptor,
@@ -453,7 +453,7 @@ window manager is not aware or this yet.
 
 The consequences of this, as well as programming guidances are described in
 C<Prima::Window>. Here, we describe other aspects of interactions with WMs, as
-WM protocols, hints, and properties. 
+WM protocols, hints, and properties.
 
 Prima was tested with alternating success under the following window managers:
 mwm, kwin, wmaker, fvwm, fvwm2, enlightment, sawfish, blackbox, 9wm, olvm, twm,
@@ -486,7 +486,7 @@ Prima tries to use WM-specific hints, known for two window managers: mwm and
 kwin.  For mwm ( Motif window manager ) Prima sets hints of decoration border
 width and icons only. For kwin ( and probably to others, who wish to conform to
 specifications of http://www.freedesktop.org/ ) Prima uses C<NET_WM_STATE>
-property, in particular its maximization and task-bar visibility hints. 
+property, in particular its maximization and task-bar visibility hints.
 
 Use of these explicitly contradicts ICCCM, and definitely may lead to bugs in
 future ( at least with C<NET_WM_STATE>, since Motif interface can hardly
@@ -623,7 +623,7 @@ Various visuals provide different color depth and access scheme. Some X
 stations have badly chosen default visuals (for example, default IRIX
 workstation setup has 8-bit default visual selected), so this property can be
 used to fix things. List of visuals, supported by a X display can be produced
-interactively by standard C<xdpyinfo> command from X distribution. 
+interactively by standard C<xdpyinfo> command from X distribution.
 
 Identical to C<--visual> command-line argument.
 
@@ -634,7 +634,7 @@ See L<Color> for more information.
 BUTTON is a number of X mouse button event, treated as 'mouse wheel down'
 event.
 
-Default value: 5 ( default values for wheeldown and wheelup are current de-facto 
+Default value: 5 ( default values for wheeldown and wheelup are current de-facto
 most popular settings ).
 
 =item Wheelup.wheelup BUTTON
@@ -708,6 +708,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::gp-problems>, L<Prima::Widget>, 
+L<Prima>, L<Prima::gp-problems>, L<Prima::Widget>,
 Nye A, Xlib programming manual. O'Reilly E<amp> Associates, 1995.
 

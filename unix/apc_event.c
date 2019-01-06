@@ -44,7 +44,7 @@ prima_xw2h( XWindow win)
 {
 	Handle self;
 	self = (Handle)hash_fetch( guts.windows, (void*)&win, sizeof(win));
-	if (!self) 
+	if (!self)
 		self = (Handle)hash_fetch( guts.menu_windows, (void*)&win, sizeof(win));
 	return self;
 }
@@ -253,7 +253,7 @@ static unsigned short keysym_to_unicode_12a1_12fe[] = {
 	0x0175, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x1e6b, /* 0x12f0-0x12f7 */
 	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0177          /* 0x12f0-0x12ff */
 };
-					
+
 static unsigned short const keysym_to_unicode_13bc_13be[] = {
 	0x0152, 0x0153, 0x0178          /* 0x13b8-0x13bf */
 };
@@ -388,7 +388,7 @@ KeySymToUcs4(KeySym keysym)
 		return keysym_to_unicode_ff00_ff1f[keysym - 0xff00];
 	else if (keysym > 0xff80 && keysym < 0xffbc)
 		return keysym_to_unicode_ff80_ffbb[keysym - 0xff80];
-	else 
+	else
 		return 0;
 }
 /* end unicode map */
@@ -404,7 +404,7 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 
 	str_len = XLookupString( ev, str_buf, 256, &keysym, nil);
 	*sym = keysym;
-	Edebug( "event: keysym: %08lx/%08lx 0: %08lx, 1: %08lx, 2: %08lx, 3: %08lx\n", keysym, 
+	Edebug( "event: keysym: %08lx/%08lx 0: %08lx, 1: %08lx, 2: %08lx, 3: %08lx\n", keysym,
 		KeySymToUcs4( keysym),
 		XLookupKeysym(ev,0),
 		XLookupKeysym(ev,1),
@@ -563,7 +563,7 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 	if ( PApplication(application)-> wantUnicodeInput) {
 		e-> key. mod  |= kmUnicode;
 		e-> key. code = KeySymToUcs4( keysym);
-		if (( ev-> state & ControlMask) && isalpha( e-> key. code)) 
+		if (( ev-> state & ControlMask) && isalpha( e-> key. code))
 			e-> key. code = toupper( e-> key. code) - '@';
 	} else {
 		e-> key. code = keycode & kbCharMask;
@@ -608,7 +608,7 @@ syntetic_mouse_move( void)
 	while ( 1) {
 		Bool ret;
 		last = e;
-		ret = XQueryPointer( DISP, e.root, &e. root, &e. window, &e.x_root, 
+		ret = XQueryPointer( DISP, e.root, &e. root, &e. window, &e.x_root,
 					&e.y_root, &e.x, &e.y, &e. state);
 		XCHECKPOINT;
 		if ( !ret || e. window == None) {
@@ -628,7 +628,7 @@ syntetic_mouse_move( void)
 		e. is_hint     = false;
 		XSendEvent( DISP, e. window, false, 0, ( XEvent*) &e);
 	}
-} 
+}
 
 typedef struct _WMSyncData
 {
@@ -683,28 +683,28 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
 		e. gen. P   = XX-> origin = wmsd-> origin;
 		e. gen. source = self;
 		SELF_MESSAGE(e);
-		if ( PObject( self)-> stage == csDead) return false; 
+		if ( PObject( self)-> stage == csDead) return false;
 	}
 
-	if ( wmsd-> allow_cmSize && 
+	if ( wmsd-> allow_cmSize &&
 		( wmsd-> size. x != XX-> size. x || wmsd-> size. y != XX-> size. y + XX-> menuHeight)) {
 		XX-> size. x = wmsd-> size. x;
 		XX-> size. y = wmsd-> size. y - XX-> menuHeight;
-		PWidget( self)-> virtualSize = XX-> size; 
+		PWidget( self)-> virtualSize = XX-> size;
 		Edebug("event: got size to %d %d\n", XX-> size.x, XX-> size.y);
 		prima_send_cmSize( self, old_size);
-		if ( PObject( self)-> stage == csDead) return false; 
+		if ( PObject( self)-> stage == csDead) return false;
 		size_changed = true;
 	}
-	
+
 	if ( wmsd-> above != XX-> above) {
 		XX-> above = wmsd-> above;
 		bzero( &e, sizeof( Event));
 		e. cmd = cmZOrderChanged;
 		SELF_MESSAGE(e);
-		if ( PObject( self)-> stage == csDead) return false; 
+		if ( PObject( self)-> stage == csDead) return false;
 	}
-	
+
 	if ( size_changed && XX-> flags. want_visible && !guts. net_wm_maximization) {
 		int qx = guts. displaySize.x * 4 / 5, qy = guts. displaySize.y * 4 / 5;
 		bzero( &e, sizeof( Event));
@@ -717,7 +717,7 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
 				XX-> zoomRect.right = old_size.x;
 				XX-> zoomRect.top = old_size.y;
 				XX-> flags. zoomed = 1;
-			}   
+			}
 		} else {
 			if ( old_size.x > XX-> size.x && old_size.y > XX-> size.y) {
 				e. cmd = cmWindowState;
@@ -729,9 +729,9 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
 				XX-> zoomRect.right = XX-> size.x;
 				XX-> zoomRect.top = XX-> size.y;
 			}
-		}   
+		}
 		if ( e. cmd) SELF_MESSAGE(e);
-		if ( PObject( self)-> stage == csDead) return false; 
+		if ( PObject( self)-> stage == csDead) return false;
 	}
 
 	if ( !XX-> flags. mapped && wmsd-> mapped) {
@@ -743,16 +743,16 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
 			f. gen. i = XX-> flags. zoomed ? wsMaximized : wsNormal;
 			f. gen. source = self;
 			XX-> flags. iconic = 0;
-		}   
+		}
 		if ( XX-> flags. withdrawn)
 			XX-> flags. withdrawn = 0;
 		XX-> flags. mapped = 1;
 		e. cmd = cmShow;
 		SELF_MESSAGE(e);
-		if ( PObject( self)-> stage == csDead) return false; 
+		if ( PObject( self)-> stage == csDead) return false;
 		if ( f. cmd) {
 			SELF_MESSAGE(f);
-			if ( PObject( self)-> stage == csDead) return false; 
+			if ( PObject( self)-> stage == csDead) return false;
 		}
 	} else if ( XX-> flags. mapped && !wmsd-> mapped) {
 		Event f;
@@ -763,16 +763,16 @@ process_wm_sync_data( Handle self, WMSyncData * wmsd)
 			f. gen. i = wsMinimized;
 			f. gen. source = self;
 			XX-> flags. iconic = 1;
-		}   
+		}
 		e. cmd = cmHide;
 		XX-> flags. mapped = 0;
 		SELF_MESSAGE(e);
-		if ( PObject( self)-> stage == csDead) return false; 
+		if ( PObject( self)-> stage == csDead) return false;
 		if ( f. cmd) {
 			SELF_MESSAGE(f);
-			if ( PObject( self)-> stage == csDead) return false; 
+			if ( PObject( self)-> stage == csDead) return false;
 		}
-	}   
+	}
 	return true;
 }
 
@@ -804,7 +804,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 
 				/* under modal window? */
 
-				if ( selectee && selectee != self) 
+				if ( selectee && selectee != self)
 					XMapRaised( DISP, PWidget(selectee)-> handle);
 
 				if ( !guts. currentMenu) {
@@ -823,7 +823,7 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 					/* Refuse to take focus unless there are no modal windows above */
 					if ( !selectee || selectee == self)
 						XSetInputFocus( DISP, X_WINDOW, RevertToParent, xev-> xclient. data. l[1]);
-					if ( selectee) 
+					if ( selectee)
 						Widget_selected( selectee, true, true);
 					guts. currentFocusTime = CurrentTime;
 				}
@@ -835,24 +835,24 @@ wm_event( Handle self, XEvent *xev, PEvent ev)
 		if ( xev-> xproperty. atom == NET_WM_STATE && xev-> xproperty. state == PropertyNewValue) {
 			DEFXX;
 			ev-> cmd = cmWindowState;
-			ev-> gen. source = self; 
+			ev-> gen. source = self;
 			if ( prima_wm_net_state_read_maximization( xev-> xproperty. window, NET_WM_STATE)) {
 				if ( !XX-> flags. zoomed) {
 					ev-> gen. i = wsMaximized;
 					XX-> flags. zoomed = 1;
-				} else 
+				} else
 					ev-> cmd = 0;
 			} else {
 				if ( XX-> flags. zoomed) {
 					ev-> gen. i = wsNormal;
 					XX-> flags. zoomed = 0;
-				} else 
-					ev-> cmd = 0; 
+				} else
+					ev-> cmd = 0;
 			}
 		}
 		break;
 	}
-	
+
 	return false;
 }
 
@@ -883,7 +883,7 @@ compress_configure_events( XEvent *ev)
 	for ( i = 0, x = set; i < queued_events; i++, x++) {
 		XNextEvent( DISP, x);
 		read_events++;
-		
+
 		switch ( x-> type) {
 		case KeyPress:       case KeyRelease:
 		case ButtonPress:    case ButtonRelease:
@@ -892,16 +892,16 @@ compress_configure_events( XEvent *ev)
 		case FocusIn:        case FocusOut:
 		case EnterNotify:    case LeaveNotify:
 			goto STOP;
-		case MapNotify:      
+		case MapNotify:
 		case UnmapNotify:
 			self = prima_xw2h( x-> xconfigure. window);
 			/* stop only after top-level events */
-			if ( self && XT_IS_WINDOW(X(self)) && x-> xconfigure. window == X_WINDOW) 
+			if ( self && XT_IS_WINDOW(X(self)) && x-> xconfigure. window == X_WINDOW)
 				goto STOP;
 			break;
 		case ClientMessage:
 			if ( x-> xclient. message_type == WM_PROTOCOLS &&
-				(Atom) x-> xclient. data. l[0] == WM_DELETE_WINDOW) 
+				(Atom) x-> xclient. data. l[0] == WM_DELETE_WINDOW)
 				goto STOP;
 			break;
 		case ConfigureNotify:
@@ -920,11 +920,11 @@ compress_configure_events( XEvent *ev)
 	}
 STOP:;
 
-	for ( i = read_events - 1, x = set + read_events - 1; i >= 0; i--, x--) 
+	for ( i = read_events - 1, x = set + read_events - 1; i >= 0; i--, x--)
 		if ( x-> type != 0)
 			XPutBackEvent( DISP, x);
 	free( set);
-	return skipped; 
+	return skipped;
 }
 
 static char * xevdefs[] = { "0", "1"
@@ -953,7 +953,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		prima_ximage_event( ev);
 		return;
 	}
-	
+
 	if ( guts. message_boxes) {
 		struct MsgDlg * md = guts. message_boxes;
 		XWindow win = ev-> xany. window;
@@ -961,10 +961,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			if ( md-> w == win) {
 				prima_msgdlg_event( ev, md);
 				return;
-			}   
+			}
 			md = md-> next;
-		}   
-	}   
+		}
+	}
 
 	if ( appDead)
 		return;
@@ -988,7 +988,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		win = ev-> xunmap. window;
 		break;
 	case DestroyNotify:
-		if ( guts. clipboard_xfers && 
+		if ( guts. clipboard_xfers &&
 			hash_fetch( guts. clipboard_xfers, &ev-> xdestroywindow. window, sizeof( XWindow))) {
 			prima_handle_selection_event( ev, ev-> xproperty. window, nilHandle);
 			return;
@@ -1035,13 +1035,13 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		}
 	}
 
-	if ( win == guts. root && guts. grab_redirect) 
+	if ( win == guts. root && guts. grab_redirect)
 		win = guts. grab_redirect;
 
 	self = prima_xw2h( win);
-	if ( ev-> type > 0) 
-		Edebug("event: %d:%s of %s\n", ev-> type, 
-				((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]), 
+	if ( ev-> type > 0)
+		Edebug("event: %d:%s of %s\n", ev-> type,
+				((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]),
 				self ? PWidget(self)-> name : "(nil)");
 
 	if (!self)
@@ -1057,7 +1057,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	was_sent = ev-> xany. send_event;
 
 	switch ( ev-> type) {
-	case KeyPress: 
+	case KeyPress:
 	case KeyRelease: {
 		guts. last_time = ev-> xkey. time;
 		if ( !ev-> xkey. send_event && self != guts. focused && guts. focused) {
@@ -1066,7 +1066,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			while ( PComponent(newself)-> owner && newself != guts. focused)
 				newself = PComponent(newself)-> owner;
 			if ( newself == guts. focused) XX = X(self = newself);
-		} 
+		}
 		if (prima_no_input(XX, false, ev-> type == KeyPress)) return;
 		handle_key_event( self, &ev-> xkey, &e, &keysym, ev-> type == KeyRelease);
 		break;
@@ -1077,8 +1077,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if (prima_no_input(XX, false, true)) return;
 		if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
 			XWindow rx;
-			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle, 
-				ev-> xbutton.x, ev-> xbutton.y, 
+			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle,
+				ev-> xbutton.x, ev-> xbutton.y,
 				&ev-> xbutton.x, &ev-> xbutton.y, &rx);
 			self = guts. grab_widget;
 			XX = X(self);
@@ -1091,7 +1091,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if ( ev-> xany. window == guts. root && guts. grab_redirect) {
 			bev-> x -= guts. grab_translate_mouse. x;
 			bev-> y -= guts. grab_translate_mouse. y;
-		}      
+		}
 		switch (bev-> button) {
 		case Button1:
 			e. pos. button = mb1;
@@ -1192,16 +1192,16 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				ev. gen. B = true;
 				ev. gen. P. x = e. pos. where. x;
 				ev. gen. P. y = e. pos. where. y;
-				apc_message( self, &ev, true);   
-				if ( PObject( self)-> stage == csDead) return; 
+				apc_message( self, &ev, true);
+				if ( PObject( self)-> stage == csDead) return;
 			}
 		}
 		memcpy( &guts.last_button_event, bev, sizeof(*bev));
 		if ( e. cmd == cmMouseClick && e. pos. dblclk) {
 			bzero( &guts.last_click, sizeof(guts.last_click));
 			guts. last_button_event. type = 0;
-		} 
-		
+		}
+
 		if ( e. cmd == cmMouseDown) {
 			if ( XX-> flags. first_click) {
 				if ( ! is_opt( optSelectable)) {
@@ -1209,7 +1209,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 					while ( f && !X(f)-> type. window && ( f != application)) f = (( PWidget) f)-> owner;
 					while ( !X(x)-> type. window && X(x)-> flags. clip_owner &&
 						x != application) x = (( PWidget) x)-> owner;
-					if ( x && x != f && X(x)-> type. window) 
+					if ( x && x != f && X(x)-> type. window)
 						XSetInputFocus( DISP, PWidget(x)-> handle, RevertToParent, bev-> time);
 				}
 			} else {
@@ -1218,7 +1218,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				while ( !X(f)-> type. window && ( f != application)) f = (( PWidget) f)-> owner;
 				if ( x != f) {
 					e. cmd = 0;
-					if ((( PApplication) application)-> hintUnder == self) 
+					if ((( PApplication) application)-> hintUnder == self)
 						CWidget(self)-> set_hintVisible( self, 0);
 					if (( PWidget(self)-> options. optSelectable) && ( PWidget(self)-> selectingButtons & e. pos. button))
 						apc_widget_set_focused( self);
@@ -1232,8 +1232,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if (prima_no_input(XX, false, false)) return;
 		if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
 			XWindow rx;
-			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle, 
-				ev-> xbutton.x, ev-> xbutton.y, 
+			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle,
+				ev-> xbutton.x, ev-> xbutton.y,
 				&ev-> xbutton.x, &ev-> xbutton.y, &rx);
 			self = guts. grab_widget;
 			XX = X(self);
@@ -1246,8 +1246,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		guts. last_time = ev-> xmotion. time;
 		if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
 			XWindow rx;
-			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle, 
-				ev-> xmotion.x, ev-> xmotion.y, 
+			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle,
+				ev-> xmotion.x, ev-> xmotion.y,
 				&ev-> xmotion.x, &ev-> xmotion.y, &rx);
 			self = guts. grab_widget;
 			XX = X(self);
@@ -1258,7 +1258,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if ( ev-> xany. window == guts. root && guts. grab_redirect) {
 			ev-> xmotion. x -= guts. grab_translate_mouse. x;
 			ev-> xmotion. y -= guts. grab_translate_mouse. y;
-		}      
+		}
 		e. pos. where. x = ev-> xmotion. x;
 		e. pos. where. y = XX-> size. y - ev-> xmotion. y - 1;
 		if ( ev-> xmotion. state & ShiftMask)     e.pos.mod |= kmShift;
@@ -1275,14 +1275,14 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	}
 	case EnterNotify: {
 		if (( guts. pointer_invisible_count == 0) && XX-> flags. pointer_obscured) {
-			XX-> flags. pointer_obscured = 0; 
-			XDefineCursor( DISP, XX-> udrawable, 
-			( XX-> pointer_id == crUser) ? XX-> user_pointer : 
+			XX-> flags. pointer_obscured = 0;
+			XDefineCursor( DISP, XX-> udrawable,
+			( XX-> pointer_id == crUser) ? XX-> user_pointer :
 			XX-> actual_pointer);
-		} else if (( guts. pointer_invisible_count < 0) && !XX-> flags. pointer_obscured) { 
+		} else if (( guts. pointer_invisible_count < 0) && !XX-> flags. pointer_obscured) {
 			XX-> flags. pointer_obscured = 1;
 			XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);
-		}   
+		}
 		guts. last_time = ev-> xcrossing. time;
 		e. cmd = cmMouseEnter;
 	CrossingEvent:
@@ -1301,10 +1301,10 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		switch ( ev-> xfocus. detail) {
 		case NotifyVirtual:
 		case NotifyPointer:
-		case NotifyPointerRoot: 
-		case NotifyDetailNone: 
+		case NotifyPointerRoot:
+		case NotifyDetailNone:
 			return;
-		case NotifyNonlinearVirtual: 
+		case NotifyNonlinearVirtual:
 			if (!XT_IS_WINDOW(XX)) return;
 			break;
 		}
@@ -1312,11 +1312,11 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if ( guts. message_boxes) {
 			struct MsgDlg * md = guts. message_boxes;
 			while ( md) {
-				XSetInputFocus( DISP, md-> w, RevertToNone, CurrentTime); 
+				XSetInputFocus( DISP, md-> w, RevertToNone, CurrentTime);
 				md = md-> next;
-			}   
+			}
 			return;
-		}   
+		}
 
 		syntetic_mouse_move(); /* XXX - simulated MouseMove event for compatibility reasons */
 
@@ -1333,7 +1333,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			if (( PObject( self)-> stage == csDead) ||
 				( ev-> xfocus. detail == NotifyNonlinearVirtual)) return;
 		}
-		
+
 		if ( guts. focused) prima_no_cursor( guts. focused);
 		guts. focused = self;
 		prima_update_cursor( guts. focused);
@@ -1345,21 +1345,21 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		switch ( ev-> xfocus. detail) {
 		case NotifyVirtual:
 		case NotifyPointer:
-		case NotifyPointerRoot: 
-		case NotifyDetailNone: 
+		case NotifyPointerRoot:
+		case NotifyDetailNone:
 			return;
-		case NotifyNonlinearVirtual: 
+		case NotifyNonlinearVirtual:
 			if (!XT_IS_WINDOW(XX)) return;
 			break;
 		}
-		
+
 		if ( XT_IS_WINDOW(XX)) {
 			e. cmd = cmDeactivate;
 			SELF_MESSAGE(e);
 			if (( PObject( self)-> stage == csDead) ||
 				( ev-> xfocus. detail == NotifyNonlinearVirtual)) return;
 		}
-		
+
 		if ( guts. focused) prima_no_cursor( guts. focused);
 		if ( self == guts. focused) guts. focused = nilHandle;
 		e. cmd = cmReleaseFocus;
@@ -1438,18 +1438,18 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				XWindow dummy;
 				XTranslateCoordinates( DISP, X_WINDOW, XX-> real_parent,
 					0, 0, &XX-> decorationSize.x, &XX-> decorationSize.y, &dummy);
-			} else 
+			} else
 				XX-> decorationSize. x = XX-> decorationSize. y = 0;
 		}
 		return;
 
-	case -ConfigureNotify: 
+	case -ConfigureNotify:
 		if ( XT_IS_WINDOW(XX)) {
 			if ( win != XX-> client) {
 				int nh;
 				WMSyncData wmsd;
 				Bool size_changed =
-					XX-> ackFrameSize. x != ev-> xconfigure. width || 
+					XX-> ackFrameSize. x != ev-> xconfigure. width ||
 					XX-> ackFrameSize. y != ev-> xconfigure. height;
 				wmsd. allow_cmSize = true;
 				XX-> ackOrigin. x = ev-> xconfigure. x;
@@ -1462,7 +1462,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				if ( PWindow( self)-> menu) {
 					if ( size_changed) {
 						M(PWindow( self)-> menu)-> paint_pending = true;
-						XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
+						XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle,
 							ev-> xconfigure. width, XX-> menuHeight);
 					}
 					M(PWindow( self)-> menu)-> w-> pos. x = ev-> xconfigure. x;
@@ -1482,7 +1482,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			XX-> ackOrigin. y = X(X(self)-> owner)-> size. y - ev-> xconfigure. height - ev-> xconfigure. y;
 		}
 		return;
-	case ConfigureNotify: 
+	case ConfigureNotify:
 		if ( XT_IS_WINDOW(XX)) {
 			if ( win != XX-> client) {
 				int nh;
@@ -1491,9 +1491,9 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				Bool match = false, size_changed;
 
 				if ( compress_configure_events( ev)) return;
-				
+
 				size_changed =
-					XX-> ackFrameSize. x != ev-> xconfigure. width || 
+					XX-> ackFrameSize. x != ev-> xconfigure. width ||
 					XX-> ackFrameSize. y != ev-> xconfigure. height;
 				nh = ev-> xconfigure. height - XX-> menuHeight;
 				if ( nh < 1 ) nh = 1;
@@ -1533,17 +1533,17 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 						TAILQ_INIT( &XX-> configure_pairs);
 					}
 				}
-		
+
 				Edebug("event: configure: %d --> %d %d\n", ev-> xany.serial, ev-> xconfigure. width, ev-> xconfigure. height);
 				XX-> flags. configured = 1;
 				process_wm_sync_data( self, &wmsd);
-				
+
 				if ( PWindow( self)-> menu) {
 					if ( size_changed) {
 						XEvent e;
 						Handle menu = PWindow( self)-> menu;
 						M(PWindow( self)-> menu)-> paint_pending = true;
-						XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle, 
+						XResizeWindow( DISP, PComponent(PWindow( self)-> menu)-> handle,
 							ev-> xconfigure. width, XX-> menuHeight);
 						e. type = ConfigureNotify;
 						e. xconfigure. width  = ev-> xconfigure. width;
@@ -1585,7 +1585,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		wm_event( self, ev, &e);
 		break;
 	}
-	case SelectionClear: 
+	case SelectionClear:
 	case SelectionRequest: {
 		prima_handle_selection_event( ev, win, self);
 		break;
@@ -1615,7 +1615,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		guts. handled_events++;
 		cmd = e. cmd;
 		SELF_MESSAGE(e);
-		if ( PObject( self)-> stage == csDead) return; 
+		if ( PObject( self)-> stage == csDead) return;
 		if ( e. cmd) {
 			switch ( cmd) {
 			case cmClose:
@@ -1631,7 +1631,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		}
 		if ( secondary. cmd) {
 			SELF_MESSAGE(secondary);
-			if ( PObject( self)-> stage == csDead) return; 
+			if ( PObject( self)-> stage == csDead) return;
 		}
 	} else {
 		/* Unhandled event, do nothing */
@@ -1659,26 +1659,26 @@ copy_events( Handle self, PList events, WMSyncData * w, int eventType)
 		switch ( x-> type) {
 		case ReparentNotify:
 			if ( X(self)-> type. window && ( x-> xreparent. window == PWidget(self)-> handle)) {
-				X(self)-> real_parent = ( x-> xreparent. parent == guts. root) ? 
+				X(self)-> real_parent = ( x-> xreparent. parent == guts. root) ?
 					nilHandle : x-> xreparent. parent;
 				x-> type = DEAD_BEEF;
 				if ( X(self)-> real_parent) {
 					XWindow dummy;
 					XTranslateCoordinates( DISP, X_WINDOW, X(self)-> real_parent,
 						0, 0, &X(self)-> decorationSize.x, &X(self)-> decorationSize.y, &dummy);
-				} else 
+				} else
 					X(self)-> decorationSize. x = X(self)-> decorationSize. y = 0;
 				}
 			break;
 		}
-		
+
 		{
 			Bool ok = false;
 			switch ( x-> type) {
-			case ConfigureNotify: 
+			case ConfigureNotify:
 				if ( x-> xconfigure. window == PWidget(self)-> handle) {
 					wm_sync_data_from_event( self, w, &x-> xconfigure, w-> mapped);
-					Edebug("event: configure copy %d %d\n", x-> xconfigure. width, x-> xconfigure. height); 
+					Edebug("event: configure copy %d %d\n", x-> xconfigure. width, x-> xconfigure. height);
 					ok = true;
 				}
 				break;
@@ -1700,7 +1700,7 @@ copy_events( Handle self, PList events, WMSyncData * w, int eventType)
 				x-> type = -x-> type;
 			}
 		}
-		if ( x-> type != DEAD_BEEF) 
+		if ( x-> type != DEAD_BEEF)
 			list_add( events, ( Handle) x);
 		else
 			free( x);
@@ -1720,9 +1720,9 @@ prima_wm_sync( Handle self, int eventType)
 
 	open_wm_sync_data( self, &wmsd);
 
-	Edebug("event: enter syncer for %d. current size: %d %d\n", eventType, X(self)-> size.x, X(self)-> size.y); 
+	Edebug("event: enter syncer for %d. current size: %d %d\n", eventType, X(self)-> size.x, X(self)-> size.y);
 	gettimeofday( &start_time, nil);
-	
+
 	/* browse & copy queued events */
 	evx = XEventsQueued( DISP, QueuedAlready);
 	if ( !( events = plist_create( evx + 32, 32)))
@@ -1734,30 +1734,30 @@ prima_wm_sync( Handle self, int eventType)
 	/* measuring round-trip time */
 	XSync( DISP, false);
 	gettimeofday( &timeout, nil);
-	delay = 2 * (( timeout. tv_sec - start_time. tv_sec) * 1000 + 
+	delay = 2 * (( timeout. tv_sec - start_time. tv_sec) * 1000 +
 					( timeout. tv_usec - start_time. tv_usec) / 1000) + guts. wm_event_timeout;
-	Edebug("event: sync took %ld.%03ld sec\n", timeout. tv_sec - start_time. tv_sec, (timeout. tv_usec - start_time. tv_usec) / 1000); 
+	Edebug("event: sync took %ld.%03ld sec\n", timeout. tv_sec - start_time. tv_sec, (timeout. tv_usec - start_time. tv_usec) / 1000);
 
 	/* got response already? happens if no wm present or  */
 	/* sometimes if wm is local to server */
 	evx = XEventsQueued( DISP, QueuedAlready);
 	r = copy_events( self, events, &wmsd, eventType);
 	if ( r < 0) return;
-	Edebug("event: pass 1, copied %ld events %s\n", evx, r ? "GOT CONF!" : ""); 
+	Edebug("event: pass 1, copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
 	if ( delay < 50) delay = 50; /* wait 50 ms just in case */
 	/* waiting for ConfigureNotify or timeout */
 	Edebug("event: enter cycle, size: %d %d\n", wmsd.size.x, wmsd.size.y);
 	start_time = timeout;
 	while ( 1) {
 		gettimeofday( &timeout, nil);
-		diff = ( timeout. tv_sec - start_time. tv_sec) * 1000 + 
+		diff = ( timeout. tv_sec - start_time. tv_sec) * 1000 +
 				( timeout. tv_usec - start_time. tv_usec) / 1000;
-		if ( delay <= diff) 
+		if ( delay <= diff)
 			break;
 		timeout. tv_sec  = ( delay - diff) / 1000;
 		timeout. tv_usec = (( delay - diff) % 1000) * 1000;
-		Edebug("event: want timeout:%g\n", (double)( delay - diff) / 1000); 
-		FD_ZERO( &zero);   
+		Edebug("event: want timeout:%g\n", (double)( delay - diff) / 1000);
+		FD_ZERO( &zero);
 		FD_ZERO( &read);
 		FD_SET( guts.connection, &read);
 		r = select( guts.connection+1, &read, &zero, &zero, &timeout);
@@ -1767,7 +1767,7 @@ prima_wm_sync( Handle self, int eventType)
 		}
 		if ( r == 0) {
 			Edebug("event: timeout\n");
-			break; 
+			break;
 		}
 		if (( evx = XEventsQueued( DISP, QueuedAfterFlush)) <= 0) {
 			/* just like tcl/perl tk do, to avoid an infinite loop */
@@ -1776,13 +1776,13 @@ prima_wm_sync( Handle self, int eventType)
 			XFlush( DISP);
 			(void) signal( SIGPIPE, oldHandler);
 		}
-		
+
 		/* copying new events */
 		r = copy_events( self, events, &wmsd, eventType);
 		if ( r < 0) return;
 		Edebug("event: copied %ld events %s\n", evx, r ? "GOT CONF!" : "");
 		if ( r > 0) break; /* has come ConfigureNotify */
-	}  
+	}
 	Edebug("event:exit cycle\n");
 
 	/* put events back */
@@ -1844,9 +1844,9 @@ perform_pending_paints( void)
 		}
 		prima_simple_message( self, cmPaint, false);
 		events++;
-		
+
 		if ( (PWidget( self)-> stage != csNormal)) goto NEXT;
-		
+
 		/* handle the case where this widget is locked */
 		if (XX->invalid_region) {
 			XDestroyRegion(XX->invalid_region);
@@ -1892,9 +1892,9 @@ send_queued_x_events(int careOfApplication)
 {
 	int events = 0, queued_events;
 	XEvent ev, next_event;
-	
+
 	if ( !application && careOfApplication ) return 0;
-	
+
 	if (( queued_events = XEventsQueued( DISP, QueuedAlready)) <= 0)
 		return 0;
 
@@ -1932,7 +1932,7 @@ process_timers(void)
 			guts. oldest-> when. tv_usec > t. tv_usec
 		))
 			return 0;
-		
+
 		timer = guts. oldest;
 		apc_timer_start( timer-> who);
 		if ( timer-> who == CURSOR_TIMER) {
@@ -1966,7 +1966,7 @@ process_file_events(Bool * x_events_pending, struct timeval * t)
 		Bool w;
 		Bool e;
 	} queue[FD_SETSIZE], *cur;
-	
+
 	if ( x_events_pending )
 		*x_events_pending = 0;
 	if ( !application ) return 0;
@@ -1980,7 +1980,7 @@ process_file_events(Bool * x_events_pending, struct timeval * t)
 		list_first_that( guts.files, (void*)purge_invalid_watchers, nil);
 		return 0;
 	}
-	
+
 	if ( x_events_pending )
 		*x_events_pending = FD_ISSET( guts.connection, &read_set);
 
@@ -2138,7 +2138,7 @@ apc_message( Handle self, PEvent e, Bool is_post)
 	} else {
 		guts. total_events++;
 		CComponent(self)->message( self, e);
-		if ( PObject( self)-> stage == csDead) return false; 
+		if ( PObject( self)-> stage == csDead) return false;
 	}
 	return true;
 }

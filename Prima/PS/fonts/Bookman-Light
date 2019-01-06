@@ -1,8 +1,8 @@
-('Bookman-Light' => { 
+('Bookman-Light' => {
   name            => 'Bookman-Light',
   family          => 'Bookman',
   height          => 1159,
-  weight          => fw::Light,   
+  weight          => fw::Light,
   style           => fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,

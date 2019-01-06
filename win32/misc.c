@@ -48,7 +48,7 @@ apc_query_drives_map( const char *firstDrive, char *map, int len)
 	if ( !map || len <= 0) return true;
 	*map = 0;
 	return true;
-#endif   
+#endif
 	if ( !map) return false;
 
 	beg = toupper( *firstDrive);
@@ -91,7 +91,7 @@ apc_query_drive_type( const char *drive)
 	char buf[ 256];                        //  Win95 fix
 #ifdef __CYGWIN__
 	return false;
-#endif   
+#endif
 	strncpy( buf, drive, 256);             //     sometimes D: isn't enough for 95,
 	if ( buf[1] == ':' && buf[2] == 0) {   //     but ok for D:\.
 		buf[2] = '\\';                      //
@@ -114,7 +114,7 @@ apc_get_user_name()
 PList
 apc_getdir( const char *dirname)
 {
-#ifdef __CYGWIN__   
+#ifdef __CYGWIN__
 	DIR *dh;
 	struct dirent *de;
 	PList dirlist = nil;
@@ -127,7 +127,7 @@ apc_getdir( const char *dirname)
 		dname = "";
 	else
 		dname = ( char*) dirname;
-		
+
 
 	if (( dh = opendir( dirname)) && (dirlist = plist_create( 50, 50))) {
 		while (( de = readdir( dh))) {
@@ -151,7 +151,7 @@ apc_getdir( const char *dirname)
 		closedir( dh);
 	}
 	return dirlist;
-#else   
+#else
 	long		len;
 	char		scanname[MAX_PATH+3];
 	WIN32_FIND_DATA	FindData;
@@ -221,7 +221,7 @@ apc_getdir( const char *dirname)
 #undef FILE
 #undef DIR
 	return ret;
-#endif    
+#endif
 }
 
 Bool
@@ -230,7 +230,7 @@ apc_show_message( const char * message, Bool utf8)
 	Bool ret;
 	if ( utf8 && (message = ( char*)alloc_utf8_to_wchar( message, -1, NULL))) {
 		ret = MessageBoxW( NULL, ( WCHAR*) message, L"Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
-		free(( void*) message); 
+		free(( void*) message);
 	} else
 		ret = MessageBox( NULL, message, "Prima", MB_OK | MB_TASKMODAL | MB_SETFOREGROUND) != 0;
 	return ret;
@@ -530,7 +530,7 @@ Bool
 apc_dl_export(char *path)
 {
 	return LoadLibrary( path) != NULL;
-}   
+}
 
 WCHAR *
 alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len)
@@ -578,17 +578,17 @@ U+202C (PDF)	POP DIRECTIONAL FORMATTING CODE	Restores the bidirectional state to
 U+200E (LRM)	LEFT-TO-RIGHT MARK	Left-to-right strong zero-width character.
 U+200F (RLM)	RIGHT-TO-LEFT MARK	Right-to-left strong zero-width character.
 */
-	ret[0] = 0x202D; 
+	ret[0] = 0x202D;
 	MultiByteToWideChar(CP_UTF8, 0, utf8, length, ret + 1, size);
 	for ( i = 1; i < size + 1; i++) {
-		if (( ret[i] >= 0x202A && ret[i] <= 0x202E) || ret[i] == 0x200F ) 
-			ret[i] = 0x200E; 
+		if (( ret[i] >= 0x202A && ret[i] <= 0x202E) || ret[i] == 0x200F )
+			ret[i] = 0x200E;
 	}
 	if ( mb_len ) *mb_len = size + 1;
 	return ret;
 }
 
-void 
+void
 wchar2char( char * dest, WCHAR * src, int lim)
 {
 	if ( lim < 1) return;
@@ -597,7 +597,7 @@ wchar2char( char * dest, WCHAR * src, int lim)
 	*dest = 0;
 }
 
-void 
+void
 char2wchar( WCHAR * dest, char * src, int lim)
 {
 	int l = strlen( src) + 1;

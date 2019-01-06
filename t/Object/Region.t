@@ -83,7 +83,7 @@ ok( !$r-> equals($r2), 'poly winding');
 my $image = Prima::Image->new(
 	size => [4,4],
 	type => im::Byte,
-	data => 
+	data =>
 		"\xff\xff\xff\x00". # y=0
 		"\xff\xff\xff\x00".
 		"\xff\xff\xff\x00".
@@ -186,7 +186,7 @@ try('rgnop::Diff',
 );
 
 $r = $dbm->region;
-try('region re-reuse', 
+try('region re-reuse',
 	"     ".
 	"     ".
 	" *   ".

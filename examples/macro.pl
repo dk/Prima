@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -85,9 +85,9 @@ my $w = Prima::MainWindow-> create(
 sub tick
 {
 	if ( $state eq 'rec') {
-		push( @data, [ 
-			$::application-> pointerPos, 
-			$::application-> get_mouse_state, 
+		push( @data, [
+			$::application-> pointerPos,
+			$::application-> get_mouse_state,
 			$::application-> get_shift_state
 		]);
 		return;

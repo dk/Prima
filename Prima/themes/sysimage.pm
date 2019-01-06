@@ -15,7 +15,7 @@ sub install
 	my ( $theme, $install) = @_;
 	if ( $install) {
 		# install
-		my $new = ( $theme eq 'sysimage-win32') ? 
+		my $new = ( $theme eq 'sysimage-win32') ?
 			'Prima::sys::win32' :
 			'Prima';
 		$new = Prima::Utils::find_image( $new, 'sysimage.gif');

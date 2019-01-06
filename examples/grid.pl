@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -34,14 +34,14 @@ my $w = Prima::MainWindow-> create(
 			['cch', 'Constant cell height' => sub { $g-> constantCellHeight($_[0]-> menu-> toggle( $_[1]) ? 100 : undef); }],
 		]
 	]],
-);  
+);
 
 # change this to 0 and Prima::Grid will be created instead
 my $abstract_grid = 1;
 
 my @user_breadths=({},{});
 
-$g = $w-> insert( 
+$g = $w-> insert(
 ( $abstract_grid ? 'Prima::AbstractGrid' : 'Prima::Grid' ),
 ( $abstract_grid ? () : ('cells', [ map { my $a = $_; [ map {"$a.$_"} 0 .. 300]} 0 .. 300])),
 	onMeasure => sub {
@@ -58,12 +58,12 @@ $g = $w-> insert(
 		$user_breadths[$axis]-> {$index} = $breadth;
 	},
 	onDrawCell => sub {
-		my ( $self, $canvas, 
+		my ( $self, $canvas,
 				$col, $row, $type,
 				$x1, $y1, $x2, $y2,
 				$X1, $Y1, $X2, $Y2,
 				$sel, $foc, $pre) = @_;
-		
+
 		my $bk = $sel ? $self-> hiliteBackColor :
 						( $type ? $self-> indentCellBackColor : cl::Back);
 		$bk = $self-> prelight_color($bk) if $pre;
@@ -97,9 +97,9 @@ if ( $abstract_grid) {
 }
 $g-> cellIndents(1,1,1,1);
 
-#$g-> insert_row( 0, 0..300 ); 
-#$g-> insert_column( 100, 0..300 ); 
+#$g-> insert_row( 0, 0..300 );
+#$g-> insert_column( 100, 0..300 );
 #$g-> delete_columns( 100, 1);
-#$g-> add_column( 100, [0..300] ); 
+#$g-> add_column( 100, [0..300] );
 
 run Prima;

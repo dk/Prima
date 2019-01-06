@@ -1,8 +1,8 @@
-('Courier-BoldOblique' => { 
+('Courier-BoldOblique' => {
   name            => 'Courier-BoldOblique',
   family          => 'Courier',
   height          => 1051,
-  weight          => fw::Bold,   
+  weight          => fw::Bold,
   style           => fs::Bold,
   pitch           => fp::Fixed,
   vector          => 1,

@@ -49,7 +49,7 @@ sub profile_check_in
 sub init
 {
 	my $self = shift;
-	for ( qw( autoHScroll autoVScroll scrollTransaction hScroll vScroll 
+	for ( qw( autoHScroll autoVScroll scrollTransaction hScroll vScroll
 				limitX limitY deltaX deltaY borderWidth winX winY))
 		{ $self->{$_} = 0; }
 	my %profile = $self-> SUPER::init(@_);
@@ -79,7 +79,7 @@ sub reset_scrolls
 	@{$self}{qw(winX winY)} = ($x, $y);
 
 
-	if ( $self-> {autoHScroll} and $self->{autoVScroll} and 
+	if ( $self-> {autoHScroll} and $self->{autoVScroll} and
 			( $self-> {hScroll} or $self-> {vScroll})
 		) {
 		# avoid the special case when two scrollbars are unnecessary, but are present
@@ -246,7 +246,7 @@ sub init
 	$self-> {$_} = 0 for qw(rigid);
 	$self-> $_( $profile{$_}) for qw(rigid);
 
-	$self-> {slave} = $profile{slaveClass}-> new( 
+	$self-> {slave} = $profile{slaveClass}-> new(
 		delegations => $profile{slaveDelegations},
 		%{$profile{slaveProfile}},
 		owner => $self,
@@ -256,9 +256,9 @@ sub init
 	);
 
 	$self-> {client_geomSize} = [0,0];
-	$self-> {client} = $profile{clientClass}-> new( 
+	$self-> {client} = $profile{clientClass}-> new(
 		delegations => [ $self, 'Size', $self, 'Move', @{$profile{clientDelegations}}],
-		( $profile{rigid} ? () : ( 
+		( $profile{rigid} ? () : (
 			origin => [0,0],
 			size   => $profile{clientSize})
 		),
@@ -308,7 +308,7 @@ sub packPropagate
 sub propagate_size
 {
 	my $self = $_[0];
-	$self-> update_geom_size( $self-> {client}-> geomSize) 
+	$self-> update_geom_size( $self-> {client}-> geomSize)
 		if $self-> {client};
 }
 
@@ -326,10 +326,10 @@ sub reset
 	my @l = $self-> limits;
 	my @s = $self-> {client}-> size;
 	my @o = $self-> {client}-> origin;
-	
+
 	local $self-> {protect_scrolling} = 1;
-	( $l[0] == $s[0] and $l[1] == $s[1]) ? 
-		$self-> reset_scrolls : 
+	( $l[0] == $s[0] and $l[1] == $s[1]) ?
+		$self-> reset_scrolls :
 		$self-> limits( $s[0], $s[1]);
 	$self-> deltas( -$o[0], $o[1] - $self-> {slave}-> height + $s[1]);
 }
@@ -351,7 +351,7 @@ sub update_geom_size
 	my ( $self, $x, $y) = @_;
 	return unless $self-> packPropagate;
 	my @i = $self-> indents;
-	$self-> geomSize( 
+	$self-> geomSize(
 		$x + $i[0] + $i[2],
 		$y + $i[1] + $i[3]
 	);
@@ -380,8 +380,8 @@ sub on_scroll
 	);
 }
 
-sub slave { $_[0]-> {slave} } 
-sub client { $_[0]-> {client} } 
+sub slave { $_[0]-> {slave} }
+sub client { $_[0]-> {client} }
 sub insert { shift-> {client}-> insert( @_ ) }
 
 sub rigid
@@ -440,12 +440,12 @@ Prima::ScrollWidget - scrollable generic document widget.
 =head1 DESCRIPTION
 
 C<Prima::ScrollWidget> is a simple class that declares two pairs of properties,
-I<delta> and I<limit> for vertical and horizontal axes, which define a 
+I<delta> and I<limit> for vertical and horizontal axes, which define a
 a virtual document. I<limit> is the document dimension, and I<delta> is
-the current offset. 
+the current offset.
 
 C<Prima::ScrollWidget> is a descendant of C<Prima::GroupScroller>, and, as well as its
-ascendant, provides same user navigation by two scrollbars. The scrollbars' C<partial> 
+ascendant, provides same user navigation by two scrollbars. The scrollbars' C<partial>
 and C<whole> properties are maintained if the document or widget extensions change.
 
 =head1 API

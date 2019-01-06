@@ -151,7 +151,7 @@ sub autowidths
 	for ( $i = 0; $i < $self-> {numColumns}; $i++) {
 		$self-> mainColumn( $i);
 		$self-> recalc_widths;
-		$w[ $i] = $self-> {maxWidth} + 5 
+		$w[ $i] = $self-> {maxWidth} + 5
 			if $w[ $i] < $self-> {maxWidth} + 5;
 		$w[$i] = $header_w[$i] if $w[$i] < $header_w[$i];
 	}
@@ -260,7 +260,7 @@ sub draw_items
 				(( $xstart + $wx - $o) > $clipRect[2]) ? $clipRect[2] : $xstart + $wx - $o,
 				$clipRect[3]);
 			for ( $i = 0; $i < $icount; $i++) {
-				my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) = 
+				my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem) =
 					@{$$iref[$i]};
 				my $c = $clrs[ $selected ? 2 : 0];
 				$canvas-> color( $c), $lc = $c if $c != $lc;
@@ -306,7 +306,7 @@ sub Header_SizeItem
 		confineRect => [ $xs, $a[1], $a[2] + abs( $neww - $oldw), $a[3]],
 		clipRect    => \@a,
 	);
-	$self->invalidate_rect( $xs - $widths[$col], $a[1], $xs, $a[3]) 
+	$self->invalidate_rect( $xs - $widths[$col], $a[1], $xs, $a[3])
 		if ( $self->{aligns}->[$col] // $self->{align} ) != ta::Left;
 	$self-> {itemWidth} = $self-> {header}-> {maxWidth} - 1;
 	$self-> reset_scrolls if $self-> {hScroll} || $self-> {autoHScroll};
@@ -423,8 +423,8 @@ sub sort
 	$foci = $self-> {items}-> [$self-> {focusedItem}] if $self-> {focusedItem} >= 0;
 	$self-> notify(q(Sort), $c, $dirSort);
 	$self-> repaint;
-	
-	return unless defined $foci; # do not select items either; 
+
+	return unless defined $foci; # do not select items either;
 	                             # focused item should be < 0 only on empty lists
 	my $i = 0;
 	my $newfoc;
@@ -434,7 +434,7 @@ sub sort
 			$newfoc = $i;
 			last unless $self-> {multiSelect};
 		}
-		push @newsel, $i 
+		push @newsel, $i
 			if $self-> {multiSelect} and exists $selected{ $_ };
 		$i++;
 	}
@@ -466,7 +466,7 @@ sub autoWidth { 0;}
 
 =head1 NAME
 
-Prima::DetailedList - a multi-column list viewer with controlling 
+Prima::DetailedList - a multi-column list viewer with controlling
 header widget.
 
 =head1 SYNOPSIS
@@ -535,7 +535,7 @@ Where an item in the array is undef, it means that the value of the C<align> pro
 
 =item columns INTEGER
 
-Governs the number of columns in L<items>. If set-called, and the new number 
+Governs the number of columns in L<items>. If set-called, and the new number
 is different from the old number, both L<items> and L<headers> are restructured.
 
 Default value: 0

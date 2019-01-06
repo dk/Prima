@@ -179,7 +179,7 @@ sub _visible
 
 	my $canvas = $self-> {canvas};
 	if ( $visible ) {
-		my @clip = $self-> has_clip_rect ? 
+		my @clip = $self-> has_clip_rect ?
 			$canvas-> client_to_screen( $self-> clipRect ) :
 			( 0, 0, $::application->width - 1, $::application-> height - 1 );
 
@@ -267,7 +267,7 @@ sub rubberband
 
 	if ($profile{destroy}) {
 		$self-> {__rubberband}-> hide if $self-> {__rubberband};
-		return delete $self-> {__rubberband} 
+		return delete $self-> {__rubberband}
 	}
 
 	if ( keys %profile) {

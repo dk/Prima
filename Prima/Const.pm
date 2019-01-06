@@ -14,25 +14,25 @@ use strict;
 use warnings;
 
 # double lines for CPAN indexer, we don't want these packages in top-level namespace
-package 
+package
     nt; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# notification types
-package 
+package
     kb; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# keyboard-related constants
-package 
+package
     km; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# keyboard modifiers
-package 
+package
     mb; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# mouse buttons & message box constants
-package 
+package
     ta; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text alignment
-package 
+package
     cl; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# colors
-package 
+package
     ci; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# color indices
-package 
+package
     wc; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# widget classes
-package 
+package
     cm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# commands
-package 
+package
     rop; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# raster operations
 
 sub blend($)
@@ -43,75 +43,75 @@ sub blend($)
    return rop::DstAtop | rop::ConstantAlpha | ( $alpha << rop::SrcAlphaShift ) | ($alpha << rop::DstAlphaShift);
 }
 
-package 
+package
     gm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# grow modes
-package 
+package
     lp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line pen styles
-package 
+package
     fp; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# fill styles & font pitches
-package 
+package
     le; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line ends
-package 
+package
     lj; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# line joins
-package 
+package
     fs; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font styles
-package 
+package
     fw; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font weights
-package 
+package
     bi; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# border icons
-package 
+package
     bs; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# border styles
-package 
+package
     ws; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# window states
-package 
+package
     sv; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# system values
-package 
+package
     im; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# image types
-package 
+package
     ictp; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image conversion types: dithering
-package 
+package
     ictd; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image conversion types: palette optimization
-package 
+package
     ict; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image conversion types
-package 
+package
     is; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Image statistics types
-package 
+package
     ist; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# Image scaling types
-package 
+package
     am; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# Icon auto masking
-package 
+package
     apc; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# OS type
-package 
+package
     gui; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# GUI types
-package 
+package
     dt; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# drives types & draw_text constants
-package 
+package
     cr; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# pointer id's
-package 
+package
     sbmp; *AUTOLOAD =\&Prima::Const::AUTOLOAD;	# system bitmaps index
-package 
+package
     tw; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text wrapping constants
-package 
+package
     fds; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog scope type
-package 
+package
     fdo; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# find/replace dialog options
-package 
+package
     fe; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# file events
-package 
+package
     fr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# fetch resource constants
-package 
+package
     mt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# modality types
-package 
+package
     gt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# geometry manager types
-package 
+package
     ps; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# paint states
-package 
+package
     scr; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# scroll() results
-package 
+package
     dbt; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# DeviceBitmap types
-package 
+package
     rgnop; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# Region operations
-package 
+package
     rgn; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# Region.rect_inside() results
 
 1;
@@ -129,7 +129,7 @@ the toolkit. Since the module provides bindings for the core constants, it is re
 to be included in every Prima-related module and program.
 
 The constants are assembled under the top-level package names, with no C<Prima::>
-prefix. This violates the perl guidelines about package naming, however, it was 
+prefix. This violates the perl guidelines about package naming, however, it was
 considered way too inconvenient to prefix every constant with C<Prima::> string.
 
 This document provides description of all core-coded constants. The constants
@@ -137,7 +137,7 @@ are also described in the articles together with the corresponding methods and
 properties. For example, C<nt> constants are also described in L<Prima::Object/Flow>
 article.
 
-=head1 API 
+=head1 API
 
 =head2 am::  - Prima::Icon auto masking
 
@@ -152,18 +152,18 @@ See also L<Prima::Image/autoMasking>
 
 See L<Prima::Application/get_system_info>
 
-	apc::Win32  
-	apc::Unix   
+	apc::Win32
+	apc::Unix
 
 =head2 bi::  - border icons
 
 See L<Prima::Window/borderIcons>
 
-	bi::SystemMenu  - system menu button and/or close button 
+	bi::SystemMenu  - system menu button and/or close button
 	                  ( usually with icon ) is shown
-	bi::Minimize    - minimize button 
+	bi::Minimize    - minimize button
 	bi::Maximize    - maximize ( and eventual restore )
-	bi::TitleBar    - window title 
+	bi::TitleBar    - window title
 	bi::All         - all of the above
 
 =head2 bs::  - border styles
@@ -179,7 +179,7 @@ See L<Prima::Window/borderStyle>
 
 See L<Prima::Widget/colorIndex>
 
-	ci::NormalText or ci::Fore 
+	ci::NormalText or ci::Fore
 	ci::Normal or ci::Back
 	ci::HiliteText
 	ci::Hilite
@@ -217,7 +217,7 @@ See L<Prima::Widget/colorIndex>
 
 =item Indirect color constants
 
-	cl::NormalText, cl::Fore 
+	cl::NormalText, cl::Fore
 	cl::Normal, cl::Back
 	cl::HiliteText
 	cl::Hilite
@@ -306,13 +306,13 @@ See L<Prima::Widget/pointerType>
 	cr::Text                    text entry cursor-like pointer
 	cr::Wait                    hourglass
 	cr::Size                    general size action pointer
-	cr::Move                    general move action pointer 
+	cr::Move                    general move action pointer
 	cr::SizeWest, cr::SizeW     right-move action pointer
-	cr::SizeEast, cr::SizeE     left-move action pointer 
-	cr::SizeWE                  general horizontal-move action pointer 
-	cr::SizeNorth, cr::SizeN    up-move action pointer 
-	cr::SizeSouth, cr::SizeS    down-move action pointer 
-	cr::SizeNS                  general vertical-move action pointer 
+	cr::SizeEast, cr::SizeE     left-move action pointer
+	cr::SizeWE                  general horizontal-move action pointer
+	cr::SizeNorth, cr::SizeN    up-move action pointer
+	cr::SizeSouth, cr::SizeS    down-move action pointer
+	cr::SizeNS                  general vertical-move action pointer
 	cr::SizeNW                  up-right move action pointer
 	cr::SizeSE                  down-left move action pointer
 	cr::SizeNE                  up-left move action pointer
@@ -344,28 +344,28 @@ See L<Prima::Utils/query_drive_type>
 	dt::Right             - text is aligned to the right boundary
 	dt::Center            - text is aligned horizontally in center
 	dt::Top               - text is aligned to the upper boundary
-	dt::Bottom            - text is aligned to the lower boundary 
+	dt::Bottom            - text is aligned to the lower boundary
 	dt::VCenter           - text is aligned vertically in center
-	dt::DrawMnemonic      - tilde-escapement and underlining is used 
-	dt::DrawSingleChar    - sets tw::BreakSingle option to 
+	dt::DrawMnemonic      - tilde-escapement and underlining is used
+	dt::DrawSingleChar    - sets tw::BreakSingle option to
 				Prima::Drawable::text_wrap call
-	dt::NewLineBreak      - sets tw::NewLineBreak option to 
-				Prima::Drawable::text_wrap call 
-	dt::SpaceBreak        - sets tw::SpaceBreak option to 
-			        Prima::Drawable::text_wrap call  
-	dt::WordBreak         - sets tw::WordBreak option to 
-				Prima::Drawable::text_wrap call 
+	dt::NewLineBreak      - sets tw::NewLineBreak option to
+				Prima::Drawable::text_wrap call
+	dt::SpaceBreak        - sets tw::SpaceBreak option to
+			        Prima::Drawable::text_wrap call
+	dt::WordBreak         - sets tw::WordBreak option to
+				Prima::Drawable::text_wrap call
 	dt::ExpandTabs        - performs tab character ( \t ) expansion
-	dt::DrawPartial       - draws the last line, if it is visible partially 
-	dt::UseExternalLeading- text lines positioned vertically with respect to 
+	dt::DrawPartial       - draws the last line, if it is visible partially
+	dt::UseExternalLeading- text lines positioned vertically with respect to
 				the font external leading
 	dt::UseClip           - assign ::clipRect property to the boundary rectangle
-	dt::QueryLinesDrawn   - calculates and returns number of lines drawn 
+	dt::QueryLinesDrawn   - calculates and returns number of lines drawn
 				( contrary to dt::QueryHeight )
-	dt::QueryHeight       - if set, calculates and returns vertical extension 
+	dt::QueryHeight       - if set, calculates and returns vertical extension
 				of the lines drawn
 	dt::NoWordWrap        - performs no word wrapping by the width of the boundaries
-	dt::WordWrap          - performs word wrapping by the width of the boundaries 
+	dt::WordWrap          - performs word wrapping by the width of the boundaries
 	dt::BidiText          - use bidirectional formatting, if available
 	dt::Default           - dt::NewLineBreak|dt::WordBreak|dt::ExpandTabs|
 				dt::UseExternalLeading
@@ -428,15 +428,15 @@ See L<Prima::Drawable/pitch>
 
 See L<Prima::Widget/fetch_resource>
 
-	fr::Color 
-	fr::Font  
+	fr::Color
+	fr::Font
 	fs::String
 
 =head2 fs::  - font styles
 
 See L<Prima::Drawable/style>
 
-	fs::Normal 
+	fs::Normal
 	fs::Bold
 	fs::Thin
 	fs::Italic
@@ -466,29 +466,29 @@ See L<Prima::Widget/growMode>
 
 =item Basic constants
 
-	gm::GrowLoX	widget's left side is kept in constant 
+	gm::GrowLoX	widget's left side is kept in constant
 			distance from owner's right side
-	gm::GrowLoY	widget's bottom side is kept in constant 
-			distance from owner's top side 
-	gm::GrowHiX	widget's right side is kept in constant 
-			distance from owner's right side  
-	gm::GrowHiY	widget's top side is kept in constant 
-			distance from owner's top side  
+	gm::GrowLoY	widget's bottom side is kept in constant
+			distance from owner's top side
+	gm::GrowHiX	widget's right side is kept in constant
+			distance from owner's right side
+	gm::GrowHiY	widget's top side is kept in constant
+			distance from owner's top side
 	gm::XCenter	widget is kept in center on its owner's
 			horizontal axis
 	gm::YCenter	widget is kept in center on its owner's
-			vertical axis 
-	gm::DontCare	widgets origin is maintained constant relative 
+			vertical axis
+	gm::DontCare	widgets origin is maintained constant relative
 			to the screen
 
 =item Derived or aliased constants
 
-	gm::GrowAll      gm::GrowLoX|gm::GrowLoY|gm::GrowHiX|gm::GrowHiY 
+	gm::GrowAll      gm::GrowLoX|gm::GrowLoY|gm::GrowHiX|gm::GrowHiY
 	gm::Center       gm::XCenter|gm::YCenter
 	gm::Client       gm::GrowHiX|gm::GrowHiY
-	gm::Right        gm::GrowLoX|gm::GrowHiY 
-	gm::Left         gm::GrowHiY 
-	gm::Floor        gm::GrowHiX 
+	gm::Right        gm::GrowLoX|gm::GrowHiY
+	gm::Left         gm::GrowHiY
+	gm::Floor        gm::GrowHiX
 
 =back
 
@@ -497,9 +497,9 @@ See L<Prima::Widget/growMode>
 See L<Prima::Application/get_system_info>
 
 	gui::Default
-	gui::PM  
+	gui::PM
 	gui::Windows
-	gui::XLib 
+	gui::XLib
 	gui::GTK
 
 =head2 le::  - line end styles
@@ -569,8 +569,8 @@ See L<Prima::Image/type>.
 	im::RGB           - im::bpp24
 	im::Triple        - im::bpp24
 	im::Byte          - gray 8-bit unsigned integer
-	im::Short         - gray 16-bit unsigned integer 
-	im::Long          - gray 32-bit unsigned integer 
+	im::Short         - gray 16-bit unsigned integer
+	im::Long          - gray 32-bit unsigned integer
 	im::Float         - float
 	im::Double        - double
 	im::Complex       - dual float
@@ -590,7 +590,7 @@ See L<Prima::Image/type>.
 
 	im::BPP      - bit depth constants
 	im::Category - category constants
-	im::FMT      - extra format constants 
+	im::FMT      - extra format constants
 
 =back
 
@@ -653,7 +653,7 @@ See also L<Prima::Widget/KeyDown>.
 	kb::SuperL   kb::SuperR   kb::HyperL     kb::HyperR
 	kb::CapsLock kb::NumLock  kb::ScrollLock kb::ShiftLock
 
-=item Keys with character code defined  
+=item Keys with character code defined
 
 	kb::Backspace  kb::Tab    kb::Linefeed   kb::Enter
 	kb::Return     kb::Escape kb::Esc        kb::Space
@@ -696,7 +696,7 @@ See also L<Prima::Widget/KeyDown>.
 
 =head2 mt:: - modality types
 
-See L<Prima::Window/get_modal>, L<Prima::Window/get_modal_window> 
+See L<Prima::Window/get_modal>, L<Prima::Window/get_modal_window>
 
 	mt::None
 	mt::Shared
@@ -716,7 +716,7 @@ See also L<Prima::Object/Flow>.
 	nt::PrivateFirst
 	nt::CustomFirst
 
-=item Direction constants 
+=item Direction constants
 
 	nt::FluxReverse
 	nt::FluxNormal
@@ -738,7 +738,7 @@ See also L<Prima::Object/Flow>.
 
 =back
 
-=head2 mb::  - mouse buttons 
+=head2 mb::  - mouse buttons
 
 See also L<Prima::Widget/MouseDown>.
 
@@ -789,7 +789,7 @@ See also L<Prima::Window/modalResult>, L<Prima::Button/modalResult>.
 	ps::Enabled     - can both draw and get/set graphical properties on an object
 	ps::Information - can only get/set graphical properties on an object
 
-For brevity, ps::Disabled is equal to 0 so this allows for simple boolean testing whether one can 
+For brevity, ps::Disabled is equal to 0 so this allows for simple boolean testing whether one can
 get/set graphical properties on an object.
 
 See L<Drawable/get_paint_state>.
@@ -812,24 +812,24 @@ See L<Drawable/get_paint_state>.
 
 See L<Prima::Drawable/Raster operations>
 
-        rop::Blackness      #   = 0 
-        rop::NotOr          #   = !(src | dest) 
-        rop::NotSrcAnd      #  &= !src 
-        rop::NotPut         #   = !src 
-        rop::NotDestAnd     #   = !dest & src 
-        rop::Invert         #   = !dest 
-        rop::XorPut         #  ^= src 
-        rop::NotAnd         #   = !(src & dest) 
-        rop::AndPut         #  &= src 
-        rop::NotXor         #   = !(src ^ dest) 
+        rop::Blackness      #   = 0
+        rop::NotOr          #   = !(src | dest)
+        rop::NotSrcAnd      #  &= !src
+        rop::NotPut         #   = !src
+        rop::NotDestAnd     #   = !dest & src
+        rop::Invert         #   = !dest
+        rop::XorPut         #  ^= src
+        rop::NotAnd         #   = !(src & dest)
+        rop::AndPut         #  &= src
+        rop::NotXor         #   = !(src ^ dest)
         rop::NotSrcXor      #     alias for rop::NotXor
         rop::NotDestXor     #     alias for rop::NotXor
-        rop::NoOper         #   = dest 
-        rop::NotSrcOr       #  |= !src 
-        rop::CopyPut        #   = src 
-        rop::NotDestOr      #   = !dest | src 
-        rop::OrPut          #  |= src 
-        rop::Whiteness      #   = 1 
+        rop::NoOper         #   = dest
+        rop::NotSrcOr       #  |= !src
+        rop::CopyPut        #   = src
+        rop::NotDestOr      #   = !dest | src
+        rop::OrPut          #  |= src
+        rop::Whiteness      #   = 1
 
 12 Porter-Duff operators
 
@@ -851,7 +851,7 @@ See L<Prima::Drawable/Raster operations>
 Constant alpha flags
 
         rop::SrcAlpha
-        rop::SrcAlphaShift 
+        rop::SrcAlphaShift
         rop::DstAlpha
         rop::DstAlphaShift
 	rop::ConstantAlpha
@@ -909,40 +909,40 @@ See also L<Prima::Application/get_system_value>
 
 	sv::YMenu            - height of menu bar in top-level windows
 	sv::YTitleBar        - height of title bar in top-level windows
-	sv::XIcon            - width and height of main icon dimensions, 
+	sv::XIcon            - width and height of main icon dimensions,
 	sv::YIcon              acceptable by the system
-	sv::XSmallIcon       - width and height of alternate icon dimensions,  
-	sv::YSmallIcon         acceptable by the system 
+	sv::XSmallIcon       - width and height of alternate icon dimensions,
+	sv::YSmallIcon         acceptable by the system
 	sv::XPointer         - width and height of mouse pointer icon
-	sv::YPointer           acceptable by the system  
+	sv::YPointer           acceptable by the system
 	sv::XScrollbar       - width of the default vertical scrollbar
-	sv::YScrollbar       - height of the default horizontal scrollbar 
+	sv::YScrollbar       - height of the default horizontal scrollbar
 	sv::XCursor          - width of the system cursor
-	sv::AutoScrollFirst  - the initial and the repetitive 
+	sv::AutoScrollFirst  - the initial and the repetitive
 	sv::AutoScrollNext     scroll timeouts
 	sv::InsertMode       - the system insert mode
 	sv::XbsNone          - widths and heights of the top-level window
 	sv::YbsNone            decorations, correspondingly, with borderStyle
 	sv::XbsSizeable        bs::None, bs::Sizeable, bs::Single, and
-	sv::YbsSizeable        bs::Dialog. 
-	sv::XbsSingle          
+	sv::YbsSizeable        bs::Dialog.
+	sv::XbsSingle
 	sv::YbsSingle
 	sv::XbsDialog
 	sv::YbsDialog
 	sv::MousePresent     - 1 if the mouse is present, 0 otherwise
 	sv::MouseButtons     - number of the mouse buttons
 	sv::WheelPresent     - 1 if the mouse wheel is present, 0 otherwise
-	sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on 
+	sv::SubmenuDelay     - timeout ( in ms ) before a sub-menu shows on
 				an implicit selection
-	sv::FullDrag         - 1 if the top-level windows are dragged dynamically, 
+	sv::FullDrag         - 1 if the top-level windows are dragged dynamically,
 	                       0 - with marquee mode
 	sv::DblClickDelay    - mouse double-click timeout in milliseconds
-	sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported, 
+	sv::ShapeExtension   - 1 if Prima::Widget::shape functionality is supported,
 	                       0 otherwise
 	sv::ColorPointer     - 1 if system accepts color pointer icons.
-	sv::CanUTF8_Input    - 1 if system can generate key codes in unicode 
+	sv::CanUTF8_Input    - 1 if system can generate key codes in unicode
 	sv::CanUTF8_Output   - 1 if system can output utf8 text
-	sv::CompositeDisplay - 1 if system uses double-buffering and alpha composition for the desktop, 
+	sv::CompositeDisplay - 1 if system uses double-buffering and alpha composition for the desktop,
 	                       0 if it doesn't, -1 if unknown
 	sv::LayeredWidgets   - 1 if system supports layering
 	sv::DWM              - 1 if system supports DWM API
@@ -967,18 +967,18 @@ See L<Prima::Drawable/text_wrap>
 	tw::CollapseTilde         - removes escaping tilde from text
 	tw::CalcTabs              - wraps text with respect to tab expansion
 	tw::ExpandTabs            - expands tab characters
-	tw::BreakSingle           - determines if text is broken to single 
+	tw::BreakSingle           - determines if text is broken to single
 	                            characters when text cannot be fit
-	tw::NewLineBreak          - breaks line on newline characters 
+	tw::NewLineBreak          - breaks line on newline characters
 	tw::SpaceBreak            - breaks line on space or tab characters
 	tw::ReturnChunks          - returns wrapped text chunks
-	tw::ReturnLines           - returns positions and lengths of wrapped 
+	tw::ReturnLines           - returns positions and lengths of wrapped
 	                            text chunks
-	tw::WordBreak             - defines if text break by width goes by the 
+	tw::WordBreak             - defines if text break by width goes by the
 	                            characters or by the words
-	tw::ReturnFirstLineLength - returns length of the first wrapped line 
+	tw::ReturnFirstLineLength - returns length of the first wrapped line
 	tw::Default               - tw::NewLineBreak | tw::CalcTabs | tw::ExpandTabs |
-	                            tw::ReturnLines | tw::WordBreak 
+	                            tw::ReturnLines | tw::WordBreak
 
 =head2 wc::  - widget classes
 

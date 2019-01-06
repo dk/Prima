@@ -1,8 +1,8 @@
-('Helvetica-Bold' => { 
+('Helvetica-Bold' => {
   name            => 'Helvetica-Bold',
   family          => 'Helvetica',
   height          => 1190,
-  weight          => fw::Bold,   
+  weight          => fw::Bold,
   style           => fs::Bold|fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,

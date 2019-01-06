@@ -297,7 +297,7 @@ typedef struct _timer_sys_data
 	struct timeval when;
 } TimerSysData, *PTimerSysData;
 
-typedef struct 
+typedef struct
 {
 	Region region;
 	int height;
@@ -479,7 +479,7 @@ prima_debug( const char *format, ...);
 #define _F_DEBUG_PITCH(x) ((x==fpDefault)?"default":(x==fpFixed?"fixed":"variable"))
 #define _F_DEBUG_STYLE(x) prima_font_debug_style(x)
 
-typedef struct 
+typedef struct
 {
 	unsigned int red_shift, green_shift, blue_shift, alpha_shift;
 	unsigned int red_range, green_range, blue_range, alpha_range;
@@ -713,8 +713,8 @@ typedef struct _drawable_sys_data
 	XWindow parent;
 	Point origin, size, bsize;
 	Point transform, gtransform, btransform;
-	Point ackOrigin, ackSize, ackFrameSize;   
-	int menuHeight; 
+	Point ackOrigin, ackSize, ackFrameSize;
+	int menuHeight;
 	int menuColorImmunity;
 	Point decorationSize;
 	Handle owner;  /* The real one */
@@ -904,10 +904,10 @@ typedef struct _clipboard_sys_data
 	PList                xfers;
 } ClipboardSysData, *PClipboardSysData;
 
-typedef struct 
+typedef struct
 {
 	Handle               self;
-	unsigned char      * data;  
+	unsigned char      * data;
 	unsigned long        size;
 	unsigned int         blocks;
 	unsigned int         offset;
@@ -987,7 +987,7 @@ prima_init_clipboard_subsystem( char * error_buf);
 
 extern Bool
 prima_init_font_subsystem( char * error_buf);
-	
+
 extern Bool
 prima_font_subsystem_set_option( char *, char *);
 
@@ -1008,7 +1008,7 @@ prima_palette_replace( Handle self, Bool fast);
 
 #define COLORHINT_NONE  0
 #define COLORHINT_BLACK 1
-#define COLORHINT_WHITE 2 
+#define COLORHINT_WHITE 2
 
 #define LOGCOLOR_BLACK 0
 #define LOGCOLOR_WHITE (pguts->palSize?(pguts->palSize-1):0xffffffff)
@@ -1019,19 +1019,19 @@ prima_map_color( Color color, int * hint);
 extern unsigned long
 prima_allocate_color( Handle self, Color color, Brush * brush);
 
-extern void   
+extern void
 prima_palette_free( Handle self, Bool priority);
 
-extern Bool   
+extern Bool
 prima_palette_alloc( Handle self);
 
-extern Bool   
+extern Bool
 prima_color_add_ref( Handle self, int index, int rank);
 
-extern int    
+extern int
 prima_color_sync( void);
 
-extern Pixmap 
+extern Pixmap
 prima_get_hatch( FillPattern * fp);
 
 extern void
@@ -1092,13 +1092,13 @@ extern void
 prima_update_cursor( Handle self);
 
 extern Bool
-prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, 
+prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide,
 	double direction, PRotatedFont *result, Bool * ok_to_not_rotate);
 
 extern void
 prima_free_rotated_entry( PCachedFont f);
 
-#define frUnix_int 1000 
+#define frUnix_int 1000
 
 extern int
 unix_rm_get_int( Handle self, XrmQuark class_detail, XrmQuark name_detail, int default_value);
@@ -1158,15 +1158,15 @@ extern void
 prima_end_menu(void);
 
 extern int
-prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym); 
-	
+prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym);
+
 extern void
 prima_wm_sync( Handle self, int eventType);
 
 extern Bool
 prima_wm_net_state_read_maximization( XWindow window, Atom property);
 
-extern unsigned char * 
+extern unsigned char *
 prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * actual_type,
 			int * actual_format, unsigned long * nitems);
 
@@ -1194,19 +1194,19 @@ prima_init_try_height( HeightGuessStack * p, int target, int firstMove );
 extern int
 prima_try_height( HeightGuessStack * p, int height);
 
-extern void         
+extern void
 prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len_bytes, int target_len_xchars);
 
-extern XChar2b *      
+extern XChar2b *
 prima_alloc_utf8_to_wchar( const char * utf8, int length_chars);
 
-extern void         
+extern void
 prima_wchar2char( char * dest, XChar2b * src, int lim);
 
-extern void         
+extern void
 prima_char2wchar( XChar2b * dest, char * src, int lim);
 
-extern XCharStruct * 
+extern XCharStruct *
 prima_char_struct( XFontStruct * xs, void * c, Bool wide);
 
 extern Color**
@@ -1243,7 +1243,7 @@ typedef void (*RETSIGTYPE)(int);
 
 #undef XDestroyImage
 #define XDestroyImage prima_XDestroyImage
-extern void 
+extern void
 prima_XDestroyImage( XImage * x);
 
 typedef int (*XIfEventProcType)(Display*,XEvent*,XPointer);
@@ -1269,13 +1269,13 @@ prima_xft_set_font( Handle self, PFont font);
 
 extern PFont
 prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *retCount);
-		
+
 extern void
 prima_xft_font_encodings( PHash hash);
 
 extern int
-prima_xft_get_text_width( PCachedFont self, const char * text, int len, 
-			Bool addOverhang, Bool utf8, uint32_t * map8, 
+prima_xft_get_text_width( PCachedFont self, const char * text, int len,
+			Bool addOverhang, Bool utf8, uint32_t * map8,
 			Point * overhangs);
 
 extern Point *
@@ -1295,7 +1295,7 @@ prima_xft_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode);
 
 extern PCachedFont
 prima_xft_get_cache( PFont font);
-			
+
 extern uint32_t *
 prima_xft_map8( const char * encoding);
 

@@ -21,11 +21,11 @@ sub hook
 	if ( exists $default-> {theme} || exists $profile-> {theme}) {
 		my $theme = exists($profile-> {theme}) ? $profile-> {theme} : $default-> {theme};
 		# execute explicitly selected theme
-		execute( $themes{$theme}, $object, $profile, $default) 
+		execute( $themes{$theme}, $object, $profile, $default)
 			if exists $themes{$theme};
 	} else {
 		# execute for all installed themes
-		execute( $themes{$_}, $object, $profile, $default) 
+		execute( $themes{$_}, $object, $profile, $default)
 			for grep { $themes{$_}-> [INSTALLED] } keys %themes;
 	}
 };
@@ -44,7 +44,7 @@ sub load_rc
 			$data{$r[1]} = $r[2];
 			eval "use $r[0];";
 			warn( "** warning: error loading module `$r[0]': $@\n"), next if $@;
-			warn( "** warning: theme `$r[1]' is not defined\n"), next 
+			warn( "** warning: theme `$r[1]' is not defined\n"), next
 				unless loaded($r[1]);
 			install($r[1]) if $install;
 		}
@@ -71,7 +71,7 @@ sub register
 {
 	my ( $file, $theme, $profile, $merger, $installer) = @_;
 	deregister($_) if $themes{$theme};
-	$themes{$theme} = [ 
+	$themes{$theme} = [
 		0,         # activity flag
 		$merger,   # merger routine, our own if undef
 		$profile,  # theme profile
@@ -81,7 +81,7 @@ sub register
 }
 
 # kill theme
-sub deregister 
+sub deregister
 {
 	uninstall($_[0]);
 	delete $themes{$_[0]};
@@ -109,8 +109,8 @@ sub select
 # load themes from files
 sub load { for ( @_) { eval "use Prima::themes::$_"; die $@ if $@ }}
 # makes 'use Prima::Themes qw(mytheme theme1);' possible
-sub import { 
-	shift; 
+sub import {
+	shift;
 	my $install;
 	for ( @_ ) {
 		if ( $_ eq ':install') {
@@ -164,7 +164,7 @@ sub merger
 sub execute
 {
 	my ( $instance, $object, $profile, $default) = @_;
-	my $merger = $instance-> [CALLBACK] || \&merger; 
+	my $merger = $instance-> [CALLBACK] || \&merger;
 	my $profiles = $instance-> [PROFILE];
 	return unless $profiles;
 	my $i;
@@ -193,7 +193,7 @@ sub DESTROY {}
 
 1;
 
-=pod 
+=pod
 
 =head1 NAME
 
@@ -202,7 +202,7 @@ Prima::Themes - object themes management
 =head1 DESCRIPTION
 
 Provides layer for theme registration in Prima. Themes are loosely grouped
-alternations of default class properties and behavior, by default stored in 
+alternations of default class properties and behavior, by default stored in
 C<Prima/themes> subdirectory. The theme realization is implemented as interception
 of object profile during its creation, inside C<::profile_add>. Various themes
 apply various alterations, one way only - once an object is applied a theme,
@@ -210,7 +210,7 @@ it cannot be neither changed nor revoked thereafter.
 
 Theme configuration can be stored in an rc file, F<~/.prima/themes>, and is
 loaded automatically, unless C<$Prima::Themes::load_rc_file> explicitly set to C<0>
-before loading the C<Prima::Themes> module. In effect, any Prima application 
+before loading the C<Prima::Themes> module. In effect, any Prima application
 not aware of themes can be coupled with themes in the rc file by the following:
 
 	perl -MPrima::Themes program
@@ -241,7 +241,7 @@ For interactive theme selection use F<examples/theme.pl> sample program.
 
 =head1 Prima::Themes
 
-=over 4 
+=over 4
 
 =item load @THEME_MODULES
 
@@ -338,7 +338,7 @@ changes to C<lineWidth> inside object's painting routine:
 
 	sub lineWidth { 1 } # line width is always 1 now!
 
-	Prima::Themes::register( '~/lib/constlinewidth.pm', 'constlinewidth', 
+	Prima::Themes::register( '~/lib/constlinewidth.pm', 'constlinewidth',
 		[ 'Prima::Widget' => {
 			onPaint => sub {
 				my ( $object, $canvas) = @_;

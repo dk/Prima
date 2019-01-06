@@ -56,8 +56,8 @@ sub on_paint
 	for my $obj ( @{$self-> {objects}}) {
 		my @r = $self-> object2screen( $obj-> rect, $obj-> inner_rect);
 		$r[$_]-- for 2,3;
-		next if !$obj-> visible || 
-			$r[0] > $c[2] || $r[1] > $c[3] || 
+		next if !$obj-> visible ||
+			$r[0] > $c[2] || $r[1] > $c[3] ||
 			$r[2] < $c[0] || $r[3] < $c[1];
 
 		my @uses = $obj-> uses;
@@ -68,7 +68,7 @@ sub on_paint
 			(map { $_ => $defaults{$_} } keys %props)
 		);
 		%props = map { $_ => 1 } @uses;
-		
+
 		$canvas-> translate( @r[4,5]);
 		$canvas-> clipRect( @r[0..3]);
 		$obj-> on_paint( $canvas, $r[6]-$r[4], $r[7]-$r[5]);
@@ -495,7 +495,7 @@ sub on_keydown
 			$obj-> size( @sz);
 		}
 	}
-	
+
 	$self-> SUPER::on_keydown( $code, $key, $mod, $repeat);
 }
 
@@ -846,7 +846,7 @@ sub inner_size
 
 sub inner_rect
 {
-	return 
+	return
 		$_[0]-> {origin}-> [0] + $_[0]-> {indents}-> [0],
 		$_[0]-> {origin}-> [1] + $_[0]-> {indents}-> [1],
 		$_[0]-> {origin}-> [0] + $_[0]-> {size}-> [0] - $_[0]-> {indents}-> [2],
@@ -863,12 +863,12 @@ sub inner_rect
 	$self-> {adjust_flag} = $adjust_flag;
 }
 
-sub indents 
+sub indents
 {
 	return @{$_[0]-> {indents}} unless $#_;
 	my ( $self, @indents) = @_;
 	@indents = @{$indents[0]} unless $#indents;
-	$self-> origin( 
+	$self-> origin(
 		$self-> {origin}-> [0] + $self-> {indents}-> [0] - $indents[0],
 		$self-> {origin}-> [1] + $self-> {indents}-> [1] - $indents[1]
 	);
@@ -881,8 +881,8 @@ sub adjust
 	return if $self-> {adjust_in_progress} or !$self-> {autoAdjust};
 	$self-> {adjust_in_progress} = 1;
 	$self-> lock;
-	$data_from_size ? 
-		$self-> on_adjust_data(@{$self-> {size}}) : 
+	$data_from_size ?
+		$self-> on_adjust_data(@{$self-> {size}}) :
 		$self-> on_adjust_size();
 	$self-> unlock;
 	delete $self-> {adjust_in_progress};
@@ -1400,14 +1400,14 @@ sub on_adjust_size
 		next unless $_ = $self-> {arrows}-> [$_];
 		$_-> rotate( atan2($y2 - $y1, $x2 - $x1) * 57.295779);
 		my @r = map { $_ * $lw } $_-> extents;
-		my @arrow_box = ( $x2 + $r[0] - $delta[0], $y2 + $r[1] - $delta[1], 
+		my @arrow_box = ( $x2 + $r[0] - $delta[0], $y2 + $r[1] - $delta[1],
 								$x2 + $r[2] - $delta[0], $y2 + $r[3] - $delta[1]);
 		for ( 0,1) {
 			$outer[$_] = $arrow_box[$_] if $outer[$_] > $arrow_box[$_];
 			$outer[$_+2] = $arrow_box[$_+2] if $outer[$_+2] < $arrow_box[$_+2];
 		}
 	}
-	$self-> indents( 
+	$self-> indents(
 		$inner[0] - $outer[0],
 		$inner[1] - $outer[1],
 		$outer[2] - $inner[2],
@@ -1429,7 +1429,7 @@ sub on_paint
 	my $p = $self-> zoom_points( $width, $height);
 	return if 4 > @$p;
 	$canvas-> lineWidth( $self-> lineWidth * $width / int $size[0]);
-	$self-> {smooth} ?		
+	$self-> {smooth} ?
 		$canvas-> spline( $p) :
 		$canvas-> polyline( $p);
 	my $flip = 0;

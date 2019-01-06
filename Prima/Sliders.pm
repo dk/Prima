@@ -82,12 +82,12 @@ sub on_mousedown
 	return if $self-> {mouseTransaction};
 	return if $btn != mb::Left;
 	my $h = $self-> height;
-	if ( $y >= $h * 0.6) { 
-		$self-> { mouseTransaction} = 1; 
-	} elsif ( $y <  $h * 0.4) { 
+	if ( $y >= $h * 0.6) {
+		$self-> { mouseTransaction} = 1;
+	} elsif ( $y <  $h * 0.4) {
 		$self-> { mouseTransaction} = 2;
-	} else { 
-		$self-> { mouseTransaction} = 3; 
+	} else {
+		$self-> { mouseTransaction} = 3;
 	}
 	delete $self->{prelight};
 	$self-> { lastMouseOver}  = 1;
@@ -120,7 +120,7 @@ sub on_mouseup
 	$self-> capture(0);
 	$self-> scroll_timer_stop;
 	$self-> state( 0);
-	$self-> pointer( $self-> {pointerSave}), $self-> {pointerSave} = undef 
+	$self-> pointer( $self-> {pointerSave}), $self-> {pointerSave} = undef
 		if $mt == 3;
 	$self-> {increment} = 0;
 	$self-> notify( 'TrackEnd');
@@ -252,8 +252,8 @@ sub on_mousedown
 	my ( $self, $btn, $mod, $x, $y) = @_;
 	return if $self-> {mouseTransaction};
 	return if $btn != mb::Left;
-	$self-> { mouseTransaction} = 
-		(( $x * $self-> height / ( $self-> width || 1)) > $y) ? 
+	$self-> { mouseTransaction} =
+		(( $x * $self-> height / ( $self-> width || 1)) > $y) ?
 			2 : 1;
 	$self-> { lastMouseOver}  = 1;
 	delete $self->{prelight};
@@ -378,7 +378,7 @@ sub on_paint
 
 	$canvas-> color( $clr[0]);
 	my $p1 = ( $p == 1) ? 1 : 0;
-	$canvas-> fillpoly( fix_triangle( 
+	$canvas-> fillpoly( fix_triangle(
 		$size[0] * 0.2 + $p1, $size[1] * 0.65 - $p1,
 		$size[0] * 0.3 + $p1, $size[1] * 0.77 - $p1,
 		$size[0] * 0.4 + $p1, $size[1] * 0.65 - $p1
@@ -522,7 +522,7 @@ sub Spin_Increment
 sub InputLine_KeyDown
 {
 	my ( $self, $edit, $code, $key, $mod) = @_;
-	$edit-> clear_event, return if 
+	$edit-> clear_event, return if
 		$key == kb::NoKey && !($mod & (km::Alt | km::Ctrl)) &&
 		chr($code) !~ /^[.\d+-]$/;
 	if ( $key == kb::Up || $key == kb::Down || $key == kb::PgDn || $key == kb::PgUp) {
@@ -626,7 +626,7 @@ sub value
 
 
 # gauge reliefs
-package 
+package
     gr;
 use constant Sink         =>  -1;
 use constant Border       =>  0;
@@ -675,14 +675,14 @@ sub init
 	$self-> {string} = '';
 	for (qw( vertical threshold min max relief indent value))
 	{$self-> $_($profile{$_}); }
-	
+
 	# additional properties for indeterminate mode
 	$self->{direction} = 1;
 	for (qw( indeterminate sliderLength))
 	{$self-> $_($profile{$_}); }
 	# If indeterminate is true, the start value must be > sliderLength
 	$self->value($self->{sliderLength}) if ($self->indeterminate);
-	
+
 	return %profile;
 }
 
@@ -696,7 +696,7 @@ sub on_paint
 {
 	my ($self,$canvas) = @_;
 	my ($x, $y) = $canvas-> size;
-	
+
 	$canvas->clear();
 	my $i = $self-> indent;
 	my ($clComplete,$clBack,$clFore,$clHilite) = ($self-> hiliteBackColor, $self-> backColor, $self-> color, $self-> hiliteColor);
@@ -706,16 +706,16 @@ sub on_paint
 	$complete = int(($complete - $i*2) * $self-> {value} / $range + 0.5);
 	my ( $l3, $d3) = ( $self-> light3DColor, $self-> dark3DColor);
 	$canvas-> color( $clComplete);
-	
+
 	# INDETERMINATE STYLE HACK
-	my $left_bound = 
-		$self->indeterminate ? 
+	my $left_bound =
+		$self->indeterminate ?
 			$complete - ($self->{sliderLength} * ($v ? $y : $x) / $range + 0.5) :
 			$i;
-	$canvas-> bar ( $v ? 
-		($i, $left_bound, $x-$i-1, $i+$complete) : 
+	$canvas-> bar ( $v ?
+		($i, $left_bound, $x-$i-1, $i+$complete) :
 		($left_bound, $i, $i + $complete, $y-$i-1));
-	
+
 	$canvas-> color( $clBack);
 	$canvas-> bar ( $v ? ($i, $i+$complete+1, $x-$i-1, $y-$i-1) : ( $i+$complete+1, $i, $x-$i-1, $y-$i-1));
 
@@ -732,8 +732,8 @@ sub on_paint
 	{
 		$canvas-> line( $j + 1, $j, $x - $j - 1, $j);
 		$canvas-> line( $x - $j - 1, $j, $x - $j - 1, $y - $j - 1);
-	}	
-	
+	}
+
 
 	# draw the text, if neccessary
 	my $s = $self-> {string};
@@ -752,14 +752,14 @@ sub on_paint
 			$canvas-> color( $clHilite);
 			$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
 		} else {
-			$canvas-> clipRect( $v ? 
-				( 0, 0, $x, $i + $complete) : 
+			$canvas-> clipRect( $v ?
+				( 0, 0, $x, $i + $complete) :
 				( 0, 0, $i + $complete, $y)
 			);
 			$canvas-> color( $clHilite);
 			$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
-			$canvas-> clipRect( $v ? 
-				( 0, $i + $complete + 1, $x, $y) : 
+			$canvas-> clipRect( $v ?
+				( 0, $i + $complete + 1, $x, $y) :
 				( $i + $complete + 1, 0, $x, $y)
 			);
 			$canvas-> color( $clFore);
@@ -826,7 +826,7 @@ sub indeterminate    {
 	# Create the timer for the motion in indeterminate mode
 	# if it is not still created
 	unless ( $self->{timer} ) {
-		$self->{timer} = $self->insert( Timer => 
+		$self->{timer} = $self->insert( Timer =>
 		name	    => 'Timer',
 		timeout     => 25,
 		delegations => ['Tick'],
@@ -837,13 +837,13 @@ sub indeterminate    {
 	# and the start_angle and for style circle the end_angle, too
 	if ( $indeterminate) {
 		$self->{timer}->start;
-	} 
-	
+	}
+
 	else {
 		$self->{timer}->stop;
 	}
 	$self->{indeterminate} = $indeterminate;
-	
+
 }
 
 sub Timer_Tick
@@ -863,7 +863,7 @@ sub direction    {($#_)?($_[0]-> {direction} = $_[1])  :return $_[0]-> {directio
 sub sliderLength    {($#_)?($_[0]-> {sliderLength} = $_[1])  :return $_[0]-> {sliderLength};}
 
 # slider standard schemes
-package 
+package
     ss;
 use constant Gauge        => 0;
 use constant Axis         => 1;
@@ -982,10 +982,10 @@ sub get_ticks
 	my ( $tv, $tl, $tt) = ($self-> {tickVal}, $self-> {tickLen}, $self-> {tickTxt});
 	my @t;
 	for ( $i = 0; $i < scalar @{$tv}; $i++) {
-		push ( @t, { 
-			value => $$tv[$i], 
-			height => $$tl[$i], 
-			text => $$tt[$i] 
+		push ( @t, {
+			value => $$tv[$i],
+			height => $$tl[$i],
+			text => $$tt[$i]
 		});
 	}
 	return @t;
@@ -1056,19 +1056,19 @@ sub set_scheme
 		push ( @t, { value => $max, height => 6,   text => "Max" });
 	} elsif ( $s == ss::Thermometer ) {
 		for ( $i = $min; $i <= $max; $i += $inc) {
-			push ( @t, { 
-				value => $i, 
-				height => 6,   
-				text => $i 
+			push ( @t, {
+				value => $i,
+				height => 6,
+				text => $i
 			});
 			if ( $i < $max) {
 				my $j;
 				for ( $j = 1; $j < 10; $j++) {
 					my $v = $i + $inc / 10 * $j;
 					last if $v > $max;
-					push ( @t, { 
+					push ( @t, {
 						value => $v,
-						height => $j == 5 ? 5 : 3 
+						height => $j == 5 ? 5 : 3
 					});
 				}
 			}
@@ -1100,7 +1100,7 @@ sub max         {($#_)?$_[0]-> set_bound($_[1],q(max)):return $_[0]-> {max};}
 
 
 # linear slider tick alignment
-package 
+package
     tka;
 use constant Normal      => 0;
 use constant Alternative => 1;
@@ -1131,10 +1131,10 @@ sub profile_check_in
 	$p-> { autoHeight} = 1
 		if !exists $p->{autoHeight} and (($p->{vertical} // $default->{vertical}) == 0);
 	$p-> { autoHeight} = 0
-		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} || 
+		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} ||
 			( exists $p-> {top} && exists $p-> {bottom});
 	$p-> { autoWidth} = 0
-		if exists $p-> {width} || exists $p-> {size} || exists $p-> {rect} || 
+		if exists $p-> {width} || exists $p-> {size} || exists $p-> {rect} ||
 			( exists $p-> {left} && exists $p-> {right});
 	my $sc = $::application->uiScaling;
 	$p->{$_} = ( exists($p->{$_}) ? $p->{$_} : $default->{$_} ) * $sc for qw(shaftBreadth knobBreadth );
@@ -1144,10 +1144,10 @@ sub profile_check_in
 sub init
 {
 	my $self = shift;
-	$self-> {$_} = 0 
+	$self-> {$_} = 0
 		for qw( vertical tickAlign ribbonStrip shaftBreadth borderWidth knobBreadth);
 	my %profile = $self-> SUPER::init( @_);
-	$self-> $_($profile{$_}) 
+	$self-> $_($profile{$_})
 		for qw( vertical tickAlign ribbonStrip shaftBreadth borderWidth knobBreadth);
 	return %profile;
 }
@@ -1161,28 +1161,28 @@ sub on_paint
 		@clr  = ( $self-> color, $self-> backColor);
 		$prelight = $self-> prelight_color($clr[1], 1.5) if $self->{prelight};
 	} else {
-		@clr = ( $self-> disabledColor, $self-> disabledBackColor) 
+		@clr = ( $self-> disabledColor, $self-> disabledBackColor)
 	}
 	my @c3d  = ( $self-> dark3DColor, $self-> light3DColor);
 	my @cht  = ( $self-> hiliteColor, $self-> hiliteBackColor);
 	my @size = $canvas-> size;
-	my ( 
-		$sb, $v, 
-		$range, $min, 
-		$tval, $tlen, $ttxt, 
+	my (
+		$sb, $v,
+		$range, $min,
+		$tval, $tlen, $ttxt,
 		$ta, $kb
-	) = ( 
-		$self-> {shaftBreadth}, $self-> {vertical}, 
+	) = (
+		$self-> {shaftBreadth}, $self-> {vertical},
 		abs($self-> {max} - $self-> {min}) || 1, $self-> {min},
-		$self-> {tickVal}, $self-> {tickLen}, $self-> {tickTxt}, 
+		$self-> {tickVal}, $self-> {tickLen}, $self-> {tickTxt},
 		$self-> {tickAlign}, $self->{knobBreadth},
 	);
-	if ( $ta == tka::Normal) { 
-		$ta = 1; 
-	} elsif ( $ta == tka::Alternative) { 
-		$ta = 2; 
-	} else { 
-		$ta = 3; 
+	if ( $ta == tka::Normal) {
+		$ta = 1;
+	} elsif ( $ta == tka::Alternative) {
+		$ta = 2;
+	} else {
+		$ta = 3;
 	}
 
 	unless ( $self-> transparent) {
@@ -1196,11 +1196,11 @@ sub on_paint
 		my $bw  = ( $size[0] - $sb) / 2;
 		return if $size[1] <= $kb * ($self-> {readOnly} ? 1 : 0) + 2 * $bh + 2;
 
-		$canvas-> translate((( $ta == 1) ? 1 : -1) * ( $bw - $sb - $kb), 0) 
+		$canvas-> translate((( $ta == 1) ? 1 : -1) * ( $bw - $sb - $kb), 0)
 			if $ta < 3;
 		my $br  = $size[1] - 2 * $bh - 2;
-		$canvas-> rect3d( 
-			$bw, $bh, $bw + $sb - 1, $bh + $br - 1, 1, 
+		$canvas-> rect3d(
+			$bw, $bh, $bw + $sb - 1, $bh + $br - 1, 1,
 			@c3d, $cht[1]
 		), return unless $range;
 
@@ -1212,10 +1212,10 @@ sub on_paint
 			$canvas-> color( $cht[1]);
 			$canvas-> bar( $bw + 1, $val + 1, $bw + $sb - 2, $bh + $br - 2);
 		} else {
-			$canvas-> rect3d( $bw, $bh, $bw + $sb - 1, $bh + $br - 1, 
+			$canvas-> rect3d( $bw, $bh, $bw + $sb - 1, $bh + $br - 1,
 				1, @c3d, $cht[1]);
 			$canvas-> color( $clr[0]);
-			$canvas-> line( $bw + 1, $val, $bw + $sb - 2, $val) 
+			$canvas-> line( $bw + 1, $val, $bw + $sb - 2, $val)
 				if $self-> {readOnly};
 		}
 		my $i;
@@ -1223,18 +1223,18 @@ sub on_paint
 		for ( $i = 0; $i < scalar @{$tval}; $i++) {
 			my $val = $bh + 1 + abs( $$tval[$i] - $min) * ( $br - 3) / $range;
 			if ( $$tlen[ $i]) {
-				$canvas-> line( 
-					$bw + $sb + 3, $val, 
+				$canvas-> line(
+					$bw + $sb + 3, $val,
 					$bw + $sb + $$tlen[ $i] + 3, $val
 				) if $ta & 2;
-				$canvas-> line( 
-					$bw - 4, $val, 
+				$canvas-> line(
+					$bw - 4, $val,
 					$bw - 4 - $$tlen[ $i], $val
 				) if $ta & 1;
 			}
 			$canvas-> text_out_bidi( $$ttxt[ $i],
-				( $ta == 2) ? 
-					$bw + $sb + $$tlen[ $i] + 5 : 
+				( $ta == 2) ?
+					$bw + $sb + $$tlen[ $i] + 5 :
 					$bw - $$tlen[ $i] - 5 - $canvas-> get_text_width( $$ttxt[ $i]),
 				$val - $bh / 2
 			) if defined $$ttxt[ $i];
@@ -1263,10 +1263,10 @@ sub on_paint
 		my $fh = $canvas-> font-> height;
 		return if $size[0] <= $kb * ($self-> {readOnly} ? 1 : 0) + 2 * $bw + 2;
 
-		$canvas-> translate( 0, (( $ta == 1) ? -1 : 1) * ( $bh - $sb - $kb)) 
+		$canvas-> translate( 0, (( $ta == 1) ? -1 : 1) * ( $bh - $sb - $kb))
 			if $ta < 3;
 		my $br  = $size[0] - 2 * $bw - 2;
-		$canvas-> rect3d( $bw, $bh, $bw + $br - 1, $bh + $sb - 1, 1, @c3d, $cht[1]), return 
+		$canvas-> rect3d( $bw, $bh, $bw + $br - 1, $bh + $sb - 1, 1, @c3d, $cht[1]), return
 			unless $range;
 		my $val = $bw + 1 + abs( $self-> {value} - $min) * ( $br - 3) / $range;
 
@@ -1288,13 +1288,13 @@ sub on_paint
 		for ( $i = 0; $i < scalar @{$tval}; $i++) {
 			my $val = int( 1 + $bw + abs( $$tval[$i] - $min) * ( $br - 3) / $range + .5);
 			if ( $$tlen[ $i]) {
-				$canvas-> line( $val, $bh + $sb + 3, $val, $bh + $sb + $$tlen[ $i] + 3) 
+				$canvas-> line( $val, $bh + $sb + 3, $val, $bh + $sb + $$tlen[ $i] + 3)
 					if $ta & 1;
-				$canvas-> line( $val, $bh - 4, $val, $bh - 4 - $$tlen[ $i]) 
+				$canvas-> line( $val, $bh - 4, $val, $bh - 4 - $$tlen[ $i])
 					if $ta & 2;
 			}
 
-			next unless defined $$ttxt[ $i]; 
+			next unless defined $$ttxt[ $i];
 			my $tw = int( $canvas-> get_text_width( $$ttxt[ $i]) / 2 + .5);
 			my $x = $val - $tw;
 			next if $x >= $size[0] or $val + $tw < 0;
@@ -1305,7 +1305,7 @@ sub on_paint
 			];
 		}
 
-		
+
 		if ( @texts) {
 			# see that leftmost val fits
 			if ( $texts[0]->[1] - $texts[0]->[2] < 0) {
@@ -1403,16 +1403,16 @@ sub pos2info
 	return if $self-> {max} == $self-> {min};
 	if ( $self-> {vertical}) {
 		my $bh  = $self-> font-> height;
-		my $val = 
-			$bh + 
-			1 + 
+		my $val =
+			$bh +
+			1 +
 			abs( $self-> {value} - $self-> {min}) *
-				( $size[1] - 2 * $bh - 5) / 
+				( $size[1] - 2 * $bh - 5) /
 				( abs($self-> {max} - $self-> {min}) || 1);
-		my $ret1 = 
-			$self-> {min} + 
-			( $y - $bh - 1) * 
-				abs($self-> {max} - $self-> {min}) / 
+		my $ret1 =
+			$self-> {min} +
+			( $y - $bh - 1) *
+				abs($self-> {max} - $self-> {min}) /
 				(( $size[1] - 2 * $bh - 5) || 1);
 
 		if ( $y < $val - $self->knobBreadth / 2 or $y >= $val + $self->knobBreadth / 2) {
@@ -1422,16 +1422,16 @@ sub pos2info
 		}
 	} else {
 		my $bw = $self-> font-> width + $self->{borderWidth};
-		my $val = 
-			$bw + 
-			1 + 
+		my $val =
+			$bw +
+			1 +
 			abs( $self-> {value} - $self-> {min}) *
-				( $size[0] - 2 * $bw - 5) / 
+				( $size[0] - 2 * $bw - 5) /
 				(abs($self-> {max} - $self-> {min}) || 1);
-		my $ret1 = 
-			$self-> {min} + 
-			( $x - $bw - 1) * 
-				abs($self-> {max} - $self-> {min}) / 
+		my $ret1 =
+			$self-> {min} +
+			( $x - $bw - 1) *
+				abs($self-> {max} - $self-> {min}) /
 				(( $size[0] - 2 * $bw - 5) || 1);
 
 		if ( $x < $val - $self->knobBreadth / 2 or $x >= $val + $self->knobBreadth / 2) {
@@ -1574,7 +1574,7 @@ sub value
 			my $tval = $self-> {tickVal};
 			for ( $i = 0; $i < scalar @{$tval}; $i++) {
 				my $j = $$tval[ $i];
-				$minDist = abs(($thatVal = $j) - $value) 
+				$minDist = abs(($thatVal = $j) - $value)
 					if abs( $j - $value) < $minDist;
 			}
 			$value = $thatVal if defined $thatVal;
@@ -1772,7 +1772,7 @@ sub on_paint
 	my $br  = $self-> {br};
 	my $rad = $br * 0.3;
 	my @cpt = ( $self-> {circX}, $self-> {circY}, $rad*2+1, $rad*2+1);
-	
+
 	if ( defined $self-> {singlePaint}) {
 		$canvas-> color( $prelight ) if $self->{prelight};
 		$canvas-> fill_ellipse( @cpt[0..1], $rad*2-5, $rad*2-5);
@@ -1823,8 +1823,8 @@ sub on_paint
 			$r += 3;
 			if ( defined $$ttxt[ $i]) {
 				my $y = $cpt[1] + $r * $sin - $fh / 2 * ( 1 - $sin);
-				my $x = $cpt[0] + $r * $cos - 
-					( 1 - $cos) * 
+				my $x = $cpt[0] + $r * $cos -
+					( 1 - $cos) *
 					$canvas-> get_text_width( $$ttxt[ $i]) / 2;
 				$canvas-> text_out_bidi( $$ttxt[ $i], $x, $y);
 			}
@@ -1844,34 +1844,34 @@ sub on_paint
 		my @cbd = reverse @c3d;
 		my $at  = 0;
 		$at = 1, @cbd = reverse @cbd if $s & 1;
-		
-		$canvas-> rect3d( 
+
+		$canvas-> rect3d(
 			$self-> { butt1X}, $self-> { butt1Y}, $self-> { butt1X} + $bw,
 			$self-> { butt1Y} + $bw, 1, @cbd, $clr[1]
 		);
-		$canvas-> line( 
+		$canvas-> line(
 			$self-> { butt1X} + 2 + $at, $self-> { butt1Y} + $bw / 2 - $at,
 			$self-> { butt1X} - 2 + + $bw + $at, $self-> {butt1Y} + $bw / 2 - $at
 		);
 
 		@cbd = reverse @c3d; $at = 0;
 		$at = 1, @cbd = reverse @cbd if $s & 2;
-		$canvas-> rect3d( 
+		$canvas-> rect3d(
 			$self-> { butt2X}, $self-> { butt1Y}, $self-> { butt2X} + $bw,
 			$self-> { butt1Y} + $bw, 1, @cbd, $clr[1]
 		);
-		$canvas-> line( 
+		$canvas-> line(
 			$self-> { butt2X} + 2 + $at, $self-> { butt1Y} + $bw / 2 - $at,
 			$self-> { butt2X} - 2 + + $bw + $at, $self-> {butt1Y} + $bw / 2 - $at
 		);
-		$canvas-> line( 
+		$canvas-> line(
 			$self-> { butt2X} + $bw / 2 + $at, $self-> { butt1Y} + 2 - $at,
 			$self-> { butt2X} + $bw / 2 + $at, $self-> { butt1Y} - 2 - $at + $bw
 		);
 	}
 
 	$canvas-> rect_focus(
-		( $size[0] - $ttw) / 2 - 1, 1, 
+		( $size[0] - $ttw) / 2 - 1, 1,
 		( $size[0] + $ttw) / 2 + 1, $fh + 2
 	) if $self-> focused && ( length( $self-> text) > 0);
 }
@@ -1919,9 +1919,9 @@ sub on_mousedown
 	return if $self-> {readOnly};
 	return if $self-> {mouseTransaction};
 	return if $btn != mb::Left;
-	my @butt = ( 
-		$self-> {butt1X}, $self-> {butt1Y}, 
-		$self-> {butt2X}, $self-> {butt1X} + $self->buttonWidth, 
+	my @butt = (
+		$self-> {butt1X}, $self-> {butt1Y},
+		$self-> {butt2X}, $self-> {butt1X} + $self->buttonWidth,
 		$self-> {butt1Y} + $self->buttonWidth, $self-> {butt2X} + $self->buttonWidth
 	);
 	if ( $self-> {buttons} and $y >= $butt[1] and $y < $butt[4]) {
@@ -1939,7 +1939,7 @@ sub on_mousedown
 			$self-> capture(1);
 			$self-> scroll_timer_start;
 			$self-> scroll_timer_semaphore(0);
-			$self-> value( $self-> value + 
+			$self-> value( $self-> value +
 				$self-> step * (($self-> {pressState} == 1) ? -1 : 1));
 			return;
 		}
@@ -1958,9 +1958,9 @@ sub on_mouseup
 	my ( $self, $btn, $mod, $x, $y) = @_;
 	return if $btn != mb::Left;
 	return unless $self-> {mouseTransaction};
-	my @butt = ( 
+	my @butt = (
 		$self-> {butt1X}, $self-> {butt1Y}, $self-> {butt2X},
-		$self-> {butt1X} + $self->buttonWidth, $self-> {butt1Y} + $self->buttonWidth, 
+		$self-> {butt1X} + $self->buttonWidth, $self-> {butt1Y} + $self->buttonWidth,
 		$self-> {butt2X} + $self->buttonWidth
 	);
 	$self-> scroll_timer_stop;
@@ -2002,7 +2002,7 @@ sub on_mousemove
 		$self-> scroll_timer_start unless $self-> scroll_timer_active;
 		return unless $self-> scroll_timer_semaphore;
 		$self-> scroll_timer_semaphore(0);
-		$self-> value( $self-> value + 
+		$self-> value( $self-> value +
 			$self-> step * (( $self-> {mouseTransaction} == 1) ? -1 : 1));
 	} else {
 		$self-> scroll_timer_stop;
@@ -2157,7 +2157,7 @@ is defined in the descendant classes.
 =item Increment DELTA
 
 Called when the user presses a part of a widget that is responsible for
-incrementing or decrementing commands. DELTA is an integer value, 
+incrementing or decrementing commands. DELTA is an integer value,
 indicating how the associated value must be modified.
 
 =item TrackEnd
@@ -2168,7 +2168,7 @@ Called when the user finished the mouse transaction.
 
 =head1 Prima::SpinButton
 
-A rectangular spin button, consists of three parts, divided horizontally. 
+A rectangular spin button, consists of three parts, divided horizontally.
 The upper and the lower parts are push-buttons associated with singular
 increment and decrement commands. The middle part, when dragged by mouse,
 fires C<Increment> events with delta value, based on a vertical position
@@ -2185,7 +2185,7 @@ the class is less functional but has more stylish look.
 The class is a numerical input line, paired with a spin button.
 The input line value can be change three ways - either as a direct
 traditional keyboard input, or as spin button actions, or as mouse
-wheel response. The class provides value storage and range 
+wheel response. The class provides value storage and range
 selection properties.
 
 =head2 Properties
@@ -2197,7 +2197,7 @@ selection properties.
 Selects the value modification rule when the increment or decrement
 action hits the range. If 1, the value is changed to the opposite limit
 value ( for example, if value is 100 in range 2-100, and the user
-clicks on 'increment' button, the value is changed to 2 ). 
+clicks on 'increment' button, the value is changed to 2 ).
 
 If 0, the value does not change.
 
@@ -2346,7 +2346,7 @@ Default value: 0
 
 =item value INTEGER
 
-Selects integer value between C<min> and C<max>, reflected in the progress bar and 
+Selects integer value between C<min> and C<max>, reflected in the progress bar and
 eventual text.
 
 Default value: 0.
@@ -2384,7 +2384,7 @@ Default stringifying conversion is identical to C<sprintf("%2d%%")> one.
 =head1 Prima::AbstractSlider
 
 The class provides basic functionality of a sliding bar, equipped with
-tick marks. Tick marks are supposed to be drawn alongside the main sliding axis or 
+tick marks. Tick marks are supposed to be drawn alongside the main sliding axis or
 circle and provide visual feedback for the user.
 
 The class is not usable directly.
@@ -2400,7 +2400,7 @@ the sliding bar. If 1, C<Change> notification is executed as soon as C<value>
 is changed. If 0, C<Change> is deferred until the user finished the mouse drag;
 instead, C<Track> notification is executed when the bar is moved.
 
-This property can be used when the action, called on C<Change> performs very 
+This property can be used when the action, called on C<Change> performs very
 slow, so the eventual fast mouse interactions would not thrash down the program.
 
 Default value: 1
@@ -2445,7 +2445,7 @@ If ARRAY is C<undef>, no ticks are drawn.
 C<scheme> is a property, that creates a set of tick marks
 using one of the predefined scale designs, selected by C<ss::XXX> constants.
 Each constant produces different scale; some make use of C<increment> integer
-property, which selects a step by which the additional 
+property, which selects a step by which the additional
 text marks are drawn. As an example, C<ss::Thermometer> design with
 default C<min>, C<max>, and C<increment> values would look like that:
 
@@ -2505,7 +2505,7 @@ this notification is a substitute to C<Change>.
 
 =head1 Prima::Slider
 
-Presents a linear sliding bar, movable along a linear shaft. 
+Presents a linear sliding bar, movable along a linear shaft.
 
 =head2 Properties
 
@@ -2515,7 +2515,7 @@ Presents a linear sliding bar, movable along a linear shaft.
 
 In horizontal mode, sets extra margin space between the slider line and
 the widget boundaries. Can be used for fine tuning of displaying text
-labels from <ticks()>, where the default spacing (0) or spacing procedure 
+labels from <ticks()>, where the default spacing (0) or spacing procedure
 (drop overlapping labels) is not enough.
 
 =item ribbonStrip BOOLEAN
@@ -2560,7 +2560,7 @@ Default value: 0
 =item pos2info X, Y
 
 Translates integer coordinates pair ( X, Y ) into the value corresponding to the scale,
-and returns three scalars: 
+and returns three scalars:
 
 =over
 
@@ -2605,7 +2605,7 @@ Default values: 0
 =item stdPointer BOOLEAN
 
 Determines the style of a value indicator ( pointer ) on the dial.
-If 1, it is drawn as a black triangular mark. 
+If 1, it is drawn as a black triangular mark.
 If 0, it is drawn as a small circular knob.
 
 Default value: 0
@@ -2631,7 +2631,7 @@ as two integers in (X,Y) format.
 
 =item xy2val X, Y
 
-Converts widget coordinates X and Y into value in range from C<min> 
+Converts widget coordinates X and Y into value in range from C<min>
 to C<max>, and return two scalars: the value and the boolean flag,
 which is set to 1 if the (X,Y) point is inside the dial circle,
 and 0 otherwise.
@@ -2645,7 +2645,7 @@ and 0 otherwise.
 =item Stringify VALUE, REF
 
 Converts integer VALUE into a string format and puts into REF scalar reference.
-The resulting string is displayed in the center of the dial. 
+The resulting string is displayed in the center of the dial.
 
 Default conversion routine simply copies VALUE to REF as is.
 

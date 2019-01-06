@@ -3,7 +3,7 @@
 #   CheckBox
 #   Radio
 #   SpeedButton
-#   RadioGroup ( obsolete ) 
+#   RadioGroup ( obsolete )
 #   GroupBox
 #   CheckBoxGroup ( obsolete )
 #
@@ -51,10 +51,10 @@ sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
 	$p-> { autoWidth} = 0
-		if exists $p-> {width} || exists $p-> {size} || exists $p-> {rect} || 
+		if exists $p-> {width} || exists $p-> {size} || exists $p-> {rect} ||
 			( exists $p-> {left} && exists $p-> {right});
 	$p-> {autoHeight} = 0
-		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} || 
+		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} ||
 			( exists $p-> {top} && exists $p-> {bottom});
 	$self-> SUPER::profile_check_in( $p, $default);
 }
@@ -62,7 +62,7 @@ sub profile_check_in
 sub on_translateaccel
 {
 	my ( $self, $code, $key, $mod) = @_;
-	if ( 
+	if (
 		defined $self-> {accel} &&
 		($key == kb::NoKey) &&
 		lc chr $code eq $self-> { accel}
@@ -115,9 +115,9 @@ sub on_keydown
 		$self-> { spaceTransaction} = 1;
 		$self-> pressed( 1);
 	}
-	if ( 
-		defined $self-> {accel} && 
-		($key == kb::NoKey) && 
+	if (
+		defined $self-> {accel} &&
+		($key == kb::NoKey) &&
 		lc chr $code eq $self-> { accel}
 	) {
 		$self-> clear_event;
@@ -204,9 +204,9 @@ sub on_mousemove
 	$self-> pressed( $mouseOver) if $self-> { lastMouseOver} != $mouseOver;
 	$self-> { lastMouseOver} = $mouseOver;
 	return unless $self-> {autoRepeat};
-	$self-> scroll_timer_stop, return 
+	$self-> scroll_timer_stop, return
 		unless $mouseOver;
-	$self-> scroll_timer_start, return 
+	$self-> scroll_timer_start, return
 		unless $self-> scroll_timer_active;
 	$self-> scroll_timer_semaphore(0);
 	$self-> notify(q(Click));
@@ -215,9 +215,9 @@ sub on_mousemove
 sub on_mouseenter
 {
 	my $self = $_[0];
-	if ( 
-		!$self-> {spaceTransaction} && 
-		!$self-> {mouseTransaction} && 
+	if (
+		!$self-> {spaceTransaction} &&
+		!$self-> {mouseTransaction} &&
 		$self-> enabled
 	) {
 		$self-> {hilite} = 1;
@@ -270,7 +270,7 @@ sub draw_caption
 	my ( $leftPart, $accel);
 	unless ( ref $cap ) {
 		$cap =~ s/^([^~]*)\~(.*)$/$1$2/;
-		( $leftPart, $accel) = ( $1, 
+		( $leftPart, $accel) = ( $1,
 			( defined ($2) && length($2)) ? substr( $2, 0, 1) : undef);
 	}
 	my ( $fw, $fh, $enabled) = (
@@ -305,7 +305,7 @@ sub draw_caption
 	}
 
 	$canvas-> text_out_bidi( $cap, $x, $y);
-	$canvas-> rect_focus( $x - 2, $y - 2, $x + 2 + $fw, $y + 2 + $fh) 
+	$canvas-> rect_focus( $x - 2, $y - 2, $x + 2 + $fw, $y + 2 + $fh)
 		if $self-> focused;
 }
 
@@ -429,7 +429,7 @@ sub init
 {
 	my $self = shift;
 	$self-> {$_} = 0 for ( qw(
-		borderWidth checkable checked default vertical 
+		borderWidth checkable checked default vertical
 		defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph
 		flat modalResult autoRepeat
 	));
@@ -440,7 +440,7 @@ sub init
 		$self-> image( $profile{image}) :
 		$self-> imageFile( $profile{imageFile});
 	$self-> $_( $profile{$_}) for ( qw(
-		borderWidth checkable checked default smoothScaling imageScale glyphs vertical 
+		borderWidth checkable checked default smoothScaling imageScale glyphs vertical
 		defaultGlyph hiliteGlyph disabledGlyph pressedGlyph holdGlyph
 		flat modalResult autoRepeat
 	));
@@ -454,17 +454,17 @@ sub on_paint
 	@clr = ( $self-> hiliteColor, $self-> hiliteBackColor)
 		if $self-> { default};
 	$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
-	@clr = ( $self-> disabledColor, $self-> disabledBackColor) 
+	@clr = ( $self-> disabledColor, $self-> disabledBackColor)
 		if !$self-> enabled;
 	my @size = $canvas-> size;
-	
+
 	my @fbar = $self-> {default} ?
 		( 1, 1, $size[0] - 2, $size[1] - 2):
 		( 0, 0, $size[0] - 1, $size[1] - 1);
 	if ( !$self-> {flat} || $self-> {hilite}) {
-		$self-> rect_bevel( $canvas, @fbar, 
+		$self-> rect_bevel( $canvas, @fbar,
 			gradient => $self-> new_gradient(
-				palette  => [ $self-> dark3DColor, $clr[1], $self-> light3DColor ],  
+				palette  => [ $self-> dark3DColor, $clr[1], $self-> light3DColor ],
 				spline   => [0,0.5,1,0.5],
 				vertical => 0,
 			),
@@ -496,23 +496,23 @@ sub on_paint
 		my $imgNo = $self-> {defaultGlyph};
 		my $useVeil = 0;
 		if ( $self-> {hilite}) {
-			$imgNo = $self-> {hiliteGlyph} 
-				if $self-> {glyphs} > $self-> {hiliteGlyph} && 
+			$imgNo = $self-> {hiliteGlyph}
+				if $self-> {glyphs} > $self-> {hiliteGlyph} &&
 					$self-> {hiliteGlyph} >= 0;
 		}
 		if ( $self-> {checked}) {
-			$imgNo = $self-> {holdGlyph} if 
-				$self-> {glyphs} > $self-> {holdGlyph} && 
+			$imgNo = $self-> {holdGlyph} if
+				$self-> {glyphs} > $self-> {holdGlyph} &&
 					$self-> {holdGlyph} >= 0;
 		}
 		if ( $self-> {pressed}) {
-			$imgNo = $self-> {pressedGlyph} if 
-				$self-> {glyphs} > $self-> {pressedGlyph} && 
+			$imgNo = $self-> {pressedGlyph} if
+				$self-> {glyphs} > $self-> {pressedGlyph} &&
 					$self-> {pressedGlyph} >= 0;
 		}
 		if ( !$self-> enabled) {
 			( $self-> {glyphs} > $self-> {disabledGlyph} && $self-> {disabledGlyph} >= 0) ?
-				$imgNo = $self-> {disabledGlyph} : 
+				$imgNo = $self-> {disabledGlyph} :
 					$useVeil = 1;
 		}
 
@@ -544,7 +544,7 @@ sub on_paint
 				cache => undef,
 			};
 			if ( $c->{zoom} != $is || $c->{obj} ne $image ) {
-				$c->{cache} = ( $self->{glyphs} == 1 ) ? 
+				$c->{cache} = ( $self->{glyphs} == 1 ) ?
 					$image->dup : $image->extract( $imgNo * $pw, 0, $pw, $ph);
 				$c->{cache}->ui_scale( zoom => $is );
 				$c->{zoom} = $is;
@@ -563,7 +563,7 @@ sub on_paint
 			$pw, $ph,
 			rop::CopyPut
 		);
-		$self-> draw_veil( $canvas, $imAtX, $imAtY, $imAtX + $sw, $imAtY + $sh) 
+		$self-> draw_veil( $canvas, $imAtX, $imAtY, $imAtX + $sw, $imAtY + $sh)
 			if $useVeil;
 	} else {
 		$textAtX = ( $size[0] - $fw) / 2 + $shift;
@@ -587,13 +587,13 @@ sub on_keydown
 sub on_click
 {
 	my $self = $_[0];
-	$self-> checked( !$self-> checked) 
+	$self-> checked( !$self-> checked)
 		if $self-> { checkable};
 	my $owner = $self-> owner;
 	while ( $owner ) {
-		if ( 
-			$owner-> isa(q(Prima::Window)) && 
-			$owner-> get_modal && 
+		if (
+			$owner-> isa(q(Prima::Window)) &&
+			$owner-> get_modal &&
 			$self-> modalResult
 		) {
 			$owner-> modalResult( $self-> modalResult);
@@ -607,14 +607,14 @@ sub on_click
 
 sub on_check {}
 
-sub std_calc_geom_size 
+sub std_calc_geom_size
 {
 	my $self = $_[0];
 	my $capOk = length($self-> text);
 	my @sz  = $capOk ? $self-> caption_box : (0,0);
 
 	$sz[$_] += 10 for 0,1;
-	
+
 	if ( defined $self-> {image}) {
 		my $imw = $self-> {image}-> width  / $self-> { glyphs} * $self-> {imageScale};
 		my $imh = $self-> {image}-> height / $self-> { glyphs} * $self-> {imageScale};
@@ -690,7 +690,7 @@ sub default
 		my @widgets = $self-> owner-> widgets;
 		for ( @widgets) {
 			last if $_ == $self;
-			$_-> default(0) 
+			$_-> default(0)
 				if $_-> isa(q(Prima::Button)) && $_-> default;
 		}
 	}
@@ -712,7 +712,7 @@ sub image
 	delete $self-> {smooth_cache};
 	$self-> check_auto_size;
 	$self-> repaint;
-}   
+}
 
 sub imageFile
 {
@@ -754,7 +754,7 @@ sub vertical
 	$self-> {vertical} = $vertical;
 	$self-> check_auto_size;
 	$self-> repaint;
-}   
+}
 
 sub modalResult
 {
@@ -763,9 +763,9 @@ sub modalResult
 	$self-> { modalResult} = $_[1];
 	my $owner = $self-> owner;
 	while ( $owner ) {
-		if ( 
-			$owner-> isa(q(Prima::Window)) && 
-			$owner-> get_modal && 
+		if (
+			$owner-> isa(q(Prima::Window)) &&
+			$owner-> get_modal &&
 			$self-> {modalResult}
 		) {
 			$owner-> modalResult( $self-> { modalResult});
@@ -798,14 +798,14 @@ my @images;
 
 Prima::Application::add_startup_notification( sub {
 	my $i = 0;
-	for (  
+	for (
 		sbmp::CheckBoxUnchecked, sbmp::CheckBoxUncheckedPressed,
 		sbmp::CheckBoxChecked, sbmp::CheckBoxCheckedPressed,
 		sbmp::RadioUnchecked, sbmp::RadioUncheckedPressed,
-		sbmp::RadioChecked, sbmp::RadioCheckedPressed 
+		sbmp::RadioChecked, sbmp::RadioCheckedPressed
 	) {
-		$images[ $i] = ( $i > 3) ? 
-			Prima::StdBitmap::icon( $_) : 
+		$images[ $i] = ( $i > 3) ?
+			Prima::StdBitmap::icon( $_) :
 			Prima::StdBitmap::image( $_);
 		$i++;
 	}
@@ -882,16 +882,16 @@ sub uncheck      { $_[0]-> checked(0)}
 
 my @static_image0_size;
 
-sub calc_geom_size 
+sub calc_geom_size
 {
 	my $self = $_[0];
 	my @sz   = $self-> caption_box;
 	$sz[$_] += 12 for 0,1;
 	if ( $images[0]) {
-		@static_image0_size = $images[0]-> size 
+		@static_image0_size = $images[0]-> size
 			unless @static_image0_size;
 		$sz[0] += $static_image0_size[0] * 1.5 + 2;
-		$sz[1] = $static_image0_size[1] 
+		$sz[1] = $static_image0_size[1]
 			if $sz[1] < $static_image0_size[1];
 	} else {
 		my $s = $::application->uiScaling;
@@ -921,12 +921,12 @@ sub on_paint
 	if ( $self-> enabled) {
 		if ( $self-> focused) {
 			@clr = ($self-> hiliteColor, $self-> hiliteBackColor);
-		} else { 
-			@clr = ($self-> color, $self-> backColor); 
+		} else {
+			@clr = ($self-> color, $self-> backColor);
 		}
 		$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
-	} else { 
-		@clr = ($self-> disabledColor, $self-> disabledBackColor); 
+	} else {
+		@clr = ($self-> disabledColor, $self-> disabledBackColor);
 	}
 
 	my @size = $canvas-> size;
@@ -951,22 +951,22 @@ sub on_paint
 	} else {
 		my $s = $::application->uiScaling;
 		$xStart = $s * 16;
-		push ( @c3d, shift @c3d) 
+		push ( @c3d, shift @c3d)
 			if $self-> { pressed};
-		$canvas-> rect3d( 1, ( $size[1] - $s*14) / 2, $s*15, ( $size[1] + $s*14) / 2, 1, 
+		$canvas-> rect3d( 1, ( $size[1] - $s*14) / 2, $s*15, ( $size[1] + $s*14) / 2, 1,
 			@c3d, $clr[ 1]);
 		if ( $self-> { checked}) {
 			my $at = $self-> { pressed} ? 1 : 0;
 			$canvas-> color( cl::Black);
 			$canvas-> lineWidth( 2);
 			my $yStart = ( $size[1] - $s*14) / 2;
-			$canvas-> line( 
-				$at + $s*4, $yStart - $at +  $s*8, 
-				$at + $s*5 , $yStart - $at + $s*3  
+			$canvas-> line(
+				$at + $s*4, $yStart - $at +  $s*8,
+				$at + $s*5 , $yStart - $at + $s*3
 			);
-			$canvas-> line( 
-				$at + $s*5 , $yStart - $at + $s*3, 
-				$at + $s*12, $yStart - $at + $s*12 
+			$canvas-> line(
+				$at + $s*5 , $yStart - $at + $s*3,
+				$at + $s*12, $yStart - $at + $s*12
 			);
 			$canvas-> lineWidth( 0);
 		}
@@ -996,12 +996,12 @@ sub on_paint
 	if ( $self-> enabled) {
 		if ( $self-> focused) {
 			@clr = ($self-> hiliteColor, $self-> hiliteBackColor);
-		} else { 
-			@clr = ($self-> color, $self-> backColor); 
+		} else {
+			@clr = ($self-> color, $self-> backColor);
 		}
 		$clr[1] = $self-> prelight_color($clr[1]) if $self->{hilite} && $self-> enabled;
-	} else { 
-		@clr = ($self-> disabledColor, $self-> disabledBackColor); 
+	} else {
+		@clr = ($self-> disabledColor, $self-> disabledBackColor);
 	}
 
 	my @size = $canvas-> size;
@@ -1032,9 +1032,9 @@ sub on_paint
 		my $i;
 		if ( $self-> { pressed}) {
 			$canvas-> color( cl::Black);
-			for ( $i = -1; $i < 3; $i++) { 
+			for ( $i = -1; $i < 3; $i++) {
 				$canvas-> line(
-					$xs[$i], $ys[$i], 
+					$xs[$i], $ys[$i],
 					$xs[$i + 1], $ys[$i + 1]
 				)
 			};
@@ -1043,14 +1043,14 @@ sub on_paint
 				( $self-> light3DColor, $self-> dark3DColor) :
 				( $self-> dark3DColor, $self-> light3DColor);
 			$canvas-> color( $clr[1]);
-			for ( $i = -1; $i < 1; $i++) { 
+			for ( $i = -1; $i < 1; $i++) {
 				$canvas-> line(
 					$xs[$i], $ys[$i],
 					$xs[$i + 1],$ys[$i + 1]
 				)
 			};
 			$canvas-> color( $clr[0]);
-			for ( $i = 1; $i < 3; $i++) { 
+			for ( $i = 1; $i < 3; $i++) {
 				$canvas-> line(
 					$xs[$i], $ys[$i],
 					$xs[$i + 1],$ys[$i + 1]
@@ -1086,7 +1086,7 @@ sub checked
 		$self-> repaint;
 		$chkOk = ( $self-> {checked} != $chkOk) && $self-> {checked};
 		my $owner = $self-> owner;
-		$owner-> notify( 'RadioClick', $self) 
+		$owner-> notify( 'RadioClick', $self)
 			if $chkOk && exists $owner-> notification_types-> {RadioClick};
 		$self-> notify( 'Check', $self-> {checked});
 	}
@@ -1106,7 +1106,7 @@ sub profile_default
 }
 
 sub calc_geom_size
-{  
+{
 	my @sz = $_[0]-> std_calc_geom_size;
 	my $s = $::application->uiScaling;
 	$sz[0] = $s*36 if $sz[0] < $s*36;
@@ -1166,8 +1166,8 @@ sub on_paint
 	my $c = $self-> text;
 	if ( length( $c) > 0) {
 		$canvas-> color( $clr[1]);
-		$canvas-> bar  ( 
-			8, $size[1] - $fh - 1, 
+		$canvas-> bar  (
+			8, $size[1] - $fh - 1,
 			16 + $canvas-> get_text_width( $c), $size[1] - 1
 		);
 		$canvas-> color( $clr[0]);
@@ -1220,7 +1220,7 @@ sub value
 }
 
 package Prima::RadioGroup;    use vars qw(@ISA); @ISA=qw(Prima::GroupBox);
-package Prima::CheckBoxGroup; use vars qw(@ISA); @ISA=qw(Prima::GroupBox); 
+package Prima::CheckBoxGroup; use vars qw(@ISA); @ISA=qw(Prima::GroupBox);
 
 1;
 
@@ -1240,7 +1240,7 @@ Prima::Buttons - button widgets and grouping widgets.
 		text  => 'Simple button',
 		pack  => {},
 	);
-	$window-> insert( 'Prima::SpeedButton' , 
+	$window-> insert( 'Prima::SpeedButton' ,
 		pack => {},
 		image => Prima::StdBitmap::icon(0),
 	);
@@ -1255,7 +1255,7 @@ Prima::Buttons - button widgets and grouping widgets.
 
 Prima::Buttons provides two separate sets of classes:
 the button widgets and the grouping widgets. The button widgets
-include push buttons, check-boxes and radio buttons. 
+include push buttons, check-boxes and radio buttons.
 The grouping widgets are designed for usage as containers for the
 check-boxes and radio buttons, however, any widget can be inserted
 in a grouping widget.
@@ -1278,13 +1278,13 @@ Note: C<*> - marked classes are abstract.
 
 	use Prima::Buttons;
 
-	my $button = $widget-> insert( 'Prima::Button', 
+	my $button = $widget-> insert( 'Prima::Button',
 		text => 'Push button',
 		onClick => sub { print "hey!\n" },
 	);
 	$button-> flat(1);
 
-	my $group = $widget-> insert( 'Prima::GroupBox', 
+	my $group = $widget-> insert( 'Prima::GroupBox',
 		onRadioClick => sub { print $_[1]-> text, "\n"; }
 	);
 	$group-> insert( 'Prima::Radio', text => 'Selection 1');
@@ -1293,7 +1293,7 @@ Note: C<*> - marked classes are abstract.
 
 =head1 Prima::AbstractButton
 
-Prima::AbstractButton realizes common functionality of buttons. 
+Prima::AbstractButton realizes common functionality of buttons.
 It provides reaction on mouse and keyboard events, and calls
 L<Click> notification when the user activates the button. The
 mouse activation is performed either by mouse double click or
@@ -1313,9 +1313,9 @@ set and enter key is pressed. This condition holds even if the button is out of 
 
 =item *
 
-C<{accel}> character variable is assigned and the corresponding character key 
+C<{accel}> character variable is assigned and the corresponding character key
 is pressed. C<{accel}> variable is extracted automatically from the text string
-passed to L<text> property. 
+passed to L<text> property.
 This condition holds even if the button is out of focus.
 
 =back
@@ -1326,7 +1326,7 @@ This condition holds even if the button is out of focus.
 
 =item Check
 
-Abstract callback event. 
+Abstract callback event.
 
 =item Click
 
@@ -1352,7 +1352,7 @@ Default value: 0
 
 The text that is drawn in the button. If STRING contains ~ ( tilde ) character,
 the following character is treated as a hot key, and the character is
-underlined. If the user presses the corresponding character key then 
+underlined. If the user presses the corresponding character key then
 L<Click> event is called. This is true even when the button is out of focus.
 
 =back
@@ -1370,10 +1370,10 @@ This is the default method of drawing the button in the disabled state.
 
 Draws single line of text, stored in L<text> property on CANVAS at X, Y
 coordinates. Performs underlining of eventual tilde-escaped character, and
-draws the text with dimmed colors if the button is disabled. If the button 
+draws the text with dimmed colors if the button is disabled. If the button
 is focused, draws a dotted line around the text.
 
-=item caption_box [ CANVAS = self ] 
+=item caption_box [ CANVAS = self ]
 
 Calculates geometrical extensions of text string, stored in L<text> property in pixels.
 Returns two integers, the width and the height of the string for the font selected on CANVAS.
@@ -1431,7 +1431,7 @@ Default value: 0
 =item checked BOOLEAN
 
 Selects whether the button is checked or not. Only actual
-when L<checkable> property is set. See also L<holdGlyph>. 
+when L<checkable> property is set. See also L<holdGlyph>.
 
 Default value: 0
 
@@ -1445,7 +1445,7 @@ Default value: 0
 
 =item defaultGlyph INTEGER
 
-Selects index of the default sub-image. 
+Selects index of the default sub-image.
 
 Default value: 0
 
@@ -1471,7 +1471,7 @@ If a button is to be drawn with the image, it can be passed in the L<image>
 property. If, however, the button must be drawn with several different images,
 there are no several image-holding properties. Instead, the L<image> object
 can be logically split vertically into several equal sub-images. This allows
-the button resource to contain all button states into one image file. 
+the button resource to contain all button states into one image file.
 The C<glyphs> property assigns how many such sub-images the image object contains.
 
 The sub-image indices can be assigned for rendition of the different states.
@@ -1506,9 +1506,9 @@ Default value: undef
 
 =item imageFile FILENAME
 
-Alternative to image selection by loading an image from the file. 
+Alternative to image selection by loading an image from the file.
 During the creation state, if set together with L<image> property, is superseded
-by the latter. 
+by the latter.
 
 To allow easy multiframe image access, FILENAME string is checked if it contains
 a number after a colon in the string end. Such, C<imageFile('image.gif:3')> call
@@ -1516,34 +1516,34 @@ would load the fourth frame in C<image.gif> file.
 
 =item imageScale SCALE
 
-Contains zoom factor for the L<image>. 
+Contains zoom factor for the L<image>.
 
 Default value: 1
 
 =item modalResult INTEGER
 
 Contains a custom integer value, preferably one of C<mb::XXX> constants.
-If a button with non-zero C<modalResult> is owned by a currently executing 
-modal window, and is pressed, its C<modalResult> value is copied to the C<modalResult> 
-property of the owner window, and the latter is closed. 
+If a button with non-zero C<modalResult> is owned by a currently executing
+modal window, and is pressed, its C<modalResult> value is copied to the C<modalResult>
+property of the owner window, and the latter is closed.
 This scheme is helpful for the dialog design:
 
-	$dialog-> insert( 'Prima::Button', modalResult => mb::OK, 
+	$dialog-> insert( 'Prima::Button', modalResult => mb::OK,
 		text => '~Ok', default => 1);
-	$dialog-> insert( 'Prima::Button', modalResult => mb::Cancel, 
+	$dialog-> insert( 'Prima::Button', modalResult => mb::Cancel,
 		text => 'Cancel);
 	return if $dialog-> execute != mb::OK.
 
 The toolkit defines the following constants for C<modalResult> use:
 
-	mb::OK or mb::Ok        
-	mb::Cancel    
-	mb::Yes       
-	mb::No        
-	mb::Abort     
-	mb::Retry     
-	mb::Ignore    
-	mb::Help      
+	mb::OK or mb::Ok
+	mb::Cancel
+	mb::Yes
+	mb::No
+	mb::Abort
+	mb::Retry
+	mb::Ignore
+	mb::Help
 
 However, any other integer value can be safely used.
 
@@ -1552,7 +1552,7 @@ Default value: 0
 =item smoothScaling BOOL
 
 Tries to represent the image as smooth as possible. When the system doesn't support ARGB layering,
-icon objects smooth scaling will be restricted to integer-scaling only (i.e. 2x, 3x etc) because 
+icon objects smooth scaling will be restricted to integer-scaling only (i.e. 2x, 3x etc) because
 smooth color plane will not match pixelated mask plane, and because box-scaling
 with non-integer zooms looks ugly.
 
@@ -1562,7 +1562,7 @@ See also: L<Prima::Image/ui_scale> .
 
 =item pressedGlyph INTEGER
 
-Selects index of the sub-image for the pressed state of the button. 
+Selects index of the sub-image for the pressed state of the button.
 If C<image> does not contain such sub-image, the C<defaultGlyph> sub-image is drawn.
 
 =item transparent BOOLEAN
@@ -1586,7 +1586,7 @@ square shape and text property set to an empty string.
 
 An abstract class with common functionality of L<Prima::CheckBox> and
 L<Prima::RadioButton>. Reassigns default actions on tab and back-tab keys, so
-the sibling cluster widgets are not selected. Has C<ownerBackColor> property 
+the sibling cluster widgets are not selected. Has C<ownerBackColor> property
 set to 1, to prevent usage of background color from C<wc::Button> palette.
 
 =head2 Properties
@@ -1629,7 +1629,7 @@ Reverts the C<checked> state of the button and returns the new state.
 Represents a standard radio button, that can be either in checked, or in unchecked state.
 When checked, delivers L<RadioClick> event to the owner ( if the latter provides one ).
 
-The button uses the standard toolkit images with C<sbmp::RadioXXX> indices. 
+The button uses the standard toolkit images with C<sbmp::RadioXXX> indices.
 If the images can not be loaded, the button is drawn with the graphic primitives.
 
 =head2 Events
@@ -1646,7 +1646,7 @@ Called when a button is checked.
 
 Represents a standard check box button, that can be either in checked, or in unchecked state.
 
-The button uses the standard toolkit images with C<sbmp::CheckBoxXXX> indices. 
+The button uses the standard toolkit images with C<sbmp::CheckBoxXXX> indices.
 If the images can not be loaded, the button is drawn with graphic primitives.
 
 =head1 Prima::GroupBox
@@ -1669,9 +1669,9 @@ The upper offset is dependent on a font, and constitutes the half of the font he
 =item RadioClick BUTTON
 
 Called whenever one of children radio buttons is checked. BUTTON
-parameter contains the newly checked button. 
+parameter contains the newly checked button.
 
-The default action of the class is that all checked buttons, 
+The default action of the class is that all checked buttons,
 except BUTTON, are unchecked. Since the flow type of C<RadioClick> event
 is C<nt::PrivateFirst>, C<on_radioclick> method must be directly overloaded
 to disable this functionality.
@@ -1724,7 +1724,7 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, L<Prima::Window>, L<Prima::IntUtils>, 
+L<Prima>, L<Prima::Widget>, L<Prima::Window>, L<Prima::IntUtils>,
 L<Prima::StdBitmap>, F<examples/buttons.pl>, F<examples/buttons2.pl>.
 
 =cut

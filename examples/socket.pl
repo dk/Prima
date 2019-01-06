@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -76,7 +76,7 @@ my $watcher = Prima::File-> create(
 		syswrite $fh, $r, length($r);
 		$me-> mask( fe::Read); # want no write notifications
 	},
-);    
+);
 
 my $il = $w-> insert( InputLine =>
 	text => '',
@@ -87,7 +87,7 @@ my $il = $w-> insert( InputLine =>
 	return unless $key == kb::Enter;
 	$me-> clear_event;
 	my $t = $me-> text;
-	
+
 	unless ($t =~ m/^(?:http:\/\/)?([^\/]*)((?:\/.*$)|$)/) {
 		$e-> text( "Invalid URL");
 		return;
@@ -98,7 +98,7 @@ my $il = $w-> insert( InputLine =>
 	$remote_file = '/' unless length $remote_file;
 	$watcher-> {remote_host} = $remote;
 	$watcher-> {remote_file} = $remote_file;
-	
+
 	my $port = 80;
 	my $proto = getprotobyname('tcp');
 	my $iaddr;

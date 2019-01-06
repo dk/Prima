@@ -5,7 +5,7 @@ use warnings;
 use Prima;
 use Prima::IntUtils;
 
-package 
+package
     ci;
 
 BEGIN {
@@ -14,7 +14,7 @@ BEGIN {
 	eval 'use constant IndentCellBack => 3 + MaxId;' unless exists $ci::{IndentCellBack};
 }
 
-package 
+package
     gsci;
 
 use constant COL_INDEX => 0;
@@ -101,7 +101,7 @@ sub init
 	my $self = shift;
 
 	$self-> {$_} = -1 for qw( leftCell topCell);
-	$self-> {$_} = 0 for qw( 
+	$self-> {$_} = 0 for qw(
 		autoHScroll autoVScroll scrollTransaction gridColor hScroll vScroll dx dy
 		leftCell topCell multiSelect borderWidth visibleCols visibleRows
 		indentCellColor indentCellBackColor clipCells cache_geometry_requests
@@ -111,16 +111,16 @@ sub init
 	$self-> {focusedCell} = [0,0];
 	$self-> {cellIndents} = [0,0,0,0];
 	$self-> {selection} = [-1,-1,-1,-1];
-	
+
 	my %profile = $self-> SUPER::init(@_);
 	$self-> setup_indents;
 
 	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
-	$self-> $_( $profile{ $_}) for qw( 
+	$self-> $_( $profile{ $_}) for qw(
 		allowChangeCellHeight allowChangeCellWidth
 		constantCellWidth constantCellHeight
 		autoHScroll autoVScroll drawHGrid drawVGrid gridColor hScroll vScroll
-		columns rows cellIndents 
+		columns rows cellIndents
 		leftCell topCell multiSelect focusedCell borderWidth indentCellColor
 		indentCellBackColor clipCells gridGravity
 	);
@@ -166,15 +166,15 @@ sub draw_cells
 			$ysel = $row >= $selection[1] && $row <= $selection[3] if $xsel;
 			$yprelight = $row == $prelight[1];
 			$canvas-> clipRect( $x1, $y1, $x2, $y2) if $clipH;
-			$notifier-> ( @notifyParms, 
-				$canvas, 
+			$notifier-> ( @notifyParms,
+				$canvas,
 				$col, $row, $xtype || $ytype,
 				$x1, $y1, $x2, $y2,
 				$X1, $Y1, $X2, $Y2,
 				$xsel && $ysel,
 				( $col == $f[0] && $row == $f[1]) ? 1 : 0,
 				$xprelight && $yprelight
-			); 
+			);
 		}
 	}
 	$self-> pop_event;
@@ -184,7 +184,7 @@ sub draw_text_cells
 {
 	my ( $self, $canvas, $screen_rects, $cell_rects, $cell_indices, $font_height) = @_;
 	my $i;
-	my @clip = $canvas-> clipRect if $self-> {clipCells} == 2; 
+	my @clip = $canvas-> clipRect if $self-> {clipCells} == 2;
 	for ( $i = 0; $i < @$screen_rects; $i++) {
 		my @r = @{$$cell_rects[$i]};
 		$canvas-> clipRect( @{$$screen_rects[$i]}) if $self-> {clipCells} == 2;
@@ -248,9 +248,9 @@ sub get_cell_alignment
 sub get_range
 {
 	my ( $self, $vertical, $index) = @_;
-	my ( $min, $max) = ( 1, 16384 ); # actually, no real restriction on $max - 
+	my ( $min, $max) = ( 1, 16384 ); # actually, no real restriction on $max -
 					# just a reasonable non-undef value
-	$self-> notify(q(GetRange), $vertical, $index, \$min, \$max); 
+	$self-> notify(q(GetRange), $vertical, $index, \$min, \$max);
 	$min = 1 if $min < 1;
 	$max = $min if $max < $min;
 	return $min, $max;
@@ -276,11 +276,11 @@ sub get_screen_cell_info
 	}
 	return unless defined $row;
 	my ( $dx, $dy) = ( $self-> {dx}, $self-> {dy});
-	return 
+	return
 		$col, $row,
 		(
-		( $$c[3] == $$c[5]) && ( $$c[4] == $$c[6]) && 
-		( $$r[3] == $$r[5]) && ( $$r[4] == $$r[6]) 
+		( $$c[3] == $$c[5]) && ( $$c[4] == $$c[6]) &&
+		( $$r[3] == $$r[5]) && ( $$r[4] == $$r[6])
 		),
 		$$c[3]-$dx, $$r[3]+$dy, $$c[4]-$dx+1, $$r[4]+$dy+1,
 		$$c[5]-$dx, $$r[5]+$dy, $$c[6]-$dx+1, $$r[6]+$dy+1,
@@ -308,8 +308,8 @@ sub point2cell
 		# left border
 		$cx = -1;
 		$hints{x} = -1;
-	} elsif ( $x >= $a[2] - 
-			(($self-> {drawVGrid} && $self-> {cellIndents}-> [2] > 0) ? 
+	} elsif ( $x >= $a[2] -
+			(($self-> {drawVGrid} && $self-> {cellIndents}-> [2] > 0) ?
 				$self-> {drawVGrid} : 0)) {
 		# right border
 		$cx = -1;
@@ -319,8 +319,8 @@ sub point2cell
 		# bottom border
 		$cy = -1;
 		$hints{y} = +2;
-	} elsif ( $y >= $a[3] - 
-		(($self-> {drawHGrid} && $self-> {cellIndents}-> [1] > 0) ? 
+	} elsif ( $y >= $a[3] -
+		(($self-> {drawHGrid} && $self-> {cellIndents}-> [1] > 0) ?
 			$self-> {drawVGrid} : 0)) {
 		# top border
 		$cy = -1;
@@ -339,7 +339,7 @@ sub point2cell
 			next if $x < $$_[0] - $lax || $x > $$_[0] + $lax || $i == $skipLast;
 			$hints{x_grid}    = 1;
 			$hints{grid}      = 1;
-			if ( $self-> {cellIndents}-> [2] > 0 && 
+			if ( $self-> {cellIndents}-> [2] > 0 &&
 				$i >= scalar(@{$self-> {vGrid}}) - $self-> {cellIndents}-> [2] - 1) {
 				$hints{x_right} = 1;
 				$i++ unless $self-> {lastColEmpty};
@@ -354,7 +354,7 @@ sub point2cell
 	if ( !$NoGrid && $self-> {drawHGrid}) {
 		my $i = -1;
 		my $lax = $self-> allowChangeCellHeight ? $self-> {gridGravity} : 0;
-		my $skipLast = ( $self-> {cellIndents}-> [3] > 0) ? 
+		my $skipLast = ( $self-> {cellIndents}-> [3] > 0) ?
 			scalar(@{$self-> {hGrid}}) - 1 : -1;
 
 		for ( @{$self-> {hGrid}}) {
@@ -363,7 +363,7 @@ sub point2cell
 
 			$hints{y_grid}    = 1;
 			$hints{grid}      = 1;
-			if ( $self-> {cellIndents}-> [3] > 0 && 
+			if ( $self-> {cellIndents}-> [3] > 0 &&
 				$i >= scalar(@{$self-> {hGrid}}) - $self-> {cellIndents}-> [3] - 1) {
 				$hints{y_bottom} = 1;
 				$i++ unless $self-> {lastRowEmpty};
@@ -385,10 +385,10 @@ sub point2cell
 		# right whitespace
 		$cx = -1;
 		$hints{x} = +1;
-	} elsif ( $self-> {lastColEmpty} && 
+	} elsif ( $self-> {lastColEmpty} &&
 		$x < $a[2] - $self-> {pixelCellIndents}-> [2] &&
-		$x > $a[2] - $self-> {pixelCellIndents}-> [2] - $self-> {lastColTail} - 
-			(($self-> {cellIndents}-> [2] > 0) ? $self-> {drawVGrid} : 0) 
+		$x > $a[2] - $self-> {pixelCellIndents}-> [2] - $self-> {lastColTail} -
+			(($self-> {cellIndents}-> [2] > 0) ? $self-> {drawVGrid} : 0)
 	) {
 		# gap
 		$cx = -1;
@@ -404,9 +404,9 @@ sub point2cell
 				$cx = $$_[0];
 				$hints{x} = 0;
 				if (( $hints{x_type} = $$_[1]) != 0) {
-					$hints{x_type} = 
-						( $x > $a[0] + $self-> {pixelCellIndents}-> [0]) ? 
-							(( $x < $a[2] - $self-> {pixelCellIndents}-> [2] - 1) ? 
+					$hints{x_type} =
+						( $x > $a[0] + $self-> {pixelCellIndents}-> [0]) ?
+							(( $x < $a[2] - $self-> {pixelCellIndents}-> [2] - 1) ?
 							0 : +1)
 						: -1;
 				}
@@ -427,11 +427,11 @@ sub point2cell
 		# bottom whitespace
 		$cy = -1;
 		$hints{y} = +1;
-	} elsif ( 
-		$self-> {lastRowEmpty} && 
+	} elsif (
+		$self-> {lastRowEmpty} &&
 		$y > $a[1] + $self-> {pixelCellIndents}-> [3] &&
-		$y < $a[1] + $self-> {pixelCellIndents}-> [3] + $self-> {lastRowTail} - 
-			(($self-> {cellIndents}-> [3] > 0) ? $self-> {drawHGrid} : 0) 
+		$y < $a[1] + $self-> {pixelCellIndents}-> [3] + $self-> {lastRowTail} -
+			(($self-> {cellIndents}-> [3] > 0) ? $self-> {drawHGrid} : 0)
 	) {
 		# gap
 		$cy = -1;
@@ -447,7 +447,7 @@ sub point2cell
 				$cy = $$_[0];
 				$hints{y} = 0;
 				if (( $hints{y_type} = $$_[1]) != 0) {
-					$hints{y_type} = ( $y < $a[3] - $self-> {pixelCellIndents}-> [1] - 1) ? 
+					$hints{y_type} = ( $y < $a[3] - $self-> {pixelCellIndents}-> [1] - 1) ?
 					(( $y > $a[1] + $self-> {pixelCellIndents}-> [3]) ? 0 : +1) : -1;
 				}
 				last;
@@ -496,7 +496,7 @@ sub redraw_cell
 sub reset
 {
 	my ( $self, @par_sz) = @_;
-	my ( $O, $T, $r, $c, $dh, $dv) = ( 
+	my ( $O, $T, $r, $c, $dh, $dv) = (
 		$self-> {leftCell}, $self-> {topCell}, $self-> {rows}, $self-> {columns},
 		$self-> {drawHGrid}, $self-> {drawVGrid});
 	my ( $i, $W, $H, $lastw, $lasth) = ( 0, 0, 0, 0, 0);
@@ -505,7 +505,7 @@ sub reset
 
 	$self-> cache_geometry_requests(1);
 	$self-> begin_paint_info unless $self-> {NoBulkPaintInfo};
-	
+
 	my @in = @{$self-> {cellIndents}};
 	my @px = ( 0,0,0,0);
 	for ( $i = 0; $i < $in[0]; $i++) {
@@ -522,20 +522,20 @@ sub reset
 	}
 	$self-> {pixelCellIndents} = \@px;
 
-	# calculate dimension of a minimal operational field 
-	$W += $self-> columnWidth( $O++) + $dv 
+	# calculate dimension of a minimal operational field
+	$W += $self-> columnWidth( $O++) + $dv
 		if $c > $in[0] + $in[2];
-	$H += $self-> rowHeight( $T++) + $dh 
+	$H += $self-> rowHeight( $T++) + $dh
 		if $r > $in[1] + $in[3];
 
 	# select unit mode
-REPEAT_LAYOUT:   
+REPEAT_LAYOUT:
 	my ( $w, $h, $o, $t) = ( $W, $H, $O, $T);
 	my @sz = $self-> get_active_area( 2, @par_sz);
 	$self-> {colUnits} = ( $w + $px[0] + $px[2] <= $sz[0] ) ? 1 : 0;
 	$self-> {rowUnits} = ( $h + $px[1] + $px[3] <= $sz[1] ) ? 1 : 0;
 
-	# calculate the last possible visible row 
+	# calculate the last possible visible row
 	$i = $r - $in[3] - 1;
 	my $maxh = $sz[1] - $px[1] - $px[3];
 	my $yh = $self-> rowHeight( $i) + $dh;
@@ -546,8 +546,8 @@ REPEAT_LAYOUT:
 		$i--;
 	}
 	$self-> {rowMax} = $i;
-	
-	# calculate the last possible visible column 
+
+	# calculate the last possible visible column
 	my $maxw = $sz[0] - $px[0] - $px[2];
 	$i = $c - $in[2] - 1;
 	my $xw = $self-> columnWidth( $i) + $dv;
@@ -558,7 +558,7 @@ REPEAT_LAYOUT:
 		$i--;
 	}
 	$self-> {colMax} = $i;
-	
+
 	# if span is more than minimal, calculate how many cells can be fit in screen
 	if ( $self-> {colUnits}) {
 		$sz[0] -= $px[0] + $px[2];
@@ -568,16 +568,16 @@ REPEAT_LAYOUT:
 		}
 		$self-> {dx} = 0;
 		$self-> {lastColEmpty} = ($in[2] > 0) ? $w < $sz[0] : 0;
-		$self-> {lastColTail} = ( $w > $sz[0] ) ? 
-			$sz[0] - $lastw : 
+		$self-> {lastColTail} = ( $w > $sz[0] ) ?
+			$sz[0] - $lastw :
 			(( $in[2] > 0) ? $sz[0] - $w : 0);
-		$self-> {colSpan} = $lastw + 
+		$self-> {colSpan} = $lastw +
 			( $self-> {lastColEmpty} ? $self-> {lastColTail} : 0);
 	} else {
 		$self-> {lastColEmpty} = 0;
 		$self-> {lastColTail}  = 0;
 		$self-> {colSpan} = $w + $px[0] + $px[2];
-		$self-> {dx} = $self-> {colSpan} - $sz[0] 
+		$self-> {dx} = $self-> {colSpan} - $sz[0]
 			if $self-> {dx} > $self-> {colSpan} - $sz[0];
 	}
 	if ( $self-> {rowUnits}) {
@@ -588,25 +588,25 @@ REPEAT_LAYOUT:
 		}
 		$self-> {dy} = 0;
 		$self-> {lastRowEmpty} = ( $in[3] > 0) ? $h < $sz[1] : 0;
-		$self-> {lastRowTail} = ( $h > $sz[1] ) ? 
-			$sz[1] - $lasth : 
+		$self-> {lastRowTail} = ( $h > $sz[1] ) ?
+			$sz[1] - $lasth :
 			(( $in[3] > 0) ? $sz[1] - $h : 0);
-		$self-> {rowSpan} = $lasth + ($self-> {lastRowEmpty} ? 
-			$self-> {lastRowTail} : 0); 
+		$self-> {rowSpan} = $lasth + ($self-> {lastRowEmpty} ?
+			$self-> {lastRowTail} : 0);
 	} else {
 		$self-> {lastRowEmpty} = 0;
 		$self-> {lastRowTail} = 0;
-		$self-> {rowSpan} = $h + $px[1] + $px[3]; 
-		$self-> {dy} = $self-> {rowSpan} - $sz[1] 
+		$self-> {rowSpan} = $h + $px[1] + $px[3];
+		$self-> {dy} = $self-> {rowSpan} - $sz[1]
 			if $self-> {dy} > $self-> {rowSpan} - $sz[1];
 	}
 	$self-> {visibleCols} = $o - $self-> {leftCell};
 	$self-> {visibleRows} = $t - $self-> {topCell};
-	$self-> {fullCols} =  $self-> {visibleCols} - 
+	$self-> {fullCols} =  $self-> {visibleCols} -
 		(( !$self-> {lastColEmpty} && $self-> {lastColTail} > 0) ? 1 : 0);
-	$self-> {fullRows} =  $self-> {visibleRows} - 
+	$self-> {fullRows} =  $self-> {visibleRows} -
 		(( !$self-> {lastRowEmpty} && $self-> {lastRowTail} > 0) ? 1 : 0);
-		
+
 	my $vr = $self-> {visibleRows} + $in[1] + $in[3];
 	my $vc = $self-> {visibleCols} + $in[0] + $in[2];
 
@@ -633,7 +633,7 @@ REPEAT_LAYOUT:
 	push @colsDraw, map {[$_, 1, $self-> columnWidth($_) + $dv]} 0 .. $in[0] - 1
 		if $in[0] > 0;
 	if ( $self-> {colUnits}) {
-		push @colsDraw, map {[$_, 0, $self-> columnWidth($_) + $dv]} 
+		push @colsDraw, map {[$_, 0, $self-> columnWidth($_) + $dv]}
 			$o .. $o + $self-> {visibleCols} - 1;
 		if ( !$self-> {lastColEmpty} && $self-> {lastColTail} > 0) {
 			$colsDraw[-1][6] = $colsDraw[-1][2] - $self-> {lastColTail};
@@ -642,13 +642,13 @@ REPEAT_LAYOUT:
 	} else {
 		push @colsDraw, [ $o, 0, $self-> columnWidth($o) + $dv];
 	}
-	push @colsDraw, map {[$_, 1, $self-> columnWidth($_) + $dv]} $c - $in[2] .. $c - 1 
+	push @colsDraw, map {[$_, 1, $self-> columnWidth($_) + $dv]} $c - $in[2] .. $c - 1
 	if $in[2] > 0;
 	# and vertical
 	push @rowsDraw, map {[$_, 1, $self-> rowHeight($_) + $dh]} 0 .. $in[1] - 1
 	if $in[1] > 0;
 	if ( $self-> {rowUnits}) {
-		push @rowsDraw, map {[$_, 0, $self-> rowHeight($_) + $dh]} 
+		push @rowsDraw, map {[$_, 0, $self-> rowHeight($_) + $dh]}
 			$t .. $t + $self-> {visibleRows} - 1;
 		if ( !$self-> {lastRowEmpty} && $self-> {lastRowTail} > 0) {
 			$rowsDraw[-1][5] = $self-> {lastRowTail} + $dh - $rowsDraw[-1][2];
@@ -657,7 +657,7 @@ REPEAT_LAYOUT:
 	} else {
 		push @rowsDraw, [ $t, 0, $self-> rowHeight($t) + $dh];
 	}
-	push @rowsDraw, map {[$_, 1, $self-> rowHeight($_) + $dh]} $r - $in[3] .. $r - 1 
+	push @rowsDraw, map {[$_, 1, $self-> rowHeight($_) + $dh]} $r - $in[3] .. $r - 1
 		if $in[3] > 0;
 
 	$i = $self-> {indents}-> [0];
@@ -668,7 +668,7 @@ REPEAT_LAYOUT:
 		$$_[5] += $$_[3];
 		$$_[6] += $$_[4];
 		$i += $$_[2];
-		$i += $self-> {lastColTail} 
+		$i += $self-> {lastColTail}
 			if $self-> {lastColEmpty} && $in[2] > 0 && $$_[0] == $c - $in[2] - 1;
 		$j++;
 	}
@@ -681,10 +681,10 @@ REPEAT_LAYOUT:
 		$$_[5] += $$_[3];
 		$$_[6] += $$_[4];
 		$i -= $$_[2];
-		$i -= $self-> {lastRowTail} 
+		$i -= $self-> {lastRowTail}
 			if $self-> {lastRowEmpty} && $in[3] > 0 && $$_[0] == $r - $in[3] - 1;
 	}
-		
+
 	$self-> {colsDraw} = \@colsDraw;
 	$self-> {rowsDraw} = \@rowsDraw;
 
@@ -692,7 +692,7 @@ REPEAT_LAYOUT:
 	my ( @vgrid, @hgrid);
 	if ( $dh) {
 		@hgrid = map {[ $$_[3] - 1, $colsDraw[-1][4], $colsDraw[0][3]]} @rowsDraw;
-		splice @hgrid, -$in[3], 0, 
+		splice @hgrid, -$in[3], 0,
 			[$rowsDraw[-$in[3]][4] + $dh, $colsDraw[-1][4], $colsDraw[0][3]]
 				if $self-> {rowUnits} && $self-> {lastRowEmpty} && $in[3] > 0;
 		# split lines over the gap
@@ -709,7 +709,7 @@ REPEAT_LAYOUT:
 	$self-> {hGrid} = \@hgrid;
 	if ( $dv) {
 		@vgrid = map {[ $$_[4] + 1, $rowsDraw[-1][3], $rowsDraw[0][4]]} @colsDraw;
-		splice @vgrid, -$in[2], 0, 
+		splice @vgrid, -$in[2], 0,
 			[$colsDraw[-$in[2]][3] - $dv, $rowsDraw[-1][3], $rowsDraw[0][4]]
 				if $self-> {colUnits} && $self-> {lastColEmpty} && $in[2] > 0;
 		# split lines over the gap
@@ -732,7 +732,7 @@ REPEAT_LAYOUT:
 	my @scrolls = ( $self-> {hScroll}, $self-> {vScroll});
 	if ( !($self-> {scrollTransaction} & 1)) {
 		if ( $self-> {rowUnits}) {
-			$self-> vScroll( $vr < $r) 
+			$self-> vScroll( $vr < $r)
 				if $self-> {autoVScroll};
 			$self-> {vScrollBar}-> set(
 				max      => $self-> {rowMax} - $in[1],
@@ -742,7 +742,7 @@ REPEAT_LAYOUT:
 				value    => $self-> {topCell} - $in[1],
 			) if $self-> {vScroll};
 		} else {
-			$self-> vScroll( $self-> {dy} < $self-> {rowSpan}) 
+			$self-> vScroll( $self-> {dy} < $self-> {rowSpan})
 				if $self-> {autoVScroll};
 			my @sz = $self-> get_active_area(2);
 			$self-> {vScrollBar}-> set(
@@ -756,7 +756,7 @@ REPEAT_LAYOUT:
 	}
 	if ( !($self-> {scrollTransaction} & 2)) {
 		if ( $self-> {colUnits}) {
-			$self-> hScroll( $vc < $c) 
+			$self-> hScroll( $vc < $c)
 				if $self-> {autoHScroll};
 			$self-> {hScrollBar}-> set(
 				max      => $self-> {colMax} - $in[0],
@@ -766,7 +766,7 @@ REPEAT_LAYOUT:
 				value    => $self-> {leftCell} - $in[0],
 			) if $self-> {hScroll};
 		} else {
-			$self-> hScroll( $self-> {dx} < $self-> {colSpan}) 
+			$self-> hScroll( $self-> {dx} < $self-> {colSpan})
 				if $self-> {autoHScroll};
 			my @sz = $self-> get_active_area(2);
 			$self-> {hScrollBar}-> set(
@@ -779,7 +779,7 @@ REPEAT_LAYOUT:
 		}
 	}
 
-	# check if auto-scrolling changed the layout, and reset it again, 
+	# check if auto-scrolling changed the layout, and reset it again,
 	# but no more than once for each dimension
 	if ( $self-> {hScroll} != $scrolls[0] || $self-> {vScroll} != $scrolls[1] ) {
 		$scroll_steps[0]++ if $self-> {hScroll} != $scrolls[0];
@@ -787,7 +787,7 @@ REPEAT_LAYOUT:
 		if ( $scroll_steps[0] < 2 && $scroll_steps[1] < 2) {
 			$lastw = $lasth = 0;
 			$self-> begin_paint_info unless $self-> {NoBulkPaintInfo};
-			goto REPEAT_LAYOUT 
+			goto REPEAT_LAYOUT
 		}
 	}
 
@@ -821,7 +821,7 @@ sub std_draw_text_cells
 	my @clipRect = $canvas-> clipRect;
 	for ( @$cols) {
 		my ( $col, $xtype, $br, $x1, $x2, $X1, $X2) = @$_;
-		$canvas-> clipRect( $x1, $$active_area[1], $x2, $$active_area[3]) 
+		$canvas-> clipRect( $x1, $$active_area[1], $x2, $$active_area[3])
 			if $clipV;
 		$xsel      = $col >= $selection[0] && $col <= $selection[2];
 		$xprelight = $col == $prelight[0];
@@ -882,7 +882,7 @@ sub on_keydown
 
 	$mod &= ( km::Shift|km::Ctrl|km::Alt);
 
-	if ( scalar grep { $key == $_ } 
+	if ( scalar grep { $key == $_ }
 		(kb::Left,kb::Right,kb::Up,kb::Down,kb::Home,kb::End,kb::PgUp,kb::PgDn))
 	{
 		my @f = @{$self-> {focusedCell}};
@@ -893,39 +893,39 @@ sub on_keydown
 			elsif ( $key == kb::Left) { $f[0]-- }
 			elsif ( $key == kb::Right){ $f[0]++ }
 			elsif ( $key == kb::Home) {
-				$f[0] = (($mod & km::Ctrl) ? 0 : 
-					($self-> {leftCell} - (( $f[0] == $self-> {leftCell}) ? 
+				$f[0] = (($mod & km::Ctrl) ? 0 :
+					($self-> {leftCell} - (( $f[0] == $self-> {leftCell}) ?
 						$self-> {fullCols} : 0)));
 			}
-			elsif ( $key == kb::End)  { 
+			elsif ( $key == kb::End)  {
 				my $e = $self-> {leftCell} + $self-> {fullCols} - 1;
-				$f[0] = (($mod & km::Ctrl) ? 
-					$self-> {columns} : 
+				$f[0] = (($mod & km::Ctrl) ?
+					$self-> {columns} :
 					$e + (
-						($f[0] == $e) ? 
+						($f[0] == $e) ?
 						$self-> {fullCols} : 0
 					));
-			} 
-			elsif ( $key == kb::PgUp) { 
-				$f[1] = (($mod & km::Ctrl) ? 0 : 
-					($self-> {topCell} - (( $f[1] == $self-> {topCell}) ? 
-						$self-> {fullRows} : 
+			}
+			elsif ( $key == kb::PgUp) {
+				$f[1] = (($mod & km::Ctrl) ? 0 :
+					($self-> {topCell} - (( $f[1] == $self-> {topCell}) ?
+						$self-> {fullRows} :
 						0)
 					));
 			}
-			elsif ( $key == kb::PgDn) { 
+			elsif ( $key == kb::PgDn) {
 				my $e = $self-> {topCell} + $self-> {fullRows} - 1;
-				$f[1] = (($mod & km::Ctrl) ? $self-> {rows} : 
-						($e + (($f[1] == $e ) ? 
-							$self-> {fullRows} : 
+				$f[1] = (($mod & km::Ctrl) ? $self-> {rows} :
+						($e + (($f[1] == $e ) ?
+							$self-> {fullRows} :
 							0)
 						));
 			}
 			$doSelect = $mod & km::Shift;
 		}
 		if ( $doSelect ) {
-			my @sel = exists($self-> {anchor}) ? 
-				@{$self-> {anchor}} : 
+			my @sel = exists($self-> {anchor}) ?
+				@{$self-> {anchor}} :
 				@{$self-> {focusedCell}};
 
 			$self-> selection( @sel, @f);
@@ -964,7 +964,7 @@ sub on_mouseclick
 	my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
 	$self-> clear_event;
 	return if $btn != mb::Left || !$dbl;
-	
+
 	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y);
 	$self-> notify(q(Click)) if $hints{normal} || $hints{indent};
 }
@@ -991,7 +991,7 @@ sub on_mousedown
 		$self-> capture(1);
 		$self-> clear_event;
 		return;
-	} 
+	}
 
 	if ( defined($hints{x_grid}) && $self-> allowChangeCellWidth) {
 		$self-> pointerType( cr::SizeWE);
@@ -1020,7 +1020,7 @@ sub on_mousedown
 		$self-> capture(1);
 		$self-> clear_event;
 		return;
-	} elsif ( defined($hints{y_grid}) && $self-> allowChangeCellHeight) { 
+	} elsif ( defined($hints{y_grid}) && $self-> allowChangeCellHeight) {
 		$self-> pointerType( cr::SizeNS);
 		my %d;
 		if ( $hints{y_bottom}) {
@@ -1047,7 +1047,7 @@ sub on_mousedown
 		$self-> capture(1);
 		$self-> clear_event;
 		return;
-	} 
+	}
 }
 
 sub update_prelight_and_pointer
@@ -1055,13 +1055,13 @@ sub update_prelight_and_pointer
 	my ( $self, $x, $y) = @_;
 	return delete $self->{prelight} if $self-> {mouseTransaction};
 	return unless $self-> enabled;
-	
+
 	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y );
 	my @prelight = (-1,-1);
 	my @old      = @{$self->{prelight} // [-1,-1]};
 	if ( defined($hints{x_grid}) && $self-> allowChangeCellWidth) {
 		$self-> pointerType( cr::SizeWE);
-	} elsif ( defined($hints{y_grid}) && $self-> allowChangeCellHeight) { 
+	} elsif ( defined($hints{y_grid}) && $self-> allowChangeCellHeight) {
 		$self-> pointerType( cr::SizeNS);
 	} else {
 		@prelight = ($cx, $cy) if $hints{normal};
@@ -1081,7 +1081,7 @@ sub on_mousemove
 	$self-> clear_event;
 	$self-> update_prelight_and_pointer($x,$y);
 	return unless $self-> {mouseTransaction};
-	
+
 	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y, defined($self-> {mouseTransaction}));
 
 	if ( $self-> {mouseTransaction} == 1) {
@@ -1095,8 +1095,8 @@ sub on_mousemove
 
 		my ( $t, $o);
 		if ( $hints{x} != 0 || (defined( $hints{x_type}) && $hints{x_type} != 0)) {
-			my ( $x1, $x2) = ( 
-				$self-> {leftCell}, 
+			my ( $x1, $x2) = (
+				$self-> {leftCell},
 				$self-> {leftCell} + $self-> {fullCols} - 1
 			);
 			my $xd = ( $hints{x} == 0) ? $hints{x_type} : $hints{x};
@@ -1113,9 +1113,9 @@ sub on_mousemove
 			}
 		}
 		if ( $hints{y} != 0 || (defined( $hints{y_type}) && $hints{y_type} != 0)) {
-			my ( $y1, $y2) = ( 
-				$self-> {topCell}, 
-				$self-> {topCell} + $self-> {fullRows} - 1 
+			my ( $y1, $y2) = (
+				$self-> {topCell},
+				$self-> {topCell} + $self-> {fullRows} - 1
 			);
 			my $yd = ( $hints{y} == 0) ? $hints{y_type} : $hints{y};
 			if ( $yd < 0) {
@@ -1148,7 +1148,7 @@ sub on_mousemove
 			$self-> columnWidth( $d-> {index}, $x);
 			$d-> {breadth} = $self-> columnWidth( $d-> {index});
 		}
-	} elsif ( $self-> {mouseTransaction} == 3) { 
+	} elsif ( $self-> {mouseTransaction} == 3) {
 		my @a = $self-> get_active_area( 1);
 		$y = $a[1] if $y < $a[1];
 		$y = $a[3] if $y > $a[3];
@@ -1180,7 +1180,7 @@ sub on_mouseup
 	my ( $cx, $cy, %hints) = $self-> point2cell( $x, $y);
 	if ( defined($hints{x_grid}) && $self-> allowChangeCellWidth) {
 		$self-> pointerType( cr::SizeWE);
-	} elsif ( defined($hints{y_grid}) && $self-> allowChangeCellHeight) { 
+	} elsif ( defined($hints{y_grid}) && $self-> allowChangeCellHeight) {
 		$self-> pointerType( cr::SizeNS);
 	} else {
 		$self-> pointerType( cr::Default);
@@ -1232,7 +1232,7 @@ sub on_paint
 		$clipRect[$_] = $a[$_] if $clipRect[$_] < $a[$_];
 		$clipRect[$_+2] = $a[$_+2] if $clipRect[$_+2] > $a[$_+2];
 	}
-	
+
 	my @clipCells;
 	my @colsDraw = map { [ @$_ ] } @{$self-> {colsDraw}};
 	my @rowsDraw = map { [ @$_ ] } @{$self-> {rowsDraw}};
@@ -1244,22 +1244,22 @@ sub on_paint
 	for ( @colsDraw) {
 		my $c = $_;
 		$$c[$_] -= $dx for 3..6;
-		$clipCells[0] = $j 
+		$clipCells[0] = $j
 			if !defined($clipCells[0]) && $$c[4] + $dv >= $clipRect[0];
-		$clipCells[2] = $j 
+		$clipCells[2] = $j
 			if !defined($clipCells[2]) && $$c[4] + $dv >= $clipRect[2];
 		$j++;
 	}
 	$clipCells[0] = 0 unless defined $clipCells[0];
 	$clipCells[2] = $#colsDraw unless defined $clipCells[2];
-		
+
 	$j = 0;
 	for ( @rowsDraw) {
 		my $c = $_;
 		$$c[$_] += $dy for 3..6;
-		$clipCells[3] = $j 
+		$clipCells[3] = $j
 			if !defined($clipCells[3]) && $$c[3] - $dv <= $clipRect[3];
-		$clipCells[1] = $j 
+		$clipCells[1] = $j
 			if !defined($clipCells[1]) && $$c[3] - $dv <= $clipRect[1];
 		$j++;
 	}
@@ -1272,10 +1272,10 @@ sub on_paint
 		($px[0] > 0) ? $dv : 0, ($px[1] > 0) ? $dh : 0,
 		($px[2] > 0) ? $dv : 0, ($px[3] > 0) ? $dh : 0
 	);
-	
-	# clear undrawable area 
+
+	# clear undrawable area
 	if ( !$self-> {colUnits} || $px[2] == 0) {
-		$canvas-> clear( $colsDraw[-1][4] + $dv + 1, @a[1..3]) 
+		$canvas-> clear( $colsDraw[-1][4] + $dv + 1, @a[1..3])
 			if $colsDraw[-1][4] < $a[2];
 	} elsif ( $self-> {lastColEmpty}) {
 		my $right  = $a[2] - $px[2] - $extras[2];
@@ -1286,30 +1286,30 @@ sub on_paint
 				$canvas-> clear( $left, $a[1] + $px[3] + $extras[3],
 									$right, $a[3] - $px[1]);
 			} else {
-				$canvas-> clear( $left,  
-					$a[3] + $px[3] + $extras[3] + $dy - $self-> {rowSpan} + 1, 
-					$right, 
+				$canvas-> clear( $left,
+					$a[3] + $px[3] + $extras[3] + $dy - $self-> {rowSpan} + 1,
+					$right,
 					$a[3] - $px[1] + $dy);
 			}
 		}
 		$canvas-> backColor( $self-> {indentCellBackColor});
 		if ( $self-> {rowUnits}) {
-			$canvas-> clear( 
+			$canvas-> clear(
 				$left, $a[3] - $px[1] + $extras[1] + 1,
 				$right, $a[3]
 			) if $px[1] > $dh;
-			$canvas-> clear( 
-				$left, $a[1] + $dh, 
+			$canvas-> clear(
+				$left, $a[1] + $dh,
 				$right, $a[1] + $px[3] - 1
 			) if $px[3] > $dh;
 		} else {
-			$canvas-> clear( 
+			$canvas-> clear(
 				$left, $a[3] - $px[1] + $extras[1] + 1 + $dy,
 				$right, $a[3] + $dy
 			) if $px[1] > $dh;
-			$canvas-> clear( 
+			$canvas-> clear(
 				$left, $a[3] - $self-> {rowSpan} + $dy + $dh,
-				$right, $a[3] - $self-> {rowSpan} + $dy + $dh + $px[3] - 1 
+				$right, $a[3] - $self-> {rowSpan} + $dy + $dh + $px[3] - 1
 			) if $px[3] > $dh;
 		}
 		$canvas-> backColor( $bk);
@@ -1317,7 +1317,7 @@ sub on_paint
 
 	# and horizontal area
 	if ( !$self-> {rowUnits} || $in[3] == 0) {
-		$canvas-> clear( @a[0..2], $rowsDraw[-1][3] - 1 - $dh) 
+		$canvas-> clear( @a[0..2], $rowsDraw[-1][3] - 1 - $dh)
 			if $rowsDraw[-1][3] > $a[1];
 	} elsif ( $self-> {lastRowEmpty} ) {
 		my $bottom = $a[1] + $px[3] + $extras[3];
@@ -1325,40 +1325,40 @@ sub on_paint
 		my $bk = $canvas-> backColor;
 		if ( $self-> {lastRowTail} > $dh) {
 			if ( $self-> {colUnits}) {
-				$canvas-> clear( 
-					$a[0] + $px[0], $bottom, 
+				$canvas-> clear(
+					$a[0] + $px[0], $bottom,
 					$a[2] - $px[2] - $extras[2], $top
 				);
 			} else {
-				$canvas-> clear( 
-					$a[0] + $px[0] - $dx, $bottom, 
+				$canvas-> clear(
+					$a[0] + $px[0] - $dx, $bottom,
 					$a[0] - $px[2] - $extras[2] - $dx - $dv + $self-> {colSpan}, $top
 				);
 			}
 		}
 		$canvas-> backColor( $self-> {indentCellBackColor});
 		if ( $self-> {colUnits}) {
-			$canvas-> clear(	
-				$a[0], $bottom, 
+			$canvas-> clear(
+				$a[0], $bottom,
 				$a[0] + $px[0] - 1 - $extras[0], $top
 			) if $px[0] > $dv;
-			$canvas-> clear( 
-				$a[2] - $px[2] + 1, $bottom, 
+			$canvas-> clear(
+				$a[2] - $px[2] + 1, $bottom,
 				$a[2] - $dv, $top
 			) if $px[2] > $dv;
 		} else {
-			$canvas-> clear( 
-				$a[0] - $dx, $bottom, 
+			$canvas-> clear(
+				$a[0] - $dx, $bottom,
 				$a[0] + $px[0] - 1 - $extras[0] - $dx, $top
 			) if $px[0] > $dv;
-			$canvas-> clear( 
-				$a[0] - $px[2] + $self-> {colSpan} - $dx , $bottom, 
+			$canvas-> clear(
+				$a[0] - $px[2] + $self-> {colSpan} - $dx , $bottom,
 				$a[0] - $dx - $dv + $self-> {colSpan}, $top
 			) if $px[2] > $dv;
 		}
 		$canvas-> backColor( $bk);
 	}
-	
+
 	# prepare indent grid line array
 	my @grid;
 	for ( @{$self-> {vGrid}}) {
@@ -1378,7 +1378,7 @@ sub on_paint
 	splice( @colsDraw, $clipCells[2] + 1);
 	splice( @colsDraw,  0, $clipCells[0]);
 	@colsDraw = grep { $$_[2] > 0 } @colsDraw;
-	
+
 	splice( @rowsDraw, $clipCells[1] + 1);
 	splice( @rowsDraw,  0, $clipCells[3]);
 	@rowsDraw = grep { $$_[2] > 0 } @rowsDraw;
@@ -1392,7 +1392,7 @@ sub on_paint
 		$$_[3] = $a[1] if $$_[3] < $a[1];
 		$$_[4] = $a[3] if $$_[4] > $a[3];
 	}
-	
+
 	# draw cells
 	$self-> draw_cells( $canvas, \@colsDraw, \@rowsDraw, \@a);
 
@@ -1422,7 +1422,7 @@ sub set_h_scroll
 {
 	my ( $self, $hs) = @_;
 	return if $hs == $self-> {hScroll};
-	
+
 	$self-> SUPER::set_h_scroll( $hs);
 
 	if ( !($self-> {scrollTransaction} & 2)) {
@@ -1437,7 +1437,7 @@ sub set_v_scroll
 {
 	my ( $self, $vs) = @_;
 	return if $vs == $self-> {vScroll};
-	
+
 	$self-> SUPER::set_v_scroll( $vs);
 
 	if ( !($self-> {scrollTransaction} & 1)) {
@@ -1475,7 +1475,7 @@ sub HScroll_Change
 sub allowChangeCellHeight
 {
 	return $_[0]-> {constantCellHeight} ? 0 : $_[0]-> {allowChangeCellHeight} unless $#_;
-	
+
 	my ( $self, $h) = @_;
 	$self-> {allowChangeCellHeight} = $h;
 }
@@ -1511,13 +1511,13 @@ sub cellIndents
 			$indents[1] = $self-> {rows};
 		}
 	}
-	
+
 	$self-> {leftCell}          += $indents[0] - $self-> {cellIndents}-> [0];
 	$self-> {topCell}           += $indents[1] - $self-> {cellIndents}-> [1];
 	$self-> {focusedCell}-> [0]  += $indents[0] - $self-> {cellIndents}-> [0];
 	$self-> {focusedCell}-> [1]  += $indents[1] - $self-> {cellIndents}-> [1];
 	$self-> {cellIndents} = \@indents;
-	
+
 	$self-> reset;
 	$self-> repaint;
 }
@@ -1562,7 +1562,7 @@ sub columns
 	$self-> {columns} = $c;
 	$self-> reset;
 	my @f = $self-> focusedCell;
-	$self-> focusedCell( $c - $self-> {cellIndents}-> [2] - 1, $f[1]) 
+	$self-> focusedCell( $c - $self-> {cellIndents}-> [2] - 1, $f[1])
 		if $f[0] >= $c - $self-> {cellIndents}-> [2];
 	$self-> reset;
 	$self-> repaint;
@@ -1574,7 +1574,7 @@ sub columnWidth
 	if ( $#_ <= 1) {
 		return $self-> {constantCellWidth} if $self-> {constantCellWidth};
 		return $self-> {geometry_cache_column}-> {$col}
-			if $self-> {cache_geometry_requests} && 
+			if $self-> {cache_geometry_requests} &&
 				exists $self-> {geometry_cache}-> {$col};
 		my $ref = 0;
 		$self-> notify(q(Measure), 0, $col, \$ref);
@@ -1596,9 +1596,9 @@ sub constantCellHeight
 	return $_[0]-> {constantCellHeight} unless $#_;
 	my ( $self, $h) = @_;
 	return if !defined( $self-> {constantCellHeight}) && !defined $h;
-	return if 
-		defined($self-> {constantCellHeight}) && 
-		defined($h) && 
+	return if
+		defined($self-> {constantCellHeight}) &&
+		defined($h) &&
 		$self-> {constantCellHeight} == $h;
 	$h = 1 if defined $h && $h < 1;
 	$self-> {constantCellHeight} = $h;
@@ -1611,9 +1611,9 @@ sub constantCellWidth
 	return $_[0]-> {constantCellWidth} unless $#_;
 	my ( $self, $w) = @_;
 	return if !defined( $self-> {constantCellWidth}) && !defined $w;
-	return if 
-		defined($self-> {constantCellWidth}) && 
-		defined($w) && 
+	return if
+		defined($self-> {constantCellWidth}) &&
+		defined($w) &&
 		$self-> {constantCellWidth} == $w;
 	$w = 1 if defined $w && $w < 1;
 	$self-> {constantCellWidth} = $w;
@@ -1656,7 +1656,7 @@ sub dx
 	my $delta = $self-> {dx} - $dx;
 	$self-> {dx} = $dx;
 	if ( $self-> {hScroll} && !($self-> {scrollTransaction} & 2)) {
-		$self-> {scrollTransaction} |= 2; 
+		$self-> {scrollTransaction} |= 2;
 		$self-> {hScrollBar}-> value($dx);
 		$self-> {scrollTransaction} &= ~2;
 	}
@@ -1678,7 +1678,7 @@ sub dy
 	my $delta = $dy - $self-> {dy};
 	$self-> {dy} = $dy;
 	if ( $self-> {vScroll} && !($self-> {scrollTransaction} & 1)) {
-		$self-> {scrollTransaction} |= 1; 
+		$self-> {scrollTransaction} |= 1;
 		$self-> {vScrollBar}-> value($dy);
 		$self-> {scrollTransaction} &= ~1;
 	}
@@ -1701,12 +1701,12 @@ sub focusedCell
 	$f[1] = $r - $in[3] - 1 if $f[1] >= $r - $in[3];
 	my @o = @{$self-> {focusedCell}};
 	return if $o[0] == $f[0] && $o[1] == $f[1];
-	
+
 	$self-> notify(q(SelectCell), @f);
 	my @old = $self-> get_screen_cell_info( @o);
 	my @new = $self-> get_screen_cell_info( @f);
 	@{$self-> {focusedCell}} = @f;
-	
+
 	if ( $new[gsci::V_FULL ]) {
 		# the new cell is fully visible, need no scrolling
 		$self-> invalidate_rect( @new[gsci::V_RECT]);
@@ -1729,7 +1729,7 @@ sub focusedCell
 				last if $maxw < 0;
 				$o--;
 			}
-		} elsif ( $f[0] < $x1) { 
+		} elsif ( $f[0] < $x1) {
 			$o = $f[0];
 		}
 		if ( $f[1] > $y2) {
@@ -1759,7 +1759,7 @@ sub gridColor
 	return $_[0]-> {gridColor} unless $#_;
 	my ( $self, $gc) = @_;
 	return if $gc == $self-> {gridColor};
-	
+
 	$self-> {gridColor} = $gc;
 	$self-> repaint if $self-> {drawVGrid} || $self-> {drawHGrid};
 }
@@ -1767,7 +1767,7 @@ sub gridColor
 sub gridGravity
 {
 	return $_[0]-> {gridGravity} unless $#_;
-	
+
 	my ( $self, $gg) = @_;
 	$gg = 0 if $gg < 0;
 	$self-> {gridGravity} = $gg;
@@ -1778,7 +1778,7 @@ sub indentCellBackColor
 	return $_[0]-> {indentCellBackColor} unless $#_;
 	my ( $self, $c) = @_;
 	return if $c == $self-> {indentCellBackColor};
-	
+
 	$self-> {indentCellBackColor} = $c;
 	$self-> repaint if grep { $_ > 0 } @{$self-> {cellIndents}};
 }
@@ -1788,7 +1788,7 @@ sub indentCellColor
 	return $_[0]-> {indentCellColor} unless $#_;
 	my ( $self, $c) = @_;
 	return if $c == $self-> {indentCellColor};
-	
+
 	$self-> {indentCellColor} = $c;
 	$self-> repaint if grep { $_ > 0 } @{$self-> {cellIndents}};
 }
@@ -1799,17 +1799,17 @@ sub leftCell
 
 	my ( $self, $c) = @_;
 	return if defined( $self-> {mouseTransaction}) && $self-> {mouseTransaction} == 2;
-	
+
 	$c = $self-> {cellIndents}-> [0] if $c < $self-> {cellIndents}-> [0];
 	$c = $self-> {colMax} if $c > $self-> {colMax};
 	return if $c == $self-> {leftCell};
-	
-	my ( $old, $unit, $span, $dv) = ( 
+
+	my ( $old, $unit, $span, $dv) = (
 		$self-> {leftCell}, $self-> {colUnits}, $self-> {colSpan}, $self-> {drawVGrid});
 	my @a = $self-> get_active_area( 0);
-	my $width = $a[2] - 
-		$a[0] - 
-		$self-> {pixelCellIndents}-> [0] - 
+	my $width = $a[2] -
+		$a[0] -
+		$self-> {pixelCellIndents}-> [0] -
 		$self-> {pixelCellIndents}-> [2];
 	$self-> {leftCell} = $c;
 	$self-> reset;
@@ -1826,7 +1826,7 @@ sub leftCell
 		return;
 	}
 
-	# see if can do scrolling - calculate distance between 
+	# see if can do scrolling - calculate distance between
 	# current and new x coordinates, not too far though
 	my $w = 0;
 	my $i = $old;
@@ -1871,7 +1871,7 @@ sub rows
 	$self-> {rows} = $r;
 	$self-> reset;
 	my @f = $self-> focusedCell;
-	$self-> focusedCell( $f[0], $r - $self-> {cellIndents}-> [3] - 1) 
+	$self-> focusedCell( $f[0], $r - $self-> {cellIndents}-> [3] - 1)
 		if $f[1] >= $r - $self-> {cellIndents}-> [3];
 	$self-> reset;
 	$self-> repaint;
@@ -1883,17 +1883,17 @@ sub topCell
 
 	my ( $self, $c) = @_;
 	return if defined( $self-> {mouseTransaction}) && $self-> {mouseTransaction} == 3;
-	
+
 	$c = $self-> {cellIndents}-> [1] if $c < $self-> {cellIndents}-> [1];
 	$c = $self-> {rowMax} if $c > $self-> {rowMax};
 	return if $c == $self-> {topCell};
-	
-	my ( $old, $unit, $span, $dh) = ( 
+
+	my ( $old, $unit, $span, $dh) = (
 		$self-> {topCell}, $self-> {rowUnits}, $self-> {rowSpan}, $self-> {drawHGrid});
 	my @a = $self-> get_active_area( 0);
-	my $height = $a[3] - 
-		$a[1] - 
-		$self-> {pixelCellIndents}-> [3] - 
+	my $height = $a[3] -
+		$a[1] -
+		$self-> {pixelCellIndents}-> [3] -
 		$self-> {pixelCellIndents}-> [1];
 	$self-> {topCell} = $c;
 	$self-> reset;
@@ -1909,8 +1909,8 @@ sub topCell
 		$self-> invalidate_rect( @a);
 		return;
 	}
-	
-	# see if can do scrolling - calculate distance between 
+
+	# see if can do scrolling - calculate distance between
 	# current and new x coordinates, not too far though
 	my $h = 0;
 	my $i = $old;
@@ -1941,9 +1941,9 @@ sub rowHeight
 	if ( $#_ <= 1) {
 		return $self-> {constantCellHeight} if $self-> {constantCellHeight};
 		return $self-> {geometry_cache_row}-> {$row}
-			if $self-> {cache_geometry_requests} && 
+			if $self-> {cache_geometry_requests} &&
 				exists $self-> {geometry_cache}-> {$row};
-			
+
 		my $ref = 0;
 		$self-> notify(q(Measure), 1, $row, \$ref);
 		$ref = 1 if $ref < 1;
@@ -1961,9 +1961,9 @@ sub rowHeight
 }
 
 sub selection
-{ 
-	return $_[0]-> {multiSelect} ? 
-		@{$_[0]-> {selection}} : 
+{
+	return $_[0]-> {multiSelect} ?
+		@{$_[0]-> {selection}} :
 		(@{$_[0]-> {focusedCell}}, @{$_[0]-> {focusedCell}})
 			unless $#_;
 	return unless $_[0]-> {multiSelect};
@@ -1986,7 +1986,7 @@ sub selection
 		$y2 = $in[1] if $y2 < $in[1];
 		$y2 = $r - $in[3] - 1 if $y2 >= $r - $in[3];
 	}
-	
+
 	my ( $ox1, $oy1, $ox2, $oy2) = @{$self-> {selection}};
 	return if $x1 == $ox1 && $y1 == $oy1 && $x2 == $ox2 && $y2 == $oy2;
 
@@ -2017,8 +2017,8 @@ sub selection
 	my @info1 = $self-> get_screen_cell_info( $x1, $y2);
 	my @info2 = $self-> get_screen_cell_info( $x2, $y1);
 	if ( @info1 && @info2) {
-		$self-> invalidate_rect( 
-			@info1[gsci::V_LEFT,gsci::V_BOTTOM], 
+		$self-> invalidate_rect(
+			@info1[gsci::V_LEFT,gsci::V_BOTTOM],
 			@info2[gsci::V_RIGHT,gsci::V_TOP]
 		);
 	} else {
@@ -2038,7 +2038,7 @@ sub draw_cells
 sub on_fontchanged
 {
 	my $self = $_[0];
-	$self-> constantCellHeight( $self-> font-> height + 2 ) if 
+	$self-> constantCellHeight( $self-> font-> height + 2 ) if
 		$self-> constantCellHeight;
 }
 
@@ -2056,7 +2056,7 @@ sub on_measure
 	} else {
 		$$sref = 0;
 		for ( my $i = 0; $i < $self-> {colMax}; $i++ ) {
-			my $w = $self-> get_text_width( $self->get_cell_text($i, $index), 1);	
+			my $w = $self-> get_text_width( $self->get_cell_text($i, $index), 1);
 			$$sref = $w if $$sref < $w;
 		}
 	}
@@ -2106,8 +2106,8 @@ sub columnWidth
 		return $self-> {widths}-> [$col];
 	} elsif ( !$self-> {constantCellWidth}) {
 		$width = 1 if $width < 1;
-		return if 
-			defined($self-> {widths}-> [$col]) && 
+		return if
+			defined($self-> {widths}-> [$col]) &&
 			$width == $self-> {widths}-> [$col];
 		$self-> {widths}-> [$col] = $width;
 		$self-> notify(q(SetExtent), 0, $col, $width);
@@ -2135,8 +2135,8 @@ sub rowHeight
 		return $self-> {heights}-> [$row];
 	} elsif ( !$self-> {constantCellHeight}) {
 		$height = 1 if $height < 1;
-		return if 
-			defined($self-> {heights}-> [$row]) && 
+		return if
+			defined($self-> {heights}-> [$row]) &&
 			$height == $self-> {heights}-> [$row];
 		$self-> {heights}-> [$row] = $height;
 		$self-> notify(q(SetExtent), 1, $row, $height);
@@ -2322,7 +2322,7 @@ sub on_getrange
 sub on_fontchanged
 {
 	my $self = $_[0];
-	$self-> constantCellHeight( $self-> font-> height + 2 ) if 
+	$self-> constantCellHeight( $self-> font-> height + 2 ) if
 		$self-> constantCellHeight;
 }
 
@@ -2334,7 +2334,7 @@ sub on_measure
 	} else {
 		$$sref = 0;
 		for ( @{$self-> {cells}}) {
-			my $w = $self-> get_text_width( $$_[$index], 1);	
+			my $w = $self-> get_text_width( $$_[$index], 1);
 			$$sref = $w if $$sref < $w;
 		}
 	}
@@ -2364,7 +2364,7 @@ Prima::Grids - grid widgets
 			[qw(2.First 2.Second 2.Third)],
 			[qw(3.First 3.Second 3.Third)],
 		],
-		onClick     => sub { 
+		onClick     => sub {
 			print $_[0]-> get_cell_text( $_[0]-> focusedCell), " is selected\n";
 		}
 	);
@@ -2391,20 +2391,20 @@ are centered around the way the cell data are stored. The simplest
 organization of a text-only cell, provided by C<Prima::Grid>,
 stores data as a two-dimensional array of text scalars. More elaborated storage
 and representation types are not realized, and the programmer is urged
-to use the more abstract classes to derive own mechanisms. 
+to use the more abstract classes to derive own mechanisms.
 To organize an item storage, different from C<Prima::Grid>, it is
-usually enough to overload either the C<Stringify>, C<Measure>, 
+usually enough to overload either the C<Stringify>, C<Measure>,
 and C<DrawCell> events, or their method counterparts: C<get_cell_text>,
 C<columnWidth>, C<rowHeight>, and C<draw_items>.
 
 The grid widget is designed to contain cells of variable extents, of two types, normal and
-indent. The indent rows and columns are displayed in grid margins, and their 
+indent. The indent rows and columns are displayed in grid margins, and their
 cell are drawn with distinguished colors.
 An example use for a bottom indent row is a sum row in a spreadsheet application;
 the top indent row can be used for displaying columns' headers. The normal cells
-can be selected by the user, scrolled, and selected. The cell selection 
+can be selected by the user, scrolled, and selected. The cell selection
 can only contain rectangular areas, and therefore is operated with
-two integer pairs with the beginning and the end of the selection. 
+two integer pairs with the beginning and the end of the selection.
 
 The widget operates in two visual scrolling modes; when the space allows,
 the scrollbars affect the leftmost and the topmost cell. When the widget is
@@ -2413,7 +2413,7 @@ is scrolled pixel-wise. These modes are named 'cell' and 'pixel', after the scro
 units.
 
 The widget allows the interactive changing of cell widths and heights by dragging
-the grid lines between the cells. 
+the grid lines between the cells.
 
 =head1 Prima::AbstractGridViewer
 
@@ -2463,16 +2463,16 @@ Default value: 0,0,0,0
 
 =item clipCells INTEGER
 
-A three-state integer property, that governs the way clipping is applied 
-when cells are drawn. Depending on kind of graphic in cells, the clipping 
-may be necessary, or unnecessary. 
+A three-state integer property, that governs the way clipping is applied
+when cells are drawn. Depending on kind of graphic in cells, the clipping
+may be necessary, or unnecessary.
 
 If the value is 1, the clipping is applied for every column drawn, as the
 default drawing routines proceed column-wise. If the value is 2, the clipping
 as applied for every cell. This setting reduces the drawing speed significantly.
 If the value is 0, no clipping is applied.
 
-This property is destined for custom-drawn grid widgets, when it is the 
+This property is destined for custom-drawn grid widgets, when it is the
 developer's task to decide what kind of clipping suits better. Text grid
 widgets, C<Prima::AbstractGrid> and C<Prima::Grid>, are safe with C<clipCells>
 set to 1.
@@ -2488,7 +2488,7 @@ Default value: 0.
 
 =item columnWidth COLUMN [ WIDTH ]
 
-A run-time property, selects width of a column. To acquire or set 
+A run-time property, selects width of a column. To acquire or set
 the width, C<Measure> and C<SetExtent> notifications can be invoked.
 Result of C<Measure> may be cached internally using C<cache_geometry_requests>
 method.
@@ -2545,7 +2545,7 @@ Default value: C<cl::Black> .
 
 =item gridGravity INTEGER
 
-The property selects the breadth of area around the grid lines, that 
+The property selects the breadth of area around the grid lines, that
 reacts on grid-dragging mouse events. The minimal value, 0, marks
 only grid lines as the drag area, but makes the dragging operation inconvenient
 for the user.
@@ -2572,8 +2572,8 @@ Selects index of the leftmost visible normal cell.
 
 =item multiSelect BOOLEAN
 
-If 1, the normal cells in an arbitrary rectangular area can be marked 
-as selected ( see L<selection> ). If 0, only one cell at a time 
+If 1, the normal cells in an arbitrary rectangular area can be marked
+as selected ( see L<selection> ). If 0, only one cell at a time
 can be selected.
 
 Default value: 0
@@ -2591,7 +2591,7 @@ Selects index of the topmost visible normal cell.
 
 =item rowHeight INTEGER
 
-A run-time property, selects height of a row. To acquire or set 
+A run-time property, selects height of a row. To acquire or set
 the height, C<Measure> and C<SetExtent> notifications can be invoked.
 Result of C<Measure> may be cached internally using C<cache_geometry_requests>
 method.
@@ -2651,7 +2651,7 @@ do not include eventual grid space, nor gaps between indent and
 normal cells. By default, internal arrays C<{colsDraw}> and
 C<{rowsDraw}> are passed as COLUMNS and ROWS parameters.
 
-In C<Prima::AbstractGrid> and C<Prima::Grid> classes <draw_cells> is overloaded to 
+In C<Prima::AbstractGrid> and C<Prima::Grid> classes <draw_cells> is overloaded to
 transfer the call to C<std_draw_text_cells>, the text-oriented optimized routine.
 
 =item draw_text_cells SCREEN_RECTANGLES, CELL_RECTANGLES, CELL_INDECES, FONT_HEIGHT
@@ -2661,7 +2661,7 @@ A bulk routine for drawing text cells, called from C<std_draw_text_cells> .
 SCREEN_RECTANGLES and CELL_RECTANGLES are arrays, where each item is a rectangle
 with exterior of a cell. SCREEN_RECTANGLES contains rectangles that cover the
 cell visible area; CELL_RECTANGLES contains rectangles that span the cell extents
-disregarding its eventual partial visibility. For example, a 100-pixel cell with 
+disregarding its eventual partial visibility. For example, a 100-pixel cell with
 only its left half visible, would contain corresponding arrays [150,150,200,250]
 in SCREEN_RECTANGLES, and [150,150,250,250] in CELL_RECTANGLES.
 
@@ -2674,7 +2674,7 @@ often used for text operations and may require vertical text justification.
 =item get_cell_area [ WIDTH, HEIGHT ]
 
 Returns screen area in inclusive-inclusive pixel coordinates, that is used
-to display normal cells. The extensions are related to the current size of a widget, 
+to display normal cells. The extensions are related to the current size of a widget,
 however, can be overridden by specifying WIDTH and HEIGHT.
 
 =item get_cell_alignment COLUMN, ROW
@@ -2703,13 +2703,13 @@ The returned parameters are indexed by C<gsci::XXX> constants,
 and explained below:
 
 	gsci::COL_INDEX - visual column number where the cell displayed
-	gsci::ROW_INDEX - visual row number where the cell displayed 
+	gsci::ROW_INDEX - visual row number where the cell displayed
 	gsci::V_FULL    - cell is fully visible
 
 	gsci::V_LEFT    - inclusive-inclusive rectangle of the visible
 	gsci::V_BOTTOM    part of the cell. These four indices are grouped
 	gsci::V_RIGHT     under list constant, gsci::V_RECT.
-	gsci::V_TOP    
+	gsci::V_TOP
 
 	gsci::LEFT      - inclusive-inclusive rectangle of the cell, as if
 	gsci::BOTTOM      it is fully visible. These four indices are grouped
@@ -2725,7 +2725,7 @@ Returns a boolean value, indicating whether the grid contains a selection (1) or
 =item point2cell X, Y, [ OMIT_GRID = 0 ]
 
 Return information about point X, Y in widget coordinates. The method
-returns two integers, CX and CY, with cell coordinates, and 
+returns two integers, CX and CY, with cell coordinates, and
 eventual HINTS hash, with more information about pixe localtion. If OMIT_GRID is set to 1
 and the pixel belongs to a grid, the pixels is treated a part of adjacent cell.
 The call syntax:
@@ -2734,7 +2734,7 @@ The call syntax:
 
 If the pixel lies within cell boundaries by either coordinate, CX and/or CY
 are correspondingly set to cell column and/or row. When the pixel is outside
-cell space, CX and/or CY are set to -1. 
+cell space, CX and/or CY are set to -1.
 
 HINTS may contain the following values:
 
@@ -2777,7 +2777,7 @@ cells adjacent to the grid line.
 
 =item C<x_gap> and C<y_gap>
 
-If 1, the point is within a gap between the last normal cell and the first 
+If 1, the point is within a gap between the last normal cell and the first
 right/bottom indent cell.
 
 =item C<normal>
@@ -2800,7 +2800,7 @@ If 1, the point is in inoperable area or outside the widget boundaries.
 
 =item redraw_cell X, Y
 
-Repaints cell with coordinates X and Y. 
+Repaints cell with coordinates X and Y.
 
 =item reset
 
@@ -2808,9 +2808,9 @@ Recalculates internal geometry variables.
 
 =item select_all
 
-Marks all cells as selected, if C<multiSelect> is 1. 
+Marks all cells as selected, if C<multiSelect> is 1.
 
-=item std_draw_text_cells CANVAS, COLUMNS, ROWS, AREA 
+=item std_draw_text_cells CANVAS, COLUMNS, ROWS, AREA
 
 An optimized bulk routine for text-oriented grid widgets. The optimization
 is achieved under assumption that each cell is drawn with two colors only,
@@ -2829,7 +2829,7 @@ For explanation of COLUMNS, ROWS, and AREA parameters see L<draw_cells> .
 
 =item DrawCell CANVAS, COLUMN, ROW, INDENT, @SCREEN_RECT, @CELL_RECT, SELECTED, FOCUSED, PRELIGHT
 
-Called when a cell with COLUMN and ROW coordinates is to be drawn on CANVAS. 
+Called when a cell with COLUMN and ROW coordinates is to be drawn on CANVAS.
 SCREEN_RECT is a cell rectangle in widget coordinates,
 where the item is to be drawn. CELL_RECT is same as SCREEN_RECT, but calculated
 as if the cell is fully visible.
@@ -2839,7 +2839,7 @@ correspondingly in selected, focused, and pre-lighted states.
 
 =item GetAlignment COLUMN, ROW, HORIZONTAL_ALIGN_REF, VERTICAL_ALIGN_REF
 
-Puts two text alignment C<ta::> constants, assigned to cell with COLUMN and ROW coordinates, 
+Puts two text alignment C<ta::> constants, assigned to cell with COLUMN and ROW coordinates,
 into HORIZONTAL_ALIGN_REF and VERTICAL_ALIGN_REF scalar references.
 
 =item GetRange VERTICAL, INDEX, MIN, MAX
@@ -2850,9 +2850,9 @@ in corresponding MIN and MAX scalar references.
 =item Measure VERTICAL, INDEX, BREADTH
 
 Puts breadth in pixels of INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1)
-into BREADTH scalar reference. 
+into BREADTH scalar reference.
 
-This notification by default may be called from within 
+This notification by default may be called from within
 C<begin_paint_info/end_paint_info> brackets. To disable this feature
 set internal flag C<{NoBulkPaintInfo}> to 1.
 
@@ -2860,7 +2860,7 @@ set internal flag C<{NoBulkPaintInfo}> to 1.
 
 Called when a cell with COLUMN and ROW coordinates is focused.
 
-=item SetExtent VERTICAL, INDEX, BREADTH 
+=item SetExtent VERTICAL, INDEX, BREADTH
 
 Reports breadth in pixels of INDEXth column ( VERTICAL = 0 ) or row ( VERTICAL = 1),
 as a response to C<columnWidth> and C<rowHeight> calls.
@@ -2875,21 +2875,21 @@ scalar reference.
 =head1 Prima::AbstractGrid
 
 Exactly the same as its ascendant, C<Prima::AbstractGridViewer>,
-except that it does not propagate C<DrawItem> message, 
+except that it does not propagate C<DrawItem> message,
 assuming that the items must be drawn as text.
 
 =head1 Prima::GridViewer
 
 The class implements cells data and geometry storage mechanism, but leaves
 the cell data format to the programmer. The cells are accessible via
-C<cells> property and several other helper routines. 
+C<cells> property and several other helper routines.
 
 The cell data are stored in an array, where each item corresponds to a row,
 and contains array of scalars, where each corresponds to a column. All
 data managing routines, that accept two-dimensional arrays, assume that
-the columns arrays are of the same widths. 
+the columns arrays are of the same widths.
 
-For example, C<[[1,2,3]]]> is a valid one-row, three-column structure, and 
+For example, C<[[1,2,3]]]> is a valid one-row, three-column structure, and
 C<[[1,2],[2,3],[3,4]]> is a valid three-row, two-column structure.
 The structure C<[[1],[2,3],[3,4]]> is invalid, since its first row has
 one column, while the others have two.
@@ -2915,7 +2915,7 @@ Run-time property. Selects the data in cell with COLUMN and ROW coordinates.
 =item cells [ ARRAY ]
 
 The property accepts or returns all cells as a two-dimensional
-rectangular array or scalars. 
+rectangular array or scalars.
 
 =item columns INDEX
 
@@ -2941,7 +2941,7 @@ Inserts two-dimensional array of scalars to the end of columns.
 
 =item add_row CELLS
 
-Inserts one-dimensional array of scalars to the end of rows. 
+Inserts one-dimensional array of scalars to the end of rows.
 
 =item add_rows CELLS
 
@@ -2981,7 +2981,7 @@ Negative values are accepted.
 
 =head1 Prima::Grid
 
-Descendant of C<Prima::GridViewer>, declares format of cells 
+Descendant of C<Prima::GridViewer>, declares format of cells
 as a single text string. Incorporating all functionality of
 its ascendants, provides a standard text grid widget.
 
@@ -2997,7 +2997,7 @@ so without calling C<GetAlignment> notification.
 
 =item get_cell_text COLUMN, ROW
 
-Returns text string assigned to cell in COLUMN and ROW. 
+Returns text string assigned to cell in COLUMN and ROW.
 Since the item storage organization is implemented, does
 so without calling C<Stringify> notification.
 

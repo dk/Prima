@@ -6,7 +6,7 @@ use Prima::Test qw(noX11);
 
 # noX11 test
 
-my $i = Prima::Image-> create( 
+my $i = Prima::Image-> create(
        width  => 4,
        height => 2,
        preserveType => 0,

@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -43,11 +43,11 @@ my $il = $w-> insert( InputLine =>
 	    return unless $key == kb::Enter;
 	    $me-> clear_event;
 	    my $t = $me-> text;
-	
+
 	    return $e-> text( "Invalid URL") unless $t =~ m/^(?:http:\/\/)?([^\/]*)((?:\/.*$)|$)/;
     	my ($remote, $uri, $port) = ($1,$2,80);
 	    $uri = '/' unless length $uri;
-        
+
         $e-> text("");
 
         tcp_connect $remote, $port, sub {

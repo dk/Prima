@@ -78,15 +78,15 @@ sub alarm
 {
 	my ( $timeout, $sub, @params) = @_;
 	return 0 unless $::application;
-	my $timer = Prima::Timer-> create( 
+	my $timer = Prima::Timer-> create(
 		name    => $sub,
-		timeout => $timeout, 
+		timeout => $timeout,
 		owner   => $::application,
 		onTick  => sub {
 			$_[0]-> destroy;
 			$sub-> (@params);
 		}
-	); 
+	);
 	$timer-> start;
 	return 1 if $timer-> get_active;
 	$timer-> destroy;
@@ -100,12 +100,12 @@ sub post
 	my $id;
 	$id = $::application-> add_notification( 'PostMessage', sub {
 		my ( $me, $parm1, $parm2) = @_;
-		if ( defined($parm1) && $parm1 eq 'Prima::Utils::post' && $parm2 == $id) { 
+		if ( defined($parm1) && $parm1 eq 'Prima::Utils::post' && $parm2 == $id) {
 			$::application-> remove_notification( $id);
 			$sub-> ( @params);
 			$me-> clear_event;
 		}
-	}); 
+	});
 	return 0 unless $id;
 	$::application-> post_message( 'Prima::Utils::post', $id);
 	return 1;
@@ -121,7 +121,7 @@ Prima::Utils - miscellanneous routines
 
 =head1 DESCRIPTION
 
-The module contains several helper routines, implemented in both C and perl. 
+The module contains several helper routines, implemented in both C and perl.
 Whereas the C-coded parts are accessible only if 'use Prima;' statement was issued
 prior to the 'use Prima::Utils' invocation, the perl-coded are always available.
 This makes the module valuable when used without the rest of toolkit code.
@@ -134,9 +134,9 @@ This makes the module valuable when used without the rest of toolkit code.
 
 Calls SUB with PARAMS after TIMEOUT milliseconds.
 
-=item beep [ FLAGS = mb::Error ] 
+=item beep [ FLAGS = mb::Error ]
 
-Invokes the system-depended sound and/or visual bell, 
+Invokes the system-depended sound and/or visual bell,
 corresponding to one of following constants:
 
 	mb::Error
@@ -150,9 +150,9 @@ Returns one of C<gui::XXX> constants, reflecting the graphic
 user interface used in the system:
 
 	gui::Default
-	gui::PM  
+	gui::PM
 	gui::Windows
-	gui::XLib 
+	gui::XLib
 	gui::GTK
 
 =item get_os
@@ -160,7 +160,7 @@ user interface used in the system:
 Returns one of C<apc::XXX> constants, reflecting the platfrom.
 Currently, the list of the supported platforms is:
 
-	apc::Win32  
+	apc::Win32
 	apc::Unix
 
 =item ceil DOUBLE
@@ -182,9 +182,9 @@ Obsolete function.
 
 Returns stdlib's floor() of DOUBLE
 
-=item getdir PATH 
+=item getdir PATH
 
-Reads content of PATH directory and 
+Reads content of PATH directory and
 returns array of string pairs, where the first item is a file
 name, and the second is a file type.
 
@@ -199,7 +199,7 @@ The file type is a string, one of the following:
 	"sock" - socket
 	"wht"  - whiteout
 
-This function was implemented for faster directory reading, 
+This function was implemented for faster directory reading,
 to avoid successive call of C<stat> for every file.
 
 =item last_error
@@ -211,7 +211,7 @@ Returns last system error, if any
 If called with no parameters, returns path to a directory,
 usually F<~/.prima>, that can be used to contain the user settings
 of a toolkit module or a program. If FILE is specified, appends
-it to the path and returns the full file name. In the latter case 
+it to the path and returns the full file name. In the latter case
 the path is automatically created by C<File::Path::mkpath> unless it
 already exists.
 
@@ -249,7 +249,7 @@ Issues a tone of FREQUENCY in Hz with DURATION in milliseconds.
 
 =item username
 
-Returns the login name of the user. 
+Returns the login name of the user.
 Sometimes is preferred to the perl-provided C<getlogin> ( see L<perlfunc/getlogin> ) .
 
 =item xcolor COLOR

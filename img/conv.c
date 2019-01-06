@@ -289,13 +289,13 @@ macro_asis(double,float)
 macro_asis_complex(Byte,float)
 macro_asis_complex(Byte,double)
 macro_asis_complex(Short,float)
-macro_asis_complex(Short,double)   
-macro_asis_complex(Long,float)   
-macro_asis_complex(Long,double)   
-macro_asis_complex(float,float)   
-macro_asis_complex(float,double)   
-macro_asis_complex(double,float)   
-macro_asis_complex(double,double)   
+macro_asis_complex(Short,double)
+macro_asis_complex(Long,float)
+macro_asis_complex(Long,double)
+macro_asis_complex(float,float)
+macro_asis_complex(float,double)
+macro_asis_complex(double,float)
+macro_asis_complex(double,double)
 
 macro_asis_revcomplex(double,double)
 macro_asis_revcomplex(double,float)
@@ -307,7 +307,7 @@ macro_asis_revcomplex(float,float)
 macro_asis_revcomplex_toint(float,Long)
 macro_asis_revcomplex_toint(float,Short)
 macro_asis_revcomplex_toint(float,Byte)
-	
+
 #ifdef __cplusplus
 }
 #endif

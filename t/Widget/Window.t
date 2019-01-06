@@ -32,13 +32,13 @@ wait_flag unless $id{Activate2};
 SKIP: {
 	skip "WM doesn't respect focus requests", 4 if !$id{Activate2} &&
 		Prima::Application-> get_system_info->{apc} == apc::Unix;
-	
+
 	reset_flag;
 	$xw-> focus;
 	ok( wait_flag && $id{Activate}, "onActivate" );
 	ok( $xw-> selected, "activate" );
 	%id=();
-	
+
 	reset_flag;
 	$window-> focus;
 	ok( !$xw-> selected, "deactivate" );

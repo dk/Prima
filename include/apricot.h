@@ -669,9 +669,9 @@ CM(Close)
 #define cmChangeOwner   (0x00000006|ctDiscardable)
 CM(ChangeOwner)
 #define cmChildEnter    (0x00000007|ctDiscardable)
-CM(ChildEnter)         
+CM(ChildEnter)
 #define cmChildLeave    (0x00000008|ctDiscardable)
-CM(ChildLeave)         
+CM(ChildLeave)
 #define cmCreate        (0x00000009|ctPassThrough)
 CM(Create)
 #define cmDestroy       (0x0000000B|ctPassThrough|ctNoInhibit)
@@ -2039,7 +2039,7 @@ typedef struct {
 	Point          pad;            /* border padding */
 	Point          ipad;           /* size increaze */
 	Handle         order;          /* if non-nil, BEFORE or AFTER a widget */
-	/* place */ 
+	/* place */
 	int x, y;
 	float relX, relY;
 	float relWidth, relHeight;
@@ -2052,9 +2052,9 @@ typedef struct {
 	unsigned int   after      : 1; /* 0 - order is BEFORE; 1 - order is AFTER */
 	unsigned int   expand     : 1; /* causes the allocation rectange to fill all remaining space */
 	unsigned int   fillx      : 1; /* fill horizontal extent */
-	unsigned int   filly      : 1; /* fill vertical extent */ 
+	unsigned int   filly      : 1; /* fill vertical extent */
 	unsigned int   side       : 2; /* 0 - left, 1 - bottom, 2 - right, 3 - top */
-	/* place */ 
+	/* place */
 	unsigned int   use_x      : 1;
 	unsigned int   use_y      : 1;
 	unsigned int   use_w      : 1;
@@ -2645,11 +2645,11 @@ typedef enum {
 	ropDstAtop,
 
 	/* 8-bit standalone alpha */
-	ropAlphaCopy          = 0x0000100, 
+	ropAlphaCopy          = 0x0000100,
 
 	/* extensions for Prima's own Image.put */
-	ropPorterDuffMask     = 0x000000F, 
-	ropSrcAlpha           = 0x1000000, 
+	ropPorterDuffMask     = 0x000000F,
+	ropSrcAlpha           = 0x1000000,
 	ropSrcAlphaShift      = 8,
 	ropDstAlpha           = 0x2000000,
 	ropDstAlphaShift      = 16,
@@ -3697,7 +3697,7 @@ prima_omp_set_num_threads(int num);
 
 #ifdef HAVE_OPENMP
 #define OMP_MAX_THREADS prima_omp_max_threads()
-#define OMP_THREAD_NUM prima_omp_thread_num() 
+#define OMP_THREAD_NUM prima_omp_thread_num()
 #else
 #define OMP_MAX_THREADS 1
 #define OMP_THREAD_NUM  0

@@ -69,7 +69,7 @@ region_create( Handle mask)
 					if ( rdata-> rdh. nCount >= size) {
 						void * xrdata = ( RGNDATA *) realloc( rdata, sizeof( RGNDATAHEADER) + ( size *= 3) * sizeof( RECT));
 						if ( !xrdata) {
-							free( rdata); 
+							free( rdata);
 							return NULL;
 						}
 						rdata = xrdata;
@@ -142,14 +142,14 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 	}
 
 	for ( i = 0, max = 0; i < r->n_points; i++) {
-		if ( max < r->points[i].y) 
+		if ( max < r->points[i].y)
 			max = r->points[i].y;
 	}
 	for ( i = 0; i < r->n_points; i++) {
 		xp[i].x = r->points[i].x;
 		xp[i].y = max - r->points[i].y;
 	}
-	
+
 	HEIGHT = max;
 	REGION = CreatePolygonRgn( xp, r->n_points, r-> winding ? WINDING : ALTERNATE );
 
@@ -218,7 +218,7 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 	RegionData * r2;
 	int d;
 	Bool ok;
-	
+
 	r2 = GET_REGION(other_region);
 
 	if ( rgnop == rgnopCopy ) {
@@ -228,7 +228,7 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 	}
 
 	d = HEIGHT - r2-> height;
-	if ( d > 0 ) 
+	if ( d > 0 )
 		OffsetRgn( r2-> region, 0, d);
 	else
 		OffsetRgn( REGION, 0, -d);
@@ -236,7 +236,7 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 	rgnop = ctx_remap_def( rgnop, ctx_rgnop2RGN, true, RGN_COPY);
 	ok = CombineRgn( REGION, REGION, r2->region, rgnop);
 
-	if ( d > 0 ) 
+	if ( d > 0 )
 		OffsetRgn( r2-> region, 0, -d);
 	else
 		HEIGHT = r2-> height;
@@ -289,7 +289,7 @@ apc_region_is_empty( Handle self)
 
 Box
 apc_region_get_box( Handle self)
-{	
+{
 	Box box;
 	RECT xr;
 	if ( GetRgnBox( REGION, &xr) == NULLREGION) {

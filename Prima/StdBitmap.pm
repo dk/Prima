@@ -48,19 +48,19 @@ sub load_std_bmp
 {
 	my %opt = @_;
 	$opt{class} = $opt{icon} ? q(Prima::Icon) : q(Prima::Image);
-	
+
 	return undef if !defined $opt{index} || !defined $opt{file} || $opt{index} < 0;
 	return load_image(%opt) if $opt{copy};
 
 	my $icon   = $opt{icon} ? 1 : 0;
 	my $index  = $opt{index};
 	my $cache  = $bmCache{$opt{file}} //= {};
-	return $cache-> {$index}-> [$icon] //= load_image(%opt); 
+	return $cache-> {$index}-> [$icon] //= load_image(%opt);
 }
 
 $sysimage = Prima::Utils::find_image(
 	((Prima::Application-> get_system_info-> {apc} == apc::Win32) ? 'sys/win32/' : '') .
-	"sysimage.gif") 
+	"sysimage.gif")
 	unless defined $sysimage;
 _warn('sysimage.gif') unless defined $sysimage;
 
@@ -77,7 +77,7 @@ Prima::StdBitmap - shared access to the standard toolkit bitmaps
 
 =head1 DESCRIPTION
 
-The toolkit contains F<sysimage.gif> image library, which consists of 
+The toolkit contains F<sysimage.gif> image library, which consists of
 a predefined set of images, used in several toolkit modules. To provide
 a unified access to the images this module can be used. The images are
 assigned a C<sbmp::> constant, which is used as an index on a load
@@ -110,7 +110,7 @@ Loads INDEXth image frame and returns C<Prima::Image> instance.
 
 Loads C<index>th image frame from C<file> and returns it as either a C<Prima::Image> or
 as a C<Prima::Icon> instance, depending on value of boolean C<icon> flag. If
-C<copy> boolean flag is unset, the cached images loaded previously 
+C<copy> boolean flag is unset, the cached images loaded previously
 can be used. If this flag is set, the cached value is never used, and the
 created image is not stored in the cache. Since the module's intended use
 is to provide shared and read-only access to the image library, C<copy>

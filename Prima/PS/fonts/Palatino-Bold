@@ -1,8 +1,8 @@
-('Palatino-Bold' => { 
+('Palatino-Bold' => {
   name            => 'Palatino-Bold',
   family          => 'Palatino',
   height          => 1190,
-  weight          => fw::Bold,   
+  weight          => fw::Bold,
   style           => fs::Bold|fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,

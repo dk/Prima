@@ -155,9 +155,9 @@ Object_destroy( Handle self)
 		/*  ENTER;
 		SAVEINT recursiveCall; */
 		protect_chain( owner = var-> owner, 1);
-		if ( enter_stage > csConstructing) 
+		if ( enter_stage > csConstructing)
 			my-> cleanup( self);
-		else if ( enter_stage == csConstructing && var-> transient_class) 
+		else if ( enter_stage == csConstructing && var-> transient_class)
 			((PObject_vmt)var-> transient_class)-> cleanup( self);
 		if ( var-> stage == csHalfDead) {
 			var-> stage = csFinalizing;

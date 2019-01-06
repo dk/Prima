@@ -20,12 +20,12 @@ $auto_hook = 1;
 sub install
 {
 	my ( $sub, %rules) = @_;
-	
+
 	my @params;
 	if ( defined($rules{param})) {
 		@params = ( ref($rules{param}) eq 'ARRAY') ? @{$rules{param}} : $rules{param};
 	}
-	
+
 	my @names;
 	if ( defined($rules{event})) {
 		@names = ( ref($rules{event}) eq 'ARRAY') ? @{$rules{event}} : $rules{event};
@@ -40,7 +40,7 @@ sub install
 	} else {
 		@objects = (undef);
 	}
-	
+
 	for (@names) {
 		$hooks{$_} = [] unless $hooks{$_};
 		my $array = $hooks{$_};
@@ -49,7 +49,7 @@ sub install
 		}
 	}
 
-	Prima::Component-> event_hook( $hook = \&_hook_proc) 
+	Prima::Component-> event_hook( $hook = \&_hook_proc)
 		if $auto_hook && !$hook;
 }
 
@@ -61,7 +61,7 @@ sub deinstall
 		@{$hooks{$_}} = grep { $$_[0] != $sub } @{$hooks{$_}};
 		$total += @{$hooks{$_}};
 	}
-	Prima::Component-> event_hook( $hook = undef) 
+	Prima::Component-> event_hook( $hook = undef)
 		if !$total && $hook && $auto_hook;
 }
 
@@ -72,7 +72,7 @@ sub _hook_proc
 		next unless exists $hooks{$_};
 		for ( @{$hooks{$_}}) {
 			my ( $sub, $sub_object, $sub_children, @sub_params) = @$_;
-			next if 
+			next if
 				defined $sub_object &&
 				(
 					(  $sub_children && $sub_object-> is_owner( $object) == 0) ||
@@ -105,9 +105,9 @@ Prima::EventHook - event filtering
 		return 1;
 	}
 
-	Prima::EventHook::install( \&hook, 
+	Prima::EventHook::install( \&hook,
 		param    => $my_param,
-		object   => $my_window, 
+		object   => $my_window,
 		event    => [qw(Size Move Destroy)],
 		children => 1
 	);
@@ -117,10 +117,10 @@ Prima::EventHook - event filtering
 =head1 DESCRIPTION
 
 Prima dispatches events by calling notifications registered
-on one or more objects interested in the events. Also, one 
+on one or more objects interested in the events. Also, one
 event hook can be installed that would receive all events occurred on
 all objects. C<Prima::EventHook> provides multiplex access to
-the core event hook and introduces set of dispatching rules so 
+the core event hook and introduces set of dispatching rules so
 the user hook subs receive only a defined subset of events.
 
 The filtering criteria are event names and object hierarchy.
@@ -146,7 +146,7 @@ Rules can contain the following keys:
 
 Event is either a string, an array of strings, or C<undef> value.  In the latter
 case it is equal to C<'*'> string, which selects all events to be passed in the
-SUB. A string is either name of an event, or one of pre-defined event groups, 
+SUB. A string is either name of an event, or one of pre-defined event groups,
 declared in C<%groups> package hash. The group names are:
 
 	ability
@@ -154,7 +154,7 @@ declared in C<%groups> package hash. The group names are:
 	geometry
 	keyboard
 	menu
-	mouse  
+	mouse
 	objects
 	visibility
 
@@ -183,7 +183,7 @@ Setting together object to C<undef> and children to 1 is inefficient.
 
 =item param
 
-A scalar or array of scalars passed as first parameters to SUB 
+A scalar or array of scalars passed as first parameters to SUB
 whenever it is called.
 
 =back

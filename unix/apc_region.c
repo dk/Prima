@@ -19,7 +19,7 @@ prima_region_create( Handle mask)
 	w = PImage( mask)-> w;
 	h = PImage( mask)-> h;
 	/*
-		XUnionRegion is actually SLOWER than the image scan - 
+		XUnionRegion is actually SLOWER than the image scan -
 		- uncomment if this is wrong
 	if ( X( mask)-> cached_region) {
 		rgn = XCreateRegion();
@@ -55,7 +55,7 @@ prima_region_create( Handle mask)
 						void * xrdata = realloc( rdata, ( size *= 3) * sizeof( XRectangle));
 						if ( !xrdata) {
 							warn("Not enough memory");
-							free( rdata); 
+							free( rdata);
 							return None;
 						}
 						rdata = xrdata;
@@ -76,7 +76,7 @@ prima_region_create( Handle mask)
 
 	if ( set) {
 		rgn = XCreateRegion();
-		for ( x = 0, current = rdata; x < count; x++, current++) 
+		for ( x = 0, current = rdata; x < count; x++, current++)
 			XUnionRectWithRegion( current, rgn, rgn);
 		/*
 		X( mask)-> cached_region = XCreateRegion();
@@ -129,14 +129,14 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 	}
 
 	for ( i = 0, max = 0; i < r->n_points; i++) {
-		if ( max < r->points[i].y) 
+		if ( max < r->points[i].y)
 			max = r->points[i].y;
 	}
 	for ( i = 0; i < r->n_points; i++) {
 		xp[i].x = r->points[i].x;
 		xp[i].y = max - r->points[i].y;
 	}
-	
+
 	HEIGHT = max;
 	REGION = XPolygonRegion( xp, r->n_points, r-> winding ? WindingRule : EvenOddRule );
 
@@ -202,7 +202,7 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 	PRegionSysData r2;
 	int d;
 	Bool ok = true;
-	
+
 	r2 = GET_REGION(other_region);
 
 	if ( rgnop == rgnopCopy ) {
@@ -214,7 +214,7 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 	}
 
 	d = HEIGHT - r2-> height;
-	if ( d > 0 ) 
+	if ( d > 0 )
 		XOffsetRegion( r2-> region, 0, d);
 	else
 		XOffsetRegion( REGION, 0, -d);
@@ -235,7 +235,7 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 	default:
 		ok = false;
 	}
-	if ( d > 0 ) 
+	if ( d > 0 )
 		XOffsetRegion( r2-> region, 0, -d);
 	else
 		HEIGHT = r2-> height;
@@ -363,14 +363,14 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
 		XOffsetRegion( region, XX-> btransform. x, -XX-> btransform. y);
 	}
 	XSetRegion( DISP, XX-> gc, region);
-	if ( XX-> flags. kill_current_region) 
+	if ( XX-> flags. kill_current_region)
 		XDestroyRegion( XX-> current_region);
 	XX-> flags. kill_current_region = 1;
 	XX-> current_region = region;
 	XX-> flags. xft_clip = 0;
 #ifdef USE_XFT
 	if ( XX-> xft_drawable) prima_xft_update_region( self);
-#endif	 
+#endif
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	if ( XX-> argb_picture ) XRenderSetPictureClipRegion(DISP, XX->argb_picture, region);
 #endif
@@ -418,11 +418,11 @@ apc_gp_set_region( Handle self, Handle rgn)
 	/* otherwise ( and only otherwise ), and if there's a
 		X11 clipping, intersect the region with it. X11 clipping
 		must not mix with the buffer clipping */
-	if (( !XX-> udrawable || XX-> udrawable == XX-> gdrawable) && 
-		XX-> paint_region) 
+	if (( !XX-> udrawable || XX-> udrawable == XX-> gdrawable) &&
+		XX-> paint_region)
 		XIntersectRegion( region, XX-> paint_region, region);
 	XSetRegion( DISP, XX-> gc, region);
-	if ( XX-> flags. kill_current_region) 
+	if ( XX-> flags. kill_current_region)
 		XDestroyRegion( XX-> current_region);
 	XX-> flags. kill_current_region = 1;
 	XX-> current_region = region;
@@ -450,9 +450,9 @@ apc_gp_get_region( Handle self, Handle rgn)
 
 	if ( !XF_IN_PAINT(XX)) return false;
 
-	if ( !rgn) 
+	if ( !rgn)
 		return XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0;
-		
+
 	if ( XX-> clip_mask_extent. x == 0 || XX-> clip_mask_extent. y == 0)
 		return false;
 
@@ -460,7 +460,7 @@ apc_gp_get_region( Handle self, Handle rgn)
 	h = XX-> clip_mask_extent. y;
 
 	pixmap = XCreatePixmap( DISP, guts.root, w, h,
-		XF_LAYERED(XX) ? guts. argb_depth : 
+		XF_LAYERED(XX) ? guts. argb_depth :
 		( XT_IS_BITMAP(XX) ? 1 : guts. depth )
 	);
 	XCHECKPOINT;
@@ -478,7 +478,7 @@ apc_gp_get_region( Handle self, Handle rgn)
 	XFillRectangle( DISP, pixmap, gc, 0, 0, w, h);
 	XFreeGC( DISP, gc);
 	XCHECKPOINT;
-	
+
 	i = XGetImage( DISP, pixmap, 0, 0, w, h, 1, XYPixmap);
 	XFreePixmap( DISP, pixmap);
 	if ( !i ) {

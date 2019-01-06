@@ -22,11 +22,11 @@ extern "C" {
 /* Mono */
 
 static void
-fill_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSize, 
+fill_palette( Handle self, Bool palSize_only, RGBColor * dstPal, int * dstPalSize,
 				RGBColor * fillPalette, int fillPalSize, int maxPalSize, Byte * colorref)
 {
 	Bool do_colormap = 1;
-	if ( palSize_only) { 
+	if ( palSize_only) {
 		if ( var-> palSize > *dstPalSize) {
 			cm_squeeze_palette( var-> palette, var-> palSize, dstPal, *dstPalSize);
 		} else if ( *dstPalSize > fillPalSize + var-> palSize) {
@@ -89,7 +89,7 @@ optimize_palette_rgb( Handle self, Bool palSize_only, RGBColor * dstPal, int * d
 
 	if ( *dstPalSize == 0 || palSize_only) {
 		if ( palSize_only) new_pal_size = *dstPalSize;
-		if ( !cm_optimized_palette( var->data, var->lineSize, var->w, var->h, new_palette, &new_pal_size)) 
+		if ( !cm_optimized_palette( var->data, var->lineSize, var->w, var->h, new_palette, &new_pal_size))
 			return NULL;
 	} else
 		memcpy( new_palette, dstPal, ( new_pal_size = *dstPalSize) * sizeof(RGBColor));
@@ -106,15 +106,15 @@ BC( mono, mono, None)
 	dBCARGS;
 	BCWARN;
 
-	if ( palSize_only || *dstPalSize == 0) 
+	if ( palSize_only || *dstPalSize == 0)
 		memcpy( dstPal, stdmono_palette, (*dstPalSize = 2) * sizeof( RGBColor));
-	
+
 	if ((
 		(var->palette[0].r + var->palette[0].g + var->palette[0].b) >
 		(var->palette[1].r + var->palette[1].g + var->palette[1].b)
 	) == (
 		(dstPal[0].r + dstPal[0].g + dstPal[0].b) >
-		(dstPal[1].r + dstPal[1].g + dstPal[1].b) 
+		(dstPal[1].r + dstPal[1].g + dstPal[1].b)
 	)) {
 		if ( dstData != var-> data)
 			memcpy( dstData, var-> data, var-> dataSize);
@@ -160,16 +160,16 @@ BC( mono, mono, Optimized)
 	for ( i = 0; i < height; i++) {
 		dBCLOOP;
 		Byte * buf_t = buf + width * OMP_THREAD_NUM;
-		bc_mono_byte( srcDataLoop, buf_t, width); 
+		bc_mono_byte( srcDataLoop, buf_t, width);
 		bc_byte_op( buf_t, buf_t, width, tree, var-> palette, dstPal, EDIFF_CONV);
-		bc_byte_mono_cr( buf_t, dstDataLoop, width, map_stdcolorref); 
+		bc_byte_mono_cr( buf_t, dstDataLoop, width, map_stdcolorref);
 	}
 	free( tree);
 	free( buf);
 	EDIFF_DONE;
 	return;
-	
-FAIL:  
+
+FAIL:
 	ic_mono_mono_ictNone(BCPARMS);
 }
 
@@ -305,10 +305,10 @@ BC( nibble, mono, Optimized)
 	free( buf);
 	EDIFF_DONE;
 	return;
-	
-FAIL:  
+
+FAIL:
 	ic_nibble_mono_ictErrorDiffusion(BCPARMS);
-} 
+}
 
 BC( nibble, nibble, None)
 {
@@ -323,7 +323,7 @@ BC( nibble, nibble, None)
 		register int j;
 		dBCLOOP;
 		for ( j = 0; j < w; j++)
-			dstDataLoop[j] = (colorref[srcDataLoop[j] >> 4] << 4) | colorref[srcDataLoop[j] & 0xf]; 
+			dstDataLoop[j] = (colorref[srcDataLoop[j] >> 4] << 4) | colorref[srcDataLoop[j] & 0xf];
 	}
 }
 
@@ -343,9 +343,9 @@ BC( nibble, nibble, Posterization)
 	for ( i = 0; i < height; i++) {
 		dBCLOOP;
 		Byte * buf_t = buf + width * OMP_THREAD_NUM;
-		bc_nibble_byte( srcDataLoop, buf_t, width); 
+		bc_nibble_byte( srcDataLoop, buf_t, width);
 		bc_byte_nop( buf_t, buf_t, width, tree, var-> palette, dstPal);
-		bc_byte_nibble_cr( buf_t, dstDataLoop, width, map_stdcolorref); 
+		bc_byte_nibble_cr( buf_t, dstDataLoop, width, map_stdcolorref);
 	}
 	free( tree);
 	free( buf);
@@ -406,9 +406,9 @@ BC( nibble, nibble, Optimized)
 	for ( i = 0; i < height; i++) {
 		dBCLOOP;
 		Byte * buf_t = buf + width * OMP_THREAD_NUM;
-		bc_nibble_byte( srcDataLoop, buf_t, width); 
+		bc_nibble_byte( srcDataLoop, buf_t, width);
 		bc_byte_op( buf_t, buf_t, width, tree, var-> palette, dstPal, EDIFF_CONV);
-		bc_byte_nibble_cr( buf_t, dstDataLoop, width, map_stdcolorref); 
+		bc_byte_nibble_cr( buf_t, dstDataLoop, width, map_stdcolorref);
 	}
 	free( tree);
 	free( buf);
@@ -991,8 +991,8 @@ BC( rgb, nibble, Posterization)
 	BCWARN;
 	U16 * tree;
 	Byte * buf;
-	
-	if ( !( buf = malloc( width * OMP_MAX_THREADS))) 
+
+	if ( !( buf = malloc( width * OMP_MAX_THREADS)))
 		goto FAIL;
 	if ( !( tree = OPTIMIZE_PALETTE_RGB(16))) {
 		free(buf);

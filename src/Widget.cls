@@ -27,14 +27,14 @@ object Prima::Widget( Prima::Drawable)
 	Handle *  enum_lists;               # list of currently running enumerators
 
 # 	geometry managers data
-#	common:   
+#	common:
 	int       geometry;                 # geometry manager, gtXXX
 	Point     geomSize;                 # requested size, common to all managers
 	GeomInfo  geomInfo;                 # managers options
 #	growMode:
 	int       growMode;                 # growing flags, see gmGrowXXX
 	Point     virtualSize;              # fictive size not aware of size limits
-#	pack   
+#	pack
 	Handle    packSlaves;               # first pack slave in linked list
 #	place
 	Handle    placeSlaves;              # first place slave in linked list

@@ -60,11 +60,11 @@ sub quoted_split
 	study;
 	{
 		/\G\s+/gc && redo;
-		/\G((?:[^\\\s]|\\.)+)\s*/gc && do { 
-			my $z = $1; 
-			$z =~ s/\\(.)/$1/g; 
-			push(@ret, $z); 
-			redo; 
+		/\G((?:[^\\\s]|\\.)+)\s*/gc && do {
+			my $z = $1;
+			$z =~ s/\\(.)/$1/g;
+			push(@ret, $z);
+			redo;
 		};
 		/\G(\\)$/gc && do { push(@ret, $1); redo; };
 	}
@@ -83,7 +83,7 @@ sub filter
 			push @exts, $$_[0];
 			push @mdts, $$_[1];
 		}
-		$self-> {filterIndex} = scalar @exts - 1 
+		$self-> {filterIndex} = scalar @exts - 1
 			if $self-> { filterIndex} >= scalar @exts;
 		$self-> {filter} = \@filter;
 	} else {
@@ -100,7 +100,7 @@ sub filterIndex
 	}
 }
 
-sub directory 
+sub directory
 {
 	return $_[0]->{directory} unless $#_;
 	my ( $self, $dir) = @_;
@@ -194,11 +194,11 @@ sub noReadOnly
 
 # dummies
 sub sorted { 1 }
-sub showHelp { 0 } 
+sub showHelp { 0 }
 
 # mere callbacks if someone wants these to inherit
-sub ok {} 
-sub cancel {} 
+sub ok {}
+sub cancel {}
 
 sub execute
 {
@@ -207,13 +207,13 @@ sub execute
 	DIALOG: while ( 1) {
 		Prima::Application-> sys_action( "gtk.OpenFile.$_=". $self-> {$_})
 			for qw(multi_select overwrite_prompt show_hidden);
-		Prima::Application-> sys_action( 'gtk.OpenFile.filters=' . 
+		Prima::Application-> sys_action( 'gtk.OpenFile.filters=' .
 			join("\0", map { "$$_[0] ($$_[1])\0$$_[1]" } @{$self->{filter}}) . "\0\0");
-		Prima::Application-> sys_action( 'gtk.OpenFile.filterindex=' . 
+		Prima::Application-> sys_action( 'gtk.OpenFile.filterindex=' .
 			($self->{filterIndex}));
-		Prima::Application-> sys_action( 'gtk.OpenFile.directory=' . 
+		Prima::Application-> sys_action( 'gtk.OpenFile.directory=' .
 			$self->{directory});
-		Prima::Application-> sys_action( 'gtk.OpenFile.title=' . 
+		Prima::Application-> sys_action( 'gtk.OpenFile.title=' .
 			(defined $self->{text} ? $self->{text} : ''));
 		my $ret = Prima::Application-> sys_action( 'gtk.OpenFile.'.
 			($self->{openMode}?'open':'save'));
@@ -233,7 +233,7 @@ sub execute
 				next DIALOG;
 			}
 		}
-		
+
 		for my $file ( $self-> fileName) {
 			if ( $self-> {fileMustExist}) {
 				next if -f $file;
@@ -244,7 +244,7 @@ sub execute
 			if ( $self-> {openMode}) {
 				if ( $self-> {createPrompt}) {
 					if ( Prima::MsgBox::message_box( $self-> text,
-						"File $file does not exists. Create?", 
+						"File $file does not exists. Create?",
 						mb::OKCancel|mb::Information
 					) != mb::OK) {
 						$self-> cancel;
@@ -253,19 +253,19 @@ sub execute
 				}
 			} else {
 				if ( $self-> {noReadOnly} && !(-w $file)) {
-					message_box( 
-						$self-> text, 
-						"File $file is read only", 
+					message_box(
+						$self-> text,
+						"File $file is read only",
 						mb::OK | mb::Error
 					);
 					next DIALOG;
 				}
-			
+
 				if ( not $self-> {noTestFileCreate}) {
-					if ( open FILE, ">>$file") { 
-						close FILE; 
+					if ( open FILE, ">>$file") {
+						close FILE;
 					} else {
-						message_box( $self-> text, 
+						message_box( $self-> text,
 							"Cannot create file $file: $!", mb::OK | mb::Error);
 						next DIALOG;
 					}
@@ -301,7 +301,7 @@ sub profile_default
 
 Prima::sys::gtk::FileDialog - GTK file system dialogs.
 
-=head1 DESCRIPTION 
+=head1 DESCRIPTION
 
 The module mimics Prima file dialog classes C<Prima::OpenDialog> and
 C<Prima::SaveDialog>, defined in L<Prima::FileDialog>. The class names

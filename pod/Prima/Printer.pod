@@ -30,16 +30,16 @@ is used instead.
 =head1 Usage
 
 I<Prima::Printer> objects are never created directly. During the life
-of a program, there exists only one instance of a printer 
+of a program, there exists only one instance of a printer
 object, created automatically by I<Prima::Application>.
 I<Prima::Printer> object is created only when the system provides
-graphic printing capabilities - drawing and painting procedures 
+graphic printing capabilities - drawing and painting procedures
 on a graphic device.
 If there are no such API, I<Prima::Application> creates an
 instance of I<Prima::PS::Printer> instead, which emulates
 a graphic device, producing PostScript output.
 The discretion between I<Prima::Printer> and I<Prima::PS::Printer>
-is transparent for both the user and the programmer, unless 
+is transparent for both the user and the programmer, unless
 printer device specific adjustments desired.
 
 A printing session is started by C<begin_doc()>, which switches
@@ -100,7 +100,7 @@ if the printer device supports several resolutions, inside C<setup_dialog()>.
 =item size WIDTH, HEIGHT
 
 A read-only property; returns dimensions of a printer device page.
-The user can change this, if the printer device supports several 
+The user can change this, if the printer device supports several
 resolutions or page formats, inside C<setup_dialog()>.
 
 =back
@@ -185,10 +185,10 @@ successfully set.
 
 The compatibility between options and values used by different OSes is low here.
 The only fully compatible options are C<Orientation>[C<Portrait|Landscape>],
-C<Color>[C<Color|Monochrome>], C<Copies>[C<integer>], and 
+C<Color>[C<Color|Monochrome>], C<Copies>[C<integer>], and
 C<PaperSize>[C<AI<integer>|BI<integer>|Executive|Folio|Ledger|Legal|Letter|Tabloid>].
 The other options are OS-dependant. For win32, consult Microsoft manual on
-DEVMODE structure L<http://msdn.microsoft.com/library/en-us/gdi/prntspol_8nle.asp>; 
+DEVMODE structure L<http://msdn.microsoft.com/library/en-us/gdi/prntspol_8nle.asp>;
 for Prima's own PostScript printer, consult L<Prima::PS::Printer>.
 
 =item printers
@@ -216,7 +216,7 @@ A boolean flag, 1 if the printer is default, 0 otherwise.
 
 Invokes the system-provided printer device setup dialog.
 In this setup, the user can adjust the capabilities of the printer,
-such as page setup, resolution, color, etc etc. 
+such as page setup, resolution, color, etc etc.
 
 =item get_default_printer
 

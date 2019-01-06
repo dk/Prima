@@ -2,12 +2,12 @@
 #	AbstractDocker::Interface
 #		SimpleWidgetDocker
 #		ClientWidgetDocker
-#		LinearWidgetDocker 
+#		LinearWidgetDocker
 #		FourPartDocker
 #	ExternalDockerShuttle
-#	InternalDockerShuttle 
-#		LinearDockerShuttle 
-#		SingleLinearWidgetDocker 
+#	InternalDockerShuttle
+#		LinearDockerShuttle
+#		SingleLinearWidgetDocker
 
 package Prima::Docks;
 
@@ -28,7 +28,7 @@ sub open_session
 		@{$self-> {subdockers}} = grep { $_-> alive} @{$self-> {subdockers}};
 		push( @mgrs, @{$self-> {subdockers}});
 	}
-	return { 
+	return {
 		SUBMGR    => \@mgrs,
 		SUBMGR_ID => -1,
 	};
@@ -40,13 +40,13 @@ sub check_session
 	return 1 if $$p{CHECKED_OK};
 	warn("No 'self' given\n"), return 0 unless $$p{self};
 	for ( qw( sizes)) {
-		warn("No '$_' array specified\n"), return 0 
+		warn("No '$_' array specified\n"), return 0
 			if !defined($$p{$_});
 	}
 	for ( qw( sizes sizeable position sizeMin)) {
-		warn("'$_' is not an array\n"), return 0 
+		warn("'$_' is not an array\n"), return 0
 			if defined($$p{$_}) && ( ref($$p{$_}) ne 'ARRAY');
-	}   
+	}
 	my $i = 0;
 	for ( @{$$p{sizes}}) {
 		warn("Size #$i is not an valid array"), return 0 if (ref($_) ne 'ARRAY') || ( @$_ != 2);
@@ -58,21 +58,21 @@ sub check_session
 	$$p{position} = [] unless defined $$p{position};
 	$$p{CHECKED_OK} = 1;
 	return 1;
-}   
+}
 
 sub query
 {
 	my ( $self, $session_id, @rect) = @_;
-	return unless (ref($session_id) eq 'HASH') && 
+	return unless (ref($session_id) eq 'HASH') &&
 		exists($session_id-> {SUBMGR}) && exists($session_id-> {SUBMGR_ID});
 	$session_id-> {SUBMGR_ID} = 0;
-	return $session_id-> {SUBMGR}-> [0]; 
+	return $session_id-> {SUBMGR}-> [0];
 }
 
 sub next_docker
 {
 	my ( $self, $session_id, $posx, $posy) = @_;
-	return unless (ref($session_id) eq 'HASH') && 
+	return unless (ref($session_id) eq 'HASH') &&
 		exists($session_id-> {SUBMGR}) && exists($session_id-> {SUBMGR_ID});
 	my ( $id, $array) =  ( $session_id-> {SUBMGR_ID}, $session_id-> {SUBMGR});
 	while ( 1) {
@@ -81,22 +81,22 @@ sub next_docker
 		return $$array[$id] if defined( $$array[$id]) && Prima::Object::alive($$array[$id]);
 	}
 	undef;
-}   
+}
 
 sub close_session
 {
-#	my ( $self, $session_id) = @_;   
+#	my ( $self, $session_id) = @_;
 	undef $_[1];
-}   
+}
 
 
 sub undock
 {
 	my ( $self, $who) = @_;
 #	print $self-> name . "($self): ". $who-> name . " is undocked\n";
-	return unless $self-> {docklings}; 
+	return unless $self-> {docklings};
 	@{$self-> {docklings}} = grep { $who != $_ } @{$self-> {docklings}};
-}   
+}
 
 sub dock
 {
@@ -104,19 +104,19 @@ sub dock
 #	print $self-> name . "($self): ". $who-> name . " is docked\n";
 	$self-> {docklings} = [] unless $self-> {docklings};
 	push ( @{$self-> {docklings}}, $who);
-}   
+}
 
 sub dock_bunch
 {
 	my $self = shift;
 	push ( @{$self-> {docklings}}, @_);
 	$self-> rearrange;
-}   
+}
 
 sub docklings
 {
 	return $_[0]-> {docklings} ? @{$_[0]-> {docklings}} : ();
-}   
+}
 
 sub replace
 {
@@ -128,7 +128,7 @@ sub replace
 		$wijTo-> owner( $wijFrom-> owner) unless $wijTo-> owner == $wijFrom-> owner;
 		$wijTo-> rect( $wijFrom-> rect);
 		last;
-	}   
+	}
 }
 
 
@@ -151,18 +151,18 @@ sub redock_widget
 		if ( 4 == scalar @rc) {
 			if (( $rc[2] - $rc[0] == $r[2] - $r[0]) && ( $rc[3] - $rc[1] == $r[3] - $r[1])) {
 				my @rx = $wij-> owner-> screen_to_client( @rc[0,1]);
-				$wij-> origin( $wij-> owner-> screen_to_client( @rc[0,1])) 
+				$wij-> origin( $wij-> owner-> screen_to_client( @rc[0,1]))
 					if $rc[0] != $r[0] || $rc[1] != $r[1];
 			} else {
 				$wij-> rect( $wij-> owner-> screen_to_client( @rc));
-			} 
+			}
 			$self-> undock( $wij);
 			$self-> dock( $wij);
-		} 
-	}   
-}   
+		}
+	}
+}
 
-sub rearrange 
+sub rearrange
 {
 	my $self = $_[0];
 	return unless $self-> {docklings};
@@ -180,21 +180,21 @@ sub add_subdocker
 {
 	my ( $self, $subdocker) = @_;
 	push( @{$self-> {subdockers}}, $subdocker);
-}   
+}
 
 sub remove_subdocker
 {
-	my ( $self, $subdocker) = @_; 
+	my ( $self, $subdocker) = @_;
 	return unless $self-> {subdockers};
 	@{$self-> {subdockers}} = grep { $_ != $subdocker} @{$self-> {subdockers}};
-}   
+}
 
 sub dockup
 {
 	return $_[0]-> {dockup} unless $#_;
 	$_[0]-> {dockup}-> remove_subdocker( $_[0]) if $_[0]-> {dockup};
 	$_[1]-> add_subdocker( $_[0]) if $_[1];
-}   
+}
 
 package Prima::SimpleWidgetDocker;
 use vars qw(@ISA);
@@ -203,13 +203,13 @@ use vars qw(@ISA);
 sub profile_default
 {
 	my $def = $_[0]-> SUPER::profile_default;
-	my %prf = (  
+	my %prf = (
 		fingerprint => 0x0000FFFF,
 		dockup      => undef,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}   
+}
 
 sub init
 {
@@ -217,7 +217,7 @@ sub init
 	my %profile = $self-> SUPER::init( @_);
 	$self-> $_( $profile{$_}) for ( qw(fingerprint dockup));
 	return %profile;
-}   
+}
 
 
 sub open_session
@@ -229,9 +229,9 @@ sub open_session
 	my @sz = $self-> size;
 	my @asz;
 	my @able  = @{$profile-> {sizeable}};
-	my @minSz = @{$profile-> {sizeMin}}; 
+	my @minSz = @{$profile-> {sizeMin}};
 	for ( @{$profile-> {sizes}}) {
-		my @xsz = @$_; 
+		my @xsz = @$_;
 		for ( 0, 1) {
 			next if ( $xsz[$_] >= $sz[$_]) && !$able[$_];
 			next if $sz[$_] < $minSz[$_];
@@ -247,7 +247,7 @@ sub open_session
 		maxpos => [ $offs[0] + $sz[0] - $asz[0] - 0, $offs[1] + $sz[1] - $asz[1] - 0,],
 		size   => \@asz,
 	};
-}   
+}
 
 sub query
 {
@@ -264,7 +264,7 @@ sub query
 		@npx = @{$$p{minpos}};
 	}
 	return @npx[0,1], $$p{size}-> [0] + $npx[0], $$p{size}-> [1] + $npx[1];
-}   
+}
 
 package Prima::ClientWidgetDocker;
 use vars qw(@ISA);
@@ -279,9 +279,9 @@ sub open_session
 	my @sz = $self-> size;
 	my @asz;
 	my @able = @{$profile-> {sizeable}};
-	my @minSz = @{$profile-> {sizeMin}}; 
+	my @minSz = @{$profile-> {sizeMin}};
 	for ( @{$profile-> {sizes}}) {
-		my @xsz = @$_; 
+		my @xsz = @$_;
 		for ( 0, 1) {
 			next if ( $xsz[$_] != $sz[$_]) && !$able[$_];
 			next if $sz[$_] < $minSz[$_];
@@ -295,9 +295,9 @@ sub open_session
 	return {
 		retval => [@offs, $offs[0] + $sz[0], $offs[1] + $sz[1]],
 	};
-}   
+}
 
-sub query { return @{$_[1]-> {retval}}}   
+sub query { return @{$_[1]-> {retval}}}
 
 sub on_paint
 {
@@ -305,9 +305,9 @@ sub on_paint
 	my @sz = $self-> size;
 	$canvas-> clear( 1, 1, $sz[0]-2, $sz[1]-2);
 	$canvas-> rect3d( 0, 0, $sz[0]-1, $sz[1]-1, 1, $self-> dark3DColor, $self-> light3DColor);
-}   
+}
 
-package 
+package
     grow;
 # direct, ::vertical-independent
 use constant ForwardLeft   => 0x01;
@@ -324,13 +324,13 @@ use constant Right         => ForwardRight| BackRight;
 use constant Up            => ForwardUp   | BackUp;
 
 # indirect, ::vertical-dependent
-use constant ForwardMajorLess => 0x0100; 
+use constant ForwardMajorLess => 0x0100;
 use constant ForwardMajorMore => 0x0200;
-use constant ForwardMinorLess => 0x0400; 
+use constant ForwardMinorLess => 0x0400;
 use constant ForwardMinorMore => 0x0800;
-use constant BackMajorLess    => 0x1000; 
+use constant BackMajorLess    => 0x1000;
 use constant BackMajorMore    => 0x2000;
-use constant BackMinorLess    => 0x4000; 
+use constant BackMinorLess    => 0x4000;
 use constant BackMinorMore    => 0x8000;
 use constant MajorLess        => ForwardMajorLess | BackMajorLess;
 use constant MajorMore        => ForwardMajorMore | BackMajorMore;
@@ -357,7 +357,7 @@ sub profile_default
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}   
+}
 
 {
 my %RNT = (
@@ -377,21 +377,21 @@ sub init
 	my %profile = $self-> SUPER::init( @_);
 	$self-> $_( $profile{$_}) for ( qw( fingerprint growable hasPocket vertical dockup));
 	return %profile;
-}   
+}
 
 sub vertical
 {
 	return $_[0]-> {vertical} unless $#_;
 	my ( $self, $v) = @_;
 	$self-> {vertical} = $v;
-}   
+}
 
 sub hasPocket
 {
 	return $_[0]-> {hasPocket} unless $#_;
 	my ( $self, $v) = @_;
 	$self-> {hasPocket} = $v;
-}   
+}
 
 
 sub growable
@@ -399,17 +399,17 @@ sub growable
 	return $_[0]-> {growable} unless $#_;
 	my ( $self, $g) = @_;
 	$self-> {growable} = $g;
-}   
+}
 
 sub __docklings
 {
 	my ( $self, $exclude) = @_;
 	my %hmap;
 	my $xid = $self-> {vertical} ? 0 : 1; # minor axis, further 'vertical'
-	my $yid = $self-> {vertical} ? 1 : 0; # major axis, further 'horizontal   
+	my $yid = $self-> {vertical} ? 1 : 0; # major axis, further 'horizontal
 	my $min;
-	for ( @{$self-> {docklings}}) {    
-		next if $_ == $exclude;  # if redocking to another position, for example      
+	for ( @{$self-> {docklings}}) {
+		next if $_ == $exclude;  # if redocking to another position, for example
 		my @rt = $_-> rect;
 		$hmap{$rt[$xid]} = [0,0,0,[],[]] unless $hmap{$rt[$xid]};
 		my $sz = $rt[$xid+2] - $rt[$xid];
@@ -419,9 +419,9 @@ sub __docklings
 		$$xm[1] += $rt[$yid + 2] - $rt[$yid]; # total length occupied
 		$$xm[2] = $rt[$yid+2] if $rt[$yid+2] > $$xm[2]; # farthest border
 		push( @{$$xm[4]}, $_); # widget
-	}  
+	}
 
-	# checking widgets 
+	# checking widgets
 	my @ske = sort { $a <=> $b }keys %hmap;
 	my @sz  = $self-> size;
 	my $i;
@@ -430,20 +430,20 @@ sub __docklings
 		if ( $ext + $ske[$i] < $ske[$i+1]) { # some gap here
 			$hmap{$ext + $ske[$i]} = [$ske[$i+1] - $ske[$i] - $ext, 0, 0, [], []];
 			@ske = sort { $a <=> $b }keys %hmap;
-		}   
-	}   
+		}
+	}
 	if ( @ske) {
 		my $ext = $hmap{$ske[-1]}-> [0]; # last row
-		$hmap{$ext + $ske[-1]} = [$sz[$xid] - $ske[-1] - $ext, 0, 0, [], []]; 
+		$hmap{$ext + $ske[-1]} = [$sz[$xid] - $ske[-1] - $ext, 0, 0, [], []];
 	} else {
 		$hmap{0} = [ $sz[$xid], 0, 0, [], []];
 	}
 	$hmap{0} = [ $min, 0, 0, [], []] unless $hmap{0};
 # hmap structure:
-# 0 - max vert extension   
+# 0 - max vert extension
 # 1 - total length occupied
 # 2 - farther border by major axis
-# 3 - array of accepted sizes 
+# 3 - array of accepted sizes
 # 4 - widget list
 	return \%hmap;
 }
@@ -457,7 +457,7 @@ sub read_growable
 	my $gMaxL = ( $g & grow::MajorLess) || ($g & ($xid ? grow::Left  : grow::Down));
 	my $gMinG = ( $g & grow::MinorMore) || ($g & ($xid ? grow::Up    : grow::Right));
 	my $gMinL = ( $g & grow::MinorLess) || ($g & ($xid ? grow::Down  : grow::Left));
-	
+
 	return ( $gMaxG, $gMaxL, $gMinG, $gMinL);
 }
 
@@ -480,14 +480,14 @@ sub open_session
 	my $minExt = ( $gMinG || $gMinL) ? $msz[ $xid] : $sz[ $xid];
 
 	push( @{$$profile{sizes}}, [ @sz]) unless @{$$profile{sizes}};
-	
+
 	# total vertical occupied size
 	my ( $gap, $vo) = (0, 0);
 	for ( keys %hmap) {
 		$hmap{$_}-> [1] ?
-			( $vo  += $hmap{$_}-> [0]) : 
+			( $vo  += $hmap{$_}-> [0]) :
 			( $gap += $hmap{$_}-> [0]) ;
-	}   
+	}
 
 	# put acceptable set of sizes for every line
 	my @minSz = @{$$profile{sizeMin}};
@@ -499,37 +499,37 @@ sub open_session
 			#print "row $y:($total $majExt)";
 			#if ( $asz[$xid] > $minExt - $vo) {
 			if (( $asz[$xid] > $ext) && ($asz[$xid] > $minExt - $vo)) {
-				next unless $profile-> {sizeable}-> [$xid]; 
+				next unless $profile-> {sizeable}-> [$xid];
 				my $n_ext = $minExt - $vo;
 				next if $n_ext < $minSz[$xid] && $n_ext < $asz[$xid];
 				$asz[$xid] = $n_ext;
-			}   
+			}
 			#print "step1 $y :@asz|$ext $total $border = $majExt\n";
-			if ($total + $asz[$yid] > $majExt) { 
+			if ($total + $asz[$yid] > $majExt) {
 				if ( !$self-> {hasPocket} || ( $border >= $majExt)) {
-					next unless $profile-> {sizeable}-> [$yid]; 
+					next unless $profile-> {sizeable}-> [$yid];
 					my $nb = ( $self-> {hasPocket} ? $border : $majExt) - $total;
 					#print "3: $nb $yid\n";
-					next if $nb < $minSz[$yid] && $nb < $asz[$yid]; 
+					next if $nb < $minSz[$yid] && $nb < $asz[$yid];
 					$asz[$yid] = $nb;
-				}   
-			}  
+				}
+			}
 			# print "@$_:@asz\n";
 			push ( @$array, \@asz);
-		}   
+		}
 		# print "$_(" . scalar(@{$hmap{$_}->[4]}). ')';
-	}   
+	}
 
 	# add decrement line
 	if ( $vo) {
 		# print " and - ";
-		for (@{$$profile{sizes}}) { 
-			my @asz = @$_; 
+		for (@{$$profile{sizes}}) {
+			my @asz = @$_;
 			next if $hmap{- $asz[$xid]};
 			next if $asz[$xid] > $minExt - $vo;
 			$hmap{ - $asz[$xid]} = [ $asz[$xid], 0, 0, [\@asz], []];
 			# print "|$asz[$xid] ";
-		}   
+		}
 	}
 	# print "\n";
 
@@ -544,7 +544,7 @@ sub open_session
 		} map {
 			[@$_, $$_[$xid] / ($$_[$yid]||1)] # calculate xid/yid ratio
 		} @$s;
-	}   
+	}
 	return {
 		offs     => [ $self-> client_to_screen(0,0)],
 		size     => \@sz,
@@ -554,7 +554,7 @@ sub open_session
 		vmap     => [ sort { $a <=> $b } keys %hmap],
 		sizes    => [ sort { $$a[2] <=> $$b[2]} map { [ @$_, $$_[$yid] / ($$_[$xid]||1)]} @{$$profile{sizes}}],
 		sizeable => $$profile{sizeable},
-		sizeMin  => $$profile{sizeMin}, 
+		sizeMin  => $$profile{sizeMin},
 		grow     => [ $gMinG, $gMinL, $gMaxG, $gMaxL],
 	};
 }
@@ -562,8 +562,8 @@ sub open_session
 sub query
 {
 	my ( $self, $p, @rect) = @_;
-	my $xid = $self-> {vertical} ? 0 : 1; 
-	my $yid = $self-> {vertical} ? 1 : 0; 
+	my $xid = $self-> {vertical} ? 0 : 1;
+	my $yid = $self-> {vertical} ? 1 : 0;
 	my @asz;
 	my @offs = @{$p-> {offs}};
 	my $hmap = $$p{hmap};
@@ -574,7 +574,7 @@ sub query
 
 	$useSZ = 0, @rect = ( 0, 0, 1, 1) unless scalar @rect;
 	my %skip = ();
-AGAIN:      
+AGAIN:
 	$i = 0; $idx = undef;
 	for ( $i = 0; $i < $rows; $i++) {
 		next if $skip{$$vmap[$i]};
@@ -586,14 +586,14 @@ AGAIN:
 			$dist *= $dist;
 			$side = 1, $idx = $$vmap[$i], $closest = $dist if $closest > $dist;
 		}
-	} 
+	}
 	return unless defined $idx;
 	if ( @{$hmap-> {$idx}-> [3]}) {
 		@asz = @{$hmap-> {$idx}-> [3]-> [0]};
 	} else {
 		# print "$idx rejected\n";
 		$skip{$idx} = 1;
-		goto AGAIN;   
+		goto AGAIN;
 	}
 
 	@rect = ( 0, 0, @asz) unless $useSZ;
@@ -603,26 +603,26 @@ AGAIN:
 		$rect[$yid] = $offs[$yid];
 	}
 	my $sk = ( $p-> {sizeMin}-> [$yid] > $asz[$yid]) ? $asz[$yid] : $p-> {sizeMin}-> [$yid];
-	$rect[ $yid] = $offs[$yid] + $p-> {size}-> [$yid] - $sk if 
+	$rect[ $yid] = $offs[$yid] + $p-> {size}-> [$yid] - $sk if
 		$rect[$yid] > $offs[$yid] + $p-> {size}-> [$yid] - $sk;
 #   unless ( $self-> {vertical}) {
 #my @r = ( $rect[0], $idx + $offs[1], $rect[0] + $asz[0], $idx + $offs[1] + $asz[1]);
 #print "q :@r\n";
-#   } 
-	return $self-> {vertical} ? 
+#   }
+	return $self-> {vertical} ?
 		( $idx + $offs[0], $rect[1], $idx + $offs[0] + $asz[0], $rect[1] + $asz[1]) :
 		( $rect[0], $idx + $offs[1], $rect[0] + $asz[0], $idx + $offs[1] + $asz[1]);
-}  
+}
 
 sub dock
 {
 	my ( $self, $who) = @_;
 	$self-> SUPER::dock( $who);
-	my $xid = $self-> {vertical} ? 0 : 1; 
-	my $yid = $self-> {vertical} ? 1 : 0; 
+	my $xid = $self-> {vertical} ? 0 : 1;
+	my $yid = $self-> {vertical} ? 1 : 0;
 	my @rt = $who-> rect;
 	my @sz = $self-> size;
-	my $hmap = $self-> __docklings( $who); 
+	my $hmap = $self-> __docklings( $who);
 	my ( $gMaxG, $gMaxL, $gMinG, $gMinL) = $self-> read_growable( grow::Forward);
 
 	# for ( keys %$hmap) { print "hmap:$_\n"; }
@@ -633,7 +633,7 @@ sub dock
 			return;
 		}
 		$hmap-> {$rt[$xid]} = [$rt[$xid+2]-$rt[$xid], 0, 0, [], [], 0];
-	}   
+	}
 
 	# minor axis
 	my $doMajor = $hmap-> {$rt[$xid]}-> [1];
@@ -642,24 +642,24 @@ sub dock
 	for ( keys %$hmap) {
 		next if $_ < 0 || $hmap-> {$_}-> [1];
 		$gap += $hmap-> {$_}-> [0];
-	}   
-	
+	}
+
 #   print "key : $rt[$xid] $rt[$xid+2]\n";
 	my $maxY = $hmap-> {$rt[$xid]}-> [1] ? $hmap-> {$rt[$xid]}-> [0] : 0;
 	#my $tail = $rt[$xid+2] - $rt[$xid] - $hmap->{$rt[$xid]}->[0];
 	my $tail = $rt[$xid+2] - $rt[$xid] - $maxY;
-	#print "$self:tail:$tail $maxY @rt\n"; 
+	#print "$self:tail:$tail $maxY @rt\n";
 	if ( $tail > 0 || $rt[$xid] < 0) {
 		my @fmp  = sort { $a <=> $b} keys %$hmap;
 		my $prop = $self-> {vertical} ? 'left' : 'bottom';
 		my $last = 0;
-		for ( @fmp) { 
+		for ( @fmp) {
 			my @rp = @{$hmap-> {$_}-> [4]};
-			my $ht = $hmap-> {$_}-> [0]; 
+			my $ht = $hmap-> {$_}-> [0];
 			if ( $_ == $rt[$xid]) {
 				push ( @rp, $who);
 				$ht = $rt[$xid+2] - $rt[$xid] if $ht < $rt[$xid+2] - $rt[$xid];
-			}   
+			}
 			next unless scalar @rp;
 			$_-> $prop( $last) for @rp;
 			$last += $ht;
@@ -670,7 +670,7 @@ sub dock
 		# print "last:$last, tail:$tail\n";
 	} else {
 		$tail = 0;
-	}   
+	}
 
 	if ( $tail) {
 		if ( $gMinG) {
@@ -680,12 +680,12 @@ sub dock
 			my @rect = $self-> rect;
 			$rect[ $xid] -= $tail;
 			$self-> rect( @rect);
-		}  
+		}
 		@sz = $self-> size;
-	}  
-	
+	}
+
 	# major axis
-	
+
 	unless ( $self-> {hasPocket}) {
 		my @o = @rt[0,1];
 		$o[$yid] = $sz[$yid] - $rt[$yid+2] + $rt[$yid] if $rt[$yid+2] > $sz[$yid];
@@ -693,7 +693,7 @@ sub dock
 	#  print "@o:@rt\n";
 		$who-> origin( @o) if $o[$yid] != $rt[$yid];
 		@rt[0,1] = @o;
-	}  
+	}
 
 	my @fmp;
 	my $edge = 0;
@@ -711,7 +711,7 @@ sub dock
 		for ( @fmp) {
 			$overlap = 1, last if $$_[1] < $last;
 			$last = $$_[1] + $$_[2];
-		}  
+		}
 		if ( $overlap) {
 			$last = 0;
 			my $i = 0;
@@ -723,7 +723,7 @@ sub dock
 				$$_[0]-> $prop( $last);
 				$last += $$_[2];
 				$i++;
-			} 
+			}
 			$edge = $last;
 		}
 	}
@@ -736,23 +736,23 @@ sub dock
 			my @r = $self-> rect;
 			$r[$yid] -= $edge - $sz[$yid];
 			$self-> rect( @r);
-		}   
+		}
 		@sz = $self-> size;
-	}   
+	}
 
 	# redocking non-fit widgets
 	my $stage = 0;
 	my @repush;
 	for ( @fmp) {
 		if ( $self-> {hasPocket}) {
-			next if $$_[1] <= $sz[$yid] - 5; 
+			next if $$_[1] <= $sz[$yid] - 5;
 			$stage = 1, next unless $stage;
 		} else {
 			next if $$_[1] + $$_[2] <= $sz[$yid];
-		}   
+		}
 		push( @repush, $$_[0]);
-	}   
-	$self-> redock_widget($_) for @repush; 
+	}
+	$self-> redock_widget($_) for @repush;
 
 	$self-> notify(q(Dock), $who);
 }
@@ -761,13 +761,13 @@ sub undock
 {
 	my ( $self, $who) = @_;
 	$self-> SUPER::undock( $who);
-	my $xid = $self-> {vertical} ? 0 : 1; 
-	my $yid = $self-> {vertical} ? 1 : 0; 
+	my $xid = $self-> {vertical} ? 0 : 1;
+	my $yid = $self-> {vertical} ? 1 : 0;
 	my @rt = $who-> rect;
 	my @sz = $self-> size;
-	my $hmap = $self-> __docklings( $who); 
-	my ( $gMaxG, $gMaxL, $gMinG, $gMinL) = $self-> read_growable( grow::Back);   
-	
+	my $hmap = $self-> __docklings( $who);
+	my ( $gMaxG, $gMaxL, $gMinG, $gMinL) = $self-> read_growable( grow::Back);
+
 # collapsing minor axis
 	my $xd = $rt[$xid+2] - $rt[$xid];
 	if (( !$hmap-> {$rt[$xid]}-> [1] || ($hmap-> {$rt[$xid]}-> [0] < $xd)) && ( $gMinG || $gMinL)) {
@@ -780,14 +780,14 @@ sub undock
 		for ( keys %$hmap) {
 			next if $_ <= $rt[$xid];
 			$_-> $prop( $_-> $prop() - $d) for @{$hmap-> {$_}-> [4]};
-		}   
+		}
 		if ( $gMinL) {
 			my @o = $self-> origin;
 			$o[$xid] += $d;
 			$self-> origin( @o);
-		}   
-	}   
-# collapsing major axis   
+		}
+	}
+# collapsing major axis
 	my @fmp;
 	my $adjacent;
 	for ( @{$hmap-> {$rt[$xid]}-> [4]}) {
@@ -795,21 +795,21 @@ sub undock
 		next if $rxt[$yid] < $rt[$yid];
 		push( @fmp, $_);
 		$adjacent = 1 if $rxt[$yid] == $rt[$yid + 2];
-	}  
+	}
 	if ( $adjacent) {
 		my $d = $rt[$yid+2] - $rt[$yid];
 		my $prop = $self-> {vertical} ? 'bottom' : 'left';
 		$_-> $prop( $_-> $prop() - $d) for @fmp;
-	}   
-	
+	}
+
 	if ( $gMaxG || $gMaxL) {
 		my $edge = 0;
 		for ( keys %$hmap) {
 			for ( @{$hmap-> {$_}-> [4]}) {
 				my @rxt = $_-> rect;
 				$edge = $rxt[$yid+2] if $edge < $rxt[$yid+2];
-			}   
-		}   
+			}
+		}
 		if ( $edge < $sz[$yid]) {
 			if ( $gMaxG) {
 				$sz[$yid] = $edge;
@@ -818,12 +818,12 @@ sub undock
 				my @r = $self-> rect;
 				$r[$yid] += $edge - $sz[$yid];
 				$self-> rect( @r);
-			}   
-		}   
+			}
+		}
 	}
 
 	$self-> notify(q(Undock), $who);
-}   
+}
 
 sub on_dockerror
 {
@@ -832,7 +832,7 @@ sub on_dockerror
 	my $xid = $self-> {vertical} ? 0 : 1;
 	warn "The widget $urchin didn't follow docking conventions. Info: $rt[$xid] $rt[$xid+2]\n";
 	$self-> redock_widget( $urchin);
-}   
+}
 
 package Prima::SingleLinearWidgetDocker;
 use vars qw(@ISA);
@@ -848,11 +848,11 @@ sub profile_default
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}   
+}
 
 sub open_session
 {
-	my ( $self, $profile) = @_; 
+	my ( $self, $profile) = @_;
 	my $res = $self-> SUPER::open_session( $profile);
 	return unless $res;
 # keep only one row of docklings
@@ -860,14 +860,14 @@ sub open_session
 	my @k    = keys %hmap;
 	for ( @k) {
 		delete $hmap{$_} if $_ != 0;
-	}  
+	}
 	$res-> {noDownSide} = 1;
 	return $res if scalar(keys %hmap) == scalar(@k);
 	$res-> {hmap} = \%hmap;
 	$res-> {rows} = scalar keys %hmap;
 	$res-> {vmap} = [sort { $a <=> $b } keys %hmap];
-	return $res;    
-} 
+	return $res;
+}
 
 package Prima::FourPartDocker;
 use vars qw(@ISA);
@@ -881,11 +881,11 @@ sub profile_default
 		growMode            => gm::Client,
 		dockup              => undef,
 		fingerprint         => 0x0000FFFF,
-		dockerClassLeft     => 'Prima::LinearWidgetDocker', 
-		dockerClassRight    => 'Prima::LinearWidgetDocker', 
-		dockerClassTop      => 'Prima::LinearWidgetDocker', 
-		dockerClassBottom   => 'Prima::LinearWidgetDocker', 
-		dockerClassClient   => 'Prima::ClientWidgetDocker', 
+		dockerClassLeft     => 'Prima::LinearWidgetDocker',
+		dockerClassRight    => 'Prima::LinearWidgetDocker',
+		dockerClassTop      => 'Prima::LinearWidgetDocker',
+		dockerClassBottom   => 'Prima::LinearWidgetDocker',
+		dockerClassClient   => 'Prima::ClientWidgetDocker',
 		dockerProfileLeft   => {},
 		dockerProfileRight  => {},
 		dockerProfileTop    => {},
@@ -900,20 +900,20 @@ sub profile_default
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}   
+}
 
 sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
 	$self-> SUPER::profile_check_in( $p, $default);
 	for ( qw( Left Right Top Bottom)) {
-		my $x = "dockerDelegations$_"; 
+		my $x = "dockerDelegations$_";
 		# append user-specified delegations - it may not be known beforehand
 		# which delegations we are using internally
 		next unless exists $p-> {$x};
 		splice( @{$p-> {$x}}, scalar(@{$p-> {$x}}), 0, @{$default-> {$x}});
-	}    
-}   
+	}
+}
 
 sub init
 {
@@ -922,8 +922,8 @@ sub init
 	$self-> $_( $profile{$_}) for ( qw( dockup indents fingerprint));
 	my @sz = $self-> size;
 	my @i  = @{$self-> indents};
-	$self-> insert([ $profile{dockerClassLeft} => 
-		origin   => [ 0, $i[1]],    
+	$self-> insert([ $profile{dockerClassLeft} =>
+		origin   => [ 0, $i[1]],
 		size     => [ $i[0], $sz[1] - $i[3] - $i[1]],
 		vertical => 1,
 		growable => grow::Right,
@@ -932,8 +932,8 @@ sub init
 		delegations => $profile{dockerDelegationsLeft},
 		%{$profile{dockerProfileLeft}},
 		%{$profile{dockerCommonProfile}},
-	], [ $profile{dockerClassRight} => 
-		origin   => [ $sz[0] - $i[2], $i[1]],    
+	], [ $profile{dockerClassRight} =>
+		origin   => [ $sz[0] - $i[2], $i[1]],
 		size     => [ $i[2], $sz[1] - $i[3] - $i[1]],
 		vertical => 1,
 		growable => grow::Left,
@@ -942,37 +942,37 @@ sub init
 		delegations => $profile{dockerDelegationsRight},
 		%{$profile{dockerProfileRight}},
 		%{$profile{dockerCommonProfile}},
-	], [ $profile{dockerClassTop} => 
-		origin   => [ 0, $sz[1] - $i[3]],    
+	], [ $profile{dockerClassTop} =>
+		origin   => [ 0, $sz[1] - $i[3]],
 		size     => [ $sz[0], $i[3]],
 		vertical => 0,
 		growable => grow::Down,
 		growMode => gm::GrowLoY|gm::GrowHiX,
 		name     => 'TopDocker',
-		delegations => $profile{dockerDelegationsTop},       
+		delegations => $profile{dockerDelegationsTop},
 		%{$profile{dockerProfileTop}},
 		%{$profile{dockerCommonProfile}},
-	], [ $profile{dockerClassBottom} => 
-		origin   => [ 0, 0],    
+	], [ $profile{dockerClassBottom} =>
+		origin   => [ 0, 0],
 		size     => [ $sz[0], $i[1]],
 		vertical => 0,
 		growable => grow::Up,
 		growMode => gm::GrowHiX,
 		name     => 'BottomDocker',
-		delegations => $profile{dockerDelegationsBottom},       
+		delegations => $profile{dockerDelegationsBottom},
 		%{$profile{dockerProfileBottom}},
 		%{$profile{dockerCommonProfile}},
-	], [ $profile{dockerClassClient} => 
-		origin   => [ @i[0,1]],    
+	], [ $profile{dockerClassClient} =>
+		origin   => [ @i[0,1]],
 		size     => [ $sz[0]-$i[2], $sz[1]-$i[3]],
 		growMode => gm::Client,
 		name     => 'ClientDocker',
-		delegations => $profile{dockerDelegationsClient},       
+		delegations => $profile{dockerDelegationsClient},
 		%{$profile{dockerProfileClient}},
 		%{$profile{dockerCommonProfile}},
 	]);
 	return %profile;
-}   
+}
 
 sub indents
 {
@@ -983,7 +983,7 @@ sub indents
 	}
 	return unless 4 == @i;
 	$_[0]-> {indents} = \@i;
-}   
+}
 
 sub LeftDocker_Size
 {
@@ -996,7 +996,7 @@ sub LeftDocker_Size
 		right => $self-> ClientDocker-> right,
 	);
 	$self-> repaint;
-}   
+}
 
 sub RightDocker_Size
 {
@@ -1006,39 +1006,39 @@ sub RightDocker_Size
 	$self-> {indents}-> [2] = $x;
 	$self-> ClientDocker-> width( $self-> width - $x - $self-> {indents}-> [0]);
 	$self-> repaint;
-}   
+}
 
 sub TopDocker_Size
 {
 	my ( $self, $dock, $ox, $oy, $x, $y) = @_;
-	return if $self-> {indents}-> [3] == $y; 
+	return if $self-> {indents}-> [3] == $y;
 	return unless $self-> can_event;
 	$self-> {indents}-> [3] = $y;
 	my $h = $self-> height - $y - $self-> {indents}-> [1];
-	
+
 	$self-> LeftDocker-> height( $h);
 	$self-> RightDocker-> height( $h);
 	$self-> ClientDocker-> height( $h);
 	$self-> repaint;
-}   
+}
 
 sub BottomDocker_Size
 {
 	my ( $self, $dock, $ox, $oy, $x, $y) = @_;
-	return if $self-> {indents}-> [1] == $y; 
+	return if $self-> {indents}-> [1] == $y;
 	return unless $self-> can_event;
 	$self-> {indents}-> [1] = $y;
 	my $h = $self-> height;
-	$self-> LeftDocker-> height( $h - $y - $self-> {indents}-> [3]); 
-	$self-> LeftDocker-> bottom( $self-> {indents}-> [1]); 
-	$self-> RightDocker-> height( $h - $y - $self-> {indents}-> [3]); 
-	$self-> RightDocker-> bottom( $self-> {indents}-> [1]); 
+	$self-> LeftDocker-> height( $h - $y - $self-> {indents}-> [3]);
+	$self-> LeftDocker-> bottom( $self-> {indents}-> [1]);
+	$self-> RightDocker-> height( $h - $y - $self-> {indents}-> [3]);
+	$self-> RightDocker-> bottom( $self-> {indents}-> [1]);
 	$self-> ClientDocker-> set(
 		bottom  => $y,
 		top     => $self-> ClientDocker-> top,
 	);
 	$self-> repaint;
-}   
+}
 
 package Prima::InternalDockerShuttle;
 use vars qw(@ISA);
@@ -1074,8 +1074,8 @@ sub profile_default
 		fingerprint             => 0x0000FFFF,
 	);
 	@$def{keys %prf} = values %prf;
-	return $def;   
-}   
+	return $def;
+}
 
 sub init
 {
@@ -1086,7 +1086,7 @@ sub init
 		dockingRoot snapDistance));
 	$self-> {__dock__} = $profile{dock};
 	return %profile;
-}   
+}
 
 
 sub setup
@@ -1094,7 +1094,7 @@ sub setup
 	$_[0]-> SUPER::setup;
 	$_[0]-> dock( $_[0]-> {__dock__});
 	delete $_[0]-> {__dock__};
-}   
+}
 
 sub cleanup
 {
@@ -1104,27 +1104,27 @@ sub cleanup
 	my $d = $self-> {externalDocker};
 	$self-> {externalDocker} = $self-> {dock} = undef;
 	$d-> destroy if $d;
-}   
+}
 
 
-sub snapDistance { 
+sub snapDistance {
 	return $_[0]-> {snapDistance} unless $#_;
 	my $sd = $_[1];
 	$sd = 0 if defined( $sd) && ($sd < 0);
 	$_[0]-> {snapDistance} = $sd;
 }
 
-sub externalDockerClass { 
+sub externalDockerClass {
 	return $_[0]-> {externalDockerClass} unless $#_;
 	$_[0]-> {externalDockerClass} = $_[1];
 }
 
-sub externalDockerModule { 
+sub externalDockerModule {
 	return $_[0]-> {externalDockerModule} unless $#_;
 	$_[0]-> {externalDockerModule} = $_[1];
 }
 
-sub externalDockerProfile { 
+sub externalDockerProfile {
 	return $_[0]-> {externalDockerProfile} unless $#_;
 	$_[0]-> {externalDockerProfile} = $_[1];
 }
@@ -1157,7 +1157,7 @@ sub client
 		return if !$self-> {client};
 	} else {
 		return if defined( $self-> {client}) && ($c == $self-> {client});
-	}   
+	}
 	$self-> {client} = $c;
 	return unless defined $c;
 	return unless $self-> {externalDocker};
@@ -1168,21 +1168,21 @@ sub client
 	$c-> owner( $ed-> client);
 	$c-> clipOwner(1);
 	$c-> origin( 0, 0);
-}  
+}
 
 sub frame2client
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
 	my @i = @{$self-> {indents}};
 	return ( $x1 + $i[0], $y1 + $i[1], $x2 - $i[2], $y2 - $i[3]);
-}   
+}
 
 sub client2frame
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
 	my @i = @{$self-> {indents}};
 	return ( $x1 - $i[0], $y1 - $i[1], $x2 + $i[2], $y2 + $i[3]);
-}   
+}
 
 sub xorrect
 {
@@ -1204,7 +1204,7 @@ sub on_paint
 	my @sz = $canvas-> size;
 	$canvas-> clear( 1, 1, $sz[0]-2, $sz[1]-2);
 	$canvas-> rectangle( 0, 0, $sz[0]-1, $sz[1]-1);
-}  
+}
 
 sub indents
 {
@@ -1215,7 +1215,7 @@ sub indents
 	}
 	return unless 4 == @i;
 	$_[0]-> {indents} = \@i;
-}   
+}
 
 sub drag
 {
@@ -1245,7 +1245,7 @@ sub drag
 		delete $self-> {$_} for qw( anchor drag orgRect oldRect pointerSave sessions dockInfo);
 		$self-> xorrect;
 	}
-	
+
 	unless ( $drag) {
 		$self-> {focSave}-> focus if
 			$self-> {focSave} && ref($self-> {focSave}) && $self-> {focSave}-> alive;
@@ -1269,19 +1269,19 @@ sub on_mouseup
 	$rc[$_]  = $self-> {orgRect}-> [$_] - $self-> {anchor}-> [0] + $x for ( 0, 2);
 	$rc[$_]  = $self-> {orgRect}-> [$_] - $self-> {anchor}-> [1] + $y for ( 1, 3);
 	my ( $dm, $rect);
-	if ( $self-> {dockingRoot}) { 
+	if ( $self-> {dockingRoot}) {
 		( $dm, $rect) = $self-> find_docking($self-> {dockingRoot}, \@rc);
 	}
 	$self-> drag(0);
 	if ( $self-> {dockingRoot}) {
 		if ( $dm) {
 			$self-> dock( $dm, @$rect); # dock or redock
-		} elsif ( $self-> {externalDocker}) { 
+		} elsif ( $self-> {externalDocker}) {
 			$self-> {externalDocker}-> origin( @rc[0,1]); # just move external docker
 			$self-> notify(q(FailDock), @rc[0,1]);
 		} else {
 			$self-> dock( undef, @rc); # convert to external state
-		}   
+		}
 	}
 	$self-> clear_event;
 }
@@ -1299,7 +1299,7 @@ sub on_mousemove
 	goto LEAVE unless $dm;
 	@rc = @$rect;
 	$w = 1;
-LEAVE:   
+LEAVE:
 	$self-> {oldRect} = \@rc;
 	$self-> xorrect( @{$self-> {oldRect}}, $w);
 	$self-> clear_event;
@@ -1319,15 +1319,15 @@ sub on_mouseclick
 	my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
 	return unless $dbl;
 	$self-> dock( undef);
-}   
+}
 
 sub on_getcaps
 {
 	my ( $self, $docker, $prf) = @_;
 	push( @{$prf-> {sizes}}, [$self-> size]);
 	$prf-> {sizeable} = [ $self-> {x_sizeable}, $self-> {y_sizeable}];
-	$prf-> {sizeMin}  = [ $self-> {indents}-> [2] + $self-> {indents}-> [0], $self-> {indents}-> [3] + $self-> {indents}-> [1]]; 
-}   
+	$prf-> {sizeMin}  = [ $self-> {indents}-> [2] + $self-> {indents}-> [0], $self-> {indents}-> [3] + $self-> {indents}-> [1]];
+}
 
 sub find_docking
 {
@@ -1342,7 +1342,7 @@ sub find_docking
 				$caps{self}     = $self;
 				$sid = $dm-> open_session( \%caps);
 			}
-		} 
+		}
 		$self-> {sessions}-> {$dm} = $sid;
 	} else {
 		$sid = $self-> {sessions}-> {$dm};
@@ -1359,7 +1359,7 @@ AGAIN:
 		my $sd = $self-> {snapDistance};
 		if ( $pos && defined($sd)) {
 			if ( $self-> {drag} &&
-					( # have to change the shape 
+					( # have to change the shape
 					(( $$pos[2] - $$pos[0]) != ( $rc[2] - $rc[0])) ||
 					(( $$pos[3] - $$pos[1]) != ( $rc[3] - $rc[1])))) {
 				my @pp = $::application-> pointerPos;
@@ -1369,40 +1369,40 @@ AGAIN:
 					my ( $a, $b) = ( $_, $_ + 2);
 					my $lb = (( $$pos[$a] + $$pos[$b]) / 2) > $pp[$a]; # 1 if pointer is closer to left/bottom
 					my $pdist = $lb ? $pp[$a] - $$pos[$a] : $$pos[$b] - $pp[$a];
-					my $sz1 = $rc[$b] - $rc[$a];     
+					my $sz1 = $rc[$b] - $rc[$a];
 					if ( $sz1 <= $pdist * 2) {
 						$newpos[$a] = $pp[$a] - int( $sz1/2);
 					} else {
 						$newpos[$a] = $lb ? ( $pp[$a] - $pdist) : ( $pp[$a] + $pdist - $sz1);
-					}   
+					}
 					$newpos[$b] = $newpos[$a] + $sz1;
-				}   
+				}
 				# asking for the new position for the shape, if $dm can accept that...
 				if ( 2 >= $relocationCount++) {
 				#print "case1: @newpos\n";
 				$pos = \@newpos;
-				goto AGAIN; 
+				goto AGAIN;
 				}
 			} elsif ( $self-> {drag} && ( # have to change the position
 					( $$pos[0] != $rc[0]) || ( $$pos[1] != $rc[1]))) {
-				my @pp = $::application-> pointerPos; 
-				my @newpos = @pp; 
+				my @pp = $::application-> pointerPos;
+				my @newpos = @pp;
 				#print ',';
 				for ( 0, 1) {
 					my ( $a, $b) = ( $_, $_ + 2);
 					$newpos[$a] = $rc[$a] if $newpos[$a] < $rc[$a];
 					$newpos[$a] = $rc[$b] if $newpos[$a] > $rc[$b];
-				}  
+				}
 				goto EXIT  if ( $sd < abs($pp[0] - $newpos[0])) || ( $sd < abs($pp[1] - $newpos[1]));
 				# asking for the new position, and maybe new shape...
 				if ( 2 >= $relocationCount++) {
 				#print "case2: @rc\n";
 				$pos = [@rc];
-				goto AGAIN; 
+				goto AGAIN;
 				}
-			}   
+			}
 			goto EXIT if ($sd < abs($rc[0] - $$pos[0])) || ($sd < abs($rc[1] - $$pos[1]));
-		}   
+		}
 		goto EXIT unless $self-> notify(q(Landing), $dm, @rc);
 		#print "@rc\n";
 		@retval = ($dm, \@rc);
@@ -1412,15 +1412,15 @@ AGAIN:
 			my ( $dm_found, $npos) = $self-> find_docking( $next, $pos);
 			@retval = ($dm_found, $npos), goto EXIT if $npos;
 			$next = $dm-> next_docker( $sid, $pos ? @$pos[0,1] : ());
-		}   
-	}   
-EXIT:   
+		}
+	}
+EXIT:
 	unless ( $self-> {drag}) {
 		$dm-> close_session( $sid);
 		delete $self-> {sessions};
 	}
 	return @retval;
-}   
+}
 
 sub dock
 {
@@ -1431,7 +1431,7 @@ sub dock
 		my $stage = 0;
 		my ( $sid, @rc, @s1rc);
 AGAIN:
-		if ( $self-> fingerprint && $dm-> fingerprint) { 
+		if ( $self-> fingerprint && $dm-> fingerprint) {
 			$self-> notify(q(GetCaps), $dm, \%caps);
 			if ( keys %caps) { # $dm is user-approved
 				unshift(@{$caps{sizes}}, [$rect[2] - $rect[0], $rect[3] - $rect[1]]) if scalar @rect;
@@ -1448,7 +1448,7 @@ AGAIN:
 			my ( $dm2, $rc) = $self-> find_docking( $dm, @rect ? [@rect] : ());
 			$self-> dock( $dm2, $rc ? @$rc : ());
 			return;
-		}   
+		}
 		return 0 if 4 != scalar @rc;
 		return 0 unless $self-> notify(q(Landing), $dm, @rc);
 
@@ -1459,16 +1459,16 @@ AGAIN:
 			if ( grep { $s1rc[$_] != $s2rc[$_] } (0..3)) {
 				$stage = 1;
 				goto AGAIN;
-			}   
+			}
 		}
 		$self-> hide;
 		$self-> owner( $dm);
 		my @sz = $self-> size;
 		$dm-> close_session( $sid);
-		
+
 		if ( $rc[2] - $rc[0] == $sz[0] && $rc[3] - $rc[1] == $sz[1]) {
-			$self-> origin( $self-> owner-> screen_to_client( @rc[0,1])); 
-		} else { 
+			$self-> origin( $self-> owner-> screen_to_client( @rc[0,1]));
+		} else {
 			$self-> rect( $self-> owner-> screen_to_client( @rc));
 		}
 		unless ( $self-> {dock}) {
@@ -1477,32 +1477,32 @@ AGAIN:
 				$c-> owner( $self);
 				$c-> clipOwner(1);
 				$c-> rect( $self-> frame2client( 0, 0, $self-> width, $self-> height));
-			}   
+			}
 			if ($self-> {externalDocker}) {
 				my $d = $self-> {externalDocker};
 				delete $self-> {externalDocker};
-				$d-> destroy;   
+				$d-> destroy;
 			}
-		}  
-		$self-> {dock} = $dm; 
+		}
+		$self-> {dock} = $dm;
 		$self-> show;
 		$dm-> dock( $self);
 		$self-> notify(q(Dock));
 	} else {
-		return if $self-> {externalDocker};  
+		return if $self-> {externalDocker};
 		my $c = $self-> client;
 		my $s = $c || $self;
 		if ( defined $self-> {externalDockerModule}) {
 			eval "use $self->{externalDockerModule};";
 			die $@ if $@;
 		}
-		my $ed = $self-> {externalDockerClass}-> create( 
+		my $ed = $self-> {externalDockerClass}-> create(
 			%{$self-> {externalDockerProfile}},
 			visible => 0,
 			shuttle => $self,
 			owner   => $::application,
 			text    => $self-> text,
-			onClose => sub { $_[0]-> clear_event unless $self-> notify(q(EDSClose))},   
+			onClose => sub { $_[0]-> clear_event unless $self-> notify(q(EDSClose))},
 		);
 		my @r = $s-> owner-> client_to_screen( $s-> rect);
 		$ed-> rect( $ed-> client2frame( @r));
@@ -1522,17 +1522,17 @@ AGAIN:
 			$self-> {lastUsedDock} = [ $self-> {dock}, [$self-> owner-> client_to_screen( $self-> rect)]];
 			$self-> {dock}-> undock( $self) if $self-> {dock};
 			$self-> {dock} = undef;
-		} 
+		}
 		$self-> hide;
 		$self-> owner( $::application);
 		$self-> notify(q(Undock));
-	}   
-}   
+	}
+}
 
 sub externalDocker
 {
 	return $_[0]-> {externalDocker} unless $#_;
-}   
+}
 
 sub dock_back
 {
@@ -1541,14 +1541,14 @@ sub dock_back
 	my ( $dm, $rect);
 	if ( $self-> {lastUsedDock}) {
 		( $dm, $rect) = @{$self-> {lastUsedDock}};
-		delete $self-> {lastUsedDock}; 
-	}   
+		delete $self-> {lastUsedDock};
+	}
 	if ( !defined($dm) || !Prima::Object::alive( $dm)) {
 		( $dm, $rect) = $self-> find_docking( $self-> {dockingRoot});
 	}
 	return unless $dm;
 	$self-> dock( $dm, $rect ? @$rect : ());
-}   
+}
 
 sub redock
 {
@@ -1556,14 +1556,14 @@ sub redock
 	return unless $self-> {dock};
 	$self-> dock( undef);
 	$self-> dock_back;
-}   
+}
 
 sub text
 {
 	return $_[0]-> SUPER::text unless $#_;
 	$_[0]-> SUPER::text( $_[1]);
 	$_[0]-> {externalDocker}-> text($_[1]) if $_[0]-> {externalDocker};
-}   
+}
 
 package Prima::ExternalDockerShuttle;
 use vars qw(@ISA);
@@ -1583,8 +1583,8 @@ sub profile_default
 	@$def{keys %prf} = values %prf;
 	$def-> {font}-> {height} = $fh;
 	$def-> {font}-> {width}  = 0;
-	return $def;   
-}   
+	return $def;
+}
 
 sub init
 {
@@ -1592,13 +1592,13 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	$self-> $_($profile{$_}) for qw(shuttle);
 	return %profile;
-}   
+}
 
 sub shuttle
 {
 	return $_[0]-> {shuttle} unless $#_;
 	$_[0]-> {shuttle} = $_[1];
-}   
+}
 
 sub on_mousedown
 {
@@ -1606,7 +1606,7 @@ sub on_mousedown
 	if (q(caption) ne $self-> xy2part( $x, $y)) {
 		$self-> SUPER::on_mousedown( $btn, $mod, $x, $y);
 		return;
-	}   
+	}
 	$self-> clear_event;
 	return if $self-> {mouseTransaction};
 	$self-> bring_to_front;
@@ -1617,21 +1617,21 @@ sub on_mousedown
 		$s-> rect( $s-> client2frame( $s-> client-> rect));
 	} else {
 		$s-> rect( $self-> frame2client( $self-> rect));
-	}   
+	}
 	$s-> drag( 1, [ $self-> rect], $s-> screen_to_client( $self-> client_to_screen($x, $y)));
 	$self-> clear_event;
-}   
+}
 
 sub on_mouseclick
 {
-	my ( $self, $btn, $mod, $x, $y, $dbl) = @_; 
+	my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
 	if (!$dbl || (q(caption) ne $self-> xy2part( $x, $y))) {
-		$self-> SUPER::on_mouseclick( $btn, $mod, $x, $y, $dbl); 
+		$self-> SUPER::on_mouseclick( $btn, $mod, $x, $y, $dbl);
 		return;
-	}   
+	}
 	$self-> clear_event;
 	$self-> shuttle-> dock_back;
-}   
+}
 
 sub windowState
 {
@@ -1641,7 +1641,7 @@ sub windowState
 		$self-> shuttle-> dock_back;
 	} else {
 		$self-> SUPER::windowState( $ws);
-	}   
+	}
 }
 
 package Prima::LinearDockerShuttle;
@@ -1657,17 +1657,17 @@ sub profile_default
 		vertical      => 0,
 	);
 	@$def{keys %prf} = values %prf;
-	return $def;   
-}   
+	return $def;
+}
 
 sub init
 {
 	my $self = shift;
-	$self-> {$_} = 0 for ( qw(indent headerBreadth vertical)); 
+	$self-> {$_} = 0 for ( qw(indent headerBreadth vertical));
 	my %profile = $self-> SUPER::init( @_);
 	$self-> $_( $profile{$_}) for ( qw(indent headerBreadth vertical));
 	return %profile;
-}   
+}
 
 sub indent
 {
@@ -1678,7 +1678,7 @@ sub indent
 	return if $i == $self-> {indent};
 	$self-> {indent} = $i;
 	$self-> update_indents;
-}   
+}
 
 sub headerBreadth
 {
@@ -1689,7 +1689,7 @@ sub headerBreadth
 	return if $i == $self-> {headerBreadth};
 	$self-> {headerBreadth} = $i;
 	$self-> update_indents;
-}   
+}
 
 
 sub vertical
@@ -1702,7 +1702,7 @@ sub vertical
 	$self-> {vertical} = $i;
 	$self-> update_indents;
 	$self-> repaint;
-}   
+}
 
 sub update_indents
 {
@@ -1710,8 +1710,8 @@ sub update_indents
 	my $vs   = $self-> { vertical};
 	my $i    = $self-> {indent};
 	my $hb   = $self-> {headerBreadth};
-	$self-> indents([ $vs ? $i : $i + $hb, $i, $i, $vs ? $i + $hb : $i]); 
-}   
+	$self-> indents([ $vs ? $i : $i + $hb, $i, $i, $vs ? $i + $hb : $i]);
+}
 
 sub on_paint
 {
@@ -1728,8 +1728,8 @@ sub on_paint
 	for ( $j = $i; $j < $hb; $j += 4) {
 		$vs ?
 		$canvas-> rect3d( $i, $sz[1] - 3 - $j, $sz[0] - $i - 1, $sz[1] - 1 - $j, 1, @rc) :
-		$canvas-> rect3d( $j, $i, $j+2, $sz[1] - $i - 1, 1, @rc); 
-	}   
+		$canvas-> rect3d( $j, $i, $j+2, $sz[1] - $i - 1, 1, @rc);
+	}
 }
 
 1;
@@ -1749,11 +1749,11 @@ C<Prima::AbstractDocker::Interface> package.
 
 =head1 USAGE
 
-A dockable widget is required to take particular steps before 
+A dockable widget is required to take particular steps before
 it can dock to a dock widget. It needs to talk to the dock and
 find out if it is allowed to land, or if the dock contains lower-level dock widgets
 that might suit better for docking. If there's more than one dock
-widget in the program, the dockable widget can select between the targets; this is 
+widget in the program, the dockable widget can select between the targets; this is
 especially actual when a dockable widget is dragged by mouse and
 the arbitration is performed on geometrical distance basis.
 
@@ -1774,13 +1774,13 @@ calls C<query> method, which either returns a new rectangle, or another dock wid
 In the latter case, the caller can enumerate all available dock widgets by
 repetitive calls to C<next_docker> method. The session is closed by C<close_session>
 call; after that, the widget is allowed to dock by setting its C<owner>
-to the dock widget, the C<rect> property to the negotiated position and size, and 
+to the dock widget, the C<rect> property to the negotiated position and size, and
 calling C<dock> method.
 
-C<open_session>/C<close_session> brackets are used to cache all necessary 
+C<open_session>/C<close_session> brackets are used to cache all necessary
 calculations once, making C<query> call as light as possible. This design allows
-a dockable widget, when dragged, repeatedly ask all reachable docks in an 
-optimized way. The docking sessions are kept open until the drag 
+a dockable widget, when dragged, repeatedly ask all reachable docks in an
+optimized way. The docking sessions are kept open until the drag
 session is finished.
 
 The conversation can be schematized in the following code:
@@ -1811,11 +1811,11 @@ The conversation can be schematized in the following code:
 Since even the simplified code is quite cumbersome, direct calls to
 C<open_session> are rare. Instead, C<Prima::InternalDockerShuttle>
 implements C<find_docking> method which performs the arbitration automatically
-and returns the appropriate dock widget. 
+and returns the appropriate dock widget.
 
 C<Prima::InternalDockerShuttle> is a class that implements dockable
 widget functionality. It also employs a top-level window-like wrapper widget
-for the dockable widget when it is not docked. 
+for the dockable widget when it is not docked.
 By default, C<Prima::ExternalDockerShuttle> is used as the wrapper widget class.
 
 It is not required, however, to use neither C<Prima::InternalDockerShuttle>
@@ -1825,19 +1825,19 @@ protocol.
 
 C<Prima::InternalDockerShuttle> initiates a class hierarchy of dockable widgets.
 Its descendants are C<Prima::LinearWidgetDocker> and, in turn, C<Prima::SingleLinearWidgetDocker>.
-C<Prima::SimpleWidgetDocker> and C<Prima::LinearWidgetDocker>, derived from 
+C<Prima::SimpleWidgetDocker> and C<Prima::LinearWidgetDocker>, derived from
 C<Prima::AbstractDocker::Interface>, begin hierarchy of dock widgets.
 The full hierarchy is as follows:
 
 	Prima::AbstractDocker::Interface
 		Prima::SimpleWidgetDocker
 		Prima::ClientWidgetDocker
-		Prima::LinearWidgetDocker 
+		Prima::LinearWidgetDocker
 		Prima::FourPartDocker
 
-	Prima::InternalDockerShuttle 
-		Prima::LinearDockerShuttle 
-		Prima::SingleLinearWidgetDocker 
+	Prima::InternalDockerShuttle
+		Prima::LinearDockerShuttle
+		Prima::SingleLinearWidgetDocker
 
 	Prima::ExternalDockerShuttle
 
@@ -1872,7 +1872,7 @@ A custom bit mask, to be used by docking widgets to reject inappropriate
 dock widgets on early stage. The C<fingerprint> property is not part
 of the protocol, and is not required to be present in a dockable widget implementation.
 
-Default value: C<0x0000FFFF> 
+Default value: C<0x0000FFFF>
 
 =item dockup DOCK_WIDGET
 
@@ -1889,7 +1889,7 @@ of the link must be implemented separately, for example:
 		$self-> dockup( undef );
 	}, $self);
 
-	$self-> {destroy_id} = $self-> add_notification( 'Destroy', sub { 
+	$self-> {destroy_id} = $self-> add_notification( 'Destroy', sub {
 		$self-> dockup( undef );
 	} unless $self-> {destroy_id};
 
@@ -1932,9 +1932,9 @@ and calling C<rearrange>.
 
 Returns array of docked widgets.
 
-=item next_docker SESSION, [ X, Y ] 
+=item next_docker SESSION, [ X, Y ]
 
-Enumerates lower-level docker widgets within SESSION; returns 
+Enumerates lower-level docker widgets within SESSION; returns
 one docker widget at a time. After the last widget returns
 C<undef>.
 
@@ -1952,7 +1952,7 @@ The following keys must be set in PROFILE:
 
 =item position ARRAY
 
-Contains two integer coordinates of the desired position of 
+Contains two integer coordinates of the desired position of
 a widget in (X,Y) format in screen coordinate system.
 
 =item self WIDGET
@@ -1981,21 +1981,21 @@ fails.
 
 =item query SESSION [ X1, Y1, X2, Y2 ]
 
-Checks if a dockable widget can be landed into the dock. 
+Checks if a dockable widget can be landed into the dock.
 If it can, returns a rectangle that the widget must be set to.
-If coordinates ( X1 .. Y2 ) are specified, returns the 
+If coordinates ( X1 .. Y2 ) are specified, returns the
 rectangle closest to these. If C<sizes> or C<sizeable>
-keys of C<open_session> profile were set, the returned size 
+keys of C<open_session> profile were set, the returned size
 might be different from the current docking widget size.
 
 Once the caller finds the result appropriate, it is allowed to change
-its owner to the dock; after that, it must change its origin and size correspondingly 
-to the result, and then call C<dock>. 
+its owner to the dock; after that, it must change its origin and size correspondingly
+to the result, and then call C<dock>.
 
 If the dock cannot accept the widget, but contains lower-lever
 dock widgets, returns the first lower-lever widget. The caller
 can use subsequent calls to C<next_docker> to enumerate all
-lower-level dock widgets. A call to C<query> 
+lower-level dock widgets. A call to C<query>
 resets the internal enumeration pointer.
 
 If the widget cannot be landed, an empty array is returned.
@@ -2003,7 +2003,7 @@ If the widget cannot be landed, an empty array is returned.
 =item rearrange
 
 Effectively re-docks all the docked widgets. The effect is
-as same as of 
+as same as of
 
 	$self-> redock_widget($_) for $self-> docklings;
 
@@ -2048,7 +2048,7 @@ dock's interior.
 
 A toolbar-like docking widget class. The implementation does
 not allow tiling, and can reshape the dock widget and rearrange
-the docked widgets if necessary. 
+the docked widgets if necessary.
 
 C<Prima::LinearWidgetDocker> is orientation-dependent; its main axis,
 governed by C<vertical> property, is used to align docked widgets in
@@ -2064,9 +2064,9 @@ are used in the code for the axes ).
 A combination of C<grow::XXX> constants, that describes how
 the dock widget can be resized. The constants are divided in two
 sets, direct and indirect, or, C<vertical> property independent and
-dependent. 
+dependent.
 
-The first set contains explicitly named constants: 
+The first set contains explicitly named constants:
 
 	grow::Left       grow::ForwardLeft       grow::BackLeft
 	grow::Down       grow::ForwardDown       grow::BackDown
@@ -2084,7 +2084,7 @@ are not that illustrative:
 	grow::MinorLess  grow::ForwardMinorLess  grow::BackMinorLess
 	grow::MinorMore  grow::ForwardMinorMore  grow::BackMinorMore
 
-C<Forward> and C<Back> prefixes select if the dock widget can be 
+C<Forward> and C<Back> prefixes select if the dock widget can be
 respectively expanded or shrunk in the given direction. C<Less> and
 C<More> are equivalent to C<Left> and C<Right> when C<vertical> is 0,
 and to C<Up> and C<Down> otherwise.
@@ -2125,7 +2125,7 @@ Called when C<dock> is successfully finished.
 
 =item DockError WIDGET
 
-Called when C<dock> is unsuccessfully finished. This only 
+Called when C<dock> is unsuccessfully finished. This only
 happens if WIDGET does not follow the docking protocol, and inserts
 itself into a non-approved area.
 
@@ -2263,15 +2263,15 @@ Create-only property.
 
 =head1 Prima::InternalDockerShuttle
 
-The class provides a container, or a 'shuttle', for a client widget, while is docked to 
-an C<Prima::AbstractDocker::Interface> descendant instance. The functionality includes 
+The class provides a container, or a 'shuttle', for a client widget, while is docked to
+an C<Prima::AbstractDocker::Interface> descendant instance. The functionality includes
 communicating with dock widgets, the user interface for dragging and interactive dock selection,
 and a client widget container for non-docked state. The latter is implemented by
 reparenting of the client widget to an external shuttle widget, selected by C<externalDockerClass>
 property. Both user interfaces for the docked and the non-docked shuttle states are minimal.
 
 The class implements dockable widget functionality, served by C<Prima::AbstractDocker::Interface>,
-while itself it is derived from C<Prima::Widget> only. 
+while itself it is derived from C<Prima::Widget> only.
 
 See also: L</Prima::ExternalDockerShuttle>.
 
@@ -2281,7 +2281,7 @@ See also: L</Prima::ExternalDockerShuttle>.
 
 =item client WIDGET
 
-Provides access to the client widget, which always resides either in 
+Provides access to the client widget, which always resides either in
 the internal or the external shuttle. By default there is no client,
 and any widget capable of changing its parent can be set as one.
 After a widget is assigned as a client, its C<owner> and C<clipOwner>
@@ -2298,7 +2298,7 @@ Default value: C<undef>
 
 =item dockingRoot WIDGET
 
-Selects the root of dock widgets hierarchy. 
+Selects the root of dock widgets hierarchy.
 If C<undef>, the shuttle can only exist in the non-docked state.
 
 Default value: C<undef>
@@ -2329,7 +2329,7 @@ Default value: C<0x0000FFFF>
 
 =item indents ARRAY
 
-Contains four integers, specifying the breadth of offset in pixels for each 
+Contains four integers, specifying the breadth of offset in pixels for each
 widget side in the docked state.
 
 Default value: C<5,5,5,5>.
@@ -2364,20 +2364,20 @@ Default value: 0
 =item client2frame X1, Y1, X2, Y2
 
 Returns a rectangle that the shuttle would occupy if
-its client rectangle is assigned to X1, Y1, X2, Y2 
+its client rectangle is assigned to X1, Y1, X2, Y2
 rectangle.
 
 =item dock_back
 
-Docks to the recent dock widget, if it is still available. 
+Docks to the recent dock widget, if it is still available.
 
 =item drag STATE, RECT, ANCHOR_X, ANCHOR_Y
 
 Initiates or aborts the dragging session, depending on STATE boolean
-flag. 
+flag.
 
 If it is 1, RECT is an array with the coordinates of the shuttle rectangle
-before the drag has started; ANCHOR_X and ANCHOR_Y are coordinates of the 
+before the drag has started; ANCHOR_X and ANCHOR_Y are coordinates of the
 aperture point where the mouse event occurred that has initiated the drag.
 Depending on how the drag session ended, the shuttle can be relocated to
 another dock, undocked, or left intact. Also, C<Dock>, C<Undock>, or
@@ -2403,17 +2403,17 @@ notification is triggered with the proposed dock widget
 and the target rectangle. The area can be rejected on this stage
 if C<Landing> returns negative answer.
 
-On success, returns a dock widget found and the target rectangle; 
+On success, returns a dock widget found and the target rectangle;
 the widget is never docked though. On failure returns an empty array.
 
 This method is used by the dragging routine to provide a visual feedback to
-the user, to indicate that a shuttle may or may not land in a particular 
+the user, to indicate that a shuttle may or may not land in a particular
 area.
 
 =item frame2client X1, Y1, X2, Y2
 
 Returns a rectangle that the client would occupy if
-the shuttle rectangle is assigned to X1, Y1, X2, Y2 
+the shuttle rectangle is assigned to X1, Y1, X2, Y2
 rectangle.
 
 =item redock
@@ -2471,7 +2471,7 @@ Called when shuttle is switched to the non-docked state.
 A shuttle class, used to host a client of C<Prima::InternalDockerShuttle>
 widget when it is in the non-docked state. The class represents an
 emulation of a top-level window, which can be moved, resized ( this
-feature is not on by default though ), and closed. 
+feature is not on by default though ), and closed.
 
 C<Prima::ExternalDockerShuttle> is inherited from C<Prima::MDI> class, and
 its window emulating functionality is a subset of its ascendant.
@@ -2512,8 +2512,8 @@ property value.
 
 =item vertical BOOLEAN
 
-If 1, the shuttle is drawn as a vertical bar. 
-If 0, the shuttle is drawn as a horizontal bar. 
+If 1, the shuttle is drawn as a vertical bar.
+If 0, the shuttle is drawn as a horizontal bar.
 
 Default value: 0
 

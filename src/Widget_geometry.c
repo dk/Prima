@@ -11,14 +11,14 @@ extern "C" {
 #define var (( PWidget) self)
 #define his (( PWidget) child)
 
-void Widget_pack_slaves( Handle self); 
-void Widget_place_slaves( Handle self); 
+void Widget_pack_slaves( Handle self);
+void Widget_place_slaves( Handle self);
 Bool Widget_size_notify( Handle self, Handle child, const Rect* metrix);
 Bool Widget_move_notify( Handle self, Handle child, Point * moveTo);
-static void Widget_pack_enter( Handle self); 
-static void Widget_pack_leave( Handle self); 
-static void Widget_place_enter( Handle self); 
-static void Widget_place_leave( Handle self); 
+static void Widget_pack_enter( Handle self);
+static void Widget_pack_leave( Handle self);
+static void Widget_place_enter( Handle self);
+static void Widget_place_leave( Handle self);
 
 /*
 	geometry managers.
@@ -26,8 +26,8 @@ static void Widget_place_leave( Handle self);
 	growMode - native Prima model, borrowed from TurboVision. Does not live with
 				geomSize request size, uses virtualSize instead.
 
-	pack and place - copy-pasted from Perl-Tk.  
-	
+	pack and place - copy-pasted from Perl-Tk.
+
 */
 
 /*
@@ -44,7 +44,7 @@ pack Handle fields:
 
 #define MASTER      ((var->geometry != gtGrowMode && var->geomInfo.in)?var->geomInfo.in:var->owner)
 #define geometry_reset_all() geometry_reset(MASTER,-1)
-							
+
 
 /* resets particular ( or all, if geometry < 0 ) geometry widgets */
 
@@ -53,7 +53,7 @@ geometry_reset( Handle self, int geometry)
 {
 	if ( !self) return;
 
-	if ( 
+	if (
 		(var-> geometry == gtGrowMode) &&
 		(var-> growMode & gmCenter) &&
 		( geometry == gtGrowMode || geometry < 0)
@@ -63,7 +63,7 @@ geometry_reset( Handle self, int geometry)
 
 	if ( geometry == gtPack || geometry < 0)
 		Widget_pack_slaves( self);
-	
+
 	if ( geometry == gtPlace || geometry < 0)
 		Widget_place_slaves( self);
 }
@@ -75,14 +75,14 @@ Widget_geometry( Handle self, Bool set, int geometry)
 		return var-> geometry;
 	if ( geometry == var-> geometry) {
 		/* because called within set_owner() */
-		if ((var-> geometry == gtGrowMode) && (var-> growMode & gmCenter)) 
+		if ((var-> geometry == gtGrowMode) && (var-> growMode & gmCenter))
 			my-> set_centered( self, var-> growMode & gmXCenter, var-> growMode & gmYCenter);
 		return geometry;
 	}
 
 	if ( geometry < gtDefault || geometry > gtMax)
 		croak("Prima::Widget::geometry: invalid value passed");
-	
+
 	switch ( var-> geometry) {
 	case gtPlace:
 		Widget_place_leave( self);
@@ -115,7 +115,7 @@ Widget_geomSize( Handle self, Bool set, Point geomSize)
 		return var-> geomSize;
 		/* return ( var-> geometry == gtDefault) ? my-> get_size(self) : var-> geomSize; */
 	var-> geomSize = geomSize;
-	if ( var-> geometry == gtDefault) 
+	if ( var-> geometry == gtDefault)
 		my-> set_size( self, var-> geomSize);
 	else
 		geometry_reset_all();
@@ -197,7 +197,7 @@ Widget_check_in( Handle self, Handle in, Bool barf)
 		}
 		h = PWidget( h)-> geomInfo. next;
 	}
-	
+
 	h = PWidget( in)-> placeSlaves;
 	while ( h) {
 		if ( h == in) {
@@ -323,7 +323,7 @@ Widget_move_notify( Handle self, Handle child, Point * moveTo)
 
 /*
 	PACK
-*/    
+*/
 
 #define LEFT    0
 #define BOTTOM  1
@@ -336,7 +336,7 @@ Widget_move_notify( Handle self, Handle child, Point * moveTo)
 #define EAST    2
 #define CENTER  1
 
-/* pack() internal mechanism - stolen from Tk v800.24, tkPack.c 
+/* pack() internal mechanism - stolen from Tk v800.24, tkPack.c
 	Note that the original algorithm is taught to respect sizeMin
 	and sizeMax, not present in Tk */
 
@@ -359,7 +359,7 @@ Widget_move_notify( Handle self, Handle child, Point * moveTo)
 static int
 slave_width( register PWidget slavePtr, register int plus)
 {
-	register int width = slavePtr-> geomSize. x + slavePtr-> geomInfo. pad.x + 
+	register int width = slavePtr-> geomSize. x + slavePtr-> geomInfo. pad.x +
 								slavePtr-> geomInfo. ipad.x + plus;
 	if ( width < slavePtr-> sizeMin.x) width = slavePtr-> sizeMin.x;
 	if ( width > slavePtr-> sizeMax.x) width = slavePtr-> sizeMax.x;
@@ -369,7 +369,7 @@ slave_width( register PWidget slavePtr, register int plus)
 static int
 slave_height( register PWidget slavePtr, register int plus)
 {
-	register int height = slavePtr-> geomSize.y + slavePtr-> geomInfo. pad.y + 
+	register int height = slavePtr-> geomSize.y + slavePtr-> geomInfo. pad.y +
 								slavePtr-> geomInfo. ipad.y + plus;
 	if ( height < slavePtr-> sizeMin.y) height = slavePtr-> sizeMin.y;
 	if ( height > slavePtr-> sizeMax.y) height = slavePtr-> sizeMax.y;
@@ -522,7 +522,7 @@ Widget_pack_slaves( Handle self)
 	*/
 
 	width = height = maxWidth = maxHeight = 0;
-	for (slavePtr=masterPtr; slavePtr != NULL; 
+	for (slavePtr=masterPtr; slavePtr != NULL;
 			slavePtr = ( PWidget) slavePtr-> geomInfo. next) {
 		if ((slavePtr-> geomInfo. side == TOP) || (slavePtr-> geomInfo. side == BOTTOM)) {
 				tmp = slave_width( slavePtr, width);
@@ -620,16 +620,16 @@ Widget_pack_slaves( Handle self)
 		/*
 			* Now that we've got the size of the frame for the window,
 			* compute the window's actual size and location using the
-			* fill, padding, and frame factors.  
+			* fill, padding, and frame factors.
 			*/
 
 		borderX = slavePtr-> geomInfo. pad.x;
 		borderY = slavePtr-> geomInfo. pad.y;
 		width = slavePtr->  geomSize. x + slavePtr-> geomInfo. ipad.x;
-		if (slavePtr->  geomInfo. fillx || (width > (frameWidth - borderX))) 
+		if (slavePtr->  geomInfo. fillx || (width > (frameWidth - borderX)))
 				width = frameWidth - borderX;
 		height = slavePtr->  geomSize. y + slavePtr-> geomInfo. ipad.y;
-		if (slavePtr->  geomInfo. filly || (height > (frameHeight - borderY))) 
+		if (slavePtr->  geomInfo. filly || (height > (frameHeight - borderY)))
 				height = frameHeight - borderY;
 		borderX /= 2;
 		borderY /= 2;
@@ -681,13 +681,13 @@ Widget_pack_enter( Handle self)
 	Handle master, ptr;
 
 	/* see if leftover object references are alive */
-	if ( var-> geomInfo. order && 
+	if ( var-> geomInfo. order &&
 		!hash_fetch( primaObjects, &var-> geomInfo. order, sizeof(Handle))) {
 		var-> geomInfo. order = nilHandle;
 		var-> geomInfo. after = 0;
 	}
 	if ( var-> geomInfo. in) {
-		if ( hash_fetch( primaObjects, &var-> geomInfo. in, sizeof(Handle))) 
+		if ( hash_fetch( primaObjects, &var-> geomInfo. in, sizeof(Handle)))
 			var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, false);
 		else
 			var-> geomInfo. in = nilHandle;
@@ -760,7 +760,7 @@ Widget_pack_leave( Handle self)
 	var-> geomInfo. next = nilHandle;
 }
 
-SV * 
+SV *
 Widget_packInfo( Handle self, Bool set, SV * packInfo)
 {
 	if ( !set) {
@@ -784,17 +784,17 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 
 		switch ( p-> anchorx) {
 		case WEST:
-			pset_c( anchor, 
+			pset_c( anchor,
 					(( p-> anchory == NORTH) ? "nw" : (( p-> anchory == CENTER) ? "w" : "sw"))
 					);
 			break;
 		case CENTER:
-			pset_c( anchor, 
+			pset_c( anchor,
 					(( p-> anchory == NORTH) ? "n" : (( p-> anchory == CENTER) ? "center" : "s"))
 					);
 			break;
 		case EAST:
-			pset_c( anchor, 
+			pset_c( anchor,
 					(( p-> anchory == NORTH) ? "ne" : (( p-> anchory == CENTER) ? "e" : "se"))
 					);
 			break;
@@ -803,12 +803,12 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 		pset_H( after,  ( p-> order && p-> after)  ? p-> order : nilHandle);
 		pset_H( before, ( p-> order && !p-> after) ? p-> order : nilHandle);
 		pset_H( in, var-> geomInfo. in);
-		
+
 		pset_i( ipadx, p-> ipad. x);
 		pset_i( ipady, p-> ipad. y);
 		pset_i( padx, p-> pad. x);
 		pset_i( pady, p-> pad. y);
-		
+
 		return newRV_noinc(( SV *) profile);
 	} else {
 		dPROFILE;
@@ -817,7 +817,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 		Handle in = nilHandle;
 
 		if ( SvTYPE(packInfo) == SVt_NULL) return nilSV;
-		
+
 		if ( !SvOK(packInfo) || !SvROK(packInfo) || SvTYPE(SvRV(packInfo)) != SVt_PVHV)
 			croak("Widget::packInfo: parameter is not a hash");
 
@@ -834,21 +834,21 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 		if ( pexist( fill)) {
 			char * c = pget_c( fill);
 			if (( strcmp( c, "x") == 0)) {
-				var-> geomInfo. fillx = 1; 
-				var-> geomInfo. filly = 0; 
+				var-> geomInfo. fillx = 1;
+				var-> geomInfo. filly = 0;
 			} else if (( strcmp( c, "y") == 0)) {
-				var-> geomInfo. fillx = 0; 
-				var-> geomInfo. filly = 1; 
+				var-> geomInfo. fillx = 0;
+				var-> geomInfo. filly = 1;
 			} else if ( *c == 'n' && ( strcmp( c, "none") == 0)) {
-				var-> geomInfo. fillx = 
-				var-> geomInfo. filly = 0; 
+				var-> geomInfo. fillx =
+				var-> geomInfo. filly = 0;
 			} else if ( *c == 'b' && ( strcmp( c, "both") == 0)) {
-				var-> geomInfo. fillx = 
-				var-> geomInfo. filly = 1; 
+				var-> geomInfo. fillx =
+				var-> geomInfo. filly = 1;
 			} else
 				croak("%s: invalid 'fill'", "Prima::Widget::pack");
 		}
-		
+
 		if ( pexist( expand)) {
 			var-> geomInfo. expand = pget_B( expand);
 		}
@@ -929,12 +929,12 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 		}
 
 		if ( var-> geometry == gtPack) {
-			if ( reset_zorder) 
+			if ( reset_zorder)
 				Widget_pack_leave( self);
 		}
 		if ( set_in) var-> geomInfo. in = in;
 		if ( var-> geometry == gtPack) {
-			if ( reset_zorder) 
+			if ( reset_zorder)
 				Widget_pack_enter( self);
 			geometry_reset( MASTER, gtPack);
 		}
@@ -966,8 +966,8 @@ XS( Widget_get_pack_slaves_FROMPERL)
 void Widget_get_pack_slaves          ( Handle self) { warn("Invalid call of Widget::get_pack_slaves"); }
 void Widget_get_pack_slaves_REDEFINED( Handle self) { warn("Invalid call of Widget::get_pack_slaves"); }
 
-/* 
-PLACE   
+/*
+PLACE
 */
 /* place internal mechanism - stolen from Tk v800.24, tkPlace.c */
 
@@ -978,7 +978,7 @@ Widget_place_enter( Handle self)
 
 	/* see if leftover object references are alive */
 	if ( var-> geomInfo. in) {
-		if ( hash_fetch( primaObjects, &var-> geomInfo. in, sizeof(Handle))) 
+		if ( hash_fetch( primaObjects, &var-> geomInfo. in, sizeof(Handle)))
 			var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, false);
 		else
 			var-> geomInfo. in = nilHandle;
@@ -990,7 +990,7 @@ Widget_place_enter( Handle self)
 	if ( PWidget( master)-> placeSlaves) {
 		/* append to the end of list  */
 		if (( ptr = PWidget( master)-> placeSlaves)) {
-			while ( PWidget( ptr)-> geomInfo. next) 
+			while ( PWidget( ptr)-> geomInfo. next)
 				ptr = PWidget( ptr)-> geomInfo. next;
 			PWidget( ptr)-> geomInfo. next = self;
 		} else {
@@ -1047,16 +1047,16 @@ Widget_place_slaves( Handle self)
 
 	if (!( master = ( PWidget) var-> placeSlaves)) return;
 	size = my-> get_size( self);
-	masterWidth  = size. x; 
-	masterHeight = size. y; 
-	
-	for (slave=master; slave != NULL; 
+	masterWidth  = size. x;
+	masterHeight = size. y;
+
+	for (slave=master; slave != NULL;
 			slave = ( PWidget) slave-> geomInfo. next) {
 		Point sz;
 		register GeomInfo* slavePtr = &slave-> geomInfo;
-		
+
 		sz = slave-> self-> get_size(( Handle) slave);
-		
+
 		/*
 		* Step 2:  compute size of slave (outside dimensions including
 		* border) and location of anchor point within master.
@@ -1137,7 +1137,7 @@ Widget_place_slaves( Handle self)
 			r. bottom = y;
 			r. right  = x + width;
 			r. top    = y + height;
-				
+
 			/* printf("%s: %d %d %d %d\n", slave-> name, x, y, width, height); */
 			slave-> self-> set_rect(( Handle) slave, r);
 		}
@@ -1145,7 +1145,7 @@ Widget_place_slaves( Handle self)
 }
 
 
-SV * 
+SV *
 Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 {
 	if ( !set) {
@@ -1154,24 +1154,24 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 
 		switch ( p-> anchorx) {
 		case WEST:
-			pset_c( anchor, 
+			pset_c( anchor,
 					(( p-> anchory == NORTH) ? "nw" : (( p-> anchory == CENTER) ? "w" : "sw"))
 					);
 			break;
 		case CENTER:
-			pset_c( anchor, 
+			pset_c( anchor,
 					(( p-> anchory == NORTH) ? "n" : (( p-> anchory == CENTER) ? "center" : "s"))
 					);
 			break;
 		case EAST:
-			pset_c( anchor, 
+			pset_c( anchor,
 					(( p-> anchory == NORTH) ? "ne" : (( p-> anchory == CENTER) ? "e" : "se"))
 					);
 			break;
 		}
 
 		pset_H( in, var-> geomInfo. in);
-		
+
 		if ( p-> use_x)   pset_i( x, p-> x);
 		if ( p-> use_y)   pset_i( y, p-> y);
 		if ( p-> use_w)   pset_i( width,  var-> geomSize. x);
@@ -1180,7 +1180,7 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 		if ( p-> use_ry)  pset_f( rely, p-> relY);
 		if ( p-> use_rw)  pset_f( relwidth, p-> relWidth);
 		if ( p-> use_rh)  pset_f( relheight, p-> relHeight);
-		
+
 		return newRV_noinc(( SV *) profile);
 	} else {
 		dPROFILE;
@@ -1189,7 +1189,7 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 		Bool set_in = false;
 
 		if ( SvTYPE(placeInfo) == SVt_NULL) return nilSV;
-		
+
 		if ( !SvOK(placeInfo) || !SvROK(placeInfo) || SvTYPE(SvRV(placeInfo)) != SVt_PVHV)
 			croak("Widget::placeInfo: parameter is not a hash");
 
@@ -1230,42 +1230,42 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 
 		if ( pexist( x)) {
 			SV * sv = pget_sv( x);
-			if (( var-> geomInfo. use_x = (SvTYPE( sv) != SVt_NULL))) 
+			if (( var-> geomInfo. use_x = (SvTYPE( sv) != SVt_NULL)))
 				var-> geomInfo. x = SvIV( sv);
 		}
 		if ( pexist( y)) {
 			SV * sv = pget_sv( y);
-			if (( var-> geomInfo. use_y = (SvTYPE( sv) != SVt_NULL))) 
+			if (( var-> geomInfo. use_y = (SvTYPE( sv) != SVt_NULL)))
 				var-> geomInfo. y = SvIV( sv);
 		}
 		if ( pexist( width)) {
 			SV * sv = pget_sv( width);
-			if (( var-> geomInfo. use_w = (SvTYPE( sv) != SVt_NULL))) 
+			if (( var-> geomInfo. use_w = (SvTYPE( sv) != SVt_NULL)))
 				var-> geomSize. x = SvIV( sv);
 		}
 		if ( pexist( height)) {
 			SV * sv = pget_sv( height);
-			if (( var-> geomInfo. use_h = (SvTYPE( sv) != SVt_NULL))) 
+			if (( var-> geomInfo. use_h = (SvTYPE( sv) != SVt_NULL)))
 				var-> geomSize. y = SvIV( sv);
 		}
 		if ( pexist( relx)) {
 			SV * sv = pget_sv( relx);
-			if (( var-> geomInfo. use_rx = (SvTYPE( sv) != SVt_NULL))) 
+			if (( var-> geomInfo. use_rx = (SvTYPE( sv) != SVt_NULL)))
 				var-> geomInfo. relX = SvNV( sv);
 		}
 		if ( pexist( rely)) {
 			SV * sv = pget_sv( rely);
-			if (( var-> geomInfo. use_ry = (SvTYPE( sv) != SVt_NULL))) 
+			if (( var-> geomInfo. use_ry = (SvTYPE( sv) != SVt_NULL)))
 				var-> geomInfo. relY = SvNV( sv);
 		}
 		if ( pexist( relwidth)) {
 			SV * sv = pget_sv( relwidth);
-			if (( var-> geomInfo. use_rw = (SvTYPE( sv) != SVt_NULL))) 
+			if (( var-> geomInfo. use_rw = (SvTYPE( sv) != SVt_NULL)))
 				var-> geomInfo. relWidth = SvNV( sv);
 		}
 		if ( pexist( relheight)) {
 			SV * sv = pget_sv( relheight);
-			if (( var-> geomInfo. use_rh = (SvTYPE( sv) != SVt_NULL))) 
+			if (( var-> geomInfo. use_rh = (SvTYPE( sv) != SVt_NULL)))
 				var-> geomInfo. relHeight = SvNV( sv);
 		}
 
@@ -1276,14 +1276,14 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 				in = Widget_check_in( self, gimme_the_mate( sv), true);
 			set_in = true;
 		}
-		
+
 		if ( var-> geometry == gtPlace) {
-			if ( set_in) 
+			if ( set_in)
 				Widget_place_leave( self);
 		}
 		if ( set_in) var-> geomInfo. in = in;
 		if ( var-> geometry == gtPlace) {
-			if ( set_in) 
+			if ( set_in)
 				Widget_place_enter( self);
 			geometry_reset( MASTER, gtPlace);
 		}

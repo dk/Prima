@@ -8,7 +8,7 @@ Prima::File - asynchronous stream I/O.
   use Prima qw(Application);
 
   # create pipe and autoflush the writer end
-  pipe(READ, WRITE) or die "pipe():$!\n"; 
+  pipe(READ, WRITE) or die "pipe():$!\n";
   select WRITE;
   $|=1;
   select STDOUT;
@@ -31,7 +31,7 @@ Prima::File - asynchronous stream I/O.
 Prima::File provides access to the I/O stream events,
 that are called when a file handle becomes readable, writable
 or if an exception occurred. Registering file handles to Prima::File
-objects makes possible the stream operations coexist with the event loop. 
+objects makes possible the stream operations coexist with the event loop.
 
 =head1 USAGE
 
@@ -52,7 +52,7 @@ property:
   $f-> mask( fe::Read | fe::Exception);
 
 NB. Due to different system implementations, the only handles,
-currently supported on all systems, are socket handle and disk file 
+currently supported on all systems, are socket handle and disk file
 handles. Pipes only work on unix platforms. The example file I<socket.pl>
 elucidates the use of sockets together with Prima::File.
 
@@ -112,7 +112,7 @@ If C<::file> is C<undef>, -1 is used instead fileno() result.
 =item is_active AUTODETACH = 0
 
 Returns a boolean flag, indicating if a file handle is valid.
-If AUTODETACH is 1, and the file handle is not valid, 
+If AUTODETACH is 1, and the file handle is not valid,
 C<file(undef)> is called.
 
 =back
@@ -135,7 +135,7 @@ is expected to call a non-blocking write() on the file handle.
 
 Called when an exception is signaled on a file handle.
 The exceptions are specific to handle type and the operating system.
-For example, a unix socket signals C<Exception> when a control status 
+For example, a unix socket signals C<Exception> when a control status
 data for a pseudo terminal or an out-of-band data arrives.
 
 =back

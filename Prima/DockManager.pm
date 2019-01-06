@@ -23,13 +23,13 @@ use vars qw(@ISA);
 sub profile_default
 {
 	my $def = $_[0]-> SUPER::profile_default;
-	my %prf = ( 
+	my %prf = (
 		fingerprint => 0x0000FFFF,
 		dockup      => undef,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}   
+}
 
 sub init
 {
@@ -37,7 +37,7 @@ sub init
 	my %profile = $self-> SUPER::init( @_);
 	$self-> $_( $profile{$_}) for ( qw(fingerprint dockup));
 	return %profile;
-}   
+}
 
 # inner part of toolbar tandem
 
@@ -48,7 +48,7 @@ use vars qw(@ISA);
 sub profile_default
 {
 	my $def = $_[0]-> SUPER::profile_default;
-	my %prf = ( 
+	my %prf = (
 		parentDocker => undef,
 		instance     => undef,
 		x_sizeable   => 0,
@@ -56,7 +56,7 @@ sub profile_default
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}   
+}
 
 sub init
 {
@@ -64,7 +64,7 @@ sub init
 	%profile = $self-> SUPER::init( %profile);
 	$self-> $_($profile{$_}) for qw( parentDocker instance);
 	return %profile;
-}   
+}
 
 sub get_extent
 {
@@ -75,9 +75,9 @@ sub get_extent
 		for (0,1) {
 			$ext[$_] = $z[$_+2] if $ext[$_] < $z[$_+2]
 		}
-	}   
-	return @ext; 
-}   
+	}
+	return @ext;
+}
 
 sub update_size
 {
@@ -90,12 +90,12 @@ sub update_size
 	$self-> size( @sz);
 	if ( $o-> dock) {
 		$o-> redock;
-	} else {   
+	} else {
 		@r = $o-> externalDocker-> client2frame( 0,0, @sz);
 		$o-> externalDocker-> size($r[2] - $r[0], $r[3] - $r[1]);
 		$self-> rect( 0,0,@sz); # respect growMode
 	}
-}   
+}
 
 # this part is responsible for changing toolbar's size when new tools are docked in
 sub dock
@@ -113,7 +113,7 @@ sub dock
 	return if !$resize && ($sz[0] == $sz1[0] && $sz[1] == $sz1[1]);
 	$self-> size( @sz1);
 	$self-> update_size( @sz1);
-}   
+}
 
 sub rearrange
 {
@@ -124,36 +124,36 @@ sub rearrange
 	my ( $xid, $yid) = ( $v ? 0 : 1, $v ? 1 : 0);
 	my $a;
 	for ( $self-> docklings) {
-		$a = $_ unless $a; # 
+		$a = $_ unless $a; #
 		my @sz = $_-> size;
 		$_-> origin( $v ? ( 0, $ext[1]) : ( $ext[0], 0));
 		$ext[$xid] = $sz[$xid] if $ext[$xid] < $sz[$xid];
 		$ext[$yid] += $sz[$yid];
-	}  
+	}
 	if ( $a) {
 		$self-> size( @ext);
 		#innvoke dock-undock, just to be sure, but for only one widget
 		$self-> redock_widget( $a);
 	}
-}   
+}
 
 sub parentDocker
 {
 	return $_[0]-> {parentDocker} unless $#_;
 	$_[0]-> {parentDocker} = $_[1];
-}   
+}
 
 sub instance
 {
 	return $_[0]-> {instance} unless $#_;
 	$_[0]-> {instance} = $_[1];
-}   
+}
 
 sub on_dockerror
 {
 	my ( $self, $urchin) = @_;
 	$self-> redock_widget( $urchin);
-}   
+}
 
 sub on_undock
 {
@@ -166,10 +166,10 @@ sub on_undock
 			$self-> parentDocker-> destroy;
 		} else {
 			$i-> toolbar_visible( $self-> parentDocker, 0);
-			$i-> notify(q(ToolbarChange)); 
-		}   
+			$i-> notify(q(ToolbarChange));
+		}
 	});
-}   
+}
 
 package Prima::DockManager::Toolbar;
 use vars qw(@ISA);
@@ -178,14 +178,14 @@ use vars qw(@ISA);
 sub profile_default
 {
 	my $def = $_[0]-> SUPER::profile_default;
-	my %prf = ( 
+	my %prf = (
 		instance    => undef,
 		childDocker => undef,
 		autoClose   => 1,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}   
+}
 
 sub init
 {
@@ -193,7 +193,7 @@ sub init
 	my %profile = $self-> SUPER::init( @_);
 	$self-> $_( $profile{$_}) for ( qw(instance childDocker autoClose));
 	return %profile;
-}   
+}
 
 sub autoClose
 {
@@ -205,13 +205,13 @@ sub childDocker
 {
 	return $_[0]-> {childDocker} unless $#_;
 	$_[0]-> {childDocker} = $_[1];
-}    
+}
 
 sub instance
 {
 	return $_[0]-> {instance} unless $#_;
 	$_[0]-> {instance} = $_[1];
-}   
+}
 
 sub on_getcaps
 {
@@ -224,19 +224,19 @@ sub on_getcaps
 	my $vs = $docker-> can('vertical') ? $docker-> vertical : 0;
 	my $v  = $self-> {vertical};
 	$prf-> {sizes} = ( $v == $vs) ? [[@sz]] : [[@sz[1,0]]];
-}   
+}
 
 sub on_dock
 {
 	my $self = $_[0];
-	my $nv   = $self-> dock-> can('vertical') ? $self-> dock-> vertical : 0; 
+	my $nv   = $self-> dock-> can('vertical') ? $self-> dock-> vertical : 0;
 	return if $nv == $self-> {vertical};
 	$self-> vertical( $nv);
 	my $c = $self-> {childDocker};
 	$c-> vertical( $nv);
 	$c-> rect( $self-> frame2client( 0, 0, $self-> size));
 	$c-> rearrange;
-}   
+}
 
 package Prima::DockManager::Panelbar;
 use vars qw(@ISA);
@@ -245,7 +245,7 @@ use vars qw(@ISA);
 sub profile_default
 {
 	my $def = $_[0]-> SUPER::profile_default;
-	my %prf = ( 
+	my %prf = (
 		vertical    => 1,
 		instance    => undef,
 		externalDockerProfile =>  { borderStyle => bs::Sizeable },
@@ -254,7 +254,7 @@ sub profile_default
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}   
+}
 
 sub init
 {
@@ -262,17 +262,17 @@ sub init
 	my %profile = $self-> SUPER::init( @_);
 	$self-> $_( $profile{$_}) for ( qw(instance));
 	return %profile;
-}   
+}
 
 sub instance
 {
 	return $_[0]-> {instance} unless $#_;
 	$_[0]-> {instance} = $_[1];
-}   
+}
 
 
 # flags for fingerprints - for different dockers and stages.
-package 
+package
     dmfp;
 
 use constant Tools     => 0x0F000; # those who want tools, must set this
@@ -286,9 +286,9 @@ use vars qw(@ISA);
 {
 my %RNT = (
 	%{Prima::Component->notification_types()},
-	CommandChange  => nt::Notification, 
-	ToolbarChange  => nt::Notification, 
-	PanelChange    => nt::Notification, 
+	CommandChange  => nt::Notification,
+	ToolbarChange  => nt::Notification,
+	PanelChange    => nt::Notification,
 	Command        => nt::Command,
 );
 
@@ -298,13 +298,13 @@ sub notification_types { return \%RNT; }
 sub profile_default
 {
 	my $def = $_[0]-> SUPER::profile_default;
-	my %prf = ( 
+	my %prf = (
 		interactiveDrag => 0,
 		commands        => {},
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
-}   
+}
 
 sub init
 {
@@ -318,7 +318,7 @@ sub init
 	$self-> {panels} = [];
 	$self-> $_( $profile{$_}) for ( qw( commands interactiveDrag));
 	return %profile;
-}   
+}
 
 sub interactiveDrag
 {
@@ -329,36 +329,36 @@ sub interactiveDrag
 	if ( $id) {
 		for ( $self-> toolbars)  {
 			$_-> enabled(1) for $_-> childDocker-> docklings;
-		}   
-	} else {   
+		}
+	} else {
 		my $c = $self-> {commands};
 		for ( $self-> toolbars)  {
 			for ( $_-> childDocker-> docklings) {
 				next if !defined $_->{CLSID} || !exists($c-> {$_->{CLSID}}) || $c-> {$_->{CLSID}};
 				$_-> enabled(0);
-			}   
-		}   
-	}   
-}   
+			}
+		}
+	}
+}
 
-sub toolbars { return @{$_[0]->{toolbars}}}   
-sub panels   { return @{$_[0]->{panels}}}  
+sub toolbars { return @{$_[0]->{toolbars}}}
+sub panels   { return @{$_[0]->{panels}}}
 
-sub fingerprint { return 0xFFFFFFFF }   
+sub fingerprint { return 0xFFFFFFFF }
 
 sub register_tool
 {
 	my ( $self, $CLSID, $hash) = @_;
 	$hash-> {tool} = 1;
 	push @{$self-> {classes}}, $CLSID, $hash;
-}   
+}
 
 sub register_panel
 {
 	my ( $self, $CLSID, $hash) = @_;
 	$hash-> {tool} = 0;
-	push @{$self-> {classes}}, $CLSID, $hash; 
-}   
+	push @{$self-> {classes}}, $CLSID, $hash;
+}
 
 sub get_class
 {
@@ -368,30 +368,30 @@ sub get_class
 	my $x = scalar @$c;
 	for ( $i = 0; $i < $x; $i+=2) {
 		return $$c[$i+1] if $CLSID eq $$c[$i];
-	}   
-}   
+	}
+}
 
 sub panel_by_id
 {
 	my ( $self, $name) = @_;
 	for ( @{$self-> {panels}}) {
 		return $_ if $_-> {CLSID} eq $name;
-	}   
-}   
+	}
+}
 
 sub toolbar_by_name
 {
 	my ( $self, $name) = @_;
 	for ( @{$self-> {toolbars}}) {
 		return $_ if $_-> name eq $name;
-	}   
-}   
+	}
+}
 
 sub post
 {
 	my ( $self, $sub, @parms) = @_;
 	$self-> post_message( 'sub', [ $sub, @parms]);
-}   
+}
 
 sub on_postmessage
 {
@@ -399,11 +399,11 @@ sub on_postmessage
 	return unless $id eq 'sub';
 	my $sub = shift @$val;
 	$sub->( $self, @$val);
-}   
+}
 
 sub create_manager
 {
-	my ( $self, $where, %profile) = @_; 
+	my ( $self, $where, %profile) = @_;
 	my @o   = exists($profile{origin}) ? @{$profile{origin}} : (0,0);
 	my @sz  = exists($profile{size})   ? @{$profile{size}}   : ($where-> size);
 	my ( @items, %items);
@@ -422,7 +422,7 @@ sub create_manager
 	}
 	$i = 0;
 	my $nb;
-	my $lb = $where-> insert( ListBox => 
+	my $lb = $where-> insert( ListBox =>
 		origin  => [@o],
 		size    => [ int($sz[0] / 3), $sz[1]],
 		name    => 'GroupSelector',
@@ -434,24 +434,24 @@ sub create_manager
 			my ($self,$lst,$state) = @_;
 			return unless $state;
 			$nb-> pageIndex( $self-> focusedItem);
-		},   
+		},
 		exists($profile{listboxProfile}) ? %{$profile{listboxProfile}} : (),
 	);
-	$nb = $where-> insert( 'Prima::DockManager::LaunchPad' => 
-		exists($profile{dockerProfile}) ? %{$profile{dockerProfile}} : (), 
+	$nb = $where-> insert( 'Prima::DockManager::LaunchPad' =>
+		exists($profile{dockerProfile}) ? %{$profile{dockerProfile}} : (),
 		origin      => [ $o[0] + int($sz[0] / 3), 0],
 		size        => [ $sz[0] - int($sz[0] / 3), $sz[1]],
 		name        => 'PageFlipper',
 		pageCount   => scalar(@items),
 		growMode    => gm::GrowHiY|gm::GrowLoX,
-		fingerprint => dmfp::LaunchPad, 
+		fingerprint => dmfp::LaunchPad,
 		dockup      => $self,
 	);
 	$nb-> {dockingRoot} = $self;
 	$i = 0;
 	my %x = @$cls;
 	my @szn = $nb-> size;
-	
+
 	for ( @items) {
 		my $iid = $_;
 		my @d = grep { m/^([^\:]+)(?:\:|$)/; my $j = $1 || ''; $j eq $iid; } @lclasses;
@@ -461,7 +461,7 @@ sub create_manager
 		my $ix = 0;
 		for ( @d) {
 			my %acp = exists($x{$_}-> {profile}) ? %{$x{$_}-> {profile}} : ();
-			my $ctrl = $nb-> insert_to_page( $i, $x{$_}->{class} => 
+			my $ctrl = $nb-> insert_to_page( $i, $x{$_}->{class} =>
 				growMode => gm::GrowLoY,
 				%acp,
 				onMouseDown => \&Control_MouseDown_FirstStage,
@@ -478,20 +478,20 @@ sub create_manager
 			} else {
 				$org[0] += $s[0] + 1;
 				$maxy = $s[1] if $maxy < $s[1];
-			}   
+			}
 			$ix++;
-		}   
+		}
 		if ( $org[1] + $maxy < $szn[1] - 5) {
 			my $d = $sz[1] - 5 - $org[1] - $maxy;
 			for ( @ctrls) {
 				my @o = $_-> origin;
 				$_-> origin( $o[0], $o[1] + $d);
-			}   
-		}   
+			}
+		}
 		$i++;
-	}   
+	}
 	return $lb, $nb;
-}   
+}
 
 sub create_tool
 {
@@ -511,17 +511,17 @@ sub create_tool
 	$ctrl-> enabled(0) if !$self-> {interactiveDrag} && exists( $self-> {commands}->{$CLSID})
 	&& !$self-> {commands}->{$CLSID};
 	return $ctrl;
-}   
+}
 
 sub create_toolbar
 {
 	my ( $self, %profile) = @_;
-	my $v    = $profile{vertical} || 0; 
+	my $v    = $profile{vertical} || 0;
 	my $dock = $profile{dock};
 	my $auto = exists( $profile{autoClose}) ? $profile{autoClose} : ( exists($profile{name}) ? 1 : 0);
 	my $name = $profile{name} || $self-> auto_toolbar_name;
 	my $visible = exists($profile{visible}) ? $profile{visible} : 1;
-	my @r    = $profile{rect} ? @{$profile{rect}} : ( 0, 0, 10, 10); 
+	my @r    = $profile{rect} ? @{$profile{rect}} : ( 0, 0, 10, 10);
 	my $acd  = $profile{dockerProfile}  || {};
 	my $aci  = $profile{toolbarProfile} || {};
 
@@ -536,12 +536,12 @@ sub create_toolbar
 		onEDSClose  => \&Toolbar_EDSClose,
 		%$acd,
 	);
-	
+
 	my @i = @{$x-> indents};
 	$x-> rect( $r[0] - $i[0], $r[1] - $i[1], $r[2] + $i[2], $r[3] + $i[3]);
 	@r = $x-> frame2client( $x-> rect);
-	
-	my $xcl = $x-> insert( 'Prima::DockManager::ToolbarDocker' => 
+
+	my $xcl = $x-> insert( 'Prima::DockManager::ToolbarDocker' =>
 		%$aci,
 		origin       => [ @i[0,1]],
 		size         => [ $r[2] - $r[0], $r[3] - $r[1]],
@@ -560,12 +560,12 @@ sub create_toolbar
 		$x-> dock( $dock, $dock-> client_to_screen( $x-> rect));
 	} else {
 		$x-> externalDocker-> rect( $x-> externalDocker-> client2frame( @r));
-	}   
-	push ( @{$self-> {toolbars}}, $x);   
+	}
+	push ( @{$self-> {toolbars}}, $x);
 	$self-> toolbar_visible( $x, 0) unless $visible;
 	$self-> notify(q(ToolbarChange));
 	return $x, $xcl;
-}   
+}
 
 sub create_panel
 {
@@ -587,7 +587,7 @@ sub create_panel
 	$x-> onEDSClose( \&Panel_EDSClose);
 	$prf-> {text} = $x-> text unless exists $prf-> {text};
 	my @rrc = $x-> frame2client( 0, 0, $x-> size);
-	my $xcl = $x-> insert( $prf->{class} => 
+	my $xcl = $x-> insert( $prf->{class} =>
 		growMode => gm::Client,
 		$prf-> {profile} ? %{$prf-> {profile}} : (),
 		$profile{profile} ? %{$profile{profile}} : (),
@@ -595,15 +595,15 @@ sub create_panel
 	);
 	$xcl-> add_notification( 'Destroy', \&Panelbar_Destroy, $x);
 	$x-> client( $xcl);
-	push( @{$self-> {panels}}, $x);   
+	push( @{$self-> {panels}}, $x);
 	$x-> {CLSID} = $CLSID;
 	if ( $prf-> {dockerProfile}-> {dock} || $profile{dockerProfile}-> {dock}) {
 		my $dock = $prf-> {dockerProfile}-> {dock} || $profile{dockerProfile}-> {dock};
 		$x-> dock( $dock, $dock-> client_to_screen( $x-> rect));
-	} 
+	}
 	$self-> notify(q(PanelChange));
 	return ( $x, $xcl);
-}   
+}
 
 sub auto_toolbar_name
 {
@@ -620,11 +620,11 @@ sub auto_toolbar_name
 		$i++, next unless $i; # skip ToolBar0
 		$name = $i, last unless $_;
 		$i++;
-	}   
+	}
 	$name = scalar(@ids) unless defined $name;
 	$name++ unless $name;
 	return "ToolBar$name";
-}   
+}
 
 sub toolbar_menuitems
 {
@@ -636,7 +636,7 @@ sub toolbar_menuitems
 		push ( @items, [ $vis => $_-> name => $sub ]);
 	}
 	return \@items;
-}   
+}
 
 sub panel_menuitems
 {
@@ -652,7 +652,7 @@ sub panel_menuitems
 		push ( @items, [ $vis => $hash-> {text} => $sub ]);
 	}
 	return \@items;
-}   
+}
 
 sub toolbar_visible
 {
@@ -665,12 +665,12 @@ sub toolbar_visible
 		} else {
 			$d-> dock( undef);
 			$d-> externalDocker-> visible( $visible);
-		}   
+		}
 	} else {
 		return if $visible == $d-> externalDocker-> visible;
 		$d-> externalDocker-> visible( $visible);
-	}   
-}   
+	}
+}
 
 sub panel_visible
 {
@@ -685,16 +685,16 @@ sub panel_visible
 		}
 		if ( $hash-> {lastUsedRect}) {
 			$pf{dockerProfile}->{rect} = $hash-> {lastUsedRect};
-		}   
+		}
 		my ( $x, $xcl) = $self-> create_panel( $panelbarCLSID, %pf);
 		$x-> bring_to_front;
-	} else {   
+	} else {
 		return unless $d;
 		$hash-> {lastUsedDock} = $d-> dock;
 		$hash-> {lastUsedRect} = [$d-> dock ? $d-> rect : $d-> externalDocker-> rect],
 		$d-> close;
 	}
-}   
+}
 
 sub predefined_toolbars
 {
@@ -720,8 +720,8 @@ sub predefined_toolbars
 			push ( @ctrls, $ctrl);
 		}
 		my @oz = $rec->{origin} ? @{$rec->{origin}} : ( $rec->{dock} ? (0,0) : @o);
-		my ( $x, $xcl) = $self-> create_toolbar( 
-			name    => $_->{name}, 
+		my ( $x, $xcl) = $self-> create_toolbar(
+			name    => $_->{name},
 			rect    => [ @oz, $oz[0]+$org[0], $oz[1]+$maxy],
 			visible => 1,
 			dock    => $rec->{dock},
@@ -729,12 +729,12 @@ sub predefined_toolbars
 		for ( @ctrls) {
 			$_-> owner( $xcl);
 			$xcl-> dock( $_);
-		}   
+		}
 		$xcl-> rearrange;
 		$o[0] += 25;
 		$o[1] -= 25;
-	}   
-}   
+	}
+}
 
 sub predefined_panels
 {
@@ -745,8 +745,8 @@ sub predefined_panels
 		my ( $CLSID, $dock) = @rec[$i, $i+1];
 		next if $pan{$CLSID};
 		my ( $a, $b) = $self-> create_panel( $CLSID, dockerProfile => {dock => $dock});
-	}   
-}   
+	}
+}
 
 sub activate
 {
@@ -754,25 +754,25 @@ sub activate
 	for ( @{$self->{panels}}, @{$self-> {toolbars}}) {
 		next if $_-> dock;
 		$_-> externalDocker-> bring_to_front if $_-> externalDocker;
-	}   
-}   
+	}
+}
 
 sub windowState
 {
 	my ( $self, $ws) = @_;
 	if ( $ws == ws::Minimized) {
-	for ( @{$self->{panels}}, @{$self-> {toolbars}}) { 
+	for ( @{$self->{panels}}, @{$self-> {toolbars}}) {
 			next if $_-> dock;
 			my $e = $_-> externalDocker;
 			next unless $e;
 			$e-> hide;
 			push ( @{$self->{hiddenToolbars}}, $e);
-		}   
-	} else { 
+		}
+	} else {
 		$_-> show for @{$self->{hiddenToolbars}};
 		@{$self->{hiddenToolbars}} = ();
-	}   
-}  
+	}
+}
 
 sub commands_enable
 {
@@ -783,17 +783,17 @@ sub commands_enable
 			for ( $_-> childDocker-> docklings) {
 				next if !defined $_->{CLSID} || !$cmds{$_->{CLSID}} || $enable == $self-> {commands}->{$_->{CLSID}};
 				$_-> enabled( $enable);
-			}   
-		}   
+			}
+		}
 	}
 	for ( keys %{$self->{commands}}) {
 		next unless $cmds{$_};
 		$self-> {commands}-> {$_} = $enable;
-	}   
+	}
 	$self-> notify(q(CommandChange));
-}   
+}
 
-sub commands 
+sub commands
 {
 	return $_[0]-> {commands} unless $#_;
 	my ( $self, $cmds) = @_;
@@ -803,11 +803,11 @@ sub commands
 			for ( $_-> childDocker-> docklings) {
 				next if !defined $_->{CLSID} || !$cmds-> {$_->{CLSID}};
 				$_-> enabled( $cmds-> {$_-> {CLSID}});
-			}   
+			}
 		}
 	}
 	$self-> notify(q(CommandChange));
-}   
+}
 
 # internals
 
@@ -817,7 +817,7 @@ sub autodock
 	my $dock = $ctrl-> owner;
 	$dock-> undock( $ctrl);
 
-	my ( $x, $xcl) = $self-> create_toolbar( 
+	my ( $x, $xcl) = $self-> create_toolbar(
 		vertical  => $dock-> can('vertical') ? $dock-> vertical : 0,
 		dock      => $dock,
 		rect      => [$ctrl-> rect],
@@ -834,7 +834,7 @@ sub Control_KeyDown
 {
 	return unless $_[0]-> {DOCKMAN}-> interactiveDrag;
 	$_[0]-> clear_event;
-}   
+}
 
 sub Control_MouseDown_FirstStage
 {
@@ -845,7 +845,7 @@ sub Control_MouseDown_FirstStage
 		owner       => $self-> owner,
 		rect        => [$self-> rect],
 		dockingRoot => $man,
-		fingerprint => dmfp::LaunchPad | dmfp::Toolbar | dmfp::Tools, # allow all docks 
+		fingerprint => dmfp::LaunchPad | dmfp::Toolbar | dmfp::Tools, # allow all docks
 		backColor   => cl::Yellow,
 		onLanding   => \&InternalDockerShuttle_Landing,
 		name        => 'FirstStage',
@@ -859,28 +859,28 @@ sub Control_MouseDown_FirstStage
 			return unless $ctrl;
 			$me-> {dock} = undef;
 			$me-> owner-> replace( $me, $ctrl);
-			$man-> post( sub { $me-> destroy; });   
-			$man-> autodock( $ctrl) 
+			$man-> post( sub { $me-> destroy; });
+			$man-> autodock( $ctrl)
 				unless $me-> owner-> isa(q(Prima::DockManager::ToolbarDocker));
-		},   
+		},
 		onFailDock => sub {
 			my ( $me, $ax, $ay) = @_;
 			my ( $x, $xcl) = $man-> create_toolbar( rect => [$me-> rect], autoClose => 1);
 			$xcl-> dock( $man-> create_tool( $xcl, $self-> {CLSID}));
 			$x-> externalDocker-> origin( $ax, $ay);
-			$man-> post( sub { $me-> destroy; });   
-		},   
+			$man-> post( sub { $me-> destroy; });
+		},
 	);
 	$c-> externalDocker-> hide;
 	$::application-> yield;
 	$c-> drag( 1, [ $self-> client_to_screen(0,0,$self-> size)], $c-> screen_to_client( $self-> client_to_screen($x, $y)));
 	$self-> clear_event;
-}   
+}
 
 sub Control_Destroy
 {
 	$_[0]-> owner-> undock( $_[0]);
-}   
+}
 
 sub Control_MouseDown
 {
@@ -889,13 +889,13 @@ sub Control_MouseDown
 	return unless $man-> interactiveDrag;
 	$self-> clear_event;
 	return unless $btn == mb::Left;
-	
+
 	my $c;
 	$c = Prima::InternalDockerShuttle-> create(
 		owner       => $self-> owner,
 		rect        => [$self-> rect],
 		dockingRoot => $man,
-		fingerprint => dmfp::LaunchPad | dmfp::Toolbar | dmfp::Tools, # allow all docks  
+		fingerprint => dmfp::LaunchPad | dmfp::Toolbar | dmfp::Tools, # allow all docks
 		backColor   => cl::White,
 		onLanding   => \&InternalDockerShuttle_Landing,
 		name        => 'SecondStage',
@@ -903,18 +903,18 @@ sub Control_MouseDown
 			my $me = $_[0];
 			$me-> {dock} = undef;
 			$me-> owner-> replace( $me, $self);
-			$man-> post( sub { $me-> destroy; });   
+			$man-> post( sub { $me-> destroy; });
 			if ( $me-> owner-> isa(q(Prima::DockManager::LaunchPad))) {
-				$man-> post( sub { $self-> destroy; });   
+				$man-> post( sub { $self-> destroy; });
 				return;
 			}
 			$man-> autodock( $self) unless $me-> owner-> isa(q(Prima::DockManager::ToolbarDocker));
-		}, 
+		},
 		onFailDock => sub {
 			$self-> owner-> replace( $c, $self);
 			$c-> {dock} = undef;
 			$man-> post( sub { $c-> destroy; });
-		},   
+		},
 	);
 	$c-> {dock} = $self-> owner;
 	$self-> owner-> replace( $self, $c);
@@ -922,7 +922,7 @@ sub Control_MouseDown
 	$c-> hide;
 	$::application-> yield;
 	$c-> drag( 1, [ $self-> client_to_screen(0,0,$self-> size)], $c-> screen_to_client( $self-> client_to_screen($x, $y)));
-}   
+}
 
 sub Panelbar_Destroy
 {
@@ -932,7 +932,7 @@ sub Panelbar_Destroy
 	@{$i-> {panels}} = grep { $_ != $self } @{$i->{panels}};
 	@{$i-> {hiddenToolbars}} = grep { $_ != $self } @{$i->{hiddenToolbars}};
 	$i-> notify(q(PanelChange));
-}   
+}
 
 sub Toolbar_Destroy
 {
@@ -942,7 +942,7 @@ sub Toolbar_Destroy
 	@{$i-> {toolbars}} = grep { $_ != $self } @{$i->{toolbars}};
 	@{$i-> {hiddenToolbars}} = grep { $_ != $self } @{$i->{hiddenToolbars}};
 	$i-> notify(q(ToolbarChange));
-}   
+}
 
 sub Toolbar_EDSClose
 {
@@ -950,7 +950,7 @@ sub Toolbar_EDSClose
 	$e-> hide;
 	$_[0]-> clear_event;
 	$_[0]-> instance-> notify(q(ToolbarChange));
-} 
+}
 
 sub Panel_EDSClose
 {
@@ -959,7 +959,7 @@ sub Panel_EDSClose
 	$hash-> {lastUsedDock} = undef;
 	$hash-> {lastUsedRect} = [ $_[0]-> externalDocker-> rect ];
 	$_[0]-> instance-> notify(q(PanelChange));
-}  
+}
 
 sub InternalDockerShuttle_Landing
 {
@@ -994,14 +994,14 @@ sub class
 			borderWidth => 1,
 			onClick     => \&on_click,
 			%profile,
-		},   
-	},   
-}   
+		},
+	},
+}
 
 sub on_click
 {
 	$_[0]-> owner-> instance-> notify(q(Command), $_[0]-> {CLSID});
-}  
+}
 
 1;
 
@@ -1014,12 +1014,12 @@ Prima::DockManager - advanced dockable widgets
 =head1 DESCRIPTION
 
 C<Prima::DockManager> contains classes that implement additional
-functionality within the dockable widgets paradigm. 
+functionality within the dockable widgets paradigm.
 
 The module introduces two new dockable widget classes:
-C<Prima::DockManager::Panelbar>, a general purpose 
-dockable container for variable-sized widgets; and C<Prima::DockManager::Toolbar>, 
-a dockable container for fixed-size command widgets, mostly push buttons. 
+C<Prima::DockManager::Panelbar>, a general purpose
+dockable container for variable-sized widgets; and C<Prima::DockManager::Toolbar>,
+a dockable container for fixed-size command widgets, mostly push buttons.
 The command widgets, nested in a toolbar, can also be docked.
 
 C<Prima::DockManager> class is an application-oriented class in a way
@@ -1030,7 +1030,7 @@ to serve as a docking hierarchy root. Through the document, I<instance>
 term is referred to C<Prima::DockManager> class instance.
 
 The module by itself is not enough to make a docking-aware application work
-effectively. The reader is urged to look at F<examples/dock.pl> 
+effectively. The reader is urged to look at F<examples/dock.pl>
 example code, which demonstrates the usage and capabilities of
 the module.
 
@@ -1038,7 +1038,7 @@ the module.
 
 A toolbar widget class. The toolbar has a dual nature; it can dock
 and accept docking widgets simultaneously. In the scope of C<Prima::DockManager>,
-the toolbar hosts command widget, mostly push buttons. 
+the toolbar hosts command widget, mostly push buttons.
 
 The toolbar consists of two widgets. The external dockable widget is
 implemented in C<Prima::DockManager::Toolbar>, and the internal dock
@@ -1131,9 +1131,9 @@ C<Prima::DockManager> instance, the docking hierarchy root.
 
 A binder class, contains set of functions that groups
 toolbars, panels, and command widgets together under the docking
-hierarchy. 
+hierarchy.
 
-The manager servers several purposes. 
+The manager servers several purposes.
 First, it is a command state holder: the command
 widgets, mostly buttons, usually are in enabled or disabled state in different
 life stages of a program. The manager maintains the enabled/disabled state
@@ -1163,7 +1163,7 @@ begin from C<Prima::DockManager> object, which although does not provide
 docking capabilities itself ( it is C<Prima::Component> descendant ),
 redirects the docking requests to the lower-level dock widgets.
 
-Fifth, it provides number of helper methods and notifications, 
+Fifth, it provides number of helper methods and notifications,
 and enforces use or C<fingerprint> property by all dockable widgets.
 This property has default value of C<0xFFFF> ( defined in C<Prima::Docks> ).
 The module contains the fingerprint C<dmfp::XXX> constants with value greater than this,
@@ -1174,7 +1174,7 @@ configuration. The base constant set is:
 	fdmp::Toolbar    ( 0x10000) - dock the toolbars
 	fdmp::LaunchPad  ( 0x20000) - allows widgets recycling
 
-All this functionality is demonstrated in F<examples/dock.pl> 
+All this functionality is demonstrated in F<examples/dock.pl>
 example.
 
 =head2 Properties
@@ -1214,10 +1214,10 @@ Default value: 0
 =item activate
 
 Brings to front all toolbars and panels. To be
-used inside a callback code of a main window, that has 
+used inside a callback code of a main window, that has
 the toolbars and panels attached to:
 
-	onActivate => sub { $dock_manager-> activate } 
+	onActivate => sub { $dock_manager-> activate }
 
 =item auto_toolbar_name
 
@@ -1227,15 +1227,15 @@ toolbar, like C<Toolbar1>, C<Toolbar2> etc.
 =item commands_enable BOOLEAN, @CLSIDs
 
 Enabled or disables commands from CLSIDs array.
-The changes are reflected in the visible command widgets, which 
-are enabled or disabled immediately. 
+The changes are reflected in the visible command widgets, which
+are enabled or disabled immediately.
 Also, C<CommandChange> notification is triggered.
 
 =item create_manager OWNER, %PROFILE
 
 Inserts two widgets into OWNER with PROFILE parameters:
 a listbox with command section groups, displayed as items, that usually correspond to
-the predefined toolbar names, and a notebook that displays the 
+the predefined toolbar names, and a notebook that displays the
 command icons. The notebook pages are interactively selected by the listbox
 navigation.
 
@@ -1286,18 +1286,18 @@ by C<register_panel>. The C<profile> hash takes the precedence.
 
 =item dockerProfile HASH
 
-Constains extra options, passed to C<Prima::DockManager::Panelbar> 
-widget. Before the usage it is merged with the set of parameters, 
-registered by C<register_panel>. 
+Constains extra options, passed to C<Prima::DockManager::Panelbar>
+widget. Before the usage it is merged with the set of parameters,
+registered by C<register_panel>.
 
-NB: The C<dock> key here contains a reference to a desired dock widget. 
+NB: The C<dock> key here contains a reference to a desired dock widget.
 If C<dock> set to C<undef>, the panel is created in the non-docked state.
 
 =back
 
 Example:
 
-	$dock_manager-> create_panel( $CLSID, 
+	$dock_manager-> create_panel( $CLSID,
 		dockerProfile => { dock => $main_window }},
 		profile       => { backColor => cl::Green });
 
@@ -1305,9 +1305,9 @@ Example:
 =item create_tool OWNER, CLSID, X1, Y1, X2, Y2
 
 Inserts a command widget, previously registered with CLSID by C<register_tool>, into
-OWNER widget with X1 - Y2 coordinates. For automatic maintenance of 
-enable/disable state of command widgets OWNER is expected to be a 
-toolbar. If it is not, the maintenance must be performed separately, 
+OWNER widget with X1 - Y2 coordinates. For automatic maintenance of
+enable/disable state of command widgets OWNER is expected to be a
+toolbar. If it is not, the maintenance must be performed separately,
 for example, by C<CommandChange> event.
 
 =item create_toolbar %PROFILE
@@ -1333,7 +1333,7 @@ the toolbar is created in the non-docked state.
 Parameters passed to C<Prima::DockManager::Toolbar> as
 creation properties.
 
-NB: The C<dock> key here contains a reference to a desired dock widget. 
+NB: The C<dock> key here contains a reference to a desired dock widget.
 If C<dock> set to C<undef>, the panel is created in the non-docked state.
 
 =item rect X1, Y1, X2, Y2
@@ -1366,7 +1366,7 @@ the following keys:
 
 =item class STRING
 
-Widget class 
+Widget class
 
 =item profile HASH
 
@@ -1517,7 +1517,7 @@ Mimics interface of C<Prima::Window::windowState>, and maintains
 visibility of toolbars and panels. If the parameter is C<ws::Minimized>,
 the toolbars and panels are hidden. On any other parameter these are shown.
 
-To be used inside a callback code of a main window, that has the toolbars 
+To be used inside a callback code of a main window, that has the toolbars
 and panels attached to:
 
 	onWindowState => sub { $dock_manager-> windowState( $_[1] ) }
@@ -1564,17 +1564,17 @@ for registering a C<Prima::SpeedButton> class instance with PROFILE parameters.
 
 IMAGE is a path to a image file, loaded and stored in the registration hash.
 IMAGE provides an extended syntax for indicating a frame index, if the image file is multiframed: the frame index is appended to the path name
-with C<:> character prefix. 
+with C<:> character prefix.
 
 CLSID scalar is not used; it is returned so the method result can
 directly be passed into C<register_tool> method.
 
-Returns two scalars: CLSID and the registration hash. 
+Returns two scalars: CLSID and the registration hash.
 
 Example:
 
-	$dock_manager-> register_tool( 
-		Prima::DockManager::S::SpeedButton::class( "myicon.gif:2", 
+	$dock_manager-> register_tool(
+		Prima::DockManager::S::SpeedButton::class( "myicon.gif:2",
 		q(CLSID::Logo), hint => 'Logo image' ));
 
 =back

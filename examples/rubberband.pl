@@ -5,7 +5,7 @@ use Prima qw(Application RubberBand);
 sub xordraw
 {
 	my ($self, @new_rect) = @_;
-	$::application-> rubberband( 
+	$::application-> rubberband(
 		@new_rect ?
 		( rect => \@new_rect ) :
 		( destroy => 1 ),

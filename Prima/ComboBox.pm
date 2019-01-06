@@ -1,5 +1,5 @@
 # combo styles
-package 
+package
     cs;
 use constant Simple       =>  0;
 use constant DropDown     =>  1;
@@ -20,16 +20,16 @@ use constant DefButtonX => 17;
 
 %editProps = map { $_ => 1 } qw(
 	alignment      autoScroll  text         select_all
-	charOffset     maxLen      insertMode   firstChar 
-	selection      selStart    selEnd       writeOnly 
-	copy           cut         delete       paste     
-	wordDelimiters readOnly    passwordChar focus     
+	charOffset     maxLen      insertMode   firstChar
+	selection      selStart    selEnd       writeOnly
+	copy           cut         delete       paste
+	wordDelimiters readOnly    passwordChar focus
 );
 
 %listProps = map { $_ => 1 } qw(
-	focusedItem hScroll    
-	integralHeight items       itemHeight 
-	topItem        vScroll     gridColor  
+	focusedItem hScroll
+	integralHeight items       itemHeight
+	topItem        vScroll     gridColor
 	multiColumn    offset      autoHScroll
 	autoVScroll
 );
@@ -85,7 +85,7 @@ sub profile_default
 		vScrollBarProfile => {},
 		listDelegations   => [qw(Leave SelectItem MouseUp Click KeyDown)],
 		editDelegations   => [qw(FontChanged Create Setup KeyDown KeyUp Change Leave MouseWheel)],
-		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick 
+		buttonDelegations => [qw(ColorChanged FontChanged MouseDown MouseClick
 			MouseUp MouseMove MouseEnter MouseLeave Paint Enable Disable)],
 	}
 }
@@ -98,13 +98,13 @@ sub profile_check_in
 	$p-> {autoHeight} = 0
 		if exists $p-> {height} || exists $p-> {size} || exists $p-> {rect} || ( exists $p-> {top} && exists $p-> {bottom});
 	if ( $style != cs::Simple) {
-		$p-> { editHeight } = exists $p-> {height} ? $p-> {height} : $default-> {height} 
+		$p-> { editHeight } = exists $p-> {height} ? $p-> {height} : $default-> {height}
 			unless exists $p-> { editHeight };
 	} else {
-		my $fh = exists $p-> {font}-> {height} ? 
-			$p-> {font}-> {height} : 
+		my $fh = exists $p-> {font}-> {height} ?
+			$p-> {font}-> {height} :
 			$default-> {font}-> {height};
-		$p-> { editHeight } = $fh + 2 
+		$p-> { editHeight } = $fh + 2
 			unless exists $p-> {editHeight };
 	}
 	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
@@ -197,7 +197,7 @@ sub check_auto_size
 sub on_create
 {
 	my $self = $_[0];
-	$self-> InputLine_Change( $self-> {edit}) 
+	$self-> InputLine_Change( $self-> {edit})
 		if $self-> {style} == cs::DropDownList;
 }
 
@@ -366,12 +366,12 @@ sub InputLine_KeyDown
 		$edit-> clear_event;
 		return;
 	}
-	
+
 	return if $mod & km::DeadKey;
 	if (
-		( $key & 0xFF00) && 
-		( $key != kb::NoKey) && 
-		( $key != kb::Space) && 
+		( $key & 0xFF00) &&
+		( $key != kb::NoKey) &&
+		( $key != kb::Space) &&
 		( $key != kb::Backspace)
 	) {
 		return if $key == kb::Tab || $key == kb::BackTab || $key == kb::NoKey;
@@ -455,8 +455,8 @@ sub InputLine_Change
 		}
 	}
 	if (
-		( $style == cs::DropDown) && 
-		( $matchId < 0) && 
+		( $style == cs::DropDown) &&
+		( $matchId < 0) &&
 		defined $edit-> {keyDown}
 	) {
 		my ($t,$txt);
@@ -480,7 +480,7 @@ sub InputLine_Change
 	if ( $matchId < 0) {
 		for ( $i = 0; $i < scalar @texts; $i++) {
 			my $l = 0;
-			$l++ while 
+			$l++ while
 				$l < length($texts[$i]) && $l < length($cap)
 				&& substr( $texts[$i], $l, 1) eq substr( $cap, $l, 1);
 			if ( $l >= $maxMatch) {
@@ -662,7 +662,7 @@ Prima::ComboBox - standard combo box widget
 =head1 DESCRIPTION
 
 Provides a combo box widget which consists of an input line, list box of possible
-selections and eventual drop-down button. The combo box can be either in form 
+selections and eventual drop-down button. The combo box can be either in form
 with a drop-down selection list, that is shown by the command of the user,
 or in form when the selection list is always visible.
 
@@ -779,7 +779,7 @@ Create-only property.
 
 =item literal BOOLEAN
 
-Selects whether the combo box user input routine assume that 
+Selects whether the combo box user input routine assume that
 the listbox contains literal strings, that can be fetched via
 C<get_item_text> ( see L<Prima::Lists> ). As an example when
 this property is set to 0 is C<Prima::ColorComboBox> from L<Prima::ComboBox> package.
@@ -794,7 +794,7 @@ Selected one of three styles:
 
 =item cs::Simple
 
-The listbox is always visible, and the drop-down button is not. 
+The listbox is always visible, and the drop-down button is not.
 
 =item cs::DropDown
 
@@ -804,7 +804,7 @@ is defocused, it gets hidden.
 
 =item cs::DropDownList
 
-Same as C<cs::DropDown>, but the user is restricted in the selection: 
+Same as C<cs::DropDown>, but the user is restricted in the selection:
 the input line can only accept user input that is contained in listbox.
 If L<literal> set to 1, the auto completion feature is provided.
 
@@ -812,7 +812,7 @@ If L<literal> set to 1, the auto completion feature is provided.
 
 =item text STRING
 
-Mapped onto the edit widget's C<text> property. 
+Mapped onto the edit widget's C<text> property.
 
 =back
 
@@ -841,23 +841,23 @@ See more in L<Prima::Lists>.
 
 =item %editProps
 
-	alignment      autoScroll  text         text        
-	charOffset     maxLen      insertMode   firstChar   
-	selection      selStart    selEnd       writeOnly   
-	copy           cut         delete       paste       
-	wordDelimiters readOnly    passwordChar focus       
-	select_all     
+	alignment      autoScroll  text         text
+	charOffset     maxLen      insertMode   firstChar
+	selection      selStart    selEnd       writeOnly
+	copy           cut         delete       paste
+	wordDelimiters readOnly    passwordChar focus
+	select_all
 
 =item %listProps
 
-		       focusedItem    hScroll        
-	integralHeight items          itemHeight     
-	topItem        vScroll        gridColor      
-	multiColumn    offset         
+		       focusedItem    hScroll
+	integralHeight items          itemHeight
+	topItem        vScroll        gridColor
+	multiColumn    offset
 
-=item %listDynas 
+=item %listDynas
 
-	onDrawItem 
+	onDrawItem
 	onSelectItem
 
 =back

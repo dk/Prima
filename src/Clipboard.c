@@ -137,7 +137,7 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
 void
 Clipboard_deregister_format( Handle self, char * format)
 {
-	PClipboardFormatReg fr, list; 
+	PClipboardFormatReg fr, list;
 
 	if ( protect_formats && (
 		( strlen( format) == 0)          ||
@@ -180,7 +180,7 @@ Clipboard_close( Handle self)
 		var-> openCount = 0;
 		return;
 	}
-	
+
 	var-> openCount--;
 	if ( var->  openCount > 0) return;
 	text = formats + cfText;
@@ -195,7 +195,7 @@ Clipboard_close( Handle self)
 				bytecount = bytelen;
 				text_sv = newSVpvn("", 0);
 				while ( bytecount > 0) {
-					register UV u = 
+					register UV u =
 #if PERL_PATCHLEVEL >= 16
 						  utf8_to_uvchr_buf( src, src + bytelen, &charlen)
 #else

@@ -15,8 +15,8 @@ word,dword is read individually.
 #include "Image.h"
 
 static char * bmpext[] = {
-	"bmp", "vga", "bga", 
-	"rle", "dib", "rl4", 
+	"bmp", "vga", "bga",
+	"rle", "dib", "rl4",
 	"rl8", NULL,
 };
 
@@ -25,7 +25,7 @@ static int    bmpbpp[] = {
 	imbpp8 | imGrayScale, imbpp8,
 	imbpp4 | imGrayScale, imbpp4,
 	imbpp1 | imGrayScale, imbpp1,
-	0 
+	0
 };
 static char * bmpfeat[] = {
 	"OS/2 BMP 1.0",
@@ -264,7 +264,7 @@ typedef struct _LoadRec {
 } LoadRec;
 
 
-static void * 
+static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	LoadRec * l;
@@ -516,7 +516,7 @@ read_bmp_header( PImgLoadFileInstance fi)
 			l-> rgb_offset. r = (l->bpp == 16) ? 10 : 16;
 
 			/* set color masks to either 16bpp (5,5,5) or 32bpp (8,8,8) */
-			l-> rgb_mask. b = (l-> bpp == 16) ? 0x001f : 0x000000ff; 
+			l-> rgb_mask. b = (l-> bpp == 16) ? 0x001f : 0x000000ff;
 			l-> rgb_mask. g = (l-> bpp == 16) ? 0x03e0 : 0x0000ff00;
 			l-> rgb_mask. r = (l-> bpp == 16) ? 0x7c00 : 0x00ff0000;
 
@@ -652,7 +652,7 @@ read_16_32_bpp( PImgLoadFileInstance fi, PImage i, int bpp, unsigned long stride
 		/* Extract red, green, blue. */
 		/* Encoding starts at least significant bit, then xB,yG,zR (most significant bit is unused). */
 		/* Map these into 24bpp BGR. */
-#define GetX(X,SRC) (((SRC & l-> rgb_mask.X) >> l->rgb_offset.X) << l->rgb_valid_bits.X) 
+#define GetX(X,SRC) (((SRC & l-> rgb_mask.X) >> l->rgb_offset.X) << l->rgb_valid_bits.X)
 		if ( bpp == 16 ) {
 			while (block_count > 0) {
 				register word data16 = *src16++;
@@ -781,7 +781,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			case 4:
 			case 8:
 			case 24:
-				if ( !req_read_big(fi, l-> h, cLinesWorth, data)) 
+				if ( !req_read_big(fi, l-> h, cLinesWorth, data))
 					return false;
 				break;
 			case 16:
@@ -1059,7 +1059,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		a black background!) results.
 		*/
 
-		/* DK adds: since we swap OS/2 mono palette on load, we do the same 
+		/* DK adds: since we swap OS/2 mono palette on load, we do the same
 		on save. The reason is that if the programmed doesn't care about OS/2
 		problems (which is most probable), we simply restore the status quo.
 		If he does (surprise!) then he can also swap the palette manually

@@ -1,8 +1,8 @@
-('AvantGarde-DemiOblique' => { 
+('AvantGarde-DemiOblique' => {
   name            => 'AvantGarde-DemiOblique',
   family          => 'Avant Garde',
   height          => 1272,
-  weight          => fw::Medium,   
+  weight          => fw::Medium,
   style           => fs::Normal,
   pitch           => fp::Variable,
   vector          => 1,

@@ -1,7 +1,7 @@
 #
 #  Created by:
 #     Anton Berezin  <tobez@tobez.org>
-#     Dmitry Karasik <dk@plab.ku.dk> 
+#     Dmitry Karasik <dk@plab.ku.dk>
 #  Modifications by:
 #     David Scott <dscott@dgt.com>
 #
@@ -100,8 +100,8 @@ sub on_click
 	return if $foc < 0;
 	my $newP = '';
 	my $ind = $items-> [$foc]-> {indent};
-	for ( @{$items} ) { 
-		$newP .= $_-> {text}."/" if $_-> {indent} < $ind; 
+	for ( @{$items} ) {
+		$newP .= $_-> {text}."/" if $_-> {indent} < $ind;
 	}
 	$newP .= $items-> [$foc]-> {text};
 	$newP .= '/' unless $newP =~ m/[\/\\]$/;
@@ -470,7 +470,7 @@ sub profile_default
 
 Prima::Application::add_startup_notification( sub {
 	my $i = 0;
-	for ( 
+	for (
 		sbmp::DriveFloppy, sbmp::DriveHDD,    sbmp::DriveNetwork,
 		sbmp::DriveCDROM,  sbmp::DriveMemory, sbmp::DriveUnknown
 	) {
@@ -585,7 +585,7 @@ sub List_DrawItem
 	my $font = $canvas-> font;
 	my $x = $left + 2;
 	my ($h, $w);
-	
+
 	if ( $icon) {
 		($h, $w) = ($icon-> height, $icon-> width);
 		$canvas-> put_image( $x, ($top + $bottom - $h) / 2, $icon);
@@ -620,7 +620,7 @@ sub List_FontChanged
 sub List_MeasureItem
 {
 	my ( $combo, $self, $index, $sref) = @_;
-	
+
 	my $iw = ( $combo-> {icons}-> [$index] ? $combo-> {icons}-> [$index]-> width : 0);
 	$$sref = $self-> get_text_width($combo-> {drives}[$index]) + $iw;
 	$self-> clear_event;
@@ -753,12 +753,12 @@ sub init
 	my $drives = length( Prima::Utils::query_drives_map);
 	$self-> {hasDrives} = $drives;
 
-	for ( qw( 
+	for ( qw(
 		defaultExt filter directory filterIndex showDotFiles
 		createPrompt fileMustExist noReadOnly noTestFileCreate
 		overwritePrompt pathMustExist showHelp openMode sorted
-	)) { 
-		$self-> {$_} = $profile{$_} 
+	)) {
+		$self-> {$_} = $profile{$_}
 	}
 
 	@{$self-> {filter}}  = [[ '' => '*']] unless scalar @{$self-> {filter}};
@@ -769,11 +769,11 @@ sub init
 		push @mdts, $$_[1];
 	}
 	$self-> { filterIndex} = scalar @exts - 1 if $self-> { filterIndex} >= scalar @exts;
-	
+
 	$self-> { mask} = $mdts[ $self-> { filterIndex}];
 	$self-> { mask} = $profile{fileName} if $profile{fileName} =~ /[*?]/;
 	$self-> canonize_mask;
-	
+
 	$self-> insert( InputLine =>
 		name      => 'Name',
 		origin    => [ 14, 343],
@@ -914,16 +914,16 @@ sub on_size
 	my ( $self, $ox, $oy, $x, $y) = @_;
 
 	my ( $w, $dx, @left, @right);
-	
+
 	$dx = $self-> Files-> left;
 	$x -= $self-> {right_margin};
 	$w = ( $x - 3 * $dx ) / 2;
-	$_-> width( $w) for 
-		grep { defined } map { $self-> bring($_) } 
+	$_-> width( $w) for
+		grep { defined } map { $self-> bring($_) }
 		qw(Files Name NameLabel Ext ExtensionsLabel CompletionList);
 	$x = 2 * $dx + $w;
-	$_-> set( left => $x, width => $w) for 
-		grep { defined } map { $self-> bring($_) } 
+	$_-> set( left => $x, width => $w) for
+		grep { defined } map { $self-> bring($_) }
 		qw(Directory DirectoryLabel Dir Drive DriveLabel);
 }
 
@@ -940,8 +940,8 @@ sub on_endmodal
 
 sub execute
 {
-	return ($_[0]-> SUPER::execute != mb::Cancel) ? 
-		$_[0]-> fileName : 
+	return ($_[0]-> SUPER::execute != mb::Cancel) ?
+		$_[0]-> fileName :
 		( wantarray ? () : undef);
 }
 
@@ -961,13 +961,13 @@ sub Name_KeyDown
 		$self-> clear_event;
 		my $f = $self-> text;
 		substr( $f, $self-> selStart) = ''
-			if $self-> selStart == $self-> charOffset && 
+			if $self-> selStart == $self-> charOffset &&
 				$self-> selEnd == length $f;
 		$f =~ s/^\s*//;
 		$f =~ s/\\\s/ /g;
 		$f =~ s/^~/$ENV{HOME}/ if $f =~ m/^~/ && defined $ENV{HOME};
 		my $relative;
-		$f = $dlg-> Dir-> path .  $f, $relative = 1 if 
+		$f = $dlg-> Dir-> path .  $f, $relative = 1 if
 			($unix && $f !~ /^\//) ||
 			(!$unix && $f !~ /^([a-z]\:|\/)/i);
 		$f =~ s/\\/\//g;
@@ -998,9 +998,9 @@ sub Name_KeyDown
 				unless ( $dlg-> {completionList}) {
 					$dlg-> {completionList} = Prima::ListBox-> create(
 						owner       => $dlg,
-						width       => $self-> width, 
+						width       => $self-> width,
 						bottom      => $dlg-> Files-> bottom,
-						top         => $self-> bottom - 1, 
+						top         => $self-> bottom - 1,
 						left        => $self-> left,
 						designScale => undef,
 						name        => 'CompletionList',
@@ -1010,15 +1010,15 @@ sub Name_KeyDown
 					$dlg-> {completionMatch} = '';
 					$dlg-> {completionListIndex} = 0;
 				}
-				if ( 
+				if (
 					$dlg-> {completionMatch} eq $rel_path &&
 					defined $completions[$dlg-> {completionListIndex}] &&
 					defined $dlg-> {completionList}-> get_items($dlg-> {completionListIndex}) &&
 					$dlg-> {completionList}-> get_items($dlg-> {completionListIndex}) eq
-						$completions[$dlg-> {completionListIndex}] 
+						$completions[$dlg-> {completionListIndex}]
 				) {
 					$dlg-> {completionList}-> focusedItem($dlg-> {completionListIndex});
-					$f = $rel_path . $completions[$dlg-> {completionListIndex}]; 
+					$f = $rel_path . $completions[$dlg-> {completionListIndex}];
 					$self-> text( $f);
 					$i = length( $rel_path) + length( $residue);
 					$self-> selection( $i , length $f);
@@ -1177,11 +1177,11 @@ sub quoted_split
 	study;
 	{
 		/\G\s+/gc && redo;
-		/\G((?:[^\\\s]|\\.)+)\s*/gc && do { 
-			my $z = $1; 
-			$z =~ s/\\(.)/$1/g; 
-			push(@ret, $z); 
-			redo; 
+		/\G((?:[^\\\s]|\\.)+)\s*/gc && do {
+			my $z = $1;
+			$z =~ s/\\(.)/$1/g;
+			push(@ret, $z);
+			redo;
 		};
 		/\G(\\)$/gc && do { push(@ret, $1); redo; };
 	}
@@ -1258,7 +1258,7 @@ sub Open_Click
 		{
 			my @masked = grep {
 				/[*?]/
-			} map { 
+			} map {
 				m{([^/\\]*)$} ? $1 : $_
 			} grep {
 				/[*?]/
@@ -1271,9 +1271,9 @@ sub Open_Click
 			return;
 		}
 		if ( $dirTo =~ /[*?]/) {
-			Prima::MsgBox::message_box( 
-				$self-> text, 
-				"Invalid path name " . $self-> Name-> text, 
+			Prima::MsgBox::message_box(
+				$self-> text,
+				"Invalid path name " . $self-> Name-> text,
 				mb::OK | mb::Error
 			);
 			$self-> Name-> select_all;
@@ -1296,9 +1296,9 @@ sub Open_Click
 		$_ .= $self-> {defaultExt} if $self-> {openMode} && !m{\.[^/]*$};
 		if ( -f $_) {
 			if ( !$self-> {openMode} && $self-> {noReadOnly} && !(-w $_)) {
-				Prima::MsgBox::message_box( 
-					$self-> text, 
-					"File $_ is read only", 
+				Prima::MsgBox::message_box(
+					$self-> text,
+					"File $_ is read only",
 					mb::OK | mb::Error
 				);
 				$self-> Name-> select_all;
@@ -1315,14 +1315,14 @@ sub Open_Click
 			$dirTo = '.', $fileTo = $_ unless defined $dirTo;
 			if ( $self-> {openMode} && $self-> {createPrompt}) {
 				return if ( Prima::MsgBox::message_box( $self-> text,
-					"File $_ does not exists. Create?", 
+					"File $_ does not exists. Create?",
 					mb::OKCancel|mb::Information
 				) != mb::OK);
-				if ( open FILE, ">$_") { 
-					close FILE; 
+				if ( open FILE, ">$_") {
+					close FILE;
 				} else {
-					Prima::MsgBox::message_box( $self-> text, 
-						"Cannot create file $_: $!", 
+					Prima::MsgBox::message_box( $self-> text,
+						"Cannot create file $_: $!",
 						mb::OK | mb::Error
 					);
 					$self-> Name-> select_all;
@@ -1344,8 +1344,8 @@ sub Open_Click
 			}
 		}
 		if ( !$self-> {openMode} && !$self-> {noTestFileCreate}) {
-			if ( open FILE, ">>$_") { 
-				close FILE; 
+			if ( open FILE, ">>$_") {
+				close FILE;
 			} else {
 				Prima::MsgBox::message_box( $self-> text, "Cannot create file $_: $!", mb::OK | mb::Error);
 				$self-> Name-> select_all;
@@ -1363,7 +1363,7 @@ sub filter
 {
 	if ( $#_) {
 		my $self   = $_[0];
-		
+
 		my @filter = @{$_[1]};
 		@filter = [[ '' => '*']] unless scalar @filter;
 		my @exts;
@@ -1378,7 +1378,7 @@ sub filter
 		$self-> { mask} = $mdts[ $self-> { filterIndex}];
 		$self-> { mask} = '*' unless defined $self-> { mask};
 		$self-> canonize_mask;
-		
+
 		$self-> Ext-> items( \@exts);
 		$self-> Ext-> text( $exts[$self-> { filterIndex}]);
 	} else {
@@ -1596,8 +1596,8 @@ sub Drive_Change
 	my ( $self, $drive) = @_;
 	my $newDisk = $drive-> text . "/";
 	until (-d $newDisk) {
-		last if Prima::MsgBox::message_box( 
-			$self-> text, 
+		last if Prima::MsgBox::message_box(
+			$self-> text,
 			"Drive $newDisk is not ready!",
 			mb::Cancel | mb::Retry | mb::Warning
 		) != mb::Retry;
@@ -1675,19 +1675,19 @@ Prima::FileDialog - File system related widgets and dialogs.
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/filedlg.gif">
 
-=head1 DESCRIPTION 
+=head1 DESCRIPTION
 
 The module contains widgets for file and drive selection,
-and also standard open file, save file, and change directory 
+and also standard open file, save file, and change directory
 dialogs.
 
 =head1 Prima::DirectoryListBox
 
-A directory listing list box. Shows the list of 
+A directory listing list box. Shows the list of
 subdirectories and upper directories, hierarchy-mapped,
 with the folder images and outlines.
 
-=head2 Properties 
+=head2 Properties
 
 =over
 
@@ -1700,7 +1700,7 @@ Default value: 1
 
 =item closedIcon ICON
 
-Provides an icon representation 
+Provides an icon representation
 for the directories, contained in the current directory.
 
 =item indent INTEGER
@@ -1719,7 +1719,7 @@ Default value: 1
 
 =item openedIcon OBJECT
 
-Provides an icon representation 
+Provides an icon representation
 for the directories, contained in the directories above the current
 directory.
 
@@ -1759,9 +1759,9 @@ Provides drive selection combo-box for non-unix systems.
 
 =over
 
-=item firstDrive DRIVE_LETTER 
+=item firstDrive DRIVE_LETTER
 
-Create-only property. 
+Create-only property.
 
 Default value: 'A:'
 
@@ -1794,15 +1794,15 @@ which is stored in L<openMode> property.
 =item createPrompt BOOLEAN
 
 If 1, and a file selected is nonexistent, asks the user
-if the file is to be created. 
+if the file is to be created.
 
-Only actual when L<openMode> is 1. 
+Only actual when L<openMode> is 1.
 
 Default value: 0
 
 =item defaultExt STRING
 
-Selects the file extension, appended to the 
+Selects the file extension, appended to the
 file name typed by the user, if the extension is not given.
 
 Default value: ''
@@ -1814,7 +1814,7 @@ Selects the currently selected directory.
 =item fileMustExist BOOLEAN
 
 If 1, ensures that the file typed by the user exists before
-closing the dialog. 
+closing the dialog.
 
 Default value: 1
 
@@ -1850,7 +1850,7 @@ If 1, fails to open a file when it is read-only.
 
 Default value: 0
 
-Only actual when L<openMode> is 0. 
+Only actual when L<openMode> is 0.
 
 =item noTestFileCreate BOOLEAN
 
@@ -1858,7 +1858,7 @@ If 0, tests if a file selected can be created.
 
 Default value: 0
 
-Only actual when L<openMode> is 0. 
+Only actual when L<openMode> is 0.
 
 =item overwritePrompt BOOLEAN
 
@@ -1866,13 +1866,13 @@ If 1, asks the user if the file selected is to be overwrittten.
 
 Default value: 1
 
-Only actual when L<openMode> is 0. 
+Only actual when L<openMode> is 0.
 
 =item openMode BOOLEAN
 
 Create-only property.
 
-Selects whether the dialog operates in 'open' ( 1 ) mode or 'save' ( 0 ) 
+Selects whether the dialog operates in 'open' ( 1 ) mode or 'save' ( 0 )
 mode.
 
 =item pathMustExist BOOLEAN
@@ -1885,7 +1885,7 @@ Default value: 1
 =item showDotFiles BOOLEAN
 
 Selects if the directories with the first dot character
-are shown the files view. 
+are shown the files view.
 
 Default value: 0
 
@@ -1904,11 +1904,11 @@ Default value : 1
 =item system BOOLEAN
 
 Create-only property. If set to 1, C<Prima::FileDialog> returns
-instance of C<Prima::sys::XXX::FileDialog> system-specific file dialog, 
+instance of C<Prima::sys::XXX::FileDialog> system-specific file dialog,
 if available for the I<XXX> platform.
 
 C<system> knows only how to map C<FileDialog>, C<OpenDialog>, and C<SaveDialog>
-classes onto the system-specific file dialog classes; the inherited classes 
+classes onto the system-specific file dialog classes; the inherited classes
 are not affected.
 
 =back
@@ -1946,7 +1946,7 @@ Selects the directory
 =item showDotDirs
 
 Selects if the directories with the first dot character
-are shown the view. 
+are shown the view.
 
 Default value: 0
 

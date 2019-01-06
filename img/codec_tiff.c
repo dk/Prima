@@ -26,13 +26,13 @@ extern "C" {
 
 
 static char * tiffext[] = { "tif", "tiff", nil };
-static int    tiffbpp[] = { imbpp24, 
-			imbpp8, imByte, 
-			imShort, 
+static int    tiffbpp[] = { imbpp24,
+			imbpp8, imByte,
+			imShort,
 			imbpp4, imbpp4 | imGrayScale,
-			imbpp1, imbpp1 | imGrayScale, 
-			0 };   
-static char * loadOutput[] = { 
+			imbpp1, imbpp1 | imGrayScale,
+			0 };
+static char * loadOutput[] = {
 	"Photometric",
 	"BitsPerSample",
 	"SamplesPerPixel",
@@ -42,7 +42,7 @@ static char * loadOutput[] = {
 	"Faxpect",
 
 	"Artist",
-	"CompressionType", 
+	"CompressionType",
 	/* tibtiff can decompress many types; but compress a few, so CompressionType
 		is named so to avoid implicit but impossible compression selection */
 	"Copyright",
@@ -64,7 +64,7 @@ static char * loadOutput[] = {
 	nil
 };
 
-static char * tifffeatures[] = { 
+static char * tifffeatures[] = {
 #ifdef COLORIMETRY_SUPPORT
 	"Tag-COLORIMETRY",
 #endif
@@ -162,7 +162,7 @@ static ImgCodecInfo codec_info = {
 	tifffeatures,    /* features  */
 	"Prima::Image::tiff",     /* module */
 	"Prima::Image::tiff",     /* package */
-	IMG_LOAD_FROM_FILE | IMG_LOAD_MULTIFRAME | IMG_LOAD_FROM_STREAM | 
+	IMG_LOAD_FROM_FILE | IMG_LOAD_MULTIFRAME | IMG_LOAD_FROM_STREAM |
 	IMG_SAVE_TO_FILE | IMG_SAVE_MULTIFRAME | IMG_SAVE_TO_STREAM,
 	tiffbpp, /* save types */
 	loadOutput
@@ -213,7 +213,7 @@ my_tiff_seek( thandle_t h, toff_t offset, int whence)
 static int
 my_tiff_close( thandle_t h)
 {
-	return (( PImgIORequest) h)-> flush ? 
+	return (( PImgIORequest) h)-> flush ?
 		req_flush( (PImgIORequest) h) :
 		0;
 }
@@ -236,7 +236,7 @@ my_tiff_unmap( thandle_t h, tdata_t data, toff_t offset)
 }
 
 
-static void * 
+static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	TIFF * tiff;
@@ -244,7 +244,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	err_signal = 0;
 	if (!( tiff = TIFFClientOpen( "", "r", (thandle_t) fi-> req,
 		my_tiff_read, my_tiff_write,
-		my_tiff_seek, my_tiff_close, my_tiff_size, 
+		my_tiff_seek, my_tiff_close, my_tiff_size,
 		my_tiff_map, my_tiff_unmap))) {
 		req_seek( fi-> req, 0, SEEK_SET);
 		return nil;
@@ -305,12 +305,12 @@ convert_1x8_to_byte( Byte * src, Byte * dest, int bps, int pixels)
 	case 1:
 		bc_mono_byte( src, dest, pixels);
 		break;
-	case 2: 
+	case 2:
 		{
 			register Byte mask = 0xC0, shift = 6;
 			while ( pixels--) {
 				*dest++ = (*src & mask) >> shift;
-				if ( shift == 0) { 
+				if ( shift == 0) {
 					mask = 0xC0;
 					shift = 6;
 					src++;
@@ -367,7 +367,7 @@ convert_9x16_to_short( Byte * src, Short * dest, int bps, int pixels)
 			*dest++ = get_bits( src, offset, bps ) << shift;
 			offset += bps;
 		}
-	} else 
+	} else
 		memcpy((Byte *) dest, src, pixels * 2);
 }
 
@@ -387,7 +387,7 @@ convert_17x32_to_long( Byte * src, Long * dest, int bps, int pixels)
 			*dest++ = get_bits( src, offset, bps ) << shift;
 			offset += bps;
 		}
-	} else 
+	} else
 		memcpy((Byte *) dest, src, pixels * 4);
 }
 
@@ -453,7 +453,7 @@ scan_convert( Byte * src, Byte * dest, int pixels, int source_bits, int source_f
 			return;
 		}
 
-		if (target_bytes == 1) 
+		if (target_bytes == 1)
 			convert_real_to_byte( src, dest, pixels, source_format);
 		else
 			croak("panic: tiff.scan_convert(float,%d bytes)", target_bytes);
@@ -501,7 +501,7 @@ scan_convert( Byte * src, Byte * dest, int pixels, int source_bits, int source_f
 		dest += target_bytes - 1;
 #endif
 		while ( pixels-- ) {
-			if ( *dest & 0x80 ) 
+			if ( *dest & 0x80 )
 				*dest &= 0x7f;
 			else
 				*dest |= 0x80;
@@ -512,7 +512,7 @@ scan_convert( Byte * src, Byte * dest, int pixels, int source_bits, int source_f
 
 
 
-static void 
+static void
 invert_scanline( Byte * src, int source_bits, int type, int pixels)
 {
 #undef NEGATE
@@ -555,7 +555,7 @@ convert_abgr_to_rgba( Byte * buffer, int quads)
 	register uint32_t * x = (uint32_t *) buffer;
 	while ( quads-- ) {
 		register uint32_t f = *x;
-		*x++ = 
+		*x++ =
 			(f >> 24) |
 			((f >> 8) & 0x00FF00) |
 			((f << 8) & 0xFF0000) |
@@ -581,7 +581,7 @@ read_source_format( PImgLoadFileInstance fi, int source_bits, int * source_forma
 
 	for ( i = 0; i < sizeof(pixeltype) / sizeof(TagRec); i++) {
 		if ( pixeltype[i].tag == sample_format) {
-			if ( fi-> loadExtras) 
+			if ( fi-> loadExtras)
 				pset_c( SampleFormat, pixeltype[i].name);
 			break;
 		}
@@ -612,7 +612,7 @@ read_source_format( PImgLoadFileInstance fi, int source_bits, int * source_forma
 			return false;
 		}
 		break;
-	default:  
+	default:
 		sprintf( fi-> errbuf, "Unexpected SAMPLEFORMAT: %d", sample_format);
 		return false;
 	}
@@ -631,14 +631,14 @@ read_source_bits( PImgLoadFileInstance fi, int * source_bits)
 		*source_bits = 1;
 		return true;
 	}
-	
+
 	if ( bits > 64 ) {
 		sprintf( fi-> errbuf, "Unexpected BITSPERSAMPLE: %d", bits);
 		return false;
 	}
 
 	if ( fi-> loadExtras) pset_i( BitsPerSample, bits);
-	
+
 	*source_bits = bits;
 
 	return true;
@@ -655,7 +655,7 @@ read_source_sample_per_pixel( PImgLoadFileInstance fi, int * source_spp)
 		*source_spp = 1;
 		return true;
 	}
-	
+
 	if ( spp < 1 || spp > 4) {
 		sprintf( fi-> errbuf, "Unexpected SAMPLESPERPIXEL: %d", spp);
 		return false;
@@ -666,7 +666,7 @@ read_source_sample_per_pixel( PImgLoadFileInstance fi, int * source_spp)
 	*source_spp = spp;
 
 	return true;
-}   
+}
 
 static Bool
 read_source_planar_config( PImgLoadFileInstance fi, Bool * source_is_planar)
@@ -705,7 +705,7 @@ read_source_resolution( PImgLoadFileInstance fi, float * x, float * y)
 
 	if ( !TIFFGetField( tiff, TIFFTAG_XRESOLUTION, x))
 		*x = 0.0;
-	else 
+	else
 		if ( fi-> loadExtras)
 			pset_f( XResolution, *x);
 
@@ -716,7 +716,7 @@ read_source_resolution( PImgLoadFileInstance fi, float * x, float * y)
 			pset_f( YResolution, *y);
 
 	return true;
-}     
+}
 
 static Bool
 read_other_tags( PImgLoadFileInstance fi)
@@ -728,17 +728,17 @@ read_other_tags( PImgLoadFileInstance fi)
 	float n;
 
 	if ( !fi-> loadExtras) return true;
-	
+
 	if ( !TIFFGetField( tiff, TIFFTAG_RESOLUTIONUNIT, &u16))
 		u16 = RESUNIT_INCH;  /* default (see libtiff tif_dir.c) */
 	else
-		pset_c( ResolutionUnit, 
-			( u16 == RESUNIT_INCH      ) ? "inch" : 
-			( u16 == RESUNIT_CENTIMETER  ? "centimeter" : 
+		pset_c( ResolutionUnit,
+			( u16 == RESUNIT_INCH      ) ? "inch" :
+			( u16 == RESUNIT_CENTIMETER  ? "centimeter" :
 													"none"
 	));
-		
-	if ( TIFFGetField( tiff, TIFFTAG_ARTIST, &ch)) 
+
+	if ( TIFFGetField( tiff, TIFFTAG_ARTIST, &ch))
 		pset_c( Artist, ch);
 
 	if ( TIFFGetField( tiff, TIFFTAG_COMPRESSION, &u16)) {
@@ -753,37 +753,37 @@ read_other_tags( PImgLoadFileInstance fi)
 		if ( !found) pset_i( CompressionType, u16);
 	}
 
-	if ( TIFFGetField( tiff, TIFFTAG_COPYRIGHT, &ch)) 
+	if ( TIFFGetField( tiff, TIFFTAG_COPYRIGHT, &ch))
 		pset_c( Copyright, ch);
 
-	if ( TIFFGetField( tiff, TIFFTAG_DATETIME, &ch)) 
+	if ( TIFFGetField( tiff, TIFFTAG_DATETIME, &ch))
 		pset_c( DateTime, ch);
 
-	if ( TIFFGetField( tiff, TIFFTAG_DOCUMENTNAME, &ch)) 
+	if ( TIFFGetField( tiff, TIFFTAG_DOCUMENTNAME, &ch))
 		pset_c( DocumentName, ch);
 
-	if ( TIFFGetField( tiff, TIFFTAG_HOSTCOMPUTER, &ch)) 
+	if ( TIFFGetField( tiff, TIFFTAG_HOSTCOMPUTER, &ch))
 		pset_c( HostComputer, ch);
 
-	if ( TIFFGetField( tiff, TIFFTAG_IMAGEDESCRIPTION, &ch)) 
+	if ( TIFFGetField( tiff, TIFFTAG_IMAGEDESCRIPTION, &ch))
 		pset_c( ImageDescription, ch);
 
-	if ( TIFFGetField( tiff, TIFFTAG_MAKE, &ch)) 
+	if ( TIFFGetField( tiff, TIFFTAG_MAKE, &ch))
 		pset_c( Make, ch);
 
-	if ( TIFFGetField( tiff, TIFFTAG_MODEL, &ch)) 
+	if ( TIFFGetField( tiff, TIFFTAG_MODEL, &ch))
 		pset_c( Model, ch);
 
-	if ( TIFFGetField( tiff, TIFFTAG_PAGENAME, &ch)) 
+	if ( TIFFGetField( tiff, TIFFTAG_PAGENAME, &ch))
 		pset_c( PageName, ch);
 
-	if ( TIFFGetField( tiff, TIFFTAG_SOFTWARE, &ch)) 
+	if ( TIFFGetField( tiff, TIFFTAG_SOFTWARE, &ch))
 		pset_c( Software, ch);
 
-	if ( TIFFGetField( tiff, TIFFTAG_XPOSITION, &n)) 
+	if ( TIFFGetField( tiff, TIFFTAG_XPOSITION, &n))
 		pset_f( XPosition, n);
 
-	if ( TIFFGetField( tiff, TIFFTAG_YPOSITION, &n)) 
+	if ( TIFFGetField( tiff, TIFFTAG_YPOSITION, &n))
 		pset_f( YPosition, n);
 
 	if ( TIFFGetField( tiff, TIFFTAG_PAGENUMBER, &u16, &u16_2)) {
@@ -792,7 +792,7 @@ read_other_tags( PImgLoadFileInstance fi)
 	}
 
 	return true;
-}  
+}
 
 /* reads palette, fixes colors if necessary */
 static Bool
@@ -802,12 +802,12 @@ read_palette( PImgLoadFileInstance fi, int source_bits, int * colors, RGBColor *
 	RGBColor *p, last;
 	int x, entry, steps;
 	unsigned short *redcolormap, *greencolormap, *bluecolormap;
-		
+
 	if ( !TIFFGetField( tiff, TIFFTAG_COLORMAP, &redcolormap, &greencolormap, &bluecolormap)) {
 		outc("Cannot query COLORMAP tag");
 		return false;
 	}
-	
+
 	p = palette;
 	steps = ( source_bits <= 8 ) ? 1 : ( 1 << ( source_bits - 8 ));
 	for ( x = entry = 0; x < *colors; x++, p++, entry += steps) {
@@ -833,12 +833,12 @@ read_palette( PImgLoadFileInstance fi, int source_bits, int * colors, RGBColor *
 			}
 			break;
 		}
-	} 
+	}
 
 	return true;
 }
-		
-static void      
+
+static void
 build_grayscale_palette( int source_bits, RGBColor * palette)
 {
 	int i, colors;
@@ -854,7 +854,7 @@ build_grayscale_palette( int source_bits, RGBColor * palette)
 	}
 }
 
-static Bool   
+static Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
 	TIFF * tiff = ( TIFF *) fi-> instance;
@@ -872,10 +872,10 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	size_t stripsz, linesz, tilesz = 0L;
 	uint32 tile_width, tile_height, num_tilesX = 0L, rowsperstrip;
 	Byte bw_colorref[256];
-	
+
 	errbuf = fi-> errbuf;
 	err_signal = 0;
-	
+
 	if ( !TIFFSetDirectory( tiff, (tdir_t) fi-> frame)) {
 		outc( "Frame index out of range");
 		return false;
@@ -931,7 +931,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		photometric_descr = ( photometric == PHOTOMETRIC_MINISWHITE) ? "MinIsWhite" : "MinIsBlack";
 		break;
 	case PHOTOMETRIC_PALETTE:
-		if ( source_bits > 4) target_type = imbpp8; else 
+		if ( source_bits > 4) target_type = imbpp8; else
 		if ( source_bits > 1) target_type = imbpp4; else
 		                      target_type = imbpp1;
 		photometric_descr = "Palette";
@@ -1009,7 +1009,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		target_type = imbpp24;
 		source_samples = 4;
 		rgba_striped = 1;
-		photometric_descr = 
+		photometric_descr =
 		photometric == PHOTOMETRIC_MASK?      "MASK" :
 		photometric == PHOTOMETRIC_CIELAB?    "CIELAB" :
 		photometric == PHOTOMETRIC_DEPTH?     "DEPTH" :
@@ -1048,11 +1048,11 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	}}
 
 	/* check source_bits and source_samples combinations - 3 and 4 samples for RGB, 1 and 2 for the others */
-	if 
+	if
 		(
-			(( target_type == imbpp24) && ( source_samples != 3 && source_samples != 4)) 
+			(( target_type == imbpp24) && ( source_samples != 3 && source_samples != 4))
 			||
-			(( target_type != imbpp24) && ( source_samples != 1 && source_samples != 2)) 
+			(( target_type != imbpp24) && ( source_samples != 1 && source_samples != 2))
 		) {
 		sprintf( fi-> errbuf, "Cannot handle combination SAMPLESPERPIXEL=%d, BITSPERSAMPLE=%d", source_samples, source_bits);
 		return false;
@@ -1061,7 +1061,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	/* Also check source_bits (tiff pixel format) and target_type (wanted prima format) as an extra assertion measure */
 	if (( target_type & imRealNumber ) == 0) {
 		switch ( target_type & imBPP ) {
-		case imbpp1: 
+		case imbpp1:
 			if ( source_bits == 1 ) goto VALID_COMBINATION;
 		case imbpp4:
 			if ( source_bits <= 4 && source_bits >= 2)   goto VALID_COMBINATION;
@@ -1081,22 +1081,22 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	return false;
 VALID_COMBINATION:
 
-	
-	/* check load options */   
+
+	/* check load options */
 	{
 		dPROFILE;
 		HV * profile = fi-> profile;
 		if ( pexist( InvertMinIsWhite)) InvertMinIsWhite = pget_i( InvertMinIsWhite);
 
 		/* check fax option applicability */
-		if ( source_bits == 1 && 
+		if ( source_bits == 1 &&
 			( photometric == PHOTOMETRIC_MINISWHITE || photometric == PHOTOMETRIC_MINISBLACK) &&
-			xres > 0 && yres > 0 && 
+			xres > 0 && yres > 0 &&
 			xres / yres > 1.9 && xres / yres < 2.1
 		) {
 			comp_method = 0;
 			TIFFGetField( tiff, TIFFTAG_COMPRESSION, &comp_method);
-			if ( 
+			if (
 				( comp_method == COMPRESSION_CCITTFAX3 || comp_method == COMPRESSION_CCITTFAX4) &&
 				( !pexist(Fax) || pget_i(Fax) )
 			) {
@@ -1117,7 +1117,7 @@ VALID_COMBINATION:
 		CImage( fi-> object)-> create_empty( fi-> object, 1, 1, target_type);
 		pset_i( width,  w);
 		pset_i( height, h);
-	} else 
+	} else
 		CImage( fi-> object)-> create_empty( fi-> object, w, h, target_type);
 	EVENT_HEADER_READY(fi);
 
@@ -1182,8 +1182,8 @@ VALID_COMBINATION:
 			full_image  = 1;
 		}
 	}
-			
-	if ( full_image || full_rgba_image)	 
+
+	if ( full_image || full_rgba_image)
 		tile_height = h;
 
 	if ( full_rgba_image ) {
@@ -1246,7 +1246,7 @@ VALID_COMBINATION:
 					if ( rgba_striped) {
 						/* RGBATiles are reversed */
 						sd   = - ((int)tile_width * source_samples);
-						src  = tifftile - sd * (tile_height - 1); 
+						src  = tifftile - sd * (tile_height - 1);
 					} else {
 						sd   = tilesz / tile_height;
 						src  = tifftile;
@@ -1257,7 +1257,7 @@ VALID_COMBINATION:
 					if ( read_failure) break;
 				}
 				tiffline = tiffstrip; /* set tileline to top of strip */
-			} else 
+			} else
 				tiffline = tiffstrip + (y % tile_height) * w * source_samples;
 		} else if ( rgba_striped) {
 			/* Is it time for a new strip? */
@@ -1278,8 +1278,8 @@ VALID_COMBINATION:
 				src  = tifftile + sd * (rows - 1);
 
 				/* RGBAStrips are reversed */
-				for (r = 0; r < rows; r++, src -= sd, dest += dd) 
-					scan_convert( src, dest, sd, source_bits, source_format, mid_bytes, mid_format); 
+				for (r = 0; r < rows; r++, src -= sd, dest += dd)
+					scan_convert( src, dest, sd, source_bits, source_format, mid_bytes, mid_format);
 				tiffline = tiffstrip; /* set tileline to top of strip */
 			} else
 				tiffline = tiffstrip + (y % rowsperstrip) * source_samples * w;
@@ -1365,13 +1365,13 @@ VALID_COMBINATION:
 						*dst0++ = *src0++;
 					}
 					byte_counter = mid_bytes;
-					while ( byte_counter--) 
+					while ( byte_counter--)
 						*dst1++ = *src0++;
 				}
 				break;
 			case 24:
 				/* copy alpha, the 4th channel */
-				memcpy( dst0 + w * 3 * byte_counter, src0 + w * 3 * byte_counter, w * byte_counter); 
+				memcpy( dst0 + w * 3 * byte_counter, src0 + w * 3 * byte_counter, w * byte_counter);
 			case 23:
 				src1 = src0 + w * byte_counter;
 				src2 = src1 + w * byte_counter;
@@ -1411,7 +1411,7 @@ VALID_COMBINATION:
 		case imbpp8: case imbpp8 | imGrayScale:
 			memcpy( primaline, tiffline, w);
 			break;
-		case imRGB: 
+		case imRGB:
 			cm_reverse_palette(( RGBColor*) tiffline, ( RGBColor*) primaline, w);
 			break;
 		case imShort:
@@ -1432,7 +1432,7 @@ VALID_COMBINATION:
 
 		if ( read_failure && !full_image) break;
 	}
-	
+
 	/* finalize */
 	free( tifftile);
 
@@ -1444,9 +1444,9 @@ VALID_COMBINATION:
 	} else {
 		EVENT_TOPDOWN_SCANLINES_FINISHED(fi);
 	}
-	
+
 	return true;
-}   
+}
 
 static void
 close_load( PImgCodec instance, PImgLoadFileInstance fi)
@@ -1479,7 +1479,7 @@ save_defaults( PImgCodec c)
 	pset_i( YPosition, 0);
 	pset_i( XResolution, 1200);
 	pset_i( YResolution, 1200);
-	
+
 	return profile;
 }
 
@@ -1491,13 +1491,13 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 	err_signal = 0;
 	if (!( tiff = TIFFClientOpen( "", "w", (thandle_t) fi-> req,
 		my_tiff_read, my_tiff_write,
-		my_tiff_seek, my_tiff_close, my_tiff_size, 
+		my_tiff_seek, my_tiff_close, my_tiff_size,
 		my_tiff_map, my_tiff_unmap)))
 		return nil;
 	return tiff;
 }
 
-static Bool   
+static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	dPROFILE;
@@ -1507,7 +1507,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	int x, y;
 	HV * profile = fi-> objectExtras;
 	uint16 u16;
-	
+
 	errbuf = fi-> errbuf;
 	err_signal = 0;
 
@@ -1545,35 +1545,35 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	}
 	TIFFSetField( tiff, TIFFTAG_RESOLUTIONUNIT, u16);
 
-	if ( pexist( Artist)) 
+	if ( pexist( Artist))
 		TIFFSetField( tiff, TIFFTAG_ARTIST, pget_c( Artist));
-	if ( pexist( Copyright)) 
+	if ( pexist( Copyright))
 		TIFFSetField( tiff, TIFFTAG_COPYRIGHT, pget_c( Copyright));
-	if ( pexist( DateTime)) 
+	if ( pexist( DateTime))
 		TIFFSetField( tiff, TIFFTAG_DATETIME, pget_c( DateTime));
-	if ( pexist( DocumentName)) 
+	if ( pexist( DocumentName))
 		TIFFSetField( tiff, TIFFTAG_DOCUMENTNAME, pget_c( DocumentName));
-	if ( pexist( HostComputer)) 
+	if ( pexist( HostComputer))
 		TIFFSetField( tiff, TIFFTAG_HOSTCOMPUTER, pget_c( HostComputer));
-	if ( pexist( ImageDescription)) 
+	if ( pexist( ImageDescription))
 		TIFFSetField( tiff, TIFFTAG_IMAGEDESCRIPTION, pget_c( ImageDescription));
-	if ( pexist( Make)) 
+	if ( pexist( Make))
 		TIFFSetField( tiff, TIFFTAG_MAKE, pget_c( Make));
-	if ( pexist( Model)) 
+	if ( pexist( Model))
 		TIFFSetField( tiff, TIFFTAG_MODEL, pget_c( Model));
-	if ( pexist( PageName)) 
+	if ( pexist( PageName))
 		TIFFSetField( tiff, TIFFTAG_PAGENAME, pget_c( PageName));
-	if ( pexist( Software)) 
+	if ( pexist( Software))
 		TIFFSetField( tiff, TIFFTAG_SOFTWARE, pget_c( Software));
 	else
 		TIFFSetField( tiff, TIFFTAG_SOFTWARE, "Prima");
-	if ( pexist( XPosition)) 
+	if ( pexist( XPosition))
 		TIFFSetField( tiff, TIFFTAG_XPOSITION, pget_f( XPosition));
-	if ( pexist( YPosition)) 
+	if ( pexist( YPosition))
 		TIFFSetField( tiff, TIFFTAG_YPOSITION, pget_f( YPosition));
-	if ( pexist( XResolution)) 
+	if ( pexist( XResolution))
 		TIFFSetField( tiff, TIFFTAG_XRESOLUTION, pget_f( XResolution));
-	if ( pexist( YResolution)) 
+	if ( pexist( YResolution))
 		TIFFSetField( tiff, TIFFTAG_YRESOLUTION, pget_f( YResolution));
 	{
 		Bool r1 = pexist( PageNumber), r2 = pexist( PageNumber2);
@@ -1588,7 +1588,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			TIFFSetField( tiff, TIFFTAG_PAGENUMBER, u16, u2);
 		}
 	}
-	
+
 	/* write data */
 	TIFFSetField( tiff, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	TIFFSetField( tiff, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
@@ -1598,15 +1598,15 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		Byte * r = i-> data + ( i-> h - 1 ) * i-> lineSize;
 		uint16 photometric = PHOTOMETRIC_MINISBLACK;
 		switch ( i-> type) {
-		case imbpp1: 
+		case imbpp1:
 			if ( p[0].r == 0 && p[0].g == 0 && p[0].b == 0 &&
-				p[1].r == 255 && p[1].g == 255 && p[1].b == 255) 
+				p[1].r == 255 && p[1].g == 255 && p[1].b == 255)
 				photometric = PHOTOMETRIC_MINISBLACK;
-			else if 
+			else if
 				( p[1].r == 0 && p[1].g == 0 && p[1].b == 0 &&
-				p[0].r == 255 && p[0].g == 255 && p[0].b == 255) 
+				p[0].r == 255 && p[0].g == 255 && p[0].b == 255)
 				photometric = PHOTOMETRIC_MINISWHITE;
-			else 
+			else
 				photometric = PHOTOMETRIC_PALETTE;
 			break;
 		case imbpp4:
@@ -1620,7 +1620,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		TIFFSetField(tiff, TIFFTAG_PHOTOMETRIC, photometric);
 		TIFFSetField( tiff, TIFFTAG_SAMPLESPERPIXEL, 1);
 		TIFFSetField( tiff, TIFFTAG_BITSPERSAMPLE, i-> type & imBPP);
-			
+
 		if ( photometric == PHOTOMETRIC_PALETTE) {
 			int x, lim = (i-> palSize > 256) ? 256 : i-> palSize;
 			uint16 red[256], green[256], blue[256];
@@ -1667,7 +1667,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			return false;
 		}
 		conv2 = conv1 + i-> lineSize + i-> w;
-		CImage( dup)-> reset( dup, imRGB, nil, 0); 
+		CImage( dup)-> reset( dup, imRGB, nil, 0);
 		lineSize = PImage( dup)-> lineSize;
 		r = PImage( dup)-> data + ( i-> h - 1 ) * lineSize;
 		TIFFSetField(tiff, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
@@ -1677,7 +1677,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			Byte * sconv1 = conv1 + 3, * sconv2 = conv2;
 			bc_mono_byte( mask, conv2, i-> w);
 			bc_rgb_bgri( r, conv1, i-> w);
-			for ( x = 0; x < i-> w; x++, sconv1 += 4, sconv2++) 
+			for ( x = 0; x < i-> w; x++, sconv1 += 4, sconv2++)
 				*sconv1 = *sconv2 ? 0 : 255;
 			if ( !TIFFWriteScanline( tiff, conv1, y, 0) || err_signal) {
 				free( conv1);
@@ -1696,7 +1696,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	return true;
 }
 
-static void 
+static void
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
 	errbuf = fi-> errbuf;
@@ -1714,15 +1714,15 @@ error_handler( const char* module, const char* fmt, va_list ap)
 	err_signal = 1;
 }
 
-static void * 
+static void *
 init( PImgCodecInfo * info, void * param)
 {
 	*info = &codec_info;
-	codec_info. vendor  = ( char *) TIFFGetVersion(); 
+	codec_info. vendor  = ( char *) TIFFGetVersion();
 	old_error_handler   = TIFFSetErrorHandler(( TIFFErrorHandler) error_handler);
 	old_warning_handler = TIFFSetWarningHandler(( TIFFErrorHandler) nil);
 	return (void*)1;
-}   
+}
 
 static void
 done( PImgCodec instance)
@@ -1731,7 +1731,7 @@ done( PImgCodec instance)
 	TIFFSetErrorHandler( old_warning_handler);
 }
 
-void 
+void
 apc_img_codec_tiff( void )
 {
 	struct ImgCodecVMT vmt;
@@ -1740,11 +1740,11 @@ apc_img_codec_tiff( void )
 	vmt. load_defaults = load_defaults;
 	vmt. done          = done;
 	vmt. open_load     = open_load;
-	vmt. load          = load; 
-	vmt. close_load    = close_load; 
+	vmt. load          = load;
+	vmt. close_load    = close_load;
 	vmt. save_defaults = save_defaults;
 	vmt. open_save     = open_save;
-	vmt. save          = save; 
+	vmt. save          = save;
 	vmt. close_save    = close_save;
 	apc_img_register( &vmt, nil);
 }

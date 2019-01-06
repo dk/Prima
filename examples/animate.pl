@@ -63,7 +63,7 @@ while ( my $info = $x-> next) {
 	}
 	$::application-> rop(rop::CopyPut);
 	$::application-> put_image( $X, $Y, $c);
-	
+
 	$::application-> sync;
 	select(undef, undef, undef, $info-> {delay});
 

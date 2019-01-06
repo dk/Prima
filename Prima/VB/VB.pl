@@ -53,8 +53,8 @@ my $fontDlg;
 sub open_dialog
 {
 	my %profile = @_;
-	$openFileDlg = Prima::OpenDialog-> create( 
-		icon => $VB::ico, 
+	$openFileDlg = Prima::OpenDialog-> create(
+		icon => $VB::ico,
 		directory => $VB::main-> {ini}-> {OpenPath},
 		system => 1,
 	) unless $openFileDlg;
@@ -65,7 +65,7 @@ sub open_dialog
 sub save_dialog
 {
 	my %profile = @_;
-	$saveFileDlg = Prima::SaveDialog-> create( 
+	$saveFileDlg = Prima::SaveDialog-> create(
 		icon => $VB::ico,
 		directory => $VB::main-> {ini}-> {SavePath},
 		system => 1,
@@ -77,8 +77,8 @@ sub save_dialog
 sub image_open_dialog
 {
 	my %profile = @_;
-	$openImageDlg = Prima::ImageOpenDialog-> create( 
-		icon => $VB::ico, 
+	$openImageDlg = Prima::ImageOpenDialog-> create(
+		icon => $VB::ico,
 		directory => $VB::main-> {ini}-> {OpenPath},
 	) unless $openImageDlg;
 	$openImageDlg-> set( %profile);
@@ -88,7 +88,7 @@ sub image_open_dialog
 sub image_save_dialog
 {
 	my %profile = @_;
-	$saveImageDlg = Prima::ImageSaveDialog-> create( 
+	$saveImageDlg = Prima::ImageSaveDialog-> create(
 		icon => $VB::ico,
 		directory => $VB::main-> {ini}-> {SavePath},
 	) unless $saveImageDlg;
@@ -99,9 +99,9 @@ sub image_save_dialog
 sub font_dialog
 {
 	my %profile = @_;
-	$fontDlg = Prima::FontDialog-> create( 
+	$fontDlg = Prima::FontDialog-> create(
 		icon => $VB::ico,
-		name => 'Select font', 
+		name => 'Select font',
 	) unless $fontDlg;
 	$fontDlg-> set( %profile);
 	return $fontDlg;
@@ -274,7 +274,7 @@ sub Div_Change
 		width => $self-> width - $right,
 		left  => $right,
 	);
-	$self-> {div_ratio} = $left / ( $self-> width || 1 ) 
+	$self-> {div_ratio} = $left / ( $self-> width || 1 )
 		unless $self-> {lock_div_ratio};
 }
 
@@ -312,7 +312,7 @@ sub Selector_Change
 	} else {
 		my @f = $VB::form-> widgets;
 		for ( @f) {
-			$enter = $_, $_-> show, $_-> focus, last 
+			$enter = $_, $_-> show, $_-> focus, last
 				if $t eq $_-> name;
 		}
 	}
@@ -365,7 +365,7 @@ sub widget_changed
 			my $data = $self-> {opened}-> {widget}-> prf( $id);
 			$self-> {opened}-> set( $data);
 			$self-> {sync} = undef;
-		}   
+		}
 	}
 	my $list = $self-> {currentList};
 	my $ix = $list-> {index}-> {$id};
@@ -480,7 +480,7 @@ sub update_markings
 	my @w = $VB::form-> marked_widgets;
 	return enter_widget( $VB::form) if 0 == @w;
 	return enter_widget( $w[0])     if 1 == @w;
-	
+
 	my $self = $VB::inspector;
 	$self-> close_item;
 	my $n1 = $self-> {current} = shift @w;
@@ -719,8 +719,8 @@ sub on_close
 	my $self = $_[0];
 	if ( $self-> {modified} || ( $VB::editor && $VB::editor-> {modified})) {
 		my $name = defined ( $VB::main-> {fmName}) ? $VB::main-> {fmName} : 'Untitled';
-		my $r = Prima::MsgBox::message( 
-			"Save changes to $name?", 
+		my $r = Prima::MsgBox::message(
+			"Save changes to $name?",
 			mb::YesNoCancel|mb::Warning
 		);
 		if ( $r == mb::Yes) {
@@ -755,7 +755,7 @@ sub veil
 	( $r[0], $r[2]) = ( $r[2], $r[0]) if $r[2] < $r[0];
 	( $r[1], $r[3]) = ( $r[3], $r[1]) if $r[3] < $r[1];
 	@r = $self-> client_to_screen( @r);
-	$::application-> rubberband( 
+	$::application-> rubberband(
 		clipRect => [ $self-> client_to_screen( 0,0,$self->size ) ],
 		$draw ?
 			( rect => \@r ) :
@@ -804,8 +804,8 @@ sub on_mousemove
 	my ( $self, $mod, $x, $y) = @_;
 	unless ( $self-> {transaction}) {
 		if ( abs( $self-> {guidelineX} - $x) < 3) {
-			$self-> pointer(( abs( $self-> {guidelineY} - $y) < 3) ? 
-				cr::Move : 
+			$self-> pointer(( abs( $self-> {guidelineY} - $y) < 3) ?
+				cr::Move :
 				cr::SizeWE);
 		} elsif ( abs( $self-> {guidelineY} - $y) < 3) {
 			$self-> pointer( cr::SizeNS);
@@ -986,7 +986,7 @@ sub fm_subalign
 	my ( $forward) = @_;
 	my @marked_widgets = $VB::form-> marked_widgets;
 	return unless scalar @marked_widgets;
-	my @sorted_widgets = sort { $a-> {creationOrder} <=> $b-> {creationOrder}} 
+	my @sorted_widgets = sort { $a-> {creationOrder} <=> $b-> {creationOrder}}
 		$VB::form-> widgets;
 	my %marked = map { $_-> {creationOrder}  => 1 } @marked_widgets;
 	return if @sorted_widgets == scalar keys %marked;
@@ -1008,7 +1008,7 @@ sub fm_stepalign
 	my ($forward) = @_;
 	my @marked_widgets = $VB::form-> marked_widgets;
 	return unless scalar @marked_widgets;
-	my @sorted_widgets = sort { $a-> {creationOrder} <=> $b-> {creationOrder}} 
+	my @sorted_widgets = sort { $a-> {creationOrder} <=> $b-> {creationOrder}}
 		$VB::form-> widgets;
 	my %marked = map { $_-> {creationOrder}  => 1 } @marked_widgets;
 	my @marked_indexes = grep { exists $marked{$_}} (0..$#sorted_widgets);
@@ -1020,14 +1020,14 @@ sub fm_stepalign
 		push @new_indexes, grep { ! exists $marked{$_}} (0..$marked_indexes[-1]);
 		push @new_indexes, ($marked_indexes[-1]+1)
 			if $marked_indexes[-1] < $#sorted_widgets;
-		push @new_indexes, @marked_indexes; 
+		push @new_indexes, @marked_indexes;
 		if ( $marked_indexes[-1] < $#sorted_widgets - 1) {
 			push @new_indexes, ($marked_indexes[-1]+2..$#sorted_widgets);
 		}
 	} else {
 		push @new_indexes, (0..$marked_indexes[0]-2)
 			if $marked_indexes[0] > 1;
-		push @new_indexes, @marked_indexes; 
+		push @new_indexes, @marked_indexes;
 		my $anchor = @new_indexes;
 		push @new_indexes, ($marked_indexes[0]-1)
 			if $marked_indexes[0] > 0;
@@ -1043,8 +1043,8 @@ sub fm_realign
 {
 	my $self = $VB::form;
 	return unless $self;
-	$_-> bring_to_front for 
-		sort { $a-> {creationOrder} <=> $b-> {creationOrder}} 
+	$_-> bring_to_front for
+		sort { $a-> {creationOrder} <=> $b-> {creationOrder}}
 		$VB::form-> widgets;
 }
 
@@ -1064,7 +1064,7 @@ sub fm_duplicate
 			profile      => $_-> {profile},
 		);
 		$prf{realClass} = $_-> {realClass} if defined $_-> {realClass};
-		my $j = $self-> insert_new_control( $_-> left + 14, $_-> bottom + 14, 
+		my $j = $self-> insert_new_control( $_-> left + 14, $_-> bottom + 14,
 			$wjs{$_-> prf('owner')}, %prf);
 		next unless $j;
 		$j-> focus unless scalar @r;
@@ -1097,7 +1097,7 @@ sub fm_copy
 
 sub fm_paste
 {
-	return unless $VB::form; 
+	return unless $VB::form;
 	my @seq = $VB::main-> inspect_load_data( $::application-> Clipboard-> text, 0);
 	return unless @seq;
 
@@ -1109,8 +1109,8 @@ sub fm_paste
 	my $classes = $VB::main-> {classes};
 
 	for ( $i = 0; $i < scalar @seq; $i+= 2) {
-		my ( $key, $hash) = ( $seq[$i], $seq[$i + 1]); 
-		
+		my ( $key, $hash) = ( $seq[$i], $seq[$i + 1]);
+
 		# handling name clashes
 		my $j = 0;
 		$key = $seq[$i] . "_$j", $j++ while exists $names{$key};
@@ -1261,7 +1261,7 @@ sub profile_default
 		width          => $::application-> width - 12,
 		left           => 6,
 		bottom         => $::application-> height - $::application->uiScaling * 106 -
-			$::application-> get_system_value(sv::YTitleBar) - 
+			$::application-> get_system_value(sv::YTitleBar) -
 			$::application-> get_system_value(sv::YMenu),
 		sizeDontCare   => 0,
 		originDontCare => 0,
@@ -1280,7 +1280,7 @@ sub profile_default
 			['edit' => '~Edit' => [
 				[copy => 'Cop~y' => 'Ctrl+C' => '^C' =>       sub { Prima::VB::Form::fm_copy(); }],
 				[paste => '~Paste' => 'Ctrl+V' => '^V' =>      sub { Prima::VB::Form::fm_paste(); }],
-				[delete => '~Delete' => 'Ctrl-X' => '^X' =>     sub { Prima::VB::Form::fm_delete(); } ], 
+				[delete => '~Delete' => 'Ctrl-X' => '^X' =>     sub { Prima::VB::Form::fm_delete(); } ],
 				[selectall => '~Select all' => 'Ctrl+A' => '^A' => sub { Prima::VB::Form::fm_selectall(); }],
 				[dup => 'D~uplicate'  => 'Ctrl+D' => '^D' => sub { Prima::VB::Form::fm_duplicate(); }],
 				[],
@@ -1294,7 +1294,7 @@ sub profile_default
 				[setclass => '~Change class...' => sub { Prima::VB::Form::fm_reclass();}],
 				[setorder => 'Creation ~order' => sub { Prima::VB::Form::fm_creationorder(); } ],
 				[togglelock => 'To~ggle lock' => 'Ctrl+G' => '^G' => sub { Prima::VB::Form::fm_toggle_lock(); }],
-				[shortcuts => 'Edit shortcuts...' => 'edit_menu' ], 
+				[shortcuts => 'Edit shortcuts...' => 'edit_menu' ],
 			]],
 			['~View' => [
 				[objects => '~Object Inspector' => 'F11' => 'F11' => sub { $_[0]-> bring_inspector; }],
@@ -1472,8 +1472,8 @@ sub init
 	$self-> {pages}   = \@pages;
 	$self-> {gridAlert} = 5;
 	my $font = $self-> font;
-	
-	$self-> {iniFile} = Prima::IniFile-> create( 
+
+	$self-> {iniFile} = Prima::IniFile-> create(
 		file    => Prima::Utils::path('VisualBuilder'),
 		default => [
 			'View' => [
@@ -1524,10 +1524,10 @@ sub on_close
 sub on_destroy
 {
 	$_[0]-> {ini}-> {MainPanelRect} = join( ' ', $_[0]-> rect);
-	my @rx = ( $_[0]-> {ini}-> {ObjectInspectorVisible} = ( $VB::inspector ? 1 : 0)) 
+	my @rx = ( $_[0]-> {ini}-> {ObjectInspectorVisible} = ( $VB::inspector ? 1 : 0))
 		? $VB::inspector-> rect : ((-1)x4);
 	$_[0]-> {ini}-> {ObjectInspectorRect} = join( ' ', @rx);
-	@rx = ( $_[0]-> {ini}-> {CodeEditorVisible} = ( $VB::editor ? 1 : 0)) 
+	@rx = ( $_[0]-> {ini}-> {CodeEditorVisible} = ( $VB::editor ? 1 : 0))
 		? $VB::editor-> rect : ((-1)x4);
 	$_[0]-> {ini}-> {CodeEditorRect} = join( ' ', @rx);
 	$_[0]-> {ini}-> {OpenPath} = $openFileDlg-> directory if $openFileDlg;
@@ -1703,9 +1703,9 @@ sub new
 
 sub inspect_load_data
 {
-	my ($self, $data, $asFile) = @_; 
+	my ($self, $data, $asFile) = @_;
 	my @preload_modules;
-	
+
 	my $fn = ( $asFile ? $data : "input data");
 	if ( $asFile) {
 		unless (CORE::open( F, "< $data")) {
@@ -1719,10 +1719,10 @@ sub inspect_load_data
 
 	my @d = split( "\n", $data);
 	undef $data;
-	
-	
+
+
 	if ( !defined($d[0]) || !($d[0] =~ /^# VBForm/ )) {
-INV:   
+INV:
 		Prima::MsgBox::message("Invalid format of $fn");
 		return;
 	}
@@ -1736,8 +1736,8 @@ INV:
 	for ( $i = 0; $i < scalar @d; $i++) {
 		last unless $d[$i] =~ /^#/;
 		next unless $d[$i] =~ /^#\s*\[([^\]]+)\](.*)$/;
-		if ( $1 eq 'preload') { 
-			push( @preload_modules, split( ' ', $2)); 
+		if ( $1 eq 'preload') {
+			push( @preload_modules, split( ' ', $2));
 		}
 	}
 	goto INV if $i >= scalar @d;
@@ -1756,7 +1756,7 @@ INV:
 		Prima::MsgBox::message("Error loading $fn:$@");
 		return;
 	}
-	
+
 	$Prima::VB::VBLoader::builderActive = 1;
 	my @ret = $sub-> ();
 	$Prima::VB::VBLoader::builderActive = 0;
@@ -1766,7 +1766,7 @@ INV:
 sub preload_modules
 {
 	my $self = shift;
-	
+
 
 }
 
@@ -1775,7 +1775,7 @@ sub push_widgets
 	my $self     = shift;
 	my $classes = $self-> {classes};
 	my $callback = shift if $_[0] && ref($_[0]) eq 'CODE';
-	
+
 	my @seq = @_;
 	my $main = $VB::form-> prf('name');
 	my %owners  = ( $main => '');
@@ -1789,11 +1789,11 @@ sub push_widgets
 	}
 
 	for ( keys %dep) {
-		$owners{$_} = exists $dep{$_}-> {profile}-> {owner} ? 
-			$dep{$_}-> {profile}-> {owner} : 
+		$owners{$_} = exists $dep{$_}-> {profile}-> {owner} ?
+			$dep{$_}-> {profile}-> {owner} :
 			$main;
 	}
-	
+
 	local *do_layer = sub
 	{
 		my $id = $_[0];
@@ -1849,13 +1849,13 @@ sub load_file
 
 	my @seq = $self-> inspect_load_data( $fileName, 1);
 	return unless @seq;
-	
+
 	$self-> {fmName} = $fileName;
 
 	$VB::main-> wait;
 	my ( $i, $mf, $main, $fmindex);
 	my $classes = $self-> {classes};
-	
+
 	for ( $i = 0; $i < scalar @seq; $i+= 2) {
 		my $hash = $seq[$i + 1];
 		if ( $hash-> {parent}) {
@@ -1869,7 +1869,7 @@ sub load_file
 		}
 	}
 
-	defined($main) ? 
+	defined($main) ?
 		splice( @seq, $fmindex, 2) :
 		( $main = 'Form1', $mf = {});
 
@@ -1900,7 +1900,7 @@ sub load_file
 	$VB::inspector-> {selectorChanging} = 1 if $VB::inspector;
 	my $loaded;
 	$self-> push_widgets( sub {
-		$self-> text( sprintf( "Loaded %d%%", ($loaded++ / $maxwij) * 100)); 
+		$self-> text( sprintf( "Loaded %d%%", ($loaded++ / $maxwij) * 100));
 	}, @seq);
 	$VB::form-> show;
 	$VB::inspector-> {selectorChanging}-- if $VB::inspector;
@@ -1929,7 +1929,7 @@ sub write_form
 	my ( $self, $partialExport) = @_;
 	$VB::writeMode = 0;
 
-	my @cmp = $partialExport ? 
+	my @cmp = $partialExport ?
 		$VB::form-> marked_widgets : $VB::form-> widgets;
 	my %preload_modules;
 
@@ -2039,7 +2039,7 @@ PREPREHEAD
 	my %modules = map { $_-> {module} => 1 } @cmp;
 
 	Prima::VB::CodeEditor::sync_code;
-	
+
 	my $c = <<PREHEAD;
 
 $VB::code
@@ -2313,9 +2313,9 @@ sub form_run
 	my $uiScaling = $::application->uiScaling;
 	my @saved_font = @Prima::Widget::default_font_box;
 	eval{
-		local $SIG{__WARN__} = sub { 
+		local $SIG{__WARN__} = sub {
 			return if $_[0] =~ /^Subroutine.*redefined/;
-			die $_[0] 
+			die $_[0]
 		};
 		my $n = $VB::form-> prf('name');
 		my %param;
@@ -2356,19 +2356,19 @@ sub form_run
 	if ( $error ) {
 		my $msg = "$error";
 		$msg =~ s/ \(eval \d+\)//g;
-		if ( defined( $Prima::VB::VBLoader::eventContext[0]) && 
+		if ( defined( $Prima::VB::VBLoader::eventContext[0]) &&
 			length ($Prima::VB::VBLoader::eventContext[0])) {
 			$VB::main-> bring_inspector;
 			$VB::main-> {topLevel}-> { "$VB::inspector" } = 1;
 			$VB::inspector-> Selector-> text( $Prima::VB::VBLoader::eventContext[0]);
 			if ( $Prima::VB::VBLoader::eventContext[0] eq $VB::inspector-> Selector-> text &&
 					length($Prima::VB::VBLoader::eventContext[1])) {
-				$VB::inspector-> set_monger_index(1); 
+				$VB::inspector-> set_monger_index(1);
 				my $list = $VB::inspector-> {currentList};
 				my $ix = $list-> {index}-> {$Prima::VB::VBLoader::eventContext[1]};
 				if ( defined $ix) {
 					$list-> focusedItem( $ix);
-					$VB::inspector-> {panel}-> select; 
+					$VB::inspector-> {panel}-> select;
 				}
 			}
 		}
@@ -2431,10 +2431,10 @@ sub bring_font_dialog
 	if ( $VB::font_dialog) {
 		$VB::font_dialog-> restore if $VB::font_dialog-> windowState == ws::Minimized;
 	} else {
-		$VB::font_dialog = Prima::FontDialog-> new( 
+		$VB::font_dialog = Prima::FontDialog-> new(
 			borderIcons => bi::All & ~bi::Maximize,
 			taskListed  => 1,
-			onDestroy   => sub { $VB::font_dialog = undef }, 
+			onDestroy   => sub { $VB::font_dialog = undef },
 		);
 		my $y;
 		for ( $VB::font_dialog-> widgets) {
@@ -2442,7 +2442,7 @@ sub bring_font_dialog
 			$y = $_-> right;
 			$_-> set( visible => 0, enabled => 0);
 		}
-		$VB::font_dialog-> Size-> set( 
+		$VB::font_dialog-> Size-> set(
 			left  => $VB::font_dialog-> Size-> left,
 			right => $y
 		);
@@ -2457,10 +2457,10 @@ sub bring_color_dialog
 	if ( $VB::color_dialog) {
 		$VB::color_dialog-> restore if $VB::color_dialog-> windowState == ws::Minimized;
 	} else {
-		$VB::color_dialog = Prima::ColorDialog-> new( 
+		$VB::color_dialog = Prima::ColorDialog-> new(
 			borderIcons => bi::All & ~bi::Maximize,
 			taskListed  => 1,
-			onDestroy => sub { $VB::color_dialog = undef }, 
+			onDestroy => sub { $VB::color_dialog = undef },
 		);
 		my $y;
 		for ( $VB::color_dialog-> widgets) {
@@ -2512,7 +2512,7 @@ $VB::inspector = Prima::VB::ObjectInspector-> create(
 ) if $VB::main-> {ini}-> {ObjectInspectorVisible};
 $VB::code = '';
 $VB::editor = Prima::VB::CodeEditor-> create() if $VB::main-> {ini}-> {CodeEditorVisible};
-$VB::form = Prima::VB::Form-> create; 
+$VB::form = Prima::VB::Form-> create;
 Prima::VB::ObjectInspector::renew_widgets;
 Prima::VB::ObjectInspector::preload() unless $VB::fastLoad;
 $VB::main-> update_menu();
@@ -2541,7 +2541,7 @@ the Prima toolkit. It provides rich set of perl-composed widgets,
 whose can be inserted into a form by simple actions. The form
 can be stored in a file and loaded by either user program or
 a simple wrapper, C<utils/prima-fmview.pl>; the form can be also stored as
-a valid perl program. 
+a valid perl program.
 
 A form file typically has I<.fm> extension, an can be loaded
 by using L<Prima::VB::VBLoader> module. The following example
@@ -2551,7 +2551,7 @@ is the only content of C<prima-fmview.pl>:
 	my $ret = Prima::VBLoad( $ARGV[0] );
 	die "$@\n" unless $ret;
 	$ret-> execute;
-	
+
 and is usually sufficient for executing a form file.
 
 =head1 Help
@@ -2560,12 +2560,12 @@ The builder provides three main windows, that are used
 for designing. These are called I<main panel>, I<object inspector>
 and I<form window>. When the builder is started, the form window is empty.
 
-The main panel consists of the menu bar, speed buttons and the widget 
+The main panel consists of the menu bar, speed buttons and the widget
 buttons. If the user presses a widget button, and then clicks the mouse
 on the form window, the designated widget is inserted into the form
-and becomes a child of the form window.  If the click was made on a visible 
-widget in the form window, the newly inserted widget becomes a children of 
-that widget. After the widget is inserted, its properties are accessible 
+and becomes a child of the form window.  If the click was made on a visible
+widget in the form window, the newly inserted widget becomes a children of
+that widget. After the widget is inserted, its properties are accessible
 via the object inspector window.
 
 The menu bar contains the following commands:
@@ -2579,7 +2579,7 @@ The menu bar contains the following commands:
 =item New
 
 Closes the current form and opens a new, empty form.
-If the old form was not saved, the user is asked if the changes made 
+If the old form was not saved, the user is asked if the changes made
 have to be saved.
 
 This command is an alias to a 'new file' icon on the panel.
@@ -2587,17 +2587,17 @@ This command is an alias to a 'new file' icon on the panel.
 =item Open
 
 Invokes a file open dialog, so a I<.fm> form file can be opened.
-After the successful file load, all form widgets are visible and 
+After the successful file load, all form widgets are visible and
 available for editing.
 
 This command is an alias to an 'open folder' icon on the panel.
 
 =item Save
 
-Stores the form into a file. The user here can select a type 
+Stores the form into a file. The user here can select a type
 of the file to be saved. If the form is saved as I<.fm> form
 file, then it can be re-loaded either in the builder or in the
-user program ( see L<Prima::VB::VBLoader> for details ). 
+user program ( see L<Prima::VB::VBLoader> for details ).
 If the form is saved as I<.pl> program, then it
 can not be loaded; instead, the program can be run immediately
 without the builder or any supplementary code.
@@ -2615,7 +2615,7 @@ asked every time the command is invoked.
 =item Close
 
 Closes the form and removes the form window. If the form window
-was changed, the user is asked if the changes made 
+was changed, the user is asked if the changes made
 have to be saved.
 
 =back
@@ -2627,8 +2627,8 @@ have to be saved.
 =item Copy
 
 Copies the selected widgets into the clipboard, so they can be
-inserted later by using L<Paste> command. 
-The form window can not be copied. 
+inserted later by using L<Paste> command.
+The form window can not be copied.
 
 =item Paste
 
@@ -2646,7 +2646,7 @@ The form window can not be deleted.
 
 =item Select all
 
-Selects all of the widgets, inserted in the form window, except the 
+Selects all of the widgets, inserted in the form window, except the
 form window itself.
 
 =item Duplicate
@@ -2776,7 +2776,7 @@ and events, it is still a little bit more convenient than nothing.
 
 =head2 Form window
 
-The form widget is a common parent for all widgets, created by the 
+The form widget is a common parent for all widgets, created by the
 builder. The form window provides the following basic navigation
 functionality.
 
@@ -2797,14 +2797,14 @@ To explicitly select a widget in addition to the already selected
 ones, hold the C<shift> key while clicking on a widget. This combination
 also deselects the widget. To select all widgets on the form window,
 call L<Select all> command from the menu. To prevent widgets from being
-occasionally selected, lock them with "Edit/Toggle lock" command or 
+occasionally selected, lock them with "Edit/Toggle lock" command or
 Ctrl+mouse click.
 
 =item Moving
 
 Dragging the mouse can move the selected widgets. The widgets
 can be snapped to the grid or the guidelines during the move. If one of
-the moving widgets is selected in the object inspector window, 
+the moving widgets is selected in the object inspector window,
 the coordinate changes are reflected in the C<origin> property.
 
 If the C<Tab> key is pressed during the move, the mouse pointer is changed
@@ -2816,7 +2816,7 @@ the vertical; other two are the horizontal only and the vertical only.
 
 The sizeable widgets can be dynamically resized. Regardless to the
 amount of the selected widgets, only one widget at a time can be resized.
-If the resized widget is selected in the object inspector window, 
+If the resized widget is selected in the object inspector window,
 the size changes are reflected in the C<size> property.
 
 =item Context menus
@@ -2851,25 +2851,25 @@ that the property is initialized. To remove a property from the initialization l
 double-click on it, so it is grayed again. Some very basic properties as C<name>
 can not be deselected. This is because the builder keeps a name-keyed list; another
 consequence of this fact is that no widgets of same name can exist simultaneously
-within the builder. 
+within the builder.
 
-The events, much like the properties, are accessible for direct change. 
+The events, much like the properties, are accessible for direct change.
 All the events provide a small editor, so the custom code can be supplied.
 This code is executed when the form is run or loaded via C<Prima::VB::VBLoader>
-interface. 
+interface.
 
 The full explanation of properties and events is not provided here. It is
 not even the goal of this document, because the builder can work with the
 widgets irrespective of their property or event capabilities; this information
 is extracted by native toolkit functionality. To read on what each property or
 event means, use the documentation on the class of interest; L<Prima::Widget> is a good
-start because it encompasses the ground C<Prima::Widget> functionality. 
+start because it encompasses the ground C<Prima::Widget> functionality.
 The other widgets are ( hopefully ) documented in their modules, for example,
 C<Prima::ScrollBar> documentation can be found in L<Prima::ScrollBar>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::VB::VBLoader> 
+L<Prima>, L<Prima::VB::VBLoader>
 
 =head1 AUTHOR
 

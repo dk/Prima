@@ -80,7 +80,7 @@ Bool
 apc_clipboard_has_format( Handle self, Handle id)
 {
 	id = cf2CF( id);
-	return IsClipboardFormatAvailable( id) || 
+	return IsClipboardFormatAvailable( id) ||
 		(( id == CF_TEXT) && IsClipboardFormatAvailable( CF_UNICODETEXT));
 }
 
@@ -138,7 +138,7 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 				apcErrClear;
 				c->length = WideCharToMultiByte(CP_UTF8, 0, ptr, -1, NULL, 0, NULL, 0);
 				if (( c->data = malloc( c-> length ) )) {
-					WideCharToMultiByte(CP_UTF8, 0, ptr, -1, (LPSTR)c->data, c->length, NULL, 0); 
+					WideCharToMultiByte(CP_UTF8, 0, ptr, -1, (LPSTR)c->data, c->length, NULL, 0);
 					if ( c->length > 0) c->length--; // terminating 0
 					ret = true;
 				} else {
@@ -164,11 +164,11 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 				len = strlen(( char*) ptr);
 				c-> length = 0;
 				if ((c-> data = ( Byte *) malloc( len))) {
-					for ( i = 0; i < len; i++) 
-						if ( ptr[i] != '\r' || (( i < len) && (ptr[i+1] != '\n'))) 
+					for ( i = 0; i < len; i++)
+						if ( ptr[i] != '\r' || (( i < len) && (ptr[i+1] != '\n')))
 							c-> data[c-> length++] = ptr[i];
 					ret = true;
-				} 
+				}
 				GlobalUnlock( ph);
 				return ret;
 			}
@@ -219,7 +219,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 			return true;
 		case CF_UNICODETEXT:
 			{
-				int ulen = MultiByteToWideChar(CP_UTF8, 0, (char*) c-> data, c-> length, NULL, 0) + 1; 
+				int ulen = MultiByteToWideChar(CP_UTF8, 0, (char*) c-> data, c-> length, NULL, 0) + 1;
 				void *ptr = nil;
 				HGLOBAL glob;
 
@@ -243,8 +243,8 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 				char *dst;
 				HGLOBAL glob, oemglob;
 
-				for ( i = 0; i < c-> length; i++) 
-					if (c-> data[i] == '\n' && ( i == 0 || c-> data[i-1] != '\r')) 
+				for ( i = 0; i < c-> length; i++)
+					if (c-> data[i] == '\n' && ( i == 0 || c-> data[i-1] != '\r'))
 						cr++;
 
 				glob    = GlobalAlloc( GMEM_DDESHARE, ulen + cr + 1);
@@ -255,7 +255,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 				if ( ptr && oemptr) {
 					dst = ( char *) ptr;
 					for ( i = 0; i < c-> length; i++) {
-						if ( c-> data[i] == '\n' && ( i == 0 || c-> data[i-1] != '\r')) 
+						if ( c-> data[i] == '\n' && ( i == 0 || c-> data[i-1] != '\r'))
 							*(dst++) = '\r';
 						*(dst++) = c-> data[i];
 					}

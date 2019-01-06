@@ -1,5 +1,5 @@
 #  Created by:
-#     Dmitry Karasik <dk@plab.ku.dk> 
+#     Dmitry Karasik <dk@plab.ku.dk>
 #     Anton Berezin  <tobez@tobez.org>
 package Prima::Lists;
 
@@ -20,7 +20,7 @@ use Prima::IntUtils;
 use Prima::Utils;
 use Cwd;
 
-package 
+package
     ci;
 
 BEGIN {
@@ -87,16 +87,16 @@ sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
 	$self-> SUPER::profile_check_in( $p, $default);
-	$p-> { multiSelect} = 1 if 
-		exists $p-> { extendedSelect} && 
-		$p-> {extendedSelect} && 
+	$p-> { multiSelect} = 1 if
+		exists $p-> { extendedSelect} &&
+		$p-> {extendedSelect} &&
 		!exists $p-> {multiSelect};
-	$p-> { autoHeight} = 0 if 
-		exists $p-> { itemHeight} && 
+	$p-> { autoHeight} = 0 if
+		exists $p-> { itemHeight} &&
 		!exists $p-> {autoHeight};
-	my $multi_column = exists($p->{multiColumn}) ? 
+	my $multi_column = exists($p->{multiColumn}) ?
 		$p->{multiColumn} : $default->{multiColumn};
-	my $vertical = exists($p->{vertical}) ? 
+	my $vertical = exists($p->{vertical}) ?
 		$p->{vertical} : $default->{vertical};
 	$p-> { integralHeight} = 1 if
 		! exists $p->{integralHeight} and
@@ -113,9 +113,9 @@ sub init
 	my $self = shift;
 	for ( qw( lastItem topItem focusedItem))
 		{ $self-> {$_} = -1; }
-	for ( qw( 
-		autoHScroll autoVScroll scrollTransaction gridColor dx dy hScroll vScroll 
-		itemWidth offset multiColumn count autoHeight multiSelect 
+	for ( qw(
+		autoHScroll autoVScroll scrollTransaction gridColor dx dy hScroll vScroll
+		itemWidth offset multiColumn count autoHeight multiSelect
 		extendedSelect borderWidth dragable ))
 		{ $self-> {$_} = 0; }
 	for ( qw( drawGrid itemHeight integralWidth integralHeight vertical align))
@@ -125,10 +125,10 @@ sub init
 	$self-> setup_indents;
 	$self-> {selectedItems} = {} unless $profile{multiSelect};
 	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
-	for ( qw( 
-		autoHScroll autoVScroll gridColor hScroll vScroll offset multiColumn 
-		itemHeight autoHeight itemWidth multiSelect extendedSelect integralHeight 
-		integralWidth focusedItem topItem selectedItems borderWidth dragable 
+	for ( qw(
+		autoHScroll autoVScroll gridColor hScroll vScroll offset multiColumn
+		itemHeight autoHeight itemWidth multiSelect extendedSelect integralHeight
+		integralWidth focusedItem topItem selectedItems borderWidth dragable
 		vertical drawGrid align))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> reset;
@@ -155,7 +155,7 @@ sub item2rect
 		$item -= $self-> {topItem};
 		my $who = $self-> {vertical} ? 'rows' : 'columns';
 		my ($j,$i,$ih,$iw,$dg) = (
-			$self-> {$who} ? ( 
+			$self-> {$who} ? (
 				int( $item / $self-> {$who} - (( $item < 0) ? 1 : 0)),
 				$item % $self-> {$who}
 			) : (-1, 1),
@@ -165,7 +165,7 @@ sub item2rect
 		);
 		($i,$j)=($j,$i) unless $self->{vertical};
 
-		return 
+		return
 			$a[0] + $j * ( $iw + $dg),
 			$a[3] - $ih * ( $i + 1),
 			$a[0] + $j * ( $iw + $dg) + $iw,
@@ -186,11 +186,11 @@ sub on_paint
 		$self-> backColor( $self-> disabledBackColor);
 	}
 	my ( $ih, $iw, $dg, @a) = (
-		$self-> { itemHeight}, 
+		$self-> { itemHeight},
 		$self-> {itemWidth}, $self-> {drawGrid},
 		$self-> get_active_area( 1, @size)
 	);
-	
+
 	my $i;
 	my $j;
 	my $locWidth = $a[2] - $a[0] + 1;
@@ -206,30 +206,30 @@ sub on_paint
 
 		for ( $i = 0; $i < $self-> {partial_columns}; $i++) {
 			my $y = (
-				defined($uncover) and 
-				$i >= $uncover->{x} and 
+				defined($uncover) and
+				$i >= $uncover->{x} and
 				$i < $self-> {active_columns}
-			) ? 
-			$ymiddle : 
+			) ?
+			$ymiddle :
 			(( $i < $self->{active_columns}) ?
-				$yend : 
+				$yend :
 				$a[3]
 			);
 			$canvas-> clear(
 				$xstart, $a[1],
-				( $xstart + $iw - 1 > $a[2]) ? 
-					$a[2] : 
+				( $xstart + $iw - 1 > $a[2]) ?
+					$a[2] :
 					$xstart + $iw - 1,
 				$y
 			) if $xstart >= $a[0] and $y >= $a[1];
 			$xstart += $iw + $dg;
 		}
-	
+
 		if ( $self-> {drawGrid}) {
 			my $c = $canvas-> color;
 			$canvas-> color( $self-> {gridColor});
 			for ( $i = 1; $i < 1 + $self-> {whole_columns}; $i++) {
-				$canvas-> line( 
+				$canvas-> line(
 					$a[0] + $i * ( $iw + $dg) - 1, $a[1],
 					$a[0] + $i * ( $iw + $dg) - 1, $a[3]
 				);
@@ -240,7 +240,7 @@ sub on_paint
 		$canvas-> clear( @a[0..2], $a[1] + $self-> {uncover})
 			if defined $self-> {uncover};
 	}
-	
+
 	my $focusedState = $self-> focused ? ( exists $self-> {unfocState} ? 0 : 1) : 0;
 	$self-> {unfocVeil} = ( $focusedState && $self-> {focusedItem} < 0 && $locWidth > 0) ? 1 : 0;
 	my $foci = $self-> {focusedItem};
@@ -268,12 +268,12 @@ sub on_paint
 						$a[0] + $j * ( $iw + $dg) + $iw,
 						$a[3] - $ih * ( $i + 1) + $ih + 1
 					);
-					$item += $di, next if 
+					$item += $di, next if
 						$itemRect[3] < $invalidRect[1] ||
 						$itemRect[1] > $invalidRect[3] ||
 						$itemRect[2] < $invalidRect[0] ||
 						$itemRect[0] > $invalidRect[2];
-						
+
 					my $sel = $self-> {multiSelect} ?
 						exists $self-> {selectedItems}-> {$item} :
 						(( $self-> {focusedItem} == $item) ? 1 : 0);
@@ -298,10 +298,10 @@ sub on_paint
 					$a[0], $a[3] - $ih * ( $i + 1) + 1,
 					$a[2], $a[3] - $ih * $i
 				);
-				$item++, next if 
-					$itemRect[3] < $invalidRect[1] || 
+				$item++, next if
+					$itemRect[3] < $invalidRect[1] ||
 					$itemRect[1] > $invalidRect[3];
-					
+
 				my $sel = $self-> {multiSelect} ?
 					exists $self-> {selectedItems}-> {$item} :
 					(( $foci == $item) ? 1 : 0);
@@ -355,8 +355,8 @@ sub on_keydown
 	)) {
 		my $newItem = $self-> {focusedItem};
 		my $doSelect = 0;
-		if ( 
-			$mod == 0 || 
+		if (
+			$mod == 0 ||
 			( $mod & km::Shift && $self-> {multiSelect} && $self-> { extendedSelect})
 		) {
 			my $pgStep  = $self-> {whole_rows} - 1;
@@ -365,37 +365,37 @@ sub on_keydown
 			my $mc = $self-> {multiColumn};
 			my $dx = $self-> {vertical} ? $self-> {rows} : 1;
 			my $dy = $self-> {vertical} ? 1 : $self-> {active_columns};
-			if ( $key == kb::Up)   { 
-				$newItem -= $dy; 
-			} elsif ( $key == kb::Down) { 
-				$newItem += $dy; 
-			} elsif ( $key == kb::Left) { 
+			if ( $key == kb::Up)   {
+				$newItem -= $dy;
+			} elsif ( $key == kb::Down) {
+				$newItem += $dy;
+			} elsif ( $key == kb::Left) {
 				$newItem -= $dx if $mc
-			} elsif ( $key == kb::Right) { 
+			} elsif ( $key == kb::Right) {
 				$newItem += $dx if $mc
-			} elsif ( $key == kb::Home) { 
-				$newItem = $self-> {topItem} 
-			} elsif ( $key == kb::End)  { 
+			} elsif ( $key == kb::Home) {
+				$newItem = $self-> {topItem}
+			} elsif ( $key == kb::End)  {
 				$newItem = $mc ?
-					$self-> {topItem} + $self-> {whole_rows} * $cols - 1 : 
-					$self-> {topItem} + $pgStep; 
-			} elsif ( $key == kb::PgDn) { 
-				$newItem += $mc ? 
-					$self-> {whole_rows} * $cols : 
-					$pgStep 
-			} elsif ( $key == kb::PgUp) { 
-				$newItem -= $mc ? 
-					$self-> {whole_rows} * $cols : 
+					$self-> {topItem} + $self-> {whole_rows} * $cols - 1 :
+					$self-> {topItem} + $pgStep;
+			} elsif ( $key == kb::PgDn) {
+				$newItem += $mc ?
+					$self-> {whole_rows} * $cols :
+					$pgStep
+			} elsif ( $key == kb::PgUp) {
+				$newItem -= $mc ?
+					$self-> {whole_rows} * $cols :
 					$pgStep
 			};
 			$doSelect = $mod & km::Shift;
 		}
 
 		if (
-			( $mod & km::Ctrl) || 
+			( $mod & km::Ctrl) ||
 			(
-				(( $mod & ( km::Shift|km::Ctrl))==(km::Shift|km::Ctrl)) && 
-				$self-> {multiSelect} && 
+				(( $mod & ( km::Shift|km::Ctrl))==(km::Shift|km::Ctrl)) &&
+				$self-> {multiSelect} &&
 				$self-> { extendedSelect}
 			)
 		) {
@@ -404,10 +404,10 @@ sub on_keydown
 			$doSelect = $mod & km::Shift;
 		}
 		if ( $doSelect ) {
-			my ( $a, $b) = ( 
-				defined $self-> {anchor} ? 
-					$self-> {anchor} : 
-					$self-> {focusedItem}, 
+			my ( $a, $b) = (
+				defined $self-> {anchor} ?
+					$self-> {anchor} :
+					$self-> {focusedItem},
 				$newItem
 			);
 			( $a, $b) = ( $b, $a) if $a > $b;
@@ -427,9 +427,9 @@ sub on_keydown
 	}
 
 	if ( $mod == 0 && ( $key == kb::Space || $key == kb::Enter)) {
-		$self-> toggle_item( $self-> {focusedItem}) if 
+		$self-> toggle_item( $self-> {focusedItem}) if
 			$key == kb::Space &&
-			$self-> {multiSelect} && 
+			$self-> {multiSelect} &&
 			!$self-> {extendedSelect};
 
 		$self-> clear_event;
@@ -454,11 +454,11 @@ sub point2item
 	my ( $ih, @a) = ( $self-> {itemHeight}, $self-> get_active_area);
 
 	if ( $self-> {multiColumn}) {
-		my ( $r, $t, $l, $c, $ac) = ( 
-			$self-> {active_rows}, $self-> {topItem}, $self-> {lastItem}, 
+		my ( $r, $t, $l, $c, $ac) = (
+			$self-> {active_rows}, $self-> {topItem}, $self-> {lastItem},
 			$self-> {whole_columns}, $self-> {active_columns},
 		);
-		$x -= $a[0]; 
+		$x -= $a[0];
 		$y -= $a[1] + $self-> {yedge} + ( $self-> {rows} - $self->{active_rows} ) * $ih;
 		$x /= $self-> {itemWidth} + $self-> {drawGrid};
 		$y /= $ih;
@@ -471,12 +471,12 @@ sub point2item
 		$x = int( $x - (( $x < 0) ? 1 : 0));
 		$y = int( $y - (( $y < 0) ? 1 : 0));
 		$y = $r if $y > $r;
-	
+
 		if ( $self-> {vertical}) {
 			return $t - $r                if $y < 0 && $x < 1;
 			return $t + $r * $x,  -1      if $y < 0 && $x >= 0 && $x < $c;
 			return $t + $r * $c           if $y < 0 && $x >= $c;
-			return 
+			return
 				$l + $y + 1 - (( $c and $l < $self->{count}-1) ? $r : 0),
 				$ac <= $c ? 0 : $r
 					if $x > $c && $y >= 0 && $y < $r;
@@ -493,8 +493,8 @@ sub point2item
 				$x = $ac - 1 if $x >= $ac;
 				my $i = $t + $y * $ac + $x;
 				return $i if $i <= $self->{count};
-				return 
-					$t + ($r - 1) * $ac + $x, 
+				return
+					$t + ($r - 1) * $ac + $x,
 					( $t + $y * $ac <= $self->{count}) ? 1 : 0
 			}
 			if ( $y < 0) {
@@ -502,9 +502,9 @@ sub point2item
 				$x = $ac - 1 if $x >= $ac;
 				my $i = $t - $ac + $x;
 				return ( $i < 0 && $t == 0) ? $x : $i;
-			}	
+			}
 			return $t + $y * $ac, -1 if $x < 0;
-			return $t + ( $y + 1) * $ac - 1, 
+			return $t + ( $y + 1) * $ac - 1,
 				( $l < $self->{count} -1 ) ? 1 : 0
 				if $x >= $ac;
 			return $t + $y * $ac + $x;
@@ -526,16 +526,16 @@ sub point2item
 sub on_mousedown
 {
 	my ( $self, $btn, $mod, $x, $y) = @_;
-	
+
 	my $bw = $self-> { borderWidth};
 	$self-> clear_event;
 	return if $btn != mb::Left;
-	
+
 	my @a = $self-> get_active_area;
 	return if defined $self-> {mouseTransaction} ||
 		$y < $a[1] || $y >= $a[3] ||
 		$x < $a[0] || $x >= $a[2];
-	
+
 	my $item = $self-> point2item( $x, $y);
 	my $foc = $item >= 0 ? $item : 0;
 
@@ -543,8 +543,8 @@ sub on_mousedown
 		if ( $self-> {extendedSelect}) {
 			if ($mod & km::Shift) {
 				my $foc = $self-> focusedItem;
-				return $self-> selectedItems(( $foc < $item) ? 
-					[$foc..$item] : 
+				return $self-> selectedItems(( $foc < $item) ?
+					[$foc..$item] :
 					[$item..$foc]
 				);
 			} elsif ( $mod & km::Ctrl) {
@@ -558,8 +558,8 @@ sub on_mousedown
 		}
 	}
 
-	$self-> {mouseTransaction} = 
-		(( $mod & ( km::Alt | ($self-> {multiSelect} ? 0 : km::Ctrl))) && $self-> {dragable}) ? 
+	$self-> {mouseTransaction} =
+		(( $mod & ( km::Alt | ($self-> {multiSelect} ? 0 : km::Ctrl))) && $self-> {dragable}) ?
 			2 : 1;
 	if ( $self-> {mouseTransaction} == 2) {
 		$self-> {dragItem} = $foc;
@@ -575,7 +575,7 @@ sub on_mouseclick
 	my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
 	$self-> clear_event;
 	return if $btn != mb::Left || !$dbl;
-	
+
 	$self-> notify(q(Click)) if $self-> focusedItem >= 0;
 }
 
@@ -606,11 +606,11 @@ sub on_mousemove
 	my ( $self, $mod, $x, $y) = @_;
 	$self-> update_prelight($x,$y);
 	return unless defined $self-> {mouseTransaction};
-	
+
 	my $bw = $self-> { borderWidth};
 	my ($item, $aux) = $self-> point2item( $x, $y);
 	my @a = $self-> get_active_area;
-	
+
 	if ( $y >= $a[3] || $y < $a[1] || $x >= $a[2] || $x < $a[0]) {
 		$self-> scroll_timer_start unless $self-> scroll_timer_active;
 		return unless $self-> scroll_timer_semaphore;
@@ -625,34 +625,34 @@ sub on_mousemove
 		$item += (( $top != $self-> {topItem}) ? $aux : 0);
 	}
 
-	if ( 
-		$self-> {multiSelect} && 
-		$self-> {extendedSelect} && 
-		exists $self-> {anchor} && 
+	if (
+		$self-> {multiSelect} &&
+		$self-> {extendedSelect} &&
+		exists $self-> {anchor} &&
 		$self-> {mouseTransaction} != 2
 	) {
 		my ( $a, $b, $c) = ( $self-> {anchor}, $item, $self-> {focusedItem});
 		my $globSelect = 0;
-		if (( $b <= $a && $c > $a) || ( $b >= $a && $c < $a)) { 
+		if (( $b <= $a && $c > $a) || ( $b >= $a && $c < $a)) {
 			$globSelect = 1
 		} elsif ( $b > $a) {
-			if ( $c < $b) { 
-				$self-> add_selection([$c + 1..$b], 1) 
-			} elsif ( $c > $b) { 
-				$self-> add_selection([$b + 1..$c], 0) 
-			} else { 
-				$globSelect = 1 
+			if ( $c < $b) {
+				$self-> add_selection([$c + 1..$b], 1)
+			} elsif ( $c > $b) {
+				$self-> add_selection([$b + 1..$c], 0)
+			} else {
+				$globSelect = 1
 			}
 		} elsif ( $b < $a) {
-			if ( $c < $b) { 
-				$self-> add_selection([$c..$b], 0) 
-			} elsif ( $c > $b) { 
-				$self-> add_selection([$b..$c], 1) 
-			} else { 
-				$globSelect = 1 
+			if ( $c < $b) {
+				$self-> add_selection([$c..$b], 0)
+			} elsif ( $c > $b) {
+				$self-> add_selection([$b..$c], 1)
+			} else {
+				$globSelect = 1
 			}
-		} else { 
-			$globSelect = 1 
+		} else {
+			$globSelect = 1
 		}
 
 		if ( $globSelect ) {
@@ -660,9 +660,9 @@ sub on_mousemove
 			$self-> selectedItems([$a..$b]);
 		}
 	}
-	
+
 	$self-> focusedItem( $item >= 0 ? $item : 0);
-	$self-> offset( $self-> {offset} + 5 * (( $x < $a[0]) ? -1 : 1)) 
+	$self-> offset( $self-> {offset} + 5 * (( $x < $a[0]) ? -1 : 1))
 		if $x >= $a[2] || $x < $a[0];
 }
 
@@ -671,19 +671,19 @@ sub on_mouseup
 	my ( $self, $btn, $mod, $x, $y) = @_;
 	return if $btn != mb::Left;
 	return unless defined $self-> {mouseTransaction};
-	
+
 	my @dragnotify;
 	if ( $self-> {mouseTransaction} == 2) {
 		$self-> pointer( $self-> {mousePtr});
 		my $fci = $self-> focusedItem;
-		@dragnotify = ($self-> {dragItem}, $fci) 
+		@dragnotify = ($self-> {dragItem}, $fci)
 			if $fci != $self-> {dragItem} and $self-> {dragItem} >= 0;
 	}
-	
+
 	delete $self-> {mouseTransaction};
 	delete $self-> {mouseHorizontal};
 	delete $self-> {anchor};
-	
+
 	$self-> capture(0);
 	$self-> clear_event;
 	$self-> notify(q(DragItem), @dragnotify) if @dragnotify;
@@ -699,7 +699,7 @@ sub on_mouseleave
 sub on_mousewheel
 {
 	my ( $self, $mod, $x, $y, $z) = @_;
-	
+
 	$z = int( $z/120);
 	$z *= $self-> {whole_columns}
 		if $self-> {multiColumn} and not $self->{vertical};
@@ -707,9 +707,9 @@ sub on_mousewheel
 	my $newTop = $self-> topItem - $z;
 	my $cols = $self-> {whole_columns};
 	my $maxTop = $self-> {count} - $self-> {whole_rows} * $cols;
-	
+
 	$self-> topItem( $newTop > $maxTop ? $maxTop : $newTop);
-	$self-> update_prelight($x,$y); 
+	$self-> update_prelight($x,$y);
 }
 
 sub on_size
@@ -722,7 +722,7 @@ sub on_size
 sub reset
 {
 	my $self = $_[0];
-	
+
 	my @size = $self-> get_active_area( 2);
 	my $ih   = $self-> {itemHeight};
 	my $iw   = $self-> {itemWidth};
@@ -740,17 +740,17 @@ sub reset
 		my $dg  = $self-> {drawGrid};
 
 		$self-> {whole_columns}   = int( $size[0] / ( $dg + $iw));
-		$self-> {partial_columns} = ( $size[0] > $self-> {whole_columns} * ( $dg + $iw)) 
+		$self-> {partial_columns} = ( $size[0] > $self-> {whole_columns} * ( $dg + $iw))
 						? 1 : 0;
 		$self-> {whole_columns}   = 0 if $self-> {whole_columns} < 0;
 		$self-> {partial_columns} += $self-> {whole_columns};
 		$self-> {uncover} = undef;
-			
-		$self-> {rows} = $self-> {integralHeight} ? 
-				( $self-> {whole_rows} || $self-> {partial_rows} ) : 
+
+		$self-> {rows} = $self-> {integralHeight} ?
+				( $self-> {whole_rows} || $self-> {partial_rows} ) :
 				$self-> {partial_rows};
-		$self-> {columns} = $self-> {integralWidth} ? 
-				( $self-> {whole_columns} || $self-> {partial_columns} ) : 
+		$self-> {columns} = $self-> {integralWidth} ?
+				( $self-> {whole_columns} || $self-> {partial_columns} ) :
 				$self-> {partial_columns};
 
 		my $seen_items = $self->{rows} * $self-> {columns};
@@ -762,8 +762,8 @@ sub reset
 			if ( $self-> {rows} > 0) {
 				$self-> {active_rows} = ( $seen_items > $self-> {rows} ) ?
 					$self->{rows} : $seen_items;
-				$self-> {active_columns} = 
-					int( $seen_items / $self-> {rows}) + 
+				$self-> {active_columns} =
+					int( $seen_items / $self-> {rows}) +
 					(( $seen_items % $self-> {rows}) ? 1 : 0);
 				$seen_items %= $self->{rows};
 				$self-> {uncover} = {
@@ -777,8 +777,8 @@ sub reset
 			if ( $self-> {columns} > 0) {
 				$self-> {active_columns} = ( $seen_items > $self-> {columns} ) ?
 					$self-> {columns} : $seen_items;
-				$self-> {active_rows} = 	
-					int( $seen_items / $self-> {columns}) + 
+				$self-> {active_rows} =
+					int( $seen_items / $self-> {columns}) +
 					(int( $seen_items % $self-> {columns}) > 0);
 				$seen_items %= $self->{columns};
 				$self-> {uncover} = {
@@ -795,13 +795,13 @@ sub reset
 		$self-> {$_} = 1 for qw(partial_columns whole_columns active_columns columns);
 		$self-> {xedge} = 0;
 		$self-> {rows} = (
-				$self-> {integralHeight} and 
+				$self-> {integralHeight} and
 				$self-> {whole_rows} > 0
-			) ? 
+			) ?
 				$self-> {whole_rows} :
 				$self-> {partial_rows};
-		my ($max, $last) = ( 
-			$self-> {count} - 1, 
+		my ($max, $last) = (
+			$self-> {count} - 1,
 			$self-> {topItem} + $self-> {rows} - 1
 		);
 		$self-> {lastItem} = $max > $last ? $last : $max;
@@ -819,27 +819,27 @@ sub reset_scrolls
 	my $count = $self-> {count};
 	my $cols  = $self-> {whole_columns};
 	my $rows  = $self-> {whole_rows};
-	$cols++ if ( 
-			$self->{whole_columns} == 0 and 
+	$cols++ if (
+			$self->{whole_columns} == 0 and
 			$self->{active_columns} > 0
-		) or ( 
-			$self->{partial_columns} > $self->{whole_columns} and 
+		) or (
+			$self->{partial_columns} > $self->{whole_columns} and
 			$self->{yedge} > $self-> {itemHeight} * 0.66
 		);
-	$rows++ if ( 
-			$self->{whole_rows} == 0 and 
+	$rows++ if (
+			$self->{whole_rows} == 0 and
 			$self->{active_rows} > 0
-		) or ( 
-			$self->{partial_rows} > $self->{whole_rows} and 
+		) or (
+			$self->{partial_rows} > $self->{whole_rows} and
 			$self->{xedge} > $self-> {itemWidth} * 0.66
 		);
-	
+
 	if ( !($self-> {scrollTransaction} & 1)) {
-		$self-> vScroll( $self->{whole_rows} * $self->{whole_columns} < $count) 
+		$self-> vScroll( $self->{whole_rows} * $self->{whole_columns} < $count)
 			if $self-> {autoVScroll};
 
 		$self-> {vScrollBar}-> set(
-			step     => ( $self-> {multiColumn} and not $self->{vertical}) ? 
+			step     => ( $self-> {multiColumn} and not $self->{vertical}) ?
 					$self-> {active_columns} : 1,
 			max      => $count - $self->{whole_rows} * $self->{whole_columns},
 			whole    => $count,
@@ -850,7 +850,7 @@ sub reset_scrolls
 	}
 	if ( !($self-> {scrollTransaction} & 2)) {
 		if ( $self-> {multiColumn}) {
-			$self-> hScroll( $self->{whole_rows} * $self->{whole_columns} < $count) 
+			$self-> hScroll( $self->{whole_rows} * $self->{whole_columns} < $count)
 				if $self-> {autoHScroll};
 			$self-> {hScrollBar}-> set(
 				max      => $count - $self->{whole_rows} * $self->{whole_columns},
@@ -871,7 +871,7 @@ sub reset_scrolls
 					@sz = $self-> get_active_area( 2);
 				}
 			}
-			
+
 			$self-> {hScrollBar}-> set(
 				max      => $iw - $sz[0],
 				whole    => $iw,
@@ -952,11 +952,11 @@ sub set_focused_item
 	return if $foc < -1;
 
 	$self-> {focusedItem} = $foc;
-	$self-> selectedItems([$foc]) 
-		if $self-> {multiSelect} && $self-> {extendedSelect} 
-			&& ! exists $self-> {anchor} && 
+	$self-> selectedItems([$foc])
+		if $self-> {multiSelect} && $self-> {extendedSelect}
+			&& ! exists $self-> {anchor} &&
 				( !defined($self-> {mouseTransaction}) || $self-> {mouseTransaction} != 2);
-	$self-> notify(q(SelectItem), [ $foc], 1) 
+	$self-> notify(q(SelectItem), [ $foc], 1)
 		if $foc >= 0 && !exists $self-> {selectedItems}-> {$foc};
 
 	my $topSet = undef;
@@ -966,12 +966,12 @@ sub set_focused_item
 		my $cols = $self-> {whole_columns} || 1;
 		( $cols, $rows) = ( $rows, $cols) if $mc and not $self->{vertical};
 		if ( $foc < $self-> {topItem}) {
-			$topSet = $mc ? 
-				$foc - $foc % $rows : 
+			$topSet = $mc ?
+				$foc - $foc % $rows :
 				$foc;
 		} elsif ( $foc >= $self-> {topItem} + $rows * $cols) {
-			$topSet = $mc ? 
-				$foc - $foc % $rows - $rows * ( $cols - 1) : 
+			$topSet = $mc ?
+				$foc - $foc % $rows - $rows * ( $cols - 1) :
 				$foc - $rows + 1;
 		}
 	}
@@ -1108,7 +1108,7 @@ sub set_offset
 		$self-> {hScrollBar}-> value( $offset);
 		$self-> {scrollTransaction} &= ~2;
 	}
-	
+
 	$self-> scroll( -$dt, 0, clipRect => \@a);
 	if ( $self-> focused) {
 		my $focId = ( $self-> {focusedItem} >= 0) ? $self-> {focusedItem} : 0;
@@ -1127,36 +1127,36 @@ sub set_selected_items
 {
 	my ( $self, $items) = @_;
 	return if !$self-> { multiSelect} && ( scalar @{$items} > 0);
-	
+
 	my $ptr = $::application-> pointer;
 	$::application-> pointer( cr::Wait)
 		if scalar @{$items} > 500;
 
 	my $sc = $self-> {count};
 	my %newItems;
-	for (@{$items}) { 
-		$newItems{$_}=1 if $_>=0 && $_<$sc; 
+	for (@{$items}) {
+		$newItems{$_}=1 if $_>=0 && $_<$sc;
 	}
-	
+
 	my @stateChangers; # $#stateChangers = scalar @{$items};
 	my $k;
 	while (defined($k = each %{$self-> {selectedItems}})) {
 		next if exists $newItems{$k};
 		push( @stateChangers, $k);
 	};
-	
+
 	my @indices;
 	my $sel = $self-> {selectedItems};
 	$self-> {selectedItems} = \%newItems;
 	$self-> notify(q(SelectItem), [@stateChangers], 0) if scalar @stateChangers;
-	
+
 	while (defined($k = each %newItems)) {
 		next if exists $sel-> {$k};
 		push( @stateChangers, $k);
 		push( @indices, $k);
 	};
 	$self-> notify(q(SelectItem), [@indices], 1) if scalar @indices;
-	
+
 	$::application-> pointer( $ptr);
 
 	return unless scalar @stateChangers;
@@ -1188,9 +1188,9 @@ sub set_item_selected
 	return unless $self-> {multiSelect};
 	return if $index < 0 || $index >= $self-> {count};
 	return if $sel == exists $self-> {selectedItems}-> {$index};
-	
-	$sel ? 
-		$self-> {selectedItems}-> {$index} = 1 : 
+
+	$sel ?
+		$self-> {selectedItems}-> {$index} = 1 :
 		delete $self-> {selectedItems}-> {$index};
 	$self-> notify(q(SelectItem), [ $index], $sel);
 	$self-> invalidate_rect( $self-> item2rect( $index));
@@ -1211,9 +1211,9 @@ sub add_selection
 	{
 		next if $_ < 0 || $_ >= $count;
 		next if exists $self-> {selectedItems}-> {$_} == $sel;
-		
-		$sel ? 
-			$self-> {selectedItems}-> {$_} = 1 : 
+
+		$sel ?
+			$self-> {selectedItems}-> {$_} = 1 :
 			delete $self-> {selectedItems}-> {$_};
 		push ( @notifiers, $_);
 		$self-> invalidate_rect( $self-> item2rect( $_, @sz));
@@ -1235,7 +1235,7 @@ sub set_top_item
 	my ( $ih, $iw, @a) = ( $self-> {itemHeight}, $self-> {itemWidth}, $self-> get_active_area);
 	my $dt = $topItem - $oldTop;
 	$self-> reset;
-	
+
 	if ( !($self-> {scrollTransaction} & 1) && $self-> {vScroll}) {
 		$self-> {scrollTransaction} |= 1;
 		$self-> {vScrollBar}-> value( $topItem);
@@ -1253,7 +1253,7 @@ sub set_top_item
 		if ( $self-> {vertical}) {
 			$a[1] += $self-> {yedge};
 			if (( $self-> {rows} != 0) && ( $dt % $self-> {rows} == 0)) {
-				$self-> scroll( 
+				$self-> scroll(
 					-( $dt / $self-> {rows}) * $iw, 0,
 					clipRect => \@a
 				);
@@ -1263,7 +1263,7 @@ sub set_top_item
 		} else {
 			$a[2] = $a[0] + int(( $a[2] - $a[0] ) / $iw) * $iw;
 			if (( $self-> {whole_columns} != 0) && ( $dt % $self-> {whole_columns} == 0)) {
-				$self-> scroll( 
+				$self-> scroll(
 					0, ( $dt / $self-> {whole_columns}) * $ih,
 					clipRect => \@a
 				);
@@ -1272,7 +1272,7 @@ sub set_top_item
 			}
 		}
 	} else {
-		$a[1] += $self-> {yedge} 
+		$a[1] += $self-> {yedge}
 			if $self-> {integralHeight} and $self-> {whole_rows} > 0;
 		$self-> scroll( 0, $dt * $ih, clipRect => \@a);
 	}
@@ -1344,7 +1344,7 @@ sub selectedItems {($#_)?shift-> set_selected_items    (@_):return $_[0]-> get_s
 sub topItem       {($#_)?$_[0]-> set_top_item       ($_[1]):return $_[0]-> {topItem}        }
 sub vertical      {($#_)?$_[0]-> set_vertical       ($_[1]):return $_[0]-> {vertical}        }
 
-# section for item text representation 
+# section for item text representation
 
 sub get_item_text
 {
@@ -1393,7 +1393,7 @@ sub draw_text_items
 		} elsif ( $self->{align} == ta::Right) {
 			$dx = ($iw > $width) ? $iw - $width : 0;
 		}
-		$canvas-> text_out_bidi( $self-> get_item_text( $i), 
+		$canvas-> text_out_bidi( $self-> get_item_text( $i),
 			$x + $dx, $y + $textShift - $j * $self-> {itemHeight} + 1
 		);
 	}
@@ -1408,18 +1408,18 @@ sub std_draw_text_items
 		$self-> colorIndex( ci::HiliteText),
 		$self-> colorIndex( ci::Hilite)
 	);
-	
+
 	my @clipRect = $canvas-> clipRect;
 	my $i;
 	my $drawVeilFoc = -1;
 	my $atY    = ( $self-> {itemHeight} - $canvas-> font-> height) / 2;
 	my $ih     = $self-> {itemHeight};
 	my $offset = $self-> {offset};
-	my $step   = ( $self-> {multiColumn} and !$self-> {vertical}) ? 
+	my $step   = ( $self-> {multiColumn} and !$self-> {vertical}) ?
 		$self-> {active_columns} : 1;
 
 	my @colContainer;
-	for ( $i = 0; $i < $self-> {columns}; $i++){ 
+	for ( $i = 0; $i < $self-> {columns}; $i++){
 		push ( @colContainer, [])
 	};
 	for ( $i = 0; $i < scalar @_; $i++) {
@@ -1438,35 +1438,35 @@ sub std_draw_text_items
 		for ( $i = 0; $i < scalar @$_; $i++) {
 			my ( $itemIndex, $x, $y, $x2, $y2, $selected, $focusedItem, $prelighted) = @{$$_[$i]};
 			if ( $prelighted ) {
-				push ( @prelight, [ 
-					$x, $y, $x2, $y2, 
+				push ( @prelight, [
+					$x, $y, $x2, $y2,
 					$$_[$i]-> [0], $$_[$i]-> [0], $selected ? 3 : 2,
 				]);
 			} elsif ( $selected) {
-				if ( 
-					defined $lastSelected && 
+				if (
+					defined $lastSelected &&
 					( $y2 + 1 == $lastSelected)
 				) {
 					${$selected[-1]}[1] = $y;
 					${$selected[-1]}[5] = $$_[$i]-> [0];
 				} else {
-					push ( @selected, [ 
-						$x, $y, $x2, $y2, 
+					push ( @selected, [
+						$x, $y, $x2, $y2,
 						$$_[$i]-> [0], $$_[$i]-> [0], 1
 					]);
 				}
 				$lastSelected = $y;
 			} else {
-				if ( 
-					defined $lastNormal && 
+				if (
+					defined $lastNormal &&
 					( $y2 + 1 == $lastNormal) &&
 					( ${$normals[-1]}[3] - $lastNormal < 100))
 				{
 					${$normals[-1]}[1] = $y;
 					${$normals[-1]}[5] = $$_[$i]-> [0];
 				} else {
-					push ( @normals, [ 
-						$x, $y, $x2, $y2, 
+					push ( @normals, [
+						$x, $y, $x2, $y2,
 						$$_[$i]-> [0], $$_[$i]-> [0], 0
 					]);
 				}
@@ -1489,7 +1489,7 @@ sub std_draw_text_items
 				$canvas-> backColor( $c);
 				$lbc = $c;
 			}
-			
+
 			$self-> draw_item_background( $canvas, $x, $y, $x2, $y2, $prelight);
 
 			$c = $clrs[ $selected ? 2 : 0];
@@ -1497,12 +1497,12 @@ sub std_draw_text_items
 				$canvas-> color( $c);
 				$lc = $c;
 			}
-		
+
 			$self-> draw_text_items( $canvas, $first, $last, $step,
 				$x, $y2, $atY, \@clipRect);
 		}
 	}
-	
+
 	# draw veil
 	if ( $drawVeilFoc >= 0) {
 		my ( $itemIndex, $x, $y, $x2, $y2) = @{$_[$drawVeilFoc]};
@@ -1547,7 +1547,7 @@ sub init
 	$self-> {widths}     = [];
 	$self-> {maxWidth}   = 0;
 	$self-> {autoWidth}  = 0;
-	
+
 	my %profile = $self-> SUPER::init(@_);
 
 	$self-> autoWidth( $profile{autoWidth});
@@ -1573,7 +1573,7 @@ sub get_item_width
 sub on_fontchanged
 {
 	my $self = $_[0];
-	
+
 	$self-> itemHeight( $self-> font-> height), $self-> {autoHeight} = 1 if $self-> { autoHeight};
 	$self-> calibrate;
 }
@@ -1581,11 +1581,11 @@ sub on_fontchanged
 sub recalc_widths
 {
 	my $self = $_[0];
-	
+
 	my @w;
 	my $maxWidth = 0;
 	my $i;
-	
+
 	my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(MeasureItem));
 	$self-> push_event;
 	$self-> begin_paint_info;
@@ -1650,7 +1650,7 @@ sub insert_items
 	( $self-> {items}, $self-> {widths}) = ( $is, $iw);
 	$self-> itemWidth( $self-> {maxWidth} = $mw)
 		if $self-> {autoWidth} && $self-> {maxWidth} < $mw;
-		
+
 	$self-> SUPER::count( scalar @{$self-> {items}});
 
 	$self-> itemWidth( $self-> {maxWidth}) if $self-> {autoWidth};
@@ -1672,7 +1672,7 @@ sub replace_items
 {
 	my ( $self, $where) = ( shift, shift);
 	return if $where < 0;
-	
+
 	my ( $is, $iw) = ( $self-> {items}, $self-> {widths});
 	my $new;
 	if (@_ == 1 and ref($_[0]) eq q(ARRAY)) {
@@ -1682,21 +1682,21 @@ sub replace_items
 		return unless scalar @_;
 		$new = [@_];
 	}
-	
+
 	my $num = scalar @$new;
 	if ( $num + $where >= $self-> {count}) {
 		$num = $self-> {count} - $where;
 		return if $num <= 0;
 		splice @$new, $num;
 	}
-	
+
 	$self-> {items} = $new;
 	$self-> {widths} = [];
 	$self-> recalc_widths;
 	splice( @{$is}, $where, $num, @{$self-> {items}});
 	splice( @{$iw}, $where, $num, @{$self-> {widths}});
 	( $self-> {items}, $self-> {widths}) = ( $is, $iw);
-	
+
 	if ( $self-> {autoWidth}) {
 		my $mw = 0;
 		for (@{$iw}) {
@@ -1717,7 +1717,7 @@ sub delete_items
 {
 	my $self = shift;
 	my ( $is, $iw, $mw) = ( $self-> {items}, $self-> {widths}, $self-> {maxWidth});
-	
+
 	my %indices;
 	if (@_ == 1 and ref($_[0]) eq q(ARRAY)) {
 		return unless scalar @{$_[0]};
@@ -1734,7 +1734,7 @@ sub delete_items
 	my $i;
 	my $num = scalar keys %indices;
 	my ( $items, $widths) = ( $self-> {items}, $self-> {widths});
-	
+
 	$self-> focusedItem( -1) if exists $indices{$self-> {focusedItem}};
 
 	for ( $i = 0; $i < scalar @{$self-> {items}}; $i++) {
@@ -1767,7 +1767,7 @@ sub delete_items
 	( $self-> {items}, $self-> {widths}) = ([@newItems], [@newWidths]);
 	my $maxWidth = 0;
 	for ( @newWidths) { $maxWidth = $_ if $maxWidth < $_; }
-	
+
 	$self-> lock;
 	$self-> itemWidth( $self-> {maxWidth} = $maxWidth)
 	if $self-> {autoWidth} && $self-> {maxWidth} > $maxWidth;
@@ -1783,10 +1783,10 @@ sub on_keydown
 	my ( $self, $code, $key, $mod) = @_;
 	$self-> notify(q(MouseUp),0,0,0) if defined $self-> {mouseTransaction};
 	return if $mod & km::DeadKey;
-	
+
 	if (
-		(( $code & 0xFF) >= ord(' ')) && 
-		( $key == kb::NoKey) && 
+		(( $code & 0xFF) >= ord(' ')) &&
+		( $key == kb::NoKey) &&
 		!($mod & ~km::Shift) && $self-> {count}
 	) {
 		my $i;
@@ -1829,7 +1829,7 @@ sub on_dragitem
 		$nto++ if $nto != $to;
 		splice( @$is, $nto, 0, reverse @is);
 		splice( @$iw, $nto, 0, reverse @iw);
-		@{$self-> {selectedItems}}{$nto .. $nto + @k - 1} = 
+		@{$self-> {selectedItems}}{$nto .. $nto + @k - 1} =
 			delete @{$self-> {selectedItems}}{@k};
 	} else {
 		splice( @$is, $to, 0, splice( @$is, $from, 1));
@@ -1849,8 +1849,8 @@ use vars qw(@ISA);
 
 BEGIN {
 	for ( qw(
-		font color backColor rop rop2 
-		linePattern lineWidth lineEnd textOutBaseline 
+		font color backColor rop rop2
+		linePattern lineWidth lineEnd textOutBaseline
 		fillPattern clipRect)
 	) {
 		my $sb = $_;
@@ -1873,7 +1873,7 @@ sub draw_items
 	return if $canvas != $self;   # this does not support 'uncertain' drawings due that
 	my %protect;                  # it's impossible to override $canvas's methods dynamically
 	for ( qw(
-		font color backColor rop rop2 linePattern lineWidth 
+		font color backColor rop rop2 linePattern lineWidth
 		lineEnd textOutBaseline fillPattern)
 	) { $protect{$_} = $canvas-> $_(); }
 
@@ -1945,11 +1945,11 @@ are centered around the way the item list is stored. The simplest
 organization of a text-only item list, provided by C<Prima::ListBox>,
 stores an array of text scalars in a widget. More elaborated storage
 and representation types are not realized, and the programmer is urged
-to use the more abstract classes to derive own mechanisms. 
+to use the more abstract classes to derive own mechanisms.
 For example, for a list of items that contain text strings and icons
 see L<Prima::FileDialog/"Prima::DirectoryListBox">.
 To organize an item storage, different from C<Prima::ListBox>, it is
-usually enough to overload either the C<Stringify>, C<MeasureItem>, 
+usually enough to overload either the C<Stringify>, C<MeasureItem>,
 and C<DrawItem> events, or their method counterparts: C<get_item_text>,
 C<get_item_width>, and C<draw_items>.
 
@@ -1968,7 +1968,7 @@ plus functionality for text-oriented lists. The class is not usable directly.
 =item autoHeight BOOLEAN
 
 If 1, the item height is changed automatically
-when the widget font is changed; this is useful for text items. 
+when the widget font is changed; this is useful for text items.
 If 0, item height is not changed; this is useful for non-text items.
 
 Default value: 1
@@ -2008,14 +2008,14 @@ Default value: 0
 
 Selects the focused item index. If -1, no item is focused.
 It is mostly a run-time property, however, it can be set
-during the widget creation stage given that the item list is 
+during the widget creation stage given that the item list is
 accessible on this stage as well.
 
 Default value: -1
 
 =item gridColor COLOR
 
-Color, used for drawing vertical divider lines for multi-column 
+Color, used for drawing vertical divider lines for multi-column
 list widgets. The list classes support also the indirect way
 of setting the grid color, as well as widget does, via
 the C<colorIndex> property. To achieve this, C<ci::Grid> constant
@@ -2041,16 +2041,16 @@ Default value: 0
 
 =item itemHeight INTEGER
 
-Selects the height of the items in pixels. Since the list classes do 
-not support items with different dimensions, changes to this property 
+Selects the height of the items in pixels. Since the list classes do
+not support items with different dimensions, changes to this property
 affect all items.
 
 Default value: default font height
 
 =item itemWidth INTEGER
 
-Selects the width of the items in pixels. Since the list classes do 
-not support items with different dimensions, changes to this property 
+Selects the width of the items in pixels. Since the list classes do
+not support items with different dimensions, changes to this property
 affect all items.
 
 Default value: default widget width
@@ -2058,7 +2058,7 @@ Default value: default widget width
 =item multiSelect BOOLEAN
 
 If 0, the user can only select one item, and it is reported by
-the C<focusedItem> property. If 1, the user can select more than one item. 
+the C<focusedItem> property. If 1, the user can select more than one item.
 In this case, C<focusedItem>'th item is not necessarily selected.
 To access selected item list, use C<selectedItems> property.
 
@@ -2066,7 +2066,7 @@ Default value: 0
 
 =item multiColumn BOOLEAN
 
-If 0, the items are arrayed vertically in one column, and the main scroll bar 
+If 0, the items are arrayed vertically in one column, and the main scroll bar
 is vertical. If 1, the items are arrayed in several columns, C<itemWidth>
 pixels wide each. In this case, the main scroll bar is horizontal.
 
@@ -2128,10 +2128,10 @@ See L<DrawItem> for parameters description.
 
 =item draw_text_items CANVAS, FIRST, LAST, STEP, X, Y, OFFSET, CLIP_RECT
 
-Called by C<std_draw_text_items> to draw sequence of text items with 
+Called by C<std_draw_text_items> to draw sequence of text items with
 indices from FIRST to LAST, by STEP, on CANVAS, starting at point X, Y, and
 incrementing the horizontal position with OFFSET. CLIP_RECT is a reference
-to array of four integers with inclusive-inclusive coordinates of the active 
+to array of four integers with inclusive-inclusive coordinates of the active
 clipping rectangle.
 
 =item get_item_text INDEX
@@ -2160,7 +2160,7 @@ the C<size> property is not called, thus some speed-up can be achieved.
 
 =item point2item X, Y
 
-Returns the index of an item that contains point (X,Y). If the point 
+Returns the index of an item that contains point (X,Y). If the point
 belongs to the item outside the widget's interior, returns the index
 of the first item outside the widget's interior in the direction of the point.
 
@@ -2194,14 +2194,14 @@ It is fully compatible to C<draw_items> interface,
 and is used in C<Prima::ListBox> class.
 
 The optimization is derived from the assumption that items
-maintain common background and foreground colors, that differ 
+maintain common background and foreground colors, that differ
 in selected and non-selected states only. The routine groups
 drawing requests for selected and non-selected items, and
 draws items with reduced number of calls to C<color> property.
 While the background is drawn by the routine itself, the foreground
 ( usually text ) is delegated to the C<draw_text_items> method, so
 the text positioning and eventual decorations would not require
-full rewrite of code. 
+full rewrite of code.
 
 ITEM_DRAW_DATA is an array of arrays of scalars, where each array
 contains parameters of C<DrawItem> notification.
@@ -2238,7 +2238,7 @@ rearranges the item list in accord with the dragging action.
 
 =item DrawItem CANVAS, INDEX, X1, Y1, X2, Y2, SELECTED, FOCUSED, PRELIGHT, COLUMN
 
-Called when an INDEXth item is to be drawn on CANVAS. 
+Called when an INDEXth item is to be drawn on CANVAS.
 X1, Y1, X2, Y2 designate the item rectangle in widget coordinates,
 where the item is to be drawn. SELECTED, FOCUSED, and PRELIGHT are boolean
 flags, if the item must be drawn correspondingly in selected and
@@ -2247,7 +2247,7 @@ focused states, with or without the prelight effect.
 =item MeasureItem INDEX, REF
 
 Puts width in pixels of INDEXth item into REF
-scalar reference. This notification must be called 
+scalar reference. This notification must be called
 from within C<begin_paint_info/end_paint_info> block.
 
 =item SelectItem INDEX, FLAG
@@ -2266,8 +2266,8 @@ scalar reference.
 =head1 Prima::AbstractListBox
 
 Exactly the same as its ascendant, C<Prima::AbstractListViewer>,
-except that it does not propagate C<DrawItem> message, 
-assuming that the items must be drawn as text. 
+except that it does not propagate C<DrawItem> message,
+assuming that the items must be drawn as text.
 
 =head1 Prima::ListViewer
 
@@ -2287,7 +2287,7 @@ C<Prima::ListViewer> is derived from C<Prima::AbstractListViewer>.
 
 =item autoWidth BOOLEAN
 
-Selects if the gross item width must be recalculated automatically 
+Selects if the gross item width must be recalculated automatically
 when either the font changes or item list is changed.
 
 Default value: 1
@@ -2356,15 +2356,15 @@ that applies certain protection for every item drawing session.
 Assuming that several item drawing routines can be assembled in one
 widget, C<Prima::ProtectedListBox> provides a safety layer between
 these, so, for example, one drawing routine that selects a font
-or a color and does not care to restore the old value back, 
-does not affect the outlook of the other items. 
+or a color and does not care to restore the old value back,
+does not affect the outlook of the other items.
 
-This functionality is implementing by overloading C<draw_items> 
+This functionality is implementing by overloading C<draw_items>
 method and also all graphic properties.
 
 =head1 Prima::ListBox
 
-Descendant of C<Prima::ListViewer>, declares format of items 
+Descendant of C<Prima::ListViewer>, declares format of items
 as a single text string. Incorporating all of functionality of
 its predecessors, provides a standard listbox widget.
 
@@ -2373,7 +2373,7 @@ its predecessors, provides a standard listbox widget.
 	my $lb = Prima::ListBox-> create(
 		items       => [qw(First Second Third)],
 		focusedItem => 2,
-		onClick     => sub { 
+		onClick     => sub {
 			print $_[0]-> get_items( $_[0]-> focusedItem), " is selected\n";
 		}
 	);

@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -8,7 +8,7 @@ examples/print.pl - A printing example
 
 Demonstrates the usage of Prima printing interface.
 A particular incoherence between *nix and win32 systems
-in their printing system is particularly solved by a implicit 
+in their printing system is particularly solved by a implicit
 Prima::PS modules set usage.
 
 =cut
@@ -106,7 +106,7 @@ sub print_sample
 		bottom      => 0,
 		valignment  => ta::Center,
 	);
-	
+
 	paint( $curr);
 
 	$curr-> end_doc;
@@ -127,8 +127,8 @@ sub refresh
 
 	push( @printers, { name => $display});
 	$l-> items([ map {$_ = $_-> {name}} @{[@printers]}]),
-	$l-> focusedItem( scalar grep { 
-		my $isnt = !$_-> {defaultPrinter}; ($wasnt &&= $isnt) && $isnt 
+	$l-> focusedItem( scalar grep {
+		my $isnt = !$_-> {defaultPrinter}; ($wasnt &&= $isnt) && $isnt
 	} @printers);
 	$w-> menu-> A1-> enabled( scalar @printers);
 }

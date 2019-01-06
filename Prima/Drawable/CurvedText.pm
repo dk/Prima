@@ -10,7 +10,7 @@ sub init_pointer
 	my ( $p, $beginning) = @_;
 	my $P = {
 		x      => $p-> [0],     # current coordinates of the aperture point
-		y      => $p-> [1],     # 
+		y      => $p-> [1],     #
 		i      => 0,            # index of the current segment in polygon
 		n      => scalar(@$p)-2,# number of points
  		end    => 0,            # end of polygon?
@@ -149,7 +149,7 @@ sub update_box
 	}
 }
 
-# rotate back @$a to angle=0, calculate transformation matrix, 
+# rotate back @$a to angle=0, calculate transformation matrix,
 # and store all in the cache
 sub precalc_box
 {
@@ -197,11 +197,11 @@ sub boxes_overlap
 		@b[$i,$i+1] = ($X,$Y);
 	}
 
-	# check whether any segment that forms @b intesects with $a 
+	# check whether any segment that forms @b intesects with $a
 
 	# reshuffle order of get_text_box() points so [0] is lower left, [1] is upper left, [2] is upper right
 	# also, point 8,9->0,1 for easier looping
-	@b[0..3,8,9] = @b[2,3,0..3]; 
+	@b[0..3,8,9] = @b[2,3,0..3];
 	for ( $i = 0; $i < 8; $i +=2 ) {
 		my ($x1, $y1, $x2, $y2) = @b[$i .. $i + 3];
 		my ( $dx, $dy) = ( $x2 - $x1, $y2 - $y1);
@@ -210,7 +210,7 @@ sub boxes_overlap
 		if ( $dx != 0) {
 			my $tangent = $dy / $dx;
 			for (0, $w) {
-				next if 
+				next if
 					( $_ > $x1 and $_ > $x2) or
 					( $_ < $x1 and $_ < $x2);
 				my $p = $y2 - $tangent * ( $x2 - $_ );
@@ -223,7 +223,7 @@ sub boxes_overlap
 		if ( $dy != 0) {
 			my $tangent = $dx / $dy;
 			for (0, $h) {
-				next if 
+				next if
 					( $_ > $y1 and $_ > $y2) or
 					( $_ < $y1 and $_ < $y2);
 				my $p = $x2 - $tangent * ( $y2 - $_ );
@@ -240,7 +240,7 @@ sub boxes_overlap
 sub curved_text_out
 {
 	my ( $self, $text, $polyline, %options) = @_;
-	
+
 	return unless 4 == grep { defined } @$polyline[0..3];
 
 	my $retval     = 1;
@@ -253,13 +253,13 @@ sub curved_text_out
 	my $p = init_pointer( $polyline, $offset >= 0);
 	move_pointer( $p, $offset);
 
-	my ( @chunks, $try_text_wrap, $angle, @box); 
+	my ( @chunks, $try_text_wrap, $angle, @box);
 	my ( %start, @walkback, @translated_box, @all_boxes, $fitting_direction); # collision detection
 
 	$try_text_wrap = 1;
 	@box[8,9] = ( $p->{x}, $p->{y});
 	push @all_boxes, \@translated_box if $collisions == 1;
-	
+
 	$text = Prima::Bidi::visual($text) if $Prima::Bidi::enabled;
 
 	while ( not $p-> {end} and length ($text) ) {
@@ -271,8 +271,8 @@ sub curved_text_out
 #print "* point $x $y\n";
 		# obtain next position
 		if ( $try_text_wrap) {
-			my $chunk = $self-> text_wrap( 
-				$text, $p-> {lleft}, 
+			my $chunk = $self-> text_wrap(
+				$text, $p-> {lleft},
 				tw::BreakSingle|tw::ReturnFirstLineLength
 			);
 			$t = substr( $text, 0, $chunk, '');
@@ -298,7 +298,7 @@ sub curved_text_out
 		} else {
 		SINGLE_GLYPH:
 			$t = substr( $text, 0, 1, '');
-			my ( $a, $b, $c) = @{ $self-> get_font_abc( 
+			my ( $a, $b, $c) = @{ $self-> get_font_abc(
 				ord($t), ord($t),
 				utf8::is_utf8($t)
 			)};
@@ -332,12 +332,12 @@ sub curved_text_out
 			$start_direction = 1;
 			last;
 		}
-		$fitting_direction = 
+		$fitting_direction =
 			(
-				not defined($fitting_direction) or 
+				not defined($fitting_direction) or
 				$fitting_direction == $start_direction
-			) ? 
-				$start_direction : 
+			) ?
+				$start_direction :
 				undef
 			;
 		if ( defined $fitting_direction) {
@@ -416,11 +416,11 @@ collide with the path boundaries and each other.
 =head2 curved_text_out $TEXT, $POLYLINE, %OPTIONS
 
 C<$TEXT> is a line of text, no special treatment is given to tab and newline characters.
-The text is plotted over C<$POLYLINE> path that should be an array of coordinate 
+The text is plotted over C<$POLYLINE> path that should be an array of coordinate
 numeric pairs, in the same format as C<Prima::Drawable::polyline> expects.
 
 The text begins to plot by drawing the first glyphs at the first path point, unless
-specified otherwise with the C<offset> option. The glyph is plotted with the angle 
+specified otherwise with the C<offset> option. The glyph is plotted with the angle
 perpendicular to the path segment; therefore the path may contain floating point numbers if
 futher plotting angle accuracy is desired.
 
@@ -485,7 +485,7 @@ If set, calculate glyph positions but do not draw them.
 =item offset INTEGER=0
 
 Sets offset from the beginning of the path where the first glyph is plotted.
-If offset is negative, it is calculated from the end of the path. 
+If offset is negative, it is calculated from the end of the path.
 
 =item skiptail BOOLEAN=false
 

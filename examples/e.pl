@@ -8,7 +8,7 @@ examples/e.pl - A minimalistic graphic editor window
 
 Outlines features required for a graphic editor window -
 color selection, and, mainly, non-standart L<Prima::ImageViewer>
-usage. 
+usage.
 
 Using L<Prima::Classes>, L<Prima::ScrollWidget>, L<Prima::Application>,
 L<Prima::ColorDialog>, L<Prima::ImageViewer>.
@@ -134,10 +134,10 @@ sub on_paint
 	my @c3d = ( $self-> dark3DColor, $self-> light3DColor);
 	my $i;
 	for ( $i = 0; $i < $cx; $i++) {
-		$canvas-> rect3d( 1 + $i * $cdx, $sz[1] / 2 + 1, 
+		$canvas-> rect3d( 1 + $i * $cdx, $sz[1] / 2 + 1,
 			1 + $i * $cdx + $cdx - 1, $sz[1] - 2,
 			1, @c3d, $colors[$i]);
-		$canvas-> rect3d( 1 + $i * $cdx, 1, 
+		$canvas-> rect3d( 1 + $i * $cdx, 1,
 			1 + $i * $cdx + $cdx - 1, $sz[1] / 2,
 			1, @c3d, $colors[$i + $cx]);
 	}
@@ -170,8 +170,8 @@ sub on_mouseclick
 	my $index = 0;
 	$index += $cx if $y < $sz[1] / 2;
 	$index += int(( $x - 1) / $cdx);
-	my $d = $self-> {colorDlg} ? 
-		$self-> {colorDlg} : 
+	my $d = $self-> {colorDlg} ?
+		$self-> {colorDlg} :
 		Prima::ColorDialog-> create(
 			centered => 1,
 			visible  => 0,
@@ -194,9 +194,9 @@ sub on_paint
 	my @sz = $canvas-> size;
 	my @c3d = ( $self-> dark3DColor, $self-> light3DColor);
 	$canvas-> rect3d( 0, 0, $sz[0]-1, $sz[1]-1, 1, @c3d, $self-> backColor);
-	$canvas-> rect3d( 3, 3, $sz[0] * 0.6, $sz[1] * 0.6, 1, 
+	$canvas-> rect3d( 3, 3, $sz[0] * 0.6, $sz[1] * 0.6, 1,
 		@c3d, $self-> owner-> {attrs}-> {backColor});
-	$canvas-> rect3d( $sz[0] * 0.4, $sz[1] * 0.4, $sz[0] - 4, 
+	$canvas-> rect3d( $sz[0] * 0.4, $sz[1] * 0.4, $sz[0] - 4,
 		$sz[1] - 4, 1, @c3d, $self-> owner-> {attrs}-> {color});
 }
 

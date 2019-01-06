@@ -11,7 +11,7 @@
 #include "Application.h"
 
 /* Tell a NET-compliant window manager that the window needs special treatment.
-	See freedesktop.org for docs 
+	See freedesktop.org for docs
 
 	params - 0 - clear, 1 - set
 */
@@ -31,11 +31,11 @@ set_net_hint(XWindow window, Bool state, Atom prop1, Atom prop2)
 	ev. window = window;
 	ev. message_type = NET_WM_STATE;
 	ev. format = 32;
-	
+
 	/*
-		_NET_WM_STATE_REMOVE        0    // remove/unset property 
-		_NET_WM_STATE_ADD           1    // add/set property 
-		_NET_WM_STATE_TOGGLE        2    // toggle property  
+		_NET_WM_STATE_REMOVE        0    // remove/unset property
+		_NET_WM_STATE_ADD           1    // add/set property
+		_NET_WM_STATE_TOGGLE        2    // toggle property
 	*/
 
 	ev. data. l[0] = state ? 1 : 0;
@@ -49,7 +49,7 @@ set_net_hint(XWindow window, Bool state, Atom prop1, Atom prop2)
 #define NETWM_SET_MAXIMIZED(xwindow,flag)   set_net_hint(xwindow,flag,NET_WM_STATE_MAXIMIZED_VERT,NET_WM_STATE_MAXIMIZED_HORZ)
 #define NETWM_SET_ON_TOP(xwindow,flag)      set_net_hint(xwindow,flag,NET_WM_STATE_STAYS_ON_TOP,NET_WM_STATE_ABOVE)
 
-unsigned char * 
+unsigned char *
 prima_get_window_property( XWindow window, Atom property, Atom req_type, Atom * actual_type,
 									int * actual_format, unsigned long * nitems)
 {
@@ -140,7 +140,7 @@ prima_wm_net_state_read_maximization( XWindow window, Atom property)
 			}
 			horiz = 1;
 		}
-	}  
+	}
 
 	free( prop);
 	return vert && horiz;
@@ -167,7 +167,7 @@ apc_window_task_listed( Handle self, Bool task_list)
 	DEFXX;
 	XX-> flags. task_listed = ( task_list ? 1 : 0);
 	NETWM_SET_TASK_LISTED( X_WINDOW, XX-> flags.task_listed );
-} 
+}
 
 /* Motif window hints */
 #define MWM_HINTS_FUNCTIONS           (1L << 0)
@@ -233,7 +233,7 @@ set_motif_hints( XWindow window, int border_style, int border_icons)
 
 Bool
 apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
-						int border_style, Bool task_list, int window_state, 
+						int border_style, Bool task_list, int window_state,
 						int on_top, Bool use_origin, Bool use_size, Bool layered)
 {
 	DEFXX;
@@ -249,10 +249,10 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	Bool recreate;
 	ViewProfile vprf;
 	XWindow old = X_WINDOW;
-	
+
 	if ( border_style != bsSizeable) border_style = bsDialog;
 	border_icons &= biAll;
-	
+
 	if ( !guts. argb_visual. visual || guts. argb_visual. visualid == guts. visual. visualid)
 		layered = false;
 
@@ -295,10 +295,10 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 
 	if ( X_WINDOW) { /* recreate request */
 		Bool destructive_motif_hints = 0; /* KDE 3.1: setting motif hints kills net_wm hints */
-		if ( 
+		if (
 			!guts.icccm_only && (
 				( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
-				( border_icons != XX-> borderIcons) || 
+				( border_icons != XX-> borderIcons) ||
 			( on_top >= 0)
 		)) {
 			if (( border_style != ( XX-> flags. sizeable ? bsSizeable : bsDialog)) ||
@@ -355,7 +355,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	attrs. override_redirect = false;
 	attrs. do_not_propagate_mask = attrs. event_mask;
 	attrs. colormap = XX-> colormap;
-	valuemask = 
+	valuemask =
 			0
 		/* | CWBackPixmap */
 		/* | CWBackPixel */
@@ -370,7 +370,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		/* | CWSaveUnder */
 		| CWEventMask
 		/* | CWDontPropagate */
-			| CWColormap 
+			| CWColormap
 		/* | CWCursor */
 		;
 	if ( layered ) {
@@ -414,7 +414,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	attrs. do_not_propagate_mask = attrs. event_mask;
 	attrs. colormap = XX->colormap;
 
-	valuemask = 
+	valuemask =
 		0
 		/* | CWBackPixmap */
 		/* | CWBackPixel */
@@ -429,7 +429,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		/* | CWSaveUnder */
 		| CWEventMask
 		/* | CWDontPropagate */
-			| CWColormap 
+			| CWColormap
 		/* | CWCursor */
 		;
 	if ( layered ) {
@@ -560,18 +560,18 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 			XX-> size. y *= 0.75;
 		}
 	}
-	XX-> origin. x = XX-> origin. y = 
-	XX-> ackOrigin. x = XX-> ackOrigin. y = 
-	XX-> ackSize. x = XX-> ackSize. y = 
+	XX-> origin. x = XX-> origin. y =
+	XX-> ackOrigin. x = XX-> ackOrigin. y =
+	XX-> ackSize. x = XX-> ackSize. y =
 	XX-> ackFrameSize. x = XX-> ackFrameSize.y = 0;
-	
+
 	bzero( &hints, sizeof( XSizeHints));
 	hints. flags  = PBaseSize;
 	hints. width  = hints. base_width  = XX-> size. x;
 	hints. height = hints. base_height = XX-> size. y;
 	XSetWMNormalHints( DISP, X_WINDOW, &hints);
-	XResizeWindow( DISP, XX-> client, XX-> size. x, XX-> size. y); 
-	XResizeWindow( DISP, X_WINDOW, XX-> size. x, XX-> size. y); 
+	XResizeWindow( DISP, XX-> client, XX-> size. x, XX-> size. y);
+	XResizeWindow( DISP, X_WINDOW, XX-> size. x, XX-> size. y);
 
 	TAILQ_INIT( &XX-> configure_pairs);
 	if (( cep = malloc( sizeof( ConfigureEventPair)))) {
@@ -582,7 +582,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	}
 
 	prima_send_cmSize( self, p0);
-	
+
 	return true;
 }
 
@@ -673,12 +673,12 @@ apc_window_get_icon( Handle self, Handle icon)
 	unsigned int xx, xy, ax, ay, xd, ad;
 	Bool ret;
 
-	if ( !icon) 
+	if ( !icon)
 		return X(self)-> flags. has_icon ? true : false;
 	else
 		if ( !X(self)-> flags. has_icon) return false;
 
-	if ( !( hints = XGetWMHints( DISP, X_WINDOW))) return false;  
+	if ( !( hints = XGetWMHints( DISP, X_WINDOW))) return false;
 	if ( !icon || !hints-> icon_pixmap) {
 		Bool ret = hints-> icon_pixmap != nilHandle;
 		XFree( hints);
@@ -686,7 +686,7 @@ apc_window_get_icon( Handle self, Handle icon)
 	}
 	xor = hints-> icon_pixmap;
 	and = hints-> icon_mask;
-	XFree( hints); 
+	XFree( hints);
 
 	{
 		XWindow foo;
@@ -696,11 +696,11 @@ apc_window_get_icon( Handle self, Handle icon)
 			return false;
 		if ( and && (!XGetGeometry( DISP, and, &foo, &bar2, &bar2, &ax, &ay, &bar, &ad)))
 			return false;
-	} 
+	}
 
 	CImage( icon)-> create_empty( icon, xx, xy, ( xd == 1) ? 1 : guts. qdepth);
 	if ( !prima_std_query_image( icon, xor)) return false;
-	
+
 	if ( and) {
 		Handle mask = (Handle) create_object( "Prima::Image", "");
 		CImage( mask)-> create_empty( mask, ax, ay, ( ad == 1) ? imBW : guts. qdepth);
@@ -708,7 +708,7 @@ apc_window_get_icon( Handle self, Handle icon)
 		if (( PImage( mask)-> type & imBPP) != 1)
 			CImage( mask)-> type( mask, true, imBW);
 		if ( ret) {
-			int i; 
+			int i;
 			Byte *d = PImage(mask)-> data;
 			for ( i = 0; i < PImage(mask)-> dataSize; i++, d++)
 				*d = ~(*d);
@@ -746,7 +746,7 @@ apc_window_set_caption( Handle self, const char *caption, Bool utf8)
 	XTextProperty p;
 
 	if ( utf8) {
-		if ( Xutf8TextListToTextProperty(DISP, ( char **) &caption, 1, 
+		if ( Xutf8TextListToTextProperty(DISP, ( char **) &caption, 1,
 #ifdef X_HAVE_UTF8_STRING
 			XUTF8StringStyle,
 #else
@@ -757,9 +757,9 @@ apc_window_set_caption( Handle self, const char *caption, Bool utf8)
 			XSetWMName( DISP, X_WINDOW, &p);
 			XFree( p. value);
 		}
-		XChangeProperty( DISP, X_WINDOW, NET_WM_NAME, UTF8_STRING, 8, 
+		XChangeProperty( DISP, X_WINDOW, NET_WM_NAME, UTF8_STRING, 8,
 			PropModeReplace, ( unsigned char*) caption, strlen( caption) + 1);
-		XChangeProperty( DISP, X_WINDOW, NET_WM_ICON_NAME, UTF8_STRING, 8, 
+		XChangeProperty( DISP, X_WINDOW, NET_WM_ICON_NAME, UTF8_STRING, 8,
 			PropModeReplace, ( unsigned char*) caption, strlen( caption) + 1);
 		X(self)->flags. title_utf8 = 1;
 	} else {
@@ -831,15 +831,15 @@ apc_SetWMNormalHints( Handle self, XSizeHints * hints)
 		hints-> min_height = h + XX-> menuHeight;
 		hints-> max_width  = PWidget(self)-> sizeMax.x;
 		hints-> max_height = PWidget(self)-> sizeMax.y + XX-> menuHeight;
-		if ( !XX-> flags. sizemax_set && 
+		if ( !XX-> flags. sizemax_set &&
 			PWidget(self)-> sizeMax.x == 16384 &&
 			PWidget(self)-> sizeMax.y == 16384) {
 			hints-> flags &= ~ PMaxSize;
 		}
-		else 
+		else
 			XX-> flags. sizemax_set = 1;
-	} else {   
-		Point who; 
+	} else {
+		Point who;
 		who. x = ( hints-> flags & USSize) ? hints-> width  : XX-> size. x;
 		who. y = ( hints-> flags & USSize) ? hints-> height : XX-> size. y + XX-> menuHeight;
 		hints-> min_width  = who. x;
@@ -871,7 +871,7 @@ apc_window_set_client_pos( Handle self, int x, int y)
 
 	if ( XX-> client == guts. grab_redirect) {
 		XWindow rx;
-		XTranslateCoordinates( DISP, XX-> client, guts. root, 0, 0, 
+		XTranslateCoordinates( DISP, XX-> client, guts. root, 0, 0,
 			&guts. grab_translate_mouse.x, &guts. grab_translate_mouse.y, &rx);
 	}
 
@@ -912,9 +912,9 @@ apc_window_set_rect( Handle self, int x, int y, int szx, int szy)
 
 	apc_SetWMNormalHints( self, &hints);
 	prima_send_cmSize( self, psize);
-	if ( PObject( self)-> stage == csDead) return; 
-	prima_wm_sync( self, ConfigureNotify); 
-}   
+	if ( PObject( self)-> stage == csDead) return;
+	prima_wm_sync( self, ConfigureNotify);
+}
 
 static Bool
 window_set_client_size( Handle self, int width, int height)
@@ -925,13 +925,13 @@ window_set_client_size( Handle self, int width, int height)
 	Bool implicit_move = false;
 	Point post, psize;
 	ConfigureEventPair *cep;
-	
+
 	widg-> virtualSize. x = width;
 	widg-> virtualSize. y = height;
 
 	width = ( width >= widg-> sizeMin. x)
 			? (( width <= widg-> sizeMax. x)
-				? width 
+				? width
 				: widg-> sizeMax. x)
 			: widg-> sizeMin. x;
 	if ( width == 0) width = 1;
@@ -969,7 +969,7 @@ window_set_client_size( Handle self, int width, int height)
 	}
 	XCHECKPOINT;
 	prima_send_cmSize( self, psize);
-	if ( PObject( self)-> stage == csDead) return false; 
+	if ( PObject( self)-> stage == csDead) return false;
 	prima_wm_sync( self, ConfigureNotify);
 	if ( implicit_move && (( XX-> origin.x != post.x) || (XX-> origin.y != post.y))) {
 		XX-> decorationSize. x =   XX-> origin.x - post. x;
@@ -989,13 +989,13 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
 {
 	DEFXX;
 	PWidget widg = PWidget( self);
-	
+
 	widg-> virtualSize. x = width;
 	widg-> virtualSize. y = height;
 
 	width = ( width >= widg-> sizeMin. x)
 			? (( width <= widg-> sizeMax. x)
-				? width 
+				? width
 				: widg-> sizeMax. x)
 			: widg-> sizeMin. x;
 	if ( width == 0) width = 1;
@@ -1014,10 +1014,10 @@ apc_window_set_client_rect( Handle self, int x, int y, int width, int height)
 		XX-> zoomRect. top   = height;
 		return true;
 	}
-	
-	if ( x == XX-> origin. x && y == XX-> origin. y && 
+
+	if ( x == XX-> origin. x && y == XX-> origin. y &&
 		width == XX-> size. x && height == XX-> size. y ) return true;
-	
+
 	apc_window_set_rect( self, x, y, width, height);
 	return true;
 }
@@ -1043,7 +1043,7 @@ prima_window_reset_menu( Handle self, int newMenuHeight)
 			ret = window_set_client_size( self, XX-> size.x, XX-> size.y);
 		else
 			XX-> size. y -= newMenuHeight - oh;
-		
+
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
 	if ( XX-> shape_extent. x != 0 || XX-> shape_extent. y != 0) {
 		int ny = XX-> menuHeight;
@@ -1058,7 +1058,7 @@ prima_window_reset_menu( Handle self, int newMenuHeight)
 			XShapeCombineRectangles( DISP, X_WINDOW, ShapeBounding, 0, 0, &xr, 1, ShapeUnion, 0);
 		}
 	}
-#endif     
+#endif
 	}
 	return ret;
 }
@@ -1083,7 +1083,7 @@ apc_window_set_visible( Handle self, Bool show)
 			wh. flags = StateHint;
 			XSetWMHints( DISP, X_WINDOW, &wh);
 			XX-> flags. withdrawn = 0;
-		}   
+		}
 		XMapWindow( DISP, X_WINDOW);
 		XX-> flags. iconic = iconic;
 		prima_wm_sync( self, MapNotify);
@@ -1094,7 +1094,7 @@ apc_window_set_visible( Handle self, Bool show)
 		} else
 			XUnmapWindow( DISP, X_WINDOW);
 		prima_wm_sync( self, UnmapNotify);
-	}   
+	}
 	XCHECKPOINT;
 	return true;
 }
@@ -1106,7 +1106,7 @@ apc_window_set_icon( Handle self, Handle icon)
 {
 	DEFXX;
 	PIcon i = ( PIcon) icon;
-	XIconSize * sz = nil; 
+	XIconSize * sz = nil;
 	Pixmap xor, and;
 	XWMHints wmhints;
 	int n;
@@ -1116,7 +1116,7 @@ apc_window_set_icon( Handle self, Handle icon)
 		XX-> flags. has_icon = false;
 		XDeleteProperty( DISP, X_WINDOW, XA_WM_HINTS);
 		wmhints. flags = InputHint;
-		wmhints. input = false; 
+		wmhints. input = false;
 		XSetWMHints( DISP, X_WINDOW, &wmhints);
 		return true;
 	}
@@ -1139,20 +1139,20 @@ apc_window_set_icon( Handle self, Handle icon)
 			i-> self-> size(( Handle) i, true, z);
 		}
 		XFree( sz);
-	} 
+	}
 
 	xor = prima_std_pixmap( icon, CACHE_LOW_RES);
 	if ( !xor) goto FAIL;
 	{
 		GC gc;
 		XGCValues gcv;
-		
+
 		and = XCreatePixmap( DISP, guts. root, i-> w, i-> h, 1);
 		if ( !and) {
 			XFreePixmap( DISP, xor);
 			goto FAIL;
 		}
-		
+
 		gcv. graphics_exposures = false;
 		gc = XCreateGC( DISP, and, GCGraphicsExposures, &gcv);
 		if ( X(icon)-> image_cache. icon) {
@@ -1175,7 +1175,7 @@ apc_window_set_icon( Handle self, Handle icon)
 	XCHECKPOINT;
 
 	XX-> flags. has_icon = true;
-	
+
 	return true;
 FAIL:
 
@@ -1202,8 +1202,8 @@ apc_window_set_window_state( Handle self, int state)
 		break;
 	default:
 		return false;
-	}   
-	
+	}
+
 	/* operate via NET_WM */
 	if ( state == wsMaximized && !XX-> flags. zoomed && net_supports_maximization()) {
 		Bool visible = XX-> flags. mapped;
@@ -1235,10 +1235,10 @@ apc_window_set_window_state( Handle self, int state)
 		} else {
 			XMapWindow( DISP, X_WINDOW);
 			if ( !XX-> flags. mapped && !did_net_zoom) sync = MapNotify;
-		}   
-	}     
-	XX-> flags. iconic = ( state == wsMinimized) ? 1 : 0; 
-	
+		}
+	}
+	XX-> flags. iconic = ( state == wsMinimized) ? 1 : 0;
+
 	if ( state == wsMaximized && !XX-> flags. zoomed && !did_net_zoom) {
 		int dx = ( XX-> decorationSize. x > 0 ) ? XX-> decorationSize. x : 2;
 		int dy = ( XX-> decorationSize. y > 0 ) ? XX-> decorationSize. y : 20;
@@ -1246,7 +1246,7 @@ apc_window_set_window_state( Handle self, int state)
 		XX-> zoomRect. bottom = XX-> origin.y;
 		XX-> zoomRect. right  = XX-> size.x;
 		XX-> zoomRect. top    = XX-> size.y;
-		apc_window_set_rect( self, dx * 2, dy * 2, 
+		apc_window_set_rect( self, dx * 2, dy * 2,
 				guts. displaySize.x - dx * 4, guts. displaySize. y - XX-> menuHeight - dy * 4);
 		if ( !XX-> flags. zoomed) sync = ConfigureNotify;
 		XX-> flags. zoomed = 1;
@@ -1254,11 +1254,11 @@ apc_window_set_window_state( Handle self, int state)
 
 	if ( XX-> flags. zoomed && state != wsMaximized) {
 		NETWM_SET_MAXIMIZED( X_WINDOW, 0);
-		apc_window_set_rect( self, XX-> zoomRect. left, XX-> zoomRect. bottom, 
+		apc_window_set_rect( self, XX-> zoomRect. left, XX-> zoomRect. bottom,
 			XX-> zoomRect. right, XX-> zoomRect. top);
 		if ( XX-> flags. zoomed) sync = ConfigureNotify;
-		XX-> flags. zoomed = 0; 
-	}   
+		XX-> flags. zoomed = 0;
+	}
 
 	bzero( &e, sizeof(e));
 	e. gen. source = self;
@@ -1295,15 +1295,15 @@ Handle
 prima_find_toplevel_window(Handle self)
 {
 	Handle toplevel = nilHandle;
-	
+
 	if (!application) return nilHandle;
 
 	toplevel = CApplication(application)-> get_modal_window(application, mtExclusive, true);
 	if ( toplevel == nilHandle && self != nilHandle) {
-		if ( 
-			PWindow(self)-> owner && 
+		if (
+			PWindow(self)-> owner &&
 			PWindow(self)-> owner != application
-		) 
+		)
 			toplevel = PWindow(self)-> owner;
 	}
 
@@ -1318,7 +1318,7 @@ prima_find_toplevel_window(Handle self)
 			}
 		}
 	}
-	
+
 	return toplevel;
 }
 
@@ -1327,7 +1327,7 @@ apc_window_execute( Handle self, Handle insert_before)
 {
 	DEFXX;
 	Handle toplevel;
-	
+
 	if (!application) return false;
 
 	toplevel = prima_find_toplevel_window(self);
@@ -1343,7 +1343,7 @@ apc_window_execute( Handle self, Handle insert_before)
 	XSync( DISP, false);
 	while ( prima_one_loop_round( WAIT_ALWAYS, true) && XX-> flags.modal)
 		;
-	
+
 	if ( toplevel) XSetTransientForHint( DISP, X_WINDOW, None);
 	if ( X_WINDOW) NETWM_SET_MODAL( X_WINDOW, XX-> flags.modal);
 	unprotect_object( self);
@@ -1388,14 +1388,14 @@ apc_window_get_on_top( Handle self)
 	int format;
 	unsigned long i, n, left;
 	Bool on_top = 0;
-	
+
 	if ( guts. icccm_only) return false;
-	
+
 	if ( XGetWindowProperty( DISP, X_WINDOW, NET_WM_STATE, 0, 32, false, XA_ATOM,
 			&type, &format, &n, &left, (unsigned char**)&prop) == Success) {
 	if ( prop) {
 			for ( i = 0; i < n; i++) {
-				if ( 
+				if (
 					prop[i] == NET_WM_STATE_STAYS_ON_TOP ||
 					prop[i] == NET_WM_STATE_ABOVE
 				) {

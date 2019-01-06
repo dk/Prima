@@ -21,7 +21,7 @@ sub rect3d
 			$canvas-> bar( $x, $y, $x1, $y1);
 		}
 		$canvas-> color( $c);
-		
+
 	}
 	oval3d( $canvas, $x, $y, $x1, $y1, $width, $lColor, $rColor, 40);
 }
@@ -49,7 +49,7 @@ sub oval3d
 #  |C    D|
 #  \------/
 # C'        D'
-	my @r = ( 
+	my @r = (
 		# coordinates of C and B, so A=r[0,3],B=r[2,3],C=r[0,1],D=[2,1]
 		$x + $r, $y + $r,
 		$x1 - $r, $y1 - $r,
@@ -85,7 +85,7 @@ my %wrap_paint = (
 	}
 );
 
-Prima::Themes::register( 'Prima::themes::round3d', 'round3d', [ 
+Prima::Themes::register( 'Prima::themes::round3d', 'round3d', [
 		'Prima::Button' => \%wrap_paint,
 		'Prima::ScrollBar' => \%wrap_paint,
 		'Prima::InputLine' => \%wrap_paint,

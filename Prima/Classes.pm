@@ -50,8 +50,7 @@ sub STORESIZE {
 		(STORE($_[0], $_[1] - 1, 0)) :
 		(substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE] ) = '' )
 }
-sub DELETE    { warn "This array does not implement delete functionaly" }
-
+sub DELETE    { warn "This array does not implement delete functionality" }
 
 # class Object; base class of all Prima classes
 package Prima::Object;
@@ -205,14 +204,14 @@ sub profile_check_in
 	my ( $self, $p, $default) = @_;
 	my $owner = $p-> {owner} ? $p-> {owner} : $default-> {owner};
 	$self-> SUPER::profile_check_in( $p, $default);
-	if ( 
+	if (
 		defined $owner
 		and !exists( $p-> {name})
 		and $default-> {name} eq ref $self
 	) {
-		$p-> {name} = ( ref $self) .  ( 
-			1 + map { 
-				(ref $self) eq (ref $_) ? 1 : () 
+		$p-> {name} = ( ref $self) .  (
+			1 + map {
+				(ref $self) eq (ref $_) ? 1 : ()
 			} $owner-> get_components
 		);
 		$p-> { name} =~ s/(.*):([^:]+)$/$2/;
@@ -225,8 +224,8 @@ sub get_notify_sub
 	my $rnt = $self-> notification_types-> {$note};
 	$rnt = nt::Default unless defined $rnt;
 	if ( $rnt & nt::CustomFirst) {
-		my ( $referer, $sub, $id) = $self-> get_notification( 
-			$note, 
+		my ( $referer, $sub, $id) = $self-> get_notification(
+			$note,
 			($rnt & nt::FluxReverse) ? -1 : 0
 		);
 		if ( defined $referer) {
@@ -256,7 +255,7 @@ sub AUTOLOAD
 		if scalar(@_) or not ref $self;
 	my ($componentName) = $expectedMethod =~ /::([^:]+)$/;
 	my $component = $self-> bring( $componentName);
-	Carp::croak("Unknown widget or method \"$expectedMethod\"") 
+	Carp::croak("Unknown widget or method \"$expectedMethod\"")
 		unless $component && ref($component);
 	return $component;
 }
@@ -313,7 +312,7 @@ sub profile_default
 }
 
 sub text
-{ 
+{
 	if ($#_) {
 		my ( $self, $text ) = @_;
 		$self-> open;
@@ -328,7 +327,7 @@ sub text
 }
 
 sub image
-{ 
+{
 	if ($#_) {
 		my ( $self, $image ) = @_;
 		$self-> open;
@@ -433,28 +432,28 @@ sub profile_check_in
 sub font
 {
 	($#_) ?
-		$_[0]-> set_font( $#_ > 1 ? 
-			{@_[1 .. $#_]} : 
+		$_[0]-> set_font( $#_ > 1 ?
+			{@_[1 .. $#_]} :
 			$_[1]
-		) : 
-		return Prima::Font-> new( 
+		) :
+		return Prima::Font-> new(
 			$_[0], "get_font", "set_font"
 		)
 }
 
 sub put_image
-{ 
-	$_[0]-> put_image_indirect( 
-		@_[3,1,2], 0, 0, 
-		($_[3]-> size) x 2, 
+{
+	$_[0]-> put_image_indirect(
+		@_[3,1,2], 0, 0,
+		($_[3]-> size) x 2,
 		defined ($_[4]) ? $_[4] : $_[0]-> rop
 	) if $_[3]
 }
 
-sub stretch_image { 
-	$_[0]-> put_image_indirect( 
-		@_[5,1,2], 0, 0, 
-		@_[3,4], $_[5]-> size, 
+sub stretch_image {
+	$_[0]-> put_image_indirect(
+		@_[5,1,2], 0, 0,
+		@_[3,4], $_[5]-> size,
 		defined ($_[6]) ? $_[6] : $_[0]-> rop
 	) if $_[5]
 }
@@ -647,7 +646,7 @@ sub has_alpha_layer { shift->maskType == im::bpp8 }
 sub ui_scale
 {
 	my ($self, %opt) = @_;
-	
+
 	my $zoom = delete($opt{zoom}) // ( $::application ? $::application->uiScaling : 1 );
 	return $self if $zoom == 1.0;
 
@@ -901,24 +900,24 @@ sub profile_check_in
 	$p-> {text} = $name
 		if !defined $p-> { text} and !defined $default-> {text};
 
-	$p-> {showHint} = 1 if 
-		( defined $owner) && 
-		( defined $::application) && 
+	$p-> {showHint} = 1 if
+		( defined $owner) &&
+		( defined $::application) &&
 		( $owner == $::application) &&
-		( exists $p-> { ownerShowHint} ? 
-			$p-> { ownerShowHint} : 
+		( exists $p-> { ownerShowHint} ?
+			$p-> { ownerShowHint} :
 			$default-> { ownerShowHint}
 		);
 
-	$p-> {enabled} = $owner-> enabled 
+	$p-> {enabled} = $owner-> enabled
 		if defined $owner && $owner-> autoEnableChildren;
 
 	(my $cls = ref $self) =~ s/^Prima:://;
 
 	for my $fore (qw(color hiliteBackColor disabledColor dark3DColor)) {
 		unless (exists $p-> {$fore}) {
-			my $clr = Prima::Widget::fetch_resource( 
-				$cls, $name, 'Foreground', 
+			my $clr = Prima::Widget::fetch_resource(
+				$cls, $name, 'Foreground',
 				$fore, $owner, fr::Color
 			);
 			$p-> {$fore} = $clr if defined $clr;
@@ -926,22 +925,22 @@ sub profile_check_in
 	}
 	for my $back (qw(backColor hiliteColor disabledBackColor light3DColor)) {
 		unless (exists $p-> {$back}) {
-			my $clr = Prima::Widget::fetch_resource( 
-				$cls, $name, 'Background', 
+			my $clr = Prima::Widget::fetch_resource(
+				$cls, $name, 'Background',
 				$back, $owner, fr::Color
 			);
 			$p-> {$back} = $clr if defined $clr;
 		}
 	}
 	for my $fon (qw(font popupFont)) {
-		my $f = Prima::Widget::fetch_resource( 
+		my $f = Prima::Widget::fetch_resource(
 			$cls, $name, 'Font', $fon, $owner, fr::Font);
 		next unless defined $f;
 		unless ( exists $p-> {$fon}) {
 			$p-> {$fon} = $f;
 		} else {
 			for ( keys %$f) {
-				$p-> {$fon}-> {$_} = $$f{$_} 
+				$p-> {$fon}-> {$_} = $$f{$_}
 					unless exists $p-> {$fon}-> {$_};
 			}
 		}
@@ -975,20 +974,20 @@ sub profile_check_in
 		$p-> { width } = $p-> { size}-> [ 0];
 		$p-> { height} = $p-> { size}-> [ 1];
 	}
-	
+
 	my $designScale = exists $p-> {designScale} ? $p-> {designScale} : $default-> {designScale};
 	if ( defined $designScale) {
 		my @defScale = @$designScale;
 		if (( $defScale[0] > 0) && ( $defScale[1] > 0)) {
 			@{$p-> { designScale}} = @defScale;
 			for ( qw ( left right top bottom width height)) {
-				$p-> {$_} = $default-> {$_} 
+				$p-> {$_} = $default-> {$_}
 					unless exists $p-> {$_};
 			}
 		} else {
-			@defScale = $owner-> designScale 
+			@defScale = $owner-> designScale
 				if defined $owner && $owner-> scaleChildren;
-			@{$p-> { designScale}} = @defScale 	
+			@{$p-> { designScale}} = @defScale
 				if ( $defScale[0] > 0) && ( $defScale[1] > 0);
 		}
 		if ( exists $p-> { designScale}) {
@@ -1051,9 +1050,9 @@ sub profile_check_in
 
 	if ( exists $p-> {pointer}) {
 		my $pt = $p-> {pointer};
-		$p-> {pointerType}    = ( ref($pt) ? cr::User : $pt) 
+		$p-> {pointerType}    = ( ref($pt) ? cr::User : $pt)
 			if !exists $p-> {pointerType};
-		$p-> {pointerIcon}    = $pt 
+		$p-> {pointerIcon}    = $pt
 			if !exists $p-> {pointerIcon} && ref( $pt);
 		$p-> {pointerHotSpot} = $pt-> {__pointerHotSpot}
 			if !exists $p-> {pointerHotSpot} && ref( $pt) && exists $pt-> {__pointerHotSpot};
@@ -1062,21 +1061,21 @@ sub profile_check_in
 	if ( exists $p-> {pack}) {
 		for ( keys %{$p-> {pack}}) {
 			s/^-//; # Tk syntax
-			$p-> {packInfo}-> {$_} = $p-> {pack}-> {$_} 
+			$p-> {packInfo}-> {$_} = $p-> {pack}-> {$_}
 				unless exists $p-> {packInfo}-> {$_};
 		}
 		$p-> {geometry} = gt::Pack unless exists $p-> {geometry};
-	} 
-	$p-> {packPropagate} = 0 if !exists $p-> {packPropagate} && 
+	}
+	$p-> {packPropagate} = 0 if !exists $p-> {packPropagate} &&
 		( exists $p-> {width} || exists $p-> {height});
-	
+
 	if ( exists $p-> {place}) {
 		for ( keys %{$p-> {place}}) {
 			s/^-//; # Tk syntax
-			$p-> {placeInfo}-> {$_} = $p-> {place}-> {$_} 
+			$p-> {placeInfo}-> {$_} = $p-> {place}-> {$_}
 				unless exists $p-> {placeInfo}-> {$_};
 		}
-		$p-> {geometry} = gt::Place unless exists $p-> {geometry}; 
+		$p-> {geometry} = gt::Place unless exists $p-> {geometry};
 	}
 }
 
@@ -1107,14 +1106,14 @@ sub insert
 	my @e;
 	while (ref $_[0]) {
 		my $cl = shift @{$_[0]};
-		$cl = "Prima::$cl" 
+		$cl = "Prima::$cl"
 			unless $cl =~ /^Prima::/ || $cl-> isa("Prima::Component");
 		push @e, $cl-> create(@{$_[0]}, owner=> $self);
 		shift;
 	}
 	if (@_) {
 		my $cl = shift @_;
-		$cl = "Prima::$cl" 
+		$cl = "Prima::$cl"
 			unless $cl =~ /^Prima::/ || $cl-> isa("Prima::Component");
 		push @e, $cl-> create(@_, owner=> $self);
 	}
@@ -1124,7 +1123,7 @@ sub insert
 #  The help context string is a pod-styled link ( see perlpod ) :
 #  "file/section". If the widget's helpContext begins with /,
 #  it's clearly a sub-topic, and the leading content is to be
-#  extracted up from the hierarchy. When a grouping widget 
+#  extracted up from the hierarchy. When a grouping widget
 #  does not have any help file related to, and does not wish that
 #  its childrens' helpContext would be combined with the upper
 #  helpContext, an empty string " " can be set
@@ -1140,8 +1139,8 @@ sub help
 	}
 	my $file;
 	while ( $self = $self-> owner) {
-		my $ho = $self-> helpContext; 
-		return 0 if $ho =~ /^\s+$/;   
+		my $ho = $self-> helpContext;
+		return 0 if $ho =~ /^\s+$/;
 		if ( length($ht) && $ht !~ /^\//) {
 			$file = $ht;
 			last;
@@ -1173,7 +1172,7 @@ sub pointer
 }
 
 sub widgets
-{ 
+{
 	return shift-> get_widgets unless $#_;
 	my $self = shift;
 	return unless $_[0];
@@ -1209,13 +1208,13 @@ sub __tk_dash_map
 	return %ret;
 }
 
-sub pack { 
+sub pack {
 	my $self = shift;
 	$self-> packInfo( { __tk_dash_map(@_) });
 	$self-> geometry( gt::Pack);
 }
 
-sub place { 
+sub place {
 	my $self = shift;
 	$self-> placeInfo( { __tk_dash_map(@_) });
 	$self-> geometry( gt::Place);
@@ -1330,35 +1329,35 @@ sub profile_check_in
 		exists $p-> {width}  or exists $p-> {height} or
 		exists $p-> {size}   or exists $p-> {rect} or
 		exists $p-> {right}  or exists $p-> {top};
-		
+
 	$self-> SUPER::profile_check_in( $p, $default);
-	
+
 	if ( $p-> { menu}) {
 		$p-> { menuItems} = $p-> {menu}-> get_items("");
 		delete $p-> {menu};
 	}
-	$p-> { menuFont} = {} 
+	$p-> { menuFont} = {}
 		unless exists $p-> { menuFont};
 	$p-> { menuFont} = Prima::Drawable-> font_match( $p-> { menuFont}, $default-> { menuFont});
-	
-	$p-> { modalHorizon} = 0 
+
+	$p-> { modalHorizon} = 0
 		if $p-> {clipOwner} || $default-> {clipOwner};
-		
-	$p-> { growMode} = 0 
-		if !exists $p-> {growMode} 
-		and $default-> {growMode} == gm::DontCare 
+
+	$p-> { growMode} = 0
+		if !exists $p-> {growMode}
+		and $default-> {growMode} == gm::DontCare
 		and (
-			( exists $p-> {clipOwner} && ($p-> {clipOwner}==1)) 
+			( exists $p-> {clipOwner} && ($p-> {clipOwner}==1))
 			or ( $default-> {clipOwner} == 1)
 		);
-		
+
 	my $owner = exists $p-> { owner} ? $p-> { owner} : $default-> { owner};
 	if ( $owner) {
 		$p-> {icon} = $owner-> icon if
-			( $p-> {ownerIcon} = exists $p-> {icon} ? 
+			( $p-> {ownerIcon} = exists $p-> {icon} ?
 				0 :
-				( exists $p-> {ownerIcon} ? 
-					$p-> {ownerIcon} : 
+				( exists $p-> {ownerIcon} ?
+					$p-> {ownerIcon} :
 					$default-> {ownerIcon}
 				)
 			);
@@ -1486,7 +1485,7 @@ sub AUTOLOAD
 	die "There is no such method as \"$expectedMethod\""
 		if scalar(@_) or not ref $self;
 	my ($itemName) = $expectedMethod =~ /::([^:]+)$/;
-	die "Unknown menu item identifier \"$itemName\"" 
+	die "Unknown menu item identifier \"$itemName\""
 		unless defined $itemName && $self-> has_item( $itemName);
 	return Prima::MenuItem-> create( $self, $itemName);
 }
@@ -1581,7 +1580,7 @@ my %RNT = (
 
 sub notification_types { return \%RNT; }
 }
-	
+
 my $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix;
 
 sub profile_default

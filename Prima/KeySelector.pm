@@ -78,15 +78,15 @@ sub init
 		text        => '~Shift',
 	], [ CheckBox =>
 		name        => 'Ctrl',
-		delegations => [$self, qw(Click)], 
+		delegations => [$self, qw(Click)],
 		pack        => { side => 'top', fill => 'x', padx => 15 },
 		text        => '~Ctrl',
 	], [ CheckBox =>
 		name        => 'Alt',
-		delegations => [$self, qw(Click)], 
+		delegations => [$self, qw(Click)],
 		pack        => { side => 'top', fill => 'x', padx => 15},
 		text        => '~Alt',
- 	], [ Widget => 
+ 	], [ Widget =>
 		name        => 'dummy2',
 		height      => 0,
 		visible     => 0,
@@ -105,7 +105,7 @@ sub Alt_Click    { $_[0]-> _gather; }
 sub _gather
 {
 	my $self = $_[0];
-	return if $self-> {blockChange}; 
+	return if $self-> {blockChange};
 
 	my $mod = ( $self-> GB-> Alt-> checked ? km::Alt : 0) |
 			( $self-> GB-> Ctrl-> checked ? km::Ctrl : 0) |
@@ -124,11 +124,11 @@ sub _gather
 	$self-> notify(q(Change));
 }
 
-sub Hook_KeyDown 
+sub Hook_KeyDown
 {
 	my ( $self, $hook, $code, $key, $mod) = @_;
 	$self-> key( Prima::AbstractMenu-> translate_key( $code, $key, $mod));
-}   
+}
 
 sub Hook_TranslateAccel
 {
@@ -152,9 +152,9 @@ sub translate_codes
 	if ((( $data & 0xFF) >= ord('A')) && (( $data & 0xFF) <= ord('z'))) {
 		$code = $data & 0xFF;
 		$key  = kb::NoKey;
-	} elsif ((( $data & 0xFF) >= 1) && (( $data & 0xFF) <= 26)) { 
+	} elsif ((( $data & 0xFF) >= 1) && (( $data & 0xFF) <= 26)) {
 		$code  = $useCTRL ? ( $data & 0xFF) : ord( lc chr(ord( '@') + $data & 0xFF));
-		$key   = kb::NoKey; 
+		$key   = kb::NoKey;
 		$data |= km::Ctrl;
 	} elsif ( $data & 0xFF) {
 		$code = $data & 0xFF;
@@ -163,7 +163,7 @@ sub translate_codes
 		$code = 0;
 		$key  = $data & kb::CodeMask;
 	}
-	$mod = $data & kb::ModMask;   
+	$mod = $data & kb::ModMask;
 	return $code, $key, $mod;
 }
 
@@ -172,7 +172,7 @@ sub key
 	return $_[0]-> {key} unless $#_;
 	my ( $self, $data) = @_;
 	my ( $code, $key, $mod) = translate_codes( $data, 0);
-	
+
 	if ( $code) {
 		$self-> Keys-> text( chr($code));
 	} else {
@@ -205,9 +205,9 @@ sub export
 	if ( $code) {
 		if (( $code >= 1) && ($code <= 26)) {
 			$code += ord('@');
-			$txt = '(ord(\''.uc chr($code).'\')-64)'; 
+			$txt = '(ord(\''.uc chr($code).'\')-64)';
 		} else {
-			$txt = 'ord(\''.lc chr($code).'\')'; 
+			$txt = 'ord(\''.lc chr($code).'\')';
 		}
 	} else {
 		my $x = 'NoKey';
@@ -243,7 +243,7 @@ sub describe
 	}
 	$txt = 'Shift+' . $txt if $mod & km::Shift;
 	$txt = 'Alt+'   . $txt if $mod & km::Alt;
-	$txt = 'Ctrl+'  . $txt if $mod & km::Ctrl; 
+	$txt = 'Ctrl+'  . $txt if $mod & km::Ctrl;
 	$txt =~ s/\+$// if $lonekey;
 	return $txt;
 }
@@ -257,13 +257,13 @@ sub shortcut
 	my $txt = '';
 
 	if ( $code || (( $key >= kb::F1) && ( $key <= kb::F30))) {
-		$txt = $code ? 
-			( uc chr $code) : 
+		$txt = $code ?
+			( uc chr $code) :
 			( 'F' . (( $key - kb::F1) / ( kb::F2 - kb::F1) + 1));
 		$txt = '^' . $txt if $mod & km::Ctrl;
 		$txt = '@' . $txt if $mod & km::Alt;
 		$txt = '#' . $txt if $mod & km::Shift;
-	} else { 
+	} else {
 		return export( $data);
 	}
 	return "'" . $txt . "'";
@@ -274,7 +274,7 @@ sub shortcut
 sub eval_shortcut
 {
 	my $text = shift;
-	
+
 	return undef unless defined $text;
 	return $text if $text =~ /^(\d+)$/;
 
@@ -285,7 +285,7 @@ sub eval_shortcut
 		$mod |= km::Ctrl  if $1 eq 'Ctrl';
 		$mod |= km::Shift if $1 eq 'Shift';
 	}
-	
+
 	if ( $text =~ s/^kb::(\w+)// ) {
 		my $vk = $vkeys{$1};
 		return $vk | $mod;
@@ -591,7 +591,7 @@ sub _parse_menu_items
 				push @stack, [ $i + 1, $ptr ];
 				$ptr = $ref_or_sub;
 				$i = -1;
-			} elsif ( defined $text && $id !~ /^#/) { # kindly saves you from hell when your menu layout will change, 
+			} elsif ( defined $text && $id !~ /^#/) { # kindly saves you from hell when your menu layout will change,
 			                                          # but config file stays the same
 				$text =~ s/~//;
 				$vkeys{$id} = $vkey;
@@ -702,8 +702,8 @@ sub init
 		pack        => { side => 'bottom', pad => 20 },
 	] );
 
-	$self-> set_centered( 
-		$profile{x_centered} || $profile{centered}, 
+	$self-> set_centered(
+		$profile{x_centered} || $profile{centered},
 		$profile{y_centered} || $profile{centered});
 
 	return $self;
@@ -756,7 +756,7 @@ of C<km::XXX> key modifiers and either a C<kb::XXX> virtual
 key, or a character code value.
 
 The property allows almost, but not all possible combinations of
-key constants. Only C<km::Ctrl>, C<km::Alt>, and C<km::Shift> 
+key constants. Only C<km::Ctrl>, C<km::Alt>, and C<km::Shift>
 modifiers are allowed.
 
 =back
@@ -764,7 +764,7 @@ modifiers are allowed.
 =head2 Methods
 
 All methods here can ( and must ) be called without the object
-syntax; - the first parameter must not be neither package nor 
+syntax; - the first parameter must not be neither package nor
 widget.
 
 =over
@@ -784,11 +784,11 @@ a menu.
 Accepts KEY in integer format, and returns string
 with a perl-evaluable expression, which after
 evaluation resolves to the original KEY value. Useful for storing
-a key into text config files, where value must be both 
+a key into text config files, where value must be both
 human readable and easily passed to a program.
 
 	print export( km::Shift|km::Ctrl|km::F10);
-	km::Shift|km::Ctrl|km::F10 
+	km::Shift|km::Ctrl|km::F10
 
 =item shortcut KEY
 

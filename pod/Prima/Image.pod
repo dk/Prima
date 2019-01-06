@@ -14,10 +14,10 @@ Prima::Image - Bitmap routines
    );
 
    # draw something
-   $i-> begin_paint; 
+   $i-> begin_paint;
    $i-> color( cl::White);
    $i-> ellipse( 5, 5, 10, 10);
-   $i-> end_paint; 
+   $i-> end_paint;
 
    # mangle
    $i-> size( 64, 64);
@@ -118,7 +118,7 @@ the system's graphical layer.
 Another special case is a 1-bit ( monochrome ) DeviceBitmap. When it is drawn
 upon a drawable with bit depth greater than 1, the drawable's color and
 backColor properties are used to reflect 1 and 0 bits, respectively. On a 1-bit
-drawable this does not happen, and the color properties are not used. 
+drawable this does not happen, and the color properties are not used.
 
 =head2 File input and output
 
@@ -131,12 +131,12 @@ operations, auto conversion when a format does not support a particular pixel
 format etc. In this document, C<load()> and C<save()> methods are illustrated
 only in their basic, single-frame functionality. When called with no extra
 parameters, these methods fail only if a disk I/O error occurred or an unknown
-image format was used. 
+image format was used.
 
 When an image is loaded, the old bitmap memory content is discarded,
 and the image attributes are changed accordingly to the loaded image.
 Along with these, an image palette is loaded, if available, and
-a pixel format is assigned, closest or identical to the pixel format 
+a pixel format is assigned, closest or identical to the pixel format
 in the image file.
 
 =head2 Pixel formats
@@ -179,7 +179,7 @@ calls,
   $image-> type( im::bpp4);
   $image-> palette( $palette);
 
-and 
+and
 
   $image-> palette( $palette);
   $image-> type( im::bpp4);
@@ -204,19 +204,19 @@ the final color palette. For example, for an 24-bit image,
   $image-> set( type => im::bpp8, palette => 32);
 
 call would calculate colors in the image, compress them to an optimized palette of
-32 cells and finally converts to a 8-bit format. 
+32 cells and finally converts to a 8-bit format.
 
 Instead of C<palette> property, C<colormap> can also be used.
 
-=head2 Data access 
+=head2 Data access
 
 The pixel values can be accessed in I<Prima::Drawable> style, via C<::pixel>
 property. However, I<Prima::Image> introduces several helper functions,
-for different aims. The C<::data> property is used to set or retrieve 
-a scalar representation of bitmap data. The data are expected to be lined 
+for different aims. The C<::data> property is used to set or retrieve
+a scalar representation of bitmap data. The data are expected to be lined
 up to a 'line size' margin ( 4-byte boundary ), which is calculated as
 
-  $lineSize = int(( $image->width * ( $image-> type & im::BPP) + 31) / 32) * 4; 
+  $lineSize = int(( $image->width * ( $image-> type & im::BPP) + 31) / 32) * 4;
 
 or returned from the read-only property C<::lineSize>.
 
@@ -302,7 +302,7 @@ different from C<rop::CopyPut>, usually fail.
 
 The term I<layered window> is borrowed from Windows world, and means a window
 with transparency. In Prima, the property L<layered> is used to select this
-functionality. The call to C<< $::application->get_system_value(sv::LayeredWidgets) >> 
+functionality. The call to C<< $::application->get_system_value(sv::LayeredWidgets) >>
 can check whether this functionality is available; if not, the property is ignored.
 By default, widgets can not use layering.
 
@@ -335,7 +335,7 @@ put a constant alpha value over a rectangle is this, for example:
    $drawable-> stretch_image( 0, 0, 100, 100, $a, rop::SrcOver );
 
 If displaying a picture with pre-existing alpha channel, you'll need to call
-L<premultiply_alpha>, because picture renderer assumes that pixel values are premultiplied. 
+L<premultiply_alpha>, because picture renderer assumes that pixel values are premultiplied.
 
 Even though addressing alpha values of pixels when drawing on layered surfaces is not straighforward,
 the conversion between images and device bitmaps fully supports alpha pixels. This means that:
@@ -444,7 +444,7 @@ indicate another alignment. See L<Data access> for more.
 Returns mean value of pixels.
 Mean value is C<::sum> of pixel values, divided by number of pixels.
 
-=item palette [ @PALETTE ] 
+=item palette [ @PALETTE ]
 
 A color palette, used for representing 1, 4, and 8-bit bitmaps, when an image
 object is to be visualized. @PALETTE contains individual color component
@@ -455,7 +455,7 @@ See also C<colormap>.
 
 =item pixel ( X_OFFSET, Y_OFFSET ) PIXEL
 
-Provides per-pixel access to the image data when 
+Provides per-pixel access to the image data when
 image object is in disabled paint state. Otherwise,
 same as C<Prima::Drawable::pixel>.
 
@@ -479,18 +479,18 @@ through C<ist::Box> are very fast scalers, others not so.
 
 Can be one of C<ist:::XXX> constants:
 
-  ist::None      - image will be either stripped (when downsizing) 
+  ist::None      - image will be either stripped (when downsizing)
                    or padded (when upsizing) with zeros
   ist::Box       - image will be scaled using simple box transform
   ist::BoxX      - columns will behave same as in ist::None,
                    rows will behave same as in ist::Box
   ist::BoxY      - rows will behave same as in ist::None,
-                   columns will behave same as in ist::Box  
+                   columns will behave same as in ist::Box
   ist::Triangle  - bilinear interpolation
   ist::Quadratic - 2rd order (quadratic) B-Spline approximation of Gaussian
   ist::Sinc      - sine function
   ist::Hermite   - B-Spline interpolation
-  ist::Cubic     - 3rd order (cubic) B-Spline approximation of Gaussian 
+  ist::Cubic     - 3rd order (cubic) B-Spline approximation of Gaussian
   ist::Gaussian  - Gaussian transform with gamma=0.5
 
 =for podview <img src="scalings.gif">
@@ -499,9 +499,9 @@ Can be one of C<ist:::XXX> constants:
 
 Note: Resampling scaling algorithms (those greater than C<ist::Box>), when applied to Icons with 1-bit
 icon mask, will silently convert the mask in 8-bit and apply the same scaling algorithm to it. This
-will have great smoothing effect on mask edges if the system supports ARGB layering (see L<Layering> ).
+will have great smoothing effect on mask edges if the system supports ARGB layering (see L<"Layering"> ).
 
-=item size WIDTH, HEIGHT 
+=item size WIDTH, HEIGHT
 
 Manages dimensions of the image. On set-call,
 the image data are changed accordingly to the new dimensions,
@@ -510,7 +510,7 @@ the pixel values are either scaled or truncated.
 
 =item stats ( INDEX ) VALUE
 
-Returns one of calculated values, that correspond to INDEX, which is one 
+Returns one of calculated values, that correspond to INDEX, which is one
 of the following C<is::XXX> constants:
 
    is::RangeLo  - minimum pixel value
@@ -531,8 +531,8 @@ C<::stdDev>, C<::sum>, C<::sum2>.
 
 =item stdDev
 
-Returns standard deviation of the image data. 
-Standard deviation is the square root of C<::variance>. 
+Returns standard deviation of the image data.
+Standard deviation is the square root of C<::variance>.
 
 =item sum
 
@@ -547,9 +547,9 @@ Returns sum of squares of pixel values of the image data
 Governs the image pixel format type. TYPE is a combination
 of C<im::XXX> constants. The constants are collected in groups:
 
-Bit-depth constants provide size of pixel is bits. Their actual 
+Bit-depth constants provide size of pixel is bits. Their actual
 value is same as number of bits, so C<im::bpp1> value is 1,
-C<im::bpp4> - 4, etc. The valid constants represent bit depths 
+C<im::bpp4> - 4, etc. The valid constants represent bit depths
 from 1 to 128:
 
    im::bpp1
@@ -570,11 +570,11 @@ The following values designate the pixel format category:
    im::TrigComplexNumber
    im::SignedInt
 
-Value of C<im::Color> is 0, whereas other category constants 
+Value of C<im::Color> is 0, whereas other category constants
 represented by unique bit value, so combination of
 C<im::RealNumber> and C<im::ComplexNumber> is possible.
 
-There also several mnemonic constants defined: 
+There also several mnemonic constants defined:
 
    im::Mono          - im::bpp1
    im::BW            - im::bpp1 | im::GrayScale
@@ -584,8 +584,8 @@ There also several mnemonic constants defined:
    im::RGB           - im::bpp24
    im::Triple        - im::bpp24
    im::Byte          - gray 8-bit unsigned integer
-   im::Short         - gray 16-bit unsigned integer 
-   im::Long          - gray 32-bit unsigned integer 
+   im::Short         - gray 16-bit unsigned integer
+   im::Long          - gray 32-bit unsigned integer
    im::Float         - float
    im::Double        - double
    im::Complex       - dual float
@@ -593,14 +593,14 @@ There also several mnemonic constants defined:
    im::TrigComplex   - dual float
    im::TrigDComplex  - dual double
 
-Bit depths of float- and double- derived pixel formats 
+Bit depths of float- and double- derived pixel formats
 depend on a platform.
 
 The groups can be masked out with the mask values:
 
    im::BPP      - bit depth constants
    im::Category - category constants
-   im::FMT      - extra format constants 
+   im::FMT      - extra format constants
 
 The extra formats are the pixel formats, not supported by C<::type>,
 but recognized within the combined set-call, like
@@ -623,7 +623,7 @@ extra pixel formats are recognized:
 =item variance
 
 Returns variance of pixel values of the image data.
-Variance is C<::sum2>, divided by number of pixels 
+Variance is C<::sum2>, divided by number of pixels
 minus square of C<::sum> of pixel values.
 
 =item width INTEGER
@@ -672,7 +672,7 @@ stores the provided transparency data with same alignment.
 
 =item maskColor COLOR
 
-When C<::autoMasking> set to C<am::MaskColor>, COLOR 
+When C<::autoMasking> set to C<am::MaskColor>, COLOR
 is used as a transparency value.
 
 =item maskIndex INDEX
@@ -682,10 +682,10 @@ color in teh current palette is used as a transparency value.
 
 =item maskType INTEGER
 
-Is either C<im::bpp1> (1) or C<im::bpp8> (8). The latter can be used 
+Is either C<im::bpp1> (1) or C<im::bpp8> (8). The latter can be used
 as a layered (argb) source surface to draw with blending effect.
 
-=back 
+=back
 
 =head2 Prima::DeviceBitmap properties
 
@@ -701,16 +701,16 @@ channel and compatible with layered widgets (C<dbt::Layered>).
 The color depth of a bitmap can be read via C<get_bpp()> method; monochrome
 bitmaps always have bit depth of 1, layered bitmaps have bit depth of 32.
 
-=back 
+=back
 
-=head2 Prima::Image methods 
+=head2 Prima::Image methods
 
 =over
 
 =item bitmap
 
-Returns newly created I<Prima::DeviceBitmap> instance, 
-with the image dimensions and with the bitmap pixel 
+Returns newly created I<Prima::DeviceBitmap> instance,
+with the image dimensions and with the bitmap pixel
 values copied to.
 
 =item clone %properties
@@ -722,7 +722,7 @@ a down-sampled copy, for example.
 
 Returns array of hashes, each describing the supported image
 format. If the array is empty, the toolkit was set up so
-it can not load and save images. 
+it can not load and save images.
 
 See L<Prima::image-load> for details.
 
@@ -750,11 +750,11 @@ Returns a system handle for an image object.
 =item load (FILENAME or FILEGLOB) [ %PARAMETERS ]
 
 Loads image from file FILENAME or stream FILEGLOB into an object, and returns the success flag.
-The semantics of C<load()> is extensive, and can be influenced by 
+The semantics of C<load()> is extensive, and can be influenced by
 PARAMETERS hash. C<load()> can be called either in a context of an existing object,
 then a boolean success flag is returned, or in a class context, then a newly
 created object ( or C<undef> ) is returned. If an error occurs, C<$@> variable
-contains the error description string. These two invocation semantics are 
+contains the error description string. These two invocation semantics are
 equivalent:
 
    my $x = Prima::Image-> create();
@@ -773,8 +773,8 @@ NB! When loading from streams on win32, mind C<binmode>.
 
 Performs iterative mapping of bitmap pixels, setting every pixel
 to C<::color> property with respect to C<::rop> type if a pixel
-equals to COLOR, and to C<::backColor> property with respect 
-to C<::rop2> type otherwise. 
+equals to COLOR, and to C<::backColor> property with respect
+to C<::rop2> type otherwise.
 
 C<rop::NoOper> type can be used for color masking.
 
@@ -816,7 +816,7 @@ Rotates the image by 90, 180, or 270 degrees.
 =item save (FILENAME or FILEGLOB), [ %PARAMETERS ]
 
 Stores image data into image file FILENAME or stream FILEGLOB, and returns the success flag.
-The semantics of C<save()> is extensive, and can be influenced by 
+The semantics of C<save()> is extensive, and can be influenced by
 PARAMETERS hash. If error occurs, C<$@> variable
 contains error description string.
 
@@ -845,7 +845,7 @@ See also: L<Application/uiScaling>
 C<Prima::Image>-specific events occur only from inside L<load> call, to report
 image loading progress. Not all codecs (currently JPEG,PNG,TIFF only) are able
 to report the progress to the caller. See L<Prima::image-load/"Loading with
-progress indicator"> for details, L<Prima::ImageViewer/watch_load_progress> and 
+progress indicator"> for details, L<Prima::ImageViewer/watch_load_progress> and
 L<Prima::ImageDialog/load> for suggested use.
 
 =over
@@ -859,13 +859,13 @@ C<EXTRAS> is the hash to be stored later in C<{extras}> key on the object.
 
 =item DataReady X, Y, WIDTH, HEIGHT
 
-Called whenever image data that cover area designated by X,Y,WIDTH,HEIGHT 
+Called whenever image data that cover area designated by X,Y,WIDTH,HEIGHT
 is acquired. Use C<load> option C<eventDelay> to limit the rate of C<DataReady>
 event.
 
 =back
 
-=head2 Prima::Icon methods 
+=head2 Prima::Icon methods
 
 =over
 
@@ -905,19 +905,19 @@ with non-integer zooms looks ugly.
 
 =back
 
-=head2 Prima::DeviceBitmap methods 
+=head2 Prima::DeviceBitmap methods
 
 =over
 
 =item icon
 
-Returns a newly created I<Prima::Icon> object instance, with the 
+Returns a newly created I<Prima::Icon> object instance, with the
 pixel information copied from the object. If the bitmap is layered,
 returns icons with maskType set to C<im::bpp8>.
 
 =item image
 
-Returns a newly created I<Prima::Image> object instance, with the 
+Returns a newly created I<Prima::Image> object instance, with the
 pixel information copied from the object.
 
 =item get_handle

@@ -45,7 +45,7 @@ apc_timer_create( Handle self)
 	sys-> type.timer = true;
 	inactivate_timer( sys);
 	sys-> who = self;
-	if (real) 
+	if (real)
 		apc_component_fullname_changed_notify( self);
 	return true;
 }

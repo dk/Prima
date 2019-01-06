@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -192,14 +192,14 @@ sub focusedCell
 	return $_[0]-> SUPER::focusedCell unless $#_;
 	my ($self,$x,$y) = @_;
 	($x, $y) = @$x if !defined $y && ref($x) eq 'ARRAY';
-	return unless $y >= 0 && $x >= 0 && $self-> {cells}-> [$y] && 
+	return unless $y >= 0 && $x >= 0 && $self-> {cells}-> [$y] &&
 		$self-> {cells}-> [$y]-> [$x] && length $self-> {cells}-> [$y]-> [$x];
 	$self-> SUPER::focusedCell( $x, $y);
 }
 
 my @small_font_metrics;
 
-my $g = $w-> insert( Periodic => 
+my $g = $w-> insert( Periodic =>
 	origin => [0,0],
 	size   => [$w-> size],
 	growMode => gm::Client,
@@ -224,19 +224,19 @@ my $g = $w-> insert( Periodic =>
 	constantCellHeight => int( 50 * $scaling + .5),
 	multiSelect => 0,
 	onDrawCell => sub {
-		my ( $self, $canvas, 
-			$column, $row, $indent, 
-			$sx1, $sy1, $sx2, $sy2, 
-			$cx1, $cy1, $cx2, $cy2, 
+		my ( $self, $canvas,
+			$column, $row, $indent,
+			$sx1, $sy1, $sx2, $sy2,
+			$cx1, $cy1, $cx2, $cy2,
 			$selected, $focused, $prelight) = @_;
 		$canvas-> clear($sx1, $sy1, $sx2, $sy2);
 		my $item = $self-> {cells}-> [$row]-> [$column];
 		my $color = $colors{$layers[$row]};
 		if ( length $item) {
 			return unless $color;
-			return unless defined 
-				($color = ( exists $color-> {$column}) ? 
-					$color-> {$column} : 
+			return unless defined
+				($color = ( exists $color-> {$column}) ?
+					$color-> {$column} :
 					$color-> {default});
 			$canvas-> color( cl::Black);
 			$canvas-> rectangle( $cx1-1, $cy1-1, $cx2, $cy2);
@@ -252,10 +252,10 @@ my $g = $w-> insert( Periodic =>
 			$canvas-> font( height => 12 * $scaling );
 				@small_font_metrics = ( $canvas-> get_text_width('3'), $f-> height)
 					unless @small_font_metrics;
-					
+
 			my $text = $elem_info{$item}-> {atomic_number}||"";
-			$canvas-> text_out( $text, 
-				$cx2 - $small_font_metrics[0] * length($text) - 4, 
+			$canvas-> text_out( $text,
+				$cx2 - $small_font_metrics[0] * length($text) - 4,
 				$cy2 - $small_font_metrics[1] - 4);
 			$canvas-> font($f);
 			$canvas-> rect_focus( $sx1, $sy1, $sx2-1, $sy2-1) if $focused;

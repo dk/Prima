@@ -83,7 +83,7 @@ $tn->insert_to_page(0,'Label',
 	text   => M "Wrappable text: B<bold
 W<non-wrappable bold C<Green|and green>>,
 but still bold> text
-",	
+",
 	pack   => { side => 'top', fill => 'both', expand => 1 },
 );
 

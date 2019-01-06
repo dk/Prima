@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -7,7 +7,7 @@ examples/eyes.pl - An eyes program clone
 =head1 FEATURES
 
 A well-known eyes written in Prima toolkit.
-Demostrates the usage of a shape-extension and a 
+Demostrates the usage of a shape-extension and a
 determination of its support on a system.
 
 Note the menu hide feature - it's activation (^M)
@@ -36,7 +36,7 @@ sub reshape
 	for (0,1) {
 	$sz[$_] = 5 if $sz[$_] < 5;
 	}
-	my $i = Prima::Image-> create( 
+	my $i = Prima::Image-> create(
 		width  => $sz[0],
 		height => $sz[1],
 		type   => im::BW,
@@ -69,7 +69,7 @@ my $x = Prima::MainWindow-> create(
 			["~Reverse colors" => sub {
 				my ( $self, $mit) = @_;
 				$revcolors = $revcolors ? 0 : 1;
-				$self-> menu-> text( $mit, 
+				$self-> menu-> text( $mit,
 					$revcolors ? "~Normal colors" : "~Reverse colors");
 				$self-> color( $revcolors ? cl::White : cl::Black);
 				$self-> backColor( $revcolors ? cl::Black : cl::White);
@@ -88,7 +88,7 @@ my $x = Prima::MainWindow-> create(
 	],
 	size     => [ 200, 300],
 	name     => 'Eyes',
-	onSize   => sub { 
+	onSize   => sub {
 		reshape( $_[0]) if $canshape;
 	},
 	onPaint  => sub {
@@ -107,13 +107,13 @@ my $x = Prima::MainWindow-> create(
 			my $angle = atan2( $dd[1], $dd[0]);
 			my ( $sin, $cos) = ( sin($angle), cos( $angle));
 			my $h = sqrt(
-				($eye[1]*$cos) * ($eye[1]*$cos) + 
+				($eye[1]*$cos) * ($eye[1]*$cos) +
 				($eye[0]*$sin) * ($eye[0]*$sin)
 			);
 			my @da = ( $eye[0] * $eye[1] * $cos / $h, $eye[0] * $eye[1] * $sin / $h);
 			my $dp = sqrt( $dd[0] * $dd[0] + $dd[1] * $dd[1]);
 			my $db = sqrt( $da[0] * $da[0] + $da[1] * $da[1]) * 0.36;
-			my @e = ( $db < $dp) ? ( $db * $cos, $db * $sin) : @dd; 
+			my @e = ( $db < $dp) ? ( $db * $cos, $db * $sin) : @dd;
 			$canvas-> fill_ellipse( @e, $sz[0]* $ball, $sz[1]* $ball * 2);
 			$cc[0] += $sz[0] / 2;
 		}
@@ -124,7 +124,7 @@ $x-> icon( reshape( $x));
 
 my @pp = $x-> pointerPos;
 
-$x-> insert( Timer => 
+$x-> insert( Timer =>
 	timeout => 100,
 	onTick => sub {
 		my @pxp = $x-> pointerPos;

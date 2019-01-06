@@ -1,8 +1,8 @@
-('NewCenturySchlbk-Bold' => { 
+('NewCenturySchlbk-Bold' => {
   name            => 'NewCenturySchlbk-Bold',
   family          => 'New Century Schoolbook',
   height          => 1238,
-  weight          => fw::Bold,   
+  weight          => fw::Bold,
   style           => fs::Bold|fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,

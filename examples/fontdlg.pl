@@ -1,6 +1,6 @@
 package fontdlg;
 
-=pod 
+=pod
 
 =head1 NAME
 
@@ -11,7 +11,7 @@ examples/fontdlg.pl - An alternate font selection window
 Demonstrates Prima font API and its usage.
 
 Note the inability to set a font with a particular size and width factor in one
-call ( in $re_sample sub ). A font size and width is accepted, however. 
+call ( in $re_sample sub ). A font size and width is accepted, however.
 
 Tests the Prima font interface implementation. A constant pain here is the
 correspondence of a font metrics before and after the font load.  X is known
@@ -107,7 +107,7 @@ my $re_size = sub {
 		$w-> Encoding-> set_items( \@enc_items);
 		$w-> Encoding-> set_focused_item( $found);
 	}
-	
+
 	for ( @list)
 	{
 		next if length( $current_encoding) && ( $current_encoding ne $_-> {encoding});
@@ -118,7 +118,7 @@ my $re_size = sub {
 		} else {
 			push ( @sizes, $_-> {size});
 		}
-	}   
+	}
 	my %k = map { $_ => 1 } @sizes;
 	@sizes = sort { $a <=> $b } keys %k;
 	@sizes = (10) unless scalar @sizes;
@@ -167,7 +167,7 @@ sub create_info_window
 			$p-> font-> direction(0);
 
 			my $m = $p-> get_font;
-			my $xtext = Encode::decode('latin1', "\x{c5}Mg"); 
+			my $xtext = Encode::decode('latin1', "\x{c5}Mg");
 			my $s = $size[1] - $m-> {height} - $m-> {externalLeading} - 20;
 			my $w = $p-> get_text_width($xtext) + 66;
 			$p-> textOutBaseline(1);
@@ -249,7 +249,7 @@ sub create_info_window
 
 	my %wf = ( %$f, direction => 0 );
 	my @gsize= ( $f->maximalWidth + 10 , $f->height + 10 );
-	my $glyph = $ww-> insert( Widget => 
+	my $glyph = $ww-> insert( Widget =>
 		text => ' ',
 		font => \%wf,
 		size => \@gsize,
@@ -266,7 +266,7 @@ sub create_info_window
 
 			my ( $a, $b, $c ) = @{ $self->get_font_abc( ord($C), ord($C), utf8::is_utf8($C)) };
 			my ( $d, $e, $f ) = @{ $self->get_font_def( ord($C), ord($C), utf8::is_utf8($C)) };
-			
+
 			my $w = (( $a < 0 ) ? 0 : $a) + $b + (( $c < 0 ) ? 0 : $c);
 			my $h = (( $d < 0 ) ? 0 : $d) + $e + (( $f < 0 ) ? 0 : $f);
 			$w = ( $self-> width  - $w ) / 2;
@@ -309,7 +309,7 @@ sub create_info_window
 		$charmap{$count++} = $_ for $$_[0] .. $$_[1];
 	}
 	my $ih = int($f-> height * 1.5);
-	my $l = $ww-> insert( AbstractListViewer => 
+	my $l = $ww-> insert( AbstractListViewer =>
 		origin => [0,0],
 		size   => [$ww-> width, $ww-> height - $f-> height - $f-> externalLeading - $f-> descent - 360],
 		growMode => gm::Client,
@@ -390,7 +390,7 @@ $w-> insert( ListBox =>
 	},
 );
 
-$w-> insert( ListBox => 
+$w-> insert( ListBox =>
 	origin      => [ 270, 160],
 	size        => [ 200, 55],
 	name        => 'Encoding',
@@ -399,7 +399,7 @@ $w-> insert( ListBox =>
 		&$re_size(0);
 		&$re_sample;
 	},
-	
+
 );
 
 my $scaling = $::application->font->height / ($w->designScale)[1];
@@ -484,7 +484,7 @@ $w-> insert( Button =>
 			$error =~ s/at examples.*//;
 			return Prima::message("Error loading font$error");
 		}
-	
+
 		$load_fonts->();
 		$w->NameList->items(\@fontItems);
 	}
@@ -576,7 +576,7 @@ $w-> insert( Widget =>
 	size      => [ 200, 120],
 	backColor => cl::White,
 	onPaint   => sub {
-		my ($fore, $back, $x, $y) = 
+		my ($fore, $back, $x, $y) =
 			($_[0]-> color, $_[0]-> backColor, $_[1]-> width, $_[1]-> height);
 		$_[1]-> color( $back);
 		$_[1]-> bar( 0, 0, $x, $y);
@@ -590,7 +590,7 @@ $w-> insert( Widget =>
 		RANGES: for ( $i = 0; $i < @ranges; $i += 2) {
 			for ( $j = $ranges[$i]; $j < $ranges[$i+1]; $j++) {
 				$latin     .= chr($j) if $j > 45 && $j < 128;
-				$non_latin .= chr($j) if $j > 256 && ( !$use_charnames || (charnames::viacode($j) || '') !~ 
+				$non_latin .= chr($j) if $j > 256 && ( !$use_charnames || (charnames::viacode($j) || '') !~
 					/(space|punctuation|mark|accent|point|combining|modifier)/i);
 				last RANGES if length($latin) > 32 || length($non_latin) > 32;
 			}
@@ -602,8 +602,8 @@ $w-> insert( Widget =>
 		pop @box;
 		my $width = $_[1]-> get_text_width( $probe);
 		my ( $ox, $oy) = (( $x - $width) / 2, ( $y - $_[1]-> font-> height) / 2);
-		$box[$_] += $ox for 0,2,4,6; 
-		$box[$_] += $oy for 1,3,5,7; 
+		$box[$_] += $ox for 0,2,4,6;
+		$box[$_] += $oy for 1,3,5,7;
 		@box[4,5,6,7] = @box[6,7,4,5];
 		$_[1]-> color( cl::Yellow);
 		$_[1]-> fillpoly(\@box);
@@ -647,7 +647,7 @@ $w-> insert( Widget =>
 		$_[0]-> capture(0);
 		$_[0]-> {drag} = 0;
 		$_[0]-> pointer( cr::Default);
-		my $x = $::application-> get_widget_from_point( 
+		my $x = $::application-> get_widget_from_point(
 			$_[0]-> client_to_screen( $_[3], $_[4])
 		);
 		return unless $x;

@@ -42,9 +42,9 @@ sub init_profiler
 	$self-> {events}  = \%events;
 	$self-> {default} = {%{$prf-> {class}-> profile_default}, %events};
 	$self-> prf_adjust_default( $self-> {profile}, $self-> {default});
-	$self-> prf_set( name  => $prf-> {profile}-> {name})  
+	$self-> prf_set( name  => $prf-> {profile}-> {name})
 		if exists $prf-> {profile}-> {name};
-	$self-> prf_set( owner => $prf-> {profile}-> {owner}) 
+	$self-> prf_set( owner => $prf-> {profile}-> {owner})
 		if exists $prf-> {profile}-> {owner};
 	delete $prf-> {profile}-> {name};
 	delete $prf-> {profile}-> {owner};
@@ -90,13 +90,13 @@ sub prf_set
 	for ( keys %profile) {
 		my $key = $_;
 		next unless $hooks{$key};
-		my $o = exists $self-> {profile}-> {$key} ? 
+		my $o = exists $self-> {profile}-> {$key} ?
 			$self-> {profile}-> {$key} : $self-> {default}-> {$key};
 		$_-> on_hook( $name, $key, $o, $profile{$key}, $self) for @{$hooks{$key}};
 	}
 	$self-> {profile} = {%{$self-> {profile}}, %profile};
-	my $check = $VB::inspector && 
-		( $VB::inspector-> {current}) && 
+	my $check = $VB::inspector &&
+		( $VB::inspector-> {current}) &&
 		( $VB::inspector-> {current} eq $self);
 	for ( keys %profile) {
 		my $cname = 'prf_'.$_;
@@ -110,8 +110,8 @@ sub prf_delete
 	my ( $self, @dellist) = @_;
 	my $df = $self-> {default};
 	my $pr = $self-> {profile};
-	my $check = $VB::inspector && 
-		( $VB::inspector-> {opened}) && 
+	my $check = $VB::inspector &&
+		( $VB::inspector-> {opened}) &&
 		( $VB::inspector-> {current} eq $self);
 	for ( @dellist) {
 		delete $pr-> {$_};
@@ -228,13 +228,13 @@ sub prf_types_add
 	my ( $self, $pt, $de) = @_;
 	for ( keys %{$de}) {
 		# * uncomment this if you suspect property type clash *
-		# 
+		#
 		#my $t1 = $_;
 		#for ( @{$de-> {$_}}) {
 		#  my $p1 = $_;
 		#  for ( keys %$pt) {
 		#     my $t2 = $_;
-		#     for ( @{$pt-> {$_}}) { 
+		#     for ( @{$pt-> {$_}}) {
 		#        die "$self: $p1: $t2 vs $t1\n" if $p1 eq $_ && $t2 ne $t1;
 		#     }
 		#  }
@@ -389,7 +389,7 @@ sub xorrect
 		my @d = $self-> owner-> screen_to_client(0,0);
 		my @o = $self-> get_o_delta();
 		$d[$_] -= $o[$_] for 0..1;
-		$VB::form-> text( 
+		$VB::form-> text(
 			'['.($r0+$d[0]).', '.($r1+$d[1]).'] - ['.($r2+$d[0]).', '.($r3+$d[1]).']'
 		);
 	}
@@ -406,7 +406,7 @@ sub xorrect
 		my @org = ( $ax, $ay);
 		$org[0] = $r0 - $org[0];
 		$org[1] = $r1 - $org[1];
-		$o-> rect_focus( 
+		$o-> rect_focus(
 			$$_[0] + $org[0], $$_[1] + $org[1], $$_[2] + $org[0], $$_[3] + $org[1],
 			$dsize
 		) for @{$self-> {extraRects}};
@@ -442,14 +442,14 @@ sub iterate_children
 		$sub-> ( $_, $self, @xargs);
 		$_-> iterate_children( $sub, @xargs);
 	}
-}   
+}
 
 sub on_mousedown
 {
 	my ( $self, $btn, $mod, $x, $y) = @_;
 	if ( $btn == mb::Left) {
 		if ( defined $VB::main-> {currentClass}) {
-			$VB::form-> insert_new_control( 
+			$VB::form-> insert_new_control(
 				$self-> left + $x, $self-> bottom + $y, $self);
 			return;
 		}
@@ -471,14 +471,14 @@ sub on_mousedown
 		my $part = $self-> xy2part( $x, $y);
 		if ( $self-> {locked} and not $self-> marked) {
 			# propagate for marquee selection
-			$VB::form-> on_mousedown( 
-				$btn, $mod, 
+			$VB::form-> on_mousedown(
+				$btn, $mod,
 				$x + $self-> left,
 				$y + $self-> bottom
 			) if $self != $VB::form;
 			return;
 		}
-		
+
 		$self-> bring_to_front;
 		$self-> focus;
 		if ( $VB::inspector) {
@@ -487,7 +487,7 @@ sub on_mousedown
 			$VB::inspector-> {selectorChanging} = 0;
 		}
 
-		$self-> iterate_children( sub { $_[0]-> bring_to_front; $_[0]-> update_view; }); 
+		$self-> iterate_children( sub { $_[0]-> bring_to_front; $_[0]-> update_view; });
 
 		my @mw;
 		@mw = $VB::form-> marked_widgets if $part eq q(client) && $self-> marked;
@@ -564,7 +564,7 @@ sub altpopup
 sub on_mouseclick
 {
 	my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
-	
+
 	return unless $dbl;
 	$mod &= km::Alt|km::Shift|km::Ctrl;
 	if ( $mod == 0 && defined $self-> mainEvent && $VB::inspector) {
@@ -610,13 +610,13 @@ sub on_mousemove
 		if ( $VB::main-> {ini}-> {SnapToGuidelines}) {
 			my $xline = $VB::form-> {guidelineX} - $og[0];
 			my $yline = $VB::form-> {guidelineY} - $og[1];
-			$x = $xline + $self-> {spotX} 
+			$x = $xline + $self-> {spotX}
 				if abs( $xline - $x + $self-> {spotX}) < 8;
-			$y = $yline + $self-> {spotY} 
+			$y = $yline + $self-> {spotY}
 				if abs( $yline - $y + $self-> {spotY}) < 8;
-			$x = $xline + $self-> {spotX} - $sz[0] 
+			$x = $xline + $self-> {spotX} - $sz[0]
 				if abs( $xline - $x + $self-> {spotX} - $sz[0]) < 8;
-			$y = $yline + $self-> {spotY} - $sz[1] 
+			$y = $yline + $self-> {spotY} - $sz[1]
 				if abs( $yline - $y + $self-> {spotY} - $sz[1]) < 8;
 		}
 		$self-> xorrect( @{$self-> {prevRect}});
@@ -632,7 +632,7 @@ sub on_mousemove
 			my ( $xa, $ya) = @{$self-> {dirData}};
 
 			if ( $VB::main-> {ini}-> {SnapToGrid}) {
-				return if 
+				return if
 					!$self-> {dragImpedance} &&
 					abs( $x - $self-> {spotX}) < 4 &&
 					abs( $y - $self-> {spotY}) < 4
@@ -647,15 +647,15 @@ sub on_mousemove
 				my $xline = $VB::form-> {guidelineX} - $og[0];
 				my $yline = $VB::form-> {guidelineY} - $og[1];
 				if ( $xa != 0) {
-					$x = $xline + $self-> {spotX} 
+					$x = $xline + $self-> {spotX}
 						if abs( $xline - $x + $self-> {spotX}) < 8;
-					$x = $xline + $self-> {spotX} - $sz[0] 
+					$x = $xline + $self-> {spotX} - $sz[0]
 						if abs( $xline - $x + $self-> {spotX} - $sz[0]) < 8;
 				}
 				if ( $ya != 0) {
-					$y = $yline + $self-> {spotY} 
+					$y = $yline + $self-> {spotY}
 						if abs( $yline - $y + $self-> {spotY}) < 8;
-					$y = $yline + $self-> {spotY} - $sz[1] 
+					$y = $yline + $self-> {spotY} - $sz[1]
 						if abs( $yline - $y + $self-> {spotY} - $sz[1]) < 8;
 				}
 			}
@@ -680,8 +680,8 @@ sub on_mousemove
 				}
 			}
 
-			if ( 
-				$org[1] != $new[1] || $org[0] != $new[0] || 
+			if (
+				$org[1] != $new[1] || $org[0] != $new[0] ||
 				$org[2] != $new[2] || $org[3] != $new[3]
 			) {
 				$self-> xorrect( @{$self-> {prevRect}});
@@ -694,15 +694,15 @@ sub on_mousemove
 			my $part = $self-> xy2part( $x, $y);
 			$self-> pointer( $part =~ /^Size/ ? &{$cr::{$part}} : cr::Arrow);
 		}
-	} 
-	
+	}
+
 	if ( $self-> {locked} and not $self-> marked) {
 		# propagate guideline selection
 		$x += $self-> left;
 		$y += $self-> bottom;
 		if ( abs( $VB::form-> {guidelineX} - $x) < 3) {
-			$self-> pointer(( abs( $VB::form-> {guidelineY} - $y) < 3) ? 
-				cr::Move : 
+			$self-> pointer(( abs( $VB::form-> {guidelineY} - $y) < 3) ?
+				cr::Move :
 				cr::SizeWE);
 		} elsif ( abs( $VB::form-> {guidelineY} - $y) < 3) {
 			$self-> pointer( cr::SizeNS);
@@ -1179,8 +1179,8 @@ sub on_size
 sub on_colorchanged
 {
 	my ( $self, $index) = @_;
-	my @colors = qw(color backColor hiliteColor hiliteBackColor 
-		disabledColor disabledBackColor light3DColor dark3DColor); 
+	my @colors = qw(color backColor hiliteColor hiliteBackColor
+		disabledColor disabledBackColor light3DColor dark3DColor);
 	return if $self-> {syncColoring} or $index >= @colors;
 	$self-> {syncColoring} = 1;
 	$index = $colors[$index];
@@ -1644,7 +1644,7 @@ sub get
 	my $err = "$@";
 	$err =~ s/Prima::VB::Types::fallback:*//i;
 	$err =~ s/\(eval \d*\)\s*//i;
-	Prima::MsgBox::message( 
+	Prima::MsgBox::message(
 		$_[0]-> {widget}-> name . '::' . $_[0]-> {id} . " : $err ( $ret )");
 	return '';
 }
@@ -1775,8 +1775,8 @@ sub set
 		$data = '';
 		$self-> {A}-> items( ['']);
 	} else {
-		my %items = $VB::inspector ? 
-			(map { $_ => 1} sort @{$VB::inspector-> Selector-> items}) : 
+		my %items = $VB::inspector ?
+			(map { $_ => 1} sort @{$VB::inspector-> Selector-> items}) :
 			();
 		delete $items{ $self-> {widget}-> name};
 		delete @items{ map { $_-> name } $VB::form-> marked_widgets};
@@ -1910,7 +1910,7 @@ sub write
 		for ( @uColors) {
 			$twc = "cl::$_", last if $acl == &{$cl::{$_}}();
 		}
-		
+
 		$ret = "$tcl | $twc";
 	} else {
 		$ret = '0x'.sprintf("%06x",$data);
@@ -2621,7 +2621,7 @@ sub write
 {
 	my ( $class, $id, $data) = @_;
 	my $ret = '{';
-	$ret .= "name => '".Prima::VB::Types::generic::quotable($data-> {name})."', " 
+	$ret .= "name => '".Prima::VB::Types::generic::quotable($data-> {name})."', "
 		if exists $data-> {name};
 	$ret .= 'size => '.$data-> {size}.', ' if exists $data-> {size};
 	if ( exists $data-> {style}) {
@@ -2689,7 +2689,7 @@ sub open
 		glyphs => $VB::main-> {openbutton}-> glyphs,
 		growMode => gm::GrowLoY,
 		onClick => sub {
-			my @r = VB::image_open_dialog-> load( 
+			my @r = VB::image_open_dialog-> load(
 				className => $self-> imgClass,
 				loadAll   => 1
 			);
@@ -2721,8 +2721,8 @@ sub open
 					growMode    => gm::Client,
 					onDrawItem => sub {
 						my (
-							$self, $canvas, $index, 
-							$left, $bottom, $right, 
+							$self, $canvas, $index,
+							$left, $bottom, $right,
 							$top, $hilite, $focusedItem) = @_;
 						my $bc;
 						if ( $hilite) {
@@ -2871,7 +2871,7 @@ use vars qw(@ISA);
 sub set
 {
 	my ( $self, $data) = @_;
-	$self-> {A}-> text( join( "\n", map { join( ' ', map { 
+	$self-> {A}-> text( join( "\n", map { join( ' ', map {
 		my $x = $_; $x =~ s/(^|[^\\])(\\|\s)/$1\\$2/g; $x; } @$_)} @$data));
 }
 
@@ -2927,7 +2927,7 @@ sub write
 {
 	my ( $class, $id, $data) = @_;
 	return $VB::writeMode ? "sub { $data\n}" :
-		'Prima::VB::VBLoader::GO_SUB(\''.Prima::VB::Types::generic::quotable($data). 
+		'Prima::VB::VBLoader::GO_SUB(\''.Prima::VB::Types::generic::quotable($data).
 		"\n','$Prima::VB::VBLoader::eventContext[0]', '$id')";
 }
 
@@ -3088,7 +3088,7 @@ sub open_item
 		$p-> pageIndex( $p-> pageCount - 1);
 		$p-> {pages}-> {$type} = $p-> pageIndex;
 		$self-> {opened} = $type-> new( $p, $id, $self);
-		$self-> {opened}-> {changeProc} = 
+		$self-> {opened}-> {changeProc} =
 			\&Prima::VB::Types::packInfo::item_changed_from_notebook;
 		$self-> {typeCache}-> {$type} = $self-> {opened};
 	}
@@ -3401,9 +3401,9 @@ sub open
 	$self-> {B}-> {master} = $self;
 
 	my $xb = $::application-> get_system_value( sv::XScrollbar);
-	$self-> {B}-> insert( Button => 
-		origin => [ 
-			$self-> {B}-> indents()-> [0], 
+	$self-> {B}-> insert( Button =>
+		origin => [
+			$self-> {B}-> indents()-> [0],
 			$self-> {B}-> height - $xb - $self-> {B}-> indents()-> [3]
 		],
 		size   => [ ( $xb ) x 2],
@@ -3504,7 +3504,7 @@ sub open_item
 		$p-> pageIndex( $p-> pageCount - 1);
 		$p-> {pages}-> {$type} = $p-> pageIndex;
 		$self-> {opened} = $type-> new( $p, $id, $self);
-		$self-> {opened}-> {changeProc} = 
+		$self-> {opened}-> {changeProc} =
 			\&Prima::VB::Types::menuItems::item_changed_from_notebook;
 		$self-> {typeCache}-> {$type} = $self-> {opened};
 	}
@@ -3772,7 +3772,7 @@ sub valid
 	my $self = $_[0];
 	my $tx = $self-> {A}-> text;
 	$self-> wake, return 0 unless length( $tx);
-	$self-> wake, return 0 
+	$self-> wake, return 0
 		if $tx =~ /[\s\\\~\!\@\#\$\%\^\&\*\(\)\-\+\=\[\]\{\}\.\,\?\;\|\`\'\"]/;
 	my $s = $self-> {widget}-> {B};
 	my $ok = 1;
@@ -3780,8 +3780,8 @@ sub valid
 	$s-> iterate( sub {
 		my ( $current, $position, $level) = @_;
 		return 0 if $position == $fi;
-		$ok = 0, return 1 
-			if defined $current-> [0]-> [1]-> {name} && 
+		$ok = 0, return 1
+			if defined $current-> [0]-> [1]-> {name} &&
 			$current-> [0]-> [1]-> {name} eq $tx;
 		return 0;
 	}, 1);
@@ -3800,7 +3800,7 @@ sub open
 {
 	my $self = $_[0];
 	my $i = $self-> {container};
-	$self-> {A} = $i-> insert( KeySelector => 
+	$self-> {A} = $i-> insert( KeySelector =>
 		origin   => [ 5, 5],
 		size     => [ $i-> width - 10, $i-> height - 10],
 		growMode => gm::Ceiling,
@@ -3816,7 +3816,7 @@ sub get
 sub set
 {
 	my ( $self, $data) = @_;
-	$self-> {A}-> key( $data); 
+	$self-> {A}-> key( $data);
 }
 
 sub write
@@ -3865,9 +3865,9 @@ sub open
 	);
 	$self-> {A}-> {master} = $self;
 	my $xb = $self-> {A}-> {vScroll} ? $self-> {A}-> {vScrollBar}-> width : 0;
-	$self-> {A}-> insert( Button => 
-		origin => [ 
-			$self-> {A}-> width - $xb - $self-> {A}-> indents()-> [2], 
+	$self-> {A}-> insert( Button =>
+		origin => [
+			$self-> {A}-> width - $xb - $self-> {A}-> indents()-> [2],
 			$self-> {A}-> height - $xb - $self-> {A}-> indents()-> [3]
 		],
 		size   => [ ( $xb ) x 2],
@@ -3945,7 +3945,7 @@ Prima::VB::Classes - Visual Builder widgets and types
 
 =head1 DESCRIPTION
 
-Visual Builder is designed without a prior knowledge of the 
+Visual Builder is designed without a prior knowledge of the
 widget classes that would be contained in its widget palette.
 Instead, it provides a registration interface for new widgets and their specific properties.
 
@@ -3985,8 +3985,8 @@ though since its function is obvious and its code is trivial.
 
 Since the real widgets are used in the interaction with the builder,
 their properties are not touched when changed by the object inspector
-or otherwise. The widgets 
-keep the set of properties in a separated hash. The properties are 
+or otherwise. The widgets
+keep the set of properties in a separated hash. The properties are
 accessible by C<prf> and C<prf_set> methods.
 
 A type object is a class used to represent a particular type of
@@ -4074,7 +4074,7 @@ PROFILE keys are property names, and value are property values.
 
 =item prf_adjust_default PROFILE, DEFAULT_PROFILE
 
-DEFAULT_PROFILE is a result of C<profile_default> call 
+DEFAULT_PROFILE is a result of C<profile_default> call
 of the real object class. However, not all properties usually
 are exported to the object inspector. C<prf_adjust_default>
 deletes the unneeded property keys from PROFILE hash.
@@ -4085,7 +4085,7 @@ Removes PROPERTIES from internal properties hash.
 This action results in that the PROPERTIES in the object inspector
 are set back to their default values.
 
-=item prf_events 
+=item prf_events
 
 Returns hash of a class-specific events. These appear in
 the object inspector on C<Events> page. The hash keys are
@@ -4100,7 +4100,7 @@ that describe format of the event parameters. Example:
 =item prf @PROPERTIES
 
 Maps array of PROPERTIES names to their values. If called
-in scalar context, returns the first value only; if in array 
+in scalar context, returns the first value only; if in array
 context, returns array of property values.
 
 =item prf_types
@@ -4114,7 +4114,7 @@ by the types.
 
 =item prf_types_add PROFILE1, PROFILE2
 
-Adds PROFILE2 content to PROFILE1. PROFILE1 and PROFILE2 are 
+Adds PROFILE2 content to PROFILE1. PROFILE1 and PROFILE2 are
 hashes in format of result of C<prf_types> method.
 
 =item prf_types_delete PROFILE, @NAMES
@@ -4176,7 +4176,7 @@ Draws selection and resize marks on the widget
 if it is in the selected state. To be called from
 all C<on_paint> callbacks.
 
-=item get_o_delta 
+=item get_o_delta
 
 Returns offset to the owner widget. Since the builder does
 not insert widgets in widgets to reflect the user-designed
@@ -4214,9 +4214,9 @@ Called when the widget is loaded from a file or the clipboard.
 
 =head1 Prima::VB::Types::generic
 
-Root of all type classes. 
+Root of all type classes.
 
-A type class can be used with 
+A type class can be used with
 and without object instance. The instantiated class
 contains reference to ID string, which is a property
 name that the object presents in the object inspector,
@@ -4287,7 +4287,7 @@ exports constant values, which are defined in another module.
 
 =item set DATA
 
-Called when a new value is set to the widget property by means other than the 
+Called when a new value is set to the widget property by means other than the
 selector widgets, so these can be updated. DATA is the property new value.
 
 =item valid
@@ -4299,7 +4299,7 @@ set to widget profile.
 =item write CLASS, ID, DATA
 
 Called when DATA is to be written in form.
-C<write> must return such a string that 
+C<write> must return such a string that
 can be loaded by C<Prima::VB::VBLoader> later.
 
 =back

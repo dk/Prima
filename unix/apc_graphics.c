@@ -62,7 +62,7 @@ prima_get_gc( PDrawableSysData selfxx)
 	if ( XX-> gc || XX-> gcl) {
 		warn( "UAG_010: internal error");
 		return;
-	}   
+	}
 
 	bitmap = XT_IS_BITMAP(XX) ? true : false;
 	layered = XF_LAYERED(XX) ? true : false;
@@ -74,7 +74,7 @@ prima_get_gc( PDrawableSysData selfxx)
 		gcv. graphics_exposures = false;
 		XX-> gc = XCreateGC( DISP, (bitmap || layered) ? XX-> gdrawable : guts. root, GCGraphicsExposures, &gcv);
 		XCHECKPOINT;
-		if (( XX->gcl = alloc1z( GCList))) 
+		if (( XX->gcl = alloc1z( GCList)))
 			XX->gcl->gc = XX-> gc;
 	}
 	if ( XX-> gcl) XX->gc = XX->gcl->gc;
@@ -92,7 +92,7 @@ prima_release_gc( PDrawableSysData selfxx)
 		bitmap = XT_IS_BITMAP(XX) ? true : false;
 		layered = XF_LAYERED(XX) ? true : false;
 		gc_pool = bitmap ? &guts.bitmap_gc_pool : ( layered ? &guts.argb_gc_pool : &guts.screen_gc_pool );
-		if ( XX-> gcl) 
+		if ( XX-> gcl)
 			TAILQ_INSERT_HEAD(gc_pool, XX->gcl, gc_link);
 		XX->gcl = nil;
 		XX->gc = nil;
@@ -104,8 +104,8 @@ prima_release_gc( PDrawableSysData selfxx)
 	}
 }
 
-/* 
-	macros to multiply line pattern entries to line width in 
+/*
+	macros to multiply line pattern entries to line width in
 	a more-less aestethic fashion :-)
 */
 #define MAX_DASH_LEN 2048
@@ -175,10 +175,10 @@ Unbuffered:
 
 	prima_get_gc( XX);
 	XX-> gcv. subwindow_mode = (XX->flags.clip_by_children ? ClipByChildren : IncludeInferiors);
-	
+
 	XChangeGC( DISP, XX-> gc, mask, &XX-> gcv);
 	XCHECKPOINT;
-	
+
 	if ( XX-> dashes) {
 		dDASH_FIX( XX-> line_width, XX-> dashes, XX-> ndashes);
 		DASH_FIX;
@@ -323,7 +323,7 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
 		if ( colorIndex > 0) return false;
 		p1 = &guts. ditherPatterns[ 64 - (XX-> fore. primary ? 64 : XX-> fore. balance)];
 		p2 = &guts. ditherPatterns[ 64 - (XX-> back. primary ? 64 : XX-> back. balance)];
-		for ( i = 0; i < sizeof( FillPattern); i++) 
+		for ( i = 0; i < sizeof( FillPattern); i++)
 			mix[i] = ((*p1)[i] & XX-> fill_pattern[i]) | ((*p2)[i] & ~XX-> fill_pattern[i]);
 		XSetForeground( DISP, XX-> gc, 1);
 		XSetBackground( DISP, XX-> gc, 0);
@@ -348,7 +348,7 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
 				XX-> flags. brush_back = 0;
 			} else /* failure */
 				XSetFillStyle( DISP, XX-> gc, FillSolid);
-		} else 
+		} else
 			XSetFillStyle( DISP, XX-> gc, FillSolid);
 		if (!XX->flags.brush_fore) {
 			XSetForeground( DISP, XX-> gc, XX-> fore. primary);
@@ -356,7 +356,7 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
 		}
 	} else if ( XX->fore.balance == 0 && XX->back.balance == 0) {
 		if ( colorIndex > 0) return false;
-		
+
 		p = prima_get_hatch( &XX-> fill_pattern);
 		XSetFillStyle( DISP, XX-> gc, p ? FillOpaqueStippled : FillSolid);
 		if ( p) XSetStipple( DISP, XX-> gc, p);
@@ -379,7 +379,7 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
 					XSetBackground( DISP, XX-> gc, XX-> back. secondary);
 				} else  /* failure */
 					XSetFillStyle( DISP, XX-> gc, FillSolid);
-			} else 
+			} else
 				XSetFillStyle( DISP, XX-> gc, FillSolid);
 			XSetForeground( DISP, XX-> gc, XX-> back. primary);
 			XX-> flags. brush_back = 0;
@@ -394,7 +394,7 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
 				for ( i = 0; i < 8; i++)
 					fp[i] &= XX-> fill_pattern[i];
 				p = prima_get_hatch( &fp);
-			} else 
+			} else
 				p = prima_get_hatch( &XX-> fill_pattern);
 			if ( !p) return false;
 			XSetStipple( DISP, XX-> gc, p);
@@ -411,7 +411,7 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
 				int i;
 				FillPattern fp;
 				memcpy( &fp, &guts. ditherPatterns[ XX-> fore. balance], sizeof(FillPattern));
-				for ( i = 0; i < 8; i++) 
+				for ( i = 0; i < 8; i++)
 					fp[i] = (~fp[i]) & XX-> fill_pattern[i];
 				p = prima_get_hatch( &fp);
 				if ( !p) return false;
@@ -428,7 +428,7 @@ prima_make_brush( DrawableSysData * XX, int colorIndex)
 	}
 	return true;
 }
-	
+
 Bool
 apc_gp_init( Handle self)
 {
@@ -508,15 +508,15 @@ calculate_ellipse_divergence(void)
 		if (( xi = XGetImage( DISP, px, 0, 0, 4, 4, 1, XYPixmap))) {
 			int i;
 			Byte *data[4];
-			if ( xi-> bitmap_bit_order == LSBFirst) 
+			if ( xi-> bitmap_bit_order == LSBFirst)
 				prima_mirror_bytes(( Byte*) xi-> data, xi-> bytes_per_line * 4);
 			for ( i = 0; i < 4; i++) data[i] = (Byte*)xi-> data + i * xi-> bytes_per_line;
 #define PIX(x,y) ((data[y][0] & (0x80>>(x)))!=0)
 			if (  PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = -1; else
-			if ( !PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = 1; 
+			if ( !PIX(2,1) && !PIX(3,1)) guts. ellipseDivergence.x = 1;
 			if (  PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = -1; else
-			if ( !PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = 1; 
-#undef PIX                          
+			if ( !PIX(1,2) && !PIX(1,3)) guts. ellipseDivergence.y = 1;
+#undef PIX
 			XDestroyImage( xi);
 		}
 		XFreeGC( DISP, gc);
@@ -529,19 +529,19 @@ calculate_ellipse_divergence(void)
 #define FILL_ANTIDEFECT_REPAIRABLE \
 		( rop_map[XX-> paint_rop] == GXcopy ||\
 		rop_map[XX-> paint_rop] == GXset  ||\
-		rop_map[XX-> paint_rop] == GXclear) 
+		rop_map[XX-> paint_rop] == GXclear)
 #define FILL_ANTIDEFECT_OPEN {\
 XGCValues gcv;\
 gcv. line_width = 1;\
 gcv. line_style = LineSolid;\
 XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
-}   
+}
 #define FILL_ANTIDEFECT_CLOSE {\
 XGCValues gcv;\
 gcv. line_width = XX-> line_width;\
 gcv. line_style = ( XX-> paint_rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;\
 XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
-}   
+}
 
 Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
@@ -564,7 +564,7 @@ apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double
 	if ( needf)
 		XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
 			angleStart * 64, ( angleEnd - angleStart) * 64);
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -580,10 +580,10 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 	SHIFT( x1, y1); SHIFT( x2, y2);
 	SORT( x1, x2); SORT( y1, y2);
 	RANGE4( x1, y1, x2, y2);
-	while ( prima_make_brush( XX, mix++)) 
+	while ( prima_make_brush( XX, mix++))
 		XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
 	XCHECKPOINT;
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -608,11 +608,11 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 		rp->height = rr->top - rr->bottom + 1;
 	}
 
-	while ( prima_make_brush( XX, mix++)) 
+	while ( prima_make_brush( XX, mix++))
 		XFillRectangles( DISP, XX-> gdrawable, XX-> gc, r, nr);
 
 	XCHECKPOINT;
-	XFLUSH;	  
+	XFLUSH;
 	free( r);
 	return true;
 }
@@ -627,7 +627,7 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	if ( !XF_IN_PAINT(XX)) return false;
 	if ( !XF_LAYERED(XX)) return false;
 	if ( XT_IS_WIDGET(XX) && !XX->flags. layered_requested) return false;
-	
+
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
 		x1 = 0; y1 = 0;
 		x2 = XX-> size. x - 1;
@@ -636,15 +636,15 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	SHIFT( x1, y1); SHIFT( x2, y2);
 	SORT( x1, x2); SORT( y1, y2);
 	RANGE4( x1, y1, x2, y2);
-	
+
 	pixel = ((alpha << guts. argb_bits. alpha_range) >> 8) << guts. argb_bits. alpha_shift;
 	XSetForeground( DISP, XX-> gc, pixel);
 	XX-> flags. brush_fore = 0;
 	XSetPlaneMask( DISP, XX-> gc, guts. argb_bits. alpha_mask);
 	XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
 	XSetPlaneMask( DISP, XX-> gc, AllPlanes);
-	XFLUSH;	  
-	
+	XFLUSH;
+
 	return true;
 }
 
@@ -655,7 +655,7 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
-	
+
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
 		x1 = 0; y1 = 0;
 		x2 = XX-> size. x - 1;
@@ -664,14 +664,14 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 	SHIFT( x1, y1); SHIFT( x2, y2);
 	SORT( x1, x2); SORT( y1, y2);
 	RANGE4( x1, y1, x2, y2);
-	
+
 	/* clean color entries, leave just background & foreground. XXX */
 	if ( guts. dynamicColors && x1 <= 0 && x2 > XX-> size.x && y1 <= 0 && y2 >= XX-> size.y) {
 		prima_palette_free(self,false);
 		apc_gp_set_color(self, XX-> fore. color);
 		apc_gp_set_back_color(self, XX-> back. color);
 	}
-	
+
 	XSetForeground( DISP, XX-> gc, XX-> back. primary);
 	if ( XX-> back. balance > 0) {
 		Pixmap p = prima_get_hatch( &guts. ditherPatterns[ XX-> back. balance]);
@@ -681,12 +681,12 @@ apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 			XSetBackground( DISP, XX-> gc, XX-> back. secondary);
 		} else
 			XSetFillStyle( DISP, XX-> gc, FillSolid);
-	} else 
+	} else
 		XSetFillStyle( DISP, XX-> gc, FillSolid);
 	XX-> flags. brush_fore = 0;
 	XFillRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1 + 1, y2 - y1 + 1);
-	XFLUSH;	  
-	
+	XFLUSH;
+
 	return true;
 }
 
@@ -713,10 +713,10 @@ apc_gp_chord( Handle self, int x, int y, int dX, int dY, double angleStart, doub
 	if ( !needf) return true;
 	XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT,
 		angleStart * 64, ( angleEnd - angleStart) * 64);
-	XDrawLine( DISP, XX-> gdrawable, XX-> gc, 
+	XDrawLine( DISP, XX-> gdrawable, XX-> gc,
 		x + cos( angleStart / GRAD) * dX / 2, y - sin( angleStart / GRAD) * dY / 2,
 		x + cos( angleEnd / GRAD) * dX / 2,   y - sin( angleEnd / GRAD) * dY / 2);
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -732,7 +732,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
 
-	if ((p = malloc( sizeof( XPoint)*n)) == nil) 
+	if ((p = malloc( sizeof( XPoint)*n)) == nil)
 		return false;
 
 	for ( i = 0; i < n; i++) {
@@ -745,7 +745,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 	XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, n, CoordModeOrigin);
 
 	free( p);
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -776,7 +776,7 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
 	XDrawSegments( DISP, XX-> gdrawable, XX-> gc, s, n);
 
 	free( s);
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -798,7 +798,7 @@ apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
 	PURE_FOREGROUND;
 	calculate_ellipse_divergence();
 	XDrawArc( DISP, XX-> gdrawable, XX-> gc, ELLIPSE_RECT, 0, 64*360);
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -817,8 +817,8 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
 	y = REVERT( y);
 
 	XSetArcMode( DISP, XX-> gc, ArcChord);
-	FILL_ANTIDEFECT_OPEN;  
-	
+	FILL_ANTIDEFECT_OPEN;
+
 	while ( prima_make_brush( XX, mix++)) {
 		compl = arc_completion( &angleStart, &angleEnd, &needf);
 		while ( compl--) {
@@ -831,12 +831,12 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
 			XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
 				angleStart * 64, ( angleEnd - angleStart) * 64);
 			if ( FILL_ANTIDEFECT_REPAIRABLE)
-				XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 
+				XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1,
 					angleStart * 64, ( angleEnd - angleStart) * 64);
 		}
 	}
 	FILL_ANTIDEFECT_CLOSE;
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -857,13 +857,13 @@ apc_gp_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
 	y = REVERT( y);
 
 	FILL_ANTIDEFECT_OPEN;
-	while ( prima_make_brush( XX, mix++)) { 
+	while ( prima_make_brush( XX, mix++)) {
 		XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY, 0, 64*360);
 		if ( FILL_ANTIDEFECT_REPAIRABLE)
 			XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 0, 64*360);
 	}
 	FILL_ANTIDEFECT_CLOSE;
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -897,11 +897,11 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 				XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
 		}
 		XCHECKPOINT;
-	} else 
+	} else
 		warn( "Prima::Drawable::fill_poly: too many points");
 	FILL_ANTIDEFECT_CLOSE;
 	free( p);
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -933,17 +933,17 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 			XFillArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX, dY,
 				angleStart * 64, ( angleEnd - angleStart) * 64);
 			if ( FILL_ANTIDEFECT_REPAIRABLE)
-				XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1, 
+				XDrawArc( DISP, XX-> gdrawable, XX-> gc, x - ( dX + 1) / 2 + 1, y - dY / 2, dX-1, dY-1,
 					angleStart * 64, ( angleEnd - angleStart) * 64);
 		}
 	}
 	FILL_ANTIDEFECT_CLOSE;
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
 static int
-get_pixel_depth( int depth) 
+get_pixel_depth( int depth)
 {
 	if ( depth ==  1) return  1; else
 	if ( depth <=  4) return  4; else
@@ -951,8 +951,8 @@ get_pixel_depth( int depth)
 	if ( depth <= 16) return 16; else
 	if ( depth <= 24) return 24; else
 	return 32;
-}   
-	
+}
+
 
 static uint32_t
 color_to_pixel( Handle self, Color color, int depth)
@@ -966,25 +966,25 @@ color_to_pixel( Handle self, Color color, int depth)
 	} else {
 		PRGBABitDescription bd = GET_RGBA_DESCRIPTION;
 		switch ( depth) {
-		case 16:   
-		case 24:   
-		case 32:   
-			pv = 
+		case 16:
+		case 24:
+		case 32:
+			pv =
 				(((COLOR_R(color) << bd-> red_range  ) >> 8) << bd->   red_shift) |
 				(((COLOR_G(color) << bd-> green_range) >> 8) << bd-> green_shift) |
 				(((COLOR_B(color) << bd-> blue_range ) >> 8) << bd->  blue_shift);
-			if ( guts.machine_byte_order != guts.byte_order)  
+			if ( guts.machine_byte_order != guts.byte_order)
 				switch( depth) {
 				case 16:
 					pv = REVERSE_BYTES_16( pv);
-					break;   
+					break;
 				case 24:
 					pv = REVERSE_BYTES_24( pv);
-					break;   
+					break;
 				case 32:
 					pv = REVERSE_BYTES_32( pv);
-					break;            
-				}   
+					break;
+				}
 			break;
 		default:
 			warn("UAG_005: Not supported pixel depth");
@@ -992,7 +992,7 @@ color_to_pixel( Handle self, Color color, int depth)
 		}
 	}
 	return pv;
-}  
+}
 
 typedef struct {
 	XImage *  i;
@@ -1007,12 +1007,12 @@ typedef struct {
 	PList  *  lists;
 } FillSession;
 
-static Bool 
+static Bool
 fs_get_pixel( FillSession * fs, int x, int y)
 {
 	if ( x < fs-> clip. left || x > fs-> clip. right || y < fs-> clip. top || y > fs-> clip. bottom)  {
 		return false;
-	}   
+	}
 
 	if ( fs-> lists[ y - fs-> first]) {
 		PList l = fs-> lists[ y - fs-> first];
@@ -1020,26 +1020,26 @@ fs_get_pixel( FillSession * fs, int x, int y)
 		for ( i = 0; i < l-> count; i+=2) {
 			if (((int) l-> items[i+1] >= x) && ((int)l->items[i] <= x))
 				return false;
-		}   
-	}   
-	
+		}
+	}
+
 	if ( !fs-> i || y != fs-> y) {
 		XCHECKPOINT;
 		if ( fs-> i) XDestroyImage( fs-> i);
 		XCHECKPOINT;
-		fs-> i = XGetImage( DISP, fs-> drawable, fs-> clip. left, y, 
-								fs-> clip. right - fs-> clip. left + 1, 1, 
-								( fs-> depth == 1) ? 1 : AllPlanes, 
+		fs-> i = XGetImage( DISP, fs-> drawable, fs-> clip. left, y,
+								fs-> clip. right - fs-> clip. left + 1, 1,
+								( fs-> depth == 1) ? 1 : AllPlanes,
 								( fs-> depth == 1) ? XYPixmap : ZPixmap);
 		XCHECKPOINT;
 		if ( !fs-> i) {
 			return false;
-		}   
+		}
 		fs-> y = y;
-	}   
+	}
 
 	x -= fs-> clip. left;
-	
+
 	switch( fs-> depth) {
 	case 1:
 		{
@@ -1047,55 +1047,55 @@ fs_get_pixel( FillSession * fs, int x, int y)
 			uint32_t v = ( guts.bit_order == MSBFirst) ?
 				( xz & ( 0x80 >> ( x & 7)) ? 1 : 0) :
 				( xz & ( 0x01 << ( x & 7)) ? 1 : 0);
-			return fs-> singleBorder ? 
+			return fs-> singleBorder ?
 				( v == fs-> color) : ( v != fs-> color);
-		}   
+		}
 		break;
 	case 4:
 		{
 			Byte xz = *((Byte*)(fs->i->data) + (x >> 1));
 			uint32_t v = ( x & 1) ? ( xz & 0xF) : ( xz >> 4);
-			return fs-> singleBorder ? 
+			return fs-> singleBorder ?
 				( v == fs-> color) : ( v != fs-> color);
 		}
 		break;
 	case 8:
-	return fs-> singleBorder ? 
+	return fs-> singleBorder ?
 		( fs-> color == *((Byte*)(fs->i->data) + x)) :
 		( fs-> color != *((Byte*)(fs->i->data) + x));
 	case 16:
-	return fs-> singleBorder ? 
+	return fs-> singleBorder ?
 		( fs-> color == *((uint16_t*)(fs->i->data) + x)):
 		( fs-> color != *((uint16_t*)(fs->i->data) + x));
 	case 24:
-		return fs-> singleBorder ? 
+		return fs-> singleBorder ?
 		( memcmp(( Byte*)(fs->i->data) + x, &fs->color, 3) == 0) :
 		( memcmp(( Byte*)(fs->i->data) + x, &fs->color, 3) != 0);
 	case 32:
-		return fs-> singleBorder ? 
-		( fs-> color == *((uint32_t*)(fs->i->data) + x)): 
+		return fs-> singleBorder ?
+		( fs-> color == *((uint32_t*)(fs->i->data) + x)):
 		( fs-> color != *((uint32_t*)(fs->i->data) + x));
-	}  
+	}
 	return false;
-}   
+}
 
 static void
 hline( FillSession * fs, int x1, int y, int x2)
 {
 	XFillRectangle( DISP, fs-> drawable, fs-> gc, x1, y, x2 - x1 + 1, 1);
-	
+
 	if ( y == fs-> y && fs-> i) {
 		XDestroyImage( fs-> i);
 		fs-> i = nil;
-	}   
-	
+	}
+
 	y -= fs-> first;
-	
+
 	if ( fs-> lists[y] == nil)
 		fs-> lists[y] = plist_create( 32, 128);
 	list_add( fs-> lists[y], ( Handle) x1);
 	list_add( fs-> lists[y], ( Handle) x2);
-}   
+}
 
 static int
 fill( FillSession * fs, int sx, int sy, int d, int pxl, int pxr)
@@ -1110,29 +1110,29 @@ fill( FillSession * fs, int sx, int sy, int d, int pxl, int pxr)
 		while ( x <= xr) {
 			if ( fs_get_pixel( fs, x, sy + d)) {
 				x = fill( fs, x, sy + d, d, sx, xr);
-			}   
+			}
 			x++;
-		}   
-	}   
-	
+		}
+	}
+
 	if ( sy - d >= fs-> clip. top && sy - d <= fs-> clip. bottom) {
 		x = sx;
 		while ( x < pxl) {
 			if ( fs_get_pixel( fs, x, sy - d)) {
 				x = fill( fs, x, sy - d, -d, sx, xr);
-			}   
+			}
 			x++;
-		}   
+		}
 		x = pxr;
 		while ( x < xr) {
 			if ( fs_get_pixel( fs, x, sy - d)) {
 				x = fill( fs, x, sy - d, -d, sx, xr);
-			}   
+			}
 			x++;
-		}   
-	}   
+		}
+	}
 	return xr;
-}   
+}
 
 Bool
 apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
@@ -1142,9 +1142,9 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 	XRectangle cr;
 	FillSession s;
 	int mix = 0, hint;
-	
+
 	if ( !opt_InPaint) return false;
-	
+
 	s. singleBorder = singleBorder;
 	s. drawable     = XX-> gdrawable;
 	s. gc           = XX-> gc;
@@ -1161,12 +1161,12 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 	s. i = nil;
 	s. depth = XT_IS_BITMAP(X(self)) ? 1 : guts. idepth;
 	s. depth = get_pixel_depth( s. depth);
-	s. color = hint ? 
+	s. color = hint ?
 		(( hint == COLORHINT_BLACK) ? LOGCOLOR_BLACK : LOGCOLOR_WHITE)
 		: color_to_pixel( self, color, s.depth);
-	
+
 	s. first = s. clip. top;
-	if ( !( s. lists = malloc(( s. clip. bottom - s. clip. top + 1) * sizeof( void*)))) 
+	if ( !( s. lists = malloc(( s. clip. bottom - s. clip. top + 1) * sizeof( void*))))
 		return false;
 	bzero( s. lists, ( s. clip. bottom - s. clip. top + 1) * sizeof( void*));
 
@@ -1174,13 +1174,13 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 	if ( fs_get_pixel( &s, x, y)) {
 		fill( &s, x, y, -1, x, x);
 		ret = true;
-	}  
+	}
 
 	while ( prima_make_brush( XX, mix++)) {
 		for ( y = 0; y < s. clip. bottom - s. clip. top + 1; y++)
-			if ( s. lists[y]) 
-				for ( x = 0; x < s.lists[y]-> count; x += 2) 
-					XFillRectangle( DISP, s.drawable, s.gc, 
+			if ( s. lists[y])
+				for ( x = 0; x < s.lists[y]-> count; x += 2)
+					XFillRectangle( DISP, s.drawable, s.gc,
 						(int)s.lists[y]->items[x], y,
 						(int)s.lists[y]->items[x+1] - (int)s.lists[y]->items[x], 1);
 	}
@@ -1188,10 +1188,10 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 	if ( s. i) XDestroyImage( s. i);
 
 	for ( x = 0; x < s. clip. bottom - s. clip. top + 1; x++)
-		if ( s. lists[x]) 
+		if ( s. lists[x])
 			plist_destroy( s.lists[x]);
 	free( s. lists);
-	XFLUSH;	  
+	XFLUSH;
 
 	return ret;
 }
@@ -1217,9 +1217,9 @@ apc_gp_get_pixel( Handle self, int x, int y)
 		pixmap = 0;
 	} else {
 		pixmap = guts. idepth > 1;
-	}   
-	
-	im = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - 1, 1, 1, 
+	}
+
+	im = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - 1, 1, 1,
 						pixmap ? AllPlanes : 1,
 						pixmap ? ZPixmap   : XYPixmap);
 	XCHECKPOINT;
@@ -1228,7 +1228,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
 	if ( pixmap) {
 		if ( guts. palSize > 0) {
 			int pixel;
-			if ( guts. idepth <= 8) 
+			if ( guts. idepth <= 8)
 				pixel = (*( U8*)( im-> data)) & (( 1 << guts.idepth) - 1);
 			else
 				pixel = (*( U16*)( im-> data)) & (( 1 << guts.idepth) - 1);
@@ -1237,7 +1237,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
 				xc.pixel = pixel;
 				XQueryColors( DISP, guts. defaultColormap, &xc, 1);
 				c = RGB_COMPOSITE(xc.red>>8,xc.green>>8,xc.blue>>8);
-			} else 
+			} else
 				c = guts.palette[pixel]. composite;
 		} else {
 			PRGBABitDescription bd = GET_RGBA_DESCRIPTION;
@@ -1247,20 +1247,20 @@ apc_gp_get_pixel( Handle self, int x, int y)
 			switch ( depth) {
 			case 16:
 				p32 = *(( uint16_t*)(im-> data));
-				if ( guts.machine_byte_order != guts.byte_order) 
+				if ( guts.machine_byte_order != guts.byte_order)
 					p32 = REVERSE_BYTES_16(p32);
 				rmax = 0xff & ( 0xff << ( 8 - bd-> red_range));
 				gmax = 0xff & ( 0xff << ( 8 - bd-> green_range));
 				bmax = 0xff & ( 0xff << ( 8 - bd-> blue_range));
 				goto COMP;
-			case 24:   
+			case 24:
 				p32 = (im-> data[0] << 16) | (im-> data[1] << 8) | im-> data[2];
-				if ( guts.machine_byte_order != guts.byte_order) 
+				if ( guts.machine_byte_order != guts.byte_order)
 					p32 = REVERSE_BYTES_24(p32);
 				goto COMP;
 			case 32:
 				p32 = *(( uint32_t*)(im-> data));
-				if ( guts.machine_byte_order != guts.byte_order) 
+				if ( guts.machine_byte_order != guts.byte_order)
 					p32 = REVERSE_BYTES_32(p32);
 			COMP:
 				r = ((((p32 & bd-> red_mask)   >> bd->red_shift) << 8)   >> bd-> red_range) & 0xff;
@@ -1273,12 +1273,12 @@ apc_gp_get_pixel( Handle self, int x, int y)
 				break;
 			default:
 				warn("UAG_009: get_pixel not implemented for %d depth", guts.idepth);
-			}   
+			}
 		}
 	} else {
-		c = ( im-> data[0] & ((guts.bit_order == MSBFirst) ? 0x80 : 1)) 
+		c = ( im-> data[0] & ((guts.bit_order == MSBFirst) ? 0x80 : 1))
 			? 0xffffff : 0;
-	}   
+	}
 
 	XDestroyImage( im);
 	return c;
@@ -1287,7 +1287,7 @@ apc_gp_get_pixel( Handle self, int x, int y)
 Color
 apc_gp_get_nearest_color( Handle self, Color color)
 {
-	if ( guts. palSize > 0) 
+	if ( guts. palSize > 0)
 		return guts. palette[ prima_color_find( self, color, -1, nil, RANK_FREE)]. composite;
 	if ( guts. visualClass == TrueColor || guts. visualClass == DirectColor) {
 		XColor xc;
@@ -1295,15 +1295,15 @@ apc_gp_get_nearest_color( Handle self, Color color)
 		xc. green = COLOR_G16(color);
 		xc. blue  = COLOR_B16(color);
 		if ( XAllocColor( DISP, guts. defaultColormap, &xc)) {
-			XFreeColors( DISP, guts. defaultColormap, &xc. pixel, 1, 0); 
-			return 
+			XFreeColors( DISP, guts. defaultColormap, &xc. pixel, 1, 0);
+			return
 				(( xc. red   & 0xFF00) << 8) |
 				(( xc. green & 0xFF00)) |
 				(( xc. blue  & 0xFF00) >> 8);
 		}
 	}
 	return color;
-}   
+}
 
 PRGBColor
 apc_gp_get_physical_palette( Handle self, int * colors)
@@ -1311,9 +1311,9 @@ apc_gp_get_physical_palette( Handle self, int * colors)
 	int i;
 	PRGBColor p;
 	XColor * xc;
-	
+
 	*colors = 0;
-	
+
 	if ( guts. palSize == 0) return nil;
 	if ( !( p = malloc( guts. palSize * sizeof( RGBColor))))
 		return nil;
@@ -1356,7 +1356,7 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 		gcv. line_width = 0;
 		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
 	}
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -1379,7 +1379,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 	}
 	XDrawRectangle( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y2), x2 - x1, y2 - y1);
 	XCHECKPOINT;
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -1414,7 +1414,7 @@ apc_gp_sector( Handle self, int x, int y,  int dX, int dY, double angleStart, do
 		x, y,
 		x + cos( angleEnd / GRAD) * dX / 2, y - sin( angleEnd / GRAD) * dY / 2
 	);
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -1437,7 +1437,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 	XSetForeground( DISP, XX-> gc, prima_allocate_color( self, color, nil));
 	XDrawPoint( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y));
 	XX-> flags. brush_fore = 0;
-	XFLUSH;	  
+	XFLUSH;
 	return true;
 }
 
@@ -1448,15 +1448,15 @@ gp_get_text_overhangs( Handle self, const char *text, int len, Bool wide)
 	Point ret;
 	if ( len > 0) {
 		XCharStruct * cs;
-		cs = prima_char_struct( XX-> font-> fs, (void*) text, wide);  
+		cs = prima_char_struct( XX-> font-> fs, (void*) text, wide);
 		ret. x = ( cs-> lbearing < 0) ? - cs-> lbearing : 0;
 		text += (len - 1) * (wide ? 2 : 1);
-		cs = prima_char_struct( XX-> font-> fs, (void*) text, wide);  
+		cs = prima_char_struct( XX-> font-> fs, (void*) text, wide);
 		ret. y = (( cs-> width - cs-> rbearing) < 0) ? cs-> rbearing - cs-> width : 0;
 	} else
 		ret. x = ret. y = 0;
 	return ret;
-}   
+}
 
 static int
 gp_get_text_width( Handle self, const char *text, int len, Bool addOverhang, Bool wide);
@@ -1465,18 +1465,18 @@ static Point *
 gp_get_text_box( Handle self, const char * text, int len, Bool wide);
 
 static Bool
-gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool wide, Bool * ok_to_not_rotate) 
+gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool wide, Bool * ok_to_not_rotate)
 {
 	DEFXX;
 	int i;
 	PRotatedFont r;
 	XCharStruct *cs;
-	int px, py = ( XX-> flags. paint_base_line) ?  XX-> font-> font. descent : 0; 
+	int px, py = ( XX-> flags. paint_base_line) ?  XX-> font-> font. descent : 0;
 	int ax = 0, ay = 0;
 	int psx, psy, dsx, dsy;
 	Fixed rx, ry;
 
-	if ( !prima_update_rotated_fonts( XX-> font, text, len, wide, PDrawable( self)-> font. direction, &r, ok_to_not_rotate)) 
+	if ( !prima_update_rotated_fonts( XX-> font, text, len, wide, PDrawable( self)-> font. direction, &r, ok_to_not_rotate))
 		return false;
 
 	for ( i = 0; i < len; i++) {
@@ -1485,19 +1485,19 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
 		/* acquire actual character index */
 		index. byte1 = wide ? (( XChar2b*) text+i)-> byte1 : 0;
 		index. byte2 = wide ? (( XChar2b*) text+i)-> byte2 : *((unsigned char*)text+i);
-		
+
 		if ( index. byte1 < r-> first1 || index. byte1 >= r-> first1 + r-> height ||
 			index. byte2 < r-> first2 || index. byte2 >= r-> first2 + r-> width) {
 			if ( r-> defaultChar1 < 0 || r-> defaultChar2 < 0) continue;
 			index. byte1 = ( unsigned char) r-> defaultChar1;
 			index. byte2 = ( unsigned char) r-> defaultChar2;
-		}   
+		}
 
 		/* querying character */
 		if ( r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] == nil) continue;
-		cs = XX-> font-> fs-> per_char ? 
-			XX-> font-> fs-> per_char + 
-				( index. byte1 - XX-> font-> fs-> min_byte1) * r-> width + 
+		cs = XX-> font-> fs-> per_char ?
+			XX-> font-> fs-> per_char +
+				( index. byte1 - XX-> font-> fs-> min_byte1) * r-> width +
 				index. byte2 - XX-> font-> fs-> min_char_or_byte2 :
 			&(XX-> font-> fs-> min_bounds);
 
@@ -1507,7 +1507,7 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
 		ry. l = px * r-> sin2. l + py * r-> cos2. l + UINT16_PRECISION/2;
 		psx = rx. i. i - r-> shift. x;
 		psy = ry. i. i - r-> shift. y;
-		
+
 		/* find glyph position */
 		rx. l = ax * r-> cos2. l - ay * r-> sin2. l + UINT16_PRECISION/2;
 		ry. l = ax * r-> sin2. l + ay * r-> cos2. l + UINT16_PRECISION/2;
@@ -1515,13 +1515,13 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
 		dsy = REVERT( y + ry. i. i) + psy - r-> dimension. y + 1;
 
 		if ( guts. debug & DEBUG_FONTS) {
-			_debug("shift %d %d\n", r-> shift.x, r-> shift.y);            
-			_debug("point ref: %d %d => %d %d. dims: %d %d, [%d %d %d]\n", px, py, psx, psy, r-> dimension.x, r-> dimension.y, 
+			_debug("shift %d %d\n", r-> shift.x, r-> shift.y);
+			_debug("point ref: %d %d => %d %d. dims: %d %d, [%d %d %d]\n", px, py, psx, psy, r-> dimension.x, r-> dimension.y,
 				cs-> lbearing, cs-> rbearing - cs-> lbearing, cs-> width - cs-> rbearing);
 			_debug("plot ref: %d %d => %d %d\n", ax, ay, rx.i.i, ry.i.i);
 			_debug("at: %d %d ( sz = %d), dest: %d %d\n", x, y, XX-> size.y, dsx, dsy);
 		}
-		
+
 /*   GXandReverse   ropNotDestAnd */		/* dest = (!dest) & src */
 /*   GXorReverse    ropNotDestOr */		/* dest = (!dest) | src */
 /*   GXequiv        ropNotSrcXor */		/* dest ^= !src */
@@ -1530,21 +1530,21 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
 /*   GXnand         ropNotAnd */		/* dest = !(src & dest) */
 /*   GXnor          ropNotOr */		/* dest = !(src | dest) */
 /*   GXinvert       ropInvert */		/* dest = !dest */
-		
+
 		switch ( XX-> paint_rop) { /* XXX Limited set edition - either expand to full list or find new way to display bitmaps */
-		case ropXorPut:  
+		case ropXorPut:
 			XSetBackground( DISP, XX-> gc, 0);
-			XSetFunction( DISP, XX-> gc, GXxor); 
+			XSetFunction( DISP, XX-> gc, GXxor);
 			break;
-		case ropOrPut:   
+		case ropOrPut:
 			XSetBackground( DISP, XX-> gc, 0);
 			XSetFunction( DISP, XX-> gc, GXor);
 			break;
-		case ropAndPut:  
+		case ropAndPut:
 			XSetBackground( DISP, XX-> gc, 0xffffffff);
 			XSetFunction( DISP, XX-> gc, GXand);
 			break;
-		case ropNotPut:   
+		case ropNotPut:
 		case ropBlackness:
 			XSetForeground( DISP, XX-> gc, 0);
 			XSetBackground( DISP, XX-> gc, 0xffffffff);
@@ -1554,40 +1554,40 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
 			XSetForeground( DISP, XX-> gc, 0xffffffff);
 			XSetBackground( DISP, XX-> gc, 0);
 			XSetFunction( DISP, XX-> gc, GXor);
-			break;   
-		default:   
+			break;
+		default:
 			XSetForeground( DISP, XX-> gc, 0);
 			XSetBackground( DISP, XX-> gc, 0xffffffff);
 			XSetFunction( DISP, XX-> gc, GXand);
 		}
-		XPutImage( DISP, XX-> gdrawable, XX-> gc, 
-			r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]-> image, 
+		XPutImage( DISP, XX-> gdrawable, XX-> gc,
+			r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]-> image,
 			0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
-		XCHECKPOINT; 
+		XCHECKPOINT;
 		switch ( XX-> paint_rop) {
-		case ropAndPut:   
+		case ropAndPut:
 		case ropOrPut:
 		case ropXorPut:
-		case ropBlackness:   
+		case ropBlackness:
 		case ropWhiteness:
 			break;
-		case ropNotPut:   
+		case ropNotPut:
 			XSetForeground( DISP, XX-> gc, XX-> fore. primary);
 			XSetBackground( DISP, XX-> gc, 0xffffffff);
 			XSetFunction( DISP, XX-> gc, GXorInverted);
 			goto DISPLAY;
-		default:   
+		default:
 			XSetForeground( DISP, XX-> gc, XX-> fore. primary);
 			XSetBackground( DISP, XX-> gc, 0);
 			XSetFunction( DISP, XX-> gc, GXor);
-		DISPLAY:         
-			XPutImage( DISP, XX-> gdrawable, XX-> gc, 
-				r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]-> image, 
+		DISPLAY:
+			XPutImage( DISP, XX-> gdrawable, XX-> gc,
+				r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2]-> image,
 				0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
 			XCHECKPOINT;
 		}
 		ax += cs-> width;
-	}  
+	}
 	apc_gp_set_rop( self, XX-> paint_rop);
 	XSetFillStyle( DISP, XX-> gc, FillSolid);
 	XSetForeground( DISP, XX-> gc, XX-> fore. primary);
@@ -1595,7 +1595,7 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
 	XX-> flags. brush_fore = 1;
 	XX-> flags. brush_back = 1;
 
-	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {      
+	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
 		int lw = apc_gp_get_line_width( self);
 		int tw = gp_get_text_width( self, text, len, true, wide) - 1;
 		int d  = XX-> font-> underlinePos;
@@ -1615,7 +1615,7 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
 			ry. l = tw * r-> sin2. l + ay * r-> cos2. l + 0.5;
 			x2 = x + rx. i. i;
 			y2 = y + ry. i. i;
-			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2)); 
+			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
 		}
 
 		if ( PDrawable( self)-> font. style & fsStruckOut) {
@@ -1630,35 +1630,35 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, Bool
 			ry. l = tw * r-> sin2. l + ay * r-> cos2. l + 0.5;
 			x2 = x + rx. i. i;
 			y2 = y + ry. i. i;
-			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2)); 
+			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
 		}
 
-		if ( lw != XX-> font-> underlineThickness) 
+		if ( lw != XX-> font-> underlineThickness)
 			apc_gp_set_line_width( self, lw);
-	}   
-	XFLUSH;	  
+	}
+	XFLUSH;
 	return true;
-}   
+}
 
 Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8)
 {
 	DEFXX;
-	
+
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
 
 	if ( len == 0) return true;
 	if ( len > 65535 ) len = 65535;
-	
-#ifdef USE_XFT
-	if ( XX-> font-> xft) 
-		return prima_xft_text_out( self, text, x, y, len, utf8);
-#endif   
 
-	if ( utf8)  
+#ifdef USE_XFT
+	if ( XX-> font-> xft)
+		return prima_xft_text_out( self, text, x, y, len, utf8);
+#endif
+
+	if ( utf8)
 		if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return false;
-	
+
 	/* paint background if opaque */
 	if ( XX-> flags. paint_opaque) {
 		int i;
@@ -1667,23 +1667,23 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
 		memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
 		XSetForeground( DISP, XX-> gc, XX-> back. primary);
 		XX-> flags. brush_back = 0;
-		XX-> flags. brush_fore = 1; 
+		XX-> flags. brush_fore = 1;
 		XX-> fore. balance = 0;
 		XSetFunction( DISP, XX-> gc, GXcopy);
 		apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
 		for ( i = 0; i < 4; i++) {
 			p[i].x += x;
 			p[i].y += y;
-		}   
+		}
 		i = p[2].x; p[2].x = p[3].x; p[3].x = i;
 		i = p[2].y; p[2].y = p[3].y; p[3].y = i;
-		
+
 		apc_gp_fill_poly( self, 4, p);
 		apc_gp_set_rop( self, XX-> paint_rop);
 		apc_gp_set_color( self, XX-> fore. color);
 		apc_gp_set_fill_pattern( self, fp);
-		free( p); 
-	}  
+		free( p);
+	}
 	SHIFT( x, y);
 	RANGE2(x,y);
 
@@ -1710,7 +1710,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
 	else
 		XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y) + 1, ( char*) text, len);
 	XCHECKPOINT;
-	
+
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
 		int lw = apc_gp_get_line_width( self);
 		int tw = gp_get_text_width( self, text, len, false, utf8);
@@ -1719,20 +1719,20 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf
 		if ( lw != XX-> font-> underlineThickness)
 			apc_gp_set_line_width( self, XX-> font-> underlineThickness);
 		if ( PDrawable( self)-> font. style & fsUnderlined)
-			XDrawLine( DISP, XX-> gdrawable, XX-> gc, 
-				x - ovx.x, REVERT( y + d), x + tw - 1 + ovx.y, REVERT( y + d)); 
+			XDrawLine( DISP, XX-> gdrawable, XX-> gc,
+				x - ovx.x, REVERT( y + d), x + tw - 1 + ovx.y, REVERT( y + d));
 		if ( PDrawable( self)-> font. style & fsStruckOut) {
 			int scy = REVERT( y + (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/2);
-			XDrawLine( DISP, XX-> gdrawable, XX-> gc, 
+			XDrawLine( DISP, XX-> gdrawable, XX-> gc,
 				x - ovx.x, scy, x + tw - 1 + ovx.y, scy);
 		}
-		if ( lw != XX-> font-> underlineThickness) 
+		if ( lw != XX-> font-> underlineThickness)
 			apc_gp_set_line_width( self, lw);
-	}   
+	}
 
 	if ( utf8) free(( char *) text);
-	XFLUSH;	  
-	
+	XFLUSH;
+
 	return true;
 }
 
@@ -1769,7 +1769,7 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 	int default_char1 = fs-> default_char >> 8;
 	int default_char2 = fs-> default_char & 0xff;
 	if ( !abc) return nil;
-	
+
 	if ( default_char2 < fs-> min_char_or_byte2 || default_char2 > fs-> max_char_or_byte2 ||
 		default_char1 < fs-> min_byte1 || default_char1 > fs-> max_byte1) {
 		default_char1 = fs-> min_byte1;
@@ -1782,11 +1782,11 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 			cs = &fs-> min_bounds;
 		else if ( i2 < fs-> min_char_or_byte2 || i2 > fs-> max_char_or_byte2 ||
 					i1 < fs-> min_byte1 || i1 > fs-> max_byte1)
-			cs = fs-> per_char + 
+			cs = fs-> per_char +
 				(default_char1 - fs-> min_byte1) * d +
 					default_char2 - fs-> min_char_or_byte2;
 		else
-			cs = fs-> per_char + 
+			cs = fs-> per_char +
 				(i1 - fs-> min_byte1) * d +
 					i2 - fs-> min_char_or_byte2;
 		abc[l]. a = cs-> lbearing;
@@ -1794,7 +1794,7 @@ prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 		abc[l]. c = cs-> width - cs-> rbearing;
 	}
 	return abc;
-}   
+}
 
 PFontABC
 apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
@@ -1806,7 +1806,7 @@ apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
 #ifdef USE_XFT
 		if ( XX-> font-> xft)
 			return prima_xft_get_font_abc( self, firstChar, lastChar, unicode);
-#endif   
+#endif
 
 		abc = prima_xfont2abc( XX-> font-> fs, firstChar, lastChar);
 	} else
@@ -1896,7 +1896,7 @@ prima_xfont2def( Handle self, int first, int last)
 	XFreeGC( DISP, gc);
 	XFreePixmap( DISP, pixmap);
 
-	return ret; 
+	return ret;
 }
 
 PFontABC
@@ -2018,7 +2018,7 @@ int
 apc_gp_get_line_width( Handle self)
 {
 	DEFXX;
-	return XF_IN_PAINT(XX) ? XX-> line_width : XX-> gcv. line_width; 
+	return XF_IN_PAINT(XX) ? XX-> line_width : XX-> gcv. line_width;
 }
 
 int
@@ -2028,7 +2028,7 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 	int n;
 	if ( XF_IN_PAINT(XX)) {
 		n = XX-> paint_ndashes;
-		if ( XX-> paint_dashes) 
+		if ( XX-> paint_dashes)
 			memcpy( dashes, XX-> paint_dashes, n);
 		else
 			bzero( dashes, n);
@@ -2079,11 +2079,11 @@ gp_get_text_width( Handle self, const char *text, int len, Bool addOverhang, Boo
 {
 	DEFXX;
 	int ret;
-	/* 
+	/*
 	if ( !XX-> font) apc_gp_set_font( self, &PDrawable( self)-> font);
 	if ( !XX-> font) return 0;
 	*/
-	ret = wide ? 
+	ret = wide ?
 		XTextWidth16( XX-> font-> fs, ( XChar2b *) text, len) :
 		XTextWidth  ( XX-> font-> fs, (char*) text, len);
 	if ( addOverhang) {
@@ -2102,11 +2102,11 @@ apc_gp_get_text_width( Handle self, const char * text, int len, Bool addOverhang
 
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
-		return prima_xft_get_text_width( X(self)-> font, text, len, addOverhang, utf8, 
+		return prima_xft_get_text_width( X(self)-> font, text, len, addOverhang, utf8,
 			X(self)-> xft_map8, nil);
 #endif
-	
-	if ( utf8)  
+
+	if ( utf8)
 		if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return 0;
 	ret = gp_get_text_width( self, text, len, addOverhang, utf8);
 	if ( utf8)
@@ -2121,17 +2121,17 @@ gp_get_text_box( Handle self, const char * text, int len, Bool wide)
 	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
 	int x;
 	Point ovx;
-	
+
 	if ( !pt) return nil;
 
 	/*
-	if ( !XX-> font) 
+	if ( !XX-> font)
 		apc_gp_set_font( self, &PDrawable( self)-> font);
-	if ( !XX-> font) 
+	if ( !XX-> font)
 		return nil;
 	*/
-	
-	x = wide ? 
+
+	x = wide ?
 		XTextWidth16( XX-> font-> fs, ( XChar2b*) text, len) :
 		XTextWidth( XX-> font-> fs, (char*)text, len);
 	ovx = gp_get_text_overhangs( self, text, len, wide);
@@ -2146,8 +2146,8 @@ gp_get_text_box( Handle self, const char * text, int len, Bool wide)
 	if ( !XX-> flags. paint_base_line) {
 		int i;
 		for ( i = 0; i < 4; i++) pt[i]. y += XX-> font-> font. descent;
-	}   
-	
+	}
+
 	if ( PDrawable( self)-> font. direction != 0) {
 		int i;
 		double s = sin( PDrawable( self)-> font. direction / 57.29577951);
@@ -2167,20 +2167,20 @@ Point *
 apc_gp_get_text_box( Handle self, const char * text, int len, Bool utf8)
 {
 	Point * ret;
-	
+
 	if ( len > 65535 ) len = 65535;
 
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
 		return prima_xft_get_text_box( self, text, len, utf8);
 #endif
-	if ( utf8)  
+	if ( utf8)
 		if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return 0;
 	ret = gp_get_text_box( self, text, len, utf8);
 	if ( utf8)
 		free(( char*) text);
 	return ret;
-}   
+}
 
 Point
 apc_gp_get_transform( Handle self)
@@ -2222,7 +2222,7 @@ apc_gp_set_back_color( Handle self, Color color)
 	if ( XF_IN_PAINT(XX)) {
 		prima_allocate_color( self, color, &XX-> back);
 		XX-> flags. brush_back = 0;
-	} else 
+	} else
 		XX-> saved_back = color;
 	return true;
 }
@@ -2234,7 +2234,7 @@ apc_gp_set_color( Handle self, Color color)
 	if ( XF_IN_PAINT(XX)) {
 		prima_allocate_color( self, color, &XX-> fore);
 		XX-> flags. brush_fore = 0;
-	} else 
+	} else
 		XX-> saved_fore = color;
 	return true;
 }
@@ -2263,7 +2263,7 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 	DEFXX;
 	if ( memcmp( pattern, XX-> fill_pattern, sizeof(FillPattern)) == 0)
 		return true;
-	XX-> flags. brush_null_hatch = 
+	XX-> flags. brush_null_hatch =
 	( memcmp( pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
 	memcpy( XX-> fill_pattern, pattern, sizeof( FillPattern));
 	return true;
@@ -2274,7 +2274,7 @@ apc_gp_set_fill_pattern_offset( Handle self, Point fpo)
 {
 	DEFXX;
 	XGCValues gcv;
-	
+
 	fpo. y = 8 - fpo.y;
 	XX-> fill_pattern_offset = fpo;
 
@@ -2440,12 +2440,12 @@ apc_gp_set_rop2( Handle self, int rop)
 			XGCValues gcv;
 			gcv. line_style = ( rop == ropCopyPut) ? LineDoubleDash : LineOnOffDash;
 			XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
-		}   
+		}
 	} else {
 		XX-> rop2 = rop;
 		if ( XX-> gcv. line_style != LineSolid)
 			XX-> gcv. line_style = ( rop == ropCopyPut) ? LineDoubleDash : LineOnOffDash;
-	}   
+	}
 	return true;
 }
 

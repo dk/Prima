@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -40,7 +40,7 @@ my $i = 1;
 
 for my $c ( @a[0..$#a-1])
 {
-	my $p = eval("cr::$c"); 
+	my $p = eval("cr::$c");
 	$w-> pointer( $p);
 	my $b = $w-> insert( Button =>
 		flat => 1,
@@ -62,14 +62,14 @@ my @mapset = map {
 	my ($x,$a) = $ptr-> split;
 	my $j = Prima::Icon-> create;
 	$x-> begin_paint;
-	$x-> text_out( $_, 3, 3); 
+	$x-> text_out( $_, 3, 3);
 	$x-> end_paint;
 	$a-> begin_paint;
-	$a-> text_out( $_, 3, 3); 
+	$a-> text_out( $_, 3, 3);
 	$a-> end_paint;
 	$j-> combine( $x, $a);
 	$j;
-} 1..4;   
+} 1..4;
 my $mapsetID = 0;
 
 my $b = $w-> insert( SpeedButton =>
@@ -86,14 +86,14 @@ my $b = $w-> insert( SpeedButton =>
 	},
 );
 
-$b-> insert( Timer => 
-	timeout => 1250, 
+$b-> insert( Timer =>
+	timeout => 1250,
 	onTick  => sub {
 		$b-> pointerIcon( $mapset[$mapsetID]);
 		$b-> image( $mapset[$mapsetID]);
 		$mapsetID++;
 		$mapsetID = 0 if $mapsetID >= @mapset;
-	},   
+	},
 )-> start;
 
 $w-> pointer( cr::Default);

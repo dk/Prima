@@ -13,7 +13,7 @@ sub TIEARRAY {
 
 sub FETCH {
 	my ($self, $idx) = @_;
-	my ($widget, $property) = @$self; 
+	my ($widget, $property) = @$self;
 	$widget-> $property()-> [$idx];
 }
 
@@ -42,13 +42,13 @@ sub STORESIZE {
 }
 
 
-sub EXISTS 
+sub EXISTS
 {
 	my ( $self, $idx) = ( $_[0], abs($_[1]));
 	return $idx >= 0 && $idx < $self-> FETCHSIZE;
 }
 
-sub DELETE 
+sub DELETE
 {
 }
 
@@ -83,7 +83,7 @@ sub FETCH {
 
 sub STORE {
 	my ($self, $idx, $value) = @_;
-	my $size = $self-> FETCHSIZE; 
+	my $size = $self-> FETCHSIZE;
 	if ( $idx == $size) {
 		if ( $self-> {add_items}) {
 			$self-> {self}-> add_items($value);
@@ -193,13 +193,13 @@ sub SPLICE {
 }
 
 
-sub EXISTS 
+sub EXISTS
 {
 	my ( $self, $idx) = ( $_[0], abs($_[1]));
 	return $idx >= 0 && $idx < $self-> FETCHSIZE;
 }
 
-sub DELETE 
+sub DELETE
 {
 }
 
@@ -222,13 +222,13 @@ sub TIESCALAR {
 
 sub FETCH {
 	my ($self) = @_;
-	my ($widget, $property) = @$self; 
+	my ($widget, $property) = @$self;
 	$widget-> $property();
 }
 
 sub STORE {
 	my ($self, $value) = @_;
-	my ( $widget, $property) = @$self; 
+	my ( $widget, $property) = @$self;
 	$widget-> $property($value);
 	return $value;
 }

@@ -7,7 +7,7 @@ examples/sheet.pl - Prima DetailedList widget example
 =head1 FEATURES
 
 Demonstrates the usage of L<Prima::DetailedList> class.
-Note the header-driven actions: column sort ( vertical, with click ) and 
+Note the header-driven actions: column sort ( vertical, with click ) and
 rearrangement ( horizontal, with drag ).
 
 =cut

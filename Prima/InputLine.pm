@@ -70,8 +70,8 @@ sub init
 {
 	my $self = shift;
 
-	for ( qw( 
-		borderWidth passwordChar maxLen alignment autoTab autoSelect 
+	for ( qw(
+		borderWidth passwordChar maxLen alignment autoTab autoSelect
 		firstChar charOffset readOnly))
 		{ $self-> {$_} = 1; }
 	for ( qw( selStart selEnd atDrawX autoHeight undoLimit))
@@ -88,17 +88,17 @@ sub init
 
 	for ( qw(
 		textDirection
-		writeOnly borderWidth passwordChar maxLen alignment 
-		autoTab autoSelect readOnly selEnd selStart charOffset 
+		writeOnly borderWidth passwordChar maxLen alignment
+		autoTab autoSelect readOnly selEnd selStart charOffset
 		firstChar wordDelimiters ))
 		{ $self-> $_( $profile{ $_}); }
 	$self-> {resetDisabled} = 0;
 	$self-> {resetLevel}    = 0;
-	
+
 	my $font = $self-> font;
 	$self-> {font_height} = $font-> height;
 	$self-> {font_width} = $font-> width;
-	
+
 	$self-> reset;
 	$self-> autoHeight( $profile{autoHeight});
 
@@ -111,11 +111,11 @@ sub on_paint
 	my @size = $canvas-> size;
 	my @clr;
 	my @selClr;
-	@clr = $self-> enabled ? 
+	@clr = $self-> enabled ?
 		($self-> color, $self-> backColor) :
 		($self-> disabledColor, $self-> disabledBackColor);
 	@selClr = ($self-> hiliteColor, $self-> hiliteBackColor);
-	
+
 	my $border = $self-> {borderWidth};
 	if ( $self-> {borderWidth} == 0) {
 		$canvas-> color( $clr[1]);
@@ -126,8 +126,8 @@ sub on_paint
 
 	return if $size[0] <= $border * 2 + 2;
 	my $cap   = $self-> {line};
-	$canvas-> clipRect  ( 
-		$border + 1, $border + 1, 
+	$canvas-> clipRect  (
+		$border + 1, $border + 1,
 		$size[0] - $border - 2, $size[1] - $border - 2
 	);
 	$canvas-> translate ( $border + 1, $border + 1);
@@ -144,8 +144,8 @@ sub on_paint
 
 	my ( $x, $y) = ( $self-> {atDrawX}, $self-> {atDrawY});
 	if ( $useSel && @{ $self->{selChunks} // [] }) {
-		$self->bidi_selection_walk( 
-			$self->{selChunks}, 
+		$self->bidi_selection_walk(
+			$self->{selChunks},
 				$self->{firstChar}, length($self->{wholeLine}),
 		sub {
 			my ( $offset, $length, $selected ) = @_;
@@ -219,8 +219,8 @@ sub reset
 	my $ofs = $self-> {charOffset} - $fcCut;
 	$cap = ($ofs < 0) ? '' : substr( $self-> {line}, 0, $ofs );
 	my $x   = $self-> get_text_width( $cap) + $self-> {atDrawX} + $border;
-	my $curWidth = $self-> {insertMode} ? 
-		$self-> {defcw} : 
+	my $curWidth = $self-> {insertMode} ?
+		$self-> {defcw} :
 		(( $ofs < 0 ) ? 0 : $self-> get_text_width( substr( $self-> {line}, $ofs, 1)) + 1);
 	$curWidth = $size[0] - $x - $border if $curWidth + $x > $size[0] - $border;
 	$self-> cursorSize( $curWidth, $size[1] - $border * 2 - 2);
@@ -232,7 +232,7 @@ sub text
 	return $_[0]-> SUPER::text unless $#_;
 	my ( $self, $cap) = @_;
 	$cap = '' unless defined $cap;
-	$cap = substr( $cap, 0, $self-> {maxLen}) 
+	$cap = substr( $cap, 0, $self-> {maxLen})
 		if $self-> {maxLen} >= 0 and length($cap) > $self-> {maxLen};
 
 	$self-> SUPER::text($cap);
@@ -647,13 +647,13 @@ sub on_mousedown
 		my $cp = $::application-> bring('Primary');
 		return unless $cp;
 		return if $self-> {readOnly};
-		
+
 		my $cap = $self-> text;
 		my ( $start, $end) = $self-> selection;
 		($start, $end) = ( $self-> charOffset, $self-> charOffset) if $start == $end;
 		my $s = $cp-> text;
 		return if !defined($s) or length( $s) == 0;
-		
+
 		my ($p_start, $p_end) = $self-> selection_strpos;
 		substr( $cap, $p_start, $p_end - $p_start) = $s;
 		$self-> selection(0,0);
@@ -664,7 +664,7 @@ sub on_mousedown
 	} elsif ( $btn == mb::Right) {
 		return;
 	}
-	
+
 	$self-> {mouseTransaction} = 1;
 	$self-> selection(0,0);
 	$self-> charOffset( $self-> x2offset( $x));
@@ -719,7 +719,7 @@ sub on_mousemove
 
 		$self-> lock;
 		$self-> selection( $self-> {anchor}, $nSel);
-		
+
 		my $newFc  = $self-> firstChar + $delta * ( $x <= $border ? -1 : 1);
 		my $caplen = length $self-> {wholeLine};
 		$newFc = $caplen - $delta if $newFc + $delta > $caplen;
@@ -740,7 +740,7 @@ sub on_mouseup
 	delete $self-> {mouseTransaction};
 	$self-> scroll_timer_stop;
 	$self-> capture(0);
-	
+
 	return if $self-> {writeOnly};
 
 	my $cp = $::application-> bring('Primary');
@@ -773,13 +773,13 @@ sub on_fontchanged
 sub set_alignment
 {
 	my ( $self, $align) = @_;
-	
+
 	$self-> {alignment} = $align;
-	$align = ta::Left if 
-		$align != ta::Left && 
-		$align != ta::Right && 
+	$align = ta::Left if
+		$align != ta::Left &&
+		$align != ta::Right &&
 		$align != ta::Center;
-	
+
 	$self-> reset;
 	$self-> repaint;
 }
@@ -787,10 +787,10 @@ sub set_alignment
 sub set_border_width
 {
 	my ( $self, $width) = @_;
-	
+
 	$width = 0 if $width < 0;
 	$self-> {borderWidth} = $width;
-	
+
 	$self-> check_auto_size;
 	$self-> reset;
 	$self-> repaint;
@@ -799,15 +799,15 @@ sub set_border_width
 sub set_char_offset
 {
 	my ( $self, $offset) = @_;
-	
+
 	my $cap = $self-> text;
 	my $l   = length($cap);
 	$offset = $l if $offset > $l;
 	$offset = 0 if $offset < 0;
 	return if $self-> {charOffset} == $offset;
-	
+
 	$self-> push_undo_action( 'charOffset', $offset) unless $self->has_undo_action('charOffset');
-	
+
 	my $border = $self-> {borderWidth};
 	$self-> {charOffset} = $offset;
 	my $w = $self-> width - ( $border + 1) * 2;
@@ -848,7 +848,7 @@ sub set_first_char
 	my $l = length $self-> {wholeLine};
 	$pos = $l if $pos > $l;
 	$pos = 0 if $pos < 0;
-	$pos = 0 if 
+	$pos = 0 if
 		( $self-> {alignment} != ta::Left) &&
 		( $self-> get_text_width( $self-> {wholeLine}) <= $self-> width - $self-> {borderWidth} * 2 - 2);
 	my $ofc = $self-> {firstChar};
@@ -874,7 +874,7 @@ sub set_write_only
 {
 	my ( $self, $wo) = @_;
 	return if $wo == $self-> {writeOnly};
-	
+
 	$self-> {writeOnly} = $wo;
 	$self-> text( $self-> text);
 }
@@ -883,7 +883,7 @@ sub set_password_char
 {
 	my ( $self, $pc) = @_;
 	return if $pc eq $self-> {passwordChar};
-	
+
 	$self-> {passwordChar} = $pc;
 	$self-> text( $self-> text) if $self-> {writeOnly};
 }
@@ -935,7 +935,7 @@ sub set_selection
 	} else {
 		$new_chunks = [ length( $self->{wholeLine}) ];
 	}
-	
+
 	my $ooffset = $self-> charOffset;
 	$self-> charOffset( $end) if ( $start != $end) && !defined $self-> {autoAdjustDisabled};
 	return if ( $start == $ostart && $end == $oend);
@@ -947,7 +947,7 @@ sub set_selection
 	my @r = ( $self->{atDrawX} + $border + 2, $self->{atDrawX} + $border + 2 );
 	my @invalid_rects;
 	$self-> begin_paint_info;
-	$self->bidi_selection_walk( 
+	$self->bidi_selection_walk(
 		$self->bidi_selection_diff( $old_chunks, $new_chunks ),
 		$self->{firstChar}, length($self->{wholeLine}),
 		sub {
@@ -1066,7 +1066,7 @@ Prima::InputLine - standard input line widget
 
 The class provides basic functionality of an input line,
 including hidden input, read-only state, selection, and
-clipboard operations. The input line text data is 
+clipboard operations. The input line text data is
 contained in L<text> property.
 
 =head1 API
@@ -1077,7 +1077,7 @@ contained in L<text> property.
 
 =item Change
 
-The notification is called when the L<text> property is changed, either 
+The notification is called when the L<text> property is changed, either
 interactively or as a result of direct call.
 
 =back
@@ -1178,7 +1178,7 @@ If set, indicates RTL text input.
 
 =item wordDelimiters STRING
 
-Contains string of character that are used for locating a word break. 
+Contains string of character that are used for locating a word break.
 Default STRING value consists of punctuation marks, space and tab characters,
 and C<\xff> character.
 
@@ -1191,7 +1191,7 @@ Default value: 0
 
 =back
 
-=head2 Methods 
+=head2 Methods
 
 =over
 

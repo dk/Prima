@@ -61,7 +61,7 @@ Prima::Test - GUI test tools
 
 =head1 DESCRIPTION
 
-The module contains a small set or tool used for testing of 
+The module contains a small set or tool used for testing of
 Prima-related code together with standard perl C<Test::> suite.
 
 =head1 SYNOPSIS
@@ -93,7 +93,7 @@ Waits for the flag to be raised in 500 msec, or returns false.
 
 =head2 no-X11 environment
 
-By default fires skip_all condition if running without X11 connection. If the test 
+By default fires skip_all condition if running without X11 connection. If the test
 can be ran without X11, use as:
 
 	use Prima::Test qw(noX11);

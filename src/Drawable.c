@@ -68,11 +68,11 @@ clear_font_abc_caches( Handle self)
 	PList u;
 	if (( u = var-> font_abc_unicode)) {
 		int i;
-		for ( i = 0; i < u-> count; i += 2) 
+		for ( i = 0; i < u-> count; i += 2)
 			free(( void*) u-> items[ i + 1]);
 		plist_destroy( u);
 		var-> font_abc_unicode = nil;
-	} 
+	}
 	if ( var-> font_abc_ascii) {
 		free( var-> font_abc_ascii);
 		var-> font_abc_ascii = nil;
@@ -130,7 +130,7 @@ Drawable_end_paint_info( Handle self)
 	opt_clear( optInDrawInfo);
 }
 
-void 
+void
 Drawable_set( Handle self, HV * profile)
 {
 	dPROFILE;
@@ -177,7 +177,7 @@ Drawable_set( Handle self, HV * profile)
 Font *
 Drawable_font_match( char * dummy, Font * source, Font * dest, Bool pick)
 {
-	if ( pick) 
+	if ( pick)
 		apc_font_pick( nilHandle, source, dest);
 	else
 		Drawable_font_add( nilHandle, source, dest);
@@ -218,7 +218,7 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 		dest-> pitch = fpDefault;
 	if ( useHeight)
 		dest-> size = 0;
-	if ( !useHeight && !useSize && ( dest-> height <= 0 || dest-> height > 16383)) 
+	if ( !useHeight && !useSize && ( dest-> height <= 0 || dest-> height > 16383))
 		useSize = 1;
 
 	/* validating entries */
@@ -373,13 +373,13 @@ Drawable_get_font_ranges( Handle self)
 	unsigned long * ret;
 	AV * av = newAV();
 	gpARGS;
-	
+
 	gpENTER( newRV_noinc(( SV *) av));
 	ret = apc_gp_get_font_ranges( self, &count);
 	gpLEAVE;
 	if ( ret) {
 		int i;
-		for ( i = 0; i < count; i++) 
+		for ( i = 0; i < count; i++)
 			av_push( av, newSViv( ret[i]));
 		free( ret);
 	}
@@ -432,9 +432,9 @@ Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom,
 {
 	Bool ok;
 	if ( image == nilHandle) return false;
-	if ( xLen == xDestLen && yLen == yDestLen) 
+	if ( xLen == xDestLen && yLen == yDestLen)
 		ok = apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
-	else    
+	else
 		ok = apc_gp_stretch_image( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
 	if ( !ok) perl_error();
 	return ok;
@@ -488,7 +488,7 @@ prima_read_array( SV * points, char * procName, Bool integer, int div, int min, 
 		warn("%s: number of elements in an array must be a multiple of %d", procName, div);
 		return NULL;
 	}
-	if ( n_points) 
+	if ( n_points)
 		*n_points = count / div;
 	if ( count == 0)
 		return NULL;
@@ -567,11 +567,11 @@ Drawable_bars( Handle self, SV * rects)
 	return ret;
 }
 
-/* 
+/*
 
 Render B-spline
 
-thanks to : 
+thanks to :
 
 Marcel Steinbeck for tinyspline.c
 Thibaut Séguy for bspline.js
@@ -607,9 +607,9 @@ default_knots( int n_points, int degree, Bool clamped )
 
 /* render single point on a spline with de Boor's algorithm */
 static Bool
-render_point( 
-	double t, 
-	int degree, int n_points, int dimensions, double * v, 
+render_point(
+	double t,
+	int degree, int n_points, int dimensions, double * v,
 	double * knots, int * last_found_knot, Point * result
 ) {
 	double lo, hi;
@@ -687,18 +687,18 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 			warn("degree must be at least 2");
 			goto EXIT;
 		}
-	} else 
+	} else
 		degree = 2;
-	
+
 	if ( pexist( precision )) {
 		precision = pget_i(precision);
 		if ( precision < 2 || precision > 1024 ) {
 			warn("precision must be at least 2 and max 1024");
 			goto EXIT;
 		}
-	} else 
+	} else
 		precision = 24;
-	
+
 	p = (NPoint*) prima_read_array( points, "Drawable::render_spline", false, 2, degree + 1, -1, &n_points);
 	if ( !p) goto EXIT;
 
@@ -708,14 +708,14 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	n_points += n_add_points;
 
 	if ( pexist( knots )) {
-		knots = (double*) prima_read_array( pget_sv(knots), "knots", false, 1, 
+		knots = (double*) prima_read_array( pget_sv(knots), "knots", false, 1,
 			n_points + degree + 1, n_points + degree + 1, NULL);
 		if (!knots) goto EXIT;
 	} else
 		knots = default_knots(n_points, degree, !closed);
-	
+
 	if ( pexist( weights )) {
-		weights = (double*) prima_read_array(pget_sv(weights), "weights", false, 1, 
+		weights = (double*) prima_read_array(pget_sv(weights), "weights", false, 1,
 			n_points, n_points, NULL);
 		if (!weights) goto EXIT;
 		dim = 3;
@@ -733,7 +733,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 		warn("not enough memory");
 		goto EXIT;
 	}
-	
+
 	/* convert to weighted points */
 	for ( i = j = 0, pp = p; i < n_points; i++, pp++) {
 		register double w = weights ? weights[i] : 1.0;
@@ -944,8 +944,8 @@ add_wrapped_text( TextWrapRec * t, int start, int utfstart, int end, int utfend,
 		if ( !( c = allocs( l + 1))) return false;
 		memcpy( c, t-> text + start, l);
 		c[ l] = 0;
-	}                                               
-	if ( tildeIndex >= 0 && tildeIndex >= start && tildeIndex < end) {                                               
+	}
+	if ( tildeIndex >= 0 && tildeIndex >= start && tildeIndex < end) {
 		*tildeLine = t-> t_line = t-> count;
 		*tildePos = *tildeLPos = tildeIndex - start;
 		if ( tildeIndex == end - 1) {
@@ -968,7 +968,7 @@ add_wrapped_text( TextWrapRec * t, int start, int utfstart, int end, int utfend,
 		(*lArray)[ t-> count++] = c;
 	return true;
 }
-	
+
 char **
 Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 {
@@ -989,12 +989,12 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 	start = end; \
 	utf_start = utfend; \
 	if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) return ret
-		
+
 	t-> count = 0;
 	if (!( ret = allocn( char*, lSize))) return nil;
 
 	/* determining ~ character location */
-	if ( t-> options & twCalcMnemonic) 
+	if ( t-> options & twCalcMnemonic)
 		for ( i = 0; i < t-> textLen - 1; i++)
 			if ( t-> text[ i] == '~') {
 				unsigned char c = t-> text[ i + 1];
@@ -1007,18 +1007,18 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 				}
 			}
 
-		
+
 	/* process UV chars */
 	for ( i = 0, utf_p = 0; i < t-> textLen; utf_p++) {
 		UV uv;
 		float winc;
 		int p = i;
-		
+
 		if ( t-> utf8_text) {
 			STRLEN len;
 #if PERL_PATCHLEVEL >= 16
 			uv = utf8_to_uvchr_buf(( U8*) t-> text + i, ( U8*) t-> text + t-> textLen, &len);
-#else	 
+#else
 			uv = utf8_to_uvchr(( U8*) t-> text + i, &len);
 #endif
 			i += len;
@@ -1026,18 +1026,18 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 		} else
 			uv = (( unsigned char *)(t-> text))[i++];
 
-		if ( uv / 256 != base) 
+		if ( uv / 256 != base)
 			if ( !precalc_abc_buffer( query_abc_range( self, t, base = uv / 256), width, abc))
 				return ret;
 		if ( reassign_w) w = abc[ uv & 0xff]. a;
 		reassign_w = 0;
-		
+
 		switch ( uv ) {
 		case '\t':
 			split_start = p; split_end = i; utf_split = utf_p;
 			if (!( t-> options & twCalcTabs)) goto _default;
 			if ( t-> options & twSpaceBreak) {
-				lAdd( p, utf_p); 
+				lAdd( p, utf_p);
 				start = i;
 				utf_start++;
 				reassign_w = 1;
@@ -1046,7 +1046,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 			if ( !spaceOK) {
 				PFontABC s = query_abc_range( self, t, 0);
 				if ( !s) return ret;
-				spaceWidth = (s[' '].a + s[' '].b + s[' '].c) * t-> tabIndent; 
+				spaceWidth = (s[' '].a + s[' '].b + s[' '].c) * t-> tabIndent;
 				spaceC     = (s[' '].c < 0) ? - s[' ']. c : 0;
 				spaceOK = 1;
 			}
@@ -1057,17 +1057,17 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 		case '\n':
 		case 0x2028:
 		case 0x2029:
-			split_start = p; split_end = i; utf_split = utf_p; 
+			split_start = p; split_end = i; utf_split = utf_p;
 			if (!( t-> options & twNewLineBreak)) goto _default;
-			lAdd( p, utf_p); 
+			lAdd( p, utf_p);
 			start = i;
 			utf_start++;
 			reassign_w = 1;
 			continue;
 		case ' ':
-			split_start = p; split_end = i; utf_split = utf_p; 
+			split_start = p; split_end = i; utf_split = utf_p;
 			if (!( t-> options & twSpaceBreak)) goto _default;
-			lAdd( p, utf_p); 
+			lAdd( p, utf_p);
 			start = i;
 			utf_start++;
 			reassign_w = 1;
@@ -1095,11 +1095,11 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 					}
 					t-> count = 0;
 					return ret;
-				} 
+				}
 				/* or push this character disregarding the width */
 				lAdd( i, utf_p + 1);
 			} else { /* normal break condition */
-				/* checking if break was at word boundary */ 
+				/* checking if break was at word boundary */
 				if ( t-> options & twWordBreak) {
 					if ( start <= split_start) {
 						lAdd( split_start, utf_split );
@@ -1108,7 +1108,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 						utf_p = utf_split;
 						w = 0;
 						continue;
-					} else if ( t-> options & twBreakSingle) { 
+					} else if ( t-> options & twBreakSingle) {
 						/* cannot be split, return nothing */
 						int j;
 						if (!( t-> options & twReturnChunks)) {
@@ -1117,7 +1117,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 						}
 						t-> count = 0;
 						return ret;
-					} 
+					}
 				}
 				/* repeat again */
 				lAdd( p, utf_p );
@@ -1133,7 +1133,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 
 	/* adding or skipping last line */
 	if ( t-> textLen - start > 0 || t-> count == 0) lAdd( t-> textLen, t-> utf8_textLen);
-	
+
 	/* removing ~ and determining it's location */
 	if ( tildeIndex >= 0 && !(t-> options & twReturnChunks)) {
 		PFontABC abc;
@@ -1154,10 +1154,10 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 		for ( i = 0; i < t-> count; i++) {
 			int tabs = 0, len = 0;
 			char *substr = ret[ i], *n;
-			while (*substr) { 
-				if ( *substr == '\t') tabs++; 
-				substr++; 
-				len++; 
+			while (*substr) {
+				if ( *substr == '\t') tabs++;
+				substr++;
+				len++;
 			}
 			if ( tabs == 0) continue;
 			if ( !( n = allocs( len + tabs * t-> tabIndent + 1)))
@@ -1205,7 +1205,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 	t. utf8_text = prima_is_utf8_sv( text);
 	if ( t. utf8_text) {
 		t. utf8_textLen = prima_utf8_length( t. text);
-		t. textLen = utf8_hop(( U8*) t. text, t. utf8_textLen) - (U8*) t. text; 
+		t. textLen = utf8_hop(( U8*) t. text, t. utf8_textLen) - (U8*) t. text;
 	} else {
 		t. utf8_textLen = t. textLen = tlen;
 	}
@@ -1235,7 +1235,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 	av = newAV();
 	for ( i = 0; i < t. count; i++) {
 		SV * sv = retChunks ? newSViv( PTR2IV(c[i])) : newSVpv( c[ i], 0);
-		if ( !retChunks) { 
+		if ( !retChunks) {
 			if ( t. utf8_text) SvUTF8_on( sv);
 			free( c[i]);
 		}

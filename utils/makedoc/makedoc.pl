@@ -45,7 +45,7 @@ if ( $build) {
 			} else {
 				push @bs, [ 1, $1];
 			}
-			push @bs, [0,'Prima'] 
+			push @bs, [0,'Prima']
 				if $#bs && $bs[-1][0] == 1 && $bs[-1][1] =~ /Core toolkit classes/;
 		}
 	}
@@ -101,7 +101,7 @@ if ( $build) {
 			}
 		}
 		die "`$fn' document is not found\n";
-	FOUND:   
+	FOUND:
 
 		open W, $fn or die "Cannot open $fn:$!\n";
 		my @ctx;
@@ -120,7 +120,7 @@ if ( $build) {
 						goto FOUND;
 					}
 					warn "** $gif is not found\n";
-					undef $gif; 
+					undef $gif;
 				FOUND:
 					if ( defined $gif) {
 						print "convert $gif $eps\n";
@@ -140,7 +140,7 @@ if ( $build) {
 
 			s/L<([^\>]+)>/Link($1)/ge;
 			s/\b(DESCRIPTION|USAGE|BUGS|SYNOPSIS|EXAMPLE|FORMAT|ARGUMENTS|SYNTAX|FILES|FILE FORMAT|METHODS|BASIC PROGRAM)\b/ucfirst(lc $1)/ge;
-			
+
 			push @ctx, $_ unless $cut;
 		}
 		close W;
@@ -152,7 +152,7 @@ if ( $build) {
 			close W;
 			$ffn = 'tmp.pm';
 		}
-	
+
 		unlink 'out.tex';
 		my $q = ($^O =~ /win32/i) ? '"' : "'";
 		system "pod2latex -full -modify -sections $q!SEE ALSO|AUTHOR|AUTHORS|COPYRIGHT$q -out out.tex $ffn";
@@ -188,7 +188,7 @@ for ( $i = 0; $i < @tex; $i++) {
 	$tex[$i] =~ s/\\tableofcontents//s;
 	$tex[$i] =~ s/\\end{document}.*//s if $i < $#tex;
 	$tex[$i] =~ s/\\item \d/\\item/gs;
-	
+
 	# $tex[$i] =~ s/ elsewhere in this document//gs;
 	# $tex[$i] =~ s/the (\\emph{[^}]+}) manpage/$1/gs;
 	print W $tex[$i];

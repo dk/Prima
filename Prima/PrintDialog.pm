@@ -107,7 +107,7 @@ sub Printers_Change
 {
 	my ( $self, $combic) = @_;
 	$::application-> get_printer-> printer( $combic-> text);
-	$self-> Device-> text( 'Device: ' . 
+	$self-> Device-> text( 'Device: ' .
 		$self-> {list}-> [ $combic-> List-> focusedItem]-> {device}
 	);
 }

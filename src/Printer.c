@@ -203,7 +203,7 @@ XS( Printer_options_FROMPERL)
 			free( argv);
 		}
 		PUTBACK;
-		return;    
+		return;
 	}
 	case 2: {
 		char *option, *value;
@@ -217,7 +217,7 @@ XS( Printer_options_FROMPERL)
 			XPUSHs( nilSV);
 		}
 		PUTBACK;
-		return;    
+		return;
 	}
 	default: {
 		int i, success = 0;
@@ -230,11 +230,11 @@ XS( Printer_options_FROMPERL)
 			if ( !apc_prn_set_option( self, option, value)) continue;
 			success++;
 		}
-		
+
 		SPAGAIN;
 		XPUSHs( sv_2mortal( newSViv( success)));
 		PUTBACK;
-		return;    
+		return;
 	}}
 	return;
 }

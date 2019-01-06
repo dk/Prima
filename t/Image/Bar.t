@@ -67,7 +67,7 @@ for my $w ( 1..31 ) {
 	}
 }
 
-# 1-bit color 
+# 1-bit color
 $i-> set(
 	colormap => [ 0xff0000, 0x00ff00 ],
 	type     => im::bpp1,
@@ -78,7 +78,7 @@ $i-> set(
 $i->bar(0,0,31,0);
 is_bits( $i->data, "\0\0\0\0", "imbpp1 color find");
 
-# 4-bit 
+# 4-bit
 $i->set(
 	type     => im::bpp4,
 	color    => 0x00ff00,

@@ -40,11 +40,11 @@ for my $afm (<*.afm>) {
 
 	open F, ">:raw", $pm or die $!;
 	print F <<HDR;
-('$fm{name}' => { 
+('$fm{name}' => {
   name            => '$fm{name}',
   family          => '$fm{family}',
   height          => $fm{height},
-  weight          => fw::$fm{weight},   
+  weight          => fw::$fm{weight},
   style           => $fm{style},
   pitch           => $fm{pitch},
   vector          => 1,

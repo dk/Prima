@@ -9,7 +9,7 @@
 
 USAGE
 -----
-To use specific Xft fonts, set Prima font names in your X resource 
+To use specific Xft fonts, set Prima font names in your X resource
 database in fontconfig formats - for example, Palatino-12. Consult
 'man fontconfig' for the syntax, but be aware that Prima uses only
 size, weight, and name fields.
@@ -18,11 +18,11 @@ IMPLEMENTATION NOTES
 --------------------
 
 This implementations doesn't work with non-scalable Xft fonts,
-since their rasterization capabilities are currently ( June 2003) very limited - 
+since their rasterization capabilities are currently ( June 2003) very limited -
 no scaling and no rotation. Plus, the selection of the non-scalable fonts is
 a one big something, and I believe that one in apc_font.c is enough.
 
-The following Xft/fontconfig problems, if fixed in th next versions, need to be 
+The following Xft/fontconfig problems, if fixed in th next versions, need to be
 taken into the consideration:
 - no font/glyph data - internal leading, underscore size/position,
 	no strikeout size/position, average width.
@@ -43,7 +43,7 @@ TO DO
 - Under some circumstances Xft decides to put antialiasing aside, for
 	example, on the paletted displays. Check, if some heuristics that would
 	govern whether Xft is to be used there, are needed.
-		
+
 */
 
 #include "unix/guts.h"
@@ -82,7 +82,7 @@ typedef struct {
 
 static CharSetInfo std_charsets[] = {
 	{ "iso8859-1",  NULL, 0, 1 }
-#ifdef HAVE_ICONV_H    
+#ifdef HAVE_ICONV_H
 	,
 	{ "iso8859-2",  NULL, 0, 0 },
 	{ "iso8859-3",  NULL, 0, 0 },
@@ -100,7 +100,7 @@ static CharSetInfo std_charsets[] = {
 					the table */
 /* You are welcome to add more 8-bit charsets here - just keep in mind
 	that each encoding requires iconv() to load a file */
-#endif    
+#endif
 };
 
 static CharSetInfo fontspecific_charset = { "fontspecific", NULL, 0, 1 };
@@ -125,17 +125,17 @@ static CharSetInfo * locale = NULL;
 #ifdef NEED_X11_EXTENSIONS_XRENDER_H
 /* piece of Xrender guts */
 typedef struct _XExtDisplayInfo {
-	struct _XExtDisplayInfo *next;      
-	Display *display;                   
-	XExtCodes *codes;                   
-	XPointer data;                      
+	struct _XExtDisplayInfo *next;
+	Display *display;
+	XExtCodes *codes;
+	XPointer data;
 } XExtDisplayInfo;
 
 extern XExtDisplayInfo *
 XRenderFindDisplay (Display *dpy);
 #endif
 
-static void 
+static void
 xft_debug( const char *format, ...)
 {
 	int i;
@@ -160,7 +160,7 @@ prima_xft_init(void)
 	size_t ibl, obl;
 	uint32_t *optr;
 	int j;
-#endif  
+#endif
 
 #ifdef NEED_X11_EXTENSIONS_XRENDER_H
 	{ /* snatch error code from xrender guts */
@@ -168,9 +168,9 @@ prima_xft_init(void)
 		if ( info && info-> codes)
 			guts. xft_xrender_major_opcode = info-> codes-> major_opcode;
 	}
-#endif   
+#endif
 
-	if ( !apc_fetch_resource( "Prima", "", "UseXFT", "usexft", 
+	if ( !apc_fetch_resource( "Prima", "", "UseXFT", "usexft",
 				nilHandle, frUnix_int, &guts. use_xft))
 		guts. use_xft = 1;
 	if ( guts. use_xft) {
@@ -188,7 +188,7 @@ prima_xft_init(void)
 	for ( i = 161; i < 255; i++) FcCharSetAddChar( std_charsets[0]. fcs, i);
 	for ( i = 128; i < 255; i++) std_charsets[0]. map[i - 128] = i;
 	std_charsets[0]. glyphs = ( 127 - 32) + ( 255 - 161);
-		
+
 #ifdef HAVE_ICONV_H
 	sprintf( ucs4, "UCS-4%cE", (guts.machine_byte_order == LSBFirst) ? 'L' : 'B');
 	for ( i = 1; i < STD_CHARSETS; i++) {
@@ -218,14 +218,14 @@ prima_xft_init(void)
 
 		optr = std_charsets[i]. map - 128;
 		std_charsets[i]. glyphs = 127 - 32;
-		for ( j = (( i == KOI8_INDEX) ? 191 : 161); j < 256; j++) 
+		for ( j = (( i == KOI8_INDEX) ? 191 : 161); j < 256; j++)
 			/* koi8 hack - 161-190 are pseudo-graphic symbols, not really characters,
 				so don't use them for font matching by a charset */
 			if ( optr[j]) {
 				FcCharSetAddChar( std_charsets[i]. fcs, optr[j]);
 				std_charsets[i]. glyphs++;
 			}
-		if ( std_charsets[i]. glyphs > 127 - 32) 
+		if ( std_charsets[i]. glyphs > 127 - 32)
 			std_charsets[i]. enabled = true;
 	}
 #endif
@@ -250,7 +250,7 @@ prima_xft_init(void)
 	fontspecific_charset. fcs = FcCharSetCreate();
 	for ( i = 128; i < 256; i++) fontspecific_charset. map[i - 128] = i;
 	hash_store( encodings, fontspecific, strlen(fontspecific), (void*) &fontspecific_charset);
-	
+
 	utf8_charset. fcs = FcCharSetCreate();
 	for ( i = 128; i < 256; i++) utf8_charset. map[i - 128] = i;
 	hash_store( encodings, utf8_encoding, strlen(utf8_encoding), (void*) &utf8_charset);
@@ -265,7 +265,7 @@ remove_myfonts( void * f, int keyLen, void * key, void * dummy)
 {
 	unlink((char*) key);
 	return false;
-}   
+}
 
 void
 prima_xft_done(void)
@@ -281,8 +281,8 @@ prima_xft_done(void)
 	hash_destroy( mismatch, false);
 	hash_destroy( prop_fonts, true);
 	hash_destroy( mono_fonts, true);
-	
-	hash_first_that( myfont_cache, (void*)remove_myfonts, NULL, NULL, NULL); 
+
+	hash_first_that( myfont_cache, (void*)remove_myfonts, NULL, NULL, NULL);
 	hash_destroy( myfont_cache, false);
 	myfont_cache = NULL;
 
@@ -293,7 +293,7 @@ utf8_flag_strncpy( char * dst, const char * src, unsigned int maxlen, unsigned s
 {
 	int is_utf8 = 0;
 	while ( maxlen-- && *src) {
-		if ( *((unsigned char*)src) > 0x7f) 
+		if ( *((unsigned char*)src) > 0x7f)
 			is_utf8 = 1;
 		*(dst++) = *(src++);
 	}
@@ -338,7 +338,7 @@ fcpattern2font( FcPattern * pattern, PFont font)
 
 	font-> style = 0;
 	font-> undef. style = 0;
-	if ( FcPatternGetInteger( pattern, FC_SLANT, 0, &i) == FcResultMatch) 
+	if ( FcPatternGetInteger( pattern, FC_SLANT, 0, &i) == FcResultMatch)
 		if ( i == FC_SLANT_ITALIC || i == FC_SLANT_OBLIQUE)
 			font-> style |= fsItalic;
 	if ( FcPatternGetInteger( pattern, FC_WEIGHT, 0, &i) == FcResultMatch) {
@@ -347,7 +347,7 @@ fcpattern2font( FcPattern * pattern, PFont font)
 		else if ( i >= FC_WEIGHT_BOLD)
 			font-> style |= fsBold;
 	}
-	
+
 	font-> xDeviceRes = guts. resolution. x;
 	font-> yDeviceRes = guts. resolution. y;
 	if ( FcPatternGetDouble( pattern, FC_DPI, 0, &d) == FcResultMatch)
@@ -393,7 +393,7 @@ fcpattern2font( FcPattern * pattern, PFont font)
 	if (( FcPatternGetCharSet( pattern, FC_CHARSET, 0, &c) == FcResultMatch) && c) {
 		FcChar32 ucs4, next, map[FC_CHARSET_MAP_SIZE];
 		if (( ucs4 = FcCharSetFirstPage( c, map, &next)) != FC_CHARSET_DONE) {
-			for (i = 0; i < FC_CHARSET_MAP_SIZE; i++) 
+			for (i = 0; i < FC_CHARSET_MAP_SIZE; i++)
 				if ( map[i] ) {
 					for (j = 0; j < 32; j++)
 						if (map[i] & (1 << j)) {
@@ -407,7 +407,7 @@ fcpattern2font( FcPattern * pattern, PFont font)
 STOP_1:;
 			while ( next != FC_CHARSET_DONE)
 				ucs4 = FcCharSetNextPage (c, map, &next);
-			for (i = FC_CHARSET_MAP_SIZE - 1; i >= 0; i--) 
+			for (i = FC_CHARSET_MAP_SIZE - 1; i >= 0; i--)
 				if ( map[i] ) {
 					for (j = 31; j >= 0; j--)
 						if (map[i] & (1 << j)) {
@@ -421,7 +421,7 @@ STOP_1:;
 STOP_2:;
 		}
 	}
-	
+
 	/* XXX other details? */
 	font-> descent = font-> height / 4;
 	font-> ascent  = font-> height - font-> descent;
@@ -462,7 +462,7 @@ try_size( Handle self, Font f, double size)
 
 /* find a most similar monospace/proportional font by name and family */
 static char *
-find_good_font_by_family( Font * f, int fc_spacing ) 
+find_good_font_by_family( Font * f, int fc_spacing )
 {
 	static Bool initialized = 0;
 
@@ -479,7 +479,7 @@ find_good_font_by_family( Font * f, int fc_spacing )
 #ifdef NEED_EXPLICIT_FC_SCALABLE
 		FcPatternAddBool( pat, FC_SCALABLE, 1);
 #endif
-		os = FcObjectSetBuild( FC_FAMILY, FC_CHARSET, FC_ASPECT, 
+		os = FcObjectSetBuild( FC_FAMILY, FC_CHARSET, FC_ASPECT,
 			FC_SLANT, FC_WEIGHT, FC_SIZE, FC_PIXEL_SIZE, FC_SPACING,
 			FC_FOUNDRY, FC_SCALABLE, FC_DPI,
 			(void*) 0);
@@ -488,7 +488,7 @@ find_good_font_by_family( Font * f, int fc_spacing )
 		FcPatternDestroy( pat);
 		if ( !s) return NULL;
 
-		ppat = s-> fonts; 
+		ppat = s-> fonts;
 		for ( i = 0; i < s->nfont; i++, ppat++) {
 			Font f;
 			int spacing = FC_PROPORTIONAL, slant, len, weight;
@@ -503,7 +503,7 @@ find_good_font_by_family( Font * f, int fc_spacing )
 			if (
 				( FcPatternGetInteger( *ppat, FC_WEIGHT, 0, &weight) != FcResultMatch) ||
 				( weight <= FC_WEIGHT_LIGHT || weight >= FC_WEIGHT_BOLD)
-			)            
+			)
 				continue;
 
 			fcpattern2fontnames( *ppat, &f);
@@ -544,7 +544,7 @@ find_good_font_by_family( Font * f, int fc_spacing )
 static void
 xft_store_font(Font * k, Font * v, Bool by_size, XftFont * xft, XftFont * xft_base)
 {
-	FontKey key; 
+	FontKey key;
 	PCachedFont kf;
 	xft_build_font_key( &key, k, by_size);
 	if ( !hash_fetch( guts. font_hash, &key, sizeof(FontKey))) {
@@ -564,7 +564,7 @@ static int force_xft_monospace_emulation = 0;
 static int try_xft_monospace_emulation_by_name = 0;
 
 /* Bug #128146: libXft might use another shared libfontconfig library, as
- * observed on a badly configured macos, and thus FcPattern* returned by it 
+ * observed on a badly configured macos, and thus FcPattern* returned by it
  * can crash everything */
 static FcPattern *
 my_XftFontMatch(Display        *dpy,
@@ -593,7 +593,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	Bool by_size;
 	CharSetInfo * csi;
 	XftFont * xf;
-	FontKey key; 
+	FontKey key;
 	PCachedFont kf, kf_base = NULL;
 	int i, base_width = 1, exact_pixel_size = 0, cache_results = 1;
 	double pixel_size;
@@ -605,12 +605,12 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	pixel_size = requested_font. height;
 
 	if ( guts. xft_disable_large_fonts > 0) {
-		/* xft is unable to deal with large polygon requests. 
+		/* xft is unable to deal with large polygon requests.
 			we must cut the large fonts here, before Xlib croaks */
 		if (
 			( by_size && ( requested_font. size >= MAX_GLYPH_SIZE)) ||
 			(!by_size && ( requested_font. height >= MAX_GLYPH_SIZE / 72.27 * guts. resolution. y))
-		) 
+		)
 			return false;
 	}
 
@@ -619,13 +619,13 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	if ( by_size && size && *size * 100 != requested_font.size * 100 ) {
 		cache_results = 0;
 		XFTdebug("not caching results because size %g is fractional", *size);
-	}      
+	}
 
 	/* see if the font is not present in xft - the hashed negative matches
 			are stored with width=0, as the width alterations are derived */
 	xft_build_font_key( &key, &requested_font, by_size);
 	XFTdebug("want %dx%d.%s.%s.%s/%s^%g", key.height, key. width, _F_DEBUG_STYLE(key.style), _F_DEBUG_PITCH(key.pitch), key.name, requested_font.encoding, ROUGHLY(requested_font.direction));
-	
+
 	key. width = 0;
 	if ( hash_fetch( mismatch, &key, sizeof( FontKey))) {
 		XFTdebug("refuse");
@@ -697,10 +697,10 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			}
 		}
 	}
-	
+
 	/* create FcPattern request */
 	if ( !( request = FcPatternCreate())) return false;
-	if ( strcmp( requested_font. name, "Default") != 0) 
+	if ( strcmp( requested_font. name, "Default") != 0)
 		FcPatternAddString( request, FC_FAMILY, ( FcChar8*) requested_font. name);
 	if ( by_size) {
 		if ( size) {
@@ -714,11 +714,11 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		FcPatternAddDouble( request, FC_PIXEL_SIZE, pixel_size);
 		XFTdebug("FC_PIXEL_SIZE = %g", pixel_size);
 	}
-	FcPatternAddInteger( request, FC_SPACING, 
+	FcPatternAddInteger( request, FC_SPACING,
 		(requested_font. pitch == fpFixed && force_xft_monospace_emulation) ? FC_MONO : FC_PROPORTIONAL);
-	
+
 	FcPatternAddInteger( request, FC_SLANT, ( requested_font. style & fsItalic) ? FC_SLANT_ITALIC : FC_SLANT_ROMAN);
-	FcPatternAddInteger( request, FC_WEIGHT, 
+	FcPatternAddInteger( request, FC_WEIGHT,
 				( requested_font. style & fsBold) ? FC_WEIGHT_BOLD :
 				( requested_font. style & fsThin) ? FC_WEIGHT_THIN : FC_WEIGHT_NORMAL);
 #ifdef NEED_EXPLICIT_FC_SCALABLE
@@ -728,7 +728,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		FcMatrix mat;
 		FcMatrixInit(&mat);
 		if ( requested_font. width != 0) {
-			FcMatrixScale( &mat, ( double) requested_font. width / base_width, 1); 
+			FcMatrixScale( &mat, ( double) requested_font. width / base_width, 1);
 			XFTdebug("FcMatrixScale %g", ( double) requested_font. width / base_width);
 		}
 		if ( !IS_ZERO(requested_font. direction))
@@ -742,16 +742,16 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	/* match best font - must return something useful; the match is statically allocated */
 	match = my_XftFontMatch( DISP, SCREEN, request, &res);
 	if ( !match) {
-		XFTdebug("XftFontMatch error");   
+		XFTdebug("XftFontMatch error");
 		FcPatternDestroy( request);
 		return false;
 	}
 	/* if (pguts->debug & DEBUG_FONTS) { FcPatternPrint(match); } */
 	FcPatternDestroy( request);
-		
+
 	/* xft does a rather bad job with synthesizing a monospaced
 	font out of a proportional one ... try to find one ourself,
-	or bail out if it is the case 
+	or bail out if it is the case
 	*/
 	if ( requested_font.pitch == fpFixed && !force_xft_monospace_emulation) {
 		int spacing = -1;
@@ -813,13 +813,13 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			} else {
 				XFTdebug("variable pitch is not found within family %s", font_with_family.family);
 			}
-		}         
-		
+		}
+
 	}
 
-	/* Manually check if font contains wanted encoding - matching by FcCharSet 
+	/* Manually check if font contains wanted encoding - matching by FcCharSet
 		can't set threshold on how many glyphs can be omitted */
-	if ( !( 
+	if ( !(
 		(strcmp( requested_font. encoding, fontspecific) != 0) ||
 		(strcmp( requested_font. encoding, utf8_encoding) != 0)
 	)) {
@@ -832,7 +832,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		}
 	}
 
-	/* Check if the matched font is scalable -- see comments in the beginning 
+	/* Check if the matched font is scalable -- see comments in the beginning
 		of the file about non-scalable fonts in Xft */
 	{
 		FcBool scalable;
@@ -877,7 +877,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 				FcPatternDestroy( match);
 				return false;
 			}
-				
+
 			/* check if core has cached face name */
 			if ( prima_find_known_font( &requested_font, false, by_size)) {
 				XFTdebug("pass to cached core");
@@ -886,10 +886,10 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 
 			/* check if core has non-cached face name */
 			for ( i = 0; i < n; i++) {
-				if ( 
-					info[i]. flags. disabled || 
+				if (
+					info[i]. flags. disabled ||
 					!info[i].flags.name ||
-					(strcmp( info[i].font.name, requested_font.name) != 0) 
+					(strcmp( info[i].font.name, requested_font.name) != 0)
 				) continue;
 				XFTdebug("pass to core");
 				goto NAME_MISMATCH;
@@ -915,13 +915,13 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		but anyway it's not 100% */
 		Bool underlined = loaded_font. style & fsUnderlined;
 		Bool strike_out  = loaded_font. style & fsStruckOut;
-		loaded_font = kf_base-> font; 
+		loaded_font = kf_base-> font;
 		loaded_font. direction = requested_font. direction;
 		strcpy( loaded_font. encoding, csi-> name);
 		if ( underlined) loaded_font. style |= fsUnderlined;
 		if ( strike_out) loaded_font. style |= fsStruckOut;
 	} else {
-		loaded_font. internalLeading = xf-> height - loaded_font. size * guts. resolution. y / 72.27 + 0.5; 
+		loaded_font. internalLeading = xf-> height - loaded_font. size * guts. resolution. y / 72.27 + 0.5;
 		if ( !by_size && !exact_pixel_size) {
 			/* Try to locate the corresponding size and
 			the correct height - FC_PIXEL_SIZE is not correct most probably
@@ -930,7 +930,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			HeightGuessStack hgs;
 			int h, sz, last_sz = -1;
 			XftFont * guessed_font = NULL;
-	
+
 			sz = 10.0 * (float) loaded_font. size * (float) loaded_font. height / (float) xf->height;
 			XFTdebug("need to figure the corresponding size - try %g first...", ( double) sz / 10.0);
 			guessed_font = try_size( self, loaded_font, ( double) sz / 10.0);
@@ -966,10 +966,10 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 				loaded_font. height = xf-> height;
 				XFTdebug("redirect to font %x", xf);
 			}
-			XFTdebug("guessed size %d", loaded_font.size); 
+			XFTdebug("guessed size %d", loaded_font.size);
 		} else {
 			loaded_font. height = xf-> height;
-			XFTdebug("set height: %d", loaded_font.height); 
+			XFTdebug("set height: %d", loaded_font.height);
 		}
 
 		loaded_font. maximalWidth = xf-> max_advance_width;
@@ -996,12 +996,12 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 		loaded_font. descent = base-> descent;
 		loaded_font. ascent  = base-> ascent;
 	}
-	
+
 	if ( cache_results ) {
 		/* create hash entry for subsequent loads of same font */
 		xft_store_font(&requested_font, &loaded_font, by_size, xf, kf_base ? kf_base-> xft : xf);
 		/* and with the matched by height and size */
-		for ( i = 0; i < 2; i++) 
+		for ( i = 0; i < 2; i++)
 			xft_store_font(&loaded_font, &loaded_font, i, xf, kf_base ? kf_base-> xft : xf);
 	}
 
@@ -1071,10 +1071,10 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 
 	pat = FcPatternCreate();
 	if ( facename) FcPatternAddString( pat, FC_FAMILY, ( FcChar8*) facename);
-#ifdef NEED_EXPLICIT_FC_SCALABLE   
+#ifdef NEED_EXPLICIT_FC_SCALABLE
 	FcPatternAddBool( pat, FC_SCALABLE, 1);
 #endif
-	os = FcObjectSetBuild( FC_FAMILY, FC_CHARSET, FC_ASPECT, 
+	os = FcObjectSetBuild( FC_FAMILY, FC_CHARSET, FC_ASPECT,
 		FC_SLANT, FC_WEIGHT, FC_SIZE, FC_PIXEL_SIZE, FC_SPACING,
 		FC_FOUNDRY, FC_SCALABLE, FC_DPI,
 		(void*) 0);
@@ -1088,12 +1088,12 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 		FcFontSetDestroy(s);
 		return array;
 	}
-	ppat = s-> fonts; 
+	ppat = s-> fonts;
 	f = newarray + *retCount;
 	bzero( f, sizeof( Font) * s-> nfont * ALL_CHARSETS);
 
 	names = hash_create();
-	
+
 	for ( i = 0; i < s->nfont; i++, ppat++) {
 		FcCharSet *c = NULL;
 		fcpattern2font( *ppat, f);
@@ -1110,7 +1110,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 				}
 				strncpy( f-> encoding, encoding, 255);
 				f++;
-			} 
+			}
 		} else if ( facename) {
 			/* case 2 - facename only is set, report each facename with every encoding */
 			int j;
@@ -1126,7 +1126,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 			/* if no encodings found, assume fontspecific, otherwise always provide iso10646 */
 			strcpy( f-> encoding, (f == tmpl) ? fontspecific : utf8_encoding);
 			f++;
-		} else if ( !facename && !encoding) { 
+		} else if ( !facename && !encoding) {
 			/* case 3 - report unique facenames and store list of encodings
 				into the hack array */
 			if ( hash_fetch( names, f-> name, strlen( f-> name)) == (void*)1) continue;
@@ -1154,9 +1154,9 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 	}
 
 	*retCount = f - newarray;
-	
+
 	hash_destroy( names, false);
-	
+
 	FcFontSetDestroy(s);
 	return newarray;
 }
@@ -1171,7 +1171,7 @@ prima_xft_font_encodings( PHash hash)
 	}
 	hash_store( hash, utf8_encoding, strlen(utf8_encoding), (void*) &utf8_charset);
 }
-	
+
 static FcChar32 *
 xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 {
@@ -1183,7 +1183,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 		if ( len < 0) len = prima_utf8_length(( char*) text);
 		if ( !( r = ret = malloc( len * sizeof( FcChar32)))) return NULL;
 		while ( len--) {
-			*(r++) = 
+			*(r++) =
 #if PERL_PATCHLEVEL >= 16
 			utf8_to_uvchr_buf(( U8*) text, ( U8*) + bytelen, &charlen)
 #else
@@ -1197,14 +1197,14 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 		int i;
 		if ( len < 0) len = strlen(( char*) text);
 		if ( !( ret = malloc( len * sizeof( FcChar32)))) return NULL;
-		for ( i = 0; i < len; i++) 
+		for ( i = 0; i < len; i++)
 			ret[i] = ( text[i] < 128) ? text[i] : map8[ text[i] - 128];
 	}
 	return ret;
 }
 
 int
-prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool addOverhang, 
+prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool addOverhang,
 								Bool utf8, uint32_t * map8, Point * overhangs)
 {
 	int i, ret = 0, bytelen, div;
@@ -1212,7 +1212,7 @@ prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool add
 
 	if ( overhangs) overhangs-> x = overhangs-> y = 0;
 	if ( utf8 ) bytelen = strlen(text);
-	
+
 	/* x11 has problems with text_out strings that are wider than
 	64K pixel - it wraps the coordinates and produces mess. This hack is
 	although ugly, but is better that X11 default behaviour, and
@@ -1228,7 +1228,7 @@ prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool add
 		XGlyphInfo glyph;
 		if ( utf8) {
 			STRLEN charlen;
-			c = ( FcChar32) 
+			c = ( FcChar32)
 #if PERL_PATCHLEVEL >= 16
 			utf8_to_uvchr_buf(( U8*) text, (U8*) text + bytelen, &charlen)
 #else
@@ -1250,7 +1250,7 @@ prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool add
 					if ( addOverhang) ret += glyph. x;
 					if ( overhangs)   overhangs-> x = glyph. x;
 				}
-			} 
+			}
 			if ( i == len - 1) {
 				int c = glyph. xOff - glyph. width + glyph. x;
 				if ( c < 0) {
@@ -1272,7 +1272,7 @@ prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8)
 	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
 	if ( !pt) return NULL;
 
-	width = prima_xft_get_text_width( XX-> font, text, len, 
+	width = prima_xft_get_text_width( XX-> font, text, len,
 		false, utf8, X(self)-> xft_map8, &ovx);
 
 	pt[0].y = pt[2]. y = XX-> font-> font. ascent - 1;
@@ -1285,8 +1285,8 @@ prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8)
 	if ( !XX-> flags. paint_base_line) {
 		int i;
 		for ( i = 0; i < 4; i++) pt[i]. y += XX-> font-> font. descent;
-	}   
-	
+	}
+
 	if ( !IS_ZERO(PDrawable( self)-> font. direction)) {
 		int i;
 		double s = sin( PDrawable( self)-> font. direction / 57.29577951);
@@ -1333,8 +1333,8 @@ XftDrawGlyph_layered( PDrawableSysData selfxx, _Xconst XftColor *color, int x, i
 	XftGlyphExtents( DISP, XX-> font-> xft, &glyph, 1, &extents);
 
 	if (
-		!XX-> xft_shadow_pixmap || 
-		extents. width  > XX-> xft_shadow_extentions.x || 
+		!XX-> xft_shadow_pixmap ||
+		extents. width  > XX-> xft_shadow_extentions.x ||
 		extents. height > XX-> xft_shadow_extentions.y
 	) {
 		int w, h;
@@ -1350,8 +1350,8 @@ XftDrawGlyph_layered( PDrawableSysData selfxx, _Xconst XftColor *color, int x, i
 		if ( h < 32 ) h = 32;
 		XX-> xft_shadow_extentions. x = w;
 		XX-> xft_shadow_extentions. y = h;
-		XX-> xft_shadow_pixmap   = XCreatePixmap( DISP, guts.root, w, h, 1); 
-		XX-> xft_shadow_drawable = XftDrawCreateBitmap( DISP, XX-> xft_shadow_pixmap ); 
+		XX-> xft_shadow_pixmap   = XCreatePixmap( DISP, guts.root, w, h, 1);
+		XX-> xft_shadow_drawable = XftDrawCreateBitmap( DISP, XX-> xft_shadow_pixmap );
 	}
 
 	if ( !XX-> xft_shadow_gc ) {
@@ -1363,9 +1363,9 @@ XftDrawGlyph_layered( PDrawableSysData selfxx, _Xconst XftColor *color, int x, i
 	XFillRectangle( DISP, XX-> xft_shadow_pixmap, XX-> xft_shadow_gc,
 		0, 0, XX-> xft_shadow_extentions.x, XX-> xft_shadow_extentions.y);
 
-	black.color.red   = 
-	black.color.green = 
-	black.color.blue  = 
+	black.color.red   =
+	black.color.green =
+	black.color.blue  =
 	black.pixel       = 0x1;
 	black.color.alpha = 0x0;
 	XftDrawGlyphs( XX-> xft_shadow_drawable, &black, XX->font->xft, extents.x, extents.y, &glyph, 1);
@@ -1423,7 +1423,7 @@ my_XftDrawString32( PDrawableSysData selfxx,
 		x = cx;
 		y = cy;
 	}
-	
+
 	if ( XX-> flags. layered && EMULATE_ALPHA_CLEARING)
 		XChangeGC( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &old_gcv);
 }
@@ -1439,7 +1439,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 	Point baseline;
 
 	if ( len == 0) return true;
-	
+
 	/* x11 has problems with text_out strings that are wider than
 	64K pixel - it wraps the coordinates and produces mess. This hack is
 	although ugly, but is better that X11 default behaviour, and
@@ -1452,25 +1452,25 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 	/* filter out unsupported rops */
 	switch ( rop) {
 	case ropBlackness:
-		xftcolor.color.red   = 
-		xftcolor.color.green = 
-		xftcolor.color.blue  = 
+		xftcolor.color.red   =
+		xftcolor.color.green =
+		xftcolor.color.blue  =
 		xftcolor.pixel       = 0;
 		rop = ropCopyPut;
 		break;
 	case ropWhiteness:
-		xftcolor.color.red   = 
-		xftcolor.color.green = 
+		xftcolor.color.red   =
+		xftcolor.color.green =
 		xftcolor.color.blue  = 0xffff;
 		xftcolor.pixel       = 0xffffffff;
 		rop = ropCopyPut;
-		break;   
-	case ropXorPut:  
-	case ropOrPut:   
-	case ropNotSrcAnd:   
-	case ropNotSrcXor:   
-	case ropNotSrcOr:   
-	case ropAndPut:  
+		break;
+	case ropXorPut:
+	case ropOrPut:
+	case ropNotSrcAnd:
+	case ropNotSrcXor:
+	case ropNotSrcOr:
+	case ropAndPut:
 		xftcolor.color.red   = COLOR_R16(XX->fore.color);
 		xftcolor.color.green = COLOR_G16(XX->fore.color);
 		xftcolor.color.blue  = COLOR_B16(XX->fore.color);
@@ -1494,13 +1494,13 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 	if ( XX-> flags. layered) {
 		xftcolor.color.alpha = 0xffff;
 	} else if ( XX-> type. bitmap) {
-		xftcolor.color.alpha = 
+		xftcolor.color.alpha =
 			((xftcolor.color.red/3 + xftcolor.color.green/3 + xftcolor.color.blue/3) > (0xff00 / 2)) ?
 				0xffff : 0;
 		/* force-remove antialiasing, xft doesn't have a better API for this */
 		if ( !guts. xft_no_antialias && !XX-> font-> xft_no_aa) {
 			FcBool aa;
-			if ( 
+			if (
 				( FcPatternGetBool( font-> pattern, FC_ANTIALIAS, 0, &aa) == FcResultMatch)
 				&& aa
 				) {
@@ -1520,29 +1520,29 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 		memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
 		XSetForeground( DISP, XX-> gc, XX-> back. primary);
 		XX-> flags. brush_back = 0;
-		XX-> flags. brush_fore = 1; 
+		XX-> flags. brush_fore = 1;
 		XX-> fore. balance = 0;
 		XSetFunction( DISP, XX-> gc, GXcopy);
 		apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
 		for ( i = 0; i < 4; i++) {
 			p[i].x += x;
 			p[i].y += y;
-		}   
+		}
 		i = p[2].x; p[2].x = p[3].x; p[3].x = i;
 		i = p[2].y; p[2].y = p[3].y; p[3].y = i;
-		
+
 		apc_gp_fill_poly( self, 4, p);
 		apc_gp_set_rop( self, XX-> paint_rop);
 		apc_gp_set_color( self, XX-> fore. color);
 		apc_gp_set_fill_pattern( self, fp);
-		free( p); 
-	}  
+		free( p);
+	}
 	SHIFT( x, y);
 	RANGE2(x,y);
 
 	/* xft doesn't allow shifting glyph reference point - need to adjust manually */
 	baseline. x = - PDrawable(self)-> font. descent * XX-> xft_font_sin;
-	baseline. y = - PDrawable(self)-> font. descent * ( 1 - XX-> xft_font_cos ) 
+	baseline. y = - PDrawable(self)-> font. descent * ( 1 - XX-> xft_font_cos )
 					+ XX-> font-> font. descent;
 	if ( !XX-> flags. paint_base_line) {
 		x += baseline. x;
@@ -1551,11 +1551,11 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 
 	/* allocate xftdraw surface */
 	if ( !XX-> xft_drawable) {
-		if ( XX-> type. bitmap) 
-			XX-> xft_drawable = XftDrawCreateBitmap( DISP, XX-> gdrawable ); 
+		if ( XX-> type. bitmap)
+			XX-> xft_drawable = XftDrawCreateBitmap( DISP, XX-> gdrawable );
 		else
 			XX-> xft_drawable = XftDrawCreate( DISP, XX-> gdrawable, XX->visual->visual, XX->colormap);
-		XftDrawSetSubwindowMode( XX-> xft_drawable, 
+		XftDrawSetSubwindowMode( XX-> xft_drawable,
 			XX-> flags.clip_by_children ? ClipByChildren : IncludeInferiors);
 		XCHECKPOINT;
 	}
@@ -1565,14 +1565,14 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 	}
 
 	/* convert text string to unicode */
-	if ( !( ucs4 = xft_text2ucs4(( unsigned char*) text, len, utf8, X( self)-> xft_map8))) 
+	if ( !( ucs4 = xft_text2ucs4(( unsigned char*) text, len, utf8, X( self)-> xft_map8)))
 		return false;
 
 	if ( rop != ropCopyPut) {
-	/* emulate rops by blitting the text */ 
+	/* emulate rops by blitting the text */
 		XGCValues gcv;
 		GC gc;
-		int dx  = prima_xft_get_text_width( XX-> font, text, len, 
+		int dx  = prima_xft_get_text_width( XX-> font, text, len,
 			true, utf8, X(self)-> xft_map8, NULL);
 		int dy  = XX-> font-> font. height;
 		int i, width, height;
@@ -1635,24 +1635,24 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 	/*
 		If you're guided here by something like
 
-			X Error: BadLength (poly request too large or internal Xlib length error), 
+			X Error: BadLength (poly request too large or internal Xlib length error),
 
 		then you probably need to know that your X server is out of date.
 		The error is caused by a Xrender bug, and you have the following options:
 		- update your X server
 		- set guts.xft_disable_large_fonts to 1, which would explicitly tell Prima not to wait
 		for Xlib to bark on large polygons
-		- set guts.xft_disable_large_fonts to 1 and decrease MAX_GLYPH_SIZE, if the former 
+		- set guts.xft_disable_large_fonts to 1 and decrease MAX_GLYPH_SIZE, if the former
 		option is not enough
 	*/
 	XCHECKPOINT;
-		
 
-	/* emulate over- and understriking */ 
-	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {      
+
+	/* emulate over- and understriking */
+	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
 		Point ovx;
 		int lw = apc_gp_get_line_width( self);
-		int tw = prima_xft_get_text_width( XX-> font, text, len, false, utf8, 
+		int tw = prima_xft_get_text_width( XX-> font, text, len, false, utf8,
 						X(self)-> xft_map8, &ovx) - 1;
 		int d  = - PDrawable(self)-> font. descent;
 		int ay, x1, y1, x2, y2;
@@ -1674,7 +1674,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 			tw += ovx.y;
 			x2 = x + tw * c - ay * s + 0.5;
 			y2 = y + tw * s + ay * c + 0.5;
-			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2)); 
+			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
 		}
 
 		if ( PDrawable( self)-> font. style & fsStruckOut) {
@@ -1684,19 +1684,19 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 			tw += ovx.y;
 			x2 = x + tw * c - ay * s + 0.5;
 			y2 = y + tw * s + ay * c + 0.5;
-			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2)); 
+			XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
 		}
 
-		if ( lw != 1) 
+		if ( lw != 1)
 			apc_gp_set_line_width( self, lw);
-	}  
+	}
 	XFLUSH;
 
 	return true;
 }
-									
+
 static Bool
-xft_add_item( unsigned long ** list, int * count, int * size, FcChar32 chr, 
+xft_add_item( unsigned long ** list, int * count, int * size, FcChar32 chr,
 				Bool decrease_count_if_failed)
 {
 	if ( *count >= *size) {
@@ -1769,7 +1769,7 @@ prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode)
 	int i, len = lastChar - firstChar + 1;
 	XftFont *font = X(self)-> font-> xft_base;
 
-	if ( !( abc = malloc( sizeof( FontABC) * len))) 
+	if ( !( abc = malloc( sizeof( FontABC) * len)))
 		return NULL;
 
 	for ( i = 0; i < len; i++) {
@@ -1796,7 +1796,7 @@ prima_xft_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode)
 	int i, len = lastChar - firstChar + 1;
 	XftFont *font = X(self)-> font-> xft_base;
 
-	if ( !( abc = malloc( sizeof( FontABC) * len))) 
+	if ( !( abc = malloc( sizeof( FontABC) * len)))
 		return NULL;
 
 	for ( i = 0; i < len; i++) {
@@ -1871,8 +1871,8 @@ prima_xft_load_font( char* filename)
 	struct stat s;
 	FcPattern * font;
 	FcConfig * config;
-	FcFontSet *fonts;   
-	
+	FcFontSet *fonts;
+
 	/* -f $filename or die */
 	if (stat( filename, &s) < 0) {
 		warn("%s", strerror(errno));
@@ -1881,17 +1881,17 @@ prima_xft_load_font( char* filename)
 
 #define FAIL(msg) { warn(msg); return 0; }
 
-	if (( s.st_mode & S_IFDIR) != 0) 
+	if (( s.st_mode & S_IFDIR) != 0)
 		FAIL("Must not be a directory")
-	if ( !( font = FcFreeTypeQuery ((const FcChar8*)filename, 0, NULL, &count))) 
+	if ( !( font = FcFreeTypeQuery ((const FcChar8*)filename, 0, NULL, &count)))
 		FAIL("Format not recognized")
 	FcPatternDestroy (font);
 
-	if ( count == 0 ) 
+	if ( count == 0 )
 		FAIL("No fonts found in file")
-	if ( !(config = FcConfigGetCurrent())) 
+	if ( !(config = FcConfigGetCurrent()))
 		FAIL("FcConfigGetCurrent error")
-	if ( !( fonts = FcConfigGetFonts(config, FcSetSystem))) 
+	if ( !( fonts = FcConfigGetFonts(config, FcSetSystem)))
 		FAIL("FcConfigGetFonts(FcSetSystem) error")
 	if ( !( FcFileScan(fonts, NULL, NULL, NULL, (const FcChar8*)filename, FcFalse)))
 		FAIL("FcFileScan error")

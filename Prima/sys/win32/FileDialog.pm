@@ -44,7 +44,7 @@ sub init
 	for ( qw( filterIndex openMode)) { $self->{$_}=$profile{$_} }
 	for ( qw( defaultExt filter directory multiSelect
 		createPrompt fileMustExist noReadOnly noTestFileCreate
-		overwritePrompt pathMustExist showHelp 
+		overwritePrompt pathMustExist showHelp
 	)) { $self->$_($profile{$_}) }
 	return %profile;
 }
@@ -57,11 +57,11 @@ sub quoted_split
 	study;
 	{
 		/\G\s+/gc && redo;
-		/\G((?:[^\\\s]|\\.)+)\s*/gc && do { 
-			my $z = $1; 
-			$z =~ s/\\(.)/$1/g; 
-			push(@ret, $z); 
-			redo; 
+		/\G((?:[^\\\s]|\\.)+)\s*/gc && do {
+			my $z = $1;
+			$z =~ s/\\(.)/$1/g;
+			push(@ret, $z);
+			redo;
 		};
 		/\G(\\)$/gc && do { push(@ret, $1); redo; };
 	}
@@ -80,7 +80,7 @@ sub filter
 			push @exts, $$_[0];
 			push @mdts, $$_[1];
 		}
-		$self-> {filterIndex} = scalar @exts - 1 
+		$self-> {filterIndex} = scalar @exts - 1
 			if $self-> { filterIndex} >= scalar @exts;
 		$self-> {filter} = \@filter;
 	} else {
@@ -97,7 +97,7 @@ sub filterIndex
 	}
 }
 
-sub directory 
+sub directory
 {
 	return $_[0]->{directory} unless $#_;
 	$_[0]->{directory} = $_[1];
@@ -185,25 +185,25 @@ sub sorted { 1 }
 sub showDotFiles { 1 }
 
 # mere callbacks if someone wants these to inherit
-sub ok {} 
-sub cancel {} 
+sub ok {}
+sub cancel {}
 
 sub execute
 {
 	my $self = $_[0];
-	
-	Prima::Application-> sys_action( 'win32.OpenFile.flags='. 
+
+	Prima::Application-> sys_action( 'win32.OpenFile.flags='.
 		join(',', grep { $self->{flags}->{$_}} keys %{$self->{flags}}));
-	Prima::Application-> sys_action( 'win32.OpenFile.filters=' . 
+	Prima::Application-> sys_action( 'win32.OpenFile.filters=' .
 		join("\0", map { "$$_[0] ($$_[1])\0$$_[1]" } @{$self->{filter}}) . "\0");
-	Prima::Application-> sys_action( 'win32.OpenFile.filterindex=' . 
+	Prima::Application-> sys_action( 'win32.OpenFile.filterindex=' .
 		($self->{filterIndex}+1));
 	my $dir = $self->{directory};
 	$dir =~ s/\//\\/g;
 	Prima::Application-> sys_action( 'win32.OpenFile.directory=' . $dir);
-	Prima::Application-> sys_action( 'win32.OpenFile.defext=' . 
+	Prima::Application-> sys_action( 'win32.OpenFile.defext=' .
 		$self->{defaultExt});
-	Prima::Application-> sys_action( 'win32.OpenFile.title=' . 
+	Prima::Application-> sys_action( 'win32.OpenFile.title=' .
 		(defined $self->{text} ? $self->{text} : 'NULL'));
 	my $ret = Prima::Application-> sys_action( 'win32.OpenFile.'.
 		($self->{openMode}?'open':'save'));
@@ -218,7 +218,7 @@ sub execute
 	$self-> {fileName} = $ret;
 	if ( $self-> multiSelect) {
 		$self-> {fileName} = join( ' ', map {
-			s/\\/\//g; 
+			s/\\/\//g;
 			$_ = $self->{directory} . $_ unless m/^\w\:/; # win32 absolute path, if any
 			s/([\\\s])/\\$1/g;
 			$_;
@@ -253,10 +253,10 @@ sub profile_default
 
 Prima::sys::win32::FileDialog - Windows file system dialogs.
 
-=head1 DESCRIPTION 
+=head1 DESCRIPTION
 
 The module mimics Prima file dialog classes C<Prima::OpenDialog>
-and C<Prima::SaveDialog>, defined in L<Prima::FileDialog>. The 
+and C<Prima::SaveDialog>, defined in L<Prima::FileDialog>. The
 class names registered in the module are the same, but in C<Prima::sys::win32>
 namespace.
 

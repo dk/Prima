@@ -132,13 +132,13 @@ strnicmp(const char *s1, const char *s2, size_t count)
 	const unsigned char *u1 = (const unsigned char *)s1;
 	const unsigned char *u2 = (const unsigned char *)s2;
 	if ( count == 0) return 0;
-	while (tolower(*u1) == tolower(*u2++)) 
+	while (tolower(*u1) == tolower(*u2++))
 		if (--count == 0 || *u1++ == '\0')
 			return 0;
 	return (tolower(*u1) - tolower(*--u2));
 }
 #endif
-	
+
 #ifndef HAVE_STRCASESTR
 /* Code was taken from FreeBSD 4.8 /usr/src/lib/libc/string/strcasestr.c */
 char *
@@ -573,7 +573,7 @@ XS(Prima_options)
 			for ( i = 0; i < argc2; i++)
 				PUSHs( sv_2mortal( newSVpv( argv2[i], 0)));
 			PUTBACK;
-			return;    
+			return;
 		}
 		break;
 	case 2:
@@ -596,7 +596,7 @@ XS(Prima_init)
 	char error_buf[256] = "Error initializing Prima";
 	(void)items;
 
-	if ( items < 1) croak("Invalid call to Prima::init"); 
+	if ( items < 1) croak("Invalid call to Prima::init");
 
 	{
 		SV * ref;
@@ -627,14 +627,14 @@ XS(Prima_init)
 		register_notifications((PVMT)CRegion);
 		prima_init_ok++;
 	}
-	
+
 	if ( prima_init_ok == 1) {
 		prima_init_image_subsystem();
 		prima_init_ok++;
 	}
 
 	if ( prima_init_ok == 2) {
-		if ( !window_subsystem_init( error_buf)) 
+		if ( !window_subsystem_init( error_buf))
 			croak( "%s", error_buf);
 		prima_init_ok++;
 	}
@@ -1174,7 +1174,7 @@ Bool appDead = false;
 
 XS(Utils_getdir_FROMPERL);
 
-static Bool 
+static Bool
 kill_hashes( PHash hash, void * dummy)
 {
 	hash_destroy( hash, false);
@@ -1527,7 +1527,7 @@ plist_create( int size, int delta)
 	return new_list;
 }
 
-PList 
+PList
 plist_dup( PList slf )
 {
 	PList n = plist_create( slf-> count, slf-> delta );

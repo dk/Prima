@@ -1,6 +1,6 @@
 #  Created by:
 #     Anton Berezin  <tobez@tobez.org>
-#     Dmitry Karasik <dk@plab.ku.dk> 
+#     Dmitry Karasik <dk@plab.ku.dk>
 use strict;
 use warnings;
 use Prima::ScrollWidget;
@@ -65,15 +65,15 @@ sub on_paint
 	my $bw     = $self-> {borderWidth};
 
 	unless ( $self-> {image}) {
-		$canvas-> rect3d( 
-			0, 0, $size[0]-1, $size[1]-1, $bw, 
+		$canvas-> rect3d(
+			0, 0, $size[0]-1, $size[1]-1, $bw,
 			$self-> dark3DColor, $self-> light3DColor, $self-> backColor
 		);
 		return 1;
 	}
 
-	$canvas-> rect3d( 
-		0, 0, $size[0]-1, $size[1]-1, $bw, 
+	$canvas-> rect3d(
+		0, 0, $size[0]-1, $size[1]-1, $bw,
 		$self-> dark3DColor, $self-> light3DColor
 	) if $bw;
 
@@ -251,8 +251,8 @@ sub set_image
 						for ( $g = 0; $g < 6; $g++) {
 							for ( $r = 0; $r < 6; $r++) {
 								my $ix = $b + $g * 6 + $r * 36;
-								@cubic_palette[ $ix, $ix + 1, $ix + 2] = 
-									map {$_*51} ($b,$g,$r); 
+								@cubic_palette[ $ix, $ix + 1, $ix + 2] =
+									map {$_*51} ($b,$g,$r);
 				}}}}
 				$self-> palette( \@cubic_palette);
 			}
@@ -418,7 +418,7 @@ sub point2screen
 				$maxy += ( $self-> {imageY} * $z - $wy) / 2;
 			}
 		}
-		
+
 		$maxx = 0;
 		if ( $wx > $self-> {limitX}) {
 			if ( $ha == ta::Right) {
@@ -449,7 +449,7 @@ sub quality      {($#_)?$_[0]-> set_quality($_[1]):return $_[0]-> {quality}}
 sub stretch      {($#_)?$_[0]-> set_stretch($_[1]):return $_[0]-> {stretch}}
 
 sub PreviewImage_HeaderReady
-{ 
+{
 	my ( $self, $image, $extras) = @_;
 	my $db;
 	eval {
@@ -467,7 +467,7 @@ sub PreviewImage_HeaderReady
 }
 
 sub PreviewImage_DataReady
-{ 
+{
 	my ( $self, $image, $x, $y, $w, $h) = @_;
 	return unless exists $self-> {__watch} && $self->{__watch}->{preview};
 
@@ -505,14 +505,14 @@ sub unwatch_load_progress
 	return unless $self-> {__watch};
 
 	if ( $self-> {image}) {
-		$self-> {image}-> remove_notification($_) 
+		$self-> {image}-> remove_notification($_)
 			for @{ $self-> {__watch}-> {notifications} };
 	}
 
 	if ( $self-> {__watch}-> {preview} && ($clear_image // 1)) {
 		$self-> image( undef);
 	}
-	
+
 	delete $self-> {__watch};
 }
 
@@ -557,7 +557,7 @@ See L<Prima::ScrollWidget> for details.
 One of the following C<ta::XXX> constants:
 
 	ta::Left
-	ta::Center 
+	ta::Center
 	ta::Right
 
 Selects the horizontal image alignment.
@@ -587,7 +587,7 @@ keyboard navigation become disabled.
 
 =item quality BOOLEAN
 
-A boolean flag, selecting if the palette of C<image> is to be 
+A boolean flag, selecting if the palette of C<image> is to be
 copied into the widget palette, providing higher visual
 quality on paletted displays. See also L<Prima::Widget/palette>.
 
@@ -680,10 +680,10 @@ Default value: 100
 The C<Paint> notification handler is mentioned here for the specific case
 of its return value, that is the return value of internal C<put_image> call.
 For those who might be interested in C<put_image> failures, that mostly occur
-when trying to draw an image that is too big, the following code might be 
+when trying to draw an image that is too big, the following code might be
 useful:
 
-    sub on_paint 
+    sub on_paint
     {
         my ( $self, $canvas) = @_;
 	warn "put_image() error:$@" unless $self-> SUPER::on_paint($canvas);
@@ -691,7 +691,7 @@ useful:
 
 =item screen2point X, Y, [ X, Y, ... ]
 
-Performs translation of integer pairs integers as (X,Y)-points from widget coordinates 
+Performs translation of integer pairs integers as (X,Y)-points from widget coordinates
 to pixel offset in image coordinates. Takes in account zoom level,
 image alignments, and offsets. Returns array of same length as the input.
 

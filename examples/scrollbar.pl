@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -9,7 +9,7 @@ examples/scrollbar.pl - A Prima toolkit example
 Tests correct representation of a color created by a combination
 of R,G and B components. The Prima::Widget::sizeMin and Prima::Widget::sizeMax
 implementation is tested - the Area widget changes its height on a mouse click,
-up to the left button and down to the right button. 
+up to the left button and down to the right button.
 Note how Area widget maintains its maximum size when the window gets maximized.
 
 =cut

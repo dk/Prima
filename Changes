@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 1.53 2018-10-10
- - Image downsampling made consistent; added ict::Posterization; 
+ - Image downsampling made consistent; added ict::Posterization;
  - Added images to documentations
  - Support gtk3 (but prefer gtk2)
 
@@ -76,7 +76,7 @@ Revision history for Perl module Prima
 
 1.41 2014-11-08
  - Add ImageViewer.autoZoom
- - Fixes to Notebook  
+ - Fixes to Notebook
 
 1.40 2014-08-17
  - Remove Win9X support

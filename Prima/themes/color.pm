@@ -8,7 +8,7 @@ package Prima::Themes::color;
 # byte pairs: weak (0xFF00 mask) and strong ( 0x00FF) colors
 my %list = (
 	backColor         => 0x80c0,
-	light3DColor      => 0x80e8, 
+	light3DColor      => 0x80e8,
 	dark3DColor   	   => 0x0080,
 	disabledColor     => 0x0040,
 	disabledBackColor => 0x90cc,
@@ -43,9 +43,9 @@ my %transparent_classes = map { $_ => 1 } (
 sub merger
 {
 	my ( $object, $profile, $default, $mask) = @_;
-	my $class = exists ( $profile->{widgetClass}) ? 
+	my $class = exists ( $profile->{widgetClass}) ?
 		$profile->{widgetClass} : $default->{widgetClass};
-	my %class = (%list, 
+	my %class = (%list,
 		exists($strong_classes{$class}) ? %strong_selection : %weak_selection);
 	$class{hiliteBackColor} = $class{disabledBackColor} = $class{backColor}
 		if $transparent_classes{$class};
@@ -56,7 +56,7 @@ sub merger
 	);
 	for ( keys %class) {
 		my ( $weak_color, $strong_color) = (( $class{$_} & 0xFF00) >> 8, $class{$_} & 0xFF);
-		$class{$_} = 
+		$class{$_} =
 			(( $r ? $strong_color : $weak_color) << 16) |
 			(( $g ? $strong_color : $weak_color) << 8) |
 			( $b ? $strong_color : $weak_color);

@@ -1,4 +1,4 @@
-=pod 
+=pod
 
 =head1 NAME
 
@@ -6,7 +6,7 @@ examples/ownerchange.pl - A recreate functionality example.
 
 =head1 FEATURES
 
-Widgets that change owner dynamically often gets 
+Widgets that change owner dynamically often gets
 recreated internally - one system window gets
 destroyed and another created then. Test the correct
 implementation of Prima owner change functionality.
@@ -42,8 +42,8 @@ my $w2 = Prima::Window-> create(
 	size      =>  [ 450, 200],
 	font      => { name=>"System VIO",size=>18},
 	backColor => cl::Yellow,
-	onTimer   => sub { 
-		$_[0]-> backColor(($_[0]-> backColor == cl::Yellow) ? 
+	onTimer   => sub {
+		$_[0]-> backColor(($_[0]-> backColor == cl::Yellow) ?
 			cl::White : cl::Yellow)
 	},
 );
@@ -66,7 +66,7 @@ $w-> insert( Button =>
 	text  => "Change owner",
 	onClick  => sub {
 		my $oldOwner = $_[0]-> owner;
-		$_[0]-> owner (( $_[0]-> owner-> name eq "D1") ? 
+		$_[0]-> owner (( $_[0]-> owner-> name eq "D1") ?
 			$::application-> D2 : $::application-> D1);
 		my $timer = $::application-> Timer1;
 		if ( $timer-> {win} == $w)
