@@ -608,7 +608,6 @@ sub xorrect
 		$r[3]--;
 	}
 	my $o = $::application;
-	$o-> begin_paint;
 	my $oo = $self-> clipOwner ? $self-> owner : $::application;
 	$o-> clipRect( $oo-> client_to_screen( 0,0,$oo-> size));
 	$o-> rubberband( @r ? (
@@ -618,7 +617,6 @@ sub xorrect
 			destroy => 1
 		)
 	);
-	$o-> end_paint;
 }
 
 sub on_mousedown

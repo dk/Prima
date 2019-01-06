@@ -246,6 +246,7 @@ sub _visible
 		}
 
 	LEAVE:
+		return unless $self->{_widgets};
 		if ( $optimized_rect_change ) {
 			for ( my $i = 0; $i < 4; $i++) {
 				$self->{_widgets}->[$i]->visible( defined $requests[$i] );
@@ -255,6 +256,7 @@ sub _visible
 			$self->{_widgets}->[$i]->bring_to_front;
 		}
 	} else {
+		return unless $self->{_widgets};
 		$_->hide for @{$self->{_widgets}};
 	}
 }

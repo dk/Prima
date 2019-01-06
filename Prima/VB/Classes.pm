@@ -384,35 +384,36 @@ sub xy2part
 
 sub xorrect
 {
-	my ( $self, $r0, $r1, $r2, $r3, $adj) = @_;
-	if ( $adj) {
-		my @d = $self-> owner-> screen_to_client(0,0);
-		my @o = $self-> get_o_delta();
-		$d[$_] -= $o[$_] for 0..1;
-		$VB::form-> text(
-			'['.($r0+$d[0]).', '.($r1+$d[1]).'] - ['.($r2+$d[0]).', '.($r3+$d[1]).']'
-		);
-	}
+	my ( $self, $r0, $r1, $r2, $r3) = @_;
+
+	return undef $self->{rubberbands} unless defined $r0;
+
+	my @d = $self-> owner-> screen_to_client(0,0);
+	my @o = $self-> get_o_delta();
+	$d[$_] -= $o[$_] for 0..1;
+	$VB::form-> text(
+		'['.($r0+$d[0]).', '.($r1+$d[1]).'] - ['.($r2+$d[0]).', '.($r3+$d[1]).']'
+	);
 
 	my $o = $self->owner;
-	$o-> begin_paint;
-	$o-> clipChildren(0);
-	my $dsize = $self-> {sizeable} ? 5 : 1;
-
-	$o-> rect_focus( $r0,$r1,$r2-1,$r3-1,$dsize);
+	$self->{rubberbands} //= [ map {
+		Prima::RubberBand->new(
+			breadth  => $self-> {sizeable} ? 5 : 1,
+			clipRect => [$o->client_to_screen( 0, 0, $o->size )],
+		)
+	} 0 .. @{ $self->{extraRects} // [] } ];
+	$self->{rubberbands}->[-1]->set( rect => [$o->client_to_screen($r0,$r1,$r2-1,$r3-1)] );
 
 	if ( defined $self-> {extraRects}) {
 		my ( $ax, $ay) = @{$self-> {sav}};
 		my @org = ( $ax, $ay);
 		$org[0] = $r0 - $org[0];
 		$org[1] = $r1 - $org[1];
-		$o-> rect_focus(
-			$$_[0] + $org[0], $$_[1] + $org[1], $$_[2] + $org[0], $$_[3] + $org[1],
-			$dsize
-		) for @{$self-> {extraRects}};
+		my $i = 0;
+		$self->{rubberbands}->[$i++]->set(
+			rect    => [ $o->client_to_screen($$_[0] + $org[0], $$_[1] + $org[1], $$_[2] + $org[0], $$_[3] + $org[1]) ]
+		) for @{ $self->{extraRects} };
 	}
-	$o-> clipChildren(1);
-	$o-> end_paint;
 }
 
 
@@ -512,7 +513,7 @@ sub on_mousedown
 			$self-> {prevRect} = [$self->rect];
 			$self-> update_view;
 			$VB::form-> {saveHdr} = $VB::form-> text;
-			$self-> xorrect( @{$self-> {prevRect}}, 1);
+			$self-> xorrect( @{$self-> {prevRect}});
 			return;
 		}
 
@@ -533,7 +534,7 @@ sub on_mousedown
 			$self-> {prevRect} = [$self->rect];
 			$self-> update_view;
 			$VB::form-> {saveHdr} = $VB::form-> text;
-			$self-> xorrect( @{$self-> {prevRect}}, 1);
+			$self-> xorrect( @{$self-> {prevRect}});
 			return;
 		}
 	}
@@ -619,10 +620,9 @@ sub on_mousemove
 			$y = $yline + $self-> {spotY} - $sz[1]
 				if abs( $yline - $y + $self-> {spotY} - $sz[1]) < 8;
 		}
-		$self-> xorrect( @{$self-> {prevRect}});
 		my @xorg = ( $self-> left + $x - $self-> {spotX}, $self->bottom + $y - $self-> {spotY});
 		$self-> {prevRect} = [ @xorg, $sz[0] + $xorg[0], $sz[1] + $xorg[1]];
-		$self-> xorrect( @{$self-> {prevRect}}, 1);
+		$self-> xorrect( @{$self-> {prevRect}});
 	} elsif ( $self-> {sizeable}) {
 		if ( $self-> {sizeAction}) {
 			my @org = $_[0]-> rect;
@@ -684,9 +684,8 @@ sub on_mousemove
 				$org[1] != $new[1] || $org[0] != $new[0] ||
 				$org[2] != $new[2] || $org[3] != $new[3]
 			) {
-				$self-> xorrect( @{$self-> {prevRect}});
 				$self-> {prevRect} = [@new];
-				$self-> xorrect( @{$self-> {prevRect}}, 1);
+				$self-> xorrect( @{$self-> {prevRect}});
 			}
 			return;
 		} else {
@@ -721,7 +720,7 @@ sub on_mouseup
 			$self-> pointer( cr::Default);
 			$self-> capture(0);
 			$self-> {drag} = 0;
-			$self-> xorrect( @{$self-> {prevRect}});
+			$self-> xorrect;
 			my @o = $self-> origin;
 			$self-> origin( @{$self-> {prevRect}}[0,1] );
 			if ( defined $self-> {extraRects}) {
@@ -749,7 +748,7 @@ sub on_mouseup
 		}
 		if ( $self-> {sizeAction}) {
 			my @r = @{$self-> {prevRect}};
-			$self-> xorrect( @r);
+			$self-> xorrect;
 			my @o = $self-> origin;
 			$self-> rect( @r);
 			$self-> pointer( cr::Default);
@@ -794,7 +793,7 @@ sub on_keydown
 	}
 	if ( $key == kb::Esc) {
 		if ( $self-> {drag} || $self-> {sizeAction}) {
-			$self-> xorrect( @{$self-> {prevRect}});
+			$self-> xorrect;
 			$self-> {drag} = $self-> {sizeAction} = 0;
 			$self-> {dirData} = $self-> {spotX} = $self-> {spotY} = undef;
 			$self-> pointer( cr::Default);
