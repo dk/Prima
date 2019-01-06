@@ -113,6 +113,7 @@ win32/files.o
 win32/global.o
 win32/gp.o
 win32/misc.o
+win32/misc.o
 win32/stock.o
 win32/timers.o
 unix/apc_app.o
@@ -124,6 +125,7 @@ unix/apc_img.o
 unix/apc_menu.o
 unix/apc_misc.o
 unix/apc_pointer.o
+unix/apc_region.o
 unix/apc_timer.o
 unix/apc_widget.o
 unix/apc_win.o
