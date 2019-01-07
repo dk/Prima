@@ -367,8 +367,7 @@ sub setup_environment
 		$LD_LIB_EXT   = '';
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
 		$OPENMP       = '-fopenmp';
-		$OPTIMIZE    .= ' -Wall';
-
+		$OPTIMIZE    .= ' -Wall' if $compiler_type eq 'gcc';
 	}
 
 	$DEFFILE    = 'Prima.def';
