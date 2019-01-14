@@ -341,8 +341,12 @@ init_x11( char * error_buf )
 	guts. ximages = hash_create();
 	gcv. graphics_exposures = false;
 	guts. menugc = XCreateGC( DISP, guts. root, GCGraphicsExposures, &gcv);
-	guts. resolution. x = 25.4 * guts. displaySize. x / DisplayWidthMM( DISP, SCREEN) + .5;
-	guts. resolution. y = 25.4 * DisplayHeight( DISP, SCREEN) / DisplayHeightMM( DISP, SCREEN) + .5;
+	guts. resolution. x = ( DisplayWidthMM( DISP, SCREEN) > 0) ? 
+		25.4 * guts. displaySize. x / DisplayWidthMM( DISP, SCREEN) + .5:
+		96;
+	guts. resolution. y = ( DisplayHeightMM( DISP, SCREEN) > 0) ? 
+		25.4 * DisplayHeight( DISP, SCREEN) / DisplayHeightMM( DISP, SCREEN) + .5:
+		96;
 	guts. depth = DefaultDepth( DISP, SCREEN);
 	guts. idepth = get_idepth();
 	if ( guts.depth == 1) guts. qdepth = 1; else
