@@ -486,6 +486,7 @@ find_good_font_by_family( Font * f, int fc_spacing )
 		for ( i = 0; i < s->nfont; i++, ppat++) {
 			Font f;
 			int spacing = FC_PROPORTIONAL, slant, len, weight;
+			FcBool scalable;
 			PHash font_hash;
 
 			/* only regular fonts */
@@ -497,6 +498,11 @@ find_good_font_by_family( Font * f, int fc_spacing )
 			if (
 				( FcPatternGetInteger( *ppat, FC_WEIGHT, 0, &weight) != FcResultMatch) ||
 				( weight <= FC_WEIGHT_LIGHT || weight >= FC_WEIGHT_BOLD)
+			)
+				continue;
+			if (
+				( FcPatternGetBool( *ppat, FC_SCALABLE, 0, &scalable) != FcResultMatch) ||
+				( scalable == 0 )
 			)
 				continue;
 
