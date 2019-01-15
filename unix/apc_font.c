@@ -188,6 +188,9 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 	int style = 0;    /* must become 2 if we know it */
 	int vector = 0;   /* must become 5, or 3 if we know it */
 
+        bzero( &info-> font, sizeof(info->font));
+        bzero( &info-> flags, sizeof(info->flags));
+
 	info-> flags. sloppy = true;
 
 	/*
@@ -342,9 +345,9 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				info-> font. xDeviceRes = strtol( c, &b, 10);
 			if ( c != b) {
 				if ( info-> font. xDeviceRes) {
-		       info-> flags. xDeviceRes = true;
+					info-> flags. xDeviceRes = true;
 				} else {
-		       vector++;
+					vector++;
 				}
 				c = b;
 			} else if ( strncmp( c, "*-", 2) == 0) c++;
@@ -1482,11 +1485,11 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 		diff += 2000.0;
 	} else {
 		if (( f-> style & fsThin) != ( fi-> font. style & fsThin))
-			diff += 1500;
+			diff += 1500.0;
 		if (( f-> style & fsBold) != ( fi-> font. style & fsBold))
-			diff += 3000;
+			diff += 3000.0;
 		if (( f-> style & fsItalic) != ( fi-> font. style & fsItalic))
-			diff += 3000;
+			diff += 3000.0;
 	}
 	return diff;
 }
