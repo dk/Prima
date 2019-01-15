@@ -7,6 +7,8 @@ use Prima::Application;
 
 plan tests => 10;
 
+$Prima::Test::timeout *= 4;
+
 my $dong1 = 0;
 my $dong2 = 0;
 
