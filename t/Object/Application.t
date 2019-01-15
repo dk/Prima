@@ -48,13 +48,17 @@ $e &= $::application->yield(1) while !get_flag;
 ok( $e && get_flag, "timer triggers yield return");
 $t->stop;
 
-alarm(1);
 reset_flag;
 $SIG{ALRM} = \&set_flag;
+alarm(1);
 my $p = 0;
 $::application->onIdle( sub { $p+=1 } );
 $::application->onIdle( sub { $p+=8 } );
-$::application->yield(1);
+my $time = time + 2;
+while ( 1) {
+	$::application->yield(1);
+	last if $time < time or get_flag;
+}
 ok( get_flag, "yield without events sleeps, but still is alive");
 ok( $p == 9, "idle event");
 
