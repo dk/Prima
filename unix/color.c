@@ -110,6 +110,8 @@ prima_map_color( Color clr, int * hint)
 	} else if ( clr == clClear) {
 		if ( hint) *hint = COLORHINT_BLACK;
 		return 0;
+	} else if ( clr == clInvalid) {
+		return 0xffffff;
 	} else return standard_colors[cls][(clr & clSysMask) - 1];
 }
 
