@@ -5,6 +5,7 @@
 /*********************************/
 
 #include "unix/guts.h"
+#include "img.h"
 
 #ifdef WITH_GTK
 
@@ -19,18 +20,18 @@
 #endif
 #include <gtk/gtk.h>
 
-static int gtk_initialized = 0;
-
-static GtkWidget *gtk_dialog           = NULL;
-static char	gtk_dialog_title[256];
-static char*	gtk_dialog_title_ptr   = NULL;
-static Bool	gtk_select_multiple    = FALSE;
-static Bool	gtk_overwrite_prompt   = FALSE;
-static Bool	gtk_show_hidden_files  = FALSE;
-static char	gtk_current_folder[MAXPATHLEN+1];
-static char*	gtk_current_folder_ptr = NULL;
-static List*	gtk_filters            = NULL;
-static int	gtk_filter_index       = 0;
+static int           gtk_initialized        = 0;
+static GApplication* gtk_app                = NULL;
+static GtkWidget*    gtk_dialog             = NULL;
+static char	     gtk_dialog_title[256];
+static char*	     gtk_dialog_title_ptr   = NULL;
+static Bool	     gtk_select_multiple    = FALSE;
+static Bool	     gtk_overwrite_prompt   = FALSE;
+static Bool	     gtk_show_hidden_files  = FALSE;
+static char	     gtk_current_folder[MAXPATHLEN+1];
+static char*	     gtk_current_folder_ptr = NULL;
+static List*	     gtk_filters            = NULL;
+static int	     gtk_filter_index       = 0;
 
 static GdkDisplay * display = NULL;
 
@@ -92,6 +93,9 @@ my_gdk_display_open_default (void)
 }
 #endif
 
+/* GIO wants that callback, even empty */
+static void gtk_application_activate (GApplication *app) {}
+
 Display*
 prima_gtk_init(void)
 {
@@ -147,6 +151,13 @@ prima_gtk_init(void)
 #else
 		ret = gdk_x11_display_get_xdisplay(display);
 #endif
+	}
+  
+	gtk_app = g_application_new ("org.prima", G_APPLICATION_NON_UNIQUE);
+	g_signal_connect (gtk_app, "activate", G_CALLBACK (gtk_application_activate), NULL);
+	if ( !g_application_register (gtk_app, NULL, NULL)) {
+  		g_object_unref (gtk_app);
+		gtk_app = NULL;
 	}
 
 	settings  = gtk_settings_get_default();
@@ -232,6 +243,10 @@ prima_gtk_done(void)
 			g_object_unref(( GObject*) gtk_filters-> items[i]);
 		plist_destroy( gtk_filters);
 		gtk_filters = NULL;
+	}
+	if ( gtk_app ) {
+		g_object_unref( gtk_app );
+		gtk_app = NULL;
 	}
 	gtk_initialized = 0;
 	return true;
@@ -543,6 +558,78 @@ prima_gtk_openfile( char * params)
 	}
 
 	return NULL;
+}
+
+/* Thanks to Cosimo Cecchi @ gnome-screenshot for the code below */
+Bool
+prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen)
+{
+	DEFXX;
+	int              i, found_png;
+	PList            codecs;
+	GVariant        *params, *results;
+	GError   *       error = NULL;
+	GDBusConnection *conn;
+	char             filename[256];
+
+	/* do we have png? it seems gnome only saves scheenshots as pngs */
+	codecs = plist_create( 16, 16);
+	apc_img_codecs( codecs);
+	found_png = false;
+	for ( i = 0; i < codecs-> count; i++) {
+		PImgCodec c = ( PImgCodec ) codecs-> items[ i];
+		if ( strcmp( c-> info-> fileShortType, "PNG" ) == 0 ) {
+			found_png = true;
+			break;
+		}
+	}
+	plist_destroy( codecs);
+	if ( !found_png ) {
+		Mdebug("PNG decoder not found\n");
+		return false;
+	}
+
+	/* execute gnome shell screenshot */
+	snprintf(filename, 256, "/tmp/%d-sc.png", (int) getpid());
+	params = g_variant_new("(iiiibs)",
+		x, XX->size.y - y - yLen, xLen, yLen, 
+		0, filename);
+
+	if (!( conn = g_application_get_dbus_connection (g_application_get_default ()))) {
+		Mdebug("cannot get dbus connection\n");
+		return false;
+	}
+
+	results = g_dbus_connection_call_sync (conn,
+		"org.gnome.Shell.Screenshot",
+		"/org/gnome/Shell/Screenshot",
+		"org.gnome.Shell.Screenshot",
+		"ScreenshotArea",
+		params,
+		NULL,
+		G_DBUS_CALL_FLAGS_NONE,
+		-1,
+		NULL,
+		&error
+	);
+	if ( results )
+		g_variant_unref( results );
+	if (error != NULL) {
+		Mdebug("cannot get gnome shell screenshot\n");
+      		g_error_free (error);
+		return false;
+	}
+
+	/* load */
+	codecs = apc_img_load( image, filename, NULL, NULL, NULL);
+	unlink( filename );
+	if ( !codecs ) {
+		Mdebug("error loading png back\n");
+		return false;
+	}
+	plist_destroy(codecs);
+
+	return true;
 }
 
 #endif

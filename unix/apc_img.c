@@ -2865,6 +2865,11 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 	}
 
 	if ( !inPaint) apc_application_end_paint( self);
+#ifdef WITH_GTK
+	if ( !ret && guts. use_gtk )
+		ret = prima_gtk_application_get_bitmap( self, image, x, y, xLen, yLen);
+#endif
+
 	return ret;
 }
 

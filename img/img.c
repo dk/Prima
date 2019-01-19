@@ -203,14 +203,15 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 	char * baseClassName = "Prima::Image";
 	ImgIORequest sioreq;
 	int  load_mask;
+	char dummy_error_buf[256];
 
 
 #define out(x){ err = true;\
-	strncpy( error, x, 256);\
+	strncpy( fi.errbuf, x, 256);\
 	goto EXIT_NOW;}
 
 #define outd(x,d){ err = true;\
-	snprintf( error, 256, x, d);\
+	snprintf( fi.errbuf, 256, x, d);\
 	goto EXIT_NOW;}
 
 	CHK;
@@ -218,8 +219,8 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 	ret = plist_create( 8, 8);
 	if ( !ret) out("Not enough memory")
 
-	strcpy( error, "Internal error");
-	fi. errbuf = error;
+	fi. errbuf = error ? error : dummy_error_buf;
+	strcpy( fi.errbuf, "Internal error");
 
 	/* open file */
 	if ( ioreq == NULL) {
@@ -816,13 +817,14 @@ apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, c
 	Bool autoConvert = true;
 	ImgIORequest sioreq;
 	int save_mask;
+	char dummy_error_buf[256];
 
 #define out(x){ err = true;\
-	strncpy( error, x, 256);\
+	strncpy( fi.errbuf, x, 256);\
 	goto EXIT_NOW;}
 
 #define outd(x,d){ err = true;\
-	snprintf( error, 256, x, d);\
+	snprintf( fi.errbuf, 256, x, d);\
 	goto EXIT_NOW;}
 
 	CHK;
@@ -843,7 +845,7 @@ apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, c
 			fclose( f);
 	}
 
-	fi. errbuf = error;
+	fi. errbuf = error ? error : dummy_error_buf;
 	if ( ioreq == NULL) {
 		memcpy( &sioreq, &std_ioreq, sizeof( sioreq));
 		if (( sioreq. handle = fopen( fileName, fi. append ? "rb+" : "wb+" )) == NULL)
@@ -905,7 +907,7 @@ apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, c
 	fi. extras = profile;
 
 	/* finding codec */
-	strcpy( error, "No appropriate codec found");
+	strcpy( fi.errbuf, "No appropriate codec found");
 	{
 		Bool * savemap = ( Bool*) malloc( sizeof( Bool) * imgCodecs. count);
 
@@ -1050,7 +1052,7 @@ apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, c
 		}
 	}
 
-	snprintf( error, 256, "Error saving %s", fileName ? fileName : "to stream");
+	snprintf( fi.errbuf, 256, "Error saving %s", fileName ? fileName : "to stream");
 
 	/* use common profile */
 	def = c-> vmt-> save_defaults( c);

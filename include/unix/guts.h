@@ -1319,6 +1319,9 @@ prima_gtk_done( void);
 
 extern char *
 prima_gtk_openfile( char * params);
+
+extern Bool
+prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen);
 #endif
 
 typedef struct _ViewProfile {
