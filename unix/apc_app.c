@@ -165,7 +165,8 @@ static char* do_display = NULL;
 static int   do_debug   = 0;
 static Bool  do_icccm_only = false;
 static Bool  do_no_shmem   = false;
-static Bool  do_no_gtk   = false;
+static Bool  do_no_gtk     = false;
+static Bool  do_no_quartz  = false;
 
 static Bool
 init_x11( char * error_buf )
@@ -224,6 +225,7 @@ init_x11( char * error_buf )
 	};
 	char hostname_buf[256], *hostname = hostname_buf;
 
+	bzero( &guts, sizeof(guts));
 	guts. click_time_frame = 200;
 	guts. double_click_time_frame = 200;
 	guts. visible_timeout = 500;
@@ -408,6 +410,9 @@ init_x11( char * error_buf )
 #ifdef WITH_GTK
 	guts. use_gtk = do_no_gtk ? false : ( prima_gtk_init() != NULL );
 #endif
+#ifdef WITH_COCOA
+	guts. use_quartz = !do_no_quartz;
+#endif
 	bzero( &guts. cursor_gcv, sizeof( guts. cursor_gcv));
 	guts. cursor_gcv. cap_style = CapButt;
 	guts. cursor_gcv. function = GXcopy;
@@ -483,6 +488,9 @@ window_subsystem_get_options( int * argc, char *** argv)
 #ifdef WITH_GTK
 	"no-gtk",        "do not use GTK",
 #endif
+#ifdef WITH_COCOA
+	"no-quartz",     "do not use Quartz",
+#endif
 	"font",
 #ifdef USE_XFT
 				"default prima font in XLFD (-helv-misc-*-*-) or XFT(Helv-12) format",
@@ -535,6 +543,10 @@ window_subsystem_set_option( char * option, char * value)
 	} else if ( strcmp( option, "no-gtk") == 0) {
 		if ( value) warn("`--no-gtk' option has no parameters");
 		do_no_gtk = true;
+		return true;
+	} else if ( strcmp( option, "no-quartz") == 0) {
+		if ( value) warn("`--no-quartz' option has no parameters");
+		do_no_quartz = true;
 		return true;
 	} else if ( strcmp( option, "debug") == 0) {
 		if ( !value) {

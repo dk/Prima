@@ -2850,6 +2850,26 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 	if ( y + yLen > XX-> size. y) yLen = XX-> size. y - y;
 	if ( xLen <= 0 || yLen <= 0) return false;
 
+#ifdef WITH_COCOA
+	if ( guts. use_quartz) {
+		uint32_t *pixels;
+		if ( PImage(image)->type != imRGB)
+			CImage( image)-> create_empty( image, xLen, yLen, imRGB);
+		printf("%d %d/%d(%d) %d %d\n", x, y, XX->size.y-y-yLen, XX->size.y, xLen, yLen);
+		if (( pixels = prima_cocoa_application_get_bitmap(
+			x, XX->size.y - y - yLen, xLen, yLen
+		))) {
+			int y;
+			Byte *src = (Byte*) (pixels + xLen * (yLen - 1));
+			Byte *dst = PImage(image)->data;
+			for ( y = 0; y < yLen; y++, src -= xLen * 4, dst += PImage(image)->lineSize)
+				bc_bgri_rgb(src, dst, xLen);
+			free(pixels);
+			return true;
+		}
+	}
+#endif
+
 	if ( !inPaint) apc_application_begin_paint( self);
 
 	CImage( image)-> create_empty( image, xLen, yLen, guts. qdepth);

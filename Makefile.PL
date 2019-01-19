@@ -39,6 +39,7 @@ use vars qw(
 	$LD_LIB_EXT
 	$LIB_EXT
 	$LIB_PREFIX
+	$LDFLAGS
 	@LIBS
 	@INCPATH
 	@LIBPATH
@@ -127,6 +128,7 @@ options:
     WITH_GTK2         - compile with/without GTK2 (default 1), X only
     WITH_GTK3         - compile with/without GTK3 (default 0), X only
     WITH_OPENMP       - compile with/without openmp (default 1)
+    WITH_COCOA        - compile with/without Cocoa (default 1), MacOSX only
     CYGWIN_WINAPI     - Winapi build in cygwin environment
     DEBUG             - build with debug information
     EXTRA_LDFLAGS      - add extra ld line (i.e. -lgcc )
@@ -159,6 +161,7 @@ setup_dl_loadflags();
 setup_pkgconfig();
 setup_X11() if $unix;
 setup_xlibs() if $unix;
+setup_macosx() if $cmd_options{WITH_COCOA};
 setup_codecs();
 setup_modules();
 create_codecs_c();
@@ -178,6 +181,7 @@ sub setup_argv
 		WITH_GTK2     => 1,
 		WITH_GTK3     => 0,
 		WITH_OPENMP   => 1,
+		WITH_COCOA    => ($^O eq 'darwin'),
 		CYGWIN_WINAPI => 0,
 		DEBUG         => 0,
 		EXTRA_CCFLAGS => '',
@@ -373,6 +377,7 @@ sub setup_environment
 	$DEFFILE    = 'Prima.def';
 	$LIB_EXT    = ($cygwin ? '.dll' : '') . $Config{ _a};
 	$LIB_PREFIX = ($cygwin || $mingw) ? 'lib' : '';
+	$LDFLAGS    = '';
 
 	open F, 'Prima.pm' or die "Cannot open Prima.pm:$!\n";
 	my ($ver1, $ver2);
@@ -539,6 +544,7 @@ sub cc_command_line
 	return $cc if $compile_only;
 	$cc .= " $passthru_options{LDDLFLAGS}" if $compiler_type eq 'gcc';
 	$cc .= " $CLINKPREFIX";
+	$cc .= " $LDFLAGS";
 	$cc .= ' ' . join(' ', map { "\"$CLIBPATHFLAG\\\"$_\\\"\"" } @LIBPATH) if $compiler_type eq 'cl';
 	$cc .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
 	$cc .= " $passthru_options{LIBS}" if length $passthru_options{LIBS};
@@ -550,6 +556,7 @@ sub ld_command_line
 {
 	my ( $dstf) = shift;
 	my $ld = "$passthru_options{LD} $passthru_options{LDDLFLAGS}";
+	$ld .= " $LDFLAGS";
 	$ld .= " $cmd_options{EXTRA_LDFLAGS}" if length $cmd_options{EXTRA_LDFLAGS};
 	$ld .= " $LDOUTFLAG$dstf @_";
 	$ld .= ' ' . join(' ', map { "$LDLIBFLAG$_$LD_LIB_EXT"} @LIBS);
@@ -1593,6 +1600,29 @@ sub setup_xlibs
 	printlog "Using Xrandr library\n" if $DEFINES{HAVE_X11_EXTENSIONS_XRANDR_H};
 }
 
+sub setup_macosx
+{
+	printlog "Can compile with Cocoa...";
+	my $old_ldflags = $LDFLAGS;
+
+	$LDFLAGS .= ' -framework Foundation /System/Library/Frameworks/Cocoa.framework/Cocoa';
+	my $ok = compile(<<TEXT);
+#import <ApplicationServices/ApplicationServices.h>
+int main() {
+	printf("%x\\n", (void*)CGColorSpaceCreateDeviceRGB());
+	return 0;
+}
+TEXT
+	unless ($ok) {
+		printlog "no\n";
+		$LDFLAGS = $old_ldflags;
+		return;
+	}
+
+	printlog "yes\n";
+	$DEFINES{WITH_COCOA} = 1;
+}
+
 sub generate_win32_def
 {
 	open PRIMADEF, ">$DEFFILE" or die "Cannot create $DEFFILE: $!";
@@ -2430,6 +2460,7 @@ WriteMakefile(
 		' ' . $cmd_options{EXTRA_CCFLAGS},
 	LIBS              => [
 		$cmd_options{EXTRA_LDFLAGS} . ' ' .
+		$LDFLAGS . ' ' .
 		':nosearch ' .
 		join(' ', map { "-L$_" } @LIBPATH) . ' ' .
 		join(' ', map { "-l$_" } @LIBS),

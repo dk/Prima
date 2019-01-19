@@ -702,6 +702,12 @@ Prima will get into problems with remote X11 connections. Prima tries to detect
 this condition, but if trouble persists, please use C<--no-gtk> switch (and
 please file a bug report so this can be fixed, too).
 
+=head2 Quartz
+
+Prima can be compiled with Cocoa library on MacOSX, that gives access to
+screen scraping functionality of Application.get_image, that is otherwise is
+non-functional with XQuartz. To disable it, use C<--no-quartz> runtime switch.
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.

@@ -406,6 +406,7 @@ unix/apc_timer.c
 unix/apc_widget.c
 unix/apc_win.c
 unix/color.c
+unix/cocoa.c
 unix/gtk.c
 unix/xft.c
 utils/prima-fmview.pl

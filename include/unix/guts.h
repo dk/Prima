@@ -668,6 +668,7 @@ typedef struct _UnixGuts
 	Bool                         net_wm_maximization;
 	int                          net_wm_maximize_HORZ_vs_HORIZ;
 	int                          use_gtk;
+	int                          use_quartz;
 } UnixGuts;
 
 extern UnixGuts  guts;
@@ -1328,6 +1329,11 @@ prima_gtk_openfile( char * params);
 
 extern Bool
 prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen);
+#endif
+
+#ifdef WITH_COCOA
+extern uint32_t*
+prima_cocoa_application_get_bitmap( int x, int y, int xLen, int yLen);
 #endif
 
 typedef struct _ViewProfile {
