@@ -11,11 +11,10 @@ my $a = $::application;
 
 my @sz = $a->size;
 
-$a-> begin_paint;
-ok( $a-> get_paint_state, "get_paint_state");
 
 SKIP: {
-	skip "xquartz doesn't support this", 2 if $^O eq 'darwin';
+	skip "system doesn't allow direct access to screen", 3 unless $a-> begin_paint;
+	ok( $a-> get_paint_state, "get_paint_state");
 	my $pix = $a-> pixel( 10, 10);
 	skip "rdesktop", 2 if $^O =~ /win32/i && $pix == cl::Invalid;
 
@@ -28,9 +27,9 @@ SKIP: {
 	$wh =  ( $xr + $xg + $xb ) / 3;
 	is( $bl, 0, "black pixel");
 	cmp_ok( $wh, '>', 200, "white pixel");
+	$a-> end_paint;
 }
 
-$a-> end_paint;
 
 $a-> visible(0);
 ok( $a-> visible && $a-> width == $sz[0] && $a-> height == $sz[1], "width and height");

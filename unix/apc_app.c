@@ -643,11 +643,30 @@ window_subsystem_done( void)
 	prima_cleanup_font_subsystem();
 }
 
+static int
+can_access_root_screen(void)
+{
+	static int result = -1;
+	XImage * im;
+	XErrorEvent xr;
+	if ( result >= 0 ) return result;
+
+	XFlush(DISP);
+	prima_save_xerror_event(&xr);
+	im = XGetImage( DISP, guts.root, 0, 0, 1, 1, AllPlanes, ZPixmap);
+	prima_restore_xerror_event(NULL);
+
+	result = im != NULL;
+	if (im) XDestroyImage( im);
+	return result;
+}
+
 Bool
 apc_application_begin_paint( Handle self)
 {
 	DEFXX;
 	if ( guts. appLock > 0) return false;
+	if ( !can_access_root_screen()) return false;
 	prima_prepare_drawable_for_painting( self, false);
 	XX-> flags. force_flush = 1;
 	return true;

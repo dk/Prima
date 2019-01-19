@@ -123,6 +123,11 @@ methods pair, and the other pair, begin_paint_info()/end_paint_info()
 triggers the information mode. This three-state paint functionality
 is more thoroughly described in L<Prima::Drawable>.
 
+The painting on the screen surfaces under certain environments (XQuartz,
+XWayland) is either silently ignored or results in an error. There,
+C<begin_paint> will return a false value (C<begin_paint_info> though returns
+true).
+
 =item Hint
 
 $::application hosts a special Prima::HintWidget class object,
