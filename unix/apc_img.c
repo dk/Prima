@@ -2837,6 +2837,7 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 	DEFXX;
 	Bool inPaint = opt_InPaint, ret = false;
 	XImage * i;
+	XErrorEvent xr;
 
 	if ( !image || PObject(image)-> stage == csDead) return false;
 
@@ -2852,6 +2853,7 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 	if ( !inPaint) apc_application_begin_paint( self);
 
 	CImage( image)-> create_empty( image, xLen, yLen, guts. qdepth);
+	prima_save_xerror_event( &xr);
 	if ( guts. idepth == 1)
 		i = XGetImage( DISP, XX-> gdrawable, x, XX-> size.y - y - yLen, xLen, yLen, 1, XYPixmap);
 	else
@@ -2869,6 +2871,8 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 	if ( !ret && guts. use_gtk )
 		ret = prima_gtk_application_get_bitmap( self, image, x, y, xLen, yLen);
 #endif
+	if (ret) bzero( &xr, sizeof(xr));
+	prima_restore_xerror_event( &xr);
 
 	return ret;
 }

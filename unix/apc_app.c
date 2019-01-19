@@ -23,6 +23,7 @@
 #endif
 
 UnixGuts guts, *pguts = &guts;
+static XErrorEvent *save_xerror_event = NULL;
 
 UnixGuts *
 prima_unix_guts(void)
@@ -39,6 +40,12 @@ x_error_handler( Display *d, XErrorEvent *ev)
 	char buf[BUFSIZ];
 	char mesg[BUFSIZ];
 	char number[32];
+
+	if ( save_xerror_event ) {
+		*save_xerror_event = *ev;
+		save_xerror_event = NULL;
+		return 0;
+	}
 
 	while ( tail != guts. ri_head) {
 		if ( guts. ri[ tail]. request > ev-> serial)
@@ -92,6 +99,21 @@ x_error_handler( Display *d, XErrorEvent *ev)
 					guts. ri[ tail]. file, guts. ri[ tail]. line);
 	return 0;
 }
+
+void
+prima_save_xerror_event( XErrorEvent *xr)
+{
+	bzero( xr, sizeof(XErrorEvent));
+	save_xerror_event = xr;
+}
+
+void
+prima_restore_xerror_event( XErrorEvent *xr)
+{
+	save_xerror_event = NULL;
+	if ( xr && xr->display != NULL) x_error_handler( xr-> display, xr);
+}
+
 
 static int
 x_io_error_handler( Display *d)

@@ -974,6 +974,12 @@ extern void
 prima_handle_selection_event( XEvent *ev, XWindow win, Handle self);
 
 extern void
+prima_save_xerror_event( XErrorEvent *xr);
+
+extern void
+prima_restore_xerror_event( XErrorEvent *xr);
+
+extern void
 prima_get_gc( PDrawableSysData);
 
 extern void
