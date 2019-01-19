@@ -649,15 +649,32 @@ can_access_root_screen(void)
 	static int result = -1;
 	XImage * im;
 	XErrorEvent xr;
+
 	if ( result >= 0 ) return result;
+	result = 0;
 
 	XFlush(DISP);
 	prima_save_xerror_event(&xr);
-	im = XGetImage( DISP, guts.root, 0, 0, 1, 1, AllPlanes, ZPixmap);
+	im = XGetImage( DISP, guts.root, 0, 0, 1, 1, AllPlanes, ZPixmap); /* XWayland fails here */
 	prima_restore_xerror_event(NULL);
+	if (im == NULL) goto EXIT;
 
-	result = im != NULL;
-	if (im) XDestroyImage( im);
+	XDestroyImage( im);
+
+#ifdef WITH_GTK_NONX11
+	/* detect XQuartz */
+	{
+		char * display_str = getenv("DISPLAY");
+		if ( display_str ) {
+			struct stat s;
+			if ((stat( display_str, &s) >= 0) && S_ISSOCK(s.st_mode))  /* is a socket */
+				goto EXIT;
+		}
+	}
+#endif
+
+	result = 1;
+EXIT:
 	return result;
 }
 
