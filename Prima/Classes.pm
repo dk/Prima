@@ -1669,6 +1669,17 @@ sub setup
 	}
 }
 
+sub get_fullscreen_image
+{
+	my $self = shift;
+	if ( $^O eq 'darwin') {
+		require Prima::sys::XQuartz;
+		return Prima::sys::XQuartz::get_fullscreen_image($self);
+	} else {
+		return $self->get_image(0,0,$self->size);
+	}
+}
+
 sub get_printer
 {
 	unless ( $_[0]-> {Printer}) {

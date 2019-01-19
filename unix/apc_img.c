@@ -2855,9 +2855,8 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 		uint32_t *pixels;
 		if ( PImage(image)->type != imRGB)
 			CImage( image)-> create_empty( image, xLen, yLen, imRGB);
-		printf("%d %d/%d(%d) %d %d\n", x, y, XX->size.y-y-yLen, XX->size.y, xLen, yLen);
 		if (( pixels = prima_cocoa_application_get_bitmap(
-			x, XX->size.y - y - yLen, xLen, yLen
+			x, XX->size.y - y - yLen, xLen, yLen, XX->size.y
 		))) {
 			int y;
 			Byte *src = (Byte*) (pixels + xLen * (yLen - 1));

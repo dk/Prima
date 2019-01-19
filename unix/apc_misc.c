@@ -1308,6 +1308,16 @@ apc_system_action( const char *s)
 		if ( strcmp( s, "unix_guts") == 0)
 			return (char*) &guts;
 		break;
+	case 'x':
+		if ( strncmp(s, "xquartz.", 8) == 0) {
+			s += 8;
+#ifdef WITH_COCOA
+			if ( guts. use_quartz )
+				return prima_cocoa_system_action(( char*) s);
+#endif
+			return nil;
+		}
+		break;
 	case 'X':
 		if ( strcmp( s, "XOpenDisplay") == 0) {
 			char err_buf[512];

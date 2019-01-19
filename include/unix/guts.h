@@ -1333,7 +1333,10 @@ prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int x
 
 #ifdef WITH_COCOA
 extern uint32_t*
-prima_cocoa_application_get_bitmap( int x, int y, int xLen, int yLen);
+prima_cocoa_application_get_bitmap( int x, int y, int xLen, int yLen, int yMax);
+
+extern char *
+prima_cocoa_system_action( char * params);
 #endif
 
 typedef struct _ViewProfile {

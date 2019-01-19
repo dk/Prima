@@ -501,6 +501,15 @@ Returns object reference to a currently focused widget,
 if any, that belongs to the program. If no such widget exists,
 C<undef> is returned.
 
+=item get_fullscreen_image
+
+Syntax sugar for grabbing whole screen as in
+
+   $::application->get_image( 0, 0, $::application->size)
+
+(MacOSX/XQuartz: get_image() does not grab all screen bits, but
+C<get_fullscreen_image> does (given Prima is compiled with Cocoa library)).
+
 =item get_hint_widget
 
 Returns the hint label widget, attached automatically to
@@ -517,6 +526,11 @@ X_OFFSET and Y_OFFSET coordinates. If WIDTH and HEIGHT
 extend beyond the screen dimensions, they are adjusted.
 If the offsets are outside screen boundaries, or WIDTH and
 HEIGHT are zero or negative, C<undef> is returned.
+
+Note: When running on MacOSX under XQuartz, the latter
+does not give access to the whole screen, so the function
+will not be able to grab top-level menu bar. This problem
+is addresses in C<get_fullscreen_image>.
 
 =item get_indents
 
