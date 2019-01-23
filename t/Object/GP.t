@@ -310,6 +310,7 @@ for ( $i = 0; $i < 8; $i++) {
 	}
 }
 cmp_ok( $bl, '>', 5, "text_out");
+warn "looks like this bug: https://gitlab.freedesktop.org/xorg/xserver/issues/87\n" unless $bl;
 
 # 21
 my $y = Prima::DeviceBitmap-> create( type => dbt::Bitmap, width => 2, height => 2);
