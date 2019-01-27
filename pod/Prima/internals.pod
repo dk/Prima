@@ -142,6 +142,7 @@ Prima defines the following built-in classes: (in hierarchy order)
                         Image
                                 Icon
                 File
+                Region
                 Timer
                 Widget
                         Application
@@ -497,7 +498,7 @@ call Component_attach() during init-stage, automatically
 increasing their reference count. Component_attach() and
 its reverse Component_detach() account list of objects,
 attributed to each other. Object can be attached to multiple
-objects, but cannot be attached more that once to another object.
+objects, but cannot be attached more than once to another object.
 
 =head2 Notifications
 
@@ -507,7 +508,7 @@ different events. This mechanism is used heavily in event-driven
 programming. Component_notify() is used to call user notifications,
 and its format string has same format as accepted by perl_call_indirect().
 The only difference that it always has to be prepended with '<s', -
-this way the call success flag is set, and first parameter have to
+this way the call success flag is set, and first parameter has to
 be the name of the notification.
 
     Component_notify( self, "<sH", "Paint", self);

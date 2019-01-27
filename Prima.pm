@@ -137,6 +137,7 @@ The core classes form an hierarchy, which is displayed below:
 				Prima::Image
 					Prima::Icon
 			Prima::File
+			Prima::Region
 			Prima::Timer
 			Prima::Widget
 				Prima::Application
