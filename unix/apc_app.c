@@ -422,6 +422,11 @@ init_x11( char * error_buf )
 
 	guts. net_wm_maximization = prima_wm_net_state_read_maximization( guts. root, NET_SUPPORTED);
 
+	if ( strcmp(getenv("XDG_SESSION_TYPE"), "wayland") == 0) {
+		guts. is_xwayland = true;
+		Mdebug("XWayland detected\n");
+	}
+
 	if ( do_sync) XSynchronize( DISP, true);
 	return true;
 }

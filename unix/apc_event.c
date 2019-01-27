@@ -1737,6 +1737,7 @@ prima_wm_sync( Handle self, int eventType)
 	delay = 2 * (( timeout. tv_sec - start_time. tv_sec) * 1000 +
 					( timeout. tv_usec - start_time. tv_usec) / 1000) + guts. wm_event_timeout;
 	Edebug("event: sync took %ld.%03ld sec\n", timeout. tv_sec - start_time. tv_sec, (timeout. tv_usec - start_time. tv_usec) / 1000);
+	if ( guts. is_xwayland) delay *= 2; /* because of extra roundtrip between xwayland and wayland */
 
 	/* got response already? happens if no wm present or  */
 	/* sometimes if wm is local to server */
