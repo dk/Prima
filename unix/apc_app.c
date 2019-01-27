@@ -225,7 +225,6 @@ init_x11( char * error_buf )
 	};
 	char hostname_buf[256], *hostname = hostname_buf;
 
-	bzero( &guts, sizeof(guts));
 	guts. click_time_frame = 200;
 	guts. double_click_time_frame = 200;
 	guts. visible_timeout = 500;
