@@ -795,27 +795,29 @@ apc_application_end_paint_info( Handle self)
 int
 apc_application_get_gui_info( char * description, int len)
 {
+	int ret = guiXLib;
+	if ( description)
+		strncpy( description, "X Window System", len);
+
 #ifdef WITH_GTK
 	if ( guts. use_gtk ) {
 		if ( description) {
+			strncat( description, " + GTK", len);
 #ifdef WITH_GTK_NONX11
-			strncpy( description, "X Window System + GTK", len);
-#else
-			strncpy( description, "X Window System + XQuartz + GTK", len);
+			strncat( description, " with native support", len);
 #endif
-#define _xstr(s) #s
-			strncpy( description, _xstr(WITH_GTK), len);
-#undef _xstr
-			description[len-1] = 0;
+#ifdef WITH_COCOA
+			if ( guts. use_quartz)
+				strncat( description, " + Cocoa", len);
+#endif
 		}
-		return guiGTK;
+		ret = guiGTK;
 	}
 #endif
-	if ( description) {
-		strncpy( description, "X Window System", len);
+
+	if ( description)
 		description[len-1] = 0;
-	}
-	return guiXLib;
+	return ret;
 }
 
 Handle

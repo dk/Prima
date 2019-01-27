@@ -14,19 +14,27 @@ my @sz = $a->size;
 # Test screen grabbing
 SKIP: {
 	if ($^O eq 'darwin') {
-		skip "not compiled with cocoa", 3 unless $a->get_system_info->{guiDescription} != /bCocoa/;
+		skip "not compiled with cocoa", 3 unless $a->get_system_info->{guiDescription} =~ /Cocoa/;
 	} elsif ( ($ENV{XDG_SESSION_TYPE} // 'x11') ne 'x11') {
 		skip "not compiled with gtk", 3 unless $a->get_system_info->{gui} == gui::GTK;
 	}
 
+
+	reset_flag;
 	my $w = $a->insert(Widget =>
 		rect => [0,0,5,5],
 		color => cl::White,
 		backColor => cl::Black,
-		fillPattern => fp::SimpleDots,
+		onPaint => sub {
+			my $w = shift;
+			$w->fillPattern(fp::SimpleDots);
+			$w->bar(0,0,$w->size);
+			set_flag;
+		},
 	);
 	$w->show;
 	$w->bring_to_front;
+	wait_flag;
 
 	my $i = $a->get_image(1,1,2,1);
 	ok( $i && $i->width == 2 && $i->height == 1, "some bitmap grabbing succeeded");
@@ -36,6 +44,7 @@ SKIP: {
 	($a,$b) = ($b,$a) if $b < $a;
 	is($a, 0, "one pixel is black");
 	is($b, 255, "another is white");
+	$w->destroy;
 }
 
 
