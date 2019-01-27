@@ -21,7 +21,10 @@ SKIP: {
 
 
 	reset_flag;
-	my $w = $a->insert(Widget =>
+	my $w = $a->insert(Window =>
+		borderStyle => bs::None,
+		borderIcons => 0,
+		onTop => 1,
 		rect => [0,0,5,5],
 		color => cl::White,
 		backColor => cl::Black,
