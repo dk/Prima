@@ -5,11 +5,39 @@ use Test::More;
 use Prima::Test;
 use Prima::Application;
 
-plan tests => 9;
+plan tests => 12;
 
 my $a = $::application;
 
 my @sz = $a->size;
+
+# Test screen grabbing
+SKIP: {
+	if ($^O eq 'darwin') {
+		skip "not compiled with cocoa", 3 unless $a->get_system_info->{guiDescription} != /bCocoa/;
+	} elsif ( ($ENV{XDG_SESSION_TYPE} // 'x11') ne 'x11') {
+		skip "not compiled with gtk", 3 unless $a->get_system_info->{gui} == gui::GTK;
+	}
+
+	my $w = $a->insert(Widget =>
+		rect => [0,0,5,5],
+		color => cl::White,
+		backColor => cl::Black,
+		fillPattern => fp::SimpleDots,
+	);
+	$w->show;
+	$w->bring_to_front;
+
+	my $i = $a->get_image(1,1,2,1);
+	ok( $i && $i->width == 2 && $i->height == 1, "some bitmap grabbing succeeded");
+	skip "no bitmap", 1 unless $i;
+	$i->type(im::BW);
+	my ( $a, $b ) = ( $i->pixel(0,0), $i->pixel(1,0) );
+	($a,$b) = ($b,$a) if $b < $a;
+	is($a, 0, "one pixel is black");
+	is($b, 255, "another is white");
+}
+
 
 
 SKIP: {
