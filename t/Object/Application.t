@@ -21,10 +21,13 @@ SKIP: {
 
 
 	reset_flag;
-	my $w = $a->insert(Window =>
-		borderStyle => bs::None,
-		borderIcons => 0,
-		onTop => 1,
+	my $w = $a->insert(
+		(($^O eq 'win32') ? (
+			Window =>
+				borderStyle => bs::None,
+				borderIcons => 0,
+				onTop => 1,
+			) : ('Widget')),
 		rect => [0,0,5,5],
 		color => cl::White,
 		backColor => cl::Black,
@@ -38,6 +41,7 @@ SKIP: {
 	$w->show;
 	$w->bring_to_front;
 	wait_flag;
+	select(undef,undef,undef,0.1);
 
 	my $i = $a->get_image(1,1,2,1);
 	ok( $i && $i->width == 2 && $i->height == 1, "some bitmap grabbing succeeded");
