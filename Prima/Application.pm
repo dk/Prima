@@ -530,7 +530,7 @@ HEIGHT are zero or negative, C<undef> is returned.
 Note: When running on MacOSX under XQuartz, the latter
 does not give access to the whole screen, so the function
 will not be able to grab top-level menu bar. This problem
-is addresses in C<get_fullscreen_image>.
+is addressed in C<get_fullscreen_image>.
 
 =item get_indents
 
