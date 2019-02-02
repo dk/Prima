@@ -22,7 +22,7 @@ SKIP: {
 
 	reset_flag;
 	my $w = $a->insert(
-		(($^O eq 'win32') ? (
+		(($^O =~ /win32/i) ? (
 			Window =>
 				borderStyle => bs::None,
 				borderIcons => 0,
