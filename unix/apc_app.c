@@ -223,7 +223,7 @@ init_x11( char * error_buf )
 		"_NET_WORKAREA",
 		"_NET_WM_STATE_ABOVE"
 	};
-	char hostname_buf[256], *hostname = hostname_buf;
+	char hostname_buf[256], *hostname = hostname_buf, *env;
 
 	guts. click_time_frame = 200;
 	guts. double_click_time_frame = 200;
@@ -422,7 +422,8 @@ init_x11( char * error_buf )
 
 	guts. net_wm_maximization = prima_wm_net_state_read_maximization( guts. root, NET_SUPPORTED);
 
-	if ( strcmp(getenv("XDG_SESSION_TYPE"), "wayland") == 0) {
+	env = getenv("XDG_SESSION_TYPE");
+	if (( env != NULL) && (strcmp(env, "wayland") == 0)) {
 		guts. is_xwayland = true;
 		Mdebug("XWayland detected\n");
 	}
