@@ -1,4 +1,7 @@
 Revision history for Perl module Prima
+1.54 2019-02-09
+ - Support screen grabbing on Mac and Gnome/Wayland
+
 1.53 2018-10-10
  - Image downsampling made consistent; added ict::Posterization;
  - Added images to documentations
