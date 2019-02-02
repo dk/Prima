@@ -1181,7 +1181,9 @@ AGAIN:
 
 	if ( f-> flags. sloppy || f-> vecname) {
 		/* check first if height is o.k. */
-		f-> font. height = s-> max_bounds. ascent + s-> max_bounds. descent;
+		int h = s-> max_bounds. ascent + s-> max_bounds. descent;
+		if ( h > 0 ) /* empty fonts like 'space' or just downright broken fonts */
+			f-> font. height = h;
 		f-> flags. height = true;
 		if ( f-> vecname && !bySize && f-> font. height != font-> height) {
 			int h = prima_try_height( &hgs, f-> font. height * 10);
