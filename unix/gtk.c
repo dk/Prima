@@ -260,7 +260,7 @@ set_transient_for(void)
 	if ( toplevel ) {
 		GdkWindow * g = NULL;
 
-#if GTK_MAJOR_VERSION == 3 || (GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 14)
+#if GTK_MAJOR_VERSION > 2 || (GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 14)
 		g = gtk_widget_get_window(GTK_WIDGET(gtk_dialog));
 #else
 		g = gtk_dialog->window;
@@ -331,7 +331,7 @@ gtk_openfile( Bool open)
 	if (open)
 		gtk_file_chooser_set_select_multiple( GTK_FILE_CHOOSER (gtk_dialog), gtk_select_multiple);
 
-#if GTK_MAJOR_VERSION == 3 || (GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 8)
+#if GTK_MAJOR_VERSION > 2 || (GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 8)
 	gtk_file_chooser_set_do_overwrite_confirmation( GTK_FILE_CHOOSER (gtk_dialog), gtk_overwrite_prompt);
 	gtk_file_chooser_set_show_hidden( GTK_FILE_CHOOSER (gtk_dialog), gtk_show_hidden_files);
 #endif
@@ -564,6 +564,7 @@ prima_gtk_openfile( char * params)
 Bool
 prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen)
 {
+#if GTK_MAJOR_VERSION > 2 || (GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 34)
 	DEFXX;
 	int              i, found_png;
 	PList            codecs;
@@ -630,6 +631,9 @@ prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int x
 	plist_destroy(codecs);
 
 	return true;
+#else
+	return false;
+#endif
 }
 
 #endif
