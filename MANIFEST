@@ -393,6 +393,7 @@ t/Widget/Window.t
 t/Widget/ZOrder.t
 t/misc/pod.t
 t/misc/syntax.t
+t/misc/cpan.t
 unix/apc_app.c
 unix/apc_clipboard.c
 unix/apc_event.c
