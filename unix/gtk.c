@@ -20,6 +20,10 @@
 #endif
 #include <gtk/gtk.h>
 
+#ifndef G_APPLICATION_NON_UNIQUE
+#define G_APPLICATION_NON_UNIQUE 0
+#endif
+
 static int           gtk_initialized        = 0;
 static GApplication* gtk_app                = NULL;
 static GtkWidget*    gtk_dialog             = NULL;
