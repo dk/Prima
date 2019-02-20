@@ -92,11 +92,17 @@ ok( $e && get_flag, "timer triggers yield return");
 $t->stop;
 
 reset_flag;
-$SIG{ALRM} = \&set_flag;
-alarm(1);
+alarm(10);
 my $p = 0;
 $::application->onIdle( sub { $p|=1 } );
 $::application->onIdle( sub { $p|=2 } );
+$::application->insert( Timer => 
+       timeout => 1000,
+       onTick  => sub {
+               set_flag;
+               shift->stop
+       }
+)->start;
 my $time = time + 2;
 while ( 1) {
 	$::application->yield(1);
