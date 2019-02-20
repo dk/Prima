@@ -4,8 +4,8 @@ use Test::More;
 plan tests => 1;
 
 SKIP : {
-	skip "not under CPAN" unless $ENV{PERL5_CPAN_IS_RUNNING};
-	skip "no makepl.log" unless open F, "<", "makepl.log";
+	skip "not under CPAN", 1 unless $ENV{PERL5_CPAN_IS_RUNNING};
+	skip "no makepl.log", 1 unless open F, "<", "makepl.log";
 	local $/;
 	diag(<F>);
 	close F;
