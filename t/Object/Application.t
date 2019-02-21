@@ -17,8 +17,9 @@ SKIP: {
 		skip "not compiled with cocoa", 3 unless $a->get_system_info->{guiDescription} =~ /Cocoa/;
 	} elsif ( ($ENV{XDG_SESSION_TYPE} // 'x11') ne 'x11') {
 		skip "not compiled with gtk", 3 unless $a->get_system_info->{gui} == gui::GTK;
+	} elsif ( $^O =~ /win32/i && $::application->pixel(0,0) == cl::Invalid) {
+		skip "rdesktop", 3;
 	}
-
 
 	reset_flag;
 	my $w = $a->insert(
