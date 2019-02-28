@@ -1,3 +1,12 @@
+#include <setjmp.h>
+#if defined(WIN32)
+/*
+MINGW defines setjmp as some serious voodoo that PerlProc_setjmp cannot emulate,
+and _setjmp is not equivaluent to setjmp anymore
+*/
+#pragma push_macro("setjmp")
+#pragma push_macro("longjmp")
+#endif
 #define USE_NO_MINGW_SETJMP_TWO_ARGS
 #include "img.h"
 #include "img_conv.h"
@@ -19,7 +28,10 @@
 #define XMD_H /* fails otherwise on redefined INT32 */
 #include <jpeglib.h>
 #include <jerror.h>
-
+#if defined(WIN32)
+#pragma pop_macro("setjmp")
+#pragma pop_macro("longjmp")
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,9 +103,11 @@ load_output_message(j_common_ptr cinfo)
 static void
 load_error_exit(j_common_ptr cinfo)
 {
+	static jmp_buf j;
 	LoadRec *l = (LoadRec*)((( PImgLoadFileInstance)( cinfo-> client_data))-> instance);
 	load_output_message( cinfo);
-	longjmp( l-> j, 1);
+	memcpy( j, l->j, sizeof(jmp_buf));
+	longjmp( j, 1);
 }
 
 /* begin ripoff from jdatasrc.c */
@@ -702,9 +716,11 @@ save_output_message(j_common_ptr cinfo)
 static void
 save_error_exit(j_common_ptr cinfo)
 {
+	jmp_buf j;
 	SaveRec *l = (SaveRec*)((( PImgSaveFileInstance)( cinfo-> client_data))-> instance);
 	save_output_message( cinfo);
-	longjmp( l-> j, 1);
+	memcpy( j, l->j, sizeof(jmp_buf));
+	longjmp( j, 1);
 }
 
 static HV *
