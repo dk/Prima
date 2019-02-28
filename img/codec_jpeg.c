@@ -83,6 +83,7 @@ typedef struct _LoadRec {
 	struct  jpeg_error_mgr         e;
 	jmp_buf                        j;
 	Bool                        init;
+	Bool                        decompressed;
 	Byte *                    channelbuf;
 	Byte *                    transformbuf;
 } LoadRec;
@@ -561,7 +562,12 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	HV * profile;
 	jmp_buf j;
 
-	if ( setjmp( j) != 0) return false;
+	if ( setjmp( j) != 0) {
+		l = ( LoadRec *) fi-> instance;
+		if ( l && l->decompressed )
+			return !fi->noIncomplete;
+		return false;
+	}
 	l = ( LoadRec *) fi-> instance;
 	memcpy( l->j, j, sizeof(jmp_buf));
 	i = ( PImage) fi-> object;
@@ -645,6 +651,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		    		}
 		    		break;
 		 	}
+			l->decompressed = true;
 
 			switch (l-> d. output_components) {
 			case 3:
