@@ -264,9 +264,8 @@ By default, codecs are not specified whether they would fail on premature end
 of file or omit the error and return truncated image. C<noIncomplete> boolean
 flag tells that a codec must always fail if the image cannot be red in full. It
 is off by default. If indeed the codec detected that the file was incomplete,
-it sets C<truncated> boolean flag in the C<extras> profile, if C<loadExtras>
+it sets C<truncated> error string in the C<extras> profile, if C<loadExtras>
 was requested.
-
 
 =head1 Saving
 
@@ -581,6 +580,7 @@ When C<noImageData> is in action, contains image height.
 =item truncated BOOL
 
 When C<noIncomplete> is in action, is set if image was truncated.
+The value is the error string.
 
 =item width INT
 
