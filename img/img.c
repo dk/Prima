@@ -525,7 +525,7 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 		}
 
 		if ( fi. loadExtras && fi. wasTruncated)
-			(void) hv_store( fi. frameProperties, "truncated", 9, newSViv(1), 0);
+			(void) hv_store( fi. frameProperties, "truncated", 9, newSVpv( fi.errbuf, 0 ), 0);
 
 		/* checking for grayscale */
 		{

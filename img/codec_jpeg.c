@@ -564,8 +564,10 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 	if ( setjmp( j) != 0) {
 		l = ( LoadRec *) fi-> instance;
-		if ( l && l->decompressed )
+		if ( l && l->decompressed ) {
+			fi-> wasTruncated = 1;
 			return !fi->noIncomplete;
+		}
 		return false;
 	}
 	l = ( LoadRec *) fi-> instance;

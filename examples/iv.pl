@@ -177,6 +177,7 @@ sub freopen
 	if ( $i-> load( $self-> {fileName}, loadExtras => 1)) {
 		$self-> image( $i);
 		status( $_[0]);
+		message( $i->{extras}->{truncated} ) if defined $i->{extras}->{truncated};
 	} else {
 		message("Cannot reload ". $self-> {fileName}. ":$@");
 	}
@@ -232,6 +233,7 @@ sub fload
 		$self-> image( $i);
 		$self-> {fileName} = $f;
 		status( $_[0]);
+		message( $i->{extras}->{truncated} ) if defined $i->{extras}->{truncated};
 	} else {
 		message("Cannot load $f:$@");
 	}
