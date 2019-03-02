@@ -74,7 +74,7 @@ typedef struct _LoadRec {
 	Byte     xpalette;
 } LoadRec;
 
-#define outcm(dd) snprintf( fi-> errbuf, 256, "No enough memory (%d bytes)", (int)(dd))
+#define outcm(dd) snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", (int)(dd))
 #define outc(x)   strncpy( fi-> errbuf, x, 256)
 
 static void *

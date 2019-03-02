@@ -921,7 +921,7 @@ Component_add_notification( Handle self, char * name, SV * subroutine, Handle re
 			if ( cf == nil) free( var-> events);
 			var-> events = ( List*) cf;
 		}
-		if ( var-> events == nil) croak("No enough memory");
+		if ( var-> events == nil) croak("Not enough memory");
 		list = var-> events + var-> eventIDCount++;
 		list_create( list, 2, 2);
 	} else

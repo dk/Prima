@@ -162,7 +162,7 @@ swap_pal( RGBColor * p)
 #define outr(fd) { snprintf( fi-> errbuf, 256, "Read error:%s",strerror( req_error( fd))); return false; }
 #define outw(fd) { snprintf( fi-> errbuf, 256, "Write error:%s",strerror( req_error( fd))); return false; }
 #define outs(fd) { snprintf( fi-> errbuf, 256, "Seek error:%s",strerror( req_error( fd))); return false; }
-#define outcm(dd){ snprintf( fi-> errbuf, 256, "No enough memory (%d bytes)", (int)(dd)); return false;}
+#define outcm(dd){ snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", (int)(dd)); return false;}
 #define outcd(x,dd){ snprintf( fi-> errbuf, 256, x, (int)(dd)); return false;}
 
 

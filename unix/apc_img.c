@@ -112,7 +112,7 @@ prima_prepare_ximage( int width, int height, int format)
 
 	i = malloc( sizeof( PrimaXImage));
 	if (!i) {
-		warn("No enough memory");
+		warn("Not enough memory");
 		return nil;
 	}
 	bzero( i, sizeof( PrimaXImage));
@@ -169,7 +169,7 @@ normal_way:
 	i-> bytes_per_line_alias = (( width * idepth + 31) / 32) * 4;
 	i-> data_alias = malloc( height * i-> bytes_per_line_alias + extra_bytes);
 	if (!i-> data_alias) {
-		warn("No enough memory");
+		warn("Not enough memory");
 		free(i);
 		return nil;
 	}
