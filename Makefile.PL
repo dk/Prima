@@ -1715,6 +1715,8 @@ sub setup_codecs
 			if ( $codec eq 'X11') {
 				$DEFINES{EMULATE_X11_CODEC} = 1 unless pkgconfig('x11');
 				$found = 1;
+			} elsif ( $codec eq 'webp') {
+				$found = 1 if pkgconfig('libwebp') && pkgconfig('libwebdemux');
 			} elsif ( $codec eq 'png') {
 				$found = 1 if pkgconfig('libpng');
 			} elsif ( $codec eq 'tiff') {
@@ -1763,6 +1765,7 @@ sub setup_codecs
 			printlog "yes";
 			printlog ", in $foundlib" if defined($foundlib) and length($foundlib);
 			printlog "\n";
+			push @LIBS, 'webpdemux' if $codec eq 'webp';
 		} elsif ( $codec eq 'X11') {
 			$DEFINES{EMULATE_X11_CODEC} = 1;
 			push( @ACTIVE_CODECS, $codec);
