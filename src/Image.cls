@@ -33,7 +33,7 @@ object Prima::Image( Prima::Drawable)
 	method Handle bitmap();
 	method Bool   begin_paint();
 	method Bool   begin_paint_info();
-	static SV   * codecs( SV * dummy);
+	static SV   * codecs( SV * dummy, int codecID = -1);
 	c_only void   create_empty( int width, int height, int type);
 	method void   done();
 	method Handle dup();

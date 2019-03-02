@@ -1511,20 +1511,29 @@ Image_map( Handle self, Color color)
 }
 
 SV *
-Image_codecs( SV * dummy)
+Image_codecs( SV * dummy, int codecID)
 {
-	int i;
-	AV * av = newAV();
 	PList p = plist_create( 16, 16);
 	apc_img_codecs( p);
-	for ( i = 0; i < p-> count; i++) {
-		PImgCodec c = ( PImgCodec ) p-> items[ i];
+	if ( codecID < 0 ) {
+		int i;
+		AV * av = newAV();
+		for ( i = 0; i < p-> count; i++) {
+			PImgCodec c = ( PImgCodec ) p-> items[ i];
+			HV * profile = apc_img_info2hash( c);
+			pset_i( codecID, i);
+			av_push( av, newRV_noinc(( SV *) profile));
+		}
+		plist_destroy( p);
+		return newRV_noinc(( SV *) av);
+	} else if ( codecID < p-> count ) {
+		PImgCodec c = ( PImgCodec ) p-> items[ codecID];
 		HV * profile = apc_img_info2hash( c);
-		pset_i( codecID, i);
-		av_push( av, newRV_noinc(( SV *) profile));
+		pset_i( codecID, codecID);
+		return newRV_noinc(( SV *) profile);
+	} else {
+		return &PL_sv_undef;
 	}
-	plist_destroy( p);
-	return newRV_noinc(( SV *) av);
 }
 
 Bool
