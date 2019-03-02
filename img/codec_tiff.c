@@ -566,6 +566,26 @@ convert_abgr_to_rgba( Byte * buffer, int quads)
 
 #endif
 
+/* 4-channels is already presplit as if it was RGBA to reject A early */
+static void
+convert_cmyk_to_rgb( Byte * buffer, int quads)
+{
+	Byte * blacks = buffer + quads * 3;
+	while (quads--) {
+		register unsigned int k = 255 - *(blacks++);
+		if ( k > 0 ) {
+			buffer[0] = (((255 - buffer[0]) * k) / 255) & 0xff;
+			buffer[1] = (((255 - buffer[1]) * k) / 255) & 0xff;
+			buffer[2] = (((255 - buffer[2]) * k) / 255) & 0xff;
+		} else {
+			buffer[0] = 255 - buffer[0];
+			buffer[1] = 255 - buffer[1];
+			buffer[2] = 255 - buffer[2];
+		}
+		buffer += 3;
+	}
+}
+
 static Bool
 read_source_format( PImgLoadFileInstance fi, int source_bits, int * source_format)
 {
@@ -854,6 +874,7 @@ build_grayscale_palette( int source_bits, RGBColor * palette)
 	}
 }
 
+
 static Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
@@ -862,10 +883,10 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	PIcon i = ( PIcon) fi-> object;
 	char * photometric_descr = nil;
 	unsigned short photometric, comp_method;
-	int x, y, w, h, icon, tiled, rgba_striped = 0,
+	int x, y, w, h, icon, tiled, rgba_striped = 0, cmyk = 0,
 		InvertMinIsWhite = INVERT_MINISWHITE, faxpect = 0, full_image = 0, full_rgba_image = 0,
 		read_failure = 0;
-	int source_bits, source_format, source_samples, mid_bytes, mid_format, target_type;
+	int source_bits, source_format, source_samples, mid_bytes, mid_format, target_type, target_samples;
 	Bool source_is_planar, build_gray_palette = 0;
 	float xres, yres;
 	Byte *tiffstrip, *tiffline, *tifftile, *primaline, *primamask = nil;
@@ -911,6 +932,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	if ( fi-> loadExtras) pset_i( Tiled, tiled);
 
 	/* calculate prima image bpp and color count */
+	target_samples = 0;
 	switch ( photometric) {
 	case PHOTOMETRIC_MINISWHITE:
 	case PHOTOMETRIC_MINISBLACK:
@@ -999,7 +1021,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	case PHOTOMETRIC_SEPARATED:
 		target_type = imbpp24;
 		source_samples = 4;
-		rgba_striped = 1;
+		cmyk = 1;
+		target_samples = 3;
 		photometric_descr = "Separated";
 		photometric = PHOTOMETRIC_RGB;
 		break;
@@ -1015,10 +1038,14 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		photometric == PHOTOMETRIC_DEPTH?     "DEPTH" :
 		photometric == PHOTOMETRIC_SEPARATED? "Separated" :
 		photometric == PHOTOMETRIC_YCBCR?     "YCbCr" :
-															"unknown";
+		                                       "unknown";
 		photometric = PHOTOMETRIC_RGB;
 		break;
 	}
+
+	/* CMYK -> RGB */
+	if ( target_samples == 0 ) target_samples = source_samples;
+
 	if ( fi-> loadExtras)
 		pset_c( Photometric, photometric_descr);
 
@@ -1203,7 +1230,7 @@ VALID_COMBINATION:
 	tiffstrip = tifftile + stripsz * 2;
 
 	tiffline = tiffstrip; /* just set the line to the top of the strip.
-								* we'll move it through below. */
+	                         * we'll move it through below. */
 
 	/* printf("w:%d, source_bits:%d, source_samples:%d, planar:%d, tile_height:%d, strip_sz:%d, target_type:%d\n", w, source_bits, spp, source_is_planar, tile_height, stripsz, taregt_format); */
 	/* setting up destination pointers */
@@ -1396,6 +1423,10 @@ VALID_COMBINATION:
 			while ( bytes-- ) *x++ <<= shift;
 		}
 
+		/* 4-channels is already presplit as if it was RGBA to reject A early */
+		if ( cmyk )
+			convert_cmyk_to_rgb( tiffline, w);
+
 		/* invert data, if any */
 		if ( InvertMinIsWhite && photometric == PHOTOMETRIC_MINISWHITE)
 			invert_scanline( tiffline, source_bits, target_type, w * source_samples);
@@ -1423,8 +1454,8 @@ VALID_COMBINATION:
 		}
 
 		/* do alpha channel */
-		if ( icon && ( source_samples == 2 || source_samples == 4)) {
-			Byte * alpha = tiffline + w * ( source_samples - 1 ) * mid_bytes;
+		if ( icon && ( target_samples == 2 || target_samples == 4)) {
+			Byte * alpha = tiffline + w * ( target_samples - 1 ) * mid_bytes;
 			bc_byte_mono_cr( alpha, primamask, w, bw_colorref);
 			primamask -= i-> maskLine;
 		}
@@ -1439,7 +1470,7 @@ VALID_COMBINATION:
 	if ( read_failure) {
 		if ( fi-> noIncomplete) return false;
 
-		/* it's not icomplete, it's a real libtiff error camouflaged inside */
+		/* it's not incomplete, it's a real libtiff error camouflaged inside */
 		if ( y == 0 ) return false;
 	} else {
 		EVENT_TOPDOWN_SCANLINES_FINISHED(fi);
