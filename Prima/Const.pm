@@ -26,6 +26,10 @@ package
     ta; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text alignment
 package
     cl; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# colors
+
+sub from_rgb { ($_[2] & 0xff) | (($_[1] & 0xff) << 8) | (($_[0] & 0xff) << 16) }
+sub to_rgb   { (( $_[0]>>16) & 0xFF, ($_[0]>>8) & 0xFF, $_[0] & 0xFF) }
+
 package
     ci; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# color indices
 package
