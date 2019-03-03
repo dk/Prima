@@ -478,6 +478,20 @@ This section describes parameters accepted and data returned by C<Prima::Image::
 
 =over
 
+=item blending BOOLEAN = 1
+
+Affects how to treat alpha channel bits, if any.
+
+If set, mixes the alpha channel with background color in case if loading to
+an image, or premultiplies color bits (either data or palette) with alpha, if
+loading to icon. Note that saving back the object will result in different
+image, but the object is ready to be displayed immediately.
+
+If unset, color and eventual alpha bits, if loaded to an icon, will not be
+affected in any way. Note that saving back the object will result in the same
+image, but the object is not ready to be displayed immediately. See also:
+L<Prima::Image/premultiply_alpha>.
+
 =item className STRING
 
 When loading more than one image, this string is used to create
@@ -747,7 +761,7 @@ Not applicable C<Prima::Icon>.
 
 =item blending BOOLEAN = 1
 
-Affects how to treat aplha channel bits, if any.
+Affects how to treat alpha channel bits, if any.
 
 If set, mixes the alpha channel with C<background> color in case if loading to
 an image, or premultiplies color bits (either data or palette) with alpha, if

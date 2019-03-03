@@ -14,16 +14,16 @@ static int    webpbpp[] = {
 	0 };
 
 static char * loadOutput[] = {
-	"hasAlpha",
-	"screenWidth",
-	"screenHeight",
-	"screenBackGroundColor",
+	"blendMethod",
 	"delayTime",
 	"disposalMethod",
-	"blendMethod",
+	"hasAlpha",
 	"left",
-	"top",
 	"loopCount",
+	"screenBackGroundColor",
+	"screenHeight",
+	"screenWidth",
+	"top",
 	NULL
 };
 
@@ -50,6 +50,18 @@ init( PImgCodecInfo * info, void * param)
 	codec_info.versionMaj = (version >> 8) & 0xff;
 	*info = &codec_info;
 	return (void*)1;
+}
+
+static HV *
+load_defaults( PImgCodec c)
+{
+	HV * profile = newHV();
+	/*
+	if background is not RGB, ( like clInvalid), use
+	whatever it is in the file.
+	*/
+	pset_f( background, clInvalid);
+	return profile;
 }
 
 #define outcm(dd) snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", (int)dd)
@@ -206,6 +218,7 @@ format_error( PImgLoadFileInstance fi, VP8StatusCode status)
 static Bool
 load( PImgCodec instance, PImgLoadFileInstance fi)
 {
+	dPROFILE;
 	LoadRec * l = ( LoadRec *) fi-> instance;
 	WebPIterator* curr = &l->curr_frame;
 	WebPDecoderConfig* const config = &l->config;
@@ -213,6 +226,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	VP8StatusCode status;
 	HV * profile;
 	Bool icon;
+	Color background;
 
 	/* position to frame */
 	if ( !WebPDemuxGetFrame(l->dmux, fi->frame + 1, curr)) { /* 0th is last */
@@ -246,6 +260,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		return true;
 	}
 
+	profile = fi-> profile;
+
 	/* read pixels */
 	icon = kind_of( fi-> object, CIcon) && curr->has_alpha;
 	output_buffer->colorspace = fi->blending ? MODE_bgrA : MODE_BGRA;
@@ -253,6 +269,19 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		format_error(fi, status);
 		goto EXIT;
 	}
+
+	/* set blending background */
+	background = l->bg_color;
+	if ( pexist( background)) {
+		if ( kind_of( fi-> object, CIcon) ) {
+			strcpy( fi-> errbuf, "Option 'background' cannot be set when loading to an Icon object");
+			goto EXIT;
+		}
+		if ( (pget_i( background) & clSysFlag) == 0)
+			background = pget_i( background);
+	}
+	background &= 0xffffff;
+
 
 	l->pic = output_buffer;
 	CImage( fi-> object)-> create_empty( fi-> object, curr->width, curr->height, imRGB);
@@ -263,6 +292,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	EVENT_HEADER_READY(fi);
 
 	{
+		Bool    blend  = !icon && fi->blending && (background != 0);
 		PIcon   i      = PIcon(fi->object);
 		int     y      = curr->height,
 			stride = l->pic->u.RGBA.stride;
@@ -283,6 +313,19 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 					*(m++) = *(s++);
 				}
 				mask -= i->maskLine;
+			} else if ( blend ) {
+				int32_t R = ( background & 0xff         ) << 8;
+				int32_t G = ( (background >> 8)  & 0xff ) << 8;
+				int32_t B = ( (background >> 16) & 0xff ) << 8;
+				while (x--) {
+					register int32_t r = (int32_t)(*(s++) << 8);
+					register int32_t g = (int32_t)(*(s++) << 8);
+					register int32_t b = (int32_t)(*(s++) << 8);
+					register Byte a = 255 - *(s++);
+					*(d++) = (r + R * a / 255 + 127) >> 8;
+					*(d++) = (g + G * a / 255 + 127) >> 8;
+					*(d++) = (b + B * a / 255 + 127) >> 8;
+				}
 			} else {
 				while (x--) {
 					*(d++) = *(s++);
@@ -351,6 +394,7 @@ apc_img_codec_webp( void )
 {
 	struct ImgCodecVMT vmt;
 	memcpy( &vmt, &CNullImgCodecVMT, sizeof( CNullImgCodecVMT));
+	vmt. load_defaults = load_defaults;
 	vmt. init          = init;
 	vmt. open_load     = open_load;
 	vmt. load          = load;
