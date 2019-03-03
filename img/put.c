@@ -813,7 +813,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		if ( PImage( dup )-> type != bpp )
 			CImage(dup)-> set_type( dup, bpp);
 
-		ok = img_put_alpha( dest, dup, dstX, dstY, 0, 0, dstW, dstH, dstW, srcH, xrop);
+		ok = img_put_alpha( dest, dup, dstX, dstY, 0, 0, dstW, dstH, dstW, dstH, xrop);
 
 		Object_destroy(dup);
 		return ok;
