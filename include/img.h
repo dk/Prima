@@ -50,6 +50,7 @@ typedef struct _ImgLoadFileInstance {
 	Bool            noImageData;
 	Bool            iconUnmask;
 	Bool            noIncomplete;
+	Bool            blending;
 	HV            * extras;         /* profile applied to all frames */
 
 	/* user-specified data - applied to every frame */

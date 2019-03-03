@@ -199,6 +199,7 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 	Bool loadExtras = false, noImageData = false;
 	Bool incrementalLoad = false;
 	Bool iconUnmask = false;
+	Bool blending = true;
 	Bool noIncomplete = false;
 	char * baseClassName = "Prima::Image";
 	ImgIORequest sioreq;
@@ -280,6 +281,9 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 
 	if ( pexist( iconUnmask) && pget_B( iconUnmask))
 		fi. iconUnmask = iconUnmask = true;
+
+	if ( pexist( blending) && !pget_B( blending))
+		fi. blending = blending = false;
 
 	if ( pexist( noIncomplete) && pget_B( noIncomplete))
 		fi. noIncomplete = noIncomplete = true;
@@ -444,6 +448,7 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 		fi. loadExtras   = loadExtras;
 		fi. noImageData  = noImageData;
 		fi. iconUnmask   = iconUnmask;
+		fi. blending     = blending;
 		fi. noIncomplete = noIncomplete;
 		fi. wasTruncated = false;
 
@@ -466,9 +471,11 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 					if ( pexist( loadExtras))
 					fi. loadExtras  = pget_B( loadExtras);
 					if ( pexist( noImageData))
-					fi. noImageData = pget_B( noImageData);
+						fi. noImageData = pget_B( noImageData);
 					if ( pexist( iconUnmask))
-					fi. iconUnmask = pget_B( iconUnmask);
+						fi. iconUnmask = pget_B( iconUnmask);
+					if ( pexist( blending))
+						fi. blending = pget_B( blending);
 				}
 			}
 		}
@@ -651,6 +658,7 @@ apc_img_frame_count( char * fileName, PImgIORequest ioreq )
 	fi. loadExtras     = true;
 	fi. noImageData    = true;
 	fi. iconUnmask     = false;
+	fi. blending       = false;
 	fi. noIncomplete   = false;
 	fi. extras         = newHV();
 	fi. fileProperties = newHV();
@@ -1286,6 +1294,7 @@ apc_img_info2hash( PImgCodec codec)
 		(void) hv_store( hv, "loadExtras",   10, newSViv(0),     0);
 		(void) hv_store( hv, "noImageData",  11, newSViv(0),     0);
 		(void) hv_store( hv, "iconUnmask",   10, newSViv(0),     0);
+		(void) hv_store( hv, "blending",      8, newSViv(0),     0);
 		(void) hv_store( hv, "noIncomplete", 12, newSViv(0),     0);
 		(void) hv_store( hv, "className",     9, newSVpv("Prima::Image", 0), 0);
 	} else
