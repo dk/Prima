@@ -1158,7 +1158,9 @@ PutImageFunc (*img_put_on_layered[SRC_NUM]) = {
 };
 
 Bool
-apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
+apc_gp_stretch_image( Handle self, Handle image,
+	int dst_x, int dst_y, int src_x, int src_y,
+	int dst_w, int dst_h, int src_w, int src_h, int rop)
 {
 	PIcon img = (PIcon) image;
 	PutImageRequest req;
@@ -1169,17 +1171,48 @@ apc_gp_stretch_image( Handle self, Handle image, int x, int y, int xFrom, int yF
 	objCheck false;
 	dobjCheck(image) false;
 
-	if ( xLen <= 0 || yLen <= 0) return false;
+	if ( src_h < 0) {
+		src_h = -src_h;
+		dst_h = -dst_h;
+	}
+	if ( src_w < 0) {
+		src_w = -src_w;
+		dst_w = -dst_w;
+	}
+	if ( abs(src_x) >= img-> w) return false;
+	if ( abs(src_y) >= img-> h) return false;
+	if ( src_w == 0 || src_h == 0) return false;
+	if ( src_x < 0) {
+		dst_x -= src_x * dst_w / src_w;
+		dst_w += src_x * dst_w / src_w;
+		src_w += src_x;
+		src_x = 0;
+	}
+	if ( src_y < 0) {
+		dst_y -= src_y * dst_h / src_h;
+		dst_h += src_y * dst_h / src_h;
+		src_h += src_y;
+		src_y = 0;
+	}
+	if ( src_x + src_w > img-> w) {
+		dst_w = (img-> w - src_x) * dst_w / src_w;
+		src_w = img-> w - src_x;
+	}
+	if ( src_y + src_h > img-> h) {
+		dst_h = (img-> h - src_y) * dst_h / src_h;
+		src_h = img-> h - src_y;
+	}
+	if ( src_w <= 0 || src_h <= 0) return false;
 
 	memset( &req, 0, sizeof(req));
-	req. src_x = xFrom;
-	req. src_y = img->h - yFrom - yLen;
-	req. src_w = xLen;
-	req. src_h = yLen;
-	req. dst_x = x;
-	req. dst_y = sys lastSize. y - y - yDestLen;
-	req. dst_w = xDestLen;
-	req. dst_h = yDestLen;
+	req. src_x = src_x;
+	req. src_y = img->h - src_y - src_h;
+	req. src_w = src_w;
+	req. src_h = src_h;
+	req. dst_x = dst_x;
+	req. dst_y = sys lastSize. y - dst_y - dst_h;
+	req. dst_w = dst_w;
+	req. dst_h = dst_h;
 	req. rop   = rop;
 
 	if ( dsys( image) options. aptDeviceBitmap ) {
