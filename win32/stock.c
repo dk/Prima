@@ -1499,8 +1499,8 @@ hwnd_enter_paint( Handle self)
 		apc_gp_set_color( self, sys viewColors[ ciFore]);
 		apc_gp_set_back_color( self, sys viewColors[ ciBack]);
 	} else {
-		apc_gp_set_color( self, sys lbs[0]);
-		apc_gp_set_back_color( self, sys lbs[1]);
+		apc_gp_set_color( self, remap_color(sys lbs[0],false));
+		apc_gp_set_back_color( self, remap_color(sys lbs[1],false));
 	}
 
 	if ( sys psd == nil) sys psd = ( PPaintSaveData) malloc( sizeof( PaintSaveData));
