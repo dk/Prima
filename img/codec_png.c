@@ -1,3 +1,12 @@
+#include <setjmp.h>
+#if defined(WIN32)
+/*
+MINGW defines setjmp as some serious voodoo that PerlProc_setjmp cannot emulate,
+and _setjmp is not equivaluent to setjmp anymore
+*/
+#pragma push_macro("setjmp")
+#pragma push_macro("longjmp")
+#endif
 #define USE_NO_MINGW_SETJMP_TWO_ARGS
 #include "generic/config.h"
 #define Z_PREFIX
@@ -25,6 +34,10 @@
 #undef      setjmp
 #undef      longjmp
 #define     setjmp _setjmp
+#endif
+#if defined(WIN32)
+#pragma pop_macro("setjmp")
+#pragma pop_macro("longjmp")
 #endif
 
 #ifdef __cplusplus
@@ -76,7 +89,6 @@ static char * features[] = {
 
 static char * loadOutput[] = {
 	"background",
-	"blending",
 	"gamma",
 #ifdef PNG_iCCP_SUPPORTED
 	"iccp_name",
@@ -213,11 +225,6 @@ load_defaults( PImgCodec c)
 	whatever it is in the file.
 	*/
 	pset_f( background, clInvalid);
-	/* alpha blending:
-		1 - combine user or file background with color channel and alpha channel
-		0 - load color channels and alpha channel as is, without blending
-	*/
-	pset_i( blending, 1);
 	return profile;
 }
 
@@ -226,6 +233,7 @@ typedef struct _LoadRec {
 	png_infop info_ptr;
 	Byte * b8_4;
 	Byte * line;
+	Bool decompressed;
 } LoadRec;
 
 static void
@@ -329,12 +337,19 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	HV * profile;
 	Color background;
 	int channels, trns_n;
-	Bool icon, blending, post_blending;
+	Bool icon, post_blending;
 	Byte * alpha;
 	png_bytep trns_t;
 	png_color_16p trns_p;
 
-	if (setjmp(png_jmpbuf( l-> png_ptr)) != 0) return false;
+	if (setjmp(png_jmpbuf( l-> png_ptr)) != 0) {
+		l = ( LoadRec *) fi-> instance;
+		if ( l && l->decompressed ) {
+			fi-> wasTruncated = 1;
+			return !fi->noIncomplete;
+		}
+		return false;
+	}
 
 	profile = fi-> profile;
 
@@ -417,9 +432,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	}
 
 	/* alpha blending */
-	blending = pexist( blending) ? pget_B(blending) : 1;
 	post_blending = false;
-	if ( !icon && !blending)
+	if ( !icon && !fi->blending)
 		png_set_strip_alpha(l-> png_ptr);
 
 	/* image background color */
@@ -460,7 +474,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		strcpy( fi-> errbuf, "Option 'background' cannot be set when loading to an Icon object");
 		return false;
 	}
-	if ( !icon && blending ) {
+	if ( !icon && fi->blending ) {
 		png_color_16 p;
 		/* override with user data */
 		if ( pexist( background) && ((pget_i( background) & clSysFlag) == 0))
@@ -558,7 +572,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	} else if ( color_type & PNG_COLOR_MASK_ALPHA ||
 					channels == 2 ||
 					channels == 4) {
-		blending = 0;
+		fi->blending = 0;
 		icon     = 0;
 		png_set_strip_alpha(l-> png_ptr);
 		warn("Unknown alpha channel coding scheme (%d %d %d %x)", channels, color_type, obd, bpp);
@@ -568,7 +582,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		CIcon( fi-> object)-> set_autoMasking( fi-> object, amNone );
 		CIcon( fi-> object)-> set_maskType( fi-> object, imbpp8 );
 		alpha = PIcon(fi->object)-> mask;
-		if (( bpp & imBPP ) != 24 ) post_blending = true; /* cannot blend 8 bits inplace */
+		if (fi->blending && (( bpp & imBPP ) != 24))
+			post_blending = true; /* cannot blend 8 bits inplace */
 	} else
 		alpha = NULL;
 
@@ -578,6 +593,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		Byte * data = PImage( fi-> object)-> data;
 		Byte * a_data = alpha;
 
+		l->decompressed = true;
 		EVENT_SCANLINES_RESET(fi);
 		data += ( height - 1) * PImage( fi-> object)-> lineSize;
 		if ( a_data)
@@ -588,7 +604,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				Byte * dst = data, * src = l-> line, *a = a_data;
 				png_read_row(l->png_ptr, l-> line, NULL);
 				if ( channels == 4 ) {
-					if ( blending ) {
+					if ( fi->blending ) {
 						for ( i = 0; i < width; i++) {
 							register uint16_t r = *src++;
 							register uint16_t g = *src++;
@@ -631,7 +647,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	/* adjusting icon mask if possible */
 	if ( icon && !alpha && trns_n ) {
 		if ( trns_t) {
-			if ( blending ) {
+			if ( fi->blending ) {
 				PRGBColor p = PIcon( fi-> object)-> palette;
 				int i;
 				/* transparency values per pixel table is present */
