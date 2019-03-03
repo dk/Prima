@@ -1,5 +1,5 @@
-#include <setjmp.h>
 #if defined(WIN32)
+#include <setjmp.h>
 /*
 MINGW defines setjmp as some serious voodoo that PerlProc_setjmp cannot emulate,
 and _setjmp is not equivaluent to setjmp anymore
