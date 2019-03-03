@@ -1049,7 +1049,7 @@ Default: 1200
 
 =head2 GIF codec
 
-For GIF animation see L<Prima::Image::AnimateGIF>.
+For GIF animation see L<Prima::Image::Animate>.
 
 The following load output and save input keys are recognized:
 

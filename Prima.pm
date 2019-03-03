@@ -445,7 +445,7 @@ L<Prima::Const> - predefined toolkit constants
 
 L<Prima::EventHook> - event filtering
 
-L<Prima::Image::AnimateGIF> - animate gif files
+L<Prima::Image::Animate> - animate gif and webp files
 
 L<Prima::IniFile> - support of Windows-like initialization files
 

@@ -1,20 +1,16 @@
-package Prima::Image::AnimateGIF;
+package Prima::Image::Animate;
 
 use strict;
 use warnings;
 use Carp;
 use Prima;
 
-use constant DISPOSE_NOT_SPECIFIED    => 0; # Leave frame, let new frame draw on top
-use constant DISPOSE_KEEP             => 1; # Leave frame, let new frame draw on top
-use constant DISPOSE_CLEAR            => 2; # Clear the frame's area, revealing bg
-use constant DISPOSE_RESTORE_PREVIOUS => 3; # Restore the previous (composited) frame
-
 sub new
 {
 	my $class = shift;
 	my $self = bless {
 		images     => [],
+		model      => 'gif',
 		@_,
 		current    => -1,
 	}, $class;
@@ -44,39 +40,30 @@ sub load
 		loadExtras => 1,
 		loadAll    => 1,
 		iconUnmask => 1,
+		blending   => 1,
 		%args,
 	);
 
 	return unless @i;
 
-	return $class-> new( images => \@i);
+	my $c = Prima::Image->codecs($i[0]-> {extras}-> {codecID}) or return 0;
+	my $model;
+	if ( $c->{name} eq 'GIFLIB') {
+		$model = 'GIF';
+	} elsif ($c->{name} eq 'WebP') {
+		$model = 'WebP';
+	} else {
+		return 0;
+	}
+	$model = 'Prima::Image::Animate::' . $model;
+
+	return $model-> new( images => \@i);
 }
 
 sub add
 {
 	my ( $self, $image) = @_;
 	push @{$self-> {images}}, $image;
-}
-
-sub get_extras
-{
-	my ( $self, $ix) = @_;
-	$ix = $self-> {images}-> [$ix];
-	return unless $ix;
-
-	my $e = $ix-> {extras} || {};
-
-	$e-> {screenHeight}     ||= $ix-> height;
-	$e-> {screenWidth}      ||= $ix-> width;
-	$e-> {$_} ||= 0 for qw(disposalMethod useScreenPalette delayTime left top);
-
-	$e-> {iconic} =
-		$ix-> isa('Prima::Icon')
-		&& $ix-> autoMasking != am::None;
-		# gif doesn't support explicit masks, therefore
-		# when image actually has a mask, autoMaskign is set to am::Index
-
-	return $e;
 }
 
 sub fixup_rect
@@ -93,7 +80,7 @@ sub fixup_rect
 
 sub union_rect
 {
-	my ( $r1, $r2) = @_;
+	my ( $self, $r1, $r2) = @_;
 	return { %$r2 } unless grep { $r1-> {$_} } qw(left bottom right top);
 	return { %$r1 } unless grep { $r2-> {$_} } qw(left bottom right top);
 
@@ -138,6 +125,204 @@ sub reset
 	$self-> {changedRect} = {};
 	$self-> fixup_rect( $e, $ix);
 
+}
+
+sub advance_frame
+{
+	my $self = shift;
+
+	delete @{$self}{qw(image info)};
+	if ( ++$self-> {current} >= @{$self-> {images}}) {
+		# go back to first frame, or stop
+		if ( defined $self-> {loopCount}) {
+		    return 0 if --$self-> {loopCount} <= 0;
+		}
+		$self-> {current} = 0;
+	}
+	$self-> {image} = $self-> {images}-> [$self-> {current}];
+	my $info = $self-> {info} = $self-> get_extras( $self-> {current} );
+	$self-> fixup_rect( $info, $self-> {image});
+
+	# load global extension data
+	if ( $self-> {current} == 0) {
+		unless ( defined $info-> {loopCount}) {
+			$self-> {loopCount} = 1;
+		} elsif ( $info-> {loopCount} == 0) {
+			# loop forever
+			$self-> {loopCount} = undef;
+		} else {
+			$self-> {loopCount} = $info-> {loopCount};
+		}
+	}
+	return 1;
+}
+
+sub next  { die }
+sub icon  { die }
+sub image { die }
+sub draw  { die }
+sub get_extras { die }
+
+sub is_stopped
+{
+	my $self = shift;
+	return $self-> {current} >= @{$self-> {images}};
+}
+
+sub width   { $_[0]-> {canvas} ? $_[0]-> {canvas}-> width  : 0 }
+sub height  { $_[0]-> {canvas} ? $_[0]-> {canvas}-> height : 0 }
+sub size    { $_[0]-> {canvas} ? $_[0]-> {canvas}-> size   : (0,0) }
+sub bgColor { $_[0]-> {bgColor} }
+sub current { $_[0]-> {current} }
+sub total   { scalar @{$_[0]-> {images}} }
+
+sub length
+{
+	my $length = 0;
+	$length += $_-> {delayTime} || 0 for
+		map { $_-> {extras} || {} }
+		@{$_[0]-> {images}};
+	return $length / 1000;
+}
+
+sub loopCount
+{
+	return $_[0]-> {loopCount} unless $#_;
+	$_[0]-> {loopCount} = $_[1];
+}
+
+package Prima::Image::Animate::GIF;
+use base 'Prima::Image::Animate';
+
+use constant DISPOSE_NOT_SPECIFIED    => 0; # Leave frame, let new frame draw on top
+use constant DISPOSE_KEEP             => 1; # Leave frame, let new frame draw on top
+use constant DISPOSE_CLEAR            => 2; # Clear the frame's area, revealing bg
+use constant DISPOSE_RESTORE_PREVIOUS => 3; # Restore the previous (composited) frame
+
+sub get_extras
+{
+	my ( $self, $ix) = @_;
+	$ix = $self-> {images}-> [$ix];
+	return unless $ix;
+
+	my $e = $ix-> {extras} || {};
+
+	$e-> {screenHeight}     ||= $ix-> height;
+	$e-> {screenWidth}      ||= $ix-> width;
+	$e-> {$_} ||= 0 for qw(disposalMethod useScreenPalette delayTime left top);
+
+	# gif doesn't support explicit masks, therefore
+	# when image actually has a mask, autoMaskign is set to am::Index
+	$e-> {iconic} = $ix-> isa('Prima::Icon') && $ix-> autoMasking != am::None;
+
+	return $e;
+}
+
+sub next
+{
+	my $self = shift;
+	my %ret;
+
+	# dispose from the previous frame and calculate the changed rect
+	my $info = $self->{info};
+	my @sz = ( $self-> {screenWidth}, $self-> {screenHeight});
+
+	# dispose from the previous frame and calculate the changed rect
+	if ( $info-> {disposalMethod} == DISPOSE_CLEAR) {
+		$self-> {canvas}-> backColor( 0);
+		$self-> {canvas}-> clear;
+		$self-> {mask}-> backColor(cl::Set);
+		$self-> {mask}-> clear;
+
+		%ret = %{ $self-> {changedRect} };
+		$self-> {changedRect} = {};
+	} elsif ( $info-> {disposalMethod} == DISPOSE_RESTORE_PREVIOUS) {
+		# cut to the previous frame, that we expect to be saved for us
+		if ( $self-> {saveCanvas} && $self-> {saveMask}) {
+			$self-> {canvas} = $self-> {saveCanvas};
+			$self-> {mask}   = $self-> {saveMask};
+		}
+		$self-> {changedRect} = $self-> {saveRect};
+		delete $self-> {saveCanvas};
+		delete $self-> {saveMask};
+		delete $self-> {saveRect};
+		%ret = %{ $info-> {rect} };
+	}
+
+	return unless $self->advance_frame;
+
+	$info = $self->{info};
+	if ( $info-> {disposalMethod} == DISPOSE_RESTORE_PREVIOUS) {
+		my $c  = Prima::DeviceBitmap-> new(
+			width      => $sz[0],
+			height     => $sz[1],
+			type       => dbt::Pixmap,
+		);
+		$c-> put_image( 0, 0, $self-> {canvas});
+		$self-> {saveCanvas} = $self-> {canvas};
+		$self-> {canvas} = $c;
+
+		$c = Prima::DeviceBitmap-> new(
+			width      => $sz[0],
+			height     => $sz[1],
+			type       => dbt::Bitmap,
+		);
+		$c-> put_image( 0, 0, $self-> {mask});
+		$self-> {saveMask} = $self-> {mask};
+		$self-> {mask} = $c;
+
+		$self-> {saveRect} = $self-> {changedRect};
+	}
+
+	$self-> {changedRect} = $self->union_rect( $self-> {changedRect}, $info-> {rect});
+	%ret = %{ $self->union_rect( \%ret, $info-> {rect}) };
+
+	# draw the current frame
+	if ( $info-> {iconic}) {
+		my ( $xor, $and) = $self-> {image}-> split;
+		# combine masks
+		$self-> {mask}-> set(
+			color     => cl::Clear,
+			backColor => cl::Set,
+		);
+		$self-> {mask}-> put_image(
+			$info-> {rect}-> {left},
+			$info-> {rect}-> {bottom},
+			$and,
+			rop::AndPut,
+		);
+	} else {
+		my @is = $self->{image}->size;
+		$self-> {mask}-> color(cl::Clear);
+		$self-> {mask}-> bar(
+			$info-> {rect}-> {left},
+			$info-> {rect}-> {bottom},
+			$info-> {rect}-> {left}   + $is[0],
+			$info-> {rect}-> {bottom} + $is[1],
+		);
+	}
+
+	# put non-transparent image pixels
+	$self-> {canvas}-> put_image(
+		$info-> {rect}-> {left},
+		$info-> {rect}-> {bottom},
+		$self-> {image},
+	);
+
+	$ret{$_} ||= 0 for qw(left bottom right top);
+	$ret{delay} = $info-> {delayTime} / 100;
+
+	return \%ret;
+}
+
+sub reset
+{
+	my $self = shift;
+	$self-> SUPER::reset;
+
+	my $e = $self-> get_extras(0);
+	return unless $e;
+
 	# create canvas and mask
 	$self-> {canvas}  = Prima::DeviceBitmap-> new(
 		width      => $e-> {screenWidth},
@@ -162,140 +347,8 @@ sub reset
 				$e-> {screenPalette} :
 				$self-> {images}-> [0]-> palette;
 		my $i = $e-> {screenBackGroundColor} * 3;
-		$self-> {bgColor} = (
-			($$cm[$i+2] || 0) |
-			(($$cm[$i+1] || 0) << 8) |
-			(($$cm[$i] || 0) << 16)
-		);
+		$self-> {bgColor} = cl::from_rgb(map { $_ || 0 } @$cm[$i..$i+2]);
 	}
-}
-
-sub next
-{
-	my $self = shift;
-
-	my $info = $self-> {info};
-	return unless $info;
-
-	my @sz = ( $self-> {screenWidth}, $self-> {screenHeight});
-	my %ret;
-
-	# dispose from the previous frame and calculate the changed rect
-	if ( $info-> {disposalMethod} == DISPOSE_CLEAR) {
-		$self-> {canvas}-> backColor( 0);
-		$self-> {canvas}-> clear;
-		$self-> {mask}-> backColor(cl::Set);
-		$self-> {mask}-> clear;
-
-		%ret = %{ $self-> {changedRect} };
-		$self-> {changedRect} = {};
-	} elsif ( $info-> {disposalMethod} == DISPOSE_RESTORE_PREVIOUS) {
-		# cut to the previous frame, that we expect to be saved for us
-		if ( $self-> {saveCanvas} && $self-> {saveMask}) {
-			$self-> {canvas} = $self-> {saveCanvas};
-			$self-> {mask}   = $self-> {saveMask};
-		}
-		$self-> {changedRect} = $self-> {saveRect};
-		delete $self-> {saveCanvas};
-		delete $self-> {saveMask};
-		delete $self-> {saveRect};
-		%ret = %{ $info-> {rect} };
-	}
-
-	# advance frame
-	delete @{$self}{qw(image info)};
-	if ( ++$self-> {current} >= @{$self-> {images}}) {
-		# go back to first frame, or stop
-		if ( defined $self-> {loopCount}) {
-		    return if --$self-> {loopCount} <= 0;
-		}
-		$self-> {current} = 0;
-	}
-	$self-> {image} = $self-> {images}-> [$self-> {current}];
-	my $old_info = $info;
-	$info = $self-> {info} = $self-> get_extras( $self-> {current} );
-	$self-> fixup_rect( $info, $self-> {image});
-	my @is = $self-> {image}-> size;
-
-	# load global extension data
-	if ( $self-> {current} == 0) {
-		unless ( defined $info-> {loopCount}) {
-			$self-> {loopCount} = 1;
-		} elsif ( $info-> {loopCount} == 0) {
-			# loop forever
-			$self-> {loopCount} = undef;
-		} else {
-			$self-> {loopCount} = $info-> {loopCount};
-		}
-	}
-
-	# remember the background, if needed, and again update the # rect
-	if ( $info-> {disposalMethod} == DISPOSE_RESTORE_PREVIOUS) {
-		my $c  = Prima::DeviceBitmap-> new(
-			width      => $sz[0],
-			height     => $sz[1],
-			type       => dbt::Pixmap,
-		);
-		$c-> put_image( 0, 0, $self-> {canvas});
-		$self-> {saveCanvas} = $self-> {canvas};
-		$self-> {canvas} = $c;
-
-		$c = Prima::DeviceBitmap-> new(
-			width      => $sz[0],
-			height     => $sz[1],
-			type       => dbt::Bitmap,
-		);
-		$c-> put_image( 0, 0, $self-> {mask});
-		$self-> {saveMask} = $self-> {mask};
-		$self-> {mask} = $c;
-
-		$self-> {saveRect} = $self-> {changedRect};
-	}
-	$self-> {changedRect} = union_rect( $self-> {changedRect}, $info-> {rect});
-	%ret = %{ union_rect( \%ret, $info-> {rect}) };
-
-	# draw the current frame
-	if ( $info-> {iconic}) {
-		my ( $xor, $and) = $self-> {image}-> split;
-		# combine masks
-		$self-> {mask}-> set(
-			color     => cl::Clear,
-			backColor => cl::Set,
-		);
-		$self-> {mask}-> put_image(
-			$info-> {rect}-> {left},
-			$info-> {rect}-> {bottom},
-			$and,
-			rop::AndPut,
-		);
-	} else {
-		$self-> {mask}-> color(cl::Clear);
-		$self-> {mask}-> bar(
-			$info-> {rect}-> {left},
-			$info-> {rect}-> {bottom},
-			$info-> {rect}-> {left}   + $is[0],
-			$info-> {rect}-> {bottom} + $is[1],
-		);
-	}
-
-	# put non-transparent image pixels
-	$self-> {canvas}-> put_image(
-		$info-> {rect}-> {left},
-		$info-> {rect}-> {bottom},
-		$self-> {image},
-	);
-
-	#
-	$ret{delay} = $info-> {delayTime} / 100;
-	$ret{$_} ||= 0 for qw(left bottom right top);
-
-	return \%ret;
-}
-
-sub is_stopped
-{
-	my $self = shift;
-	return $self-> {current} >= @{$self-> {images}};
 }
 
 sub icon
@@ -347,27 +400,119 @@ sub draw
 }
 
 
-sub masks   { ( $_[0]-> {canvas}, $_[0]-> {mask} ) }
-sub width   { $_[0]-> {canvas} ? $_[0]-> {canvas}-> width  : 0 }
-sub height  { $_[0]-> {canvas} ? $_[0]-> {canvas}-> height : 0 }
-sub size    { $_[0]-> {canvas} ? $_[0]-> {canvas}-> size   : (0,0) }
-sub bgColor { $_[0]-> {bgColor} }
-sub current { $_[0]-> {current} }
-sub total   { scalar @{$_[0]-> {images}} }
+package Prima::Image::Animate::WebP;
+use base 'Prima::Image::Animate';
 
-sub length
+sub new
 {
-	my $length = 0;
-	$length += $_-> {delayTime} || 0 for
-		map { $_-> {extras} || {} }
-		@{$_[0]-> {images}};
-	return $length / 100;
+	my ( $class, %opt ) = @_;
+
+	# rop::SrcCopy works only with 8-bit alpha
+	$_->maskType(im::bpp8) for @{ $opt{images} // [] };
+
+	return $class->SUPER::new(%opt);
 }
 
-sub loopCount
+sub get_extras
 {
-	return $_[0]-> {loopCount} unless $#_;
-	$_[0]-> {loopCount} = $_[1];
+	my ( $self, $ix) = @_;
+	$ix = $self-> {images}-> [$ix];
+	return unless $ix;
+
+	my $e = $ix-> {extras} || {};
+
+	$e-> {screenHeight}     ||= $ix-> height;
+	$e-> {screenWidth}      ||= $ix-> width;
+	$e-> {$_} ||= 0 for qw(disposalMethod blendMethod delayTime left top);
+
+	return $e;
+}
+
+sub next
+{
+	my $self = shift;
+	my $info = $self->{info};
+	my %ret;
+
+	# dispose from the previous frame and calculate the changed rect
+	if ( $info-> {disposalMethod} eq 'background') {
+		$self-> {canvas}-> color(cl::Clear);
+		$self-> {canvas}-> bar(
+			$info-> {rect}-> {left},
+			$info-> {rect}-> {bottom},
+			$self->{image}->width  + $info-> {rect}-> {left},
+			$self->{image}->height + $info-> {rect}-> {bottom}
+		);
+		%ret = %{ $info-> {rect} };
+	}
+
+	return unless $self->advance_frame;
+	$info = $self->{info};
+
+	%ret = %{ $self->union_rect( \%ret, $info-> {rect}) };
+
+	# draw the current frame
+	$self-> {canvas}-> put_image(
+		$info-> {rect}-> {left},
+		$info-> {rect}-> {bottom},
+		$self-> {image},
+		(( $info-> {blendMethod} eq 'blend') ? rop::SrcOver : rop::SrcCopy)
+	);
+
+	$ret{$_} ||= 0 for qw(left bottom right top);
+	$ret{delay} = $info-> {delayTime} / 1000;
+
+	return \%ret;
+}
+
+sub reset
+{
+	my $self = shift;
+	$self-> SUPER::reset;
+
+	my $e = $self-> get_extras(0);
+	return unless $e;
+
+	$self-> {canvas}  = Prima::DeviceBitmap-> new(
+		width      => $e-> {screenWidth},
+		height     => $e-> {screenHeight},
+		type       => im::RGB,
+		maskType   => im::bpp8,
+		type       => dbt::Layered,
+		backColor  => 0,
+	);
+	$self-> {canvas}-> clear; # canvas is black and transparent
+
+	if ( defined $e-> {screenBackGroundColor}) {
+		$self-> {bgColor} = cl::from_rgb(reverse cl::to_rgb($e->{screenBackGroundColor}));
+	}
+}
+
+sub icon { shift->{canvas} }
+
+sub image
+{
+	my $self = shift;
+
+	my $i = Prima::Image-> new(
+		width     => $self-> {canvas}-> width,
+		height    => $self-> {canvas}-> height,
+		type      => im::RGB,
+		backColor => $self-> {bgColor} || 0,
+	);
+	$i-> begin_paint;
+	$i-> clear;
+	$i-> put_image( 0, 0, $self-> {canvas}, rop::SrcOver);
+	$i-> end_paint;
+
+	return $i;
+}
+
+sub draw
+{
+	my ( $self, $canvas, $x, $y) = @_;
+
+	$canvas-> put_image( $x, $y, $self-> {canvas}, rop::SrcOver) if $self->{canvas};
 }
 
 1;
@@ -378,16 +523,16 @@ __END__
 
 =head1 NAME
 
-Prima::Image::AnimateGIF - animate gif files
+Prima::Image::Animate - animate gif and webp files
 
 =head1 DESCRIPTION
 
-The module provides high-level access to GIF animation sequences.
+The module provides high-level access to GIF and WebP animation sequences.
 
 =head1 SYNOPSIS
 
-	use Prima qw(Application Image::AnimateGIF);
-	my $x = Prima::Image::AnimateGIF->load($ARGV[0]);
+	use Prima qw(Application Image::Animate);
+	my $x = Prima::Image::Animate->load($ARGV[0]);
 	die $@ unless $x;
 	my ( $X, $Y) = ( 0, 100);
 	my $background = $::application-> get_image( $X, $Y, $x-> size);
@@ -414,7 +559,7 @@ details).
 
 =head2 load $SOURCE, %OPTIONS
 
-Loads GIF animation sequence from file or stream C<$SOURCE>. Options
+Loads GIF or WebP animation sequence from file or stream C<$SOURCE>. Options
 are the same as understood by C<Prima::Image::load>, and are passed
 down to it.
 
@@ -424,7 +569,7 @@ Appends an image frame to the container.
 
 =head2 bgColor
 
-Return the background color specified by the GIF sequence as the preferred
+Return the background color specified by the sequence as the preferred
 background color to use when there is no specific background to superimpose the
 animation to.
 
@@ -463,11 +608,6 @@ Returns total animation length (without repeats) in seconds.
 =head2 loopCount [ INTEGER ]
 
 Sets and returns number of loops left, undef for indefinite.
-
-=head2 masks
-
-Return the AND and XOR masks, that can be used to display the current
-composite frame.
 
 =head2 next
 

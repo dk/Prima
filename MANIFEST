@@ -237,7 +237,7 @@ Prima/Grids.pm
 Prima/Header.pm
 Prima/HelpViewer.fm
 Prima/HelpViewer.pm
-Prima/Image/AnimateGIF.pm
+Prima/Image/Animate.pm
 Prima/Image/gif.pm
 Prima/Image/jpeg.pm
 Prima/Image/tiff.fm
