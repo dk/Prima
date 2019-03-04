@@ -1716,7 +1716,7 @@ sub setup_codecs
 				$DEFINES{EMULATE_X11_CODEC} = 1 unless pkgconfig('x11');
 				$found = 1;
 			} elsif ( $codec eq 'webp') {
-				$found = 1 if pkgconfig('libwebp') && pkgconfig('libwebdemux');
+				$found = 1 if pkgconfig('libwebp') && pkgconfig('libwebpdemux');
 			} elsif ( $codec eq 'png') {
 				$found = 1 if pkgconfig('libpng');
 			} elsif ( $codec eq 'tiff') {
@@ -1759,13 +1759,22 @@ sub setup_codecs
 				@codec_libpath = ();
 			}
 			push( @ACTIVE_CODECS, $codec);
+
+			printlog "yes";
+			if ($codec eq 'webp') {
+				my $lib2 = 'webpdemux';
+				if ( defined find_lib($lib2,join('', @inc), '', @codec_libpath)) {
+					unshift( @LIBS, $lib2) unless $libs{$lib2};
+				} else {
+					printlog ", but $lib2 not found, skipping\n";
+					next;
+				}
+			}
 			# In gcc, order of libs matters. libXpm requires libgdi32, and
 			# has to be mentioned _after_ it to work.
 			unshift( @LIBS, $lib) unless $libs{$lib};
-			printlog "yes";
 			printlog ", in $foundlib" if defined($foundlib) and length($foundlib);
 			printlog "\n";
-			push @LIBS, 'webpdemux' if $codec eq 'webp';
 		} elsif ( $codec eq 'X11') {
 			$DEFINES{EMULATE_X11_CODEC} = 1;
 			push( @ACTIVE_CODECS, $codec);
