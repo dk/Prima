@@ -122,6 +122,7 @@ img/codec_tiff.c
 img/codec_gif.c
 img/codec_X11.c
 img/codec_Xpm.c
+img/codec_webp.c
 img/conv.c
 img/ic_conv.c
 img/img.c
