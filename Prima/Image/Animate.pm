@@ -173,6 +173,7 @@ sub width   { $_[0]-> {canvas} ? $_[0]-> {canvas}-> width  : 0 }
 sub height  { $_[0]-> {canvas} ? $_[0]-> {canvas}-> height : 0 }
 sub size    { $_[0]-> {canvas} ? $_[0]-> {canvas}-> size   : (0,0) }
 sub bgColor { $_[0]-> {bgColor} }
+sub bgAlpha { $_[0]-> {bgAlpha} }
 sub current { $_[0]-> {current} }
 sub total   { scalar @{$_[0]-> {images}} }
 
@@ -323,6 +324,8 @@ sub reset
 	my $e = $self-> get_extras(0);
 	return unless $e;
 
+	$self-> {$_} = $e-> {$_} for qw(screenWidth screenHeight);
+
 	# create canvas and mask
 	$self-> {canvas}  = Prima::DeviceBitmap-> new(
 		width      => $e-> {screenWidth},
@@ -348,6 +351,7 @@ sub reset
 				$self-> {images}-> [0]-> palette;
 		my $i = $e-> {screenBackGroundColor} * 3;
 		$self-> {bgColor} = cl::from_rgb(map { $_ || 0 } @$cm[$i..$i+2]);
+		$self-> {bgAlpha} = 0xff;
 	}
 }
 
@@ -423,7 +427,8 @@ sub get_extras
 
 	$e-> {screenHeight}     ||= $ix-> height;
 	$e-> {screenWidth}      ||= $ix-> width;
-	$e-> {$_} ||= 0 for qw(disposalMethod blendMethod delayTime left top);
+	$e-> {$_} ||= 0 for qw(disposalMethod blendMethod delayTime);
+	$e-> {$_} = 0 for qw(left top);
 
 	return $e;
 }
@@ -473,6 +478,8 @@ sub reset
 	my $e = $self-> get_extras(0);
 	return unless $e;
 
+	($e-> {screenWidth}, $e->{screenHeight}) = $self-> {images}-> [0]->size;
+
 	$self-> {canvas}  = Prima::DeviceBitmap-> new(
 		width      => $e-> {screenWidth},
 		height     => $e-> {screenHeight},
@@ -483,8 +490,9 @@ sub reset
 	);
 	$self-> {canvas}-> clear; # canvas is black and transparent
 
-	if ( defined $e-> {screenBackGroundColor}) {
-		$self-> {bgColor} = cl::from_rgb(reverse cl::to_rgb($e->{screenBackGroundColor}));
+	if ( defined $e-> {background}) {
+		$self-> {bgColor} = cl::from_rgb(cl::to_bgr($e->{background} & 0xffffff));
+		$self-> {bgAlpha} = ($e->{background} >> 24) & 0xff;
 	}
 }
 
