@@ -39,6 +39,7 @@ use vars qw(
 	$LIB_EXT
 	$LIB_PREFIX
 	$LDFLAGS
+	$LDDLFLAGS
 	@LIBS
 	@INCPATH
 	@LIBPATH
@@ -371,6 +372,7 @@ sub setup_environment
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
 		$OPENMP       = '-fopenmp';
 		$OPTIMIZE    .= ' -Wall' if $compiler_type eq 'gcc';
+		$passthru_options{LDDLFLAGS} .= ' -g' if $cmd_options{DEBUG};
 	}
 
 	$DEFFILE    = 'Prima.def';
@@ -1716,7 +1718,7 @@ sub setup_codecs
 				$DEFINES{EMULATE_X11_CODEC} = 1 unless pkgconfig('x11');
 				$found = 1;
 			} elsif ( $codec eq 'webp') {
-				$found = 1 if pkgconfig('libwebp') && pkgconfig('libwebpdemux');
+				$found = 1 if pkgconfig('libwebp') && pkgconfig('libwebpdemux') && pkgconfig('libwebpmux');
 			} elsif ( $codec eq 'png') {
 				$found = 1 if pkgconfig('libpng');
 			} elsif ( $codec eq 'tiff') {
@@ -1762,12 +1764,13 @@ sub setup_codecs
 
 			printlog "yes";
 			if ($codec eq 'webp') {
-				my $lib2 = 'webpdemux';
-				if ( defined find_lib($lib2,join('', @inc), '', @codec_libpath)) {
-					unshift( @LIBS, $lib2) unless $libs{$lib2};
-				} else {
-					printlog ", but $lib2 not found, skipping\n";
-					next;
+				for my $lib2 ('webpdemux', 'webmux') {
+					if ( defined find_lib($lib2,join('', @inc), '', @codec_libpath)) {
+						unshift( @LIBS, $lib2) unless $libs{$lib2};
+					} else {
+						printlog ", but $lib2 not found, skipping\n";
+						next;
+					}
 				}
 			}
 			# In gcc, order of libs matters. libXpm requires libgdi32, and
@@ -2464,6 +2467,7 @@ WriteMakefile(
 	AUTHOR            => 'Dmitry Karasik <dmitry@karasik.eu.org>',
 	PM                => MY::orderedhash->tie(\%ALL_PM_INSTALL),
 	OPTIMIZE          => $OPTIMIZE,
+	LDDLFLAGS         => $passthru_options{LDDLFLAGS},
 	PREREQ_PM         => \%PREREQ,
 	OBJECT            => "@o_files",
 	INC               =>
