@@ -427,8 +427,7 @@ sub get_extras
 
 	$e-> {screenHeight}     ||= $ix-> height;
 	$e-> {screenWidth}      ||= $ix-> width;
-	$e-> {$_} ||= 0 for qw(disposalMethod blendMethod delayTime);
-	$e-> {$_} = 0 for qw(left top);
+	$e-> {$_} ||= 0 for qw(disposalMethod blendMethod delayTime left top);
 
 	return $e;
 }
@@ -477,8 +476,6 @@ sub reset
 
 	my $e = $self-> get_extras(0);
 	return unless $e;
-
-	($e-> {screenWidth}, $e->{screenHeight}) = $self-> {images}-> [0]->size;
 
 	$self-> {canvas}  = Prima::DeviceBitmap-> new(
 		width      => $e-> {screenWidth},

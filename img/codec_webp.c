@@ -31,6 +31,8 @@ static char * loadOutput[] = {
 	"loopCount",
 	"background",
 	"top",
+	"screenWidth",
+	"screenHeight",
 	NULL
 };
 
@@ -202,8 +204,10 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	l-> bg_color      = WebPDemuxGetI(l->dmux, WEBP_FF_BACKGROUND_COLOR);
 
 	if ( fi-> loadExtras) {
-		pset_i( background, l->bg_color);
-		pset_i( loopCount,  l->loop_count);
+		pset_i( screenWidth,  l->canvas_width);
+		pset_i( screenHeight, l->canvas_height);
+		pset_i( background,   l->bg_color);
+		pset_i( loopCount,    l->loop_count);
 	}
 
 	return l;

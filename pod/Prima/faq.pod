@@ -115,6 +115,7 @@ libraries:
    libgif   - GIF images
    libpng   - PNG images
    libtiff  - tiff images
+   libwebp,libwebpdemux,libwebpmux  - WebP images
 
 Strawberry perl and Cygwin come with most of them, so on these installations Prima just
 compiles without any throuble. For other perl builds, use one of C<Prima::codecs::>

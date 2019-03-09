@@ -1140,6 +1140,100 @@ Default: 0
 
 =back
 
+=head2 WebP codec
+
+=head3 Load input
+
+=over
+
+=item background $ARGB_color
+
+Integer constant encoded as ARGB, hints the background to be used
+
+=item blendMethod blend|no_blend|unknown
+
+Signals whether the new frame to be blended over
+the existing animation, or replace it.
+
+=item delayTime $milliseconds
+
+Delay time between frames
+
+=item disposalMethod none|background|unknown
+
+Signals whether the frame, before being replaced, is to be erased by the background
+color or not.
+
+=item hasAlpha BOOLEAN
+
+If set, image contains alpha channel
+
+=item left INTEGER
+
+Frame horizontal offset from the screen
+
+=item loopCount INTEGER
+
+How many times the animation sequence should run, or 0 for forever.
+
+=item screenWidth INTEGER
+
+=item screenHeight INTEGER
+
+=item top INTEGER
+
+Frame vertical offset from the screen
+
+=back
+
+=head3 Save input
+
+WebP requires all images to have same dimensions.
+
+=over
+
+=item background $ARGB_color
+
+Integer constant encoded as ARGB, hints the background to be used
+
+=item compression lossless (default)|lossy|mixed
+
+=item delay $milliseconds
+
+=item filter_strength INTEGER
+
+Setting between 0 and 100, 0 means off.
+
+=item kmax INTEGER
+
+Min distance between key frames. Default is 9 for lossless compression, and 3 for lossy
+
+=item kmin INTEGER
+
+Max distance between key frames. Default is 17 for lossless compression, and 5 for lossy
+
+=item loopCount 0
+
+How many times the animation sequence should run, or 0 for forever.
+
+=item method INTEGER
+
+Compression method vs size, 0 (fast) to 6 (slow)
+
+=item minimize_size BOOLEAN
+
+Minimize output size (off by default)
+
+=item quality INTEGER
+
+Quality factor (0:small..100:big)
+
+=item thread_level BOOLEAN
+
+Use multi-threading if available (off by default)
+
+=back
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.

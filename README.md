@@ -13,7 +13,7 @@ Debian/Ubuntu
 
 For easy setup, run this:
 
-apt-get install libgtk2.0-dev libtext-bidi-perl libgif-dev libjpeg-dev libtiff-dev libxpm-dev
+apt-get install libgtk2.0-dev libtext-bidi-perl libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev 
 
 Graphic libraries
 -----------------
@@ -29,6 +29,7 @@ libraries can be compiled in on all platforms:
    - libgif
    - libtiff
    - libX11  - support for native X11 bitmap files
+   - libwebp,libwebpdemux,libwebpmux
 
 Win32
 -----
@@ -43,6 +44,10 @@ for this purpose:
 
 it should work for all MSVC and GCC compilers and for native,
 cygwin, and mingw/strawberry perl runtimes.
+
+WebP libraries are unavailable for strawberry, get them here:
+
+ http://prima.eu.org/download/webp-win.zip
 
 Fribidi
 -------
