@@ -939,8 +939,8 @@ apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, c
 			if ( pexist( codecID))
 				c = pget_sv( codecID);
 			else if ( self &&
-						hv_exists(( HV*)SvRV((( PAnyObject) self)-> mate),
-										"extras", 6)) {
+				hv_exists(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6)
+			) {
 				SV ** sv = hv_fetch(( HV*)SvRV((( PAnyObject) self)-> mate), "extras", 6, 0);
 				if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV) {
 					HV * profile = ( HV *) SvRV( *sv);
