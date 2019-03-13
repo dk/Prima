@@ -34,11 +34,13 @@ my $g = $::application-> get_image( $X, $Y, $x-> size);
 $::application-> begin_paint;
 
 my $break;
+my $with_background = ($ARGV[1] // '') eq '-bg';
 
 $SIG{INT} = sub { $break++ };
 while ( my $info = $x-> next) {
 	my $c = $g-> dup;
 	$c-> begin_paint;
+	$x-> draw_background( $c, 0, 0) if $with_background;
 	$x-> draw( $c, 0, 0);
 
 	$::application-> clipRect(

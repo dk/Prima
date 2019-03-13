@@ -107,7 +107,7 @@ sub reset
 	delete @{$self}{qw(canvas bgColor saveCanvas
 		saveMask image info
 		screenWidth screenHeight
-		loopCount changedRect
+		loopCount changedRect cache
 		)};
 
 	my $i = $self-> {images};
@@ -162,6 +162,30 @@ sub icon  { die }
 sub image { die }
 sub draw  { die }
 sub get_extras { die }
+
+sub draw_background
+{
+	my ( $self, $canvas, $x, $y) = @_;
+	return 0 unless $self-> {canvas};
+        my $a = $self->bgAlpha // 0xff;
+        return 0 if $a == 0 || !defined $self->bgColor;
+        if ( $a == 0xff ) {
+                my $c = $canvas->color;
+                $canvas->color($self->bgColor);
+                $canvas->bar($x, $y, $x + $self->{screenWidth}, $y + $self->{screenHeight});
+                $canvas->color($c);
+        } else {
+                my $px = $self->{cache}->{bgpixel} //= Prima::Icon->new(
+                        size     => [1,1],
+                        type     => im::RGB,
+                        maskType => im::bpp8,
+                        data     => join('', map { chr } cl::to_bgr($self->bgColor)),
+                        mask     => chr($a),
+                );
+                $canvas->stretch_image( $x, $y, $self->{screenWidth}, $self->{screenHeight}, $px, rop::SrcOver);
+        }
+        return 1;
+}
 
 sub is_stopped
 {
@@ -412,7 +436,9 @@ sub new
 	my ( $class, %opt ) = @_;
 
 	# rop::SrcCopy works only with 8-bit alpha
-	$_->maskType(im::bpp8) for @{ $opt{images} // [] };
+	for (@{ $opt{images} // [] }) {
+		$_->maskType(im::bpp8) if $_->isa('Prima::Icon');
+	}
 
 	return $class->SUPER::new(%opt);
 }
@@ -493,30 +519,12 @@ sub reset
 	}
 }
 
-sub icon { shift->{canvas} }
-
-sub image
-{
-	my $self = shift;
-
-	my $i = Prima::Image-> new(
-		width     => $self-> {canvas}-> width,
-		height    => $self-> {canvas}-> height,
-		type      => im::RGB,
-		backColor => $self-> {bgColor} || 0,
-	);
-	$i-> begin_paint;
-	$i-> clear;
-	$i-> put_image( 0, 0, $self-> {canvas}, rop::SrcOver);
-	$i-> end_paint;
-
-	return $i;
-}
+sub icon  { shift->{canvas}->icon }
+sub image { shift->{canvas}->image }
 
 sub draw
 {
 	my ( $self, $canvas, $x, $y) = @_;
-
 	$canvas-> put_image( $x, $y, $self-> {canvas}, rop::SrcOver) if $self->{canvas};
 }
 
@@ -540,12 +548,14 @@ The module provides high-level access to GIF and WebP animation sequences.
 	my $x = Prima::Image::Animate->load($ARGV[0]);
 	die $@ unless $x;
 	my ( $X, $Y) = ( 0, 100);
+        my $want_background = 1; # 0 for eventual transparency
 	my $background = $::application-> get_image( $X, $Y, $x-> size);
 	$::application-> begin_paint;
 
 	while ( my $info = $x-> next) {
 		my $frame = $background-> dup;
 		$frame-> begin_paint;
+		$x-> draw_background( $frame, 0, 0) if $want_background;
 		$x-> draw( $frame, 0, 0);
 		$::application-> put_image( $X, $Y, $frame);
 
@@ -585,6 +595,11 @@ Return index of the current frame
 =head2 draw $CANVAS, $X, $Y
 
 Draws the current composite frame on C<$CANVAS> at the given coordinates.
+
+=head2 draw_background $CANVAS, $X, $Y
+
+Fills the background on C<$CANVAS> at the given coordinates if file provides that.
+Returns whether the canvas was tainted or not.
 
 =head2 height
 
