@@ -1188,7 +1188,16 @@ Frame vertical offset from the screen
 
 =head3 Save input
 
-WebP requires all images to have same dimensions.
+WebP requires all images to have same dimensions.  Also, saving the webp
+loading result might fail because loaded frames might only contains parts to be
+superimpose on each other, while saving requires always full frames. To convert
+webp loaded frames to something that case be saved later more-or-less
+identically, use C<Prima::Image::webp::animation_to_frames> convertor:
+
+   use Prima qw(Image::webp);
+   my @i = Prima::Icon->load('source.webp', loadAll => 1, loadExtras => 1) or die $@;
+   @i = Prima::Image::webp::animation_to_frames(@i);
+   die $@ if @i != Prima::Icon->save('target.webp', images => \@i);
 
 =over
 
