@@ -4,8 +4,14 @@
 /*                               */
 /*********************************/
 
+#include <sys/param.h>
 #include "unix/guts.h"
 #include "img.h"
+
+#if !(defined(__FreeBSD__ ) && PERL_REVISION == 5 && PERL_VERSION < 22)
+/* Observed hangs on 2 processors with DBUS session running */
+#define SAFE_DBUS
+#endif
 
 #ifdef WITH_GTK
 
@@ -19,10 +25,6 @@
 #include <gdk/gdkx.h>
 #endif
 #include <gtk/gtk.h>
-
-#ifndef G_APPLICATION_NON_UNIQUE
-#define G_APPLICATION_NON_UNIQUE 0
-#endif
 
 static int           gtk_initialized        = 0;
 static GApplication* gtk_app                = NULL;
@@ -97,8 +99,10 @@ my_gdk_display_open_default (void)
 }
 #endif
 
+#ifdef SAFE_DBUS
 /* GIO wants that callback, even empty */
 static void gtk_application_activate (GApplication *app) {}
+#endif
 
 Display*
 prima_gtk_init(void)
@@ -156,13 +160,15 @@ prima_gtk_init(void)
 		ret = gdk_x11_display_get_xdisplay(display);
 #endif
 	}
-  
+
+#ifdef SAFE_DBUS
 	gtk_app = g_application_new ("org.prima", G_APPLICATION_NON_UNIQUE);
 	g_signal_connect (gtk_app, "activate", G_CALLBACK (gtk_application_activate), NULL);
 	if ( !g_application_register (gtk_app, NULL, NULL)) {
   		g_object_unref (gtk_app);
 		gtk_app = NULL;
 	}
+#endif
 
 	settings  = gtk_settings_get_default();
 	stdcolors = prima_standard_colors();
@@ -568,7 +574,7 @@ prima_gtk_openfile( char * params)
 Bool
 prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen)
 {
-#if GTK_MAJOR_VERSION > 2 || (GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 34)
+#if defined(SAFE_DBUS) && (GTK_MAJOR_VERSION > 2 || (GTK_MAJOR_VERSION == 2 && GTK_MINOR_VERSION >= 24))
 	DEFXX;
 	int              i, found_png;
 	PList            codecs;
