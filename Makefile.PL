@@ -56,6 +56,7 @@ use vars qw(
 	$OPENMP
 	%ALL_PM_INSTALL
 	%ALL_MAN_INSTALL
+	%MODVERSIONS
 );
 
 use vars qw(
@@ -661,7 +662,7 @@ sub compile_and_run
 
 	null_output;
 	my $cc = cc_command_line( $tmpsrc, $tmpo, $tmpexe, 0);
-	$cc =~ s/\s-s(hared)?\b// if $compiler_type eq 'gcc';
+	$cc =~ s/\s\-(s(hared)?|mdll)\b//g if $compiler_type eq 'gcc';
 	print STDERR "$cc\n";
 	my $rc = system($cc);
 	restore_output;
@@ -1227,6 +1228,7 @@ sub pkgconfig
 
 	my $modversion  = `pkg-config --modversion $package`;
 	chomp $modversion;
+	$MODVERSIONS{$package} = $modversion;
 	printlog "$modversion\n";
 
 	my %h;
@@ -1705,6 +1707,7 @@ sub setup_codecs
 
 	my @codec_libpath = $Config{installsitearch};
 	my @warn_codecs;
+	my $webp_version;
 	for my $cx ( @codecs) {
 		my @inc;
 		my $foundlib;
@@ -1719,7 +1722,11 @@ sub setup_codecs
 				$DEFINES{EMULATE_X11_CODEC} = 1 unless pkgconfig('x11');
 				$found = 1;
 			} elsif ( $codec eq 'webp') {
-				$found = 1 if pkgconfig('libwebp') && pkgconfig('libwebpdemux') && pkgconfig('libwebpmux');
+				if (pkgconfig('libwebp') && pkgconfig('libwebpdemux') && pkgconfig('libwebpmux')) {
+					$found = 1;
+					$webp_version = $1 * 0x10000 + $2 * 0x100 + $3
+						if $MODVERSIONS{libwebp} =~ /^(\d+).(\d+).(\d+)/;
+				}
 			} elsif ( $codec eq 'png') {
 				$found = 1 if pkgconfig('libpng');
 			} elsif ( $codec eq 'tiff') {
@@ -1798,7 +1805,7 @@ sub setup_codecs
 
 	# check supported versions
 	if ( grep {/webp/} @ACTIVE_CODECS) {
-		my $webp_version = compile_and_run(<<'VER');
+		$webp_version //= compile_and_run(<<'VER');
 #include <stdio.h>
 #include <webp/decode.h>
 int main() {
