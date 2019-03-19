@@ -661,6 +661,7 @@ sub compile_and_run
 
 	null_output;
 	my $cc = cc_command_line( $tmpsrc, $tmpo, $tmpexe, 0);
+	$cc =~ s/\s-s(hared)?\b// if $compiler_type eq 'gcc';
 	print STDERR "$cc\n";
 	my $rc = system($cc);
 	restore_output;
@@ -1791,6 +1792,28 @@ sub setup_codecs
 			$PASSIVE_CODECS{$fn} = 1;
 			push @warn_codecs, $codec;
 			printlog "no\n";
+		}
+	}
+
+
+	# check supported versions
+	if ( grep {/webp/} @ACTIVE_CODECS) {
+		my $webp_version = compile_and_run(<<'VER');
+#include <stdio.h>
+#include <webp/decode.h>
+int main() {
+	printf("%d\n", WebPGetDecoderVersion());
+	return 0;
+}
+VER
+		if (( $webp_version // 0) < 1537 ) { # 0.6.1
+			printlog "** Warning: webp version ".
+				((defined($webp_version) ?
+					"is too low, 0.6.1 at least is needed" :
+					"cannot be determined")).
+				", skipping\n";
+			@ACTIVE_CODECS = grep { !/webp/ } @ACTIVE_CODECS;
+			$PASSIVE_CODECS{'img/codec_webp.c'} = 1;
 		}
 	}
 
