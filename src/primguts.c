@@ -1261,12 +1261,36 @@ register_constants( void)
 XS( Object_alive_FROMPERL);
 XS( Component_event_hook_FROMPERL);
 
+/* This stuff is not part of the API! Yes, I have been warned. */
+#ifndef PERL_VERSION_DECIMAL
+#  define PERL_VERSION_DECIMAL(r,v,s) (r*1000000 + v*1000 + s)
+#endif
+#ifndef PERL_DECIMAL_VERSION
+#  define PERL_DECIMAL_VERSION \
+	PERL_VERSION_DECIMAL(PERL_REVISION,PERL_VERSION,PERL_SUBVERSION)
+#endif
+#ifndef PERL_VERSION_GE
+#  define PERL_VERSION_GE(r,v,s) \
+	(PERL_DECIMAL_VERSION >= PERL_VERSION_DECIMAL(r,v,s))
+#endif
+#ifndef PERL_VERSION_LE
+#  define PERL_VERSION_LE(r,v,s) \
+	(PERL_DECIMAL_VERSION <= PERL_VERSION_DECIMAL(r,v,s))
+#endif
+
+
 XS( boot_Prima)
 {
 	dXSARGS;
 	(void)items;
 
+#if PERL_VERSION_LE(5, 21, 5)
 	XS_VERSION_BOOTCHECK;
+#  ifdef XS_APIVERSION_BOOTCHECK
+	XS_APIVERSION_BOOTCHECK;
+#  endif
+#endif
+
 
 #define TYPECHECK(s1,s2) \
 if (sizeof(s1) != (s2)) { \
@@ -1327,8 +1351,15 @@ if (sizeof(s1) != (s2)) { \
 	register_Printer_Class();
 	register_Region_Class();
 
-	ST(0) = &PL_sv_yes;
-	XSRETURN(1);
+#if PERL_VERSION_LE(5, 21, 5)
+#  if PERL_VERSION_GE(5, 9, 0)
+	if (PL_unitcheckav)
+		call_list(PL_scopestack_ix, PL_unitcheckav);
+#  endif
+	XSRETURN_YES;
+#else
+	Perl_xs_boot_epilog(aTHX_ ax);
+#endif
 }
 
 typedef struct _RemapHashNode_ {
