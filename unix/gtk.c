@@ -160,6 +160,10 @@ prima_gtk_init(void)
 		ret = gdk_x11_display_get_xdisplay(display);
 #endif
 	}
+#if PERL_REVISION == 5 && PERL_VERSION >= 22
+/* https://rt.perl.org/Ticket/Display.html?id=133945 */
+	sync_locale();
+#endif
 
 #ifdef SAFE_DBUS
 	gtk_app = g_application_new ("org.prima", G_APPLICATION_NON_UNIQUE);
