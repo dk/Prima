@@ -165,7 +165,7 @@ prima_gtk_init(void)
 	sync_locale();
 #endif
 
-#ifdef SAFE_DBUS
+#if defined(SAFE_DBUS) && (GLIB_MAJOR_VERSION > 2 || (GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION >= 34))
 	gtk_app = g_application_new ("org.prima", G_APPLICATION_NON_UNIQUE);
 	g_signal_connect (gtk_app, "activate", G_CALLBACK (gtk_application_activate), NULL);
 	if ( !g_application_register (gtk_app, NULL, NULL)) {
