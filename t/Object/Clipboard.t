@@ -56,6 +56,11 @@ is( $i-> height, 32, "image height ok" );
 $i-> destroy if $i;
 $c->close;
 
+SKIP: {
+if ( $^O =~ /win32/i) {
+	my $info = $::application->get_system_info;
+	skip "XP does bad things to me", 3 if $info->{release} < 6;
+}
 ok( $c-> register_format("Mumbo-Jumbo"), "register user-defined format");
 %rc = map { $_ => 1 } $c-> get_registered_formats;
 try { $c-> store( "Mumbo-Jumbo", pack( 'C*', 0,1,2,3,4,5,6,7,8,9)) } 3;
@@ -66,6 +71,7 @@ ok(exists $rc{"Mumbo-Jumbo"} && exists $fm{"Mumbo-Jumbo"} && defined $res, "exis
 is( $res, pack( 'C*', 0,1,2,3,4,5,6,7,8,9), "user-defined format data ok");
 $c-> deregister_format("Mumbo-Jumbo");
 $c->close;
+}
 
 $c-> clear;
 try { $c->open } 1;
