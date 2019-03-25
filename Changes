@@ -1,4 +1,7 @@
 Revision history for Perl module Prima
+1.55 2019-03-25
+ - Add WebP images support
+
 1.54 2019-02-09
  - Support screen grabbing on Mac and Gnome/Wayland
 
