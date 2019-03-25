@@ -54,7 +54,7 @@ if ( $build) {
 	open F, "Prima.cache.tex" or die "Cannot open Prima.cache.tex:$!\n";
 	push @tex, '';
 	for ( <F>) {
-		push @tex, '' if m/^\\documentclass{article}/;
+		push @tex, '' if m/^\\documentclass\{article\}/;
 		$tex[-1] .= $_;
 	}
 	close F;
@@ -184,9 +184,9 @@ close F;
 open W, "> Prima.tex" or die "Cannot open Prima.tex:$!\n";
 print W $intro;
 for ( $i = 0; $i < @tex; $i++) {
-	$tex[$i] =~ s/^.*\\begin{document}//s;
+	$tex[$i] =~ s/^.*\\begin\{document\}//s;
 	$tex[$i] =~ s/\\tableofcontents//s;
-	$tex[$i] =~ s/\\end{document}.*//s if $i < $#tex;
+	$tex[$i] =~ s/\\end\{document\}.*//s if $i < $#tex;
 	$tex[$i] =~ s/\\item \d/\\item/gs;
 
 	# $tex[$i] =~ s/ elsewhere in this document//gs;
