@@ -27,6 +27,7 @@ $build = 1 unless -f 'Prima.cache.tex';
 
 my @tex;
 my @bs;
+my @header;
 
 if ( $build) {
 	open F, "$path/Prima.pm" or die "Cannot open $path/Prima.pm:$!\n";
@@ -81,6 +82,13 @@ sub Link
 	}
 }
 
+sub a1z26enc
+{
+	my $c = ord shift;
+	$c =~ tr/ABCDEFGHIO/1234567890/;
+	return "\$\\u$c\$";
+}
+
 if ( $build) {
 	my $chapter;
 	for ( @bs) {
@@ -104,10 +112,11 @@ if ( $build) {
 	FOUND:
 
 		open W, $fn or die "Cannot open $fn:$!\n";
+		binmode W, ":utf8";
 		my @ctx;
 		my $cut;
 		my $cow = 1;
-		for ( <W>) {
+		while (defined($_ = <W>)) {
 			if ( m/^=for\s*podview\s*<\s*img\s*src=\"?([^\"\s]+)\"?\s*(cut\s*=\s*1)?\s*>/) {
 				my ( $gif, $eps, $do_cut) = ( $1, $1, $2);
 				$eps =~ s/\.\.\///g;
@@ -130,12 +139,23 @@ if ( $build) {
 				if ( -f $eps) {
 					$cow = 1;
 					$cut = 1 if $do_cut;
-					push @ctx, "=for latex \n\\includegraphics[keepaspectratio]{$eps}\n\n";
+					push @ctx, "=for latex \n\\includegraphics[scale=0.5]{$eps}\n\n";
 				} else {
 					warn "** error creating $eps\n";
 				}
 			} elsif ( m/^=for\s*podview.*\/cut/) {
 				$cut = 0;
+			} elsif ( m/^=(begin|end)\s+latex-makedoc/) {
+				# skip
+			} elsif ( m/^=(for\s+latex-makedoc\s+cut)/) {
+				$cut = !$cut;
+				$cow = 1;
+			} elsif ( m/^=for\s+latex-makedoc\s+header/) {
+				while (defined($_=<W>)) {
+					chomp;
+					push @header, $_;
+					last unless length;
+				}
 			}
 
 			s/L<([^\>]+)>/Link($1)/ge;
@@ -179,6 +199,8 @@ my $i;
 local $/;
 open F, "intro.tex" or die "Cannot open intro.tex:$!\n";
 my $intro = <F>;
+my $header = join("\n", @header);
+$intro =~ s/%%header/$header/m;
 close F;
 
 open W, "> Prima.tex" or die "Cannot open Prima.tex:$!\n";

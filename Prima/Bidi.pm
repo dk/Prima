@@ -438,11 +438,41 @@ Prima::Bidi - helper routines for bi-directional text input and output
 
 =encoding utf-8
 
+=for latex-makedoc header
+\usepackage{amsmath,amssymb}
+\DeclareFontFamily{U}{rcjhbltx}{}
+\DeclareFontShape{U}{rcjhbltx}{m}{n}{<->rcjhbltx}{}
+\DeclareSymbolFont{hebrewletters}{U}{rcjhbltx}{m}{n}
+\DeclareMathSymbol{\alef}{\mathord}{hebrewletters}{39}
+\DeclareMathSymbol{\pe}{\mathord}{hebrewletters}{112}
+\DeclareMathSymbol{\samekh}{\mathord}{hebrewletters}{115}
+
+=begin latex-makedoc
+
+=begin latex
+
+\begin{tt}
+~ ~\\
+\hspace*{1.5em}use Prima::Bidi qw(:enable is\_bidi);\\
+\hspace*{1.5em}\$bidi\_text = "'$\alef\pe\samekh123$'";\\
+\hspace*{1.5em}say Prima::Bidi::visual( \$bidi\_text ) if is\_bidi(\$bidi\_text);\\
+ \\
+\hspace*{1.5em}'123$\samekh\pe\alef$'\\
+\end{tt}
+
+=end latex
+
+=end latex-makedoc
+
+=for latex-makedoc cut
+
    use Prima::Bidi qw(:enable is_bidi);
    $bidi_text = "'אפס123'";
    say Prima::Bidi::visual( $bidi_text ) if is_bidi($bidi_text);
 
    '123ספא'
+
+=for latex-makedoc cut
 
 or same, for classes
 
