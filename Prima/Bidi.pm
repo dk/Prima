@@ -610,7 +610,7 @@ C<< $SUB->($offset, $length, $selected) >>, where each call contains 2 integers 
 chunk offset and length, and a boolean flag whether the chunk is selected or
 not.
 
-Can be also used on a result of C<bidi_selection_walk>, in which case
+Can be also used on a result of C<bidi_selection_diff>, in which case
 C<$selected> flag is irrelevant.
 
 =item bidi_visual $TEXT, $RTL, $FLAGS
