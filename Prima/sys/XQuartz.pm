@@ -19,7 +19,7 @@ sub get_fullscreen_image
 	goto FALLBACK unless $menubar;
 
 	my $fullscreen = $self->get_image(0,0,$self->size);
-	$fullscreen->scaling(ist::BoxY);
+	$fullscreen->scaling(ist::None);
 	$fullscreen->height( $real_screen_height );
 	$fullscreen->put_image( 0, $self-> height, $menubar );
 	return $fullscreen;
