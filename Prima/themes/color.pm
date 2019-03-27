@@ -49,17 +49,14 @@ sub merger
 		exists($strong_classes{$class}) ? %strong_selection : %weak_selection);
 	$class{hiliteBackColor} = $class{disabledBackColor} = $class{backColor}
 		if $transparent_classes{$class};
-	my ( $r, $g, $b) = (
-		( $mask >> 16) & 0xFF,
-		( $mask >> 8) & 0xFF,
-		$mask & 0xFF,
-	);
+	my ( $r, $g, $b) = cl::to_rgb($mask);
 	for ( keys %class) {
 		my ( $weak_color, $strong_color) = (( $class{$_} & 0xFF00) >> 8, $class{$_} & 0xFF);
-		$class{$_} =
-			(( $r ? $strong_color : $weak_color) << 16) |
-			(( $g ? $strong_color : $weak_color) << 8) |
-			( $b ? $strong_color : $weak_color);
+		$class{$_} = cl::from_rgb(
+			( $r ? $strong_color : $weak_color),
+			( $g ? $strong_color : $weak_color),
+			( $b ? $strong_color : $weak_color)
+		);
 	}
 	Prima::Themes::merger( $object, $profile, $default, \%class);
 }

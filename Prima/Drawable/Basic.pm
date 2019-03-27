@@ -191,7 +191,7 @@ sub prelight_color
 		$coeff = 1/$coeff;
 	}
 	$coeff = ($coeff - 1) * 256;
-	my @channels = map { $_ & 0xff } ($color >> 16), ($color >> 8), $color;
+	my @channels = map { $_ & 0xff } cl::to_rgb($color);
 	for (@channels) {
 		my $amp = ( 256 - $_ ) / 8;
 		$amp -= $amp if $coeff < 0;
@@ -199,7 +199,7 @@ sub prelight_color
 		$_ = 255 if $_ > 255;
 		$_ = 0   if $_ < 0;
 	}
-	return ( $channels[0] << 16 ) | ( $channels[1] << 8 ) | $channels[2];
+	return cl::from_rgb(@channels);
 }
 
 sub text_split_lines

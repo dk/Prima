@@ -207,10 +207,7 @@ sub Day_Paint
 	my @zs = ( $self-> {X}, $self-> {Y}, $self-> {CX1}, $self-> {CY});
 	my $i;
 	my $c = $canvas-> color;
-	my $b = $canvas-> backColor;
-	$canvas-> color( int((($b & 0xff0000)>>16)*0.8)<<16 |
-                  int((($b & 0xff00)>>8)*0.8)<<8 |
-                  int((($b & 0xff))*0.8));
+	$canvas-> color( $self-> prelight_color($canvas-> backColor));
 	$canvas-> bar( 2, $sz[1] - $zs[1] - 3, $sz[0] - 3, $sz[1] - 3);
 	$canvas-> color($c);
 	$canvas-> clipRect( 2, 2, $sz[0] - 3, $sz[1] - 3);

@@ -91,17 +91,6 @@ sub rgb2hsv
 	return $h, $s, $v;
 }
 
-sub rgb2value
-{
-	return $_[2]|($_[1] << 8)|($_[0] << 16);
-}
-
-sub value2rgb
-{
-	my $c = $_[0];
-	return ( $c>>16) & 0xFF, ($c>>8) & 0xFF, $c & 0xFF;
-}
-
 sub xy2hs
 {
 	my ( $x, $y, $c) = @_;
@@ -236,7 +225,7 @@ sub init
 
 	my $c = $self-> {value} = $profile{value};
 	$self-> {quality} = 0;
-	my ( $r, $g, $b) = value2rgb( $c);
+	my ( $r, $g, $b) = cl::to_rgb( $c);
 	my ( $h, $s, $v) = rgb2hsv( $r, $g, $b);
 	$s *= 255;
 	$v *= 255;
@@ -422,11 +411,11 @@ sub RGB_Change
 	return if $self-> {setTransaction};
 	$self-> {setTransaction} = 1;
 	$self-> {RGBPin} = $pin;
-	my ( $r, $g, $b) = value2rgb( $self-> {value});
+	my ( $r, $g, $b) = cl::to_rgb( $self-> {value});
 	$r = $self-> {R}-> value if $pin == $self-> {R};
 	$g = $self-> {G}-> value if $pin == $self-> {G};
 	$b = $self-> {B}-> value if $pin == $self-> {B};
-	$self-> value( rgb2value( $r, $g, $b));
+	$self-> value( cl::from_rgb( $r, $g, $b));
 	undef $self-> {RGBPin};
 	undef $self-> {setTransaction};
 }
@@ -441,7 +430,7 @@ sub HSV_Change
 	$h = $self-> {H}-> value      ;
 	$s = $self-> {S}-> value / 255;
 	$v = $self-> {V}-> value / 255;
-	$self-> value( rgb2value( hsv2rgb( $h, $s, $v)));
+	$self-> value( cl::from_rgb( hsv2rgb( $h, $s, $v)));
 	undef $self-> {HSVPin};
 	undef $self-> {setTransaction};
 }
@@ -506,7 +495,7 @@ sub Wheel_MouseMove
 	$owner-> {HSVPin} = Lum|Hue|Sat;
 	$owner-> {H}-> value( int( $h));
 	$owner-> {S}-> value( int( $s * 255));
-	$owner-> value( rgb2value( hsv2rgb( int($h), $s, $owner-> {V}-> value/255)));
+	$owner-> value( cl::from_rgb( hsv2rgb( int($h), $s, $owner-> {V}-> value/255)));
 	$owner-> {HSVPin} = undef;
 	$owner-> {setTransaction} = undef;
 }
@@ -539,7 +528,7 @@ sub Roller_Paint
 
 	for $i (0..31) {
 		( $r, $g, $b) = hsv2rgb( $h, $s, $i / 31);
-		$canvas-> color( rgb2value( $r, $g, $b));
+		$canvas-> color( cl::from_rgb( $r, $g, $b));
 		$canvas-> bar( $step, $step + $i * $d, $size[0] - $step, $step + ($i + 1) * $d);
 	}
 
@@ -567,7 +556,7 @@ sub Roller_Repaint
 			( $r, $g, $b) = hsv2rgb( $h, $s, $i / 31);
 			push ( @pal, $b, $g, $r);
 		}
-		( $r, $g, $b) = value2rgb( $owner-> {value});
+		( $r, $g, $b) = cl::to_rgb( $owner-> {value});
 		push ( @pal, $b, $g, $r);
 
 		$roller-> {paintPoll} = 1;
@@ -596,7 +585,7 @@ sub Roller_MouseMove
 	$owner-> {setTransaction} = 1;
 	$owner-> {HSVPin} = Hue|Sat|Wheel|Roller;
 	my $step = 8 * $owner->{scaling};
-	$owner-> value( rgb2value( hsv2rgb(
+	$owner-> value( cl::from_rgb( hsv2rgb(
 		$owner-> {H}-> value, $owner-> {S}-> value/255,
 		($y - $step) / ( $self-> height - $step * 2))));
 	$owner-> {HSVPin} = undef;
@@ -631,7 +620,7 @@ sub set_value
 	$self-> {setTransaction} = 1;
 	my $rgb = $self-> {RGBPin} || 0;
 	my $hsv = $self-> {HSVPin} || 0;
-	my ( $r, $g, $b) = value2rgb( $value);
+	my ( $r, $g, $b) = cl::to_rgb( $value);
 	my ( $h, $s, $v) = rgb2hsv( $r, $g, $b);
 	$s = int( $s*255);
 	$v = int( $v*255);
@@ -1014,15 +1003,6 @@ and blue components.
 
 Converts color from RGB to HSV format and returns three numerical values, hue, saturation,
 and luminosity components.
-
-=item rgb2value RED, GREEN, BLUE
-
-Combines separate channels into single 24-bit RGB value and returns the result.
-
-=item value2rgb COLOR
-
-Splits 24-bit RGB value into three channels, red, green, and blue and returns
-three integer values.
 
 =item xy2hs X, Y, RADIUS
 

@@ -115,8 +115,8 @@ sub calculate_single
 	$offset //= 0;
 	$start_color = $self-> map_color( $start_color);
 	$end_color   = $self-> map_color( $end_color);
-	my @start = map { $_ & 0xff } ($start_color >> 16), ($start_color >> 8), $start_color;
-	my @end   = map { $_ & 0xff } ($end_color   >> 16), ($end_color   >> 8), $end_color;
+	my @start = cl::to_rgb($start_color);
+	my @end   = cl::to_rgb($end_color);
 	my @color = @start;
 	return $start_color, 1 if $breadth == 1;
 

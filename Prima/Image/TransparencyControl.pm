@@ -144,7 +144,7 @@ sub Panel_MouseDown
 	my $pal = $owner-> {image}-> palette;
 	my $i;
 	my $c = $owner-> {imageColors};
-	my ( $b, $g, $r) = ( $pix & 0xff, ( $pix >> 8) & 0xff, ( $pix >> 16) & 0xff);
+	my ( $r, $g, $b) = cl::to_rgb($pix);
 	for ( $i = 0; $i < $c; $i++) {
 		last if $pal->[ $i * 3 + 0] == $b &&
 				$pal->[ $i * 3 + 1] == $g &&

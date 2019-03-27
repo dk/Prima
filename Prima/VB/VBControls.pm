@@ -183,14 +183,11 @@ sub on_drawitem
 	my $ena = $me-> {check}-> [$index];
 	unless ( defined $me-> {hBenchColor}) {
 		my ( $i1, $i2) = ( $me-> map_color( $me-> hiliteBackColor), $me-> map_color( $me-> hiliteColor));
-		my ( $r1, $g1, $b1, $r2, $g2, $b2) = (
-			( $i1 >> 16) & 0xFF, ( $i1 >> 8) & 0xFF, $i1 & 0xFF,
-			( $i2 >> 16) & 0xFF, ( $i2 >> 8) & 0xFF, $i2 & 0xFF,
-		);
+		my ( $r1, $g1, $b1, $r2, $g2, $b2) = (cl::to_rgb($i1), cl::to_rgb($i2));
 		$r1 = int(( $r1 + $r2) / 2);
 		$g1 = int(( $g1 + $g2) / 2);
 		$b1 = int(( $b1 + $b2) / 2);
-		$me-> {hBenchColor} = $b1 | ( $g1 << 8) | ( $r1 << 16);
+		$me-> {hBenchColor} = cl::from_rgb( $r1, $g1, $b1);
 		$me-> {hBenchColor} = $i1 if $me-> {hBenchColor} == $i2;
 	}
 	my ( $c, $bc);
