@@ -66,6 +66,7 @@ use vars qw(
 	$Win64
 	$unix
 	$cygwin
+	$clang
 	$mingw
 	$platform
 	$flavor
@@ -334,6 +335,7 @@ sub setup_environment
 	} else {
 		$compiler_type = $Config{ccname};
 	}
+	$clang = $Config{cc} =~ /\bclang/;
 
 	if ( $Win32 and not $cygwin ) {
 		$SCRIPT_EXT = '.bat';
@@ -371,8 +373,9 @@ sub setup_environment
 		$LDOUTFLAG    = '-o ';
 		$LD_LIB_EXT   = '';
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
-		$OPENMP       = '-fopenmp';
+		$OPENMP       = '-fopenmp' . ( $clang ? '=libomp' : '');
 		$OPTIMIZE    .= ' -Wall' if $compiler_type eq 'gcc';
+		$passthru_options{LDDLFLAGS} .= ' -g' if $cmd_options{DEBUG};
 		$passthru_options{LDDLFLAGS} .= ' -g' if $cmd_options{DEBUG};
 	}
 
@@ -871,7 +874,7 @@ EOF
 
 sub setup_compiler
 {
-	printlog "Compiler: $compiler_type\n";
+	printlog "Compiler: $compiler_type" . ( $clang ? '/clang' : '') . "\n";
 
 	printlog "Checking if can compile... ";
 	compile('int a;', 1) or die "no " . see_makefile_log;
@@ -906,10 +909,12 @@ main()
    return 0;
 }
 EOF
-		my $save = $cmd_options{EXTRA_CCFLAGS};
+		my $savecc = $cmd_options{EXTRA_CCFLAGS};
+		my $saveld = $passthru_options{LDDLFLAGS};
 		$cmd_options{EXTRA_CCFLAGS} .= " $OPENMP";
+		$passthru_options{LDDLFLAGS} .= " $OPENMP" if $clang;
 		my @savelibs = @LIBS;
-		push @LIBS, 'gomp' if $compiler_type eq 'gcc';
+		push @LIBS, 'gomp' if !$clang && $compiler_type eq 'gcc';
 		if ( compile($text)) {
 		YES_OPENMP:
 			printlog "yes\n";
@@ -923,17 +928,19 @@ EOF
 
 			@LIBS = @savelibs;
 			$cmd_options{WITH_OPENMP} = 0;
-			$cmd_options{EXTRA_CCFLAGS} = $save;
+			$cmd_options{EXTRA_CCFLAGS} = $savecc;
+			$passthru_options{LDDLFLAGS} = $saveld;
 			printlog "no\n";
 		}
 
 		# see if perl can use that
 		if ( $cmd_options{WITH_OPENMP} ) {
+			my $omplib = $clang ? 'omp' : 'gomp';
 			printlog "Checking if perl setup is good enough for OpenMP...";
 			my $found;
 			LIBPTH: for my $libpth ( split / /, $Config{libpth} ) {
 				for my $lib ( <$libpth/*> ) {
-					next unless $lib =~ /gomp/;
+					next unless $lib =~ /$omplib/;
 					$found = 1;
 					last LIBPTH;
 				}
@@ -942,23 +949,32 @@ EOF
 				printlog "yes\n";
 				$DEFINES{HAVE_OPENMP} = 1;
 			} else {
-				my $gcc_lib_path;
+				my @gcc_lib_paths;
 				if ( $compiler_type eq 'gcc') {
 					printlog "no, looking it up ...";
-					for ( split "\n", `gcc --print-search-dirs`) {
-						next unless /^install:\s+(.*)/;
-						$gcc_lib_path = $1;
+					for ( split "\n", `$Config{cc} --print-search-dirs`) {
+						next unless /^libraries:\s+=(.*)/;
+						@gcc_lib_paths = split /:/, $1;
 						last;
 					}
 				}
-				if ( -d $gcc_lib_path ) {
-					unshift @LIBPATH, $gcc_lib_path;
-					printlog "yes, in $gcc_lib_path\n";
+				LIBPTH: for my $libpth ( @gcc_lib_paths ) {
+					next unless -d $libpth;
+					for my $lib ( <$libpth/*> ) {
+						next unless $lib =~ /$omplib/;
+						$found = $lib;
+						last LIBPTH;
+					}
+				}
+				if ( $found ) {
+					unshift @LIBPATH, $found;
+					printlog "yes, in $found\n";
 					$DEFINES{HAVE_OPENMP} = 1;
 				} else {
 					@LIBS = @savelibs;
 					$cmd_options{WITH_OPENMP} = 0;
-					$cmd_options{EXTRA_CCFLAGS} = $save;
+					$cmd_options{EXTRA_CCFLAGS} = $savecc;
+					$passthru_options{LDDLFLAGS} = $saveld;
 					printlog "no, config is broken\n";
 					$END .= <<OPENMP;
 
@@ -967,7 +983,7 @@ EOF
 However your perl configuration is set up so that it is not available to Prima.
 If you want to build with OpenMP, edit 'libpth' entry in your Config.pm in
 system perl location so that it points to location of complier-specific
-libraries where libgomp is located.
+libraries where lib$omplib is located.
 
 OPENMP
 				}
