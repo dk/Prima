@@ -376,7 +376,6 @@ sub setup_environment
 		$OPENMP       = '-fopenmp' . ( $clang ? '=libomp' : '');
 		$OPTIMIZE    .= ' -Wall' if $compiler_type eq 'gcc';
 		$passthru_options{LDDLFLAGS} .= ' -g' if $cmd_options{DEBUG};
-		$passthru_options{LDDLFLAGS} .= ' -g' if $cmd_options{DEBUG};
 	}
 
 	$DEFFILE    = 'Prima.def';
@@ -962,7 +961,7 @@ EOF
 					next unless -d $libpth;
 					for my $lib ( <$libpth/*> ) {
 						next unless $lib =~ /$omplib/;
-						$found = $lib;
+						$found = $libpth;
 						last LIBPTH;
 					}
 				}
