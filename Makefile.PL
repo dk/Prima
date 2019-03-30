@@ -327,7 +327,7 @@ sub setup_files
 	);
 }
 
-sub gcc_or_clang { $compiler_type =~ /^(gcc|clang)$/ }
+sub gcc { $compiler_type eq 'gcc' }
 
 sub setup_environment
 {
@@ -336,12 +336,11 @@ sub setup_environment
 	} else {
 		$compiler_type = $Config{ccname};
 	}
-	$compiler_type = 'clang' if $Config{cc} =~ /\bclang/;
 
 	if ( $Win32 and not $cygwin ) {
 		$SCRIPT_EXT = '.bat';
 		$SHQUOTE    = '"';
-		if (gcc_or_clang) {
+		if (gcc) {
 			$win32_use_dlltool = $Config{dlltool} || 'dlltool';
 			$mingw = 1;
 		}
@@ -375,7 +374,7 @@ sub setup_environment
 		$LD_LIB_EXT   = '';
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
 		$OPENMP       = '-fopenmp';
-		$OPTIMIZE    .= ' -Wall' if gcc_or_clang;
+		$OPTIMIZE    .= ' -Wall' if gcc;
 		$passthru_options{LDDLFLAGS} .= ' -g' if $cmd_options{DEBUG};
 	}
 
@@ -547,7 +546,7 @@ sub cc_command_line
 	$cc .= ' ' . join(' ', map { "$CLIBPATHFLAG$_"} @LIBPATH) unless $compile_only || ( $compiler_type eq 'cl');
 	$cc .= " $srcf";
 	return $cc if $compile_only;
-	$cc .= " $passthru_options{LDDLFLAGS}" if gcc_or_clang;
+	$cc .= " $passthru_options{LDDLFLAGS}" if gcc;
 	$cc .= " $CLINKPREFIX";
 	$cc .= " $LDFLAGS";
 	$cc .= ' ' . join(' ', map { "\"$CLIBPATHFLAG\\\"$_\\\"\"" } @LIBPATH) if $compiler_type eq 'cl';
@@ -665,7 +664,7 @@ sub compile_and_run
 
 	null_output;
 	my $cc = cc_command_line( $tmpsrc, $tmpo, $tmpexe, 0);
-	$cc =~ s/\s\-(s(hared)?|mdll)\b//g if gcc_or_clang;
+	$cc =~ s/\s\-(s(hared)?|mdll)\b//g if gcc;
 	print STDERR "$cc\n";
 	my $rc = system($cc);
 	restore_output;
@@ -912,11 +911,12 @@ EOF
 		my $savecc = $cmd_options{EXTRA_CCFLAGS};
 		my $saveld = $passthru_options{LDDLFLAGS};
 		$cmd_options{EXTRA_CCFLAGS} .= " $OPENMP";
-		$passthru_options{LDDLFLAGS} .= " $OPENMP" if $compiler_type eq 'clang';
+		$passthru_options{LDDLFLAGS} .= " $OPENMP";
 		my @savelibs = @LIBS;
-		push @LIBS, 'gomp' if $compiler_type eq 'gcc';
+#		push @LIBS, 'gomp' if $compiler_type eq 'gcc';
 		if ( compile($text)) {
 		YES_OPENMP:
+			$DEFINES{HAVE_OPENMP} = 1;
 			printlog "yes\n";
 		} else {
 			if ( $captured_makefile_log =~ /recompile with (\-fpic)/i) {
@@ -931,63 +931,6 @@ EOF
 			$cmd_options{EXTRA_CCFLAGS} = $savecc;
 			$passthru_options{LDDLFLAGS} = $saveld;
 			printlog "no\n";
-		}
-
-		# see if perl can use that
-		if ( $cmd_options{WITH_OPENMP} ) {
-			my $omplib = ($compiler_type eq 'clang') ? 'omp' : 'gomp';
-			printlog "Checking if perl setup is good enough for OpenMP...";
-			my $found;
-			LIBPTH: for my $libpth ( split / /, $Config{libpth} ) {
-				for my $lib ( <$libpth/*> ) {
-					next unless $lib =~ /$omplib/;
-					$found = 1;
-					last LIBPTH;
-				}
-			}
-			if ( $found ) {
-				printlog "yes\n";
-				$DEFINES{HAVE_OPENMP} = 1;
-			} else {
-				my @gcc_lib_paths;
-				if ( gcc_or_clang ) {
-					printlog "no, looking it up ...";
-					for ( split "\n", `$Config{cc} --print-search-dirs`) {
-						next unless /^libraries:\s+=(.*)/;
-						@gcc_lib_paths = split /:/, $1;
-						last;
-					}
-				}
-				LIBPTH: for my $libpth ( @gcc_lib_paths ) {
-					next unless -d $libpth;
-					for my $lib ( <$libpth/*> ) {
-						next unless $lib =~ /$omplib/;
-						$found = $libpth;
-						last LIBPTH;
-					}
-				}
-				if ( $found ) {
-					unshift @LIBPATH, $found;
-					printlog "yes, in $found\n";
-					$DEFINES{HAVE_OPENMP} = 1;
-				} else {
-					@LIBS = @savelibs;
-					$cmd_options{WITH_OPENMP} = 0;
-					$cmd_options{EXTRA_CCFLAGS} = $savecc;
-					$passthru_options{LDDLFLAGS} = $saveld;
-					printlog "no, config is broken\n";
-					$END .= <<OPENMP;
-
-** Warning: Your system has OpenMP libraries and Prima can use them.
-
-However your perl configuration is set up so that it is not available to Prima.
-If you want to build with OpenMP, edit 'libpth' entry in your Config.pm in
-system perl location so that it points to location of complier-specific
-libraries where lib$omplib is located.
-
-OPENMP
-				}
-			}
 		}
 	}
 
@@ -2008,12 +1951,12 @@ sub create_config_pm
 	# libs
 	my @libpath = @LIBPATH;
 	my @libs    = @LIBS;
-	unless ( $unix or gcc_or_clang) {
+	unless ( $unix or gcc) {
 		push @libpath, "$cwd/auto/Prima";
 		push @libs, "Prima$LD_LIB_EXT";
 	}
 	my $libpath = join( ',', map {"'$_'"} @libpath);
-	unless ( $unix or gcc_or_clang) {
+	unless ( $unix or gcc) {
 		$libpath[-1] = '$(lib)/auto/Prima';
 	}
 	my $libpathi = join( ',', map {"'$_'"} @libpath);
