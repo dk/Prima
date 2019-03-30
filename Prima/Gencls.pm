@@ -1421,7 +1421,7 @@ sub out_method_profile
 			print HEADER "\tSPAGAIN;\n";
 			print HEADER "\t$incCount = pop_hv_for_REDEFINED( sp, $incCount, $hvName, $popParams);\n"
 				if $hvName;
-			print HEADER "\tif ( set) {\n\t\tFREETMPS;\n\t\tLEAVE;\n\t\treturn $incRes;\n\t}\n\n"
+			print HEADER "\tif ( set) {\n\t\tFREETMPS;\n\t\tLEAVE;\n\t\tmemset(&$incRes,0,sizeof($incRes));\n\t\treturn $incRes;\n\t}\n\n"
 				if $property;
 			print HEADER "\tif ( $incCount != $lParams) croak( \"Sub result corrupted\");\n\n";
 			if ( exists $structs{ $resSub}) {
@@ -1733,7 +1733,9 @@ LABEL
 		my $lpaus = ( length( $paramAuxSet) > 4) || ( $paramAuxSet eq '****');
 		if ( $lpaus || $property) {
 			if ( $property && $lpaus) {
-				my $label =  "if ( !( $ifpropset)) goto CALL_POINT;\n\t\t";
+				my $label =  "if ( !( $ifpropset)) {\n";
+				$label .= "\t\t\tmemset(&$incRes,0,sizeof($incRes));\n" if $reuseStructVar;
+				$label .= "\t\t\tgoto CALL_POINT;\n\t\t}\n\t\t";
 				$paramAuxSet =~ s/\*\*\*\*/$label/;
 			}
 			print HEADER $paramAuxSet;
