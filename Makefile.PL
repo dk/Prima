@@ -374,7 +374,7 @@ sub setup_environment
 		$LDOUTFLAG    = '-o ';
 		$LD_LIB_EXT   = '';
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
-		$OPENMP       = '-fopenmp' . (( $compiler_type eq 'clang') ? '=libomp' : '');
+		$OPENMP       = '-fopenmp';
 		$OPTIMIZE    .= ' -Wall' if gcc_or_clang;
 		$passthru_options{LDDLFLAGS} .= ' -g' if $cmd_options{DEBUG};
 	}
