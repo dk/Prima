@@ -64,8 +64,8 @@ sub commands         { shift->{commands} }
 sub save             { shift->cmd('save') }
 sub open             { shift->cmd('open') }
 sub close            { shift->cmd('close') }
-sub moveto           { shift->cmd('moveto', shift, shift) }
-sub rmoveto          { shift->cmd('rmoveto', shift, shift) }
+sub moveto           { shift->cmd('moveto', shift, shift, 0) }
+sub rmoveto          { shift->cmd('moveto', shift, shift, 1) }
 sub restore          { shift->cmd('restore') } # no checks for underflow here, to allow append paths
 sub precision        { shift->cmd(set => precision => shift) }
 
@@ -297,17 +297,10 @@ sub _relative
 sub _moveto
 {
 	my ( $self, $cmd) = @_;
+	my ( $mx, $my, $rel) = splice(@$cmd, 0, 3);
+	($mx, $my) = $self->matrix_apply($mx, $my);
+	my ($lx, $ly) = $rel ? $self->last_point : (0,0);
 	push @{$self->{points}}, Prima::array->new_int;
-	push @{$self->{points}->[-1]}, $self->matrix_apply(shift(@$cmd), shift(@$cmd));
-}
-
-sub _rmoveto
-{
-	my ( $self, $cmd) = @_;
-	my $p = $self->{points}->[-1];
-	push @{$self->{points}}, Prima::array->new_int;
-	my ( $lx, $ly ) = $self->last_point;
-	my ( $mx, $my ) = $self->matrix_apply(splice(@$cmd, 0, 2));
 	push @{$self->{points}->[-1]}, $lx + $mx, $ly + $my;
 }
 
