@@ -62,7 +62,9 @@ sub rcmd
 sub append           { push @{shift->{commands}}, @{shift->{commands}} }
 sub commands         { shift->{commands} }
 sub save             { shift->cmd('save') }
+sub open             { shift->cmd('open') }
 sub close            { shift->cmd('close') }
+sub moveto           { shift->cmd('moveto', shift, shift) }
 sub restore          { shift->cmd('restore') } # no checks for underflow here, to allow append paths
 sub precision        { shift->cmd(set => precision => shift) }
 
@@ -205,11 +207,12 @@ sub points
 			matrix => [ identity ],
 			( map { $_, $self->{$_} } qw(precision ) )
 		};
-		$self->{points} = Prima::array->new_int;
+		$self->{points} = [ Prima::array->new_int ];
 		my @c = @{ $self->{commands} };
 		while ( my $cmd = shift @c ) {
 			$self-> can("_$cmd")-> ( $self, \@c );
 		}
+		@{$self->{points}} = grep { @$_ > 2 } @{$self->{points}};
 		$self->{last_matrix} = $self->{curr}->{matrix};
 	}
 
@@ -275,7 +278,7 @@ sub _matrix
 sub _relative
 {
 	my $self = shift;
-	my $p  = $self->{points};
+	my $p  = $self->{points}->[-1];
 	return unless @$p;
 	my $m  = $self->{curr}->{matrix};
 	my ( $x0, $y0 ) = $self-> matrix_apply(0, 0);
@@ -283,18 +286,35 @@ sub _relative
 	$m->[Y] += $p->[-1] - $y0;
 }
 
+sub _moveto
+{
+	my ( $self, $cmd) = @_;
+	push @{$self->{points}}, Prima::array->new_int;
+	my $m  = $self->{curr}->{matrix};
+	my ( $x0, $y0 ) = $self-> matrix_apply(0, 0);
+	$m->[X] += shift(@$cmd) - $x0;
+	$m->[Y] += shift(@$cmd) - $y0;
+}
+
+sub _open
+{
+	my ( $self, $cmd) = @_;
+	push @{$self->{points}}, Prima::array->new_int;
+}
+
 sub _close
 {
 	my $self = shift;
 	my $p = $self->{points};
-	push @$p, $p->[0], $p->[1] if @$p;
+	push @{$p->[-1]}, $p->[0][0], $p->[0][1] if @{$p->[-1]};
+	push @{$self->{points}}, Prima::array->new_int;
 }
 
 sub _line
 {
 	my ( $self, $cmd ) = @_;
 	my $line = shift @$cmd;
-	push @{ $self->{points} }, @{ $self-> matrix_apply( $line ) };
+	push @{ $self->{points}->[-1] }, @{ $self-> matrix_apply( $line ) };
 }
 
 sub _spline
@@ -302,7 +322,7 @@ sub _spline
 	my ( $self, $cmd ) = @_;
 	my $points  = shift @$cmd;
 	my $options = shift @$cmd;
-	Prima::array::append( $self->{points},
+	Prima::array::append( $self->{points}->[-1],
 		Prima::Drawable->render_spline(
 			$self-> matrix_apply( $points ),
 			%$options
@@ -374,7 +394,7 @@ sub _arc
 
 	my $nurbset = $self->arc2nurbs( $from, $to);
 	if ( $rel ) {
-		my $p  = $self->{points};
+		my $p  = $self->{points}->[-1];
 		if ( @$p ) {
 			my $pts = $nurbset->[0]->[0];
 			my $m = $self->{curr}->{matrix};
@@ -389,7 +409,7 @@ sub _arc
 
 	for my $set ( @$nurbset ) {
 		my ( $points, @options ) = @$set;
-		Prima::array::append( $self->{points},
+		Prima::array::append( $self->{points}->[-1],
 			Prima::Drawable->render_spline(
 				$self-> matrix_apply( $points ),
 				@options,
@@ -399,21 +419,36 @@ sub _arc
 	}
 }
 
-sub stroke { $_[0]->{canvas} ? $_[0]->{canvas}->polyline( $_[0]->points ) : 0 }
-sub fill   { $_[0]->{canvas} ? $_[0]->{canvas}->fillpoly( $_[0]->points ) : 0 }
+sub stroke {
+	return 0 unless $_[0]->{canvas};
+	for ( @{ $_[0]->points }) {
+		return 0 unless $_[0]->{canvas}->polyline($_);
+	}
+	return 1;
+}
+
+sub fill {
+	return 0 unless $_[0]->{canvas};
+	for ( @{ $_[0]->points }) {
+		return 0 unless $_[0]->{canvas}->fillpoly($_);
+	}
+	return 1;
+}
 
 sub extents
 {
 	my $self = shift;
-	my $p = $self->points;
-	return unless @$p;
-	my ( $x1, $y1, $x2, $y2 ) = @{$p}[0,1,0,1];
-	for ( my $i = 2; $i < $#$p; $i+=2) {
-		my ($x, $y) = @{$p}[$i,$i+1];
-		$x1 = $x if $x < $x1;
-		$y1 = $y if $y < $y1;
-		$x2 = $x if $x > $x2;
-		$y2 = $y if $y > $y2;
+	my $pp = $self->points;
+	return unless @$pp;
+	my ( $x1, $y1, $x2, $y2 ) = @{$pp->[0]}[0,1,0,1];
+	for my $p ( @$pp ) {
+		for ( my $i = 2; $i < $#$p; $i+=2) {
+			my ($x, $y) = @{$p}[$i,$i+1];
+			$x1 = $x if $x < $x1;
+			$y1 = $y if $y < $y1;
+			$x2 = $x if $x > $x2;
+			$y2 = $y if $y > $y2;
+		}
 	}
 	return $x1, $y1, $x2, $y2;
 }
@@ -430,16 +465,23 @@ sub clip
 	$p->clear;
 	$p->set(%opt) if scalar keys %opt;
 	$p->translate($tx, $ty);
-	$p->fillpoly( $self->{points} );
+	$p->fillpoly($_) for @{ $self->{points} };
 	return $p->image;
 }
 
 sub region
 {
-	my $self = shift;
-	my %opt = ( polygon => $self->points );
-	$opt{winding} = 1 if shift;
-	return Prima::Region->new( %opt );
+	my ($self, $winding) = @_;
+	my $pp  = $self->points;
+	my $reg = Prima::Region->new(
+		polygon => $pp->[0],
+		winding => $winding,
+	);
+	$reg->combine( 
+		Prima::Region->new( polygon => $_, winding => $winding),
+		rgnop::Union
+	) for @$pp[1..$#_];
+	return $reg;
 }
 
 1;
@@ -488,6 +530,11 @@ the previous primitive (or (0,0) if there's none).
 =item arc CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END, TILT = 0
 
 Adds elliptic arc to path centered around (CENTER_X,CENTER_Y).
+
+=item close, open, moveto(X,Y)
+
+Closes the current shape and opens a new one, with a starting point (X,Y) in case of moveto.
+close() is same as open() but makes sure the shape's first point is equal to its last point.
 
 =item circular_arc ANGLE_START, ANGLE_END
 
