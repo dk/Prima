@@ -65,6 +65,7 @@ sub save             { shift->cmd('save') }
 sub open             { shift->cmd('open') }
 sub close            { shift->cmd('close') }
 sub moveto           { shift->cmd('moveto', shift, shift) }
+sub rmoveto          { shift->cmd('rmoveto', shift, shift) }
 sub restore          { shift->cmd('restore') } # no checks for underflow here, to allow append paths
 sub precision        { shift->cmd(set => precision => shift) }
 
@@ -226,6 +227,14 @@ sub last_matrix
 	return $self->{last_matrix};
 }
 
+sub last_point
+{
+	for ( reverse @{ shift->{points} }) {
+		return $$_[-2], $$_[-1] if @$_;
+	}
+	return 0,0;
+}
+
 sub matrix_apply
 {
 	my $self   = shift;
@@ -278,22 +287,28 @@ sub _matrix
 sub _relative
 {
 	my $self = shift;
-	my $p  = $self->{points}->[-1];
-	return unless @$p;
+	my ($lx,$ly) = $self->last_point;
 	my $m  = $self->{curr}->{matrix};
 	my ( $x0, $y0 ) = $self-> matrix_apply(0, 0);
-	$m->[X] += $p->[-2] - $x0;
-	$m->[Y] += $p->[-1] - $y0;
+	$m->[X] += $lx - $x0;
+	$m->[Y] += $ly - $y0;
 }
 
 sub _moveto
 {
 	my ( $self, $cmd) = @_;
 	push @{$self->{points}}, Prima::array->new_int;
-	my $m  = $self->{curr}->{matrix};
-	my ( $x0, $y0 ) = $self-> matrix_apply(0, 0);
-	$m->[X] += shift(@$cmd) - $x0;
-	$m->[Y] += shift(@$cmd) - $y0;
+	push @{$self->{points}->[-1]}, $self->matrix_apply(shift(@$cmd), shift(@$cmd));
+}
+
+sub _rmoveto
+{
+	my ( $self, $cmd) = @_;
+	my $p = $self->{points}->[-1];
+	push @{$self->{points}}, Prima::array->new_int;
+	my ( $lx, $ly ) = $self->last_point;
+	my ( $mx, $my ) = $self->matrix_apply(splice(@$cmd, 0, 2));
+	push @{$self->{points}->[-1]}, $lx + $mx, $ly + $my;
 }
 
 sub _open
@@ -394,14 +409,12 @@ sub _arc
 
 	my $nurbset = $self->arc2nurbs( $from, $to);
 	if ( $rel ) {
-		my $p  = $self->{points}->[-1];
-		if ( @$p ) {
-			my $pts = $nurbset->[0]->[0];
-			my $m = $self->{curr}->{matrix};
-			my @s = $self->matrix_apply( $pts->[0], $pts->[1]);
-			$m->[X] += $p->[-2] - $s[0];
-			$m->[Y] += $p->[-1] - $s[1];
-		}
+		my ($lx,$ly) = $self->last_point;
+		my $pts = $nurbset->[0]->[0];
+		my $m = $self->{curr}->{matrix};
+		my @s = $self->matrix_apply( $pts->[0], $pts->[1]);
+		$m->[X] += $lx - $s[0];
+		$m->[Y] += $ly - $s[1];
 	}
 
 	my %xopt;
@@ -531,9 +544,9 @@ the previous primitive (or (0,0) if there's none).
 
 Adds elliptic arc to path centered around (CENTER_X,CENTER_Y).
 
-=item close, open, moveto(X,Y)
+=item close, open
 
-Closes the current shape and opens a new one, with a starting point (X,Y) in case of moveto.
+Closes the current shape and opens a new one
 close() is same as open() but makes sure the shape's first point is equal to its last point.
 
 =item circular_arc ANGLE_START, ANGLE_END
@@ -548,6 +561,10 @@ Adds full ellipse to the path.
 =item line, rline @POINTS
 
 Adds a polyline to path
+
+=item moveto, rmoveto X, Y
+
+Stops plotting the current shape and moves the plotting position to X, Y.
 
 =item rarc DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END, TILT = 0
 
