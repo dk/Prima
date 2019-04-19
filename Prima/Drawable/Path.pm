@@ -42,8 +42,8 @@ sub dup
 
 sub cmd
 {
-	my $self = shift;
-	push @{ $self->{commands} }, @_;
+	my ($self, $cmd, @param) = @_;
+	push @{ $self->{commands} }, $cmd, scalar(@param), @param;
 	delete $self->{points};
 	return $self;
 }
@@ -51,12 +51,13 @@ sub cmd
 sub rcmd
 {
 	my $self = shift;
-	$self->cmd(
-		save     => (),
-		relative => (),
-		@_,
-		restore  => (),
-	);
+	push @{ $self->{commands} }, 
+		save     => 0,
+		relative => 0,
+		shift, scalar(@_), @_,
+		restore  => 0,
+	;
+	delete $self->{points};
 }
 
 sub append           { push @{shift->{commands}}, @{shift->{commands}} }
@@ -209,9 +210,12 @@ sub points
 			( map { $_, $self->{$_} } qw(precision ) )
 		};
 		$self->{points} = [ Prima::array->new_int ];
-		my @c = @{ $self->{commands} };
-		while ( my $cmd = shift @c ) {
-			$self-> can("_$cmd")-> ( $self, \@c );
+		my $c = $self->{commands};
+		for ( my $i = 0; $i < @$c; ) {
+			my ($cmd,$len) = @$c[$i,$i+1];
+			$self-> can("_$cmd")-> ( $self, @$c[$i+2..$i+$len+1] );
+			$i += $len + 2;
+			
 		}
 		@{$self->{points}} = grep { @$_ > 2 } @{$self->{points}};
 		$self->{last_matrix} = $self->{curr}->{matrix};
@@ -253,7 +257,7 @@ sub matrix_apply
 
 sub _save
 {
-	my ( $self, $cmd )  = @_;
+	my $self = shift;
 
 	push @{ $self->{stack} }, $self->{curr};
 	my $m = [ @{ $self->{curr}->{matrix} } ];
@@ -271,17 +275,14 @@ sub _restore
 
 sub _set
 {
-	my ($self, $cmd) = @_;
-	my $prop = shift @$cmd;
-	my $val  = shift @$cmd;
+	my ($self, $prop, $val) = @_;
 	$self->{curr}->{$prop} = $val;
 }
 
 sub _matrix
 {
-	my ( $self, $cmd ) = @_;
-	my $new = [ splice( @$cmd, 0, 6 ) ];
-	$self->{curr}->{matrix}  = matrix_multiply( $new, $self->{curr}->{matrix} );
+	my $self = shift;
+	$self->{curr}->{matrix}  = matrix_multiply( \@_, $self->{curr}->{matrix} );
 }
 
 sub _relative
@@ -296,40 +297,32 @@ sub _relative
 
 sub _moveto
 {
-	my ( $self, $cmd) = @_;
-	my ( $mx, $my, $rel) = splice(@$cmd, 0, 3);
+	my ( $self, $mx, $my, $rel) = @_;
 	($mx, $my) = $self->matrix_apply($mx, $my);
 	my ($lx, $ly) = $rel ? $self->last_point : (0,0);
 	push @{$self->{points}}, Prima::array->new_int;
 	push @{$self->{points}->[-1]}, $lx + $mx, $ly + $my;
 }
 
-sub _open
-{
-	my ( $self, $cmd) = @_;
-	push @{$self->{points}}, Prima::array->new_int;
-}
+sub _open { push @{shift->{points}}, Prima::array->new_int }
 
 sub _close
 {
 	my $self = shift;
 	my $p = $self->{points};
 	push @{$p->[-1]}, $p->[0][0], $p->[0][1] if @{$p->[-1]};
-	push @{$self->{points}}, Prima::array->new_int;
+	push @$p, Prima::array->new_int;
 }
 
 sub _line
 {
-	my ( $self, $cmd ) = @_;
-	my $line = shift @$cmd;
+	my ( $self, $line ) = @_;
 	push @{ $self->{points}->[-1] }, @{ $self-> matrix_apply( $line ) };
 }
 
 sub _spline
 {
-	my ( $self, $cmd ) = @_;
-	my $points  = shift @$cmd;
-	my $options = shift @$cmd;
+	my ( $self, $points, $options ) = @_;
 	Prima::array::append( $self->{points}->[-1],
 		Prima::Drawable->render_spline(
 			$self-> matrix_apply( $points ),
@@ -395,10 +388,7 @@ sub arc2nurbs
 
 sub _arc
 {
-	my ( $self, $cmd ) = @_;
-	my $from = shift @$cmd;
-	my $to   = shift @$cmd;
-	my $rel  = shift @$cmd;
+	my ( $self, $from, $to, $rel ) = @_;
 
 	my $nurbset = $self->arc2nurbs( $from, $to);
 	if ( $rel ) {
@@ -439,6 +429,74 @@ sub fill {
 		return 0 unless $_[0]->{canvas}->fillpoly($_);
 	}
 	return 1;
+}
+
+sub flatten
+{
+	my ($self, $opt_prescale) = @_;
+	local $self->{stack} = [];
+	local $self->{curr}  = {
+		matrix => [ identity ],
+		( map { $_, $self->{$_} } qw(precision ) )
+	};
+	my $c = $self->{commands};
+	my @dst;
+	for ( my $i = 0; $i < @$c; ) {
+		my ($cmd,$len) = @$c[$i,$i+1];
+		my @param = @$c[$i+2..$i+$len+1];
+		$i += $len + 2;
+
+		if ( $cmd =~ /^(matrix|set|save|restore)$/) {
+			# to get the right precision and prescaling
+			$self-> can("_$cmd")-> ( $self, @param );
+			push @dst, $cmd, $len, @param;
+		} elsif ( $cmd eq 'arc') {
+			my ( $from, $to, $rel ) = @param;
+			my $prescale;
+			unless ( defined $opt_prescale ) {
+				my @m = map { abs } @{ $self-> {curr}->{matrix} };
+				# pre-shoot scaling ractor for rasterization
+				my $prescale = $m[A];
+				$prescale = $m[B] if $prescale < $m[B];
+				$prescale = $m[C] if $prescale < $m[C];
+				$prescale = $m[D] if $prescale < $m[D];
+				$prescale = 1 if $prescale == 0.0;
+			} else {
+				$prescale = $opt_prescale;
+			}
+
+			my %xopt;
+			$xopt{precision} = $self->{curr}->{precision} if defined $self->{curr}->{precision};
+			my $polyline;
+			my $nurbset = $self->arc2nurbs( $from, $to);
+			for my $set ( @$nurbset ) {
+				my ( $points, @options ) = @$set;
+				my $p = Prima::Drawable->render_spline( 
+					[map { $_ * $prescale } @$points],
+					@options, %xopt
+				);
+				if ( $polyline ) {
+					Prima::array::append( $polyline, $p );
+				} else {
+					$polyline = $p;
+				}
+			}
+			if ( scalar @$polyline ) {
+				push @dst, save     => 0;
+				push @dst, relative => 0 if $rel;
+				push @dst, matrix   => 6, 1.0/$prescale, 0, 0, 1.0/$prescale, 0, 0;
+				push @dst, line     => 1, $polyline;
+				push @dst, restore  => 0;
+			}
+		} else {
+			push @dst, $cmd, $len, @param;
+		}
+	}
+	return ref($self)->new( undef,
+		%$self,
+		canvas   => $self->{canvas},
+		commands => \@dst
+	);
 }
 
 sub extents
@@ -643,11 +701,6 @@ pass C<fillWinding> property that affects the result of the filled shape.
 
 Returns 2 points that box the path.
 
-=item points
-
-Runs all accumulated commands, and returns rendered set of points, suitable
-for further calls to C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly>.
-
 =item last_matrix
 
 Return CTM resulted after running all commands
@@ -656,14 +709,27 @@ Return CTM resulted after running all commands
 
 Paints a filled shape over the path
 
-=item stroke
+=item flatten PRESCALE 
 
-Draws a polyline over the path
+Returns new objects where arcs are flattened into lines. The lines are
+rasterized with scaling factor that is as close as possible to the device
+pixels, to be suitable for direct send to the polyline() API call. If PRESCALE
+factor is set, it is used instead to premultiply coordinates of arc anchor
+points used to render the lines.
+
+=item points
+
+Runs all accumulated commands, and returns rendered set of points, suitable
+for further calls to C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly>.
 
 =item region WINDING=0
 
 Creates a region object from polygonal shape. If WINDING is set, applies fill winding
 mode (see L<Drawable/fillWinding> for more).
+
+=item stroke
+
+Draws a polyline over the path
 
 =back
 
