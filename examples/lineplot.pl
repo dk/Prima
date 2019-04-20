@@ -1,12 +1,10 @@
 use strict;
 use warnings;
-use subs qw(reset);
-use lib '.', 'blib/arch';
 use Prima qw(Application MsgBox);
 
 my %opt = (
-	le  => le::Flat,
-	lep => 'le::Flat',
+	le  => le::Round,
+	lep => 'le::Round',
 	lj  => lj::Round,
 	ljp => 'lj::Round',
 	ml  => 10,
@@ -16,6 +14,7 @@ my $aperture = 12;
 my $capture;
 my $prelight;
 my @points;
+@points = (100,200,200,200,200,100,50,10);
 
 sub menu($$)
 {
@@ -35,7 +34,7 @@ my $mw = Prima::MainWindow->new(
 	designScale => [ 7, 16 ],
 	menuItems => [
 		['~Options' => [ 
-			[ closed => '~Closed' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
+			[ '*closed' => '~Closed' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
 			[ compare => '~Compare' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
 			[],
 			[ 'E~xit' => sub { $_[0]->destroy } ],
@@ -74,22 +73,29 @@ my $mw = Prima::MainWindow->new(
 		$canvas->color(cl::Black);
 		my @xpoints = 
 			$self->menu->checked('closed') ?
-			( 100, 100, @points, 100, 100 ) :
+			((@points < 6) ? ( 100, 100, @points, 100, 100 ) : @points[0..$#points,0,1]):
 			( 30, 30, @points, $w - 30, $h - 30);
 		my $cmp;
 		if ( $cmp = $self-> menu->checked('compare')) {
 			$canvas->lineWidth(30);
-			$canvas-> polyline( \@xpoints);
+			$canvas->polyline( \@xpoints);
 			$canvas->lineWidth(1);
 		}
 
 		my $p = $canvas->new_path;
 		$p->line(\@xpoints);
+		my $lw = 28;
 		$p = $p->widen( 
-			lineWidth  => 28, 
+			lineWidth  => $lw, 
 			lineEnd    => $opt{le}, 
 			lineJoin   => $opt{lj}, 
-			miterLimit => $opt{ml} 
+			miterLimit => $opt{ml},
+			callback   => sub {
+				my ($idx, $points, $set) = @_;
+				$lw -= 56/@xpoints;
+				$lw = 2 if $lw < 2;
+				$set->{lineWidth}->($lw);
+			},
 		);
 		$canvas->color(cl::LightRed);
 		$canvas->rop(rop::OrPut) if $cmp;

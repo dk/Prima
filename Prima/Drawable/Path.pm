@@ -559,8 +559,15 @@ sub widen
 			next;
 		}
 
-		my @firstout;
+		my ($firstout, $firstin, $firstsign);
 		for ( my $i = 0; $i <= $last; $i += 2 ) {
+			$opt{callback}->(
+				$i, $p, {
+					lineJoin  => sub { $lj = shift },
+					lineEnd   => sub { $le = shift },
+					lineWidth => sub { $lw2 = ($lw = shift) / 2 },
+				}
+			) if $opt{callback};
 			if ( !$closed && ($i == 0 || $i == $last )) {
 				my ( $xo, $yo, $xa, $ya) = @$p[ $i ? (map { $i + $_ } 0,1,-2,-1) : (0..3)];
         	        	my $theta = atan2( $ya - $yo, $xa - $xo );
@@ -612,6 +619,10 @@ sub widen
 					cos($theta + $alpha + $PI_2),
 					sin($theta + $alpha + $PI_2)
 				);
+				if ($i == 0) {
+					@$firstin = ( $xo + $dx1, $yo + $dy1);
+					$firstsign = $sign;
+				}
 				push @$in, [ line => [ $xo + $dx1, $yo + $dy1 ]];
 				push @$in, [ line => [ $xo - $dx2, $yo - $dy2 ]];
 				if ( $_lj == lj::Miter) {
@@ -620,15 +631,15 @@ sub widen
 						$xo + $miterWidth * cos($theta + $alpha / 2),
 						$yo + $miterWidth * sin($theta + $alpha / 2)
 					]];
-					@firstout = @{ $out->[-1][1] }
+					@$firstout = @{ $out->[-1][1] }
 						if $i == 0;
 				} elsif ( $_lj == lj::Bevel) {
-					@firstout = ( $xo - $dx1, $yo - $dy1 )
+					@$firstout = ( $xo - $dx1, $yo - $dy1 )
 						if $i == 0;
 					push @$out, [ line => [ $xo - $dx1, $yo - $dy1 ]];
 					push @$out, [ line => [ $xo + $dx2, $yo + $dy2 ]];
 				} else {
-					@firstout = ( $xo - $dx1, $yo - $dy1 )
+					@$firstout = ( $xo - $dx1, $yo - $dy1 )
 						if $i == 0;
 					push @$out, [ arc =>
 						$xo, $yo,
@@ -643,8 +654,10 @@ sub widen
 					];
 				}
 				if ( $i == $last ) {
-					push @$in,  [ line => [@{$in ->[0][1]}[0,1]]];
-					push @$out, [ line => \@firstout ];
+					( $firstin, $firstout ) = ( $firstout, $firstin )
+						if $sign != $firstsign;
+					push @$in, [ line => $firstin ];
+					push @$out, [ line => $firstout ];
 				}
 			}
 		}
