@@ -4,6 +4,8 @@ use strict;
 use warnings;
 
 our $PI = 3.14159265358979323846264338327950288419716939937510;
+our $PI_2 = $PI / 2;
+our $PI_4 = $PI / 4;
 our $RAD = 180.0 / $PI;
 
 # | a  b  0 |
@@ -310,7 +312,8 @@ sub _close
 {
 	my $self = shift;
 	my $p = $self->{points};
-	push @{$p->[-1]}, $p->[0][0], $p->[0][1] if @{$p->[-1]};
+	push @{$p->[-1]}, $p->[0][0], $p->[0][1]
+		if @{$p->[-1]} && $p->[0][0] != $p->[-1][-2] && $p->[0][1] != $p->[-1][-1];
 	push @$p, Prima::array->new_int;
 }
 
@@ -376,6 +379,7 @@ sub arc2nurbs
 
 		push @set, [
 			\@points,
+			closed    => 0,
 			degree    => 2,
 			weights   => \@weights,
 			knots     => \@knots,
@@ -456,7 +460,7 @@ sub flatten
 			unless ( defined $opt_prescale ) {
 				my @m = map { abs } @{ $self-> {curr}->{matrix} };
 				# pre-shoot scaling ractor for rasterization
-				my $prescale = $m[A];
+				$prescale = $m[A];
 				$prescale = $m[B] if $prescale < $m[B];
 				$prescale = $m[C] if $prescale < $m[C];
 				$prescale = $m[D] if $prescale < $m[D];
@@ -497,6 +501,170 @@ sub flatten
 		canvas   => $self->{canvas},
 		commands => \@dst
 	);
+}
+
+# Adapted from wine/dlls/gdi32/path.c:WidenPath()
+# (c) Martin Boehme, Huw D M Davies, Dmitry Timoshkov, Alexandre Julliard
+sub widen
+{
+	my ( $self, %opt ) = @_;
+
+	my $dst = ref($self)->new( undef,
+		%$self,
+		canvas   => $self->{canvas},
+		commands => [],
+	);
+
+	my ($lw, $lj, $le) = map {
+		my $opt = exists($opt{$_}) ? $opt{$_} : (
+			$self->{canvas} ? $self->{canvas}->$_() : 0
+		);
+		$opt = 0 if $opt < 0;
+		$opt;
+	} qw(lineWidth lineJoin lineEnd);
+	if ( $lw == 0 ) {
+		for my $p ( @{ $self->points} ) {
+			$dst->line($p);
+			$dst->open;
+		}
+		return $dst;
+	}
+	my $ml = exists($opt{miterLimit}) ? $opt{miterLimit} : 10;
+	$ml = 20        if $ml > 20;
+	$lw = 16834     if $lw > 16834;
+	$lj = lj::Miter if $lj > lj::Miter;
+	$le = le::Round if $le > le::Round;
+	my $sqrt2;
+
+	my @dst;
+	my $lw2 = $lw / 2;
+	for my $p ( @{ $self->points} ) {
+		my (@u,@d);
+		next unless @$p;
+		my $closed = $p->[0] == $p->[-2] && $p->[1] == $p->[-1];
+		my $last = @$p - ($closed ? 4 : 2);
+
+		if ( $last == 0 ) {
+			my ($x,$y) = @$p;
+			if ( $le == le::Square ) {
+				$dst->line( 
+					$x - $lw2, $y - $lw2,
+					$x - $lw2, $y + $lw2,
+					$x + $lw2, $y + $lw2,
+					$x + $lw2, $y - $lw2,
+				);
+			} elsif ( $le == le::Round ) {
+				$dst->ellipse( $x, $y, $lw);
+			}
+			next;
+		}
+
+		my @firstout;
+		for ( my $i = 0; $i <= $last; $i += 2 ) {
+			if ( !$closed && ($i == 0 || $i == $last )) {
+				my ( $xo, $yo, $xa, $ya) = @$p[ $i ? (map { $i + $_ } 0,1,-2,-1) : (0..3)];
+        	        	my $theta = atan2( $ya - $yo, $xa - $xo );
+				if ( $le == le::Flat) {
+					my ($sin, $cos) = (sin($theta + $PI_2), cos($theta + $PI_2));
+					push @u, [ line => [
+						$xo + $lw2 * $cos,
+						$yo + $lw2 * $sin,
+						$xo - $lw2 * $cos,
+						$yo - $lw2 * $sin
+					] ];
+				} elsif ( $le == le::Square ) {
+					$sqrt2 //= sqrt(2.0) * $lw2;
+					push @u, [ line => [
+						$xo - $sqrt2 * cos($theta - $PI_4),
+						$yo - $sqrt2 * sin($theta - $PI_4),
+						$xo - $sqrt2 * cos($theta + $PI_4),
+						$yo - $sqrt2 * sin($theta + $PI_4)
+					] ];
+				} else {
+					push @u, [ arc => 
+						$xo, $yo, $lw, $lw, 
+						$RAD * ($theta + $PI_2),
+						$RAD * ($theta + 3 * $PI_2),
+					];
+				}
+			} else {
+				my ($prev, $next);
+				if ( $i > 0 && $i < $last) {
+					($prev, $next) = ($i - 2, $i + 2);
+				} elsif ( $i == 0) {
+					($prev, $next) = ($last, $i + 2);
+				} else {
+					($prev, $next) = ($i - 2, 0);
+				}
+				my ($xo,$yo,$xa,$ya,$xb,$yb) = @$p[$i,$i+1,$prev,$prev+1,$next,$next+1];
+				my $theta = atan2( $yo - $ya, $xo - $xa );
+        	        	my $alpha = atan2( $yb - $yo, $xb - $xo ) - $theta;
+				$alpha += $PI * (($alpha > 0) ? -1 : 1);
+				# next if $alpha == 0.0; # XXX
+				my $_lj = $lj;
+				$_lj = lj::Bevel if
+					$_lj == lj::Miter && ($alpha == 0 || $ml < abs( 1 / sin($alpha/2)));
+				my $sign = ( $alpha > 0) ? -1 : 1;
+				my ( $in, $out) = ($alpha > 0) ? (\@u,\@d) : (\@d,\@u);
+				my ( $dx1, $dy1, $dx2, $dy2) = map { $sign * $lw2 * $_ } (
+					cos($theta + $PI_2),
+					sin($theta + $PI_2),
+					cos($theta + $alpha + $PI_2),
+					sin($theta + $alpha + $PI_2)
+				);
+				push @$in, [ line => [ $xo + $dx1, $yo + $dy1 ]];
+				push @$in, [ line => [ $xo - $dx2, $yo - $dy2 ]];
+				if ( $_lj == lj::Miter) {
+        	                	my $miterWidth = abs($lw2 / cos($PI_2 - abs($alpha) / 2));
+					push @$out, [ line => [
+						$xo + $miterWidth * cos($theta + $alpha / 2),
+						$yo + $miterWidth * sin($theta + $alpha / 2)
+					]];
+					@firstout = @{ $out->[-1][1] }
+						if $i == 0;
+				} elsif ( $_lj == lj::Bevel) {
+					@firstout = ( $xo - $dx1, $yo - $dy1 )
+						if $i == 0;
+					push @$out, [ line => [ $xo - $dx1, $yo - $dy1 ]];
+					push @$out, [ line => [ $xo + $dx2, $yo + $dy2 ]];
+				} else {
+					@firstout = ( $xo - $dx1, $yo - $dy1 )
+						if $i == 0;
+					push @$out, [ arc =>
+						$xo, $yo,
+						$lw, $lw,
+						($alpha > 0) ? (
+							$RAD * ($theta + $alpha - $PI_2),
+							$RAD * ($theta + $PI_2),
+						) : (
+							$RAD * ($theta - $PI_2),
+							$RAD * ($theta + $alpha + $PI_2),
+						)
+					];
+				}
+				if ( $i == $last ) {
+					push @$in,  [ line => [@{$in ->[0][1]}[0,1]]];
+					push @$out, [ line => \@firstout ];
+				}
+			}
+		}
+		push @u, reverse @d;
+		@d = (); 
+		for ( @u ) {
+			my ( $cmd, @param ) = @$_;
+			if ( $cmd eq 'line' && @d && $d[-1][0] eq 'line' ) {
+				push @{ $d[-1][1] }, @{$param[0]};
+			} else {
+				push @d, $_;
+			}
+		}
+		for ( @d ) {
+			my ( $cmd, @param ) = @$_;
+			$dst->$cmd(@param);
+		}
+		$dst->open;
+	}
+	return $dst;
 }
 
 sub extents
@@ -730,6 +898,13 @@ mode (see L<Drawable/fillWinding> for more).
 =item stroke
 
 Draws a polyline over the path
+
+=item widen %OPTIONS
+
+Expands path into a new path object containing outlines of the original path as
+if drawn with selected line properties. C<lineWidth>, C<lineEnd>, C<lineJoin>
+are read from C<%OPTIONS>, or from the attached canvas when available. Supports
+C<miterLimit> option with values from 0 to 20.
 
 =back
 

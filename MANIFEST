@@ -81,6 +81,7 @@ examples/keyselector.pl
 examples/label.pl
 examples/launch.pl
 examples/layered.pl
+examples/lineplot.pl
 examples/listbox.pl
 examples/macro.pl
 examples/markup.pl
