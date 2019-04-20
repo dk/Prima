@@ -1222,14 +1222,18 @@ Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
 =item spline \@VERTICES, %OPTIONS
 
 Draws a B-spline curve defined by set of VERTICES control points.  VERTICES
-must present an array of integer pair in (X,Y) format.  If the first and the
-last vertices point to the same point, draws closed spline shape ( Note - by
-adding degree minus two points to the set; this is important if C<weight> or
-C<knots> are specificed).
+must present an array of integer pair in (X,Y) format.  
 
 The following options are supported:
 
 =over
+
+=item closed BOOL = undef
+
+When not set, checks if the first and the last vertices point to the same
+point, and if yes, assumes a closed shape. Note - a closed shape rendering is
+implemented by adding degree minus two points to the set; this is important if
+C<weight> or C<knots> are specificed.
 
 =item degree INTEGER = 2
 

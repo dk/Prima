@@ -664,6 +664,58 @@ render_point(
 	return true;
 }
 
+static int
+tangent_detect( Point * a, Point * b)
+{
+	register int x = a->x - b->x;
+	register int y = a->y - b->y;
+	if ( x == 0 ) {
+		if ( y ==  0) return 0;
+		if ( y == -1) return 1;
+		if ( y ==  1) return 2;
+	} else if ( y == 0 ) {
+		if ( x == -1) return 3;
+		if ( x ==  1) return 4;
+	} else if ( x < 2 && x > -2 && y < 2 && y > -2 )
+		return (x * 10) + y;
+	return -1;
+}
+
+static void
+tangent_apply( int tangent,  Point * b)
+{
+	switch(tangent) {
+	case 1:
+		b->y++;
+		break;
+	case 2:
+		b->y--;
+		break;
+	case 3:
+		b->x++;
+		break;
+	case 4:
+		b->x--;
+		break;
+	case 10 - 1:
+		b->x--;	
+		b->y++;	
+		break;
+	case 10 + 1:
+		b->x--;	
+		b->y--;	
+		break;
+	case - 10 - 1:
+		b->x++;	
+		b->y++;	
+		break;
+	case - 10 + 1:
+		b->x++;	
+		b->y--;	
+		break;
+	}
+}
+
 SV *
 Drawable_render_spline( SV * obj, SV * points, HV * profile)
 {
@@ -672,7 +724,8 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	Point *rendered, *storage;
 	SV *ret;
 	Bool ok, closed;
-	int i, j, degree, precision, n_points, final_size, k, dim, n_add_points, temp_size;
+	int i, j, degree, precision, n_points, final_size, k, dim, n_add_points, temp_size,
+		tangent, last_tangent;
 	double *knots, *weights, t, dt, *weighted, *temp;
 
 	knots = weights = weighted = NULL;
@@ -703,7 +756,15 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	if ( !p) goto EXIT;
 
 	/* closed curve will need at least one extra point and unclamped default knot set */
-	closed = p[0].x == p[n_points-1].x && p[0].y == p[n_points-1].y;
+	if ( pexist( closed )) {
+		SV * sv = pget_sv(closed);
+		if ( SvTYPE(sv) == SVt_NULL ) goto DETECT_SHAPE;
+		closed = SvTRUE(sv);
+	}
+	else {
+	DETECT_SHAPE:
+		closed = p[0].x == p[n_points-1].x && p[0].y == p[n_points-1].y;
+	}
 	n_add_points = closed ? degree - 1 : 0;
 	n_points += n_add_points;
 
@@ -748,19 +809,33 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	final_size = 0;
 	rendered = storage = (Point*) prima_array_get_storage(ret);
 	k = -1;
+	last_tangent = -1;
 	for ( i = 0, t = 0.0, dt = 1.0 / precision; i < precision - 1; i++, t += dt) {
 		memcpy( temp, weighted, temp_size);
 		if (!render_point(t, degree, n_points, dim, temp, knots, &k, rendered))
 			goto EXIT;
-		if ( i > 0 && rendered->x == rendered[-1].x && rendered->y == rendered[-1].y)
-			continue;
+		if ( i > 0 ) {
+			/* primitive line detection */
+			tangent = tangent_detect( rendered-1, rendered);
+			if (
+				( i > 1 && tangent > 0 && tangent == last_tangent) ||
+				(tangent == 0)
+			) {
+				tangent_apply( tangent, rendered-1);
+				continue;
+			} else
+				last_tangent = tangent;
+		}
 		final_size++;
 		rendered++;
 	}
 	memcpy( temp, weighted, temp_size);
 	if ( !render_point(1.0, degree, n_points, dim, temp, knots, &k, rendered))
 		goto EXIT;
-	if ( !( i > 0 && rendered->x == rendered[-1].x && rendered->y == rendered[-1].y)) {
+	tangent = ( i > 0 ) ? tangent_detect( rendered-1, rendered) : -2;
+	if ( tangent == 0 || tangent == last_tangent )
+		tangent_apply( tangent, rendered-1);
+	else {
 		final_size++;
 		rendered++;
 	}
