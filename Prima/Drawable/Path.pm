@@ -503,6 +503,112 @@ sub flatten
 	);
 }
 
+sub poly2patterns
+{
+	my ($pp, $lp, $lw) = @_;
+	$lw = 1 if $lw < 1;
+	my @steps = map { 1 + $lw * (ord($_) - 1 ) } split '', $lp;
+#	print "$lw: steps: @steps\n";
+	my @dst;
+	my @sqrt;
+	for my $p ( @$pp ) {
+		if ( @$p <= 2 ) {
+			push @dst, $p;
+			next;
+		}
+		my $closed = $p->[0] == $p->[-2] && $p->[1] == $p->[-1];
+		my ($segment, @strokes);
+		my ($i,$strokecolor,$step,$new_point,$new_stroke,$advance,$joiner) = 
+			(0,0,0,1,1,0,0,0);
+		my ( @a, @b, $black, $dx, $dy, $pixlen, @r, @a1, @b1, $plotted, $draw, $strokelen);
+		while ( 1) {
+			if ( $advance == 0 && $new_stroke ) {
+				$strokecolor = !$strokecolor;
+				$strokelen = $steps[$step++];
+#				print "new stroke #$step: $strokelen " . ($strokecolor ? "black" : "white") . " pixels\n";
+				$step = 0 if $step == @steps;
+				push @strokes, $segment = [] if $strokecolor;
+				$joiner = 0;
+			}
+			if ($new_point ) {
+				@a  = @$p[$i,$i+1];
+				last if @$p <= ($i += 2);
+				@b  = @$p[$i,$i+1];
+				$dx = $b[0] - $a[0];
+				$dy = $b[1] - $a[1];
+				my $dl = $dx * $dx + $dy * $dy;
+				$pixlen = (($dl < 1024 ) ?
+					$sqrt[$dl + .5] //= sqrt(int($dl + .5)) :
+					sqrt($dl)
+				);
+#				print "new point $i: (@a) + $pixlen -> @b\n";
+				@r = ($pixlen > 0) ? 
+					($dx / $pixlen, $dy / $pixlen):
+					(1,1);
+				$pixlen = int( $pixlen + .5 );
+				if (($i == $#$p - 1 && !$closed) || ($pixlen == 0)) {
+					$pixlen++;
+				} else {
+					$b[0] -= $r[0];
+					$b[1] -= $r[1];
+				}
+				@a1 = @a;
+				@b1 = @b;
+				$plotted = 0;
+				splice( @$segment, -2, 2) if $joiner && $advance == 0;
+				$joiner = 0;
+			}
+			($draw, $black) = ( $advance > 0 ) ? ($advance, 0) : ($strokelen, $strokecolor);
+#			print "draw:$advance/$strokelen pixlen:$pixlen plotted:$plotted black:$black\n";
+			if ( $draw < $pixlen ) {
+				$plotted += $draw;
+				@b1 = ($draw == 1) ? @a1 : (
+					($plotted - 1) * $r[0] + $a[0],
+					($plotted - 1) * $r[1] + $a[1],
+				);
+#				print "pix($black): @a1 -> @b1\n";
+				push @$segment, @a1, @b1 if $black;
+				$pixlen -= $draw;
+				$advance += ($advance > 0) ? -$draw : ($lw-1);
+				@a1 = ( $b1[0] + $r[0], $b1[1] + $r[1]);
+#				print "new adv to @a1? =$advance\n";
+				($new_point, $new_stroke) = (0,1);
+			} elsif ( $draw == $pixlen ) {
+				push @$segment, @a1, @b if $black;
+				$new_stroke = $new_point = 1;
+				$advance += ($advance > 0) ? -$draw : ($lw-1);
+#				print "=: pix($black): @a1 -> @b\n";
+				$joiner = $black;
+			} elsif ( $black && $draw == 1 && $pixlen <= 0 )  {
+				$new_point = $new_stroke = 1;
+				$advance = $lw-1;
+#				print "skip tail\n";
+			} else {
+#				print ">: pix($black): @a1 -> @b\n";
+				push @$segment, @a1, @b if $black;
+				($new_point, $new_stroke) = (1,0);
+				if ($advance > 0) {
+					$advance -= $pixlen;
+				} else {
+					$strokelen -= $pixlen;
+					$joiner = $black;
+				}
+			}
+		}
+#		print "done with @$p\n";
+
+		pop @strokes if @strokes && !@{$strokes[-1]};
+		my $first;
+		push @dst, $first = shift @strokes;
+		push @dst, @strokes;
+		if ( @strokes && $closed && $steps[0] > 1 && $strokelen > 1 ) {
+			my $last = pop @dst;
+			unshift @$first, @$last[2 .. $#$last];
+		}
+	}
+	return \@dst;
+}
+
 # Adapted from wine/dlls/gdi32/path.c:WidenPath()
 # (c) Martin Boehme, Huw D M Davies, Dmitry Timoshkov, Alexandre Julliard
 sub widen
@@ -515,15 +621,20 @@ sub widen
 		commands => [],
 	);
 
-	my ($lw, $lj, $le) = map {
+	my ($lw, $lj, $le, $lp) = map {
 		my $opt = exists($opt{$_}) ? $opt{$_} : (
 			$self->{canvas} ? $self->{canvas}->$_() : 0
 		);
-		$opt = 0 if $opt < 0;
+		$opt = 0 if $_ ne 'linePattern' and $opt < 0;
 		$opt;
-	} qw(lineWidth lineJoin lineEnd);
+	} qw(lineWidth lineJoin lineEnd linePattern);
+
+	my $pp = $self->points;
+	return $dst if $lp eq lp::Null;
+	$pp = poly2patterns($pp, $lp, $lw) if $lp ne lp::Solid;
+
 	if ( $lw == 0 ) {
-		for my $p ( @{ $self->points} ) {
+		for my $p ( @$pp ) {
 			$dst->line($p);
 			$dst->open;
 		}
@@ -538,7 +649,7 @@ sub widen
 
 	my @dst;
 	my $lw2 = $lw / 2;
-	for my $p ( @{ $self->points} ) {
+	for my $p ( @$pp ) {
 		my (@u,@d);
 		next unless @$p;
 		my $closed = $p->[0] == $p->[-2] && $p->[1] == $p->[-1];
@@ -556,6 +667,7 @@ sub widen
 			} elsif ( $le == le::Round ) {
 				$dst->ellipse( $x, $y, $lw);
 			}
+			$dst->open;
 			next;
 		}
 
@@ -915,9 +1027,9 @@ Draws a polyline over the path
 =item widen %OPTIONS
 
 Expands path into a new path object containing outlines of the original path as
-if drawn with selected line properties. C<lineWidth>, C<lineEnd>, C<lineJoin>
-are read from C<%OPTIONS>, or from the attached canvas when available. Supports
-C<miterLimit> option with values from 0 to 20.
+if drawn with selected line properties. C<lineWidth>, C<lineEnd>, C<lineJoin>,
+C<linePattern> are read from C<%OPTIONS>, or from the attached canvas when
+available. Supports C<miterLimit> option with values from 0 to 20.
 
 =back
 

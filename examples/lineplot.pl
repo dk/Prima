@@ -7,6 +7,8 @@ my %opt = (
 	lep => 'le::Round',
 	lj  => lj::Round,
 	ljp => 'lj::Round',
+	lp  => lp::DotDot,
+	lpp => 'lp::DotDot',
 	ml  => 10,
 );
 $opt{ml} = 10;
@@ -34,7 +36,7 @@ my $mw = Prima::MainWindow->new(
 	designScale => [ 7, 16 ],
 	menuItems => [
 		['~Options' => [ 
-			[ '*closed' => '~Closed' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
+			[ 'closed' => '~Closed' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
 			[ compare => '~Compare' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
 			[],
 			[ 'E~xit' => sub { $_[0]->destroy } ],
@@ -61,6 +63,10 @@ my $mw = Prima::MainWindow->new(
 				}
 			}],
 		]],
+		[ '~Pattern' => [ map { [ menu lp => $_ ] } qw(
+			Null Solid Dash LongDash ShortDash
+			Dot DotDot DashDot DashDotDot
+		) ]],
 	],
 	buffered => 1,
 	onPaint => sub {
@@ -86,16 +92,11 @@ my $mw = Prima::MainWindow->new(
 		$p->line(\@xpoints);
 		my $lw = 28;
 		$p = $p->widen( 
-			lineWidth  => $lw, 
-			lineEnd    => $opt{le}, 
-			lineJoin   => $opt{lj}, 
-			miterLimit => $opt{ml},
-			callback   => sub {
-				my ($idx, $points, $set) = @_;
-				$lw -= 56/@xpoints;
-				$lw = 2 if $lw < 2;
-				$set->{lineWidth}->($lw);
-			},
+			lineWidth   => $lw, 
+			lineEnd     => $opt{le}, 
+			lineJoin    => $opt{lj}, 
+			linePattern => $opt{lp},
+			miterLimit  => $opt{ml},
 		);
 		$canvas->color(cl::LightRed);
 		$canvas->rop(rop::OrPut) if $cmp;
@@ -188,6 +189,6 @@ my $mw = Prima::MainWindow->new(
 	},
 );
 
-$mw->menu->check($opt{$_}) for qw(lep ljp);
+$mw->menu->check($opt{$_}) for qw(lep ljp lpp);
 
 run Prima;
