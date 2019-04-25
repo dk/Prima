@@ -84,8 +84,10 @@ my $mw = Prima::MainWindow->new(
 		my $cmp;
 		if ( $cmp = $self-> menu->checked('compare')) {
 			$canvas->lineWidth(30);
+			$canvas->linePattern($opt{lp});
 			$canvas->polyline( \@xpoints);
 			$canvas->lineWidth(1);
+			$canvas->linePattern(lp::Solid);
 		}
 
 		my $p = $canvas->new_path;
