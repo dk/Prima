@@ -10,6 +10,7 @@ my %opt = (
 	lp  => lp::DotDot,
 	lpp => 'lp::DotDot',
 	ml  => 10,
+	lw  => 28,
 );
 $opt{ml} = 10;
 my $aperture = 12;
@@ -30,7 +31,15 @@ sub menu($$)
 	}
 }
 
-my $mw = Prima::MainWindow->new(
+my $mw;
+
+sub lw
+{
+	$opt{lw} = shift;
+	$mw->repaint;
+}
+
+$mw = Prima::MainWindow->new(
 	size => [ 400, 431 ],
 	text => 'Line plotter',
 	designScale => [ 7, 16 ],
@@ -38,6 +47,7 @@ my $mw = Prima::MainWindow->new(
 		['~Options' => [ 
 			[ 'closed' => '~Closed' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
 			[ compare => '~Compare' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
+			[ '*hairline' => '~Hairline' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
 			[],
 			[ 'E~xit' => sub { $_[0]->destroy } ],
 		]],
@@ -67,6 +77,9 @@ my $mw = Prima::MainWindow->new(
 			Null Solid Dash LongDash ShortDash
 			Dot DotDot DashDot DashDotDot
 		) ]],
+		[ '~Width' => [
+			(map { my $k = $_; [ $k , sub { lw($k) } ] } (0,1,2,3,5,10,20,30)),
+		]],
 	],
 	buffered => 1,
 	onPaint => sub {
@@ -83,7 +96,7 @@ my $mw = Prima::MainWindow->new(
 			( 30, 30, @points, $w - 30, $h - 30);
 		my $cmp;
 		if ( $cmp = $self-> menu->checked('compare')) {
-			$canvas->lineWidth(30);
+			$canvas->lineWidth($opt{lw}+2);
 			$canvas->linePattern($opt{lp});
 			$canvas->polyline( \@xpoints);
 			$canvas->lineWidth(1);
@@ -92,9 +105,8 @@ my $mw = Prima::MainWindow->new(
 
 		my $p = $canvas->new_path;
 		$p->line(\@xpoints);
-		my $lw = 28;
 		$p = $p->widen( 
-			lineWidth   => $lw, 
+			lineWidth   => $opt{lw}, 
 			lineEnd     => $opt{le}, 
 			lineJoin    => $opt{lj}, 
 			linePattern => $opt{lp},
@@ -106,10 +118,12 @@ my $mw = Prima::MainWindow->new(
 		$p->fill;
 		$canvas->rop(rop::CopyPut);
 
-		$canvas->color(cl::White);
-		$canvas->lineWidth(1);
-		$canvas->linePattern(lp::Solid);
-		$canvas-> polyline( \@xpoints);
+		if ( $cmp = $self-> menu->checked('hairline')) {
+			$canvas->color(cl::White);
+			$canvas->lineWidth(1);
+			$canvas->linePattern(lp::Solid);
+			$canvas-> polyline( \@xpoints);
+		}
 		for ( my $i = 0; $i < @points; $i+=2) {
 			$canvas-> color(($i == $c) ? cl::White : cl::Black);
 			$canvas-> fill_ellipse(

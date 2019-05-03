@@ -1031,6 +1031,10 @@ if drawn with selected line properties. C<lineWidth>, C<lineEnd>, C<lineJoin>,
 C<linePattern> are read from C<%OPTIONS>, or from the attached canvas when
 available. Supports C<miterLimit> option with values from 0 to 20.
 
+Note: if the intention is to immediately render lines, decrease lineWidth by 1
+(they are 1 pixel wider because paths are built around assumption that pixel size is 0,
+which makes them scalable).
+
 =back
 
 =head2 Methods for custom primitives
