@@ -654,11 +654,11 @@ render_point(
 	/* convert back to cartesian and return */
 	s *= 3;
 	if ( dimensions == 3 ) {
-		result-> x = v[s] / v[s+2];
-		result-> y = v[s+1] / v[s+2];
+		result-> x = v[s] / v[s+2]   + .5;
+		result-> y = v[s+1] / v[s+2] + .5;
 	} else {
-		result-> x = v[s];
-		result-> y = v[s+1];
+		result-> x = v[s]   + .5;
+		result-> y = v[s+1] + .5;
 	}
 
 	return true;

@@ -303,7 +303,7 @@ sub _moveto
 	($mx, $my) = $self->matrix_apply($mx, $my);
 	my ($lx, $ly) = $rel ? $self->last_point : (0,0);
 	push @{$self->{points}}, Prima::array->new_int;
-	push @{$self->{points}->[-1]}, $lx + $mx, $ly + $my;
+	push @{$self->{points}->[-1]}, int($lx + $mx + .5), int($ly + $my + .5);
 }
 
 sub _open { push @{shift->{points}}, Prima::array->new_int }
@@ -320,7 +320,7 @@ sub _close
 sub _line
 {
 	my ( $self, $line ) = @_;
-	push @{ $self->{points}->[-1] }, @{ $self-> matrix_apply( $line ) };
+	push @{ $self->{points}->[-1] }, map { int($_ + .5) } @{ $self-> matrix_apply( $line ) };
 }
 
 sub _spline
