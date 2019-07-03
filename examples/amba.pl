@@ -218,13 +218,23 @@ my $w = Prima::MainWindow-> create(
 		$self-> capture(1);
 		$self-> pointer( cr::Size);
 		my $xx = $self-> pointerIcon;
+
+		if ( $::application-> get_system_value( sv::ColorPointer)) {
+			$xx->scaling(ist::None);
+			my @sz = $images{$i}->size;
+			$xx->width($sz[0]) if $xx->width < $sz[0];
+			$xx->height($sz[1]) if $xx->height < $sz[1];
+		}
 		my ( $xor, $and) = $xx-> split;
 
 		$and-> begin_paint;
+		$and-> backColor(cl::White);
+		$and-> clear;
 		$and-> rop( rop::NotSrcAnd);
 		$and-> put_image( @pointer, $images{$i});
 		$and-> end_paint;
 
+		$xor->type(im::RGB) if $xor->get_bpp == 1 && $::application-> get_system_value( sv::ColorPointer);
 		$xor-> begin_paint;
 		$xor-> set(
 			color      => cl::Black,
