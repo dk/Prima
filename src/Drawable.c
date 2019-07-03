@@ -832,13 +832,8 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	memcpy( temp, weighted, temp_size);
 	if ( !render_point(1.0, degree, n_points, dim, temp, knots, &k, rendered))
 		goto EXIT;
-	tangent = ( i > 0 ) ? tangent_detect( rendered-1, rendered) : -2;
-	if ( tangent == 0 || tangent == last_tangent )
-		tangent_apply( tangent, rendered-1);
-	else {
-		final_size++;
-		rendered++;
-	}
+	final_size++;
+	rendered++;
 
 	/* looks good */
 	ok = true;
