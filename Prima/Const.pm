@@ -952,6 +952,7 @@ See also L<Prima::Application/get_system_value>
 	                       0 if it doesn't, -1 if unknown
 	sv::LayeredWidgets   - 1 if system supports layering
 	sv::DWM              - 1 if system supports DWM API
+	sv::FixedPointerSize - 0 if system doesn't support arbitrary sized pointers and will resize custom icons to the system size
 
 =head2 ta::  - alignment constants
 

@@ -211,7 +211,7 @@ xlib_cursor_load( Handle self, Handle icon)
 {
 	XImage *im;
 	Pixmap p1 = None, p2 = None;
-	Bool free_pixmap = true;
+	Bool free_pixmap = true, success = false;
 	GC gc;
 	XGCValues gcv;
 	char c;
@@ -262,27 +262,33 @@ xlib_cursor_load( Handle self, Handle icon)
 		XFreeGC( DISP, gc);
 	}
 	CIcon(icon)-> create_empty( icon, w, h, imBW);
-	im = XGetImage( DISP, p1, 0, 0, w, h, 1, XYPixmap);
-	prima_copy_xybitmap( PIcon(icon)-> data, (Byte*)im-> data,
-								PIcon(icon)-> w, PIcon(icon)-> h,
-								PIcon(icon)-> lineSize, im-> bytes_per_line);
+	if (( im = XGetImage( DISP, p1, 0, 0, w, h, 1, XYPixmap)) == NULL)
+		goto FAIL;
+	prima_copy_xybitmap(
+		PIcon(icon)-> data, (Byte*)im-> data,
+		PIcon(icon)-> w, PIcon(icon)-> h,
+		PIcon(icon)-> lineSize, im-> bytes_per_line);
 	XDestroyImage( im);
-	im = XGetImage( DISP, p2, 0, 0, w, h, 1, XYPixmap);
-	prima_copy_xybitmap( PIcon(icon)-> mask, (Byte*)im-> data,
-								PIcon(icon)-> w, PIcon(icon)-> h,
-								PIcon(icon)-> maskLine, im-> bytes_per_line);
+	if (( im = XGetImage( DISP, p2, 0, 0, w, h, 1, XYPixmap)) == NULL)
+		goto FAIL;
+	prima_copy_xybitmap(
+		PIcon(icon)-> mask, (Byte*)im-> data,
+		PIcon(icon)-> w, PIcon(icon)-> h,
+		PIcon(icon)-> maskLine, im-> bytes_per_line);
 	if ( id == crUser) {
 		int i;
 		Byte * mask = PIcon(icon)-> mask;
 		for ( i = 0; i < PIcon(icon)-> maskSize; i++)
 			mask[i] = ~mask[i];
 	}
-	XDestroyImage( im);
+	success = true;
+FAIL:
+	if (im != NULL) XDestroyImage( im);
 	if ( free_pixmap) {
 		XFreePixmap( DISP, p1);
 		XFreePixmap( DISP, p2);
 	}
-	return true;
+	return success;
 }
 
 Bool

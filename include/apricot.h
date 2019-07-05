@@ -1859,6 +1859,8 @@ SV(CompositeDisplay)
 SV(LayeredWidgets)
 #define   svDWM             34
 SV(DWM)
+#define   svFixedPointerSize 35
+SV(FixedPointerSize)
 END_TABLE(sv,UV)
 #undef SV
 

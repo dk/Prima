@@ -893,7 +893,9 @@ of an arbitrary size and color depth.
 
 NB: Not all systems allow the colored pointer icons. System value
 under sv::ColorPointer index containing a boolean value, whether the colored
-icons are allowed or not.
+icons are allowed or not. Also, the pointer icon size may have a limit: 
+check if sv::FixedPointerSize is non-zero, in which case the pointer size will 
+be reduced to the system limits.
 
 In general, the C<::pointer> property is enough for these actions.
 It discerns whether it has an icon or a constant passed, and
