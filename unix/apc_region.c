@@ -535,11 +535,11 @@ apc_region_copy_rects( Handle self)
 	height = region-> extents.y2 - region-> extents.y1;
 	for ( i = 0; i < ret->n_boxes; i++, src++, dst++) {
 		dst-> x = src-> x1;
-		dst-> y = src-> y2 - height;
+		dst-> y = height - src-> y2;
 		dst-> width  = src-> x2 - src->x1;
 		dst-> height = src-> y2 - src->y1;
 	}
 
-	return NULL;
+	return ret;
 }
 

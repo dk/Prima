@@ -144,8 +144,8 @@ Region_update_handle( Handle self)
 			free(var->rects);
 			var->rects = NULL;
 		}
-		var->rects = apc_region_copy_rects(self);
 		opt_clear( optDirtyRegion);
+		var->rects = apc_region_copy_rects(self);
 	}
 }
 
