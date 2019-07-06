@@ -21,6 +21,7 @@ Region_init( Handle self, HV * profile)
 	Bool free_image = false, ok;
 
 	r.type = rgnEmpty;
+	r.n_boxes = 1;
 
 	inherited-> init( self, profile);
 
@@ -84,6 +85,7 @@ CREATE:
 	ok = apc_region_create( self, &r);
 	if ( r. type == rgnPolygon ) free( r. data. polygon. points );
 	if ( free_image ) Object_destroy(r.data.image);
+	opt_set( optDirtyRegion);
 	CORE_INIT_TRANSIENT(Region);
 	if (!ok)
 		warn("Cannot create region");
@@ -92,6 +94,10 @@ CREATE:
 void
 Region_done( Handle self)
 {
+	if ( var->rects != NULL ) {
+		free(var->rects);
+		var->rects = NULL;
+	}
 	apc_region_destroy( self);
 	inherited-> done( self);
 }
@@ -106,11 +112,19 @@ Region_equals( Handle self, Handle other_region)
 }
 
 Bool
+Region_offset( Handle self, int dx, int dy)
+{
+	opt_set( optDirtyRegion);
+	return apc_region_offset( self, dx, dy);
+}
+
+Bool
 Region_combine( Handle self, Handle other_region, int rgnop)
 {
 	if ( !other_region) return false;
 	if (PRegion(other_region)->stage > csNormal || !kind_of(other_region, CRegion))
 		croak("Not a region passed");
+	opt_set( optDirtyRegion);
 	return apc_region_combine( self, other_region, rgnop );
 }
 
@@ -120,6 +134,19 @@ Region_get_handle( Handle self)
 	char buf[ 256];
 	snprintf( buf, 256, PR_HANDLE_FMT, apc_region_get_handle( self));
 	return newSVpv( buf, 0);
+}
+
+void
+Region_update_handle( Handle self)
+{
+	if ( is_opt( optDirtyRegion)) {
+		if ( var->rects != NULL ) {
+			free(var->rects);
+			var->rects = NULL;
+		}
+		var->rects = apc_region_copy_rects(self);
+		opt_clear( optDirtyRegion);
+	}
 }
 
 #ifdef __cplusplus

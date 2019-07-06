@@ -10,6 +10,11 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
+#define Box _prima_Box
+#include <X11/Xregion.h>
+#undef Box
+#define Box BoxRec
+#undef Box
 #include <X11/Xresource.h>
 #include <X11/cursorfont.h>
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
@@ -1375,3 +1380,6 @@ prima_find_toplevel_window(Handle self);
 
 extern Byte*
 prima_mirror_bits( void);
+
+extern int
+prima_copy_region_data(void * region);

@@ -1623,6 +1623,7 @@ typedef struct _ObjectOptions_ {
 	unsigned optActive              : 1;   /* Timer */
 	unsigned optOwnerIcon           : 1;   /* Window */
 	unsigned optMainWindow          : 1;
+	unsigned optDirtyRegion         : 1;   /* Region */
 } ObjectOptions;
 
 #define opt_set( option)           (PObject(self)-> options. option = 1)
@@ -3257,6 +3258,7 @@ typedef struct {
 
 typedef struct {
 	int type;
+	int n_boxes;
 	union {
 		Box box;
 		PolygonRegionRec polygon;
@@ -3319,6 +3321,9 @@ apc_region_is_empty( Handle self);
 
 extern ApiHandle
 apc_region_get_handle( Handle self);
+
+extern PRegionRec
+apc_region_copy_rects( Handle self);
 
 /* gp functions */
 extern Bool

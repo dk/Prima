@@ -1,8 +1,8 @@
 #include "unix/guts.h"
 #include "Icon.h"
 
-#define REGION GET_REGION(self)->region
-#define HEIGHT GET_REGION(self)->height
+#define pREGION GET_REGION(self)->region
+#define pHEIGHT GET_REGION(self)->height
 
 Region
 prima_region_create( Handle mask)
@@ -92,14 +92,14 @@ static Bool
 rgn_empty(Handle self)
 {
 	XRectangle xr;
-	REGION = XCreateRegion();
+	pREGION = XCreateRegion();
 	xr. x = 0;
 	xr. y = 0;
 	xr. width  = 1;
 	xr. height = 1;
-	XUnionRectWithRegion( &xr, REGION, REGION);
-	XXorRegion( REGION, REGION, REGION);
-	HEIGHT = 0;
+	XUnionRectWithRegion( &xr, pREGION, pREGION);
+	XXorRegion( pREGION, pREGION, pREGION);
+	pHEIGHT = 0;
 	return true;
 }
 
@@ -107,13 +107,13 @@ static Bool
 rgn_rect(Handle self, Box r)
 {
 	XRectangle xr;
-	REGION = XCreateRegion();
+	pREGION = XCreateRegion();
 	xr. x = r. x;
 	xr. y = 0;
 	xr. width  = r. width;
 	xr. height = r. height;
-	XUnionRectWithRegion( &xr, REGION, REGION);
-	HEIGHT = r.y + r.height;
+	XUnionRectWithRegion( &xr, pREGION, pREGION);
+	pHEIGHT = r.y + r.height;
 	return true;
 }
 
@@ -137,8 +137,8 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 		xp[i].y = max - r->points[i].y;
 	}
 
-	HEIGHT = max;
-	REGION = XPolygonRegion( xp, r->n_points, r-> winding ? WindingRule : EvenOddRule );
+	pHEIGHT = max;
+	pREGION = XPolygonRegion( xp, r->n_points, r-> winding ? WindingRule : EvenOddRule );
 
 	free( xp );
 	return true;
@@ -147,12 +147,12 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 static Bool
 rgn_image(Handle self, Handle image)
 {
-	REGION = prima_region_create(image);
+	pREGION = prima_region_create(image);
 
-	if ( !REGION )
-		REGION = XCreateRegion();
+	if ( !pREGION )
+		pREGION = XCreateRegion();
 	else
-		HEIGHT = PImage(image)->h;
+		pHEIGHT = PImage(image)->h;
 	return true;
 }
 
@@ -176,9 +176,9 @@ apc_region_create( Handle self, PRegionRec rec)
 Bool
 apc_region_destroy( Handle self)
 {
-	if ( REGION ) {
-		XDestroyRegion(REGION);
-		REGION = NULL;
+	if ( pREGION ) {
+		XDestroyRegion(pREGION);
+		pREGION = NULL;
 	}
 	return true;
 }
@@ -186,13 +186,13 @@ apc_region_destroy( Handle self)
 ApiHandle
 apc_region_get_handle( Handle self)
 {
-	return (ApiHandle) REGION;
+	return (ApiHandle) pREGION;
 }
 
 Bool
 apc_region_offset( Handle self, int dx, int dy)
 {
-	XOffsetRegion(REGION, dx, -dy);
+	XOffsetRegion(pREGION, dx, -dy);
 	return true;
 }
 
@@ -206,31 +206,31 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 	r2 = GET_REGION(other_region);
 
 	if ( rgnop == rgnopCopy ) {
-		if ( REGION ) XDestroyRegion( REGION );
-		REGION = XCreateRegion();
-		XUnionRegion( REGION, r2->region, REGION);
-		HEIGHT = r2-> height;
+		if ( pREGION ) XDestroyRegion( pREGION );
+		pREGION = XCreateRegion();
+		XUnionRegion( pREGION, r2->region, pREGION);
+		pHEIGHT = r2-> height;
 		return true;
 	}
 
-	d = HEIGHT - r2-> height;
+	d = pHEIGHT - r2-> height;
 	if ( d > 0 )
 		XOffsetRegion( r2-> region, 0, d);
 	else
-		XOffsetRegion( REGION, 0, -d);
+		XOffsetRegion( pREGION, 0, -d);
 
 	switch (rgnop) {
 	case rgnopIntersect:
-		XIntersectRegion( REGION, r2->region, REGION);
+		XIntersectRegion( pREGION, r2->region, pREGION);
 		break;
 	case rgnopUnion:
-		XUnionRegion( REGION, r2->region, REGION);
+		XUnionRegion( pREGION, r2->region, pREGION);
 		break;
 	case rgnopXor:
-		XXorRegion( REGION, r2->region, REGION);
+		XXorRegion( pREGION, r2->region, pREGION);
 		break;
 	case rgnopDiff:
-		XSubtractRegion( REGION, r2->region, REGION);
+		XSubtractRegion( pREGION, r2->region, pREGION);
 		break;
 	default:
 		ok = false;
@@ -238,7 +238,7 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 	if ( d > 0 )
 		XOffsetRegion( r2-> region, 0, -d);
 	else
-		HEIGHT = r2-> height;
+		pHEIGHT = r2-> height;
 
 	return ok;
 }
@@ -246,15 +246,15 @@ apc_region_combine( Handle self, Handle other_region, int rgnop)
 Bool
 apc_region_point_inside( Handle self, Point p)
 {
-	return XPointInRegion( REGION, p.x, HEIGHT - p.y - 1);
+	return XPointInRegion( pREGION, p.x, pHEIGHT - p.y - 1);
 }
 
 int
 apc_region_rect_inside( Handle self, Rect r)
 {
 	int res = XRectInRegion(
-		REGION,
-		r. left, HEIGHT - r. bottom - 1,
+		pREGION,
+		r. left, pHEIGHT - r. bottom - 1,
 		r. right - r.left + 1, r.top - r.bottom + 1
 	);
 	switch (res) {
@@ -267,13 +267,13 @@ apc_region_rect_inside( Handle self, Rect r)
 Bool
 apc_region_equals( Handle self, Handle other_region)
 {
-	return XEqualRegion( REGION, GET_REGION(other_region)->region);
+	return XEqualRegion( pREGION, GET_REGION(other_region)->region);
 }
 
 Bool
 apc_region_is_empty( Handle self)
 {
-	return XEmptyRegion( REGION );
+	return XEmptyRegion( pREGION );
 }
 
 Box
@@ -281,9 +281,9 @@ apc_region_get_box( Handle self)
 {
 	Box box;
 	XRectangle xr;
-	XClipBox( REGION, &xr);
+	XClipBox( pREGION, &xr);
 	box. x	    = xr. x;
-	box. y	    = HEIGHT - xr. height - xr.y;
+	box. y	    = pHEIGHT - xr. height - xr.y;
 	box. width  = xr. width;
 	box. height = xr. height;
 	return box;
@@ -510,5 +510,36 @@ apc_gp_get_region( Handle self, Handle rgn)
 		GET_REGION(rgn)-> region = XCreateRegion();
 	}
 	return true;
+}
+
+PRegionRec
+apc_region_copy_rects( Handle self)
+{
+	int i, height;
+	PRegionRec ret;
+	Box *dst;
+	BoxRec *src;
+	REGION *region;
+
+	region = (REGION*) pREGION;
+	ret = malloc(sizeof(RegionRec) + sizeof(Box) * ( region->numRects - 1 ));
+	if ( ret == NULL ) {
+		warn("Not enough memory\n");
+		return NULL;
+	}
+
+	ret-> type = rgnRectangle;
+	ret-> n_boxes = region-> numRects;
+	src = region->rects;
+	dst = &(ret->data.box);
+	height = region-> extents.y2 - region-> extents.y1;
+	for ( i = 0; i < ret->n_boxes; i++, src++, dst++) {
+		dst-> x = src-> x1;
+		dst-> y = src-> y2 - height;
+		dst-> width  = src-> x2 - src->x1;
+		dst-> height = src-> y2 - src->y1;
+	}
+
+	return NULL;
 }
 
