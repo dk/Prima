@@ -406,6 +406,47 @@ apc_gp_set_region( Handle self, Handle region)
 	return true;
 }
 
+PRegionRec
+apc_region_copy_rects( Handle self)
+{
+	int i, height, size;
+	PRegionRec ret;
+	Box *dst;
+	RECT *src;
+	RGNDATA *rgndata;
+
+	size = GetRegionData( REGION, 0, NULL);
+	if ( !( rgndata = malloc(size))) {
+		warn("Not enough memory\n");
+		return NULL;
+	}
+	size = GetRegionData( REGION, size, rgndata);
+	if ( size == 0) return NULL;
+
+	ret = malloc(sizeof(RegionRec) + sizeof(Box) * ( rgndata-> rdh. nCount - 1 ));
+	if ( ret == NULL ) {
+		free(ret);
+		warn("Not enough memory\n");
+		return NULL;
+	}
+
+
+
+	ret-> type = rgnRectangle;
+	ret-> n_boxes = rgndata->rdh. nCount;
+	src = (RECT*) &(rgndata->Buffer);
+	dst = &(ret->data.box);
+	height = rgndata->rdh. rcBound. bottom - rgndata->rdh. rcBound. top;
+	for ( i = 0; i < ret->n_boxes; i++, src++, dst++) {
+		dst-> x = src-> left;
+		dst-> y = height - src-> bottom;
+		dst-> width  = src-> right - src->left;
+		dst-> height = src-> bottom - src->top;
+	}
+	free(rgndata);
+
+	return ret;
+}
 
 #ifdef __cplusplus
 }

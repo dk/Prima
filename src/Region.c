@@ -137,7 +137,7 @@ Region_get_handle( Handle self)
 }
 
 void
-Region_update_handle( Handle self)
+Region_update_change( Handle self)
 {
 	if ( is_opt( optDirtyRegion)) {
 		if ( var->rects != NULL ) {
