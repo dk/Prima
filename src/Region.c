@@ -91,6 +91,24 @@ CREATE:
 		warn("Cannot create region");
 }
 
+Handle
+Region_create_from_data( Handle self, PRegionRec data)
+{
+	Bool ok;
+	HV * profile = newHV();
+	self = Object_create( "Prima::Region", profile);
+	apc_region_destroy(self);
+	ok = apc_region_create( self, data);
+	opt_set( optDirtyRegion);
+	sv_free(( SV *) profile);
+	--SvREFCNT( SvRV(var-> mate));
+	if (!ok) {
+ 		warn("Cannot create region");
+		return nilHandle;
+	}
+	return self;
+}
+
 void
 Region_done( Handle self)
 {
@@ -136,8 +154,8 @@ Region_get_handle( Handle self)
 	return newSVpv( buf, 0);
 }
 
-void
-Region_update_change( Handle self)
+PRegionRec
+Region_update_change( Handle self, Bool disown)
 {
 	if ( is_opt( optDirtyRegion)) {
 		if ( var->rects != NULL ) {
@@ -147,6 +165,12 @@ Region_update_change( Handle self)
 		opt_clear( optDirtyRegion);
 		var->rects = apc_region_copy_rects(self);
 	}
+	if ( disown && var->rects ) {
+		PRegionRec ret = var->rects;
+		var->rects = NULL;
+		return ret;
+	}
+	return NULL;
 }
 
 #ifdef __cplusplus

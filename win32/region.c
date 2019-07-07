@@ -123,10 +123,21 @@ rgn_empty(Handle self)
 }
 
 static Bool
-rgn_rect(Handle self, Box r)
+rgn_rect(Handle self, int * count, Box * r)
 {
-	REGION = CreateRectRgn(r.x, 0, r.width+r.x, r.height);
-	HEIGHT = r.y + r.height;
+	REGION = CreateRectRgn(r->x, 0, r->width+r->x, r->height);
+	HEIGHT = r->y + r->height;
+	if ( count > 1 ) {
+		int i, h = HEIGHT;
+		for ( i = 1; i < count; i++, r++) {
+			HRGN reg = CreateRectRgn(r->x, 0, r->width+r->x, r->height);
+			CombineRgn( REGION, REGION, rgn, RGN_OR);
+			DeleteObject(reg);
+			if ( h < r->y + r->height)
+				h = r->y + r->height;
+		}
+		HEIGHT = h;
+	}
 	return true;
 }
 
@@ -176,7 +187,7 @@ apc_region_create( Handle self, PRegionRec rec)
 	case rgnEmpty:
 		return rgn_empty(self);
 	case rgnRectangle:
-		return rgn_rect(self, rec->data.box);
+		return rgn_rect(self, rec->n_boxes, &rec->data.box);
 	case rgnPolygon:
 		return rgn_polygon(self, &rec->data.polygon);
 	case rgnImage:

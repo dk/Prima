@@ -5,6 +5,7 @@
 #include <math.h>
 #include "apricot.h"
 #include "Image.h"
+#include "Region.h"
 #include "img_conv.h"
 #include <Image.inc>
 #include "Clipboard.h"
@@ -320,6 +321,10 @@ Image_set( Handle self, HV * profile)
 void
 Image_done( Handle self)
 {
+	if ( var-> regionData ) {
+		free(var->regionData);
+		var->regionData = NULL;
+	}
 	apc_image_destroy( self);
 	my->make_empty( self);
 	inherited done( self);
@@ -810,6 +815,10 @@ Bool
 Image_begin_paint( Handle self)
 {
 	Bool ok;
+	if ( var-> regionData ) {
+		free(var->regionData);
+		var->regionData = NULL;
+	}
 	if ( !inherited begin_paint( self))
 		return false;
 	if ( !( ok = apc_image_begin_paint( self))) {
@@ -824,6 +833,10 @@ Image_begin_paint_info( Handle self)
 {
 	Bool ok;
 	if ( is_opt( optInDraw))     return true;
+	if ( var-> regionData ) {
+		free(var->regionData);
+		var->regionData = NULL;
+	}
 	if ( !inherited begin_paint_info( self))
 		return false;
 	if ( !( ok = apc_image_begin_paint_info( self))) {
@@ -1742,6 +1755,50 @@ Image_premultiply_alpha( Handle self, SV * alpha)
 		my-> set_type( self, oldType );
 	else
 		my-> update_change( self );
+}
+
+Handle
+Image_region( Handle self, Bool set, Handle mask)
+{
+	if ( is_opt(optInDraw) || is_opt(optInDrawInfo))
+		return inherited region(self,set,mask);
+
+	if ( var-> stage > csFrozen) return nilHandle;
+
+	if ( set) {
+		if ( var-> regionData ) {
+			free(var->regionData);
+			var->regionData = NULL;
+		}
+		var-> regionOffset = apc_gp_get_transform(self);
+
+		if ( mask && kind_of( mask, CRegion)) {
+			var->regionData = CRegion(mask)->update_change(mask, true);
+			return nilHandle;
+		}
+
+		if ( mask && !kind_of( mask, CImage)) {
+			warn("Illegal object reference passed to Image::region");
+			return nilHandle;
+		}
+
+		if ( mask ) {
+			Handle region;
+			HV * profile = newHV();
+			pset_H( image, mask );
+			region = Object_create("Prima::Region", profile);
+			sv_free(( SV *) profile);
+			var->regionData = CRegion(region)->update_change(region, true);
+			Object_destroy(region);
+		}
+
+	} else if ( var-> regionData ) {
+		Handle region = Region_create_from_data( nilHandle, var->regionData);
+		apc_region_offset( region, var->regionOffset.x, var->regionOffset.y);
+		return region;
+	}
+
+	return nilHandle;
 }
 
 #ifdef __cplusplus

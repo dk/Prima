@@ -14,6 +14,8 @@ object Prima::Image( Prima::Drawable)
 	Point          resolution;
 	int            eventMask1;
 	int            eventMask2;
+	Point          regionOffset;
+	PRegionRec     regionData;
 
 	property int    conversion;
 	property SV *   data;
@@ -21,6 +23,7 @@ object Prima::Image( Prima::Drawable)
 	property SV *   palette;
 	property SV *   pixel( int x, int y);
 	property Bool   preserveType;
+	property Handle region;
 	property Point  resolution;
 	property int    scaling;
 	property Point  size;

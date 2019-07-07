@@ -12,5 +12,6 @@ object Prima::Region( Prima::Component)
 	method   Bool      offset(int dx, int dy);
 	method   Bool      point_inside(Point p) => apc_region_point_inside;
 	method   int       rect_inside(Rect p) => apc_region_rect_inside;
-	c_only   void      update_change();
+	c_only   PRegionRec update_change(Bool disown);
+	c_only   Handle    create_from_data( PRegionRec data );
 }

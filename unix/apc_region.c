@@ -104,16 +104,23 @@ rgn_empty(Handle self)
 }
 
 static Bool
-rgn_rect(Handle self, Box r)
+rgn_rect(Handle self, int count, Box * r)
 {
-	XRectangle xr;
+	int i, h;
 	pREGION = XCreateRegion();
-	xr. x = r. x;
-	xr. y = 0;
-	xr. width  = r. width;
-	xr. height = r. height;
-	XUnionRectWithRegion( &xr, pREGION, pREGION);
-	pHEIGHT = r.y + r.height;
+
+	h = 0;
+	for ( i = 0; i < count; i++, r++) {
+		XRectangle xr;
+		xr. x = r-> x;
+		xr. y = 0;
+		xr. width  = r-> width;
+		xr. height = r-> height;
+		XUnionRectWithRegion( &xr, pREGION, pREGION);
+		if ( h < r->y + r->height)
+			h = r->y + r->height;
+	}
+	pHEIGHT = h;
 	return true;
 }
 
@@ -163,7 +170,7 @@ apc_region_create( Handle self, PRegionRec rec)
 	case rgnEmpty:
 		return rgn_empty(self);
 	case rgnRectangle:
-		return rgn_rect(self, rec->data.box);
+		return rgn_rect(self, rec->n_boxes, &rec->data.box);
 	case rgnPolygon:
 		return rgn_polygon(self, &rec->data.polygon);
 	case rgnImage:
