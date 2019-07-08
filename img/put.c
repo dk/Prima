@@ -500,8 +500,145 @@ EXIT:
 	return true;
 }
 
+#define BLT_BUFSIZE 1024
+
+static void
+img_bar_single( PImage i,
+	int x, int y, int w, int h, 
+	PBitBltProc proc, 
+ 	Byte * blt_buffer)
+{
+	int j, blt_bytes, blt_step, offset;
+	Byte lmask, rmask;
+	Byte * data;
+	int lineSize = i-> lineSize;
+	int type     = i-> type;
+	int pixSize  = (type & imBPP) / 8;
+
+	switch ( type & imBPP) {
+	case imbpp1:
+		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
+		lmask = ( x & 7 ) ? 255 << ( 8 - (x & 7)) : 0;
+		rmask = (( x + w) & 7 ) ? 255 >> ((x + w) & 7) : 0;
+		offset = x >> 3;
+		break;
+	case imbpp4:
+		blt_bytes = (( x + w - 1) >> 1) - (x >> 1) + 1;
+		lmask = ( x & 1 )       ? 0xf0 : 0;
+		rmask = (( x + w) & 1 ) ? 0x0f : 0;
+		offset = x >> 1;
+		break;
+	case imbpp8:
+		blt_bytes = w;
+		lmask = rmask = 0;
+		offset = x;
+		break;
+	default:
+		blt_bytes = w * pixSize;
+		lmask = rmask = 0;
+		offset = x * pixSize;
+	}
+
+	blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
+
+	data = i->data + lineSize * y + offset;
+	for ( j = 0; j < h; j++) {
+		int bytes = blt_bytes;
+		Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
+		while ( bytes > 0 ) {
+			proc( blt_buffer, p, ( bytes > blt_step ) ? blt_step : bytes );
+			bytes -= blt_step;
+			p += blt_step;
+		}
+		if ( lmask ) *data = (lsave & lmask) | (*data & ~lmask);
+		if ( rmask ) data[blt_bytes-1] = (rsave & rmask) | (data[blt_bytes-1] & ~rmask);
+		data += lineSize;
+	}
+}
+
 void
 img_bar( Handle dest, int x, int y, int w, int h, int rop, void * color)
+{
+	PImage i     = (PImage) dest;
+	int pixSize  = (i->type & imBPP) / 8;
+	Byte blt_buffer[BLT_BUFSIZE];
+	int j, k, blt_bytes, blt_step;
+	PBitBltProc proc;
+	Byte filler, *p, *q;
+
+	if ( x < 0 ) {
+		w += x;
+		x = 0;
+	}
+	if ( y < 0 ) {
+		h += y;
+		y = 0;
+	}
+	if ( x + w > i->w ) w = i->w - x;
+	if ( y + h > i->h ) h = i->h - y;
+	if ( w <= 0 || h <= 0 ) return;
+
+	switch ( i->type & imBPP) {
+	case imbpp1:
+		filler = (*((Byte*)color)) ? 255 : 0;
+		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
+		blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
+		memset( blt_buffer, filler, blt_step);
+		break;
+	case imbpp4:
+		filler = (*((Byte*)color)) * 17;
+		blt_bytes = (( x + w - 1) >> 1) - (x >> 1) + 1;
+		blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
+		memset( blt_buffer, filler, blt_step);
+		break;
+	case imbpp8:
+		filler = (*((Byte*)color));
+		blt_bytes = w;
+		blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
+		memset( blt_buffer, filler, blt_step);
+		break;
+	default:
+		blt_bytes = w * pixSize;
+		blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE / pixSize : w;
+		for ( j = 0, p = blt_buffer; j < blt_step; j ++ )
+			for ( k = 0, q = (Byte*) color; k < pixSize; k++ )
+				*(p++) = *(q++);
+		blt_step *= pixSize;
+	}
+
+	proc = find_blt_proc(rop);
+	if ( i-> regionData ) {
+		Box * r;
+		PRegionRec rgn;
+		int right = x + w, top = y + h;
+
+		rgn = i-> regionData;
+		r = rgn-> data. box. boxes;
+		for ( j = 0; j < rgn-> data.box.n_boxes; j++, r++) {
+			int xx = r->x;
+			int yy = r->y;
+			int ww = r->width;
+			int hh = r->height;
+			if ( xx + ww > right ) ww = right - xx;
+			if ( yy + hh > top   ) hh = top   - yy;
+			if ( xx < x ) {
+				ww -= x - xx;
+				xx = x;
+			}
+			if ( yy < y ) {
+				hh -= y - yy;
+				yy = y;
+			}
+			if ( xx + ww < x || yy + hh < y || ww <= 0 || hh <= 0 ) continue;
+			/* printf("bar single: %d %d %d %d => %d %d %d %d\n", r->x, r->y, r->width, r->height, xx, yy, ww, hh);  */
+			img_bar_single( i, xx, yy, ww, hh, proc, blt_buffer);
+		}
+	} else
+		img_bar_single( i, x, y, w, h, proc, blt_buffer);
+}
+
+void
+img_bar2( Handle dest, int x, int y, int w, int h, int rop, void * color)
 {
 	PImage i     = (PImage) dest;
 	Byte * data  = i-> data;

@@ -458,77 +458,6 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 	return ok;
 }
 
-void *
-prima_read_array( SV * points, char * procName, Bool integer, int div, int min, int max, int * n_points )
-{
-	AV * av;
-	int i, count, psize;
-	void * p;
-
-	psize = integer ? sizeof(int) : sizeof(double);
-	if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
-		warn("Invalid array reference passed to %s", procName);
-		return NULL;
-	}
-	av = ( AV *) SvRV( points);
-	count = av_len( av) + 1;
-	if ( min == max && count != min * div ) {
-		warn("%s: array must contain %d elements", procName, min * div);
-		return NULL;
-	}
-	if ( count < min * div ) {
-		warn("%s: array must contain at least %d elements", procName, min * div);
-		return NULL;
-	}
-	if ( max >= 0 && count > max * div ) {
-		warn("%s: array must contain maximum %d elements", procName, max * div);
-		return NULL;
-	}
-	if ( count % div != 0 ) {
-		warn("%s: number of elements in an array must be a multiple of %d", procName, div);
-		return NULL;
-	}
-	if ( n_points)
-		*n_points = count / div;
-	if ( count == 0)
-		return NULL;
-
-	{
-		void * ref;
-		char * pack, req = integer ? 'i' : 'd';
-		if ( prima_array_parse( points, &ref, NULL, &pack ) && *pack == req) {
-			if (!( p = malloc( psize * count))) {
-				warn("not enough memory");
-				return false;
-			}
-			memcpy( p, ref, psize * count);
-			return p;
-		}
-	}
-
-
-	if (!( p = malloc( psize * count))) {
-		warn("not enough memory");
-		return NULL;
-	}
-
-	for ( i = 0; i < count; i++)
-	{
-		SV** psv = av_fetch( av, i, 0);
-		if ( psv == NULL) {
-			free( p);
-			warn("Array panic on item %d on %s", i, procName);
-			return NULL;
-		}
-		if ( integer )
-			*(((int*)p) + i) = SvIV( *psv);
-		else
-			*(((double*)p) + i) = SvNV( *psv);
-	}
-
-	return p;
-}
-
 static Bool
 read_polypoints( Handle self, SV * points, char * procName, int min, Bool (*procPtr)(Handle,int,Point*))
 {
@@ -1472,13 +1401,11 @@ Drawable_region( Handle self, Bool set, Handle mask)
 		}
 
 		if ( mask ) {
+			RegionRec r;
 			Handle region;
-			HV * profile = newHV();
-
-			pset_H( image, mask );
-			region = Object_create("Prima::Region", profile);
-			sv_free(( SV *) profile);
-
+			r. type = rgnImage;
+			r. data. image = mask;
+			region = Region_create_from_data( nilHandle, &r);
 			apc_gp_set_region(self, region);
 			Object_destroy(region);
 		} else

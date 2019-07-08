@@ -18,42 +18,45 @@ Region_init( Handle self, HV * profile)
 	dPROFILE;
 	RegionRec r;
 	char *t = NULL;
+	SV * box_entry;
 	Bool free_image = false, ok;
 
-	r.type = rgnEmpty;
-	r.n_boxes = 1;
+	r. type = rgnEmpty;
 
 	inherited-> init( self, profile);
 
 	if ( pexist(rect)) {
 		t = "rect";
-		r.type = rgnRectangle;
+		r. type = rgnRectangle;
+		box_entry = pget_sv(rect);
 	} else if (pexist(box)) {
 		t = "box";
-		r.type = rgnRectangle;
+		r. type = rgnRectangle;
+		box_entry = pget_sv(box);
 	} else if (pexist(polygon)) {
-		r.type = rgnPolygon;
+		r. type = rgnPolygon;
 	} else if (pexist(image)) {
-		r.type = rgnImage;
+		r. type = rgnImage;
 	}
 
-	switch (r.type) {
+	switch (r. type) {
 	case rgnRectangle: {
-		int rect[4];
-		SV ** val = hv_fetch( profile, t, (I32) strlen( t), 0);
-		prima_read_point( *val, rect, 4, "Array panic");
-
-		r. data. box. x      = rect[0];
-		r. data. box. y      = rect[1];
-		if ( strncmp(t, "rect", 4) == 0 ) {
-			r. data. box. width  = rect[2] - rect[0];
-			r. data. box. height = rect[3] - rect[1];
-		} else {
-			r. data. box. width  = rect[2];
-			r. data. box. height = rect[3];
-		}
-		if ( r.data.box.width <= 0 || r.data.box.height <= 0 )
+		if (( r. data. box. boxes = (Box*) prima_read_array(
+			box_entry, "Region::new", true,
+			4, 1, -1,
+			&r. data. box. n_boxes
+		)) == NULL) {
 			r. type = rgnEmpty;
+			break;
+		}
+		if ( strncmp(t, "rect", 4) == 0 ) {
+			int i;
+			Box * box = r. data. box. boxes;
+			for ( i = 0; i < r. data. box. n_boxes; i++, box++) {
+				box-> width  -= box-> x;
+				box-> height -= box-> y;
+			}
+		}
 		break;
 	}
 	case rgnPolygon:
@@ -61,8 +64,10 @@ Region_init( Handle self, HV * profile)
 			pget_sv(polygon), "Region::polygon", true,
 			2, 2, -1,
 			&r. data. polygon. n_points)
-		) == NULL)
-			croak("Bad polygon data");
+		) == NULL) {
+			r. type = rgnEmpty;
+			break;
+		}
 		r. data. polygon. winding = pexist(winding) ? pget_B(winding) : 0;
 		break;
 	case rgnEmpty:
@@ -83,7 +88,8 @@ Region_init( Handle self, HV * profile)
 	}
 CREATE:
 	ok = apc_region_create( self, &r);
-	if ( r. type == rgnPolygon ) free( r. data. polygon. points );
+	if ( r. type == rgnPolygon   ) free( r. data. polygon. points );
+	if ( r. type == rgnRectangle ) free( r. data. box. boxes );
 	if ( free_image ) Object_destroy(r.data.image);
 	opt_set( optDirtyRegion);
 	CORE_INIT_TRANSIENT(Region);
@@ -154,6 +160,20 @@ Region_get_handle( Handle self)
 	return newSVpv( buf, 0);
 }
 
+SV *
+Region_get_boxes( Handle self)
+{
+	SV *ret;
+	PRegionRec data;
+
+	if (( data = my->update_change(self, false)) == NULL)
+		return nilSV;
+	if (( ret = prima_array_new(data-> data. box. n_boxes * sizeof(Box))) == NULL)
+		return nilSV;
+	memcpy( prima_array_get_storage(ret), data->data.box.boxes, data-> data. box. n_boxes * sizeof(Box));
+	return prima_array_tie( ret, sizeof(int), "i");
+}
+
 PRegionRec
 Region_update_change( Handle self, Bool disown)
 {
@@ -168,9 +188,10 @@ Region_update_change( Handle self, Bool disown)
 	if ( disown && var->rects ) {
 		PRegionRec ret = var->rects;
 		var->rects = NULL;
+		opt_set( optDirtyRegion);
 		return ret;
 	}
-	return NULL;
+	return var->rects;
 }
 
 #ifdef __cplusplus

@@ -740,7 +740,7 @@ apc_widget_get_shape( Handle self, Handle mask)
 #else
 	DEFXX;
 	XRectangle *r, *rc;
-	int i, count, ordering, height;
+	int i, count, ordering, aperture;
 	Region rgn;
 
 	if ( !guts. shape_extension) return false;
@@ -754,12 +754,12 @@ apc_widget_get_shape( Handle self, Handle mask)
 	r = rc = XShapeGetRectangles( DISP, X_WINDOW, ShapeBounding, &count, &ordering);
 
 	rgn = GET_REGION(mask)-> region;
-	for ( i = height = 0; i < count; i++, r++) {
+	for ( i = aperture = 0; i < count; i++, r++) {
 		int h = r-> y + r-> height;
-		if ( height < h ) height = h;
+		if ( aperture < h ) aperture = h;
 		XUnionRectWithRegion( r, rgn, rgn);
 	}
-	GET_REGION(mask)-> height = height;
+	GET_REGION(mask)-> aperture = aperture;
 	XFree( rc);
 	return true;
 #endif
@@ -1241,7 +1241,7 @@ apc_widget_set_shape( Handle self, Handle mask)
 		return true;
 	}
 
-	XShapeCombineRegion( DISP, X_WINDOW, ShapeBounding, 0, XX->size.y - GET_REGION(mask)->height + XX->menuHeight, GET_REGION(mask)->region, ShapeSet);
+	XShapeCombineRegion( DISP, X_WINDOW, ShapeBounding, 0, XX->size.y - GET_REGION(mask)->aperture + XX->menuHeight, GET_REGION(mask)->region, ShapeSet);
 	if ( XX-> menuHeight > 0 ) {
 	/*
 		XXX This static shape approach doesn't work when menuHeight is dynamically changed.
@@ -1255,7 +1255,7 @@ apc_widget_set_shape( Handle self, Handle mask)
 	}
 	XClipBox( GET_REGION(mask)->region, &xr);
 	XX-> shape_extent. x = xr. x + xr. width;
-	XX-> shape_extent. y = GET_REGION(mask)->height;
+	XX-> shape_extent. y = GET_REGION(mask)->aperture;
 	XX-> shape_offset. x = 0;
 	XX-> shape_offset. y = XX-> menuHeight;
 	return true;

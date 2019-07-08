@@ -305,7 +305,7 @@ typedef struct _timer_sys_data
 typedef struct
 {
 	Region region;
-	int height;
+	int aperture;
 } RegionSysData, *PRegionSysData;
 
 struct  _drawable_sys_data;

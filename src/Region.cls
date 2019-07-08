@@ -6,6 +6,7 @@ object Prima::Region( Prima::Component)
 	method   Bool      combine(Handle other_region, int rgnop = rgnopCopy);
 	method   void      done();
 	method   SV      * get_handle();
+	method   SV      * get_boxes();
 	method   Bool      equals(Handle other_region);
 	method   void      init( HV * profile);
 	method   Bool      is_empty() => apc_region_is_empty;

@@ -364,6 +364,7 @@ t/Image/Colormap.t
 t/Image/Conversion.t
 t/Image/Extract.t
 t/Image/Import.t
+t/Image/Region.t
 t/Image/ROP.t
 t/Image/Stream.t
 t/Image/Stretch.t

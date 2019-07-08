@@ -1770,7 +1770,6 @@ Image_region( Handle self, Bool set, Handle mask)
 			free(var->regionData);
 			var->regionData = NULL;
 		}
-		var-> regionOffset = apc_gp_get_transform(self);
 
 		if ( mask && kind_of( mask, CRegion)) {
 			var->regionData = CRegion(mask)->update_change(mask, true);
@@ -1783,20 +1782,17 @@ Image_region( Handle self, Bool set, Handle mask)
 		}
 
 		if ( mask ) {
+			RegionRec r;
 			Handle region;
-			HV * profile = newHV();
-			pset_H( image, mask );
-			region = Object_create("Prima::Region", profile);
-			sv_free(( SV *) profile);
+			r. type = rgnImage;
+			r. data. image = mask;
+			region = Region_create_from_data( nilHandle, &r);
 			var->regionData = CRegion(region)->update_change(region, true);
 			Object_destroy(region);
 		}
 
-	} else if ( var-> regionData ) {
-		Handle region = Region_create_from_data( nilHandle, var->regionData);
-		apc_region_offset( region, var->regionOffset.x, var->regionOffset.y);
-		return region;
-	}
+	} else if ( var-> regionData )
+		return Region_create_from_data( nilHandle, var->regionData);
 
 	return nilHandle;
 }

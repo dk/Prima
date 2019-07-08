@@ -14,7 +14,6 @@ object Prima::Image( Prima::Drawable)
 	Point          resolution;
 	int            eventMask1;
 	int            eventMask2;
-	Point          regionOffset;
 	PRegionRec     regionData;
 
 	property int    conversion;

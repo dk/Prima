@@ -3257,10 +3257,14 @@ typedef struct {
 } PolygonRegionRec;
 
 typedef struct {
-	int type;
 	int n_boxes;
+	Box* boxes;
+} BoxRegionRec;
+
+typedef struct {
+	int type;
 	union {
-		Box box;
+		BoxRegionRec box;
 		PolygonRegionRec polygon;
 		Handle image;
 	} data;
