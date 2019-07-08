@@ -1543,7 +1543,7 @@ apc_window_set_effects( Handle self, HV * effects )
 			if ( region && kind_of(region, CRegion)){
 				mask = CreateRectRgn(0,0,0,0);
 				CombineRgn( mask, GET_REGION(region)->region, NULL, RGN_COPY);
-				OffsetRgn( mask, 0, sys lastSize.y - GET_REGION(region)->height );
+				OffsetRgn( mask, 0, sys lastSize.y - GET_REGION(region)->aperture );
 			}
 		}
 	}
@@ -2387,7 +2387,7 @@ apc_widget_get_shape( Handle self, Handle mask)
 
 	GetRgnBox(rgn, &rect);
 	OffsetRgn( rgn, -sys extraPos. x, -sys extraPos. y);
-	GET_REGION(mask)-> height = sys lastSize. y - rect.top;
+	GET_REGION(mask)-> aperture = sys lastSize. y - rect.top;
 
 	return true;
 }
@@ -2860,7 +2860,7 @@ apc_widget_set_shape( Handle self, Handle mask)
 	CombineRgn( rgn, GET_REGION(mask)->region, NULL, RGN_COPY);
 	GetRgnBox( rgn, &xr);
 	sys extraBounds. x = xr. right - 1;
-	sys extraBounds. y = GET_REGION(mask)->height;
+	sys extraBounds. y = GET_REGION(mask)->aperture;
 	if ( sys className == WC_FRAME && !is_apt(aptLayered)) {
 		Point delta = get_window_borders( sys s. window. borderStyle);
 		Point sz    = apc_widget_get_size( self);

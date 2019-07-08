@@ -227,7 +227,7 @@ typedef struct _FileData
 typedef struct
 {
 	HRGN region;
-	int height;
+	int aperture;
 } RegionData;
 
 
