@@ -18,7 +18,6 @@ Region_init( Handle self, HV * profile)
 	dPROFILE;
 	RegionRec r;
 	char *t = NULL;
-	SV * box_entry;
 	Bool free_image = false, ok;
 
 	r. type = rgnEmpty;
@@ -28,11 +27,9 @@ Region_init( Handle self, HV * profile)
 	if ( pexist(rect)) {
 		t = "rect";
 		r. type = rgnRectangle;
-		box_entry = pget_sv(rect);
 	} else if (pexist(box)) {
 		t = "box";
 		r. type = rgnRectangle;
-		box_entry = pget_sv(box);
 	} else if (pexist(polygon)) {
 		r. type = rgnPolygon;
 	} else if (pexist(image)) {
@@ -41,8 +38,9 @@ Region_init( Handle self, HV * profile)
 
 	switch (r. type) {
 	case rgnRectangle: {
+		SV ** box_entry = hv_fetch( profile, t, (I32) strlen(t), 0);
 		if (( r. data. box. boxes = (Box*) prima_read_array(
-			box_entry, "Region::new", true,
+			*box_entry, "Region::new", true,
 			4, 1, -1,
 			&r. data. box. n_boxes
 		)) == NULL) {

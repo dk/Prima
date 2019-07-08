@@ -78,6 +78,7 @@ prima_region_create( Handle mask)
 		rgn = XCreateRegion();
 		for ( x = 0, current = rdata; x < count; x++, current++)
 			XUnionRectWithRegion( current, rgn, rgn);
+
 		/*
 		X( mask)-> cached_region = XCreateRegion();
 		XUnionRegion( X( mask)-> cached_region, rgn, X( mask)-> cached_region);

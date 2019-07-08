@@ -3259,7 +3259,7 @@ typedef struct {
 typedef struct {
 	int n_boxes;
 	Box* boxes;
-} BoxRegionRec;
+} BoxRegionRec, *PBoxRegionRec;
 
 typedef struct {
 	int type;

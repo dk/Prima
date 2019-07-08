@@ -1401,13 +1401,16 @@ Drawable_region( Handle self, Bool set, Handle mask)
 		}
 
 		if ( mask ) {
-			RegionRec r;
 			Handle region;
-			r. type = rgnImage;
-			r. data. image = mask;
-			region = Region_create_from_data( nilHandle, &r);
+			HV * profile = newHV();
+
+			pset_H( image, mask );
+			region = Object_create("Prima::Region", profile);
+			sv_free(( SV *) profile);
+
 			apc_gp_set_region(self, region);
 			Object_destroy(region);
+
 		} else
 			apc_gp_set_region(self, nilHandle);
 

@@ -1604,9 +1604,10 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 	if (opt_InPaint) {
 		return apc_gp_bar( self, x1, y1, x2, y2);
 	} else {
-		Byte colorbuf[sizeof(double)*2];
 		Color color;
 		RGBColor rgb;
+		Point t;
+		ImgPaintContext ctx;
 
 		color = my->get_color(self);
 		rgb.b = color & 0xff;
@@ -1615,36 +1616,41 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 
 		switch (var->type) {
 		case imBW:
-			colorbuf[0] = (int)( (rgb.r + rgb.g + rgb.b) / 768.0 + .5);
+			ctx.color[0] = (int)( (rgb.r + rgb.g + rgb.b) / 768.0 + .5);
 			break;
 		case imbpp1:
-			colorbuf[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 1;
+			ctx.color[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 1;
 			break;
 		case imbpp4 | imGrayScale :
-			colorbuf[0] = (int)( (rgb.r + rgb.g + rgb.b) / 48.0);
+			ctx.color[0] = (int)( (rgb.r + rgb.g + rgb.b) / 48.0);
 			break;
 		case imbpp4  :
-			colorbuf[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 7;
+			ctx.color[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 7;
 			break;
 		case imByte:
-			colorbuf[0] = (int)( (rgb.r + rgb.g + rgb.b) / 3.0);
+			ctx.color[0] = (int)( (rgb.r + rgb.g + rgb.b) / 3.0);
 			break;
 		case imbpp8:
-			colorbuf[0] = cm_nearest_color(rgb,var->palSize,var->palette);
+			ctx.color[0] = cm_nearest_color(rgb,var->palSize,var->palette);
 			break;
 		case imShort :
-			*((Short*)colorbuf) = color;
+			*((Short*)ctx.color) = color;
 			break;
 		case imRGB :
-			memcpy( colorbuf, &rgb, 3);
+			memcpy( ctx.color, &rgb, 3);
 			break;
 		case imLong :
-			*((Long*)colorbuf) = color;
+			*((Long*)ctx.color) = color;
 			break;
 		default:
 			croak("Not implemented yet");
 		}
-		img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, my-> get_rop(self), colorbuf);
+		t = my->get_translate(self);
+		x1 += t.x;
+		y1 += t.y;
+		ctx.rop = my->get_rop(self);
+		ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
+		img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 		my-> update_change(self);
 		return true;
 	}
@@ -1782,11 +1788,11 @@ Image_region( Handle self, Bool set, Handle mask)
 		}
 
 		if ( mask ) {
-			RegionRec r;
 			Handle region;
-			r. type = rgnImage;
-			r. data. image = mask;
-			region = Region_create_from_data( nilHandle, &r);
+			HV * profile = newHV();
+			pset_H( image, mask );
+			region = Object_create("Prima::Region", profile);
+			sv_free(( SV *) profile);
 			var->regionData = CRegion(region)->update_change(region, true);
 			Object_destroy(region);
 		}
