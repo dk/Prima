@@ -588,6 +588,26 @@ sub ui_scale
 
 sub to_region { Prima::Region->new( image => shift ) }
 
+sub fill_primitive
+{
+	my ( $self, $request ) = (shift, shift);
+	my $path = $self->new_path;
+	$path->$request(@_);
+	my @offset  = $self->translate;
+	my $region1 = $path->region( $self-> fillWinding);
+	$region1->offset(@offset);
+	my $region2 = $self->region;
+	$region1->combine($region2, rgnop::Intersect) if $region2;
+	my @box = $region1->box;
+	$box[$_+2] += $box[$_] for 0,1;
+	$self->region($region1);
+	$self->translate(0,0);
+	my $ok = $self->bar(@box);
+	$self->translate(@offset);
+	$self->region($region2);
+	return $ok;
+}
+
 package Prima::Icon;
 use vars qw( @ISA);
 @ISA = qw(Prima::Image);

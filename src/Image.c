@@ -1803,6 +1803,51 @@ Image_region( Handle self, Bool set, Handle mask)
 	return nilHandle;
 }
 
+static Bool
+fill_primitive( Handle self, char * format, ...)
+{
+	Bool r;
+	SV * ret;
+	va_list args;
+	va_start( args, format);
+	ENTER;
+	SAVETMPS;
+	ret = call_perl_indirect( self, "fill_primitive", format, true, false, args);
+	va_end( args);
+	r = ( ret && SvIOK( ret)) ? (SvIV( ret) != 0) : 0;
+	FREETMPS;
+	LEAVE;
+	return r;
+}
+
+Bool
+Image_fill_chord( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
+{
+	if ( opt_InPaint) return inherited fill_chord(self, x, y, dX, dY, startAngle, endAngle);
+	return fill_primitive( self, "siiiinn", "chord", x, y, dX, dY, startAngle, endAngle);
+}
+
+Bool
+Image_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
+{
+	if ( opt_InPaint) return inherited fill_ellipse(self, x, y, dX, dY);
+	return fill_primitive( self, "siiii", "ellipse", x, y, dX, dY);
+}
+
+Bool
+Image_fillpoly( Handle self, SV * points)
+{
+	if ( opt_InPaint) return inherited fillpoly(self, points);
+	return fill_primitive( self, "sS", "line", points );
+}
+
+Bool
+Image_fill_sector( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
+{
+	if ( opt_InPaint) return inherited fill_sector(self, x, y, dX, dY, startAngle, endAngle);
+	return fill_primitive( self, "siiiinn", "sector", x, y, dX, dY, startAngle, endAngle);
+}
+
 #ifdef __cplusplus
 }
 #endif

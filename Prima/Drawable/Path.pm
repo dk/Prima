@@ -202,6 +202,29 @@ sub ellipse
 		restore;
 }
 
+sub chord
+{
+	my $self = shift;
+	@_ == 6 or Carp::croak('bad parameters to chord');
+	my ( $cx, $cy, $dx, $dy, $start, $end) = @_;
+	$self-> save->
+		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
+		circular_arc( $start, $end )->
+		restore;
+}
+
+sub sector
+{
+	my $self = shift;
+	@_ == 6 or Carp::croak('bad parameters to sector');
+	my ( $cx, $cy, $dx, $dy, $start, $end) = @_;
+	$self-> save->
+		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
+		line(0,0)->
+		circular_arc( $start, $end )->
+		restore;
+}
+
 sub points
 {
 	my $self = shift;
@@ -829,15 +852,9 @@ sub clip
 sub region
 {
 	my ($self, $winding) = @_;
-	my $pp  = $self->points;
-	my $reg = Prima::Region->new(
-		polygon => $pp->[0],
-		winding => $winding,
-	);
-	$reg->combine( 
-		Prima::Region->new( polygon => $_, winding => $winding),
-		rgnop::Union
-	) for @$pp[1..$#_];
+	my $reg;
+	$reg ? $reg->combine($_, rgnop::Union) : ($reg = $_)
+		for map { Prima::Region->new( polygon => $_, winding => $winding) } @{ $self->points };
 	return $reg;
 }
 
@@ -898,6 +915,10 @@ close() is same as open() but makes sure the shape's first point is equal to its
 Adds circular arc to the path. Note that adding transformations will effectively
 make it into elliptic arc, which is used internally by C<arc> and C<rarc>.
 
+=item chord CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END.
+
+Adds chord to the path. Is there only for compatibility with C<Prima::Drawable>.
+
 =item ellipse CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y = DIAMETER_X, TILT = 0
 
 Adds full ellipse to the path.
@@ -914,6 +935,10 @@ Stops plotting the current shape and moves the plotting position to X, Y.
 
 Adds elliptic arc to path so that the first point of the arc starts on the last
 point of the previous primitive, or (0,0) if there's none.
+
+=item sector CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END
+
+Adds sector to the path. Is there only for compatibility with C<Prima::Drawable>.
 
 =item spline, rspline $POINTS, %OPTIONS.
 
