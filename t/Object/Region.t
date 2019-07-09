@@ -306,7 +306,6 @@ is_bytes($b->data,
 	"\xff\xff\x00\x00",
 	"region plot with offset 2"
 );
-$b->save('1.bmp');
 
 $b->translate(0,0);
 render(undef);
@@ -317,5 +316,18 @@ $b->bar(0,0,$b->size);
 is( $b->sum, 16 * 255, "region outside left");
 $b->translate(-5,-5);
 is( $b->sum, 16 * 255, "region outside right");
+
+my $i = Prima::Image->new( size => [32, 32], type => im::Byte);
+$i->color(0);
+$i->bar(0,0,$i->size);
+my $j = $i->dup;
+$j->color(cl::White);
+$j->bar(0,0,$j->size);
+$r = Prima::Region->new( polygon => [0, 0, 10, 25, 25, 0, 0, 15, 25, 15]);
+$i->region($r);
+$i->put_image(0,0,$j);
+
+$r = $r->image(type => im::Byte, size => [32, 32], backColor => 0, color => cl::White);
+is( $i->data, $r->data, 'put_image(region) == region.image');
 
 done_testing;

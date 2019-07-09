@@ -36,6 +36,7 @@ object Prima::Image( Prima::Drawable)
 	method Bool   begin_paint();
 	method Bool   begin_paint_info();
 	static SV   * codecs( SV * dummy, int codecID = -1);
+	method Bool   clear(int x1=-1, int y1=-1, int x2=-1, int y2=-1);
 	c_only void   create_empty( int width, int height, int type);
 	method void   done();
 	method Handle dup();

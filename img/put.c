@@ -182,7 +182,7 @@ static Bool
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop);
 
 Bool
-img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
+img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region)
 {
 	Point srcSz, dstSz;
 	int asrcW, asrcH;
@@ -218,7 +218,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 
 		PImage( src)-> type     =  imBW;
 		PImage( src)-> palSize  = 2;
-		img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut);
+		img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut, region);
 		rop = ropXorPut;
 		memcpy( PImage( src)-> palette, palette, 6);
 
@@ -236,13 +236,13 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 		if ( PImage(src)-> type != imByte ) {
 			Handle dup = CImage(src)->dup(src);
 			CImage(dup)->set_type(src, imByte);
-			ok = img_put( dest, dup, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
+			ok = img_put( dest, dup, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region);
 			Object_destroy(dup);
 			return ok;
 		}
 		if ( PIcon(dest)-> maskType != imbpp8) {
 			CIcon(dest)-> set_maskType(dest, imbpp8);
-			ok = img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
+			ok = img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region);
 			if ( PIcon(dest)-> options. optPreserveType )
 				CIcon(dest)-> set_maskType(dest, imbpp1);
 			return ok;
@@ -250,7 +250,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 
 		i = (PIcon) dest;
 		img_fill_dummy( &dummy, i-> w, i-> h, imByte, i-> mask, NULL);
-		return img_put((Handle)&dummy, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut);
+		return img_put((Handle)&dummy, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut, region);
 	} else if ( rop & ropConstantAlpha )
 		return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
 
@@ -337,7 +337,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 
 			if ( srcX < 0) dsx = asrcW - dsw;
 			if ( srcY < 0) dsy = asrcH - dsh;
-			img_put( dx, x, dsx, dsy, 0, 0, dsw, dsh, dsw, dsh, ropCopyPut);
+			img_put( dx, x, dsx, dsy, 0, 0, dsw, dsh, dsw, dsh, ropCopyPut, region);
 			Object_destroy( x);
 			x = dx;
 		}
@@ -388,7 +388,7 @@ NOSCALE:
 				if ( *dj == mask) *dj = 0xff;
 				dj++;
 			}
-			img_put( b8, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop);
+			img_put( b8, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region);
 			for ( sz = 0; sz < 256; sz++) colorref[sz] = ( sz > mask) ? mask : sz;
 			dj = j-> data;
 			di = i-> data;
@@ -404,7 +404,7 @@ NOSCALE:
 			int conv = i-> conversion;
 			i-> conversion = PImage( src)-> conversion;
 			i-> self-> reset( dest, imbpp8, nil, 0);
-			img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop);
+			img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region);
 			i-> self-> reset( dest, type, nil, 0);
 			i-> conversion = conv;
 		}
@@ -483,15 +483,45 @@ NOSCALE:
 		pix = ( PImage( dest)-> type & imBPP ) / 8;
 		dyd = PImage( dest)-> lineSize;
 		dys = PImage( src)-> lineSize;
-		sptr = PImage( src )-> data + dys * srcY + pix * srcX;
-		dptr = PImage( dest)-> data + dyd * dstY + pix * dstX;
-		count = dstW * pix;
 
 		if ( proc == bitblt_copy && dest == src) /* incredible */
 			proc = bitblt_move;
 
-		for ( y = 0; y < dstH; y++, sptr += dys, dptr += dyd)
-			proc( sptr, dptr, count);
+		if ( region ) {
+			Box * r;
+			int j, right = dstX + dstW, top = dstY + dstH;
+
+			r = region-> boxes;
+			for ( j = 0; j < region-> n_boxes; j++, r++) {
+				int xx = r->x;
+				int yy = r->y;
+				int ww = r->width;
+				int hh = r->height;
+				if ( xx + ww > right ) ww = right - xx;
+				if ( yy + hh > top   ) hh = top   - yy;
+				if ( xx < dstX ) {
+					ww -= dstX - xx;
+					xx = dstX;
+				}
+				if ( yy < dstY ) {
+					hh -= dstY - yy;
+					yy = dstY;
+				}
+				if ( xx + ww < dstX || yy + hh < dstY || ww <= 0 || hh <= 0 ) continue;
+				/* printf("bar single: %d %d %d %d => %d %d %d %d\n", r->x, r->y, r->width, r->height, xx, yy, ww, hh);  */
+				sptr = PImage( src )-> data + dys * (srcY - dstY + yy) + pix * (srcX - dstX + xx);
+				dptr = PImage( dest)-> data + dyd * yy + pix * xx;
+				count = ww * pix;
+				for ( y = 0; y < hh; y++, sptr += dys, dptr += dyd)
+					proc( sptr, dptr, count);
+			}
+		} else {
+			sptr = PImage( src )-> data + dys * srcY + pix * srcX;
+			dptr = PImage( dest)-> data + dyd * dstY + pix * dstX;
+			count = dstW * pix;
+			for ( y = 0; y < dstH; y++, sptr += dys, dptr += dyd)
+				proc( sptr, dptr, count);
+		}
 	}
 
 EXIT:

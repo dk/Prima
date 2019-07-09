@@ -360,17 +360,19 @@ sub dup
 	return $r;
 }
 
-sub bitmap
+sub bitmap_or_image
 {
-	my ($self, $with_offset, $type) = @_;
+	my ($self, $class, %param) = @_;
 	return undef if $self-> is_empty;
 	my @box = $self->box;
 	my @size = @box[2,3];
+
+	my $with_offset = delete $param{with_offset};
 	if ( $with_offset ) {
 		$size[0] += $box[0];
 		$size[1] += $box[1];
 	}
-	my $dbm = Prima::DeviceBitmap->new( size => \@size, type => $type // dbt::Bitmap );
+	my $dbm = $class->new( size => \@size, %param);
 	$dbm-> clear;
 	$self-> offset( -$box[0], -$box[1]) unless $with_offset;
 	$dbm-> region($self);
@@ -378,6 +380,9 @@ sub bitmap
 	$dbm-> bar(0,0,@size);
 	return $dbm;
 }
+
+sub bitmap { shift->bitmap_or_image( 'Prima::DeviceBitmap', type => dbt::Bitmap, @_ ) }
+sub image  { shift->bitmap_or_image( 'Prima::Image',        type => im::BW,      @_ ) }
 
 package Prima::Drawable;
 use vars qw(@ISA);

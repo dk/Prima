@@ -16,7 +16,7 @@ Prima::Region - generic shape for clipping and hit testing
    $drawable-> region( $rect );
 
    my $rgn = $drawable->region;
-   $rgn->bitmap->image->save('region.png') if $rgn;
+   $rgn->image->save('region.png') if $rgn;
 
 =head1 DESCRIPTION
 
@@ -55,7 +55,7 @@ the region will be effecively empty.
 
 =back
 
-=item bitmap WITH_OFFSET = 0, TYPE = dbt::Bitmap
+=item bitmap with_offset => 0, type => dbt::Bitmap
 
 Paints the region on a newly created bitmap and returns it. By default,
 region offset is not included.
@@ -104,6 +104,11 @@ Returns a system handle for the region
 =item equals REGION
 
 Returns true if the regions are equal, false otherwise.
+
+=item image with_offset => 0, type => dbt::Bitmap
+
+Paints the region on a newly created image and returns it. By default,
+region offset is not included.
 
 =item is_empty
 

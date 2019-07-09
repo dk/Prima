@@ -1558,7 +1558,8 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 	if ( is_opt( optInDraw))
 		return inherited put_image_indirect( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
 	if ( !kind_of( image, CImage)) return false;
-	ret = img_put( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
+	ret = img_put( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop,
+		var->regionData ? &var->regionData-> data. box : NULL);
 	my-> update_change( self);
 	return ret;
 }
@@ -1598,62 +1599,88 @@ Image_reset_notifications( Handle self)
 	}
 }
 
+static void
+color2pixel( Handle self, Color color, Byte * pixel)
+{
+	RGBColor rgb;
+	rgb.b = color & 0xff;
+	rgb.g = ((color)>>8) & 0xff;
+	rgb.r = ((color)>>16) & 0xff;
+
+	switch (var->type) {
+	case imBW:
+		pixel[0] = (int)( (rgb.r + rgb.g + rgb.b) / 768.0 + .5);
+		break;
+	case imbpp1:
+		pixel[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 1;
+		break;
+	case imbpp4 | imGrayScale :
+		pixel[0] = (int)( (rgb.r + rgb.g + rgb.b) / 48.0);
+		break;
+	case imbpp4  :
+		pixel[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 7;
+		break;
+	case imByte:
+		pixel[0] = (int)( (rgb.r + rgb.g + rgb.b) / 3.0);
+		break;
+	case imbpp8:
+		pixel[0] = cm_nearest_color(rgb,var->palSize,var->palette);
+		break;
+	case imShort :
+		*((Short*)pixel) = color;
+		break;
+	case imRGB :
+		memcpy( pixel, &rgb, 3);
+		break;
+	case imLong :
+		*((Long*)pixel) = color;
+		break;
+	default:
+		croak("Not implemented yet");
+	}
+}
+
 Bool
 Image_bar( Handle self, int x1, int y1, int x2, int y2)
 {
-	if (opt_InPaint) {
+	Point t;
+	ImgPaintContext ctx;
+	if (opt_InPaint)
 		return apc_gp_bar( self, x1, y1, x2, y2);
-	} else {
-		Color color;
-		RGBColor rgb;
-		Point t;
-		ImgPaintContext ctx;
 
-		color = my->get_color(self);
-		rgb.b = color & 0xff;
-		rgb.g = ((color)>>8) & 0xff;
-		rgb.r = ((color)>>16) & 0xff;
+	t = my->get_translate(self);
+	x1 += t.x;
+	y1 += t.y;
+	color2pixel( self, my->get_color(self), ctx.color);
+	ctx.rop = my->get_rop(self);
+	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
+	img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
+	my-> update_change(self);
+	return true;
+}
 
-		switch (var->type) {
-		case imBW:
-			ctx.color[0] = (int)( (rgb.r + rgb.g + rgb.b) / 768.0 + .5);
-			break;
-		case imbpp1:
-			ctx.color[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 1;
-			break;
-		case imbpp4 | imGrayScale :
-			ctx.color[0] = (int)( (rgb.r + rgb.g + rgb.b) / 48.0);
-			break;
-		case imbpp4  :
-			ctx.color[0] = cm_nearest_color(rgb,var->palSize,var->palette) & 7;
-			break;
-		case imByte:
-			ctx.color[0] = (int)( (rgb.r + rgb.g + rgb.b) / 3.0);
-			break;
-		case imbpp8:
-			ctx.color[0] = cm_nearest_color(rgb,var->palSize,var->palette);
-			break;
-		case imShort :
-			*((Short*)ctx.color) = color;
-			break;
-		case imRGB :
-			memcpy( ctx.color, &rgb, 3);
-			break;
-		case imLong :
-			*((Long*)ctx.color) = color;
-			break;
-		default:
-			croak("Not implemented yet");
-		}
-		t = my->get_translate(self);
-		x1 += t.x;
-		y1 += t.y;
-		ctx.rop = my->get_rop(self);
-		ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
-		img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
-		my-> update_change(self);
-		return true;
+Bool
+Image_clear(Handle self, int x1, int y1, int x2, int y2)
+{
+	Point t;
+	ImgPaintContext ctx;
+	if (opt_InPaint)
+		return apc_gp_clear( self, x1, y1, x2, y2);
+	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
+		x1 = 0;
+		y1 = 0;
+		x2 = var-> w - 1;
+		y2 = var-> h - 1;
 	}
+	t = my->get_translate(self);
+	x1 += t.x;
+	y1 += t.y;
+	color2pixel( self, my->get_backColor(self), ctx.color);
+	ctx.rop = my->get_rop(self);
+	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
+	img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
+	my-> update_change(self);
+	return true;
 }
 
 void
