@@ -179,7 +179,7 @@ find_blt_proc( int rop )
 }
 
 static Bool
-img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop);
+img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region);
 
 Bool
 img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region)
@@ -205,7 +205,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 
 		if ( PIcon(src)-> maskType != imbpp1) {
 			if ( PIcon(src)-> maskType != imbpp8) croak("panic: bad icon mask type");
-			return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
+			return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region);
 		}
 
 		PImage( src)-> self     =  CImage;
@@ -252,7 +252,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 		img_fill_dummy( &dummy, i-> w, i-> h, imByte, i-> mask, NULL);
 		return img_put((Handle)&dummy, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut, region);
 	} else if ( rop & ropConstantAlpha )
-		return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop);
+		return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region);
 
 	srcSz. x = PImage(src)-> w;
 	srcSz. y = PImage(src)-> h;
@@ -821,15 +821,58 @@ static BlendFunc* blend_functions[] = {
 	blend_dst_atop
 };
 
+static void
+img_put_alpha_single(
+	int dstW, int dstH, int bytes, int bpp,
+	Byte *s, Byte* d, Byte *m, Byte *a,
+	int sls, int dls, int mls, int als,
+	Bool use_src_alpha, Bool use_dst_alpha,
+	Byte * asbuf, Byte * adbuf,
+	BlendFunc * blend_func
+) {
+	int y;
+	/* blend */
+#ifdef HAVE_OPENMP
+#pragma omp parallel for
+#endif
+	for ( y = 0; y < dstH; y++) {
+		Byte *asbuf_ptr, *adbuf_ptr, *s_ptr, *m_ptr, *d_ptr, *a_ptr;
+
+		s_ptr = s + sls * y;
+		d_ptr = d + dls * y;
+		m_ptr = m ? m + mls * y : NULL;
+		a_ptr = a ? a + als * y : NULL;
+
+		if ( !use_src_alpha ) {
+			asbuf_ptr = asbuf + bytes * OMP_THREAD_NUM;
+			fill_alpha_buf( asbuf_ptr, m_ptr, dstW, bpp);
+		} else
+			asbuf_ptr = asbuf;
+
+		if ( !use_dst_alpha ) {
+			adbuf_ptr = adbuf + bytes * OMP_THREAD_NUM;
+			fill_alpha_buf( adbuf_ptr, a_ptr, dstW, bpp);
+		} else
+			adbuf_ptr = adbuf;
+
+		blend_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, bytes);
+		if (a) {
+			if ( use_src_alpha )
+				blend_func( asbuf, asbuf, a_ptr, a_ptr, dstW);
+			else
+				blend_func( m_ptr, m_ptr, a_ptr, a_ptr, dstW);
+		}
+	}
+}
+
 /*
 	This is basically a lightweight pixman_image_composite() .
 	Converts images to either 8 or 24 bits before processing
 */
 static Bool
-img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop)
+img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region)
 {
-	int bpp, bytes, sls, dls, mls, als, x, y, xrop;
-	Byte *s, *d, *m, *a;
+	int bpp, bytes, sls, dls, mls, als, x, xrop;
 	unsigned int src_alpha = 0, dst_alpha = 0;
 	Bool use_src_alpha = false, use_dst_alpha = false;
 	Byte *asbuf, *adbuf;
@@ -891,7 +934,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		if ( PImage( dup )-> type != bpp )
 			CImage(dup)-> set_type( dup, bpp);
 
-		ok = img_put_alpha( dest, dup, dstX, dstY, 0, 0, dstW, dstH, dstW, dstH, xrop);
+		ok = img_put_alpha( dest, dup, dstX, dstY, 0, 0, dstW, dstH, dstW, dstH, xrop, region);
 
 		Object_destroy(dup);
 		return ok;
@@ -908,7 +951,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 			CIcon(dest)-> set_type( dest, bpp );
 		if ( icon && mask != imbpp8 )
 			CIcon(dest)-> set_maskType( dest, imbpp8 );
-		ok = img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, xrop);
+		ok = img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, xrop, region);
 		if ( PImage(dest)-> options. optPreserveType ) {
 			if ( type != bpp )
 				CImage(dest)-> set_type( dest, type );
@@ -926,36 +969,30 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	bpp = ( bpp == imByte ) ? 1 : 3;
 	sls = PImage(src)-> lineSize;
 	dls = PImage(dest)-> lineSize;
-	s = PImage(src )-> data + srcY * sls + srcX * bpp;
-	d = PImage(dest)-> data + dstY * dls + dstX * bpp;
 
 	if ( kind_of(src, CIcon)) {
 		mls = PIcon(src)-> maskLine;
-		m   = PIcon(src)-> mask + srcY * mls + srcX;
 		if ( PIcon(src)-> maskType != imbpp8)
 			croak("panic: assert failed for img_put_alpha: %s", "src mask type");
 		use_src_alpha = false;
 	} else {
-		m   = NULL;
 		mls = 0;
 	}
 
 	if ( kind_of(dest, CIcon)) {
 		als = PIcon(dest)-> maskLine;
-		a   = PIcon(dest)-> mask + dstY * als + dstX;
 		if ( PIcon(dest)-> maskType != imbpp8)
 			croak("panic: assert failed for img_put_alpha: %s", "dst mask type");
 		use_dst_alpha = false;
 	} else {
-		a   = NULL;
 		als = 0;
 	}
 
-	if ( !use_src_alpha && !m) {
+	if ( !use_src_alpha && mls == 0) {
 		use_src_alpha = true;
 		src_alpha = 0xff;
 	}
-	if ( !use_dst_alpha && !a) {
+	if ( !use_dst_alpha && als == 0) {
 		use_dst_alpha = true;
 		dst_alpha = 0xff;
 	}
@@ -980,37 +1017,58 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	/* select function */
 	blend_func = blend_functions[rop];
 
-	/* blend */
-#ifdef HAVE_OPENMP
-#pragma omp parallel for
-#endif
-	for ( y = 0; y < dstH; y++) {
-		Byte *asbuf_ptr, *adbuf_ptr, *s_ptr, *m_ptr, *d_ptr, *a_ptr;
+	if ( region ) {
+		Box * r;
+		int j, right = dstX + dstW, top = dstY + dstH;
 
-		s_ptr = s + sls * y;
-		d_ptr = d + dls * y;
-		m_ptr = m ? m + mls * y : NULL;
-		a_ptr = a ? a + als * y : NULL;
-
-		if ( !use_src_alpha ) {
-			asbuf_ptr = asbuf + bytes * OMP_THREAD_NUM;
-			fill_alpha_buf( asbuf_ptr, m_ptr, dstW, bpp);
-		} else
-			asbuf_ptr = asbuf;
-
-		if ( !use_dst_alpha ) {
-			adbuf_ptr = adbuf + bytes * OMP_THREAD_NUM;
-			fill_alpha_buf( adbuf_ptr, a_ptr, dstW, bpp);
-		} else
-			adbuf_ptr = adbuf;
-
-		blend_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, bytes);
-		if (a) {
-			if ( use_src_alpha )
-				blend_func( asbuf, asbuf, a_ptr, a_ptr, dstW);
-			else
-				blend_func( m_ptr, m_ptr, a_ptr, a_ptr, dstW);
+		r = region-> boxes;
+		for ( j = 0; j < region-> n_boxes; j++, r++) {
+			int xx = r->x;
+			int yy = r->y;
+			int ww = r->width;
+			int hh = r->height;
+			int dx, dy;
+			Byte *s, *d, *m, *a;
+			if ( xx + ww > right ) ww = right - xx;
+			if ( yy + hh > top   ) hh = top   - yy;
+			if ( xx < dstX ) {
+				ww -= dstX - xx;
+				xx = dstX;
+			}
+			if ( yy < dstY ) {
+				hh -= dstY - yy;
+				yy = dstY;
+			}
+			if ( xx + ww < dstX || yy + hh < dstY || ww <= 0 || hh <= 0 ) continue;
+			dx = xx - dstX;
+			dy = yy - dstY;
+			s = PImage(src )-> data + (srcY + dy) * sls + (srcX + dx) * bpp;
+			d = PImage(dest)-> data + (dstY + dy) * dls + (dstX + dx) * bpp;
+			m = ( mls > 0) ? PIcon(src )-> mask + (srcY + dy) * mls + (srcX + dx) : NULL;
+			a = ( als > 0) ? PIcon(dest)-> mask + (dstY + dy) * als + (dstX + dx) : NULL;
+			/* printf("alpha single: %d %d %d %d => %d %d %d %d\n", r->x, r->y, r->width, r->height, xx, yy, ww, hh);  */
+			img_put_alpha_single(
+				ww, hh, ww * bpp, bpp,
+				s, d, m, a,
+				sls, dls, mls, als,
+				use_src_alpha, use_dst_alpha,
+				asbuf, adbuf,
+				blend_func
+			);
 		}
+	} else {
+		Byte * s = PImage(src )-> data + srcY * sls + srcX * bpp;
+		Byte * d = PImage(dest)-> data + dstY * dls + dstX * bpp;
+		Byte * a = ( als > 0) ? PIcon(dest)-> mask + dstY * als + dstX : NULL;
+		Byte * m = ( mls > 0) ? PIcon(src) -> mask + srcY * mls + srcX : NULL;
+		img_put_alpha_single(
+			dstW, dstH, bytes, bpp,
+			s, d, m, a,
+			sls, dls, mls, als,
+			use_src_alpha, use_dst_alpha,
+			asbuf, adbuf,
+			blend_func
+		);
 	}
 
 	/* cleanup */
