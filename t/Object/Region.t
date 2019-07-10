@@ -327,7 +327,19 @@ $r = Prima::Region->new( polygon => [0, 0, 10, 25, 25, 0, 0, 15, 25, 15]);
 $i->region($r);
 $i->put_image(0,0,$j);
 
-$r = $r->image(type => im::Byte, size => [32, 32], backColor => 0, color => cl::White);
-is( $i->data, $r->data, 'put_image(region) == region.image');
+my $xr = $r->image(type => im::Byte, size => [32, 32], backColor => 0, color => cl::White);
+is( $i->data, $xr->data, 'put_image(region) == region.image');
+
+my $i = Prima::Icon->new( size => [32, 32], type => im::Byte, maskType => im::bpp8, autoMasking => am::None);
+$i->color(0);
+$i->bar(0,0,$i->size);
+$j = Prima::Icon->new( size => [32, 32], type => im::Byte, maskType => im::bpp8, autoMasking => am::None);
+$j->color(cl::White);
+$j->bar(0,0,$j->size);
+$j->mask( "\xff" x length($i->mask));
+$i->region($r);
+$i->put_image(0,0,$j,rop::SrcOver);
+is( $i->data, $xr->data, 'put_image(region).rgb == region.image');
+is( $i->mask, $xr->data, 'put_image(region).a8  == region.image');
 
 done_testing;
