@@ -5,6 +5,44 @@
 extern "C" {
 #endif
 
+
+typedef void * RegionCallbackFunc( int x, int y, int w, int h, void * param);
+
+static void
+region_foreach(
+	PBoxRegionRec region, 
+	int dstX, int dstY, int dstW, int dstH,
+	RegionCallbackFunc * callback, void * param
+) {
+	Box * r;
+	int j, right, top;
+	if ( region == NULL ) {
+		callback( dstX, dstY, dstW, dstH, param);
+		return;
+	}
+	right = dstX + dstW;
+	top   = dstY + dstH;
+	r = region-> boxes;
+	for ( j = 0; j < region-> n_boxes; j++, r++) {
+		int xx = r->x;
+		int yy = r->y;
+		int ww = r->width;
+		int hh = r->height;
+		if ( xx + ww > right ) ww = right - xx;
+		if ( yy + hh > top   ) hh = top   - yy;
+		if ( xx < dstX ) {
+			ww -= dstX - xx;
+			xx = dstX;
+		}
+		if ( yy < dstY ) {
+			hh -= dstY - yy;
+			yy = dstY;
+		}
+		if ( xx + ww >= dstX && yy + hh >= dstY && ww > 0 && hh > 0 )
+			callback( xx, yy, ww, hh, param );
+	}
+}
+
 typedef void BitBltProc( Byte * src, Byte * dst, int count);
 typedef BitBltProc *PBitBltProc;
 
@@ -180,6 +218,31 @@ find_blt_proc( int rop )
 
 static Bool
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region);
+
+typedef struct {
+	int srcX;
+	int srcY;
+	int bpp;
+	int srcLS;
+	int dstLS;
+	int dX;
+	int dY;
+	Byte * src;
+	Byte * dst;
+	PBitBltProc proc;
+} ImgPutCallbackRec;
+
+static void
+img_put_single( int x, int y, int w, int h, ImgPutCallbackRec * ptr)
+{
+	int i, count;
+	Byte *dptr, *sptr;
+	sptr  = ptr->src + ptr->srcLS * (ptr->dY + y) + ptr->bpp * (ptr->dX + x);
+	dptr  = ptr->dst + ptr->dstLS * y + ptr->bpp * x;
+	count = w * ptr->bpp;
+	for ( i = 0; i < h; i++, sptr += ptr->srcLS, dptr += ptr->dstLS)
+		ptr->proc( sptr, dptr, count);
+}
 
 Bool
 img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region)
@@ -476,52 +539,24 @@ NOSCALE:
 
 	/* checks done, do put_image */
 	{
-		int  y, dyd, dys, count, pix;
-		Byte *dptr, *sptr;
-		PBitBltProc proc = find_blt_proc(rop);
-
-		pix = ( PImage( dest)-> type & imBPP ) / 8;
-		dyd = PImage( dest)-> lineSize;
-		dys = PImage( src)-> lineSize;
-
-		if ( proc == bitblt_copy && dest == src) /* incredible */
-			proc = bitblt_move;
-
-		if ( region ) {
-			Box * r;
-			int j, right = dstX + dstW, top = dstY + dstH;
-
-			r = region-> boxes;
-			for ( j = 0; j < region-> n_boxes; j++, r++) {
-				int xx = r->x;
-				int yy = r->y;
-				int ww = r->width;
-				int hh = r->height;
-				if ( xx + ww > right ) ww = right - xx;
-				if ( yy + hh > top   ) hh = top   - yy;
-				if ( xx < dstX ) {
-					ww -= dstX - xx;
-					xx = dstX;
-				}
-				if ( yy < dstY ) {
-					hh -= dstY - yy;
-					yy = dstY;
-				}
-				if ( xx + ww < dstX || yy + hh < dstY || ww <= 0 || hh <= 0 ) continue;
-				/* printf("bar single: %d %d %d %d => %d %d %d %d\n", r->x, r->y, r->width, r->height, xx, yy, ww, hh);  */
-				sptr = PImage( src )-> data + dys * (srcY - dstY + yy) + pix * (srcX - dstX + xx);
-				dptr = PImage( dest)-> data + dyd * yy + pix * xx;
-				count = ww * pix;
-				for ( y = 0; y < hh; y++, sptr += dys, dptr += dyd)
-					proc( sptr, dptr, count);
-			}
-		} else {
-			sptr = PImage( src )-> data + dys * srcY + pix * srcX;
-			dptr = PImage( dest)-> data + dyd * dstY + pix * dstX;
-			count = dstW * pix;
-			for ( y = 0; y < dstH; y++, sptr += dys, dptr += dyd)
-				proc( sptr, dptr, count);
-		}
+		ImgPutCallbackRec rec = {
+			srcX  : srcX,
+			srcY  : srcY,
+			bpp   : ( PImage( dest)-> type & imBPP ) / 8,
+			srcLS : PImage( src)-> lineSize,
+			dstLS : PImage( dest)-> lineSize,
+			dX    : srcX - dstX,
+			dY    : srcY - dstY,
+			src   : PImage( src )-> data,
+			dst   : PImage( dest )-> data,
+			proc  : find_blt_proc(rop)
+		};
+		if ( rec.proc == bitblt_copy && dest == src) /* incredible */
+			rec.proc = bitblt_move;
+		region_foreach( region,
+			dstX, dstY, dstW, dstH,
+			(RegionCallbackFunc*)img_put_single, &rec
+		);
 	}
 
 EXIT:
@@ -532,57 +567,60 @@ EXIT:
 
 #define BLT_BUFSIZE 1024
 
+typedef struct {
+	int bpp;
+	int count;
+	int ls;
+	Byte * data;
+	Byte * buf;
+	PBitBltProc proc;
+} ImgBarCallbackRec;
+
 static void
-img_bar_single( PImage i,
-	int x, int y, int w, int h, 
-	PBitBltProc proc, 
- 	Byte * blt_buffer)
+img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 {
 	int j, blt_bytes, blt_step, offset;
 	Byte lmask, rmask;
 	Byte * data;
-	int lineSize = i-> lineSize;
-	int type     = i-> type;
-	int pixSize  = (type & imBPP) / 8;
 
-	switch ( type & imBPP) {
-	case imbpp1:
+	switch ( ptr->bpp ) {
+	case 1:
 		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
 		lmask = ( x & 7 ) ? 255 << ( 8 - (x & 7)) : 0;
 		rmask = (( x + w) & 7 ) ? 255 >> ((x + w) & 7) : 0;
 		offset = x >> 3;
 		break;
-	case imbpp4:
+	case 4:
 		blt_bytes = (( x + w - 1) >> 1) - (x >> 1) + 1;
 		lmask = ( x & 1 )       ? 0xf0 : 0;
 		rmask = (( x + w) & 1 ) ? 0x0f : 0;
 		offset = x >> 1;
 		break;
-	case imbpp8:
+	case 8:
 		blt_bytes = w;
 		lmask = rmask = 0;
 		offset = x;
 		break;
 	default:
-		blt_bytes = w * pixSize;
+		blt_bytes = w * ptr->count;
 		lmask = rmask = 0;
-		offset = x * pixSize;
+		offset = x * ptr->count;
 	}
 
 	blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
 
-	data = i->data + lineSize * y + offset;
+	data = ptr->data + ptr->ls * y + offset;
 	for ( j = 0; j < h; j++) {
 		int bytes = blt_bytes;
 		Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
 		while ( bytes > 0 ) {
-			proc( blt_buffer, p, ( bytes > blt_step ) ? blt_step : bytes );
+			ptr->proc( ptr->buf, p, ( bytes > blt_step ) ? blt_step : bytes );
 			bytes -= blt_step;
 			p += blt_step;
 		}
 		if ( lmask ) *data = (lsave & lmask) | (*data & ~lmask);
 		if ( rmask ) data[blt_bytes-1] = (rsave & rmask) | (data[blt_bytes-1] & ~rmask);
-		data += lineSize;
+		data += ptr->ls;
 	}
 }
 
@@ -593,7 +631,6 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	int pixSize  = (i->type & imBPP) / 8;
 	Byte blt_buffer[BLT_BUFSIZE];
 	int j, k, blt_bytes, blt_step;
-	PBitBltProc proc;
 	Byte filler, *p, *q;
 
 	if ( x < 0 ) {
@@ -636,33 +673,20 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		blt_step *= pixSize;
 	}
 
-	proc = find_blt_proc(ctx->rop);
-	if ( ctx-> region ) {
-		Box * r;
-		int right = x + w, top = y + h;
-
-		r = ctx-> region-> boxes;
-		for ( j = 0; j < ctx-> region-> n_boxes; j++, r++) {
-			int xx = r->x;
-			int yy = r->y;
-			int ww = r->width;
-			int hh = r->height;
-			if ( xx + ww > right ) ww = right - xx;
-			if ( yy + hh > top   ) hh = top   - yy;
-			if ( xx < x ) {
-				ww -= x - xx;
-				xx = x;
-			}
-			if ( yy < y ) {
-				hh -= y - yy;
-				yy = y;
-			}
-			if ( xx + ww < x || yy + hh < y || ww <= 0 || hh <= 0 ) continue;
-			/* printf("bar single: %d %d %d %d => %d %d %d %d\n", r->x, r->y, r->width, r->height, xx, yy, ww, hh);  */
-			img_bar_single( i, xx, yy, ww, hh, proc, blt_buffer);
-		}
-	} else
-		img_bar_single( i, x, y, w, h, proc, blt_buffer);
+	{
+		ImgBarCallbackRec rec = {
+			bpp   : (i->type & imBPP),
+			count : (i->type & imBPP) / 8,
+			ls    : i->lineSize,
+			data  : i->data,
+			buf   : blt_buffer,
+			proc  : find_blt_proc(ctx->rop)
+		};
+		region_foreach( ctx->region,
+			x, y, w, h,
+			(RegionCallbackFunc*)img_bar_single, &rec
+		);
+	}
 }
 
 static void
@@ -821,46 +845,68 @@ static BlendFunc* blend_functions[] = {
 	blend_dst_atop
 };
 
+typedef struct {
+	int dX;
+	int dY;
+	int bpp;
+	int sls;
+	int dls;
+	int mls;
+	int als;
+	Byte * src;
+	Byte * dst;
+	Byte * srcMask;
+	Byte * dstMask;
+	Bool use_src_alpha;
+	Bool use_dst_alpha;
+	Byte * asbuf;
+	Byte * adbuf;
+	BlendFunc * blend_func;
+} ImgPutAlphaCallbackRec;
+
 static void
-img_put_alpha_single(
-	int dstW, int dstH, int bytes, int bpp,
-	Byte *s, Byte* d, Byte *m, Byte *a,
-	int sls, int dls, int mls, int als,
-	Bool use_src_alpha, Bool use_dst_alpha,
-	Byte * asbuf, Byte * adbuf,
-	BlendFunc * blend_func
-) {
-	int y;
-	/* blend */
+img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
+{
+	int i;
+	const int bpp = ptr->bpp;
+	int bytes = w * bpp;
+	const int sls = ptr->sls;
+	const int dls = ptr->dls;
+	const int mls = ptr->mls;
+	const int als = ptr->als;
+	const Byte * s = ptr->src + (ptr->dY + y) * ptr->sls + (ptr->dX + x) * bpp;
+	const Byte * d = ptr->dst + y * ptr->dls + x * bpp;
+	const Byte * m = ( mls > 0) ? ptr->srcMask + (ptr->dY + y) * mls + (ptr->dX + x) : NULL;
+	const Byte * a = ( als > 0) ? ptr->dstMask + y * als + x : NULL;
 #ifdef HAVE_OPENMP
 #pragma omp parallel for
 #endif
-	for ( y = 0; y < dstH; y++) {
+	for ( i = 0; i < h; i++) {
 		Byte *asbuf_ptr, *adbuf_ptr, *s_ptr, *m_ptr, *d_ptr, *a_ptr;
 
-		s_ptr = s + sls * y;
-		d_ptr = d + dls * y;
-		m_ptr = m ? m + mls * y : NULL;
-		a_ptr = a ? a + als * y : NULL;
+		s_ptr = (Byte*)s + sls * i;
+		d_ptr = (Byte*)d + dls * i;
+		m_ptr = m ? (Byte*)m + mls * i : NULL;
+		a_ptr = a ? (Byte*)a + als * i : NULL;
 
-		if ( !use_src_alpha ) {
-			asbuf_ptr = asbuf + bytes * OMP_THREAD_NUM;
-			fill_alpha_buf( asbuf_ptr, m_ptr, dstW, bpp);
+		if ( !ptr->use_src_alpha ) {
+			asbuf_ptr = ptr->asbuf + bytes * OMP_THREAD_NUM;
+			fill_alpha_buf( asbuf_ptr, m_ptr, w, bpp);
 		} else
-			asbuf_ptr = asbuf;
+			asbuf_ptr = ptr->asbuf;
 
-		if ( !use_dst_alpha ) {
-			adbuf_ptr = adbuf + bytes * OMP_THREAD_NUM;
-			fill_alpha_buf( adbuf_ptr, a_ptr, dstW, bpp);
+		if ( !ptr->use_dst_alpha ) {
+			adbuf_ptr = ptr->adbuf + bytes * OMP_THREAD_NUM;
+			fill_alpha_buf( adbuf_ptr, a_ptr, w, bpp);
 		} else
-			adbuf_ptr = adbuf;
+			adbuf_ptr = ptr->adbuf;
 
-		blend_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, bytes);
+		ptr->blend_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, bytes);
 		if (a) {
-			if ( use_src_alpha )
-				blend_func( asbuf, asbuf, a_ptr, a_ptr, dstW);
+			if ( ptr->use_src_alpha )
+				ptr->blend_func( ptr->asbuf, ptr->asbuf, (Byte*)a_ptr, a_ptr, w);
 			else
-				blend_func( m_ptr, m_ptr, a_ptr, a_ptr, dstW);
+				ptr->blend_func( m_ptr, m_ptr, (Byte*)a_ptr, a_ptr, w);
 		}
 	}
 }
@@ -872,11 +918,10 @@ img_put_alpha_single(
 static Bool
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region)
 {
-	int bpp, bytes, sls, dls, mls, als, x, xrop;
+	int bpp, bytes, mls, als, x, xrop;
 	unsigned int src_alpha = 0, dst_alpha = 0;
 	Bool use_src_alpha = false, use_dst_alpha = false;
 	Byte *asbuf, *adbuf;
-	BlendFunc * blend_func;
 
 	xrop = rop;
 
@@ -967,9 +1012,6 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		croak("panic: assert failed for img_put_alpha: %s", "types and geometry");
 
 	bpp = ( bpp == imByte ) ? 1 : 3;
-	sls = PImage(src)-> lineSize;
-	dls = PImage(dest)-> lineSize;
-
 	if ( kind_of(src, CIcon)) {
 		mls = PIcon(src)-> maskLine;
 		if ( PIcon(src)-> maskType != imbpp8)
@@ -1015,61 +1057,30 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		for ( x = 0; x < bytes; x++) adbuf[x] = dst_alpha;
 
 	/* select function */
-	blend_func = blend_functions[rop];
-
-	if ( region ) {
-		Box * r;
-		int j, right = dstX + dstW, top = dstY + dstH;
-
-		r = region-> boxes;
-		for ( j = 0; j < region-> n_boxes; j++, r++) {
-			int xx = r->x;
-			int yy = r->y;
-			int ww = r->width;
-			int hh = r->height;
-			int dx, dy;
-			Byte *s, *d, *m, *a;
-			if ( xx + ww > right ) ww = right - xx;
-			if ( yy + hh > top   ) hh = top   - yy;
-			if ( xx < dstX ) {
-				ww -= dstX - xx;
-				xx = dstX;
-			}
-			if ( yy < dstY ) {
-				hh -= dstY - yy;
-				yy = dstY;
-			}
-			if ( xx + ww < dstX || yy + hh < dstY || ww <= 0 || hh <= 0 ) continue;
-			dx = xx - dstX;
-			dy = yy - dstY;
-			s = PImage(src )-> data + (srcY + dy) * sls + (srcX + dx) * bpp;
-			d = PImage(dest)-> data + (dstY + dy) * dls + (dstX + dx) * bpp;
-			m = ( mls > 0) ? PIcon(src )-> mask + (srcY + dy) * mls + (srcX + dx) : NULL;
-			a = ( als > 0) ? PIcon(dest)-> mask + (dstY + dy) * als + (dstX + dx) : NULL;
-			/* printf("alpha single: %d %d %d %d => %d %d %d %d\n", r->x, r->y, r->width, r->height, xx, yy, ww, hh);  */
-			img_put_alpha_single(
-				ww, hh, ww * bpp, bpp,
-				s, d, m, a,
-				sls, dls, mls, als,
-				use_src_alpha, use_dst_alpha,
-				asbuf, adbuf,
-				blend_func
-			);
-		}
-	} else {
-		Byte * s = PImage(src )-> data + srcY * sls + srcX * bpp;
-		Byte * d = PImage(dest)-> data + dstY * dls + dstX * bpp;
-		Byte * a = ( als > 0) ? PIcon(dest)-> mask + dstY * als + dstX : NULL;
-		Byte * m = ( mls > 0) ? PIcon(src) -> mask + srcY * mls + srcX : NULL;
-		img_put_alpha_single(
-			dstW, dstH, bytes, bpp,
-			s, d, m, a,
-			sls, dls, mls, als,
-			use_src_alpha, use_dst_alpha,
-			asbuf, adbuf,
-			blend_func
+	{
+		ImgPutAlphaCallbackRec rec = {
+			dX            : srcX - dstX,
+			dY            : srcY - dstY,
+			bpp           : bpp,
+			sls           : PImage(src )-> lineSize,
+			dls           : PImage(dest)-> lineSize,
+			mls           : mls,
+			als           : als,
+			src           : PImage(src )->data,
+			dst           : PImage(dest)->data,
+			srcMask       : (mls > 0) ? PIcon(src )->mask : NULL,
+			dstMask       : (als > 0) ? PIcon(dest)->mask : NULL,
+			use_src_alpha : use_src_alpha,
+			use_dst_alpha : use_dst_alpha,
+			asbuf         : asbuf,
+			adbuf         : adbuf,
+			blend_func    : blend_functions[rop]
+		};
+		region_foreach( region,
+			dstX, dstY, dstW, dstH,
+			(RegionCallbackFunc*)img_put_alpha_single, &rec
 		);
-	}
+	};
 
 	/* cleanup */
 	free(adbuf);

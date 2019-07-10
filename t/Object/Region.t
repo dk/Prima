@@ -330,7 +330,7 @@ $i->put_image(0,0,$j);
 my $xr = $r->image(type => im::Byte, size => [32, 32], backColor => 0, color => cl::White);
 is( $i->data, $xr->data, 'put_image(region) == region.image');
 
-my $i = Prima::Icon->new( size => [32, 32], type => im::Byte, maskType => im::bpp8, autoMasking => am::None);
+$i = Prima::Icon->new( size => [32, 32], type => im::Byte, maskType => im::bpp8, autoMasking => am::None);
 $i->color(0);
 $i->bar(0,0,$i->size);
 $j = Prima::Icon->new( size => [32, 32], type => im::Byte, maskType => im::bpp8, autoMasking => am::None);
