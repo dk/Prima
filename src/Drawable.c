@@ -40,21 +40,31 @@ Drawable_init( Handle self, HV * profile)
 	my-> set_textOutBaseline( self, pget_B ( textOutBaseline));
 	if ( pexist( translate))
 	{
-		AV * av = ( AV *) SvRV( pget_sv( translate));
-		Point tr = {0,0};
-		SV ** holder = av_fetch( av, 0, 0);
-		if ( holder) tr.x = SvIV( *holder); else warn("Array panic on 'translate'");
-		holder = av_fetch( av, 1, 0);
-		if ( holder) tr.y = SvIV( *holder); else warn("Array panic on 'translate'");
-		my-> set_translate( self, tr);
+		AV * av;
+		Point tr;
+		SV ** holder, *sv;
+		
+		sv = pget_sv( translate);
+		if ( sv && SvOK(sv) && SvROK(sv) && SvTYPE(av = (AV*)SvRV(sv)) == SVt_PVAV && av_len(av) == 1) {
+			tr.x = tr.y = 0;
+			holder = av_fetch( av, 0, 0);
+			if ( holder) tr.x = SvIV( *holder); else warn("Array panic on 'translate'");
+			holder = av_fetch( av, 1, 0);
+			if ( holder) tr.y = SvIV( *holder); else warn("Array panic on 'translate'");
+			my-> set_translate( self, tr);
+		} else
+			warn("Array panic on 'translate'");
 
-		av = ( AV *) SvRV( pget_sv( fillPatternOffset));
-		tr.x = tr.y = 0;
-		holder = av_fetch( av, 0, 0);
-		if ( holder) tr.x = SvIV( *holder); else warn("Array panic on 'fillPatternOffset'");
-		holder = av_fetch( av, 1, 0);
-		if ( holder) tr.y = SvIV( *holder); else warn("Array panic on 'fillPatternOffset'");
-		my-> set_fillPatternOffset( self, tr );
+		sv = pget_sv( fillPatternOffset);
+		if ( sv && SvOK(sv) && SvROK(sv) && SvTYPE(av = (AV*)SvRV(sv)) == SVt_PVAV && av_len(av) == 1) {
+			tr.x = tr.y = 0;
+			holder = av_fetch( av, 0, 0);
+			if ( holder) tr.x = SvIV( *holder); else warn("Array panic on 'fillPatternOffset'");
+			holder = av_fetch( av, 1, 0);
+			if ( holder) tr.y = SvIV( *holder); else warn("Array panic on 'fillPatternOffset'");
+			my-> set_fillPatternOffset( self, tr );
+		} else
+			warn("Array panic on 'fillPatternOffset'");
 	}
 	SvHV_Font( pget_sv( font), &Font_buffer, "Drawable::init");
 	my-> set_font( self, Font_buffer);
