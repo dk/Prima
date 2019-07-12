@@ -571,10 +571,13 @@ typedef struct {
 	int bpp;
 	int count;
 	int ls;
+	int step;
 	Byte * data;
 	Byte * buf;
 	PBitBltProc proc;
 } ImgBarCallbackRec;
+
+#define FILL_PATTERN_SIZE 8
 
 static void
 img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
@@ -607,14 +610,15 @@ img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 		offset = x * ptr->count;
 	}
 
-	blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
+	blt_step = (blt_bytes > ptr->step) ? ptr->step : blt_bytes;
 
 	data = ptr->data + ptr->ls * y + offset;
 	for ( j = 0; j < h; j++) {
 		int bytes = blt_bytes;
 		Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
+		Byte * src = ptr-> buf + ((y + j) % FILL_PATTERN_SIZE) * ptr->step;
 		while ( bytes > 0 ) {
-			ptr->proc( ptr->buf, p, ( bytes > blt_step ) ? blt_step : bytes );
+			ptr->proc( src, p, ( bytes > blt_step ) ? blt_step : bytes );
 			bytes -= blt_step;
 			p += blt_step;
 		}
@@ -631,7 +635,6 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	int pixSize  = (i->type & imBPP) / 8;
 	Byte blt_buffer[BLT_BUFSIZE];
 	int j, k, blt_bytes, blt_step;
-	Byte filler, *p, *q;
 
 	if ( x < 0 ) {
 		w += x;
@@ -645,33 +648,71 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	if ( y + h > i->h ) h = i->h - y;
 	if ( w <= 0 || h <= 0 ) return;
 
+	while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += FILL_PATTERN_SIZE;
+	while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += FILL_PATTERN_SIZE;
+
 	switch ( i->type & imBPP) {
 	case imbpp1:
-		filler = (*((Byte*)ctx->color)) ? 255 : 0;
 		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
-		blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
-		memset( blt_buffer, filler, blt_step);
+		if ( blt_bytes < FILL_PATTERN_SIZE ) blt_bytes = FILL_PATTERN_SIZE;
 		break;
 	case imbpp4:
-		filler = (*((Byte*)ctx->color)) * 17;
 		blt_bytes = (( x + w - 1) >> 1) - (x >> 1) + 1;
-		blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
-		memset( blt_buffer, filler, blt_step);
-		break;
-	case imbpp8:
-		filler = (*((Byte*)ctx->color));
-		blt_bytes = w;
-		blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes;
-		memset( blt_buffer, filler, blt_step);
+		if ( blt_bytes < FILL_PATTERN_SIZE / 2 ) blt_bytes = FILL_PATTERN_SIZE / 2;
 		break;
 	default:
 		blt_bytes = w * pixSize;
-		blt_step = (blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE / pixSize : w;
-		for ( j = 0, p = blt_buffer; j < blt_step; j ++ )
-			for ( k = 0, q = (Byte*) ctx->color; k < pixSize; k++ )
-				*(p++) = *(q++);
-		blt_step *= pixSize;
+		if ( blt_bytes < FILL_PATTERN_SIZE * pixSize ) blt_bytes = FILL_PATTERN_SIZE * pixSize;
 	}
+	blt_bytes *= FILL_PATTERN_SIZE;
+	blt_step = ((blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes) / FILL_PATTERN_SIZE;
+	for ( j = 0; j < FILL_PATTERN_SIZE; j++) {
+		unsigned int pat;
+		Byte matrix[MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE], *buffer;
+		pat = (unsigned int) ctx->pattern[(j + ctx->patternOffset. y) % FILL_PATTERN_SIZE];
+		pat = (((pat << 8) | pat) >> ((x + ctx->patternOffset. x) % FILL_PATTERN_SIZE)) & 0xff;
+		buffer = blt_buffer + j * blt_step;
+		switch ( i->type & imBPP) {
+		case 1:
+			matrix[0] = ctx->color[0] ? 
+				(ctx->backColor[0] ? 0xff : pat) :
+				(ctx->backColor[0] ? ~pat : 0);
+			memset( buffer, matrix[0], blt_step);
+			break;
+		case 4:
+			for ( k = 0; k < FILL_PATTERN_SIZE; ) {
+				Byte c1 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
+				Byte c2 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
+				matrix[ (k / 2) - 1 ] = (c1 << 4) | c2;
+			}
+			for ( k = 0; k < blt_step * 2 / FILL_PATTERN_SIZE; k++)
+				memcpy( buffer + k * FILL_PATTERN_SIZE / 2, matrix, FILL_PATTERN_SIZE / 2);
+			break;
+		case 8:
+			for ( k = 0; k < FILL_PATTERN_SIZE; k++)
+				matrix[k] = *((pat & (0x80 >> k)) ? ctx->color : ctx->backColor);
+			for ( k = 0; k < blt_step / FILL_PATTERN_SIZE; k++)
+				memcpy( buffer + k * FILL_PATTERN_SIZE, matrix, FILL_PATTERN_SIZE);
+			break;
+		default:
+			for ( k = 0; k < FILL_PATTERN_SIZE; k++) {
+				Byte * color = (pat & (0x80 >> k)) ? ctx->color : ctx->backColor;
+				memcpy( matrix + k * pixSize, color, pixSize);
+			}
+			for ( k = 0; k < blt_step / FILL_PATTERN_SIZE / pixSize; k++)
+				memcpy( buffer + k * FILL_PATTERN_SIZE * pixSize, matrix, FILL_PATTERN_SIZE * pixSize);
+		}
+	}
+	/*
+	printf("pxs:%d step:%d\n", pixSize, blt_step);
+	for ( j = 0; j < blt_bytes / blt_step; j++) {
+		printf("%d: ", j);
+		for ( k = 0; k < blt_step; k++) {
+			printf("%02x ", blt_buffer[ j * blt_step + k]);
+		}
+		printf("\n");
+	}
+	*/
 
 	{
 		ImgBarCallbackRec rec = {
@@ -680,6 +721,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			ls    : i->lineSize,
 			data  : i->data,
 			buf   : blt_buffer,
+			step  : blt_step,
 			proc  : find_blt_proc(ctx->rop)
 		};
 		region_foreach( ctx->region,

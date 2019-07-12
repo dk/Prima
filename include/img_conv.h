@@ -276,7 +276,10 @@ typedef SimpleConvProc *PSimpleConvProc;
 #define MAX_SIZEOF_PIXEL (sizeof(double) * 2)
 typedef struct {
 	Byte color[MAX_SIZEOF_PIXEL];
+	Byte backColor[MAX_SIZEOF_PIXEL];
 	int rop;
+	FillPattern pattern;
+	Point patternOffset;
 	PBoxRegionRec region;
 } ImgPaintContext, *PImgPaintContext;
 

@@ -1652,8 +1652,33 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 	x1 += t.x;
 	y1 += t.y;
 	color2pixel( self, my->get_color(self), ctx.color);
-	ctx.rop = my->get_rop(self);
+	color2pixel( self, my->get_backColor(self), ctx.backColor);
+	ctx.rop    = my->get_rop(self);
 	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
+	if ( my-> fillPattern == Drawable_fillPattern) {
+		FillPattern * fp = apc_gp_get_fill_pattern( self);
+		if ( fp )
+			memcpy( &ctx.pattern, fp, sizeof(ctx.pattern));
+		else 
+			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
+	} else {
+		AV * av;
+		SV * fp;
+		fp = my->get_fillPattern( self);
+		if ( fp && SvOK(fp) && SvROK(fp) && SvTYPE(av = (AV*)SvRV(fp)) == SVt_PVAV && av_len(av) == sizeof(FillPattern) - 1) {
+			int i;
+			for ( i = 0; i < 8; i++) {
+				SV ** sv = av_fetch( av, i, 0);
+				ctx.pattern[i] = (sv && *sv && SvOK(*sv)) ? SvIV(*sv) : 0;
+			}
+		} else {
+			warn("Bad array returned by .fillPattern");
+			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
+		}
+	}
+	ctx.patternOffset = my->get_fillPatternOffset(self);
+	ctx.patternOffset.x -= t.x;
+	ctx.patternOffset.y -= t.y;
 	img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 	my-> update_change(self);
 	return true;
@@ -1678,6 +1703,10 @@ Image_clear(Handle self, int x1, int y1, int x2, int y2)
 	color2pixel( self, my->get_backColor(self), ctx.color);
 	ctx.rop = my->get_rop(self);
 	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
+	memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
+	ctx.patternOffset.x = ctx.patternOffset.y = 0;
+	ctx.patternOffset.x -= t.x;
+	ctx.patternOffset.y -= t.y;
 	img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 	my-> update_change(self);
 	return true;

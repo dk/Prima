@@ -742,6 +742,8 @@ Icon_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	ctx. color[0] = alpha & 0xff;
 	ctx. rop = ropCopyPut;
 	ctx. region = var->regionData ? &var->regionData-> data. box : NULL;
+	memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
+	ctx.patternOffset.x = ctx.patternOffset.y = 0;
 	img_bar((Handle) &dummy, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 
 	return true;
