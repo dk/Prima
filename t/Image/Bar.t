@@ -4,8 +4,6 @@ use warnings;
 use Test::More;
 use Prima::Test qw(noX11);
 
-plan tests => 1133;
-
 sub bits  { join ':', map { sprintf "%08b", ord } split '', shift }
 sub bytes { unpack('H*', shift ) }
 
@@ -162,3 +160,115 @@ $i->set(
 );
 $i->bar(0,0,3,0);
 is( $i->pixel(0,0), 0x123456, "imLong");
+
+# patterned ROPs
+my @alu = qw(
+   Blackness
+   NotOr
+   NotSrcAnd
+   NotPut
+   NotDestAnd
+   Invert
+   XorPut
+   NotAnd
+   AndPut
+   NotXor
+   NoOper
+   NotSrcOr
+   CopyPut
+   NotDestOr
+   OrPut
+   Whiteness
+);
+my %alunames;
+for (my $i = 0; $i < @alu; $i++) { $alunames{$alu[$i]} = $i }
+
+my @ops = (
+	sub {0},                # Blackness
+	sub {!($_[0]|$_[1])},   # NotOr
+	sub {!$_[0] & $_[1]},   # NotSrcAnd
+	sub {!$_[0]},           # NotPut
+	sub {$_[0] & !$_[1]},   # NotDestAnd
+	sub {!$_[1]},           # Invert
+	sub {$_[0] ^ $_[1]},    # XorPut
+	sub {!($_[0] & $_[1])}, # NotAnd
+	sub {$_[0] & $_[1]},    # AndPut
+	sub {!($_[0] ^ $_[1])}, # NotXor
+	sub {$_[1]},            # NoOper
+	sub {!$_[0] | $_[1]},   # NotSrcOr
+	sub {$_[0]},            # CopyPut
+	sub {$_[0] | !$_[1]},   # NotDestOr
+	sub {$_[0] | $_[1]},    # OrPut
+	sub {1},         # Whiteness
+);
+
+sub alu { $ops[$_[0]]->( $_[1], $_[2] ) }
+sub aln { $ops[$alunames{$_[0]}]->( $_[1], $_[2]) }
+sub bits($$) { map { ($_[1] >> $_) & 1 } 0..($_[0]-1)}
+sub val {
+	my $r = 0;
+	for ( my $i = 0; $i < @_; $i++) {
+		$r |= ($_[$i] & 1) << $i;
+	}
+	return $r;
+}
+sub alx {
+	my $n = shift;
+	my @src = bits $n, $_[1];
+	my @dst = bits $n, $_[2];
+	val( map { aln($_[0], $src[$_], $dst[$_] ) } 0..$#src);
+}
+sub al24 { alx(24,@_) }
+sub al8 { alx(8,@_) }
+
+sub h_is
+{
+	my ( $act, $exp, $name) = @_;
+	if ( $act == $exp ) {
+		ok(1, $name);
+	} else {
+		ok(0, $name);
+		diag( sprintf("actual(%0x) != expected(%0x)\n", $act, $exp));
+	}
+}
+
+for my $bpp ( 8 ) {
+for my $alu ( @alu ) {
+	my ($src, $dst, $bk) = (0xcccccc, 0xaaaaaa, 0x030303);
+	my $p = Prima::Image->new( type => $bpp | im::GrayScale, size => [2,2]);
+	my $fun = $rop::{$alu}->();
+
+	$p->color($dst);
+	$p->backColor(0);
+	$p->rop(rop::CopyPut);
+	$p->rop2(rop::CopyPut);
+	$p->fillPattern(fp::Solid);
+	$p->bar(0,0,$p->size);
+
+	$p->color($src);
+	$p->backColor($bk);
+	$p->rop($fun);
+	$p->fillPattern([(0x55,0xAA)x4]);
+	$p->bar(0,0,$p->size);
+	h_is($p->pixel(0,0), alx($bpp,$alu,$bk,$dst),  "i$bpp($alu).cpy.0=B");
+	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i$bpp($alu).cpy.1=F");
+
+	$p->color($dst);
+	$p->backColor(0);
+	$p->rop(rop::CopyPut);
+	$p->rop2(rop::CopyPut);
+	$p->fillPattern(fp::Solid);
+	$p->bar(0,0,$p->size);
+
+	$p->color($src);
+	$p->backColor($bk);
+	$p->fillPattern([(0x55,0xAA)x4]);
+	$p->rop($fun);
+	$p->rop2(rop::NoOper);
+	$p->bar(0,0,$p->size);
+
+	h_is($p->pixel(0,0), $dst & 0xff,  "i$bpp($alu).nop.0=S");
+	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i$bpp($alu).nop.1=F");
+}}
+
+done_testing;

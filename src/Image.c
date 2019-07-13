@@ -1679,6 +1679,7 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 	ctx.patternOffset = my->get_fillPatternOffset(self);
 	ctx.patternOffset.x -= t.x;
 	ctx.patternOffset.y -= t.y;
+	ctx.transparent = my->get_rop2(self) == ropNoOper;
 	img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 	my-> update_change(self);
 	return true;
@@ -1707,6 +1708,7 @@ Image_clear(Handle self, int x1, int y1, int x2, int y2)
 	ctx.patternOffset.x = ctx.patternOffset.y = 0;
 	ctx.patternOffset.x -= t.x;
 	ctx.patternOffset.y -= t.y;
+	ctx.transparent = false;
 	img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 	my-> update_change(self);
 	return true;

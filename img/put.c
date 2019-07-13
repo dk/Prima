@@ -635,6 +635,8 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	int pixSize  = (i->type & imBPP) / 8;
 	Byte blt_buffer[BLT_BUFSIZE];
 	int j, k, blt_bytes, blt_step;
+	
+	if ( ctx->rop == ropNoOper) return;
 
 	if ( x < 0 ) {
 		w += x;
@@ -651,9 +653,55 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += FILL_PATTERN_SIZE;
 	while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += FILL_PATTERN_SIZE;
 
+	if ( ctx->transparent ) {
+		#define FILL(who,val) memset( ctx->who, val, MAX_SIZEOF_PIXEL)
+		switch ( ctx-> rop ) {
+		case ropBlackness:
+			FILL(color,0x00);
+			FILL(backColor,0xff);
+			ctx->rop = ropAndPut;
+			break;
+		case ropWhiteness:
+			FILL(color,0xff);
+			FILL(backColor,0x00);
+			ctx->rop = ropOrPut;
+			break;
+		case ropInvert:
+			FILL(color,0xff);
+			FILL(backColor,0x00);
+			ctx->rop = ropXorPut;
+			break;
+		case ropNotSrcAnd:
+		case ropXorPut:
+			FILL(backColor,0x00);
+			break;
+		default: {
+			static int rop1[16] = {
+				ropNotOr, ropXorPut, ropInvert, ropNotOr,
+				ropNotSrcAnd, ropXorPut, ropNotSrcAnd, ropXorPut,
+				ropNotOr, ropNotOr, ropNotSrcAnd, ropInvert,
+				ropInvert, ropXorPut, ropNotSrcAnd, ropInvert
+			};
+			static int rop2[16] = {
+				ropNotDestAnd, ropNoOper, ropNotDestAnd, ropInvert,
+				ropNotSrcOr, ropNotXor, ropAndPut, ropAndPut,
+				ropXorPut, ropNotAnd, ropNoOper, ropNotAnd,
+				ropXorPut, ropNotSrcOr, ropNotXor, ropInvert
+			};
+			int rop = ctx->rop;
+			FILL(backColor,0x00);
+			ctx->rop = rop1[rop];
+			ctx->transparent = false;
+			img_bar( dest, x, y, w, h, ctx);
+			FILL(backColor,0xff);
+			ctx->rop = rop2[rop];
+			break;
+		}}
+	}
+
 	switch ( i->type & imBPP) {
 	case imbpp1:
-		blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
+		 blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
 		if ( blt_bytes < FILL_PATTERN_SIZE ) blt_bytes = FILL_PATTERN_SIZE;
 		break;
 	case imbpp4:

@@ -278,6 +278,7 @@ typedef struct {
 	Byte color[MAX_SIZEOF_PIXEL];
 	Byte backColor[MAX_SIZEOF_PIXEL];
 	int rop;
+	Bool transparent;
 	FillPattern pattern;
 	Point patternOffset;
 	PBoxRegionRec region;
