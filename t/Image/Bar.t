@@ -204,7 +204,7 @@ my @ops = (
 
 sub alu { $ops[$_[0]]->( $_[1], $_[2] ) }
 sub aln { $ops[$alunames{$_[0]}]->( $_[1], $_[2]) }
-sub bits($$) { map { ($_[1] >> $_) & 1 } 0..($_[0]-1)}
+sub mbits($$) { map { ($_[1] >> $_) & 1 } 0..($_[0]-1)}
 sub val {
 	my $r = 0;
 	for ( my $i = 0; $i < @_; $i++) {
@@ -214,8 +214,8 @@ sub val {
 }
 sub alx {
 	my $n = shift;
-	my @src = bits $n, $_[1];
-	my @dst = bits $n, $_[2];
+	my @src = mbits $n, $_[1];
+	my @dst = mbits $n, $_[2];
 	val( map { aln($_[0], $src[$_], $dst[$_] ) } 0..$#src);
 }
 sub al24 { alx(24,@_) }
