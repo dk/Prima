@@ -838,7 +838,7 @@ Same as C<Drawable::> functions but can be used also outside of the paint state.
 
 Extends raster functionality to access alpha channel either using constant
 alpha values or C<Prima::Icon> as sources. See explanation of C<rop::>
-constants in L<Drawable/Raster operations>.
+constants in L<Prima::Drawable/Raster operations>.
 
 =item resample SRC_LOW, SRC_HIGH, DEST_LOW, DEST_HIGH
 
