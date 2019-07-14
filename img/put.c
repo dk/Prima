@@ -635,7 +635,8 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	int pixSize  = (i->type & imBPP) / 8;
 	Byte blt_buffer[BLT_BUFSIZE];
 	int j, k, blt_bytes, blt_step;
-	
+
+	/* check boundaries */
 	if ( ctx->rop == ropNoOper) return;
 
 	if ( x < 0 ) {
@@ -653,6 +654,10 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += FILL_PATTERN_SIZE;
 	while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += FILL_PATTERN_SIZE;
 
+	/* transparent stippling: if rop is simple enough, adjust parameters to
+	execute it as another rop with adjusted input. Otherwise make it into
+	two-step operation, such as CopyPut stippling is famously executed by
+	And and Xor rops */
 	if ( ctx->transparent ) {
 		#define FILL(who,val) memset( ctx->who, val, MAX_SIZEOF_PIXEL)
 		switch ( ctx-> rop ) {
@@ -699,6 +704,9 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		}}
 	}
 
+	/* render a (minimum) 8x8xPIXEL matrix with pattern, then
+	replicate it over blt_buffer as much as possible, to streamline
+	byte operations */
 	switch ( i->type & imBPP) {
 	case imbpp1:
 		 blt_bytes = (( x + w - 1) >> 3) - (x >> 3) + 1;
@@ -715,42 +723,45 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	blt_bytes *= FILL_PATTERN_SIZE;
 	blt_step = ((blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes) / FILL_PATTERN_SIZE;
 	for ( j = 0; j < FILL_PATTERN_SIZE; j++) {
-		unsigned int pat;
+		unsigned int pat, strip_size;
 		Byte matrix[MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE], *buffer;
 		pat = (unsigned int) ctx->pattern[(j + ctx->patternOffset. y) % FILL_PATTERN_SIZE];
 		pat = (((pat << 8) | pat) >> ((x + ctx->patternOffset. x) % FILL_PATTERN_SIZE)) & 0xff;
 		buffer = blt_buffer + j * blt_step;
 		switch ( i->type & imBPP) {
 		case 1:
+			strip_size = 1;
 			matrix[0] = ctx->color[0] ? 
 				(ctx->backColor[0] ? 0xff : pat) :
 				(ctx->backColor[0] ? ~pat : 0);
 			memset( buffer, matrix[0], blt_step);
 			break;
-		case 4:
+		case 4: 
+			strip_size = FILL_PATTERN_SIZE / 2;
 			for ( k = 0; k < FILL_PATTERN_SIZE; ) {
 				Byte c1 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
 				Byte c2 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
 				matrix[ (k / 2) - 1 ] = (c1 << 4) | (c2 & 0xf);
 			}
-			for ( k = 0; k < blt_step * 2 / FILL_PATTERN_SIZE; k++)
-				memcpy( buffer + k * FILL_PATTERN_SIZE / 2, matrix, FILL_PATTERN_SIZE / 2);
-			if ( blt_step % (FILL_PATTERN_SIZE / 2))
-				memcpy( buffer + k * FILL_PATTERN_SIZE / 2, matrix, blt_step % (FILL_PATTERN_SIZE / 2));
 			break;
-		case 8:
+		case 8: 
+			strip_size = FILL_PATTERN_SIZE;
 			for ( k = 0; k < FILL_PATTERN_SIZE; k++)
 				matrix[k] = *((pat & (0x80 >> k)) ? ctx->color : ctx->backColor);
-			for ( k = 0; k < blt_step / FILL_PATTERN_SIZE; k++)
-				memcpy( buffer + k * FILL_PATTERN_SIZE, matrix, FILL_PATTERN_SIZE);
 			break;
-		default:
+		default: 
+			strip_size = FILL_PATTERN_SIZE * pixSize;
 			for ( k = 0; k < FILL_PATTERN_SIZE; k++) {
 				Byte * color = (pat & (0x80 >> k)) ? ctx->color : ctx->backColor;
 				memcpy( matrix + k * pixSize, color, pixSize);
 			}
-			for ( k = 0; k < blt_step / FILL_PATTERN_SIZE / pixSize; k++)
-				memcpy( buffer + k * FILL_PATTERN_SIZE * pixSize, matrix, FILL_PATTERN_SIZE * pixSize);
+		}
+		if ( strip_size > 1 ) {
+			Byte * buf = buffer; 
+			for ( k = 0; k < blt_step / strip_size; k++, buf += strip_size)
+				memcpy( buf, matrix, strip_size);
+			if ( blt_step % strip_size != 0)
+				memcpy( buf, matrix, blt_step % strip_size);
 		}
 	}
 	/*
