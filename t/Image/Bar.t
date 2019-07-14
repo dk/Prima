@@ -214,12 +214,12 @@ sub val {
 }
 sub alx {
 	my $n = shift;
-	my @src = bits $n, $_[1];
-	my @dst = bits $n, $_[2];
-	val( map { aln($_[0], $src[$_], $dst[$_] ) } 0..$#src);
+	my $nn = ($n < 8) ? 8 : $n;
+	my @src = bits $nn, $_[1];
+	my @dst = bits $nn, $_[2];
+	my $val = val( map { aln($_[0], $src[$_], $dst[$_] ) } 0..$#src);
+	return ($n > 1) ? $val : (($val >= 0x80) ? 0xff : 0);
 }
-sub al24 { alx(24,@_) }
-sub al8 { alx(8,@_) }
 
 sub h_is
 {
@@ -232,11 +232,15 @@ sub h_is
 	}
 }
 
-for my $bpp ( 8 ) {
+for my $bpp ( 1, 4, 8, 24) {
 for my $alu ( @alu ) {
-	my ($src, $dst, $bk) = (0xcccccc, 0xaaaaaa, 0x030303);
-	my $p = Prima::Image->new( type => $bpp | im::GrayScale, size => [2,2]);
+	my ($src, $dst, $bk) = (0xcccccc, 0xaaaaaa, 0x333333);
+	my $p = Prima::Image->new( type => $bpp | (($bpp < 24) ? im::GrayScale : 0), size => [20,20]);
 	my $fun = $rop::{$alu}->();
+
+
+	my $xbpp = $bpp;
+	$xbpp = 8 if $xbpp == 4 || $xbpp == 1;
 
 	$p->color($dst);
 	$p->backColor(0);
@@ -250,8 +254,8 @@ for my $alu ( @alu ) {
 	$p->rop($fun);
 	$p->fillPattern([(0x55,0xAA)x4]);
 	$p->bar(0,0,$p->size);
-	h_is($p->pixel(0,0), alx($bpp,$alu,$bk,$dst),  "i$bpp($alu).cpy.0=B");
-	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i$bpp($alu).cpy.1=F");
+	h_is($p->pixel(0,0), alx($bpp,$alu,$bk,$dst),  "i8($alu).cpy.0=B");
+	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i8($alu).cpy.1=F");
 
 	$p->color($dst);
 	$p->backColor(0);
@@ -267,8 +271,10 @@ for my $alu ( @alu ) {
 	$p->rop2(rop::NoOper);
 	$p->bar(0,0,$p->size);
 
-	h_is($p->pixel(0,0), $dst & 0xff,  "i$bpp($alu).nop.0=S");
-	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i$bpp($alu).nop.1=F");
+	my $expected = ($dst & ((1 << $xbpp) - 1));
+	$expected = ( $expected >= 0x80 ) ? 0xff : 0 if $bpp == 1;
+	h_is($p->pixel(0,0), $expected,  "i8($alu).nop.0=S");
+	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i8($alu).nop.1=F");
 }}
-
+	
 done_testing;

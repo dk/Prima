@@ -731,10 +731,12 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			for ( k = 0; k < FILL_PATTERN_SIZE; ) {
 				Byte c1 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
 				Byte c2 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
-				matrix[ (k / 2) - 1 ] = (c1 << 4) | c2;
+				matrix[ (k / 2) - 1 ] = (c1 << 4) | (c2 & 0xf);
 			}
 			for ( k = 0; k < blt_step * 2 / FILL_PATTERN_SIZE; k++)
 				memcpy( buffer + k * FILL_PATTERN_SIZE / 2, matrix, FILL_PATTERN_SIZE / 2);
+			if ( blt_step % (FILL_PATTERN_SIZE / 2))
+				memcpy( buffer + k * FILL_PATTERN_SIZE / 2, matrix, blt_step % (FILL_PATTERN_SIZE / 2));
 			break;
 		case 8:
 			for ( k = 0; k < FILL_PATTERN_SIZE; k++)
@@ -759,9 +761,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			printf("%02x ", blt_buffer[ j * blt_step + k]);
 		}
 		printf("\n");
-	}
-	*/
-
+	}*/
 	{
 		ImgBarCallbackRec rec = {
 			bpp   : (i->type & imBPP),
