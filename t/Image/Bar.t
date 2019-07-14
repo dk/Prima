@@ -215,8 +215,8 @@ sub val {
 sub alx {
 	my $n = shift;
 	my $nn = ($n < 8) ? 8 : $n;
-	my @src = bits $nn, $_[1];
-	my @dst = bits $nn, $_[2];
+	my @src = mbits $nn, $_[1];
+	my @dst = mbits $nn, $_[2];
 	my $val = val( map { aln($_[0], $src[$_], $dst[$_] ) } 0..$#src);
 	return ($n > 1) ? $val : (($val >= 0x80) ? 0xff : 0);
 }
@@ -254,8 +254,8 @@ for my $alu ( @alu ) {
 	$p->rop($fun);
 	$p->fillPattern([(0x55,0xAA)x4]);
 	$p->bar(0,0,$p->size);
-	h_is($p->pixel(0,0), alx($bpp,$alu,$bk,$dst),  "i8($alu).cpy.0=B");
-	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i8($alu).cpy.1=F");
+	h_is($p->pixel(0,0), alx($bpp,$alu,$bk,$dst),  "i$bpp($alu).cpy.0=B");
+	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i$bpp($alu).cpy.1=F");
 
 	$p->color($dst);
 	$p->backColor(0);
@@ -273,8 +273,8 @@ for my $alu ( @alu ) {
 
 	my $expected = ($dst & ((1 << $xbpp) - 1));
 	$expected = ( $expected >= 0x80 ) ? 0xff : 0 if $bpp == 1;
-	h_is($p->pixel(0,0), $expected,  "i8($alu).nop.0=S");
-	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i8($alu).nop.1=F");
+	h_is($p->pixel(0,0), $expected,  "i$bpp($alu).nop.0=S");
+	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i$bpp($alu).nop.1=F");
 }}
 	
 done_testing;
