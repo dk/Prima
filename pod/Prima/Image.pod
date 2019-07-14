@@ -265,9 +265,14 @@ variance, and standard deviation.
 Some of image functionality can be used standalone, with all other parts of the
 toolkit being uninitialized. The functionality is limited to loading and
 saving files, and reading and writing pixels (outside begin_paint only).
-All other calls are ignored.
+All other calls are ignored. Example:
 
-This feature is useful in non-interactive programs, running in evnironments
+   my $i = Prima::Image->new( size => [5,5]);
+   $i->color(cl::Red);
+   $i->bar(0,0,$i->size);
+   $i->save('1.bmp');
+
+This feature is useful in non-interactive programs, running in environments
 with no GUI access, a cgi-script with no access to X11 display, for example.
 Normally, Prima fails to start in such situations, but can be told not to
 initialize its GUI part by explicitly operating system-dependent options. To do
@@ -276,6 +281,9 @@ so, invoke
   use Prima::noX11;
 
 in the beginning of your program. See L<Prima::noX11> for more.
+
+See individual methods and properties in L<API> that support standalone usage,
+and how they differ from system-dependent implementation.
 
 =head2 Prima::Icon
 
@@ -455,9 +463,14 @@ See also C<colormap>.
 
 =item pixel ( X_OFFSET, Y_OFFSET ) PIXEL
 
-Provides per-pixel access to the image data when
-image object is in disabled paint state. Otherwise,
-same as C<Prima::Drawable::pixel>.
+Provides per-pixel access to the image data when image object is in disabled
+paint state.
+
+Pixel values for grayscale 1- and 4- bit images are treated specifically, such
+that like 8-bit function, values cover range between 0 and 255. F.ex. pixel
+values for grayscale 1 bit images are 0 and 255, not 0 and 1.
+
+In paint state same as C<Prima::Drawable::pixel>.
 
 =item preserveType BOOLEAN
 
@@ -707,11 +720,25 @@ bitmaps always have bit depth of 1, layered bitmaps have bit depth of 32.
 
 =over
 
+=item bar X1, Y1, X2, Y2
+
+Outside the paint state uses owen implementation for drawing a rectangular shape.
+The following properties are respected: C<color>, C<backColor>, C<rop>,
+C<rop2>, C<fillPattern>, C<fillPatternOffset>, C<region>. C<rop2> accepts
+either C<rop::CopyPut> or C<rop::NoOper> values, to produce either opaque or
+transparent fill pattern application.
+
+Inside the paint state is identical to C<Drawable::bar>.
+
 =item bitmap
 
 Returns newly created I<Prima::DeviceBitmap> instance,
 with the image dimensions and with the bitmap pixel
 values copied to.
+
+=item clear [X1, Y1, X2, Y2]
+
+Same as C<Drawable::clear> but can be used also outside of the paint state.
 
 =item clone %properties
 
@@ -738,6 +765,10 @@ information copied to it.
 Returns a newly created image object with WIDTH and HEIGHT dimensions,
 initialized with pixel data from X_OFFSET and Y_OFFSET
 in the bitmap.
+
+=item fill_chord, fill_ellipse, fill_sector
+
+Same as C<Drawable::> functions but can be used also outside of the paint state.
 
 =item get_bpp
 
@@ -800,6 +831,14 @@ Applies premultiplication formula to each pixel
    pixel = pixel * alpha / 256
 
 where alpha either is a constant, or a pixel value in an image
+
+=item put_image, put_image_indirect, stretch_image
+
+Same as C<Drawable::> functions but can be used also outside of the paint state.
+
+Extends raster functionality to access alpha channel either using constant
+alpha values or C<Prima::Icon> as sources. See explanation of C<rop::>
+constants in L<Drawable/Raster operations>.
 
 =item resample SRC_LOW, SRC_HIGH, DEST_LOW, DEST_HIGH
 
@@ -868,6 +907,10 @@ event.
 =head2 Prima::Icon methods
 
 =over
+
+=item alpha ALPHA <X1, Y1, X2, Y2>
+
+Same as C<Drawable::alpha> but can be used also outside of the paint state.
 
 =item combine DATA, MASK
 
