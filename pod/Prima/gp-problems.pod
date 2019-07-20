@@ -73,6 +73,8 @@ lineJoin
 
 lineStyle
 
+miterLimit
+
 fillPattern
 
 fillPolyWinding
@@ -155,7 +157,7 @@ because it is impossible to provide an algorithm
 for a correct rendering without a prior knowledge of the
 widget nature. (All)
 
-Workaround: Do not use patterned backgrounds.
+Workaround: Do not use patterned backgrounds or use C<fillPatternOffset> property.
 Since the same effect is visible on dithered
 backgrounds, routine check for pure color might be applied.
 
@@ -186,6 +188,11 @@ Dithering might be not used for line plotting. (Win9X)
 Drawing is dependent in X11 on an X servers - different X servers do different plotting
 strategies on small (less than 3 pixels) diameters. Current version is adapted best to the
 latest (2010) Xorg capabilities. See discussion on CPAN bug https://rt.cpan.org/Ticket/Display.html?id=62972 .
+
+=item Miter limiting
+
+Change of miter limiting is not supported by X11 by design, it has a constant
+value of C<10.43> there.
 
 =back
 
@@ -359,6 +366,8 @@ White is not 2^n-1 on n-bit paletted displays (tested on XFree86).
 Filled shapes are broken.
 
 Color bitmaps cannot be drawn onto mono bitmaps.
+
+Miter limit is read-only.
 
 =head1 Implementation notes
 

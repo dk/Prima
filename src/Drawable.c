@@ -33,6 +33,7 @@ Drawable_init( Handle self, HV * profile)
 	my-> set_lineJoin     ( self, pget_i ( lineJoin));
 	my-> set_linePattern  ( self, pget_sv( linePattern));
 	my-> set_lineWidth    ( self, pget_i ( lineWidth));
+	my-> set_miterLimit   ( self, pget_i ( miterLimit));
 	my-> set_region       ( self, pget_H ( region));
 	my-> set_rop          ( self, pget_i ( rop));
 	my-> set_rop2         ( self, pget_i ( rop2));
@@ -1362,6 +1363,14 @@ Drawable_lineWidth( Handle self, Bool set, int lineWidth)
 	if (!set) return apc_gp_get_line_width( self);
 	apc_gp_set_line_width( self, lineWidth);
 	return lineWidth;
+}
+
+double
+Drawable_miterLimit( Handle self, Bool set, double miterLimit)
+{
+	if (!set) return apc_gp_get_miter_limit( self);
+	apc_gp_set_miter_limit( self, miterLimit);
+	return miterLimit;
 }
 
 SV *

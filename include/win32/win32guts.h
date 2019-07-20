@@ -282,6 +282,7 @@ typedef struct _PaintSaveData
 	int         lineJoin;
 	unsigned char * linePattern;
 	int         linePatternLen;
+	int         miterLimit;
 	FillPattern fillPattern;
 	Point       fillPatternOffset;
 	int         rop;

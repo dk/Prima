@@ -1348,6 +1348,16 @@ apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 	}
 }
 
+float
+apc_gp_get_miter_limit( Handle self)
+{
+	FLOAT ml;
+	objCheck 0;
+	if ( !sys ps) return sys miterLimit;
+	if (! GetMiterLimit( sys ps, &ml)) return 0;
+	return (float)ml;
+}
+
 Color
 apc_gp_get_nearest_color( Handle self, Color color)
 {
@@ -1878,6 +1888,18 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
 	}
 	return true;
 }
+
+Bool
+apc_gp_set_miter_limit( Handle self, float miter_limit)
+{
+	objCheck false;
+	if ( !sys ps) {
+		sys miterLimit = miter_limit;
+		return true;
+	} else 
+		return SetMiterLimit( sys ps, (FLOAT) miter_limit, NULL);
+}
+
 
 Bool
 apc_gp_set_palette( Handle self)

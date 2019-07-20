@@ -747,6 +747,7 @@ typedef struct _drawable_sys_data
 	int rop, paint_rop;
 	int rop2, paint_rop2;
 	int line_style, line_width;
+	float miter_limit;
 	unsigned char *dashes, *paint_dashes;
 	int ndashes, paint_ndashes;
 	Point clip_mask_extent, shape_extent, shape_offset;

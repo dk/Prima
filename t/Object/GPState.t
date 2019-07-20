@@ -4,8 +4,6 @@ use warnings;
 use Test::More;
 use Prima::Test;
 
-plan tests => 28;
-
 my $a = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 
 $a-> color( 0x123456);
@@ -25,6 +23,9 @@ is( $fpo[1], 4, 'fillPatternOffset.y' );
 
 $a-> lineEnd( le::Square);
 is( $a-> lineEnd, le::Square, 'lineEnd' );
+
+$a-> miterLimit( 5.0 );
+is( int( $a-> miterLimit + .5), 5, 'miterLimit' );
 
 $a-> lineWidth( 5);
 is( $a-> lineWidth, 5, 'lineWidth' );
@@ -65,6 +66,7 @@ is( $fillPatternCount, 0, "fillPattern" );
 is( $a-> lineEnd, le::Square, "lineEnd" );
 is( $a-> lineWidth, 5, "lineWidth" );
 is( $a-> linePattern, lp::Dash, "linePattern" );
+is( int( $a-> miterLimit + .5), 5, 'miterLimit' );
 is( $a-> rop, rop::NotSrcXor, "rop" );
 is( $a-> rop2 , rop::NotSrcXor, "rop2");
 
@@ -74,3 +76,5 @@ is( $a-> textOpaque, 1, "textOpaque" );
 is( $a-> textOutBaseline, 1, "textOutBaseline" );
 is( $a-> lineJoin, lj::Bevel, "lineJoin" );
 ok( $a-> fillWinding, "fillWinding");
+
+done_testing;

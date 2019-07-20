@@ -413,6 +413,7 @@ sub profile_default
 		lineJoin        => lj::Round,
 		linePattern     => lp::Solid,
 		lineWidth       => 0,
+		miterLimit      => 10.0,
 		owner           => undef,
 		palette         => [],
 		region          => undef,

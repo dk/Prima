@@ -2047,6 +2047,15 @@ apc_gp_get_line_pattern( Handle self, unsigned char *dashes)
 	return n;
 }
 
+float
+apc_gp_get_miter_limit( Handle self)
+{
+	DEFXX;
+	/* xorg.miArcJoin: don't miter arcs with less than 11 degrees between them */
+	if ( XF_IN_PAINT(XX) ) return 1.0 / sin((11.0 * 3.14159265358 / 180) / 2);
+	return XX->miter_limit;
+}
+
 Point
 apc_gp_get_resolution( Handle self)
 {
@@ -2402,6 +2411,15 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 			XX-> gcv. line_style = ( XX-> rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;
 		}
 	}
+	return true;
+}
+
+Bool
+apc_gp_set_miter_limit( Handle self, float miter_limit)
+{
+	DEFXX;
+	if ( XF_IN_PAINT(XX)) return false;
+	XX-> miter_limit = miter_limit;
 	return true;
 }
 

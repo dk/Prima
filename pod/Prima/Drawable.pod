@@ -866,6 +866,41 @@ the lines are joined.
 
 Default value is 0.
 
+=item miterLimit VALUE
+
+When path segments connect at a sharp angle, a miter join results in a spike
+that extends well beyond the connection point. The purpose of the miter limit
+is to cut off such spikes when they become objectionably long. At any given
+corner, the miter length is the distance from the point at which the inner
+edges of the stroke intersect to the point at which the outside edges of the
+strokes intersect-in other words, the diagonal length of the miter.  This
+distance increases as the angle between the segments decreases. If the ratio of
+the miter length to the line width exceeds the miter limit parameter, stroke
+treats the corner with a bevel join instead of a miter join. The ratio of miter
+length to line width is directly related to the angle j between the segments
+by the formula: 
+
+   r = 1/sin(j/2)
+
+Default value is 10.0.
+
+Asssuming line join is C<lj::Miter> and line angle is 30 degrees:
+
+=for podview <img src="miterlimit.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/miterlimit.gif"><!--
+
+   miter limit = 1.0: \__/
+
+   miter limit = 9.0: \  /
+                       \/
+
+=for podview </cut>
+
+=for html -->
+
+Note: does not work under X11.
+
 =item palette [ @PALETTE ]
 
 Selects solid colors in a system palette, as many as possible.
@@ -980,7 +1015,7 @@ Has only effect on layered surfaces.
 Plots an arc with center in X, Y and DIAMETER_X and DIAMETER_Y axis
 from START_ANGLE to END_ANGLE.
 
-Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
+Context used: color, backColor, lineEnd, linePattern, lineWidth, miterLimit, rop, rop2
 
 =item bar X1, Y1, X2, Y2
 
@@ -1000,7 +1035,7 @@ Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2
 Plots an arc with center in X, Y and DIAMETER_X and DIAMETER_Y axis
 from START_ANGLE to END_ANGLE and connects its ends with a straight line.
 
-Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
+Context used: color, backColor, lineEnd, linePattern, lineWidth, miterLimit, rop, rop2
 
 =item clear <X1, Y1, X2, Y2>
 
@@ -1157,7 +1192,7 @@ No context is used.
 Draws a polygonal area defined by POLYGON set of points.
 POLYGON must present an array of integer pair in (X,Y) format.
 
-Context used: color, backColor, linePattern, lineWidth, lineJoin, lineEnd, rop, rop2
+Context used: color, backColor, linePattern, lineWidth, lineJoin, lineEnd, miterLimit, rop, rop2
 
 Returns success flag; if failed, C<$@> contains the error.
 
@@ -1217,7 +1252,7 @@ Plots an arc with center in X, Y and DIAMETER_X and DIAMETER_Y axis
 from START_ANGLE to END_ANGLE and connects its ends and (X,Y) with
 two straight lines.
 
-Context used: color, backColor, lineEnd, linePattern, lineWidth, rop, rop2
+Context used: color, backColor, lineEnd, linePattern, lineWidth, miterLimit, rop, rop2
 
 =item spline \@VERTICES, %OPTIONS
 
@@ -1261,7 +1296,7 @@ convert B-spline into a NURBS. By default set of ones.
 
 =back
 
-Context used: color, backColor, linePattern, lineWidth, lineEnd, rop, rop2
+Context used: color, backColor, linePattern, lineWidth, lineEnd, miterLimit, rop, rop2
 
 See also: fill_spline, render_spline.
 

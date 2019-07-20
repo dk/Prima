@@ -3452,6 +3452,9 @@ apc_gp_get_line_width( Handle self);
 extern int
 apc_gp_get_line_pattern( Handle self, unsigned char * buffer);
 
+extern float
+apc_gp_get_miter_limit( Handle self);
+
 extern Color
 apc_gp_get_nearest_color( Handle self, Color color);
 
@@ -3517,6 +3520,9 @@ apc_gp_set_line_width( Handle self, int lineWidth);
 
 extern Bool
 apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len);
+
+extern Bool
+apc_gp_set_miter_limit( Handle self, float limit);
 
 extern Bool
 apc_gp_set_palette( Handle self);

@@ -966,6 +966,7 @@ sub prf_types
 		point         => ['translate', 'fillPatternOffset'],
 		palette       => ['palette'],
 		image         => ['region'],
+		uiv           => ['miterLimit'],
 	);
 	$_[0]-> prf_types_add( $pt, \%de);
 	return $pt;

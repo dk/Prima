@@ -18,8 +18,9 @@ sub profile_default {
 # Graphics properties must be stored internally. Note the font attribute
 # needs to be handled with a tied hash at some point.
 my @easy_props = qw(color backColor fillWinding fillPattern font lineEnd
-					lineJoin linePattern lineWidth rop rop2
-					textOpaque textOutBaseline);
+	lineJoin linePattern lineWidth rop rop2 miterLimit
+	textOpaque textOutBaseline
+);
 
 sub init {
 	my $self = shift;

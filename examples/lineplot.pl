@@ -88,6 +88,7 @@ $mw = Prima::MainWindow->new(
 		$canvas->clear();
 		$canvas->lineEnd($opt{le});
 		$canvas->lineJoin($opt{lj});
+		$canvas->miterLimit($opt{ml});
 		my $c = $prelight // $capture // -1;
 		$canvas->color(cl::Black);
 		my @xpoints = 
