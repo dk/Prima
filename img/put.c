@@ -726,7 +726,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		unsigned int pat, strip_size;
 		Byte matrix[MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE], *buffer;
 		pat = (unsigned int) ctx->pattern[(j + ctx->patternOffset. y) % FILL_PATTERN_SIZE];
-		pat = (((pat << 8) | pat) >> ((x + ctx->patternOffset. x) % FILL_PATTERN_SIZE)) & 0xff;
+		pat = (((pat << 8) | pat) >> ((ctx->patternOffset. x + 8 - (x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
 		buffer = blt_buffer + j * blt_step;
 		switch ( i->type & imBPP) {
 		case 1:

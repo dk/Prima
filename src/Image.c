@@ -1686,12 +1686,68 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 }
 
 Bool
+Image_bars( Handle self, SV * rects)
+{
+	Point t;
+	ImgPaintContext ctx;
+	int i, count;
+	Rect * p, * r;
+	if (opt_InPaint)
+		return inherited bars( self, rects);
+
+	if (( p = prima_read_array( rects, "Drawable::bars", true, 4, 0, -1, &count)) == NULL)
+		return false;
+	color2pixel( self, my->get_color(self), ctx.color);
+	color2pixel( self, my->get_backColor(self), ctx.backColor);
+	ctx.rop    = my->get_rop(self);
+	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
+	if ( my-> fillPattern == Drawable_fillPattern) {
+		FillPattern * fp = apc_gp_get_fill_pattern( self);
+		if ( fp )
+			memcpy( &ctx.pattern, fp, sizeof(ctx.pattern));
+		else 
+			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
+	} else {
+		AV * av;
+		SV * fp;
+		fp = my->get_fillPattern( self);
+		if ( fp && SvOK(fp) && SvROK(fp) && SvTYPE(av = (AV*)SvRV(fp)) == SVt_PVAV && av_len(av) == sizeof(FillPattern) - 1) {
+			int i;
+			for ( i = 0; i < 8; i++) {
+				SV ** sv = av_fetch( av, i, 0);
+				ctx.pattern[i] = (sv && *sv && SvOK(*sv)) ? SvIV(*sv) : 0;
+			}
+		} else {
+			warn("Bad array returned by .fillPattern");
+			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
+		}
+	}
+	t = my->get_translate(self);
+	ctx.patternOffset = my->get_fillPatternOffset(self);
+	ctx.patternOffset.x -= t.x;
+	ctx.patternOffset.y -= t.y;
+	ctx.transparent = my->get_rop2(self) == ropNoOper;
+	for ( i = 0, r = p; i < count; i++, r++) {
+		ImgPaintContext ctx2 = ctx;
+		img_bar( self, 
+			r->left + t.x, 
+			r->bottom + t.y, 
+			r->right - r->left + t.x + 1, 
+			r->top - r->bottom + t.y + 1,
+			&ctx2);
+	}
+	free( p);
+	my-> update_change(self);
+	return true;
+}
+
+Bool
 Image_clear(Handle self, int x1, int y1, int x2, int y2)
 {
 	Point t;
 	ImgPaintContext ctx;
 	if (opt_InPaint)
-		return apc_gp_clear( self, x1, y1, x2, y2);
+		return inherited clear( self, x1, y1, x2, y2);
 	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
 		x1 = 0;
 		y1 = 0;
@@ -1862,7 +1918,7 @@ Image_region( Handle self, Bool set, Handle mask)
 }
 
 static Bool
-fill_primitive( Handle self, char * format, ...)
+primitive( Handle self, Bool fill, char * format, ...)
 {
 	Bool r;
 	SV * ret;
@@ -1870,7 +1926,7 @@ fill_primitive( Handle self, char * format, ...)
 	va_start( args, format);
 	ENTER;
 	SAVETMPS;
-	ret = call_perl_indirect( self, "fill_primitive", format, true, false, args);
+	ret = call_perl_indirect( self, fill ? "fill_primitive" : "stroke_primitive", format, true, false, args);
 	va_end( args);
 	r = ( ret && SvIOK( ret)) ? (SvIV( ret) != 0) : 0;
 	FREETMPS;
@@ -1878,32 +1934,89 @@ fill_primitive( Handle self, char * format, ...)
 	return r;
 }
 
+
+Bool
+Image_arc( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
+{
+	if ( opt_InPaint) return inherited arc(self, x, y, dX, dY, startAngle, endAngle);
+	return primitive( self, 0, "siiiinn", "arc", x, y, dX, dY, startAngle, endAngle);
+}
+
+Bool
+Image_chord( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
+{
+	if ( opt_InPaint) return inherited chord(self, x, y, dX, dY, startAngle, endAngle);
+	return primitive( self, 0, "siiiinn", "chord", x, y, dX, dY, startAngle, endAngle);
+}
+
+Bool
+Image_ellipse( Handle self, int x, int y,  int dX, int dY)
+{
+	if ( opt_InPaint) return inherited ellipse(self, x, y, dX, dY);
+	return primitive( self, 0, "siiii", "ellipse", x, y, dX, dY);
+}
+
+Bool
+Image_line(Handle self, int x1, int y1, int x2, int y2)
+{
+	if ( opt_InPaint) return inherited line(self, x1, y1, x2, y2);
+	return primitive( self, 0, "siiii", "line", x1, y1, x2, y2);
+}
+
+Bool
+Image_lines( Handle self, SV * points)
+{
+	if ( opt_InPaint) return inherited lines(self, points);
+	return primitive( self, 0, "sS", "lines", points );
+}
+
+Bool
+Image_polyline( Handle self, SV * points)
+{
+	if ( opt_InPaint) return inherited polyline(self, points);
+	return primitive( self, 0, "sS", "line", points );
+}
+
+Bool
+Image_rectangle(Handle self, int x1, int y1, int x2, int y2)
+{
+	if ( opt_InPaint) return inherited rectangle(self, x1, y1, x2, y2);
+	return primitive( self, 0, "siiii", "rectangle", x1, y1, x2, y2);
+}
+
+Bool
+Image_sector( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
+{
+	if ( opt_InPaint) return inherited sector(self, x, y, dX, dY, startAngle, endAngle);
+	return primitive( self, 0, "siiiinn", "sector", x, y, dX, dY, startAngle, endAngle);
+}
+
 Bool
 Image_fill_chord( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited fill_chord(self, x, y, dX, dY, startAngle, endAngle);
-	return fill_primitive( self, "siiiinn", "chord", x, y, dX, dY, startAngle, endAngle);
+	return primitive( self, 1, "siiiinn", "chord", x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
 Image_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
 {
 	if ( opt_InPaint) return inherited fill_ellipse(self, x, y, dX, dY);
-	return fill_primitive( self, "siiii", "ellipse", x, y, dX, dY);
+	return primitive( self, 1, "siiii", "ellipse", x, y, dX, dY);
 }
 
 Bool
 Image_fillpoly( Handle self, SV * points)
 {
 	if ( opt_InPaint) return inherited fillpoly(self, points);
-	return fill_primitive( self, "sS", "line", points );
+	return primitive( self, 1, "sS", "line", points );
 }
 
 Bool
 Image_fill_sector( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited fill_sector(self, x, y, dX, dY, startAngle, endAngle);
-	return fill_primitive( self, "siiiinn", "sector", x, y, dX, dY, startAngle, endAngle);
+	return primitive( self, 1, "siiiinn", "sector", x, y, dX, dY, startAngle, endAngle);
 }
 
 #ifdef __cplusplus

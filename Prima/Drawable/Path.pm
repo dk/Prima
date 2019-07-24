@@ -210,7 +210,26 @@ sub chord
 	$self-> save->
 		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
 		circular_arc( $start, $end )->
+		close->
 		restore;
+}
+
+sub lines
+{
+	my $self = shift;
+	my $p = $#_ ? \@_ : $_[0];
+	@$p % 4 and Carp::croak('bad parameters to lines');
+	for ( my $i = 0; $i < @$p; $i += 4 ) {
+		$self->cmd( line => [ @$p[ $i .. $i + 3 ] ] );
+	}
+}
+
+sub rectangle
+{
+	my $self = shift;
+	@_ == 4 or Carp::croak('bad parameters to rectangle');
+	my ( $x1, $y1, $x2, $y2) = @_;
+	$self-> line([$x1, $y1, $x2, $y1, $x2, $y2, $x1, $y2])-> close;
 }
 
 sub sector
@@ -222,6 +241,7 @@ sub sector
 		matrix( $dx / 2, 0, 0, $dy / 2, $cx, $cy )->
 		line(0,0)->
 		circular_arc( $start, $end )->
+		close->
 		restore;
 }
 
@@ -336,7 +356,7 @@ sub _close
 	my $self = shift;
 	my $p = $self->{points};
 	push @{$p->[-1]}, $p->[0][0], $p->[0][1]
-		if @{$p->[-1]} && $p->[0][0] != $p->[-1][-2] && $p->[0][1] != $p->[-1][-1];
+		if @{$p->[-1]} && ($p->[0][0] != $p->[-1][-2] || $p->[0][1] != $p->[-1][-1]);
 	push @$p, Prima::array->new_int;
 }
 
@@ -656,7 +676,7 @@ sub widen
 	return $dst if $lp eq lp::Null;
 	$pp = poly2patterns($pp, $lp, $lw) if $lp ne lp::Solid;
 
-	if ( $lw == 0 ) {
+	if ( $lw <= 1 ) {
 		for my $p ( @$pp ) {
 			$dst->line($p);
 			$dst->open;
@@ -927,6 +947,11 @@ Adds full ellipse to the path.
 
 Adds a polyline to path
 
+=item lines [X1, Y1, X2, Y2]..
+
+Adds set of multiple, unconnected lines to the path. Is there only for
+compatibility with C<Prima::Drawable>.
+
 =item moveto, rmoveto X, Y
 
 Stops plotting the current shape and moves the plotting position to X, Y.
@@ -935,6 +960,10 @@ Stops plotting the current shape and moves the plotting position to X, Y.
 
 Adds elliptic arc to path so that the first point of the arc starts on the last
 point of the previous primitive, or (0,0) if there's none.
+
+=item rectangle X1, Y1, X2, Y2
+
+Adds rectangle to the path. Is there only for compatibility with C<Prima::Drawable>.
 
 =item sector CENTER_X, CENTER_Y, DIAMETER_X, DIAMETER_Y, ANGLE_START, ANGLE_END
 

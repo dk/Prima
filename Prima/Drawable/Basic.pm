@@ -222,6 +222,66 @@ sub new_gradient
 	return Prima::Drawable::Gradient->new(@_);
 }
 
+sub stroke_primitive
+{
+	my ( $self, $request ) = (shift, shift);
+	return if $self->linePattern eq lp::Null || $self->rop == rop::NoOper;
+
+	my $path = $self->new_path;
+	my @offset  = $self->translate;
+	$path->translate(@offset);
+	$path->$request(@_);
+	my $region2 = $self->region;
+	my $path2   = $path->widen;
+	my $region1 = $path2->region(1);
+	my @box = $region1->box;
+	$box[$_+2] += $box[$_] for 0,1;
+	my $fp = $self->fillPattern;
+	$self->fillPattern(fp::Solid);
+	$self->translate(0,0);
+	my $ok = 1;
+	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid ) {
+		my $color = $self->color;
+		$self->color($self->backColor);
+		my $path3 = $path->widen( linePattern => lp::Solid );
+		my $region3 = $path3->region;
+		$region3->combine( $region1, rgnop::Diff);
+		$region3->combine($region2, rgnop::Intersect) if $region2;
+		$self->region($region3);
+		$ok = $self->bar(@box);
+		$self->color($color);
+	}
+		
+	$region1->combine($region2, rgnop::Intersect) if $region2;
+	$self->region($region1);
+	$ok &&= $self->bar(@box);
+	$self->region($region2);
+	$self->fillPattern($fp);
+	$self->translate(@offset);
+	return $ok;
+}
+
+sub fill_primitive
+{
+	my ( $self, $request ) = (shift, shift);
+	my $path = $self->new_path;
+	$path->$request(@_);
+	my @offset  = $self->translate;
+	my $region1 = $path->region( $self-> fillWinding);
+	$region1->offset(@offset);
+	my $region2 = $self->region;
+	$region1->combine($region2, rgnop::Intersect) if $region2;
+	my @box = $region1->box;
+	$box[$_+2] += $box[$_] for 0,1;
+	$self->region($region1);
+	$self->translate(0,0);
+	my $ok = $self->bar(@box);
+	$self->translate(@offset);
+	$self->region($region2);
+	return $ok;
+}
+
+
 1;
 
 =head1 NAME
