@@ -790,6 +790,326 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	}
 }
 
+typedef struct {
+	PImage      i;
+	PBitBltProc proc;
+	Bool        closed, solid, segment_is_fg;
+	int         bpp, bytes, optimized_stride;
+	int         current_segment, segment_offset, n_segments;
+	PImgPaintContext ctx;
+	Byte        *color;
+} ImgHLineRec;
+
+static void
+setpixel( ImgHLineRec* rec, int x, int y)
+{
+	switch ( rec->bpp ) {
+	case 1: {
+		Byte * dst = rec->i->data + rec->i->lineSize * y + x / 8, src = *dst;
+		Byte shift = 7 - (x & 7);
+		src = (src >> shift) & 1;
+		rec->proc( rec->color, &src, 1);
+		if ( src & 1 )
+			*dst |= 1 << shift;
+		else
+			*dst &= ~(1 << shift);
+		break;
+	}
+	case 4: {
+		Byte * dst = rec->i->data + rec->i->lineSize * y + x / 2, src = *dst, tmp = *dst;
+		if ( x & 1 ) {
+			rec->proc( rec->color, &src, 1);
+			*dst = (tmp & 0xf0) | (src & 0x0f);
+		} else {
+			src >>= 4;
+			rec->proc( rec->color, &src, 1);
+			*dst = (tmp & 0x0f) | (src << 4);
+		}
+		break;
+	}
+	case 8:
+		rec->proc( rec->color, rec->i->data + rec->i->lineSize * y + x, 1);
+		break;
+	default:
+		rec->proc( rec->color, rec->i->data + rec->i->lineSize * y + x * rec->bytes, rec->bytes);
+	}
+}
+
+static Bool
+point_in_region( int x, int y, PBoxRegionRec region)
+{
+	int i;
+	Box * b;
+	for ( i = 0, b = region->boxes; i < region->n_boxes; i++, b++) {
+		if ( x >= b->x && y >= b->y && x < b->x + b->width && y < b->y + b->height)
+			return true;
+	}
+	return false;
+}
+
+#define VISIBILITY_NONE       0
+#define VISIBILITY_CLIPPED    1
+#define VISIBILITY_UNSURE     2
+#define VISIBILITY_CLEAR      3
+					
+static void
+hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
+{
+	/* printf("(%d,%d)->%d\n", x1, y, x2); */
+	if ( x1 > x2 ) {
+		int t = x1;
+		x1 = x2;
+		x2 = t;
+	}
+	if ( rec->solid) {
+		if ( visibility == VISIBILITY_CLEAR ) {
+			switch ( rec->bpp) {
+			case 8:
+			case 16:
+			case 24: {
+				/* optimized multipixel set */
+				int n;
+				int w = rec->bytes, stride = rec->optimized_stride;
+				Byte * dst = rec->i->data + rec->i->lineSize * y + x1 * w;
+				for ( n = w * (x2 - x1 + 1); n > 0; n -= stride, dst += stride)
+					rec->proc( rec->ctx->color, dst,
+						( n >= stride ) ? stride : n);
+				return;
+			}
+			default: {
+				int i;
+				for ( i = x1; i <= x2; i++) setpixel(rec, i, y);
+			}}
+		} else {
+			/* VISIBILITY_NONE is not reaching here */
+			int i;
+			for ( i = x1; i <= x2; i++)
+				if ( point_in_region(i, y, rec->ctx->region))
+					setpixel(rec, i, y);
+		}
+	} else {
+		int i;
+		for ( i = x1; i <= x2; i++) {
+			/* calculate color */
+			rec->color = rec->segment_is_fg ?
+				rec->ctx->color : 
+				( rec->ctx->transparent ? NULL : rec->ctx->backColor )
+				;
+			if ( ++rec->segment_offset >= rec->ctx->linePattern[rec->current_segment]) {
+				rec->segment_offset = 0;
+				if ( ++rec->current_segment >= rec->n_segments ) {
+					rec->current_segment = 0;
+					rec->segment_is_fg = true;
+				} else {
+					rec->segment_is_fg = !rec->segment_is_fg;
+					rec->current_segment++;
+				}
+			}
+			/* put pixel */
+			if (
+				(visibility > VISIBILITY_NONE) &&
+				(rec->color != NULL) &&
+				(
+					(visibility == VISIBILITY_CLEAR) || 
+					point_in_region(i, y, rec->ctx->region)
+				)
+			)
+				setpixel(rec, i, y);
+		}
+	}
+}
+
+void
+img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
+{
+	PImage i = (PImage) dest;
+	int j;
+	ImgHLineRec rec;
+	BoxRegionRec dummy_region;
+	Box dummy_region_box, *pbox;
+	Point* pp;
+	Rect  enclosure;
+
+	if ( ctx->rop == ropNoOper || n_points <= 1 || *(ctx->linePattern) == 0) return;
+
+	/* misc */
+	rec.ctx     = ctx;
+	rec.i       = i;
+	rec.bpp     = i->type & imBPP;
+	rec.bytes   = rec.bpp / 8;
+	rec.proc    = find_blt_proc(ctx->rop);
+	rec.closed  = points[0].x == points[n_points-1].x && points[0].y == points[n_points-1].y && n_points > 2;
+	rec.solid   = (strcmp((const char*)ctx->linePattern, (const char*)lpSolid) == 0);
+
+	/* colors; optimize 8 16 24 pixels for horizontal line memcpy */
+	if ( rec.solid )
+		rec.color = ctx->color;
+	switch ( rec.bpp ) {
+	case 8:
+		memset( ctx->color + 1, ctx->color[0], MAX_SIZEOF_PIXEL - 1);
+		memset( ctx->backColor + 1, ctx->backColor[0], MAX_SIZEOF_PIXEL - 1);
+		rec. optimized_stride = MAX_SIZEOF_PIXEL;
+		break;
+	case 16:
+	case 24: {
+		int b = rec.bpp / 8, n = MAX_SIZEOF_PIXEL / b, i;
+		for ( i = 1; i < n; i++) {
+			memcpy( ctx->color + i * b, ctx->color, b);
+			memcpy( ctx->backColor + i * b, ctx->backColor, b);
+		}
+		rec. optimized_stride = (MAX_SIZEOF_PIXEL / b) * b;
+		break;
+	}}
+
+	/* patterns */
+	rec.n_segments       = strlen(( const char*) ctx->pattern );
+	rec.current_segment  = 0;
+	rec.segment_offset   = 0;
+	rec.segment_is_fg    = 1;
+	if ( ctx->region == NULL ) {
+		dummy_region.n_boxes = 1;
+		dummy_region.boxes = &dummy_region_box;
+		dummy_region_box.x = 0;
+		dummy_region_box.y = 0;
+		dummy_region_box.width  = i->w;
+		dummy_region_box.height = i->h;
+		ctx->region = &dummy_region;
+	}
+	enclosure.left   = ctx->region->boxes[0].x;
+	enclosure.bottom = ctx->region->boxes[0].y;
+	enclosure.right  = ctx->region->boxes[0].x + ctx->region->boxes[0].width;
+	enclosure.top    = ctx->region->boxes[0].y + ctx->region->boxes[0].height;
+	for ( j = 1, pbox = ctx->region->boxes + 1; j < ctx->region->n_boxes; j++, pbox++) {
+		int right = pbox->x + pbox->width;
+		int top   = pbox->y + pbox->height;
+		if ( enclosure.left   > pbox->x ) enclosure.left   = pbox->x;
+		if ( enclosure.bottom > pbox->y ) enclosure.bottom = pbox->y;
+		if ( enclosure.right  < right   ) enclosure.right  = right;
+		if ( enclosure.top    < top     ) enclosure.top    = top;
+	}
+	for ( j = 0, pp = points; j < n_points - 1; j++, pp++) {
+		/* calculate clipping: -1 invisible, 0 definitely clipped, 1 possibly clipped */
+		int visibility; 
+		int curr_maj, curr_min, to_maj, delta_maj, delta_min;
+		int delta_y, delta_x;
+		int dir = 0, d, d_inc1, d_inc2;
+		int inc_maj, inc_min;
+		int x, y, acc_x = 0, acc_y = -1, ox;
+		Point a, b;
+		/* printf("* p(%d): (%d,%d)-(%d,%d)\n", j, pp[0].x, pp[0].y, pp[1].x, pp[1].y); */
+		a.x = pp[0].x + ctx->translate.x;
+		a.y = pp[0].y + ctx->translate.y;
+		b.x = pp[1].x + ctx->translate.x;
+		b.y = pp[1].y + ctx->translate.y;
+
+		if (
+			( a.x < enclosure.left   && b.x < enclosure.left) ||
+			( a.x > enclosure.right  && b.x > enclosure.right) ||
+			( a.y < enclosure.bottom && b.y < enclosure.bottom) ||
+			( a.y > enclosure.top    && b.y > enclosure.top)
+		) {
+			visibility = VISIBILITY_NONE;
+			if ( rec.solid ) continue;
+		} else if (
+			a.x >= enclosure.left   && b.x >= enclosure.left &&
+			a.x <= enclosure.right  && b.x <= enclosure.right &&
+			a.y >= enclosure.bottom && b.y >= enclosure.bottom &&
+			a.y <= enclosure.top    && b.y <= enclosure.top
+		) {
+			if ( ctx->region->n_boxes > 1) {
+				int i,n;
+				Box *e;
+				visibility = VISIBILITY_CLIPPED;
+				for (
+					i = 0, e = ctx->region->boxes, n = ctx->region->n_boxes; 
+					i < n; i++, e++
+				) {
+					int r = e->x + e->width;
+					int t = e->y + e->height;
+					if (
+						a.x >= e->x && a.y >= e->y && a.x <= r && a.y <= t &&
+						b.x >= e->x && b.y >= e->y && b.x <= r && b.y <= t
+					) {
+						visibility = VISIBILITY_CLEAR;
+						break;
+					}
+				}
+			} else {
+				visibility = VISIBILITY_CLEAR;
+			}
+		} else {
+			visibility = VISIBILITY_CLIPPED;
+		}
+
+/* 
+   Bresenham line plotting, (c) LiloHuang @ 2008, kenwu@cpan.org 
+   http://cpansearch.perl.org/src/KENWU/Algorithm-Line-Bresenham-C-0.1/Line/Bresenham/C/C.xs
+ */
+		delta_y = b.y - a.y;
+		delta_x = b.x - a.x;
+		if (abs(delta_y) > abs(delta_x)) dir = 1;
+		
+		if (dir) {
+			curr_maj = a.y;
+			curr_min = a.x;
+			to_maj = b.y;
+			delta_maj = delta_y;
+			delta_min = delta_x;
+		} else {
+			curr_maj = a.x;
+			curr_min = a.y;
+			to_maj = b.x;
+			delta_maj = delta_x;
+			delta_min = delta_y;   
+		}
+
+		if (delta_maj != 0)
+			inc_maj = (abs(delta_maj)==delta_maj ? 1 : -1);
+		else
+			inc_maj = 0;
+		
+		if (delta_min != 0)
+			inc_min = (abs(delta_min)==delta_min ? 1 : -1);
+		else
+			inc_min = 0;
+		
+		delta_maj = abs(delta_maj);
+		delta_min = abs(delta_min);
+		
+		d      = (delta_min << 1) - delta_maj;
+		d_inc1 = (delta_min << 1);
+		d_inc2 = ((delta_min - delta_maj) << 1);
+	
+		while(1) {
+			ox = x;
+			if (dir) {
+				x = curr_min;	 
+				y = curr_maj;
+			} else {
+				x = curr_maj;	 
+				y = curr_min;
+			}
+			if ( acc_y != y ) {
+				if ( acc_y >= 0) 
+					hline( &rec, acc_x, ox, acc_y, visibility);
+				acc_x = x;
+				acc_y = y;
+			}
+	
+			if (curr_maj == to_maj) break;
+			curr_maj += inc_maj;
+			if (d < 0) {
+				d += d_inc1;
+			} else {
+				d += d_inc2;
+				curr_min += inc_min;
+			}
+		}
+		if ( acc_y > 0)
+			hline( &rec, acc_x, x, acc_y, visibility);
+	}
+}
+
 static void
 fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp)
 {

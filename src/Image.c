@@ -1640,6 +1640,59 @@ color2pixel( Handle self, Color color, Byte * pixel)
 	}
 }
 
+static void
+read_fill_pattern(Handle self, FillPattern * p)
+{
+	if ( my-> fillPattern == Drawable_fillPattern) {
+		FillPattern * fp = apc_gp_get_fill_pattern( self);
+		if ( fp )
+			memcpy( p, fp, sizeof(FillPattern));
+		else 
+			memset( p, 0xff, sizeof(FillPattern));
+	} else {
+		AV * av;
+		SV * fp;
+		fp = my->get_fillPattern( self);
+		if ( fp && SvOK(fp) && SvROK(fp) && SvTYPE(av = (AV*)SvRV(fp)) == SVt_PVAV && av_len(av) == sizeof(FillPattern) - 1) {
+			int i;
+			for ( i = 0; i < 8; i++) {
+				SV ** sv = av_fetch( av, i, 0);
+				(*p)[i] = (sv && *sv && SvOK(*sv)) ? SvIV(*sv) : 0;
+			}
+		} else {
+			warn("Bad array returned by .fillPattern");
+			memset( p, 0xff, sizeof(FillPattern));
+		}
+	}
+}
+
+static void
+prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
+{
+	color2pixel( self, my->get_color(self), ctx->color);
+	color2pixel( self, my->get_backColor(self), ctx->backColor);
+	ctx->rop    = my->get_rop(self);
+	ctx->region = var->regionData ? &var->regionData-> data. box : NULL;
+	ctx->transparent = my->get_rop2(self) == ropNoOper;
+	ctx->translate = my->get_translate(self);
+	ctx->linePattern = lp;
+	if ( my-> linePattern == Drawable_linePattern) {
+		int lplen;
+		lplen = apc_gp_get_line_pattern( self, lp);
+		lp[lplen] = 0;
+	} else {
+		SV * sv = my->get_linePattern(self);
+		if ( sv && SvOK(sv)) {
+			STRLEN lplen;
+			char * lpsv = SvPV(sv, lplen);
+			if ( lplen > 255 ) lplen = 255;
+			memcpy(lp, lpsv, lplen);
+			lp[lplen] = 0;
+		} else 
+			strcpy((char*) lp, (const char*) lpSolid);
+	}
+}
+
 Bool
 Image_bar( Handle self, int x1, int y1, int x2, int y2)
 {
@@ -1655,27 +1708,7 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 	color2pixel( self, my->get_backColor(self), ctx.backColor);
 	ctx.rop    = my->get_rop(self);
 	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
-	if ( my-> fillPattern == Drawable_fillPattern) {
-		FillPattern * fp = apc_gp_get_fill_pattern( self);
-		if ( fp )
-			memcpy( &ctx.pattern, fp, sizeof(ctx.pattern));
-		else 
-			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
-	} else {
-		AV * av;
-		SV * fp;
-		fp = my->get_fillPattern( self);
-		if ( fp && SvOK(fp) && SvROK(fp) && SvTYPE(av = (AV*)SvRV(fp)) == SVt_PVAV && av_len(av) == sizeof(FillPattern) - 1) {
-			int i;
-			for ( i = 0; i < 8; i++) {
-				SV ** sv = av_fetch( av, i, 0);
-				ctx.pattern[i] = (sv && *sv && SvOK(*sv)) ? SvIV(*sv) : 0;
-			}
-		} else {
-			warn("Bad array returned by .fillPattern");
-			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
-		}
-	}
+	read_fill_pattern(self, &ctx.pattern);
 	ctx.patternOffset = my->get_fillPatternOffset(self);
 	ctx.patternOffset.x -= t.x;
 	ctx.patternOffset.y -= t.y;
@@ -1695,33 +1728,13 @@ Image_bars( Handle self, SV * rects)
 	if (opt_InPaint)
 		return inherited bars( self, rects);
 
-	if (( p = prima_read_array( rects, "Drawable::bars", true, 4, 0, -1, &count)) == NULL)
+	if (( p = prima_read_array( rects, "Image::bars", true, 4, 0, -1, &count)) == NULL)
 		return false;
 	color2pixel( self, my->get_color(self), ctx.color);
 	color2pixel( self, my->get_backColor(self), ctx.backColor);
 	ctx.rop    = my->get_rop(self);
 	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
-	if ( my-> fillPattern == Drawable_fillPattern) {
-		FillPattern * fp = apc_gp_get_fill_pattern( self);
-		if ( fp )
-			memcpy( &ctx.pattern, fp, sizeof(ctx.pattern));
-		else 
-			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
-	} else {
-		AV * av;
-		SV * fp;
-		fp = my->get_fillPattern( self);
-		if ( fp && SvOK(fp) && SvROK(fp) && SvTYPE(av = (AV*)SvRV(fp)) == SVt_PVAV && av_len(av) == sizeof(FillPattern) - 1) {
-			int i;
-			for ( i = 0; i < 8; i++) {
-				SV ** sv = av_fetch( av, i, 0);
-				ctx.pattern[i] = (sv && *sv && SvOK(*sv)) ? SvIV(*sv) : 0;
-			}
-		} else {
-			warn("Bad array returned by .fillPattern");
-			memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
-		}
-	}
+	read_fill_pattern(self, &ctx.pattern);
 	t = my->get_translate(self);
 	ctx.patternOffset = my->get_fillPatternOffset(self);
 	ctx.patternOffset.x -= t.x;
@@ -1959,29 +1972,84 @@ Image_ellipse( Handle self, int x, int y,  int dX, int dY)
 Bool
 Image_line(Handle self, int x1, int y1, int x2, int y2)
 {
-	if ( opt_InPaint) return inherited line(self, x1, y1, x2, y2);
-	return primitive( self, 0, "siiii", "line", x1, y1, x2, y2);
+	if ( opt_InPaint) {
+		return inherited line(self, x1, y1, x2, y2);
+	} else if ( my->get_lineWidth(self) <= 1) {
+		ImgPaintContext ctx;
+		unsigned char lp[256];
+		Point poly[2];
+		prepare_line_context( self, lp, &ctx);
+		poly[0].x = x1;
+		poly[0].y = y1;
+		poly[1].x = x2;
+		poly[1].y = y2;
+		img_polyline(self, 2, poly, &ctx);
+		return true;
+	} else {
+		return primitive( self, 0, "siiii", "line", x1, y1, x2, y2);
+	}
 }
 
 Bool
 Image_lines( Handle self, SV * points)
 {
-	if ( opt_InPaint) return inherited lines(self, points);
-	return primitive( self, 0, "sS", "lines", points );
+	if ( opt_InPaint) {
+		return inherited lines(self, points);
+	} else if ( my->get_lineWidth(self) <= 1) {
+		Point * lines, *p;
+		int i, count;
+		ImgPaintContext ctx, ctx2;
+		unsigned char lp[256];
+		if (( lines = prima_read_array( points, "Image::lines", true, 4, 0, -1, &count)) == NULL)
+			return false;
+		prepare_line_context( self, lp, &ctx);
+		for (i = 0, p = lines; i < count; i++, p+=2) {
+			ctx2 = ctx;
+			img_polyline(self, 2, p, &ctx2);
+		}
+		free(lines);
+		return true;
+	} else {
+		return primitive( self, 0, "sS", "lines", points );
+	}
 }
 
 Bool
 Image_polyline( Handle self, SV * points)
 {
-	if ( opt_InPaint) return inherited polyline(self, points);
-	return primitive( self, 0, "sS", "line", points );
+	if ( opt_InPaint) {
+		return inherited polyline(self, points);
+	} else if ( my->get_lineWidth(self) <= 1) {
+		Point * lines;
+		int count;
+		ImgPaintContext ctx;
+		unsigned char lp[256];
+		if (( lines = prima_read_array( points, "Image::polyline", true, 2, 2, -1, &count)) == NULL)
+			return false;
+		prepare_line_context( self, lp, &ctx);
+		img_polyline(self, count, lines, &ctx);
+		free(lines);
+		return true;
+	} else {
+		return primitive( self, 0, "sS", "line", points );
+	}
 }
 
 Bool
 Image_rectangle(Handle self, int x1, int y1, int x2, int y2)
 {
-	if ( opt_InPaint) return inherited rectangle(self, x1, y1, x2, y2);
-	return primitive( self, 0, "siiii", "rectangle", x1, y1, x2, y2);
+	if ( opt_InPaint) {
+		return inherited rectangle(self, x1, y1, x2, y2);
+	} else if ( my->get_lineWidth(self) <= 1) {
+		ImgPaintContext ctx;
+		unsigned char lp[256];
+		Point r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
+		prepare_line_context( self, lp, &ctx);
+		img_polyline(self, 5, r, &ctx);
+		return true;
+	} else {
+		return primitive( self, 0, "siiii", "rectangle", x1, y1, x2, y2);
+	}
 }
 
 Bool

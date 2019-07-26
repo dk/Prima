@@ -225,12 +225,22 @@ sub new_gradient
 sub stroke_primitive
 {
 	my ( $self, $request ) = (shift, shift);
-	return if $self->linePattern eq lp::Null || $self->rop == rop::NoOper;
+	return 1 if $self->linePattern eq lp::Null || $self->rop == rop::NoOper;
 
 	my $path = $self->new_path;
 	my @offset  = $self->translate;
 	$path->translate(@offset);
 	$path->$request(@_);
+	my $ok = 1;
+	if ( $self->lineWidth <= 1 ) {
+		# paths produce floating point coordinates and line end arcs,
+		# here we need internal pixel-wise plotting
+		for my $pp ( @{ $path->points } ) {
+			last unless $ok &= $self->polyline($pp);
+		}
+		return $ok;
+	}
+
 	my $region2 = $self->region;
 	my $path2   = $path->widen;
 	my $region1 = $path2->region(1);
@@ -239,7 +249,6 @@ sub stroke_primitive
 	my $fp = $self->fillPattern;
 	$self->fillPattern(fp::Solid);
 	$self->translate(0,0);
-	my $ok = 1;
 	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid ) {
 		my $color = $self->color;
 		$self->color($self->backColor);
