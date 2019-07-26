@@ -793,7 +793,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 typedef struct {
 	PImage      i;
 	PBitBltProc proc;
-	Bool        closed, solid, segment_is_fg;
+	Bool        solid, segment_is_fg, skip_pixel;
 	int         bpp, bytes, optimized_stride;
 	int         current_segment, segment_offset, n_segments;
 	PImgPaintContext ctx;
@@ -855,11 +855,13 @@ point_in_region( int x, int y, PBoxRegionRec region)
 static void
 hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 {
+	int n  = abs(x2 - x1) + 1;
+	int dx = (x1 < x2) ? 1 : -1;
 	/* printf("(%d,%d)->%d\n", x1, y, x2); */
-	if ( x1 > x2 ) {
-		int t = x1;
-		x1 = x2;
-		x2 = t;
+	if ( rec->skip_pixel ) {
+		rec->skip_pixel = false;
+		if ( n-- == 1 ) return;
+		x1 += dx;
 	}
 	if ( rec->solid) {
 		if ( visibility == VISIBILITY_CLEAR ) {
@@ -868,28 +870,28 @@ hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 			case 16:
 			case 24: {
 				/* optimized multipixel set */
-				int n;
+				int wn;
 				int w = rec->bytes, stride = rec->optimized_stride;
-				Byte * dst = rec->i->data + rec->i->lineSize * y + x1 * w;
-				for ( n = w * (x2 - x1 + 1); n > 0; n -= stride, dst += stride)
+				Byte * dst = rec->i->data + rec->i->lineSize * y + ((x1 < x2) ? x1 : x2) * w;
+				for ( wn = w * n; wn > 0; wn -= stride, dst += stride)
 					rec->proc( rec->ctx->color, dst,
-						( n >= stride ) ? stride : n);
+						( wn >= stride ) ? stride : wn);
 				return;
 			}
 			default: {
 				int i;
-				for ( i = x1; i <= x2; i++) setpixel(rec, i, y);
+				for ( i = 0; i < n; i++, x1 += dx) setpixel(rec, x1, y);
 			}}
 		} else {
 			/* VISIBILITY_NONE is not reaching here */
 			int i;
-			for ( i = x1; i <= x2; i++)
-				if ( point_in_region(i, y, rec->ctx->region))
-					setpixel(rec, i, y);
+			for ( i = 0; i < n; i++, x1 += dx)
+				if ( point_in_region(x1, y, rec->ctx->region))
+					setpixel(rec, x1, y);
 		}
 	} else {
 		int i;
-		for ( i = x1; i <= x2; i++) {
+		for ( i = 0; i < n; i++, x1 += dx) {
 			/* calculate color */
 			rec->color = rec->segment_is_fg ?
 				rec->ctx->color : 
@@ -902,19 +904,19 @@ hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 					rec->segment_is_fg = true;
 				} else {
 					rec->segment_is_fg = !rec->segment_is_fg;
-					rec->current_segment++;
 				}
 			}
+
 			/* put pixel */
 			if (
 				(visibility > VISIBILITY_NONE) &&
 				(rec->color != NULL) &&
 				(
 					(visibility == VISIBILITY_CLEAR) || 
-					point_in_region(i, y, rec->ctx->region)
+					point_in_region(x1, y, rec->ctx->region)
 				)
 			)
-				setpixel(rec, i, y);
+				setpixel(rec, x1, y);
 		}
 	}
 }
@@ -929,8 +931,9 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 	Box dummy_region_box, *pbox;
 	Point* pp;
 	Rect  enclosure;
+	Bool closed;
 
-	if ( ctx->rop == ropNoOper || n_points <= 1 || *(ctx->linePattern) == 0) return;
+	if ( ctx->rop == ropNoOper || n_points <= 1) return;
 
 	/* misc */
 	rec.ctx     = ctx;
@@ -938,8 +941,15 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 	rec.bpp     = i->type & imBPP;
 	rec.bytes   = rec.bpp / 8;
 	rec.proc    = find_blt_proc(ctx->rop);
-	rec.closed  = points[0].x == points[n_points-1].x && points[0].y == points[n_points-1].y && n_points > 2;
+
 	rec.solid   = (strcmp((const char*)ctx->linePattern, (const char*)lpSolid) == 0);
+	if ( *(ctx->linePattern) == 0) {
+		if ( ctx->transparent ) return;
+		rec.solid = true;
+		memcpy( ctx->color, ctx->backColor, MAX_SIZEOF_PIXEL);
+	}
+	
+	closed  = points[0].x == points[n_points-1].x && points[0].y == points[n_points-1].y && n_points > 2;
 
 	/* colors; optimize 8 16 24 pixels for horizontal line memcpy */
 	if ( rec.solid )
@@ -962,7 +972,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 	}}
 
 	/* patterns */
-	rec.n_segments       = strlen(( const char*) ctx->pattern );
+	rec.n_segments       = strlen(( const char*) ctx->linePattern );
 	rec.current_segment  = 0;
 	rec.segment_offset   = 0;
 	rec.segment_is_fg    = 1;
@@ -996,6 +1006,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		int inc_maj, inc_min;
 		int x, y, acc_x = 0, acc_y = -1, ox;
 		Point a, b;
+
 		/* printf("* p(%d): (%d,%d)-(%d,%d)\n", j, pp[0].x, pp[0].y, pp[1].x, pp[1].y); */
 		a.x = pp[0].x + ctx->translate.x;
 		a.y = pp[0].y + ctx->translate.y;
@@ -1045,6 +1056,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
    Bresenham line plotting, (c) LiloHuang @ 2008, kenwu@cpan.org 
    http://cpansearch.perl.org/src/KENWU/Algorithm-Line-Bresenham-C-0.1/Line/Bresenham/C/C.xs
  */
+ 		rec.skip_pixel = closed || (j > 0);
 		delta_y = b.y - a.y;
 		delta_x = b.x - a.x;
 		if (abs(delta_y) > abs(delta_x)) dir = 1;

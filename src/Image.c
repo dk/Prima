@@ -1675,7 +1675,6 @@ prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 	ctx->region = var->regionData ? &var->regionData-> data. box : NULL;
 	ctx->transparent = my->get_rop2(self) == ropNoOper;
 	ctx->translate = my->get_translate(self);
-	ctx->linePattern = lp;
 	if ( my-> linePattern == Drawable_linePattern) {
 		int lplen;
 		lplen = apc_gp_get_line_pattern( self, lp);
@@ -1691,6 +1690,7 @@ prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 		} else 
 			strcpy((char*) lp, (const char*) lpSolid);
 	}
+	ctx->linePattern = lp;
 }
 
 Bool
@@ -1946,7 +1946,6 @@ primitive( Handle self, Bool fill, char * format, ...)
 	LEAVE;
 	return r;
 }
-
 
 Bool
 Image_arc( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
