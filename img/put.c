@@ -1004,7 +1004,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		int delta_y, delta_x;
 		int dir = 0, d, d_inc1, d_inc2;
 		int inc_maj, inc_min;
-		int x, y, acc_x = 0, acc_y = -1, ox;
+		int x, y, acc_x = 0, acc_y = INT_MIN, ox;
 		Point a, b;
 
 		/* printf("* p(%d): (%d,%d)-(%d,%d)\n", j, pp[0].x, pp[0].y, pp[1].x, pp[1].y); */
@@ -1103,7 +1103,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 				y = curr_min;
 			}
 			if ( acc_y != y ) {
-				if ( acc_y >= 0) 
+				if ( acc_y > INT_MIN) 
 					hline( &rec, acc_x, ox, acc_y, visibility);
 				acc_x = x;
 				acc_y = y;
@@ -1118,7 +1118,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 				curr_min += inc_min;
 			}
 		}
-		if ( acc_y >= 0)
+		if ( acc_y > INT_MIN)
 			hline( &rec, acc_x, x, acc_y, visibility);
 	}
 }

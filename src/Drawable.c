@@ -594,11 +594,14 @@ render_point(
 	/* convert back to cartesian and return */
 	s *= 3;
 	if ( dimensions == 3 ) {
-		result-> x = v[s] / v[s+2]   + .5;
-		result-> y = v[s+1] / v[s+2] + .5;
+		double f;
+		f = v[s] / v[s+2];
+		result-> x = ( f < 0 ) ? (f - .5) : (f + .5);
+		f = v[s+1] / v[s+2];
+		result-> y = ( f < 0 ) ? (f - .5) : (f + .5);
 	} else {
-		result-> x = v[s]   + .5;
-		result-> y = v[s+1] + .5;
+		result-> x = (v[s] < 0) ? (v[s] - .5) : (v[s] + .5);
+		result-> y = (v[s+1] < 0) ? (v[s+1] - .5) : (v[s+1] + .5);
 	}
 
 	return true;
