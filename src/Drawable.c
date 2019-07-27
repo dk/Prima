@@ -782,7 +782,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 				tangent_apply( tangent, rendered-1);
 				continue;
 			} else if ( cut_corner(last_tangent, tangent, rendered-2, rendered-1)) {
-			/* primitive corner detection - convert 8-connectivity into 4- */
+			/* primitive corner detection - convert 4-connectivity into 8- */
 				*(rendered-1) = *rendered;
 				tangent = -1;
 				rendered--;

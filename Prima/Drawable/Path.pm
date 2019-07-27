@@ -925,6 +925,14 @@ the previous primitive (or (0,0) if there's none).
 
 Adds elliptic arc to path centered around (CENTER_X,CENTER_Y).
 
+Important: if the intention is an immediate rendering, especially with 1-pixel
+line width, consider decreasing diameters by 1. This is because all arc
+calculations are made with floating point, where diameter is also given not in
+pixels but in geometrical coordinates, to allow for matrix transformations.
+Before rendering is performed, arcs are tranformed into spline vertices and
+then transformation matrix is applied, and by that time the notion of an arc
+diameter is lost to be successfully converted into pixel size minus one.
+
 =item close, open
 
 Closes the current shape and opens a new one
