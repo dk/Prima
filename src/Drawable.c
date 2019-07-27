@@ -656,6 +656,26 @@ tangent_apply( int tangent,  Point * b)
 	}
 }
 
+static Bool
+cut_corner( int t2, int t1, Point * p2, Point * p1)
+{
+	switch (t2 * 10 + t1) {
+	/*
+	 >xxa    xx is tangent 3
+  	    ab>  aa is tangent 1
+	         bb is something not 1
+
+        corner is detected when (aa) is exactly 1px high,
+	and is cut so that (ab) becomes (b)
+	*/
+	case 13: case 14: return p2->y + 1 == p1->y;
+	case 23: case 24: return p2->y - 1 == p1->y;
+	case 31: case 32: return p2->x + 1 == p1->x;
+	case 41: case 42: return p2->x - 1 == p1->x;
+	}
+	return false;
+}
+
 SV *
 Drawable_render_spline( SV * obj, SV * points, HV * profile)
 {
@@ -757,11 +777,16 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 		if ( i > 0 ) {
 			/* primitive line detection */
 			tangent = tangent_detect( rendered-1, rendered);
-			if (
-				( i > 1 && tangent > 0 && tangent == last_tangent) ||
-				(tangent == 0)
-			) {
+			if ( tangent == 0 ) continue;
+			if ( i > 1 && tangent > 0 && tangent == last_tangent) {
 				tangent_apply( tangent, rendered-1);
+				continue;
+			} else if ( cut_corner(last_tangent, tangent, rendered-2, rendered-1)) {
+			/* primitive corner detection - convert 8-connectivity into 4- */
+				*(rendered-1) = *rendered;
+				tangent = -1;
+				rendered--;
+				final_size--;
 				continue;
 			} else
 				last_tangent = tangent;
