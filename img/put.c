@@ -857,7 +857,7 @@ hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 {
 	int n  = abs(x2 - x1) + 1;
 	int dx = (x1 < x2) ? 1 : -1;
-	/* printf("(%d,%d)->%d\n", x1, y, x2); */
+	/* printf("(%d,%d)->%d %d\n", x1, y, x2,visibility); */
 	if ( rec->skip_pixel ) {
 		rec->skip_pixel = false;
 		if ( n-- == 1 ) return;
@@ -987,11 +987,11 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 	}
 	enclosure.left   = ctx->region->boxes[0].x;
 	enclosure.bottom = ctx->region->boxes[0].y;
-	enclosure.right  = ctx->region->boxes[0].x + ctx->region->boxes[0].width;
-	enclosure.top    = ctx->region->boxes[0].y + ctx->region->boxes[0].height;
+	enclosure.right  = ctx->region->boxes[0].x + ctx->region->boxes[0].width  - 1;
+	enclosure.top    = ctx->region->boxes[0].y + ctx->region->boxes[0].height - 1;
 	for ( j = 1, pbox = ctx->region->boxes + 1; j < ctx->region->n_boxes; j++, pbox++) {
-		int right = pbox->x + pbox->width;
-		int top   = pbox->y + pbox->height;
+		int right = pbox->x + pbox->width - 1;
+		int top   = pbox->y + pbox->height - 1;
 		if ( enclosure.left   > pbox->x ) enclosure.left   = pbox->x;
 		if ( enclosure.bottom > pbox->y ) enclosure.bottom = pbox->y;
 		if ( enclosure.right  < right   ) enclosure.right  = right;
@@ -1012,6 +1012,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		a.y = pp[0].y + ctx->translate.y;
 		b.x = pp[1].x + ctx->translate.x;
 		b.y = pp[1].y + ctx->translate.y;
+		if (a.x == b.x && a.y == b.y && n_points > 2) continue;
 
 		if (
 			( a.x < enclosure.left   && b.x < enclosure.left) ||
@@ -1038,8 +1039,8 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 					int r = e->x + e->width;
 					int t = e->y + e->height;
 					if (
-						a.x >= e->x && a.y >= e->y && a.x <= r && a.y <= t &&
-						b.x >= e->x && b.y >= e->y && b.x <= r && b.y <= t
+						a.x >= e->x && a.y >= e->y && a.x < r && a.y < t &&
+						b.x >= e->x && b.y >= e->y && b.x < r && b.y < t
 					) {
 						visibility = VISIBILITY_CLEAR;
 						break;
@@ -1091,7 +1092,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		d      = (delta_min << 1) - delta_maj;
 		d_inc1 = (delta_min << 1);
 		d_inc2 = ((delta_min - delta_maj) << 1);
-	
+
 		while(1) {
 			ox = x;
 			if (dir) {
@@ -1117,7 +1118,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 				curr_min += inc_min;
 			}
 		}
-		if ( acc_y > 0)
+		if ( acc_y >= 0)
 			hline( &rec, acc_x, x, acc_y, visibility);
 	}
 }
