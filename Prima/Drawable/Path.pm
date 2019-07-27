@@ -391,8 +391,8 @@ sub arc2nurbs
 
 	push @out, $a1;
 	while (1) {
-		if ( $a2 - $a1 > 180 ) {
-			push @out, $a1 += 180;
+		if ( $a2 - $a1 > 90 ) {
+			push @out, $a1 += 90;
 		} else {
 			push @out, $a2;
 			last;
