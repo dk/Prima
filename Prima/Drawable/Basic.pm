@@ -225,7 +225,8 @@ sub new_gradient
 sub stroke_primitive
 {
 	my ( $self, $request ) = (shift, shift);
-	return 1 if $self->linePattern eq lp::Null || $self->rop == rop::NoOper;
+	return 1 if $self->rop == rop::NoOper;
+	return 1 if $self->linePattern eq lp::Null && $self->rop2 == rop::NoOper;
 
 	my $path = $self->new_path;
 	my @offset  = $self->translate;
@@ -241,15 +242,24 @@ sub stroke_primitive
 		return $ok;
 	}
 
+	my %widen;
+	my $method;
+	if ($self->linePattern eq lp::Null) {
+		$widen{linePattern} = lp::Solid;
+		$method = 'clear';
+	} else {
+		$method = 'bar';
+	}
+
 	my $region2 = $self->region;
-	my $path2   = $path->widen;
+	my $path2   = $path->widen(%widen);
 	my $region1 = $path2->region(1);
 	my @box = $region1->box;
 	$box[$_+2] += $box[$_] for 0,1;
 	my $fp = $self->fillPattern;
 	$self->fillPattern(fp::Solid);
 	$self->translate(0,0);
-	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid ) {
+	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid && $self->linePattern ne lp::Null ) {
 		my $color = $self->color;
 		$self->color($self->backColor);
 		my $path3 = $path->widen( linePattern => lp::Solid );
@@ -263,7 +273,7 @@ sub stroke_primitive
 		
 	$region1->combine($region2, rgnop::Intersect) if $region2;
 	$self->region($region1);
-	$ok &&= $self->bar(@box);
+	$ok &&= $self->$method(@box);
 	$self->region($region2);
 	$self->fillPattern($fp);
 	$self->translate(@offset);
@@ -289,7 +299,6 @@ sub fill_primitive
 	$self->region($region2);
 	return $ok;
 }
-
 
 1;
 
