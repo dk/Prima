@@ -282,7 +282,7 @@ typedef struct _PaintSaveData
 	int         lineJoin;
 	unsigned char * linePattern;
 	int         linePatternLen;
-	int         miterLimit;
+	float       miterLimit;
 	FillPattern fillPattern;
 	Point       fillPatternOffset;
 	int         rop;
@@ -392,6 +392,7 @@ typedef struct _DrawableData
 	Point          fillPatternOffset;
 	int            rop;
 	int            rop2;
+	float          miterLimit;
 	Point          transform;
 	PPaintSaveData psd;                     // Their values during paint saved in sys psd
 
