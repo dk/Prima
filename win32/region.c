@@ -159,11 +159,12 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 	}
 	for ( i = 0; i < r->n_points; i++) {
 		xp[i].x = r->points[i].x;
-		xp[i].y = max - r->points[i].y;
+		xp[i].y = max - r->points[i].y - 1;
 	}
 
 	APERTURE = max;
 	REGION = CreatePolygonRgn( xp, r->n_points, r-> winding ? WINDING : ALTERNATE );
+	free( xp );
 
 	/* superimpose polyline points using Bresenham
 	because windows regions are as broken as filled shapes */
@@ -174,8 +175,8 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 		int inc_maj, inc_min;
 		int x, y, acc_x = 0, acc_y = INT_MIN, ox;
 		Point
-			a = {r->points[i].x, max - r->points[i].y},
-			b = {r->points[i+1].x, max - r->points[i+1].y};
+			a = {r->points[i].x, max - r->points[i].y - 1},
+			b = {r->points[i+1].x, max - r->points[i+1].y - 1};
 		delta_y = b.y - a.y;
 		delta_x = b.x - a.x;
 		if (abs(delta_y) > abs(delta_x)) dir = 1;
@@ -222,7 +223,7 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 			}
 			if ( acc_y != y ) {
 				if ( acc_y > INT_MIN) {
-					HRGN reg = CreateRectRgn(acc_x, acc_y, ox, acc_y + 1);
+					HRGN reg = CreateRectRgn(acc_x, acc_y, ox + 1, acc_y + 1);
 					CombineRgn( REGION, REGION, reg, RGN_OR);
 					DeleteObject(reg);
 				}
@@ -240,13 +241,12 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 			}
 		}
 		if ( acc_y > INT_MIN) {
-			HRGN reg = CreateRectRgn(acc_x, acc_y, x, acc_y + 1);
+			HRGN reg = CreateRectRgn(acc_x, acc_y, x + 1, acc_y + 1);
 			CombineRgn( REGION, REGION, reg, RGN_OR);
 			DeleteObject(reg);
 		}
 	}
 
-	free( xp );
 	return true;
 }
 
