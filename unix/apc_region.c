@@ -146,13 +146,92 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 	}
 	for ( i = 0; i < r->n_points; i++) {
 		xp[i].x = r->points[i].x;
-		xp[i].y = max - r->points[i].y;
+		xp[i].y = max - r->points[i].y - 1;
 	}
 
 	pAPERTURE = max;
 	pREGION = XPolygonRegion( xp, r->n_points, r-> winding ? WindingRule : EvenOddRule );
 
 	free( xp );
+
+	/* superimpose polyline points using Bresenham
+	because windows regions are as broken as filled shapes */
+	for ( i = 0; i < r->n_points-1; i++) {
+		int curr_maj, curr_min, to_maj, delta_maj, delta_min;
+		int delta_y, delta_x;
+		int dir = 0, d, d_inc1, d_inc2;
+		int inc_maj, inc_min;
+		int x, y, acc_x = 0, acc_y = INT_MIN, ox;
+		Point
+			a = {r->points[i].x, max - r->points[i].y - 1},
+			b = {r->points[i+1].x, max - r->points[i+1].y - 1};
+		delta_y = b.y - a.y;
+		delta_x = b.x - a.x;
+		if (abs(delta_y) > abs(delta_x)) dir = 1;
+
+		if (dir) {
+			curr_maj = a.y;
+			curr_min = a.x;
+			to_maj = b.y;
+			delta_maj = delta_y;
+			delta_min = delta_x;
+		} else {
+			curr_maj = a.x;
+			curr_min = a.y;
+			to_maj = b.x;
+			delta_maj = delta_x;
+			delta_min = delta_y;
+		}
+
+		if (delta_maj != 0)
+			inc_maj = (abs(delta_maj)==delta_maj ? 1 : -1);
+		else
+			inc_maj = 0;
+
+		if (delta_min != 0)
+			inc_min = (abs(delta_min)==delta_min ? 1 : -1);
+		else
+			inc_min = 0;
+
+		delta_maj = abs(delta_maj);
+		delta_min = abs(delta_min);
+
+		d      = (delta_min << 1) - delta_maj;
+		d_inc1 = (delta_min << 1);
+		d_inc2 = ((delta_min - delta_maj) << 1);
+
+		while(1) {
+			ox = x;
+			if (dir) {
+				x = curr_min;
+				y = curr_maj;
+			} else {
+				x = curr_maj;
+				y = curr_min;
+			}
+			if ( acc_y != y ) {
+				if ( acc_y > INT_MIN) {
+					XRectangle xr = { acc_x, acc_y, ox - acc_x + 1, 1 };
+					XUnionRectWithRegion( &xr, pREGION, pREGION);
+				}
+				acc_x = x;
+				acc_y = y;
+			}
+
+			if (curr_maj == to_maj) break;
+			curr_maj += inc_maj;
+			if (d < 0) {
+				d += d_inc1;
+			} else {
+				d += d_inc2;
+				curr_min += inc_min;
+			}
+		}
+		if ( acc_y > INT_MIN) {
+			XRectangle xr = { acc_x, acc_y, x - acc_x + 1, 1 };
+			XUnionRectWithRegion( &xr, pREGION, pREGION);
+		}
+	}
 	return true;
 }
 

@@ -262,13 +262,34 @@ is_pict($i, "polyline",
 	"     "
 );
 
-# $i->fill_ellipse(2,2,5,5);
-# is_pict($i, "fill_ellipse",
-# 	"  *  ".
-# 	" *** ".
-# 	"*****".
-# 	" *** ".
-# 	"  *  "
-# );
+$i->clear;
+$i->fill_ellipse(2,2,5,5);
+is_pict($i, "fill_ellipse",
+	"  *  ".
+	" *** ".
+	"*****".
+	" *** ".
+	"  *  "
+);
+
+$i->clear;
+$i->fill_sector(2,2,5,5,0,90);
+is_pict($i, "fill_ellipse",
+	"  *  ".
+	"  ** ".
+	"  ***".
+	"     ".
+	"     "
+);
+
+$i->clear;
+$i->fill_chord(2,2,5,5,0,90);
+is_pict($i, "fill_ellipse",
+	"  *  ".
+	"   * ".
+	"    *".
+	"     ".
+	"     "
+);
 
 done_testing;
