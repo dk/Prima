@@ -3704,21 +3704,7 @@ apc_system_action( const char * params)
 		}
 		break;
 	case 'w':
-		if ( strncmp( params, "win32.DrawFocusRect ", 20) == 0) {
-			RECT r;
-			Handle win;
-			Handle self;
-			int i = sscanf( params + 20, "%" PR_HANDLE " %ld %ld %ld %ld", &win, &r.left, &r.bottom, &r.right, &r.top);
-
-			if ( i != 5 || !( self = hwnd_to_view(( HWND) win))) {
-				warn( "Bad parameters to sysaction win32.DrawFocusRect");
-				return 0;
-			}
-			if ( !opt_InPaint) return 0;
-			r. bottom = sys lastSize. y - r. bottom;
-			r. top    = sys lastSize. y - r. top;
-			DrawFocusRect( sys ps, &r);
-		} else if ( strncmp( params, "win32.SetVersion", 16) == 0) {
+		if ( strncmp( params, "win32.SetVersion", 16) == 0) {
 			const char * ver = params + 17;
 			while ( *ver && ( *ver == ' '  || *ver == '\t')) ver++;
 
@@ -3745,7 +3731,7 @@ apc_system_action( const char * params)
 
 			if ( strcmp( params, " exists") == 0) {
 				char * p = ( char *) malloc(12);
-				if ( p) sprintf( p, "0x%08" PR_HANDLE, ( Handle) guts. console);
+				if ( p) snprintf( p, 12, PR_HANDLE_FMT, ( Handle) guts. console);
 				return p;
 			} else
 			if ( strcmp( params, " hide") == 0)     { ShowWindow( guts. console, SW_HIDE); } else
