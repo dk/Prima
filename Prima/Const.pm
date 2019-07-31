@@ -119,6 +119,8 @@ package
     rgnop; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# Region operations
 package
     rgn; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# Region.rect_inside() results
+package
+    fm; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# fill modes
 
 1;
 
@@ -401,6 +403,14 @@ See L<Prima::File>
 	fe::Read
 	fe::Write
 	fe::Exception
+
+=head2 fm::  - fill modes 
+
+See L<Prima::Drawable/fillMode>
+
+	fp::Alternate
+	fp::Winding
+	fp::Overlay
 
 =head2 fp::  - standard fill pattern indices
 

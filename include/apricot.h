@@ -2729,6 +2729,18 @@ LP(DashDotDot)
 END_TABLE_CHAR(lp,unsigned char*)
 #undef LP
 
+/* fill modes */
+#define FM(const_name) CONSTANT(fm,const_name)
+START_TABLE(fm,UV)
+#define    fmAlternate       0
+FM(Alternate)
+#define    fmWinding         1
+FM(Winding)
+#define    fmOverlay         2
+FM(Overlay)
+END_TABLE(fm,UV)
+#undef FM
+
 /* font styles */
 #define FS(const_name) CONSTANT(fs,const_name)
 START_TABLE(fs,UV)
@@ -3252,7 +3264,7 @@ typedef struct _TextWrapRec {
 
 typedef struct {
 	int n_points;
-	Bool winding;
+	int fill_mode;
 	Point* points;
 } PolygonRegionRec;
 
@@ -3428,8 +3440,8 @@ apc_gp_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode);
 extern unsigned long *
 apc_gp_get_font_ranges( Handle self, int * count);
 
-extern Bool
-apc_gp_get_fill_winding( Handle self);
+extern int
+apc_gp_get_fill_mode( Handle self);
 
 extern FillPattern *
 apc_gp_get_fill_pattern( Handle self);
@@ -3498,7 +3510,7 @@ extern Bool
 apc_gp_set_color( Handle self, Color color);
 
 extern Bool
-apc_gp_set_fill_winding( Handle self, Bool fillWinding);
+apc_gp_set_fill_mode( Handle self, int fillMode);
 
 extern Bool
 apc_gp_set_fill_pattern( Handle self, FillPattern pattern);

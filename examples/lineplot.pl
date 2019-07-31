@@ -115,7 +115,7 @@ $mw = Prima::MainWindow->new(
 		);
 		$canvas->color(cl::LightRed);
 		$canvas->rop(rop::OrPut) if $cmp;
-		$canvas->fillWinding(1);
+		$canvas->fillMode(fm::Overlay);
 		$p->fill;
 		$canvas->rop(rop::CopyPut);
 

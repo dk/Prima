@@ -43,10 +43,10 @@ Create rectangular region with inclusive-inclusive coordinates.
 
 Same as C<rect> but using other semantics.
 
-=item polygon => \@POINTS, winding = 0
+=item polygon => \@POINTS, fillMode = 0
 
 Creates a polygon shape with vertices given in C<@POINTS>, and using
-an optional winding flag ( see L<Drawable/fillWinding> ).
+an optional fillMode ( see L<Drawable/fillMode> ).
 
 =item image => IMAGE
 

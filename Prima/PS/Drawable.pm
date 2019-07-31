@@ -117,7 +117,7 @@ sub save_state
 	}
 	$self-> {saveState}-> {$_} = $self-> $_() for qw(
 		color backColor fillPattern lineEnd linePattern lineWidth miterLimit
-		rop rop2 textOpaque textOutBaseline font lineJoin fillWinding
+		rop rop2 textOpaque textOutBaseline font lineJoin fillMode
 	);
 	delete $self->{saveState}->{font}->{size};
 	$self-> {saveState}-> {$_} = [$self-> $_()] for qw(
@@ -131,7 +131,7 @@ sub restore_state
 {
 	my $self = $_[0];
 	for ( qw( color backColor fillPattern lineEnd linePattern lineWidth miterLimit
-			rop rop2 textOpaque textOutBaseline font lineJoin fillWinding)) {
+			rop rop2 textOpaque textOutBaseline font lineJoin fillMode)) {
 		$self-> $_( $self-> {saveState}-> {$_});
 	}
 	for ( qw( translate clipRect)) {
@@ -595,10 +595,10 @@ sub lineJoin
 	$_[0]-> {changed}-> {lineJoin} = 1;
 }
 
-sub fillWinding
+sub fillMode
 {
-	return $_[0]-> SUPER::fillWinding unless $#_;
-	$_[0]-> SUPER::fillWinding($_[1]);
+	return $_[0]-> SUPER::fillMode unless $#_;
+	$_[0]-> SUPER::fillMode($_[1]);
 }
 
 sub linePattern
@@ -866,7 +866,7 @@ sub fill_chord
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 	my $rx = $dx / 2;
 	$end -= $start;
-	my $F = $self-> fillWinding ? 'F' : 'E';
+	my $F = (($self-> fillMode & fm::Winding) == fm::Alternate) ? 'E' : 'F';
 	$self-> fill( <<CHORD );
 $x $y M : $x $y T 1 $try Z
 N $rx 0 M 0 0 $rx 0 $end a X $F ;
@@ -905,7 +905,7 @@ sub fill_sector
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 	my $rx = $dx / 2;
 	$end -= $start;
-	my $F = $self-> fillWinding ? 'F' : 'E';
+	my $F = (($self-> fillMode & fm::Winding) == fm::Alternate) ? 'E' : 'F';
 	$self-> fill(<<SECTOR);
 $x $y M : $x $y T 1 $try Z $start R
 N 0 0 M 0 0 $rx 0 $end a 0 0 l $F ;
@@ -1147,7 +1147,7 @@ sub fillpoly
 	for ( $i = 2; $i < $c; $i += 2) {
 		$x .= "@a[$i,$i+1] l ";
 	}
-	$x .= 'X ' . ($self-> fillWinding ? 'F' : 'E');
+	$x .= 'X ' . ((($self-> fillMode & fm::Winding) == fm::Alternate) ? 'E' : 'F');
 	$self-> fill( $x);
 }
 

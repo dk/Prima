@@ -396,7 +396,7 @@ sub profile_default
 	my %prf = (
 		color           => cl::Black,
 		backColor       => cl::White,
-		fillWinding     => 0,
+		fillMode        => fm::Overlay|fm::Alternate,
 		fillPattern     => fp::Solid,
 		fillPatternOffset => [0,0],
 		font            => {
@@ -433,6 +433,8 @@ sub profile_check_in
 	$self-> SUPER::profile_check_in( $p, $default);
 	$p-> { font} = {} unless exists $p-> { font};
 	$p-> { font} = Prima::Drawable-> font_match( $p-> { font}, $default-> { font});
+	$p->{fillMode} = ( delete($p->{fillWinding}) ? fm::Winding : fm::Alternate) | fm::Overlay
+		if exists $p->{fillWinding} && ! exists $p->{fillMode}; # compatibility
 }
 
 sub font
@@ -485,6 +487,12 @@ sub fill_spline
 {
 	my $self = shift;
 	$self->fillpoly( $self->render_spline(@_) );
+}
+
+sub fillWinding # compatibility
+{
+	return $_[0]->fillMode & fm::Winding unless $#_;
+	$_[0]->fillMode(($_[1] ? fm::Winding : fm::Alternate) | fm::Overlay);
 }
 
 package Prima::Image;

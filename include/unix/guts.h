@@ -739,6 +739,7 @@ typedef struct _drawable_sys_data
 	XRectangle clip_rect;
 	FillPattern fill_pattern, saved_fill_pattern;
 	Point fill_pattern_offset, saved_fill_pattern_offset;
+	int fill_mode, saved_fill_mode;
 	Pixmap fp_pixmap;
 #if defined(sgi) && !defined(__GNUC__)
 /* multiple compilation and runtime errors otherwise. must be some alignment tricks */

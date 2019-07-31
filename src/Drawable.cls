@@ -11,7 +11,7 @@ object Prima::Drawable ( Prima::Component)
 	property     Color         backColor;
 	property     Color         color;
 	property     Rect          clipRect;
-	property     Bool          fillWinding;
+	property     int           fillMode;
 	property     SV *          fillPattern;
 	property     Point         fillPatternOffset;
 	property     int           height;

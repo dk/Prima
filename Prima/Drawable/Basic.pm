@@ -286,7 +286,7 @@ sub fill_primitive
 	my $path = $self->new_path;
 	$path->$request(@_);
 	my @offset  = $self->translate;
-	my $region1 = $path->region( $self-> fillWinding);
+	my $region1 = $path->region( $self-> fillMode);
 	$region1->offset(@offset);
 	my $region2 = $self->region;
 	$region1->combine($region2, rgnop::Intersect) if $region2;

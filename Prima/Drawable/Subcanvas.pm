@@ -17,7 +17,7 @@ sub profile_default {
 
 # Graphics properties must be stored internally. Note the font attribute
 # needs to be handled with a tied hash at some point.
-my @easy_props = qw(color backColor fillWinding fillPattern font lineEnd
+my @easy_props = qw(color backColor fillMode fillPattern font lineEnd
 	lineJoin linePattern lineWidth rop rop2 miterLimit
 	textOpaque textOutBaseline
 );

@@ -145,10 +145,15 @@ rgn_rect(Handle self, int count, Box * r)
 static Bool
 rgn_polygon(Handle self, PolygonRegionRec * r)
 {
-	int i, max;
+	int i, max, open, xp_points;
 	POINT * xp;
 
-	if ( !( xp = malloc( sizeof(POINT) * r->n_points ))) {
+	open =
+		r->points[r->n_points-1].x != r->points[0].x ||
+		r->points[r->n_points-1].y != r->points[0].y;
+	xp_points = r->n_points + (open ? 1 : 0);
+
+	if ( !( xp = malloc( sizeof(POINT) * xp_points ))) {
 		warn("Not enough memory");
 		return false;
 	}
@@ -157,26 +162,43 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 		if ( max < r->points[i].y)
 			max = r->points[i].y;
 	}
+	max++;
 	for ( i = 0; i < r->n_points; i++) {
 		xp[i].x = r->points[i].x;
 		xp[i].y = max - r->points[i].y - 1;
+<<<<<<< HEAD
 	}
 
 	APERTURE = max;
 	REGION = CreatePolygonRgn( xp, r->n_points, r-> winding ? WINDING : ALTERNATE );
 	free( xp );
+=======
+	}
+	if ( open ) {
+		xp[i].x = r->points[0].x;
+		xp[i].y = max - r->points[0].y - 1;
+	}
+
+	APERTURE = max;
+	REGION = CreatePolygonRgn( xp, r->n_points, ((r-> fill_mode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
+	if (( r->fill_mode & fmOverlay) == 0) goto NO_OVERLAY;
+>>>>>>> extend and rename Drawable.fillWinding into .fillMode, with new constants
 
 	/* superimpose polyline points using Bresenham
 	because windows regions are as broken as filled shapes */
-	for ( i = 0; i < r->n_points-1; i++) {
+	for ( i = 0; i < xp_points-1; i++) {
 		int curr_maj, curr_min, to_maj, delta_maj, delta_min;
 		int delta_y, delta_x;
 		int dir = 0, d, d_inc1, d_inc2;
 		int inc_maj, inc_min;
 		int x, y, acc_x = 0, acc_y = INT_MIN, ox;
+<<<<<<< HEAD
 		Point
 			a = {r->points[i].x, max - r->points[i].y - 1},
 			b = {r->points[i+1].x, max - r->points[i+1].y - 1};
+=======
+		POINT a = xp[i], b = xp[i+1];
+>>>>>>> extend and rename Drawable.fillWinding into .fillMode, with new constants
 		delta_y = b.y - a.y;
 		delta_x = b.x - a.x;
 		if (abs(delta_y) > abs(delta_x)) dir = 1;
@@ -223,7 +245,16 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 			}
 			if ( acc_y != y ) {
 				if ( acc_y > INT_MIN) {
-					HRGN reg = CreateRectRgn(acc_x, acc_y, ox + 1, acc_y + 1);
+					HRGN reg;
+					int x1, x2;
+					if (ox < acc_x) {
+						x1 = ox;
+						x2 = acc_x;
+					} else {
+						x1 = acc_x;
+						x2 = ox;
+					}
+					reg = CreateRectRgn(x1, acc_y, x2, acc_y + 1);
 					CombineRgn( REGION, REGION, reg, RGN_OR);
 					DeleteObject(reg);
 				}
@@ -241,12 +272,26 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 			}
 		}
 		if ( acc_y > INT_MIN) {
-			HRGN reg = CreateRectRgn(acc_x, acc_y, x + 1, acc_y + 1);
+			HRGN reg;
+			int x1, x2;
+			if (x < acc_x) {
+				x1 = x;
+				x2 = acc_x;
+			} else {
+				x1 = acc_x;
+				x2 = x;
+			}
+			reg = CreateRectRgn(x1, acc_y, x2, acc_y + 1);
 			CombineRgn( REGION, REGION, reg, RGN_OR);
 			DeleteObject(reg);
 		}
 	}
 
+<<<<<<< HEAD
+=======
+NO_OVERLAY:
+	free( xp );
+>>>>>>> extend and rename Drawable.fillWinding into .fillMode, with new constants
 	return true;
 }
 

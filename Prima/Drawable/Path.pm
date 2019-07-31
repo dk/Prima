@@ -871,10 +871,11 @@ sub clip
 
 sub region
 {
-	my ($self, $winding) = @_;
+	my ($self, $mode) = @_;
 	my $reg;
+	$mode //= fm::Winding | fm::Overlay;
 	$reg ? $reg->combine($_, rgnop::Union) : ($reg = $_)
-		for map { Prima::Region->new( polygon => $_, winding => $winding) } @{ $self->points };
+		for map { Prima::Region->new( polygon => $_, fillMode => $mode) } @{ $self->points };
 	return $reg;
 }
 
@@ -1050,7 +1051,7 @@ create an array of points that can be used for actual drawing.
 =item clip %options
 
 Returns 1-bit image with clipping mask of the path. C<%options> can be used to
-pass C<fillWinding> property that affects the result of the filled shape.
+pass C<fillMode> property that affects the result of the filled shape.
 
 =item extents
 
@@ -1077,10 +1078,10 @@ points used to render the lines.
 Runs all accumulated commands, and returns rendered set of points, suitable
 for further calls to C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly>.
 
-=item region WINDING=0
+=item region MODE=fm::Winding|fm::Overlay
 
-Creates a region object from polygonal shape. If WINDING is set, applies fill winding
-mode (see L<Drawable/fillWinding> for more).
+Creates a region object from polygonal shape. If MODE is set, applies fill mode
+(see L<Drawable/fillMode> for more).
 
 =item stroke
 

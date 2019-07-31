@@ -693,11 +693,16 @@ Note: C<::clipRect> can not be used while the object is in the paint-disabled st
 its context is neither recorded nor used as a template
 ( see L<"Graphic context and canvas">).
 
-=item fillWinding BOOLEAN
+=item fillMode INTEGER
 
 Affects filling style of complex polygonal shapes filled by C<fillpoly>.
-If 1, the filled shape contains no holes; otherwise, holes are present
-where the shape edges cross.
+If C<fm::Winding>, the filled shape contains no holes; if C<fm::EvenOdd>, holes are present
+where the shape edges cross. 
+
+C<fm::Overlay> flag can be combined with these to counter an intrinsic defect
+of filled shaped both in Win32 and X11 that don't exactly follow polygon
+vertices. When supplied, it overlays a polygon over the filled shape, so that
+the latter falls exactly in the boundaries defined by vertices.
 
 =for podview <img src="windings.gif">
 
@@ -1113,7 +1118,7 @@ Example:
 
    $d-> fillpoly([ 0, 0, 15, 20, 30, 0]); # triangle
 
-Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2, fillWinding
+Context used: color, backColor, fillPattern, fillPatternOffset, rop, rop2, fillMode
 
 Returns success flag; if failed, C<$@> contains the error.
 

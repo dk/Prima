@@ -515,7 +515,7 @@ use vars qw(%defaults @uses %list_properties);
 {
 	@uses = qw( backColor color fillPattern font lineEnd linePattern
 					lineWidth region rop rop2 textOpaque
-					textOutBaseline lineJoin fillWinding);
+					textOutBaseline lineJoin fillMode);
 	my $pd = Prima::Drawable-> profile_default();
 	%defaults = map { $_ => $pd-> {$_} } @uses;
 	%list_properties = map { $_ => 1 } qw(origin size rect resolution);
@@ -971,10 +971,10 @@ sub lineJoin
 	$_[0]-> repaint;
 }
 
-sub fillWinding
+sub fillMode
 {
-	return $_[0]-> {fillWinding} unless $#_;
-	$_[0]-> {fillWinding} = $_[1];
+	return $_[0]-> {fillMode} unless $#_;
+	$_[0]-> {fillMode} = $_[1];
 	$_[0]-> repaint;
 }
 
@@ -1478,7 +1478,7 @@ sub uses
 	my $self = $_[0];
 	my @ret = $self-> SUPER::uses;
 	push @ret, 'lineJoin' if $self-> {outline};
-	push @ret, 'fillWinding' if $self-> {fill};
+	push @ret, 'fillMode' if $self-> {fill};
 	@ret;
 }
 
@@ -1714,11 +1714,6 @@ sub on_layoutchanged
 	}
 }
 
-package fillrule;
-
-use constant Alternate => 0;
-use constant Winding   => 1;
-
 package main;
 
 use Prima qw(Application StdBitmap ColorDialog FontDialog Buttons);
@@ -1756,8 +1751,8 @@ menuItems => [
 				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %rop:: ]],
 		['Rop~2' => [ map { [ "rop:rop2=$_", $_, \&set_constant ] }
 				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %rop:: ]],
-		['Fill r~ule' => [ map { [ "fillrule:fillWinding=$_", $_, \&set_constant ] }
-				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fillrule:: ]],
+		['Fill r~ule' => [ map { [ "fillrule:fillMode=$_", $_, \&set_constant ] }
+				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fm:: ]],
 		[],
 		['fill' => 'Toggle ~fill' => \&toggle],
 		['outline' => 'Toggle ~outline' => \&toggle],

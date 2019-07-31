@@ -66,7 +66,7 @@ Region_init( Handle self, HV * profile)
 			r. type = rgnEmpty;
 			break;
 		}
-		r. data. polygon. winding = pexist(winding) ? pget_B(winding) : 0;
+		r. data. polygon. fill_mode = pexist(fillMode) ? pget_i(fillMode) : fmOverlay;
 		break;
 	case rgnEmpty:
 		break;

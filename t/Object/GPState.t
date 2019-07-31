@@ -52,8 +52,8 @@ is( $a-> textOutBaseline, 1, 'textOutBaseline' );
 $a-> lineJoin( lj::Bevel);
 is( $a-> lineJoin ,lj::Bevel, "lineJoin");
 
-$a-> fillWinding( 1);
-ok( $a-> fillWinding, "fillWinding");
+$a-> fillMode( fm::Alternate);
+is( $a-> fillMode, fm::Alternate, "fillMode");
 
 $a-> begin_paint;
 $a-> end_paint;
@@ -75,6 +75,6 @@ is_deeply( \@z, [1,2], "translate" );
 is( $a-> textOpaque, 1, "textOpaque" );
 is( $a-> textOutBaseline, 1, "textOutBaseline" );
 is( $a-> lineJoin, lj::Bevel, "lineJoin" );
-ok( $a-> fillWinding, "fillWinding");
+is( $a-> fillMode, fm::Alternate, "fillMode");
 
 done_testing;

@@ -172,6 +172,7 @@ Unbuffered:
 	XX-> line_width = XX-> gcv. line_width;
 	XX-> gcv. clip_mask = None;
 	XX-> gtransform = XX-> transform;
+	XX-> fill_mode = XX->saved_fill_mode;
 
 	prima_get_gc( XX);
 	XX-> gcv. subwindow_mode = (XX->flags.clip_by_children ? ClipByChildren : IncludeInferiors);
@@ -526,10 +527,10 @@ calculate_ellipse_divergence(void)
 }
 
 #define ELLIPSE_RECT x - ( dX + 1) / 2 + 1, y - dY / 2, dX-guts.ellipseDivergence.x, dY-guts.ellipseDivergence.y
-#define FILL_ANTIDEFECT_REPAIRABLE \
+#define FILL_ANTIDEFECT_REPAIRABLE ((XX->fill_mode == fmOverlay) && \
 		( rop_map[XX-> paint_rop] == GXcopy ||\
 		rop_map[XX-> paint_rop] == GXset  ||\
-		rop_map[XX-> paint_rop] == GXclear)
+		rop_map[XX-> paint_rop] == GXclear))
 #define FILL_ANTIDEFECT_OPEN {\
 XGCValues gcv;\
 gcv. line_width = 1;\
@@ -1934,24 +1935,11 @@ apc_gp_get_font_ranges( Handle self, int * count)
 	return ret;
 }
 
-Bool
-apc_gp_get_fill_winding( Handle self)
+int
+apc_gp_get_fill_mode( Handle self)
 {
 	DEFXX;
-	int fill_rule;
-	XGCValues gcv;
-
-	if ( XF_IN_PAINT(XX)) {
-		if ( XGetGCValues( DISP, XX-> gc, GCFillRule, &gcv) == 0) {
-			warn( "UAG_006: error querying GC values");
-			fill_rule = EvenOddRule;
-		} else {
-			fill_rule = gcv. fill_rule;
-		}
-	} else {
-		fill_rule = XX-> gcv. fill_rule;
-	}
-	return fill_rule == WindingRule;
+	return XF_IN_PAINT(XX) ? XX->fill_mode : XX->saved_fill_mode;
 }
 
 FillPattern *
@@ -2249,19 +2237,21 @@ apc_gp_set_color( Handle self, Color color)
 }
 
 Bool
-apc_gp_set_fill_winding( Handle self, Bool fillWinding)
+apc_gp_set_fill_mode( Handle self, int fillMode)
 {
 	DEFXX;
 	int fill_rule;
 	XGCValues gcv;
 
-	fill_rule = fillWinding ? WindingRule : EvenOddRule;
+	fill_rule = ((fillMode & fmWinding) == fmAlternate) ? EvenOddRule : WindingRule;
 	if ( XF_IN_PAINT(XX)) {
 		gcv. fill_rule = fill_rule;
+		XX-> fill_mode = fillMode;
 		XChangeGC( DISP, XX-> gc, GCFillRule, &gcv);
 		XCHECKPOINT;
 	} else {
 		XX-> gcv. fill_rule = fill_rule;
+		XX-> saved_fill_mode = fillMode;
 	}
 	return true;
 }

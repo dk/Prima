@@ -27,7 +27,7 @@ Drawable_init( Handle self, HV * profile)
 	var-> w = var-> h = 0;
 	my-> set_color        ( self, pget_i ( color));
 	my-> set_backColor    ( self, pget_i ( backColor));
-	my-> set_fillWinding  ( self, pget_B ( fillWinding));
+	my-> set_fillMode     ( self, pget_i ( fillMode));
 	my-> set_fillPattern  ( self, pget_sv( fillPattern));
 	my-> set_lineEnd      ( self, pget_i ( lineEnd));
 	my-> set_lineJoin     ( self, pget_i ( lineJoin));
@@ -1361,12 +1361,12 @@ Drawable_clipRect( Handle self, Bool set, Rect clipRect)
 	return clipRect;
 }
 
-Bool
-Drawable_fillWinding( Handle self, Bool set, Bool fillWinding)
+int
+Drawable_fillMode( Handle self, Bool set, int fillMode)
 {
-	if (!set) return apc_gp_get_fill_winding( self);
-	apc_gp_set_fill_winding( self, fillWinding);
-	return fillWinding;
+	if (!set) return apc_gp_get_fill_mode( self);
+	apc_gp_set_fill_mode( self, fillMode);
+	return fillMode;
 }
 
 int

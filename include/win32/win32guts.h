@@ -276,7 +276,7 @@ typedef struct _PrinterData
 typedef struct _PaintSaveData
 {
 	Color       lbs[2];
-	Bool        fillWinding;
+	Bool        fillMode;
 	int         lineWidth;
 	int         lineEnd;
 	int         lineJoin;
@@ -381,7 +381,7 @@ typedef struct _DrawableData
 
 	/* HDC attributes storage outside paint mode */
 	Color          lbs[2];
-	Bool           fillWinding;
+	int            fillMode, psFillMode;
 	int            lineWidth;
 	int            lineEnd;
 	int            lineJoin;

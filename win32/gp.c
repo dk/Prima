@@ -1262,12 +1262,11 @@ apc_gp_get_color( Handle self)
 	return remap_color( sys ps ? sys stylus. pen. lopnColor : sys lbs[0], false);
 }
 
-Bool
-apc_gp_get_fill_winding( Handle self)
+int
+apc_gp_get_fill_mode( Handle self)
 {
 	objCheck 0;
-	if ( ! sys ps) return sys fillWinding;
-	return GetPolyFillMode( sys ps) == WINDING;
+	return sys ps ? sys psFillMode : sys fillMode;
 }
 
 static Handle ctx_le2PS_ENDCAP[] = {
@@ -1718,13 +1717,14 @@ apc_gp_set_color( Handle self, Color color)
 }
 
 Bool
-apc_gp_set_fill_winding( Handle self, Bool fillWinding)
+apc_gp_set_fill_mode( Handle self, int fillMode)
 {
 	objCheck false;
-	if ( sys ps)
-		SetPolyFillMode( sys ps, fillWinding ? WINDING : ALTERNATE);
-	else
-		sys fillWinding = fillWinding;
+	if ( sys ps) {
+		SetPolyFillMode( sys ps, ((fillMode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
+		sys psFillMode = fillMode;
+	} else
+		sys fillMode = fillMode;
 	return true;
 }
 
