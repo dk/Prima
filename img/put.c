@@ -653,12 +653,17 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 
 	while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += FILL_PATTERN_SIZE;
 	while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += FILL_PATTERN_SIZE;
-
+	
+	if ( memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0) {
+		/* do nothing */
+	} else if (memcmp( ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0) {
+		if ( ctx->transparent ) return;
+		/* still do nothing */
+	} else if ( ctx->transparent ) {
 	/* transparent stippling: if rop is simple enough, adjust parameters to
 	execute it as another rop with adjusted input. Otherwise make it into
 	two-step operation, such as CopyPut stippling is famously executed by
 	And and Xor rops */
-	if ( ctx->transparent ) {
 		#define FILL(who,val) memset( ctx->who, val, MAX_SIZEOF_PIXEL)
 		switch ( ctx-> rop ) {
 		case ropBlackness:
