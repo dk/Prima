@@ -708,7 +708,7 @@ the latter falls exactly in the boundaries defined by vertices.
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/windings.gif">
 
-Default value: false
+Default value: C<fm::Winding|fm::Overlay>
 
 =item fillPattern ( [ @PATTERN ] ) or ( fp::XXX )
 

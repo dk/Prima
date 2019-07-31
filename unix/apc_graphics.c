@@ -527,20 +527,19 @@ calculate_ellipse_divergence(void)
 }
 
 #define ELLIPSE_RECT x - ( dX + 1) / 2 + 1, y - dY / 2, dX-guts.ellipseDivergence.x, dY-guts.ellipseDivergence.y
-#define FILL_ANTIDEFECT_REPAIRABLE ((XX->fill_mode == fmOverlay) && \
+#define FILL_ANTIDEFECT_REPAIRABLE (((XX->fill_mode & fmOverlay) != 0) && \
 		( rop_map[XX-> paint_rop] == GXcopy ||\
 		rop_map[XX-> paint_rop] == GXset  ||\
 		rop_map[XX-> paint_rop] == GXclear))
 #define FILL_ANTIDEFECT_OPEN {\
 XGCValues gcv;\
-gcv. line_width = 1;\
+gcv. line_width = 0;\
 gcv. line_style = LineSolid;\
 XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
 }
 #define FILL_ANTIDEFECT_CLOSE {\
 XGCValues gcv;\
 gcv. line_width = XX-> line_width;\
-gcv. line_style = ( XX-> paint_rop2 == ropNoOper) ? LineOnOffDash : LineDoubleDash;\
 XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
 }
 
@@ -894,8 +893,9 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 	if ( guts. limits. XFillPolygon >= numPts) {
 		while ( prima_make_brush( XX, mix++)) {
 			XFillPolygon( DISP, XX-> gdrawable, XX-> gc, p, numPts, ComplexShape, CoordModeOrigin);
-			if ( FILL_ANTIDEFECT_REPAIRABLE)
+			if ( FILL_ANTIDEFECT_REPAIRABLE) {
 				XDrawLines( DISP, XX-> gdrawable, XX-> gc, p, numPts+1, CoordModeOrigin);
+			}
 		}
 		XCHECKPOINT;
 	} else
