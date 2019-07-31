@@ -142,6 +142,37 @@ rgn_rect(Handle self, int count, Box * r)
 	return true;
 }
 
+static void dump( HRGN r )
+{
+	int i, size;
+	PRegionRec ret;
+	RECT *src;
+	RGNDATA *rgndata;
+
+	size = GetRegionData( r, 0, NULL);
+	if ( !( rgndata = malloc(size))) {
+		warn("Not enough memory\n");
+		return ;
+	}
+	size = GetRegionData( r, size, rgndata);
+	if ( size == 0) return ;
+
+	ret = malloc(sizeof(RegionRec) + sizeof(Box) * rgndata-> rdh. nCount );
+	if ( ret == NULL ) {
+		free(ret);
+		warn("Not enough memory\n");
+		return ;
+	}
+
+	src = (RECT*) &(rgndata->Buffer);
+	ret-> data. box. n_boxes = rgndata->rdh. nCount;
+	for ( i = 0; i < ret->data. box. n_boxes; i++, src++) {
+		printf("%d: [%ld %ld %ld %ld]\n", i, src->left, src->top, src->right, src->bottom); 
+	}
+	free(rgndata);
+	free(ret);
+}
+
 static Bool
 rgn_polygon(Handle self, PolygonRegionRec * r)
 {
@@ -166,13 +197,6 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 	for ( i = 0; i < r->n_points; i++) {
 		xp[i].x = r->points[i].x;
 		xp[i].y = max - r->points[i].y - 1;
-<<<<<<< HEAD
-	}
-
-	APERTURE = max;
-	REGION = CreatePolygonRgn( xp, r->n_points, r-> winding ? WINDING : ALTERNATE );
-	free( xp );
-=======
 	}
 	if ( open ) {
 		xp[i].x = r->points[0].x;
@@ -180,9 +204,9 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 	}
 
 	APERTURE = max;
-	REGION = CreatePolygonRgn( xp, r->n_points, ((r-> fill_mode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
+	REGION = CreatePolygonRgn( xp, r->n_points, 
+		((r-> fill_mode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
 	if (( r->fill_mode & fmOverlay) == 0) goto NO_OVERLAY;
->>>>>>> extend and rename Drawable.fillWinding into .fillMode, with new constants
 
 	/* superimpose polyline points using Bresenham
 	because windows regions are as broken as filled shapes */
@@ -192,13 +216,7 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 		int dir = 0, d, d_inc1, d_inc2;
 		int inc_maj, inc_min;
 		int x, y, acc_x = 0, acc_y = INT_MIN, ox;
-<<<<<<< HEAD
-		Point
-			a = {r->points[i].x, max - r->points[i].y - 1},
-			b = {r->points[i+1].x, max - r->points[i+1].y - 1};
-=======
 		POINT a = xp[i], b = xp[i+1];
->>>>>>> extend and rename Drawable.fillWinding into .fillMode, with new constants
 		delta_y = b.y - a.y;
 		delta_x = b.x - a.x;
 		if (abs(delta_y) > abs(delta_x)) dir = 1;
@@ -254,7 +272,7 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 						x1 = acc_x;
 						x2 = ox;
 					}
-					reg = CreateRectRgn(x1, acc_y, x2, acc_y + 1);
+					reg = CreateRectRgn(x1, acc_y, x2+1, acc_y + 1);
 					CombineRgn( REGION, REGION, reg, RGN_OR);
 					DeleteObject(reg);
 				}
@@ -281,17 +299,14 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 				x1 = acc_x;
 				x2 = x;
 			}
-			reg = CreateRectRgn(x1, acc_y, x2, acc_y + 1);
+			reg = CreateRectRgn(x1, acc_y, x2+1, acc_y + 1);
 			CombineRgn( REGION, REGION, reg, RGN_OR);
 			DeleteObject(reg);
 		}
 	}
 
-<<<<<<< HEAD
-=======
 NO_OVERLAY:
 	free( xp );
->>>>>>> extend and rename Drawable.fillWinding into .fillMode, with new constants
 	return true;
 }
 

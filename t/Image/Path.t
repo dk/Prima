@@ -263,6 +263,7 @@ is_pict($i, "polyline",
 );
 
 $i->clear;
+$i->fillMode(fm::Overlay|fm::Winding);
 $i->fill_ellipse(2,2,5,5);
 is_pict($i, "fill_ellipse",
 	"  *  ".

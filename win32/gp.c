@@ -480,7 +480,7 @@ apc_gp_fill_chord( Handle self, int x, int y, int dX, int dY, double angleStart,
 	int compl, needf;
 
 	compl = arc_completion( &angleStart, &angleEnd, &needf);
-	comp = stylus_complex( &sys stylus, ps);
+	comp = ((sys psFillMode & fmOverlay) == 0) || stylus_complex( &sys stylus, ps);
 	y = sys lastSize. y - y - 1;
 	STYLUS_USE_BRUSH( ps);
 
@@ -510,7 +510,7 @@ apc_gp_fill_ellipse( Handle self, int x, int y, int dX, int dY)
 	Bool ok = true;
 	HDC     ps  = sys ps;
 	HGDIOBJ old;
-	Bool    comp = stylus_complex( &sys stylus, ps);
+	Bool    comp = ((sys psFillMode & fmOverlay) == 0) || stylus_complex( &sys stylus, ps);
 	STYLUS_USE_BRUSH( ps);
 	y = sys lastSize. y - y - 1;
 	if ( comp) {
@@ -553,7 +553,12 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 
 	for ( i = 0; i < numPts; i++) points[ i]. y = dy - points[ i]. y - 1;
 
-	if ( !stylus_complex( &sys stylus, ps)) {
+	if (( sys psFillMode & fmOverlay) == 0) {
+		HGDIOBJ old = SelectObject( ps, hPenHollow);
+		STYLUS_USE_BRUSH( ps);
+		if ( !( ok = Polygon( ps, ( POINT *) points, numPts))) apiErr;
+		SelectObject( ps, old);
+	} else if ( !stylus_complex( &sys stylus, ps)) {
 		HPEN old = SelectObject( ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
 		STYLUS_USE_BRUSH( ps);
 		if ( !( ok = Polygon( ps, ( POINT *) points, numPts))) apiErr;
@@ -641,7 +646,7 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 	int compl, needf;
 
 	compl = arc_completion( &angleStart, &angleEnd, &needf);
-	comp = stylus_complex( &sys stylus, ps);
+	comp = ((sys psFillMode & fmOverlay) == 0) || stylus_complex( &sys stylus, ps);
 
 	pts[ 0]. x = x + cos( angleEnd / GRAD) * dX / 2 + 0.5;
 	pts[ 0]. y = newY - sin( angleEnd / GRAD) * dY / 2 + 0.5;
