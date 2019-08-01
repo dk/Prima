@@ -533,7 +533,7 @@ calculate_ellipse_divergence(void)
 		rop_map[XX-> paint_rop] == GXclear))
 #define FILL_ANTIDEFECT_OPEN {\
 XGCValues gcv;\
-gcv. line_width = 0;\
+gcv. line_width = 1;\
 gcv. line_style = LineSolid;\
 XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
 }
