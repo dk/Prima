@@ -676,9 +676,11 @@ sub widen
 	return $dst if $lp eq lp::Null;
 	$pp = poly2patterns($pp, $lp, $lw) if $lp ne lp::Solid;
 
-	if ( $lw <= 1 ) {
+	if ( $lw < 1 ) {
 		for my $p ( @$pp ) {
 			$dst->line($p);
+			$dst->line([map { @{$p}[-2*$_,-2*$_+1] } 1..@$p/2 ])
+				if $lp eq lp::Solid;
 			$dst->open;
 		}
 		return $dst;

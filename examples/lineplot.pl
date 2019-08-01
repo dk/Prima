@@ -107,15 +107,15 @@ $mw = Prima::MainWindow->new(
 		my $p = $canvas->new_path;
 		$p->line(\@xpoints);
 		$p = $p->widen( 
-			lineWidth   => $opt{lw}, 
-			lineEnd     => $opt{le}, 
-			lineJoin    => $opt{lj}, 
+			lineWidth   => $opt{lw},
+			lineEnd     => $opt{le},
+			lineJoin    => $opt{lj},
 			linePattern => $opt{lp},
 			miterLimit  => $opt{ml},
 		);
 		$canvas->color(cl::LightRed);
 		$canvas->rop(rop::OrPut) if $cmp;
-		$canvas->fillMode(fm::Overlay);
+		$canvas->fillMode(fm::Winding|fm::Overlay);
 		$p->fill;
 		$canvas->rop(rop::CopyPut);
 
