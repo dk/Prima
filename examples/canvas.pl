@@ -1751,7 +1751,7 @@ menuItems => [
 				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %rop:: ]],
 		['Rop~2' => [ map { [ "rop:rop2=$_", $_, \&set_constant ] }
 				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %rop:: ]],
-		['Fill r~ule' => [ map { [ "fillrule:fillMode=$_", $_, \&set_constant ] }
+		['Fill r~ule' => [ map { [ "fm:fillMode=$_", $_, \&set_constant ] }
 				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fm:: ]],
 		[],
 		['fill' => 'Toggle ~fill' => \&toggle],
