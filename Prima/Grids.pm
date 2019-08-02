@@ -1190,7 +1190,7 @@ sub on_mouseup
 sub on_mousewheel
 {
 	my ( $self, $mod, $x, $y, $z) = @_;
-	$z = int( $z/120);
+	$z = (abs($z) > 120) ? int($z/120) : (($z > 0) ? 1 : -1);
 	$z *= ( $self-> {visibleRows} || 1) if $mod & km::Ctrl;
 	my $newTop = $self-> {topCell} - $z;
 	$self-> topCell( $newTop);

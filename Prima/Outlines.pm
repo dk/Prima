@@ -726,7 +726,7 @@ sub on_mouseup
 sub on_mousewheel
 {
 	my ( $self, $mod, $x, $y, $z) = @_;
-	$z = int( $z/120);
+	$z = (abs($z) > 120) ? int($z/120) : (($z > 0) ? 1 : -1);
 	$z *= $self-> {rows} if $mod & km::Ctrl;
 	my $newTop = $self-> topItem - $z;
 	my $maxTop = $self-> {count} - $self-> {rows};

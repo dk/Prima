@@ -700,7 +700,7 @@ sub on_mousewheel
 {
 	my ( $self, $mod, $x, $y, $z) = @_;
 
-	$z = int( $z/120);
+	$z = (abs($z) > 120) ? int($z/120) : (($z > 0) ? 1 : -1);
 	$z *= $self-> {whole_columns}
 		if $self-> {multiColumn} and not $self->{vertical};
 	$z *= $self-> {whole_rows} if $mod & km::Ctrl;

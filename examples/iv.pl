@@ -330,7 +330,7 @@ sub iv_mousemove
 sub iv_mousewheel
 {
 	my ( $self, $mod, $x, $y, $z) = @_;
-	$z = int( $z / 120);
+	$z = (abs($z) > 120) ? int($z/120) : (($z > 0) ? 1 : -1);
 	my $xv = $self-> bring(($mod & km::Shift) ? 'VScroll' : 'HScroll');
 	return unless $xv;
 	$z *= ($mod & km::Ctrl) ? $xv-> pageStep : $xv-> step;

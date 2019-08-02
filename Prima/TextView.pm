@@ -967,7 +967,8 @@ sub on_mousemove
 sub on_mousewheel
 {
 	my ( $self, $mod, $x, $y, $z) = @_;
-	$z = int( $z/120) * 3;
+	$z = (abs($z) > 120) ? int($z/120) : (($z > 0) ? 1 : -1);
+	$z *= 3;
 	$z *= $self-> font-> height + $self-> font-> externalLeading unless $mod & km::Ctrl;
 	my $newTop = $self-> {topLine} - $z;
 	$self-> topLine( $newTop > $self-> {paneHeight} ? $self-> {paneHeight} : $newTop);

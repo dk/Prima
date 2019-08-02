@@ -518,7 +518,8 @@ sub on_mouseleave
 sub on_mousewheel
 {
 	my ( $self, $mod, $x, $y, $z) = @_;
-	$self-> value( $self-> value - $self-> step * int( $z/120));
+	$z = (abs($z) > 120) ? int($z/120) : (($z > 0) ? 1 : -1);
+	$self-> value( $self-> value - $self-> step * $z);
 	$self-> clear_event;
 }
 

@@ -501,7 +501,7 @@ sub on_paint
 sub InputLine_MouseWheel
 {
 	my ( $self, $edit, $mod, $x, $y, $z) = @_;
-	$z = int($z/120);
+	$z = (abs($z) > 120) ? int($z/120) : (($z > 0) ? 1 : -1);
 	$z *= $self-> {pageStep} if $mod & km::Ctrl;
 	my $value = $self-> value;
 	$self-> value( $value + $z * $self-> {step});
