@@ -1389,6 +1389,7 @@ int
 Drawable_lineWidth( Handle self, Bool set, int lineWidth)
 {
 	if (!set) return apc_gp_get_line_width( self);
+	if ( lineWidth < 0 ) lineWidth = 0;
 	apc_gp_set_line_width( self, lineWidth);
 	return lineWidth;
 }

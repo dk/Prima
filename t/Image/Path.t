@@ -275,7 +275,7 @@ is_pict($i, "fill_ellipse",
 
 $i->clear;
 $i->fill_sector(2,2,5,5,0,90);
-is_pict($i, "fill_ellipse",
+is_pict($i, "fill_sector",
 	"  *  ".
 	"  ** ".
 	"  ***".
@@ -285,7 +285,7 @@ is_pict($i, "fill_ellipse",
 
 $i->clear;
 $i->fill_chord(2,2,5,5,0,90);
-is_pict($i, "fill_ellipse",
+is_pict($i, "fill_chord",
 	"  *  ".
 	"   * ".
 	"    *".

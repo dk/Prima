@@ -233,7 +233,7 @@ sub stroke_primitive
 	$path->translate(@offset);
 	$path->$request(@_);
 	my $ok = 1;
-	if ( $self->lineWidth <= 1 ) {
+	if ( $self->lineWidth == 0 ) {
 		# paths produce floating point coordinates and line end arcs,
 		# here we need internal pixel-wise plotting
 		for my $pp ( @{ $path->points } ) {
