@@ -253,7 +253,7 @@ sub stroke_primitive
 
 	my $region2 = $self->region;
 	my $path2   = $path->widen(%widen);
-	my $region1 = $path2->region(1);
+	my $region1 = $path2->region(fm::Winding | fm::Overlay);
 	my @box = $region1->box;
 	$box[$_+2] += $box[$_] for 0,1;
 	my $fp = $self->fillPattern;
@@ -270,7 +270,7 @@ sub stroke_primitive
 		$ok = $self->bar(@box);
 		$self->color($color);
 	}
-		
+
 	$region1->combine($region2, rgnop::Intersect) if $region2;
 	$self->region($region1);
 	$ok &&= $self->$method(@box);

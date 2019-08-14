@@ -166,7 +166,7 @@ rgn_polygon(Handle self, PolygonRegionRec * r)
 	if (( r->fill_mode & fmOverlay) == 0) goto NO_OVERLAY;
 
 	/* superimpose polyline points using Bresenham
-	because windows regions are as broken as filled shapes */
+	because x11 regions are as broken as filled shapes */
 	for ( i = 0; i < xp_points-1; i++) {
 		int curr_maj, curr_min, to_maj, delta_maj, delta_min;
 		int delta_y, delta_x;
