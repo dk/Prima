@@ -897,14 +897,16 @@ EOF
 
 	if ( $cmd_options{WITH_OPENMP} ) {
 		printlog "Checking if can compile with OpenMP... ";
-	my $text = <<EOF;
+	my $text = <<'EOF';
 #include <omp.h>
+#include <stdio.h>
 int
 main()
 {
-   int x = omp_get_thread_num();
-   #pragma omp parallel
-   x++;
+   int i, x = omp_get_thread_num();
+#pragma omp parallel for
+   for ( i = 0; i < x; i++) x++;
+   printf("1\n");
    return 0;
 }
 EOF
@@ -914,7 +916,7 @@ EOF
 		$passthru_options{LDDLFLAGS} .= " $OPENMP";
 		my @savelibs = @LIBS;
 #		push @LIBS, 'gomp' if $compiler_type eq 'gcc';
-		if ( compile($text)) {
+		if ( compile_and_run($text)) {
 		YES_OPENMP:
 			$DEFINES{HAVE_OPENMP} = 1;
 			printlog "yes\n";
