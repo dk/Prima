@@ -873,10 +873,11 @@ sub clip
 
 sub region
 {
-	my ($self, $mode) = @_;
+	my ($self, $mode, $rgnop) = @_;
 	my $reg;
 	$mode //= fm::Winding | fm::Overlay;
-	$reg ? $reg->combine($_, rgnop::Union) : ($reg = $_)
+	$rgnop //= rgnop::Union;
+	$reg ? $reg->combine($_, $rgnop) : ($reg = $_)
 		for map { Prima::Region->new( polygon => $_, fillMode => $mode) } @{ $self->points };
 	return $reg;
 }
@@ -1080,10 +1081,11 @@ points used to render the lines.
 Runs all accumulated commands, and returns rendered set of points, suitable
 for further calls to C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly>.
 
-=item region MODE=fm::Winding|fm::Overlay
+=item region MODE=fm::Winding|fm::Overlay, RGNOP=rgnop::Union
 
 Creates a region object from polygonal shape. If MODE is set, applies fill mode
-(see L<Drawable/fillMode> for more).
+(see L<Prima::Drawable/fillMode> for more); if RGNOP is set, applies region set operation
+(see L<Prima::Region/combine>).
 
 =item stroke
 
