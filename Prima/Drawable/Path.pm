@@ -355,8 +355,9 @@ sub _close
 {
 	my $self = shift;
 	my $p = $self->{points};
-	push @{$p->[-1]}, $p->[0][0], $p->[0][1]
-		if @{$p->[-1]} && ($p->[0][0] != $p->[-1][-2] || $p->[0][1] != $p->[-1][-1]);
+	return unless @$p;
+	my $l = $p->[-1];
+	push @$l, $$l[0], $$l[1] if @$l && ($$l[0] != $$l[-2] || $$l[1] != $$l[-1]);
 	push @$p, Prima::array->new_int;
 }
 
