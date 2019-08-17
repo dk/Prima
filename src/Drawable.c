@@ -507,6 +507,37 @@ Drawable_bars( Handle self, SV * rects)
 	return ret;
 }
 
+SV *
+Drawable_render_glyph( Handle self, int index, HV * profile)
+{
+	int flags, *buffer, count, is_path = 0;
+	dPROFILE;
+	gpARGS;
+	gpENTER(nilSV);
+
+	flags = ggoUseHints;
+	if ( pexist(glyph)   && pget_B(glyph))   flags |= ggoGlyphIndex;
+	if ( pexist(hints)   && !pget_B(hints))  flags &= ~ggoUseHints;
+	if ( pexist(unicode) && pget_B(unicode)) flags |= ggoUnicode;
+	if ( pexist(path)    && pget_B(path))    is_path = 1;
+	count = apc_gp_get_glyph_outline( self, index, flags, &buffer);
+	hv_clear(profile); /* old gencls bork */
+	gpLEAVE;
+	
+	if ( count == 0 ) return nilSV;
+
+	if (is_path) {
+		SV * ret;
+		ret = prima_array_new(sizeof(int) * count);
+		memcpy( prima_array_get_storage(ret), buffer, sizeof(int) * count);
+		free( buffer );
+		return prima_array_tie( ret, sizeof(int), "i");
+	}
+
+	free( buffer );
+	return nilSV;
+}
+
 /*
 
 Render B-spline

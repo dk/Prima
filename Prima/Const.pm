@@ -121,6 +121,8 @@ package
     rgn; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# Region.rect_inside() results
 package
     fm; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# fill modes
+package
+    ggo; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# glyph outline codes
 
 1;
 

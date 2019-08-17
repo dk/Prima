@@ -1917,6 +1917,102 @@ prima_xft_gp_destroy( Handle self )
 	}
 }
 
+typedef struct {
+	int count, size;
+	int * buffer;
+} OutlineStorage;
+
+#define STORE_POINT(p) if(p) {\
+	storage->buffer[ storage->count++ ] = p->x;\
+	storage->buffer[ storage->count++ ] = p->y;\
+}
+
+static int
+store_command( OutlineStorage * storage, int cmd, const FT_Vector * p1, const FT_Vector * p2, const FT_Vector * p3)
+{
+	if ( storage-> size == 0 ) {
+		storage-> size = 256;
+		if ( !( storage-> buffer = malloc(sizeof(int) * storage->size)))
+			return 1;
+	} else if ( storage-> count + 7 >= storage->size ) {
+		int * r;
+		storage-> size *= 2;
+		if (( r = realloc( storage->buffer, sizeof(int) * storage->size)) == NULL ) {
+			warn("Not enough memory");
+			free( storage-> buffer );
+			storage-> buffer = NULL;
+			storage-> count = 0;
+			return 1;
+		}
+	}
+
+	storage->buffer[ storage->count++ ] = cmd;
+	STORE_POINT(p1)
+	STORE_POINT(p2)
+	STORE_POINT(p3)
+
+	return 0;
+}
+
+static int
+ftoutline_line(const FT_Vector* to, void* user)
+{
+	return store_command((OutlineStorage*)user, ggoLine, to, NULL, NULL);
+}
+
+static int
+ftoutline_move(const FT_Vector* to, void* user)
+{
+	return store_command((OutlineStorage*)user, ggoMove, to, NULL, NULL);
+}
+
+static int
+ftoutline_conic(const FT_Vector* control, const FT_Vector* to, void* user)
+{
+	return store_command((OutlineStorage*)user, ggoConic, control, to, NULL);
+}
+
+static int
+ftoutline_cubic(const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user)
+{
+	return store_command((OutlineStorage*)user, ggoCubic, control1, control2, to);
+}
+
+int
+prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
+{
+	DEFXX;
+	FcChar32 c;
+	FT_Face face;
+	FT_UInt ft_index;
+	FT_Int32 ft_flags = FT_LOAD_NO_BITMAP |
+		(( flags & ggoUseHints ) ? 0 : FT_LOAD_NO_HINTING);
+	FT_Outline_Funcs funcs = {
+		ftoutline_move,
+		ftoutline_line,
+		ftoutline_conic,
+		ftoutline_cubic,
+		0, 0
+	};
+	OutlineStorage storage = { 0, 0, NULL };
+
+	if ( !( face = XftLockFace( XX->font->xft)))
+		return 0;
+
+	c = ((flags & ggoUnicode) || index <= 128) ? index : XX-> xft_map8[index - 128];
+	ft_index = (flags & ggoGlyphIndex) ? c : XftCharIndex( DISP, XX->font->xft, c);
+	if (
+		(FT_Load_Glyph (face, ft_index, ft_flags) == 0) &&
+		(face->glyph->format == FT_GLYPH_FORMAT_OUTLINE)
+	)
+  		FT_Outline_Decompose( &face->glyph->outline, &funcs, (void*)&storage);
+
+	XftUnlockFace(XX->font->xft);
+
+	*buffer = storage.buffer;
+	return storage.count;
+}
+
 #else
 #error Required: Xft version 2.1.0 or higher; fontconfig version 2.0.1 or higher. To compile without Xft, re-run 'perl Makefile.PL WITH_XFT=0'
 #endif /* USE_XFT */

@@ -32,6 +32,7 @@
 #if defined(HAVE_X11_XFT_XFT_H) && defined(HAVE_FONTCONFIG_FONTCONFIG_H) && defined(HAVE_X11_EXTENSIONS_XRENDER_H) && defined(HAVE_FREETYPE_FREETYPE_H)
 #include <X11/Xft/Xft.h>
 #include <fontconfig/fontconfig.h>
+#include FT_OUTLINE_H
 #  if XFT_MAJOR > 1 && FC_MAJOR > 1
 #     define USE_XFT
 #  endif
@@ -1307,6 +1308,9 @@ prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode);
 
 extern PFontABC
 prima_xft_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode);
+
+extern int
+prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer);
 
 extern PCachedFont
 prima_xft_get_cache( PFont font);

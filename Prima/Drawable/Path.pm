@@ -129,7 +129,7 @@ sub rotate
 sub line
 {
 	my $self = shift;
-	my $p = $#_ ? \@_ : $_[0];
+	my $p = $#_ ? [@_] : $_[0];
 	@$p % 2 and Carp::croak('bad parameters to line');
 	$self->cmd( line => $p );
 }
@@ -137,7 +137,7 @@ sub line
 sub rline
 {
 	my $self = shift;
-	my $p = $#_ ? \@_ : $_[0];
+	my $p = $#_ ? [@_] : $_[0];
 	@$p % 2 and Carp::croak('bad parameters to rline');
 	$self->rcmd( line => $p);
 }
@@ -154,6 +154,37 @@ sub rspline
 	my ($self, $p, %opt) = @_;
 	(@$p % 2 || @$p < 6) and Carp::croak('bad parameters to spline');
 	$self-> rcmd( spline => $p, \%opt );
+}
+
+sub glyph
+{
+	my ($self, $ix, %opt) = @_;
+	return unless $self->{canvas};
+	my $outline = $self->{canvas}->render_glyph( $ix, %opt, path => 1);
+	return unless $outline;
+	my $size = scalar(@$outline);
+	my @p;
+	for ( my $i = 0; $i < $size; ) {
+		my $cmd = $outline->[$i++];
+		if ( $cmd == ggo::Move ) {
+			$self->close;
+			$p[$_] = $outline->[$i++] / 64.0 for 0,1;
+			$self->moveto(@p);
+		} elsif ( $cmd == ggo::Line ) {
+			$p[$_] = $outline->[$i++] / 64.0 for 0,1;
+			$self->line(@p);
+		} elsif ( $cmd == ggo::Conic ) {
+			my @r;
+			$r[$_] = $outline->[$i++] / 64.0 for 0..3;
+			$self->spline( [ @p, @r ] );
+			@p = @r[2,3];
+		} elsif ( $cmd == ggo::Cubic ) {
+			my @r;
+			$r[$_] = $outline->[$i++] / 64.0 for 0..5;
+			$self->spline( [ @p, @r ], degree => 3 );
+			@p = @r[4,5];
+		}
+	}
 }
 
 sub circular_arc
@@ -217,7 +248,7 @@ sub chord
 sub lines
 {
 	my $self = shift;
-	my $p = $#_ ? \@_ : $_[0];
+	my $p = $#_ ? [@_] : $_[0];
 	@$p % 4 and Carp::croak('bad parameters to lines');
 	for ( my $i = 0; $i < @$p; $i += 4 ) {
 		$self->cmd( line => [ @$p[ $i .. $i + 3 ] ] );

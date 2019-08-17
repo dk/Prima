@@ -1857,6 +1857,18 @@ apc_menu_set_font( Handle self, PFont font)
 	return true;
 }
 
+int
+apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
+{
+#ifdef USE_XFT
+	if ( !guts. use_xft) return 0;
+	return prima_xft_get_glyph_outline( self, index, flags, buffer);
+#else
+	return 0;
+#endif
+}
+
+
 Bool
 prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide, double direction, PRotatedFont * result,
 	Bool * ok_to_not_rotate)

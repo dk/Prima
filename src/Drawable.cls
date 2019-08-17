@@ -58,6 +58,7 @@ object Prima::Drawable ( Prima::Component)
 	method SV *  get_physical_palette();
 	method int   get_text_width( SV * text, Bool addOverhang = 0);
 	method SV *  get_text_box( SV * text);
+	method SV *  render_glyph( int index, HV * profile);
 	static SV *  render_spline( SV * obj, SV * points, HV * profile);
 
 	# operators

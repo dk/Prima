@@ -3390,6 +3390,26 @@ apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart
 extern Bool
 apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBorder);
 
+#define GGO(const_name) CONSTANT(ggo,const_name)
+START_TABLE(ggo,UV)
+#define ggoGlyphIndex   0x01
+#define ggoUseHints     0x02 
+#define ggoUnicode      0x03
+
+#define ggoMove         0
+GGO(Move)
+#define ggoLine         1
+GGO(Line)
+#define ggoConic        2
+GGO(Conic)
+#define ggoCubic        3
+GGO(Cubic)
+END_TABLE(ggo,UV)
+#undef GGO
+
+extern int
+apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer);
+
 extern Color
 apc_gp_get_pixel( Handle self, int x, int y);
 
