@@ -781,6 +781,11 @@ apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 			case TT_PRIM_CSPLINE:
 				*(r_ptr++) = ggoCubic;
 				break;
+			default:
+				warn("Unknown constant TT_PRIM_%d\n", c->wType);
+				free(gdi_buf);
+				free(r_buf);
+				return 0;
 			}
 			*(r_ptr++) = c-> cpfx;
 			for ( i = 0; i < c-> cpfx; i++) {
