@@ -699,6 +699,103 @@ apc_gp_get_pixel( Handle self, int x, int y)
 	return remap_color(( Color) c, false);
 }}
 
+int
+apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
+{
+	int offset, gdi_size, r_size, *r_buf, *r_ptr;
+	Byte * gdi_buf;
+	GLYPHMETRICS gm;
+	MAT2 matrix;
+	UINT format;
+
+	memset(&matrix, 0, sizeof(matrix));
+	matrix.eM11.value = matrix.eM22.value = 1;
+
+	format = GGO_NATIVE;
+	if ( flags & ggoGlyphIndex )       format |= GGO_GLYPH_INDEX;
+	if (( flags & ggoUseHints ) == 0 ) format |= GGO_UNHINTED;
+
+	gdi_size = (flags & ggoUnicode) ?
+		GetGlyphOutlineW(sys ps, index, format, &gm, 0, NULL, &matrix) :
+		GetGlyphOutlineA(sys ps, index, format, &gm, 0, NULL, &matrix);
+	if ( gdi_size <= 0 ) {
+		if ( gdi_size < 0 ) apiErr;
+		return 0;
+	}
+
+	if (( gdi_buf = malloc(gdi_size)) == NULL ) {
+		warn("Not enough memory");
+		return 0;
+	}
+
+	if (
+		( (flags & ggoUnicode) ?
+			GetGlyphOutlineW(sys ps, index, format, &gm, gdi_size, gdi_buf, &matrix) :
+			GetGlyphOutlineA(sys ps, index, format, &gm, gdi_size, gdi_buf, &matrix)
+		) == GDI_ERROR
+	) {
+		apiErr;
+		free(gdi_buf);
+		return 0;
+	}
+
+	offset = 0;
+	r_size = 0;
+	while ( offset < gdi_size ) {
+		TTPOLYGONHEADER * h = ( TTPOLYGONHEADER*) (gdi_buf + offset);
+		unsigned int curve_offset = sizeof(TTPOLYGONHEADER);
+		r_size += 2 /* cmd=ggoMove */ + 2 /* x, y */;
+		while ( curve_offset < h->cb ) {
+			TTPOLYCURVE * c = (TTPOLYCURVE*) (gdi_buf + offset + curve_offset);
+			curve_offset += sizeof(WORD) * 2 + c->cpfx * sizeof(POINTFX);
+			r_size += 2 /* cmd */ + c->cpfx * 2;
+		}
+		offset += h->cb;
+	}
+	if (( r_buf = malloc(r_size * sizeof(int))) == NULL ) {
+		warn("Not enough memory");
+		free(gdi_buf);
+		return 0;
+	}
+	r_ptr = r_buf;
+
+	offset = 0;
+#define PTX(x) (x.value * 64 + x.fract / (0x10000 / 64))
+	while ( offset < gdi_size ) {
+		TTPOLYGONHEADER * h = ( TTPOLYGONHEADER*) (gdi_buf + offset);
+		unsigned int curve_offset = sizeof(TTPOLYGONHEADER);
+		*(r_ptr++) = ggoMove;
+		*(r_ptr++) = 1;
+		*(r_ptr++) = PTX(h->pfxStart.x);
+		*(r_ptr++) = PTX(h->pfxStart.y);
+		while ( curve_offset < h->cb ) {
+			int i;
+			TTPOLYCURVE * c = (TTPOLYCURVE*) (gdi_buf + offset + curve_offset);
+			switch ( c-> wType ) {
+			case TT_PRIM_LINE:
+				*(r_ptr++) = ggoLine;
+				break;
+			case TT_PRIM_QSPLINE:
+				*(r_ptr++) = ggoConic;
+				break;
+			case TT_PRIM_CSPLINE:
+				*(r_ptr++) = ggoCubic;
+				break;
+			}
+			*(r_ptr++) = c-> cpfx;
+			for ( i = 0; i < c-> cpfx; i++) {
+				*(r_ptr++) = PTX(c->apfx[i].x);
+				*(r_ptr++) = PTX(c->apfx[i].y);
+			}
+			curve_offset += sizeof(WORD) * 2 + c->cpfx * sizeof(POINTFX);
+		}
+		offset += h->cb;
+	}
+	free(gdi_buf);
+	*buffer = r_buf;
+	return r_size;
+}
+
 ApiHandle
 apc_gp_get_handle( Handle self)
 {

@@ -160,31 +160,27 @@ sub glyph
 {
 	my ($self, $ix, %opt) = @_;
 	return unless $self->{canvas};
-	my $outline = $self->{canvas}->render_glyph( $ix, %opt, path => 1);
+	my $outline = $self->{canvas}->render_glyph( $ix, %opt );
 	return unless $outline;
 	my $size = scalar(@$outline);
 	my @p;
 	for ( my $i = 0; $i < $size; ) {
 		my $cmd = $outline->[$i++];
+		my $pts = $outline->[$i++] * 2;
+		my @pts = map { $outline->[$i++] / 64.0 } 0 .. $pts - 1;
 		if ( $cmd == ggo::Move ) {
 			$self->close;
-			$p[$_] = $outline->[$i++] / 64.0 for 0,1;
-			$self->moveto(@p);
+			$self->moveto(@pts);
 		} elsif ( $cmd == ggo::Line ) {
-			$p[$_] = $outline->[$i++] / 64.0 for 0,1;
 			$self->line(@p);
 		} elsif ( $cmd == ggo::Conic ) {
-			my @r;
-			$r[$_] = $outline->[$i++] / 64.0 for 0..3;
-			$self->spline( [ @p, @r ] );
-			@p = @r[2,3];
+			$self->spline( [ @p, @pts ] );
 		} elsif ( $cmd == ggo::Cubic ) {
-			my @r;
-			$r[$_] = $outline->[$i++] / 64.0 for 0..5;
-			$self->spline( [ @p, @r ], degree => 3 );
-			@p = @r[4,5];
+			$self->spline( [ @p, @pts ], degree => 3 );
 		}
+		@p = @pts[-2,-1];
 	}
+	$self->close;
 }
 
 sub circular_arc
