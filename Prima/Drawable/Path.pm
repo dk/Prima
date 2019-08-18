@@ -500,10 +500,9 @@ sub stroke {
 
 sub fill {
 	return 0 unless $_[0]->{canvas};
-	for ( @{ $_[0]->points }) {
-		return 0 unless $_[0]->{canvas}->fillpoly($_);
-	}
-	return 1;
+	my $a = Prima::array->new_int;
+	Prima::array::append( $a, $_ ) for @{ $_[0]->points };
+	return $_[0]->{canvas}->fillpoly($a);
 }
 
 sub flatten
