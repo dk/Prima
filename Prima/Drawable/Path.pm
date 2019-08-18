@@ -172,11 +172,11 @@ sub glyph
 			$self->close;
 			$self->moveto(@pts);
 		} elsif ( $cmd == ggo::Line ) {
-			$self->line(@p);
+			$self->line([ @p, @pts ]);
 		} elsif ( $cmd == ggo::Conic ) {
-			$self->spline( [ @p, @pts ] );
+			$self->spline([ @p, @pts ]);
 		} elsif ( $cmd == ggo::Cubic ) {
-			$self->spline( [ @p, @pts ], degree => 3 );
+			$self->spline([ @p, @pts ], degree => 3 );
 		}
 		@p = @pts[-2,-1];
 	}

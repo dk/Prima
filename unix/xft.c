@@ -1918,11 +1918,12 @@ prima_xft_gp_destroy( Handle self )
 }
 
 typedef struct {
-	int count, size;
-	int * buffer;
+	int count, size, last_ptr;
+	int *buffer;
 } OutlineStorage;
 
 #define STORE_POINT(p) if(p) {\
+	storage->buffer[ storage->last_ptr + 1 ]++;\
 	storage->buffer[ storage->count++ ] = p->x;\
 	storage->buffer[ storage->count++ ] = p->y;\
 }
@@ -1946,7 +1947,18 @@ store_command( OutlineStorage * storage, int cmd, const FT_Vector * p1, const FT
 		}
 	}
 
-	storage->buffer[ storage->count++ ] = cmd;
+	if ( 
+		storage-> last_ptr < 0 || storage->buffer[storage->last_ptr] != cmd || 
+		cmd == ggoConic || cmd == ggoCubic
+	) {
+		storage->last_ptr = storage->count;
+		storage->buffer[ storage->count++ ] = cmd;
+		storage->buffer[ storage->count++ ] = 0;
+	} else if ( cmd == ggoMove ) {
+		storage->buffer[ storage->last_ptr + 1 ]--;
+		storage->count--;
+	}
+
 	STORE_POINT(p1)
 	STORE_POINT(p2)
 	STORE_POINT(p3)
@@ -1994,7 +2006,7 @@ prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 		ftoutline_cubic,
 		0, 0
 	};
-	OutlineStorage storage = { 0, 0, NULL };
+	OutlineStorage storage = { 0, 0, -1, NULL };
 
 	if ( !( face = XftLockFace( XX->font->xft)))
 		return 0;
