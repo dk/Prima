@@ -274,7 +274,7 @@ sub sector
 
 sub points
 {
-	my $self = shift;
+	my ($self, $for_fill) = @_;
 	unless ( $self->{points} ) {
 		local $self->{stack} = [];
 		local $self->{curr}  = {
@@ -291,6 +291,12 @@ sub points
 		}
 		@{$self->{points}} = grep { @$_ > 2 } @{$self->{points}};
 		$self->{last_matrix} = $self->{curr}->{matrix};
+	}
+
+	if ( $for_fill ) {
+		my $arr = Prima::array->new_int;
+		Prima::array::append( $arr, $_ ) for @{ $self->points };
+		return $arr;
 	}
 
 	return $self->{points};
@@ -498,12 +504,7 @@ sub stroke {
 	return 1;
 }
 
-sub fill {
-	return 0 unless $_[0]->{canvas};
-	my $a = Prima::array->new_int;
-	Prima::array::append( $a, $_ ) for @{ $_[0]->points };
-	return $_[0]->{canvas}->fillpoly($a);
-}
+sub fill { $_[0]->{canvas} ? $_[0]->{canvas}->fillpoly($_[0]-> points(1)) : 0 }
 
 sub flatten
 {
@@ -900,13 +901,11 @@ sub clip
 
 sub region
 {
-	my ($self, $mode, $rgnop) = @_;
-	my $reg;
-	$mode //= fm::Winding | fm::Overlay;
-	$rgnop //= rgnop::Union;
-	$reg ? $reg->combine($_, $rgnop) : ($reg = $_)
-		for map { Prima::Region->new( polygon => $_, fillMode => $mode) } @{ $self->points };
-	return $reg;
+	my ($self, $mode) = @_;
+	Prima::Region->new(
+		polygon  => $self->points(1), 
+		fillMode => ( $mode // (fm::Winding | fm::Overlay))
+	);
 }
 
 1;
@@ -1108,11 +1107,10 @@ points used to render the lines.
 Runs all accumulated commands, and returns rendered set of points, suitable
 for further calls to C<Prima::Drawable::polyline> and C<Prima::Drawable::fillpoly>.
 
-=item region MODE=fm::Winding|fm::Overlay, RGNOP=rgnop::Union
+=item region MODE=fm::Winding|fm::Overlay
 
 Creates a region object from polygonal shape. If MODE is set, applies fill mode
-(see L<Prima::Drawable/fillMode> for more); if RGNOP is set, applies region set operation
-(see L<Prima::Region/combine>).
+(see L<Prima::Drawable/fillMode> for more).
 
 =item stroke
 
