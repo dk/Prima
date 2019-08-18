@@ -702,7 +702,10 @@ where the shape edges cross.
 C<fm::Overlay> flag can be combined with these to counter an intrinsic defect
 of filled shaped both in Win32 and X11 that don't exactly follow polygon
 vertices. When supplied, it overlays a polygon over the filled shape, so that
-the latter falls exactly in the boundaries defined by vertices.
+the latter falls exactly in the boundaries defined by vertices. This is desirable
+when one wants to follow polygon vertices, but is not desirable when a shape has
+holes in it connected in a way that the polygon overlay may leave connection edges
+over them.
 
 =for podview <img src="windings.gif">
 

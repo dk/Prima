@@ -538,12 +538,20 @@ sub stroke {
 }
 
 sub fill {
-	return 0 unless $_[0]->{canvas};
-	my @p = $_[0]->points(1);
-	for ( @p ) {
-		return 0 unless $_[0]->{canvas}->fillpoly($_);
+	my ( $self, $fillMode ) = @_;
+	return 0 unless my $c = $self->{canvas};
+	my @p = $self->points(1);
+	my $ok = 1;
+	my $save;
+	if ( defined $fillMode ) {
+		$save = $c->fillMode;
+		$c->fillMode($fillMode);
 	}
-	return 1;
+	for ( @p ) {
+		last unless $ok &= $c->fillpoly($_);
+	}
+	$c->fillMode($save) if defined $save;
+	return $ok;
 }
 
 sub flatten
@@ -1077,6 +1085,7 @@ Adds full ellipse to the path.
 =item glyph INDEX, %OPTIONS
 
 Adds glyph outline to the path. C<%OPTIONS> are passed as is to L<Prima::Drawable/renger_glyph>.
+Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set.
 
 =item line, rline @POINTS
 
@@ -1209,9 +1218,10 @@ Returns 2 points that box the path.
 
 Return CTM resulted after running all commands
 
-=item fill
+=item fill fillMode=undef
 
-Paints a filled shape over the path
+Paints a filled shape over the path. If C<fillMode> is set, it is used instead of the one
+selected on the canvas.
 
 =item flatten PRESCALE 
 
