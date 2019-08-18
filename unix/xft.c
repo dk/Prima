@@ -1949,14 +1949,11 @@ store_command( OutlineStorage * storage, int cmd, const FT_Vector * p1, const FT
 
 	if ( 
 		storage-> last_ptr < 0 || storage->buffer[storage->last_ptr] != cmd || 
-		cmd == ggoConic || cmd == ggoCubic
+		cmd != ggoLine
 	) {
 		storage->last_ptr = storage->count;
 		storage->buffer[ storage->count++ ] = cmd;
 		storage->buffer[ storage->count++ ] = 0;
-	} else if ( cmd == ggoMove ) {
-		storage->buffer[ storage->last_ptr + 1 ]--;
-		storage->count--;
 	}
 
 	STORE_POINT(p1)

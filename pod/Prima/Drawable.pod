@@ -1529,6 +1529,39 @@ Context used: font, textOutBaseline
 
 =for html -->
 
+=item render_glyph INDEX, %OPTIONS
+
+Returns glyph representation as an outline. The outline is an integer array,
+formed as a set of plotting commands. Each commnds is a C<ggo::> constant,
+followed by number of points, followed by the 2D point coordinates in 1/64 pixels.
+
+Options recognized:
+
+=over
+
+=item glyph BOOL
+
+If set, INDEX is treated as the glyph index rather than character index.
+Default is false.
+
+=item hints BOOL
+
+Is set, hinting is enabled. Default is true.
+
+=item unicode BOOL
+
+If set, INDEX is threated as a utf8 character index, otherwise a locale-specific index.
+Default is false.
+
+=back
+
+The C<ggo::> commands are:
+
+	ggo::Move  - move point
+	ggo::Line  - plot line
+	ggo::Conic - plot 2-degree spline
+	ggo::Cubic - plot 3-degree spline
+
 =item render_spline \@VERTICES, %OPTIONS
 
 Renders B-spline curve from set of VERTICES to a polyline with given options.

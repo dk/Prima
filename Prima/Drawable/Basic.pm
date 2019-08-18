@@ -236,7 +236,7 @@ sub stroke_primitive
 	if ( $self->lineWidth == 0 ) {
 		# paths produce floating point coordinates and line end arcs,
 		# here we need internal pixel-wise plotting
-		for my $pp ( @{ $path->points } ) {
+		for my $pp ( map { @$_ } @{ $path->points } ) {
 			last unless $ok &= $self->polyline($pp);
 		}
 		return $ok;

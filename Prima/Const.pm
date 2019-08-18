@@ -476,6 +476,15 @@ See L<Prima::Drawable/weight>
 	fw::ExtraBold
 	fw::UltraBold
 
+=head2 ggo::  - glyph outline commands
+
+	ggo::Move
+	ggo::Line
+	ggo::Conic
+	ggo::Cubic
+
+See also L<Prima::Drawable/render_glyph>
+
 =head2 gm::  - grow modes
 
 See L<Prima::Widget/growMode>

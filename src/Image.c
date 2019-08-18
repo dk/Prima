@@ -1931,17 +1931,20 @@ Image_region( Handle self, Bool set, Handle mask)
 }
 
 static Bool
-primitive( Handle self, Bool fill, char * format, ...)
+primitive( Handle self, Bool fill, char * method, ...)
 {
 	Bool r;
 	SV * ret;
+	char format[256];
 	va_list args;
-	va_start( args, format);
+	va_start( args, method);
 	ENTER;
 	SAVETMPS;
+	strcpy(format, "<");
+	strncat(format, method, 256);
 	ret = call_perl_indirect( self, fill ? "fill_primitive" : "stroke_primitive", format, true, false, args);
 	va_end( args);
-	r = ( ret && SvIOK( ret)) ? (SvIV( ret) != 0) : 0;
+	r = ret ? SvTRUE( ret) : false;
 	FREETMPS;
 	LEAVE;
 	return r;

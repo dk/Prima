@@ -22,20 +22,30 @@ my $i = Prima::Image-> create(
 	type => im::BW,
 	font => { size => 100, style => fs::Bold|fs::Italic },
 );
+
 $i-> begin_paint_info;
 my $textx = $i-> get_text_width( "PRIMA");
 my $texty = $i-> font-> height;
 $i-> end_paint_info;
 $i-> size( $textx + 20, $texty + 20);
-
 my @is = $i-> size;
-$i-> begin_paint;
-$i-> color( cl::Black);
-$i-> bar(0,0,@is);
-$i-> color( cl::White);
-$i-> text_out( "PRIMA", 0,0);
-$i-> end_paint;
-$i = $i->to_region;
+my $path;
+	
+if ( $i->font->{vector}) {
+	$i = $i->new_path;
+	$i->translate( 10, 10 );
+	$i->text('PRIMA');
+	$path = $i;
+	$i = $i->region;
+} else {
+	$i-> begin_paint;
+	$i-> color( cl::Black);
+	$i-> bar(0,0,@is);
+	$i-> color( cl::White);
+	$i-> text_out( "PRIMA", 0,0);
+	$i-> end_paint;
+	$i = $i->to_region;
+}
 
 my ($g1, $g2);
 
@@ -50,6 +60,12 @@ my $w = Prima::MainWindow-> create(
 		$g1->ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0]);
 		$canvas-> region( $i);
 		$g2->ellipse($is[0]/2 ,$is[1]/2, $is[0], $is[0]);
+		$canvas-> linePattern(lp::Dot);
+		$canvas-> lineWidth(6);
+		if ( $path ) {
+			$path->canvas($canvas);
+			$path->stroke;
+		}
 	},
 );
 
