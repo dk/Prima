@@ -36,7 +36,7 @@ if ( $i->font->{vector}) {
 	$i->translate( 10, 10 );
 	$i->text('PRIMA');
 	$path = $i;
-	$i = $i->region;
+	$i = $i->region(fm::Winding);
 } else {
 	$i-> begin_paint;
 	$i-> color( cl::Black);
