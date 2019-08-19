@@ -142,37 +142,6 @@ rgn_rect(Handle self, int count, Box * r)
 	return true;
 }
 
-static void dump( HRGN r )
-{
-	int i, size;
-	PRegionRec ret;
-	RECT *src;
-	RGNDATA *rgndata;
-
-	size = GetRegionData( r, 0, NULL);
-	if ( !( rgndata = malloc(size))) {
-		warn("Not enough memory\n");
-		return ;
-	}
-	size = GetRegionData( r, size, rgndata);
-	if ( size == 0) return ;
-
-	ret = malloc(sizeof(RegionRec) + sizeof(Box) * rgndata-> rdh. nCount );
-	if ( ret == NULL ) {
-		free(ret);
-		warn("Not enough memory\n");
-		return ;
-	}
-
-	src = (RECT*) &(rgndata->Buffer);
-	ret-> data. box. n_boxes = rgndata->rdh. nCount;
-	for ( i = 0; i < ret->data. box. n_boxes; i++, src++) {
-		printf("%d: [%ld %ld %ld %ld]\n", i, src->left, src->top, src->right, src->bottom); 
-	}
-	free(rgndata);
-	free(ret);
-}
-
 static Bool
 rgn_polygon(Handle self, PolygonRegionRec * r)
 {
