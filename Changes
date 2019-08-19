@@ -1,4 +1,16 @@
 Revision history for Perl module Prima
+1.56 2019-08-19
+ - Rename and expand Drawable.fillWinding to .fillMode
+ - Add Drawable.render_glyph and glyph outline functions
+ - Add Drawable.miterLimit
+ - Drawable.render_spline produces 8-connected shapes instead of 4-connected
+ - Image can stroke and fill shapes outside begin_paint now
+ - Image drawing outside begin_paint supports regions,translations,patterns,and rop2
+ - Regions can keep a non-OS-specific data copy, when needed by Image drawing
+ - Region.new(box) supports polybox structure from .get_boxes()
+ - Add sv::FixedPointerSize do deal with pointer size limits
+ - Better support for touchpad scrolling
+
 1.55 2019-03-25
  - Add WebP images support
 
