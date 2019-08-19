@@ -644,7 +644,8 @@ font_font2logfont( Font * f, LOGFONT * lf)
 	lf-> lfClipPrecision    = CLIP_DEFAULT_PRECIS;
 	lf-> lfQuality          = PROOF_QUALITY;
 	lf-> lfPitchAndFamily   = FF_DONTCARE;
-	(void)strncpy( lf-> lfFaceName, f-> name, LF_FACESIZE);
+	strncpy( lf-> lfFaceName, f-> name, LF_FACESIZE);
+	lf->lfFaceName[LF_FACESIZE - 1] = 0;
 	lf-> lfCharSet          = font_encoding2charset( f-> encoding);
 }
 
