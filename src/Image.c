@@ -1941,7 +1941,7 @@ primitive( Handle self, Bool fill, char * method, ...)
 	ENTER;
 	SAVETMPS;
 	strcpy(format, "<");
-	strncat(format, method, 256);
+	strncat(format, method, 255);
 	ret = call_perl_indirect( self, fill ? "fill_primitive" : "stroke_primitive", format, true, false, args);
 	va_end( args);
 	r = ret ? SvTRUE( ret) : false;
