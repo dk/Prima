@@ -1045,12 +1045,12 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 	int tildeIndex = -100, tildeLPos = 0, tildeLine = 0, tildePos = 0, tildeOffset = 0, lSize = 16;
 	int spaceWidth = 0, spaceC = 0, spaceOK = 0;
 
-#define lAdd(end, utfend) \
+#define lAdd(end, utfend) if(1) { \
 	if ( !add_wrapped_text( t, start, utf_start, end, utfend, tildeIndex, \
 		&tildePos, &tildeLPos, &tildeLine, &ret, &lSize)) return ret;\
 	start = end; \
 	utf_start = utfend; \
-	if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) return ret
+	if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) return ret; }
 
 	t-> count = 0;
 	if (!( ret = allocn( char*, lSize))) return nil;

@@ -644,7 +644,7 @@ font_font2logfont( Font * f, LOGFONT * lf)
 	lf-> lfClipPrecision    = CLIP_DEFAULT_PRECIS;
 	lf-> lfQuality          = PROOF_QUALITY;
 	lf-> lfPitchAndFamily   = FF_DONTCARE;
-	strncpy( lf-> lfFaceName, f-> name, LF_FACESIZE);
+	(void)strncpy( lf-> lfFaceName, f-> name, LF_FACESIZE);
 	lf-> lfCharSet          = font_encoding2charset( f-> encoding);
 }
 
@@ -693,7 +693,7 @@ font_pp2font( char * presParam, Font * f)
 	} else
 		f-> size = 10;
 
-	strncpy( f-> name, p, 256);
+	strncpy( f-> name, p, 255);
 	p = f-> name;
 	f-> style = 0;
 	f-> pitch = fpDefault;
@@ -1322,7 +1322,7 @@ apc_lookup_color( const char * colorName)
 
 #define xcmp( name, stlen, retval)  if (( len == stlen) && ( strcmp( name, buf) == 0)) return retval
 
-	strncpy( buf, colorName, 256);
+	strncpy( buf, colorName, 255);
 	len = strlen( buf);
 	for ( b = buf; *b; b++) *b = tolower(*b);
 
