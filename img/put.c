@@ -565,26 +565,27 @@ EXIT:
 	return true;
 }
 
-#define BLT_BUFSIZE 1024
-
 typedef struct {
 	int bpp;
 	int count;
 	int ls;
 	int step;
+	int pat_x_offset;
+	Bool solid;
 	Byte * data;
 	Byte * buf;
 	PBitBltProc proc;
 } ImgBarCallbackRec;
 
 #define FILL_PATTERN_SIZE 8
+#define BLT_BUFSIZE ((MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE * (FILL_PATTERN_SIZE / 8) * 2 * 4))
 
 static void
 img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 {
 	int j, blt_bytes, blt_step, offset;
 	Byte lmask, rmask;
-	Byte * data;
+	Byte * data, *pat_ptr;
 
 	switch ( ptr->bpp ) {
 	case 1:
@@ -611,12 +612,35 @@ img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 	}
 
 	blt_step = (blt_bytes > ptr->step) ? ptr->step : blt_bytes;
+	if (!ptr->solid && (( ptr-> pat_x_offset % FILL_PATTERN_SIZE ) != (x % FILL_PATTERN_SIZE))) {
+		int dx = (x % FILL_PATTERN_SIZE) - ( ptr-> pat_x_offset % FILL_PATTERN_SIZE );
+		if ( dx < 0 ) dx += FILL_PATTERN_SIZE;
+
+		switch ( ptr->bpp ) {
+		case 1:
+			pat_ptr = ptr->buf;
+			break;
+		case 4:
+			if ( dx > 1 ) {
+				pat_ptr = ptr->buf + dx / 2;
+				if ( blt_step + FILL_PATTERN_SIZE / 2 > BLT_BUFSIZE )
+					blt_step -= FILL_PATTERN_SIZE / 2;
+			} else
+				pat_ptr = ptr->buf;
+			break;
+		default:
+			pat_ptr = ptr->buf + dx * ptr->bpp / 8;
+			if ( blt_step + FILL_PATTERN_SIZE * ptr->count > BLT_BUFSIZE )
+				blt_step -= FILL_PATTERN_SIZE * ptr->count;
+		}
+	} else
+		pat_ptr = ptr->buf;
 
 	data = ptr->data + ptr->ls * y + offset;
 	for ( j = 0; j < h; j++) {
 		int bytes = blt_bytes;
 		Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
-		Byte * src = ptr-> buf + ((y + j) % FILL_PATTERN_SIZE) * ptr->step;
+		Byte * src = pat_ptr + ((y + j) % FILL_PATTERN_SIZE) * ptr->step;
 		while ( bytes > 0 ) {
 			ptr->proc( src, p, ( bytes > blt_step ) ? blt_step : bytes );
 			bytes -= blt_step;
@@ -628,6 +652,9 @@ img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 	}
 }
 
+static Bool
+img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx);
+
 void
 img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
@@ -635,6 +662,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	int pixSize  = (i->type & imBPP) / 8;
 	Byte blt_buffer[BLT_BUFSIZE];
 	int j, k, blt_bytes, blt_step;
+	Bool solid;
 
 	/* check boundaries */
 	if ( ctx->rop == ropNoOper) return;
@@ -653,7 +681,12 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 
 	while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += FILL_PATTERN_SIZE;
 	while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += FILL_PATTERN_SIZE;
-	
+
+	if ( ctx-> rop & ropConstantAlpha ) {
+		img_bar_alpha(dest, x, y, w, h, ctx);
+		return;
+	}
+
 	if ( memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0) {
 		/* do nothing */
 	} else if (memcmp( ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0) {
@@ -709,7 +742,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		}}
 	}
 
-	/* render a (minimum) 8x8xPIXEL matrix with pattern, then
+	/* render a 8x8xPIXEL matrix with pattern, then horizontally
 	replicate it over blt_buffer as much as possible, to streamline
 	byte operations */
 	switch ( i->type & imBPP) {
@@ -727,11 +760,18 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	}
 	blt_bytes *= FILL_PATTERN_SIZE;
 	blt_step = ((blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes) / FILL_PATTERN_SIZE;
+	if ( pixSize > 1 )
+		blt_step = (blt_step / pixSize / FILL_PATTERN_SIZE) * pixSize * FILL_PATTERN_SIZE;
+	solid = (memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
 	for ( j = 0; j < FILL_PATTERN_SIZE; j++) {
 		unsigned int pat, strip_size;
 		Byte matrix[MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE], *buffer;
-		pat = (unsigned int) ctx->pattern[(j + ctx->patternOffset. y) % FILL_PATTERN_SIZE];
-		pat = (((pat << 8) | pat) >> ((ctx->patternOffset. x + 8 - (x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
+		if ( solid ) {
+			pat = 0xff;
+		} else {
+			pat = (unsigned int) ctx->pattern[(j + ctx->patternOffset. y) % FILL_PATTERN_SIZE];
+			pat = (((pat << 8) | pat) >> ((ctx->patternOffset. x + 8 - (x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
+		}
 		buffer = blt_buffer + j * blt_step;
 		switch ( i->type & imBPP) {
 		case 1:
@@ -746,7 +786,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			for ( k = 0; k < FILL_PATTERN_SIZE; ) {
 				Byte c1 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
 				Byte c2 = *((pat & (0x80 >> k++)) ? ctx->color : ctx->backColor);
-				matrix[ (k / 2) - 1 ] = (c1 << 4) | (c2 & 0xf);
+				matrix[ (k / 2) - 1] = (c1 << 4) | (c2 & 0xf);
 			}
 			break;
 		case 8: 
@@ -771,13 +811,13 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	}
 	/*
 	printf("pxs:%d step:%d\n", pixSize, blt_step);
-	for ( j = 0; j < blt_bytes / blt_step; j++) {
+	for ( j = 0; j < 8; j++) {
 		printf("%d: ", j);
 		for ( k = 0; k < blt_step; k++) {
-			printf("%02x ", blt_buffer[ j * blt_step + k]);
+			printf("%02x", blt_buffer[ j * blt_step + k]);
 		}
 		printf("\n");
-	}*/
+	} */
 	{
 		ImgBarCallbackRec rec = {
 			bpp   : (i->type & imBPP),
@@ -786,7 +826,9 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			data  : i->data,
 			buf   : blt_buffer,
 			step  : blt_step,
-			proc  : find_blt_proc(ctx->rop)
+			proc  : find_blt_proc(ctx->rop),
+			solid        : solid,
+			pat_x_offset : x,
 		};
 		region_foreach( ctx->region,
 			x, y, w, h,
@@ -1143,7 +1185,12 @@ fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp)
 		memcpy( dst, src, width * bpp);
 }
 
-#define dBLEND_FUNC(name) void name( const Byte * src, const Byte * src_a, Byte * dst, const Byte * dst_a, int bytes )
+#define dBLEND_FUNC(name) void name( \
+	const Byte * src, const Byte src_inc, \
+	const Byte * src_a, const Byte src_a_inc,\
+	Byte * dst, \
+	const Byte * dst_a, const Byte dst_a_inc,\
+	int bytes)
 
 typedef dBLEND_FUNC(BlendFunc);
 
@@ -1152,9 +1199,11 @@ static dBLEND_FUNC(blend_src_over)
 {
 	while ( bytes-- > 0 ) {
 		register int32_t s =
-				((int32_t)(*src++) << 8 ) +
-				((int32_t)(*dst) << 8) * (255 - *src_a++) / 255
+				((int32_t)(*src) << 8 ) +
+				((int32_t)(*dst) << 8) * (255 - *src_a) / 255
 				+ 127;
+		src += src_inc;
+		src_a += src_a_inc;
 		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
@@ -1165,9 +1214,12 @@ static dBLEND_FUNC(blend_xor)
 {
 	while ( bytes-- > 0 ) {
 		register int32_t s = (
-				((int32_t)(*src++) << 8) * (255 - *dst_a++) +
-				((int32_t)(*dst)   << 8) * (255 - *src_a++)
+				((int32_t)(*src) << 8) * (255 - *dst_a) +
+				((int32_t)(*dst)   << 8) * (255 - *src_a)
 			) / 255 + 127;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
 		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
@@ -1179,8 +1231,10 @@ static dBLEND_FUNC(blend_dst_over)
 	while ( bytes-- > 0 ) {
 		register int32_t s =
 				((int32_t)(*dst) << 8 ) +
-				((int32_t)(*src++) << 8) * (255 - *dst_a++) / 255
+				((int32_t)(*src) << 8) * (255 - *dst_a) / 255
 				+ 127;
+		src++;
+		dst_a += dst_a_inc;
 		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
@@ -1201,7 +1255,9 @@ static dBLEND_FUNC(blend_clear)
 static dBLEND_FUNC(blend_src_in)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = (((int32_t)(*src++) << 8) * *dst_a++) / 255 + 127;
+		register int32_t s = (((int32_t)(*src) << 8) * *dst_a) / 255 + 127;
+		src++;
+		dst_a += dst_a_inc;
 		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
@@ -1211,7 +1267,8 @@ static dBLEND_FUNC(blend_src_in)
 static dBLEND_FUNC(blend_dst_in)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t d = (((int32_t)(*dst) << 8) * *src_a++) / 255 + 127;
+		register int32_t d = (((int32_t)(*dst) << 8) * *src_a) / 255 + 127;
+		src_a += src_a_inc;
 		d >>= 8;
 		*dst++ = ( d > 255 ) ? 255 : d;
 	}
@@ -1221,7 +1278,9 @@ static dBLEND_FUNC(blend_dst_in)
 static dBLEND_FUNC(blend_src_out)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = (((int32_t)(*src++) << 8) * ( 255 - *dst_a++)) / 255 + 127;
+		register int32_t s = (((int32_t)(*src) << 8) * ( 255 - *dst_a)) / 255 + 127;
+		src++;
+		dst_a += dst_a_inc;
 		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
@@ -1231,7 +1290,8 @@ static dBLEND_FUNC(blend_src_out)
 static dBLEND_FUNC(blend_dst_out)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t d = (((int32_t)(*dst) << 8) * ( 255 - *src_a++)) / 255 + 127;
+		register int32_t d = (((int32_t)(*dst) << 8) * ( 255 - *src_a)) / 255 + 127;
+		src_a += src_a_inc;
 		d >>= 8;
 		*dst++ = ( d > 255 ) ? 255 : d;
 	}
@@ -1242,10 +1302,13 @@ static dBLEND_FUNC(blend_src_atop)
 {
 	while ( bytes-- > 0 ) {
 		register int32_t s = (
-			((int32_t)(*src++) << 8) * *dst_a++ +
-			((int32_t)(*dst) << 8) * (255 - *src_a++)
+			((int32_t)(*src) << 8) * *dst_a +
+			((int32_t)(*dst) << 8) * (255 - *src_a)
 		) / 255 + 127;
 		s >>= 8;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1255,9 +1318,12 @@ static dBLEND_FUNC(blend_dst_atop)
 {
 	while ( bytes-- > 0 ) {
 		register int32_t s = (
-			((int32_t)(*src++) << 8) * ( 255 - *dst_a++) +
-			((int32_t)(*dst) << 8) * *src_a++
+			((int32_t)(*src) << 8) * (255 - *dst_a) +
+			((int32_t)(*dst) << 8) * *src_a
 		) / 255 + 127;
+		src++;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
 		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
@@ -1266,7 +1332,10 @@ static dBLEND_FUNC(blend_dst_atop)
 /* sss */
 static dBLEND_FUNC(blend_src_copy)
 {
-	memcpy( dst, src, bytes);
+	if ( src_inc )
+		memcpy( dst, src, bytes);
+	else
+		memset( dst, *src, bytes);
 }
 
 static BlendFunc* blend_functions[] = {
@@ -1340,12 +1409,27 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 		} else
 			adbuf_ptr = ptr->adbuf;
 
-		ptr->blend_func( s_ptr, asbuf_ptr, d_ptr, adbuf_ptr, bytes);
+		ptr->blend_func(
+			s_ptr, 1,
+			asbuf_ptr, ptr->use_src_alpha ? 0 : 1,
+			d_ptr,
+			adbuf_ptr, ptr->use_dst_alpha ? 0 : 1,
+			bytes);
 		if (a) {
 			if ( ptr->use_src_alpha )
-				ptr->blend_func( ptr->asbuf, ptr->asbuf, (Byte*)a_ptr, a_ptr, w);
+				ptr->blend_func(
+					ptr->asbuf, 0,
+					ptr->asbuf, 0,
+					(Byte*)a_ptr,
+					a_ptr, ptr->use_dst_alpha ? 0 : 1,
+					w);
 			else
-				ptr->blend_func( m_ptr, m_ptr, (Byte*)a_ptr, a_ptr, w);
+				ptr->blend_func(
+					m_ptr, 1,
+					m_ptr, 1,
+					(Byte*)a_ptr,
+					a_ptr, ptr->use_dst_alpha ? 0 : 1,
+					w);
 		}
 	}
 }
@@ -1357,7 +1441,7 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 static Bool
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region)
 {
-	int bpp, bytes, mls, als, x, xrop;
+	int bpp, bytes, mls, als, xrop;
 	unsigned int src_alpha = 0, dst_alpha = 0;
 	Bool use_src_alpha = false, use_dst_alpha = false;
 	Byte *asbuf, *adbuf;
@@ -1480,20 +1564,18 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 
 	/* make buffers for alpha */
 	bytes = dstW * bpp;
-	if ( !(asbuf = malloc(bytes * (use_src_alpha ? 1 : OMP_MAX_THREADS)))) {
+	if ( !(asbuf = malloc(use_src_alpha ? 1 : (bytes * OMP_MAX_THREADS)))) {
 		warn("not enough memory");
 		return false;
 	}
-	if ( !(adbuf = malloc(bytes * (use_dst_alpha ? 1 : OMP_MAX_THREADS)))) {
+	if ( !(adbuf = malloc(use_dst_alpha ? 1 : (bytes * OMP_MAX_THREADS)))) {
 		free(asbuf);
 		warn("not enough memory");
 		return false;
 	}
 
-	if ( use_src_alpha )
-		for ( x = 0; x < bytes; x++) asbuf[x] = src_alpha;
-	if ( use_dst_alpha )
-		for ( x = 0; x < bytes; x++) adbuf[x] = dst_alpha;
+	if ( use_src_alpha ) asbuf[0] = src_alpha;
+	if ( use_dst_alpha ) adbuf[0] = dst_alpha;
 
 	/* select function */
 	{
@@ -1524,6 +1606,335 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	/* cleanup */
 	free(adbuf);
 	free(asbuf);
+
+	return true;
+}
+
+typedef struct {
+	int bpp, als, dls, step, pat_x_offset;
+	Byte * dst, *dstMask, *pattern_buf, *adbuf;
+	Bool use_dst_alpha, solid;
+	Byte src_alpha;
+	PImgPaintContext ctx;
+	BlendFunc * blend_func;
+} ImgBarAlphaCallbackRec;
+
+static void
+img_bar_alpha_single_opaque( int x, int y, int w, int h, ImgBarAlphaCallbackRec * ptr)
+{
+	int i;
+	const int bpp = ptr->bpp;
+	const int blt_bytes = w * bpp;
+	const int dls = ptr->dls;
+	const int als = ptr->als;
+	const Byte * d = ptr->dst + y * ptr->dls + x * bpp;
+	const Byte * a = (als > 0) ? ptr->dstMask + y * als + x : NULL;
+	int blt_step = (blt_bytes > ptr->step) ? ptr->step : blt_bytes;
+	Byte * pat_ptr;
+	
+	if (!ptr->solid && (( ptr-> pat_x_offset % FILL_PATTERN_SIZE ) != (x % FILL_PATTERN_SIZE))) {
+		int dx = (x % FILL_PATTERN_SIZE) - ( ptr-> pat_x_offset % FILL_PATTERN_SIZE );
+		if ( dx < 0 ) dx += FILL_PATTERN_SIZE;
+		pat_ptr = ptr->pattern_buf + dx * bpp;
+		if ( blt_step + FILL_PATTERN_SIZE * bpp > BLT_BUFSIZE )
+			blt_step -= FILL_PATTERN_SIZE * bpp;
+	} else
+		pat_ptr = ptr->pattern_buf;
+
+	for ( i = 0; i < h; i++) {
+		Byte *adbuf_ptr;
+
+		int bytes = blt_bytes;
+		Byte *d_ptr = (Byte *)d;
+		Byte *s_ptr = pat_ptr + ((y + i) % FILL_PATTERN_SIZE) * ptr->step;
+
+		if ( !ptr->use_dst_alpha ) {
+			adbuf_ptr = ptr->adbuf;
+			fill_alpha_buf( adbuf_ptr, (Byte*)a, w, bpp);
+		} else
+			adbuf_ptr = ptr->adbuf;
+
+		while ( bytes > 0 ) {
+			ptr->blend_func(
+				s_ptr, 1,
+				&ptr->src_alpha, 0,
+				d_ptr,
+				adbuf_ptr, ptr->use_dst_alpha ? 0 : 1,
+				( bytes > blt_step ) ? blt_step : bytes);
+			bytes -= blt_step;
+			d_ptr += blt_step;
+		}
+		d += dls;
+
+		if ( a ) {
+			ptr->blend_func(
+				&ptr->src_alpha, 0,
+				&ptr->src_alpha, 0,
+				(Byte*)a,
+				a, ptr->use_dst_alpha ? 0 : 1,
+				w
+			);
+			a += als;
+		}
+	}
+}
+
+static void
+img_bar_alpha_single_transparent( int x, int y, int w, int h, ImgBarAlphaCallbackRec * ptr)
+{
+	int i, j;
+	const int bpp = ptr->bpp;
+	const int blt_bytes = w * bpp;
+	const int dls = ptr->dls;
+	const int als = ptr->als;
+	const Byte * d = ptr->dst + y * ptr->dls + x * bpp;
+	const Byte * a = (als > 0) ? ptr->dstMask + y * als + x : NULL;
+
+	for ( i = 0; i < h; i++) {
+		unsigned int pat;
+		Byte *d_ptr, *a_ptr, *adbuf_ptr, *adbuf_ptr2;
+		pat = (unsigned int) ptr->ctx->pattern[(i + ptr->ctx->patternOffset. y) % FILL_PATTERN_SIZE];
+		if ( pat == 0 ) goto NEXT_LINE;
+		pat = (((pat << 8) | pat) >> ((ptr->ctx->patternOffset. x + 8 - (x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
+
+		if ( !ptr->use_dst_alpha ) {
+			adbuf_ptr = ptr->adbuf;
+			fill_alpha_buf( adbuf_ptr, (Byte*)a, w, bpp);
+		} else
+			adbuf_ptr = ptr->adbuf;
+
+		if ( pat == 0xff && bpp == 1) {
+			ptr->blend_func(
+				ptr->ctx->color, 0,
+				&ptr->src_alpha, 0,
+				(Byte*)d,
+				adbuf_ptr, ptr->use_dst_alpha ? 0 : 1,
+				blt_bytes);
+			if ( a ) ptr->blend_func(
+				&ptr->src_alpha, 0,
+				&ptr->src_alpha, 0,
+				(Byte*)a,
+				a, ptr->use_dst_alpha ? 0 : 1,
+				w
+			);
+			goto NEXT_LINE;
+		}
+
+		for (
+			j = 0, d_ptr = (Byte*)d, a_ptr = (Byte*)a, adbuf_ptr2 = adbuf_ptr;
+			j < w;
+			j++
+		) {
+			if ( pat & (0x80 >> (j % 8)) ) {
+				ptr->blend_func(
+					ptr->ctx->color, 0,
+					&ptr->src_alpha, 0,
+					d_ptr,
+					adbuf_ptr2, ptr->use_dst_alpha ? 0 : 1,
+					bpp);
+				if ( a ) ptr->blend_func(
+					&ptr->src_alpha, 0,
+					&ptr->src_alpha, 0,
+					a_ptr,
+					a_ptr, ptr->use_dst_alpha ? 0 : 1,
+					1
+				);
+			}
+			d_ptr += bpp;
+			if ( a ) a_ptr++;
+			if ( !ptr-> use_dst_alpha ) adbuf_ptr2++;
+		}
+
+	NEXT_LINE:
+		d += dls;
+		if ( a ) a += als;
+	}
+}
+
+static Bool
+img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
+{
+	int bpp, als;
+	unsigned int src_alpha = 0xff, dst_alpha = 0;
+	Bool use_dst_alpha = false, solid;
+	Byte blt_buffer[BLT_BUFSIZE], *adbuf;
+	int j, k, blt_bytes, blt_step = -1;
+
+	if ( ctx->transparent && (memcmp( ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0))
+		return true;
+
+	/* align types and geometry - can only operate over imByte and imRGB */
+	bpp = ( PImage(dest)->type & imGrayScale) ? imByte : imRGB;
+	if (PImage(dest)-> type != bpp || ( kind_of( dest, CIcon) && PIcon(dest)->maskType != imbpp8 )) {
+		Bool icon = kind_of(dest, CIcon), ok;
+		int type = PImage(dest)->type;
+		int mask = icon ? PIcon(dest)->maskType : 0;
+
+		if ( type != bpp ) {
+			RGBColor fg, bg;
+			int rbpp = type & imBPP;
+			if (rbpp <= 8 ) {
+				fg = PImage(dest)->palette[*(ctx->color)];
+				bg = PImage(dest)->palette[*(ctx->backColor)];
+			} else switch ( type ) {
+			case imRGB:
+				fg.b = ctx->color[0];
+				fg.g = ctx->color[1];
+				fg.r = ctx->color[2];
+				bg.b = ctx->backColor[0];
+				bg.g = ctx->backColor[1];
+				bg.r = ctx->backColor[2];
+				break;
+			case imShort:
+				fg.b = fg.g = fg.r = *((Short*)(ctx->color));
+				bg.b = bg.g = bg.r = *((Short*)(ctx->backColor));
+				break;
+			case imLong:
+				fg.b = fg.g = fg.r = *((Long*)(ctx->color));
+				bg.b = bg.g = bg.r = *((Long*)(ctx->backColor));
+				break;
+			case imFloat: case imComplex: case imTrigComplex:
+				fg.b = fg.g = fg.r = *((float*)(ctx->color));
+				bg.b = bg.g = bg.r = *((float*)(ctx->backColor));
+				break;
+			case imDouble: case imDComplex: case imTrigDComplex:
+				fg.b = fg.g = fg.r = *((double*)(ctx->color));
+				bg.b = bg.g = bg.r = *((double*)(ctx->backColor));
+				break;
+			default:
+				return false;
+			}
+			if ( bpp == imByte ) {
+				*(ctx->color)     = (fg.r + fg.g + fg.b) / 3;
+				*(ctx->backColor) = (bg.r + bg.g + bg.b) / 3;
+			} else {
+				*((Color*)ctx->color)     = ARGB(fg.r,fg.g,fg.b);
+				*((Color*)ctx->backColor) = ARGB(bg.r,bg.g,bg.b);
+			}
+			CIcon(dest)-> set_type( dest, bpp );
+		}
+		if ( icon && mask != imbpp8 )
+			CIcon(dest)-> set_maskType( dest, imbpp8 );
+		ok = img_bar_alpha( dest, x, y, w, h, ctx);
+		if ( PImage(dest)-> options. optPreserveType ) {
+			if ( type != bpp )
+				CImage(dest)-> set_type( dest, type );
+			if ( icon && mask != imbpp8 )
+				CIcon(dest)-> set_maskType( dest, mask );
+		}
+		return ok;
+	}
+
+	/* differentiate between per-pixel alpha and a global value */
+	if ( ctx->rop & ropSrcAlpha )
+		src_alpha = (ctx->rop >> ropSrcAlphaShift) & 0xff;
+	if ( ctx->rop & ropDstAlpha ) {
+		use_dst_alpha = true;
+		dst_alpha = (ctx->rop >> ropDstAlphaShift) & 0xff;
+	}
+	ctx->rop &= ropPorterDuffMask;
+	if ( ctx->rop > ropDstAtop || ctx->rop < 0 ) ctx->rop = ropSrcOver;
+
+	/* assign pointers */
+	bpp = ( bpp == imByte ) ? 1 : 3;
+	if ( kind_of(dest, CIcon)) {
+		als = PIcon(dest)-> maskLine;
+		if ( PIcon(dest)-> maskType != imbpp8)
+			croak("panic: assert failed for img_bar_alpha: %s", "dst mask type");
+		use_dst_alpha = false;
+	} else {
+		als = 0;
+	}
+
+	if ( !use_dst_alpha && als == 0) {
+		use_dst_alpha = true;
+		dst_alpha = 0xff;
+	}
+	if ( !(adbuf = malloc(use_dst_alpha ? 1 : (bpp * w)))) {
+		warn("not enough memory");
+		return false;
+	}
+	if ( use_dst_alpha ) adbuf[0] = dst_alpha;
+
+	solid = (memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
+	if ( solid || !ctx->transparent ) {
+		/* render a (minimum) 8x8xPIXEL matrix with pattern, then
+		replicate it over blt_buffer as much as possible, to streamline
+		byte operations */
+		blt_bytes = w * bpp;
+		if ( blt_bytes < FILL_PATTERN_SIZE * bpp ) blt_bytes = FILL_PATTERN_SIZE * bpp;
+		blt_bytes *= FILL_PATTERN_SIZE;
+		blt_step = ((blt_bytes > BLT_BUFSIZE) ? BLT_BUFSIZE : blt_bytes) / FILL_PATTERN_SIZE;
+		if ( bpp > 1 )
+			blt_step = (blt_step / bpp / FILL_PATTERN_SIZE) * bpp * FILL_PATTERN_SIZE;
+		for ( j = 0; j < FILL_PATTERN_SIZE; j++) {
+			unsigned int pat, strip_size;
+			Byte matrix[MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE], *buffer;
+			if ( solid ) {
+				pat = 0xff;
+			} else {
+				pat = (unsigned int) ctx->pattern[(j + ctx->patternOffset. y) % FILL_PATTERN_SIZE];
+				pat = (((pat << 8) | pat) >> ((ctx->patternOffset. x + 8 - (x % 8)) % FILL_PATTERN_SIZE)) & 0xff;
+			}
+			buffer = blt_buffer + j * blt_step;
+			if ( bpp == 1 ) {
+				strip_size = FILL_PATTERN_SIZE;
+				for ( k = 0; k < FILL_PATTERN_SIZE; k++)
+					matrix[k] = *((pat & (0x80 >> k)) ? ctx->color : ctx->backColor);
+			} else {
+				strip_size = FILL_PATTERN_SIZE * bpp;
+				for ( k = 0; k < FILL_PATTERN_SIZE; k++) {
+					Byte * color = (pat & (0x80 >> k)) ? ctx->color : ctx->backColor;
+					memcpy( matrix + k * bpp, color, bpp);
+				}
+			}
+			if ( strip_size > 1 ) {
+				Byte * buf = buffer; 
+				for ( k = 0; k < blt_step / strip_size; k++, buf += strip_size)
+					memcpy( buf, matrix, strip_size);
+				if ( blt_step % strip_size != 0)
+					memcpy( buf, matrix, blt_step % strip_size);
+			}
+		}
+
+		/*
+		printf("bpp:%d step:%d\n", bpp, blt_step);
+		for ( j = 0; j < 8; j++) {
+			printf("%d: ", j);
+			for ( k = 0; k < blt_step; k++) {
+				printf("%02x", blt_buffer[ j * blt_step + k]);
+			}
+			printf("\n");
+		} 
+		*/
+	}
+
+	/* select function */
+	{
+		ImgBarAlphaCallbackRec rec = {
+			ctx           : ctx,
+			bpp           : bpp,
+			als           : als,
+			dls           : PImage(dest)-> lineSize,
+			dst           : PImage(dest)->data,
+			dstMask       : (als > 0) ? PIcon(dest)->mask : NULL,
+			src_alpha     : src_alpha,
+			use_dst_alpha : use_dst_alpha,
+			adbuf         : adbuf,
+			pattern_buf   : blt_buffer,
+			step          : blt_step,
+			solid         : solid,
+			pat_x_offset  : x,
+			blend_func    : blend_functions[ctx->rop]
+		};
+		region_foreach( ctx->region, x, y, w, h,
+			( RegionCallbackFunc *)((solid || !ctx->transparent) ?
+				img_bar_alpha_single_opaque : img_bar_alpha_single_transparent),
+			&rec
+		);
+	};
+
+	free(adbuf);
 
 	return true;
 }

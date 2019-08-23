@@ -276,5 +276,33 @@ for my $alu ( @alu ) {
 	h_is($p->pixel(0,0), $expected,  "i$bpp($alu).nop.0=S");
 	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i$bpp($alu).nop.1=F");
 }}
+
+my $r = Prima::Region->new( box => [ 1, 1, 30, 1 ]);
+for my $type ( im::BW, 4, im::Byte, 24 ) {
+	my $bpp = $type & im::BPP;
+	my $i = Prima::Image->new( size => [32, 3], type => $bpp, conversion => ict::None);
+	$i->clear;
+	my %clone = (region => $r, fillPattern => [(0xF6) x 8]);
+	my $j = $i->clone(%clone, rop2 => rop::NoOper);
+	$j->bar(0,0,$i->size);
+	$j->type(im::BW);
+	is_bytes( $j->data, ("\xff"x4).("\x89\x09\x09\x09").("\xff"x4), "patshift/transparent, bpp=$bpp");
+	
+	$j = $i->clone( %clone, rop2 => rop::CopyPut);
+	$j->bar(0,0,$i->size);
+	$j->type(im::BW);
+	is_bytes( $j->data, ("\xff"x4).("\x89\x09\x09\x09").("\xff"x4), "patshift/opaque, bpp=$bpp");
+
+	$clone{rop} = rop::alpha(rop::SrcCopy, 255);
+	$j = $i->clone( %clone, rop2 => rop::NoOper);
+	$j->bar(0,0,$i->size);
+	$j->type(im::BW);
+	is_bytes( $j->data, ("\xff"x4).("\x89\x09\x09\x09").("\xff"x4), "patshift/transparent, bpp=$bpp, alpha");
+	
+	$j = $i->clone( %clone, rop2 => rop::CopyPut);
+	$j->bar(0,0,$i->size);
+	$j->type(im::BW);
+	is_bytes( $j->data, ("\xff"x4).("\x89\x09\x09\x09").("\xff"x4), "patshift/opaque, bpp=$bpp, alpha");
+}
 	
 done_testing;

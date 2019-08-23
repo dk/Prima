@@ -49,6 +49,14 @@ sub blend($)
    return rop::DstAtop | rop::ConstantAlpha | ( $alpha << rop::SrcAlphaShift ) | ($alpha << rop::DstAlphaShift);
 }
 
+sub alpha($$)
+{
+   my ($rop, $alpha) = @_;
+   $alpha = 0 if $alpha < 0;
+   $alpha = 255 if $alpha > 255;
+   return $rop | rop::SrcAlpha | ( $alpha << rop::SrcAlphaShift );
+}
+
 package
     gm; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# grow modes
 package

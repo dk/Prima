@@ -633,6 +633,12 @@ by the following formula:
 
    $dst = ( $src * $alpha + $dst * ( 255 - $alpha ) ) / 255
 
+Its brother function C<rop::alpha($rop, $alpha)> can be used for drawing on
+image outside begin_paint/end_paint:
+
+   $image->rop( rop::alpha( rop::SrcOver, 128 ));
+   $image->ellipse( 5, 5, 5, 5 );
+
 In addition to that, C<rop::AlphaCopy> operation is available for accessing
 alpha bits only.  When used, the source image is treated as alpha mask, and
 therefore it has to be grayscale.  It can be used to apply the alpha bits

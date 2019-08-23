@@ -282,6 +282,10 @@ so, invoke
 
 in the beginning of your program. See L<Prima::noX11> for more.
 
+Generally the standalone methods support all the OS-specific functions
+(i.e. color, region, etc), plus filling methods support alpha blending
+using C<rop> property and C<rop::alpha($rop, $alpha))> constant.
+
 See individual methods and properties in L<API> that support standalone usage,
 and how they differ from system-dependent implementation.
 
@@ -758,7 +762,7 @@ This method can be called without object instance.
 =item dup
 
 Returns a duplicate of the object, a newly created I<Prima::Image>, with all
-information copied to it.
+information copied to it. Does not preserve graphical properties (color etc).
 
 =item extract X_OFFSET, Y_OFFSET, WIDTH, HEIGHT
 
