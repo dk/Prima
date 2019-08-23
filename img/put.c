@@ -655,7 +655,7 @@ img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 static Bool
 img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx);
 
-void
+Bool
 img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 {
 	PImage i     = (PImage) dest;
@@ -665,7 +665,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	Bool solid;
 
 	/* check boundaries */
-	if ( ctx->rop == ropNoOper) return;
+	if ( ctx->rop == ropNoOper) return true;
 
 	if ( x < 0 ) {
 		w += x;
@@ -677,20 +677,18 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	}
 	if ( x + w > i->w ) w = i->w - x;
 	if ( y + h > i->h ) h = i->h - y;
-	if ( w <= 0 || h <= 0 ) return;
+	if ( w <= 0 || h <= 0 ) return true;
 
 	while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += FILL_PATTERN_SIZE;
 	while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += FILL_PATTERN_SIZE;
 
-	if ( ctx-> rop & ropConstantAlpha ) {
-		img_bar_alpha(dest, x, y, w, h, ctx);
-		return;
-	}
+	if ( ctx-> rop & ropConstantAlpha )
+		return img_bar_alpha(dest, x, y, w, h, ctx);
 
 	if ( memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0) {
 		/* do nothing */
 	} else if (memcmp( ctx->pattern, fillPatterns[fpEmpty], sizeof(FillPattern)) == 0) {
-		if ( ctx->transparent ) return;
+		if ( ctx->transparent ) return true;
 		/* still do nothing */
 	} else if ( ctx->transparent ) {
 	/* transparent stippling: if rop is simple enough, adjust parameters to
@@ -835,6 +833,8 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			(RegionCallbackFunc*)img_bar_single, &rec
 		);
 	}
+
+	return true;
 }
 
 typedef struct {
@@ -968,7 +968,7 @@ hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 	}
 }
 
-void
+Bool
 img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 {
 	PImage i = (PImage) dest;
@@ -980,7 +980,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 	Rect  enclosure;
 	Bool closed;
 
-	if ( ctx->rop == ropNoOper || n_points <= 1) return;
+	if ( ctx->rop == ropNoOper || n_points <= 1) return true;
 
 	/* misc */
 	rec.ctx     = ctx;
@@ -991,7 +991,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 
 	rec.solid   = (strcmp((const char*)ctx->linePattern, (const char*)lpSolid) == 0);
 	if ( *(ctx->linePattern) == 0) {
-		if ( ctx->transparent ) return;
+		if ( ctx->transparent ) return true;
 		rec.solid = true;
 		memcpy( ctx->color, ctx->backColor, MAX_SIZEOF_PIXEL);
 	}
@@ -1168,6 +1168,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		if ( acc_y > INT_MIN)
 			hline( &rec, acc_x, x, acc_y, visibility);
 	}
+	return true;
 }
 
 static void

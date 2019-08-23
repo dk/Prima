@@ -1697,6 +1697,7 @@ Bool
 Image_bar( Handle self, int x1, int y1, int x2, int y2)
 {
 	Point t;
+	Bool ok;
 	ImgPaintContext ctx;
 	if (opt_InPaint)
 		return apc_gp_bar( self, x1, y1, x2, y2);
@@ -1713,9 +1714,9 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 	ctx.patternOffset.x -= t.x;
 	ctx.patternOffset.y -= t.y;
 	ctx.transparent = my->get_rop2(self) == ropNoOper;
-	img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
+	ok = img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 	my-> update_change(self);
-	return true;
+	return ok;
 }
 
 Bool
@@ -1724,6 +1725,7 @@ Image_bars( Handle self, SV * rects)
 	Point t;
 	ImgPaintContext ctx;
 	int i, count;
+	Bool ok = true;
 	Rect * p, * r;
 	if (opt_InPaint)
 		return inherited bars( self, rects);
@@ -1742,22 +1744,23 @@ Image_bars( Handle self, SV * rects)
 	ctx.transparent = my->get_rop2(self) == ropNoOper;
 	for ( i = 0, r = p; i < count; i++, r++) {
 		ImgPaintContext ctx2 = ctx;
-		img_bar( self, 
+		if ( !( ok &= img_bar( self, 
 			r->left + t.x, 
 			r->bottom + t.y, 
 			r->right - r->left + t.x + 1, 
 			r->top - r->bottom + t.y + 1,
-			&ctx2);
+			&ctx2))) break;
 	}
 	free( p);
 	my-> update_change(self);
-	return true;
+	return ok;
 }
 
 Bool
 Image_clear(Handle self, int x1, int y1, int x2, int y2)
 {
 	Point t;
+	Bool ok;
 	ImgPaintContext ctx;
 	if (opt_InPaint)
 		return inherited clear( self, x1, y1, x2, y2);
@@ -1778,9 +1781,9 @@ Image_clear(Handle self, int x1, int y1, int x2, int y2)
 	ctx.patternOffset.x -= t.x;
 	ctx.patternOffset.y -= t.y;
 	ctx.transparent = false;
-	img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
+	ok = img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 	my-> update_change(self);
-	return true;
+	return ok;
 }
 
 void
@@ -1985,8 +1988,7 @@ Image_line(Handle self, int x1, int y1, int x2, int y2)
 		poly[0].y = y1;
 		poly[1].x = x2;
 		poly[1].y = y2;
-		img_polyline(self, 2, poly, &ctx);
-		return true;
+		return img_polyline(self, 2, poly, &ctx);
 	} else {
 		return primitive( self, 0, "siiii", "line", x1, y1, x2, y2);
 	}
@@ -2000,6 +2002,7 @@ Image_lines( Handle self, SV * points)
 	} else if ( my->get_lineWidth(self) == 0) {
 		Point * lines, *p;
 		int i, count;
+		Bool ok = true;
 		ImgPaintContext ctx, ctx2;
 		unsigned char lp[256];
 		if (( lines = prima_read_array( points, "Image::lines", true, 4, 0, -1, &count)) == NULL)
@@ -2007,10 +2010,10 @@ Image_lines( Handle self, SV * points)
 		prepare_line_context( self, lp, &ctx);
 		for (i = 0, p = lines; i < count; i++, p+=2) {
 			ctx2 = ctx;
-			img_polyline(self, 2, p, &ctx2);
+			if ( !( ok &= img_polyline(self, 2, p, &ctx2))) break;
 		}
 		free(lines);
-		return true;
+		return ok;
 	} else {
 		return primitive( self, 0, "sS", "lines", points );
 	}
@@ -2024,14 +2027,15 @@ Image_polyline( Handle self, SV * points)
 	} else if ( my->get_lineWidth(self) == 0) {
 		Point * lines;
 		int count;
+		Bool ok;
 		ImgPaintContext ctx;
 		unsigned char lp[256];
 		if (( lines = prima_read_array( points, "Image::polyline", true, 2, 2, -1, &count)) == NULL)
 			return false;
 		prepare_line_context( self, lp, &ctx);
-		img_polyline(self, count, lines, &ctx);
+		ok = img_polyline(self, count, lines, &ctx);
 		free(lines);
-		return true;
+		return ok;
 	} else {
 		return primitive( self, 0, "sS", "line", points );
 	}
@@ -2047,8 +2051,7 @@ Image_rectangle(Handle self, int x1, int y1, int x2, int y2)
 		unsigned char lp[256];
 		Point r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
 		prepare_line_context( self, lp, &ctx);
-		img_polyline(self, 5, r, &ctx);
-		return true;
+		return img_polyline(self, 5, r, &ctx);
 	} else {
 		return primitive( self, 0, "siiii", "rectangle", x1, y1, x2, y2);
 	}
