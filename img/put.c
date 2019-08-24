@@ -1185,20 +1185,23 @@ hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 					if ( rec->proc )
 						rec->proc( rec->ctx->color, dst, dw);
 					else {
-						rec->blend( rec->ctx->color, 1,
-							&rec->src_alpha, 0,
-							dst,
-							rec->use_dst_alpha ? &rec->dst_alpha : mask,
-							rec->use_dst_alpha ? 0 : 1,
-							dw);
+						Byte mask_buf[MAX_SIZEOF_PIXEL];
 						if ( mask ) {
-							int dm = dw * 8 / rec->bpp;
+							int bp = rec->bpp / 8;
+							int dm = dw / bp;
+							fill_alpha_buf( mask_buf, mask, dm, bp);
 							rec->blend(
 								&rec->src_alpha, 0,
 								&rec->src_alpha, 0,
 								mask, mask, 1, dm);
 							mask += dm;
 						}
+						rec->blend( rec->ctx->color, 1,
+							&rec->src_alpha, 0,
+							dst,
+							mask ? mask_buf : &rec->dst_alpha,
+							rec->use_dst_alpha ? 0 : 1,
+							dw);
 					}
 				}
 				return;
