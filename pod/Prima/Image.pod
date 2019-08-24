@@ -283,8 +283,8 @@ so, invoke
 in the beginning of your program. See L<Prima::noX11> for more.
 
 Generally the standalone methods support all the OS-specific functions
-(i.e. color, region, etc), plus filling methods support alpha blending
-using C<rop> property and C<rop::alpha($rop, $src_alpha, $dst_alpha))> constant.
+(i.e. color, region, etc), plus they support alpha blending
+using C<rop> property and C<rop::alpha($rop, $src_alpha[, $dst_alpha]))> value.
 
 See individual methods and properties in L<API> that support standalone usage,
 and how they differ from system-dependent implementation.

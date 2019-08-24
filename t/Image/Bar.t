@@ -277,32 +277,33 @@ for my $alu ( @alu ) {
 	h_is($p->pixel(0,1), alx($bpp,$alu,$src,$dst), "i$bpp($alu).nop.1=F");
 }}
 
+sub test_bar_and_line
+{
+	my ($i, $clone, $msg) = @_;
+	my $bpp = $i->type & im::BPP;
+	my $j = $i->clone(%$clone);
+	$j->bar(0,0,$i->size);
+	$j->type(im::BW);
+	is_bytes( $j->data, ("\xff"x4).("\x89\x09\x09\x09").("\xff"x4), "bar $msg, bpp=$bpp");
+
+	$j = $i->clone(%$clone);
+	$j->line(0,1,32,1);
+	$j->type(im::BW);
+	is_bytes( $j->data, ("\xff"x4).("\x89\x09\x09\x09").("\xff"x4), "line $msg, bpp=$bpp");
+}
+
 my $r = Prima::Region->new( box => [ 1, 1, 30, 1 ]);
 for my $type ( im::BW, 4, im::Byte, 24 ) {
 	my $bpp = $type & im::BPP;
-	my $i = Prima::Image->new( size => [32, 3], type => $bpp, conversion => ict::None);
+	my $i = Prima::Icon->new( size => [32, 3], type => $bpp, conversion => ict::None, autoMasking => am::None);
 	$i->clear;
-	my %clone = (region => $r, fillPattern => [(0xF6) x 8]);
-	my $j = $i->clone(%clone, rop2 => rop::NoOper);
-	$j->bar(0,0,$i->size);
-	$j->type(im::BW);
-	is_bytes( $j->data, ("\xff"x4).("\x89\x09\x09\x09").("\xff"x4), "patshift/transparent, bpp=$bpp");
-	
-	$j = $i->clone( %clone, rop2 => rop::CopyPut);
-	$j->bar(0,0,$i->size);
-	$j->type(im::BW);
-	is_bytes( $j->data, ("\xff"x4).("\x89\x09\x09\x09").("\xff"x4), "patshift/opaque, bpp=$bpp");
+	my %clone = (region => $r, fillPattern => [(0xF6) x 8], linePattern => "\4\1\2\1");
+	test_bar_and_line($i, { %clone, rop2 => rop::NoOper }, "patshift/transparent" );
+	test_bar_and_line($i, { %clone, rop2 => rop::CopyPut }, "patshift/opaque" );
 
 	$clone{rop} = rop::alpha(rop::SrcCopy, 255);
-	$j = $i->clone( %clone, rop2 => rop::NoOper);
-	$j->bar(0,0,$i->size);
-	$j->type(im::BW);
-	is_bytes( $j->data, ("\xff"x4).("\x89\x09\x09\x09").("\xff"x4), "patshift/transparent, bpp=$bpp, alpha");
-	
-	$j = $i->clone( %clone, rop2 => rop::CopyPut);
-	$j->bar(0,0,$i->size);
-	$j->type(im::BW);
-	is_bytes( $j->data, ("\xff"x4).("\x89\x09\x09\x09").("\xff"x4), "patshift/opaque, bpp=$bpp, alpha");
+	test_bar_and_line($i, { %clone, rop2 => rop::NoOper }, "patshift/transparent alpha" );
+	test_bar_and_line($i, { %clone, rop2 => rop::CopyPut }, "patshift/opaque alpha" );
 }
 	
 done_testing;

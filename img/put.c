@@ -971,6 +971,15 @@ static dBLEND_FUNC(blend_dst_over)
 	}
 }
 
+/* sss */
+static dBLEND_FUNC(blend_src_copy)
+{
+	if ( src_inc )
+		memcpy( dst, src, bytes);
+	else
+		memset( dst, *src, bytes);
+}
+
 /* ddd */
 static dBLEND_FUNC(blend_dst_copy)
 {
@@ -1058,15 +1067,6 @@ static dBLEND_FUNC(blend_dst_atop)
 		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
-}
-
-/* sss */
-static dBLEND_FUNC(blend_src_copy)
-{
-	if ( src_inc )
-		memcpy( dst, src, bytes);
-	else
-		memset( dst, *src, bytes);
 }
 
 static BlendFunc* blend_functions[] = {
@@ -1172,14 +1172,35 @@ hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 			switch ( rec->bpp) {
 			case 8:
 			case 16:
-			case 24: if ( rec-> proc ) {
-				/* optimized multipixel set, for normal rops only */
+			case 24: {
+				/* optimized multipixel set */
 				int wn;
 				int w = rec->bytes, stride = rec->optimized_stride;
-				Byte * dst = rec->i->data + rec->i->lineSize * y + ((x1 < x2) ? x1 : x2) * w;
-				for ( wn = w * n; wn > 0; wn -= stride, dst += stride)
-					rec->proc( rec->ctx->color, dst,
-						( wn >= stride ) ? stride : wn);
+				int xx = (x1 < x2) ? x1 : x2;
+				Byte * dst = rec->i->data + rec->i->lineSize * y + xx * w;
+				Byte * mask = ( rec->blend && !rec->use_dst_alpha) ?
+					(rec->i->mask + rec->i->maskLine * y + xx) : NULL;
+				for ( wn = w * n; wn > 0; wn -= stride, dst += stride) {
+					int dw = ( wn >= stride ) ? stride : wn;
+					if ( rec->proc )
+						rec->proc( rec->ctx->color, dst, dw);
+					else {
+						rec->blend( rec->ctx->color, 1,
+							&rec->src_alpha, 0,
+							dst,
+							rec->use_dst_alpha ? &rec->dst_alpha : mask,
+							rec->use_dst_alpha ? 0 : 1,
+							dw);
+						if ( mask ) {
+							int dm = dw * 8 / rec->bpp;
+							rec->blend(
+								&rec->src_alpha, 0,
+								&rec->src_alpha, 0,
+								mask, mask, 1, dm);
+							mask += dm;
+						}
+					}
+				}
 				return;
 			}
 			default: {
@@ -1300,27 +1321,25 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 			rec.use_dst_alpha = true;
 			rec.dst_alpha = 0xff;
 		}
+		rec.proc = NULL;
 	} else {
 		rec.blend = NULL;
 		rec.proc = find_blt_proc(ctx->rop);
 	}
 	
 	/* colors; optimize 8 16 24 pixels for horizontal line memcpy */
-	if ( rec.solid && rec.proc )
+	if ( rec.solid )
 		rec.color = ctx->color;
 	switch ( rec.bpp ) {
 	case 8:
 		memset( ctx->color + 1, ctx->color[0], MAX_SIZEOF_PIXEL - 1);
-		memset( ctx->backColor + 1, ctx->backColor[0], MAX_SIZEOF_PIXEL - 1);
 		rec. optimized_stride = MAX_SIZEOF_PIXEL;
 		break;
 	case 16:
 	case 24: {
 		int b = rec.bpp / 8, n = MAX_SIZEOF_PIXEL / b, i;
-		for ( i = 1; i < n; i++) {
+		for ( i = 1; i < n; i++)
 			memcpy( ctx->color + i * b, ctx->color, b);
-			memcpy( ctx->backColor + i * b, ctx->backColor, b);
-		}
 		rec. optimized_stride = (MAX_SIZEOF_PIXEL / b) * b;
 		break;
 	}}

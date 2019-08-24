@@ -633,10 +633,10 @@ by the following formula:
 
    $dst = ( $src * $alpha + $dst * ( 255 - $alpha ) ) / 255
 
-Its brother function C<rop::alpha($rop, $src_alpha, $dst_alpha)> can be used for drawing on
+Its brother function C<rop::alpha($rop, $src_alpha[, $dst_alpha])> can be used for drawing on
 image outside begin_paint/end_paint:
 
-   $image->rop( rop::alpha( rop::SrcOver, 128, 80 ));
+   $image->rop( rop::alpha( rop::SrcOver, 128 ));
    $image->ellipse( 5, 5, 5, 5 );
 
 In addition to that, C<rop::AlphaCopy> operation is available for accessing

@@ -870,18 +870,18 @@ See L<Prima::Drawable/Raster operations>
 
 12 Porter-Duff operators
 
-        rop::Clear
-        rop::Xor
-        rop::SrcOver
-        rop::DstOver
-        rop::SrcCopy
-        rop::DstCopy
-        rop::SrcIn
-        rop::DstIn
-        rop::SrcOut
-        rop::DstOut
-        rop::SrcAtop
-        rop::DstAtop
+        rop::Clear       # = 0
+        rop::Xor         # = src ( 1 - dstA ) + dst ( 1 - srcA )
+        rop::SrcOver     # = src + dst (1 - srcA) 
+        rop::DstOver     # = dst + src (1 - dstA)
+        rop::SrcCopy     # = src
+        rop::DstCopy     # = dst
+        rop::SrcIn       # = src dstA
+        rop::DstIn       # = dst srcA
+        rop::SrcOut      # = src ( 1 - dstA )
+        rop::DstOut      # = dst ( 1 - srcA )
+        rop::SrcAtop     # = src dstA + dst ( 1 - srcA )
+        rop::DstAtop     # = dst srcA + src ( 1 - dstA )
 
         rop::PorterDuffMask - masks out all bits but the constants above
 
