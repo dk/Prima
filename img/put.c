@@ -1325,6 +1325,12 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 			rec.dst_alpha = 0xff;
 		}
 		rec.proc = NULL;
+
+		/* premultiply colors */
+		for ( j = 0; j < bpp / 8; j++) {
+			ctx->color[j] = (float)(ctx->color[j] * 255.0) / rec.src_alpha + .5;
+			ctx->backColor[j] = (float)(ctx->backColor[j] * 255.0) / rec.src_alpha + .5;
+		}
 	} else {
 		rec.blend = NULL;
 		rec.proc = find_blt_proc(ctx->rop);
@@ -1965,6 +1971,12 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		return false;
 	}
 	if ( use_dst_alpha ) adbuf[0] = dst_alpha;
+
+	/* premultiply colors */
+	for ( j = 0; j < bpp; j++) {
+		ctx->color[j] = (float)(ctx->color[j] * 255.0) / src_alpha + .5;
+		ctx->backColor[j] = (float)(ctx->backColor[j] * 255.0) / src_alpha + .5;
+	}
 
 	solid = (memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
 	if ( solid || !ctx->transparent ) {
