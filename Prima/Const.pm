@@ -49,12 +49,14 @@ sub blend($)
    return rop::DstAtop | rop::ConstantAlpha | ( $alpha << rop::SrcAlphaShift ) | ($alpha << rop::DstAlphaShift);
 }
 
-sub alpha($$)
+sub alpha($$;$)
 {
-   my ($rop, $alpha) = @_;
-   $alpha = 0 if $alpha < 0;
-   $alpha = 255 if $alpha > 255;
-   return $rop | rop::SrcAlpha | ( $alpha << rop::SrcAlphaShift );
+   my ($rop, $src_alpha, $dst_alpha) = @_;
+   $src_alpha = 0 if $src_alpha < 0;
+   $src_alpha = 255 if $src_alpha > 255;
+   my $ret = $rop | rop::SrcAlpha | ( $src_alpha << rop::SrcAlphaShift );
+   $ret |= rop::DstAlpha | ( $dst_alpha << rop::DstAlphaShift ) if defined $dst_alpha;
+   return $ret;
 }
 
 package
