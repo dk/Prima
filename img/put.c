@@ -1072,14 +1072,16 @@ static dBLEND_FUNC(blend_add)
 	}
 }
 
-/*  */
+/* sss * ((as < ad) ? 1 : (ad / as)) */
 static dBLEND_FUNC(blend_saturate)
 {
-	printf("%d %d\n", *src_a, *dst_a);
 	while ( bytes-- > 0 ) {
 		register int32_t sa = *src_a, da = 255 - *dst_a;
-		register int32_t s = *dst + (( sa <= da || sa == 0 ) ? *src :
-			((*src * da * 255 / sa + 127) >> 8));
+		register int32_t s = *dst + ( 
+			( sa <= da ) ? 
+				*src :
+				*src * da / sa
+		);
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
@@ -1087,14 +1089,14 @@ static dBLEND_FUNC(blend_saturate)
 	}
 }
 
-/*  */
+/*  dst * src + src * (255 - ad) + dst * (255 - as) */
 static dBLEND_FUNC(blend_multiply)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = *dst + *src + (((
-				((int32_t)(*src) << 8) * (255 - *dst_a) +
-				((int32_t)(*dst) << 8) * (255 - *src_a)
-			) / 255 + 127) >> 8);
+		register int32_t s = ((
+			((int32_t)(*dst) << 8) * (*src + 255 - *src_a) + 
+			((int32_t)(*src) << 8) * (255 - *dst_a)
+		) / 255 + 127 ) >> 8;
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
@@ -1102,15 +1104,17 @@ static dBLEND_FUNC(blend_multiply)
 	}
 }
 
-/*  */
+/* sss*(255-ad) + ddd*(255-as) + sss*ad + ddd*as - sss*ddd */
 static dBLEND_FUNC(blend_screen)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = 0;
+		register int32_t s = ((
+			((int32_t)(*src) << 8) * 255 +
+			((int32_t)(*dst) << 8) * (255 - *src)
+		) / 255 + 127) >> 8;
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1262,10 +1266,17 @@ static BlendFunc* blend_functions[] = {
 	blend_exclusion
 };
 
+static void
+find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blend2 )
+{
+	*blend1 = blend_functions[rop];
+	*blend2 = (rop >= ropScreen) ? blend_functions[ropMultiply] : blend_functions[rop];
+}
+
 typedef struct {
 	PIcon       i;
 	PBitBltProc proc;
-	BlendFunc*  blend;
+	BlendFunc  *blend1, *blend2;
 	Bool        solid, segment_is_fg, skip_pixel;
 	int         bpp, bytes, optimized_stride;
 	int         current_segment, segment_offset, n_segments;
@@ -1307,7 +1318,7 @@ setpixel( ImgHLineRec* rec, int x, int y)
 		if ( rec->proc)
 			rec->proc( rec->color, rec->i->data + rec->i->lineSize * y + x, 1);
 		else
-			rec->blend(
+			rec->blend1(
 				rec-> color, 0, &rec->src_alpha, 0,
 				rec->i->data + rec->i->lineSize * y + x,
 				rec->use_dst_alpha ? 
@@ -1319,7 +1330,7 @@ setpixel( ImgHLineRec* rec, int x, int y)
 		if ( rec->proc)
 			rec->proc( rec->color, rec->i->data + rec->i->lineSize * y + x * rec->bytes, rec->bytes);
 		else
-			rec->blend(
+			rec->blend1(
 				rec-> color, 0, &rec->src_alpha, 0,
 				rec->i->data + rec->i->lineSize * y + x * rec->bytes,
 				rec->use_dst_alpha ? 
@@ -1328,9 +1339,9 @@ setpixel( ImgHLineRec* rec, int x, int y)
 			);
 	}
 
-	if ( rec->blend && rec->is_icon ) {
+	if ( rec->blend2 && rec->is_icon ) {
 		Byte * a = rec->i->mask + rec->i->maskLine * y + x;
-		rec->blend( &rec->src_alpha, 0, &rec->src_alpha, 0, (Byte*)a, a, 0, 1);
+		rec->blend2( &rec->src_alpha, 0, &rec->src_alpha, 0, (Byte*)a, a, 0, 1);
 	}
 }
 
@@ -1356,7 +1367,7 @@ hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 				int w = rec->bytes, stride = rec->optimized_stride;
 				int xx = (x1 < x2) ? x1 : x2;
 				Byte * dst = rec->i->data + rec->i->lineSize * y + xx * w;
-				Byte * mask = ( rec->blend && !rec->use_dst_alpha) ?
+				Byte * mask = ( rec->blend1 && !rec->use_dst_alpha) ?
 					(rec->i->mask + rec->i->maskLine * y + xx) : NULL;
 				for ( wn = w * n; wn > 0; wn -= stride, dst += stride) {
 					int dw = ( wn >= stride ) ? stride : wn;
@@ -1368,13 +1379,13 @@ hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 							int bp = rec->bpp / 8;
 							int dm = dw / bp;
 							fill_alpha_buf( mask_buf, mask, dm, bp);
-							rec->blend(
+							rec->blend2(
 								&rec->src_alpha, 0,
 								&rec->src_alpha, 0,
 								mask, mask, 1, dm);
 							mask += dm;
 						}
-						rec->blend( rec->ctx->color, 1,
+						rec->blend1( rec->ctx->color, 1,
 							&rec->src_alpha, 0,
 							dst,
 							mask ? mask_buf : &rec->dst_alpha,
@@ -1468,7 +1479,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		}
 		rop &= ropPorterDuffMask;
 		if ( rop > ropMaxPDFunc || rop < 0 ) return false;
-		rec.blend = blend_functions[rop];
+		find_blend_proc( rop, &rec.blend1, &rec.blend2 );
 		rec.is_icon = kind_of( dest, CIcon );
 
 		/* align types and geometry - can only operate over imByte and imRGB */
@@ -1510,7 +1521,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 			ctx->backColor[j] = (float)(ctx->backColor[j] * 255.0) / rec.src_alpha + .5;
 		}
 	} else {
-		rec.blend = NULL;
+		rec.blend1 = rec.blend2 = NULL;
 		rec.proc = find_blt_proc(ctx->rop);
 	}
 	
@@ -1702,7 +1713,7 @@ typedef struct {
 	Bool use_dst_alpha;
 	Byte * asbuf;
 	Byte * adbuf;
-	BlendFunc * blend_func;
+	BlendFunc * blend1, * blend2;
 } ImgPutAlphaCallbackRec;
 
 static void
@@ -1742,7 +1753,7 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 		} else
 			adbuf_ptr = ptr->adbuf;
 
-		ptr->blend_func(
+		ptr->blend1(
 			s_ptr, 1,
 			asbuf_ptr, ptr->use_src_alpha ? 0 : 1,
 			d_ptr,
@@ -1750,14 +1761,14 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 			bytes);
 		if (a) {
 			if ( ptr->use_src_alpha )
-				ptr->blend_func(
+				ptr->blend2(
 					ptr->asbuf, 0,
 					ptr->asbuf, 0,
 					(Byte*)a_ptr,
 					a_ptr, ptr->use_dst_alpha ? 0 : 1,
 					w);
 			else
-				ptr->blend_func(
+				ptr->blend2(
 					m_ptr, 1,
 					m_ptr, 1,
 					(Byte*)a_ptr,
@@ -1928,8 +1939,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 			use_dst_alpha : use_dst_alpha,
 			asbuf         : asbuf,
 			adbuf         : adbuf,
-			blend_func    : blend_functions[rop]
 		};
+		find_blend_proc(rop, &rec.blend1, &rec.blend2);
 		region_foreach( region,
 			dstX, dstY, dstW, dstH,
 			(RegionCallbackFunc*)img_put_alpha_single, &rec
@@ -1949,7 +1960,7 @@ typedef struct {
 	Bool use_dst_alpha, solid;
 	Byte src_alpha;
 	PImgPaintContext ctx;
-	BlendFunc * blend_func;
+	BlendFunc * blend1, * blend2;
 } ImgBarAlphaCallbackRec;
 
 static void
@@ -1988,7 +1999,7 @@ img_bar_alpha_single_opaque( int x, int y, int w, int h, ImgBarAlphaCallbackRec 
 			adbuf_ptr = ptr->adbuf;
 
 		while ( bytes > 0 ) {
-			ptr->blend_func(
+			ptr->blend1(
 				s_ptr, 1,
 				&ptr->src_alpha, 0,
 				d_ptr,
@@ -2000,7 +2011,7 @@ img_bar_alpha_single_opaque( int x, int y, int w, int h, ImgBarAlphaCallbackRec 
 		d += dls;
 
 		if ( a ) {
-			ptr->blend_func(
+			ptr->blend2(
 				&ptr->src_alpha, 0,
 				&ptr->src_alpha, 0,
 				(Byte*)a,
@@ -2037,13 +2048,13 @@ img_bar_alpha_single_transparent( int x, int y, int w, int h, ImgBarAlphaCallbac
 			adbuf_ptr = ptr->adbuf;
 
 		if ( pat == 0xff && bpp == 1) {
-			ptr->blend_func(
+			ptr->blend1(
 				ptr->ctx->color, 0,
 				&ptr->src_alpha, 0,
 				(Byte*)d,
 				adbuf_ptr, ptr->use_dst_alpha ? 0 : 1,
 				blt_bytes);
-			if ( a ) ptr->blend_func(
+			if ( a ) ptr->blend2(
 				&ptr->src_alpha, 0,
 				&ptr->src_alpha, 0,
 				(Byte*)a,
@@ -2059,13 +2070,13 @@ img_bar_alpha_single_transparent( int x, int y, int w, int h, ImgBarAlphaCallbac
 			j++
 		) {
 			if ( pat & (0x80 >> (j % 8)) ) {
-				ptr->blend_func(
+				ptr->blend1(
 					ptr->ctx->color, 0,
 					&ptr->src_alpha, 0,
 					d_ptr,
 					adbuf_ptr2, ptr->use_dst_alpha ? 0 : 1,
 					bpp);
-				if ( a ) ptr->blend_func(
+				if ( a ) ptr->blend2(
 					&ptr->src_alpha, 0,
 					&ptr->src_alpha, 0,
 					a_ptr,
@@ -2225,8 +2236,8 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			step          : blt_step,
 			solid         : solid,
 			pat_x_offset  : x,
-			blend_func    : blend_functions[ctx->rop]
 		};
+		find_blend_proc(ctx->rop, &rec.blend1, &rec.blend2);
 		region_foreach( ctx->region, x, y, w, h,
 			( RegionCallbackFunc *)((solid || !ctx->transparent) ?
 				img_bar_alpha_single_opaque : img_bar_alpha_single_transparent),
