@@ -929,13 +929,12 @@ typedef dBLEND_FUNC(BlendFunc);
 static dBLEND_FUNC(blend_src_over)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s =
+		register int32_t s = (
 				((int32_t)(*src) << 8 ) +
 				((int32_t)(*dst) << 8) * (255 - *src_a) / 255
-				+ 127;
+				+ 127) >> 8;
 		src += src_inc;
 		src_a += src_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -944,14 +943,13 @@ static dBLEND_FUNC(blend_src_over)
 static dBLEND_FUNC(blend_xor)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = (
+		register int32_t s = ((
 				((int32_t)(*src) << 8) * (255 - *dst_a) +
 				((int32_t)(*dst)   << 8) * (255 - *src_a)
-			) / 255 + 127;
+			) / 255 + 127) >> 8;
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -960,13 +958,12 @@ static dBLEND_FUNC(blend_xor)
 static dBLEND_FUNC(blend_dst_over)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s =
+		register int32_t s = (
 				((int32_t)(*dst) << 8 ) +
 				((int32_t)(*src) << 8) * (255 - *dst_a) / 255
-				+ 127;
-		src++;
+				+ 127) >> 8;
+		src += src_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -995,10 +992,9 @@ static dBLEND_FUNC(blend_clear)
 static dBLEND_FUNC(blend_src_in)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = (((int32_t)(*src) << 8) * *dst_a) / 255 + 127;
-		src++;
+		register int32_t s = ((((int32_t)(*src) << 8) * *dst_a) / 255 + 127) >> 8;
+		src += src_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1007,9 +1003,8 @@ static dBLEND_FUNC(blend_src_in)
 static dBLEND_FUNC(blend_dst_in)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t d = (((int32_t)(*dst) << 8) * *src_a) / 255 + 127;
+		register int32_t d = ((((int32_t)(*dst) << 8) * *src_a) / 255 + 127) >> 8;
 		src_a += src_a_inc;
-		d >>= 8;
 		*dst++ = ( d > 255 ) ? 255 : d;
 	}
 }
@@ -1018,10 +1013,9 @@ static dBLEND_FUNC(blend_dst_in)
 static dBLEND_FUNC(blend_src_out)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = (((int32_t)(*src) << 8) * ( 255 - *dst_a)) / 255 + 127;
-		src++;
+		register int32_t s = ((((int32_t)(*src) << 8) * ( 255 - *dst_a)) / 255 + 127) >> 8;
+		src += src_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1030,9 +1024,10 @@ static dBLEND_FUNC(blend_src_out)
 static dBLEND_FUNC(blend_dst_out)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t d = (((int32_t)(*dst) << 8) * ( 255 - *src_a)) / 255 + 127;
+		register int32_t d = (
+			(((int32_t)(*dst) << 8) * ( 255 - *src_a)) / 255
+			+ 127) >> 8;
 		src_a += src_a_inc;
-		d >>= 8;
 		*dst++ = ( d > 255 ) ? 255 : d;
 	}
 }
@@ -1041,11 +1036,10 @@ static dBLEND_FUNC(blend_dst_out)
 static dBLEND_FUNC(blend_src_atop)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = (
+		register int32_t s = ((
 			((int32_t)(*src) << 8) * *dst_a +
 			((int32_t)(*dst) << 8) * (255 - *src_a)
-		) / 255 + 127;
-		s >>= 8;
+		) / 255 + 127) >> 8;
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
@@ -1057,11 +1051,181 @@ static dBLEND_FUNC(blend_src_atop)
 static dBLEND_FUNC(blend_dst_atop)
 {
 	while ( bytes-- > 0 ) {
-		register int32_t s = (
+		register int32_t s = ((
 			((int32_t)(*src) << 8) * (255 - *dst_a) +
 			((int32_t)(*dst) << 8) * *src_a
-		) / 255 + 127;
-		src++;
+		) / 255 + 127) >> 8;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/* sss + ddd */
+static dBLEND_FUNC(blend_add)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = *src + *dst;
+		src += src_inc;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_saturate)
+{
+	printf("%d %d\n", *src_a, *dst_a);
+	while ( bytes-- > 0 ) {
+		register int32_t sa = *src_a, da = 255 - *dst_a;
+		register int32_t s = *dst + (( sa <= da || sa == 0 ) ? *src :
+			((*src * da * 255 / sa + 127) >> 8));
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_multiply)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = *dst + *src + (((
+				((int32_t)(*src) << 8) * (255 - *dst_a) +
+				((int32_t)(*dst) << 8) * (255 - *src_a)
+			) / 255 + 127) >> 8);
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_screen)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = 0;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		s >>= 8;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+
+/*  */
+static dBLEND_FUNC(blend_overlay)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = 0;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		s >>= 8;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_darken)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = 0;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		s >>= 8;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_lighten)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = 0;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		s >>= 8;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_color_dodge)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = 0;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		s >>= 8;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_color_burn)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = 0;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		s >>= 8;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_hard_light)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = 0;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		s >>= 8;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_soft_light)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = 0;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		s >>= 8;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_difference)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = 0;
+		src += src_inc;
+		src_a += src_a_inc;
+		dst_a += dst_a_inc;
+		s >>= 8;
+		*dst++ = ( s > 255 ) ? 255 : s;
+	}
+}
+
+/*  */
+static dBLEND_FUNC(blend_exclusion)
+{
+	while ( bytes-- > 0 ) {
+		register int32_t s = 0;
+		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
 		s >>= 8;
@@ -1081,7 +1245,21 @@ static BlendFunc* blend_functions[] = {
 	blend_src_out,
 	blend_dst_out,
 	blend_src_atop,
-	blend_dst_atop
+	blend_dst_atop,
+	blend_add,
+	blend_saturate,
+	blend_multiply,
+	blend_dst_copy,
+	blend_screen,
+	blend_overlay,
+	blend_darken,
+	blend_lighten,
+	blend_color_dodge,
+	blend_color_burn,
+	blend_hard_light,
+	blend_soft_light,
+	blend_difference,
+	blend_exclusion
 };
 
 typedef struct {
@@ -1289,7 +1467,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 			rec.dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
 		}
 		rop &= ropPorterDuffMask;
-		if ( rop > ropDstAtop || rop < 0 ) return false;
+		if ( rop > ropMaxPDFunc || rop < 0 ) return false;
 		rec.blend = blend_functions[rop];
 		rec.is_icon = kind_of( dest, CIcon );
 
@@ -1613,7 +1791,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
 	}
 	rop &= ropPorterDuffMask;
-	if ( rop > ropDstAtop || rop < 0 ) return false;
+	if ( rop > ropMaxPDFunc || rop < 0 ) return false;
 
 	/* align types and geometry - can only operate over imByte and imRGB */
 	bpp = (( PImage(src)->type & imGrayScale) && ( PImage(dest)->type & imGrayScale)) ? imByte : imRGB;
@@ -1949,7 +2127,7 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 		dst_alpha = (ctx->rop >> ropDstAlphaShift) & 0xff;
 	}
 	ctx->rop &= ropPorterDuffMask;
-	if ( ctx->rop > ropDstAtop || ctx->rop < 0 ) ctx->rop = ropSrcOver;
+	if ( ctx->rop > ropMaxPDFunc || ctx->rop < 0 ) ctx->rop = ropSrcOver;
 
 	/* assign pointers */
 	bpp = ( bpp == imByte ) ? 1 : 3;

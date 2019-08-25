@@ -2646,12 +2646,28 @@ typedef enum {
 	ropDstOut,
 	ropSrcAtop,
 	ropDstAtop,
+	/* and their extensions, photoshop blend modes */
+	ropAdd,
+	ropSaturate,
+	ropMultiply,
+	ropNoOper2 = ropNoOper,
+	ropScreen,
+	ropOverlay,
+	ropDarken,
+	ropLighten,
+	ropColorDodge,
+	ropColorBurn,
+	ropHardLight,
+	ropSoftLight,
+	ropDifference,
+	ropExclusion,
+	ropMaxPDFunc = ropExclusion,
 
 	/* 8-bit standalone alpha */
 	ropAlphaCopy          = 0x0000100,
 
 	/* extensions for Prima's own Image.put */
-	ropPorterDuffMask     = 0x000000F,
+	ropPorterDuffMask     = 0x000001F,
 	ropSrcAlpha           = 0x1000000,
 	ropSrcAlphaShift      = 8,
 	ropDstAlpha           = 0x2000000,
@@ -2674,6 +2690,10 @@ ROP(NotSrcXor) ROP(NotDestXor)
 ROP(SrcOver) ROP(SrcCopy) ROP(SrcIn) ROP(SrcOut) ROP(SrcAtop)
 ROP(DstOver) ROP(DstCopy) ROP(DstIn) ROP(DstOut) ROP(DstAtop)
 ROP(Xor) ROP(Clear)
+	
+ROP(Add) ROP(Saturate) ROP(Multiply) ROP(Screen) ROP(Overlay)
+ROP(Darken) ROP(Lighten) ROP(ColorDodge) ROP(ColorBurn)
+ROP(HardLight) ROP(SoftLight) ROP(Difference) ROP(Exclusion)
 
 ROP(SrcAlpha) ROP(SrcAlphaShift)
 ROP(DstAlpha) ROP(DstAlphaShift)
