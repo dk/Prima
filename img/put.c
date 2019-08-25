@@ -922,51 +922,26 @@ fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp)
 	Byte * dst, \
 	const Byte * dst_a, const Byte dst_a_inc,\
 	int bytes)
+#define dBLEND_FUNCx(name,expr) \
+static dBLEND_FUNC(name) \
+{ \
+	while(bytes-- > 0) { \
+	register int32_t s = (((expr) + 127) >> 8);\
+	*dst++ = ( s > 255 ) ? 255 : s;\
+	src += src_inc;\
+	src_a += src_a_inc;\
+	dst_a += dst_a_inc;\
+}}
 
 typedef dBLEND_FUNC(BlendFunc);
 
-/* sss + (ddd * (255 - as)) / 255 */
-static dBLEND_FUNC(blend_src_over)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = (
-				((int32_t)(*src) << 8 ) +
-				((int32_t)(*dst) << 8) * (255 - *src_a) / 255
-				+ 127) >> 8;
-		src += src_inc;
-		src_a += src_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
-
-/* (sss * (255 - ad) + ddd * (255 - as)) / 255 */
-static dBLEND_FUNC(blend_xor)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = ((
-				((int32_t)(*src) << 8) * (255 - *dst_a) +
-				((int32_t)(*dst)   << 8) * (255 - *src_a)
-			) / 255 + 127) >> 8;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
-
-/* sss * (255 - ad) / 255 + ddd */
-static dBLEND_FUNC(blend_dst_over)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = (
-				((int32_t)(*dst) << 8 ) +
-				((int32_t)(*src) << 8) * (255 - *dst_a) / 255
-				+ 127) >> 8;
-		src += src_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
+#define UP(x) ((int32_t)(x) << 8 )
+#define S (*src)
+#define D (*dst)
+#define SA (*src_a)
+#define DA (*dst_a)
+#define INVSA (255 - *src_a)
+#define INVDA (255 - *dst_a)
 
 /* sss */
 static dBLEND_FUNC(blend_src_copy)
@@ -988,79 +963,15 @@ static dBLEND_FUNC(blend_clear)
 	memset( dst, 0, bytes);
 }
 
-/* sss * ad / 255 */
-static dBLEND_FUNC(blend_src_in)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = ((((int32_t)(*src) << 8) * *dst_a) / 255 + 127) >> 8;
-		src += src_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
-
-/* ddd * as / 255 */
-static dBLEND_FUNC(blend_dst_in)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t d = ((((int32_t)(*dst) << 8) * *src_a) / 255 + 127) >> 8;
-		src_a += src_a_inc;
-		*dst++ = ( d > 255 ) ? 255 : d;
-	}
-}
-
-/* sss * (255 - ad) / 255 */
-static dBLEND_FUNC(blend_src_out)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = ((((int32_t)(*src) << 8) * ( 255 - *dst_a)) / 255 + 127) >> 8;
-		src += src_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
-
-/* ddd * (255 - as) / 255 */
-static dBLEND_FUNC(blend_dst_out)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t d = (
-			(((int32_t)(*dst) << 8) * ( 255 - *src_a)) / 255
-			+ 127) >> 8;
-		src_a += src_a_inc;
-		*dst++ = ( d > 255 ) ? 255 : d;
-	}
-}
-
-/* (sss * ad + ddd * (255 - as)) / 255 */
-static dBLEND_FUNC(blend_src_atop)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = ((
-			((int32_t)(*src) << 8) * *dst_a +
-			((int32_t)(*dst) << 8) * (255 - *src_a)
-		) / 255 + 127) >> 8;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
-
-/* (sss * (255 - ad) + ddd * as) / 255 */
-static dBLEND_FUNC(blend_dst_atop)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = ((
-			((int32_t)(*src) << 8) * (255 - *dst_a) +
-			((int32_t)(*dst) << 8) * *src_a
-		) / 255 + 127) >> 8;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
+dBLEND_FUNCx(blend_src_over,  UP(S) + UP(D) * INVSA / 255)
+dBLEND_FUNCx(blend_xor,      (UP(S) * INVDA + UP(D) * INVSA) / 255)
+dBLEND_FUNCx(blend_dst_over,  UP(D) + UP(S) * INVDA / 255)
+dBLEND_FUNCx(blend_src_in,    UP(S) * DA / 255)
+dBLEND_FUNCx(blend_dst_in,    UP(D) * SA / 255)
+dBLEND_FUNCx(blend_src_out,   UP(S) * INVDA / 255)
+dBLEND_FUNCx(blend_dst_out,   UP(D) * INVSA / 255)
+dBLEND_FUNCx(blend_src_atop, (UP(S) * DA + UP(D) * INVSA) / 255)
+dBLEND_FUNCx(blend_dst_atop, (UP(D) * SA + UP(S) * INVDA) / 255)
 
 /* sss + ddd */
 static dBLEND_FUNC(blend_add)
@@ -1089,49 +1000,13 @@ static dBLEND_FUNC(blend_saturate)
 	}
 }
 
-/*  dst * src + src * (255 - ad) + dst * (255 - as) */
-static dBLEND_FUNC(blend_multiply)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = ((
-			((int32_t)(*dst) << 8) * (*src + 255 - *src_a) + 
-			((int32_t)(*src) << 8) * (255 - *dst_a)
-		) / 255 + 127 ) >> 8;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
-
-/* sss*(255-ad) + ddd*(255-as) + sss*ad + ddd*as - sss*ddd */
-static dBLEND_FUNC(blend_screen)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = ((
-			((int32_t)(*src) << 8) * 255 +
-			((int32_t)(*dst) << 8) * (255 - *src)
-		) / 255 + 127) >> 8;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
-
-
-/*  */
-static dBLEND_FUNC(blend_overlay)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = 0;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		s >>= 8;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
+dBLEND_FUNCx(blend_multiply, (UP(D) * (S + INVSA) + UP(S) * INVDA) / 255)
+dBLEND_FUNCx(blend_screen,   (UP(S) * 255 + UP(D) * (255 - S)) / 255)
+dBLEND_FUNCx(blend_overlay,  (UP(S) * INVDA + UP(D) * INVSA + 
+	((2 * D < DA) ? 
+		(2 * UP(D) * S) : 
+		(UP(SA) * DA - UP(2) * (DA-D) * (SA-S)) 
+	))/255)
 
 /*  */
 static dBLEND_FUNC(blend_darken)
@@ -1141,7 +1016,6 @@ static dBLEND_FUNC(blend_darken)
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1154,7 +1028,6 @@ static dBLEND_FUNC(blend_lighten)
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1167,7 +1040,6 @@ static dBLEND_FUNC(blend_color_dodge)
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1180,7 +1052,6 @@ static dBLEND_FUNC(blend_color_burn)
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1193,7 +1064,6 @@ static dBLEND_FUNC(blend_hard_light)
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1206,7 +1076,6 @@ static dBLEND_FUNC(blend_soft_light)
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1219,7 +1088,6 @@ static dBLEND_FUNC(blend_difference)
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
@@ -1232,7 +1100,6 @@ static dBLEND_FUNC(blend_exclusion)
 		src += src_inc;
 		src_a += src_a_inc;
 		dst_a += dst_a_inc;
-		s >>= 8;
 		*dst++ = ( s > 255 ) ? 255 : s;
 	}
 }
