@@ -885,6 +885,22 @@ See L<Prima::Drawable/Raster operations>
 
         rop::PorterDuffMask - masks out all bits but the constants above
 
+Photoshop operators
+
+	rop::Add
+	rop::Saturate
+	rop::Multiply
+	rop::Screen
+	rop::Overlay
+	rop::Darken
+	rop::Lighten
+	rop::ColorDodge
+	rop::ColorBurn
+	rop::HardLight
+	rop::SoftLight
+	rop::Difference
+	rop::Exclusion
+
 Constant alpha flags
 
         rop::SrcAlpha

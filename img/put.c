@@ -922,20 +922,29 @@ fill_alpha_buf( Byte * dst, Byte * src, int width, int bpp)
 	Byte * dst, \
 	const Byte * dst_a, const Byte dst_a_inc,\
 	int bytes)
-#define dBLEND_FUNCx(name,expr) \
-static dBLEND_FUNC(name) \
-{ \
-	while(bytes-- > 0) { \
-	register int32_t s = (((expr) + 127) >> 8);\
+
+#define dVAL(x) register int32_t s = x
+#define STORE \
 	*dst++ = ( s > 255 ) ? 255 : s;\
 	src += src_inc;\
 	src_a += src_a_inc;\
-	dst_a += dst_a_inc;\
-}}
+	dst_a += dst_a_inc
+#define BLEND_LOOP while(bytes-- > 0)
+
+#define UP(x) ((int32_t)(x) << 8 )
+#define DOWN(expr) (((expr) + 127) >> 8)
+
+#define dBLEND_FUNCx(name,expr) \
+static dBLEND_FUNC(name) \
+{ \
+	BLEND_LOOP {\
+		dVAL(DOWN(expr));\
+		STORE;\
+	}\
+}
 
 typedef dBLEND_FUNC(BlendFunc);
 
-#define UP(x) ((int32_t)(x) << 8 )
 #define S (*src)
 #define D (*dst)
 #define SA (*src_a)
@@ -976,133 +985,117 @@ dBLEND_FUNCx(blend_dst_atop, (UP(D) * SA + UP(S) * INVDA) / 255)
 /* sss + ddd */
 static dBLEND_FUNC(blend_add)
 {
-	while ( bytes-- > 0 ) {
-		register int32_t s = *src + *dst;
-		src += src_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
+	BLEND_LOOP {
+		dVAL(S + D);
+		STORE;
 	}
 }
 
 /* sss * ((as < ad) ? 1 : (ad / as)) */
 static dBLEND_FUNC(blend_saturate)
 {
-	while ( bytes-- > 0 ) {
+	BLEND_LOOP {
 		register int32_t sa = *src_a, da = 255 - *dst_a;
-		register int32_t s = *dst + ( 
-			( sa <= da ) ? 
-				*src :
-				*src * da / sa
-		);
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
+		dVAL( D + ( sa <= da ) ? S : S * da / sa);
+		STORE;
 	}
 }
 
 dBLEND_FUNCx(blend_multiply, (UP(D) * (S + INVSA) + UP(S) * INVDA) / 255)
 dBLEND_FUNCx(blend_screen,   (UP(S) * 255 + UP(D) * (255 - S)) / 255)
-dBLEND_FUNCx(blend_overlay,  (UP(S) * INVDA + UP(D) * INVSA + 
-	((2 * D < DA) ? 
-		(2 * UP(D) * S) : 
-		(UP(SA) * DA - UP(2) * (DA-D) * (SA-S)) 
-	))/255)
 
-/*  */
+#define SEPARABLE(f) (UP(S) * INVDA + UP(D) * INVSA + (f))/255
+dBLEND_FUNCx(blend_overlay, SEPARABLE(
+	(2 * D < DA) ?
+		(2 * UP(D) * S) :
+		(UP(SA) * DA - UP(2) * (DA - D) * (SA - S)) 
+	))
+
 static dBLEND_FUNC(blend_darken)
 {
-	while ( bytes-- > 0 ) {
-		register int32_t s = 0;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
+	BLEND_LOOP {
+		register int32_t ss = UP(S) * DA;
+		register int32_t dd = UP(D) * SA;
+		dVAL(DOWN(SEPARABLE((ss > dd) ? dd : ss)));
+		STORE;
 	}
 }
 
-/*  */
 static dBLEND_FUNC(blend_lighten)
 {
-	while ( bytes-- > 0 ) {
-		register int32_t s = 0;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
+	BLEND_LOOP {
+		register int32_t ss = UP(S) * DA;
+		register int32_t dd = UP(D) * SA;
+		dVAL(DOWN(SEPARABLE((ss > dd) ? ss : dd)));
+		STORE;
 	}
 }
 
-/*  */
 static dBLEND_FUNC(blend_color_dodge)
 {
-	while ( bytes-- > 0 ) {
-		register int32_t s = 0;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
+	BLEND_LOOP {
+		register int32_t s;
+		if ( S >= SA ) {
+			s = D ? UP(SA) * DA : 0;
+		} else {
+			register int32_t dodge = D * SA / (SA - S);
+			s = UP(SA) * ((DA < dodge) ? DA : dodge);
+		}
+		s = DOWN(SEPARABLE(s));
+		STORE;
 	}
 }
 
-/*  */
 static dBLEND_FUNC(blend_color_burn)
 {
-	while ( bytes-- > 0 ) {
-		register int32_t s = 0;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
+	BLEND_LOOP {
+		register int32_t s;
+		if ( S == 0 ) {
+			s = (D < DA) ? 0 : UP(SA) * DA;
+		} else {
+			register int32_t burn = (DA - D) * SA / S;
+			s = (DA < burn) ? 0 : UP(SA) * (DA - burn);
+		}
+		s = DOWN(SEPARABLE(s));
+		STORE;
 	}
 }
 
-/*  */
-static dBLEND_FUNC(blend_hard_light)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = 0;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
+dBLEND_FUNCx(blend_hard_light, SEPARABLE(
+	(2 * S < SA) ?
+		(2 * UP(D) * S) :
+		(UP(SA) * DA - UP(2) * (DA - D) * (SA - S)) 
+	))
 
-/*  */
 static dBLEND_FUNC(blend_soft_light)
 {
-	while ( bytes-- > 0 ) {
-		register int32_t s = 0;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
+	BLEND_LOOP {
+		register int32_t s;
+		if ( 2 * S < SA ) {
+			s = DA ? D * (UP(SA) - UP(DA - D) * (SA - 2 * S) / DA ) : 0;
+		} else if (DA == 0) {
+			s = 0;
+		} else if (4 * D <= DA) {
+			s = D * (UP(SA) + (2 * S - SA) * ((UP(16) * D / DA - UP(12)) * D / DA + UP(3)));
+		} else {
+			s = 256 * (D * SA + (sqrt(D * DA) - D) * (2 * SA - S));
+		}
+		s = DOWN(SEPARABLE(s));
+		STORE;
 	}
 }
 
-/*  */
 static dBLEND_FUNC(blend_difference)
 {
-	while ( bytes-- > 0 ) {
-		register int32_t s = 0;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
+	BLEND_LOOP {
+		dVAL(UP(D) * SA - UP(S) * DA);
+		if ( s < 0 ) s = -s;
+		s = DOWN(SEPARABLE(s));
+		STORE;
 	}
 }
 
-/*  */
-static dBLEND_FUNC(blend_exclusion)
-{
-	while ( bytes-- > 0 ) {
-		register int32_t s = 0;
-		src += src_inc;
-		src_a += src_a_inc;
-		dst_a += dst_a_inc;
-		*dst++ = ( s > 255 ) ? 255 : s;
-	}
-}
+dBLEND_FUNCx(blend_exclusion, SEPARABLE( UP(S) * (DA - 2 * D) + UP(D) * SA ));
 
 static BlendFunc* blend_functions[] = {
 	blend_src_over,
