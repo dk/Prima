@@ -591,24 +591,26 @@ C<put_image> and C<stretch_image> can only use C<rop::SrcCopy> and C<rop::SrcOve
 raster operations on OS-provided surfaces.
 
 Additionally, Prima implements extra features for compositing on images outside the
-begin_paint/end_paint brackets. It supports the following 12 Porter-Duff operators:
+begin_paint/end_paint brackets. It supports the following 12 Porter-Duff operators
+and some selected Photoshop blend operators:
 
 =for podview <img src="rop2.gif" cut=1 >
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop2.gif"><!--
 
-   rop::Clear
-   rop::Xor
-   rop::SrcOver
-   rop::DstOver
-   rop::SrcCopy
-   rop::DstCopy
-   rop::SrcIn
-   rop::DstIn
-   rop::SrcOut
-   rop::DstOut
-   rop::SrcAtop
-   rop::DstAtop
+   rop::Clear            rop::Add
+   rop::Xor              rop::Saturate
+   rop::SrcOver          rop::Multiply
+   rop::DstOver          rop::Screen
+   rop::SrcCopy          rop::Overlay
+   rop::DstCopy          rop::Darken
+   rop::SrcIn            rop::Lighten
+   rop::DstIn            rop::ColorDodge
+   rop::SrcOut           rop::ColorBurn
+   rop::DstOut           rop::HardLight
+   rop::SrcAtop          rop::SoftLight
+   rop::DstAtop          rop::Difference
+                         rop::Exclusion
 
 =for html -->
 
