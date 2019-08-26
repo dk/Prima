@@ -594,9 +594,14 @@ Additionally, Prima implements extra features for compositing on images outside 
 begin_paint/end_paint brackets. It supports the following 12 Porter-Duff operators
 and some selected Photoshop blend operators:
 
-=for podview <img src="rop2.gif" cut=1 >
+=for podview 
+ <img src="rop2.gif" cut=1>
+ <img src="rop3.png" cut=1>
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop2.gif"><!--
+=for html <p>
+<img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop2.gif">
+<img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop3.png">
+<!--
 
    rop::Clear            rop::Add
    rop::Xor              rop::Multiply
