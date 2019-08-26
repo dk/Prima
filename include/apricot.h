@@ -2648,10 +2648,9 @@ typedef enum {
 	ropDstAtop,
 	/* and their extensions, photoshop blend modes */
 	ropAdd,
-	ropSaturate,
 	ropMultiply,
-	ropNoOper2 = ropNoOper,
 	ropScreen,
+	ropNoOper2 = ropNoOper,
 	ropOverlay,
 	ropDarken,
 	ropLighten,
@@ -2691,7 +2690,7 @@ ROP(SrcOver) ROP(SrcCopy) ROP(SrcIn) ROP(SrcOut) ROP(SrcAtop)
 ROP(DstOver) ROP(DstCopy) ROP(DstIn) ROP(DstOut) ROP(DstAtop)
 ROP(Xor) ROP(Clear)
 	
-ROP(Add) ROP(Saturate) ROP(Multiply) ROP(Screen) ROP(Overlay)
+ROP(Add) ROP(Multiply) ROP(Screen) ROP(Overlay)
 ROP(Darken) ROP(Lighten) ROP(ColorDodge) ROP(ColorBurn)
 ROP(HardLight) ROP(SoftLight) ROP(Difference) ROP(Exclusion)
 

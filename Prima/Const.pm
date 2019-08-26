@@ -49,13 +49,18 @@ sub blend($)
    return rop::DstAtop | rop::ConstantAlpha | ( $alpha << rop::SrcAlphaShift ) | ($alpha << rop::DstAlphaShift);
 }
 
-sub alpha($$;$)
+sub alpha($;$$)
 {
    my ($rop, $src_alpha, $dst_alpha) = @_;
+   $src_alpha //= 255;
    $src_alpha = 0 if $src_alpha < 0;
    $src_alpha = 255 if $src_alpha > 255;
    my $ret = $rop | rop::SrcAlpha | ( $src_alpha << rop::SrcAlphaShift );
-   $ret |= rop::DstAlpha | ( $dst_alpha << rop::DstAlphaShift ) if defined $dst_alpha;
+   if (defined $dst_alpha) {
+      $dst_alpha = 0 if $dst_alpha < 0;
+      $dst_alpha = 255 if $dst_alpha > 255;
+      $ret |= rop::DstAlpha | ( $dst_alpha << rop::DstAlphaShift );
+   }
    return $ret;
 }
 
@@ -888,7 +893,6 @@ See L<Prima::Drawable/Raster operations>
 Photoshop operators
 
 	rop::Add
-	rop::Saturate
 	rop::Multiply
 	rop::Screen
 	rop::Overlay

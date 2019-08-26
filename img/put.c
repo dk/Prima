@@ -991,16 +991,6 @@ static dBLEND_FUNC(blend_add)
 	}
 }
 
-/* sss * ((as < ad) ? 1 : (ad / as)) */
-static dBLEND_FUNC(blend_saturate)
-{
-	BLEND_LOOP {
-		register int32_t sa = *src_a, da = 255 - *dst_a;
-		dVAL( D + ( sa <= da ) ? S : S * da / sa);
-		STORE;
-	}
-}
-
 dBLEND_FUNCx(blend_multiply, (UP(D) * (S + INVSA) + UP(S) * INVDA) / 255)
 dBLEND_FUNCx(blend_screen,   (UP(S) * 255 + UP(D) * (255 - S)) / 255)
 
@@ -1111,10 +1101,9 @@ static BlendFunc* blend_functions[] = {
 	blend_src_atop,
 	blend_dst_atop,
 	blend_add,
-	blend_saturate,
 	blend_multiply,
-	blend_dst_copy,
 	blend_screen,
+	blend_dst_copy,
 	blend_overlay,
 	blend_darken,
 	blend_lighten,

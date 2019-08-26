@@ -599,18 +599,17 @@ and some selected Photoshop blend operators:
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop2.gif"><!--
 
    rop::Clear            rop::Add
-   rop::Xor              rop::Saturate
-   rop::SrcOver          rop::Multiply
-   rop::DstOver          rop::Screen
-   rop::SrcCopy          rop::Overlay
-   rop::DstCopy          rop::Darken
-   rop::SrcIn            rop::Lighten
-   rop::DstIn            rop::ColorDodge
-   rop::SrcOut           rop::ColorBurn
-   rop::DstOut           rop::HardLight
-   rop::SrcAtop          rop::SoftLight
-   rop::DstAtop          rop::Difference
-                         rop::Exclusion
+   rop::Xor              rop::Multiply
+   rop::SrcOver          rop::Screen
+   rop::DstOver          rop::Overlay
+   rop::SrcCopy          rop::Darken
+   rop::DstCopy          rop::Lighten
+   rop::SrcIn            rop::ColorDodge
+   rop::DstIn            rop::ColorBurn
+   rop::SrcOut           rop::HardLight
+   rop::DstOut           rop::SoftLight
+   rop::SrcAtop          rop::Difference
+   rop::DstAtop          rop::Exclusion
 
 =for html -->
 
