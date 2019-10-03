@@ -627,15 +627,17 @@ sub load_image
 	my ( $self, $src, $frame ) = @_;
 	my $index = 0;
 	unless ( -f $src) {
-		local @INC =
+		$src =~ s!::!/!g;
+		for my $path (
 			map {( "$_", "$_/pod")}
 			grep { defined && length && -d }
-			( length($self-> {manpath}) ? $self-> {manpath} : (),
-				@INC, split( $Config::Config{path_sep}, $ENV{PATH}));
-		$src = Prima::Utils::find_image( $src);
-		return unless $src;
+			( length($self-> {manpath}) ? $self-> {manpath} : (), @INC)
+		) {
+			return Prima::Icon-> load( "$path/$src", index => $frame, iconUnmask => 1)
+				if -f "$path/$src" && -r _;
+		}
 	}
-	return Prima::Icon-> load( $src, index => $frame, iconUnmask => 1);
+	return;
 }
 
 sub add_image
