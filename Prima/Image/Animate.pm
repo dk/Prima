@@ -177,7 +177,6 @@ sub draw_background
                 $canvas->bar($x, $y, $x + $self->{screenWidth}, $y + $self->{screenHeight});
                 $canvas->color($c);
         } else {
-		die 1;
                 my $px = $self->{cache}->{bgpixel} //= Prima::Icon->new(
                         size     => [1,1],
                         type     => im::RGB,
