@@ -244,6 +244,7 @@ Prima/HelpViewer.pm
 Prima/Image/Animate.pm
 Prima/Image/gif.pm
 Prima/Image/jpeg.pm
+Prima/Image/png.pm
 Prima/Image/tiff.fm
 Prima/Image/tiff.pm
 Prima/Image/TransparencyControl.pm

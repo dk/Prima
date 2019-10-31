@@ -138,6 +138,8 @@ static char * loadOutput[] = {
 	"disposalMethod",
 	"left",
 	"loopCount",
+	"screenWidth",
+	"screenHeight",
 	"top",
 #endif
 	nil
@@ -161,8 +163,8 @@ static ImgCodecInfo codec_info = {
 	"Portable Network Graphics",     /* file type */
 	"PNG",  /* short type */
 	features,    /* features  */
-	"",     /* module */
-	"",     /* package */
+	"Prima::Image::png",     /* module */
+	"Prima::Image::png",     /* package */
 	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM
 #ifdef APNG
 	| IMG_LOAD_MULTIFRAME
@@ -299,7 +301,6 @@ PNGAPI
 error_fn( png_structp png_ptr, png_const_charp msg)
 {
 	char * buf = ( char *) png_get_error_ptr( png_ptr);
-	warn("error:%s\n", msg);
 	if ( buf) strncpy( buf, msg, 256);
 	throw(png_ptr);
 }
@@ -488,10 +489,14 @@ header_available(PImgLoadFileInstance fi)
 	LoadRec * l = ( LoadRec *) fi-> instance;
 	int bit_depth, color_type, interlace_type, filter, compression_type;
 	png_uint_32 width, height;
-	printf("IHDR called\n");
 	
 	png_get_IHDR(l->png_ptr, l->info_ptr, &width, &height, &bit_depth, &color_type,
 		&interlace_type, &compression_type, &filter);
+	if ( fi->loadExtras) {
+		HV * profile = fi->fileProperties;
+		pset_i( screenWidth, width);
+		pset_i( screenHeight, height);
+	}
 
 	l->m_channels = (int) png_get_channels(l->png_ptr, l->info_ptr);
 	if (l->m_channels > 4) {
@@ -669,7 +674,6 @@ PNGAPI
 frame_header(png_structp png, png_infop info)
 {
 	PImgLoadFileInstance fi = (PImgLoadFileInstance) png_get_progressive_ptr(png);
-	warn("frame header called\n");
 	if ( !process_header( fi, true ))
 		throw( png );
 }
@@ -891,7 +895,7 @@ process_fcTL(PImgLoadFileInstance fi, png_unknown_chunkp chunk)
 	if ( fi-> loadExtras) {
 		pset_i( left,      x);
 		pset_i( top,       y);
-		pset_i( delayTime, den ? (num * 100 / den) : (num * 10));
+		pset_i( delayTime, den ? (num * 1000 / den) : (num * 10));
 		pset_c( disposalMethod,
 			(dispose == 2) ? "restore"    :
 			(dispose == 1) ? "background" :
@@ -959,7 +963,6 @@ read_chunks(png_structp png, png_unknown_chunkp chunk)
 	PImgLoadFileInstance fi = (PImgLoadFileInstance) png_get_user_chunk_ptr(png);
 	LoadRec * l = ( LoadRec *) fi-> instance;
 			
-	warn("chunk %s\n", chunk->name);
 	if ( 
 		STREQ(chunk->name, "acTL") &&
 		(chunk->size == 8) &&
@@ -1090,7 +1093,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		strcpy( fi-> errbuf, "Option 'background' cannot be set when loading to an Icon object");
 		return false;
 	}
-	warn("WANT %d\n", fi->frame);
 
 	/* rewind */
 	if ( fi->frame > 0 && fi->frame < l->current_frame) {
@@ -1132,7 +1134,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		memcpy( chunk, buf + 4, 4);
 		chunk[4] = 0;
 		size = png_get_uint_32(buf);
-		warn("stream chunk %s:%d\n", chunk, size);
 
 		/* see if we need to feed the data to libpng :
 		- any frame needs acTL, IHDR, RNS etc common chunks
@@ -1178,7 +1179,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				feed = false;
 			} else if ( fi->frame != l->current_frame + 1 && STREQ(chunk, "fcTL")) {
 				feed = false;
-				warn("skip fcTL %d after frame %d\n", fi->frame, l->current_frame);
 				l->current_frame++;
 			}
 		} else {
@@ -1201,7 +1201,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			header_available(fi);
 
 		if ( !feed ) {
-			warn("skip\n");
 			if ( req_seek( fi-> req, size + 4, SEEK_CUR) < 0) {
 				snprintf( fi-> errbuf, 256, "I/O error:%s", strerror(req_error( fi-> req)));
 				return false;
@@ -1233,8 +1232,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			png_process_data(l->png_ptr, l->info_ptr, buf, n_read);
 			n_need -= n_read;
 		}
-
-		warn("processed\n");
 	}
 
 	if ( !l->got_frame_header) {
@@ -1253,8 +1250,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			return false;
 		}
 	}
-
-	warn("OK\n");
 
 	return true;
 }

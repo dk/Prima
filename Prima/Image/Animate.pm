@@ -52,6 +52,8 @@ sub load
 		$model = 'GIF';
 	} elsif ($c->{name} eq 'WebP') {
 		$model = 'WebP';
+	} elsif ($c->{name} eq 'PNG') {
+		$model = 'APNG';
 	} else {
 		return 0;
 	}
@@ -175,6 +177,7 @@ sub draw_background
                 $canvas->bar($x, $y, $x + $self->{screenWidth}, $y + $self->{screenHeight});
                 $canvas->color($c);
         } else {
+		die 1;
                 my $px = $self->{cache}->{bgpixel} //= Prima::Icon->new(
                         size     => [1,1],
                         type     => im::RGB,
@@ -526,6 +529,64 @@ sub draw
 {
 	my ( $self, $canvas, $x, $y) = @_;
 	$canvas-> put_image( $x, $y, $self-> {canvas}, rop::SrcOver) if $self->{canvas};
+}
+
+package Prima::Image::Animate::APNG;
+use base 'Prima::Image::Animate::WebP';
+
+sub next
+{
+	my $self = shift;
+	my $info = $self->{info};
+	my %ret;
+
+	if ( $info-> {disposalMethod} eq 'restore') {
+		# cut to the previous frame, that we expect to be saved for us
+		if ( $self-> {saveCanvas} ) {
+			$self-> {canvas} = $self-> {saveCanvas};
+		}
+		delete $self-> {saveCanvas};
+		%ret = %{ $info-> {rect} };
+	} elsif ( $info-> {disposalMethod} eq 'background') {
+		# dispose from the previous frame and calculate the changed rect
+		$self-> {canvas}-> color(cl::Clear);
+		$self-> {canvas}-> bar(
+			$info-> {rect}-> {left},
+			$info-> {rect}-> {bottom},
+			$self->{image}->width  + $info-> {rect}-> {left},
+			$self->{image}->height + $info-> {rect}-> {bottom}
+		);
+		%ret = %{ $info-> {rect} };
+	}
+
+	return unless $self->advance_frame;
+	$info = $self->{info};
+	if ( $info-> {disposalMethod} eq 'restore') {
+		my @sz = ( $self-> {screenWidth}, $self-> {screenHeight});
+		my $c  = Prima::DeviceBitmap-> new(
+			width      => $sz[0],
+			height     => $sz[1],
+			type       => dbt::Pixmap,
+		);
+		$c-> put_image( 0, 0, $self-> {canvas});
+		$self-> {saveCanvas} = $self-> {canvas};
+		$self-> {canvas} = $c;
+	}
+
+	%ret = %{ $self->union_rect( \%ret, $info-> {rect}) };
+
+	# draw the current frame
+	$self-> {canvas}-> put_image(
+		$info-> {rect}-> {left},
+		$info-> {rect}-> {bottom},
+		$self-> {image},
+		(( $info-> {blendMethod} eq 'blend') ? rop::SrcOver : rop::SrcCopy)
+	);
+
+	$ret{$_} ||= 0 for qw(left bottom right top);
+	$ret{delay} = $info-> {delayTime} / 1000;
+
+	return \%ret;
 }
 
 1;
