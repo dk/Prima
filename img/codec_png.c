@@ -1015,8 +1015,10 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 		req_seek( fi-> req, 0, SEEK_SET);
 		return false;
 	}
-	if ( png_sig_cmp( buf, 0, 8) != 0)
+	if ( png_sig_cmp( buf, 0, 8) != 0) {
+		req_seek( fi-> req, 0, SEEK_SET);
 		return false;
+	}
 
 	fi-> stop = true;
 
