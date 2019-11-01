@@ -125,7 +125,7 @@ stylus_change( Handle self)
 	newP = stylus_alloc( &sys stylus);
 	if ( p != newP) {
 		sys stylusResource = newP;
-		sys stylusFlags = 0;
+		sys stylusFlags = 0; /* GDI plus too */
 	}
 	stylus_free( p, false);
 }
@@ -175,6 +175,133 @@ DWORD
 stylus_get_extpen_style( PStylus s)
 {
 	return s-> extPen. lineEnd | s-> pen. lopnStyle | s-> extPen. lineJoin | PS_GEOMETRIC;
+}
+
+void
+stylus_gp_free( PDCGPStylus res, Bool permanent)
+{
+	if ( !res || --res-> refcnt > 0) return;
+	if ( !permanent) {
+		res-> refcnt = 0;
+		return;
+	}
+	if ( res-> pen)   GdipDeletePen( res-> pen);
+	if ( res-> brush) GdipDeleteBrush( res-> brush);
+	res-> brush = NULL;
+	res-> pen = NULL;
+	hash_delete( stylusGpMan, &res-> s, sizeof( GPStylus), true);
+}
+
+static Bool _gp_cleaner( PDCGPStylus s, int keyLen, void * key, void * dummy) {
+	if ( s-> refcnt <= 0) stylus_gp_free( s, true);
+	return false;
+}
+
+void
+stylus_gp_clean()
+{
+	hash_first_that( stylusMan, _gp_cleaner, nil, nil, nil);
+}
+
+static Bool
+stylus_gp_prealloc(Handle self)
+{
+	if ( sys stylusGPResource != NULL ) {
+		stylus_gp_free( sys stylusGPResource, false);
+		sys stylusGPResource = NULL;
+	}
+
+	if ( sys graphics == NULL ) {
+		GPCALL GdipCreateFromHDC(sys ps, &sys graphics);
+		apiGPErrCheckRet(false);
+	}
+
+	return true;
+}
+
+static PDCGPStylus
+stylus_gp_fetch( GPStylus * key)
+{
+	PDCGPStylus cached;
+
+	cached = ( PDCGPStylus) hash_fetch( stylusGpMan, key, sizeof(GPStylus));
+
+	if ( cached == NULL ) {
+		if (( cached = malloc(sizeof(DCGPStylus))) == NULL) {
+			warn("Not enough memory");
+			return NULL;
+		}
+		memset( cached, 0, sizeof(DCGPStylus));
+		cached->s = *key;
+		if ( hash_count( stylusGpMan) > 128)
+			stylus_gp_clean();
+		hash_store( stylusGpMan, key, sizeof(GPStylus), cached);
+	}
+
+	return cached;
+}
+
+
+GpPen*
+stylus_gp_alloc_pen(Handle self)
+{
+	GPStylus key;
+	DCGPStylus *cached;
+
+	if ( !stylus_gp_prealloc(self)) return NULL;
+
+	memset(&key, 0, sizeof(key));
+	key.type = stbPen;
+	key.fg =
+		 (sys stylus.brush.lb.lbColor >> 16) |
+		 (sys stylus.brush.lb.lbColor & 0xff00) |
+		((sys stylus.brush.lb.lbColor & 0xff) << 16) |
+		 (sys alpha << 24);
+
+	if ((cached = stylus_gp_fetch(&key)) == NULL)
+		return NULL;
+
+	if ( cached->pen == NULL ) {
+		GpPen *p;
+		GPCALL GdipCreatePen1((ARGB)key.fg, 0, UnitPixel, &p);
+		apiGPErrCheckRet(NULL);
+		cached->pen = (GpPen*)p;
+	}
+
+	cached-> refcnt++;
+	sys stylusGPResource = cached;
+	return cached;
+}
+
+GpBrush*
+stylus_gp_alloc_brush(Handle self)
+{
+	GPStylus key;
+	DCGPStylus *cached;
+
+	if ( !stylus_gp_prealloc(self)) return NULL;
+
+	memset(&key, 0, sizeof(key));
+	key.type = stbBrush;
+	key.fg =
+		 (sys stylus.brush.lb.lbColor >> 16) |
+		 (sys stylus.brush.lb.lbColor & 0xff00) |
+		((sys stylus.brush.lb.lbColor & 0xff) << 16) |
+		 (sys alpha << 24);
+
+	if ((cached = stylus_gp_fetch(&key)) == NULL)
+		return NULL;
+
+	if ( cached->brush == NULL ) {
+		GpSolidFill *f;
+		GPCALL GdipCreateSolidFill((ARGB)key.fg, &f);
+		apiGPErrCheckRet(NULL);
+		cached->brush = (GpBrush*)f;
+	}
+
+	cached-> refcnt++;
+	sys stylusGPResource = cached;
+	return cached;
 }
 
 PPatResource
@@ -1491,6 +1618,7 @@ hwnd_enter_paint( Handle self)
 		sys stockPalette = GetCurrentObject( sys ps, OBJ_PAL);
 	font_free( sys fontResource, false);
 	sys stylusResource = nil;
+	sys stylusGPResource = nil;
 	sys fontResource   = nil;
 	sys stylusFlags    = 0;
 	sys stylus. extPen. actual = false;

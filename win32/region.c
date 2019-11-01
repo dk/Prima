@@ -1,8 +1,8 @@
+#include "win32\win32guts.h"
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
 #include "guts.h"
-#include "win32\win32guts.h"
 #include "Image.h"
 
 #ifdef __cplusplus

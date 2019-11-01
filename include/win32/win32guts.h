@@ -2,6 +2,13 @@
 #define _WIN32_H_
 #include <windows.h>
 #include <winspool.h>
+#define Rect xxRect
+#define Color xxColor
+#define Point xxPoint
+#include <gdiplus/gdiplus.h>
+#undef Rect
+#undef Color
+#undef Point
 #include "apricot.h"
 
 #ifdef __cplusplus
@@ -76,10 +83,13 @@ typedef HANDLE SOCKETHANDLE;
 #define exsLineEnd      2
 #define exsLineJoin     4
 
-#define stbPen          1
-#define stbBrush        2
-#define stbText         4
-#define stbBacking      8
+#define stbPen          0x01
+#define stbBrush        0x02
+#define stbText         0x04
+#define stbBacking      0x08
+#define stbGDIMask      0x0F
+#define stbGPPen        0x10
+#define stbGPBrush      0x20
 
 #define SOCKETS_NONE         ( guts. socket_version == -1)
 #define SOCKETS_AS_HANDLES   ( guts. socket_version == 1)
@@ -111,6 +121,15 @@ typedef HANDLE SOCKETHANDLE;
 #define apiErrCheckRet    { apiErrCheck; if ( rc) return false; }
 #define apcErrRet(err)    { apcErr(err);          return false; }
 #define apcErrClear       { apcError = errOk;                   }
+
+#define GPCALL rc = (DWORD)
+#define apiGPErr { \
+	apcError = errApcError; \
+	if ( debug ) err_msg_gplus(rc, NULL);\
+	rc |= 0x40000;    \
+}
+#define apiGPErrCheck if (rc) apiGPErr;
+#define apiGPErrCheckRet(f) if (rc) { apiGPErr; return f; }
 
 #define objCheck          if ( var stage == csDead) return
 #define dobjCheck(handle) if ((( PObject)handle)-> stage == csDead) return
@@ -199,6 +218,7 @@ typedef struct _WinGuts
 	Bool           dont_xlate_message; // one-time stopper to TranslateMessage() call
 	int            utf8_prepend_0x202D;// newer windows do automatic bidi conversion, this is to cancel it
 	WCHAR *      (*alloc_utf8_to_wchar_visual)(const char*,int,int*);
+	ULONG_PTR      gdiplusToken;       // GDI+ handle
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
@@ -345,10 +365,28 @@ typedef struct _DCFont
 	HFONT         hfont;
 } DCFont, *PDCFont;
 
+typedef struct _GPStylus
+{
+	int type, opaque;
+	uint32_t fg, bg;
+	FillPattern fill;
+} GPStylus, *PGPStylus;
+
+typedef struct _DCGPStylus
+{
+	GPStylus s;
+	int refcnt;
+	int line_width;
+	GpPen * pen;
+	GpBrush * brush;
+} DCGPStylus, *PDCGPStylus;
+
+
 typedef struct _DrawableData
 {
 	/* Drawable basic data*/
 	HDC            ps;                      // general HDC
+	GpGraphics    *graphics;                // GDI+ context
 	PAINTSTRUCT    paintStruc;              // HDC counterpart
 	HBITMAP        bm;                      // cached bitmap
 	HPALETTE       pal;                     // cached palette
@@ -358,6 +396,7 @@ typedef struct _DrawableData
 	int            stylusFlags;             // stylus resource cache( stbXXXX)
 	Stylus         stylus;                  // widgets stylus record
 	PDCFont        fontResource;            // font resource pointer
+	PDCGPStylus    stylusGPResource;        // GDI+ resource pointer
 
 	/* Stock objects of HDC - to be restored after paint mode */
 	HPEN           stockPen;
@@ -371,9 +410,10 @@ typedef struct _DrawableData
 	Point          res;                     // resolution
 
 	/* for opaque stroke emulation */
-	Bool           currentROP;
-	Bool           currentROP2;
-	HPEN	          opaquePen;
+	int            currentROP;
+	int            currentROP2;
+	int            alpha;
+	HPEN	       opaquePen;
 
 	/* cached GetTextMetrics */
 	BYTE           tmPitchAndFamily;
@@ -495,6 +535,22 @@ typedef struct _MusClkRec {
 		sys stylusFlags |= stbBacking;                       \
 	}
 
+#define STYLUS_USE_GP_PEN                          \
+	if ( !( sys stylusFlags & stbGPPen)) {                \
+		if ( stylus_gp_alloc_pen(self) == NULL ) return false; \
+		sys stylusFlags |= stbGPPen;                      \
+		if ( sys stylus.pen.lopnWidth.x != sys stylusGPResource->line_width ) {\
+			 GPCALL GdipSetPenWidth(sys stylusGPResource->pen, sys stylusGPResource->line_width = sys stylus.pen.lopnWidth.x);\
+			 apiGPErrCheck; \
+		}\
+	}
+
+#define STYLUS_USE_GP_BRUSH                          \
+	if ( !( sys stylusFlags & stbGPBrush)) {                \
+		if ( stylus_gp_alloc_brush(self) == NULL ) return false; \
+		sys stylusFlags |= stbGPBrush;                      \
+	}
+
 #define psDot         "\3\3"
 #define psDash        "\x16\6"
 #define psDashDot     "\x9\6\3\6"
@@ -537,6 +593,7 @@ extern MusClkRec    musClk;
 extern PHash        patMan;
 extern DWORD        rc;
 extern PHash        stylusMan;
+extern PHash        stylusGpMan;
 extern HBRUSH       hBrushHollow;
 extern PatResource  hPatHollow;
 extern HPEN         hPenHollow;
@@ -564,6 +621,7 @@ extern void         dc_compat_free( void);
 extern void         dbm_recreate( Handle self);
 extern Bool         destroy_font_hash( void);
 extern char *       err_msg( DWORD errId, char * buffer);
+extern char *       err_msg_gplus( GpStatus errId, char * buffer);
 extern PDCFont      font_alloc( Font * data, Point * resolution);
 extern void         font_change( Handle self, Font * font);
 extern void         font_clean( void);
@@ -606,6 +664,10 @@ extern Bool         stylus_complex( PStylus stylus, HDC dc);
 extern Bool         stylus_extpenned( PStylus stylus);
 extern void         stylus_free( PDCStylus res, Bool permanent);
 extern DWORD        stylus_get_extpen_style( PStylus s);
+extern GpPen*       stylus_gp_alloc_pen(Handle self);
+extern GpBrush*     stylus_gp_alloc_brush(Handle self);
+extern void         stylus_gp_clean( void);
+extern void         stylus_gp_free( PDCGPStylus res, Bool permanent);
 extern HRGN         region_create( Handle mask);
 extern WCHAR *      alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len);
 extern WCHAR *      alloc_utf8_to_wchar_visual( const char * utf8, int length, int * mb_len);

@@ -1,8 +1,8 @@
+#include "win32\win32guts.h"
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
 #include "guts.h"
-#include "win32\win32guts.h"
 #include "Window.h"
 #include "Icon.h"
 #include "DeviceBitmap.h"
@@ -34,6 +34,10 @@ apc_gp_done( Handle self)
 		if ( !DeleteObject( sys bm)) apiErr;
 	if ( sys pal)
 		if ( !DeleteObject( sys pal)) apiErr;
+	if ( sys graphics) {
+		GdipDeleteGraphics(sys graphics);
+		sys graphics = NULL;
+	}
 	if ( sys ps)
 	{
 		if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
@@ -47,6 +51,8 @@ apc_gp_done( Handle self)
 		}
 	}
 	if ( sys linePatternLen  > 3) free( sys linePattern);
+	stylus_free( sys stylusResource, false);
+	stylus_gp_free( sys stylusGPResource, false);
 	font_free( sys fontResource, false);
 	if ( sys p256) free( sys p256);
 	sys bm = nil;
@@ -55,6 +61,8 @@ apc_gp_done( Handle self)
 	sys bm = nil;
 	sys p256 = nil;
 	sys fontResource = nil;
+	sys stylusResource = nil;
+	sys stylusGPResource = nil;
 	sys linePattern = nil;
 	return true;
 }
@@ -255,11 +263,24 @@ Bool
 apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
 	HDC     ps = sys ps;
-	HGDIOBJ old = SelectObject( ps, hPenHollow);
-	Bool ok = true;
-	STYLUS_USE_BRUSH( ps);
+	HGDIOBJ old;
+	Bool ok;
+
 	check_swap( x1, x2);
 	check_swap( y1, y2);
+	if ( sys alpha >= 0 && sys stylus.brush.lb.lbStyle == BS_SOLID) {
+		STYLUS_USE_GP_BRUSH;
+		GPCALL GdipFillRectangleI(
+			sys graphics, sys stylusGPResource->brush,
+			x1, sys lastSize. y - y2 - 1, x2 - x1 + 1, y2 - y1 + 1
+		);
+		apiGPErrCheckRet(false);
+		return true;
+	}
+
+	ok = true;
+	old = SelectObject( ps, hPenHollow);
+	STYLUS_USE_BRUSH( ps);
 	if ( !( ok = Rectangle( ps, x1, sys lastSize. y - y2 - 1, x2 + 2, sys lastSize. y - y1 + 1))) apiErr;
 	SelectObject( ps, old);
 	return ok;
@@ -844,10 +865,22 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 {objCheck false;{
 	Bool ok = true;
 	HDC     ps = sys ps;
-	HGDIOBJ old = SelectObject( ps, hBrushHollow);
+	HGDIOBJ old;
 
 	check_swap( x1, x2);
 	check_swap( y1, y2);
+
+	if ( sys alpha >= 0) {
+		STYLUS_USE_GP_PEN;
+		GPCALL GdipDrawRectangleI(
+			sys graphics, sys stylusGPResource->pen,
+			x1, sys lastSize. y - y2 - 1, x2 - x1, y2 - y1
+		);
+		apiGPErrCheckRet(false);
+		return true;
+	}
+
+	old = SelectObject( ps, hBrushHollow);
 	if ( sys stylus. pen. lopnWidth. x > 1 &&
 		(sys stylus. pen. lopnWidth. x % 2) == 0
 		) {
@@ -1610,7 +1643,8 @@ apc_gp_get_rop( Handle self)
 {
 	objCheck 0;
 	if ( !sys ps) return sys rop;
-	return ctx_remap_def( GetROP2( sys ps), ctx_rop2R2, false, ropCopyPut);
+	return ctx_remap_def( GetROP2( sys ps), ctx_rop2R2, false, ropCopyPut) |
+		(( sys alpha >= 0) ? ( ropSrcAlpha | (sys alpha << ropSrcAlphaShift)) : 0);
 }
 
 int
@@ -1811,9 +1845,8 @@ apc_gp_set_color( Handle self, Color color)
 {
 	long clr = remap_color( color, true);
 	objCheck false;
-	if ( !sys ps)
-		sys lbs[0] = clr;
-	else {
+	sys lbs[0] = clr;
+	if ( sys ps) {
 		PStylus s = & sys stylus;
 		if ( pal_ok) clr = palette_match( self, clr);
 		s-> pen. lopnColor = ( COLORREF) clr;
@@ -1842,8 +1875,8 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 {
 	HDC ps    = sys ps;
 	PStylus s = & sys stylus;
-	long *p1 = ( long*) pattern;
-	long *p2 = p1 + 1;
+	uint32_t *p1 = ( uint32_t*) pattern;
+	uint32_t *p2 = p1 + 1;
 	if ( !ps) {
 		memcpy( &sys fillPattern2, pattern, sizeof( FillPattern));
 		return true;
@@ -2037,6 +2070,11 @@ apc_gp_set_rop( Handle self, int rop)
 {
 	objCheck false;
 	if ( !sys ps) { sys rop = rop; return true; }
+	if ( rop & ropSrcAlpha ) {
+		sys alpha = (rop >> ropSrcAlphaShift) & 0xff;
+		rop &= 0xF;
+	} else
+		sys alpha = -1;
 	sys currentROP = ctx_remap_def( rop, ctx_rop2R2, true, R2_COPYPEN);
 	if ( !SetROP2( sys ps, sys currentROP)) apiErr;
 	return true;
