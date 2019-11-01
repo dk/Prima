@@ -1824,6 +1824,8 @@ img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	Picture target;
 
 	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
+	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
+		XRenderSetPictureClipRegion(DISP, target, XX->current_region);
 	XRenderComposite(
 		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, YY-> argb_picture, 0, target,
 		req->src_x, req->src_y, 0, 0,
@@ -1917,6 +1919,8 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 	if ( render_rop >= PictOpMinimum ) {
 		/* cheap on-server blit */
 		picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
+		if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
+			XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
 		XRenderComposite(
 			DISP, render_rop, picture, 0, XX-> argb_picture,
 			req->src_x, req->src_y, 0, 0,
@@ -1972,6 +1976,8 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
 
 	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb_pic_format, 0, NULL);
 	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
+	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
+		XRenderSetPictureClipRegion(DISP, target, XX->current_region);
 	XRenderComposite(
 		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, target,
 		0, 0, 0, 0,
@@ -2064,6 +2070,8 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 	))) goto FAIL;
 
 	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb_pic_format, 0, NULL);
+	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
+		XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
 	XRenderComposite(
 		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, XX-> argb_picture,
 		0, 0, 0, 0,

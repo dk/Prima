@@ -434,14 +434,16 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 		char * className = baseClassName;
 
 		fi. frame = incrementalLoad ? i : fi. frameMap[ i];
-		if (( fi. frameCount >= 0 && fi. frame >= fi. frameCount) ||
-			( !(c-> info-> IOFlags & IMG_LOAD_MULTIFRAME) && fi. frame > 0)) {
+		if (
+			( fi. frameCount >= 0 && fi. frame >= fi. frameCount) ||
+			( !(c-> info-> IOFlags & IMG_LOAD_MULTIFRAME) && fi. frame > 0)
+		) {
 			if ( !(c-> info-> IOFlags & IMG_LOAD_MULTIFRAME) && fi. frameCount < 0)
 				fi. frameCount = i;
+			c-> vmt-> close_load( c, &fi);
 			if ( incrementalLoad)
 				/* that means, codec bothered to set frameCount at last - report no error then */
 				goto EXIT_NOW;
-			c-> vmt-> close_load( c, &fi);
 			out("Frame index out of range");
 		}
 
