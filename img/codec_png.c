@@ -131,6 +131,7 @@ static char * loadOutput[] = {
 #ifdef PNG_tRNS_SUPPORTED
 	"transparency_table",
 	"transparent_color",
+	"has_alpha",
 #endif
 #ifdef APNG
 	"blendMethod",
@@ -331,6 +332,7 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 	PIcon i = (PIcon) fi->object;
 
 	l->last_row = -1;
+	l->got_frame_header = true;
 
 	if ( l-> interlace_buffer ) {
 		free( l-> interlace_buffer );
@@ -353,14 +355,6 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 
 
 	switch ( color_type) {
-	case PNG_COLOR_TYPE_GRAY_ALPHA:
-		if ( l-> icon ) {
-			png_set_bgr(png_ptr);
-			png_set_gray_to_rgb(png_ptr);
-			channels = 4;
-			color_type = PNG_COLOR_TYPE_RGB_ALPHA;
-		}
-		break;
 	case PNG_COLOR_TYPE_PALETTE:
 		if ( l-> convert_to_rgba ) {
 			png_set_bgr(png_ptr);
@@ -458,16 +452,7 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 		warn("Unknown alpha channel coding scheme (%d %d %d %x)", channels, color_type, bit_depth, type);
 	}
 
-	if ( fi-> noImageData) {
-		profile = fi->frameProperties;
-		pset_i( width, width);
-		pset_i( height, height);
-		i-> self-> create_empty((Handle)i, 1, 1, l->m_type);
-		png_read_update_info(png_ptr, info_ptr);
-		return true;
-	}
-
-	CImage( fi-> object)-> create_empty( fi-> object, width, height, type);
+	i-> self-> create_empty((Handle)i, 1, 1, type);
 	if (( type & imBPP ) < 24) {
 		i-> palSize = l-> m_palette_size;
 		memcpy( i-> palette, l-> m_palette, l-> m_palette_size * 3);
@@ -479,6 +464,7 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 			l->has_alpha = true;
 			i-> autoMasking = amNone;
 			i-> self-> set_maskType((Handle) i, imbpp8 );
+			pset_i( has_alpha, 1 );
 		} else if ( l->m_alpha_size < 0) {
 			i-> maskColor = l-> m_transparent_color;
 			i-> autoMasking = amMaskColor;
@@ -487,10 +473,17 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 			i-> autoMasking = amMaskIndex;
 		}
 	}
-
+	
 	png_read_update_info(png_ptr, info_ptr);
-	l->got_frame_header = true;
 
+	if ( fi-> noImageData) {
+		profile = fi->frameProperties;
+		pset_i( width, width);
+		pset_i( height, height);
+		return true;
+	}
+
+	CImage( fi-> object)-> create_empty( fi-> object, width, height, type);
 	if ( l->load_req == 0)
 		EVENT_HEADER_READY(fi);
 
@@ -555,13 +548,8 @@ header_available(PImgLoadFileInstance fi)
 
 	switch ( color_type) {
 	case PNG_COLOR_TYPE_GRAY:
-		l->m_type |= imGrayScale;
-		break;
 	case PNG_COLOR_TYPE_GRAY_ALPHA:
-		if ( l-> icon )
-			l-> m_type = imRGB;
-		else
-			l-> m_type |= imGrayScale;
+		l->m_type |= imGrayScale;
 		break;
 	case PNG_COLOR_TYPE_PALETTE:
 		break;
@@ -787,9 +775,17 @@ row_available(png_structp png, png_bytep row_buffer, png_uint_32 row_index, int 
 				}
 			}
 		} else {
-			while ( w-- > 0 ) {
-				*dst++ = *src++;
-				*a++ = *src++;
+			if ( fi->blending ) {
+				while ( w-- > 0 ) {
+					register uint16_t A = *src++;
+					*dst++ = (*src++ * A) >> 8;
+					*a++ = A;
+				}
+			} else {
+				while ( w-- > 0 ) {
+					*dst++ = *src++;
+					*a++ = *src++;
+				}
 			}
 		}
 	} else if ( l->want_nibbles == 2) {
