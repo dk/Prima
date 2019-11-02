@@ -131,7 +131,7 @@ static char * loadOutput[] = {
 #ifdef PNG_tRNS_SUPPORTED
 	"transparency_table",
 	"transparent_color",
-	"has_alpha",
+	"hasAlpha",
 #endif
 #ifdef APNG
 	"blendMethod",
@@ -464,7 +464,7 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 			l->has_alpha = true;
 			i-> autoMasking = amNone;
 			i-> self-> set_maskType((Handle) i, imbpp8 );
-			pset_i( has_alpha, 1 );
+			pset_i( hasAlpha, 1 );
 		} else if ( l->m_alpha_size < 0) {
 			i-> maskColor = l-> m_transparent_color;
 			i-> autoMasking = amMaskColor;
