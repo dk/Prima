@@ -740,10 +740,13 @@ Default: 75
 
 Only used for saving.
 
-
 =back
 
 =head2 PNG codec
+
+Note: due to PNG structure, lots of properties are located in the end of file.
+Therefore when performing loading of several frames at once, only the last image
+will contain these. This is done to avoid excessive scanning of an image.
 
 =head3 Load input
 
@@ -759,19 +762,24 @@ Default: clInvalid
 
 Not applicable C<Prima::Icon>.
 
-=item blending BOOLEAN = 1
+=item blendMethod blend|no_blend|unknown
 
-Affects how to treat alpha channel bits, if any.
+Signals whether the new frame to be blended over
+the existing animation, or replace it.
 
-If set, mixes the alpha channel with C<background> color in case if loading to
-an image, or premultiplies color bits (either data or palette) with alpha, if
-loading to icon. Note that saving back the object will result in different
-image, but the object is ready to be displayed immediately.
+=item delayTime $milliseconds
 
-If unset, color and eventual alpha bits, if loaded to an icon, will not be
-affected in any way. Note that saving back the object will result in the same
-image, but the object is not ready to be displayed immediately. See also:
-L<Prima::Image/premultiply_alpha>.
+Delay time between frames
+
+=item disposalMethod none|background|restore|unknown
+
+Signals whether the frame, before being replaced, is to be erased by the background
+color, previous frame, or none.
+
+=item hasAlpha BOOLEAN
+
+If set, image contains alpha channel
+
 
 =item gamma REAL
 
@@ -779,11 +787,28 @@ Override gamma value applied to the loaded image
 
 Default: 0.45455
 
+=item left INTEGER
+
+Frame horizontal offset from the screen
+
+=item loopCount INTEGER
+
+How many times the animation sequence should run, or 0 for forever.
+
+
 =item screen_gamma REAL
 
 Current gamma value for the operating system, if specified.
 
 Default: 2.2
+
+=item screenWidth INTEGER
+
+=item screenHeight INTEGER
+
+=item top INTEGER
+
+Frame vertical offset from the screen
 
 =back
 
@@ -870,25 +895,18 @@ Free-text comments found in the file
 
 Default: C<{}>
 
-=item transparent_colors [COLOR], transparency_table [INT]
+=item transparency_table [INT]
 
-When image contains transparent colors, returns either array of palette indexes
-(C<transparency_table>) in 0-255 range, for paletted images. Or an array of
-colors in RGB form for 24-bit images (C<transparent_colors>).
+When a paletted image contains transparent colors, returns array of palette indexes
+(C<transparency_table>) in 0-255 range, where each number is an alpha value.
 
 Not applicable for save.
-
-Note: support for transparency is not symmetric; codec cannot automatically
-save the transparency info read from PNG files. See C<transparent_color> and
-C<transparent_color_index> for manual save of one transparent color.
 
 =item transparent_color COLOR
 
 One transparent color value for 24-bit PNG images.
 
 Default value: clInvalid (i.e. none)
-
-Not applicable for load.
 
 =item transparent_color_index INT
 
