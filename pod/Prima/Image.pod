@@ -926,6 +926,12 @@ of same dimension.
 
 Same as C<combine>, but to be called as constructor.
 
+=item image %opt
+
+Renders icon graphics on a newly created I<Prima::Image> object instance
+upon black background.  If C<$opt{background}> is given, it is used instead.
+
+
 =item premultiply_alpha CONSTANT_OR_IMAGE = undef
 
 Applies premultiplication formula to each pixel
@@ -955,6 +961,11 @@ with non-integer zooms looks ugly.
 =head2 Prima::DeviceBitmap methods
 
 =over
+
+=item dup
+
+Returns a duplicate of the object, a newly created I<Prima::DeviceBitmap>, with all
+information copied to it. Does not preserve graphical properties (color etc).
 
 =item icon
 
