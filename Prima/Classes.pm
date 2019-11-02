@@ -682,6 +682,16 @@ sub ui_scale
 	return $self;
 }
 
+sub image
+{
+	my $self  = shift;
+	my ($image, undef) = $self-> split;
+	$image->backColor(0);
+	$image->clear;
+	$image->put_image(0,0,$self,rop::CopyPut);
+	return $image;
+}
+
 package Prima::DeviceBitmap;
 use vars qw( @ISA);
 @ISA = qw(Prima::Drawable);
@@ -714,6 +724,19 @@ sub profile_check_in
 }
 
 sub has_alpha_layer { shift->type == dbt::Layered }
+
+sub dup 
+{
+	my $self = shift;
+	my $dup = ref($self)->new(
+		size => [ $self->size ],
+		type => $self->type
+	);
+	$dup->backColor(0);
+	$dup->clear;
+	$dup->put_image(0,0,$self,rop::SrcOver);
+	return $dup;
+}
 
 package Prima::Timer;
 use vars qw(@ISA);
