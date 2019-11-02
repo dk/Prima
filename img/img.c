@@ -471,7 +471,7 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 				{
 					HV * profile = hv;
 					if ( pexist( loadExtras))
-					fi. loadExtras  = pget_B( loadExtras);
+						fi. loadExtras  = pget_B( loadExtras);
 					if ( pexist( noImageData))
 						fi. noImageData = pget_B( noImageData);
 					if ( pexist( iconUnmask))
