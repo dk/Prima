@@ -557,8 +557,12 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 		}
 
 		/* updating image */
-		if ( !fi. noImageData)
+		if ( !fi. noImageData) {
 			CImage( fi. object)-> update_change( fi. object);
+			/* loaders are ok to be lazy and use autoMasking for post-creation of the mask */
+			if ( fi. iconUnmask && kind_of( fi. object, CIcon))
+				PIcon( fi. object)-> autoMasking = amNone;
+		}
 
 		/* applying extras */
 		if ( fi. loadExtras) {
