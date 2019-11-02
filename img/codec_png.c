@@ -262,7 +262,7 @@ typedef struct _LoadRec {
 	Bool decompressed;
 	Bool animated;
 	int load_req, current_frame, last_row;
-	Bool got_IHDR, got_frame_header;
+	Bool got_IHDR, got_frame_header, got_tail_extras;
 	Bool has_alpha, want_nibbles, icon, convert_to_rgba;
 	png_byte m_dataIHDR[12 + 13];
 	png_byte m_dataPLTE[12 + 256 * 3];
@@ -817,9 +817,10 @@ png_complete(PImgLoadFileInstance fi)
 
 	(void)tx; (void)py; (void)pl; (void)pyi; (void)pli; (void)i; (void)ct;
 	(void)pf; (void)name; (void)scx; (void)scy;
-		
+
 	/* misc extras  */
-	if ( !fi-> loadExtras) return;
+	if ( !fi-> loadExtras || l->got_tail_extras) return;
+	l->got_tail_extras = true;
 
 
 #ifdef PNG_sRGB_SUPPORTED
@@ -1099,17 +1100,18 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 	/* rewind */
 	if ( fi->frame >= 0 && fi->frame < l->current_frame) {
-		void * newinst, * oldinst = fi->instance;
-		if (( newinst = open_load(instance, fi)) == NULL) {
-			fi->instance = oldinst;
+		LoadRec * newinst;
+		if (( newinst = (LoadRec*) open_load(instance, fi)) == NULL) {
+			fi->instance = l;
 			strcpy(fi->errbuf, "Cannot reinitialize loader");
 			return false;
 		}
-		(( LoadRec *) newinst)-> load_req = l-> load_req;
-		fi->instance = oldinst;
+		newinst-> load_req = l-> load_req;
+		newinst-> got_tail_extras = true;
+		fi->instance = l;
 		close_load(instance, fi);
 		fi->instance = newinst;
-		l = ( LoadRec *) newinst;
+		l = newinst;
 	}
 
 	l->icon = fi->object ? kind_of( fi-> object, CIcon) : false;
@@ -1158,13 +1160,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			if ( STREQ(chunk, "IDAT")) 
 				had_DAT = true;
 			else if (had_DAT) {
-				if (!fi->noImageData) 
+				if (!fi->noImageData)
 					got_frame_body = true;
-				if (
-					!fi->loadExtras ||
-					/* report extras on last image only to avoid constant rescans on loadAll */
-					l->load_req < ((fi->frameMap ? fi->frameMapSize : fi->frameCount) - 1)
-				) {
+				if ( !fi->loadExtras || l->got_tail_extras ) {
 					reset_to_chunk_start = true;
 					break;
 				}
@@ -1183,13 +1181,9 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				else
 					had_DAT = true;
 			} else if ( had_DAT ) {
-				if (!fi->noImageData && fi->frame == l->current_frame) 
+				if (!fi->noImageData && fi->frame == l->current_frame)
 					got_frame_body = true;
-				if (
-					!fi->loadExtras ||
-					/* report extras on last image only to avoid constant rescans on loadAll */
-					l->load_req < ((fi->frameMap ? fi->frameMapSize : fi->frameCount) - 1)
-				) {
+				if ( !fi->loadExtras || l->got_tail_extras ) {
 					reset_to_chunk_start = true;
 					break;
 				}
@@ -1203,9 +1197,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			}
 		} else {
 			/* local special case: null load request, assumed loadExtras = true */
-			if ( 
-				STREQ(chunk, "fcTL") || STREQ(chunk, "fdAT") || STREQ(chunk, "IDAT")
-			)
+			if ( STREQ(chunk, "fcTL") || STREQ(chunk, "fdAT") || STREQ(chunk, "IDAT"))
 				feed = false;
 		}
 
@@ -1241,7 +1233,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			return false;
 		png_process_data(l->png_ptr, l->info_ptr, buf, n_read + 8);
 		n_need -= n_read;
-		
+
 		/* read to the end of chunk */
 		while ( n_need > 0 ) {
 			n_read = n_need;

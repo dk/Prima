@@ -744,10 +744,6 @@ Only used for saving.
 
 =head2 PNG codec
 
-Note: due to PNG structure, lots of properties are located in the end of file.
-Therefore when performing loading of several frames at once, only the last image
-will contain these. This is done to avoid excessive scanning of an image.
-
 =head3 Load input
 
 =over
