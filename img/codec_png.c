@@ -1107,7 +1107,6 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	/* rewind */
 	if ( fi->frame > 0 && fi->frame < l->current_frame) {
 		void * newinst, * oldinst = fi->instance;
-		warn("REL %d %d\n", fi->frame, l->current_frame);
 		if (( newinst = open_load(instance, fi)) == NULL) {
 			fi->instance = oldinst;
 			strcpy(fi->errbuf, "Cannot reinitialize loader");
@@ -1225,7 +1224,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 		/* libpng calls it when IDAT is met and it is too late to stop its unrolling - 
 		call it ourselves */
-		if ( STREQ(chunk, "IDAT"))
+		if ( !l->got_frame_header && STREQ(chunk, "IDAT"))
 			header_available(fi);
 
 		if ( !feed ) {
