@@ -262,7 +262,7 @@ typedef struct _LoadRec {
 	Bool decompressed;
 	Bool animated;
 	int load_req, current_frame, last_row;
-	Bool got_IHDR, want_fdat, got_frame_header;
+	Bool got_IHDR, got_frame_header;
 	Bool has_alpha, want_nibbles, icon, convert_to_rgba;
 	png_byte m_dataIHDR[12 + 13];
 	png_byte m_dataPLTE[12 + 256 * 3];
@@ -957,7 +957,6 @@ process_fcTL(PImgLoadFileInstance fi, png_unknown_chunkp chunk)
 		png_process_data(l->png_ptr2, l->info_ptr2, l->m_dataPLTE, l->m_sizePLTE);
 	if (l->m_sizetRNS > 0)
 		png_process_data(l->png_ptr2, l->info_ptr2, l->m_datatRNS, l->m_sizetRNS);
-	l->want_fdat = true;
 }
 #endif
 
@@ -997,10 +996,8 @@ read_chunks(png_structp png, png_unknown_chunkp chunk)
 	} else if (
 		STREQ(chunk->name, "fdAT") &&
 		(chunk->size > 4) &&
-		l->animated &&
-		l->want_fdat
+		l->animated
 	) {
-		l->want_fdat = false;
 	        png_save_uint_32(chunk->data, chunk->size - 4);
 	        png_process_data(l->png_ptr2, l->info_ptr2, chunk->data, 4);
 	        memcpy(chunk->data, "IDAT", 4);
