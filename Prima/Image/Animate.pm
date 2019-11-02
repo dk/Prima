@@ -508,8 +508,6 @@ sub reset
 	$self-> {canvas}  = Prima::DeviceBitmap-> new(
 		width      => $e-> {screenWidth},
 		height     => $e-> {screenHeight},
-		type       => im::RGB,
-		maskType   => im::bpp8,
 		type       => dbt::Layered,
 		backColor  => 0,
 	);
@@ -565,7 +563,7 @@ sub next
 		my $c  = Prima::DeviceBitmap-> new(
 			width      => $sz[0],
 			height     => $sz[1],
-			type       => dbt::Pixmap,
+			type       => dbt::Layered,
 		);
 		$c-> put_image( 0, 0, $self-> {canvas});
 		$self-> {saveCanvas} = $self-> {canvas};

@@ -130,7 +130,7 @@ static char * loadOutput[] = {
 #endif
 #ifdef PNG_tRNS_SUPPORTED
 	"transparency_table",
-	"transparent_colors",
+	"transparent_color",
 #endif
 #ifdef APNG
 	"blendMethod",
@@ -260,17 +260,18 @@ typedef struct _LoadRec {
 
 	Bool decompressed;
 	Bool animated;
-	int current_frame, frames, images_created, last_row;
-	Bool got_IHDR, want_fdat, got_frame_header, got_frame_body; 
-	Bool has_alpha, want_nibbles, icon, post_blending;
+	int load_req, current_frame, last_row;
+	Bool got_IHDR, want_fdat, got_frame_header;
+	Bool has_alpha, want_nibbles, icon, convert_to_rgba;
 	png_byte m_dataIHDR[12 + 13];
 	png_byte m_dataPLTE[12 + 256 * 3];
 	png_byte m_datatRNS[12 + 256];
 	int m_sizePLTE, m_sizetRNS, m_hasgAMA, m_type, m_channels;
 	double m_gamma;
-	Color m_background;
+	Color m_background, m_transparent_color;
+	RGBColor m_palette[256];
 	Byte * interlace_buffer;
-	int interlaced_channels;
+	int interlaced_channels, m_alpha_size, m_palette_size;
 } LoadRec;
 
 
@@ -327,6 +328,7 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 	HV * profile = fi->profile;
 	png_structp png_ptr  = use_subloader ? l->png_ptr2  : l->png_ptr;
 	png_infop   info_ptr = use_subloader ? l->info_ptr2 : l->info_ptr;
+	PIcon i = (PIcon) fi->object;
 
 	l->last_row = -1;
 
@@ -351,6 +353,22 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 
 
 	switch ( color_type) {
+	case PNG_COLOR_TYPE_GRAY_ALPHA:
+		if ( l-> icon ) {
+			png_set_bgr(png_ptr);
+			png_set_gray_to_rgb(png_ptr);
+			channels = 4;
+			color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+		}
+		break;
+	case PNG_COLOR_TYPE_PALETTE:
+		if ( l-> convert_to_rgba ) {
+			png_set_bgr(png_ptr);
+			png_set_expand(png_ptr);
+			channels = 4;
+			color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+		}
+		break;
 	case PNG_COLOR_TYPE_RGB:
 	case PNG_COLOR_TYPE_RGB_ALPHA:
 		png_set_bgr(png_ptr);
@@ -387,7 +405,6 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 	}
 
 	/* alpha blending */
-	l->post_blending = false;
 	if ( !l->icon && fi->blending ) {
 		png_color_16 p;
 		Color background = l->m_background;
@@ -429,7 +446,7 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 	/* sanity check */
 	if (( type & imGrayScale) && (channels == 2)) {
 		/* this is ok configuration */
-	} else if (( type & imBPP) == 24 && (channels == 4)) {
+	} else if (( type & imBPP) == 24 && channels == 4) {
 		/* this is ok too */
 	} else if ( color_type & PNG_COLOR_MASK_ALPHA ||
 		channels == 2 ||
@@ -445,42 +462,57 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 		profile = fi->frameProperties;
 		pset_i( width, width);
 		pset_i( height, height);
-		CImage( fi-> object)-> create_empty( fi-> object, 1, 1, l->m_type);
+		i-> self-> create_empty((Handle)i, 1, 1, l->m_type);
 		png_read_update_info(png_ptr, info_ptr);
 		return true;
 	}
 
 	CImage( fi-> object)-> create_empty( fi-> object, width, height, type);
-
-	/* palette, if any */
-	if ( type < 24) {
-		RGBColor * pal = PImage( fi-> object)-> palette;
-		int num_palette, i;
-		png_colorp palette;
-		if (png_get_PLTE(png_ptr, info_ptr, &palette, &num_palette)) {
-			if ( num_palette > 256) num_palette = 256;
-			PImage( fi-> object)-> palSize = num_palette;
-			for ( i = 0; i < num_palette; i++, palette++, pal++) {
-				pal-> r = palette-> red;
-				pal-> g = palette-> green;
-				pal-> b = palette-> blue;
-			}
-		}
+	if (( type & imBPP ) < 24) {
+		i-> palSize = l-> m_palette_size;
+		memcpy( i-> palette, l-> m_palette, l-> m_palette_size * 3);
 	}
 
 	l->has_alpha = false;
-	if (( color_type & PNG_COLOR_MASK_ALPHA) && l->icon ) {
-		CIcon( fi-> object)-> set_autoMasking( fi-> object, amNone );
-		CIcon( fi-> object)-> set_maskType( fi-> object, imbpp8 );
-		l->has_alpha = true;
-		if (fi->blending && (( type & imBPP ) != 24))
-			l->post_blending =  true; /* cannot blend 8 bits inplace */
+	if ( l->icon) {
+		if ( color_type & PNG_COLOR_MASK_ALPHA ) {
+			l->has_alpha = true;
+			i-> autoMasking = amNone;
+			i-> self-> set_maskType((Handle) i, imbpp8 );
+		} else if ( l->m_alpha_size < 0) {
+			i-> maskColor = l-> m_transparent_color;
+			i-> autoMasking = amMaskColor;
+		} else if ( l->m_alpha_size > 0) {
+			i-> maskIndex = l-> m_datatRNS[8];
+			i-> autoMasking = amMaskIndex;
+		}
 	}
 
 	png_read_update_info(png_ptr, info_ptr);
 	l->got_frame_header = true;
 
+	if ( l->load_req == 0)
+		EVENT_HEADER_READY(fi);
+
 	return true;
+}
+
+static Byte
+bit_depth_color( png_uint_16 component, int bit_depth)
+{
+	switch ( bit_depth ) {
+	case 1:
+		component = (component > 128) ? 255 : 0;
+	case 2:
+		component = (255/3) * component;
+	case 4:
+		component = (255/7) * component;
+	case 16:
+		component = component >> 8;
+	default:
+		component = component;
+	}
+	return component & 0xff;
 }
 
 static void
@@ -523,14 +555,19 @@ header_available(PImgLoadFileInstance fi)
 
 	switch ( color_type) {
 	case PNG_COLOR_TYPE_GRAY:
-	case PNG_COLOR_TYPE_GRAY_ALPHA:
 		l->m_type |= imGrayScale;
+		break;
+	case PNG_COLOR_TYPE_GRAY_ALPHA:
+		if ( l-> icon )
+			l-> m_type = imRGB;
+		else
+			l-> m_type |= imGrayScale;
 		break;
 	case PNG_COLOR_TYPE_PALETTE:
 		break;
 	case PNG_COLOR_TYPE_RGB:
 	case PNG_COLOR_TYPE_RGB_ALPHA:
-		l->m_type = 24;
+		l->m_type = imRGB;
 		break;
 	default:
 		sprintf( fi-> errbuf, "Unknown file color type: %d", color_type);
@@ -550,17 +587,28 @@ header_available(PImgLoadFileInstance fi)
 
 	if (color_type == PNG_COLOR_TYPE_PALETTE) {
 		png_colorp palette;
-		int palette_size = 0;
+		int i, palette_size = 0;
+		RGBColor *pal;
 		if ( !png_get_valid( l->png_ptr, l->info_ptr, PNG_INFO_PLTE)) {
 			sprintf( fi-> errbuf, "Palette not found");
 			throw( l->png_ptr );
 		}
 		png_get_PLTE(l->png_ptr, l->info_ptr, &palette, &palette_size);
+		pal = l->m_palette;
+		l-> m_palette_size = palette_size;
+		if ( palette_size > 256 ) palette_size = 256;
+
 		palette_size *= 3;
 		png_save_uint_32(l->m_dataPLTE, palette_size);
 		memcpy(l->m_dataPLTE + 4, "PLTE", 4);
 		memcpy(l->m_dataPLTE + 8, palette, palette_size);
 		l->m_sizePLTE = palette_size + 12;
+
+		for ( i = 0; i < l->m_palette_size; i++, palette++, pal++) {
+			pal-> r = palette-> red;
+			pal-> g = palette-> green;
+			pal-> b = palette-> blue;
+		}
 	}
 
 #ifdef PNG_tRNS_SUPPORTED
@@ -568,38 +616,52 @@ header_available(PImgLoadFileInstance fi)
 		png_bytep trns_t = 0;
 		int trns_n = 0;
 		png_color_16p trns_p;
+		HV * profile = fi-> frameProperties;
 
 		png_get_tRNS(l->png_ptr, l->info_ptr, &trns_t, &trns_n, &trns_p);
 
 		if (color_type == PNG_COLOR_TYPE_RGB) {
+			l->m_transparent_color = ARGB(
+				bit_depth_color(trns_p->red, bit_depth),
+				bit_depth_color(trns_p->green, bit_depth),
+				bit_depth_color(trns_p->blue, bit_depth)
+			);
+			l->m_alpha_size = -1;
 			png_save_uint_16(l->m_datatRNS +  8, trns_p->red);
 			png_save_uint_16(l->m_datatRNS + 10, trns_p->green);
 			png_save_uint_16(l->m_datatRNS + 12, trns_p->blue);
 			trns_n = 6;
+			if ( fi-> loadExtras) 
+				pset_i( transparent_color, l->m_transparent_color);
 		} else if (color_type == PNG_COLOR_TYPE_GRAY) {
+			l->m_alpha_size = -1;
+			l->m_transparent_color = bit_depth_color(trns_p->gray, bit_depth) * 0x10101;
 			png_save_uint_16(l->m_datatRNS + 8, trns_p->gray);
 			trns_n = 2;
-		} else if (color_type == PNG_COLOR_TYPE_PALETTE)
+			if ( fi-> loadExtras) 
+				pset_i( transparent_color, l->m_transparent_color);
+		} else if (color_type == PNG_COLOR_TYPE_PALETTE) {
 			memcpy(l->m_datatRNS + 8, trns_t, trns_n);
-		
-		png_save_uint_32(l->m_datatRNS, trns_n);
-		memcpy(l->m_datatRNS + 4, "tRNS", 4);
-		l->m_sizetRNS = trns_n + 12;
+			l-> m_alpha_size = trns_n;
+			if ( l->icon && (l-> m_alpha_size > 1 || ( l-> m_alpha_size ==  1 && *trns_t != 0 ))) {
+				l-> m_type = imRGB;
+				l-> convert_to_rgba = true;
+			}
 
-		if ( fi-> loadExtras) {
-			int i;
-			AV * av = newAV();
-			HV * profile = fi-> frameProperties;
-			for ( i = 0; i < trns_n; i++)
-				av_push( av, newSViv( trns_p[i]. index));
-			pset_sv_noinc( transparent_colors, newRV_noinc(( SV*) av));
-			if ( trns_t) {
-				av = newAV();
+			if ( fi-> loadExtras && trns_t) {
+				int i;
+				HV * profile = fi-> frameProperties;
+				AV * av = newAV();
 				for ( i = 0; i < trns_n; i++)
 					av_push( av, newSViv( trns_t[i]));
 				pset_sv_noinc( transparency_table, newRV_noinc(( SV*) av));
 			}
 		}
+		
+		png_save_uint_32(l->m_datatRNS, trns_n);
+		memcpy(l->m_datatRNS + 4, "tRNS", 4);
+		l->m_sizetRNS = trns_n + 12;
+
 	}
 #endif
 
@@ -622,21 +684,12 @@ header_available(PImgLoadFileInstance fi)
 		png_color_16p pBackground;
 		png_get_bKGD(l->png_ptr, l->info_ptr, &pBackground);
 
-		if (bit_depth == 16) {
-			r.r = pBackground->red   >> 8;
-			r.g = pBackground->green >> 8;
-			r.b = pBackground->blue  >> 8;
-		} else if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) {
-			if (bit_depth == 1)
-				r.r = r.g = r.b = pBackground->gray? 255 : 0;
-			else if (bit_depth == 2)
-				r.r = r.g = r.b = (255/3) * pBackground->gray;
-			else
-				r.r = r.g = r.b = (255/15) * pBackground->gray;
+		if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
+			r.r = r.g = r.b = bit_depth_color(pBackground->gray, bit_depth);
 		} else {
-			r.r = (Byte)pBackground->red;
-			r.g = (Byte)pBackground->green;
-			r.b = (Byte)pBackground->blue;
+			r.r = bit_depth_color(pBackground->red, bit_depth);
+			r.g = bit_depth_color(pBackground->green, bit_depth);
+			r.b = bit_depth_color(pBackground->blue, bit_depth);
 		}
 		l->m_background = ARGB(r.r, r.g, r.b);
 	}
@@ -663,8 +716,6 @@ header_available(PImgLoadFileInstance fi)
 		if ( !process_header( fi, false ))
 			throw( l->png_ptr );
 	}
-
-	EVENT_HEADER_READY(fi);
 }
 
 static void
@@ -701,7 +752,7 @@ row_available(png_structp png, png_bytep row_buffer, png_uint_32 row_index, int 
 		png_bytep row = l->interlace_buffer + (row_index * l->interlaced_channels * i->w);
 		png_progressive_combine_row(png, row, row_buffer);
 		src = (Byte*) row;
-		if ( l->images_created == 1) {
+		if ( l->load_req == 0) {
 			if (l->last_row > row_index)
 				EVENT_SCANLINES_RESET(fi);
 			l->last_row = row_index;
@@ -749,46 +800,8 @@ row_available(png_structp png, png_bytep row_buffer, png_uint_32 row_index, int 
 		memcpy( dst, src, i->w * (i->type & imBPP) / 8);
 	}
 
-	if ( l->images_created == 1) /* report events only on first image loaded */
+	if ( l->load_req == 0) /* report events only on first image loaded */
 		EVENT_TOPDOWN_SCANLINES_READY(fi,1);
-}
-
-static void
-frame_complete(PImgLoadFileInstance fi)
-{
-	LoadRec * l = ( LoadRec *) fi-> instance;
-	PIcon i = PIcon( fi-> object);
-
-	l->got_frame_body = true;
-
-	/* adjusting icon mask if possible */
-	if ( l->icon && !l->has_alpha) {
-		png_bytep trns_t = 0;
-		int trns_n = 0;
-		png_color_16p trns_p;
-		if ( png_get_valid( l->png_ptr, l->info_ptr, PNG_INFO_tRNS))
-			png_get_tRNS(l->png_ptr, l->info_ptr, &trns_t, &trns_n, &trns_p);
-		if ( trns_n ) {
-			if ( trns_t) {
-				if ( fi->blending ) {
-					PRGBColor p = PIcon( fi-> object)-> palette;
-					int j;
-					/* transparency values per pixel table is present */
-					for ( j = 0; j < trns_n; j++) {
-						p[j]. r = ((uint16_t) p[j]. r * trns_t[j]) >> 8;
-						p[j]. g = ((uint16_t) p[j]. g * trns_t[j]) >> 8;
-						p[j]. b = ((uint16_t) p[j]. b * trns_t[j]) >> 8;
-					}
-				}
-				i-> autoMasking = amNone;
-			} else {
-				i-> maskIndex = trns_p[0].index;
-				i-> autoMasking = amMaskIndex;
-			}
-		}
-	}
-	if ( l->post_blending )
-		i->self-> premultiply_alpha( fi-> object, (SV*) NULL );
 }
 
 static void
@@ -803,7 +816,7 @@ png_complete(PImgLoadFileInstance fi)
 	png_textp tx;
 	double scx, scy;
 
-	if ( l-> images_created == 1) /* report events only on first image loaded */
+	if ( l-> load_req == 0) /* report events only on first image loaded */
 		EVENT_TOPDOWN_SCANLINES_FINISHED(fi);
 
 	(void)tx; (void)py; (void)pl; (void)pyi; (void)pli; (void)i; (void)ct;
@@ -948,7 +961,6 @@ process_fcTL(PImgLoadFileInstance fi, png_unknown_chunkp chunk)
 		png_process_data(l->png_ptr2, l->info_ptr2, l->m_dataPLTE, l->m_sizePLTE);
 	if (l->m_sizetRNS > 0)
 		png_process_data(l->png_ptr2, l->info_ptr2, l->m_datatRNS, l->m_sizetRNS);
-	l->images_created++;
 	l->want_fdat = true;
 }
 #endif
@@ -1056,6 +1068,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 
 	fi-> instance = l;
 	l-> current_frame = -1;
+	l-> load_req = -1;
 	return l;
 }
 
@@ -1087,27 +1100,30 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	Byte buf[BUFSIZE], chunk[5];
 	LoadRec * l = ( LoadRec *) fi-> instance;
 	HV * profile = fi-> profile;
-	Bool had_DAT = false, reset_to_chunk_start = false; 
+	Bool had_DAT = false, reset_to_chunk_start = false, got_frame_body = false;
 
-	l->icon = fi->object ? kind_of( fi-> object, CIcon) : false;
-
-	if ( l->icon && pexist( background)) {
-		strcpy( fi-> errbuf, "Option 'background' cannot be set when loading to an Icon object");
-		return false;
-	}
+	l-> load_req++;
 
 	/* rewind */
 	if ( fi->frame > 0 && fi->frame < l->current_frame) {
 		void * newinst, * oldinst = fi->instance;
+		warn("REL %d %d\n", fi->frame, l->current_frame);
 		if (( newinst = open_load(instance, fi)) == NULL) {
 			fi->instance = oldinst;
 			strcpy(fi->errbuf, "Cannot reinitialize loader");
 			return false;
 		}
+		(( LoadRec *) newinst)-> load_req = l-> load_req;
 		fi->instance = oldinst;
 		close_load(instance, fi);
 		fi->instance = newinst;
 		l = ( LoadRec *) newinst;
+	}
+
+	l->icon = fi->object ? kind_of( fi-> object, CIcon) : false;
+	if ( l->icon && pexist( background)) {
+		strcpy( fi-> errbuf, "Option 'background' cannot be set when loading to an Icon object");
+		return false;
 	}
 
 	if (setjmp(png_jmpbuf(l->png_ptr)) != 0) {
@@ -1150,8 +1166,13 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			if ( STREQ(chunk, "IDAT")) 
 				had_DAT = true;
 			else if (had_DAT) {
-				if (!fi->noImageData) frame_complete(fi);
-				if (!fi->loadExtras) {
+				if (!fi->noImageData) 
+					got_frame_body = true;
+				if (
+					!fi->loadExtras ||
+					/* report extras on last image only to avoid constant rescans on loadAll */
+					l->load_req < ((fi->frameMap ? fi->frameMapSize : fi->frameCount) - 1)
+				) {
 					reset_to_chunk_start = true;
 					break;
 				}
@@ -1170,8 +1191,13 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				else
 					had_DAT = true;
 			} else if ( had_DAT ) {
-				if (!fi->noImageData) frame_complete(fi);
-				if (!fi->loadExtras) {
+				if (!fi->noImageData && fi->frame == l->current_frame) 
+					got_frame_body = true;
+				if (
+					!fi->loadExtras ||
+					/* report extras on last image only to avoid constant rescans on loadAll */
+					l->load_req < ((fi->frameMap ? fi->frameMapSize : fi->frameCount) - 1)
+				) {
 					reset_to_chunk_start = true;
 					break;
 				}
@@ -1240,7 +1266,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		sprintf(fi->errbuf, "Frame header not found");
 		return false;
 	}
-	if ( !fi->noImageData && !l->got_frame_body) {
+	if ( !fi->noImageData && !got_frame_body) {
 		sprintf(fi->errbuf, "Frame data not found");
 		return false;
 	}
