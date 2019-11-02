@@ -1098,7 +1098,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	l-> load_req++;
 
 	/* rewind */
-	if ( fi->frame > 0 && fi->frame < l->current_frame) {
+	if ( fi->frame >= 0 && fi->frame < l->current_frame) {
 		void * newinst, * oldinst = fi->instance;
 		if (( newinst = open_load(instance, fi)) == NULL) {
 			fi->instance = oldinst;
