@@ -50,7 +50,7 @@ sub load
 	my $model;
 	if ( $c->{name} eq 'GIFLIB') {
 		$model = 'GIF';
-	} elsif ($c->{name} =~ /^(WebP|APNG)$/) {
+	} elsif ($c->{name} =~ /^(WebP|PNG)$/) {
 		$model = 'WebPNG';
 	} else {
 		return 0;
