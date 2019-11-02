@@ -684,9 +684,9 @@ sub ui_scale
 
 sub image
 {
-	my $self  = shift;
+	my ($self,%opt) = @_;
 	my ($image, undef) = $self-> split;
-	$image->backColor(0);
+	$image->backColor($opt{background} // 0);
 	$image->clear;
 	$image->put_image(0,0,$self,rop::CopyPut);
 	return $image;
