@@ -20,6 +20,26 @@ sub new
 	return $self;
 }
 
+sub detect_animation
+{
+	my (undef, $extras) = @_;
+	return undef unless                    # more than 1 frame?
+		$extras &&
+		defined($extras->{codecID}) &&
+		$extras->{frames} &&
+		$extras->{frames} > 1;
+	my $c = Prima::Image->codecs($extras-> {codecID}) or return 0;
+	return undef unless $c;
+
+	if ( $c->{name} eq 'GIFLIB') {
+		return 'GIF';
+	} elsif ($c->{name} =~ /^(WebP|PNG)$/) {
+		return $c->{name};
+	} else {
+		return undef;
+	}
+}
+
 sub load
 {
 	my $class = shift;
@@ -45,16 +65,7 @@ sub load
 	);
 
 	return unless @i;
-
-	my $c = Prima::Image->codecs($i[0]-> {extras}-> {codecID}) or return 0;
-	my $model;
-	if ( $c->{name} eq 'GIFLIB') {
-		$model = 'GIF';
-	} elsif ($c->{name} =~ /^(WebP|PNG)$/) {
-		$model = 'WebPNG';
-	} else {
-		return 0;
-	}
+	my $model = $class->detect_animation($i[0]->{extras}) or return;
 	$model = 'Prima::Image::Animate::' . $model;
 
 	return $model-> new( images => \@i);
@@ -535,6 +546,12 @@ sub draw
 	$canvas-> put_image( $x, $y, $self-> {canvas}, rop::SrcOver) if $self->{canvas};
 }
 
+package Prima::Image::Animate::WebP;
+use base 'Prima::Image::Animate::WebPNG';
+
+package Prima::Image::Animate::PNG;
+use base 'Prima::Image::Animate::WebPNG';
+
 1;
 
 __END__
@@ -578,6 +595,12 @@ Creates an empty animation container. If C<$OPTIONS{images}> is given, it is
 expected to be an array of images, best if loaded from gif files with
 C<loadExtras> and C<iconUnmask> parameters set ( see L<Prima::image-load> for
 details).
+
+=head2 detect_animation $HASH
+
+Checks C<{extras} hash> obtained from a image loaded with C<loadExtras> flag set,
+to detect whether the image is an animation, and if loading all of its frame is
+supported by the module. Returns file format name on success, undef otherwise.
 
 =head2 load $SOURCE, %OPTIONS
 
