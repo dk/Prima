@@ -272,7 +272,7 @@ typedef struct _LoadRec {
 	Color m_background, m_transparent_color;
 	RGBColor m_palette[256];
 	Byte * interlace_buffer;
-	int interlaced_channels, m_alpha_size, m_palette_size;
+	int interlaced_channels, m_alpha_size, m_palette_size, stride;
 } LoadRec;
 
 
@@ -449,10 +449,13 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 		fi->blending = 0;
 		l->icon      = 0;
 		png_set_strip_alpha(png_ptr);
-		warn("Unknown alpha channel coding scheme (%d %d %d %x)", channels, color_type, bit_depth, type);
+		warn("Unknown alpha channel coding scheme (channels=%d, color=%d, bits=%d, type=%x)", channels, color_type, bit_depth, type);
 	}
 
-	i-> self-> create_empty((Handle)i, 1, 1, type);
+	i-> self-> create_empty((Handle)i, 
+		fi->noImageData ? 1 : width, 
+		fi->noImageData ? 1 : height, 
+		type);
 	if (( type & imBPP ) < 24) {
 		i-> palSize = l-> m_palette_size;
 		memcpy( i-> palette, l-> m_palette, l-> m_palette_size * 3);
@@ -483,7 +486,10 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 		return true;
 	}
 
-	CImage( fi-> object)-> create_empty( fi-> object, width, height, type);
+	l->stride = bit_depth * channels * i->w;
+	l->stride = (l->stride / 8) + ((l->stride % 8) ? 1 : 0);
+	if ( l->stride > i->lineSize ) l-> stride = i->lineSize;
+
 	if ( l->load_req == 0)
 		EVENT_HEADER_READY(fi);
 
@@ -788,12 +794,12 @@ row_available(png_structp png, png_bytep row_buffer, png_uint_32 row_index, int 
 				}
 			}
 		}
-	} else if ( l->want_nibbles == 2) {
-		/* convert from 8-bit down to 4-bit */
+	} else if ( l->want_nibbles) {
+		/* convert from 8-bit down to 4-bit */	
 		bc_byte_nibble_cr( src, dst, i->w, map_stdcolorref);
 	} else {
-		/* plain gray or rgb */
-		memcpy( dst, src, i->w * (i->type & imBPP) / 8);
+		/* plain 24 bit or less */
+		memcpy( dst, src, l->stride);
 	}
 
 	if ( l->load_req == 0) /* report events only on first image loaded */
@@ -951,7 +957,7 @@ process_fcTL(PImgLoadFileInstance fi, png_unknown_chunkp chunk)
 	png_process_data(l->png_ptr2, l->info_ptr2, dataPNG, 8);
 	png_process_data(l->png_ptr2, l->info_ptr2, l->m_dataIHDR, 25);
 	if ( l->m_hasgAMA) {
-		png_save_uint_32(datagAMA + 8, l->m_gamma);
+		png_save_uint_32(datagAMA + 8, (png_uint_32)(l->m_gamma * 100000));
 		png_process_data(l->png_ptr2, l->info_ptr2, datagAMA, 16);
 	}
 	if (l->m_sizePLTE > 0)
@@ -1099,7 +1105,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	l-> load_req++;
 
 	/* rewind */
-	if ( fi->frame >= 0 && fi->frame < l->current_frame) {
+	if ( fi->frame >= 0 && fi->frame <= l->current_frame) {
 		LoadRec * newinst;
 		if (( newinst = (LoadRec*) open_load(instance, fi)) == NULL) {
 			fi->instance = l;
@@ -1261,7 +1267,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			snprintf( fi-> errbuf, 256, "I/O error:%s", strerror(req_error( fi-> req)));
 			return false;
 		}
-	}
+	}	
 
 	return true;
 }
