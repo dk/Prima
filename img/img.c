@@ -526,8 +526,12 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 				Object_destroy( fi. object);
 			if ( fi. profile != commonHV) sv_free(( SV *) fi. profile);
 			if ( incrementalLoad) {
-				if ( fi. frameCount < 0) fi. frameCount = fi. frame;
-				goto EXIT_NOW; /* EOF, report no error */
+				if ( fi. frameCount < 0)
+					fi. frameCount = fi. frame;
+				else if ( fi.frame < fi.frameCount )
+					err = true;
+				/* or it is EOF, report no error then */
+				goto EXIT_NOW;
 			}
 			err = true;
 			goto EXIT_NOW;
