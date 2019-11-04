@@ -168,7 +168,7 @@ static ImgCodecInfo codec_info = {
 	"Prima::Image::png",     /* package */
 	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM
 #ifdef APNG
-	| IMG_LOAD_MULTIFRAME
+	| IMG_LOAD_MULTIFRAME | IMG_SAVE_MULTIFRAME
 #endif
 	,
 	pngbpp, /* save types */
@@ -456,7 +456,7 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 		fi->noImageData ? 1 : width, 
 		fi->noImageData ? 1 : height, 
 		type);
-	if (( type & imBPP ) < 24) {
+	if (( type & imBPP ) < 24 && !(type & imGrayScale)) {
 		i-> palSize = l-> m_palette_size;
 		memcpy( i-> palette, l-> m_palette, l-> m_palette_size * 3);
 	}
@@ -1005,6 +1005,8 @@ read_chunks(png_structp png, png_unknown_chunkp chunk)
 		(chunk->size > 4) &&
 		l->animated
 	) {
+		if (setjmp(png_jmpbuf( l->png_ptr2)) != 0)
+			throw(l->png_ptr);
 	        png_save_uint_32(chunk->data, chunk->size - 4);
 	        png_process_data(l->png_ptr2, l->info_ptr2, chunk->data, 4);
 	        memcpy(chunk->data, "IDAT", 4);
@@ -1270,6 +1272,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	}	
 
 	return true;
+#undef BUFSIZE
 }
 
 static void
@@ -1336,127 +1339,222 @@ save_defaults( PImgCodec c)
 typedef struct _SaveRec {
 	png_structp png_ptr;
 	png_infop info_ptr;
-	Byte * b8_4;
 	Byte * line;
+	Bool icon, autoConvert;
+	int m_type, m_mask, m_palSize;
+	RGBColor m_palette[256];
+	png_byte m_dataPLTE[12 + 256 * 3];
+	png_byte m_datatRNS[12 + 256];
 } SaveRec;
 
 static void *
 open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
-	SaveRec * l;
+	SaveRec * s;
 
-	l = malloc( sizeof( SaveRec));
-	if ( !l) return nil;
+	s = malloc( sizeof( SaveRec));
+	if ( !s) return nil;
 
-	memset( l, 0, sizeof( SaveRec));
+	memset( s, 0, sizeof( SaveRec));
 
-	if ( !( l-> png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
+	if ( !( s-> png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
 		fi-> errbuf, error_fn, warning_fn))) {
-		free( l);
+		free( s);
 		return false;
 	}
 
-	if ( !( l-> info_ptr = png_create_info_struct(l->png_ptr))) {
-		png_destroy_write_struct(&l->png_ptr, (png_infopp)NULL);
-		free( l);
+	if ( !( s-> info_ptr = png_create_info_struct(s->png_ptr))) {
+		png_destroy_write_struct(&s->png_ptr, (png_infopp)NULL);
+		free( s);
 		return false;
 	}
 
-	fi-> instance = l;
+	fi-> instance = s;
+	png_set_write_fn( s-> png_ptr, fi, img_png_write, img_png_flush);
 
-	if (setjmp(png_jmpbuf( l-> png_ptr))) {
-		/* If we get here, we had a problem inside open_load */
-		png_destroy_write_struct(&l-> png_ptr, &l-> info_ptr);
-		fi-> instance = nil;
-		free( l);
-		return false;
-	}
-	png_set_write_fn( l-> png_ptr, fi, img_png_write, img_png_flush);
-
-	return l;
+	return s;
 }
 
 static Bool
-save( PImgCodec instance, PImgSaveFileInstance fi)
+write_IHDR(PImgSaveFileInstance fi)
 {
 	dPROFILE;
-	PIcon i;
-	SaveRec * l;
-	HV * profile;
-	Bool icon;
-	Byte * alpha;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	PIcon i = ( PIcon) fi-> object;
+	HV * profile = fi-> extras;
 
-	l = ( SaveRec *) fi-> instance;
-	if ( setjmp( png_jmpbuf( l-> png_ptr)) != 0) return false;
+	int bit_depth, color_type, interlace = PNG_INTERLACE_NONE,
+		filter = PNG_FILTER_TYPE_DEFAULT;
 
-	l = ( SaveRec *) fi-> instance;
-	icon = kind_of( fi-> object, CIcon);
-	i = ( PIcon) fi-> object;
-	profile = fi-> objectExtras;
-	alpha = NULL;
-
-	/* header */
-	{
-		int bit_depth, color_type, interlace = PNG_INTERLACE_NONE,
-			filter = PNG_FILTER_TYPE_DEFAULT;
-		if (( i-> type & imBPP) == 24) {
-			bit_depth = 8;
-			color_type = PNG_COLOR_TYPE_RGB;
-		} else {
-			color_type = ( i-> type & imGrayScale) ?
-				PNG_COLOR_TYPE_GRAY : PNG_COLOR_TYPE_PALETTE;
-			bit_depth = i-> type & imBPP;
-		}
-		if ( pexist( interlaced) && pget_B( interlaced))
-			interlace = PNG_INTERLACE_ADAM7;
+	if (( i-> type & imBPP) == 24) {
+		bit_depth = 8;
+		color_type = PNG_COLOR_TYPE_RGB;
+	} else {
+		color_type = ( i-> type & imGrayScale) ?
+			PNG_COLOR_TYPE_GRAY : PNG_COLOR_TYPE_PALETTE;
+		bit_depth = i-> type & imBPP;
+	}
+	if ( pexist( interlaced) && pget_B( interlaced))
+		interlace = PNG_INTERLACE_ADAM7;
 #ifdef PNG_INTRAPIXEL_DIFFERENCING
-		if ( pexist( mng_datastream) && pget_B( mng_datastream))
-			filter = PNG_INTRAPIXEL_DIFFERENCING;
+	if ( pexist( mng_datastream) && pget_B( mng_datastream))
+		filter = PNG_INTRAPIXEL_DIFFERENCING;
 #endif
-		if ( icon && i-> autoMasking != amMaskIndex && i-> autoMasking != amMaskColor ) {
-			Bool autoConvert;
-			{
-				/* recognize autoConvert as the image subsystem does */
-				HV * profile = fi-> extras;
-				autoConvert = pexist( autoConvert) ? pget_B( autoConvert) : true;
-			}
-
-			/* png doesn't support paletted images with alpha channel? */
-			if ( color_type == PNG_COLOR_TYPE_PALETTE) {
-				if ( !autoConvert)
-					outc("Cannot apply alpha channel to a paletted image");
-				CImage( i)-> set_type(( Handle) i, imRGB);
-				if ( i-> type != imRGB)
-					outc("Failed converting image to type im::RGB");
-				color_type = PNG_COLOR_TYPE_RGB;
-			}
-
-			/* and does not alpha with bit_depth other that 8 or 24 bits? */
-			if ( bit_depth != 8) {
-				if ( !autoConvert)
-					outc( "Image depth must be of 8 bits to be saved with alpha channel");
-				CImage( i)-> set_type(( Handle) i, imbpp8 | ( i-> type & imGrayScale));
-				if (( i-> type & imBPP) != 8)
-					outc("Failed converting image to 8-bit");
-				bit_depth = 8;
-			}
-
-			if ( i-> maskType != imbpp8) {
-				if ( !autoConvert)
-					outc("maskType is not of type im::bpp8");
-				i-> self-> set_maskType( fi-> object, imbpp8);
-				if ( i-> maskType != imbpp8 )
-					outc("Failed converting icon mask to type im::bpp8");
-			}
-			if (( l-> line = malloc( i-> w * (( color_type == PNG_COLOR_TYPE_GRAY) ? 2 : 4)))) {
-				alpha = i-> mask;
-				color_type |= PNG_COLOR_MASK_ALPHA;
-			}
+	if ( s->icon && i-> autoMasking != amMaskIndex && i-> autoMasking != amMaskColor ) {
+		/* png doesn't support paletted images with alpha channel? */
+		if ( color_type == PNG_COLOR_TYPE_PALETTE) {
+			if ( !s->autoConvert)
+				outc("Cannot apply alpha channel to a paletted image");
+			CImage( i)-> set_type(( Handle) i, imRGB);
+			if ( i-> type != imRGB)
+				outc("Failed converting image to type im::RGB");
+			color_type = PNG_COLOR_TYPE_RGB;
 		}
-		png_set_IHDR( l-> png_ptr, l-> info_ptr, i-> w, i-> h, bit_depth, color_type,
-			interlace, PNG_COMPRESSION_TYPE_DEFAULT, filter);
+
+		/* and does not alpha with bit_depth other that 8 or 24 bits? */
+		if ( bit_depth != 8) {
+			if ( !s->autoConvert)
+				outc( "Image depth must be of 8 bits to be saved with alpha channel");
+			CImage( i)-> set_type(( Handle) i, imbpp8 | ( i-> type & imGrayScale));
+			if (( i-> type & imBPP) != 8)
+				outc("Failed converting image to 8-bit");
+			bit_depth = 8;
+		}
+
+		if ( i-> maskType != imbpp8) {
+			if ( !s->autoConvert)
+				outc("maskType is not of type im::bpp8");
+			i-> self-> set_maskType( fi-> object, imbpp8);
+			if ( i-> maskType != imbpp8 )
+				outc("Failed converting icon mask to type im::bpp8");
+		}
+		color_type |= PNG_COLOR_MASK_ALPHA;
 	}
 
+	s-> m_type = PImage(i)->type;
+	s-> m_mask = s-> icon ? (PIcon(i)->maskType) : 0;
+	if ( (!( s->m_type & imGrayScale)) && ( s->m_type != imRGB) && (i->palSize > 0)) {
+		s-> m_palSize = i->palSize;
+		memcpy( s-> m_palette, i->palette, 768 );
+	} else
+		s-> m_palSize = 0;
+
+	png_set_IHDR( s-> png_ptr, s-> info_ptr, i-> w, i-> h, bit_depth, color_type,
+		interlace, PNG_COMPRESSION_TYPE_DEFAULT, filter);
+	return true;
+}
+
+static Bool
+write_tRNS(PImgSaveFileInstance fi)
+{
+	/* tRNS */
+#ifdef PNG_tRNS_SUPPORTED
+	dPROFILE;
+	HV * profile = fi->extras;
+	png_color_16 trns_p[256];
+	png_byte trns_t[256];
+	int trns_n = 0;
+	Color color;
+	int   index = 0;
+	Bool has_color, has_index;
+	int color_weight = 0, index_weight = 0;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	PIcon i = ( PIcon) fi-> object;
+
+	if ( pexist(transparent_color)) {
+		color = pget_i(transparent_color);
+		color_weight++;
+		has_color = true;
+	} else {
+		if ( s->icon && (i-> autoMasking == amMaskIndex)) {
+			RGBColor *p = i->palette + i-> maskIndex;
+			color = ARGB(p->r, p->g, p->b);
+			has_color = true;
+		} else if ( s->icon && (i-> autoMasking == amMaskColor)) {
+			color = i->maskColor;
+			has_color = true;
+		}
+	}
+
+	if (( i-> type & imBPP ) <= 8) {
+		if ( pexist(transparent_color_index)) {
+			index = pget_i(transparent_color_index);
+			has_index = true;
+			index_weight++;
+		} else if ( s->icon && (i-> autoMasking == amMaskIndex)) {
+			index = i-> maskIndex;
+			has_index = true;
+		}
+	}
+
+	if ( has_color && has_index ) {
+		if ( index_weight < color_weight )
+			has_index = false;
+		else
+			has_color = false;
+	}
+
+	if ( i-> type <= 8 ) {
+		if ( pexist(transparency_table)) {
+			SV * sv = pget_sv(transparency_table);
+			if ( sv && SvOK(sv) && SvROK(sv) && SvTYPE(SvRV(sv)) == SVt_PVAV) {
+				AV * av = (AV*) SvRV(sv);
+				int i;
+				trns_n = av_len(av) + 1;
+				for ( i = 0; i < trns_n; i++) {
+					SV **item = av_fetch( av, i, 0);
+					if ( item && *item && SvOK(*item) && SvIOK(*item)) 
+						trns_t[i] = SvIV(*item);
+					else {
+						sprintf(fi-> errbuf, "Invalid item #%d in transparency_table array", i);
+						return false;
+					}
+
+				}
+			} else {
+				sprintf(fi-> errbuf, "Invalid transparency_table array");
+				return false;
+			}
+		} else if ( has_index ) {
+			trns_n = 1;
+			trns_t[index] = 0;
+		} else if ( has_color ) {
+			RGBColor rgb;
+			rgb. b = color         & 0xFF;
+			rgb. g = (color >> 8)  & 0xFF;
+			rgb. r = (color >> 16) & 0xFF;
+			index = cm_nearest_color( rgb, i-> palSize, i-> palette);
+			trns_n = 1;
+			trns_t[index] = 0;
+		}
+	} else if ( i-> type == 24 && has_color) {
+		trns_p[0].red   = (color & 0xFF0000) >> 16;
+		trns_p[0].green = (color & 0x00FF00) >> 8;
+		trns_p[0].blue  = (color & 0x0000FF);
+		trns_n = 1;
+	} else if ( i-> type & imGrayScale && (has_color || has_index)) {
+		RGBColor rgb;
+		rgb. b = color         & 0xFF;
+		rgb. g = (color >> 8)  & 0xFF;
+		rgb. r = (color >> 16) & 0xFF;
+		trns_n = 1;
+		trns_p[0].gray = has_index ? index : cm_nearest_color( rgb, i-> palSize, i-> palette);
+	}
+
+	if ( trns_n == 0 ) return true;
+	png_set_tRNS(s->png_ptr, s-> info_ptr, trns_t, trns_n, trns_p);
+
+#endif
+	return true;
+}
+
+static Bool
+write_PLTE_etc(PImgSaveFileInstance fi)
+{
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	PIcon i = ( PIcon) fi-> object;
+	HV * profile = fi-> extras;
 	/* palette */
 	if ((( i-> type & imBPP) <= 8) && ((i-> type & imGrayScale) == 0)) {
 		RGBColor * pal = i-> palette;
@@ -1469,7 +1567,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			palette[j].green = pal-> g;
 			palette[j].blue  = pal-> b;
 		}
-		png_set_PLTE(l->png_ptr, l->info_ptr, palette, num_palette);
+		png_set_PLTE(s->png_ptr, s->info_ptr, palette, num_palette);
 	}
 
 	/* sRGB */
@@ -1485,7 +1583,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 				snprintf( fi-> errbuf, 256, "Unknown render_intent option '%s'", c);
 				return false;
 			}
-			png_set_sRGB( l-> png_ptr, l-> info_ptr, i);
+			png_set_sRGB( s-> png_ptr, s-> info_ptr, i);
 		}
 	}
 #endif
@@ -1498,7 +1596,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			sprintf( fi-> errbuf, "Gamma value must be within %g..%g", PNG_GAMMA_THRESHOLD, (double)PNG_MAX_GAMMA);
 			return false;
 		}
-		png_set_gAMA( l-> png_ptr, l-> info_ptr, gamma);
+		png_set_gAMA( s-> png_ptr, s-> info_ptr, gamma);
 	}
 #endif
 
@@ -1509,60 +1607,10 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		STRLEN plen = 0;
 		char * name = pexist( iccp_name) ? pget_c( iccp_name) : "unspecified";
 		if ( pexist( iccp_profile)) prf = SvPV( pget_sv( iccp_profile), plen);
-		png_set_iCCP( l-> png_ptr, l-> info_ptr, name, 0, (void*) prf, plen);
+		png_set_iCCP( s-> png_ptr, s-> info_ptr, name, 0, (void*) prf, plen);
 	}
 #endif
 
-	/* tRNS */
-#ifdef PNG_tRNS_SUPPORTED
-	{
-		png_color_16 trns_p[256];
-		png_byte trns_t[256];
-		int trns_n = 0;
-		Color color = pexist( transparent_color) ? pget_i( transparent_color) : clInvalid;
-		int   index = pexist( transparent_color_index) ? pget_i( transparent_color_index) : -1;
-
-		if ( index > i-> palSize)
-			index = i-> palSize - 1;
-		if ( icon && (i-> autoMasking == amMaskIndex) && ( index < 0))
-			index = i-> maskIndex;
-
-		if ( color & clSysFlag)
-			color = clInvalid;
-		if ( icon && (i-> autoMasking == amMaskColor) && ( color == clInvalid))
-			color = i-> maskColor;
-		memset( trns_p, 0, sizeof( trns_p));
-		if ( color != clInvalid || index >= 0) {
-			memset( trns_t, 255, sizeof( trns_t));
-			if (( i-> type & imBPP) < 24) {
-				int x;
-				if ( index < 0) {
-					RGBColor r;
-					r.r = (color & 0xFF0000) >> 16;
-					r.g = (color & 0x00FF00) >> 8;
-					r.b = (color & 0x0000FF);
-					x = cm_nearest_color( r, i-> palSize, i-> palette);
-				} else {
-					x = index;
-				}
-				trns_t[x] = 0;
-				trns_n = x + 1;
-				trns_p[0].index = x;
-				trns_p[x].index = x;
-				png_set_tRNS(l->png_ptr, l-> info_ptr, trns_t, trns_n, trns_p);
-			} else if ( color != clInvalid) {
-				trns_p[0].red   = (color & 0xFF0000) >> 16;
-				trns_p[0].green = (color & 0x00FF00) >> 8;
-				trns_p[0].blue  = (color & 0x0000FF);
-				png_set_tRNS(l->png_ptr, l-> info_ptr, nil, 1, trns_p);
-			}
-
-			/* maybe it is a good idea to adjust automatically backgound  */
-			if ( !pexist( background) || (pget_i( background) & clSysFlag))
-				pset_i( background, color);
-		}
-	}
-#endif
 
 	/* bKGD */
 #ifdef PNG_bKGD_SUPPORTED
@@ -1573,10 +1621,12 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			p.red   = (background & 0xFF0000) >> 16;
 			p.green = (background & 0x00FF00) >> 8;
 			p.blue  = (background & 0x0000FF);
-			png_set_bKGD(l-> png_ptr, l-> info_ptr, &p);
+			png_set_bKGD(s-> png_ptr, s-> info_ptr, &p);
 		}
 	}
 #endif
+
+	if ( !write_tRNS(fi)) return false;
 
 	/* text */
 #ifdef PNG_TEXT_SUPPORTED
@@ -1609,7 +1659,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			txt[i]. text_length = vlen;
 			i++;
 		}
-		png_set_text(l-> png_ptr, l-> info_ptr, txt, len);
+		png_set_text(s-> png_ptr, s-> info_ptr, txt, len);
 		free( txt);
 	}
 #endif
@@ -1629,7 +1679,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 				return false;
 			}
 		}
-		png_set_oFFs( l-> png_ptr, l-> info_ptr, ox, oy, dm);
+		png_set_oFFs( s-> png_ptr, s-> info_ptr, ox, oy, dm);
 	}
 #endif
 
@@ -1648,7 +1698,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 				return false;
 			}
 		}
-		png_set_pHYs( l-> png_ptr, l-> info_ptr, ox, oy, dm);
+		png_set_pHYs( s-> png_ptr, s-> info_ptr, ox, oy, dm);
 	}
 #endif
 
@@ -1668,64 +1718,352 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 				return false;
 			}
 		}
-		png_set_sCAL( l-> png_ptr, l-> info_ptr, dm, ox, oy);
+		png_set_sCAL( s-> png_ptr, s-> info_ptr, dm, ox, oy);
 	}
 #endif
+	return true;
+}
 
-	/* done with header, write it now */
-	png_write_info(l-> png_ptr, l-> info_ptr);
+#ifdef APNG
+static Bool
+write_fcTL(PImgSaveFileInstance fi)
+{
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	PIcon i = ( PIcon) fi-> object;
+	HV * profile = fi-> extras;
+	png_byte fctl[26];
+	png_uint_16 num, den;
+	png_uint_32 delay;
 
-	if (( i-> type & imBPP) == 24) png_set_bgr(l-> png_ptr);
-
-	/* writing data */
-	{
-		int pass, num_pass = png_set_interlace_handling(l-> png_ptr);
-		for (pass = 0; pass < num_pass; pass++) {
-			int h = i-> h;
-			Byte * data = i-> data + (i-> h - 1) * i-> lineSize;
-			Byte * a_data = alpha;
-			if ( a_data )
-				a_data += ( h - 1) * i-> maskLine;
-			while ( h--) {
-				if ( a_data ) {
-					int j;
-					Byte * src = data, * dst = l-> line, *a = a_data;
-					if ( i-> type == imRGB) {
-						for ( j = 0; j < i-> w; j++) {
-							*dst++ = *src++;
-							*dst++ = *src++;
-							*dst++ = *src++;
-							*dst++ = *a++;
-						}
-					} else {
-						for ( j = 0; j < i-> w; j++) {
-							*dst++ = *src++;
-							*dst++ = *a++;
-						}
-					}
-					png_write_row( l-> png_ptr, l-> line);
-				} else {
-					png_write_row( l-> png_ptr, data);
-				}
-				data -= i-> lineSize;
-				if ( a_data) a_data -= i-> maskLine;
+	if ( 
+		i->type != s->m_type || 
+		(s->icon && i->maskType != s->m_mask) ||
+		(s->m_palSize > 0 && memcmp( s-> m_palette, i-> palette, i-> palSize * 3) != 0)
+	) {
+		if ( s->autoConvert ) {
+			if (
+				i->type != s->m_type ||
+				(s->m_palSize > 0 && memcmp( s-> m_palette, i-> palette, i-> palSize * 3) != 0)
+			) {
+				if ( s-> m_palSize > 0)
+					i->self->reset((Handle)i, s-> m_type, s-> m_palette, s-> m_palSize );
+				else
+					i->self->set_type((Handle)i, s-> m_type );
 			}
+			if ( s->icon && i->maskType != s->m_mask)
+				i->self->set_maskType((Handle)i, s-> m_mask );
+		} else {
+			sprintf( fi-> errbuf, "Image #%d must be of same type as the first image", fi->frame);
+			return false;
 		}
 	}
 
-	/* end - now comments or time, if any */
-	png_write_end(l-> png_ptr, NULL);
+	png_save_uint_32( &fctl[0],  fi->frame);
+	png_save_uint_32( &fctl[4],  i->w);
+	png_save_uint_32( &fctl[8],  i->h);
+	png_save_uint_32( &fctl[12], pexist(left) ? pget_i(left) : 0);
+	png_save_uint_32( &fctl[16], pexist(top)  ? pget_i(top)  : 0);
+
+	delay = pexist(delayTime) ? pget_i(delayTime) : 0;
+	if ( delay <= 655350 ) {
+		den = 0;
+		num = delay / 10;
+	} else if ( delay <= 65535000 ) {
+		den = 1;
+		num = delay / 1000;
+	} else {
+		den = 1;
+		num = 65535;
+	}
+	png_save_uint_16( &fctl[20], num);
+	png_save_uint_16( &fctl[22], den);
+
+	if ( pexist(disposalMethod)) {
+		char * c = pget_c(disposalMethod);
+		if ( strcmp(c, "restore")) 
+			fctl[24] = 2;
+		else if ( strcmp(c, "background")) 
+			fctl[24] = 1;
+		else if ( strcmp(c, "none")) 
+			fctl[24] = 0;
+		else {
+			snprintf( fi-> errbuf, 256, "unknown disposalMethod '%s'", c);
+			return false;
+		}
+	} else
+		fctl[24] = 0;
+		
+	if ( pexist(blendMethod)) {
+		char * c = pget_c(blendMethod);
+		if ( strcmp(c, "blend")) 
+			fctl[25] = 1;
+		else if ( strcmp(c, "no_blend")) 
+			fctl[25] = 0;
+		else {
+			snprintf( fi-> errbuf, 256, "unknown blendMethod '%s'", c);
+			return false;
+		}
+	} else
+		fctl[25] = 0;
+	png_write_chunk(s->png_ptr, (png_const_bytep)"fcTL", (png_byte*)&fctl, sizeof(fctl));
 	return true;
+}
+
+static Bool
+write_IDAT(PImgSaveFileInstance fi, png_structp png_ptr)
+{
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	PIcon i = ( PIcon) fi-> object;
+	int h = i-> h;
+	Byte * data = i-> data + (i-> h - 1) * i-> lineSize;
+	Byte * a_data = s-> icon ? i-> mask : NULL;
+
+	if (( i-> type & imBPP) == 24) png_set_bgr(png_ptr);
+
+	if ( s-> line ) free( s-> line );
+	if ( a_data ) {
+		if (!( s-> line = malloc( i-> w * 4)))
+			outcm( i-> w * 4);
+	}
+
+	if ( a_data )
+		a_data += ( h - 1) * i-> maskLine;
+	while ( h--) {
+		if ( a_data ) {
+			int j;
+			Byte * src = data, * dst = s-> line, *a = a_data;
+			if ( i-> type == imRGB) {
+				for ( j = 0; j < i-> w; j++) {
+					*dst++ = *src++;
+					*dst++ = *src++;
+					*dst++ = *src++;
+					*dst++ = *a++;
+				}
+			} else {
+				for ( j = 0; j < i-> w; j++) {
+					*dst++ = *src++;
+					*dst++ = *a++;
+				}
+			}
+			png_write_row( png_ptr, s-> line);
+		} else {
+			png_write_row( png_ptr, data);
+		}
+		data -= i-> lineSize;
+		if ( a_data) a_data -= i-> maskLine;
+	}
+
+	if ( s-> line ) {
+		free( s-> line);
+		s-> line = NULL;
+	}
+
+	return true;
+}
+
+
+#define BUFSIZE (8 + 8192 + 4)
+typedef struct {
+	Bool skip_header;
+	PImgSaveFileInstance fi;
+	SaveRec * s;
+	ssize_t size, written;
+	Byte buf[BUFSIZE];
+} Buffer;
+
+static void
+buf_flush (png_structp png_ptr)
+{
+	Buffer * b = (Buffer *) png_get_io_ptr(png_ptr);
+	if ( b-> skip_header || b->size == 0 ) return;
+
+	if (
+		b-> size < 13 ||
+		png_get_uint_32( b->buf ) != b-> size - 12 ||
+		memcmp(b-> buf + 4, "IDAT", 4) != 0
+	) {
+		sprintf(b->fi->errbuf, "Error recoding IDAT into fdAT chunk");
+		throw(png_ptr);
+	}
+
+	png_save_uint_32( b-> buf + 4, b->fi->frame);
+	png_write_chunk(b->s->png_ptr, (png_const_bytep)"fdAT", (png_byte*)(b->buf + 4), b->size - 8);
+	b-> written += b->size;
+	if ( b-> size < BUFSIZE ) b-> skip_header = true;
+	b-> size = 0;
+}
+
+static void
+buf_write (png_structp png_ptr, png_bytep data, png_size_t size)
+{
+	Buffer * b = (Buffer *) png_get_io_ptr(png_ptr);
+	if ( b-> skip_header ) return;
+AGAIN:
+	if ( b-> size + size >= BUFSIZE ) {
+		int s = BUFSIZE - b->size;
+		memcpy( b->buf + b->size, data, s);
+		b->size += s;
+		buf_flush(png_ptr);
+
+		data += s;
+		size -= s;
+		if ( size > 0 ) goto AGAIN;
+	} else {
+		memcpy( b->buf + b->size, data, size);
+		b->size += size;
+	}
+}
+
+#undef BUFSIZE
+
+static Bool
+write_fdAT(PImgSaveFileInstance fi)
+{
+	Buffer b;
+	png_structp png_ptr;
+	png_infop info_ptr;
+	int bit_depth, color_type, interlace_type, filter, compression_type;
+	png_uint_32 width, height;
+	PIcon i = ( PIcon) fi-> object;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+
+	if ( !( png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
+		fi-> errbuf, error_fn, warning_fn)))
+		return false;
+
+	if ( !( info_ptr = png_create_info_struct(png_ptr))) {
+		png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+		return false;
+	}
+	
+	if ( setjmp( png_jmpbuf( png_ptr)) != 0) {
+		png_destroy_write_struct(&png_ptr, &info_ptr);
+		return false;
+	}
+
+	b.s = s;
+	b.size = 0;
+	b.skip_header = true;
+	b.fi = fi;
+	png_set_write_fn( png_ptr, (void*)&b, buf_write, buf_flush);
+	
+	png_get_IHDR(s->png_ptr, s->info_ptr, &width, &height, &bit_depth, &color_type,
+		&interlace_type, &compression_type, &filter);
+	png_set_IHDR( png_ptr, info_ptr, i-> w, i-> h, bit_depth, color_type,
+		interlace_type, compression_type, filter);
+	if (color_type == PNG_COLOR_TYPE_PALETTE) {
+		png_colorp palette;
+		int palette_size;
+		png_get_PLTE(s->png_ptr, s->info_ptr, &palette, &palette_size);
+		png_set_PLTE(png_ptr, info_ptr, palette, palette_size);
+	}
+	png_write_info(png_ptr, info_ptr);
+
+	b.skip_header = false;
+	png_set_compression_buffer_size(png_ptr, 8192);
+	if (!write_IDAT(fi, png_ptr)) return false;
+	buf_flush(png_ptr);
+
+	png_destroy_write_struct(&png_ptr, &info_ptr);
+
+	return true;
+}
+
+static Bool
+write_first_frame(PImgSaveFileInstance fi)
+{
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	HV * profile = fi-> extras;
+	png_byte actl[8];
+	png_unknown_chunk acTL_chunk = { "acTL", actl, 8, PNG_HAVE_IHDR };
+       	png_byte apngChunks[]= {"acTL\0fcTL\0fdAT\0"};
+
+	png_save_uint_32( &actl[0],  fi->frameMapSize);
+	png_save_uint_32( &actl[4],  pexist(loopCount) ? pget_i(loopCount) : 0);
+
+	png_set_keep_unknown_chunks( s->png_ptr, PNG_HANDLE_CHUNK_ALWAYS, apngChunks, 3); 
+	png_set_unknown_chunks( s->png_ptr, s->info_ptr, &acTL_chunk, 1);
+	if (!write_IHDR(fi)) return false;
+	if (!write_PLTE_etc(fi)) return false;
+	png_write_info(s-> png_ptr, s-> info_ptr);
+
+	if (!write_fcTL(fi)) return false;
+	if (!write_IDAT(fi, s->png_ptr)) return false;
+	
+	return true;
+}
+
+static Bool
+write_middle_frame(PImgSaveFileInstance fi)
+{
+	if (!write_fcTL(fi)) return false;
+	if (!write_fdAT(fi)) return false;
+	return true;
+}
+
+static Bool
+write_last_frame(PImgSaveFileInstance fi)
+{
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	if (!write_fcTL(fi)) return false;
+	if (!write_fdAT(fi)) return false;
+	png_write_end(s-> png_ptr, NULL);
+	return true;
+}
+
+#endif
+
+static Bool
+write_classic_png(PImgSaveFileInstance fi)
+{
+	SaveRec * s = ( SaveRec *) fi-> instance;
+
+	if (!write_IHDR(fi)) return false;
+	if (!write_PLTE_etc(fi)) return false;
+	png_write_info(s-> png_ptr, s-> info_ptr);
+	if (!write_IDAT(fi, s->png_ptr)) return false;
+	png_write_end(s-> png_ptr, NULL);
+	return true;
+}
+
+
+
+static Bool
+save( PImgCodec instance, PImgSaveFileInstance fi)
+{
+	dPROFILE;
+	HV * profile = fi-> extras;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+
+	s-> icon = kind_of( fi-> object, CIcon);
+	/* recognize autoConvert as the image subsystem does */
+	s->autoConvert = pexist( autoConvert) ? pget_B( autoConvert) : true;
+
+	if ( setjmp( png_jmpbuf( s-> png_ptr)) != 0) return false;
+
+#ifdef APNG
+	if ( fi->frameMapSize == 1 )
+#endif
+		return write_classic_png(fi);
+#ifdef APNG
+	else if ( fi->frame == 0)
+		return write_first_frame(fi);
+	else if ( fi->frame == fi->frameMapSize - 1)
+		return write_last_frame(fi);
+	else
+		return write_middle_frame(fi);
+#endif
 }
 
 static void
 close_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
-	SaveRec * l = ( SaveRec *) fi-> instance;
-	png_destroy_write_struct(&l-> png_ptr, &l-> info_ptr);
-	if ( l-> b8_4) free( l-> b8_4);
-	if ( l-> line) free( l-> line);
-	free( l);
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	png_destroy_write_struct(&s-> png_ptr, &s-> info_ptr);
+	if ( s-> line) free( s-> line);
+	free( s);
 }
 
 void
