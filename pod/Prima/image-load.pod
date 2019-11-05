@@ -756,7 +756,31 @@ default PNG library background color is used.
 
 Default: clInvalid
 
-Not applicable C<Prima::Icon>.
+Not applicable for C<Prima::Icon>.
+
+=item gamma REAL
+
+Override gamma value applied to the loaded image
+
+Default: 0.45455
+
+=item screen_gamma REAL
+
+Current gamma value for the operating system, if specified.
+
+Default: 2.2
+
+=back
+
+=head3 Load output and save input
+
+=over
+
+=item background COLOR
+
+Default PNG library background color
+
+Default: clInvalid, which means PNG library default
 
 =item blendMethod blend|no_blend|unknown
 
@@ -772,57 +796,15 @@ Delay time between frames
 Signals whether the frame, before being replaced, is to be erased by the background
 color, previous frame, or none.
 
-=item hasAlpha BOOLEAN
-
-If set, image contains alpha channel
-
-
-=item gamma REAL
-
-Override gamma value applied to the loaded image
-
-Default: 0.45455
-
-=item left INTEGER
-
-Frame horizontal offset from the screen
-
-=item loopCount INTEGER
-
-How many times the animation sequence should run, or 0 for forever.
-
-
-=item screen_gamma REAL
-
-Current gamma value for the operating system, if specified.
-
-Default: 2.2
-
-=item screenWidth INTEGER
-
-=item screenHeight INTEGER
-
-=item top INTEGER
-
-Frame vertical offset from the screen
-
-=back
-
-=head3 Load output and save input
-
-=over
-
-=item background COLOR
-
-Default PNG library background color
-
-Default: clInvalid, which means PNG library default
-
 =item gamma REAL
 
 Gamma value found in file.
 
 Default: 0.45455
+
+=item hasAlpha BOOLEAN
+
+If set, image contains alpha channel
 
 =item iccp_name, iccp_profile STRING
 
@@ -835,6 +817,14 @@ Default: C<unspecified> and C<"">.
 If set, PNG file is interlaced
 
 Default: 0
+
+=item left INTEGER
+
+Frame horizontal offset from the screen
+
+=item loopCount INTEGER
+
+How many times the animation sequence should run, or 0 for forever.
 
 =item mng_datastream BOOL
 
@@ -885,18 +875,24 @@ Image scale factor units
 
 Default: unknown
 
+=item screenWidth, screenHeight INTEGER
+
 =item text HASH
 
 Free-text comments found in the file
 
 Default: C<{}>
 
+=item top INTEGER
+
+Frame vertical offset from the screen
+
 =item transparency_table [INT]
 
 When a paletted image contains transparent colors, returns array of palette indexes
 (C<transparency_table>) in 0-255 range, where each number is an alpha value.
 
-Not applicable for save.
+Default value: empty array
 
 =item transparent_color COLOR
 

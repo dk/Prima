@@ -502,14 +502,16 @@ bit_depth_color( png_uint_16 component, int bit_depth)
 	switch ( bit_depth ) {
 	case 1:
 		component = (component > 128) ? 255 : 0;
+		break;
 	case 2:
 		component = (255/3) * component;
+		break;
 	case 4:
 		component = (255/7) * component;
+		break;
 	case 16:
 		component = component >> 8;
-	default:
-		component = component;
+		break;
 	}
 	return component & 0xff;
 }
@@ -520,7 +522,7 @@ header_available(PImgLoadFileInstance fi)
 	LoadRec * l = ( LoadRec *) fi-> instance;
 	int bit_depth, color_type, interlace_type, filter, compression_type;
 	png_uint_32 width, height;
-	
+
 	png_get_IHDR(l->png_ptr, l->info_ptr, &width, &height, &bit_depth, &color_type,
 		&interlace_type, &compression_type, &filter);
 	if ( fi->loadExtras) {
@@ -651,7 +653,7 @@ header_available(PImgLoadFileInstance fi)
 				pset_sv_noinc( transparency_table, newRV_noinc(( SV*) av));
 			}
 		}
-		
+
 		png_save_uint_32(l->m_datatRNS, trns_n);
 		memcpy(l->m_datatRNS + 4, "tRNS", 4);
 		l->m_sizetRNS = trns_n + 12;
@@ -976,8 +978,8 @@ read_chunks(png_structp png, png_unknown_chunkp chunk)
 #ifdef APNG
 	PImgLoadFileInstance fi = (PImgLoadFileInstance) png_get_user_chunk_ptr(png);
 	LoadRec * l = ( LoadRec *) fi-> instance;
-			
-	if ( 
+
+	if (
 		STREQ(chunk->name, "acTL") &&
 		(chunk->size == 8) &&
 		!l->animated
@@ -1269,7 +1271,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 			snprintf( fi-> errbuf, 256, "I/O error:%s", strerror(req_error( fi-> req)));
 			return false;
 		}
-	}	
+	}
 
 	return true;
 #undef BUFSIZE
@@ -1332,6 +1334,7 @@ save_defaults( PImgCodec c)
 #ifdef PNG_tRNS_SUPPORTED
 	pset_sv_noinc( transparent_color, newSViv(clInvalid));
 	pset_sv_noinc( transparent_color_index, newSViv(-1));
+	pset_sv_noinc( transparency_table, newRV_noinc((SV*)newAV()));
 #endif
 	return profile;
 }
@@ -1549,13 +1552,10 @@ write_tRNS(PImgSaveFileInstance fi)
 }
 
 static Bool
-write_PLTE_etc(PImgSaveFileInstance fi)
+write_PLTE(PImgSaveFileInstance fi)
 {
-	dPROFILE;
 	SaveRec * s = ( SaveRec *) fi-> instance;
 	PIcon i = ( PIcon) fi-> object;
-	HV * profile = fi-> extras;
-	/* palette */
 	if ((( i-> type & imBPP) <= 8) && ((i-> type & imGrayScale) == 0)) {
 		RGBColor * pal = i-> palette;
 		int num_palette, j;
@@ -1569,9 +1569,17 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 		}
 		png_set_PLTE(s->png_ptr, s->info_ptr, palette, num_palette);
 	}
+	return true;
+}
 
-	/* sRGB */
+static Bool
+write_sRGB(PImgSaveFileInstance fi)
+{
 #ifdef PNG_sRGB_SUPPORTED
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	HV * profile = fi-> extras;
+
 	if ( pexist( render_intent)) {
 		char * c = pget_c( render_intent);
 		if ( stricmp( c, "none") != 0) {
@@ -1587,9 +1595,17 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 		}
 	}
 #endif
+	return true;
+}
 
-	/* gamma */
+static Bool
+write_gAMA(PImgSaveFileInstance fi)
+{
 #ifdef PNG_gAMA_SUPPORTED
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	HV * profile = fi-> extras;
+
 	if ( pexist( gamma)) {
 		double gamma = pget_f( gamma);
 		if ( gamma < PNG_GAMMA_THRESHOLD || gamma > PNG_MAX_GAMMA) {
@@ -1599,9 +1615,16 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 		png_set_gAMA( s-> png_ptr, s-> info_ptr, gamma);
 	}
 #endif
+	return true;
+}
 
-	/* iccp */
+static Bool
+write_iCCP(PImgSaveFileInstance fi)
+{
 #ifdef PNG_iCCP_SUPPORTED
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	HV * profile = fi-> extras;
 	if ( pexist( iccp_name) || pexist( iccp_profile)) {
 		char * prf = nil;
 		STRLEN plen = 0;
@@ -1610,10 +1633,16 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 		png_set_iCCP( s-> png_ptr, s-> info_ptr, name, 0, (void*) prf, plen);
 	}
 #endif
+	return true;
+}
 
-
-	/* bKGD */
+static Bool
+write_bKGD(PImgSaveFileInstance fi)
+{
 #ifdef PNG_bKGD_SUPPORTED
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	HV * profile = fi-> extras;
 	if ( pexist( background)) {
 		Color background = pget_i( background);
 		if (( background & clSysFlag) == 0) {
@@ -1626,10 +1655,17 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 	}
 #endif
 
-	if ( !write_tRNS(fi)) return false;
+	return true;
+}
 
-	/* text */
+static Bool
+write_TEXT(PImgSaveFileInstance fi)
+{
 #ifdef PNG_TEXT_SUPPORTED
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	HV * profile = fi-> extras;
+
 	if ( pexist( text)) {
 		HV * hv;
 		HE * he;
@@ -1663,9 +1699,16 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 		free( txt);
 	}
 #endif
+	return true;
+}
 
-	/* offset */
+static Bool
+write_oFFs(PImgSaveFileInstance fi)
+{
 #ifdef PNG_oFFs_SUPPORTED
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	HV * profile = fi-> extras;
 	if ( pexist( offset_x) || pexist( offset_y) || pexist( offset_dimension)) {
 		int ox = pexist( offset_x) ? pget_i( offset_x) : 0;
 		int oy = pexist( offset_y) ? pget_i( offset_y) : 0;
@@ -1682,9 +1725,16 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 		png_set_oFFs( s-> png_ptr, s-> info_ptr, ox, oy, dm);
 	}
 #endif
+	return true;
+}
 
-	/* phys */
+static Bool
+write_pHYs(PImgSaveFileInstance fi)
+{
 #ifdef PNG_pHYs_SUPPORTED
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	HV * profile = fi-> extras;
 	if ( pexist( resolution_x) || pexist( resolution_y) || pexist( resolution_dimension)) {
 		int ox = pexist( resolution_x) ? pget_i( resolution_x) : 0;
 		int oy = pexist( resolution_y) ? pget_i( resolution_y) : 0;
@@ -1701,9 +1751,16 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 		png_set_pHYs( s-> png_ptr, s-> info_ptr, ox, oy, dm);
 	}
 #endif
+	return true;
+}
 
-	/* scale */
+static Bool
+write_sCAL(PImgSaveFileInstance fi)
+{
 #ifdef PNG_sCAL_SUPPORTED
+	dPROFILE;
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	HV * profile = fi-> extras;
 	if ( pexist( scale_x) || pexist( scale_y) || pexist( scale_unit)) {
 		double ox = pexist( scale_x) ? pget_f( scale_x) : 1;
 		double oy = pexist( scale_y) ? pget_f( scale_y) : 1;
@@ -1713,7 +1770,7 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 			char * c = pget_c( scale_unit);
 			if ( stricmp( c, "unknown") == 0) dm = PNG_SCALE_UNKNOWN; else
 			if ( stricmp( c, "meter") == 0)   dm = PNG_SCALE_METER;   else
-			if ( stricmp( c, "radian") == 0)   dm = PNG_SCALE_RADIAN; else {
+			if ( stricmp( c, "radian") == 0)  dm = PNG_SCALE_RADIAN;  else {
 				snprintf( fi-> errbuf, 256, "unknown scale_unit '%s'", c);
 				return false;
 			}
@@ -1721,6 +1778,22 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 		png_set_sCAL( s-> png_ptr, s-> info_ptr, dm, ox, oy);
 	}
 #endif
+	return true;
+}
+
+static Bool
+write_PLTE_etc(PImgSaveFileInstance fi)
+{
+	if ( !write_PLTE(fi)) return false;
+	if ( !write_tRNS(fi)) return false;
+	if ( !write_sRGB(fi)) return false;
+	if ( !write_gAMA(fi)) return false;
+	if ( !write_iCCP(fi)) return false;
+	if ( !write_bKGD(fi)) return false;
+	if ( !write_TEXT(fi)) return false;
+	if ( !write_oFFs(fi)) return false;
+	if ( !write_pHYs(fi)) return false;
+	if ( !write_sCAL(fi)) return false;
 	return true;
 }
 
