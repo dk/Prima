@@ -1724,6 +1724,58 @@ write_PLTE_etc(PImgSaveFileInstance fi)
 	return true;
 }
 
+static Bool
+write_IDAT(PImgSaveFileInstance fi, png_structp png_ptr)
+{
+	SaveRec * s = ( SaveRec *) fi-> instance;
+	PIcon i = ( PIcon) fi-> object;
+	int h = i-> h;
+	Byte * data = i-> data + (i-> h - 1) * i-> lineSize;
+	Byte * a_data = s-> icon ? i-> mask : NULL;
+
+	if (( i-> type & imBPP) == 24) png_set_bgr(png_ptr);
+
+	if ( s-> line ) free( s-> line );
+	if ( a_data ) {
+		if (!( s-> line = malloc( i-> w * 4)))
+			outcm( i-> w * 4);
+	}
+
+	if ( a_data )
+		a_data += ( h - 1) * i-> maskLine;
+	while ( h--) {
+		if ( a_data ) {
+			int j;
+			Byte * src = data, * dst = s-> line, *a = a_data;
+			if ( i-> type == imRGB) {
+				for ( j = 0; j < i-> w; j++) {
+					*dst++ = *src++;
+					*dst++ = *src++;
+					*dst++ = *src++;
+					*dst++ = *a++;
+				}
+			} else {
+				for ( j = 0; j < i-> w; j++) {
+					*dst++ = *src++;
+					*dst++ = *a++;
+				}
+			}
+			png_write_row( png_ptr, s-> line);
+		} else {
+			png_write_row( png_ptr, data);
+		}
+		data -= i-> lineSize;
+		if ( a_data) a_data -= i-> maskLine;
+	}
+
+	if ( s-> line ) {
+		free( s-> line);
+		s-> line = NULL;
+	}
+
+	return true;
+}
+
 #ifdef APNG
 static Bool
 write_fcTL(PImgSaveFileInstance fi)
@@ -1793,7 +1845,7 @@ write_fcTL(PImgSaveFileInstance fi)
 		}
 	} else
 		fctl[24] = 0;
-		
+
 	if ( pexist(blendMethod)) {
 		char * c = pget_c(blendMethod);
 		if ( strcmp(c, "blend")) 
@@ -1809,59 +1861,6 @@ write_fcTL(PImgSaveFileInstance fi)
 	png_write_chunk(s->png_ptr, (png_const_bytep)"fcTL", (png_byte*)&fctl, sizeof(fctl));
 	return true;
 }
-
-static Bool
-write_IDAT(PImgSaveFileInstance fi, png_structp png_ptr)
-{
-	SaveRec * s = ( SaveRec *) fi-> instance;
-	PIcon i = ( PIcon) fi-> object;
-	int h = i-> h;
-	Byte * data = i-> data + (i-> h - 1) * i-> lineSize;
-	Byte * a_data = s-> icon ? i-> mask : NULL;
-
-	if (( i-> type & imBPP) == 24) png_set_bgr(png_ptr);
-
-	if ( s-> line ) free( s-> line );
-	if ( a_data ) {
-		if (!( s-> line = malloc( i-> w * 4)))
-			outcm( i-> w * 4);
-	}
-
-	if ( a_data )
-		a_data += ( h - 1) * i-> maskLine;
-	while ( h--) {
-		if ( a_data ) {
-			int j;
-			Byte * src = data, * dst = s-> line, *a = a_data;
-			if ( i-> type == imRGB) {
-				for ( j = 0; j < i-> w; j++) {
-					*dst++ = *src++;
-					*dst++ = *src++;
-					*dst++ = *src++;
-					*dst++ = *a++;
-				}
-			} else {
-				for ( j = 0; j < i-> w; j++) {
-					*dst++ = *src++;
-					*dst++ = *a++;
-				}
-			}
-			png_write_row( png_ptr, s-> line);
-		} else {
-			png_write_row( png_ptr, data);
-		}
-		data -= i-> lineSize;
-		if ( a_data) a_data -= i-> maskLine;
-	}
-
-	if ( s-> line ) {
-		free( s-> line);
-		s-> line = NULL;
-	}
-
-	return true;
-}
-
 
 #define BUFSIZE (8 + 8192 + 4)
 typedef struct {
@@ -1936,7 +1935,7 @@ write_fdAT(PImgSaveFileInstance fi)
 		png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
 		return false;
 	}
-	
+
 	if ( setjmp( png_jmpbuf( png_ptr)) != 0) {
 		png_destroy_write_struct(&png_ptr, &info_ptr);
 		return false;
@@ -1947,7 +1946,7 @@ write_fdAT(PImgSaveFileInstance fi)
 	b.skip_header = true;
 	b.fi = fi;
 	png_set_write_fn( png_ptr, (void*)&b, buf_write, buf_flush);
-	
+
 	png_get_IHDR(s->png_ptr, s->info_ptr, &width, &height, &bit_depth, &color_type,
 		&interlace_type, &compression_type, &filter);
 	png_set_IHDR( png_ptr, info_ptr, i-> w, i-> h, bit_depth, color_type,
@@ -1991,7 +1990,7 @@ write_first_frame(PImgSaveFileInstance fi)
 
 	if (!write_fcTL(fi)) return false;
 	if (!write_IDAT(fi, s->png_ptr)) return false;
-	
+
 	return true;
 }
 
@@ -2027,8 +2026,6 @@ write_classic_png(PImgSaveFileInstance fi)
 	png_write_end(s-> png_ptr, NULL);
 	return true;
 }
-
-
 
 static Bool
 save( PImgCodec instance, PImgSaveFileInstance fi)
