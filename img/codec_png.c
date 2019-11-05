@@ -136,6 +136,7 @@ static char * loadOutput[] = {
 #ifdef APNG
 	"blendMethod",
 	"delayTime",
+	"default_frame",
 	"disposalMethod",
 	"left",
 	"loopCount",
@@ -352,7 +353,6 @@ process_header( PImgLoadFileInstance fi, Bool use_subloader )
 		png_set_strip_16(png_ptr);
 		break;
 	}
-
 
 	switch ( color_type) {
 	case PNG_COLOR_TYPE_PALETTE:
@@ -703,11 +703,6 @@ header_available(PImgLoadFileInstance fi)
 	}
 
 	l->got_IHDR = true;
-	if ( fi-> frameCount < 0)
-		fi->frameCount = 1;
-	if ( !l->animated)
-		l->current_frame++;
-
 	if (fi->frame == 0) {
 		if ( !process_header( fi, false ))
 			throw( l->png_ptr );
@@ -1104,7 +1099,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	Byte buf[BUFSIZE], chunk[5];
 	LoadRec * l = ( LoadRec *) fi-> instance;
 	HV * profile = fi-> profile;
-	Bool had_DAT = false, reset_to_chunk_start = false, got_frame_body = false;
+	Bool had_DAT = false, reset_to_chunk_start = false, got_frame_body = false,
+		IDAT_is_default = true, had_fcTL = false, had_IDAT = false;
 
 	l-> load_req++;
 
@@ -1156,6 +1152,20 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		memcpy( chunk, buf + 4, 4);
 		chunk[4] = 0;
 		size = png_get_uint_32(buf);
+
+		/* If IDAT follows fcTL, it is a first animation frame.
+		If IDAT is standalone, it is a back-compat "default" image */
+		if ( STREQ(chunk, "IDAT")) {
+			if ( had_fcTL )
+				IDAT_is_default = false;
+			else if ( !had_IDAT) {
+				if ( fi->frameCount < 0 ) fi->frameCount = 0;
+				fi->frameCount++;
+				l->current_frame++;
+			}
+			had_IDAT = true;
+		} else if ( STREQ(chunk, "fcTL"))
+			had_fcTL = true;
 
 		/* see if we need to feed the data to libpng :
 		- any frame needs acTL, IHDR, RNS etc common chunks
@@ -1265,6 +1275,11 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		return false;
 	}
 
+	if ( fi->frame == 0 && l->load_req == 0 ) {
+		HV * profile = fi->fileProperties;
+		pset_i( default_frame, IDAT_is_default);
+	}
+
 	png_complete(fi);
 	if ( reset_to_chunk_start ) {
 		if ( req_seek( fi->req, -8, SEEK_CUR) < 0) {
@@ -1335,6 +1350,17 @@ save_defaults( PImgCodec c)
 	pset_sv_noinc( transparent_color, newSViv(clInvalid));
 	pset_sv_noinc( transparent_color_index, newSViv(-1));
 	pset_sv_noinc( transparency_table, newRV_noinc((SV*)newAV()));
+#endif
+#ifdef APNG
+	pset_i( blendMethod,    0);
+	pset_i( default_frame,  0);
+	pset_i( delayTime,      1);
+	pset_i( disposalMethod, 0);
+	pset_i( left, 0);
+	pset_i( loopCount,      1);
+	pset_i( screenHeight, -1);
+	pset_i( screenWidth,  -1);
+	pset_i( top,  0);
 #endif
 	return profile;
 }
@@ -2048,6 +2074,7 @@ write_first_frame(PImgSaveFileInstance fi)
 	dPROFILE;
 	SaveRec * s = ( SaveRec *) fi-> instance;
 	HV * profile = fi-> extras;
+	Bool IDAT_is_default = false;
 	png_byte actl[8];
 	png_unknown_chunk acTL_chunk = { "acTL", actl, 8, PNG_HAVE_IHDR };
        	png_byte apngChunks[]= {"acTL\0fcTL\0fdAT\0"};
@@ -2061,7 +2088,8 @@ write_first_frame(PImgSaveFileInstance fi)
 	if (!write_PLTE_etc(fi)) return false;
 	png_write_info(s-> png_ptr, s-> info_ptr);
 
-	if (!write_fcTL(fi)) return false;
+	if ( pexist(default_frame)) IDAT_is_default = pget_B(default_frame);
+	if (!IDAT_is_default && !write_fcTL(fi)) return false;
 	if (!write_IDAT(fi, s->png_ptr)) return false;
 
 	return true;
