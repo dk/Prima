@@ -55,7 +55,7 @@ sub load
 
 	my $i = Prima::Icon-> new(%events); # dummy object
 
-	my @i = $i-> load(
+	my @i = grep { defined } $i-> load(
 		$where,
 		loadExtras => 1,
 		loadAll    => 1,
@@ -63,6 +63,7 @@ sub load
 		blending   => 1,
 		%args,
 	);
+	warn $@ if @i && !$i[-1];
 
 	return unless @i;
 	my $model = $class->detect_animation($i[0]->{extras}) or return;
@@ -161,7 +162,7 @@ sub advance_frame
 		} elsif ( $info-> {loopCount} == 0) {
 			# loop forever
 			$self-> {loopCount} = undef;
-		} else {
+		} elsif ( !defined $self->{loopCount}) {
 			$self-> {loopCount} = $info-> {loopCount};
 		}
 	}
@@ -551,6 +552,15 @@ use base 'Prima::Image::Animate::WebPNG';
 
 package Prima::Image::Animate::PNG;
 use base 'Prima::Image::Animate::WebPNG';
+
+sub new
+{
+	my $class = shift;
+	my $self = $class->SUPER::new(@_);
+	my $i = $self->{images} // [];
+	shift @$i if @$i > 1 && $i->[0]->{extras}->{default_frame};
+	return $self;
+}
 
 1;
 

@@ -791,6 +791,13 @@ the existing animation, or replace it.
 
 Delay time between frames
 
+=item default_frame BOOLEAN
+
+When set, means that the first image is a "default" frame, a special
+backward-compatibility image that is supposed to be excluded from the animation
+sequence, to be displayed only when all animation frames cannot be loaded
+for whatever reason.
+
 =item disposalMethod none|background|restore|unknown
 
 Signals whether the frame, before being replaced, is to be erased by the background
