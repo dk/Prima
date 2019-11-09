@@ -16,6 +16,7 @@ object Prima::Image( Prima::Drawable)
 	int            eventMask2;
 	PRegionRec     regionData;
 
+	property Rect   clipRect;
 	property int    conversion;
 	property SV *   data;
 	property int    lineSize;

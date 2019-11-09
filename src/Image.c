@@ -1641,8 +1641,19 @@ color2pixel( Handle self, Color color, Byte * pixel)
 }
 
 static void
-read_fill_pattern(Handle self, FillPattern * p)
+prepare_fill_context(Handle self, Point translate, PImgPaintContext ctx)
 {
+	FillPattern * p = &ctx->pattern;
+
+	color2pixel( self, my->get_color(self), ctx->color);
+	color2pixel( self, my->get_backColor(self), ctx->backColor);
+	ctx-> rop    = my->get_rop(self);
+	ctx-> region = var->regionData ? &var->regionData-> data. box : NULL;
+	ctx-> patternOffset = my->get_fillPatternOffset(self);
+	ctx-> patternOffset.x -= translate.x;
+	ctx-> patternOffset.y -= translate.y;
+	ctx-> transparent = my->get_rop2(self) == ropNoOper;
+
 	if ( my-> fillPattern == Drawable_fillPattern) {
 		FillPattern * fp = apc_gp_get_fill_pattern( self);
 		if ( fp )
@@ -1705,15 +1716,8 @@ Image_bar( Handle self, int x1, int y1, int x2, int y2)
 	t = my->get_translate(self);
 	x1 += t.x;
 	y1 += t.y;
-	color2pixel( self, my->get_color(self), ctx.color);
-	color2pixel( self, my->get_backColor(self), ctx.backColor);
-	ctx.rop    = my->get_rop(self);
-	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
-	read_fill_pattern(self, &ctx.pattern);
-	ctx.patternOffset = my->get_fillPatternOffset(self);
-	ctx.patternOffset.x -= t.x;
-	ctx.patternOffset.y -= t.y;
-	ctx.transparent = my->get_rop2(self) == ropNoOper;
+
+	prepare_fill_context(self, t, &ctx);
 	ok = img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 	my-> update_change(self);
 	return ok;
@@ -1732,16 +1736,7 @@ Image_bars( Handle self, SV * rects)
 
 	if (( p = prima_read_array( rects, "Image::bars", true, 4, 0, -1, &count)) == NULL)
 		return false;
-	color2pixel( self, my->get_color(self), ctx.color);
-	color2pixel( self, my->get_backColor(self), ctx.backColor);
-	ctx.rop    = my->get_rop(self);
-	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
-	read_fill_pattern(self, &ctx.pattern);
-	t = my->get_translate(self);
-	ctx.patternOffset = my->get_fillPatternOffset(self);
-	ctx.patternOffset.x -= t.x;
-	ctx.patternOffset.y -= t.y;
-	ctx.transparent = my->get_rop2(self) == ropNoOper;
+	prepare_fill_context(self, t, &ctx);
 	for ( i = 0, r = p; i < count; i++, r++) {
 		ImgPaintContext ctx2 = ctx;
 		if ( !( ok &= img_bar( self, 
@@ -1891,6 +1886,44 @@ Image_premultiply_alpha( Handle self, SV * alpha)
 		my-> set_type( self, oldType );
 	else
 		my-> update_change( self );
+} 
+
+Rect
+Image_clipRect( Handle self, Bool set, Rect r)
+{
+	if ( is_opt(optInDraw) || is_opt(optInDrawInfo))
+		return inherited clipRect(self,set,r);
+
+	if ( var-> stage > csFrozen) return r;
+
+	if ( set) {
+		PRegionRec reg;
+		if ( var-> regionData ) {
+			free(var->regionData);
+			var->regionData = NULL;
+		}
+		if ((reg = malloc(sizeof(RegionRec) + sizeof(Box))) != NULL) {
+			Box *box;
+			reg->type = rgnRectangle;
+			reg-> data. box. n_boxes = 1;
+			box = reg-> data. box. boxes = (Box*) (((Byte*)reg) + sizeof(RegionRec));
+			box-> x = r.left;
+			box-> y = r.bottom;
+			box-> width  = r.right - r.left;
+			box-> height = r.top - r.bottom;
+			var->regionData = reg;
+		}
+	} else if ( var-> regionData ) {
+		Box box   = img_region_box( &var->regionData->data.box);
+		r.left    = box.x;
+		r.bottom  = box.y;
+		r.right   = box.x + box.width;
+		r.top     = box.y + box.height;
+	} else {
+		bzero(&r, sizeof(Rect));
+	}
+
+	return r;
 }
 
 Handle

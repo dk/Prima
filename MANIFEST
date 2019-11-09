@@ -129,8 +129,9 @@ img/ic_conv.c
 img/img.c
 img/imgscale.c
 img/imgtype.c
-img/put.c
+img/region.c
 img/rotate.c
+img/put.c
 include/apricot.h
 include/guts.h
 include/img.h

@@ -297,6 +297,17 @@ extern void img_premultiply_alpha_constant( Handle self, int alpha);
 extern void img_premultiply_alpha_map( Handle self, Handle alpha);
 extern Bool img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx);
 
+/* regions */
+typedef void * RegionCallbackFunc( int x, int y, int w, int h, void * param);
+
+extern Box img_region_box(PBoxRegionRec region);
+extern PBoxRegionRec img_region_alloc(PBoxRegionRec old_region, int n_boxes);
+extern void img_region_foreach(
+	PBoxRegionRec region, 
+	int x, int y, int w, int h,
+	RegionCallbackFunc *cb, void *param
+);
+
 /* internal maps */
 extern Byte     map_stdcolorref    [ 256];
 extern Byte     div51              [ 256];
