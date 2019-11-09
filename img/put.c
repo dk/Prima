@@ -6,43 +6,6 @@ extern "C" {
 #endif
 
 
-typedef void * RegionCallbackFunc( int x, int y, int w, int h, void * param);
-
-static void
-region_foreach(
-	PBoxRegionRec region, 
-	int dstX, int dstY, int dstW, int dstH,
-	RegionCallbackFunc * callback, void * param
-) {
-	Box * r;
-	int j, right, top;
-	if ( region == NULL ) {
-		callback( dstX, dstY, dstW, dstH, param);
-		return;
-	}
-	right = dstX + dstW;
-	top   = dstY + dstH;
-	r = region-> boxes;
-	for ( j = 0; j < region-> n_boxes; j++, r++) {
-		int xx = r->x;
-		int yy = r->y;
-		int ww = r->width;
-		int hh = r->height;
-		if ( xx + ww > right ) ww = right - xx;
-		if ( yy + hh > top   ) hh = top   - yy;
-		if ( xx < dstX ) {
-			ww -= dstX - xx;
-			xx = dstX;
-		}
-		if ( yy < dstY ) {
-			hh -= dstY - yy;
-			yy = dstY;
-		}
-		if ( xx + ww >= dstX && yy + hh >= dstY && ww > 0 && hh > 0 )
-			callback( xx, yy, ww, hh, param );
-	}
-}
-
 typedef void BitBltProc( Byte * src, Byte * dst, int count);
 typedef BitBltProc *PBitBltProc;
 
@@ -553,7 +516,7 @@ NOSCALE:
 		};
 		if ( rec.proc == bitblt_copy && dest == src) /* incredible */
 			rec.proc = bitblt_move;
-		region_foreach( region,
+		img_region_foreach( region,
 			dstX, dstY, dstW, dstH,
 			(RegionCallbackFunc*)img_put_single, &rec
 		);
@@ -828,7 +791,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			solid        : solid,
 			pat_x_offset : x,
 		};
-		region_foreach( ctx->region,
+		img_region_foreach( ctx->region,
 			x, y, w, h,
 			(RegionCallbackFunc*)img_bar_single, &rec
 		);
@@ -1790,7 +1753,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 			adbuf         : adbuf,
 		};
 		find_blend_proc(rop, &rec.blend1, &rec.blend2);
-		region_foreach( region,
+		img_region_foreach( region,
 			dstX, dstY, dstW, dstH,
 			(RegionCallbackFunc*)img_put_alpha_single, &rec
 		);
@@ -2087,7 +2050,7 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 			pat_x_offset  : x,
 		};
 		find_blend_proc(ctx->rop, &rec.blend1, &rec.blend2);
-		region_foreach( ctx->region, x, y, w, h,
+		img_region_foreach( ctx->region, x, y, w, h,
 			( RegionCallbackFunc *)((solid || !ctx->transparent) ?
 				img_bar_alpha_single_opaque : img_bar_alpha_single_transparent),
 			&rec
