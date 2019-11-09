@@ -29,6 +29,15 @@ and _setjmp is not equivaluent to setjmp anymore
 #define APNG
 #endif
 
+#if (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR < 5)
+#define PNG_CHAR_TYPE_P       png_charp
+#define PNG_CHAR_TYPE_PP      png_charpp
+#define PNG_CHAR_TYPE_CONST_P png_bytep
+#else
+#define PNG_CHAR_TYPE_P       png_bytep
+#define PNG_CHAR_TYPE_PP      png_bytepp
+#define PNG_CHAR_TYPE_CONST_P png_const_bytep
+#endif
 
 #include "img.h"
 #include "img_conv.h"
@@ -842,7 +851,7 @@ png_complete(PImgLoadFileInstance fi)
 #endif
 
 #ifdef PNG_iCCP_SUPPORTED
-	if ( png_get_iCCP( l->png_ptr, l->info_ptr, &name, &ct, (png_bytepp)&pf, &pl)) {
+	if ( png_get_iCCP( l->png_ptr, l->info_ptr, &name, &ct, (PNG_CHAR_TYPE_PP) &pf, &pl)) {
 		pset_c( iccp_name, name);
 		if ( pf) pset_sv_noinc( iccp_profile, newSVpv( pf, pl));
 	}
@@ -1957,7 +1966,7 @@ write_fcTL(PImgSaveFileInstance fi)
 		}
 	} else
 		fctl[25] = 0;
-	png_write_chunk(s->png_ptr, (png_const_bytep)"fcTL", (png_byte*)&fctl, sizeof(fctl));
+	png_write_chunk(s->png_ptr, (PNG_CHAR_TYPE_CONST_P)"fcTL", (png_byte*)&fctl, sizeof(fctl));
 	return true;
 }
 
@@ -1986,7 +1995,7 @@ buf_flush (png_structp png_ptr)
 	}
 
 	png_save_uint_32( b-> buf + 4, b->fi->frame);
-	png_write_chunk(b->s->png_ptr, (png_const_bytep)"fdAT", (png_byte*)(b->buf + 4), b->size - 8);
+	png_write_chunk(b->s->png_ptr, (PNG_CHAR_TYPE_CONST_P)"fdAT", (png_byte*)(b->buf + 4), b->size - 8);
 	b-> written += b->size;
 	if ( b-> size < BUFSIZE ) b-> skip_header = true;
 	b-> size = 0;
