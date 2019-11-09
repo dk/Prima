@@ -25,7 +25,7 @@ and _setjmp is not equivaluent to setjmp anymore
 #  define png_jmpbuf(png_ptr) ((png_ptr)->jmpbuf)
 #endif
 
-#ifdef PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED
+#if defined(PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED) || defined(PNG_UNKNOWN_CHUNKS_SUPPORTED)
 #define APNG
 #endif
 
@@ -709,6 +709,7 @@ header_available(PImgLoadFileInstance fi)
 	}
 }
 
+#ifdef APNG
 static void
 #ifdef PNGAPI
 PNGAPI
@@ -719,6 +720,7 @@ frame_header(png_structp png, png_infop info)
 	if ( !process_header( fi, true ))
 		throw( png );
 }
+#endif
 
 static void
 #ifdef PNGAPI
@@ -962,7 +964,6 @@ process_fcTL(PImgLoadFileInstance fi, png_unknown_chunkp chunk)
 	if (l->m_sizetRNS > 0)
 		png_process_data(l->png_ptr2, l->info_ptr2, l->m_datatRNS, l->m_sizetRNS);
 }
-#endif
 
 static int
 #ifdef PNGAPI
@@ -970,7 +971,6 @@ PNGAPI
 #endif
 read_chunks(png_structp png, png_unknown_chunkp chunk)
 {
-#ifdef APNG
 	PImgLoadFileInstance fi = (PImgLoadFileInstance) png_get_user_chunk_ptr(png);
 	LoadRec * l = ( LoadRec *) fi-> instance;
 
@@ -1011,9 +1011,9 @@ read_chunks(png_structp png, png_unknown_chunkp chunk)
 	        png_process_data(l->png_ptr2, l->info_ptr2, chunk->data, 4);
 	}
 
-#endif
 	return true;
 }
+#endif
 
 static void *
 open_load( PImgCodec instance, PImgLoadFileInstance fi)
@@ -2084,6 +2084,9 @@ write_first_frame(PImgSaveFileInstance fi)
 
 	png_set_keep_unknown_chunks( s->png_ptr, PNG_HANDLE_CHUNK_ALWAYS, apngChunks, 3); 
 	png_set_unknown_chunks( s->png_ptr, s->info_ptr, &acTL_chunk, 1);
+#if (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR < 6)
+	png_set_unknown_chunk_location( s->png_ptr, s->info_ptr, 0, PNG_HAVE_IHDR);
+#endif
 	if (!write_IHDR(fi)) return false;
 	if (!write_PLTE_etc(fi)) return false;
 	png_write_info(s-> png_ptr, s-> info_ptr);
