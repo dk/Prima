@@ -4,18 +4,16 @@
 extern "C" {
 #endif
 
-void
+Bool
 img_region_foreach(
 	PBoxRegionRec region, 
 	int dstX, int dstY, int dstW, int dstH,
-	RegionCallbackFunc * callback, void * param
+	RegionCallbackFunc callback, void * param
 ) {
 	Box * r;
 	int j, right, top;
-	if ( region == NULL ) {
-		callback( dstX, dstY, dstW, dstH, param);
-		return;
-	}
+	if ( region == NULL )
+		return callback( dstX, dstY, dstW, dstH, param);
 	right = dstX + dstW;
 	top   = dstY + dstH;
 	r = region-> boxes;
@@ -35,8 +33,10 @@ img_region_foreach(
 			yy = dstY;
 		}
 		if ( xx + ww >= dstX && yy + hh >= dstY && ww > 0 && hh > 0 )
-			callback( xx, yy, ww, hh, param );
+			if ( !callback( xx, yy, ww, hh, param ))
+				return false;
 	}
+	return true;
 }
 
 PBoxRegionRec
@@ -59,19 +59,22 @@ img_region_alloc(PBoxRegionRec old_region, int n_boxes)
 Box
 img_region_box(PBoxRegionRec region)
 {
-	int i;
+	int i, n = 0;
 	Box ret, *curr = NULL;
 	Rect r;
-	if ( region-> n_boxes > 0 ) {
-		curr = (region->boxes)++;
+
+	if ( region != NULL && region-> n_boxes > 0 ) {
+		n        = region-> n_boxes;
+		curr     = region->boxes;
 		r.left   = curr->x; 
 		r.bottom = curr->y; 
-		r.right  = curr->x + curr->width; 
-		r.top    = curr->y + curr->height; 
+		r.right  = curr->x + curr->width;
+		r.top    = curr->y + curr->height;
+		curr++;
 	} else
 		bzero(&r, sizeof(r));
 
-	for ( i = 1; i < region->n_boxes; i++, curr++) {
+	for ( i = 1; i < n; i++, curr++) {
 		int right = curr->x + curr->width, top = curr->y + curr->height;
 		if ( curr-> x < r.left)   r.left   = curr->x;
 		if ( curr-> y < r.bottom) r.bottom = curr->y;
@@ -83,6 +86,18 @@ img_region_box(PBoxRegionRec region)
 	ret.width  = r.right - r.left;
 	ret.height = r.top   - r.bottom;
 	return ret;
+}
+
+Bool
+img_point_in_region( int x, int y, PBoxRegionRec region)
+{
+	int i;
+	Box * b;
+	for ( i = 0, b = region->boxes; i < region->n_boxes; i++, b++) {
+		if ( x >= b->x && y >= b->y && x < b->x + b->width && y < b->y + b->height)
+			return true;
+	}
+	return false;
 }
 
 

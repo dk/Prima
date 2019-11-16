@@ -273,10 +273,9 @@ extern void bc_rgb_bgri( Byte * source, Byte * dest, int count);
 typedef void SimpleConvProc( Byte * srcData, Byte * dstData, int count);
 typedef SimpleConvProc *PSimpleConvProc;
 
-#define MAX_SIZEOF_PIXEL (sizeof(double) * 2)
 typedef struct {
-	Byte color[MAX_SIZEOF_PIXEL];
-	Byte backColor[MAX_SIZEOF_PIXEL];
+	ColorPixel color;
+	ColorPixel backColor;
 	int rop;
 	Bool transparent;
 	FillPattern pattern;
@@ -296,17 +295,19 @@ extern Bool img_mirror_raw( int type, int w, int h, Byte * data, Bool vertically
 extern void img_premultiply_alpha_constant( Handle self, int alpha);
 extern void img_premultiply_alpha_map( Handle self, Handle alpha);
 extern Bool img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx);
+extern Bool img_flood_fill( Handle self, int x, int y, ColorPixel color, Bool single_border, PImgPaintContext ctx);
 
 /* regions */
-typedef void * RegionCallbackFunc( int x, int y, int w, int h, void * param);
+typedef Bool RegionCallbackFunc( int x, int y, int w, int h, void * param);
 
 extern Box img_region_box(PBoxRegionRec region);
 extern PBoxRegionRec img_region_alloc(PBoxRegionRec old_region, int n_boxes);
-extern void img_region_foreach(
+extern Bool img_region_foreach(
 	PBoxRegionRec region, 
 	int x, int y, int w, int h,
 	RegionCallbackFunc *cb, void *param
 );
+extern Bool img_point_in_region( int x, int y, PBoxRegionRec region);
 
 /* internal maps */
 extern Byte     map_stdcolorref    [ 256];

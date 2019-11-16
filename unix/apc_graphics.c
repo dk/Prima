@@ -1125,7 +1125,7 @@ fill( FillSession * fs, int sx, int sy, int d, int pxl, int pxr)
 			x++;
 		}
 		x = pxr;
-		while ( x < xr) {
+		while ( x <= xr) {
 			if ( fs_get_pixel( fs, x, sy - d)) {
 				x = fill( fs, x, sy - d, -d, sx, xr);
 			}

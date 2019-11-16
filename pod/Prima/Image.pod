@@ -770,7 +770,7 @@ Returns a newly created image object with WIDTH and HEIGHT dimensions,
 initialized with pixel data from X_OFFSET and Y_OFFSET
 in the bitmap.
 
-=item fill_chord, fill_ellipse, fill_sector
+=item fill_chord, fill_ellipse, fill_sector, flood_fill
 
 Same as C<Drawable::> functions but can be used also outside of the paint state.
 
