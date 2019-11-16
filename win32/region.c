@@ -468,8 +468,10 @@ apc_gp_set_clip_rect( Handle self, Rect c)
 	c. bottom += sys transform2. y;
 	check_swap( c. top, c. bottom);
 	check_swap( c. left, c. right);
-	if ( !( rgn = CreateRectRgn( c. left,  sys lastSize. y - c. top,
-										c. right + 1, sys lastSize. y - c. bottom - 1))) apiErrRet;
+	if ( !( rgn = CreateRectRgn(
+		c. left,  sys lastSize. y - c. top,
+		c. right + 1, sys lastSize. y - c. bottom - 1))
+		) apiErrRet;
 	if ( is_apt(aptLayeredPaint) && sys layeredParentRegion )
 		CombineRgn( rgn, rgn, sys layeredParentRegion, RGN_AND);
 	if ( !SelectClipRgn( sys ps, rgn)) apiErr;
