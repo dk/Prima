@@ -1909,16 +1909,16 @@ Image_clipRect( Handle self, Bool set, Rect r)
 			box = reg-> data. box. boxes = (Box*) (((Byte*)reg) + sizeof(RegionRec));
 			box-> x = r.left;
 			box-> y = r.bottom;
-			box-> width  = r.right - r.left;
-			box-> height = r.top - r.bottom;
+			box-> width  = r.right - r.left + 1;
+			box-> height = r.top - r.bottom + 1;
 			var->regionData = reg;
 		}
 	} else if ( var-> regionData ) {
 		Box box   = img_region_box( &var->regionData->data.box);
 		r.left    = box.x;
 		r.bottom  = box.y;
-		r.right   = box.x + box.width;
-		r.top     = box.y + box.height;
+		r.right   = box.x + box.width  - 1;
+		r.top     = box.y + box.height - 1;
 	} else {
 		bzero(&r, sizeof(Rect));
 	}
@@ -2124,6 +2124,28 @@ Image_fill_sector( Handle self, int x, int y, int dX, int dY, double startAngle,
 	if ( opt_InPaint) return inherited fill_sector(self, x, y, dX, dY, startAngle, endAngle);
 	return primitive( self, 1, "siiiinn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
 }
+
+Bool
+Image_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
+{
+	Point t;
+	Bool ok;
+	ImgPaintContext ctx;
+	ColorPixel px;
+	if (opt_InPaint)
+		return inherited flood_fill(self, x, y, color, singleBorder);
+
+	t = my->get_translate(self);
+	x += t.x;
+	y += t.y;
+
+	prepare_fill_context(self, t, &ctx);
+	color2pixel( self, color, (Byte*)&px);
+	ok = img_flood_fill( self, x, y, px, singleBorder, &ctx); 
+	my-> update_change(self);
+	return ok;
+}
+
 
 #ifdef __cplusplus
 }

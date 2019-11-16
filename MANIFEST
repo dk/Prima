@@ -367,6 +367,7 @@ t/Image/Codec.t
 t/Image/Colormap.t
 t/Image/Conversion.t
 t/Image/Extract.t
+t/Image/FloodFill.t
 t/Image/Import.t
 t/Image/Path.t
 t/Image/ROP.t

@@ -52,6 +52,7 @@ object Prima::Image( Prima::Drawable)
 	method Bool   fill_ellipse(int x, int y, int dX, int dY);
 	method Bool   fillpoly( SV * points);
 	method Bool   fill_sector( int x, int y, int dX, int dY, double startAngle, double endAngle);
+	method Bool   flood_fill( int x, int y, Color color, Bool singleBorder = 1);
 	method int    get_bpp();
 	method SV   * get_handle();
 	method Color  get_nearest_color( Color color);

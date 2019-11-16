@@ -195,7 +195,7 @@ typedef struct {
 	PBitBltProc proc;
 } ImgPutCallbackRec;
 
-static void
+static Bool
 img_put_single( int x, int y, int w, int h, ImgPutCallbackRec * ptr)
 {
 	int i, count;
@@ -205,6 +205,7 @@ img_put_single( int x, int y, int w, int h, ImgPutCallbackRec * ptr)
 	count = w * ptr->bpp;
 	for ( i = 0; i < h; i++, sptr += ptr->srcLS, dptr += ptr->dstLS)
 		ptr->proc( sptr, dptr, count);
+	return true;
 }
 
 Bool
@@ -543,7 +544,7 @@ typedef struct {
 #define FILL_PATTERN_SIZE 8
 #define BLT_BUFSIZE ((MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE * (FILL_PATTERN_SIZE / 8) * 2 * 4))
 
-static void
+static Bool
 img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 {
 	int j, blt_bytes, blt_step, offset;
@@ -613,6 +614,7 @@ img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 		if ( rmask ) data[blt_bytes-1] = (rsave & rmask) | (data[blt_bytes-1] & ~rmask);
 		data += ptr->ls;
 	}
+	return true;
 }
 
 static Bool
@@ -800,18 +802,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	return true;
 }
 
-static Bool
-point_in_region( int x, int y, PBoxRegionRec region)
-{
-	int i;
-	Box * b;
-	for ( i = 0, b = region->boxes; i < region->n_boxes; i++, b++) {
-		if ( x >= b->x && y >= b->y && x < b->x + b->width && y < b->y + b->height)
-			return true;
-	}
-	return false;
-}
-
+/* reformat color values to imByte/imRGB */
 static Bool
 resample_colors( Handle dest, int bpp, PImgPaintContext ctx)
 {
@@ -1089,9 +1080,7 @@ typedef struct {
 	PIcon       i;
 	PBitBltProc proc;
 	BlendFunc  *blend1, *blend2;
-	Bool        solid, segment_is_fg, skip_pixel;
 	int         bpp, bytes, optimized_stride;
-	int         current_segment, segment_offset, n_segments;
 	PImgPaintContext ctx;
 	Byte        *color;
 
@@ -1158,7 +1147,146 @@ setpixel( ImgHLineRec* rec, int x, int y)
 }
 
 static void
-hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
+hline( ImgHLineRec *rec, int x, int n, int y)
+{
+	switch ( rec->bpp) {
+	case 8:
+	case 24: {
+		/* optimized multipixel set */
+		int wn;
+		int w = rec->bytes, stride = rec->optimized_stride;
+		Byte * dst = rec->i->data + rec->i->lineSize * y + x * w;
+		Byte * mask = ( rec->blend1 && !rec->use_dst_alpha) ?
+			(rec->i->mask + rec->i->maskLine * y + x) : NULL;
+		for ( wn = w * n; wn > 0; wn -= stride, dst += stride) {
+			int dw = ( wn >= stride ) ? stride : wn;
+			if ( rec->proc )
+				rec->proc( rec->color, dst, dw);
+			else {
+				Byte mask_buf[MAX_SIZEOF_PIXEL];
+				if ( mask ) {
+					int bp = rec->bpp / 8;
+					int dm = dw / bp;
+					fill_alpha_buf( mask_buf, mask, dm, bp);
+					rec->blend2(
+						&rec->src_alpha, 0,
+						&rec->src_alpha, 0,
+						mask, mask, 1, dm);
+					mask += dm;
+				}
+				rec->blend1( rec->color, 1,
+					&rec->src_alpha, 0,
+					dst,
+					mask ? mask_buf : &rec->dst_alpha,
+					rec->use_dst_alpha ? 0 : 1,
+					dw);
+			}
+		}
+		return;
+	}
+	default: {
+		int i;
+		for ( i = 0; i < n; i++, x++) setpixel(rec, x, y);
+	}}
+}
+
+#define HLINE_INIT_OK    0
+#define HLINE_INIT_FAIL  1
+#define HLINE_INIT_RETRY 2
+
+/* prepare to draw horizontal lines with alpha etc using single solid color */
+static int
+hline_init( ImgHLineRec * rec, Handle dest, PImgPaintContext ctx, char * method)
+{
+	int i;
+
+	/* misc */
+	rec->ctx     = ctx;
+	rec->i       = (PIcon) dest;
+	rec->bpp     = rec->i->type & imBPP;
+	rec->bytes   = rec->bpp / 8;
+	rec->color   = ctx->color;
+
+	/* deal with alpha request */
+	if ( ctx-> rop & ropConstantAlpha ) {
+		int j, rop = ctx->rop;
+		/* differentiate between per-pixel alpha and a global value */
+		if ( ctx->rop & ropSrcAlpha )
+			rec->src_alpha = (rop >> ropSrcAlphaShift) & 0xff;
+		else
+			rec->src_alpha = 0xff;
+		if ( rop & ropDstAlpha ) {
+			rec->use_dst_alpha = true;
+			rec->dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
+		}
+		rop &= ropPorterDuffMask;
+		if ( rop > ropMaxPDFunc || rop < 0 ) return false;
+		find_blend_proc( rop, &rec->blend1, &rec->blend2 );
+		rec->is_icon = kind_of( dest, CIcon );
+
+		/* align types and geometry - can only operate over imByte and imRGB */
+		int bpp = ( PImage(dest)->type & imGrayScale) ? imByte : imRGB;
+		if (PImage(dest)-> type != bpp || ( rec->is_icon && PIcon(dest)->maskType != imbpp8 )) {
+			int type = PImage(dest)->type;
+			int mask = rec->is_icon ? PIcon(dest)->maskType : 0;
+
+			if ( type != bpp ) {
+				resample_colors( dest, bpp, ctx );
+				CIcon(dest)-> set_type( dest, bpp );
+				if ( PImage(dest)->type != bpp)
+					return HLINE_INIT_FAIL;
+			}
+			if ( rec->is_icon && mask != imbpp8 ) {
+				CIcon(dest)-> set_maskType( dest, imbpp8 );
+				if ( PIcon(dest)->maskType != imbpp8)
+					return HLINE_INIT_FAIL;
+			}
+			return HLINE_INIT_RETRY;
+		}
+
+		if ( rec->is_icon ) {
+			if ( PIcon(dest)-> maskType != imbpp8)
+				croak("panic: assert failed for %s: %s", method, "dst mask type");
+			rec->use_dst_alpha = false;
+		} else if ( !rec->use_dst_alpha ) {
+			rec->use_dst_alpha = true;
+			rec->dst_alpha = 0xff;
+		}
+		rec->proc = NULL;
+
+		/* premultiply colors */
+		for ( j = 0; j < bpp / 8; j++) {
+			ctx->color[j] = (float)(ctx->color[j] * 255.0) / rec->src_alpha + .5;
+			ctx->backColor[j] = (float)(ctx->backColor[j] * 255.0) / rec->src_alpha + .5;
+		}
+	} else {
+		rec->blend1 = rec->blend2 = NULL;
+		rec->proc = find_blt_proc(ctx->rop);
+	}
+	
+	/* colors; optimize 8 and 24 pixels for horizontal line memcpy */
+	switch ( rec->bpp ) {
+	case 8:
+		memset( ctx->color + 1, ctx->color[0], MAX_SIZEOF_PIXEL - 1);
+		rec->optimized_stride = MAX_SIZEOF_PIXEL;
+		break;
+	case 24: 
+		for ( i = 1; i < MAX_SIZEOF_PIXEL / 3; i++)
+			memcpy( ctx->color + i * 3, ctx->color, 3);
+		rec->optimized_stride = (MAX_SIZEOF_PIXEL / 3) * 3;
+	}
+
+	return HLINE_INIT_OK;
+}
+
+typedef struct {
+	ImgHLineRec h;
+	Bool        solid, segment_is_fg, skip_pixel;
+	int         current_segment, segment_offset, n_segments;
+} ImgSegmentedLineRec;
+
+static void
+segmented_hline( ImgSegmentedLineRec *rec, int x1, int x2, int y, int visibility)
 {
 	int n  = abs(x2 - x1) + 1;
 	int dx = (x1 < x2) ? 1 : -1;
@@ -1170,63 +1298,26 @@ hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 	}
 	if ( rec->solid) {
 		if ( visibility == VISIBILITY_CLEAR ) {
-			switch ( rec->bpp) {
-			case 8:
-			case 16:
-			case 24: {
-				/* optimized multipixel set */
-				int wn;
-				int w = rec->bytes, stride = rec->optimized_stride;
-				int xx = (x1 < x2) ? x1 : x2;
-				Byte * dst = rec->i->data + rec->i->lineSize * y + xx * w;
-				Byte * mask = ( rec->blend1 && !rec->use_dst_alpha) ?
-					(rec->i->mask + rec->i->maskLine * y + xx) : NULL;
-				for ( wn = w * n; wn > 0; wn -= stride, dst += stride) {
-					int dw = ( wn >= stride ) ? stride : wn;
-					if ( rec->proc )
-						rec->proc( rec->ctx->color, dst, dw);
-					else {
-						Byte mask_buf[MAX_SIZEOF_PIXEL];
-						if ( mask ) {
-							int bp = rec->bpp / 8;
-							int dm = dw / bp;
-							fill_alpha_buf( mask_buf, mask, dm, bp);
-							rec->blend2(
-								&rec->src_alpha, 0,
-								&rec->src_alpha, 0,
-								mask, mask, 1, dm);
-							mask += dm;
-						}
-						rec->blend1( rec->ctx->color, 1,
-							&rec->src_alpha, 0,
-							dst,
-							mask ? mask_buf : &rec->dst_alpha,
-							rec->use_dst_alpha ? 0 : 1,
-							dw);
-					}
-				}
-				return;
-			}
-			default: {
-				int i;
-				for ( i = 0; i < n; i++, x1 += dx) setpixel(rec, x1, y);
-			}}
+			if ( x2 < x1 )
+				hline( &rec->h, x2, x1 - x2 + 1, y);
+			else
+				hline( &rec->h, x1, x2 - x1 + 1, y);
 		} else {
 			/* VISIBILITY_NONE is not reaching here */
 			int i;
 			for ( i = 0; i < n; i++, x1 += dx)
-				if ( point_in_region(x1, y, rec->ctx->region))
-					setpixel(rec, x1, y);
+				if ( img_point_in_region(x1, y, rec->h.ctx->region))
+					setpixel(&rec->h, x1, y);
 		}
 	} else {
 		int i;
 		for ( i = 0; i < n; i++, x1 += dx) {
 			/* calculate color */
-			rec->color = rec->segment_is_fg ?
-				rec->ctx->color : 
-				( rec->ctx->transparent ? NULL : rec->ctx->backColor )
+			rec->h.color = rec->segment_is_fg ?
+				rec->h.ctx->color : 
+				( rec->h.ctx->transparent ? NULL : rec->h.ctx->backColor )
 				;
-			if ( ++rec->segment_offset >= rec->ctx->linePattern[rec->current_segment]) {
+			if ( ++rec->segment_offset >= rec->h.ctx->linePattern[rec->current_segment]) {
 				rec->segment_offset = 0;
 				if ( ++rec->current_segment >= rec->n_segments ) {
 					rec->current_segment = 0;
@@ -1239,13 +1330,13 @@ hline( ImgHLineRec *rec, int x1, int x2, int y, int visibility)
 			/* put pixel */
 			if (
 				(visibility > VISIBILITY_NONE) &&
-				(rec->color != NULL) &&
+				(rec->h.color != NULL) &&
 				(
 					(visibility == VISIBILITY_CLEAR) || 
-					point_in_region(x1, y, rec->ctx->region)
+					img_point_in_region(x1, y, rec->h.ctx->region)
 				)
 			)
-				setpixel(rec, x1, y);
+				setpixel(&rec->h, x1, y);
 		}
 	}
 }
@@ -1255,7 +1346,9 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 {
 	PIcon i = (PIcon) dest;
 	int j;
-	ImgHLineRec rec;
+	int type     = i->type;
+	int maskType = kind_of(dest, CIcon) ? i->maskType : 0;
+	ImgSegmentedLineRec rec;
 	BoxRegionRec dummy_region;
 	Box dummy_region_box, *pbox;
 	Point* pp;
@@ -1264,11 +1357,21 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 
 	if ( ctx->rop == ropNoOper || n_points <= 1) return true;
 
-	/* misc */
-	rec.ctx     = ctx;
-	rec.i       = i;
-	rec.bpp     = i->type & imBPP;
-	rec.bytes   = rec.bpp / 8;
+	switch ( hline_init( &rec.h, dest, ctx, "img_polyline")) {
+	case HLINE_INIT_RETRY: {
+		Bool ok;
+		ok = img_polyline( dest, n_points, points, ctx);
+		if ( i-> options. optPreserveType ) {
+			if ( type != i->type )
+				CImage(dest)-> set_type( dest, type );
+			if ( maskType != 0 && maskType != i->maskType )
+				CIcon(dest)-> set_maskType( dest, maskType );
+		}
+		return ok;
+	}
+	case HLINE_INIT_FAIL:
+		return false;
+	}
 
 	rec.solid   = (strcmp((const char*)ctx->linePattern, (const char*)lpSolid) == 0);
 	if ( *(ctx->linePattern) == 0) {
@@ -1277,82 +1380,8 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		memcpy( ctx->color, ctx->backColor, MAX_SIZEOF_PIXEL);
 	}
 
-	/* deal with alpha request */
-	if ( ctx-> rop & ropConstantAlpha ) {
-		int rop = ctx->rop;
-		/* differentiate between per-pixel alpha and a global value */
-		if ( ctx->rop & ropSrcAlpha )
-			rec.src_alpha = (rop >> ropSrcAlphaShift) & 0xff;
-		else
-			rec.src_alpha = 0xff;
-		if ( rop & ropDstAlpha ) {
-			rec.use_dst_alpha = true;
-			rec.dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
-		}
-		rop &= ropPorterDuffMask;
-		if ( rop > ropMaxPDFunc || rop < 0 ) return false;
-		find_blend_proc( rop, &rec.blend1, &rec.blend2 );
-		rec.is_icon = kind_of( dest, CIcon );
-
-		/* align types and geometry - can only operate over imByte and imRGB */
-		int bpp = ( PImage(dest)->type & imGrayScale) ? imByte : imRGB;
-		if (PImage(dest)-> type != bpp || ( rec.is_icon && PIcon(dest)->maskType != imbpp8 )) {
-			Bool ok;
-			int type = PImage(dest)->type;
-			int mask = rec.is_icon ? PIcon(dest)->maskType : 0;
-
-			if ( type != bpp ) {
-				resample_colors( dest, bpp, ctx );
-				CIcon(dest)-> set_type( dest, bpp );
-			}
-			if ( rec.is_icon && mask != imbpp8 )
-				CIcon(dest)-> set_maskType( dest, imbpp8 );
-			ok = img_polyline( dest, n_points, points, ctx);
-			if ( PImage(dest)-> options. optPreserveType ) {
-				if ( type != bpp )
-					CImage(dest)-> set_type( dest, type );
-				if ( rec.is_icon && mask != imbpp8 )
-					CIcon(dest)-> set_maskType( dest, mask );
-			}
-			return ok;
-		}
-
-		if ( rec.is_icon ) {
-			if ( PIcon(dest)-> maskType != imbpp8)
-				croak("panic: assert failed for img_polyline: %s", "dst mask type");
-			rec.use_dst_alpha = false;
-		} else if ( !rec.use_dst_alpha ) {
-			rec.use_dst_alpha = true;
-			rec.dst_alpha = 0xff;
-		}
-		rec.proc = NULL;
-
-		/* premultiply colors */
-		for ( j = 0; j < bpp / 8; j++) {
-			ctx->color[j] = (float)(ctx->color[j] * 255.0) / rec.src_alpha + .5;
-			ctx->backColor[j] = (float)(ctx->backColor[j] * 255.0) / rec.src_alpha + .5;
-		}
-	} else {
-		rec.blend1 = rec.blend2 = NULL;
-		rec.proc = find_blt_proc(ctx->rop);
-	}
-	
-	/* colors; optimize 8 16 24 pixels for horizontal line memcpy */
 	if ( rec.solid )
-		rec.color = ctx->color;
-	switch ( rec.bpp ) {
-	case 8:
-		memset( ctx->color + 1, ctx->color[0], MAX_SIZEOF_PIXEL - 1);
-		rec. optimized_stride = MAX_SIZEOF_PIXEL;
-		break;
-	case 16:
-	case 24: {
-		int b = rec.bpp / 8, n = MAX_SIZEOF_PIXEL / b, i;
-		for ( i = 1; i < n; i++)
-			memcpy( ctx->color + i * b, ctx->color, b);
-		rec. optimized_stride = (MAX_SIZEOF_PIXEL / b) * b;
-		break;
-	}}
+		rec.h.color = ctx->color;
 
 	/* patterns */
 	rec.n_segments       = strlen(( const char*) ctx->linePattern );
@@ -1489,7 +1518,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 			}
 			if ( acc_y != y ) {
 				if ( acc_y > INT_MIN) 
-					hline( &rec, acc_x, ox, acc_y, visibility);
+					segmented_hline( &rec, acc_x, ox, acc_y, visibility);
 				acc_x = x;
 				acc_y = y;
 			}
@@ -1504,7 +1533,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 			}
 		}
 		if ( acc_y > INT_MIN)
-			hline( &rec, acc_x, x, acc_y, visibility);
+			segmented_hline( &rec, acc_x, x, acc_y, visibility);
 	}
 	return true;
 }
@@ -1528,7 +1557,7 @@ typedef struct {
 	BlendFunc * blend1, * blend2;
 } ImgPutAlphaCallbackRec;
 
-static void
+static Bool
 img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 {
 	int i;
@@ -1588,6 +1617,7 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 					w);
 		}
 	}
+	return true;
 }
 
 /*
@@ -1775,7 +1805,7 @@ typedef struct {
 	BlendFunc * blend1, * blend2;
 } ImgBarAlphaCallbackRec;
 
-static void
+static Bool
 img_bar_alpha_single_opaque( int x, int y, int w, int h, ImgBarAlphaCallbackRec * ptr)
 {
 	int i;
@@ -1833,9 +1863,10 @@ img_bar_alpha_single_opaque( int x, int y, int w, int h, ImgBarAlphaCallbackRec 
 			a += als;
 		}
 	}
+	return true;
 }
 
-static void
+static Bool
 img_bar_alpha_single_transparent( int x, int y, int w, int h, ImgBarAlphaCallbackRec * ptr)
 {
 	int i, j;
@@ -1905,6 +1936,7 @@ img_bar_alpha_single_transparent( int x, int y, int w, int h, ImgBarAlphaCallbac
 		d += dls;
 		if ( a ) a += als;
 	}
+	return true;
 }
 
 static Bool
@@ -2060,6 +2092,216 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	free(adbuf);
 
 	return true;
+}
+
+typedef struct {
+	PIcon         i;
+	Rect          clip;
+	int           y, bpp, bytes;
+	Byte   *      color;
+	Bool          single_border;
+	int           first;
+	PList  *      lists;
+	PBoxRegionRec new_region;
+	int           new_region_size;
+} FillSession;
+
+static Bool
+fs_get_pixel( FillSession * fs, int x, int y)
+{
+	Byte * data;
+
+
+	if ( x < fs-> clip. left || x > fs-> clip. right || y < fs-> clip. bottom || y > fs-> clip. top)
+		return false;
+
+	if ( fs-> lists[ y - fs-> first]) {
+		PList l = fs-> lists[ y - fs-> first];
+		int i;
+		for ( i = 0; i < l-> count; i+=2) {
+			if (((int) l-> items[i+1] >= x) && ((int)l->items[i] <= x))
+				return false;
+		}
+	}
+
+	data = fs->i->data + fs->i->lineSize * y;
+
+	switch( fs-> bpp) {
+	case 1: {
+		Byte xz = *(data + (x >> 3));
+		Byte v  = ( xz & ( 0x80 >> ( x & 7)) ? 1 : 0);
+		return fs-> single_border ?
+			( v == *(fs-> color)) : ( v != *(fs-> color));
+		break;
+	}
+	case 4: {
+		Byte xz = *(data + (x >> 1));
+		Byte v  = (x & 1) ? ( xz & 0xF) : ( xz >> 4);
+		return fs-> single_border ?
+			( v == *(fs-> color)) : ( v != *(fs-> color));
+		break;
+	}
+	case 8:
+		return fs-> single_border ?
+			( *(fs-> color) == *(data + x) ):
+			( *(fs-> color) != *(data + x) );
+	case 16:
+		return fs-> single_border ?
+			( *((uint16_t*)(fs-> color)) == *((uint16_t*)data + x) ) :
+			( *((uint16_t*)(fs-> color)) != *((uint16_t*)data + x) );
+	case 32:
+		return fs-> single_border ?
+			( *((uint32_t*)(fs-> color)) == *((uint32_t*)data + x) ) :
+			( *((uint32_t*)(fs-> color)) != *((uint32_t*)data + x) );
+	default: {
+		return fs-> single_border ?
+			( memcmp(data + x * fs->bytes, fs->color, fs->bytes) == 0) :
+			( memcmp(data + x * fs->bytes, fs->color, fs->bytes) != 0);
+	}}
+	return false;
+}
+
+static void
+fs_hline( FillSession * fs, int x1, int y, int x2)
+{
+	y -= fs-> first;
+	if ( fs-> lists[y] == NULL)
+		fs-> lists[y] = plist_create( 32, 128);
+	list_add( fs-> lists[y], ( Handle) x1);
+	list_add( fs-> lists[y], ( Handle) x2);
+}
+
+static int
+fs_fill( FillSession * fs, int sx, int sy, int d, int pxl, int pxr)
+{
+	int x, xr = sx;
+	while ( sx > fs-> clip. left  && fs_get_pixel( fs, sx - 1, sy)) sx--;
+	while ( xr < fs-> clip. right && fs_get_pixel( fs, xr + 1, sy)) xr++;
+	fs_hline( fs, sx, sy, xr);
+
+	if ( sy + d >= fs-> clip. bottom && sy + d <= fs-> clip. top) {
+		x = sx;
+		while ( x <= xr) {
+			if ( fs_get_pixel( fs, x, sy + d))
+				x = fs_fill( fs, x, sy + d, d, sx, xr);
+			x++;
+		}
+	} 
+
+	if ( sy - d >= fs-> clip. bottom && sy - d <= fs-> clip. top) {
+		x = sx;
+		while ( x < pxl) {
+			if ( fs_get_pixel( fs, x, sy - d))
+				x = fs_fill( fs, x, sy - d, -d, sx, xr);
+			x++;
+		}
+		x = pxr;
+		while ( x <= xr) {
+			if ( fs_get_pixel( fs, x, sy - d))
+				x = fs_fill( fs, x, sy - d, -d, sx, xr);
+			x++;
+		}
+	}
+	return xr;
+}
+
+static Bool
+fs_intersect( int x1, int y, int w, int h, FillSession * fs)
+{
+	PList l;
+	Handle * items;
+	int i, j, x2;
+
+	x2 = x1 + w - 1;
+	for ( i = 0; i < h; i++) 
+		if (( l = fs-> lists[y + i - fs->first]) != NULL )
+			for ( j = 0, items = l->items; j < l-> count; j+=2) {
+				Box * box;
+				int left  = (int) (*(items++));
+				int right = (int) (*(items++));
+				if ( left < x1 )
+					left = x1;
+				if ( right > x2)
+					right = x2;
+				if ( left > right )
+					continue;
+				if ( fs-> new_region-> n_boxes >= fs-> new_region_size ) {
+					PBoxRegionRec n;
+					fs-> new_region_size *= 2;
+					if ( !( n = img_region_alloc( fs-> new_region, fs-> new_region_size)))
+						return false;
+					fs-> new_region = n;
+				}
+				box = fs-> new_region-> boxes + fs-> new_region-> n_boxes;
+				box-> x      = left;
+				box-> y      = y + i;
+				box-> width  = right - left + 1;
+				box-> height = 1;
+				fs-> new_region-> n_boxes++;
+			}
+
+	return true;
+}
+
+Bool
+img_flood_fill( Handle self, int x, int y, ColorPixel color, Bool single_border, PImgPaintContext ctx)
+{
+	Bool ok = true;
+	Box box;
+	FillSession fs;
+	
+	fs.i             = ( PIcon ) self;
+	fs.color         = color;
+	fs.bpp           = fs.i->type & imBPP;
+	fs.bytes         = fs.bpp / 8;
+	fs.single_border = single_border;
+
+	if ( ctx-> region ) {
+		Box box = img_region_box( ctx-> region );
+		fs. clip. left   = box. x;
+		fs. clip. bottom = box. y;
+		fs. clip. right  = box. x + box. width - 1;
+		fs. clip. top    = box. y + box. height - 1;
+	} else {
+		fs. clip. left   = 0;
+		fs. clip. bottom = 0;
+		fs. clip. right  = fs.i->w - 1;
+		fs. clip. top    = fs.i->h - 1;
+	}
+
+	fs. new_region_size = (fs. clip. top - fs. clip. bottom + 1) * 4;
+	if ( !( fs. new_region = img_region_alloc(NULL, fs. new_region_size)))
+		return false;
+
+	fs. first = fs. clip. bottom;
+	if ( !( fs. lists = malloc(( fs. clip. top - fs. clip. bottom + 1) * sizeof( void*)))) {
+		free( fs. new_region );
+		return false;
+	}
+	bzero( fs. lists, ( fs. clip. top - fs. clip. bottom + 1) * sizeof( void*));
+
+	if ( fs_get_pixel( &fs, x, y)) {
+		fs_fill( &fs, x, y, -1, x, x);
+		ok = img_region_foreach( ctx->region,
+			0, 0, fs.i->w, fs.i->h,
+			(RegionCallbackFunc*)fs_intersect, &fs
+		);
+	}
+
+	for ( x = 0; x < fs. clip. bottom - fs. clip. top + 1; x++)
+		if ( fs. lists[x])
+			plist_destroy( fs.lists[x]);
+	free( fs. lists);
+
+	if ( ok ) {
+		ctx-> region = fs. new_region;
+		box = img_region_box( ctx-> region );
+		ok = img_bar( self, box.x, box.y, box.width, box.height, ctx);
+	}
+
+	free( fs. new_region);
+
+	return ok;
 }
 
 /* alpha stuff */
