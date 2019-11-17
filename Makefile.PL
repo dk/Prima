@@ -132,8 +132,9 @@ options:
     WITH_COCOA        - compile with/without Cocoa (default 1), MacOSX only
     CYGWIN_WINAPI     - Winapi build in cygwin environment
     DEBUG             - build with debug information
-    EXTRA_LDFLAGS      - add extra ld line (i.e. -lgcc )
-    EXTRA_CCFLAGS      - add extra cc line (i.e. -I/usr/local/include )
+    VERBOSE           - don't redirect commands to makefile.log
+    EXTRA_LDFLAGS     - add extra ld line (i.e. -lgcc )
+    EXTRA_CCFLAGS     - add extra cc line (i.e. -I/usr/local/include )
 
 HELP
 	exit;
@@ -187,6 +188,7 @@ sub setup_argv
 		DEBUG         => 0,
 		EXTRA_CCFLAGS => '',
 		EXTRA_LDFLAGS => '',
+		VERBOSE       => 0,
 
 		# service vars
 		AUTOMATED_RUN => 0,
@@ -569,6 +571,8 @@ sub ld_command_line
 
 sub null_output
 {
+	return if $cmd_options{VERBOSE};
+
 	open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
 	open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
 #	$NULLDEV = ( $Win32) ? "CON" : "/dev/tty";
@@ -588,6 +592,8 @@ sub null_output
 
 sub restore_output
 {
+	return if $cmd_options{VERBOSE};
+
 	if ( $^O !~ /linux/) {
 		close STDOUT;
 		close STDERR;
