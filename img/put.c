@@ -504,16 +504,16 @@ NOSCALE:
 	/* checks done, do put_image */
 	{
 		ImgPutCallbackRec rec = {
-			srcX  : srcX,
-			srcY  : srcY,
-			bpp   : ( PImage( dest)-> type & imBPP ) / 8,
-			srcLS : PImage( src)-> lineSize,
-			dstLS : PImage( dest)-> lineSize,
-			dX    : srcX - dstX,
-			dY    : srcY - dstY,
-			src   : PImage( src )-> data,
-			dst   : PImage( dest )-> data,
-			proc  : find_blt_proc(rop)
+			/* srcX  */ srcX,
+			/* srcY  */ srcY,
+			/* bpp   */ ( PImage( dest)-> type & imBPP ) / 8,
+			/* srcLS */ PImage( src)-> lineSize,
+			/* dstLS */ PImage( dest)-> lineSize,
+			/* dX    */ srcX - dstX,
+			/* dY    */ srcY - dstY,
+			/* src   */ PImage( src )-> data,
+			/* dst   */ PImage( dest )-> data,
+			/* proc  */ find_blt_proc(rop)
 		};
 		if ( rec.proc == bitblt_copy && dest == src) /* incredible */
 			rec.proc = bitblt_move;
@@ -783,15 +783,15 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	} */
 	{
 		ImgBarCallbackRec rec = {
-			bpp   : (i->type & imBPP),
-			count : (i->type & imBPP) / 8,
-			ls    : i->lineSize,
-			data  : i->data,
-			buf   : blt_buffer,
-			step  : blt_step,
-			proc  : find_blt_proc(ctx->rop),
-			solid        : solid,
-			pat_x_offset : x,
+			/* bpp          */ (i->type & imBPP),
+			/* count        */ (i->type & imBPP) / 8,
+			/* ls           */ i->lineSize,
+			/* step         */ blt_step,
+			/* pat_x_offset */ x,
+			/* solid        */ solid,
+			/* data         */ i->data,
+			/* buf          */ blt_buffer,
+			/* proc         */ find_blt_proc(ctx->rop),
 		};
 		img_region_foreach( ctx->region,
 			x, y, w, h,
@@ -1766,21 +1766,21 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	/* select function */
 	{
 		ImgPutAlphaCallbackRec rec = {
-			dX            : srcX - dstX,
-			dY            : srcY - dstY,
-			bpp           : bpp,
-			sls           : PImage(src )-> lineSize,
-			dls           : PImage(dest)-> lineSize,
-			mls           : mls,
-			als           : als,
-			src           : PImage(src )->data,
-			dst           : PImage(dest)->data,
-			srcMask       : (mls > 0) ? PIcon(src )->mask : NULL,
-			dstMask       : (als > 0) ? PIcon(dest)->mask : NULL,
-			use_src_alpha : use_src_alpha,
-			use_dst_alpha : use_dst_alpha,
-			asbuf         : asbuf,
-			adbuf         : adbuf,
+			/* dX            */ srcX - dstX,
+			/* dY            */ srcY - dstY,
+			/* bpp           */ bpp,
+			/* sls           */ PImage(src )-> lineSize,
+			/* dls           */ PImage(dest)-> lineSize,
+			/* mls           */ mls,
+			/* als           */ als,
+			/* src           */ PImage(src )->data,
+			/* dst           */ PImage(dest)->data,
+			/* srcMask       */ (mls > 0) ? PIcon(src )->mask : NULL,
+			/* dstMask       */ (als > 0) ? PIcon(dest)->mask : NULL,
+			/* use_src_alpha */ use_src_alpha,
+			/* use_dst_alpha */ use_dst_alpha,
+			/* asbuf         */ asbuf,
+			/* adbuf         */ adbuf,
 		};
 		find_blend_proc(rop, &rec.blend1, &rec.blend2);
 		img_region_foreach( region,
@@ -2067,19 +2067,19 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	/* select function */
 	{
 		ImgBarAlphaCallbackRec rec = {
-			ctx           : ctx,
-			bpp           : bpp,
-			als           : als,
-			dls           : PImage(dest)-> lineSize,
-			dst           : PImage(dest)->data,
-			dstMask       : (als > 0) ? PIcon(dest)->mask : NULL,
-			src_alpha     : src_alpha,
-			use_dst_alpha : use_dst_alpha,
-			adbuf         : adbuf,
-			pattern_buf   : blt_buffer,
-			step          : blt_step,
-			solid         : solid,
-			pat_x_offset  : x,
+			/* bpp           */ bpp,
+			/* als           */ als,
+			/* dls           */ PImage(dest)-> lineSize,
+			/* step          */ blt_step,
+			/* pat_x_offset  */ x,
+			/* dst           */ PImage(dest)->data,
+			/* dstMask       */ (als > 0) ? PIcon(dest)->mask : NULL,
+			/* pattern_buf   */ blt_buffer,
+			/* adbuf         */ adbuf,
+			/* use_dst_alpha */ use_dst_alpha,
+			/* solid         */ solid,
+			/* src_alpha     */ src_alpha,
+			/* ctx           */ ctx
 		};
 		find_blend_proc(ctx->rop, &rec.blend1, &rec.blend2);
 		img_region_foreach( ctx->region, x, y, w, h,
