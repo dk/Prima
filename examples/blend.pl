@@ -57,7 +57,6 @@ $ia->color(cl::Black);
 $ia->bar(0,0,30,200);
 $ia->bar(170,0,200,200);
 my ( $xa, $ma ) = $ia->split;
-undef $ia;
 
 my $b = $a->dup;
 $b->begin_paint;
@@ -74,7 +73,6 @@ my $ib = Prima::Icon->new(
 );
 $ib->put_image( 0,0,$b);
 my ( $xb, $mb ) = $ib->split;
-undef $ib;
 undef $b;
 
 my $base = $a->dup;
@@ -89,26 +87,29 @@ my $precanvas = Prima::Icon->new(
 	autoMasking => am::None,
 );
 undef $a;
+$ia->autoMasking(am::None);
 
+my $mask = Prima::Image->new(
+	size => [200,200],
+	type => im::Byte,
+);
 
 sub repaint
 {
 	my $sa = $w->SliderA;
 	my $sb = $w->SliderB;
 	if ( $sa->enabled ) {
-		my ($mm, $i);
+		$mask->put_image(0,0,$ma,rop::alpha(rop::SrcIn, undef, $sa->value));
+		$ia->put_image(0,0,$xa);
+		$ia->put_image(0,0,$mask,rop::AlphaCopy);
+		$ia->premultiply_alpha;
+		$precanvas->put_image(0,0,$ia,rop::SrcCopy);
 
-		$mm = $ma->dup;
-		$mm->premultiply_alpha( $sa-> value );
-		$i = Prima::Icon->create_combined( $xa, $mm );
-		$i->premultiply_alpha;
-		$precanvas->put_image(0,0,$i,rop::SrcCopy);
-
-		$mm = $mb->dup;
-		$mm->premultiply_alpha( $sb-> value );
-		$i = Prima::Icon->create_combined( $xb, $mm );
-		$i->premultiply_alpha;
-		$precanvas->put_image(0,0,$i,$rop_val);
+		$mask->put_image(0,0,$mb,rop::alpha(rop::SrcIn, undef, $sb->value));
+		$ia->put_image(0,0,$xb);
+		$ia->put_image(0,0,$mask,rop::AlphaCopy);
+		$ia->premultiply_alpha;
+		$precanvas->put_image(0,0,$ia,$rop_val);
 
 		$canvas->put_image(0,0,$base);
 		$canvas->put_image(0,0,$precanvas);
