@@ -471,7 +471,7 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 				{
 					HV * profile = hv;
 					if ( pexist( loadExtras))
-					fi. loadExtras  = pget_B( loadExtras);
+						fi. loadExtras  = pget_B( loadExtras);
 					if ( pexist( noImageData))
 						fi. noImageData = pget_B( noImageData);
 					if ( pexist( iconUnmask))
@@ -526,8 +526,12 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 				Object_destroy( fi. object);
 			if ( fi. profile != commonHV) sv_free(( SV *) fi. profile);
 			if ( incrementalLoad) {
-				if ( fi. frameCount < 0) fi. frameCount = fi. frame;
-				goto EXIT_NOW; /* EOF, report no error */
+				if ( fi. frameCount < 0)
+					fi. frameCount = fi. frame;
+				else if ( fi.frame < fi.frameCount )
+					err = true;
+				/* or it is EOF, report no error then */
+				goto EXIT_NOW;
 			}
 			err = true;
 			goto EXIT_NOW;
@@ -557,8 +561,12 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 		}
 
 		/* updating image */
-		if ( !fi. noImageData)
+		if ( !fi. noImageData) {
 			CImage( fi. object)-> update_change( fi. object);
+			/* loaders are ok to be lazy and use autoMasking for post-creation of the mask */
+			if ( fi. iconUnmask && kind_of( fi. object, CIcon))
+				PIcon( fi. object)-> autoMasking = amNone;
+		}
 
 		/* applying extras */
 		if ( fi. loadExtras) {

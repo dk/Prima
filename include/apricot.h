@@ -311,6 +311,7 @@ typedef Uquad_t Handle;
 #endif
 typedef Handle ApiHandle;
 
+
 #define __xstr1(x) #x
 #define __xstr2(x) __xstr1(x)
 #define PR_HANDLE_FMT "0x%0" __xstr2(PTRSIZE) PR_HANDLE
@@ -2951,6 +2952,9 @@ IM(TrigComplex)
 IM(TrigDComplex)
 END_TABLE(im,UV)
 #undef IM
+
+#define MAX_SIZEOF_PIXEL (sizeof(double) * 2)
+typedef Byte ColorPixel[MAX_SIZEOF_PIXEL];
 
 /* Image statistics constants */
 #define IS(const_name) CONSTANT(is,const_name)

@@ -129,8 +129,9 @@ img/ic_conv.c
 img/img.c
 img/imgscale.c
 img/imgtype.c
-img/put.c
+img/region.c
 img/rotate.c
+img/put.c
 include/apricot.h
 include/guts.h
 include/img.h
@@ -244,6 +245,7 @@ Prima/HelpViewer.pm
 Prima/Image/Animate.pm
 Prima/Image/gif.pm
 Prima/Image/jpeg.pm
+Prima/Image/png.pm
 Prima/Image/tiff.fm
 Prima/Image/tiff.pm
 Prima/Image/TransparencyControl.pm
@@ -365,6 +367,7 @@ t/Image/Codec.t
 t/Image/Colormap.t
 t/Image/Conversion.t
 t/Image/Extract.t
+t/Image/FloodFill.t
 t/Image/Import.t
 t/Image/Path.t
 t/Image/ROP.t

@@ -20,6 +20,26 @@ sub new
 	return $self;
 }
 
+sub detect_animation
+{
+	my (undef, $extras) = @_;
+	return undef unless                    # more than 1 frame?
+		$extras &&
+		defined($extras->{codecID}) &&
+		$extras->{frames} &&
+		$extras->{frames} > 1;
+	my $c = Prima::Image->codecs($extras-> {codecID}) or return 0;
+	return undef unless $c;
+
+	if ( $c->{name} eq 'GIFLIB') {
+		return 'GIF';
+	} elsif ($c->{name} =~ /^(WebP|PNG)$/) {
+		return $c->{name};
+	} else {
+		return undef;
+	}
+}
+
 sub load
 {
 	my $class = shift;
@@ -35,7 +55,7 @@ sub load
 
 	my $i = Prima::Icon-> new(%events); # dummy object
 
-	my @i = $i-> load(
+	my @i = grep { defined } $i-> load(
 		$where,
 		loadExtras => 1,
 		loadAll    => 1,
@@ -43,18 +63,10 @@ sub load
 		blending   => 1,
 		%args,
 	);
+	warn $@ if @i && !$i[-1];
 
 	return unless @i;
-
-	my $c = Prima::Image->codecs($i[0]-> {extras}-> {codecID}) or return 0;
-	my $model;
-	if ( $c->{name} eq 'GIFLIB') {
-		$model = 'GIF';
-	} elsif ($c->{name} eq 'WebP') {
-		$model = 'WebP';
-	} else {
-		return 0;
-	}
+	my $model = $class->detect_animation($i[0]->{extras}) or return;
 	$model = 'Prima::Image::Animate::' . $model;
 
 	return $model-> new( images => \@i);
@@ -150,7 +162,7 @@ sub advance_frame
 		} elsif ( $info-> {loopCount} == 0) {
 			# loop forever
 			$self-> {loopCount} = undef;
-		} else {
+		} elsif ( !defined $self->{loopCount}) {
 			$self-> {loopCount} = $info-> {loopCount};
 		}
 	}
@@ -428,7 +440,7 @@ sub draw
 }
 
 
-package Prima::Image::Animate::WebP;
+package Prima::Image::Animate::WebPNG;
 use base 'Prima::Image::Animate';
 
 sub new
@@ -464,20 +476,29 @@ sub next
 	my $info = $self->{info};
 	my %ret;
 
-	# dispose from the previous frame and calculate the changed rect
-	if ( $info-> {disposalMethod} eq 'background') {
+	if ( $info-> {disposalMethod} eq 'restore') {
+		# cut to the previous frame, that we expect to be saved for us
+		if ( $self-> {saveCanvas} ) {
+			$self-> {canvas} = $self-> {saveCanvas};
+		}
+		delete $self-> {saveCanvas};
+		%ret = %{ $info-> {rect} };
+	} elsif ( $info-> {disposalMethod} eq 'background') {
+		# dispose from the previous frame and calculate the changed rect
 		$self-> {canvas}-> color(cl::Clear);
 		$self-> {canvas}-> bar(
 			$info-> {rect}-> {left},
 			$info-> {rect}-> {bottom},
-			$self->{image}->width  + $info-> {rect}-> {left},
-			$self->{image}->height + $info-> {rect}-> {bottom}
+			$self->{image}->width  + $info-> {rect}-> {left} - 1,
+			$self->{image}->height + $info-> {rect}-> {bottom} - 1
 		);
 		%ret = %{ $info-> {rect} };
 	}
 
 	return unless $self->advance_frame;
 	$info = $self->{info};
+	@{$self}{qw(saveCanvas canvas)} = ($self->{canvas}, $self->{canvas}->dup)
+		if $info-> {disposalMethod} eq 'restore';
 
 	%ret = %{ $self->union_rect( \%ret, $info-> {rect}) };
 
@@ -506,8 +527,6 @@ sub reset
 	$self-> {canvas}  = Prima::DeviceBitmap-> new(
 		width      => $e-> {screenWidth},
 		height     => $e-> {screenHeight},
-		type       => im::RGB,
-		maskType   => im::bpp8,
 		type       => dbt::Layered,
 		backColor  => 0,
 	);
@@ -528,6 +547,21 @@ sub draw
 	$canvas-> put_image( $x, $y, $self-> {canvas}, rop::SrcOver) if $self->{canvas};
 }
 
+package Prima::Image::Animate::WebP;
+use base 'Prima::Image::Animate::WebPNG';
+
+package Prima::Image::Animate::PNG;
+use base 'Prima::Image::Animate::WebPNG';
+
+sub new
+{
+	my $class = shift;
+	my $self = $class->SUPER::new(@_);
+	my $i = $self->{images} // [];
+	shift @$i if @$i > 1 && $i->[0]->{extras}->{default_frame};
+	return $self;
+}
+
 1;
 
 __END__
@@ -536,11 +570,11 @@ __END__
 
 =head1 NAME
 
-Prima::Image::Animate - animate gif and webp files
+Prima::Image::Animate - animate gif,webp,png files
 
 =head1 DESCRIPTION
 
-The module provides high-level access to GIF and WebP animation sequences.
+The module provides high-level access to GIF, APNG, and WebP animation sequences.
 
 =head1 SYNOPSIS
 
@@ -571,6 +605,12 @@ Creates an empty animation container. If C<$OPTIONS{images}> is given, it is
 expected to be an array of images, best if loaded from gif files with
 C<loadExtras> and C<iconUnmask> parameters set ( see L<Prima::image-load> for
 details).
+
+=head2 detect_animation $HASH
+
+Checks C<{extras} hash> obtained from a image loaded with C<loadExtras> flag set,
+to detect whether the image is an animation, and if loading all of its frame is
+supported by the module. Returns file format name on success, undef otherwise.
 
 =head2 load $SOURCE, %OPTIONS
 
@@ -632,8 +672,8 @@ Sets and returns number of loops left, undef for indefinite.
 =head2 next
 
 Advances one animation frame. The step triggers changes to the internally kept
-AND and XOR masks that create effect of transparency, if needed.  The method
-return a hash, where the following field are initialized:
+icon image that create effect of transparency, if needed.  The method returns a
+hash, where the following fields are initialized:
 
 =over
 
@@ -643,7 +683,7 @@ Coordinates of the changed area since the last frame was updated.
 
 =item delay
 
-Time ins seconds how long the frame is expected to be displayed.
+Time in seconds how long the frame is expected to be displayed.
 
 =back
 
@@ -666,8 +706,7 @@ Returns width of the composite frame.
 
 =head1 SEE ALSO
 
-L<Prima::image-load>,
-L<http://www.the-labs.com/GIFMerge/>
+L<Prima::image-load>
 
 =head1 AUTHOR
 
