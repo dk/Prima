@@ -945,7 +945,10 @@ static dBLEND_FUNC(blend_add)
 	}
 }
 
+/* SEPARABLE(S * D) */
 dBLEND_FUNCx(blend_multiply, (UP(D) * (S + INVSA) + UP(S) * INVDA) / 255)
+
+/* SEPARABLE(D * SA + S * DA - S * D) */
 dBLEND_FUNCx(blend_screen,   (UP(S) * 255 + UP(D) * (255 - S)) / 255)
 
 #define SEPARABLE(f) (UP(S) * INVDA + UP(D) * INVSA + (f))/255
@@ -1073,7 +1076,7 @@ static void
 find_blend_proc( int rop, BlendFunc ** blend1, BlendFunc ** blend2 )
 {
 	*blend1 = blend_functions[rop];
-	*blend2 = (rop >= ropScreen) ? blend_functions[ropMultiply] : blend_functions[rop];
+	*blend2 = (rop >= ropMultiply) ? blend_functions[ropScreen] : blend_functions[rop];
 }
 
 typedef struct {
