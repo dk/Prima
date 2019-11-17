@@ -571,8 +571,6 @@ sub ld_command_line
 
 sub null_output
 {
-	return if $cmd_options{VERBOSE};
-
 	open OLDSTDOUT, ">&STDOUT" or die "STDOUT dup failed: $!";
 	open OLDSTDERR, ">&STDERR" or die "STDERR dup failed: $!";
 #	$NULLDEV = ( $Win32) ? "CON" : "/dev/tty";
@@ -592,8 +590,6 @@ sub null_output
 
 sub restore_output
 {
-	return if $cmd_options{VERBOSE};
-
 	if ( $^O !~ /linux/) {
 		close STDOUT;
 		close STDERR;
@@ -609,6 +605,7 @@ sub restore_output
 			seek MAKEFILELOG, $offset_makefile_log, 0;
 			local $/;
 			$captured_makefile_log = <MAKEFILELOG>;
+			print "\n", $captured_makefile_log if $cmd_options{VERBOSE};
 			close MAKEFILELOG;
 		}
 	}
@@ -670,9 +667,10 @@ sub compile_and_run
 
 	null_output;
 	my $cc = cc_command_line( $tmpsrc, $tmpo, $tmpexe, 0);
-	$cc =~ s/\s\-(s(hared)?|mdll)\b//g if gcc;
+	$cc =~ s/\s\-+(s(hared)?|mdll)\b//g if gcc;
 	print STDERR "$cc\n";
 	my $rc = system($cc);
+	print "$tmpexe\n";
 	restore_output;
 	unlink $tmpsrc;
 	unlink $tmpo if -w $tmpo;
