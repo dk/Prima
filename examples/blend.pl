@@ -13,11 +13,11 @@ Demonstrates use of Prima image alpha blending with C<rop::blend($ALPHA)>.
 
 use strict;
 use warnings;
-use Prima qw(Application Sliders ImageViewer);
+use Prima qw(Application Label Sliders ImageViewer);
 
 my ($rop_name, $rop_val);
 my $w = Prima::MainWindow->new(
-	size => [ 400, 300 ],
+	size => [ 600, 500 ],
 	designScale => [7, 16],
 	text => 'Blending example',
 	menuItems => [
@@ -43,22 +43,79 @@ my $a = Prima::Image->new(
 	type => im::RGB,
 );
 $a->begin_paint;
-$a->new_gradient( palette => [cl::LightRed, cl::Yellow ])-> ellipse($a->width/2,$a->height/2, $a->width, $a->height);
+$a->new_gradient( palette => [cl::LightGreen, cl::Blue ])->bar(0, 0, $a->size);
 $a->end_paint;
+my $ia = Prima::Icon->new(
+	size => [200,200],
+	type => im::RGB,
+	maskType => im::bpp8,
+	autoMasking => am::MaskColor,
+	maskColor => cl::Black,
+);
+$ia->put_image(0,0,$a);
+$ia->color(cl::Black);
+$ia->bar(0,0,30,200);
+$ia->bar(170,0,200,200);
+my ( $xa, $ma ) = $ia->split;
+undef $ia;
 
 my $b = $a->dup;
 $b->begin_paint;
-$b->new_gradient( palette => [cl::LightGreen, cl::Blue ])->bar(0, 0, $b->width,$b->height);
+$b->bar(0,0,$b->size);
+$b->new_gradient( palette => [cl::LightRed, cl::Yellow ])-> ellipse($b->width/2,$b->height/2, $b->size);
 $b->end_paint;
 
+my $ib = Prima::Icon->new(
+	size => [200,200],
+	type => im::RGB,
+	maskType => im::bpp8,
+	autoMasking => am::MaskColor,
+	maskColor => cl::Black,
+);
+$ib->put_image( 0,0,$b);
+my ( $xb, $mb ) = $ib->split;
+undef $ib;
+undef $b;
+
+my $base = $a->dup;
+$base->set( backColor => cl::White, color => cl::Black, fillPattern => [(0xF0)x4, (0xF)x4], rop2 => rop::CopyPut);
+$base->bar(0,0,$base->size);
+
 my $canvas = $a->dup;
+my $precanvas = Prima::Icon->new(
+	size => [200,200],
+	type => im::RGB,
+	maskType => im::bpp8,
+	autoMasking => am::None,
+);
+undef $a;
+
 
 sub repaint
 {
-	my $s = $w->Slider;
-	my $rop = $s->visible ? rop::alpha( $rop_val, $s->value, $s->value) : $rop_val;
-	$canvas->put_image(0,0,$a);
-	$canvas->put_image(0,0,$b,$rop);
+	my $sa = $w->SliderA;
+	my $sb = $w->SliderB;
+	if ( $sa->enabled ) {
+		my ($mm, $i);
+
+		$mm = $ma->dup;
+		$mm->premultiply_alpha( $sa-> value );
+		$i = Prima::Icon->create_combined( $xa, $mm );
+		$i->premultiply_alpha;
+		$precanvas->put_image(0,0,$i,rop::SrcCopy);
+
+		$mm = $mb->dup;
+		$mm->premultiply_alpha( $sb-> value );
+		$i = Prima::Icon->create_combined( $xb, $mm );
+		$i->premultiply_alpha;
+		$precanvas->put_image(0,0,$i,$rop_val);
+
+		$canvas->put_image(0,0,$base);
+		$canvas->put_image(0,0,$precanvas);
+	} else {
+		$canvas->put_image(0,0,$xa);
+		$canvas->put_image(0,0,$xb,$rop_val);
+	}
 	$w-> ImageViewer1->repaint;
 }
 
@@ -70,8 +127,10 @@ sub select_rop
 	}
 	$rop_name = $newrop;
 	$rop_val = &{${rop::}{$rop_name}}();
-	$w->Slider->enabled( $with_slider );
-	$w->Slider->readOnly( !$with_slider );
+	$w->SliderA->enabled( $with_slider );
+	$w->SliderA->readOnly( !$with_slider );
+	$w->SliderB->enabled( $with_slider );
+	$w->SliderB->readOnly( !$with_slider );
 	$w->menu->check($rop_name);
 	repaint();
 }
@@ -86,16 +145,40 @@ $w-> insert( ImageViewer =>
 	stretch => 1,
 );
 
+$w->insert( Label => 
+	text => '~Green transparency',
+	focusLink => 'SliderA',
+	pack => {side => 'top', fill => 'x', padx => 15},
+);
+
+$w->insert( Slider =>
+	min => 0,
+	max => 255,
+	value => 200,
+	scheme => ss::Axis,
+	increment => 16,
+	name => 'SliderA',
+	pack => {side => 'top', fill => 'x'},
+	onChange => \&repaint,
+);
+
+$w->insert( Label => 
+	text => '~Red transparency',
+	focusLink => 'SliderB',
+	pack => {side => 'top', fill => 'x', padx => 15},
+);
+
 $w->insert( Slider =>
 	min => 0,
 	max => 255,
 	scheme => ss::Axis,
 	increment => 16,
-	name => 'Slider',
-	pack => {side => 'top', fill => 'x', pad => 10},
+	value => 200,
+	name => 'SliderB',
+	pack => {side => 'top', fill => 'x'},
 	onChange => \&repaint,
 );
 
-select_rop('DstAtop', 1);
+select_rop('SrcOver', 1);
 
 run Prima;
