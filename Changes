@@ -1,4 +1,9 @@
 Revision history for Perl module Prima
+1.57 2017-11-17
+ - Add photoshop image operators (rop::Add, rop::Multiply, rop::SoftLight etc)
+ - Support animated PNG files
+ - Add Image.flood_fill
+
 1.56 2019-08-19
  - Rename and expand Drawable.fillWinding to .fillMode
  - Add Drawable.render_glyph and glyph outline functions
