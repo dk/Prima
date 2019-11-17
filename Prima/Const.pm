@@ -41,13 +41,7 @@ package
 package
     rop; *AUTOLOAD = \&Prima::Const::AUTOLOAD;	# raster operations
 
-sub blend($)
-{
-   my $alpha = 255 - shift;
-   $alpha = 0 if $alpha < 0;
-   $alpha = 255 if $alpha > 255;
-   return rop::DstAtop | rop::ConstantAlpha | ( $alpha << rop::SrcAlphaShift ) | ($alpha << rop::DstAlphaShift);
-}
+sub blend($) { alpha(rop::DstAtop, (255 - $_[0]) x 2) }
 
 sub alpha($;$$)
 {
