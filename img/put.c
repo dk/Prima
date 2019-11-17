@@ -1039,7 +1039,7 @@ static dBLEND_FUNC(blend_difference)
 	}
 }
 
-dBLEND_FUNCx(blend_exclusion, SEPARABLE( UP(S) * (DA - 2 * D) + UP(D) * SA ));
+dBLEND_FUNCx(blend_exclusion, SEPARABLE( UP(S) * (DA - 2 * D) + UP(D) * SA ))
 
 static BlendFunc* blend_functions[] = {
 	blend_src_over,
@@ -2132,14 +2132,12 @@ fs_get_pixel( FillSession * fs, int x, int y)
 		Byte v  = ( xz & ( 0x80 >> ( x & 7)) ? 1 : 0);
 		return fs-> single_border ?
 			( v == *(fs-> color)) : ( v != *(fs-> color));
-		break;
 	}
 	case 4: {
 		Byte xz = *(data + (x >> 1));
 		Byte v  = (x & 1) ? ( xz & 0xF) : ( xz >> 4);
 		return fs-> single_border ?
 			( v == *(fs-> color)) : ( v != *(fs-> color));
-		break;
 	}
 	case 8:
 		return fs-> single_border ?
@@ -2158,7 +2156,6 @@ fs_get_pixel( FillSession * fs, int x, int y)
 			( memcmp(data + x * fs->bytes, fs->color, fs->bytes) == 0) :
 			( memcmp(data + x * fs->bytes, fs->color, fs->bytes) != 0);
 	}}
-	return false;
 }
 
 static void
