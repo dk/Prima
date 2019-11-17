@@ -45,17 +45,21 @@ sub blend($) { alpha(rop::DstAtop, (255 - $_[0]) x 2) }
 
 sub alpha($;$$)
 {
-   my ($rop, $src_alpha, $dst_alpha) = @_;
-   $src_alpha //= 255;
-   $src_alpha = 0 if $src_alpha < 0;
-   $src_alpha = 255 if $src_alpha > 255;
-   my $ret = $rop | rop::SrcAlpha | ( $src_alpha << rop::SrcAlphaShift );
-   if (defined $dst_alpha) {
-      $dst_alpha = 0 if $dst_alpha < 0;
-      $dst_alpha = 255 if $dst_alpha > 255;
-      $ret |= rop::DstAlpha | ( $dst_alpha << rop::DstAlphaShift );
-   }
-   return $ret;
+	my ($rop, $src_alpha, $dst_alpha) = @_;
+
+	if (defined $src_alpha) {
+		$src_alpha =   0 if $src_alpha < 0;
+		$src_alpha = 255 if $src_alpha > 255;
+		$rop |= rop::SrcAlpha | ( $src_alpha << rop::SrcAlphaShift );
+	}
+
+	if (defined $dst_alpha) {
+		$dst_alpha =   0 if $dst_alpha < 0;
+		$dst_alpha = 255 if $dst_alpha > 255;
+		$rop |= rop::DstAlpha | ( $dst_alpha << rop::DstAlphaShift );
+	}
+
+	return $rop;
 }
 
 package
