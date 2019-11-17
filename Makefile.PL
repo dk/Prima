@@ -674,8 +674,11 @@ sub compile_and_run
 	restore_output;
 	unlink $tmpsrc;
 	unlink $tmpo if -w $tmpo;
-	my $ret = `$tmpexe`;
-	chomp $ret;
+	my $ret = '';
+	if ( -x $tmpexe ) {
+		`$tmpexe`;
+		chomp $ret;
+	}
 	unlink $tmpexe if -w $tmpexe;
 	unlink $_ for @tmpextras;
 	return $ret;
