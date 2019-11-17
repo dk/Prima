@@ -1157,7 +1157,10 @@ sub on_paint
 	my ( $self, $canvas) = @_;
 	my @clr;
 	my $prelight;
-	if ( $self-> enabled) {
+
+	my $enabled = $self->enabled;
+
+	if ( $enabled ) {
 		@clr  = ( $self-> color, $self-> backColor);
 		$prelight = $self-> prelight_color($clr[1], 1.5) if $self->{prelight};
 	} else {
@@ -1165,6 +1168,9 @@ sub on_paint
 	}
 	my @c3d  = ( $self-> dark3DColor, $self-> light3DColor);
 	my @cht  = ( $self-> hiliteColor, $self-> hiliteBackColor);
+	my @glyph_deltas = ([$clr[0], 0, 0]);
+	unshift @glyph_deltas, [cl::White, 1, -1] unless $enabled;
+
 	my @size = $canvas-> size;
 	my (
 		$sb, $v,
@@ -1219,25 +1225,30 @@ sub on_paint
 				if $self-> {readOnly};
 		}
 		my $i;
-		$canvas-> color( $clr[0]);
-		for ( $i = 0; $i < scalar @{$tval}; $i++) {
-			my $val = $bh + 1 + abs( $$tval[$i] - $min) * ( $br - 3) / $range;
-			if ( $$tlen[ $i]) {
-				$canvas-> line(
-					$bw + $sb + 3, $val,
-					$bw + $sb + $$tlen[ $i] + 3, $val
-				) if $ta & 2;
-				$canvas-> line(
-					$bw - 4, $val,
-					$bw - 4 - $$tlen[ $i], $val
-				) if $ta & 1;
+		my @tr = $self->translate;
+		for my $glyph_delta ( @glyph_deltas ) {
+			my ( $color, $delta_x, $delta_y ) = @$glyph_delta;
+			$canvas-> color( $color );
+			$self->translate($tr[0] + $delta_x, $tr[1] + $delta_y);
+			for ( $i = 0; $i < scalar @{$tval}; $i++) {
+				my $val = $bh + 1 + abs( $$tval[$i] - $min) * ( $br - 3) / $range;
+				if ( $$tlen[ $i]) {
+					$canvas-> line(
+						$bw + $sb + 3, $val,
+						$bw + $sb + $$tlen[ $i] + 3, $val
+					) if $ta & 2;
+					$canvas-> line(
+						$bw - 4, $val,
+						$bw - 4 - $$tlen[ $i], $val
+					) if $ta & 1;
+				}
+				$canvas-> text_out_bidi( $$ttxt[ $i],
+					( $ta == 2) ?
+						$bw + $sb + $$tlen[ $i] + 5 :
+						$bw - $$tlen[ $i] - 5 - $canvas-> get_text_width( $$ttxt[ $i]),
+					$val - $bh / 2
+				) if defined $$ttxt[ $i];
 			}
-			$canvas-> text_out_bidi( $$ttxt[ $i],
-				( $ta == 2) ?
-					$bw + $sb + $$tlen[ $i] + 5 :
-					$bw - $$tlen[ $i] - 5 - $canvas-> get_text_width( $$ttxt[ $i]),
-				$val - $bh / 2
-			) if defined $$ttxt[ $i];
 		}
 		unless ( $self-> {readOnly}) {
 			my @jp = (
@@ -1283,65 +1294,70 @@ sub on_paint
 		}
 		my $i;
 
-		$canvas-> color( $clr[0]);
 		my @texts;
-		for ( $i = 0; $i < scalar @{$tval}; $i++) {
-			my $val = int( 1 + $bw + abs( $$tval[$i] - $min) * ( $br - 3) / $range + .5);
-			if ( $$tlen[ $i]) {
-				$canvas-> line( $val, $bh + $sb + 3, $val, $bh + $sb + $$tlen[ $i] + 3)
-					if $ta & 1;
-				$canvas-> line( $val, $bh - 4, $val, $bh - 4 - $$tlen[ $i])
-					if $ta & 2;
+		my @tr = $self->translate;
+		for my $glyph_delta ( @glyph_deltas ) {
+			my ( $color, $delta_x, $delta_y ) = @$glyph_delta;
+			$canvas-> color( $color );
+			$self->translate($tr[0] + $delta_x, $tr[1] + $delta_y);
+			for ( $i = 0; $i < scalar @{$tval}; $i++) {
+				my $val = int( 1 + $bw + abs( $$tval[$i] - $min) * ( $br - 3) / $range + .5);
+				if ( $$tlen[ $i]) {
+					$canvas-> line( $val, $bh + $sb + 3, $val, $bh + $sb + $$tlen[ $i] + 3)
+						if $ta & 1;
+					$canvas-> line( $val, $bh - 4, $val, $bh - 4 - $$tlen[ $i])
+						if $ta & 2;
+				}
+
+				next unless defined $$ttxt[ $i];
+				my $tw = int( $canvas-> get_text_width( $$ttxt[ $i]) / 2 + .5);
+				my $x = $val - $tw;
+				next if $x >= $size[0] or $val + $tw < 0;
+				push @texts, [
+					$$ttxt[$i], $val, $tw,
+					( $ta == 2) ? $bh - $$tlen[ $i] - 5 - $fh : $bh + $sb + $$tlen[ $i] + 5,
+					$size[0]
+				];
 			}
 
-			next unless defined $$ttxt[ $i];
-			my $tw = int( $canvas-> get_text_width( $$ttxt[ $i]) / 2 + .5);
-			my $x = $val - $tw;
-			next if $x >= $size[0] or $val + $tw < 0;
-			push @texts, [
-				$$ttxt[$i], $val, $tw,
-				( $ta == 2) ? $bh - $$tlen[ $i] - 5 - $fh : $bh + $sb + $$tlen[ $i] + 5,
-				$size[0]
-			];
+
+			if ( @texts) {
+				# see that leftmost val fits
+				if ( $texts[0]->[1] - $texts[0]->[2] < 0) {
+					$texts[0]->[1] = $texts[0]->[2];
+					shift @texts
+						if $texts[0]->[1] + $texts[0]->[2] > $size[0];
+					goto NO_LABELS unless @texts;
+				}
+
+				# see that rightmost text fits
+				my ( $rightmost_val, $rightmost_label_width) = (
+					$texts[-1]->[1], $texts[-1]->[2]);
+				$rightmost_val = $size[0] - 1 - $rightmost_label_width
+					if $rightmost_val > $size[0] - 1 - $rightmost_label_width;
+				if ( 1 < @texts and $rightmost_val < 0) {
+					# skip it
+					pop @texts;
+					goto NO_LABELS unless @texts;
+				} else {
+					$texts[-1]->[1] = $rightmost_val;
+					my $lv = 2 * $rightmost_label_width + $mw;
+					$$_[-1] -= $lv for @texts[0..$#texts-1];
+					$texts[-1][-1] += $mw;
+				}
+
+				# draw labels
+				my $lastx = 0;
+				for ( @texts) {
+					my ( $text, $val, $half_width, $y, $xlim) = @$_;
+					my $x = $val - $half_width;
+					next if $x < $lastx or $x < 0 or $val + $half_width >= $xlim;
+					$lastx = $val + $half_width + $mw;
+					$canvas-> text_out_bidi( $text, $x, $y);
+				}
+			}
+			NO_LABELS:
 		}
-
-
-		if ( @texts) {
-			# see that leftmost val fits
-			if ( $texts[0]->[1] - $texts[0]->[2] < 0) {
-				$texts[0]->[1] = $texts[0]->[2];
-				shift @texts
-					if $texts[0]->[1] + $texts[0]->[2] > $size[0];
-				goto NO_LABELS unless @texts;
-			}
-
-			# see that rightmost text fits
-			my ( $rightmost_val, $rightmost_label_width) = (
-				$texts[-1]->[1], $texts[-1]->[2]);
-			$rightmost_val = $size[0] - 1 - $rightmost_label_width
-				if $rightmost_val > $size[0] - 1 - $rightmost_label_width;
-			if ( 1 < @texts and $rightmost_val < 0) {
-				# skip it
-				pop @texts;
-				goto NO_LABELS unless @texts;
-			} else {
-				$texts[-1]->[1] = $rightmost_val;
-				my $lv = 2 * $rightmost_label_width + $mw;
-				$$_[-1] -= $lv for @texts[0..$#texts-1];
-				$texts[-1][-1] += $mw;
-			}
-
-			# draw labels
-			my $lastx = 0;
-			for ( @texts) {
-				my ( $text, $val, $half_width, $y, $xlim) = @$_;
-				my $x = $val - $half_width;
-				next if $x < $lastx or $x < 0 or $val + $half_width >= $xlim;
-				$lastx = $val + $half_width + $mw;
-				$canvas-> text_out_bidi( $text, $x, $y);
-			}
-		}
-		NO_LABELS:
 
 		unless ( $self-> {readOnly}) {
 			my @jp = (
