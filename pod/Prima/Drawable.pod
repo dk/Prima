@@ -550,6 +550,8 @@ A drawable has two raster operation properties: C<::rop> and C<::rop2>.
 These define how the graphic primitives are plotted. C<::rop> deals
 with the foreground color drawing, and C<::rop2> with the background.
 
+=head3 Universal ROPs
+
 The toolkit defines the following operations:
 
 =for podview <img src="rop1.gif" cut=1 >
@@ -590,9 +592,16 @@ Note for layering: using layered images and device bitmaps with
 C<put_image> and C<stretch_image> can only use C<rop::SrcCopy> and C<rop::SrcOver>
 raster operations on OS-provided surfaces.
 
-Additionally, Prima implements extra features for compositing on images outside the
-begin_paint/end_paint brackets. It supports the following 12 Porter-Duff operators
-and some selected Photoshop blend operators:
+Also, C<rop::AlphaCopy> operation is available for accessing alpha bits only.
+When used, the source image is treated as alpha mask, and therefore it has to
+be grayscale.  It can be used to apply the alpha bits independently, without
+need to construct an Icon object.
+
+=head3 Additional ROPs
+
+Prima implements extra features for compositing on images outside the
+begin_paint/end_paint brackets. It supports the following 12 Porter-Duff
+operators and some selected Photoshop blend operators:
 
 =for podview 
  <img src="rop2.gif" cut=1>
@@ -620,15 +629,19 @@ and some selected Photoshop blend operators:
 
 =for podview </cut>
 
-and set of constants to apply a constant source and destination alpha to override the
-existing alpha channel, if any:
+=over
+
+=item Transparency control
+
+There is defined a set of constants to apply a constant source and destination alpha to when
+there is no alpha channel available:
 
    rop::SrcAlpha
    rop::SrcAlphaShift
    rop::DstAlpha
    rop::DstAlphaShift
 
-To override the alpha channel(s) combine the rop constant using this formula:
+Combine the rop constant using this formula:
 
    $rop = rop::XXX |
       rop::SrcAlpha | ( $src_alpha << rop::SrcAlphaShift ) |
@@ -639,16 +652,17 @@ by the following formula:
 
    $dst = ( $src * $alpha + $dst * ( 255 - $alpha ) ) / 255
 
-Its brother function C<rop::alpha($rop, $src_alpha[, $dst_alpha])> can be used for drawing on
+Its brother function C<rop::alpha($rop, $src_alpha, $dst_alpha)> can be used for drawing on
 image outside begin_paint/end_paint:
 
    $image->rop( rop::alpha( rop::SrcOver, 128 ));
    $image->ellipse( 5, 5, 5, 5 );
 
-In addition to that, C<rop::AlphaCopy> operation is available for accessing
-alpha bits only.  When used, the source image is treated as alpha mask, and
-therefore it has to be grayscale.  It can be used to apply the alpha bits
-independently, without need to construct an Icon object.
+=item rop::Premultiply
+
+When this bit is set, source pixels will be multiplied with alpha before blending
+
+=back
 
 =head2 Coordinates
 
