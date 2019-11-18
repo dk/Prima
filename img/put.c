@@ -1556,6 +1556,8 @@ typedef struct {
 	Byte * dstMask;
 	Bool use_src_alpha;
 	Bool use_dst_alpha;
+	Byte src_alpha_mul;
+	Byte dst_alpha_mul;
 	Byte * pmsbuf;
 	Byte * asbuf;
 	Byte * adbuf;
@@ -1563,7 +1565,7 @@ typedef struct {
 } ImgPutAlphaCallbackRec;
 
 static void
-premultiply( Byte * src, Byte * alpha, int alpha_step, Byte * dst, int bytes)
+multiply( Byte * src, Byte * alpha, int alpha_step, Byte * dst, int bytes)
 {
 	while (bytes--) {
 		*(dst++) = *(src++) * *alpha / 255.0 + .5;
@@ -1599,18 +1601,22 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 		if ( !ptr->use_src_alpha ) {
 			asbuf_ptr = ptr->asbuf + bytes * OMP_THREAD_NUM;
 			fill_alpha_buf( asbuf_ptr, m_ptr, w, bpp);
+			if ( ptr-> src_alpha_mul < 255 )
+				multiply( asbuf_ptr, &ptr->src_alpha_mul, 0, asbuf_ptr, bytes);
 		} else
 			asbuf_ptr = ptr->asbuf;
 
 		if ( !ptr->use_dst_alpha ) {
 			adbuf_ptr = ptr->adbuf + bytes * OMP_THREAD_NUM;
 			fill_alpha_buf( adbuf_ptr, a_ptr, w, bpp);
+			if ( ptr-> dst_alpha_mul < 255 )
+				multiply( adbuf_ptr, &ptr->dst_alpha_mul, 0, adbuf_ptr, bytes);
 		} else
 			adbuf_ptr = ptr->adbuf;
 
 		if ( ptr-> pmsbuf ) {
 			Byte *pmsbuf = ptr-> pmsbuf + bytes * OMP_THREAD_NUM;
-			premultiply( s_ptr, asbuf_ptr, ptr->use_src_alpha ? 0 : 1, pmsbuf, bytes);
+			multiply( s_ptr, asbuf_ptr, ptr->use_src_alpha ? 0 : 1, pmsbuf, bytes);
 			s_ptr = pmsbuf;
 		} 
 		ptr->blend1(
@@ -1619,22 +1625,29 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 			d_ptr,
 			adbuf_ptr, ptr->use_dst_alpha ? 0 : 1,
 			bytes);
-		if (a) {
-			if ( ptr->use_src_alpha )
-				ptr->blend2(
-					ptr->asbuf, 0,
-					ptr->asbuf, 0,
-					(Byte*)a_ptr,
-					a_ptr, ptr->use_dst_alpha ? 0 : 1,
-					w);
-			else
-				ptr->blend2(
-					m_ptr, 1,
-					m_ptr, 1,
-					(Byte*)a_ptr,
-					a_ptr, ptr->use_dst_alpha ? 0 : 1,
-					w);
-		}
+		if (a == NULL) 
+			continue;
+
+#define BLEND_ALPHA(src,step)\
+	ptr->blend2(\
+		src,step,\
+		src,step,\
+		(Byte*)a_ptr,\
+		a_ptr, ptr->use_dst_alpha ? 0 : 1,\
+		w)
+
+		if ( ptr->dst_alpha_mul < 255 )
+			multiply( a_ptr, &ptr->dst_alpha_mul, 0, a_ptr, w);
+
+		if ( ptr-> src_alpha_mul < 255 ) {
+			if ( bpp == 3 ) /* reuse the old values from multiply() otherwise */
+				multiply( m_ptr, &ptr->src_alpha_mul, 0, asbuf_ptr, w);
+			BLEND_ALPHA(asbuf_ptr,1);
+		} else if ( ptr->use_src_alpha )
+			BLEND_ALPHA(ptr->asbuf,0);
+		else
+			BLEND_ALPHA(m_ptr,1);
+#undef BLEND2
 	}
 	return true;
 }
@@ -1649,7 +1662,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	int bpp, bytes, mls, als, xrop;
 	unsigned int src_alpha = 0, dst_alpha = 0;
 	Bool use_src_alpha = false, use_dst_alpha = false, use_pms = false;
-	Byte *asbuf, *adbuf, *pmsbuf = NULL;
+	Byte *asbuf, *adbuf, *pmsbuf = NULL, src_alpha_mul = 255, dst_alpha_mul = 255;
 
 	xrop = rop;
 
@@ -1746,6 +1759,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		mls = PIcon(src)-> maskLine;
 		if ( PIcon(src)-> maskType != imbpp8)
 			croak("panic: assert failed for img_put_alpha: %s", "src mask type");
+		if ( use_src_alpha )
+			src_alpha_mul = src_alpha;
 		use_src_alpha = false;
 	} else {
 		mls = 0;
@@ -1755,6 +1770,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		als = PIcon(dest)-> maskLine;
 		if ( PIcon(dest)-> maskType != imbpp8)
 			croak("panic: assert failed for img_put_alpha: %s", "dst mask type");
+		if ( use_dst_alpha )
+			dst_alpha_mul = dst_alpha;
 		use_dst_alpha = false;
 	} else {
 		als = 0;
@@ -1810,6 +1827,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 			/* dstMask       */ (als > 0) ? PIcon(dest)->mask : NULL,
 			/* use_src_alpha */ use_src_alpha,
 			/* use_dst_alpha */ use_dst_alpha,
+			/* src_alpha_mul */ src_alpha_mul,
+			/* dst_alpha_mul */ dst_alpha_mul,
 			/* pmsbuf        */ pmsbuf,
 			/* asbuf         */ asbuf,
 			/* adbuf         */ adbuf,
