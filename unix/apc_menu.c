@@ -194,8 +194,10 @@ get_font_abc( PCachedFont font, char * index, Bool utf8, FontABC * rec, MenuDraw
 #ifdef USE_XFT
 	if ( font-> xft) {
 		Point ovx;
-		rec-> b = prima_xft_get_text_width( font, index, 1, false,
-														utf8, data-> xft_map8, &ovx);
+		rec-> b = prima_xft_get_text_width(
+			font, index, 1, false,
+			utf8, data-> xft_map8, &ovx
+		);
 		/* not really abc, but enough for its single invocation */
 		rec-> a = -ovx. x;
 		rec-> c = -ovx. y;
