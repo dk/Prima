@@ -32,12 +32,12 @@ sub polyline_to_points
 		if ( $dx > 0 ) {
 			my $dy = ($y2 - $y1) / $dx;
 			my $y = $y1;
-			for ( my $x = $x1; $x <= $x2; $x++) {
+			for ( my $x = int($x1); $x <= int($x2); $x++) {
 				$map[$x] = $y;
 				$y += $dy;
 			}
 		} else {
-			$map[$x1] = $y1;
+			$map[int($x1)] = $y1;
 		}
 	}
 	return \@map;
