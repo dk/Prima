@@ -1200,9 +1200,10 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 }
 
 int
-prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool addOverhang,
-								Bool utf8, uint32_t * map8, Point * overhangs)
-{
+prima_xft_get_text_width(
+	PCachedFont self, const char * text, int len, Bool addOverhang,
+	Bool utf8, uint32_t * map8, Point * overhangs
+) {
 	int i, ret = 0, bytelen, div;
 	XftFont * font = self-> xft_base;
 
@@ -1242,17 +1243,13 @@ prima_xft_get_text_width( PCachedFont self, const char * text, int len, Bool add
 		ret += glyph. xOff;
 		if ( addOverhang || overhangs) {
 			if ( i == 0) {
-				if ( glyph. x > 0) {
-					if ( addOverhang) ret += glyph. x;
-					if ( overhangs)   overhangs-> x = glyph. x;
-				}
+				if ( addOverhang && glyph. x > 0) ret += glyph. x;
+				if ( overhangs) overhangs-> x = glyph. x;
 			}
 			if ( i == len - 1) {
 				int c = glyph. xOff - glyph. width + glyph. x;
-				if ( c < 0) {
-					if ( addOverhang) ret -= c;
-					if ( overhangs)   overhangs-> y = -c;
-				}
+				if ( addOverhang && c < 0) ret -= c;
+				if ( overhangs) overhangs-> y = -c;
 			}
 		}
 	}
@@ -1270,6 +1267,8 @@ prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8)
 
 	width = prima_xft_get_text_width( XX-> font, text, len,
 		false, utf8, X(self)-> xft_map8, &ovx);
+	if ( ovx.x < 0 ) ovx.x = 0;
+	if ( ovx.y < 0 ) ovx.y = 0;
 
 	pt[0].y = pt[2]. y = XX-> font-> font. ascent - 1;
 	pt[1].y = pt[3]. y = - XX-> font-> font. descent;
@@ -1663,6 +1662,8 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 		if ( lw != 1)
 			apc_gp_set_line_width( self, 1);
 
+		if ( ovx.x < 0 ) ovx.x = 0;
+		if ( ovx.y < 0 ) ovx.y = 0;
 		if ( PDrawable( self)-> font. style & fsUnderlined) {
 			ay = d;
 			x1 = x - ovx.x * c - ay * s + 0.5;
