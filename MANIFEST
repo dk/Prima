@@ -67,6 +67,7 @@ examples/edit.pl
 examples/editor.pl
 examples/extlist.pl
 examples/eyes.pl
+examples/fading_text.pl
 examples/fontdlg.pl
 examples/frames.pl
 examples/f_fill.pl
