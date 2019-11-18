@@ -1208,7 +1208,6 @@ hline_init( ImgHLineRec * rec, Handle dest, PImgPaintContext ctx, char * method)
 	rec->i       = (PIcon) dest;
 	rec->bpp     = rec->i->type & imBPP;
 	rec->bytes   = rec->bpp / 8;
-	rec->color   = ctx->color;
 
 	/* deal with alpha request */
 	if ( ctx-> rop & ropConstantAlpha ) {
@@ -1266,6 +1265,8 @@ hline_init( ImgHLineRec * rec, Handle dest, PImgPaintContext ctx, char * method)
 		rec->blend1 = rec->blend2 = NULL;
 		rec->proc = find_blt_proc(ctx->rop);
 	}
+
+	rec->color   = ctx->color;
 	
 	/* colors; optimize 8 and 24 pixels for horizontal line memcpy */
 	switch ( rec->bpp ) {
@@ -1555,10 +1556,20 @@ typedef struct {
 	Byte * dstMask;
 	Bool use_src_alpha;
 	Bool use_dst_alpha;
+	Byte * pmsbuf;
 	Byte * asbuf;
 	Byte * adbuf;
 	BlendFunc * blend1, * blend2;
 } ImgPutAlphaCallbackRec;
+
+static void
+premultiply( Byte * src, Byte * alpha, int alpha_step, Byte * dst, int bytes)
+{
+	while (bytes--) {
+		*(dst++) = *(src++) * *alpha / 255.0 + .5;
+		alpha += alpha_step;
+	}
+}
 
 static Bool
 img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
@@ -1597,6 +1608,11 @@ img_put_alpha_single( int x, int y, int w, int h, ImgPutAlphaCallbackRec * ptr)
 		} else
 			adbuf_ptr = ptr->adbuf;
 
+		if ( ptr-> pmsbuf ) {
+			Byte *pmsbuf = ptr-> pmsbuf + bytes * OMP_THREAD_NUM;
+			premultiply( s_ptr, asbuf_ptr, ptr->use_src_alpha ? 0 : 1, pmsbuf, bytes);
+			s_ptr = pmsbuf;
+		} 
 		ptr->blend1(
 			s_ptr, 1,
 			asbuf_ptr, ptr->use_src_alpha ? 0 : 1,
@@ -1632,8 +1648,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 {
 	int bpp, bytes, mls, als, xrop;
 	unsigned int src_alpha = 0, dst_alpha = 0;
-	Bool use_src_alpha = false, use_dst_alpha = false;
-	Byte *asbuf, *adbuf;
+	Bool use_src_alpha = false, use_dst_alpha = false, use_pms = false;
+	Byte *asbuf, *adbuf, *pmsbuf = NULL;
 
 	xrop = rop;
 
@@ -1646,6 +1662,8 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		use_dst_alpha = true;
 		dst_alpha = (rop >> ropDstAlphaShift) & 0xff;
 	}
+	if ( rop & ropPremultiply )
+		use_pms = true;
 	rop &= ropPorterDuffMask;
 	if ( rop > ropMaxPDFunc || rop < 0 ) return false;
 
@@ -1750,8 +1768,10 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		use_dst_alpha = true;
 		dst_alpha = 0xff;
 	}
+	if ( use_pms && !use_src_alpha && mls == 0 )
+		use_pms = false;
 
-	/* make buffers for alpha */
+	/* make buffers */
 	bytes = dstW * bpp;
 	if ( !(asbuf = malloc(use_src_alpha ? 1 : (bytes * OMP_MAX_THREADS)))) {
 		warn("not enough memory");
@@ -1761,6 +1781,14 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 		free(asbuf);
 		warn("not enough memory");
 		return false;
+	}
+	if ( use_pms ) {
+		if ( !(pmsbuf = malloc( bytes * OMP_MAX_THREADS))) {
+			free(adbuf);
+			free(asbuf);
+			warn("not enough memory");
+			return false;
+		}
 	}
 
 	if ( use_src_alpha ) asbuf[0] = src_alpha;
@@ -1782,6 +1810,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 			/* dstMask       */ (als > 0) ? PIcon(dest)->mask : NULL,
 			/* use_src_alpha */ use_src_alpha,
 			/* use_dst_alpha */ use_dst_alpha,
+			/* pmsbuf        */ pmsbuf,
 			/* asbuf         */ asbuf,
 			/* adbuf         */ adbuf,
 		};
@@ -1795,6 +1824,7 @@ img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, 
 	/* cleanup */
 	free(adbuf);
 	free(asbuf);
+	if (pmsbuf) free(pmsbuf);
 
 	return true;
 }

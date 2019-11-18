@@ -102,14 +102,12 @@ sub repaint
 		$mask->put_image(0,0,$ma,rop::alpha(rop::SrcIn, undef, $sa->value));
 		$ia->put_image(0,0,$xa);
 		$ia->put_image(0,0,$mask,rop::AlphaCopy);
-		$ia->premultiply_alpha;
-		$precanvas->put_image(0,0,$ia,rop::SrcCopy);
+		$precanvas->put_image(0,0,$ia, rop::SrcCopy | rop::Premultiply);
 
 		$mask->put_image(0,0,$mb,rop::alpha(rop::SrcIn, undef, $sb->value));
 		$ia->put_image(0,0,$xb);
 		$ia->put_image(0,0,$mask,rop::AlphaCopy);
-		$ia->premultiply_alpha;
-		$precanvas->put_image(0,0,$ia,$rop_val);
+		$precanvas->put_image(0,0,$ia,$rop_val | rop::Premultiply);
 
 		$canvas->put_image(0,0,$base);
 		$canvas->put_image(0,0,$precanvas);
