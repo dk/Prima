@@ -103,6 +103,10 @@ sub repaint
 		$canvas->put_image(0,0,$a);
 		$canvas->put_image(0,0,$b,$rop_val);
 	}
+
+	my $fader = $w->Fader;
+	$canvas->put_image(2, 2, $fader->{banner}, rop::alpha( rop::SrcOver | rop::Premultiply, $fader->{alpha} ))
+		if $fader->{banner};
 	$w-> ImageViewer1->repaint;
 }
 
@@ -119,9 +123,21 @@ sub select_rop
 	$w->SliderB->enabled( $with_slider );
 	$w->SliderB->readOnly( !$with_slider );
 	$w->menu->check($rop_name);
+	$w->Fader->{text} = $rop_name;
+	delete $w->Fader->{left};
+	$w->Fader->{steps} = 30;
+	$w->Fader->start;
 	repaint();
 }
 
+sub set_slider
+{
+	$w->Fader->{text} = shift->value;
+	$w->Fader->{steps} = 15;
+	delete $w->Fader->{left};
+	$w->Fader->start;
+	repaint();
+}
 sub bin { select_rop($_[1], 0) }
 sub pd  { select_rop($_[1], 1) } 
 
@@ -146,7 +162,7 @@ $w->insert( Slider =>
 	increment => 16,
 	name => 'SliderA',
 	pack => {side => 'top', fill => 'x'},
-	onChange => \&repaint,
+	onChange => \&set_slider,
 );
 
 $w->insert( Label => 
@@ -163,8 +179,58 @@ $w->insert( Slider =>
 	value => 200,
 	name => 'SliderB',
 	pack => {side => 'top', fill => 'x'},
-	onChange => \&repaint,
+	onChange => \&set_slider,
 );
+
+$w-> insert( Timer => 
+	timeout => 50,
+	name => 'Fader',
+	onTick => sub {
+		my $self = shift;
+		if ( !defined $self->{left}) {
+			$self->{left} = $self->{steps};
+			$canvas-> begin_paint_info;
+			$canvas->font->set( size => 18, style => fs::Bold );
+			my $f = $canvas->font;
+			my $b = Prima::Icon->new(
+				type        => im::RGB,
+				size        => [ $canvas->get_text_width( $self->{text}, 1 ) + 4, $f-> height + 4 ],
+				color       => cl::Yellow,
+				backColor   => cl::Black,
+				lineWidth   => 5,
+				maskType    => 8,
+				autoMasking => 0,
+			);
+			$canvas-> end_paint_info;
+			$b->begin_paint;
+			$b->clear;
+			$b->font->set( size => 18, style => fs::Bold );
+			$b->color(0x010101); # black but not zero
+			my $path = $b->new_path;
+			$path->translate(2,2);
+			$path->text( $self->{text});
+			$path->stroke;
+			$b->color(cl::Yellow);
+			$b->text_out($self->{text}, 2, 2);
+			$b->end_paint;
+
+			my $bb = $b->clone( type => im::Byte, rop2 => rop::CopyPut );
+			$bb->map(0x000000); # black and zero
+			$b->mask( $bb->data );
+
+			$self->{banner} = $b;
+			$self->{alpha} = 255;
+		} elsif ( --$self->{left} <= 0 ) {
+			delete $self->{banner};
+			delete $self->{left};
+			$self->stop;
+		} else {
+			$self->{alpha} -= 256 / $self->{steps};
+		}
+		repaint;
+	},
+);
+$w->Fader->{steps} = 30;
 
 select_rop('SrcOver', 1);
 
