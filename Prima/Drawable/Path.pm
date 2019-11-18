@@ -192,6 +192,9 @@ sub text
 	unless ($state) {
 		return unless $c->begin_paint_info;
 	}
+
+	$self->translate( 0, $c->font->descent )
+		unless $opt{baseline} // $c->textOutBaseline;
 	my $cache   = $opt{cache} || {};
 	my $unicode = utf8::is_utf8($text);
 	for my $char ( split //, $text ) {
@@ -1122,7 +1125,7 @@ Adds B-spline to path. See L<Prima::Drawable/spline> for C<%OPTIONS> description
 Adds C<TEXT> to the path. C<%OPTIONS> are same as in L<Prima::Drawable/render_glyph>, 
 except that C<unicode> is deduced automatically based on whether C<TEXT> has utf8 bit
 on or off; and an extra option C<cache> with a hash can be used to speed up the function
-with subsequent calls.
+with subsequent calls. C<baseline> option is same as L<Prima::Drawable/textOutBaseline>.
 
 =back
 
