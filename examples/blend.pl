@@ -56,7 +56,6 @@ $ia->put_image(0,0,$a);
 $ia->color(cl::Black);
 $ia->bar(0,0,30,200);
 $ia->bar(170,0,200,200);
-my ( $xa, $ma ) = $ia->split;
 
 my $b = $a->dup;
 $b->begin_paint;
@@ -72,8 +71,6 @@ my $ib = Prima::Icon->new(
 	maskColor => cl::Black,
 );
 $ib->put_image( 0,0,$b);
-my ( $xb, $mb ) = $ib->split;
-undef $b;
 
 my $base = $a->dup;
 $base->set( backColor => cl::White, color => cl::Black, fillPattern => [(0xF0)x4, (0xF)x4], rop2 => rop::CopyPut);
@@ -86,7 +83,6 @@ my $precanvas = Prima::Icon->new(
 	maskType => im::bpp8,
 	autoMasking => am::None,
 );
-undef $a;
 $ia->autoMasking(am::None);
 
 my $mask = Prima::Image->new(
@@ -99,21 +95,13 @@ sub repaint
 	my $sa = $w->SliderA;
 	my $sb = $w->SliderB;
 	if ( $sa->enabled ) {
-		$mask->put_image(0,0,$ma,rop::alpha(rop::SrcIn, undef, $sa->value));
-		$ia->put_image(0,0,$xa);
-		$ia->put_image(0,0,$mask,rop::AlphaCopy);
-		$precanvas->put_image(0,0,$ia, rop::SrcCopy | rop::Premultiply);
-
-		$mask->put_image(0,0,$mb,rop::alpha(rop::SrcIn, undef, $sb->value));
-		$ia->put_image(0,0,$xb);
-		$ia->put_image(0,0,$mask,rop::AlphaCopy);
-		$precanvas->put_image(0,0,$ia,$rop_val | rop::Premultiply);
-
+		$precanvas->put_image(0,0,$ia, rop::alpha( rop::SrcCopy | rop::Premultiply, $sa->value));
+		$precanvas->put_image(0,0,$ib, rop::alpha( $rop_val     | rop::Premultiply, $sb->value));
 		$canvas->put_image(0,0,$base);
 		$canvas->put_image(0,0,$precanvas);
 	} else {
-		$canvas->put_image(0,0,$xa);
-		$canvas->put_image(0,0,$xb,$rop_val);
+		$canvas->put_image(0,0,$a);
+		$canvas->put_image(0,0,$b,$rop_val);
 	}
 	$w-> ImageViewer1->repaint;
 }

@@ -633,7 +633,7 @@ operators and some selected Photoshop blend operators:
 
 =item Transparency control
 
-There is defined a set of constants to apply a constant source and destination alpha to when
+There is defined a set of constants to apply a constant source and destination alpha to whe
 there is no alpha channel available:
 
    rop::SrcAlpha
@@ -657,6 +657,9 @@ image outside begin_paint/end_paint:
 
    $image->rop( rop::alpha( rop::SrcOver, 128 ));
    $image->ellipse( 5, 5, 5, 5 );
+
+When used with icons, their source and/or destination alpha channels are additionally
+multiplied with these values.
 
 =item rop::Premultiply
 
