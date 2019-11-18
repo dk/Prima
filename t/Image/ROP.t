@@ -263,18 +263,18 @@ sub test_rop
 
 		my $src = Prima::Icon->new(
 			width    => 4,
-			height   => 4,
-			data     => join('', map { chr } @q, @q, @q, @q),
-			mask     => join('', map { chr } @q, @q, @q, @q),
+			height   => 5,
+			data     => join('', map { chr } @q, @q, @q, @q, @q),
+			mask     => join('', map { chr } @q, @q, @q, @q, @q),
 			type     => im::Byte,
 			maskType => im::Byte,
 		);
 
 		my $dst = Prima::Icon->new(
 			width    => 4,
-			height   => 4,
-			data     => join('', map { chr } @q, reverse(@q), @q, reverse(@q)),
-			mask     => join('', map { chr } @q, reverse(@q), @q, reverse(@q)),
+			height   => 5,
+			data     => join('', map { chr } @q, reverse(@q), @q, reverse(@q), @q),
+			mask     => join('', map { chr } @q, reverse(@q), @q, reverse(@q), @q),
 			type     => im::Byte,
 			maskType => im::Byte,
 		);
@@ -287,6 +287,7 @@ sub test_rop
 		$dst->put_image_indirect($src,0,0,0,0,4,2,4,2,$rop);
 		$dst->put_image_indirect($src,0,2,0,2,4,1,4,1,rop::alpha( $rop, 128 ));
 		$dst->put_image_indirect($src,0,3,0,3,4,1,4,1,rop::alpha( $rop, undef, 128 ));
+		$dst->put_image_indirect($src,0,4,0,4,4,1,4,1,$rop | rop::Premultiply);
 
 		my ( $cc, $aa ) = $dst->split;
 		$cc->type(im::Byte);
@@ -298,16 +299,16 @@ sub test_rop
 			my $a = pd_alpha( $rop, $q, $q );
 			my $pc = $cc->pixel($i, 0);
 			my $pa = $aa->pixel($i, 0);
-			is( $pc, $c, "C(($q/$q) $name ($q/$q)) = $c $subname");
-			is( $pa, $a, "A(($q/$q) $name ($q/$q)) = $a $subname");
+			is( $pc, $c, "C (($q/$q) $name ($q/$q)) = $c $subname");
+			is( $pa, $a, "A (($q/$q) $name ($q/$q)) = $a $subname");
 
 			my $q2 = 255 - $q[$i];
 			$c = pd_color( $rop, $q, $q, $q2, $q2 );
 			$a = pd_alpha( $rop, $q, $q2 );
 			$pc = $cc->pixel($i, 1);
 			$pa = $aa->pixel($i, 1);
-			is( $pc, $c, "C(($q/$q) $name ($q2/$q2)) = $c $subname");
-			is( $pa, $a, "A(($q/$q) $name ($q2/$q2)) = $a $subname");
+			is( $pc, $c, "C (($q/$q) $name ($q2/$q2)) = $c $subname");
+			is( $pa, $a, "A (($q/$q) $name ($q2/$q2)) = $a $subname");
 			
 			my $q_half = int( $q / 2 + .5);
 			$c = pd_color( $rop, $q, $q_half, $q, $q);
@@ -324,6 +325,14 @@ sub test_rop
 			$pa = $aa->pixel($i, 3);
 			is( $pc, $c, "C (($q/$q) $name ($q/{$q/2})) = $c $subname");
 			is( $pa, $a, "A (($q/$q) $name ($q/{$q/2})) = $a $subname");
+
+			my $qm = int($q * $q / 255 + .5);
+			$c = pd_color( $rop, $qm, $q, $q, $q );
+			$a = pd_alpha( $rop, $q, $q );
+			$pc = $cc->pixel($i, 4);
+			$pa = $aa->pixel($i, 4);
+			is( $pc, $c, "C*(($q/$q) $name ($q/$q)) = $c $subname");
+			is( $pa, $a, "A*(($q/$q) $name ($q/$q)) = $a $subname");
 		}
 	}
 }
