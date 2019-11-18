@@ -650,7 +650,7 @@ sub rotate
 
 sub create_combined
 {
-	my $self = shift->new;
+	my $self = shift->new( autoMasking => am::None );
 	$self->combine(@_);
 	return $self;
 }
