@@ -10,7 +10,8 @@ my $i = Prima::Icon->new(
 	autoMasking => am::None,
 	fillPattern => [(0xF6) x 8],
 	linePattern => "\4\1\2\1",
-	rop => rop::alpha(rop::SrcCopy, 255)
+	rop => rop::alpha(rop::SrcCopy, 255),
+	rop2 => rop::CopyPut,	
 );
 $i->clear;
 $i->region(Prima::Region->new( box => [ 1, 1, 30, 1 ]));
