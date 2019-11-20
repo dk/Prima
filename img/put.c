@@ -809,7 +809,6 @@ resample_colors( Handle dest, int bpp, PImgPaintContext ctx)
 	RGBColor fg, bg;
 	int type = PImage(dest)->type;
 	int rbpp = type & imBPP;
-	printf("resample colors for %d\n", rbpp);
 	if (rbpp <= 8 ) {
 		fg = PImage(dest)->palette[*(ctx->color)];
 		bg = PImage(dest)->palette[*(ctx->backColor)];
@@ -842,13 +841,16 @@ resample_colors( Handle dest, int bpp, PImgPaintContext ctx)
 		return false;
 	}
 	if ( bpp == imByte ) {
-		printf("GRAY\n");
 		*(ctx->color)     = (fg.r + fg.g + fg.b) / 3;
 		*(ctx->backColor) = (bg.r + bg.g + bg.b) / 3;
 	} else {
-		printf("COLOR\n");
-		*((Color*)ctx->color)     = ARGB(fg.r,fg.g,fg.b);
-		*((Color*)ctx->backColor) = ARGB(bg.r,bg.g,bg.b);
+                ctx->color[0] = fg.b;
+                ctx->color[1] = fg.g;
+                ctx->color[2] = fg.r;
+                ctx->backColor[0] = bg.b;
+                ctx->backColor[1] = bg.g;
+                ctx->backColor[2] = bg.r;
+		
 	}
 	return true;
 }
@@ -1097,10 +1099,6 @@ typedef struct {
 static void
 setpixel( ImgHLineRec* rec, int x, int y)
 {
-	printf("set px %d %d %d = %02x%02x%02x\n", x, y, rec->bpp,
-		rec->color[0],
-		rec->color[1],
-		rec->color[2]);
 	switch ( rec->bpp ) {
 	case 1: {
 		Byte * dst = rec->i->data + rec->i->lineSize * y + x / 8, src = *dst;
@@ -1274,8 +1272,6 @@ hline_init( ImgHLineRec * rec, Handle dest, PImgPaintContext ctx, char * method)
 	}
 
 	rec->color   = ctx->color;
-	printf("fg: %02x%02x%02x\n", ctx->color[0], ctx->color[1], ctx->color[2]);
-	printf("bg: %02x%02x%02x\n", ctx->backColor[0], ctx->backColor[1], ctx->backColor[2]);
 	
 	/* colors; optimize 8 and 24 pixels for horizontal line memcpy */
 	switch ( rec->bpp ) {
