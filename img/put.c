@@ -844,8 +844,12 @@ resample_colors( Handle dest, int bpp, PImgPaintContext ctx)
 		*(ctx->color)     = (fg.r + fg.g + fg.b) / 3;
 		*(ctx->backColor) = (bg.r + bg.g + bg.b) / 3;
 	} else {
-		*((Color*)ctx->color)     = ARGB(fg.r,fg.g,fg.b);
-		*((Color*)ctx->backColor) = ARGB(bg.r,bg.g,bg.b);
+                ctx->color[0] = fg.b;
+                ctx->color[1] = fg.g;
+                ctx->color[2] = fg.r;
+                ctx->backColor[0] = bg.b;
+                ctx->backColor[1] = bg.g;
+                ctx->backColor[2] = bg.r;
 	}
 	return true;
 }
