@@ -676,7 +676,7 @@ sub compile_and_run
 	unlink $tmpo if -w $tmpo;
 	my $ret = '';
 	if ( -x $tmpexe ) {
-		`$tmpexe`;
+		$ret = `$tmpexe`;
 		chomp $ret;
 	}
 	unlink $tmpexe if -w $tmpexe;
