@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 static void
-rotate90( PImage i, Byte * new_data, int new_line_size)
+rotate270( PImage i, Byte * new_data, int new_line_size)
 {
 	int y;
 	int w   = i->w;
@@ -83,7 +83,7 @@ rotate180( PImage i, Byte * new_data)
 }
 
 static void
-rotate270( PImage i, Byte * new_data, int new_line_size)
+rotate90( PImage i, Byte * new_data, int new_line_size)
 {
 	int y;
 	int w   = i->w;

@@ -26,16 +26,16 @@ my $i = Prima::Image->create(
 );
 
 my $j = $i->dup;
-$j->rotate(270);
-is( $j->width, 4, "rotate(270) width ok");
-is( $j->height, 2, "rotate(270) height ok");
-is($j->data, "75318642", "rotate(270) data ok");
-
-$j = $i->dup;
 $j->rotate(90);
 is( $j->width, 4, "rotate(90) width ok");
 is( $j->height, 2, "rotate(90) height ok");
-is($j->data, "24681357", "rotate(90) data ok");
+is($j->data, "75318642", "rotate(90) data ok");
+
+$j = $i->dup;
+$j->rotate(270);
+is( $j->width, 4, "rotate(270) width ok");
+is( $j->height, 2, "rotate(270) height ok");
+is($j->data, "24681357", "rotate(270) data ok");
 
 $j->rotate(180);
 is( $j->width, 4, "rotate(180) width ok");
@@ -50,12 +50,12 @@ my $k = Prima::Image->create(
 	lineSize => 4,
 );
 
-$k->rotate(270);
-is($k->data, "56127834", "short: rotate(270) data ok");
+$k->rotate(90);
+is($k->data, "56127834", "short: rotate(90) data ok");
 
 $k->data("12345678");
-$k->rotate(90);
-is($k->data, "34781256", "short: rotate(90) data ok");
+$k->rotate(270);
+is($k->data, "34781256", "short: rotate(270) data ok");
 
 $k->data("12345678");
 $k->rotate(180);
