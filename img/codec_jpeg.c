@@ -526,7 +526,7 @@ exif_transform_scanline( PImage i, PImage d, Byte ** dest, int orientation)
 		*dest -= i-> lineSize;
 		break;
 	case 3:
-		img_rotate((Handle) d, *dest, 0, 180);
+		img_integral_rotate((Handle) d, *dest, 0, 180);
 		*dest += i-> lineSize;
 		break;
 	case 4:
@@ -534,19 +534,19 @@ exif_transform_scanline( PImage i, PImage d, Byte ** dest, int orientation)
 		*dest += i-> lineSize;
 		break;
 	case 5:
-		img_rotate((Handle) d, *dest, i-> lineSize, 90);
+		img_integral_rotate((Handle) d, *dest, i-> lineSize, 270);
 		*dest += (d->type & imBPP) / 8;
 		break;
 	case 6:
-		img_rotate((Handle) d, *dest, i-> lineSize, 90);
+		img_integral_rotate((Handle) d, *dest, i-> lineSize, 270);
 		*dest -= (d->type & imBPP) / 8;
 		break;
 	case 7:
-		img_rotate((Handle) d, *dest, i-> lineSize, 270);
+		img_integral_rotate((Handle) d, *dest, i-> lineSize, 90);
 		*dest -= (d->type & imBPP) / 8;
 		break;
 	case 8:
-		img_rotate((Handle) d, *dest, i-> lineSize, 270);
+		img_integral_rotate((Handle) d, *dest, i-> lineSize, 90);
 		*dest += (d->type & imBPP) / 8;
 		break;
 	}
