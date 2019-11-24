@@ -15,6 +15,7 @@ object Prima::Image( Prima::Drawable)
 	int            eventMask1;
 	int            eventMask2;
 	PRegionRec     regionData;
+	int            updateLock;
 
 	property Rect   clipRect;
 	property int    conversion;
@@ -70,7 +71,7 @@ object Prima::Image( Prima::Drawable)
 	method void   premultiply_alpha(SV * alpha);
 	method Bool   put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
 	method void   remove_notification( UV id);
-	method void   rotate( int degrees );
+	method Bool   rotate( double degrees );
 	method Bool   rectangle(int x1, int y1, int x2, int y2);
 	method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
 	weird  int    save( SV *className, char *filename, HV * profile);

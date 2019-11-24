@@ -395,13 +395,6 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 
 /* Resizing with filters - stolen from ImageMagick MagickCore/resize.c */
 
-typedef double FilterFunc( const double x );
-typedef struct {
-	unsigned int id;
-	FilterFunc * filter;
-	double support;
-} FilterRec;
-
 #define PI  3.14159265358979323846264338327950288419716939937510
 #define PI2 1.57079632679489661923132169163975144209858469968755
 
@@ -538,13 +531,14 @@ filter_gaussian(const double x)
 }
 
 
-static FilterRec filters[] = {
+FilterRec ist_filters[] = {
 	{ istTriangle,  filter_triangle,      1.0 },
 	{ istQuadratic, filter_quadratic,     1.5 },
 	{ istSinc,      filter_sinc_fast,     4.0 },
 	{ istHermite,   filter_cubic_spline0, 1.0 },
 	{ istCubic,     filter_cubic_spline1, 2.0 },
-	{ istGaussian,  filter_gaussian,      2.0 }
+	{ istGaussian,  filter_gaussian,      2.0 },
+	{ 0, NULL, 0.0 }
 };
 
 static int
@@ -740,9 +734,10 @@ stretch_filtered( int type, Byte * oldData, int oldW, int oldH, Byte * newData, 
 	Byte * filter_data;
 	FilterRec * filter = NULL;
 
-	for ( i = 0; i < sizeof(filters) / sizeof(FilterRec); i++) {
-		if ( filters[i]. id == scaling ) {
-			filter = &filters[i];
+	for ( i = 0; ; i++) {
+                if ( ist_filters[i]. id == 0 ) break;
+		if ( ist_filters[i]. id == scaling ) {
+			filter = &ist_filters[i];
 			break;
 		}
 	}

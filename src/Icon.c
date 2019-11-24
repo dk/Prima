@@ -395,6 +395,8 @@ Icon_maskIndex( Handle self, Bool set, int index)
 void
 Icon_update_change( Handle self)
 {
+	if ( var-> updateLock > 0 ) return;
+
 	inherited update_change( self);
 
 	if ( var-> maskType == 0) return; /* inside inherited init */
@@ -441,8 +443,8 @@ Icon_stretch( Handle self, int width, int height)
 	Byte * newMask = nil;
 	int lineSize, oldW = var-> w, oldH = var-> h, am = var-> autoMasking;
 	if ( var->stage > csFrozen) return;
-	if ( width  >  65535) width  =  65535;
-	if ( height >  65535) height =  65535;
+	if ( width  >  65535) width  =	65535;
+	if ( height >  65535) height =	65535;
 	if ( width  < -65535) width  = -65535;
 	if ( height < -65535) height = -65535;
 	if (( width == var->w) && ( height == var->h)) return;
@@ -531,11 +533,11 @@ Icon_dup( Handle self)
 	}
 
 	i-> autoMasking = var-> autoMasking;
-	i-> maskType    = var-> maskType;
-	i-> maskColor   = var-> maskColor;
-	i-> maskIndex   = var-> maskIndex;
-	i-> maskSize    = var-> maskSize;
-	i-> maskLine    = var-> maskLine;
+	i-> maskType	= var-> maskType;
+	i-> maskColor	= var-> maskColor;
+	i-> maskIndex	= var-> maskIndex;
+	i-> maskSize	= var-> maskSize;
+	i-> maskLine	= var-> maskLine;
 
 	memcpy( i-> mask, var-> mask, var-> maskSize);
 	return h;
@@ -549,10 +551,10 @@ Icon_split( Handle self)
 	HV * profile = newHV();
 	char* className = var-> self-> className;
 
-	pset_H( owner,        var-> owner);
-	pset_i( width,        var-> w);
+	pset_H( owner,	      var-> owner);
+	pset_i( width,	      var-> w);
 	pset_i( height,       var-> h);
-	pset_i( type,         var->maskType|imGrayScale);
+	pset_i( type,	      var->maskType|imGrayScale);
 	pset_i( conversion,   var->conversion);
 	pset_i( scaling,      var->scaling);
 	pset_i( preserveType, is_opt( optPreserveType));
@@ -564,7 +566,7 @@ Icon_split( Handle self)
 	i-> self-> update_change(( Handle) i);
 
 	var-> self-> className = inherited className;
-	ret. xorMask         = inherited dup( self);
+	ret. xorMask	     = inherited dup( self);
 	hv_delete(( HV*)SvRV( PImage(ret. xorMask)-> mate), "extras", 6, G_DISCARD);
 	var-> self-> className = className;
 
@@ -692,11 +694,11 @@ Icon_bitmap( Handle self)
 		return inherited bitmap(self);
 
 	profile = newHV();
-	pset_H( owner,        var->owner);
-	pset_i( width,        var->w);
+	pset_H( owner,	      var->owner);
+	pset_i( width,	      var->w);
 	pset_i( height,       var->h);
 	pset_sv_noinc( palette,     my->get_palette( self));
-	pset_i( type,         dbtLayered);
+	pset_i( type,	      dbtLayered);
 	h = Object_create( "Prima::DeviceBitmap", profile);
 	sv_free(( SV *) profile);
 	s = CDrawable( h)-> get_size( h);
@@ -748,6 +750,43 @@ Icon_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	img_bar((Handle) &dummy, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
 
 	return true;
+}
+
+
+Bool
+Icon_rotate( Handle self, double degrees)
+{
+	Bool ok;
+	Image dummy;
+	int autoMasking = var->autoMasking, maskType = var->maskType;
+	var->autoMasking = amNone;
+
+	var->updateLock++;
+
+	my->set_maskType(self, imbpp8);
+
+	img_fill_dummy( &dummy, var->w, var->h, imByte, var->mask, NULL);
+	dummy.scaling = var->scaling;
+	dummy.mate    = var->mate;
+
+	ok = inherited rotate(self, degrees);
+	if ( ok ) {
+		ok = Image_rotate((Handle) &dummy, degrees);
+		if ( ok ) {
+			var-> mask     = dummy.data;
+			var-> maskLine = dummy. lineSize;
+			var-> maskSize = dummy. dataSize;
+			if ( var->w != dummy.w || var->h != dummy.h)
+				croak("panic: icon object inconsistent after rotation");
+		}
+	}
+
+	if (maskType != imbpp8 && is_opt( optPreserveType))
+		my-> set_maskType( self, maskType);
+	var->updateLock--;
+	my->update_change(self);
+	var->autoMasking = autoMasking;
+	return ok;
 }
 
 #ifdef __cplusplus

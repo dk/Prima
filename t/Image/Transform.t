@@ -4,8 +4,6 @@ use warnings;
 use Test::More;
 use Prima::Test qw(noX11);
 
-plan tests => 16;
-
 sub bytes { unpack('H*', shift ) }
 
 sub is_bytes
@@ -76,3 +74,35 @@ is( $j->data, "9ABCDEFG12345678", "short: vertical mirroring ok");
 $j->data("123456789ABCDEFG");
 $j->mirror(0);
 is( $j->data, "78563412FGDEBC9A", "short: horizontal mirroring ok");
+
+# rotation
+$k = Prima::Image->create(
+	width    => 140,
+	height   => 140,
+	type     => im::Byte,
+);
+
+$k->bar(0,0,$k->size);
+$k->pixel(138, 70, cl::White);
+
+my $p = Prima::Image->create(
+	width    => 200,
+	height   => 200,
+	type     => im::Byte,
+);
+$p->bar(0,0,$k->size);
+for (my $i = 0; $i < 360; $i++) {
+	my $d = $k->dup;
+	$d->rotate($i);
+	my $dx = ($p-> width  - $d->width) / 2; 
+	my $dy = ($p-> height - $d->height) / 2; 
+	$p->put_image($dx,$dy,$d,rop::OrPut);
+}
+my $sum = $p->sum / 255;
+ok(( $sum > 250 && $sum < 430), "rotation 360 seems performing");
+$p->color(cl::Black);
+$p->lineWidth(8);
+$p->ellipse( 100, 100, 138, 138 );
+is( $p->sum, 0, "rotation 360 is correct");
+
+done_testing;

@@ -36,6 +36,7 @@ void
 Image_init( Handle self, HV * profile)
 {
 	dPROFILE;
+	var-> updateLock = 0;
 	inherited init( self, profile);
 	var-> eventMask1 =
 	( query_method( self, "on_headerready", 0) ? IMG_EVENTS_HEADER_READY : 0) |
@@ -887,6 +888,7 @@ Image_end_paint_info( Handle self)
 void
 Image_update_change( Handle self)
 {
+	if ( var-> updateLock ) return;
 	if ( var-> stage <= csNormal) apc_image_update_change( self);
 	var->statsCache = 0;
 }
@@ -1781,48 +1783,46 @@ Image_clear(Handle self, int x1, int y1, int x2, int y2)
 	return ok;
 }
 
-void
-Image_rotate( Handle self, int degrees)
+static Bool
+integral_rotate( Handle self, int degrees)
 {
 	Byte * new_data = NULL;
 	int new_line_size = 0;
 
-	switch (degrees) {
-	case 90:
-	case 270:
-	case 180:
-		break;
-	default:
-		croak("'degrees' must be 90,180,or 270");
-	}
-
 	if (( var-> type & imBPP) < 8) {
+		Bool ok;
 		int type = var->type;
 		my->set_type( self, imbpp8 );
-		my->rotate( self, degrees );
+		ok = integral_rotate( self, degrees );
 		if ( is_opt( optPreserveType)) {
 			int conv = var-> conversion;
 			my-> set_conversion( self, ictNone);
 			my-> set_type( self, type);
 			my-> set_conversion( self, conv);
 		}
-		return;
+		return ok;
 	}
 
 	switch (degrees) {
 	case 90:
 	case 270:
 		new_line_size = LINE_SIZE( var-> h , var->type);
-		if (( new_data = allocb( new_line_size * var->w )) == NULL )
-			croak("Image::rotate: cannot allocate %d bytes", new_line_size * var->w);
+		if (( new_data = allocb( new_line_size * var->w )) == NULL ) {
+			warn("Image::rotate: cannot allocate %d bytes", new_line_size * var->w);
+			return false;
+		}
 		break;
 	case 180:
-		if (( new_data = allocb( var->dataSize )) == NULL )
-			croak("Image::rotate: cannot allocate %d bytes", var->dataSize );
+		if (( new_data = allocb( var->dataSize )) == NULL ) {
+			warn("Image::rotate: cannot allocate %d bytes", var->dataSize );
+			return false;
+		}
 		break;
+	default:
+		croak("'degrees' must be 90,180,or 270");
 	}
 
-	img_rotate( self, new_data, new_line_size, degrees );
+	img_integral_rotate( self, new_data, new_line_size, degrees );
 	if ( degrees != 180 ) {
 		int h = var->h;
 		var->h = var->w;
@@ -1834,6 +1834,60 @@ Image_rotate( Handle self, int degrees)
 	var->data = new_data;
 
 	my-> update_change(self);
+	return true;
+}
+
+static Bool
+generic_rotate( Handle self, double degrees)
+{
+	Image i;
+	int desired_type = var->type;
+
+	if (( desired_type & imBPP) <= 8) 
+		desired_type = (desired_type & imGrayScale) ? imByte : imRGB;
+
+	if (var->type != desired_type) {
+		Bool ok;
+		int type = var->type;
+		my->set_type( self, desired_type );
+		ok = generic_rotate( self, degrees );
+		if ( is_opt( optPreserveType)) {
+			int conv = var-> conversion;
+			my-> set_conversion( self, ictNone);
+			my-> set_type( self, type);
+			my-> set_conversion( self, conv);
+		}
+		return ok;
+	}
+	
+	if (!img_generic_rotate( self, degrees, &i ))
+		return false;
+
+	free( var->data);
+
+	var->h        = i. h;
+	var->w        = i. w;
+	var->lineSize = i. lineSize;
+	var->dataSize = i. dataSize;
+	var->data     = i. data;
+
+	my-> update_change(self);
+	return true;
+}
+
+Bool
+Image_rotate( Handle self, double degrees)
+{
+	degrees = fmod(degrees, 360.0);
+	if ( degrees < 0 ) degrees += 360.0;
+
+	if ( degrees == 0.0 )
+		return true;
+
+	if ( degrees == 90.0 || degrees == 180.0 || degrees == 270.0 )
+		return integral_rotate(self, (int)degrees);
+	else
+		return generic_rotate(self, degrees);
 }
 
 void
