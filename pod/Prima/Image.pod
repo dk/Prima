@@ -854,7 +854,10 @@ gray non-8 bit pixel values, by the code:
 
 =item rotate DEGREES
 
-Rotates the image by 90, 180, or 270 degrees.
+Rotates the image. Where the angle is 90, 180, or 270 degrees, fast pixel
+flipping is used, otherwise fast Paeth rotation is used.  Eventual resampling
+can be controlled by C<scaling> property ( probably not worth it for functions
+with support of more than 1 pixel).
 
 =item save (FILENAME or FILEGLOB), [ %PARAMETERS ]
 

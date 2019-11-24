@@ -650,6 +650,7 @@ REPEAT_CALC:
 void
 img_fill_dummy( PImage dummy, int w, int h, int type, Byte * data, RGBColor * palette)
 {
+	bzero( dummy, sizeof(Image));
 	dummy-> self     = CImage;
 	dummy-> w        = w;
 	dummy-> h        = h;
@@ -658,6 +659,7 @@ img_fill_dummy( PImage dummy, int w, int h, int type, Byte * data, RGBColor * pa
 	dummy-> lineSize = LINE_SIZE(w, type);
 	dummy-> dataSize = dummy-> lineSize * h;
 	dummy-> palette  = palette;
+	dummy-> updateLock = true; /* just in case */
 
 	if ( type == imRGB ) {
 		dummy-> palSize = 0;

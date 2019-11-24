@@ -639,15 +639,6 @@ sub mirror
         $self->combine($xor, $and);
 }
 
-sub rotate
-{
-        my ($self, $degrees) = @_;
-        my ($xor, $and) = $self->split;
-        $and->preserveType(1);
-        $_->rotate($degrees) for $xor, $and;
-        $self->combine($xor, $and);
-}
-
 sub create_combined
 {
 	my $self = shift->new( autoMasking => am::None );

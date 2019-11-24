@@ -289,7 +289,8 @@ extern void ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineS
 extern void img_fill_dummy( PImage dummy, int w, int h, int type, Byte * data, RGBColor * palette);
 extern Bool img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region);
 extern Bool img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx);
-extern void img_rotate( Handle self, Byte * new_data, int new_line_size, int degrees);
+extern void img_integral_rotate( Handle self, Byte * new_data, int new_line_size, int degrees);
+extern Bool img_generic_rotate( Handle self, double degrees, PImage dummy);
 extern void img_mirror( Handle self, Bool vertically);
 extern Bool img_mirror_raw( int type, int w, int h, Byte * data, Bool vertically);
 extern void img_premultiply_alpha_constant( Handle self, int alpha);
@@ -308,6 +309,15 @@ extern Bool img_region_foreach(
 	RegionCallbackFunc *cb, void *param
 );
 extern Bool img_point_in_region( int x, int y, PBoxRegionRec region);
+
+/* istXXX function */
+typedef double FilterFunc( const double x );
+typedef struct {
+	unsigned int id;
+	FilterFunc * filter;
+	double support;
+} FilterRec;
+extern FilterRec ist_filters[];
 
 /* internal maps */
 extern Byte     map_stdcolorref    [ 256];
