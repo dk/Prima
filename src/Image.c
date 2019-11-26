@@ -1890,6 +1890,48 @@ Image_rotate( Handle self, double degrees)
 		return generic_rotate(self, degrees);
 }
 
+Bool
+Image_transform( Handle self, double a, double b, double c, double d)
+{
+	Image i;
+	int desired_type = var->type;
+	double matrix[4] = { a, b, c, d };
+
+	if (( desired_type & imBPP) <= 8) 
+		desired_type = (desired_type & imGrayScale) ? imByte : imRGB;
+
+	if (var->type != desired_type) {
+		Bool ok;
+		int type = var->type;
+		my->set_type( self, desired_type );
+		ok = my->transform( self, a, b, c, d);
+		if ( is_opt( optPreserveType)) {
+			int conv = var-> conversion;
+			my-> set_conversion( self, ictNone);
+			my-> set_type( self, type);
+			my-> set_conversion( self, conv);
+		}
+		return ok;
+	}
+
+	if (!img_2d_transform( self, matrix, &i ))
+		return false;
+
+	if ( i.data != NULL ) {
+		free( var->data);
+
+		var->h        = i. h;
+		var->w        = i. w;
+		var->lineSize = i. lineSize;
+		var->dataSize = i. dataSize;
+		var->data     = i. data;
+
+		my-> update_change(self);
+	}
+
+	return true;
+}
+
 void
 Image_mirror( Handle self, Bool vertically)
 {
