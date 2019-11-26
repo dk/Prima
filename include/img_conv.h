@@ -22,9 +22,7 @@ extern void init_image_support(void);
 /* image basic routines */
 #define LINE_SIZE(width,type) (((( width ) * (( type ) & imBPP) + 31) / 32) * 4)
 extern Bool ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, int scaling, char * error);
-extern void ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch);
 extern int  ic_stretch_suggest_type( int type, int scaling );
-extern Bool ic_stretch_filtered( int type, Byte * oldData, int oldW, int oldH, Byte * newData, int w, int h, int scaling, char * error );
 extern void ic_type_convert( Handle self, Byte * dstData, PRGBColor dstPal, int dstType, int * palSize, Bool palSize_only);
 extern Bool itype_supported( int type);
 extern Bool itype_importable( int type, int *newtype, void **from_proc, void **to_proc);
@@ -291,6 +289,7 @@ extern Bool img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int 
 extern Bool img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx);
 extern void img_integral_rotate( Handle self, Byte * new_data, int new_line_size, int degrees);
 extern Bool img_generic_rotate( Handle self, double degrees, PImage dummy);
+extern Bool img_2d_transform( Handle self, double *matrix, PImage dummy);
 extern void img_mirror( Handle self, Bool vertically);
 extern Bool img_mirror_raw( int type, int w, int h, Byte * data, Bool vertically);
 extern void img_premultiply_alpha_constant( Handle self, int alpha);

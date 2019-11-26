@@ -79,5 +79,6 @@ object Prima::Image( Prima::Drawable)
 	method void   set( HV * profile);
 	c_only void   reset( int type, RGBColor * palette, int palSize);
 	c_only void   stretch( int width, int height);
+	method Bool   transform( double a, double b, double c, double d );
 	c_only void   update_change();
 }
