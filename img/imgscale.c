@@ -217,7 +217,7 @@ void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx
 	}
 }
 
-#define STEP(x) ((double)x * (double)(UINT16_PRECISION) + .5)
+#define STEP(x) ((double)x * (double)(UINT16_PRECISION))
 
 void
 ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch)
