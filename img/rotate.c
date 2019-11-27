@@ -317,6 +317,8 @@ apply_scale( Point * points, double sx, double sy, int w, int h, Point * out_min
 	center.y = (max.y + min.y) / 2;
 
 	/* convert to integers */
+	sx = fabs(sx);
+	sy = fabs(sy);
 	min_p.x = min_p.y = 0;
 	for ( i = 0, p = points; i < 4; i++, p++) {
 		p->x = (tmp[i].x > center.x) ? (int)ceil(tmp[i].x + sx) - 1 : (int)(floor(tmp[i].x));
@@ -723,10 +725,56 @@ img_generic_rotate( Handle self, double degrees, PImage dummy)
 	return true;
 }
 
+static Bool
+integral_rotate( Handle self, int degrees, PImage dummy)
+{
+	PImage i = (PImage) self;
+	int w, h;
+	if ( degrees != 180 ) {
+		w = i->h;
+		h = i->w;
+	} else {
+		w = i->w;
+		h = i->h;
+	}
+
+	img_fill_dummy( dummy, w, h, i->type, NULL, i->palette);
+	if (!(dummy->data = malloc( dummy->dataSize))) {
+		warn("not enough memory: %d bytes", dummy->dataSize);
+		return false;
+	}
+	img_integral_rotate( self, dummy->data, dummy->lineSize, degrees);
+	return true;
+}
+
+static void
+roundoff_near_zero(double * matrix, int count)
+{
+	static double limit = 0.0;
+
+	if ( limit == 0.0 ) {
+		/* double has 15 digits max */
+		char buf[256], *p = buf + 2;
+		snprintf(buf, 255, "%.32g", 0.11111111111111111111111111111111);
+		limit = 10.0; /* throw last one away */
+		while (*(p++) == '1') limit /= 10;
+	}
+
+	while ( count-- ) {
+		if (
+			( *matrix <  limit && *matrix > 0.0 ) ||
+			( *matrix > -limit && *matrix < 0.0 )
+		)
+			*matrix = 0.0;
+		matrix++;
+	}
+}
+
 /* Generic 2D transform applied through LDU decomposition as series of shears and/or scaling.
    Does not fare well with inputs that create interim images that are too large, f.ex.
-   rotation to angles near 90,270
-*/
+   rotation to angles near 90,270. So it detects rotations to cover for at least these cases,
+   and addionally checks whether 90/180/270 integral rotation can be applied. */
+
 Bool
 img_2d_transform( Handle self, double *matrix, PImage dummy)
 {
@@ -739,16 +787,35 @@ img_2d_transform( Handle self, double *matrix, PImage dummy)
 	FilterFunc *filter = default_filter;
 	double shear_x_coeff, shear_y_coeff, scale_x, scale_y;
 
+	roundoff_near_zero(matrix, 4);
+
 	/* very special case for rotation */
 	if ( matrix[0] == matrix[3] && matrix[1] == -matrix[2] ) {
 		double angle = acos(matrix[0]);
-		if ( sin(angle) == matrix[1] )
-			return img_generic_rotate( self, acos(matrix[0]) * RAD, dummy);
+		double sin1  = sin( angle );
+		roundoff_near_zero( &sin1, 1);
+		if ( sin1 == matrix[1] ) {
+			double cos1 = matrix[0];
+			if ( cos1 == 0.0 ) {
+				if ( sin1 == 1.0 ) 
+					return integral_rotate(self, 90, dummy);
+				else if ( sin1 == -1.0 )
+					return integral_rotate(self, 270, dummy);
+			} else if ( cos1 == 1.0 && sin1 == 0.0 ) {
+				img_fill_dummy( dummy, 0, 0, 0, NULL, NULL);
+				return true;
+			} else if ( cos1 == -1.0 && sin1 == 0.0 ) 
+				return integral_rotate(self, 180, dummy);
+
+			return img_generic_rotate( self, angle * RAD, dummy);
+		}
 	}
 
 	if ( matrix[0] == 0.0 ) {
-		if (matrix[3] == 0.0) 
+		if (matrix[3] == 0.0) {
+			warn("Image.tranform: input matrix is not supported");
 			return false;
+		}
 		n_steps = 3;
 		steps[0] = STEP_SHEAR_X;
 		steps[1] = STEP_SCALE;
@@ -767,11 +834,18 @@ img_2d_transform( Handle self, double *matrix, PImage dummy)
 		scale_x = matrix[3] - matrix[1] * matrix[2] / matrix[0];
 		scale_y = matrix[0];
 	}
-	printf("%d steps, shear: %g %g, scale: %g %g\n", n_steps, shear_x_coeff, shear_y_coeff, scale_x, scale_y);
-	if ( scale_x == 0.0 || scale_y == 0.0 )
+	if ( shear_x_coeff == -0.0 ) shear_x_coeff = 0.0;
+	if ( shear_y_coeff == -0.0 ) shear_y_coeff = 0.0;
+	if ( scale_x == -0.0 ) scale_x = 0.0;
+	if ( scale_y == -0.0 ) scale_y = 0.0;
+	/*
+	 printf("%d steps [%d %d %d], shear: %g %g, scale: %g %g\n", n_steps, 
+	 	steps[0], steps[1], steps[2],
+	 	shear_x_coeff, shear_y_coeff, scale_x, scale_y); */
+	if ( fabs(shear_x_coeff) > 8192.0 || fabs(shear_y_coeff) > 8192.0) {
+		warn("Image.tranform: input matrix is not supported");
 		return false;
-	if ( fabs(shear_x_coeff) > 8192.0 || fabs(shear_y_coeff) > 8192.0)
-		return false;
+	}
 
 	if ( i-> scaling > istTriangle ) {
 		Bool found = 0;
@@ -801,16 +875,15 @@ img_2d_transform( Handle self, double *matrix, PImage dummy)
 	dimensions[0].x  = i-> w;
 	dimensions[0].y  = i-> h;
 	for ( step = 0; step < n_steps; step++) {
-		printf("%d[%d]: %d.%d =>", step, steps[step], dimensions[step].x, dimensions[step].y);
 		switch ( steps[step]) {
 		case STEP_SHEAR_X:
-			if ( shear_x_coeff == 1.0 ) goto SKIP;
+			if ( shear_x_coeff == 0.0 ) goto SKIP;
 			if ( !apply_shear(p, shear_x_coeff, dimensions[step].x, dimensions[step].y, 0, &offsets[step], &dimensions[step+1]))
 				return false;
 			applied_steps++;
 			break;
 		case STEP_SHEAR_Y:
-			if ( shear_y_coeff == 1.0 ) goto SKIP;
+			if ( shear_y_coeff == 0.0 ) goto SKIP;
 			if ( !apply_shear(p, shear_y_coeff, dimensions[step].x, dimensions[step].y, 1, &offsets[step], &dimensions[step+1]))
 				return false;
 			applied_steps++;
@@ -823,13 +896,13 @@ img_2d_transform( Handle self, double *matrix, PImage dummy)
 			break;
 		}
 
-		printf("%d.%d\n", dimensions[step+1].x, dimensions[step+1].y);
 		continue;
 
 	SKIP:
-		printf("SKIP\n");
-		if ( step < n_steps - 1 )
-			memmove( steps, steps + 1, sizeof(int) * (n_steps - step - 1));
+		switch ( step ) {
+		case 0: steps[0] = steps[1]; /* fallthrough */
+		case 1: steps[1] = steps[2];
+		}
 		step--;
 		n_steps--;
 	}
@@ -846,7 +919,6 @@ img_2d_transform( Handle self, double *matrix, PImage dummy)
 				free(tmp_images[step].data);
 			return false;
 		}
-
 		switch ( steps[step]) {
 		case STEP_SHEAR_X:
 			shear_x(&tmp_images[step], channels, &tmp_images[step+1], shear_x_coeff, filter, -offsets[step].x, 0);
@@ -878,6 +950,8 @@ img_2d_transform( Handle self, double *matrix, PImage dummy)
 	}
 
 	*dummy = tmp_images[n_steps];
+	dummy-> w /= channels;
+	dummy-> type = i->type;
 	return true;
 }
 

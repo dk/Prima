@@ -859,6 +859,10 @@ flipping is used, otherwise fast Paeth rotation is used.  Eventual resampling
 can be controlled by C<scaling> property ( probably not worth it for functions
 with support of more than 1 pixel).
 
+Resulting images can be 1 pixel too wide due to horizontal shearing applied
+twice, where in worst cases 1 pixel from the original image can take 3
+horizontal pixels on the result.
+
 =item save (FILENAME or FILEGLOB), [ %PARAMETERS ]
 
 Stores image data into image file FILENAME or stream FILEGLOB, and returns the success flag.
@@ -872,9 +876,31 @@ See L<Prima::image-load> for details.
 
 NB! When saving to streams on win32, mind C<binmode>.
 
+=item shear X, Y
+
+Applies shearing to the image. If the shearing is needed only for one axis, set
+shear factor for the other one to zero.
+
 =item to_region
 
 Creates a new L<Prima::Region> object with the image as the data source.
+
+=item transform @MATRIX
+
+Applies generic 2D transform matrix to the image, where matrix is 4 numbers.
+
+Tries first to split matrix into series of shear and scale transforms using LDU
+decomposition; if the matrix cannot be split, or an interim image needs to be
+too large, fails and returns C<false>.
+
+Rotation matrices can be applied too, however, when angles are close to 90 and
+270, either interim images become too big, or defects introduced by shearing
+become too visible. Therefore the method specifically detects for rotation
+cases, and uses Paeth rotation algorithm instead, which yields better results.
+Also, if the angle is detected to be 90, 180, or 270 degrees, fast pixel
+flipping is used.
+
+Eventual resampling can be controlled by C<scaling> property.
 
 =item ui_scale %OPTIONS
 
