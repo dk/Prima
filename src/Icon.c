@@ -752,7 +752,6 @@ Icon_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	return true;
 }
 
-
 Bool
 Icon_rotate( Handle self, double degrees)
 {
@@ -778,6 +777,42 @@ Icon_rotate( Handle self, double degrees)
 			var-> maskSize = dummy. dataSize;
 			if ( var->w != dummy.w || var->h != dummy.h)
 				croak("panic: icon object inconsistent after rotation");
+		}
+	}
+
+	if (maskType != imbpp8 && is_opt( optPreserveType))
+		my-> set_maskType( self, maskType);
+	var->updateLock--;
+	my->update_change(self);
+	var->autoMasking = autoMasking;
+	return ok;
+}
+
+Bool
+Icon_transform( Handle self, double a, double b, double c, double d)
+{
+	Bool ok;
+	Image dummy;
+	int autoMasking = var->autoMasking, maskType = var->maskType;
+	var->autoMasking = amNone;
+
+	var->updateLock++;
+
+	my->set_maskType(self, imbpp8);
+
+	img_fill_dummy( &dummy, var->w, var->h, imByte, var->mask, NULL);
+	dummy.scaling = var->scaling;
+	dummy.mate    = var->mate;
+
+	ok = inherited transform(self, a, b, c, d);
+	if ( ok ) {
+		ok = Image_transform((Handle) &dummy, a, b, c, d);
+		if ( ok ) {
+			var-> mask     = dummy.data;
+			var-> maskLine = dummy. lineSize;
+			var-> maskSize = dummy. dataSize;
+			if ( var->w != dummy.w || var->h != dummy.h)
+				croak("panic: icon object inconsistent after 2d transform");
 		}
 	}
 

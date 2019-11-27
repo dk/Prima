@@ -602,6 +602,8 @@ sub ui_scale
 
 sub to_region { Prima::Region->new( image => shift ) }
 
+sub shear { $_[0]->transform(1,@_[2,1],1) }
+
 package Prima::Icon;
 use vars qw( @ISA);
 @ISA = qw(Prima::Image);

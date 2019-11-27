@@ -105,4 +105,26 @@ $p->lineWidth(8);
 $p->ellipse( 100, 100, 138, 138 );
 is( $p->sum, 0, "rotation 360 is correct");
 
+$p = Prima::Icon->create(
+	width    => 2,
+	height   => 2,
+	type     => im::Byte,
+	maskType => 8,
+	mask     => "\1\2..\3\4",
+	data     => "\4\5..\6\7",
+);
+$p->shear(2,0);
+is_bytes( $p->data, "\4\5\0\0\0\0\6\7", "xshear(2) integral data");
+is_bytes( $p->mask, "\1\2\0\0\0\0\3\4", "xshear(2) integral mask");
+
+$p = Prima::Image->create(
+	width    => 2,
+	height   => 2,
+	type     => im::Byte,
+	data     => "\1\4..\3\6");
+$p->shear(0,0.5);
+$p = $p->data;
+$p = substr($p,0,2) . substr($p,4,2) . substr($p,8,2);
+is_bytes( $p, join('', map { chr } (1, (0+4)/2), 3, (4+6)/2, 0, (6+0)/2), "yshear subpixel");
+
 done_testing;
