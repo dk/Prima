@@ -739,6 +739,13 @@ img_2d_transform( Handle self, double *matrix, PImage dummy)
 	FilterFunc *filter = default_filter;
 	double shear_x_coeff, shear_y_coeff, scale_x, scale_y;
 
+	/* very special case for rotation */
+	if ( matrix[0] == matrix[3] && matrix[1] == -matrix[2] ) {
+		double angle = acos(matrix[0]);
+		if ( sin(angle) == matrix[1] )
+			return img_generic_rotate( self, acos(matrix[0]) * RAD, dummy);
+	}
+
 	if ( matrix[0] == 0.0 ) {
 		if (matrix[3] == 0.0) 
 			return false;
