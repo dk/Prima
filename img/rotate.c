@@ -774,7 +774,7 @@ roundoff(float * matrix, int count)
 {
 	/* max image size is 16K, so best precision we need is 1/32 K */
 	while ( count-- ) 
-		*matrix = floor(*matrix * 32768.0) / 32768.0;
+		*matrix = floor(*matrix * 32768.0 + 0.5) / 32768.0;
 }
 
 static int
