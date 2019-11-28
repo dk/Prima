@@ -769,18 +769,18 @@ integral_rotate( Handle self, int degrees, PImage dummy)
 	return true;
 }
 
+/* max image size is 16K, so best precision we need is 1/32 K */
 static void
 roundoff(float * matrix, int count)
 {
-	/* max image size is 16K, so best precision we need is 1/32 K */
 	while ( count-- ) 
 		*matrix = floor(*matrix * 32768.0 + 0.5) / 32768.0;
 }
 
+/* very special case for rotation */
 static int
 check_rotated_case( Handle self, float *matrix, PImage dummy)
 {
-	/* very special case for rotation */
 	if ( matrix[0] == matrix[3] && matrix[1] == -matrix[2] ) {
 		float angle = acos(matrix[0]);
 		float sin1  = sin( angle );
@@ -817,6 +817,52 @@ typedef float LDUCoeff[MAX_LDU_COEFF+1];
 #define STEP_SCALE     2
 #define STEP_ROTATE_90 3
 
+/*
+
+Based on block LDU decomposition [1]
+
+|A B| = |1   0| * |A      0| * |1 B/A|
+|C D|   |C/A 1|   |0 D-CB/A|   |0   1|
+
+a matrix can be split into a product of lower, diagonal, and upper matrices.
+Except, naturally, cases where A=0, but these cases can be decomposed to
+UDL:
+
+|A B| = |1 B/D| * |A-BC/D 0| * |1   0|
+|C D|   |0   1|   |0      D|   |C/D 1|
+
+Those with both A and D = 0 can be rotated 90 by
+multiplying to
+
+|0  1|
+|-1 0|
+
+and sent back to the LDU/UDL, while cases with B and/or C = 0 are just a
+degenerate scalings, resulting in images with X=0 and/or Y=0.
+
+L and U steps are shearings (that can be implemented very effectively), but
+they have their own corner cases where either A or D are close to 0 and thus
+interim images can be huge. Even where such images can be created, the
+accumulated errors make the resulting image look bad. Therefore select_ldu()
+below makes a guess, what if we apply a rotate90 transformation first, and see
+if these huge shearings disappear. So the ldu/select_ldu chain can produce the
+following op-lists:
+
+0) scale
+1) shear x, scale, shear y
+2) shear y, scale, shear x
+3) rotate90, shear x, scale, shear y
+4) rotate90, shear y, scale, shear x
+
+where it is up to the consumer to skip individual steps if these are no-ops.
+
+That is of course a valid question whether #3 and #4 are generally more optimal
+to implement that way rather than just using a direct pixel resampling with
+direct 2D transformation, but that's yet to be measured.
+
+[1] https://en.wikipedia.org/wiki/Block_LU_decomposition
+
+*/
 static void
 ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 {
@@ -831,7 +877,7 @@ ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 				local_matrix[2] = -matrix[0];
 				local_matrix[3] =  matrix[1];
 				matrix = local_matrix;
-				goto LDU;
+				goto UDL;
 			} else {
 				/* degenerate scaling */
 				steps[(*n_steps)++] = STEP_SCALE;
@@ -840,7 +886,7 @@ ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 				c[SHEAR_X] = c[SHEAR_Y] = 0.0;
 			}
 		} else {
-		LDU:
+		UDL:
 			steps[(*n_steps)++] = STEP_SHEAR_X;
 			steps[(*n_steps)++] = STEP_SCALE;
 			steps[(*n_steps)++] = STEP_SHEAR_Y;
@@ -855,8 +901,8 @@ ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 		steps[(*n_steps)++] = STEP_SHEAR_X;
 		c[SHEAR_X] = matrix[2] / matrix[0];
 		c[SHEAR_Y] = matrix[1] / matrix[0];
-		c[SCALE_X] = matrix[3] - matrix[1] * matrix[2] / matrix[0];
-		c[SCALE_Y] = matrix[0];
+		c[SCALE_X] = matrix[0];
+		c[SCALE_Y] = matrix[3] - matrix[1] * matrix[2] / matrix[0];
 	}
 	if ( c[SHEAR_X] == -0.0 ) c[SHEAR_X] = 0.0;
 	if ( c[SHEAR_Y] == -0.0 ) c[SHEAR_Y] = 0.0;
@@ -870,7 +916,7 @@ static void
 select_ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 {
 	int select_first = true;
-	int steps1[MAX_STEPS], steps2[MAX_STEPS], n_steps1 = 0, n_steps2 = 0;
+	int steps1[MAX_STEPS+1], steps2[MAX_STEPS+1], n_steps1 = 0, n_steps2 = 0;
 	LDUCoeff c1, c2;
 
 	memset( steps, 0, 16);
@@ -892,12 +938,14 @@ select_ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 	 		steps2[0], steps2[1], steps2[2], steps2[3],
 	 		c2[SHEAR_X], c2[SHEAR_Y], c2[SCALE_X], c2[SCALE_Y]); 
 		*/
-		for ( i = 0; i <= MAX_LDU_COEFF; i++) {
-			float v1 = fabs(c1[i]), v2 = fabs(c2[i]);
-			if ( max1 < v1 ) max1 = v1;
-			if ( max2 < v2 ) max2 = v2;
+		if ( steps2[1] != STEP_ROTATE_90) {
+			for ( i = 0; i <= MAX_LDU_COEFF; i++) {
+				float v1 = fabs(c1[i]), v2 = fabs(c2[i]);
+				if ( max1 < v1 ) max1 = v1;
+				if ( max2 < v2 ) max2 = v2;
+			}
+			if ( max2 < max1 ) select_first = false;
 		}
-		if ( max2 < max1 ) select_first = false;
 	}
 
 	if ( select_first ) {
