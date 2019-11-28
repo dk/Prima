@@ -890,8 +890,8 @@ Creates a new L<Prima::Region> object with the image as the data source.
 Applies generic 2D transform matrix to the image, where matrix is 4 numbers.
 
 Tries first to split matrix into series of shear and scale transforms using LDU
-decomposition; if the matrix cannot be split, or an interim image needs to be
-too large, fails and returns C<false>.
+decomposition; if an interim image needs to be too large, fails and returns
+C<false>.
 
 Rotation matrices can be applied too, however, when angles are close to 90 and
 270, either interim images become too big, or defects introduced by shearing
