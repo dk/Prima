@@ -1838,7 +1838,7 @@ integral_rotate( Handle self, int degrees)
 }
 
 static Bool
-generic_rotate( Handle self, double degrees)
+generic_rotate( Handle self, float degrees)
 {
 	Image i;
 	int desired_type = var->type;
@@ -1895,7 +1895,7 @@ Image_transform( Handle self, double a, double b, double c, double d)
 {
 	Image i;
 	int desired_type = var->type;
-	double matrix[4] = { a, b, c, d };
+	float matrix[4] = { a, b, c, d };
 
 	if (( desired_type & imBPP) <= 8) 
 		desired_type = (desired_type & imGrayScale) ? imByte : imRGB;
