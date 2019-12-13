@@ -9,8 +9,8 @@ static void
 rotate270( PImage i, Byte * new_data, int new_line_size)
 {
 	int y;
-	int w	= i->w;
-	int pixel_size	  = (i-> type & imBPP) / 8;
+	int w = i->w;
+	int pixel_size = (i-> type & imBPP) / 8;
 	int tail = i-> lineSize - w * pixel_size  ;
 	Byte * src = i->data, * dst0;
 
@@ -49,9 +49,9 @@ static void
 rotate180( PImage i, Byte * new_data)
 {
 	int y, bs2;
-	int w	       = i->w;
+	int w          = i->w;
 	int pixel_size = (i-> type & imBPP) / 8;
-	int tail       = i-> lineSize - w * pixel_size	;
+	int tail       = i-> lineSize - w * pixel_size        ;
 	Byte * src = i->data, *dst = new_data + i-> h * i-> lineSize - tail - pixel_size;
 
 	switch (i->type & imBPP) {
@@ -86,8 +86,8 @@ static void
 rotate90( PImage i, Byte * new_data, int new_line_size)
 {
 	int y;
-	int w	= i->w;
-	int pixel_size	  = (i-> type & imBPP) / 8;
+	int w = i->w;
+	int pixel_size = (i-> type & imBPP) / 8;
 	int tail = i-> lineSize - w * pixel_size;
 	Byte * src = i->data, *dst0;
 
@@ -245,7 +245,7 @@ apply_shear( Point * points, float func, int w, int h, int index, Point * out_mi
 	int i, min_i;
 	Point * p, min_p;
 	float max_shift, min, max, center, tmp[4];
-	
+
 	max_shift = (func >= 0) ? 0 : func * ((index ? w : h) - 1);
 
 	/* apply shearing */
@@ -298,7 +298,7 @@ apply_scale( Point * points, float sx, float sy, Point * out_min, Point * out_di
 	int i;
 	Point * p, min_p;
 	NPoint min, max, center, tmp[4];
-	
+
 	/* apply shearing */
 	max.x = max.y = min.x = min.y = 0.0;
 	for ( i = 0, p = points; i < 4; i++, p++) {
@@ -376,32 +376,32 @@ create_tmp_image( PImage template, int channels, PImage target, Point size)
 }
 
 #define SHEAR_X_FUNCTION(type,pixel_interim_type) \
-static void							  \
-shear_x_scanline_ ## type(					  \
-	void * _src, int channels, int src_w,			  \
-	void * _dst, int dst_w,					  \
-	int delta, float sf, Bool reverse			  \
-) {								  \
-	int x, c, nx, dsrc;					  \
-	float leftover[3];					  \
-	type *src = (type*)_src, *dst = (type*) _dst;		  \
+static void                                                       \
+shear_x_scanline_ ## type(                                        \
+	void * _src, int channels, int src_w,                     \
+	void * _dst, int dst_w,                                   \
+	int delta, float sf, Bool reverse                         \
+) {                                                               \
+	int x, c, nx, dsrc;                                       \
+	float leftover[3];                                        \
+	type *src = (type*)_src, *dst = (type*) _dst;             \
 	pixel_interim_type new_pixel;                             \
-								  \
-	if ( reverse ) {					  \
-		dsrc = channels * 2;  				  \
+	                                                          \
+	if ( reverse ) {                                          \
+		dsrc = channels * 2;                              \
 		src  += (src_w - 1) * channels;                   \
-	} else							  \
-		dsrc = 0;					  \
-								  \
-	for ( c = 0; c < channels; c++)				  \
-		leftover[c] = 0;				  \
-								  \
-	dst += delta * channels;				  \
-	for (							  \
-		x = 0, nx = delta;				  \
-		x < src_w;					  \
-		x++, nx++, src -= dsrc				  \
-	) {							  \
+	} else                                                    \
+		dsrc = 0;                                         \
+	                                                          \
+	for ( c = 0; c < channels; c++)                           \
+		leftover[c] = 0;                                  \
+	                                                          \
+	dst += delta * channels;                                  \
+	for (                                                     \
+		x = 0, nx = delta;                                \
+		x < src_w;                                        \
+		x++, nx++, src -= dsrc                            \
+	) {                                                       \
 		for ( c = 0; c < channels; c++, src++) {          \
 			float to_transfer = ((float)*src) * sf;
 
@@ -414,20 +414,20 @@ shear_x_scanline_ ## type(					  \
 			if ( new_pixel > maxval ) new_pixel = maxval;
 
 #define SHEAR_X_LOOP_END \
-			if ( nx >= 0)		      \
+			if ( nx >= 0)                 \
 				*(dst++) = new_pixel; \
-			else			      \
-				dst++;		      \
+			else                          \
+				dst++;                \
 			leftover[c] = to_leave;       \
-		}				      \
+		}                                     \
 	}
 #define SHEAR_X_TAIL \
 	if ( nx >= 0 && nx < dst_w) \
 		for ( c = 0; c < channels; c++) {
 
 #define SHEAR_X_FUNCTION_END \
-			*(dst++) = new_pixel; \
-		}			      \
+			*(dst++) = new_pixel;  \
+		}                              \
 }
 
 SHEAR_X_FUNCTION(Byte,short int)
@@ -477,25 +477,25 @@ SHEAR_X_FUNCTION(double,double)
 SHEAR_X_FUNCTION_END
 
 #define SHEAR_Y_FUNCTION(type,pixel_interim_type) \
-static void								  \
-shear_y_scanline_ ## type(						  \
+static void                                                               \
+shear_y_scanline_ ## type(                                                \
 	void * _src, int channels, int src_w, int src_h, int src_stride,  \
-	void * _dst, int dst_w, int dst_h, int dst_stride,		  \
-	int delta, float sf						  \
-) {									  \
-	int y, c, ny;							  \
-	float leftover[3];						  \
-	type * src = (type*)_src, * dst = ( type* ) _dst;		  \
-	pixel_interim_type new_pixel;					  \
-									  \
-	for ( c = 0; c < channels; c++)					  \
-		leftover[c] = 0;					  \
-									  \
-	dst = (type*) (((Byte*) dst) + delta * dst_stride);		  \
-									  \
-	for ( y = 0, ny = delta; y < src_h; y++, ny++) {		  \
-		for ( c = 0; c < channels; c++) {			  \
-			type   pixel	   = src[c];			  \
+	void * _dst, int dst_w, int dst_h, int dst_stride,                \
+	int delta, float sf                                               \
+) {                                                                       \
+	int y, c, ny;                                                     \
+	float leftover[3];                                                \
+	type * src = (type*)_src, * dst = ( type* ) _dst;                 \
+	pixel_interim_type new_pixel;                                     \
+	                                                                  \
+	for ( c = 0; c < channels; c++)                                   \
+		leftover[c] = 0;                                          \
+	                                                                  \
+	dst = (type*) (((Byte*) dst) + delta * dst_stride);               \
+	                                                                  \
+	for ( y = 0, ny = delta; y < src_h; y++, ny++) {                  \
+		for ( c = 0; c < channels; c++) {                         \
+			type   pixel           = src[c];                  \
 			float to_transfer = ((float)pixel) * sf;
 
 #define SHEAR_Y_LOOP \
@@ -503,15 +503,15 @@ shear_y_scanline_ ## type(						  \
 			if ( ny >= dst_h) return;
 
 #define SHEAR_Y_LOOP_END(type) \
-			if ( ny >= 0 ) dst[c] = new_pixel;		    \
-			leftover[c] = to_leave;				    \
-		}							    \
-		src = (type*)(((Byte*)src) + src_stride);		    \
-		dst = (type*)(((Byte*)dst) + dst_stride);		    \
+			if ( ny >= 0 ) dst[c] = new_pixel;                \
+			leftover[c] = to_leave;                           \
+		}                                                         \
+		src = (type*)(((Byte*)src) + src_stride);                 \
+		dst = (type*)(((Byte*)dst) + dst_stride);                 \
 	}
 
 #define SHEAR_Y_TAIL \
-	if ( ny >= 0 && ny < dst_h)					   \
+	if ( ny >= 0 && ny < dst_h)                                       \
 		for ( c = 0; c < channels; c++) {
 
 #define SHEAR_Y_FUNCTION_END \
@@ -577,9 +577,9 @@ typedef void ShearYFunc(
 );
 
 #define FIND_SHEAR_FUNC(letter) \
-	case imByte   : shear_func = shear_## letter ##_scanline_Byte;	 break;\
+	case imByte   : shear_func = shear_## letter ##_scanline_Byte;   break;\
 	case imShort  : shear_func = shear_## letter ##_scanline_Short;  break;\
-	case imLong   : shear_func = shear_## letter ##_scanline_Long;	 break;\
+	case imLong   : shear_func = shear_## letter ##_scanline_Long;   break;\
 	case imFloat  : shear_func = shear_## letter ##_scanline_float;  break;\
 	case imDouble : shear_func = shear_## letter ##_scanline_double; break;
 
@@ -618,8 +618,8 @@ shear_x( PImage src, int channels, PImage dst, float func, FilterFunc filter, in
 		float sk = ( func > 0 ) ? func * y : (-func) * (h - y - 1);
 		int    si = (int) floor(sk);
 		shear_func(
-			src_scanline + dsrc * y, channels, w, 
-			dst_scanline + ddst * y, dw, 
+			src_scanline + dsrc * y, channels, w,
+			dst_scanline + ddst * y, dw,
 			si + dx, filter(sk - si), apply_180
 		);
 	}
@@ -631,7 +631,7 @@ shear_y( PImage src, int channels, PImage dst, float func, FilterFunc filter, in
 	int x, w, h, dw, lim_x, dscanline;
 	Byte * src_scanline, * dst_scanline;
 	ShearYFunc * shear_func;
-	
+
 	w  = src->w / channels;
 	dw = dst->w / channels;
 	h  = src->h;
@@ -685,7 +685,7 @@ find_filter( int scaling )
 
 
 /* Fast rotation by Paeth algortihm. Accepts grayscale images with bpp >= 8, and 24 bpp RGBs */
-Bool 
+Bool
 img_generic_rotate( Handle self, float degrees, PImage dummy)
 {
 	Bool apply_180 = false;
@@ -695,7 +695,7 @@ img_generic_rotate( Handle self, float degrees, PImage dummy)
 	int channels;
 	FilterFunc *filter = find_filter(i->scaling);
 
-	if ( i->type == imRGB) 
+	if ( i->type == imRGB)
 		channels = 3;
 	else if ( i->type & (imComplexNumber | imTrigComplexNumber) )
 		channels = 2;
@@ -714,12 +714,12 @@ img_generic_rotate( Handle self, float degrees, PImage dummy)
 	bzero(&p, sizeof(p));
 	p[1].x = p[2].x = i->w - 1;
 	p[2].y = p[3].y = i->h - 1;
-	
+
 	if ( !(
 		apply_shear(p, tan2, i->w, i-> h, 0, &s1min, &s1dim) &&
 		apply_shear(p, sin1, s1dim.x, s1dim.y, 1, &s2min, &s2dim) &&
 		apply_shear(p, tan2, s2dim.x, s2dim.y, 0, &s3min, &s3dim)
-	)) 
+	))
 		return false;
 
 	if ( !create_tmp_image(i, channels, &s1, s1dim))
@@ -924,8 +924,8 @@ select_ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 	ldu(matrix, c1, steps1, &n_steps1);
 	/*
 	 printf("LDU1: %d steps [%d %d %d %d], shear: %g %g, scale: %g %g\n", n_steps1, 
-	 	steps1[0], steps1[1], steps1[2], steps1[3],
-	 	c1[SHEAR_X], c1[SHEAR_Y], c1[SCALE_X], c1[SCALE_Y]); 
+		 steps1[0], steps1[1], steps1[2], steps1[3],
+		 c1[SHEAR_X], c1[SHEAR_Y], c1[SCALE_X], c1[SCALE_Y]); 
 	*/
 	if ( steps1[0] != STEP_ROTATE_90 ) {
 		int i;
@@ -934,9 +934,9 @@ select_ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 		steps2[n_steps2++] = STEP_ROTATE_90;
 		ldu(m2, c2, steps2, &n_steps2);
 		/*
-	 	printf("LDU2: %d steps [%d %d %d %d], shear: %g %g, scale: %g %g\n", n_steps2, 
-	 		steps2[0], steps2[1], steps2[2], steps2[3],
-	 		c2[SHEAR_X], c2[SHEAR_Y], c2[SCALE_X], c2[SCALE_Y]); 
+		 printf("LDU2: %d steps [%d %d %d %d], shear: %g %g, scale: %g %g\n", n_steps2, 
+			 steps2[0], steps2[1], steps2[2], steps2[3],
+			 c2[SHEAR_X], c2[SHEAR_Y], c2[SCALE_X], c2[SCALE_Y]); 
 		*/
 		if ( steps2[1] != STEP_ROTATE_90) {
 			for ( i = 0; i <= MAX_LDU_COEFF; i++) {
