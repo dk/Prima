@@ -385,13 +385,13 @@ shear_x_scanline_ ## type(					  \
 	int x, c, nx, dsrc;					  \
 	float leftover[3];					  \
 	type *src = (type*)_src, *dst = (type*) _dst;		  \
-	pixel_interim_type new_pixel;						\
+	pixel_interim_type new_pixel;                             \
 								  \
 	if ( reverse ) {					  \
-		dsrc = -1;					  \
-		src  += (src_w - 1) * channels + channels - 1;	  \
+		dsrc = channels * 2;  				  \
+		src  += (src_w - 1) * channels;                   \
 	} else							  \
-		dsrc = 1;					  \
+		dsrc = 0;					  \
 								  \
 	for ( c = 0; c < channels; c++)				  \
 		leftover[c] = 0;				  \
@@ -400,9 +400,9 @@ shear_x_scanline_ ## type(					  \
 	for (							  \
 		x = 0, nx = delta;				  \
 		x < src_w;					  \
-		x++, nx++					  \
+		x++, nx++, src -= dsrc				  \
 	) {							  \
-		for ( c = 0; c < channels; c++, src += dsrc) {	  \
+		for ( c = 0; c < channels; c++, src++) {          \
 			float to_transfer = ((float)*src) * sf;
 
 #define SHEAR_X_LOOP \
@@ -518,7 +518,7 @@ shear_y_scanline_ ## type(						  \
 			dst[c] = new_pixel; \
 		} \
 }
-									     
+
 SHEAR_Y_FUNCTION(Byte,short int)
 	new_pixel = leftover[c] + to_transfer + 0.5;
 	SHEAR_Y_LOOP
