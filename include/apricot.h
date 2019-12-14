@@ -1575,7 +1575,7 @@ DT(NoWordWrap)
 DT(WordWrap)
 #define dtBidiText                 0x8000
 DT(BidiText)
-#define dtDefault                  (dtNewLineBreak|dtWordBreak|dtExpandTabs|dtUseExternalLeading)
+#define dtDefault                  (dtNewLineBreak|dtWordBreak|dtExpandTabs|dtUseExternalLeading|dtBidiText)
 DT(Default)
 
 END_TABLE(dt,UV)
