@@ -965,7 +965,7 @@ select_ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 Bool
 img_2d_transform( Handle self, float *matrix, PImage dummy)
 {
-	int n_steps = 0, applied_steps = 0, steps[MAX_STEPS], step, n, channels;
+	int n_steps = 0, applied_steps = 0, steps[MAX_STEPS], step, n, type, channels;
 	Point p[4], dimensions[MAX_STEPS+1], offsets[MAX_STEPS];
 	Image *i = (PImage)self, tmp_images[MAX_STEPS+1];
 	FilterFunc *filter = find_filter(i->scaling);
@@ -981,11 +981,15 @@ img_2d_transform( Handle self, float *matrix, PImage dummy)
 			return false;
 		}
 
-	if ( i->type == imRGB) 
+	type = i->type;
+	if ( i->type == imRGB)  {
 		channels = 3;
-	else if ( i->type & (imComplexNumber | imTrigComplexNumber) )
+		type = imByte;
+	}
+	else if ( i->type & (imComplexNumber | imTrigComplexNumber) ) {
 		channels = 2;
-	else
+		type &= ~(imComplexNumber | imTrigComplexNumber);
+	} else
 		channels = 1;
 
 	bzero(&p, sizeof(p));
@@ -1042,7 +1046,7 @@ img_2d_transform( Handle self, float *matrix, PImage dummy)
 		return true;
 	}
 
-	img_fill_dummy( &tmp_images[0], i->w, i->h, i->type, i->data, i->palette);
+	img_fill_dummy( &tmp_images[0], i->w * channels, i->h, type, i->data, i->palette);
 	for ( step = 0; step < n_steps; step++) {
 		if ( !create_tmp_image(i, channels, &tmp_images[step+1], dimensions[step+1])) {
 			if ( step > 0 )
@@ -1059,7 +1063,7 @@ img_2d_transform( Handle self, float *matrix, PImage dummy)
 		case STEP_ROTATE_90: {
 			PImage src = &tmp_images[step];
 			PImage dst = &tmp_images[step+1];
-			src-> w   *= channels;
+			src-> w   /= channels;
 			src-> type = i->type;
 			rotate90(src, dst->data, dst->lineSize);
 			break;
@@ -1070,8 +1074,8 @@ img_2d_transform( Handle self, float *matrix, PImage dummy)
 			int mx = (c[SCALE_X] < 0) ? -1 : 1;
 			int my = (c[SCALE_Y] < 0) ? -1 : 1;
 			if ( !ic_stretch( i->type,
-				src->data, src->w, src->h,
-				dst->data, dst->w * mx, dst->h * my,
+				src->data, src->w / channels, src->h,
+				dst->data, dst->w * mx / channels, dst->h * my,
 				i->scaling, errbuf)) {
 				if ( step > 0 )
 					free(tmp_images[step].data);
