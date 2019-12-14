@@ -1719,8 +1719,10 @@ sub setup
 sub text
 {
 	return $_[0]-> SUPER::text unless $#_;
-	$_[0]-> SUPER::text( $_[1]);
-	$_[0]-> repaint;
+	my ( $self, $caption) = @_;
+	$self-> SUPER::text( $caption );
+	$self-> {accel} = lc($1) if $caption =~ /~([a-z0-9])/i;
+	$self-> repaint;
 }
 
 sub reset
@@ -1728,14 +1730,140 @@ sub reset
 	my $self = $_[0];
 	my @size = $self-> size;
 	my $fh  = $self-> font-> height;
-	my $br  = $size[0] > ( $size[1] - $fh) ? ( $size[1] - $fh) : $size[0];
+	my $bw  = $self->buttonWidth;
+	my $br  = ($size[0] > ( $size[1] - $fh)) ? ( $size[1] - $fh) : $size[0];
+	$self->begin_paint_info;
+
 	$self-> {br}        = $br;
-	$self-> {circX}     = $size[0]/2;
-	$self-> {circY}     = ($size[1] + $fh) / 2;
-	$self-> {butt1X}    = $size[0] / 2 - $br * 0.4 - $self->buttonWidth / 2;
-	$self-> {butt1Y}    = ( $size[1] + $fh) / 2 - $br * 0.4;
-	$self-> {butt2X}    = $size[0] / 2 + $br * 0.4 - $self->buttonWidth / 2;
-	$self-> {circAlive} = $br > $self->buttonWidth * 5;
+	$self-> {circX}     = int($size[0]/2 + .5);
+	$self-> {circY}     = int(($size[1] + $fh) / 2 + .5);
+	$self-> {butt1X}    = int( $size[0] / 2 - $br * 0.4 - $bw / 2 + .5);
+	$self-> {butt2X}    = int( $size[0] / 2 + $br * 0.4 - $bw / 2 + .5);
+	$self-> {radius}    = $br * 0.25;
+	if ( $self->{butt1X} + $bw + 1 > $self->{butt2X} ) {
+		my $d = $bw - $self->{butt2X} + $self->{butt1X};
+		$self->{butt1X} -= $d / 2 + 1;
+		$self->{butt2X} += $d / 2 + 1;
+	}
+	
+	my $i;
+	my $rad = $self->{radius};
+	my ( $tval, $tlen, $ttxt) = ( $self-> {tickVal}, $self-> {tickLen}, $self-> {tickTxt});
+	my @ext = (0,0,0,0);
+	for ( $i = 0; $i < scalar @{$tval}; $i++) {
+		my $r = $rad + 3 + $$tlen[ $i];
+		my ( $cos, $sin) = $self-> offset2data( $$tval[$i]);
+		if ( $$tlen[$i]) {
+			my @outer = ($r * $cos, $r * $sin);
+			$ext[0] = $outer[0] if $ext[0] > $outer[0];
+			$ext[1] = $outer[1] if $ext[1] > $outer[1];
+			$ext[2] = $outer[0] if $ext[2] < $outer[0];
+			$ext[3] = $outer[1] if $ext[3] < $outer[1];
+		}
+		$r += 3;
+		if ( defined $$ttxt[ $i]) {
+		my $R = $r;
+			my $w = $self-> get_text_width( $$ttxt[ $i], 1);
+			my $y = $r * $sin - $fh / 2 * ( 1 - $sin);
+			my $x = $r * $cos - ( 1 - $cos) * $w / 2;
+			my $r = $x + $w;
+			my $t = $y + $fh;
+			$ext[0] = $x if $ext[0] > $x;
+			$ext[1] = $y if $ext[1] > $y;
+			$ext[2] = $r if $ext[2] < $r;
+			$ext[3] = $t if $ext[3] < $t;
+		}
+	}
+	$ext[$_] = int($ext[$_] - .5) for 0,1;
+	$ext[$_] = int($ext[$_] + .5) for 2,3;
+
+	my @sz = ( $ext[2] - $ext[0], $ext[3] - $ext[1] );
+	my @d = (
+		$self->{circX} + $ext[0],
+		$self->{circY} + $ext[1],
+		$size[0] - $self->{circX} - $ext[2],
+		$size[1] - $self->{circY} - $ext[3],
+	);
+	$self-> {show_scale} = ! grep { $_ < 0 } @d;
+	@ext = (0,0,0,0) unless $self->{show_scale};
+
+	my $lowest = $self->{circY} + $ext[1];
+	my $fd     = $self->font->descent;
+	$self-> {textY} = ($lowest > $fh + 2) ? ($lowest - $fh) / 2 + 1 : 2;
+	$self-> {textY} += $fd;
+
+	$self-> {show_text} = 1;
+	my $title_width = $self->get_text_width($self->text, 1);
+
+	if ( $title_width > $size[0] ) {
+		$self->{show_text} = 0;
+	} elsif ( $title_width > $br * 0.8 - $bw) {
+		$self-> {butt1Y} = int(($size[1] + $fh) / 2 - $br * 0.4 + .5);
+		if ( $self->{textY} + $fh > $self->{butt1Y} ) {
+			$self->{textY} = $self->{butt1Y} - $fh + 2;
+			$self->{show_text} = 0 if $self->{textY} < 0;
+		}
+		if ( $self->{textY} + $fh > $self->{butt1Y} ) {
+			$self->{show_text} = 0;
+		}
+	} else {
+		my $y = $self->{textY} - $fd;
+		$y += ( $fh - $bw ) / 2;
+		$y = 0 if $y < 0;
+		$self-> {butt1Y} = int($y + .5);
+	}
+	$self->end_paint_info;
+
+	# can grow the circle?
+	$lowest  = $self->{butt1Y};
+	$lowest  = $self->{textY} - $fd if $self->{show_text} && $lowest > $self->{textY} - $fd;
+	my $highest = $self->{butt1Y} + $bw;
+	$highest = $self->{textY} + $fh if $self->{show_text} && $highest < $self->{textY} + $fh;
+	my $extraY = $highest - $lowest;
+
+	$ext[0] = -$self->{radius} if $ext[0] > -$self->{radius};
+	$ext[1] = -$self->{radius} if $ext[1] > -$self->{radius};
+	$ext[2] =  $self->{radius} if $ext[2] <  $self->{radius};
+	$ext[3] =  $self->{radius} if $ext[3] <  $self->{radius};
+	$ext[$_] -= 2 for 0,1;
+	$ext[$_] += 2 for 2,3;
+	@sz = ( $ext[2] - $ext[0], $ext[3] - $ext[1] );
+
+	if ( $sz[0] < $size[0] && $sz[1] < $size[1] - $extraY) {
+		my @d = (
+			$self->{circX} + $ext[0],
+			$self->{circY} + $ext[1],
+			$size[0] - $self->{circX} - $ext[2],
+			$size[1] - $self->{circY} - $ext[3],
+		);
+		my $min = $d[0];
+		for ( @d ) {
+			$min = $_ if $min > $_;
+		}
+		$self->{radius} += $min;
+		$self->{textY}  -= $min;
+		$self->{butt1Y} -= $min;
+		$self->{textY} = $fd if $self->{textY} < $fd;
+		$self->{butt1Y} = 0  if $self->{butt1Y} < 0;
+	}
+
+	# hints
+	$self->{show_dial} = $self->{radius} > 10;
+	if ( $self->{show_text} && !$self->{show_scale} && $self->{textY} + $fh > $self->{circY} - $self->{radius}) {
+		# if text is over the expanded dial ( when @ext is empty ), move it or hide
+		$self->{textY} = $fd;
+		if ( $self->{textY} + $fh > $self->{circY} - $self->{radius}) {
+			$self->{show_text} = 0;
+		}
+	}
+	if ( !$self->{show_text} && $self->{butt1Y} + $bw > $size[1] ) {
+		# no text, don't need to fit buttons together with the text
+		$self->{butt1Y} = ( $size[1] - $bw ) / 2;
+	}
+	if ( !$self->{show_dial} ) {
+		# do not obscure the value as much as possible
+		$self->{butt1Y} = 0;
+	}
 }
 
 sub offset2pt
@@ -1753,7 +1881,6 @@ sub offset2data
 		(abs( $self-> {min} - $self-> {max})||1);
 	return cos($a), sin($a);
 }
-
 
 sub on_paint
 {
@@ -1786,9 +1913,10 @@ sub on_paint
 	$canvas-> bar( 0, 0, @size) if !$self-> transparent && !defined $self-> {singlePaint};
 	my $fh  = $canvas-> font-> height;
 	my $br  = $self-> {br};
-	my $rad = $br * 0.3;
+	my $rad = $self-> {radius};
 	my @cpt = ( $self-> {circX}, $self-> {circY}, $rad*2+1, $rad*2+1);
 
+	goto AFTER_DIAL unless $self->{show_dial};
 	if ( defined $self-> {singlePaint}) {
 		$canvas-> color( $prelight ) if $self->{prelight};
 		$canvas-> fill_ellipse( @cpt[0..1], $rad*2-5, $rad*2-5);
@@ -1825,10 +1953,11 @@ sub on_paint
 		$canvas-> color( $c3d[1]);
 		$canvas-> arc( @cxt[0..1], $knob, $knob, 255, 405);
 		$canvas-> lineWidth(0);
-		$canvas-> color( $clr[0]);
 	}
+AFTER_DIAL:
+	$canvas-> color( $clr[0]);
 
-	if ( $self-> {circAlive} && !defined $self-> {singlePaint}) {
+	if ( $self-> {show_scale} && !defined $self-> {singlePaint}) {
 		my $i;
 		for ( $i = 0; $i < scalar @{$tval}; $i++) {
 			my $r = $rad + 3 + $$tlen[ $i];
@@ -1841,19 +1970,24 @@ sub on_paint
 				my $y = $cpt[1] + $r * $sin - $fh / 2 * ( 1 - $sin);
 				my $x = $cpt[0] + $r * $cos -
 					( 1 - $cos) *
-					$canvas-> get_text_width( $$ttxt[ $i]) / 2;
+					$canvas-> get_text_width( $$ttxt[ $i], 1) / 2;
 				$canvas-> text_out_bidi( $$ttxt[ $i], $x, $y);
 			}
 		}
 	}
 
-	my $ttw = $canvas-> get_text_width( $self-> {string});
-	$canvas-> text_out_bidi( $self-> {string}, ( $size[0] - $ttw) / 2, $size[1] / 2 - $fh / 3)
-	if $ttw < $rad || !$self-> {circAlive};
+	my $ttw = $canvas-> get_text_width( $self-> {string}, 1);
+	$canvas-> text_out_bidi( $self-> {string}, ( $size[0] - $ttw) / 2, $size[1] / 2 - $fh / 3);
 	return if defined $self-> {singlePaint};
 
-	$ttw = $canvas-> get_text_width( $self-> text);
-	$canvas-> text_out_bidi( $self-> text, ( $size[0] - $ttw) / 2, 2);
+	my $text = $self->text;
+	$text =~ s/\~//;
+	$ttw = $canvas-> get_text_width( $text, 1);
+	$canvas-> draw_text( $self->text,
+		( $size[0] - $ttw) / 2, $self->{textY},
+		( $size[0] + $ttw) / 2, $self->{textY} + $fh, 
+		dt::DrawMnemonic|dt::NoWordWrap|dt::Default)
+			if $self->{show_text};
 
 	if ( $self-> {buttons}) {
 		my $s = $self-> {pressState};
@@ -1887,9 +2021,9 @@ sub on_paint
 	}
 
 	$canvas-> rect_focus(
-		( $size[0] - $ttw) / 2 - 1, 1,
-		( $size[0] + $ttw) / 2 + 1, $fh + 2
-	) if $self-> focused && ( length( $self-> text) > 0);
+		( $size[0] - $ttw) / 2 - 1, $self->{textY} - 1,
+		( $size[0] + $ttw) / 2 + 1, $self->{textY} + $fh + 1
+	) if $self->{show_text} && $self-> focused && ( length( $self-> text) > 0);
 }
 
 sub on_keydown
@@ -1913,6 +2047,19 @@ sub on_keydown
 	}
 }
 
+sub on_translateaccel
+{
+	my ( $self, $code, $key, $mod) = @_;
+	if (
+		defined $self-> {accel} &&
+		($key == kb::NoKey) &&
+		lc chr $code eq $self-> { accel}
+	) {
+		$self-> clear_event;
+		$self-> select;
+	}
+}
+
 sub xy2val
 {
 	my ( $self, $x, $y) = @_;
@@ -1925,7 +2072,7 @@ sub xy2val
 	$a = $self-> {min} + abs( $self-> {max} - $self-> {min}) * ( $pi * 1.75 - $a) * 2 / ( 3 * $pi);
 	my $s = $self-> {step};
 	$a = int( $a) if int( $s) - $s == 0;
-	my $inCircle = ( abs($x) < $self-> {br} * 0.3 + 3 and abs($y) < $self-> {br} * 0.3 + 3);
+	my $inCircle = ( abs($x) < $self-> {radius} + 3 and abs($y) < $self-> {radius} + 3);
 	return $a, $inCircle;
 }
 
@@ -1935,6 +2082,7 @@ sub on_mousedown
 	return if $self-> {readOnly};
 	return if $self-> {mouseTransaction};
 	return if $btn != mb::Left;
+	return unless $self->{show_dial};
 	my @butt = (
 		$self-> {butt1X}, $self-> {butt1Y},
 		$self-> {butt2X}, $self-> {butt1X} + $self->buttonWidth,
@@ -2071,10 +2219,10 @@ sub repaint_circle
 	my $self = shift;
 	$self-> {singlePaint} = 1;
 	my @clip = (
-		int( $self-> {circX} - $self-> {br} * 0.3),
-		int( $self-> {circY} - $self-> {br} * 0.3),
-		int( $self-> {circX} + $self-> {br} * 0.3),
-		int( $self-> {circY} + $self-> {br} * 0.3),
+		int( $self-> {circX} - $self-> {radius}),
+		int( $self-> {circY} - $self-> {radius}),
+		int( $self-> {circX} + $self-> {radius}),
+		int( $self-> {circY} + $self-> {radius}),
 	);
 	$self-> {expectedClip} = \@clip;
 	$self-> invalidate_rect( @clip[0..1], $clip[2]+1, $clip[3]+1);
