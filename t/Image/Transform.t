@@ -105,6 +105,28 @@ $p->lineWidth(8);
 $p->ellipse( 100, 100, 138, 138 );
 is( $p->sum, 0, "rotation 360 is correct");
 
+$p = Prima::Image->create(
+	width    => 200,
+	height   => 200,
+	type     => im::Byte,
+);
+$p->bar(0,0,$k->size);
+for (my $i = 0; $i < 360; $i++) {
+	my $d = $k->dup;
+	my $cos = cos($i / 3.14159 * 180.0);
+	my $sin = sin($i / 3.14159 * 180.0);
+	$d->transform($cos, $sin, -$sin, $cos + 0.001); # to make sure it's 2D transform, not a rotation
+	my $dx = ($p-> width  - $d->width) / 2; 
+	my $dy = ($p-> height - $d->height) / 2; 
+	$p->put_image($dx,$dy,$d,rop::OrPut);
+}
+my $sum = $p->sum / 255;
+ok(( $sum > 250 && $sum < 430), "rotation 360 by transform2d seems performing");
+$p->color(cl::Black);
+$p->lineWidth(8);
+$p->ellipse( 100, 100, 138, 138 );
+is( $p->sum, 0, "rotation 360 transform2d is correct");
+
 $p = Prima::Icon->create(
 	width    => 2,
 	height   => 2,
