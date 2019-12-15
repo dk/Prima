@@ -834,8 +834,8 @@ UDL:
 Those with both A and D = 0 can be rotated 90 by
 multiplying to
 
-|0  1|
-|-1 0|
+|0 -1|
+|1  0|
 
 and sent back to the LDU/UDL, while cases with B and/or C = 0 are just a
 degenerate scalings, resulting in images with X=0 and/or Y=0.
@@ -870,12 +870,12 @@ ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 	if ( matrix[0] == 0.0 ) {
 		if (matrix[3] == 0.0) {
 			if ( matrix[2] != 0.0 && matrix[1] != 0.0 ) {
-				/* scaling preceded by 90-rotation (0,1,-1,0) */
+				/* scaling preceded by 90-rotation (0,-1,1,0) */
 				steps[(*n_steps)++] = STEP_ROTATE_90;
-				local_matrix[0] =  matrix[2];
-				local_matrix[1] =  matrix[3];
-				local_matrix[2] = -matrix[0];
-				local_matrix[3] =  matrix[1];
+				local_matrix[0] =  matrix[1];
+				local_matrix[1] = -matrix[0];
+				local_matrix[2] =  matrix[3];
+				local_matrix[3] = -matrix[2];
 				matrix = local_matrix;
 				goto UDL;
 			} else {
@@ -887,18 +887,18 @@ ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 			}
 		} else {
 		UDL:
-			steps[(*n_steps)++] = STEP_SHEAR_X;
-			steps[(*n_steps)++] = STEP_SCALE;
 			steps[(*n_steps)++] = STEP_SHEAR_Y;
-			c[SHEAR_X] = matrix[1] / matrix[3];
-			c[SHEAR_Y] = matrix[2] / matrix[3];
+			steps[(*n_steps)++] = STEP_SCALE;
+			steps[(*n_steps)++] = STEP_SHEAR_X;
+			c[SHEAR_X] = matrix[2] / matrix[3];
+			c[SHEAR_Y] = matrix[1] / matrix[3];
 			c[SCALE_X] = matrix[0] - matrix[1] * matrix[2] / matrix[3];
 			c[SCALE_Y] = matrix[3];
 		}
 	} else {
-		steps[(*n_steps)++] = STEP_SHEAR_Y;
-		steps[(*n_steps)++] = STEP_SCALE;
 		steps[(*n_steps)++] = STEP_SHEAR_X;
+		steps[(*n_steps)++] = STEP_SCALE;
+		steps[(*n_steps)++] = STEP_SHEAR_Y;
 		c[SHEAR_X] = matrix[2] / matrix[0];
 		c[SHEAR_Y] = matrix[1] / matrix[0];
 		c[SCALE_X] = matrix[0];
@@ -930,7 +930,7 @@ select_ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 	if ( steps1[0] != STEP_ROTATE_90 ) {
 		int i;
 		float max1 = 0.0, max2 = 0.0;
-		float m2[4] = { matrix[2], matrix[3], -matrix[0], matrix[1] };
+		float m2[4] = { matrix[1], -matrix[0], matrix[3], -matrix[2] };
 		steps2[n_steps2++] = STEP_ROTATE_90;
 		ldu(m2, c2, steps2, &n_steps2);
 		/*
@@ -947,6 +947,7 @@ select_ldu( float *matrix, LDUCoeff c, int * steps, int * n_steps)
 			if ( max2 < max1 ) select_first = false;
 		}
 	}
+	/* printf("use LDU%d\n", select_first ? 1 : 2); */
 
 	if ( select_first ) {
 		memcpy( c, c1, sizeof(float) * ( MAX_LDU_COEFF + 1));
