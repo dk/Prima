@@ -2833,6 +2833,20 @@ FP(MaxId)
 END_TABLE(fp,UV)
 #undef FP
 
+/* font vector constants */
+#define FV(const_name) CONSTANT(fv,const_name)
+START_TABLE(fv,UV)
+#define    fvBitmap         0x0000
+FV(Bitmap)
+#define    fvOutline        0x0001
+FV(Outline)
+#define    fvDefault        0x0002
+FV(Default)
+#define    fvMask           0x0003
+END_TABLE(fv,UV)
+#undef FV
+
+
 /* font weigths */
 #define FW(const_name) CONSTANT(fw,const_name)
 START_TABLE(fw,UV)

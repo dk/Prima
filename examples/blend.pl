@@ -200,6 +200,7 @@ $w-> insert( Timer =>
 				lineWidth   => 5,
 				maskType    => 8,
 				autoMasking => 0,
+				font        => { vector => 1 },
 			);
 			$canvas-> end_paint_info;
 			$b->begin_paint;

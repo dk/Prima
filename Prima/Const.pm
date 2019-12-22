@@ -136,6 +136,8 @@ package
     fm; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# fill modes
 package
     ggo; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# glyph outline codes
+package
+    fv; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font vector constants
 
 1;
 

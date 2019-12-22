@@ -1258,6 +1258,7 @@ register_constants( void)
 	register_rgnop_constants();
 	register_fm_constants();
 	register_ggo_constants();
+	register_fv_constants();
 }
 
 XS( Object_alive_FROMPERL);
