@@ -143,7 +143,7 @@ sub set
 	$o-> $w( \%pr);
 }
 
-for ( qw( size name width height direction style pitch encoding)) {
+for ( qw( size name width height direction style pitch encoding vector)) {
 	eval <<GENPROC;
    sub $_
    {
@@ -155,8 +155,8 @@ GENPROC
 }
 
 for ( qw( ascent descent family weight maximalWidth internalLeading externalLeading
-			xDeviceRes yDeviceRes firstChar lastChar breakChar defaultChar vector
-	)) {
+	xDeviceRes yDeviceRes firstChar lastChar breakChar defaultChar 
+)) {
 	eval <<GENPROC;
    sub $_
    {
@@ -404,8 +404,8 @@ sub profile_default
 			width       => 0,
 			pitch       => fp::Default,
 			style       => fs::Normal,
-			aspect      => 1,
 			direction   => 0,
+			vector      => fv::Default,
 			name        => "Helv",
 			encoding    => "",
 		},

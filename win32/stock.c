@@ -350,17 +350,12 @@ patres_user( unsigned char * pattern, int len)
 #define FONTHASH_SIZE 563
 #define FONTIDHASH_SIZE 23
 
-typedef struct _FontInfo {
-	Font          font;
-	int           vectored;
-} FontInfo;
-
 typedef struct _FontHashNode
 {
 	struct _FontHashNode *next;
 	struct _FontHashNode *next2;
 	Font key;
-	FontInfo value;
+	Font value;
 } FontHashNode, *PFontHashNode;
 
 typedef struct _FontHash
@@ -452,7 +447,7 @@ find_node( const PFont font, Bool bySize)
 }
 
 Bool
-add_font_to_hash( const PFont key, const PFont font, int vectored, Bool addSizeEntry)
+add_font_to_hash( const PFont key, const PFont font, Bool addSizeEntry)
 {
 	PFontHashNode node;
 	unsigned long i;
@@ -460,8 +455,7 @@ add_font_to_hash( const PFont key, const PFont font, int vectored, Bool addSizeE
 	node = ( PFontHashNode) malloc( sizeof( FontHashNode));
 	if ( node == nil) return false;
 	memcpy( &(node-> key), key, sizeof( Font));
-	memcpy( &(node-> value. font), font, sizeof( Font));
-	node-> value. vectored = vectored;
+	memcpy( &(node-> value), font, sizeof( Font));
 	i = elf(key, 0);
 	node-> next = fontHash. buckets[ i];
 	fontHash. buckets[ i] = node;
@@ -474,12 +468,11 @@ add_font_to_hash( const PFont key, const PFont font, int vectored, Bool addSizeE
 }
 
 Bool
-get_font_from_hash( PFont font, int *vectored, Bool bySize)
+get_font_from_hash( PFont font, Bool bySize)
 {
 	PFontHashNode node = find_node( font, bySize);
 	if ( node == nil) return false;
-	*font = node-> value. font;
-	*vectored = node-> value. vectored;
+	*font = node-> value;
 	return true;
 }
 
@@ -714,7 +707,7 @@ reset_system_fonts(void)
 	memset( &guts. windowFont, 0, sizeof( Font));
 	strcpy( guts. windowFont. name, DEFAULT_WIDGET_FONT);
 	guts. windowFont. size  = DEFAULT_WIDGET_FONT_SIZE;
-	guts. windowFont. undef. width = guts. windowFont. undef. height = 1;
+	guts. windowFont. undef. width = guts. windowFont. undef. height = guts. windowFont. undef. vector = 1;
 	apc_font_pick( nilHandle, &guts. windowFont, &guts. windowFont);
 
 	guts. ncmData. cbSize = sizeof( NONCLIENTMETRICS);
@@ -744,6 +737,7 @@ font_logfont2font( LOGFONT * lf, Font * f, Point * res)
 	f-> size                = ( f-> height - tm. tmInternalLeading) * 72.0 / res-> y + 0.5;
 	f-> width               = lf-> lfWidth;
 	f-> direction           = (double)(lf-> lfEscapement) / 10.0;
+	f-> vector              = (( tm. tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? fvOutline : fvBitmap);
 	f-> style               = 0 |
 		( lf-> lfItalic     ? fsItalic     : 0) |
 		( lf-> lfUnderline  ? fsUnderlined : 0) |
@@ -767,7 +761,7 @@ font_font2logfont( Font * f, LOGFONT * lf)
 	lf-> lfItalic           = ( f-> style & fsItalic)     ? 1 : 0;
 	lf-> lfUnderline        = ( f-> style & fsUnderlined) ? 1 : 0;
 	lf-> lfStrikeOut        = ( f-> style & fsStruckOut)  ? 1 : 0;
-	lf-> lfOutPrecision     = OUT_TT_PRECIS;
+	lf-> lfOutPrecision     = f-> vector ? OUT_TT_PRECIS : OUT_RASTER_PRECIS;
 	lf-> lfClipPrecision    = CLIP_DEFAULT_PRECIS;
 	lf-> lfQuality          = PROOF_QUALITY;
 	lf-> lfPitchAndFamily   = FF_DONTCARE;
@@ -834,7 +828,7 @@ font_pp2font( char * presParam, Font * f)
 			p[ i] = 0;
 		}
 	}
-	f-> undef. width = f-> undef. height = 1;
+	f-> undef. width = f-> undef. height = f-> undef. vector = 1;
 	f-> direction = 0;
 }
 
@@ -843,6 +837,7 @@ apc_font_default( PFont font)
 {
 	*font = guts. windowFont;
 	font-> pitch = fpDefault;
+	font-> vector = fvDefault;
 	return font;
 }
 
@@ -854,11 +849,9 @@ apc_font_load( Handle self, char* filename)
 	return ret;
 }
 
-#define fgBitmap 0
-#define fgVector 1
-
 static Bool recursiveFF         = 0;
 static Bool recursiveFFEncoding = 0;
+static Bool recursiveFFPitch    = 0;
 
 typedef struct _FEnumStruc
 {
@@ -869,6 +862,7 @@ typedef struct _FEnumStruc
 	int           widValue;
 	int           fType;
 	Bool          useWidth;
+	Bool          wantOutline;
 	Bool          useVector;
 	Bool          usePitch;
 	Bool          forceSize;
@@ -896,6 +890,12 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, PFEnumStruc es)
 		int fpitch = ( t-> ntmTm. tmPitchAndFamily & TMPF_FIXED_PITCH) ? fpVariable : fpFixed;
 		if ( fpitch != font-> pitch)
 			return 1; // so this font cannot be selected due pitch pickup failure
+	}
+
+	if ( font-> vector != fvDefault) {
+		int fvector = (( t-> ntmTm. tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? fvOutline : fvBitmap);
+		if ( fvector != font-> vector)
+			return 1; // so this font cannot be selected due quality pickup failure
 	}
 
 	if ( type & TRUETYPE_FONTTYPE) {
@@ -986,19 +986,20 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 	Bool useNameSubplacing = false;
 	LOGFONTW elf;
 
-	if ( !dc) return fgBitmap;
+	if ( !dc) return fvBitmap;
 
 	memset( &es, 0, sizeof( es));
 	es. resValue       = es. heiValue = es. widValue = INT_MAX;
 	es. useWidth       = font-> width != 0;
-	es. useVector      = fabs(font-> direction) > 0.0001;
+	es. useVector      = font->vector != fvDefault;
+	es. wantOutline    = (font-> vector == fvDefault && fabs(font-> direction) > 0.0001) || font->vector == fvOutline;
 	es. usePitch       = font-> pitch != fpDefault;
 	es. res            = res;
 	es. forceSize      = forceSize;
 	es. font           = font;
 	es. matchILead     = forceSize ? ( font-> size >= 0) : ( font-> height >= 0);
 
-	useNameSubplacing = es. usePitch;
+	useNameSubplacing = es. usePitch || es. useVector;
 	if ( font-> height < 0) font-> height *= -1;
 	if ( font-> size   < 0) font-> size   *= -1;
 
@@ -1019,24 +1020,24 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 
 	// checking matched font, if available
 	if ( es. count > 0) {
-		if ( es. useVector) {
+		if ( es. wantOutline) {
 			if ( !es. vecId) useNameSubplacing = 1; // try other font if bitmap wouldn't fit
 			es. resValue = es. heiValue = INT_MAX;  // cancel bitmap font selection
 		}
 
 		// special synthesized GDI font case
 		if (
-				es. useWidth && ( es. widValue > 0) &&
+			es. useWidth && ( es. widValue > 0) &&
 			( es. heiValue == 0) &&
 			( es. fType & RASTER_FONTTYPE) &&
 			( font-> style & fsBold)
-			) {
+		) {
 				int r;
 				Font xf = *font;
 				xf. width--;
 				xf. style = 0; // any style could affect tmOverhang
 				r = font_font2gp( &xf, res, forceSize, dc);
-				if (( r == fgBitmap) && ( xf. width < font-> width)) {
+				if (( r == fvBitmap) && ( xf. width < font-> width)) {
 					LOGFONT lpf;
 					TEXTMETRICW tm;
 					font_font2logfont( &xf, &lpf);
@@ -1048,7 +1049,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 						font-> size   = xf. size;
 						font-> height = xf. height;
 						font-> maximalWidth += tm. tmOverhang;
-						out( fgBitmap);
+						out( fvBitmap);
 					}
 				}
 			}
@@ -1076,7 +1077,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 			strncpy( font-> family, es. family, LF_FULLFACESIZE);
 			font-> size     = ( es. tm. tmHeight - es. tm. tmInternalLeading) * 72.0 / res.y + 0.5;
 			font-> width    = es. lf. lfWidth;
-			out( fgBitmap);
+			out( fvBitmap);
 		}
 
 		// or vector font - for any purpose?
@@ -1106,19 +1107,40 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 
 			font_textmetric2font( &tm, font, true);
 			strncpy( font-> family, es. family, LF_FULLFACESIZE);
-			out( fgVector);
+			out( fvOutline);
 		}
 	}
 
 	// if strict match not found, use subplacing
-	if ( useNameSubplacing)
+	if ( useNameSubplacing && recursiveFFPitch == 0)
 	{
 		int ret;
 		int ogp  = font-> pitch;
+
+		if ( es. usePitch && es. useVector ) {
+			// is this too much? try first without vector
+			font-> vector = fvDefault;
+			ret = font_font2gp( font, res, forceSize, dc);
+			out(ret);
+		}
+
 		// setting some other( maybe other) font name
-		strcpy( font-> name, font-> pitch == fpFixed ?
-			guts. defaultFixedFont : guts. defaultVariableFont);
-		font-> pitch = fpDefault;
+		if ( es. usePitch) {
+			switch ( font->pitch ) {
+			case fpFixed:
+				strcpy( font-> name, guts. defaultFixedFont);
+				break;
+			case fpVariable:
+				strcpy( font-> name, guts. defaultVariableFont);
+				break;
+			}
+			font-> pitch = fpDefault;
+		}
+
+		if ( es. useVector )
+			font-> vector = fvDefault;
+
+		recursiveFFPitch++;
 		ret = font_font2gp( font, res, forceSize, dc);
 		// if that alternative match succeeded with name subplaced again, skip
 		// that result and use DEFAULT_SYSTEM_FONT match
@@ -1127,6 +1149,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 			font-> pitch = fpDefault;
 			ret = font_font2gp( font, res, forceSize, dc);
 		}
+		recursiveFFPitch--;
 		out( ret);
 	}
 
@@ -1147,36 +1170,35 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 		*font = guts. windowFont;
 		font-> pitch = fpDefault;
 		recursiveFF++;
-		r = ( recursiveFF < 3) ? font_font2gp( font, res, forceSize, dc) : fgBitmap;
+		r = ( recursiveFF < 3) ? font_font2gp( font, res, forceSize, dc) : fvBitmap;
 		recursiveFF--;
 		out( r);
 	}
-	return fgBitmap;
+	return fvBitmap;
 #undef out
 }
 
 static int
 font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
 {
-	int vectored;
 	Font key;
 	Bool addSizeEntry;
 
 	font-> resolution = res. y * 0x10000 + res. x;
-	if ( get_font_from_hash( font, &vectored, forceSize))
-		return vectored;
+	if ( get_font_from_hash( font, forceSize))
+		return font->vector;
 	memcpy( &key, font, sizeof( Font));
-	vectored = font_font2gp_internal( font, res, forceSize, dc);
+	font_font2gp_internal( font, res, forceSize, dc);
 	font-> resolution = res. y * 0x10000 + res. x;
 	if ( forceSize) {
 		key. height = font-> height;
 		addSizeEntry = true;
 	} else {
 		key. size  = font-> size;
-		addSizeEntry = vectored ? (( key. height == key. width)  || ( key. width == 0)) : true;
+		addSizeEntry = (font->vector > fvBitmap) ? (( key. height == key. width)  || ( key. width == 0)) : true;
 	}
-	add_font_to_hash( &key, font, vectored, addSizeEntry);
-	return vectored;
+	add_font_to_hash( &key, font, addSizeEntry);
+	return font->vector;
 }
 
 Bool

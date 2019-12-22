@@ -609,7 +609,7 @@ LRESULT CALLBACK    layered_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, 
 LRESULT CALLBACK    generic_view_handler     ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 
 extern int          arc_completion( double * angleStart, double * angleEnd, int * needFigure);
-extern Bool         add_font_to_hash( const PFont key, const PFont font, int vectored, Bool addSizeEntry);
+extern Bool         add_font_to_hash( const PFont key, const PFont font, Bool addSizeEntry);
 extern void         adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth);
 extern void         cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
 extern Bool         create_font_hash( void);
@@ -630,7 +630,7 @@ extern void         font_free( PDCFont res, Bool permanent);
 extern void         font_logfont2font( LOGFONT * lf, Font * font, Point * resolution);
 extern void         font_pp2font( char * presParam, Font * font);
 extern void         font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readOnly);
-extern Bool         get_font_from_hash( PFont font, int *vectored, Bool bySize);
+extern Bool         get_font_from_hash( PFont font, Bool bySize);
 extern Point        get_window_borders( int borderStyle);
 extern Bool         hwnd_check_limits( int x, int y, Bool uint);
 extern void         hwnd_enter_paint( Handle self);

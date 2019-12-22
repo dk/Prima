@@ -205,6 +205,7 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 	Bool useStyle  = !source-> undef. style;
 	Bool useDir    = !source-> undef. direction;
 	Bool useName   = !source-> undef. name;
+	Bool useVec    = !source-> undef. vector;
 	Bool useEnc    = !source-> undef. encoding;
 
 	/* assignning values */
@@ -216,6 +217,7 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 		if ( useStyle ) dest-> style     = source-> style;
 		if ( usePitch ) dest-> pitch     = source-> pitch;
 		if ( useSize  ) dest-> size      = source-> size;
+		if ( useVec   ) dest-> vector    = source-> vector;
 		if ( useName  ) strcpy( dest-> name, source-> name);
 		if ( useEnc   ) strcpy( dest-> encoding, source-> encoding);
 	}
@@ -241,13 +243,16 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 		else if ( dest-> size   > 16383 ) dest-> size   = 16383;
 	if ( dest-> name[0] == 0)
 		strcpy( dest-> name, "Default");
-	if ( dest-> pitch < fpDefault || dest-> pitch > fpFixed)
+	if ( dest-> undef.pitch || dest-> pitch < fpDefault || dest-> pitch > fpFixed)
 		dest-> pitch = fpDefault;
 	if ( dest-> undef. direction )
 		dest-> direction = 0;
 	if ( dest-> undef. style )
 		dest-> style = 0;
+	if ( dest-> undef. vector || dest-> vector < fvBitmap || dest-> vector > fvDefault)
+		dest-> vector = fvDefault;
 	memset(&dest->undef, 0, sizeof(dest->undef));
+	printf("%d %d %d\n", useVec, source->vector, dest->vector);
 
 	return useSize && !useHeight;
 }
