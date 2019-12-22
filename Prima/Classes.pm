@@ -406,7 +406,7 @@ sub profile_default
 			style       => fs::Normal,
 			direction   => 0,
 			vector      => fv::Default,
-			name        => "Helv",
+			name        => "Default",
 			encoding    => "",
 		},
 		lineEnd         => le::Round,
