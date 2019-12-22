@@ -239,7 +239,7 @@ prima_gtk_init(void)
 		if ( pango_font_description_get_style(t->font_desc) == PANGO_STYLE_ITALIC)
 			f-> style |= fsItalic;
 		strcpy( f->encoding, "Default" );
-		f-> undef. width = f-> undef. height = f-> undef. pitch = 1;
+		f-> undef. width = f-> undef. height = f-> undef. pitch = f-> undef. vector = 1;
 		apc_font_pick( application, f, f);
 #define DEBUG_FONT(font) f->height,f->width,f->size,f->name,f->encoding
 		Fdebug("gtk-font (%s): %d.[w=%d,s=%d].%s.%s\n", s->name, DEBUG_FONT(f));

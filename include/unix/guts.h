@@ -242,6 +242,7 @@ typedef struct _FontKey
 	int style;
 	int pitch;
 	int direction;
+	int vector;
 	char name[ 256];
 } FontKey, *PFontKey;
 

@@ -47,7 +47,8 @@ fill_default_font( Font * font )
 	font-> size = 12;
 	font-> style = fsNormal;
 	font-> pitch = fpDefault;
-	font-> undef. height = font-> undef. width = 1;
+	font-> vector = fvDefault;
+	font-> undef. height = font-> undef. width = font-> undef. vector = 1;
 }
 
 /* Extracts font name, charset, foundry etc from X properties, if available.
@@ -447,7 +448,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				if ( do_vector_fonts && ( vector == 5 || vector == 3)) {
 					char pattern[ 1024], *pat = pattern;
 					int dash = 0;
-					info-> font. vector = true;
+					info-> font. vector = fvScalableBitmap;
 					if ( guts. no_scaled_fonts) info-> flags. disabled = true;
 					info-> flags. bad_vector = (vector == 3);
 
@@ -477,7 +478,7 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 					if (( info-> vecname = malloc( pat - pattern)))
 						strcpy( info-> vecname, pattern);
 				} else
-					info-> font. vector = false;
+					info-> font. vector = fvBitmap;
 				info-> flags. vector = true;
 			}
 		}
@@ -499,7 +500,7 @@ pick_default_font_with_encoding(void)
 			if ( info-> font. style == fsNormal) weight++;
 			if ( info-> font. weight == fwMedium) weight++;
 			if ( info-> font. pitch == fpVariable) weight++;
-			if ( info-> font. vector) weight++;
+			if ( info-> font. vector > fvBitmap) weight++;
 			if (
 				( strcmp( info-> font.name, "helvetica") == 0 ) ||
 				( strcmp( info-> font.name, "arial") == 0 )
@@ -600,7 +601,7 @@ prima_init_font_subsystem( char * error_buf)
 
 	for ( i = 0, j = 0; i < count; i++) {
 		if ( xlfd_parse_font( names[i], info + j, true)) {
-			vector_fonts += info[j]. font. vector;
+			vector_fonts += ( info[j]. font. vector == fvBitmap ) ? 0 : 1;
 			info[j]. xname = names[ i];
 			j++;
 		} else
@@ -1421,7 +1422,7 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 		if ( fi-> flags. funky && !enc_match) diff += 10000.0;
 	}
 
-	if ( fi-> font. vector) {
+	if ( fi-> font. vector > fvBitmap) {
 		if ( fi-> flags. bad_vector) {
 			diff += 20.0;
 		}
@@ -1452,7 +1453,7 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 	}
 
 	if ( f-> width) {
-		if ( fi-> font. vector) {
+		if ( fi-> font. vector > fvBitmap ) {
 			if ( fi-> flags. bad_vector) {
 				diff += 20.0;
 			}
@@ -1719,13 +1720,12 @@ apc_fonts( Handle self, const char *facename, const char * encoding, int *retCou
 		for ( i = 0; i < count; i++) {
 			if ( info[ i]. flags. disabled) continue;
 			if (
-					( stricmp( info[ i].font.name, facename) == 0) &&
-					(
-						!encoding ||
-						( strcmp( info[ i].xname + info[ i].info_offset, encoding) == 0)
-					)
+				( stricmp( info[ i].font.name, facename) == 0) &&
+				(
+					!encoding ||
+					( strcmp( info[ i].xname + info[ i].info_offset, encoding) == 0)
 				)
-			{
+			) {
 				table[ n_table++] = info + i;
 			}
 		}
