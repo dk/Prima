@@ -2842,6 +2842,8 @@ FV(Bitmap)
 FV(Outline)
 #define    fvDefault        0x0002
 FV(Default)
+#define    fvScalableBitmap 0x0003
+FV(ScalableBitmap)
 #define    fvMask           0x0003
 END_TABLE(fv,UV)
 #undef FV

@@ -293,18 +293,34 @@ they are ignored.
 
 =item pitch
 
-A one of three constants:
+One of three constants:
 
    fp::Default
    fp::Fixed
    fp::Variable
 
-fp::Default specifies no interest about font pitch selection.
-fp::Fixed is set when a monospaced (all glyphs are of same width) font
-is desired. fp::Variable pitch
+C<fp::Default> specifies no interest about font pitch selection.
+C<fp::Fixed> is set when a monospaced (all glyphs are of same width) font
+is desired. C<fp::Variable> pitch
 specifies a font with different glyph widths. This key
 is of the highest priority; all other keys may be altered for
 the consistency of the pitch key.
+
+=item vector
+
+On of three constants:
+
+   fv::Default
+   fv::Bitmap
+   fv::Outline
+
+C<fv::Default> specifies no interest about font type selection,
+C<fv::Bitmap> sets priority for bitmap fonts, C<fv::Outline> for vector fonts.
+
+Additionally, font entries returned from C<fonts> method may set C<vector> to
+C<fv::ScalableBitmap>, to distingush a bitmap font face that comes with predefined
+bitmap sets from a scalable font.
+
 
 =item direction
 

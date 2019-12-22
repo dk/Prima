@@ -382,7 +382,10 @@ fcpattern2font( FcPattern * pattern, PFont font)
 		XFTdebug("size unknown");
 	}
 
-	FcPatternGetBool( pattern, FC_SCALABLE, 0, &font-> vector);
+	/* fvBitmap is 0, fvOutline is 1 */
+	font-> vector = fvOutline;
+	if ( FcPatternGetBool( pattern, FC_SCALABLE, 0, &font-> vector) == FcResultMatch) 
+		font-> undef. vector = 0;
 
 	font-> firstChar = 32; font-> lastChar = 255;
 	font-> breakChar = 32; font-> defaultChar = 32;
@@ -435,9 +438,10 @@ xft_build_font_key( PFontKey key, PFont f, Bool bySize)
 {
 	bzero( key, sizeof( FontKey));
 	key-> height = bySize ? -f-> size : f-> height;
-	key-> width = f-> width;
-	key-> style = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut) & fsMask;
-	key-> pitch = f-> pitch & fpMask;
+	key-> width  = f-> width;
+	key-> style  = f-> style & ~(fsUnderlined|fsOutline|fsStruckOut) & fsMask;
+	key-> pitch  = f-> pitch & fpMask;
+	key-> vector = (f-> vector == fvBitmap) ? 0 : 1;
 	key-> direction = ROUGHLY(f-> direction);
 	strcpy( key-> name, f-> name);
 }
@@ -624,7 +628,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	/* see if the font is not present in xft - the hashed negative matches
 			are stored with width=0, as the width alterations are derived */
 	xft_build_font_key( &key, &requested_font, by_size);
-	XFTdebug("want %dx%d.%s.%s.%s/%s^%g", key.height, key. width, _F_DEBUG_STYLE(key.style), _F_DEBUG_PITCH(key.pitch), key.name, requested_font.encoding, ROUGHLY(requested_font.direction));
+	XFTdebug("want %dx%d.%s.%s.%s/%s^%g.%d", key.height, key. width, _F_DEBUG_STYLE(key.style), _F_DEBUG_PITCH(key.pitch), key.name, requested_font.encoding, ROUGHLY(requested_font.direction), requested_font.vector);
 
 	key. width = 0;
 	if ( hash_fetch( mismatch, &key, sizeof( FontKey))) {
@@ -721,7 +725,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 	FcPatternAddInteger( request, FC_WEIGHT,
 				( requested_font. style & fsBold) ? FC_WEIGHT_BOLD :
 				( requested_font. style & fsThin) ? FC_WEIGHT_THIN : FC_WEIGHT_NORMAL);
-	FcPatternAddBool( request, FC_SCALABLE, 1);
+	FcPatternAddBool( request, FC_SCALABLE, requested_font. vector > fvBitmap );
 	if ( !IS_ZERO(requested_font. direction) || requested_font. width != 0) {
 		FcMatrix mat;
 		FcMatrixInit(&mat);
@@ -832,7 +836,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 
 	/* Check if the matched font is scalable -- see comments in the beginning
 		of the file about non-scalable fonts in Xft */
-	{
+	if ( requested_font. vector > fvBitmap ) {
 		FcBool scalable;
 		if (( FcPatternGetBool( match, FC_SCALABLE, 0, &scalable) == FcResultMatch) && !scalable) {
 			xft_build_font_key( &key, &requested_font, by_size);
@@ -1830,7 +1834,7 @@ prima_xft_parse( char * ppFontNameSize, Font * font)
 	Font f, def = guts. default_font;
 
 	bzero( &f, sizeof( Font));
-	f. undef. height = f. undef. width = f. undef. size = 1;
+	f. undef. height = f. undef. width = f. undef. size = f. undef. vector = f. undef. pitch = 1;
 	fcpattern2font( p, &f);
 	f. undef. width = 1;
 	FcPatternGetCharSet( p, FC_CHARSET, 0, &c);
