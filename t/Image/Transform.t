@@ -120,7 +120,7 @@ for (my $i = 0; $i < 360; $i++) {
 	my $dy = ($p-> height - $d->height) / 2; 
 	$p->put_image($dx,$dy,$d,rop::OrPut);
 }
-my $sum = $p->sum / 255;
+$sum = $p->sum / 255;
 ok(( $sum > 250 && $sum < 430), "rotation 360 by transform2d seems performing");
 $p->color(cl::Black);
 $p->lineWidth(8);
