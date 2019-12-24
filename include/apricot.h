@@ -3434,8 +3434,8 @@ apc_gp_flood_fill( Handle self, int x, int y, Color borderColor, Bool singleBord
 #define GGO(const_name) CONSTANT(ggo,const_name)
 START_TABLE(ggo,UV)
 #define ggoGlyphIndex   0x01
-#define ggoUseHints     0x02 
-#define ggoUnicode      0x03
+#define ggoUseHints     0x02
+#define ggoUnicode      0x04
 
 #define ggoMove         0
 GGO(Move)
