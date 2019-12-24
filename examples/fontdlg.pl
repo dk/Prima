@@ -265,7 +265,7 @@ sub create_info_window
 		backColor => cl::White,
 		#buffered => 1,
 		name    => 'Glyph',
-		textOutBaseline => 0,
+		textOutBaseline => 1,
 		onPaint => sub {
 			my $self = shift;
 			$self-> clear;
@@ -286,7 +286,7 @@ sub create_info_window
 			$dy -= $d if $d < 0;
 
 			my $fh = $self-> font->height;
-			$self-> text_out( $C, $dx, $dy );
+			$self-> text_out( $C, $dx, $dy + $self->font-> descent);
 
 			$dx = abs($a);
 			$dy = abs($d);
@@ -300,10 +300,11 @@ sub create_info_window
 			$dy = (( $d < 0 ) ? 0 : $d) + $e + (( $f < 0 ) ? 0 : $f) - abs($f);
 			$self-> line(0, $dy, $self->width, $dy);
 
-			$self-> linePattern(lp::DotDot);
+			$self-> linePattern(lp::Solid);
 			$self-> color(cl::LightRed);
 			my $path = $self-> new_path;
-			$path-> text( $C, $dx, $dy );
+			$path->translate( -$a, 0 ) if $a < 0;
+			$path-> text( $C, baseline => 0 );
 			$path->stroke;
 		},
 	);

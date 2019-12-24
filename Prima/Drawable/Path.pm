@@ -171,6 +171,7 @@ sub glyph
 		my $pts = $outline->[$i++] * 2;
 		my @pts = map { $outline->[$i++] / 64.0 } 0 .. $pts - 1;
 		if ( $cmd == ggo::Move ) {
+			$self->close;
 			$self->moveto(@pts);
 		} elsif ( $cmd == ggo::Line ) {
 			$self->line([ @p, @pts ]);
