@@ -299,6 +299,12 @@ sub create_info_window
 			$self-> line(0, $dy, $self->width, $dy);
 			$dy = (( $d < 0 ) ? 0 : $d) + $e + (( $f < 0 ) ? 0 : $f) - abs($f);
 			$self-> line(0, $dy, $self->width, $dy);
+
+			$self-> linePattern(lp::DotDot);
+			$self-> color(cl::LightRed);
+			my $path = $self-> new_path;
+			$path-> text( $C, $dx, $dy );
+			$path->stroke;
 		},
 	);
 
