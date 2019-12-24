@@ -166,12 +166,13 @@ sub glyph
 	return unless $outline;
 	my $size = scalar(@$outline);
 	my @p;
+	my $fill = delete $opt{fill};
 	for ( my $i = 0; $i < $size; ) {
 		my $cmd = $outline->[$i++];
 		my $pts = $outline->[$i++] * 2;
 		my @pts = map { $outline->[$i++] / 64.0 } 0 .. $pts - 1;
 		if ( $cmd == ggo::Move ) {
-			$self->close;
+			$self->close unless $fill;
 			$self->moveto(@pts);
 		} elsif ( $cmd == ggo::Line ) {
 			$self->line([ @p, @pts ]);
@@ -1089,7 +1090,8 @@ Adds full ellipse to the path.
 =item glyph INDEX, %OPTIONS
 
 Adds glyph outline to the path. C<%OPTIONS> are passed as is to L<Prima::Drawable/renger_glyph>.
-Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set.
+Note that filled glyphs require C<fillMode> without the C<fm::Overlay> bit set and C<fill> option set
+to generate proper shapes with holes.
 
 =item line, rline @POINTS
 
