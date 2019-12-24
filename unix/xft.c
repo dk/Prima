@@ -1940,6 +1940,7 @@ store_command( OutlineStorage * storage, int cmd, const FT_Vector * p1, const FT
 		storage-> size = 256;
 		if ( !( storage-> buffer = malloc(sizeof(int) * storage->size)))
 			return 1;
+
 	} else if ( storage-> count + 7 >= storage->size ) {
 		int * r;
 		storage-> size *= 2;
@@ -1950,6 +1951,7 @@ store_command( OutlineStorage * storage, int cmd, const FT_Vector * p1, const FT
 			storage-> count = 0;
 			return 1;
 		}
+		storage-> buffer = r;
 	}
 
 	if ( 

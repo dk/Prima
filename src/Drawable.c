@@ -809,10 +809,10 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 			/* primitive line detection */
 			tangent = tangent_detect( rendered-1, rendered);
 			if ( tangent == 0 ) continue;
-			if ( i > 1 && tangent > 0 && tangent == last_tangent) {
+			if ( final_size > 1 && tangent > 0 && tangent == last_tangent) {
 				tangent_apply( tangent, rendered-1);
 				continue;
-			} else if ( cut_corner(last_tangent, tangent, rendered-2, rendered-1)) {
+			} else if ( final_size > 1 && cut_corner(last_tangent, tangent, rendered-2, rendered-1)) {
 			/* primitive corner detection - convert 4-connectivity into 8- */
 				*(rendered-1) = *rendered;
 				tangent = -1;
