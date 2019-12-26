@@ -409,7 +409,7 @@ collide with the path boundaries and each other.
   $::application-> spline($spline);
   $::application-> curved_text_out( 'Hello, world!', $::application-> render_spline( $spline ));
 
-=for podview <img src="curvedtext.gif">
+=for podview <img src="Prima/curvedtext.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/curvedtext.gif">
 

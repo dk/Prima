@@ -270,7 +270,7 @@ adding C<new_gradient> function.
 		palette => [ cl::White, cl::Blue, cl::White ],
 	)-> sector(50,50,100,100,0,360);
 
-=for podview <img src="gradient.gif">
+=for podview <img src="Prima/gradient.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/gradient.gif">
 
