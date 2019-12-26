@@ -1041,7 +1041,7 @@ to be used for drawing or clipping shapes.
 		arc( 0, 0, $d1 + $dx * 4, $d1 + $dx * 3, 270, 360)->
 	stroke;
 
-=for podview <img src="path.gif">
+=for podview <img src="Prima/path.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/path.gif">
 

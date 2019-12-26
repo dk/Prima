@@ -18,7 +18,7 @@ Prima::Markup - Allow markup in Prima Widgets
     );
     run Prima;
 
-=for podview <img src="markup.gif" cut=1>
+=for podview <img src="Prima/markup.gif" cut=1>
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/markup.gif">
 
