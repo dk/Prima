@@ -368,6 +368,12 @@ sub Ext_Change
 	my ( $self, $ext) = @_;
 	$self-> SUPER::Ext_Change( $ext);
 	my $codec = $self-> {codecs}-> [ $self-> filterIndex];
+	my $old   = $self-> Name->text;
+	my $new   = $codec->{fileExtensions}->[0];
+	if ( $old =~ /\.\w+$/ ) {
+		$old =~ s/\.\w+$/.$new/;
+		$self-> Name->text($old);
+	}
 	$self-> ExtensionsLabel-> text("Sav~e as type ($codec->{fileShortType})");
 	$self-> update_conversion( $codec);
 }
@@ -441,7 +447,7 @@ sub save
 					Prima::MsgBox::message(
 						"Error invoking $codec->{fileShortType} filter dialog:$@"
 					);
-				} else {
+				} elsif ( $codec->{package}->can('save_dialog')) {
 					$self-> {codecFilters}-> [$fi] =
 						$codec-> {package}-> save_dialog( $codec);
 				}
