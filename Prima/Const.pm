@@ -138,6 +138,8 @@ package
     ggo; *AUTOLOAD = \&Prima::Const::AUTOLOAD;# glyph outline codes
 package
     fv; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# font vector constants
+package
+    dnd; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# drag-and-drop constants
 
 1;
 

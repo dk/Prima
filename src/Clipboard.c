@@ -294,19 +294,29 @@ XS( Clipboard_get_formats_FROMPERL)
 	dXSARGS;
 	Handle self;
 	int i;
-	PClipboardFormatReg list;
+	Bool include_unregistered;
 
-	if ( items != 1)
+	if ( items != 1 && items != 2)
 		croak ("Invalid usage of Clipboard.get_formats");
 	SP -= items;
 	self = gimme_the_mate( ST( 0));
 	if ( self == nilHandle)
 		croak( "Illegal object reference passed to Clipboard.get_formats");
+	include_unregistered = (items > 1) ? SvBOOL(ST(1)) : false;
 	my-> open( self);
-	list = formats;
-	for ( i = 0; i < formatCount; i++) {
-		if ( !apc_clipboard_has_format( self, list[ i]. sysId)) continue;
-		XPUSHs( sv_2mortal( newSVpv( list[ i]. id, 0)));
+	if ( include_unregistered ) {
+		PList list = apc_clipboard_get_formats(self);
+		if (list) for ( i = 0; i < list->count; i++) {
+			XPUSHs( sv_2mortal( newSVpv( (char*) list->items[i], 0)));
+			free( (void*) list->items[i] );
+		}
+		free(list);
+	} else {
+		PClipboardFormatReg list = formats;
+		for ( i = 0; i < formatCount; i++) {
+			if ( !apc_clipboard_has_format( self, list[ i]. sysId)) continue;
+			XPUSHs( sv_2mortal( newSVpv( list[ i]. id, 0)));
+		}
 	}
 	my-> close( self);
 	PUTBACK;
@@ -354,8 +364,8 @@ XS( Clipboard_get_standard_clipboards_FROMPERL)
 	PUTBACK;
 }
 
-void Clipboard_get_formats                       ( Handle self) { warn("Invalid call of Clipboard::get_formats"); }
-void Clipboard_get_formats_REDEFINED             ( Handle self) { warn("Invalid call of Clipboard::get_formats"); }
+void Clipboard_get_formats                       ( Handle self, Bool unr) { warn("Invalid call of Clipboard::get_formats"); }
+void Clipboard_get_formats_REDEFINED             ( Handle self, Bool unr) { warn("Invalid call of Clipboard::get_formats"); }
 void Clipboard_get_registered_formats            ( Handle self) { warn("Invalid call of Clipboard::get_registered_formats"); }
 void Clipboard_get_registered_formats_REDEFINED  ( Handle self) { warn("Invalid call of Clipboard::get_registered_formats"); }
 void Clipboard_get_standard_clipboards               ( Handle self) { warn("Invalid call of Clipboard::get_standard_clipboards"); }

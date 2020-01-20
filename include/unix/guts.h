@@ -427,45 +427,81 @@ typedef struct {
 #define AI_NET_CURRENT_DESKTOP           31
 #define AI_NET_WORKAREA                  32
 #define AI_NET_WM_STATE_ABOVE            33
-#define AI_count                         34
+#define AI_XdndEnter                     34
+#define AI_XdndPosition                  35
+#define AI_XdndStatus                    36
+#define AI_XdndTypeList                  37
+#define AI_XdndActionCopy                38
+#define AI_XdndDrop                      39
+#define AI_XdndLeave                     40
+#define AI_XdndFinished                  41
+#define AI_XdndSelection                 42
+#define AI_XdndProxy                     43
+#define AI_XdndAware                     44
+#define AI_XdndActionMove                45
+#define AI_XdndActionLink                46
+#define AI_XdndActionAsk                 47
+#define AI_XdndActionPrivate             48
+#define AI_XdndActionList                49
+#define AI_XdndActionDescription         50
+#define AI_PLAINTEXT_MIME                51
+#define AI_count                         52
 
-#define FXA_RESOLUTION_X pguts-> atoms[ AI_FXA_RESOLUTION_X]
-#define FXA_RESOLUTION_Y pguts-> atoms[ AI_FXA_RESOLUTION_Y]
-#define FXA_POINT_SIZE XA_POINT_SIZE
-#define FXA_PIXEL_SIZE pguts-> atoms[ AI_FXA_PIXEL_SIZE]
-#define FXA_SPACING pguts-> atoms[ AI_FXA_SPACING]
-#define FXA_WEIGHT XA_WEIGHT
-#define FXA_RELATIVE_WEIGHT pguts-> atoms[ AI_FXA_RELATIVE_WEIGHT]
-#define FXA_FOUNDRY pguts-> atoms[ AI_FXA_FOUNDRY]
-#define FXA_FAMILY_NAME XA_FAMILY_NAME
-#define FXA_AVERAGE_WIDTH   pguts-> atoms[ AI_FXA_AVERAGE_WIDTH]
-#define FXA_CHARSET_REGISTRY pguts-> atoms[ AI_FXA_CHARSET_REGISTRY]
-#define FXA_CHARSET_ENCODING pguts-> atoms[ AI_FXA_CHARSET_ENCODING]
-#define FXA_CAP_HEIGHT XA_CAP_HEIGHT
-#define CREATE_EVENT pguts-> atoms[ AI_CREATE_EVENT]
-#define WM_DELETE_WINDOW pguts-> atoms[ AI_WM_DELETE_WINDOW]
-#define WM_PROTOCOLS pguts-> atoms[ AI_WM_PROTOCOLS]
-#define WM_TAKE_FOCUS pguts-> atoms[ AI_WM_TAKE_FOCUS]
-#define NET_WM_STATE pguts-> atoms[ AI_NET_WM_STATE]
-#define NET_WM_STATE_SKIP_TASKBAR pguts-> atoms[ AI_NET_WM_STATE_SKIP_TASKBAR]
-#define NET_WM_STATE_MAXIMIZED_VERT pguts-> atoms[ AI_NET_WM_STATE_MAXIMIZED_VERT]
-#define NET_WM_STATE_MAXIMIZED_HORZ pguts-> atoms[ (pguts-> net_wm_maximize_HORZ_vs_HORIZ > 0) ? pguts-> net_wm_maximize_HORZ_vs_HORIZ : AI_NET_WM_STATE_MAXIMIZED_HORZ]
-#define NET_WM_NAME pguts-> atoms[ AI_NET_WM_NAME]
-#define NET_WM_ICON_NAME pguts-> atoms[ AI_NET_WM_ICON_NAME]
-#define UTF8_STRING pguts-> atoms[ AI_UTF8_STRING]
-#define CF_TARGETS pguts-> atoms[ AI_TARGETS]
-#define XA_INCR  pguts-> atoms[ AI_INCR]
-#define CF_PIXEL pguts-> atoms[ AI_PIXEL]
-#define CF_FOREGROUND pguts-> atoms[ AI_FOREGROUND]
-#define CF_BACKGROUND pguts-> atoms[ AI_BACKGROUND]
-#define XA_MOTIF_WM_HINTS pguts-> atoms[ AI_MOTIF_WM_HINTS]
-#define NET_WM_STATE_MODAL pguts-> atoms[ AI_NET_WM_STATE_MODAL]
-#define NET_SUPPORTED pguts-> atoms[ AI_NET_SUPPORTED]
-#define UTF8_MIME pguts-> atoms[ AI_UTF8_MIME]
-#define NET_WM_STATE_STAYS_ON_TOP pguts-> atoms[ AI_NET_WM_STATE_STAYS_ON_TOP]
-#define NET_CURRENT_DESKTOP pguts-> atoms[ AI_NET_CURRENT_DESKTOP]
-#define NET_WORKAREA pguts-> atoms[ AI_NET_WORKAREA]
-#define NET_WM_STATE_ABOVE pguts-> atoms[ AI_NET_WM_STATE_ABOVE]
+#define FXA_RESOLUTION_X            pguts->atoms[AI_FXA_RESOLUTION_X           ]
+#define FXA_RESOLUTION_Y            pguts->atoms[AI_FXA_RESOLUTION_Y           ]
+#define FXA_POINT_SIZE              XA_POINT_SIZE
+#define FXA_PIXEL_SIZE              pguts->atoms[AI_FXA_PIXEL_SIZE             ]
+#define FXA_SPACING                 pguts->atoms[AI_FXA_SPACING                ]
+#define FXA_WEIGHT                  XA_WEIGHT
+#define FXA_RELATIVE_WEIGHT         pguts->atoms[AI_FXA_RELATIVE_WEIGHT        ]
+#define FXA_FOUNDRY                 pguts->atoms[AI_FXA_FOUNDRY                ]
+#define FXA_FAMILY_NAME             XA_FAMILY_NAME
+#define FXA_AVERAGE_WIDTH           pguts->atoms[AI_FXA_AVERAGE_WIDTH          ]
+#define FXA_CHARSET_REGISTRY        pguts->atoms[AI_FXA_CHARSET_REGISTRY       ]
+#define FXA_CHARSET_ENCODING        pguts->atoms[AI_FXA_CHARSET_ENCODING       ]
+#define FXA_CAP_HEIGHT              XA_CAP_HEIGHT
+#define CREATE_EVENT                pguts->atoms[AI_CREATE_EVENT               ]
+#define WM_DELETE_WINDOW            pguts->atoms[AI_WM_DELETE_WINDOW           ]
+#define WM_PROTOCOLS                pguts->atoms[AI_WM_PROTOCOLS               ]
+#define WM_TAKE_FOCUS               pguts->atoms[AI_WM_TAKE_FOCUS              ]
+#define NET_WM_STATE                pguts->atoms[ AI_NET_WM_STATE              ]
+#define NET_WM_STATE_SKIP_TASKBAR   pguts->atoms[AI_NET_WM_STATE_SKIP_TASKBAR  ]
+#define NET_WM_STATE_MAXIMIZED_VERT pguts->atoms[AI_NET_WM_STATE_MAXIMIZED_VERT]
+#define NET_WM_STATE_MAXIMIZED_HORZ pguts->atoms[(pguts-> net_wm_maximize_HORZ_vs_HORIZ > 0) ? pguts-> net_wm_maximize_HORZ_vs_HORIZ : AI_NET_WM_STATE_MAXIMIZED_HORZ]
+#define NET_WM_NAME                 pguts->atoms[AI_NET_WM_NAME                ]
+#define NET_WM_ICON_NAME            pguts->atoms[AI_NET_WM_ICON_NAME           ]
+#define UTF8_STRING                 pguts->atoms[AI_UTF8_STRING                ]
+#define CF_TARGETS                  pguts->atoms[AI_TARGETS                    ]
+#define XA_INCR                     pguts->atoms[AI_INCR                       ]
+#define CF_PIXEL                    pguts->atoms[AI_PIXEL                      ]
+#define CF_FOREGROUND               pguts->atoms[AI_FOREGROUND                 ]
+#define CF_BACKGROUND               pguts->atoms[AI_BACKGROUND                 ]
+#define XA_MOTIF_WM_HINTS           pguts->atoms[AI_MOTIF_WM_HINTS             ]
+#define NET_WM_STATE_MODAL          pguts->atoms[AI_NET_WM_STATE_MODAL         ]
+#define NET_SUPPORTED               pguts->atoms[AI_NET_SUPPORTED              ]
+#define UTF8_MIME                   pguts->atoms[AI_UTF8_MIME                  ]
+#define NET_WM_STATE_STAYS_ON_TOP   pguts->atoms[AI_NET_WM_STATE_STAYS_ON_TOP  ]
+#define NET_CURRENT_DESKTOP         pguts->atoms[AI_NET_CURRENT_DESKTOP        ]
+#define NET_WORKAREA                pguts->atoms[AI_NET_WORKAREA               ]
+#define NET_WM_STATE_ABOVE          pguts->atoms[AI_NET_WM_STATE_ABOVE         ]
+#define XdndEnter                   pguts->atoms[AI_XdndEnter                  ]
+#define XdndPosition                pguts->atoms[AI_XdndPosition               ]
+#define XdndStatus                  pguts->atoms[AI_XdndStatus                 ]
+#define XdndTypeList                pguts->atoms[AI_XdndTypeList               ]
+#define XdndActionCopy              pguts->atoms[AI_XdndActionCopy             ]
+#define XdndDrop                    pguts->atoms[AI_XdndDrop                   ]
+#define XdndLeave                   pguts->atoms[AI_XdndLeave                  ]
+#define XdndFinished                pguts->atoms[AI_XdndFinished               ]
+#define XdndSelection               pguts->atoms[AI_XdndSelection              ]
+#define XdndProxy                   pguts->atoms[AI_XdndProxy                  ]
+#define XdndAware                   pguts->atoms[AI_XdndAware                  ]
+#define XdndActionMove              pguts->atoms[AI_XdndActionMove             ]
+#define XdndActionLink              pguts->atoms[AI_XdndActionLink             ]
+#define XdndActionAsk               pguts->atoms[AI_XdndActionAsk              ]
+#define XdndActionPrivate           pguts->atoms[AI_XdndActionPrivate          ]
+#define XdndActionList              pguts->atoms[AI_XdndActionList             ]
+#define XdndActionDescription       pguts->atoms[AI_XdndActionDescription      ]
+#define PLAINTEXT_MIME              pguts->atoms[AI_PLAINTEXT_MIME             ]
 
 #define DEBUG_FONTS 0x01
 #define DEBUG_CLIP  0x02
@@ -677,6 +713,13 @@ typedef struct _UnixGuts
 	int                          use_gtk;
 	int                          use_quartz;
 	Bool                         is_xwayland;
+	/* DND: Receiver */
+	Handle                       xdnd_receiver, xdnd_widget, xdnd_clipboard;
+	XWindow                      xdnd_source;
+	long                         xdnd_timestamp;
+	int                          xdnd_version, xdnd_last_action;
+	Bool                         xdnd_disabled, xdnd_last_drop_response;
+	Box                          xdnd_suppress_events_within; /* in prima coordinates */
 } UnixGuts;
 
 extern UnixGuts  guts;
@@ -778,6 +821,8 @@ typedef struct _drawable_sys_data
 		unsigned clip_owner	          : 1;
 		unsigned configured               : 1;
 		unsigned cursor_visible		  : 1;
+		unsigned dnd_aware                : 1;
+		unsigned drop_target              : 1;
 		unsigned enabled               	  : 1;
 		unsigned exposed                  : 1;
 		unsigned falsely_hidden           : 1;
@@ -895,6 +940,8 @@ typedef struct _menu_sys_data
 #define cfCOUNT      (cfCustom  + 4)
 */
 
+#define CF_32        (sizeof(long)*8)        /* 32-bit properties are hacky */
+
 typedef struct {
 	IV size;
 	unsigned char * data;
@@ -913,6 +960,7 @@ typedef struct _clipboard_sys_data
 	PClipboardDataItem   external;
 	PClipboardDataItem   internal;
 	PList                xfers;
+	Bool                 xdnd;
 } ClipboardSysData, *PClipboardSysData;
 
 typedef struct
@@ -1390,3 +1438,27 @@ prima_mirror_bits( void);
 
 extern int
 prima_copy_region_data(void * region);
+
+#define RPS_OK       0
+#define RPS_PARTIAL  1
+#define RPS_NODATA   2
+#define RPS_ERROR    3
+
+extern Bool
+prima_handle_dnd_event( Handle self, XEvent *xev);
+
+extern int
+prima_read_property( XWindow window, Atom property, Atom * type, int * format,
+	unsigned long * size, unsigned char ** data, Bool delete_property);
+
+extern void
+prima_clipboard_kill_item( PClipboardDataItem item, Handle id);
+
+extern void
+prima_detach_xfers( PClipboardSysData XX, Handle id, Bool clear_original_data);
+
+extern void
+prima_clipboard_query_targets( Handle self );
+
+extern void
+prima_update_dnd_aware( Handle self );

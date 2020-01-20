@@ -407,6 +407,14 @@ typedef struct { double r,  ph; } TrigDComplex;
 #define false FALSE
 #endif
 
+typedef struct _List
+{
+	Handle * items;
+	int    count;
+	int    size;
+	int    delta;
+} List, *PList;
+
 /* Event structures */
 
 #ifdef KeyEvent
@@ -437,6 +445,20 @@ typedef struct _PositionalEvent {
 	Bool   dblclk;
 } PositionalEvent, *PPositionalEvent;
 
+#ifdef DNDEvent
+#undef DNDEvent
+#endif
+
+typedef struct _DNDEvent {
+	int    cmd;
+	int    allow;
+	int    action;
+	Handle clipboard;
+	Point  where;
+	Box    pad;
+	List   actions;
+} DNDEvent, *PDNDEvent;
+
 #ifdef GenericEvent
 #undef GenericEvent
 #endif
@@ -459,6 +481,7 @@ typedef union _Event {
 	GenericEvent    gen;
 	PositionalEvent pos;
 	KeyEvent        key;
+	DNDEvent        dnd;
 } Event, *PEvent;
 
 typedef struct _PostMsg {
@@ -1371,6 +1394,8 @@ SvBOOL( SV *sv)
 #define CApplication(h)                 (PApplication(h)-> self)
 #define PComponent(h)                   TransmogrifyHandle(Component,(h))
 #define CComponent(h)                   (PComponent(h)-> self)
+#define PClipboard(h)                   TransmogrifyHandle(Clipboard,(h))
+#define CClipboard(h)                   (PClipboard(h)-> self)
 #define PDrawable(h)                    TransmogrifyHandle(Drawable,(h))
 #define CDrawable(h)                    (PDrawable(h)-> self)
 #define PFile(h)                        TransmogrifyHandle(File,(h))
@@ -1413,14 +1438,6 @@ extern char *
 duplicate_string( const char *);
 
 /* lists support */
-
-typedef struct _List
-{
-	Handle * items;
-	int    count;
-	int    size;
-	int    delta;
-} List, *PList;
 
 typedef Bool ListProc ( Handle item, void * params);
 typedef ListProc *PListProc;
@@ -2373,14 +2390,17 @@ apc_clipboard_close( Handle self);
 extern Bool
 apc_clipboard_clear( Handle self);
 
-extern Bool
-apc_clipboard_has_format( Handle self, Handle id);
+extern PList
+apc_clipboard_get_formats( Handle self);
 
 extern Bool
 apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c);
 
 extern ApiHandle
 apc_clipboard_get_handle( Handle self);
+
+extern Bool
+apc_clipboard_has_format( Handle self, Handle id);
 
 extern Bool
 apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c);
@@ -2390,6 +2410,31 @@ apc_clipboard_register_format( Handle self, const char *format);
 
 extern Bool
 apc_clipboard_deregister_format( Handle self, Handle id);
+
+/* Drag and drop */
+
+#define DND(const_name) CONSTANT(dnd,const_name)
+START_TABLE(dnd,UV)
+#define    dndCopy               0
+DND(Copy)
+#define    dndMove               1
+DND(Move)
+#define    dndLink               2
+DND(Link)
+#define    dndAsk                3
+DND(Ask)
+#define    dndPrivate            4
+DND(Private)
+#define    dndUnknown            0x10000
+DND(Unknown)
+END_TABLE(dnd,UV)
+#undef DND
+
+extern Bool
+apc_dnd_get_aware( Handle self );
+
+extern Bool
+apc_dnd_set_aware( Handle self, Bool is_target );
 
 /* Menus & popups */
 

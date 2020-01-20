@@ -217,11 +217,29 @@ init_x11( char * error_buf )
 		"_NET_WM_STATE_MODAL",
 		"_NET_SUPPORTED",
 		"_NET_WM_STATE_MAXIMIZED_HORIZ",
-		"text/plain;charset=UTF-8",
+		"text/plain;charset=utf-8",
 		"_NET_WM_STATE_STAYS_ON_TOP",
 		"_NET_CURRENT_DESKTOP",
 		"_NET_WORKAREA",
-		"_NET_WM_STATE_ABOVE"
+		"_NET_WM_STATE_ABOVE",
+		"XdndEnter",
+		"XdndPosition",
+		"XdndStatus",
+		"XdndTypeList",
+		"XdndActionCopy",
+		"XdndDrop",
+		"XdndLeave",
+		"XdndFinished",
+		"XdndSelection",
+		"XdndProxy",
+		"XdndAware",
+		"XdndActionMove",
+		"XdndActionLink",
+		"XdndActionAsk",
+		"XdndActionPrivate",
+		"XdndActionList",
+	 	"XdndActionDescription",
+		"text/plain"
 	};
 	char hostname_buf[256], *hostname = hostname_buf, *env;
 

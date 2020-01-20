@@ -835,6 +835,7 @@ sub notification_types { return \%RNT; }
 	dark3DColor       => cl::Dark3DColor,
 	disabledBackColor => cl::Disabled,
 	disabledColor     => cl::DisabledText,
+	dndAware          => 0,
 	enabled           => 1,
 	firstClick        => 1,
 	focused           => 0,

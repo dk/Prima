@@ -1602,6 +1602,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 			e. cmd = cmSetup;
 		} else {
 			wm_event( self, ev, &e);
+			prima_handle_dnd_event( self, ev);
 		}
 		break;
 	}
@@ -1615,7 +1616,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		guts. handled_events++;
 		cmd = e. cmd;
 		SELF_MESSAGE(e);
-		if ( PObject( self)-> stage == csDead) return;
+		if ( PObject( self)-> stage == csDead && e.cmd != cmEndDrag ) return;
 		if ( e. cmd) {
 			switch ( cmd) {
 			case cmClose:

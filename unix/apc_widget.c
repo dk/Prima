@@ -569,6 +569,14 @@ apc_widget_destroy( Handle self)
 		XDestroyRegion( XX-> invalid_region);
 		XX-> invalid_region = nil;
 	}
+
+	if ( XX-> flags. dnd_aware )
+		apc_dnd_set_aware( self, false );
+	if ( guts. xdnd_widget == self )
+		guts. xdnd_widget = nilHandle;
+	if ( guts. xdnd_receiver == self )
+		guts. xdnd_receiver = nilHandle;
+
 	if ( X_WINDOW) {
 		if ( guts. grab_redirect == XX-> client || guts. grab_redirect == X_WINDOW)
 			guts. grab_redirect = nilHandle;
