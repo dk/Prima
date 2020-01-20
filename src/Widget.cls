@@ -57,6 +57,7 @@ object Prima::Widget( Prima::Drawable)
 	property  Point  cursorSize;
 	property  Bool   cursorVisible;
 	property  NPoint designScale;
+	property  Bool   dndAware;
 	property  Bool   enabled;
 	property  int    geometry;
 	property  int    geomHeight;

@@ -839,10 +839,11 @@ Handle
 Application_top_frame( Handle self, Handle from)
 {
 	while ( from) {
-		if ( kind_of( from, CWindow) && (
+		if (
+			kind_of( from, CWindow) || 
 			( PWidget( from)-> owner == application) ||
 			!CWidget( from)-> get_clipOwner(from)
-		))
+		)
 			return from;
 		from = PWidget( from)-> owner;
 	}
