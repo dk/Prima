@@ -457,7 +457,7 @@ query_datum( Handle self, Handle id, Atom query_target, Atom query_type)
 	spd. mask = SELECTION_NOTIFY_MASK;
 	while ( 1) {
 		Bool ok;
-		
+
 		ok = XCheckIfEvent( DISP, &ev, (XIfEventProcType)selection_filter, (char*)&spd);
 		if ( !ok ) {
 			gettimeofday( &timeout, nil);
@@ -640,7 +640,7 @@ apc_clipboard_has_format( Handle self, Handle id)
 		if ( XX-> internal[id]. size > 0) return true;
 		prima_clipboard_query_targets(self);
 		if ( XX-> external[cfTargets]. size > 0) {
-			return find_atoms( 
+			return find_atoms(
 				(Atom*) XX-> external[cfTargets]. data,
 				XX-> external[cfTargets]. size, id
 			) != None;
@@ -676,7 +676,7 @@ apc_clipboard_get_formats( Handle self)
 	} else {
 		int i, j, size;
 		Atom * data;
-		
+
 		prima_clipboard_query_targets(self);
 		size = XX-> external[cfTargets].size;
 		data = ( Atom*)(XX-> external[cfTargets]. data);
@@ -686,12 +686,12 @@ apc_clipboard_get_formats( Handle self)
 				Atom atom = None;
 				char *name = NULL;
 				/* try to map back f.ex. text/plain to Text */
-				for ( j = 0; j < guts.clipboard_formats_count; j++) 
+				for ( j = 0; j < guts.clipboard_formats_count; j++)
 					if (*data == XX->external[j].name) {
 						atom = CF_NAME(j);
 						if (atom == XA_STRING )
 							name = "Text";
-						else if ( atom == XA_BITMAP) 
+						else if ( atom == XA_BITMAP)
 							name = "Image";
 						else if ( atom == UTF8_STRING )
 							name = "UTF8";
@@ -893,7 +893,7 @@ delete_xfers( Handle self, int keyLen, void * key, XWindow * window)
 
 int
 prima_clipboard_fill_targets( Handle self)
-{	
+{
 	DEFCC;
 	int i, count = 0, have_utf8 = 0, have_plaintext = 0;
 	Atom * ci;

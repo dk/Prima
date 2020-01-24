@@ -4,6 +4,7 @@
 /* ActionList */
 
 #define dndAsk 0x100
+#define WAIT_FOR_FINISH 2
 
 static int
 xdnd_atom_to_constant( Atom atom )
@@ -43,12 +44,12 @@ xdnd_read_ask_actions(void)
 		return guts. xdndr_action_list_cache;
 
 	list_data = NULL;
-	
+
 	list_size = 0;
 	list_data = malloc(0);
-	rps = prima_read_property( guts.xdndr_source, XdndActionList, &type, &format, 
+	rps = prima_read_property( guts.xdndr_source, XdndActionList, &type, &format,
 		&list_size, &list_data, 0);
-	if ( rps != RPS_OK || type != XA_ATOM || format != CF_32) 
+	if ( rps != RPS_OK || type != XA_ATOM || format != CF_32)
 		return guts. xdndr_action_list_cache = dndCopy;
 	n_list = list_size / sizeof(Atom);
 
@@ -83,6 +84,18 @@ xdnd_send_message( XWindow source, Atom cmd, long l0, long l1, long l2, long l3,
 	XCHECKPOINT;
 }
 
+static void
+xdnd_send_message_ev( XEvent* ev)
+{
+	ev->type = ClientMessage;
+	ev->xclient.display = DISP;
+	ev->xclient.format = 32;
+	ev->xclient.window = guts.xdnds_target;
+	XSendEvent(DISP, guts.xdnds_target, False, NoEventMask, ev);
+	XSync( DISP, false);
+	XCHECKPOINT;
+}
+
 static Bool
 handle_xdnd_leave( Handle self)
 {
@@ -91,6 +104,7 @@ handle_xdnd_leave( Handle self)
 	if ( guts.xdndr_receiver != self )
 		self = guts.xdndr_receiver;
 	guts.xdndr_receiver = nilHandle;
+	guts.xdndr_source   = None;
 
 	if ( guts.xdnd_clipboard )
 		C(guts.xdnd_clipboard)-> xdnd_receiving = false;
@@ -108,6 +122,7 @@ handle_xdnd_leave( Handle self)
 	return true;
 }
 
+
 static const char *
 atom_name(Atom atom)
 {
@@ -122,7 +137,7 @@ query_xdnd_target(XWindow w)
 	unsigned mask;
 	int i, bar, nprops;
 	Atom *atoms;
-	
+
 	atoms = XListProperties(DISP, w, &nprops);
 	for (i = 0; i < nprops; i++)
 		if (atoms[i] == XdndAware) {
@@ -170,6 +185,59 @@ query_pointer(XWindow * receiver, Point *p)
 	return ret;
 }
 
+static Bool
+handle_xdnd_status( Handle self, XEvent* xev)
+{
+	Event ev = { cmDragResponse };
+
+	if ( xev->xclient.data.l[0] != guts.xdnds_target)
+		return false;
+
+	guts.xdnds_last_drop_response = xev->xclient.data.l[1] & 1;
+	if ( xev->xclient.data.l[1] & 2 ) {
+		bzero(&guts.xdnds_suppress_events_within, sizeof(Box));
+	} else {
+		/* XXX */
+		guts.xdnds_suppress_events_within.x = xev->xclient.data.l[2] >> 16;
+		guts.xdnds_suppress_events_within.y = xev->xclient.data.l[2] & 0xffff;
+		guts.xdnds_suppress_events_within.width  = xev->xclient.data.l[3] >> 16;
+		guts.xdnds_suppress_events_within.height = xev->xclient.data.l[3] & 0xffff;
+	}
+
+	ev.dnd.allow = guts.xdnds_last_drop_response;
+
+	guts. xdnds_last_action_response = (guts.xdnds_version > 1) ?
+		xdnd_atom_to_constant(xev->xclient.data.l[4]) : dndCopy;
+	ev.dnd.action = guts.xdnds_last_action_response;
+	if ( ev.dnd.action == dndAsk )
+		ev.dnd.action = guts.xdnds_last_action;
+
+	if (guts.xdnds_widget) {
+		guts.xdnd_disabled = true;
+		CComponent(guts.xdnds_widget)-> message(guts.xdnds_widget, &ev);
+		guts.xdnd_disabled = false;
+	}
+	return true;
+}
+
+static Bool
+handle_xdnd_finished( Handle self, XEvent* xev)
+{
+	if ( guts.xdnd_disabled && guts.xdnd_disabled != WAIT_FOR_FINISH )
+		return false;
+	if ( xev->xclient.data.l[0] != guts.xdnds_target)
+		return false;
+	Cdebug("dnd:finished\n");
+	if ( guts. xdnds_version > 4 ) {
+		guts.xdnds_last_drop_response = xev->xclient.data.l[1] & 1;
+		guts.xdnds_last_action_response = guts.xdnds_last_drop_response ?
+			xdnd_atom_to_constant(xev->xclient.data.l[2]) : dndNone;
+	} else {
+		guts.xdnds_last_drop_response = 1;
+	}
+	guts.xdnd_disabled = false;
+	return true;
+}
 
 static Bool
 handle_xdnd_enter( Handle self, XEvent* xev)
@@ -192,10 +260,16 @@ handle_xdnd_enter( Handle self, XEvent* xev)
 	/* pre-read available formats */
 	guts.xdndr_source  = xev->xclient.data.l[0];
 	guts.xdndr_version = xev->xclient.data.l[1] >> 24;
+
+	if (guts.xdndr_source == guts.xdnds_sender) {
+		Cdebug("dnd:enter local\n");
+		return true;
+	}
+
 	Cdebug("dnd:enter %08x v%d %d %s %s %s\n", guts.xdndr_source, guts.xdndr_version,
 		xev->xclient.data.l[1] & 1,
-		atom_name(xev->xclient.data.l[2]), 
-		atom_name(xev->xclient.data.l[3]), 
+		atom_name(xev->xclient.data.l[2]),
+		atom_name(xev->xclient.data.l[3]),
 		atom_name(xev->xclient.data.l[4])
 	);
 	for ( i = 0; i < guts. clipboard_formats_count; i++) {
@@ -232,7 +306,7 @@ handle_xdnd_enter( Handle self, XEvent* xev)
 			int i;
 			Atom * types = (Atom *) data;
 			_debug("dnd clipboard formats:\n");
-			for ( i = 0; i < size / sizeof(Atom); i++, types++) 
+			for ( i = 0; i < size / sizeof(Atom); i++, types++)
 				_debug("%d:%x %s\n", i, *types, XGetAtomName(DISP, *types));
 		}
 	}
@@ -246,12 +320,16 @@ static Bool
 handle_xdnd_position( Handle self, XEvent* xev)
 {
 	Box box;
+	Bool ret = false;
 	int x, y, dx, dy, action;
 	XWindow from, to, child = None;
 	Handle h = nilHandle;
-	
+	XEvent xr;
+
+	bzero(&xr, sizeof(xr));
+
 	/* Cdebug("xdnd:position disabled=%d\n",guts.xdnd_disabled); */
-	if (guts.xdnd_disabled) 
+	if (guts.xdnd_disabled)
 		goto FAIL;
 
 	if ( guts. xdndr_receiver != self ) {
@@ -269,7 +347,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 		if (child) {
 			from = to;
 			to = child;
-		} else if ( to == from) 
+		} else if ( to == from)
 			to = X(self)->client;
 
 		h = (Handle) hash_fetch( guts.windows, (void*)&to, sizeof(to));
@@ -309,7 +387,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	if ( !h ||
 		PObject(h)->stage != csNormal ||
 		!X(h)->flags.dnd_aware
-	) 
+	)
 		goto FAIL;
 
 	if ( guts.xdndr_widget != h ) {
@@ -318,7 +396,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 		guts.xdnd_disabled = true;
 		CComponent(h)-> message(h, &ev);
 		guts.xdnd_disabled = false;
-		if (PObject(h)->stage != csNormal || !guts.xdnd_clipboard) 
+		if (PObject(h)->stage != csNormal || !guts.xdnd_clipboard)
 			goto FAIL;
 
 		guts.xdndr_widget = h;
@@ -351,7 +429,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 		)
 	)) {
 		Event ev = { cmDragOver };
-		
+
 		if ( action == dndAsk )
 			action = xdnd_read_ask_actions();
 		if ( action == dndNone )
@@ -371,7 +449,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	}
 
 	box. x = dx + guts.xdndr_suppress_events_within.x;
-	box. y = dy + X(guts.xdndr_widget)->size.y - guts.xdndr_suppress_events_within.y - 
+	box. y = dy + X(guts.xdndr_widget)->size.y - guts.xdndr_suppress_events_within.y -
 		guts.xdndr_suppress_events_within.height - 1;
 	box. width  = guts. xdndr_suppress_events_within. width;
 	box. height = guts. xdndr_suppress_events_within. height;
@@ -385,23 +463,24 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	if (box.height > 0xffff) box.height = 0xffff;
 
 	XCHECKPOINT;
-	xdnd_send_message(
-		guts.xdndr_source, XdndStatus,
-		X_WINDOW, 
-		guts.xdndr_last_drop_response | 
-			((guts.xdndr_suppress_events_within.width > 0 && 
+	xr.xclient.message_type = XdndStatus;
+	xr.xclient.data.l[1] = 
+		guts.xdndr_last_drop_response |
+			((guts.xdndr_suppress_events_within.width > 0 &&
 			guts.xdndr_suppress_events_within.height > 0) ? 0 : 2),
-		(box.x     << 16 ) | box.y,
-		(box.width << 16 ) | box.height,
-		guts.xdndr_last_drop_response ? xdnd_constant_to_atom( guts.xdndr_last_action) : None
-	);
-
-	return true;
+	xr.xclient.data.l[2] = (box.x     << 16 ) | box.y;
+	xr.xclient.data.l[3] = (box.width << 16 ) | box.height;
+	xr.xclient.data.l[4] = guts.xdndr_last_drop_response ? xdnd_constant_to_atom( guts.xdndr_last_action) : None;
+	ret = true;
 
 FAIL:
-	XCHECKPOINT;
-	xdnd_send_message( guts.xdndr_source, XdndStatus, X_WINDOW, 0, 0, 0, None);
-	return false;
+	xr.xclient.data.l[0] = X_WINDOW;
+	if (guts.xdndr_source == guts.xdnds_sender)
+		handle_xdnd_status(guts.xdndr_receiver, &xr);
+	else
+		xdnd_send_message_ev(&xr);
+
+	return ret;
 }
 
 static Bool
@@ -409,8 +488,9 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 {
 	Event ev;
 	Atom action;
+	XEvent xr;
 
-	if (guts.xdnd_disabled || !guts.xdnd_clipboard) return false;
+	if (!guts.xdnd_clipboard || guts.xdnd_disabled) return false;
 
 	if (
 		guts.xdndr_receiver != self ||
@@ -419,7 +499,7 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 		handle_xdnd_leave(guts. xdndr_receiver);
 		return false;
 	}
-	
+
 	Cdebug("dnd:drop from %08x\n", guts.xdndr_source);
 	if ( X(guts.xdndr_widget)->flags.dnd_aware) {
 		ev.cmd = cmDragEnd;
@@ -440,6 +520,7 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 
 	/* cleanup */
 	guts.xdndr_widget   = nilHandle;
+	guts.xdndr_source   = None;
 	guts.xdndr_receiver = nilHandle;
 	if ( guts. xdnd_clipboard )
 		C(guts.xdnd_clipboard)->xdnd_receiving = false;
@@ -452,67 +533,16 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 	}
 	XCHECKPOINT;
 	/* XXX show popup */
-	xdnd_send_message(
-		guts.xdndr_source, XdndFinished,
-		X_WINDOW, ev.dnd.allow,
-		ev.dnd.allow ? action : None,
-		0, 0
-	);
 
-	return true;
-}
+	bzero(&xr, sizeof(xr));
+	xr.xclient.data.l[0] = X_WINDOW;
+	xr.xclient.data.l[1] = ev.dnd.allow;
+	xr.xclient.data.l[2] = ev.dnd.allow ? action : None;
+	if (guts.xdndr_source == guts.xdnds_sender)
+		handle_xdnd_finished(guts.xdndr_receiver, &xr);
+	else
+		xdnd_send_message_ev(&xr);
 
-static Bool
-handle_xdnd_status( Handle self, XEvent* xev)
-{
-	Event ev = { cmDragResponse };
-
-	if ( xev->xclient.data.l[0] != guts.xdnds_target)
-		return false;
-
-	guts.xdnds_last_drop_response = xev->xclient.data.l[1] & 1;
-	if ( xev->xclient.data.l[1] & 2 ) {
-		bzero(&guts.xdnds_suppress_events_within, sizeof(Box));
-	} else {
-		/* XXX */
-		guts.xdnds_suppress_events_within.x = xev->xclient.data.l[2] >> 16;
-		guts.xdnds_suppress_events_within.y = xev->xclient.data.l[2] & 0xffff;
-		guts.xdnds_suppress_events_within.width  = xev->xclient.data.l[3] >> 16;
-		guts.xdnds_suppress_events_within.height = xev->xclient.data.l[3] & 0xffff;
-	}
-	
-	ev.dnd.allow = guts.xdnds_last_drop_response;
-
-	guts. xdnds_last_action_response = (guts.xdnds_version > 1) ? 
-		xdnd_atom_to_constant(xev->xclient.data.l[4]) : dndCopy;
-	ev.dnd.action = guts.xdnds_last_action_response;
-	if ( ev.dnd.action == dndAsk ) 
-		ev.dnd.action = guts.xdnds_last_action;
-	
-	if (guts.xdnds_widget) {
-		guts.xdnd_disabled = true;
-		CComponent(guts.xdnds_widget)-> message(guts.xdnds_widget, &ev);
-		guts.xdnd_disabled = false;
-	}
-	return true;
-}
-
-static Bool
-handle_xdnd_finished( Handle self, XEvent* xev)
-{
-	if ( guts.xdnd_disabled == 1 )
-		return false;
-	if ( xev->xclient.data.l[0] != guts.xdnds_target)
-		return false;
-	Cdebug("dnd:finished\n");
-	if ( guts. xdnds_version > 4 ) {
-		guts.xdnds_last_drop_response = xev->xclient.data.l[1] & 1;
-		guts.xdnds_last_action_response = guts.xdnds_last_drop_response ?
-			xdnd_atom_to_constant(xev->xclient.data.l[2]) : dndNone;
-	} else {
-		guts.xdnds_last_drop_response = 1;
-	}
-	guts.xdnd_disabled = false;
 	return true;
 }
 
@@ -536,9 +566,68 @@ prima_handle_dnd_event( Handle self, XEvent *xev)
 	return false;
 }
 
+/* make sure it's synchronous when talking local */
+static void
+xdnd_send_leave_message(void)
+{
+	if (guts.xdndr_source == guts.xdnds_sender)
+		handle_xdnd_leave( guts.xdndr_receiver );
+	else
+		xdnd_send_message( guts.xdnds_target, XdndLeave, 0, 0, 0, 0, None);
+}
+
+static void
+xdnd_send_drop_message(void)
+{
+	XEvent ev;
+	bzero(&ev, sizeof(ev));
+	ev.xclient.message_type = XdndDrop;
+	ev.xclient.data.l[0] = guts.xdnds_sender;
+	ev.xclient.data.l[2] = CurrentTime;
+	if (guts.xdndr_source == guts.xdnds_sender)
+		handle_xdnd_drop( guts.xdndr_receiver, &ev );
+	else
+		xdnd_send_message_ev(&ev);
+}
+
+static void
+xdnds_send_position_message(Point ptr, int action)
+{
+	XEvent ev;
+	bzero(&ev, sizeof(ev));
+	ev.xclient.message_type = XdndPosition;
+	ev.xclient.data.l[0] = guts.xdnds_sender;
+	ev.xclient.data.l[2] = (ptr.x << 16)|ptr.y;
+	ev.xclient.data.l[3] = CurrentTime;
+	ev.xclient.data.l[4] = action;
+	if (guts.xdndr_source == guts.xdnds_sender)
+		handle_xdnd_position( guts.xdndr_receiver, &ev );
+	else
+		xdnd_send_message_ev(&ev);
+}
+
+static void
+xdnds_send_enter_message(int rps, Atom * targets)
+{
+	Handle local;
+	XEvent ev;
+	bzero(&ev, sizeof(ev));
+	ev.xclient.message_type = XdndEnter;
+	ev.xclient.data.l[0] = guts.xdnds_sender;
+	ev.xclient.data.l[1] = (((guts.xdnds_version < 5) ? guts.xdnds_version : 5) << 24) | (rps > 3);
+	ev.xclient.data.l[2] = (rps > 0) ? targets[0] : None;
+	ev.xclient.data.l[3] = (rps > 0) ? targets[1] : None;
+	ev.xclient.data.l[4] = (rps > 0) ? targets[2] : None;
+	local = ( Handle) hash_fetch( guts. windows, (void*)&(guts.xdnds_target), sizeof(XWindow));
+	if (local)
+		handle_xdnd_enter( local, &ev );
+	else
+		xdnd_send_message_ev(&ev);
+}
+
 Bool
 apc_dnd_get_aware( Handle self )
-{	
+{
 	return X(self)->flags. dnd_aware;
 }
 
@@ -565,7 +654,7 @@ prima_update_dnd_aware( Handle self )
 
 	if ( has_drop_target ) {
 		Atom version = 5;
-		XChangeProperty(DISP, X_WINDOW, XdndAware, XA_ATOM, 32, 
+		XChangeProperty(DISP, X_WINDOW, XdndAware, XA_ATOM, 32,
 			PropModeReplace, (unsigned char*)&version, 1);
 	} else
 		XDeleteProperty( DISP, X_WINDOW, XdndAware);
@@ -598,14 +687,13 @@ int
 apc_dnd_start( Handle self, int actions)
 {
 	Bool got_session = false;
-	Point ptr;
+	Point ptr, last_ptr = { -1, -1 };
 	int ret = dndNone, i, modmap, first_modmap, n_actions = 0;
 	Atom actions_list[3], curr_action;
 	char *ac_ptr, actions_descriptions[16] = ""; /* Copy Move Link */
 	PClipboardSysData CC;
-	XWindow sender;
-	Handle top_level;
-	struct timeval start_time, timeout;
+	Handle top_level, banned_receiver = None;
+	XWindow last_xdndr_source = None;
 
 	if ( guts.xdnd_disabled || guts.xdnds_widget || !guts.xdnd_clipboard ) {
 		Cdebug("dnd:already is action\n");
@@ -645,24 +733,28 @@ apc_dnd_start( Handle self, int actions)
 		return -1; /* nothing to drag */
 	}
 
-	sender = PWidget(top_level)->handle;
+	guts. xdnds_sender = PWidget(top_level)->handle;
 	guts. xdnds_widget = self;
 	modmap = query_pointer(NULL,NULL);
 	first_modmap = modmap & 0xffff;
-	guts. xdnds_escape_key = false;
+	guts.xdnds_escape_key = false;
+	guts.xdnds_last_drop_response = false;
+	guts.xdnds_target = None;
+	guts.xdnds_version = 0;
+	guts.xdnds_last_action = guts.xdnds_last_action_response = dndNone;
+	bzero( &guts.xdnds_suppress_events_within, sizeof(Box));
+	Cdebug("dnd:begin\n");
 
 	CC = C(guts.xdnd_clipboard);
 	prima_detach_xfers( CC, cfTargets, true);
 	prima_clipboard_kill_item( CC-> internal, cfTargets);
 	CC->internal[cfTargets].name = XdndTypeList;
 
-	/*
-	XXX do we capture?
-	*/
+	apc_widget_set_capture(self, true, nilHandle);
 
-	XChangeProperty(DISP, sender, XdndActionList, XA_ATOM, 32, 
+	XChangeProperty(DISP, guts. xdnds_sender, XdndActionList, XA_ATOM, 32,
 		PropModeReplace, (unsigned char*)&actions_list, n_actions);
-	XChangeProperty(DISP, sender, XdndActionDescription, XA_STRING, 8, 
+	XChangeProperty(DISP, guts. xdnds_sender, XdndActionDescription, XA_STRING, 8,
 		PropModeReplace, (unsigned char*)&actions_descriptions, ac_ptr - actions_descriptions);
 	XCHECKPOINT;
 
@@ -674,20 +766,25 @@ apc_dnd_start( Handle self, int actions)
 
 		if ( !guts.xdnds_widget || !guts.xdnd_clipboard ) {
 			Cdebug("dnd:objects killed\n");
-			guts.xdnds_widget = nilHandle;
-			return dndNone;
+			ret = dndNone;
+			goto FAIL;
 		}
 
 		new_modmap = query_pointer(&new_receiver, &ptr);
+		if ( new_receiver == banned_receiver )
+			new_receiver = guts.xdnds_target;
+
 		if ( guts.xdnds_escape_key )
 			new_modmap |= kmEscape;
-		if ( new_modmap == modmap && new_receiver == guts.xdnds_target)
+		if ( new_modmap == modmap && new_receiver == guts.xdnds_target && last_ptr.x == ptr.x && last_ptr.y == ptr.y)
 			continue;
+		last_ptr = ptr;
 
 		if ( new_receiver != guts.xdnds_target ) {
+			banned_receiver = None;
 			Cdebug("dnd:target %08x => %08x\n", guts.xdnds_target, new_receiver);
 			if ( got_session && guts.xdnds_target ) {
-				xdnd_send_message( guts.xdnds_target, XdndLeave, 0, 0, 0, 0, None);
+				xdnd_send_leave_message();
 				guts. xdnds_target = None;
 				got_session = false;
 			}
@@ -698,12 +795,12 @@ apc_dnd_start( Handle self, int actions)
 				unsigned long size = 0;
 				unsigned char * data = malloc(0);
 
-				rps = prima_read_property( new_receiver, XdndAware, &type, &format, 
+				rps = prima_read_property( new_receiver, XdndAware, &type, &format,
 					&size, &data, 0);
 				if ( rps != RPS_OK || type != XA_ATOM || format != CF_32 || size != sizeof(Atom)) {
 					free(data);
 					Cdebug("dnd:bad XdndAware\n");
-					/* XXX banned targets */
+					banned_receiver = new_receiver;
 					continue;
 				}
 				guts.xdnds_version = *((Atom*)data);
@@ -711,30 +808,23 @@ apc_dnd_start( Handle self, int actions)
 				rps = prima_clipboard_fill_targets(guts.xdnd_clipboard);
 				if ( rps == 0 ) {
 					Cdebug("dnd:failed to query clipboard targets\n");
-					guts.xdnds_widget = nilHandle;
-					return -1;
+					ret = -1;
+					goto FAIL;
 				}
 
 				got_session = true;
 				guts.xdnds_target = new_receiver;
 				targets = (Atom*) CC->internal[cfTargets].data;
-				xdnd_send_message(guts.xdnds_target, XdndEnter, sender, 
-					(((guts.xdnds_version < 5) ? guts.xdnds_version : 5) << 24) | (rps > 3),
-					(rps > 0) ? targets[0] : None,
-					(rps > 1) ? targets[1] : None,
-					(rps > 2) ? targets[2] : None
-				);
+				Cdebug("dnd:send enter to %08x\n",guts.xdnds_target);
+				xdnds_send_enter_message(rps, targets);
 			}
 		}
 
 		if (got_session) {
 			XCHECKPOINT;
-			xdnd_send_message(guts.xdnds_target, XdndPosition, sender, 
-				0, (ptr.x << 16)|ptr.y, 
-				CurrentTime, curr_action
-			);
+			xdnds_send_position_message(ptr, curr_action);
 		}
-	
+
 		if ( new_modmap != modmap) {
 			Event ev = { cmDragQuery };
 			Cdebug("dnd:modmap %08x => %08x\n", modmap, new_modmap);
@@ -761,20 +851,19 @@ apc_dnd_start( Handle self, int actions)
 			}
 			if ( ev.dnd.allow != 0 ) {
 				XCHECKPOINT;
-				if ( 
-					got_session && 
-					ev.dnd.allow > 0 && 
-					guts. xdnds_last_drop_response && 
-					guts. xdnds_last_action_response != None 
+				if (
+					got_session &&
+					ev.dnd.allow > 0 &&
+					guts. xdnds_last_drop_response &&
+					guts. xdnds_last_action_response != None
 				) {
-					xdnd_send_message(guts.xdnds_target, XdndDrop, sender, 
-						0, CurrentTime, 0, 0);
+					last_xdndr_source = guts.xdndr_source;
+					xdnd_send_drop_message();
 					guts.xdnds_widget = nilHandle;
 					ret = guts.xdnds_last_action_response;
 					Cdebug("dnd:drop\n");
 				} else {
-					xdnd_send_message(guts.xdnds_target, XdndLeave, sender, 
-						0, 0, 0, 0);
+					xdnd_send_leave_message();
 					guts.xdnds_widget = nilHandle;
 					got_session = false;
 					Cdebug("dnd:leave\n");
@@ -786,6 +875,8 @@ apc_dnd_start( Handle self, int actions)
 		XSync( DISP, false);
 	}
 
+	apc_widget_set_capture(self, 0, nilHandle);
+
 	if (ret == dndNone) return ret;
 
 	if (guts. xdnds_version < 2 ) {
@@ -794,22 +885,18 @@ apc_dnd_start( Handle self, int actions)
 	}
 
 	/* wait for XdndFinished */
-	guts.xdnd_disabled = 2; /* our event comes through */
-	gettimeofday( &start_time, NULL);
-	XCHECKPOINT;
-	while ( prima_one_loop_round( WAIT_ALWAYS, true) && guts.xdnd_disabled) {
-		int diff;
-		XSync( DISP, false);
-		gettimeofday( &timeout, NULL);
-		diff = 
-			( timeout. tv_sec - start_time. tv_sec) * 1000 +
-			( timeout. tv_usec - start_time. tv_usec) / 1000;
-		if (diff > guts. clipboard_event_timeout) {
-			guts.xdnds_last_drop_response = false; /* shouldn't happen */
-			break;
+	if (last_xdndr_source != guts.xdnds_sender) {
+		XCHECKPOINT;
+		guts.xdnd_disabled = WAIT_FOR_FINISH; /* our event comes through */
+		guts.xdnds_widget = self;
+		guts.xdnds_escape_key = false;
+		while ( prima_one_loop_round( WAIT_ALWAYS, true) && guts.xdnd_disabled && !guts.xdnds_escape_key) {
+			XSync( DISP, false);
 		}
+		guts.xdnds_widget = nilHandle;
+		guts.xdnd_disabled = false;
+		guts.xdnds_escape_key = false;
 	}
-	guts.xdnd_disabled = false;
 
 	if (guts.xdnds_last_drop_response) {
 		ret = guts. xdnds_last_action_response;
@@ -817,5 +904,10 @@ apc_dnd_start( Handle self, int actions)
 	} else
 		ret = dndNone;
 
+	return ret;
+
+FAIL:
+	apc_widget_set_capture(self, 0, nilHandle);
+	guts.xdnds_widget = nilHandle;
 	return ret;
 }

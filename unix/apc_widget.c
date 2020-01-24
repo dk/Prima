@@ -180,25 +180,25 @@ prima_flush_events( Display * disp, XEvent * ev, Handle self)
 void
 prima_get_view_ex( Handle self, PViewProfile p)
 {
-DEFXX;
-if ( !p) return;
-if ( XX-> type. window) {
-	p-> pos       = apc_window_get_client_pos( self);
-	p-> size      = apc_window_get_client_size( self);
-	XFetchName( DISP, X_WINDOW, &p-> title);
-} else {
-	p-> pos       = apc_widget_get_pos( self);
-	p-> size      = apc_widget_get_size( self);
-	p-> title     = NULL;
-}
-p-> capture   = apc_widget_is_captured( self);
-p-> focused   = apc_widget_is_focused( self);
-p-> visible   = apc_widget_is_visible( self);
+	DEFXX;
+	if ( !p) return;
+	if ( XX-> type. window) {
+		p-> pos       = apc_window_get_client_pos( self);
+		p-> size      = apc_window_get_client_size( self);
+		XFetchName( DISP, X_WINDOW, &p-> title);
+	} else {
+		p-> pos       = apc_widget_get_pos( self);
+		p-> size      = apc_widget_get_size( self);
+		p-> title     = NULL;
+	}
+	p-> capture   = apc_widget_is_captured( self);
+	p-> focused   = apc_widget_is_focused( self);
+	p-> visible   = apc_widget_is_visible( self);
 
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
-p-> shape_count = 0;
-if ( XX-> shape_extent. x != 0 && XX-> shape_extent. y != 0)
-	p-> shape_rects = XShapeGetRectangles( DISP, X_WINDOW, ShapeBounding, &p-> shape_count, &p->shape_ordering);
+	p-> shape_count = 0;
+	if ( XX-> shape_extent. x != 0 && XX-> shape_extent. y != 0)
+		p-> shape_rects = XShapeGetRectangles( DISP, X_WINDOW, ShapeBounding, &p-> shape_count, &p->shape_ordering);
 #endif
 }
 
@@ -1049,11 +1049,12 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 			confine_to = PWidget(confineTo)-> handle;
 AGAIN:
 		r = XGrabPointer( DISP, z, false, 0
-								| ButtonPressMask
-								| ButtonReleaseMask
-								| PointerMotionMask
-								| ButtonMotionMask, GrabModeAsync, GrabModeAsync,
-								confine_to, cursor, t);
+			| ButtonPressMask
+			| ButtonReleaseMask
+			| PointerMotionMask
+			| ButtonMotionMask, GrabModeAsync, GrabModeAsync,
+			confine_to, cursor, t
+		);
 		XCHECKPOINT;
 		if ( r != GrabSuccess) {
 			XWindow root = guts. root, rx;

@@ -725,7 +725,7 @@ typedef struct _UnixGuts
 	Box                          xdndr_suppress_events_within; /* in prima coordinates */
 	/* DND: Sender */
 	Handle                       xdnds_widget;
-	XWindow                      xdnds_target;
+	XWindow                      xdnds_sender, xdnds_target;
 	int                          xdnds_version, xdnds_last_action, xdnds_last_action_response;
 	Bool                         xdnds_last_drop_response, xdnds_escape_key;
 	Box                          xdnds_suppress_events_within; /* in root coordinates */
