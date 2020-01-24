@@ -489,6 +489,7 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 	Event ev;
 	Atom action;
 	XEvent xr;
+	XWindow last_source;
 
 	if (!guts.xdnd_clipboard || guts.xdnd_disabled) return false;
 
@@ -520,6 +521,7 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 
 	/* cleanup */
 	guts.xdndr_widget   = nilHandle;
+	last_source = guts.xdndr_source;
 	guts.xdndr_source   = None;
 	guts.xdndr_receiver = nilHandle;
 	if ( guts. xdnd_clipboard )
@@ -538,7 +540,7 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 	xr.xclient.data.l[0] = X_WINDOW;
 	xr.xclient.data.l[1] = ev.dnd.allow;
 	xr.xclient.data.l[2] = ev.dnd.allow ? action : None;
-	if (guts.xdndr_source == guts.xdnds_sender)
+	if (last_source == guts.xdnds_sender)
 		handle_xdnd_finished(guts.xdndr_receiver, &xr);
 	else
 		xdnd_send_message_ev(&xr);
