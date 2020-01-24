@@ -13,6 +13,7 @@ object Prima::Clipboard( Prima::Component)
 	public void   get_registered_formats();
 	public void   get_standard_clipboards();
 	method void   init( HV * profile);
+	method Bool   is_dnd() => apc_clipboard_is_dnd;
 	method Bool   open();
 	method Bool   register_format( char * format);
 	method Bool   store( char * format, SV * data);

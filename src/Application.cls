@@ -61,6 +61,7 @@ object Prima::Application( Prima::Widget)
 	static Font   get_default_font( char * dummy = "");
 	static Point  get_default_scrollbar_metrics( char * dummy = "");
 	static Point  get_default_window_borders( char * dummy = "", int borderStyle = bsSizeable);
+	method Handle get_dnd_clipboard() => apc_dnd_get_clipboard;
 	method Handle get_focused_widget();
 	method Handle get_widget_from_handle( SV * handle);
 	method Handle get_hint_widget();

@@ -453,10 +453,10 @@ typedef struct _DNDEvent {
 	int    cmd;
 	int    allow;
 	int    action;
+	int    modmap;
 	Handle clipboard;
 	Point  where;
 	Box    pad;
-	List   actions;
 } DNDEvent, *PDNDEvent;
 
 #ifdef GenericEvent
@@ -748,19 +748,23 @@ CM(Execute)
 CM(Setup)
 #define cmHint           0x00000023                /* hint show/hide message */
 CM(Hint)
-#define cmDragDrop       0x00000024                /* Drag'n'drop aware */
-CM(DragDrop)
+#define cmDragBegin      0x00000024                /* Drag'n'drop aware */
+CM(DragBegin)
 #define cmDragOver       0x00000025                /*         constants */
 CM(DragOver)
-#define cmEndDrag        0x00000026                /* * */
-CM(EndDrag)
-#define cmMenu          (0x00000027|ctDiscardable) /* send when menu going to be activated */
+#define cmDragEnd        0x00000026                /* * */
+CM(DragEnd)
+#define cmDragQuery      0x00000027                /* * */
+CM(DragQuery)
+#define cmDragResponse   0x00000028                /* * */
+CM(DragResponse)
+#define cmMenu          (0x00000029|ctDiscardable) /* send when menu going to be activated */
 CM(Menu)
-#define cmEndModal       0x00000028                /* dialog execution end */
+#define cmEndModal       0x0000002A                /* dialog execution end */
 CM(EndModal)
-#define cmSysHandle      0x00000029                /* system handle recreated */
+#define cmSysHandle      0x0000002B                /* system handle recreated */
 CM(SysHandle)
-#define cmIdle           0x0000002A                /* idle handler */
+#define cmIdle           0x0000002C                /* idle handler */
 CM(Idle)
 
 #define cmMenuCmd        0x00000050                /* interactive menu command */
@@ -890,6 +894,8 @@ KM(Shift)
 KM(Ctrl)
 #define kmAlt           0x08000000
 KM(Alt)
+#define kmEscape        0x10000000
+KM(Escape)
 #define kmUnicode       0x10000000
 KM(Unicode)
 #define kmKeyPad        0x40000000
@@ -2411,22 +2417,22 @@ apc_clipboard_register_format( Handle self, const char *format);
 extern Bool
 apc_clipboard_deregister_format( Handle self, Handle id);
 
+extern Bool
+apc_clipboard_is_dnd( Handle self);
+
 /* Drag and drop */
 
 #define DND(const_name) CONSTANT(dnd,const_name)
 START_TABLE(dnd,UV)
-#define    dndCopy               0
+#define    dndNone               0x00
+DND(None)
+#define    dndCopy               0x01
 DND(Copy)
-#define    dndMove               1
+#define    dndMove               0x02
 DND(Move)
-#define    dndLink               2
+#define    dndLink               0x04
 DND(Link)
-#define    dndAsk                3
-DND(Ask)
-#define    dndPrivate            4
-DND(Private)
-#define    dndUnknown            0x10000
-DND(Unknown)
+#define    dndMask               0x07
 END_TABLE(dnd,UV)
 #undef DND
 
@@ -2435,6 +2441,12 @@ apc_dnd_get_aware( Handle self );
 
 extern Bool
 apc_dnd_set_aware( Handle self, Bool is_target );
+
+extern int
+apc_dnd_start( Handle self, int actions);
+
+extern Handle
+apc_dnd_get_clipboard( Handle self );
 
 /* Menus & popups */
 
