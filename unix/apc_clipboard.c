@@ -66,8 +66,9 @@ apc_clipboard_create( Handle self)
 		}
 		XX-> selection = XInternAtom( DISP, name, false);
 		free( name);
-	} else 
+	} else {
 		XX-> selection = XdndSelection;
+	}
 
 	if ( hash_fetch( guts.clipboards, &XX->selection, sizeof(XX->selection))) {
 		warn("This clipboard is already present");
@@ -87,7 +88,9 @@ apc_clipboard_create( Handle self)
 	bzero( XX-> external, sizeof( ClipboardDataItem) * cfCOUNT);
 
 	hash_store( guts.clipboards, &XX->selection, sizeof(XX->selection), (void*)self);
-	hash_store( guts.clipboards, c->name, strlen(c->name), (void*)self);
+
+	if ( XX-> selection == XdndSelection )
+		guts. xdnd_clipboard = self;
 
 	return true;
 }
@@ -211,7 +214,6 @@ apc_clipboard_destroy( Handle self)
 	free( XX-> external);
 	free( XX-> internal);
 	hash_delete( guts.clipboards, &XX->selection, sizeof(XX->selection), false);
-	hash_delete( guts.clipboards, PClipboard(self)->name, strlen(PClipboard(self)->name), false);
 
 	XX-> selection = None;
 	return true;
@@ -221,7 +223,7 @@ Bool
 apc_clipboard_open( Handle self)
 {
 	DEFCC;
-	if ( XX-> xdnd ) return true; /* XXX */
+	if ( XX-> xdnd_receiving ) return true;
 	if ( XX-> opened) return false;
 	XX-> opened = true;
 
@@ -234,7 +236,7 @@ Bool
 apc_clipboard_close( Handle self)
 {
 	DEFCC;
-	if ( XX-> xdnd ) return true; /* XXX */
+	if ( XX-> xdnd_receiving ) return true; /* XXX */
 	if ( !XX-> opened) return false;
 	XX-> opened = false;
 
@@ -268,7 +270,7 @@ apc_clipboard_close( Handle self)
 		int i;
 		for ( i = 0; i < guts. clipboard_formats_count; i++)
 			prima_clipboard_kill_item( XX-> external, i);
-		if ( XX-> need_write && !XX->xdnd)
+		if ( XX-> need_write && (!XX->xdnd_receiving || XX->xdnd_sending))
 			if ( XGetSelectionOwner( DISP, XX-> selection) != WIN)
 				XSetSelectionOwner( DISP, XX-> selection, WIN, CurrentTime);
 	}
@@ -318,7 +320,7 @@ apc_clipboard_clear( Handle self)
 
 	if ( XX-> inside_event) {
 		XX-> need_write = true;
-	} else if ( !XX->xdnd) {
+	} else if ( !XX->xdnd_receiving || XX->xdnd_sending) {
 		XWindow owner = XGetSelectionOwner( DISP, XX-> selection);
 		XX-> need_write = false;
 		if ( owner != None && owner != WIN)
@@ -435,9 +437,9 @@ query_datum( Handle self, Handle id, Atom query_target, Atom query_type)
 
 	/* init */
 	if ( query_target == None) return false;
-	window = XX-> xdnd ? PWidget(guts.xdnd_receiver)->handle : WIN;
+	window = XX-> xdnd_receiving ? PWidget(guts.xdndr_receiver)->handle : WIN;
 	if ( window == None ) return false; /* don't operate on XDND clipboard outside the drag */
-	timestamp = XX-> xdnd ? guts.xdnd_timestamp : guts.last_time;
+	timestamp = XX-> xdnd_receiving ? guts.xdndr_timestamp : guts.last_time;
 
 	data = malloc(0);
 	XX-> external[id]. size = CFDATA_ERROR;
@@ -595,7 +597,7 @@ prima_clipboard_query_targets( Handle self)
 {
 	DEFCC;
 
-	if ( !XX->xdnd ) {
+	if ( !XX->xdnd_receiving ) {
 		if ( XX-> external[cfTargets]. size != 0)
 			return;
 		query_data( self, cfTargets);
@@ -870,6 +872,12 @@ apc_clipboard_get_handle( Handle self)
 	return C(self)-> selection;
 }
 
+Bool
+apc_clipboard_is_dnd( Handle self)
+{
+	return guts. xdnd_clipboard == self;
+}
+
 static Bool
 delete_xfers( Handle self, int keyLen, void * key, XWindow * window)
 {
@@ -881,6 +889,41 @@ delete_xfers( Handle self, int keyLen, void * key, XWindow * window)
 	}
 	hash_delete( guts. clipboard_xfers, window, sizeof( XWindow), false);
 	return false;
+}
+
+int
+prima_clipboard_fill_targets( Handle self)
+{	
+	DEFCC;
+	int i, count = 0, have_utf8 = 0, have_plaintext = 0;
+	Atom * ci;
+	prima_detach_xfers( XX, cfTargets, true);
+	prima_clipboard_kill_item( XX-> internal, cfTargets);
+	for ( i = 0; i < guts. clipboard_formats_count; i++) {
+		if ( i != cfTargets && XX-> internal[i]. size > 0) {
+			count++;
+			if ( i == cfUTF8) {
+				count++;
+				have_utf8 = 1;
+			}
+			if ( i == cfText) {
+				count++;
+				have_plaintext = 1;
+			}
+		}
+	}
+	if (( XX-> internal[cfTargets]. data = malloc( count * sizeof( Atom)))) {
+		XX-> internal[cfTargets]. size = count * sizeof( Atom);
+		ci = (Atom*)XX-> internal[cfTargets]. data;
+		for ( i = 0; i < guts. clipboard_formats_count; i++)
+			if ( i != cfTargets && XX-> internal[i]. size > 0)
+				*(ci++) = CF_NAME(i);
+		if ( have_utf8)
+			*(ci++) = UTF8_MIME;
+		if ( have_plaintext)
+			*(ci++) = PLAINTEXT_MIME;
+	}
+	return count;
 }
 
 void
@@ -914,7 +957,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
 		if ( self) {
 			PClipboardSysData CC = C(self);
 			Bool event = CC-> inside_event;
-			int format, utf8_mime = 0;
+			int format, utf8_mime = 0, plaintext_mime = 0;
 
 			for ( i = 0; i < guts. clipboard_formats_count; i++) {
 				if ( xe. xselection. target == CC-> internal[i]. name) {
@@ -923,6 +966,10 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
 				} else if ( i == cfUTF8 && xe. xselection. target == UTF8_MIME) {
 					id = i;
 					utf8_mime = 1;
+					break;
+				} else if ( i == cfText && xe. xselection. target == PLAINTEXT_MIME) {
+					id = i;
+					plaintext_mime = 1;
 					break;
 				}
 			}
@@ -940,31 +987,10 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
 			format = CF_FORMAT(id);
 			target = CF_TYPE( id);
 			if ( utf8_mime) target = UTF8_MIME;
+			if ( plaintext_mime) target = PLAINTEXT_MIME;
 
-			if ( id == cfTargets) {
-				int count = 0, have_utf8 = 0;
-				Atom * ci;
-				for ( i = 0; i < guts. clipboard_formats_count; i++) {
-					if ( i != cfTargets && CC-> internal[i]. size > 0) {
-						count++;
-						if ( i == cfUTF8) {
-							count++;
-							have_utf8 = 1;
-						}
-					}
-				}
-				prima_detach_xfers( CC, cfTargets, true);
-				prima_clipboard_kill_item( CC-> internal, cfTargets);
-				if (( CC-> internal[cfTargets]. data = malloc( count * sizeof( Atom)))) {
-					CC-> internal[cfTargets]. size = count * sizeof( Atom);
-					ci = (Atom*)CC-> internal[cfTargets]. data;
-					for ( i = 0; i < guts. clipboard_formats_count; i++)
-						if ( i != cfTargets && CC-> internal[i]. size > 0)
-							*(ci++) = CF_NAME(i);
-					if ( have_utf8)
-						*(ci++) = UTF8_MIME;
-				}
-			}
+			if ( id == cfTargets)
+				prima_clipboard_fill_targets(self);
 
 			if ( CC-> internal[id]. size > 0) {
 				Atom incr;

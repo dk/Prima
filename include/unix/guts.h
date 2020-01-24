@@ -713,13 +713,22 @@ typedef struct _UnixGuts
 	int                          use_gtk;
 	int                          use_quartz;
 	Bool                         is_xwayland;
+	/* DND: Common */
+	Handle                       xdnd_clipboard;
+	int                          xdnd_disabled;
 	/* DND: Receiver */
-	Handle                       xdnd_receiver, xdnd_widget, xdnd_clipboard;
-	XWindow                      xdnd_source;
-	long                         xdnd_timestamp;
-	int                          xdnd_version, xdnd_last_action;
-	Bool                         xdnd_disabled, xdnd_last_drop_response;
-	Box                          xdnd_suppress_events_within; /* in prima coordinates */
+	Handle                       xdndr_receiver, xdndr_widget;
+	XWindow                      xdndr_source;
+	long                         xdndr_timestamp;
+	int                          xdndr_version, xdndr_last_action, xdndr_action_list_cache;
+	Bool                         xdndr_last_drop_response;
+	Box                          xdndr_suppress_events_within; /* in prima coordinates */
+	/* DND: Sender */
+	Handle                       xdnds_widget;
+	XWindow                      xdnds_target;
+	int                          xdnds_version, xdnds_last_action, xdnds_last_action_response;
+	Bool                         xdnds_last_drop_response, xdnds_escape_key;
+	Box                          xdnds_suppress_events_within; /* in root coordinates */
 } UnixGuts;
 
 extern UnixGuts  guts;
@@ -960,7 +969,7 @@ typedef struct _clipboard_sys_data
 	PClipboardDataItem   external;
 	PClipboardDataItem   internal;
 	PList                xfers;
-	Bool                 xdnd;
+	Bool                 xdnd_sending, xdnd_receiving;
 } ClipboardSysData, *PClipboardSysData;
 
 typedef struct
@@ -1459,6 +1468,9 @@ prima_detach_xfers( PClipboardSysData XX, Handle id, Bool clear_original_data);
 
 extern void
 prima_clipboard_query_targets( Handle self );
+
+extern int
+prima_clipboard_fill_targets( Handle self);
 
 extern void
 prima_update_dnd_aware( Handle self );

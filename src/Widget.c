@@ -550,10 +550,13 @@ handle_drag_over( Handle self, PEvent event)
 	HV * profile = newHV();
 	SV * ref = newRV_noinc((SV*) profile);
 		
-	my-> notify( self, "<sHiPS", "DragOver", 
-		event-> dnd. clipboard, /* clipboard */
-		event-> dnd. action,    /* action */
-		event-> dnd. where,     /* position */
+	pset_i(allow,1);
+	pset_i(action,dndCopy);
+	my-> notify( self, "<sHiiPS", "DragOver", 
+		event-> dnd. clipboard,
+		event-> dnd. action,
+		event-> dnd. modmap,
+		event-> dnd. where,
 		ref
 	);
 
@@ -573,29 +576,34 @@ handle_drag_over( Handle self, PEvent event)
 }
 
 static void
-handle_end_drag( Handle self, PEvent event)
+handle_drag_end( Handle self, PEvent event)
 {
 	dPROFILE;
 	enter_method;
 	HV * profile = newHV();
 	SV * ref = newRV_noinc((SV*) profile);
 
-	if ( event-> dnd. allow && event-> dnd. action == dndAsk ) {
-		int i;
-		PList l = &event->dnd. actions;
-		AV * av = newAV();
-		for ( i = 0; i < l->count; i+=3) {
-			av_push( av, newSViv((IV) l->items[i]));
-			av_push( av, newSVpv((char*) l->items[i+1], 0));
-		}
-		pset_sv_noinc( actions, newRV_noinc((SV*) av ));
-	}
-
-	my-> notify( self, "<sHS", "EndDrag", event->dnd.allow ? event-> dnd. clipboard : nilHandle, ref);
-
+	pset_i(allow, 1);
+	pset_i(action, event->dnd.action);
+	my-> notify( self, "<sHS", "DragEnd", event->dnd.allow ? event-> dnd.clipboard : nilHandle, ref);
 	event-> dnd. allow  = pexist(allow)  ? pget_i(allow)  : 1;
 	event-> dnd. action = pexist(action) ? pget_i(action) : dndCopy;
 
+	sv_free(ref);
+}
+
+static void
+handle_drag_query( Handle self, PEvent event)
+{
+	dPROFILE;
+	enter_method;
+	HV * profile = newHV();
+	SV * ref = newRV_noinc((SV*) profile);
+	pset_i(allow, event->dnd.allow);
+	my-> notify( self, "<siS", "DragQuery", event->dnd.modmap, ref);
+	if (pexist(allow))
+		event-> dnd.allow = pget_i(allow);
+	event-> dnd.action = pexist(action) ? pget_i(action) : 0;
 	sv_free(ref);
 }
 
@@ -998,14 +1006,20 @@ void Widget_handle_event( Handle self, PEvent event)
 		case cmSize:
 			handle_size( self, event);
 			break;
-		case cmDragDrop       :
-			my-> notify( self, "<sH", "DragDrop", event->dnd.clipboard);
+		case cmDragBegin       :
+			my-> notify( self, "<sH", "DragBegin", event->dnd.clipboard);
 			break;
 		case cmDragOver       :
 			handle_drag_over( self, event );
 			break;
-		case cmEndDrag        :
-			handle_end_drag( self, event );
+		case cmDragEnd        :
+			handle_drag_end( self, event );
+			break;
+		case cmDragQuery       :
+			handle_drag_query( self, event );
+			break;
+		case cmDragResponse     :
+			my-> notify( self, "<sii", "DragResponse", event->dnd.allow, event->dnd.action);
 			break;
 	}
 }

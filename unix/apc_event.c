@@ -1058,6 +1058,13 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
 	switch ( ev-> type) {
 	case KeyPress:
+		if ( guts.xdnds_widget && !guts.xdnds_escape_key ) {
+			char str_buf[ 256];
+			KeySym keysym = 0;
+			XLookupString( ev, str_buf, 256, &keysym, nil);
+			if ( keysym == XK_Escape )
+				guts. xdnds_escape_key = true;
+		}
 	case KeyRelease: {
 		guts. last_time = ev-> xkey. time;
 		if ( !ev-> xkey. send_event && self != guts. focused && guts. focused) {
@@ -1616,7 +1623,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		guts. handled_events++;
 		cmd = e. cmd;
 		SELF_MESSAGE(e);
-		if ( PObject( self)-> stage == csDead && e.cmd != cmEndDrag ) return;
+		if ( PObject( self)-> stage == csDead ) return;
 		if ( e. cmd) {
 			switch ( cmd) {
 			case cmClose:
