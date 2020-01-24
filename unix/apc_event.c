@@ -1061,7 +1061,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if ( guts.xdnds_widget && !guts.xdnds_escape_key ) {
 			char str_buf[ 256];
 			KeySym keysym = 0;
-			XLookupString( ev, str_buf, 256, &keysym, nil);
+			XLookupString( &ev-> xkey, str_buf, 256, &keysym, nil);
 			if ( keysym == XK_Escape )
 				guts. xdnds_escape_key = true;
 		}

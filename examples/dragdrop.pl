@@ -44,7 +44,7 @@ $w->insert( Widget =>
 			1, 1, 0, 0,
 			$self->width-2,$self->height-2,
 			$self->{image}->size,
-			rop::CopyPut
+			$self->{drag} ? rop::NotPut : rop::CopyPut # XXX
 		) if $self->{image};
 		$self->rectangle(0,0,$self->width-1,$self->height-1);
 		$self->draw_text("Drop\nImage",0,0,$self->size,dt::NewLineBreak|dt::Center|dt::VCenter);
@@ -52,9 +52,11 @@ $w->insert( Widget =>
 	onDragBegin => sub {
 		my ($self, $clipboard) = @_;
 		$self->backColor(cl::Hilite);
+		$self->{drag} = 1;
 	},
 	onDragEnd => sub {
 		my ( $self, $clipboard, $ref) = @_;
+		$self->{drag} = 0;
 		$self->backColor(cl::Back);
 		return unless $clipboard;
 		$self->{image} = $clipboard->image;
@@ -76,11 +78,9 @@ $w->insert( Widget =>
 		my $self = shift;
 		return if $self->{grab};
 		$self->{grab}++;
-		$self->capture(1);
 		my $c = $::application->get_dnd_clipboard;
 		$c->text($self->text);
 		$self->begin_drag;
-		$self->capture(0);
 		$self->{grab}--;
 	},
 );
@@ -111,11 +111,9 @@ $w->insert( Widget =>
 		my $self = shift;
 		return if $self->{grab} or not $self->{image};
 		$self->{grab}++;
-		$self->capture(1);
 		my $c = $::application->get_dnd_clipboard;
 		$c->image($self->{image});
 		$self->begin_drag;
-		$self->capture(0);
 		$self->{grab}--;
 	},
 );
