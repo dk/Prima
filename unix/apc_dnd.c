@@ -85,13 +85,13 @@ xdnd_send_message( XWindow source, Atom cmd, long l0, long l1, long l2, long l3,
 }
 
 static void
-xdnd_send_message_ev( XEvent* ev)
+xdnd_send_message_ev( XWindow w, XEvent* ev)
 {
 	ev->type = ClientMessage;
 	ev->xclient.display = DISP;
 	ev->xclient.format = 32;
-	ev->xclient.window = guts.xdnds_target;
-	XSendEvent(DISP, guts.xdnds_target, False, NoEventMask, ev);
+	ev->xclient.window = w;
+	XSendEvent(DISP, w, False, NoEventMask, ev);
 	XSync( DISP, false);
 	XCHECKPOINT;
 }
@@ -478,7 +478,7 @@ FAIL:
 	if (guts.xdndr_source == guts.xdnds_sender)
 		handle_xdnd_status(guts.xdndr_receiver, &xr);
 	else
-		xdnd_send_message_ev(&xr);
+		xdnd_send_message_ev(guts.xdndr_source, &xr);
 
 	return ret;
 }
@@ -531,10 +531,14 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 	if (ev.dnd.allow) {
 		action = xdnd_constant_to_atom( ev.dnd.action );
 		if (( action & dndMask ) == 0) action = None;
+		/* never return a combination, if DragEnd never bothered to ask */
+		if ( action & dndCopy ) action = dndCopy;
+		else if ( action & dndMove ) action = dndMove;
+		else if ( action & dndLink ) action = dndLink;
+		action = None;
 		if ( action == None ) ev.dnd.allow = false;
 	}
 	XCHECKPOINT;
-	/* XXX show popup */
 
 	bzero(&xr, sizeof(xr));
 	xr.xclient.data.l[0] = X_WINDOW;
@@ -543,7 +547,7 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 	if (last_source == guts.xdnds_sender)
 		handle_xdnd_finished(guts.xdndr_receiver, &xr);
 	else
-		xdnd_send_message_ev(&xr);
+		xdnd_send_message_ev(guts.xdnds_target, &xr);
 
 	return true;
 }
@@ -589,7 +593,7 @@ xdnd_send_drop_message(void)
 	if (guts.xdndr_source == guts.xdnds_sender)
 		handle_xdnd_drop( guts.xdndr_receiver, &ev );
 	else
-		xdnd_send_message_ev(&ev);
+		xdnd_send_message_ev(guts.xdnds_target, &ev);
 }
 
 static void
@@ -605,7 +609,7 @@ xdnds_send_position_message(Point ptr, int action)
 	if (guts.xdndr_source == guts.xdnds_sender)
 		handle_xdnd_position( guts.xdndr_receiver, &ev );
 	else
-		xdnd_send_message_ev(&ev);
+		xdnd_send_message_ev(guts.xdnds_target, &ev);
 }
 
 static void
@@ -624,7 +628,7 @@ xdnds_send_enter_message(int rps, Atom * targets)
 	if (local)
 		handle_xdnd_enter( local, &ev );
 	else
-		xdnd_send_message_ev(&ev);
+		xdnd_send_message_ev(guts.xdnds_target, &ev);
 }
 
 Bool
@@ -691,7 +695,7 @@ apc_dnd_start( Handle self, int actions)
 	Bool got_session = false;
 	Point ptr, last_ptr = { -1, -1 };
 	int ret = dndNone, i, modmap, first_modmap, n_actions = 0;
-	Atom actions_list[3], curr_action;
+	Atom actions_list[3], curr_action, last_action = -1;
 	char *ac_ptr, actions_descriptions[16] = ""; /* Copy Move Link */
 	PClipboardSysData CC;
 	Handle top_level, banned_receiver = None;
@@ -823,8 +827,17 @@ apc_dnd_start( Handle self, int actions)
 		}
 
 		if (got_session) {
+			Box b = guts.xdnds_suppress_events_within;
 			XCHECKPOINT;
-			xdnds_send_position_message(ptr, curr_action);
+			if (!(
+				b.width > 0 && b.height > 0 &&
+				ptr.x >= b.x && ptr.y >= b.y &&
+				ptr.x <= b.x + b.width && ptr.y <= b.y + b.height &&
+				curr_action == last_action
+			)) {
+				xdnds_send_position_message(ptr, curr_action);
+				last_action = curr_action;
+			}
 		}
 
 		if ( new_modmap != modmap) {
@@ -847,6 +860,7 @@ apc_dnd_start( Handle self, int actions)
 			ev.dnd.action &= dndMask;
 
 			if ( ev.dnd.action != 0 ) {
+				last_action = curr_action;
 				curr_action = xdnd_constant_to_atom(ev.dnd.action);
 				if ( curr_action == None )
 					curr_action = XdndActionAsk;
