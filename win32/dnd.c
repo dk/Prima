@@ -20,6 +20,361 @@ extern "C" {
 
 static PList formats = NULL;
 
+/*
+	Classes
+*/
+
+/* IUnknown */
+typedef struct {
+	IUnknownVtbl* lpVtbl;
+	GUID *guid;
+	ULONG refcnt;
+} OLEUnknown, *POLEUnknown;
+
+static void*
+create_ole_object(int size, void * vmt)
+{
+	void * object;
+	if ( !( object = malloc(size)))
+		return false;
+	bzero(object,size);
+	((POLEUnknown)object)->refcnt = 1;
+	((POLEUnknown)object)->lpVtbl = (void*)vmt;
+	return object;
+}
+
+#define CreateObject(type) create_ole_object(sizeof(type),&type ## VMT)
+
+static ULONG __stdcall
+OLEUnknown__AddRef(POLEUnknown self)
+{
+	return self->refcnt++;
+}
+
+static ULONG __stdcall
+OLEUnknown__Release(POLEUnknown self)
+{
+	if ( --(self->refcnt) == 0 ) {
+		free(self);
+		return 0;
+	} else
+		return self->refcnt;
+}
+
+static HRESULT __stdcall
+OLEUnknown__QueryInterface(POLEUnknown self, REFIID riid, void **object)
+{
+	if (
+		IsEqualGUID(riid, &IID_IUnknown) ||
+		IsEqualGUID(riid, self->guid)
+	) {
+		self->lpVtbl->AddRef((IUnknown*) self);
+		*object = self;
+		return S_OK;
+	} else {
+		*object = NULL;
+		return E_NOINTERFACE;
+	}
+}
+
+/* IDropTarget */
+typedef struct {
+	IDropTargetVtbl* lpVtbl;
+	GUID * guid;
+	ULONG  refcnt;
+	Handle widget;
+	Box    pad;
+	int    first_action;
+	int    last_action;
+} DropTarget, *PDropTarget;
+
+int
+convert_modmap(int modmap)
+{
+	return 0
+		| ((modmap & MK_CONTROL  ) ? kmCtrl  : 0)
+		| ((modmap & MK_SHIFT    ) ? kmShift : 0)
+		| ((modmap & MK_ALT      ) ? kmAlt   : 0)
+		| ((modmap & MK_LBUTTON  ) ? mb1     : 0)
+		| ((modmap & MK_RBUTTON  ) ? mb2     : 0)
+		| ((modmap & MK_MBUTTON  ) ? mb3     : 0)
+		| ((modmap & MK_XBUTTON1 ) ? mb4     : 0)
+		| ((modmap & MK_XBUTTON2 ) ? mb5     : 0)
+	;
+}
+
+static HRESULT __stdcall
+DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, DWORD *effect)
+{
+	int stage;
+	Handle w;
+	Event ev = { cmDragBegin };
+
+	if ((ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND]) == nilHandle) {
+		*effect = DROPEFFECT_NONE;
+		return S_OK;
+	}
+
+	guts.dndDataReceiver = data;
+	bzero(&(self->pad), sizeof(self->pad));
+	self->last_action  = DROPEFFECT_NONE;
+	self->first_action = *effect & dndMask;
+
+	w = self->widget;
+	protect_object(w);
+	guts.dndInsideEvent = true;
+	CWidget(w)->message(w, &ev);
+	guts.dndInsideEvent = false;
+	stage = PObject(w)-> stage;
+	unprotect_object(w);
+	if ( stage == csDead ) {
+		self->widget = nilHandle;
+		guts. dndDataReceiver = NULL;
+		*effect = DROPEFFECT_NONE;
+		return S_OK;
+	}
+
+	self->lpVtbl->DragOver((IDropTarget*)self, modmap, pt, effect);
+
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
+{
+	int stage;
+	Handle w;
+	RECT r;
+	Event ev = { cmDragOver };
+
+	if ( self->widget == nilHandle || guts.clipboards[CLIPBOARD_DND] == nilHandle) {
+		*effect = DROPEFFECT_NONE;
+		return S_OK;
+	}
+
+	w = self->widget;
+	ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND];
+
+	GetWindowRect( DHANDLE(w), &r);
+	ev.dnd.where.x   = pt.x;
+	ev.dnd.where.y   = r.bottom - r.top - pt.y - 1;
+	if (
+		self->pad.width > 0 && self->pad.height > 0 &&
+		(
+			ev.dnd.where.x < self->pad.x ||
+			ev.dnd.where.x > self->pad.width  + self->pad.x ||
+			ev.dnd.where.y < self->pad.y ||
+			ev.dnd.where.y > self->pad.height + self->pad.y
+		)
+	) {
+		*effect = self-> last_action;
+		return S_OK;
+	}
+
+	/* DROPEFFECT_XXX and dndXXX constants are directly mapped to each other, except DROPEFFECT_SCROLL */
+	ev.dnd.action = *effect & dndMask;
+	ev.dnd.modmap = convert_modmap(modmap);
+
+	protect_object(w);
+	guts.dndInsideEvent = true;
+	CWidget(w)->message(w, &ev);
+	guts.dndInsideEvent = false;
+	stage = PObject(w)-> stage;
+	unprotect_object(w);
+	if ( stage == csDead ) {
+		self->widget = nilHandle;
+		guts. dndDataReceiver = NULL;
+		*effect = DROPEFFECT_NONE;
+		return S_OK;
+	}
+
+	ev.dnd.action &= self->first_action;
+	self->last_action = *effect = ev.dnd.allow ? ev.dnd.action : DROPEFFECT_NONE;
+	self->pad = ev.dnd.pad;
+
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DropTarget__DragLeave(PDropTarget self)
+{
+	Handle w;
+	Event ev = { cmDragEnd };
+
+	guts. dndDataReceiver = NULL;
+	if ( self->widget == nilHandle || guts.clipboards[CLIPBOARD_DND] == nilHandle)
+		return S_OK;
+
+	w = self->widget;
+	ev.dnd.allow = 0;
+	ev.dnd.clipboard = nilHandle;
+	guts.dndInsideEvent = true;
+	CWidget(w)->message(w, &ev);
+	guts.dndInsideEvent = false;
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, DWORD *effect)
+{
+	Handle w;
+	DWORD dummy_effect;
+	Event ev = { cmDragEnd };
+
+	dummy_effect = *effect;
+	self->lpVtbl->DragOver((IDropTarget*)self, modmap, pt, &dummy_effect);
+	if ( self->widget == nilHandle || guts.clipboards[CLIPBOARD_DND] == nilHandle) {
+		*effect = DROPEFFECT_NONE;
+		guts. dndDataReceiver = NULL;
+		return S_OK;
+	}
+
+	w = self->widget;
+	ev.dnd.allow     = 1;
+	ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND];
+	ev.dnd.action    = *effect & dndMask;
+	guts.dndInsideEvent = true;
+	CWidget(w)->message(w, &ev);
+	guts.dndInsideEvent = false;
+	*effect          = ev.dnd.allow ? (ev.dnd.action & self->first_action) : DROPEFFECT_NONE;
+
+	return S_OK;
+}
+
+static IDropTargetVtbl DropTargetVMT = {
+	(void*) OLEUnknown__QueryInterface,
+	(void*) OLEUnknown__AddRef,
+	(void*) OLEUnknown__Release,
+	(void*) DropTarget__DragEnter,
+	(void*) DropTarget__DragOver,
+	(void*) DropTarget__DragLeave,
+	(void*) DropTarget__Drop
+};
+
+/* IDropSource */
+typedef struct {
+	IDropSourceVtbl* lpVtbl;
+	GUID * guid;
+	ULONG  refcnt;
+	Handle widget;
+	int    first_modmap;
+} DropSource, *PDropSource;
+
+static HRESULT __stdcall
+DropSource__QueryContinueDrag(PDropSource self, BOOL escape, DWORD modmap)
+{
+	Event ev = { cmDragQuery };
+	ev.dnd.modmap = 
+		convert_modmap(modmap) | 
+		(escape ? kmEscape : 0)
+	;
+	if ( escape )
+		ev.dnd.allow = -1;
+	else if ( self->first_modmap != (ev.dnd.modmap & self->first_modmap ))
+		ev.dnd.allow = 1;
+	else
+		ev.dnd.allow = 0;
+	CWidget(self->widget)->message(self->widget, &ev);
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DropSource__GiveFeedback(PDropSource self, DWORD effect)
+{
+	Event ev = { cmDragResponse };
+	ev.dnd.action = effect & dndMask;
+	ev.dnd.allow  = ev.dnd.action != dndNone;
+	CWidget(self->widget)->message(self->widget, &ev);
+	return S_OK;
+}
+
+static IDropSourceVtbl DropSourceVMT = {
+	(void*) OLEUnknown__QueryInterface,
+	(void*) OLEUnknown__AddRef,
+	(void*) OLEUnknown__Release,
+	(void*) DropSource__QueryContinueDrag,
+	(void*) DropSource__GiveFeedback
+};
+
+/* IDataObject */
+typedef struct {
+	IDataObjectVtbl* lpVtbl;
+	GUID * guid;
+	ULONG  refcnt;
+	List   data;
+} DataObject, *PDataObject;
+
+static HRESULT __stdcall
+DataObject__GetData(PDataObject self, LPFORMATETC format, LPSTGMEDIUM medium)
+{
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DataObject__GetDataHere(PDataObject self, LPFORMATETC format, LPSTGMEDIUM medium)
+{
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DataObject__QueryGetData(PDataObject self, LPFORMATETC format)
+{
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DataObject__GetCanonicalFormatEtc(PDataObject self, LPFORMATETC format_in, LPFORMATETC format_out)
+{
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DataObject__SetData(PDataObject self, LPFORMATETC format, LPSTGMEDIUM medium, BOOL release)
+{
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DataObject__EnumFormatEtc(PDataObject self, DWORD direction, LPENUMFORMATETC *enum_formats)
+{
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DataObject__DAdvise(PDataObject self, LPFORMATETC format, DWORD advf, LPADVISESINK sink, DWORD *connection)
+{
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DataObject__Dunadvise(PDataObject self, DWORD connection)
+{
+	return S_OK;
+}
+
+static HRESULT __stdcall
+DataObject__EnumDAdvise(PDataObject self, LPENUMSTATDATA *enum_advise)
+{
+	return S_OK;
+}
+
+static IDataObjectVtbl DataObjectVMT = {
+	(void*) OLEUnknown__QueryInterface,
+	(void*) OLEUnknown__AddRef,
+	(void*) OLEUnknown__Release,
+	(void*) DataObject__GetData,
+	(void*) DataObject__GetDataHere,
+	(void*) DataObject__QueryGetData,
+	(void*) DataObject__GetCanonicalFormatEtc,
+	(void*) DataObject__SetData,
+	(void*) DataObject__EnumFormatEtc,
+	(void*) DataObject__DAdvise,
+	(void*) DataObject__Dunadvise,
+	(void*) DataObject__EnumDAdvise
+};
+
+/* clipboard */
+
 Bool
 dnd_clipboard_open( Handle self)
 {
@@ -151,230 +506,24 @@ dnd_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 	return false;
 }
 
+/* Widgets */
+
 Bool
 apc_dnd_get_aware( Handle self )
 {
 	return sys dropTarget != NULL;
 }
 
-typedef struct {
-	IUnknownVtbl* lpVtbl;
-	GUID *guid;
-	ULONG refcnt;
-} OLEUnknown, *POLEUnknown;
-
-static ULONG __stdcall
-OLEUnknown__AddRef(POLEUnknown self)
-{
-	return self->refcnt++;
-}
-
-static ULONG __stdcall
-OLEUnknown__Release(POLEUnknown self)
-{
-	if ( --(self->refcnt) == 0 ) {
-		free(self);
-		return 0;
-	} else
-		return self->refcnt;
-}
-
-static HRESULT __stdcall
-OLEUnknown__QueryInterface(POLEUnknown self, REFIID riid, void **object)
-{
-	if (
-		IsEqualGUID(riid, &IID_IUnknown) ||
-		IsEqualGUID(riid, self->guid)
-	) {
-		self->lpVtbl->AddRef((IUnknown*) self);
-		*object = self;
-		return S_OK;
-	} else {
-		*object = NULL;
-		return E_NOINTERFACE;
-	}
-}
-
-typedef struct {
-	IDropTargetVtbl* lpVtbl;
-	GUID * guid;
-	ULONG  refcnt;
-	Handle widget;
-	Box    pad;
-	int    first_action;
-	int    last_action;
-} DropTarget, *PDropTarget;
-
-static HRESULT __stdcall
-DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, DWORD *effect)
-{
-	int stage;
-	Handle w;
-	Event ev = { cmDragBegin };
-
-	if ((ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND]) == nilHandle) {
-		*effect = DROPEFFECT_NONE;
-		return S_OK;
-	}
-
-	guts.dndDataReceiver = data;
-	bzero(&(self->pad), sizeof(self->pad));
-	self->last_action  = DROPEFFECT_NONE;
-	self->first_action = *effect & dndMask;
-
-	w = self->widget;
-	protect_object(w);
-	guts.dndInsideEvent = true;
-	CWidget(w)->message(w, &ev);
-	guts.dndInsideEvent = false;
-	stage = PObject(w)-> stage;
-	unprotect_object(w);
-	if ( stage == csDead ) {
-		self->widget = nilHandle;
-		guts. dndDataReceiver = NULL;
-		*effect = DROPEFFECT_NONE;
-		return S_OK;
-	}
-
-	self->lpVtbl->DragOver((IDropTarget*)self, modmap, pt, effect);
-
-	return S_OK;
-}
-
-static HRESULT __stdcall
-DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
-{
-	int stage;
-	Handle w;
-	RECT r;
-	Event ev = { cmDragOver };
-
-	if ( self->widget == nilHandle || guts.clipboards[CLIPBOARD_DND] == nilHandle) {
-		*effect = DROPEFFECT_NONE;
-		return S_OK;
-	}
-
-	w = self->widget;
-	ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND];
-
-	GetWindowRect( DHANDLE(w), &r);
-	ev.dnd.where.x   = pt.x;
-	ev.dnd.where.y   = r.bottom - r.top - pt.y - 1;
-	if (
-		self->pad.width > 0 && self->pad.height > 0 &&
-		(
-			ev.dnd.where.x < self->pad.x ||
-			ev.dnd.where.x > self->pad.width  + self->pad.x ||
-			ev.dnd.where.y < self->pad.y ||
-			ev.dnd.where.y > self->pad.height + self->pad.y
-		)
-	) {
-		*effect = self-> last_action;
-		return S_OK;
-	}
-
-	/* DROPEFFECT_XXX and dndXXX constants are directly mapped to each other, except DROPEFFECT_SCROLL */
-	ev.dnd.action    = *effect & dndMask;
-
-	ev.dnd.modmap    = 0
-		| ((modmap & MK_CONTROL  ) ? kmCtrl  : 0)
-		| ((modmap & MK_SHIFT    ) ? kmShift : 0)
-		| ((modmap & MK_ALT      ) ? kmAlt   : 0)
-		| ((modmap & MK_LBUTTON  ) ? mb1     : 0)
-		| ((modmap & MK_RBUTTON  ) ? mb2     : 0)
-		| ((modmap & MK_MBUTTON  ) ? mb3     : 0)
-		| ((modmap & MK_XBUTTON1 ) ? mb4     : 0)
-		| ((modmap & MK_XBUTTON2 ) ? mb5     : 0)
-	;
-
-	protect_object(w);
-	guts.dndInsideEvent = true;
-	CWidget(w)->message(w, &ev);
-	guts.dndInsideEvent = false;
-	stage = PObject(w)-> stage;
-	unprotect_object(w);
-	if ( stage == csDead ) {
-		self->widget = nilHandle;
-		guts. dndDataReceiver = NULL;
-		*effect = DROPEFFECT_NONE;
-		return S_OK;
-	}
-
-	ev.dnd.action &= self->first_action;
-	self->last_action = *effect = ev.dnd.allow ? ev.dnd.action : DROPEFFECT_NONE;
-	self->pad = ev.dnd.pad;
-
-	return S_OK;
-}
-
-static HRESULT __stdcall
-DropTarget__DragLeave(PDropTarget self)
-{
-	Handle w;
-	Event ev = { cmDragEnd };
-
-	guts. dndDataReceiver = NULL;
-	if ( self->widget == nilHandle || guts.clipboards[CLIPBOARD_DND] == nilHandle)
-		return S_OK;
-
-	w = self->widget;
-	ev.dnd.allow = 0;
-	ev.dnd.clipboard = nilHandle;
-	guts.dndInsideEvent = true;
-	CWidget(w)->message(w, &ev);
-	guts.dndInsideEvent = false;
-	return S_OK;
-}
-
-static HRESULT __stdcall
-DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, DWORD *effect)
-{
-	Handle w;
-	DWORD dummy_effect;
-	Event ev = { cmDragEnd };
-
-	dummy_effect = *effect;
-	self->lpVtbl->DragOver((IDropTarget*)self, modmap, pt, &dummy_effect);
-	if ( self->widget == nilHandle || guts.clipboards[CLIPBOARD_DND] == nilHandle) {
-		*effect = DROPEFFECT_NONE;
-		guts. dndDataReceiver = NULL;
-		return S_OK;
-	}
-
-	w = self->widget;
-	ev.dnd.allow     = 1;
-	ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND];
-	ev.dnd.action    = *effect & dndMask;
-	guts.dndInsideEvent = true;
-	CWidget(w)->message(w, &ev);
-	guts.dndInsideEvent = false;
-	*effect          = ev.dnd.allow ? (ev.dnd.action & self->first_action) : DROPEFFECT_NONE;
-
-	return S_OK;
-}
-
-static IDropTargetVtbl DropTargetVMT = {
-	(void*) OLEUnknown__QueryInterface,
-	(void*) OLEUnknown__AddRef,
-	(void*) OLEUnknown__Release,
-	(void*) DropTarget__DragEnter,
-	(void*) DropTarget__DragOver,
-	(void*) DropTarget__DragLeave,
-	(void*) DropTarget__Drop
-};
 
 Bool
 apc_dnd_set_aware( Handle self, Bool is_target )
 {
-	PDropTarget target;
 	if ( is_target == (sys dropTarget != NULL )) return true;
 
 	if ( is_target ) {
-		if ( !( target = malloc(sizeof(DropTarget))))
+		PDropTarget target;
+		if (!(target = CreateObject(DropTarget)))
 			return false;
-		bzero(target,sizeof(DropTarget));
-		target->refcnt = 1;
-		target->lpVtbl = &DropTargetVMT;
 		target->widget = self;
 		if ( RegisterDragDrop( sys handle, (IDropTarget*) target) != S_OK) {
 			apiErr;
@@ -383,9 +532,8 @@ apc_dnd_set_aware( Handle self, Bool is_target )
 		}
 		sys dropTarget = target;
 	} else {
-		target = (PDropTarget) sys dropTarget;
 		RevokeDragDrop(sys handle);
-		target->lpVtbl->Release((IDropTarget*)target);
+		free(sys dropTarget);
 		sys dropTarget = NULL;
 	}
 
@@ -401,7 +549,50 @@ apc_dnd_get_clipboard( Handle self )
 int
 apc_dnd_start( Handle self, int actions)
 {
-	return 0;
+	int ret = dndNone;
+	DWORD effect;
+	actions &= dndMask;
+
+	if ( actions == 0 )
+		return -1;
+	if ( guts.dragSource )
+		return -1;
+	if (!(guts.dndDataSender = CreateObject(DataObject)))
+		return -1;
+	if (!(guts.dragSource = CreateObject(DropSource))) {
+		free(guts.dndDataSender);
+		guts.dndDataSender = NULL;
+		return -1;
+	}
+	((PDropSource)guts.dragSource)->widget       = self;
+	((PDropSource)guts.dragSource)->first_modmap = 
+		apc_kbd_get_state() | apc_pointer_get_state();
+
+	rc = DoDragDrop(
+		(LPDATAOBJECT) guts.dndDataSender,
+		(LPDROPSOURCE) guts.dragSource,
+		actions,
+		&effect
+	);
+
+	switch (rc) {
+	case DRAGDROP_S_DROP:
+		ret = dndNone;
+		break;
+	case DRAGDROP_S_CANCEL:
+		ret = effect & dndMask;
+		break;
+	default:
+		ret = -1;
+		apcWarn;
+	}
+
+	free(guts.dndDataSender);
+	free(guts.dragSource);
+	guts.dndDataSender = NULL;
+	guts.dragSource    = NULL;
+
+	return ret;
 }
 
 #ifdef __cplusplus
