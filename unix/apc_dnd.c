@@ -197,7 +197,6 @@ handle_xdnd_status( Handle self, XEvent* xev)
 	if ( xev->xclient.data.l[1] & 2 ) {
 		bzero(&guts.xdnds_suppress_events_within, sizeof(Box));
 	} else {
-		/* XXX */
 		guts.xdnds_suppress_events_within.x = xev->xclient.data.l[2] >> 16;
 		guts.xdnds_suppress_events_within.y = xev->xclient.data.l[2] & 0xffff;
 		guts.xdnds_suppress_events_within.width  = xev->xclient.data.l[3] >> 16;

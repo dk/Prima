@@ -290,9 +290,11 @@ int
 apc_pointer_get_state( Handle self)
 {
 	return
-		(( GetKeyState( VK_LBUTTON) < 0) ? mbLeft     : 0) |
-		(( GetKeyState( VK_RBUTTON) < 0) ? mbRight    : 0) |
-		(( GetKeyState( VK_MBUTTON) < 0) ? mbMiddle   : 0);
+		(( GetKeyState( VK_LBUTTON)  < 0) ? mbLeft     : 0) |
+		(( GetKeyState( VK_RBUTTON)  < 0) ? mbRight    : 0) |
+		(( GetKeyState( VK_MBUTTON)  < 0) ? mbMiddle   : 0) |
+		(( GetKeyState( VK_XBUTTON1) < 0) ? mb4        : 0) |
+		(( GetKeyState( VK_XBUTTON2) < 0) ? mb5        : 0);
 }
 
 #ifdef __cplusplus
