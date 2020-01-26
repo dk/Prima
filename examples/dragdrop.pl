@@ -29,6 +29,7 @@ $w->insert( Widget =>
 		$self->backColor(cl::Back);
 		return unless $clipboard;
 		$self->text($clipboard->text) if $clipboard->format_exists('Text');
+		$self->repaint;
 	},
 );
 

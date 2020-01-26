@@ -1,4 +1,5 @@
 #include "win32\win32guts.h"
+#include <ole2.h>
 #ifndef _APRICOT_H_
 #include "apricot.h"
 #endif
@@ -381,6 +382,11 @@ window_subsystem_init( char * error_buf)
 	guts. smDblClk. x = GetSystemMetrics( SM_CXDOUBLECLK);
 	guts. smDblClk. y = GetSystemMetrics( SM_CYDOUBLECLK);
 
+	{
+		HRESULT r = OleInitialize(NULL);
+		guts. ole_initialized = (r == S_OK || r == S_FALSE );
+	}
+
 	return true;
 }
 
@@ -413,6 +419,8 @@ static Bool myfont_cleaner( void * value, int keyLen, void * key, void * dummy) 
 void
 window_subsystem_done()
 {
+	if (guts. ole_initialized)
+		OleUninitialize();
 	free( timeDefs);
 	timeDefs = NULL;
 	list_destroy( &guts. files);
