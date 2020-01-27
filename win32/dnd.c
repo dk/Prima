@@ -301,8 +301,38 @@ typedef struct {
 	IDataObjectVtbl* lpVtbl;
 	GUID * guid;
 	ULONG  refcnt;
-	List   data;
+	List   list;
 } DataObject, *PDataObject;
+
+typedef struct {
+	int format, size;
+	void * data;
+	HBITMAP bitmap;
+	HPALETTE palette;
+} DataObjectEntry, *PDataObjectEntry;
+
+static void
+dataobject_free_entry(PDataObjectEntry entry)
+{
+	if ( entry-> format == CF_BITMAP ) {
+		if ( entry-> bitmap ) DeleteObject(entry-> bitmap);
+		if ( entry-> palette ) DeleteObject(entry-> palette);
+	} else {
+		free( entry->data);
+	}
+	bzero(&(entry->data), sizeof(DataObjectEntry));
+}
+
+static void
+dataobject_clear()
+{
+	int i;
+	PDataObject data = (PDataObject) guts.dndDataSender;
+	if ( !data ) return;
+	for ( i = 0; i < data->list.count; i++)
+		dataobject_free_entry((PDataObjectEntry) data->list.items[i]);
+	data->list.count = 0;
+}
 
 static HRESULT __stdcall
 DataObject__GetData(PDataObject self, LPFORMATETC format, LPSTGMEDIUM medium)
@@ -375,36 +405,6 @@ static IDataObjectVtbl DataObjectVMT = {
 
 /* clipboard */
 
-Bool
-dnd_clipboard_open( Handle self)
-{
-	DEFCC;
-	if (data == NULL) return false;
-	return true;
-}
-
-Bool
-dnd_clipboard_close( Handle self)
-{
-	DEFCC;
-	if ( formats ) {
-		plist_destroy(formats);
-		formats = NULL;
-	}
-	if (data == NULL) return false;
-	return true;
-}
-
-Bool
-dnd_clipboard_clear( Handle self)
-{
-	DEFCC;
-	if ( guts.dndInsideEvent ) return false;
-	if (data == NULL) return false;
-	/* XXX */
-	return true;
-}
-
 static PList
 get_formats(void)
 {
@@ -429,8 +429,57 @@ get_formats(void)
 	return formats;
 }
 
+Bool
+dnd_clipboard_create( void)
+{
+	if (guts.dndDataSender) return false;
+	if (!(guts.dndDataSender = CreateObject(DataObject))) 
+		return false;
+	list_create(&((PDataObject) guts.dndDataSender)->list, 8, 8);
+}
+
+void
+dnd_clipboard_destroy( void)
+{
+	if (!guts.dndDataSender) return;
+	dataobject_clear();
+	list_destroy(&((PDataObject) guts.dndDataSender)->list);
+	free(guts.dndDataSender);
+	guts.dndDataSender = NULL;
+}
+
+Bool
+dnd_clipboard_open( void)
+{
+	DEFCC;
+	if (data == NULL) return false;
+	return true;
+}
+
+Bool
+dnd_clipboard_close( void)
+{
+	DEFCC;
+	if ( formats ) {
+		plist_destroy(formats);
+		formats = NULL;
+	}
+	if (data == NULL) return false;
+	return true;
+}
+
+Bool
+dnd_clipboard_clear( void)
+{
+	DEFCC;
+	if ( guts.dndInsideEvent ) return false;
+	if (data == NULL) return false;
+	dataobject_clear();
+	return true;
+}
+
 PList
-dnd_clipboard_get_formats( Handle self)
+dnd_clipboard_get_formats( void)
 {
 	int i;
 	PList cf_formats, ret;
@@ -448,7 +497,7 @@ dnd_clipboard_get_formats( Handle self)
 }
 
 Bool
-dnd_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
+dnd_clipboard_get_data( Handle id, PClipboardDataRec c)
 {
 	DEFCC;
 	Bool ret;
@@ -485,7 +534,7 @@ dnd_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 }
 
 Bool
-dnd_clipboard_has_format( Handle self, Handle id)
+dnd_clipboard_has_format( Handle id)
 {
 	int i;
 	PList cf_formats;
@@ -501,7 +550,7 @@ dnd_clipboard_has_format( Handle self, Handle id)
 }
 
 Bool
-dnd_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
+dnd_clipboard_set_data( Handle id, PClipboardDataRec c)
 {
 	return false;
 }
@@ -557,8 +606,6 @@ apc_dnd_start( Handle self, int actions)
 		return -1;
 	if ( guts.dragSource )
 		return -1;
-	if (!(guts.dndDataSender = CreateObject(DataObject)))
-		return -1;
 	if (!(guts.dragSource = CreateObject(DropSource))) {
 		free(guts.dndDataSender);
 		guts.dndDataSender = NULL;
@@ -566,7 +613,7 @@ apc_dnd_start( Handle self, int actions)
 	}
 	((PDropSource)guts.dragSource)->widget       = self;
 	((PDropSource)guts.dragSource)->first_modmap = 
-		apc_kbd_get_state() | apc_pointer_get_state();
+		apc_kbd_get_state(self) | apc_pointer_get_state(self);
 
 	rc = DoDragDrop(
 		(LPDATAOBJECT) guts.dndDataSender,

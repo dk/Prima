@@ -37,9 +37,10 @@ apc_clipboard_create( Handle self)
 
 	if (strcmp(c, "Clipboard") == 0)
 		guts.clipboards[CLIPBOARD_MAIN] = self;
-	else if (strcmp(c, "DragDrop") == 0)
+	else if (strcmp(c, "DragDrop") == 0) {
 		guts.clipboards[CLIPBOARD_DND] = self;
-	else
+		return dnd_clipboard_create();
+	} else
 		return false;
 	return true;
 }
@@ -48,6 +49,8 @@ Bool
 apc_clipboard_destroy( Handle self)
 {
 	int i;
+	if (self == guts.clipboards[CLIPBOARD_DND])
+		dnd_clipboard_destroy();
 	for ( i = 0; i < 2; i++)
 		if ( guts.clipboards[i] == self )
 			guts.clipboards[i] = nilHandle;
@@ -58,7 +61,7 @@ Bool
 apc_clipboard_open( Handle self)
 {
 	if (self == guts.clipboards[CLIPBOARD_DND])
-		return dnd_clipboard_open(self);
+		return dnd_clipboard_open();
 
 	if ( !OpenClipboard( nil)) apiErrRet;
 	return true;
@@ -68,7 +71,7 @@ Bool
 apc_clipboard_close( Handle self)
 {
 	if (self == guts.clipboards[CLIPBOARD_DND])
-		return dnd_clipboard_close(self);
+		return dnd_clipboard_close();
 
 	if ( !CloseClipboard()) apiErrRet;
 	return true;
@@ -78,7 +81,7 @@ Bool
 apc_clipboard_clear( Handle self)
 {
 	if (self == guts.clipboards[CLIPBOARD_DND])
-		return dnd_clipboard_clear(self);
+		return dnd_clipboard_clear();
 
 	if ( !EmptyClipboard()) apiErrRet;
 	return true;
@@ -148,7 +151,7 @@ apc_clipboard_get_formats( Handle self)
 	PList list;
 
 	if (self == guts.clipboards[CLIPBOARD_DND])
-		return dnd_clipboard_get_formats(self);
+		return dnd_clipboard_get_formats();
 
 	list = plist_create(8, 8);
 	while (( f = EnumClipboardFormats( f))) {
@@ -165,7 +168,7 @@ apc_clipboard_has_format( Handle self, Handle id)
 {
 	id = cf2CF( id);
 	if (self == guts.clipboards[CLIPBOARD_DND])
-		return dnd_clipboard_has_format(self, id);
+		return dnd_clipboard_has_format(id);
 
 	return IsClipboardFormatAvailable( id) ||
 		(( id == CF_TEXT) && IsClipboardFormatAvailable( CF_UNICODETEXT));
@@ -268,7 +271,7 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 
 	id = cf2CF( id);
 	if (self == guts.clipboards[CLIPBOARD_DND])
-		return dnd_clipboard_get_data(self, id, c);
+		return dnd_clipboard_get_data(id, c);
 
 	if ((ph = GetClipboardData(id)) == NULL) {
 		apcErr( errInvClipboardData);
@@ -284,7 +287,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 {
 	id = cf2CF( id);
 	if (self == guts.clipboards[CLIPBOARD_DND])
-		return dnd_clipboard_set_data(self, id, c);
+		return dnd_clipboard_set_data(id, c);
 
 	switch ( id)
 	{
