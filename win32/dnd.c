@@ -4,6 +4,7 @@
 #include "apricot.h"
 #endif
 #include "guts.h"
+#include "Image.h"
 #include "Widget.h"
 
 #ifdef __cplusplus
@@ -13,7 +14,6 @@ extern "C" {
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
 #define  dsys( view) (( PDrawableData)(( PComponent) view)-> sysData)->
 #define var (( PWidget) self)->
-#define HANDLE sys handle
 #define DHANDLE(x) dsys(x) handle
 
 #define DEFCC IDataObject* data = (IDataObject*) ( guts.dndInsideEvent ? guts.dndDataReceiver : guts.dndDataSender );
@@ -27,23 +27,24 @@ static PList formats = NULL;
 /* IUnknown */
 typedef struct {
 	IUnknownVtbl* lpVtbl;
-	GUID *guid;
+	const GUID *guid;
 	ULONG refcnt;
 } OLEUnknown, *POLEUnknown;
 
 static void*
-create_ole_object(int size, void * vmt)
+create_ole_object(int size, void * vmt, const GUID * guid)
 {
 	void * object;
 	if ( !( object = malloc(size)))
 		return false;
 	bzero(object,size);
 	((POLEUnknown)object)->refcnt = 1;
+	((POLEUnknown)object)->guid   = guid;
 	((POLEUnknown)object)->lpVtbl = (void*)vmt;
 	return object;
 }
 
-#define CreateObject(type) create_ole_object(sizeof(type),&type ## VMT)
+#define CreateObject(type) create_ole_object(sizeof(type),&type ## VMT, &IID_I ## type)
 
 static ULONG __stdcall
 OLEUnknown__AddRef(POLEUnknown self)
@@ -258,14 +259,15 @@ typedef struct {
 	ULONG  refcnt;
 	Handle widget;
 	int    first_modmap;
+	int    last_action;
 } DropSource, *PDropSource;
 
 static HRESULT __stdcall
 DropSource__QueryContinueDrag(PDropSource self, BOOL escape, DWORD modmap)
 {
 	Event ev = { cmDragQuery };
-	ev.dnd.modmap = 
-		convert_modmap(modmap) | 
+	ev.dnd.modmap =
+		convert_modmap(modmap) |
 		(escape ? kmEscape : 0)
 	;
 	if ( escape )
@@ -275,7 +277,13 @@ DropSource__QueryContinueDrag(PDropSource self, BOOL escape, DWORD modmap)
 	else
 		ev.dnd.allow = 0;
 	CWidget(self->widget)->message(self->widget, &ev);
-	return S_OK;
+
+	if ( ev.dnd.allow < 0 )
+		return DRAGDROP_S_CANCEL;
+	else if ( ev.dnd.allow > 0)
+		return DRAGDROP_S_DROP;
+	else
+		return S_OK;
 }
 
 static HRESULT __stdcall
@@ -285,6 +293,10 @@ DropSource__GiveFeedback(PDropSource self, DWORD effect)
 	ev.dnd.action = effect & dndMask;
 	ev.dnd.allow  = ev.dnd.action != dndNone;
 	CWidget(self->widget)->message(self->widget, &ev);
+	if ( self->last_action != ev.dnd.action ) {
+		self->last_action = ev.dnd.action;
+		return DRAGDROP_S_USEDEFAULTCURSORS;
+	}
 	return S_OK;
 }
 
@@ -305,22 +317,76 @@ typedef struct {
 } DataObject, *PDataObject;
 
 typedef struct {
-	int format, size;
+	int format1, format2, size;
 	void * data;
-	HBITMAP bitmap;
-	HPALETTE palette;
+	Handle image;
+	char payload[1]; /* data points here */
 } DataObjectEntry, *PDataObjectEntry;
+
+static TYMED
+cf2tymed(int cf)
+{
+	return (cf == CF_BITMAP || cf == CF_PALETTE) ? TYMED_GDI : TYMED_HGLOBAL;
+}
+
+static PDataObjectEntry
+dataobject_alloc_buffer(int format, int size, void * data)
+{
+	PDataObjectEntry entry;
+	if ( !( entry = malloc( size + sizeof(DataObjectEntry)))) {
+		warn("Not enough memory");
+		return NULL;
+	}
+	bzero( entry, sizeof(DataObjectEntry));
+	entry->format1 = format;
+	entry->format2 = -1;
+	entry->size    = size;
+	entry->data    = &(entry->payload);
+	memcpy( entry->data, data, size );
+	return entry;
+}
+
+static PDataObjectEntry
+dataobject_alloc_image(Handle image)
+{
+	PDataObjectEntry entry;
+	if ( !( entry = malloc( sizeof(DataObjectEntry)))) {
+		warn("Not enough memory");
+		return NULL;
+	}
+	bzero( entry, sizeof(DataObjectEntry));
+	entry->image   = image;
+	entry->format1 = CF_BITMAP;
+	entry->format2 = ( PImage(image)-> type != imbpp24 ) ? CF_PALETTE : -1;
+	protect_object(image);
+	CComponent(guts.clipboards[CLIPBOARD_DND])->attach(guts.clipboards[CLIPBOARD_DND], image);
+	return entry;
+}
 
 static void
 dataobject_free_entry(PDataObjectEntry entry)
 {
-	if ( entry-> format == CF_BITMAP ) {
-		if ( entry-> bitmap ) DeleteObject(entry-> bitmap);
-		if ( entry-> palette ) DeleteObject(entry-> palette);
-	} else {
-		free( entry->data);
+	if ( entry->format1 == CF_BITMAP ) {
+		CComponent(guts.clipboards[CLIPBOARD_DND])->detach(guts.clipboards[CLIPBOARD_DND], entry->image, false);
+		unprotect_object(entry->image);
 	}
-	bzero(&(entry->data), sizeof(DataObjectEntry));
+	free( entry );
+}
+
+static int
+dataobject_find_entry(PDataObject data, int format, PDataObjectEntry * entry_ref)
+{
+	int i;
+
+	if ( entry_ref ) *entry_ref = NULL;
+	for ( i = 0; i < data->list.count; i++) {
+		PDataObjectEntry entry = (void*) data->list.items[i];
+		if ( entry->format1 == format || ( entry->format2 >= 0 && entry->format2 == format )) {
+			if ( entry_ref ) *entry_ref = entry;
+			return i;
+		}
+	}
+	return -1;
 }
 
 static void
@@ -334,58 +400,192 @@ dataobject_clear()
 	data->list.count = 0;
 }
 
+static HRESULT
+dataobject_convert( PDataObjectEntry entry, int format, LPSTGMEDIUM medium)
+{
+	switch (format) {
+	case CF_BITMAP: {
+		HPALETTE p;
+		if ( PImage(entry->image)->stage != csNormal)
+			return E_UNEXPECTED;
+		p = ( HGLOBAL) palette_create( entry-> image);
+		medium->hBitmap = ( HBITMAP) image_create_bitmap( entry-> image, p, NULL, BM_AUTO);
+		DeleteObject(p);
+		break;
+	}
+	case CF_PALETTE:
+		if ( PImage(entry->image)->stage != csNormal)
+			return E_UNEXPECTED;
+		medium->hGlobal = ( HGLOBAL) palette_create( entry-> image);
+		break;
+	case CF_UNICODETEXT: {
+		int ulen;
+		void *ptr = NULL;
+
+		ulen = MultiByteToWideChar(CP_UTF8, 0, (char*) entry->data, entry->size, NULL, 0) + 1;
+		if (( medium->hGlobal = GlobalAlloc( GMEM_DDESHARE, ( ulen + 0) * sizeof( WCHAR))) == NULL)
+			return E_OUTOFMEMORY;
+
+		if (( ptr = GlobalLock( medium->hGlobal)) == NULL) {
+			GlobalFree( medium->hGlobal);
+			medium->hGlobal = NULL;
+			return E_UNEXPECTED;
+		}
+
+		MultiByteToWideChar(CP_UTF8, 0, (LPSTR)entry-> data, entry->size, ptr, ulen);
+		GlobalUnlock( medium->hGlobal);
+		break;
+	}
+	case CF_TEXT: {
+		int i, cr = 0;
+		void *ptr = nil;
+		char *src = (char*)entry->data, *dst;
+
+		for ( i = 0; i < entry-> size; i++)
+			if (src[i] == '\n' && ( i == 0 || src[i-1] != '\r'))
+				cr++;
+
+		if (( medium->hGlobal = GlobalAlloc( GMEM_DDESHARE, entry->size + cr + 1)) == NULL)
+			return E_OUTOFMEMORY;
+		if (( ptr = GlobalLock( medium->hGlobal)) == NULL ) {
+			GlobalFree( medium->hGlobal);
+			medium->hGlobal = NULL;
+			return E_UNEXPECTED;
+		}
+
+		dst = ( char *) ptr;
+		for ( i = 0; i < entry->size; i++) {
+			if ( src[i] == '\n' && ( i == 0 || src[i-1] != '\r'))
+				*(dst++) = '\r';
+			*(dst++) = src[i];
+		}
+		*dst = 0;
+		GlobalUnlock( ptr);
+		break;
+	}
+	default: {
+		char* ptr;
+		if (!( medium->hGlobal = GlobalAlloc( GMEM_DDESHARE, entry-> size)))
+			return E_OUTOFMEMORY;
+		if ( !( ptr = ( char *) GlobalLock( medium->hGlobal))) {
+			GlobalFree( medium->hGlobal );
+			medium->hGlobal = NULL;
+			return E_UNEXPECTED;
+		}
+		memcpy( ptr, entry-> data, entry-> size);
+		GlobalUnlock( medium->hGlobal );
+		break;
+	}}
+
+	return S_OK;
+}
+
 static HRESULT __stdcall
 DataObject__GetData(PDataObject self, LPFORMATETC format, LPSTGMEDIUM medium)
 {
-	return S_OK;
+	PDataObjectEntry entry;
+	int found = -1;
+
+	if ((found = dataobject_find_entry(self, format->cfFormat, &entry)) < 0)
+		return DV_E_FORMATETC;
+	if ( format->tymed != cf2tymed(format->cfFormat))
+		return DV_E_TYMED;
+
+	medium->tymed = format->tymed;
+	medium->pUnkForRelease  = 0;
+	return dataobject_convert(entry, format->cfFormat, medium);
 }
 
 static HRESULT __stdcall
 DataObject__GetDataHere(PDataObject self, LPFORMATETC format, LPSTGMEDIUM medium)
 {
-	return S_OK;
+	return DATA_E_FORMATETC;
 }
 
 static HRESULT __stdcall
 DataObject__QueryGetData(PDataObject self, LPFORMATETC format)
 {
+	PDataObjectEntry entry;
+	int found = -1;
+
+	if ((found = dataobject_find_entry(self, format->cfFormat, &entry)) < 0)
+		return DV_E_FORMATETC;
+	if ( format->tymed != cf2tymed(format->cfFormat))
+		return DV_E_TYMED;
+
 	return S_OK;
 }
 
 static HRESULT __stdcall
 DataObject__GetCanonicalFormatEtc(PDataObject self, LPFORMATETC format_in, LPFORMATETC format_out)
 {
-	return S_OK;
+	format_out->ptd = NULL;
+	return E_NOTIMPL;
 }
 
 static HRESULT __stdcall
 DataObject__SetData(PDataObject self, LPFORMATETC format, LPSTGMEDIUM medium, BOOL release)
 {
-	return S_OK;
+	return E_UNEXPECTED;
 }
+
+static void
+fill_formatetc(int id, FORMATETC * f)
+{
+	f->cfFormat = id;
+	f->ptd      = NULL;
+	f->dwAspect = DVASPECT_CONTENT;
+	f->lindex   = -1;
+	f->tymed    = cf2tymed(id);
+}
+
+STDAPI __stdcall SHCreateStdEnumFmtEtc(UINT cfmt, const FORMATETC* afmt, LPENUMFORMATETC *ppenumFormatEtc);
 
 static HRESULT __stdcall
 DataObject__EnumFormatEtc(PDataObject self, DWORD direction, LPENUMFORMATETC *enum_formats)
 {
+	int i, n_formats = self->list.count;
+	FORMATETC *formats, *f;
+
+	if (direction != DATADIR_GET)
+		return E_NOTIMPL;
+
+	for ( i = 0; i < self->list.count; i++)
+		if (((PDataObjectEntry)self->list.items[i])->format2 >= 0)
+			n_formats++;
+
+	if ((formats = malloc(sizeof(FORMATETC) * n_formats)) == NULL)
+		return E_OUTOFMEMORY;
+
+	for ( i = 0, f = formats; i < self->list.count; i++) {
+		PDataObjectEntry entry = (PDataObjectEntry)self->list.items[i];
+		fill_formatetc(entry->format1, f++);
+		if ( entry->format2 >= 0)
+			fill_formatetc(entry->format2, f++);
+	}
+
+	SHCreateStdEnumFmtEtc(n_formats, formats, enum_formats);
+	free(formats);
+
 	return S_OK;
 }
 
 static HRESULT __stdcall
 DataObject__DAdvise(PDataObject self, LPFORMATETC format, DWORD advf, LPADVISESINK sink, DWORD *connection)
 {
-	return S_OK;
+	return E_FAIL;
 }
 
 static HRESULT __stdcall
 DataObject__Dunadvise(PDataObject self, DWORD connection)
 {
-	return S_OK;
+	return E_FAIL;
 }
 
 static HRESULT __stdcall
 DataObject__EnumDAdvise(PDataObject self, LPENUMSTATDATA *enum_advise)
 {
-	return S_OK;
+	return E_FAIL;
 }
 
 static IDataObjectVtbl DataObjectVMT = {
@@ -433,9 +633,10 @@ Bool
 dnd_clipboard_create( void)
 {
 	if (guts.dndDataSender) return false;
-	if (!(guts.dndDataSender = CreateObject(DataObject))) 
+	if (!(guts.dndDataSender = CreateObject(DataObject)))
 		return false;
 	list_create(&((PDataObject) guts.dndDataSender)->list, 8, 8);
+	return true;
 }
 
 void
@@ -503,10 +704,35 @@ dnd_clipboard_get_data( Handle id, PClipboardDataRec c)
 	Bool ret;
 	HPALETTE palette = NULL;
 	STGMEDIUM medium, medium2;
-	FORMATETC etc = { id, NULL, DVASPECT_CONTENT, -1, ( id == CF_BITMAP ) ? TYMED_GDI : TYMED_HGLOBAL };
+	FORMATETC etc = { id, NULL, DVASPECT_CONTENT, -1, cf2tymed(id) };
 
 	if (data == NULL)
 		return false;
+
+	/* copy cached data directly */
+	if ( !guts. dndInsideEvent ) {
+		PDataObjectEntry entry;
+		if (( dataobject_find_entry((PDataObject) data, id, &entry)) < 0)
+			return false;
+
+		if ( id == CF_BITMAP ) {
+			PImage src = (PImage) entry->image;
+			PImage dst = (PImage) c->image;
+			if ( src->stage != csNormal)
+				return false;
+			dst-> self-> create_empty((Handle) dst, src->w, src->h, src->type);
+			memcpy( dst-> data, src->data, src->dataSize);
+			memcpy( dst-> palette, src->palette, 3 * src->palSize );
+		} else {
+			c->length = 0;
+			if (( c->data = malloc(entry->size )) == NULL)
+				return false;
+			memcpy( c->data, entry->data, c->length = entry->size );
+		}
+		return true;
+	}
+
+	/* read from OLE */
 	if (data->lpVtbl->QueryGetData(data, &etc) != S_OK)
 		return false;
 	if (( rc = data->lpVtbl->GetData(data, &etc, &medium)) != S_OK) {
@@ -536,8 +762,17 @@ dnd_clipboard_get_data( Handle id, PClipboardDataRec c)
 Bool
 dnd_clipboard_has_format( Handle id)
 {
+	DEFCC;
 	int i;
 	PList cf_formats;
+
+	if ( !guts. dndInsideEvent ) {
+		if ( !data ) 
+			return false;
+		if (( dataobject_find_entry((PDataObject)data, id, NULL)) < 0)
+			return false;
+		return true;
+	}
 
 	if (( cf_formats = get_formats()) == NULL )
 		return false;
@@ -552,7 +787,34 @@ dnd_clipboard_has_format( Handle id)
 Bool
 dnd_clipboard_set_data( Handle id, PClipboardDataRec c)
 {
-	return false;
+	int index;
+	PDataObject data = (PDataObject) guts.dndDataSender;
+	PDataObjectEntry entry;
+
+	if ( guts. dndInsideEvent )
+		return false;
+	if (data == NULL)
+		return false;
+
+	if ((index = dataobject_find_entry((PDataObject)data, id, &entry)) >= 0) {
+		dataobject_free_entry(entry);
+		data->list.items[index] = nilHandle;
+	}
+
+	entry = ( id == CF_BITMAP ) ?
+		dataobject_alloc_image(c->image) :
+		dataobject_alloc_buffer(id, c->length, c->data);
+	if ( entry == NULL ) {
+		warn("Not enough memory");
+		return false;
+	}
+
+	if ( index >= 0 )
+		data->list.items[index] = (Handle) entry;
+	else
+		list_add(&data->list, (Handle) entry);
+
+	return true;
 }
 
 /* Widgets */
@@ -562,7 +824,6 @@ apc_dnd_get_aware( Handle self )
 {
 	return sys dropTarget != NULL;
 }
-
 
 Bool
 apc_dnd_set_aware( Handle self, Bool is_target )
@@ -606,14 +867,12 @@ apc_dnd_start( Handle self, int actions)
 		return -1;
 	if ( guts.dragSource )
 		return -1;
-	if (!(guts.dragSource = CreateObject(DropSource))) {
-		free(guts.dndDataSender);
-		guts.dndDataSender = NULL;
+	if (!(guts.dragSource = CreateObject(DropSource)))
 		return -1;
-	}
 	((PDropSource)guts.dragSource)->widget       = self;
-	((PDropSource)guts.dragSource)->first_modmap = 
+	((PDropSource)guts.dragSource)->first_modmap =
 		apc_kbd_get_state(self) | apc_pointer_get_state(self);
+	((PDropSource)guts.dragSource)->last_action = -1;
 
 	rc = DoDragDrop(
 		(LPDATAOBJECT) guts.dndDataSender,
@@ -634,9 +893,7 @@ apc_dnd_start( Handle self, int actions)
 		apcWarn;
 	}
 
-	free(guts.dndDataSender);
 	free(guts.dragSource);
-	guts.dndDataSender = NULL;
 	guts.dragSource    = NULL;
 
 	return ret;
