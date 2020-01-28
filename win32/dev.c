@@ -1664,16 +1664,25 @@ image_create_dib(Handle image, Bool global_alloc)
 	Byte * data;
 
 	i = (PIcon) image;
-	if ( i->type & (imSignedInt | imRealNumber | imComplexNumber | imTrigComplexNumber)) {
+	if ( dsys(image)options.aptIcon && i->type != imRGB ) {
 		Handle dup = CImage(image)->dup(image);
-		void * ret = image_create_dib(dup, global_alloc);
+		CImage(dup)->set_type( dup, imRGB );
+		ret = image_create_dib(dup, global_alloc);
+		Object_destroy(dup);
+		return ret;
+	} else if ( i->type & (imSignedInt | imRealNumber | imComplexNumber | imTrigComplexNumber)) {
+		Handle dup = CImage(image)->dup(image);
+		CImage(dup)->set_type( dup, imByte );
+		ret = image_create_dib(dup, global_alloc);
 		Object_destroy(dup);
 		return ret;
 	}
 
 	image_fill_bitmap_info(image, &bi, BM_AUTO);
+	if ( bi.bmiHeader.biClrUsed > 0)
+		bi.bmiHeader.biClrUsed = bi.bmiHeader.biClrImportant = i-> palSize;
 
-	offset = sizeof(BITMAPINFOHEADER) + 3 * bi. bmiHeader. biClrUsed;
+	offset = sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * bi.bmiHeader.biClrUsed;
 	size = i->dataSize + sizeof(BITMAPINFOHEADER) + offset;
 	if ( global_alloc ) {
 		if (!( ret = GlobalAlloc( GMEM_DDESHARE, size)))
