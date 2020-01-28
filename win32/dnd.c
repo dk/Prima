@@ -236,8 +236,12 @@ DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, D
 	ev.dnd.action    = *effect & dndMask;
 	guts.dndInsideEvent = true;
 	CWidget(w)->message(w, &ev);
+
 	guts.dndInsideEvent = false;
 	*effect          = ev.dnd.allow ? (ev.dnd.action & self->first_action) : DROPEFFECT_NONE;
+	if ( *effect & dndCopy ) *effect = dndCopy;
+	else if ( *effect & dndMove ) *effect = dndMove;
+	else if ( *effect & dndLink ) *effect = dndLink;
 
 	return S_OK;
 }
@@ -317,7 +321,7 @@ typedef struct {
 } DataObject, *PDataObject;
 
 typedef struct {
-	int format1, format2, size;
+	int formats[3], n_formats, size;
 	void * data;
 	Handle image;
 	char payload[1]; /* data points here */
@@ -338,8 +342,10 @@ dataobject_alloc_buffer(int format, int size, void * data)
 		return NULL;
 	}
 	bzero( entry, sizeof(DataObjectEntry));
-	entry->format1 = format;
-	entry->format2 = -1;
+	entry->formats[0] = format;
+	entry->formats[1] = -1;
+	entry->formats[2] = -1;
+	entry->n_formats = 1;
 	entry->size    = size;
 	entry->data    = &(entry->payload);
 	memcpy( entry->data, data, size );
@@ -356,8 +362,10 @@ dataobject_alloc_image(Handle image)
 	}
 	bzero( entry, sizeof(DataObjectEntry));
 	entry->image   = image;
-	entry->format1 = CF_BITMAP;
-	entry->format2 = CF_DIB;
+	entry->formats[0] = CF_BITMAP;
+	entry->formats[1] = CF_PALETTE;
+	entry->formats[2] = CF_DIB;
+	entry->n_formats = 3;
 	protect_object(image);
 	CComponent(guts.clipboards[CLIPBOARD_DND])->attach(guts.clipboards[CLIPBOARD_DND], image);
 	return entry;
@@ -366,7 +374,7 @@ dataobject_alloc_image(Handle image)
 static void
 dataobject_free_entry(PDataObjectEntry entry)
 {
-	if ( entry->format1 == CF_BITMAP ) {
+	if ( entry->formats[0] == CF_BITMAP ) {
 		CComponent(guts.clipboards[CLIPBOARD_DND])->detach(guts.clipboards[CLIPBOARD_DND], entry->image, false);
 		unprotect_object(entry->image);
 	}
@@ -376,14 +384,16 @@ dataobject_free_entry(PDataObjectEntry entry)
 static int
 dataobject_find_entry(PDataObject data, int format, PDataObjectEntry * entry_ref)
 {
-	int i;
+	int i, j;
 
 	if ( entry_ref ) *entry_ref = NULL;
 	for ( i = 0; i < data->list.count; i++) {
 		PDataObjectEntry entry = (void*) data->list.items[i];
-		if ( entry->format1 == format || ( entry->format2 >= 0 && entry->format2 == format )) {
-			if ( entry_ref ) *entry_ref = entry;
-			return i;
+		for ( j = 0; j < entry->n_formats; j++) {
+			if ( entry->formats[j] == format ) {
+				if ( entry_ref ) *entry_ref = entry;
+				return i;
+			}
 		}
 	}
 	return -1;
@@ -516,7 +526,7 @@ DataObject__QueryGetData(PDataObject self, LPFORMATETC format)
 	int found = -1;
 
 	if ((found = dataobject_find_entry(self, format->cfFormat, &entry)) < 0)
-		return DV_E_FORMATETC;
+		return S_FALSE;
 	if ( format->tymed != cf2tymed(format->cfFormat))
 		return DV_E_TYMED;
 
@@ -536,39 +546,32 @@ DataObject__SetData(PDataObject self, LPFORMATETC format, LPSTGMEDIUM medium, BO
 	return E_UNEXPECTED;
 }
 
-static void
-fill_formatetc(int id, FORMATETC * f)
-{
-	f->cfFormat = id;
-	f->ptd      = NULL;
-	f->dwAspect = DVASPECT_CONTENT;
-	f->lindex   = -1;
-	f->tymed    = cf2tymed(id);
-}
-
 STDAPI __stdcall SHCreateStdEnumFmtEtc(UINT cfmt, const FORMATETC* afmt, LPENUMFORMATETC *ppenumFormatEtc);
 
 static HRESULT __stdcall
 DataObject__EnumFormatEtc(PDataObject self, DWORD direction, LPENUMFORMATETC *enum_formats)
 {
-	int i, n_formats = self->list.count;
+	int i, j, n_formats = 0;
 	FORMATETC *formats, *f;
 
 	if (direction != DATADIR_GET)
 		return E_NOTIMPL;
 
 	for ( i = 0; i < self->list.count; i++)
-		if (((PDataObjectEntry)self->list.items[i])->format2 >= 0)
-			n_formats++;
+		n_formats += ((PDataObjectEntry)self->list.items[i])->n_formats;
 
 	if ((formats = malloc(sizeof(FORMATETC) * n_formats)) == NULL)
 		return E_OUTOFMEMORY;
 
 	for ( i = 0, f = formats; i < self->list.count; i++) {
 		PDataObjectEntry entry = (PDataObjectEntry)self->list.items[i];
-		fill_formatetc(entry->format1, f++);
-		if ( entry->format2 >= 0)
-			fill_formatetc(entry->format2, f++);
+		for ( j = 0; j < entry->n_formats; j++, f++) {
+			f->cfFormat = entry->formats[j];
+			f->ptd      = NULL;
+			f->dwAspect = DVASPECT_CONTENT;
+			f->lindex   = -1;
+			f->tymed    = cf2tymed(entry->formats[j]);
+		}
 	}
 
 	SHCreateStdEnumFmtEtc(n_formats, formats, enum_formats);
@@ -631,6 +634,7 @@ get_formats(void)
 	formats = plist_create(8, 8);
 	while ( e->lpVtbl->Next(e, 1, &etc, NULL) == S_OK ) {
 		list_add( formats, (Handle)etc.cfFormat);
+		list_add( formats, (Handle)etc.tymed);
 	}
 	e->lpVtbl->Release(e);
 	return formats;
@@ -695,10 +699,28 @@ dnd_clipboard_get_formats( void)
 	if (( cf_formats = get_formats()) == NULL )
 		return NULL;
 	ret = plist_create(8, 8);
-	for ( i = 0; i < cf_formats->count; i++) {
+	for ( i = 0; i < cf_formats->count; i+=2) {
+		char buf[256];
 		char * name = cf2name((UINT) cf_formats->items[i]);
 		if ( name )
-			list_add(ret, (Handle) duplicate_string(name));
+			snprintf(buf, 256, "%s", name);
+		else
+			snprintf(buf, 256, "0x%x", (unsigned int)cf_formats->items[i]);
+		switch (cf_formats->items[i+1]) {
+		case TYMED_HGLOBAL  : break;
+		case TYMED_FILE	    : strncat(buf, ".FILE"    ,255); break;
+		case TYMED_ISTREAM  : strncat(buf, ".ISTREAM" ,255); break;
+		case TYMED_ISTORAGE : strncat(buf, ".ISTORAGE",255); break;
+		case TYMED_GDI	    : strncat(buf, ".GDI"     ,255); break;
+		case TYMED_MFPICT   : strncat(buf, ".MFPICT"  ,255); break;
+		case TYMED_ENHMF    : strncat(buf, ".ENHMF"   ,255); break;
+		default             : {
+			char num[16];
+			snprintf(num, 16, ".0x%x", (unsigned int) cf_formats->items[i+1]);
+			strncat(buf, num, 255);
+		}}
+		buf[255] = 0;
+		list_add( ret, (Handle) duplicate_string(buf));
 	}
 
 	return ret;
@@ -711,7 +733,7 @@ dnd_clipboard_get_data( Handle id, PClipboardDataRec c)
 	Bool ret;
 	HPALETTE palette = NULL;
 	STGMEDIUM medium, medium2;
-	FORMATETC etc = { id, NULL, DVASPECT_CONTENT, -1, cf2tymed(id) };
+	FORMATETC etc = { id, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
 
 	if (data == NULL)
 		return false;
@@ -723,13 +745,7 @@ dnd_clipboard_get_data( Handle id, PClipboardDataRec c)
 			return false;
 
 		if ( id == CF_BITMAP ) {
-			PImage src = (PImage) entry->image;
-			PImage dst = (PImage) c->image;
-			if ( src->stage != csNormal)
-				return false;
-			dst-> self-> create_empty((Handle) dst, src->w, src->h, src->type);
-			memcpy( dst-> data, src->data, src->dataSize);
-			memcpy( dst-> palette, src->palette, 3 * src->palSize );
+			c->image = CImage(entry->image)->dup((Handle)(entry->image));
 		} else {
 			c->length = 0;
 			if (( c->data = malloc(entry->size )) == NULL)
@@ -740,20 +756,38 @@ dnd_clipboard_get_data( Handle id, PClipboardDataRec c)
 	}
 
 	/* read from OLE */
-	if (data->lpVtbl->QueryGetData(data, &etc) != S_OK)
-		return false;
-	if (( rc = data->lpVtbl->GetData(data, &etc, &medium)) != S_OK) {
-		apcWarn;
-		return false;
-	}
-
 	if ( id == CF_BITMAP ) {
-		etc.cfFormat = CF_PALETTE;
+		/* HBITMAP needs palette, which doesn't seem to be served through DND - check DIB first */
+		etc.cfFormat = CF_DIB;
 		if (
 			(data->lpVtbl->QueryGetData(data, &etc) == S_OK) &&
-			(data->lpVtbl->GetData(data, &etc, &medium2) == S_OK)
+			(data->lpVtbl->GetData(data, &etc, &medium) == S_OK)
 		) {
-			palette = medium2.hGlobal;
+			id = CF_DIB;
+		} else {
+			etc.cfFormat = CF_BITMAP;
+			etc.tymed    = TYMED_GDI;
+			if (
+				(data->lpVtbl->QueryGetData(data, &etc) == S_OK) &&
+				(data->lpVtbl->GetData(data, &etc, &medium) == S_OK)
+			) {
+				id = CF_BITMAP;
+				etc.cfFormat = CF_PALETTE;
+				if (
+					(data->lpVtbl->QueryGetData(data, &etc) == S_OK) &&
+					(data->lpVtbl->GetData(data, &etc, &medium2) == S_OK)
+				) {
+					palette = medium2.hGlobal;
+				}
+			} else
+				return false;
+		}
+	} else {
+		if (data->lpVtbl->QueryGetData(data, &etc) != S_OK)
+			return false;
+		if (( rc = data->lpVtbl->GetData(data, &etc, &medium)) != S_OK) {
+			apcWarn;
+			return false;
 		}
 	}
 
