@@ -737,17 +737,25 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 
 	switch ( id) {
 	case cfBitmap: {
-		Handle img = c-> image;
 		XWindow foo;
 		Pixmap px = *(( Pixmap*)( data));
 		unsigned int dummy, x, y, d;
 		int bar;
+		Bool ok = true;
 
 		if ( !XGetGeometry( DISP, px, &foo, &bar, &bar, &x, &y, &dummy, &d))
 			return false;
-		CImage( img)-> create_empty( img, x, y, ( d == 1) ? imBW : guts. qdepth);
-		if ( !prima_std_query_image( img, px)) return false;
-		break;}
+		c->image = (Handle) create_object("Prima::Image", "iii",
+			"width", x,
+			"height", y,
+			"type", (d == 1) ? imBW : guts.qdepth
+		);
+		if ( !prima_std_query_image( c->image, px)) {
+			Object_destroy(c->image);
+			return false;
+		}
+		break;
+	}
 	case cfText:
 	case cfUTF8: {
 		void * ret = malloc( size);

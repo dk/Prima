@@ -438,16 +438,8 @@ image_server( Handle self, PClipboardFormatReg instance, int function, SV * data
 	case cefInit:
 		return ( SV *) cfBitmap;
 	case cefFetch:
-		{
-			HV * profile = newHV();
-			c. image = Object_create( "Prima::Image", profile);
-			sv_free(( SV *) profile);
-			if ( apc_clipboard_get_data( self, cfBitmap, &c)) {
-				--SvREFCNT( SvRV( PImage(c. image)-> mate));
-				return newSVsv( PImage(c. image)->  mate);
-			}
-			Object_destroy( c. image);
-		}
+		if ( apc_clipboard_get_data( self, cfBitmap, &c))
+			return newSVsv( PImage(c. image)->  mate);
 		break;
 	case cefStore:
 		c. image = gimme_the_mate( data);

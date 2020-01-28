@@ -654,6 +654,7 @@ extern Handle       hwnd_layered_top_level( Handle self);
 extern Bool         hwnd_repaint_layered( Handle self, Bool now);
 extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotSpot);
 extern void         image_query_bits( Handle self, Bool forceNewImage);
+extern void         image_argb_query_bits( Handle self);
 extern HBITMAP      image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm_type);
 extern HBITMAP      image_create_argb_dib_section( HDC dc, int w, int h, uint32_t ** ptr);
 extern HPALETTE     image_create_palette( Handle self);

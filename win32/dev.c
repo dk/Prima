@@ -196,7 +196,7 @@ icon2argb( PIcon i, uint32_t * argb_bits)
 {
 	Byte * rgb_bits, *a_bits, *mask;
 	int y, maskLineSize, free_mask;
-	
+
 	if ( i-> maskType != imbpp8 ) {
 		free_mask    = true;
 		maskLineSize = LINE_SIZE(i->w, imbpp8);
@@ -464,8 +464,8 @@ image_fill_bitmap_cache( Handle self, int bm_type, Handle optimize_for_surface)
 	sys s. image. cache. cacheType = bm_type;
 }
 
-static void
-argb_query_bits( Handle self)
+void
+image_argb_query_bits( Handle self)
 {
 	PIcon i = (PIcon) self;
 	uint32_t * argb_bits;
@@ -1373,7 +1373,7 @@ apc_image_end_paint( Handle self)
 	objCheck false;
 
 	if ( is_apt( aptLayered))
-		argb_query_bits( self);
+		image_argb_query_bits( self);
 	else
 		image_query_bits( self, false);
 	hwnd_leave_paint( self);
@@ -1709,7 +1709,7 @@ image_create_dib(Handle image, Bool global_alloc)
 				free(ret);
 			return NULL;
 		}
-	} else 
+	} else
 		memcpy( data, i->data, i->dataSize );
 
 	if ( global_alloc )

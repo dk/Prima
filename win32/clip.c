@@ -104,8 +104,6 @@ static struct {
    }, {CF_DIF              , "CF_DIF"
    }, {CF_TIFF             , "CF_TIFF"
    }, {CF_OEMTEXT          , "CF_OEMTEXT"
-   }, {CF_DIB              , "CF_DIB"
-   }, {CF_PALETTE          , "CF_PALETTE"
    }, {CF_PENDATA          , "CF_PENDATA"
    }, {CF_RIFF             , "CF_RIFF"
    }, {CF_WAVE             , "CF_WAVE"
@@ -129,6 +127,12 @@ cf2name(UINT f)
 		break;
 	case CF_UNICODETEXT:
 		return duplicate_string("UTF8");
+		break;
+	case CF_DIB:
+		return duplicate_string("CF_DIB");
+		break;
+	case CF_PALETTE:
+		return duplicate_string("CF_PALETTE");
 		break;
 	default: {
 		int i = 0;
@@ -179,87 +183,133 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 {
 	switch( cfid)
 	{
-		/* XXX CF_DIB */
-		case CF_BITMAP:
-			{
-				Handle self  = c-> image;
-				HBITMAP b = (HBITMAP) p1;
-				HPALETTE op = nil, p = (HPALETTE) p2;
-				HBITMAP obm = sys bm;
-				HDC dc, ops;
+		case CF_DIB: {
+			PIcon i;
+			XBITMAPINFO * bi = (XBITMAPINFO *) p1;
+			printf("DIB\n");
+			if ( bi-> bmiHeader. biCompression != BI_RGB )
+				return false;
+			if ( bi-> bmiHeader. biBitCount == 32 ) {
+				i = (PIcon) create_object("Prima::Icon",
+					"iiiii",
+					"maskType",    8,
+					"width",       bi-> bmiHeader. biWidth,
+					"height",      bi-> bmiHeader. biHeight,
+					"type",        imRGB,
+					"autoMasking", amNone
+				);
+				if ( !i) return false;
+				image_argb_query_bits((Handle) i);
+			} else if (
+				bi-> bmiHeader. biBitCount == 1 ||
+				bi-> bmiHeader. biBitCount == 4 ||
+				bi-> bmiHeader. biBitCount == 8
+			) {
+				Byte * data;
+				int j, colors = bi-> bmiHeader. biClrUsed;
 
-				sys bm = b;
-				apcErrClear;
-				if (!( dc = CreateCompatibleDC( dc_alloc()))) return false;
-				ops = sys ps;
-				sys ps = dc;
-
-				if ( p) {
-					op = SelectPalette( dc, p, 1);
-					RealizePalette( dc);
+				i = (PIcon) create_object("Prima::Image",
+					"iii",
+					"width",       bi-> bmiHeader. biWidth,
+					"height",      bi-> bmiHeader. biHeight,
+					"type",        bi-> bmiHeader. biBitCount
+				);
+				if ( !i) return false;
+				if ( colors > 256 ) colors = 256;
+				i->palSize = colors;
+				for ( j = 0; j < colors; j++) {
+					i-> palette[ j]. r = bi-> bmiColors[ j]. rgbRed  ;
+					i-> palette[ j]. g = bi-> bmiColors[ j]. rgbGreen;
+					i-> palette[ j]. b = bi-> bmiColors[ j]. rgbBlue ;
 				}
-				image_query_bits( self, true);
-				if ( p)
-					SelectPalette( dc, op, 1);
-				DeleteDC( dc);
-				dc_free();
-				sys ps = ops;
-				sys bm = obm;
-				return apcError ? 0 : 1;
-			}
-			break;
-		case CF_UNICODETEXT:
-			{
-				WCHAR *ptr;
-				Bool ret = false;
 
-				if ( !( ptr = ( WCHAR*) GlobalLock( p1)))
-					apiErrRet;
-				apcErrClear;
-				c->length = WideCharToMultiByte(CP_UTF8, 0, ptr, -1, NULL, 0, NULL, 0);
-				if (( c->data = malloc( c-> length ) )) {
-					WideCharToMultiByte(CP_UTF8, 0, ptr, -1, (LPSTR)c->data, c->length, NULL, 0);
-					if ( c->length > 0) c->length--; // terminating 0
-					ret = true;
-				} else {
-					c->length = 0;
-				}
-				GlobalUnlock( p1);
-				return ret;
-			}
-			break;
-		case CF_TEXT:
-			{
-				Byte *ptr;
-				int i, len, ret = false;
+				data = (Byte*)bi;
+				data += sizeof(BITMAPINFOHEADER) + bi-> bmiHeader.biClrUsed * sizeof(RGBQUAD);
+				memcpy( i->data, data, i->dataSize );
+			} else
+				return false;
+			c->image = (Handle) i;
+			return true;
+		}
+		case CF_BITMAP: {
+			Handle self;
+			HBITMAP b = (HBITMAP) p1;
+			HPALETTE op = nil, p = (HPALETTE) p2;
+			HBITMAP obm;
+			HDC dc, ops;
 
-				if ( !( ptr = ( Byte*) GlobalLock( p1)))
-					apiErrRet;
-				apcErrClear;
-				len = strlen(( char*) ptr);
-				c-> length = 0;
-				if ((c-> data = ( Byte *) malloc( len))) {
-					for ( i = 0; i < len; i++)
-						if ( ptr[i] != '\r' || (( i < len) && (ptr[i+1] != '\n')))
-							c-> data[c-> length++] = ptr[i];
-					ret = true;
-				}
-				GlobalUnlock( p1);
-				return ret;
+			self = (Handle) create_object("Prima::Image", "");
+			obm = sys bm;
+			sys bm = b;
+			apcErrClear;
+			if (!( dc = CreateCompatibleDC( dc_alloc()))) {
+				Object_destroy(self);
+				return false;
 			}
-			break;
-		default:
-			{
-				char *ptr;
-				if (( c-> length = GlobalSize( p1)) == 0)
-					return true; /* not an error */
-				if ( !( ptr = ( char*) GlobalLock( p1)))
-					apiErrRet;
-				if (( c-> data = malloc( c-> length)))
-					memcpy( c-> data, ptr, c-> length);
-				GlobalUnlock( p1);
-				return true;
+			ops = sys ps;
+			sys ps = dc;
+
+			if ( p) {
+				op = SelectPalette( dc, p, 1);
+				RealizePalette( dc);
 			}
+			image_query_bits(self, true);
+			if ( p)
+				SelectPalette( dc, op, 1);
+			DeleteDC( dc);
+			dc_free();
+			sys ps = ops;
+			sys bm = obm;
+			c->image = self;
+			return true;
+		}
+		case CF_UNICODETEXT: {
+			WCHAR *ptr;
+			Bool ret = false;
+
+			if ( !( ptr = ( WCHAR*) GlobalLock( p1)))
+				apiErrRet;
+			apcErrClear;
+			c->length = WideCharToMultiByte(CP_UTF8, 0, ptr, -1, NULL, 0, NULL, 0);
+			if (( c->data = malloc( c-> length ) )) {
+				WideCharToMultiByte(CP_UTF8, 0, ptr, -1, (LPSTR)c->data, c->length, NULL, 0);
+				if ( c->length > 0) c->length--; // terminating 0
+				ret = true;
+			} else {
+				c->length = 0;
+			}
+			GlobalUnlock( p1);
+			return ret;
+		}
+		case CF_TEXT: {
+			Byte *ptr;
+			int i, len, ret = false;
+
+			if ( !( ptr = ( Byte*) GlobalLock( p1)))
+				apiErrRet;
+			apcErrClear;
+			len = strlen(( char*) ptr);
+			c-> length = 0;
+			if ((c-> data = ( Byte *) malloc( len))) {
+				for ( i = 0; i < len; i++)
+					if ( ptr[i] != '\r' || (( i < len) && (ptr[i+1] != '\n')))
+						c-> data[c-> length++] = ptr[i];
+				ret = true;
+			}
+			GlobalUnlock( p1);
+			return ret;
+		}
+		default: {
+			char *ptr;
+			if (( c-> length = GlobalSize( p1)) == 0)
+				return true; /* not an error */
+			if ( !( ptr = ( char*) GlobalLock( p1)))
+				apiErrRet;
+			if (( c-> data = malloc( c-> length)))
+				memcpy( c-> data, ptr, c-> length);
+			GlobalUnlock( p1);
+			return true;
+		}
 	}
 	return false;
 }
@@ -269,7 +319,9 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 {
 	void *ph;
 
+printf("%x\n", id);
 	id = cf2CF( id);
+printf("%x\n", id);
 	if (self == guts.clipboards[CLIPBOARD_DND])
 		return dnd_clipboard_get_data(id, c);
 
