@@ -186,7 +186,6 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 		case CF_DIB: {
 			PIcon i;
 			XBITMAPINFO * bi = (XBITMAPINFO *) p1;
-			printf("DIB\n");
 			if ( bi-> bmiHeader. biCompression != BI_RGB )
 				return false;
 			if ( bi-> bmiHeader. biBitCount == 32 ) {
@@ -319,9 +318,7 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 {
 	void *ph;
 
-printf("%x\n", id);
 	id = cf2CF( id);
-printf("%x\n", id);
 	if (self == guts.clipboards[CLIPBOARD_DND])
 		return dnd_clipboard_get_data(id, c);
 
