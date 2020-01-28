@@ -357,7 +357,7 @@ dataobject_alloc_image(Handle image)
 	bzero( entry, sizeof(DataObjectEntry));
 	entry->image   = image;
 	entry->format1 = CF_BITMAP;
-	entry->format2 = ( PImage(image)-> type != imbpp24 ) ? CF_PALETTE : -1;
+	entry->format2 = CF_DIB;
 	protect_object(image);
 	CComponent(guts.clipboards[CLIPBOARD_DND])->attach(guts.clipboards[CLIPBOARD_DND], image);
 	return entry;
@@ -418,6 +418,13 @@ dataobject_convert( PDataObjectEntry entry, int format, LPSTGMEDIUM medium)
 			return E_UNEXPECTED;
 		medium->hGlobal = ( HGLOBAL) palette_create( entry-> image);
 		break;
+	case CF_DIB: {
+		if ( PImage(entry->image)->stage != csNormal)
+			return E_UNEXPECTED;
+		if ((medium->hGlobal = image_create_dib(entry->image, true)) == NULL)
+			return E_OUTOFMEMORY;
+		break;
+	}
 	case CF_UNICODETEXT: {
 		int ulen;
 		void *ptr = NULL;

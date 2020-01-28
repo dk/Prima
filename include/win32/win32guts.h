@@ -704,6 +704,7 @@ extern Bool         dnd_clipboard_set_data( Handle id, PClipboardDataRec c);
 extern PList        dnd_clipboard_get_formats();
 extern char *       cf2name( UINT cf );
 extern Bool         clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2);
+extern void *       image_create_dib(Handle image, Bool global_alloc);
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA

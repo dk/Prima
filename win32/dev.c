@@ -191,60 +191,28 @@ image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm
 	return bm;
 }
 
-static HBITMAP
-image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr )
+static Bool
+icon2argb( PIcon i, uint32_t * argb_bits)
 {
-	HBITMAP bm;
-	XBITMAPINFO xbi;
-	BITMAPINFO * bi;
-	HDC dc, compat_dc;
-	PIcon i = (PIcon) self;
-	uint32_t * argb_bits;
 	Byte * rgb_bits, *a_bits, *mask;
 	int y, maskLineSize, free_mask;
-
-	if ( !is_apt(aptIcon) || i-> type != imRGB ) {
-		warn("panic: image_create_argb_bitmap called on a non-imRGB icon");
-		return NULL;
-	}
-
-	if ( argb_bits_ptr == NULL )
-		argb_bits_ptr = &argb_bits;
-
-	bm = NULL;
-
-	bi  = image_fill_bitmap_info( self, &xbi, BM_LAYERED);
-	if ( !bi)
-		return NULL;
-
+	
 	if ( i-> maskType != imbpp8 ) {
 		free_mask    = true;
 		maskLineSize = LINE_SIZE(i->w, imbpp8);
-		mask         = i->self->convert_mask( self, imbpp8 );
+		mask         = i->self->convert_mask(( Handle ) i, imbpp8 );
 		if ( !mask )
-			return NULL;
+			return false;
 	} else {
 		free_mask    = false;
 		mask         = i-> mask;
 		maskLineSize = i-> maskLine;
 	}
 
-	dc = GetDC(NULL);
-	compat_dc = CreateCompatibleDC(dc);
-
-	bi-> bmiHeader. biBitCount = 32;
-	bi-> bmiHeader. biSizeImage = bi->bmiHeader.biWidth * bi->bmiHeader. biHeight * 4;
-	bm = CreateDIBSection(compat_dc, bi, DIB_RGB_COLORS,
-			(LPVOID*) argb_bits_ptr, NULL, 0x0);
-	if (!bm) {
-		apiErr;
-		goto EXIT;
-	}
 	for (
 		y = 0,
 			rgb_bits  = i->data,
-			a_bits    = mask,
-			argb_bits = *argb_bits_ptr;
+			a_bits    = mask;
 		y < i->h;
 		y++,
 			rgb_bits  += i-> lineSize,
@@ -261,8 +229,52 @@ image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr )
 		}
 	}
 
-EXIT:
 	if ( free_mask ) free(mask);
+	return true;
+}
+
+static HBITMAP
+image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr )
+{
+	HBITMAP bm;
+	XBITMAPINFO xbi;
+	BITMAPINFO * bi;
+	HDC dc, compat_dc;
+	PIcon i = (PIcon) self;
+	uint32_t * argb_bits;
+
+	if ( !is_apt(aptIcon) || i-> type != imRGB ) {
+		warn("panic: image_create_argb_bitmap called on a non-imRGB icon");
+		return NULL;
+	}
+
+	if ( argb_bits_ptr == NULL )
+		argb_bits_ptr = &argb_bits;
+
+	bm = NULL;
+
+	bi  = image_fill_bitmap_info( self, &xbi, BM_LAYERED);
+	if ( !bi)
+		return NULL;
+
+	dc = GetDC(NULL);
+	compat_dc = CreateCompatibleDC(dc);
+
+	bi-> bmiHeader. biBitCount = 32;
+	bi-> bmiHeader. biSizeImage = bi->bmiHeader.biWidth * bi->bmiHeader. biHeight * 4;
+	bm = CreateDIBSection(compat_dc, bi, DIB_RGB_COLORS,
+			(LPVOID*) argb_bits_ptr, NULL, 0x0);
+	if (!bm) {
+		apiErr;
+		goto EXIT;
+	}
+
+	if ( !icon2argb(i, *argb_bits_ptr)) {
+		DeleteObject(bm);
+		bm = NULL;
+	}
+
+EXIT:
 	DeleteDC( compat_dc);
 	ReleaseDC( NULL, dc);
 	return bm;
@@ -1640,6 +1652,61 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 	DeleteObject( ii. hbmMask);
 	if (( Handle) i != img) Object_destroy(( Handle) i);
 	return r;
+}
+
+void *
+image_create_dib(Handle image, Bool global_alloc)
+{
+	int size, offset;
+	XBITMAPINFO bi;
+	PIcon i;
+	void *ptr, *ret;
+	Byte * data;
+
+	i = (PIcon) image;
+	if ( i->type & (imSignedInt | imRealNumber | imComplexNumber | imTrigComplexNumber)) {
+		Handle dup = CImage(image)->dup(image);
+		void * ret = image_create_dib(dup, global_alloc);
+		Object_destroy(dup);
+		return ret;
+	}
+
+	image_fill_bitmap_info(image, &bi, BM_AUTO);
+
+	offset = sizeof(BITMAPINFOHEADER) + 3 * bi. bmiHeader. biClrUsed;
+	size = i->dataSize + sizeof(BITMAPINFOHEADER) + offset;
+	if ( global_alloc ) {
+		if (!( ret = GlobalAlloc( GMEM_DDESHARE, size)))
+			return NULL;
+		if ( !( ptr = GlobalLock( ret))) {
+			GlobalFree( ret );
+			return NULL;
+		}
+	} else {
+		if ( !( ptr = ret = malloc(size)))
+			return NULL;
+	}
+
+	memcpy( ptr, &bi, offset);
+	data = ptr;
+	data += offset;
+
+	if ( bi. bmiHeader. biBitCount == 32 ) {
+		if ( !icon2argb(i, (uint32_t*)data)) {
+			if ( global_alloc ) {
+				GlobalUnlock( ret );
+				GlobalFree( ret );
+			} else 
+				free(ret);
+			return NULL;
+		}
+	} else 
+		memcpy( data, i->data, i->dataSize );
+
+	if ( global_alloc )
+		GlobalUnlock( ret );
+
+	return ret;
 }
 
 ApiHandle
