@@ -1283,15 +1283,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	case EnterNotify: {
 		if (( guts. pointer_invisible_count == 0) && XX-> flags. pointer_obscured) {
 			XX-> flags. pointer_obscured = 0;
-			if ( XX-> pointer_id == crUser ) {
-				XDefineCursor( DISP, XX-> udrawable, XX-> user_pointer.cursor);
-			} else if (
-				XX-> pointer_id >= crDragCopy && XX-> pointer_id <= crDragLink &&
-				guts.xdnd_pointers[XX->pointer_id - crDragCopy].status > 0) {
-				XDefineCursor( DISP, XX-> udrawable, guts.xdnd_pointers[XX->pointer_id - crDragCopy].cursor);
-			} else {
-				XDefineCursor( DISP, XX-> udrawable, XX-> actual_pointer);
-			}
+			XDefineCursor( DISP, XX-> udrawable, prima_get_cursor(self));
 		} else if (( guts. pointer_invisible_count < 0) && !XX-> flags. pointer_obscured) {
 			XX-> flags. pointer_obscured = 1;
 			XDefineCursor( DISP, XX-> udrawable, guts. null_pointer);

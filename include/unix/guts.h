@@ -742,7 +742,7 @@ typedef struct _UnixGuts
 	Bool                         xdnds_last_drop_response, xdnds_escape_key;
 	Box                          xdnds_suppress_events_within; /* in root coordinates */
 
-	CustomPointer                xdnd_pointers[3]; /* copy,link,move */
+	CustomPointer                xdnd_pointers[5]; /* none,copy,link,move,ask */
 } UnixGuts;
 
 extern UnixGuts  guts;
