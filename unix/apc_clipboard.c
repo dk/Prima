@@ -1054,7 +1054,7 @@ prima_handle_selection_event( XEvent *ev, XWindow win, Handle self)
 					xe. xselection. display,
 					xe. xselection. requestor,
 					prop, target, format, mode, data, size);
-				Cdebug("clipboard: store prop %s\n", XGetAtomName( DISP, prop));
+				Cdebug("clipboard: store prop %s f=%d s=%d\n", XGetAtomName( DISP, prop), format, size);
 				xe. xselection. property = prop;
 			}
 

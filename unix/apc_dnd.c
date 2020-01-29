@@ -1,10 +1,9 @@
 #include "unix/guts.h"
 #include "Application.h"
 
-/* ActionList */
+/* See specs at https://www.freedesktop.org/wiki/Specifications/XDND/ */
 
 #define dndAsk 0x100
-#define WAIT_FOR_FINISH 2
 
 static int
 xdnd_atom_to_constant( Atom atom )
@@ -236,11 +235,11 @@ handle_xdnd_status( Handle self, XEvent* xev)
 static Bool
 handle_xdnd_finished( Handle self, XEvent* xev)
 {
-	if ( guts.xdnd_disabled && guts.xdnd_disabled != WAIT_FOR_FINISH )
+	Cdebug("dnd:finished disabled=%d/%x %x\n",guts.xdnd_disabled,xev->xclient.data.l[0],guts.xdnds_target);
+	if ( guts.xdnd_disabled )
 		return false;
 	if ( xev->xclient.data.l[0] != guts.xdnds_target)
 		return false;
-	Cdebug("dnd:finished\n");
 	if ( guts. xdnds_version > 4 ) {
 		guts.xdnds_last_drop_response = xev->xclient.data.l[1] & 1;
 		guts.xdnds_last_action_response = (guts.xdnds_last_drop_response ?
@@ -248,7 +247,8 @@ handle_xdnd_finished( Handle self, XEvent* xev)
 	} else {
 		guts.xdnds_last_drop_response = 1;
 	}
-	guts.xdnd_disabled = false;
+	Cdebug("dnd:finish\n");
+	guts.xdnds_finished = true;
 	return true;
 }
 
@@ -377,7 +377,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	if ( h == application || !X(h)->flags.enabled)
 		h = nilHandle;
 	XCHECKPOINT;
-	/* Cdebug("dnd:position old widget %08x, new %08x\n", guts.xdnd_widget, h); */
+	/* Cdebug("dnd:position old widget %08x, new %08x\n", guts.xdndr_widget, h); */
 
 	/* send enter/leave messages */
 	if ( guts. xdndr_widget != h && guts. xdndr_widget != nilHandle ) {
@@ -476,7 +476,6 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	if (box.height > 0xffff) box.height = 0xffff;
 
 	XCHECKPOINT;
-	xr.xclient.message_type = XdndStatus;
 	xr.xclient.data.l[1] = 
 		guts.xdndr_last_drop_response |
 			((guts.xdndr_suppress_events_within.width > 0 &&
@@ -488,6 +487,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 
 FAIL:
 	xr.xclient.data.l[0] = X_WINDOW;
+	xr.xclient.message_type = XdndStatus;
 	if (guts.xdndr_source == guts.xdnds_sender)
 		handle_xdnd_status(guts.xdndr_receiver, &xr);
 	else
@@ -554,13 +554,14 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 	XCHECKPOINT;
 
 	bzero(&xr, sizeof(xr));
+	xr.xclient.message_type = XdndFinished;
 	xr.xclient.data.l[0] = X_WINDOW;
 	xr.xclient.data.l[1] = ev.dnd.allow;
 	xr.xclient.data.l[2] = ev.dnd.allow ? action : None;
 	if (last_source == guts.xdnds_sender)
 		handle_xdnd_finished(guts.xdndr_receiver, &xr);
 	else
-		xdnd_send_message_ev(guts.xdnds_target, &xr);
+		xdnd_send_message_ev(last_source, &xr);
 
 	return true;
 }
@@ -635,8 +636,8 @@ xdnds_send_enter_message(int rps, Atom * targets)
 	ev.xclient.data.l[0] = guts.xdnds_sender;
 	ev.xclient.data.l[1] = (((guts.xdnds_version < 5) ? guts.xdnds_version : 5) << 24) | (rps > 3);
 	ev.xclient.data.l[2] = (rps > 0) ? targets[0] : None;
-	ev.xclient.data.l[3] = (rps > 0) ? targets[1] : None;
-	ev.xclient.data.l[4] = (rps > 0) ? targets[2] : None;
+	ev.xclient.data.l[3] = (rps > 1) ? targets[1] : None;
+	ev.xclient.data.l[4] = (rps > 2) ? targets[2] : None;
 	local = ( Handle) hash_fetch( guts. windows, (void*)&(guts.xdnds_target), sizeof(XWindow));
 	if (local)
 		handle_xdnd_enter( local, &ev );
@@ -755,6 +756,7 @@ apc_dnd_start( Handle self, int actions)
 
 	guts. xdnds_sender = PWidget(top_level)->handle;
 	guts. xdnds_widget = self;
+	guts. xdnds_finished = false;
 	modmap = query_pointer(NULL,NULL);
 	first_modmap = modmap & 0xffff;
 	guts.xdnds_escape_key = false;
@@ -789,7 +791,7 @@ apc_dnd_start( Handle self, int actions)
 		if ( !guts.xdnds_widget || !guts.xdnd_clipboard ) {
 			Cdebug("dnd:objects killed\n");
 			ret = dndNone;
-			goto FAIL;
+			goto EXIT;
 		}
 
 		new_modmap = query_pointer(&new_receiver, &ptr);
@@ -831,7 +833,7 @@ apc_dnd_start( Handle self, int actions)
 				if ( rps == 0 ) {
 					Cdebug("dnd:failed to query clipboard targets\n");
 					ret = -1;
-					goto FAIL;
+					goto EXIT;
 				}
 
 				got_session = true;
@@ -907,27 +909,29 @@ apc_dnd_start( Handle self, int actions)
 		XSync( DISP, false);
 	}
 
-	apc_widget_set_capture(self, 0, nilHandle);
-	apc_pointer_set_shape(self, old_pointer);
-
-	if (ret == dndNone) return ret;
+	if (ret == dndNone) goto EXIT;
 
 	if (guts. xdnds_version < 2 ) {
 		if (ret == dndAsk) ret = dndCopy; /* shouldn't happen */
-		return ret;
+		goto EXIT;
 	}
 
 	/* wait for XdndFinished */
 	if (last_xdndr_source != guts.xdnds_sender) {
 		XCHECKPOINT;
-		guts.xdnd_disabled = WAIT_FOR_FINISH; /* our event comes through */
+		guts.xdnds_finished = false;
 		guts.xdnds_widget = self;
 		guts.xdnds_escape_key = false;
-		while ( prima_one_loop_round( WAIT_ALWAYS, true) && guts.xdnd_disabled && !guts.xdnds_escape_key) {
+		Cdebug("dnd:wait for finalization\n");
+		while ( 
+			prima_one_loop_round( WAIT_ALWAYS, true) && 
+			!guts.xdnds_finished && 
+			!guts.xdnds_escape_key
+		) {
 			XSync( DISP, false);
 		}
+		Cdebug("dnd:finalize by %s\n", guts.xdnds_escape_key ? "escape" : "event");
 		guts.xdnds_widget = nilHandle;
-		guts.xdnd_disabled = false;
 		guts.xdnds_escape_key = false;
 	}
 
@@ -937,11 +941,10 @@ apc_dnd_start( Handle self, int actions)
 	} else
 		ret = dndNone;
 
-	return ret;
-
-FAIL:
+EXIT:
 	apc_widget_set_capture(self, 0, nilHandle);
 	apc_pointer_set_shape(self, old_pointer);
 	guts.xdnds_widget = nilHandle;
+	guts.xdnds_target = None;
 	return ret;
 }
