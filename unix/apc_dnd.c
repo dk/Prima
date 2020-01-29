@@ -188,6 +188,7 @@ query_pointer(XWindow * receiver, Point *p)
 static Bool
 handle_xdnd_status( Handle self, XEvent* xev)
 {
+	int old_response;
 	Event ev = { cmDragResponse };
 
 	if ( xev->xclient.data.l[0] != guts.xdnds_target)
@@ -205,6 +206,7 @@ handle_xdnd_status( Handle self, XEvent* xev)
 
 	ev.dnd.allow = guts.xdnds_last_drop_response;
 
+	old_response = guts. xdnds_last_action_response;
 	guts. xdnds_last_action_response = (guts.xdnds_version > 1) ?
 		xdnd_atom_to_constant(xev->xclient.data.l[4]) : dndCopy;
 	ev.dnd.action = guts.xdnds_last_action_response;
@@ -215,6 +217,9 @@ handle_xdnd_status( Handle self, XEvent* xev)
 		guts.xdnd_disabled = true;
 		CComponent(guts.xdnds_widget)-> message(guts.xdnds_widget, &ev);
 		guts.xdnd_disabled = false;
+	}
+
+	if ( old_response != guts.xdnds_last_action_response) {
 	}
 	return true;
 }
@@ -229,8 +234,8 @@ handle_xdnd_finished( Handle self, XEvent* xev)
 	Cdebug("dnd:finished\n");
 	if ( guts. xdnds_version > 4 ) {
 		guts.xdnds_last_drop_response = xev->xclient.data.l[1] & 1;
-		guts.xdnds_last_action_response = guts.xdnds_last_drop_response ?
-			xdnd_atom_to_constant(xev->xclient.data.l[2]) : dndNone;
+		guts.xdnds_last_action_response = (guts.xdnds_last_drop_response ?
+			xdnd_atom_to_constant(xev->xclient.data.l[2]) : dndNone);
 	} else {
 		guts.xdnds_last_drop_response = 1;
 	}
