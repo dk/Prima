@@ -22,14 +22,30 @@ $w->insert( Widget =>
 	},
 	onDragBegin => sub {
 		my ($self, $clipboard) = @_;
-		$self->backColor(cl::Hilite);
+		$self->{dropable} = $clipboard->format_exists('Text') ? 1 : 0;
+		$self->set(
+			color     => ($self->{dropable} ? cl::HiliteText : cl::DisabledText),
+			backColor => ($self->{dropable} ? cl::Hilite : cl::Disabled),
+		);
+	},
+	onDragOver => sub {
+		my ( $self, $clipboard, $action, $modmap, $x, $y, $ref) = @_;
+		$ref->{allow} = $self->{dropable};
+		$ref->{pad} = [ 0, 0, $self-> size ]; # don't send it anymore
 	},
 	onDragEnd => sub {
 		my ( $self, $clipboard, $ref) = @_;
-		$self->backColor(cl::Back);
+		$self->set(
+			color     => cl::Fore,
+			backColor => cl::Back,
+		);
 		return unless $clipboard;
-		$self->text($clipboard->text) if $clipboard->format_exists('Text');
-		$self->repaint;
+		$ref->{allow} = 0;
+		if ($clipboard->format_exists('Text')) {
+			$ref->{allow} = 1;
+			$self->text($clipboard->text);
+			$self->repaint;
+		}
 	},
 );
 
@@ -52,16 +68,31 @@ $w->insert( Widget =>
 	},
 	onDragBegin => sub {
 		my ($self, $clipboard) = @_;
-		$self->backColor(cl::Hilite);
 		$self->{drag} = 1;
+		$self->{dropable} = $clipboard->format_exists('Image') ? 1 : 0;
+		$self->set(
+			color     => ($self->{dropable} ? cl::HiliteText : cl::DisabledText),
+			backColor => ($self->{dropable} ? cl::Hilite : cl::Disabled),
+		);
+	},
+	onDragOver => sub {
+		my ( $self, $clipboard, $action, $modmap, $x, $y, $ref) = @_;
+		$ref->{allow} = $self->{dropable};
+		$ref->{pad} = [ 0, 0, $self-> size ]; # don't send it anymore
 	},
 	onDragEnd => sub {
 		my ( $self, $clipboard, $ref) = @_;
 		$self->{drag} = 0;
-		$self->backColor(cl::Back);
+		$self->set(
+			color     => cl::Fore,
+			backColor => cl::Back,
+		);
 		return unless $clipboard;
-		$self->{image} = $clipboard->image;
-		$self->repaint;
+		$ref->{allow} = 0;
+		if ( $self->{image} = $clipboard->image) {
+			$ref->{allow} = 1;
+			$self->repaint;
+		}
 	},
 );
 

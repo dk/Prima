@@ -1,6 +1,5 @@
 #include "unix/guts.h"
 #include "Icon.h"
-#undef HAVE_X11_XCURSOR_XCURSOR_H
 
 static int
 cursor_map[] = {
@@ -46,11 +45,11 @@ xcursor_map[] = {
 	/* crSizeNE          => */   "top_right_corner",
 	/* crSizeSW          => */   "bottom_left_corner",
 	/* crInvalid         => */   "X_cursor",
-        /* crDragNone        => */   "circle",
-        /* crDragCopy        => */   "sb_down_arrow",
-        /* crDragMove        => */   "sb_down_arrow",
-        /* crDragLink        => */   "sb_down_arrow",
-        /* crDragAsk         => */   "question_arrow",
+        /* crDragNone        => */   "dnd-none",
+        /* crDragCopy        => */   "dnd-copy",
+        /* crDragMove        => */   "dnd-move",
+        /* crDragLink        => */   "dnd-link",
+        /* crDragAsk         => */   "dnd-ask"
 };
 #endif
 
@@ -78,6 +77,9 @@ predefined_cursors[] = {
 	None,
 	None
 };
+
+static CustomPointer*
+is_drag_cursor_available(int id);
 
 static Bool
 create_cursor(CustomPointer* cp, Handle icon, Point hot_spot)
@@ -214,14 +216,85 @@ load_pointer_font( void)
 	return true;
 }
 
-static CustomPointer*
-is_drag_cursor_available(int id)
+static void
+draw_poly( Handle self, int n_points, Point * pts, int dx, int dy)
 {
-	if ( id >= crDragCopy && id <= crDragLink ) {
-		CustomPointer *cp = guts.xdnd_pointers + id - crDragCopy;
-		return (cp->status > 0) ? cp : NULL;
+	RegionRec rgnrec, *prgnrec;
+	PIcon i = (PIcon) self;
+	ImgPaintContext ctx = {
+		{0,0,0,0},
+		{0,0,0,0},
+		ropCopyPut, false,
+		{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff },
+		{0,0},
+		lpSolid,
+		NULL,
+		{dx,dy}
+	};
+	Image mask;
+	img_fill_dummy(&mask, i->w, i->h, i->maskType, i->mask, NULL);
+
+	Handle rgn = (Handle) create_object("Prima::Region", "");
+	apc_region_destroy(rgn);
+	rgnrec.type = rgnPolygon;
+	rgnrec.data.polygon.n_points  = n_points;
+	rgnrec.data.polygon.points    = pts;
+	rgnrec.data.polygon.fill_mode = fmWinding;
+	apc_region_create(rgn, &rgnrec);
+	apc_region_offset(rgn, dx, dy);
+	prgnrec = apc_region_copy_rects(rgn);
+	Object_destroy(rgn);
+
+	ctx.region = &prgnrec->data.box;
+	memset( &ctx.color, 0xff, sizeof(ctx.color));
+	img_bar( self, 0, 0, i->w, i-> h, &ctx);
+	memset( &ctx.color, 0x0, sizeof(ctx.color));
+	img_bar((Handle) &mask, 0, 0, i->w, i-> h, &ctx);
+	free(prgnrec);
+	ctx.region = NULL;
+
+	memset( &ctx.color, 0x0, sizeof(ctx.color));
+	img_polyline( self, n_points, pts, &ctx);
+	img_polyline((Handle) &mask, n_points, pts, &ctx);
+}
+
+static void
+xdnd_synthesize_cursor(Handle self, int id)
+{
+	PIcon i  = (PIcon) self;
+	int side = ((i->h < i->w) ? i->h : i->w) / 2;
+	int s1 = side / 3; /* worst case 2 */
+	int s2 = s1 * 2;
+	int s3 = s1 * 3;
+
+	CIcon(self)->set_maskType(self, 1);
+
+	/* draw a little + = or arrow for copy,move,link in the bottom quarter */
+	switch ( id ) {
+	case crDragCopy: {
+		Point plus[13] = {
+			{s1, 0},  {s2, 0},  {s2, s1}, {s3, s1},
+			{s3, s2}, {s2, s2}, {s2, s3}, {s1, s3},
+			{s1, s2}, {0, s2},  {0, s1},  {s1, s1},
+			{s1, 0}
+		};
+		draw_poly( self, 13, plus, i->w/2, 0 );
+		break;
 	}
-	return NULL;
+	case crDragMove: {
+		Point bar[5] = {{0, 0}, {s3, 0}, {s3, s1}, {0, s1}, {0, 0}};
+		draw_poly( self, 5, bar, i->w/2, 0 );
+		draw_poly( self, 5, bar, i->w/2, s1 * 1.5 + 1);
+		break;
+	}
+	case crDragLink: {
+		Point arrow[10] = {
+			{s2, 0}, {s3, s1}, {s2, s2}, {s3, s2}, {s3, s3}, 
+			{0,s3}, {0,0}, {s1, 0}, {s1, s1}, {s2, 0},
+		};
+		draw_poly( self, 10, arrow, i->w/2, 0 );
+		break;
+	}}
 }
 
 static Point
@@ -267,57 +340,6 @@ get_predefined_hot_spot( int id)
 	if ( ret. y >= guts. cursor_height) ret. y = guts. cursor_height - 1;
 	return ret;
 }
-
-#ifdef HAVE_X11_XCURSOR_XCURSOR_H
-static Bool
-xcursor_load( Handle self, int id, Handle icon)
-{
-	PIcon c;
-	int x, y;
-	XcursorPixel * src;
-	XcursorImage* i;
-	Byte * dst_data, * dst_mask;
-	Bool kill = false;
-	CustomPointer* cp;
-
-	if (( cp = is_drag_cursor_available(id)) != NULL ) {
-		i = cp->xcursor;
-		goto READ_BITMAP;
-	}
-
-	if ( id != crUser ) {
-		if (( i = XcursorLibraryLoadImage( xcursor_map[id] , NULL, guts. cursor_width )) == NULL)
-			return false;
-		kill = true;
-	} else if ( self ) {
-		DEFXX;
-		i = XX-> user_pointer.xcursor;
-		kill = false;
-	} else
-		return false;
-
-READ_BITMAP:
-	c = PIcon(icon);
-	CIcon(icon)-> create_empty_icon( icon, i->width, i->height, imRGB, imbpp8);
-	dst_data = c->data + c->lineSize * ( c-> h - 1 );
-	dst_mask = c->mask + c->maskLine * ( c-> h - 1 );
-	src = i->pixels;
-	for ( y = 0; y < c-> h; y++) {
-		Byte * d_data = dst_data, * d_mask = dst_mask;
-		for ( x = 0; x < c-> w; x++) {
-			*d_data++ = *src & 0xff;
-			*d_data++ = (*src >> 8) & 0xff;
-			*d_data++ = (*src >> 16) & 0xff;
-			*d_mask++ = (*src >> 24) & 0xff;
-			src++;
-		}
-		dst_mask -= c->maskLine;
-		dst_data -= c->lineSize;
-	}
-	if ( kill ) XcursorImageDestroy(i);
-	return true;
-}
-#endif
 
 static Bool
 xlib_cursor_load( Handle self, int id, Handle icon)
@@ -408,122 +430,42 @@ FAIL:
 	return success;
 }
 
-static void
-draw_poly( Handle self, int n_points, Point * pts, int dx, int dy)
-{
-	RegionRec rgnrec, *prgnrec;
-	PIcon i = (PIcon) self;
-	ImgPaintContext ctx = {
-		{0,0,0,0},
-		{0,0,0,0},
-		ropCopyPut, false,
-		{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff },
-		{0,0},
-		lpSolid,
-		NULL,
-		{dx,dy}
-	};
-	Image mask;
-	img_fill_dummy(&mask, i->w, i->h, i->maskType, i->mask, NULL);
-
-	Handle rgn = (Handle) create_object("Prima::Region", "");
-	apc_region_destroy(rgn);
-	rgnrec.type = rgnPolygon;
-	rgnrec.data.polygon.n_points  = n_points;
-	rgnrec.data.polygon.points    = pts;
-	rgnrec.data.polygon.fill_mode = fmWinding;
-	apc_region_create(rgn, &rgnrec);
-	apc_region_offset(rgn, dx, dy);
-	prgnrec = apc_region_copy_rects(rgn);
-	Object_destroy(rgn);
-
-	ctx.region = &prgnrec->data.box;
-	memset( &ctx.color, 0xff, sizeof(ctx.color));
-	img_bar( self, 0, 0, i->w, i-> h, &ctx);
-	memset( &ctx.color, 0x0, sizeof(ctx.color));
-	img_bar((Handle) &mask, 0, 0, i->w, i-> h, &ctx);
-	free(prgnrec);
-	ctx.region = NULL;
-
-	memset( &ctx.color, 0x0, sizeof(ctx.color));
-	img_polyline( self, n_points, pts, &ctx);
-	img_polyline((Handle) &mask, n_points, pts, &ctx);
-}
-
-static void
-xdnd_synthesize_cursor(Handle self, int id)
-{
-	PIcon i  = (PIcon) self;
-	int side = ((i->h < i->w) ? i->h : i->w) / 2;
-	int step1 = side / 3; /* worst case 2 */
-	int step2 = step1 * 2;
-	int step3 = step1 * 3;
-
-	CIcon(self)->set_maskType(self, 1);
-
-	/* draw a little + = or arrow for copy,move,link in the bottom quarter */
-	switch ( id ) {
-	case crDragCopy: {
-		Point plus[13] = {
-			{step1, 0},     {step2, 0},
-			{step2, step1}, {step3, step1},
-			{step3, step2}, {step2, step2},
-			{step2, step3}, {step1, step3},
-			{step1, step2}, {0, step2},
-			{0, step1},     {step1, step1},
-			{step1, 0}
-		};
-		draw_poly( self, 13, plus, i->w/2, 0 );
-		break;
-	}
-	case crDragMove: {
-		Point bar[5] = {
-			{0, 0}, {step3, 0},
-			{step3, step1}, {0, step1},
-			{0, 0}
-		};
-		draw_poly( self, 5, bar, i->w/2, 0 );
-		draw_poly( self, 5, bar, i->w/2, step1 * 1.5 + 1);
-		break;
-	}
-	case crDragLink: {
-		Point arrow[11] = {
-			{step2, 0}, 
-			{step3, step1},
-			{step2, step2}, {step3, step2},
-			{step3, step3}, {0,step3},
-			{0,0}, {step1, 0},
-			{step1, step1}, {step2, 0},
-		};
-		draw_poly( self, 10, arrow, i->w/2, 0 );
-		break;
-	}}
-}
 
 static Bool
 create_xdnd_pointer(int id, CustomPointer* cp)
-{
+{	
 	Handle self;
-	Bool use_xcursor = false;
 	if ( cp-> status > 0 ) return true;
 	if ( cp-> status < 0 ) return false;
 
-	self = (Handle) create_object("Prima::Icon", "");
-
 #ifdef HAVE_X11_XCURSOR_XCURSOR_H
-	if (xcursor_load(nilHandle, crArrow, self))
-		use_xcursor = true;
+	if (( cp->xcursor = XcursorLibraryLoadImage( xcursor_map[id] , NULL, guts. cursor_width )) != NULL) {
+		if ((cp-> cursor = XcursorImageLoadCursor(DISP, cp->xcursor)) != None) {
+			cp-> hot_spot.x = cp->xcursor->xhot;
+			cp-> hot_spot.y = cp->xcursor->height - cp->xcursor->yhot - 1;
+			cp-> status = 1;
+			return true;
+		} else {
+			XcursorImageDestroy(cp-> xcursor);
+			cp-> xcursor = NULL;
+		}
+	}
 #endif
-	if ( !use_xcursor )
-		xlib_cursor_load(nilHandle, crArrow, self);
 
+	if ( id == crDragNone || id == crDragAsk) {
+		/* X11 has good enough glyphs for these */
+		cp->status = -1;
+		return true;
+	}
+
+	self = (Handle) create_object("Prima::Icon", "");
+	xlib_cursor_load(nilHandle, crArrow, self);
 	if ( PImage(self)->w < 16 || PImage(self)->h < 16 ) {
 		/* too small */
 		cp-> status = -1;
 		Object_destroy(self);
 		return false;
 	}
-
 	xdnd_synthesize_cursor(self, id);
 
 	cp-> status = 1;
@@ -533,9 +475,73 @@ create_xdnd_pointer(int id, CustomPointer* cp)
 	return true;
 }
 
+static CustomPointer*
+is_drag_cursor_available(int id)
+{
+	if ( id >= crDragNone && id <= crDragAsk ) {
+		CustomPointer *cp = guts.xdnd_pointers + id - crDragNone;
+		if (cp->status == 0) 
+			create_xdnd_pointer(id, cp);
+		return (cp->status > 0) ? cp : NULL;
+	}
+	return NULL;
+}
+
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+static Bool
+xcursor_load( Handle self, int id, Handle icon)
+{
+	PIcon c;
+	int x, y;
+	XcursorPixel * src;
+	XcursorImage* i = NULL;
+	Byte * dst_data, * dst_mask;
+	Bool kill = false;
+	CustomPointer* cp;
+
+	if (( cp = is_drag_cursor_available(id)) != NULL ) {
+		i = cp->xcursor;
+		goto READ_BITMAP;
+	}
+
+	if ( i == NULL && id != crUser ) {
+		if (( i = XcursorLibraryLoadImage( xcursor_map[id] , NULL, guts. cursor_width )) == NULL)
+			return false;
+		kill = true;
+	} else if ( self ) {
+		DEFXX;
+		i = XX-> user_pointer.xcursor;
+		kill = false;
+	} else
+		return false;
+
+READ_BITMAP:
+	c = PIcon(icon);
+	CIcon(icon)-> create_empty_icon( icon, i->width, i->height, imRGB, imbpp8);
+	dst_data = c->data + c->lineSize * ( c-> h - 1 );
+	dst_mask = c->mask + c->maskLine * ( c-> h - 1 );
+	src = i->pixels;
+	for ( y = 0; y < c-> h; y++) {
+		Byte * d_data = dst_data, * d_mask = dst_mask;
+		for ( x = 0; x < c-> w; x++) {
+			*d_data++ = *src & 0xff;
+			*d_data++ = (*src >> 8) & 0xff;
+			*d_data++ = (*src >> 16) & 0xff;
+			*d_mask++ = (*src >> 24) & 0xff;
+			src++;
+		}
+		dst_mask -= c->maskLine;
+		dst_data -= c->lineSize;
+	}
+	if ( kill ) XcursorImageDestroy(i);
+	return true;
+}
+#endif
+
 static int
 get_cursor( Handle self, Pixmap *source, Pixmap *mask, Point *hot_spot, Cursor *cursor)
 {
+	CustomPointer *cp = NULL;
 	int id = X(self)-> pointer_id;
 
 	while ( self && ( id = X(self)-> pointer_id) == crDefault)
@@ -545,23 +551,19 @@ get_cursor( Handle self, Pixmap *source, Pixmap *mask, Point *hot_spot, Cursor *
 		id = crArrow;
 		break;
 	case crUser:
-		if (source)       *source   = X(self)-> user_pointer.xor;
-		if (mask)         *mask     = X(self)-> user_pointer.and;
-		if (hot_spot)     *hot_spot = X(self)-> user_pointer.hot_spot;
-		if (cursor)       *cursor   = X(self)-> user_pointer.cursor;
+		cp = &X(self)->user_pointer; 
 		break;
-	case crDragCopy:
-	case crDragMove:
-	case crDragLink: {
-		CustomPointer *cp = guts.xdnd_pointers + id - crDragCopy;
-		if ( create_xdnd_pointer(id, cp)) {
-			if (source)       *source   = cp->xor;
-			if (mask)         *mask     = cp->and;
-			if (hot_spot)     *hot_spot = cp->hot_spot;
-			if (cursor)       *cursor   = cp->cursor;
-		}
+	default:
+		cp = is_drag_cursor_available(id);
 		break;
-	}}
+	}
+
+	if ( cp ) {
+		if (source)   *source   = cp->xor;
+		if (mask)     *mask     = cp->and;
+		if (hot_spot) *hot_spot = cp->hot_spot;
+		if (cursor)   *cursor   = cp->cursor;
+	}
 
 	return id;
 }

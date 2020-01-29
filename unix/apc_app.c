@@ -642,7 +642,18 @@ free_gc_pool( struct gc_head *head)
 void
 window_subsystem_done( void)
 {
+	int i;
 	if ( !DISP) return;
+
+	for ( i = 0; i < sizeof(guts.xdnd_pointers) / sizeof(CustomPointer); i++) {
+		CustomPointer *cp = guts.xdnd_pointers + i;
+		if ( cp-> cursor )
+			XFreeCursor( DISP, cp->cursor);
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+		if ( cp-> xcursor != NULL)
+			XcursorImageDestroy(cp-> xcursor);
+#endif
+	}
 
 	if ( guts. hostname. value) {
 		XFree( guts. hostname. value);
@@ -676,6 +687,7 @@ window_subsystem_done( void)
 	if (guts.clipboards)         hash_destroy( guts.clipboards, false);
 	if (guts.clipboard_xfers)    hash_destroy( guts.clipboard_xfers, false);
 	prima_cleanup_font_subsystem();
+	bzero(&guts, sizeof(guts));
 }
 
 static int

@@ -202,6 +202,11 @@ Handle ctx_cr2IDC[] =
 	crSizeNE,    ( Handle) IDC_SIZENESW,
 	crSizeSW,    ( Handle) IDC_SIZENESW,
 	crInvalid,   ( Handle) IDC_NO,
+        crDragNone,  ( Handle) IDC_NO,
+        crDragCopy,  ( Handle) IDC_HAND, 
+        crDragMove,  ( Handle) IDC_HAND, 
+        crDragLink,  ( Handle) IDC_HAND, 
+        crDragAsk ,  ( Handle) IDC_HAND, 
 	endCtx
 };
 

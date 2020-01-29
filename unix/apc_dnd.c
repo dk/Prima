@@ -220,6 +220,15 @@ handle_xdnd_status( Handle self, XEvent* xev)
 	}
 
 	if ( old_response != guts.xdnds_last_action_response) {
+		int pointer = crDragNone;
+		switch ( guts.xdnds_last_drop_response ) {
+		case dndNone: pointer = crDragNone; break;
+		case dndCopy: pointer = crDragCopy; break;
+		case dndMove: pointer = crDragMove; break;
+		case dndLink: pointer = crDragLink; break;
+		case dndAsk : pointer = crDragAsk ; break;
+		}
+		apc_pointer_set_shape(guts.xdnds_widget, pointer);
 	}
 	return true;
 }
@@ -704,6 +713,7 @@ apc_dnd_start( Handle self, int actions)
 	PClipboardSysData CC;
 	Handle top_level, banned_receiver = None;
 	XWindow last_xdndr_source = None;
+	int old_pointer;
 
 	if ( guts.xdnd_disabled || guts.xdnds_widget || !guts.xdnd_clipboard ) {
 		Cdebug("dnd:already is action\n");
@@ -760,6 +770,8 @@ apc_dnd_start( Handle self, int actions)
 	prima_clipboard_kill_item( CC-> internal, cfTargets);
 	CC->internal[cfTargets].name = XdndTypeList;
 
+	old_pointer = apc_pointer_get_shape(self);
+	apc_pointer_set_shape(self, crDragNone);
 	apc_widget_set_capture(self, true, nilHandle);
 
 	XChangeProperty(DISP, guts. xdnds_sender, XdndActionList, XA_ATOM, 32,
@@ -896,6 +908,7 @@ apc_dnd_start( Handle self, int actions)
 	}
 
 	apc_widget_set_capture(self, 0, nilHandle);
+	apc_pointer_set_shape(self, old_pointer);
 
 	if (ret == dndNone) return ret;
 
@@ -928,6 +941,7 @@ apc_dnd_start( Handle self, int actions)
 
 FAIL:
 	apc_widget_set_capture(self, 0, nilHandle);
+	apc_pointer_set_shape(self, old_pointer);
 	guts.xdnds_widget = nilHandle;
 	return ret;
 }
