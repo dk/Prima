@@ -1,6 +1,6 @@
 #include "unix/guts.h"
 #include "Icon.h"
-//#undef HAVE_X11_XCURSOR_XCURSOR_H
+#undef HAVE_X11_XCURSOR_XCURSOR_H
 
 static int
 cursor_map[] = {
@@ -409,7 +409,7 @@ FAIL:
 }
 
 static void
-draw_poly( Handle self, int n_points, Point * pts)
+draw_poly( Handle self, int n_points, Point * pts, int dx, int dy)
 {
 	RegionRec rgnrec, *prgnrec;
 	PIcon i = (PIcon) self;
@@ -421,7 +421,7 @@ draw_poly( Handle self, int n_points, Point * pts)
 		{0,0},
 		lpSolid,
 		NULL,
-		{0,0}
+		{dx,dy}
 	};
 	Image mask;
 	img_fill_dummy(&mask, i->w, i->h, i->maskType, i->mask, NULL);
@@ -433,6 +433,7 @@ draw_poly( Handle self, int n_points, Point * pts)
 	rgnrec.data.polygon.points    = pts;
 	rgnrec.data.polygon.fill_mode = fmWinding;
 	apc_region_create(rgn, &rgnrec);
+	apc_region_offset(rgn, dx, dy);
 	prgnrec = apc_region_copy_rects(rgn);
 	Object_destroy(rgn);
 
@@ -452,18 +453,17 @@ draw_poly( Handle self, int n_points, Point * pts)
 static void
 xdnd_synthesize_cursor(Handle self, int id)
 {
-	PIcon i = (PIcon) self;
-	Rect  r = { 0, 0, i->w / 2, i-> h / 2 };
-	int side = (r.top < r.right) ? r.top : r.right;
+	PIcon i  = (PIcon) self;
+	int side = ((i->h < i->w) ? i->h : i->w) / 2;
 	int step1 = side / 3; /* worst case 2 */
+	int step2 = step1 * 2;
+	int step3 = step1 * 3;
 
 	CIcon(self)->set_maskType(self, 1);
 
 	/* draw a little + = or arrow for copy,move,link in the bottom quarter */
 	switch ( id ) {
 	case crDragCopy: {
-		int step2 = step1 * 2;
-		int step3 = step1 * 3;
 		Point plus[13] = {
 			{step1, 0},     {step2, 0},
 			{step2, step1}, {step3, step1},
@@ -473,14 +473,31 @@ xdnd_synthesize_cursor(Handle self, int id)
 			{0, step1},     {step1, step1},
 			{step1, 0}
 		};
-		draw_poly( self, 13, plus);
+		draw_poly( self, 13, plus, i->w/2, 0 );
 		break;
 	}
-	case crDragMove:
-		break;
-	case crDragLink:
+	case crDragMove: {
+		Point bar[5] = {
+			{0, 0}, {step3, 0},
+			{step3, step1}, {0, step1},
+			{0, 0}
+		};
+		draw_poly( self, 5, bar, i->w/2, 0 );
+		draw_poly( self, 5, bar, i->w/2, step1 * 1.5 + 1);
 		break;
 	}
+	case crDragLink: {
+		Point arrow[11] = {
+			{step2, 0}, 
+			{step3, step1},
+			{step2, step2}, {step3, step2},
+			{step3, step3}, {0,step3},
+			{0,0}, {step1, 0},
+			{step1, step1}, {step2, 0},
+		};
+		draw_poly( self, 10, arrow, i->w/2, 0 );
+		break;
+	}}
 }
 
 static Bool
@@ -734,8 +751,6 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
 		apc_widget_set_capture( guts. grab_widget, true, guts. grab_confine);
 	return true;
 }
-
-
 
 Bool
 apc_pointer_set_visible( Handle self, Bool visible)
