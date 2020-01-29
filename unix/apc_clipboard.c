@@ -741,8 +741,6 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 		Pixmap px = *(( Pixmap*)( data));
 		unsigned int dummy, x, y, d;
 		int bar;
-		Bool ok = true;
-
 		if ( !XGetGeometry( DISP, px, &foo, &bar, &bar, &x, &y, &dummy, &d))
 			return false;
 		c->image = (Handle) create_object("Prima::Image", "iii",
