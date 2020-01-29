@@ -529,6 +529,18 @@ typedef struct
 	unsigned int red_mask,  green_mask,  blue_mask,  alpha_mask;
 } RGBABitDescription, *PRGBABitDescription;
 
+typedef struct
+{
+	int status; /* -1 not ok to use, 0 not initialized, 1, ok to use */
+	Point hot_spot;
+	Cursor cursor;
+	Pixmap xor;
+	Pixmap and;
+#ifdef HAVE_X11_XCURSOR_XCURSOR_H
+	XcursorImage * xcursor;
+#endif
+} CustomPointer;
+
 typedef struct _UnixGuts
 {
 	/* Event management */
@@ -729,6 +741,8 @@ typedef struct _UnixGuts
 	int                          xdnds_version, xdnds_last_action, xdnds_last_action_response;
 	Bool                         xdnds_last_drop_response, xdnds_escape_key;
 	Box                          xdnds_suppress_events_within; /* in root coordinates */
+
+	CustomPointer                xdnd_pointers[3]; /* copy,link,move */
 } UnixGuts;
 
 extern UnixGuts  guts;
@@ -810,15 +824,9 @@ typedef struct _drawable_sys_data
 	Font saved_font;
 	Point cursor_pos;
 	Point cursor_size;
-	Point pointer_hot_spot;
+	CustomPointer user_pointer;
 	int pointer_id;
 	Cursor actual_pointer;
-	Cursor user_pointer;
-	Pixmap user_p_source;
-	Pixmap user_p_mask;
-#ifdef HAVE_X11_XCURSOR_XCURSOR_H
-	XcursorImage * user_xcursor;
-#endif
 	void * recreateData;
 	XWindow client;
 	struct {
@@ -1474,3 +1482,6 @@ prima_clipboard_fill_targets( Handle self);
 
 extern void
 prima_update_dnd_aware( Handle self );
+
+extern Cursor
+prima_get_cursor(Handle self);

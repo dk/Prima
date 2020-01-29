@@ -21,7 +21,7 @@ my $ph = Prima::Application-> get_system_value(sv::YPointer);
 my $sc = $::application-> uiScaling;
 $ph = $::application->font->height * 2 if $ph < $::application->font->height * 2;
 my $w = Prima::MainWindow-> create(
-	size    => [ 350 * $sc, 20 + ($ph+8)*11],
+	size    => [ 350 * $sc, 20 + ($ph+8)*13],
 	left    => 200,
 	text    => 'Pointers',
 );

@@ -2305,7 +2305,17 @@ CR(SizeNE)
 CR(SizeSW)
 #define crInvalid      15
 CR(Invalid)
-#define crUser         16
+#define crDragNone     16
+CR(DragNone)
+#define crDragCopy     17
+CR(DragCopy)
+#define crDragMove     18
+CR(DragMove)
+#define crDragLink     19
+CR(DragLink)
+#define crDragAsk      20
+CR(DragAsk)
+#define crUser         21
 CR(User)
 END_TABLE(cr,UV)
 #undef CR

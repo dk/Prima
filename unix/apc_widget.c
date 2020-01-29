@@ -538,22 +538,22 @@ apc_widget_destroy( Handle self)
 		n1 = n2;
 	}
 
-	if ( XX-> user_pointer != None) {
-		XFreeCursor( DISP, XX-> user_pointer);
-		XX-> user_pointer = None;
+	if ( XX-> user_pointer.cursor != None) {
+		XFreeCursor( DISP, XX-> user_pointer.cursor);
+		XX-> user_pointer.cursor = None;
 	}
-	if ( XX-> user_p_source != None) {
-		XFreePixmap( DISP, XX-> user_p_source);
-		XX-> user_p_source = None;
+	if ( XX-> user_pointer.xor != None) {
+		XFreePixmap( DISP, XX-> user_pointer.xor);
+		XX-> user_pointer.xor = None;
 	}
-	if ( XX-> user_p_mask != None) {
-		XFreePixmap( DISP, XX-> user_p_mask);
-		XX-> user_p_mask = None;
+	if ( XX-> user_pointer.and != None) {
+		XFreePixmap( DISP, XX-> user_pointer.and);
+		XX-> user_pointer.and = None;
 	}
 #ifdef HAVE_X11_XCURSOR_XCURSOR_H
-	if ( XX-> user_xcursor != NULL) {
-		XcursorImageDestroy(XX-> user_xcursor);
-		XX-> user_xcursor = NULL;
+	if ( XX-> user_pointer.xcursor != NULL) {
+		XcursorImageDestroy(XX-> user_pointer.xcursor);
+		XX-> user_pointer.xcursor = NULL;
 	}
 #endif
 	if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self)
@@ -1043,8 +1043,7 @@ apc_widget_set_capture( Handle self, Bool capture, Handle confineTo)
 	if ( capture) {
 		XWindow z = XX-> client;
 		Time t = guts. last_time;
-		Cursor cursor = XX-> flags. pointer_obscured ? prima_null_pointer() :
-				(( XX-> pointer_id == crUser) ?  XX-> user_pointer : XX-> actual_pointer);
+		Cursor cursor = prima_get_cursor(self);
 		if ( confineTo && PWidget(confineTo)-> handle)
 			confine_to = PWidget(confineTo)-> handle;
 AGAIN:
