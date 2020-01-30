@@ -946,5 +946,6 @@ EXIT:
 	apc_pointer_set_shape(self, old_pointer);
 	guts.xdnds_widget = nilHandle;
 	guts.xdnds_target = None;
+	Cdebug("dnd:stop\n");
 	return ret;
 }
