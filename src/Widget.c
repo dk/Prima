@@ -547,7 +547,8 @@ dnd_event_wanted(Handle self, PEvent event)
 {
 	Bool r;
 	SV * ret;
-	if ( var-> dndAware == NULL ) return false;
+	enter_method;
+	if ( var-> dndAware == NULL || !my->get_enabled(self)) return false;
 	if ( strcmp(var->dndAware, "1") == 0) return true;
 	ENTER;
 	SAVETMPS;
