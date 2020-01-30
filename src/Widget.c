@@ -87,7 +87,7 @@ Widget_init( Handle self, HV * profile)
 	my-> set_buffered           ( self, pget_B( buffered));
 	my-> set_clipChildren       ( self, pget_B( clipChildren));
 	my-> set_cursorVisible      ( self, pget_B( cursorVisible));
-	my-> set_dndAware           ( self, pget_B( dndAware));
+	my-> set_dndAware           ( self, pget_sv( dndAware));
 	my-> set_growMode           ( self, pget_i( growMode));
 	my-> set_helpContext        ( self, pget_sv( helpContext));
 	my-> set_hint               ( self, pget_sv( hint));
@@ -542,13 +542,53 @@ Widget_first_that( Handle self, void * actionProc, void * params)
 #define evOK ( var-> evStack[ var-> evPtr - 1])
 #define objCheck if ( var-> stage > csNormal) return
 
+static Bool
+dnd_event_wanted(Handle self, PEvent event)
+{
+	Bool r;
+	SV * ret;
+	if ( var-> dndAware == NULL ) return false;
+	if ( strcmp(var->dndAware, "1") == 0) return true;
+	ENTER;
+	SAVETMPS;
+	ret = call_perl( event->dnd.clipboard, "has_format", "<s", var->dndAware);
+	r = ret ? SvTRUE( ret) : false;
+	FREETMPS;
+	LEAVE;
+	return r;
+}
+
+static void
+handle_drag_begin( Handle self, PEvent event)
+{
+	enter_method;
+	if ( !dnd_event_wanted(self, event)) {
+		opt_clear(optDropSession);
+		return;
+	}
+	opt_set(optDropSession);
+	my-> notify( self, "<sH", "DragBegin", event->dnd.clipboard);
+}
+
 static void
 handle_drag_over( Handle self, PEvent event)
 {
 	dPROFILE;
 	enter_method;
-	HV * profile = newHV();
-	SV * ref = newRV_noinc((SV*) profile);
+	HV * profile;
+	SV * ref;
+	
+	if ( !is_opt(optDropSession)) {
+		Point size = apc_widget_get_size(self);
+		event-> dnd.allow      = 0;
+		event-> dnd.pad.x      = event-> dnd.pad.y = 0;
+		event-> dnd.pad.width  = size.x;
+		event-> dnd.pad.height = size.y;
+		return;
+	}
+
+	profile = newHV();
+	ref = newRV_noinc((SV*) profile);
 
 	pset_i(allow,1);
 	pset_i(action,dndCopy);
@@ -580,8 +620,17 @@ handle_drag_end( Handle self, PEvent event)
 {
 	dPROFILE;
 	enter_method;
-	HV * profile = newHV();
-	SV * ref = newRV_noinc((SV*) profile);
+	HV * profile;
+	SV * ref;
+
+	if ( !is_opt(optDropSession)) {
+		event-> dnd. allow = 0;
+		return;
+	}
+	opt_clear(optDropSession);
+
+	profile = newHV();
+	ref = newRV_noinc((SV*) profile);
 
 	pset_i(allow, 1);
 	pset_i(action, event->dnd.action);
@@ -1007,7 +1056,7 @@ void Widget_handle_event( Handle self, PEvent event)
 			handle_size( self, event);
 			break;
 		case cmDragBegin       :
-			my-> notify( self, "<sH", "DragBegin", event->dnd.clipboard);
+			handle_drag_begin( self, event );
 			break;
 		case cmDragOver       :
 			handle_drag_over( self, event );
@@ -2400,12 +2449,28 @@ Widget_cursorVisible( Handle self, Bool set, Bool cursorVisible)
 	return apc_cursor_set_visible( self, cursorVisible);
 }
 
-Bool
-Widget_dndAware( Handle self, Bool set, Bool dndAware)
+SV *
+Widget_dndAware( Handle self, Bool set, SV * dndAware)
 {
-	if ( !set)
-		return apc_dnd_get_aware( self);
-	return apc_dnd_set_aware( self, dndAware);
+	if ( !set) {
+		if ( var->dndAware == NULL)
+			return &PL_sv_undef;
+		else if ( strcmp(var->dndAware, "1") == 0)
+			return newSViv(1);
+		else
+			return newSVpv(var->dndAware, 0);
+	} else if ( var->dndAware == NULL && SvTYPE(dndAware) != SVt_NULL ) {
+		if ( apc_dnd_set_aware( self, true))
+			var-> dndAware = duplicate_string( SvPV_nolen( dndAware));
+	} else if ( var->dndAware != NULL ) {
+		free(var-> dndAware);
+		if ( SvTYPE(dndAware) == SVt_NULL) {
+			var->dndAware = NULL;
+			apc_dnd_set_aware( self, false);
+		} else
+			var-> dndAware = duplicate_string( SvPV_nolen( dndAware));
+	}
+	return &PL_sv_undef;
 }
 
 Bool

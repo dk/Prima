@@ -311,17 +311,27 @@ sub profile_default
 	return $def;
 }
 
+sub has_format
+{
+	my ( $self, $format ) = @_;
+	$self-> open;
+	my $exists = 0;
+	$::application-> notify( 'FormatExists', $format, $self, \$exists );
+	$self-> close;
+	return $exists ? 1 : 0;
+}
+
 sub text
 {
 	if ($#_) {
 		my ( $self, $text ) = @_;
 		$self-> open;
 		$self-> clear;
-		$::application-> notify( 'CopyText', $self, $text );
+		$::application-> notify( 'Copy', 'Text', $self, $text );
 		$self-> close;
 	} else {
 		my $text;
-		$::application-> notify( 'PasteText', $_[0], \$text);
+		$::application-> notify( 'Paste', 'Text', $_[0], \$text);
 		return $text;
 	}
 }
@@ -332,11 +342,11 @@ sub image
 		my ( $self, $image ) = @_;
 		$self-> open;
 		$self-> clear;
-		$::application-> notify( 'CopyImage', $self, $image);
+		$::application-> notify( 'Copy', 'Image', $self, $image);
 		$self-> close;
 	} else {
 		my $image;
-		$::application-> notify( 'PasteImage', $_[0], \$image);
+		$::application-> notify( 'Paste', 'Image', $_[0], \$image);
 		return $image;
 	}
 }
@@ -1604,11 +1614,10 @@ use vars qw(@ISA @startupNotifications);
 {
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
-	CopyText    => nt::Action,
-	PasteText   => nt::Action,
-	CopyImage   => nt::Action,
-	PasteImage  => nt::Action,
-	Idle        => nt::Default,
+	FormatExists => nt::Action,
+	Copy         => nt::Action,
+	Paste        => nt::Action,
+	Idle         => nt::Default,
 );
 
 sub notification_types { return \%RNT; }
@@ -1751,56 +1760,73 @@ sub open_help
 	return $self-> {HelpClass}-> open($link);
 }
 
-sub on_copytext
+sub on_copy
 {
-	my ( $self, $clipboard, $text ) = @_;
-	$clipboard-> store( 'Text',  $text);
-}
-
-sub on_copyimage
-{
-	my ( $self, $clipboard, $image) = @_;
-	$clipboard-> store( 'Image',  $image);
-	if ( my $formats = $self-> {GTKImageClipboardFormats} ) {
-		my ($bmp, $data, $handle) = ($formats->[0], '');
-		if (open( $handle, '>', \$data) and $image->save($handle, codecID => $bmp->{id})) {
-			$clipboard->store($bmp->{mime}, $data);
+	my ( $self, $format, $clipboard, $data ) = @_;
+	$clipboard-> store( $format, $data);
+	if ( $format eq 'Image') {
+		if ( my $formats = $self-> {GTKImageClipboardFormats} ) {
+			my ($bmp, $bits, $handle) = ($formats->[0], '');
+			if (open( $handle, '>', \$bits) and $data->save($handle, codecID => $bmp->{id})) {
+				$clipboard->store($bmp->{mime}, $bits);
+			}
 		}
 	}
 }
 
-sub on_pastetext
+sub on_formatexists
 {
-	my ( $self, $clipboard, $ref) = @_;
-	if ( $self-> wantUnicodeInput) {
-		return if defined ( $$ref = $clipboard-> fetch( 'UTF8'));
+	my ( $self, $format, $clipboard, $ref) = @_;
+	
+	if ( $format eq 'Text') {
+		if ( $self-> wantUnicodeInput) {
+			return $$ref = 'UTF8' if $clipboard-> format_exists( 'UTF8');
+		}
+		$$ref = $clipboard-> format_exists( $format ) ? $format : undef;
+	} elsif ( $format eq 'Image') {
+		$$ref = undef;
+		return $$ref = 'Image' if $clipboard-> format_exists( 'Image');
+		my $codecs = $self-> {GTKImageClipboardFormats} or return;
+		my %formats = map { $_ => 1 } $clipboard-> get_formats;
+		my @codecs  = grep { $formats{$_->{mime}} } @$codecs or return;
+		$$ref = $codecs[0]->{mime} if $clipboard-> format_exists($codecs[0]->{mime});
+	} else {
+		$$ref = $clipboard-> format_exists( $format ) ? $format : undef;
 	}
-	$$ref = $clipboard-> fetch( 'Text');
 	undef;
 }
 
-sub on_pasteimage
+sub on_paste
 {
-	my ( $self, $clipboard, $ref) = @_;
-	$$ref = $clipboard-> fetch( 'Image');
-	return if defined $$ref;
+	my ( $self, $format, $clipboard, $ref) = @_;
+	
+	if ( $format eq 'Text') {
+		if ( $self-> wantUnicodeInput) {
+			return if defined ( $$ref = $clipboard-> fetch( 'UTF8'));
+		}
+		$$ref = $clipboard-> fetch( 'Text');
+	} elsif ( $format eq 'Image') {
+		$$ref = $clipboard-> fetch( 'Image');
+		return if defined $$ref;
 
-	my $codecs = $self-> {GTKImageClipboardFormats};
-	return unless $codecs;
+		my $codecs = $self-> {GTKImageClipboardFormats};
+		return unless $codecs;
 
-	my %formats = map { $_ => 1 } $clipboard-> get_formats;
-	my @codecs  = grep { $formats{$_->{mime}} } @$codecs;
-	return unless @codecs;
+		my %formats = map { $_ => 1 } $clipboard-> get_formats;
+		my @codecs  = grep { $formats{$_->{mime}} } @$codecs;
+		return unless @codecs;
 
-	my $data = $clipboard-> fetch($codecs[0]->{mime});
-	return unless defined $data;
+		my $data = $clipboard-> fetch($codecs[0]->{mime});
+		return unless defined $data;
 
-	my $handle;
-	open( $handle, '<', \$data) or return;
+		my $handle;
+		open( $handle, '<', \$data) or return;
 
-	local $@;
-	$$ref = Prima::Image-> load($handle, loadExtras => 1 );
-
+		local $@;
+		$$ref = Prima::Image-> load($handle, loadExtras => 1 );
+	} else {
+		$$ref = $clipboard-> fetch( $format);
+	}
 	undef;
 }
 

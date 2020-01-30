@@ -1627,6 +1627,7 @@ typedef struct _ObjectOptions_ {
 	unsigned optAutoEnableChildren  : 1;   /* Widget */
 	unsigned optBriefKeys           : 1;
 	unsigned optBuffered            : 1;
+	unsigned optDropSession         : 1;
 	unsigned optModalHorizon        : 1;
 	unsigned optOwnerBackColor      : 1;
 	unsigned optOwnerColor          : 1;
