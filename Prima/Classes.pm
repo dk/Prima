@@ -1305,6 +1305,27 @@ sub begin_drag
 		$opt{text} = $opt[0];
 	}
 
+	# don't start dragging immediately
+	if ( $opt{track} // 1 ) {
+		my @start_pos = $self->pointerPos;
+		my $offset = $opt{track} // 5;
+		my $break  = 0;
+		my @id;
+		push @id, $self-> add_notification( MouseMove => sub {
+			my ( undef, undef, $x, $y ) = @_;
+			$break = 1 if
+				abs( $start_pos[0] - $x ) > $offset || 
+				abs( $start_pos[1] - $y ) > $offset;
+		});
+		push @id, 
+			map { $self-> add_notification( $_ => sub { $break = -1 }) }
+			qw(MouseLeave MouseClick MouseDown MouseUp Destroy);
+		1 while !$break && $::application->yield(1);
+		return dnd::None unless $self->alive;
+		$self->remove_notification($_) for @id;
+		return undef if $break < 0;
+	}
+
 	# data
 	my $clipboard = $::application->get_dnd_clipboard;
 	if ( exists $opt{text}) {
