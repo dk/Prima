@@ -57,17 +57,25 @@ for my $c ( @a[0..$#a-1])
 };
 
 my $ptr = Prima::StdBitmap::icon( sbmp::DriveCDROM, argb => 0, copy => 1);
+my $color_pointer = $::application->get_system_value(sv::ColorPointer);
 
 my @mapset = map {
-	my ($x,$a) = $ptr-> split;
+	my ($x,$r) = $ptr-> split;
 	my $j = Prima::Icon-> create;
 	$x-> begin_paint;
 	$x-> text_out( $_, 3, 3);
 	$x-> end_paint;
-	$a-> begin_paint;
-	$a-> text_out( $_, 3, 3);
-	$a-> end_paint;
-	$j-> combine( $x, $a);
+	$r-> begin_paint;
+	$r-> text_out( $_, 3, 3);
+	$r-> end_paint;
+	if ( $color_pointer ) { # add alpha
+		$r-> type(im::Byte);
+		$r-> rop2(rop::CopyPut);
+		$r->color(0xc0c0c0);
+		$r->backColor(0);
+		$r->map(0);
+	}
+	$j-> combine( $x, $r);
 	$j;
 } 1..4;
 my $mapsetID = 0;
@@ -77,8 +85,8 @@ my $b = $w-> insert( SpeedButton =>
 	width   => 160 * $sc,
 	height  => $ph+4,
 	bottom  => $w-> height - int(($i+1)/2) * ($ph+8) - 10,
-	pointer => $ptr,
-	image   => $ptr,
+	pointer => $mapset[-1],
+	image   => $mapset[-1],
 	text => $a[-1],
 	flat => 1,
 	onClick => sub {

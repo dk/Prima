@@ -1597,13 +1597,16 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 	Bool  noSZ   = i-> w != size. x || i-> h != size. y;
 	Bool  noBPP  = bpp != 1 && bpp != 4 && bpp != 8 && bpp != 24;
 	HDC dc;
-	Byte * mask;
-	XBITMAPINFO bi;
 	Bool notAnIcon = !dsys( img ) options. aptIcon;
 
 	ii. fIcon = hotSpot ? false : true;
 	ii. xHotspot = hotSpot ? hotSpot-> x : 0;
 	ii. yHotspot = hotSpot ? hotSpot-> y : 0;
+
+	if (!notAnIcon && i->maskType == 8 && bpp != 24 ) {
+		bpp = 24;
+		noBPP = true;
+	}
 
 	if ( noSZ || noBPP) {
 		i = ( PIcon)( i-> self-> dup( img));
@@ -1622,27 +1625,51 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 		if (( Handle) i != img) Object_destroy(( Handle) i);
 		return NULL;
 	}
-	image_fill_bitmap_info(( Handle)i, &bi, BM_PIXMAP);
-	if ( bi. bmiHeader. biClrUsed > 0)
-		bi. bmiHeader. biClrUsed = bi. bmiHeader. biClrImportant = i-> palSize;
 
-	if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-		i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
-	bi. bmiHeader. biBitCount = bi. bmiHeader. biPlanes = 1;
-	bi. bmiColors[ 0]. rgbRed = bi. bmiColors[ 0]. rgbGreen = bi. bmiColors[ 0]. rgbBlue = 0;
-	bi. bmiColors[ 1]. rgbRed = bi. bmiColors[ 1]. rgbGreen = bi. bmiColors[ 1]. rgbBlue = 255;
-
-	if ( notAnIcon )
-		mask = NULL;
-	else if ( i-> maskType == imbpp1)
-		mask = i-> mask;
-	else
-		mask = i-> self-> convert_mask((Handle)i, imbpp1);
-	if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
-		mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
-
-	if ( !notAnIcon && i-> maskType == imbpp8)
+	if (!notAnIcon && i->maskType == 8) {
+		/* argb icon */
+		int j, size;
+		void *mask;
+		Byte * argb;
+		XBITMAPINFO bi;
+		image_fill_bitmap_info(( Handle)i, &bi, BM_BITMAP);
+		bi. bmiColors[ 0]. rgbRed = bi. bmiColors[ 0]. rgbGreen = bi. bmiColors[ 0]. rgbBlue = 0;
+		bi. bmiColors[ 1]. rgbRed = bi. bmiColors[ 1]. rgbGreen = bi. bmiColors[ 1]. rgbBlue = 255;
+		mask = i->self->convert_mask(img, imbpp1);
+		ii. hbmMask = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+			mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS);
 		free(mask);
+		if ( ii. hbmMask == NULL ) return false;
+
+		if (( ii. hbmColor = image_create_argb_bitmap( img, (uint32_t**) &argb )) == NULL ) {
+			DeleteObject( ii. hbmMask);
+			return false;
+		}
+		/* alpha 0 is treated very strange if all alpha bytes are 0 and there are not a single non-0 byte -
+		cursor becomes a negative version of itself. Might be a driver bug though */
+		size = i-> w * i-> h;
+		for ( j = 0, argb += 3; j < size; j++, argb += 4)
+			if ( *argb == 0) *argb = 1;
+	} else {
+		XBITMAPINFO bi;
+		Byte * mask;
+		image_fill_bitmap_info(( Handle)i, &bi, BM_PIXMAP);
+		if ( bi. bmiHeader. biClrUsed > 0)
+			bi. bmiHeader. biClrUsed = bi. bmiHeader. biClrImportant = i-> palSize;
+
+		if ( !( ii. hbmColor = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+			i-> data, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+		bi. bmiHeader. biBitCount = bi. bmiHeader. biPlanes = 1;
+		bi. bmiColors[ 0]. rgbRed = bi. bmiColors[ 0]. rgbGreen = bi. bmiColors[ 0]. rgbBlue = 0;
+		bi. bmiColors[ 1]. rgbRed = bi. bmiColors[ 1]. rgbGreen = bi. bmiColors[ 1]. rgbBlue = 255;
+
+		if ( notAnIcon )
+			mask = NULL;
+		else
+			mask = i-> mask;
+		if ( !( ii. hbmMask  = CreateDIBitmap( dc, &bi. bmiHeader, CBM_INIT,
+			mask, ( BITMAPINFO*) &bi, DIB_RGB_COLORS))) apiErr;
+	}
 
 	dc_free();
 
