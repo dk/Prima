@@ -111,7 +111,11 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 	Handle w;
 	Event ev = { cmDragBegin };
 
-	if ((ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND]) == nilHandle) {
+	if (
+		((ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND]) == nilHandle) ||
+		!dsys(self->widget)options.aptEnabled
+	) {
+  
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
 	}
@@ -148,7 +152,11 @@ DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
 	RECT r;
 	Event ev = { cmDragOver };
 
-	if ( self->widget == nilHandle || guts.clipboards[CLIPBOARD_DND] == nilHandle) {
+	if ( 
+		self->widget == nilHandle || 
+		guts.clipboards[CLIPBOARD_DND] == nilHandle ||
+		!dsys(self->widget)options.aptEnabled
+	) {
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
 	}
@@ -203,7 +211,11 @@ DropTarget__DragLeave(PDropTarget self)
 	Event ev = { cmDragEnd };
 
 	guts. dndDataReceiver = NULL;
-	if ( self->widget == nilHandle || guts.clipboards[CLIPBOARD_DND] == nilHandle)
+	if (
+		self->widget == nilHandle ||
+		guts.clipboards[CLIPBOARD_DND] == nilHandle || 
+		!dsys(self->widget)options.aptEnabled
+	)
 		return S_OK;
 
 	w = self->widget;
@@ -222,13 +234,18 @@ DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, D
 	DWORD dummy_effect;
 	Event ev = { cmDragEnd };
 
-	dummy_effect = *effect;
-	self->lpVtbl->DragOver((IDropTarget*)self, modmap, pt, &dummy_effect);
-	if ( self->widget == nilHandle || guts.clipboards[CLIPBOARD_DND] == nilHandle) {
+	if (
+		self->widget == nilHandle ||
+		guts.clipboards[CLIPBOARD_DND] == nilHandle || 
+		!dsys(self->widget)options.aptEnabled
+	) {
 		*effect = DROPEFFECT_NONE;
 		guts. dndDataReceiver = NULL;
 		return S_OK;
 	}
+
+	dummy_effect = *effect;
+	self->lpVtbl->DragOver((IDropTarget*)self, modmap, pt, &dummy_effect);
 
 	w = self->widget;
 	ev.dnd.allow     = 1;
@@ -299,7 +316,7 @@ DropSource__GiveFeedback(PDropSource self, DWORD effect)
 	CWidget(self->widget)->message(self->widget, &ev);
 	if ( self->last_action != ev.dnd.action ) {
 		self->last_action = ev.dnd.action;
-		return DRAGDROP_S_USEDEFAULTCURSORS;
+		return guts.dndDefaultCursors ? DRAGDROP_S_USEDEFAULTCURSORS : S_OK;
 	}
 	return S_OK;
 }
@@ -898,7 +915,7 @@ apc_dnd_get_clipboard( Handle self )
 }
 
 int
-apc_dnd_start( Handle self, int actions)
+apc_dnd_start( Handle self, int actions, Bool default_pointers)
 {
 	int ret = dndNone;
 	DWORD effect;
@@ -910,6 +927,7 @@ apc_dnd_start( Handle self, int actions)
 		return -1;
 	if (!(guts.dragSource = CreateObject(DropSource)))
 		return -1;
+	guts.dndDefaultCursors = default_pointers;
 	((PDropSource)guts.dragSource)->widget       = self;
 	((PDropSource)guts.dragSource)->first_modmap =
 		apc_kbd_get_state(self) | apc_pointer_get_state(self);

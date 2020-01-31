@@ -110,9 +110,7 @@ $w->insert( Widget =>
 		my $self = shift;
 		return if $self->{grab};
 		$self->{grab}++;
-		my $c = $::application->get_dnd_clipboard;
-		$c->text($self->text);
-		$self->begin_drag;
+		$self->begin_drag($self->text);
 		$self->{grab}--;
 	},
 );
@@ -143,9 +141,7 @@ $w->insert( Widget =>
 		my $self = shift;
 		return if $self->{grab} or not $self->{image};
 		$self->{grab}++;
-		my $c = $::application->get_dnd_clipboard;
-		$c->image($self->{image});
-		$self->begin_drag;
+		$self->begin_drag($self->{image});
 		$self->{grab}--;
 	},
 );

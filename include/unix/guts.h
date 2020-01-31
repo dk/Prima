@@ -740,6 +740,7 @@ typedef struct _UnixGuts
 	XWindow                      xdnds_sender, xdnds_target;
 	int                          xdnds_version, xdnds_last_action, xdnds_last_action_response;
 	Bool                         xdnds_last_drop_response, xdnds_escape_key, xdnds_finished;
+	Bool                         xdnds_default_pointers;
 	Box                          xdnds_suppress_events_within; /* in root coordinates */
 
 	CustomPointer                xdnd_pointers[5]; /* none,copy,link,move,ask */
