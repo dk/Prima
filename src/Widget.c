@@ -254,6 +254,10 @@ Widget_update_sys_handle( Handle self, HV * profile)
 void
 Widget_done( Handle self)
 {
+	if ( var-> dndAware != NULL ) {
+		free( var-> dndAware );
+		var-> dndAware = NULL;
+	}
 	if ( var-> text ) sv_free( var->text);
 	var-> text = nil;
 	apc_widget_destroy( self);
