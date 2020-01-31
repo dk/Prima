@@ -321,35 +321,25 @@ sub has_format
 	return $exists ? 1 : 0;
 }
 
-sub text
+sub copy
 {
-	if ($#_) {
-		my ( $self, $text ) = @_;
-		$self-> open;
-		$self-> clear;
-		$::application-> notify( 'Copy', 'Text', $self, $text );
-		$self-> close;
-	} else {
-		my $text;
-		$::application-> notify( 'Paste', 'Text', $_[0], \$text);
-		return $text;
-	}
+	my ( $self, $format, $data ) = @_;
+	$self-> open;
+	$self-> clear;
+	$::application-> notify( 'Copy', $format, $self, $data );
+	$self-> close;
 }
 
-sub image
+sub paste
 {
-	if ($#_) {
-		my ( $self, $image ) = @_;
-		$self-> open;
-		$self-> clear;
-		$::application-> notify( 'Copy', 'Image', $self, $image);
-		$self-> close;
-	} else {
-		my $image;
-		$::application-> notify( 'Paste', 'Image', $_[0], \$image);
-		return $image;
-	}
+	my ( $self, $format ) = @_;
+	my $data;
+	$::application-> notify( 'Paste', $format, $_[0], \$data);
+	return $data;
 }
+
+sub text  { $#_ ? $_[0]->copy('Text',  $_[1]) : $_[0]->paste('Text') }
+sub image { $#_ ? $_[0]->copy('Image', $_[1]) : $_[0]->paste('Image') }
 
 package Prima::Region;
 use vars qw(@ISA);
@@ -1302,6 +1292,105 @@ sub rect_bevel
 }
 
 sub has_alpha_layer { $_[0]-> layered && $_[0]-> is_surface_layered }
+
+sub begin_drag
+{
+	my ( $self, @opt ) = @_;
+	my %opt;
+	if ( 1 != @opt ) {
+		%opt = @opt;
+	} elsif ( ref($opt[0]) && $opt[0]->isa('Prima::Image')) {
+		$opt{image} = $opt[0];
+	} else {
+		$opt{text} = $opt[0];
+	}
+
+	# data
+	my $clipboard = $::application->get_dnd_clipboard;
+	if ( exists $opt{text}) {
+		$clipboard->text($opt{text});
+		$opt{preview} //= $opt{text};
+	} elsif ( exists $opt{image}) {
+		$clipboard->image($opt{image});
+		$opt{preview} //= $opt{image};
+	} elsif ( exists $opt{format} and exists $opt{data}) {
+		$clipboard->copy($opt{format}, $opt{data});
+	} # or else you fill the clipboard yourself
+
+	my @id;
+	my %pointers;
+	my $last_action = -1;
+	$opt{preview} = undef unless $::application->get_system_value(sv::ColorPointer);
+
+	my @max = map { $_ / 8 } $::application->size;
+	if ( $opt{preview} && !ref($opt{preview}) ) {
+		my @lines = split "\n", $opt{preview};
+		my $fh    = $self->font->height;
+		my @sz = ( 1, $fh * @lines );
+		for my $text ( @lines ) {
+			my $tw = $self->get_text_width($text, 1);
+			$sz[0] = $tw if $sz[0] < $tw;
+		}
+		$sz[0] = $max[0] if $sz[0] > $max[0];
+		$sz[1] = $max[1] if $sz[1] > $max[1];
+		my $i = Prima::Image->new(
+			size      => \@sz,
+			type      => im::RGB,
+			color     => $self->color,
+			backColor => $self->backColor,
+		);
+		$i->begin_paint;
+		$i->clear;
+		my $y = $i->height - $fh;
+		for my $text ( @lines ) {
+			$i->text_out( $text, 0, $y );
+			$y -= $fh;
+		}
+		$i->end_paint;
+		$opt{preview} = $i;
+	}
+
+	if ( my $p = $opt{preview}) {
+		my @sz = $p->size;
+		$opt{preview} = $p->extract(0, 0,
+			($sz[0] > $max[0]) ? $max[0] : $sz[0],
+			($sz[1] > $max[1]) ? $max[1] : $sz[1],
+		) if $sz[0] > $max[0] || $sz[1] > $max[1];
+	}
+
+	@id = $self-> add_notification( DragResponse => sub {
+		my ( undef, $allow, $action ) = @_;
+		return if $action == $last_action;
+		$last_action = $action;
+
+		unless ($pointers{$action}) {
+			$self-> pointer( $action - dnd::None + cr::DragNone );
+			my $p = $opt{preview};
+			my $i = $self->pointerIcon;
+			my $n = Prima::Icon->new(
+				type     => im::RGB,
+				maskType => im::bpp8,
+				autoMasking => am::None,
+				size     => [ $i->width + $p->width, $i-> height + $p-> height ],
+			);
+			$n->put_image( 0, $p->height, $i, rop::SrcCopy);
+			$n->put_image( $i->width, 0, $p, rop::SrcCopy);
+			$n->alpha(0xff, $i->width, 0, $i->width + $p->width - 1, $p->height - 1)
+				if !$p->isa('Prima::Icon') || $p->maskType == 1; # XXX
+			my @hs = $self->pointerHotSpot;
+			$hs[1] += $p->height;
+			$n->{__pointerHotSpot} = \@hs;
+			$pointers{$action} = $n;
+		}
+	
+		$self->pointer($pointers{$action});
+	}) if $opt{preview};
+
+	my $ret = $self->dnd_start($opt{actions} // dnd::Copy, !$opt{preview});
+	@id = () unless $self->alive;
+	$self->remove_notification($_) for @id;
+	return $ret;
+}
 
 package Prima::Window;
 use vars qw(@ISA);

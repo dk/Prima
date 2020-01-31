@@ -124,7 +124,7 @@ object Prima::Widget( Prima::Drawable)
 	c_only   Bool     custom_paint();
 	method   void     detach( Handle objectHandle, Bool kill);
 	method   void     done();
-	method   int      begin_drag(int dnd_actions = dndCopy) => apc_dnd_start;
+	method   int      dnd_start(int dnd_actions = dndCopy, Bool default_pointers = 1) => apc_dnd_start;
 	method   void     end_paint();
 	method   void     end_paint_info();
 	method   Bool     exposed()                       => apc_widget_is_exposed;

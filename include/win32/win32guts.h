@@ -227,6 +227,7 @@ typedef struct _WinGuts
 	void*          dndDataSender;      // IDropTarget.DragEnter.DataObject dnd storage object
 	void*          dndDataReceiver;    // CLIPBOARD_DND storage object
 	Bool           dndInsideEvent;     // to distinguish whether the clipboard is read-only or not
+	Bool           dndDefaultCursors;
 	void*          dragSource;         // not null if dragging
 } WinGuts, *PWinGuts;
 

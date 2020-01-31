@@ -218,7 +218,7 @@ handle_xdnd_status( Handle self, XEvent* xev)
 		guts.xdnd_disabled = false;
 	}
 
-	if ( old_response != guts.xdnds_last_action_response) {
+	if ( guts.xdnds_default_pointers && old_response != guts.xdnds_last_action_response) {
 		int pointer = crDragNone;
 		switch ( guts.xdnds_last_drop_response ) {
 		case dndNone: pointer = crDragNone; break;
@@ -456,6 +456,15 @@ handle_xdnd_position( Handle self, XEvent* xev)
 		guts.xdnd_disabled = true;
 		CComponent(h)-> message(h, &ev);
 		guts.xdnd_disabled = false;
+
+		if (ev.dnd.pad.x < 0) ev.dnd.pad.x = 0;
+		if (ev.dnd.pad.y < 0) ev.dnd.pad.y = 0;
+		if (ev.dnd.pad.x + ev.dnd.pad.width > X(self)->size.x)
+			ev.dnd.pad.width = X(self)->size.x - ev.dnd.pad.x;
+		if (ev.dnd.pad.y + ev.dnd.pad.height > X(self)->size.y)
+			ev.dnd.pad.height = X(self)->size.y - ev.dnd.pad.y;
+		if (ev.dnd.pad.width < 0 || ev.dnd.pad.height < 0)
+			bzero(&ev.dnd.pad, sizeof(ev.dnd.pad));
 
 		guts.xdndr_suppress_events_within = ev.dnd.pad;
 		guts.xdndr_last_drop_response     = ev.dnd.allow;
@@ -704,7 +713,7 @@ apc_dnd_get_clipboard( Handle self )
 }
 
 int
-apc_dnd_start( Handle self, int actions)
+apc_dnd_start( Handle self, int actions, Bool default_pointers)
 {
 	Bool got_session = false;
 	Point ptr, last_ptr = { -1, -1 };
@@ -754,6 +763,7 @@ apc_dnd_start( Handle self, int actions)
 		return -1; /* nothing to drag */
 	}
 
+	guts. xdnds_default_pointers = default_pointers;
 	guts. xdnds_sender = PWidget(top_level)->handle;
 	guts. xdnds_widget = self;
 	guts. xdnds_finished = false;
@@ -765,6 +775,7 @@ apc_dnd_start( Handle self, int actions)
 	guts.xdnds_version = 0;
 	guts.xdnds_last_action = guts.xdnds_last_action_response = dndNone;
 	bzero( &guts.xdnds_suppress_events_within, sizeof(Box));
+	protect_object(self);
 	Cdebug("dnd:begin\n");
 
 	CC = C(guts.xdnd_clipboard);
@@ -942,8 +953,11 @@ apc_dnd_start( Handle self, int actions)
 		ret = dndNone;
 
 EXIT:
-	apc_widget_set_capture(self, 0, nilHandle);
-	apc_pointer_set_shape(self, old_pointer);
+	if ( PObject(self)->stage == csNormal ) {
+		apc_widget_set_capture(self, 0, nilHandle);
+		apc_pointer_set_shape(self, old_pointer);
+	}
+	unprotect_object(self);
 	guts.xdnds_widget = nilHandle;
 	guts.xdnds_target = None;
 	Cdebug("dnd:stop\n");

@@ -552,7 +552,7 @@ dnd_event_wanted(Handle self, PEvent event)
 	Bool r;
 	SV * ret;
 	enter_method;
-	if ( var-> dndAware == NULL || !my->get_enabled(self)) return false;
+	if ( var-> dndAware == NULL) return false;
 	if ( strcmp(var->dndAware, "1") == 0) return true;
 	ENTER;
 	SAVETMPS;
@@ -1888,7 +1888,6 @@ Widget_get_handle( Handle self)
 	return newSVpv( buf, 0);
 }
 
-
 SV *
 Widget_get_parent_handle( Handle self)
 {
@@ -2464,12 +2463,12 @@ Widget_dndAware( Handle self, Bool set, SV * dndAware)
 			return newSViv(1);
 		else
 			return newSVpv(var->dndAware, 0);
-	} else if ( var->dndAware == NULL && SvTYPE(dndAware) != SVt_NULL ) {
+	} else if ( var->dndAware == NULL && SvBOOL(dndAware)) {
 		if ( apc_dnd_set_aware( self, true))
 			var-> dndAware = duplicate_string( SvPV_nolen( dndAware));
 	} else if ( var->dndAware != NULL ) {
 		free(var-> dndAware);
-		if ( SvTYPE(dndAware) == SVt_NULL) {
+		if ( !SvBOOL(dndAware)) {
 			var->dndAware = NULL;
 			apc_dnd_set_aware( self, false);
 		} else
