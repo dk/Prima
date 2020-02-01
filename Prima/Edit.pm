@@ -778,7 +778,6 @@ sub on_mousedown
 	my @sel = $self->selection;
 	if (
 		$self->has_selection &&
-		!$self->{readOnly} && 
 		!$self->{drag_transaction} && 
 		!$self->{drop_transaction} && (
 			($sel[1] == $sel[3] && $xy[1] == $sel[1] && $xy[0] >= $sel[0] && $xy[0] < $sel[2]) ||
@@ -790,11 +789,11 @@ sub on_mousedown
 		$self-> {drag_transaction} = 1;
 		my $act = $self-> begin_drag(
 			text       => $self->get_selected_text,
-			actions    => dnd::Copy|dnd::Move,
+			actions    => dnd::Copy|( $self->{readOnly} ? 0 : dnd::Move),
 			self_aware => 0,
 		);
 		$self-> {drag_transaction} = 0;
-		$self-> delete_block if $act == dnd::Move;
+		$self-> delete_block if !$self->{readOnly} && $act == dnd::Move;
 		return;
 	}
 
