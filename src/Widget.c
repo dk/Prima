@@ -571,7 +571,7 @@ handle_drag_begin( Handle self, PEvent event)
 		return;
 	}
 	opt_set(optDropSession);
-	my-> notify( self, "<sHiiPS", "DragBegin", 
+	my-> notify( self, "<sHiiP", "DragBegin",
 		event-> dnd. clipboard,
 		event-> dnd. action,
 		event-> dnd. modmap,
@@ -586,7 +586,7 @@ handle_drag_over( Handle self, PEvent event)
 	enter_method;
 	HV * profile;
 	SV * ref;
-	
+
 	if ( !is_opt(optDropSession)) {
 		Point size = apc_widget_get_size(self);
 		event-> dnd.allow      = 0;
@@ -601,7 +601,7 @@ handle_drag_over( Handle self, PEvent event)
 
 	pset_i(allow,1);
 	pset_i(action,dndCopy);
-	my-> notify( self, "<sHiiPS", "DragOver", 
+	my-> notify( self, "<sHiiPS", "DragOver",
 		event-> dnd. clipboard,
 		event-> dnd. action,
 		event-> dnd. modmap,
