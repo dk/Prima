@@ -850,15 +850,33 @@ sub on_mousedown
 	}
 
 	return if $btn != mb::Left;
-
-	my ( $text_offset, $bid) = $self-> xy2info( $x, $y);
-
-	$self-> {mouseTransaction} = 1;
-	$self-> {mouseAnchor} = [ $text_offset, $bid ];
-	$self-> selection( -1, -1, -1, -1);
-
-	$self-> capture(1);
 	$self-> clear_event;
+
+	my @xy = $self-> xy2info( $x, $y);
+	my @sel = $self->selection;
+	if (
+		$self->has_selection &&
+		!$self->{drag_transaction} && 
+		(
+			($sel[1] == $sel[3] && $xy[1] == $sel[1] && $xy[0] >= $sel[0] && $xy[0] < $sel[2]) ||
+			($xy[1] == $sel[1] && $xy[1] < $sel[3] && $xy[0] >= $sel[0]) ||
+			($xy[1] == $sel[3] && $xy[1] > $sel[1] && $xy[0] < $sel[2]) ||
+			($xy[1] > $sel[1] && $xy[1] < $sel[3])
+		)
+	) {
+		$self-> {drag_transaction} = 1;
+		my $act = $self-> begin_drag(
+			text       => $self->get_selected_text,
+			actions    => dnd::Copy,
+		);
+		$self-> {drag_transaction} = 0;
+	} else {
+		$self-> {mouseTransaction} = 1;
+		$self-> {mouseAnchor} = \@xy;
+		$self-> selection( -1, -1, -1, -1);
+
+		$self-> capture(1);
+	}
 }
 
 sub on_mouseclick

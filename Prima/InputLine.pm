@@ -672,7 +672,7 @@ sub on_mousedown
 	my $ofs = $self-> x2offset( $x);
 	if (
 		$start != $end && 
-		! $self-> {writeOnly} && !$self->{readOnly} && 
+		! $self-> {writeOnly} && 
 		!$self->{drag_transaction} && 
 		!$self->{drop_transaction} && 
 		$ofs >= $start && $ofs < $end 
@@ -680,11 +680,11 @@ sub on_mousedown
 		$self-> {drag_transaction} = 1;
 		my $act = $self-> begin_drag(
 			text       => substr( $self->text, $start, $end - $start),
-			actions    => dnd::Copy|dnd::Move,
+			actions    => dnd::Copy|( $self->{readOnly} ? 0 : dnd::Move),
 			self_aware => 0,
 		);
 		$self-> {drag_transaction} = 0;
-		if ( $act == dnd::Move ) {
+		if ( $act == dnd::Move && !$self->{readOnly}) {
 			my $cap = $self->text;
 			substr( $cap, $start, $end - $start) = '';
 			$self-> selection(0,0);
