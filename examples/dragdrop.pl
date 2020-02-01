@@ -23,11 +23,16 @@ sub set_dnd_mode
 
 sub best_dnd_mode
 {
-	my ( $mod, $action ) = @_;
+	my ( $mod, $actions ) = @_;
+	return $actions if grep { $_ == $actions } (dnd::Copy, dnd::Move, dnd::Link);
 	my $preferred =
 		($mod & km::Ctrl) ? dnd::Move :
 		(($mod & km::Shift) ? dnd::Link : dnd::Copy);
-	return $preferred & $action;
+	return $preferred if $preferred & $actions;
+	return dnd::Copy if $actions & dnd::Copy;
+	return dnd::Move if $actions & dnd::Move;
+	return dnd::Link if $actions & dnd::Link;
+	return dnd::None;
 }
 
 sub add_buttons
@@ -95,7 +100,7 @@ $w->insert( Widget =>
 		$self->draw_text($self->text,0,0,$self->size,dt::NewLineBreak|dt::Center|dt::VCenter);
 	},
 	onDragBegin => sub {
-		my ($self, $clipboard) = @_;
+		my ( $self, $clipboard, $action, $modmap, $x, $y) = @_;
 		$self->{dropable} = $clipboard->format_exists('Text') ? 1 : 0;
 		$self->set(
 			color     => ($self->{dropable} ? cl::HiliteText : cl::DisabledText),
@@ -107,11 +112,11 @@ $w->insert( Widget =>
 		my ( $self, $clipboard, $action, $modmap, $x, $y, $ref) = @_;
 		$ref->{allow} = $self->{dropable} && $self->{dnd_mode} != dnd::None;
 		$self->{modmap} = $modmap;
-		$ref->{action} = best_dnd_mode($modmap, $self->{dnd_mode});
+		$ref->{action} = best_dnd_mode($modmap, $self->{dnd_mode} & $action);
 		$ref->{pad} = [ 0, 0, $self-> size ]; # don't send it anymore
 	},
 	onDragEnd => sub {
-		my ( $self, $clipboard, $ref) = @_;
+		my ( $self, $clipboard, $action, $modmap, $x, $y, $ref) = @_;
 		$self->set(
 			color     => cl::Fore,
 			backColor => cl::Back,
@@ -120,7 +125,7 @@ $w->insert( Widget =>
 		$ref->{allow} = 0;
 		if ($clipboard->format_exists('Text')) {
 			$ref->{allow} = 1;
-			$ref->{action} = best_dnd_mode($self->{modmap}, $self->{dnd_mode}); 
+			$ref->{action} = best_dnd_mode($self->{modmap}, $self->{dnd_mode} & $action); 
 			$self->text($clipboard->text);
 			$self->repaint;
 		}
@@ -145,7 +150,7 @@ $w->insert( Widget =>
 		$self->draw_text("Drop\nImage",0,0,$self->size,dt::NewLineBreak|dt::Center|dt::VCenter);
 	},
 	onDragBegin => sub {
-		my ($self, $clipboard) = @_;
+		my ( $self, $clipboard, $action, $modmap, $x, $y) = @_;
 		$self->{drag} = 1;
 		$self->{dropable} = $clipboard->format_exists('Image') ? 1 : 0;
 		$self->set(
@@ -161,7 +166,7 @@ $w->insert( Widget =>
 		$ref->{pad} = [ 0, 0, $self-> size ]; # don't send it anymore
 	},
 	onDragEnd => sub {
-		my ( $self, $clipboard, $ref) = @_;
+		my ( $self, $clipboard, $action, $modmap, $x, $y, $ref) = @_;
 		$self->{drag} = 0;
 		$self->set(
 			color     => cl::Fore,

@@ -1013,7 +1013,7 @@ sub on_dragover
 
 sub on_dragend
 {
-	my ($self, $clipboard, $ref) = @_;
+	my ($self, $clipboard, $action, $mod, $x, $y, $ref) = @_;
 	my $dt;
 	if ( $dt = $self->{drop_transaction} and @$dt ) {
 		$self-> invalidate_rect(@$dt);
