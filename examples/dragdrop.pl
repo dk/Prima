@@ -24,15 +24,12 @@ sub set_dnd_mode
 sub best_dnd_mode
 {
 	my ( $mod, $actions ) = @_;
-	return $actions if grep { $_ == $actions } (dnd::Copy, dnd::Move, dnd::Link);
+	return $actions if dnd::is_one_action($actions);
 	my $preferred =
 		($mod & km::Ctrl) ? dnd::Move :
 		(($mod & km::Shift) ? dnd::Link : dnd::Copy);
 	return $preferred if $preferred & $actions;
-	return dnd::Copy if $actions & dnd::Copy;
-	return dnd::Move if $actions & dnd::Move;
-	return dnd::Link if $actions & dnd::Link;
-	return dnd::None;
+	return dnd::to_one_action($actions);
 }
 
 sub add_buttons

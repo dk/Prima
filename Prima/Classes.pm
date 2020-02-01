@@ -1391,11 +1391,8 @@ sub begin_drag
 	}
 
 	# select multi actions
-	unless (grep { $actions == $_ } (dnd::Copy, dnd::Move, dnd::Link)) {
-		my $default_action = 
-			( $actions & dnd::Copy) ? dnd::Copy : (
-			( $actions & dnd::Move) ? dnd::Move : dnd::Link)
-			;
+	unless (dnd::is_one_action($actions)) {
+		my $default_action = dnd::to_one_action($actions);
 		push @id, $self-> add_notification( DragQuery => sub {
 			my ( $self, $modmap, $ref ) = @_;
 			if ( $modmap & km::Ctrl and $actions & dnd::Move ) {
@@ -1413,15 +1410,7 @@ sub begin_drag
 		my ( undef, $allow, $action ) = @_;
 
 		unless ($pointers{$action}) {
-			if ( $action == dnd::Copy ) {
-				$self-> pointer( cr::DragCopy );
-			} elsif ( $action == dnd::Move ) {
-				$self-> pointer( cr::DragMove );
-			} elsif ( $action == dnd::Link ) {
-				$self-> pointer( cr::DragLink );
-			} else {
-				$self-> pointer( cr::DragNone );
-			}
+			$self->pointer(dnd::pointer($action));
 			my $p = $opt{preview};
 			my $i = $self->pointerIcon;
 			my @hs = $self->pointerHotSpot;

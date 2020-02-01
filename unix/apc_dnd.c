@@ -202,7 +202,6 @@ update_pointer(Handle self, int dnd)
 	case dndCopy: pointer = crDragCopy; break;
 	case dndMove: pointer = crDragMove; break;
 	case dndLink: pointer = crDragLink; break;
-	case dndAsk : pointer = crDragAsk ; break;
 	}
 	apc_pointer_set_shape(self, pointer);
 }

@@ -87,7 +87,7 @@ static unsigned char cursor_dnd_link[] = {
 0x7F,0xFF,0xFF,0xFF
 };
 
-static HCURSOR drag_cursors[crDragAsk - crDragCopy + 1] = { NULL, NULL, NULL, NULL };
+static HCURSOR drag_cursors[crDragLink - crDragCopy + 1] = { NULL, NULL, NULL };
 
 static HCURSOR
 create_drag_cursor( int cr )
@@ -96,7 +96,7 @@ create_drag_cursor( int cr )
 	unsigned int size = 0;
 	int index = cr - crDragCopy;
 
-	if ( cr < crDragCopy || cr > crDragAsk)
+	if ( cr < crDragCopy || cr > crDragLink)
 		return NULL;
 
 	if ( drag_cursors[index] != NULL )
@@ -115,9 +115,6 @@ create_drag_cursor( int cr )
 		bits = cursor_dnd_link;
 		size = sizeof(cursor_dnd_link);
 		break;
-	case crDragAsk:
-		/* DragAsk action is only for X11 anyway */
-		return create_drag_cursor(crDragMove);
 	}
 
 	if (( drag_cursors[index] = CreateIconFromResourceEx(
@@ -318,7 +315,6 @@ Handle ctx_cr2IDC[] =
         crDragCopy,  ( Handle) IDC_HAND, 
         crDragMove,  ( Handle) IDC_HAND, 
         crDragLink,  ( Handle) IDC_HAND, 
-        crDragAsk ,  ( Handle) IDC_HAND, 
 	endCtx
 };
 
@@ -358,7 +354,7 @@ apc_pointer_set_shape( Handle self, int sysPtrId)
 		LoadCursor( NULL, MAKEINTRESOURCE(
 		ctx_remap_def( sysPtrId, ctx_cr2IDC, true, ( Handle)IDC_ARROW)));
 
-	if ( sysPtrId >= crDragCopy && sysPtrId <= crDragAsk) {
+	if ( sysPtrId >= crDragCopy && sysPtrId <= crDragLink) {
 		HCURSOR cursor = create_drag_cursor(sysPtrId);
 		if ( cursor != NULL ) sys pointer = cursor;
 	}
