@@ -547,9 +547,9 @@ sub on_dragover
 
 sub on_dragend
 {
-	my ($self, $clipboard, $ref) = @_;
+	my ($self, $clipboard, $action, $mod, $x, $y, $ref) = @_;
 	$ref->{allow} = 0;
-	$self->notify(q(MouseUp), mb::Left, 0, @{ $self->{drop_transaction} });
+	$self->notify(q(MouseUp), mb::Left, 0, $x, $y);
 	undef $self->{drop_transaction};
 }
 

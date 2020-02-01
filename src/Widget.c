@@ -571,7 +571,12 @@ handle_drag_begin( Handle self, PEvent event)
 		return;
 	}
 	opt_set(optDropSession);
-	my-> notify( self, "<sH", "DragBegin", event->dnd.clipboard);
+	my-> notify( self, "<sHiiPS", "DragBegin", 
+		event-> dnd. clipboard,
+		event-> dnd. action,
+		event-> dnd. modmap,
+		event-> dnd. where
+	);
 }
 
 static void
@@ -638,7 +643,13 @@ handle_drag_end( Handle self, PEvent event)
 
 	pset_i(allow, 1);
 	pset_i(action, event->dnd.action);
-	my-> notify( self, "<sHS", "DragEnd", event->dnd.allow ? event-> dnd.clipboard : nilHandle, ref);
+	my-> notify( self, "<sHiiPS", "DragEnd", 
+		event-> dnd. allow ? event-> dnd.clipboard : nilHandle, 
+		event-> dnd. action,
+		event-> dnd. modmap,
+		event-> dnd. where,
+		ref
+	);
 	event-> dnd. allow  = pexist(allow)  ? pget_i(allow)  : 1;
 	event-> dnd. action = pexist(action) ? pget_i(action) : dndCopy;
 

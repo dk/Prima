@@ -31,6 +31,63 @@ xdnd_constant_to_atom( int cmd )
 	}
 }
 
+static XWindow
+query_xdnd_target(XWindow w)
+{
+	Bool found = false;
+	XWindow foo, child;
+	unsigned mask;
+	int i, bar, nprops;
+	Atom *atoms;
+
+	atoms = XListProperties(DISP, w, &nprops);
+	for (i = 0; i < nprops; i++)
+		if (atoms[i] == XdndAware) {
+			found = true;
+			break;
+		}
+	if ( nprops) XFree(atoms);
+	if ( found ) return w;
+
+	if ( !XQueryPointer( DISP, w, &foo, &child, &bar, &bar, &bar, &bar, &mask))
+		return None;
+	if ( child == None )
+		return None;
+	return query_xdnd_target(child);
+}
+
+static int
+query_pointer(XWindow * receiver, Point *p)
+{
+	XWindow foo;
+	int bar, x, y, ret;
+	unsigned mask;
+
+	XQueryPointer( DISP, guts.root, &foo, &foo, &x, &y, &bar, &bar, &mask);
+	ret =
+		(( mask & Button1Mask) ? mb1 : 0) |
+		(( mask & Button2Mask) ? mb2 : 0) |
+		(( mask & Button3Mask) ? mb3 : 0) |
+		(( mask & Button4Mask) ? mb4 : 0) |
+		(( mask & Button5Mask) ? mb5 : 0) |
+		(( mask & Button6Mask) ? mb6 : 0) |
+		(( mask & Button7Mask) ? mb7 : 0) |
+		(( mask & ShiftMask)   ? kmShift : 0) |
+		(( mask & ControlMask) ? kmCtrl  : 0) |
+		(( mask & Mod1Mask)    ? kmAlt   : 0);
+
+	if ( p ) {
+		p->x = x;
+		p->y = y;
+	}
+
+	if ( receiver )
+		*receiver = query_xdnd_target(guts.root);
+
+	return ret;
+}
+
+
 static int
 xdnd_read_ask_actions(void)
 {
@@ -109,9 +166,16 @@ handle_xdnd_leave( Handle self)
 		C(guts.xdnd_clipboard)-> xdnd_receiving = false;
 
 	if ( guts.xdndr_widget ) {
+		XWindow dummy;
 		Event ev = { cmDragEnd };
 		ev.dnd.allow = 0;
 		ev.dnd.clipboard = nilHandle;
+		ev.dnd.modmap  = query_pointer(NULL,&ev.dnd.where);
+		ev.dnd.action  = dndNone;
+		XTranslateCoordinates(DISP, guts.root, X(guts.xdndr_widget)->client, 
+			ev.dnd.where.x, ev.dnd.where.y,
+			&ev.dnd.where.x, &ev.dnd.where.y,
+			&dummy);
 		guts.xdnd_disabled = true;
 		CComponent(guts.xdndr_widget)-> message(guts.xdndr_widget, &ev);
 		guts.xdnd_disabled = false;
@@ -128,61 +192,6 @@ atom_name(Atom atom)
 	return atom ? XGetAtomName(DISP,atom) : "None";
 }
 
-static XWindow
-query_xdnd_target(XWindow w)
-{
-	Bool found = false;
-	XWindow foo, child;
-	unsigned mask;
-	int i, bar, nprops;
-	Atom *atoms;
-
-	atoms = XListProperties(DISP, w, &nprops);
-	for (i = 0; i < nprops; i++)
-		if (atoms[i] == XdndAware) {
-			found = true;
-			break;
-		}
-	if ( nprops) XFree(atoms);
-	if ( found ) return w;
-
-	if ( !XQueryPointer( DISP, w, &foo, &child, &bar, &bar, &bar, &bar, &mask))
-		return None;
-	if ( child == None )
-		return None;
-	return query_xdnd_target(child);
-}
-
-static int
-query_pointer(XWindow * receiver, Point *p)
-{
-	XWindow foo;
-	int bar, x, y, ret;
-	unsigned mask;
-
-	XQueryPointer( DISP, guts.root, &foo, &foo, &x, &y, &bar, &bar, &mask);
-	ret =
-		(( mask & Button1Mask) ? mb1 : 0) |
-		(( mask & Button2Mask) ? mb2 : 0) |
-		(( mask & Button3Mask) ? mb3 : 0) |
-		(( mask & Button4Mask) ? mb4 : 0) |
-		(( mask & Button5Mask) ? mb5 : 0) |
-		(( mask & Button6Mask) ? mb6 : 0) |
-		(( mask & Button7Mask) ? mb7 : 0) |
-		(( mask & ShiftMask)   ? kmShift : 0) |
-		(( mask & ControlMask) ? kmCtrl  : 0) |
-		(( mask & Mod1Mask)    ? kmAlt   : 0);
-
-	if ( p ) {
-		p->x = x;
-		p->y = y;
-	}
-
-	if ( receiver )
-		*receiver = query_xdnd_target(guts.root);
-
-	return ret;
-}
 
 static void
 update_pointer(Handle self, int dnd)
@@ -340,7 +349,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 {
 	Box box;
 	Bool ret = false;
-	int x, y, dx, dy, action;
+	int x, y, dx, dy, action, modmap;
 	XWindow from, to, child = None;
 	Handle h = nilHandle;
 	XEvent xr;
@@ -384,12 +393,24 @@ handle_xdnd_position( Handle self, XEvent* xev)
 		h = nilHandle;
 	XCHECKPOINT;
 	/* Cdebug("dnd:position old widget %08x, new %08x\n", guts.xdndr_widget, h); */
+	modmap  = query_pointer(NULL,NULL);
+	dx = x = xev->xclient.data.l[2] >> 16;
+	dy = y = xev->xclient.data.l[2] & 0xffff;
+	XTranslateCoordinates(DISP, guts.root, X(h)->client, x, y, &x, &y, &to);
+	dx -= x;
+	dy -= y;
+	y = X(h)->size.y - y - 1;
+	/* Cdebug("xdnd:final position %d %d for %08x/%08x\n",x,y,h); */
 
 	/* send enter/leave messages */
 	if ( guts. xdndr_widget != h && guts. xdndr_widget != nilHandle ) {
 		Event ev = { cmDragEnd };
 		ev.dnd.allow = 0;
 		ev.dnd.clipboard = nilHandle;
+		ev.dnd.modmap  = modmap;
+		ev.dnd.where.x = x;
+		ev.dnd.where.y = y;
+		ev.dnd.action  = dndNone;
 		if ( h )
 			protect_object(h);
 		guts.xdnd_disabled = true;
@@ -409,9 +430,17 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	)
 		goto FAIL;
 
+	action = dndCopy;
+	if (guts.xdndr_version > 1)
+		action = xdnd_atom_to_constant(xev->xclient.data.l[4]);
+
 	if ( guts.xdndr_widget != h ) {
 		Event ev = { cmDragBegin };
 		ev.dnd.clipboard = guts.xdnd_clipboard;
+		ev.dnd.modmap  = modmap;
+		ev.dnd.where.x = x;
+		ev.dnd.where.y = y;
+		ev.dnd.action  = action;
 		guts.xdnd_disabled = true;
 		CComponent(h)-> message(h, &ev);
 		guts.xdnd_disabled = false;
@@ -422,19 +451,6 @@ handle_xdnd_position( Handle self, XEvent* xev)
 		bzero(&guts. xdndr_suppress_events_within, sizeof(Box));
 		guts. xdndr_last_action = dndCopy;
 	}
-
-	/* check position, suppress events if the sender doesn't respect that */
-	XCHECKPOINT;
-	dx = x = xev->xclient.data.l[2] >> 16;
-	dy = y = xev->xclient.data.l[2] & 0xffff;
-	XTranslateCoordinates(DISP, guts.root, X(h)->client, x, y, &x, &y, &to);
-	dx -= x;
-	dy -= y;
-	y = X(h)->size.y - y - 1;
-	/* Cdebug("xdnd:final position %d %d for %08x/%08x\n",x,y,h); */
-	action = dndCopy;
-	if (guts.xdndr_version > 1)
-		action = xdnd_atom_to_constant(xev->xclient.data.l[4]);
 
 	if (!(
 		action == guts.xdndr_last_action &&
@@ -474,6 +490,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 
 		guts.xdndr_suppress_events_within = ev.dnd.pad;
 		guts.xdndr_last_drop_response     = ev.dnd.allow;
+		guts.xdndr_last_action            = ev.dnd.action;
 	}
 
 	box. x = dx + guts.xdndr_suppress_events_within.x;
@@ -531,10 +548,17 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 
 	Cdebug("dnd:drop from %08x\n", guts.xdndr_source);
 	if ( X(guts.xdndr_widget)->flags.dnd_aware) {
+		XWindow dummy;
 		ev.cmd = cmDragEnd;
 		ev.dnd.allow = 1;
 		ev.dnd.action = dndCopy;
 		ev.dnd.clipboard = guts.xdnd_clipboard;
+		ev.dnd.modmap  = query_pointer(NULL,&ev.dnd.where);
+		ev.dnd.action  = dndNone;
+		XTranslateCoordinates(DISP, guts.root, X(guts.xdndr_widget)->client, 
+			ev.dnd.where.x, ev.dnd.where.y,
+			&ev.dnd.where.x, &ev.dnd.where.y,
+			&dummy);
 		guts.xdndr_source = xev->xclient.data.l[0];
 		guts.xdndr_timestamp = (guts.xdndr_version >= 1) ? xev-> xclient.data.l[2] : CurrentTime;
 		if ( guts.xdndr_last_action == dndAsk )
@@ -557,14 +581,14 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 
 	/* respond */
 	if (ev.dnd.allow) {
-		action = xdnd_constant_to_atom( ev.dnd.action );
-		if (( action & dndMask ) == 0) action = None;
+		if (( ev.dnd.action & dndMask ) == 0) ev.dnd.action = None;
 		/* never return a combination, if DragEnd never bothered to ask */
-		if ( action & dndCopy ) action = dndCopy;
-		else if ( action & dndMove ) action = dndMove;
-		else if ( action & dndLink ) action = dndLink;
-		action = None;
-		if ( action == None ) ev.dnd.allow = false;
+		if ( ev.dnd.action & dndCopy ) ev.dnd.action = dndCopy;
+		else if ( ev.dnd.action & dndMove ) ev.dnd.action = dndMove;
+		else if ( ev.dnd.action & dndLink ) ev.dnd.action = dndLink;
+		else ev.dnd.action = dndNone;
+		if ( ev.dnd.action == dndNone ) ev.dnd.allow = false;
+		action = xdnd_constant_to_atom( ev.dnd.action );
 	}
 	XCHECKPOINT;
 

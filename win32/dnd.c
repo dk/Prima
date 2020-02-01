@@ -105,10 +105,12 @@ convert_modmap(int modmap)
 }
 
 static HRESULT __stdcall
-DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, DWORD *effect)
+DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL _pt, DWORD *effect)
 {
 	int stage;
 	Handle w;
+	RECT r;
+	POINT pt = {_pt.x, _pt.y}, size;
 	Event ev = { cmDragBegin };
 
 	if (
@@ -125,6 +127,20 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 	self->last_action  = DROPEFFECT_NONE;
 	self->first_action = *effect & dndMask;
 
+	GetWindowRect((HWND) PWidget(w)->handle, &r);
+	size.x = r.right  - r.left;
+	size.y = r.bottom - r.top;
+	MapWindowPoints((HWND) NULL, ( HWND) DHANDLE(w), &pt, 1);
+	if ( pt.x < 0 || pt.y < 0 || pt.x > size.x - 1 || pt.y > size.y - 1) {
+		*effect = DROPEFFECT_NONE;
+		return S_OK;
+	}
+	ev.dnd.where.x   = pt.x;
+	ev.dnd.where.y   = size.y - pt.y - 1;
+	/* DROPEFFECT_XXX and dndXXX constants are directly mapped to each other, except DROPEFFECT_SCROLL */
+	ev.dnd.action = *effect & dndMask;
+	ev.dnd.modmap = convert_modmap(modmap);
+
 	w = self->widget;
 	protect_object(w);
 	guts.dndInsideEvent = true;
@@ -138,8 +154,6 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
 	}
-
-	self->lpVtbl->DragOver((IDropTarget*)self, modmap, pt, effect);
 
 	return S_OK;
 }
@@ -230,6 +244,9 @@ DropTarget__DragLeave(PDropTarget self)
 	w = self->widget;
 	ev.dnd.allow = 0;
 	ev.dnd.clipboard = nilHandle;
+	ev.dnd.modmap    = apc_kbd_get_state(self->widget) | apc_pointer_get_state(self->widget);
+	ev.dnd.where     = apc_pointer_get_pos(self->widget);
+	ev.dnd.action    = dndNone;
 	guts.dndInsideEvent = true;
 	CWidget(w)->message(w, &ev);
 	guts.dndInsideEvent = false;
@@ -240,7 +257,6 @@ static HRESULT __stdcall
 DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, DWORD *effect)
 {
 	Handle w;
-	DWORD dummy_effect;
 	Event ev = { cmDragEnd };
 
 	if (
@@ -253,13 +269,23 @@ DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, D
 		return S_OK;
 	}
 
-	dummy_effect = *effect;
-	self->lpVtbl->DragOver((IDropTarget*)self, modmap, pt, &dummy_effect);
+	GetWindowRect((HWND) PWidget(w)->handle, &r);
+	size.x = r.right  - r.left;
+	size.y = r.bottom - r.top;
+	MapWindowPoints((HWND) NULL, ( HWND) DHANDLE(w), &pt, 1);
+	if ( pt.x < 0 || pt.y < 0 || pt.x > size.x - 1 || pt.y > size.y - 1) {
+		*effect = DROPEFFECT_NONE;
+		return S_OK;
+	}
 
 	w = self->widget;
 	ev.dnd.allow     = 1;
 	ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND];
+	/* DROPEFFECT_XXX and dndXXX constants are directly mapped to each other, except DROPEFFECT_SCROLL */
 	ev.dnd.action    = *effect & dndMask;
+	ev.dnd.where.x   = pt.x;
+	ev.dnd.where.y   = size.y - pt.y - 1;
+	ev.dnd.modmap    = convert_modmap(modmap);
 	guts.dndInsideEvent = true;
 	CWidget(w)->message(w, &ev);
 
