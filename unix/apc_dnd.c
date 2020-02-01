@@ -184,6 +184,20 @@ query_pointer(XWindow * receiver, Point *p)
 	return ret;
 }
 
+static void
+update_pointer(Handle self, int dnd)
+{
+	int pointer = crDragNone;
+	switch ( dnd ) {
+	case dndNone: pointer = crDragNone; break;
+	case dndCopy: pointer = crDragCopy; break;
+	case dndMove: pointer = crDragMove; break;
+	case dndLink: pointer = crDragLink; break;
+	case dndAsk : pointer = crDragAsk ; break;
+	}
+	apc_pointer_set_shape(self, pointer);
+}
+
 static Bool
 handle_xdnd_status( Handle self, XEvent* xev)
 {
@@ -218,17 +232,9 @@ handle_xdnd_status( Handle self, XEvent* xev)
 		guts.xdnd_disabled = false;
 	}
 
-	if ( guts.xdnds_default_pointers && old_response != guts.xdnds_last_action_response) {
-		int pointer = crDragNone;
-		switch ( guts.xdnds_last_drop_response ) {
-		case dndNone: pointer = crDragNone; break;
-		case dndCopy: pointer = crDragCopy; break;
-		case dndMove: pointer = crDragMove; break;
-		case dndLink: pointer = crDragLink; break;
-		case dndAsk : pointer = crDragAsk ; break;
-		}
-		apc_pointer_set_shape(guts.xdnds_widget, pointer);
-	}
+	if ( guts.xdnds_default_pointers && old_response != guts.xdnds_last_action_response)
+		update_pointer(guts.xdnds_widget, guts.xdnds_last_action_response );
+
 	return true;
 }
 
@@ -247,7 +253,7 @@ handle_xdnd_finished( Handle self, XEvent* xev)
 	} else {
 		guts.xdnds_last_drop_response = 1;
 	}
-	Cdebug("dnd:finish\n");
+	Cdebug("dnd:finish with %d\n", guts.xdnds_last_action_response);
 	guts.xdnds_finished = true;
 	return true;
 }
@@ -712,6 +718,18 @@ apc_dnd_get_clipboard( Handle self )
 	return guts. xdnd_clipboard;
 }
 
+static Bool
+send_drag_response(Handle self, Bool allow, int action)
+{
+	Event ev = { cmDragResponse };
+	ev.dnd.allow = allow;
+	ev.dnd.action = action;
+	guts.xdnd_disabled = true;
+	CComponent(self)-> message(self, &ev);
+	guts.xdnd_disabled = false;
+	return PObject(self)->stage == csNormal;
+}
+
 int
 apc_dnd_start( Handle self, int actions, Bool default_pointers)
 {
@@ -787,6 +805,10 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers)
 	apc_pointer_set_shape(self, crDragNone);
 	apc_widget_set_capture(self, true, nilHandle);
 
+	if ( !default_pointers && !X(self)->flags. dnd_aware) {
+		if ( !send_drag_response(self, false, dndNone)) goto EXIT;
+	}
+
 	XChangeProperty(DISP, guts. xdnds_sender, XdndActionList, XA_ATOM, 32,
 		PropModeReplace, (unsigned char*)&actions_list, n_actions);
 	XChangeProperty(DISP, guts. xdnds_sender, XdndActionDescription, XA_STRING, 8,
@@ -806,7 +828,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers)
 		}
 
 		new_modmap = query_pointer(&new_receiver, &ptr);
-		if ( new_receiver == banned_receiver )
+		if ( new_receiver == banned_receiver && banned_receiver != None )
 			new_receiver = guts.xdnds_target;
 
 		if ( guts.xdnds_escape_key )
@@ -867,6 +889,12 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers)
 				xdnds_send_position_message(ptr, curr_action);
 				last_action = curr_action;
 			}
+		} else {
+			if ( default_pointers)
+				apc_pointer_set_shape(self, crDragNone);
+			guts.xdnds_last_drop_response = false;
+			guts.xdnds_last_action_response = dndNone;
+			if ( !send_drag_response(self, false, dndNone)) goto EXIT;
 		}
 
 		if ( new_modmap != modmap) {
@@ -914,6 +942,8 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers)
 					Cdebug("dnd:leave\n");
 				}
 				break;
+			} else {
+				xdnds_send_position_message(ptr, curr_action);
 			}
 		}
 

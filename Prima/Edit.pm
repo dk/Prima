@@ -20,6 +20,7 @@ use Prima::Classes;
 use Prima::ScrollBar;
 use Prima::IntUtils;
 use Prima::Bidi qw(:methods);
+use Prima::RubberBand;
 
 {
 my %RNT = (
@@ -114,6 +115,7 @@ sub profile_default
 		cursorX           => 0,
 		cursorY           => 0,
 		cursorWrap        => 0,
+		dndAware          => "Text",
 		insertMode        => 0,
 		hiliteNumbers     => cl::Green,
 		hiliteQStrings    => cl::LightBlue,
@@ -759,9 +761,9 @@ sub on_mousedown
 	return if $btn != mb::Left && $btn != mb::Middle;
 	my @xy = $self-> point2xy( $x, $y);
 	return unless $xy[2];
-	$self-> cursor( @xy);
 
 	if ( $btn == mb::Middle) {
+		$self-> cursor( @xy);
 		my $cp = $::application-> bring('Primary');
 		return if !$cp || $self-> {readOnly};
 		$self-> insert_text( $cp-> text, 0);
@@ -769,7 +771,30 @@ sub on_mousedown
 		return;
 	}
 
+	my @sel = $self->selection;
+	if (
+		$self->has_selection &&
+		!$self->{readOnly} && 
+		!$self->{drag_transaction} && 
+		!$self->{drop_transaction} && (
+			($sel[1] == $sel[3] && $xy[1] == $sel[1] && $xy[0] >= $sel[0] && $xy[0] < $sel[2]) ||
+			($xy[1] == $sel[1] && $xy[1] < $sel[3] && $xy[0] >= $sel[0]) ||
+			($xy[1] == $sel[3] && $xy[1] > $sel[1] && $xy[0] < $sel[2]) ||
+			($xy[1] > $sel[1] && $xy[1] < $sel[3])
+		)
+	) {
+		$self-> {drag_transaction} = 1;
+		my $act = $self-> begin_drag(
+			text       => $self->get_selected_text,
+			actions    => dnd::Copy|dnd::Move,
+			self_aware => 0,
+		);
+		$self-> {drag_transaction} = 0;
+		$self-> delete_block if $act == dnd::Move;
+		return;
+	}
 
+	$self-> cursor( @xy);
 	$self-> {mouseTransaction} = 1;
 	if ( $self-> {persistentBlock} && $self-> has_selection) {
 		$self-> {mouseTransaction} = 2;
@@ -960,6 +985,33 @@ sub on_enter
 sub on_change { $_[0]-> {modified} = 1;}
 
 sub on_parsesyntax { $_[0]-> {syntaxer}-> (@_); }
+
+sub on_dragbegin
+{
+	my $self = shift;
+	$self->{drop_transaction} = {};
+}
+
+sub on_dragover
+{
+	my ($self, $clipboard, $action, $mod, $x, $y, $ref) = @_;
+	$ref->{allow} = 1;
+	$self-> cursor( $self-> point2xy( $x, $y));
+	my @cp = $self->cursorPos;
+	my @cs = $self->cursorSize;
+	$self->rubberband( rect => [ @cp, $cp[0] + $cs[0], $cp[1] + $cs[1] ]);
+}
+
+sub on_dragend
+{
+	my ($self, $clipboard, $ref) = @_;
+	$self->rubberband( destroy => 1 );
+	$self->{drop_transaction} = 0;
+	return unless $clipboard;
+	$ref->{allow} = 1;
+	my $cap = $clipboard->text;
+	$self->insert_text($cap) if defined $cap;
+}
 
 sub set_block_type
 {

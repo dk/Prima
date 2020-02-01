@@ -1305,6 +1305,12 @@ sub begin_drag
 		$opt{text} = $opt[0];
 	}
 
+	my $actions = ($opt{actions} // dnd::Copy) & dnd::Mask;
+	unless ( $actions ) {
+		Carp::carp("bad actions");
+		return -1;
+	}
+
 	# don't start dragging immediately
 	if ( $opt{track} // 1 ) {
 		my @start_pos = $self->pointerPos;
@@ -1323,7 +1329,7 @@ sub begin_drag
 		1 while !$break && $::application->yield(1);
 		return dnd::None unless $self->alive;
 		$self->remove_notification($_) for @id;
-		return undef if $break < 0;
+		return -1 if $break < 0;
 	}
 
 	# data
@@ -1384,7 +1390,26 @@ sub begin_drag
 		) if $sz[0] > $max[0] || $sz[1] > $max[1];
 	}
 
-	@id = $self-> add_notification( DragResponse => sub {
+	# select multi actions
+	unless (grep { $actions == $_ } (dnd::Copy, dnd::Move, dnd::Mask)) {
+		my $default_action = 
+			( $actions & dnd::Copy) ? dnd::Copy : (
+			( $actions & dnd::Move) ? dnd::Move : dnd::Link)
+			;
+		push @id, $self-> add_notification( DragQuery => sub {
+			my ( $self, $modmap, $ref ) = @_;
+			if ( $modmap & km::Ctrl and $actions & dnd::Move ) {
+				$ref->{action} = dnd::Move;
+			} elsif ( $modmap & km::Shift and $actions & dnd::Link ) {
+				$ref->{action} = dnd::Link;
+			} else {
+				$ref->{action} = $default_action;
+			}
+		});
+	}
+
+	# update pointers
+	push @id, $self-> add_notification( DragResponse => sub {
 		my ( undef, $allow, $action ) = @_;
 
 		unless ($pointers{$action}) {
@@ -1417,9 +1442,16 @@ sub begin_drag
 		}
 	}) if $opt{preview};
 
-	my $ret = $self->dnd_start($opt{actions} // dnd::Copy, !$opt{preview});
-	@id = () unless $self->alive;
-	$self->remove_notification($_) for @id;
+	my $old_dndAware;
+	if ( !( $opt{self_aware} // 1) ) {
+		$old_dndAware = $self->dndAware;
+		$self->dndAware(0);
+	}
+	my $ret = $self->dnd_start($actions, !$opt{preview});
+	if ( $self->alive ) {
+		$self->remove_notification($_) for @id;
+		$self->dndAware($old_dndAware) if $old_dndAware;
+	}
 	return $ret;
 }
 

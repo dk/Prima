@@ -2444,6 +2444,7 @@ DND(Move)
 #define    dndLink               0x04
 DND(Link)
 #define    dndMask               0x07
+DND(Mask)
 END_TABLE(dnd,UV)
 #undef DND
 

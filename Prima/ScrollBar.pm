@@ -23,6 +23,7 @@ sub profile_default
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
 		autoTrack     => 1,
+		dndAware      => 1,
 		growMode      => gm::GrowHiX,
 		height        => $stdMetrics[1],
 		min           => 0,
@@ -390,11 +391,12 @@ sub on_mousedown
 	return if defined $self-> {mouseTransaction};
 	my $who = $self-> translate_point( $x, $y);
 	return if !defined $who or $who eq q(groove);
+	return if $self->{drop_transaction} and $who !~ /^b\d$/;
 	if (( $who eq q(b1) || $who eq q(b2))) {
 		if ( $self-> {$who}-> {enabled}) {
 			$self-> {$who}-> {pressed} = 1;
 			$self-> {mouseTransaction} = $who;
-			$self-> capture(1);
+			$self-> capture(1) unless $self->{drop_transaction};
 			$self-> {suppressNotify} = 1;
 			$self-> value( $self-> {value} + (( $who eq q(b1))?-1:1) * $self-> {step});
 			$self-> {suppressNotify} = undef;
@@ -410,7 +412,7 @@ sub on_mousedown
 		$self-> {$who}-> {pressed} = 1;
 		$self-> {mouseTransaction} = $who;
 		$self-> value( $self-> {value} + (( $who eq q(left))?-1:1) * $self-> {pageStep});
-		$self-> capture(1);
+		$self-> capture(1) unless $self->{drop_transaction};
 		$self-> scroll_timer_start;
 		return;
 	}
@@ -420,7 +422,7 @@ sub on_mousedown
 		my @r = @{$self-> {tab}-> {rect}};
 		$self-> {$who}-> {aperture} = $self-> { vertical} ? $y - $r[1] : $x - $r[0];
 		$self-> draw_part($who);
-		$self-> capture(1);
+		$self-> capture(1) unless $self->{drop_transaction};
 	}
 }
 
@@ -439,6 +441,7 @@ sub on_mouseup
 	return unless defined $self-> {mouseTransaction};
 
 	my $who = $self-> {mouseTransaction};
+	return if $self->{drop_transaction} and $who !~ /^b\d$/;
 	if (
 		$who eq q(b1) ||
 		$who eq q(b2) ||
@@ -448,7 +451,7 @@ sub on_mouseup
 	) {
 		$self-> {$who}-> {pressed} = 0;
 		$self-> {mouseTransaction} = undef;
-		$self-> capture(0);
+		$self-> capture(0) unless $self->{drop_transaction};
 		$self-> repaint;
 		$self-> notify(q(Change)) if !$self-> {autoTrack} && $who eq q(tab);
 	}
@@ -475,6 +478,7 @@ sub on_mousemove
 		return;
 	}
 
+	return if $self->{drop_transaction} and $who !~ /^b\d$/;
 	if ( $who eq q(tab)) {
 		my @groove = @{$self-> {groove}-> {rect}};
 		my @tab    = @{$self-> {tab}-> {rect}};
@@ -521,6 +525,28 @@ sub on_mousewheel
 	$z = (abs($z) > 120) ? int($z/120) : (($z > 0) ? 1 : -1);
 	$self-> value( $self-> value - $self-> step * $z);
 	$self-> clear_event;
+}
+
+sub on_dragbegin
+{
+	my $self = shift;
+	$self->{drop_transaction} = 1;
+	$self->notify(q(MouseDown), mb::Left, 0, $self->pointerPos);
+}
+
+sub on_dragover
+{
+	my ($self, $clipboard, $action, $mod, $x, $y, $ref) = @_;
+	$ref->{allow} = 0;
+	$self->notify(q(MouseMove), 0, $x, $y);
+}
+
+sub on_dragend
+{
+	my ($self, $clipboard, $ref) = @_;
+	$ref->{allow} = 0;
+	$self->notify(q(MouseUp), mb::Left, 0, $self->pointerPos);
+	undef $self->{drop_transaction};
 }
 
 sub reset
