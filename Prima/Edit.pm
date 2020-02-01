@@ -20,7 +20,6 @@ use Prima::Classes;
 use Prima::ScrollBar;
 use Prima::IntUtils;
 use Prima::Bidi qw(:methods);
-use Prima::RubberBand;
 
 {
 my %RNT = (
@@ -716,6 +715,11 @@ sub on_paint
 		}
 		$y -= $fh;
 	}
+
+	if ( my $dt = $self->{drop_transaction}) {
+		$self->color(cl::Fore);
+		$self-> bar(@$dt[0,1], $dt->[2]-1,$dt->[3]-1);
+	}
 }
 
 sub point2xy
@@ -989,24 +993,32 @@ sub on_parsesyntax { $_[0]-> {syntaxer}-> (@_); }
 sub on_dragbegin
 {
 	my $self = shift;
-	$self->{drop_transaction} = {};
+	$self->{drop_transaction} = [];
 }
 
 sub on_dragover
 {
 	my ($self, $clipboard, $action, $mod, $x, $y, $ref) = @_;
 	$ref->{allow} = 1;
+	my $dt;
+	if ( $dt = $self->{drop_transaction} and @$dt) {
+		$self-> invalidate_rect(@$dt);
+	}
 	$self-> cursor( $self-> point2xy( $x, $y));
 	my @cp = $self->cursorPos;
 	my @cs = $self->cursorSize;
-	$self->rubberband( rect => [ @cp, $cp[0] + $cs[0], $cp[1] + $cs[1] ]);
+	$self->{drop_transaction} = [@cp, $cp[0] + $self->{defcw}, $cp[1] + $cs[1]];
+	$self-> invalidate_rect(@{ $self->{drop_transaction} });
 }
 
 sub on_dragend
 {
 	my ($self, $clipboard, $ref) = @_;
-	$self->rubberband( destroy => 1 );
-	$self->{drop_transaction} = 0;
+	my $dt;
+	if ( $dt = $self->{drop_transaction} and @$dt ) {
+		$self-> invalidate_rect(@$dt);
+	}
+	delete $self->{drop_transaction};
 	return unless $clipboard;
 	$ref->{allow} = 1;
 	my $cap = $clipboard->text;

@@ -145,15 +145,16 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 }
 
 static HRESULT __stdcall
-DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
+DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL _pt, DWORD *effect)
 {
 	int stage;
 	Handle w;
 	RECT r;
+	POINT pt = {_pt.x, _pt.y}, size;
 	Event ev = { cmDragOver };
 
-	if ( 
-		self->widget == nilHandle || 
+	if (
+		self->widget == nilHandle ||
 		guts.clipboards[CLIPBOARD_DND] == nilHandle ||
 		!dsys(self->widget)options.aptEnabled
 	) {
@@ -164,9 +165,17 @@ DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
 	w = self->widget;
 	ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND];
 
-	GetWindowRect( DHANDLE(w), &r);
+	GetWindowRect((HWND) PWidget(w)->handle, &r);
+	size.x = r.right  - r.left;
+	size.y = r.bottom - r.top;
+	MapWindowPoints((HWND) NULL, ( HWND) DHANDLE(w), &pt, 1);
+	if ( pt.x < 0 || pt.y < 0 || pt.x > size.x - 1 || pt.y > size.y - 1) {
+		*effect = self-> last_action;
+		return S_OK;
+	}
+
 	ev.dnd.where.x   = pt.x;
-	ev.dnd.where.y   = r.bottom - r.top - pt.y - 1;
+	ev.dnd.where.y   = size.y - pt.y - 1;
 	if (
 		self->pad.width > 0 && self->pad.height > 0 &&
 		(

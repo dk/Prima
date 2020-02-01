@@ -64,7 +64,7 @@ sub set
 	if ( $other_changed ) {
 		$self-> hide if $visible;
 		$self-> $_( @{$profile{$_}} ) for grep { exists $profile{$_} } qw(rect clipRect);
-		$self-> $_( $profile{$_}    ) for grep { exists $profile{$_} } qw(mode canvas breadth);
+		$self-> $_( $profile{$_}    ) for grep { exists $profile{$_} } qw(canvas breadth);
 		$self-> show if $visible;
 	} elsif ( $rect_changed ) {
 		$self->{visible} = 0;

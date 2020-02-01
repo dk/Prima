@@ -531,14 +531,17 @@ sub on_dragbegin
 {
 	my $self = shift;
 	$self->{drop_transaction} = 1;
-	$self->notify(q(MouseDown), mb::Left, 0, $self->pointerPos);
 }
 
 sub on_dragover
 {
 	my ($self, $clipboard, $action, $mod, $x, $y, $ref) = @_;
 	$ref->{allow} = 0;
-	$self->notify(q(MouseMove), 0, $x, $y);
+	if ( $self-> {mouseTransaction} ) {
+		$self->notify(q(MouseMove), 0, $x, $y);
+	} else {
+		$self->notify(q(MouseDown), mb::Left, 0, $x, $y);
+	}
 }
 
 sub on_dragend
