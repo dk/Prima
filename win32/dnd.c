@@ -104,20 +104,43 @@ convert_modmap(int modmap)
 	;
 }
 
+static Point
+convert_position( Handle self, POINTL _pt)
+{
+	RECT r;
+	POINT pt = {_pt.x, _pt.y}, size;
+	Point ret;
+	GetWindowRect((HWND) PWidget(self)->handle, &r);
+	size.x = r.right  - r.left;
+	size.y = r.bottom - r.top;
+	MapWindowPoints((HWND) NULL, ( HWND) PWidget(self)->handle, &pt, 1); /* XXX */
+	if ( pt.x < 0 || pt.y < 0 || pt.x > size.x - 1 || pt.y > size.y - 1) {
+		ret.x = ret.y = -1;
+	} else {
+		ret.x = pt.x;
+		ret.y = size.y - pt.y - 1;
+	}
+	return ret;
+}
+
+static int
+convert_effect( DWORD effect)
+{
+	/* DROPEFFECT_XXX and dndXXX constants are directly mapped to each other, except DROPEFFECT_SCROLL */
+	return effect & dndMask;
+}
+
 static HRESULT __stdcall
-DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL _pt, DWORD *effect)
+DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, DWORD *effect)
 {
 	int stage;
 	Handle w;
-	RECT r;
-	POINT pt = {_pt.x, _pt.y}, size;
 	Event ev = { cmDragBegin };
 
 	if (
 		((ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND]) == nilHandle) ||
 		!dsys(self->widget)options.aptEnabled
 	) {
-  
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
 	}
@@ -127,21 +150,16 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 	self->last_action  = DROPEFFECT_NONE;
 	self->first_action = *effect & dndMask;
 
-	GetWindowRect((HWND) PWidget(w)->handle, &r);
-	size.x = r.right  - r.left;
-	size.y = r.bottom - r.top;
-	MapWindowPoints((HWND) NULL, ( HWND) DHANDLE(w), &pt, 1);
-	if ( pt.x < 0 || pt.y < 0 || pt.x > size.x - 1 || pt.y > size.y - 1) {
+	w = self->widget;
+	ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND];
+	ev.dnd.action = convert_effect(*effect);
+	ev.dnd.modmap = convert_modmap(modmap);
+	ev.dnd.where  = convert_position(w, pt);
+	if ( ev.dnd.where.x < 0 ) {
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
 	}
-	ev.dnd.where.x   = pt.x;
-	ev.dnd.where.y   = size.y - pt.y - 1;
-	/* DROPEFFECT_XXX and dndXXX constants are directly mapped to each other, except DROPEFFECT_SCROLL */
-	ev.dnd.action = *effect & dndMask;
-	ev.dnd.modmap = convert_modmap(modmap);
 
-	w = self->widget;
 	protect_object(w);
 	guts.dndInsideEvent = true;
 	CWidget(w)->message(w, &ev);
@@ -159,12 +177,10 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 }
 
 static HRESULT __stdcall
-DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL _pt, DWORD *effect)
+DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
 {
 	int stage;
 	Handle w;
-	RECT r;
-	POINT pt = {_pt.x, _pt.y}, size;
 	Event ev = { cmDragOver };
 
 	if (
@@ -178,18 +194,14 @@ DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL _pt, DWORD *effect)
 
 	w = self->widget;
 	ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND];
-
-	GetWindowRect((HWND) PWidget(w)->handle, &r);
-	size.x = r.right  - r.left;
-	size.y = r.bottom - r.top;
-	MapWindowPoints((HWND) NULL, ( HWND) DHANDLE(w), &pt, 1);
-	if ( pt.x < 0 || pt.y < 0 || pt.x > size.x - 1 || pt.y > size.y - 1) {
+	ev.dnd.action    = convert_effect(*effect);
+	ev.dnd.modmap    = convert_modmap(modmap);
+	ev.dnd.where     = convert_position(w, pt);
+	if ( ev.dnd.where.x < 0 ) {
 		*effect = self-> last_action;
 		return S_OK;
 	}
 
-	ev.dnd.where.x   = pt.x;
-	ev.dnd.where.y   = size.y - pt.y - 1;
 	if (
 		self->pad.width > 0 && self->pad.height > 0 &&
 		(
@@ -202,10 +214,6 @@ DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL _pt, DWORD *effect)
 		*effect = self-> last_action;
 		return S_OK;
 	}
-
-	/* DROPEFFECT_XXX and dndXXX constants are directly mapped to each other, except DROPEFFECT_SCROLL */
-	ev.dnd.action = *effect & dndMask;
-	ev.dnd.modmap = convert_modmap(modmap);
 
 	protect_object(w);
 	guts.dndInsideEvent = true;
@@ -269,23 +277,18 @@ DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, D
 		return S_OK;
 	}
 
-	GetWindowRect((HWND) PWidget(w)->handle, &r);
-	size.x = r.right  - r.left;
-	size.y = r.bottom - r.top;
-	MapWindowPoints((HWND) NULL, ( HWND) DHANDLE(w), &pt, 1);
-	if ( pt.x < 0 || pt.y < 0 || pt.x > size.x - 1 || pt.y > size.y - 1) {
+	w = self->widget;
+	ev.dnd.allow     = 1;
+	ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND];
+	ev.dnd.action = convert_effect(*effect);
+	ev.dnd.modmap = convert_modmap(modmap);
+	ev.dnd.where  = convert_position(w, pt);
+	if ( ev.dnd.where.x < 0 ) {
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
 	}
 
-	w = self->widget;
-	ev.dnd.allow     = 1;
-	ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND];
 	/* DROPEFFECT_XXX and dndXXX constants are directly mapped to each other, except DROPEFFECT_SCROLL */
-	ev.dnd.action    = *effect & dndMask;
-	ev.dnd.where.x   = pt.x;
-	ev.dnd.where.y   = size.y - pt.y - 1;
-	ev.dnd.modmap    = convert_modmap(modmap);
 	guts.dndInsideEvent = true;
 	CWidget(w)->message(w, &ev);
 
