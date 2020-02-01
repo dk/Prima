@@ -1347,27 +1347,32 @@ sub begin_drag
 	if ( $opt{preview} && !ref($opt{preview}) ) {
 		my @lines = split "\n", $opt{preview};
 		my $fh    = $self->font->height;
-		my @sz = ( 1, $fh * @lines );
+		my @sz = ( 0, 10 + $fh * @lines );
 		for my $text ( @lines ) {
 			my $tw = $self->get_text_width($text, 1);
 			$sz[0] = $tw if $sz[0] < $tw;
 		}
+		$sz[0] += 10;
 		$sz[0] = $max[0] if $sz[0] > $max[0];
 		$sz[1] = $max[1] if $sz[1] > $max[1];
-		my $i = Prima::Image->new(
+		my $i = Prima::Icon->new(
 			size      => \@sz,
 			type      => im::RGB,
 			color     => $self->color,
 			backColor => $self->backColor,
+			font      => $self->font,
+			autoMasking => am::None,
+			maskType    => im::bpp8,
 		);
 		$i->begin_paint;
 		$i->clear;
-		my $y = $i->height - $fh;
+		my $y = $i->height - $fh - 5;
 		for my $text ( @lines ) {
-			$i->text_out( $text, 0, $y );
+			$i->text_out( $text, 5, $y);
 			$y -= $fh;
 		}
 		$i->end_paint;
+		$i->alpha(160, 0, 0, $i->size);
 		$opt{preview} = $i;
 	}
 
@@ -1381,30 +1386,35 @@ sub begin_drag
 
 	@id = $self-> add_notification( DragResponse => sub {
 		my ( undef, $allow, $action ) = @_;
-		return if $action == $last_action;
-		$last_action = $action;
 
 		unless ($pointers{$action}) {
 			$self-> pointer( $action - dnd::None + cr::DragNone );
 			my $p = $opt{preview};
 			my $i = $self->pointerIcon;
+			my @hs = $self->pointerHotSpot;
+			$hs[1] += $p->height;
 			my $n = Prima::Icon->new(
 				type     => im::RGB,
 				maskType => im::bpp8,
 				autoMasking => am::None,
 				size     => [ $i->width + $p->width, $i-> height + $p-> height ],
 			);
+			$i->autoMasking(am::None);
+			$i->type(im::RGB);
+			$i->maskType(8);
+			$p->maskType(8)
+				if $p->isa('Prima::Icon');
 			$n->put_image( 0, $p->height, $i, rop::SrcCopy);
 			$n->put_image( $i->width, 0, $p, rop::SrcCopy);
 			$n->alpha(0xff, $i->width, 0, $i->width + $p->width - 1, $p->height - 1)
-				if !$p->isa('Prima::Icon') || $p->maskType == 1; # XXX
-			my @hs = $self->pointerHotSpot;
-			$hs[1] += $p->height;
+				if !$p->isa('Prima::Icon');
 			$n->{__pointerHotSpot} = \@hs;
 			$pointers{$action} = $n;
 		}
-	
-		$self->pointer($pointers{$action});
+		if ($action != $last_action) {
+			$last_action = $action;
+			$self->pointer($pointers{$action});
+		}
 	}) if $opt{preview};
 
 	my $ret = $self->dnd_start($opt{actions} // dnd::Copy, !$opt{preview});

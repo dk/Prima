@@ -682,6 +682,9 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 			ev. gen. P. y = sys lastSize. y - a. y - 1;
 		}
 		break;
+	case WM_DRAG_RESPONSE:
+		SetCursor( sys pointer );
+		break;
 	case WM_ENABLE:
 		ev. cmd = mp1 ? cmEnable : cmDisable;
 		hiStage = true;

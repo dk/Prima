@@ -314,11 +314,10 @@ DropSource__GiveFeedback(PDropSource self, DWORD effect)
 	ev.dnd.action = effect & dndMask;
 	ev.dnd.allow  = ev.dnd.action != dndNone;
 	CWidget(self->widget)->message(self->widget, &ev);
-	if ( self->last_action != ev.dnd.action ) {
-		self->last_action = ev.dnd.action;
-		return guts.dndDefaultCursors ? DRAGDROP_S_USEDEFAULTCURSORS : S_OK;
-	}
-	return S_OK;
+	/* Force our cursor again, otherwise a standart IDC_NO will be slapped on */
+	if ( !guts.dndDefaultCursors && ev.dnd.action == dndNone)
+		PostMessage( DHANDLE(self->widget), WM_DRAG_RESPONSE, 0, 0);
+	return guts.dndDefaultCursors ? DRAGDROP_S_USEDEFAULTCURSORS : S_OK;
 }
 
 static IDropSourceVtbl DropSourceVMT = {
@@ -825,7 +824,7 @@ dnd_clipboard_has_format( Handle id)
 	PList cf_formats;
 
 	if ( !guts. dndInsideEvent ) {
-		if ( !data ) 
+		if ( !data )
 			return false;
 		if (( dataobject_find_entry((PDataObject)data, id, NULL)) < 0)
 			return false;
@@ -834,7 +833,7 @@ dnd_clipboard_has_format( Handle id)
 
 	if (( cf_formats = get_formats()) == NULL )
 		return false;
-	for ( i = 0; i < cf_formats->count; i++) {
+	for ( i = 0; i < cf_formats->count; i+=2) {
 		if ( id == cf_formats->items[i])
 			return true;
 	}
@@ -918,6 +917,7 @@ int
 apc_dnd_start( Handle self, int actions, Bool default_pointers)
 {
 	int ret = dndNone;
+	int old_pointer;
 	DWORD effect;
 	actions &= dndMask;
 
@@ -933,12 +933,19 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers)
 		apc_kbd_get_state(self) | apc_pointer_get_state(self);
 	((PDropSource)guts.dragSource)->last_action = -1;
 
+	protect_object(self);
+	old_pointer = apc_pointer_get_shape(self);
+
 	rc = DoDragDrop(
 		(LPDATAOBJECT) guts.dndDataSender,
 		(LPDROPSOURCE) guts.dragSource,
 		actions,
 		&effect
 	);
+
+	if ( PObject(self)->stage == csNormal )
+		apc_pointer_set_shape(self, old_pointer);
+	unprotect_object(self);
 
 	switch (rc) {
 	case DRAGDROP_S_DROP:

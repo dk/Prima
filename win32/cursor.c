@@ -326,7 +326,9 @@ static Bool
 direct_pointer_change( Handle self)
 {
 	Point p;
-	if ( var stage != csNormal || !IsWindowVisible( HANDLE)) return false;
+	if ( var stage != csNormal) return false;
+	if ( guts.dragSource != NULL ) return true;
+	if ( !IsWindowVisible( HANDLE)) return false;
 	p = apc_pointer_get_pos( application);
 	return self == apc_application_get_widget_from_point( application, p);
 }
@@ -361,8 +363,9 @@ apc_pointer_set_shape( Handle self, int sysPtrId)
 		if ( cursor != NULL ) sys pointer = cursor;
 	}
 
-	if ( direct_pointer_change( self))
+	if ( direct_pointer_change( self)) {
 		SetCursor( sys pointer);
+	}
 	return true;
 }
 
@@ -375,9 +378,9 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
 
 	apcErrClear;
 	direct = direct_pointer_change( self);
-	hotSpot. y = guts. pointerSize. y - hotSpot. y - 1;
 	if (icon) {
 		Point sz = { PImage(icon)->w, PImage(icon)-> h };
+		hotSpot. y = sz.y - hotSpot. y - 1;
 		cursor = image_make_icon_handle( icon, sz, &hotSpot);
 		if ( apcError) return false;
 	} else
