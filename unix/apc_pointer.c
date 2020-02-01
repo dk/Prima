@@ -22,8 +22,7 @@ cursor_map[] = {
         /* crDragNone        => */   XC_X_cursor,
         /* crDragCopy        => */   XC_bottom_side,
         /* crDragMove        => */   XC_bottom_side,
-        /* crDragLink        => */   XC_bottom_side,
-        /* crDragAsk         => */   XC_question_arrow,
+        /* crDragLink        => */   XC_bottom_side
 };
 
 #ifdef HAVE_X11_XCURSOR_XCURSOR_H
@@ -48,8 +47,7 @@ xcursor_map[] = {
         /* crDragNone        => */   "dnd-none",
         /* crDragCopy        => */   "dnd-copy",
         /* crDragMove        => */   "dnd-move",
-        /* crDragLink        => */   "dnd-link",
-        /* crDragAsk         => */   "dnd-ask"
+        /* crDragLink        => */   "dnd-link"
 };
 #endif
 
@@ -452,8 +450,8 @@ create_xdnd_pointer(int id, CustomPointer* cp)
 	}
 #endif
 
-	if ( id == crDragNone || id == crDragAsk) {
-		/* X11 has good enough glyphs for these */
+	if ( id == crDragNone ) {
+		/* X11 has good enough glyphs for this */
 		cp->status = -1;
 		return true;
 	}
@@ -478,7 +476,7 @@ create_xdnd_pointer(int id, CustomPointer* cp)
 static CustomPointer*
 is_drag_cursor_available(int id)
 {
-	if ( id >= crDragNone && id <= crDragAsk ) {
+	if ( id >= crDragNone && id <= crDragLink ) {
 		CustomPointer *cp = guts.xdnd_pointers + id - crDragNone;
 		if (cp->status == 0) 
 			create_xdnd_pointer(id, cp);

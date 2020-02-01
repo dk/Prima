@@ -141,6 +141,39 @@ package
 package
     dnd; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# drag-and-drop constants
 
+sub is_one_action { 1 == grep { $_[0] == $_ } (dnd::Copy, dnd::Move, dnd::Link) }
+
+sub pointer
+{
+	my $action = shift;
+	if ( $action == dnd::Copy ) {
+		return cr::DragCopy;
+	} elsif ( $action == dnd::Move ) {
+		return cr::DragMove;
+	} elsif ( $action == dnd::Link ) {
+		return cr::DragLink;
+	} else {
+		return cr::DragNone;
+	}
+}
+
+sub to_one_action
+{
+	my $actions = shift;
+	return dnd::Copy if $actions & dnd::Copy;
+	return dnd::Move if $actions & dnd::Move;
+	return dnd::Link if $actions & dnd::Link;
+	return dnd::None;
+}
+
+sub keymod
+{
+	my $dnd = shift;
+	return km::Ctrl  if $dnd == dnd::Move;
+	return km::Shift if $dnd == dnd::Link;
+	return 0;
+}
+
 1;
 
 =pod
