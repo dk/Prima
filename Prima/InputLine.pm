@@ -26,6 +26,7 @@ sub profile_default
 		cursorVisible  => 1,
 		cursorSize     => [ Prima::Application-> get_default_cursor_width, $font-> { height}],
 		firstChar      => 0,
+		dndAware       => 'Text',
 		height         => 2 + $font-> { height} + 2,
 		insertMode     => 0,
 		maxLen         => 256,  # length $def{ text},
@@ -628,6 +629,8 @@ sub char_offset_strpos
 	}
 }
 
+sub has_selection { $_[0]->{selStart} != $_[0]->{selEnd} }
+
 sub selection_strpos
 {
 	my $self = shift;
@@ -665,12 +668,37 @@ sub on_mousedown
 		return;
 	}
 
-	$self-> {mouseTransaction} = 1;
-	$self-> selection(0,0);
-	$self-> charOffset( $self-> x2offset( $x));
-	$self-> {anchor} = $self-> charOffset;
-	$self-> capture(1);
-	$self-> clear_event;
+	my ( $start, $end) = $self-> selection_strpos;
+	my $ofs = $self-> x2offset( $x);
+	if (
+		$start != $end && 
+		! $self-> {writeOnly} && !$self->{readOnly} && 
+		!$self->{drag_transaction} && 
+		!$self->{drop_transaction} && 
+		$ofs >= $start && $ofs < $end 
+	) {
+		$self-> {drag_transaction} = 1;
+		my $act = $self-> begin_drag(
+			text       => substr( $self->text, $start, $end - $start),
+			actions    => dnd::Copy|dnd::Move,
+			self_aware => 0,
+		);
+		$self-> {drag_transaction} = 0;
+		if ( $act == dnd::Move ) {
+			my $cap = $self->text;
+			substr( $cap, $start, $end - $start) = '';
+			$self-> selection(0,0);
+			$self-> text( $cap);
+			$self-> charOffset( $start );
+		}
+	} else {
+		$self-> {mouseTransaction} = 1;
+		$self-> selection(0,0);
+		$self-> charOffset( $ofs );
+		$self-> {anchor} = $self-> charOffset;
+		$self-> capture(1);
+		$self-> clear_event;
+	}
 }
 
 sub new_offset
@@ -735,6 +763,7 @@ sub on_mousemove
 sub on_mouseup
 {
 	my ( $self, $btn, $mod, $x, $y) = @_;
+
 	return unless defined $self-> {mouseTransaction};
 
 	delete $self-> {mouseTransaction};
@@ -990,6 +1019,22 @@ sub on_enter
 		my @s = $self-> selection;
 		$self-> repaint if $s[0] != $s[1];
 	}
+}
+
+sub on_dragbegin
+{
+	my $self = shift;
+	$self->{drop_transaction} = 1;
+}
+
+sub on_dragend
+{
+	my ($self, $clipboard, $ref) = @_;
+	$self->{drop_transaction} = 0;
+	return unless $clipboard;
+	$ref->{allow} = 1;
+	my $cap = $clipboard->text;
+	$self->text($cap) if defined $cap;
 }
 
 sub select_all { $_[0]-> selection(0,-1); }
