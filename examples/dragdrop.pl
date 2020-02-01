@@ -1,12 +1,86 @@
 use strict;
 use warnings;
 use FindBin qw($Bin);
-use Prima qw(Application StdBitmap);
+use Prima qw(Application StdBitmap Buttons);
 
 my $w = Prima::MainWindow->new(
 	size => [240, 240],
 	text => 'Drag and drop',
 );
+
+
+sub set_dnd_mode
+{
+	my $self = shift;
+	my $dv = 0;
+	$dv |= &{$dnd::{$_}}() for grep { $self->bring($_)->checked } qw(Copy Move Link);
+	if ( $dv == 0 && $self->name =~ /Drag/ ) {
+		$self->Copy->checked(1);
+		$dv = dnd::Copy;
+	}
+	$self->{dnd_mode} = $dv;
+}
+
+sub best_dnd_mode
+{
+	my ( $mod, $action ) = @_;
+	my $preferred =
+		($mod & km::Ctrl) ? dnd::Move :
+		(($mod & km::Shift) ? dnd::Link : dnd::Copy);
+	return $preferred & $action;
+}
+
+sub add_buttons
+{
+	my $self = shift;
+	my $fh = $self->font->height;
+	my $d  = $fh + 4;
+	my $h = $self->height - $fh - 5 - 4;
+	$self->{dnd_mode} = dnd::Copy;
+	$self->insert([ SpeedButton =>
+		rect => [ 5, $h, 5 + $d, $h + $d ],
+		name => 'Copy',
+		text => 'C',
+		hint => 'Copy',
+		checkable => 1,
+		checked   => 1,
+		onClick => sub { set_dnd_mode( $self ) },
+	], [ SpeedButton => 
+		rect => [ 5 + $d, $h, 5 + $d * 2, $h + $d ],
+		name => 'Move',
+		text => 'M',
+		hint => 'Move',
+		checkable => 1,
+		onClick => sub { set_dnd_mode( $self ) },
+	], [ SpeedButton => 
+		rect => [ 5 + $d * 2, $h, 5 + $d * 3, $h + $d ],
+		name => 'Link',
+		text => 'L',
+		hint => 'Link',
+		checkable => 1,
+		onClick => sub { set_dnd_mode( $self ) },
+	]
+	);
+}
+
+sub display_action
+{
+	my $action = shift;
+	if ( $action < 0 ) {
+		$action = 'DND failed';
+	} elsif ( $action == 0 ) {
+		$action = 'No action',
+	} elsif ( $action == dnd::Copy ) {
+		$action = 'Data copied',
+	} elsif ( $action == dnd::Move ) {
+		$action = 'Data moved',
+	} elsif ( $action == dnd::Link ) {
+		$action = 'Data linked',
+	} else {
+		$action = "Unknown status ($action)";
+	}
+	$w-> text($action);
+}
 
 $w->insert( Widget => 
 	origin => [10, 10],
@@ -27,10 +101,13 @@ $w->insert( Widget =>
 			color     => ($self->{dropable} ? cl::HiliteText : cl::DisabledText),
 			backColor => ($self->{dropable} ? cl::Hilite : cl::Disabled),
 		);
+		$self->{modmap} = 0;
 	},
 	onDragOver => sub {
 		my ( $self, $clipboard, $action, $modmap, $x, $y, $ref) = @_;
-		$ref->{allow} = $self->{dropable};
+		$ref->{allow} = $self->{dropable} && $self->{dnd_mode} != dnd::None;
+		$self->{modmap} = $modmap;
+		$ref->{action} = best_dnd_mode($modmap, $self->{dnd_mode});
 		$ref->{pad} = [ 0, 0, $self-> size ]; # don't send it anymore
 	},
 	onDragEnd => sub {
@@ -43,6 +120,7 @@ $w->insert( Widget =>
 		$ref->{allow} = 0;
 		if ($clipboard->format_exists('Text')) {
 			$ref->{allow} = 1;
+			$ref->{action} = best_dnd_mode($self->{modmap}, $self->{dnd_mode}); 
 			$self->text($clipboard->text);
 			$self->repaint;
 		}
@@ -61,7 +139,7 @@ $w->insert( Widget =>
 			1, 1, 0, 0,
 			$self->width-2,$self->height-2,
 			$self->{image}->size,
-			$self->{drag} ? rop::NotPut : rop::CopyPut # XXX
+			$self->{drag} ? rop::NotPut : rop::CopyPut
 		) if $self->{image};
 		$self->rectangle(0,0,$self->width-1,$self->height-1);
 		$self->draw_text("Drop\nImage",0,0,$self->size,dt::NewLineBreak|dt::Center|dt::VCenter);
@@ -77,7 +155,9 @@ $w->insert( Widget =>
 	},
 	onDragOver => sub {
 		my ( $self, $clipboard, $action, $modmap, $x, $y, $ref) = @_;
-		$ref->{allow} = $self->{dropable};
+		$ref->{allow} = $self->{dropable} && $self->{dnd_mode} != dnd::None;
+		$self->{modmap} = $modmap;
+		$ref->{action} = best_dnd_mode($modmap, $self->{dnd_mode}); 
 		$ref->{pad} = [ 0, 0, $self-> size ]; # don't send it anymore
 	},
 	onDragEnd => sub {
@@ -91,6 +171,7 @@ $w->insert( Widget =>
 		$ref->{allow} = 0;
 		if ( $self->{image} = $clipboard->image) {
 			$ref->{allow} = 1;
+			$ref->{action} = best_dnd_mode($self->{modmap}, $self->{dnd_mode}); 
 			$self->repaint;
 		}
 	},
@@ -110,7 +191,11 @@ $w->insert( Widget =>
 		my $self = shift;
 		return if $self->{grab};
 		$self->{grab}++;
-		$self->begin_drag($self->text);
+		my $action = $self->begin_drag(
+			text    => $self->text,
+			actions => $self->{dnd_mode},
+		);
+		display_action($action);
 		$self->{grab}--;
 	},
 );
@@ -141,9 +226,15 @@ $w->insert( Widget =>
 		my $self = shift;
 		return if $self->{grab} or not $self->{image};
 		$self->{grab}++;
-		$self->begin_drag($self->{image});
+		my $action = $self->begin_drag(
+			image   => $self->{image},
+			actions => $self->{dnd_mode},
+		);
+		display_action($action);
 		$self->{grab}--;
 	},
 );
+
+add_buttons($w->bring($_)) for qw(DropText DragText DropImage DragImage);
 
 run Prima;

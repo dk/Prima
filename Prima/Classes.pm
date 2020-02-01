@@ -1391,7 +1391,7 @@ sub begin_drag
 	}
 
 	# select multi actions
-	unless (grep { $actions == $_ } (dnd::Copy, dnd::Move, dnd::Mask)) {
+	unless (grep { $actions == $_ } (dnd::Copy, dnd::Move, dnd::Link)) {
 		my $default_action = 
 			( $actions & dnd::Copy) ? dnd::Copy : (
 			( $actions & dnd::Move) ? dnd::Move : dnd::Link)
@@ -1413,7 +1413,15 @@ sub begin_drag
 		my ( undef, $allow, $action ) = @_;
 
 		unless ($pointers{$action}) {
-			$self-> pointer( $action - dnd::None + cr::DragNone );
+			if ( $action == dnd::Copy ) {
+				$self-> pointer( cr::DragCopy );
+			} elsif ( $action == dnd::Move ) {
+				$self-> pointer( cr::DragMove );
+			} elsif ( $action == dnd::Link ) {
+				$self-> pointer( cr::DragLink );
+			} else {
+				$self-> pointer( cr::DragNone );
+			}
 			my $p = $opt{preview};
 			my $i = $self->pointerIcon;
 			my @hs = $self->pointerHotSpot;
@@ -1447,8 +1455,10 @@ sub begin_drag
 		$old_dndAware = $self->dndAware;
 		$self->dndAware(0);
 	}
+	my $pointer = $self->pointer;
 	my $ret = $self->dnd_start($actions, !$opt{preview});
 	if ( $self->alive ) {
+		$self->pointer($pointer); # dnd_start doesn't affect children pointers and doesn't restore them
 		$self->remove_notification($_) for @id;
 		$self->dndAware($old_dndAware) if $old_dndAware;
 	}
