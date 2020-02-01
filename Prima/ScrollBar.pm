@@ -530,7 +530,7 @@ sub on_mousewheel
 sub on_dragbegin
 {
 	my $self = shift;
-	$self->{drop_transaction} = 1;
+	$self->{drop_transaction} = [0,0];
 }
 
 sub on_dragover
@@ -539,6 +539,7 @@ sub on_dragover
 	$ref->{allow} = 0;
 	if ( $self-> {mouseTransaction} ) {
 		$self->notify(q(MouseMove), 0, $x, $y);
+		@{$self->{drop_transaction}} = [$x, $y];
 	} else {
 		$self->notify(q(MouseDown), mb::Left, 0, $x, $y);
 	}
@@ -548,7 +549,7 @@ sub on_dragend
 {
 	my ($self, $clipboard, $ref) = @_;
 	$ref->{allow} = 0;
-	$self->notify(q(MouseUp), mb::Left, 0, $self->pointerPos);
+	$self->notify(q(MouseUp), mb::Left, 0, @{ $self->{drop_transaction} });
 	undef $self->{drop_transaction};
 }
 

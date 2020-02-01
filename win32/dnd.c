@@ -320,6 +320,10 @@ static HRESULT __stdcall
 DropSource__GiveFeedback(PDropSource self, DWORD effect)
 {
 	Event ev = { cmDragResponse };
+	if ( effect & dndCopy ) effect = dndCopy;
+	else if ( effect & dndMove ) effect = dndMove;
+	else if ( effect & dndLink ) effect = dndLink;
+	else effect = dndNone;
 	ev.dnd.action = effect & dndMask;
 	ev.dnd.allow  = ev.dnd.action != dndNone;
 	CWidget(self->widget)->message(self->widget, &ev);
@@ -958,10 +962,10 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers)
 
 	switch (rc) {
 	case DRAGDROP_S_DROP:
-		ret = dndNone;
+		ret = effect & dndMask;
 		break;
 	case DRAGDROP_S_CANCEL:
-		ret = effect & dndMask;
+		ret = dndNone;
 		break;
 	default:
 		ret = -1;
