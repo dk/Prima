@@ -724,7 +724,7 @@ of the modifier keys, a combination of C<km::XXX> constants.
 There are two methods, corresponding to the major notifications -
 C<key_up()> and C<key_down()>, that accept the same parameters as
 the C<KeyUp> and C<KeyDown> notifications do, plus the POST
-boolean flag. See L<"API"> for details.
+boolean flag. See L</"API"> for details.
 
 These methods are convenience wrappers for C<key_event()>
 method, which is never used directly.
@@ -771,7 +771,7 @@ two-integer property that reports the current position of the mouse pointer.
 There are five methods, corresponding to the mouse events -
 C<mouse_up()>, C<mouse_down()>, C<mouse_click()>, C<mouse_wheel()> and C<mouse_move()>,
 that accept the same parameters as their event counterparts do,
-plus the POST boolean flag. See L<"API"> for details.
+plus the POST boolean flag. See L</"API"> for details.
 
 These methods are convenience wrappers for C<mouse_event()>
 method, which is never used directly.
@@ -809,11 +809,11 @@ C<text/html> can be implemented relatively easily, if wanted so.
 =item Dragging
 
 To initiate the drag, first fill the DND clipboard with data to be exchanged,
-using one or more formats, then call either L<start_dnd> or L<begin_drag>,
+using one or more formats, then call either L</start_dnd> or L</begin_drag>,
 where the latter is a wrapper over the former. See their documentation for more
 details.
 
-During the dragging, the sender will receive L<DragQuery> and L<DragResponse>,
+During the dragging, the sender will receive L</DragQuery> and L</DragResponse>,
 in order to check whether the drag session must continue or stop depending on
 the user input, and reflect that back to the user. Traditionally, mouse cursors
 are changed to show whether an application will receive a drop, and if yes,
@@ -824,14 +824,14 @@ how C<begin_drag> is implemented).
 
 =item Dropping
 
-To register a widget as a drop target, set its L<dndAware> property to either
+To register a widget as a drop target, set its L</dndAware> property to either
 1, to mark that it will answer to all format, or to a string, in which case
 drop events will only be delivered if the DND clipboard containt a format with
 that string.
 
 Thereafter, when the user will initiate a DND session and will move mouse
-pointer over the widget, it will receive a L<DragBegin> event, then series of
-L<DragOver> events, and finally a L<DragEnd> event with a flag telling whether
+pointer over the widget, it will receive a L</DragBegin> event, then series of
+L</DragOver> events, and finally a L</DragEnd> event with a flag telling whether
 the user choose to drop the data or cancel the session.
 
 The C<DragOver> and C<DragEnd> callback have a chance to either allow or deny
@@ -930,7 +930,7 @@ the C<wc::> constants, that represent standard widget class.
 The widget class is implicitly used when single C<cl::> constant is used;
 its value is read from the C<::widgetClass> property, unless
 one of C<wc::> constants is combined with the non-RGB C<cl::> value. C<wc::>
-constants are described in L<"API">; their usage can make
+constants are described in L</"API">; their usage can make
 call of, for example, C<backColor( cl::Back)> on a button and on
 an input line result in different colors, because the C<cl::Back>
 is translated in the first case into C<cl::Back|wc::Button>, and
@@ -953,7 +953,7 @@ If it is not, the default font values read from the system.
 
 The default font metrics for a widget returned by C<get_default_font()>
 method, that often deals with system-dependent and user-selected
-preferences ( see L<"Additional resources"> ). Because a widget can host
+preferences ( see L</"Additional resources"> ). Because a widget can host
 an eventual Prima::Popup object, it contains
 C<get_default_popup_font()> method, that returns the default font
 for the popup objects. The dynamic popup font settings governed,
@@ -994,7 +994,7 @@ sets the appropriate properties. These properties are also
 accessible separately, although their usage is not encouraged, primarily
 because of the tangled relationship between them. These properties are:
 C<::pointerType>, C<::pointerIcon>, and C<::pointerHotSpot>. See their
-details in the L<"API"> sections.
+details in the L</"API"> sections.
 
 Another property, which is present only in Prima::Application name space
 is called C<::pointerVisible>, and governs the visibility of the pointer -
@@ -1040,7 +1040,7 @@ descendants - Prima::AccelTable and Prima::Popup ( Prima::Window
 is also equipped with Prima::Menu reference). The C<::items> property of these objects
 are accessible through C<::accelItems> and C<::popupItems>, whereas
 the objects themselves - through C<::accelTable> and C<::popup>,
-correspondingly. As mentioned in L<"User input">,
+correspondingly. As mentioned in L</"User input">,
 these objects hook the user keyboard input and call the programmer-defined
 callback subroutine if the key stroke
 equals to one of their table values. As for C<::accelTable>, its
@@ -1207,7 +1207,7 @@ decorations.
 
 Default value: 1
 
-See L<"Parent-child relationship">
+See L</"Parent-child relationship">
 
 See also: C<Prima::Object> owner section, C<parentHandle>
 
@@ -1313,7 +1313,7 @@ See also: C<disabledBackColor>, C<colorIndex>, C<ColorChanged>
 
 =item dndAware 0 | 1 | FORMAT
 
-To register a widget as a drop target, set its L<dndAware> property to either
+To register a widget as a drop target, set its L</dndAware> property to either
 1, to mark that it will answer to all format, or to a string, in which case
 drop events will only be delivered if the DND clipboard containt a format with
 that string.
@@ -1907,7 +1907,7 @@ See also: C<Paint>, C<buffered>.
 =item visible BOOLEAN
 
 Specifies whether a widget is visible or not.
-See L<"Visibility">.
+See L</"Visibility">.
 
 See also: C<Show>, C<Hide>, C<showing>, C<exposed>
 
@@ -2218,7 +2218,7 @@ See also: C<bring_to_front>, C<send_to_back>, C<ZOrderChanged>
 =item invalidate_rect X_LEFT_OFFSET Y_BOTTOM_OFFSET X_RIGHT_OFFSET Y_TOP_OFFSET
 
 Marks the rectangular area of a widget as 'invalid',
-so re-painting of the area happens. See L<"Graphic content">.
+so re-painting of the area happens. See L</"Graphic content">.
 
 See also: C<validate_rect>, C<get_invalid_rect>, C<repaint>, C<Paint>, C<syncPaint>, C<update_view>
 
@@ -2228,7 +2228,7 @@ Returns true if both the widget and it's top-most parent are layered.
 If the widget itself is top-most, i.e. a window, a non-clipOwner widget,
 or a child to application, then is the same as C<layered>.
 
-See also: L<layered>
+See also: L</layered>
 
 =item key_down CODE, KEY = kb::NoKey, MOD = 0, REPEAT = 1, POST = 0
 
@@ -2402,7 +2402,7 @@ See also: C<first>, C<last>, C<next>
 =item repaint
 
 Marks the whole widget area as 'invalid',
-so re-painting of the area happens. See L<"Graphic content">.
+so re-painting of the area happens. See L</"Graphic content">.
 
 See also: C<validate_rect>, C<get_invalid_rect>, C<invalidate_rect>, C<Paint>,
 C<update_view>, C<syncPaint>
@@ -2621,7 +2621,7 @@ See also: C<get_shift_state>
 =item get_virtual_size
 
 Returns virtual width and height of a widget.
-See L<"Geometry">, Implicit size regulations.
+See L</"Geometry">, Implicit size regulations.
 
 See also: C<width>, C<height>, C<size>
 C<growMode>, C<Move>, C<Size>, C<sizeMax>, C<sizeMin>
@@ -2683,7 +2683,7 @@ entered the widget. This event, and the following C<DragOver> and C<DragEnd>
 events are happening only if the property C<dndAware> is set either to 1, or
 match a clipboard format that exists in C<CLIPBOARD>.
 
-See also: L<Drag and Drop>, C<DragOver>, C<DragEnd>
+See also: L</Drag and Drop>, C<DragOver>, C<DragEnd>
 
 =item DragEnd CLIPBOARD, ACTION, MOD, X, Y, ANSWER
 
@@ -2707,7 +2707,7 @@ the receiver has accepted, if any.
 
 =back
 
-See also: L<Drag and Drop>, C<DragBegin>, C<DragOver>
+See also: L</Drag and Drop>, C<DragBegin>, C<DragOver>
 
 =item DragOver CLIPBOARD, ACTION, MOD, X, Y, ANSWER
 
@@ -2751,7 +2751,7 @@ on C<MOD> value (f.ex. a C<dnd::Move> if a control modifier was pressed).
 Note: This action will only forward the change to the receiver on X11, but for the portable code it
 is advised to implement it anyway.
 
-See also: L<Drag and Drop>, C<DragResponse>
+See also: L</Drag and Drop>, C<DragResponse>
 
 =item DragResponse ALLOW, ACTION
 
@@ -2767,7 +2767,7 @@ event, the pointer change may happen withing this event callback. It is not
 needed though to save and restore mouse pointers before and after the the DND
 session.
 
-See also: L<Drag and Drop>, C<dnd_start>, C<begin_drag>.
+See also: L</Drag and Drop>, C<dnd_start>, C<begin_drag>.
 
 =item Enable
 
@@ -3033,7 +3033,7 @@ C<sizeMax>, C<sizeMin>, C<rect>, C<clipOwner>
 
 Same as in C<Component>, but introduces the following C<Widget> properties can trigger it:
 
-L<clipOwner>, L<syncPaint>, L<layered>, L<transparent>
+L</clipOwner>, L</syncPaint>, L</layered>, L</transparent>
 
 This event will be only needed when the system handle (that can be acquired by
 C<get_handle> ) is needed.
