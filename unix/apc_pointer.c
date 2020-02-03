@@ -280,17 +280,18 @@ xdnd_synthesize_cursor(Handle self, int id)
 		break;
 	}
 	case crDragMove: {
-		Point bar[5] = {{0, 0}, {s3, 0}, {s3, s1}, {0, s1}, {0, 0}};
-		draw_poly( self, 5, bar, i->w/2, 0 );
-		draw_poly( self, 5, bar, i->w/2, s1 * 1.5 + 1);
-		break;
-	}
-	case crDragLink: {
 		Point arrow[10] = {
 			{s2, 0}, {s3, s1}, {s2, s2}, {s3, s2}, {s3, s3}, 
 			{0,s3}, {0,0}, {s1, 0}, {s1, s1}, {s2, 0},
 		};
 		draw_poly( self, 10, arrow, i->w/2, 0 );
+		break;
+	}
+	case crDragLink: {
+		Point bar[5] = {{0, 0}, {s1, 0}, {s1, s1}, {0, s1}, {0, 0}};
+		draw_poly( self, 5, bar, i->w/2, 0 );
+		draw_poly( self, 5, bar, i->w/2 + s1, s1);
+		draw_poly( self, 5, bar, i->w/2 + s2, s2);
 		break;
 	}}
 }
@@ -386,12 +387,12 @@ xlib_cursor_load( Handle self, int id, Handle icon)
 		gcv. foreground = 1;
 		XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
 		XFillRectangle( DISP, p2, gc, 0, 0, w, h);
-		XDrawString( DISP, p1, gc, -cs-> lbearing, cs-> ascent, (c = (char)(idx+1), &c), 1);
+		XDrawString( DISP, p1, gc, 1-cs-> lbearing, 1+cs-> ascent, (c = (char)(idx+1), &c), 1);
 		gcv. background = 1;
 		gcv. foreground = 0;
 		XChangeGC( DISP, gc, GCBackground | GCForeground, &gcv);
-		XDrawString( DISP, p2, gc, -cs-> lbearing, cs-> ascent, (c = (char)(idx+1), &c), 1);
-		XDrawString( DISP, p1, gc, -cs-> lbearing, cs-> ascent, (c = (char)idx, &c), 1);
+		XDrawString( DISP, p2, gc, 1-cs-> lbearing, 1+cs-> ascent, (c = (char)(idx+1), &c), 1);
+		XDrawString( DISP, p1, gc, 1-cs-> lbearing, 1+cs-> ascent, (c = (char)idx, &c), 1);
 		XFreeGC( DISP, gc);
 	}
 	if ( cp != NULL ) {
