@@ -549,19 +549,16 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 	if ( X(guts.xdndr_widget)->flags.dnd_aware) {
 		XWindow dummy;
 		ev.cmd = cmDragEnd;
-		ev.dnd.allow = 1;
-		ev.dnd.action = dndCopy;
-		ev.dnd.clipboard = guts.xdnd_clipboard;
 		ev.dnd.modmap  = query_pointer(NULL,&ev.dnd.where);
-		ev.dnd.action  = dndNone;
 		XTranslateCoordinates(DISP, guts.root, X(guts.xdndr_widget)->client, 
 			ev.dnd.where.x, ev.dnd.where.y,
 			&ev.dnd.where.x, &ev.dnd.where.y,
 			&dummy);
 		guts.xdndr_source = xev->xclient.data.l[0];
 		guts.xdndr_timestamp = (guts.xdndr_version >= 1) ? xev-> xclient.data.l[2] : CurrentTime;
-		if ( guts.xdndr_last_action == dndAsk )
-			ev.dnd.action = xdnd_read_ask_actions();
+		ev.dnd.action = guts.xdndr_last_action;
+		ev.dnd.allow = guts.xdndr_last_action != dndNone;
+		ev.dnd.clipboard = ev.dnd.allow ? guts.xdnd_clipboard : nilHandle;
 		guts.xdnd_disabled = true;
 		CComponent(guts.xdndr_widget)-> message(guts.xdndr_widget, &ev);
 		guts.xdnd_disabled = false;
