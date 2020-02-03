@@ -1065,7 +1065,7 @@ sub prf_types
 		pointer       => ['pointer',],
 		growMode      => ['growMode'],
 		geometry      => ['geometry'],
-		string        => ['helpContext'],
+		string        => ['helpContext', 'dndAware'],
 		text          => ['text', 'hint'],
 		selectingButtons=> ['selectingButtons'],
 		widgetClass   => ['widgetClass'],
