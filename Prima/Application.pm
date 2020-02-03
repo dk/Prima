@@ -462,6 +462,13 @@ Returns dimensions of the system scrollbars - width of the standard vertical
 scrollbar and height of the standard horizon scrollbar.  The method can be
 called with a class string instead of an object instance.
 
+=item get_dnd_clipboard
+
+Returns the predefined special clipboard used as a proxy for drag and drop
+interactions.
+
+See also: C<Widget/Drag and drop>, C<Clipboard/is_dnd>.
+
 =item get_default_window_borders BORDER_STYLE = bs::Sizeable
 
 Returns width and height of standard system window border decorations for one

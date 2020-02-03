@@ -228,14 +228,15 @@ format data is present in the clipboard or not.
 
 Returns a system handle for a clipboard object.
 
-=item get_formats
+=item get_formats INCLUDE_UNREGISTERED = 0
 
 Returns array of strings, where each is a format ID,
 reflecting the formats present in the clipboard.
 
-Only the predefined formats, and the formats registered
-via C<register_format()> are returned. There is no
-way to see if a format, not registered before, is present.
+Only the predefined formats, and the formats registered via
+C<register_format()> are returned if C<INCLUDE_UNREGISTERED> is unset.  If the
+flag is set, then all existing formats returned, however their names are not
+necessarily are the same as registered with Prima.
 
 =item get_registered_formats
 
@@ -252,6 +253,13 @@ As an example, this function returns only C<Clipboard>
 under win32, but also C<Primary> and C<Secondary>
 under X11. The code, specific to these clipboards
 must refer to this function first.
+
+=item is_dnd
+
+Returns 1 if the clipboard is the special clipboard used as
+a proxy for drag and drop interactions.
+
+See also: C<Widget/Drag and drop>, C<Application/get_dnd_clipboard>.
 
 =item open
 

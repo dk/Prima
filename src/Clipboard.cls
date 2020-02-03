@@ -9,7 +9,7 @@ object Prima::Clipboard( Prima::Component)
 	method SV *   fetch( char * format);
 	method Bool   format_exists( char * format);
 	method SV *   get_handle();
-	public void   get_formats( Bool include_unregistered = 1 );
+	public void   get_formats( Bool include_unregistered = 0 );
 	public void   get_registered_formats();
 	public void   get_standard_clipboards();
 	method void   init( HV * profile);
