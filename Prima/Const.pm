@@ -378,6 +378,10 @@ See L<Prima::Widget/pointerType>
 	cr::SizeNE                  up-left move action pointer
 	cr::SizeSW                  down-right move action pointer
 	cr::Invalid                 invalid action pointer
+	cr::DragNone                pointer for an invalid dragging target
+	cr::DragCopy                pointer to show that a dnd::Copy action can be accepted
+	cr::DragMove                pointer to show that a dnd::Move action can be accepted
+	cr::DragLink                pointer to show that a dnd::Link action can be accepted
 	cr::User                    user-defined icon
 
 =head2 dbt::  - device bitmap types
@@ -385,6 +389,36 @@ See L<Prima::Widget/pointerType>
         dbt::Bitmap                 monochrome 1 bit bitmap
         dbt::Pixmap                 bitmap compatible with display format
         dbt::Layered                bitmap compatible with display format with alpha channel
+
+=head2 dnd::  - drag and drop action constants and functions
+
+        dnd::None                   no DND action was selected or performed
+        dnd::Copy                   copy action
+        dnd::Move                   move action
+        dnd::Link                   link action
+        dnd::Mask                   combination of all valid actions
+
+=over
+
+=item is_one_action ACTIONS
+
+Returns true if C<ACTIONS> is not a combination of C<dnd::> constants.
+
+=item pointer ACTION
+
+Returns a C<cr::> constant corresponding to the C<ACTION>
+
+=item to_one_action ACTIONS
+
+Selects a best single action from combination of allowes C<ACTIONS>
+
+=item keymod ACTION
+
+Returns a C<km::> keyboard modifier constant the C<ACTION> will be selected,
+when possible, if the user presses that modifier. Return 0 for C<dnd::Copy>
+that is a standard action to be performed without any modifiers.
+
+=back
 
 =head2 dt::  - drive types
 

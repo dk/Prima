@@ -778,6 +778,97 @@ method, which is never used directly.
 
 =back
 
+=head2 Drag and drop
+
+Widgets can participate in full drag and drop sessions with other applications
+and itself, with very few restrictions. See below how to use this
+functionality.
+
+=over
+
+=item Data exchange
+
+Prima defined a special clipboard object that serves as an exchange point
+whenever data is to be either sent or received. In order to either offer to, or
+choose from, many formats of another DND client, use that clipboard to operate
+with standard open/fetch/store/close methods (see more at L<Prima::Clipboard>).
+
+That clipboard can be accessed any time by calling C< $::application->
+get_dnd_clipboard >, however during handling of dropping events it will stay
+read-only.
+
+To successfully exchange data with other applictions, one may call C<<
+$clipboard-> get_formats(1) >> to see what types of data the selected
+application can exchange. With a high probability many programs can exchange
+text and image in a system-dependent format, however it is also common to see
+applications to exchange data in format names that match their MIME
+description. For example Prima supports image formats like C<image/bmp> out of
+the box, and C<text/plain> on X11, but other MIME formats like f.ex.
+C<text/html> can be implemented relatively easily, if wanted so.
+
+=item Dragging
+
+To initiate the drag, first fill the DND clipboard with data to be exchanged,
+using one or more formats, then call either L<start_dnd> or L<begin_drag>,
+where the latter is a wrapper over the former. See their documentation for more
+details.
+
+During the dragging, the sender will receive L<DragQuery> and L<DragResponse>,
+in order to check whether the drag session must continue or stop depending on
+the user input, and reflect that back to the user. Traditionally, mouse cursors
+are changed to show whether an application will receive a drop, and if yes,
+what action (copy, move, or link) it will participate in. Prima will try best
+to either use system cursors, or synthesise ones that are informative enough;
+if that is not sufficient, one may present own cursor schema (see code example
+how C<begin_drag> is implemented).
+
+=item Dropping
+
+To register a widget as a drop target, set its L<dndAware> property to either
+1, to mark that it will answer to all format, or to a string, in which case
+drop events will only be delivered if the DND clipboard containt a format with
+that string.
+
+Thereafter, when the user will initiate a DND session and will move mouse
+pointer over the widget, it will receive a L<DragBegin> event, then series of
+L<DragOver> events, and finally a L<DragEnd> event with a flag telling whether
+the user choose to drop the data or cancel the session.
+
+The C<DragOver> and C<DragEnd> callback have a chance to either allow or deny
+data, and select from actions (if there are more presented by the other
+application) to proceed with. To do so, set appropriate values to C<{allow}>
+and C<{action}> in the last hashref parameter that is sent to these event
+handlers. Additionally, C<DragOver> can set a C<{pad}> rectangle that will
+cache the last answer and will tell the system not to send repeated event with
+same input while the mouse pointer stays in the same rectangle.
+
+=item Portability
+
+X11 and Win32 are rather identical in how they are handing a DND session from
+the user's perspective. The only difference that is significant to Prima here
+is whether the sender or the receiver is responsible to select an action for
+available list of actions, when the user presses modifier keys, like CTRL or
+SHIFT.
+
+On X11, it is the sender that contols that aspect, and this the user operates
+with hotkeys provided by it, and it is also sender that tells the receiver that
+action at any given moment the use chose. On Win32, it is the receiver that
+selects an action from the list on each event, depending on modifier keys
+pressed by the user; Windows recommends to keep to the standard scheme where
+CTRL mark C<dnd::Move> action, and SHIFT the C<dnd::Link>, but that is up to
+the receiver. 
+
+Thus, to write an effective portable program, assume that your program must
+select and control the actions both as sender and as a receiver; Prima
+system-dependent code will make sure that there will be no ambiguities on the
+input. F.ex. a sender on Win32 will never be presented with a combination of
+several C<dnd::> constants inside a C<DragOver> event, and a receiver will
+similarly never be presented with such combination inside C<DragQuery>.
+However, a protable program must be prepared to deal with both of these
+aspects.
+
+=back
+
 =head1 Color schemes
 
 Prima::Drawable deals only with such color values, that
@@ -1219,6 +1310,17 @@ The color used to substitute C<::color> when a widget
 is in its disabled state.
 
 See also: C<disabledBackColor>, C<colorIndex>, C<ColorChanged>
+
+=item dndAware 0 | 1 | FORMAT
+
+To register a widget as a drop target, set its L<dndAware> property to either
+1, to mark that it will answer to all format, or to a string, in which case
+drop events will only be delivered if the DND clipboard containt a format with
+that string.
+
+Default: 0
+
+See also: C<Drag and Drop>
 
 =item enabled BOOLEAN
 
@@ -1875,6 +1977,69 @@ See also: C<x_centered>, C<centered>, C<growMode>, C<origin>, C<Move>.
 
 =over
 
+=item begin_drag [ DATA | %OPTIONS ]
+
+Wrapper over C<dnd_start> that takes care of some DND session aspects other
+than the default system's. All input is contained in C<%OPTIONS> hash, except
+for the case of a single-parameter call, in which case it is equivalent to C<
+text => DATA > when C<DATA> is a scalar, and to C< image => DATA > when C<DATA>
+is a reference.
+
+Returns -1 if a session cannot start, C<dnd::None> if it was cancelled by the
+user, or another C<dnd::> constants what action the DND receiver has selected
+and successfully performed. For example, after a call to C<dnd_start> returning
+C<dnd::Move> (depending on a context), the called may remove the data the user
+selected to move.
+
+The following input is recognized:
+
+=over
+
+=item actions INTEGER = dnd::Copy
+
+Combination of C<dnd::> constants, to tell DND receives whether copying,
+moving, and/or linking of the data is allowed. The method fails on the invalid
+C<actions> input.
+
+=item format FORMAT, data INPUT
+
+If set, the clipboard will be assigned to contain a single entry of C<INPUT> of the
+C<FORMAT> format, where format is either one of the standard C<Text> or C<Input>, or
+one of the format registered by C<Clipboard.register_format>.
+
+If not set, the called needs to fill the clipboard in advance, f.ex. to offer
+data in more than one format.
+
+=item image INPUT
+
+Shortcut for C< format => 'Image', data => $INPUT, preview => $INPUT >
+
+=item preview INPUT
+
+If set, mouse pointers sending feedback to the user, will be equipped with
+either text or image (depending on whether C<INPUT> is a scalar or an image
+reference).
+
+=item self_aware BOOLEAN = 1
+
+If unset the widget will be temporarily set C<dndAware> to 0, to exclude a
+possibility of a DND operation that may end in sending data to itself.
+
+=item text INPUT
+
+Shortcut for C< format => 'Text', data => $INPUT, preview => $INPUT >
+
+=item track INTEGER = 5
+
+When set, waits with starting the DND process until the user moves the pointer
+from the starting point further than C<track> pixels, which makes sense if the method
+to be called directly from a C<MouseDown> event handler.
+
+If the drag did not happen because the user released the button or otherwise
+marked that this is not a drag, -1 is returned.
+
+=back
+
 =item bring_to_front
 
 Sends a widget on top of all other siblings widgets
@@ -1913,6 +2078,26 @@ See also: C<focus>, C<focused>, C<Enter>, C<Leave>
 Alias for C<selected(0)> call
 
 See also: C<select>, C<selected>, C<Enter>, C<Leave>
+
+=item dnd_start ACTIONS = dnd::Copy, USE_DEFAULT_POINTERS = 1
+
+Starts a drag and drop session with a combination of C<ACTIONS> allowed.  It is
+expected that a DND clipboard will be filled with data that are prepared to be
+send to a DND receiver.
+
+Returns -1 if a session cannot start, C<dnd::None> if it was cancelled by the
+user, or another C<dnd::> constants what action the DND receiver has selected
+and successfully performed. For example, after a call to C<dnd_start> returning
+C<dnd::Move> (depending on a context), the called may remove the data the user
+selected to move.
+
+If USE_DEFAULT_POINTERS is set, then the system will use deault drag pointers.
+Otherwise it is expected that a C<DragResponse> action will change the
+according to action to give the user a visual feedback.
+
+See C<begin_drag> for a wrapper over this method that handles for other DND aspects.
+
+See also: C<Drag and Drop>, C<DragQuery>, C<DragResponse>.
 
 =item exposed
 
@@ -2488,40 +2673,107 @@ Triggered by a successive C<enabled(0)> call
 
 See also: C<Enable>, C<enabled>, C<responsive>
 
-=item DragDrop X Y
+=item DragBegin CLIPBOARD, ACTION, MOD, X, Y
 
-I<Design in progress>. Supposed to be triggered
-when a drag-and-drop session started by the widget.
-X and Y are mouse pointer coordinates on
-the session start.
+Triggered on a receiver widget when a mouse with a DND object enters it.
+C<CLIPBOARD> contains the DND data, C<ACTION> is a combination of C<dnd::>
+constants, the actions the sender is ready to offer, C<MOD> is a combination of
+modificator keys (C<kb::>) and C<X> and C<Y> are coordinates where the mouse
+entered the widget. This event, and the following C<DragOver> and C<DragEnd>
+events are happening only if the property C<dndAware> is set either to 1, or
+match a clipboard format that exists in C<CLIPBOARD>.
 
-See also: C<DragOver>, C<EndDrag>
+See also: L<Drag and Drop>, C<DragOver>, C<DragEnd>
 
-=item DragOver X Y STATE
+=item DragEnd CLIPBOARD, ACTION, MOD, X, Y, ANSWER
 
-I<Design in progress>. Supposed to be called
-when a mouse pointer is passed over a widget
-during a drag-and-drop session.
-X and Y are mouse pointer coordinates, identical
-to C<MouseMove> X Y parameters. STATE value
-is undefined.
+Triggered on a received widget when a the user either drops or cancels the DND
+session.  In case of a cancelled drop, C<CLIPBOARD> is set to C<undef> and
+C<ACTION> to C<dnd::None>. On a successful drop, input data are same as on
+C<DragBegin>, and output data are to be stored in hashref C<ANSWER>, if any.
+The following answers can be stored:
 
-See also: C<DragDrop>, C<EndDrag>
+=over
+
+=item allow BOOLEAN
+
+Is pre-set to 1. If changed to 0, a signal will be send to the sender that a drop
+is accepted.
+
+=item action INTEGER
+
+A C<dnd::> constant (not a combination) to be returned to sender with the selected action
+the receiver has accepted, if any.
+
+=back
+
+See also: L<Drag and Drop>, C<DragBegin>, C<DragOver>
+
+=item DragOver CLIPBOARD, ACTION, MOD, X, Y, ANSWER
+
+Triggered on a received widget when a mouse with a DND moves within the widget.
+Input data are same as on C<DragBegin>, and output data are to be stored in
+hashref C<ANSWER>, if any. The following answers can be stored:
+
+=over
+
+=item allow BOOLEAN
+
+Is pre-set to 1. If changed to 0, a signal will be send to the sender that a drop
+action cannot happen with the input provided.
+
+=item action INTEGER
+
+A C<dnd::> constant (not a combination) to be returned to sender with the selected action
+the receiver is ready to accept, if any.
+
+=item pad X, Y, WIDTH, HEIGHT
+
+If set, instructs the sender not to repeat C<DragOver> events that contains same input data,
+while mouse pointer is withing the geometrical limits.
+
+=back
+
+=item DragQuery MOD, ANSWERS
+
+triggered on a sender dnd widget when there was detected a change in mouse or
+modifier buttons present, or the user pressed c<escape> key to cancel the dnd
+session. The combination of mouse and modified buttons is stored in C<MOD>
+integer, together with a special C<km::Escape> modifier for the C<Escape> key.
+
+It is up to this event to decide whether to continue the drag session or not,
+and if it is decided not to continue, C<$answer->{allow}> must be set to 0.
+
+Additionally, C<$answer->{action}> can be set to select a single C<dnd::>
+action that will be used to propose to the receiver a single concrete action based
+on C<MOD> value (f.ex. a C<dnd::Move> if a control modifier was pressed). 
+
+Note: This action will only forward the change to the receiver on X11, but for the portable code it
+is advised to implement it anyway.
+
+See also: L<Drag and Drop>, C<DragResponse>
+
+=item DragResponse ALLOW, ACTION
+
+Triggered on a sender DND widget when there was detected a change in mouse or
+modifier button present, or the mouse was moved from one DND target to another.
+The sender event is then presented with the new input, collected from
+interaction with the (new or old) target; there, C<ALLOW> is set to a boolean
+value whether the sender is allowed to drop data, and C<ACTION> is a C<dnd::>
+constant with the action the receiver has agreed to accept, if any.
+
+If the drag and drop session was told not to update mouse pointers on such
+event, the pointer change may happen withing this event callback. It is not
+needed though to save and restore mouse pointers before and after the the DND
+session.
+
+See also: L<Drag and Drop>, C<dnd_start>, C<begin_drag>.
 
 =item Enable
 
 Triggered by a successive C<enabled(1)> call
 
 See also: C<Disable>, C<enabled>, C<responsive>
-
-=item EndDrag X Y
-
-I<Design in progress>. Supposed to be called
-when a drag-and-drop session is finished successfully
-over a widget. X and Y are mouse pointer coordinates
-on the session end.
-
-See also: C<DragDrop>, C<DragOver>
 
 =item Enter
 
