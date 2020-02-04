@@ -514,28 +514,54 @@ sub _syntax_entry
 
 sub draw_colorchunk
 {
-	my ( $self, $canvas, $chunk, $i, $x, $y, $clr) = @_;
-	my $sd = $self-> {syntax}-> [$i];
-	unless ( defined $sd) {
-		$self-> notify(q(ParseSyntax), $chunk, $sd);
-		$sd = $self-> {syntax}-> [$i] = $self->_syntax_entry($chunk, $sd);
+	my ( $self, $canvas, $text, $i, $x, $y, $clr) = @_;
+
+	my ($skip, $cm, $cut_ofs, $cut_len);
+	if ( $self->{wordWrap} ) {
+		$cm = $self-> {chunkMap};
+		my $i3 = $i * 3;
+		$cut_ofs = $$cm[$i3];
+		$cut_len = $$cm[$i3 + 1] + $cut_ofs;
+		$skip = 1 + $cut_ofs * 2;
+		$i = $$cm[$i3 + 2];
+		$text = $self->{lines}->[$i];
+	} else {
+		$skip = 1;
+		$cut_ofs = 0;
+		$cut_len = length($text);
 	}
 
-	my $visual = $sd->[0] // $chunk;
+	my $sd = $self-> {syntax}-> [$i];
+	unless ( defined $sd) {
+		$self-> notify(q(ParseSyntax), $text, $sd);
+		$sd = $self-> {syntax}-> [$i] = $self->_syntax_entry($text, $sd);
+	}
+	$text = $sd->[0] if defined $sd->[0];
 
 	my $ofs = 0;
 	for ( my $j = 1; $j <= $#$sd; $j += 2) {
 		my $len     = $$sd[$j];
-		my $substr  = substr( $visual, $ofs, $len);
-		$substr    =~ s/\t/$self->{tabs}/g;
-		my $width  = $self-> {fixed} ?
-			( length( $substr) * $self-> {averageWidth}) :
-			$self-> get_text_width( $substr);
+		if ( $ofs + $len >= $cut_ofs ) {
+			if ( $ofs + $len > $cut_len ) {
+				$len = $cut_len - $ofs;
+				last if $len <= 0;
+			}
+			if ( $ofs < $cut_ofs ) {
+				$len -= $cut_ofs - $ofs;
+				$ofs = $cut_ofs;
+			}
+			my $substr  = substr( $text, $ofs, $len);
+			$substr    =~ s/\t/$self->{tabs}/g;
+			my $width  = $self-> {fixed} ?
+				( length( $substr) * $self-> {averageWidth}) :
+				$self-> get_text_width( $substr);
 
-		$canvas-> color(( $$sd[$j+1] == cl::Fore) ? $clr : $$sd[$j+1]);
-		$canvas-> text_out( $substr, $x, $y);
-		$x   += $width;
+			$canvas-> color(( $$sd[$j+1] == cl::Fore) ? $clr : $$sd[$j+1]);
+			$canvas-> text_out( $substr, $x, $y);
+			$x   += $width;
+		}
 		$ofs += $len;
+		last if $ofs >= $cut_len;
 	}
 }
 
@@ -1083,7 +1109,8 @@ sub get_chunk
 	Carp::confess($index) if $index > $self-> {maxChunk};
 	if ( $self-> {wordWrap}) {
 		my $cm = $self-> {chunkMap};
-		return substr( $$ck[ $$cm[ $index * 3 + 2]], $$cm[ $index * 3], $$cm[ $index * 3 + 1]);
+		$index *= 3;
+		return substr( $$ck[ $$cm[$index + 2] ], $$cm[$index], $$cm[$index + 1]);
 	} else {
 		return $$ck[ $index];
 	}
@@ -1493,7 +1520,6 @@ sub set_word_wrap
 	my ( $self, $ww) = @_;
 	return if $ww == $self-> {wordWrap};
 	$self-> {wordWrap} = $ww;
-	$self-> syntaxHilite(0) if $ww;
 	$self-> reset;
 	$self-> reset_scrolls;
 	$self-> repaint;
