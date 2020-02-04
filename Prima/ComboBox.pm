@@ -137,6 +137,7 @@ sub init
 		selectable  => 1,
 		tabStop     => 1,
 		current     => 1,
+		dndAware    => (( $self->{style} == cs::DropDown) ? 'Text' : 0 ),
 		delegations => $profile{editDelegations},
 		(map { $_   => $profile{$_}} keys %editProps),
 		%{$profile{editProfile}},
@@ -549,6 +550,7 @@ sub set_style
 		width  => $self-> { edit}-> width + $::application-> uiScaling * DefButtonX * $decr *
 			(( $style == cs::Simple) ? 1 : -1),
 		height => $self-> editHeight ,
+		dndAware => (( $style == cs::DropDown) ? 'Text' : 0 ),
 	);
 	$self-> {button}-> set(
 		bottom => $self-> height - $self-> editHeight ,
