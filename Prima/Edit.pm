@@ -541,7 +541,7 @@ sub draw_colorchunk
 	my $ofs = 0;
 	for ( my $j = 1; $j <= $#$sd; $j += 2) {
 		my $len     = $$sd[$j];
-		if ( $ofs + $len >= $cut_ofs ) {
+		if ( $ofs + $len > $cut_ofs ) {
 			if ( $ofs + $len > $cut_len ) {
 				$len = $cut_len - $ofs;
 				last if $len <= 0;
