@@ -713,6 +713,21 @@ sub screen2point
 	return $x, $y;
 }
 
+sub point2screen
+{
+	my ( $self, $x, $y, @size) = @_;
+
+	@size = $self-> size unless @size;
+	my @aa = $self-> get_active_area( 0, @size);
+
+	$y -= $self-> {topLine};
+	$x -= $self-> {offset};
+	$x += $aa[0];
+	$y  = $aa[3] - $y;
+
+	return $x, $y;
+}
+
 sub text2xoffset
 {
 	my ( $self, $x, $bid) = @_;
@@ -731,10 +746,9 @@ sub text2xoffset
 			return if $x < $offset;
 
 			if ( $x < $offset + $length ) {
-				$pos[0] += $self-> get_text_width( substr( $text, 0, $x - $offset), 1);
+				$pos[0] += $self-> get_text_width( substr( $text, 0, $x - $offset), 1) - $width;
 				$self-> block_walk_abort;
 			} elsif ( $x == $offset + $length ) {
-				$pos[0] += $width;
 				$self-> block_walk_abort;
 			}
 		},
