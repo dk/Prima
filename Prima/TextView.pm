@@ -884,10 +884,11 @@ sub on_mousedown
 			actions    => dnd::Copy,
 		);
 		$self-> {drag_transaction} = 0;
+		$self-> clear_selection if $act < 0;
 	} else {
 		$self-> {mouseTransaction} = 1;
 		$self-> {mouseAnchor} = \@xy;
-		$self-> selection( -1, -1, -1, -1);
+		$self-> clear_selection;
 
 		$self-> capture(1);
 	}
@@ -1168,6 +1169,8 @@ sub selection
 	$self-> {selection} = [ $sx1, $sy1, $sx2, $sy2 ];
 	$self->invalidate_rect(@$_) for @invalid_rects;
 }
+
+sub clear_selection { shift->selection(-1,-1,-1,-1) }
 
 sub get_selected_text
 {
