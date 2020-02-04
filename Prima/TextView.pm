@@ -1353,10 +1353,11 @@ Below different coordinate system converters are described
 
 =over
 
-=item screen2point X, Y
+=item screen2point, point2screen X, Y
 
-Accepts (X,Y) in the screen coordinates ( O is a lower left widget corner ),
-returns (X,Y) in document coordinates ( O is upper left corner of a document ).
+C<screen2point> accepts (X,Y) in the screen coordinates ( O is a lower left
+widget corner ), returns (X,Y) in document coordinates ( O is upper left corner
+of a document ).  C<point2screen> does the reverse.
 
 =item xy2info X, Y
 

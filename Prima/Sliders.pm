@@ -446,7 +446,7 @@ sub profile_default
 		spinClass      => 'Prima::AltSpinButton',
 		editProfile    => {},
 		spinProfile    => {},
-		editDelegations=> [qw(KeyDown Change MouseWheel Enter Leave)],
+		editDelegations=> [qw(KeyDown Change MouseWheel Enter Leave DragEnd)],
 		spinDelegations=> [qw(Increment)],
 	}
 }
@@ -508,6 +508,20 @@ sub InputLine_MouseWheel
 	$self-> value( $z > 0 ? $self-> min : $self-> max)
 		if $self-> {circulate} && ( $self-> value == $value);
 	$edit-> clear_event;
+}
+
+sub InputLine_DragEnd
+{
+	my ( $self, $edit, $clipboard, $action, $mod, $x, $y, $ref ) = @_;
+	return unless $clipboard;
+	my $text = $clipboard->text;
+	return unless defined $text;
+	$text =~ s/^\s+//;
+	$text =~ s/\s+$//;
+	return if $text =~ /^-?\d+(\.\d+)?$/ and $text >= $self->min and $text <= $self->max;
+	$edit->clear_event;
+	$edit->on_dragend(undef, $action, $mod, $x, $y, $ref);
+	$ref->{allow} = 0;
 }
 
 sub Spin_Increment
