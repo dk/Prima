@@ -516,17 +516,15 @@ sub draw_colorchunk
 {
 	my ( $self, $canvas, $text, $i, $x, $y, $clr) = @_;
 
-	my ($skip, $cm, $cut_ofs, $cut_len);
+	my ($cut_ofs, $cut_len);
 	if ( $self->{wordWrap} ) {
-		$cm = $self-> {chunkMap};
+		my $cm = $self-> {chunkMap};
 		my $i3 = $i * 3;
 		$cut_ofs = $$cm[$i3];
 		$cut_len = $$cm[$i3 + 1] + $cut_ofs;
-		$skip = 1 + $cut_ofs * 2;
 		$i = $$cm[$i3 + 2];
 		$text = $self->{lines}->[$i];
 	} else {
-		$skip = 1;
 		$cut_ofs = 0;
 		$cut_len = length($text);
 	}
@@ -820,6 +818,7 @@ sub on_mousedown
 		);
 		$self-> {drag_transaction} = 0;
 		$self-> delete_block if !$self->{readOnly} && $act == dnd::Move;
+		$self-> cancel_block if $act < 0;
 		return;
 	}
 

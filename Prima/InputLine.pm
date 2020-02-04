@@ -691,6 +691,7 @@ sub on_mousedown
 			$self-> text( $cap);
 			$self-> charOffset( $start );
 		}
+		$self-> selection(0,0) if $act < 0;
 	} else {
 		$self-> {mouseTransaction} = 1;
 		$self-> selection(0,0);
