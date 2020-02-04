@@ -381,7 +381,7 @@ sub on_begindragcolor
 {
 	my ( $self, $property) = @_;
 	$self-> {old_text} = $self-> text;
-	$self-> {wheel}-> pointer( cr::Invalid);
+	$self-> {wheel}-> pointer( cr::DragMove);
 	$self-> text( "Apply $property...");
 }
 
