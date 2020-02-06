@@ -1033,7 +1033,6 @@ sub on_dragend
 	my ( $self, $clipboard, $action, $modmap, $x, $y, $ref) = @_;
 	$self->{drop_transaction} = 0;
 	return unless $clipboard;
-	$ref->{allow} = 1;
 	my $cap = $clipboard->text;
 	$self->text($cap) if defined $cap;
 }

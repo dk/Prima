@@ -1044,7 +1044,6 @@ sub on_dragend
 	}
 	delete $self->{drop_transaction};
 	return unless $clipboard;
-	$ref->{allow} = 1;
 	my $cap = $clipboard->text;
 	$self->insert_text($cap) if defined $cap;
 }
