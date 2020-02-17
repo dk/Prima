@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use FindBin qw($Bin);
-use Prima qw(Application StdBitmap Buttons);
+use Prima qw(Application StdBitmap Buttons Utils);
 
 my $w = Prima::MainWindow->new(
 	size => [240, 240],
@@ -134,12 +134,20 @@ sub drops
 		if ($clipboard->has_format(ucfirst $fmt)) {
 			$ref->{allow} = 1;
 			$ref->{action} = best_dnd_mode($self->{modmap}, $self->{dnd_mode} & $action); 
-			if ( $fmt eq 'text') {
-				$self->text($clipboard->text());
-			} else {
-				$self->{image} = $clipboard->image;
-			}
-			$self->repaint;
+
+			# this is an example of how to deal with (desired) cases when the same widget
+			# is both a dnd sender and a receiver. To make sure that whatever is copied from the clipboard
+			# is not erased on f.ex dnd::Move, postpone that copying action. 
+			#
+			# usually this is not needed, and if actually is not desired set self_aware => 0 in begin_drag
+			Prima::Utils::post( sub {
+				if ( $fmt eq 'text') {
+					$self->text($clipboard->text());
+				} else {
+					$self->{image} = $clipboard->image;
+				}
+				$self->repaint;
+			});
 		}
 	},
 	onMouseDown => sub {
