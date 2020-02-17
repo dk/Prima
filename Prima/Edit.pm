@@ -2747,6 +2747,7 @@ sub find
 	my ( $self, $line, $x, $y, $replaceLine, $options) = @_;
 	$x ||= 0;
 	$y ||= 0;
+	$options //= 0;
 	my $maxY = $self-> {maxLine};
 	return if $y > $maxY || $maxY < 0;
 
