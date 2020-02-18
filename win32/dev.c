@@ -1641,7 +1641,7 @@ image_make_icon_handle( Handle img, Point size, Point * hotSpot)
 		free(mask);
 		if ( ii. hbmMask == NULL ) return false;
 
-		if (( ii. hbmColor = image_create_argb_bitmap( img, (uint32_t**) &argb )) == NULL ) {
+		if (( ii. hbmColor = image_create_argb_bitmap(( Handle) i , (uint32_t**) &argb )) == NULL ) {
 			DeleteObject( ii. hbmMask);
 			return false;
 		}
