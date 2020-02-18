@@ -202,8 +202,16 @@ apc_pointer_get_hot_spot( Handle self)
 	if ( !GetIconInfo( sys pointer, &ii))
 		apiErr
 	else {
+		int y;
+		BITMAP bitmap;
+		if ( ii.hbmColor && GetObject( ii.hbmColor, sizeof( BITMAP), ( LPSTR) &bitmap))
+			y = bitmap.bmHeight;
+		else if ( GetObject( ii.hbmMask, sizeof( BITMAP), ( LPSTR) &bitmap))
+			y = bitmap.bmHeight / 2;
+		else
+			y = guts. pointerSize. y;
 		r. x = ii. xHotspot;
-		r. y = guts. pointerSize. y - ii. yHotspot - 1;
+		r. y = y - ii. yHotspot - 1;
 		DeleteObject( ii. hbmMask);
 		DeleteObject( ii. hbmColor);
 	}
@@ -244,6 +252,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 	XBITMAPINFO bi = {{
 		sizeof( BITMAPINFOHEADER), 0, 0, 1, 1
 	}};
+	BITMAP bitmap;
 
 	bi. bmiHeader. biWidth = guts. pointerSize. x;
 	bi. bmiHeader. biHeight = guts. pointerSize. y;
@@ -254,7 +263,12 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 	dobjCheck( icon) false;
 	if ( !GetIconInfo( sys pointer, &ii))
 		apiErrRet;
-	i-> self-> create_empty( icon, guts. pointerSize. x, guts. pointerSize. y, 1);
+	if ( ii.hbmColor && GetObject( ii.hbmColor, sizeof( BITMAP), ( LPSTR) &bitmap))
+		i-> self-> create_empty( icon, bitmap.bmWidth, bitmap.bmHeight, 1);
+	else if ( GetObject( ii.hbmMask, sizeof( BITMAP), ( LPSTR) &bitmap))
+		i-> self-> create_empty( icon, bitmap.bmWidth, bitmap.bmHeight / 2, 1);
+	else
+		i-> self-> create_empty( icon, guts. pointerSize. x, guts. pointerSize. y, 1);
 	if (!( dc = dc_alloc())) return false;
 	if ( ii. hbmColor) {
 		HDC ops = dsys( icon) ps;
