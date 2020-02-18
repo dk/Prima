@@ -22,7 +22,11 @@ cursor_map[] = {
         /* crDragNone        => */   XC_X_cursor,
         /* crDragCopy        => */   XC_bottom_side,
         /* crDragMove        => */   XC_bottom_side,
-        /* crDragLink        => */   XC_bottom_side
+        /* crDragLink        => */   XC_bottom_side,
+        /* crCrosshair       => */   XC_crosshair,
+        /* crUpArrow         => */   XC_sb_up_arrow,
+        /* crQuestionArrow   => */   XC_question_arrow,
+        /* crHand            => */   XC_hand2
 };
 
 #ifdef HAVE_X11_XCURSOR_XCURSOR_H
@@ -47,35 +51,43 @@ xcursor_map[] = {
         /* crDragNone        => */   "dnd-none",
         /* crDragCopy        => */   "dnd-copy",
         /* crDragMove        => */   "dnd-move",
-        /* crDragLink        => */   "dnd-link"
+        /* crDragLink        => */   "dnd-link",
+        /* crCrosshair       => */   "crosshair",
+        /* crUpArrow         => */   "sb_up_arrow",
+        /* crQuestionArrow   => */   "question_arrow",
+        /* crHand            => */   "hand"
 };
 #endif
 
 Cursor
 predefined_cursors[] = {
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None,
-	None
-};
+/* crArrow           => */	None,
+/* crText            => */	None,
+/* crWait            => */	None,
+/* crSize            => */	None,
+/* crMove            => */	None,
+/* crSizeWest        => */	None,
+/* crSizeEast        => */	None,
+/* crSizeNE          => */	None,
+/* crSizeNorth       => */	None,
+/* crSizeSouth       => */	None,
+/* crSizeNS          => */	None,
+/* crSizeNW          => */	None,
+/* crSizeSE          => */	None,
+/* crSizeNE          => */	None,
+/* crSizeSW          => */	None,
+/* crInvalid         => */	None,
+/* crDragNone        => */	None,
+/* crDragCopy        => */	None,
+/* crDragMove        => */	None,
+/* crDragLink        => */	None,
+/* crCrosshair       => */	None,
+/* crUpArrow         => */	None,
+/* crQuestionArrow   => */	None,
+/* crHand            => */	None,
+/* crUser            => */	None
 
+};
 static CustomPointer*
 is_drag_cursor_available(int id);
 

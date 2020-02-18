@@ -2314,7 +2314,15 @@ CR(DragCopy)
 CR(DragMove)
 #define crDragLink     19
 CR(DragLink)
-#define crUser         20
+#define crCrosshair    20
+CR(Crosshair)
+#define crUpArrow      21
+CR(UpArrow)
+#define crQuestionArrow 22
+CR(QuestionArrow)
+#define crHand         23
+CR(Hand)
+#define crUser         24
 CR(User)
 END_TABLE(cr,UV)
 #undef CR
