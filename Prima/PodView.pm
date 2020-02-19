@@ -1929,4 +1929,24 @@ If the location cannot be stored or defined, C<undef> is returned.
 
 =back
 
+=head2 Events
+
+=over
+
+=item Bookmark BOOKMARK
+
+When a new topic is navigated to by the user, this event is triggered with the
+current topic to have it eventually stored in bookmarks or history.
+
+=item Link LINK_REF, BUTTON, MOD, X, Y
+
+When the user clicks on a link, this event is called with the link address,
+mouse button, modificator keys, and coordinates.
+
+=item NewPage
+
+Called after new content is loaded
+
+=back
+
 =cut
