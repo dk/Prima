@@ -1655,6 +1655,7 @@ sub visual_to_physical
 		my ( $lx, $ly ) = $self-> visual_to_logical($x, $y);
 		$x = $lx;
 		my $cm = $self->{chunkMap};
+		return 0 unless @$cm;
 		$l = substr($l, $offset = $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
 	}
 
@@ -1673,6 +1674,7 @@ sub logical_to_physical
 	$y = $self-> {maxChunk} if $y > $self-> {maxChunk};
 	$y = 0  if $y < 0;
 	my $cm = $self-> {chunkMap};
+	return 0 unless @$cm;
 	my ( $ofs, $l, $nY) = ( $$cm[ $y * 3], $$cm[ $y * 3 + 1], $$cm[ $y * 3 + 2]);
 	$x = 0  if $x < 0;
 	$x = $l if $x > $l;
@@ -1695,6 +1697,7 @@ sub logical_to_visual
 	$y = $self-> {maxChunk} if $y > $self-> {maxChunk};
 	$y = 0  if $y < 0;
 	my $cm = $self-> {chunkMap};
+	return (0,0) unless @$cm;
 	my ( $ofs, $l, $nY) = ( $$cm[ $y * 3], $$cm[ $y * 3 + 1], $$cm[ $y * 3 + 2]);
 	$x = $l if $x < 0 || $x > $l;
 	return $x + $ofs, $nY;
