@@ -1202,16 +1202,31 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 
 	/* removing ~ and determining it's location */
 	if ( tildeIndex >= 0 && !(t-> options & twReturnChunks)) {
-		PFontABC abc;
+		UV uv;
+		PFontABC abcc;
 		char *l = ret[ tildeLine];
 		t-> t_char = t-> text + tildePos + 1;
 		if ( t-> options & twCollapseTilde)
 			memmove( l + tildePos, l + tildePos + 1, strlen( l) - tildePos);
-		abc = query_abc_range( self, t, 0) + '~';
+		if ( t-> utf8_text) {
+			STRLEN len;
+#if PERL_PATCHLEVEL >= 16
+			uv = utf8_to_uvchr_buf(( U8*) t-> t_char, ( U8*) t-> text + t-> textLen, &len);
+#else
+			uv = utf8_to_uvchr(( U8*) t-> t_char, &len);
+#endif
+			if ( len == 0 ) goto NO_TILDE;
+		} else
+			uv = *(t->t_char);
+
+		if ( uv / 256 != base)
+			precalc_abc_buffer( query_abc_range( self, t, base = uv / 256), width, abc);
+		abcc = abc + (uv & 0xff);
 		w = tildeOffset;
 		t-> t_start = w - 1;
-		t-> t_end   = w + abc->a + abc->b + abc->c;
+		t-> t_end   = w + abcc->a + abcc->b + abcc->c;
 	} else {
+	NO_TILDE:
 		t-> t_start = t-> t_end = t-> t_line = C_NUMERIC_UNDEF;
 	}
 
