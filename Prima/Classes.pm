@@ -1445,8 +1445,30 @@ sub begin_drag
 		$self->dndAware(0);
 	}
 	my $pointer = $self->pointer;
+	my @opp = $::application->pointerPos;
 	my $ret = $self->dnd_start($actions, !$opt{preview});
 	if ( $self->alive ) {
+		if ( $ret == dnd::None && $opt{preview} ) {
+			my @npp = $::application->pointerPos;
+			my $flyback = Prima::Widget->new(
+				size      => [ $opt{preview}->size ],
+				origin    => \@npp,
+				layered   => 1,
+				backColor => 0,
+				onPaint   => sub {
+					$_[0]->clear;
+					$_[0]->put_image(0,0,$opt{preview});
+				}
+			);
+			$flyback->bring_to_front;
+			while (abs( $npp[0] - $opp[0]) > 10 && abs($npp[1] - $opp[1]) > 10) {
+				@npp = map { ( $npp[$_] + $opp[$_] ) / 2 } 0, 1;
+				$::application->yield;
+				CORE::select(undef, undef, undef, 0.1);
+				$flyback->origin(@npp);
+			}
+			$flyback->destroy;
+		}
 		$self->pointer($pointer); # dnd_start doesn't affect children pointers and doesn't restore them
 		$self->remove_notification($_) for @id;
 		$self->dndAware($old_dndAware) if $old_dndAware;
