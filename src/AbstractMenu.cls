@@ -14,8 +14,10 @@ object Prima::AbstractMenu ( Prima::Component)
 	method void   cleanup();
 	method void   done();
 	method void   remove( char * varName);
+	method SV   * find_item_by_key( int key );
 	c_only void * first_that( void * actionProc, void * params, Bool useDisabled);
 	method SV   * get_handle();
+	method SV   * get_item( char * varName, Bool fullTree = 0);
 	method SV   * get_items( char * varName, Bool fullTree = 1);
 	method Bool   has_item( char * varName);
 	method void   init( HV * profile);
