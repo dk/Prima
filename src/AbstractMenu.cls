@@ -16,7 +16,7 @@ object Prima::AbstractMenu ( Prima::Component)
 	method void   remove( char * varName);
 	c_only void * first_that( void * actionProc, void * params, Bool useDisabled);
 	method SV   * get_handle();
-	method SV   * get_items( char * varName);
+	method SV   * get_items( char * varName, Bool fullTree = 1);
 	method Bool   has_item( char * varName);
 	method void   init( HV * profile);
 	method void   insert( SV * menuItems, char * rootName, int index);

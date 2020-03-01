@@ -560,7 +560,7 @@ Window_menu( Handle self, Bool set, Handle menu)
 		return var-> menu;
 	if ( menu && !kind_of( menu, CMenu)) return nilHandle;
 	if ( menu && (( PMenu) menu)-> owner != self)
-		my-> set_menuItems( self, ((( PMenu) menu)-> self)-> get_items( menu, ""));
+		my-> set_menuItems( self, ((( PMenu) menu)-> self)-> get_items( menu, "", true));
 	else {
 		apc_window_set_menu( self, menu);
 		var-> menu = menu;
@@ -585,7 +585,7 @@ Window_menuItems( Handle self, Bool set, SV * menuItems)
 	if ( var-> stage > csFrozen) return nilSV;
 
 	if ( !set)
-		return var-> menu ? CMenu( var-> menu)-> get_items( var-> menu, "") : nilSV;
+		return var-> menu ? CMenu( var-> menu)-> get_items( var-> menu, "", true) : nilSV;
 
 	if ( var-> menu == nilHandle) {
 	if ( SvTYPE( menuItems)) {

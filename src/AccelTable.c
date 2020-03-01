@@ -33,14 +33,15 @@ AccelTable_set_items( Handle self, SV * menuItems)
 Bool
 AccelTable_selected( Handle self, Bool set, Bool selected)
 {
+	Handle owner = var-> owner;
 	if ( !set)
-		return CWidget( var-> owner)-> get_accelTable( var-> owner) == self;
-	if ( var-> stage > csFrozen)
+		return owner ? CWidget( owner)-> get_accelTable( owner) == self : false;
+	if ( var-> stage > csFrozen || !owner )
 		return false;
 	if ( selected)
-		CWidget( var-> owner)-> set_accelTable( var->  owner, self);
+		CWidget( owner)-> set_accelTable( owner, self);
 	else if ( my-> get_selected( self))
-		CWidget( var-> owner)-> set_accelTable( var->  owner, nilHandle);
+		CWidget( owner)-> set_accelTable( owner, nilHandle);
 	return false;
 }
 
