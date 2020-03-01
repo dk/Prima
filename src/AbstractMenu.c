@@ -396,6 +396,101 @@ AbstractMenu_set( Handle self, HV * profile)
 }
 
 static SV *
+new_av(  PMenuItemReg m, int level, Bool fullTree);
+
+static SV *
+new_av_entry(  PMenuItemReg m, int level, Bool fullTree)
+{
+	AV * loc = newAV();
+	if ( !m-> flags. divider) {
+		if ( m-> variable) { /* has name */
+			SV * sv;
+			int shift = ( m-> flags. checked ? 1 : 0) + ( m-> flags. disabled ? 1 : 0);
+			if ( shift > 0) { /* has flags */
+				int len = (int) strlen( m-> variable);
+				char * name = allocs( len + shift);
+				if ( name) {
+					int slen = len + shift;
+					memcpy( name + shift, m-> variable, len);
+					if ( m-> flags. disabled)   name[ --shift] = '-';
+					if ( m-> flags. checked)    name[ --shift] = '*';
+					if ( m-> flags. autotoggle) name[ --shift] = '@';
+					sv = newSVpv( name, slen);
+					free(name);
+				} else
+					sv = newSVpv( m-> variable, len);
+			} else /* has name but no flags */
+				sv = newSVpv( m-> variable, 0);
+
+			if ( m-> flags. utf8_variable)
+				SvUTF8_on( sv);
+			av_push( loc, sv);
+		} else { /* has flags but no name - autogenerate */
+			int len;
+			char buffer[20];
+			len = sprintf( buffer, "%s%s%s#%d",
+				m-> flags. disabled   ? "-" : "",
+				m-> flags. checked    ? "*" : "",
+				m-> flags. autotoggle ? "@" : "",
+				m-> id);
+			av_push( loc, newSVpv( buffer, ( STRLEN) len));
+		}
+
+		if ( m-> bitmap) {
+			if ( PObject( m-> bitmap)-> stage < csDead)
+				av_push( loc, newRV( SvRV((( PObject)( m-> bitmap))-> mate)));
+			else
+				av_push( loc, newSVpv( "", 0));
+		} else {
+			SV * sv = newSVpv( m-> text, 0);
+			if ( m-> flags. utf8_text) SvUTF8_on( sv);
+			av_push( loc, sv);
+		}
+
+		if ( m-> accel) {
+			SV * sv = newSVpv( m-> accel, 0);
+			av_push( loc, sv);
+			if ( m-> flags. utf8_accel) SvUTF8_on( sv);
+		} else {
+			av_push( loc, newSVpv( "", 0));
+		}
+		av_push( loc, newSViv( m-> key));
+
+		if ( m-> down) {
+			av_push( loc, fullTree ? 
+				new_av( m-> down, level + 1, true) :
+				newRV_noinc(( SV *) newAV())
+			);
+		} else if ( m-> code) {
+			av_push( loc, newSVsv( m-> code));
+		} else if ( m-> perlSub) {
+			SV * sv = newSVpv( m-> perlSub, 0);
+			if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
+			av_push( loc, sv);
+		} else {
+			av_push( loc, newSVpv( "", 0));
+		}
+
+		if ( m-> data)
+			av_push( loc, newSVsv( m-> data));
+	} else {
+		/* divider */
+		if ( m-> variable) {
+			SV * sv = newSVpv( m-> variable, 0);
+			if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
+			av_push( loc, sv);
+		} else {
+			int len;
+			char buffer[20];
+			len = sprintf( buffer, "#%d", m-> id);
+			av_push( loc, newSVpv( buffer, ( STRLEN) len));
+		}
+	}
+
+	return newRV_noinc(( SV *) loc);
+}
+
+static SV *
 new_av(  PMenuItemReg m, int level, Bool fullTree)
 {
 	AV * glo;
@@ -403,91 +498,7 @@ new_av(  PMenuItemReg m, int level, Bool fullTree)
 	glo = newAV();
 	while ( m)
 	{
-		AV * loc = newAV();
-		if ( !m-> flags. divider) {
-			if ( m-> variable) { /* has name */
-				SV * sv;
-				int shift = ( m-> flags. checked ? 1 : 0) + ( m-> flags. disabled ? 1 : 0);
-				if ( shift > 0) { /* has flags */
-					int len = (int) strlen( m-> variable);
-					char * name = allocs( len + shift);
-					if ( name) {
-						int slen = len + shift;
-						memcpy( name + shift, m-> variable, len);
-						if ( m-> flags. disabled)   name[ --shift] = '-';
-						if ( m-> flags. checked)    name[ --shift] = '*';
-						if ( m-> flags. autotoggle) name[ --shift] = '@';
-						sv = newSVpv( name, slen);
-					} else
-						sv = newSVpv( m-> variable, len);
-				} else /* has name but no flags */
-					sv = newSVpv( m-> variable, 0);
-
-				if ( m-> flags. utf8_variable)
-					SvUTF8_on( sv);
-				av_push( loc, sv);
-			} else { /* has flags but no name - autogenerate */
-				int len;
-				char buffer[20];
-				len = sprintf( buffer, "%s%s%s#%d",
-					m-> flags. disabled   ? "-" : "",
-					m-> flags. checked    ? "*" : "",
-					m-> flags. autotoggle ? "@" : "",
-					m-> id);
-				av_push( loc, newSVpv( buffer, ( STRLEN) len));
-			}
-
-			if ( m-> bitmap) {
-				if ( PObject( m-> bitmap)-> stage < csDead)
-					av_push( loc, newRV( SvRV((( PObject)( m-> bitmap))-> mate)));
-				else
-					av_push( loc, newSVpv( "", 0));
-			} else {
-				SV * sv = newSVpv( m-> text, 0);
-				if ( m-> flags. utf8_text) SvUTF8_on( sv);
-				av_push( loc, sv);
-			}
-
-			if ( m-> accel) {
-				SV * sv = newSVpv( m-> accel, 0);
-				av_push( loc, sv);
-				if ( m-> flags. utf8_accel) SvUTF8_on( sv);
-			} else {
-				av_push( loc, newSVpv( "", 0));
-			}
-			av_push( loc, newSViv( m-> key));
-
-			if ( m-> down) {
-				av_push( loc, fullTree ? 
-					new_av( m-> down, level + 1, true) :
-					newRV_noinc(( SV *) newAV())
-				);
-			} else if ( m-> code) {
-				av_push( loc, newSVsv( m-> code));
-			} else if ( m-> perlSub) {
-				SV * sv = newSVpv( m-> perlSub, 0);
-				if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
-				av_push( loc, sv);
-			} else {
-				av_push( loc, newSVpv( "", 0));
-			}
-
-			if ( m-> data)
-				av_push( loc, newSVsv( m-> data));
-		} else {
-			/* divider */
-			if ( m-> variable) {
-				SV * sv = newSVpv( m-> variable, 0);
-				if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
-				av_push( loc, sv);
-			} else {
-				int len;
-				char buffer[20];
-				len = sprintf( buffer, "#%d", m-> id);
-				av_push( loc, newSVpv( buffer, ( STRLEN) len));
-			}
-		}
-		av_push( glo, newRV_noinc(( SV *) loc));
+		av_push( glo, new_av_entry(m, level, fullTree));
 		m = m-> next;
 	}
 	return newRV_noinc(( SV *) glo);
@@ -538,6 +549,16 @@ char *
 AbstractMenu_make_id_context( Handle self, int id, char * buffer)
 {
 	return my-> make_var_context( self, my-> first_that( self, (void*)id_match, &id, true), buffer);
+}
+
+SV *
+AbstractMenu_get_item( Handle self, char * varName, Bool fullTree)
+{
+	PMenuItemReg m;
+	if ( var-> stage > csFrozen) return nilSV;
+	m = find_menuitem( self, varName, true);
+	if ( !m ) return nilSV;
+	return new_av_entry( m, 1, fullTree);
 }
 
 SV *
@@ -871,6 +892,23 @@ AbstractMenu_sub_call_key ( Handle self, int key)
 {
 	keyRealize( key);
 	return my-> sub_call( self, ( PMenuItemReg) my-> first_that( self, (void*)key_match, &key, false));
+}
+
+SV *
+AbstractMenu_find_item_by_key ( Handle self, int key)
+{
+	PMenuItemReg m;
+	SV * sv;
+	char buffer[16], *context;
+	keyRealize( key);
+	m = ( PMenuItemReg) my-> first_that( self, (void*)key_match, &key, false);
+	if ( m == NULL ) return nilSV;
+
+	context = AbstractMenu_make_var_context( self, m, buffer);
+	sv = newSVpv( context, 0 );
+	if ( m-> flags. utf8_variable)
+		SvUTF8_on( sv);
+	return sv;
 }
 
 typedef struct _Kmcc
