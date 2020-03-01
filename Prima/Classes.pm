@@ -1277,7 +1277,7 @@ sub rect_bevel
 	# 2 - upper left         -- outer square
 	# 3 - lower right
 	if ( $opt{concave}) {
-		push @c3d, 0x404040, $back;
+		push @c3d, 0x404040, $c3d[0];
 	} elsif ( $opt{panel}) {
 		@c3d = ( 0x404040, $self-> disabledBackColor, $c3d[0], $c3d[1]);
 	} else {
