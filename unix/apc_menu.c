@@ -825,7 +825,7 @@ prima_handle_menu_event( XEvent *ev, XWindow win, Handle self)
 								} else {
 									if ( !haveDash) {
 										haveDash = 1;
-										lineEnd = lineStart +
+										lineEnd = lineStart + 1 +
 											get_text_width( kf, t + i + 1, 1,
 												m-> flags. utf8_text, draw. xft_map8);
 									}
