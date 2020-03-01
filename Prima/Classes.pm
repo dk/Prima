@@ -1281,7 +1281,7 @@ sub rect_bevel
 	} elsif ( $opt{panel}) {
 		@c3d = ( 0x404040, $self-> disabledBackColor, $c3d[0], $c3d[1]);
 	} else {
-		push @c3d, $back, 0x404040;
+		push @c3d, $c3d[1], 0x404040;
 	}
 
 	$fill = $fill->clone( widgetClass => $self->widgetClass ) if $fill && ref($fill);
