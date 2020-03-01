@@ -2240,7 +2240,7 @@ Widget_accelItems( Handle self, Bool set, SV * accelItems)
 	if ( var-> stage > csFrozen) return nilSV;
 	if ( !set)
 		return var-> accelTable ?
-			CAbstractMenu( var-> accelTable)-> get_items( var-> accelTable, "") : nilSV;
+			CAbstractMenu( var-> accelTable)-> get_items( var-> accelTable, "", true) : nilSV;
 	if ( var-> accelTable == nilHandle) {
 		HV * profile = newHV();
 		if ( SvTYPE( accelItems)) pset_sv( items, accelItems);
@@ -2261,7 +2261,7 @@ Widget_accelTable( Handle self, Bool set, Handle accelTable)
 		return var-> accelTable;
 	if ( accelTable && !kind_of( accelTable, CAbstractMenu)) return nilHandle;
 	if ( accelTable && (( PAbstractMenu) accelTable)-> owner != self)
-		my-> set_accelItems( self, CAbstractMenu( accelTable)-> get_items( accelTable, ""));
+		my-> set_accelItems( self, CAbstractMenu( accelTable)-> get_items( accelTable, "", true));
 	else
 		var-> accelTable = accelTable;
 	return accelTable;
@@ -2797,7 +2797,7 @@ Widget_popup( Handle self, Bool set, Handle popup)
 
 	if ( popup && !kind_of( popup, CPopup)) return nilHandle;
 	if ( popup && PAbstractMenu( popup)-> owner != self)
-		my-> set_popupItems( self, CAbstractMenu( popup)-> get_items( popup, ""));
+		my-> set_popupItems( self, CAbstractMenu( popup)-> get_items( popup, "", true));
 	else
 		var-> popupMenu = popup;
 	return nilHandle;
@@ -2822,7 +2822,7 @@ Widget_popupItems( Handle self, Bool set, SV * popupItems)
 	if ( var-> stage > csFrozen) return nilSV;
 	if ( !set)
 		return var-> popupMenu ?
-			CAbstractMenu( var-> popupMenu)-> get_items( var-> popupMenu, "") : nilSV;
+			CAbstractMenu( var-> popupMenu)-> get_items( var-> popupMenu, "", true) : nilSV;
 
 	if ( var-> popupMenu == nilHandle) {
 	if ( SvTYPE( popupItems)) {

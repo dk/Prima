@@ -370,6 +370,7 @@ AbstractMenu_validate_owner( Handle self, Handle * owner, HV * profile)
 {
 	dPROFILE;
 	*owner = pget_H( owner);
+	if ( !*owner ) return !var-> system;
 	if ( !kind_of( *owner, CWidget)) return false;
 	return inherited validate_owner( self, owner, profile);
 }
@@ -395,7 +396,7 @@ AbstractMenu_set( Handle self, HV * profile)
 }
 
 static SV *
-new_av(  PMenuItemReg m, int level)
+new_av(  PMenuItemReg m, int level, Bool fullTree)
 {
 	AV * glo;
 	if ( m == nil) return nilSV;
@@ -457,7 +458,10 @@ new_av(  PMenuItemReg m, int level)
 			av_push( loc, newSViv( m-> key));
 
 			if ( m-> down) {
-				av_push( loc, new_av( m-> down, level + 1));
+				av_push( loc, fullTree ? 
+					new_av( m-> down, level + 1, true) :
+					newRV_noinc(( SV *) newAV())
+				);
 			} else if ( m-> code) {
 				av_push( loc, newSVsv( m-> code));
 			} else if ( m-> perlSub) {
@@ -537,14 +541,16 @@ AbstractMenu_make_id_context( Handle self, int id, char * buffer)
 }
 
 SV *
-AbstractMenu_get_items( Handle self, char * varName)
+AbstractMenu_get_items( Handle self, char * varName, Bool fullTree)
 {
 	if ( var-> stage > csFrozen) return nilSV;
 	if ( strlen( varName))
 	{
 		PMenuItemReg m = find_menuitem( self, varName, true);
 		if ( m && m-> down) {
-			return new_av( m-> down, 1);
+			return fullTree ? 
+				new_av( m-> down, 1, true) :
+				newRV_noinc(( SV *) newAV());
 		} else if ( m) {
 			return newRV_noinc(( SV *) newAV());
 		} else {
@@ -552,7 +558,7 @@ AbstractMenu_get_items( Handle self, char * varName)
 		}
 	} else {
 		return var-> tree ?
-			new_av( var-> tree, 0) :
+			new_av( var-> tree, 0, fullTree) :
 			newRV_noinc(( SV *) newAV());
 	}
 }
@@ -817,6 +823,7 @@ AbstractMenu_set_variable( Handle self, char * varName, SV * newName)
 Bool
 AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 {
+	Handle owner;
 	char buffer[16], *context;
 	if ( m == nil) return false;
 	context = AbstractMenu_make_var_context( self, m, buffer);
@@ -824,22 +831,24 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 		m-> flags. checked = m-> flags. checked ? 0 : 1;
 		apc_menu_item_set_check( self, m);
 	}
+	owner = var-> owner;
+	if ( owner == nilHandle ) return false;
 	if ( m-> code) {
 		if ( m-> flags. utf8_variable) {
 			SV * sv = newSVpv( context, 0);
 			SvUTF8_on( sv);
-			cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "Si", sv, m-> flags. checked);
+			cv_call_perl((( PComponent) owner)-> mate, SvRV( m-> code), "Si", sv, m-> flags. checked);
 			sv_free( sv);
 		} else
-			cv_call_perl((( PComponent) var-> owner)-> mate, SvRV( m-> code), "si", context, m-> flags. checked);
+			cv_call_perl((( PComponent) owner)-> mate, SvRV( m-> code), "si", context, m-> flags. checked);
 	} else if ( m-> perlSub) {
 		if ( m-> flags. utf8_variable) {
 			SV * sv = newSVpv( context, 0);
 			SvUTF8_on( sv);
-			call_perl( var-> owner, m-> perlSub, "Si", sv, m-> flags. checked);
+			call_perl( owner, m-> perlSub, "Si", sv, m-> flags. checked);
 			sv_free( sv);
 		} else
-			call_perl( var-> owner, m-> perlSub, "si", context, m-> flags. checked);
+			call_perl( owner, m-> perlSub, "si", context, m-> flags. checked);
 	}
 	return true;
 }
