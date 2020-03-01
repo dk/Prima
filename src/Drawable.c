@@ -1042,7 +1042,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 	float width[256];
 	FontABC abc[256];
 	int start = 0, utf_start = 0, split_start = -1, split_end = -1, i, utf_p, utf_split = -1;
-	float w = 0, inc = 0;
+	float w = 0, inc = 0, initial_overhang = 0;
 	char **ret;
 	Bool wasTab = 0, reassign_w = 1;
 	Bool doWidthBreak = t-> width >= 0;
@@ -1095,7 +1095,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 		if ( uv / 256 != base)
 			if ( !precalc_abc_buffer( query_abc_range( self, t, base = uv / 256), width, abc))
 				return ret;
-		if ( reassign_w) w = abc[ uv & 0xff]. a;
+		if ( reassign_w) w = initial_overhang = abc[ uv & 0xff]. a;
 		reassign_w = 0;
 
 		switch ( uv ) {
@@ -1140,7 +1140,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 			continue;
 		case '~':
 			if ( p == tildeIndex ) {
-				tildeOffset = w;
+				tildeOffset = w - initial_overhang;
 				inc = winc = 0;
 				break;
 			}
@@ -1205,6 +1205,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 		UV uv;
 		PFontABC abcc;
 		char *l = ret[ tildeLine];
+		float start, end;
 		t-> t_char = t-> text + tildePos + 1;
 		if ( t-> options & twCollapseTilde)
 			memmove( l + tildePos, l + tildePos + 1, strlen( l) - tildePos);
@@ -1219,12 +1220,16 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 		} else
 			uv = *(t->t_char);
 
-		if ( uv / 256 != base)
-			precalc_abc_buffer( query_abc_range( self, t, base = uv / 256), width, abc);
-		abcc = abc + (uv & 0xff);
-		w = tildeOffset;
-		t-> t_start = w - 1;
-		t-> t_end   = w + abcc->a + abcc->b + abcc->c;
+		abcc = query_abc_range( self, t, base = uv / 256) + (uv & 0xff);
+		start = tildeOffset;
+		end   = start + abcc-> b - 1.0;
+		if ( abcc-> a < 0.0 ) {
+			start += abcc->a;
+			end += abcc->a;
+		}
+		t-> t_start = start + .5 * (( start < 0 ) ? -1 : 1);
+		t-> t_end   = end   + .5 * (( end   < 0 ) ? -1 : 1);
+
 	} else {
 	NO_TILDE:
 		t-> t_start = t-> t_end = t-> t_line = C_NUMERIC_UNDEF;
