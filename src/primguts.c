@@ -880,6 +880,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
 		{
 		case 'i':
 		case 's':
+		case 'U':
 		case 'n':
 		case 'H':
 		case 'S':
@@ -918,6 +919,13 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
 			case 's':
 				_string = va_arg( params, char *);
 				PUSHs( sv_2mortal( newSVpv( _string, 0)));
+				break;
+			case 'U':
+				_string = va_arg( params, char *);
+				_SV = newSVpv( _string, 0 );
+				_int = va_arg( params, int);
+				if ( _int ) SvUTF8_on(_SV);
+				PUSHs( sv_2mortal( _SV ));
 				break;
 			case 'n':
 				_number = va_arg( params, double);
