@@ -1461,11 +1461,13 @@ sub begin_drag
 				}
 			);
 			$flyback->bring_to_front;
-			while (abs( $npp[0] - $opp[0]) > 10 && abs($npp[1] - $opp[1]) > 10) {
+			my @targ = map { $_ / 2 } $flyback->size;
+			while (abs( $npp[0] - $opp[0]) > $targ[0] || abs($npp[1] - $opp[1]) > $targ[1]) {
 				@npp = map { ( $npp[$_] + $opp[$_] ) / 2 } 0, 1;
 				$::application->yield;
 				CORE::select(undef, undef, undef, 0.1);
 				$flyback->origin(@npp);
+				$flyback->bring_to_front;
 			}
 			$flyback->destroy;
 		}
