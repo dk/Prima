@@ -1671,6 +1671,15 @@ package Prima::AbstractMenu;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
 
+{
+my %RNT = (
+	%{Prima::Component-> notification_types()},
+	Change => nt::Default,
+);
+
+sub notification_types { return \%RNT; }
+}
+
 sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;

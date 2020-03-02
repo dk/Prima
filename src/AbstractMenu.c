@@ -593,6 +593,7 @@ AbstractMenu_set_items( Handle self, SV * items)
 	if ( var-> stage <= csNormal && var-> system)
 		apc_menu_update( self, oldBranch, var-> tree);
 	my-> dispose_menu( self, oldBranch);
+	my-> notify( self, "<sss", "Change", "items", "");
 }
 
 
@@ -646,9 +647,11 @@ AbstractMenu_accel( Handle self, Bool set, char * varName, SV * accel)
 	m-> accel = duplicate_string( SvPV_nolen( accel));
 	m-> flags. utf8_accel = prima_is_utf8_sv( accel);
 
-	if ( m-> id > 0)
+	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_accel( self, m);
+		my-> notify( self, "<sssS", "Change", "accel", varName, accel);
+	}
 	return nilSV;
 }
 
@@ -704,9 +707,11 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 		return m ? m-> flags. checked : false;
 	if ( m-> flags. divider || m-> down) return false;
 	m-> flags. checked = checked ? 1 : 0;
-	if ( m-> id > 0)
+	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_check( self, m);
+		my-> notify( self, "<sssi", "Change", "checked", varName, checked);
+	}
 	return checked;
 }
 
@@ -735,9 +740,11 @@ AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
 		return m ? !m->  flags. disabled : false;
 	if (m-> flags. divider) return false;
 	m->  flags. disabled = ( enabled ? 0 : 1 ) ;
-	if ( m-> id > 0)
+	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_enabled( self, m);
+		my-> notify( self, "<sssi", "Change", "enabled", varName, enabled);
+	}
 	return enabled;
 }
 
@@ -772,9 +779,11 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 		SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate));
 	unprotect_object( m-> bitmap);
 	m-> bitmap = image;
-	if ( m-> id > 0)
+	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_image( self, m);
+		my-> notify( self, "<sssH", "Change", "image", varName, image);
+	}
 	return nilHandle;
 }
 
@@ -795,9 +804,11 @@ AbstractMenu_text( Handle self, Bool set, char * varName, SV * text)
 	m-> text = nil;
 	m-> text = duplicate_string( SvPV_nolen( text));
 	m-> flags. utf8_accel = prima_is_utf8_sv( text);
-	if ( m-> id > 0)
+	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_text( self, m);
+		my-> notify( self, "<sssS", "Change", "text", varName, text);
+	}
 	return nilSV;
 }
 
@@ -813,9 +824,11 @@ AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
 		return newSViv( m-> key);
 
 	m-> key = key_normalize( SvPV_nolen( key));
-	if ( m-> id > 0)
+	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_key( self, m);
+		my-> notify( self, "<sssi", "Change", "key", varName, m->key);
+	}
 	return nilSV;
 }
 
@@ -826,6 +839,9 @@ AbstractMenu_set_variable( Handle self, char * varName, SV * newName)
 	if ( var-> stage > csFrozen) return;
 	m = find_menuitem( self, varName, true);
 	if ( m == nil) return;
+
+	my-> notify( self, "<sssS", "Change", "rename", varName, newName);
+
 	free( m-> variable);
 	if ( SvTYPE(newName) != SVt_NULL) {
 		STRLEN len;
@@ -851,6 +867,7 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 	if ( m-> flags. autotoggle ) {
 		m-> flags. checked = m-> flags. checked ? 0 : 1;
 		apc_menu_item_set_check( self, m);
+		my-> notify( self, "<sssi", "Change", "checked", context, m->flags.checked);
 	}
 	owner = var-> owner;
 	if ( owner == nilHandle ) return false;
@@ -909,35 +926,6 @@ AbstractMenu_find_item_by_key ( Handle self, int key)
 	if ( m-> flags. utf8_variable)
 		SvUTF8_on( sv);
 	return sv;
-}
-
-typedef struct _Kmcc
-{
-	int  key;
-	Bool enabled;
-} Kmcc, *PKmcc;
-
-static Bool
-kmcc ( Handle self, PMenuItemReg m, void * params)
-{
-	if ((( PKmcc) params)-> key == m-> key)
-	{
-		m-> flags. disabled = ((( PKmcc) params)-> enabled ? 0 : 1);
-		if ( m-> id > 0)
-			if ( var-> stage <= csNormal && var-> system)
-				apc_menu_item_set_enabled( self, m);
-	}
-	return false;
-}
-
-void
-AbstractMenu_set_command( Handle self, char * key, Bool enabled)
-{
-	Kmcc mcc;
-	mcc. key = key_normalize( key);
-	mcc. enabled = enabled;
-	if ( var-> stage > csFrozen) return;
-	my-> first_that( self, (void*)kmcc, &mcc, true);
 }
 
 Bool AbstractMenu_selected( Handle self, Bool set, Bool selected)
@@ -1007,6 +995,7 @@ AbstractMenu_remove( Handle self, char * varName)
 	if ( m == var-> tree) var-> tree = m-> next;
 	m-> next = nil;
 	my-> dispose_menu( self, m);
+	my-> notify( self, "<sss", "Change", "remove", varName);
 }
 
 void
@@ -1026,6 +1015,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 			var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
 			if ( var-> stage <= csNormal && var-> system)
 				apc_menu_update( self, nil, var-> tree);
+			my-> notify( self, "<sss", "Change", "insert", "");
 			return;
 		}
 		branch = m = var-> tree;
@@ -1071,6 +1061,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 
 	if ( var-> stage <= csNormal && var-> system)
 		apc_menu_update( self, branch, branch);
+	my-> notify( self, "<sss", "Change", "insert", rootName);
 }
 
 
