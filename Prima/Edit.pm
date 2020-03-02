@@ -536,6 +536,12 @@ sub draw_colorchunk
 	}
 	$text = $sd->[0] if defined $sd->[0];
 
+	if (1 == @$sd) {
+		$canvas-> color($clr);
+		$canvas-> text_out( substr($text, $cut_ofs, $cut_len - $cut_ofs), $x, $y);
+		return;
+	}
+
 	my $ofs = 0;
 	for ( my $j = 1; $j <= $#$sd; $j += 2) {
 		my $len     = $$sd[$j];
@@ -1136,7 +1142,7 @@ sub get_line_dimension
 	return $y, 1 unless $self-> {wordWrap};
 	( undef, $y) = $self-> physical_to_logical( 0, $y);
 	my ($ret, $ix, $cm) = ( 0, $y * 3 + 2, $self-> {chunkMap});
-	$ret++, $ix += 3 while $$cm[ $ix] == $y;
+	$ret++, $ix += 3 while $ix < @$cm && $$cm[$ix] == $y;
 	return $y, $ret;
 }
 
