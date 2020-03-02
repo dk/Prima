@@ -584,6 +584,25 @@ AbstractMenu_get_items( Handle self, char * varName, Bool fullTree)
 	}
 }
 
+static void
+notify( Handle self, char * format, ...)
+{
+	va_list args;
+
+	if ( var-> stage != csNormal) return;
+	va_start( args, format);
+	protect_object( self);
+	my-> push_event( self);
+	ENTER;
+	SAVETMPS;
+	call_perl_indirect( self, "notify", format, true, false, args);
+	va_end( args);
+	FREETMPS;
+	LEAVE;
+	my-> pop_event( self);
+	unprotect_object( self);
+}
+
 void
 AbstractMenu_set_items( Handle self, SV * items)
 {
@@ -593,7 +612,7 @@ AbstractMenu_set_items( Handle self, SV * items)
 	if ( var-> stage <= csNormal && var-> system)
 		apc_menu_update( self, oldBranch, var-> tree);
 	my-> dispose_menu( self, oldBranch);
-	my-> notify( self, "<sss", "Change", "items", "");
+	notify( self, "<sss", "Change", "items", "");
 }
 
 
@@ -650,11 +669,13 @@ AbstractMenu_accel( Handle self, Bool set, char * varName, SV * accel)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_accel( self, m);
-		my-> notify( self, "<sssS", "Change", "accel", varName, accel);
+		notify( self, "<ssUS", "Change", "accel", 
+			m->variable ? m-> variable      : varName, 
+			m->variable ? m-> flags.utf8_variable : 0, 
+			accel);
 	}
 	return nilSV;
 }
-
 
 SV *
 AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
@@ -710,7 +731,10 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_check( self, m);
-		my-> notify( self, "<sssi", "Change", "checked", varName, checked);
+		notify( self, "<ssUi", "Change", "checked", 
+			m->variable ? m-> variable      : varName, 
+			m->variable ? m-> flags.utf8_variable : 0,
+			checked);
 	}
 	return checked;
 }
@@ -743,7 +767,10 @@ AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_enabled( self, m);
-		my-> notify( self, "<sssi", "Change", "enabled", varName, enabled);
+		notify( self, "<ssUi", "Change", "enabled", 
+			m->variable ? m-> variable      : varName, 
+			m->variable ? m-> flags.utf8_variable : 0,
+			enabled);
 	}
 	return enabled;
 }
@@ -782,9 +809,37 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_image( self, m);
-		my-> notify( self, "<sssH", "Change", "image", varName, image);
+		notify( self, "<ssUH", "Change", "image", 
+			m->variable ? m-> variable      : varName, 
+			m->variable ? m-> flags.utf8_variable : 0,
+			image);
 	}
 	return nilHandle;
+}
+
+SV *
+AbstractMenu_submenu( Handle self, Bool set, char * varName, SV * submenu)
+{
+	PMenuItemReg m;
+	if ( var-> stage > csFrozen) return nilSV;
+	if ( !set) 
+		return my-> get_items( self, varName, true);
+	
+	m = find_menuitem( self, varName, true);
+	if ( !m || !m-> down) return nilSV;
+
+	if ( var-> stage <= csNormal && var-> system)
+		apc_menu_item_delete( self, m-> down);
+	my-> dispose_menu( self, m-> down);
+	
+	m-> down = ( PMenuItemReg) my-> new_menu( self, submenu, 1);
+	if ( var-> stage <= csNormal && var-> system)
+		apc_menu_update( self, m-> down, m-> down);
+	notify( self, "<ssU", "Change", "submenu", 
+		m->variable ? m-> variable      : varName, 
+		m->variable ? m-> flags.utf8_variable : 0);
+
+	return nilSV;
 }
 
 SV *
@@ -807,7 +862,10 @@ AbstractMenu_text( Handle self, Bool set, char * varName, SV * text)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_text( self, m);
-		my-> notify( self, "<sssS", "Change", "text", varName, text);
+		notify( self, "<ssUS", "Change", "text", 
+			m->variable ? m-> variable      : varName, 
+			m->variable ? m-> flags.utf8_variable : 0,
+			text);
 	}
 	return nilSV;
 }
@@ -827,7 +885,10 @@ AbstractMenu_key( Handle self, Bool set, char * varName, SV * key)
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_key( self, m);
-		my-> notify( self, "<sssi", "Change", "key", varName, m->key);
+		notify( self, "<ssUi", "Change", "key", 
+			m->variable ? m-> variable      : varName, 
+			m->variable ? m-> flags.utf8_variable : 0,
+			m->key);
 	}
 	return nilSV;
 }
@@ -840,7 +901,10 @@ AbstractMenu_set_variable( Handle self, char * varName, SV * newName)
 	m = find_menuitem( self, varName, true);
 	if ( m == nil) return;
 
-	my-> notify( self, "<sssS", "Change", "rename", varName, newName);
+	notify( self, "<ssUS", "Change", "rename", 
+		m->variable ? m-> variable      : varName, 
+		m->variable ? m-> flags.utf8_variable : 0,
+		newName);
 
 	free( m-> variable);
 	if ( SvTYPE(newName) != SVt_NULL) {
@@ -867,7 +931,10 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 	if ( m-> flags. autotoggle ) {
 		m-> flags. checked = m-> flags. checked ? 0 : 1;
 		apc_menu_item_set_check( self, m);
-		my-> notify( self, "<sssi", "Change", "checked", context, m->flags.checked);
+		notify( self, "<ssUi", "Change", "checked", 
+			m->variable ? m-> variable      : context, 
+			m->variable ? m-> flags.utf8_variable : 0, 
+			m->flags.checked);
 	}
 	owner = var-> owner;
 	if ( owner == nilHandle ) return false;
@@ -994,8 +1061,10 @@ AbstractMenu_remove( Handle self, char * varName)
 	if ( prev) prev-> next = m-> next;
 	if ( m == var-> tree) var-> tree = m-> next;
 	m-> next = nil;
+	notify( self, "<ssU", "Change", "remove", 
+			m->variable ? m-> variable      : varName, 
+			m->variable ? m-> flags.utf8_variable : 0);
 	my-> dispose_menu( self, m);
-	my-> notify( self, "<sss", "Change", "remove", varName);
 }
 
 void
@@ -1015,7 +1084,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 			var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
 			if ( var-> stage <= csNormal && var-> system)
 				apc_menu_update( self, nil, var-> tree);
-			my-> notify( self, "<sss", "Change", "insert", "");
+			notify( self, "<sss", "Change", "insert", "");
 			return;
 		}
 		branch = m = var-> tree;
@@ -1061,7 +1130,21 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 
 	if ( var-> stage <= csNormal && var-> system)
 		apc_menu_update( self, branch, branch);
-	my-> notify( self, "<sss", "Change", "insert", rootName);
+	notify( self, "<ssU", "Change", "insert", rootName, branch->flags.utf8_variable);
+}
+
+Bool
+AbstractMenu_is_separator( Handle self, char * varName)
+{
+	PMenuItemReg m = find_menuitem( self, varName, true);
+	return m && m-> flags. divider;
+}
+
+Bool
+AbstractMenu_is_submenu( Handle self, char * varName)
+{
+	PMenuItemReg m = find_menuitem( self, varName, true);
+	return m && m-> down;
 }
 
 

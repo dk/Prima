@@ -521,6 +521,14 @@ implicit hot-key lookup when on C<KeyDown> event.
 
 Default value: 1
 
+=item submenu NAME, ARRAY / Prima::MenuItem::submeny ARRAY
+
+Manages submenu, if present on the item. On reading, is equivalent
+to C<get_items(NAME, 1)>. On writing, removes all items under NAME
+and inserts new ones.
+
+See also: L<is_submenu>.
+
 =item text NAME, STRING / Prima::MenuItem::text STRING
 
 Manages the text, bound with a menu item. STRING
@@ -593,6 +601,14 @@ would possess after the insertion. INDEX 0 indicates
 the beginning, thus.
 
 Returns no value.
+
+=item is_separator NAME
+
+Returns true if the item is a separator, false otherwise
+
+=item is_submenu NAME
+
+Returns true if the item has submenu, false otherwise
 
 =item popup X_OFFSET, Y_OFFSET, [ LEFT = 0, BOTTOM = 0, RIGHT = 0, TOP = 0 ]
 
