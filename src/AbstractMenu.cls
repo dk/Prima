@@ -24,7 +24,6 @@ object Prima::AbstractMenu ( Prima::Component)
 	method void   insert( SV * menuItems, char * rootName, int index);
 	import SV *   profile_default ();
 	method void   set( HV * profile);
-	method void   set_command( char * key, Bool enabled);
 	method void   set_items( SV * menuItems);
 	method void   set_variable ( char * varName, SV * newName);
 	static int    translate_accel( Handle self, char * accel);

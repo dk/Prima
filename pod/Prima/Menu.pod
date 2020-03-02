@@ -555,12 +555,26 @@ Sets menu item in disabled state.
 Alias for C<enabled(1)>.
 Sets menu item in enabled state.
 
+=item find_item_by_key KEY
+
+Finds items by the associated hot key combination
+
 =item get_handle
 
 Returns a system-dependent menu handle.
 
 NB: Prima::AccelTable use no system resources, and
 this method returns its object handle instead.
+
+=item get_item NAME, FULL_TREE = 0
+
+Returns items entry corresponding to NAME, with or without eventual full tree
+of children items, depending on FULL_TREE flag.
+
+=item get_item NAMES, FULL_TREE = 0
+
+Returns immediate children items entries that have NAME as a parent, with or
+without eventual full tree of children items, depending on FULL_TREE flag.
 
 =item has_item NAME
 
@@ -606,11 +620,6 @@ its sub-menus if the item is a sub-menu item.
 Alias for C<selected(1)>.
 Sets menu object in selected state.
 
-=item set_command KEY, ENABLED
-
-Disables or enables menu items, associated with
-key combinations KEY.
-
 =item set_variable NAME, NEW_NAME
 
 Changes the name of a menu item with NAME to NEW_NAME.
@@ -652,6 +661,17 @@ The method can be called with no object.
 
 Alias for C<checked(0)>.
 Sets menu item in unchecked state.
+
+=back
+
+=head2 Events
+
+=over
+
+=item Change ACTION [, NAME [, VALUE ]]
+
+Triggered when structure of the menu tree is changed. ACTION is the method call that triggered that action, and NAME
+is the menu item namem, when applicable. If empty string, means root. VALUE is the new value, if applicable.
 
 =back
 
