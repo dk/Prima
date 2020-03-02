@@ -1654,6 +1654,7 @@ sub enabled { my $self = shift;return $self-> {menu}-> enabled( $self-> {id}, @_
 sub data    { my $self = shift;return $self-> {menu}-> data   ( $self-> {id}, @_);}
 sub image   { my $self = shift;return $self-> {menu}-> image  ( $self-> {id}, @_);}
 sub key     { my $self = shift;return $self-> {menu}-> key    ( $self-> {id}, @_);}
+sub submenu { my $self = shift;return $self-> {menu}-> submenu( $self-> {id}, @_);}
 sub text    { my $self = shift;return $self-> {menu}-> text   ( $self-> {id}, @_);}
 sub items   { my $i = shift; ( @_) ? $i-> { menu}-> set_items  ( $i-> { id}, @_):return $i-> {menu}-> get_items  ( $i-> { id}); }
 sub enable  { $_[0]-> {menu}-> enabled( $_[0]-> { id}, 1) };

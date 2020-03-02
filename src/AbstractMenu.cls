@@ -9,6 +9,7 @@ object Prima::AbstractMenu ( Prima::Component)
 	property Bool   enabled( char * varName);
 	property Handle image  ( char * varName);
 	property SV   * key    ( char * varName);
+	property SV   * submenu( char * varName);
 	property SV   * text   ( char * varName);
 
 	method void   cleanup();
@@ -22,6 +23,8 @@ object Prima::AbstractMenu ( Prima::Component)
 	method Bool   has_item( char * varName);
 	method void   init( HV * profile);
 	method void   insert( SV * menuItems, char * rootName, int index);
+	method Bool   is_submenu( char * varName);
+	method Bool   is_separator( char * varName);
 	import SV *   profile_default ();
 	method void   set( HV * profile);
 	method void   set_items( SV * menuItems);
