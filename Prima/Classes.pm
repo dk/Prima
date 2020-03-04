@@ -1647,8 +1647,12 @@ sub create
 	return $self;
 }
 
+sub new { shift-> create(@_) }
+sub menu    { $_[0]->{menu} }
+
 sub accel   { my $self = shift;return $self-> {menu}-> accel( $self-> {id}, @_);}
 sub action  { my $self = shift;return $self-> {menu}-> action ( $self-> {id}, @_);}
+sub autoToggle { my $self = shift;return $self-> {menu}-> autoToggle( $self-> {id}, @_);}
 sub checked { my $self = shift;return $self-> {menu}-> checked( $self-> {id}, @_);}
 sub enabled { my $self = shift;return $self-> {menu}-> enabled( $self-> {id}, @_);}
 sub data    { my $self = shift;return $self-> {menu}-> data   ( $self-> {id}, @_);}
@@ -1667,6 +1671,13 @@ sub toggle  {
 	$_[0]-> { menu}-> checked($_[0]-> { id}, $i);
 	return $i
 }
+sub id {
+	return $_[0]->{id} unless $#_;
+	$_[0]->menu->set_variable( $_[0]->{id}, $_[1] );
+	$_[0]->{id} = $_[1];
+}
+sub execute  { $_[0]->{menu}->execute($_[0]->{id}) }
+sub children { $_[0]->{menu}->get_children($_[0]->{id}) }
 
 package Prima::AbstractMenu;
 use vars qw(@ISA);

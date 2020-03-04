@@ -4,6 +4,7 @@ object Prima::AbstractMenu ( Prima::Component)
 	property Bool   selected;
 	property SV   * accel  ( char * varName);
 	property SV   * action ( char * varName);
+	property Bool   autoToggle( char * varName);
 	property Bool   checked( char * varName);
 	property SV   * data   ( char * varName);
 	property Bool   enabled( char * varName);
@@ -14,18 +15,21 @@ object Prima::AbstractMenu ( Prima::Component)
 
 	method void   cleanup();
 	method void   done();
-	method void   remove( char * varName);
+	method Bool   execute( char * varName);
 	method SV   * find_item_by_key( int key );
 	c_only void * first_that( void * actionProc, void * params, Bool useDisabled);
 	method SV   * get_handle();
 	method SV   * get_item( char * varName, Bool fullTree = 0);
 	method SV   * get_items( char * varName, Bool fullTree = 1);
+	method SV   * get_children( char * varName);
 	method Bool   has_item( char * varName);
 	method void   init( HV * profile);
 	method void   insert( SV * menuItems, char * rootName, int index);
 	method Bool   is_submenu( char * varName);
 	method Bool   is_separator( char * varName);
+	import SV *   notification_types();
 	import SV *   profile_default ();
+	method void   remove( char * varName);
 	method void   set( HV * profile);
 	method void   set_items( SV * menuItems);
 	method void   set_variable ( char * varName, SV * newName);
