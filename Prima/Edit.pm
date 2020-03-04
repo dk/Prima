@@ -479,6 +479,10 @@ sub reset_syntaxer
 			\$_[2] = \\\@a;
 		};
 SYNTAXER
+		if ( $@) {
+			warn "Error compiling highlighting regexes: $@\n";
+			$self-> {syntaxer} = sub { $_[2] = [ length($_[1]), cl::Fore ] };
+		}
 	}
 }
 
@@ -3007,6 +3011,51 @@ a color value.
 Array of scalar pairs, that define character patterns to be highlighted.
 The first item in the pair is a perl regular expression; the second item is
 a color value.
+
+Note: these are tricky. Generally, they assume that whatever is captured in (),
+is highlighted, and that capturing parentheses match from the first character
+onwards.  So for simple matches like C< (\d+) > (digits) or C< (#.*) > this
+works fine. Things become more interesting if you need to check text after, or
+especially before the capture.  For this you need to make sure that whatever
+text is matched by a regexp, need not move C<pos> pointer as the regexes are
+looped over with C<\G> anchor prepended (i.e. starting each time from the
+position the previous regex left off), and with C</gc> flags (advancing C< pos
+> to the match length). Advancing the C<pos> will skip color highlighting on text after the
+capture but before end of the match - so you'll need look-ahead assertions, C< (?=pattern) >
+and C< (?!pattern) > (see L<perlre/"Lookaround Assertions").
+
+For example, we have a string C< ABC123abc >, and we want to match 123 followed by abc.
+This won't work
+
+	hiliteREs => [
+		'(123)abc',cl::LightRed,
+		'(abc)', cl::LightGreen 
+	]
+
+while this will:
+
+	hiliteREs => [
+		'(123)(?=abc)',cl::LightRed,
+		'(abc)', cl::LightGreen 
+	]
+
+If you need to look behind, the corresponding assertions C< (?<=pattern) > and
+C< (?<!pattern) > could be used, but these are even more restrictive in that
+they only support fixed-width looks-behinds (NB: C< \K > won't work because of
+C< \G > either). That way, is we want to match 123 that follow ABC, this won't
+work:
+
+	hiliteREs =>  [
+		'(ABC)',cl::LightBlue,
+		'(?<=[ABC]+)(?=abc)',cl::LightRed,
+	]
+
+while this will:
+
+	hiliteREs =>  [
+		'(ABC)',cl::LightBlue,
+		'(?<=[ABC]{3})(?=abc)',cl::LightRed,
+	]
 
 =item mark MARK [ BLOCK_TYPE ]
 
