@@ -3022,7 +3022,7 @@ looped over with C<\G> anchor prepended (i.e. starting each time from the
 position the previous regex left off), and with C</gc> flags (advancing C< pos
 > to the match length). Advancing the C<pos> will skip color highlighting on text after the
 capture but before end of the match - so you'll need look-ahead assertions, C< (?=pattern) >
-and C< (?!pattern) > (see L<perlre/"Lookaround Assertions").
+and C< (?!pattern) > (see L<perlre/"Lookaround Assertions"> ).
 
 For example, we have a string C< ABC123abc >, and we want to match 123 followed by abc.
 This won't work
@@ -3042,19 +3042,19 @@ while this will:
 If you need to look behind, the corresponding assertions C< (?<=pattern) > and
 C< (?<!pattern) > could be used, but these are even more restrictive in that
 they only support fixed-width looks-behinds (NB: C< \K > won't work because of
-C< \G > either). That way, is we want to match 123 that follow ABC, this won't
+C< \G > either). That way, if we want to match 123 that follow ABC, this won't
 work:
 
 	hiliteREs =>  [
 		'(ABC)',cl::LightBlue,
-		'(?<=[ABC]+)(?=abc)',cl::LightRed,
+		'(?<=[ABC]+)(123)',cl::LightRed,
 	]
 
 while this will:
 
 	hiliteREs =>  [
 		'(ABC)',cl::LightBlue,
-		'(?<=[ABC]{3})(?=abc)',cl::LightRed,
+		'(?<=[ABC]{3})(123)',cl::LightRed,
 	]
 
 =item mark MARK [ BLOCK_TYPE ]
