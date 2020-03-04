@@ -584,6 +584,39 @@ AbstractMenu_get_items( Handle self, char * varName, Bool fullTree)
 	}
 }
 
+SV *
+AbstractMenu_get_children( Handle self, char * varName)
+{
+	PMenuItemReg m;
+	AV * av;
+
+	if ( var-> stage > csFrozen) return nilSV;
+	if ( strlen( varName)) {
+		if ( !( m = find_menuitem( self, varName, true)))
+			return nilSV;
+		m = m->down;
+	} else
+		m = var-> tree;
+	if ( !m ) return nilSV;
+
+	av = newAV();
+	while ( m != NULL ) {
+		if ( m-> variable) {
+			SV * sv = newSVpv( m-> variable, 0);
+			if ( m-> flags. utf8_perlSub) SvUTF8_on( sv);
+			av_push( av, sv);
+		} else {
+			int len;
+			char buffer[20];
+			len = sprintf( buffer, "#%d", m-> id);
+			av_push( av, newSVpv( buffer, ( STRLEN) len));
+		}
+		m = m-> next;
+	}
+
+	return newRV_noinc(( SV *) av);
+}
+
 static void
 notify( Handle self, char * format, ...)
 {
@@ -715,6 +748,26 @@ AbstractMenu_action( Handle self, Bool set, char * varName, SV * action)
 		m-> flags. utf8_perlSub = prima_is_utf8_sv( action);
 	}
 	return nilSV;
+}
+
+Bool
+AbstractMenu_autoToggle( Handle self, Bool set, char * varName, Bool autotoggle)
+{
+	PMenuItemReg m;
+	if ( var-> stage > csFrozen) return false;
+	m = find_menuitem( self, varName, true);
+	if ( m == nil) return false;
+	if ( !set)
+		return m ? m-> flags. autotoggle : false;
+	if ( m-> flags. divider || m-> down) return false;
+	m-> flags. autotoggle = autotoggle ? 1 : 0;
+	if ( m-> id > 0) {
+		notify( self, "<ssUi", "Change", "autoToggle", 
+			m->variable ? m-> variable      : varName, 
+			m->variable ? m-> flags.utf8_variable : 0,
+			autotoggle);
+	}
+	return autotoggle;
 }
 
 Bool
@@ -946,6 +999,7 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 			sv_free( sv);
 		} else
 			cv_call_perl((( PComponent) owner)-> mate, SvRV( m-> code), "si", context, m-> flags. checked);
+		return true;
 	} else if ( m-> perlSub) {
 		if ( m-> flags. utf8_variable) {
 			SV * sv = newSVpv( context, 0);
@@ -954,8 +1008,9 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 			sv_free( sv);
 		} else
 			call_perl( owner, m-> perlSub, "si", context, m-> flags. checked);
+		return true;
 	}
-	return true;
+	return false;
 }
 
 Bool
@@ -1145,6 +1200,14 @@ AbstractMenu_is_submenu( Handle self, char * varName)
 {
 	PMenuItemReg m = find_menuitem( self, varName, true);
 	return m && m-> down;
+}
+
+Bool
+AbstractMenu_execute( Handle self, char * varName) 
+{
+	PMenuItemReg m = find_menuitem( self, varName, true);
+	if ( !m ) return false;
+	return my->sub_call(self, m);
 }
 
 

@@ -441,6 +441,11 @@ If 0, the pop-up menu can not be executed implicitly.
 
 Default value: 1
 
+=item autoToggle NAME, SCALAR / Prima::MenuItem::autoToggle SCALAR.
+
+Manages autoToggle flag for a menu item. When set, C<checked> option
+is flipped when user selects the item.
+
 =item checked NAME, BOOLEAN / Prima::MenuItem::checked BOOLEAN
 
 Manages 'checked' state of a menu item. If 'checked',
@@ -563,6 +568,10 @@ Sets menu item in disabled state.
 Alias for C<enabled(1)>.
 Sets menu item in enabled state.
 
+=item execute NAME
+
+Calls the action associated with the menu item
+
 =item find_item_by_key KEY
 
 Finds items by the associated hot key combination
@@ -573,6 +582,10 @@ Returns a system-dependent menu handle.
 
 NB: Prima::AccelTable use no system resources, and
 this method returns its object handle instead.
+
+=item get_children NAME
+
+Returns list of NAME's children
 
 =item get_item NAME, FULL_TREE = 0
 
