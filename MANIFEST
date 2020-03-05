@@ -437,7 +437,10 @@ win32/dev.c
 win32/files.c
 win32/global.c
 win32/gp.c
+win32/image.c
+win32/menu.c
 win32/misc.c
 win32/region.c
 win32/stock.c
 win32/timers.c
+win32/widgets.c
