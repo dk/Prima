@@ -231,7 +231,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 		{
 			#define s r-> variable
 			int i, decr = 0;
-			for ( i = 0; i < 2; i++) {
+			for ( i = 0; i < 3; i++) {
 				switch ( s[i]) {
 				case '-':
 					r-> flags. disabled = 1;
@@ -983,7 +983,8 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 	context = AbstractMenu_make_var_context( self, m, buffer);
 	if ( m-> flags. autotoggle ) {
 		m-> flags. checked = m-> flags. checked ? 0 : 1;
-		apc_menu_item_set_check( self, m);
+		if ( var-> stage <= csNormal && var-> system)
+			apc_menu_item_set_check( self, m);
 		notify( self, "<ssUi", "Change", "checked", 
 			m->variable ? m-> variable      : context, 
 			m->variable ? m-> flags.utf8_variable : 0, 
