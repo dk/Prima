@@ -1678,6 +1678,8 @@ sub id {
 }
 sub execute  { $_[0]->{menu}->execute($_[0]->{id}) }
 sub children { $_[0]->{menu}->get_children($_[0]->{id}) }
+sub is_separator { $_[0]->{menu}->is_separator($_[0]->{id}) }
+sub is_submenu   { $_[0]->{menu}->is_submenu($_[0]->{id}) }
 
 package Prima::AbstractMenu;
 use vars qw(@ISA);
