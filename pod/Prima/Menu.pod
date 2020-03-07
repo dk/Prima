@@ -279,9 +279,14 @@ is bound to the item. Default ACCEL value is an empty string.
 
 Otherwise same as two-scalar plus DATA hashref.
 
-=item two [ TEXT/IMAGE, ACTION/SUBMENU ]
+=item two [ TEXT/IMAGE, ACTION/SUBMENU ] or [ NAME, DATA ]
 
-Same as three-scalar syntax, but without NAME field.
+One of two, depending whether last item is a hashref or not.
+
+If not, same as three-scalar syntax, but without NAME field.
+
+Otherwise name with data reference. Useful for custom menu items that need at
+least the C<'?'> flag in the NAME.
 
 =item one and zero [ ]
 

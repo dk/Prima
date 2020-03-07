@@ -224,7 +224,7 @@ EXIT:
 
 
 HBITMAP
-image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm_type)
+image_create_bitmap_by_type( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm_type)
 {
 	HBITMAP bm;
 	XBITMAPINFO xbi;
@@ -290,6 +290,12 @@ image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm
 	ReleaseDC( NULL, dc);
 
 	return bm;
+}
+
+HBITMAP
+image_create_bitmap( Handle self)
+{
+	return image_create_bitmap_by_type(self, NULL, NULL, BM_AUTO);
 }
 
 static XBITMAPINFO a1_info_header = {
@@ -458,7 +464,7 @@ image_fill_bitmap_cache( Handle self, int bm_type, Handle optimize_for_surface)
 		break;
 	default:
 		sys pal = image_create_palette( copy);
-		sys bm  = image_create_bitmap( copy, sys pal, &sys s. image. cache. rawHeader, bm_type );
+		sys bm  = image_create_bitmap_by_type( copy, sys pal, &sys s. image. cache. rawHeader, bm_type );
 		if ( sys bm ) {
 			hash_store( imageMan, &self, sizeof(self), (void*)self);
 		} else {

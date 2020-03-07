@@ -17,11 +17,11 @@ Note the "Edit/Kill menu" realisation.
 
 use strict;
 use warnings;
-use Prima qw( InputLine Label Application);
+use Prima qw( InputLine Label Application StdBitmap );
 
 package TestWindow;
 use vars qw(@ISA);
-@ISA = qw(Prima::Window);
+@ISA = qw(Prima::MainWindow);
 
 sub create_images_menu
 {
@@ -70,6 +70,31 @@ sub create_images_menu
 	return @ret;
 }
 
+sub create_custom_menu
+{
+	my @ret;
+	my @icons = map { Prima::StdBitmap::image($_) } sbmp::CheckBoxUnchecked, sbmp::CheckBoxChecked;
+	push @ret, [ '@?' => "Custom" => sub { print "Custom\n" } => {
+		data => {
+			onMeasure => sub {
+				my ( $self, $menu, $ref) = @_;
+				my ($w, $h) = ( $self->get_text_width( $menu-> text, 1 ), $self->popupFont->height );
+				@$ref = ($w + 20 + $menu-> check_icon_size, $h + 20);
+			},
+			onPaint => sub {
+				my ( $self, $menu, $canvas, $x1, $y1, $x2, $y2) = @_;
+				$canvas-> new_gradient(palette => [cl::Black, cl::White])->bar($x1, $y1, $x2, $y2, 1);
+				$canvas-> font( $self-> popupFont );
+				$canvas-> color(cl::Yellow);
+				$canvas-> text_out( $menu->text, $x1 + $menu-> check_icon_size, $y1 + 10);
+				my $i = $icons[ $menu->checked ];
+				$canvas-> put_image(( $menu-> check_icon_size - $i-> width) / 2, ($y2 + $y1 - $i->height) / 2, $i);
+			},
+		},
+	} ];
+	return @ret;
+}
+
 my $img = Prima::Image-> create;
 $0 =~ /^(.*)(\\|\/)[^\\\/]+$/;
 $img-> load(( $1 || '.') . '/Hand.gif');
@@ -80,13 +105,11 @@ $img-> load(( $1 || '.') . '/Hand.gif');
 
 sub create_menu
 {
-	my $img = Prima::Image-> create;
-	$0 =~ /^(.*)(\\|\/)[^\\\/]+$/;
-	$img-> load(( $1 || '.') . '/Hand.gif');
 	return [
 		[ "~File" => [
 			[ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!\n";}],   # anonymous sub
 			[ '~Images' => [ create_images_menu($img) ]],
+			create_custom_menu,
 			[],                                       # division line
 			[ "E~xit" => "Exit"    ]    # calling named function of menu owner
 		]],
@@ -105,7 +128,7 @@ sub create_menu
 					}],
 				]);
 			}],
-			["~Duplicate menu"=>sub{ TestWindow-> create( menu=>$_[0]-> menu)}],
+			["~Duplicate menu"=>sub{ TestWindow-> new( menu=>$_[0]-> menu)}],
 		]],
 		[ "~Input line" => [
 			[ "Print ~text" => "Text"],
@@ -209,7 +232,6 @@ my $w = TestWindow-> create(
 	size      => [ 360, 120],
 	menuItems => TestWindow::create_menu,
 	designScale => [ 7, 16 ],
-	onDestroy => sub {$::application-> close},
 );
 $w-> insert( "InputLine",
 	pack      => { pady => 20, padx => 20, fill => 'x', side => 'bottom'},

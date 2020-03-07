@@ -343,7 +343,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 		case CF_BITMAP:
 			{
 				HPALETTE p = palette_create( c-> image);
-				HBITMAP b = ( HBITMAP) image_create_bitmap( c-> image, p, NULL, BM_AUTO);
+				HBITMAP b  = image_create_bitmap_by_type( c-> image, p, NULL, BM_AUTO);
 
 				if ( b == nil) {
 					if ( p) DeleteObject( p);

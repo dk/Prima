@@ -477,7 +477,7 @@ dataobject_convert( PDataObjectEntry entry, int format, LPSTGMEDIUM medium)
 		if ( PImage(entry->image)->stage != csNormal)
 			return E_UNEXPECTED;
 		p = ( HGLOBAL) palette_create( entry-> image);
-		medium->hBitmap = ( HBITMAP) image_create_bitmap( entry-> image, p, NULL, BM_AUTO);
+		medium->hBitmap = image_create_bitmap_by_type( entry-> image, p, NULL, BM_AUTO);
 		DeleteObject(p);
 		break;
 	}

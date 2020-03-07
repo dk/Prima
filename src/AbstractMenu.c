@@ -195,8 +195,13 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 			rightAdjust = (( level == 0) && ( var-> anchored));
 			if ( count == 1) l_var = 0;
 		} else if ( count == 2) {
-			l_text = 0;
-			l_sub  = 1;
+			if ( last_item_is_a_hash ) {
+				l_var  = 0;
+				l_data = 1;
+			} else {
+				l_text = 0;
+				l_sub  = 1;
+			}
 		} else if ( count == 3) {
 			if ( last_item_is_a_hash ) {
 				l_text = 0;
@@ -1291,24 +1296,41 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 	if ( var-> stage > csNormal) return;
 
 
-	if ( event-> cmd == cmMenuItemSize || event-> cmd == cmMenuItemPaint) {
+	if ( event-> cmd == cmMenuItemMeasure || event-> cmd == cmMenuItemPaint) {
+		Handle owner = event->gen.H;
 		char buffer[16], *context;
 		PMenuItemReg m;
 		m = ( PMenuItemReg) my-> first_that( self, (void*)id_match, &event->gen.i, false);
 		if ( m == NULL ) return;
 
 		context = AbstractMenu_make_var_context( self, m, buffer);
-		if ( event-> cmd == cmMenuItemSize ) {
+		if ( event-> cmd == cmMenuItemMeasure ) {
 			AV * pt = newAV();
 			SV * ref = newRV_noinc((SV*)pt);
 			av_push(pt, newSViv(event->gen.P.x));
 			av_push(pt, newSViv(event->gen.P.y));
-			PComponent(event->gen.H)->self->notify( event->gen.H, "<sHsS", "MenuItemSize", self, context, ref );
+			PComponent(owner)->self->notify( owner, "<sHUS", "MenuItemMeasure",
+				self, context, m-> flags.utf8_variable, ref );
 			if ( !prima_read_point( ref, (int*)&event->gen.P, 2, NULL))
-				warn("bad size array returned from onMenuItemSize");
+				warn("bad size array returned from onMenuItemMeasure");
 			sv_free(ref);
 		} else {
-			PComponent(event->gen.H)->self->notify( event->gen.H, "<sHs", "MenuItemPaint", self, context );
+			Handle drawable = (Handle) create_object("Prima::Drawable", "");
+			++SvREFCNT( SvRV((( PAnyObject) drawable)-> mate));
+			PDrawable(drawable)-> w = event->gen.P.x;
+			PDrawable(drawable)-> h = event->gen.P.y;
+			protect_object(drawable);
+
+			event-> gen.H = drawable;
+			if ( apc_menu_item_begin_paint(self, event)) {
+				PComponent(owner)->self->notify( owner, "<sHUHR", "MenuItemPaint",
+					self, context, m->flags.utf8_variable, event->gen.H, event->gen.R);
+				apc_menu_item_end_paint(self, event);
+			}
+
+			--SvREFCNT( SvRV((( PAnyObject) drawable)-> mate));
+			unprotect_object(drawable);
+			Object_destroy(event->gen.H);
 		}
 	}
 }
