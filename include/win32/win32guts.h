@@ -249,6 +249,11 @@ typedef struct _TimerData
 	int  timeout;
 } TimerData;
 
+typedef struct _MenuItemData
+{
+	int  saved_dc;
+} MenuItemData;
+
 typedef struct _FileData
 {
 	SOCKETHANDLE object;
@@ -497,6 +502,7 @@ typedef struct _DrawableData
 		FileData      file;
 		ImageData     image;
 		RegionData    region;
+		MenuItemData  menuitem;
 	} s;
 } DrawableData, *PDrawableData;
 
@@ -617,7 +623,6 @@ extern int          timeDefsCount;
 extern PItemRegRec  timeDefs;
 extern PHash        menuBitmapMan;
 
-
 LRESULT CALLBACK    generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    layered_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
@@ -658,7 +663,8 @@ extern Bool         hwnd_repaint_layered( Handle self, Bool now);
 extern HICON        image_make_icon_handle( Handle img, Point size, Point * hotSpot);
 extern void         image_query_bits( Handle self, Bool forceNewImage);
 extern void         image_argb_query_bits( Handle self);
-extern HBITMAP      image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm_type);
+extern HBITMAP      image_create_bitmap_by_type( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm_type);
+extern HBITMAP      image_create_bitmap( Handle self );
 extern HBITMAP      image_create_argb_dib_section( HDC dc, int w, int h, uint32_t ** ptr);
 extern HPALETTE     image_create_palette( Handle self);
 extern void         image_destroy_cache( Handle self);

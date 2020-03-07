@@ -700,6 +700,25 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 	case WM_DRAG_RESPONSE:
 		SetCursor( sys pointer );
 		break;
+	case WM_DRAWITEM:
+		{
+			DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT*) mp2;
+			if ( dis-> CtlType == ODT_MENU && dis-> itemData != 0) {
+				RECT r;
+				GetClientRect(WindowFromDC(dis->hDC), &r);
+				ev.cmd          = cmMenuItemPaint;
+				ev.gen.H        = (Handle) dis-> itemData;
+				ev.gen.i        = (Handle) dis-> itemID - MENU_ID_AUTOSTART;
+				ev.gen.p        = (void*) dis->hDC;
+				ev.gen.P.x      = r.right;
+				ev.gen.P.y      = r.bottom;
+				ev.gen.R.left   = dis-> rcItem.left;
+				ev.gen.R.bottom = r.bottom - dis-> rcItem.bottom;
+				ev.gen.R.right  = dis-> rcItem.right - 1;
+				ev.gen.R.top    = r.bottom - dis-> rcItem.top - 1;
+			}
+		}
+		break;
 	case WM_ENABLE:
 		ev. cmd = mp1 ? cmEnable : cmDisable;
 		hiStage = true;
@@ -1001,6 +1020,17 @@ AGAIN:
 		apc_pointer_get_state(self)
 		;
 		break;
+	case WM_MEASUREITEM:
+		{
+			MEASUREITEMSTRUCT *mis = (MEASUREITEMSTRUCT*) mp2;
+			if ( mis-> CtlType == ODT_MENU && mis-> itemData != 0) {
+				ev.cmd     = cmMenuItemMeasure;
+				ev.gen.H   = (Handle) mis-> itemData;
+				ev.gen.i   = (Handle) mis-> itemID - MENU_ID_AUTOSTART;
+				ev.gen.P.x = ev.gen.P.y = 0;
+			}
+		}
+		break;
 	case WM_MENUCHAR:
 		{
 			int key;
@@ -1164,6 +1194,13 @@ AGAIN:
 	if ( v-> stage > csNormal) orgMsg = 0; // protect us from dead body
 
 	switch ( orgMsg) {
+	case WM_DRAWITEM:
+		{
+			DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT*) mp2;
+			if ( dis-> CtlType == ODT_MENU && dis-> itemData != 0)
+				return (LRESULT) 1;
+		}
+		break;
 	case WM_DESTROY:
 		v-> handle = nilHandle;       // tell apc not to kill this HWND
 		SetWindowLongPtr( win, GWLP_USERDATA, 0);
@@ -1177,6 +1214,16 @@ AGAIN:
 		break;
 	case WM_SYSKEYUP:
 		// ev. cmd = 1; // forced call DefWindowProc superseded for test reasons
+		break;
+	case WM_MEASUREITEM:
+		{
+			MEASUREITEMSTRUCT *mis = (MEASUREITEMSTRUCT*) mp2;
+			if ( mis-> CtlType == ODT_MENU && mis-> itemData != 0) {
+				mis-> itemWidth  = ev.gen.P.x;
+				mis-> itemHeight = ev.gen.P.y;
+				return (LRESULT) 1;
+			}
+		}
 		break;
 	case WM_MOUSEMOVE:
 		if ( is_apt( aptEnabled)) SetCursor( sys pointer);
@@ -1243,8 +1290,10 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		ev. cmd = cmClose;
 		break;
 	case WM_COMMAND:
+	case WM_DRAWITEM:
 	case WM_INITMENUPOPUP:
 	case WM_INITMENU:
+	case WM_MEASUREITEM:
 	case WM_MENUCHAR:
 	case WM_KEYDOWN:
 	case WM_KEYUP:

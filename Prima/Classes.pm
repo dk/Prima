@@ -797,7 +797,7 @@ my %RNT = (
 	KeyUp          => nt::Command,
 	Leave          => nt::Default,
 	Menu           => nt::Default,
-	MenuItemSize   => nt::Action,
+	MenuItemMeasure=> nt::Action,
 	MenuItemPaint  => nt::Action,
 	MouseClick     => nt::Command,
 	MouseDown      => nt::Command,
@@ -1480,6 +1480,28 @@ sub begin_drag
 	return $ret;
 }
 
+sub on_menuitemmeasure
+{
+	my ( $self, $menu, $id, $ref) = @_;
+	my $data = $menu->data($id) or return;
+	return if ref($data) ne 'HASH';
+	if ( defined( my $cb = $data->{onMeasure})) {
+		$cb->($self, Prima::MenuItem->new($menu, $id), $ref);
+		$self->clear_event;
+	}
+}
+
+sub on_menuitempaint
+{
+	my ( $self, $menu, $id, @r) = @_;
+	my $data = $menu->data($id) or return;
+	return if ref($data) ne 'HASH';
+	if ( defined( my $cb = $data->{onPaint})) {
+		$cb->($self, Prima::MenuItem->new($menu, $id), @r);
+		$self->clear_event;
+	}
+}
+
 package Prima::Window;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
@@ -1682,6 +1704,8 @@ sub execute  { $_[0]->{menu}->execute($_[0]->{id}) }
 sub children { $_[0]->{menu}->get_children($_[0]->{id}) }
 sub is_separator { $_[0]->{menu}->is_separator($_[0]->{id}) }
 sub is_submenu   { $_[0]->{menu}->is_submenu($_[0]->{id}) }
+
+sub check_icon_size { $::application->get_system_value(sv::MenuCheckSize) }
 
 package Prima::AbstractMenu;
 use vars qw(@ISA);

@@ -99,7 +99,7 @@ create_menu_bitmap( Handle bitmap )
 
 	if (kind_of(bitmap, CIcon)) {
 		if (( i-> type & imBPP) == 1) {
-			ret = image_create_bitmap( bitmap, NULL, NULL, BM_BITMAP );
+			ret = image_create_bitmap( bitmap);
 		} else {
 			Handle dup = CImage(bitmap)->dup(bitmap);
 			if ( i-> type != imRGB )
@@ -107,20 +107,20 @@ create_menu_bitmap( Handle bitmap )
 			if ( i-> maskType != 8 )
 				CIcon(dup)->set_maskType(dup, 8);
 			CIcon(dup)-> premultiply_alpha(dup, NULL);
-			ret = image_create_bitmap( dup, NULL, NULL, BM_LAYERED );
+			ret = image_create_bitmap( dup);
 			Object_destroy(dup);
 		}
 	} else {
 		if (( i-> type & imBPP) == 1) {
 			Handle dup = CImage(bitmap)->dup(bitmap);
 			CIcon(dup)->set_type(dup, 4);
-			ret = image_create_bitmap( bitmap, NULL, NULL, BM_PIXMAP );
+			ret = image_create_bitmap( bitmap);
 			Object_destroy(dup);
 		}
 	}
 
 	if ( ret == NULL )
-		ret = image_create_bitmap( bitmap, NULL, NULL, BM_AUTO );
+		ret = image_create_bitmap( bitmap);
 
 	return ret;
 }
@@ -142,7 +142,7 @@ build_bitmap_key( HMENU menu, PMenuItemReg m, BitmapKey * key)
 static HMENU
 add_item( Bool menuType, Handle menu, PMenuItemReg i)
 {
-	MENUITEMINFOW menuItem;
+	MENUITEMINFOW mii;
 	HMENU m;
 	PMenuWndData mwd;
 	PMenuItemReg first;
@@ -165,41 +165,50 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 	}
 	mwd-> menu = menu;
 	first      = i;
-	hash_store( menuMan, &m, sizeof( void*), mwd);
+	hash_store( menuMan, &m, sizeof(HMENU), mwd);
 
 	while ( i != nil)
 	{
-		memset( &menuItem, 0, sizeof( menuItem));
-		menuItem. cbSize   = sizeof( menuItem);
-		menuItem. fMask    = MIIM_STATE | MIIM_SUBMENU | MIIM_TYPE | MIIM_ID;
-		menuItem. fType    = 0;
-		menuItem. fType   |= ( i-> flags. divider    ) ? MFT_SEPARATOR    : 0;
-		menuItem. fType   |= ( i-> bitmap     ) ? MFT_BITMAP       : 0;
-		menuItem. fType   |= ( i-> text       ) ? MFT_STRING       : 0;
-		menuItem. fType   |= ( i-> flags. rightAdjust) ? MFT_RIGHTJUSTIFY : 0;
-		menuItem. fState   = 0;
-		menuItem. fState  |= ( i-> flags. checked )    ? MFS_CHECKED      : 0;
-		menuItem. fState  |= ( i-> flags. disabled )   ? MFS_GRAYED       : 0;
-		menuItem. wID      = i-> id + MENU_ID_AUTOSTART;
-		menuItem. hSubMenu = add_item( menuType, menu, i-> down);
+		bzero( &mii, sizeof(mii));
+		mii.cbSize   = sizeof(mii);
+		mii.fMask    = MIIM_STATE | MIIM_SUBMENU | MIIM_TYPE | MIIM_ID | MIIM_DATA;
+
+		mii.fType    = 0;
+		mii.fType   |= ( i-> flags. divider    ) ? MFT_SEPARATOR    : 0;
+		mii.fType   |= ( i-> bitmap            ) ? MFT_BITMAP       : 0;
+		mii.fType   |= ( i-> text              ) ? MFT_STRING       : 0;
+		mii.fType   |= ( i-> flags. rightAdjust) ? MFT_RIGHTJUSTIFY : 0;
+		mii.fType   |= ( i-> flags. custom_draw) ? MFT_OWNERDRAW    : 0;
+
+		mii.fState   = 0;
+		mii.fState  |= ( i-> flags. checked    ) ? MFS_CHECKED      : 0;
+		mii.fState  |= ( i-> flags. disabled   ) ? MFS_GRAYED       : 0;
+
+		mii.wID      = i-> id + MENU_ID_AUTOSTART;
+		mii.hSubMenu = add_item( menuType, menu, i-> down);
+		mii.dwItemData = menu;
+
 		if (!( i-> flags. divider && i-> flags. rightAdjust)) {
-			if ( i-> text) {
-				menuItem. dwTypeData = map_text_accel( i);
-			} else if ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead)
-				menuItem. dwTypeData = create_menu_bitmap( i-> bitmap);
-			InsertMenuItemW( m, -1, true, &menuItem);
-			if ( i-> text && menuItem. dwTypeData) free( menuItem. dwTypeData);
+			if ( i-> text)
+				mii. dwTypeData = map_text_accel( i);
+			else if ( i-> bitmap )
+				mii. dwTypeData = (WCHAR*) create_menu_bitmap( i-> bitmap);
+			InsertMenuItemW( m, -1, true, &mii);
+			if ( i-> text && mii.dwTypeData)
+				free( mii. dwTypeData);
 		}
+
 		if ( i-> icon ) {
 			BitmapKey key;
-			HBITMAP bitmap = create_menu_bitmap( i-> icon); 
+			HBITMAP bitmap = create_menu_bitmap( i-> icon);
 			build_bitmap_key(m, i, &key);
 			hash_store( menuBitmapMan, &key, sizeof(key), (void*) bitmap);
 			SetMenuItemBitmaps(m, i->id + MENU_ID_AUTOSTART, MF_BYCOMMAND, bitmap, bitmap);
 		}
-		menuItem. dwItemData = menu;
+
 		i = i-> next;
 	}
+
 	mwd-> id = first-> id;
 	return m;
 }
@@ -288,6 +297,19 @@ free_bitmaps( BitmapKey *key, PMenuItemReg m)
 		free_bitmaps( key, m-> down);
 }
 
+static void
+free_submenus(HMENU menu)
+{
+	int i, n;
+	hash_delete( menuMan, &menu, sizeof(HMENU), true);
+	n = GetMenuItemCount(menu);
+	for ( i = 0; i < n; i++) {
+		HMENU submenu = GetSubMenu(menu, i);
+		if ( submenu )
+			free_submenus(submenu);
+	}
+}
+
 Bool
 apc_menu_item_delete( Handle self, PMenuItemReg m)
 {
@@ -295,6 +317,7 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
 	Point size;
 	Bool resize;
 	BitmapKey key;
+	MENUITEMINFO mii;
 
 	objCheck false;
 	dobjCheck( var owner) false;
@@ -309,8 +332,11 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
 	build_bitmap_key((HMENU) var handle, m, &key);
 	free_bitmaps(&key, m);
 
-	// since GetMenuItemInfo does not work in NT, do not free menuMan entries here,
-	// they'll be freed in apc_menu_destroy anyway.
+	bzero(&mii, sizeof(mii));
+	mii.cbSize = sizeof(mii);
+	mii.fMask  = MIIM_SUBMENU;
+	GetMenuItemInfo(( HMENU) var handle, m->id + MENU_ID_AUTOSTART, false, &mii);
+	if (mii.hSubMenu) free_submenus(mii.hSubMenu);
 
 	DeleteMenu(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
 	DrawMenuBar( DHANDLE( var owner));
@@ -546,6 +572,35 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
 		x, y, owner, anchor ? &tpm : NULL);
 	guts. popupActive = 0;
 	return ret;
+}
+
+Bool
+apc_menu_item_begin_paint( Handle self, PEvent event)
+{
+	objCheck false;
+	apcErrClear;
+
+	self = event->gen.H;
+	sys transform2. x = 0;
+	sys transform2. y = 0;
+	apt_set( aptCompatiblePS);
+	sys ps = (HDC) event->gen.p;
+	sys lastSize = event->gen.P;
+	sys s.menuitem.saved_dc = SaveDC(sys ps);
+	hwnd_enter_paint( self);
+	return true;
+}
+
+Bool
+apc_menu_item_end_paint( Handle self, PEvent event)
+{
+	objCheck false;
+	self = event->gen.H;
+	hwnd_leave_paint( self);
+	RestoreDC(sys ps, sys s.menuitem.saved_dc);
+	sys ps = nil;
+	apt_clear( aptCompatiblePS);
+	return true;
 }
 
 

@@ -766,8 +766,8 @@ CM(EndModal)
 CM(SysHandle)
 #define cmIdle           0x0000002C                /* idle handler */
 CM(Idle)
-#define cmMenuItemSize   0x0000002D                /* query custom menu item size */
-CM(MenuItemSize)
+#define cmMenuItemMeasure 0x0000002D               /* query custom menu item size */
+CM(MenuItemMeasure)
 #define cmMenuItemPaint  0x0000002E                /* menu item custom paint */
 CM(MenuItemPaint)
 
@@ -1891,6 +1891,8 @@ SV(LayeredWidgets)
 SV(DWM)
 #define   svFixedPointerSize 35
 SV(FixedPointerSize)
+#define   svMenuCheckSize   36
+SV(MenuCheckSize)
 END_TABLE(sv,UV)
 #undef SV
 
@@ -2522,6 +2524,12 @@ apc_menu_set_color( Handle self, Color color, int index);
 
 extern Bool
 apc_menu_set_font( Handle self, PFont font);
+
+extern Bool
+apc_menu_item_begin_paint( Handle self, PEvent event);
+
+extern Bool
+apc_menu_item_end_paint( Handle self, PEvent event);
 
 extern Bool
 apc_menu_item_delete( Handle self, PMenuItemReg m);
