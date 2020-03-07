@@ -124,72 +124,6 @@ image_create_palette( Handle self)
 	return r;
 }
 
-HBITMAP
-image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm_type)
-{
-	HBITMAP bm;
-	XBITMAPINFO xbi;
-	BITMAPINFO * bi;
-	HPALETTE old = nil, xpal = pal;
-	HDC dc;
-	PIcon i = (PIcon) self;
-
-	if ( bm_type == BM_AUTO )
-		bm_type = image_guess_bitmap_type( self );
-
-	if ( bitmapinfo == NULL)
-		bitmapinfo = &xbi;
-	bi  = image_fill_bitmap_info( self, bitmapinfo, bm_type);
-	if ( !bi)
-		return NULL;
-
-	dc = GetDC(NULL);
-
-	if ( bi-> bmiHeader. biClrUsed > 0)
-		bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = i-> palSize;
-
-	if ( xpal == nil)
-		xpal = image_create_palette( self);
-
-	if ( xpal) {
-		old = SelectPalette( dc, xpal, 1);
-		RealizePalette( dc);
-	}
-
-	switch (bm_type) {
-	case BM_BITMAP:
-		if ( i-> type != imBW )
-			warn("panic: image_create_bitmap(BM_BITMAP) called on not a imBW image");
-		bm = CreateBitmap( bi-> bmiHeader. biWidth, bi-> bmiHeader. biHeight, 1, 1, NULL);
-		if (bm)
-			SetDIBits( dc, bm, 0, bi-> bmiHeader. biHeight, i-> data, bi, DIB_RGB_COLORS);
-		break;
-	case BM_PIXMAP:
-		bm = CreateCompatibleBitmap( dc, i->w, i->h);
-		if (bm)
-			SetDIBits( dc, bm, 0, bi-> bmiHeader. biHeight, i-> data, bi, DIB_RGB_COLORS);
-		break;
-	default:
-		warn("panic: bad use of image_create_bitmap(%d)", bm_type);
-		return NULL;
-	}
-
-	if ( !bm)
-		apiErr;
-
-	if ( old) {
-		SelectPalette( dc, old, 1);
-		RealizePalette( dc);
-	}
-
-	if ( xpal != pal)
-		DeleteObject( xpal);
-
-	ReleaseDC( NULL, dc);
-
-	return bm;
-}
-
 static Bool
 icon2argb( PIcon i, uint32_t * argb_bits)
 {
@@ -242,9 +176,18 @@ image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr )
 	PIcon i = (PIcon) self;
 	uint32_t * argb_bits;
 
-	if ( !is_apt(aptIcon) || i-> type != imRGB ) {
-		warn("panic: image_create_argb_bitmap called on a non-imRGB icon");
+	if ( !is_apt(aptIcon)) {
+		warn("panic: image_create_argb_bitmap called on a non-icon");
 		return NULL;
+	}
+
+	if (i-> type != imRGB ) {
+		HBITMAP ret;
+		Handle dup = CImage(self)->dup(self);
+		CImage(dup)->set_type(dup, imRGB);
+		ret = image_create_argb_bitmap( dup, argb_bits_ptr );
+		Object_destroy(dup);
+		return ret;
 	}
 
 	if ( argb_bits_ptr == NULL )
@@ -276,6 +219,76 @@ image_create_argb_bitmap( Handle self, uint32_t ** argb_bits_ptr )
 EXIT:
 	DeleteDC( compat_dc);
 	ReleaseDC( NULL, dc);
+	return bm;
+}
+
+
+HBITMAP
+image_create_bitmap( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo, int bm_type)
+{
+	HBITMAP bm;
+	XBITMAPINFO xbi;
+	BITMAPINFO * bi;
+	HPALETTE old = nil, xpal = pal;
+	HDC dc;
+	PIcon i = (PIcon) self;
+
+	if ( bm_type == BM_AUTO )
+		bm_type = image_guess_bitmap_type( self );
+
+	if ( bitmapinfo == NULL)
+		bitmapinfo = &xbi;
+	bi  = image_fill_bitmap_info( self, bitmapinfo, bm_type);
+	if ( !bi)
+		return NULL;
+
+	dc = GetDC(NULL);
+
+	if ( bi-> bmiHeader. biClrUsed > 0)
+		bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = i-> palSize;
+
+	if ( xpal == nil)
+		xpal = image_create_palette( self);
+
+	if ( xpal) {
+		old = SelectPalette( dc, xpal, 1);
+		RealizePalette( dc);
+	}
+
+	switch (bm_type) {
+	case BM_BITMAP:
+		if ( i-> type != imBW )
+			warn("panic: image_create_bitmap(BM_BITMAP) called on not a imBW image");
+		bm = CreateBitmap( bi-> bmiHeader. biWidth, bi-> bmiHeader. biHeight, 1, 1, NULL);
+		if (bm)
+			SetDIBits( dc, bm, 0, bi-> bmiHeader. biHeight, i-> data, bi, DIB_RGB_COLORS);
+		break;
+	case BM_PIXMAP:
+		bm = CreateCompatibleBitmap( dc, i->w, i->h);
+		if (bm)
+			SetDIBits( dc, bm, 0, bi-> bmiHeader. biHeight, i-> data, bi, DIB_RGB_COLORS);
+		break;
+	case BM_LAYERED:
+		bm = image_create_argb_bitmap(( Handle) i, NULL );
+		break;
+	default:
+		warn("panic: bad use of image_create_bitmap(%d)", bm_type);
+		return NULL;
+	}
+
+	if ( !bm)
+		apiErr;
+
+	if ( old) {
+		SelectPalette( dc, old, 1);
+		RealizePalette( dc);
+	}
+
+	if ( xpal != pal)
+		DeleteObject( xpal);
+
+	ReleaseDC( NULL, dc);
+
 	return bm;
 }
 
