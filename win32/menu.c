@@ -6,7 +6,7 @@
 #include "guts.h"
 #include "File.h"
 #include "Menu.h"
-#include "Image.h"
+#include "Icon.h"
 #include "Widget.h"
 #include "Window.h"
 
@@ -87,6 +87,58 @@ map_text_accel( PMenuItemReg i)
 	return buf;
 }
 
+/* Convert 1-bit icons to bitmaps, icons to argb, others to pixmaps */
+static HBITMAP
+create_menu_bitmap( Handle bitmap )
+{
+	HBITMAP ret = NULL;
+	PIcon i = (PIcon) bitmap;
+
+	if ( i == NULL || i-> stage >= csDead )
+		return NULL;
+
+	if (kind_of(bitmap, CIcon)) {
+		if (( i-> type & imBPP) == 1) {
+			ret = image_create_bitmap( bitmap, NULL, NULL, BM_BITMAP );
+		} else {
+			Handle dup = CImage(bitmap)->dup(bitmap);
+			if ( i-> type != imRGB )
+				CIcon(dup)->set_type(dup, imRGB);
+			if ( i-> maskType != 8 )
+				CIcon(dup)->set_maskType(dup, 8);
+			CIcon(dup)-> premultiply_alpha(dup, NULL);
+			ret = image_create_bitmap( dup, NULL, NULL, BM_LAYERED );
+			Object_destroy(dup);
+		}
+	} else {
+		if (( i-> type & imBPP) == 1) {
+			Handle dup = CImage(bitmap)->dup(bitmap);
+			CIcon(dup)->set_type(dup, 4);
+			ret = image_create_bitmap( bitmap, NULL, NULL, BM_PIXMAP );
+			Object_destroy(dup);
+		}
+	}
+
+	if ( ret == NULL )
+		ret = image_create_bitmap( bitmap, NULL, NULL, BM_AUTO );
+
+	return ret;
+}
+
+typedef struct {
+	HMENU menu;
+	int   id;
+} BitmapKey;
+
+static void
+build_bitmap_key( HMENU menu, PMenuItemReg m, BitmapKey * key)
+{
+	memset(key, 0, sizeof(BitmapKey));
+	key->menu = menu;
+	key->id   = m->id;
+}
+
+
 static HMENU
 add_item( Bool menuType, Handle menu, PMenuItemReg i)
 {
@@ -127,16 +179,23 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 		menuItem. fType   |= ( i-> flags. rightAdjust) ? MFT_RIGHTJUSTIFY : 0;
 		menuItem. fState   = 0;
 		menuItem. fState  |= ( i-> flags. checked )    ? MFS_CHECKED      : 0;
-		menuItem. fState  |= ( i-> flags. disabled)    ? MFS_GRAYED       : 0;
+		menuItem. fState  |= ( i-> flags. disabled )   ? MFS_GRAYED       : 0;
 		menuItem. wID      = i-> id + MENU_ID_AUTOSTART;
 		menuItem. hSubMenu = add_item( menuType, menu, i-> down);
 		if (!( i-> flags. divider && i-> flags. rightAdjust)) {
 			if ( i-> text) {
 				menuItem. dwTypeData = map_text_accel( i);
 			} else if ( i-> bitmap && PObject( i-> bitmap)-> stage < csDead)
-				menuItem. dwTypeData = ( LPWSTR) image_create_bitmap( i-> bitmap, NULL, NULL, BM_AUTO);
+				menuItem. dwTypeData = create_menu_bitmap( i-> bitmap);
 			InsertMenuItemW( m, -1, true, &menuItem);
 			if ( i-> text && menuItem. dwTypeData) free( menuItem. dwTypeData);
+		}
+		if ( i-> icon ) {
+			BitmapKey key;
+			HBITMAP bitmap = create_menu_bitmap( i-> icon); 
+			build_bitmap_key(m, i, &key);
+			hash_store( menuBitmapMan, &key, sizeof(key), (void*) bitmap);
+			SetMenuItemBitmaps(m, i->id + MENU_ID_AUTOSTART, MF_BYCOMMAND, bitmap, bitmap);
 		}
 		menuItem. dwItemData = menu;
 		i = i-> next;
@@ -155,10 +214,19 @@ apc_menu_create( Handle self, Handle owner)
 	return true;
 }
 
-static Bool clear_menus( PMenuWndData item, int keyLen, void * key, void * params)
+static Bool
+clear_menus( PMenuWndData item, int keyLen, void * key, void * params)
 {
 	if ( item-> menu == ( Handle) params)
 		hash_delete( menuMan, key, keyLen, true);
+	return false;
+}
+
+static Bool
+clear_bitmaps(void * bm, int keyLen, BitmapKey * key, void * menu)
+{
+	if ( key-> menu == ( HMENU) menu)
+		hash_delete( menuBitmapMan, key, keyLen, true);
 	return false;
 }
 
@@ -168,6 +236,7 @@ apc_menu_destroy( Handle self)
 	if ( var handle) {
 		objCheck false;
 		hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
+		hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) var handle, nil, nil);
 		if ( IsMenu(( HMENU) var handle) && !DestroyMenu(( HMENU) var handle)) apiErrRet;
 		return true;
 	}
@@ -206,12 +275,27 @@ apc_menu_set_font( Handle self, PFont font)
 	return true;
 }
 
+static void
+free_bitmaps( BitmapKey *key, PMenuItemReg m)
+{
+	if ( m-> icon ) {
+		key-> id = m-> id;
+		hash_delete( menuBitmapMan, &key, sizeof(key), false);
+	}
+	if ( m-> next )
+		free_bitmaps( key, m-> next);
+	if ( m-> down )
+		free_bitmaps( key, m-> down);
+}
+
 Bool
 apc_menu_item_delete( Handle self, PMenuItemReg m)
 {
 	PWindow owner = nil;
 	Point size;
 	Bool resize;
+	BitmapKey key;
+
 	objCheck false;
 	dobjCheck( var owner) false;
 	if (( resize = kind_of( var owner, CWindow) &&
@@ -221,6 +305,9 @@ apc_menu_item_delete( Handle self, PMenuItemReg m)
 		owner = ( PWindow) var owner;
 		size = owner-> self-> get_size( var owner);
 	}
+
+	build_bitmap_key((HMENU) var handle, m, &key);
+	free_bitmaps(&key, m);
 
 	// since GetMenuItemInfo does not work in NT, do not free menuMan entries here,
 	// they'll be freed in apc_menu_destroy anyway.
@@ -272,8 +359,9 @@ apc_menu_item_set_enabled( Handle self, PMenuItemReg m)
 	DWORD res;
 	if ( !var handle) return false;
 	objCheck false;
-	res = EnableMenuItem(( HMENU) var handle,
-		m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | ( m-> flags. disabled ? MF_GRAYED : MF_ENABLED));
+	res = EnableMenuItem(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND | (
+		m-> flags. disabled ? MF_GRAYED : MF_ENABLED
+	));
 	DrawMenuBar( DHANDLE( var owner));
 	return res != 0xFFFFFFFF;
 }
@@ -321,10 +409,41 @@ apc_menu_item_set_image( Handle self, PMenuItemReg m)
 
 	if ( !ModifyMenuW(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, flags,
 		m-> id + MENU_ID_AUTOSTART,
-		( LPCWSTR) image_create_bitmap( m-> bitmap, NULL, NULL, BM_AUTO))) apiErrRet;
+		( LPCWSTR) create_menu_bitmap( m-> bitmap))) apiErrRet;
 	return true;
 }
 
+Bool
+apc_menu_item_set_icon( Handle self, PMenuItemReg m)
+{
+	UINT flags;
+	HBITMAP bitmap = NULL;
+	BitmapKey key;
+	Bool ret = true;
+
+	if ( !var handle) return false;
+	objCheck false;
+	flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
+	if ( flags == 0xFFFFFFFF) return false;
+
+	build_bitmap_key((HMENU) var handle, m, &key);
+	hash_delete( menuBitmapMan, &key, sizeof(key), false);
+
+	if ( m-> icon ) {
+		if ( ( bitmap = create_menu_bitmap( m-> icon)) != NULL)
+			hash_store( menuBitmapMan, &key, sizeof(key), (void*) bitmap);
+		else {
+			apiErr;
+			ret = false;
+		}
+	}
+	if (!SetMenuItemBitmaps(( HMENU ) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND, bitmap, bitmap)) {
+		apiErr;
+		ret = false;
+	}
+
+	return ret;
+}
 
 ApiHandle
 apc_menu_get_handle( Handle self)
@@ -346,7 +465,10 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 		HMENU h = GetMenu( DHANDLE( var owner));
 		PWindow owner = ( PWindow) var owner;
 		Point size = owner-> self-> get_size( var owner);
-		if ( h) DestroyMenu( h);
+		if ( h) {
+			hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) h, nil, nil);
+			DestroyMenu( h);
+		}
 		hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
 		var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
 		SetMenu( DHANDLE( var owner), self ? ( HMENU) var handle : nil);
@@ -354,8 +476,10 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 		if ( apc_window_get_window_state( var owner) == wsNormal)
 			owner-> self-> set_size( var owner, size);
 	} else {
-		if ( var handle)
+		if ( var handle) {
+			hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) var handle, nil, nil);
 			DestroyMenu(( HMENU) var handle);
+		}
 		hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
 		var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
 	}

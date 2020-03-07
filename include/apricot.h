@@ -766,6 +766,10 @@ CM(EndModal)
 CM(SysHandle)
 #define cmIdle           0x0000002C                /* idle handler */
 CM(Idle)
+#define cmMenuItemSize   0x0000002D                /* query custom menu item size */
+CM(MenuItemSize)
+#define cmMenuItemPaint  0x0000002E                /* menu item custom paint */
+CM(MenuItemPaint)
 
 #define cmMenuCmd        0x00000050                /* interactive menu command */
 CM(MenuCmd)
@@ -2478,11 +2482,12 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
 	Handle bitmap;               /* bitmap if not nil */
 	SV *   code;                 /* code if not nil */
 	SV *   data;                 /* use data if not nil */
+	Handle icon;                 /* custom checked bitmap */
 	struct _MenuItemReg* down;   /* pointer to submenu */
 	struct _MenuItemReg* next;   /* pointer to next item */
 	struct {
 		unsigned int checked       : 1;  /* true if item is checked */
-		unsigned int disabled      : 1;  /* true if item is disabled */
+		unsigned int disabled      : 1;
 		unsigned int rightAdjust   : 1;  /* true if right adjust ordered */
 		unsigned int divider       : 1;  /* true if it's line divider */
 		unsigned int utf8_variable : 1;
@@ -2490,6 +2495,7 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
 		unsigned int utf8_accel    : 1;
 		unsigned int utf8_perlSub  : 1;
 		unsigned int autotoggle    : 1;  /* true if menu is toggled automatially */
+		unsigned int custom_draw   : 1;  /* true if menu item is drawn through onMenuItemPaint */
 	} flags;
 } MenuItemReg, *PMenuItemReg;
 
@@ -2528,6 +2534,9 @@ apc_menu_item_set_check( Handle self, PMenuItemReg m);
 
 extern Bool
 apc_menu_item_set_enabled( Handle self, PMenuItemReg m);
+
+extern Bool
+apc_menu_item_set_icon( Handle self, PMenuItemReg m);
 
 extern Bool
 apc_menu_item_set_image( Handle self, PMenuItemReg m);

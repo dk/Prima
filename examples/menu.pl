@@ -23,20 +23,60 @@ package TestWindow;
 use vars qw(@ISA);
 @ISA = qw(Prima::Window);
 
-#    Menu item must be an array with up to 5 items in -
-# [variable, text or image, accelerator text, shortcut key, sub or command]
-# if there are 0 or 1 items, it's treated as divisor line;
-# same divisor in main level of menu makes next part right-adjacent.
-# The priority is: text(2), then sub(5), then variable(1), then accelerator(3)
-# and shortcut(4). So, if there are 2 items, they are text and sub,
-# 3 - variable, text and sub, 4 - text, accelerator, key and sub
-# ( because of accelerator and key must be present both and never separately),
-# and 5 - all of the above.
-# See example below.
-# Notes:
-#   1. When adding image, scalar must be object derived from Image component
-#  or Image component by itself.
-#   2. You cannot assign to shortcut key modificator keys.
+sub create_images_menu
+{
+	my @ret;
+	my $template = shift;
+
+	my $sub = sub {
+		my $img = $_[0]-> menu-> icon( $_[1]);
+		my @r = @{$img-> palette};
+		$img-> palette( [reverse @r]) if @r;
+		$_[0]-> menu-> icon( $_[1], $img);
+	};
+
+	my $mono = $template->dup;
+	$mono->conversion(ict::None);
+	$mono->type(im::BW);
+	push @ret, [ '1-bit image', $sub, { icon => $mono } ];
+	push @ret, [ '-', '1-bit image disabled', $sub, { icon => $mono } ];
+
+	my $mask1 = $template->dup;
+	$mask1->set( color => cl::White, backColor => cl::Black, rop2 => rop::CopyPut );
+	$mask1->map( $mask1->pixel(0,0) );
+	$mask1->conversion(ict::None);
+	$mask1->type(im::BW);
+
+	my $mono2 = Prima::Icon->create_combined( $mono, $mask1);
+	push @ret, [ '1-bit icon', $sub, { icon => $mono2 } ];
+	push @ret, [ '-', '1-bit icon disabled', $sub, { icon => $mono2 } ];
+
+	push @ret, [];
+	push @ret, [ 'Color image', $sub, { icon => $template } ];
+	push @ret, [ '-', 'Color image disabled', $sub, { icon => $template } ];
+	my $color = Prima::Icon->create_combined( $template, $mask1);
+	push @ret, [ 'Color icon', $sub, { icon => $color } ];
+	push @ret, [ '-', 'Color icon disabled', $sub, { icon => $color } ];
+	push @ret, [];
+
+	my $mask8 = $template->dup;
+	$mask8->type(im::Byte);
+	$mask8->set( color => cl::Black, backColor => 0x808080, rop2 => rop::CopyPut );
+	$mask8->map( 0x10101 * $mask8->pixel(0,0) );
+	my $argb = Prima::Icon->create_combined( $template, $mask8);
+	push @ret, [ 'ARGB icon', $sub, { icon => $argb } ];
+	push @ret, [ '-', 'ARGB icon disabled', $sub, { icon => $argb } ];
+
+	return @ret;
+}
+
+my $img = Prima::Image-> create;
+$0 =~ /^(.*)(\\|\/)[^\\\/]+$/;
+$img-> load(( $1 || '.') . '/Hand.gif');
+
+#    Menu item must be an array with up to 6 items in -
+# [variable, text or image, accelerator text, shortcut key, sub or command, data]
+# see exact rules how these are parsed in L<"Prima::Menu" / "Menu items">.
 
 sub create_menu
 {
@@ -46,12 +86,7 @@ sub create_menu
 	return [
 		[ "~File" => [
 			[ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!\n";}],   # anonymous sub
-			[ $img => sub {
-				my $img = $_[0]-> menu-> image( $_[1]);
-				my @r = @{$img-> palette};
-				$img-> palette( [reverse @r]);
-				$_[0]-> menu-> image( $_[1], $img);
-			}],                        # image
+			[ '~Images' => [ create_images_menu($img) ]],
 			[],                                       # division line
 			[ "E~xit" => "Exit"    ]    # calling named function of menu owner
 		]],

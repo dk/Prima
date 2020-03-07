@@ -6,6 +6,7 @@ object Prima::AbstractMenu ( Prima::Component)
 	property SV   * action ( char * varName);
 	property Bool   autoToggle( char * varName);
 	property Bool   checked( char * varName);
+	property Handle icon   ( char * varName);
 	property SV   * data   ( char * varName);
 	property Bool   enabled( char * varName);
 	property Handle image  ( char * varName);
@@ -25,8 +26,10 @@ object Prima::AbstractMenu ( Prima::Component)
 	method Bool   has_item( char * varName);
 	method void   init( HV * profile);
 	method void   insert( SV * menuItems, char * rootName, int index);
+	method Bool   is_custom( char * varName);
 	method Bool   is_submenu( char * varName);
 	method Bool   is_separator( char * varName);
+	c_only void   handle_event ( PEvent event);
 	import SV *   notification_types();
 	import SV *   profile_default ();
 	method void   remove( char * varName);
