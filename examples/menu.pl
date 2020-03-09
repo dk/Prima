@@ -76,7 +76,7 @@ sub create_custom_menu
 {
 	my @ret;
 	my @icons = map { Prima::StdBitmap::image($_) } sbmp::CheckBoxUnchecked, sbmp::CheckBoxChecked;
-	push @ret, [ '@?' => "Custom" => sub { print "Custom\n" } => {
+	push @ret, [ '@?' => "~Custom" => sub { print "Custom\n" } => {
 		onMeasure => sub {
 			my ( $self, $menu, $ref) = @_;
 			my ($w, $h) = ( $self->get_text_width( $menu-> text, 1 ), $self->popupFont->height );
@@ -93,7 +93,7 @@ sub create_custom_menu
 			my $i = $icons[ $menu->checked ];
 			my $isz = $menu-> check_icon_size;
 			my $dx = ( $isz > $i-> width ) ? $isz : $i-> width;
-			$canvas-> text_out( $menu->text, $x1 + 2 + $dx, $y1 + 10);
+			$canvas-> draw_text( $menu->text, $x1 + 2 + $dx, $y1, $x2, $y2, dt::VCenter|dt::DrawMnemonic);
 			$canvas-> put_image(
 				$x1 + (( $isz > $i-> width ) ? ( $menu-> check_icon_size - $i-> width) / 2 : 0),
 				($y2 + $y1 - $i->height) / 2, $i);

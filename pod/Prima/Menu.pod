@@ -105,6 +105,9 @@ system uses as a hot key during menu navigation.
 Menu image is a L<Prima::Image> object of no particular color
 space and dimensions.
 
+Note: tilde-marked character is also used in navigation for custom drawn menu
+items, even though they not necessarily draw the text itself.
+
 Menu text in menu item is accessible via the C<::text> property,
 and menu image via the C<::image> property. These can not accept
 or return sensible arguments simultaneously.
