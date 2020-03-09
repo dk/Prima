@@ -630,6 +630,11 @@ zorder_sync( Handle self, HWND me, LPWINDOWPOS lp)
 	}
 }
 
+static Bool
+id_match( Handle self, PMenuItemReg m, void * params)
+{
+	return m-> id == *(( int*) params);
+}
 
 LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2)
 {
@@ -1035,8 +1040,9 @@ AGAIN:
 	case WM_MENUCHAR:
 		{
 			int key;
+			PMenuWndData mwd;
 			ev. key. key    = ctx_remap_def( mp1, ctx_kb2VK2, false, kbNoKey);
-			ev. key. code   = mp1;
+			ev. key. code   = LOWORD(mp1);
 			ev. key. mod   |=
 				(( GetKeyState( VK_SHIFT)   < 0) ? kmShift : 0) |
 				(( GetKeyState( VK_CONTROL) < 0) ? kmCtrl  : 0) |
@@ -1046,6 +1052,24 @@ AGAIN:
 			key = CAbstractMenu-> translate_key( nilHandle, ev. key. code, ev. key. key, ev. key. mod);
 			if ( v-> self-> process_accel( self, key))
 				return MAKELONG( 0, MNC_CLOSE);
+
+			ev.key.code = tolower(ev.key.code);
+			if (( mwd = (MenuWndData*) hash_fetch(menuMan, &mp2, sizeof(mp2))) != NULL) {
+				int pos = 0;
+				PMenuItemReg m = CAbstractMenu(mwd->menu)-> first_that(mwd->menu, (void*)id_match, &mwd->id, false);
+				while ( m != NULL ) {
+					if ( m-> flags.custom_draw && m-> text != NULL ) {
+						char * t = m-> text;
+						while (*t) {
+							if ( t[0] == '~' && tolower(t[1]) == ev.key.code )
+								return MAKELONG( pos, MNC_EXECUTE);
+							t++;
+						}
+					}
+					m = m-> next;
+					pos++;
+				}
+			}
 		}
 		break;
 	case WM_SYNCMOVE:
