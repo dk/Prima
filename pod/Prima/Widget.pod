@@ -2896,6 +2896,21 @@ Used for making changes in the menu structures dynamically.
 
 See also: C<popupItems>
 
+=item MenuItemMeasure MENU, ITEMID, REF
+
+Called when system needs to query dimensions of a menu item that has custom
+painting bit set. C<REF> is a 2-item arrayref that needs to be set with pixel
+dimension.
+
+See also: L<Prima::Menu/Options>
+
+=item MenuItemPaint WIDGET, MENU, ITEMID, CANVAS, X1, Y1, X2, Y2
+
+Called whenever system needs to draw a menu item that has custom painting bit
+set. X1 - Y2 are coordinates of the rectangle where the drawing is allowed.
+
+See also: L<Prima::Menu/Options>
+
 =item MouseClick BUTTON, MOD, X, Y, DOUBLE_CLICK
 
 Called when a mouse click ( button is pressed, and then

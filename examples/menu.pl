@@ -35,6 +35,8 @@ sub create_images_menu
 		$_[0]-> menu-> icon( $_[1], $img);
 	};
 
+	push @ret, [ $template, $sub ], [];
+
 	my $mono = $template->dup;
 	$mono->conversion(ict::None);
 	$mono->type(im::BW);
@@ -75,21 +77,19 @@ sub create_custom_menu
 	my @ret;
 	my @icons = map { Prima::StdBitmap::image($_) } sbmp::CheckBoxUnchecked, sbmp::CheckBoxChecked;
 	push @ret, [ '@?' => "Custom" => sub { print "Custom\n" } => {
-		data => {
-			onMeasure => sub {
-				my ( $self, $menu, $ref) = @_;
-				my ($w, $h) = ( $self->get_text_width( $menu-> text, 1 ), $self->popupFont->height );
-				@$ref = ($w + 20 + $menu-> check_icon_size, $h + 20);
-			},
-			onPaint => sub {
-				my ( $self, $menu, $canvas, $x1, $y1, $x2, $y2) = @_;
-				$canvas-> new_gradient(palette => [cl::Black, cl::White])->bar($x1, $y1, $x2, $y2, 1);
-				$canvas-> font( $self-> popupFont );
-				$canvas-> color(cl::Yellow);
-				$canvas-> text_out( $menu->text, $x1 + $menu-> check_icon_size, $y1 + 10);
-				my $i = $icons[ $menu->checked ];
-				$canvas-> put_image(( $menu-> check_icon_size - $i-> width) / 2, ($y2 + $y1 - $i->height) / 2, $i);
-			},
+		onMeasure => sub {
+			my ( $self, $menu, $ref) = @_;
+			my ($w, $h) = ( $self->get_text_width( $menu-> text, 1 ), $self->popupFont->height );
+			@$ref = ($w + 20 + $menu-> check_icon_size, $h + 20);
+		},
+		onPaint => sub {
+			my ( $self, $menu, $canvas, $x1, $y1, $x2, $y2) = @_;
+			$canvas-> new_gradient(palette => [cl::Black, cl::White])->bar($x1, $y1, $x2, $y2, 1);
+			$canvas-> font( $self-> popupFont );
+			$canvas-> color(cl::Yellow);
+			$canvas-> text_out( $menu->text, $x1 + $menu-> check_icon_size, $y1 + 10);
+			my $i = $icons[ $menu->checked ];
+			$canvas-> put_image(( $menu-> check_icon_size - $i-> width) / 2, ($y2 + $y1 - $i->height) / 2, $i);
 		},
 	} ];
 	return @ret;

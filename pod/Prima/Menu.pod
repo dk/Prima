@@ -184,15 +184,30 @@ an explicit call
 
 To achieve this, add '@' character to the menu item name (see L<"Menu item name">).
 
-=item User data
+=item Options
 
-At last, a non-separator and non-submenu menu item can hold
-an arbitrary scalar value, the 'user data' field.
-The toolkit does not use this field, leaving that to
-the programmer.
+At last, non-separator menu items can hold an extra hash in C<options> property.
+The toolkit reserves the following keys for internal use:
 
-User data scalar in menu item is accessible via C<::data>
-property.
+=over
+
+=item icon HANDLE
+
+Uses to replace default check mark bitmap on a menu item
+
+=item onMeasure WIDGET, MENUITEM, REF
+
+Required when custom painting is set. It is called when system needs to query
+menu item dimensions. C<REF> is a 2-item arrayref that needs to be set with
+pixel dimension.
+
+=item onPaint WIDGET, MENUITEM, CANVAS, X1, Y1, X2, Y2
+
+Required when custom painting is set. It is called whenever system needs to
+draw a menu item. X1 - Y2 are coordinates of the rectangle where the drawing is
+allowed.
+
+=back
 
 =back
 
