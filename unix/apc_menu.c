@@ -16,6 +16,8 @@
 
 #define TREE            (PAbstractMenu(self)->tree)
 
+#define MAX_BITMAP_HEIGHT (guts.displaySize.y - kf->font.height - MENU_ITEM_GAP * 3 - 4)
+
 static PMenuWindow
 get_menu_window( Handle self, XWindow xw)
 {
@@ -106,14 +108,9 @@ item_count( PMenuWindow w)
 static void
 free_unix_items( PMenuWindow w)
 {
-	int i;
 	if ( w-> um) {
-		if ( w-> first < 0) {
-			for ( i = 0; i < w->num; i++)
-				if ( w-> um[i].pixmap)
-					XFreePixmap( DISP, w-> um[i].pixmap);
+		if ( w-> first < 0) 
 			free( w-> um);
-		}
 		w-> um = nil;
 	}
 	w-> num = 0;
@@ -307,16 +304,10 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 				if ( ntildas)
 					ix-> width -= ntildas * get_text_width( kf, "~", 1, false, xft_map8);
 			} else if ( m-> bitmap && PObject( m-> bitmap)-> stage < csDead) {
-				Pixmap px = prima_std_pixmap( m-> bitmap, CACHE_LOW_RES);
-				if ( px) {
-					PImage i = ( PImage) m-> bitmap;
-					ix-> height += (( i-> h < kf-> font. height) ?  kf-> font. height : i-> h) +
-						MENU_ITEM_GAP * 2;
-					if ( ix-> height > guts. displaySize. y - kf-> font. height - MENU_ITEM_GAP * 3 - 4)
-					ix-> height = guts. displaySize. y - kf-> font. height - MENU_ITEM_GAP * 3 - 4;
-					ix-> width  += i-> w + startx;
-					ix-> pixmap = px;
-				}
+				PImage i = ( PImage) m-> bitmap;
+				ix-> height += (( i-> h < kf-> font. height) ?  kf-> font. height : i-> h) +
+					MENU_ITEM_GAP * 2;
+				ix-> width  += i-> w + startx;
 			}
 
 			if ( m-> icon && PObject( m-> icon)-> stage < csDead) {
@@ -324,6 +315,9 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 				int    y = i-> h + MENU_ITEM_GAP * 2;
 				if ( ix-> height < y ) ix-> height = y;
 			}
+
+			if ( ix-> height > MAX_BITMAP_HEIGHT )
+				ix-> height = MAX_BITMAP_HEIGHT;
 
 			if ( m-> accel && ( l = strlen( m-> accel))) {
 				ix-> accel_width = get_text_width( kf, m-> accel, l,
@@ -676,7 +670,12 @@ menuitem_draw_##name( \
 	PMenuItemReg m, PUnixMenuItem ix, \
 	int x, int y, int *str_size, char ** str_ptr, \
 	MenuDrawRec * draw, \
-	Bool vertical, Bool selected, int descent, unsigned long clr, Color rgb \
+	Bool vertical, Bool selected, int descent, unsigned long clr, Color rgb, Handle param \
+)
+
+#define DRAW(name) menuitem_draw_ ## name( \
+	self, win, w, m, ix, x, y, \
+	&sz, &s, &draw, vertical, selected, descent, clr, rgb, nilHandle \
 )
 
 DECL_DRAW(text)
@@ -875,25 +874,76 @@ DECL_DRAW(divider)
 	return true;
 }
 
-DECL_DRAW(bitmap)
+DECL_DRAW(image)
 {
-	PImage i = ( PImage) m-> bitmap;
+	DEFMM;
+	PImage i = ( PImage) param;
+	PCachedFont kf = XX->font;
+	int Y, H;
+	Drawable   dummy_p;
+	UnixSysData dummy_s;
+	ImageCache * cache = prima_image_cache(i, CACHE_MENU);
 
-	if ( ix-> pixmap == None ) return true;
-	x += MENU_XOFFSET + (vertical ? ix-> icon_width : 0);
+	if ( !cache ) return true;
 
-	if ( selected) XSetFunction( DISP, draw->gc, GXcopyInverted);
-	XCopyArea( DISP, ix-> pixmap, win, draw->gc, 0, 0, ix-> width, ix-> height, x, y + (ix-> height - i->h) / 2);
-	if ( selected) XSetFunction( DISP, draw->gc, GXcopy);
+	Y = y + ( ix->height - i-> h ) / 2;
+	H = (ix-> height == MAX_BITMAP_HEIGHT) ? MAX_BITMAP_HEIGHT - MENU_ITEM_GAP * 2 : i->h;
+
+	bzero(&dummy_p, sizeof(dummy_p));
+	bzero(&dummy_s, sizeof(dummy_s));
+	dummy_p.sysData = &dummy_s;
+	dummy_s.component.type.widget = 1;
+	dummy_s.drawable.flags.paint  = 1;
+	dummy_s.drawable.gc           = draw->gc;
+	dummy_s.drawable.gdrawable    = win;
+	dummy_s.drawable.size         = w->sz;
+	if ( cache-> type == CACHE_BITMAP && XT_IS_ICON(X(param))) {
+		/* menu is special around 1-bit/1-bit icons, for win32 compat - these should be treated as bitmaps
+		to paint with menu colors */
+		if ( m-> flags. disabled ) {
+			XSetFunction  ( DISP, draw-> gc, GXor );
+			XSetForeground( DISP, draw-> gc, 0x00000000);
+			XSetBackground( DISP, draw-> gc, XX->c[ciLight3DColor]);
+			prima_put_ximage(win, draw-> gc, cache->image, 0, 0, x + 1, Y + 1, i-> w, H);
+		}
+		XSetFunction  ( DISP, draw-> gc, GXand );
+		XSetForeground( DISP, draw-> gc, 0xffffffff);
+		XSetBackground( DISP, draw-> gc, 0x00000000);
+		prima_put_ximage(win, draw-> gc, cache->image, 0, 0, x, Y, i-> w, H);
+		XSetFunction  ( DISP, draw-> gc, GXxor );
+		XSetForeground( DISP, draw-> gc, 0x00000000);
+		XSetBackground( DISP, draw-> gc, clr);
+		prima_put_ximage(win, draw-> gc, cache->image, 0, 0, x, Y, i-> w, H);
+		XSetFunction( DISP, draw-> gc, GXcopy );
+	} else {
+		apc_gp_put_image((Handle) &dummy_p, param,
+			x, w-> sz.y - H - Y,
+			0, 0, i-> w, H, ropCopyPut);
+		if ( m-> flags. disabled ) {
+			XSetStipple   ( DISP, draw-> gc, prima_get_hatch( &fillPatterns[fpSimpleDots] ));
+			XSetFillStyle ( DISP, draw-> gc, FillOpaqueStippled);
+			XSetFunction  ( DISP, draw-> gc, GXand );
+			XSetForeground( DISP, draw-> gc, 0x00000000);
+			XSetBackground( DISP, draw-> gc, 0xffffffff);
+			XFillRectangle( DISP, win, draw-> gc, x, Y, i-> w, H);
+			XSetFunction  ( DISP, draw-> gc, GXcopy );
+			XSetFillStyle ( DISP, draw-> gc, FillSolid);
+		}
+	}
 
 	return true;
 }
 
+DECL_DRAW(bitmap)
+{
+	x += MENU_XOFFSET + (vertical ? ix-> icon_width : 0);
+	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,m->bitmap);
+}
+
 DECL_DRAW(icon)
 {
-	PIcon i = ( PIcon) m-> icon;
-
-	return true;
+	x += MENU_XOFFSET;
+	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,m->icon);
 }
 
 DECL_DRAW(background)
@@ -922,10 +972,6 @@ DECL_DRAW(background)
 }
 
 #undef DECL_DRAW
-#define DRAW(name) menuitem_draw_ ## name( \
-	self, win, w, m, ix, x, y, \
-	&sz, &s, &draw, vertical, selected, descent, clr, rgb \
-)
 
 static void
 handle_menu_expose( XEvent *ev, XWindow win, Handle self)

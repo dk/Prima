@@ -127,13 +127,14 @@ typedef struct _PrimaXImage
 } PrimaXImage;
 
 
-#define CACHE_AUTODETECT     0
+#define CACHE_INVALID        0
 #define CACHE_BITMAP         1
 #define CACHE_PIXMAP         2
 #define CACHE_LOW_RES        3
 #define CACHE_LAYERED        4
 #define CACHE_LAYERED_ALPHA  5
 #define CACHE_A8             6
+#define CACHE_MENU           7
 
 typedef struct {
 	int type;
@@ -914,7 +915,6 @@ typedef struct _menu_item
 	int          height;
 	int          accel_width;
 	int          icon_width;
-	Pixmap       pixmap;
 } UnixMenuItem, *PUnixMenuItem;
 
 typedef struct _menu_window
@@ -1128,7 +1128,7 @@ extern Bool
 prima_create_icon_pixmaps( Handle bw_icon, Pixmap *xor, Pixmap *and);
 
 extern ImageCache*
-prima_create_image_cache( PImage img, Handle drawable, int type);
+prima_image_cache( PImage img, int type);
 
 extern Bool
 prima_put_ximage( XDrawable win, GC gc, PrimaXImage *i,
