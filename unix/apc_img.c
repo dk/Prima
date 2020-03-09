@@ -316,7 +316,7 @@ apc_image_create( Handle self)
 	XX-> type.image        = true;
 	XX-> type.icon         = !!kind_of(self, CIcon);
 	XX-> type.drawable     = true;
-	XX-> image_cache. type = CACHE_AUTODETECT;
+	XX-> image_cache. type = CACHE_INVALID;
 	XX->size. x            = PImage(self)-> w;
 	XX->size. y            = PImage(self)-> h;
 	return true;
@@ -1210,8 +1210,8 @@ create_argb_cache(PIcon img, ImageCache * cache, int type)
 	return true;
 }
 
-ImageCache*
-prima_create_image_cache( PImage img, Handle drawable, int type)
+static ImageCache*
+create_image_cache( PImage img, int type)
 {
 	PDrawableSysData IMG = X((Handle)img);
 	int target_bpp;
@@ -1229,11 +1229,6 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
 
 	/* test if types are applicable */
 	switch ( type) {
-	case CACHE_AUTODETECT:
-		type = ( drawable == nilHandle || X(drawable) == nil ||
-			XT_IS_BITMAP(X(drawable)) || ( guts. idepth == 1)) ?
-			CACHE_BITMAP : CACHE_PIXMAP;
-		break;
 	case CACHE_A8:
 	case CACHE_LAYERED:
 	case CACHE_LAYERED_ALPHA:
@@ -1248,6 +1243,24 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
 	case CACHE_LOW_RES:
 		if ( !guts. dynamicColors) type = CACHE_PIXMAP;
 		if ( guts. idepth == 1) type = CACHE_BITMAP;
+		break;
+	case CACHE_MENU:
+		if (
+			(XT_IS_ICON(IMG) && ((PIcon(img)->type & imBPP) == 1) &&  (PIcon(img)->maskType == 1)) ||
+			(guts.idepth == 1)
+		) {
+			/* menu is special around 1-bit/1-bit icons, for win32 compat - these should be treated as bitmaps
+			to paint with menu colors */
+			type = CACHE_BITMAP;
+			target_bpp = guts. idepth;
+		} else if ( guts. dynamicColors ) {
+			/* menus don't have palettes, so paletted image will be garbled -- downgrade */
+			type = CACHE_LOW_RES;
+		} else if (XT_IS_ICON(IMG) && PIcon(img)->maskType == 8 && guts. argb_visual. visual) {
+			type = CACHE_LAYERED_ALPHA;
+		} else {
+			type = CACHE_PIXMAP;
+		}
 		break;
 	}
 
@@ -1264,7 +1277,6 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
 	default:
 		target_bpp = guts. idepth;
 	}
-
 
 	/* create icon cache, if any */
 	if ( XT_IS_ICON(IMG) && type != CACHE_LAYERED_ALPHA) {
@@ -1434,6 +1446,14 @@ prima_create_image_cache( PImage img, Handle drawable, int type)
 	return cache;
 }
 
+ImageCache*
+prima_image_cache( PImage img, int type)
+{
+	ImageCache *cache = &X((Handle)img)-> image_cache;
+	if ( cache-> image != NULL && cache-> type == type) return cache;
+	return create_image_cache(img, type);
+}
+
 Bool
 prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
 {
@@ -1443,7 +1463,7 @@ prima_create_icon_pixmaps( Handle self, Pixmap *xor, Pixmap *and)
 	GC gc;
 	XGCValues gcv;
 
-	cache = prima_create_image_cache((PImage)icon, nilHandle, CACHE_BITMAP);
+	cache = prima_image_cache((PImage)icon, CACHE_BITMAP);
 	if ( !cache) return false;
 	p1 = XCreatePixmap( DISP, guts. root, icon-> w, icon-> h, 1);
 	p2 = XCreatePixmap( DISP, guts. root, icon-> w, icon-> h, 1);
@@ -1670,7 +1690,7 @@ img_put_image_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
 
-	if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP)))
+	if (!(cache = prima_image_cache(img, CACHE_BITMAP)))
 		return false;
 
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
@@ -1709,7 +1729,7 @@ img_put_argb_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 
 	PImage img = (PImage) image;
 
-	if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_BITMAP)))
+	if (!(cache = prima_image_cache(img, CACHE_BITMAP)))
 		return false;
 
 	if ( !img_put_icon_mask( self, cache->icon, req))
@@ -1793,7 +1813,7 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
 
-	if (!(cache = prima_create_image_cache(img, nilHandle,
+	if (!(cache = prima_image_cache(img,
 		XT_IS_DBM(YY) ? CACHE_LOW_RES : CACHE_PIXMAP)))
 		return false;
 
@@ -1847,7 +1867,7 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 	PImage img = (PImage) image;
 	PDrawableSysData YY = X(image);
 
-	if (!(cache = prima_create_image_cache(img, nilHandle, CACHE_PIXMAP)))
+	if (!(cache = prima_image_cache(img, CACHE_PIXMAP)))
 		return false;
 
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
@@ -1894,7 +1914,7 @@ img_put_image_on_layered( Handle self, Handle image, PutImageRequest * req)
 {
 	ImageCache *cache;
 	PDrawableSysData YY = X(image);
-	if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED)))
+	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED)))
 		return false;
 	if ( XT_IS_ICON(YY) && !img_put_icon_mask( self, cache->icon, req))
 		return false;
@@ -1960,7 +1980,7 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
 	if ( !guts. argb_visual. visual)
 		return fallback( self, image, req);
 
-	if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED_ALPHA)))
+	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED_ALPHA)))
 		return false;
 
 	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts. argb_visual. depth);
@@ -2034,7 +2054,7 @@ img_put_a8_on_layered( Handle self, Handle image, PutImageRequest * req)
 	DEFXX;
 	Bool ok;
 	ImageCache *cache;
-	if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_A8)))
+	if (!(cache = prima_image_cache((PImage) image, CACHE_A8)))
 		return false;
 	XSetPlaneMask( DISP, XX-> gc, guts. argb_bits. alpha_mask);
 	req->rop = GXcopy;
@@ -2055,7 +2075,7 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 	Bool ret = false;
 	Picture picture;
 
-	if (!(cache = prima_create_image_cache((PImage) image, nilHandle, CACHE_LAYERED_ALPHA)))
+	if (!(cache = prima_image_cache((PImage) image, CACHE_LAYERED_ALPHA)))
 		return false;
 
 	pixmap = XCreatePixmap( DISP, guts.root, req->w, req->h, guts. argb_visual. depth);
@@ -2654,7 +2674,7 @@ prima_std_pixmap( Handle self, int type)
 	PImage img = ( PImage) self;
 	unsigned long fore, back;
 
-	ImageCache * xi = prima_create_image_cache(( PImage) self, nilHandle, type);
+	ImageCache * xi = prima_image_cache(( PImage) self, type);
 	if ( !xi) return nilHandle;
 
 	px = XCreatePixmap( DISP, guts. root, img-> w, img-> h,
