@@ -2483,7 +2483,7 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
 	char * perlSub;              /* sub name */
 	Handle bitmap;               /* bitmap if not nil */
 	SV *   code;                 /* code if not nil */
-	SV *   data;                 /* use data if not nil */
+	SV *   options;              /* use options if not nil */
 	Handle icon;                 /* custom checked bitmap */
 	struct _MenuItemReg* down;   /* pointer to submenu */
 	struct _MenuItemReg* next;   /* pointer to next item */

@@ -85,7 +85,7 @@ AbstractMenu_dispose_menu( Handle self, void * menu)
 	free( m-> variable);
 	free( m-> perlSub);
 	if ( m-> code) sv_free( m-> code);
-	if ( m-> data) sv_free( m-> data);
+	if ( m-> options) sv_free( m-> options);
 	if ( m-> bitmap) {
 		if ( PObject( m-> bitmap)-> stage < csDead)
 			SvREFCNT_dec( SvRV(( PObject( m-> bitmap))-> mate));
@@ -159,7 +159,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 		int l_sub   = -1;
 		int l_accel = -1;
 		int l_key   = -1;
-		int l_data  = -1;
+		int l_options  = -1;
 		Bool last_item_is_a_hash;
 
 		if ( itemHolder == nil)
@@ -197,7 +197,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 		} else if ( count == 2) {
 			if ( last_item_is_a_hash ) {
 				l_var  = 0;
-				l_data = 1;
+				l_options = 1;
 			} else {
 				l_text = 0;
 				l_sub  = 1;
@@ -206,7 +206,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 			if ( last_item_is_a_hash ) {
 				l_text = 0;
 				l_sub  = 1;
-				l_data = 2;
+				l_options = 2;
 			} else {
 				l_var  = 0;
 				l_text = 1;
@@ -217,7 +217,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 				l_var  = 0;
 				l_text = 1;
 				l_sub  = 2;
-				l_data = 3;
+				l_options = 3;
 			} else {
 				l_text  = 0;
 				l_accel = 1;
@@ -236,7 +236,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 			l_accel = 2;
 			l_key   = 3;
 			l_sub   = 4;
-			l_data  = 5;
+			l_options  = 5;
 		}
 
 		if ( m) curr = curr-> next = r; else curr = m = r; /* adding to list */
@@ -357,17 +357,17 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 			}
 		}
 
-		/* parsing data */
-		if ( l_data >= 0)
+		/* parsing options */
+		if ( l_options >= 0)
 		{
-			holder = av_fetch( item, l_data, 0);
+			holder = av_fetch( item, l_options, 0);
 			if ( !holder) {
 				warn("menu build error: array panic");
 				my-> dispose_menu( self, m);
 				return nil;
 			}
 			if (!( SvOK( *holder) && SvROK( *holder) && SvTYPE( SvRV( *holder)) == SVt_PVHV)) {
-				warn("menu build error: data is not a hashref");
+				warn("menu build error: options is not a hashref");
 			} else {
 				dPROFILE;
 				HV * profile = (HV*) SvRV(*holder);
@@ -375,10 +375,10 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 					Handle c_object = pget_H(icon);
 					if ( register_image(c_object))
 						r-> icon = c_object;
+					pdelete(icon);
 				}
-				if ( pexist( data ))
-					r-> data = newSVsv( pget_sv(data) );
 			}
+			r-> options = newSVsv( *holder);
 		}
 	}
 	return m;
@@ -518,12 +518,8 @@ new_av_entry(  PMenuItemReg m, int level, Bool fullTree)
 			av_push( loc, newSVpv( "", 0));
 		}
 
-		if ( m-> data || m-> icon) {
-			HV * profile = newHV();
-			if ( m-> icon ) pset_H ( icon, m-> icon );
-			if ( m-> data ) pset_sv( data, m-> data );
-			av_push( loc, newRV_noinc((SV*) profile));
-		}
+		if ( m-> options)
+			av_push( loc, newSVsv(m->options));
 	} else {
 		/* divider */
 		if ( m-> variable) {
@@ -844,16 +840,43 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 }
 
 SV *
-AbstractMenu_data( Handle self, Bool set, char * varName, SV * data)
+AbstractMenu_options( Handle self, Bool set, char * varName, SV * options)
 {
+	HV * profile;
 	PMenuItemReg m;
 	if ( var-> stage > csFrozen) return nilSV;
 	m = find_menuitem( self, varName, true);
 	if ( m == nil) return nilSV;
-	if ( !set)
-		return m-> data ? newSVsv( m-> data) : nilSV;
-	sv_free( m-> data);
-	m-> data = newSVsv( data);
+	if ( !set) {
+		if ( !m->options && m->icon ) {
+			HV * profile = newHV();
+			pset_H(icon, m->icon);
+			return newRV_noinc((SV*)profile);
+		}
+		return m-> options ? newSVsv( m-> options) : nilSV;
+	}
+
+	if (SvTYPE( SvRV( options)) == SVt_NULL) {
+		sv_free( m-> options);
+		m-> options = nilSV;
+	} else {
+		if (!(SvROK( options) && SvTYPE( SvRV( options)) == SVt_PVHV)) {
+			warn("options is not a hashref");
+			return nilSV;
+		}
+		sv_free( m-> options);
+		m-> options = newSVsv( options);
+		profile = (HV*)SvRV(options);
+		if ( pexist(icon)) {
+			dPROFILE;
+			my->icon(self, true, varName, pget_H(icon));
+			pdelete(icon);
+		}
+	}
+	notify( self, "<ssUS", "Change", "options",
+		m->variable ? m-> variable      : varName,
+		m->variable ? m-> flags.utf8_variable : 0,
+		options);
 	return nilSV;
 }
 

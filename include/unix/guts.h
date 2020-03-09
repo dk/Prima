@@ -913,6 +913,7 @@ typedef struct _menu_item
 	int          width;
 	int          height;
 	int          accel_width;
+	int          icon_width;
 	Pixmap       pixmap;
 } UnixMenuItem, *PUnixMenuItem;
 

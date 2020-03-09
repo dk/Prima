@@ -1483,9 +1483,9 @@ sub begin_drag
 sub on_menuitemmeasure
 {
 	my ( $self, $menu, $id, $ref) = @_;
-	my $data = $menu->data($id) or return;
-	return if ref($data) ne 'HASH';
-	if ( defined( my $cb = $data->{onMeasure})) {
+	my $opt = $menu->opt($id) or return;
+	return if ref($opt) ne 'HASH';
+	if ( defined( my $cb = $opt->{onMeasure})) {
 		$cb->($self, Prima::MenuItem->new($menu, $id), $ref);
 		$self->clear_event;
 	}
@@ -1494,9 +1494,9 @@ sub on_menuitemmeasure
 sub on_menuitempaint
 {
 	my ( $self, $menu, $id, @r) = @_;
-	my $data = $menu->data($id) or return;
-	return if ref($data) ne 'HASH';
-	if ( defined( my $cb = $data->{onPaint})) {
+	my $opt = $menu->opt($id) or return;
+	return if ref($opt) ne 'HASH';
+	if ( defined( my $cb = $opt->{onPaint})) {
 		$cb->($self, Prima::MenuItem->new($menu, $id), @r);
 		$self->clear_event;
 	}
@@ -1679,7 +1679,7 @@ sub action  { my $self = shift;return $self-> {menu}-> action ( $self-> {id}, @_
 sub autoToggle { my $self = shift;return $self-> {menu}-> autoToggle( $self-> {id}, @_);}
 sub checked { my $self = shift;return $self-> {menu}-> checked( $self-> {id}, @_);}
 sub enabled { my $self = shift;return $self-> {menu}-> enabled( $self-> {id}, @_);}
-sub data    { my $self = shift;return $self-> {menu}-> data   ( $self-> {id}, @_);}
+sub options { my $self = shift;return $self-> {menu}-> options( $self-> {id}, @_);}
 sub image   { my $self = shift;return $self-> {menu}-> image  ( $self-> {id}, @_);}
 sub key     { my $self = shift;return $self-> {menu}-> key    ( $self-> {id}, @_);}
 sub submenu { my $self = shift;return $self-> {menu}-> submenu( $self-> {id}, @_);}
