@@ -148,9 +148,6 @@ menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
 	XFlush(DISP);
 }
 
-#define MENU_XOFFSET 5
-#define MENU_CHECK_XOFFSET 10
-
 static int
 get_text_width( PCachedFont font, const char * text, int byte_length, Bool utf8, uint32_t * xft_map8)
 {
@@ -284,7 +281,17 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 	while ( m) {
 		ix-> icon_width = icon_width;
 
-		if ( m-> flags. divider) {
+		if ( m-> flags. custom_draw ) {
+			Handle owner = PComponent( w-> self)-> owner;
+			Event ev = { cmMenuItemMeasure };
+			ev.gen.P.x = 0;
+			ev.gen.P.y = 0;
+			ev.gen.H = w->self;
+			ev.gen.i = m-> id;
+			CComponent(owner)-> message(owner,&ev);
+			ix-> width  = ev.gen.P.x;
+			ix-> height = ev.gen.P.y + MENU_ITEM_GAP * 2;
+		} else if ( m-> flags. divider) {
 			ix-> height = vertical ? MENU_ITEM_GAP * 2 : 0;
 		} else {
 			int l = 0;
@@ -670,12 +677,12 @@ menuitem_draw_##name( \
 	PMenuItemReg m, PUnixMenuItem ix, \
 	int x, int y, int *str_size, char ** str_ptr, \
 	MenuDrawRec * draw, \
-	Bool vertical, Bool selected, int descent, unsigned long clr, Color rgb, Handle param \
+	Bool vertical, Bool selected, int descent, unsigned long clr, Color rgb, int index, Handle param \
 )
 
 #define DRAW(name) menuitem_draw_ ## name( \
 	self, win, w, m, ix, x, y, \
-	&sz, &s, &draw, vertical, selected, descent, clr, rgb, nilHandle \
+	&sz, &s, &draw, vertical, selected, descent, clr, rgb, last, nilHandle \
 )
 
 DECL_DRAW(text)
@@ -892,11 +899,12 @@ DECL_DRAW(image)
 	bzero(&dummy_p, sizeof(dummy_p));
 	bzero(&dummy_s, sizeof(dummy_s));
 	dummy_p.sysData = &dummy_s;
-	dummy_s.component.type.widget = 1;
-	dummy_s.drawable.flags.paint  = 1;
-	dummy_s.drawable.gc           = draw->gc;
-	dummy_s.drawable.gdrawable    = win;
-	dummy_s.drawable.size         = w->sz;
+	dummy_s.component.type.drawable = 1;
+	dummy_s.component.type.widget   = 1;
+	dummy_s.drawable.flags.paint    = 1;
+	dummy_s.drawable.gc             = draw->gc;
+	dummy_s.drawable.gdrawable      = win;
+	dummy_s.drawable.size           = w->sz;
 	if ( cache-> type == CACHE_BITMAP && XT_IS_ICON(X(param))) {
 		/* menu is special around 1-bit/1-bit icons, for win32 compat - these should be treated as bitmaps
 		to paint with menu colors */
@@ -937,13 +945,13 @@ DECL_DRAW(image)
 DECL_DRAW(bitmap)
 {
 	x += MENU_XOFFSET + (vertical ? ix-> icon_width : 0);
-	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,m->bitmap);
+	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,index,m->bitmap);
 }
 
 DECL_DRAW(icon)
 {
 	x += MENU_XOFFSET;
-	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,m->icon);
+	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,index,m->icon);
 }
 
 DECL_DRAW(background)
@@ -967,6 +975,36 @@ DECL_DRAW(background)
 		XDrawLine( DISP, win, draw->gc, 1, 1, mx-2, 1);
 	} else
 		XFillRectangle( DISP, win, draw->gc, 0, 0, w-> sz.x, w-> sz.y);
+
+	return true;
+}
+
+typedef struct {
+	XWindow win;
+	Bool layered;
+} PaintEvent;
+
+DECL_DRAW(custom)
+{
+	Point offset, size;
+	Handle owner;
+	Event ev = { cmMenuItemPaint };
+	PaintEvent rec = { win, draw-> layered };
+
+	offset = menu_item_offset( M(self), w, index);
+	size   = menu_item_size( M(self), w, index);
+	owner = PComponent( w-> self)-> owner;
+	ev.gen.P = w-> sz;
+	ev.gen.H = w->self;
+	ev.gen.i = m-> id;
+	offset.y = w-> sz.y - offset.y - 1;
+	ev.gen.R.left   = offset.x;
+	ev.gen.R.bottom = offset.y - size.y + 1;
+	ev.gen.R.right  = offset.x + size.x - 1;
+	ev.gen.R.top    = offset.y;
+	ev.gen.p        = &rec;
+	ev.gen.B        = selected;
+	CComponent(owner)-> message(owner,&ev);
 
 	return true;
 }
@@ -1059,19 +1097,22 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 	if ( !( s = malloc( sz))) goto EXIT;
 	DRAW(background);
 	while ( m) {
+		int deltaY = ix-> height;
+
 		/* printf("%d %d %d %s\n", last, w-> selected, w-> last, m-> text); */
-		if ( last == w-> selected) {
-			Point sz = menu_item_size( XX, w, last);
-			Point p = menu_item_offset( XX, w, last);
-			XSetForeground( DISP, draw.gc, draw.c[ciHilite]);
-			XFillRectangle( DISP, win, draw.gc, p.x, p.y, sz. x, sz.y);
+		selected = last == w-> selected;
+		if ( selected ) {
+			if ( !m-> flags. custom_draw ) {
+				Point sz = menu_item_size( XX, w, last);
+				Point p = menu_item_offset( XX, w, last);
+				XSetForeground( DISP, draw.gc, draw.c[ciHilite]);
+				XFillRectangle( DISP, win, draw.gc, p.x, p.y, sz. x, sz.y);
+			}
 			clr = draw.c[ciHiliteText];
 			rgb = XX-> rgb[ciHiliteText];
-			selected = true;
 		} else {
 			clr = draw.c[ciFore];
 			rgb = XX-> rgb[ciFore];
-			selected = false;
 		}
 
 		if ( last > w-> last) {
@@ -1079,7 +1120,17 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 			break;
 		}
 
-		if ( m-> flags. divider) {
+		if ( m-> flags. disabled) {
+			clr = draw.c[ciDisabledText];
+			rgb = XX-> rgb[ ciDisabledText];
+		}
+
+		if ( m-> flags. custom_draw ) {
+			if ( vertical ) {y += ix-> height;
+				if (m-> down) DRAW(submenu);
+			}
+			DRAW(custom);
+		} else if ( m-> flags. divider) {
 			DRAW(divider);
 			if ( vertical )
 				y += MENU_ITEM_GAP * 2;
@@ -1088,14 +1139,6 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 				right = 0;
 			}
 		} else {
-			int deltaY = 0;
-
-			if ( m-> flags. disabled) {
-				clr = draw.c[ciDisabledText];
-				rgb = XX-> rgb[ ciDisabledText];
-			}
-			deltaY = ix-> height;
-
 			if ( vertical ) {
 				/* don't draw check marks on horizontal menus - they look ugly */
 				if ( m-> icon )
@@ -2112,11 +2155,26 @@ apc_window_set_menu( Handle self, Handle menu)
 Bool
 apc_menu_item_begin_paint( Handle self, PEvent event)
 {
-	return false;
+	PaintEvent * pe = (PaintEvent*) event-> gen.p;
+	PDrawableSysData YY = X(event->gen.H);
+
+	YY-> type.drawable = 1;
+	YY-> type.widget   = 1;
+	YY-> flags.paint   = 1;
+	YY-> flags.layered = pe->layered;
+	YY-> gdrawable     = pe->win;
+	YY-> size          = event-> gen.P;
+	YY-> visual        = pe->layered ? &guts. argb_visual : &guts. visual;
+	YY-> colormap      = pe->layered ? guts. argbColormap : guts. defaultColormap;
+	prima_prepare_drawable_for_painting(event-> gen.H, false );
+
+	return true;
+
 }
 
 Bool
 apc_menu_item_end_paint( Handle self, PEvent event)
 {
-	return false;
+	prima_cleanup_drawable_after_painting(event->gen.H);
+	return true;
 }

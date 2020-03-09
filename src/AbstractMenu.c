@@ -1346,8 +1346,8 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 
 			event-> gen.H = drawable;
 			if ( apc_menu_item_begin_paint(self, event)) {
-				PComponent(owner)->self->notify( owner, "<sHUHR", "MenuItemPaint",
-					self, context, m->flags.utf8_variable, event->gen.H, event->gen.R);
+				PComponent(owner)->self->notify( owner, "<sHUHiR", "MenuItemPaint",
+					self, context, m->flags.utf8_variable, event->gen.H, event->gen.B, event->gen.R);
 				apc_menu_item_end_paint(self, event);
 			}
 
