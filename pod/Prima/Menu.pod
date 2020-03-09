@@ -201,7 +201,7 @@ Required when custom painting is set. It is called when system needs to query
 menu item dimensions. C<REF> is a 2-item arrayref that needs to be set with
 pixel dimension.
 
-=item onPaint WIDGET, MENUITEM, CANVAS, X1, Y1, X2, Y2
+=item onPaint WIDGET, MENUITEM, CANVAS, SELECTED, X1, Y1, X2, Y2
 
 Required when custom painting is set. It is called whenever system needs to
 draw a menu item. X1 - Y2 are coordinates of the rectangle where the drawing is

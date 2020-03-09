@@ -906,6 +906,9 @@ typedef struct _drawable_sys_data
 #define MenuTimerMessage   1021
 
 #define MENU_ITEM_GAP 4
+#define MENU_XOFFSET 5
+#define MENU_CHECK_XOFFSET 10
+
 
 typedef struct _menu_item
 {
@@ -1487,3 +1490,4 @@ prima_update_dnd_aware( Handle self );
 
 extern Cursor
 prima_get_cursor(Handle self);
+

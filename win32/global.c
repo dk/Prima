@@ -710,6 +710,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 				ev.gen.H        = (Handle) dis-> itemData;
 				ev.gen.i        = (Handle) dis-> itemID - MENU_ID_AUTOSTART;
 				ev.gen.p        = (void*) dis->hDC;
+				ev.gen.B        = ((dis-> itemState & ODS_SELECTED) != 0);
 				ev.gen.P.x      = r.right;
 				ev.gen.P.y      = r.bottom;
 				ev.gen.R.left   = dis-> rcItem.left;

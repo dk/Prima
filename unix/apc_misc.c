@@ -1171,6 +1171,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 		1
 #endif
 ;
+	case svMenuCheckSize   : return MENU_CHECK_XOFFSET;
 	default:
 		return -1;
 	}

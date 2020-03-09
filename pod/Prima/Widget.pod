@@ -2904,7 +2904,7 @@ dimension.
 
 See also: L<Prima::Menu/Options>
 
-=item MenuItemPaint WIDGET, MENU, ITEMID, CANVAS, X1, Y1, X2, Y2
+=item MenuItemPaint WIDGET, MENU, ITEMID, CANVAS, SELECTED, X1, Y1, X2, Y2
 
 Called whenever system needs to draw a menu item that has custom painting bit
 set. X1 - Y2 are coordinates of the rectangle where the drawing is allowed.

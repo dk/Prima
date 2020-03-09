@@ -1483,7 +1483,7 @@ sub begin_drag
 sub on_menuitemmeasure
 {
 	my ( $self, $menu, $id, $ref) = @_;
-	my $opt = $menu->opt($id) or return;
+	my $opt = $menu->options($id) or return;
 	return if ref($opt) ne 'HASH';
 	if ( defined( my $cb = $opt->{onMeasure})) {
 		$cb->($self, Prima::MenuItem->new($menu, $id), $ref);
@@ -1494,7 +1494,7 @@ sub on_menuitemmeasure
 sub on_menuitempaint
 {
 	my ( $self, $menu, $id, @r) = @_;
-	my $opt = $menu->opt($id) or return;
+	my $opt = $menu->options($id) or return;
 	return if ref($opt) ne 'HASH';
 	if ( defined( my $cb = $opt->{onPaint})) {
 		$cb->($self, Prima::MenuItem->new($menu, $id), @r);

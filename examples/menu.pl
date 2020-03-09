@@ -83,13 +83,20 @@ sub create_custom_menu
 			@$ref = ($w + 20 + $menu-> check_icon_size, $h + 20);
 		},
 		onPaint => sub {
-			my ( $self, $menu, $canvas, $x1, $y1, $x2, $y2) = @_;
-			$canvas-> new_gradient(palette => [cl::Black, cl::White])->bar($x1, $y1, $x2, $y2, 1);
+			my ( $self, $menu, $canvas, $selected, $x1, $y1, $x2, $y2) = @_;
+			my @p = ( cl::Black, cl::White );
+			@p = reverse @p if $selected;
+			$canvas-> new_gradient(palette => \@p)->bar($x1, $y1, $x2, $y2, 1);
 			$canvas-> font( $self-> popupFont );
 			$canvas-> color(cl::Yellow);
-			$canvas-> text_out( $menu->text, $x1 + $menu-> check_icon_size, $y1 + 10);
+
 			my $i = $icons[ $menu->checked ];
-			$canvas-> put_image(( $menu-> check_icon_size - $i-> width) / 2, ($y2 + $y1 - $i->height) / 2, $i);
+			my $isz = $menu-> check_icon_size;
+			my $dx = ( $isz > $i-> width ) ? $isz : $i-> width;
+			$canvas-> text_out( $menu->text, $x1 + 2 + $dx, $y1 + 10);
+			$canvas-> put_image(
+				$x1 + (( $isz > $i-> width ) ? ( $menu-> check_icon_size - $i-> width) / 2 : 0),
+				($y2 + $y1 - $i->height) / 2, $i);
 		},
 	} ];
 	return @ret;
