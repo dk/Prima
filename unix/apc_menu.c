@@ -16,7 +16,8 @@
 
 #define TREE            (PAbstractMenu(self)->tree)
 
-#define MAX_BITMAP_HEIGHT (guts.displaySize.y - kf->font.height - MENU_ITEM_GAP * 3 - 4)
+#define MAX_BITMAP_HEIGHT (guts.displaySize.y / 4)
+#define MAX_BITMAP_WIDTH  (guts.displaySize.x / 4)
 
 static PMenuWindow
 get_menu_window( Handle self, XWindow xw)
@@ -106,11 +107,32 @@ item_count( PMenuWindow w)
 }
 
 static void
+kill_menu_bitmap( PMenuBitmap bm )
+{
+	if ( bm-> xor ) {
+		prima_refcnt_dec(bm->xor);
+		unprotect_object(bm->xor);
+		Object_destroy( bm->xor);
+	}
+	if ( bm-> and ) {
+		prima_refcnt_dec(bm->and);
+		unprotect_object(bm->and);
+		Object_destroy( bm->and);
+	}
+}
+
+static void
 free_unix_items( PMenuWindow w)
 {
 	if ( w-> um) {
-		if ( w-> first < 0) 
+		if ( w-> first < 0) {
+			int i;
+			for ( i = 0; i < w->num; i++) {
+				kill_menu_bitmap( &w->um[i].icon  );
+				kill_menu_bitmap( &w->um[i].bitmap);
+			}
 			free( w-> um);
+		}
 		w-> um = nil;
 	}
 	w-> num = 0;
@@ -233,26 +255,194 @@ text_out( PCachedFont font, const char * text, int length, int x, int y,
 }
 
 static void
+convert_to_lowres(Handle src)
+{
+	int i, colors = 0;
+	RGBColor palette[256];
+
+	for ( i = 0; i < guts. palSize; i++) {
+		if ( guts. palette[i]. rank <= RANK_LOCKED) continue;
+		palette[colors]. r = guts. palette[i]. r;
+		palette[colors]. g = guts. palette[i]. g;
+		palette[colors]. b = guts. palette[i]. b;
+		if ( ++colors > 255) break;
+	}
+
+	CImage(src)->reset( src, guts.qdepth, palette, colors);
+}
+
+static Bool
+create_menu_bitmap(Handle src, PMenuBitmap dst, Bool layered, Bool disabled, int * w, int * h)
+{
+	Bool dispose_src = false;
+	PIcon i = (PIcon) src;
+
+	if ( i == NULL || i-> stage >= csDead)
+		return false;
+
+	bzero(dst, sizeof(MenuBitmap));
+
+	/* XXX check for dynamic colors and layered env */
+#define USE_ARGB_SHADING 1
+
+	if ( i-> w > MAX_BITMAP_WIDTH || i-> h > MAX_BITMAP_HEIGHT ) {
+		Handle dup;
+		int w = i-> w, h = i-> h;
+		if ( w > MAX_BITMAP_WIDTH  ) w = MAX_BITMAP_WIDTH;
+		if ( h > MAX_BITMAP_HEIGHT ) h = MAX_BITMAP_HEIGHT;
+
+		dup = i-> self-> dup(src);
+		Object_destroy(dup);
+		dispose_src = true;
+		src = dup;
+
+		i = (PIcon) src;
+		i-> self-> stretch(src, w, h);
+	}
+	*w = i->w;
+	*h = i->h;
+
+	/* menu is special around 1-bit/1-bit icons, for win32 compat - these should be treated as bitmaps
+	to paint with menu colors */
+	if ( XT_IS_ICON(X(src)) && ((i->type & imBPP) == 1) && (i->maskType == 1)) {
+		IconHandle split = i->self->split(src);
+		dst->is_mono = true;
+		dst->xor  = CImage(split.xorMask)->bitmap(split.xorMask);
+		Object_destroy( split.xorMask );
+		Object_destroy( split.andMask );
+	}
+
+	/* as-is image */
+	else if ( !( XT_IS_ICON(X(src))) && !disabled ) {
+		goto FALLBACK;
+	}
+
+	/* as-is icon */
+	else if ( XT_IS_ICON(X(src)) && !disabled && (i->maskType == 1)) {
+		IconHandle split = i->self->split(src);
+		if ( guts.dynamicColors )
+			convert_to_lowres(split.xorMask);
+		dst->xor = CImage(split.xorMask)->bitmap(split.xorMask);
+		dst->and = CImage(split.andMask)->bitmap(split.andMask);
+		Object_destroy( split.xorMask );
+		Object_destroy( split.andMask );
+	}
+
+	/* layering is available -- use it */
+	else if (
+		guts. argb_depth &&
+		(
+			layered ||
+			( disabled && USE_ARGB_SHADING ) ||
+			( XT_IS_ICON(X(src)) && (i->maskType == 8))
+		)
+	) {
+		/* convert input to rgba */
+		dst->rop  = ropSrcOver;
+		if ( XT_IS_ICON(X(src))) {
+			if ( !dispose_src ) {
+				i = (PIcon)(src = i->self->dup(src));
+				dispose_src = true;
+			}
+			if ( i-> maskType == 1 ) 
+				i->self->set_maskType(src, 8);
+			if ( disabled ) {
+				int sz = i-> maskSize;
+				Byte * p = i-> mask;
+				while (sz--) *p /= 2;
+			}
+			i-> autoMasking = amNone;
+			i-> self-> set_type( src, imRGB );
+			i-> self-> premultiply_alpha(src, NULL);
+			dst->xor  = CImage(src)->bitmap(src);
+		} else {
+			Handle dup = (Handle) create_object("Prima::Icon", "iiiii",
+				"width", i->w,
+				"height", i-> h,
+				"type", i->type,
+				"maskType", 8,
+				"autoMasking", amNone
+			);
+			PImage(dup)->palSize = i->palSize;
+			memcpy( PImage(dup)->palette, i->palette, i->palSize * 3);
+			memcpy( PImage(dup)->data, i->data, i->dataSize);
+			CImage(dup)->set_type(dup, imRGB);
+			memset( PIcon(dup)->mask, disabled ? 0x80 : 0xff, PIcon(dup)->maskSize);
+			if ( disabled )
+				CImage(dup)->premultiply_alpha(dup, NULL);
+			dst->xor = CImage(dup)->bitmap(dup);
+			Object_destroy(dup);
+			dst->rop  = ropSrcCopy;
+		}
+
+	} else if ( XT_IS_ICON(X(src))) {
+		/* argb icon over non-argb surface */
+		IconHandle split;
+		if ( !dispose_src ) {
+			i = (PIcon)(src = i->self->dup(src));
+			dispose_src = true;
+		}
+		if ( i->maskType == 8 ) {
+			i->self->set_type(src, imRGB);
+			i->self->premultiply_alpha(src, NULL);
+			i->self->set_maskType(src, 1);
+		}
+		split = i->self->split(src);
+		dst->use_stippling = disabled;
+		dst->xor = CImage(split.xorMask)->bitmap(split.xorMask);
+		dst->and = CImage(split.andMask)->bitmap(split.andMask);
+		Object_destroy( split.xorMask );
+		Object_destroy( split.andMask );
+	} else {
+		dst-> use_stippling = disabled;
+	FALLBACK:
+		if ( guts.dynamicColors ) {
+			Handle dup = i-> self-> dup(src);
+			if ( dispose_src ) Object_destroy(src);
+			dispose_src = true;
+			convert_to_lowres(dup);
+			i = (PIcon) (src = dup);
+		}
+		dst->xor = i->self->bitmap(src);
+		dst->rop = ropCopyPut;
+	}
+
+	if ( dispose_src )
+		Object_destroy( src );
+	if ( dst->xor ) {
+		prima_refcnt_inc(dst->xor);
+		protect_object(dst->xor);
+	}
+	if ( dst->and ) {
+		prima_refcnt_inc(dst->and);
+		protect_object(dst->and);
+	}
+
+	return true;
+#undef USE_ARGB_SHADING
+}
+
+static void
 update_menu_window( PMenuSysData XX, PMenuWindow w)
 {
 	int x, y = 2 + 2, startx, icon_width;
-	Bool vertical = w != &XX-> wstatic;
+	Bool vertical = w != &XX-> wstatic, layered;
 	PMenuItemReg m = w->m;
 	PUnixMenuItem ix;
 	int lastIncOk = 1;
 	PCachedFont kf = XX-> font;
 	uint32_t *xft_map8 = nil;
+	PWindow owner = ( PWindow)(PComponent( w-> self)-> owner);
 
 #ifdef USE_XFT
 	{
-		PWindow owner = ( PWindow)(PComponent( w-> self)-> owner);
 		const char * encoding = ( XX-> type. popup) ?
 			owner-> popupFont. encoding :
 			owner-> menuFont. encoding;
 		xft_map8 = prima_xft_map8( encoding);
 	}
 #endif
-
+	layered = vertical ? false : X(owner)->flags. layered;
 
 	free_unix_items( w);
 	w-> num = item_count( w);
@@ -282,19 +472,18 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 		ix-> icon_width = icon_width;
 
 		if ( m-> flags. custom_draw ) {
-			Handle owner = PComponent( w-> self)-> owner;
 			Event ev = { cmMenuItemMeasure };
 			ev.gen.P.x = 0;
 			ev.gen.P.y = 0;
 			ev.gen.H = w->self;
 			ev.gen.i = m-> id;
-			CComponent(owner)-> message(owner,&ev);
+			owner-> self-> message((Handle) owner,&ev);
 			ix-> width  = ev.gen.P.x;
 			ix-> height = ev.gen.P.y + MENU_ITEM_GAP * 2;
 		} else if ( m-> flags. divider) {
 			ix-> height = vertical ? MENU_ITEM_GAP * 2 : 0;
 		} else {
-			int l = 0;
+			int l = 0, w, h;
 			if ( m-> text) {
 				int i, ntildas = 0;
 				char * t = m-> text;
@@ -310,16 +499,14 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 					m-> flags. utf8_text, xft_map8);
 				if ( ntildas)
 					ix-> width -= ntildas * get_text_width( kf, "~", 1, false, xft_map8);
-			} else if ( m-> bitmap && PObject( m-> bitmap)-> stage < csDead) {
-				PImage i = ( PImage) m-> bitmap;
-				ix-> height += (( i-> h < kf-> font. height) ?  kf-> font. height : i-> h) +
+			} else if ( create_menu_bitmap(m->bitmap, &ix->bitmap, layered, m->flags.disabled, &w, &h)) {
+				ix-> height += (( h < kf-> font. height) ?  kf-> font. height : h) +
 					MENU_ITEM_GAP * 2;
-				ix-> width  += i-> w + startx;
+				ix-> width  += w + startx;
 			}
 
-			if ( m-> icon && PObject( m-> icon)-> stage < csDead) {
-				PImage i = ( PImage) m-> icon;
-				int    y = i-> h + MENU_ITEM_GAP * 2;
+			if (  create_menu_bitmap(m->icon, &ix->icon, layered, m->flags.disabled, &w, &h)) {
+				int    y = h + MENU_ITEM_GAP * 2;
 				if ( ix-> height < y ) ix-> height = y;
 			}
 
@@ -677,12 +864,12 @@ menuitem_draw_##name( \
 	PMenuItemReg m, PUnixMenuItem ix, \
 	int x, int y, int *str_size, char ** str_ptr, \
 	MenuDrawRec * draw, \
-	Bool vertical, Bool selected, int descent, unsigned long clr, Color rgb, int index, Handle param \
+	Bool vertical, Bool selected, int descent, unsigned long clr, Color rgb, int index, void* param \
 )
 
 #define DRAW(name) menuitem_draw_ ## name( \
 	self, win, w, m, ix, x, y, \
-	&sz, &s, &draw, vertical, selected, descent, clr, rgb, last, nilHandle \
+	&sz, &s, &draw, vertical, selected, descent, clr, rgb, last, NULL \
 )
 
 DECL_DRAW(text)
@@ -884,17 +1071,16 @@ DECL_DRAW(divider)
 DECL_DRAW(image)
 {
 	DEFMM;
-	PImage i = ( PImage) param;
-	PCachedFont kf = XX->font;
-	int Y, H;
+	int Y, H, W;
+	PMenuBitmap bm = (PMenuBitmap) param;
 	Drawable   dummy_p;
 	UnixSysData dummy_s;
-	ImageCache * cache = prima_image_cache(i, CACHE_MENU);
 
-	if ( !cache ) return true;
-
-	Y = y + ( ix->height - i-> h ) / 2;
-	H = (ix-> height == MAX_BITMAP_HEIGHT) ? MAX_BITMAP_HEIGHT - MENU_ITEM_GAP * 2 : i->h;
+	if ( !bm-> xor )
+		return true;
+	W = X(bm->xor)->size.x;
+	H = X(bm->xor)->size.y;
+	Y = y + ( ix->height - H ) / 2;
 
 	bzero(&dummy_p, sizeof(dummy_p));
 	bzero(&dummy_s, sizeof(dummy_s));
@@ -905,35 +1091,41 @@ DECL_DRAW(image)
 	dummy_s.drawable.gc             = draw->gc;
 	dummy_s.drawable.gdrawable      = win;
 	dummy_s.drawable.size           = w->sz;
-	if ( cache-> type == CACHE_BITMAP && XT_IS_ICON(X(param))) {
-		/* menu is special around 1-bit/1-bit icons, for win32 compat - these should be treated as bitmaps
-		to paint with menu colors */
+
+	if ( bm-> is_mono ) {
 		if ( m-> flags. disabled ) {
-			XSetFunction  ( DISP, draw-> gc, GXor );
-			XSetForeground( DISP, draw-> gc, 0x00000000);
-			XSetBackground( DISP, draw-> gc, XX->c[ciLight3DColor]);
-			prima_put_ximage(win, draw-> gc, cache->image, 0, 0, x + 1, Y + 1, i-> w, H);
+			dummy_s.drawable.back.primary = 0x00000000;
+			dummy_s.drawable.fore.primary = XX->c[ciLight3DColor];
+			apc_gp_put_image((Handle) &dummy_p, bm->xor, x + 1, w-> sz.y - H - Y - 1, 0, 0, W, H, ropOrPut);
 		}
-		XSetFunction  ( DISP, draw-> gc, GXand );
-		XSetForeground( DISP, draw-> gc, 0xffffffff);
-		XSetBackground( DISP, draw-> gc, 0x00000000);
-		prima_put_ximage(win, draw-> gc, cache->image, 0, 0, x, Y, i-> w, H);
-		XSetFunction  ( DISP, draw-> gc, GXxor );
-		XSetForeground( DISP, draw-> gc, 0x00000000);
-		XSetBackground( DISP, draw-> gc, clr);
-		prima_put_ximage(win, draw-> gc, cache->image, 0, 0, x, Y, i-> w, H);
-		XSetFunction( DISP, draw-> gc, GXcopy );
+		dummy_s.drawable.fore.primary = 0x00000000;
+		dummy_s.drawable.back.primary = 0xffffffff;
+		apc_gp_put_image((Handle) &dummy_p, bm->xor, x, w-> sz.y - H - Y, 0, 0, W, H, ropAndPut);
+		dummy_s.drawable.back.primary = 0x00000000;
+		dummy_s.drawable.fore.primary = clr;
+		apc_gp_put_image((Handle) &dummy_p, bm->xor, x, w-> sz.y - H - Y, 0, 0, W, H, ropXorPut);
 	} else {
-		apc_gp_put_image((Handle) &dummy_p, param,
-			x, w-> sz.y - H - Y,
-			0, 0, i-> w, H, ropCopyPut);
-		if ( m-> flags. disabled ) {
+		dummy_s.drawable.fore.primary = 0x00000000;
+		dummy_s.drawable.back.primary = 0xffffffff;
+		if ( bm-> and ) {
+			apc_gp_put_image((Handle) &dummy_p, bm->and,
+				x, w-> sz.y - H - Y,
+				0, 0, W, H, ropAndPut);
+			apc_gp_put_image((Handle) &dummy_p, bm->xor,
+				x, w-> sz.y - H - Y,
+				0, 0, W, H, ropXorPut);
+		} else {
+			apc_gp_put_image((Handle) &dummy_p, bm->xor,
+				x, w-> sz.y - H - Y,
+				0, 0, W, H, bm->rop);
+		}
+		if ( bm-> use_stippling ) {
 			XSetStipple   ( DISP, draw-> gc, prima_get_hatch( &fillPatterns[fpSimpleDots] ));
 			XSetFillStyle ( DISP, draw-> gc, FillOpaqueStippled);
 			XSetFunction  ( DISP, draw-> gc, GXand );
 			XSetForeground( DISP, draw-> gc, 0x00000000);
 			XSetBackground( DISP, draw-> gc, 0xffffffff);
-			XFillRectangle( DISP, win, draw-> gc, x, Y, i-> w, H);
+			XFillRectangle( DISP, win, draw-> gc, x, Y, W, H);
 			XSetFunction  ( DISP, draw-> gc, GXcopy );
 			XSetFillStyle ( DISP, draw-> gc, FillSolid);
 		}
@@ -945,13 +1137,13 @@ DECL_DRAW(image)
 DECL_DRAW(bitmap)
 {
 	x += MENU_XOFFSET + (vertical ? ix-> icon_width : 0);
-	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,index,m->bitmap);
+	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,index,&ix->bitmap);
 }
 
 DECL_DRAW(icon)
 {
 	x += MENU_XOFFSET;
-	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,index,m->icon);
+	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,index,&ix->icon);
 }
 
 DECL_DRAW(background)

@@ -909,6 +909,15 @@ typedef struct _drawable_sys_data
 #define MENU_XOFFSET 5
 #define MENU_CHECK_XOFFSET 10
 
+typedef struct
+{
+	Bool is_mono;
+	Bool use_stippling;
+	int rop;
+	Handle xor;
+	Handle and;
+	long fore, back;
+} MenuBitmap, *PMenuBitmap;
 
 typedef struct _menu_item
 {
@@ -918,6 +927,7 @@ typedef struct _menu_item
 	int          height;
 	int          accel_width;
 	int          icon_width;
+	MenuBitmap   bitmap, icon;
 } UnixMenuItem, *PUnixMenuItem;
 
 typedef struct _menu_window
