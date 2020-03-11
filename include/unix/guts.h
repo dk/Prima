@@ -913,7 +913,6 @@ typedef struct
 {
 	Bool is_mono;
 	Bool use_stippling;
-	int rop;
 	Handle xor;
 	Handle and;
 	long fore, back;
@@ -945,6 +944,10 @@ typedef struct _menu_window
 	int                  right;
 	int                  last;
 	int                  first;
+	Region               rgn;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	Picture              argb_picture;
+#endif
 } MenuWindow, *PMenuWindow;
 
 typedef struct _menu_sys_data

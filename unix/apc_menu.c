@@ -338,7 +338,6 @@ create_menu_bitmap(Handle src, PMenuBitmap dst, Bool layered, Bool disabled, int
 		)
 	) {
 		/* convert input to rgba */
-		dst->rop  = ropSrcOver;
 		if ( XT_IS_ICON(X(src))) {
 			if ( !dispose_src ) {
 				i = (PIcon)(src = i->self->dup(src));
@@ -372,7 +371,6 @@ create_menu_bitmap(Handle src, PMenuBitmap dst, Bool layered, Bool disabled, int
 				CImage(dup)->premultiply_alpha(dup, NULL);
 			dst->xor = CImage(dup)->bitmap(dup);
 			Object_destroy(dup);
-			dst->rop  = ropSrcCopy;
 		}
 
 	} else if ( XT_IS_ICON(X(src))) {
@@ -404,7 +402,6 @@ create_menu_bitmap(Handle src, PMenuBitmap dst, Bool layered, Bool disabled, int
 			i = (PIcon) (src = dup);
 		}
 		dst->xor = i->self->bitmap(src);
-		dst->rop = ropCopyPut;
 	}
 
 	if ( dispose_src )
@@ -860,7 +857,7 @@ store_char( char * src, int srclen, int * srcptr, char * dst, int * dstptr, Bool
 #define DECL_DRAW(name) \
 static Bool \
 menuitem_draw_##name( \
-	Handle self, XWindow win, PMenuWindow w,\
+	Handle self, XWindow win, PMenuWindow w, Region rgn, \
 	PMenuItemReg m, PUnixMenuItem ix, \
 	int x, int y, int *str_size, char ** str_ptr, \
 	MenuDrawRec * draw, \
@@ -868,7 +865,7 @@ menuitem_draw_##name( \
 )
 
 #define DRAW(name) menuitem_draw_ ## name( \
-	self, win, w, m, ix, x, y, \
+	self, win, w, rgn, m, ix, x, y, \
 	&sz, &s, &draw, vertical, selected, descent, clr, rgb, last, NULL \
 )
 
@@ -1091,6 +1088,13 @@ DECL_DRAW(image)
 	dummy_s.drawable.gc             = draw->gc;
 	dummy_s.drawable.gdrawable      = win;
 	dummy_s.drawable.size           = w->sz;
+	dummy_s.drawable.current_region = rgn;
+	if ( draw->layered ) {
+		dummy_s.drawable.flags.layered = 1;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		dummy_s.drawable.argb_picture = w-> argb_picture;
+#endif
+	}
 
 	if ( bm-> is_mono ) {
 		if ( m-> flags. disabled ) {
@@ -1108,16 +1112,22 @@ DECL_DRAW(image)
 		dummy_s.drawable.fore.primary = 0x00000000;
 		dummy_s.drawable.back.primary = 0xffffffff;
 		if ( bm-> and ) {
+			XSetPlaneMask( DISP, draw-> gc,
+				guts.argb_bits.red_mask|
+				guts.argb_bits.green_mask|
+				guts.argb_bits.blue_mask
+			);
 			apc_gp_put_image((Handle) &dummy_p, bm->and,
 				x, w-> sz.y - H - Y,
 				0, 0, W, H, ropAndPut);
 			apc_gp_put_image((Handle) &dummy_p, bm->xor,
 				x, w-> sz.y - H - Y,
 				0, 0, W, H, ropXorPut);
+			XSetPlaneMask( DISP, draw-> gc, AllPlanes);
 		} else {
 			apc_gp_put_image((Handle) &dummy_p, bm->xor,
 				x, w-> sz.y - H - Y,
-				0, 0, W, H, bm->rop);
+				0, 0, W, H, ropSrcOver);
 		}
 		if ( bm-> use_stippling ) {
 			XSetStipple   ( DISP, draw-> gc, prima_get_hatch( &fillPatterns[fpSimpleDots] ));
@@ -1137,13 +1147,13 @@ DECL_DRAW(image)
 DECL_DRAW(bitmap)
 {
 	x += MENU_XOFFSET + (vertical ? ix-> icon_width : 0);
-	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,index,&ix->bitmap);
+	return menuitem_draw_image(self,win,w,rgn,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,index,&ix->bitmap);
 }
 
 DECL_DRAW(icon)
 {
 	x += MENU_XOFFSET;
-	return menuitem_draw_image(self,win,w,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,index,&ix->icon);
+	return menuitem_draw_image(self,win,w,rgn,m,ix,x,y,str_size,str_ptr,draw,vertical,selected,descent,clr,rgb,index,&ix->icon);
 }
 
 DECL_DRAW(background)
@@ -1217,10 +1227,12 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 	int descent;
 	PCachedFont kf;
 	MenuDrawRec draw;
-	unsigned long clr;
-	Color rgb;
+	unsigned long clr = 0;
+	Color rgb = 0;
 	PWindow owner;
 	Bool selected = false;
+	XRectangle r;
+	Region rgn;
 
 	kf = XX-> font;
 	XX-> paint_pending = false;
@@ -1263,21 +1275,19 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 #endif
 	descent = kf-> fs->max_bounds.descent;
 
-	{
-		XRectangle r;
-		Region rgn;
-		r. x = ev-> xexpose. x;
-		r. y = ev-> xexpose. y;
-		r. width = ev-> xexpose. width;
-		r. height = ev-> xexpose. height;
-		rgn = XCreateRegion();
-		XUnionRectWithRegion( &r, rgn, rgn);
-		XSetRegion( DISP, draw.gc, rgn);
+	r. x = ev-> xexpose. x;
+	r. y = ev-> xexpose. y;
+	r. width = ev-> xexpose. width;
+	r. height = ev-> xexpose. height;
+	rgn = XCreateRegion();
+	XUnionRectWithRegion( &r, rgn, rgn);
+	XSetRegion( DISP, draw.gc, rgn);
 #ifdef USE_XFT
-		if ( draw. xft_drawable) XftDrawSetClip(( XftDraw*) draw.xft_drawable, rgn);
+	if ( draw. xft_drawable) XftDrawSetClip(( XftDraw*) draw.xft_drawable, rgn);
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	if ( w-> argb_picture ) XRenderSetPictureClipRegion(DISP, w->argb_picture, rgn);
 #endif
-		XDestroyRegion( rgn);
-	}
+#endif
 
 #ifdef USE_XFT
 	if ( !kf-> xft)
@@ -1367,6 +1377,7 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 	free(s);
 	EXIT:;
 
+	XDestroyRegion( rgn);
 #ifdef USE_XFT
 	if ( draw. xft_drawable)
 		XftDrawDestroy( draw. xft_drawable);
@@ -2096,6 +2107,38 @@ menubar_repaint( Handle self)
 	}
 }
 
+static void
+menu_update_item( Handle self, PMenuItemReg m)
+{
+	DEFMM;
+	PUnixMenuItem ix;
+	PMenuWindow w;
+	PMenuItemReg mm;
+	Handle owner;
+	Bool layered;
+
+	if ( !PMenu(self)-> handle) return; /* horizontal updates only */
+
+	w       = XX-> w;
+	ix      = w-> um;
+	mm      = w->m;
+	owner   = PComponent( w-> self)-> owner;
+	layered = X(owner)->flags. layered;
+	while (mm) {
+		int w, h;
+		if ( mm != m ) {
+			ix++;
+			mm = mm->next;
+			continue;
+		}
+		kill_menu_bitmap( &ix->icon);
+		kill_menu_bitmap( &ix->bitmap);
+		create_menu_bitmap(m->bitmap, &ix->bitmap, layered, m->flags.disabled, &w, &h);
+		create_menu_bitmap(m->icon, &ix->icon, layered, m->flags.disabled, &w, &h);
+		break;
+	}
+}
+
 Bool
 apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 {
@@ -2150,6 +2193,7 @@ Bool
 apc_menu_item_set_enabled( Handle self, PMenuItemReg m)
 {
 	menu_touch( self, m, false);
+	menu_update_item(self, m);
 	menubar_repaint( self);
 	return true;
 }
@@ -2158,6 +2202,7 @@ Bool
 apc_menu_item_set_icon( Handle self, PMenuItemReg m)
 {
 	menu_touch( self, m, false);
+	menu_update_item(self, m);
 	menubar_repaint( self);
 	return true;
 }
@@ -2167,6 +2212,7 @@ Bool
 apc_menu_item_set_image( Handle self, PMenuItemReg m)
 {
 	menu_touch( self, m, false);
+	menu_update_item(self, m);
 	menubar_repaint( self);
 	return true;
 }
@@ -2282,6 +2328,12 @@ apc_window_set_menu( Handle self, Handle menu)
 		PMenuWindow w = M(m)-> w;
 		if ( m-> handle == guts. currentMenu) prima_end_menu();
 		hash_delete( guts. menu_windows, &w-> w, sizeof( w-> w), false);
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		if ( w->argb_picture ) {
+			XRenderFreePicture( DISP, w->argb_picture);
+			w->argb_picture = 0;
+		}
+#endif
 		XDestroyWindow( DISP, w-> w);
 		free_unix_items( w);
 		m-> handle = nilHandle;
@@ -2311,6 +2363,10 @@ apc_window_set_menu( Handle self, Handle menu)
 		M(m)-> w-> w = m-> handle = XCreateWindow( DISP, X_WINDOW,
 			0, 0, 1, 1, 0, CopyFromParent,
 			InputOutput, CopyFromParent, valuemask, &attrs);
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+		if ( XF_LAYERED(XX) )
+			M(m)->w->argb_picture = XRenderCreatePicture( DISP, M(m)->w->w, guts. xrender_argb_pic_format, 0, NULL);
+#endif
 		hash_store( guts. menu_windows, &m-> handle, sizeof( m-> handle), m);
 		XResizeWindow( DISP, m-> handle, XX-> size.x, y);
 		XMapRaised( DISP, m-> handle);
@@ -2335,7 +2391,7 @@ apc_window_set_menu( Handle self, Handle menu)
 		XX->flags.layered = layered;
 		M(menu)-> layered = XX->flags. layered;
 		if ( M(menu)-> layered ) {
-			for ( i = 0; i <= ciMaxId; i++)
+			for ( i = 0; i <= ciMaxId; i++) 
 				M(menu)-> argb_c[i] = argb_color(
 					prima_map_color( PWindow(self)-> menuColor[i], nil)
 				);
