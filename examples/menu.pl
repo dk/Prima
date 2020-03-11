@@ -290,5 +290,4 @@ $w-> insert( "Label",
 	focusLink => $w-> InputLine1,
 );
 
-$w->test_toplevels;
 run Prima;
