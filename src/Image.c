@@ -1738,14 +1738,15 @@ Image_bars( Handle self, SV * rects)
 
 	if (( p = prima_read_array( rects, "Image::bars", true, 4, 0, -1, &count)) == NULL)
 		return false;
+	t = my->get_translate(self);
 	prepare_fill_context(self, t, &ctx);
 	for ( i = 0, r = p; i < count; i++, r++) {
 		ImgPaintContext ctx2 = ctx;
-		if ( !( ok &= img_bar( self, 
-			r->left + t.x, 
-			r->bottom + t.y, 
-			r->right - r->left + t.x + 1, 
-			r->top - r->bottom + t.y + 1,
+		if ( !( ok &= img_bar( self,
+			r->left,
+			r->bottom,
+			r->right - r->left + 1,
+			r->top - r->bottom + 1,
 			&ctx2))) break;
 	}
 	free( p);
