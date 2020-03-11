@@ -1318,9 +1318,7 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 	inherited handle_event ( self, event);
 	if ( var-> stage > csNormal) return;
 
-
 	if ( event-> cmd == cmMenuItemMeasure || event-> cmd == cmMenuItemPaint) {
-		Handle owner = event->gen.H;
 		char buffer[16], *context;
 		PMenuItemReg m;
 		m = ( PMenuItemReg) my-> first_that( self, (void*)id_match, &event->gen.i, false);
@@ -1332,10 +1330,10 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 			SV * ref = newRV_noinc((SV*)pt);
 			av_push(pt, newSViv(event->gen.P.x));
 			av_push(pt, newSViv(event->gen.P.y));
-			PComponent(owner)->self->notify( owner, "<sHUS", "MenuItemMeasure",
-				self, context, m-> flags.utf8_variable, ref );
+			my->notify( self, "<sUS", "ItemMeasure",
+				context, m-> flags.utf8_variable, ref );
 			if ( !prima_read_point( ref, (int*)&event->gen.P, 2, NULL))
-				warn("bad size array returned from onMenuItemMeasure");
+				warn("bad size array returned from onItemMeasure");
 			sv_free(ref);
 		} else {
 			Handle drawable = (Handle) create_object("Prima::Drawable", "");
@@ -1346,8 +1344,8 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 
 			event-> gen.H = drawable;
 			if ( apc_menu_item_begin_paint(self, event)) {
-				PComponent(owner)->self->notify( owner, "<sHUHiR", "MenuItemPaint",
-					self, context, m->flags.utf8_variable, event->gen.H, event->gen.B, event->gen.R);
+				PComponent(self)->self->notify( self, "<sUHiR", "ItemPaint",
+					context, m->flags.utf8_variable, event->gen.H, event->gen.B, event->gen.R);
 				apc_menu_item_end_paint(self, event);
 			}
 
