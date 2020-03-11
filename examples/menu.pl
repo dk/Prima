@@ -85,7 +85,10 @@ sub create_custom_menu
 		onMeasure => sub {
 			my ( $self, $menu, $ref) = @_;
 			my ($w, $h) = ( $self->get_text_width( $menu-> text, 1 ), $self->popupFont->height );
-			@$ref = ($w + 20 + $menu-> check_icon_size, $h + 20);
+			my $i = $icons[ $menu->checked ];
+			my $isz = $menu-> check_icon_size;
+			my $dx = ( $isz > $i-> width ) ? $isz : $i-> width;
+			@$ref = ($w + 20 + $dx, $h + 20);
 		},
 		onPaint => sub {
 			my ( $self, $menu, $canvas, $selected, $x1, $y1, $x2, $y2) = @_;
@@ -111,6 +114,29 @@ my $img = Prima::Image-> create;
 $0 =~ /^(.*)(\\|\/)[^\\\/]+$/;
 $img-> load(( $1 || '.') . '/Hand.gif');
 
+sub test_toplevels
+{
+	my @img = map { ((ref($$_[-1]) // '') eq 'HASH') ? $$_[-1]->{icon} : () } create_images_menu($img);
+	my $i;
+	my @menu;
+	for ( $i = 0; $i < @img; $i+=2) {
+		push @menu, [ "\@t1-$i", $img[$i], sub {
+			my $id = $_[1];
+			$id =~ s/1/2/;
+			my $m = Prima::MenuItem->new( $_[0]->menu, $id);
+			$m->enabled(!$m->enabled);
+		}];
+		push @menu, [ "-\@t2-$i", $img[$i], sub {}];
+	};
+	TestWindow->new(
+		layered => 1,
+		menuItems => \@menu,
+#			create_custom_menu, # XXX
+		size => [ 600, 0 ],
+		text => 'Toplevel images',
+	);
+}
+
 #    Menu item must be an array with up to 6 items in -
 # [variable, text or image, accelerator text, shortcut key, sub or command, data]
 # see exact rules how these are parsed in L<"Prima::Menu" / "Menu items">.
@@ -123,6 +149,7 @@ sub create_menu
 			[ '~Images' => [ create_images_menu($img) ]],
 			create_custom_menu,
 			[],                                       # division line
+			[ 'Test toplevels' => 'test_toplevels' ],
 			[ "E~xit" => "Exit"    ]    # calling named function of menu owner
 		]],
 		[ ef => "~Edit" => [                  # example of system commands usage
@@ -264,4 +291,6 @@ $w-> insert( "Label",
 	valignment => ta::Center,
 	focusLink => $w-> InputLine1,
 );
+
+$w->test_toplevels;
 run Prima;
