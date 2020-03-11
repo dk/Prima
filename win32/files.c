@@ -8,10 +8,13 @@
 #else
 
 #include <winsock.h>
+
 void __inline my_fd_zero( fd_set* f)           { FD_ZERO( f); }
-void __inline my_fd_set( HANDLE fd, fd_set* f) { FD_SET((unsigned int) fd, f); }
 
 #endif
+
+typedef fd_set type_fd_set;
+void __inline std_fd_set( int fd, fd_set * f) { FD_SET(fd, f); }
 
 #include "win32\win32guts.h"
 #ifndef _APRICOT_H_
@@ -21,6 +24,7 @@ void __inline my_fd_set( HANDLE fd, fd_set* f) { FD_SET((unsigned int) fd, f); }
 #include "Component.h"
 #include "File.h"
 
+void __inline my_fd_set( HANDLE fd, type_fd_set * f) { std_fd_set( PTR2UV(fd), f); }
 
 #define var (( PFile) self)->
 #define  sys (( PDrawableData)(( PComponent) self)-> sysData)->
@@ -240,7 +244,7 @@ apc_file_attach( Handle self)
 
 	sys s. file. object = SOCKETS_AS_HANDLES ?
 		(( SOCKETHANDLE) _get_osfhandle( var fd)) :
-		(( SOCKETHANDLE) var fd);
+		((INT2PTR(SOCKETHANDLE, var fd)));
 
 	{
 		int  _data, _sz = sizeof( int);
