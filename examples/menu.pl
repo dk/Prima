@@ -40,8 +40,11 @@ sub create_images_menu
 	my $mono = $template->dup;
 	$mono->conversion(ict::None);
 	$mono->type(im::BW);
-	push @ret, [ '1-bit image', $sub, { icon => $mono } ];
-	push @ret, [ '-', '1-bit image disabled', $sub, { icon => $mono } ];
+
+	my $monox = $mono->clone(type => 1);
+	$monox->colormap(cl::Yellow, cl::Blue);
+	push @ret, [ '1-bit image', $sub, { icon => $monox } ];
+	push @ret, [ '-', '1-bit image disabled', $sub, { icon => $monox } ];
 
 	my $mask1 = $template->dup;
 	$mask1->set( color => cl::White, backColor => cl::Black, rop2 => rop::CopyPut );
@@ -57,6 +60,8 @@ sub create_images_menu
 	push @ret, [ 'Color image', $sub, { icon => $template } ];
 	push @ret, [ '-', 'Color image disabled', $sub, { icon => $template } ];
 	my $color = Prima::Icon->create_combined( $template, $mask1);
+	$color->maskColor($color->pixel(0,0));
+	$color->autoMasking(am::MaskColor);
 	push @ret, [ 'Color icon', $sub, { icon => $color } ];
 	push @ret, [ '-', 'Color icon disabled', $sub, { icon => $color } ];
 	push @ret, [];
@@ -113,7 +118,7 @@ $img-> load(( $1 || '.') . '/Hand.gif');
 sub create_menu
 {
 	return [
-		[ "~File" => [
+		[ "~Window" => [
 			[ "Anonymous" => "Ctrl+D" => '^d' => sub { print "sub!\n";}],   # anonymous sub
 			[ '~Images' => [ create_images_menu($img) ]],
 			create_custom_menu,

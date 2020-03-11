@@ -389,6 +389,20 @@ prima_kill_zombies( void)
 }
 
 void
+prima_refcnt_inc( Handle obj)
+{
+	if ( obj )
+		++SvREFCNT( SvRV((( PAnyObject) obj)-> mate));
+}
+
+void
+prima_refcnt_dec( Handle obj)
+{
+	if ( obj )
+		--SvREFCNT( SvRV((( PAnyObject) obj)-> mate));
+}
+
+void
 protect_object( Handle obj)
 {
 	PObject o = (PObject)obj;

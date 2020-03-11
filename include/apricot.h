@@ -1307,6 +1307,12 @@ extern void
 unprotect_object( Handle obj);
 
 extern void
+prima_refcnt_inc( Handle obj);
+
+extern void
+prima_refcnt_dec( Handle obj);
+
+extern void
 prima_kill_zombies( void);
 
 /*
