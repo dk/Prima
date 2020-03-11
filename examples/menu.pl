@@ -79,12 +79,11 @@ sub create_images_menu
 
 sub create_custom_menu
 {
-	my @ret;
 	my @icons = map { Prima::StdBitmap::image($_) } sbmp::CheckBoxUnchecked, sbmp::CheckBoxChecked;
-	push @ret, [ '@?' => "~Custom" => sub { print "Custom\n" } => {
+	return [ '@?' => "~Custom" => sub { print "Custom\n" } => {
 		onMeasure => sub {
 			my ( $self, $menu, $ref) = @_;
-			my ($w, $h) = ( $self->get_text_width( $menu-> text, 1 ), $self->popupFont->height );
+			my ($w, $h) = ( $self->owner->get_text_width( $menu-> text, 1 ), $self->owner->popupFont->height );
 			my $i = $icons[ $menu->checked ];
 			my $isz = $menu-> check_icon_size;
 			my $dx = ( $isz > $i-> width ) ? $isz : $i-> width;
@@ -95,7 +94,7 @@ sub create_custom_menu
 			my @p = ( cl::Black, cl::White );
 			@p = reverse @p if $selected;
 			$canvas-> new_gradient(palette => \@p)->bar($x1, $y1, $x2, $y2, 1);
-			$canvas-> font( $self-> popupFont );
+			$canvas-> font( $self-> owner->popupFont );
 			$canvas-> color(cl::Yellow);
 
 			my $i = $icons[ $menu->checked ];
@@ -107,7 +106,6 @@ sub create_custom_menu
 				($y2 + $y1 - $i->height) / 2, $i);
 		},
 	} ];
-	return @ret;
 }
 
 my $img = Prima::Image-> create;
@@ -119,6 +117,8 @@ sub test_toplevels
 	my @img = map { ((ref($$_[-1]) // '') eq 'HASH') ? $$_[-1]->{icon} : () } create_images_menu($img);
 	my $i;
 	my @menu;
+	push @menu, [ '@?', 'Layered', sub {$_[0]->layered( $_[2] ); },  create_custom_menu->[-1] ];
+
 	for ( $i = 0; $i < @img; $i+=2) {
 		push @menu, [ "\@t1-$i", $img[$i], sub {
 			my $id = $_[1];
@@ -129,9 +129,7 @@ sub test_toplevels
 		push @menu, [ "-\@t2-$i", $img[$i], sub {}];
 	};
 	TestWindow->new(
-		layered => 1,
 		menuItems => \@menu,
-#			create_custom_menu, # XXX
 		size => [ 600, 0 ],
 		text => 'Toplevel images',
 	);

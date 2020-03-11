@@ -472,9 +472,8 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 			Event ev = { cmMenuItemMeasure };
 			ev.gen.P.x = 0;
 			ev.gen.P.y = 0;
-			ev.gen.H = w->self;
 			ev.gen.i = m-> id;
-			owner-> self-> message((Handle) owner,&ev);
+			CComponent(w-> self)-> message(w-> self,&ev);
 			ix-> width  = ev.gen.P.x;
 			ix-> height = ev.gen.P.y + MENU_ITEM_GAP * 2;
 		} else if ( m-> flags. divider) {
@@ -1189,15 +1188,12 @@ typedef struct {
 DECL_DRAW(custom)
 {
 	Point offset, size;
-	Handle owner;
 	Event ev = { cmMenuItemPaint };
 	PaintEvent rec = { win, draw-> layered };
 
 	offset = menu_item_offset( M(self), w, index);
 	size   = menu_item_size( M(self), w, index);
-	owner = PComponent( w-> self)-> owner;
 	ev.gen.P = w-> sz;
-	ev.gen.H = w->self;
 	ev.gen.i = m-> id;
 	offset.y = w-> sz.y - offset.y - 1;
 	ev.gen.R.left   = offset.x;
@@ -1206,7 +1202,7 @@ DECL_DRAW(custom)
 	ev.gen.R.top    = offset.y;
 	ev.gen.p        = &rec;
 	ev.gen.B        = selected;
-	CComponent(owner)-> message(owner,&ev);
+	CComponent(w->self)-> message(w->self,&ev);
 
 	return true;
 }
@@ -1328,10 +1324,13 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 		}
 
 		if ( m-> flags. custom_draw ) {
-			if ( vertical ) {y += ix-> height;
+			if ( vertical ) {
+				y += ix-> height;
 				if (m-> down) DRAW(submenu);
 			}
 			DRAW(custom);
+			if ( !vertical )
+				x += ix-> width + 2 * MENU_XOFFSET;
 		} else if ( m-> flags. divider) {
 			DRAW(divider);
 			if ( vertical )

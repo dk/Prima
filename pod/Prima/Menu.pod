@@ -198,13 +198,13 @@ The toolkit reserves the following keys for internal use:
 
 Uses to replace default check mark bitmap on a menu item
 
-=item onMeasure WIDGET, MENUITEM, REF
+=item onMeasure MENUITEM, REF
 
 Required when custom painting is set. It is called when system needs to query
 menu item dimensions. C<REF> is a 2-item arrayref that needs to be set with
 pixel dimension.
 
-=item onPaint WIDGET, MENUITEM, CANVAS, SELECTED, X1, Y1, X2, Y2
+=item onPaint MENUITEM, CANVAS, SELECTED, X1, Y1, X2, Y2
 
 Required when custom painting is set. It is called whenever system needs to
 draw a menu item. X1 - Y2 are coordinates of the rectangle where the drawing is
@@ -734,6 +734,22 @@ Sets menu item in unchecked state.
 
 Triggered when structure of the menu tree is changed. ACTION is the method call that triggered that action, and NAME
 is the menu item namem, when applicable. If empty string, means root. VALUE is the new value, if applicable.
+
+=item ItemMeasure ITEMID, REF
+
+Called when system needs to query dimensions of a menu item that has custom
+painting bit set. C<REF> is a 2-item arrayref that needs to be set with pixel
+dimension.
+
+See also: L<Options>
+
+=item ItemPaint CANVAS, ITEMID, SELECTED, X1, Y1, X2, Y2
+
+Called whenever system needs to draw a menu item that has custom painting bit
+set. X1 - Y2 are coordinates of the rectangle where the drawing is allowed.
+
+See also: L<Options>
+
 
 =back
 

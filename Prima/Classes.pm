@@ -1,4 +1,4 @@
-#
+
 #  Created by:
 #     Anton Berezin  <tobez@tobez.org>
 #     Dmitry Karasik <dmitry@karasik.eu.org>
@@ -797,8 +797,6 @@ my %RNT = (
 	KeyUp          => nt::Command,
 	Leave          => nt::Default,
 	Menu           => nt::Default,
-	MenuItemMeasure=> nt::Action,
-	MenuItemPaint  => nt::Action,
 	MouseClick     => nt::Command,
 	MouseDown      => nt::Command,
 	MouseUp        => nt::Command,
@@ -1480,28 +1478,6 @@ sub begin_drag
 	return $ret;
 }
 
-sub on_menuitemmeasure
-{
-	my ( $self, $menu, $id, $ref) = @_;
-	my $opt = $menu->options($id) or return;
-	return if ref($opt) ne 'HASH';
-	if ( defined( my $cb = $opt->{onMeasure})) {
-		$cb->($self, Prima::MenuItem->new($menu, $id), $ref);
-		$self->clear_event;
-	}
-}
-
-sub on_menuitempaint
-{
-	my ( $self, $menu, $id, @r) = @_;
-	my $opt = $menu->options($id) or return;
-	return if ref($opt) ne 'HASH';
-	if ( defined( my $cb = $opt->{onPaint})) {
-		$cb->($self, Prima::MenuItem->new($menu, $id), @r);
-		$self->clear_event;
-	}
-}
-
 package Prima::Window;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
@@ -1714,7 +1690,9 @@ use vars qw(@ISA);
 {
 my %RNT = (
 	%{Prima::Component-> notification_types()},
-	Change => nt::Default,
+	Change      => nt::Default,
+	ItemMeasure => nt::Action,
+	ItemPaint   => nt::Action,
 );
 
 sub notification_types { return \%RNT; }
@@ -1756,6 +1734,28 @@ sub AUTOLOAD
 		unless defined $itemName && $self-> has_item( $itemName);
 	return Prima::MenuItem-> create( $self, $itemName);
 }
+sub on_itemmeasure
+{
+	my ( $self, $id, $ref) = @_;
+	my $opt = $self->options($id) or return;
+	return if ref($opt) ne 'HASH';
+	if ( defined( my $cb = $opt->{onMeasure})) {
+		$cb->($self, Prima::MenuItem->new($self, $id), $ref);
+		$self->clear_event;
+	}
+}
+
+sub on_itempaint
+{
+	my ( $self, $id, @r) = @_;
+	my $opt = $self->options($id) or return;
+	return if ref($opt) ne 'HASH';
+	if ( defined( my $cb = $opt->{onPaint})) {
+		$cb->($self, Prima::MenuItem->new($self, $id), @r);
+		$self->clear_event;
+	}
+}
+
 
 package Prima::AccelTable;
 use vars qw(@ISA);
