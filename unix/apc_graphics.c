@@ -1904,8 +1904,8 @@ PFontABC
 apc_gp_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode)
 {
 	PFontABC abc;
-	DEFXX;
 #ifdef USE_XFT
+	DEFXX;
 	if ( XX-> font-> xft)
 		return prima_xft_get_font_def( self, firstChar, lastChar, unicode);
 #endif

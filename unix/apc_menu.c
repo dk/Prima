@@ -1183,13 +1183,14 @@ DECL_DRAW(background)
 typedef struct {
 	XWindow win;
 	Bool layered;
+	Handle self;
 } PaintEvent;
 
 DECL_DRAW(custom)
 {
 	Point offset, size;
 	Event ev = { cmMenuItemPaint };
-	PaintEvent rec = { win, draw-> layered };
+	PaintEvent rec = { win, draw-> layered, self };
 
 	offset = menu_item_offset( M(self), w, index);
 	size   = menu_item_size( M(self), w, index);
@@ -2409,6 +2410,10 @@ apc_menu_item_begin_paint( Handle self, PEvent event)
 	YY-> type.widget   = 1;
 	YY-> flags.paint   = 1;
 	YY-> flags.layered = pe->layered;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	if ( pe-> layered )
+		YY-> argb_picture = M(pe->self)->w->argb_picture;
+#endif
 	YY-> gdrawable     = pe->win;
 	YY-> size          = event-> gen.P;
 	YY-> visual        = pe->layered ? &guts. argb_visual : &guts. visual;
