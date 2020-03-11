@@ -710,9 +710,10 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 			DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT*) mp2;
 			if ( dis-> CtlType == ODT_MENU && dis-> itemData != 0) {
 				RECT r;
+				self = (Handle) dis-> itemData;
+				v = (PWidget) self;
 				GetClientRect(WindowFromDC(dis->hDC), &r);
 				ev.cmd          = cmMenuItemPaint;
-				ev.gen.H        = (Handle) dis-> itemData;
 				ev.gen.i        = (Handle) dis-> itemID - MENU_ID_AUTOSTART;
 				ev.gen.p        = (void*) dis->hDC;
 				ev.gen.B        = ((dis-> itemState & ODS_SELECTED) != 0);
@@ -1031,7 +1032,8 @@ AGAIN:
 			MEASUREITEMSTRUCT *mis = (MEASUREITEMSTRUCT*) mp2;
 			if ( mis-> CtlType == ODT_MENU && mis-> itemData != 0) {
 				ev.cmd     = cmMenuItemMeasure;
-				ev.gen.H   = (Handle) mis-> itemData;
+				self = (Handle) mis-> itemData;
+				v = (PWidget) self;
 				ev.gen.i   = (Handle) mis-> itemID - MENU_ID_AUTOSTART;
 				ev.gen.P.x = ev.gen.P.y = 0;
 			}
