@@ -74,7 +74,7 @@ Popup_popup( Handle self, int x, int y, int ancLeft, int ancBottom, int ancRight
 	owner-> stage = csFrozen;
 	memcpy( color, owner-> popupColor, sizeof( ColorSet));
 	for ( i = 0; i < ciMaxId + 1; i++)
-	apc_menu_set_color( self, color[ i], i);
+		apc_menu_set_color( self, color[ i], i);
 	memcpy( owner-> popupColor, color, sizeof( ColorSet));
 	apc_menu_set_font( self, &owner-> popupFont);
 	owner-> stage = stage;

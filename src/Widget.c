@@ -381,11 +381,17 @@ Widget_cleanup( Handle self)
 			Object_destroy( var-> widgets. items[i]);
 	}
 
-	my-> detach( self, var-> accelTable, true);
-	var-> accelTable = nilHandle;
+	if ( var-> accelTable) {
+		unprotect_object(var-> accelTable);
+		//my-> detach( self, var-> accelTable, true);
+		var-> accelTable = nilHandle;
+	}
 
-	my-> detach( self, var-> popupMenu, true);
-	var-> popupMenu = nilHandle;
+	if ( var-> popupMenu ) {
+		unprotect_object(var-> popupMenu);
+		//my-> detach( self, var-> popupMenu, true);
+		var-> popupMenu = nilHandle;
+	}
 
 	inherited-> cleanup( self);
 }
@@ -2263,16 +2269,14 @@ Widget_accelItems( Handle self, Bool set, SV * accelItems)
 Handle
 Widget_accelTable( Handle self, Bool set, Handle accelTable)
 {
-	enter_method;
 	if ( var-> stage > csFrozen) return nilHandle;
 	if ( !set)
 		return var-> accelTable;
 	if ( accelTable && !kind_of( accelTable, CAbstractMenu)) return nilHandle;
-	if ( accelTable && (( PAbstractMenu) accelTable)-> owner != self)
-		my-> set_accelItems( self, CAbstractMenu( accelTable)-> get_items( accelTable, "", true));
-	else
-		var-> accelTable = accelTable;
-	return accelTable;
+	if ( var->accelTable ) unprotect_object(var-> accelTable);
+	var-> accelTable = accelTable;
+	if ( var->accelTable ) protect_object(var-> accelTable);
+	return nilHandle;
 }
 
 Color
@@ -2798,16 +2802,14 @@ Widget_pointerPos( Handle self, Bool set, Point p)
 Handle
 Widget_popup( Handle self, Bool set, Handle popup)
 {
-	enter_method;
 	if ( var-> stage > csFrozen) return nilHandle;
 	if ( !set)
 		return var-> popupMenu;
 
 	if ( popup && !kind_of( popup, CPopup)) return nilHandle;
-	if ( popup && PAbstractMenu( popup)-> owner != self)
-		my-> set_popupItems( self, CAbstractMenu( popup)-> get_items( popup, "", true));
-	else
-		var-> popupMenu = popup;
+	if ( var->popupMenu ) unprotect_object(var-> popupMenu);
+	var-> popupMenu = popup;
+	if ( var->popupMenu ) protect_object(var-> popupMenu);
 	return nilHandle;
 }
 
@@ -2833,7 +2835,7 @@ Widget_popupItems( Handle self, Bool set, SV * popupItems)
 			CAbstractMenu( var-> popupMenu)-> get_items( var-> popupMenu, "", true) : nilSV;
 
 	if ( var-> popupMenu == nilHandle) {
-	if ( SvTYPE( popupItems)) {
+		if ( SvTYPE( popupItems)) {
 			HV * profile = newHV();
 			pset_sv( items, popupItems);
 			pset_H ( owner, self);
@@ -2842,7 +2844,7 @@ Widget_popupItems( Handle self, Bool set, SV * popupItems)
 		}
 	}
 	else
-		CAbstractMenu( var-> popupMenu)-> set_items( var-> popupMenu, popupItems);
+		CAbstractMenu(var-> popupMenu)-> set_items(var-> popupMenu, popupItems);
 	return popupItems;
 }
 
