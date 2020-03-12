@@ -16,6 +16,7 @@ object Prima::Image( Prima::Drawable)
 	int            eventMask2;
 	PRegionRec     regionData;
 	int            updateLock;
+	int            extraROP;
 
 	property Rect   clipRect;
 	property int    conversion;
@@ -26,6 +27,7 @@ object Prima::Image( Prima::Drawable)
 	property Bool   preserveType;
 	property Handle region;
 	property Point  resolution;
+	property int    rop;
 	property int    scaling;
 	property Point  size;
 	property double stats( int index);
