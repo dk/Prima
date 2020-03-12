@@ -715,6 +715,21 @@ prima_update_dnd_aware( Handle self )
 		XDeleteProperty( DISP, X_WINDOW, XdndAware);
 }
 
+static Handle
+get_top_window(Handle from)
+{
+	while ( from) {
+		if (
+			kind_of( from, CWindow) ||
+			( PWidget( from)-> owner == application) ||
+			!CWidget( from)-> get_clipOwner(from)
+		)
+			return from;
+		from = PWidget( from)-> owner;
+	}
+	return application;
+}
+
 Bool
 apc_dnd_set_aware( Handle self, Bool is_target )
 {
@@ -724,7 +739,7 @@ apc_dnd_set_aware( Handle self, Bool is_target )
 	Handle top_level;
 
 	if ( src == dst ) return true;
-	top_level = CApplication(application)-> top_frame( application, self);
+	top_level = get_top_window(self);
 	if ( top_level == application ) return false;
 
 	XX->flags. dnd_aware = dst;
@@ -771,7 +786,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers)
 		Cdebug("dnd:bad actions\n");
 		return -1;
 	}
-	top_level = CApplication(application)-> top_frame( application, self);
+	top_level = get_top_window(self);
 	if ( top_level == application ) {
 		Cdebug("dnd:no toplevel window\n");
 		return -1;
