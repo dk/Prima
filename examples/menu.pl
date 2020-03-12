@@ -130,7 +130,7 @@ sub test_toplevels
 	};
 	TestWindow->new(
 		menuItems => \@menu,
-		size => [ 600, 0 ],
+		size => [ 600, $::application->font->height ],
 		text => 'Toplevel images',
 	);
 }
