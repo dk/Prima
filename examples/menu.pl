@@ -183,6 +183,10 @@ sub create_menu
 		[ "*".checker =>  "Checking Item"   => "Check"     ],
 		[ "@" =>  "Auto Checking Item"   => sub {print "new state: $_[2]\n" } ],
 		[],
+		[ '*(' => 'one' => sub {} ],
+		[ '' => 'two' => sub {} ],
+		[ ')' => 'three' => sub {} ],
+		[],
 		[ "-@".slave   =>  "Disabled state"   => "PrintText"],
 		[ master  =>  "~Enable item above" => "Enable"     ]   # enable/disable and text sample
 		]]

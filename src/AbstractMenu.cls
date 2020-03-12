@@ -7,6 +7,7 @@ object Prima::AbstractMenu ( Prima::Component)
 	property Bool   autoToggle( char * varName);
 	property Bool   checked( char * varName);
 	property Handle icon   ( char * varName);
+	property int    group  ( char * varName);
 	property SV   * options( char * varName);
 	property Bool   enabled( char * varName);
 	property Handle image  ( char * varName);
@@ -44,9 +45,10 @@ object Prima::AbstractMenu ( Prima::Component)
 #	private
 	Bool   anchored;
 	Bool   system;
+	PHash  groups;
 	unsigned int autoEnum;
 	c_only void   dispose_menu( void * menu);
-	c_only void * new_menu( SV * sv, int level);
+	c_only void * new_menu( SV * sv, int level, void * avt);
 	c_only Bool   sub_call( PMenuItemReg m);
 	c_only Bool   sub_call_id ( int sysId);
 	c_only Bool   sub_call_key ( int key);

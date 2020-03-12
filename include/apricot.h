@@ -2491,6 +2491,7 @@ typedef struct _MenuItemReg {   /* Menu item registration record */
 	SV *   code;                 /* code if not nil */
 	SV *   options;              /* use options if not nil */
 	Handle icon;                 /* custom checked bitmap */
+	int    group;                /* radio group */
 	struct _MenuItemReg* down;   /* pointer to submenu */
 	struct _MenuItemReg* next;   /* pointer to next item */
 	struct {

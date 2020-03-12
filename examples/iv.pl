@@ -114,10 +114,10 @@ sub menuadd
 					['~RGB' => sub {icvt($_[0],im::RGB)}],
 					['~Long' => sub {icvt($_[0],im::Long)}],
 					[],
-					['N' => '~No halftoning' => sub {setconv(@_)}],
+					['(N' => '~No halftoning' => sub {setconv(@_)}],
 					['O' => '~Ordered' => sub {setconv(@_)}],
 					['E' => '~Error diffusion' => sub {setconv(@_)}],
-					['*P' => 'O~ptimized' => sub {setconv(@_)}],
+					[')*P' => 'O~ptimized' => sub {setconv(@_)}],
 				]],
 				['~Zoom' => [
 					['~Normal ( 100%)' => 'Ctrl+Z' => '^Z' => sub{$_[0]-> IV-> zoom(1.0)}],
@@ -261,8 +261,6 @@ sub setconv
 {
 	my ( $self, $menuID) = @_;
 	return if $self-> {omenuID} eq $menuID;
-	$self-> menu-> uncheck( $self-> {omenuID});
-	$self-> menu-> check( $menuID);
 	$self-> {omenuID}    = $menuID;
 	$self-> {conversion} = (
 	( $menuID eq 'N') ? ict::None : (

@@ -310,9 +310,9 @@ sub profile_default
 				['Redo' => 'Ctrl+R' => '^R' => sub { $_[0]-> Editor-> redo }],
 			]],
 			['~Selection' => [
-				[ 'bt-0', '~Normal'     => q(blockType)],
+				[ '(bt-0', '~Normal'     => q(blockType)],
 				[ 'bt-1', '~Vertical'   => q(blockType)],
-				[ 'bt-2', '~Horizontal' => q(blockType)],
+				[ ')bt-2', '~Horizontal' => q(blockType)],
 				[],
 				[ '~Remove'        => 'Alt+U' => '@U' => sub { $_[0]-> Editor-> cancel_block }],
 				[ '~Mark vertical' => 'Alt+B' => '@B' => sub {
@@ -400,8 +400,6 @@ sub blockType
 {
 	my ( $self, $var) = @_;
 	return unless $var =~ /^bt-(\d)$/;
-	$self-> menu-> uncheck( 'bt-' . $self-> Editor-> blockType);
-	$self-> menu-> check( $var);
 	$self-> Editor-> blockType($1);
 }
 
