@@ -45,9 +45,9 @@ $mw = Prima::MainWindow->new(
 	designScale => [ 7, 16 ],
 	menuItems => [
 		['~Options' => [ 
-			[ 'closed' => '~Closed' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
-			[ compare => '~Compare' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
-			[ '*hairline' => '~Hairline' => sub { $_[0]->menu->toggle($_[1]); $_[0]->repaint } ],
+			[ '@closed'    => '~Closed'   => sub{shift->repaint} ],
+			[ '@compare'   => '~Compare'  => sub{shift->repaint} ],
+			[ '@*hairline' => '~Hairline' => sub{shift->repaint} ],
 			[],
 			[ 'E~xit' => sub { $_[0]->destroy } ],
 		]],

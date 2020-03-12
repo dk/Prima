@@ -35,19 +35,12 @@ my $w = Prima::MainWindow-> create(
 	size => [500,250],
 	text => 'Keyboard events checker',
 	menuItems => [['~Options' => [
-		[ '*pp' => '~Propagate key event' => sub {
-			$propagate = $propagate ? 0 : 1;
-			$_[0]-> menu-> checked( 'pp', $propagate);
-		}],
-		[ 'rr' => '~Repeat key event' => sub {
-			$repeat = $repeat ? 0 : 1;
-			$_[0]-> menu-> checked( 'rr', $repeat);
-		}],
-		[ ( $::application-> wantUnicodeInput()   ? '*' : '') . # is is on?
-			( $::application-> get_system_value( sv::CanUTF8_Input) ? '' : '-') . # is it writable ?
-			'uu' => '~Unicode input' => sub {
-			$::application-> wantUnicodeInput( $_[0]-> menu-> toggle( 'uu'));
-		}],
+		[ '@*' => '~Propagate key event' => sub { $propagate = $_[2] } ],
+		[ '@'  => '~Repeat key event'    => sub { $repeat    = $_[2] } ],
+		[ '@'.( $::application-> wantUnicodeInput()   ? '*' : '') . # is is on?
+			( $::application-> get_system_value( sv::CanUTF8_Input) ? '' : '-'), # is it writable ?
+			'~Unicode input' => sub { $::application-> wantUnicodeInput($_[2]) },
+		],
 		[],
 		["Set ~font..." => "Ctrl+F" => '^F' => sub {
 			my $d =  $fontDialog ? $fontDialog : Prima::FontDialog-> create(
