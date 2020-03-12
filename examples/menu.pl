@@ -18,6 +18,7 @@ Note the "Edit/Kill menu" realisation.
 use strict;
 use warnings;
 use Prima qw( InputLine Label Application StdBitmap );
+use Prima::Menus;
 
 package TestWindow;
 use vars qw(@ISA);
@@ -267,9 +268,14 @@ package UserInit;
 my $w = TestWindow-> create(
 	text      => "Menu and input line example",
 	bottom    => 300,
-	size      => [ 360, 120],
+	size      => [ 360, 160],
 	menuItems => TestWindow::create_menu,
 	designScale => [ 7, 16 ],
+);
+
+$w-> insert( "Prima::Menu::Bar",
+	pack  => { pady => 20, padx => 20, fill => 'x', expand => 1},
+	menu  => $w->menu,
 );
 $w-> insert( "InputLine",
 	pack      => { pady => 20, padx => 20, fill => 'x', side => 'bottom'},
