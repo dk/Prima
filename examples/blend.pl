@@ -21,16 +21,16 @@ my $w = Prima::MainWindow->new(
 	designScale => [7, 16],
 	text => 'Blending example',
 	menuItems => [
-		[ '~Binary' => [ map { [$_, $_, \&bin] } qw(
+		[ '~Binary' => [ map { [$_, $_, \&bin, {group => 1}] } qw(
 			CopyPut XorPut AndPut OrPut NotPut Invert Blackness
 			NotDestAnd NotDestOr Whiteness NotSrcAnd NotSrcOr NotXor
 			NotAnd NotOr NoOper
 		)]],
-		[ 'Porter-~Duff' => [ map { [$_, $_, \&pd] } qw(
+		[ 'Porter-~Duff' => [ map { [$_, $_, \&pd, {group => 1}] } qw(
 			SrcOver Xor DstOver SrcCopy DstCopy Clear
 			SrcIn DstIn SrcOut DstOut SrcAtop DstAtop
 		)]],
-		[ '~Photoshop' => [ map { [$_, $_, \&pd] } qw(
+		[ '~Photoshop' => [ map { [$_, $_, \&pd, {group => 1}] } qw(
 			Add Multiply Screen Overlay Darken
 			Lighten ColorDodge ColorBurn HardLight
 			SoftLight Difference Exclusion
@@ -113,16 +113,12 @@ sub repaint
 sub select_rop
 {
 	my ($newrop, $with_slider) = @_;
-	if ( defined $rop_name ) {
-		$w->menu->uncheck($rop_name);
-	}
 	$rop_name = $newrop;
 	$rop_val = &{${rop::}{$rop_name}}();
 	$w->SliderA->enabled( $with_slider );
 	$w->SliderA->readOnly( !$with_slider );
 	$w->SliderB->enabled( $with_slider );
 	$w->SliderB->readOnly( !$with_slider );
-	$w->menu->check($rop_name);
 	$w->Fader->{text} = $rop_name;
 	delete $w->Fader->{left};
 	$w->Fader->{steps} = 30;

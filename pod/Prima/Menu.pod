@@ -89,11 +89,40 @@ items to be copied change their IDs, but explicitly set names are preserved.
 Since the anonymous menu items do not have name, their auto-generated names
 change also.
 
-If the name is prepended by '-', '*', or '@' characters, the characters are not
-treated as part of the name but as indicator that the item is disabled  ( '-'
-character ), checked ( '*' character ), or has an auto-toggle flag ('@').
-This syntax is valid only for C<::items> and C<insert()> functions, not for
-C<set_variable()> method.
+If the name is prepended by special characters ( see below ), these characters
+are not treated as part of the name but as an item modifier.  This syntax is
+valid only for C<::items> and C<insert()> functions, not for C<set_variable()>
+method.
+
+=over
+
+=item C<-> - item is disabled
+
+=item C<*> - item is checked
+
+=item C<@> - item is using auto-toggling
+
+=item C<?> - item is customly drawn
+
+Expects C<onMeasure> and C<onPaint> callbacks in C<options>
+
+=item C<(> and C<)> - radio group
+
+Items marked with parentheses are treated as a part of a group, where only a
+single item can be checked. Checking and unchecking happens automatically.
+
+A group is only valid for the same level where it was opened on (i.e. submenus
+don't inherit it).  A group is automatically terminated on a separator item. If
+that is not desired, mark it as C<(> too (consequent C<(> are allowed):
+
+    [ '(one' ... ]
+    [ 'two' ... ]
+    [ '(' ],
+    [ ')last' ... ] 
+
+See also: C<group>
+
+=back
 
 =item Menu text / menu image
 
@@ -193,6 +222,10 @@ At last, non-separator menu items can hold an extra hash in C<options> property.
 The toolkit reserves the following keys for internal use:
 
 =over
+
+=item group INTEGER
+
+Same as C<group> property.
 
 =item icon HANDLE
 
@@ -506,6 +539,13 @@ item is disabled, whole sub-menu is inaccessible.
 Default: C<me::Enabled>
 
 NAME is name of the menu item.
+
+=item group NAME, INTEGER / Prima::MenuItem::group INTEGER
+
+If not 0, treated as a member of radio group with that number when checked.
+I.e. if one of the group is checked, others are unchecked.
+
+Auto-toggled items are not treated as radio groups.
 
 =item image NAME, OBJECT / Prima::MenuItem::image OBJECT
 

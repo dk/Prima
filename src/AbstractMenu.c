@@ -117,8 +117,28 @@ register_image(Handle c_object)
 	return true;
 }
 
+typedef struct {
+	int max_group, curr_group;
+	int max_group_initialized;
+} AVTraverse;
+
+static Bool
+avt_init( Handle self, PMenuItemReg m, AVTraverse * avt)
+{
+	if ( m-> group > avt-> max_group ) {
+		if ( m-> group < INT_MAX)
+			avt-> max_group = m-> group;
+		else {
+			avt-> max_group = -1;
+			warn("Cannot deduce next group id - don't use large numbers for it");
+			return true;
+		}
+	}
+	return false;
+}
+
 void *
-AbstractMenu_new_menu( Handle self, SV * sv, int level)
+AbstractMenu_new_menu( Handle self, SV * sv, int level, void * _avt)
 {
 	AV * av;
 	int i, count;
@@ -126,6 +146,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 	PMenuItemReg m    = nil;
 	PMenuItemReg curr = nil;
 	Bool rightAdjust = false;
+	AVTraverse avt_dummy, *avt;
 
 	if ( level == 0)
 	{
@@ -145,6 +166,8 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 		return nil;
 	}
 
+	avt = ( _avt == NULL ) ? &avt_dummy : _avt;
+
 	/* cycling the list of items */
 	for ( i = 0; i <= n; i++)
 	{
@@ -161,6 +184,7 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 		int l_key   = -1;
 		int l_options  = -1;
 		Bool last_item_is_a_hash;
+		Bool stop_group = false;
 
 		if ( itemHolder == nil)
 		{
@@ -193,7 +217,10 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 		if ( count < 2) {          /* empty or 1 means line divisor, no matter of text */
 			r-> flags. divider = true;
 			rightAdjust = (( level == 0) && ( var-> anchored));
-			if ( count == 1) l_var = 0;
+			if ( count == 1)
+				l_var = 0;
+			else /* auto-grouping ends with a divider */
+				stop_group = true;
 		} else if ( count == 2) {
 			if ( last_item_is_a_hash ) {
 				l_var  = 0;
@@ -287,6 +314,30 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 				case '*': PARSE(checked);
 				case '@': PARSE(autotoggle);
 				case '?': PARSE(custom_draw);
+				case '(':
+					if ( !avt-> max_group_initialized ) {
+						bzero(avt, sizeof(AVTraverse));
+						my-> first_that( self, (void*) &avt_init, avt, true);
+						avt-> max_group_initialized = true;
+					}
+					if ( r-> flags. divider )
+						/* variable name hinted , continue */
+						stop_group = false;
+					else if ( avt-> curr_group != 0) {
+						/* that's okay, reuse the last group */
+					} else if ( avt-> max_group >= 0 )
+						avt-> curr_group = ++avt-> max_group;
+					decr++;
+					break;
+				case ')':
+					if ( avt-> curr_group == 0 ) {
+						warn("group closing outside parantheses, ignoring");
+					} else {
+						r-> group = avt->curr_group;
+						avt-> curr_group = 0;
+					}
+					decr++;
+					break;
 				default : goto STOP;
 				}
 			}
@@ -298,6 +349,11 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 			}
 			#undef s
 		}
+
+		if ( stop_group )
+			avt-> curr_group = 0;
+		if ( avt-> curr_group != 0 && !r-> flags. divider)
+			r-> group = avt-> curr_group;
 
 		/* parsing text */
 		if ( l_text >= 0)
@@ -333,15 +389,18 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 			}
 			subItem = *holder;
 
-			if ( SvROK( subItem))
-			{
-				if ( SvTYPE( SvRV( subItem)) == SVt_PVCV)
-				{
+			if ( SvROK( subItem)) {
+				if ( SvTYPE( SvRV( subItem)) == SVt_PVCV) {
 					r-> code = newSVsv( subItem);
 				} else {
-					r-> down = ( PMenuItemReg) my-> new_menu( self, subItem, level + 1);
-					if ( r-> down == nil)
-					{
+					int save;
+
+					save = avt-> curr_group;
+					avt-> curr_group = 0;
+					r-> down = ( PMenuItemReg) my-> new_menu( self, subItem, level + 1, avt);
+					avt-> curr_group = save;
+
+					if ( r-> down == nil) {
 						/* seems error was occured inside this call */
 						my-> dispose_menu( self, m);
 						return nil;
@@ -376,6 +435,10 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level)
 					if ( register_image(c_object))
 						r-> icon = c_object;
 					pdelete(icon);
+				}
+				if ( pexist( group )) {
+					r-> group = pget_i(group);
+					pdelete(group);
 				}
 			}
 			r-> options = newSVsv( *holder);
@@ -689,7 +752,7 @@ AbstractMenu_set_items( Handle self, SV * items)
 {
 	PMenuItemReg oldBranch = var-> tree;
 	if ( var-> stage > csFrozen) return;
-	var-> tree = ( PMenuItemReg) my-> new_menu( self, items, 0);
+	var-> tree = ( PMenuItemReg) my-> new_menu( self, items, 0, NULL);
 	if ( var-> stage <= csNormal && var-> system)
 		apc_menu_update( self, oldBranch, var-> tree);
 	my-> dispose_menu( self, oldBranch);
@@ -820,6 +883,30 @@ AbstractMenu_autoToggle( Handle self, Bool set, char * varName, Bool autotoggle)
 	return autotoggle;
 }
 
+static void
+set_check( Handle self, char * varName, PMenuItemReg m, Bool checked)
+{
+	char buffer[16];
+
+	m-> flags. checked = checked ? 1 : 0;
+	if ( var-> stage <= csNormal && var-> system)
+		apc_menu_item_set_check( self, m);
+	if ( varName == NULL )
+		varName = AbstractMenu_make_var_context( self, m, buffer);
+	notify( self, "<ssUi", "Change", "checked",
+		varName,
+		m->variable ? m-> flags.utf8_variable : 0,
+		checked);
+}
+
+static Bool
+update_group( Handle self, PMenuItemReg m, PMenuItemReg src)
+{
+	if ( m-> group == src->group && m != src && m->flags.checked )
+		set_check(self, NULL, m, 0);
+	return false;
+}
+
 Bool
 AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 {
@@ -830,58 +917,31 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 	if ( !set)
 		return m ? m-> flags. checked : false;
 	if ( m-> flags. divider || m-> down) return false;
-	m-> flags. checked = checked ? 1 : 0;
-	if ( m-> id > 0) {
-		if ( var-> stage <= csNormal && var-> system)
-			apc_menu_item_set_check( self, m);
-		notify( self, "<ssUi", "Change", "checked", 
-			m->variable ? m-> variable      : varName, 
-			m->variable ? m-> flags.utf8_variable : 0,
-			checked);
+	if ( m-> id > 0 && !m->flags.checked ) {
+		set_check(self, varName, m, checked);
+		if ( checked && m-> group != 0 )
+			my-> first_that( self, (void*)update_group, m, true);
 	}
 	return checked;
 }
 
-SV *
-AbstractMenu_options( Handle self, Bool set, char * varName, SV * options)
+int
+AbstractMenu_group( Handle self, Bool set, char * varName, int group)
 {
-	HV * profile;
 	PMenuItemReg m;
-	if ( var-> stage > csFrozen) return nilSV;
+	if ( var-> stage > csFrozen) return 0;
 	m = find_menuitem( self, varName, true);
-	if ( m == nil) return nilSV;
-	if ( !set) {
-		if ( !m->options && m->icon ) {
-			HV * profile = newHV();
-			pset_H(icon, m->icon);
-			return newRV_noinc((SV*)profile);
-		}
-		return m-> options ? newSVsv( m-> options) : nilSV;
-	}
-
-	if (SvTYPE( SvRV( options)) == SVt_NULL) {
-		sv_free( m-> options);
-		m-> options = nilSV;
-	} else {
-		if (!(SvROK( options) && SvTYPE( SvRV( options)) == SVt_PVHV)) {
-			warn("options is not a hashref");
-			return nilSV;
-		}
-		sv_free( m-> options);
-		m-> options = newSVsv( options);
-		profile = (HV*)SvRV(options);
-		if ( pexist(icon)) {
-			dPROFILE;
-			my->icon(self, true, varName, pget_H(icon));
-			pdelete(icon);
-		}
-	}
-	notify( self, "<ssUS", "Change", "options",
+	if ( m == nil) return 0;
+	if ( !set) return m-> group;
+	if ( m-> group == group ) return group;
+	m-> group = group;
+	notify( self, "<ssUS", "Change", "group",
 		m->variable ? m-> variable      : varName,
 		m->variable ? m-> flags.utf8_variable : 0,
-		options);
-	return nilSV;
+		group);
+	return group;
 }
+
 
 Bool
 AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
@@ -969,21 +1029,74 @@ AbstractMenu_image( Handle self, Bool set, char * varName, Handle image)
 }
 
 SV *
+AbstractMenu_options( Handle self, Bool set, char * varName, SV * options)
+{
+	HV * profile;
+	PMenuItemReg m;
+	if ( var-> stage > csFrozen) return nilSV;
+	m = find_menuitem( self, varName, true);
+	if ( m == nil) return nilSV;
+	if ( !set) {
+		HV * profile;
+		if ( m->options )
+			return newSVsv( m-> options);
+		profile = newHV();
+		if ( m-> icon )       pset_H(icon,  m->icon);
+		if ( m-> group != 0 ) pset_i(group, m->group);
+		return newRV_noinc((SV*)profile);
+	}
+
+	if (SvTYPE( SvRV( options)) == SVt_NULL) {
+		sv_free( m-> options);
+		m-> options = nilSV;
+	} else {
+		dPROFILE;
+		if (!(SvROK( options) && SvTYPE( SvRV( options)) == SVt_PVHV)) {
+			warn("options is not a hashref");
+			return nilSV;
+		}
+		sv_free( m-> options);
+		m-> options = newSVsv( options);
+		profile = (HV*)SvRV(options);
+		if ( pexist(icon)) {
+			if ( m-> flags. divider )
+				warn("Cannot set icon on a divider item");
+			else
+				my->icon(self, true, varName, pget_H(icon));
+			pdelete(icon);
+		}
+		if ( pexist(group)) {
+			if ( m-> flags. divider )
+				warn("Cannot set group on a divider item");
+			else
+				my->group(self, true, varName, pget_i(group));
+			pdelete(icon);
+		}
+	}
+	notify( self, "<ssUS", "Change", "options",
+		m->variable ? m-> variable      : varName,
+		m->variable ? m-> flags.utf8_variable : 0,
+		options);
+	return nilSV;
+}
+
+
+SV *
 AbstractMenu_submenu( Handle self, Bool set, char * varName, SV * submenu)
 {
 	PMenuItemReg m;
 	if ( var-> stage > csFrozen) return nilSV;
-	if ( !set) 
+	if ( !set)
 		return my-> get_items( self, varName, true);
-	
+
 	m = find_menuitem( self, varName, true);
 	if ( !m || !m-> down) return nilSV;
 
 	if ( var-> stage <= csNormal && var-> system)
 		apc_menu_item_delete( self, m-> down);
 	my-> dispose_menu( self, m-> down);
-	
-	m-> down = ( PMenuItemReg) my-> new_menu( self, submenu, 1);
+
+	m-> down = ( PMenuItemReg) my-> new_menu( self, submenu, 1, NULL);
 	if ( var-> stage <= csNormal && var-> system)
 		apc_menu_update( self, m-> down, m-> down);
 	notify( self, "<ssU", "Change", "submenu", 
@@ -1080,14 +1193,12 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 	if ( m == nil) return false;
 
 	context = AbstractMenu_make_var_context( self, m, buffer);
-	if ( m-> flags. autotoggle ) {
-		m-> flags. checked = m-> flags. checked ? 0 : 1;
-		if ( var-> stage <= csNormal && var-> system)
-			apc_menu_item_set_check( self, m);
-		notify( self, "<ssUi", "Change", "checked", 
-			m->variable ? m-> variable      : context, 
-			m->variable ? m-> flags.utf8_variable : 0, 
-			m->flags.checked);
+	if ( m-> flags. autotoggle )
+		set_check(self, context, m, m-> flags. checked ? 0 : 1);
+	if ( m-> group != 0 ) {
+		if ( !m->flags.checked )
+			set_check(self, context, m, 1);
+		my-> first_that( self, (void*)update_group, m, true);
 	}
 	owner = var-> owner;
 	if ( owner == nilHandle ) return false;
@@ -1236,7 +1347,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 	{
 		if ( var-> tree == nil)
 		{
-			var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0);
+			var-> tree = ( PMenuItemReg) my-> new_menu( self, menuItems, 0, NULL);
 			if ( var-> stage <= csNormal && var-> system)
 				apc_menu_update( self, nil, var-> tree);
 			notify( self, "<sss", "Change", "insert", "");
@@ -1255,7 +1366,7 @@ AbstractMenu_insert( Handle self, SV * menuItems, char * rootName, int index)
 	}
 
 	/* the level is 0 or 1 for the sake of rightAdjust */
-	addFirst = ( PMenuItemReg) my-> new_menu( self, menuItems, level);
+	addFirst = ( PMenuItemReg) my-> new_menu( self, menuItems, level, NULL);
 	if ( !addFirst) return; /* error in menuItems */
 
 	addLast = addFirst;

@@ -1661,6 +1661,7 @@ sub icon    { my $self = shift;return $self-> {menu}-> icon   ( $self-> {id}, @_
 sub key     { my $self = shift;return $self-> {menu}-> key    ( $self-> {id}, @_);}
 sub submenu { my $self = shift;return $self-> {menu}-> submenu( $self-> {id}, @_);}
 sub text    { my $self = shift;return $self-> {menu}-> text   ( $self-> {id}, @_);}
+sub group   { my $self = shift;return $self-> {menu}-> group  ( $self-> {id}, @_);}
 sub items   { my $i = shift; ( @_) ? $i-> { menu}-> set_items  ( $i-> { id}, @_):return $i-> {menu}-> get_items  ( $i-> { id}); }
 sub enable  { $_[0]-> {menu}-> enabled( $_[0]-> { id}, 1) };
 sub disable { $_[0]-> {menu}-> enabled( $_[0]-> { id}, 0) };

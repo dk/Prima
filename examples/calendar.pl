@@ -23,10 +23,10 @@ my $w = Prima::MainWindow->new(
 	size => [ 200, 200],
 	designScale => [6,16],
 	menuItems => [[ "~Options" => [
-		[ 'locale', 'Use ~locale', 'Ctrl+L', '^L', sub {
-			my ( $self, $mid) = @_;
+		[ '@locale', 'Use ~locale', 'Ctrl+L', '^L', sub {
+			my ( $self, $mid, $val) = @_;
 			my $newstate;
-			$cal-> useLocale( $newstate = $self-> menu-> toggle( $mid));
+			$cal-> useLocale( $newstate = $val );
 			$cal-> notify(q(Change));
 			return unless $newstate && !$cal-> useLocale;
 			$self-> menu-> uncheck( $mid);
@@ -35,9 +35,9 @@ my $w = Prima::MainWindow->new(
 		[ 'Re~set to current date', 'Ctrl+R', '^R', sub {
 			$cal-> date_from_time( localtime( time));
 		}],
-		[ 'monday', '~Monday is the first day of week', sub {
-			my ( $self, $mid) = @_;
-			$cal-> firstDayOfWeek( $self-> menu-> toggle( $mid) ? 1 : 0);
+		[ '@monday', '~Monday is the first day of week', sub {
+			my ( $self, $mid, $val) = @_;
+			$cal-> firstDayOfWeek( $val );
 		}],
 	]]],
 );

@@ -1304,14 +1304,14 @@ sub profile_default
 				[widgets => '~Add widgets...' => q(add_widgets)],
 				[],
 				[resetlines => 'Reset ~guidelines' => sub { Prima::VB::Form::fm_resetguidelines(); } ],
-				['*gsnap' => 'Snap to guid~elines' => sub { $VB::main-> {ini}-> {SnapToGuidelines} = $VB::main-> menu-> toggle( 'gsnap') ? 1 : 0; } ],
-				['*dsnap' => 'Snap to gri~d'       => sub { $VB::main-> {ini}-> {SnapToGrid} = $VB::main-> menu-> toggle( 'dsnap') ? 1 : 0; } ],
+				['@*gsnap' => 'Snap to guid~elines' => sub { $VB::main-> {ini}-> {SnapToGuidelines} = $_[2]; } ],
+				['@*dsnap' => 'Snap to gri~d'       => sub { $VB::main-> {ini}-> {SnapToGrid}       = $_[2] } ],
 				[],
 				['-runitem' => '~Run' => 'Ctrl+F9' => '^F9' => \&form_run ],
 				['-breakitem' => '~Break' => \&form_cancel ],
 				['~Emulate resolution' => [
-					["*dpi0" => '~Native' => \&dpi_toggle ],
-					[],
+					["(*dpi0" => '~Native' => \&dpi_toggle ],
+					['('],
 					map {
 						["dpi$_" => "$_ PPI", \&dpi_toggle ]
 					} (48, 72, 96, 120, 144, 168, 192, 216, 240, 264, 288, 312)
@@ -2383,12 +2383,8 @@ sub form_run
 
 sub dpi_toggle
 {
-	my $old = $VB::dpi;
 	my ( $self, $id ) = @_;
 	$id =~ s/^dpi//;
-	return if $id eq $old;
-	$self->menu->uncheck("dpi$old");
-	$self->menu->check("dpi$id");
 	$VB::dpi = $id;
 }
 

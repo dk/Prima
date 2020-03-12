@@ -212,7 +212,7 @@ sub profile_default
 			[],
 			['Set~up' => 'setup_dialog'],
 			['Set font ~encoding' => [
-				map { [ "ENC$_", $_, 'set_encoding' ] } sort @{$::application-> font_encodings()},
+				map { [ "(ENC$_", $_, 'set_encoding' ] } sort @{$::application-> font_encodings()},
 			]],
 		]], [ '~Go' => [
 				[ '-goback' => '~Back' => 'Alt + LeftArrow' => km::Alt | kb::Left, 'back' ],
@@ -342,7 +342,6 @@ sub init
 		my $fe = $sec-> {FontEncoding};
 		if ( $self-> menu-> has_item( "ENC$fe")) {
 			my $enc = $self-> {text}-> {fontPalette}-> [0]-> {encoding};
-			$self-> menu-> uncheck( "ENC$enc") if $self-> menu-> has_item( "ENC$enc");
 			$self-> menu-> check( "ENC$fe");
 			$self-> {text}-> {fontPalette}-> [$_]-> {encoding} = $fe for 0,1;
 		}
@@ -534,7 +533,7 @@ sub update
 sub doc_goto
 {
 	my ( $self, $item) = @_;
-	my $topic = $self-> menu-> data( $item);
+	my $topic = $self-> menu-> options( $item)-> {topic};
 	$self-> {text}-> load_link("topic://$topic");
 }
 
@@ -572,7 +571,7 @@ sub update_menu
 				$level = 0;
 				$current = \@array;
 			}
-			push @$current, [ undef, $text, '', kb::NoKey, \&doc_goto, $id];
+			push @$current, [ undef, $text, '', kb::NoKey, \&doc_goto, { topic => $id } ];
 		}
 		$m-> insert( \@array, 'doc', 0);
 		$m-> doc-> enabled(1);
@@ -946,7 +945,6 @@ sub set_encoding
 	return unless $m-> has_item( "ENC$fe");
 
 	my $enc = $self-> {text}-> {fontPalette}-> [0]-> {encoding};
-	$m-> uncheck( "ENC$enc") if $m-> has_item( "ENC$enc");
 	$m-> check( "ENC$fe");
 	$t-> {fontPalette}-> [$_]-> {encoding} = $fe for 0,1;
 	$inifile-> section('View')-> {FontEncoding} = $self-> {text}-> {fontPalette}-> [0]-> {encoding};
