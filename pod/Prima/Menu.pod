@@ -474,8 +474,10 @@ Default value: 1
 
 =item autoToggle NAME, SCALAR / Prima::MenuItem::autoToggle SCALAR.
 
-Manages autoToggle flag for a menu item. When set, C<checked> option
-is flipped when user selects the item.
+Manages autoToggle flag for a menu item. When set, C<checked> option is flipped
+when user selects the item. Also, un the unchecked state the system displays an
+empty check box icon where normally a check icon would appear, to hint the user
+that an item is a toggle, despite being unchecked.
 
 =item checked NAME, BOOLEAN / Prima::MenuItem::checked BOOLEAN
 
