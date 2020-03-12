@@ -449,6 +449,7 @@ new_av_entry(  PMenuItemReg m, int level, Bool fullTree)
 			int shift =
 				( m-> flags. checked     ? 1 : 0) +
 				( m-> flags. disabled    ? 1 : 0) +
+				( m-> flags. autotoggle  ? 1 : 0) +
 				( m-> flags. custom_draw ? 1 : 0)
 				;
 			if ( shift > 0) { /* has flags */
