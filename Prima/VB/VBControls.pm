@@ -327,9 +327,9 @@ sub profile_default
 				['Over~write block' => 'Alt+O' => '@O' => sub { $_[0]-> Editor-> overtype_block }],
 			]],
 			['~Options' => [
-				[ '*syntaxHilite'   => '~Syntax hilite'     => q(bool_set)],
-				[ '*autoIndent'      => '~Auto indent'      => q(bool_set)],
-				[ 'persistentBlock' => '~Presistent blocks' => q(bool_set)],
+				[ '@*syntaxHilite'   => '~Syntax hilite'     => q(bool_set)],
+				[ '@*autoIndent'     => '~Auto indent'       => q(bool_set)],
+				[ '@persistentBlock' => '~Presistent blocks' => q(bool_set)],
 				[],
 				[ 'Set ~font' => q(setfont)],
 			]],
@@ -392,8 +392,8 @@ sub setfont
 
 sub bool_set
 {
-	my ( $self, $var) = @_;
-	$self-> Editor-> set( $var, $self-> menu-> toggle($var));
+	my ( $self, $var, $val) = @_;
+	$self-> Editor-> set($var, $val);
 }
 
 sub blockType
