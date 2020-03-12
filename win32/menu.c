@@ -102,6 +102,7 @@ create_menu_bitmap( Handle bitmap )
 			ret = image_create_bitmap( bitmap);
 		} else {
 			Handle dup = CImage(bitmap)->dup(bitmap);
+			CIcon(dup)->set_autoMasking(dup, amNone);
 			if ( i-> type != imRGB )
 				CIcon(dup)->set_type(dup, imRGB);
 			if ( i-> maskType != 8 )
