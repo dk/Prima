@@ -1380,6 +1380,10 @@ menus.
 	);
 	run Prima;
 
+=for podview <img src="Prima/menu.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/menu.gif">
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
