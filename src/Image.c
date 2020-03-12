@@ -1649,7 +1649,7 @@ prepare_fill_context(Handle self, Point translate, PImgPaintContext ctx)
 
 	color2pixel( self, my->get_color(self), ctx->color);
 	color2pixel( self, my->get_backColor(self), ctx->backColor);
-	ctx-> rop    = my->get_rop(self);
+	ctx-> rop    = var->extraROP;
 	ctx-> region = var->regionData ? &var->regionData-> data. box : NULL;
 	ctx-> patternOffset = my->get_fillPatternOffset(self);
 	ctx-> patternOffset.x -= translate.x;
@@ -2061,6 +2061,17 @@ Image_region( Handle self, Bool set, Handle mask)
 		return Region_create_from_data( nilHandle, var->regionData);
 
 	return nilHandle;
+}
+
+int
+Image_rop( Handle self, Bool set, int rop)
+{
+	if (!set) return var-> extraROP;
+	if ( rop < 0 ) rop = 0;
+	var-> extraROP = rop;
+	if ( rop > ropNoOper ) rop = ropNoOper;
+	apc_gp_set_rop( self, rop);
+	return var-> extraROP;
 }
 
 static Bool
