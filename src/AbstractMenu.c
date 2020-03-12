@@ -906,32 +906,33 @@ AbstractMenu_enabled( Handle self, Bool set, char * varName, Bool enabled)
 }
 
 Handle
-AbstractMenu_icon( Handle self, Bool set, char * varName, Handle image)
+AbstractMenu_icon( Handle self, Bool set, char * varName, Handle icon)
 {
 	PMenuItemReg m;
 	if ( var-> stage > csFrozen) return nilHandle;
 
 	m = find_menuitem( self, varName, true);
 	if ( m == nil) return nilHandle;
+	if ( !m-> icon) return nilHandle;
 	if ( !set) {
 		if ( PObject( m-> icon)-> stage == csDead) return nilHandle;
 		return m-> icon;
 	}
-	if ( !register_image(image))
+	if ( !register_image(icon))
 		return nilHandle;
 	if ( m-> icon ) {
 		if ( PObject( m-> icon)-> stage < csDead)
 			SvREFCNT_dec( SvRV(( PObject( m-> icon))-> mate));
 		unprotect_object( m-> icon);
 	}
-	m-> icon = image;
+	m-> icon = icon;
 	if ( m-> id > 0) {
 		if ( var-> stage <= csNormal && var-> system)
 			apc_menu_item_set_icon( self, m);
 		notify( self, "<ssUH", "Change", "icon",
 			m->variable ? m-> variable      : varName,
 			m->variable ? m-> flags.utf8_variable : 0,
-			image);
+			icon);
 	}
 	return nilHandle;
 }
@@ -1076,6 +1077,7 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 	Handle owner;
 	char buffer[16], *context;
 	if ( m == nil) return false;
+
 	context = AbstractMenu_make_var_context( self, m, buffer);
 	if ( m-> flags. autotoggle ) {
 		m-> flags. checked = m-> flags. checked ? 0 : 1;
