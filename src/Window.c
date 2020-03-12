@@ -69,8 +69,11 @@ void
 Window_cleanup( Handle self)
 {
 	if ( var-> modal) my-> cancel( self);
-	my-> detach( self, var-> menu, true);
-	var-> menu = nilHandle;
+	if ( var->menu ) {
+		unprotect_object(var-> menu);
+		//my-> detach( self, var-> menu, true);
+		var->menu = nilHandle;
+	}
 	inherited cleanup( self);
 }
 
@@ -559,22 +562,11 @@ Window_menu( Handle self, Bool set, Handle menu)
 	if ( !set)
 		return var-> menu;
 	if ( menu && !kind_of( menu, CMenu)) return nilHandle;
-	if ( menu && (( PMenu) menu)-> owner != self)
-		my-> set_menuItems( self, ((( PMenu) menu)-> self)-> get_items( menu, "", true));
-	else {
-		apc_window_set_menu( self, menu);
-		var-> menu = menu;
-		if ( menu)
-		{
-			int i;
-			ColorSet menuColor;
-			memcpy( menuColor, var-> menuColor, sizeof( ColorSet));
-			for ( i = 0; i < ciMaxId + 1; i++)
-			apc_menu_set_color( menu, menuColor[ i], i);
-			memcpy( var-> menuColor, menuColor, sizeof( ColorSet));
-			apc_menu_set_font( menu, &var-> menuFont);
-		}
-	}
+
+	if ( var->menu ) unprotect_object(var-> menu);
+	apc_window_set_menu( self, menu);
+	var-> menu = menu;
+	if ( var->menu ) protect_object(var-> menu);
 	return nilHandle;
 }
 
@@ -588,16 +580,26 @@ Window_menuItems( Handle self, Bool set, SV * menuItems)
 		return var-> menu ? CMenu( var-> menu)-> get_items( var-> menu, "", true) : nilSV;
 
 	if ( var-> menu == nilHandle) {
-	if ( SvTYPE( menuItems)) {
+		if ( SvTYPE( menuItems)) {
+			Handle menu;
 			HV * profile = newHV();
 			pset_sv( items, menuItems);
 			pset_H ( owner, self);
 			pset_i ( selected, false);
-			my-> set_menu( self, create_instance( "Prima::Menu"));
+			if (( menu = create_instance( "Prima::Menu")) != nilHandle) {
+				int i;
+				ColorSet color;
+				my-> set_menu( self, menu );
+				memcpy( color, var-> menuColor, sizeof( ColorSet));
+				for ( i = 0; i < ciMaxId + 1; i++)
+					apc_menu_set_color( menu, color[ i], i);
+				memcpy( var-> menuColor, color, sizeof( ColorSet));
+				apc_menu_set_font( menu, &var-> menuFont);
+			}
 			sv_free(( SV *) profile);
 		}
 	} else
-	CMenu( var-> menu)-> set_items( var-> menu, menuItems);
+		CMenu( var-> menu)-> set_items( var-> menu, menuItems);
 	return menuItems;
 }
 
