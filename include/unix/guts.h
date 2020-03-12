@@ -950,6 +950,7 @@ typedef struct _menu_window
 #endif
 } MenuWindow, *PMenuWindow;
 
+#define MENU_PALETTE_SIZE (ciMaxId + 2)
 typedef struct _menu_sys_data
 {
 	COMPONENT_SYS_DATA;
@@ -959,9 +960,9 @@ typedef struct _menu_sys_data
 	PCachedFont          font;
 	int                  guillemots;
 	Bool                 layered;
-	unsigned long        c[ciMaxId+1];
-	unsigned long        argb_c[ciMaxId+1];
-	Color                rgb[ciMaxId+1];
+	unsigned long        c[MENU_PALETTE_SIZE];
+	unsigned long        argb_c[MENU_PALETTE_SIZE];
+	Color                rgb[MENU_PALETTE_SIZE];
 	XWindow              focus;
 	PMenuWindow          focused;
 } MenuSysData, *PMenuSysData;

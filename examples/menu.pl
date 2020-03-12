@@ -180,8 +180,9 @@ sub create_menu
 		[],                             # divisor in main menu opens
 		[ "~Clusters" => [              # right-adjacent part
 		[ "*".checker =>  "Checking Item"   => "Check"     ],
+		[ "@" =>  "Auto Checking Item"   => sub {print "new state: $_[2]\n" } ],
 		[],
-		[ "-".slave   =>  "Disabled state"   => "PrintText"],
+		[ "-@".slave   =>  "Disabled state"   => "PrintText"],
 		[ master  =>  "~Enable item above" => "Enable"     ]   # enable/disable and text sample
 		]]
 	];
