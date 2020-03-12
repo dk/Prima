@@ -1032,10 +1032,10 @@ DECL_DRAW(check)
 DECL_DRAW(checkbox)
 {
 	int 
-		x1 = x  + MENU_XOFFSET / 2, 
-		y1 = y  + (ix-> height/2) - MENU_CHECK_XOFFSET/2,
-		x2 = x1 + MENU_CHECK_XOFFSET,
-		y2 = y1 + MENU_CHECK_XOFFSET;
+		x1 = x  + MENU_XOFFSET / 2 + 1, 
+		y1 = y  + (ix-> height/2) - MENU_CHECK_XOFFSET/2 + 1,
+		x2 = x1 + MENU_CHECK_XOFFSET - 2,
+		y2 = y1 + MENU_CHECK_XOFFSET - 2;
 
 	XSetForeground( DISP, draw->gc, draw->c[m->flags.disabled ? ciLight3DColor : (MENU_PALETTE_SIZE-1)]);
 	XDrawLine( DISP, win, draw->gc, x1, y2, x2 + 1, y2);
