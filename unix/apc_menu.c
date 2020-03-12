@@ -348,7 +348,7 @@ create_menu_bitmap(Handle src, PMenuBitmap dst, Bool layered, Bool disabled, int
 			if ( disabled ) {
 				int sz = i-> maskSize;
 				Byte * p = i-> mask;
-				while (sz--) *p /= 2;
+				while (sz--) *(p++) /= 2;
 			}
 			i-> autoMasking = amNone;
 			i-> self-> set_type( src, imRGB );
