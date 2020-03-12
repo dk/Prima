@@ -259,6 +259,7 @@ Prima/IntUtils.pm
 Prima/KeySelector.pm
 Prima/Label.pm
 Prima/Lists.pm
+Prima/Menus.pm
 Prima/MDI.pm
 Prima/MsgBox.pm
 Prima/noARGV.pm
