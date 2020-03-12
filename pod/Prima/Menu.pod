@@ -545,8 +545,6 @@ NAME is name of the menu item.
 If not 0, treated as a member of radio group with that number when checked.
 I.e. if one of the group is checked, others are unchecked.
 
-Auto-toggled items are not treated as radio groups.
-
 =item image NAME, OBJECT / Prima::MenuItem::image OBJECT
 
 Manages the image, bound with a menu item. OBJECT

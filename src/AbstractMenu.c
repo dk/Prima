@@ -1193,13 +1193,14 @@ AbstractMenu_sub_call( Handle self, PMenuItemReg m)
 	if ( m == nil) return false;
 
 	context = AbstractMenu_make_var_context( self, m, buffer);
-	if ( m-> flags. autotoggle )
-		set_check(self, context, m, m-> flags. checked ? 0 : 1);
 	if ( m-> group != 0 ) {
 		if ( !m->flags.checked )
 			set_check(self, context, m, 1);
+		else if ( m-> flags. autotoggle )
+			set_check(self, context, m, 0);
 		my-> first_that( self, (void*)update_group, m, true);
-	}
+	} else if ( m-> flags. autotoggle )
+		set_check(self, context, m, m-> flags. checked ? 0 : 1);
 	owner = var-> owner;
 	if ( owner == nilHandle ) return false;
 	if ( m-> code) {
