@@ -809,6 +809,8 @@ AbstractMenu_autoToggle( Handle self, Bool set, char * varName, Bool autotoggle)
 	if ( m-> flags. divider || m-> down) return false;
 	m-> flags. autotoggle = autotoggle ? 1 : 0;
 	if ( m-> id > 0) {
+		if ( var-> stage <= csNormal && var-> system)
+			apc_menu_item_set_autotoggle( self, m);
 		notify( self, "<ssUi", "Change", "autoToggle", 
 			m->variable ? m-> variable      : varName, 
 			m->variable ? m-> flags.utf8_variable : 0,

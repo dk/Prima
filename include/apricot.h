@@ -2544,6 +2544,9 @@ extern Bool
 apc_menu_item_set_accel( Handle self, PMenuItemReg m);
 
 extern Bool
+apc_menu_item_set_autotoggle( Handle self, PMenuItemReg m);
+
+extern Bool
 apc_menu_item_set_check( Handle self, PMenuItemReg m);
 
 extern Bool

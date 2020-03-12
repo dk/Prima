@@ -49,6 +49,7 @@ WCHAR lastDeadKey = 0;
 int          timeDefsCount = 0;
 PItemRegRec  timeDefs = NULL;
 Bool debug = false;
+HBITMAP uncheckedBitmap = NULL;
 
 BOOL APIENTRY
 DllMain( HINSTANCE hInstance, DWORD reason, LPVOID reserved)
@@ -470,6 +471,8 @@ window_subsystem_done()
 	hash_destroy( myfontMan,  false);
 	DeleteObject( hPenHollow);
 	DeleteObject( hBrushHollow);
+	if ( uncheckedBitmap && uncheckedBitmap != (HBITMAP)-1)
+		DeleteObject( uncheckedBitmap);
 	SetErrorMode( guts. errorMode);
 }
 

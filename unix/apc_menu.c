@@ -2211,6 +2211,13 @@ apc_menu_item_set_accel( Handle self, PMenuItemReg m)
 }
 
 Bool
+apc_menu_item_set_autotoggle( Handle self, PMenuItemReg m)
+{
+	menu_touch( self, m, false);
+	return true;
+}
+
+Bool
 apc_menu_item_set_check( Handle self, PMenuItemReg m)
 {
 	menu_touch( self, m, false);

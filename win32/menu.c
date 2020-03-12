@@ -138,6 +138,70 @@ build_bitmap_key( HMENU menu, PMenuItemReg m, BitmapKey * key)
 	key->id   = m->id;
 }
 
+static HBITMAP
+unchecked_bitmap(void)
+{
+	int cx, x1, y1, x2, y2, i, sz;
+	HDC dc;
+	uint32_t * ptr;
+	HPEN stock_pen;
+	HPEN stock_brush;
+	HBITMAP stock_bm;
+
+	if ( uncheckedBitmap == (HBITMAP)(-1)) return NULL;
+	if ( uncheckedBitmap != NULL) return uncheckedBitmap;
+
+	uncheckedBitmap = (HBITMAP) -1;
+
+	cx = GetSystemMetrics( SM_CXMENUCHECK ) - 1;
+	dc = GetDC(NULL);
+	if ( !( uncheckedBitmap = image_create_argb_dib_section( dc, cx, cx, &ptr))) {
+		DeleteDC(dc);
+		return NULL;
+	}
+	DeleteDC(dc);
+
+	dc = CreateCompatibleDC(NULL);
+	stock_bm = SelectObject( dc, uncheckedBitmap);
+
+	sz = cx * cx;
+	bzero(ptr, sz * 4);
+	x1 = y1 = (cx > 10) ? cx / 4 : 0;
+	x2 = y2 = cx - x1;
+
+	stock_brush = SelectObject( dc, hBrushHollow);
+
+	stock_pen = SelectObject( dc, CreatePen( PS_SOLID, 0, 0x404040));
+	MoveToEx( dc, x1, y2, NULL);
+	LineTo( dc, x2, y2);
+	LineTo( dc, x2, y1);
+
+	DeleteObject( SelectObject( dc, CreatePen( PS_SOLID, 0, GetSysColor(COLOR_BTNSHADOW))));
+	MoveToEx( dc, x2, y1, NULL);
+	LineTo( dc, x1, y1);
+	LineTo( dc, x1, y2 + 1);
+
+	x1++; y1++; x2--; y2--;
+	MoveToEx( dc, x1, y2, NULL);
+	LineTo( dc, x2, y2);
+	LineTo( dc, x2, y1);
+
+	DeleteObject( SelectObject( dc, CreatePen( PS_SOLID, 0, GetSysColor(COLOR_BTNHIGHLIGHT))));
+	MoveToEx( dc, x2, y1, NULL);
+	LineTo( dc, x1, y1);
+	LineTo( dc, x1, y2 + 1);
+
+	for ( i = 0; i < sz; i++, ptr++)
+		if ( *ptr )
+			*ptr |= 0xff000000;
+
+	DeleteObject(SelectObject( dc, stock_brush ));
+	SelectObject( dc, stock_pen );
+	SelectObject(dc, stock_bm);
+	DeleteDC(dc);
+
+	return uncheckedBitmap;
+}
 
 static HMENU
 add_item( Bool menuType, Handle menu, PMenuItemReg i)
@@ -193,17 +257,20 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 				mii. dwTypeData = map_text_accel( i);
 			else if ( i-> bitmap )
 				mii. dwTypeData = (WCHAR*) create_menu_bitmap( i-> bitmap);
+			if ( i-> icon ) {
+				BitmapKey key;
+				HBITMAP bitmap = create_menu_bitmap( i-> icon);
+				build_bitmap_key(m, i, &key);
+				hash_store( menuBitmapMan, &key, sizeof(key), (void*) bitmap);
+				mii. fMask |= MIIM_CHECKMARKS;
+				mii. hbmpChecked = mii. hbmpUnchecked = bitmap;
+			} else if ( i-> flags. autotoggle ) {
+				mii. fMask |= MIIM_CHECKMARKS;
+				mii. hbmpUnchecked = unchecked_bitmap();
+			}
 			InsertMenuItemW( m, -1, true, &mii);
 			if ( i-> text && mii.dwTypeData)
 				free( mii. dwTypeData);
-		}
-
-		if ( i-> icon ) {
-			BitmapKey key;
-			HBITMAP bitmap = create_menu_bitmap( i-> icon);
-			build_bitmap_key(m, i, &key);
-			hash_store( menuBitmapMan, &key, sizeof(key), (void*) bitmap);
-			SetMenuItemBitmaps(m, i->id + MENU_ID_AUTOSTART, MF_BYCOMMAND, bitmap, bitmap);
 		}
 
 		i = i-> next;
@@ -379,6 +446,49 @@ apc_menu_item_set_check( Handle self, PMenuItemReg m)
 	return res != 0xFFFFFFFF;
 }
 
+static Bool
+update_check_icons( Handle self, PMenuItemReg m)
+{
+	UINT flags;
+	HBITMAP bitmap = NULL;
+	BitmapKey key;
+	Bool ret = true;
+	MENUITEMINFO mii;
+
+	if ( !var handle) return false;
+	objCheck false;
+	flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
+	if ( flags == 0xFFFFFFFF) return false;
+
+	build_bitmap_key((HMENU) var handle, m, &key);
+	hash_delete( menuBitmapMan, &key, sizeof(key), false);
+
+	bzero(&mii, sizeof(mii));
+	mii.cbSize = sizeof(mii);
+	mii.fMask  = MIIM_CHECKMARKS;
+
+	if ( m-> icon ) {
+		if ( ( bitmap = create_menu_bitmap( m-> icon)) != NULL)
+			hash_store( menuBitmapMan, &key, sizeof(key), (void*) bitmap);
+		else {
+			apiErr;
+			ret = false;
+		}
+		mii.hbmpChecked = mii.hbmpUnchecked = bitmap;
+	} else if ( m-> flags.autotoggle ) {
+		mii. hbmpUnchecked = unchecked_bitmap();
+	}
+
+
+	return ret;
+}
+
+Bool
+apc_menu_item_set_autotoggle( Handle self, PMenuItemReg m)
+{
+	return update_check_icons(self, m);
+}
+
 Bool
 apc_menu_item_set_enabled( Handle self, PMenuItemReg m)
 {
@@ -442,33 +552,7 @@ apc_menu_item_set_image( Handle self, PMenuItemReg m)
 Bool
 apc_menu_item_set_icon( Handle self, PMenuItemReg m)
 {
-	UINT flags;
-	HBITMAP bitmap = NULL;
-	BitmapKey key;
-	Bool ret = true;
-
-	if ( !var handle) return false;
-	objCheck false;
-	flags = GetMenuState(( HMENU) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND);
-	if ( flags == 0xFFFFFFFF) return false;
-
-	build_bitmap_key((HMENU) var handle, m, &key);
-	hash_delete( menuBitmapMan, &key, sizeof(key), false);
-
-	if ( m-> icon ) {
-		if ( ( bitmap = create_menu_bitmap( m-> icon)) != NULL)
-			hash_store( menuBitmapMan, &key, sizeof(key), (void*) bitmap);
-		else {
-			apiErr;
-			ret = false;
-		}
-	}
-	if (!SetMenuItemBitmaps(( HMENU ) var handle, m-> id + MENU_ID_AUTOSTART, MF_BYCOMMAND, bitmap, bitmap)) {
-		apiErr;
-		ret = false;
-	}
-
-	return ret;
+	return update_check_icons(self, m);
 }
 
 ApiHandle
