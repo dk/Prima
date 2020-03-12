@@ -1657,6 +1657,7 @@ sub checked { my $self = shift;return $self-> {menu}-> checked( $self-> {id}, @_
 sub enabled { my $self = shift;return $self-> {menu}-> enabled( $self-> {id}, @_);}
 sub options { my $self = shift;return $self-> {menu}-> options( $self-> {id}, @_);}
 sub image   { my $self = shift;return $self-> {menu}-> image  ( $self-> {id}, @_);}
+sub icon    { my $self = shift;return $self-> {menu}-> icon   ( $self-> {id}, @_);}
 sub key     { my $self = shift;return $self-> {menu}-> key    ( $self-> {id}, @_);}
 sub submenu { my $self = shift;return $self-> {menu}-> submenu( $self-> {id}, @_);}
 sub text    { my $self = shift;return $self-> {menu}-> text   ( $self-> {id}, @_);}
