@@ -1029,6 +1029,32 @@ DECL_DRAW(check)
 	return true;
 }
 
+DECL_DRAW(checkbox)
+{
+	int 
+		x1 = x  + MENU_XOFFSET / 2, 
+		y1 = y  + (ix-> height/2) - MENU_CHECK_XOFFSET/2,
+		x2 = x1 + MENU_CHECK_XOFFSET,
+		y2 = y1 + MENU_CHECK_XOFFSET;
+
+	XSetForeground( DISP, draw->gc, draw->c[m->flags.disabled ? ciLight3DColor : (MENU_PALETTE_SIZE-1)]);
+	XDrawLine( DISP, win, draw->gc, x1, y2, x2 + 1, y2);
+	XDrawLine( DISP, win, draw->gc, x2, y2, x2, y1);
+	XSetForeground( DISP, draw->gc, draw->c[ m->flags.disabled ? ciDisabledText : ciDark3DColor] );
+	XDrawLine( DISP, win, draw->gc, x2, y1, x1, y1);
+	XDrawLine( DISP, win, draw->gc, x1, y1, x1, y2);
+
+	x1++; y1++; x2--; y2--;
+	XSetForeground( DISP, draw->gc, draw->c[ m->flags.disabled ? ciDisabledText : ciDark3DColor] );
+	XDrawLine( DISP, win, draw->gc, x1, y2, x2 + 1, y2);
+	XDrawLine( DISP, win, draw->gc, x2, y2, x2, y1);
+	XSetForeground( DISP, draw->gc, draw->c[ciLight3DColor]);
+	XDrawLine( DISP, win, draw->gc, x2, y1, x1, y1);
+	XDrawLine( DISP, win, draw->gc, x1, y1, x1, y2);
+
+	return true;
+}
+
 DECL_DRAW(guillemots)
 {
 	DEFMM;
@@ -1347,6 +1373,8 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 					DRAW(icon);
 				else if ( m-> flags. checked)
 					DRAW(check);
+				else if ( m-> flags. autotoggle)
+					DRAW(checkbox);
 			}
 
 			if ( m-> text) {
@@ -2388,6 +2416,8 @@ apc_window_set_menu( Handle self, Handle menu)
 			M(menu)-> c[i] = prima_allocate_color( self,
 				prima_map_color( PWindow(self)-> menuColor[i], nil), nil);
 		}
+		i = MENU_PALETTE_SIZE - 1;
+		M(menu)-> c[i] = prima_allocate_color( self, 0x404040, nil);
 		XX->flags.layered = layered;
 		M(menu)-> layered = XX->flags. layered;
 		if ( M(menu)-> layered ) {
@@ -2395,6 +2425,8 @@ apc_window_set_menu( Handle self, Handle menu)
 				M(menu)-> argb_c[i] = argb_color(
 					prima_map_color( PWindow(self)-> menuColor[i], nil)
 				);
+			i = MENU_PALETTE_SIZE - 1;
+			M(menu)-> argb_c[i] = prima_allocate_color( self, 0x404040, nil);
 		}
 	}
 	return true;
