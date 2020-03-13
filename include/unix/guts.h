@@ -730,7 +730,7 @@ typedef struct _UnixGuts
 	Handle                       xdnd_clipboard;
 	int                          xdnd_disabled;
 	/* DND: Receiver */
-	Handle                       xdndr_receiver, xdndr_widget;
+	Handle                       xdndr_receiver, xdndr_widget, xdndr_last_target;
 	XWindow                      xdndr_source;
 	long                         xdndr_timestamp;
 	int                          xdndr_version, xdndr_last_action, xdndr_action_list_cache;

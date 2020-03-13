@@ -1394,7 +1394,7 @@ sub begin_drag
 	unless (dnd::is_one_action($actions)) {
 		my $default_action = dnd::to_one_action($actions);
 		push @id, $self-> add_notification( DragQuery => sub {
-			my ( $self, $modmap, $ref ) = @_;
+			my ( $self, $modmap, $counterpart, $ref ) = @_;
 			if ( $modmap & km::Ctrl and $actions & dnd::Move ) {
 				$ref->{action} = dnd::Move;
 			} elsif ( $modmap & km::Shift and $actions & dnd::Link ) {
@@ -1407,7 +1407,7 @@ sub begin_drag
 
 	# update pointers
 	push @id, $self-> add_notification( DragResponse => sub {
-		my ( undef, $allow, $action ) = @_;
+		my ( undef, $allow, $action, $counterpart ) = @_;
 
 		unless ($pointers{$action}) {
 			$self->pointer(dnd::pointer($action));
@@ -1446,7 +1446,7 @@ sub begin_drag
 	}
 	my $pointer = $self->pointer;
 	my @opp = $::application->pointerPos;
-	my $ret = $self->dnd_start($actions, !$opt{preview});
+	my ($ret, $counterpart) = $self->dnd_start($actions, !$opt{preview});
 	if ( $self->alive ) {
 		if ( $ret == dnd::None && $opt{preview} ) {
 			my @npp = $::application->pointerPos;
@@ -1475,7 +1475,7 @@ sub begin_drag
 		$self->remove_notification($_) for @id;
 		$self->dndAware($old_dndAware) if $old_dndAware;
 	}
-	return $ret;
+	return wantarray ? ($ret, $counterpart) : $ret;
 }
 
 package Prima::Window;

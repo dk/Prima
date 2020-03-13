@@ -529,6 +529,9 @@ apc_widget_destroy( Handle self)
 	DEFXX;
 	ConfigureEventPair *n1, *n2;
 
+	if ( guts.xdndr_last_target == self )
+		guts.xdndr_last_target = nilHandle;
+
 	if ( XX-> recreateData) free( XX-> recreateData);
 
 	n1 = TAILQ_FIRST( &XX-> configure_pairs);

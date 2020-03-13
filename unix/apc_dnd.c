@@ -1,4 +1,5 @@
 #include "unix/guts.h"
+#include "Window.h"
 #include "Application.h"
 
 /* See specs at https://www.freedesktop.org/wiki/Specifications/XDND/ */
@@ -172,6 +173,7 @@ handle_xdnd_leave( Handle self)
 		ev.dnd.clipboard = nilHandle;
 		ev.dnd.modmap  = query_pointer(NULL,&ev.dnd.where);
 		ev.dnd.action  = dndNone;
+		ev.dnd.counterpart = guts. xdnds_widget;
 		XTranslateCoordinates(DISP, guts.root, X(guts.xdndr_widget)->client, 
 			ev.dnd.where.x, ev.dnd.where.y,
 			&ev.dnd.where.x, &ev.dnd.where.y,
@@ -233,6 +235,7 @@ handle_xdnd_status( Handle self, XEvent* xev)
 	ev.dnd.action = guts.xdnds_last_action_response;
 	if ( ev.dnd.action == dndAsk )
 		ev.dnd.action = guts.xdnds_last_action;
+	ev.dnd.counterpart = guts. xdndr_widget;
 
 	if (guts.xdnds_widget) {
 		guts.xdnd_disabled = true;
@@ -440,6 +443,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 		ev.dnd.where.x = x;
 		ev.dnd.where.y = y;
 		ev.dnd.action  = action;
+		ev.dnd.counterpart = guts. xdnds_widget;
 		guts.xdnd_disabled = true;
 		CComponent(h)-> message(h, &ev);
 		guts.xdnd_disabled = false;
@@ -474,6 +478,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 		ev.dnd.where.y = y;
 		ev.dnd.action  = action;
 		ev.dnd.modmap  = query_pointer(NULL,NULL);
+		ev.dnd.counterpart = guts. xdnds_widget;
 		guts.xdnd_disabled = true;
 		CComponent(h)-> message(h, &ev);
 		guts.xdnd_disabled = false;
@@ -559,9 +564,11 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 		ev.dnd.action = guts.xdndr_last_action;
 		ev.dnd.allow = guts.xdndr_last_action != dndNone;
 		ev.dnd.clipboard = ev.dnd.allow ? guts.xdnd_clipboard : nilHandle;
+		ev.dnd.counterpart = guts.xdnds_widget;
 		guts.xdnd_disabled = true;
 		CComponent(guts.xdndr_widget)-> message(guts.xdndr_widget, &ev);
 		guts.xdnd_disabled = false;
+		guts.xdndr_last_target = guts.xdndr_widget;
 	} else {
 		ev.dnd.allow = 0;
 		ev.dnd.action = dndCopy;
@@ -759,6 +766,7 @@ send_drag_response(Handle self, Bool allow, int action)
 	Event ev = { cmDragResponse };
 	ev.dnd.allow = allow;
 	ev.dnd.action = action;
+	ev.dnd.counterpart = guts.xdndr_widget;
 	guts.xdnd_disabled = true;
 	CComponent(self)-> message(self, &ev);
 	guts.xdnd_disabled = false;
@@ -766,7 +774,7 @@ send_drag_response(Handle self, Bool allow, int action)
 }
 
 int
-apc_dnd_start( Handle self, int actions, Bool default_pointers)
+apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counterpart)
 {
 	Bool got_session = false;
 	Point ptr, last_ptr = { -1, -1 };
@@ -791,6 +799,9 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers)
 		Cdebug("dnd:no toplevel window\n");
 		return -1;
 	}
+
+	if ( *counterpart ) *counterpart = nilHandle;
+	guts.xdndr_last_target = nilHandle;
 
 	ac_ptr = actions_descriptions;
 	for ( i = 0x1; i <= dndLink; i <<= 1) {
@@ -944,6 +955,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers)
 				ev.dnd.allow = got_session ? 1 : -1;
 			else
 				ev.dnd.allow = 0;
+			ev.dnd.counterpart = guts.xdndr_widget;
 
 			guts.xdnd_disabled = true;
 			CComponent(guts.xdnds_widget)-> message(guts.xdnds_widget, &ev);
@@ -1025,6 +1037,7 @@ EXIT:
 	unprotect_object(self);
 	guts.xdnds_widget = nilHandle;
 	guts.xdnds_target = None;
+	if ( *counterpart ) *counterpart = guts.xdndr_last_target;
 	Cdebug("dnd:stop\n");
 	return ret;
 }

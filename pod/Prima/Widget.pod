@@ -854,7 +854,7 @@ available list of actions, when the user presses modifier keys, like CTRL or
 SHIFT.
 
 On X11, it is the sender that contols that aspect, and tells the receiver what
-action at any given moment the use chose, by responding to a C<DragQuery>
+action at any given moment the user chose, by responding to a C<DragQuery>
 event. On Win32, it is the receiver that selects an action from the list on
 each C<DragOver> event, depending on modifier keys pressed by the user; Windows
 recommends to adhere to the standard scheme where CTRL mark C<dnd::Move> action,
@@ -1993,9 +1993,16 @@ is a reference.
 Returns -1 if a session cannot start, C<dnd::None> if it was cancelled by the
 user, or any other C<dnd::> constant when the DND receiver has selected and
 successfully performed that action. For example, after a call to C<dnd_start>
-returning C<dnd::Move> (depending on a context), the called may remove the data
+returning C<dnd::Move> (depending on a context), the caller may remove the data
 the user selected to move (C<Prima::InputLine> and C<Prima::Edit> do exactly
 this).
+
+In C<wantarray> context also returns the widget that accepted the drop, if that
+was a Prima widget. Check this before handling C<dnd::Move> actions that
+require data to be deleted on the source, to not occasionally delete the
+freshly transferred data. The method uses a precaution for this scenario and by
+default won't let the widget to be both a sender and a receiver though ( see
+C<self_aware> below ).
 
 The following input is recognized:
 
@@ -2098,6 +2105,9 @@ successfully performed that action. For example, after a call to C<dnd_start>
 returning C<dnd::Move> (depending on a context), the called may remove the data
 the user selected to move (C<Prima::InputLine> and C<Prima::Edit> do exactly
 this).
+
+Also returns the widget that accepted the drop, if that was a Prima widget within
+the same program.
 
 If USE_DEFAULT_POINTERS is set, then the system will use default drag pointers.
 Otherwise it is expected that a C<DragResponse> action will change them
@@ -2682,7 +2692,7 @@ Triggered by a successive C<enabled(0)> call
 
 See also: C<Enable>, C<enabled>, C<responsive>
 
-=item DragBegin CLIPBOARD, ACTION, MOD, X, Y
+=item DragBegin CLIPBOARD, ACTION, MOD, X, Y, COUNTERPART
 
 Triggered on a receiver widget when a mouse with a DND object enters it.
 C<CLIPBOARD> contains the DND data, C<ACTION> is a combination of C<dnd::>
@@ -2692,9 +2702,12 @@ entered the widget. This event, and the following C<DragOver> and C<DragEnd>
 events are happening only if the property C<dndAware> is set either to 1, or
 if it matches a clipboard format that exists in C<CLIPBOARD>.
 
+C<COUNTERPART> is the Prima DND sender widget, if the session is initiated within
+the same program.
+
 See also: L</Drag and Drop>, C<DragOver>, C<DragEnd>
 
-=item DragEnd CLIPBOARD, ACTION, MOD, X, Y, ANSWER
+=item DragEnd CLIPBOARD, ACTION, MOD, X, Y, COUNTERPART, ANSWER
 
 Triggered on a received widget when the user either drops or cancels the DND
 session. In case of a cancelled drop, C<CLIPBOARD> is set to C<undef> and
@@ -2716,9 +2729,12 @@ the receiver has accepted, if any.
 
 =back
 
+C<COUNTERPART> is the Prima DND sender widget, if the session is initiated within
+the same program.
+
 See also: L</Drag and Drop>, C<DragBegin>, C<DragOver>
 
-=item DragOver CLIPBOARD, ACTION, MOD, X, Y, ANSWER
+=item DragOver CLIPBOARD, ACTION, MOD, X, Y, COUNTERPART, ANSWER
 
 Triggered on a received widget when a mouse with a DND moves within the widget.
 Input data are same as on C<DragBegin>, and output data are to be stored in
@@ -2743,7 +2759,10 @@ while the mouse pointer is within these geometrical limits.
 
 =back
 
-=item DragQuery MOD, ANSWERS
+C<COUNTERPART> is the Prima DND sender widget, if the session is initiated within
+the same program.
+
+=item DragQuery MOD, ANSWERS, COUNTERPART
 
 Triggered on a sender DND widget when there was detected a change in mouse or
 modifier buttons, or the user pressed C<Escape> key to cancel the DND session.
@@ -2760,9 +2779,12 @@ on the C<MOD> value (f.ex. a C<dnd::Move> if a control modifier was pressed).
 Note: This action will only forward the change to the receiver on X11, but
 it is advised to implement it anyway for portability.
 
+C<COUNTERPART> is the Prima DND receiver widget, if within
+the same program.
+
 See also: L</Drag and Drop>, C<DragResponse>
 
-=item DragResponse ALLOW, ACTION
+=item DragResponse ALLOW, ACTION, COUNTERPART
 
 Triggered on a sender DND widget when there was detected a change in mouse or
 modifier buttons, or the mouse was moved from one DND target to another.
@@ -2776,6 +2798,8 @@ event, the handle should update the pointer in this callback. It is not
 needed though to save and restore mouse pointers before and after the DND
 session.
 
+C<COUNTERPART> is the Prima DND receiver widget, if within
+the same program.
 See also: L</Drag and Drop>, C<dnd_start>, C<begin_drag>.
 
 =item Enable
