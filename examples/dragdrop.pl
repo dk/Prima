@@ -162,6 +162,7 @@ sub drops
 				(image => $self->{image}),
 			actions => $self->{dnd_mode},
 		);
+		$self->{grab}--;
 		return $w-> text('That\'s me!') if ( $counterpart // 0) == $self;
 		display_action($action);
 		if ($action == dnd::Move) {
@@ -172,7 +173,6 @@ sub drops
 			}
 			$self->repaint;
 		}
-		$self->{grab}--;
 	},
 	onPaint => (( $fmt eq 'text') ? \&paint_text : \&paint_image ),
 }
