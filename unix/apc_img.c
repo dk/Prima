@@ -1244,24 +1244,6 @@ create_image_cache( PImage img, int type)
 		if ( !guts. dynamicColors) type = CACHE_PIXMAP;
 		if ( guts. idepth == 1) type = CACHE_BITMAP;
 		break;
-	case CACHE_MENU:
-		if (
-			(XT_IS_ICON(IMG) && ((PIcon(img)->type & imBPP) == 1) &&  (PIcon(img)->maskType == 1)) ||
-			(guts.idepth == 1)
-		) {
-			/* menu is special around 1-bit/1-bit icons, for win32 compat - these should be treated as bitmaps
-			to paint with menu colors */
-			type = CACHE_BITMAP;
-			target_bpp = guts. idepth;
-		} else if ( guts. dynamicColors ) {
-			/* menus don't have palettes, so paletted image will be garbled -- downgrade */
-			type = CACHE_LOW_RES;
-		} else if (XT_IS_ICON(IMG) && PIcon(img)->maskType == 8 && guts. argb_visual. visual) {
-			type = CACHE_LAYERED_ALPHA;
-		} else {
-			type = CACHE_PIXMAP;
-		}
-		break;
 	}
 
 	/* find Prima image depth */

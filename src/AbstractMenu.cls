@@ -45,7 +45,6 @@ object Prima::AbstractMenu ( Prima::Component)
 #	private
 	Bool   anchored;
 	Bool   system;
-	PHash  groups;
 	unsigned int autoEnum;
 	c_only void   dispose_menu( void * menu);
 	c_only void * new_menu( SV * sv, int level, void * avt);
