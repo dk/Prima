@@ -120,6 +120,10 @@ that is not desired, mark it as C<(> too (consequent C<(> are allowed):
     [ '(' ],
     [ ')last' ... ] 
 
+When user hits an already checked item, nothing happens. However, when combined with
+auto-toggling (i.e. marked with C<(@>), a checked item becomes unchecked, thus the
+group can present a state where no items are checked, too.
+
 See also: C<group>
 
 =back
