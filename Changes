@@ -1,5 +1,21 @@
 Revision history for Perl module Prima
-1.57 2017-11-17
+
+1.58 2020-03-12
+ - Added drag and drop support. Dragging from/to edit widgets works.
+ - Added more mouse pointers (drag pointers, crosshair, hand, question, up arrow)
+ - Menus:
+     -- added icons, radio groups, customly drawn items
+     -- extended API (get_item, is_custom, is_submenu, is_separator, execute)
+     -- .data renamed to .options and is used for new features
+     -- added Prima::Menus, a full emulation of system menu
+     -- menu objects can be shared between widgets
+ - font.vector is now a writeable property and a selector
+ - Prima::Edit.syntaxHilite work in word-wrapping mode
+ - Image:
+      -- rotation works to arbitrary angle
+      -- added generic 2D transform (.transform)
+
+1.57 2019-11-17
  - Add photoshop image operators (rop::Add, rop::Multiply, rop::SoftLight etc)
  - Support animated PNG files
  - Add Image.flood_fill
