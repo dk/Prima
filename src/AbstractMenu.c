@@ -166,7 +166,11 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, void * _avt)
 		return nil;
 	}
 
-	avt = ( _avt == NULL ) ? &avt_dummy : _avt;
+	if ( _avt == NULL ) {
+		avt = &avt_dummy;
+		bzero(avt, sizeof(AVTraverse));
+	} else
+		avt = _avt;
 
 	/* cycling the list of items */
 	for ( i = 0; i <= n; i++)
@@ -316,7 +320,6 @@ AbstractMenu_new_menu( Handle self, SV * sv, int level, void * _avt)
 				case '?': PARSE(custom_draw);
 				case '(':
 					if ( !avt-> max_group_initialized ) {
-						bzero(avt, sizeof(AVTraverse));
 						my-> first_that( self, (void*) &avt_init, avt, true);
 						avt-> max_group_initialized = true;
 					}

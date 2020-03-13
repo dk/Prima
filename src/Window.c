@@ -70,8 +70,8 @@ Window_cleanup( Handle self)
 {
 	if ( var-> modal) my-> cancel( self);
 	if ( var->menu ) {
+		apc_window_set_menu(self, nilHandle);
 		unprotect_object(var-> menu);
-		//my-> detach( self, var-> menu, true);
 		var->menu = nilHandle;
 	}
 	inherited cleanup( self);
@@ -563,10 +563,12 @@ Window_menu( Handle self, Bool set, Handle menu)
 		return var-> menu;
 	if ( menu && !kind_of( menu, CMenu)) return nilHandle;
 
-	if ( var->menu ) unprotect_object(var-> menu);
+	if ( var->menu )
+		unprotect_object(var-> menu);
 	apc_window_set_menu( self, menu);
 	var-> menu = menu;
-	if ( var->menu ) protect_object(var-> menu);
+	if ( var->menu )
+		protect_object(var-> menu);
 	return nilHandle;
 }
 
