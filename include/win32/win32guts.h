@@ -230,6 +230,7 @@ typedef struct _WinGuts
 	Bool           dndInsideEvent;     // to distinguish whether the clipboard is read-only or not
 	Bool           dndDefaultCursors;
 	void*          dragSource;         // not null if dragging
+	Handle         dragTarget;         // last successful drop
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData

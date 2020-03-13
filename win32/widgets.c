@@ -1223,6 +1223,7 @@ apc_widget_destroy( Handle self)
 	}
 	if ( sys recreateData) free( sys recreateData);
 	if ( self == lastMouseOver) lastMouseOver = nilHandle;
+	if ( self == guts.dragTarget) guts.dragTarget = nilHandle;
 	if ( var handle == nilHandle) return true;
 
 	if ( sys className == WC_FRAME)

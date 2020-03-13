@@ -457,6 +457,7 @@ typedef struct _DNDEvent {
 	Handle clipboard;
 	Point  where;
 	Box    pad;
+	Handle counterpart;
 } DNDEvent, *PDNDEvent;
 
 #ifdef GenericEvent
@@ -2473,7 +2474,7 @@ extern Bool
 apc_dnd_set_aware( Handle self, Bool is_target );
 
 extern int
-apc_dnd_start( Handle self, int actions, Bool default_pointers);
+apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counterpart);
 
 extern Handle
 apc_dnd_get_clipboard( Handle self );

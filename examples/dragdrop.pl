@@ -108,7 +108,7 @@ sub drops
 {
 	my $fmt = shift;
 	onDragBegin => sub {
-		my ( $self, $clipboard, $action, $modmap, $x, $y) = @_;
+		my ( $self, $clipboard, $action, $modmap, $x, $y, $counterpart) = @_;
 		$self->{dropable} = $clipboard->has_format(ucfirst $fmt) ? 1 : 0;
 		$self->set(
 			color     => ($self->{dropable} ? cl::HiliteText : cl::DisabledText),
@@ -117,14 +117,14 @@ sub drops
 		$self->{modmap} = 0;
 	},
 	onDragOver => sub {
-		my ( $self, $clipboard, $action, $modmap, $x, $y, $ref) = @_;
+		my ( $self, $clipboard, $action, $modmap, $x, $y, $counterpart, $ref) = @_;
 		$ref->{allow} = $self->{dropable} && $self->{dnd_mode} != dnd::None;
 		$self->{modmap} = $modmap;
 		$ref->{action} = best_dnd_mode($modmap, $self->{dnd_mode} & $action);
 		$ref->{pad} = [ 0, 0, $self-> size ]; # don't send it anymore
 	},
 	onDragEnd => sub {
-		my ( $self, $clipboard, $action, $modmap, $x, $y, $ref) = @_;
+		my ( $self, $clipboard, $action, $modmap, $x, $y, $counterpart, $ref) = @_;
 		$self->set(
 			color     => cl::Fore,
 			backColor => cl::Back,
@@ -136,18 +136,19 @@ sub drops
 			$ref->{action} = best_dnd_mode($self->{modmap}, $self->{dnd_mode} & $action); 
 
 			# this is an example of how to deal with (desired) cases when the same widget
-			# is both a dnd sender and a receiver. To make sure that whatever is copied from the clipboard
-			# is not erased on f.ex dnd::Move, postpone that copying action. 
+			# is both a dnd sender and a receiver. To make sure that whatever is copied 
+			# from the clipboard is not erased on f.ex dnd::Move, check the action
 			#
-			# usually this is not needed, and if actually is not desired set self_aware => 0 in begin_drag
-			Prima::Utils::post( sub {
+			# usually this is not needed, and if actually is not desired 
+			# set self_aware => 0 in begin_drag
+			if (( $counterpart // 0) != $self ) {
 				if ( $fmt eq 'text') {
-					$self->text($clipboard->text());
+					$self->text($clipboard->text);
 				} else {
 					$self->{image} = $clipboard->image;
 				}
 				$self->repaint;
-			});
+			}
 		}
 	},
 	onMouseDown => sub {
@@ -155,12 +156,13 @@ sub drops
 		return if $self->{grab} or not $self->{dnd_mode};
 		return if $fmt eq 'image' and not $self->{image};
 		$self->{grab}++;
-		my $action = $self->begin_drag(
+		my ($action, $counterpart) = $self->begin_drag(
 			( $fmt eq 'text') ?
 				(text => $self->text ) :
 				(image => $self->{image}),
 			actions => $self->{dnd_mode},
 		);
+		return $w-> text('That\'s me!') if ( $counterpart // 0) == $self;
 		display_action($action);
 		if ($action == dnd::Move) {
 			if ( $fmt eq 'text') {

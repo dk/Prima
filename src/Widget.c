@@ -435,6 +435,14 @@ Widget_detach( Handle self, Handle objectHandle, Bool kill)
 	}
 	inherited-> detach( self, objectHandle, kill);
 }
+	
+DNDResp
+Widget_dnd_start(Handle self, int dnd_actions, Bool default_pointers)
+{
+	DNDResp ret;
+	ret.action = apc_dnd_start( self, dnd_actions, default_pointers, &ret.counterpart);
+	return ret;
+}
 
 /*::e */
 void
@@ -577,11 +585,12 @@ handle_drag_begin( Handle self, PEvent event)
 		return;
 	}
 	opt_set(optDropSession);
-	my-> notify( self, "<sHiiP", "DragBegin",
+	my-> notify( self, "<sHiiPH", "DragBegin",
 		event-> dnd. clipboard,
 		event-> dnd. action,
 		event-> dnd. modmap,
-		event-> dnd. where
+		event-> dnd. where,
+		event-> dnd. counterpart
 	);
 }
 
@@ -607,11 +616,12 @@ handle_drag_over( Handle self, PEvent event)
 
 	pset_i(allow,1);
 	pset_i(action,dndCopy);
-	my-> notify( self, "<sHiiPS", "DragOver",
+	my-> notify( self, "<sHiiPHS", "DragOver",
 		event-> dnd. clipboard,
 		event-> dnd. action,
 		event-> dnd. modmap,
 		event-> dnd. where,
+		event-> dnd. counterpart,
 		ref
 	);
 
@@ -649,11 +659,12 @@ handle_drag_end( Handle self, PEvent event)
 
 	pset_i(allow, 1);
 	pset_i(action, event->dnd.action);
-	my-> notify( self, "<sHiiPS", "DragEnd", 
+	my-> notify( self, "<sHiiPHS", "DragEnd", 
 		event-> dnd. allow ? event-> dnd.clipboard : nilHandle, 
 		event-> dnd. action,
 		event-> dnd. modmap,
 		event-> dnd. where,
+		event-> dnd. counterpart,
 		ref
 	);
 	event-> dnd. allow  = pexist(allow)  ? pget_i(allow)  : 1;
@@ -670,7 +681,7 @@ handle_drag_query( Handle self, PEvent event)
 	HV * profile = newHV();
 	SV * ref = newRV_noinc((SV*) profile);
 	pset_i(allow, event->dnd.allow);
-	my-> notify( self, "<siS", "DragQuery", event->dnd.modmap, ref);
+	my-> notify( self, "<siHS", "DragQuery", event->dnd.modmap, event->dnd.counterpart, ref);
 	if (pexist(allow))
 		event-> dnd.allow = pget_i(allow);
 	event-> dnd.action = pexist(action) ? pget_i(action) : 0;
@@ -1089,7 +1100,8 @@ void Widget_handle_event( Handle self, PEvent event)
 			handle_drag_query( self, event );
 			break;
 		case cmDragResponse     :
-			my-> notify( self, "<sii", "DragResponse", event->dnd.allow, event->dnd.action);
+			my-> notify( self, "<siiH", "DragResponse", 
+				event->dnd.allow, event->dnd.action, event->dnd.counterpart);
 			break;
 		case cmMenuItemMeasure  :
 		case cmMenuItemPaint    :
