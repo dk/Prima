@@ -155,7 +155,7 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 	ev.dnd.action = convert_effect(*effect);
 	ev.dnd.modmap = convert_modmap(modmap);
 	ev.dnd.where  = convert_position(w, pt);
-	ev.dnd.counterpart = guts.dragSource ? ((PDropSource)guts.dragSource)->widget : nilHandle;
+	ev.dnd.counterpart = guts.dragSourceWidget;
 	if ( ev.dnd.where.x < 0 ) {
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
@@ -198,7 +198,7 @@ DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
 	ev.dnd.action    = convert_effect(*effect);
 	ev.dnd.modmap    = convert_modmap(modmap);
 	ev.dnd.where     = convert_position(w, pt);
-	ev.dnd.counterpart = guts.dragSource ? ((PDropSource)guts.dragSource)->widget : nilHandle;
+	ev.dnd.counterpart = guts.dragSourceWidget;
 	if ( ev.dnd.where.x < 0 ) {
 		*effect = self-> last_action;
 		return S_OK;
@@ -257,7 +257,7 @@ DropTarget__DragLeave(PDropTarget self)
 	ev.dnd.modmap    = apc_kbd_get_state(self->widget) | apc_pointer_get_state(self->widget);
 	ev.dnd.where     = apc_pointer_get_pos(self->widget);
 	ev.dnd.action    = dndNone;
-	ev.dnd.counterpart = guts.dragSource ? ((PDropSource)guts.dragSource)->widget : nilHandle;
+	ev.dnd.counterpart = guts.dragSourceWidget;
 	guts.dndInsideEvent = true;
 	CWidget(w)->message(w, &ev);
 	guts.dndInsideEvent = false;
@@ -286,7 +286,7 @@ DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, D
 	ev.dnd.action = convert_effect(*effect);
 	ev.dnd.modmap = convert_modmap(modmap);
 	ev.dnd.where  = convert_position(w, pt);
-	ev.dnd.counterpart = guts.dragSource ? ((PDropSource)guts.dragSource)->widget : nilHandle;
+	ev.dnd.counterpart = guts.dragSourceWidget;
 	if ( ev.dnd.where.x < 0 ) {
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
@@ -975,6 +975,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 		return -1;
 	if (!(guts.dragSource = CreateObject(DropSource)))
 		return -1;
+	guts.dragSourceWidget = self;
 	if ( counterpart ) *counterpart = nilHandle;
 	guts.dragTarget = nilHandle;
 	guts.dndDefaultCursors = default_pointers;
@@ -1011,6 +1012,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 
 	free(guts.dragSource);
 	guts.dragSource    = NULL;
+	guts.dragSourceWidget = nilHandle;
 	if ( counterpart ) *counterpart = guts.dragTarget;
 
 	return ret;
