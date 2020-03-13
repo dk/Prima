@@ -1115,12 +1115,17 @@ AGAIN:
 			( list_index_of( &guts. transp, self) >= 0)
 			)
 			return 0;
-		if ( is_apt( aptLayered )) {
+
+		if (
+			( var self->get_locked(self) > 0) || /* or WM_PAINT bashing occurs */
+			is_apt( aptLayered )
+		) {
 			PAINTSTRUCT ps;
 			BeginPaint(win, &ps);
 			EndPaint(win, &ps);
 			return 0;
 		}
+
 		break;
 	case WM_QUERYNEWPALETTE:
 		return palette_change( self);
