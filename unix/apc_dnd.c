@@ -800,7 +800,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 		return -1;
 	}
 
-	if ( *counterpart ) *counterpart = nilHandle;
+	if ( counterpart ) *counterpart = nilHandle;
 	guts.xdndr_last_target = nilHandle;
 
 	ac_ptr = actions_descriptions;
@@ -1037,7 +1037,7 @@ EXIT:
 	unprotect_object(self);
 	guts.xdnds_widget = nilHandle;
 	guts.xdnds_target = None;
-	if ( *counterpart ) *counterpart = guts.xdndr_last_target;
+	if ( counterpart ) *counterpart = guts.xdndr_last_target;
 	Cdebug("dnd:stop\n");
 	return ret;
 }
