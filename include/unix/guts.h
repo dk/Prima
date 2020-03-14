@@ -11,6 +11,8 @@
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #define Box _prima_Box
+#undef TRUE
+#undef FALSE
 #include <X11/Xregion.h>
 #undef Box
 #define Box BoxRec
