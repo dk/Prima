@@ -408,6 +408,7 @@ t/misc/syntax.t
 t/misc/cpan.t
 unix/apc_app.c
 unix/apc_clipboard.c
+unix/apc_dnd.c
 unix/apc_event.c
 unix/apc_font.c
 unix/apc_graphics.c
