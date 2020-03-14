@@ -1515,6 +1515,7 @@ img_polyline( Handle dest, int n_points, Point * points, PImgPaintContext ctx)
 		d_inc1 = (delta_min << 1);
 		d_inc2 = ((delta_min - delta_maj) << 1);
 
+		x = INT_MIN;
 		while(1) {
 			ox = x;
 			if (dir) {
