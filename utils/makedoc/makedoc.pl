@@ -117,34 +117,53 @@ if ( $build) {
 		my $cut;
 		my $cow = 1;
 		while (defined($_ = <W>)) {
-			if ( m/^=for\s*podview\s*<\s*img\s*src=\"?([^\"\s]+)\"?\s*(cut\s*=\s*1)?\s*>/) {
-				my ( $gif, $eps, $do_cut) = ( $1, $1, $2);
-				$eps =~ s/\.\.\///g;
-				$eps =~ s/\//_/g;
-				$eps =~ s/\.[^\.]+$/.eps/;
-				unless ( -f $eps) {
-					for ( "$path/Prima", "$path/Prima/pod", "$path/pod/Prima", "$path/pod") {
-						next unless -f "$_/$gif";
-						$gif = "$_/$gif";
-						goto FOUND;
-					}
-					warn "** $gif is not found\n";
-					undef $gif;
-				FOUND:
-					if ( defined $gif) {
-						print "convert $gif $eps\n";
-						system "convert $gif $eps\n";
+			if ( m/^=for\s*podview\s*(.*)/) {
+				my $spec = $1;
+				chomp $spec;
+				while (defined($_ = <W>)) {
+					chomp;
+					last unless length;
+					$spec .= $_;
+				}
+
+				while (1) {
+					if ( $spec =~ m/\G<\s*img\s*src=\"?([^\"\s]+)\"?\s*(cut\s*=\s*1)?\s*>/gcs) {
+						my ( $gif, $eps, $do_cut) = ( $1, $1, $2);
+						$eps =~ s/\.\.\///g;
+						$eps =~ s/\//_/g;
+						$eps =~ s/\.[^\.]+$/.eps/;
+						unless ( -f $eps) {
+							for ( "$path/Prima", "$path/Prima/pod", "$path/pod/Prima", "$path/pod") {
+								next unless -f "$_/$gif";
+								$gif = "$_/$gif";
+								goto FOUND;
+							}
+							warn "** $gif is not found\n";
+							undef $gif;
+						FOUND:
+							if ( defined $gif) {
+								print "convert $gif $eps\n";
+								system "convert $gif $eps\n";
+							}
+						}
+						if ( -f $eps) {
+							$cow = 1;
+							$cut = 1 if $do_cut;
+							push @ctx, "=for latex \n\\includegraphics[scale=0.5]{$eps}\n\n";
+						} else {
+							warn "** error creating $eps\n";
+						}
+					} elsif ( $spec =~ m/\G<\s*\/cut\s*>\s*/gcs) {
+						$cut = 0;
+					} elsif ( $spec =~ m/\G\s+/gcs) {
+						next;
+					} elsif ( $spec =~ m/\G$/gcs) {
+						last;
+					} else {
+						my $c = substr($spec, pos($spec));
+						die "bad podview command: '$c' in $fn line $.\n";
 					}
 				}
-				if ( -f $eps) {
-					$cow = 1;
-					$cut = 1 if $do_cut;
-					push @ctx, "=for latex \n\\includegraphics[scale=0.5]{$eps}\n\n";
-				} else {
-					warn "** error creating $eps\n";
-				}
-			} elsif ( m/^=for\s*podview.*\/cut/) {
-				$cut = 0;
 			} elsif ( m/^=(begin|end)\s+latex-makedoc/) {
 				# skip
 			} elsif ( m/^=(for\s+latex-makedoc\s+cut)/) {
