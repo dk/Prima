@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.58 2020-03-12
+1.58 2020-03-15
  - Added drag and drop support. Dragging from/to edit widgets works.
  - Added more mouse pointers (drag pointers, crosshair, hand, question, up arrow)
  - Menus:
