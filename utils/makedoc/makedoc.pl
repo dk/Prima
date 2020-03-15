@@ -123,7 +123,7 @@ if ( $build) {
 				$eps =~ s/\//_/g;
 				$eps =~ s/\.[^\.]+$/.eps/;
 				unless ( -f $eps) {
-					for ( "$path/Prima", "$path/Prima/pod", "$path/pod/Prima") {
+					for ( "$path/Prima", "$path/Prima/pod", "$path/pod/Prima", "$path/pod") {
 						next unless -f "$_/$gif";
 						$gif = "$_/$gif";
 						goto FOUND;
