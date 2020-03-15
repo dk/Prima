@@ -387,11 +387,13 @@ L<Prima::ColorDialog> - color selection facilities
 
 L<Prima::EditDialog> - find and replace dialogs
 
-L<Prima::FileDialog> - file system related widgets and dialogs 
+L<Prima::FileDialog> - file system related widgets and dialogs
 
 L<Prima::FontDialog> - font dialog
 
 L<Prima::ImageDialog> - image file open and save dialogs
+
+L<Prima::Image::TransparencyControl> - transparent color index selection
 
 L<Prima::MsgBox> - message and input dialog boxes
 
@@ -405,9 +407,13 @@ L<Prima::Drawable::CurvedText> - fit text to path
 
 L<Prima::Drawable::Gradient> - gradient fills for primitives
 
+L<Prima::Drawable::Markup> - Allow markup in widgets
+
 L<Prima::Drawable::Path> - stroke and fill complex paths
 
 L<Prima::Drawable::Subcanvas> - paint a hierarchy of widgets to any drawable
+
+L<Prima::Drawable::TextBlock> - rich text representation
 
 =item Visual Builder
 
@@ -463,9 +469,17 @@ L<Prima::Utils> - miscellaneous routines
 
 L<Prima::Widgets> - miscellaneous widget classes
 
+=item System-specific modules and documentation
+
 L<Prima::gp-problems> - Graphic subsystem portability issues
 
 L<Prima::X11> - usage guide for X11 environment
+
+L<Prima::sys::gtk::FileDialog> - GTK file system dialogs
+
+L<Prima::sys::win32::FileDialog> - Windows file system dialogs
+
+L<Prima::sys::XQuartz> - MacOSX/XQuartz facilities
 
 =item Class information
 

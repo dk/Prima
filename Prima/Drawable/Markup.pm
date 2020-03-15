@@ -7,7 +7,7 @@ use base qw(Prima::Drawable::TextBlock);
 
 =head1 NAME
 
-Prima::Markup - Allow markup in Prima Widgets
+Prima::Markup - allow markup in widgets
 
 =head1 SYNOPSIS
 

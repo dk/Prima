@@ -392,7 +392,7 @@ __END__
 
 =head1 NAME
 
-Prima::CurvedText - fit text to path
+Prima::Drawable::CurvedText - fit text to path
 
 =head1 DESCRIPTION
 
