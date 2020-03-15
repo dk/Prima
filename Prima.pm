@@ -353,6 +353,8 @@ L<Prima::InputLine> - input line widget
 
 L<Prima::KeySelector> - key combination widget and routines
 
+L<Prima::Menus> - menu widgets
+
 L<Prima::Label> - static text widget 
 
 L<Prima::Lists> - user-selectable item list widgets
