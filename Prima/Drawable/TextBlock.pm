@@ -5,20 +5,20 @@ use Prima::Bidi;
 
 package
     tb;
-use vars qw(@oplen %opnames);
+use vars qw($lastop %opnames);
 
-@oplen = ( 4, 2, 3, 4, 3, 2, 4, 3);   # lengths of OP_XXX constants ( see below ) + 1
 # basic opcodes
-use constant OP_TEXT               =>  0; # (3) text offset, text length, text width
-use constant OP_COLOR              =>  1; # (1) 0xRRGGBB or COLOR_INDEX | palette_index
-use constant OP_FONT               =>  2; # (2) op_font_mode, font info
-use constant OP_TRANSPOSE          =>  3; # (3) move current point to delta X, delta Y
-use constant OP_CODE               =>  4; # (2) code pointer and parameters
+use constant OP_TEXT               =>  (0 | (4 << 16)); # text offset, text length, text width
+use constant OP_COLOR              =>  (1 | (2 << 16)); # 0xRRGGBB or COLOR_INDEX | palette_index
+use constant OP_FONT               =>  (2 | (3 << 16)); # op_font_mode, font info
+use constant OP_TRANSPOSE          =>  (3 | (4 << 16)); # move current point to delta X, delta Y
+use constant OP_CODE               =>  (4 | (3 << 16)); # code pointer and parameters
 
 # formatting opcodes
-use constant OP_WRAP               =>  5; # (1) WRAP_XXX
-use constant OP_MARK               =>  6; # (3) id, x, y
-use constant OP_BIDIMAP            =>  7; # (2) visual, $map
+use constant OP_WRAP               =>  (5 | (2 << 16)); # WRAP_XXX
+use constant OP_MARK               =>  (6 | (4 << 16)); # id, x, y
+use constant OP_BIDIMAP            =>  (7 | (3 << 16)); # visual, $map
+$lastop = 7;
 
 %opnames = (
 	text      => OP_TEXT,
@@ -136,7 +136,7 @@ sub block_count
 	my $block = $_[0];
 	my $ret = 0;
 	my ( $i, $lim) = ( BLK_START, scalar @$block);
-	$i += $oplen[$$block[$i]], $ret++ while $i < $lim;
+	$i += $$block[$i] >> 16, $ret++ while $i < $lim;
 	return $ret;
 }
 
@@ -146,11 +146,10 @@ sub opcode
 	my $len = $_[0] || 0;
 	my $name = $_[1];
 	$len = 0 if $len < 0;
-	push @oplen, $len + 1;
-	$opnames{$name} = scalar(@oplen) - 1 if defined $name;
-	return scalar(@oplen) - 1;
+	my $op = ++$lastop;
+	$opnames{$name} = $op if defined $name;
+	return $op | (( $len + 1 ) << 16);
 }
-
 
 sub text           { return OP_TEXT, $_[0], $_[1], $_[2] || 0 }
 sub color          { return OP_COLOR, $_[0] }
@@ -228,10 +227,9 @@ sub _debug_block
 	print STDERR "$color\n";
 
 	my ($i, $lim) = (BLK_START, scalar @$b);
-	my $oplen;
-	for ( ; $i < $lim; $i += $oplen[ $$b[ $i]]) {
+	for ( ; $i < $lim; $i += $$b[$i] >> 16) {
 		my $cmd = $$b[$i];
-		if ( !defined($cmd) || $cmd > $#oplen ) {
+		if ( !defined($cmd)) {
 			$cmd //= 'undef';
 			print STDERR "corrupted block: $cmd at $i/$lim\n";
 			last;
@@ -299,7 +297,7 @@ sub _debug_block
 			my $y  = $$b[ $i + MARK_Y ];
 			print STDERR ": OP_MARK $id $x $y\n";
 		} else {
-			my $oplen = $oplen[ $cmd ];
+			my $oplen = $cmd >> 16;
 			my @o = ($oplen > 1) ? @$b[ $i + 1 .. $i + $oplen - 1] : ();
 			print STDERR ": OP($cmd) @o\n";
 		}
@@ -329,7 +327,7 @@ sub walk
 	};
 
 	my @commands;
-	$commands[ $opnames{$_} ] = $commands{$_} for grep { exists $opnames{$_} } keys %commands;
+	$commands[ $opnames{$_} & 0xffff ] = $commands{$_} for grep { exists $opnames{$_} } keys %commands;
 	my $ret;
 
 	my ( $text_offset, $f_taint, $font, $c_taint, $paint_state, %save_properties );
@@ -356,10 +354,10 @@ sub walk
 
 	# go
 	my $lim = scalar(@$block);
-	for ( $$ptr = BLK_START; $$ptr < $lim; $$ptr += $oplen[ $$block[ $$ptr ]] ) {
+	for ( $$ptr = BLK_START; $$ptr < $lim; $$ptr += $$block[ $$ptr ] >> 16 ) {
 		my $i   = $$ptr;
 		my $cmd = $$block[$i];
-		my $sub = $commands[ $$block[$i] ];
+		my $sub = $commands[ $cmd & 0xffff];
 		my @opcode;
 		if ( !$sub && $other ) {
 			$sub = $other;
@@ -378,7 +376,7 @@ sub walk
 			}
 			$ret = $sub->(
 				@opcode,
-				@$block[$i + 1 .. $i + $oplen[ $$block[ $$ptr ]] - 1],
+				@$block[$i + 1 .. $i + ($$block[ $$ptr ] >> 16) - 1],
 				(( $trace & TRACE_TEXT ) ?
 					substr( $$text, $text_offset + $$block[$i + T_OFS], $$block[$i + T_LEN] ) : ())
 			) if $sub;
@@ -444,12 +442,13 @@ sub walk
 		} elsif (( $cmd == OP_MARK) & ( $trace & TRACE_UPDATE_MARK)) {
 			$$block[ $i + MARK_X] = $$position[0];
 			$$block[ $i + MARK_Y] = $$position[1];
-		} elsif ( $cmd > $#oplen ) {
+		} elsif (( 0 == ($cmd >> 16)) || (($cmd & 0xffff) > $lastop)) {
+			# broken cmd, don't inf loop here
 			warn "corrupted block, $cmd at $$ptr\n";
 			_debug_block($block);
 			last;
 		}
-		$ret = $sub->( @opcode, @$block[$i + 1 .. $i + $oplen[ $$block[ $$ptr ]] - 1]) if $sub;
+		$ret = $sub->( @opcode, @$block[$i + 1 .. $i + ($$block[ $$ptr ] >> 16) - 1]) if $sub;
 		last if $$semaphore;
 	}
 
@@ -476,7 +475,6 @@ sub bidi_visualize
 	my $revmap  = Prima::Bidi::revmap($map);
 	my @new     = ( @$b[0..BLK_DATA_END], bidimap( $visual, $map ) );
 	$new[BLK_FLAGS] |= T_IS_BIDI;
-	my $oplen;
 	my ($x, $y, $i, $lim) = (0,0,BLK_START, scalar @$b);
 
 	# step 1 - record how each character is drawn with font/color, and also
@@ -1198,12 +1196,12 @@ can be used for automated assigning of these fields.
 
 =head2 Block parameters
 
-The scalars, beginning from C<tb::BLK_START>, represent the commands to the renderer.
-These commands have their own parameters, that follow the command. The length of
-a command is located in C<@oplen> array, and must not be changed. The basic command
-set includes C<OP_TEXT>, C<OP_COLOR>, C<OP_FONT>, C<OP_TRANSPOSE>, and C<OP_CODE>.
-The additional codes are C<OP_WRAP> and C<OP_MARK>, not used in drawing but are
-special commands to L<block_wrap>.
+The scalars, beginning from C<tb::BLK_START>, represent the commands to the
+renderer.  These commands have their own parameters, that follow the command.
+The length of a command is high 16-bit word of the command. The basic command
+set includes C<OP_TEXT>, C<OP_COLOR>, C<OP_FONT>, C<OP_TRANSPOSE>, and
+C<OP_CODE>.  The additional codes are C<OP_WRAP> and C<OP_MARK>, not used in
+drawing but are special commands to L<block_wrap>.
 
 =over
 
