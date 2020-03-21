@@ -46,7 +46,6 @@ extern Bool prima_font_notify ( Handle self, Handle child, void * font);
 extern Bool prima_find_accel( Handle self, Handle item, int * key);
 extern Bool prima_single_color_notify ( Handle self, Handle child, void * color);
 extern Bool prima_kill_all_objects( Handle self, Handle child, void * dummy);
-extern void *prima_read_array( SV * points, char * procName, Bool integer, int div, int min, int max, int * n_points );
 
 #ifdef __cplusplus
 }

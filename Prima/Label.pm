@@ -5,7 +5,7 @@ use vars qw(@ISA);
 use Carp;
 use Prima::Const;
 use Prima::Classes;
-use Prima::Bidi qw(is_bidi);
+use Prima::Bidi qw(is_complex);
 use strict;
 use warnings;
 
@@ -25,6 +25,7 @@ sub profile_default
 		showAccelChar  => 0,
 		showPartial    => 1,
 		tabStop        => 0,
+		textDirection  => $Prima::Bidi::default_direction_rtl,
 		valignment     => ta::Top,
 		widgetClass    => wc::Label,
 		wordWrap       => 0,
@@ -49,6 +50,8 @@ sub profile_check_in
 		exists $p-> {rect} ||
 		( exists $p-> {top} && exists $p-> {bottom})
 	);
+	$p-> {alignment} = ( $p->{textDirection} // $default->{textDirection} ) ?
+		ta::Right : ta::Left unless exists $p->{alignment};
 	$self-> SUPER::profile_check_in( $p, $default);
 	my $vertical = exists $p-> {vertical} ?
 		$p-> {vertical} :
@@ -61,7 +64,7 @@ sub init
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
 	$self-> {$_} = $profile{$_} for qw(
-		alignment valignment autoHeight autoWidth
+		textDirection alignment valignment autoHeight autoWidth
 		wordWrap focusLink showAccelChar showPartial hotKey
 	);
 	$self-> check_auto_size;
@@ -264,9 +267,11 @@ sub reset_lines
 	my $lines = $self-> text_wrap( $self-> text, $width, $opt);
 	my $lastRef = pop @{$lines};
 
-	if ( $Prima::Bidi::enabled) {
-		$_ = Prima::Bidi::visual($_) for grep { is_bidi $_ } @$lines;
+	for ( grep { is_complex $_ } @$lines) {
+		my $shaped = $self->text_shape( $_, rtl => $self->{textDirection}) or next;
+		$_ = $shaped;
 	}
+
 	$self-> {textLines} = scalar @$lines;
 	for( qw( tildeStart tildeEnd tildeLine)) {$self-> {$_} = $lastRef-> {$_}}
 
@@ -367,6 +372,15 @@ sub autoWidth     {($#_)?($_[0]-> set_auto_width(   $_[1]))   :return $_[0]-> {a
 sub autoHeight    {($#_)?($_[0]-> set_auto_height(  $_[1]))   :return $_[0]-> {autoHeight}   }
 sub wordWrap      {($#_)?($_[0]-> set_word_wrap(    $_[1]))   :return $_[0]-> {wordWrap}     }
 sub hotKey        { $#_ ? $_[0]->{hotKey} = $_[1] : $_[0]->{hotKey} }
+
+sub textDirection
+{
+	return $_[0]-> {textDirection} unless $#_;
+	my ( $self, $td ) = @_;
+	$self-> {textDirection} = $td;
+	$self-> text( $self-> text );
+	$self-> alignment( $td ? ta::Right : ta::Left );
+}
 
 1;
 
@@ -473,6 +487,10 @@ last line is shown even if not visible in full. If 0, only full
 lines are drawn.
 
 Default value: 1
+
+=item textDirection BOOLEAN.
+
+If set, indicates RTL text direction.
 
 =item wordWrap BOOLEAN
 

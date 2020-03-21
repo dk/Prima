@@ -449,13 +449,14 @@ Application_get_system_info( char * dummy)
 	char vendor   [ 1024];
 	char arch     [ 1024];
 	char gui_desc [ 1024];
+	char gui_lang [ 1024];
 	int  os, gui;
 
 	os  = apc_application_get_os_info( system, sizeof( system),
 					release, sizeof( release),
 					vendor, sizeof( vendor),
 					arch, sizeof( arch));
-	gui = apc_application_get_gui_info( gui_desc, sizeof( gui_desc));
+	gui = apc_application_get_gui_info( gui_desc, sizeof( gui_desc), gui_lang, sizeof(gui_lang));
 
 	pset_i( apc,            os);
 	pset_i( gui,            gui);
@@ -464,6 +465,7 @@ Application_get_system_info( char * dummy)
 	pset_c( vendor,         vendor);
 	pset_c( architecture,   arch);
 	pset_c( guiDescription, gui_desc);
+	pset_c( guiLanguage,    gui_lang);
 
 	return newRV_noinc(( SV *) profile);
 }

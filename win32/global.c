@@ -21,14 +21,15 @@ extern "C" {
 
 WinGuts guts;
 DWORD   rc;
-PHash   stylusMan    = nil; // pen & brush manager
-PHash   fontMan      = nil; // font manager
-PHash   patMan       = nil; // pattern resource manager
-PHash   menuMan      = nil; // HMENU manager
-PHash   imageMan     = nil; // HBITMAP manager
-PHash   regnodeMan   = nil; // cache for apc_widget_user_profile
-PHash   myfontMan    = nil; // hash of calls to apc_font_load
-PHash   menuBitmapMan= nil; // HBITMAP manager for SetMenuItemBitmaps 
+PHash   stylusMan      = nil; // pen & brush manager
+PHash   fontMan        = nil; // font manager
+PHash   patMan         = nil; // pattern resource manager
+PHash   menuMan        = nil; // HMENU manager
+PHash   imageMan       = nil; // HBITMAP manager
+PHash   regnodeMan     = nil; // cache for apc_widget_user_profile
+PHash   myfontMan      = nil; // hash of calls to apc_font_load
+PHash   menuBitmapMan  = nil; // HBITMAP manager for SetMenuItemBitmaps 
+PHash   scriptCacheMan = nil; // SCRIPT_CACHE entries per font/script
 HPEN    hPenHollow;
 HBRUSH  hBrushHollow;
 PatResource hPatHollow;
@@ -249,7 +250,8 @@ window_subsystem_init( char * error_buf)
 	imageMan   = hash_create();
 	regnodeMan = hash_create();
 	myfontMan  = hash_create();
-	menuBitmapMan = hash_create();
+	menuBitmapMan  = hash_create();
+	scriptCacheMan = hash_create();
 	create_font_hash();
 	{
 		LOGBRUSH b = { BS_HOLLOW, 0, 0};
@@ -458,6 +460,7 @@ window_subsystem_done()
 
 	hash_first_that( menuBitmapMan, menu_bitmap_cleaner, nil, nil, nil);
 	hash_destroy( menuBitmapMan,  false);
+	hash_destroy( scriptCacheMan,  true);
 
 	hash_first_that( myfontMan, myfont_cleaner, nil, nil, nil);
 	hash_destroy( myfontMan,  false);

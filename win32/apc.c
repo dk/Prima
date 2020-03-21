@@ -131,11 +131,19 @@ apc_application_end_paint_info( Handle self)
 
 
 int
-apc_application_get_gui_info( char * description, int len)
+apc_application_get_gui_info( char * description, int len1, char * language, int len2)
 {
 	if ( description) {
-		strncpy( description, "Windows", len);
-		description[len-1] = 0;
+		strncpy( description, "Windows", len1);
+		description[len1-1] = 0;
+	}
+	if ( language ) {
+		ULONG n_lang, n_words = 128;
+		WORD buffer[128];
+		if ( !( GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &n_lang, buffer, &n_words)))
+			return NULL;
+		if ( len2 < n_words ) n_words = len2;
+		wchar2char( language, buffer, n_words );
 	}
 	return guiWindows;
 }

@@ -335,7 +335,7 @@ Drawable_get_physical_palette( Handle self)
 }
 
 SV *
-Drawable_get_font_abcdef( Handle self, int first, int last, Bool unicode, PFontABC (*func)(Handle, int, int, Bool))
+Drawable_get_font_abcdef( Handle self, int first, int last, int flags, PFontABC (*func)(Handle, int, int, int))
 {
 	int i;
 	AV * av;
@@ -343,7 +343,10 @@ Drawable_get_font_abcdef( Handle self, int first, int last, Bool unicode, PFontA
 
 	if ( first < 0) first = 0;
 	if ( last  < 0) last  = 255;
-	if ( !unicode) {
+
+	if ( flags & toGlyphs )
+		flags &= ~toUTF8;
+	if ( !(flags & toUTF8)) {
 		if ( first > 255) first = 255;
 		if ( last  > 255) last  = 255;
 	}
@@ -353,7 +356,7 @@ Drawable_get_font_abcdef( Handle self, int first, int last, Bool unicode, PFontA
 	else {
 		gpARGS;
 		gpENTER( newRV_noinc(( SV *) newAV()));
-		abc = func( self, first, last, unicode );
+		abc = func( self, first, last, flags );
 		gpLEAVE;
 	}
 
@@ -370,15 +373,15 @@ Drawable_get_font_abcdef( Handle self, int first, int last, Bool unicode, PFontA
 }
 
 SV *
-Drawable_get_font_abc( Handle self, int first, int last, Bool unicode)
+Drawable_get_font_abc( Handle self, int first, int last, int flags)
 {
-	return Drawable_get_font_abcdef( self, first, last, unicode, apc_gp_get_font_abc);
+	return Drawable_get_font_abcdef( self, first, last, flags, apc_gp_get_font_abc);
 }
 
 SV *
-Drawable_get_font_def( Handle self, int first, int last, Bool unicode)
+Drawable_get_font_def( Handle self, int first, int last, int flags)
 {
-	return Drawable_get_font_abcdef( self, first, last, unicode, apc_gp_get_font_def);
+	return Drawable_get_font_abcdef( self, first, last, flags, apc_gp_get_font_def);
 }
 
 SV *
@@ -464,13 +467,91 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 		char * c_text = SvPV( text, dlen);
 		Bool   utf8 = prima_is_utf8_sv( text);
 		if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
-		ok = apc_gp_text_out( self, c_text, x, y, dlen, utf8);
+		ok = apc_gp_text_out( self, c_text, x, y, dlen, utf8 ? toUTF8 : 0);
 		if ( !ok) perl_error();
+	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
+		int n_glyphs;
+		void * glyphs;
+		Bool do_free;
+		if ( !( glyphs = prima_read_array(
+			text, "Drawable::text_out",
+			's', 1, 1, -1, &n_glyphs, &do_free)))
+			return false;
+		ok = apc_gp_text_out( self, (char*)glyphs, x, y, n_glyphs, toGlyphs);
+		if ( !ok) perl_error();
+		if ( do_free ) free(glyphs);
 	} else {
 		SV * ret = sv_call_perl(text, "text_out", "<Hii", self, x, y);
 		ok = ret && SvTRUE(ret);
 	}
 	return ok;
+}
+
+SV*
+Drawable_text_shape( Handle self, SV * text, HV * profile)
+{
+	gpARGS;
+	SV * ret = nilSV;
+	if ( !SvROK( text )) {
+		dPROFILE;
+		STRLEN dlen;
+		int size, new_size, flags = 0;
+		uint16_t * glyphs;
+		int16_t * char_offsets;
+		Bool with_offsets;
+		char * c_text;
+		SV * sv_glyphs, *sv_offsets;
+
+		gpENTER(nilSV);
+		with_offsets = pexist(map) ? pget_B(map) : false;
+		c_text = SvPV( text, dlen);
+		if (prima_is_utf8_sv( text)) {
+			flags |= toUTF8;
+			dlen = prima_utf8_length(c_text);
+		}
+		if ( pexist(rtl)      && pget_B(rtl))      flags |= toRTL;
+		if ( pexist(override) && pget_B(override)) flags |= toOverride;
+		size = dlen * 2 + 16; /* MSDN, on ScriptShape: A reasonable value is (1.5 * cChars + 16) */
+
+		sv_glyphs = prima_array_new(size * 2);
+		glyphs = (uint16_t*) prima_array_get_storage(sv_glyphs);
+		if ( with_offsets ) {
+			sv_offsets = prima_array_new(size * 2);
+			char_offsets = (int16_t*) prima_array_get_storage(sv_offsets);
+		} else {
+			char_offsets = NULL;
+			sv_offsets = NULL;
+		}
+		new_size = apc_gp_text_shape(self,
+			pexist(language) ? pget_c(language) : NULL,
+			c_text, dlen, flags,
+			size, glyphs, char_offsets);
+		gpLEAVE;
+		if ( new_size < 0 ) {
+			sv_free(sv_glyphs);
+			if ( sv_offsets ) sv_free(sv_offsets);
+			return (new_size == -2) ? newSViv(0) : nilSV;
+		}
+		if (new_size < size ) {
+			prima_array_truncate( sv_glyphs, new_size * 2);
+			if ( sv_offsets ) prima_array_truncate( sv_offsets, new_size * 2);
+		}
+
+		sv_glyphs = prima_array_tie( sv_glyphs, 2, "s" );
+		if ( !with_offsets ) return sv_glyphs;
+
+		sv_offsets = prima_array_tie( sv_offsets, 2, "s");
+		ret = newSVsv(call_perl(self, "new_glyph_obj", "<SS", sv_glyphs, sv_offsets));
+		sv_free(sv_glyphs);
+		sv_free(sv_offsets);
+	} else {
+		SV * ref = newRV_noinc((SV*) profile);
+		gpENTER(nilSV);
+		ret = sv_call_perl(text, "text_shape", "<HSS", self, text, ref);
+		gpLEAVE;
+		sv_free(ref);
+	}
+	return ret;
 }
 
 static Bool
@@ -479,10 +560,11 @@ read_polypoints( Handle self, SV * points, char * procName, int min, Bool (*proc
 	int count;
 	Point * p;
 	Bool ret = false;
-	if (( p = (Point*) prima_read_array( points, procName, true, 2, min, -1, &count)) != NULL) {
+	Bool do_free;
+	if (( p = (Point*) prima_read_array( points, procName, 'i', 2, min, -1, &count, &do_free)) != NULL) {
 		ret = procPtr( self, count, p);
 		if ( !ret) perl_error();
-		free(p);
+		if ( do_free ) free(p);
 	}
 	return ret;
 }
@@ -502,11 +584,11 @@ Drawable_bars( Handle self, SV * rects)
 {
 	int count;
 	Rect * p;
-	Bool ret = false;
-	if (( p = prima_read_array( rects, "Drawable::bars", true, 4, 0, -1, &count)) != NULL) {
+	Bool ret = false, do_free;
+	if (( p = prima_read_array( rects, "Drawable::bars", 'i', 4, 0, -1, &count, &do_free)) != NULL) {
 		ret = apc_gp_bars( self, count, p);
 		if ( !ret) perl_error();
-		free( p);
+		if ( do_free ) free( p);
 	}
 	return ret;
 }
@@ -743,7 +825,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	} else
 		precision = 24;
 
-	p = (NPoint*) prima_read_array( points, "Drawable::render_spline", false, 2, degree + 1, -1, &n_points);
+	p = (NPoint*) prima_read_array( points, "Drawable::render_spline", 'd', 2, degree + 1, -1, &n_points, NULL);
 	if ( !p) goto EXIT;
 
 	/* closed curve will need at least one extra point and unclamped default knot set */
@@ -760,15 +842,15 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	n_points += n_add_points;
 
 	if ( pexist( knots )) {
-		knots = (double*) prima_read_array( pget_sv(knots), "knots", false, 1,
-			n_points + degree + 1, n_points + degree + 1, NULL);
+		knots = (double*) prima_read_array( pget_sv(knots), "knots", 'd', 1,
+			n_points + degree + 1, n_points + degree + 1, NULL, NULL);
 		if (!knots) goto EXIT;
 	} else
 		knots = default_knots(n_points, degree, !closed);
 
 	if ( pexist( weights )) {
-		weights = (double*) prima_read_array(pget_sv(weights), "weights", false, 1,
-			n_points, n_points, NULL);
+		weights = (double*) prima_read_array(pget_sv(weights), "weights", 'd', 1,
+			n_points, n_points, NULL, NULL);
 		if (!weights) goto EXIT;
 		dim = 3;
 	} else {
@@ -859,7 +941,7 @@ EXIT:
 }
 
 int
-Drawable_get_text_width( Handle self, SV * text, Bool addOverhang)
+Drawable_get_text_width( Handle self, SV * text, int flags)
 {
 	gpARGS;
 	int res;
@@ -868,13 +950,30 @@ Drawable_get_text_width( Handle self, SV * text, Bool addOverhang)
 		char * c_text = SvPV( text, dlen);
 		Bool   utf8 = prima_is_utf8_sv( text);
 		if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
+		if ( utf8 )
+			flags |= toUTF8;
+		else
+			flags &= ~toUTF8;
 		gpENTER(0);
-		res = apc_gp_get_text_width( self, c_text, dlen, addOverhang, utf8);
+		res = apc_gp_get_text_width( self, c_text, dlen, flags);
 		gpLEAVE;
+	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
+		int n_glyphs;
+		void * glyphs;
+		Bool do_free;
+		if ( !( glyphs = prima_read_array(
+			text, "Drawable::get_text_width",
+			's', 1, 1, -1, &n_glyphs, &do_free)))
+			return false;
+		flags &= ~toUTF8;
+		gpENTER(0);
+		res = apc_gp_get_text_width( self, (char*) glyphs, n_glyphs, flags | toGlyphs );
+		gpLEAVE;
+		if ( do_free ) free(glyphs);
 	} else {
 		SV * ret;
 		gpENTER(0);
-		ret = sv_call_perl(text, "get_text_width", "<Hi", self, addOverhang);
+		ret = sv_call_perl(text, "get_text_width", "<Hi", self, flags);
 		gpLEAVE;
 		res = (ret && SvOK(ret)) ? SvIV(ret) : 0;
 	}
@@ -882,7 +981,7 @@ Drawable_get_text_width( Handle self, SV * text, Bool addOverhang)
 }
 
 SV *
-Drawable_get_text_box( Handle self, SV * text)
+Drawable_get_text_box( Handle self, SV * text, int flags )
 {
 	gpARGS;
 	Point * p;
@@ -892,20 +991,28 @@ Drawable_get_text_box( Handle self, SV * text)
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
 		Bool   utf8 = prima_is_utf8_sv( text);
-		if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
+		if ( utf8) {
+			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
+			flags |= toUTF8;
+		} else
+			flags &= ~toUTF8;
 		gpENTER( newRV_noinc(( SV *) newAV()));
-		p = apc_gp_get_text_box( self, c_text, dlen, utf8);
+		p = apc_gp_get_text_box( self, c_text, dlen, flags);
 		gpLEAVE;
+	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
+		int n_glyphs;
+		void * glyphs;
+		Bool do_free;
+		if ( !( glyphs = prima_read_array(
+			text, "Drawable::get_text_box",
+			's', 1, 1, -1, &n_glyphs, &do_free)))
+			return false;
+		flags &= ~toUTF8;
+		gpENTER( newRV_noinc(( SV *) newAV()));
+		p = apc_gp_get_text_box( self, (char*) glyphs, n_glyphs, flags | toGlyphs );
+		gpLEAVE;
+		if ( do_free ) free(glyphs);
 
-		av = newAV();
-		if ( p) {
-			for ( i = 0; i < 5; i++) {
-				av_push( av, newSViv( p[ i]. x));
-				av_push( av, newSViv( p[ i]. y));
-			};
-			free( p);
-		}
-		return newRV_noinc(( SV *) av);
 	} else {
 		SV * ret;
 		gpENTER( newRV_noinc(( SV *) newAV()));
@@ -913,6 +1020,16 @@ Drawable_get_text_box( Handle self, SV * text)
 		gpLEAVE;
 		return ret;
 	}
+
+	av = newAV();
+	if ( p) {
+		for ( i = 0; i < 5; i++) {
+			av_push( av, newSViv( p[ i]. x));
+			av_push( av, newSViv( p[ i]. y));
+		};
+		free( p);
+	}
+	return newRV_noinc(( SV *) av);
 }
 
 static PFontABC
@@ -935,18 +1052,18 @@ query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
 
 	/* query ABC information */
 	if ( !self) {
-		abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text);
+		abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text ? toUTF8 : 0);
 		if ( !abc) return nil;
 	} else if ( my-> get_font_abc == Drawable_get_font_abc) {
 		gpARGS;
 		gpENTER(nil);
-		abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text);
+		abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text ? toUTF8 : 0);
 		gpLEAVE;
 		if ( !abc) return nil;
 	} else {
 		SV * sv;
 		if ( !( abc = malloc( 256 * sizeof( FontABC)))) return nil;
-		sv = my-> get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text);
+		sv = my-> get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text ? toUTF8 : 0);
 		if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
 			AV * av = ( AV*) SvRV( sv);
 			int i, j = 0, n = av_len( av) + 1;

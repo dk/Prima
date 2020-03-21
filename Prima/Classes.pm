@@ -15,7 +15,7 @@ use base 'Tie::Array';
 sub new
 {
 	my ($class, $letter) = @_;
-	die "bad array type" if $letter !~ /^[id]$/;
+	die "bad array type" if $letter !~ /^[ids]$/;
 	my @tie;
 	my $size = length pack $letter, 0;
 	my $buf = '';
@@ -23,6 +23,7 @@ sub new
 	return \@tie;
 }
 
+sub new_short  { shift->new('s') }
 sub new_int    { shift->new('i') }
 sub new_double { shift->new('d') }
 
@@ -51,6 +52,12 @@ sub STORESIZE {
 		(substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE] ) = '' )
 }
 sub DELETE    { warn "This array does not implement delete functionality" }
+
+package Prima::glyph_obj;
+
+sub new    { bless [@_[1,2]], $_[0] }
+sub glyphs { $_[0]->[0] }
+sub map    { $_[0]->[1] }
 
 # class Object; base class of all Prima classes
 package Prima::Object;
@@ -494,6 +501,8 @@ sub fillWinding # compatibility
 	return $_[0]->fillMode & fm::Winding unless $#_;
 	$_[0]->fillMode(($_[1] ? fm::Winding : fm::Alternate) | fm::Overlay);
 }
+
+sub new_glyph_obj { Prima::glyph_obj->new(@_[1,2]) }
 
 package Prima::Image;
 use vars qw( @ISA);
@@ -1883,7 +1892,7 @@ sub profile_default
 		helpClass      => 'Prima::HelpViewer',
 		helpModule     => 'Prima::HelpViewer',
 		uiScaling      => 0,
-		wantUnicodeInput => 0,
+		wantUnicodeInput => 1,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;

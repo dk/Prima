@@ -1522,6 +1522,9 @@ prima_array_parse( SV * sv, void ** ref, size_t * length, char ** letter);
 extern Bool
 prima_read_point( SV *rv_av, int * pt, int number, char * error);
 
+extern void *
+prima_read_array( SV * points, char * procName, char type, int div, int min, int max, int * n_points, Bool * do_free);
+
 /* OS types */
 #define APC(const_name) CONSTANT(apc,const_name)
 START_TABLE(apc,UV)
@@ -1569,46 +1572,48 @@ DT(CDROM)
 #define dtMemory                6
 DT(Memory)
 
-#define dtLeft                     0x0000
+#define dtLeft                     0x00000
 DT(Left)
-#define dtRight                    0x0001
+#define dtRight                    0x00001
 DT(Right)
-#define dtCenter                   0x0002
+#define dtCenter                   0x00002
 DT(Center)
-#define dtTop                      0x0000
+#define dtTop                      0x00000
 DT(Top)
-#define dtBottom                   0x0004
+#define dtBottom                   0x00004
 DT(Bottom)
-#define dtVCenter                  0x0008
+#define dtVCenter                  0x00008
 DT(VCenter)
-#define dtDrawMnemonic             0x0010
+#define dtDrawMnemonic             0x00010
 DT(DrawMnemonic)
-#define dtDrawSingleChar           0x0020
+#define dtDrawSingleChar           0x00020
 DT(DrawSingleChar)
-#define dtDrawPartial              0x0040
+#define dtDrawPartial              0x00040
 DT(DrawPartial)
-#define dtNewLineBreak             0x0080
+#define dtNewLineBreak             0x00080
 DT(NewLineBreak)
-#define dtSpaceBreak               0x0100
+#define dtSpaceBreak               0x00100
 DT(SpaceBreak)
-#define dtWordBreak                0x0200
+#define dtWordBreak                0x00200
 DT(WordBreak)
-#define dtExpandTabs               0x0400
+#define dtExpandTabs               0x00400
 DT(ExpandTabs)
-#define dtUseExternalLeading       0x0800
+#define dtUseExternalLeading       0x00800
 DT(UseExternalLeading)
-#define dtUseClip                  0x1000
+#define dtUseClip                  0x01000
 DT(UseClip)
-#define dtQueryHeight              0x2000
+#define dtQueryHeight              0x02000
 DT(QueryHeight)
-#define dtQueryLinesDrawn          0x0000
+#define dtQueryLinesDrawn          0x00000
 DT(QueryLinesDrawn)
-#define dtNoWordWrap               0x4000
+#define dtNoWordWrap               0x04000
 DT(NoWordWrap)
-#define dtWordWrap                 0x0000
+#define dtWordWrap                 0x00000
 DT(WordWrap)
-#define dtBidiText                 0x8000
+#define dtBidiText                 0x08000
 DT(BidiText)
+#define dtGlyphs                   0x10000
+DT(Glyphs)
 #define dtDefault                  (dtNewLineBreak|dtWordBreak|dtExpandTabs|dtUseExternalLeading|dtBidiText)
 DT(Default)
 
@@ -1944,7 +1949,7 @@ extern Bool
 apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, int yLen);
 
 extern int
-apc_application_get_gui_info( char * description, int len);
+apc_application_get_gui_info( char * description, int len1, char * language, int len2);
 
 extern Handle
 apc_application_get_widget_from_point( Handle self, Point point);
@@ -3579,8 +3584,27 @@ apc_gp_stretch_image( Handle self, Handle image,
 	int xDestLen, int yDestLen, int xLen, int yLen,
 	int rop);
 
+#define TO(const_name) CONSTANT(to,const_name)
+START_TABLE(to,UV)
+#define toPlain          0x000
+TO(Plain)
+#define toAddOverhangs   0x001
+TO(AddOverhangs)
+#define toGlyphs         0x002
+TO(Glyphs)
+#define toUTF8           0x004
+#define toUnicode        0x004
+TO(Unicode)
+#define toOverride       0x008
+#define toRTL            0x010
+END_TABLE(to,UV)
+#undef TO
+
 extern Bool
-apc_gp_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8);
+apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags);
+
+extern int
+apc_gp_text_shape( Handle self, const char * lang, const char * text, int bytes, int flags, int n_glyphs, uint16_t * glyphs, int16_t * char_offsets);
 
 /* gpi settings */
 extern Color
@@ -3596,10 +3620,10 @@ extern Rect
 apc_gp_get_clip_rect( Handle self);
 
 extern PFontABC
-apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode);
+apc_gp_get_font_abc( Handle self, int firstChar, int lastChar, int flags);
 
 extern PFontABC
-apc_gp_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode);
+apc_gp_get_font_def( Handle self, int firstChar, int lastChar, int flags);
 
 extern unsigned long *
 apc_gp_get_font_ranges( Handle self, int * count);
@@ -3650,13 +3674,13 @@ extern int
 apc_gp_get_rop2( Handle self);
 
 extern Point*
-apc_gp_get_text_box( Handle self, const char * text, int len, Bool utf8);
+apc_gp_get_text_box( Handle self, const char * text, int len, int flags);
 
 extern Bool
 apc_gp_get_text_opaque( Handle self);
 
 extern int
-apc_gp_get_text_width( Handle self, const char * text, int len, Bool addOverhang, Bool utf8);
+apc_gp_get_text_width( Handle self, const char * text, int len, int flags);
 
 extern Bool
 apc_gp_get_text_out_baseline( Handle self);

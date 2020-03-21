@@ -446,5 +446,6 @@ win32/menu.c
 win32/misc.c
 win32/region.c
 win32/stock.c
+win32/text.c
 win32/timers.c
 win32/widgets.c
