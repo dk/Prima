@@ -328,7 +328,7 @@ operating system do not support UTF8.
 If 1, C<Prima::Clipboard::text> property may return UTF8 text from system
 clipboards is available.
 
-Default value: 0
+Default value: 1
 
 =back
 

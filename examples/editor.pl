@@ -16,10 +16,6 @@ use warnings;
 
 use Prima qw(Edit Bidi Application MsgBox StdDlg);
 
-eval "use Encode;";
-my $can_utf8 = $@ ? 0 : 1;
-$::application->wantUnicodeInput($can_utf8);
-
 package Indicator;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget);
@@ -121,7 +117,7 @@ sub profile_default
 	return {
 		%def,
 		fileName => undef,
-		utf8     => $can_utf8,
+		utf8     => 1,
 		menuItems => [
 			[ '~File' => [
 				[ '~New'        => q(new_window)],
@@ -154,13 +150,11 @@ sub profile_default
 				[ '@*vsc' => '~Vertical scrollbar'   => sub{ $_[0]-> {editor}-> vScroll( $_[2])}],
 				[],
 				(
-					$can_utf8 ?
 					['utf'  => 'UTF-8 mode' => sub {
 						my $utf8_mode = $_[0]-> menu-> utf-> toggle;
 						$_[0]-> {utf8} = $utf8_mode;
 						$::application-> wantUnicodeInput($utf8_mode);
-					}] :
-					()
+					}]
 				),
 				[ 'Set ~font' => q(setfont)],
 			]]
@@ -271,7 +265,7 @@ sub save_file
 	my $fn = $self-> text;
 	if ( open FILE, '>'.($self-> {utf8} ? 'utf8' : ''), $fn) {
 		my $cap = $self-> {editor}-> text;
-		Encode::_utf8_off($cap) if $can_utf8 and !$self-> {utf8};
+		Encode::_utf8_off($cap) if !$self-> {utf8};
 		my $swr = syswrite(FILE,$cap,length($cap));
 		close FILE;
 		unless (defined $swr && $swr==length($cap)) {
@@ -302,7 +296,7 @@ sub save_as
 	SAVE:while(1) {
 		next SAVE unless open FILE, '>'.($self-> {utf8} ? 'utf8' : ''), $fn;
 		my $cap = $self-> {editor}-> text;
-		Encode::_utf8_off($cap) if $can_utf8 and !$self-> {utf8};
+		Encode::_utf8_off($cap) if !$self-> {utf8};
 		my $swr = syswrite(FILE,$cap,length($cap));
 		close FILE;
 		unless (defined $swr && $swr==length($cap)) {
