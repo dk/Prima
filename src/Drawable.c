@@ -77,16 +77,23 @@ static void
 clear_font_abc_caches( Handle self)
 {
 	PList u;
+	if (( u = var-> font_abc_glyphs)) {
+		int i;
+		for ( i = 0; i < u-> count; i += 2)
+			free(( void*) u-> items[ i + 1]);
+		plist_destroy( u);
+		var-> font_abc_glyphs = NULL;
+	}
 	if (( u = var-> font_abc_unicode)) {
 		int i;
 		for ( i = 0; i < u-> count; i += 2)
 			free(( void*) u-> items[ i + 1]);
 		plist_destroy( u);
-		var-> font_abc_unicode = nil;
+		var-> font_abc_unicode = NULL;
 	}
 	if ( var-> font_abc_ascii) {
 		free( var-> font_abc_ascii);
-		var-> font_abc_ascii = nil;
+		var-> font_abc_ascii = NULL;
 	}
 }
 
@@ -352,7 +359,7 @@ Drawable_get_font_abcdef( Handle self, int first, int last, int flags, PFontABC 
 	}
 
 	if ( first > last)
-		abc = nil;
+		abc = NULL;
 	else {
 		gpARGS;
 		gpENTER( newRV_noinc(( SV *) newAV()));
@@ -361,7 +368,7 @@ Drawable_get_font_abcdef( Handle self, int first, int last, int flags, PFontABC 
 	}
 
 	av = newAV();
-	if ( abc != nil) {
+	if ( abc != NULL) {
 		for ( i = 0; i <= last - first; i++) {
 			av_push( av, newSVnv( abc[ i]. a));
 			av_push( av, newSVnv( abc[ i]. b));
@@ -1033,37 +1040,24 @@ Drawable_get_text_box( Handle self, SV * text, int flags )
 }
 
 static PFontABC
-query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
+call_get_font_abc( Handle self, unsigned int base, int flags)
 {
 	PFontABC abc;
 
-	/* find if present in cache */
-	if ( t-> utf8_text) {
-		if ( *(t-> unicode)) {
-			int i;
-			PList p;
-			if (( p = *(t-> unicode)))
-				for ( i = 0; i < p-> count; i += 2)
-					if (( unsigned int) p-> items[ i] == base)
-						return ( PFontABC) p-> items[i + 1];
-		}
-	} else
-		if ( *( t-> ascii)) return *(t-> ascii);
-
 	/* query ABC information */
 	if ( !self) {
-		abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text ? toUTF8 : 0);
-		if ( !abc) return nil;
+		abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, flags);
+		if ( !abc) return NULL;
 	} else if ( my-> get_font_abc == Drawable_get_font_abc) {
 		gpARGS;
-		gpENTER(nil);
-		abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text ? toUTF8 : 0);
+		gpENTER(NULL);
+		abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, flags);
 		gpLEAVE;
-		if ( !abc) return nil;
+		if ( !abc) return NULL;
 	} else {
 		SV * sv;
-		if ( !( abc = malloc( 256 * sizeof( FontABC)))) return nil;
-		sv = my-> get_font_abc( self, base * 256, base * 256 + 255, t-> utf8_text ? toUTF8 : 0);
+		if ( !( abc = malloc( 256 * sizeof( FontABC)))) return NULL;
+		sv = my-> get_font_abc( self, base * 256, base * 256 + 255, flags);
 		if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
 			AV * av = ( AV*) SvRV( sv);
 			int i, j = 0, n = av_len( av) + 1;
@@ -1084,6 +1078,30 @@ query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
 		sv_free( sv);
 	}
 
+	return abc;
+}
+
+static PFontABC
+query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
+{
+	PFontABC abc;
+
+	/* find if present in cache */
+	if ( t-> utf8_text) {
+		if ( *(t-> unicode)) {
+			int i;
+			PList p;
+			if (( p = *(t-> unicode)))
+				for ( i = 0; i < p-> count; i += 2)
+					if (( unsigned int) p-> items[ i] == base)
+						return ( PFontABC) p-> items[i + 1];
+		}
+	} else
+		if ( *( t-> ascii)) return *(t-> ascii);
+
+	if ( !( abc = call_get_font_abc(self, base, t-> utf8_text ? toUTF8 : 0)))
+		return NULL;
+
 	/* store in cache */
 	if ( t-> utf8_text) {
 		PList p;
@@ -1094,7 +1112,7 @@ query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
 			list_add( p, ( Handle) abc);
 		} else {
 			free( abc);
-			return nil;
+			return NULL;
 		}
 	} else
 		*(t-> ascii) = abc;
@@ -1122,7 +1140,7 @@ add_wrapped_text( TextWrapRec * t, int start, int utfstart, int end, int utfend,
 						char *** lArray, int * lSize)
 {
 	int l = end - start;
-	char *c = nil;
+	char *c = NULL;
 	if (!( t-> options & twReturnChunks)) {
 		if ( !( c = allocs( l + 1))) return false;
 		memcpy( c, t-> text + start, l);
@@ -1174,7 +1192,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 	if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) return ret; }
 
 	t-> count = 0;
-	if (!( ret = allocn( char*, lSize))) return nil;
+	if (!( ret = allocn( char*, lSize))) return NULL;
 
 	/* determining ~ character location */
 	if ( t-> options & twCalcMnemonic)
@@ -1383,26 +1401,17 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 
 	return ret;
 }
+#undef lAdd
 
-SV*
-Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabIndent)
+static SV*
+string_wrap( Handle self,SV * text, int width, int options, int tabIndent)
 {
 	gpARGS;
 	TextWrapRec t;
-	Bool retChunks;
 	char** c;
 	int i;
 	AV * av;
 	STRLEN tlen;
-	int returnFirstLine = ( options & twReturnFirstLineLength) == twReturnFirstLineLength;
-
-	if ( SvROK( text )) {
-		SV * ret;
-		gpENTER( returnFirstLine ? newSViv(0) : newRV_noinc(( SV *) newAV()));
-		ret = newSVsv(sv_call_perl(text, "text_wrap", "<Hiii", self, width, options, tabIndent));
-		gpLEAVE;
-		return ret;
-	}
 
 	t. text      = SvPV( text, tlen);
 	t. utf8_text = prima_is_utf8_sv( text);
@@ -1415,12 +1424,11 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 	t. width     = ( width < 0) ? 0 : width;
 	t. tabIndent = ( tabIndent < 0) ? 0 : tabIndent;
 	t. options   = options;
-	retChunks    = t. options & twReturnChunks;
 	t. ascii     = &var-> font_abc_ascii;
 	t. unicode   = &var-> font_abc_unicode;
-	t. t_char    = nil;
+	t. t_char    = NULL;
 
-	gpENTER( returnFirstLine ? newSViv(0) : newRV_noinc(( SV *) newAV()));
+	gpENTER( (options & twReturnFirstLineLength) ? newSViv(0) : newRV_noinc(( SV *) newAV()));
 	c = Drawable_do_text_wrap( self, &t);
 	gpLEAVE;
 
@@ -1437,8 +1445,10 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 
 	av = newAV();
 	for ( i = 0; i < t. count; i++) {
-		SV * sv = retChunks ? newSViv( PTR2IV(c[i])) : newSVpv( c[ i], 0);
-		if ( !retChunks) {
+		SV * sv = (t. options & twReturnChunks) ?
+			newSViv( PTR2IV(c[i])) :
+			newSVpv( c[ i], 0);
+		if ( !(t. options & twReturnChunks)) {
 			if ( t. utf8_text) SvUTF8_on( sv);
 			free( c[i]);
 		}
@@ -1470,6 +1480,202 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 	return newRV_noinc(( SV *) av);
 }
 
+typedef struct {
+	uint16_t * glyphs;   /* glyphset to be wrapped */
+	int        n_glyphs; /* glyphset length in words */
+	int        width;    /* width to wrap with */
+	int        options;  /* twXXX constants */
+	int        count;    /* count of lines returned */
+	PList    * cache;
+} GlyphWrapRec;
+
+static Bool
+add_wrapped_glyphs( GlyphWrapRec * t, unsigned int start, unsigned int end, unsigned int ** array, int * size)
+{
+	if ( t-> count == *size) {
+		unsigned int * n;
+		if ( !( n = (unsigned int *)realloc( *array, sizeof(unsigned int) * (*size *= 2))))
+			return false;
+	}
+
+	(*array)[t-> count++] = start;
+	(*array)[t-> count++] = end - start;
+
+	return true;
+}
+
+static PFontABC
+query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
+{
+	PList p;
+	PFontABC abc;
+
+	/* find if present in cache */
+	if (( p = *(t-> cache))) {
+		int i;
+		for ( i = 0; i < p-> count; i += 2)
+			if (( unsigned int) p-> items[ i] == base)
+				return ( PFontABC) p-> items[i + 1];
+	}
+
+	if ( !( abc = call_get_font_abc(self, base, toGlyphs)))
+		return NULL;
+
+	if ( !*(t-> cache))
+		*(t-> cache) = plist_create( 8, 8);
+	if (( p = *(t-> cache))) {
+		list_add( p, ( Handle) base);
+		list_add( p, ( Handle) abc);
+	} else {
+		free( abc);
+		return NULL;
+	}
+
+	return abc;
+}
+
+static unsigned int *
+Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
+{
+	unsigned int base = 0x10000000;
+	float width[256];
+	FontABC abc[256];
+	unsigned int start = 0, i;
+	float w = 0, inc = 0, initial_overhang = 0;
+	unsigned int *ret;
+	Bool reassign_w = 1;
+	Bool doWidthBreak = t-> width >= 0;
+	int size = 16;
+
+#define lAdd(end) if(1) { \
+	if ( !add_wrapped_glyphs( t, start, end, &ret, &size)) return ret;\
+	start = end; \
+	if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) return ret; }
+
+	t-> count = 0;
+	if (!( ret = allocn( unsigned int, size))) return NULL;
+
+	/* process glyphs */
+	for ( i = 0; i < t-> n_glyphs; i++) {
+		uint16_t uv;
+		float winc;
+		int p = i;
+
+		uv = t-> glyphs[i];
+		if ( uv / 256 != base)
+			if ( !precalc_abc_buffer( query_abc_range_glyphs( self, t, base = uv / 256), width, abc))
+				return ret;
+		if ( reassign_w) w = initial_overhang = abc[ uv & 0xff]. a;
+		reassign_w = 0;
+		winc = width[ uv & 0xff];
+		inc  = abc[ uv & 0xff]. c;
+
+		if ( doWidthBreak && w + winc + inc > t-> width) {
+			if (( p == start) || ( p == start - 1)) {
+				/* case when even single char cannot be fit in  */
+				if ( t-> options & twBreakSingle) {
+					/* do not return anything in this case */
+					t-> count = 0;
+					return ret;
+				}
+				/* or push this character disregarding the width */
+				lAdd( i);
+			} else { /* normal break condition */
+				lAdd( p );
+				i = start = p;
+			}
+			w = 0;
+		} else
+			w += winc;
+	}
+
+	/* adding or skipping last line */
+	if ( t-> n_glyphs - start > 0 || t-> count == 0)
+		lAdd( t-> n_glyphs);
+
+	return ret;
+}
+#undef lAdd
+
+static SV*
+glyphs_wrap( Handle self, SV * text, int width, int options)
+{
+	gpARGS;
+	GlyphWrapRec t;
+	AV * av;
+	int i;
+	unsigned int * c;
+	Bool do_free;
+
+	if ( !( t.glyphs = prima_read_array(
+		text, "Drawable::text_wrap",
+		's', 1, 1, -1, &t.n_glyphs, &do_free)))
+		return nilSV;
+
+	t. width     = ( width < 0) ? 0 : width;
+	t. options   = options;
+	t. cache     = &var-> font_abc_glyphs;
+
+	if ( !inPaint && !my-> begin_paint_info( self)) {
+		if ( do_free ) free( t. glyphs );
+		return (options & twReturnFirstLineLength) ? newSViv(0) : newRV_noinc(( SV *) newAV());
+	}
+	c = Drawable_do_glyphs_wrap( self, &t);
+	gpLEAVE;
+
+	if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) {
+		IV rlen = 0;
+		if ( c) {
+			if ( t. count > 0) rlen = c[1];
+			free( c);
+		}
+		if ( do_free ) free( t. glyphs );
+		return newSViv( rlen);
+	}
+
+	if ( !c) {
+		if ( do_free ) free( t. glyphs );
+		return nilSV;
+	}
+
+	av = newAV();
+	if ( options & twReturnChunks) {
+		for ( i = 0; i < t.count; i++)
+			av_push( av, newSViv( c[i]));
+	} else {
+		for ( i = 0; i < t. count; i += 2) {
+			SV * sv;
+			unsigned int offset = c[i], size = c[i + 1] * 2;
+			sv = prima_array_new(size);
+			memcpy( prima_array_get_storage(sv), t.glyphs + offset, size);
+			av_push( av, prima_array_tie( sv, 2, "s"));
+		}
+	}
+	free( c);
+
+	if ( do_free ) free( t. glyphs );
+	return newRV_noinc(( SV *) av);
+}
+
+
+SV*
+Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabIndent)
+{
+
+	if ( !SvROK( text )) {
+		return string_wrap(self, text, width, options, tabIndent);
+	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
+		return glyphs_wrap(self, text, width, options);
+	} else {
+		SV * ret;
+		gpARGS;
+		gpENTER((options & twReturnFirstLineLength) ? newSViv(0) : newRV_noinc(( SV *) newAV()));
+		ret = newSVsv(sv_call_perl(text, "text_wrap", "<Hiii", self, width, options, tabIndent));
+		gpLEAVE;
+		return ret;
+	}
+}
+
 
 PRGBColor
 prima_read_palette( int * palSize, SV * palette)
@@ -1480,20 +1686,20 @@ prima_read_palette( int * palSize, SV * palette)
 
 	if ( !SvROK( palette) || ( SvTYPE( SvRV( palette)) != SVt_PVAV)) {
 		*palSize = 0;
-		return nil;
+		return NULL;
 	}
 	av = (AV *) SvRV( palette);
 	count = av_len( av) + 1;
 	*palSize = count / 3;
 	count = *palSize * 3;
-	if ( count == 0) return nil;
+	if ( count == 0) return NULL;
 
-	if ( !( buf = allocb( count))) return nil;
+	if ( !( buf = allocb( count))) return NULL;
 
 	for ( i = 0; i < count; i++)
 	{
 		SV **itemHolder = av_fetch( av, i, 0);
-		if ( itemHolder == nil)
+		if ( itemHolder == NULL)
 			return ( PRGBColor) buf;
 		buf[ i] = SvIV( *itemHolder);
 	}
