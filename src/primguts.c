@@ -1943,6 +1943,7 @@ prima_array_tie( SV * array, size_t size_of_entry, char * letter)
 
 	av2 = newAV();
 	hv_magic(av2, (GV*)tie, PERL_MAGIC_tied);
+	SvREFCNT(tie)--;
 	return newRV_noinc((SV*) av2);
 }
 
