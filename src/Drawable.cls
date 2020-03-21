@@ -87,5 +87,6 @@ object Prima::Drawable ( Prima::Component)
 	# font_abc caches
 	PFontABC font_abc_ascii;
 	PList    font_abc_unicode;
+	PList    font_abc_glyphs;
 
 }
