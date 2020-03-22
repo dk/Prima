@@ -11,21 +11,26 @@ use Prima::Const;
 
 package Prima::array;
 use base 'Tie::Array';
+use Carp;
 
 sub new
 {
-	my ($class, $letter) = @_;
+	my ($class, $letter, $buf) = @_;
 	die "bad array type" if $letter !~ /^[ids]$/;
 	my @tie;
 	my $size = length pack $letter, 0;
-	my $buf = '';
+	if ( defined $buf ) {
+		croak "Bad length ". length($buf). ", must be mod $size" if length($buf) % $size;
+	} else {
+		$buf = '';
+	}
 	tie @tie, $class, $buf, $size, $letter;
 	return \@tie;
 }
 
-sub new_short  { shift->new('s') }
-sub new_int    { shift->new('i') }
-sub new_double { shift->new('d') }
+sub new_short  { shift->new('s', @_) }
+sub new_int    { shift->new('i', @_) }
+sub new_double { shift->new('d', @_) }
 
 use constant REF  => 0;
 use constant SIZE => 1;
@@ -33,23 +38,45 @@ use constant PACK => 2;
 
 sub is_array { ((ref tied @{$_[0]}) // '') eq 'Prima::array' }
 
+sub substr
+{
+	my ( $self, $offset, $length, $replacement) = @_;
+	my $a1 = tied @$self;
+	my $len = length($a1->[REF]) / $a1->[SIZE];
+	croak "offset beyond array boundaries" if $offset > $len || -$offset > $len;
+	my $newref;
+	if ( defined $replacement ) {
+		croak "bad length" if $length < 0;
+		croak "bad array" unless is_array($replacement);
+		my $a2 = tied @$replacement;
+		croak "replacement of type '$a2->[PACK]' is incompatible with type '$a1->[PACK]'"
+			if $a1->[PACK] ne $a2->[PACK];
+		$newref = CORE::substr( $a1->[REF], $offset * $a1->[SIZE], $length * $a1->[SIZE], $a2->[REF]);
+	} elsif ( defined $length ) {
+		$newref = CORE::substr( $a1->[REF], $offset * $a1->[SIZE], $length * $a1->[SIZE]);
+	} else {
+		$newref = CORE::substr( $a1->[REF], $offset * $a1->[SIZE]);
+	}
+	return ref($self)->new( $a1->[PACK], $newref );
+}
+
 sub append
 {
-	die "bad array" if grep { !is_array($_) } @_;
+	croak "bad array" if grep { !is_array($_) } @_;
 	my ( $a1, $a2 ) = map { tied @$_ } @_;
-	die "bad array" if $a1->[PACK] ne $a2->[PACK];
+	croak "bad array" if $a1->[PACK] ne $a2->[PACK];
 	$a1->[REF] .= $a2->[REF];
 }
 
 sub TIEARRAY  { bless \@_, shift }
-sub FETCH     { unpack( $_[0]->[PACK], substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE] )) }
-sub STORE     { substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE], pack( $_[0]->[PACK], $_[2] )) }
+sub FETCH     { unpack( $_[0]->[PACK], CORE::substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE] )) }
+sub STORE     { CORE::substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE], $_[0]->[SIZE], pack( $_[0]->[PACK], $_[2] )) }
 sub FETCHSIZE { length( $_[0]->[REF] ) / $_[0]->[SIZE] }
 sub EXISTS    { $_[1] < FETCHSIZE($_[0]) }
 sub STORESIZE {
 	( $_[1] > FETCHSIZE($_[0]) ) ?
 		(STORE($_[0], $_[1] - 1, 0)) :
-		(substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE] ) = '' )
+		(CORE::substr( $_[0]->[REF], $_[1] * $_[0]->[SIZE] ) = '' )
 }
 sub DELETE    { warn "This array does not implement delete functionality" }
 
