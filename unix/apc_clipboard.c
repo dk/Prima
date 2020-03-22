@@ -252,13 +252,7 @@ apc_clipboard_close( Handle self)
 			dst = XX-> internal[cfText]. data;
 			XX-> internal[cfText]. size = len;
 			while ( len--) {
-				register UV u =
-#if PERL_PATCHLEVEL >= 16
-				utf8_to_uvchr_buf( src, src + XX-> internal[cfUTF8]. size, &charlen);
-#else
-				utf8_to_uvchr( src, &charlen)
-#endif
-				;
+				register UV u = prima_utf8_uvchr(src, XX-> internal[cfUTF8]. size, &charlen);
 				*(dst++) = ( u < 0x7f) ? u : '?'; /* XXX employ $LANG and iconv() */
 				src += charlen;
 			}
