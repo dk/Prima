@@ -1842,7 +1842,7 @@ apc_menu_set_font( Handle self, PFont font)
 		XX-> guillemots = XTextWidth( kf-> fs, ">>", 2);
 	} else {
 #ifdef USE_XFT
-		XX-> guillemots = prima_xft_get_text_width( kf, ">>", 2, true, false, nil, nil);
+		XX-> guillemots = prima_xft_get_text_width( kf, ">>", 2, toAddOverhangs, nil, nil);
 #endif
 	}
 	if ( !XX-> type. popup && X_WINDOW) {

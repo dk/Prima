@@ -1478,13 +1478,7 @@ prima_utf8_to_wchar( const char * utf8, XChar2b * u16, int src_len_bytes, int ta
 {
 	STRLEN charlen;
 	while ( target_len_xchars--) {
-		register UV u = (
-#if PERL_PATCHLEVEL >= 16
-			utf8_to_uvchr_buf(( U8*) utf8, ( U8*)(utf8 + src_len_bytes), &charlen)
-#else
-			utf8_to_uvchr(( U8*) utf8, &charlen)
-#endif
-		);
+		register UV u = prima_utf8_uvchr(utf8, src_len_bytes, &charlen);
 		if ( u < 0x10000) {
 			u16-> byte1 = u >> 8;
 			u16-> byte2 = u & 0xff;

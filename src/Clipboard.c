@@ -195,13 +195,7 @@ Clipboard_close( Handle self)
 				bytecount = bytelen;
 				text_sv = newSVpvn("", 0);
 				while ( bytecount > 0) {
-					register UV u =
-#if PERL_PATCHLEVEL >= 16
-						  utf8_to_uvchr_buf( src, src + bytelen, &charlen)
-#else
-						  utf8_to_uvchr( src, &charlen)
-#endif
-						;
+					register UV u = prima_utf8_uvchr(src, bytelen, &charlen);
 					char c = ( u < 0x7f) ? u : '?';
 					src += charlen;
 					bytecount -= charlen;

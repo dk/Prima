@@ -1183,13 +1183,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 		if ( len < 0) len = prima_utf8_length(( char*) text);
 		if ( !( r = ret = malloc( len * sizeof( FcChar32)))) return NULL;
 		while ( len--) {
-			*(r++) =
-#if PERL_PATCHLEVEL >= 16
-			utf8_to_uvchr_buf(( U8*) text, ( U8*) + bytelen, &charlen)
-#else
-			utf8_to_uvchr(( U8*) text, &charlen)
-#endif
-			;
+			*(r++) = prima_utf8_uvchr(text, bytelen, &charlen);
 			text += charlen;
 			if ( charlen == 0 ) break;
 		}
@@ -1205,14 +1199,14 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 
 int
 prima_xft_get_text_width(
-	PCachedFont self, const char * text, int len, Bool addOverhang,
-	Bool utf8, uint32_t * map8, Point * overhangs
+	PCachedFont self, const char * text, int len, int flags,
+	uint32_t * map8, Point * overhangs
 ) {
 	int i, ret = 0, bytelen, div;
 	XftFont * font = self-> xft_base;
 
 	if ( overhangs) overhangs-> x = overhangs-> y = 0;
-	if ( utf8 ) bytelen = strlen(text);
+	if ( flags & toUTF8 ) bytelen = strlen(text);
 
 	/* x11 has problems with text_out strings that are wider than
 	64K pixel - it wraps the coordinates and produces mess. This hack is
@@ -1227,15 +1221,9 @@ prima_xft_get_text_width(
 		FcChar32 c;
 		FT_UInt ft_index;
 		XGlyphInfo glyph;
-		if ( utf8) {
+		if ( flags & toUTF8) {
 			STRLEN charlen;
-			c = ( FcChar32)
-#if PERL_PATCHLEVEL >= 16
-			utf8_to_uvchr_buf(( U8*) text, (U8*) text + bytelen, &charlen)
-#else
-			utf8_to_uvchr(( U8*) text, &charlen)
-#endif
-			;
+			c = ( FcChar32) prima_utf8_uvchr(text, bytelen, &charlen);
 			text += charlen;
 			if ( charlen == 0 ) break;
 		} else if ( ((Byte*)text)[i] > 127) {
@@ -1245,14 +1233,14 @@ prima_xft_get_text_width(
 		ft_index = XftCharIndex( DISP, font, c);
 		XftGlyphExtents( DISP, font, &ft_index, 1, &glyph);
 		ret += glyph. xOff;
-		if ( addOverhang || overhangs) {
+		if ( (flags & toAddOverhangs ) || overhangs) {
 			if ( i == 0) {
-				if ( addOverhang && glyph. x > 0) ret += glyph. x;
+				if (( flags & toAddOverhangs ) && glyph. x > 0) ret += glyph. x;
 				if ( overhangs) overhangs-> x = glyph. x;
 			}
 			if ( i == len - 1) {
 				int c = glyph. xOff - glyph. width + glyph. x;
-				if ( addOverhang && c < 0) ret -= c;
+				if ( (flags & toAddOverhangs) && c < 0) ret -= c;
 				if ( overhangs) overhangs-> y = -c;
 			}
 		}
@@ -1261,7 +1249,7 @@ prima_xft_get_text_width(
 }
 
 Point *
-prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8)
+prima_xft_get_text_box( Handle self, const char * text, int len, int flags)
 {
 	DEFXX;
 	Point ovx;
@@ -1270,7 +1258,7 @@ prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8)
 	if ( !pt) return NULL;
 
 	width = prima_xft_get_text_width( XX-> font, text, len,
-		false, utf8, X(self)-> xft_map8, &ovx);
+		flags, X(self)-> xft_map8, &ovx);
 	if ( ovx.x < 0 ) ovx.x = 0;
 	if ( ovx.y < 0 ) ovx.y = 0;
 
@@ -1428,7 +1416,7 @@ my_XftDrawString32( PDrawableSysData selfxx,
 }
 
 Bool
-prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8)
+prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int flags)
 {
 	DEFXX;
 	FcChar32 *ucs4;
@@ -1514,7 +1502,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 	/* paint background if opaque */
 	if ( XX-> flags. paint_opaque) {
 		int i;
-		Point * p = prima_xft_get_text_box( self, text, len, utf8);
+		Point * p = prima_xft_get_text_box( self, text, len, flags);
 		FillPattern fp;
 		memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
 		XSetForeground( DISP, XX-> gc, XX-> back. primary);
@@ -1564,7 +1552,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 	}
 
 	/* convert text string to unicode */
-	if ( !( ucs4 = xft_text2ucs4(( unsigned char*) text, len, utf8, X( self)-> xft_map8)))
+	if ( !( ucs4 = xft_text2ucs4(( unsigned char*) text, len, flags & toUTF8, X( self)-> xft_map8)))
 		return false;
 
 	if ( rop != ropCopyPut) {
@@ -1572,7 +1560,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 		XGCValues gcv;
 		GC gc;
 		int dx  = prima_xft_get_text_width( XX-> font, text, len,
-			true, utf8, X(self)-> xft_map8, NULL);
+			flags | toAddOverhangs, X(self)-> xft_map8, NULL);
 		int dy  = XX-> font-> font. height;
 		int i, width, height;
 		Rect rc;
@@ -1651,7 +1639,7 @@ prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool 
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
 		Point ovx;
 		int lw = apc_gp_get_line_width( self);
-		int tw = prima_xft_get_text_width( XX-> font, text, len, false, utf8,
+		int tw = prima_xft_get_text_width( XX-> font, text, len, flags | toAddOverhangs,
 						X(self)-> xft_map8, &ovx) - 1;
 		int d  = - PDrawable(self)-> font. descent;
 		int ay, x1, y1, x2, y2;

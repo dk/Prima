@@ -1194,7 +1194,7 @@ extern void
 prima_update_cursor( Handle self);
 
 extern Bool
-prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide,
+prima_update_rotated_fonts( PCachedFont f, const char * text, int len, int flags,
 	double direction, PRotatedFont *result, Bool * ok_to_not_rotate);
 
 extern void
@@ -1309,7 +1309,7 @@ extern void
 prima_char2wchar( XChar2b * dest, char * src, int lim);
 
 extern XCharStruct *
-prima_char_struct( XFontStruct * xs, void * c, Bool wide);
+prima_char_struct( XFontStruct * xs, void * c, int flags);
 
 extern Color**
 prima_standard_colors(void);
@@ -1377,23 +1377,23 @@ prima_xft_font_encodings( PHash hash);
 
 extern int
 prima_xft_get_text_width( PCachedFont self, const char * text, int len,
-			Bool addOverhang, Bool utf8, uint32_t * map8,
+			int flags, uint32_t * map8,
 			Point * overhangs);
 
 extern Point *
-prima_xft_get_text_box( Handle self, const char * text, int len, Bool utf8);
+prima_xft_get_text_box( Handle self, const char * text, int len, int flags);
 
 extern Bool
-prima_xft_text_out( Handle self, const char * text, int x, int y, int len, Bool utf8);
+prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int flags);
 
 extern unsigned long *
 prima_xft_get_font_ranges( Handle self, int * count);
 
 extern PFontABC
-prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, Bool unicode);
+prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, int flags);
 
 extern PFontABC
-prima_xft_get_font_def( Handle self, int firstChar, int lastChar, Bool unicode);
+prima_xft_get_font_def( Handle self, int firstChar, int lastChar, int flags);
 
 extern int
 prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer);

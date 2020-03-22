@@ -828,22 +828,22 @@ apc_application_end_paint_info( Handle self)
 }
 
 int
-apc_application_get_gui_info( char * description, int len)
+apc_application_get_gui_info( char * description, int len1, char * language, int len2)
 {
 	int ret = guiXLib;
 	if ( description)
-		strncpy( description, "X Window System", len);
+		strncpy( description, "X Window System", len1);
 
 #ifdef WITH_GTK
 	if ( guts. use_gtk ) {
 		if ( description) {
-			strncat( description, " + GTK", len);
+			strncat( description, " + GTK", len1);
 #ifdef WITH_GTK_NONX11
-			strncat( description, " with native support", len);
+			strncat( description, " with native support", len1);
 #endif
 #ifdef WITH_COCOA
 			if ( guts. use_quartz)
-				strncat( description, " + Cocoa", len);
+				strncat( description, " + Cocoa", len1);
 #endif
 		}
 		ret = guiGTK;
@@ -851,7 +851,17 @@ apc_application_get_gui_info( char * description, int len)
 #endif
 
 	if ( description)
-		description[len-1] = 0;
+		description[len1-1] = 0;
+
+	if ( language ) {
+		char * lang = getenv("LANG");
+		if ( lang ) {
+			strncpy(language, lang, len2);
+			language[len2-1] = 0;
+		} else
+			*language = 0;
+	}
+
 	return ret;
 }
 

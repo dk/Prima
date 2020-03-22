@@ -20,6 +20,7 @@ src/Component.cls
 src/DeviceBitmap.c
 src/DeviceBitmap.cls
 src/Drawable.c
+src/Drawable_text.c
 src/Drawable.cls
 src/File.c
 src/File.cls
@@ -417,6 +418,7 @@ unix/apc_menu.c
 unix/apc_misc.c
 unix/apc_pointer.c
 unix/apc_region.c
+unix/apc_text.c
 unix/apc_timer.c
 unix/apc_widget.c
 unix/apc_win.c

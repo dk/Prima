@@ -177,7 +177,7 @@ get_text_width( PCachedFont font, const char * text, int byte_length, Bool utf8,
 	int char_len = utf8 ? utf8_length(( U8*) text, ( U8*) text + byte_length) : byte_length;
 #ifdef USE_XFT
 	if ( font-> xft)
-		return prima_xft_get_text_width( font, text, char_len, false, utf8, xft_map8, nil);
+		return prima_xft_get_text_width( font, text, char_len, utf8 ? toUTF8 : 0, xft_map8, nil);
 #endif
 	if ( utf8) {
 		XChar2b * xc = prima_alloc_utf8_to_wchar( text, char_len);
@@ -211,8 +211,8 @@ get_font_abc( PCachedFont font, char * index, Bool utf8, FontABC * rec, MenuDraw
 	if ( font-> xft) {
 		Point ovx;
 		rec-> b = prima_xft_get_text_width(
-			font, index, 1, false,
-			utf8, data-> xft_map8, &ovx
+			font, index, 1, utf8 ? toUTF8 : 0,
+			data-> xft_map8, &ovx
 		);
 		/* not really abc, but enough for its single invocation */
 		rec-> a = -ovx. x;
@@ -823,13 +823,7 @@ store_char( char * src, int srclen, int * srcptr, char * dst, int * dstptr, Bool
 
 	if ( utf8) {
 		STRLEN char_len;
-		UV uv =
-#if PERL_PATCHLEVEL >= 16
-			utf8_to_uvchr_buf(( U8*) src + *srcptr, ( U8*) src + srclen, &char_len)
-#else
-			utf8_to_uvchr(( U8*) src + *srcptr, &char_len)
-#endif
-		;
+		UV uv = prima_utf8_uvchr(src + *srcptr, srclen - *srcptr, &char_len);
 		*srcptr += char_len;
 		if ( data-> xft_map8) {
 			*(( uint32_t*)(dst + *dstptr)) = (uint32_t) uv;
