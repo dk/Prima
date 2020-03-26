@@ -55,6 +55,13 @@ List   postDestroys;
 int    recursiveCall = 0;
 PHash  primaObjects = nil;
 SV *   eventHook = nil;
+Bool   use_fribidi =
+#ifdef WITH_FRIBIDI
+		true
+#else
+		false
+#endif
+		;
 
 char *
 duplicate_string( const char *s)
@@ -539,15 +546,16 @@ register_notifications( PVMT vmt)
 static Bool
 common_get_options( int * argc, char *** argv)
 {
-#ifdef HAVE_OPENMP
 	static char * common_argv[] = {
-		"openmp_threads", "sets number of openmp threads"
+#ifdef HAVE_OPENMP
+		"openmp_threads", "sets number of openmp threads",
+#endif
+#ifdef WITH_FRIBIDI
+		"no-fribidi", "do not use fribidi",
+#endif
 	};
 	*argv = common_argv;
 	*argc = sizeof( common_argv) / sizeof( char*);
-#else
-	*argc = 0;
-#endif
 	return true;
 }
 
@@ -565,6 +573,13 @@ common_set_option( char * option, char * value)
 			warn("`--openmp_threads' must be given parameters.");
 		return true;
 	}
+#ifdef WITH_FRIBIDI
+	else if ( strcmp( option, "no-fribidi") == 0) {
+		if ( value) warn("`--no-fribidi' option has no parameters");
+		use_fribidi = false;
+		return true;
+	}
+#endif
 	return false;
 }
 

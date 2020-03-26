@@ -310,14 +310,36 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	return true;
 }
 
-int
-apc_gp_text_shape(
-	Handle self,
-	const char * lang,
-	const char * text, int len, int flags,
-	int max_glyphs, uint16_t * glyphs, int16_t * char_offsets
-) {
-	return -1;
+Bool
+text_shaper_core_text( Handle self, PTextShapeRec r)
+{
+        int i;
+        for ( i = 0; i < r->len; i++) {
+                uint32_t c = r->text[i];
+                if ( c > 0xffff ) c = 0x0;
+                r->glyphs[i] = c;
+        }
+        r-> n_glyphs = r->len;
+        return true;
+}
+
+PTextShapeFunc
+apc_gp_text_get_shaper( Handle self, Bool * glyph_mapper_only)
+{
+	*glyph_mapper_only = true;
+#ifdef USE_XFT
+	if ( ( X(self)-> font-> xft) ) {
+#ifdef WITH_HARFBUZZ
+		if ( guts. use_harfbuzz ) {
+			*glyph_mapper_only = false;
+			return prima_xft_text_shaper_harfbuzz;
+		} else 
+#endif
+			return prima_xft_text_shaper_ident;
+	}
+#endif
+
+	return text_shaper_core_text;
 }
 
 PFontABC
@@ -410,7 +432,7 @@ prima_xfont2def( Handle self, int first, int last)
 		XDrawString16( DISP, pixmap, gc, 10, h - XX->font->font. descent, &ch, 1);
 
 		if (!(xi = XGetImage( DISP, pixmap, 0, 0, w, h, 1, XYPixmap))) {
-			 free( ret );
+			free( ret );
 			ret = nil;
 			break;
 		}

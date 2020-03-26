@@ -1,4 +1,4 @@
-/*********************************/
+/********************************/
 /*                               */
 /*  Xft - client-side X11 fonts  */
 /*                               */
@@ -52,6 +52,11 @@ TO DO
 
 #ifdef HAVE_ICONV_H
 #include <iconv.h>
+#endif
+
+#ifdef WITH_HARFBUZZ
+#include <harfbuzz/hb.h>
+#include <harfbuzz/hb-ft.h>
 #endif
 
 /* fontconfig version < 2.2.0 */
@@ -1185,6 +1190,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 		while ( len--) {
 			*(r++) = prima_utf8_uvchr(text, bytelen, &charlen);
 			text += charlen;
+			bytelen -= charlen;
 			if ( charlen == 0 ) break;
 		}
 	} else {
@@ -1225,6 +1231,7 @@ prima_xft_get_text_width(
 			STRLEN charlen;
 			c = ( FcChar32) prima_utf8_uvchr(text, bytelen, &charlen);
 			text += charlen;
+			bytelen -= charlen;
 			if ( charlen == 0 ) break;
 		} else if ( ((Byte*)text)[i] > 127) {
 			c = map8[ ((Byte*)text)[i] - 128];
@@ -2016,6 +2023,76 @@ prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 	*buffer = storage.buffer;
 	return storage.count;
 }
+
+Bool
+prima_xft_text_shaper_ident( Handle self, PTextShapeRec r)
+{
+        int i;
+	XftFont *xft = X(self)->font->xft;
+        for ( i = 0; i < r->len; i++)
+                r->glyphs[i] = XftCharIndex(DISP, xft, r->text[i]);
+        r-> n_glyphs = r->len;
+        return true;
+}
+
+#ifdef WITH_HARFBUZZ
+Bool
+prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
+{
+	DEFXX;
+	Bool ret = true;
+	int i, j;
+	FT_Face face;
+	hb_buffer_t *buf;
+	hb_font_t *font;
+	hb_glyph_info_t *glyph_info;
+	hb_glyph_position_t *glyph_pos;
+
+	if ( !( face = XftLockFace( XX->font->xft))) /*XXX*/
+		return -1;
+
+	buf = hb_buffer_create();
+	hb_buffer_add_utf32(buf, r->text, r->len, 0, -1);
+
+#if HB_VERSION_ATLEAST(1,0,3)
+	hb_buffer_set_cluster_level(buf, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
+#endif
+	hb_buffer_set_direction(buf, (r->flags & toRTL) ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
+//	hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
+//	hb_buffer_set_language(buf, hb_language_from_string("en", -1));
+//	hb_buffer_set_script (buf, hb_script_from_string ("Arab", -1));
+//	hb_buffer_set_language(buf, hb_language_from_string("ar", -1));
+
+	font = hb_ft_font_create(face, NULL);
+
+	hb_shape(font, buf, NULL, 0);
+
+	glyph_info = hb_buffer_get_glyph_infos(buf, &r->n_glyphs);
+	glyph_pos  = hb_buffer_get_glyph_positions(buf, &r->n_glyphs);
+
+	for (i = j = 0; i < r->n_glyphs; i++) {
+		uint32_t c = glyph_info[i].cluster;
+		if ( c > r-> len ) {	
+			/* something bad happened? */
+			warn("harfbuzz shaping asssertion failed: got cluster=%d for strlen=%d", c, r->len);
+			guts. use_harfbuzz = false;
+			ret = false;
+			break;
+		}
+                r->clusters[i] = c;
+                r->glyphs[i]   = glyph_info[i].codepoint;
+                r->advances[i] = glyph_pos[i].x_advance;
+                r->coords[j++] = glyph_pos[i].x_offset;
+                r->coords[j++] = glyph_pos[i].y_offset;
+	}
+
+	hb_buffer_destroy(buf);
+	hb_font_destroy(font);
+	XftUnlockFace(XX->font->xft);
+
+	return ret;
+}
+#endif
 
 #else
 #error Required: Xft version 2.1.0 or higher; fontconfig version 2.0.1 or higher. To compile without Xft, re-run 'perl Makefile.PL WITH_XFT=0'

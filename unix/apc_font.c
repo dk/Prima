@@ -27,6 +27,7 @@ static Bool   do_core_fonts = true;
 static Bool   do_xft_no_antialias = false;
 static Bool   do_xft_priority = true;
 static Bool   do_no_scaled_fonts = false;
+static Bool   do_harfbuzz = true;
 
 static void detail_font_info( PFontInfo f, PFont font, Bool addToCache, Bool bySize);
 
@@ -645,11 +646,12 @@ prima_init_font_subsystem( char * error_buf)
 			strcpy( guts. locale, "iso10646-1");
 	}
 
-#ifdef USE_XFT
 	guts. xft_no_antialias = do_xft_no_antialias;
 	guts. xft_priority     = do_xft_priority;
+#ifdef USE_XFT
 	if ( do_xft) prima_xft_init();
 #endif
+	guts. use_harfbuzz     = do_xft && do_harfbuzz;
 
 	prima_font_pp2font( "fixed", nil);
 	Fdebug("font: init\n");
@@ -733,6 +735,7 @@ prima_font_subsystem_set_option( char * option, char * value)
 		do_core_fonts = false;
 		return true;
 	} else
+#ifdef USE_XFT
 	if ( strcmp( option, "no-xft") == 0) {
 		if ( value) warn("`--no-xft' option has no parameters");
 		do_xft = false;
@@ -756,6 +759,14 @@ prima_font_subsystem_set_option( char * option, char * value)
 			warn("Invalid value '%s' to `--font-priority' option. Valid are 'core' and 'xft'", value);
 		return true;
 	} else
+#endif
+#ifdef WITH_HARFBUZZ
+	if ( strcmp( option, "no-harfbuzz") == 0) {
+		if ( value) warn("`--no-harfbuzz' option has no parameters");
+		do_harfbuzz = false;
+		return true;
+	} else
+#endif
 	if ( strcmp( option, "noscaled") == 0) {
 		if ( value) warn("`--noscaled' option has no parameters");
 		do_no_scaled_fonts = true;

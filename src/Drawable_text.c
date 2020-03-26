@@ -1,6 +1,12 @@
 #include "apricot.h"
 #include "Drawable.h"
 
+#ifdef WITH_FRIBIDI
+#include <fribidi/fribidi.h>
+#endif
+#define MAX_GLYPHS 8192
+extern Bool   use_fribidi;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,80 +52,502 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 	return ok;
 }
 
+static void*
+warn_malloc(ssize_t size)
+{	
+	void * ret;
+	if (!(ret = malloc(size))) {
+		warn("Drawable.text_shape: not enough memory");
+		return NULL;
+	}
+	return ret;
+}
+
+static uint32_t*
+sv2unicode( SV * text, int * size, int * flags)
+{
+	STRLEN dlen;
+	register char * src;
+	uint32_t *ret;
+
+	src = SvPV(text, dlen);
+	if (prima_is_utf8_sv(text)) {
+		*flags = toUTF8;
+		*size = prima_utf8_length(src);
+	} else {
+		*flags = 0;
+		*size = dlen;
+	}
+
+	if (!(ret = ( uint32_t*) warn_malloc(sizeof(uint32_t) * (*size))))
+		return NULL;
+
+	if (*flags & toUTF8 ) {
+		uint32_t *dst = ret;
+		while ( dlen > 0) {
+			STRLEN charlen;
+			*(dst++) = prima_utf8_uvchr(src, dlen, &charlen);
+			if ( charlen == 0 ) break;
+			src  += charlen;
+			dlen -= charlen;
+		}
+	} else {
+		register int i = *size;
+		register uint32_t *dst = ret;
+		while (i-- > 0) *(dst++) = *(src++);
+	}
+
+	return ret;
+}
+
+/* knows only strong RTL characters and doesn't know about unicode bidi */
+static void 
+fallback_analysis( uint32_t * text, int len, Byte * analysis)
+{
+	int i;
+	for ( i = 0; i < len; i++) {
+		register uint32_t c = *(text++);
+		*(analysis++) = (
+			(c == 0x590) ||
+			(c == 0x5be) ||
+			(c == 0x5c0) ||
+			(c == 0x5c3) ||
+			(c == 0x5c6) ||
+			( c >= 0x5c8 && c <= 0x5ff) ||
+			(c == 0x608) ||
+			(c == 0x60b) ||
+			(c == 0x60d) ||
+			( c >= 0x61b && c <= 0x64a) ||
+			( c >= 0x66d && c <= 0x66f) ||
+			( c >= 0x671 && c <= 0x6d5) ||
+			( c >= 0x6e5 && c <= 0x6e6) ||
+			( c >= 0x6ee && c <= 0x6ef) ||
+			( c >= 0x6fa && c <= 0x710) ||
+			( c >= 0x712 && c <= 0x72f) ||
+			( c >= 0x74b && c <= 0x7a5) ||
+			( c >= 0x7b1 && c <= 0x7ea) ||
+			( c >= 0x7f4 && c <= 0x7f5) ||
+			( c >= 0x7fa && c <= 0x815) ||
+			(c == 0x81a) ||
+			(c == 0x824) ||
+			(c == 0x828) ||
+			( c >= 0x82e && c <= 0x858) ||
+			( c >= 0x85c && c <= 0x8d3) ||
+			(c == 0x200f) ||
+			(c == 0xfb1d) ||
+			( c >= 0xfb1f && c <= 0xfb28) ||
+			( c >= 0xfb2a && c <= 0xfd3d) ||
+			( c >= 0xfd40 && c <= 0xfdcf) ||
+			( c >= 0xfdf0 && c <= 0xfdfc) ||
+			( c >= 0xfdfe && c <= 0xfdff) ||
+			( c >= 0xfe70 && c <= 0xfefe) ||
+			( c >= 0x10800 && c <= 0x1091e) ||
+			( c >= 0x10920 && c <= 0x10a00) ||
+			(c == 0x10a04) ||
+			( c >= 0x10a07 && c <= 0x10a0b) ||
+			( c >= 0x10a10 && c <= 0x10a37) ||
+			( c >= 0x10a3b && c <= 0x10a3e) ||
+			( c >= 0x10a40 && c <= 0x10ae4) ||
+			( c >= 0x10ae7 && c <= 0x10b38) ||
+			( c >= 0x10b40 && c <= 0x10e5f) ||
+			( c >= 0x10e7f && c <= 0x10fff) ||
+			( c >= 0x1e800 && c <= 0x1e8cf) ||
+			( c >= 0x1e8d7 && c <= 0x1e943) ||
+			( c >= 0x1e94b && c <= 0x1eeef) ||
+			( c >= 0x1eef2 && c <= 0x1efff)
+		) ? 1 : 0; 
+	}
+}
+
+static void
+apply_identity_to_clusters(PTextShapeRec t)
+{
+	register int i = 0;
+	register uint16_t * c = t-> clusters;
+	while (i < t->len) *(c++) = i++;
+}
+
+static __INLINE__ void
+inverse_cluster_chunk(register uint16_t * start, register uint16_t * end)
+{
+	while ( start < end ) {
+		register uint16_t c = *start;
+		*(start++) = *end;
+		*(end--) = c;
+	}
+}
+
+static void
+apply_rtl_to_clusters(PTextShapeRec t)
+{
+	int i, start;
+	Byte rtl = t-> analysis[0] & 1;
+	for ( i = 1, start = 0; i < t-> len + 1; i++) {
+		if ( i < t-> len && ((t-> analysis[i] & 1) == rtl)) continue;
+		if ( rtl )
+			inverse_cluster_chunk(t->clusters + start, t->clusters + i - 1);
+		if ( i < t-> len )
+			rtl = t->analysis[i] & 1;
+		start = i;
+	}
+}
+
+static int
+apply_bidi_to_clusters(PTextShapeRec t)
+{
+	int i, j;
+	for ( i = j = 0; i < t->len; i++) {
+		register uint32_t c = t->text[t->clusters[i]];
+		if (
+			(c >= 0x200b && c <= 0x200f) ||
+			(c >= 0x202a && c <= 0x202e) ||
+			(c >= 0x2060 && c <= 0x206f)
+		)
+			continue;
+		t->clusters[j++] = t->clusters[i];
+	}
+
+	return j;
+}
+
+static Bool
+alloc_run( PTextShapeRec t, int visual_start, int visual_len, PTextShapeRec run)
+{
+	int i;
+	uint32_t *chars;
+
+	bzero(run, sizeof(TextShapeRec));
+	if ( !( run-> text = warn_malloc(sizeof(uint32_t) * visual_len)))
+		return false;
+	for ( i = 0, chars = run-> text; i < visual_len; i++)
+		*(chars++) = t->text[ t->clusters[i + visual_start] ];
+	run-> len = visual_len;
+
+	run-> flags        = (t->analysis[t->clusters[visual_start]] & 1) ? toRTL : 0;
+	run-> n_glyphs_max = t->n_glyphs_max - t-> n_glyphs;
+	run-> glyphs       = t->glyphs   + t-> n_glyphs;
+	if ( t-> coords )
+		run-> coords = t->coords + t-> n_glyphs * 2;
+	if ( t-> advances )
+		run-> advances = t->advances + t-> n_glyphs;
+
+	return true;
+}
+
+typedef struct {
+	int start, i, vis_len;
+	Byte rtl;
+	uint16_t cluster;
+} BidiRunRec, *PBidiRunRec;
+
+static void
+run_init(PBidiRunRec r, int visual_length)
+{
+	r->i       = 0;
+	r->vis_len = visual_length;
+}
+
+static int
+run_next(PTextShapeRec t, PBidiRunRec r)
+{
+	int n, rtl,
+		start = r->i,
+		last_cluster = t->clusters[r->i],
+		dir = 0;
+
+	if ( r->i >= r->vis_len ) return 0;
+
+	rtl = t->analysis[t->clusters[r->i]] & 1;
+	for ( n = 0; r->i < r->vis_len + 1; r->i++, n++) {
+		if (
+			r->i >= r->vis_len ||                                  /* eol */
+			((t-> analysis[t->clusters[r->i]] & 1) != rtl) || (    /* rtl != ltr */
+				n > 1 &&
+				t->clusters[r->i] != last_cluster + dir        /* cluster break */
+			)
+		) {
+			r->rtl = rtl;
+			return r->i - start;
+		}
+
+		/* determine cluster direction */
+		if ( n == 1 ) {
+			dir = t->clusters[r->i] - last_cluster;
+			if ( dir != 1 && dir != -1 ) {
+				r->rtl = rtl;
+				return r->i - start;
+			}
+		}
+		last_cluster = t->clusters[r->i];
+	}
+
+	return 0;
+}
+
+/* minimal bidi and unicode processing, map only glyphs, no coordinates */
+static Bool
+shape_map_glyphs(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
+{
+	Bool ok;
+	int n_chars_after_bidi;
+	TextShapeRec run;
+
+	fallback_analysis(t->text, t->len, t->analysis);
+	apply_identity_to_clusters(t);
+	apply_rtl_to_clusters(t);
+	n_chars_after_bidi = apply_bidi_to_clusters(t);
+
+	if ( !alloc_run(t, 0, n_chars_after_bidi, &run))
+		return false;
+	ok = shaper( self, &run );
+	t->n_glyphs += run.n_glyphs;
+
+	free(run.text);
+
+	return ok;
+}
+
+/*
+   orig text           : L1 L2 NONVISUAL R1 R2
+   clusters            :  0  1  3  4
+
+   text for shaper.1   > L1 L2
+            map        : 0 1
+   shaper.1 litages Ls < L12
+      returns clusters < 0
+	applied back   : 0
+
+   text for shaper.2   > R1 R2 - don't invert, shaper does this
+            map        : 3 4
+   shaper.2 litages Rs < R21
+          run clusters < 0
+	applied back   : 3
+
+*/
+
+static void
+apply_run_results(
+	PTextShapeRec src,
+	uint16_t * map,
+	PTextShapeRec dst
+) {
+	int i;
+	register uint16_t 
+		*dst_c = dst->clusters + dst->n_glyphs,
+		*src_c = src->clusters;
+	for ( i = 0; i < src->n_glyphs; i++) {
+		*(dst_c++) = map[ *(src_c++) ];
+		dst->n_glyphs++; /* glyphs are already copied */
+	}
+}
+
+static Bool
+shape_apc(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
+{
+	Bool ok = false;
+	int run_offs, run_len;
+	BidiRunRec brr;
+	uint16_t *run_clusters;
+	TextShapeRec tmp;
+
+	fallback_analysis(t->text, t->len, t->analysis);
+
+	tmp = *t;
+	/*
+		t.clusters accumulates final clusters,
+		tmp.clusters contains clusters after rtl and bidi processing
+		run_clusters accepts shaper output:
+		t = tmp(run)
+	*/
+	if ( !( tmp.clusters = malloc( sizeof(uint16_t) * tmp.n_glyphs_max * 2)))
+		return false;
+	run_clusters = tmp.clusters + tmp.n_glyphs_max;
+
+	apply_identity_to_clusters(&tmp);
+	tmp.len = apply_bidi_to_clusters(&tmp);
+
+//#define _DEBUG
+#ifdef _DEBUG
+	{
+		int i;
+		printf("tmp: ");
+		for (i = 0; i < tmp.len; i++) {
+			printf("%d(%x) ", tmp.clusters[i], tmp.text[tmp.clusters[i]]);
+		}
+		printf("\n");
+	}
+#endif
+
+	run_offs = 0;
+	run_init(&brr, tmp.len);
+	while (( run_len = run_next(&tmp, &brr)) > 0) {
+		TextShapeRec run;
+
+		if ( !alloc_run(&tmp, run_offs, run_len, &run))
+			goto EXIT;
+
+		run.clusters = run_clusters;
+#ifdef _DEBUG
+	{
+		int i;
+		printf("shaper input %s %d - %d: ", (run.flags & toRTL) ? "rtl" : "ltr", run_offs, run_offs + run_len - 1);
+		for (i = 0; i < run.len; i++) {
+			printf("%x ", run.text[i]);
+		}
+		printf("\n");
+	}
+#endif
+		ok = shaper( self, &run );
+#ifdef _DEBUG
+	{
+		int i;
+		printf("shaper output: ");
+		for (i = 0; i < run.n_glyphs; i++) {
+			printf("%d(%d) ", run.clusters[i], run.glyphs[i]);
+		}
+		printf("\n");
+	}
+#endif
+		free(run.text);
+		if ( !ok ) goto EXIT;
+
+		apply_run_results( &run, tmp.clusters + run_offs, t );
+		tmp.n_glyphs += run.n_glyphs;
+#ifdef _DEBUG
+	{
+		int i;
+		printf("copied back @ %d: ", t->n_glyphs - run.n_glyphs);
+		for (i = t->n_glyphs - run.n_glyphs; i < t->n_glyphs; i++) {
+			printf("%d(%d) ", t->clusters[i], t->glyphs[i]);
+		}
+		printf("\n");
+	}
+#endif
+		run_offs += run_len;
+	}
+
+EXIT:
+	free( tmp.clusters );
+	return ok;
+}
+
 SV*
-Drawable_text_shape( Handle self, SV * text, HV * profile)
+Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 {
 	dPROFILE;
 	gpARGS;
-	SV * ret = nilSV;
-	STRLEN dlen;
-	int size, new_size, flags = 0;
-	uint16_t * glyphs;
-	int16_t * char_offsets;
-	Bool with_offsets;
-	char * c_text;
-	SV * sv_glyphs, *sv_offsets;
+	int i;
+	SV * ret = nilSV, *sv_glyphs, *sv_clusters, *sv_coords, *sv_advances;
+	PTextShapeFunc shaper;
+	TextShapeRec t;
+	Bool glyph_mapper_only, ok = false;
 
-	if ( SvROK(text)) {
+	/* forward, if any */
+	if ( SvROK(text_sv)) {
 		SV * ref = newRV_noinc((SV*) profile);
 		gpENTER(nilSV);
-		ret = sv_call_perl(text, "text_shape", "<HSS", self, text, ref);
+		ret = sv_call_perl(text_sv, "text_shape", "<HSS", self, text_sv, ref);
 		gpLEAVE;
 		sv_free(ref);
 		return ret;
 	}
 
-	gpENTER(nilSV);
+	/* font supports shaping? */
+	if (!( shaper = apc_gp_text_get_shaper(self, &glyph_mapper_only)))
+		return newSViv(0);
 
-	c_text = SvPV( text, dlen);
-	if (prima_is_utf8_sv( text)) {
-		flags |= toUTF8;
-		dlen = prima_utf8_length(c_text);
+	/* asserts */
+#ifdef WITH_FRIBIDI
+	if ( use_fribidi && sizeof(FriBidiLevel) != 1) {
+		warn("sizeof(FriBidiLevel) != 1, fribidi is disabled");
+		use_fribidi = false;
+	}
+#endif
+
+	/* allocate buffers */
+	bzero(&t, sizeof(t));
+	if (!(t.text = sv2unicode(text_sv, &t.len, &t.flags)))
+		goto EXIT;
+
+	if ( t.len == 0 ) {
+		free(t.text);
+		return newSViv(0);
 	}
 
-	with_offsets = pexist(map) ? pget_B(map) : false;
-	if ( pexist(rtl)      && pget_B(rtl))      flags |= toRTL;
-	if ( pexist(override) && pget_B(override)) flags |= toOverride;
+	if ( t.len > MAX_GLYPHS ) {
+		warn("Drawable.text_shape: text too long, %dK max", MAX_GLYPHS / 1024);
+		t.len = MAX_GLYPHS;
+	}
+
+	if (!(t.analysis = warn_malloc(t.len)))
+		goto EXIT;
 
 	/* MSDN, on ScriptShape: A reasonable value is (1.5 * cChars + 16) */
-	size = dlen * 2 + 16;
-	sv_glyphs = prima_array_new(size * 2);
-	glyphs = (uint16_t*) prima_array_get_storage(sv_glyphs);
-	if ( with_offsets ) {
-		sv_offsets = prima_array_new(size * 2);
-		char_offsets = (int16_t*) prima_array_get_storage(sv_offsets);
+	t.n_glyphs_max = t.len * 2 + 16; 
+#define ALLOC(id,n) { \
+	sv_##id = prima_array_new( t.n_glyphs_max * n * sizeof(uint16_t)); \
+	t.id   = (uint16_t*) prima_array_get_storage(sv_##id); \
+}
+	
+	ALLOC(glyphs,1);
+	ALLOC(clusters,1);
+	if ( glyph_mapper_only ) {
+		sv_coords = sv_advances = nilSV;
 	} else {
-		char_offsets = NULL;
-		sv_offsets = NULL;
+		ALLOC(coords,2);
+		ALLOC(advances,1);
+	}
+#undef ALLOC
+
+	if ( pexist(rtl) && pget_B(rtl)) t.flags |= toRTL;
+		
+#ifdef WITH_FRIBIDI
+	if ( use_fribidi ) {
+//		if ( glyph_mapper_only ) 
+//			ok = shape_bidi_full(&t);
+//		else
+//			ok = shape_bidi_and_apc(&t);
+	} else
+#endif
+		if ( glyph_mapper_only ) 
+			ok = shape_map_glyphs(self, &t, shaper);
+		else
+			ok = shape_apc(self, &t, shaper);
+	if ( !ok ) goto EXIT;
+
+	for ( i = 0; i < t.n_glyphs; i++) {
+		if ( t.analysis[ t.clusters[i] ] & 1 )
+			t.clusters[i] |= 0x8000;
 	}
 
-	new_size = apc_gp_text_shape(self,
-		pexist(language) ? pget_c(language) : NULL,
-		c_text, dlen, flags,
-		size, glyphs, char_offsets);
-	gpLEAVE;
+	free(t.analysis );
+	free(t.text);
+	t.analysis = NULL;
+	t.text = NULL;
 
-	if ( new_size < 0 ) {
-		sv_free(sv_glyphs);
-		if ( sv_offsets ) sv_free(sv_offsets);
-		return (new_size == -2) ? newSViv(0) : nilSV;
-	}
+#define BIND(x,n) { \
+	prima_array_truncate(x, t.n_glyphs * n * sizeof(uint16_t)); \
+	x = prima_array_tie( x, sizeof(uint16_t), "S"); \
+}
+	BIND(sv_glyphs, 1);
+	BIND(sv_clusters, 1);
+	if ( sv_coords != nilSV ) BIND(sv_coords, 2);
+	if ( sv_advances != nilSV ) BIND(sv_advances, 1);
+#undef BIND
 
-	if (new_size < size ) {
-		prima_array_truncate( sv_glyphs, new_size * 2);
-		if ( sv_offsets ) prima_array_truncate( sv_offsets, new_size * 2);
-	}
+	return newSVsv(call_perl(self, "new_glyph_obj", "<SSSS",
+		sv_glyphs, sv_clusters, sv_advances, sv_coords
+	));
 
-	sv_glyphs = prima_array_tie( sv_glyphs, 2, "s" );
-	if ( !with_offsets ) return sv_glyphs;
+EXIT:
+	if ( t.text     ) free(t.text     );
+	if ( t.analysis ) free(t.analysis );
+	if ( t.clusters ) sv_free(sv_clusters );
+	if ( t.glyphs   ) sv_free(sv_glyphs   );
+	if ( t.coords   ) sv_free(sv_coords   );
+	if ( t.advances ) sv_free(sv_advances );
 
-	sv_offsets = prima_array_tie( sv_offsets, 2, "s");
-	ret = newSVsv(call_perl(self, "new_glyph_obj", "<SS", sv_glyphs, sv_offsets));
-
-	sv_free(sv_glyphs);
-	sv_free(sv_offsets);
-
-	return ret;
+	return nilSV;
 }
 
 int
@@ -404,7 +832,7 @@ fill_tilde_properties(Handle self, TextWrapRec * t, int tildePos, int tildeOffse
 	t-> t_char = t-> text + tildePos + 1;
 	if ( t-> utf8_text) {
 		STRLEN len;
-		prima_utf8_uvchr(t-> t_char, t-> textLen - tildePos - 1, &len);
+		prima_utf8_uvchr_end(t-> t_char, t->text + t-> textLen, &len);
 		if ( len == 0 ) return;
 	} else
 		uv = *(t->t_char);
@@ -515,7 +943,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 
 		if ( t-> utf8_text) {
 			STRLEN len;
-			uv = prima_utf8_uvchr(t->text + i, t-> textLen, &len);
+			uv = prima_utf8_uvchr_end(t->text + i, t->text + t-> textLen, &len);
 			i += len;
 			if ( len == 0 )
 				break;
@@ -910,7 +1338,7 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 			unsigned int offset = c[i], size = c[i + 1] * 2;
 			sv = prima_array_new(size);
 			memcpy( prima_array_get_storage(sv), t.glyphs + offset, size);
-			av_push( av, prima_array_tie( sv, 2, "s"));
+			av_push( av, prima_array_tie( sv, 2, "S"));
 		}
 	}
 	free( c);
