@@ -187,24 +187,23 @@ Clipboard_close( Handle self)
 	utf8 = formats + cfUTF8;
 	/* automatically downgrade UTF8 to TEXT */
 	if ( utf8-> written && !text-> written) {
-			SV *utf8_sv, *text_sv;
-			if (( utf8_sv = utf8-> server( self, utf8, cefFetch, nilSV))) {
-				STRLEN bytelen, charlen, bytecount;
-				U8 * src;
-				src = ( U8 *) SvPV( utf8_sv, bytelen);
-				bytecount = bytelen;
-				text_sv = newSVpvn("", 0);
-				while ( bytecount > 0) {
-					register UV u = prima_utf8_uvchr(src, bytelen, &charlen);
-					char c = ( u < 0x7f) ? u : '?';
-					src += charlen;
-					bytecount -= charlen;
-					sv_catpvn( text_sv, &c, 1);
-					if ( charlen == 0 ) break;
-				}
-				text-> server( self, text, cefFetch, text_sv);
-				sv_free( text_sv);
+		SV *utf8_sv, *text_sv;
+		if (( utf8_sv = utf8-> server( self, utf8, cefFetch, nilSV))) {
+			STRLEN bytelen, charlen;
+			U8 * src;
+			src = ( U8 *) SvPV( utf8_sv, bytelen);
+			text_sv = newSVpvn("", 0);
+			while ( bytelen > 0) {
+				register UV u = prima_utf8_uvchr(src, bytelen, &charlen);
+				char c = ( u < 0x7f) ? u : '?';
+				src += charlen;
+				bytelen -= charlen;
+				sv_catpvn( text_sv, &c, 1);
+				if ( charlen == 0 ) break;
 			}
+			text-> server( self, text, cefFetch, text_sv);
+			sv_free( text_sv);
+		}
 	}
 	apc_clipboard_close( self);
 }

@@ -1508,9 +1508,12 @@ prima_is_utf8_sv( SV * sv);
 #if PERL_PATCHLEVEL >= 16
 #define prima_utf8_uvchr(_text, _textlen, _charlen) \
 	utf8_to_uvchr_buf(( U8*)(_text), (U8*)(_text) + (_textlen), _charlen)
+#define prima_utf8_uvchr_end(_text, _end, _charlen) \
+	utf8_to_uvchr_buf(( U8*)(_text), (U8*)(_end), _charlen)
 #else
 #define prima_utf8_uvchr(_text, _textlen, _charlen) \
 	utf8_to_uvchr(( U8*)(_text), _charlen)
+#define prima_utf8_uvchr_end prima_utf8_uvchr
 #endif
 
 extern SV *
@@ -3603,7 +3606,6 @@ TO(Glyphs)
 #define toUTF8           0x004
 #define toUnicode        0x004
 TO(Unicode)
-#define toOverride       0x008
 #define toRTL            0x010
 END_TABLE(to,UV)
 #undef TO
@@ -3611,8 +3613,24 @@ END_TABLE(to,UV)
 extern Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags);
 
+typedef struct {
+	char     *language;
+	uint32_t *text;
+	int len, flags;
+	Byte * analysis;
+
+	unsigned int n_glyphs, n_glyphs_max;
+	uint16_t *glyphs, *clusters, *coords, *advances;
+} TextShapeRec, *PTextShapeRec;
+
+typedef Bool TextShapeFunc( Handle self, PTextShapeRec rec);
+typedef TextShapeFunc *PTextShapeFunc;
+
+extern PTextShapeFunc
+apc_gp_text_get_shaper( Handle self, Bool * glyph_mapper_only);
+
 extern int
-apc_gp_text_shape( Handle self, const char * lang, const char * text, int bytes, int flags, int n_glyphs, uint16_t * glyphs, int16_t * char_offsets);
+apc_gp_text_shape( Handle self, const char * lang, const char * text, int bytes, int flags, int n_glyphs, uint16_t * glyphs, uint16_t * char_offsets);
 
 /* gpi settings */
 extern Color

@@ -125,6 +125,8 @@ syntax:
 options:
     X11BASE           - path where X11 includes and libraries are installed
     WITH_XFT          - compile with/without Xft (default 1), X only
+    WITH_FRIBIDI      - compile with/without fribidi (default 1), X only
+    WITH_HARFBUZZ     - compile with/without harfbuzz (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
     WITH_GTK2         - compile with/without GTK2 (default 1), X only
     WITH_GTK3         - compile with/without GTK3 (default 0), X only
@@ -179,6 +181,8 @@ sub setup_argv
 	%cmd_options = (
 		X11BASE       => undef,
 		WITH_XFT      => 1,
+		WITH_HARFBUZZ => 1,
+		WITH_FRIBIDI   => 1,
 		WITH_ICONV    => 1,
 		WITH_GTK2     => 1,
 		WITH_GTK3     => 0,
@@ -1463,6 +1467,36 @@ sub setup_iconv
 	}
 }
 
+sub setup_fribidi
+{
+	$cmd_options{WITH_FRIBIDI} = 0;
+	unless ( $use_pkgconfig ) {
+		printlog "Checking for presence of fribidi... no, can only check with pkg-config installed\n";
+		return;
+	}
+	return unless pkgconfig('fribidi');
+	$DEFINES{WITH_FRIBIDI} = 1;
+	$cmd_options{WITH_FRIBIDI} = 1;
+}
+
+sub setup_harfbuzz
+{
+	$cmd_options{WITH_HARFBUZZ} = 0;
+
+	if ( !$cmd_options{WITH_XFT}) {
+		printlog "harfbuzz deselected as it requires Xft\n";
+		return;
+	}
+
+	unless ( $use_pkgconfig ) {
+		printlog "Checking for presence of harfbuzz... no, can only check with pkg-config installed\n";
+		return;
+	}
+	return unless pkgconfig('harfbuzz');
+	$DEFINES{WITH_HARFBUZZ} = 1;
+	$cmd_options{WITH_HARFBUZZ} = 1;
+}
+
 sub setup_gtk
 {
 	my $use_gtk3 = $cmd_options{WITH_GTK3};
@@ -1546,6 +1580,8 @@ sub setup_xlibs
 	have_header( "X11/extensions/XShm.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
 
 	setup_xft() if $cmd_options{WITH_XFT};
+	setup_fribidi() if $cmd_options{WITH_FRIBIDI};
+	setup_harfbuzz() if $cmd_options{WITH_HARFBUZZ};
 
 	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
 	setup_iconv() if $cmd_options{WITH_ICONV};
@@ -1566,6 +1602,8 @@ sub setup_xlibs
 	}
 
 	printlog "Using Xft library\n" if $cmd_options{WITH_XFT};
+	printlog "Using fribidi library\n" if $cmd_options{WITH_HARFBUZZ};
+	printlog "Using harfbuzz library\n" if $cmd_options{WITH_FRIBIDI};
 	printlog "Using iconv library\n" if $cmd_options{WITH_ICONV};
 	printlog "Using gtk2 library\n" if $cmd_options{WITH_GTK2};
 	printlog "Using gtk3 library\n" if $cmd_options{WITH_GTK3};

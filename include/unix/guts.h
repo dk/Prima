@@ -51,6 +51,14 @@
 #ifdef HAVE_X11_XCURSOR_XCURSOR_H
 #include <X11/Xcursor/Xcursor.h>
 #endif
+
+#ifdef WITH_FRIBIDI
+#include <fribidi/fribidi.h>
+#define ANALYSIS FriBidiLevel
+#else
+#define ANALYSIS Byte
+#endif
+
 #undef Font
 #undef Drawable
 #undef Bool
@@ -726,6 +734,8 @@ typedef struct _UnixGuts
 	int                          net_wm_maximize_HORZ_vs_HORIZ;
 	int                          use_gtk;
 	int                          use_quartz;
+	Bool                         use_fribidi;
+	Bool                         use_harfbuzz;
 	Bool                         is_xwayland;
 	/* DND: Common */
 	Handle                       xdnd_clipboard;
@@ -1412,6 +1422,14 @@ prima_xft_update_region( Handle self);
 
 extern int
 prima_xft_load_font( char * fontName );
+
+extern Bool
+prima_xft_text_shaper_ident( Handle self, PTextShapeRec r);
+
+#ifdef WITH_HARFBUZZ
+extern Bool
+prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r);
+#endif
 
 #endif
 

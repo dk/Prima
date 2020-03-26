@@ -1299,6 +1299,20 @@ apc_system_action( const char *s)
 			XSetFont( DISP, X(self)-> gc, XLoadFont( DISP, font));
 			return nil;
 		}
+		if ( strcmp( "shaper", s) == 0) {
+			char shaper[64] = "";
+#ifdef USE_XFT
+			if ( guts. use_xft ) strcat(shaper, "xft ");
+#endif
+#ifdef WITH_FRIBIDI
+			if ( guts. use_fribidi ) strcat(shaper, "fribidi ");
+#endif
+#ifdef WITH_HARFBUZZ
+			if ( guts. use_harfbuzz ) strcat(shaper, "harfbuzz ");
+#endif
+			shaper[strlen(shaper)-1] = 0;
+			return duplicate_string(shaper);
+		}
 		break;
 	case 't':
 		if ( strncmp( "textout16 ", s, 10) == 0) {

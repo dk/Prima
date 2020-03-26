@@ -511,6 +511,9 @@ window_subsystem_get_options( int * argc, char *** argv)
 #ifdef WITH_GTK
 	"no-gtk",        "do not use GTK",
 #endif
+#ifdef WITH_HARFBUZZ
+	"no-harfbuzz",   "do not use harfbuzz",
+#endif
 #ifdef WITH_COCOA
 	"no-quartz",     "do not use Quartz",
 #endif

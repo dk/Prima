@@ -28,7 +28,7 @@ sub new
 	return \@tie;
 }
 
-sub new_short  { shift->new('s', @_) }
+sub new_short  { shift->new('S', @_) }
 sub new_int    { shift->new('i', @_) }
 sub new_double { shift->new('d', @_) }
 
@@ -82,9 +82,11 @@ sub DELETE    { warn "This array does not implement delete functionality" }
 
 package Prima::glyph_obj;
 
-sub new    { bless [@_[1,2]], $_[0] }
-sub glyphs { $_[0]->[0] }
-sub map    { $_[0]->[1] }
+sub new      { bless [@_[1,2,3,4]], $_[0] }
+sub glyphs   { $_[0]->[0] }
+sub clusters { $_[0]->[1] }
+sub advances { $_[0]->[2] }
+sub coords   { $_[0]->[3] }
 
 # class Object; base class of all Prima classes
 package Prima::Object;
@@ -529,7 +531,7 @@ sub fillWinding # compatibility
 	$_[0]->fillMode(($_[1] ? fm::Winding : fm::Alternate) | fm::Overlay);
 }
 
-sub new_glyph_obj { Prima::glyph_obj->new(@_[1,2]) }
+sub new_glyph_obj { shift; Prima::glyph_obj->new(@_) }
 
 package Prima::Image;
 use vars qw( @ISA);

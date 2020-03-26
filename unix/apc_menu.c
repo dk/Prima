@@ -823,7 +823,7 @@ store_char( char * src, int srclen, int * srcptr, char * dst, int * dstptr, Bool
 
 	if ( utf8) {
 		STRLEN char_len;
-		UV uv = prima_utf8_uvchr(src + *srcptr, srclen - *srcptr, &char_len);
+		UV uv = prima_utf8_uvchr_end(src + *srcptr, src + srclen, &char_len);
 		*srcptr += char_len;
 		if ( data-> xft_map8) {
 			*(( uint32_t*)(dst + *dstptr)) = (uint32_t) uv;
