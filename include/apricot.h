@@ -1916,6 +1916,8 @@ SV(DWM)
 SV(FixedPointerSize)
 #define   svMenuCheckSize   36
 SV(MenuCheckSize)
+#define   svFriBidi         37
+SV(FriBidi)
 END_TABLE(sv,UV)
 #undef SV
 
@@ -3597,16 +3599,17 @@ apc_gp_stretch_image( Handle self, Handle image,
 
 #define TO(const_name) CONSTANT(to,const_name)
 START_TABLE(to,UV)
-#define toPlain          0x000
+#define toPlain          0x0000
 TO(Plain)
-#define toAddOverhangs   0x001
+#define toAddOverhangs   0x0001
 TO(AddOverhangs)
-#define toGlyphs         0x002
+#define toGlyphs         0x0002
 TO(Glyphs)
-#define toUTF8           0x004
-#define toUnicode        0x004
+#define toUTF8           0x0004
+#define toUnicode        0x0004
 TO(Unicode)
-#define toRTL            0x010
+#define toRTL            0x8000
+TO(RTL)
 END_TABLE(to,UV)
 #undef TO
 

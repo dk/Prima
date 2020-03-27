@@ -332,6 +332,7 @@ apc_sys_get_value( int sysValue)
 	case svDWM: return set_dwm_blur((HWND) 0, 0, (HRGN)0, 0);
 	case svFixedPointerSize: return 0;
 	case svMenuCheckSize   : return GetSystemMetrics( SM_CXMENUCHECK );
+	case svFriBidi         : return use_fribidi;
 	default:
 		return -1;
 	}

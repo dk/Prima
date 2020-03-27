@@ -734,7 +734,6 @@ typedef struct _UnixGuts
 	int                          net_wm_maximize_HORZ_vs_HORIZ;
 	int                          use_gtk;
 	int                          use_quartz;
-	Bool                         use_fribidi;
 	Bool                         use_harfbuzz;
 	Bool                         is_xwayland;
 	/* DND: Common */

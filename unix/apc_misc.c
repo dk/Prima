@@ -1172,6 +1172,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 #endif
 ;
 	case svMenuCheckSize   : return MENU_CHECK_XOFFSET;
+	case svFriBidi         : return use_fribidi;
 	default:
 		return -1;
 	}
@@ -1303,9 +1304,6 @@ apc_system_action( const char *s)
 			char shaper[64] = "";
 #ifdef USE_XFT
 			if ( guts. use_xft ) strcat(shaper, "xft ");
-#endif
-#ifdef WITH_FRIBIDI
-			if ( guts. use_fribidi ) strcat(shaper, "fribidi ");
 #endif
 #ifdef WITH_HARFBUZZ
 			if ( guts. use_harfbuzz ) strcat(shaper, "harfbuzz ");
