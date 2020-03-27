@@ -1,8 +1,15 @@
 use strict;
 use warnings;
+# XXX TODO:
+# bitmap fonts are non-shapers
+# language/script
+# FRIBIDI_PAR_ON
+# RTL override, WRTL/WLTR?
+# text-out
 
 use Test::More;
 use Prima::Test;
+use Prima::Application;
 use Data::Dumper;
 
 my $w;
@@ -13,8 +20,12 @@ my %glyphs;
 sub xtr($)
 {
 	my $xtr = shift;
-	# RTL(JI) ligates to Y
-	$xtr =~ tr/ABRCIJY/\x{629}\x{630}\x{630}\x{631}\x{627}\x{644}\x{fefb}/;
+
+	$xtr =~ tr[A-Z][\N{U+5d0}-\N{U+5e8}];
+	# RTL(|/) ligates to %, with ZWJ (fribidi) or without (harfbuzz)
+	$xtr =~ tr[|/%0][\x{627}\x{644}\x{fefb}\x{feff}];
+	$xtr =~ tr[+-][\x{200d}\x{200c}];
+
 	return $xtr;
 }
 
@@ -40,13 +51,20 @@ sub no_glyphs($)
         return %glyphs = %g;
 }
 
+sub glyphs_fully_resolved 
+{
+	return 0 unless scalar keys %glyphs;
+	return 0 == scalar grep { !$_ } values %glyphs;
+}
+
 sub gmap($) { [ @glyphs{ split //, $_[0] } ] }
 
-sub r { map { $_ | 0x8000 } @_ }
+sub r { map { $_ | to::RTL } @_ }
+sub R { reverse r @_ }
 
 sub comp
 {
-	my ( $got, $exp, $name) = @_;
+	my ( $got, $exp, $name, $hexy, $text) = @_;
 
 	if ( !$got && !$exp) { # undef and 0 are same, whatever
 		ok(1, $name);
@@ -64,27 +82,83 @@ sub comp
 	return;
 
 FAIL:
-	ok(0, $name);
+	ok(0, "$name {$text}");
 	$got ||= ['<undef>'];
 	$exp ||= ['<undef>'];
 	$exp = [ map { defined($_) ? $_ : '<undef>' } @$exp ];
 	$got = [ map { defined($_) ? $_ : '<undef>' } @$got ];
-	$_ = '-' . ($_ & 0x7fff) for grep { /^\d+$/ && $_ & 0x8000 } @$got;
-	$_ = '-' . ($_ & 0x7fff) for grep { /^\d+$/ && $_ & 0x8000 } @$exp;
+	if ( $hexy ) {
+		@$got = map { /^\d+$/ ? (sprintf q(%x), $_) : $_ } @$got;
+		@$exp = map { /^\d+$/ ? (sprintf q(%x), $_) : $_ } @$exp;
+	} else {
+		$_ = '-' . ($_ & ~to::RTL) for grep { /^\d+$/ && $_ & to::RTL } @$got;
+		$_ = '-' . ($_ & ~to::RTL) for grep { /^\d+$/ && $_ & to::RTL } @$exp;
+	}
 	diag(sprintf("got [@$got], expected [@$exp]"));
 }
 
 sub t
 {
-	my ( $text, $glyphs, $clusters, $name) = @_;
+	my ( $text, $glyphs, $clusters, $name, %opt) = @_;
 
 	$text   = xtr $text;
 	$glyphs = xtr $glyphs;
-	$text =~ tr/<>=/\x{2067}\x{2066}\x{2069}/;
+	$text =~ tr
+		[<>=]
+		#[\x{2067}\x{2066}\x{2069}]
+		[\x{202B}\x{202a}\x{202c}]
+		;
 
-	$z = $w-> text_shape($text);
-	comp($z->glyphs, gmap $glyphs, "$name (glyphs)");
-	comp($z->clusters, $clusters, "$name (clusters)");
+	$z = $w-> text_shape($text, %opt);
+	comp($z->glyphs, gmap $glyphs, "$name (glyphs)", 1, $_[0]);
+	comp($z->clusters, $clusters, "$name (clusters)", 0, $_[0]);
+}
+
+sub find_char
+{
+	my ($font, $char) = @_;
+	$w->font($font);
+	my @r = @{ $w->get_font_ranges };
+	my $found;
+	for ( my $i = 0; $i < @r; $i += 2 ) {
+		my ( $l, $r ) = @r[$i, $i+1];
+		$found = 1, last if $l <= $char && $r >= $char;
+	}
+	return $found;
+}
+
+# try to find font with arabic and hebrew letters
+# aim at highest standard, ie ttf/xft + scaling + bidi fonts
+sub find_vector_font
+{
+	my $find_char = shift;
+	return 1 if find_char($w->font, $find_char);
+
+	my $got_rtl;
+	my $found;
+	my @f = @{$::application->fonts};
+
+	# fontconfig fonts
+	for my $f ( @f ) {
+		next unless $f->{vector};
+		next unless $f->{name} =~ /^[A-Z]/;
+		next unless find_char($f, $find_char);
+		$found = $f;
+		$got_rtl = 1;
+		goto FOUND;
+	}
+
+FOUND:
+	$w->font->name($found->{name}) if $found;
+
+	return $got_rtl;
+}
+
+sub check_noshape_nofribidi
+{
+	t('12', '12', [0,1], 'ltr');
+	t('12ABC', '12CBA', [0,1,R(2..4)], 'rtl in ltr');
+	t('>AB', 'BA', [r(2,1)], 'bidi');
 }
 
 # very minimal support for bidi and X11 core fonts only
@@ -92,10 +166,7 @@ sub test_minimal
 {
 	ok(1, "test minimal");
 	no_glyphs '12ABC';
-
-	t('12', '12', [0,1], 'ltr');
-	t('12ABC', '12CBA', [0,1,r(4,3,2)], 'rtl');
-	t('>AB', 'BA', [r(2,1)], 'bidi');
+	check_noshape_nofribidi();
 }
 
 # very minimal support for bidi with xft but no harfbuzz
@@ -105,18 +176,55 @@ sub test_glyph_mapping
 
         SKIP: {
                 glyphs "12ABC";
-		skip("text shaping is not available", 1) unless keys %glyphs;
-
-		t('12', '12', [0,1], 'ltr');
-		t('12ABC', '12CBA', [0,1,r(4,3,2)], 'rtl');
-		t('>AB', 'BA', [r(2,1)], 'bidi');
+		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
+		check_noshape_nofribidi();
         }
+}
+
+sub check_proper_bidi
+{
+	# http://unicode.org/reports/tr9/tr9-22.html
+	SKIP : {
+		glyphs ' ACDEIMNORUYSacdeghimnrs.?"`';
+    		skip("not enough glyphs for proper bidi test", 1) unless glyphs_fully_resolved;
+		t(
+			'car means CAR.',
+			'car means RAC.', 
+			[0..9,R(10..12),13],
+			'example 1');
+		t(
+			'<car MEANS CAR.=',
+			'.RAC SNAEM car',
+			[R(4..14),1..3],
+			'example 2');
+		t(
+			'he said "<car MEANS CAR=."',
+			'he said "RAC SNAEM car."',
+			[0..8,R(13..22),10..12,24,25],
+			'example 3');
+		t(
+			'DID YOU SAY `>he said "<car MEANS CAR="=`?',
+			'?`he said "RAC SNAEM car"` YAS UOY DID',
+			[R(40,41),14..22,R(27..36),24..26,38,R(0..12)],
+			'example 4',
+			rtl => 1); # XXX not needed for autodetect
+	}
 }
 
 sub test_fribidi
 {
-	# 627 644
 	ok(1, "test bidi");
+	SKIP: {
+		glyphs "12ABC|/%0";
+		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
+
+		check_noshape_nofribidi();
+		t('12ABC', 'CBA12', [R(2..4),0..1], 'rtl in rtl', rtl => 1);
+		t('/|', '%0', [R(0,1)], 'arabic ligation with ZW nobreaker');
+		t('|/', '/|', [R(0,1)], 'no arabic ligation');
+
+		check_proper_bidi();
+	}
 }
 
 sub test_shaping
@@ -126,15 +234,36 @@ sub test_shaping
 
 	SKIP: {
 		skip("no vector fonts", 1) unless $found;
-                glyphs "12ABCIJY";
-		skip("text shaping is not available", 1) unless keys %glyphs;
 
-		t('12', '12', [0,1], 'eur num ltr');
-		t('AB', 'BA', [r(1,0)], 'pure rtl');
-		t('12ABC', '12CBA', [0,1,r(4,3,2)], 'simple rtl');
-		t('12>ABC', '12CBA', [0,1,r(5,4,3)], 'simple rtl + bidi');
-		t('IJ', 'JI', [r(1,0)], 'no ligation');
-#		t('JI', 'Y', [r(0)], 'ligation'); XXX requires explicit lang
+               	glyphs "12ABC";
+		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
+		check_noshape_nofribidi();
+		if ( $with_bidi ) {
+			t('12ABC', 'CBA12', [R(2..4),0..1], 'rtl in rtl', rtl => 1);
+		}
+
+		SKIP: {
+                	glyphs "|-/%";
+			skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
+			t('|/', '/|', [r(1,0)], 'no arabic ligation');
+			t('/|', '%', [r(0)], 'arabic ligation');
+			if ( $with_bidi ) {
+				t('/-|', '|-/', [R(0..2)], 'arabic non-ligation');
+				check_proper_bidi();
+			}
+		}
+	
+		SKIP: {
+			skip("no devanagari font", 1) unless find_vector_font(0x924);
+			my $z = $w-> text_shape("\x{924}\x{94d}\x{928}");
+			ok( $z && scalar(grep {$_} @{$z->glyphs}), 'devanagari shaping');
+		}
+		
+		SKIP: {
+			skip("no khmer font", 1) unless find_vector_font(0x179f);
+			my $z = $w-> text_shape("\x{179f}\x{17b9}\x{1784}\x{17d2}");
+			ok( $z && scalar(grep {$_} @{$z->glyphs}), 'khmer shaping');
+		}
 	}
 }
 
@@ -143,13 +272,14 @@ sub run_test
 	my $unix = shift;
 
 	$w = Prima::DeviceBitmap-> create( type => dbt::Pixmap, width => 32, height => 32);
-	my $found = find_font();
+	my $found = find_vector_font(0x631); # arabic
 
 	my $z = $w-> text_shape( "1" );
 	plan skip_all => "Shaping is not available" if defined $z && $z eq '0';
 
 	if ( $unix ) {
 		my %opt = map { $_ => 1 } split ' ', Prima::Application->sys_action('shaper');
+		$opt{fribidi} = 1 if Prima::Application->get_system_value(sv::FriBidi);
 		if ( $opt{harfbuzz} && $opt{xft}) {
 			test_shaping($found, $opt{fribidi});
 		} elsif ( $opt{fribidi}) {
@@ -162,45 +292,6 @@ sub run_test
 	} else {
 		test_shaping($found);
 	}
-}
-
-sub can_rtl
-{
-	$w->font(shift);
-	my @r = @{ $w->get_font_ranges };
-	my $arabic = 0x631;
-	my $found_arabic;
-	for ( my $i = 0; $i < @r; $i += 2 ) {
-		my ( $l, $r ) = @r[$i, $i+1];
-		$found_arabic = 1, last if $l <= $arabic && $r >= $arabic;
-	}
-	return $found_arabic;
-}
-
-# try to find font with arabic and hebrew letters
-# aim at highest standard, ie ttf/xft + scaling + bidi fonts
-sub find_font
-{
-	return 1 if can_rtl($w->font);
-
-	my $got_rtl;
-	my $found;
-	my @f = @{$w->fonts};
-
-	# fontconfig fonts
-	for my $f ( @f ) {
-		next unless $f->{vector};
-		next unless $f->{name} =~ /^[A-Z]/;
-		next unless can_rtl($f);
-		$found = $f;
-		$got_rtl = 1;
-		goto FOUND;
-	}
-
-FOUND:
-	$w->font->name($found->{name}) if $found;
-
-	return $got_rtl;
 }
 
 if ( Prima::Application-> get_system_info->{apc} == apc::Unix ) {

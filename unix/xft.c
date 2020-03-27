@@ -2062,6 +2062,8 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 //	hb_buffer_set_language(buf, hb_language_from_string("en", -1));
 //	hb_buffer_set_script (buf, hb_script_from_string ("Arab", -1));
 //	hb_buffer_set_language(buf, hb_language_from_string("ar", -1));
+	hb_buffer_guess_segment_properties (buf);
+
 
 	font = hb_ft_font_create(face, NULL);
 
