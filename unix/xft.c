@@ -1208,7 +1208,7 @@ prima_xft_get_text_width(
 	PCachedFont self, const char * text, int len, int flags,
 	uint32_t * map8, Point * overhangs
 ) {
-	int i, ret = 0, bytelen, div;
+	int i, ret = 0, bytelen = 0, div;
 	XftFont * font = self-> xft_base;
 
 	if ( overhangs) overhangs-> x = overhangs-> y = 0;
