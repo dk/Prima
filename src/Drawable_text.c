@@ -512,8 +512,6 @@ shape_bidi_full(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
 		(FriBidiLevel*)t->analysis);
 #endif
 
-	for ( i = 0; i < t->len; i++)
-		map[i] = i;
 	fribidi_get_joining_types(t->text, t->len, ar);
 	fribidi_join_arabic(types, t->len, (FriBidiLevel*)t->analysis, ar);
 	fribidi_shape(_flags, (FriBidiLevel*)t->analysis, t->len, ar, t->text);
