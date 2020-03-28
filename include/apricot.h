@@ -3632,9 +3632,6 @@ typedef TextShapeFunc *PTextShapeFunc;
 extern PTextShapeFunc
 apc_gp_text_get_shaper( Handle self, Bool * glyph_mapper_only);
 
-extern int
-apc_gp_text_shape( Handle self, const char * lang, const char * text, int bytes, int flags, int n_glyphs, uint16_t * glyphs, uint16_t * char_offsets);
-
 /* gpi settings */
 extern Color
 apc_gp_get_back_color( Handle self);
