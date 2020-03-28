@@ -276,9 +276,10 @@ sub run_test
 	my $z = $w-> text_shape( "1" );
 	plan skip_all => "Shaping is not available" if defined $z && $z eq '0';
 
+	my %opt;
+	$opt{fribidi} = 1 if Prima::Application->get_system_value(sv::FriBidi);
 	if ( $unix ) {
-		my %opt = map { $_ => 1 } split ' ', Prima::Application->sys_action('shaper');
-		$opt{fribidi} = 1 if Prima::Application->get_system_value(sv::FriBidi);
+		%opt = (%opt, map { $_ => 1 } split ' ', Prima::Application->sys_action('shaper'));
 		if ( $opt{harfbuzz} && $opt{xft}) {
 			test_shaping($found, $opt{fribidi});
 		} elsif ( $opt{fribidi}) {
@@ -289,7 +290,7 @@ sub run_test
 			test_minimal;
 		}
 	} else {
-		test_shaping($found);
+		test_shaping($found, $opt{fribidi});
 	}
 }
 

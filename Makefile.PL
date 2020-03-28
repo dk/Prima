@@ -125,7 +125,7 @@ syntax:
 options:
     X11BASE           - path where X11 includes and libraries are installed
     WITH_XFT          - compile with/without Xft (default 1), X only
-    WITH_FRIBIDI      - compile with/without fribidi (default 1), X only
+    WITH_FRIBIDI      - compile with/without fribidi (default 1)
     WITH_HARFBUZZ     - compile with/without harfbuzz (default 1), X only
     WITH_ICONV        - compile with/without iconv (default 1), X only
     WITH_GTK2         - compile with/without GTK2 (default 1), X only
@@ -163,6 +163,7 @@ setup_exports();
 setup_defines();
 setup_dl_loadflags();
 setup_pkgconfig();
+setup_fribidi() if $cmd_options{WITH_FRIBIDI};
 setup_X11() if $unix;
 setup_xlibs() if $unix;
 setup_macosx() if $cmd_options{WITH_COCOA};
@@ -1580,7 +1581,6 @@ sub setup_xlibs
 	have_header( "X11/extensions/XShm.h", "X11/X.h", "X11/Xlib.h", "X11/Xutil.h");
 
 	setup_xft() if $cmd_options{WITH_XFT};
-	setup_fribidi() if $cmd_options{WITH_FRIBIDI};
 	setup_harfbuzz() if $cmd_options{WITH_HARFBUZZ};
 
 	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
@@ -1602,8 +1602,8 @@ sub setup_xlibs
 	}
 
 	printlog "Using Xft library\n" if $cmd_options{WITH_XFT};
-	printlog "Using fribidi library\n" if $cmd_options{WITH_HARFBUZZ};
-	printlog "Using harfbuzz library\n" if $cmd_options{WITH_FRIBIDI};
+	printlog "Using fribidi library\n" if $cmd_options{WITH_FRIBIDI};
+	printlog "Using harfbuzz library\n" if $cmd_options{WITH_HARFBUZZ};
 	printlog "Using iconv library\n" if $cmd_options{WITH_ICONV};
 	printlog "Using gtk2 library\n" if $cmd_options{WITH_GTK2};
 	printlog "Using gtk3 library\n" if $cmd_options{WITH_GTK3};
