@@ -164,73 +164,68 @@ typedef struct {
 } ScriptCacheKey;
 #pragma pack()
 
-int
-apc_gp_text_shape(
-	Handle self,
-	const char * lang,
-	const char * text, int len, int flags,
-	int max_glyphs, uint16_t * glyphs, int16_t * char_offsets
-)
-{objCheck 0;{
+static Bool
+win32_shaper( Handle self, PTextShapeRec t)
+{
+	Bool ok = false;
 	HRESULT hr;
-
-	WCHAR * wtext;
-	uint16_t * out_glyphs;
-	int16_t * out_char_offsets;
-	int i, item, item_step, nitems, ret = -1, total_glyphs = 0;
+	WCHAR * wtext = NULL;
+	uint16_t * out_clusters;
+	int i, item, item_step, nitems;
 	SCRIPT_CONTROL control;
 	SCRIPT_ITEM *items = NULL;
 	WORD *clusters = NULL;
 	SCRIPT_VISATTR *visuals = NULL;
 	unsigned int * surrogate_map = NULL, first_surrogate_pair = 0;
 
-	if ( !( sys tmPitchAndFamily & TMPF_TRUETYPE))
-		return -2;
+	if ((items = malloc(sizeof(SCRIPT_ITEM) * (t-> len + 1))) == NULL)
+		goto EXIT;
+	if ((clusters = malloc(sizeof(WORD) * t-> n_glyphs_max)) == NULL)
+		goto EXIT;
+	if ((visuals = malloc(sizeof(SCRIPT_VISATTR) * t-> n_glyphs_max)) == NULL)
+		goto EXIT;
+	if ((wtext = malloc(sizeof(WCHAR) * 2 * t->len)) == NULL)
+		goto EXIT;
 
-	if ( flags & toUTF8 ) {
-		int i, mb_len;
+	/* convert UTF-32 to UTF-16, mark surrogates XXX (test for them!) */
+	{
+		int i;
 		unsigned int index = 0, *curr = NULL;
-		WCHAR * wc;
-		wtext = alloc_utf8_to_wchar( text, len, &mb_len);
-		len = mb_len;
-		if ( !wtext )
-			return -1;
-		if ( char_offsets ) {
-			for ( i = 0, wc = wtext; i < mb_len; i++, wc++, index++) {
-				if ( *wc >= 0xD800 && *wc <= 0xDBFF ) {
-					if ( !surrogate_map ) {
-						first_surrogate_pair = i;
-						surrogate_map = malloc(sizeof(unsigned int*) * (mb_len - first_surrogate_pair));
-						if ( !surrogate_map ) goto EXIT;
-						curr = surrogate_map;
-					}
+		uint32_t *src;
+		WCHAR *dst;
+		for ( i = 0, src = t->text, dst = wtext; i < t->len; i++, index++) {
+			uint32_t c = *src++;
+			if ( c >= 0x10000 && c <= 0x10FFFF ) {
+				c -= 0x10000;
+				*(dst++) = 0xd800 + (c & 0x3ff);
+				*(dst++) = 0xdc00 + (c >> 10);
+				if ( !surrogate_map ) {
+					first_surrogate_pair = i;
+					surrogate_map = malloc(sizeof(unsigned int*) * (t-> len - first_surrogate_pair));
+					if ( !surrogate_map ) goto EXIT;
+					curr = surrogate_map;
+				}
+				*(curr++) = index;
+				*(curr++) = index;
+			} else {
+				if (( c >= 0xD800 && c <= 0xDFFF ) || ( c > 0x10FFFF )) c = 0;
+				if ( surrogate_map )
 					*(curr++) = index;
-					*(curr++) = index;
-				} else if ( surrogate_map ) 
-					*(curr++) = index;
+				*(dst++) = c;
 			}
 		}
-	} else
-		wtext = alloc_ascii_to_wchar( text, len);
-	if ( !wtext )
-		return -1;
-	if ((items = malloc(sizeof(SCRIPT_ITEM) * (len + 1))) == NULL)
-		goto EXIT;
-	if ((clusters = malloc(sizeof(WORD) * max_glyphs)) == NULL)
-		goto EXIT;
-	if ((visuals = malloc(sizeof(SCRIPT_VISATTR) * max_glyphs)) == NULL)
-		goto EXIT;
+	}
 
 	bzero(&control, sizeof(control));
-	control.uDefaultLanguage = lang ? langid(lang) : MAKELANGID (LANG_NEUTRAL, SUBLANG_NEUTRAL);
+	control.uDefaultLanguage = MAKELANGID (LANG_NEUTRAL, SUBLANG_NEUTRAL);
 
-	if ((hr = ScriptItemize(wtext, len, max_glyphs, &control, NULL, items, &nitems)) != S_OK) {
+	if ((hr = ScriptItemize(wtext, t->len, t->n_glyphs_max, &control, NULL, items, &nitems)) != S_OK) {
 		apiHErr(hr);
 		goto EXIT;
 	}
 	//printf("Itemize: %d\n", nitems);
 
-	if ( flags & toRTL ) {
+	if ( t->flags & toRTL ) {
 		item = nitems - 1;
 		item_step = -1;
 	} else {
@@ -239,12 +234,12 @@ apc_gp_text_shape(
 	}
 
 	for (
-		i = 0, out_char_offsets = char_offsets, out_glyphs = glyphs;
-		i < nitems; 
+		i = 0, out_clusters = t-> clusters;
+		i < nitems;
 		i++, item += item_step
 	) {
 		int j, itemlen, last_char, nglyphs;
-		WORD last_glyph;
+		int last_glyph;
 
 		SCRIPT_CACHE * script_cache;
 		ScriptCacheKey key = { sys fontResource->hfont, items[item].a.eScript };
@@ -257,48 +252,87 @@ apc_gp_text_shape(
 
 		itemlen = items[item+1].iCharPos - items[item].iCharPos;
 		//printf("shape(%d @ %d) len %d %s\n", item, items[item].iCharPos, itemlen, items[item].a.fRTL ? "RTL" : "LTR");
-		if (flags & toOverride)
-			items[item].a.fRTL = (flags & toRTL) ? 1 : 0;
 		if (( hr = ScriptShape(
 			sys ps, script_cache,
-			wtext + items[item].iCharPos, itemlen, max_glyphs,
+			wtext + items[item].iCharPos, itemlen, t->n_glyphs_max,
 			&items[item].a,
-			out_glyphs, clusters, visuals,
+			t->glyphs + t->n_glyphs, clusters, visuals,
 			&nglyphs
 		)) != S_OK) {
 			apiHErr(hr);
 			goto EXIT;
 		}
-		total_glyphs += nglyphs;
-		out_glyphs += nglyphs;
-
-		if ( !char_offsets ) continue;
-		for ( j = last_char = last_glyph = 0; j < itemlen; j++) {
-			int k, rlen = 1;
-			WORD curr_glyph = clusters[j];
-			last_char = j;
-			for ( k = j + 1; k < itemlen; k++) {
-				if ( clusters[k] == curr_glyph )
-					rlen++;
-				else
-					break;
+//#define _DEBUG
+#ifdef _DEBUG
+		{
+			int i;
+			printf("shape input %d: ", item);
+			for ( i = 0; i < itemlen; i++) {
+				printf("%x ", *(wtext + items[item].iCharPos + i));
 			}
-			for ( ; last_glyph <= curr_glyph; last_glyph++)
-				out_char_offsets[last_glyph] = j + items[item].iCharPos;
-			j += rlen - 1;
+			printf("\n");
+			printf("shape output: ");
+			for ( i = 0; i < nglyphs; i++) {
+				printf("%d(%x) ", clusters[i], t->glyphs[t->n_glyphs + i]);
+			}
+			printf("\n");
 		}
-		for ( ; last_glyph < nglyphs; last_glyph++)
-			out_char_offsets[last_glyph] = last_char + items[item].iCharPos;
+#endif
 
-		for ( j = 0; j < nglyphs; j++, out_char_offsets++) {
-			if ( surrogate_map && *out_char_offsets >= first_surrogate_pair )
-				*out_char_offsets = surrogate_map[*out_char_offsets - first_surrogate_pair];
-			if (items[item].a.fRTL)
-				*out_char_offsets = - *out_char_offsets  - 1;
+		if (items[item].a.fRTL) {
+			for ( j = last_char = 0, last_glyph = nglyphs - 1; j < itemlen; j++) {
+				int k, rlen = 1;
+				WORD curr_glyph = clusters[j];
+				last_char = j;
+				for ( k = j + 1; k < itemlen; k++) {
+					if ( clusters[k] == curr_glyph )
+						rlen++;
+					else
+						break;
+				}
+				for ( ; last_glyph >= curr_glyph; last_glyph--) 
+					out_clusters[last_glyph] = j + items[item].iCharPos;
+				j += rlen - 1;
+			}
+			for ( ; last_glyph >= 0; last_glyph--)
+				out_clusters[last_glyph] = last_char + items[item].iCharPos;
+		} else {
+			for ( j = last_char = last_glyph = 0; j < itemlen; j++) {
+				int k, rlen = 1;
+				WORD curr_glyph = clusters[j];
+				last_char = j;
+				for ( k = j + 1; k < itemlen; k++) {
+					if ( clusters[k] == curr_glyph )
+						rlen++;
+					else
+						break;
+				}
+				for ( ; last_glyph <= curr_glyph; last_glyph++) 
+					out_clusters[last_glyph] = j + items[item].iCharPos;
+				j += rlen - 1;
+			}
+			for ( ; last_glyph < nglyphs; last_glyph++)
+				out_clusters[last_glyph] = last_char + items[item].iCharPos;
 		}
+#ifdef _DEBUG
+		{
+			int i;
+			printf("clusters: ");
+			for ( i = 0; i < nglyphs; i++) {
+				printf("%d ", out_clusters[i]);
+			}
+			printf("\n");
+		}
+#endif
+
+		for ( j = 0; j < nglyphs; j++, out_clusters++) {
+			if ( surrogate_map && *out_clusters >= first_surrogate_pair )
+				*out_clusters = surrogate_map[*out_clusters - first_surrogate_pair];
+		}
+		t-> n_glyphs += nglyphs;
 	}
 
-	ret = total_glyphs;
+	ok = true;
 
 EXIT:
 	if ( surrogate_map  ) free(surrogate_map);
@@ -306,9 +340,17 @@ EXIT:
 	if ( visuals  ) free(visuals);
 	if ( items    ) free(items);
 	if ( wtext    ) free(wtext);
+	return ok;
+}
 
-	return ret;
-}}
+PTextShapeFunc
+apc_gp_text_get_shaper( Handle self, Bool * glyph_mapper_only)
+{
+	if ( !( sys tmPitchAndFamily & TMPF_TRUETYPE))
+		return NULL;
+	*glyph_mapper_only = false;
+	return win32_shaper;
+}
 
 #define TM(field) to->field = from->field
 void
@@ -532,6 +574,11 @@ static Handle ipa_extensions_ranges[] = {
 	0x001D80 , 0x001DBF, //    Phonetic Extensions Supplement
 };
 
+static Handle spacing_modifier_letters_ranges[] = {
+	0x0002B0 , 0x0002FF, // 5 Spacing Modifier Letters
+	0x00A700 , 0x00A71F, //    Modifier Tone Letters
+};
+
 static Handle combining_diacritical_marks_ranges[] = {
 	0x000300 , 0x00036F, // 6 Combining Diacritical Marks
 	0x001DC0 , 0x001DFF, //    Combining Diacritical Marks Supplement
@@ -572,9 +619,21 @@ static Handle arrows_ranges[] = {
 	0x002B00 , 0x002BFF, //    Miscellaneous Symbols and Arrows
 };
 
+static Handle mathematical_operators_ranges[] = {
+	0x002200 , 0x0022FF, // 38 Mathematical Operators
+	0x0027C0 , 0x0027EF, //    Miscellaneous Mathematical Symbols-A
+	0x002980 , 0x0029FF, //    Miscellaneous Mathematical Symbols-B
+	0x002A00 , 0x002AFF, //    Supplemental Mathematical Operators
+};
+
 static Handle katakana_ranges[] = {
 	0x0030A0 , 0x0030FF, // 50 Katakana
 	0x0031F0 , 0x0031FF, //    Katakana Phonetic Extensions
+};
+
+static Handle bopomofo_ranges[] = {
+	0x003100 , 0x00312F, // 51 Bopomofo
+	0x0031A0 , 0x0031BF, //    Bopomofo Extended
 };
 
 static Handle cjk_radicals_supplement_ranges[] = {
@@ -614,6 +673,13 @@ static Handle yi_syllables_ranges[] = {
 	0x00A490 , 0x00A4CF, //    Yi Radicals
 };
 
+static Handle tagalog_ranges[] = {
+	0x001700 , 0x00171F, // 84 Tagalog
+	0x001720 , 0x00173F, //    Hanunoo
+	0x001740 , 0x00175F, //    Buhid
+	0x001760 , 0x00177F, //    Tagbanwa
+};
+
 static Handle byzantine_musical_symbols_ranges[] = {
 	0x01D000 , 0x01D0FF, // 88 Byzantine Musical Symbols
 	0x01D100 , 0x01D1FF, //    Musical Symbols
@@ -623,6 +689,11 @@ static Handle byzantine_musical_symbols_ranges[] = {
 static Handle private_use__plane_15__ranges[] = {
 	0x0FF000 , 0x0FFFFD, // 90 Private Use (plane 15)
 	0x100000 , 0x10FFFD, //    Private Use (plane 16)
+};
+
+static Handle variation_selectors_ranges[] = {
+	0x00FE00 , 0x00FE0F, // 91 Variation Selectors
+	0x0E0100 , 0x0E01EF, //    Variation Selectors Supplement
 };
 
 static Handle linear_b_syllabary_ranges[] = {
@@ -642,6 +713,11 @@ static Handle lycian_ranges[] = {
 	0x010920 , 0x01093F, //    Lydian
 };
 
+static Handle mahjong_tiles_ranges[] = {
+	0x01F000 , 0x01F02F, // 122 Mahjong Tiles
+	0x01F030 , 0x01F09F, //    Domino Tiles
+};
+
 #define SUBRANGES 123
 
 static Handle unicode_subranges[SUBRANGES * 2] = {
@@ -650,14 +726,15 @@ static Handle unicode_subranges[SUBRANGES * 2] = {
 	0x000100 , 0x00017F, // 2 Latin Extended-A
 	0x000180 , 0x00024F, // 3 Latin Extended-B
 	3        , (Handle) &ipa_extensions_ranges, // 4 
-	2        , (Handle) &combining_diacritical_marks_ranges, // 7 
+	2        , (Handle) &spacing_modifier_letters_ranges, // 5 
+	2        , (Handle) &combining_diacritical_marks_ranges, // 6 
 	0x000370 , 0x0003FF, // 7 Greek and Coptic
 	0x002C80 , 0x002CFF, // 8 Coptic
-	4        , (Handle) &cyrillic_ranges, // 10 
+	4        , (Handle) &cyrillic_ranges, // 9 
 	0x000530 , 0x00058F, // 10 Armenian
 	0x000590 , 0x0005FF, // 11 Hebrew
 	0x00A500 , 0x00A63F, // 12 Vai
-	2        , (Handle) &arabic_ranges, // 14 
+	2        , (Handle) &arabic_ranges, // 13 
 	0x0007C0 , 0x0007FF, // 14 NKo
 	0x000900 , 0x00097F, // 15 Devanagari
 	0x000980 , 0x0009FF, // 16 Bangla
@@ -670,18 +747,19 @@ static Handle unicode_subranges[SUBRANGES * 2] = {
 	0x000D00 , 0x000D7F, // 23 Malayalam
 	0x000E00 , 0x000E7F, // 24 Thai
 	0x000E80 , 0x000EFF, // 25 Lao
-	2        , (Handle) &georgian_ranges, // 27 
+	2        , (Handle) &georgian_ranges, // 26 
 	0x001B00 , 0x001B7F, // 27 Balinese
 	0x001100 , 0x0011FF, // 28 Hangul Jamo
-	3        , (Handle) &latin_extended_additional_ranges, // 30 
+	3        , (Handle) &latin_extended_additional_ranges, // 29 
 	0x001F00 , 0x001FFF, // 30 Greek Extended
-	2        , (Handle) &general_punctuation_ranges, // 32 
+	2        , (Handle) &general_punctuation_ranges, // 31 
 	0x002070 , 0x00209F, // 32 Superscripts And Subscripts
 	0x0020A0 , 0x0020CF, // 33 Currency Symbols
 	0x0020D0 , 0x0020FF, // 34 Combining Diacritical Marks For Symbols
 	0x002100 , 0x00214F, // 35 Letterlike Symbols
 	0x002150 , 0x00218F, // 36 Number Forms
 	4        , (Handle) &arrows_ranges, // 37 
+	4        , (Handle) &mathematical_operators_ranges, // 38 
 	0x002300 , 0x0023FF, // 39 Miscellaneous Technical
 	0x002400 , 0x00243F, // 40 Control Pictures
 	0x002440 , 0x00245F, // 41 Optical Character Recognition
@@ -694,6 +772,7 @@ static Handle unicode_subranges[SUBRANGES * 2] = {
 	0x003000 , 0x00303F, // 48 CJK Symbols And Punctuation
 	0x003040 , 0x00309F, // 49 Hiragana
 	2        , (Handle) &katakana_ranges, // 50 
+	2        , (Handle) &bopomofo_ranges, // 51 
 	0x003130 , 0x00318F, // 52 Hangul Compatibility Jamo
 	0x00A840 , 0x00A87F, // 53 Phags-pa
 	0x003200 , 0x0032FF, // 54 Enclosed CJK Letters And Months
@@ -701,13 +780,13 @@ static Handle unicode_subranges[SUBRANGES * 2] = {
 	0x00AC00 , 0x00D7AF, // 56 Hangul Syllables
 	0x00D800 , 0x00DFFF, // 57 Non-Plane 0. Note that setting this bit implies that there is at least one supplementary code point beyond the Basic Multilingual Plane (BMP) that is supported by this font. See Surrogates and Supplementary Characters.
 	0x010900 , 0x01091F, // 58 Phoenician
-	7        , (Handle) &cjk_radicals_supplement_ranges, // 60 
+	7        , (Handle) &cjk_radicals_supplement_ranges, // 59 
 	0x00E000 , 0x00F8FF, // 60 Private Use Area
-	3        , (Handle) &cjk_strokes_ranges, // 62 
+	3        , (Handle) &cjk_strokes_ranges, // 61 
 	0x00FB00 , 0x00FB4F, // 62 Alphabetic Presentation Forms
 	0x00FB50 , 0x00FDFF, // 63 Arabic Presentation Forms-A
 	0x00FE20 , 0x00FE2F, // 64 Combining Half Marks
-	2        , (Handle) &vertical_forms_ranges, // 66 
+	2        , (Handle) &vertical_forms_ranges, // 65 
 	0x00FE50 , 0x00FE6F, // 66 Small Form Variants
 	0x00FE70 , 0x00FEFF, // 67 Arabic Presentation Forms-B
 	0x00FF00 , 0x00FFEF, // 68 Halfwidth And Fullwidth Forms
@@ -717,21 +796,23 @@ static Handle unicode_subranges[SUBRANGES * 2] = {
 	0x000780 , 0x0007BF, // 72 Thaana
 	0x000D80 , 0x000DFF, // 73 Sinhala
 	0x001000 , 0x00109F, // 74 Myanmar
-	3        , (Handle) &ethiopic_ranges, // 76 
+	3        , (Handle) &ethiopic_ranges, // 75 
 	0x0013A0 , 0x0013FF, // 76 Cherokee
 	0x001400 , 0x00167F, // 77 Unified Canadian Aboriginal Syllabics
 	0x001680 , 0x00169F, // 78 Ogham
 	0x0016A0 , 0x0016FF, // 79 Runic
-	2        , (Handle) &khmer_ranges, // 81 
+	2        , (Handle) &khmer_ranges, // 80 
 	0x001800 , 0x0018AF, // 81 Mongolian
 	0x002800 , 0x0028FF, // 82 Braille Patterns
 	2        , (Handle) &yi_syllables_ranges, // 83 
+	4        , (Handle) &tagalog_ranges, // 84 
 	0x010300 , 0x01032F, // 85 Old Italic
 	0x010330 , 0x01034F, // 86 Gothic
 	0x010400 , 0x01044F, // 87 Deseret
-	3        , (Handle) &byzantine_musical_symbols_ranges, // 89 
+	3        , (Handle) &byzantine_musical_symbols_ranges, // 88 
 	0x01D400 , 0x01D7FF, // 89 Mathematical Alphanumeric Symbols
 	2        , (Handle) &private_use__plane_15__ranges, // 90 
+	2        , (Handle) &variation_selectors_ranges, // 91 
 	0x0E0000 , 0x0E007F, // 92 Tags
 	0x001900 , 0x00194F, // 93 Limbu
 	0x001950 , 0x00197F, // 94 Tai Le
@@ -741,7 +822,7 @@ static Handle unicode_subranges[SUBRANGES * 2] = {
 	0x002D30 , 0x002D7F, // 98 Tifinagh
 	0x004DC0 , 0x004DFF, // 99 Yijing Hexagram Symbols
 	0x00A800 , 0x00A82F, // 100 Syloti Nagri
-	3        , (Handle) &linear_b_syllabary_ranges, // 102 
+	3        , (Handle) &linear_b_syllabary_ranges, // 101 
 	0x010140 , 0x01018F, // 102 Ancient Greek Numbers
 	0x010380 , 0x01039F, // 103 Ugaritic
 	0x0103A0 , 0x0103DF, // 104 Old Persian
@@ -750,7 +831,7 @@ static Handle unicode_subranges[SUBRANGES * 2] = {
 	0x010800 , 0x01083F, // 107 Cypriot Syllabary
 	0x010A00 , 0x010A5F, // 108 Kharoshthi
 	0x01D300 , 0x01D35F, // 109 Tai Xuan Jing Symbols
-	2        , (Handle) &cuneiform_ranges, // 111 
+	2        , (Handle) &cuneiform_ranges, // 110 
 	0x01D360 , 0x01D37F, // 111 Counting Rod Numerals
 	0x001B80 , 0x001BBF, // 112 Sundanese
 	0x001C00 , 0x001C4F, // 113 Lepcha
@@ -762,8 +843,8 @@ static Handle unicode_subranges[SUBRANGES * 2] = {
 	0x010190 , 0x0101CF, // 119 Ancient Symbols
 	0x0101D0 , 0x0101FF, // 120 Phaistos Disc
 	3        , (Handle) &lycian_ranges, // 121 
+	2        , (Handle) &mahjong_tiles_ranges, // 122 
 };
-
 
 static Handle ctx_CHARSET2index[] = {
 	// SHIFTJIS_CHARSET   ??

@@ -10,7 +10,6 @@ use warnings;
 use Test::More;
 use Prima::Test;
 use Prima::Application;
-use Data::Dumper;
 
 my $w;
 my $z;
@@ -21,9 +20,9 @@ sub xtr($)
 {
 	my $xtr = shift;
 
-	$xtr =~ tr[A-Z][\N{U+5d0}-\N{U+5e8}];
+	$xtr =~ tr[A-Z][\N{U+5d0}-\N{U+5e8}]; # hebrew
 	# RTL(|/) ligates to %, with ZWJ (fribidi) or without (harfbuzz)
-	$xtr =~ tr[|/%0][\x{627}\x{644}\x{fefb}\x{feff}];
+	$xtr =~ tr[|/%0][\x{627}\x{644}\x{fefb}\x{feff}]; 
 	$xtr =~ tr[+-][\x{200d}\x{200c}];
 
 	return $xtr;
@@ -127,7 +126,7 @@ sub find_char
 	return $found;
 }
 
-# try to find font with arabic and hebrew letters
+# try to find font with given letters
 # aim at highest standard, ie ttf/xft + scaling + bidi fonts
 sub find_vector_font
 {
@@ -272,7 +271,7 @@ sub run_test
 	my $unix = shift;
 
 	$w = Prima::DeviceBitmap-> create( type => dbt::Pixmap, width => 32, height => 32);
-	my $found = find_vector_font(0x631); # arabic
+	my $found = find_vector_font(0x5d0); # A-Z mapped to hebrew
 
 	my $z = $w-> text_shape( "1" );
 	plan skip_all => "Shaping is not available" if defined $z && $z eq '0';
