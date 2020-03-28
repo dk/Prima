@@ -458,6 +458,8 @@ EXIT:
 	return ok;
 }
 
+#ifdef WITH_FRIBIDI
+
 /* call glyph mapper with fribidi prefiltering and shaping */
 static Bool
 shape_bidi_full(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
@@ -543,7 +545,7 @@ shape_bidi_full(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
 static Bool
 shape_bidi_and_apc(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
 {
-	Bool ok;
+	Bool ok = false;
 	Byte *buf, *ptr;
 	int i, sz, mlen;
 	FriBidiFlags _flags = FRIBIDI_FLAGS_DEFAULT;
@@ -746,6 +748,9 @@ shape_bidi_and_apc(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
 	return ok;
 }
 
+#endif 
+/* WITH_FRIBIDI */
+
 static DrawableShaperFunc*
 find_shaper(Bool glyph_mapper_only)
 {
@@ -769,7 +774,11 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	dPROFILE;
 	gpARGS;
 	int i;
-	SV * ret = nilSV, *sv_glyphs, *sv_clusters, *sv_coords, *sv_advances;
+	SV * ret = nilSV, 
+		*sv_glyphs = nilSV,
+		*sv_clusters = nilSV,
+		*sv_coords = nilSV,
+		*sv_advances = nilSV;
 	PTextShapeFunc system_shaper;
 	DrawableShaperFunc* drawable_shaper;
 	TextShapeRec t;
@@ -785,6 +794,8 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		return ret;
 	}
 
+	bzero(&t, sizeof(t));
+
 	/* asserts */
 #ifdef WITH_FRIBIDI
 	if ( use_fribidi && sizeof(FriBidiLevel) != 1) {
@@ -799,7 +810,6 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	drawable_shaper = find_shaper(glyph_mapper_only);
 
 	/* allocate buffers */
-	bzero(&t, sizeof(t));
 	if (!(t.text = sv2unicode(text_sv, &t.len, &t.flags)))
 		goto EXIT;
 
@@ -827,6 +837,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	ALLOC(clusters,1);
 	if ( glyph_mapper_only ) {
 		sv_coords = sv_advances = nilSV;
+		t.coords = t.advances = NULL;
 	} else {
 		ALLOC(coords,2);
 		ALLOC(advances,1);
@@ -1155,7 +1166,7 @@ fill_tilde_properties(Handle self, TextWrapRec * t, int tildePos, int tildeOffse
 	t-> t_char = t-> text + tildePos + 1;
 	if ( t-> utf8_text) {
 		STRLEN len;
-		prima_utf8_uvchr_end(t-> t_char, t->text + t-> textLen, &len);
+		uv = prima_utf8_uvchr_end(t-> t_char, t->text + t-> textLen, &len);
 		if ( len == 0 ) return;
 	} else
 		uv = *(t->t_char);
