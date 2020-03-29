@@ -15,6 +15,7 @@ my $w;
 my $z;
 
 my %glyphs;
+my $high_unicode_char;
 
 sub xtr($)
 {
@@ -24,6 +25,7 @@ sub xtr($)
 	# RTL(|/) ligates to %, with ZWJ (fribidi) or without (harfbuzz)
 	$xtr =~ tr[|/%0][\x{627}\x{644}\x{fefb}\x{feff}]; 
 	$xtr =~ tr[+-][\x{200d}\x{200c}];
+	$xtr =~ s[\^][$high_unicode_char]g if defined $high_unicode_char;
 
 	return $xtr;
 }
@@ -132,9 +134,9 @@ sub t2
 					goto AGAIN;
 				}
 				if ($_ & to::RTL) {
-					$char = "(+$char)" if $char !~ /[A-Z\/\|\%0\+\-\.\s\?\`\<\>]/;
+					$char = "(+$char)" if $char !~ /[A-Z\/\|\%0\+\-\.\s\?\`\<\>\^]/;
 				} else {
-					$char = "(-$char)" if $char !~ /[a-z\+\-\.\s\"\d]/;
+					$char = "(-$char)" if $char !~ /[a-z\+\-\.\s\"\d\^]/;
 				}
 			}
 			$char
@@ -166,6 +168,35 @@ sub find_char
 		$found = 1, last if $l <= $char && $r >= $char;
 	}
 	return $found;
+}
+
+sub find_high_unicode_char
+{
+	my ($font) = @_;
+	$w->font($font);
+	my @r = @{ $w->get_font_ranges };
+	my @range;
+	my $found;
+	for ( my $i = 0; $i < @r; $i += 2 ) {
+		my ( $l, $r ) = @r[$i, $i+1];
+		next unless $r >= 0x10000;
+		$l = 0x10000 if $l < 0x10000;
+		push @range, $l .. $r;
+		return \@range;
+	}
+	return undef;
+}
+
+sub find_high_unicode_font
+{
+	return 1 if find_high_unicode_char($w->font);
+	my @f = @{$::application->fonts};
+	for my $f ( @f ) {
+		next unless $f->{vector};
+		my $c = find_high_unicode_char($f);
+		return $c if defined $c;
+	}
+	return undef;
 }
 
 # try to find font with given letters
@@ -289,18 +320,41 @@ sub test_shaping
 				check_proper_bidi();
 			}
 		}
-	
+
 		SKIP: {
 			skip("no devanagari font", 1) unless find_vector_font(0x924);
 			my $z = $w-> text_shape("\x{924}\x{94d}\x{928}");
 			ok( $z && scalar(grep {$_} @{$z->glyphs}), 'devanagari shaping');
 		}
-		
+
 		SKIP: {
 			skip("no khmer font", 1) unless find_vector_font(0x179f);
 			my $z = $w-> text_shape("\x{179f}\x{17b9}\x{1784}\x{17d2}");
 			ok( $z && scalar(grep {$_} @{$z->glyphs}), 'khmer shaping');
 		}
+	}
+}
+
+sub test_utf16_surrogates
+{
+	ok(1, "win32: utf16 surrogates");
+
+	SKIP: {
+		my $chars = find_high_unicode_font;
+		skip("win32: no fonts with characters above 0x10000", 1) unless $chars && @$chars;
+		#splice(@$chars, 256); # win32 reports empty glyphs as available, but surely in 256 should be at least one valid glyph
+
+		my $char;
+		%glyphs = ();
+        	for my $c (@$chars) {
+		        my $k = $w-> text_shape(chr($c));
+        	        next unless $k && $k->glyphs->[0];
+			$high_unicode_char = chr($char = $c); # as ^
+        	        $glyphs{$high_unicode_char} = $k->glyphs->[0];
+			last;
+        	}
+		skip("win32: text shaping is not available", 1) unless defined $char;
+		t("^^", "^^", sprintf("win32: found char U+%x in " . $w->font->name . " as glyph %x", $char, $glyphs{$high_unicode_char}));
 	}
 }
 
@@ -329,6 +383,7 @@ sub run_test
 		}
 	} else {
 		test_shaping($found, $opt{fribidi});
+		test_utf16_surrogates();
 	}
 }
 

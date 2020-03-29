@@ -11,7 +11,6 @@ extern Bool   use_fribidi;
 extern "C" {
 #endif
 
-
 #undef my
 #define inherited CComponent->
 #define my  ((( PDrawable) self)-> self)
@@ -295,13 +294,13 @@ bidi_reorder(PTextShapeRec t, Bool arabic_shaping)
 
 #if FRIBIDI_INTERFACE_VERSION > 3
 	fribidi_get_bracket_types(t->text, t->len, types, bracket_types);
-	fribidi_get_par_embedding_levels_ex(
+	if ( !fribidi_get_par_embedding_levels_ex(
 		types, bracket_types, t->len, &base_dir,
-		(FriBidiLevel*)t->analysis);
+		(FriBidiLevel*)t->analysis)) goto FAIL;
 #else
-	fribidi_get_par_embedding_levels(
+	if ( !fribidi_get_par_embedding_levels(
 		types, t->len, &base_dir,
-		(FriBidiLevel*)t->analysis);
+		(FriBidiLevel*)t->analysis)) goto FAIL;
 #endif
 	if ( arabic_shaping ) {
 		flags |= FRIBIDI_FLAGS_ARABIC;
@@ -312,14 +311,19 @@ bidi_reorder(PTextShapeRec t, Bool arabic_shaping)
 
 	for ( i = 0; i < t->len; i++)
 		v2l[i] = i;
-    	fribidi_reorder_line(flags, types, t->len, 0, 
-		base_dir, (FriBidiLevel*)t->analysis, t->text, v2l);
+    	if ( !fribidi_reorder_line(flags, types, t->len, 0,
+		base_dir, (FriBidiLevel*)t->analysis, t->text, v2l))
+		goto FAIL;
 	for ( i = 0; i < t->len; i++)
 		t->v2l[i] = v2l[i];
 	t-> flags = (base_dir == FRIBIDI_PAR_RTL) ? toRTL : 0;
 	free( buf );
 
 	return true;
+
+FAIL:
+	free( buf );
+	return false;
 }
 
 #endif
@@ -447,7 +451,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		gpENTER(nilSV);
 		ret = sv_call_perl(text_sv, "text_shape", "<HSS", self, text_sv, ref);
 		gpLEAVE;
-		sv_free(ref);
+		sv_free(ret);
 		return ret;
 	}
 
@@ -798,7 +802,7 @@ add_wrapped_text(
 
 static int
 find_tilde_position( TextWrapRec * t )
-{	
+{
 	int i, tildeIndex = -100;
 
 	for ( i = 0; i < t-> textLen - 1; i++)
