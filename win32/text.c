@@ -164,6 +164,7 @@ typedef struct {
 } ScriptCacheKey;
 #pragma pack()
 
+/* XXX read coordinates */
 static Bool
 win32_shaper( Handle self, PTextShapeRec t)
 {
@@ -171,7 +172,7 @@ win32_shaper( Handle self, PTextShapeRec t)
 	HRESULT hr;
 	WCHAR * wtext = NULL;
 	uint16_t * out_clusters;
-	int i, item, item_step, nitems;
+	int i, item, item_step, nitems, wlen;
 	SCRIPT_CONTROL control;
 	SCRIPT_ITEM *items = NULL;
 	WORD *clusters = NULL;
@@ -187,13 +188,13 @@ win32_shaper( Handle self, PTextShapeRec t)
 	if ((wtext = malloc(sizeof(WCHAR) * 2 * t->len)) == NULL)
 		goto EXIT;
 
-	/* convert UTF-32 to UTF-16, mark surrogates XXX (test for them!) */
+	/* convert UTF-32 to UTF-16, mark surrogates */
 	{
 		int i;
 		unsigned int index = 0, *curr = NULL;
 		uint32_t *src;
 		WCHAR *dst;
-		for ( i = 0, src = t->text, dst = wtext; i < t->len; i++, index++) {
+		for ( i = wlen = 0, src = t->text, dst = wtext; i < t->len; i++, index++) {
 			uint32_t c = *src++;
 			if ( c >= 0x10000 && c <= 0x10FFFF ) {
 				c -= 0x10000;
@@ -207,11 +208,13 @@ win32_shaper( Handle self, PTextShapeRec t)
 				}
 				*(curr++) = index;
 				*(curr++) = index;
+				wlen += 2;
 			} else {
 				if (( c >= 0xD800 && c <= 0xDFFF ) || ( c > 0x10FFFF )) c = 0;
 				if ( surrogate_map )
 					*(curr++) = index;
 				*(dst++) = c;
+				wlen++;
 			}
 		}
 	}
@@ -219,7 +222,7 @@ win32_shaper( Handle self, PTextShapeRec t)
 	bzero(&control, sizeof(control));
 	control.uDefaultLanguage = MAKELANGID (LANG_NEUTRAL, SUBLANG_NEUTRAL);
 
-	if ((hr = ScriptItemize(wtext, t->len, t->n_glyphs_max, &control, NULL, items, &nitems)) != S_OK) {
+	if ((hr = ScriptItemize(wtext, wlen, t->n_glyphs_max, &control, NULL, items, &nitems)) != S_OK) {
 		apiHErr(hr);
 		goto EXIT;
 	}
@@ -251,6 +254,7 @@ win32_shaper( Handle self, PTextShapeRec t)
 		}
 
 		itemlen = items[item+1].iCharPos - items[item].iCharPos;
+		items[item].a.fRTL = (t->flags & toRTL) ? 1 : 0;
 		//printf("shape(%d @ %d) len %d %s\n", item, items[item].iCharPos, itemlen, items[item].a.fRTL ? "RTL" : "LTR");
 		if (( hr = ScriptShape(
 			sys ps, script_cache,
@@ -262,7 +266,6 @@ win32_shaper( Handle self, PTextShapeRec t)
 			apiHErr(hr);
 			goto EXIT;
 		}
-//#define _DEBUG
 #ifdef _DEBUG
 		{
 			int i;
@@ -325,11 +328,28 @@ win32_shaper( Handle self, PTextShapeRec t)
 		}
 #endif
 
-		for ( j = 0; j < nglyphs; j++, out_clusters++) {
-			if ( surrogate_map && *out_clusters >= first_surrogate_pair )
-				*out_clusters = surrogate_map[*out_clusters - first_surrogate_pair];
+		/* map from utf16 */
+		if ( surrogate_map ) {
+			int k, loops = nglyphs;
+			uint16_t * out_glyphs = t-> glyphs + t-> n_glyphs;
+			for ( j = k = 0; j < loops; j++) {
+				if ( k < j) {
+					out_glyphs[k] = out_glyphs[j];
+				}
+				if ( surrogate_map && out_clusters[j] >= first_surrogate_pair) {
+					out_clusters[k] = surrogate_map[out_clusters[j] - first_surrogate_pair];
+					if ( j & 1 ) {
+						k++;
+						nglyphs--;
+					}
+				} else {
+					out_clusters[k] = out_clusters[j];
+					k++;
+				}
+			}
 		}
 		t-> n_glyphs += nglyphs;
+		out_clusters += nglyphs;
 	}
 
 	ok = true;
