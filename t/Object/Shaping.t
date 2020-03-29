@@ -4,6 +4,7 @@ use warnings;
 # script
 # FRIBIDI_PAR_ON
 # text-out
+# text-wrap
 
 use Test::More;
 use Prima::Test;

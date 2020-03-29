@@ -20,6 +20,81 @@ extern "C" {
 #define gpENTER(fail)     if ( !inPaint) if ( !my-> begin_paint_info( self)) return (fail)
 #define gpLEAVE           if ( !inPaint) my-> end_paint_info( self)
 
+
+static void*
+read_subarray( AV * av, int index, int length_expected, int * plen, const char * caller, const char * subarray )
+{
+	SV ** holder;
+	void * ref;
+	size_t length;
+	char * letter;
+	holder = av_fetch(av, index, 0);
+
+	if (
+		!holder ||
+		!*holder ||
+		!SvOK(*holder)
+	) {
+		warn("invalid subarray #%d (%s) passed to %s", index, subarray, caller);
+		return NULL;
+	}
+
+	if ( !prima_array_parse( *holder, &ref, &length, &letter)) {
+		warn("invalid subarray #%d (%s) passed to %s: %s", index, subarray, caller, "not a Prima::array");
+		return NULL;
+	}
+
+	if (*letter != 'S') {
+		warn("invalid subarray #%d (%s/%c) passed to %s: %s", index, subarray, *letter, caller, "not a Prima::array of 16-bit integers");
+		return NULL;
+	}
+
+	if ( length_expected >= 0 && length < length_expected ) {
+		warn("invalid subarray #%d (%s) passed to %s: length must be at least %d", index, subarray, caller, length_expected);
+		return NULL;
+	}
+	if ( plen ) *plen = length;
+	return ref;
+}
+
+static Bool
+read_glyphs( PGlyphsOutRec t, SV * text, const char * caller)
+{
+	int len;
+	AV* av;
+	/* assuming caller checked for SvTYPE( SvRV( text)) == SVt_PVAV */
+
+	av  = (AV*) SvRV(text);
+	len = av_len(av) + 1;
+
+	bzero(t, sizeof(GlyphsOutRec));
+	if ( len < 1 ) {
+		warn("malformed glyphs array in %s", caller);
+		return false;
+	}
+
+	if ( len > 4 ) len = 4; /* we don't need more */
+
+	if ( !( t-> glyphs = read_subarray( av, 0, -1, &t->len, caller, "glyphs")))
+		return false;
+	if ( t->len == 0 )
+		return false;
+
+	switch ( len ) {
+	case 4:
+		if ( !( t-> positions = read_subarray( av, 3, t->len * 2, NULL, caller, "positions")))
+			return false;
+	case 3:
+		if ( !( t-> advances = read_subarray( av, 2, t->len, NULL, caller, "advances")))
+			return false;
+	case 2:
+		if ( !( t-> clusters = read_subarray( av, 1, t->len, NULL, caller, "clusters")))
+			return false;
+	}
+
+	return true;
+}
+
 Bool
 Drawable_text_out( Handle self, SV * text, int x, int y)
 {
@@ -32,18 +107,11 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 		ok = apc_gp_text_out( self, c_text, x, y, dlen, utf8 ? toUTF8 : 0);
 		if ( !ok) perl_error();
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
-		int n_glyphs;
-		void * glyphs;
-		Bool do_free;
-	
-		if ( !( glyphs = prima_read_array(
-			text, "Drawable::text_out",
-			's', 1, 1, -1, &n_glyphs, &do_free)))
+		GlyphsOutRec t;
+		if (!read_glyphs(&t, text, "Drawable::text_out"))
 			return false;
-
-		ok = apc_gp_text_out( self, (char*)glyphs, x, y, n_glyphs, toGlyphs);
+		ok = apc_gp_glyphs_out( self, &t, x, y);
 		if ( !ok) perl_error();
-		if ( do_free ) free(glyphs);
 	} else {
 		SV * ret = sv_call_perl(text, "text_out", "<Hii", self, x, y);
 		ok = ret && SvTRUE(ret);
@@ -53,7 +121,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 
 static void*
 warn_malloc(ssize_t size)
-{	
+{
 	void * ret;
 	if (!(ret = malloc(size))) {
 		warn("Drawable.text_shape: not enough memory");
@@ -572,22 +640,12 @@ Drawable_get_text_width( Handle self, SV * text, int flags)
 		res = apc_gp_get_text_width( self, c_text, dlen, flags);
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
-		int n_glyphs;
-		void * glyphs;
-		Bool do_free;
-
-		gpENTER(0);
-		if ( !( glyphs = prima_read_array(
-			text, "Drawable::get_text_width",
-			's', 1, 1, -1, &n_glyphs, &do_free))) {
-			gpLEAVE;
+		GlyphsOutRec t;
+		if (!read_glyphs(&t, text, "Drawable::get_text_width"))
 			return false;
-		}
-
-		flags &= ~toUTF8;
-		res = apc_gp_get_text_width( self, (char*) glyphs, n_glyphs, flags | toGlyphs );
+		gpENTER(0);
+		res = apc_gp_get_glyphs_width( self, &t);
 		gpLEAVE;
-		if ( do_free ) free(glyphs);
 	} else {
 		SV * ret;
 		gpENTER(0);
@@ -620,23 +678,12 @@ Drawable_get_text_box( Handle self, SV * text, int flags )
 		p = apc_gp_get_text_box( self, c_text, dlen, flags);
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
-		int n_glyphs;
-		void * glyphs;
-		Bool do_free;
-	
-		gpENTER( newRV_noinc(( SV *) newAV()));
-		if ( !( glyphs = prima_read_array(
-			text, "Drawable::get_text_box",
-			's', 1, 1, -1, &n_glyphs, &do_free))) {
-			gpLEAVE;
+		GlyphsOutRec t;
+		if (!read_glyphs(&t, text, "Drawable::get_text_box"))
 			return false;
-		}
-
-		flags &= ~toUTF8;
-		p = apc_gp_get_text_box( self, (char*) glyphs, n_glyphs, flags | toGlyphs );
+		gpENTER(0);
+		p = apc_gp_get_glyphs_box( self, &t);
 		gpLEAVE;
-
-		if ( do_free ) free(glyphs);
 	} else {
 		SV * ret;
 		gpENTER( newRV_noinc(( SV *) newAV()));

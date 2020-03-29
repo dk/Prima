@@ -1454,10 +1454,19 @@ xft_draw_glyphs( PDrawableSysData selfxx,
 		int cx, cy;
 		FT_UInt ft_index;
 		XGlyphInfo glyph;
-		
-		ft_index = t ? t->glyphs[i] : XftCharIndex( DISP, font, string[i]);
-		XftGlyphExtents( DISP, XX-> font-> xft_base, &ft_index, 1, &glyph);
-		shift += (t && t->advances) ? t->advances[i] : glyph. xOff;
+
+		if ( t ) {
+			ft_index = t->glyphs[i];
+			if ( t-> advances )
+				shift += t-> advances[i];
+			else
+				goto CHECK_EXTENTS;
+		} else {
+			ft_index = XftCharIndex( DISP, font, string[i]);
+		CHECK_EXTENTS:
+			XftGlyphExtents( DISP, XX-> font-> xft_base, &ft_index, 1, &glyph);
+			shift += glyph. xOff;
+		}
 		cx = ox + (int)(shift * XX-> xft_font_cos + 0.5);
 		cy = oy - (int)(shift * XX-> xft_font_sin + 0.5);
 		if ( XX-> flags. layered && EMULATE_ALPHA_CLEARING)

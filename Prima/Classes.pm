@@ -82,7 +82,7 @@ sub DELETE    { warn "This array does not implement delete functionality" }
 
 package Prima::glyph_obj;
 
-sub new       { bless [@_[1,2,3,4]], $_[0] }
+sub new       { bless [grep { defined } @_[1..4]], $_[0] }
 sub glyphs    { $_[0]->[0] }
 sub clusters  { $_[0]->[1] }
 sub advances  { $_[0]->[2] }

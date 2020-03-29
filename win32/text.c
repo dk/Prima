@@ -28,25 +28,19 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
 	Bool use_path;
 
-	if ( flags & toGlyphs ) {
-		if ( len > 8192 )
-			len = 8192;
-		flags &= ~toUTF8;
-	} else {
-		int div = 32768L / (var font. maximalWidth ? var font. maximalWidth : 1);
-		if ( div <= 0) div = 1;
-		/* Win32 has problems with text_out strings that are wider than
-		32K pixel - it doesn't plot the string at all. This hack is
-		although ugly, but is better that Win32 default behaviour, and
-		at least can be excused by the fact that all GP spaces have
-		their geometrical limits. */
-		if ( len > div) len = div;
+	int div = 32768L / (var font. maximalWidth ? var font. maximalWidth : 1);
+	if ( div <= 0) div = 1;
+	/* Win32 has problems with text_out strings that are wider than
+	32K pixel - it doesn't plot the string at all. This hack is
+	although ugly, but is better that Win32 default behaviour, and
+	at least can be excused by the fact that all GP spaces have
+	their geometrical limits. */
+	if ( len > div) len = div;
 
-		if ( flags & toUTF8 ) {
-			int mb_len;
-			if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) return false;
-			len = mb_len;
-		}
+	if ( flags & toUTF8 ) {
+		int mb_len;
+		if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) return false;
+		len = mb_len;
 	}
 
 	use_path = GetROP2( sys ps) != R2_COPYPEN;
@@ -58,13 +52,9 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
 
-	if ( flags & toGlyphs ) {
-		ok = ExtTextOutW(ps, x, sys lastSize. y - y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) text, len, NULL);
-	} else {
-		ok = ( flags & toUTF8 ) ?
-			TextOutW( ps, x, sys lastSize. y - y, ( U16*)text, len) :
-			TextOutA( ps, x, sys lastSize. y - y, text, len);
-	}
+	ok = ( flags & toUTF8 ) ?
+		TextOutW( ps, x, sys lastSize. y - y, ( U16*)text, len) :
+		TextOutA( ps, x, sys lastSize. y - y, text, len);
 	if ( !ok ) apiErr;
 
 	if ( use_path ) {
@@ -75,6 +65,58 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	}
 
 	if ( flags & toUTF8 ) free(( char *) text);
+	return ok;
+}}
+
+Bool
+apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
+{objCheck false;{
+	Bool ok = true;
+	HDC ps = sys ps;
+	int bk  = GetBkMode( ps);
+	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
+	Bool use_path;
+
+	if ( t->len > 8192 ) t->len = 8192;
+	use_path = GetROP2( sys ps) != R2_COPYPEN;
+	if ( use_path ) {
+		STYLUS_USE_BRUSH( ps);
+		BeginPath(ps);
+	} else {
+		STYLUS_USE_TEXT( ps);
+		if ( opa != bk) SetBkMode( ps, opa);
+	}
+
+	if ( t-> advances ) {
+		#define SZ 1024
+		INT dx[SZ], n, *pdx, *pdx2;
+		uint16_t *goffsets = t->positions, *advances = t->advances;
+		n = t-> len * 2;
+		if ( n > SZ) {
+			if ( !( pdx = malloc(sizeof(INT) * n)))
+				pdx = dx;
+		} else
+			pdx = dx;
+		pdx2 = pdx;
+		n /= 2;
+		while ( n-- > 0 ) {
+			*(pdx2++) = *(goffsets++) + *(advances++);
+			*(pdx2++) = *(goffsets++);
+		}
+		ok = ExtTextOutW(ps, x, sys lastSize. y - y, ETO_GLYPH_INDEX | ETO_PDY, NULL, (LPCWSTR) t->glyphs, t->len, pdx);
+		if ( pdx != dx ) free(pdx);
+		#undef SZ
+	} else
+		ok = ExtTextOutW(ps, x, sys lastSize. y - y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->glyphs, t->len, NULL);
+	if ( !ok ) apiErr;
+
+	if ( use_path ) {
+		EndPath(ps);
+		FillPath(ps);
+	} else {
+		if ( opa != bk) SetBkMode( ps, bk);
+	}
+
 	return ok;
 }}
 
@@ -993,7 +1035,6 @@ apc_gp_get_font_ranges( Handle self, int * count)
 	return ret;
 }}
 
-
 static int
 gp_get_text_width( Handle self, const char* text, int len, int flags)
 {
@@ -1052,7 +1093,7 @@ int
 apc_gp_get_text_width( Handle self, const char* text, int len, int flags)
 {
 	int ret;
-	if ( flags & toGlyphs ) flags &= ~toUTF8;
+	flags &= ~toGlyphs;
 	if ( flags & toUTF8 ) {
 		int mb_len;
 		if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) return 0;
@@ -1064,25 +1105,15 @@ apc_gp_get_text_width( Handle self, const char* text, int len, int flags)
 	return ret;
 }
 
-Point *
-apc_gp_get_text_box( Handle self, const char* text, int len, int flags)
-{objCheck nil;{
-	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
-	if ( !pt) return nil;
+int
+apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
+{
+	return gp_get_text_width( self, (const char*)t->glyphs, t->len, t->flags | toGlyphs);
+}
 
-	memset( pt, 0, sizeof( Point) * 5);
-
-	if ( flags & toGlyphs ) flags &= ~toUTF8;
-
-	if ( flags & toUTF8 ) {
-		int mb_len;
-		if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) {
-			free( pt);
-			return nil;
-		}
-		len = mb_len;
-	}
-
+static void
+gp_get_text_box( Handle self, const char * text, int len, int flags, Point * pt)
+{
 	pt[0].y = pt[2]. y = var font. ascent - 1;
 	pt[1].y = pt[3]. y = - var font. descent;
 	pt[4].y = pt[0]. x = pt[1].x = 0;
@@ -1133,9 +1164,38 @@ apc_gp_get_text_box( Handle self, const char* text, int len, int flags)
 			pt[i]. y = y + (( y > 0) ? 0.5 : -0.5);
 		}
 	}
+}
 
+Point *
+apc_gp_get_text_box( Handle self, const char* text, int len, int flags)
+{objCheck nil;{
+	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
+	if ( !pt) return nil;
+
+	memset( pt, 0, sizeof( Point) * 5);
+
+	flags &= ~toGlyphs;
+	if ( flags & toUTF8 ) {
+		int mb_len;
+		if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) {
+			free( pt);
+			return nil;
+		}
+		len = mb_len;
+	}
+	gp_get_text_box(self, text, len, flags, pt);
 	if ( flags & toUTF8 ) free(( char*) text);
+	return pt;
+}}
 
+Point *
+apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
+{objCheck nil;{
+	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
+	if ( !pt) return nil;
+
+	memset( pt, 0, sizeof( Point) * 5);
+	gp_get_text_box(self, (const char*)t->glyphs, t->len, toGlyphs, pt);
 	return pt;
 }}
 
