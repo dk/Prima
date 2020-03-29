@@ -100,12 +100,104 @@ sv2unicode( SV * text, int * size, int * flags)
 	return ret;
 }
 
-/* knows only strong RTL characters and doesn't know about unicode bidi */
-static void 
-fallback_analysis( uint32_t * text, int len, Byte * analysis)
+/*
+Iterator for individual shaper runs. Each run has same direction
+and its clusters are increasing/decreasing monotonically. The latter is
+to avoid situations where text A<PDF>B is being sent to shaper as single run AB
+which might ligate.
+*/
+
+typedef struct {
+	int start, i, vis_len;
+	Byte rtl;
+	uint16_t cluster;
+} BidiRunRec, *PBidiRunRec;
+
+static void
+run_init(PBidiRunRec r, int visual_length)
+{
+	r->i       = 0;
+	r->vis_len = visual_length;
+}
+
+static int
+run_next(PTextShapeRec t, PBidiRunRec r)
+{
+	int n, rtl, start = r->i;
+
+	if ( r->i >= r->vis_len ) return 0;
+
+	rtl = t->analysis[r->i];
+	for ( n = 0; r->i < r->vis_len + 1; r->i++, n++) {
+		if (
+			r->i >= r->vis_len ||          /* eol */
+			(t-> analysis[r->i] != rtl)    /* rtl != ltr */
+		) {
+			r->rtl = rtl;
+			return r->i - start;
+		}
+	}
+
+	return 0;
+}
+
+#define INVERT(_type,_start,_end)             \
+{                                             \
+	register _type *s = _start, *e = _end;\
+	while ( s < e ) {                     \
+		register _type c = *s;        \
+		*(s++) = *e;                  \
+		*(e--) = c;                   \
+	}                                     \
+}
+
+static void
+run_alloc( PTextShapeRec t, int visual_start, int visual_len, Bool invert_rtl, PTextShapeRec run)
 {
 	int i;
-	for ( i = 0; i < len; i++) {
+	bzero(run, sizeof(TextShapeRec));
+
+	run-> text         = t->text + visual_start;
+	run-> v2l          = t->v2l + visual_start;
+	for ( i = 0; i < visual_len; i++) {
+		register uint32_t c = run->text[i];
+		if ( 
+			(c >= 0x200e && c <= 0x200f) || /* dir marks */
+			(c >= 0x202a && c <= 0x202e) || /* embedding */
+			(c >= 0x2066 && c <= 0x2069)    /* isolates */
+		)
+			continue;
+
+		run->text[run->len] = run->text[i];
+		run->v2l[run->len] = run->v2l[i];
+		run->len++;
+	}
+	if ( t->analysis[visual_start] & 1) {
+		if ( invert_rtl ) {
+			INVERT(uint32_t, run->text, run->text + run->len - 1);
+			INVERT(uint16_t, run->v2l,  run->v2l + run->len - 1);
+		}
+		run-> flags = toRTL;
+	}
+	run-> n_glyphs_max = t->n_glyphs_max - t-> n_glyphs;
+	run-> glyphs       = t->glyphs   + t-> n_glyphs;
+	run-> clusters     = t->clusters + t-> n_glyphs;
+	if ( t-> coords )
+		run-> coords = t->coords + t-> n_glyphs * 2;
+	if ( t-> advances )
+		run-> advances = t->advances + t-> n_glyphs;
+}
+
+
+/* minimal bidi and unicode processing - does not swap RTLs */
+static Bool
+fallback_reorder(PTextShapeRec t)
+{
+	int i;
+	register uint32_t* text = t->text;
+	register Byte *analysis = t->analysis;
+	register uint16_t* v2l  = t->v2l;
+	for ( i = 0; i < t->len; i++) {
 		register uint32_t c = *(text++);
 		*(analysis++) = (
 			(c == 0x590) ||
@@ -156,324 +248,23 @@ fallback_analysis( uint32_t * text, int len, Byte * analysis)
 			( c >= 0x1e94b && c <= 0x1eeef) ||
 			( c >= 0x1eef2 && c <= 0x1efff)
 		) ? 1 : 0; 
+		*(v2l++) = i;
 	}
-}
-
-/* initialize clusters */
-static void
-apply_identity_to_clusters(PTextShapeRec t)
-{
-	register int i = 0;
-	register uint16_t * c = t-> clusters;
-	while (i < t->len) *(c++) = i++;
-}
-
-static __INLINE__ void
-inverse_cluster_chunk(register uint16_t * start, register uint16_t * end)
-{
-	while ( start < end ) {
-		register uint16_t c = *start;
-		*(start++) = *end;
-		*(end--) = c;
-	}
-}
-
-/* inverse RTL portions of clusters, 12CAR34 => 12RAC34 */
-static void
-apply_rtl_to_clusters(PTextShapeRec t)
-{
-	int i, start;
-	Byte rtl = t-> analysis[0];
-	for ( i = 1, start = 0; i < t-> len + 1; i++) {
-		if ( i < t-> len && (t-> analysis[i] == rtl)) continue;
-		if ( rtl & 1 )
-			inverse_cluster_chunk(t->clusters + start, t->clusters + i - 1);
-		if ( i < t-> len )
-			rtl = t->analysis[i];
-		start = i;
-	}
-}
-
-#define FILTER_BIDI_MARKS \
-	(c >= 0x200e && c <= 0x200f) || /* dir marks */ \
-	(c >= 0x202a && c <= 0x202e) || /* embedding */ \
-	(c >= 0x2066 && c <= 0x2069)    /* isolates */
-
-
-/* remove known bidi marks from clusters, so that 12<PDF>3 becomes 123 */
-static int
-apply_bidi_to_clusters(PTextShapeRec t)
-{
-	int i, j;
-	for ( i = j = 0; i < t->len; i++) {
-		register uint32_t c = t->text[t->clusters[i]];
-		if ( FILTER_BIDI_MARKS ) continue;
-		t->clusters[j++] = t->clusters[i];
-	}
-
-	return j;
-}
-
-/*
-create sub-record for individual shape run, aliasing it partly onto the
-parent record, so that shaper fills glyphs directly there. Clusters though
-are needed to addres manually - for glyph_mapper_only shapers these are
-unneeded, as they mean char->shape 1:1 mapping anyway. For real shapers
-caller needs to allocate a separate cluster buf that will be resolved 
-individually by apply_run_results() (see below)
-*/
-
-static Bool
-alloc_run( PTextShapeRec t, int visual_start, int visual_len, PTextShapeRec run)
-{
-	int i;
-	uint32_t *chars;
-
-	bzero(run, sizeof(TextShapeRec));
-	if ( !( run-> text = warn_malloc(sizeof(uint32_t) * visual_len)))
-		return false;
-	for ( i = 0, chars = run-> text; i < visual_len; i++)
-		*(chars++) = t->text[ t->clusters[i + visual_start] ];
-	run-> len = visual_len;
-
-	run-> flags        = (t->analysis[t->clusters[visual_start]] & 1) ? toRTL : 0;
-	run-> n_glyphs_max = t->n_glyphs_max - t-> n_glyphs;
-	run-> glyphs       = t->glyphs   + t-> n_glyphs;
-	if ( t-> coords )
-		run-> coords = t->coords + t-> n_glyphs * 2;
-	if ( t-> advances )
-		run-> advances = t->advances + t-> n_glyphs;
-
 	return true;
 }
 
-/*
-
-Applies cluster map provided by shaper onto cluster map calculated here
-either by us or fribidi:
-
-   orig text           : L1 L2 NONVISUAL R1 R2
-   clusters            :  0  1  3  4
-
-   text for shaper.1   > L1 L2
-            map        : 0 1
-   shaper.1 litages Ls < L12
-      returns clusters < 0
-	applied back   : 0
-
-   text for shaper.2   > R1 R2 - don't invert, shaper does this
-            map        : 3 4
-   shaper.2 litages Rs < R21
-          run clusters < 0
-	applied back   : 3
-
-*/
-
-static void
-apply_run_results(
-	PTextShapeRec src,
-	uint16_t * map,
-	PTextShapeRec dst
-) {
-	int i;
-	register uint16_t 
-		*dst_c = dst->clusters + dst->n_glyphs,
-		*src_c = src->clusters;
-	for ( i = 0; i < src->n_glyphs; i++) {
-		*(dst_c++) = map[ *(src_c++) ];
-		dst->n_glyphs++; /* glyphs are already copied */
-	}
-}
-
-/*
-Iterator for individual shaper runs. Each run has same direction
-and its clusters are increasing/decreasing monotonically. The latter is
-to avoid situations where text A<PDF>B is being sent to shaper as single run AB
-which might ligate.
-*/
-
-typedef struct {
-	int start, i, vis_len;
-	Byte rtl;
-	uint16_t cluster;
-} BidiRunRec, *PBidiRunRec;
-
-static void
-run_init(PBidiRunRec r, int visual_length)
-{
-	r->i       = 0;
-	r->vis_len = visual_length;
-}
-
-static int
-run_next(PTextShapeRec t, PBidiRunRec r)
-{
-	int n, rtl,
-		start = r->i,
-		last_cluster = t->clusters[r->i],
-		dir = 0;
-
-	if ( r->i >= r->vis_len ) return 0;
-
-	rtl = t->analysis[t->clusters[r->i]];
-	for ( n = 0; r->i < r->vis_len + 1; r->i++, n++) {
-		if (
-			r->i >= r->vis_len ||                                  /* eol */
-			(t-> analysis[t->clusters[r->i]] != rtl) || (    /* rtl != ltr */
-				n > 1 &&
-				t->clusters[r->i] != last_cluster + dir        /* cluster break */
-			)
-		) {
-			r->rtl = rtl;
-			return r->i - start;
-		}
-
-		/* determine cluster direction */
-		if ( n == 1 ) {
-			dir = t->clusters[r->i] - last_cluster;
-			if ( dir != 1 && dir != -1 ) {
-				r->rtl = rtl;
-				return r->i - start;
-			}
-		}
-		last_cluster = t->clusters[r->i];
-	}
-
-	return 0;
-}
-
-typedef Bool DrawableShaperFunc(Handle self, PTextShapeRec t, PTextShapeFunc shaper);
-
-/* minimal bidi and unicode processing, map only glyphs, no coordinates */
-static Bool
-shape_map_glyphs(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
-{
-	Bool ok;
-	int n_chars_after_bidi;
-	TextShapeRec run;
-
-	fallback_analysis(t->text, t->len, t->analysis);
-	apply_identity_to_clusters(t);
-	apply_rtl_to_clusters(t);
-	n_chars_after_bidi = apply_bidi_to_clusters(t);
-
-	if ( !alloc_run(t, 0, n_chars_after_bidi, &run))
-		return false;
-	ok = shaper( self, &run );
-	t->n_glyphs += run.n_glyphs;
-
-	free(run.text);
-
-	return ok;
-}
-
-/* call real shaper with minimal bidi prefiltering */
-static Bool
-shape_apc(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
-{
-	Bool ok = false;
-	int run_offs, run_len;
-	BidiRunRec brr;
-	uint16_t *run_clusters;
-	TextShapeRec tmp;
-
-	fallback_analysis(t->text, t->len, t->analysis);
-
-	tmp = *t;
-	/*
-		t.clusters accumulates final clusters,
-		tmp.clusters contains clusters after rtl and bidi processing
-		run_clusters accepts shaper output:
-		t = tmp(run)
-	*/
-	if ( !( tmp.clusters = malloc( sizeof(uint16_t) * tmp.n_glyphs_max * 2)))
-		return false;
-	run_clusters = tmp.clusters + tmp.n_glyphs_max;
-
-	apply_identity_to_clusters(&tmp);
-	tmp.len = apply_bidi_to_clusters(&tmp);
-
-//#define _DEBUG
-#ifdef _DEBUG
-	{
-		int i;
-		printf("tmp: ");
-		for (i = 0; i < tmp.len; i++) {
-			printf("%d(%x) ", tmp.clusters[i], tmp.text[tmp.clusters[i]]);
-		}
-		printf("\n");
-	}
-#endif
-
-	run_offs = 0;
-	run_init(&brr, tmp.len);
-	while (( run_len = run_next(&tmp, &brr)) > 0) {
-		TextShapeRec run;
-
-		if ( !alloc_run(&tmp, run_offs, run_len, &run))
-			goto EXIT;
-
-		run.clusters = run_clusters;
-#ifdef _DEBUG
-	{
-		int i;
-		printf("shaper input %s %d - %d: ", (run.flags & toRTL) ? "rtl" : "ltr", run_offs, run_offs + run_len - 1);
-		for (i = 0; i < run.len; i++) {
-			printf("%x ", run.text[i]);
-		}
-		printf("\n");
-	}
-#endif
-		ok = shaper( self, &run );
-#ifdef _DEBUG
-	{
-		int i;
-		printf("shaper output: ");
-		for (i = 0; i < run.n_glyphs; i++) {
-			printf("%d(%d) ", run.clusters[i], run.glyphs[i]);
-		}
-		printf("\n");
-	}
-#endif
-		free(run.text);
-		if ( !ok ) goto EXIT;
-
-		apply_run_results( &run, tmp.clusters + run_offs, t );
-		tmp.n_glyphs += run.n_glyphs;
-#ifdef _DEBUG
-	{
-		int i;
-		printf("copied back @ %d: ", t->n_glyphs - run.n_glyphs);
-		for (i = t->n_glyphs - run.n_glyphs; i < t->n_glyphs; i++) {
-			printf("%d(%d) ", t->clusters[i], t->glyphs[i]);
-		}
-		printf("\n");
-	}
-#endif
-		run_offs += run_len;
-	}
-
-EXIT:
-	free( tmp.clusters );
-	return ok;
-}
-
 #ifdef WITH_FRIBIDI
-
-/* call glyph mapper with fribidi prefiltering and shaping */
+/* fribidi unicode processing - swaps RTLs */
 static Bool
-shape_bidi_full(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
+bidi_reorder(PTextShapeRec t, Bool arabic_shaping)
 {
-	Bool ok;
 	Byte *buf, *ptr;
-	int i, sz, mlen, n_visual;
-	uint32_t *visual;
-	uint16_t *clusters;
-	FriBidiFlags _flags = FRIBIDI_FLAGS_DEFAULT | FRIBIDI_FLAGS_ARABIC;
+	int i, sz, mlen;
+	FriBidiFlags flags = FRIBIDI_FLAGS_DEFAULT;
   	FriBidiParType   base_dir;
 	FriBidiCharType* types;
 	FriBidiArabicProp* ar;
-	FriBidiStrIndex* map;
+	FriBidiStrIndex* v2l;
 #if FRIBIDI_INTERFACE_VERSION > 3
 	FriBidiBracketType* bracket_types;
 #endif
@@ -494,12 +285,11 @@ shape_bidi_full(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
 
 	types    = (FriBidiCharType*)   (ptr = buf);
 	ar       = (FriBidiArabicProp*) (ptr += mlen * sizeof(FriBidiCharType));
-	map      = (FriBidiStrIndex*)   (ptr += mlen * sizeof(FriBidiArabicProp));
+	v2l      = (FriBidiStrIndex*)   (ptr += mlen * sizeof(FriBidiArabicProp));
 #if FRIBIDI_INTERFACE_VERSION > 3
 	bracket_types = (FriBidiBracketType*) (ptr += mlen * sizeof(FriBidiStrIndex));
 #endif
 	fribidi_get_bidi_types(t->text, t->len, types);
-	fribidi_get_joining_types(t->text, t->len, ar);
 	/* XXX FRIBIDI_PAR_ON ? */
 	base_dir = ( t->flags & toRTL ) ? FRIBIDI_PAR_RTL : FRIBIDI_PAR_LTR;
 
@@ -513,188 +303,94 @@ shape_bidi_full(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
 		types, t->len, &base_dir,
 		(FriBidiLevel*)t->analysis);
 #endif
-
-	fribidi_get_joining_types(t->text, t->len, ar);
-	fribidi_join_arabic(types, t->len, (FriBidiLevel*)t->analysis, ar);
-	fribidi_shape(_flags, (FriBidiLevel*)t->analysis, t->len, ar, t->text);
-	for ( i = 0; i < t->len; i++)
-		map[i] = i;
-    	fribidi_reorder_line(_flags, types, t->len, 0, 
-		base_dir, (FriBidiLevel*)t->analysis, t->text, map);
-
-	/* from fribidi_remove_bidi_marks: */
-	for (
-		i = n_visual = 0, visual = t->text, clusters = t->clusters;
-		i < t->len;
-		i++
-	) {
-		register uint32_t c = t->text[i];
-		if ( FILTER_BIDI_MARKS ) continue;
-		*(visual++) = t->text[i];
-		n_visual++;
-		*(clusters++) = map[i];
+	if ( arabic_shaping ) {
+		flags |= FRIBIDI_FLAGS_ARABIC;
+		fribidi_get_joining_types(t->text, t->len, ar);
+		fribidi_join_arabic(types, t->len, (FriBidiLevel*)t->analysis, ar);
+		fribidi_shape(flags, (FriBidiLevel*)t->analysis, t->len, ar, t->text);
 	}
-	t-> len = n_visual;
-
-	ok = shaper( self, t );
-	free(buf);
-	return ok;
-}
-
-/* call glyph shaper with fribidi prefiltering but without shaping */
-static Bool
-shape_bidi_and_apc(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
-{
-	Bool ok = false;
-	Byte *buf, *ptr;
-	int i, sz, mlen;
-	FriBidiFlags _flags = FRIBIDI_FLAGS_DEFAULT;
-  	FriBidiParType   base_dir;
-	FriBidiCharType* types;
-	FriBidiStrIndex* v2l;
-#if FRIBIDI_INTERFACE_VERSION > 3
-	FriBidiBracketType* bracket_types;
-#endif
-	int run_offs, run_len;
-	BidiRunRec brr;
-	TextShapeRec tmp;
-	uint16_t *run_clusters, *l2v;
-
-	mlen = sizeof(void*) * ((t->len / sizeof(void*)) + 1); /* align pointers */
-	sz = mlen * (
-		sizeof(FriBidiCharType) + 
-		sizeof(FriBidiStrIndex) +
-#if FRIBIDI_INTERFACE_VERSION > 3
-		sizeof(FriBidiBracketType) +
-#endif
-		0
-	);
-	if ( !( buf = warn_malloc(sz)))
-		return false;
-	bzero(buf, sz);
-
-	types    = (FriBidiCharType*)   (ptr = buf);
-	v2l      = (FriBidiStrIndex*)   (ptr += mlen * sizeof(FriBidiCharType));
-#if FRIBIDI_INTERFACE_VERSION > 3
-	bracket_types = (FriBidiBracketType*) (ptr += mlen * sizeof(FriBidiStrIndex));
-#endif
-	fribidi_get_bidi_types(t->text, t->len, types);
-	/* XXX FRIBIDI_PAR_ON ? */
-	base_dir = ( t->flags & toRTL ) ? FRIBIDI_PAR_RTL : FRIBIDI_PAR_LTR;
-
-#if FRIBIDI_INTERFACE_VERSION > 3
-	fribidi_get_bracket_types(t->text, t->len, types, bracket_types);
-	fribidi_get_par_embedding_levels_ex(
-		types, bracket_types, t->len, &base_dir,
-		(FriBidiLevel*)t->analysis);
-#else
-	fribidi_get_par_embedding_levels(
-		types, t->len, &base_dir,
-		(FriBidiLevel*)t->analysis);
-#endif
-
-#ifdef _DEBUG
-	printf("\n%s input: ", (t->flags & toRTL) ? "RTL" : "LTR");
-	for ( i = 0; i < t->len; i++) 
-		printf("%x ", t->text[i]);
-	printf("\n");
-#endif
 
 	for ( i = 0; i < t->len; i++)
 		v2l[i] = i;
-    	fribidi_reorder_line(_flags, types, t->len, 0, 
+    	fribidi_reorder_line(flags, types, t->len, 0, 
 		base_dir, (FriBidiLevel*)t->analysis, t->text, v2l);
-	/*
-		t.clusters accumulates final clusters,
-		v2l -> tmp.clusters contains clusters after rtl and bidi processing
-		run_clusters accepts shaper output:
-		t = tmp(run)
-	*/
-	tmp = *t;
-	if ( !( tmp.clusters = malloc( sizeof(uint16_t) * tmp.n_glyphs_max * 4))) {
-		free(buf);
-		return false;
-	}
-
-	run_clusters = tmp.clusters + tmp.n_glyphs_max;
-	tmp.analysis = (Byte*)(run_clusters + tmp.n_glyphs_max);
-	l2v          = run_clusters + tmp.n_glyphs_max * 2;
-
-	bzero(l2v, t->len);
 	for ( i = 0; i < t->len; i++)
-		l2v[v2l[i]] = i;
+		t->v2l[i] = v2l[i];
+	t-> flags = (base_dir == FRIBIDI_PAR_RTL) ? toRTL : 0;
+	free( buf );
+
+	return true;
+}
+
+#endif
+
+static Bool
+test_shaper(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_only)
+{
+	Bool ok, reorder_swaps_rtl;
+	Byte analysis[MAX_CHARACTERS], *save_analysis;
+	uint16_t i, l2v[MAX_CHARACTERS], run_offs, run_len;
+	BidiRunRec brr;
 
 #ifdef _DEBUG
-	printf("v2l: ");
-	for ( i = 0; i < t->len; i++) 
-		printf("%d ", v2l[i]);
-	printf("\n");
-	printf("l2v: ");
-	for ( i = 0; i < t->len; i++) 
-		printf("%d ", l2v[i]);
-	printf("\n");
-	printf("%s visual: ", (t->flags & toRTL) ? "RTL" : "LTR");
-	for ( i = 0; i < t->len; i++) 
+	printf("\n%s input: ", (t->flags & toRTL) ? "rtl" : "ltr");
+	for (i = 0; i < t->len; i++)
 		printf("%x ", t->text[i]);
 	printf("\n");
 #endif
 
-	for (
-		i = tmp.len = 0, tmp.text = t->text;
-		i < t->len;
-		i++
-	) {
-		register uint32_t c = t->text[i];
-		if ( FILTER_BIDI_MARKS ) continue;
-		tmp.text[tmp.len] = t->text[i];
-		tmp.clusters[tmp.len] = tmp.len;
-		tmp.analysis[tmp.len] = t->analysis[l2v[i]];
-		v2l[tmp.len] = v2l[i];
-		tmp.len++;
+#ifdef WITH_FRIBIDI
+	if ( use_fribidi ) {
+		reorder_swaps_rtl = true;
+		ok = bidi_reorder(t, glyph_mapper_only);
 	}
+	else
+#endif
+	{
+		reorder_swaps_rtl = false;
+		ok = fallback_reorder(t);
+	}
+	if (!ok) return false;
 
 #ifdef _DEBUG
-	printf("analysis: ");
-	for ( i = 0; i < t->len; i++) 
-		printf("%d ", tmp.analysis[i]);
+	printf("%s output: ", (t->flags & toRTL) ? "rtl" : "ltr");
+	for (i = 0; i < t->len; i++)
+		printf("%d(%x) ", t->analysis[i], t->text[i]);
 	printf("\n");
-	printf("tmp: ");
-	for (i = 0; i < tmp.len; i++) {
-		printf("%d(%x)%s ", tmp.clusters[i], tmp.text[tmp.clusters[i]], (tmp.analysis[tmp.clusters[i]] & 1) ? "R" : "L");
-	}
 #endif
 
-	apply_rtl_to_clusters(&tmp);
-
+	bzero(&l2v, MAX_CHARACTERS);
+	for ( i = 0; i < t->len; i++)
+		l2v[t->v2l[i]] = i;
+	for ( i = 0; i < t->len; i++)
+		analysis[i] = t->analysis[l2v[i]];
 #ifdef _DEBUG
-	{
-		int i;
-		printf("after rtl: ");
-		for (i = 0; i < tmp.len; i++) {
-			printf("%d(%x) ", tmp.clusters[i], tmp.text[tmp.clusters[i]]);
-		}
-		printf("\n");
-	}
+	printf("v2l: ");
+	for (i = 0; i < t->len; i++)
+		printf("%d ", t->v2l[i]);
+	printf("\n");
+	printf("l2v: ");
+	for (i = 0; i < t->len; i++)
+		printf("%d(%d) ", l2v[i], analysis[i]);
+	printf("\n");
 #endif
-
+	
 	run_offs = 0;
-	run_init(&brr, tmp.len);
-	while (( run_len = run_next(&tmp, &brr)) > 0) {
+	run_init(&brr, t->len);
+	save_analysis = t->analysis;
+	t-> analysis = analysis;
+	while (( run_len = run_next(t, &brr)) > 0) {
 		TextShapeRec run;
-
-		if ( !alloc_run(&tmp, run_offs, run_len, &run)) {
-			free(tmp.clusters);
-			free(buf);
-			return false;
+		run_alloc(t, run_offs, run_len, glyph_mapper_only ^ reorder_swaps_rtl, &run);
+		if (run.len == 0) {
+			run_offs += run_len;
+			continue;
 		}
-		run.clusters = run_clusters;
 #ifdef _DEBUG
 	{
 		int i;
-		printf("shaper input %s %d - %d: ", (run.flags & toRTL) ? "rtl" : "ltr", run_offs, run_offs + run_len - 1);
-		for (i = 0; i < run.len; i++) {
-			printf("%x ", run.text[i]);
-		}
+		printf("shaper input %s %d - %d: ", (run.flags & toRTL) ? "rtl" : "ltr", run_offs, run_offs + run.len - 1);
+		for (i = 0; i < run.len; i++) printf("%x ", run.text[i]);
 		printf("\n");
 	}
 #endif
@@ -703,69 +399,31 @@ shape_bidi_and_apc(Handle self, PTextShapeRec t, PTextShapeFunc shaper)
 	{
 		int i;
 		printf("shaper output: ");
-		for (i = 0; i < run.n_glyphs; i++) {
-			printf("%d(%d) ", run.clusters[i], run.glyphs[i]);
-		}
+		for (i = 0; i < run.n_glyphs; i++) 
+			printf("%d(%x) ", glyph_mapper_only ? -1 : run.clusters[i], run.glyphs[i]);
 		printf("\n");
 	}
 #endif
-		free(run.text);
 		if (!ok) break;
-
-		{
-			int i;
-			register uint16_t 
-				*dst_c = t->clusters + t->n_glyphs,
-				*src_c = run.clusters;
-			for ( i = 0; i < run.n_glyphs; i++) {
-				int index = 
-					( run.flags & toRTL ) ?
-						run_offs + run_len - *(src_c++) - 1 :
-						*(src_c++) + run_offs;
-#ifdef _DEBUG
-				printf("m[%x + %d -> %d] => %x\n", *(src_c-1), run_offs, index, v2l[index]);
-#endif
-				*(dst_c++) = v2l[index];
-				t->n_glyphs++; /* glyphs are already copied */
-			}
+		for (i = t->n_glyphs; i < t->n_glyphs + run.n_glyphs; i++) {
+			int x = glyph_mapper_only ? i - t->n_glyphs : t->clusters[i];
+			t->clusters[i] = t->v2l[x + run_offs];
 		}
-		tmp.n_glyphs += run.n_glyphs;
+		run_offs += run_len;
 #ifdef _DEBUG
 	{
 		int i;
-		printf("copied back @ %d: ", t->n_glyphs - run.n_glyphs);
-		for (i = t->n_glyphs - run.n_glyphs; i < t->n_glyphs; i++) {
-			printf("%d(%d) ", t->clusters[i], t->glyphs[i]);
-		}
+		printf("clusters copied back: ");
+		for (i = t->n_glyphs; i < t->n_glyphs + run.n_glyphs; i++)
+			printf("%d ", t->clusters[i]);
 		printf("\n");
 	}
 #endif
-		run_offs += run_len;
+		t-> n_glyphs += run.n_glyphs;
 	}
+	t-> analysis = save_analysis;
 
-	free(tmp.clusters);
-	free(buf);
 	return ok;
-}
-
-#endif 
-/* WITH_FRIBIDI */
-
-static DrawableShaperFunc*
-find_shaper(Bool glyph_mapper_only)
-{
-#ifdef WITH_FRIBIDI
-	if ( use_fribidi ) {
-		if ( glyph_mapper_only ) 
-			return shape_bidi_full;
-		else
-			return shape_bidi_and_apc;
-	} else
-#endif
-		if ( glyph_mapper_only ) 
-			return shape_map_glyphs;
-		else
-			return shape_apc;
 }
 
 SV*
@@ -780,7 +438,6 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		*sv_coords = nilSV,
 		*sv_advances = nilSV;
 	PTextShapeFunc system_shaper;
-	DrawableShaperFunc* drawable_shaper;
 	TextShapeRec t;
 	Bool glyph_mapper_only;
 
@@ -807,7 +464,6 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	/* font supports shaping? */
 	if (!( system_shaper = apc_gp_text_get_shaper(self, &glyph_mapper_only)))
 		return newSViv(0);
-	drawable_shaper = find_shaper(glyph_mapper_only);
 
 	/* allocate buffers */
 	if (!(t.text = sv2unicode(text_sv, &t.len, &t.flags)))
@@ -824,6 +480,8 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	}
 
 	if (!(t.analysis = warn_malloc(t.len)))
+		goto EXIT;
+	if (!(t.v2l = warn_malloc(sizeof(uint16_t) * t.len)))
 		goto EXIT;
 
 	/* MSDN, on ScriptShape: A reasonable value is (1.5 * cChars + 16) */
@@ -846,7 +504,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 	if ( pexist(rtl) && pget_B(rtl)) t.flags |= toRTL;
 		
-	if ( !drawable_shaper(self, &t, system_shaper) ) goto EXIT;
+	if ( !test_shaper(self, &t, system_shaper, glyph_mapper_only) ) goto EXIT;
 
 	/* encode direction */
 	for ( i = 0; i < t.n_glyphs; i++) {
@@ -854,8 +512,10 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 			t.clusters[i] |= toRTL;
 	}
 
+	free(t.v2l );
 	free(t.analysis );
 	free(t.text);
+	t.v2l = NULL;
 	t.analysis = NULL;
 	t.text = NULL;
 
@@ -875,6 +535,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 EXIT:
 	if ( t.text     ) free(t.text     );
+	if ( t.v2l      ) free(t.v2l      );
 	if ( t.analysis ) free(t.analysis );
 	if ( t.clusters ) sv_free(sv_clusters );
 	if ( t.glyphs   ) sv_free(sv_glyphs   );

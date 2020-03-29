@@ -96,10 +96,12 @@ FAIL:
 	diag(sprintf("got [@$got], expected [@$exp]"));
 }
 
-sub t
+sub t2
 {
 	my ( $text, $glyphs, $clusters, $name, %opt) = @_;
 
+	my $orig_text   = $text;
+	my $orig_glyphs = $glyphs;
 	$text   = xtr $text;
 	$glyphs = xtr $glyphs;
 	$text =~ tr
@@ -109,8 +111,48 @@ sub t
 		;
 
 	$z = $w-> text_shape($text, %opt);
-	comp($z->glyphs, gmap $glyphs, "$name (glyphs)", 1, $_[0]);
-	comp($z->clusters, $clusters, "$name (clusters)", 0, $_[0]);
+	return ok(0, "$name (undefined)") unless defined $z;
+	return ok(0, "$name (unnecessary, retval=0)") unless $z;
+	comp($z->glyphs, gmap $glyphs, "$name (glyphs)", 1, $orig_text);
+	if ( defined $clusters ) {
+		comp($z->clusters, $clusters, "$name (clusters)", 0, $_[0]);
+		return;
+	}
+
+	my %rev = reverse %glyphs;
+	my $v = join '',
+		map {
+			my $ofs  = $_ & ~to::RTL;
+			my $char = sprintf("(%x)",$_);
+		AGAIN:
+			if ( $ofs >= 0 && $ofs <= length($orig_text)) {
+				$char = substr($orig_text, $ofs, 1);
+				if ( $char =~ /[\<\>\=]/ ) {
+					$ofs++;
+					goto AGAIN;
+				}
+				if ($_ & to::RTL) {
+					$char = "(+$char)" if $char !~ /[A-Z\/\|\%0\+\-\.\s\?\`\<\>]/;
+				} else {
+					$char = "(-$char)" if $char !~ /[a-z\+\-\.\s\"\d]/;
+				}
+			}
+			$char
+		}
+		@{$z->clusters // []};
+	unless (is($v, $orig_glyphs, "$name (clusters)")) {
+		my $got = $z->clusters // ['<undef>'];
+		$got = [ map { defined($_) ? $_ : '<undef>' } @$got ];
+		$_ = '-' . ($_ & ~to::RTL) for grep { /^\d+$/ && $_ & to::RTL } @$got;
+		diag("got clusters: [@$got]");
+	}
+
+}
+
+sub t
+{
+	my ( $text, $glyphs, $name, %opt) = @_;
+	t2($text, $glyphs, undef, $name, %opt);
 }
 
 sub find_char
@@ -155,9 +197,9 @@ FOUND:
 
 sub check_noshape_nofribidi
 {
-	t('12', '12', [0,1], 'ltr');
-	t('12ABC', '12CBA', [0,1,R(2..4)], 'rtl in ltr');
-	t('>AB', 'BA', [r(2,1)], 'bidi');
+	t('12', '12', 'ltr');
+	t('12ABC', '12CBA', 'rtl in ltr');
+	t('>AB', 'BA', 'bidi');
 }
 
 # very minimal support for bidi and X11 core fonts only
@@ -189,22 +231,18 @@ sub check_proper_bidi
 		t(
 			'car means CAR.',
 			'car means RAC.', 
-			[0..9,R(10..12),13],
 			'example 1');
 		t(
 			'<car MEANS CAR.=',
 			'.RAC SNAEM car',
-			[R(4..14),1..3],
 			'example 2');
 		t(
 			'he said "<car MEANS CAR=."',
 			'he said "RAC SNAEM car."',
-			[0..8,R(13..22),10..12,24,25],
 			'example 3');
 		t(
 			'DID YOU SAY `>he said "<car MEANS CAR="=`?',
 			'?`he said "RAC SNAEM car"` YAS UOY DID',
-			[R(40,41),14..22,R(27..36),24..26,38,R(0..12)],
 			'example 4',
 			rtl => 1); # XXX not needed for autodetect
 	}
@@ -218,9 +256,9 @@ sub test_fribidi
 		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
 
 		check_noshape_nofribidi();
-		t('12ABC', 'CBA12', [R(2..4),0..1], 'rtl in rtl', rtl => 1);
-		t('/|', '%0', [R(0,1)], 'arabic ligation with ZW nobreaker');
-		t('|/', '/|', [R(0,1)], 'no arabic ligation');
+		t('12ABC', 'CBA12', 'rtl in rtl', rtl => 1);
+		t2('/|', '%0', [R(0,1)], 'arabic ligation with ZW nobreaker');
+		t('|/', '/|', 'no arabic ligation');
 
 		check_proper_bidi();
 	}
@@ -238,16 +276,16 @@ sub test_shaping
 		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
 		check_noshape_nofribidi();
 		if ( $with_bidi ) {
-			t('12ABC', 'CBA12', [R(2..4),0..1], 'rtl in rtl', rtl => 1);
+			t('12ABC', 'CBA12', 'rtl in rtl', rtl => 1);
 		}
 
 		SKIP: {
                 	glyphs "|-/%";
 			skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
-			t('|/', '/|', [r(1,0)], 'no arabic ligation');
-			t('/|', '%', [r(0)], 'arabic ligation');
+			t('|/', '/|', 'no arabic ligation');
+			t2('/|', '%', [r(0)], 'arabic ligation');
 			if ( $with_bidi ) {
-				t('/-|', '|-/', [R(0..2)], 'arabic non-ligation');
+				t('/-|', '|-/', 'arabic non-ligation');
 				check_proper_bidi();
 			}
 		}
