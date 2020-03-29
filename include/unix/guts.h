@@ -1389,11 +1389,21 @@ prima_xft_get_text_width( PCachedFont self, const char * text, int len,
 			int flags, uint32_t * map8,
 			Point * overhangs);
 
+extern int
+prima_xft_get_glyphs_width( PCachedFont self, PGlyphsOutRec glyphs,
+			uint32_t * map8, Point * overhangs);
+
 extern Point *
 prima_xft_get_text_box( Handle self, const char * text, int len, int flags);
 
+extern Point *
+prima_xft_get_glyphs_box( Handle self, PGlyphsOutRec glyphs);
+
 extern Bool
 prima_xft_text_out( Handle self, const char * text, int x, int y, int len, int flags);
+
+extern Bool
+prima_xft_glyphs_out( Handle self, PGlyphsOutRec glyphs, int x, int y);
 
 extern unsigned long *
 prima_xft_get_font_ranges( Handle self, int * count);

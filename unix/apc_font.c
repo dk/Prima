@@ -1874,11 +1874,10 @@ int
 apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 {
 #ifdef USE_XFT
-	if ( !guts. use_xft) return 0;
-	return prima_xft_get_glyph_outline( self, index, flags, buffer);
-#else
-	return 0;
+	if ( guts.use_xft && X(self)-> font-> xft)
+		return prima_xft_get_glyph_outline( self, index, flags, buffer);
 #endif
+	return 0;
 }
 
 

@@ -405,7 +405,7 @@ EXIT:
 }
 
 PTextShapeFunc
-apc_gp_text_get_shaper( Handle self, Bool * glyph_mapper_only)
+apc_gp_get_text_shaper( Handle self, Bool * glyph_mapper_only)
 {
 	if ( !( sys tmPitchAndFamily & TMPF_TRUETYPE))
 		return NULL;

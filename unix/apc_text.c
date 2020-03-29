@@ -213,63 +213,62 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, int 
 	return true;
 }
 
-Bool
-apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags)
+static void
+paint_text_background( Handle self, const char * text, int x, int y, int len, int flags)
+{	
+	DEFXX;
+	int i;
+	Point * p;
+	FillPattern fp;
+
+	memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
+	p = gp_get_text_box( self, text, len, flags);
+	XSetForeground( DISP, XX-> gc, XX-> back. primary);
+	XX-> flags. brush_back = 0;
+	XX-> flags. brush_fore = 1;
+	XX-> fore. balance = 0;
+	XSetFunction( DISP, XX-> gc, GXcopy);
+	apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
+	for ( i = 0; i < 4; i++) {
+		p[i].x += x;
+		p[i].y += y;
+	}
+	i = p[2].x; p[2].x = p[3].x; p[3].x = i;
+	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
+
+	apc_gp_fill_poly( self, 4, p);
+	apc_gp_set_rop( self, XX-> paint_rop);
+	apc_gp_set_color( self, XX-> fore. color);
+	apc_gp_set_fill_pattern( self, fp);
+	free( p);
+}
+
+static void
+draw_text_underline(Handle self, const char * text, int x, int y, int len, int flags)
 {
 	DEFXX;
-
-	if ( PObject( self)-> options. optInDrawInfo) return false;
-	if ( !XF_IN_PAINT(XX)) return false;
-	if ( flags & toGlyphs ) flags &= ~toUTF8;
-
-	if ( len == 0) return true;
-	if ( len > 65535 ) len = 65535;
-
-#ifdef USE_XFT
-	if ( XX-> font-> xft)
-		return prima_xft_text_out( self, text, x, y, len, flags);
-#endif
-
-	if ( flags & toUTF8 )
-		if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return false;
-
-	/* paint background if opaque */
-	if ( XX-> flags. paint_opaque) {
-		int i;
-		Point * p = gp_get_text_box( self, text, len, flags);
-		FillPattern fp;
-		memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
-		XSetForeground( DISP, XX-> gc, XX-> back. primary);
-		XX-> flags. brush_back = 0;
-		XX-> flags. brush_fore = 1;
-		XX-> fore. balance = 0;
-		XSetFunction( DISP, XX-> gc, GXcopy);
-		apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
-		for ( i = 0; i < 4; i++) {
-			p[i].x += x;
-			p[i].y += y;
-		}
-		i = p[2].x; p[2].x = p[3].x; p[3].x = i;
-		i = p[2].y; p[2].y = p[3].y; p[3].y = i;
-
-		apc_gp_fill_poly( self, 4, p);
-		apc_gp_set_rop( self, XX-> paint_rop);
-		apc_gp_set_color( self, XX-> fore. color);
-		apc_gp_set_fill_pattern( self, fp);
-		free( p);
+	int lw = apc_gp_get_line_width( self);
+	int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs);
+	int d  = XX-> font-> underlinePos;
+	Point ovx = gp_get_text_overhangs( self, text, len, flags);
+	if ( lw != XX-> font-> underlineThickness)
+		apc_gp_set_line_width( self, XX-> font-> underlineThickness);
+	if ( PDrawable( self)-> font. style & fsUnderlined)
+		XDrawLine( DISP, XX-> gdrawable, XX-> gc,
+			x - ovx.x, REVERT( y + d), x + tw - 1 + ovx.y, REVERT( y + d));
+	if ( PDrawable( self)-> font. style & fsStruckOut) {
+		int scy = REVERT( y + (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/2);
+		XDrawLine( DISP, XX-> gdrawable, XX-> gc,
+			x - ovx.x, scy, x + tw - 1 + ovx.y, scy);
 	}
-	SHIFT( x, y);
-	RANGE2(x,y);
+	if ( lw != XX-> font-> underlineThickness)
+		apc_gp_set_line_width( self, lw);
+}
 
-	if ( PDrawable( self)-> font. direction != 0) {
-		Bool ok_to_not_rotate = false;
-		Bool ret = gp_text_out_rotated( self, text, x, y, len, flags, &ok_to_not_rotate);
-		if ( !ok_to_not_rotate) {
-			if ( flags & toUTF8) free(( char *) text);
-			return ret;
-		}
-	}
-
+static Bool
+text_out( Handle self, const char * text, int x, int y, int len, int flags)
+{
+	DEFXX;
 	if ( !XX-> flags. paint_base_line)
 		y += XX-> font-> font. descent;
 
@@ -284,30 +283,86 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	else
 		XDrawString( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y) + 1, ( char*) text, len);
 	XCHECKPOINT;
+	return true;
+}
 
-	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut)) {
-		int lw = apc_gp_get_line_width( self);
-		int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs);
-		int d  = XX-> font-> underlinePos;
-		Point ovx = gp_get_text_overhangs( self, text, len, flags);
-		if ( lw != XX-> font-> underlineThickness)
-			apc_gp_set_line_width( self, XX-> font-> underlineThickness);
-		if ( PDrawable( self)-> font. style & fsUnderlined)
-			XDrawLine( DISP, XX-> gdrawable, XX-> gc,
-				x - ovx.x, REVERT( y + d), x + tw - 1 + ovx.y, REVERT( y + d));
-		if ( PDrawable( self)-> font. style & fsStruckOut) {
-			int scy = REVERT( y + (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/2);
-			XDrawLine( DISP, XX-> gdrawable, XX-> gc,
-				x - ovx.x, scy, x + tw - 1 + ovx.y, scy);
+Bool
+apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags)
+{
+	Bool ret;
+	DEFXX;
+
+	if ( PObject( self)-> options. optInDrawInfo) return false;
+	if ( !XF_IN_PAINT(XX)) return false;
+
+	if ( len == 0) return true;
+	if ( len > 65535 ) len = 65535;
+
+#ifdef USE_XFT
+	if ( XX-> font-> xft)
+		return prima_xft_text_out( self, text, x, y, len, flags);
+#endif
+
+	if ( flags & toUTF8 )
+		if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return false;
+
+	if ( XX-> flags. paint_opaque)
+		paint_text_background( self, text, x, y, len, flags);
+	SHIFT(x, y);
+	RANGE2(x,y);
+	if ( PDrawable( self)-> font. direction != 0) {
+		Bool ok_to_not_rotate = false;
+		Bool ret = gp_text_out_rotated( self, text, x, y, len, flags, &ok_to_not_rotate);
+		if ( !ok_to_not_rotate) {
+			if ( flags & toUTF8) free(( char *) text);
+			return ret;
 		}
-		if ( lw != XX-> font-> underlineThickness)
-			apc_gp_set_line_width( self, lw);
 	}
+
+	ret = text_out(self, text, x, y, len, flags);
+	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut))
+		draw_text_underline(self, text, x, y, len, flags);
 
 	if ( flags & toUTF8) free(( char *) text);
 	XFLUSH;
 
-	return true;
+	return ret;
+}
+
+Bool
+apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
+{
+	Bool ret;
+	DEFXX;
+
+	if ( PObject( self)-> options. optInDrawInfo) return false;
+	if ( !XF_IN_PAINT(XX)) return false;
+
+	if ( t->len == 0) return true;
+	if ( t->len > 65535 ) t->len = 65535;
+
+#ifdef USE_XFT
+	if ( XX-> font-> xft)
+		return prima_xft_glyphs_out( self, t, x, y);
+#endif
+
+	if ( XX-> flags. paint_opaque)
+		paint_text_background( self, (const char*) t->glyphs, x, y, t->len, toUnicode);
+	SHIFT(x, y);
+	RANGE2(x,y);
+	ret = text_out(self, (const char*) t->glyphs, x, y, t->len, toUnicode);
+	if ( PDrawable( self)-> font. direction != 0) {
+		Bool ok_to_not_rotate = false;
+		Bool ret = gp_text_out_rotated( self, (const char*) t->glyphs,
+			x, y, t->len, toUnicode, &ok_to_not_rotate);
+		if ( !ok_to_not_rotate)
+			return ret;
+	}
+	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut))
+		draw_text_underline(self, (const char*) t->glyphs, x, y, t->len, toUnicode);
+	XFLUSH;
+
+	return ret;
 }
 
 Bool
@@ -515,7 +570,6 @@ apc_gp_get_text_width( Handle self, const char * text, int len, int flags)
 	int ret;
 
 	if ( len > 65535 ) len = 65535;
-	if ( flags & toGlyphs ) flags &= ~toUTF8;
 
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
@@ -529,6 +583,20 @@ apc_gp_get_text_width( Handle self, const char * text, int len, int flags)
 	if ( flags & toUTF8)
 		free(( char*) text);
 	return ret;
+}
+
+int
+apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
+{
+	if ( t->len > 65535 ) t->len = 65535;
+
+#ifdef USE_XFT
+	if ( X(self)-> font-> xft)
+		return prima_xft_get_glyphs_width( X(self)-> font, t,
+			X(self)-> xft_map8, nil);
+#endif
+
+	return gp_get_text_width( self, (char*) t->glyphs, t->len, toUTF8 );
 }
 
 static Point *
@@ -590,6 +658,19 @@ apc_gp_get_text_box( Handle self, const char * text, int len, Bool utf8)
 	ret = gp_get_text_box( self, text, len, utf8);
 	if ( utf8)
 		free(( char*) text);
+	return ret;
+}
+
+Point *
+apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
+{
+	Point * ret;
+	if ( t->len > 65535 ) t->len = 65535;
+#ifdef USE_XFT
+	if ( X(self)-> font-> xft)
+		return prima_xft_get_glyphs_box( self, t);
+#endif
+	ret = gp_get_text_box( self, (char*) t->glyphs, t->len, toUTF8);
 	return ret;
 }
 
