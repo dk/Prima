@@ -2058,10 +2058,12 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 	hb_buffer_set_cluster_level(buf, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
 #endif
 	hb_buffer_set_direction(buf, (r->flags & toRTL) ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
-//	hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
-//	hb_buffer_set_language(buf, hb_language_from_string("en", -1));
-//	hb_buffer_set_script (buf, hb_script_from_string ("Arab", -1));
-//	hb_buffer_set_language(buf, hb_language_from_string("ar", -1));
+/*
+	hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
+	hb_buffer_set_script (buf, hb_script_from_string ("Arab", -1));
+*/
+	if ( r-> language != NULL )
+		hb_buffer_set_language(buf, hb_language_from_string(r->language, -1));
 	hb_buffer_guess_segment_properties (buf);
 
 
@@ -2070,11 +2072,13 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 	hb_shape(font, buf, NULL, 0);
 
 	glyph_info = hb_buffer_get_glyph_infos(buf, &r->n_glyphs);
-	glyph_pos  = hb_buffer_get_glyph_positions(buf, &r->n_glyphs);
+	glyph_pos  = ( r-> flags & toPositions ) ?
+		hb_buffer_get_glyph_positions(buf, &r->n_glyphs) :
+		NULL;
 
 	for (i = j = 0; i < r->n_glyphs; i++) {
 		uint32_t c = glyph_info[i].cluster;
-		if ( c > r-> len ) {	
+		if ( c > r-> len ) {
 			/* something bad happened? */
 			warn("harfbuzz shaping asssertion failed: got cluster=%d for strlen=%d", c, r->len);
 			guts. use_harfbuzz = false;
@@ -2083,11 +2087,13 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 		}
                 r->clusters[i] = c;
                 r->glyphs[i]   = glyph_info[i].codepoint;
-                r->advances[i] = glyph_pos[i].x_advance;
-                r->coords[j++] = glyph_pos[i].x_offset;
-                r->coords[j++] = glyph_pos[i].y_offset;
+		if ( glyph_pos ) {
+			r->advances[i] = glyph_pos[i].x_advance;
+			r->positions[j++] = glyph_pos[i].x_offset;
+			r->positions[j++] = glyph_pos[i].y_offset;
+		}
 	}
-
+ 
 	hb_buffer_destroy(buf);
 	hb_font_destroy(font);
 	XftUnlockFace(XX->font->xft);

@@ -164,7 +164,6 @@ typedef struct {
 } ScriptCacheKey;
 #pragma pack()
 
-/* XXX read coordinates */
 static Bool
 win32_shaper( Handle self, PTextShapeRec t)
 {
@@ -177,6 +176,8 @@ win32_shaper( Handle self, PTextShapeRec t)
 	SCRIPT_ITEM *items = NULL;
 	WORD *clusters = NULL;
 	SCRIPT_VISATTR *visuals = NULL;
+	int *advances = NULL;
+	GOFFSET *goffsets = NULL;
 	unsigned int * surrogate_map = NULL, first_surrogate_pair = 0;
 
 	if ((items = malloc(sizeof(SCRIPT_ITEM) * (t-> len + 1))) == NULL)
@@ -187,6 +188,12 @@ win32_shaper( Handle self, PTextShapeRec t)
 		goto EXIT;
 	if ((wtext = malloc(sizeof(WCHAR) * 2 * t->len)) == NULL)
 		goto EXIT;
+	if ( t->flags & toPositions) {
+		if ((advances = malloc(sizeof(int) * t->n_glyphs_max)) == NULL)
+			goto EXIT;
+		if ((goffsets = malloc(sizeof(GOFFSET) * t->n_glyphs_max)) == NULL)
+			goto EXIT;
+	}
 
 	/* convert UTF-32 to UTF-16, mark surrogates */
 	{
@@ -220,7 +227,9 @@ win32_shaper( Handle self, PTextShapeRec t)
 	}
 
 	bzero(&control, sizeof(control));
-	control.uDefaultLanguage = MAKELANGID (LANG_NEUTRAL, SUBLANG_NEUTRAL);
+	control.uDefaultLanguage = t->language ?
+		langid(t->language) :
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL);
 
 	if ((hr = ScriptItemize(wtext, wlen, t->n_glyphs_max, &control, NULL, items, &nitems)) != S_OK) {
 		apiHErr(hr);
@@ -348,6 +357,36 @@ win32_shaper( Handle self, PTextShapeRec t)
 				}
 			}
 		}
+
+		if ( t-> flags & toPositions) {
+			ABC abc;
+			GOFFSET * i_g;
+			int * i_a;
+			uint16_t * o_g, *o_a;
+			printf("copying %d positions\n", nglyphs);
+			if (( hr = ScriptPlace(sys ps, script_cache, t->glyphs + t->n_glyphs, nglyphs,
+			       visuals, &items[item].a,
+			       advances, goffsets, &abc)) != S_OK
+			) {
+				apiHErr(hr);
+				goto EXIT;
+			}
+			for (
+				i = 0,
+				i_a = advances,    i_g = goffsets,
+				o_a = t->advances, o_g = t->positions;
+				i < nglyphs;
+				i++
+			) {
+				*(o_a++) = *(i_a++);
+				*(o_g++) = i_g->dv;
+				*(o_g++) = i_g->du;
+				i_g++;
+			}
+			t-> advances  += nglyphs;
+			t-> positions += nglyphs * 2;
+		}
+
 		t-> n_glyphs += nglyphs;
 		out_clusters += nglyphs;
 	}
@@ -356,6 +395,8 @@ win32_shaper( Handle self, PTextShapeRec t)
 
 EXIT:
 	if ( surrogate_map  ) free(surrogate_map);
+	if ( goffsets ) free(goffsets);
+	if ( advances ) free(advances);
 	if ( clusters ) free(clusters);
 	if ( visuals  ) free(visuals);
 	if ( items    ) free(items);

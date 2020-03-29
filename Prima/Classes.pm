@@ -82,11 +82,11 @@ sub DELETE    { warn "This array does not implement delete functionality" }
 
 package Prima::glyph_obj;
 
-sub new      { bless [@_[1,2,3,4]], $_[0] }
-sub glyphs   { $_[0]->[0] }
-sub clusters { $_[0]->[1] }
-sub advances { $_[0]->[2] }
-sub coords   { $_[0]->[3] }
+sub new       { bless [@_[1,2,3,4]], $_[0] }
+sub glyphs    { $_[0]->[0] }
+sub clusters  { $_[0]->[1] }
+sub advances  { $_[0]->[2] }
+sub positions { $_[0]->[3] }
 
 # class Object; base class of all Prima classes
 package Prima::Object;

@@ -1,10 +1,8 @@
 use strict;
 use warnings;
 # XXX TODO:
-# bitmap fonts are non-shapers
-# language/script
+# script
 # FRIBIDI_PAR_ON
-# RTL override, WRTL/WLTR?
 # text-out
 
 use Test::More;
@@ -306,6 +304,11 @@ sub test_shaping
                	glyphs "12ABC";
 		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
 		check_noshape_nofribidi();
+
+		my $z = $w->text_shape('12', positions => 1);
+		ok((4 == grep { m/^\d+$/ } @{$z->positions // []}), "positions are okay");
+		ok((2 == grep { m/^\d+$/ } @{$z->advances  // []}), "advances are okay");
+
 		if ( $with_bidi ) {
 			t('12ABC', 'CBA12', 'rtl in rtl', rtl => 1);
 		}
