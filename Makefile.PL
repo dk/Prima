@@ -1473,11 +1473,19 @@ sub setup_fribidi
 	$cmd_options{WITH_FRIBIDI} = 0;
 	unless ( $use_pkgconfig ) {
 		printlog "Checking for presence of fribidi... no, can only check with pkg-config installed\n";
-		return;
+		goto WARN;
 	}
-	return unless pkgconfig('fribidi');
+	goto WARN unless pkgconfig('fribidi');
 	$DEFINES{WITH_FRIBIDI} = 1;
 	$cmd_options{WITH_FRIBIDI} = 1;
+	return;
+
+WARN:
+	$END .= <<BIDI;
+
+** Warning: fribidi is needed for bidirectional text.
+
+BIDI
 }
 
 sub setup_harfbuzz

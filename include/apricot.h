@@ -3614,9 +3614,6 @@ TO(RTL)
 END_TABLE(to,UV)
 #undef TO
 
-extern Bool
-apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags);
-
 typedef struct {
 	char     *language;
 	uint32_t *text;
@@ -3631,8 +3628,17 @@ typedef struct {
 typedef Bool TextShapeFunc( Handle self, PTextShapeRec rec);
 typedef TextShapeFunc *PTextShapeFunc;
 
-extern PTextShapeFunc
-apc_gp_text_get_shaper( Handle self, Bool * glyph_mapper_only);
+typedef struct {
+	int len, flags;
+	unsigned int n_glyphs;
+	uint16_t *glyphs, *clusters, *positions, *advances;
+} GlyphsOutRec, *PGlyphsOutRec;
+
+extern Bool
+apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y);
+
+extern Bool
+apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags);
 
 /* gpi settings */
 extern Color
@@ -3664,6 +3670,12 @@ apc_gp_get_fill_pattern( Handle self);
 
 extern Point
 apc_gp_get_fill_pattern_offset( Handle self);
+
+extern Point*
+apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec text);
+
+extern int
+apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec text);
 
 extern ApiHandle
 apc_gp_get_handle( Handle self);
@@ -3706,6 +3718,9 @@ apc_gp_get_text_box( Handle self, const char * text, int len, int flags);
 
 extern Bool
 apc_gp_get_text_opaque( Handle self);
+
+extern PTextShapeFunc
+apc_gp_get_text_shaper( Handle self, Bool * glyph_mapper_only);
 
 extern int
 apc_gp_get_text_width( Handle self, const char * text, int len, int flags);

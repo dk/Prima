@@ -466,7 +466,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 #endif
 
 	/* font supports shaping? */
-	if (!( system_shaper = apc_gp_text_get_shaper(self, &glyph_mapper_only)))
+	if (!( system_shaper = apc_gp_get_text_shaper(self, &glyph_mapper_only)))
 		return newSViv(0);
 
 	/* allocate buffers */
