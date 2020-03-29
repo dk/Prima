@@ -153,7 +153,7 @@ run_next(PTextShapeRec t, PBidiRunRec r)
 static void
 run_alloc( PTextShapeRec t, int visual_start, int visual_len, Bool invert_rtl, PTextShapeRec run)
 {
-	int i;
+	int i, flags = 0;
 	bzero(run, sizeof(TextShapeRec));
 
 	run-> text         = t->text + visual_start;
@@ -176,13 +176,14 @@ run_alloc( PTextShapeRec t, int visual_start, int visual_len, Bool invert_rtl, P
 			INVERT(uint32_t, run->text, run->text + run->len - 1);
 			INVERT(uint16_t, run->v2l,  run->v2l + run->len - 1);
 		}
-		run-> flags = toRTL;
+		flags = toRTL;
 	}
+	run-> flags        = ( t-> flags & ~toRTL ) | flags;
 	run-> n_glyphs_max = t->n_glyphs_max - t-> n_glyphs;
 	run-> glyphs       = t->glyphs   + t-> n_glyphs;
 	run-> clusters     = t->clusters + t-> n_glyphs;
-	if ( t-> coords )
-		run-> coords = t->coords + t-> n_glyphs * 2;
+	if ( t-> positions )
+		run-> positions = t->positions + t-> n_glyphs * 2;
 	if ( t-> advances )
 		run-> advances = t->advances + t-> n_glyphs;
 }
@@ -316,7 +317,6 @@ bidi_reorder(PTextShapeRec t, Bool arabic_shaping)
 		goto FAIL;
 	for ( i = 0; i < t->len; i++)
 		t->v2l[i] = v2l[i];
-	t-> flags = (base_dir == FRIBIDI_PAR_RTL) ? toRTL : 0;
 	free( buf );
 
 	return true;
@@ -439,7 +439,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	SV * ret = nilSV, 
 		*sv_glyphs = nilSV,
 		*sv_clusters = nilSV,
-		*sv_coords = nilSV,
+		*sv_positions = nilSV,
 		*sv_advances = nilSV;
 	PTextShapeFunc system_shaper;
 	TextShapeRec t;
@@ -488,26 +488,31 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	if (!(t.v2l = warn_malloc(sizeof(uint16_t) * t.len)))
 		goto EXIT;
 
+	if ( pexist(rtl) && pget_B(rtl))
+		t.flags |= toRTL;
+	if ( pexist(positions) && pget_B(positions))
+		t.flags |= toPositions;
+	if ( pexist(language))
+		t.language = pget_c(language);
+
 	/* MSDN, on ScriptShape: A reasonable value is (1.5 * cChars + 16) */
-	t.n_glyphs_max = t.len * 2 + 16; 
+	t.n_glyphs_max = t.len * 2 + 16;
 #define ALLOC(id,n) { \
 	sv_##id = prima_array_new( t.n_glyphs_max * n * sizeof(uint16_t)); \
 	t.id   = (uint16_t*) prima_array_get_storage(sv_##id); \
 }
-	
+
 	ALLOC(glyphs,1);
 	ALLOC(clusters,1);
-	if ( glyph_mapper_only ) {
-		sv_coords = sv_advances = nilSV;
-		t.coords = t.advances = NULL;
+	if ( glyph_mapper_only || !(t.flags & toPositions)) {
+		sv_positions = sv_advances = nilSV;
+		t.positions = t.advances = NULL;
 	} else {
-		ALLOC(coords,2);
+		ALLOC(positions,2);
 		ALLOC(advances,1);
 	}
 #undef ALLOC
 
-	if ( pexist(rtl) && pget_B(rtl)) t.flags |= toRTL;
-		
 	if ( !test_shaper(self, &t, system_shaper, glyph_mapper_only) ) goto EXIT;
 
 	/* encode direction */
@@ -529,12 +534,12 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 }
 	BIND(sv_glyphs, 1);
 	BIND(sv_clusters, 1);
-	if ( sv_coords != nilSV ) BIND(sv_coords, 2);
+	if ( sv_positions != nilSV ) BIND(sv_positions, 2);
 	if ( sv_advances != nilSV ) BIND(sv_advances, 1);
 #undef BIND
 
 	return newSVsv(call_perl(self, "new_glyph_obj", "<SSSS",
-		sv_glyphs, sv_clusters, sv_advances, sv_coords
+		sv_glyphs, sv_clusters, sv_advances, sv_positions
 	));
 
 EXIT:
@@ -543,7 +548,7 @@ EXIT:
 	if ( t.analysis ) free(t.analysis );
 	if ( t.clusters ) sv_free(sv_clusters );
 	if ( t.glyphs   ) sv_free(sv_glyphs   );
-	if ( t.coords   ) sv_free(sv_coords   );
+	if ( t.positions) sv_free(sv_positions);
 	if ( t.advances ) sv_free(sv_advances );
 
 	return nilSV;

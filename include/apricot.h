@@ -3609,6 +3609,7 @@ TO(Glyphs)
 #define toUnicode        0x0004
 TO(Unicode)
 #define toRTL            0x8000
+#define toPositions      0x0400
 TO(RTL)
 END_TABLE(to,UV)
 #undef TO
@@ -3624,7 +3625,7 @@ typedef struct {
 	uint16_t *v2l;
 
 	unsigned int n_glyphs, n_glyphs_max;
-	uint16_t *glyphs, *clusters, *coords, *advances;
+	uint16_t *glyphs, *clusters, *positions, *advances;
 } TextShapeRec, *PTextShapeRec;
 
 typedef Bool TextShapeFunc( Handle self, PTextShapeRec rec);
