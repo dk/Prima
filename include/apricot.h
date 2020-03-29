@@ -3620,7 +3620,8 @@ typedef struct {
 	char     *language;
 	uint32_t *text;
 	int len, flags;
-	Byte * analysis;
+	Byte     *analysis;
+	uint16_t *v2l;
 
 	unsigned int n_glyphs, n_glyphs_max;
 	uint16_t *glyphs, *clusters, *coords, *advances;

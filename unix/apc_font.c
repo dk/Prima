@@ -1102,8 +1102,9 @@ prima_try_height( HeightGuessStack * p, int height)
 				ret = -1;
 				break;
 			}
-		p-> xlfd[ p-> sp] = ret;
 	}
+
+	p-> xlfd[ p-> sp] = ret;
 
 	p-> sp++;
 
@@ -1114,6 +1115,7 @@ DONT_ADVISE:
 			diff = p-> target - p-> prima[i];
 			if ( diff < 0) diff += 1000;
 			if ( best_diff > diff) {
+				if ( p-> xlfd[i] < 0 ) continue;
 				best_diff = diff;
 				best_i = i;
 			}
