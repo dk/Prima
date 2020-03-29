@@ -1450,6 +1450,7 @@ xft_draw_glyphs( PDrawableSysData selfxx,
 		XChangeGC( DISP, XX-> gc, GCFunction|GCBackground|GCForeground|GCPlaneMask, &gcv);
 	}
 
+	if (t) len = t->len;
 	for ( i = 0; i < len; i++) {
 		int cx, cy;
 		FT_UInt ft_index;
@@ -2305,9 +2306,9 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
                 r->clusters[i] = c;
                 r->glyphs[i]   = glyph_info[i].codepoint;
 		if ( glyph_pos ) {
-			r->advances[i] = glyph_pos[i].x_advance;
-			r->positions[j++] = glyph_pos[i].x_offset;
-			r->positions[j++] = glyph_pos[i].y_offset;
+			r->advances[i]    = floor(glyph_pos[i].x_advance / 64 + .5);
+			r->positions[j++] = floor(glyph_pos[i].x_offset  / 64 + .5);
+			r->positions[j++] = floor(glyph_pos[i].y_offset  / 64 + .5);
 		}
 	}
  

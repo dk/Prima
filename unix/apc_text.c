@@ -379,7 +379,7 @@ text_shaper_core_text( Handle self, PTextShapeRec r)
 }
 
 PTextShapeFunc
-apc_gp_text_get_shaper( Handle self, Bool * glyph_mapper_only)
+apc_gp_get_text_shaper( Handle self, Bool * glyph_mapper_only)
 {
 	*glyph_mapper_only = true;
 #ifdef USE_XFT
