@@ -1949,20 +1949,20 @@ prima_xft_get_font_ranges( Handle self, int * count)
 		int i, j;
 		for (i = 0; i < FC_CHARSET_MAP_SIZE; i++)
 			if (map[i]) {
-					for (j = 0; j < 32; j++)
-						if (map[i] & (1 << j)) {
-							FcChar32 u = ucs4 + i * 32 + j;
-							if ( haslast) {
-								if ( last != u - 1) {
-									ADD( last,true);
-									ADD( u,false);
-								}
-							} else {
+				for (j = 0; j < 32; j++)
+					if (map[i] & (1 << j)) {
+						FcChar32 u = ucs4 + i * 32 + j;
+						if ( haslast) {
+							if ( last != u - 1) {
+								ADD( last,true);
 								ADD( u,false);
-								haslast = 1;
 							}
-							last = u;
+						} else {
+							ADD( u,false);
+							haslast = 1;
 						}
+						last = u;
+					}
 			}
 	}
 	if ( haslast) ADD( last,true);
