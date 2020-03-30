@@ -339,13 +339,13 @@ sub test_shaping
 	}
 }
 
-sub test_utf16_surrogates
+sub test_high_unicode
 {
-	ok(1, "win32: utf16 surrogates");
+	ok(1, "high unicode");
 
 	SKIP: {
 		my $chars = find_high_unicode_font;
-		skip("win32: no fonts with characters above 0x10000", 1) unless $chars && @$chars;
+		skip("no fonts with characters above 0x10000", 1) unless $chars && @$chars;
 		#splice(@$chars, 256); # win32 reports empty glyphs as available, but surely in 256 should be at least one valid glyph
 
 		my $char;
@@ -357,8 +357,8 @@ sub test_utf16_surrogates
         	        $glyphs{$high_unicode_char} = $k->glyphs->[0];
 			last;
         	}
-		skip("win32: text shaping is not available", 1) unless defined $char;
-		t("^^", "^^", sprintf("win32: found char U+%x in " . $w->font->name . " as glyph %x", $char, $glyphs{$high_unicode_char}));
+		skip("text shaping is not available", 1) unless defined $char;
+		t("^^", "^^", sprintf("found char U+%x in " . $w->font->name . " as glyph %x", $char, $glyphs{$high_unicode_char}));
 	}
 }
 
@@ -484,8 +484,8 @@ sub run_test
 		}
 	} else {
 		test_shaping($found, $opt{fribidi});
-		test_utf16_surrogates;
 	}
+	test_high_unicode;
 	test_drawing;
 }
 
