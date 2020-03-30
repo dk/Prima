@@ -788,7 +788,7 @@ sub on_keydown
 			}
 		}
 
-		if ( !($mod & ~km::Shift))  {
+		if (!($mod & (km::Ctrl|km::Alt))) {
 			my $i;
 			my ( $c, $hit, $items) = ( lc chr $code, undef, $self-> {items});
 			for ( $i = $self-> {focusedItem} + 1; $i < $self-> {count}; $i++)
