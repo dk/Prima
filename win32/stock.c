@@ -904,8 +904,7 @@ fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, PFEnumStruc es)
 		ret = 0; // enough; no further enumeration requred, since Win renders TrueType quite good
 					// to not mix these with raster fonts.
 		goto EXIT;
-	}
-	if ( type == 0) {
+	} else if ( !( type & RASTER_FONTTYPE)) {
 		copy = 1;
 		ret  = 1; // it's vector font; but keep enumeration in case we'll get better match
 		es-> vecId = 1;
