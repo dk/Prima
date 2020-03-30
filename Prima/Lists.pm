@@ -1787,7 +1787,8 @@ sub on_keydown
 	if (
 		(( $code & 0xFF) >= ord(' ')) &&
 		( $key == kb::NoKey) &&
-		!($mod & ~km::Shift) && $self-> {count}
+		!($mod & (km::Ctrl|km::Alt)) &&
+		$self-> {count}
 	) {
 		my $i;
 		my ( $c, $hit, $items) = ( lc chr ( $code & 0xFF), undef, $self-> {items});
