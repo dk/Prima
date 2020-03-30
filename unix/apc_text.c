@@ -48,16 +48,20 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, int 
 	int ax = 0, ay = 0;
 	int psx, psy, dsx, dsy;
 	Fixed rx, ry;
+	Bool wide = flags & toUnicode;
 
-	if ( !prima_update_rotated_fonts( XX-> font, text, len, flags, PDrawable( self)-> font. direction, &r, ok_to_not_rotate))
+	if ( !prima_update_rotated_fonts( XX-> font,
+		text, len, wide,
+		PDrawable( self)-> font. direction, &r, ok_to_not_rotate
+	))
 		return false;
 
 	for ( i = 0; i < len; i++) {
 		XChar2b index;
 
 		/* acquire actual character index */
-		index. byte1 = (flags & toUTF8) ? (( XChar2b*) text+i)-> byte1 : 0;
-		index. byte2 = (flags & toUTF8) ? (( XChar2b*) text+i)-> byte2 : *((unsigned char*)text+i);
+		index. byte1 = wide ? (( XChar2b*) text + i)-> byte1 : 0;
+		index. byte2 = wide ? (( XChar2b*) text + i)-> byte2 : *((unsigned char*)text + i);
 
 		if ( index. byte1 < r-> first1 || index. byte1 >= r-> first1 + r-> height ||
 			index. byte2 < r-> first2 || index. byte2 >= r-> first2 + r-> width) {
@@ -297,6 +301,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 
 	if ( len == 0) return true;
 	if ( len > 65535 ) len = 65535;
+	flags &= ~toGlyphs;
 
 #ifdef USE_XFT
 	if ( XX-> font-> xft)
@@ -308,11 +313,13 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 
 	if ( XX-> flags. paint_opaque)
 		paint_text_background( self, text, x, y, len, flags);
+
 	SHIFT(x, y);
 	RANGE2(x,y);
 	if ( PDrawable( self)-> font. direction != 0) {
 		Bool ok_to_not_rotate = false;
-		Bool ret = gp_text_out_rotated( self, text, x, y, len, flags, &ok_to_not_rotate);
+		Bool ret;
+		ret = gp_text_out_rotated( self, text, x, y, len, flags, &ok_to_not_rotate);
 		if ( !ok_to_not_rotate) {
 			if ( flags & toUTF8) free(( char *) text);
 			return ret;
@@ -328,6 +335,22 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 
 	return ret;
 }
+
+static int need_swap_bytes = -1;
+static void
+swap_bytes( register uint16_t * area, int len ) 
+{
+	if ( need_swap_bytes < 0 ) {
+		XChar2b  b = { 0x1, 0x23 };
+		uint16_t a = 0x123, *pb = (uint16_t*) &b;
+		need_swap_bytes = a != *pb;
+	}
+	if ( need_swap_bytes ) while (len-- > 0) {	
+		register uint16_t x = *area;
+		*(area++) = (( x & 0xff ) << 8) | (x >> 8);
+	}
+}
+#define SWAP_BYTES(area,len) if (need_swap_bytes) swap_bytes(area,len)
 
 Bool
 apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
@@ -346,22 +369,28 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		return prima_xft_glyphs_out( self, t, x, y);
 #endif
 
+	SWAP_BYTES(t->glyphs,t->len);
 	if ( XX-> flags. paint_opaque)
 		paint_text_background( self, (const char*) t->glyphs, x, y, t->len, toUnicode);
+
 	SHIFT(x, y);
 	RANGE2(x,y);
-	ret = text_out(self, (const char*) t->glyphs, x, y, t->len, toUnicode);
 	if ( PDrawable( self)-> font. direction != 0) {
 		Bool ok_to_not_rotate = false;
-		Bool ret = gp_text_out_rotated( self, (const char*) t->glyphs,
+		ret = gp_text_out_rotated( self, (const char*) t->glyphs,
 			x, y, t->len, toUnicode, &ok_to_not_rotate);
 		if ( !ok_to_not_rotate)
-			return ret;
+			goto EXIT;
 	}
+
+	ret = text_out(self, (const char*) t->glyphs, x, y, t->len, toUnicode);
+
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut))
 		draw_text_underline(self, (const char*) t->glyphs, x, y, t->len, toUnicode);
 	XFLUSH;
 
+EXIT:
+	SWAP_BYTES(t->glyphs,t->len);
 	return ret;
 }
 
@@ -569,6 +598,7 @@ apc_gp_get_text_width( Handle self, const char * text, int len, int flags)
 {
 	int ret;
 
+	flags &= ~toGlyphs;
 	if ( len > 65535 ) len = 65535;
 
 #ifdef USE_XFT

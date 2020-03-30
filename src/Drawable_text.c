@@ -139,10 +139,9 @@ sv2unicode( SV * text, int * size, int * flags)
 
 	src = SvPV(text, dlen);
 	if (prima_is_utf8_sv(text)) {
-		*flags = toUTF8;
+		*flags |= toUTF8;
 		*size = prima_utf8_length(src);
 	} else {
-		*flags = 0;
 		*size = dlen;
 	}
 
@@ -516,6 +515,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	/* forward, if any */
 	if ( SvROK(text_sv)) {
 		SV * ref = newRV_noinc((SV*) profile);
+		hv_clear(profile); /* old gencls bork */
 		gpENTER(nilSV);
 		ret = sv_call_perl(text_sv, "text_shape", "<HSS", self, text_sv, ref);
 		gpLEAVE;
@@ -532,6 +532,14 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		use_fribidi = false;
 	}
 #endif
+
+	if ( pexist(rtl) && pget_B(rtl))
+		t.flags |= toRTL;
+	if ( pexist(positions) && pget_B(positions))
+		t.flags |= toPositions;
+	if ( pexist(language))
+		t.language = pget_c(language);
+	hv_clear(profile); /* old gencls bork */
 
 	/* font supports shaping? */
 	if (!( system_shaper = apc_gp_get_text_shaper(self, &glyph_mapper_only)))
@@ -555,13 +563,6 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		goto EXIT;
 	if (!(t.v2l = warn_malloc(sizeof(uint16_t) * t.len)))
 		goto EXIT;
-
-	if ( pexist(rtl) && pget_B(rtl))
-		t.flags |= toRTL;
-	if ( pexist(positions) && pget_B(positions))
-		t.flags |= toPositions;
-	if ( pexist(language))
-		t.language = pget_c(language);
 
 	/* MSDN, on ScriptShape: A reasonable value is (1.5 * cChars + 16) */
 	t.n_glyphs_max = t.len * 2 + 16;
