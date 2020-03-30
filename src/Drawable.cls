@@ -51,6 +51,7 @@ object Prima::Drawable ( Prima::Component)
 	method Font  get_font();
 	method SV *  get_font_abc( int first = -1, int last = -1, int flags = 0);
 	method SV *  get_font_def( int first = -1, int last = -1, int flags = 0);
+	method SV *  get_font_languages();
 	method SV *  get_font_ranges();
 	method SV *  get_handle();
 	method Color get_nearest_color( Color color);

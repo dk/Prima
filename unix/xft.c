@@ -1970,6 +1970,55 @@ prima_xft_get_font_ranges( Handle self, int * count)
 	return ret;
 }
 
+char *
+prima_xft_get_font_languages( Handle self)
+{
+	FcPattern *pat;
+	FcLangSet *ls;
+	FcStrSet  *ss;
+	FcStrList *l;
+	FcChar8  *s;
+	char *ret, *p;
+	int size;
+	
+	if ( !(pat = X(self)-> font-> xft-> pattern))
+		return NULL;
+	FcPatternGetLangSet(pat, FC_LANG, 0, &ls);
+	if ( !ls )
+		return NULL;
+	if ( !(ss = FcLangSetGetLangs(ls)))
+		return NULL;
+	if ( !(l = FcStrListCreate (ss)))
+		return NULL;
+
+	size = 1024; /* longest line from 'fc-list -v' is 779 */
+	if ( !(p = ret = malloc(size)))
+		goto FAIL;
+
+	FcStrListFirst(l);
+	while ((s = FcStrListNext(l)) != NULL) {
+		int len = strlen((char*)s);
+		if ( p - ret + len + 1 + 1 > size ) {
+			char * p2;
+			size *= 2;
+			if ( !( p2 = realloc(ret, size)))
+				goto FAIL;
+			p   = p2 + (p - ret);
+			ret = p2;
+		}
+		strcpy( p, (char*) s );
+		p += len + 1;
+	}
+	*p = 0;
+	FcStrListDone(l);
+	return ret;
+
+FAIL:
+	FcStrListDone(l);
+	free(ret);
+	return NULL;
+}
+
 PFontABC
 prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, int flags)
 {

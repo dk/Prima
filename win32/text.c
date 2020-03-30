@@ -702,6 +702,12 @@ apc_gp_get_font_ranges( Handle self, int * count)
 	return ret;
 }}
 
+unsigned char *
+apc_gp_get_font_languages( Handle self)
+{objCheck nil;{
+	return NULL;
+}}
+
 static int
 gp_get_text_width( Handle self, const char* text, int len, int flags)
 {

@@ -1641,6 +1641,8 @@ sub get_font_ranges
 	return [ $self-> {font}-> {firstChar}, $self-> {font}-> {lastChar}];
 }
 
+sub get_font_languages {}
+
 sub get_text_width
 {
 	my ( $self, $text, $addOverhang) = @_;

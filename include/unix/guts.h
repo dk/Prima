@@ -1408,6 +1408,9 @@ prima_xft_glyphs_out( Handle self, PGlyphsOutRec glyphs, int x, int y);
 extern unsigned long *
 prima_xft_get_font_ranges( Handle self, int * count);
 
+extern char *
+prima_xft_get_font_languages( Handle self);
+
 extern PFontABC
 prima_xft_get_font_abc( Handle self, int firstChar, int lastChar, int flags);
 

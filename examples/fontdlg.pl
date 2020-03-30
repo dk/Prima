@@ -226,7 +226,6 @@ sub create_info_window
 			$p-> linePattern( lp::Dash);
 			$p-> line( 2, $sd, $w, $sd);
 
-
 			$p-> font-> set(
 				height => 16,
 				pitch  => fp::Fixed,
@@ -251,7 +250,24 @@ sub create_info_window
 			$p-> text_out( 'default char        : '.$m-> {defaultChar}, 2, $sd); $sd -= $fh;
 			$p-> text_out( 'family              : '.$m-> {family   }, 2, $sd); $sd -= $fh;
 			$p-> text_out( 'face name           : '.$cachedFacename, 2, $sd); $sd -= $fh;
+			unless ( $p-> Languages-> visible ) {
+				my $l = $p-> Languages;
+				my $em = $p->get_text_width('m');
+				$l->origin( 2 + $em * 22, $sd );
+				$l->font( $p-> font );
+				$l->size( $em * 10, $fh);
+				$l->show;
+			}
+			$p-> text_out( 'languages           : ', 2, $sd); $sd -= $fh;
 		},
+	);
+
+	$ww-> insert( ComboBox => 
+		name     => 'Languages',
+		style    => cs::DropDownList,
+		items    => $ww->get_font_languages // ['<none>'],
+		growMode => gm::GrowLoY,
+		visible  => 0,
 	);
 
 	my %wf = ( %$f, direction => 0 );
