@@ -405,7 +405,6 @@ win32_shaper( Handle self, PTextShapeRec t)
 			GOFFSET * i_g;
 			int * i_a;
 			uint16_t * o_g, *o_a;
-			printf("copying %d positions\n", nglyphs);
 			if (( hr = ScriptPlace(sys ps, script_cache, t->glyphs + t->n_glyphs, nglyphs,
 			       visuals, &items[item].a,
 			       advances, goffsets, &abc)) != S_OK
