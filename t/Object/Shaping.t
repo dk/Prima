@@ -421,7 +421,7 @@ sub test_glyphs_wrap
 	is( $r, 1, "tw::ReturnFirstLineLength");
 	
 	$r = $w-> text_wrap( $z, 0, tw::ReturnChunks );
-	is_deeply( $r, [0,1,1,1], "tw::ReturnFirstLineLength");
+	is_deeply( $r, [0,1,1,1], "tw::ReturnChunks");
 	
 	$r = $w-> text_wrap( $z, 0, 0 );
 	is( scalar(@$r), 2, "wrap: split to 2 pieces");
