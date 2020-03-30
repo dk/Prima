@@ -527,25 +527,50 @@ find_good_font_by_family( Font * f, int fc_spacing )
 			if ( hash_fetch( font_hash, f.family, len))
 				continue;
 
+			if ( spacing == FC_MONO ) {
+				char * p;
+				#define MONO_TAG " Mono"
+				if (( p = strcasestr(f.name, MONO_TAG)) == NULL )
+					continue;
+				p += strlen(MONO_TAG);
+				if ( *p != ' ' && *p != 0 )
+					continue;
+				#undef MONO_TAG
+			}
+
 			hash_store( font_hash, f.family, len, duplicate_string(f.name));
 		}
 		FcFontSetDestroy(s);
 	}
 	/* initialized ok */
+	XFTdebug("trying to find %s pitch replacement for %s/%s", 
+		(fc_spacing == FC_MONO ) ? "fixed" : "variable",
+		f->name, f->family);
 
 	/* try to find same family and same 1st word in font name */
 	{
 		char *c, *w, word1[255], word2[255];
 		PHash font_hash = (fc_spacing == FC_MONO) ? mono_fonts : prop_fonts;
 		c = hash_fetch( font_hash, f->family, strlen(f->family));
-		if ( !c ) return NULL;
-		if ( strcmp( c, f->name) == 0) return NULL; /* same font */
+		if ( !c ) {
+			XFTdebug("no default font for that family");
+			return NULL;
+		}
+		if ( strcmp( c, f->name) == 0) {
+			XFTdebug("same font");
+			return NULL; /* same font */
+		}
 
 		strcpy( word1, c);
 		strcpy( word2, f->name);
 		if (( w = strchr( word1, ' '))) *w = 0;
 		if (( w = strchr( word2, ' '))) *w = 0;
-		if ( strcmp( word1, word2 ) != 0 ) return NULL;
+		if ( strcmp( word1, word2 ) != 0 ) {
+			XFTdebug("default font %s doesn't look similar", c);
+			return NULL;
+		}
+		XFTdebug("replaced with %s", c);
+
 		return c;
 	}
 }
@@ -778,10 +803,12 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 				Bool ret;
 				Font s = *source;
 				strcpy(s.name, monospace_font);
+				s.undef.name = 0;
 				XFTdebug("try fixed pitch");
 				try_xft_monospace_emulation_by_name++;
 				ret = prima_xft_font_pick( self, &s, dest, size, xft_result);
 				try_xft_monospace_emulation_by_name--;
+				XFTdebug("fixed pitch done");
 				return ret;
 			} else {
 				Bool ret;
@@ -813,6 +840,7 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			if (( proportional_font = find_good_font_by_family(&font_with_family, FC_PROPORTIONAL))) {
 				/* try a good variable font, again */
 				Font s = *source;
+				s.undef.name = 0;
 				strcpy(s.name, proportional_font);
 				XFTdebug("try variable pitch");
 				FcPatternDestroy( match);
