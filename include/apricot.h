@@ -3630,7 +3630,6 @@ typedef TextShapeFunc *PTextShapeFunc;
 
 typedef struct {
 	int len, flags;
-	unsigned int n_glyphs;
 	uint16_t *glyphs, *clusters, *positions, *advances;
 } GlyphsOutRec, *PGlyphsOutRec;
 

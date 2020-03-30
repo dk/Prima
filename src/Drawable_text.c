@@ -964,11 +964,11 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 		start, utf_start, end, utfend,                    \
 		tildeIndex,                                       \
 		&tildePos, &tildeLPos, &tildeLine,                \
-		&ret, &bufsize))                                    \
+		&ret, &bufsize))                                  \
 			return ret;                               \
 	start     = end;                                          \
 	utf_start = utfend;                                       \
-	if ( t-> options & twReturnFirstLineLength) return ret;
+	if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) return ret;\
 
 #define ADVANCE               \
 	split_start = p;      \
@@ -1168,7 +1168,10 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent)
 	t. unicode   = &var-> font_abc_unicode;
 	t. t_char    = NULL;
 
-	gpENTER( (options & twReturnFirstLineLength) ? newSViv(0) : newRV_noinc(( SV *) newAV()));
+	gpENTER(
+		(( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) ?
+			newSViv(0) : newRV_noinc(( SV *) newAV())
+	);
 	c = Drawable_do_text_wrap( self, &t);
 	gpLEAVE;
 
@@ -1282,39 +1285,42 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	Bool reassign_w = 1;
 	Bool doWidthBreak = t-> width >= 0;
 
-#define ADD(end)                                                 \
+#define ADD(end) if (1) {                                        \
 	if ( !add_wrapped_glyphs( t, start, end, &ret, &size))   \
 		return ret;                                      \
 	start = end;                                             \
-	if (t-> options & twReturnFirstLineLength)               \
-		return ret;
+	if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) return ret;\
+}
 
 	t-> count = 0;
 	if (!( ret = allocn( unsigned int, size))) return NULL;
 
 	/* process glyphs */
-	for ( i = 0; i < t-> n_glyphs; i++) {
+
+	for ( i = 0; i < t-> n_glyphs; ) {
 		uint16_t uv;
 		float winc;
 		int p = i;
-
+	
 		uv = t-> glyphs[i];
 		if ( uv / 256 != base)
-			if ( !precalc_abc_buffer( query_abc_range_glyphs( self, t, base = uv / 256), width, abc))
+			if ( !precalc_abc_buffer( query_abc_range_glyphs( self, t, base = uv / 256), width, abc)) {
 				return ret;
+			}
 		if ( reassign_w) {
 			w = initial_overhang = abc[ uv & 0xff]. a;
 			reassign_w = 0;
 		}
 		winc = width[ uv & 0xff];
 		inc  = abc[ uv & 0xff]. c;
+		i++;
 
-		if ( doWidthBreak && w + winc + inc > t-> width) {
+		if ( !doWidthBreak || (w + winc + inc <= t-> width)) {
 			w += winc;
 			continue;
 		}
 
-		if (( p == start) || ( p == start - 1)) {
+		if ( p == start ) {
 			/* case when even single char cannot be fit in  */
 			if ( t-> options & twBreakSingle) {
 				/* do not return anything in this case */
@@ -1347,21 +1353,21 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 	AV * av;
 	int i;
 	unsigned int * c;
-	Bool do_free;
+	GlyphsOutRec g;
 
-	t. width     = ( width < 0) ? 0 : width;
-	t. options   = options;
-	t. cache     = &var-> font_abc_glyphs;
+	if (!read_glyphs(&g, text, "Drawable::text_wrap"))
+		return false;
 
-	gpENTER((options & twReturnFirstLineLength) ? newSViv(0) : newRV_noinc(( SV *) newAV()));
+	t.n_glyphs  = g.len;
+	t.glyphs    = g.glyphs;	
+	t.width     = ( width < 0) ? 0 : width;
+	t.options   = options;
+	t.cache     = &var-> font_abc_glyphs;
 
-	if ( !( t.glyphs = prima_read_array(
-		text, "Drawable::text_wrap",
-		's', 1, 1, -1, &t.n_glyphs, &do_free))) {
-		gpLEAVE;
-		return nilSV;
-	}
-
+	gpENTER(
+		(( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) ?
+			newSViv(0) : newRV_noinc(( SV *) newAV())
+	);
 	c = Drawable_do_glyphs_wrap( self, &t);
 	gpLEAVE;
 
@@ -1371,31 +1377,51 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 			if ( t. count > 0) rlen = c[1];
 			free( c);
 		}
-		if ( do_free ) free( t. glyphs );
 		return newSViv( rlen);
 	}
 
-	if ( !c) {
-		if ( do_free ) free( t. glyphs );
+	if ( !c)
 		return nilSV;
-	}
 
 	av = newAV();
 	if ( options & twReturnChunks) {
 		for ( i = 0; i < t.count; i++)
 			av_push( av, newSViv( c[i]));
 	} else {
-		for ( i = 0; i < t. count; i += 2) {
-			SV * sv;
-			unsigned int offset = c[i], size = c[i + 1] * 2;
-			sv = prima_array_new(size);
-			memcpy( prima_array_get_storage(sv), t.glyphs + offset, size);
-			av_push( av, prima_array_tie( sv, 2, "S"));
+		int j, mul[4] = { 1, 1, 1, 2 };
+		uint16_t *payload[4] = { g.glyphs, g.clusters, g.advances, g.positions };
+		for ( i = 0; i < t.count; i += 2) {
+			SV *sv_payload[4];
+			unsigned int offset = c[i], size = c[i + 1] * sizeof(uint16_t);
+			if ( size == 0 ) {
+				av_push( av, nilSV);
+				continue;
+			}
+
+			for ( j = 0; j < 4; j++) {
+				if ( payload[j] ) {
+					SV * sv = prima_array_new(size * mul[j]);
+					memcpy(
+						prima_array_get_storage(sv),
+						payload[j] + offset * mul[j],
+						size * mul[j]
+					);
+					sv_payload[j] = prima_array_tie( sv, sizeof(uint16_t), "S");
+				} else
+					sv_payload[j] = nilSV;
+			}
+			av_push( av, newSVsv(
+				call_perl(self, "new_glyph_obj", "<SSSS",
+					sv_payload[0],
+					sv_payload[1],
+					sv_payload[2],
+					sv_payload[3]
+				)
+			));
 		}
 	}
 	free( c);
 
-	if ( do_free ) free( t. glyphs );
 	return newRV_noinc(( SV *) av);
 }
 
@@ -1410,7 +1436,10 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 	} else {
 		SV * ret;
 		gpARGS;
-		gpENTER((options & twReturnFirstLineLength) ? newSViv(0) : newRV_noinc(( SV *) newAV()));
+		gpENTER(
+			(( options & twReturnFirstLineLength) == twReturnFirstLineLength) ?
+				newSViv(0) : newRV_noinc(( SV *) newAV())
+		);
 		ret = newSVsv(sv_call_perl(text, "text_wrap", "<Hiii", self, width, options, tabIndent));
 		gpLEAVE;
 		return ret;

@@ -332,7 +332,7 @@ sub test_shaping
 		}
 
 		SKIP: {
-			skip("no khmer font", 1) unless find_vector_font(0x179f);
+ 			skip("no khmer font", 1) unless find_vector_font(0x179f);
 			my $z = $w-> text_shape("\x{179f}\x{17b9}\x{1784}\x{17d2}");
 			ok( $z && scalar(grep {$_} @{$z->glyphs}), 'khmer shaping');
 		}
@@ -362,27 +362,14 @@ sub test_utf16_surrogates
 	}
 }
 
-sub test_drawing
-{ SKIP: {
-	glyphs "12";
-	skip("glyph drawing is not available", 1) unless glyphs_fully_resolved;
-
-	$w-> backColor(cl::Black);
-	$w-> color(cl::White);
-	$w-> font-> set( height => 25, style => fs::Underlined );
-	$w-> clear;
-	$w-> text_out( "12", 5, 5 );
-	my $i = $w->image;
-	$i->type(im::Byte);
-	my $sum1 = $i->sum;
-	skip("text drawing on bitmap is not available", 1) unless $sum1;
-	
+sub test_glyphs_out
+{
+	my $sum1 = shift;
 	my $z = $w-> text_shape('12');
-	skip("shaping is not available", 1) unless $z;
 
 	$w-> clear;
 	$w-> text_out( $z, 5, 5 );
-	$i = $w->image;
+	my $i = $w->image;
 	$i->type(im::Byte);
 	my $sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting");
@@ -396,7 +383,7 @@ sub test_drawing
 	is($sum3, $sum1, "glyphs plotting with positions");
 
 	$w-> clear;
-	$w->font->direction(-45.0);
+	$w-> font-> set( height => 25, style => fs::Underlined, direction => -10 );
 	$w-> text_out( "12", 5, 5 );
 	$i = $w->image;
 	$i->type(im::Byte);
@@ -417,6 +404,59 @@ sub test_drawing
 	$i->type(im::Byte);
 	$sum3 = $i->sum;
 	is($sum3, $sum1, "glyphs plotting 45 degrees with positions");
+}
+
+sub test_glyphs_wrap
+{
+	$w->font->size(12);
+	my $z = $w-> text_shape('12', positions => 1);
+	is( 2, scalar( @{ $z->glyphs // [] }), "text '12' resolved to 2 glyphs");
+
+	my ($tw) = @{ $z->advances // [ $w->get_text_width('1') ] };
+
+	my $r = $w-> text_wrap( $z, 0, tw::BreakSingle );
+	is_deeply( $r, [], "warp with no fits");
+
+	$r = $w-> text_wrap( $z, 0, tw::ReturnFirstLineLength );
+	is( $r, 1, "tw::ReturnFirstLineLength");
+	
+	$r = $w-> text_wrap( $z, 0, tw::ReturnChunks );
+	is_deeply( $r, [0,1,1,1], "tw::ReturnFirstLineLength");
+	
+	$r = $w-> text_wrap( $z, 0, 0 );
+	is( scalar(@$r), 2, "wrap: split to 2 pieces");
+	is_deeply( $r->[0]->glyphs, [ $z->glyphs->[0] ], "glyphs 1");
+	is_deeply( $r->[1]->glyphs, [ $z->glyphs->[1] ], "glyphs 2");
+	is_deeply( $r->[0]->clusters, [ $z->clusters->[0] ], "clusters 1");
+	is_deeply( $r->[1]->clusters, [ $z->clusters->[1] ], "clusters 2");
+	if ( $z-> advances ) {
+		is_deeply( $r->[0]->advances, [ $z->advances->[0] ], "advances 1");
+		is_deeply( $r->[1]->advances, [ $z->advances->[1] ], "advances 2");
+		is_deeply( $r->[0]->positions, [ @{$z->positions}[0,1] ], "positions 1");
+		is_deeply( $r->[1]->positions, [ @{$z->positions}[2,3] ], "positions 2");
+	}
+}
+
+sub test_drawing
+{ SKIP: {
+	glyphs "12";
+	skip("glyph drawing is not available", 1) unless glyphs_fully_resolved;
+
+	$w-> backColor(cl::Black);
+	$w-> color(cl::White);
+	$w-> font-> set( height => 25, style => fs::Underlined );
+	$w-> clear;
+	$w-> text_out( "12", 5, 5 );
+	my $i = $w->image;
+	$i->type(im::Byte);
+	my $sum1 = $i->sum;
+	skip("text drawing on bitmap is not available", 1) unless $sum1;
+	
+	my $z = $w-> text_shape('12');
+	skip("shaping is not available", 1) unless $z;
+
+	test_glyphs_out($sum1);
+	test_glyphs_wrap();
 }}
 
 sub run_test
