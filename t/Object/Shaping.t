@@ -362,6 +362,63 @@ sub test_utf16_surrogates
 	}
 }
 
+sub test_drawing
+{ SKIP: {
+	glyphs "12";
+	skip("glyph drawing is not available", 1) unless glyphs_fully_resolved;
+
+	$w-> backColor(cl::Black);
+	$w-> color(cl::White);
+	$w-> font-> set( height => 25, style => fs::Underlined );
+	$w-> clear;
+	$w-> text_out( "12", 5, 5 );
+	my $i = $w->image;
+	$i->type(im::Byte);
+	my $sum1 = $i->sum;
+	skip("text drawing on bitmap is not available", 1) unless $sum1;
+	
+	my $z = $w-> text_shape('12');
+	skip("shaping is not available", 1) unless $z;
+
+	$w-> clear;
+	$w-> text_out( $z, 5, 5 );
+	$i = $w->image;
+	$i->type(im::Byte);
+	my $sum2 = $i->sum;
+	is($sum2, $sum1, "glyphs plotting");
+	
+	$w-> clear;
+	$z = $w-> text_shape('12', positions => 0);
+	$w-> text_out( $w-> text_shape('12', positions => 0), 5, 5 );
+	$i = $w->image;
+	$i->type(im::Byte);
+	my $sum3 = $i->sum;
+	is($sum3, $sum1, "glyphs plotting with positions");
+
+	$w-> clear;
+	$w->font->direction(-45.0);
+	$w-> text_out( "12", 5, 5 );
+	$i = $w->image;
+	$i->type(im::Byte);
+	$sum1 = $i->sum;
+	
+	$z = $w-> text_shape('12');
+	$w-> clear;
+	$w-> text_out( $z, 5, 5 );
+	$i = $w->image;
+	$i->type(im::Byte);
+	$sum2 = $i->sum;
+	is($sum2, $sum1, "glyphs plotting 45 degrees");
+	
+	$w-> clear;
+	$z = $w-> text_shape('12', positions => 0);
+	$w-> text_out( $w-> text_shape('12', positions => 0), 5, 5 );
+	$i = $w->image;
+	$i->type(im::Byte);
+	$sum3 = $i->sum;
+	is($sum3, $sum1, "glyphs plotting 45 degrees with positions");
+}}
+
 sub run_test
 {
 	my $unix = shift;
@@ -387,8 +444,9 @@ sub run_test
 		}
 	} else {
 		test_shaping($found, $opt{fribidi});
-		test_utf16_surrogates();
+		test_utf16_surrogates;
 	}
+	test_drawing;
 }
 
 if ( Prima::Application-> get_system_info->{apc} == apc::Unix ) {

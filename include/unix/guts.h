@@ -1203,7 +1203,7 @@ extern void
 prima_update_cursor( Handle self);
 
 extern Bool
-prima_update_rotated_fonts( PCachedFont f, const char * text, int len, int flags,
+prima_update_rotated_fonts( PCachedFont f, const char * text, int len, Bool wide,
 	double direction, PRotatedFont *result, Bool * ok_to_not_rotate);
 
 extern void

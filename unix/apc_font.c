@@ -2031,7 +2031,7 @@ FAILED:
 		XSetForeground( DISP, r-> arena_gc, 0);
 		XFillRectangle( DISP, r-> arena, r-> arena_gc, 0, 0, r-> orgBox. x, r-> orgBox .y);
 		XSetForeground( DISP, r-> arena_gc, 1);
-		if ( wide)
+		if (wide)
 			XDrawString16( DISP, r-> arena, r-> arena_gc,
 				( cs-> lbearing < 0) ? -cs-> lbearing : 0,
 				r-> orgBox. y - f-> fs-> max_bounds. descent,
