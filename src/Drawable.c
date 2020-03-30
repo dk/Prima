@@ -392,6 +392,26 @@ Drawable_get_font_def( Handle self, int first, int last, int flags)
 }
 
 SV *
+Drawable_get_font_languages( Handle self)
+{
+	char *buf, *p;
+	AV * av = newAV();
+	gpARGS;
+
+	gpENTER( newRV_noinc(( SV *) av));
+	p = buf = apc_gp_get_font_languages( self);
+	gpLEAVE;
+	if (p) {
+		while (*p) {
+			int len = strlen(p);
+			av_push(av, newSVpv(p, len));
+			p += len + 1;
+		}
+		free(buf);
+	}
+	return newRV_noinc(( SV *) av);
+}
+SV *
 Drawable_get_font_ranges( Handle self)
 {
 	int count = 0;

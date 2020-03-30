@@ -3661,6 +3661,9 @@ apc_gp_get_font_def( Handle self, int firstChar, int lastChar, int flags);
 extern unsigned long *
 apc_gp_get_font_ranges( Handle self, int * count);
 
+extern char *
+apc_gp_get_font_languages( Handle self);
+
 extern int
 apc_gp_get_fill_mode( Handle self);
 

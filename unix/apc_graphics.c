@@ -1488,6 +1488,23 @@ apc_gp_get_font_ranges( Handle self, int * count)
 	return ret;
 }
 
+char *
+apc_gp_get_font_languages( Handle self)
+{
+	DEFXX;
+	char * ret;
+#ifdef USE_XFT
+	if ( XX-> font-> xft)
+		return prima_xft_get_font_languages(self);
+#endif
+	if ( XX-> font-> flags.funky )
+		return NULL;
+	if ( !( ret = malloc(4)))
+		return NULL;
+	memcpy(ret, "en\0\0", 4);
+	return ret;
+}
+
 int
 apc_gp_get_fill_mode( Handle self)
 {
