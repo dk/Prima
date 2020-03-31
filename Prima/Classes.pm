@@ -1488,6 +1488,7 @@ sub begin_drag
 	if ( $self->alive ) {
 		if ( $ret == dnd::None && $opt{preview} ) {
 			my @npp = $::application->pointerPos;
+			$npp[1] -= $opt{preview}->heightDragText;
 			my $paint_flag = 0;
 			my $flyback = Prima::Widget->new(
 				size      => [ $opt{preview}->size ],
