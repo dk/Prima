@@ -702,10 +702,289 @@ apc_gp_get_font_ranges( Handle self, int * count)
 	return ret;
 }}
 
-unsigned char *
+static char *
+single_lang(const char * lang1)
+{
+	char * m;
+	int l = strlen(lang1) + 1;
+	m = malloc( l + 3 + 1 );
+	strcpy( m, "en" );
+	strcpy( m + 3, lang1 );
+	m[l + 3] = 0;
+	return m;
+}
+
+typedef struct {
+	DWORD v[4];
+	const char * str;
+} LangId;
+
+static LangId languages[] = {
+	{
+		{0x00000001,0x00000000,0x00000000,0x00000000},
+		"fj ho ia ie io kj kwm ms ng nr om rn rw sn so ss st sw ts uz xh za zu"
+	},{
+		{0x00000003,0x00000000,0x00000000,0x00000000},
+		"aa an ay bi br ch da de en es eu fil fo fur fy gd gl gv ht id is it jv lb li mg nb nds nl nn no oc pap-an pap-aw pt rm sc sg sma smj sq su sv tl vo wa yap"
+	},{
+		{0x00000007,0x00000000,0x00000000,0x00000000},
+		"af ca co crh cs csb et fi fr hsb hu kl ku-tr mt na nso pl se sk smn tk tn tr vot wen wo"
+	},{
+		{0x20000007,0x00000000,0x00000000,0x00000000},
+		"cy ga gn"
+	},{
+		{0x0000000f,0x00000000,0x00000000,0x00000000},
+		"ro"
+	},{
+		{0x0000001f,0x00000000,0x00000000,0x00000000},
+		"az-az sms"
+	},{
+		{0x0000005f,0x00000000,0x00000000,0x00000000},
+		"ee ln"
+	},{
+		{0x2000005f,0x00000000,0x00000000,0x00000000},
+		"ak fat tw"
+	},{
+		{0x0000006f,0x00000000,0x00000000,0x00000000},
+		"nv"
+	},{
+		{0x2000004f,0x00000000,0x00000000,0x00000000},
+		"vi yo"
+	},{
+		{0x0000020f,0x00000000,0x00000000,0x00000000},
+		"mo"
+	},{
+		{0x00000027,0x00000000,0x00000000,0x00000000},
+		"ty"
+	},{
+		{0x20000003,0x00000000,0x00000000,0x00000000},
+		"ast"
+	},{
+		{0x00000023,0x00000000,0x00000000,0x00000000},
+		"qu quz"
+	},{
+		{0x00000043,0x00000000,0x00000000,0x00000000},
+		"shs"
+	},{
+		{0x20000043,0x00000000,0x00000000,0x00000000},
+		"bin"
+	},{
+		{0x00000005,0x00000000,0x00000000,0x00000000},
+		"bs eo hr ki la lg lt lv mh ny sl"
+	},{
+		{0x20000005,0x00000000,0x00000000,0x00000000},
+		"mi"
+	},{
+		{0x0000000d,0x00000000,0x00000000,0x00000000},
+		"kw"
+	},{
+		{0x0000001d,0x00000000,0x00000000,0x00000000},
+		"bm ff"
+	},{
+		{0x2000001d,0x00000000,0x00000000,0x00000000},
+		"ber-dz kab"
+	},{
+		{0x00000025,0x00000000,0x00000000,0x00000000},
+		"haw"
+	},{
+		{0x00000205,0x00000000,0x00000000,0x00000000},
+		"sh"
+	},{
+		{0x20000001,0x00000000,0x00000000,0x00000000},
+		"ig ve"
+	},{
+		{0x00000009,0x00000000,0x00000000,0x00000000},
+		"kr"
+	},{
+		{0x00000019,0x00000000,0x00000000,0x00000000},
+		"ha sco"
+	},{
+		{0x00000021,0x00000000,0x00000000,0x00000000},
+		"sm to"
+	},{
+		{0x20000041,0x00000000,0x00000000,0x00000000},
+		"hz"
+	},{
+		{0x00000400,0x00000000,0x00000000,0x00000000},
+		"hy"
+	},{
+		{0x00000800,0x00000000,0x00000000,0x00000000},
+		"he yi"
+	},{
+		{0x00002000,0x00000000,0x00000000,0x00000000},
+		"ar az-ir fa ks ku-iq ku-ir lah ota pa-pk pes prs ps-af ps-pk sd ug ur"
+	},{
+		{0x00004000,0x00000000,0x00000000,0x00000000},
+		"nqo"
+	},{
+		{0x00008000,0x00000000,0x00000000,0x00000000},
+		"bh bho brx doi hi hne kok mai mr ne sa sat"
+	},{
+		{0x00018000,0x00000000,0x00000000,0x00000000},
+		"mni"
+	},{
+		{0x00010000,0x00000000,0x00000000,0x00000000},
+		"as bn"
+	},{
+		{0x00020000,0x00000000,0x00000000,0x00000000},
+		"pa"
+	},{
+		{0x00040000,0x00000000,0x00000000,0x00000000},
+		"gu"
+	},{
+		{0x00080000,0x00000000,0x00000000,0x00000000},
+		"or"
+	},{
+		{0x00000204,0x00000000,0x00000000,0x00000000},
+		"cv"
+	},{
+		{0x00100000,0x00000000,0x00000000,0x00000000},
+		"ta"
+	},{
+		{0x00200000,0x00000000,0x00000000,0x00000000},
+		"te"
+	},{
+		{0x00400000,0x00000000,0x00000000,0x00000000},
+		"kn"
+	},{
+		{0x00800000,0x00000000,0x00000000,0x00000000},
+		"ml"
+	},{
+		{0x01000000,0x00000000,0x00000000,0x00000000},
+		"th"
+	},{
+		{0x02000000,0x00000000,0x00000000,0x00000000},
+		"lo"
+	},{
+		{0x04000000,0x00000000,0x00000000,0x00000000},
+		"ka"
+	},{
+		{0x00000000,0x08070000,0x00000000,0x00000000},
+		"ja"
+	},{
+		{0x00000000,0x08010000,0x00000000,0x00000000},
+		"zh-hk zh-mo"
+	},{
+		{0x00000020,0x08000000,0x00000000,0x00000000},
+		"zh-cn zh-sg"
+	},{
+		{0x00000000,0x01100000,0x00000000,0x00000000},
+		"ko"
+	},{
+		{0x00000000,0x28000000,0x00000000,0x00000000},
+		"zh-tw"
+	},{
+		{0x00000080,0x00000000,0x00000000,0x00000000},
+		"el"
+	},{
+		{0x00000000,0x00000000,0x00000040,0x00000000},
+		"bo dz"
+	},{
+		{0x00000000,0x00000000,0x00000080,0x00000000},
+		"syr"
+	},{
+		{0x00000000,0x00000000,0x00000100,0x00000000},
+		"dv"
+	},{
+		{0x00000000,0x00000000,0x00000200,0x00000000},
+		"si"
+	},{
+		{0x00000000,0x00000000,0x00000400,0x00000000},
+		"my"
+	},{
+		{0x00000000,0x00000000,0x00000800,0x00000000},
+		"am byn gez sid ti-er ti-et tig wal"
+	},{
+		{0x00000000,0x00000000,0x00001000,0x00000000},
+		"chr"
+	},{
+		{0x00000000,0x00000000,0x00002000,0x00000000},
+		"iu"
+	},{
+		{0x00000000,0x00000000,0x00010000,0x00000000},
+		"km"
+	},{
+		{0x00000000,0x00000000,0x00020000,0x00000000},
+		"mn-cn"
+	},{
+		{0x00000000,0x00000000,0x00080000,0x00000000},
+		"ii"
+	},{
+		{0x00000200,0x00000000,0x00000000,0x00000000},
+		"ab av ba be bg bua ce chm cu ik kaa kk ku-am kum kv ky lez mk mn-mn os ru sah sel sr tg tt tyv uk"
+	},{
+		{0x00000000,0x00000000,0x00000000,0x00000004},
+		"ber-ma"
+	}
+};
+
+char *
 apc_gp_get_font_languages( Handle self)
 {objCheck nil;{
-	return NULL;
+	int i, size;
+	char * ret, * p;
+	FONTSIGNATURE f;
+	LangId *lang;
+
+	memset( &f, 0, sizeof(f));
+	i = GetTextCharsetInfo( sys ps, &f, 0);
+	if ( i == DEFAULT_CHARSET)
+		apiErrRet;
+
+	if ( f. fsUsb[0] == 0 && f. fsUsb[1] == 0 && f. fsUsb[2] == 0 && f. fsUsb[3] == 0) {
+		switch( i ) {
+		case SYMBOL_CHARSET      : return NULL;
+		case SHIFTJIS_CHARSET    : return single_lang("ja");
+		case HANGEUL_CHARSET     :
+		case GB2312_CHARSET      :
+		case CHINESEBIG5_CHARSET : return single_lang("zh");
+#ifdef JOHAB_CHARSET
+		case GREEK_CHARSET       : return single_lang("el");
+		case HEBREW_CHARSET      : return single_lang("he");
+		case ARABIC_CHARSET      : return single_lang("ar");
+		case VIETNAMESE_CHARSET  : return single_lang("vi");
+		case THAI_CHARSET        : return single_lang("th");
+		case RUSSIAN_CHARSET     : return single_lang("ru");
+#endif
+		}
+		return single_lang("");
+	}
+
+	size = 1024;
+	if ( !( p = ret = malloc( size )))
+		return NULL;
+	for ( i = 0, lang = languages; i < sizeof(languages)/sizeof(LangId); i++, lang++) {
+		DWORD *a = f.fsUsb;
+		DWORD *b = lang->v;
+		if (
+			((a[0] & b[0]) == b[0]) &&
+			((a[1] & b[1]) == b[1]) &&
+			((a[2] & b[2]) == b[2]) &&
+			((a[3] & b[3]) == b[3])
+		) {
+			int len = strlen(lang->str) + 1;
+			if ( p - ret + len + 1 > size ) {
+				char * p2;
+				size *= 2;
+				if ( !( p2 = realloc(p, size))) {
+					free(ret);
+					return NULL;
+				}
+				p   = p2 + (p - ret);
+				ret = p2;
+			}
+			strcpy( p, lang->str );
+			p += len;
+		}
+	}
+	*p = 0;
+
+	while ( p > ret ) {
+		if (*p == ' ') *p = 0;
+		p--;
+	}
+
+	return ret;
 }}
 
 static int
