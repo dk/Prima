@@ -188,11 +188,12 @@ sub find_high_unicode_char
 
 sub find_high_unicode_font
 {
-	return 1 if find_high_unicode_char($w->font);
+	my $c = find_high_unicode_char($w->font);
+	return $c if defined $c;
 	my @f = @{$::application->fonts};
 	for my $f ( @f ) {
 		next unless $f->{vector};
-		my $c = find_high_unicode_char($f);
+		$c = find_high_unicode_char($f);
 		return $c if defined $c;
 	}
 	return undef;
