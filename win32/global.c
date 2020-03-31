@@ -781,7 +781,6 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 			} else if ( mp1 >= VK_NUMPAD0 && mp1 <= VK_DIVIDE)
 				extended = true; // include numpads
 
-			printf("State Recv: %s\n", ( GetKeyState( VK_SHIFT) < 0) ? "SHIFT" : "");
 			ev. key. mod   = 0 |
 				( extended ? kmKeyPad : 0) |
 				(( GetKeyState( VK_SHIFT)   < 0) ? kmShift : 0) |

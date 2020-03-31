@@ -421,8 +421,11 @@ process_msg( MSG * msg)
 	case WM_KEYPACKET: {
 		KeyPacket * kp = ( KeyPacket *) msg-> lParam;
 		BYTE * mod = mod_select( kp-> mod);
+		Bool wui = PApplication(application)-> wantUnicodeInput;
+		PApplication(application)-> wantUnicodeInput = kp-> mod & kmUnicode;
 		SendMessage( kp-> wnd, kp-> msg, kp-> mp1, kp-> mp2);
 		mod_free( mod);
+		PApplication(application)-> wantUnicodeInput = wui;
 		exception_check_raise();
 		break;
 	}
@@ -791,10 +794,13 @@ apc_message( Handle self, PEvent ev, Bool post)
 			}
 		} else {
 			BYTE * mod = nil;
+			Bool wui = PApplication(application)-> wantUnicodeInput;
 			if (( GetKeyState( VK_MENU) < 0) ^ (( ev-> pos. mod & kmAlt) != 0))
 				mod = mod_select( ev-> pos. mod);
+			PApplication(application)-> wantUnicodeInput = ev-> key. mod & kmUnicode;
 			SendMessage(( HWND) var handle, msg, mp1, mp2);
 			if ( mod) mod_free( mod);
+			PApplication(application)-> wantUnicodeInput = wui;
 		}
 		break;
 	}
@@ -879,9 +885,12 @@ apc_message( Handle self, PEvent ev, Bool post)
 				PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
 			}
 		} else {
+			Bool wui = PApplication(application)-> wantUnicodeInput;
 			BYTE * mod = mod_select( ev-> key. mod);
+			PApplication(application)-> wantUnicodeInput = ev-> key. mod & kmUnicode;
 			SendMessage( HANDLE, msg, mp1, mp2);
 			mod_free( mod);
+			PApplication(application)-> wantUnicodeInput = wui;
 		}
 		break;
 	}
