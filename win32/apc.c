@@ -418,15 +418,14 @@ process_msg( MSG * msg)
 	case WM_KEYUP:
 		GetKeyboardState( guts. keyState);
 		break;
-	case WM_KEYPACKET:
-		{
-			KeyPacket * kp = ( KeyPacket *) msg-> lParam;
-			BYTE * mod = mod_select( kp-> mod);
-			SendMessage( kp-> wnd, kp-> msg, kp-> mp1, kp-> mp2);
-			mod_free( mod);
-			exception_check_raise();
-		}
+	case WM_KEYPACKET: {
+		KeyPacket * kp = ( KeyPacket *) msg-> lParam;
+		BYTE * mod = mod_select( kp-> mod);
+		SendMessage( kp-> wnd, kp-> msg, kp-> mp1, kp-> mp2);
+		mod_free( mod);
+		exception_check_raise();
 		break;
+	}
 	case WM_LBUTTONDOWN:  musClk. emsg = WM_LBUTTONUP; goto MUS1;
 	case WM_MBUTTONDOWN:  musClk. emsg = WM_MBUTTONUP; goto MUS1;
 	case WM_RBUTTONDOWN:  musClk. emsg = WM_RBUTTONUP; goto MUS1;
@@ -453,24 +452,23 @@ process_msg( MSG * msg)
 	case WM_RBUTTONDBLCLK:
 		musClk. pending = 0;
 		break;
-	case WM_SOCKET:
-		{
-			int i;
-			SOCKETHANDLE socket = ( SOCKETHANDLE) msg-> lParam;
-			for ( i = 0; i < guts. sockets. count; i++) {
-				Handle self = guts. sockets. items[ i];
-				if (( sys s. file. object == socket) &&
-					( PFile( self)-> eventMask & msg-> wParam)) {
-					Event ev;
-					ev. cmd = ( msg-> wParam == feRead) ? cmFileRead :
-								(( msg-> wParam == feWrite) ? cmFileWrite : cmFileException);
-					CComponent( self)-> message( self, &ev);
-					break;
-				}
+	case WM_SOCKET: {
+		int i;
+		SOCKETHANDLE socket = ( SOCKETHANDLE) msg-> lParam;
+		for ( i = 0; i < guts. sockets. count; i++) {
+			Handle self = guts. sockets. items[ i];
+			if (( sys s. file. object == socket) &&
+				( PFile( self)-> eventMask & msg-> wParam)) {
+				Event ev;
+				ev. cmd = ( msg-> wParam == feRead) ? cmFileRead :
+					(( msg-> wParam == feWrite) ? cmFileWrite : cmFileException);
+				CComponent( self)-> message( self, &ev);
+				break;
 			}
-			guts. socketPostSync = 0; // clear semaphore
 		}
+		guts. socketPostSync = 0; // clear semaphore
 		return true;
+	}
 	case WM_SOCKET_REHASH:
 		socket_rehash();
 		guts. socketPostSync = 0; // clear semaphore
@@ -521,7 +519,6 @@ process_msg( MSG * msg)
 	return true;
 }
 
-
 Bool
 apc_application_go( Handle self)
 {
@@ -533,7 +530,6 @@ apc_application_go( Handle self)
 	if ( application) Object_destroy( application);
 	return true;
 }
-
 
 Bool
 HWND_lock( Bool lock)
@@ -652,7 +648,6 @@ apc_component_fullname_changed_notify( Handle self)
 	return true;
 }
 
-
 // View attributes
 
 int
@@ -737,165 +732,161 @@ apc_message( Handle self, PEvent ev, Bool post)
 	ULONG msg;
 	USHORT mp1s = 0;
 	objCheck false;
-	switch ( ev-> cmd)
-	{
-		case cmPost:
-			if (post)
-				PostMessage(( HWND) var handle, WM_POSTAL, ( WPARAM) ev-> gen. H, ( LPARAM) ev-> gen. p);
-			else {
-				SendMessage(( HWND) var handle, WM_POSTAL, ( WPARAM) ev-> gen. H, ( LPARAM) ev-> gen. p);
-				exception_check_raise();
+	switch ( ev-> cmd) {
+	case cmPost:
+		if (post)
+			PostMessage(( HWND) var handle, WM_POSTAL, ( WPARAM) ev-> gen. H, ( LPARAM) ev-> gen. p);
+		else {
+			SendMessage(( HWND) var handle, WM_POSTAL, ( WPARAM) ev-> gen. H, ( LPARAM) ev-> gen. p);
+			exception_check_raise();
+		}
+		break;
+	case cmMouseMove:
+		msg = WM_MOUSEMOVE;
+		goto general;
+	case cmMouseUp:
+		if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONUP; else
+		if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONUP; else
+		msg = WM_LBUTTONUP;
+		goto general;
+	case cmMouseDown:
+		if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONDOWN; else
+		if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONDOWN; else
+		msg = WM_LBUTTONDOWN;
+		goto general;
+	case cmMouseWheel:
+		msg  = WM_MOUSEWHEEL;
+		mp1s = ( SHORT) ev-> pos. button;
+		goto general;
+	case cmMouseClick:
+		if ( ev-> pos. dblclk) {
+			if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONDBLCLK; else
+			if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONDBLCLK; else
+			msg = WM_LBUTTONDBLCLK;
+		} else {
+			Event newEvent = *ev;
+			if ( ev-> pos. button & mbMiddle) msg = WM_MMOUSECLICK; else
+			if ( ev-> pos. button & mbRight)  msg = WM_RMOUSECLICK; else
+			msg = WM_LMOUSECLICK;
+			newEvent. cmd = cmMouseDown;
+			apc_message( self, &newEvent, post);
+			newEvent. cmd = cmMouseUp;
+			apc_message( self, &newEvent, post);
+		}
+	general: {
+		LPARAM mp2 = MAKELPARAM( ev-> pos. where. x, sys lastSize. y - ev-> pos. where. y - 1);
+		WPARAM mp1 = mp1s |
+			(( ev-> pos. mod & kmShift) ? MK_SHIFT   : 0) |
+			(( ev-> pos. mod & kmCtrl ) ? MK_CONTROL : 0);
+		if ( post) {
+			KeyPacket * kp;
+			kp = ( KeyPacket *) malloc( sizeof( KeyPacket));
+			if ( kp) {
+				kp-> mp1 = mp1;
+				kp-> mp2 = mp2;
+				kp-> msg = msg;
+				kp-> wnd = ( HWND) var handle;
+				kp-> mod = ev-> pos. mod;
+				PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
 			}
-			break;
-		case cmMouseMove:
-			msg = WM_MOUSEMOVE;
-			goto general;
-		case cmMouseUp:
-			if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONUP; else
-			if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONUP; else
-			msg = WM_LBUTTONUP;
-			goto general;
-		case cmMouseDown:
-			if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONDOWN; else
-			if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONDOWN; else
-			msg = WM_LBUTTONDOWN;
-			goto general;
-		case cmMouseWheel:
-			msg  = WM_MOUSEWHEEL;
-			mp1s = ( SHORT) ev-> pos. button;
-			goto general;
-		case cmMouseClick:
-			if ( ev-> pos. dblclk)
-			{
-				if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONDBLCLK; else
-				if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONDBLCLK; else
-				msg = WM_LBUTTONDBLCLK;
+		} else {
+			BYTE * mod = nil;
+			if (( GetKeyState( VK_MENU) < 0) ^ (( ev-> pos. mod & kmAlt) != 0))
+				mod = mod_select( ev-> pos. mod);
+			SendMessage(( HWND) var handle, msg, mp1, mp2);
+			if ( mod) mod_free( mod);
+		}
+		break;
+	}
+	case cmKeyDown:
+	case cmKeyUp: {
+		WPARAM mp1;
+		LPARAM mp2;
+		int scan = 0;
+		UINT msg;
+		Bool specF10 = ( ev-> key. key == kbF10) && !( ev-> key. mod & kmAlt);
+		// constructing mp1
+		if ( ev-> key. key == kbNoKey) {
+			if ( ev-> key. code == 0) {
+				if ( ev-> key. mod & kmAlt   ) mp1 = VK_MENU;    else
+				if ( ev-> key. mod & kmShift ) mp1 = VK_SHIFT;   else
+				if ( ev-> key. mod & kmCtrl  ) mp1 = VK_CONTROL; else
+					return false;
 			} else {
-				Event newEvent = *ev;
-				if ( ev-> pos. button & mbMiddle) msg = WM_MMOUSECLICK; else
-				if ( ev-> pos. button & mbRight)  msg = WM_RMOUSECLICK; else
-				msg = WM_LMOUSECLICK;
-				newEvent. cmd = cmMouseDown;
-				apc_message( self, &newEvent, post);
-				newEvent. cmd = cmMouseUp;
-				apc_message( self, &newEvent, post);
-			}
-		general:
-			{
-				LPARAM mp2 = MAKELPARAM( ev-> pos. where. x, sys lastSize. y - ev-> pos. where. y - 1);
-				WPARAM mp1 = mp1s |
-					(( ev-> pos. mod & kmShift) ? MK_SHIFT   : 0) |
-					(( ev-> pos. mod & kmCtrl ) ? MK_CONTROL : 0);
-				if ( post) {
-					KeyPacket * kp;
-					kp = ( KeyPacket *) malloc( sizeof( KeyPacket));
-					if ( kp) {
-						kp-> mp1 = mp1;
-						kp-> mp2 = mp2;
-						kp-> msg = msg;
-						kp-> wnd = ( HWND) var handle;
-						kp-> mod = ev-> pos. mod;
-						PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
-					}
+				SHORT c = VkKeyScan(( CHAR ) ev-> key. code);
+				if ( c == -1) {
+					HKL kl = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
+					c = VkKeyScanEx(( CHAR) ev-> key. code, kl);
+					if ( c == -1) return false;
+					scan = MapVirtualKeyEx( LOBYTE( c), 0, kl);
 				} else {
-					BYTE * mod = nil;
-					if (( GetKeyState( VK_MENU) < 0) ^ (( ev-> pos. mod & kmAlt) != 0))
-						mod = mod_select( ev-> pos. mod);
-					SendMessage(( HWND) var handle, msg, mp1, mp2);
-					if ( mod) mod_free( mod);
+					scan = MapVirtualKey( LOBYTE( c), 0);
 				}
+				mp1 = LOBYTE( c);
+				c = HIBYTE( c);
+				ev-> key. mod |=
+					(( c & 1) ? kmShift : 0) |
+					(( c & 2) ? kmCtrl  : 0) |
+					(( c & 4) ? kmAlt   : 0);
 			}
+		} else {
+			if ( ev-> key. key == kbBackTab) {
+				mp1  = VK_TAB;
+				ev-> key. mod |= kmShift;
+			} else {
+				mp1 = ctx_remap( ev-> key. key, ctx_kb2VK, true);
+				if ( mp1 == 0) return false;
+			}
+			scan = MapVirtualKey( mp1, 0);
+		}
+
+		// constructing msg
+		msg = ( ev-> key. mod & kmAlt) ? (
+			( ev-> cmd == cmKeyUp) ? WM_SYSKEYUP : WM_SYSKEYDOWN
+		) : (
+			( ev-> cmd == cmKeyUp) ? WM_KEYUP : WM_KEYDOWN
+		);
+
+		// constructing mp2
+		mp2 = MAKELPARAM( ev-> key. repeat,  scan);
+		switch ( msg) {
+		case WM_KEYDOWN:
+			mp2 |= 0x00000000;
 			break;
-		case cmKeyDown:
-		case cmKeyUp:
-			{
-				WPARAM mp1;
-				LPARAM mp2;
-				int scan = 0;
-				UINT msg;
-				Bool specF10 = ( ev-> key. key == kbF10) && !( ev-> key. mod & kmAlt);
-				// constructing mp1
-				if ( ev-> key. key == kbNoKey) {
-					if ( ev-> key. code == 0) {
-						if ( ev-> key. mod & kmAlt   ) mp1 = VK_MENU;    else
-						if ( ev-> key. mod & kmShift ) mp1 = VK_SHIFT;   else
-						if ( ev-> key. mod & kmCtrl  ) mp1 = VK_CONTROL; else
-							return false;
-					} else {
-						SHORT c = VkKeyScan(( CHAR ) ev-> key. code);
-						if ( c == -1) {
-							HKL kl = guts. keyLayout ? guts. keyLayout : GetKeyboardLayout( 0);
-							c = VkKeyScanEx(( CHAR) ev-> key. code, kl);
-							if ( c == -1) return false;
-							scan = MapVirtualKeyEx( LOBYTE( c), 0, kl);
-						} else {
-							scan = MapVirtualKey( LOBYTE( c), 0);
-						}
-						mp1 = LOBYTE( c);
-						c = HIBYTE( c);
-						ev-> key. mod |=
-							(( c & 1) ? kmShift : 0) |
-							(( c & 2) ? kmCtrl  : 0) |
-							(( c & 4) ? kmAlt   : 0);
-					}
-				} else {
-					if ( ev-> key. key == kbBackTab) {
-						mp1  = VK_TAB;
-						ev-> key. mod |= kmShift;
-					} else {
-						mp1 = ctx_remap( ev-> key. key, ctx_kb2VK, true);
-						if ( mp1 == 0) return false;
-					}
-					scan = MapVirtualKey( mp1, 0);
-				}
-
-				// constructing msg
-				msg = ( ev-> key. mod & kmAlt) ? (
-					( ev-> cmd == cmKeyUp) ? WM_SYSKEYUP : WM_SYSKEYDOWN
-				) : (
-					( ev-> cmd == cmKeyUp) ? WM_KEYUP : WM_KEYDOWN
-				);
-
-				// constructing mp2
-				mp2 = MAKELPARAM( ev-> key. repeat,  scan);
-				switch ( msg) {
-						case WM_KEYDOWN:
-							mp2 |= 0x00000000;
-							break;
-						case WM_SYSKEYDOWN:
-							mp2 |= 0x20000000;
-							break;
-						case WM_KEYUP:
-							mp2 |= 0xC0000000;
-							break;
-						case WM_SYSKEYUP:
-							mp2 |= 0xE0000000;
-							break;
-				}
-
-				if ( specF10)
-					msg = ( ev-> cmd == cmKeyUp) ? WM_SYSKEYUP : WM_SYSKEYDOWN;
-
-				if ( post) {
-					KeyPacket * kp;
-					kp = ( KeyPacket *) malloc( sizeof( KeyPacket));
-					if ( kp) {
-						kp-> mp1 = mp1;
-						kp-> mp2 = mp2;
-						kp-> msg = msg;
-						kp-> wnd = HANDLE;
-						kp-> mod = ev-> key. mod;
-						PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
-					}
-				} else {
-					BYTE * mod = mod_select( ev-> key. mod);
-					SendMessage( HANDLE, msg, mp1, mp2);
-					mod_free( mod);
-				}
-			}
+		case WM_SYSKEYDOWN:
+			mp2 |= 0x20000000;
 			break;
+		case WM_KEYUP:
+			mp2 |= 0xC0000000;
+			break;
+		case WM_SYSKEYUP:
+			mp2 |= 0xE0000000;
+			break;
+		}
+
+		if ( specF10)
+			msg = ( ev-> cmd == cmKeyUp) ? WM_SYSKEYUP : WM_SYSKEYDOWN;
+
+		if ( post) {
+			KeyPacket * kp;
+			kp = ( KeyPacket *) malloc( sizeof( KeyPacket));
+			if ( kp) {
+				kp-> mp1 = mp1;
+				kp-> mp2 = mp2;
+				kp-> msg = msg;
+				kp-> wnd = HANDLE;
+				kp-> mod = ev-> key. mod;
+				PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
+			}
+		} else {
+			BYTE * mod = mod_select( ev-> key. mod);
+			SendMessage( HANDLE, msg, mp1, mp2);
+			mod_free( mod);
+		}
+		break;
+	}
 	default:
-			return false;
+		return false;
 	}
 	return true;
 }
