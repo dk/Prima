@@ -206,6 +206,108 @@ typedef struct {
 } ScriptCacheKey;
 #pragma pack()
 
+
+/* convert UTF-32 to UTF-16, mark surrogates */
+static Bool
+build_wtext( PTextShapeRec t,
+	WCHAR * wtext, unsigned int * wlen,
+	unsigned int * first_surrogate_pair, unsigned int ** surrogate_map)
+{
+	int i;
+	unsigned int index = 0, *curr = NULL;
+	uint32_t *src;
+	WCHAR *dst;
+
+	for ( i = *wlen = 0, src = t->text, dst = wtext; i < t->len; i++, index++) {
+		uint32_t c = *src++;
+		if ( c >= 0x10000 && c <= 0x10FFFF ) {
+			c -= 0x10000;
+			*(dst++) = 0xd800 + (c & 0x3ff);
+			*(dst++) = 0xdc00 + (c >> 10);
+			if ( !*surrogate_map ) {
+				*first_surrogate_pair = i;
+				*surrogate_map = malloc(sizeof(unsigned int*) * (t-> len - i));
+				if ( !*surrogate_map ) return false;
+				curr = *surrogate_map;
+			}
+			*(curr++) = index;
+			*(curr++) = index;
+			*wlen += 2;
+		} else {
+			if (( c >= 0xD800 && c <= 0xDFFF ) || ( c > 0x10FFFF )) c = 0;
+			if ( *surrogate_map )
+				*(curr++) = index;
+			*(dst++) = c;
+			(*wlen)++;
+		}
+	}
+
+	return true;
+}
+
+static void
+fill_null_glyphs( PTextShapeRec t, unsigned int char_pos, unsigned int itemlen, unsigned int * surrogate_map, unsigned int first_surrogate_pair)
+{
+	int i, nglyphs;
+	if ( surrogate_map ) {
+		int p1 = char_pos;
+		int p2 = p1 + itemlen - 1;
+		if ( p1 >= first_surrogate_pair ) p1 = surrogate_map[p1 - first_surrogate_pair];
+		if ( p2 >= first_surrogate_pair ) p2 = surrogate_map[p2 - first_surrogate_pair];
+		nglyphs = p2 - p1 + 1;
+	} else
+		nglyphs = itemlen;
+	bzero( t->glyphs + t->n_glyphs, sizeof(uint16_t) * nglyphs);
+	for ( i = 0; i < nglyphs; i++)
+		t->clusters[ t->n_glyphs + i ] = i;
+	t-> n_glyphs += nglyphs;
+	if ( t->advances ) {
+		bzero( t->advances + t->n_glyphs, sizeof(uint16_t) * nglyphs);
+		bzero( t->positions + t->n_glyphs, sizeof(uint16_t) * nglyphs * 2);
+	}
+}
+
+static void
+convert_clusters( Bool rtl, unsigned int char_pos, unsigned int itemlen, unsigned int nglyphs, WORD * clusters, uint16_t * out_clusters)
+{
+	int j, last_glyph, last_char;
+	if (rtl) {
+		for ( j = last_char = 0, last_glyph = nglyphs - 1; j < itemlen; j++) {
+			int k, rlen = 1;
+			WORD curr_glyph = clusters[j];
+			last_char = j;
+			for ( k = j + 1; k < itemlen; k++) {
+				if ( clusters[k] == curr_glyph )
+					rlen++;
+				else
+					break;
+			}
+			for ( ; last_glyph >= curr_glyph; last_glyph--) 
+				out_clusters[last_glyph] = j + char_pos;
+			j += rlen - 1;
+		}
+		for ( ; last_glyph >= 0; last_glyph--)
+			out_clusters[last_glyph] = last_char + char_pos;
+	} else {
+		for ( j = last_char = last_glyph = 0; j < itemlen; j++) {
+			int k, rlen = 1;
+			WORD curr_glyph = clusters[j];
+			last_char = j;
+			for ( k = j + 1; k < itemlen; k++) {
+				if ( clusters[k] == curr_glyph )
+					rlen++;
+				else
+					break;
+			}
+			for ( ; last_glyph <= curr_glyph; last_glyph++) 
+				out_clusters[last_glyph] = j + char_pos;
+			j += rlen - 1;
+		}
+		for ( ; last_glyph < nglyphs; last_glyph++)
+			out_clusters[last_glyph] = last_char + char_pos;
+	}
+}
+
 static Bool
 win32_shaper( Handle self, PTextShapeRec t)
 {
@@ -213,14 +315,14 @@ win32_shaper( Handle self, PTextShapeRec t)
 	HRESULT hr;
 	WCHAR * wtext = NULL;
 	uint16_t * out_clusters;
-	int i, item, item_step, nitems, wlen;
+	int i, item, item_step, nitems;
 	SCRIPT_CONTROL control;
 	SCRIPT_ITEM *items = NULL;
 	WORD *clusters = NULL;
 	SCRIPT_VISATTR *visuals = NULL;
 	int *advances = NULL;
 	GOFFSET *goffsets = NULL;
-	unsigned int * surrogate_map = NULL, first_surrogate_pair = 0;
+	unsigned int * surrogate_map = NULL, first_surrogate_pair = 0, wlen;
 
 	if ((items = malloc(sizeof(SCRIPT_ITEM) * (t-> len + 1))) == NULL)
 		goto EXIT;
@@ -237,36 +339,7 @@ win32_shaper( Handle self, PTextShapeRec t)
 			goto EXIT;
 	}
 
-	/* convert UTF-32 to UTF-16, mark surrogates */
-	{
-		int i;
-		unsigned int index = 0, *curr = NULL;
-		uint32_t *src;
-		WCHAR *dst;
-		for ( i = wlen = 0, src = t->text, dst = wtext; i < t->len; i++, index++) {
-			uint32_t c = *src++;
-			if ( c >= 0x10000 && c <= 0x10FFFF ) {
-				c -= 0x10000;
-				*(dst++) = 0xd800 + (c & 0x3ff);
-				*(dst++) = 0xdc00 + (c >> 10);
-				if ( !surrogate_map ) {
-					first_surrogate_pair = i;
-					surrogate_map = malloc(sizeof(unsigned int*) * (t-> len - first_surrogate_pair));
-					if ( !surrogate_map ) goto EXIT;
-					curr = surrogate_map;
-				}
-				*(curr++) = index;
-				*(curr++) = index;
-				wlen += 2;
-			} else {
-				if (( c >= 0xD800 && c <= 0xDFFF ) || ( c > 0x10FFFF )) c = 0;
-				if ( surrogate_map )
-					*(curr++) = index;
-				*(dst++) = c;
-				wlen++;
-			}
-		}
-	}
+	build_wtext( t, wtext, &wlen, &first_surrogate_pair, &surrogate_map);
 
 	bzero(&control, sizeof(control));
 	control.uDefaultLanguage = t->language ?
@@ -292,8 +365,7 @@ win32_shaper( Handle self, PTextShapeRec t)
 		i < nitems;
 		i++, item += item_step
 	) {
-		int j, itemlen, last_char, nglyphs;
-		int last_glyph;
+		int j, itemlen, nglyphs;
 
 		SCRIPT_CACHE * script_cache;
 		ScriptCacheKey key = { sys fontResource->hfont, items[item].a.eScript };
@@ -314,6 +386,10 @@ win32_shaper( Handle self, PTextShapeRec t)
 			t->glyphs + t->n_glyphs, clusters, visuals,
 			&nglyphs
 		)) != S_OK) {
+			if ( hr == USP_E_SCRIPT_NOT_IN_FONT) {
+				fill_null_glyphs(t, items[item].iCharPos, itemlen, surrogate_map, first_surrogate_pair);
+				continue;
+			}
 			apiHErr(hr);
 			goto EXIT;
 		}
@@ -330,47 +406,6 @@ win32_shaper( Handle self, PTextShapeRec t)
 				printf("%d(%x) ", clusters[i], t->glyphs[t->n_glyphs + i]);
 			}
 			printf("\n");
-		}
-#endif
-
-		if (items[item].a.fRTL) {
-			for ( j = last_char = 0, last_glyph = nglyphs - 1; j < itemlen; j++) {
-				int k, rlen = 1;
-				WORD curr_glyph = clusters[j];
-				last_char = j;
-				for ( k = j + 1; k < itemlen; k++) {
-					if ( clusters[k] == curr_glyph )
-						rlen++;
-					else
-						break;
-				}
-				for ( ; last_glyph >= curr_glyph; last_glyph--) 
-					out_clusters[last_glyph] = j + items[item].iCharPos;
-				j += rlen - 1;
-			}
-			for ( ; last_glyph >= 0; last_glyph--)
-				out_clusters[last_glyph] = last_char + items[item].iCharPos;
-		} else {
-			for ( j = last_char = last_glyph = 0; j < itemlen; j++) {
-				int k, rlen = 1;
-				WORD curr_glyph = clusters[j];
-				last_char = j;
-				for ( k = j + 1; k < itemlen; k++) {
-					if ( clusters[k] == curr_glyph )
-						rlen++;
-					else
-						break;
-				}
-				for ( ; last_glyph <= curr_glyph; last_glyph++) 
-					out_clusters[last_glyph] = j + items[item].iCharPos;
-				j += rlen - 1;
-			}
-			for ( ; last_glyph < nglyphs; last_glyph++)
-				out_clusters[last_glyph] = last_char + items[item].iCharPos;
-		}
-#ifdef _DEBUG
-		{
-			int i;
 			printf("clusters: ");
 			for ( i = 0; i < nglyphs; i++) {
 				printf("%d ", out_clusters[i]);
@@ -379,24 +414,19 @@ win32_shaper( Handle self, PTextShapeRec t)
 		}
 #endif
 
+		convert_clusters( items[item].a.fRTL, items[item].iCharPos, itemlen, nglyphs, clusters, out_clusters);
+
 		/* map from utf16 */
 		if ( surrogate_map ) {
-			int k, loops = nglyphs;
+			int k;
 			uint16_t * out_glyphs = t-> glyphs + t-> n_glyphs;
-			for ( j = k = 0; j < loops; j++) {
-				if ( k < j) {
+			for ( j = k = 0; j < nglyphs; j++, k++) {
+				if ( k < j)
 					out_glyphs[k] = out_glyphs[j];
-				}
-				if ( surrogate_map && out_clusters[j] >= first_surrogate_pair) {
+				if ( out_clusters[j] >= first_surrogate_pair)
 					out_clusters[k] = surrogate_map[out_clusters[j] - first_surrogate_pair];
-					if ( j & 1 ) {
-						k++;
-						nglyphs--;
-					}
-				} else {
+				else if ( k < j )
 					out_clusters[k] = out_clusters[j];
-					k++;
-				}
 			}
 		}
 
