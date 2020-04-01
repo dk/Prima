@@ -103,7 +103,7 @@ sub t2
 	my ( $text, $glyphs, $clusters, $name, %opt) = @_;
 
 	my $orig_text   = $text;
-	my $orig_glyphs = $glyphs;
+	my $orig_glyphs = $glyphs . '#';
 	$text   = xtr $text;
 	$glyphs = xtr $glyphs;
 	$text =~ tr
@@ -127,7 +127,7 @@ sub t2
 			my $ofs  = $_ & ~to::RTL;
 			my $char = sprintf("(%x)",$_);
 		AGAIN:
-			if ( $ofs >= 0 && $ofs <= length($orig_text)) {
+			if ( $ofs >= 0 && $ofs < length($orig_text)) {
 				$char = substr($orig_text, $ofs, 1);
 				if ( $char =~ /[\<\>\=]/ ) {
 					$ofs++;
@@ -138,6 +138,8 @@ sub t2
 				} else {
 					$char = "(-$char)" if $char !~ /[a-z\+\-\.\s\"\d\^]/;
 				}
+			} elsif ( $ofs == length($orig_text)) {
+				$char = '#';
 			}
 			$char
 		}
@@ -148,7 +150,6 @@ sub t2
 		$_ = '-' . ($_ & ~to::RTL) for grep { /^\d+$/ && $_ & to::RTL } @$got;
 		diag("got clusters: [@$got]");
 	}
-
 }
 
 sub t
@@ -162,18 +163,14 @@ sub find_char
 	my ($font, $char) = @_;
 	$w->font($font);
 	my @r = @{ $w->get_font_ranges };
-	my $found;
+	my $found = 0;
 	my @chars = map { ord } split '', $char;
 	for ( my $i = 0; $i < @r; $i += 2 ) {
 		my ( $l, $r ) = @r[$i, $i+1];
-
-		$found = 0;
 		for my $c ( @chars ) {
 			$found++ if $l <= $c && $r >= $c;
 		}
 		last if $found == @chars;
-		$found = 0;
-
 	}
 	return $found;
 }
@@ -297,7 +294,7 @@ sub test_fribidi
 
 		check_noshape_nofribidi();
 		t('12ABC', 'CBA12', 'rtl in rtl', rtl => 1);
-		t2('/|', '%0', [R(0,1)], 'arabic ligation with ZW nobreaker');
+		t2('/|', '%0', [R(0,1),2], 'arabic ligation with ZW nobreaker');
 		t('|/', '/|', 'no arabic ligation');
 
 		check_proper_bidi();
@@ -328,7 +325,7 @@ sub test_shaping
                 	glyphs "|-/%";
 			skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
 			t('|/', '/|', 'no arabic ligation');
-			t2('/|', '%', [r(0)], 'arabic ligation');
+			t2('/|', '%', [r(0),2], 'arabic ligation');
 			if ( $opt{fribidi} ) {
 				t('/-|', '|-/', 'arabic non-ligation');
 				check_proper_bidi();
@@ -354,7 +351,7 @@ sub test_high_unicode
 	ok(1, "high unicode");
 
 	my $k = $w-> text_shape("\x{10FF00}" x 2);
-	is_deeply( $k, [[0,0],[0,1]], "unresolvable glyphs");
+	is_deeply( $k, [[0,0],[0,1,2]], "unresolvable glyphs");
 
 	SKIP: {
 		my $chars = find_high_unicode_font;
@@ -375,14 +372,73 @@ sub test_high_unicode
 	}
 }
 
-sub test_glyphs_out
+sub test_glyphs_wrap
 {
-	my $sum1 = shift;
+	$w->font->size(12);
+	my $z = $w-> text_shape('12', positions => 1);
+	is( 2, scalar( @{ $z->glyphs // [] }), "text '12' resolved to 2 glyphs");
+
+	my ($tw) = @{ $z->advances // [ $w->get_text_width('1') ] };
+
+	my $r = $w-> text_wrap( $z, 0, tw::BreakSingle );
+	is_deeply( $r, [], "wrap that doesn't fit");
+
+	$r = $w-> text_wrap( $z, 0, tw::ReturnFirstLineLength );
+	is( $r, 1, "tw::ReturnFirstLineLength");
+
+	$r = $w-> text_wrap( $z, 0, tw::ReturnChunks );
+	is_deeply( $r, [0,1,1,1], "tw::ReturnChunks");
+
+	$r = $w-> text_wrap( $z, 0, 0 );
+	is( scalar(@$r), 2, "wrap: split to 2 pieces");
+	is_deeply( $r->[0]->glyphs, [ $z->glyphs->[0] ], "glyphs 1");
+	is_deeply( $r->[1]->glyphs, [ $z->glyphs->[1] ], "glyphs 2");
+	is_deeply( $r->[0]->clusters, [ $z->clusters->[0], length('1') ], "clusters 1");
+	is_deeply( $r->[1]->clusters, [ $z->clusters->[1], length('2') ], "clusters 2");
+	if ( $z-> advances ) {
+		is_deeply( $r->[0]->advances, [ $z->advances->[0] ], "advances 1");
+		is_deeply( $r->[1]->advances, [ $z->advances->[1] ], "advances 2");
+		is_deeply( $r->[0]->positions, [ @{$z->positions}[0,1] ], "positions 1");
+		is_deeply( $r->[1]->positions, [ @{$z->positions}[2,3] ], "positions 2");
+	}
+
+	SKIP: { if ( $opt{shaping} ) {
+		skip("no arabic font", 1) unless find_vector_font(xtr('|/'));
+		glyphs "|/%";
+		skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
+		# that is tested already, rely on that: t2('/|', '%', [r(0)], 'arabic ligation');
+		$z = $w-> text_shape(xtr('/||'));
+		$r = $w-> text_wrap($z, 0, tw::ReturnChunks);
+		is_deeply($r, [0,2 , 2,1], "ligature wrap, chunks");
+		$r = $w-> text_wrap($z, 0, 0);
+		is_deeply($r, [
+			[ [$glyphs{xtr '%'}], [r(0),length('/|')] ],
+			[ [$glyphs{xtr '|'}], [r(2), length('|')] ],
+		], "ligature wrap, glyphs");
+	}}
+}
+
+sub test_drawing
+{ SKIP: {
+	glyphs "12";
+	skip("glyph drawing is not available", 1) unless glyphs_fully_resolved;
+
+	$w-> backColor(cl::Black);
+	$w-> color(cl::White);
+	$w-> font-> set( height => 25, style => fs::Underlined );
+	$w-> clear;
+	$w-> text_out( "12", 5, 5 );
+	my $i = $w->image;
+	$i->type(im::Byte);
+	my $sum1 = $i->sum;
+	skip("text drawing on bitmap is not available", 1) unless $sum1;
+
 	my $z = $w-> text_shape('12');
+	skip("shaping is not available", 1) unless $z;
 
 	$w-> clear;
 	$w-> text_out( $z, 5, 5 );
-	my $i = $w->image;
+	$i = $w->image;
 	$i->type(im::Byte);
 	my $sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting");
@@ -417,72 +473,6 @@ sub test_glyphs_out
 	$i->type(im::Byte);
 	$sum3 = $i->sum;
 	is($sum3, $sum1, "glyphs plotting 45 degrees with positions");
-}
-
-sub test_glyphs_wrap
-{
-	$w->font->size(12);
-	my $z = $w-> text_shape('12', positions => 1);
-	is( 2, scalar( @{ $z->glyphs // [] }), "text '12' resolved to 2 glyphs");
-
-	my ($tw) = @{ $z->advances // [ $w->get_text_width('1') ] };
-
-	my $r = $w-> text_wrap( $z, 0, tw::BreakSingle );
-	is_deeply( $r, [], "warp with no fits");
-
-	$r = $w-> text_wrap( $z, 0, tw::ReturnFirstLineLength );
-	is( $r, 1, "tw::ReturnFirstLineLength");
-
-	$r = $w-> text_wrap( $z, 0, tw::ReturnChunks );
-	is_deeply( $r, [0,1,1,1], "tw::ReturnChunks");
-
-	$r = $w-> text_wrap( $z, 0, 0 );
-	is( scalar(@$r), 2, "wrap: split to 2 pieces");
-	is_deeply( $r->[0]->glyphs, [ $z->glyphs->[0] ], "glyphs 1");
-	is_deeply( $r->[1]->glyphs, [ $z->glyphs->[1] ], "glyphs 2");
-	is_deeply( $r->[0]->clusters, [ $z->clusters->[0] ], "clusters 1");
-	is_deeply( $r->[1]->clusters, [ $z->clusters->[1] ], "clusters 2");
-	if ( $z-> advances ) {
-		is_deeply( $r->[0]->advances, [ $z->advances->[0] ], "advances 1");
-		is_deeply( $r->[1]->advances, [ $z->advances->[1] ], "advances 2");
-		is_deeply( $r->[0]->positions, [ @{$z->positions}[0,1] ], "positions 1");
-		is_deeply( $r->[1]->positions, [ @{$z->positions}[2,3] ], "positions 2");
-	}
-
-	SKIP: if ( $opt{shaping} ) {
-		skip("no arabic font", 1) unless find_vector_font(xtr('|/'));
-		glyphs "|/%";
-		skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
-		# that is tested already, rely on that: t2('/|', '%', [r(0)], 'arabic ligation');
-		$z = $w-> text_shape(xtr('/||'), positions => 1);
-		# 69,572, -0,-8,   5,11, 0.0.0.01
-		print "\n\n\n";
-		$r = $w-> text_wrap($z, 0, tw::ReturnChunks);
-		use Data::Dumper; print Dumper(	$r);
-		exit;
-	}
-}
-
-sub test_drawing
-{ SKIP: {
-	glyphs "12";
-	skip("glyph drawing is not available", 1) unless glyphs_fully_resolved;
-
-	$w-> backColor(cl::Black);
-	$w-> color(cl::White);
-	$w-> font-> set( height => 25, style => fs::Underlined );
-	$w-> clear;
-	$w-> text_out( "12", 5, 5 );
-	my $i = $w->image;
-	$i->type(im::Byte);
-	my $sum1 = $i->sum;
-	skip("text drawing on bitmap is not available", 1) unless $sum1;
-
-	my $z = $w-> text_shape('12');
-	skip("shaping is not available", 1) unless $z;
-
-	test_glyphs_out($sum1);
-	test_glyphs_wrap();
 }}
 
 sub run_test
@@ -514,6 +504,7 @@ sub run_test
 	}
 	test_high_unicode;
 	test_drawing;
+	test_glyphs_wrap;
 }
 
 if ( Prima::Application-> get_system_info->{apc} == apc::Unix ) {
