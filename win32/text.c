@@ -322,7 +322,11 @@ win32_shaper( Handle self, PTextShapeRec t)
 	SCRIPT_VISATTR *visuals = NULL;
 	int *advances = NULL;
 	GOFFSET *goffsets = NULL;
+	ABC first_abc, last_abc;
 	unsigned int * surrogate_map = NULL, first_surrogate_pair = 0, wlen;
+
+	bzero(&first_abc, sizeof(first_abc));
+	bzero(&last_abc, sizeof(last_abc));
 
 	if ((items = malloc(sizeof(SCRIPT_ITEM) * (t-> len + 1))) == NULL)
 		goto EXIT;
@@ -431,21 +435,22 @@ win32_shaper( Handle self, PTextShapeRec t)
 		}
 
 		if ( t-> flags & toPositions) {
-			ABC abc;
 			GOFFSET * i_g;
 			int * i_a;
 			uint16_t * o_g, *o_a;
 			if (( hr = ScriptPlace(sys ps, script_cache, t->glyphs + t->n_glyphs, nglyphs,
 			       visuals, &items[item].a,
-			       advances, goffsets, &abc)) != S_OK
+			       advances, goffsets, &last_abc)) != S_OK
 			) {
 				apiHErr(hr);
 				goto EXIT;
 			}
 			for (
 				i = 0,
-				i_a = advances,    i_g = goffsets,
-				o_a = t->advances, o_g = t->positions;
+				i_a = advances,
+				i_g = goffsets,
+				o_a = t->advances  + t-> n_glyphs,
+				o_g = t->positions + t-> n_glyphs;
 				i < nglyphs;
 				i++
 			) {
@@ -454,12 +459,15 @@ win32_shaper( Handle self, PTextShapeRec t)
 				*(o_g++) = i_g->du;
 				i_g++;
 			}
-			t-> advances  += nglyphs;
-			t-> positions += nglyphs * 2;
+			if ( i = 0 ) first_abc = last_abc;
 		}
 
 		t-> n_glyphs += nglyphs;
 		out_clusters += nglyphs;
+	}
+	if ( t-> advances ) {
+		t-> advances[ t-> n_glyphs     ] = first_abc.a;
+		t-> advances[ t-> n_glyphs + 1 ] = last_abc.c;
 	}
 
 	ok = true;

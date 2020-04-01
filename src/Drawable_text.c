@@ -606,7 +606,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	BIND(sv_glyphs, 1, 0);
 	BIND(sv_clusters, 1, 1);
 	if ( sv_positions != nilSV ) BIND(sv_positions, 2, 0);
-	if ( sv_advances != nilSV ) BIND(sv_advances, 1, 0);
+	if ( sv_advances != nilSV ) BIND(sv_advances, 1, 2);
 #undef BIND
 
 	return newSVsv(call_perl(self, "new_glyph_obj", "<SSSS",
@@ -1460,10 +1460,13 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 		for ( i = 0; i < t.count; i++)
 			av_push( av, newSViv( c[i]));
 	} else {
-		int j, k, mul[4] = { 1, 1, 1, 2 }, extras[4] = {0, sizeof(uint16_t), 0, 0};
+		int j, k,
+			mul[4] = { 1, 1, 1, 2 },
+			extras[4] = {0, 1, 2, 0};
 		uint16_t *payload[4] = { g.glyphs, g.clusters, g.advances, g.positions };
 		for ( i = 0; i < t.count; i += 2) {
 			SV *sv_payload[4];
+			uint16_t * glyphs_dst = NULL;
 			unsigned int
 				glyph_size,
 				char_offset = c[i], char_size = c[i + 1];
@@ -1475,7 +1478,6 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 			glyph_size = 0;
 			for ( k = char_offset, glyph_size = 0; k < char_offset + char_size; k++)
 				glyph_size += glyphs_in_cluster[k];
-			glyph_size *= sizeof(uint16_t);
 
 			for ( j = 0; j < 4; j++) {
 				SV * sv;
@@ -1485,8 +1487,9 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 					continue;
 				}
 
-				sv  = prima_array_new(glyph_size * mul[j] + extras[j]);
+				sv  = prima_array_new(sizeof(uint16_t) * (glyph_size * mul[j] + extras[j]));
 				dst = (uint16_t*)prima_array_get_storage(sv);
+				if ( j == 0 ) glyphs_dst = dst;
 				for ( k = char_offset; k < char_offset + char_size; k++) {
 					if ( l2v[k] >= 0 ) {
 						int l = glyphs_in_cluster[k] * mul[j];
@@ -1494,8 +1497,20 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 						while (l-- > 0) *(dst++) = *(src++);
 					}
 				}
-				/* add fake sub-text length */
-				if ( extras[j]) *dst = char_size;
+				if (j == 1) /* add fake sub-text length */
+					*dst = char_size;
+				else if (j == 2) { /* add A and C advances */
+					uint16_t glyph;
+					PFontABC abc;
+					glyph = glyphs_dst[0];
+					abc = query_abc_range_glyphs( self, &t, glyph / 256);
+					*((int16_t*)dst++) = abc[glyph & 0xff].a;
+					if ( glyph != glyphs_dst[glyph_size-1] ) {
+						glyph = glyphs_dst[glyph_size-1];
+						abc = query_abc_range_glyphs( self, &t, glyph / 256);
+					}
+					*((int16_t*)dst++) = abc[glyph & 0xff].c;
+				}
 				sv_payload[j] = prima_array_tie( sv, sizeof(uint16_t), "S");
 			}
 			av_push( av, newSVsv(

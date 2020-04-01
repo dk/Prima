@@ -315,7 +315,7 @@ sub test_shaping
 
 		my $z = $w->text_shape('12', positions => 1);
 		ok((4 == grep { m/^\d+$/ } @{$z->positions // []}), "positions are okay");
-		ok((2 == grep { m/^\d+$/ } @{$z->advances  // []}), "advances are okay");
+		ok((4 == grep { m/^\d+$/ } @{$z->advances  // []}), "advances are okay");
 
 		if ( $opt{fribidi} ) {
 			t('12ABC', 'CBA12', 'rtl in rtl', rtl => 1);
@@ -396,8 +396,13 @@ sub test_glyphs_wrap
 	is_deeply( $r->[0]->clusters, [ $z->clusters->[0], length('1') ], "clusters 1");
 	is_deeply( $r->[1]->clusters, [ $z->clusters->[1], length('2') ], "clusters 2");
 	if ( $z-> advances ) {
-		is_deeply( $r->[0]->advances, [ $z->advances->[0] ], "advances 1");
-		is_deeply( $r->[1]->advances, [ $z->advances->[1] ], "advances 2");
+		my @abc = @{$w-> get_font_abc(ord('1'), ord('2'))}; 
+		is( $r->[0]->advances->[0], $z->advances->[0], "advances 1");
+		is( $r->[1]->advances->[0], $z->advances->[1], "advances 2");
+		is( $r->[0]->a, $z->a,   "advances 1.a");
+		is( $r->[0]->c, $abc[2], "advances 1.c");
+		is( $r->[1]->a, $abc[3], "advances 2.a");
+		is( $r->[1]->c, $z->c,   "advances 2.c");
 		is_deeply( $r->[0]->positions, [ @{$z->positions}[0,1] ], "positions 1");
 		is_deeply( $r->[1]->positions, [ @{$z->positions}[2,3] ], "positions 2");
 	}

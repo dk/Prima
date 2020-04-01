@@ -2388,6 +2388,20 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 			r->positions[j++] = floor(glyph_pos[i].y_offset  / 64 + .5);
 		}
 	}
+	if ( r-> advances ) {
+		FT_UInt ft_index;
+		XGlyphInfo glyph;
+		XftFont *xft_font = X(self)-> font-> xft_base;
+
+		ft_index = r->glyphs[0];
+		XftGlyphExtents( DISP, xft_font, &ft_index, 1, &glyph);
+		r->advances[ r-> n_glyphs ] = -glyph. x;
+		if ( r-> glyphs[0] != r-> glyphs[ r-> n_glyphs - 1 ] ) {
+			ft_index = r->glyphs[r-> n_glyphs - 1];
+			XftGlyphExtents( DISP, xft_font, &ft_index, 1, &glyph);
+		}
+		r->advances[ r-> n_glyphs + 1 ] = glyph.xOff - glyph.width + glyph.x;
+	}
  
 	hb_buffer_destroy(buf);
 	hb_font_destroy(font);
