@@ -87,6 +87,9 @@ sub glyphs    { $_[0]->[0] }
 sub clusters  { $_[0]->[1] }
 sub advances  { $_[0]->[2] }
 sub positions { $_[0]->[3] }
+sub text_length { $_[0]->[0]->[-1] }
+sub a           { unpack('s', pack('S', $_[0]->[2]->[-2])) }
+sub c           { unpack('s', pack('S', $_[0]->[2]->[-1])) }
 
 # class Object; base class of all Prima classes
 package Prima::Object;
