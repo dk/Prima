@@ -1013,7 +1013,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 
 		switch ( uv ) {
 		case '\t':
-			ADVANCE;	
+			ADVANCE;
 			if (!( t-> options & twCalcTabs))
 				goto _default;
 
@@ -1038,7 +1038,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 		case '\n':
 		case 0x2028:
 		case 0x2029:
-			ADVANCE;	
+			ADVANCE;
 			if (!( t-> options & twNewLineBreak))
 				goto _default;
 			ADD( p, utf_p);
@@ -1046,7 +1046,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 			continue;
 
 		case ' ':
-			ADVANCE;	
+			ADVANCE;
 			if (!( t-> options & twSpaceBreak))
 				goto _default;
 			ADD( p, utf_p);
@@ -1089,6 +1089,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 
 			/* or push this character disregarding the width */
 			ADD(i, utf_p + 1);
+			reassign_w = 1;
 		} else {
 			/* normal break condition */
 			if ( t-> options & twWordBreak) {
@@ -1099,6 +1100,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 					utf_start = utf_split + 1;
 					utf_p = utf_split;
 					w = 0;
+					reassign_w = 1;
 					continue;
 				} else if ( t-> options & twBreakSingle) {
 					/* cannot be split, return nothing */
@@ -1118,6 +1120,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 			i = start = p;
 			utf_start = utf_p;
 			utf_p--;
+			reassign_w = 1;
 		}
 		w = 0;
 	}
@@ -1225,6 +1228,7 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent)
 
 typedef struct {
 	uint16_t * glyphs;   /* glyphset to be wrapped */
+	uint16_t * clusters; /* for visual ordering; also, won't break within a cluster */
 	int        n_glyphs; /* glyphset length in words */
 	int        width;    /* width to wrap with */
 	int        options;  /* twXXX constants */
@@ -1281,39 +1285,70 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	unsigned int base = 0x10000000;
 
 	unsigned int start = 0, i;
-	float w = 0, inc = 0, initial_overhang = 0;
+	uint16_t max_cluster, min_cluster;
+	float w = 0.0, inc = 0, initial_overhang = 0;
 	Bool reassign_w = 1;
 	Bool doWidthBreak = t-> width >= 0;
+	int l2v[MAX_CHARACTERS];
 
 #define ADD(end) if (1) {                                        \
 	if ( !add_wrapped_glyphs( t, start, end, &ret, &size))   \
 		return ret;                                      \
 	start = end;                                             \
+	reassign_w = 1;                                          \
 	if (( t-> options & twReturnFirstLineLength) == twReturnFirstLineLength) return ret;\
 }
 
 	t-> count = 0;
 	if (!( ret = allocn( unsigned int, size))) return NULL;
 
-	/* process glyphs */
+	min_cluster = max_cluster = t->clusters[0] & ~toRTL;
+	for ( i = 0; i < t->n_glyphs; i++) {
+		uint16_t c = t->clusters[i] & ~toRTL;
+		if ( max_cluster < c ) max_cluster = c;
+		if ( min_cluster > c ) min_cluster = c;
+	}
+	for ( i = min_cluster; i <= max_cluster; i++)
+		l2v[i] = -1;
+	for ( i = 0; i < t->n_glyphs; i++) {
+		uint16_t c = t->clusters[i] & ~toRTL;
+		if ( l2v[c] < 0 ) l2v[c] = i;
+	}
 
-	for ( i = 0; i < t-> n_glyphs; ) {
-		uint16_t uv;
+
+	/* process glyphs */
+	for ( i = min_cluster; i <= max_cluster; ) {
+		uint16_t uv, cluster;
 		float winc;
-		int p = i;
-	
-		uv = t-> glyphs[i];
-		if ( uv / 256 != base)
-			if ( !precalc_abc_buffer( query_abc_range_glyphs( self, t, base = uv / 256), width, abc)) {
-				return ret;
-			}
-		if ( reassign_w) {
-			w = initial_overhang = abc[ uv & 0xff]. a;
-			reassign_w = 0;
+		int i, j, n, p, v;
+
+		if ( l2v[i] < 0 ) continue;
+		v = l2v[i];
+
+		/* n: glyphs in the cluster */
+		for ( n = 0, cluster = t->clusters[v]; n < t->n_glyphs; v++) {
+			if ( t->clusters[v] != cluster ) break;
+			n++;
 		}
-		winc = width[ uv & 0xff];
-		inc  = abc[ uv & 0xff]. c;
-		i++;
+
+		winc = 0;
+		for ( j = 0; j < n; j++) {
+			uv = t->glyphs[v + j];
+			if ( uv / 256 != base)
+				if ( !precalc_abc_buffer( query_abc_range_glyphs( self, t, base = uv / 256), width, abc)) {
+					return ret;
+				}
+			if ( reassign_w) {
+				w = initial_overhang = abc[ uv & 0xff]. a;
+				reassign_w = 0;
+			}
+			winc += width[ uv & 0xff];
+			if ( i == n - 1 ) inc = abc[ uv & 0xff]. c;
+		}
+
+		p = i++;
+		printf("%d/%d: cluster:%d\n", i, v, cluster);
+		printf("uv: %x\n", uv);
 
 		if ( !doWidthBreak || (w + winc + inc <= t-> width)) {
 			w += winc;
@@ -1329,7 +1364,8 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 			}
 			/* or push this character disregarding the width */
 			ADD(i);
-		} else { /* normal break condition */
+		} else {
+			/* normal break condition */
 			ADD(p);
 			i = start = p;
 		}
@@ -1359,7 +1395,8 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 		return false;
 
 	t.n_glyphs  = g.len;
-	t.glyphs    = g.glyphs;	
+	t.glyphs    = g.glyphs;
+	t.clusters  = g.clusters;
 	t.width     = ( width < 0) ? 0 : width;
 	t.options   = options;
 	t.cache     = &var-> font_abc_glyphs;
