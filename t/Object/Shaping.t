@@ -13,6 +13,7 @@ use Prima::Application;
 my $w;
 my $z;
 
+my %opt;
 my %glyphs;
 my $high_unicode_char;
 
@@ -162,9 +163,17 @@ sub find_char
 	$w->font($font);
 	my @r = @{ $w->get_font_ranges };
 	my $found;
+	my @chars = map { ord } split '', $char;
 	for ( my $i = 0; $i < @r; $i += 2 ) {
 		my ( $l, $r ) = @r[$i, $i+1];
-		$found = 1, last if $l <= $char && $r >= $char;
+
+		$found = 0;
+		for my $c ( @chars ) {
+			$found++ if $l <= $c && $r >= $c;
+		}
+		last if $found == @chars;
+		$found = 0;
+
 	}
 	return $found;
 }
@@ -297,7 +306,7 @@ sub test_fribidi
 
 sub test_shaping
 {
-	my ($found, $with_bidi) = @_;
+	my ($found) = @_;
 	ok(1, "test shaping");
 
 	SKIP: {
@@ -311,7 +320,7 @@ sub test_shaping
 		ok((4 == grep { m/^\d+$/ } @{$z->positions // []}), "positions are okay");
 		ok((2 == grep { m/^\d+$/ } @{$z->advances  // []}), "advances are okay");
 
-		if ( $with_bidi ) {
+		if ( $opt{fribidi} ) {
 			t('12ABC', 'CBA12', 'rtl in rtl', rtl => 1);
 		}
 
@@ -320,20 +329,20 @@ sub test_shaping
 			skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
 			t('|/', '/|', 'no arabic ligation');
 			t2('/|', '%', [r(0)], 'arabic ligation');
-			if ( $with_bidi ) {
+			if ( $opt{fribidi} ) {
 				t('/-|', '|-/', 'arabic non-ligation');
 				check_proper_bidi();
 			}
 		}
 
 		SKIP: {
-			skip("no devanagari font", 1) unless find_vector_font(0x924);
+			skip("no devanagari font", 1) unless find_vector_font("\x{924}");
 			my $z = $w-> text_shape("\x{924}\x{94d}\x{928}");
 			ok( $z && scalar(grep {$_} @{$z->glyphs}), 'devanagari shaping');
 		}
 
 		SKIP: {
- 			skip("no khmer font", 1) unless find_vector_font(0x179f);
+ 			skip("no khmer font", 1) unless find_vector_font("\x{179f}");
 			my $z = $w-> text_shape("\x{179f}\x{17b9}\x{1784}\x{17d2}");
 			ok( $z && scalar(grep {$_} @{$z->glyphs}), 'khmer shaping');
 		}
@@ -343,6 +352,9 @@ sub test_shaping
 sub test_high_unicode
 {
 	ok(1, "high unicode");
+
+	my $k = $w-> text_shape("\x{10FF00}" x 2);
+	is_deeply( $k, [[0,0],[0,1]], "unresolvable glyphs");
 
 	SKIP: {
 		my $chars = find_high_unicode_font;
@@ -374,7 +386,7 @@ sub test_glyphs_out
 	$i->type(im::Byte);
 	my $sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting");
-	
+
 	$w-> clear;
 	$z = $w-> text_shape('12', positions => 0);
 	$w-> text_out( $w-> text_shape('12', positions => 0), 5, 5 );
@@ -389,7 +401,7 @@ sub test_glyphs_out
 	$i = $w->image;
 	$i->type(im::Byte);
 	$sum1 = $i->sum;
-	
+
 	$z = $w-> text_shape('12');
 	$w-> clear;
 	$w-> text_out( $z, 5, 5 );
@@ -397,7 +409,7 @@ sub test_glyphs_out
 	$i->type(im::Byte);
 	$sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting 45 degrees");
-	
+
 	$w-> clear;
 	$z = $w-> text_shape('12', positions => 0);
 	$w-> text_out( $w-> text_shape('12', positions => 0), 5, 5 );
@@ -420,10 +432,10 @@ sub test_glyphs_wrap
 
 	$r = $w-> text_wrap( $z, 0, tw::ReturnFirstLineLength );
 	is( $r, 1, "tw::ReturnFirstLineLength");
-	
+
 	$r = $w-> text_wrap( $z, 0, tw::ReturnChunks );
 	is_deeply( $r, [0,1,1,1], "tw::ReturnChunks");
-	
+
 	$r = $w-> text_wrap( $z, 0, 0 );
 	is( scalar(@$r), 2, "wrap: split to 2 pieces");
 	is_deeply( $r->[0]->glyphs, [ $z->glyphs->[0] ], "glyphs 1");
@@ -435,6 +447,19 @@ sub test_glyphs_wrap
 		is_deeply( $r->[1]->advances, [ $z->advances->[1] ], "advances 2");
 		is_deeply( $r->[0]->positions, [ @{$z->positions}[0,1] ], "positions 1");
 		is_deeply( $r->[1]->positions, [ @{$z->positions}[2,3] ], "positions 2");
+	}
+
+	SKIP: if ( $opt{shaping} ) {
+		skip("no arabic font", 1) unless find_vector_font(xtr('|/'));
+		glyphs "|/%";
+		skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
+		# that is tested already, rely on that: t2('/|', '%', [r(0)], 'arabic ligation');
+		$z = $w-> text_shape(xtr('/||'), positions => 1);
+		# 69,572, -0,-8,   5,11, 0.0.0.01
+		print "\n\n\n";
+		$r = $w-> text_wrap($z, 0, tw::ReturnChunks);
+		use Data::Dumper; print Dumper(	$r);
+		exit;
 	}
 }
 
@@ -452,7 +477,7 @@ sub test_drawing
 	$i->type(im::Byte);
 	my $sum1 = $i->sum;
 	skip("text drawing on bitmap is not available", 1) unless $sum1;
-	
+
 	my $z = $w-> text_shape('12');
 	skip("shaping is not available", 1) unless $z;
 
@@ -465,16 +490,16 @@ sub run_test
 	my $unix = shift;
 
 	$w = Prima::DeviceBitmap-> create( type => dbt::Pixmap, width => 32, height => 32);
-	my $found = find_vector_font(0x5d0); # A-Z mapped to hebrew
+	my $found = find_vector_font(xtr('A'));
 
 	my $z = $w-> text_shape( "1" );
 	plan skip_all => "Shaping is not available" if defined $z && $z eq '0';
 
-	my %opt;
 	$opt{fribidi} = 1 if Prima::Application->get_system_value(sv::FriBidi);
 	if ( $unix ) {
 		%opt = (%opt, map { $_ => 1 } split ' ', Prima::Application->sys_action('shaper'));
 		if ( $opt{harfbuzz} && $opt{xft}) {
+			$opt{shaping} = 1;
 			test_shaping($found, $opt{fribidi});
 		} elsif ( $opt{fribidi}) {
 			test_fribidi;
@@ -484,6 +509,7 @@ sub run_test
 			test_minimal;
 		}
 	} else {
+		$opt{shaping} = 1;
 		test_shaping($found, $opt{fribidi});
 	}
 	test_high_unicode;
