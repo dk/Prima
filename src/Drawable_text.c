@@ -396,7 +396,7 @@ FAIL:
 #endif
 
 static Bool
-test_shaper(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_only)
+shape(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_only)
 {
 	Bool ok, reorder_swaps_rtl;
 	Byte analysis[MAX_CHARACTERS], *save_analysis;
@@ -582,13 +582,15 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	}
 #undef ALLOC
 
-	if ( !test_shaper(self, &t, system_shaper, glyph_mapper_only) ) goto EXIT;
+	if ( !shape(self, &t, system_shaper, glyph_mapper_only) ) goto EXIT;
 
 	/* encode direction */
 	for ( i = 0; i < t.n_glyphs; i++) {
 		if ( t.analysis[ t.clusters[i] ] & 1 )
 			t.clusters[i] |= toRTL;
 	}
+	/* add an extra cluster as text length */
+	t.clusters[t.n_glyphs] = t.len;
 
 	free(t.v2l );
 	free(t.analysis );
@@ -597,14 +599,14 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	t.analysis = NULL;
 	t.text = NULL;
 
-#define BIND(x,n) { \
-	prima_array_truncate(x, t.n_glyphs * n * sizeof(uint16_t)); \
+#define BIND(x,n,d) { \
+	prima_array_truncate(x, (t.n_glyphs * n + d) * sizeof(uint16_t)); \
 	x = prima_array_tie( x, sizeof(uint16_t), "S"); \
 }
-	BIND(sv_glyphs, 1);
-	BIND(sv_clusters, 1);
-	if ( sv_positions != nilSV ) BIND(sv_positions, 2);
-	if ( sv_advances != nilSV ) BIND(sv_advances, 1);
+	BIND(sv_glyphs, 1, 0);
+	BIND(sv_clusters, 1, 1);
+	if ( sv_positions != nilSV ) BIND(sv_positions, 2, 0);
+	if ( sv_advances != nilSV ) BIND(sv_advances, 1, 0);
 #undef BIND
 
 	return newSVsv(call_perl(self, "new_glyph_obj", "<SSSS",
@@ -1274,8 +1276,9 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 	return abc;
 }
 
+/* returns character (not glyph!) mappings */
 static unsigned int *
-Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
+Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t, int * l2v, Byte * glyphs_in_cluster, Byte * chars_in_cluster)
 {
 	unsigned int *ret = NULL;
 	int size = 128;
@@ -1284,12 +1287,11 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	FontABC abc[256];
 	unsigned int base = 0x10000000;
 
-	unsigned int start = 0, i;
-	uint16_t max_cluster, min_cluster;
+	unsigned int start = 0, i, j;
+	uint16_t max_cluster, min_cluster, text_length;
 	float w = 0.0, inc = 0, initial_overhang = 0;
 	Bool reassign_w = 1;
 	Bool doWidthBreak = t-> width >= 0;
-	int l2v[MAX_CHARACTERS];
 
 #define ADD(end) if (1) {                                        \
 	if ( !add_wrapped_glyphs( t, start, end, &ret, &size))   \
@@ -1302,38 +1304,66 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	t-> count = 0;
 	if (!( ret = allocn( unsigned int, size))) return NULL;
 
+	text_length = t->clusters[t->n_glyphs];
 	min_cluster = max_cluster = t->clusters[0] & ~toRTL;
 	for ( i = 0; i < t->n_glyphs; i++) {
 		uint16_t c = t->clusters[i] & ~toRTL;
 		if ( max_cluster < c ) max_cluster = c;
 		if ( min_cluster > c ) min_cluster = c;
 	}
-	for ( i = min_cluster; i <= max_cluster; i++)
+
+	for ( i = min_cluster; i <= max_cluster; i++) {
 		l2v[i] = -1;
+		glyphs_in_cluster[i] = 0;
+		chars_in_cluster[i] = 0;
+	}
 	for ( i = 0; i < t->n_glyphs; i++) {
 		uint16_t c = t->clusters[i] & ~toRTL;
 		if ( l2v[c] < 0 ) l2v[c] = i;
 	}
 
+	for ( i = j = min_cluster; i < max_cluster; i++) {
+		if ( l2v[i] >= 0 ) j = i;
+		chars_in_cluster[j]++;
+	}
+	chars_in_cluster[max_cluster] = text_length - max_cluster;
+
+#ifdef _DEBUG
+	printf("clusters:");
+	for ( i = 0; i < t->n_glyphs; i++) {
+		uint16_t c = t->clusters[i] & ~toRTL;
+		printf(" %d", c);
+	}
+	printf("\n");
+	printf("l2v(%d-%d):", min_cluster, max_cluster);
+	for ( i = min_cluster; i <= max_cluster; i++) 
+		printf(" %d", l2v[i]);
+	printf("\n");
+	printf("chars/cluster:");
+	for ( i = min_cluster; i <= max_cluster; i++) 
+		printf(" %d", chars_in_cluster[i]);
+	printf("\n");
+#endif
 
 	/* process glyphs */
 	for ( i = min_cluster; i <= max_cluster; ) {
-		uint16_t uv, cluster;
+		uint16_t cluster;
 		float winc;
-		int i, j, n, p, v;
+		int j, ng, p, v;
 
-		if ( l2v[i] < 0 ) continue;
 		v = l2v[i];
 
-		/* n: glyphs in the cluster */
-		for ( n = 0, cluster = t->clusters[v]; n < t->n_glyphs; v++) {
+		/* ng: glyphs in the cluster */
+		for ( ng = 0, cluster = t->clusters[v]; v < t->n_glyphs; v++) {
 			if ( t->clusters[v] != cluster ) break;
-			n++;
+			ng++;
 		}
+		glyphs_in_cluster[i] = ng;
+		v -= ng;
 
 		winc = 0;
-		for ( j = 0; j < n; j++) {
-			uv = t->glyphs[v + j];
+		for ( j = 0; j < ng; j++) {
+			uint16_t uv = t->glyphs[v + j];
 			if ( uv / 256 != base)
 				if ( !precalc_abc_buffer( query_abc_range_glyphs( self, t, base = uv / 256), width, abc)) {
 					return ret;
@@ -1343,12 +1373,14 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 				reassign_w = 0;
 			}
 			winc += width[ uv & 0xff];
-			if ( i == n - 1 ) inc = abc[ uv & 0xff]. c;
+			if ( j == ng - 1 ) inc = abc[ uv & 0xff]. c;
 		}
 
-		p = i++;
-		printf("%d/%d: cluster:%d\n", i, v, cluster);
-		printf("uv: %x\n", uv);
+#ifdef _DEBUG
+		printf("l:%d v:%d: ng:%d nc:%d cluster:%d\n", i, v, ng, chars_in_cluster[i], cluster & ~toRTL);
+#endif
+		p = i;
+		i += chars_in_cluster[i];
 
 		if ( !doWidthBreak || (w + winc + inc <= t-> width)) {
 			w += winc;
@@ -1374,8 +1406,8 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	}
 
 	/* adding or skipping last line */
-	if ( t-> n_glyphs - start > 0 || t-> count == 0)
-		ADD( t-> n_glyphs);
+	if ( text_length - start > 0 || t-> count == 0)
+		ADD(text_length);
 
 	return ret;
 }
@@ -1390,6 +1422,9 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 	int i;
 	unsigned int * c;
 	GlyphsOutRec g;
+	int l2v[MAX_CHARACTERS];
+	Byte glyphs_in_cluster[MAX_CHARACTERS];
+	Byte chars_in_cluster[MAX_CHARACTERS];
 
 	if (!read_glyphs(&g, text, "Drawable::text_wrap"))
 		return false;
@@ -1405,7 +1440,7 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 		(( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) ?
 			newSViv(0) : newRV_noinc(( SV *) newAV())
 	);
-	c = Drawable_do_glyphs_wrap( self, &t);
+	c = Drawable_do_glyphs_wrap( self, &t, l2v, glyphs_in_cluster, chars_in_cluster);
 	gpLEAVE;
 
 	if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) {
@@ -1425,27 +1460,43 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 		for ( i = 0; i < t.count; i++)
 			av_push( av, newSViv( c[i]));
 	} else {
-		int j, mul[4] = { 1, 1, 1, 2 };
+		int j, k, mul[4] = { 1, 1, 1, 2 }, extras[4] = {0, sizeof(uint16_t), 0, 0};
 		uint16_t *payload[4] = { g.glyphs, g.clusters, g.advances, g.positions };
 		for ( i = 0; i < t.count; i += 2) {
 			SV *sv_payload[4];
-			unsigned int offset = c[i], size = c[i + 1] * sizeof(uint16_t);
-			if ( size == 0 ) {
+			unsigned int
+				glyph_size,
+				char_offset = c[i], char_size = c[i + 1];
+			if ( char_size == 0 ) {
 				av_push( av, nilSV);
 				continue;
 			}
 
+			glyph_size = 0;
+			for ( k = char_offset, glyph_size = 0; k < char_offset + char_size; k++)
+				glyph_size += glyphs_in_cluster[k];
+			glyph_size *= sizeof(uint16_t);
+
 			for ( j = 0; j < 4; j++) {
-				if ( payload[j] ) {
-					SV * sv = prima_array_new(size * mul[j]);
-					memcpy(
-						prima_array_get_storage(sv),
-						payload[j] + offset * mul[j],
-						size * mul[j]
-					);
-					sv_payload[j] = prima_array_tie( sv, sizeof(uint16_t), "S");
-				} else
+				SV * sv;
+				uint16_t *dst;
+				if ( payload[j] == NULL ) {
 					sv_payload[j] = nilSV;
+					continue;
+				}
+
+				sv  = prima_array_new(glyph_size * mul[j] + extras[j]);
+				dst = (uint16_t*)prima_array_get_storage(sv);
+				for ( k = char_offset; k < char_offset + char_size; k++) {
+					if ( l2v[k] >= 0 ) {
+						int l = glyphs_in_cluster[k] * mul[j];
+						uint16_t * src = payload[j] + l2v[k] * mul[j];
+						while (l-- > 0) *(dst++) = *(src++);
+					}
+				}
+				/* add fake sub-text length */
+				if ( extras[j]) *dst = char_size;
+				sv_payload[j] = prima_array_tie( sv, sizeof(uint16_t), "S");
 			}
 			av_push( av, newSVsv(
 				call_perl(self, "new_glyph_obj", "<SSSS",
