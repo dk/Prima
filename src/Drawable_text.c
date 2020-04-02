@@ -923,7 +923,8 @@ add_wrapped_text(
 
 	if ( t-> count == *size) {
 		char ** n;
-		if ( !( n = (char **) realloc( *array, *size *= 2)))
+		*size *= 2;
+		if ( !( n = (char **) realloc( *array, *size * sizeof(char*))))
 			return false;
 		*array = n;
 	}
