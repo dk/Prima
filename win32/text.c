@@ -354,7 +354,9 @@ win32_shaper( Handle self, PTextShapeRec t)
 		apiHErr(hr);
 		goto EXIT;
 	}
-	//printf("Itemize: %d\n", nitems);
+#ifdef _DEBUG
+	printf("itemizer: %d\n", nitems);
+#endif
 
 	if ( t->flags & toRTL ) {
 		item = nitems - 1;
@@ -391,6 +393,9 @@ win32_shaper( Handle self, PTextShapeRec t)
 			&nglyphs
 		)) != S_OK) {
 			if ( hr == USP_E_SCRIPT_NOT_IN_FONT) {
+#ifdef _DEBUG
+				printf("USP_E_SCRIPT_NOT_IN_FONT\n");
+#endif
 				fill_null_glyphs(t, items[item].iCharPos, itemlen, surrogate_map, first_surrogate_pair);
 				continue;
 			}
@@ -459,15 +464,15 @@ win32_shaper( Handle self, PTextShapeRec t)
 				*(o_g++) = i_g->du;
 				i_g++;
 			}
-			if ( i = 0 ) first_abc = last_abc;
+			if ( i == 0 ) first_abc = last_abc;
 		}
 
 		t-> n_glyphs += nglyphs;
 		out_clusters += nglyphs;
 	}
 	if ( t-> advances ) {
-		t-> advances[ t-> n_glyphs     ] = first_abc.a;
-		t-> advances[ t-> n_glyphs + 1 ] = last_abc.c;
+		t-> advances[ t-> n_glyphs     ] = (first_abc.abcA < 0) ? -first_abc.abcA + .5 : 0;
+		t-> advances[ t-> n_glyphs + 1 ] = (last_abc.abcC  < 0) ? -last_abc.abcC  + .5 : 0;
 	}
 
 	ok = true;
@@ -484,11 +489,11 @@ EXIT:
 }
 
 PTextShapeFunc
-apc_gp_get_text_shaper( Handle self, Bool * glyph_mapper_only)
+apc_gp_get_text_shaper( Handle self, int * type)
 {
-	if ( !( sys tmPitchAndFamily & TMPF_TRUETYPE))
-		return NULL;
-	*glyph_mapper_only = false;
+	*type = (sys tmPitchAndFamily & TMPF_TRUETYPE) ?
+		SHAPING_FULL :
+		SHAPING_EMULATION;
 	return win32_shaper;
 }
 

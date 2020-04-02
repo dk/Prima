@@ -172,7 +172,7 @@ sub find_char
 		}
 		last if $found == @chars;
 	}
-	return $found;
+	return $found == @chars;
 }
 
 sub find_high_unicode_char
@@ -221,6 +221,42 @@ sub find_vector_font
 		next unless $f->{vector};
 		next unless $f->{name} =~ /^[A-Z]/;
 		next unless find_char($f, $find_char);
+		$found = $f;
+		$got_rtl = 1;
+		goto FOUND;
+	}
+
+FOUND:
+	$w->font->name($found->{name}) if $found;
+
+	return $got_rtl;
+}
+
+sub find_glyphs
+{
+	my ($font, $glyphs) = @_;
+	$w->font($font);
+	my $z = $w->text_shape($glyphs);
+	return 0 unless $z;
+	return !grep { !$_ } @{$z->glyphs};
+}
+
+# a font may have glyphs but won't know how to ligate them, i.e. glyph found but script not found
+sub find_arabic_font
+{
+	my $find_char = shift;
+	my $glyphs = xtr('|/%');
+	return 1 if find_glyphs($w->font, $glyphs);
+
+	my $got_rtl;
+	my $found;
+	my @f = @{$::application->fonts};
+
+	# fontconfig fonts
+	for my $f ( @f ) {
+		next unless $f->{vector};
+		next unless $f->{name} =~ /^[A-Z]/;
+		next unless find_glyphs($f, $glyphs);
 		$found = $f;
 		$got_rtl = 1;
 		goto FOUND;
@@ -396,7 +432,7 @@ sub test_glyphs_wrap
 	is_deeply( $r->[0]->clusters, [ $z->clusters->[0], length('1') ], "clusters 1");
 	is_deeply( $r->[1]->clusters, [ $z->clusters->[1], length('2') ], "clusters 2");
 	if ( $z-> advances ) {
-		my @abc = @{$w-> get_font_abc(ord('1'), ord('2'))}; 
+		my @abc = map { ($_ < 0) ? -$_ : 0 } @{$w-> get_font_abc(ord('1'), ord('2'))}; 
 		is( $r->[0]->advances->[0], $z->advances->[0], "advances 1");
 		is( $r->[1]->advances->[0], $z->advances->[1], "advances 2");
 		is( $r->[0]->a, $z->a,   "advances 1.a");
@@ -408,7 +444,8 @@ sub test_glyphs_wrap
 	}
 
 	SKIP: { if ( $opt{shaping} ) {
-		skip("no arabic font", 1) unless find_vector_font(xtr('|/'));
+		$w->font->name('Arial');
+		skip("no arabic font", 1) unless find_arabic_font;
 		glyphs "|/%";
 		skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
 		# that is tested already, rely on that: t2('/|', '%', [r(0)], 'arabic ligation');

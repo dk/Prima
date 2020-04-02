@@ -222,6 +222,14 @@ sub new_gradient
 	return Prima::Drawable::Gradient->new(@_);
 }
 
+
+sub new_glyph_obj
+{
+	shift;
+	require Prima::Drawable::Glyphs;
+	return Prima::Drawable::Glyphs->new(@_);
+}
+
 sub stroke_primitive
 {
 	my ( $self, $request ) = (shift, shift);

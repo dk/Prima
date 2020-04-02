@@ -80,17 +80,6 @@ sub STORESIZE {
 }
 sub DELETE    { warn "This array does not implement delete functionality" }
 
-package Prima::glyph_obj;
-
-sub new       { bless [grep { defined } @_[1..4]], $_[0] }
-sub glyphs    { $_[0]->[0] }
-sub clusters  { $_[0]->[1] }
-sub advances  { $_[0]->[2] }
-sub positions { $_[0]->[3] }
-sub text_length { $_[0]->[0]->[-1] }
-sub a           { unpack('s', pack('S', $_[0]->[2]->[-2])) }
-sub c           { unpack('s', pack('S', $_[0]->[2]->[-1])) }
-
 # class Object; base class of all Prima classes
 package Prima::Object;
 use vars qw(@hooks);
@@ -533,8 +522,6 @@ sub fillWinding # compatibility
 	return $_[0]->fillMode & fm::Winding unless $#_;
 	$_[0]->fillMode(($_[1] ? fm::Winding : fm::Alternate) | fm::Overlay);
 }
-
-sub new_glyph_obj { shift; Prima::glyph_obj->new(@_) }
 
 package Prima::Image;
 use vars qw( @ISA);

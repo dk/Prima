@@ -510,7 +510,8 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		*sv_advances = nilSV;
 	PTextShapeFunc system_shaper;
 	TextShapeRec t;
-	Bool glyph_mapper_only;
+	int shaper_type;
+	Bool skip_if_simple = false, return_zero = false;
 
 	/* forward, if any */
 	if ( SvROK(text_sv)) {
@@ -539,10 +540,15 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		t.flags |= toPositions;
 	if ( pexist(language))
 		t.language = pget_c(language);
+	if ( pexist(skip_if_simple))
+		t.language = pget_c(skip_if_simple);
 	hv_clear(profile); /* old gencls bork */
 
 	/* font supports shaping? */
-	if (!( system_shaper = apc_gp_get_text_shaper(self, &glyph_mapper_only)))
+	if (!( system_shaper = apc_gp_get_text_shaper(self, &shaper_type)))
+		return newSViv(0);
+
+	if ( skip_if_simple && (shaper_type == SHAPING_EMULATION))
 		return newSViv(0);
 
 	/* allocate buffers */
@@ -573,16 +579,30 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 	ALLOC(glyphs,1);
 	ALLOC(clusters,1);
-	if ( glyph_mapper_only || !(t.flags & toPositions)) {
-		sv_positions = sv_advances = nilSV;
-		t.positions = t.advances = NULL;
-	} else {
+	if ( t.flags & toPositions) {
 		ALLOC(positions,2);
 		ALLOC(advances,1);
+	} else {
+		sv_positions = sv_advances = nilSV;
+		t.positions = t.advances = NULL;
 	}
 #undef ALLOC
 
-	if ( !shape(self, &t, system_shaper, glyph_mapper_only) ) goto EXIT;
+	if ( !shape(self, &t, system_shaper, shaper_type < SHAPING_FULL) ) goto EXIT;
+
+	if ( skip_if_simple ) {
+		Bool is_simple = true;
+		for ( i = 0; i < t.n_glyphs; i++) {
+			if ( i != t.clusters[i] ) {
+				is_simple = false;
+				break;
+			}
+		}
+		if ( is_simple ) {
+			return_zero = true;
+			goto EXIT;
+		}
+	}
 
 	/* encode direction */
 	for ( i = 0; i < t.n_glyphs; i++) {
@@ -622,7 +642,21 @@ EXIT:
 	if ( t.positions) sv_free(sv_positions);
 	if ( t.advances ) sv_free(sv_advances );
 
-	return nilSV;
+	return return_zero ? newSViv(0) : nilSV;
+}
+
+static int
+get_glyphs_width( PGlyphsOutRec t)
+{
+	int i, ret;
+	uint16_t * advances = t->advances;
+	for ( i = ret = 0; i < t-> len; i++)
+		ret += *(advances++);
+	if ( t-> flags & toAddOverhangs ) {
+		ret += *(advances++);
+		ret += *(advances++);
+	}
+	return ret;
 }
 
 int
@@ -646,6 +680,9 @@ Drawable_get_text_width( Handle self, SV * text, int flags)
 		GlyphsOutRec t;
 		if (!read_glyphs(&t, text, "Drawable::get_text_width"))
 			return false;
+		t.flags = flags;
+		if (t.advances)
+			return get_glyphs_width(&t);
 		gpENTER(0);
 		res = apc_gp_get_glyphs_width( self, &t);
 		gpLEAVE;
@@ -660,13 +697,34 @@ Drawable_get_text_width( Handle self, SV * text, int flags)
 	return res;
 }
 
+static void
+get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
+{
+	Bool text_out_baseline;
+
+	t-> flags = 0;
+
+	pt[0].y = pt[2]. y = var-> font. ascent - 1;
+	pt[1].y = pt[3]. y = - var-> font. descent;
+	pt[4].y = pt[0]. x = pt[1].x = 0;
+	pt[3].x = pt[2]. x = pt[4].x = get_glyphs_width(t);
+
+	text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
+		apc_gp_get_text_out_baseline(self) :
+		my-> get_textOutBaseline(self);
+	if ( !text_out_baseline ) {
+		int i = 4, d = var->font. descent;
+		while ( i--) pt[i]. y += d;
+	}
+}
+
 SV *
-Drawable_get_text_box( Handle self, SV * text, int flags )
+Drawable_get_text_box( Handle self, SV * text )
 {
 	gpARGS;
 	Point * p;
 	AV * av;
-	int i;
+	int i, flags = 0;
 	if ( !SvROK( text )) {
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
@@ -674,9 +732,7 @@ Drawable_get_text_box( Handle self, SV * text, int flags )
 		if ( prima_is_utf8_sv( text)) {
 			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
 			flags |= toUTF8;
-		} else
-			flags &= ~toUTF8;
-
+		}
 		gpENTER( newRV_noinc(( SV *) newAV()));
 		p = apc_gp_get_text_box( self, c_text, dlen, flags);
 		gpLEAVE;
@@ -684,13 +740,19 @@ Drawable_get_text_box( Handle self, SV * text, int flags )
 		GlyphsOutRec t;
 		if (!read_glyphs(&t, text, "Drawable::get_text_box"))
 			return false;
-		gpENTER(0);
-		p = apc_gp_get_glyphs_box( self, &t);
-		gpLEAVE;
+		if (t.advances) {
+			if (!( p = malloc( sizeof(Point) * 5 )))
+				return newRV_noinc(( SV *) newAV());
+			get_glyphs_box(self, &t, p);
+		} else {
+			gpENTER( newRV_noinc(( SV *) newAV()));
+			p = apc_gp_get_glyphs_box( self, &t);
+			gpLEAVE;
+		}
 	} else {
 		SV * ret;
 		gpENTER( newRV_noinc(( SV *) newAV()));
-		ret = newSVsv(sv_call_perl(text, "get_text_box", "<H", self));
+		ret = newSVsv(sv_call_perl(text, "get_text_box", "<H", self ));
 		gpLEAVE;
 		return ret;
 	}
@@ -1236,6 +1298,10 @@ typedef struct {
 	int        options;  /* twXXX constants */
 	int        count;    /* count of lines returned */
 	PList    * cache;
+
+	Byte     * glyphs_in_cluster;
+	Byte     * chars_in_cluster;
+	int      * l2v;
 } GlyphWrapRec;
 
 static Bool
@@ -1278,7 +1344,7 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 
 /* returns character (not glyph!) mappings */
 static unsigned int *
-Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t, int * l2v, Byte * glyphs_in_cluster, Byte * chars_in_cluster)
+Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 {
 	unsigned int *ret = NULL;
 	int size = 128;
@@ -1313,20 +1379,20 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t, int * l2v, Byte * glyphs
 	}
 
 	for ( i = min_cluster; i <= max_cluster; i++) {
-		l2v[i] = -1;
-		glyphs_in_cluster[i] = 0;
-		chars_in_cluster[i] = 0;
+		t->l2v[i] = -1;
+		t->glyphs_in_cluster[i] = 0;
+		t->chars_in_cluster[i] = 0;
 	}
 	for ( i = 0; i < t->n_glyphs; i++) {
 		uint16_t c = t->clusters[i] & ~toRTL;
-		if ( l2v[c] < 0 ) l2v[c] = i;
+		if ( t->l2v[c] < 0 ) t->l2v[c] = i;
 	}
 
 	for ( i = j = min_cluster; i < max_cluster; i++) {
-		if ( l2v[i] >= 0 ) j = i;
-		chars_in_cluster[j]++;
+		if ( t->l2v[i] >= 0 ) j = i;
+		t->chars_in_cluster[j]++;
 	}
-	chars_in_cluster[max_cluster] = text_length - max_cluster;
+	t->chars_in_cluster[max_cluster] = text_length - max_cluster;
 
 #ifdef _DEBUG
 	printf("clusters:");
@@ -1337,11 +1403,11 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t, int * l2v, Byte * glyphs
 	printf("\n");
 	printf("l2v(%d-%d):", min_cluster, max_cluster);
 	for ( i = min_cluster; i <= max_cluster; i++) 
-		printf(" %d", l2v[i]);
+		printf(" %d", t->l2v[i]);
 	printf("\n");
 	printf("chars/cluster:");
 	for ( i = min_cluster; i <= max_cluster; i++) 
-		printf(" %d", chars_in_cluster[i]);
+		printf(" %d", t->chars_in_cluster[i]);
 	printf("\n");
 #endif
 
@@ -1351,14 +1417,14 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t, int * l2v, Byte * glyphs
 		float winc;
 		int j, ng, p, v;
 
-		v = l2v[i];
+		v = t->l2v[i];
 
 		/* ng: glyphs in the cluster */
 		for ( ng = 0, cluster = t->clusters[v]; v < t->n_glyphs; v++) {
 			if ( t->clusters[v] != cluster ) break;
 			ng++;
 		}
-		glyphs_in_cluster[i] = ng;
+		t->glyphs_in_cluster[i] = ng;
 		v -= ng;
 
 		winc = 0;
@@ -1377,10 +1443,10 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t, int * l2v, Byte * glyphs
 		}
 
 #ifdef _DEBUG
-		printf("l:%d v:%d: ng:%d nc:%d cluster:%d\n", i, v, ng, chars_in_cluster[i], cluster & ~toRTL);
+		printf("l:%d v:%d: ng:%d nc:%d cluster:%d\n", i, v, ng, t->chars_in_cluster[i], cluster & ~toRTL);
 #endif
 		p = i;
-		i += chars_in_cluster[i];
+		i += t->chars_in_cluster[i];
 
 		if ( !doWidthBreak || (w + winc + inc <= t-> width)) {
 			w += winc;
@@ -1413,6 +1479,17 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t, int * l2v, Byte * glyphs
 }
 #undef ADD
 
+static void
+fill_ac( Handle self, GlyphWrapRec * t, uint16_t glyph1, uint16_t glyph2, uint16_t * advances)
+{
+	PFontABC abc;
+	abc = query_abc_range_glyphs( self, t, glyph1 / 256);
+	*(advances++) = ( abc[glyph1 & 0xff].a < 0 ) ? (-abc[glyph1 & 0xff].a + .5) : 0;
+	if ( glyph1 != glyph2 )
+		abc = query_abc_range_glyphs( self, t, glyph2 / 256);
+	*(advances++) = ( abc[glyph1 & 0xff].c < 0 ) ? (-abc[glyph1 & 0xff].c + .5) : 0;
+}
+
 static SV*
 glyphs_wrap( Handle self, SV * text, int width, int options)
 {
@@ -1435,12 +1512,15 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 	t.width     = ( width < 0) ? 0 : width;
 	t.options   = options;
 	t.cache     = &var-> font_abc_glyphs;
+	t.l2v       = l2v;
+	t.glyphs_in_cluster = glyphs_in_cluster;
+	t.chars_in_cluster  = chars_in_cluster;
 
 	gpENTER(
 		(( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) ?
 			newSViv(0) : newRV_noinc(( SV *) newAV())
 	);
-	c = Drawable_do_glyphs_wrap( self, &t, l2v, glyphs_in_cluster, chars_in_cluster);
+	c = Drawable_do_glyphs_wrap( self, &t);
 	gpLEAVE;
 
 	if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) {
@@ -1499,18 +1579,8 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 				}
 				if (j == 1) /* add fake sub-text length */
 					*dst = char_size;
-				else if (j == 2) { /* add A and C advances */
-					uint16_t glyph;
-					PFontABC abc;
-					glyph = glyphs_dst[0];
-					abc = query_abc_range_glyphs( self, &t, glyph / 256);
-					*((int16_t*)dst++) = abc[glyph & 0xff].a;
-					if ( glyph != glyphs_dst[glyph_size-1] ) {
-						glyph = glyphs_dst[glyph_size-1];
-						abc = query_abc_range_glyphs( self, &t, glyph / 256);
-					}
-					*((int16_t*)dst++) = abc[glyph & 0xff].c;
-				}
+				else if (j == 2) /* add A and C advances */
+					fill_ac(self, &t, glyphs_dst[0],glyphs_dst[glyph_size-1],dst);
 				sv_payload[j] = prima_array_tie( sv, sizeof(uint16_t), "S");
 			}
 			av_push( av, newSVsv(
