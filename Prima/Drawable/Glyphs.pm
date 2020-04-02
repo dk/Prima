@@ -9,5 +9,12 @@ sub text_length { $_[0]->[0]->[-1] }
 sub a           { $_[0]->[2]->[-2] }
 sub c           { $_[0]->[2]->[-1] }
 
+sub clone
+{
+	my $self = shift;
+	my @svs = map { defined ? Prima::array::clone($_) : undef } @$self;
+	return __PACKAGE__->new(@svs);
+}
+
 1;
 

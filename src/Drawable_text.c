@@ -1504,7 +1504,22 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 	Byte chars_in_cluster[MAX_CHARACTERS];
 
 	if (!read_glyphs(&g, text, "Drawable::text_wrap"))
-		return false;
+		return nilSV;
+
+	/* a very quick check, if possible, if glyphstr fits */
+	if ( g.advances && ( width >= get_glyphs_width(&g))) {
+		AV * av;
+		if (( options & twReturnFirstLineLength) == twReturnFirstLineLength)
+			return newSViv(g.len);
+		av = newAV();
+		if ( options & twReturnChunks) {
+			av_push( av, newSViv(0));
+			av_push( av, newSViv(g.len));
+		} else {
+			av_push( av, newSVsv(sv_call_perl(text, "clone", "<S", text)));
+		}
+		return newRV_noinc(( SV *) av);
+	}
 
 	t.n_glyphs  = g.len;
 	t.glyphs    = g.glyphs;
