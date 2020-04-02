@@ -3411,6 +3411,7 @@ typedef struct _TextWrapRec {
 	int    t_start;                     /* ~ starting point */
 	int    t_end;                       /* ~ ending point */
 	int    t_line;                      /* ~ line */
+	int    t_pos;                       /* ~ offset in t_line */
 	char * t_char;                      /* letter next to ~ */
 
 	PFontABC * ascii;                   /* eventual abc caches, to be freed after call. */
