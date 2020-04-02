@@ -58,22 +58,43 @@ read_subarray( AV * av, int index, int length_expected, int * plen, const char *
 }
 
 static Bool
-read_glyphs( PGlyphsOutRec t, SV * text, const char * caller)
+read_glyphs( PGlyphsOutRec t, SV * text, Bool clusters_required, const char * caller)
 {
 	int len;
 	AV* av;
+
+	bzero(t, sizeof(GlyphsOutRec));
 	/* assuming caller checked for SvTYPE( SvRV( text)) == SVt_PVAV */
 
 	av  = (AV*) SvRV(text);
-	len = av_len(av) + 1;
 
-	bzero(t, sizeof(GlyphsOutRec));
-	if ( len < 1 ) {
+	/* is this just a single glyphstr? */
+	if ( SvTIED_mg(( SV*) av, PERL_MAGIC_tied )) {
+		void * ref;
+		size_t length;
+		char * letter;
+
+		if ( clusters_required ) {
+			warn("%s requires glyphstr with clusters", caller);
+			return false;
+		}
+	
+		if ( !prima_array_parse( text, &ref, &length, &letter) || *letter != 'S') {
+			warn("invalid glyphstr passed to %s: %s", caller, "not a Prima::array");
+			return false;
+		}
+
+		t-> glyphs = ref;
+		t-> len    = length;
+		return true;
+	}
+
+	len = av_len(av) + 1;
+	if ( len > 4 ) len = 4; /* we don't need more */
+	if ( len < 1 || (len != 2 && len != 4) ) {
 		warn("malformed glyphs array in %s", caller);
 		return false;
 	}
-
-	if ( len > 4 ) len = 4; /* we don't need more */
 
 	if ( !( t-> glyphs = read_subarray( av, 0, -1, &t->len, caller, "glyphs")))
 		return false;
@@ -84,7 +105,6 @@ read_glyphs( PGlyphsOutRec t, SV * text, const char * caller)
 	case 4:
 		if ( !( t-> positions = read_subarray( av, 3, t->len * 2, NULL, caller, "positions")))
 			return false;
-	case 3:
 		if ( !( t-> advances = read_subarray( av, 2, t->len, NULL, caller, "advances")))
 			return false;
 	case 2:
@@ -108,7 +128,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 		if ( !ok) perl_error();
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
-		if (!read_glyphs(&t, text, "Drawable::text_out"))
+		if (!read_glyphs(&t, text, 0, "Drawable::text_out"))
 			return false;
 		ok = apc_gp_glyphs_out( self, &t, x, y);
 		if ( !ok) perl_error();
@@ -678,7 +698,7 @@ Drawable_get_text_width( Handle self, SV * text, int flags)
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
-		if (!read_glyphs(&t, text, "Drawable::get_text_width"))
+		if (!read_glyphs(&t, text, 0, "Drawable::get_text_width"))
 			return false;
 		t.flags = flags;
 		if (t.advances)
@@ -738,7 +758,7 @@ Drawable_get_text_box( Handle self, SV * text )
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
-		if (!read_glyphs(&t, text, "Drawable::get_text_box"))
+		if (!read_glyphs(&t, text, 0, "Drawable::get_text_box"))
 			return false;
 		if (t.advances) {
 			if (!( p = malloc( sizeof(Point) * 5 )))
@@ -1503,7 +1523,7 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 	Byte glyphs_in_cluster[MAX_CHARACTERS];
 	Byte chars_in_cluster[MAX_CHARACTERS];
 
-	if (!read_glyphs(&g, text, "Drawable::text_wrap"))
+	if (!read_glyphs(&g, text, 1, "Drawable::text_wrap"))
 		return nilSV;
 
 	/* a very quick check, if possible, if glyphstr fits */

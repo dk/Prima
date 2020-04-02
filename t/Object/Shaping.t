@@ -487,6 +487,14 @@ sub test_drawing
 	$i->type(im::Byte);
 	my $sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting");
+	
+	$w-> clear;
+	$w-> text_out( $z->glyphs, 5, 5 );
+	$i = $w->image;
+	$i->type(im::Byte);
+	$sum2 = $i->sum;
+	is($sum2, $sum1, "glyphs plotting, terse version");
+
 
 	$w-> clear;
 	$z = $w-> text_shape('12', positions => 0);

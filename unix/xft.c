@@ -2325,14 +2325,15 @@ prima_xft_text_shaper_ident( Handle self, PTextShapeRec r)
         int i;
 	XftFont *xft = X(self)->font->xft;
 	XftFont *xft_font = X(self)-> font-> xft_base;
-	uint16_t * advances = t->advances, glyph, a = 0, c = 0;
+	uint16_t * advances = r->advances, a = 0, c = 0;
         for ( i = 0; i < r->len; i++) {
-                glyph = r->glyphs[i] = XftCharIndex(DISP, xft, r->text[i]);
+                r->glyphs[i] = XftCharIndex(DISP, xft, r->text[i]);
 		if ( advances ) {
 			XGlyphInfo glyph;
-			FT_UInt ft_index = glyph;
-			if ( i == 0 && glyphs x > 0 ) a = glyph.x;
-			if ( i == n - 1 ) {
+			FT_UInt ft_index = r->glyphs[i];
+			XftGlyphExtents( DISP, xft_font, &ft_index, 1, &glyph);
+			if ( i == 0 && glyph. x > 0 ) a = glyph.x;
+			if ( i == r->len - 1 ) {
 				c = glyph.xOff - glyph.width + glyph.x;
 				c = ( c < 0 ) ? -c : 0;
 			}
