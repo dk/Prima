@@ -3721,8 +3721,12 @@ apc_gp_get_text_box( Handle self, const char * text, int len, int flags);
 extern Bool
 apc_gp_get_text_opaque( Handle self);
 
+#define SHAPING_EMULATION      0
+#define SHAPING_GLYPH_MAPPING  1
+#define SHAPING_FULL           2
+
 extern PTextShapeFunc
-apc_gp_get_text_shaper( Handle self, Bool * glyph_mapper_only);
+apc_gp_get_text_shaper( Handle self, int * type);
 
 extern int
 apc_gp_get_text_width( Handle self, const char * text, int len, int flags);

@@ -435,24 +435,25 @@ text_shaper_core_text( Handle self, PTextShapeRec r)
 			if ( i == r-> len - 1 ) c = cs-> width - cs-> rbearing;
 			*advances = cs->width;
 		}
-		*(advances++) = a;
-		*(advances++) = c;
+		*(advances++) = (a < 0) ? -a : 0;
+		*(advances++) = (c < 0) ? -c : 0;
 		bzero( r-> positions, r-> n_glyphs * 2 * sizeof(uint16_t));
 	}
         return true;
 }
 
 PTextShapeFunc
-apc_gp_get_text_shaper( Handle self, Bool * glyph_mapper_only)
+apc_gp_get_text_shaper( Handle self, int * type)
 {
-	*glyph_mapper_only = true;
+	*type = SHAPING_EMULATION;
 #ifdef USE_XFT
 	if ( ( X(self)-> font-> xft) ) {
+		*type = SHAPING_GLYPH_MAPPING;
 #ifdef WITH_HARFBUZZ
 		if ( guts. use_harfbuzz ) {
-			*glyph_mapper_only = false;
+			*type = SHAPING_FULL;
 			return prima_xft_text_shaper_harfbuzz;
-		} else 
+		} else
 #endif
 			return prima_xft_text_shaper_ident;
 	}

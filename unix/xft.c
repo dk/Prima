@@ -2324,8 +2324,26 @@ prima_xft_text_shaper_ident( Handle self, PTextShapeRec r)
 {
         int i;
 	XftFont *xft = X(self)->font->xft;
-        for ( i = 0; i < r->len; i++)
-                r->glyphs[i] = XftCharIndex(DISP, xft, r->text[i]);
+	XftFont *xft_font = X(self)-> font-> xft_base;
+	uint16_t * advances = t->advances, glyph, a = 0, c = 0;
+        for ( i = 0; i < r->len; i++) {
+                glyph = r->glyphs[i] = XftCharIndex(DISP, xft, r->text[i]);
+		if ( advances ) {
+			XGlyphInfo glyph;
+			FT_UInt ft_index = glyph;
+			if ( i == 0 && glyphs x > 0 ) a = glyph.x;
+			if ( i == n - 1 ) {
+				c = glyph.xOff - glyph.width + glyph.x;
+				c = ( c < 0 ) ? -c : 0;
+			}
+			*(advances++) = glyph. xOff;
+		}
+	}
+	if ( advances ) {
+		bzero( r-> positions, sizeof(uint16_t) * 2 * r->len);
+		*(advances++) = a;
+		*(advances++) = c;
+	}
         r-> n_glyphs = r->len;
         return true;
 }
@@ -2392,15 +2410,17 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 		FT_UInt ft_index;
 		XGlyphInfo glyph;
 		XftFont *xft_font = X(self)-> font-> xft_base;
+		int c;
 
 		ft_index = r->glyphs[0];
 		XftGlyphExtents( DISP, xft_font, &ft_index, 1, &glyph);
-		r->advances[ r-> n_glyphs ] = -glyph. x;
+		r->advances[ r-> n_glyphs ] = (glyph. x > 0) ? glyph.x : 0;
 		if ( r-> glyphs[0] != r-> glyphs[ r-> n_glyphs - 1 ] ) {
 			ft_index = r->glyphs[r-> n_glyphs - 1];
 			XftGlyphExtents( DISP, xft_font, &ft_index, 1, &glyph);
 		}
-		r->advances[ r-> n_glyphs + 1 ] = glyph.xOff - glyph.width + glyph.x;
+		c = glyph.xOff - glyph.width + glyph.x;
+		r->advances[ r-> n_glyphs + 1 ] = (c < 0) ? -c : 0;
 	}
  
 	hb_buffer_destroy(buf);
