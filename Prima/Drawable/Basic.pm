@@ -308,6 +308,57 @@ sub fill_primitive
 	return $ok;
 }
 
+sub text_shape_wrap
+{
+	my ( $self, $text, $width, %opt) = @_;
+
+	my $opt = delete($opt{options}) // tw::Default;
+
+	my $wrapped = $self-> text_wrap( $text, $width, $opt, delete($opt{tabs}) // 8);
+	return $wrapped if $opt & tw::ReturnChunks;
+
+	my $tilde;
+	$tilde = pop @$wrapped if $opt & (tw::CalcMnemonic | tw::CollapseTilde);
+
+	my @shaped;
+	for my $chunk ( @$wrapped ) {
+		my $shaped = $self-> text_shape( $chunk, %opt );
+		return unless defined $shaped;
+		$shaped = $chunk unless $shaped;
+		push @shaped, $shaped;
+	}
+
+	if ( $tilde && ref(my $glyphs = $shaped[$tilde->{tildeLine}])) {
+		my $pos = $tilde->{tildePos};
+		my $index = -1;
+		my $found = -1;
+
+		for my $c ( @{ $glyphs->clusters }) {	
+			$index++;
+			$c &= ~to::RTL;
+			$found = $index, last if $c == $pos; # same glyph
+			$found = $index if $c < $pos && $c > $found; # same cluster?
+		}
+		my $glyph_abc = $self-> get_font_abc(( $glyphs->glyphs->[$found] ) x 2, to::Glyphs);
+		my $x = 0;
+		if ( $found > 0 ) {
+			my $str = Prima::array::substr($glyphs->glyphs, 0, $found);
+			$x = $self->get_text_width($str);
+			my $first_abc = $self->get_font_abc(($str->[0]) x 2, to::Glyphs);
+			$x += $first_abc->[0] if $first_abc->[0] > 0;
+		}
+
+		$tilde->{tildeStart} = $x;
+		$tilde->{tildeStart} += $glyph_abc->[0] if $glyph_abc->[0] < 0;
+		$tilde->{tildeEnd}   = $x + $glyph_abc->[1];
+		$tilde->{tildeEnd}   -= $glyph_abc->[2] if $glyph_abc->[0] < 2;
+
+		push @shaped, $tilde;
+	}
+
+	return \@shaped;
+}
+
 1;
 
 =head1 NAME

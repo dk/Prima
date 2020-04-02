@@ -57,7 +57,7 @@ sub substr
 	} else {
 		$newref = CORE::substr( $a1->[REF], $offset * $a1->[SIZE]);
 	}
-	return ref($self)->new( $a1->[PACK], $newref );
+	return ref($a1)->new( $a1->[PACK], $newref );
 }
 
 sub append

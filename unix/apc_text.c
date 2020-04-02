@@ -654,6 +654,7 @@ apc_gp_get_text_width( Handle self, const char * text, int len, int flags)
 int
 apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 {
+	int ret;
 	if ( t->len > 65535 ) t->len = 65535;
 
 #ifdef USE_XFT
@@ -662,7 +663,10 @@ apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 			X(self)-> xft_map8, nil);
 #endif
 
-	return gp_get_text_width( self, (char*) t->glyphs, t->len, toUTF8 );
+	SWAP_BYTES(t->glyphs,t->len);
+	ret = gp_get_text_width( self, (char*) t->glyphs, t->len, toUTF8 );
+	SWAP_BYTES(t->glyphs,t->len);
+	return ret;
 }
 
 static Point *
@@ -736,7 +740,9 @@ apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
 	if ( X(self)-> font-> xft)
 		return prima_xft_get_glyphs_box( self, t);
 #endif
+	SWAP_BYTES(t->glyphs,t->len);
 	ret = gp_get_text_box( self, (char*) t->glyphs, t->len, toUTF8);
+	SWAP_BYTES(t->glyphs,t->len);
 	return ret;
 }
 
