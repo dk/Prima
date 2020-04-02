@@ -443,6 +443,9 @@ sub test_glyphs_wrap
 		is_deeply( $r->[1]->positions, [ @{$z->positions}[2,3] ], "positions 2");
 	}
 
+	$r = $w-> text_wrap( $z, 1_000_000, 0 );
+	is_deeply($r->[0], $z, "quick clone");
+
 	SKIP: { if ( $opt{shaping} ) {
 		$w->font->name('Arial');
 		skip("no arabic font", 1) unless find_arabic_font;

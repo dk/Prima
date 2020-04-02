@@ -16,7 +16,7 @@ use Carp;
 sub new
 {
 	my ($class, $letter, $buf) = @_;
-	die "bad array type" if $letter !~ /^[ids]$/;
+	die "bad array type" if $letter !~ /^[idS]$/;
 	my @tie;
 	my $size = length pack $letter, 0;
 	if ( defined $buf ) {
@@ -66,6 +66,13 @@ sub append
 	my ( $a1, $a2 ) = map { tied @$_ } @_;
 	croak "bad array" if $a1->[PACK] ne $a2->[PACK];
 	$a1->[REF] .= $a2->[REF];
+}
+
+sub clone
+{
+	my $self = tied @{$_[0]};
+	my ( $buf, $size, $pack ) = @$self;
+	return __PACKAGE__->new($pack, $buf);
 }
 
 sub TIEARRAY  { bless \@_, shift }
