@@ -12,6 +12,7 @@ my $pod_text;
 my $font_dialog;
 
 Prima::Bidi::language('ar_AR');
+$::application->textDirection(1);
 
 $w = Prima::MainWindow-> create(
 	size => [ 430, 200],

@@ -5,16 +5,16 @@ use vars qw(@ISA);
 use Carp;
 use Prima::Const;
 use Prima::Classes;
-use Prima::Bidi qw(is_complex);
 use strict;
 use warnings;
 
 sub profile_default
 {
 	my $font = $_[ 0]-> get_default_font;
+	my $rtl  = $::application-> textDirection;
 	return {
 		%{$_[ 0]-> SUPER::profile_default},
-		alignment      => $Prima::Bidi::default_direction_rtl ? ta::Right : ta::Left,
+		alignment      => $rtl ? ta::Right : ta::Left,
 		autoHeight     => 0,
 		autoWidth      => 1,
 		focusLink      => undef,
@@ -25,13 +25,12 @@ sub profile_default
 		showAccelChar  => 0,
 		showPartial    => 1,
 		tabStop        => 0,
-		textDirection  => $Prima::Bidi::default_direction_rtl,
+		textDirection  => $rtl,
 		valignment     => ta::Top,
 		widgetClass    => wc::Label,
 		wordWrap       => 0,
 	}
 }
-
 
 sub profile_check_in
 {

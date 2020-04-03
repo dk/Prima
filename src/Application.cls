@@ -1,10 +1,11 @@
 object Prima::Application( Prima::Widget)
 {
+	Bool      autoClose;
 	ColorSet  colors;
 	Handle    hintTimer;
 	Handle    hintWidget;
 	Handle    icon;
-	Bool      autoClose;
+	Bool      textDirection;
 	double    uiScaling;
 
 	property  Bool   autoClose;
@@ -40,6 +41,7 @@ object Prima::Application( Prima::Widget)
 	property  Bool   tabStop;
 	property  Bool   transparent;
 	property  SV *   text;
+	property  Bool   textDirection;
 	property  double uiScaling;
 	property  Bool   visible;
 	property  Bool   wantUnicodeInput;

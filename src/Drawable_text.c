@@ -1,5 +1,6 @@
 #include "apricot.h"
 #include "Drawable.h"
+#include "Application.h"
 
 #ifdef WITH_FRIBIDI
 #include <fribidi/fribidi.h>
@@ -554,7 +555,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	}
 #endif
 
-	if ( pexist(rtl) && pget_B(rtl))
+	if ( pexist(rtl) ? pget_B(rtl) : PApplication(application)->textDirection )
 		t.flags |= toRTL;
 	if ( pexist(positions) && pget_B(positions))
 		t.flags |= toPositions;
