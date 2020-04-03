@@ -435,10 +435,10 @@ sub test_glyphs_wrap
 		my @abc = map { ($_ < 0) ? -$_ : 0 } @{$w-> get_font_abc(ord('1'), ord('2'))}; 
 		is( $r->[0]->advances->[0], $z->advances->[0], "advances 1");
 		is( $r->[1]->advances->[0], $z->advances->[1], "advances 2");
-		is( $r->[0]->a, $z->a,   "advances 1.a");
-		is( $r->[0]->c, $abc[2], "advances 1.c");
-		is( $r->[1]->a, $abc[3], "advances 2.a");
-		is( $r->[1]->c, $z->c,   "advances 2.c");
+		is( $r->[0]->left_overhang,  $z->left_overhang,   "advances 1.a");
+		is( $r->[0]->right_overhang, $abc[2], "advances 1.c");
+		is( $r->[1]->left_overhang,  $abc[3], "advances 2.a");
+		is( $r->[1]->right_overhang, $z->right_overhang,   "advances 2.c");
 		is_deeply( $r->[0]->positions, [ @{$z->positions}[0,1] ], "positions 1");
 		is_deeply( $r->[1]->positions, [ @{$z->positions}[2,3] ], "positions 2");
 	}
@@ -460,6 +460,14 @@ sub test_glyphs_wrap
 			[ [$glyphs{xtr '%'}], [r(0),length('/|')] ],
 			[ [$glyphs{xtr '|'}], [r(2), length('|')] ],
 		], "ligature wrap, glyphs");
+
+		$z = $w-> text_wrap_shape(xtr('/|') . "\n" . xtr('/|') . "~p",
+			undef,
+			options => tw::CalcMnemonic|tw::NewLineBreak|tw::CollapseTilde,
+			rtl => 1
+		);
+		is( $z->[-1]->{tildeLine}, 1, "tilde is at line 1");
+		is( $z->[-1]->{tildePos}, 2, "'p' is at position 2");
 	}}
 }
 

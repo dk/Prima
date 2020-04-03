@@ -62,12 +62,15 @@ sub profile_check_in
 sub init
 {
 	my $self = shift;
+	$self->{lock} = 1;
 	my %profile = $self-> SUPER::init(@_);
 	$self-> {$_} = $profile{$_} for qw(
 		textDirection alignment valignment autoHeight autoWidth
 		wordWrap focusLink showAccelChar showPartial hotKey
 	);
 	$self-> check_auto_size;
+	delete $self->{lock};
+	$self->reset_lines;
 	return %profile;
 }
 
@@ -252,25 +255,21 @@ sub set_valignment
 sub reset_lines
 {
 	my ($self, $nomaxlines) = @_;
+	return if $self->{lock};
 
 	my @res;
 	my $maxLines = int($self-> height / $self-> font-> height);
 	$maxLines++ if $self-> {showPartial} and (($self-> height % $self-> font-> height) > 0);
 
 	my $opt   = tw::NewLineBreak|tw::ReturnLines|tw::WordBreak|tw::CalcMnemonic|tw::ExpandTabs|tw::CalcTabs;
-	my $width = 1000000;
+	my $width;
 	$opt |= tw::CollapseTilde unless $self-> {showAccelChar};
 	$width = $self-> width if $self-> {wordWrap};
 
 	$self-> begin_paint_info;
 
-	my $lines = $self-> text_wrap( $self-> text, $width, $opt);
+	my $lines = $self-> text_wrap_shape( $self-> text, $width, options => $opt, rtl => $self->textDirection);
 	my $lastRef = pop @{$lines};
-
-	for ( grep { is_complex $_ } @$lines) {
-		my $shaped = $self->text_shape( $_, rtl => $self->{textDirection}) or next;
-		$_ = $shaped;
-	}
 
 	$self-> {textLines} = scalar @$lines;
 	for( qw( tildeStart tildeEnd tildeLine)) {$self-> {$_} = $lastRef-> {$_}}
