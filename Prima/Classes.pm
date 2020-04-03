@@ -1899,6 +1899,9 @@ sub profile_default
 		autoClose      => 0,
 		pointerType    => cr::Arrow,
 		pointerVisible => 1,
+		language       => (
+			$ENV{LANG} =~ /^([-a-z]+)/ ? $1 : 
+			Prima::Application->get_system_info->{guiLanguage}),
 		icon           => undef,
 		owner          => undef,
 		scaleChildren  => 0,
@@ -1918,6 +1921,7 @@ sub profile_default
 		printerModule  => $unix ? 'Prima::PS::Printer' : '',
 		helpClass      => 'Prima::HelpViewer',
 		helpModule     => 'Prima::HelpViewer',
+		textDirection  => 0,
 		uiScaling      => 0,
 		wantUnicodeInput => 1,
 	);
@@ -1928,6 +1932,7 @@ sub profile_default
 sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
+	$p->{textDirection} //= lang_is_rtl($p->{language} // $default->{language});
 	$self-> SUPER::profile_check_in( $p, $default);
 	delete $p-> { printerModule};
 	delete $p-> { owner};
@@ -2004,6 +2009,30 @@ sub get_printer
 sub hintFont      {($#_)?$_[0]-> set_hint_font        ($_[1])  :return Prima::Font-> new($_[0], "get_hint_font", "set_hint_font")}
 sub helpModule    {($#_)?$_[0]-> {HelpModule} = $_[1] : return $_[0]-> {HelpModule}}
 sub helpClass     {($#_)?$_[0]-> {HelpClass}  = $_[1] : return $_[0]-> {HelpClass}}
+
+sub lang_is_rtl
+{
+	$_[0] =~ /^(
+		ar| # arabic
+		dv| # divehi
+		fa| # persian (farsi)
+		ha| # hausa
+		he| # hebrew
+		iw| # hebrew (old code)
+		ji| # yiddish (old code)
+		ps| # pashto, pushto
+		ur| # urdu
+		yi  # yiddish
+	)/x ? 1 : 0
+}
+
+sub language
+{
+	return $_[0]->{language} unless $#_;
+	my ( $self, $lang ) = @_;
+	$self->{language} = $lang;
+	$self->textDirection( lang_is_rtl($lang));
+}
 
 sub help_init
 {

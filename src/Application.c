@@ -117,8 +117,8 @@ Application_done( Handle self)
 	if ( var-> hint ) SvREFCNT_dec( var-> hint);
 	free( var-> helpContext);
 	var-> accelTable = var-> hintWidget = var-> hintTimer = nilHandle;
-	var-> helpContext = nil;
-	var-> hint = var-> text = nil;
+	var-> helpContext = NULL;
+	var-> hint = var-> text = NULL;
 	apc_application_destroy( self);
 	CDrawable-> done( self);
 	application = nilHandle;
@@ -136,7 +136,7 @@ Application_cleanup( Handle self)
 		my-> detach( self, var-> icon, true);
 	var-> icon = nilHandle;
 
-	my-> first_that_component( self, (void*)prima_kill_all_objects, nil);
+	my-> first_that_component( self, (void*)prima_kill_all_objects, NULL);
 
 	CDrawable-> cleanup( self);
 }
@@ -356,7 +356,7 @@ Application_font_encodings( Handle self, char * encoding)
 	{
 		void *key;
 		STRLEN  keyLen;
-		if (( he = hv_iternext( h)) == nil)
+		if (( he = hv_iternext( h)) == NULL)
 			break;
 		key    = HeKEY( he);
 		keyLen = HeKLEN( he);
@@ -983,6 +983,13 @@ Bool
 Application_modalHorizon( Handle self, Bool set, Bool modalHorizon)
 {
 	return true;
+}
+
+Bool
+Application_textDirection( Handle self, Bool set, Bool textDirection)
+{
+	if ( !set ) return var->textDirection;
+	return var-> textDirection = textDirection;
 }
 
 #define UISCALING_STEP 4
