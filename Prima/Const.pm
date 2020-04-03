@@ -463,7 +463,6 @@ See L<Prima::Utils/query_drive_type>
 				of the lines drawn
 	dt::NoWordWrap        - performs no word wrapping by the width of the boundaries
 	dt::WordWrap          - performs word wrapping by the width of the boundaries
-	dt::BidiText          - use bidirectional formatting, if available
 	dt::Default           - dt::NewLineBreak|dt::WordBreak|dt::ExpandTabs|
 				dt::UseExternalLeading
 

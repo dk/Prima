@@ -335,7 +335,7 @@ sub draw_entry
 		$canvas->color( $$colors[ci::Light3DColor] );
 		$canvas->draw_text( $text,
 			$x + 1, $y - 1, $x + $w + 1, $y + $h - 1,
-			dt::DrawMnemonic | dt::NoWordWrap | dt::BidiText | dt::Bottom, 1
+			dt::DrawMnemonic | dt::NoWordWrap | dt::Bottom, 1
 		);
 		$canvas->color( $$colors[ci::DisabledText] );
 	} else {
@@ -344,7 +344,7 @@ sub draw_entry
 
 	$canvas->draw_text( $text,
 		$x, $y, $x + $w, $y + $h,
-		dt::DrawMnemonic | dt::NoWordWrap | dt::BidiText | dt::Bottom, 1
+		dt::DrawMnemonic | dt::NoWordWrap | dt::Bottom, 1
 	);
 }
 

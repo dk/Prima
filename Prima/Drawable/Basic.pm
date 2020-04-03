@@ -96,19 +96,15 @@ sub draw_text
 		(( $flags & dt::ExpandTabs    ) ? ( tw::ExpandTabs | tw::CalcTabs) : 0)
 	;
 
-	my @lines = @{$canvas-> text_wrap( $string,
-		( $flags & dt::NoWordWrap) ? 1000000 : $w,
-		$twFlags, $tabIndent
+	my @lines = @{$canvas-> text_wrap_shape( $string,
+		( $flags & dt::NoWordWrap) ? undef : $w,
+		options => $twFlags, tabs => $tabIndent
 	)};
 
 	my $tildes;
 	$tildes = pop @lines if $flags & dt::DrawMnemonic;
 
 	return 0 unless scalar @lines;
-
-	if (($flags & dt::BidiText) && $Prima::Bidi::available) {
-		$_ = Prima::Bidi::visual($_) for @lines;
-	}
 
 	my @clipSave;
 	my $fh = $canvas-> font-> height +
@@ -308,9 +304,11 @@ sub fill_primitive
 	return $ok;
 }
 
-sub text_shape_wrap
+sub text_wrap_shape
 {
 	my ( $self, $text, $width, %opt) = @_;
+
+	$width = 1_000_000 unless defined $width;
 
 	my $opt = delete($opt{options}) // tw::Default;
 
@@ -328,33 +326,26 @@ sub text_shape_wrap
 		push @shaped, $shaped;
 	}
 
-	if ( $tilde && ref(my $glyphs = $shaped[$tilde->{tildeLine}])) {
+	if ( $tilde && defined($tilde->{tildeLine}) && ref(my $glyphs = $shaped[$tilde->{tildeLine}])) {
 		my $pos = $tilde->{tildePos};
 		my $index = -1;
 		my $found = -1;
 
-		for my $c ( @{ $glyphs->clusters }) {	
+		for my $c ( @{ $glyphs->clusters }) {
 			$index++;
 			$c &= ~to::RTL;
 			$found = $index, last if $c == $pos; # same glyph
 			$found = $index if $c < $pos && $c > $found; # same cluster?
 		}
-		my $glyph_abc = $self-> get_font_abc(( $glyphs->glyphs->[$found] ) x 2, to::Glyphs);
-		my $x = 0;
-		if ( $found > 0 ) {
-			my $str = Prima::array::substr($glyphs->glyphs, 0, $found);
-			$x = $self->get_text_width($str);
-			my $first_abc = $self->get_font_abc(($str->[0]) x 2, to::Glyphs);
-			$x += $first_abc->[0] if $first_abc->[0] > 0;
-		}
-
-		$tilde->{tildeStart} = $x;
-		$tilde->{tildeStart} += $glyph_abc->[0] if $glyph_abc->[0] < 0;
-		$tilde->{tildeEnd}   = $x + $glyph_abc->[1];
-		$tilde->{tildeEnd}   -= $glyph_abc->[2] if $glyph_abc->[0] < 2;
-
-		push @shaped, $tilde;
+		my ($A,$B,$C) = $glyphs-> abc($self, $found);
+		my $x = $glyphs->get_sub_width( $self, 0, $found ) + $glyphs->left_overhang($self);
+		$tilde->{tildeStart}  = $x;
+		$tilde->{tildeStart} += $A if $A < 0;
+		$tilde->{tildeEnd}    = $x + $B;
+		$tilde->{tildeEnd}   -= $C if $C < 0;
 	}
+
+	push @shaped, $tilde if $tilde;
 
 	return \@shaped;
 }

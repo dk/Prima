@@ -899,7 +899,7 @@ static Bool
 add_wrapped_text(
 	TextWrapRec * t, 
 	int start, int utfstart, int end, int utfend,
-	int tildeIndex, int * tildePos, int * tildeLine,
+	int tildeIndex, int * tildePos, int * tildeCharPos, int * tildeLine,
 	char *** array, int * size
 ) {
 	int l = end - start;
@@ -913,6 +913,12 @@ add_wrapped_text(
 	}
 
 	if ( tildeIndex >= 0 && tildeIndex >= start && tildeIndex < end) {
+		char * line = t-> text + start, *tilde_at = t->text + tildeIndex;
+		*tildeCharPos = 0;
+		while ( line < tilde_at ) {
+			line = (char*)utf8_hop((U8*)line, 1);
+			(*tildeCharPos)++;
+		}
 		*tildeLine = t-> t_line = t-> count;
 		*tildePos = tildeIndex - start;
 		if ( tildeIndex == end - 1) t-> t_line++;
@@ -940,7 +946,7 @@ find_tilde_position( TextWrapRec * t )
 {
 	int i, tildeIndex = -100;
 
-	for ( i = 0; i < t-> textLen - 1; i++)
+	for ( i = 0; i < t-> textLen - 1; i++) {
 		if ( t-> text[ i] == '~') {
 			unsigned char c = t-> text[ i + 1];
 			if ( c == '~' || c < ' ') {
@@ -951,19 +957,20 @@ find_tilde_position( TextWrapRec * t )
 				break;
 			}
 		}
+	}
 
 	return tildeIndex;
 }
 
 static void
-fill_tilde_properties(Handle self, TextWrapRec * t, int tildeIndex, int tildePos, int tildeOffset)
+fill_tilde_properties(Handle self, TextWrapRec * t, int tildeIndex, int tildeCharPos, int tildeOffset)
 {
 	UV uv;
 	int base;
 	PFontABC abcc;
 	float start, end;
 
-	t-> t_pos  = tildePos + (( t->options & twCollapseTilde ) ? 0 : 1);
+	t-> t_pos  = tildeCharPos + (( t->options & twCollapseTilde ) ? 0 : 1);
 	t-> t_char = t-> text + tildeIndex + 1;
 	if ( t-> utf8_text) {
 		STRLEN len;
@@ -1039,14 +1046,14 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 	float w = 0, inc = 0, initial_overhang = 0;
 	Bool wasTab = 0, reassign_w = 1;
 	Bool doWidthBreak = t-> width >= 0;
-	int tildeIndex = -100, tildeLine = 0, tildePos = 0, tildeOffset = 0;
+	int tildeIndex = -100, tildeLine = 0, tildePos = 0, tildeCharPos = 0, tildeOffset = 0;
 	int spaceWidth = 0, spaceC = 0, spaceOK = 0;
 
 #define ADD(end, utfend)                                          \
 	if ( !add_wrapped_text( t,                                \
 		start, utf_start, end, utfend,                    \
 		tildeIndex,                                       \
-		&tildePos, &tildeLine,                            \
+		&tildePos, &tildeCharPos, &tildeLine,             \
 		&ret, &bufsize))                                  \
 			return ret;                               \
 	start     = end;                                          \
@@ -1219,7 +1226,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 			char * l = ret[tildeLine];
 			memmove( l + tildePos, l + tildePos + 1, strlen(l) - tildePos);
 		}
-		fill_tilde_properties(self, t, tildeIndex, tildePos, tildeOffset);
+		fill_tilde_properties(self, t, tildeIndex, tildeCharPos, tildeOffset);
 	}
 
 	if (( t-> options & twExpandTabs) && !(t-> options & twReturnChunks) && wasTab)
@@ -1288,23 +1295,16 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent)
 
 	if  ( t. options & ( twCalcMnemonic | twCollapseTilde)) {
 		HV * profile = newHV();
-		SV * sv_char;
 		if ( t. t_char) {
 			STRLEN len = t. utf8_text ? utf8_hop(( U8*) t. t_char, 1) - ( U8*) t. t_char : 1;
-			sv_char = newSVpv( t. t_char, len);
-			if ( t. utf8_text) SvUTF8_on( sv_char);
-			if ( t. t_start != C_NUMERIC_UNDEF) pset_i( tildeStart, t. t_start);
-			if ( t. t_end   != C_NUMERIC_UNDEF) pset_i( tildeEnd,   t. t_end);
-			if ( t. t_line  != C_NUMERIC_UNDEF) pset_i( tildeLine,  t. t_line);
-			if ( t. t_pos   != C_NUMERIC_UNDEF) pset_i( tildePos,   t. t_pos);
-		} else {
-			sv_char = newSVsv( nilSV);
-			pset_sv( tildeStart, nilSV);
-			pset_sv( tildeEnd,   nilSV);
-			pset_sv( tildeLine,  nilSV);
-			pset_sv( tildePos,   nilSV);
+			SV * sv_char = newSVpv( t. t_char, len);
+			pset_sv_noinc( tildeChar, sv_char);
+			if ( t.utf8_text) SvUTF8_on( sv_char);
+			if ( t.t_start != C_NUMERIC_UNDEF) pset_i( tildeStart, t.t_start);
+			if ( t.t_end   != C_NUMERIC_UNDEF) pset_i( tildeEnd,   t.t_end);
+			if ( t.t_line  != C_NUMERIC_UNDEF) pset_i( tildeLine,  t.t_line);
+			if ( t.t_pos   != C_NUMERIC_UNDEF) pset_i( tildePos,   t.t_pos);
 		}
-		pset_sv_noinc( tildeChar, sv_char);
 		av_push( av, newRV_noinc(( SV *) profile));
 	}
 

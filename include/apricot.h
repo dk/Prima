@@ -1621,11 +1621,7 @@ DT(QueryLinesDrawn)
 DT(NoWordWrap)
 #define dtWordWrap                 0x00000
 DT(WordWrap)
-#define dtBidiText                 0x08000
-DT(BidiText)
-#define dtGlyphs                   0x10000
-DT(Glyphs)
-#define dtDefault                  (dtNewLineBreak|dtWordBreak|dtExpandTabs|dtUseExternalLeading|dtBidiText)
+#define dtDefault                  (dtNewLineBreak|dtWordBreak|dtExpandTabs|dtUseExternalLeading)
 DT(Default)
 
 END_TABLE(dt,UV)
