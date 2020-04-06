@@ -8,16 +8,16 @@ use strict;
 use warnings;
 
 use Prima::Classes;
-use Prima::Bidi qw(:methods);
 use Prima::IntUtils;
 
 sub profile_default
 {
 	my %def = %{$_[ 0]-> SUPER::profile_default};
 	my $font = $_[ 0]-> get_default_font;
+	my $rtl  = $::application-> textDirection;
 	return {
 		%def,
-		alignment      => $Prima::Bidi::default_direction_rtl ? ta::Right : ta::Left,
+		alignment      => $rtl ? ta::Right : ta::Left,
 		autoHeight     => 1,
 		autoSelect     => 1,
 		autoTab        => 0,
@@ -47,7 +47,7 @@ sub profile_default
 		selStart       => 0,
 		selEnd         => 0,
 		selectable     => 1,
-		textDirection  => $Prima::Bidi::default_direction_rtl,
+		textDirection  => $rtl,
 		undoLimit      => 10,
 		widgetClass    => wc::InputLine,
 		width          => 96,
@@ -64,7 +64,7 @@ sub profile_check_in
 	$p-> {alignment} = ( $p->{textDirection} // $default->{textDirection} ) ?
 		ta::Right : ta::Left unless exists $p->{alignment};
 	$self-> SUPER::profile_check_in( $p, $default);
-	($p-> { selStart}, $p-> { selEnd}) = @{$p-> { selection}} if exists( $p-> { selection});
+	@{$p}{qw(selStart selEnd)} = @{$p-> {selection}} if exists( $p-> { selection});
 }
 
 sub init
@@ -75,11 +75,10 @@ sub init
 		borderWidth passwordChar maxLen alignment autoTab autoSelect
 		firstChar charOffset readOnly))
 		{ $self-> {$_} = 1; }
-	for ( qw( selStart selEnd atDrawX autoHeight undoLimit))
+	for ( qw( selStart selEnd atDrawX autoHeight undoLimit n_clusters))
 		{ $self-> {$_} = 0;}
 	$self-> { insertMode}   = $::application-> insertMode;
 	$self-> { maxLen}   = -1;
-	for( qw( line wholeLine)) { $self-> {$_} = ''; }
 	$self-> {writeOnly} = 0;
 	$self-> {defcw} = $::application-> get_default_cursor_width;
 	$self-> {resetDisabled} = 1;
@@ -126,7 +125,8 @@ sub on_paint
 	}
 
 	return if $size[0] <= $border * 2 + 2;
-	my $cap   = $self-> {line};
+	my $cap = $self-> {glyphs} or return;
+
 	$canvas-> clipRect  (
 		$border + 1, $border + 1,
 		$size[0] - $border - 2, $size[1] - $border - 2
@@ -145,26 +145,27 @@ sub on_paint
 
 	my ( $x, $y) = ( $self-> {atDrawX}, $self-> {atDrawY});
 	if ( $useSel && @{ $self->{selChunks} // [] }) {
-		$self->bidi_selection_walk(
-			$self->{selChunks},
-				$self->{firstChar}, length($self->{wholeLine}),
-		sub {
+		$self->{glyphs}->selection_walk(
+			$self->{selChunks}, $self->{firstChar}, $self->{n_clusters}, sub {
 			my ( $offset, $length, $selected ) = @_;
 			my $text = substr( $cap, $offset, $length );
-			my $dx = $canvas->get_text_width( $text );
-			if ( $selected ) {
-				$canvas-> color( $self-> hiliteBackColor);
-				$canvas-> bar( $x, 0, $x + $dx - 1, $size[1] - 1);
-				$canvas-> color( $self-> hiliteColor);
-			} else {
-				$canvas-> color( $clr[0]);
+			my $sub = $self->{glyphs}->get_sub( $self, $self->{firstChar} + $offset, $length);
+			if ( $sub ) {
+				my $dx = $sub->get_width( $self );
+				if ( $selected ) {
+					$canvas-> color( $self-> hiliteBackColor);
+					$canvas-> bar( $x, 0, $x + $dx - 1, $size[1] - 1);
+					$canvas-> color( $self-> hiliteColor);
+				} else {
+					$canvas-> color( $clr[0]);
+				}
+				$canvas-> text_out( $sub, $x, $y );
+				$x += $dx;
 			}
-			$canvas-> text_out( $text, $x, $y );
-			$x += $dx;
 		});
 	} else {
 		$canvas-> color( $clr[0]);
-		$canvas-> text_out( $cap, $x, $y);
+		$cap->sub_text_out( $canvas, $self->{firstChar}, undef, $x, $y);
 	}
 }
 
@@ -180,49 +181,33 @@ sub reset
 {
 	my $self  = $_[0];
 	return if $self-> {resetDisabled};
-	my @size  = $self-> size;
-	my $cap   = $self-> {wholeLine};
-	my $border= $self-> {borderWidth};
-	my $width = $size[0] - ( $border + 1) * 2;
-	my $fcCut = $self-> {firstChar};
-	my $reCalc = 0;
+	my @size   = $self-> size;
+	my $border = $self-> {borderWidth};
+	my $width  = $size[0] - ( $border + 1) * 2;
+	my $fc     = $self->{firstChar};
+	my $glyphs = $self->{glyphs};
 
 	if ( $self-> {resetLevel} == 0) {
-		$self-> { atDrawY} = ( $size[1] - ( $border + 1) * 2 - $self-> {font_height}) / 2;
-		if ( $self-> {alignment} == ta::Left)
-		{
-			$self-> {line}       = substr( $cap, $fcCut, length($cap));
-			$self-> {lineWidth} = $self-> get_text_width( $self-> {line});
-			$self-> {atDrawX}   = 0;
-		} elsif ( $self-> {alignment} == ta::Center ) {
-			$self-> {lineWidth} = $self-> get_text_width( $cap);
-			if ( $self-> { lineWidth} > $width) {
-				$self-> {line}      = substr( $cap, $fcCut, length($cap));
-				$self-> {lineWidth} = $self-> get_text_width( $self-> {line});
-				$self-> {atDrawX}   = 0;
-			} else {
-				$self-> {line}      = $cap;
-				$self-> {atDrawX}   = ( $width - $self-> {lineWidth}) / 2;
-			}
-		} else {
-			$self-> {lineWidth} = $self-> get_text_width( $cap);
-			if ( $self-> { lineWidth} > $width) {
-				$self-> {line}      = substr( $cap, $fcCut, length($cap));
-				$self-> {lineWidth} = $self-> get_text_width( $self-> {line});
-				$self-> {atDrawX}   = 0;
-			} else {
-				$self-> {line}      = $cap;
-				$self-> {atDrawX}   = $width - $self->{lineWidth};
-			}
-		}
+		$self->{atDrawY} = ( $size[1] - ( $border + 1) * 2 - $self-> {font_height}) / 2;
+		$self->{lineWidth} = $glyphs->get_sub_width($self, $fc);
+		$self->{atDrawX}   = 
+			(
+				($self->{lineWidth} < $width) && 
+				($self->{alignment} != ta::Left)
+			) ?
+				($width - $self->{lineWidth}) / (
+					($self->{alignment} == ta::Center ) ? 2 : 1
+				)
+			: 0;
 	}
 
-	my $ofs = $self-> {charOffset} - $fcCut;
-	$cap = ($ofs < 0) ? '' : substr( $self-> {line}, 0, $ofs );
-	my $x   = $self-> get_text_width( $cap) + $self-> {atDrawX} + $border;
+	my $ofs = $self->{charOffset} - $fc;
+	my $x   = ($ofs < 0) ? 0 :
+		$glyphs->get_sub_width($self,$fc,$ofs) + $self->{atDrawX} + $border
+		;
 	my $curWidth = $self-> {insertMode} ?
-		$self-> {defcw} :
-		(( $ofs < 0 ) ? 0 : $self-> get_text_width( substr( $self-> {line}, $ofs, 1)) + 1);
+		$self->{defcw} :
+		((( $ofs < 0 ) ? 0 : $glyphs->get_sub_width($self, $fc+$ofs, 1)) + 1);
 	$curWidth = $size[0] - $x - $border if $curWidth + $x > $size[0] - $border;
 	$self-> cursorSize( $curWidth, $size[1] - $border * 2 - 2);
 	$self-> cursorPos( $x, $border + 1);
@@ -238,15 +223,11 @@ sub text
 
 	$self-> SUPER::text($cap);
 
-	if ($self->is_bidi($cap)) {
-		($self->{bidiData}, $cap) = $self->bidi_paragraph( $cap );
-		# Prima::Bidi::debug_str($p,$c);
-	} else {
-		delete $self->{bidiData};
-	}
 	$cap = $self-> {passwordChar} x length $cap if $self-> {writeOnly};
-	$self-> {wholeLine} = $cap;
-	$self-> charOffset( length $cap) if $self-> {charOffset} > length $cap;
+	$self->{glyphs}     = $self-> text_shape( $cap, rtl => $self->textDirection );
+	$self->{n_clusters} = $self->{glyphs}->n_clusters;
+	$self-> charOffset( $self->{n_clusters} )
+		if $self-> {charOffset} > $self->{n_clusters};
 	$self-> set_selection(0,0);
 	$self-> reset;
 	$self-> repaint;
@@ -263,8 +244,7 @@ sub on_keydown
 	$self-> notify(q(MouseUp),0,0,0) if defined $self-> {mouseTransaction};
 	my $offset = $self-> charOffset;
 	my $cap    = $self-> text;
-	my $caplen = length( $cap);
-	my $p_offset = $self-> char_offset_strpos;
+	my $caplen = $self-> {n_clusters};
 
 	# navigation part
 	if ( scalar grep { $key == $_ } (kb::Left,kb::Right,kb::Home,kb::End))
@@ -343,7 +323,6 @@ sub on_keydown
 	my ($start, $end) = $self->selection;
 	($start, $end) = ($offset, $offset) if $start == $end;
 	my ($p_start, $p_end) = $self-> selection_strpos;
-	# warn "$start $end $offset > $p_start $p_end $p_offset\n";
 
 	if ( $key == kb::Backspace)
 	{
@@ -357,14 +336,11 @@ sub on_keydown
 				$self-> edit_text( $cap);
 				$self-> charOffset( $start);
 			} else {
-				my ( $howmany, $at, $moveto) = $self->bidi_edit_delete(
-					$self->{bidiData} // length($cap),
-					$self->charOffset, 1
-				);
-				if ( $howmany ) {
-					substr( $cap, $at, $howmany) = '';
-					$self-> charOffset( $self-> charOffset + $moveto );
+				my $curpos = $self->{glyphs}->cursor2offset($start, $cap, $self->textDirection);
+				if ( $curpos > 0 ) {
+					substr( $cap, $curpos - 1, 1) = '';
 					$self-> edit_text( $cap);
+					$self-> charOffset($self->{glyphs}->index2cluster($curpos - 1))
 				}
 			}
 			$self-> end_undo_group;
@@ -386,15 +362,12 @@ sub on_keydown
 				$self-> edit_text( $cap);
 				$self-> charOffset( $start);
 			} else {
-				my ( $howmany, $at, $moveto) = $self->bidi_edit_delete(
-					$self->{bidiData} // length($cap),
-					$self->charOffset, 0
-				);
-				if ( $howmany ) {
-					$del = substr( $cap, $at, $howmany);
-					substr( $cap, $at, $howmany) = '';
-					$self-> charOffset( $self-> charOffset + $moveto );
+				my $curpos = $self->{glyphs}->cursor2offset($start, $cap, $self->textDirection);
+				if ( $curpos < length($cap) ) {
+					$del = substr( $cap, $curpos, 1);
+					substr( $cap, $curpos, 1) = '';
 					$self-> edit_text( $cap);
+					$self-> charOffset($self->{glyphs}->index2cluster($curpos))
 				}
 			}
 			$self-> end_undo_group;
@@ -456,26 +429,18 @@ sub on_keydown
 		my $chr = chr $code;
 		$self-> begin_undo_group;
 		utf8::upgrade($chr) if $is_unicode;
+		my $curpos;
 		if ( $p_start != $p_end) {
-			$offset = $p_start;
 			substr( $cap, $p_start, $p_end - $p_start) = '';
-			if ( $self->is_bidi($cap)) {
-				($self->{bidiData}) = $self->bidi_paragraph( $cap );
-			} else {
-				delete $self->{bidiData};
-			}
 			goto INSERT;
 		} elsif ( !$self-> {insertMode}) {
 			$p_end++;
 			substr( $cap, $p_start, $p_end - $p_start) = $chr;
 		} else {
 		INSERT:
-			my ($at,$moveto) = $self->bidi_edit_insert(
-				$self->{bidiData},
-				$start, $chr
-			);
-			substr( $cap, $at, 0) = $chr;
-			$offset += $moveto - 1;
+			$curpos = $self->{glyphs}->cursor2offset($start, $cap, $self->textDirection);
+			substr( $cap, $curpos, 0) = $chr;
+			$curpos++;
 		}
 
 		$self-> selection(0,0);
@@ -484,7 +449,8 @@ sub on_keydown
 			$self-> event_error;
 		} else {
 			$self-> edit_text( $cap);
-			$self-> charOffset( $offset + 1)
+			$self-> charOffset($self->{glyphs}->index2cluster($curpos))
+				if defined $curpos;
 		}
 		$self-> clear_event;
 		$self-> end_undo_group;
@@ -508,7 +474,7 @@ sub on_popup
 	$p-> enabled( 'cut',          $sel && not($self-> {writeOnly}));
 	$p-> enabled( 'delete',       $sel);
 	$p-> enabled( 'paste',        $clip);
-	$p-> enabled( 'select_all',   length($self-> {wholeLine}));
+	$p-> enabled( 'select_all',   $self->{n_clusters} > 0);
 	$p-> enabled( 'undo',         $self->can_undo );
 	$p-> enabled( 'redo',         $self->can_redo );
 }
@@ -588,45 +554,17 @@ sub x2offset
  	$x -= $self-> {atDrawX} + $self-> {borderWidth} + 1;
 	my $fc = $self->{firstChar};
 	return $fc if $x <= 0;
-	return $fc + length( $self-> {line}) if $x >= $self-> {lineWidth};
-	return $fc + $self-> text_wrap( $self-> {line}, $x, tw::ReturnFirstLineLength);
-}
-
-sub has_bidi_data { exists shift->{bidiData} }
-
-sub offset2strpos
-{
-	my $self = shift;
-	my $l  = length $self->{wholeLine};
-	my @p  = @_;
-	my $bd = $self->{bidiData} ?
-		$self->{bidiData}->map :
-		return $#p ? @p : $p[0];
-	my @ret    =  map {
-		 ($_ <   0) ? 0 :
-		(($_ >= $l) ? $l - 1 : $bd->[$_])
-	} @p;
-	return $#ret ? @ret : $ret[0];
+	return $fc + $self-> {n_clusters} if $x >= $self-> {lineWidth};
+	return $fc + $self-> {glyphs}-> sub_text_wrap( $self, $fc, undef, $x, tw::ReturnFirstLineLength);
 }
 
 sub char_at
 {
 	my ( $self, $at ) = @_;
-	return undef if $at < 0 || $at >= length($self->{wholeLine});
-	$at = $self-> offset2strpos($at);
-	return substr( $self->text, $at, 1);
-}
 
-sub char_offset_strpos
-{
-	my $self = shift;
-	if ( $self-> charOffset < length($self->{wholeLine})) {
-		return $self-> offset2strpos( $self-> charOffset );
-	} elsif ( length($self->{wholeLine}) > 0 ) {
-		return $self-> offset2strpos( $self-> charOffset - 1 ) + 1;
-	} else {
-		return 0;
-	}
+	return undef if $at < 0 || $at >= $self->{n_clusters};
+	my ( $from, $len ) = $self->{glyphs}->cluster2index($at, 1);
+	return substr( $self->text, $from, 1);
 }
 
 sub has_selection { $_[0]->{selStart} != $_[0]->{selEnd} }
@@ -634,11 +572,11 @@ sub has_selection { $_[0]->{selStart} != $_[0]->{selEnd} }
 sub selection_strpos
 {
 	my $self = shift;
-	return (0,0) unless length $self->{wholeLine};
+	return (0,0) unless $self->{n_clusters};
 	my ($start, $end) = $self-> selection;
-	return ($self-> char_offset_strpos) x 2 if $start == $end;
-	($start, $end) = $self-> offset2strpos( $start, $end - 1);
-	return ($start <= $end) ? ( $start, $end + 1) : ( $end, $start + 1);
+	my ($s_from, $s_len) = $self->{glyphs}->cluster2index($start, $end - $start);
+	return ($s_from) x 2 if $start == $end;
+	return $s_from, $s_from + $s_len;
 }
 
 sub on_mousedown
@@ -750,7 +688,7 @@ sub on_mousemove
 		$self-> selection( $self-> {anchor}, $nSel);
 
 		my $newFc  = $self-> firstChar + $delta * ( $x <= $border ? -1 : 1);
-		my $caplen = length $self-> {wholeLine};
+		my $caplen = $self->{n_clusters};
 		$newFc = $caplen - $delta if $newFc + $delta > $caplen;
 
 		$self-> firstChar ( $newFc);
@@ -830,8 +768,7 @@ sub set_char_offset
 {
 	my ( $self, $offset) = @_;
 
-	my $cap = $self-> text;
-	my $l   = length($cap);
+	my $l   = $self->{n_clusters};
 	$offset = $l if $offset > $l;
 	$offset = 0 if $offset < 0;
 	return if $self-> {charOffset} == $offset;
@@ -843,18 +780,15 @@ sub set_char_offset
 	my $w = $self-> width - ( $border + 1) * 2;
 	my $fc = $self-> {firstChar};
 	if ( $fc > $offset) {
-		$self-> firstChar( $offset);
+		$self-> firstChar($offset);
 	} else {
-		my $ofs = $offset - $fc;
-		my $str = substr( $self-> {line}, 0, $ofs);
-		my $gapWidth = ($ofs > 0) ? $self-> get_text_width($str) : 0;
-		if ( $gapWidth > $w) {
-			my $wrapRec = $self-> text_wrap( $str, $w, tw::ReturnChunks);
-			if ( scalar @{$wrapRec} < 5) {
-				$self-> firstChar( $fc + $$wrapRec[-1] + 1);
-			} else {
-				$self-> firstChar( $fc + $$wrapRec[-4] + $$wrapRec[-1] + 1);
-			}
+		my $len = $offset - $fc;
+		my $glyphs = $self->{glyphs};
+		my $gapWidth = ($len > 0) ? $glyphs-> get_sub_width($self, $fc, $len) : 0;
+		if ( $gapWidth > $w && ( my $sub = $glyphs-> get_sub( $self, $fc, $len ))) {
+			$sub = $sub->reverse;
+			my $wrap = $self-> text_wrap( $sub, $w, tw::ReturnChunks);
+			$self-> firstChar(((@$wrap < 5) ? $fc : $wrap->[-4]) + $wrap->[-1] + 1);
 		} else {
 			$self-> reset_cursor;
 		}
@@ -875,29 +809,19 @@ sub set_first_char
 {
 	my ( $self, $pos) = @_;
 
-	my $l = length $self-> {wholeLine};
+	my $l = $self-> {n_clusters};
 	$pos = $l if $pos > $l;
 	$pos = 0 if $pos < 0;
 	$pos = 0 if
+		( $pos > 0 ) &&
 		( $self-> {alignment} != ta::Left) &&
-		( $self-> get_text_width( $self-> {wholeLine}) <= $self-> width - $self-> {borderWidth} * 2 - 2);
+		( $self-> {glyphs}-> get_width($self) <= $self-> width - $self-> {borderWidth} * 2 - 2);
 	my $ofc = $self-> {firstChar};
 	return if $self-> {firstChar} == $pos;
 	$self-> push_undo_action( 'firstChar', $pos);
-	my $oline = $self-> {line};
 	$self-> {firstChar} = $pos;
 	$self-> reset;
-	my $border = $self-> {borderWidth} + 1;
-	my @size = $self-> size;
-
-	$self-> scroll(
-		( $ofc > $pos) ?
-			$self-> get_text_width( substr( $self-> {line}, 0, $ofc - $pos)) :
-			- $self-> get_text_width( substr( $oline, 0, $pos - $ofc))
-		, 0,
-		clipRect => [ $border, $border, $size[0] - $border, $size[1] - $border]
-	) if 0;
-	$self->repaint;
+	$self-> repaint;
 }
 
 sub set_write_only
@@ -934,7 +858,7 @@ sub set_selection
 {
 	my ( $self, $start, $end) = @_;
 
-	my $l = length $self-> {wholeLine};
+	my $l = $self->{n_clusters};
 	my ( $ostart, $oend) = $self-> selection;
 	my $onsel = $ostart == $oend;
 	$end   = $l if $end   < 0;
@@ -956,14 +880,11 @@ sub set_selection
 			# select all
 			$self->{selChunks} = [ 0, $l ];
 		} else {
-			$self->{selChunks} = $self->bidi_selection_chunks(
-				$self->{bidiData} ? $self->{bidiData}->map : $l,
-				$start, $end - 1);
-			# warn "$start:$end > @{$self->{selChunks}}\n";
+			$self->{selChunks} = $self->{glyphs}->selection_chunks( $start, $end - $start );
 		}
 		$new_chunks = $self->{selChunks};
 	} else {
-		$new_chunks = [ length( $self->{wholeLine}) ];
+		$new_chunks = [ $self->{n_clusters} ];
 	}
 
 	my $ooffset = $self-> charOffset;
@@ -976,13 +897,14 @@ sub set_selection
 	my @size = $self-> size;
 	my @r = ( $self->{atDrawX} + $border + 2, $self->{atDrawX} + $border + 2 );
 	my @invalid_rects;
+	my $fc = $self->{firstChar};
 	$self-> begin_paint_info;
-	$self->bidi_selection_walk(
-		$self->bidi_selection_diff( $old_chunks, $new_chunks ),
-		$self->{firstChar}, length($self->{wholeLine}),
+	$self-> {glyphs}-> selection_walk(
+		$self-> {glyphs}-> selection_diff( $old_chunks, $new_chunks ),
+		$self->{firstChar}, $self->{n_clusters},
 		sub {
 			my ( $offset, $length, $changed ) = @_;
-			my $dx = $self->get_text_width( substr( $self->{line}, $offset, $length ) );
+			my $dx = $self->{glyphs}->get_sub_width($self, $fc + $offset, $length );
 			$r[1] += $dx;
 			push @invalid_rects, [ $r[0] - 1, $border + 1, $r[1], $size[1]-$border-1 ]
 				if $changed;
@@ -1280,21 +1202,9 @@ needed:
 
 =over
 
-=item has_bidi_data
-
-Returns 1 if visual layout does not correspond to storage layout.
-
 =item char_at OFFSET
 
 Returns character at OFFSET
-
-=item offset2strpos
-
-Converts visual offset to storage offset
-
-=item char_offset_strpos
-
-Returns the character offset in storage directly under the cursor.
 
 =item selection_strpos
 

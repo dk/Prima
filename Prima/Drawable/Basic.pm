@@ -331,7 +331,7 @@ sub text_wrap_shape
 		my $index = -1;
 		my $found = -1;
 
-		for my $c ( @{ $glyphs->clusters }) {
+		for my $c ( @{ $glyphs->indexes }) {
 			$index++;
 			$c &= ~to::RTL;
 			$found = $index, last if $c == $pos; # same glyph

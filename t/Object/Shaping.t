@@ -100,7 +100,7 @@ FAIL:
 
 sub t2
 {
-	my ( $text, $glyphs, $clusters, $name, %opt) = @_;
+	my ( $text, $glyphs, $indexes, $name, %opt) = @_;
 
 	my $orig_text   = $text;
 	my $orig_glyphs = $glyphs . '#';
@@ -116,8 +116,8 @@ sub t2
 	return ok(0, "$name (undefined)") unless defined $z;
 	return ok(0, "$name (unnecessary, retval=0)") unless $z;
 	comp($z->glyphs, gmap $glyphs, "$name (glyphs)", 1, $orig_text);
-	if ( defined $clusters ) {
-		comp($z->clusters, $clusters, "$name (clusters)", 0, $_[0]);
+	if ( defined $indexes ) {
+		comp($z->indexes, $indexes, "$name (indexes)", 0, $_[0]);
 		return;
 	}
 
@@ -143,12 +143,12 @@ sub t2
 			}
 			$char
 		}
-		@{$z->clusters // []};
-	unless (is($v, $orig_glyphs, "$name (clusters)")) {
-		my $got = $z->clusters // ['<undef>'];
+		@{$z->indexes // []};
+	unless (is($v, $orig_glyphs, "$name (indexes)")) {
+		my $got = $z->indexes // ['<undef>'];
 		$got = [ map { defined($_) ? $_ : '<undef>' } @$got ];
 		$_ = '-' . ($_ & ~to::RTL) for grep { /^\d+$/ && $_ & to::RTL } @$got;
-		diag("got clusters: [@$got]");
+		diag("got indexes: [@$got]");
 	}
 }
 
@@ -429,8 +429,8 @@ sub test_glyphs_wrap
 	is( scalar(@$r), 2, "wrap: split to 2 pieces");
 	is_deeply( $r->[0]->glyphs, [ $z->glyphs->[0] ], "glyphs 1");
 	is_deeply( $r->[1]->glyphs, [ $z->glyphs->[1] ], "glyphs 2");
-	is_deeply( $r->[0]->clusters, [ $z->clusters->[0], length('1') ], "clusters 1");
-	is_deeply( $r->[1]->clusters, [ $z->clusters->[1], length('2') ], "clusters 2");
+	is_deeply( $r->[0]->indexes, [ $z->indexes->[0], length('1') ], "indexes 1");
+	is_deeply( $r->[1]->indexes, [ $z->indexes->[1], length('2') ], "indexes 2");
 	if ( $z-> advances ) {
 		my @abc = map { ($_ < 0) ? -$_ : 0 } @{$w-> get_font_abc(ord('1'), ord('2'))}; 
 		is( $r->[0]->advances->[0], $z->advances->[0], "advances 1");
