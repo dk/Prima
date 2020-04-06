@@ -59,7 +59,7 @@ read_subarray( AV * av, int index, int length_expected, int * plen, const char *
 }
 
 static Bool
-read_glyphs( PGlyphsOutRec t, SV * text, Bool clusters_required, const char * caller)
+read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const char * caller)
 {
 	int len;
 	AV* av;
@@ -75,8 +75,8 @@ read_glyphs( PGlyphsOutRec t, SV * text, Bool clusters_required, const char * ca
 		size_t length;
 		char * letter;
 
-		if ( clusters_required ) {
-			warn("%s requires glyphstr with clusters", caller);
+		if ( indexes_required ) {
+			warn("%s requires glyphstr with indexes", caller);
 			return false;
 		}
 	
@@ -106,10 +106,10 @@ read_glyphs( PGlyphsOutRec t, SV * text, Bool clusters_required, const char * ca
 	case 4:
 		if ( !( t-> positions = read_subarray( av, 3, t->len * 2, NULL, caller, "positions")))
 			return false;
-		if ( !( t-> advances = read_subarray( av, 2, t->len, NULL, caller, "advances")))
+		if ( !( t-> advances = read_subarray( av, 2, t->len + 2, NULL, caller, "advances")))
 			return false;
 	case 2:
-		if ( !( t-> clusters = read_subarray( av, 1, t->len, NULL, caller, "clusters")))
+		if ( !( t-> indexes = read_subarray( av, 1, t->len, NULL, caller, "indexes")))
 			return false;
 	}
 
@@ -189,7 +189,7 @@ sv2unicode( SV * text, int * size, int * flags)
 
 /*
 Iterator for individual shaper runs. Each run has same direction
-and its clusters are increasing/decreasing monotonically. The latter is
+and its indexes are increasing/decreasing monotonically. The latter is
 to avoid situations where text A<PDF>B is being sent to shaper as single run AB
 which might ligate.
 */
@@ -197,7 +197,7 @@ which might ligate.
 typedef struct {
 	int start, i, vis_len;
 	Byte rtl;
-	uint16_t cluster;
+	uint16_t index;
 } BidiRunRec, *PBidiRunRec;
 
 static void
@@ -268,8 +268,8 @@ run_alloc( PTextShapeRec t, int visual_start, int visual_len, Bool invert_rtl, P
 	}
 	run-> flags        = ( t-> flags & ~toRTL ) | flags;
 	run-> n_glyphs_max = t->n_glyphs_max - t-> n_glyphs;
-	run-> glyphs       = t->glyphs   + t-> n_glyphs;
-	run-> clusters     = t->clusters + t-> n_glyphs;
+	run-> glyphs       = t->glyphs  + t-> n_glyphs;
+	run-> indexes      = t->indexes + t-> n_glyphs;
 	if ( t-> positions )
 		run-> positions = t->positions + t-> n_glyphs * 2;
 	if ( t-> advances )
@@ -492,22 +492,22 @@ shape(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_onl
 		int i;
 		printf("shaper output: ");
 		for (i = 0; i < run.n_glyphs; i++) 
-			printf("%d(%x) ", glyph_mapper_only ? -1 : run.clusters[i], run.glyphs[i]);
+			printf("%d(%x) ", glyph_mapper_only ? -1 : run.indexes[i], run.glyphs[i]);
 		printf("\n");
 	}
 #endif
 		if (!ok) break;
 		for (i = t->n_glyphs; i < t->n_glyphs + run.n_glyphs; i++) {
-			int x = glyph_mapper_only ? i - t->n_glyphs : t->clusters[i];
-			t->clusters[i] = t->v2l[x + run_offs];
+			int x = glyph_mapper_only ? i - t->n_glyphs : t->indexes[i];
+			t->indexes[i] = t->v2l[x + run_offs];
 		}
 		run_offs += run_len;
 #ifdef _DEBUG
 	{
 		int i;
-		printf("clusters copied back: ");
+		printf("indexes copied back: ");
 		for (i = t->n_glyphs; i < t->n_glyphs + run.n_glyphs; i++)
-			printf("%d ", t->clusters[i]);
+			printf("%d ", t->indexes[i]);
 		printf("\n");
 	}
 #endif
@@ -526,7 +526,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	int i;
 	SV * ret = nilSV, 
 		*sv_glyphs = nilSV,
-		*sv_clusters = nilSV,
+		*sv_indexes = nilSV,
 		*sv_positions = nilSV,
 		*sv_advances = nilSV;
 	PTextShapeFunc system_shaper;
@@ -599,7 +599,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 }
 
 	ALLOC(glyphs,1);
-	ALLOC(clusters,1);
+	ALLOC(indexes,1);
 	if ( t.flags & toPositions) {
 		ALLOC(positions,2);
 		ALLOC(advances,1);
@@ -614,7 +614,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	if ( skip_if_simple ) {
 		Bool is_simple = true;
 		for ( i = 0; i < t.n_glyphs; i++) {
-			if ( i != t.clusters[i] ) {
+			if ( i != t.indexes[i] ) {
 				is_simple = false;
 				break;
 			}
@@ -627,11 +627,11 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 	/* encode direction */
 	for ( i = 0; i < t.n_glyphs; i++) {
-		if ( t.analysis[ t.clusters[i] ] & 1 )
-			t.clusters[i] |= toRTL;
+		if ( t.analysis[ t.indexes[i] ] & 1 )
+			t.indexes[i] |= toRTL;
 	}
-	/* add an extra cluster as text length */
-	t.clusters[t.n_glyphs] = t.len;
+	/* add an extra index as text length */
+	t.indexes[t.n_glyphs] = t.len;
 
 	free(t.v2l );
 	free(t.analysis );
@@ -645,20 +645,20 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	x = prima_array_tie( x, sizeof(uint16_t), "S"); \
 }
 	BIND(sv_glyphs, 1, 0);
-	BIND(sv_clusters, 1, 1);
+	BIND(sv_indexes, 1, 1);
 	if ( sv_positions != nilSV ) BIND(sv_positions, 2, 0);
 	if ( sv_advances != nilSV ) BIND(sv_advances, 1, 2);
 #undef BIND
 
 	return newSVsv(call_perl(self, "new_glyph_obj", "<SSSS",
-		sv_glyphs, sv_clusters, sv_advances, sv_positions
+		sv_glyphs, sv_indexes, sv_advances, sv_positions
 	));
 
 EXIT:
 	if ( t.text     ) free(t.text     );
 	if ( t.v2l      ) free(t.v2l      );
 	if ( t.analysis ) free(t.analysis );
-	if ( t.clusters ) sv_free(sv_clusters );
+	if ( t.indexes  ) sv_free(sv_indexes );
 	if ( t.glyphs   ) sv_free(sv_glyphs   );
 	if ( t.positions) sv_free(sv_positions);
 	if ( t.advances ) sv_free(sv_advances );
@@ -1314,7 +1314,7 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent)
 
 typedef struct {
 	uint16_t * glyphs;   /* glyphset to be wrapped */
-	uint16_t * clusters; /* for visual ordering; also, won't break within a cluster */
+	uint16_t * indexes;  /* for visual ordering; also, won't break within a cluster */
 	int        n_glyphs; /* glyphset length in words */
 	int        width;    /* width to wrap with */
 	int        options;  /* twXXX constants */
@@ -1335,6 +1335,9 @@ add_wrapped_glyphs( GlyphWrapRec * t, unsigned int start, unsigned int end, unsi
 			return false;
 		*array = n;
 	}
+#ifdef _DEBUG
+	printf("add %d - %d\n", start, end);
+#endif
 
 	(*array)[t-> count++] = start;
 	(*array)[t-> count++] = end - start;
@@ -1375,8 +1378,8 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	FontABC abc[256];
 	unsigned int base = 0x10000000;
 
-	unsigned int start = 0, i, j;
-	uint16_t max_cluster, min_cluster, text_length;
+	unsigned int start, i, j;
+	uint16_t max_index, min_index, text_length;
 	float w = 0.0, inc = 0, initial_overhang = 0;
 	Bool reassign_w = 1;
 	Bool doWidthBreak = t-> width >= 0;
@@ -1392,58 +1395,61 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	t-> count = 0;
 	if (!( ret = allocn( unsigned int, size))) return NULL;
 
-	text_length = t->clusters[t->n_glyphs];
-	min_cluster = max_cluster = t->clusters[0] & ~toRTL;
+	text_length = t->indexes[t->n_glyphs];
+#ifdef _DEBUG
+		printf("rest(%d %d)\n", text_length, t->n_glyphs);
+#endif
+	min_index = max_index = t->indexes[0] & ~toRTL;
 	for ( i = 0; i < t->n_glyphs; i++) {
-		uint16_t c = t->clusters[i] & ~toRTL;
-		if ( max_cluster < c ) max_cluster = c;
-		if ( min_cluster > c ) min_cluster = c;
+		uint16_t c = t->indexes[i] & ~toRTL;
+		if ( max_index < c ) max_index = c;
+		if ( min_index > c ) min_index = c;
 	}
 
-	for ( i = min_cluster; i <= max_cluster; i++) {
+	for ( i = min_index; i <= max_index; i++) {
 		t->l2v[i] = -1;
 		t->glyphs_in_cluster[i] = 0;
 		t->chars_in_cluster[i] = 0;
 	}
 	for ( i = 0; i < t->n_glyphs; i++) {
-		uint16_t c = t->clusters[i] & ~toRTL;
+		uint16_t c = t->indexes[i] & ~toRTL;
 		if ( t->l2v[c] < 0 ) t->l2v[c] = i;
 	}
 
-	for ( i = j = min_cluster; i < max_cluster; i++) {
+	for ( i = j = min_index; i < max_index; i++) {
 		if ( t->l2v[i] >= 0 ) j = i;
 		t->chars_in_cluster[j]++;
 	}
-	t->chars_in_cluster[max_cluster] = text_length - max_cluster;
+	t->chars_in_cluster[max_index] = text_length - max_index;
 
 #ifdef _DEBUG
-	printf("clusters:");
+	printf("indexes:");
 	for ( i = 0; i < t->n_glyphs; i++) {
-		uint16_t c = t->clusters[i] & ~toRTL;
+		uint16_t c = t->indexes[i] & ~toRTL;
 		printf(" %d", c);
 	}
 	printf("\n");
-	printf("l2v(%d-%d):", min_cluster, max_cluster);
-	for ( i = min_cluster; i <= max_cluster; i++) 
+	printf("l2v(%d-%d):", min_index, max_index);
+	for ( i = min_index; i <= max_index; i++) 
 		printf(" %d", t->l2v[i]);
 	printf("\n");
-	printf("chars/cluster:");
-	for ( i = min_cluster; i <= max_cluster; i++) 
+	printf("chars/index:");
+	for ( i = min_index; i <= max_index; i++) 
 		printf(" %d", t->chars_in_cluster[i]);
 	printf("\n");
 #endif
 
 	/* process glyphs */
-	for ( i = min_cluster; i <= max_cluster; ) {
-		uint16_t cluster;
+	for ( i = start = min_index; i <= max_index; ) {
+		uint16_t index;
 		float winc;
 		int j, ng, p, v;
 
 		v = t->l2v[i];
 
 		/* ng: glyphs in the cluster */
-		for ( ng = 0, cluster = t->clusters[v]; v < t->n_glyphs; v++) {
-			if ( t->clusters[v] != cluster ) break;
+		for ( ng = 0, index = t->indexes[v]; v < t->n_glyphs; v++) {
+			if ( t->indexes[v] != index ) break;
 			ng++;
 		}
 		t->glyphs_in_cluster[i] = ng;
@@ -1464,8 +1470,9 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 			if ( j == ng - 1 ) inc = abc[ uv & 0xff]. c;
 		}
 
+
 #ifdef _DEBUG
-		printf("l:%d v:%d: ng:%d nc:%d cluster:%d\n", i, v, ng, t->chars_in_cluster[i], cluster & ~toRTL);
+		printf("l:%d v:%d: ng:%d nc:%d index:%d w:%f\n", i, v, ng, t->chars_in_cluster[i], index & ~toRTL, w);
 #endif
 		p = i;
 		i += t->chars_in_cluster[i];
@@ -1494,8 +1501,9 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	}
 
 	/* adding or skipping last line */
-	if ( text_length - start > 0 || t-> count == 0)
+	if ( text_length - start > 0 || t-> count == 0) {
 		ADD(text_length);
+	}
 
 	return ret;
 }
@@ -1545,7 +1553,7 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 
 	t.n_glyphs  = g.len;
 	t.glyphs    = g.glyphs;
-	t.clusters  = g.clusters;
+	t.indexes   = g.indexes;
 	t.width     = ( width < 0) ? 0 : width;
 	t.options   = options;
 	t.cache     = &var-> font_abc_glyphs;
@@ -1580,7 +1588,7 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 		int j, k,
 			mul[4] = { 1, 1, 1, 2 },
 			extras[4] = {0, 1, 2, 0};
-		uint16_t *payload[4] = { g.glyphs, g.clusters, g.advances, g.positions };
+		uint16_t *payload[4] = { g.glyphs, g.indexes, g.advances, g.positions };
 		for ( i = 0; i < t.count; i += 2) {
 			SV *sv_payload[4];
 			uint16_t * glyphs_dst = NULL;

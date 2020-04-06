@@ -2399,7 +2399,7 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 			ret = false;
 			break;
 		}
-                r->clusters[i] = c;
+                r->indexes[i] = c;
                 r->glyphs[i]   = glyph_info[i].codepoint;
 		if ( glyph_pos ) {
 			r->advances[i]    = floor(glyph_pos[i].x_advance / 64.0 + .5);
