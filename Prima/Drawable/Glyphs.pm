@@ -158,7 +158,7 @@ sub offset2cluster
 {
 	my ( $self, $index ) = @_;
 
-	return 0 if $index <= 0;
+	return 0 if $index < 0;
 
 	my $indexes  = $self->indexes;
 	return 0 unless $#$indexes;
@@ -166,6 +166,7 @@ sub offset2cluster
 	my $curr_cluster = -1;
 	my $last_index = -1;
 	my $ret_cluster;
+	# print "indexes($index): ", join(' ', map { ($_ & to::RTL) ? "-" . ($_ & ~to::RTL) : $_ } @{$indexes}[0..$#$indexes-1]), "\n";
 	if ( $index >= $indexes->[-1] ) {
 		# eol
 		my $max_cluster = $indexes->[0] & ~to::RTL;
@@ -184,6 +185,7 @@ sub offset2cluster
 		return 1 + $ret_cluster;
 	} else {
 		my $diff = 0xffff;
+
 		for ( my $ix = 0; $ix < $#$indexes; $ix++) {
 			my $c = $indexes->[$ix] & ~to::RTL;
 			if ( $last_index != $c ) {
@@ -437,24 +439,35 @@ sub cursor2offset
 	return 0 unless $limit;
 	my $maxlen = $self->[INDEXES]->[-1];
 
-	my ($pl,$pr, $ll,$lr, $rl,$rr); # position,length,rtl flag for left/right
-	if ( $at_cluster > 0 ) {
-		($pl, $ll, $rl) = $self-> cluster2range( $at_cluster - 1 );
-	}
-	if ( $at_cluster <= $limit ) {
-		($pr, $lr, $rr) = $self-> cluster2range( $at_cluster );
-	}
+	my ($pos_left,$pos_right,$len_left,$len_right,$rtl_left,$rtl_right);
+	($pos_left, $len_left, $rtl_left) = $self-> cluster2range( $at_cluster - 1 )
+		if $at_cluster > 0;
+	($pos_right, $len_right, $rtl_right) = $self-> cluster2range( $at_cluster )
+		if $at_cluster <= $limit;
 
-	if (defined $pl && defined $pr) {
+#	print "L: ",
+#		(defined($pos_left) ? "pos:$pos_left len:$len_left rtl:$rtl_left" : "()"),
+#		" R: ",
+#		(defined($pos_right) ? "pos:$pos_right len:$len_right rtl:$rtl_right" : "()"),
+#		"\n";
+
+	if (defined $pos_left && defined $pos_right) {
 		# cursor between two of the same direction
-		return ($rl ? $lr : $ll) + ($rl ? $pr : $pl) if $rl == $rr;
+		return 
+			$rtl_left ? 
+				$len_right + $pos_right : 
+				$len_left  + $pos_left
+			if $rtl_left == $rtl_right;
+
 		# cursor between two of different directions
-		return ($preferred_rtl ? $rr : $lr) + ($preferred_rtl ? $pr : $pl);
+		return $preferred_rtl ?
+			$len_right + $pos_right :
+			$len_left  + $pos_left;
 	}
 	
 	# cursor at the start or at the end
-	return $rr ? $limit : 0 unless defined $pl;
-	return $rl ? 0 : $limit;
+	return $rtl_right ? $limit : 0 unless defined $pos_left;
+	return $rtl_left ? 0 : $limit;
 }
 
 1;

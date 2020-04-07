@@ -363,16 +363,14 @@ sub on_keydown
 			$self-> begin_undo_group;
 			if ( $p_start != $p_end)
 			{
-				$del = substr( $cap, $p_start, $p_end - $p_start);
-				substr( $cap, $p_start, $p_end - $p_start) = '';
+				$del = substr( $cap, $p_start, $p_end - $p_start, '');
 				$self-> set_selection(0,0);
 				$self-> edit_text( $cap);
 				$self-> charOffset( $start);
 			} else {
 				my $curpos = $self->{glyphs}->cursor2offset($start, $self->textDirection);
 				if ( $curpos < length($cap) ) {
-					$del = substr( $cap, $curpos, 1);
-					substr( $cap, $curpos, 1) = '';
+					$del = substr( $cap, $curpos, 1, '');
 					$self-> edit_text( $cap);
 					$self-> charOffset($self->{glyphs}->offset2cluster($curpos))
 				}
@@ -438,13 +436,12 @@ sub on_keydown
 		utf8::upgrade($chr) if $is_unicode;
 		my $curpos;
 		if ( $p_start != $p_end) {
-			substr( $cap, $p_start, $p_end - $p_start) = '';
-			goto INSERT;
+			substr( $cap, $p_start, $p_end - $p_start) = $chr;
+			$curpos = $p_start + 1;
 		} elsif ( !$self-> {insertMode}) {
 			$p_end++;
 			substr( $cap, $p_start, $p_end - $p_start) = $chr;
 		} else {
-		INSERT:
 			$curpos = $self->{glyphs}->cursor2offset($start, $self->textDirection);
 			substr( $cap, $curpos, 0) = $chr;
 			$curpos++;
@@ -790,6 +787,8 @@ sub set_char_offset
 	$offset = $l if $offset > $l;
 	$offset = 0 if $offset < 0;
 	return if $self-> {charOffset} == $offset;
+
+	$self->{glyphs}->cursor2offset($offset, $self->textDirection);
 
 	$self-> push_undo_action( 'charOffset', $offset) unless $self->has_undo_action('charOffset');
 
