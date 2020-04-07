@@ -17,6 +17,8 @@ sub advances    { $_[0]->[ADVANCES] }
 sub positions   { $_[0]->[POSITIONS] }
 sub text_length { $_[0]->[INDEXES]->[-1] }
 
+sub new_empty   { bless [[],[0]], $_[0] }
+
 sub overhangs
 {
 	return @{$_[0]->[ADVANCES]}[-2,-1] if $_[0]->[2];
@@ -113,39 +115,46 @@ sub cluster2glyph
 
 sub cluster2index
 {
-	my ( $self, $from, $length ) = @_;
+	my ( $self, $from ) = @_;
 
 	my $indexes = $self->indexes;
-	$length //= $#$indexes;
-
-	return 0,0 if $length <= 0;
 
 	my $last = -1;
 	my $curr_cluster = -1;
+	$from = 0 if $from < 0;
 
-	my $to = $length ? $from + $length - 1 : undef;
-	my ( $ix_from, $ix_to );
+	my $ix_from;
+	for ( my $ix = 0; $ix < $#$indexes; $ix++) {
+		my $c = $indexes->[$ix];
+		next if $last == $c;
+		$curr_cluster++;
+		$last = $c;
+		return $c if $from == $curr_cluster;
+	}
+
+	return $indexes->[-1];
+}
+
+sub cluster2range
+{
+	my ( $self, $from ) = @_;
+
+	my $indexes = $self->indexes;
+	my $first_index = $self->cluster2index($from);
+	my $first       = $first_index & ~to::RTL;
+	my $rtl         = ($first_index & to::RTL) ? 1 : 0;
+	my $last        = $indexes->[-1] & ~to::RTL;
+	return 0,0,0 if $first >= $last;
 
 	for ( my $ix = 0; $ix < $#$indexes; $ix++) {
 		my $c = $indexes->[$ix] & ~to::RTL;
-		if ( $last != $c ) {
-			if ( $length && $to == $curr_cluster ) {
-				$ix_to = $ix;
-				last;
-			}
-			$curr_cluster++;
-			$last = $c;
-			$ix_from = $c if $from == $curr_cluster;
-		}
+		$last = $c if $c > $first && $c < $last;
 	}
 
-	return 0,0 unless defined $ix_from;
-	$ix_to = $indexes->[$ix_to // -1];
-	($ix_to, $ix_from) = ($ix_from, $ix_to) if $ix_from > $ix_to;
-	return $ix_from, $ix_to - $ix_from;
+	return $first, $last - $first, $rtl;
 }
 
-sub index2cluster
+sub offset2cluster
 {
 	my ( $self, $index ) = @_;
 
@@ -153,23 +162,43 @@ sub index2cluster
 
 	my $indexes  = $self->indexes;
 	return 0 unless $#$indexes;
-	my $curr_cluster = 0;
-	my $last_index   = $indexes->[0] & to::RTL;
 
-	for ( my $ix = 1; $ix < @$indexes; $ix++) {
-		my $c = $indexes->[$ix] & ~to::RTL;
-		if ( $index >= $last_index && $index <= $c - 1 ) {
-			return $curr_cluster;
-		} elsif ( $last_index != $c ) {
-			$curr_cluster++;
-			$last_index = $c;
+	my $curr_cluster = -1;
+	my $last_index = -1;
+	my $ret_cluster;
+	if ( $index >= $indexes->[-1] ) {
+		# eol
+		my $max_cluster = $indexes->[0] & ~to::RTL;
+		$ret_cluster = ($indexes->[0] & to::RTL) ? -1 : 0;
+		for ( my $ix = 0; $ix < $#$indexes; $ix++) {
+			my $c = $indexes->[$ix] & ~to::RTL;
+			if ( $last_index != $c ) {
+				$curr_cluster++;
+				$last_index = $c;
+			}
+			if ($max_cluster < $c) {
+				$max_cluster = $c;
+				$ret_cluster = $curr_cluster + (($indexes->[$ix] & to::RTL) ? -1 : 0);
+			}
+		}
+		return 1 + $ret_cluster;
+	} else {
+		my $diff = 0xffff;
+		for ( my $ix = 0; $ix < $#$indexes; $ix++) {
+			my $c = $indexes->[$ix] & ~to::RTL;
+			if ( $last_index != $c ) {
+				$curr_cluster++;
+				$last_index = $c;
+			}
+			if ( $index >= $c && $index - $c < $diff) {
+				$ret_cluster = $curr_cluster + (($indexes->[$ix] & to::RTL) ? 1 : 0);
+				$diff = $index - $c;
+			}
 		}
 	}
 
-	return $curr_cluster;
+	return $ret_cluster;
 }
-
-
 
 sub get_sub_width
 {
@@ -258,25 +287,6 @@ sub sub_text_wrap
 	return $canvas-> text_wrap($sub, $width, $opt, $tabs);
 }
 
-use constant N_GLYPHS => 0;
-use constant N_CHARS  => 1;
-use constant INDEX    => 2;
-
-#sub clusters {
-#
-#	my $last = -1;
-#	my $indexes = $_[0]->indexes;
-#	for ( my $ix = 0; $ix < $#$indexes; $ix++) {
-#		my $c = $indexes->[$ix] & ~to::RTL;
-#		if ( $last != $c ) {
-#			push @arr, [ 1, 1, $ix ];
-#			$last = $c;
-#		}
-#	}
-##	push @arr, scalar(@$indexes);
-#	return \@arr;
-#}
-
 sub n_clusters
 {
 	my $last = -1;
@@ -350,18 +360,30 @@ sub _chunks2map
 	return \@map;
 }
 
+sub clusters
+{
+	my $last = -1;
+	my $indexes = $_[0]->indexes;
+	my @arr;
+	for ( my $ix = 0; $ix < $#$indexes; $ix++) {
+		my $c = $indexes->[$ix] & ~to::RTL;
+		if ( $last != $c ) {
+			push @arr, $c;
+			$last = $c;
+		}
+	}
+	return \@arr;
+}
+
 sub selection_chunks
 {
-	my ( $self, $start, $len ) = @_;
-	$start = 0 if $start < 0;
-	my $n = $self-> n_clusters;
-	my ( $ix_first, $ix_l ) = $self-> cluster2index( $start, $len );
+	my ( $self, $text_start, $text_end ) = @_;
+
+	my $clusters = $self->clusters;
+	($text_start, $text_end) = ($text_end, $text_start) if $text_start > $text_end;
 	my @selection_map;
-	return [0] unless $ix_l; # l_ength and thereafter l_ast
-	$ix_l += $ix_first;
-	my $indexes = $self->[INDEXES];
-	for ( my $i = 0; $i < $n; $i++) {
-		push @selection_map, ($indexes->[$i] >= $ix_first && $indexes->[$i] < $ix_l) ? 1 : 0;
+	for ( my $i = 0; $i < @$clusters; $i++) {
+		push @selection_map, ($clusters->[$i] >= $text_start && $clusters->[$i] <= $text_end) ? 1 : 0;
 	}
 	return _map2chunks( \@selection_map );
 }
@@ -409,60 +431,30 @@ sub is_ltr($)      { $_[-1] =~ m/^[\p{bc=L}\p{bc=LRE}\p{bc=LRO}\p{bc=LRI}]$/ }
 
 sub cursor2offset
 {
-	my ( $self, $at_cluster, $str, $default_rtl ) = @_;
+	my ( $self, $at_cluster, $preferred_rtl ) = @_;
 
 	my $limit = $self-> n_clusters;
 	return 0 unless $limit;
+	my $maxlen = $self->[INDEXES]->[-1];
 
-	my ($tl, $tr, $pl, $pr);
+	my ($pl,$pr, $ll,$lr, $rl,$rr); # position,length,rtl flag for left/right
 	if ( $at_cluster > 0 ) {
-		my ( $f, $l ) = $self-> cluster2index( $at_cluster - 1, 1 );
-		if ( $l ) {
-			$pl = $f + (is_rtl(substr($str, $f, 1)) ? 0 : $l - 1);
-			$tl = substr($str, $pl, 1);
-		}
+		($pl, $ll, $rl) = $self-> cluster2range( $at_cluster - 1 );
 	}
-
 	if ( $at_cluster <= $limit ) {
-		my ( $f, $l ) = $self-> cluster2index( $at_cluster, 1 );
-		if ( $l ) {
-			$pr = $f + (is_rtl(substr($str, $f, 1)) ? $l - 1 : 0);
-			$tr = substr($str, $pr, 1);
-		}
+		($pr, $lr, $rr) = $self-> cluster2range( $at_cluster );
 	}
 
+	if (defined $pl && defined $pr) {
+		# cursor between two of the same direction
+		return ($rl ? $lr : $ll) + ($rl ? $pr : $pl) if $rl == $rr;
+		# cursor between two of different directions
+		return ($preferred_rtl ? $rr : $lr) + ($preferred_rtl ? $pr : $pl);
+	}
+	
 	# cursor at the start or at the end
-	return is_rtl $tr ? $pr + 1 : 0 if $at_cluster == 0;
-	return is_rtl $tl ? 0 : $pl + 1 if $at_cluster >= $limit;
-
-
-	# cursor between two strongs
-	if ( defined $tl && defined $tr && is_strong $tl && is_strong $tr ) {
-		if ( !is_rtl $tl ) {
-			if ( !is_rtl $tr ) {
-				# normal LTR
-				return $pl + 1;
-			} else {
-				# Cursor between R and L - the rightmost wins
-				return (($pl > $pr) ? $pl : $pr) + 1;
-			}
-		} else {
-			if ( is_rtl $tr) {
-				# normal RTL
-				return $pr + 1;
-			} else {
-				# Cursor between L and R - the leftmost wins
-				return (( $pl < $pr ) ? $pl : $pr) + 1;
-			}
-		}
-	}
-
-	# cursor next to a strong
-	return $pl if defined($tl) && is_strong $tl;
-	return $pr if defined($tr) && is_strong $tr;
-
-	# cursor next to weak(s), get default mode
-	return ($default_rtl ? $pr : $pl) + 1;
+	return $rr ? $limit : 0 unless defined $pl;
+	return $rl ? 0 : $limit;
 }
 
 1;
