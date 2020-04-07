@@ -9,6 +9,7 @@ use warnings;
 
 use Prima::Classes;
 use Prima::IntUtils;
+use Prima::Drawable::Glyphs;
 
 sub profile_default
 {
@@ -51,7 +52,7 @@ sub profile_default
 		undoLimit      => 10,
 		widgetClass    => wc::InputLine,
 		width          => 96,
-		wordDelimiters => ".()\"',#$@!%^&*{}[]?/|;:<>-= \xff\t",
+		wordDelimiters => ".()\"',#$@!%^&*{}[]?/|;:<>-= \t",
 		writeOnly      => 0,
 	}
 }
@@ -224,8 +225,13 @@ sub text
 	$self-> SUPER::text($cap);
 
 	$cap = $self-> {passwordChar} x length $cap if $self-> {writeOnly};
-	$self->{glyphs}     = $self-> text_shape( $cap, rtl => $self->textDirection );
-	$self->{n_clusters} = $self->{glyphs}->n_clusters;
+	if ( length($cap)) {
+		$self->{glyphs}     = $self-> text_shape( $cap, rtl => $self->textDirection );
+		$self->{n_clusters} = $self->{glyphs}->n_clusters;
+	} else {
+		$self->{glyphs}     = Prima::Drawable::Glyphs->new_empty;
+		$self->{n_clusters} = 0;
+	}
 	$self-> charOffset( $self->{n_clusters} )
 		if $self-> {charOffset} > $self->{n_clusters};
 	$self-> set_selection(0,0);
@@ -319,6 +325,7 @@ sub on_keydown
 		$self-> clear_event;
 		return;
 	}
+
 # edit part
 	my ($start, $end) = $self->selection;
 	($start, $end) = ($offset, $offset) if $start == $end;
@@ -336,11 +343,11 @@ sub on_keydown
 				$self-> edit_text( $cap);
 				$self-> charOffset( $start);
 			} else {
-				my $curpos = $self->{glyphs}->cursor2offset($start, $cap, $self->textDirection);
+				my $curpos = $self->{glyphs}->cursor2offset($start, $self->textDirection);
 				if ( $curpos > 0 ) {
 					substr( $cap, $curpos - 1, 1) = '';
 					$self-> edit_text( $cap);
-					$self-> charOffset($self->{glyphs}->index2cluster($curpos - 1))
+					$self-> charOffset($self->{glyphs}->offset2cluster($curpos - 1))
 				}
 			}
 			$self-> end_undo_group;
@@ -362,12 +369,12 @@ sub on_keydown
 				$self-> edit_text( $cap);
 				$self-> charOffset( $start);
 			} else {
-				my $curpos = $self->{glyphs}->cursor2offset($start, $cap, $self->textDirection);
+				my $curpos = $self->{glyphs}->cursor2offset($start, $self->textDirection);
 				if ( $curpos < length($cap) ) {
 					$del = substr( $cap, $curpos, 1);
 					substr( $cap, $curpos, 1) = '';
 					$self-> edit_text( $cap);
-					$self-> charOffset($self->{glyphs}->index2cluster($curpos))
+					$self-> charOffset($self->{glyphs}->offset2cluster($curpos))
 				}
 			}
 			$self-> end_undo_group;
@@ -438,7 +445,7 @@ sub on_keydown
 			substr( $cap, $p_start, $p_end - $p_start) = $chr;
 		} else {
 		INSERT:
-			$curpos = $self->{glyphs}->cursor2offset($start, $cap, $self->textDirection);
+			$curpos = $self->{glyphs}->cursor2offset($start, $self->textDirection);
 			substr( $cap, $curpos, 0) = $chr;
 			$curpos++;
 		}
@@ -449,7 +456,7 @@ sub on_keydown
 			$self-> event_error;
 		} else {
 			$self-> edit_text( $cap);
-			$self-> charOffset($self->{glyphs}->index2cluster($curpos))
+			$self-> charOffset($self->{glyphs}->offset2cluster($curpos))
 				if defined $curpos;
 		}
 		$self-> clear_event;
@@ -513,11 +520,13 @@ sub paste
 	my $s = $::application-> Clipboard-> text;
 	return if !defined($s) or length( $s) == 0;
 
-	my ($p_start, $p_end) = $self->selection_strpos;
+	my ($p_start, $p_end) = ($start == $end) ? 
+		(($self->{glyphs}->cursor2offset($self->charOffset, $self->textDirection)) x 2) :
+		$self->selection_strpos;
 	substr( $cap, $p_start, $p_end - $p_start) = $s;
 	$self-> selection(0,0);
 	$self-> text( $cap);
-	$self-> charOffset( $start + length( $s));
+	$self-> charOffset( $self->{glyphs}-> offset2cluster($p_start + length( $s)));
 }
 
 sub delete
@@ -558,13 +567,25 @@ sub x2offset
 	return $fc + $self-> {glyphs}-> sub_text_wrap( $self, $fc, undef, $x, tw::ReturnFirstLineLength);
 }
 
+sub offset2strpos
+{
+	my $self = shift;
+	my $l  = $self->{n_clusters};
+	my @p  = @_;
+	my $bd = $self->{glyphs}->indexes;
+	my @ret    =  map {
+		 ($_ <   0) ? 0 :
+		(($_ >= $l) ? $l - 1 : $bd->[$_])
+	} @p;
+	return $#ret ? @ret : $ret[0];
+}
+
 sub char_at
 {
 	my ( $self, $at ) = @_;
-
 	return undef if $at < 0 || $at >= $self->{n_clusters};
-	my ( $from, $len ) = $self->{glyphs}->cluster2index($at, 1);
-	return substr( $self->text, $from, 1);
+	my ($f, $l) = $self-> {glyphs}-> cluster2range($at);
+	return $l ? substr( $self->text, $f, 1) : '';
 }
 
 sub has_selection { $_[0]->{selStart} != $_[0]->{selEnd} }
@@ -572,11 +593,8 @@ sub has_selection { $_[0]->{selStart} != $_[0]->{selEnd} }
 sub selection_strpos
 {
 	my $self = shift;
-	return (0,0) unless $self->{n_clusters};
-	my ($start, $end) = $self-> selection;
-	my ($s_from, $s_len) = $self->{glyphs}->cluster2index($start, $end - $start);
-	return ($s_from) x 2 if $start == $end;
-	return $s_from, $s_from + $s_len;
+	return (0,0) if $self->{selStart} == $self->{selEnd};
+	return ($self->{selTextStart}, $self->{selTextEnd});
 }
 
 sub on_mousedown
@@ -878,17 +896,26 @@ sub set_selection
 	if ( $start != $end ) {
 		if ( $start == 0 && $end == $l ) {
 			# select all
-			$self->{selChunks} = [ 0, $l ];
+			$self->{selChunks} = [ 0, $self->{n_clusters} ];
+			$self->{selTextStart} = 0;
+			$self->{selTextEnd}   = length($self->text) - 1;
 		} else {
-			$self->{selChunks} = $self->{glyphs}->selection_chunks( $start, $end - $start );
+			my ( $s, $sl) = $self->{glyphs}->cluster2range($start);
+			my ( $e, $el) = $self->{glyphs}->cluster2range($end - 1);
+			($s,$sl,$e,$el) = ($e,$el,$s,$sl) if $s > $e;
+			$self->{selTextStart} = $s;
+			$self->{selTextEnd}   = $e + $el;
+			$self->{selChunks} = $self->{glyphs}->selection_chunks($s,$e + $el - 1);
 		}
 		$new_chunks = $self->{selChunks};
 	} else {
 		$new_chunks = [ $self->{n_clusters} ];
+		$self->{selTextStart} = $self->{selTextEnd} = 0;
 	}
 
 	my $ooffset = $self-> charOffset;
-	$self-> charOffset( $end) if ( $start != $end) && !defined $self-> {autoAdjustDisabled};
+	$self-> charOffset($self->{glyphs}->offset2cluster($end))
+		if ( $start != $end) && !defined $self-> {autoAdjustDisabled};
 	return if ( $start == $ostart && $end == $oend);
 
 	$self-> reset;
