@@ -393,6 +393,38 @@ KeySymToUcs4(KeySym keysym)
 }
 /* end unicode map */
 
+#define UNICODE_HEX_CTRL           0x0001
+#define UNICODE_HEX_SHIFT          0x0002
+#define UNICODE_HEX_U              0x0004
+#define UNICODE_HEX_ENTER          0x0008
+#define UNICODE_HEX_KEYMASK        0x000F
+#define UNICODE_HEX_PRESS          0x0010
+#define UNICODE_HEX_RELEASE        0x0020
+#define UNICODE_HEX_PRESSMASK      0x0030
+#define UNICODE_HEX_METHOD_WANTED  0x0100
+#define UNICODE_HEX_ENTER_WANTED   0x0200
+#define UNICODE_HEX_RELEASE_WANTED 0x0400
+#define UNICODE_HEX_WANT_MASK      0x0700
+
+static void
+feed_unicode_character(Handle self, PEvent ev)
+{
+	char *x;
+	int r;
+
+	r = strtol( guts.unicode_hex_input_buffer, &x, 16);
+	guts.unicode_hex_input_flags = 0;
+	*guts.unicode_hex_input_buffer = 0;
+
+	if (*x) return;
+	if ( r > 0x10ffff ) return;
+	
+	ev-> cmd = cmKeyDown;
+	ev-> key.mod  = kmUnicode;
+	ev-> key.key  = kbNoKey;
+	ev-> key.code = r;
+}
+
 static void
 handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool release)
 {
@@ -414,122 +446,122 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 
 	switch (keysym) {
 	/* virtual keys-modifiers */
-	case XK_Shift_L:		keycode = kbShiftL;		break;
-	case XK_Shift_R:		keycode = kbShiftR;		break;
-	case XK_Control_L:		keycode = kbCtrlL;		break;
-	case XK_Control_R:		keycode = kbCtrlR;		break;
-	case XK_Alt_L:		keycode = kbAltL;		break;
-	case XK_Alt_R:		keycode = kbAltR;		break;
-	case XK_Meta_L:		keycode = kbMetaL;		break;
-	case XK_Meta_R:		keycode = kbMetaR;		break;
-	case XK_Super_L:		keycode = kbSuperL;		break;
-	case XK_Super_R:		keycode = kbSuperR;		break;
-	case XK_Hyper_L:		keycode = kbHyperL;		break;
-	case XK_Hyper_R:		keycode = kbHyperR;		break;
-	case XK_Caps_Lock:		keycode = kbCapsLock;		break;
-	case XK_Num_Lock:		keycode = kbNumLock;		break;
-	case XK_Scroll_Lock:		keycode = kbScrollLock;		break;
-	case XK_Shift_Lock:		keycode = kbShiftLock;		break;
+	case XK_Shift_L:      keycode = kbShiftL;     break;
+	case XK_Shift_R:      keycode = kbShiftR;     break;
+	case XK_Control_L:    keycode = kbCtrlL;      break;
+	case XK_Control_R:    keycode = kbCtrlR;      break;
+	case XK_Alt_L:        keycode = kbAltL;       break;
+	case XK_Alt_R:        keycode = kbAltR;       break;
+	case XK_Meta_L:       keycode = kbMetaL;      break;
+	case XK_Meta_R:       keycode = kbMetaR;      break;
+	case XK_Super_L:      keycode = kbSuperL;     break;
+	case XK_Super_R:      keycode = kbSuperR;     break;
+	case XK_Hyper_L:      keycode = kbHyperL;     break;
+	case XK_Hyper_R:      keycode = kbHyperR;     break;
+	case XK_Caps_Lock:    keycode = kbCapsLock;   break;
+	case XK_Num_Lock:     keycode = kbNumLock;    break;
+	case XK_Scroll_Lock:  keycode = kbScrollLock; break;
+	case XK_Shift_Lock:   keycode = kbShiftLock;  break;
 	/* virtual keys with charcode */
-	case XK_BackSpace:		keycode = kbBackspace;		break;
-	case XK_Tab:			keycode = kbTab;		break;
-	case XK_KP_Tab:		keycode = kbKPTab;		break;
-	case XK_Linefeed:		keycode = kbLinefeed;		break;
-	case XK_Return:		keycode = kbEnter;		break;
-	case XK_KP_Enter:		keycode = kbKPEnter;		break;
-	case XK_Escape:		keycode = kbEscape;		break;
-	case XK_KP_Space:		keycode = kbKPSpace;		break;
-	case XK_KP_Equal:		keycode = kbKPEqual;		break;
-	case XK_KP_Multiply:		keycode = kbKPMultiply;		break;
-	case XK_KP_Add:		keycode = kbKPAdd;		break;
-	case XK_KP_Separator:	keycode = kbKPSeparator;	break;
-	case XK_KP_Subtract:		keycode = kbKPSubtract;		break;
-	case XK_KP_Decimal:		keycode = kbKPDecimal;		break;
-	case XK_KP_Divide:		keycode = kbKPDivide;		break;
-	case XK_KP_0:		keycode = kbKP0;		break;
-	case XK_KP_1:		keycode = kbKP1;		break;
-	case XK_KP_2:		keycode = kbKP2;		break;
-	case XK_KP_3:		keycode = kbKP3;		break;
-	case XK_KP_4:		keycode = kbKP4;		break;
-	case XK_KP_5:		keycode = kbKP5;		break;
-	case XK_KP_6:		keycode = kbKP6;		break;
-	case XK_KP_7:		keycode = kbKP7;		break;
-	case XK_KP_8:		keycode = kbKP8;		break;
-	case XK_KP_9:		keycode = kbKP9;		break;
+	case XK_BackSpace:    keycode = kbBackspace;  break;
+	case XK_Tab:          keycode = kbTab;        break;
+	case XK_KP_Tab:       keycode = kbKPTab;      break;
+	case XK_Linefeed:     keycode = kbLinefeed;   break;
+	case XK_Return:       keycode = kbEnter;      break;
+	case XK_KP_Enter:     keycode = kbKPEnter;    break;
+	case XK_Escape:       keycode = kbEscape;     break;
+	case XK_KP_Space:     keycode = kbKPSpace;    break;
+	case XK_KP_Equal:     keycode = kbKPEqual;    break;
+	case XK_KP_Multiply:  keycode = kbKPMultiply; break;
+	case XK_KP_Add:       keycode = kbKPAdd;      break;
+	case XK_KP_Separator: keycode = kbKPSeparator;break;
+	case XK_KP_Subtract:  keycode = kbKPSubtract; break;
+	case XK_KP_Decimal:   keycode = kbKPDecimal;  break;
+	case XK_KP_Divide:    keycode = kbKPDivide;   break;
+	case XK_KP_0:         keycode = kbKP0;        break;
+	case XK_KP_1:         keycode = kbKP1;        break;
+	case XK_KP_2:         keycode = kbKP2;        break;
+	case XK_KP_3:         keycode = kbKP3;        break;
+	case XK_KP_4:         keycode = kbKP4;        break;
+	case XK_KP_5:         keycode = kbKP5;        break;
+	case XK_KP_6:         keycode = kbKP6;        break;
+	case XK_KP_7:         keycode = kbKP7;        break;
+	case XK_KP_8:         keycode = kbKP8;        break;
+	case XK_KP_9:         keycode = kbKP9;        break;
 	/* Other virtual keys */
-	case XK_Clear:		keycode = kbClear;		break;
-	case XK_Pause:		keycode = kbPause;		break;
-	case XK_Sys_Req:		keycode = kbSysReq;		break;
-	case XK_Delete:		keycode = kbDelete;		break;
-	case XK_KP_Delete:		keycode = kbKPDelete;		break;
-	case XK_Home:		keycode = kbHome;		break;
-	case XK_KP_Home:		keycode = kbKPHome;		break;
-	case XK_Left:		keycode = kbLeft;		break;
-	case XK_KP_Left:		keycode = kbKPLeft;		break;
-	case XK_Up:			keycode = kbUp;			break;
-	case XK_KP_Up:		keycode = kbKPUp;		break;
-	case XK_Right:		keycode = kbRight;		break;
-	case XK_KP_Right:		keycode = kbKPRight;		break;
-	case XK_Down:		keycode = kbDown;		break;
-	case XK_KP_Down:		keycode = kbKPDown;		break;
-	case XK_Prior:		keycode = kbPrior;		break;
-	case XK_KP_Prior:		keycode = kbKPPrior;		break;
-	case XK_Next:		keycode = kbNext;		break;
-	case XK_KP_Next:		keycode = kbKPNext;		break;
-	case XK_End:			keycode = kbEnd;		break;
-	case XK_KP_End:		keycode = kbKPEnd;		break;
-	case XK_Begin:		keycode = kbBegin;		break;
-	case XK_KP_Begin:		keycode = kbKPBegin;		break;
-	case XK_Select:		keycode = kbSelect;		break;
-	case XK_Print:		keycode = kbPrint;		break;
-	case XK_Execute:		keycode = kbExecute;		break;
-	case XK_Insert:		keycode = kbInsert;		break;
-	case XK_KP_Insert:		keycode = kbKPInsert;		break;
-	case XK_Undo:		keycode = kbUndo;		break;
-	case XK_Redo:		keycode = kbRedo;		break;
-	case XK_Menu:		keycode = kbMenu;		break;
-	case XK_Find:		keycode = kbFind;		break;
-	case XK_Cancel:		keycode = kbCancel;		break;
-	case XK_Help:		keycode = kbHelp;		break;
-	case XK_Break:		keycode = kbBreak;		break;
-	case XK_ISO_Left_Tab:	keycode = kbBackTab;		break;
+	case XK_Clear:        keycode = kbClear;      break;
+	case XK_Pause:        keycode = kbPause;      break;
+	case XK_Sys_Req:      keycode = kbSysReq;     break;
+	case XK_Delete:       keycode = kbDelete;     break;
+	case XK_KP_Delete:    keycode = kbKPDelete;   break;
+	case XK_Home:         keycode = kbHome;       break;
+	case XK_KP_Home:      keycode = kbKPHome;     break;
+	case XK_Left:         keycode = kbLeft;       break;
+	case XK_KP_Left:      keycode = kbKPLeft;     break;
+	case XK_Up:           keycode = kbUp;         break;
+	case XK_KP_Up:        keycode = kbKPUp;       break;
+	case XK_Right:        keycode = kbRight;      break;
+	case XK_KP_Right:     keycode = kbKPRight;    break;
+	case XK_Down:         keycode = kbDown;       break;
+	case XK_KP_Down:      keycode = kbKPDown;     break;
+	case XK_Prior:        keycode = kbPrior;      break;
+	case XK_KP_Prior:     keycode = kbKPPrior;    break;
+	case XK_Next:         keycode = kbNext;       break;
+	case XK_KP_Next:      keycode = kbKPNext;     break;
+	case XK_End:          keycode = kbEnd;        break;
+	case XK_KP_End:       keycode = kbKPEnd;      break;
+	case XK_Begin:        keycode = kbBegin;      break;
+	case XK_KP_Begin:     keycode = kbKPBegin;    break;
+	case XK_Select:       keycode = kbSelect;     break;
+	case XK_Print:        keycode = kbPrint;      break;
+	case XK_Execute:      keycode = kbExecute;    break;
+	case XK_Insert:       keycode = kbInsert;     break;
+	case XK_KP_Insert:    keycode = kbKPInsert;   break;
+	case XK_Undo:         keycode = kbUndo;       break;
+	case XK_Redo:         keycode = kbRedo;       break;
+	case XK_Menu:         keycode = kbMenu;       break;
+	case XK_Find:         keycode = kbFind;       break;
+	case XK_Cancel:       keycode = kbCancel;     break;
+	case XK_Help:         keycode = kbHelp;       break;
+	case XK_Break:        keycode = kbBreak;      break;
+	case XK_ISO_Left_Tab: keycode = kbBackTab;    break;
 	/* Virtual function keys */
-	case XK_F1:			keycode = kbF1;			break;
-	case XK_KP_F1:		keycode = kbKPF1;		break;
-	case XK_F2:			keycode = kbF2;			break;
-	case XK_KP_F2:		keycode = kbKPF2;		break;
-	case XK_F3:			keycode = kbF3;			break;
-	case XK_KP_F3:		keycode = kbKPF3;		break;
-	case XK_F4:			keycode = kbF4;			break;
-	case XK_KP_F4:		keycode = kbKPF4;		break;
-	case XK_F5:			keycode = kbF5;			break;
-	case XK_F6:			keycode = kbF6;			break;
-	case XK_F7:			keycode = kbF7;			break;
-	case XK_F8:			keycode = kbF8;			break;
-	case XK_F9:			keycode = kbF9;			break;
-	case XK_F10:			keycode = kbF10;		break;
-	case XK_F11:			keycode = kbF11;		break;
-	case XK_F12:			keycode = kbF12;		break;
-	case XK_F13:			keycode = kbF13;		break;
-	case XK_F14:			keycode = kbF14;		break;
-	case XK_F15:			keycode = kbF15;		break;
-	case XK_F16:			keycode = kbF16;		break;
-	case XK_F17:			keycode = kbF17;		break;
-	case XK_F18:			keycode = kbF18;		break;
-	case XK_F19:			keycode = kbF19;		break;
-	case XK_F20:			keycode = kbF20;		break;
-	case XK_F21:			keycode = kbF21;		break;
-	case XK_F22:			keycode = kbF22;		break;
-	case XK_F23:			keycode = kbF23;		break;
-	case XK_F24:			keycode = kbF24;		break;
-	case XK_F25:			keycode = kbF25;		break;
-	case XK_F26:			keycode = kbF26;		break;
-	case XK_F27:			keycode = kbF27;		break;
-	case XK_F28:			keycode = kbF28;		break;
-	case XK_F29:			keycode = kbF29;		break;
-	case XK_F30:			keycode = kbF30;		break;
-	case XK_space:		keycode = kbSpace;		break;
-	default:			keycode = kbNoKey;
+	case XK_F1:           keycode = kbF1;         break;
+	case XK_KP_F1:        keycode = kbKPF1;       break;
+	case XK_F2:           keycode = kbF2;         break;
+	case XK_KP_F2:        keycode = kbKPF2;       break;
+	case XK_F3:           keycode = kbF3;         break;
+	case XK_KP_F3:        keycode = kbKPF3;       break;
+	case XK_F4:           keycode = kbF4;         break;
+	case XK_KP_F4:        keycode = kbKPF4;       break;
+	case XK_F5:           keycode = kbF5;         break;
+	case XK_F6:           keycode = kbF6;         break;
+	case XK_F7:           keycode = kbF7;         break;
+	case XK_F8:           keycode = kbF8;         break;
+	case XK_F9:           keycode = kbF9;         break;
+	case XK_F10:          keycode = kbF10;        break;
+	case XK_F11:          keycode = kbF11;        break;
+	case XK_F12:          keycode = kbF12;        break;
+	case XK_F13:          keycode = kbF13;        break;
+	case XK_F14:          keycode = kbF14;        break;
+	case XK_F15:          keycode = kbF15;        break;
+	case XK_F16:          keycode = kbF16;        break;
+	case XK_F17:          keycode = kbF17;        break;
+	case XK_F18:          keycode = kbF18;        break;
+	case XK_F19:          keycode = kbF19;        break;
+	case XK_F20:          keycode = kbF20;        break;
+	case XK_F21:          keycode = kbF21;        break;
+	case XK_F22:          keycode = kbF22;        break;
+	case XK_F23:          keycode = kbF23;        break;
+	case XK_F24:          keycode = kbF24;        break;
+	case XK_F25:          keycode = kbF25;        break;
+	case XK_F26:          keycode = kbF26;        break;
+	case XK_F27:          keycode = kbF27;        break;
+	case XK_F28:          keycode = kbF28;        break;
+	case XK_F29:          keycode = kbF29;        break;
+	case XK_F30:          keycode = kbF30;        break;
+	case XK_space:        keycode = kbSpace;      break;
+	default:              keycode = kbNoKey;
 	}
 	if (( keycode == kbTab || keycode == kbKPTab) && ( ev-> state & ShiftMask))
 		keycode = kbBackTab;
@@ -553,13 +585,13 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 		keycode |= (keycode >> 8) & 0xFF;
 	e-> cmd = release ? cmKeyUp : cmKeyDown;
 	e-> key. key = keycode & kbCodeMask;
-	if ( !e-> key. key)		e-> key. key = kbNoKey;
+	if ( !e-> key. key) e-> key. key = kbNoKey;
 	e-> key. mod = keycode & kbModMask;
 	e-> key. repeat = 1;
 	/* ShiftMask LockMask ControlMask Mod1Mask Mod2Mask Mod3Mask Mod4Mask Mod5Mask */
-	if ( ev-> state & ShiftMask)		e-> key. mod |= kmShift;
-	if ( ev-> state & ControlMask)	e-> key. mod |= kmCtrl;
-	if ( ev-> state & Mod1Mask)		e-> key. mod |= kmAlt;
+	if ( ev-> state & ShiftMask)    e-> key. mod |= kmShift;
+	if ( ev-> state & ControlMask)  e-> key. mod |= kmCtrl;
+	if ( ev-> state & Mod1Mask)     e-> key. mod |= kmAlt;
 	if ( PApplication(application)-> wantUnicodeInput) {
 		e-> key. mod  |= kmUnicode;
 		e-> key. code = KeySymToUcs4( keysym);
@@ -568,6 +600,95 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 	} else {
 		e-> key. code = keycode & kbCharMask;
 	}
+
+	/* unicode hex treatment */
+	switch(e->key.key) {
+	case kbShiftL:
+	case kbShiftR:
+	case kbCtrlL:
+	case kbCtrlR:
+		if (( e->key.mod & kmAlt) == 0) {
+			int flag = ( e->key.key == kbShiftL || e->key.key == kbShiftR) ?
+				UNICODE_HEX_SHIFT : UNICODE_HEX_CTRL;
+			if ( e-> key.cmd == cmKeyDown ) {
+				if (( guts.unicode_hex_input_flags & UNICODE_HEX_METHOD_WANTED) == UNICODE_HEX_ENTER_WANTED)
+					goto _default;
+				guts.unicode_hex_input_flags |= flag;
+			} else if ( guts.unicode_hex_input_flags ) {
+				guts.unicode_hex_input_flags &= ~flag;
+				switch ( guts.unicode_hex_input_flags) {
+				case UNICODE_HEX_RELEASE_WANTED:
+					feed_unicode_character(self, e);
+					break;
+				case UNICODE_HEX_METHOD_WANTED:
+					guts.unicode_hex_input_flags = UNICODE_HEX_ENTER_WANTED;
+					break;
+				}
+			}
+			break;
+		}
+		goto _default;
+	
+	case kbNoKey: if (guts.unicode_hex_input_flags) {
+		int code = XLookupKeysym( ev, 0);
+		switch ( code ) {
+		case 'u':
+		case 'U':
+			if ((guts.unicode_hex_input_flags & UNICODE_HEX_WANT_MASK) == 0) {
+				int keys = (guts.unicode_hex_input_flags & UNICODE_HEX_KEYMASK);
+				if ( e-> key.cmd == cmKeyDown ) {
+					if (keys != (UNICODE_HEX_CTRL|UNICODE_HEX_SHIFT))
+						goto _default;
+					guts.unicode_hex_input_flags |= UNICODE_HEX_U;
+				} else {
+					if (keys != (UNICODE_HEX_CTRL|UNICODE_HEX_SHIFT|UNICODE_HEX_U))
+						goto _default;
+					guts.unicode_hex_input_flags &= ~UNICODE_HEX_U;
+					guts.unicode_hex_input_flags |= UNICODE_HEX_METHOD_WANTED;
+				}
+				break;
+			}
+			goto _default;
+		case '0': case '1': case '2': case '3':
+		case '4': case '5': case '6': case '7':
+		case '8': case '9': case 'a': case 'A':
+		case 'b': case 'B': case 'c': case 'C':
+		case 'd': case 'D': case 'e': case 'E':
+		case 'f': case 'F':
+			if ((guts.unicode_hex_input_flags & UNICODE_HEX_WANT_MASK) != 0) {
+				int len;
+				if ( e-> key.cmd != cmKeyDown ) break;
+				if ((guts.unicode_hex_input_flags & UNICODE_HEX_WANT_MASK) == UNICODE_HEX_METHOD_WANTED) {
+					guts.unicode_hex_input_flags &= ~UNICODE_HEX_WANT_MASK;
+					guts.unicode_hex_input_flags |= UNICODE_HEX_RELEASE_WANTED;
+				}
+				len = strlen(guts.unicode_hex_input_buffer);
+				if ( len >= MAX_UNICODE_HEX_LENGTH )
+					goto _default;
+				guts.unicode_hex_input_buffer[len++] = tolower(code);
+				guts.unicode_hex_input_buffer[len++] = 0;
+				break;
+			}
+			goto _default;
+		default:
+			goto _default;
+		}
+		break;
+	}
+	case kbEnter:
+		if ((guts.unicode_hex_input_flags & UNICODE_HEX_WANT_MASK) == UNICODE_HEX_ENTER_WANTED) {
+			if ( e-> key.cmd != cmKeyUp ) break;
+			feed_unicode_character(self, e);
+		}
+
+	_default:
+	default:
+		guts.unicode_hex_input_flags = 0;
+	}
+
+	if ( guts.unicode_hex_input_flags & UNICODE_HEX_WANT_MASK )
+		e-> cmd = 0;
+	/* printf("%x %s\n", guts.unicode_hex_input_flags, guts.unicode_hex_input_buffer); */
 }
 
 static Bool

@@ -551,6 +551,8 @@ typedef struct
 #endif
 } CustomPointer;
 
+#define MAX_UNICODE_HEX_LENGTH 6
+
 typedef struct _UnixGuts
 {
 	/* Event management */
@@ -755,6 +757,9 @@ typedef struct _UnixGuts
 	Box                          xdnds_suppress_events_within; /* in root coordinates */
 
 	CustomPointer                xdnd_pointers[5]; /* none,copy,link,move,ask */
+
+	int                          unicode_hex_input_flags;
+	char                         unicode_hex_input_buffer[MAX_UNICODE_HEX_LENGTH + 1];
 } UnixGuts;
 
 extern UnixGuts  guts;
