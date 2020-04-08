@@ -227,7 +227,7 @@ sub on_paint
 			$dbm-> color( $ct[1]);
 			$dbm-> bar( 0, 0, $dbm-> size);
 			$dbm-> color( $ct[0]);
-			$dbm-> text_out_bidi( $tx, $xAt, ( $dy - $canvas-> font-> height) / 2);
+			$dbm-> shape_text_out( $tx, $xAt, ( $dy - $canvas-> font-> height) / 2);
 			$dbm-> stretch_image( 0, 0, $dy, $dy, $ico) if $bi & mbi::SystemMenu;
 			$canvas-> put_image( $bb, $tyStart, $dbm);
 			$dbm-> destroy;

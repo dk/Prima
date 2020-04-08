@@ -557,7 +557,7 @@ sub on_paint
 			16 + $canvas-> get_text_width( $c), $size[1] - 1
 		);
 		$canvas-> color( $clr[0]);
-		$canvas-> text_out_bidi( $c, 12, $size[1] - $fh - 1);
+		$canvas-> shape_text_out( $c, 12, $size[1] - $fh - 1);
 	}
 	$self-> common_paint($canvas);
 }
@@ -1320,12 +1320,12 @@ sub on_paint
 	if ( $zBeg > $i + $complete)
 	{
 		$canvas-> color( $clFore);
-		$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
+		$canvas-> shape_text_out( $s, $xBeg, $yBeg);
 	}
 	elsif ( $zEnd < $i + $complete + 1)
 	{
 		$canvas-> color( $clHilite);
-		$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
+		$canvas-> shape_text_out( $s, $xBeg, $yBeg);
 	}
 	else
 	{
@@ -1333,12 +1333,12 @@ sub on_paint
 			( 0, 0, $x, $i + $complete) :
 			( 0, 0, $i + $complete, $y));
 		$canvas-> color( $clHilite);
-		$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
+		$canvas-> shape_text_out( $s, $xBeg, $yBeg);
 		$canvas-> clipRect( $v ?
 			( 0, $i + $complete + 1, $x, $y) :
 			( $i + $complete + 1, 0, $x, $y));
 		$canvas-> color( $clFore);
-		$canvas-> text_out_bidi( $s, $xBeg, $yBeg);
+		$canvas-> shape_text_out( $s, $xBeg, $yBeg);
 	}
 	$self-> common_paint( $canvas);
 }
@@ -1841,7 +1841,7 @@ sub on_paint
 	my @tabs = @{$self-> prf('tabs')};
 	my $topMost = $self-> prf( 'topMost');
 	for ( @tabs) {
-		$canvas-> text_out_bidi( $_, $x + 5, $y);
+		$canvas-> shape_text_out( $_, $x + 5, $y);
 		my $tx = $canvas-> get_text_width( $_);
 		$canvas-> polyline( $topMost ? [
 			$x, 2,
@@ -1919,7 +1919,7 @@ sub on_paint
 		$last = $_;
 
 		my $w = $canvas-> get_text_width( $last);
-		$canvas-> text_out_bidi( $last, $x + $earx + 2, $y + $fh/2 + 2);
+		$canvas-> shape_text_out( $last, $x + $earx + 2, $y + $fh/2 + 2);
 		$canvas-> rectangle( $x+1, $y + $fh/2+1, $x + $earx * 2 + $w + 2, $y + $fh*3/2+2);
 		$canvas-> rectangle( $x, $y + $fh/2, $x + $earx * 2 + $w + 3, $y + $fh*3/2+3)
 			if $page == $ix+1;
@@ -2034,7 +2034,7 @@ sub on_paint
 		my @rc = $v ? ( 0, $z, $sz[0]-1, $z + $ww) :  ( $z, 0, $z + $ww, $sz[1]-1);
 		$canvas-> rect3d( @rc, 1, @c3d);
 		$canvas-> clipRect( $rc[0]+1, $rc[1]+1, $rc[2]-1, $rc[3]-1);
-		$canvas-> text_out_bidi( $i[$x], $rc[0] + 1, $rc[1] + ($rc[3] - $rc[1] - $fh) / 2 + 1);
+		$canvas-> shape_text_out( $i[$x], $rc[0] + 1, $rc[1] + ($rc[3] - $rc[1] - $fh) / 2 + 1);
 		$canvas-> clipRect( 0, 0, @sz);
 		$z += $ww + 2;
 	}
@@ -2160,7 +2160,7 @@ sub on_paint
 	$xd = $fw if $xd < $fw;
 	my ( $x, $y, $i) = ( 5 + $xd/2,  $sz[1] - 17 - $fh * 4, 0);
 	for ( 1 .. 31 ) {
-		$canvas-> text_out_bidi( $_, $x, $y);
+		$canvas-> shape_text_out( $_, $x, $y);
 		$x += $xd;
 		next unless $i++ == 6;
 		( $x, $y, $i) = ( 5 + $xd/2, $y - $yd, 0);

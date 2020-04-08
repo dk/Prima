@@ -714,7 +714,7 @@ sub on_paint
 				{
 					my $c = $self-> get_chunk( $i);
 					$c =~ s/\t/$tabs/g;
-					$canvas-> text_out_bidi( $c, $x, $horz_y);
+					$canvas-> shape_text_out( $c, $x, $horz_y);
 					$horz_y -= $fh;
 				}
 				$canvas-> color( $clr[0]);
@@ -739,7 +739,7 @@ sub on_paint
 				} else {
 					$c =~ s/\t/$tabs/g;
 					$canvas-> color( $sclr[0]);
-					$canvas-> text_out_bidi( $c, $x, $y);
+					$canvas-> shape_text_out( $c, $x, $y);
 				}
 			} elsif ( $bt == bt::Vertical) {
 				$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);

@@ -213,7 +213,7 @@ sub Day_Paint
 	$canvas-> clipRect( 2, 2, $sz[0] - 3, $sz[1] - 3);
 	for ( $i = 0; $i < 7; $i++) {
 		my $tw = $canvas->get_text_width( $owner-> {days}-> [$i] );
-		$canvas-> text_out_bidi( $owner-> {days}-> [$i],
+		$canvas-> shape_text_out( $owner-> {days}-> [$i],
 			$i * $zs[0] + ($self->{X} - $tw)/2, $sz[1]-$zs[1]+$zs[3],
 		);
 	}
@@ -234,14 +234,14 @@ sub Day_Paint
 				( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1
 			);
 			$canvas-> color(( $d == $i) ? cl::HiliteText : cl::Fore);
-			$canvas-> text_out_bidi( $i + 1, $dow * $zs[0] + $zs[2], $y);
+			$canvas-> shape_text_out( $i + 1, $dow * $zs[0] + $zs[2], $y);
 			$canvas-> rect_focus(
 				$dow * $zs[0] + 2, $y - $zs[3],
 				( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1
 			) if $d == $i && $self-> focused;
 			$canvas-> color( $c);
 		} else {
-			$canvas-> text_out_bidi( $i + 1, $dow * $zs[0] + $zs[2], $y);
+			$canvas-> shape_text_out( $i + 1, $dow * $zs[0] + $zs[2], $y);
 		}
 		$zs[2] = $self-> {CX2} if $i == 8;
 		next unless $dow++ == 6;
