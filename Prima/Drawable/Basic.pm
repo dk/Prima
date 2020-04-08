@@ -338,7 +338,8 @@ sub text_wrap_shape
 			$found = $index if $c < $pos && $c > $found; # same cluster?
 		}
 		my ($A,$B,$C) = $glyphs-> abc($self, $found);
-		my $x = $glyphs->get_sub_width( $self, 0, $found ) + $glyphs->left_overhang($self);
+		my ($A0) = $glyphs-> abc($self, 0);
+		my $x = $glyphs->get_sub_width( $self, 0, $found ) - (($A0 < 0) ? $A0 : 0);
 		$tilde->{tildeStart}  = $x;
 		$tilde->{tildeStart} += $A if $A < 0;
 		$tilde->{tildeEnd}    = $x + $B;

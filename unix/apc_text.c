@@ -404,41 +404,6 @@ text_shaper_core_text( Handle self, PTextShapeRec r)
                 r->glyphs[i] = c;
         }
         r-> n_glyphs = r->len;
-	if ( r-> advances ) {
-		uint16_t * advances = r-> advances;
-		XCharStruct *cs;
-		XFontStruct *fs = X(self)-> font-> fs;
-		int default_char1 = fs-> default_char >> 8;
-		int default_char2 = fs-> default_char & 0xff;
-		int i, d = fs-> max_char_or_byte2 - fs-> min_char_or_byte2 + 1;
-		int a = 0, c = 0;
-		if ( default_char2 < fs-> min_char_or_byte2 || default_char2 > fs-> max_char_or_byte2 ||
-			default_char1 < fs-> min_byte1 || default_char1 > fs-> max_byte1) {
-			default_char1 = fs-> min_byte1;
-			default_char2 = fs-> min_char_or_byte2;
-		}
-		for ( i = 0; i < r-> len; i++, advances++) {
-			int i1 = i >> 8;
-			int i2 = i & 0xff;
-			if ( !fs-> per_char)
-				cs = &fs-> min_bounds;
-			else if ( i2 < fs-> min_char_or_byte2 || i2 > fs-> max_char_or_byte2 ||
-						i1 < fs-> min_byte1 || i1 > fs-> max_byte1)
-				cs = fs-> per_char +
-					(default_char1 - fs-> min_byte1) * d +
-						default_char2 - fs-> min_char_or_byte2;
-			else
-				cs = fs-> per_char +
-					(i1 - fs-> min_byte1) * d +
-						i2 - fs-> min_char_or_byte2;
-			if ( i == 0 ) a = cs-> lbearing;
-			if ( i == r-> len - 1 ) c = cs-> width - cs-> rbearing;
-			*advances = cs->width;
-		}
-		*(advances++) = (a < 0) ? -a : 0;
-		*(advances++) = (c < 0) ? -c : 0;
-		bzero( r-> positions, r-> n_glyphs * 2 * sizeof(uint16_t));
-	}
         return true;
 }
 

@@ -87,27 +87,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
 
-	if ( t-> advances ) {
-		#define SZ 1024
-		INT dx[SZ], n, *pdx, *pdx2;
-		uint16_t *goffsets = t->positions, *advances = t->advances;
-		n = t-> len * 2;
-		if ( n > SZ) {
-			if ( !( pdx = malloc(sizeof(INT) * n)))
-				pdx = dx;
-		} else
-			pdx = dx;
-		pdx2 = pdx;
-		n /= 2;
-		while ( n-- > 0 ) {
-			*(pdx2++) = *(goffsets++) + *(advances++);
-			*(pdx2++) = *(goffsets++);
-		}
-		ok = ExtTextOutW(ps, x, sys lastSize. y - y, ETO_GLYPH_INDEX | ETO_PDY, NULL, (LPCWSTR) t->glyphs, t->len, pdx);
-		if ( pdx != dx ) free(pdx);
-		#undef SZ
-	} else
-		ok = ExtTextOutW(ps, x, sys lastSize. y - y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->glyphs, t->len, NULL);
+	ok = ExtTextOutW(ps, x, sys lastSize. y - y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->glyphs, t->len, NULL);
 	if ( !ok ) apiErr;
 
 	if ( use_path ) {
@@ -261,10 +241,6 @@ fill_null_glyphs( PTextShapeRec t, unsigned int char_pos, unsigned int itemlen, 
 	for ( i = 0; i < nglyphs; i++)
 		t->indexes[ t->n_glyphs + i ] = i;
 	t-> n_glyphs += nglyphs;
-	if ( t->advances ) {
-		bzero( t->advances + t->n_glyphs, sizeof(uint16_t) * nglyphs);
-		bzero( t->positions + t->n_glyphs, sizeof(uint16_t) * nglyphs * 2);
-	}
 }
 
 static void
@@ -320,9 +296,6 @@ win32_shaper( Handle self, PTextShapeRec t)
 	SCRIPT_ITEM *items = NULL;
 	WORD *indexes = NULL;
 	SCRIPT_VISATTR *visuals = NULL;
-	int *advances = NULL;
-	GOFFSET *goffsets = NULL;
-	ABC first_abc, last_abc;
 	unsigned int * surrogate_map = NULL, first_surrogate_pair = 0, wlen;
 
 	bzero(&first_abc, sizeof(first_abc));
@@ -336,12 +309,6 @@ win32_shaper( Handle self, PTextShapeRec t)
 		goto EXIT;
 	if ((wtext = malloc(sizeof(WCHAR) * 2 * t->len)) == NULL)
 		goto EXIT;
-	if ( t->flags & toPositions) {
-		if ((advances = malloc(sizeof(int) * t->n_glyphs_max)) == NULL)
-			goto EXIT;
-		if ((goffsets = malloc(sizeof(GOFFSET) * t->n_glyphs_max)) == NULL)
-			goto EXIT;
-	}
 
 	build_wtext( t, wtext, &wlen, &first_surrogate_pair, &surrogate_map);
 
@@ -439,48 +406,14 @@ win32_shaper( Handle self, PTextShapeRec t)
 			}
 		}
 
-		if ( t-> flags & toPositions) {
-			GOFFSET * i_g;
-			int * i_a;
-			uint16_t * o_g, *o_a;
-			if (( hr = ScriptPlace(sys ps, script_cache, t->glyphs + t->n_glyphs, nglyphs,
-			       visuals, &items[item].a,
-			       advances, goffsets, &last_abc)) != S_OK
-			) {
-				apiHErr(hr);
-				goto EXIT;
-			}
-			for (
-				i = 0,
-				i_a = advances,
-				i_g = goffsets,
-				o_a = t->advances  + t-> n_glyphs,
-				o_g = t->positions + t-> n_glyphs;
-				i < nglyphs;
-				i++
-			) {
-				*(o_a++) = *(i_a++);
-				*(o_g++) = i_g->dv;
-				*(o_g++) = i_g->du;
-				i_g++;
-			}
-			if ( i == 0 ) first_abc = last_abc;
-		}
-
 		t-> n_glyphs += nglyphs;
 		out_indexes += nglyphs;
-	}
-	if ( t-> advances ) {
-		t-> advances[ t-> n_glyphs     ] = (first_abc.abcA < 0) ? -first_abc.abcA + .5 : 0;
-		t-> advances[ t-> n_glyphs + 1 ] = (last_abc.abcC  < 0) ? -last_abc.abcC  + .5 : 0;
 	}
 
 	ok = true;
 
 EXIT:
 	if ( surrogate_map  ) free(surrogate_map);
-	if ( goffsets ) free(goffsets);
-	if ( advances ) free(advances);
 	if ( indexes ) free(indexes);
 	if ( visuals  ) free(visuals);
 	if ( items    ) free(items);

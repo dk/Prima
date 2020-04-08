@@ -349,10 +349,6 @@ sub test_shaping
 		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
 		check_noshape_nofribidi();
 
-		my $z = $w->text_shape('12', positions => 1);
-		ok((4 == grep { m/^\d+$/ } @{$z->positions // []}), "positions are okay");
-		ok((4 == grep { m/^\d+$/ } @{$z->advances  // []}), "advances are okay");
-
 		if ( $opt{fribidi} ) {
 			t('12ABC', 'CBA12', 'rtl in rtl', rtl => 1);
 		}
@@ -414,7 +410,7 @@ sub test_glyphs_wrap
 	my $z = $w-> text_shape('12', positions => 1);
 	is( 2, scalar( @{ $z->glyphs // [] }), "text '12' resolved to 2 glyphs");
 
-	my ($tw) = @{ $z->advances // [ $w->get_text_width('1') ] };
+	my $tw = $w->get_text_width('1');
 
 	my $r = $w-> text_wrap( $z, 0, tw::BreakSingle );
 	is_deeply( $r, [], "wrap that doesn't fit");
@@ -431,20 +427,9 @@ sub test_glyphs_wrap
 	is_deeply( $r->[1]->glyphs, [ $z->glyphs->[1] ], "glyphs 2");
 	is_deeply( $r->[0]->indexes, [ $z->indexes->[0], length('1') ], "indexes 1");
 	is_deeply( $r->[1]->indexes, [ $z->indexes->[1], length('2') ], "indexes 2");
-	if ( $z-> advances ) {
-		my @abc = map { ($_ < 0) ? -$_ : 0 } @{$w-> get_font_abc(ord('1'), ord('2'))}; 
-		is( $r->[0]->advances->[0], $z->advances->[0], "advances 1");
-		is( $r->[1]->advances->[0], $z->advances->[1], "advances 2");
-		is( $r->[0]->left_overhang,  $z->left_overhang,   "advances 1.a");
-		is( $r->[0]->right_overhang, $abc[2], "advances 1.c");
-		is( $r->[1]->left_overhang,  $abc[3], "advances 2.a");
-		is( $r->[1]->right_overhang, $z->right_overhang,   "advances 2.c");
-		is_deeply( $r->[0]->positions, [ @{$z->positions}[0,1] ], "positions 1");
-		is_deeply( $r->[1]->positions, [ @{$z->positions}[2,3] ], "positions 2");
-	}
 
 	$r = $w-> text_wrap( $z, 1_000_000, 0 );
-	is_deeply($r->[0], $z, "quick clone");
+	is_deeply($r->[0], $z, "full fit");
 
 	SKIP: { if ( $opt{shaping} ) {
 		$w->font->name('Arial');
