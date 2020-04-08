@@ -220,17 +220,11 @@ sub sub_text_out
 	my ( $self, $canvas, $from, $length, $x, $y) = @_;
 	($from, $length) = $self-> cluster2glyph($from, $length);
 	return if $length <= 0;
-
-	return $canvas-> text_out( $self, $x, $y)
-		if $from == 0 && $length == @{ $self->[GLYPHS] };
-	if ( $self->advances ) {
-		# quick hack
-		my @sub;
-		$sub[GLYPHS]    = Prima::array::substr($self->[GLYPHS], $from, $length);
-		return $canvas-> text_out(\@sub, $x, $y);
-	} else {
-		return $canvas-> text_out(Prima::array::substr($self->[GLYPHS], $from, $length), $x, $y);
-	}
+	
+	my $glyphstr = ($from == 0 && $length == @{ $self->[GLYPHS] }) ? 
+		$self :
+		Prima::array::substr($self->[GLYPHS], $from, $length);
+	return $canvas-> text_out( $glyphstr, $x, $y)
 }
 
 sub sub_text_wrap
