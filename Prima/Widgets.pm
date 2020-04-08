@@ -62,7 +62,7 @@ sub on_paint
 	my $cap = $self-> text;
 	unless ( defined $self-> {image}) {
 		$canvas-> rect3d( 0, 0, $size[0]-1, $size[1]-1, $bw, @c3d, $clr);
-		$canvas-> text_out_bidi( $cap,
+		$canvas-> shape_text_out( $cap,
 			( $size[0] - $canvas-> get_text_width( $cap)) / 2,
 			( $size[1] - $canvas-> font-> height) / 2,
 		) if defined $cap;
@@ -81,7 +81,7 @@ sub on_paint
 		}
 		$x += $dx;
 	}
-	$canvas-> text_out_bidi( $cap,
+	$canvas-> shape_text_out( $cap,
 		( $size[0] - $canvas-> get_text_width( $cap)) / 2,
 		( $size[1] - $canvas-> font-> height) / 2,
 	) if $cap;

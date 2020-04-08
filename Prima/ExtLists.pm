@@ -81,7 +81,7 @@ sub draw_text_items
 	my ( $i, $j);
 	for ( $i = $first, $j = 1; $i <= $last; $i += $step, $j++) {
 		next if $self-> {widths}-> [$i] + $self-> {offset} + $x + 1 < $clipRect-> [0];
-		$canvas-> text_out_bidi( $self-> {items}-> [$i], $x + 2 + $imgSize[0],
+		$canvas-> shape_text_out( $self-> {items}-> [$i], $x + 2 + $imgSize[0],
 			$y + $textShift - $j * $self-> {itemHeight} + 1);
 		$canvas-> put_image( $x + 1,
 			$y + int(( $self-> {itemHeight} - $imgSize[1]) / 2) -

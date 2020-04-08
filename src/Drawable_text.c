@@ -546,7 +546,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	if ( pexist(language))
 		t.language = pget_c(language);
 	if ( pexist(skip_if_simple))
-		t.language = pget_c(skip_if_simple);
+		skip_if_simple = pget_B(skip_if_simple);
 	hv_clear(profile); /* old gencls bork */
 
 	/* font supports shaping? */

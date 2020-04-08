@@ -510,6 +510,15 @@ sub text_out_bidi
 	}
 }
 
+sub shape_text_out
+{
+	my ( $self, $text, $x, $y) = @_;
+	if ( my $glyphs = $self->text_shape($text, skip_if_simple => 1)) {
+		$text = $glyphs;
+	}
+	return $self->text_out( $text, $x, $y);
+}
+
 sub has_alpha_layer { 0 }
 
 sub spline
@@ -1860,7 +1869,7 @@ sub on_paint
 	my ( $x, $y) = ( 3, $size[1] - 1 - $fh);
 	my @ln = $canvas->text_split_lines($self->text);
 	for ( @ln) {
-		$canvas-> text_out_bidi( $_, $x, $y);
+		$canvas-> shape_text_out( $_, $x, $y);
 		$y -= $fh;
 	}
 }

@@ -266,47 +266,33 @@ sub draw_veil
 sub draw_caption
 {
 	my ( $self, $canvas, $x, $y) = @_;
-	my $cap = $self-> text;
-	my ( $leftPart, $accel);
-	unless ( ref $cap ) {
-		$cap =~ s/^([^~]*)\~(.*)$/$1$2/;
-		( $leftPart, $accel) = ( $1,
-			( defined ($2) && length($2)) ? substr( $2, 0, 1) : undef);
-	}
-	my ( $fw, $fh, $enabled) = (
-		$canvas-> get_text_width( $cap),
-		$canvas-> font-> height,
-		$self-> enabled
-	);
-
-	if ( defined $accel)
-	{
-		my ( $a, $b, $c) = (
-			$canvas-> get_text_width( $leftPart),
-			$canvas-> get_text_width( $leftPart.$accel),
-			$canvas-> get_text_width( $accel)
-		);
-		unless ( $enabled)
-		{
-			my $z = $canvas-> color;
-			$canvas-> color( cl::White);
-			$canvas-> line( $x + $b - $c + 1, $y - 1, $x + $b * 2 - $a - $c, $y - 1);
-			$canvas-> color( $z);
-		}
-		$canvas-> line( $x + $b - $c, $y, $x + $b * 2 - $a - $c - 1, $y);
-	}
-
-	unless ( $enabled)
-	{
-		my $c = $canvas-> color;
+	my ($cap, $tilde) = @{ $self-> text_wrap_shape( $self-> text, 
+		undef, 
+		options => tw::CalcMnemonic|tw::CollapseTilde|tw::ExpandTabs,
+		tabs    => 1,
+	) };
+	unless ( $self->enabled) {
+		my $z = $canvas-> color;
 		$canvas-> color( cl::White);
-		$canvas-> text_out_bidi( $cap, $x+1, $y-1);
-		$canvas-> color( $c);
+		$canvas-> text_out( $cap, $x + 1, $y - 1);
+		$canvas->line( 
+			$x + 1 + $tilde->{tildeStart}, $y - 1, 
+			$x + 1 + $tilde->{tildeEnd}, $y - 1, 
+		) if defined $tilde->{tildeLine};
+		$canvas-> color( $z);
 	}
-
-	$canvas-> text_out_bidi( $cap, $x, $y);
-	$canvas-> rect_focus( $x - 2, $y - 2, $x + 2 + $fw, $y + 2 + $fh)
-		if $self-> focused;
+	$canvas-> text_out( $cap, $x + 1, $y - 1);
+	$canvas->line( 
+		$x + $tilde->{tildeStart}, $y, 
+		$x + $tilde->{tildeEnd}, $y, 
+	) if defined $tilde->{tildeLine};
+	if ($self-> focused) {
+		my ( $fw, $fh) = (
+			$canvas-> get_text_width( $cap),
+			$canvas-> font-> height,
+		);
+		$canvas-> rect_focus( $x - 2, $y - 2, $x + 2 + $fw, $y + 2 + $fh)
+	}
 }
 
 sub caption_box
@@ -1162,15 +1148,16 @@ sub on_paint
 	$canvas-> rectangle( 1, 0, $size[0] - 1, $size[1] - $fh / 2 - 2);
 	$canvas-> color( $self-> dark3DColor);
 	$canvas-> rectangle( 0, 1, $size[0] - 2, $size[1] - $fh / 2 - 1);
-	my $c = $self-> text;
+	my $c = $self->text;
 	if ( length( $c) > 0) {
+		$c = $self-> text_shape($c, skip_if_simple => 1) || $c;
 		$canvas-> color( $clr[1]);
 		$canvas-> bar  (
 			8, $size[1] - $fh - 1,
 			16 + $canvas-> get_text_width( $c), $size[1] - 1
 		);
 		$canvas-> color( $clr[0]);
-		$canvas-> text_out_bidi( $c, 12, $size[1] - $fh - 1);
+		$canvas-> text_out( $c, 12, $size[1] - $fh - 1);
 	}
 }
 

@@ -205,7 +205,7 @@ sub draw_text_cells
 			my $dy = ($r[3] - $r[1] - $font_height) / 2;
 			$y += $dy if $dy > 0;
 		}
-		$canvas-> text_out_bidi( $text, $x, $y);
+		$canvas-> shape_text_out( $text, $x, $y);
 	}
 	$canvas-> clipRect( @clip) if $self-> {clipCells} == 2;
 }

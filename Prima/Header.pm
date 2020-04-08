@@ -145,7 +145,7 @@ sub on_fontchanged
 sub on_drawitem
 {
 	my ( $self, $canvas, $index, $left, $bottom, $right, $top, $y) = @_;
-	$canvas-> text_out_bidi( $self-> {items}-> [$index], $left, $y);
+	$canvas-> shape_text_out( $self-> {items}-> [$index], $left, $y);
 }
 
 sub on_measureitem

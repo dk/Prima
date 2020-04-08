@@ -78,6 +78,9 @@ sub draw_text
 	$flags     = dt::Default unless defined $flags;
 	$tabIndent = 1 if !defined( $tabIndent) || $tabIndent < 0;
 
+	$x2 //= $x + 1;
+	$y2 //= $y + 1;
+
 	$x2 = int( $x2);
 	$x  = int( $x);
 	$y2 = int( $y2);

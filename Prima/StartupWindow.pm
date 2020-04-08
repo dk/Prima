@@ -21,7 +21,7 @@ sub import {
 			$canvas-> color( $fore);
 			$canvas-> font( name => "Tms Rmn", size => 24, style => fs::Bold);
 			my $txt = $me-> text;
-			$canvas-> text_out_bidi( $txt, ($me-> width - $me-> get_text_width($txt))/2, ($me-> height - $me-> font-> height)/2);
+			$canvas-> shape_text_out( $txt, ($me-> width - $me-> get_text_width($txt))/2, ($me-> height - $me-> font-> height)/2);
 		},
 	);
 	my %profile = (%profileDefault,@_);
