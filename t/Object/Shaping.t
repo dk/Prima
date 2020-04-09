@@ -242,10 +242,9 @@ sub find_glyphs
 }
 
 # a font may have glyphs but won't know how to ligate them, i.e. glyph found but script not found
-sub find_arabic_font
+sub find_shaping_font
 {
-	my $find_char = shift;
-	my $glyphs = xtr('|/%');
+	my $glyphs = shift;
 	return 1 if find_glyphs($w->font, $glyphs);
 
 	my $got_rtl;
@@ -349,6 +348,10 @@ sub test_shaping
 		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
 		check_noshape_nofribidi();
 
+		my $z = $w->text_shape('12');
+		ok((4 == grep { m/^\d+$/ } @{$z->positions // []}), "positions are okay");
+		ok((2 == grep { m/^\d+$/ } @{$z->advances  // []}), "advances are okay");
+
 		if ( $opt{fribidi} ) {
 			t('12ABC', 'CBA12', 'rtl in rtl', rtl => 1);
 		}
@@ -383,7 +386,7 @@ sub test_high_unicode
 	ok(1, "high unicode");
 
 	my $k = $w-> text_shape("\x{10FF00}" x 2);
-	is_deeply( $k, [[0,0],[0,1,2]], "unresolvable glyphs");
+	is_deeply( $k->glyphs, [0,0], "unresolvable glyphs");
 
 	SKIP: {
 		my $chars = find_high_unicode_font;
@@ -410,7 +413,7 @@ sub test_glyphs_wrap
 	my $z = $w-> text_shape('12', positions => 1);
 	is( 2, scalar( @{ $z->glyphs // [] }), "text '12' resolved to 2 glyphs");
 
-	my $tw = $w->get_text_width('1');
+	my ($tw) = @{ $z->advances // [ $w->get_text_width('1') ] };
 
 	my $r = $w-> text_wrap( $z, 0, tw::BreakSingle );
 	is_deeply( $r, [], "wrap that doesn't fit");
@@ -427,13 +430,18 @@ sub test_glyphs_wrap
 	is_deeply( $r->[1]->glyphs, [ $z->glyphs->[1] ], "glyphs 2");
 	is_deeply( $r->[0]->indexes, [ $z->indexes->[0], length('1') ], "indexes 1");
 	is_deeply( $r->[1]->indexes, [ $z->indexes->[1], length('2') ], "indexes 2");
+	if ( $z-> advances ) {
+		is( $r->[0]->advances->[0], $z->advances->[0], "advances 1");
+		is( $r->[1]->advances->[0], $z->advances->[1], "advances 2");
+		is_deeply( $r->[0]->positions, [ @{$z->positions}[0,1] ], "positions 1");
+		is_deeply( $r->[1]->positions, [ @{$z->positions}[2,3] ], "positions 2");
+	}
 
 	$r = $w-> text_wrap( $z, 1_000_000, 0 );
-	is_deeply($r->[0], $z, "full fit");
+	is_deeply($r->[0], $z, "quick clone");
 
 	SKIP: { if ( $opt{shaping} ) {
-		$w->font->name('Arial');
-		skip("no arabic font", 1) unless find_arabic_font;
+		skip("no arabic font", 1) unless find_shaping_font( xtr('|/%'));
 		glyphs "|/%";
 		skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
 		# that is tested already, rely on that: t2('/|', '%', [r(0)], 'arabic ligation');
@@ -441,10 +449,10 @@ sub test_glyphs_wrap
 		$r = $w-> text_wrap($z, 0, tw::ReturnChunks);
 		is_deeply($r, [0,2 , 2,1], "ligature wrap, chunks");
 		$r = $w-> text_wrap($z, 0, 0);
-		is_deeply($r, [
-			[ [$glyphs{xtr '%'}], [r(0),length('/|')] ],
-			[ [$glyphs{xtr '|'}], [r(2), length('|')] ],
-		], "ligature wrap, glyphs");
+		is_deeply($r->[0]->glyphs, [$glyphs{xtr '%'}], 'ligature wrap, left glyphs');
+		is_deeply($r->[0]->indexes, [r(0),length('/|')], 'ligature wrap, left indexes');
+		is_deeply($r->[1]->glyphs, [$glyphs{xtr '|'}], 'ligature wrap, right glyphs');
+		is_deeply($r->[1]->indexes, [r(2),length('|')], 'ligature wrap, right indexes');
 
 		$z = $w-> text_wrap_shape(xtr('/|') . "\n" . xtr('/|') . "~p",
 			undef,
@@ -455,6 +463,24 @@ sub test_glyphs_wrap
 		is( $z->[-1]->{tildePos}, 2, "'p' is at position 2");
 	}}
 }
+
+sub test_combining { SKIP: {
+	skip("no combining without shaping", 1) unless $opt{shaping};
+	skip("no extended latin font", 1) unless find_shaping_font( "f\x{100}\x{300}");
+
+	# A with a dash on top combined with an acute
+	# acute must be combined with no advance
+	$w->font->size(12);
+	my $z = $w-> text_shape( "\x{100}\x{300}" )->advances;
+	ok( $z->[0] != 0, "'A' has non-zero advance");
+	ok( $z->[1] == 0, "joined 'acute' has zero advance");
+
+	# ff may be a ligatiure, but that's not essential -
+	# the main interest here to see that ZWNJ is indeed ZW
+	$z = $w-> text_shape( "f\x{200c}f" )->advances;
+	ok( $z->[0] != 0, "'f' has non-zero advance");
+	ok( $z->[1] == 0, "ZWNJ has zero advance");
+}}
 
 sub test_drawing
 { SKIP: {
@@ -551,6 +577,7 @@ sub run_test
 	test_high_unicode;
 	test_drawing;
 	test_glyphs_wrap;
+	test_combining;
 }
 
 if ( Prima::Application-> get_system_info->{apc} == apc::Unix ) {

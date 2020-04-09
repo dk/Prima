@@ -23,8 +23,10 @@ extern "C" {
 
 
 static void*
-read_subarray( AV * av, int index, int length_expected, int * plen, const char * caller, const char * subarray )
-{
+read_subarray( AV * av, int index, 
+	int length_expected, int * plen, char * letter_expected,
+	const char * caller, const char * subarray
+) {
 	SV ** holder;
 	void * ref;
 	size_t length;
@@ -45,7 +47,7 @@ read_subarray( AV * av, int index, int length_expected, int * plen, const char *
 		return NULL;
 	}
 
-	if (*letter != 'S') {
+	if (*letter != *letter_expected) {
 		warn("invalid subarray #%d (%s/%c) passed to %s: %s", index, subarray, *letter, caller, "not a Prima::array of 16-bit integers");
 		return NULL;
 	}
@@ -91,19 +93,27 @@ read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const char * cal
 	}
 
 	len = av_len(av) + 1;
-	if ( len > 2 ) len = 2; /* we don't need more */
-	if ( len < 1 || (len != 2) ) {
+	if ( len > 4 ) len = 4; /* we don't need more */
+	if ( len < 1 || (len != 2 && len != 4) ) {
 		warn("malformed glyphs array in %s", caller);
 		return false;
 	}
 
-	if ( !( t-> glyphs = read_subarray( av, 0, -1, &t->len, caller, "glyphs")))
+	if ( !( t-> glyphs = read_subarray( av, 0, -1, &t->len, "S", caller, "glyphs")))
 		return false;
 	if ( t->len == 0 )
 		return false;
 
-	if ( !( t-> indexes = read_subarray( av, 1, t->len, NULL, caller, "indexes")))
-		return false;
+	switch ( len ) {
+	case 4:
+		if ( !( t-> positions = read_subarray( av, 3, t->len * 2, NULL, "s", caller, "positions")))
+			return false;
+		if ( !( t-> advances = read_subarray( av, 2, t->len, NULL, "S", caller, "advances")))
+			return false;
+	case 2:
+		if ( !( t-> indexes = read_subarray( av, 1, t->len, NULL, "S", caller, "indexes")))
+			return false;
+	}
 
 	return true;
 }
@@ -262,6 +272,10 @@ run_alloc( PTextShapeRec t, int visual_start, int visual_len, Bool invert_rtl, P
 	run-> n_glyphs_max = t->n_glyphs_max - t-> n_glyphs;
 	run-> glyphs       = t->glyphs  + t-> n_glyphs;
 	run-> indexes      = t->indexes + t-> n_glyphs;
+	if ( t-> positions )
+		run-> positions = t->positions + t-> n_glyphs * 2;
+	if ( t-> advances )
+		run-> advances = t->advances + t-> n_glyphs;
 }
 
 
@@ -514,7 +528,9 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	int i;
 	SV * ret = nilSV, 
 		*sv_glyphs = nilSV,
-		*sv_indexes = nilSV;
+		*sv_indexes = nilSV,
+		*sv_positions = nilSV,
+		*sv_advances = nilSV;
 	PTextShapeFunc system_shaper;
 	TextShapeRec t;
 	int shaper_type;
@@ -577,13 +593,21 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 	/* MSDN, on ScriptShape: A reasonable value is (1.5 * cChars + 16) */
 	t.n_glyphs_max = t.len * 2 + 16;
-#define ALLOC(id,n) { \
+#define ALLOC(id,n,type) { \
 	sv_##id = prima_array_new( t.n_glyphs_max * n * sizeof(uint16_t)); \
-	t.id   = (uint16_t*) prima_array_get_storage(sv_##id); \
+	t.id   = (type*) prima_array_get_storage(sv_##id); \
 }
 
-	ALLOC(glyphs,1);
-	ALLOC(indexes,1);
+	ALLOC(glyphs,1,uint16_t);
+	ALLOC(indexes,1,uint16_t);
+	if ( shaper_type == SHAPING_FULL ) {
+		ALLOC(positions,2,int16_t);
+		ALLOC(advances,1,uint16_t);
+	} else {
+		sv_positions = sv_advances = nilSV;
+		t.positions = NULL;
+		t.advances = NULL;
+	}
 #undef ALLOC
 
 	if ( !shape(self, &t, system_shaper, shaper_type < SHAPING_FULL) ) goto EXIT;
@@ -617,16 +641,18 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	t.analysis = NULL;
 	t.text = NULL;
 
-#define BIND(x,n,d) { \
+#define BIND(x,n,d,letter) { \
 	prima_array_truncate(x, (t.n_glyphs * n + d) * sizeof(uint16_t)); \
-	x = prima_array_tie( x, sizeof(uint16_t), "S"); \
+	x = sv_2mortal(prima_array_tie( x, sizeof(uint16_t), letter)); \
 }
-	BIND(sv_glyphs, 1, 0);
-	BIND(sv_indexes, 1, 1);
+	BIND(sv_glyphs, 1, 0, "S");
+	BIND(sv_indexes, 1, 1, "S");
+	if ( sv_positions != nilSV ) BIND(sv_positions, 2, 0, "s");
+	if ( sv_advances != nilSV ) BIND(sv_advances, 1, 0, "S");
 #undef BIND
 
-	return newSVsv(call_perl(self, "new_glyph_obj", "<SS",
-		sv_glyphs, sv_indexes
+	return newSVsv(call_perl(self, "new_glyph_obj", "<SSSS",
+		sv_glyphs, sv_indexes, sv_advances, sv_positions
 	));
 
 EXIT:
@@ -635,8 +661,41 @@ EXIT:
 	if ( t.analysis ) free(t.analysis );
 	if ( t.indexes  ) sv_free(sv_indexes );
 	if ( t.glyphs   ) sv_free(sv_glyphs   );
+	if ( t.positions) sv_free(sv_positions);
+	if ( t.advances ) sv_free(sv_advances );
 
 	return return_zero ? newSViv(0) : nilSV;
+}
+
+static PFontABC
+call_get_font_abc( Handle self, unsigned int from, unsigned int to, int flags);
+
+static int
+get_glyphs_width( Handle self, PGlyphsOutRec t, Bool add_overhangs)
+{
+	int i, ret;
+	uint16_t * advances = t->advances;
+
+	for ( i = ret = 0; i < t-> len; i++)
+		ret += *(advances++);
+
+	if ( add_overhangs ) {
+		PFontABC abc;
+		uint16_t glyph1 = t->glyphs[0], glyph2 = t->glyphs[t->len - 1];
+
+		abc = call_get_font_abc( self, glyph1, glyph1, toGlyphs);
+		if ( !abc ) return ret;
+		ret += ( abc->a < 0 ) ? (-abc->a + .5) : 0;
+
+		if ( glyph1 != glyph2 ) {
+			free(abc);
+			abc = call_get_font_abc( self, glyph2, glyph2, toGlyphs);
+			if ( !abc ) return ret;
+		}
+		ret += ( abc->c < 0 ) ? (-abc->c + .5) : 0;
+	}
+
+	return ret;
 }
 
 int
@@ -660,7 +719,8 @@ Drawable_get_text_width( Handle self, SV * text, int flags)
 		GlyphsOutRec t;
 		if (!read_glyphs(&t, text, 0, "Drawable::get_text_width"))
 			return false;
-		t.flags = flags;
+		if (t.advances)
+			return get_glyphs_width(self, &t, flags & toAddOverhangs);
 		gpENTER(0);
 		res = apc_gp_get_glyphs_width( self, &t);
 		gpLEAVE;
@@ -673,6 +733,41 @@ Drawable_get_text_width( Handle self, SV * text, int flags)
 	}
 
 	return res;
+}
+
+static void
+get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
+{
+	Bool text_out_baseline;
+
+	t-> flags = 0;
+
+	pt[0].y = pt[2]. y = var-> font. ascent - 1;
+	pt[1].y = pt[3]. y = - var-> font. descent;
+	pt[4].y = pt[0]. x = pt[1].x = 0;
+	pt[3].x = pt[2]. x = pt[4].x = get_glyphs_width(self, t, false);
+
+	text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
+		apc_gp_get_text_out_baseline(self) :
+		my-> get_textOutBaseline(self);
+	if ( !text_out_baseline ) {
+		int i = 4, d = var->font. descent;
+		while ( i--) pt[i]. y += d;
+	}
+
+	if ( var-> font. direction != 0) {
+		int i;
+#define GRAD 57.29577951
+		float s = sin( var-> font. direction / GRAD);
+		float c = cos( var-> font. direction / GRAD);
+#undef GRAD
+		for ( i = 0; i < 5; i++) {
+			float x = pt[i]. x * c - pt[i]. y * s;
+			float y = pt[i]. x * s + pt[i]. y * c;
+			pt[i]. x = x + (( x > 0) ? 0.5 : -0.5);
+			pt[i]. y = y + (( y > 0) ? 0.5 : -0.5);
+		}
+	}
 }
 
 SV *
@@ -697,9 +792,15 @@ Drawable_get_text_box( Handle self, SV * text )
 		GlyphsOutRec t;
 		if (!read_glyphs(&t, text, 0, "Drawable::get_text_box"))
 			return false;
-		gpENTER( newRV_noinc(( SV *) newAV()));
-		p = apc_gp_get_glyphs_box( self, &t);
-		gpLEAVE;
+		if (t.advances) {
+			if (!( p = malloc( sizeof(Point) * 5 )))
+				return newRV_noinc(( SV *) newAV());
+			get_glyphs_box(self, &t, p);
+		} else {
+			gpENTER( newRV_noinc(( SV *) newAV()));
+			p = apc_gp_get_glyphs_box( self, &t);
+			gpLEAVE;
+		}
 	} else {
 		SV * ret;
 		gpENTER( newRV_noinc(( SV *) newAV()));
@@ -743,30 +844,31 @@ fill_abc_list_cache( PList * cache, int base, PFontABC abc)
 }
 
 static PFontABC
-call_get_font_abc( Handle self, unsigned int base, int flags)
+call_get_font_abc( Handle self, unsigned int from, unsigned int to, int flags)
 {
 	PFontABC abc;
 
 	/* query ABC information */
 	if ( !self) {
-		abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, flags);
+		abc = apc_gp_get_font_abc( self, from, to, flags);
 		if ( !abc) return NULL;
 	} else if ( my-> get_font_abc == Drawable_get_font_abc) {
 		gpARGS;
 		gpENTER(NULL);
-		abc = apc_gp_get_font_abc( self, base * 256, base * 256 + 255, flags);
+		abc = apc_gp_get_font_abc( self, from, to, flags);
 		gpLEAVE;
 		if ( !abc) return NULL;
 	} else {
 		SV * sv;
-		if ( !( abc = malloc( 256 * sizeof( FontABC)))) return NULL;
-		sv = my-> get_font_abc( self, base * 256, base * 256 + 255, flags);
+		int len = to - from + 1;
+		if ( !( abc = malloc(len * sizeof( FontABC)))) return NULL;
+		sv = my-> get_font_abc( self, from, to, flags);
 		if ( SvOK( sv) && SvROK( sv) && SvTYPE( SvRV( sv)) == SVt_PVAV) {
 			AV * av = ( AV*) SvRV( sv);
 			int i, j = 0, n = av_len( av) + 1;
-			if ( n > 256 * 3) n = 256 * 3;
+			if ( n > len * 3) n = len * 3;
 			n = ( n / 3) * 3;
-			if ( n < 256) memset( abc, 0, 256 * sizeof( FontABC));
+			if ( n < len) memset( abc, 0, len * sizeof( FontABC));
 			for ( i = 0; i < n; i += 3) {
 				SV ** holder = av_fetch( av, i, 0);
 				if ( holder) abc[j]. a = ( float) SvNV( *holder);
@@ -777,11 +879,17 @@ call_get_font_abc( Handle self, unsigned int base, int flags)
 				j++;
 			}
 		} else
-			memset( abc, 0, 256 * sizeof( FontABC));
+			memset( abc, 0, len * sizeof( FontABC));
 		sv_free( sv);
 	}
 
 	return abc;
+}
+
+static PFontABC
+call_get_font_abc_base( Handle self, unsigned int base, int flags)
+{
+	return call_get_font_abc( self, base * 256, base * 256 + 255, flags);
 }
 
 static PFontABC
@@ -798,7 +906,7 @@ query_abc_range( Handle self, TextWrapRec * t, unsigned int base)
 	} else if (*( t-> ascii))
 		return *(t-> ascii);
 
-	if ( !( abc = call_get_font_abc(self, base, t-> utf8_text ? toUTF8 : 0)))
+	if ( !( abc = call_get_font_abc_base(self, base, t-> utf8_text ? toUTF8 : 0)))
 		return NULL;
 
 	if ( t-> utf8_text) {
@@ -1286,7 +1394,7 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 	)
 		return abc;
 
-	if ( !( abc = call_get_font_abc(self, base, toGlyphs)))
+	if ( !( abc = call_get_font_abc_base(self, base, toGlyphs)))
 		return NULL;
 
 	if ( !fill_abc_list_cache(t->cache, base, abc)) {
@@ -1455,6 +1563,21 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 	if (!read_glyphs(&g, text, 1, "Drawable::text_wrap"))
 		return nilSV;
 
+	/* a very quick check, if possible, if glyphstr fits */
+	if ( g.advances && ( width >= get_glyphs_width(self, &g, true))) {
+		AV * av;
+		if (( options & twReturnFirstLineLength) == twReturnFirstLineLength)
+			return newSViv(g.len);
+		av = newAV();
+		if ( options & twReturnChunks) {
+			av_push( av, newSViv(0));
+			av_push( av, newSViv(g.len));
+		} else {
+			av_push( av, newSVsv(sv_call_perl(text, "clone", "<S", text)));
+		}
+		return newRV_noinc(( SV *) av);
+	}
+
 	t.n_glyphs  = g.len;
 	t.glyphs    = g.glyphs;
 	t.indexes   = g.indexes;
@@ -1489,10 +1612,12 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 		for ( i = 0; i < t.count; i++)
 			av_push( av, newSViv( c[i]));
 	} else {
-		int j, k, extras[2] = {0, 1};
-		uint16_t *payload[2] = { g.glyphs, g.indexes };
+		int j, k,
+			mul[4] = { 1, 1, 1, 2 },
+			extras[4] = {0, 1, 0, 0};
+		uint16_t *payload[4] = { g.glyphs, g.indexes, g.advances, (uint16_t*)g.positions };
 		for ( i = 0; i < t.count; i += 2) {
-			SV *sv_payload[2];
+			SV *sv_payload[4];
 			unsigned int
 				glyph_size,
 				char_offset = c[i], char_size = c[i + 1];
@@ -1505,7 +1630,7 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 			for ( k = char_offset, glyph_size = 0; k < char_offset + char_size; k++)
 				glyph_size += glyphs_in_cluster[k];
 
-			for ( j = 0; j < 2; j++) {
+			for ( j = 0; j < 4; j++) {
 				SV * sv;
 				uint16_t *dst;
 				if ( payload[j] == NULL ) {
@@ -1513,12 +1638,12 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 					continue;
 				}
 
-				sv  = prima_array_new(sizeof(uint16_t) * (glyph_size + extras[j]));
+				sv  = prima_array_new(sizeof(uint16_t) * (glyph_size * mul[j] + extras[j]));
 				dst = (uint16_t*)prima_array_get_storage(sv);
 				for ( k = char_offset; k < char_offset + char_size; k++) {
 					if ( l2v[k] >= 0 ) {
-						int l = glyphs_in_cluster[k];
-						uint16_t * src = payload[j] + l2v[k];
+						int l = glyphs_in_cluster[k] * mul[j];
+						uint16_t * src = payload[j] + l2v[k] * mul[j];
 						while (l-- > 0) *(dst++) = *(src++);
 					}
 				}
@@ -1527,8 +1652,11 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 				sv_payload[j] = prima_array_tie( sv, sizeof(uint16_t), "S");
 			}
 			av_push( av, newSVsv(
-				call_perl(self, "new_glyph_obj", "<SS",
-					sv_payload[0], sv_payload[1]
+				call_perl(self, "new_glyph_obj", "<SSSS",
+					sv_payload[0],
+					sv_payload[1],
+					sv_payload[2],
+					sv_payload[3]
 				)
 			));
 		}

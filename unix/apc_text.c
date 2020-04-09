@@ -624,8 +624,7 @@ apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
-		return prima_xft_get_glyphs_width( X(self)-> font, t,
-			X(self)-> xft_map8, nil);
+		return prima_xft_get_glyphs_width( X(self)-> font, t, NULL);
 #endif
 
 	SWAP_BYTES(t->glyphs,t->len);
