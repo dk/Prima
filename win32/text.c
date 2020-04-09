@@ -298,9 +298,6 @@ win32_shaper( Handle self, PTextShapeRec t)
 	SCRIPT_VISATTR *visuals = NULL;
 	unsigned int * surrogate_map = NULL, first_surrogate_pair = 0, wlen;
 
-	bzero(&first_abc, sizeof(first_abc));
-	bzero(&last_abc, sizeof(last_abc));
-
 	if ((items = malloc(sizeof(SCRIPT_ITEM) * (t-> len + 1))) == NULL)
 		goto EXIT;
 	if ((indexes = malloc(sizeof(WORD) * t-> n_glyphs_max)) == NULL)
