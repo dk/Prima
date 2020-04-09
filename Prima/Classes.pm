@@ -1909,7 +1909,7 @@ sub profile_default
 		pointerType    => cr::Arrow,
 		pointerVisible => 1,
 		language       => (
-			$ENV{LANG} =~ /^([-a-z]+)/ ? $1 : 
+			(($ENV{LANG} // '') =~ /^([-a-z]+)/) ? $1 : 
 			Prima::Application->get_system_info->{guiLanguage}),
 		icon           => undef,
 		owner          => undef,
