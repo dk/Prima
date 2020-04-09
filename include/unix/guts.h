@@ -1396,7 +1396,7 @@ prima_xft_get_text_width( PCachedFont self, const char * text, int len,
 
 extern int
 prima_xft_get_glyphs_width( PCachedFont self, PGlyphsOutRec glyphs,
-			uint32_t * map8, Point * overhangs);
+			Point * overhangs);
 
 extern Point *
 prima_xft_get_text_box( Handle self, const char * text, int len, int flags);

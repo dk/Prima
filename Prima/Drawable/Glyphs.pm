@@ -7,13 +7,30 @@ use Prima;
 
 use constant GLYPHS    => 0;
 use constant INDEXES   => 1;
+use constant ADVANCES  => 2;
+use constant POSITIONS => 3;
 
-sub new         { bless [grep { defined } @_[1..2]], $_[0] }
+sub new         { bless [grep { defined } @_[1..4]], $_[0] }
 sub glyphs      { $_[0]->[GLYPHS] }
 sub indexes     { $_[0]->[INDEXES] }
+sub advances    { $_[0]->[ADVANCES] }
+sub positions   { $_[0]->[POSITIONS] }
 sub text_length { $_[0]->[INDEXES]->[-1] }
 
 sub new_empty   { bless [[],[0]], $_[0] }
+
+sub overhangs
+{
+	my ( $self, $canvas ) = @_;
+	my $abc = $canvas->get_font_abc(($self->[GLYPHS]->[0]) x 2, to::Glyphs);
+	return (
+		(($abc->[0] < 0) ? -$abc->[0] : 0),
+		(($abc->[2] < 0) ? -$abc->[2] : 0)
+	);
+}
+
+sub left_overhang  { [shift->overhangs(@_)]->[0] }
+sub right_overhang { [shift->overhangs(@_)]->[1] }
 
 sub clone
 {
@@ -39,7 +56,16 @@ sub def
 sub get_width
 {
 	my ( $self, $canvas, $with_overhangs ) = @_;
-	return $canvas-> get_text_width($self->[GLYPHS]);
+	my $advances = $self->[ADVANCES];
+	if ( $advances ) {
+		my $x = 0;
+		$x += $_ for @$advances;
+		$x += $_ for grep { $with_overhangs } $self->overhangs;
+		return $x;
+	} else {
+		cluck "cannot calculate glyph width without canvas" unless $canvas;
+		return $canvas-> get_text_width($self->[GLYPHS], $with_overhangs ? to::AddOverhangs : 0);
+	}
 }
 
 sub get_box
@@ -179,7 +205,16 @@ sub get_sub_width
 	my ( $self, $canvas, $from, $length ) = @_;
 	($from, $length) = $self-> cluster2glyph($from, $length);
 	return 0 if $length <= 0;
-	return $canvas-> get_text_width(Prima::array::substr($self->[GLYPHS], $from, $length));
+	my $advances = $self->[ADVANCES];
+	if ( $advances ) {
+		my $x = 0;
+		my $to = $from + $length - 1;
+		$x += $advances->[$_] for $from .. $to;
+		return $x;
+	} else {
+		cluck "cannot calculate glyph width without canvas" unless $canvas;
+		return $canvas-> get_text_width(Prima::array::substr($self->[GLYPHS], $from, $length));
+	}
 }
 
 sub get_sub_box
@@ -212,6 +247,11 @@ sub get_sub
 	}
 	push @{$sub[INDEXES]}, $next_index;
 
+	if ( $self-> [ADVANCES] ) {
+		$sub[ADVANCES]  = Prima::array::substr($self->[ADVANCES], $from, $length);
+		$sub[POSITIONS] = Prima::array::substr($self->[POSITIONS], $from * 2, $length * 2);
+	}
+
 	return __PACKAGE__->new( @sub );
 }
 
@@ -227,6 +267,8 @@ sub sub_text_out
 		# quick hack
 		my @sub;
 		$sub[GLYPHS]    = Prima::array::substr($self->[GLYPHS], $from, $length);
+		$sub[ADVANCES]  = Prima::array::substr($self->[ADVANCES], $from, $length);
+		$sub[POSITIONS] = Prima::array::substr($self->[POSITIONS], $from * 2, $length * 2);
 		return $canvas-> text_out(\@sub, $x, $y);
 	} else {
 		return $canvas-> text_out(Prima::array::substr($self->[GLYPHS], $from, $length), $x, $y);
@@ -270,7 +312,18 @@ sub reverse
 	push @svs, Prima::array->new('S');
 	push @{ $svs[-1] }, reverse @{ $self->[INDEXES] }[0 .. $nglyphs-1];
 	push @{ $svs[-1] }, $self->[INDEXES]->[-1];
- 
+
+	if ( my $advances = $self->[ADVANCES] ) {
+		push @svs, Prima::array->new('S');
+		push @{ $svs[-1] }, reverse @{ $self->[ADVANCES] };
+		
+		push @svs, Prima::array->new('s');
+		my $positions = $self->[POSITIONS];
+		for ( my $i = $nglyphs - 1; $i >= 0; $i -= 2 ) {
+			push @{ $svs[-1] }, @{$positions}[$i,$i+1];
+		}
+	}
+
 	return __PACKAGE__->new(@svs);
 }
 

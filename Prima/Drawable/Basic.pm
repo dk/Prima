@@ -333,13 +333,30 @@ sub text_wrap_shape
 		my $pos = $tilde->{tildePos};
 		my $index = -1;
 		my $found = -1;
+		my $indexes;
+		my $ligature;
 
-		for my $c ( @{ $glyphs->indexes }) {
+AGAIN:
+		$indexes = $glyphs-> indexes;
+		for my $c ( @$indexes ) {
 			$index++;
 			$c &= ~to::RTL;
 			$found = $index, last if $c == $pos; # same glyph
 			$found = $index if $c < $pos && $c > $found; # same cluster?
 		}
+
+		# check for ligature: "f~l" situation where "fl" is a single glyph
+		# (also, ligatures won't work without the advances array)
+		if ( $indexes->[$found+1] > $indexes->[$found] + 1 && !$ligature && $glyphs->advances ) {
+			my $text = $wrapped->[$tilde->{tildeLine}];
+			substr( $text, $pos++, 0, "\x{200c}");
+			substr( $text, $pos + 1, 0, "\x{200c}");
+			$glyphs = $self-> text_shape( $text, %opt );
+			$ligature++;
+			$index = $found = -1;
+			goto AGAIN;
+		}
+
 		my ($A,$B,$C) = $glyphs-> abc($self, $found);
 		my ($A0) = $glyphs-> abc($self, 0);
 		my $x = $glyphs->get_sub_width( $self, 0, $found ) - (($A0 < 0) ? $A0 : 0);

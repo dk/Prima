@@ -16,7 +16,7 @@ use Carp;
 sub new
 {
 	my ($class, $letter, $buf) = @_;
-	die "bad array type" if $letter !~ /^[idS]$/;
+	die "bad array type" if $letter !~ /^[idSs]$/;
 	my @tie;
 	my $size = length pack $letter, 0;
 	if ( defined $buf ) {
