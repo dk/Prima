@@ -19,6 +19,106 @@ extern "C" {
 
 #define GRAD 57.29577951
 
+/* emulate underscore and strikeout because ExtTextOutW with ETO_PDY underlines each glyph separately */
+static void
+underscore_font( Handle self, int x, int y, int width)
+{
+	Stylus ss;
+	HPEN old = NULL;
+	HDC dc = sys ps;
+	PDCStylus dcs;
+	float c, s;
+
+	bzero(&ss, sizeof(ss));
+	ss.pen.lopnStyle   = PS_SOLID;
+	ss.pen.lopnWidth.x = 1;
+	ss.pen.lopnColor   = sys stylus.pen.lopnColor;
+
+	if ( var font. direction != 0) {
+		if ( sys font_sin == sys font_cos && sys font_sin == 0.0 ) {
+			sys font_sin = sin( var font. direction / GRAD);
+			sys font_cos = cos( var font. direction / GRAD);
+		}
+		c = sys font_cos;
+		s = sys font_sin;
+	} else {
+		s = 0.0;
+		c = 1.0;
+	}
+
+	if ( var font. style & fsUnderlined ) {
+		int i, Y = 0;
+		Point pt[2];
+
+		if ( !is_apt( aptTextOutBaseline))
+			Y -= var font. descent;
+		if (sys otmsUnderscoreSize > 0) {
+			Y -= sys otmsUnderscorePosition;
+			ss.pen.lopnWidth.x = sys otmsUnderscoreSize;
+		} else
+			Y += var font. descent - 1;
+
+		pt[0].x = 0;
+		pt[0].y = -Y;
+		pt[1].x = width;
+		pt[1].y = -Y;
+		if ( var font. direction != 0) {
+			for ( i = 0; i < 2; i++) {
+				float x = pt[i].x * c - pt[i].y * s;
+				float y = pt[i].x * s + pt[i].y * c;
+				pt[i].x = x + (( x > 0) ? 0.5 : -0.5);
+				pt[i].y = y + (( y > 0) ? 0.5 : -0.5);
+			}
+		}
+
+		dcs = stylus_alloc(&ss);
+		old = SelectObject( dc, dcs-> hpen );
+
+		MoveToEx( dc, x + pt[0].x, y - pt[0].y, nil);
+		LineTo( dc, x + pt[1].x, y - pt[1].y);
+	}
+
+	if ( var font. style & fsStruckOut ) {
+		int i, Y = 0;
+		Point pt[2];
+
+		if ( !is_apt( aptTextOutBaseline))
+			Y -= var font. descent;
+		if (sys otmsStrikeoutSize > 0) {
+			Y -= sys otmsStrikeoutPosition;
+			if ( old == NULL || ss.pen.lopnWidth.x != sys otmsStrikeoutSize ) {
+				HPEN curr;
+				ss.pen.lopnWidth.x = sys otmsStrikeoutSize;
+				dcs = stylus_alloc(&ss);
+				curr = SelectObject( dc, dcs-> hpen );
+				if ( old == NULL ) old = curr;
+			}
+		} else
+			Y -= var font. ascent / 2;
+
+		pt[0].x = 0;
+		pt[0].y = -Y;
+		pt[1].x = width;
+		pt[1].y = -Y;
+		if ( var font. direction != 0) {
+			for ( i = 0; i < 2; i++) {
+				float x = pt[i].x * c - pt[i].y * s;
+				float y = pt[i].x * s + pt[i].y * c;
+				pt[i].x = x + (( x > 0) ? 0.5 : -0.5);
+				pt[i].y = y + (( y > 0) ? 0.5 : -0.5);
+			}
+		}
+
+		MoveToEx( dc, x + pt[0].x, y - pt[0].y, nil);
+		LineTo( dc, x + pt[1].x, y - pt[1].y);
+	}
+
+	SelectObject( dc, old );
+}
+
+static int
+gp_get_text_width( Handle self, const char* text, int len, int flags);
+
 Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags )
 {objCheck false;{
@@ -57,6 +157,9 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 		TextOutA( ps, x, sys lastSize. y - y, text, len);
 	if ( !ok ) apiErr;
 
+	if ( var font. style & (fsUnderlined | fsStruckOut))
+		underscore_font( self, x, sys lastSize. y - y, gp_get_text_width( self, text, len, flags));
+
 	if ( use_path ) {
 		EndPath(ps);
 		FillPath(ps);
@@ -90,7 +193,9 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	if ( t-> advances ) {
 		#define SZ 1024
 		INT dx[SZ], n, *pdx, *pdx2;
-		uint16_t *goffsets = t->positions, *advances = t->advances;
+		int16_t *goffsets = t->positions;
+		uint16_t *advances = t->advances;
+
 		n = t-> len * 2;
 		if ( n > SZ) {
 			if ( !( pdx = malloc(sizeof(INT) * n)))
@@ -109,6 +214,9 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	} else
 		ok = ExtTextOutW(ps, x, sys lastSize. y - y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->glyphs, t->len, NULL);
 	if ( !ok ) apiErr;
+
+	if ( var font. style & (fsUnderlined | fsStruckOut))
+		underscore_font( self, x, sys lastSize. y - y, gp_get_text_width( self, (const char*)t->glyphs, t->len, toGlyphs));
 
 	if ( use_path ) {
 		EndPath(ps);
@@ -437,7 +545,8 @@ win32_shaper( Handle self, PTextShapeRec t)
 			GOFFSET * i_g;
 			int * i_a, i;
 			ABC abc;
-			uint16_t * o_g, *o_a;
+			int16_t * o_g;
+			uint16_t *o_a;
 			if (( hr = ScriptPlace(sys ps, script_cache, t->glyphs + t->n_glyphs, nglyphs,
 			       visuals, &items[item].a,
 			       advances, goffsets, &abc)) != S_OK
@@ -1140,8 +1249,13 @@ gp_get_text_box( Handle self, const char * text, int len, int flags, Point * pt)
 
 	if ( var font. direction != 0) {
 		int i;
-		float s = sin( var font. direction / GRAD);
-		float c = cos( var font. direction / GRAD);
+		float s, c;
+		if ( sys font_sin == sys font_cos && sys font_sin == 0.0 ) {
+			sys font_sin = sin( var font. direction / GRAD);
+			sys font_cos = cos( var font. direction / GRAD);
+		}
+		s = sys font_sin;
+		c = sys font_cos;
 		for ( i = 0; i < 5; i++) {
 			float x = pt[i]. x * c - pt[i]. y * s;
 			float y = pt[i]. x * s + pt[i]. y * c;
