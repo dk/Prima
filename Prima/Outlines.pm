@@ -1646,10 +1646,10 @@ sub draw_items
 			$self->backColor($bc);
 			my $c = $canvas-> color;
 			$canvas-> color( $selected ? $self-> hiliteColor : $c );
-			$canvas-> shape_text_out( $node-> [0], $left, $bottom);
+			$canvas-> text_shape_out( $node-> [0], $left, $bottom);
 			$canvas-> color( $c);
 		} else {
-			$canvas-> shape_text_out( $node-> [0], $left, $bottom);
+			$canvas-> text_shape_out( $node-> [0], $left, $bottom);
 		}
 		$canvas-> rect_focus( $left, $bottom, $right, $top) if $focused;
 	}
@@ -1686,10 +1686,10 @@ sub draw_items
 
 			my $c  = $canvas-> color;
 			$canvas-> color( $selected ? $self-> hiliteColor : $c );
-			$canvas-> shape_text_out( $node-> [0]-> [0], $left, $bottom);
+			$canvas-> text_shape_out( $node-> [0]-> [0], $left, $bottom);
 			$canvas-> color( $c);
 		} else {
-			$canvas-> shape_text_out( $node-> [0]-> [0], $left, $bottom);
+			$canvas-> text_shape_out( $node-> [0]-> [0], $left, $bottom);
 		}
 		$canvas-> rect_focus( $left, $bottom, $right, $top) if $focused;
 	}
@@ -1819,7 +1819,7 @@ sub draw_items
 			int($bottom + ( $self-> {itemHeight} - $self-> {iconSizes}-> [1]) / 2),
 			$icon
 		);
-		$canvas-> shape_text_out(
+		$canvas-> text_shape_out(
 			$node-> [0]-> [0],
 			$left + $dw,
 			int($bottom + ( $self-> {itemHeight} - $self-> {fontHeight}) / 2)

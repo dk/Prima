@@ -333,7 +333,7 @@ sub Example_Paint
 	$canvas-> color( cl::Black);
 	my $f = $self-> font;
 	my $line = $owner-> sampleText;
-	$canvas-> shape_text_out(
+	$canvas-> text_shape_out(
 		$line,
 		( $size[0] - $canvas-> get_text_width( $line)) / 2,
 		( $size[1] - $f-> height) / 2
