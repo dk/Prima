@@ -565,20 +565,26 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		skip_if_simple = pget_B(skip_if_simple);
 	hv_clear(profile); /* old gencls bork */
 
-	/* font supports shaping? */
-	if (!( system_shaper = apc_gp_get_text_shaper(self, &shaper_type)))
-		return newSViv(0);
+	gpENTER(nilSV);
 
-	if ( skip_if_simple && (shaper_type == SHAPING_EMULATION))
-		return newSViv(0);
+	/* font supports shaping? */
+	if (!( system_shaper = apc_gp_get_text_shaper(self, &shaper_type))) {
+		return_zero = true;
+		goto EXIT;
+	}
+
+	if ( skip_if_simple && (shaper_type == SHAPING_EMULATION)) {
+		return_zero = true;
+		goto EXIT;
+	}
 
 	/* allocate buffers */
 	if (!(t.text = sv2unicode(text_sv, &t.len, &t.flags)))
 		goto EXIT;
 
 	if ( t.len == 0 ) {
-		free(t.text);
-		return newSViv(0);
+		return_zero = true;
+		goto EXIT;
 	}
 
 	if ( t.len > MAX_CHARACTERS ) {
@@ -626,6 +632,8 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		}
 	}
 
+	gpLEAVE;
+
 	/* encode direction */
 	for ( i = 0; i < t.n_glyphs; i++) {
 		if ( t.analysis[ t.indexes[i] ] & 1 )
@@ -656,6 +664,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	));
 
 EXIT:
+	gpLEAVE;
 	if ( t.text     ) free(t.text     );
 	if ( t.v2l      ) free(t.v2l      );
 	if ( t.analysis ) free(t.analysis );
