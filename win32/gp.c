@@ -1245,13 +1245,28 @@ apc_gp_set_fill_pattern_offset( Handle self, Point offset)
 Bool
 apc_gp_set_font( Handle self, PFont font)
 {
-	TEXTMETRICW tm;
+	OUTLINETEXTMETRICW otm;
 	objCheck false;
 	if ( !sys ps) return true;
 	font_change( self, font);
-	GetTextMetricsW( sys ps, &tm);
-	sys tmOverhang       = tm. tmOverhang;
-	sys tmPitchAndFamily = tm. tmPitchAndFamily;
+
+	if ( GetOutlineTextMetricsW(sys ps, sizeof(otm), &otm)) {
+		sys tmOverhang             = otm.otmTextMetrics.tmOverhang;
+		sys tmPitchAndFamily       = otm.otmTextMetrics.tmPitchAndFamily;
+		sys otmsStrikeoutSize      = otm.otmsStrikeoutSize;
+		sys otmsStrikeoutPosition  = otm.otmsStrikeoutPosition;
+		sys otmsUnderscoreSize     = otm.otmsUnderscoreSize;
+		sys otmsUnderscorePosition = otm.otmsUnderscorePosition;
+	} else {
+		TEXTMETRICW tm;
+		GetTextMetricsW( sys ps, &tm);
+		sys tmOverhang        = tm.tmOverhang;
+		sys tmPitchAndFamily  = tm.tmPitchAndFamily;
+		sys otmsStrikeoutSize = sys otmsStrikeoutPosition = sys otmsUnderscoreSize = sys otmsUnderscorePosition = -1;
+	}
+
+	sys font_sin = sys font_cos = 0.0;
+
 	return true;
 }
 

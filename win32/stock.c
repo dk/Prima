@@ -759,8 +759,8 @@ font_font2logfont( Font * f, LOGFONT * lf)
 	lf-> lfOrientation      = f-> direction * 10;
 	lf-> lfWeight           = ( f-> style & fsBold)       ? 800 : 400;
 	lf-> lfItalic           = ( f-> style & fsItalic)     ? 1 : 0;
-	lf-> lfUnderline        = ( f-> style & fsUnderlined) ? 1 : 0;
-	lf-> lfStrikeOut        = ( f-> style & fsStruckOut)  ? 1 : 0;
+	lf-> lfUnderline        = 0;
+	lf-> lfStrikeOut        = 0;
 	lf-> lfOutPrecision     = f-> vector ? OUT_TT_PRECIS : OUT_RASTER_PRECIS;
 	lf-> lfClipPrecision    = CLIP_DEFAULT_PRECIS;
 	lf-> lfQuality          = PROOF_QUALITY;
@@ -774,19 +774,18 @@ void
 font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readonly)
 {
 	if ( !readonly) {
-		fm-> size                   = ( tm-> tmHeight - tm-> tmInternalLeading) * 72.0 / guts. displayResolution.y + 0.5;
-		fm-> width                  = tm-> tmAveCharWidth;
-		fm-> height                 = tm-> tmHeight;
-		fm-> style                  = 0 |
-											( tm-> tmItalic     ? fsItalic     : 0) |
-											( tm-> tmUnderlined ? fsUnderlined : 0) |
-											( tm-> tmStruckOut  ? fsStruckOut  : 0) |
-											(( tm-> tmWeight >= 700) ? fsBold   : 0);
+		fm-> size            = ( tm-> tmHeight - tm-> tmInternalLeading) * 72.0 / guts. displayResolution.y + 0.5;
+		fm-> width           = tm-> tmAveCharWidth;
+		fm-> height          = tm-> tmHeight;
+		fm-> style           = 0 |
+			( tm-> tmItalic     ? fsItalic     : 0) |
+			( tm-> tmUnderlined ? fsUnderlined : 0) |
+			( tm-> tmStruckOut  ? fsStruckOut  : 0) |
+			(( tm-> tmWeight >= 700) ? fsBold   : 0)
+			;
 	}
-	fm-> pitch                  =
-		(( tm-> tmPitchAndFamily & TMPF_FIXED_PITCH)               ? fpVariable : fpFixed);
-	fm-> vector                 =
-		(( tm-> tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? true       : false   );
+	fm-> pitch  = (( tm-> tmPitchAndFamily & TMPF_FIXED_PITCH) ? fpVariable : fpFixed);
+	fm-> vector = (( tm-> tmPitchAndFamily & ( TMPF_VECTOR | TMPF_TRUETYPE)) ? true : false);
 	fm-> weight                 = tm-> tmWeight / 100;
 	fm-> ascent                 = tm-> tmAscent;
 	fm-> descent                = tm-> tmDescent;

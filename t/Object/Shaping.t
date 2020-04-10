@@ -506,22 +506,13 @@ sub test_drawing
 	$i->type(im::Byte);
 	my $sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting");
-	
+
 	$w-> clear;
 	$w-> text_out( $z->glyphs, 5, 5 );
 	$i = $w->image;
 	$i->type(im::Byte);
 	$sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting, terse version");
-
-
-	$w-> clear;
-	$z = $w-> text_shape('12', positions => 0);
-	$w-> text_out( $w-> text_shape('12', positions => 0), 5, 5 );
-	$i = $w->image;
-	$i->type(im::Byte);
-	my $sum3 = $i->sum;
-	is($sum3, $sum1, "glyphs plotting with positions");
 
 	$w-> clear;
 	$w-> font-> set( height => 25, style => fs::Underlined, direction => -10 );
@@ -537,14 +528,6 @@ sub test_drawing
 	$i->type(im::Byte);
 	$sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting 45 degrees");
-
-	$w-> clear;
-	$z = $w-> text_shape('12', positions => 0);
-	$w-> text_out( $w-> text_shape('12', positions => 0), 5, 5 );
-	$i = $w->image;
-	$i->type(im::Byte);
-	$sum3 = $i->sum;
-	is($sum3, $sum1, "glyphs plotting 45 degrees with positions");
 }}
 
 sub run_test

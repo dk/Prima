@@ -444,6 +444,8 @@ typedef struct _DrawableData
 	/* cached GetTextMetrics */
 	BYTE           tmPitchAndFamily;
 	LONG           tmOverhang;
+	int            otmsStrikeoutSize, otmsStrikeoutPosition, otmsUnderscoreSize, otmsUnderscorePosition;
+	float          font_sin, font_cos;
 
 	/* HDC attributes storage outside paint mode */
 	Color          lbs[2];
