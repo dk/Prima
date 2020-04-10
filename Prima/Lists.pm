@@ -1393,7 +1393,7 @@ sub draw_text_items
 		} elsif ( $self->{align} == ta::Right) {
 			$dx = ($iw > $width) ? $iw - $width : 0;
 		}
-		$canvas-> shape_text_out( $self-> get_item_text( $i),
+		$canvas-> text_shape_out( $self-> get_item_text( $i),
 			$x + $dx, $y + $textShift - $j * $self-> {itemHeight} + 1
 		);
 	}

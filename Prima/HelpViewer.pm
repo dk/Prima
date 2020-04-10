@@ -303,7 +303,7 @@ sub init
 		onPaint     => sub {
 			my ( $self, $canvas) = @_;
 			$canvas-> clear;
-			$canvas-> shape_text_out( $self-> text, 1, 1);
+			$canvas-> text_shape_out( $self-> text, 1, 1);
 		}
 	);
 

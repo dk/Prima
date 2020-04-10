@@ -162,7 +162,7 @@ sub draw_items
 				$x = 2 - $o if ($ci);
 				my $c = $clrs[ $focused ? 2 : 0];
 				$canvas-> color( $c), $lc = $c if $c != $lc;
-				$canvas->shape_text_out($node->[0]->[$ci], $x+$txw, $y);
+				$canvas->text_shape_out($node->[0]->[$ci], $x+$txw, $y);
 			}
 		}
 		$xstart += $wx;

@@ -271,7 +271,7 @@ sub draw_items
 					my $iw = $canvas->get_text_width($rref-> [$itemIndex]-> [$umap]);
 					$dx = ($iw < $wx) ? $wx - $iw : 0;
 				}
-				$canvas-> shape_text_out( $rref-> [$itemIndex]-> [$umap], $x + $txw + $dx, $y);
+				$canvas-> text_shape_out( $rref-> [$itemIndex]-> [$umap], $x + $txw + $dx, $y);
 			}
 		}
 		$xstart += $wx;

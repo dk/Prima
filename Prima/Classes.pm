@@ -510,7 +510,7 @@ sub text_out_bidi
 	}
 }
 
-sub shape_text_out
+sub text_shape_out
 {
 	my ( $self, $text, $x, $y) = @_;
 	if ( my $glyphs = $self->text_shape($text, skip_if_simple => 1)) {
@@ -1869,7 +1869,7 @@ sub on_paint
 	my ( $x, $y) = ( 3, $size[1] - 1 - $fh);
 	my @ln = $canvas->text_split_lines($self->text);
 	for ( @ln) {
-		$canvas-> shape_text_out( $_, $x, $y);
+		$canvas-> text_shape_out( $_, $x, $y);
 		$y -= $fh;
 	}
 }

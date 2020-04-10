@@ -166,7 +166,7 @@ sub on_drawitem
 		$iconWidth, $iconHeight,
 		$iconWidth, $iconHeight, rop::CopyPut) if 1;
 
-	$canvas-> shape_text_out( $text,
+	$canvas-> text_shape_out( $text,
 		$left + 2 + $indent + $self-> {oneSpaceWidth} + $iconWidth,
 		int($top + $bottom - $self-> {fontHeight}) / 2+0.5);
 
@@ -422,7 +422,7 @@ sub on_paint
 	}
 
 	$canvas-> color( $fore);
-	$canvas-> shape_text_out( $self-> text, $adj, ($H - $canvas-> font-> height) / 2);
+	$canvas-> text_shape_out( $self-> text, $adj, ($H - $canvas-> font-> height) / 2);
 }
 
 sub on_mousedown
@@ -593,7 +593,7 @@ sub List_DrawItem
 	}
 
 	($h,$w) = ($font-> height, $canvas-> get_text_width( $text));
-	$canvas-> shape_text_out( $text, $x, ($top + $bottom - $h) / 2);
+	$canvas-> text_shape_out( $text, $x, ($top + $bottom - $h) / 2);
 
 	if ( $hilite || $prelight) {
 		$canvas-> color( $c);

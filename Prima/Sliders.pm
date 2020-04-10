@@ -761,23 +761,23 @@ sub on_paint
 		my ( $zBeg, $zEnd) = $v ? ( $yBeg, $yEnd) : ( $xBeg, $xEnd);
 		if ( $zBeg > $i + $complete) {
 			$canvas-> color( $clFore);
-			$canvas-> shape_text_out( $s, $xBeg, $yBeg);
+			$canvas-> text_shape_out( $s, $xBeg, $yBeg);
 		} elsif ( $zEnd < $i + $complete + 1) {
 			$canvas-> color( $clHilite);
-			$canvas-> shape_text_out( $s, $xBeg, $yBeg);
+			$canvas-> text_shape_out( $s, $xBeg, $yBeg);
 		} else {
 			$canvas-> clipRect( $v ?
 				( 0, 0, $x, $i + $complete) :
 				( 0, 0, $i + $complete, $y)
 			);
 			$canvas-> color( $clHilite);
-			$canvas-> shape_text_out( $s, $xBeg, $yBeg);
+			$canvas-> text_shape_out( $s, $xBeg, $yBeg);
 			$canvas-> clipRect( $v ?
 				( 0, $i + $complete + 1, $x, $y) :
 				( $i + $complete + 1, 0, $x, $y)
 			);
 			$canvas-> color( $clFore);
-			$canvas-> shape_text_out( $s, $xBeg, $yBeg);
+			$canvas-> text_shape_out( $s, $xBeg, $yBeg);
 		}
 	}
 }
@@ -1256,7 +1256,7 @@ sub on_paint
 						$bw - 4 - $$tlen[ $i], $val
 					) if $ta & 1;
 				}
-				$canvas-> shape_text_out( $$ttxt[ $i],
+				$canvas-> text_shape_out( $$ttxt[ $i],
 					( $ta == 2) ?
 						$bw + $sb + $$tlen[ $i] + 5 :
 						$bw - $$tlen[ $i] - 5 - $canvas-> get_text_width( $$ttxt[ $i]),
@@ -1367,7 +1367,7 @@ sub on_paint
 					my $x = $val - $half_width;
 					next if $x < $lastx or $x < 0 or $val + $half_width >= $xlim;
 					$lastx = $val + $half_width + $mw;
-					$canvas-> shape_text_out( $text, $x, $y);
+					$canvas-> text_shape_out( $text, $x, $y);
 				}
 			}
 			NO_LABELS:
@@ -2028,13 +2028,13 @@ AFTER_DIAL:
 				my $x = $cpt[0] + $r * $cos -
 					( 1 - $cos) *
 					$canvas-> get_text_width( $$ttxt[ $i], 1) / 2;
-				$canvas-> shape_text_out( $$ttxt[ $i], $x, $y);
+				$canvas-> text_shape_out( $$ttxt[ $i], $x, $y);
 			}
 		}
 	}
 
 	my $ttw = $canvas-> get_text_width( $self-> {string}, 1);
-	$canvas-> shape_text_out( $self-> {string}, ( $size[0] - $ttw) / 2, $self->{valueY});
+	$canvas-> text_shape_out( $self-> {string}, ( $size[0] - $ttw) / 2, $self->{valueY});
 	return if defined $self-> {singlePaint};
 
 	my $text = $self->text;
