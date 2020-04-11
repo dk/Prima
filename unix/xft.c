@@ -1458,8 +1458,8 @@ xft_draw_glyphs( PDrawableSysData selfxx,
 	XGCValues old_gcv, gcv;
 	int i, ox, oy, shift;
 	XftFont * font = XX->font->xft;
-	uint16_t * advances = t->advances;
-	int16_t * positions = t->positions;
+	uint16_t * advances = t ? t->advances : NULL;
+	int16_t * positions = t ? t->positions : NULL;
 	Bool straight = IS_ZERO(XX-> font-> font. direction);
 
 	ox = x;
@@ -2355,7 +2355,7 @@ prima_xft_text_shaper_ident( Handle self, PTextShapeRec r)
 		) {
 			XGlyphInfo glyph;
 			FT_UInt ft_index = *glyphs;
-			XftGlyphExtents( DISP, font, &ft_index, 1, &glyph);
+			XftGlyphExtents( DISP, xft, &ft_index, 1, &glyph);
 			*advances = glyph.xOff;
 		}
 		bzero(r->positions, r->len * sizeof(int16_t));
