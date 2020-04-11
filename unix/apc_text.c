@@ -14,6 +14,76 @@
 #define RANGE(a)        { if ((a) < -16383) (a) = -16383; else if ((a) > 16383) a = 16383; }
 #define RANGE2(a,b)     RANGE(a) RANGE(b)
 
+typedef struct {
+	int default_char1;
+	int default_char2;
+	int offset;
+	XFontStruct *fs;
+} CharStructABC;
+
+static void
+init_xchar_abc( XFontStruct * fs, CharStructABC * s)
+{
+	s-> fs = fs;
+	s-> default_char1 = fs-> default_char >> 8;
+	s-> default_char2 = fs-> default_char & 0xff;
+	s-> offset        = fs-> max_char_or_byte2 - fs-> min_char_or_byte2 + 1;
+
+	if (
+		s-> default_char2 < fs-> min_char_or_byte2 ||
+		s-> default_char2 > fs-> max_char_or_byte2 ||
+		s-> default_char1 < fs-> min_byte1 ||
+		s-> default_char1 > fs-> max_byte1
+	) {
+		s-> default_char1 = fs-> min_byte1;
+		s-> default_char2 = fs-> min_char_or_byte2;
+	}
+}
+
+static XCharStruct *
+xchar_struct( CharStructABC * s, unsigned int codepoint)
+{
+	XCharStruct * cs;
+	int i1 = codepoint >> 8;
+	int i2 = codepoint & 0xff;
+	XFontStruct * fs = s-> fs;
+
+	if ( !fs-> per_char)
+		cs = &fs-> min_bounds;
+	else if (
+		i2 < fs-> min_char_or_byte2 ||
+		i2 > fs-> max_char_or_byte2 ||
+		i1 < fs-> min_byte1 ||
+		i1 > fs-> max_byte1
+	)
+		cs = fs-> per_char +
+			(s->default_char1 - fs-> min_byte1) * s->offset +
+			s->default_char2 - fs-> min_char_or_byte2;
+	else
+		cs = fs-> per_char +
+			(i1 - fs-> min_byte1) * s->offset +
+			i2 - fs-> min_char_or_byte2;
+
+	return cs;
+}
+
+static int need_swap_bytes = -1;
+static void
+swap_bytes( register uint16_t * area, int len ) 
+{
+	if ( need_swap_bytes < 0 ) {
+		XChar2b  b = { 0x1, 0x23 };
+		uint16_t a = 0x123, *pb = (uint16_t*) &b;
+		need_swap_bytes = a != *pb;
+	}
+	if ( need_swap_bytes ) while (len-- > 0) {	
+		register uint16_t x = *area;
+		*(area++) = (( x & 0xff ) << 8) | (x >> 8);
+	}
+}
+#define SWAP_BYTES(area,len) if (need_swap_bytes) swap_bytes(area,len)
+
+
 static Point
 gp_get_text_overhangs( Handle self, const char *text, int len, int flags)
 {
@@ -38,8 +108,11 @@ static Point *
 gp_get_text_box( Handle self, const char * text, int len, int flags);
 
 static Bool
-gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, int flags, Bool * ok_to_not_rotate)
-{
+gp_text_out_rotated(
+	Handle self, const char * text, 
+	uint16_t * advances, int16_t * positions,
+	int x, int y, int len, int flags, Bool * ok_to_not_rotate
+) {
 	DEFXX;
 	int i;
 	PRotatedFont r;
@@ -58,6 +131,7 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, int 
 
 	for ( i = 0; i < len; i++) {
 		XChar2b index;
+		int real_ax, real_ay;
 
 		/* acquire actual character index */
 		index. byte1 = wide ? (( XChar2b*) text + i)-> byte1 : 0;
@@ -71,7 +145,8 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, int 
 		}
 
 		/* querying character */
-		if ( r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] == nil) continue;
+		if ( r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] == nil)
+			continue;
 		cs = XX-> font-> fs-> per_char ?
 			XX-> font-> fs-> per_char +
 				( index. byte1 - XX-> font-> fs-> min_byte1) * r-> width +
@@ -86,8 +161,14 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, int 
 		psy = ry. i. i - r-> shift. y;
 
 		/* find glyph position */
-		rx. l = ax * r-> cos2. l - ay * r-> sin2. l + UINT16_PRECISION/2;
-		ry. l = ax * r-> sin2. l + ay * r-> cos2. l + UINT16_PRECISION/2;
+		real_ax = ax;
+		real_ay = ay;
+		if ( positions ) {
+			real_ax += positions[i * 2];
+			real_ay += positions[i * 2 + 1];
+		}
+		rx. l = real_ax * r-> cos2. l - real_ay * r-> sin2. l + UINT16_PRECISION/2;
+		ry. l = real_ax * r-> sin2. l + real_ay * r-> cos2. l + UINT16_PRECISION/2;
 		dsx = x + rx. i. i - psx;
 		dsy = REVERT( y + ry. i. i) + psy - r-> dimension. y + 1;
 
@@ -163,7 +244,7 @@ gp_text_out_rotated( Handle self, const char * text, int x, int y, int len, int 
 				0, 0, dsx, dsy, r-> dimension.x, r-> dimension.y);
 			XCHECKPOINT;
 		}
-		ax += cs-> width;
+		ax += advances ? advances[i] : cs-> width;
 	}
 	apc_gp_set_rop( self, XX-> paint_rop);
 	XSetFillStyle( DISP, XX-> gc, FillSolid);
@@ -290,6 +371,68 @@ text_out( Handle self, const char * text, int x, int y, int len, int flags)
 	return true;
 }
 
+static Bool
+glyphs_out_with_advances( Handle self, PGlyphsOutRec t, int x, int y)
+{
+	DEFXX;
+	int i, run_length, next_x;
+	uint16_t * glyphs, *advances, *run_glyphs;
+	int16_t * positions;
+	CharStructABC s;
+	if ( !XX-> flags. paint_base_line)
+		y += XX-> font-> font. descent;
+
+	XSetFillStyle( DISP, XX-> gc, FillSolid);
+	if ( !XX-> flags. brush_fore) {
+		XSetForeground( DISP, XX-> gc, XX-> fore. primary);
+		XX-> flags. brush_fore = 1;
+	}
+
+	init_xchar_abc(XX->font->fs, &s);
+	y = REVERT(y) + 1;
+	next_x = x;
+	for (
+		i = run_length = 0,
+			glyphs = run_glyphs = t-> glyphs, 
+			advances = t-> advances,
+			positions = t->positions; 
+		i < t-> len;
+		i++, glyphs++, advances++, positions += 2
+	) {
+		uint16_t xc = *glyphs;
+		int default_advance;
+
+		SWAP_BYTES(&xc, 1);
+		default_advance = xchar_struct(&s, xc)-> width;
+	
+		if (
+			(positions[0] == 0 && positions[1] == 0) &&
+			(default_advance == *advances || i == t->len-1)
+		) {
+			run_length++;
+			next_x += default_advance;
+		} else {
+			if ( run_length > 0 ) {
+				XDrawString16( DISP, XX-> gdrawable, XX-> gc,
+					x, y, (XChar2b*) run_glyphs, run_length);
+				x = next_x;
+			}
+			XDrawString16( DISP, XX-> gdrawable, XX-> gc,
+				x + positions[0], y - positions[1], (XChar2b*) glyphs, 1);
+			next_x += *advances;
+			run_glyphs = glyphs + 1;
+			run_length = 0;
+			x = next_x;
+		}
+	}
+	if ( run_length > 0 )
+		XDrawString16( DISP, XX-> gdrawable, XX-> gc,
+			x, y, (XChar2b*) run_glyphs, run_length);
+
+	XCHECKPOINT;
+	return true;
+}
+
 Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags)
 {
@@ -319,7 +462,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	if ( PDrawable( self)-> font. direction != 0) {
 		Bool ok_to_not_rotate = false;
 		Bool ret;
-		ret = gp_text_out_rotated( self, text, x, y, len, flags, &ok_to_not_rotate);
+		ret = gp_text_out_rotated( self, text, NULL, NULL, x, y, len, flags, &ok_to_not_rotate);
 		if ( !ok_to_not_rotate) {
 			if ( flags & toUTF8) free(( char *) text);
 			return ret;
@@ -335,22 +478,6 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 
 	return ret;
 }
-
-static int need_swap_bytes = -1;
-static void
-swap_bytes( register uint16_t * area, int len ) 
-{
-	if ( need_swap_bytes < 0 ) {
-		XChar2b  b = { 0x1, 0x23 };
-		uint16_t a = 0x123, *pb = (uint16_t*) &b;
-		need_swap_bytes = a != *pb;
-	}
-	if ( need_swap_bytes ) while (len-- > 0) {	
-		register uint16_t x = *area;
-		*(area++) = (( x & 0xff ) << 8) | (x >> 8);
-	}
-}
-#define SWAP_BYTES(area,len) if (need_swap_bytes) swap_bytes(area,len)
 
 Bool
 apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
@@ -378,12 +505,16 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	if ( PDrawable( self)-> font. direction != 0) {
 		Bool ok_to_not_rotate = false;
 		ret = gp_text_out_rotated( self, (const char*) t->glyphs,
+			t->advances, t->positions,
 			x, y, t->len, toUnicode, &ok_to_not_rotate);
 		if ( !ok_to_not_rotate)
 			goto EXIT;
 	}
 
-	ret = text_out(self, (const char*) t->glyphs, x, y, t->len, toUnicode);
+	ret = 
+		t-> advances ?
+		glyphs_out_with_advances(self, t, x, y) :
+		text_out(self, (const char*) t->glyphs, x, y, t->len, toUnicode);
 
 	if ( PDrawable( self)-> font. style & (fsUnderlined|fsStruckOut))
 		draw_text_underline(self, (const char*) t->glyphs, x, y, t->len, toUnicode);
@@ -430,32 +561,12 @@ apc_gp_get_text_shaper( Handle self, int * type)
 PFontABC
 prima_xfont2abc( XFontStruct * fs, int firstChar, int lastChar)
 {
+	int k, l;
+	CharStructABC s;
 	PFontABC abc = malloc( sizeof( FontABC) * (lastChar - firstChar + 1));
-	XCharStruct *cs;
-	int k, l, d = fs-> max_char_or_byte2 - fs-> min_char_or_byte2 + 1;
-	int default_char1 = fs-> default_char >> 8;
-	int default_char2 = fs-> default_char & 0xff;
-	if ( !abc) return nil;
-
-	if ( default_char2 < fs-> min_char_or_byte2 || default_char2 > fs-> max_char_or_byte2 ||
-		default_char1 < fs-> min_byte1 || default_char1 > fs-> max_byte1) {
-		default_char1 = fs-> min_byte1;
-		default_char2 = fs-> min_char_or_byte2;
-	}
+	init_xchar_abc(fs, &s);
 	for ( k = firstChar, l = 0; k <= lastChar; k++, l++) {
-		int i1 = k >> 8;
-		int i2 = k & 0xff;
-		if ( !fs-> per_char)
-			cs = &fs-> min_bounds;
-		else if ( i2 < fs-> min_char_or_byte2 || i2 > fs-> max_char_or_byte2 ||
-					i1 < fs-> min_byte1 || i1 > fs-> max_byte1)
-			cs = fs-> per_char +
-				(default_char1 - fs-> min_byte1) * d +
-					default_char2 - fs-> min_char_or_byte2;
-		else
-			cs = fs-> per_char +
-				(i1 - fs-> min_byte1) * d +
-					i2 - fs-> min_char_or_byte2;
+		XCharStruct * cs = xchar_struct(&s, (unsigned int) k);
 		abc[l]. a = cs-> lbearing;
 		abc[l]. b = cs-> rbearing - cs-> lbearing;
 		abc[l]. c = cs-> width - cs-> rbearing;
@@ -708,5 +819,26 @@ apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
 	ret = gp_get_text_box( self, (char*) t->glyphs, t->len, toUTF8);
 	SWAP_BYTES(t->glyphs,t->len);
 	return ret;
+}
+
+Bool
+apc_gp_get_glyphs_advances( Handle self, PGlyphsOutRec t)
+{
+	int i;
+	uint16_t *glyphs, *advances;
+	CharStructABC s;
+
+#ifdef USE_XFT
+	if ( X(self)-> font-> xft)
+		return prima_xft_get_glyphs_advances( self, t);
+#endif
+	init_xchar_abc(X(self)->font->fs, &s);
+	for (
+		i = 0, glyphs = t->glyphs, advances = t->advances;
+		i < t-> len;
+		i++
+	)
+		*(advances++) = xchar_struct(&s, *(glyphs++))-> width;
+	return true;
 }
 

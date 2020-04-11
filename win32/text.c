@@ -1205,6 +1205,34 @@ apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 	return gp_get_text_width( self, (const char*)t->glyphs, t->len, t->flags | toGlyphs);
 }
 
+Bool
+apc_gp_get_glyphs_advances( Handle self, PGlyphsOutRec t)
+{
+	HDC dc = sys ps;
+	int i, j;
+	uint16_t *glyphs, *advances;
+#define STEP 1024
+	INT buf[STEP];
+
+	for (
+		i = 0, glyphs = t->glyphs, advances = t->advances;
+		i < t-> len;
+		i+= STEP, glyphs+=STEP
+	) {
+		int len = (i + STEP > t->len) ? t->len - i - STEP : STEP;
+		/* this is not as accurate as ABCI, but this function will only be used
+		whenever shaper doesn't fill the advances array, i.e. on non-truetypes,
+		where ABCI would fail */
+		if (!GetCharWidthsI( dc, 0, len, glyphs, buf))
+			apiErrRet;
+		for (j = 0; j < len; j++)
+			*(advances++) = buf[j];
+	}
+#endif
+
+	return true;
+}
+
 static void
 gp_get_text_box( Handle self, const char * text, int len, int flags, Point * pt)
 {

@@ -2345,6 +2345,25 @@ prima_xft_text_shaper_ident( Handle self, PTextShapeRec r)
         return true;
 }
 
+Bool
+prima_xft_get_glyphs_advances( Handle self, PGlyphsOutRec t)
+{
+	int i;
+	uint16_t *glyphs, *advances;
+	XftFont *font = X(self)-> font-> xft_base;
+	for (
+		i = 0, glyphs = t->glyphs, advances = t->advances;
+		i < t-> len;
+		i++, glyphs++, advances++
+	) {
+		XGlyphInfo glyph;
+		FT_UInt ft_index = *glyphs;
+		XftGlyphExtents( DISP, font, &ft_index, 1, &glyph);
+		*advances = glyph.xOff;
+	}
+	return true;
+}
+
 #ifdef WITH_HARFBUZZ
 Bool
 prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
