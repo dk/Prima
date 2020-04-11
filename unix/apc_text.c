@@ -529,13 +529,30 @@ Bool
 text_shaper_core_text( Handle self, PTextShapeRec r)
 {
         int i;
-        for ( i = 0; i < r->len; i++) {
-                uint32_t c = r->text[i];
+	uint16_t *glyphs;
+	uint32_t *text;
+
+        for ( i = 0, glyphs = r->glyphs, text = r->text; i < r->len; i++) {
+                uint32_t c = *(text++);
                 if ( c > 0xffff ) c = 0x0;
-                r->glyphs[i] = c;
+                *(glyphs++) = c;
         }
         r-> n_glyphs = r->len;
-        return true;
+
+	if ( r-> advances ) {
+		uint16_t *glyphs, *advances;
+		CharStructABC s;
+		init_xchar_abc(X(self)->font->fs, &s);
+		for (
+			i = 0, glyphs = r->glyphs, advances = r->advances;
+			i < r-> len;
+			i++
+		)
+			*(advances++) = xchar_struct(&s, *(glyphs++))-> width;
+		bzero(r->positions, r->len * sizeof(int16_t));
+	}
+
+	return true;
 }
 
 PTextShapeFunc
@@ -819,26 +836,5 @@ apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
 	ret = gp_get_text_box( self, (char*) t->glyphs, t->len, toUTF8);
 	SWAP_BYTES(t->glyphs,t->len);
 	return ret;
-}
-
-Bool
-apc_gp_get_glyphs_advances( Handle self, PGlyphsOutRec t)
-{
-	int i;
-	uint16_t *glyphs, *advances;
-	CharStructABC s;
-
-#ifdef USE_XFT
-	if ( X(self)-> font-> xft)
-		return prima_xft_get_glyphs_advances( self, t);
-#endif
-	init_xchar_abc(X(self)->font->fs, &s);
-	for (
-		i = 0, glyphs = t->glyphs, advances = t->advances;
-		i < t-> len;
-		i++
-	)
-		*(advances++) = xchar_struct(&s, *(glyphs++))-> width;
-	return true;
 }
 

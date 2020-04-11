@@ -636,17 +636,6 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		}
 	}
 
-	if ( force_advances ) {
-		GlyphsOutRec g;
-		bzero(&g, sizeof(g));
-		g.len      = t.len;
-		g.advances = t.advances;
-		g.glyphs   = t.glyphs;
-		if ( !apc_gp_get_glyphs_advances(self, &g))
-			goto EXIT;
-		bzero(t.positions, t.len * 2 * sizeof(int16_t));
-	}
-
 	gpLEAVE;
 
 	/* encode direction */
