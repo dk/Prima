@@ -534,7 +534,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	PTextShapeFunc system_shaper;
 	TextShapeRec t;
 	int shaper_type;
-	Bool skip_if_simple = false, return_zero = false;
+	Bool skip_if_simple = false, return_zero = false, force_advances = false;
 
 	/* forward, if any */
 	if ( SvROK(text_sv)) {
@@ -563,6 +563,8 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		t.language = pget_c(language);
 	if ( pexist(skip_if_simple))
 		skip_if_simple = pget_B(skip_if_simple);
+	if ( pexist(advances))
+		force_advances = pget_B(advances);
 	hv_clear(profile); /* old gencls bork */
 
 	gpENTER(nilSV);
@@ -577,6 +579,8 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		return_zero = true;
 		goto EXIT;
 	}
+	if ( shaper_type == SHAPING_FULL )
+		force_advances = false;
 
 	/* allocate buffers */
 	if (!(t.text = sv2unicode(text_sv, &t.len, &t.flags)))
@@ -606,7 +610,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 	ALLOC(glyphs,1,uint16_t);
 	ALLOC(indexes,1,uint16_t);
-	if ( shaper_type == SHAPING_FULL ) {
+	if ( shaper_type == SHAPING_FULL || force_advances) {
 		ALLOC(positions,2,int16_t);
 		ALLOC(advances,1,uint16_t);
 	} else {
@@ -630,6 +634,17 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 			return_zero = true;
 			goto EXIT;
 		}
+	}
+
+	if ( force_advances ) {
+		GlyphsOutRec g;
+		bzero(&g, sizeof(g));
+		g.len      = t.len;
+		g.advances = t.advances;
+		g.glyphs   = t.glyphs;
+		if ( !apc_gp_get_glyphs_advances(self, &g))
+			goto EXIT;
+		bzero(t.positions, t.len * 2 * sizeof(int16_t));
 	}
 
 	gpLEAVE;

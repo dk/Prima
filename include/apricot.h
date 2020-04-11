@@ -3671,6 +3671,9 @@ apc_gp_get_fill_pattern( Handle self);
 extern Point
 apc_gp_get_fill_pattern_offset( Handle self);
 
+extern Bool
+apc_gp_get_glyphs_advances( Handle self, PGlyphsOutRec t);
+
 extern Point*
 apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec text);
 
