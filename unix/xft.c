@@ -2338,30 +2338,30 @@ Bool
 prima_xft_text_shaper_ident( Handle self, PTextShapeRec r)
 {
         int i;
+	uint16_t *glyphs;
+	uint32_t *text;
 	XftFont *xft = X(self)->font->xft;
-        for ( i = 0; i < r->len; i++) 
-                r->glyphs[i] = XftCharIndex(DISP, xft, r->text[i]);
-        r-> n_glyphs = r->len;
-        return true;
-}
 
-Bool
-prima_xft_get_glyphs_advances( Handle self, PGlyphsOutRec t)
-{
-	int i;
-	uint16_t *glyphs, *advances;
-	XftFont *font = X(self)-> font-> xft_base;
-	for (
-		i = 0, glyphs = t->glyphs, advances = t->advances;
-		i < t-> len;
-		i++, glyphs++, advances++
-	) {
-		XGlyphInfo glyph;
-		FT_UInt ft_index = *glyphs;
-		XftGlyphExtents( DISP, font, &ft_index, 1, &glyph);
-		*advances = glyph.xOff;
+        for ( i = 0, glyphs = r->glyphs, text = r->text; i < r->len; i++) 
+                *(glyphs++) = XftCharIndex(DISP, xft, *(text++));
+        r-> n_glyphs = r->len;
+
+	if ( r-> advances ) {
+		uint16_t *advances;
+		for (
+			i = 0, glyphs = r->glyphs, advances = r->advances;
+			i < r-> len;
+			i++, glyphs++, advances++
+		) {
+			XGlyphInfo glyph;
+			FT_UInt ft_index = *glyphs;
+			XftGlyphExtents( DISP, font, &ft_index, 1, &glyph);
+			*advances = glyph.xOff;
+		}
+		bzero(r->positions, r->len * sizeof(int16_t));
 	}
-	return true;
+
+        return true;
 }
 
 #ifdef WITH_HARFBUZZ
