@@ -770,7 +770,6 @@ sub on_mousedown
 		);
 		$self-> {drag_transaction} = 0;
 		$self-> delete_block if !$self->{readOnly} && $act == dnd::Move;
-		$self-> cancel_block if $act < 0;
 		return;
 	}
 
@@ -860,7 +859,7 @@ sub on_mouseclick
 
 	my $p = $self->visual_to_physical(@xy);
 	my ($l,$r);
-
+	$sl = length $s;
 	return unless $sl;
 
 	$p = $sl-1 if $p >= $sl;
@@ -889,11 +888,10 @@ sub on_mouseclick
 		delete $self-> {doubleclickTimer};
 	}) unless $self-> {doubleclickTimer};
 	$self-> {doubleclickTimer}-> timeout(
-		Prima::Application-> get_system_value( sv::DblClickDelay)
+		Prima::Application-> get_system_value( sv::DblClickDelay) * 2
 	);
 	$self-> {doubleclickTimer}-> start;
 }
-
 
 sub on_keydown
 {
@@ -1941,15 +1939,13 @@ sub word_right
 			$self-> cursorX, $self-> cursorY,
 			$self-> wordDelimiters, 0, $self-> {maxLine}
 		);
-		my $line  = $self-> get_line( $y);
-		my $clen  = length( $line);
+		my $clen  = $self-> get_chunk_cluster_length($y);
 		if ($self-> {cursorWrap}) {
 			while ( $x >= $clen) {
 				$y++;
 				return if $y > $maxY;
 				$x = 0;
-				$line = $self-> get_line( $y);
-				$clen = length( $line);
+				$clen  = $self-> get_chunk_cluster_length($y);
 			}
 		}
 		unless ($w =~ quotemeta $self->char_at($x,$y)) {
@@ -1969,17 +1965,15 @@ sub word_left
 	my $self = $_[0];
 	my $d = $_[1] || 1;
 	my $i;
-	for ( $i= 0;$i<$d; $i++) {
+	for ( $i = 0; $i < $d; $i++) {
 		my ( $x, $y, $w, $delta) =
 			( $self-> cursorX, $self-> cursorY, $self-> wordDelimiters, 0);
-		my $line = $self-> get_line( $y);
-		my $clen = length( $line);
+		my $clen  = $self-> get_chunk_cluster_length($y);
 		if ($self-> {cursorWrap}) {
 			while ( $x == 0) {
 				$y--;
 				$y = 0, last if $y < 0;
-				$line = $self-> get_line( $y);
-				$x = $clen = length( $line);
+				$x = $clen = $self-> get_chunk_cluster_length($y);
 			}
 		}
 		if ( $w =~ quotemeta( $self->char_at( $x - 1, $y)))
@@ -2531,11 +2525,14 @@ sub delete_to_end
 {
 	my $self = $_[0];
 	my @cs = $self-> cursor;
-	my $px = $self-> logical_to_physical(@cs);
-	my $c = $self-> get_line( $cs[1]);
-	return if $cs[ 0] > length( $c);
+	my $px = $self->get_shaped_chunk($cs[1])->cursor2offset($cs[0], $self->textDirection);
+	my $c  = $self-> get_line( $cs[1]);
+	return if $px > length( $c);
 
-	$self-> set_line( $cs[1], substr( $c, 0, $px), q(delete), $cs[0], length( $c) - $cs[0]);
+	$self-> set_line(
+		$cs[1], substr($c, 0, $px), 
+		q(delete), $cs[0], $self->get_chunk_cluster_length($cs[1]) - $cs[0]
+	);
 }
 
 sub delete_word
