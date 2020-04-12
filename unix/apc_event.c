@@ -1179,12 +1179,14 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 
 	switch ( ev-> type) {
 	case KeyPress:
-		if ( guts.xdnds_widget && !guts.xdnds_escape_key ) {
+		if (guts.xdnds_widget) {
 			char str_buf[ 256];
 			KeySym keysym = 0;
 			XLookupString( &ev-> xkey, str_buf, 256, &keysym, nil);
-			if ( keysym == XK_Escape )
+			if ( keysym == XK_Escape ) {
 				guts. xdnds_escape_key = true;
+				return;
+			}
 		}
 	case KeyRelease: {
 		guts. last_time = ev-> xkey. time;
@@ -1286,7 +1288,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if ( bev-> state & Button7Mask)   e.pos.mod |= mb7;
 
 		if ( e. cmd == cmMouseDown &&
-			guts.last_button_event.type == ButtonRelease &&
+			guts.last_button_event.type == cmMouseUp &&
 			bev-> window == guts.last_button_event.window &&
 			bev-> button == guts.last_button_event.button &&
 			bev-> button != guts. mouse_wheel_up &&
@@ -1302,8 +1304,8 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		{
 			e. cmd = cmMouseWheel;
 			e. pos. button = bev-> button == guts. mouse_wheel_up ? WHEEL_DELTA : -WHEEL_DELTA;
-		} else if ( e. cmd == cmMouseUp &&
-			guts.last_button_event.type == ButtonPress &&
+		} else if ( e.cmd == cmMouseUp &&
+			guts.last_button_event.type == cmMouseDown &&
 			bev-> window == guts.last_button_event.window &&
 			bev-> button == guts.last_button_event.button &&
 			bev-> time - guts.last_button_event.time <= guts.click_time_frame) {
@@ -1323,12 +1325,18 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 				apc_message( self, &ev, true);
 				if ( PObject( self)-> stage == csDead) return;
 			}
+		} else if ( e.cmd == cmMouseUp &&
+			(guts.last_button_event.type == (cmMouseClick | 0x8000)) &&
+			bev-> window == guts.last_button_event.window &&
+			bev-> button == guts.last_button_event.button &&
+			bev-> time - guts.last_button_event.time <= guts.click_time_frame
+		) {
+			e.pos.dblclk = 1;
 		}
 		memcpy( &guts.last_button_event, bev, sizeof(*bev));
-		if ( e. cmd == cmMouseClick && e. pos. dblclk) {
-			bzero( &guts.last_click, sizeof(guts.last_click));
-			guts. last_button_event. type = 0;
-		}
+		guts. last_button_event.type = e.cmd;
+		if (e.pos.dblclk)
+			guts.last_button_event.type |= 0x8000;
 
 		if ( e. cmd == cmMouseDown) {
 			if ( XX-> flags. first_click) {
