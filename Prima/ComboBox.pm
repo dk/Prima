@@ -156,7 +156,7 @@ sub init
 	$self-> {list} = $self-> insert( $profile{listClass} =>
 		name         => 'List',
 		origin       => [ 0, 0],
-		selectable   => $capture_mode ? 0 : 1,
+		selectable   => $capture_mode ? ($self->{style} == cs::Simple) : 1,
 		width        => $w,
 		height       => ( $self-> {style} == cs::Simple) ? ( $h - $eh) : $self-> {listHeight},
 		growMode     => gm::Client,
@@ -527,11 +527,12 @@ sub set_style
 			bottom=> $self-> bottom - $self-> listHeight,
 		);
 		$self-> {list}-> set(
-		visible   => 1,
-		origin    => [ 0, 0],
-		width     => $self-> width,
-		height    => $self-> height - $self-> editHeight ,
-		clipOwner => 1,
+			visible    => 1,
+			origin     => [ 0, 0],
+			width      => $self-> width,
+			height     => $self-> height - $self-> editHeight ,
+			clipOwner  => 1,
+			selectable => 1,
 		);
 	} elsif ( $decr) {
 		$self-> set(
@@ -539,9 +540,10 @@ sub set_style
 			bottom   => $self-> bottom + $self-> listHeight,
 		);
 		$self-> { list}-> set(
-			visible  => 0,
-			height   => $self-> {listHeight},
-			clipOwner=> 0,
+			visible    => 0,
+			height     => $self-> {listHeight},
+			clipOwner  => 0,
+			selectable   => $capture_mode ? 0 : 1,
 		);
 		$self-> listVisible( 0);
 	}
