@@ -24,6 +24,7 @@ $w = Prima::MainWindow-> create(
 				my $td = !$w-> Hebrew-> textDirection;
 				$w-> Hebrew-> textDirection($td);
 				$arabic-> textDirection( $td);
+				$editor-> textDirection( $td);
 				$pod->textDirection($td);
 				$pod->format(1);
 			} ],

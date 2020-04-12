@@ -452,13 +452,13 @@ prima_update_cursor( Handle self)
 			if ( guts. cursor_pixmap_size. y < 64)
 				guts. cursor_pixmap_size. y = 64;
 			guts. cursor_save = XCreatePixmap( DISP, XX-> udrawable,
-														guts. cursor_pixmap_size. x,
-														guts. cursor_pixmap_size. y,
-														XX-> visual-> depth);
+				guts. cursor_pixmap_size. x,
+				guts. cursor_pixmap_size. y,
+				XX-> visual-> depth);
 			guts. cursor_xor  = XCreatePixmap( DISP, XX-> udrawable,
-														guts. cursor_pixmap_size. x,
-														guts. cursor_pixmap_size. y,
-														XX-> visual-> depth);
+				guts. cursor_pixmap_size. x,
+				guts. cursor_pixmap_size. y,
+				XX-> visual-> depth);
 			guts. cursor_layered = XX-> flags. layered;
 		}
 
@@ -466,10 +466,10 @@ prima_update_cursor( Handle self)
 		XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &guts. cursor_gcv);
 		XCHECKPOINT;
 		XCopyArea( DISP, XX-> udrawable, guts. cursor_save, XX-> gc,
-					x, y, w, h, 0, 0);
+			x, y, w, h, 0, 0);
 		XCHECKPOINT;
 		XCopyArea( DISP, guts. cursor_save, guts. cursor_xor, XX-> gc,
-					0, 0, w, h, 0, 0);
+			0, 0, w, h, 0, 0);
 		XCHECKPOINT;
 		XSetFunction( DISP, XX-> gc, GXxor);
 		XCHECKPOINT;
