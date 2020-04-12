@@ -948,6 +948,19 @@ precalc_abc_buffer( PFontABC src, float * width, PFontABC dest)
 }
 
 static Bool
+precalc_advances_buffer( PFontABC src, float * width, PFontABC dest)
+{
+	int i;
+	if ( !dest) return false;
+	for ( i = 0; i < 256; i++) {
+		width[i] = src[i]. a + src[i]. c;
+		dest[i]. a = ( src[i]. a < 0) ? - src[i]. a : 0;
+		dest[i]. c = ( src[i]. c < 0) ? - src[i]. c : 0;
+	}
+	return true;
+}
+
+static Bool
 add_wrapped_text(
 	TextWrapRec * t, 
 	int start, int utfstart, int end, int utfend,
@@ -1366,6 +1379,8 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent)
 typedef struct {
 	uint16_t * glyphs;   /* glyphset to be wrapped */
 	uint16_t * indexes;  /* for visual ordering; also, won't break within a cluster */
+	uint16_t * advances;
+	int16_t  * positions;
 	int        n_glyphs; /* glyphset length in words */
 	int        width;    /* width to wrap with */
 	int        options;  /* twXXX constants */
@@ -1424,7 +1439,6 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 {
 	unsigned int *ret = NULL;
 	int size = 128;
-
 	float width[256];
 	FontABC abc[256];
 	unsigned int base = 0x10000000;
@@ -1509,15 +1523,23 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 		winc = 0;
 		for ( j = 0; j < ng; j++) {
 			uint16_t uv = t->glyphs[v + j];
-			if ( uv / 256 != base)
-				if ( !precalc_abc_buffer( query_abc_range_glyphs( self, t, base = uv / 256), width, abc)) {
+			if ( uv / 256 != base) {
+				PFontABC labc;
+				if ( !(labc = query_abc_range_glyphs( self, t, base = uv / 256)))
 					return ret;
-				}
+				if ( t-> advances )
+					precalc_advances_buffer(abc, width, abc);
+				else
+					precalc_abc_buffer(labc, width, abc);
+			}
+
 			if ( reassign_w) {
 				w = initial_overhang = abc[ uv & 0xff]. a;
 				reassign_w = 0;
 			}
 			winc += width[ uv & 0xff];
+			if ( t-> advances ) 
+				winc += t->advances[v + j] + t->positions[(v + j) * 2];
 			if ( j == ng - 1 ) inc = abc[ uv & 0xff]. c;
 		}
 
@@ -1594,6 +1616,8 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 	t.n_glyphs  = g.len;
 	t.glyphs    = g.glyphs;
 	t.indexes   = g.indexes;
+	t.advances  = g.advances;
+	t.positions = g.positions;
 	t.width     = ( width < 0) ? 0 : width;
 	t.options   = options;
 	t.cache     = &var-> font_abc_glyphs;
