@@ -464,18 +464,14 @@ prima_update_cursor( Handle self)
 
 		prima_get_gc( XX);
 		XChangeGC( DISP, XX-> gc, VIRGIN_GC_MASK, &guts. cursor_gcv);
-		XCHECKPOINT;
 		XCopyArea( DISP, XX-> udrawable, guts. cursor_save, XX-> gc,
 			x, y, w, h, 0, 0);
-		XCHECKPOINT;
 		XCopyArea( DISP, guts. cursor_save, guts. cursor_xor, XX-> gc,
 			0, 0, w, h, 0, 0);
-		XCHECKPOINT;
 		XSetFunction( DISP, XX-> gc, GXxor);
-		XCHECKPOINT;
 		XFillRectangle( DISP, guts. cursor_xor, XX-> gc, 0, 0, w, h);
-		XCHECKPOINT;
 		prima_release_gc( XX);
+		XCHECKPOINT;
 
 		if ( XX-> flags. cursor_visible) {
 			guts. cursor_shown = false;

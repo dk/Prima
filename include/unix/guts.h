@@ -329,6 +329,7 @@ struct  _drawable_sys_data;
 			|       GCFunction      \
 			|       GCJoinStyle     \
 			|       GCFillRule      \
+			|       GCFillStyle      \
 			|       GCTileStipXOrigin \
 			|       GCTileStipYOrigin \
 			|       GCLineStyle     \
