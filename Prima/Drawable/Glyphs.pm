@@ -17,7 +17,13 @@ sub advances    { $_[0]->[ADVANCES] }
 sub positions   { $_[0]->[POSITIONS] }
 sub text_length { $_[0]->[INDEXES]->[-1] }
 
-sub new_empty   { bless [[],[0]], $_[0] }
+sub new_empty
+{
+	my $class = shift;
+	my @self = ( Prima::array->new('S'), Prima::array->new('S'));
+	push @{$self[1]}, 0;
+	return bless \@self, $class;
+}
 
 sub overhangs
 {
@@ -60,7 +66,9 @@ sub get_width
 	if ( $advances ) {
 		my $x = 0;
 		$x += $_ for @$advances;
-		$x += $_ for grep { $with_overhangs } $self->overhangs;
+		if ( $with_overhangs ) {
+			$x += $_ for $self->overhangs;
+		}
 		return $x;
 	} else {
 		cluck "cannot calculate glyph width without canvas" unless $canvas;
@@ -263,16 +271,17 @@ sub sub_text_out
 
 	return $canvas-> text_out( $self, $x, $y)
 		if $from == 0 && $length == @{ $self->[GLYPHS] };
-	if ( $self->advances ) {
-		# quick hack
-		my @sub;
-		$sub[GLYPHS]    = Prima::array::substr($self->[GLYPHS], $from, $length);
-		$sub[ADVANCES]  = Prima::array::substr($self->[ADVANCES], $from, $length);
-		$sub[POSITIONS] = Prima::array::substr($self->[POSITIONS], $from * 2, $length * 2);
-		return $canvas-> text_out(\@sub, $x, $y);
-	} else {
-		return $canvas-> text_out(Prima::array::substr($self->[GLYPHS], $from, $length), $x, $y);
-	}
+
+	return $canvas-> text_out(Prima::array::substr($self->[GLYPHS], $from, $length), $x, $y)
+		unless $self->advances;
+
+	# quick hack
+	my @sub;
+	$sub[GLYPHS]    = Prima::array::substr($self->[GLYPHS], $from, $length);
+	$sub[INDEXES]   = Prima::array::substr($self->[INDEXES], $from, $length + 1); # this is fake
+	$sub[ADVANCES]  = Prima::array::substr($self->[ADVANCES], $from, $length);
+	$sub[POSITIONS] = Prima::array::substr($self->[POSITIONS], $from * 2, $length * 2);
+	return $canvas-> text_out(\@sub, $x, $y);
 }
 
 sub sub_text_wrap
@@ -282,6 +291,18 @@ sub sub_text_wrap
 	$tabs //= 8;
 	my $sub = $self-> get_sub($canvas, $from, $length) or return [];
 	return $canvas-> text_wrap($sub, $width, $opt, $tabs);
+}
+
+sub x2cluster
+{
+	my ( $self, $canvas, $width, $from, $length ) = @_;
+	my $sub;
+	if (defined $from) {
+		$sub = $self-> get_sub($canvas, $from, $length) or return undef;
+	} else {
+		$sub = $self;
+	}
+	return $canvas-> text_wrap($sub, $width, tw::ReturnFirstLineLength | tw::BreakSingle);
 }
 
 sub n_clusters
@@ -462,6 +483,16 @@ sub cursor2offset
 	# cursor at the start or at the end
 	return $rtl_right ? $limit : 0 unless defined $pos_left;
 	return $rtl_left ? 0 : $limit;
+}
+
+sub log2vis
+{
+	my $map  = shift->indexes;
+	my @newmap = (undef) x $map->[-1];
+	my $last;
+	$newmap[ $map->[$_] & ~to::RTL ] = $_ for 0 .. $#$map - 1;
+	defined ? ($last = $_) : ($_ = $last) for @newmap;
+	return \@newmap;
 }
 
 1;

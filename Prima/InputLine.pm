@@ -561,7 +561,7 @@ sub x2offset
 	my $fc = $self->{firstChar};
 	return $fc if $x <= 0;
 	return $fc + $self-> {n_clusters} if $x >= $self-> {lineWidth};
-	return $fc + $self-> {glyphs}-> sub_text_wrap( $self, $fc, undef, $x, tw::ReturnFirstLineLength);
+	return $fc + $self-> {glyphs}-> x2cluster( $self, $x, $fc);
 }
 
 sub offset2strpos
@@ -897,7 +897,7 @@ sub set_selection
 			# select all
 			$self->{selChunks} = [ 0, $self->{n_clusters} ];
 			$self->{selTextStart} = 0;
-			$self->{selTextEnd}   = length($self->text) - 1;
+			$self->{selTextEnd}   = length($self->text);
 		} else {
 			my ( $s, $sl) = $self->{glyphs}->cluster2range($start);
 			my ( $e, $el) = $self->{glyphs}->cluster2range($end - 1);

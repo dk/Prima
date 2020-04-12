@@ -15,11 +15,7 @@ package Prima::Edit;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller Prima::UndoActions);
 
-use Prima::Const;
-use Prima::Classes;
-use Prima::ScrollBar;
-use Prima::IntUtils;
-use Prima::Bidi qw(:methods);
+use Prima qw(ScrollBar IntUtils Drawable::Glyphs);
 
 {
 my %RNT = (
@@ -30,6 +26,11 @@ my %RNT = (
 sub notification_types { return \%RNT; }
 }
 
+use constant CM_CHAR_OFS    => 0;
+use constant CM_CHAR_LEN    => 1;
+use constant CM_Y           => 2;
+use constant CM_CLUSTER_LEN => 3;
+use constant CM_SIZE        => 4;
 
 sub profile_default
 {
@@ -160,6 +161,7 @@ utime values vec wait waitpid wantarray warn while write y
 		syntaxHilite      => 0,
 		tabIndent         => 8,
 		textRef           => undef,
+		textDirection     => $::application-> textDirection,
 		topLine           => 0,
 		vScroll           => 0,
 		undoLimit         => 1000,
@@ -196,6 +198,7 @@ sub init
 		scrollTransaction maxLine maxChunk capLen cursorY cursorX cursorWrap
 		cursorXl cursorYl syntaxHilite hiliteNumbers hiliteQStrings hiliteQQStrings
 		notifyChangeLock modified borderWidth autoHScroll autoVScroll blockShiftMark
+		textDirection
 	))
 		{ $self-> {$_} = 0;}
 	$self-> { insertMode}   = $::application-> insertMode;
@@ -211,7 +214,7 @@ sub init
 		autoHScroll autoVScroll
 		textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth
 		topLine  tabIndent readOnly offset wordDelimiters wantTabs wantReturns
-		wordWrap cursorWrap markers))
+		wordWrap cursorWrap markers textDirection))
 		{ $self-> $_( $profile{ $_}); }
 	delete $self-> {resetDisabled};
 	$self-> {uChange} = 0;
@@ -239,8 +242,6 @@ sub reset
 		$self-> {fixed} = $self-> font-> pitch == fp::Fixed;
 		$self-> {averageWidth} = $self-> font-> width;
 		$mw                    = $self-> {averageWidth};
-		$self-> {maxFixedLength} = int( $size[0] / $mw);
-		$self-> {tabs} = ' 'x$ti;
 	}
 
 # changes that apply to string output must issue recalculation here.
@@ -254,16 +255,17 @@ sub reset
 			my @chunkMap;
 			$self-> begin_paint_info;
 			my $j = 0;
-			for ( @{$self-> {lines}})
+			for my $line ( @{$self-> {lines}})
 			{
-				my $i;
-				my $breaks = $self-> text_wrap( $_, $size[0], $twOpts, $ti);
-				for ( $i = 0; $i < scalar @{$breaks} / 2; $i++)
-				{
-				#  push( @chunkMap, $$breaks[$i * 2]);
-				#  push( @chunkMap, $$breaks[$i * 2 + 1]);
-				#  push( @chunkMap, $j);
-					push( @chunkMap, $$breaks[$i * 2], $$breaks[$i * 2 + 1], $j);
+				my $breaks = $self-> text_wrap( $line, $size[0], $twOpts, $ti);
+				for (my $i = 0; $i < @$breaks; $i+=2) {
+					my @chunk = ( undef ) x CM_SIZE;
+					$chunk[CM_CHAR_OFS] = $$breaks[$i];
+					$chunk[CM_CHAR_LEN] = 
+						(( $i == @$breaks - 2) ? length($line) : $$breaks[$i + 2]) -
+						$$breaks[$i];
+					$chunk[CM_Y]        = $j;
+					push @chunkMap, @chunk;
 				}
 				$j++;
 			}
@@ -294,16 +296,18 @@ sub reset
 
 	if ( $uC < 2) {
 		$self-> {maxLine}  = scalar @{$self-> {lines}} - 1;
-		$self-> {maxChunk} = $self-> {wordWrap} ? (scalar @{$self-> {chunkMap}}/3-1) : $self-> {maxLine};
+		$self-> {maxChunk} = $self-> {wordWrap} ? 
+			(scalar @{$self-> {chunkMap}}/CM_SIZE-1) : 
+			$self-> {maxLine};
 		$self-> {yTail} = ( $yTail > 0) ? 1 : 0;
 # updating selections
 		$self-> selection( @{$self-> {selStart}}, @{$self-> {selEnd}});
 # updating cursor
 		$self-> cursor( $self-> cursor);
-		my $chunk = $self-> get_chunk( $self-> {cursorYl});
-		my $x     = $self-> {cursorXl};
-		$self-> {cursorAtX}      = $self-> get_chunk_width( $chunk, 0, $x);
-		$self-> {cursorInsWidth} = $self-> get_chunk_width( $chunk, $x, 1);
+		my $x = $self-> {cursorXl};
+		my $y = $self-> {cursorYl};
+		$self-> {cursorAtX}      = $self-> get_chunk_width( $y, 0, $x);
+		$self-> {cursorInsWidth} = $self-> get_chunk_width( $y, $x, 1);
 	}
 # positioning cursor
 	my $cx  = $a[0] + $self-> {cursorAtX} - $self-> {offset};
@@ -394,20 +398,7 @@ sub reset_syntax
 {
 	my $self = $_[0];
 	if ( $self-> {syntaxHilite}) {
-		my ( $notifier, @notifyParms) = $self-> get_notify_sub(q(ParseSyntax));
-		my @syntax;
-		$#syntax = $self-> {maxLine};
-		@syntax = ();
-		my $i = 0;
-		$self-> push_event;
-		for ( @{$self-> {lines}}) {
-			my $sref = undef;
-			$notifier-> ( @notifyParms, $_, $sref);
-			push( @syntax, $self-> _syntax_entry($_, $sref));
-			last if $i++ > 50; # test speed...
-		}
-		$self-> pop_event;
-		$self-> {syntax} = \@syntax;
+		$self-> {syntax} = [];
 	} else {
 		$self-> {syntax} = undef;
 	}
@@ -430,7 +421,7 @@ sub reset_syntaxer
 			my $i;
 			for ($i = 0; $i < scalar @{$self-> {hiliteREs}} - 1; $i+=2) {
 				my $re = $self-> {hiliteREs}-> [$i];
-				push @doers, "/\\G$re/gc && do { " .
+				push @doers, "\$line =~ /\\G$re/gc && do { " .
 					$rest . 'push @a, length($1), ' .
 					$self-> {hiliteREs}-> [$i+1] . "; redo; };\n";
 			}
@@ -439,20 +430,20 @@ sub reset_syntaxer
 			my $i;
 			for ($i = 0; $i < scalar @{$self-> {hiliteIDs}} - 1; $i+=2) {
 				my $re = join '|', @{$self-> {hiliteIDs}-> [$i]};
-				push @doers, "/\\G\\b($re)\\b/gc && do { " .
+				push @doers, "\$line =~ /\\G\\b($re)\\b/gc && do { " .
 					$rest . 'push @a, length($1), ' .
 					$self-> {hiliteIDs}-> [$i+1] . "; redo; };\n";
 			}
 		}
-		push @doers, '/\\G\\b(\\d+)\\b/gc && do { ' .
+		push @doers, '$line =~ /\\G\\b(\\d+)\\b/gc && do { ' .
 			$rest . 'push @a, length($1), ' .
 			$self-> {hiliteNumbers} . "; redo; };\n"
 			if defined $self-> {hiliteNumbers};
-		push @doers, '/\\G("[^\\"\\\\]*(?:\\\\.[^\\"\\\\]*)*")/gc && do { ' .
+		push @doers, '$line =~ /\\G("[^\\"\\\\]*(?:\\\\.[^\\"\\\\]*)*")/gc && do { ' .
 			$rest . 'push @a, length($1), ' .
 			$self-> {hiliteQQStrings} . "; redo; };\n"
 			if defined $self-> {hiliteQQStrings};
-		push @doers, '/\\G(\'[^\\\'\\\\]*(?:\\\\.[^\\\'\\\\]*)*\')/gc && do { ' .
+		push @doers, '$line =~ /\\G(\'[^\\\'\\\\]*(?:\\\\.[^\\\'\\\\]*)*\')/gc && do { ' .
 			$rest . 'push @a, length($1), ' .
 			$self-> {hiliteQStrings} . "; redo; };\n"
 			if defined $self-> {hiliteQStrings};
@@ -460,25 +451,26 @@ sub reset_syntaxer
 			my $i;
 			for ($i = 0; $i < scalar @{$self-> {hiliteChars}} - 1; $i+=2) {
 				my $re = quotemeta $self-> {hiliteChars}-> [$i];
-				push @doers, "/\\G([$re]+)/gc && do { " .
+				push @doers, "\$line =~ /\\G([$re]+)/gc && do { " .
 					$rest . 'push @a, length($1), ' .
 					$self-> {hiliteChars}-> [$i+1] . "; redo; };\n";
 			}
 		}
-		$self-> {syntaxer} = eval(<<SYNTAXER);
+		$self-> {syntaxer} = <<SYNTAXER;
 		sub {
 			my ( \$self, \$line) = \@_;
 			my \@a;
 			my \$l = 0;
-			\$_ = \$line; study;
+			study(\$line);
 			{
 				@doers
-				/\\G(.)/gc && do { \$l++; redo; };
+				\$line =~ /\\G(.)/gc && do { \$l++; redo; };
 			}
 			$rest
 			\$_[2] = \\\@a;
 		};
 SYNTAXER
+		$self-> {syntaxer} = eval $self->{syntaxer};
 		if ( $@) {
 			warn "Error compiling highlighting regexes: $@\n";
 			$self-> {syntaxer} = sub { $_[2] = [ length($_[1]), cl::Fore ] };
@@ -488,29 +480,26 @@ SYNTAXER
 
 sub _syntax_entry
 {
-	my ( $self, $chunk, $syntax ) = @_;
+	my ( $self, $index, $chunk, $syntax ) = @_;
+
+	return $syntax unless length $chunk;
 
 	my @entry;
-	if ( length($chunk) && $self-> is_bidi($chunk)) {
-		my ( $p, $v ) = $self-> bidi_paragraph($chunk);
-		my $map    = $self->bidi_revmap($p->map);
-		my @colors = (0) x @$map;
-		my $at     = 0;
-		for ( my $j = 0; $j < $#$syntax; $j += 2 ) {
-			my ( $len, $clr ) = @$syntax[$j,$j+1];
-			$colors[ $map->[$at++] ] = $clr while $len--;
+	my $map = $self->get_shaped_chunk($index)->log2vis;
+	my @colors = (0) x @$map;
+	my $at     = 0;
+
+	for ( my $j = 0; $j < $#$syntax; $j += 2 ) {
+		my ( $len, $clr ) = @$syntax[$j,$j+1];
+		$colors[ $map->[$at++] // next ] = $clr while $len--;
+	}
+	my $last_color = -1;
+	for my $clr ( @colors ) {
+		if ( $last_color == $clr ) {
+			$entry[-2]++;
+		} else {
+			push @entry, 1, $last_color = $clr;
 		}
-		my $last_color = -1;
-		@entry = ( $v );
-		for my $clr ( @colors ) {
-			if ( $last_color == $clr ) {
-				$entry[-2]++;
-			} else {
-				push @entry, 1, $last_color = $clr;
-			}
-		}
-	} else {
-		@entry = ( undef, @$syntax );
 	}
 
 	return \@entry;
@@ -518,105 +507,67 @@ sub _syntax_entry
 
 sub draw_colorchunk
 {
-	my ( $self, $canvas, $text, $i, $x, $y, $clr) = @_;
-
-	my ($cut_ofs, $cut_len);
-	if ( $self->{wordWrap} ) {
-		my $cm = $self-> {chunkMap};
-		my $i3 = $i * 3;
-		$cut_ofs = $$cm[$i3];
-		$cut_len = $$cm[$i3 + 1] + $cut_ofs;
-		$i = $$cm[$i3 + 2];
-		$text = $self->{lines}->[$i];
-	} else {
-		$cut_ofs = 0;
-		$cut_len = length($text);
-	}
+	my ( $self, $canvas, $i, $x, $y, $clr) = @_;
 
 	my $sd = $self-> {syntax}-> [$i];
 	unless ( defined $sd) {
+		my $text = $self->get_chunk($i);
 		$self-> notify(q(ParseSyntax), $text, $sd);
-		$sd = $self-> {syntax}-> [$i] = $self->_syntax_entry($text, $sd);
+		$sd = $self-> {syntax}-> [$i] = $self->_syntax_entry($i, $text, $sd);
 	}
-	$text = $sd->[0] if defined $sd->[0];
 
-	if (1 == @$sd) {
+	my $s = $self->get_shaped_chunk($i);
+	unless (@$sd) {
 		$canvas-> color($clr);
-		$canvas-> text_out( substr($text, $cut_ofs, $cut_len - $cut_ofs), $x, $y);
+		$canvas-> text_out( $s, $x, $y);
 		return;
 	}
 
-	my $ofs = 0;
-	for ( my $j = 1; $j <= $#$sd; $j += 2) {
-		my $len     = $$sd[$j];
-		if ( $ofs + $len > $cut_ofs ) {
-			if ( $ofs + $len > $cut_len ) {
-				$len = $cut_len - $ofs;
-				last if $len <= 0;
-			}
-			if ( $ofs < $cut_ofs ) {
-				$len -= $cut_ofs - $ofs;
-				$ofs = $cut_ofs;
-			}
-			my $substr  = substr( $text, $ofs, $len);
-			$substr    =~ s/\t/$self->{tabs}/g;
-			my $width  = $self-> {fixed} ?
-				( length( $substr) * $self-> {averageWidth}) :
-				$self-> get_text_width( $substr);
-
-			$canvas-> color(( $$sd[$j+1] == cl::Fore) ? $clr : $$sd[$j+1]);
-			$canvas-> text_out( $substr, $x, $y);
-			$x   += $width;
-		}
-		$ofs += $len;
-		last if $ofs >= $cut_len;
+	for ( my ($j,$last) = (0,0); $j < @$sd; $j += 2) {
+		my $sub = $s-> get_sub( $canvas, $last, $$sd[$j]);
+		$last += $$sd[$j];
+		next unless $sub;
+	
+		$canvas-> color(( $$sd[$j+1] == cl::Fore) ? $clr : $$sd[$j+1]);
+		$canvas-> text_out( $sub, $x, $y);
+		$x += $sub->get_width($canvas);
 	}
 }
 
 sub paint_selection
 {
-	my ( $self, $canvas, $text, $index, $x, $y, $width, $height, $sx1, $sx2, $color, $clipRect ) = @_;
+	my ( $self, $canvas, $index, $x, $y, $width, $height, $sx1, $sx2, $color, $clipRect ) = @_;
 
 	my $restore_clip;
 
-	my ($map, $chunks, $visual);
-	if ( $self->is_bidi($text)) {
-		my ($p, $v) = $self->bidi_paragraph($text);
-		$visual = $v;
-		$map = $p->map;
-		$sx1 = $self->bidi_map_find($map, 0)      if $sx1 eq 'start';
-		$sx2 = $self->bidi_map_find($map, $#$map) if $sx2 eq 'end';
-	} else {
-		$visual = $text;
-		$map = length($text);
-		$sx1 = 0        if $sx1 eq 'start';
-		$sx2 = $map - 1 if $sx2 eq 'end';
-	}
+	$sx1 = 0 if $sx1 eq 'start';
+	$sx2 = $self->get_chunk_cluster_length($index) - 1 if $sx2 eq 'end';
 
-	my $expanded = $visual;
-	$expanded =~ s/\t/$self->{tabs}/g;
 	if ( $sx2 < 0 ) {
 		if ( $self->{syntaxHilite}) {
-			$self-> draw_colorchunk( $canvas, $text, $index, $x, $y, $color);
+			$self-> draw_colorchunk( $canvas, $index, $x, $y, $color);
 		} else {
 			$canvas-> color( $color );
-			$canvas-> text_out( $expanded, $x, $y);
+			$canvas-> text_out( $self-> get_shaped_chunk($index), $x, $y);
 		}
 		return;
 	}
 
 	($sx1, $sx2) = ($sx2, $sx1) if $sx2 < $sx1;
 
-	$chunks = $self->bidi_selection_chunks( $map, $sx1, $sx2);
+	my $glyphs = $self-> get_shaped_chunk($index);
+	my ($s, $sl) = $glyphs->cluster2range($sx1);
+	my ($e, $el) = $glyphs->cluster2range($sx2);
+	($s,$sl,$e,$el) = ($e,$el,$s,$sl) if $s > $e;
+	my $chunks = $glyphs->selection_chunks($s, $e + $el - 1);
+
 	my @cr = @$clipRect;
 	my $rx = $x;
-	$self->bidi_selection_walk( $chunks, 0, undef, sub {
+	$glyphs->selection_walk( $chunks, 0, undef, sub {
 		my ( $offset, $length, $selected ) = @_;
-
+		
 		$cr[0] = $rx;
-		my $substr = substr( $visual, $offset, $length );
-		$substr =~ s/\t/$self->{tabs}/g;
-		$rx += $canvas->get_text_width( $substr );
+		$rx += $glyphs->get_sub_width($canvas, $offset, $length);
 		$cr[2] = $rx - 1;
 
 		$self->clipRect(@cr);
@@ -626,12 +577,12 @@ sub paint_selection
 			$canvas-> color( $self->hiliteBackColor );
 			$canvas-> bar(0, $y, $width, $y + $height);
 			$canvas-> color( $self->hiliteColor );
-			$canvas-> text_out( $expanded, $x, $y);
+			$canvas-> text_out( $glyphs, $x, $y);
 		} elsif ( $self->{syntaxHilite}) {
-			$self-> draw_colorchunk( $canvas, $text, $index, $x, $y, $color);
+			$self-> draw_colorchunk( $canvas, $index, $x, $y, $color);
 		} else {
 			$canvas-> color( $color );
-			$canvas-> text_out( $expanded, $x, $y);
+			$canvas-> text_out( $glyphs, $x, $y);
 		}
 	});
 
@@ -646,9 +597,9 @@ sub on_paint
 	( $self-> color, $self-> backColor) :
 	( $self-> disabledColor, $self-> disabledBackColor);
 	my @sclr   = ( $self-> hiliteColor, $self-> hiliteBackColor);
-	my ( $bw, $fh, $tl, $lc, $ofs, $tabs, $bt, $issel) = (
+	my ( $bw, $fh, $tl, $lc, $ofs, $bt, $issel) = (
 		$self-> {borderWidth}, $self-> font-> height, $self-> {topLine},
-		$self-> {maxChunk}+1, $self-> {offset}, $self-> {tabs}, $self-> {blockType},
+		$self-> {maxChunk}+1, $self-> {offset}, $self-> {blockType},
 		$self-> has_selection,
 	);
 	my @a = $self-> get_active_area( 0, @size);
@@ -713,8 +664,7 @@ sub on_paint
 				for ( $i = $from; $i < $to; $i++)
 				{
 					my $c = $self-> get_chunk( $i);
-					$c =~ s/\t/$tabs/g;
-					$canvas-> text_shape_out( $c, $x, $horz_y);
+					$canvas-> text_out( $self->get_shaped_chunk($i), $x, $horz_y);
 					$horz_y -= $fh;
 				}
 				$canvas-> color( $clr[0]);
@@ -725,27 +675,25 @@ sub on_paint
 	# painting lines
 	for ( $i = $tl; $i < $lim; $i++)
 	{
-		my $c = $self-> get_chunk( $i);
 		if ( $issel && $i >= $sel[1] && $i <= $sel[3])
 		{
 			# painting selected lines
 			if ( $bt == bt::CUA) {
 				if ( $sel[1] == $sel[3]) {
-					$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
+					$self-> paint_selection( $canvas, $i, $x, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
 				} elsif ( $i == $sel[1]) {
-					$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, $sel[0], 'end'      , $clr[0], \@clipRect);
+					$self-> paint_selection( $canvas, $i, $x, $y, $size[0], $fh - 1, $sel[0], 'end'      , $clr[0], \@clipRect);
 				} elsif ( $i == $sel[3]) {
-					$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, 'start', $sel[2] - 1, $clr[0], \@clipRect);
+					$self-> paint_selection( $canvas, $i, $x, $y, $size[0], $fh - 1, 'start', $sel[2] - 1, $clr[0], \@clipRect);
 				} else {
-					$c =~ s/\t/$tabs/g;
 					$canvas-> color( $sclr[0]);
-					$canvas-> text_shape_out( $c, $x, $y);
+					$canvas-> text_out( $self-> get_shaped_chunk($i), $x, $y);
 				}
 			} elsif ( $bt == bt::Vertical) {
-				$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
+				$self-> paint_selection( $canvas, $i, $x, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
 			}
 		} else {
-			$self-> paint_selection( $canvas, $c, $i, $x, $y, $size[0], $fh - 1, -1, -1, $clr[0], \@clipRect);
+			$self-> paint_selection( $canvas, $i, $x, $y, $size[0], $fh - 1, -1, -1, $clr[0], \@clipRect);
 		}
 		$y -= $fh;
 	}
@@ -773,22 +721,16 @@ sub point2xy
 	$y  = -$fh if $y < 0;
 	$x  = $w + $avg * 2 if $x > $w + $avg * 2;
 	$x  = - $avg * 2 if $x < - $avg * 2;
-	$ry = int(( $h - $y) / $fh) + $self-> {topLine };
+	$ry = int(( $h - $y) / $fh) + $self-> {topLine};
 	$ry = 0 if $ry < 0;
 	$ry = $self-> {maxChunk} if $ry > $self-> {maxChunk};
 	$rx = 0;
 
-	my $chunk  = $self-> get_chunk( $ry);
-	$chunk = $self->bidi_visual($chunk) if $self->is_bidi($chunk);
-	my $cl     = ( $w + $ofs) / ($self-> get_text_width(' ')||1);
-	$chunk    .= ' 'x$cl;
-	if ( $ofs + $x > 0)
-	{
-		my $ofsx = $ofs + $x;
-		$ofsx = $self-> {maxLineWidth} if $ofsx > $self-> {maxLineWidth};
-		$rx = $self-> text_wrap( $chunk, $ofsx,
-			tw::CalcTabs|tw::BreakSingle|tw::ReturnFirstLineLength, $self-> {tabIndent});
-	}
+	my $ofsx = $ofs + $x;
+	$ofsx = $self-> {maxLineWidth} if $ofsx > $self-> {maxLineWidth};
+	my $s = $self-> get_shaped_chunk($ry);
+	my $sw = $s-> get_width($self);
+	$rx = $s->x2cluster($self, $ofsx);
 	return $self-> logical_to_visual( $rx, $ry), $inBounds;
 }
 
@@ -899,14 +841,16 @@ sub on_mouseclick
 	return if $btn != mb::Left;
 	my @xy = $self-> point2xy( $x, $y);
 	return unless $xy[2];
-	my $s = $self-> get_line( $xy[1]);
+
+	my $s = $self-> get_chunk($xy[1]);
+	my $sl = $self-> get_chunk_cluster_length( $xy[1]);
 	$self-> clear_event;
 
 	if ( !$dbl) {
 		if ( $self-> {doubleclickTimer}) {
 			$self-> {doubleclickTimer}-> destroy;
 			delete $self-> {doubleclickTimer};
-			$self-> selection( 0, $xy[1], length $s, $xy[1]);
+			$self-> selection( 0, $xy[1], $sl, $xy[1]);
 		}
 		return;
 	}
@@ -915,7 +859,6 @@ sub on_mouseclick
 	$self-> cursor( @xy);
 
 	my $p = $self->visual_to_physical(@xy);
-	my $sl = length $s;
 	my ($l,$r);
 
 	return unless $sl;
@@ -969,8 +912,8 @@ sub on_keydown
 		(( $key == kb::NoKey) || ( $key == kb::Space) || ( $key == kb::Tab))
 	) {
 		my @cs = $self-> cursor;
-		my $text_ofs = $self->visual_to_physical(@cs);
 		my $c  = $self-> get_line( $cs[1]);
+		my $text_ofs = $self->get_shaped_chunk($cs[1])->cursor2offset($cs[0], $self->textDirection);
 		my $l = 0;
 		$self-> begin_undo_group;
 		my $chr = chr $code;
@@ -978,20 +921,18 @@ sub on_keydown
 		if ( $self-> insertMode) {
 			$l = $text_ofs - length( $c), $c .= ' ' x $l
 				if length( $c) < $text_ofs;
-			substr( $c, $text_ofs, 0) = '';
-			my $p;
-			($p) = $self-> bidi_paragraph($c) if $self->is_bidi($c);
-			my ($at, $moveto) = $self-> bidi_edit_insert( $p, $cs[0], $chr x $repeat );
-			substr( $c, $at, 0) = $chr x $repeat;
+			substr( $c, $text_ofs, 0) = $chr x $repeat;
 			$self-> set_line( $cs[1], $c, q(add), $cs[0], $l + $repeat);
-			$repeat = $moveto;
 		} else {
 			$l = $text_ofs - length( $c) + $repeat, $c .= ' ' x $l
 				if length( $c) < $text_ofs + $repeat;
 			substr( $c, $text_ofs, $repeat) = $chr x $repeat;
 			$self-> set_line( $cs[1], $c, q(overtype));
 		}
-		$self-> cursor( $cs[0] + $repeat, $cs[1]);
+		$self-> cursor(
+			$self->get_shaped_chunk($cs[1])->offset2cluster($text_ofs + $repeat), 
+			$cs[1]
+		);
 		$self-> end_undo_group;
 		$self-> clear_event;
 	}
@@ -1078,6 +1019,8 @@ sub set_text_ref
 	@{$self-> {lines}} = ();
 	@{$self-> {lines}} = split( "\n", $$ref // '');
 	$self-> {maxLine} = scalar @{$self-> {lines}} - 1;
+	undef $self->{shapedChunk};
+	undef $self->{shapedIndex};
 	$self-> reset_syntax;
 	$self-> reset_scrolls;
 	if ( !$self-> {resetDisabled}) {
@@ -1101,13 +1044,21 @@ sub text
 	}
 }
 
+sub textDirection
+{
+	return $_[0]-> {textDirection} unless $#_;
+	my ( $self, $td ) = @_;
+	$self-> {textDirection} = $td;
+	undef $self->{shapedChunk};
+	undef $self->{shapedIndex};
+}
+
 sub get_text_ref
 {
 	my $self = $_[0];
 	my $hugeScalar = join( "\n", @{$self-> {lines}});
 	return \$hugeScalar;
 }
-
 
 sub get_chunk
 {
@@ -1117,8 +1068,12 @@ sub get_chunk
 	Carp::confess($index) if $index > $self-> {maxChunk};
 	if ( $self-> {wordWrap}) {
 		my $cm = $self-> {chunkMap};
-		$index *= 3;
-		return substr( $$ck[ $$cm[$index + 2] ], $$cm[$index], $$cm[$index + 1]);
+		$index *= CM_SIZE;
+		return substr(
+			$$ck[ $$cm[ $index + CM_Y ]],
+			$$cm[ $index + CM_CHAR_OFS ],
+			$$cm[ $index + CM_CHAR_LEN ]
+		);
 	} else {
 		return $$ck[ $index];
 	}
@@ -1130,62 +1085,81 @@ sub get_line
 	return $self-> {maxLine} >= 0 ? $self-> {lines}-> [$index] : '';
 }
 
-sub get_line_ext
+sub get_shaped_chunk
 {
 	my ( $self, $index) = @_;
-	return '' if $self-> {maxLine} < 0;
-	return $self-> {lines}-> [ $self-> {wordWrap} ?
-		( $self-> {chunkMap}-> [ $index * 3 + 2]) :
-		$index
-	];
+	return Prima::Drawable::Glyphs-> new_empty if $self-> {maxLine} < 0;
+	return $self-> {shapedChunk} if ($self->{shapedIndex} // -1) == $index;
+
+	delete $self->{shapedClusters};
+
+	$self->{shapedIndex} = $index;
+	my $chunk = $self-> get_chunk($index);
+	return $self->{shapedChunk} = Prima::Drawable::Glyphs->new_empty
+		unless length $chunk;
+
+	my $untabbed_chunk = $chunk;
+	my %opt = ( rtl => $self->textDirection );
+	if ($chunk =~ /\t/) {
+		$opt{advances} = 1;
+		$untabbed_chunk =~ s/\t/ /g;
+	}
+	my $s = $self->{shapedChunk} = $self-> text_shape($untabbed_chunk, %opt);
+	if ( $opt{advances} && ( my $advances = $s-> advances)) {
+		my $indexes = $s-> indexes;
+		for my $ix (0..$#$advances) {
+			$advances->[$ix] *= $self->{tabIndent} if
+				substr($chunk, $indexes->[$ix], 1) eq "\t";
+		}
+	}
+	return $s;
 }
 
 sub get_line_dimension
 {
 	my ( $self, $y) = @_;
 	return $y, 1 unless $self-> {wordWrap};
-	( undef, $y) = $self-> physical_to_logical( 0, $y);
-	my ($ret, $ix, $cm) = ( 0, $y * 3 + 2, $self-> {chunkMap});
-	$ret++, $ix += 3 while $ix < @$cm && $$cm[$ix] == $y;
-	return $y, $ret;
+	my (undef, $ly) = $self-> physical_to_logical( undef, $y);
+	my ($ret, $ix, $cm) = ( 0, $ly * CM_SIZE + CM_Y, $self-> {chunkMap});
+	$ret++, $ix += CM_SIZE while $ix < @$cm && $$cm[$ix] == $y;
+	return $ly, $ret;
 }
 
-
-sub get_chunk_org
+sub get_chunk_cluster_length
 {
-	my ( $self, $index) = @_;
-	return $index unless $self-> {wordWrap};
-	my $cm = $self-> {chunkMap};
-	my $y = $$cm[ $index * 3 + 2];
-	$index-- while $y == $$cm[ $index * 3 + 2];
-	return $index + 1;
+	my ($self, $index) = @_;
+	if ( $self->{wordWrap}) {
+		return $self->{chunkMap}->[$index * CM_SIZE + CM_CLUSTER_LEN] //= 
+			$self->get_shaped_chunk($index)-> n_clusters;
+	} else {
+		delete $self->{shapedClusters} if ($self->{shapedIndex} // -1) != $index;
+		return $self->{shapedClusters} if defined $self->{shapedClusters};
+		return $self->{shapedClusters} = $self->get_shaped_chunk($index)-> n_clusters;
+	}
 }
 
-sub get_chunk_end
+sub get_line_cluster_length
 {
-	my ( $self, $index) = @_;
-	return $index unless $self-> {wordWrap};
-	my $cm = $self-> {chunkMap};
-	my $y = $$cm[ $index * 3 + 2];
-	my $maxY = $self-> {maxChunk};
-	return -1 if $maxY < 0;
-	$index++ while $index <= $maxY && $y == $$cm[ $index * 3 + 2];
-	return $index - 1;
+	my ($self, $index) = @_;
+	my ($y, $n_chunks) = $self-> get_line_dimension($index);
+	my $x = 0;
+	$x += $self->get_chunk_cluster_length($y + $_) for 0 .. $n_chunks - 1;
+	return $x;
 }
 
 sub get_chunk_width
 {
-	my ( $self, $chunk, $from, $len, $retC) = @_;
-	my $cl;
-	$cl = $from + $len - length( $chunk) + 1;
-	$chunk = $self->bidi_visual($chunk) if $self->is_bidi($chunk);
-	$chunk .= ' 'x$cl if $cl >= 0;
-	$chunk  = substr( $chunk, $from, $len);
-	$chunk  =~ s/\t/$self->{tabs}/g;
-	$$retC = $chunk if $retC;
-	return $self-> {fixed} ?
-		( length( $chunk) * $self-> {averageWidth}) :
-		$self-> get_text_width( $chunk);
+	my ( $self, $index, $from, $len) = @_;
+	my $n = $self->get_chunk_cluster_length($index);
+	return $len * $self->{averageWidth} if $from >= $n;
+
+	my $s = $self->get_shaped_chunk($index);
+	return $s->get_sub_width($self, $from, $len) if $from + $len <= $n;
+
+	my $sublen = $n - $from;
+	my $tw = $s->get_sub_width($self, $from, $sublen);
+	$tw += ($len - $sublen) * $self->{averageWidth};
+	return $tw;
 }
 
 sub has_selection
@@ -1212,23 +1186,29 @@ sub set_cursor
 	my $maxY = $self-> {maxLine};
 	$y = $maxY if $y < 0 || $y > $maxY;
 	$y = 0 if $y < 0; # ??
-	my $line = $self-> get_line( $y);
-	$x = length( $line) if $x < 0;
+	my $max_x = $self-> get_line_cluster_length($y);
+	$x = $max_x if $x < 0 || $x > $max_x;
+
 	my ( $lx, $ly) = $self-> visual_to_logical( $x, $y);
+	my $cm = $self->{chunkMap};
 	my ( $olx, $oly) = ( $self-> {cursorXl}, $self-> {cursorYl});
 	$self-> {cursorXl} = $lx;
 	$self-> {cursorYl} = $ly;
-	return if $y == $oy and $x == $ox and $lx == $olx and $ly == $oly;
-	my ( $tl, $r, $yt) = ( $self-> {topLine }, $self-> {rows}, $self-> {yTail});
+	my $atX    = $self-> get_chunk_width( $ly, 0, $lx);
+	my $deltaX = $self-> get_chunk_width( $ly, $lx, 1);
+	return if 
+		$y == $oy and $x == $ox and $lx == $olx and $ly == $oly and
+		# these can change with ligatures
+		$atX    == ($self->{cursorAtX} // -1) and
+		$deltaX == ($self->{cursorInsWidth} // -1);
+
+	my ( $tl, $r, $yt) = ( $self-> {topLine}, $self-> {rows}, $self-> {yTail});
 	if ( $ly < $tl) {
 		$self-> topLine ( $ly);
 	} elsif ( $ly >= $tl + $r) {
 		my $nfc = $ly - $r + 1;
 		$self-> topLine ( $nfc);
 	}
-	my $chunk  = $self-> get_chunk( $ly);
-	my $atX    = $self-> get_chunk_width( $chunk, 0, $lx);
-	my $deltaX = $self-> get_chunk_width( $chunk, $lx, 1);
 	my $actualWidth = $self-> width -
 		$self-> {indents}-> [0] -
 		$self-> {indents}-> [2] -
@@ -1433,8 +1413,7 @@ sub set_selection
 		$sx  = $ex  = $osx;
 		$sy  = $ey  = $osy;
 	}
-	my ($firstChunk, $lastChunk) = ( $self-> get_line( $sy), $self-> get_line( $ey));
-	my ($fcl, $lcl) = ( length( $firstChunk), length( $lastChunk));
+	my ($fcl, $lcl) = map { $self-> get_chunk_cluster_length($_) } ($sy, $ey);
 	my $bt = $self-> {blockType};
 	$sx = $fcl if ( $bt != bt::Vertical && $sx > $fcl) || ( $sx < 0);
 	$ex = $lcl if ( $bt != bt::Vertical && $ex > $lcl) || ( $ex < 0);
@@ -1557,7 +1536,6 @@ sub get_selected_text
 	my $text = '';
 	my $bt = $self-> blockType;
 
-
 	if ( $bt == bt::CUA) {
 		my @sel = $self->selection_to_physical;
 		if ( $sel[1] == $sel[3]) {
@@ -1654,26 +1632,41 @@ sub paste
 	$self-> insert_text( $::application-> Clipboard-> text, 1);
 }
 
+sub get_chunk_dimension
+{
+	my ( $self, $ly ) = @_;
+	my ($n, $ix, $cm) = ( 0, $ly * CM_SIZE, $self-> {chunkMap});
+	$ly--, $ix -= CM_SIZE while $$cm[$ix + CM_CHAR_OFS] != 0;
+	$ix += CM_Y;
+	my $y = $$cm[$ix];
+	$n++ , $ix += CM_SIZE while $ix < @$cm && $$cm[$ix] == $y;
+	return $ly, $n;
+}
+
 sub visual_to_physical
 {
 	my ( $self, $x, $y) = @_;
-	return $x unless $Prima::Bidi::enabled;
-	my $l = $self->get_line($y);
-	return $x unless $self->is_bidi($l);
-	my $offset = 0;
-	if ( $self-> {wordWrap} ) {
-		my ( $lx, $ly ) = $self-> visual_to_logical($x, $y);
-		$x = $lx;
-		my $cm = $self->{chunkMap};
-		return 0 unless @$cm;
-		$l = substr($l, $offset = $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
+
+	return $self-> get_shaped_chunk($y)->cluster2index($x) & ~to::RTL
+		unless $self-> {wordWrap};
+
+	my $cm = $self->{chunkMap};
+	my ($chunks, $px, $ly);
+	(undef, $ly) = $self-> visual_to_logical(undef, $y);
+	($ly, $chunks) = $self-> get_chunk_dimension($ly);
+	$x = 0 if $x < 0;
+	for ( my $i = 0; $i < $chunks; $i++) {
+		$px = $$cm[($ly + $i) * CM_SIZE + CM_CHAR_OFS];
+		my $n_clusters = $self-> get_chunk_cluster_length( $ly + $i );
+		last if $x < $n_clusters;
+		if ( $i == $chunks - 1 ) {
+			$x = $n_clusters if $x > $n_clusters;
+			last;
+		}
+		$x -= $n_clusters;
 	}
 
-	if ( $x >= length $l ) {
-		return $offset + $self->bidi_map($l)->[length($x) - 1] + 1;
-	} else {
-		return $offset + $self->bidi_map($l)->[$x];
-	}
+	return $px + $self-> get_shaped_chunk($ly)->cluster2index($x) & ~to::RTL;
 }
 
 sub logical_to_physical
@@ -1682,51 +1675,56 @@ sub logical_to_physical
 	return $self-> visual_to_physical($x,$y) unless $self->{wordWrap};
 
 	$y = $self-> {maxChunk} if $y > $self-> {maxChunk};
-	$y = 0  if $y < 0;
+	$y = 0 if $y < 0;
 	my $cm = $self-> {chunkMap};
 	return 0 unless @$cm;
-	my ( $ofs, $l, $nY) = ( $$cm[ $y * 3], $$cm[ $y * 3 + 1], $$cm[ $y * 3 + 2]);
-	$x = 0  if $x < 0;
-	$x = $l if $x > $l;
 
-	my $str = substr($self->get_line($nY), $ofs, $l);
-	if ( $self->is_bidi($str) ) {
-		$x = $self->bidi_map($str)->[$x];
+	my ($ly, $chunks) = $self-> get_chunk_dimension($y);
+	$x = 0 if $x < 0;
+	my $px = 0;
+	for ( my $i = 0; $i < $chunks; $i++) {
+		$px = $$cm[($ly + $i) * CM_SIZE + CM_CHAR_OFS];
+		my $n_clusters = $self-> get_chunk_cluster_length( $ly + $i );
+		last if $x < $n_clusters;
+		if ( $i == $chunks - 1 ) {
+			$x = $n_clusters if $x > $n_clusters;
+			last;
+		}
+		$x -= $n_clusters;
 	}
-	return $ofs + $x;
+	return $px + $x;
 }
 
 sub logical_to_visual
 {
 	my ( $self, $x, $y) = @_;
 	unless ($self->{wordWrap}) {
-		$x = length $self->get_line($y) if $x < 0;
-		return $x, $y
+		$x = $self->get_chunk_cluster_length($y) if $x < 0;
+		return $x, $y;
 	}
 
-	$y = $self-> {maxChunk} if $y > $self-> {maxChunk};
-	$y = 0  if $y < 0;
 	my $cm = $self-> {chunkMap};
 	return (0,0) unless @$cm;
-	my ( $ofs, $l, $nY) = ( $$cm[ $y * 3], $$cm[ $y * 3 + 1], $$cm[ $y * 3 + 2]);
-	$x = $l if $x < 0 || $x > $l;
-	return $x + $ofs, $nY;
+
+	$y = $self-> {maxChunk} if $y > $self-> {maxChunk};
+	$y = 0 if $y < 0;
+	$x = 0 if $x < 0;
+	my $nY = $$cm[ $y * CM_SIZE + CM_Y];
+
+	my ($ly) = $self-> get_chunk_dimension($y);
+	for (; $ly < $y; $ly++) {
+		$x += $self-> get_chunk_cluster_length($ly);
+	}
+	return $x, $nY;
 }
 
 sub physical_to_visual
 {
 	my ( $self, $x, $y) = @_;
-	return $x unless $Prima::Bidi::enabled;
-	my $l = $self->get_line($y);
-	return $x unless $self->is_bidi($l);
-	my $offset = 0;
-	if ( $self-> {wordWrap} ) {
-		my ( $lx, $ly ) = $self-> visual_to_logical($x, $y);
-		$x = $lx;
-		my $cm = $self->{chunkMap};
-		$l = substr($l, $offset = $$cm[$ly * 3], $$cm[$ly * 3 + 1]);
-	}
-	return $offset + $self->bidi_map_find($self-> bidi_map($l), $x);
+	my ( $lx, $ly ) = $self->{wordWrap} ?
+		$self-> physical_to_logical($x,$y) :
+		($x, $y);
+	return $x - $lx + $self-> get_shaped_chunk($ly)-> offset2cluster($lx);
 }
 
 sub visual_to_logical
@@ -1739,55 +1737,47 @@ sub visual_to_logical
 	my $maxY = $self-> {maxLine};
 	$y = $maxY if $y > $maxY || $y < 0;
 	$y = 0 if $y < 0;
-	my $l = length( $self-> {lines}-> [$y]);
-	$x = $l if $x < 0 || $x > $l;
-	$x = 0 if $x < 0;
-	my $r;
-	( $l, $r) = ( 0, $self-> {maxChunk} + 1);
+
+	my ($l, $r) = ( 0, $self-> {maxChunk} + 1);
 	my $i = int($r / 2);
-	my $kk = 0;
 	while (1) {
-		my $acd = $$cm[$i * 3 + 2];
+		my $acd = $$cm[$i * CM_SIZE + CM_Y];
 		last if $acd == $y;
-		$acd > $y ? $r : $l   = $i;
+		$acd > $y ? $r : $l = $i;
 		$i = int(( $l + $r) / 2);
-		if ( $kk++ > 200) {
-			print "bcs dump to $y\n";
-			( $l, $r) = ( 0, $self-> {maxChunk} + 1);
-			$i = int($r / 2);
-			for ( $kk = 0; $kk < 7; $kk++) {
-				my $acd = $$cm[$i * 3 + 2];
-				print "i:$i [$l $r] f() = $acd\n";
-				$acd > $y ? $r : $l   = $i;
-				$i = int(( $l + $r) / 2);
-			}
-			die;
+	}
+
+	my ($ly, $chunks) = $self-> get_chunk_dimension($i);
+	return undef, $ly unless defined $x;
+
+	$x = 0 if $x < 0;
+	for ( $i = 0; $i < $chunks; $i++) {
+		my $n_clusters = $self-> get_chunk_cluster_length( $ly + $i );
+		last if $x < $n_clusters;
+		if ( $i == $chunks - 1 ) {
+			$x = $n_clusters if $x > $n_clusters;
 			last;
 		}
+		$x -= $n_clusters;
 	}
-	my $cy = $y;
-	$y = $i;
-	$i *= 3;
-	$i-= 3, $y-- while $$cm[ $i] != 0;
-	while (defined $$cm[$i+3] and $x >= $$cm[$i+3] and $cy == $$cm[$i+5]) {
-		$i+= 3;
-		$y++;
-	}
-	$x -= $$cm[ $i];
-	return $x, $y;
+
+	return $x, $ly + $i;
 }
 
 sub physical_to_logical
 {
 	my ( $self, $x, $y) = @_;
 	return (0,0) if $self-> {maxChunk} < 0;
-	return $self-> physical_to_visual($x, $y), $y unless $self-> {wordWrap};
+	unless ($self-> {wordWrap}) {
+		$x = $self->physical_to_visual($x, $y) if defined $x;
+		return $x, $y;
+	}
 
 	($x, $y) = $self->visual_to_logical($x, $y);
-	return $x, $y unless $Prima::Bidi::enabled;
-	my $l = $self->get_chunk($y);
-	return $x, $y unless $self->is_bidi($l);
-	return $self->bidi_map_find($self-> bidi_map($l), $x), $y;
+	return undef, $y unless defined $x;
+
+	$x = $self-> get_shaped_chunk($y)-> offset2cluster($x);
+	return $x, $y;
 }
 
 sub selection_to_physical
@@ -1866,7 +1856,7 @@ sub cursor_left
 	} elsif ( $_[0]-> {cursorWrap}) {
 		if ( $d == 1) {
 			my $y = $_[0]-> cursorY - 1;
-			$_[0]-> cursor( -1, $y < 0 ? 0 : $y);
+			$_[0]-> cursor(( $y < 0) ? (0,0) : (-1, $y));
 		} else {
 			$_[0]-> cursor_left( $d - 1);
 		}
@@ -1879,9 +1869,9 @@ sub cursor_right
 {
 	my $d = $_[1] || 1;
 	my $x = $_[0]-> cursorX;
-	if ( $_[0]-> {cursorWrap} || $_[0]-> {wordWrap}) {
+	if ( $_[0]-> {cursorWrap} ) {
 		my $y = $_[0]-> cursorY;
-		if ( $x + $d > length( $_[0]-> get_line( $y))) {
+		if ( $x + $d > $_[0]-> get_line_cluster_length($y)) {
 			if ( $d == 1) {
 				$_[0]-> cursor( 0, $y + 1) if $y < $_[0]-> {maxLine};
 			} else {
@@ -1897,7 +1887,6 @@ sub cursor_right
 
 sub cursor_home
 {
-	my ($spaces) = ($_[0]-> get_line( $_[0]-> cursorY) =~ /^([s\t]*)/);
 	$_[0]-> begin_undo_group;
 	$_[0]-> offset(0);
 	$_[0]-> cursorX(0);
@@ -1906,9 +1895,7 @@ sub cursor_home
 
 sub cursor_end
 {
-	my ($nonspaces) = ($_[0]-> get_line( $_[0]-> cursorY) =~ /^(.*?)[\s\t]*$/);
-	$_[0]-> cursorX( length $nonspaces);
-
+	$_[0]-> cursorX( $_[0]-> get_line_cluster_length( $_[0]->cursorY ) );
 }
 sub cursor_cend  { $_[0]-> cursorY(-1); $_[0]->cursor_end; }
 sub cursor_chome { $_[0]-> cursorY( 0); }
@@ -2095,17 +2082,27 @@ sub set_line
 		);
 		my @chunkMap;
 		( undef, $ry) = $self-> physical_to_logical( 0, $y);
-		my ($ix, $cm) = ( $ry * 3 + 2, $self-> {chunkMap});
-		my $max_ix = $self-> {maxChunk} * 3 + 2;
-		$oldDim++, $ix += 3 while $ix <= $max_ix && $$cm[ $ix] == $y;
+		my ($ix, $cm) = ( $ry * CM_SIZE + CM_Y, $self-> {chunkMap});
+		my $max_ix = $self-> {maxChunk} * CM_SIZE + CM_Y;
+		$oldDim++, $ix += CM_SIZE while $ix <= $max_ix && $$cm[$ix + CM_Y] == $y;
 		$newDim = scalar @{$breaks} / 2;
 		my $i;
-		for ( $i = 0; $i < $newDim; $i++) {
-			push( @chunkMap, $$breaks[$i * 2], $$breaks[$i * 2 + 1], $y);
+		for (my $i = 0; $i < @$breaks; $i+=2) {
+			my @chunk = ( undef ) x CM_SIZE;
+			$chunk[CM_CHAR_OFS] = $$breaks[$i];
+			$chunk[CM_CHAR_LEN] = 
+				(( $i == @$breaks - 2) ? length($line) : $$breaks[$i + 2]) -
+				$$breaks[$i];
+			$chunk[CM_Y]        = $y;
+			push @chunkMap, @chunk;
 		}
-		splice( @{$cm}, $ry * 3, $oldDim * 3, @chunkMap);
+		splice( @{$cm}, $ry * CM_SIZE, $oldDim * CM_SIZE, @chunkMap);
 
 		$self-> {lines}-> [$y] = $line;
+		if ($ry == ($self->{shapedIndex} // -1)) {
+			undef $self->{shapedChunk};
+			undef $self->{shapedIndex};
+		}
 		$self-> {maxChunk} -= $oldDim - $newDim;
 		if ( $oldDim == $newDim) {
 			( $_from, $_to) = ( $ry, $ry + $oldDim);
@@ -2121,6 +2118,10 @@ sub set_line
 	} else {
 		my ( $oldL, $newL) = ( length( $self-> {lines}-> [$y]), length( $line));
 		$self-> {lines}-> [$y] = $line;
+		if ($y == ($self->{shapedIndex} // -1)) {
+			undef $self->{shapedChunk};
+			undef $self->{shapedIndex};
+		}
 		if ( $oldL == $self-> {maxLineLength} || $newL > $self-> {maxLineLength})
 		{
 			my $needReset = 0;
@@ -2218,18 +2219,22 @@ sub insert_empty_line
 			( undef, $ly) = $self-> physical_to_logical( 0, $y);
 		}
 		my ($i, $maxC, $cm) = ( 0, $self-> {maxChunk}, $self-> {chunkMap});
+		my @empty_chunk = ((undef) x CM_SIZE);
+		$empty_chunk[CM_CHAR_OFS] = 0;
+		$empty_chunk[CM_CHAR_LEN] = 0;
+		$empty_chunk[CM_Y] = $y;
 		if ( $y <= $maxY) {
-			splice( @{$cm}, $ly * 3, 0, ( 0, 0, $y) x $len);
+			splice( @{$cm}, $ly * CM_SIZE, 0, (@empty_chunk) x $len);
 			for ( $i = $ly + 1; $i < $ly + $len; $i++) {
-				$$cm[ $i * 3 + 2] += $i - $ly;
+				$$cm[ $i * CM_SIZE + CM_Y] += $i - $ly;
 			}
 			for ( $i = $ly + $len; $i <= $maxC + $len; $i++) {
-				$$cm[ $i * 3 + 2] += $len;
+				$$cm[ $i * CM_SIZE + CM_Y] += $len;
 			}
 		} else {
-			push( @{$cm}, ( 0, 0, $y)x$len);
+			push( @{$cm}, (@empty_chunk) x $len);
 			for ( $i = $ly; $i < $ly + $len; $i++) {
-				$$cm[ $i * 3 + 2] += $i - $ly;
+				$$cm[ $i * CM_SIZE + CM_Y] += $i - $ly;
 			}
 		}
 		$self-> {maxChunk} += $len;
@@ -2241,6 +2246,7 @@ sub insert_empty_line
 	for (@{$self-> {markers}}) {
 		$$_[1] += $len if $$_[1] >= $y;
 	}
+	$self->{shapedIndex} += $len if $y <= ($self->{shapedIndex} // -1);
 	splice( @{$self-> {lines}}, $y, 0, ('') x $len);
 	$self-> {maxLine} += $len;
 	splice( @{$self-> {syntax}}, $y, 0, (undef) x $len)
@@ -2308,20 +2314,29 @@ sub delete_line
 	$self-> push_undo_action( 'insert_empty_line', $y, $len);
 
 	$len = $maxY - $y + 1 if $y + $len > $maxY + 1;
-	my ( $lx, $ly) = (0,0);
+	my ($lx, $ly);
 	if ( $self-> {wordWrap}) {
 		( $lx, $ly) = $self-> physical_to_logical( 0, $y);
 		$lx = 0;
 		my ($i, $maxC, $cm) = ($ly, $self-> {maxChunk}, $self-> {chunkMap});
-		$lx++, $i++ while ( $i <= $maxC) and ( $$cm[ $i * 3 + 2] <= ( $y + $len - 1));
-		splice( @{$cm}, $ly * 3, $lx * 3);
+		$lx++, $i++ while ( $i <= $maxC) and ( $$cm[ $i * CM_SIZE + CM_Y] <= ( $y + $len - 1));
+		splice( @{$cm}, $ly * CM_SIZE, $lx * CM_SIZE);
 		$self-> {maxChunk} -= $lx;
-		for ( $i = $ly; $i <= $maxC - $lx; $i++) { $$cm[ $i * 3 + 2] -= $len; }
+		for ( $i = $ly; $i <= $maxC - $lx; $i++) { $$cm[ $i * CM_SIZE + CM_Y] -= $len; }
 	} else {
 		$self-> {maxChunk} -= $len;
+		($lx, $ly) = (1, $y);
 	}
 
 	my @removed = splice( @{$self-> {lines}}, $y, $len);
+	if ( defined ( my $ix = $self->{shapedIndex})) {
+		if ( $ix >= $ly && $ix < $ly + $lx) {
+			undef $self->{shapedChunk};
+			undef $self->{shapedIndex};
+		} elsif ( $ix >= $ly + $lx ) {
+			$self->{shapedIndex} -= $lx;
+		}
+	}
 	splice( @{$self-> {syntax}}, $y, $len) if $self-> {syntaxHilite};
 	for (@{$self-> {markers}}) {
 		$$_[1] -= $len if $$_[1] >= $y;
@@ -2400,10 +2415,10 @@ sub delete_chunk
 	return if $len == 0;
 
 	my $cm = $self-> {chunkMap};
-	my $psy   = $$cm[ $y * 3 + 2];
-	my $pey   = $$cm[($y + $len - 1) * 3 + 2];
-	my $start = $$cm[ $y * 3];
-	my $end   = $$cm[($y + $len - 1) * 3] + $$cm[($y + $len - 1) * 3 + 1];
+	my $psy   = $$cm[ $y * CM_SIZE + CM_Y];
+	my $pey   = $$cm[($y + $len - 1) * CM_SIZE + CM_Y];
+	my $start = $$cm[ $y * CM_SIZE + CM_CHAR_OFS];
+	my $end   = $$cm[($y + $len - 1) * CM_SIZE + CM_CHAR_OFS] + $$cm[($y + $len - 1) * CM_SIZE + CM_CHAR_LEN];
 	if ( $psy == $pey) {
 		my $c  = $self-> {lines}-> [$psy];
 		$self-> delete_line( $psy), return
@@ -2447,7 +2462,6 @@ sub delete_text
 	my $c = $self-> {lines}-> [ $y];
 	my $l = length( $c);
 	$x = $l if $x < 0;
-	return if $x < 0;
 
 	if ( $x == $l) {
 		return if $y == $maxY;
@@ -2471,17 +2485,13 @@ sub delete_char
 	$repeat ||= 1;
 	$self-> begin_undo_group;
 	while ( $repeat-- ) {
-		my @cs          = $self-> cursor;
-		my $text_offset = $self-> visual_to_physical(@cs);
-		my $c           = $self->get_line($cs[1]);
-		my $p           = length($c);
-		($p) = $self-> bidi_paragraph($c) if $self->is_bidi($c);
-
-		my ( $howmany, $at, $moveto) = $self->bidi_edit_delete( $p, $cs[0], 0);
-		return unless $howmany;
-
-		$self-> delete_text( $at, $cs[1], $howmany );
-		$self-> cursor( $cs[0] + $moveto, $cs[1] ) if $moveto;
+		my @cs       = $self->cursor;
+		my $text_ofs = $self->get_shaped_chunk($cs[1])->cursor2offset($cs[0], $self->textDirection);
+		$self-> delete_text( $text_ofs, $cs[1], 1 );
+		$self-> cursor(
+			$self->get_shaped_chunk($cs[1])->offset2cluster($text_ofs), 
+			$cs[1]
+		);
 	}
 	$self-> end_undo_group;
 }
@@ -2494,17 +2504,19 @@ sub back_char
 
 	$self-> begin_undo_group;
 	while ( $repeat-- ) {
-		my @cs          = $self-> cursor;
-		my $text_offset = $self-> visual_to_physical(@cs);
-		my $c           = $self->get_line($cs[1]);
-		my $p           = length($c);
-		($p) = $self-> bidi_paragraph($c) if $self->is_bidi($c);
-
-		my ( $howmany, $at, $moveto) = $self->bidi_edit_delete( $p, $cs[0], 1);
-		return unless $howmany;
-
-		$self-> delete_text( $at, $cs[1], $howmany );
-		$self-> cursor( $cs[0] + $moveto, $cs[1] ) if $moveto;
+		my @cs       = $self->cursor;
+		my $text_ofs = $self->get_shaped_chunk($cs[1])->cursor2offset($cs[0], $self->textDirection);
+		if ( $text_ofs > 0 ) {
+			$self-> delete_text( $text_ofs - 1, $cs[1], 1 );
+			$self-> cursor(
+				$self->get_shaped_chunk($cs[1])->offset2cluster($text_ofs - 1), 
+				$cs[1]
+			);
+		} elsif ( $cs[1] > 0 ) {
+			my $l = $self->get_chunk_cluster_length($cs[1]-1),
+			$self-> delete_text( length($self->get_line($cs[1] - 1)), $cs[1] - 1, 1 );
+			$self-> cursor($l, $cs[1] - 1);
+		}
 	}
 	$self-> end_undo_group;
 }
@@ -2524,20 +2536,12 @@ sub delete_to_end
 	return if $cs[ 0] > length( $c);
 
 	$self-> set_line( $cs[1], substr( $c, 0, $px), q(delete), $cs[0], length( $c) - $cs[0]);
-	$self-> cursor(0,$cs[1]) if $self->is_bidi($c);
 }
 
 sub delete_word
 {
 	my ($self, $as_backspace) = @_;
-	my @cs          = $self-> cursor;
-	my $c           = $self-> get_line($cs[1]);
-	my $p           = length($c);
-	($p) = $self-> bidi_paragraph($c) if $self->is_bidi($c);
-	my ( $howmany, $at, $moveto) = $self->bidi_edit_delete( $p, $cs[0], $as_backspace);
-	return unless $howmany;
-
-	my $direction = ( $moveto < 0 ) ? 'Left' : 'Right';
+	my $direction = ($self-> textDirection xor $as_backspace) ? 'Left' : 'Right';
 	$self-> cursor_shift_key('ShiftWord' . $direction );
 	$self-> delete_block;
 }
@@ -2684,12 +2688,13 @@ sub split_line
 {
 	my $self = $_[0];
 	my @cs = $self-> cursor;
+	my $to = $self->get_shaped_chunk($cs[1])->cursor2offset($cs[0], $self->textDirection);
 	my $c = $self-> get_line( $cs[1]);
-	$c .= ' 'x($cs[0]-length($c)) if length($c) < $cs[0];
-	my ( $old, $new) = ( substr( $c, 0, $cs[0]), substr( $c, $cs[0], length( $c) - $cs[0]));
+	$c .= ' 'x($to-length($c)) if length($c) < $to;
+	my ( $old, $new) = ( substr( $c, 0, $to), substr( $c, $to, length( $c) - $to));
 	$self-> lock_change(1);
 	$self-> begin_undo_group;
-	$self-> set_line( $cs[1], $old, q(delete), $cs[0], length( $c) - $cs[0]);
+	$self-> set_line( $cs[1], $old, q(delete), $to, length( $c) - $to);
 	my $cshift = 0;
 	if ( $self-> {autoIndent}) {
 		my $i = 0;
@@ -2814,7 +2819,6 @@ sub delete_marker
 	splice( @{$self-> {markers}}, $index, 1);
 }
 
-
 sub select_all { $_[0]-> selection(0,0,-1,-1); }
 
 sub autoIndent      {($#_)?($_[0]-> {autoIndent}    = $_[1])                :return $_[0]-> {autoIndent }  }
@@ -2880,12 +2884,6 @@ used by L<blockType> property.
 
 =head1 USAGE
 
-The class addresses the text space by (X,Y)-coordinates,
-where X is visual character offset and Y is line number. The addressing can be
-'visual' and 'logical', - in logical case Y is number of line of text.
-The difference can be observed if L<wordWrap> property is set to 1, when a single
-text string can be shown as several sub-strings, called I<chunks>.
-
 The text is stored line-wise in C<{lines}> array; to access it use L<get_line> method.
 To access the text chunk-wise, use L<get_chunk> method.
 
@@ -2894,6 +2892,48 @@ processed by the accelerator table ( see L<Prima::Menu> ). The default
 C<accelItems> table defines names, keyboard combinations, and the corresponding
 actions to the class functions. The class does not provide functionality to change
 these mappings. To do so, consult L<Prima::Menu/Prima::AccelTable>.
+
+=head2 Coordinates
+
+The class addresses the text space by (X,Y)-coordinates, where X is visual
+character offset and Y is line number. The addressing can be 'visual' and
+'logical', - in logical case Y is number of line of text.  The difference can
+be observed if L<wordWrap> property is set to 1, when a single text string can
+be shown as several sub-strings, called I<chunks>.
+
+Cluster shaping and word wrapping can play a role here. Consider f.ex.  text
+"offset is zero", that for the sake of the example can wrapped by width and
+displayed as two lines, "offset" and "is zero". Also, the font substitutes "ff"
+text for a single ligature glyph. Here, for example, coord("f") will be (0,1)
+in all coordinates, but coord("z") is different:
+
+=over
+
+=item Physical
+
+X coordinate is a character offset from character line number Y.  These
+coordinates are idential with and without C<wordWrap> flag.  This coordinate is
+used for direct text manipulation.
+
+Example: coord("z") is (0,10);
+
+=item Visual
+
+X coordinate is a glyph cluster offset from character line number Y.  These
+coordinates are idential with and without C<wordWrap> flag.  This coordinate is
+used for cursor and selection API.
+
+Example: coord("z") is (0,9);
+
+=item Logical
+
+Y coordinates is a wrapped line index. C<chunkMap> internal array is addresses
+in logical coordinates. X coordinate is a glyph cluster offset from the line start.
+This coordinate is used mostly internally.
+
+Example: coord("z") is (1,3);
+
+=back
 
 =head1 API
 
@@ -3342,11 +3382,11 @@ Default key: Ctrl+E
 
 =item delete_text X, Y, TEXT_LENGTH
 
-Removes TEXT_LENGTH characters at X,Y visual coordinates
+Removes TEXT_LENGTH characters at X,Y physical coordinates
 
-=item draw_colorchunk CANVAS, TEXT, LINE_ID, X, Y, COLOR
+=item draw_colorchunk CANVAS, LINE_ID, X, Y, COLOR
 
-Paints the syntax-highlighted chunk of TEXT, taken from LINE_ID line index, at
+Paints the syntax-highlighted chunk taken from LINE_ID line index, at
 X, Y. COLOR is used if the syntax highlighting information contains C<cl::Fore>
 as color reference.
 
@@ -3394,16 +3434,6 @@ Not used in the class, however, used in L<Prima::EditDialog>.
 Returns chunk of text, located at CHUNK_ID.
 Returns empty string if chunk is nonexistent.
 
-=item get_chunk_end CHUNK_ID
-
-Returns the index of chunk at CHUNK_ID, corresponding to the last chunk
-of same line.
-
-=item get_chunk_org CHUNK_ID
-
-Returns the index of chunk at CHUNK_ID, corresponding to the first chunk
-of same line.
-
 =item get_chunk_width TEXT, FROM, LENGTH, [ RETURN_TEXT_PTR ]
 
 Returns the width in pixels of C<substr( TEXT, FROM, LENGTH)>.
@@ -3424,10 +3454,6 @@ the first value is the corresponding chunk index, the second is how many
 chunks represent the line.
 
 See also: L<physical_to_logical>.
-
-=item get_line_ext CHUNK_ID
-
-Returns the line, corresponding to the chunk index.
 
 =item get_selected_text
 

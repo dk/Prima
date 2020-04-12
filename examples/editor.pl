@@ -1,5 +1,4 @@
 =pod
-
 =head1 NAME
 
 examples/editor.pl - A basic text editor
@@ -144,6 +143,7 @@ sub profile_default
 				[ '@syx' => '~Syntax hilite' => sub{ $_[0]-> {editor}-> syntaxHilite( $_[2] )}],
 				[ '@*aid' => '~Auto indent' => sub{ $_[0]-> {editor}-> autoIndent( $_[2] )}],
 				[ '@wwp' => '~Word wrap' => sub{ $_[0]-> {editor}-> wordWrap( $_[2] )}],
+				[ '@cwp' => '~Cursor wrap' => sub{ $_[0]-> {editor}-> cursorWrap( $_[2] )}],
 				[ '@psb' => '~Presistent blocks' => sub{ $_[0]-> {editor}-> persistentBlock( $_[2] )}],
 				[],
 				[ '@*hsc' => '~Horizontal scrollbar' => sub{ $_[0]-> {editor}-> hScroll( $_[2])}],

@@ -102,7 +102,7 @@ read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const char * cal
 	if ( !( t-> glyphs = read_subarray( av, 0, -1, &t->len, "S", caller, "glyphs")))
 		return false;
 	if ( t->len == 0 )
-		return false;
+		return true;
 
 	switch ( len ) {
 	case 4:
@@ -133,6 +133,8 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 		GlyphsOutRec t;
 		if (!read_glyphs(&t, text, 0, "Drawable::text_out"))
 			return false;
+		if (t.len == 0)
+			return true;
 		ok = apc_gp_glyphs_out( self, &t, x, y);
 		if ( !ok) perl_error();
 	} else {
@@ -732,6 +734,8 @@ Drawable_get_text_width( Handle self, SV * text, int flags)
 		GlyphsOutRec t;
 		if (!read_glyphs(&t, text, 0, "Drawable::get_text_width"))
 			return false;
+		if (t.len == 0)
+			return true;
 		if (t.advances)
 			return get_glyphs_width(self, &t, flags & toAddOverhangs);
 		gpENTER(0);
@@ -1599,7 +1603,10 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 		return nilSV;
 
 	/* a very quick check, if possible, if glyphstr fits */
-	if ( g.advances && ( width >= get_glyphs_width(self, &g, true))) {
+	if ( 
+		(g.len == 0) ||
+		(g.advances && ( width >= get_glyphs_width(self, &g, true)))
+	) {
 		AV * av;
 		if (( options & twReturnFirstLineLength) == twReturnFirstLineLength)
 			return newSViv(g.len);
