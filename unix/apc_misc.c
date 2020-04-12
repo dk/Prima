@@ -387,7 +387,8 @@ prima_no_cursor( Handle self)
 	if ( self && guts.focused == self && X(self)
 		&& !(XF_IN_PAINT(X(self)))
 		&& X(self)-> flags. cursor_visible
-		&& guts. cursor_save)
+		&& guts. cursor_save
+		&& guts. cursor_shown)
 	{
 		DEFXX;
 		int x, y, w, h;
@@ -402,6 +403,7 @@ prima_no_cursor( Handle self)
 		XCHECKPOINT;
 		XCopyArea( DISP, guts. cursor_save, XX-> udrawable, XX-> gc,
 					0, 0, w, h, x, y);
+		XFlush(DISP);
 		XCHECKPOINT;
 		prima_release_gc( XX);
 		guts. cursor_shown = false;
