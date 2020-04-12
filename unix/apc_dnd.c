@@ -393,8 +393,11 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	}
 	if ( h == application || !X(h)->flags.enabled)
 		h = nilHandle;
-	XCHECKPOINT;
+	if ( !h )
+		goto FAIL;
+
 	/* Cdebug("dnd:position old widget %08x, new %08x\n", guts.xdndr_widget, h); */
+	XCHECKPOINT;
 	modmap  = query_pointer(NULL,NULL);
 	dx = x = xev->xclient.data.l[2] >> 16;
 	dy = y = xev->xclient.data.l[2] & 0xffff;
