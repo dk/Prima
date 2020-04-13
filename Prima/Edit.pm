@@ -754,8 +754,8 @@ sub on_mousedown
 	my @sel = $self->selection;
 	if (
 		$self->has_selection &&
-		!$self->{drag_transaction} && 
-		!$self->{drop_transaction} && (
+		!$self->{drop_transaction} && 
+		(
 			($sel[1] == $sel[3] && $xy[1] == $sel[1] && $xy[0] >= $sel[0] && $xy[0] < $sel[2]) ||
 			($xy[1] == $sel[1] && $xy[1] < $sel[3] && $xy[0] >= $sel[0]) ||
 			($xy[1] == $sel[3] && $xy[1] > $sel[1] && $xy[0] < $sel[2]) ||
@@ -1107,7 +1107,7 @@ sub get_shaped_chunk
 		my $indexes = $s-> indexes;
 		for my $ix (0..$#$advances) {
 			$advances->[$ix] *= $self->{tabIndent} if
-				substr($chunk, $indexes->[$ix], 1) eq "\t";
+				substr($chunk, $indexes->[$ix] & ~to::RTL, 1) eq "\t";
 		}
 	}
 	return $s;

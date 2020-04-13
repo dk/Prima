@@ -126,7 +126,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
 		Bool   utf8 = prima_is_utf8_sv( text);
-		if ( utf8) dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
+		if ( utf8) dlen = prima_utf8_length(c_text, dlen);
 		ok = apc_gp_text_out( self, c_text, x, y, dlen, utf8 ? toUTF8 : 0);
 		if ( !ok) perl_error();
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
@@ -165,7 +165,7 @@ sv2unicode( SV * text, int * size, int * flags)
 	src = SvPV(text, dlen);
 	if (prima_is_utf8_sv(text)) {
 		*flags |= toUTF8;
-		*size = prima_utf8_length(src);
+		*size = prima_utf8_length(src, dlen);
 	} else {
 		*size = dlen;
 	}
@@ -175,13 +175,17 @@ sv2unicode( SV * text, int * size, int * flags)
 
 	if (*flags & toUTF8 ) {
 		uint32_t *dst = ret;
-		while ( dlen > 0) {
+		while ( dlen > 0 && dst - ret < *size) {
 			STRLEN charlen;
-			*(dst++) = prima_utf8_uvchr(src, dlen, &charlen);
+			UV uv;
+			uv = prima_utf8_uvchr(src, dlen, &charlen);
+			if ( uv > 0x10FFFF ) uv = 0x10FFFF;
+			*(dst++) = uv;
 			if ( charlen == 0 ) break;
 			src  += charlen;
 			dlen -= charlen;
 		}
+		*size = dst - ret;
 	} else {
 		register int i = *size;
 		register uint32_t *dst = ret;
@@ -1318,7 +1322,7 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent)
 	t. text      = SvPV( text, tlen);
 	t. utf8_text = prima_is_utf8_sv( text);
 	if ( t. utf8_text) {
-		t. utf8_textLen = prima_utf8_length( t. text);
+		t. utf8_textLen = prima_utf8_length( t. text, tlen);
 		t. textLen = utf8_hop(( U8*) t. text, t. utf8_textLen) - (U8*) t. text;
 	} else {
 		t. utf8_textLen = t. textLen = tlen;

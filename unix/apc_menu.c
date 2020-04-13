@@ -947,7 +947,7 @@ DECL_DRAW(accel)
 	int accel_len = strlen(m-> accel);
 
 	if ( m-> flags. utf8_accel)
-		ul = prima_utf8_length( m-> accel);
+		ul = prima_utf8_length( m-> accel, -1);
 	else
 		ul = accel_len;
 	if (( ul * 4 + 4) > *str_size) {

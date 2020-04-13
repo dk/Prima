@@ -172,7 +172,7 @@ sub init
 	my $cap = '';
 	$self-> menu-> utf-> check if $self-> {utf8} = $profile{utf8};
 	if ( defined $fn) {
-		if ( open FILE, '<'.($profile{utf8} ? 'utf8' : ''), $fn) {
+		if ( open FILE, '<'.($profile{utf8} ? ':encoding(utf-8)' : ''), $fn) {
 			if ( ! defined read( FILE, $cap, -s $fn)) {
 				Prima::MsgBox::message("Cannot read file $fn:$!");
 				$fn = undef;

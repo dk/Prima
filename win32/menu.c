@@ -52,7 +52,7 @@ map_text_accel( PMenuItemReg i)
 	c = i-> text;
 	while (*c++) if ( *c == '&') amps++;
 	if ( i-> flags. utf8_text ) {
-		text = alloc_utf8_to_wchar( i-> text, prima_utf8_length( i-> text), &l1);
+		text = alloc_utf8_to_wchar( i-> text, prima_utf8_length( i-> text, -1), &l1);
 	} else {
 		l1 = strlen( i-> text);
 		text = alloc_ascii_to_wchar( i-> text, l1);
@@ -62,7 +62,7 @@ map_text_accel( PMenuItemReg i)
 		c = i-> accel;
 		while (*c++) if ( *c == '&') amps++;
 		if ( i-> flags. utf8_accel ) {
-			accel = alloc_utf8_to_wchar( i-> accel, prima_utf8_length( i-> accel), &l2);
+			accel = alloc_utf8_to_wchar( i-> accel, prima_utf8_length( i-> accel, -1), &l2);
 		} else {
 			l2 = strlen( i-> accel);
 			accel = alloc_ascii_to_wchar( i-> accel, l2);

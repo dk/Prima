@@ -883,7 +883,7 @@ apc_show_message( const char * message, Bool utf8)
 		twr. text      = ( char *) message;
 		twr. utf8_text = utf8;
 		twr. textLen   = strlen( message);
-		twr. utf8_textLen = utf8 ? prima_utf8_length( message) : twr. textLen;
+		twr. utf8_textLen = utf8 ? prima_utf8_length( message, -1) : twr. textLen;
 		twr. width     = appSz. x * 2 / 3;
 		twr. tabIndent = 3;
 		twr. options   = twNewLineBreak | twWordBreak | twReturnLines;
@@ -918,7 +918,7 @@ apc_show_message( const char * message, Bool utf8)
 		for ( i = 0; i < twr. count; i++) {
 			if ( utf8) {
 				char * w;
-				md. lengths[i] = prima_utf8_length( wrapped[i]);
+				md. lengths[i] = prima_utf8_length( wrapped[i], -1);
 				w = ( char *) prima_alloc_utf8_to_wchar( wrapped[i], md. lengths[i]);
 				if ( !w) goto EXIT;
 				free( wrapped[i]);
@@ -1505,7 +1505,7 @@ XChar2b *
 prima_alloc_utf8_to_wchar( const char * utf8, int length_chars)
 {
 	XChar2b * ret;
-	if ( length_chars < 0) length_chars = prima_utf8_length( utf8) + 1;
+	if ( length_chars < 0) length_chars = prima_utf8_length( utf8, -1) + 1;
 	if ( !( ret = malloc( length_chars * sizeof( XChar2b)))) return nil;
 	prima_utf8_to_wchar( utf8, ret, strlen(utf8), length_chars);
 	return ret;
