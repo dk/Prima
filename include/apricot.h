@@ -3626,7 +3626,7 @@ typedef Bool TextShapeFunc( Handle self, PTextShapeRec rec);
 typedef TextShapeFunc *PTextShapeFunc;
 
 typedef struct {
-	int len, flags;
+	int len, flags, text_len;
 	uint16_t *glyphs, *indexes, *advances;
 	int16_t *positions;
 } GlyphsOutRec, *PGlyphsOutRec;

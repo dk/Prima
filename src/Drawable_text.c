@@ -89,6 +89,7 @@ read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const char * cal
 
 		t-> glyphs = ref;
 		t-> len    = length;
+		t-> text_len = 0;
 		return true;
 	}
 
@@ -141,7 +142,7 @@ hop_glyphs(GlyphsOutRec * t, int from, int len)
 {
 	if ( from == 0 && len == t->len ) return;
 
-	t->len = len;
+	t->len      = len;
 	t->glyphs  += from;
 
 	if ( t-> indexes ) {
@@ -155,7 +156,7 @@ hop_glyphs(GlyphsOutRec * t, int from, int len)
 			int ix = t->indexes[i] & ~toRTL;
 			if (ix > max_index && ix < next_index) next_index = ix;
 		}
-		t->indexes[len] = next_index;
+		t->text_len = next_index;
 	}
 
 	if ( t->advances ) {
@@ -163,7 +164,6 @@ hop_glyphs(GlyphsOutRec * t, int from, int len)
 		t->positions += from * 2;
 	}
 }
-
 
 Bool
 Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
@@ -1463,6 +1463,7 @@ typedef struct {
 	uint16_t * advances;
 	int16_t  * positions;
 	int        n_glyphs; /* glyphset length in words */
+	int        text_len; /* original index[-1] */
 	int        width;    /* width to wrap with */
 	int        options;  /* twXXX constants */
 	int        count;    /* count of lines returned */
@@ -1541,7 +1542,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	t-> count = 0;
 	if (!( ret = allocn( unsigned int, size))) return NULL;
 
-	text_length = t->indexes[t->n_glyphs];
+	text_length = t->text_len;
 #ifdef _DEBUG
 		printf("rest(%d %d)\n", text_length, t->n_glyphs);
 #endif
@@ -1706,6 +1707,7 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 	t.advances  = g.advances;
 	t.positions = g.positions;
 	t.width     = ( width < 0) ? 0 : width;
+	t.text_len  = g.text_len;
 	t.options   = options;
 	t.cache     = &var-> font_abc_glyphs;
 	t.l2v       = l2v;

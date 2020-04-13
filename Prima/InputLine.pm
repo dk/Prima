@@ -749,16 +749,15 @@ sub on_fontchanged
 	$self-> reset;
 }
 
-
 sub set_alignment
 {
 	my ( $self, $align) = @_;
 
-	$self-> {alignment} = $align;
 	$align = ta::Left if
 		$align != ta::Left &&
 		$align != ta::Right &&
 		$align != ta::Center;
+	$self-> {alignment} = $align;
 
 	$self-> reset;
 	$self-> repaint;
