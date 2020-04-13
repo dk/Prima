@@ -62,13 +62,13 @@ sub def
 sub get_width
 {
 	my ( $self, $canvas, $with_overhangs ) = @_;
-	return $canvas-> get_text_width($self->[GLYPHS], $with_overhangs ? to::AddOverhangs : 0);
+	return $canvas-> get_text_width($self, $with_overhangs ? to::AddOverhangs : 0);
 }
 
 sub get_box
 {
 	my ( $self, $canvas ) = @_;
-	return $canvas-> get_text_box($self->[GLYPHS]);
+	return $canvas-> get_text_box($self);
 }
 
 sub cluster2glyph
@@ -151,8 +151,9 @@ sub cluster2range
 
 sub offset2cluster
 {
-	my ( $self, $index ) = @_;
+	my ( $self, $index, $rtl_advance ) = @_;
 
+Carp::confess unless defined $index;
 	return 0 if $index < 0;
 
 	my $indexes  = $self->indexes;
@@ -165,7 +166,8 @@ sub offset2cluster
 	if ( $index >= $indexes->[-1] ) {
 		# eol
 		my $max_cluster = $indexes->[0] & ~to::RTL;
-		$ret_cluster = ($indexes->[0] & to::RTL) ? -1 : 0;
+		$ret_cluster = ($indexes->[0] & to::RTL) ? 0 : 1;
+		# print "max_cluster $max_cluster\n";
 		for ( my $ix = 0; $ix < $#$indexes; $ix++) {
 			my $c = $indexes->[$ix] & ~to::RTL;
 			if ( $last_index != $c ) {
@@ -174,10 +176,13 @@ sub offset2cluster
 			}
 			if ($max_cluster < $c) {
 				$max_cluster = $c;
-				$ret_cluster = $curr_cluster + (($indexes->[$ix] & to::RTL) ? -1 : 0);
+				$ret_cluster = $curr_cluster;
+				$ret_cluster += (($indexes->[$ix] & to::RTL) ? 0 : 1)
+					if $rtl_advance;
+				# print "ret $ret_cluster, max $c\n";
 			}
 		}
-		return 1 + $ret_cluster;
+		return $ret_cluster + 1;
 	} else {
 		my $diff = 0xffff;
 
@@ -188,7 +193,9 @@ sub offset2cluster
 				$last_index = $c;
 			}
 			if ( $index >= $c && $index - $c < $diff) {
-				$ret_cluster = $curr_cluster + (($indexes->[$ix] & to::RTL) ? 1 : 0);
+				$ret_cluster = $curr_cluster;
+				$ret_cluster += (($indexes->[$ix] & to::RTL) ? 0 : 1)
+					if $rtl_advance;
 				$diff = $index - $c;
 			}
 		}

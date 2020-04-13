@@ -13,7 +13,10 @@ use constant Horizontal   =>  2;
 
 package Prima::Edit;
 use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller Prima::UndoActions);
+@ISA = qw(
+	Prima::Widget Prima::MouseScroller Prima::GroupScroller
+	Prima::UndoActions Prima::BidiInput
+);
 
 use Prima qw(ScrollBar IntUtils Drawable::Glyphs);
 
@@ -304,22 +307,20 @@ sub reset
 			(scalar @{$self-> {chunkMap}}/CM_SIZE-1) : 
 			$self-> {maxLine};
 		$self-> {yTail} = ( $yTail > 0) ? 1 : 0;
-# updating selections
 		$self-> selection( @{$self-> {selStart}}, @{$self-> {selEnd}});
-# updating cursor
 		$self-> cursor( $self-> cursor);
-		my $x = $self-> {cursorXl};
-		my $y = $self-> {cursorYl};
-		my $w = $self-> get_chunk_width( $y, 0, $x);
-		$self-> {cursorAtX}      = $self-> textDirection ?
-			($self->rtl_offset - $w) : 
-			$w;
-		$self-> {cursorInsWidth} = $self-> get_chunk_width( $y, $x, 1);
 	}
+
 # positioning cursor
 	my $cx  = $a[0] + $self-> {cursorAtX} - $self-> {offset};
 	my $cy  = $a[1] + $yTail + ($self-> {rows} - $self-> {cursorYl} + $self-> {topLine } - 1) * $fh;
-	my $xcw = $self-> {insertMode} ? $cw : $self-> {cursorInsWidth};
+	my $xcw; 
+	if ($self-> {insertMode}) {
+		$xcw = $cw;
+		$cx += $self->{cursorInsWidth} if $self->{textDirection};
+	} else {
+		$xcw = $self-> {cursorInsWidth};
+	}
 	my $ycw = $fh;
 	$ycw -= $a[1] - $cy, $cy = $a[1] if $cy < $a[1];
 	$xcw = $size[0] + $a[0] - $cx if $cx + $xcw >= $size[0] + $a[0];
@@ -928,24 +929,32 @@ sub on_keydown
 	) {
 		my @cs = $self-> cursor;
 		my $c  = $self-> get_line( $cs[1]);
-		my $text_ofs = $self->get_shaped_chunk($cs[1])->cursor2offset($cs[0], $self->textDirection);
 		my $l = 0;
 		$self-> begin_undo_group;
 		my $chr = chr $code;
+		my ($curpos, $advance);
 		utf8::upgrade($chr) if $mod & km::Unicode;
-		if ( $self-> insertMode) {
-			$l = $text_ofs - length( $c), $c .= ' ' x $l
-				if length( $c) < $text_ofs;
-			substr( $c, $text_ofs, 0) = $chr x $repeat;
-			$self-> set_line( $cs[1], $c, q(add), $cs[0], $l + $repeat);
-		} else {
-			$l = $text_ofs - length( $c) + $repeat, $c .= ' ' x $l
-				if length( $c) < $text_ofs + $repeat;
-			substr( $c, $text_ofs, $repeat) = $chr x $repeat;
-			$self-> set_line( $cs[1], $c, q(overtype));
+		my $ll = $self-> get_chunk_cluster_length($cs[1]);
+		if ( $cs[0] > $ll ) {
+			$l = $curpos - length( $c);
+			$c .= ' ' x $l;
 		}
+		my $s = $self->get_shaped_chunk($cs[1]);
+		my ($new_text, $new_offset) = $self->handle_bidi_input(
+			action     => ($self->insertMode ? q(insert) : q(overtype)),
+			at         => $cs[0],
+			input      => $chr x $repeat,
+			text       => $c,
+			rtl        => $self->textDirection,
+			glyphs     => $s,
+			n_clusters => $ll,
+		);
+		$self-> set_line( $cs[1], $new_text, ($self->insertMode ?
+			(q(add), $cs[0], $l + $repeat) : 
+			q(overtype)
+		));
 		$self-> cursor(
-			$self->get_shaped_chunk($cs[1])->offset2cluster($text_ofs + $repeat), 
+			$self->get_shaped_chunk($cs[1])->offset2cluster($new_offset, 1),
 			$cs[1]
 		);
 		$self-> end_undo_group;
@@ -1025,6 +1034,14 @@ sub set_block_type
 	$self-> repaint;
 }
 
+sub reset_shaping_caches
+{
+	my $self = shift;
+	undef $self->{shapedChunk};
+	undef $self->{shapedIndex};
+	undef $self->{shapedClusters};
+}
+
 sub set_text_ref
 {
 	my ( $self, $ref) = @_;
@@ -1034,8 +1051,7 @@ sub set_text_ref
 	@{$self-> {lines}} = ();
 	@{$self-> {lines}} = split( "\n", $$ref // '');
 	$self-> {maxLine} = scalar @{$self-> {lines}} - 1;
-	undef $self->{shapedChunk};
-	undef $self->{shapedIndex};
+	$self-> reset_shaping_caches;
 	$self-> reset_syntax;
 	$self-> reset_scrolls;
 	if ( !$self-> {resetDisabled}) {
@@ -1064,6 +1080,7 @@ sub textDirection
 	return $_[0]-> {textDirection} unless $#_;
 	my ( $self, $td ) = @_;
 	$self-> {textDirection} = $td;
+	$self-> reset_shaping_caches;
 	$self->repaint;
 }
 
@@ -1105,7 +1122,7 @@ sub get_shaped_chunk
 	return Prima::Drawable::Glyphs-> new_empty if $self-> {maxLine} < 0;
 	return $self-> {shapedChunk} if ($self->{shapedIndex} // -1) == $index;
 
-	delete $self->{shapedClusters};
+	$self->reset_shaping_caches;
 
 	$self->{shapedIndex} = $index;
 	my $chunk = $self-> get_chunk($index);
@@ -1122,8 +1139,9 @@ sub get_shaped_chunk
 	if ( $opt{advances} && ( my $advances = $s-> advances)) {
 		my $indexes = $s-> indexes;
 		for my $ix (0..$#$advances) {
-			$advances->[$ix] *= $self->{tabIndent} if
-				substr($chunk, $indexes->[$ix] & ~to::RTL, 1) eq "\t";
+			my $cix = $indexes->[$ix];
+			next unless substr($chunk, $cix & ~to::RTL, 1) eq "\t";
+			$advances->[$ix] *= $self->{tabIndent} 
 		}
 	}
 	return $s;
@@ -1146,7 +1164,7 @@ sub get_chunk_cluster_length
 		return $self->{chunkMap}->[$index * CM_SIZE + CM_CLUSTER_LEN] //= 
 			$self->get_shaped_chunk($index)-> n_clusters;
 	} else {
-		delete $self->{shapedClusters} if ($self->{shapedIndex} // -1) != $index;
+		$self->reset_shaping_caches if ($self->{shapedIndex} // -1) != $index;
 		return $self->{shapedClusters} if defined $self->{shapedClusters};
 		return $self->{shapedClusters} = $self->get_shaped_chunk($index)-> n_clusters;
 	}
@@ -1164,6 +1182,10 @@ sub get_line_cluster_length
 sub get_chunk_width
 {
 	my ( $self, $index, $from, $len) = @_;
+	return $len * $self->{averageWidth} + 
+		(($len + $from <= 0) ? 0 : $self->get_chunk_width($index, 0, $len + $from)) 
+			if $from < 0;
+
 	my $n = $self->get_chunk_cluster_length($index);
 	return $len * $self->{averageWidth} if $from >= $n;
 
@@ -1208,10 +1230,16 @@ sub set_cursor
 	my ( $olx, $oly) = ( $self-> {cursorXl}, $self-> {cursorYl});
 	$self-> {cursorXl} = $lx;
 	$self-> {cursorYl} = $ly;
-	my $atX = $self-> get_chunk_width( $ly, 0, $lx);
-	$atX = $self->rtl_offset - $atX if $self-> textDirection;
-	$self-> get_chunk_width( $ly, 0, $lx);
-	my $deltaX = $self-> get_chunk_width( $ly, $lx, 1);
+	my ($atX, $deltaX);
+	if ( $self-> textDirection) {
+		$deltaX = $self-> get_chunk_width( $ly, $lx - 1, 1);
+		$atX    = ($lx > 0) ? $self-> get_chunk_width( $ly, 0, $lx - 1) : -$deltaX;
+		$atX += $self->rtl_offset - $self->get_shaped_chunk($ly)->get_width($self);
+	} else {
+		$atX = $self-> get_chunk_width( $ly, 0, $lx);
+		$deltaX = $self-> get_chunk_width( $ly, $lx, 1);
+	}
+
 	return if 
 		$y == $oy and $x == $ox and $lx == $olx and $ly == $oly and
 		# these can change with ligatures
@@ -2504,13 +2532,23 @@ sub delete_char
 	$repeat ||= 1;
 	$self-> begin_undo_group;
 	while ( $repeat-- ) {
-		my @cs       = $self->cursor;
-		my $text_ofs = $self->get_shaped_chunk($cs[1])->cursor2offset($cs[0], $self->textDirection);
-		$self-> delete_text( $text_ofs, $cs[1], 1 );
-		$self-> cursor(
-			$self->get_shaped_chunk($cs[1])->offset2cluster($text_ofs), 
-			$cs[1]
+		my @cs = $self->cursor;
+		my $s = $self->get_shaped_chunk($cs[1]);
+		my ($new_text, $new_offset) = $self->handle_bidi_input(
+			action     => ($self->insertMode ? q(delete) : q(cut)),
+			at         => $cs[0],
+			text       => $self->get_line($cs[1]),
+			rtl        => $self->textDirection,
+			glyphs     => $s,
+			n_clusters => $self->get_chunk_cluster_length($cs[1]),
 		);
+		if ( defined $new_text ) {
+			$self-> set_line( $cs[1], $new_text, q(delete), $cs[0], 1);
+			$self-> cursor(
+				$self->get_shaped_chunk($cs[1])->offset2cluster($new_offset),
+				$cs[1]
+			);
+		}
 	}
 	$self-> end_undo_group;
 }
@@ -2523,16 +2561,24 @@ sub back_char
 
 	$self-> begin_undo_group;
 	while ( $repeat-- ) {
-		my @cs       = $self->cursor;
-		my $text_ofs = $self->get_shaped_chunk($cs[1])->cursor2offset($cs[0], $self->textDirection);
-		if ( $text_ofs > 0 ) {
-			$self-> delete_text( $text_ofs - 1, $cs[1], 1 );
+		my @cs = $self->cursor;
+		my $s = $self->get_shaped_chunk($cs[1]);
+		my ($new_text, $new_offset) = $self->handle_bidi_input(
+			action     => q(backspace),
+			at         => $cs[0],
+			text       => $self->get_line($cs[1]),
+			rtl        => $self->textDirection,
+			glyphs     => $s,
+			n_clusters => $self->get_chunk_cluster_length($cs[1]),
+		);
+		if ( defined $new_text ) {
+			$self-> set_line( $cs[1], $new_text, q(delete), $cs[0], 1);
 			$self-> cursor(
-				$self->get_shaped_chunk($cs[1])->offset2cluster($text_ofs - 1), 
+				$self->get_shaped_chunk($cs[1])->offset2cluster($new_offset),
 				$cs[1]
 			);
 		} elsif ( $cs[1] > 0 ) {
-			my $l = $self->get_chunk_cluster_length($cs[1]-1),
+			my $l = $self->get_chunk_cluster_length($cs[1] - 1),
 			$self-> delete_text( length($self->get_line($cs[1] - 1)), $cs[1] - 1, 1 );
 			$self-> cursor($l, $cs[1] - 1);
 		}
