@@ -157,6 +157,8 @@ sub profile_default
 						$::application-> wantUnicodeInput($utf8_mode);
 					}]
 				),
+				[ '@'.($::application->textDirection ? '*' : '').'rtl' => 
+					'~Right-to-left' => sub{ $_[0]-> {editor}-> textDirection( $_[2] )}],
 				[ 'Set ~font' => q(setfont)],
 			]]
 		],

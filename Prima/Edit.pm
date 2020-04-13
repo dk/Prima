@@ -36,6 +36,7 @@ sub profile_default
 {
 	my %def = %{$_[ 0]-> SUPER::profile_default};
 	my $font = $_[ 0]-> get_default_font;
+	my $rtl  = $::application-> textDirection;
 	return {
 		%def,
 		accelItems => [
@@ -105,6 +106,7 @@ sub profile_default
 			[ Undo            => 0, 0, km::Alt|kb::Backspace, q(undo)],
 			[ Redo            => 0, 0, '^R', q(redo)],
 		],
+		alignment         => $rtl ? ta::Right : ta::Left,
 		autoIndent        => 1,
 		autoHScroll       => 1,
 		autoVScroll       => 1,
@@ -161,7 +163,7 @@ utime values vec wait waitpid wantarray warn while write y
 		syntaxHilite      => 0,
 		tabIndent         => 8,
 		textRef           => undef,
-		textDirection     => $::application-> textDirection,
+		textDirection     => $rtl,
 		topLine           => 0,
 		vScroll           => 0,
 		undoLimit         => 1000,
@@ -186,6 +188,8 @@ sub profile_check_in
 	$p-> { text} = '' if exists( $p-> { textRef});
 	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
 	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
+	$p-> {alignment} = ( $p->{textDirection} // $default->{textDirection} ) ?
+		ta::Right : ta::Left unless exists $p->{alignment};
 }
 
 sub init
@@ -306,7 +310,10 @@ sub reset
 		$self-> cursor( $self-> cursor);
 		my $x = $self-> {cursorXl};
 		my $y = $self-> {cursorYl};
-		$self-> {cursorAtX}      = $self-> get_chunk_width( $y, 0, $x);
+		my $w = $self-> get_chunk_width( $y, 0, $x);
+		$self-> {cursorAtX}      = $self-> textDirection ?
+			($self->rtl_offset - $w) : 
+			$w;
 		$self-> {cursorInsWidth} = $self-> get_chunk_width( $y, $x, 1);
 	}
 # positioning cursor
@@ -315,7 +322,7 @@ sub reset
 	my $xcw = $self-> {insertMode} ? $cw : $self-> {cursorInsWidth};
 	my $ycw = $fh;
 	$ycw -= $a[1] - $cy, $cy = $a[1] if $cy < $a[1];
-	$xcw = $size[0] + $a[0] - $cx - 1 if $cx + $xcw >= $size[0] + $a[0];
+	$xcw = $size[0] + $a[0] - $cx if $cx + $xcw >= $size[0] + $a[0];
 	$self-> cursorVisible( $xcw > 0);
 	if ( $xcw > 0) {
 		$self-> cursorPos( $cx, $cy);
@@ -586,6 +593,15 @@ sub paint_selection
 	$self-> clipRect( @$clipRect) if $restore_clip;
 }
 
+sub rtl_offset
+{
+	my $self = shift;
+	my @size = $self->get_active_area(2);
+	my $span = $self->{maxLineWidth};
+	$span = $size[0] if $size[0] > $span;
+	return $span - $self->{defcw} - 1;
+}
+
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
@@ -594,10 +610,10 @@ sub on_paint
 	( $self-> color, $self-> backColor) :
 	( $self-> disabledColor, $self-> disabledBackColor);
 	my @sclr   = ( $self-> hiliteColor, $self-> hiliteBackColor);
-	my ( $bw, $fh, $tl, $lc, $ofs, $bt, $issel) = (
+	my ( $bw, $fh, $tl, $lc, $ofs, $bt, $issel, $rtl) = (
 		$self-> {borderWidth}, $self-> font-> height, $self-> {topLine},
 		$self-> {maxChunk}+1, $self-> {offset}, $self-> {blockType},
-		$self-> has_selection,
+		$self-> has_selection, $self-> {textDirection},
 	);
 	my @a = $self-> get_active_area( 0, @size);
 
@@ -627,7 +643,8 @@ sub on_paint
 		$tl = $fx;
 	}
 	$lim = $lc if $lim > $lc;
-	my $x    = $a[0] - $ofs;
+	my $x = $a[0] - $ofs;
+	$x += $self->rtl_offset if $rtl;
 
 	# painting selection background as a big block
 	my @sel;
@@ -660,8 +677,9 @@ sub on_paint
 				my $horz_y = $y - ( $from - $tl) * $fh;
 				for ( $i = $from; $i < $to; $i++)
 				{
-					my $c = $self-> get_chunk( $i);
-					$canvas-> text_out( $self->get_shaped_chunk($i), $x, $horz_y);
+					my $s = $self->get_shaped_chunk($i);
+					my $X = $x - ($rtl ? $s->get_width($canvas) : 0);
+					$canvas-> text_out( $s, $X, $horz_y);
 					$horz_y -= $fh;
 				}
 				$canvas-> color( $clr[0]);
@@ -672,25 +690,26 @@ sub on_paint
 	# painting lines
 	for ( $i = $tl; $i < $lim; $i++)
 	{
+		my $X = $x - ($rtl ? $self->get_shaped_chunk($i)->get_width($canvas) : 0);
 		if ( $issel && $i >= $sel[1] && $i <= $sel[3])
 		{
 			# painting selected lines
 			if ( $bt == bt::CUA) {
 				if ( $sel[1] == $sel[3]) {
-					$self-> paint_selection( $canvas, $i, $x, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
+					$self-> paint_selection( $canvas, $i, $X, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
 				} elsif ( $i == $sel[1]) {
-					$self-> paint_selection( $canvas, $i, $x, $y, $size[0], $fh - 1, $sel[0], 'end'      , $clr[0], \@clipRect);
+					$self-> paint_selection( $canvas, $i, $X, $y, $size[0], $fh - 1, $sel[0], 'end'      , $clr[0], \@clipRect);
 				} elsif ( $i == $sel[3]) {
-					$self-> paint_selection( $canvas, $i, $x, $y, $size[0], $fh - 1, 'start', $sel[2] - 1, $clr[0], \@clipRect);
+					$self-> paint_selection( $canvas, $i, $X, $y, $size[0], $fh - 1, 'start', $sel[2] - 1, $clr[0], \@clipRect);
 				} else {
 					$canvas-> color( $sclr[0]);
-					$canvas-> text_out( $self-> get_shaped_chunk($i), $x, $y);
+					$canvas-> text_out( $self-> get_shaped_chunk($i), $X, $y);
 				}
 			} elsif ( $bt == bt::Vertical) {
-				$self-> paint_selection( $canvas, $i, $x, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
+				$self-> paint_selection( $canvas, $i, $X, $y, $size[0], $fh - 1, $sel[0], $sel[2] - 1, $clr[0], \@clipRect);
 			}
 		} else {
-			$self-> paint_selection( $canvas, $i, $x, $y, $size[0], $fh - 1, -1, -1, $clr[0], \@clipRect);
+			$self-> paint_selection( $canvas, $i, $X, $y, $size[0], $fh - 1, -1, -1, $clr[0], \@clipRect);
 		}
 		$y -= $fh;
 	}
@@ -727,6 +746,7 @@ sub point2xy
 	$ofsx = $self-> {maxLineWidth} if $ofsx > $self-> {maxLineWidth};
 	my $s = $self-> get_shaped_chunk($ry);
 	my $sw = $s-> get_width($self);
+	$ofsx = $self->rtl_offset - $ofsx if $self-> textDirection;
 	$rx = $s->x2cluster($self, $ofsx);
 	return $self-> logical_to_visual( $rx, $ry), $inBounds;
 }
@@ -1044,8 +1064,7 @@ sub textDirection
 	return $_[0]-> {textDirection} unless $#_;
 	my ( $self, $td ) = @_;
 	$self-> {textDirection} = $td;
-	undef $self->{shapedChunk};
-	undef $self->{shapedIndex};
+	$self->repaint;
 }
 
 sub get_text_ref
@@ -1189,13 +1208,15 @@ sub set_cursor
 	my ( $olx, $oly) = ( $self-> {cursorXl}, $self-> {cursorYl});
 	$self-> {cursorXl} = $lx;
 	$self-> {cursorYl} = $ly;
-	my $atX    = $self-> get_chunk_width( $ly, 0, $lx);
+	my $atX = $self-> get_chunk_width( $ly, 0, $lx);
+	$atX = $self->rtl_offset - $atX if $self-> textDirection;
+	$self-> get_chunk_width( $ly, 0, $lx);
 	my $deltaX = $self-> get_chunk_width( $ly, $lx, 1);
 	return if 
 		$y == $oy and $x == $ox and $lx == $olx and $ly == $oly and
 		# these can change with ligatures
-		$atX    == ($self->{cursorAtX} // -1) and
-		$deltaX == ($self->{cursorInsWidth} // -1);
+		$atX    == ($self->{cursorAtX} // -1_000_000) and
+		$deltaX == ($self->{cursorInsWidth} // -1_000_000);
 
 	my ( $tl, $r, $yt) = ( $self-> {topLine}, $self-> {rows}, $self-> {yTail});
 	if ( $ly < $tl) {
@@ -1210,6 +1231,11 @@ sub set_cursor
 		$self-> {defcw};
 	my $ofs = $self-> {offset};
 	my $avg = $self-> {averageWidth};
+	$self-> {cursorX}        = $x;
+	$self-> {cursorY}        = $y;
+	$self-> {cursorAtX}      = $atX;
+	$self-> {cursorInsWidth} = $deltaX;
+
 	if ( $atX < $ofs) {
 		my $nofs = $atX;
 		$self-> offset( $nofs - $avg);
@@ -1222,10 +1248,6 @@ sub set_cursor
 	# can be grouped
 	$self-> push_undo_action( 'cursor', $self-> {cursorX}, $self-> {cursorY})
 		unless $self->has_undo_action('cursor');
-	$self-> {cursorX}        = $x;
-	$self-> {cursorY}        = $y;
-	$self-> {cursorAtX}      = $atX;
-	$self-> {cursorInsWidth} = $deltaX;
 
 	$self-> reset_cursor;
 	$self-> cancel_block
@@ -1349,8 +1371,14 @@ sub set_insert_mode
 sub set_offset
 {
 	my ( $self, $offset) = @_;
-	$offset = 0 if $offset < 0;
-	$offset = 0 if $self-> {wordWrap};
+	if ( $self->{wordWrap}) {
+		$offset = 0;
+	} else {
+		my @size = $self->get_active_area(2);
+		$offset = $self->{maxLineWidth} - $size[0]
+			if $offset > $self->{maxLineWidth} - $size[0];
+		$offset = 0 if $offset < 0;
+	}
 	return if $self-> {offset} == $offset;
 	if ( $self-> {delayPanning}) {
 		$self-> {delay_offset} = $offset;
@@ -2814,6 +2842,17 @@ sub delete_marker
 }
 
 sub select_all { $_[0]-> selection(0,0,-1,-1); }
+
+sub alignment
+{
+	my ( $self, $align) = @_;
+
+	$align = ta::Left if
+		$align != ta::Left &&
+		$align != ta::Right;
+	$self-> {alignment} = $align;
+	$self-> repaint;
+}
 
 sub autoIndent      {($#_)?($_[0]-> {autoIndent}    = $_[1])                :return $_[0]-> {autoIndent }  }
 sub blockType       {($#_)?($_[0]-> set_block_type  ( $_[1]))               :return $_[0]-> {blockType}    }
