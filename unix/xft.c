@@ -1213,7 +1213,7 @@ xft_text2ucs4( const unsigned char * text, int len, Bool utf8, uint32_t * map8)
 		STRLEN charlen, bytelen = strlen(( const char *) text);
 		(void)bytelen;
 
-		if ( len < 0) len = prima_utf8_length(( char*) text);
+		if ( len < 0) len = prima_utf8_length(( char*) text, -1);
 		if ( !( r = ret = malloc( len * sizeof( FcChar32)))) return NULL;
 		while ( len--) {
 			*(r++) = prima_utf8_uvchr(text, bytelen, &charlen);

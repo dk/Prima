@@ -1866,14 +1866,10 @@ exception_check_raise(void)
 }
 
 int
-prima_utf8_length( const char * utf8)
+prima_utf8_length( const char * utf8, unsigned int maxlen)
 {
-	int ret = 0;
-	while ( *utf8) {
-		utf8 = ( char*) utf8_hop(( U8*) utf8, 1);
-		ret++;
-	}
-	return ret;
+	if ( maxlen < 0 ) maxlen = INT16_MAX;
+	return utf8_length((U8*)utf8, ((U8*)utf8) + maxlen);
 }
 
 Bool
