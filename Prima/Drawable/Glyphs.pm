@@ -62,18 +62,7 @@ sub def
 sub get_width
 {
 	my ( $self, $canvas, $with_overhangs ) = @_;
-	my $advances = $self->[ADVANCES];
-	if ( $advances ) {
-		my $x = 0;
-		$x += $_ for @$advances;
-		if ( $with_overhangs ) {
-			$x += $_ for $self->overhangs;
-		}
-		return $x;
-	} else {
-		cluck "cannot calculate glyph width without canvas" unless $canvas;
-		return $canvas-> get_text_width($self->[GLYPHS], $with_overhangs ? to::AddOverhangs : 0);
-	}
+	return $canvas-> get_text_width($self->[GLYPHS], $with_overhangs ? to::AddOverhangs : 0);
 }
 
 sub get_box
@@ -149,7 +138,7 @@ sub cluster2range
 	my $first_index = $self->cluster2index($from);
 	my $first       = $first_index & ~to::RTL;
 	my $rtl         = ($first_index & to::RTL) ? 1 : 0;
-	my $last        = $indexes->[-1] & ~to::RTL;
+	my $last        = $indexes->[-1];
 	return 0,0,0 if $first >= $last;
 
 	for ( my $ix = 0; $ix < $#$indexes; $ix++) {
