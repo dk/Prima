@@ -1,4 +1,5 @@
 =pod
+
 =head1 NAME
 
 examples/editor.pl - A basic text editor
