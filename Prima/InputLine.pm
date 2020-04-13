@@ -2,7 +2,7 @@
 #  Modifications by Anton Berezin <tobez@tobez.org>
 package Prima::InputLine;
 use vars qw(@ISA);
-@ISA = qw(Prima::Widget Prima::MouseScroller Prima::UndoActions);
+@ISA = qw(Prima::Widget Prima::MouseScroller Prima::UndoActions Prima::BidiInput);
 
 use strict;
 use warnings;
@@ -41,7 +41,8 @@ sub profile_default
 			[],
 			[select_all  => 'Select ~All' => 'select_all'],
 			[undo        => '~Undo', 'Ctrl+Z', '^Z', 'undo'],
-			[redo        => '~Redo', 'Ctrl+Y', '^Y', 'redo'],
+			[redo        => 'R~edo', 'Ctrl+Y', '^Y', 'redo'],
+			['@rtl'      => '~RTL input', 'Ctrl+Shift+D', '^#D', 'toggle_rtl'],
 		],
 		readOnly       => 0,
 		selection      => [0, 0],
@@ -200,12 +201,31 @@ sub reset
 	}
 
 	my $ofs = $self->{charOffset} - $fc;
-	my $x   = ($ofs < 0) ? 0 :
-		$glyphs->get_sub_width($self,$fc,$ofs) + $self->{atDrawX} + $border
-		;
-	my $curWidth = $self-> {insertMode} ?
-		$self->{defcw} :
-		((( $ofs < 0 ) ? 0 : $glyphs->get_sub_width($self, $fc+$ofs, 1)) + 1);
+	my $curWidth;
+	my $x;
+	if ( $self-> {insertMode} ) {
+		$curWidth = $self->{defcw};
+	} 
+	if ( $self-> textDirection) {
+		if ( $ofs < 0 ) {
+			$x = 0;
+			$curWidth //= $self->{defcw};
+		} else {
+			$x = $glyphs->get_sub_width($self,$fc,$ofs - ($self->{insertMode} ? 0 : 1))
+				+ $self->{atDrawX} + $border + 1;
+			$curWidth //= $glyphs->get_sub_width($self, $fc + $ofs - 1, 1);
+		}
+	} else {
+		if ( $ofs < 0 ) {
+			$x = 0;
+			$curWidth //= 0;
+		} else {
+			$x = $glyphs->get_sub_width($self,$fc,$ofs)
+				+ $self->{atDrawX} + $border + 1;
+			$curWidth //= $glyphs->get_sub_width($self, $fc + $ofs, 1);
+		}
+	}
+	$curWidth ||= 1;
 	$curWidth = $size[0] - $x - $border if $curWidth + $x > $size[0] - $border;
 	$self-> cursorSize( $curWidth, $size[1] - $border * 2 - 2);
 	$self-> cursorPos( $x, $border + 1);
@@ -237,6 +257,78 @@ sub text
 	$self-> notify(q(Change));
 }
 
+sub find_word_offset
+{
+	my ( $self, $offset, $right, $caplen, $delta) = @_;
+
+	my $orgd = $delta;
+	if ( $offset + $delta > 0 && $offset + $delta < $caplen)
+	{
+		my $w = $self-> {wordDelimiters};
+		if ( $right )
+		{
+			if ($w !~ quotemeta($self->char_at($offset)))
+			{
+				$delta++ while (($w !~ quotemeta( $self->char_at( $offset + $delta) // '')) &&
+					( $offset + $delta < $caplen));
+			}
+			if ( $offset + $delta < $caplen)
+			{
+				$delta++ while (( $w =~ quotemeta( $self->char_at( $offset + $delta) // '')) &&
+					( $offset + $delta < $caplen));
+			}
+		} else {
+			if ( $w =~ quotemeta( $self->char_at( $offset - 1)))
+			{
+				$delta-- while (( $w =~ quotemeta( $self->char_at( $offset + $delta - 1) // '')) &&
+					( $offset + $delta > 0));
+			}
+			if ( $offset + $delta > 0)
+			{
+				$delta-- while (( $w !~ quotemeta( $self->char_at( $offset + $delta - 1) // '')) &&
+					( $offset + $delta > 0));
+			}
+		}
+	}
+
+	return $delta;
+}
+
+sub handle_input
+{
+	my ( $self, $what ) = @_;
+	my %opt = (
+		at         => $self->charOffset,
+		text       => $self->text,
+		glyphs     => $self->{glyphs},
+		n_clusters => $self->{n_clusters},
+		rtl        => $self->{textDirection}
+	);
+	if ( $what eq 'backspace') {
+		$opt{action} = $what;
+	} elsif ( $what eq 'delete') {
+		$opt{action} = $self->insertMode ? 'delete' : 'cut';
+	} elsif ( $self->insertMode ) {
+		@opt{qw(action input)} = (q(insert), $what);
+	} else {
+		@opt{qw(action input)} = (q(overtype), $what);
+	}
+	my ($new_text, $new_offset) = $self-> handle_bidi_input(%opt);
+	if (defined $new_text) {
+		if ( $self-> maxLen >= 0 and length($new_text) > $self-> maxLen) {
+			$self-> event_error;
+			return;
+		}
+		$self-> edit_text( $new_text)
+	}
+	$self-> charOffset(
+		$opt{glyphs}->offest2cluster(
+			$new_offset,
+			$opt{action} =~ /^(insert|overtype)$/
+		)
+	) if defined $new_offset;
+}
+
 sub on_keydown
 {
 	my ( $self, $code, $key, $mod) = @_;
@@ -258,38 +350,11 @@ sub on_keydown
 		elsif ( $key == kb::Right) { $delta = 1;}
 		elsif ( $key == kb::Home)  { $delta = -$offset;}
 		elsif ( $key == kb::End)   { $delta = $caplen - $offset;}
-		if (( $mod & km::Ctrl) && ( $key == kb::Left || $key == kb::Right))
-		{
-			my $orgd = $delta;
-			if ( $offset + $delta > 0 && $offset + $delta < $caplen)
-			{
-				my $w = $self-> {wordDelimiters};
-				if ( $key == kb::Right)
-				{
-					if ($w !~ quotemeta($self->char_at($offset)))
-					{
-						$delta++ while (($w !~ quotemeta( $self->char_at( $offset + $delta) // '')) &&
-							( $offset + $delta < $caplen));
-					}
-					if ( $offset + $delta < $caplen)
-					{
-						$delta++ while (( $w =~ quotemeta( $self->char_at( $offset + $delta) // '')) &&
-							( $offset + $delta < $caplen));
-					}
-				} else {
-					if ( $w =~ quotemeta( $self->char_at( $offset - 1)))
-					{
-						$delta-- while (( $w =~ quotemeta( $self->char_at( $offset + $delta - 1) // '')) &&
-							( $offset + $delta > 0));
-					}
-					if ( $offset + $delta > 0)
-					{
-						$delta-- while (( $w !~ quotemeta( $self->char_at( $offset + $delta - 1) // '')) &&
-							( $offset + $delta > 0));
-					}
-				}
-			}
+
+		if (( $mod & km::Ctrl) && ( $key == kb::Left || $key == kb::Right)) {
+			$delta = $self->find_word_offset($offset, $key == kb::Right, $caplen, $delta);
 		}
+
 		if (( $offset + $delta >= 0) && ( $offset + $delta <= $caplen))
 		{
 			if ( $mod & km::Shift)
@@ -310,12 +375,13 @@ sub on_keydown
 			}
 			$self-> charOffset( $offset + $delta);
 			$self-> clear_event;
-			return;
 		} else {
 			# boundary exceeding:
 			$self-> clear_event unless $self-> {autoTab};
 		}
+		return;
 	}
+
 	if ( $key == kb::Insert && $mod == 0)
 	{
 		$self-> insertMode( !$self-> insertMode);
@@ -330,55 +396,44 @@ sub on_keydown
 
 	if ( $key == kb::Backspace)
 	{
-		if ( !$self-> {readOnly})
-		{
-			$self-> begin_undo_group;
-			if ( $p_start != $p_end)
-			{
-				substr( $cap, $p_start, $p_end - $p_start) = '';
-				$self-> set_selection(0,0);
-				$self-> edit_text( $cap);
-				$self-> charOffset( $start);
-			} else {
-				my $curpos = $self->{glyphs}->cursor2offset($start, $self->textDirection);
-				if ( $curpos > 0 ) {
-					substr( $cap, $curpos - 1, 1) = '';
-					$self-> edit_text( $cap);
-					$self-> charOffset($self->{glyphs}->offset2cluster($curpos - 1))
-				}
-			}
-			$self-> end_undo_group;
+		return if $self-> {readOnly};
+
+		$self-> begin_undo_group;
+		if ( $p_start != $p_end) {
+			substr( $cap, $p_start, $p_end - $p_start) = '';
+			$self-> set_selection(0,0);
+			$self-> edit_text( $cap);
+			$self-> charOffset( $start);
+		} else {
+			$self-> handle_input(q(backspace));
 		}
+		$self-> end_undo_group;
 		$self-> clear_event;
 		return;
 	}
+
 	if ( $key == kb::Delete)
 	{
-		if ( !$self-> {readOnly})
+		return if $self-> {readOnly};
+
+		my $del;
+		$self-> begin_undo_group;
+		if ( $p_start != $p_end)
 		{
-			my $del;
-			$self-> begin_undo_group;
-			if ( $p_start != $p_end)
-			{
-				$del = substr( $cap, $p_start, $p_end - $p_start, '');
-				$self-> set_selection(0,0);
-				$self-> edit_text( $cap);
-				$self-> charOffset( $start);
-			} else {
-				my $curpos = $self->{glyphs}->cursor2offset($start, $self->textDirection);
-				if ( $curpos < length($cap) ) {
-					$del = substr( $cap, $curpos, 1, '');
-					$self-> edit_text( $cap);
-					$self-> charOffset($self->{glyphs}->offset2cluster($curpos))
-				}
-			}
-			$self-> end_undo_group;
-			$::application-> Clipboard-> text( $del)
-				if $mod & ( km::Ctrl|km::Shift);
+			$del = substr( $cap, $p_start, $p_end - $p_start, '');
+			$self-> set_selection(0,0);
+			$self-> edit_text( $cap);
+			$self-> charOffset( $start);
+		} else {
+			$self-> handle_input(q(delete));
 		}
+		$self-> end_undo_group;
+		$::application-> Clipboard-> text( $del )
+			if $mod & ( km::Ctrl|km::Shift) && defined($del);
 		$self-> clear_event;
 		return;
 	}
+
 	if ( $key == kb::Insert && ( $mod & ( km::Ctrl|km::Shift)))
 	{
 		if ( $mod & km::Ctrl)
@@ -431,28 +486,15 @@ sub on_keydown
 		my $chr = chr $code;
 		$self-> begin_undo_group;
 		utf8::upgrade($chr) if $is_unicode;
-		my $curpos;
+		my ($curpos, $advance);
 		if ( $p_start != $p_end) {
 			substr( $cap, $p_start, $p_end - $p_start) = $chr;
-			$curpos = $p_start + 1;
-		} elsif ( !$self-> {insertMode}) {
-			$p_end++;
-			substr( $cap, $p_start, $p_end - $p_start) = $chr;
-		} else {
-			$curpos = $self->{glyphs}->cursor2offset($start, $self->textDirection);
-			substr( $cap, $curpos, 0) = $chr;
-			$curpos++;
-		}
-
-		$self-> selection(0,0);
-		if ( $self-> maxLen >= 0 and length ( $cap) > $self-> maxLen)
-		{
-			$self-> event_error;
-		} else {
 			$self-> edit_text( $cap);
-			$self-> charOffset($self->{glyphs}->offset2cluster($curpos))
-				if defined $curpos;
+			$self-> charOffset($self->{glyphs}->offset2cluster($p_start));
+		} else {
+			$self-> handle_input($chr);
 		}
+		$self-> selection(0,0);
 		$self-> clear_event;
 		$self-> end_undo_group;
 		return;
@@ -478,6 +520,7 @@ sub on_popup
 	$p-> enabled( 'select_all',   $self->{n_clusters} > 0);
 	$p-> enabled( 'undo',         $self->can_undo );
 	$p-> enabled( 'redo',         $self->can_redo );
+	$p-> checked( 'rtl',          $self-> textDirection );
 }
 
 sub default_geom_height
@@ -502,6 +545,12 @@ sub copy
 
 	my $cap = $self-> text;
 	$::application-> Clipboard-> text( substr( $cap, $start, $end - $start));
+}
+
+sub toggle_rtl
+{	
+	my ( $self, $menu, $value ) = @_;
+	$self-> textDirection($value);
 }
 
 sub paste

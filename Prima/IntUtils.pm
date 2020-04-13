@@ -467,6 +467,60 @@ sub draw_item_background
 	}
 }
 
+package Prima::BidiInput;
+
+sub handle_bidi_input
+{
+	my ( $self, %opt ) = @_;
+
+	my @ret;
+	if ( $opt{action} eq 'backspace') {
+		if ( $opt{at} == ($opt{rtl} ? 0 : $opt{n_clusters})) {
+			chop $opt{text};
+			@ret = ( $opt{text}, length($opt{text}));
+		} else {
+			my $curpos = $opt{glyphs}->cursor2offset($opt{at}, $opt{rtl});
+			if ( $curpos > 0 ) {
+				substr( $opt{text}, $curpos - 1, 1) = '';
+				@ret = ( $opt{text}, $curpos - 1);
+			}
+		}
+	} elsif ( $opt{action} eq 'delete') {
+		my $curpos = $opt{glyphs}->cursor2offset($opt{at}, $opt{rtl});
+		if ( $curpos < length($opt{text}) ) {
+			substr( $opt{text}, $curpos, 1, '');
+			@ret = ( $opt{text}, $curpos);
+		}
+	} elsif ( $opt{action} eq 'cut') {
+		if ( $opt{at} != ($opt{rtl} ? 0 : $opt{n_clusters})) {
+			my ($pos, $len, $rtl) = $opt{glyphs}-> cluster2range( 
+				$opt{at} - ($opt{rtl} ? 1 : 0));
+			substr( $opt{text}, $pos + $len - 1, 1, '');
+			@ret = ( $opt{text}, $pos + $len - 1);
+		}
+	} elsif ( $opt{action} eq 'insert') {
+		my $curpos = $opt{glyphs}->cursor2offset($opt{at}, $opt{rtl});
+		substr( $opt{text}, $curpos, 0) = $opt{input};
+		@ret = ( $opt{text}, $curpos );
+	} elsif ( $opt{action} eq 'overtype') {
+		my ($append, $shift) = $opt{rtl} ? (0, 1) : ($opt{n_clusters}, 0);
+		my $curpos;
+		if ( $opt{at} == $append) {
+			$opt{text} .= $opt{input};
+			$curpos = length($opt{text});
+		} else {
+			my ($pos, $len, $rtl) = $opt{glyphs}-> cluster2range( $opt{at} - $shift );
+			$pos += $len - 1 if $rtl;
+			substr( $opt{text}, $pos, 1) = $opt{input};
+			$curpos = $pos + 1;
+		}
+		@ret = ( $opt{text}, $curpos );
+	} else {
+		Carp::cluck("bad input $opt{action}");
+	}
+	return ();
+}
+
 1;
 
 =head1 NAME
