@@ -906,7 +906,7 @@ scroll( Handle owner, Handle self, Point * delta)
 
 int
 apc_widget_scroll( Handle self, int horiz, int vert,
-						Rect *confine, Rect *clip, Bool withChildren)
+	Rect *confine, Rect *clip, Bool withChildren)
 {
 	DEFXX;
 	int src_x, src_y, w, h, dst_x, dst_y, iw, ih;
@@ -994,8 +994,8 @@ apc_widget_scroll( Handle self, int horiz, int vert,
 		XRectangle cpa;
 		cpa. x = dst_x;
 		cpa. y = dst_y;
-		cpa. width = iw;
-		cpa. height = ih;
+		cpa. width = w;
+		cpa. height = h;
 		XUnionRectWithRegion( &cpa, invalid, invalid);
 	}
 
