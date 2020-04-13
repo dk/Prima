@@ -153,7 +153,6 @@ sub offset2cluster
 {
 	my ( $self, $index, $rtl_advance ) = @_;
 
-Carp::confess unless defined $index;
 	return 0 if $index < 0;
 
 	my $indexes  = $self->indexes;
