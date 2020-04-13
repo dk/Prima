@@ -442,6 +442,7 @@ sub test_glyphs_wrap
 
 	SKIP: { if ( $opt{shaping} ) {
 		skip("no arabic font", 1) unless find_shaping_font( xtr('|/%'));
+		$w->font->size(12);
 		glyphs "|/%";
 		skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
 		# that is tested already, rely on that: t2('/|', '%', [r(0)], 'arabic ligation');

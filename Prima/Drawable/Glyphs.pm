@@ -208,31 +208,6 @@ sub offset2cluster
 	return $ret_cluster;
 }
 
-sub get_sub_width
-{
-	my ( $self, $canvas, $from, $length ) = @_;
-	($from, $length) = $self-> cluster2glyph($from, $length);
-	return 0 if $length <= 0;
-	my $advances = $self->[ADVANCES];
-	if ( $advances ) {
-		my $x = 0;
-		my $to = $from + $length - 1;
-		$x += $advances->[$_] for $from .. $to;
-		return $x;
-	} else {
-		cluck "cannot calculate glyph width without canvas" unless $canvas;
-		return $canvas-> get_text_width(Prima::array::substr($self->[GLYPHS], $from, $length));
-	}
-}
-
-sub get_sub_box
-{
-	my ( $self, $canvas, $from, $length ) = @_;
-	($from, $length) = $self-> cluster2glyph($from, $length);
-	return [0,0,0,0,0] if $length <= 0;
-	return $canvas-> get_text_box(Prima::array::substr($self->[GLYPHS], $from, $length));
-}
-
 sub get_sub
 {
 	my ( $self, $canvas, $from, $length) = @_;
@@ -263,25 +238,26 @@ sub get_sub
 	return __PACKAGE__->new( @sub );
 }
 
+sub get_sub_width
+{
+	my ( $self, $canvas, $from, $length ) = @_;
+	($from, $length) = $self-> cluster2glyph($from, $length);
+	return $canvas-> get_text_width($self, 0, $from, $length);
+}
+
+sub get_sub_box
+{
+	my ( $self, $canvas, $from, $length ) = @_;
+	($from, $length) = $self-> cluster2glyph($from, $length);
+	return $canvas-> get_text_box($self, $from, $length);
+}
+
 sub sub_text_out
 {
 	my ( $self, $canvas, $from, $length, $x, $y) = @_;
 	($from, $length) = $self-> cluster2glyph($from, $length);
 	return if $length <= 0;
-
-	return $canvas-> text_out( $self, $x, $y)
-		if $from == 0 && $length == @{ $self->[GLYPHS] };
-
-	return $canvas-> text_out(Prima::array::substr($self->[GLYPHS], $from, $length), $x, $y)
-		unless $self->advances;
-
-	# quick hack
-	my @sub;
-	$sub[GLYPHS]    = Prima::array::substr($self->[GLYPHS], $from, $length);
-	$sub[INDEXES]   = Prima::array::substr($self->[INDEXES], $from, $length + 1); # this is fake
-	$sub[ADVANCES]  = Prima::array::substr($self->[ADVANCES], $from, $length);
-	$sub[POSITIONS] = Prima::array::substr($self->[POSITIONS], $from * 2, $length * 2);
-	return $canvas-> text_out(\@sub, $x, $y);
+	return $canvas-> text_out($self, $x, $y, $from, $length);
 }
 
 sub sub_text_wrap
@@ -289,20 +265,18 @@ sub sub_text_wrap
 	my ( $self, $canvas, $from, $length, $width, $opt, $tabs) = @_;
 	$opt //= tw::Default;
 	$tabs //= 8;
-	my $sub = $self-> get_sub($canvas, $from, $length) or return [];
-	return $canvas-> text_wrap($sub, $width, $opt, $tabs);
+	return $canvas-> text_wrap($self, $width, $opt, $tabs, $from, $length);
 }
 
 sub x2cluster
 {
 	my ( $self, $canvas, $width, $from, $length ) = @_;
-	my $sub;
-	if (defined $from) {
-		$sub = $self-> get_sub($canvas, $from, $length) or return undef;
-	} else {
-		$sub = $self;
-	}
-	return $canvas-> text_wrap($sub, $width, tw::ReturnFirstLineLength | tw::BreakSingle);
+	$from //= 0;
+	$length //= -1;
+	return $canvas-> text_wrap($self, $width, 
+		tw::ReturnFirstLineLength | tw::BreakSingle, 8, 
+		$from, $length
+	);
 }
 
 sub n_clusters

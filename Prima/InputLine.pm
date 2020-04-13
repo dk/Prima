@@ -150,19 +150,16 @@ sub on_paint
 			$self->{selChunks}, $self->{firstChar}, $self->{n_clusters}, sub {
 			my ( $offset, $length, $selected ) = @_;
 			my $text = substr( $cap, $offset, $length );
-			my $sub = $self->{glyphs}->get_sub( $self, $self->{firstChar} + $offset, $length);
-			if ( $sub ) {
-				my $dx = $sub->get_width( $self );
-				if ( $selected ) {
-					$canvas-> color( $self-> hiliteBackColor);
-					$canvas-> bar( $x, 0, $x + $dx - 1, $size[1] - 1);
-					$canvas-> color( $self-> hiliteColor);
-				} else {
-					$canvas-> color( $clr[0]);
-				}
-				$canvas-> text_out( $sub, $x, $y );
-				$x += $dx;
+			my $dx = $self->{glyphs}->get_sub_width( $self, $self->{firstChar} + $offset, $length);
+			if ( $selected ) {
+				$canvas-> color( $self-> hiliteBackColor);
+				$canvas-> bar( $x, 0, $x + $dx - 1, $size[1] - 1);
+				$canvas-> color( $self-> hiliteColor);
+			} else {
+				$canvas-> color( $clr[0]);
 			}
+			$canvas->text_out($self->{glyphs}, $x, $y, $self->{firstChar} + $offset, $length );
+			$x += $dx;
 		});
 	} else {
 		$canvas-> color( $clr[0]);

@@ -57,8 +57,8 @@ object Prima::Drawable ( Prima::Component)
 	method Color get_nearest_color( Color color);
 	method int   get_paint_state();
 	method SV *  get_physical_palette();
-	method int   get_text_width( SV * text, int flags = 0);
-	method SV *  get_text_box( SV * text);
+	method int   get_text_width( SV * text, int flags = 0, int from = 0, int len = -1);
+	method SV *  get_text_box( SV * text, int from = 0, int len = -1);
 	method SV *  render_glyph( int index, HV * profile);
 	static SV *  render_spline( SV * obj, SV * points, HV * profile);
 
@@ -81,9 +81,9 @@ object Prima::Drawable ( Prima::Component)
 	method Bool  put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
 	method Bool  rectangle(int x1, int y1, int x2, int y2)  => apc_gp_rectangle;
 	method Bool  sector( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_sector;
-	method Bool  text_out( SV * text, int x, int y);
+	method Bool  text_out( SV * text, int x, int y, int from = 0, int len = -1);
 	method SV*   text_shape( SV * text, HV * profile);
-	method SV*   text_wrap( SV * text, int width, int options = twDefault, int tabIndent = 8);
+	method SV*   text_wrap( SV * text, int width, int options = twDefault, int tabIndent = 8, int from = 0, int len = -1);
 
 	# font_abc caches
 	PFontABC font_abc_ascii;

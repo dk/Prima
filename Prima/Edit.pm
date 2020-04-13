@@ -524,13 +524,10 @@ sub draw_colorchunk
 	}
 
 	for ( my ($j,$last) = (0,0); $j < @$sd; $j += 2) {
-		my $sub = $s-> get_sub( $canvas, $last, $$sd[$j]);
-		$last += $$sd[$j];
-		next unless $sub;
-	
 		$canvas-> color(( $$sd[$j+1] == cl::Fore) ? $clr : $$sd[$j+1]);
-		$canvas-> text_out( $sub, $x, $y);
-		$x += $sub->get_width($canvas);
+		$canvas-> text_out( $s, $x, $y, $last, $$sd[$j]);
+		$x += $canvas->get_text_width($s, 0, $last, $$sd[$j]);
+		$last += $$sd[$j];
 	}
 }
 

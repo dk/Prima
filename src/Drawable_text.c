@@ -118,8 +118,55 @@ read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const char * cal
 	return true;
 }
 
+static int
+check_length( int from, int len, int real_len )
+{
+	if ( len < 0 ) len = real_len;
+	if ( from < 0 ) return 0;
+	if ( from + len > real_len ) len = real_len - from;
+	if ( len <= 0 ) return 0;
+	return len;
+}
+
+char * 
+hop_text(char * start, Bool utf8, int from)
+{
+	if ( !utf8 ) return start + from;
+	while ( from-- ) start = (char*)utf8_hop((U8*)start, 1);
+	return start;
+}
+
+void 
+hop_glyphs(GlyphsOutRec * t, int from, int len)
+{
+	if ( from == 0 && len == t->len ) return;
+
+	t->len = len;
+	t->glyphs  += from;
+
+	if ( t-> indexes ) {
+		int i, max_index = 0, next_index = t->indexes[t->len];
+		t->indexes += from;
+		for ( i = 0; i <= len; i++ ) {
+			int ix = t->indexes[i] & ~toRTL;
+			if ( max_index < ix ) max_index = ix;
+		}
+		for ( i = 0; i <= t->len; i++ ) {
+			int ix = t->indexes[i] & ~toRTL;
+			if (ix > max_index && ix < next_index) next_index = ix;
+		}
+		t->indexes[len] = next_index;
+	}
+
+	if ( t->advances ) {
+		t->advances  += from;
+		t->positions += from * 2;
+	}
+}
+
+
 Bool
-Drawable_text_out( Handle self, SV * text, int x, int y)
+Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 {
 	Bool ok;
 	if ( !SvROK( text )) {
@@ -127,7 +174,10 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 		char * c_text = SvPV( text, dlen);
 		Bool   utf8 = prima_is_utf8_sv( text);
 		if ( utf8) dlen = prima_utf8_length(c_text, dlen);
-		ok = apc_gp_text_out( self, c_text, x, y, dlen, utf8 ? toUTF8 : 0);
+		if ((len = check_length(from,len,dlen)) == 0)
+			return true;
+		c_text = hop_text(c_text, utf8, from);
+		ok = apc_gp_text_out( self, c_text, x, y, len, utf8 ? toUTF8 : 0);
 		if ( !ok) perl_error();
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
@@ -135,10 +185,13 @@ Drawable_text_out( Handle self, SV * text, int x, int y)
 			return false;
 		if (t.len == 0)
 			return true;
+		if (( len = check_length(from,len,t.len)) == 0)
+			return true;
+		hop_glyphs(&t, from, len);
 		ok = apc_gp_glyphs_out( self, &t, x, y);
 		if ( !ok) perl_error();
 	} else {
-		SV * ret = sv_call_perl(text, "text_out", "<Hii", self, x, y);
+		SV * ret = sv_call_perl(text, "text_out", "<Hiiii", self, x, y, from, len);
 		ok = ret && SvTRUE(ret);
 	}
 	return ok;
@@ -718,7 +771,7 @@ get_glyphs_width( Handle self, PGlyphsOutRec t, Bool add_overhangs)
 }
 
 int
-Drawable_get_text_width( Handle self, SV * text, int flags)
+Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
 {
 	gpARGS;
 	int res;
@@ -731,8 +784,11 @@ Drawable_get_text_width( Handle self, SV * text, int flags)
 			flags |= toUTF8;
 		} else
 			flags &= ~toUTF8;
+		if (( len = check_length(from,len,dlen)) == 0)
+			return 0;
+		c_text = hop_text(c_text, flags & toUTF8, from);
 		gpENTER(0);
-		res = apc_gp_get_text_width( self, c_text, dlen, flags);
+		res = apc_gp_get_text_width( self, c_text, len, flags);
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
@@ -740,6 +796,9 @@ Drawable_get_text_width( Handle self, SV * text, int flags)
 			return false;
 		if (t.len == 0)
 			return true;
+		if (( len = check_length(from,len,t.len)) == 0)
+			return 0;
+		hop_glyphs(&t, from, len);
 		if (t.advances)
 			return get_glyphs_width(self, &t, flags & toAddOverhangs);
 		gpENTER(0);
@@ -748,7 +807,7 @@ Drawable_get_text_width( Handle self, SV * text, int flags)
 	} else {
 		SV * ret;
 		gpENTER(0);
-		ret = sv_call_perl(text, "get_text_width", "<Hi", self, flags);
+		ret = sv_call_perl(text, "get_text_width", "<Hiii", self, flags, from, len);
 		gpLEAVE;
 		res = (ret && SvOK(ret)) ? SvIV(ret) : 0;
 	}
@@ -792,7 +851,7 @@ get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
 }
 
 SV *
-Drawable_get_text_box( Handle self, SV * text )
+Drawable_get_text_box( Handle self, SV * text, int from, int len )
 {
 	gpARGS;
 	Point * p;
@@ -806,13 +865,19 @@ Drawable_get_text_box( Handle self, SV * text )
 			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
 			flags |= toUTF8;
 		}
+		if ((len = check_length(from,len,dlen)) == 0)
+			return newRV_noinc(( SV *) newAV());
+		c_text = hop_text(c_text, flags & toUTF8, from);
 		gpENTER( newRV_noinc(( SV *) newAV()));
-		p = apc_gp_get_text_box( self, c_text, dlen, flags);
+		p = apc_gp_get_text_box( self, c_text, len, flags);
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
 		if (!read_glyphs(&t, text, 0, "Drawable::get_text_box"))
 			return false;
+		if (( len = check_length(from,len,t.len)) == 0)
+			return newRV_noinc(( SV *) newAV());
+		hop_glyphs(&t, from, len);
 		if (t.advances) {
 			if (!( p = malloc( sizeof(Point) * 5 )))
 				return newRV_noinc(( SV *) newAV());
@@ -825,7 +890,7 @@ Drawable_get_text_box( Handle self, SV * text )
 	} else {
 		SV * ret;
 		gpENTER( newRV_noinc(( SV *) newAV()));
-		ret = newSVsv(sv_call_perl(text, "get_text_box", "<H", self ));
+		ret = newSVsv(sv_call_perl(text, "get_text_box", "<Hii", self, from, len ));
 		gpLEAVE;
 		return ret;
 	}
@@ -1310,7 +1375,7 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 #undef ADD
 
 static SV*
-string_wrap( Handle self,SV * text, int width, int options, int tabIndent)
+string_wrap( Handle self,SV * text, int width, int options, int tabIndent, int from, int len)
 {
 	gpARGS;
 	TextWrapRec t;
@@ -1323,10 +1388,18 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent)
 	t. utf8_text = prima_is_utf8_sv( text);
 	if ( t. utf8_text) {
 		t. utf8_textLen = prima_utf8_length( t. text, tlen);
+		if (( t. utf8_textLen = check_length(from, len, t. utf8_textLen)) == 0)
+			from = 0;
+		t. text = hop_text(t.text, true, from);
 		t. textLen = utf8_hop(( U8*) t. text, t. utf8_textLen) - (U8*) t. text;
 	} else {
+		if ((tlen = check_length(from, len, tlen)) == 0)
+			from = 0;
+		t. text = hop_text(t.text, false, from);
 		t. utf8_textLen = t. textLen = tlen;
 	}
+	
+
 	t. width     = ( width < 0) ? 0 : width;
 	t. tabIndent = ( tabIndent < 0) ? 0 : tabIndent;
 	t. options   = options;
@@ -1591,7 +1664,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 #undef ADD
 
 static SV*
-glyphs_wrap( Handle self, SV * text, int width, int options)
+glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 {
 	gpARGS;
 	GlyphWrapRec t;
@@ -1605,6 +1678,9 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 
 	if (!read_glyphs(&g, text, 1, "Drawable::text_wrap"))
 		return nilSV;
+	if ((len = check_length(from, len, g.len)) == 0)
+		from = 0;
+	hop_glyphs(&g, from, len);
 
 	/* a very quick check, if possible, if glyphstr fits */
 	if ( 
@@ -1715,13 +1791,12 @@ glyphs_wrap( Handle self, SV * text, int width, int options)
 }
 
 SV*
-Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabIndent)
+Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabIndent, int from, int len)
 {
-
 	if ( !SvROK( text )) {
-		return string_wrap(self, text, width, options, tabIndent);
+		return string_wrap(self, text, width, options, tabIndent, from, len);
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
-		return glyphs_wrap(self, text, width, options);
+		return glyphs_wrap(self, text, width, options, from, len);
 	} else {
 		SV * ret;
 		gpARGS;
@@ -1729,7 +1804,7 @@ Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabInden
 			(( options & twReturnFirstLineLength) == twReturnFirstLineLength) ?
 				newSViv(0) : newRV_noinc(( SV *) newAV())
 		);
-		ret = newSVsv(sv_call_perl(text, "text_wrap", "<Hiii", self, width, options, tabIndent));
+		ret = newSVsv(sv_call_perl(text, "text_wrap", "<Hiiiii", self, width, options, tabIndent, from, len));
 		gpLEAVE;
 		return ret;
 	}
