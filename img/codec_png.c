@@ -1492,7 +1492,7 @@ write_tRNS(PImgSaveFileInstance fi)
 	png_color_16 trns_p[256];
 	png_byte trns_t[256];
 	int trns_n = 0;
-	Color color;
+	Color color = (Color) 0;
 	int   index = 0;
 	Bool has_color, has_index;
 	int color_weight = 0, index_weight = 0;

@@ -21,7 +21,6 @@ extern "C" {
 #define gpENTER(fail)     if ( !inPaint) if ( !my-> begin_paint_info( self)) return (fail)
 #define gpLEAVE           if ( !inPaint) my-> end_paint_info( self)
 
-
 static void*
 read_subarray( AV * av, int index, 
 	int length_expected, int * plen, char * letter_expected,
@@ -81,7 +80,7 @@ read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const char * cal
 			warn("%s requires glyphstr with indexes", caller);
 			return false;
 		}
-	
+
 		if ( !prima_array_parse( text, &ref, &length, &letter) || *letter != 'S') {
 			warn("invalid glyphstr passed to %s: %s", caller, "not a Prima::array");
 			return false;
@@ -112,8 +111,9 @@ read_glyphs( PGlyphsOutRec t, SV * text, Bool indexes_required, const char * cal
 		if ( !( t-> advances = read_subarray( av, 2, t->len, NULL, "S", caller, "advances")))
 			return false;
 	case 2:
-		if ( !( t-> indexes = read_subarray( av, 1, t->len, NULL, "S", caller, "indexes")))
+		if ( !( t-> indexes = read_subarray( av, 1, t->len + 1, NULL, "S", caller, "indexes")))
 			return false;
+		t-> text_len = t-> indexes[t->len];
 	}
 
 	return true;
@@ -1398,7 +1398,6 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent, int f
 		t. text = hop_text(t.text, false, from);
 		t. utf8_textLen = t. textLen = tlen;
 	}
-	
 
 	t. width     = ( width < 0) ? 0 : width;
 	t. tabIndent = ( tabIndent < 0) ? 0 : tabIndent;
@@ -1656,9 +1655,8 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	}
 
 	/* adding or skipping last line */
-	if ( text_length - start > 0 || t-> count == 0) {
+	if ( text_length - start > 0 || t-> count == 0)
 		ADD(text_length);
-	}
 
 	return ret;
 }
@@ -1684,7 +1682,7 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 	hop_glyphs(&g, from, len);
 
 	/* a very quick check, if possible, if glyphstr fits */
-	if ( 
+	if (
 		(g.len == 0) ||
 		(g.advances && ( width >= get_glyphs_width(self, &g, true)))
 	) {
