@@ -460,7 +460,7 @@ sub log2vis
 	my @newmap = (undef) x $map->[-1];
 	my $last;
 	$newmap[ $map->[$_] & ~to::RTL ] = $_ for 0 .. $#$map - 1;
-	defined ? ($last = $_) : ($_ = $last) for @newmap;
+	defined($_) ? ($last = $_) : ($_ = $last) for @newmap;
 	return \@newmap;
 }
 
