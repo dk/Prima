@@ -518,7 +518,7 @@ sub handle_bidi_input
 	} else {
 		Carp::cluck("bad input $opt{action}");
 	}
-	return ();
+	return @ret;
 }
 
 1;

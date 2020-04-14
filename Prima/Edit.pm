@@ -348,7 +348,6 @@ sub reset_render
 	$self-> {uChange} = 0;
 }
 
-
 sub reset_scrolls
 {
 	my $self = $_[0];
@@ -365,7 +364,7 @@ sub reset_scrolls
 	}
 	if ( $self-> {scrollTransaction} != 2) {
 		my $w = $self-> width - $self-> {indents}-> [0] - $self-> {indents}-> [2];
-		my $lw = $self-> {maxLineWidth};
+		my $lw = $self-> {maxLineWidth} + $self->{defcw} + 1;
 		if ( $self-> {autoHScroll}) {
 			my $hs = ( $lw > $w) ? 1 : 0;
 			if ( $hs != $self-> {hScroll}) {
@@ -373,14 +372,19 @@ sub reset_scrolls
 				$w = $self-> width - $self-> {indents}-> [0] - $self-> {indents}-> [2];
 			}
 		}
-		$self-> {hScrollBar}-> set(
-			max      => $self-> {wordWrap} ? 0 : $lw - $w,
-			whole    => $lw < $w ? $w : $lw,
-			value    => $self-> {offset},
-			partial  => $w,
-			pageStep => $lw / 5,
-			step     => $self-> font-> width,
-		) if $self-> {hScroll};
+		if ($self-> {hScroll}) {
+			my $step  = $self-> font-> width;
+			my $value = int($self->{offset} / $step) * $step +
+				($self->textDirection ? $step : 0);
+			$self-> {hScrollBar}-> set(
+				max      => $self-> {wordWrap} ? 0 : ($lw - $w),
+				whole    => ($lw < $w) ? $w : $lw,
+				value    => $value,
+				partial  => $w,
+				pageStep => $lw / 5,
+				step     => $step,
+			);
+		}
 	}
 }
 
@@ -1136,6 +1140,14 @@ sub get_shaped_chunk
 		$untabbed_chunk =~ s/\t/ /g;
 	}
 	my $s = $self->{shapedChunk} = $self-> text_shape($untabbed_chunk, %opt);
+	unless ($s) {
+		warn "Prima::Edit: shaping error!\n";
+		eval { require Data::Dumper };
+		unless ($@) {
+			print STDERR Dumper($untabbed_chunk, \%opt, $s);
+		}
+		$s = $self->{shapedChunk} = Prima::Drawable::Glyphs->new_empty;
+	}
 	if ( $opt{advances} && ( my $advances = $s-> advances)) {
 		my $indexes = $s-> indexes;
 		for my $ix (0..$#$advances) {
@@ -1256,7 +1268,7 @@ sub set_cursor
 	my $actualWidth = $self-> width -
 		$self-> {indents}-> [0] -
 		$self-> {indents}-> [2] -
-		$self-> {defcw};
+		$self-> {defcw} * 2 - 1;
 	my $ofs = $self-> {offset};
 	my $avg = $self-> {averageWidth};
 	$self-> {cursorX}        = $x;
@@ -1268,7 +1280,7 @@ sub set_cursor
 		my $nofs = $atX;
 		$self-> offset( $nofs - $avg);
 	} elsif ( $atX >= $ofs + $actualWidth - $deltaX) {
-		my $nofs = $atX - $actualWidth + $deltaX;
+		my $nofs = $atX - $actualWidth * ($self-> textDirection ? 0 : 1) + $deltaX;
 		$nofs = $ofs + $avg if $nofs - $ofs < $avg;
 		$self-> offset( $nofs);
 	}
@@ -1749,8 +1761,10 @@ sub logical_to_physical
 sub logical_to_visual
 {
 	my ( $self, $x, $y) = @_;
+	$y = 0 if $y < 0;
 	unless ($self->{wordWrap}) {
-		$x = $self->get_chunk_cluster_length($y) if $x < 0;
+		$y = $self-> {maxLine} if $y > $self-> {maxLine};
+		$x = $self->get_chunk_cluster_length($y) if defined($x) && $x < 0;
 		return $x, $y;
 	}
 
@@ -1758,13 +1772,14 @@ sub logical_to_visual
 	return (0,0) unless @$cm;
 
 	$y = $self-> {maxChunk} if $y > $self-> {maxChunk};
-	$y = 0 if $y < 0;
-	$x = 0 if $x < 0;
+	$x = 0 if defined($x) && $x < 0;
 	my $nY = $$cm[ $y * CM_SIZE + CM_Y];
 
-	my ($ly) = $self-> get_chunk_dimension($y);
-	for (; $ly < $y; $ly++) {
-		$x += $self-> get_chunk_cluster_length($ly);
+	if ( defined $x) {
+		my ($ly) = $self-> get_chunk_dimension($y);
+		for (; $ly < $y; $ly++) {
+			$x += $self-> get_chunk_cluster_length($ly);
+		}
 	}
 	return $x, $nY;
 }
@@ -1885,17 +1900,36 @@ sub set_marking
 
 sub cursor_down
 {
-	my $d = $_[1] || 1;
-	$_[0]-> cursorLog( $_[0]-> {cursorXl}, $_[0]-> {cursorYl} + $d);
+	my ( $self, $d ) = @_;
+	$d ||= 1;
+	my ( $x, $y ) = @{$self}{qw(cursorXl cursorYl)};
+	$d = $self->{maxLine} - $y if $y + $d > $self->{maxLine};
+	return if $d <= 0;
+	if ( $self-> textDirection ) {
+		my $n1 = $self-> get_chunk_cluster_length($y);
+		my $n2 = $self-> get_chunk_cluster_length($y + $d);
+		my $x1 = $n1 - $x;
+		$x = $n2 - $x1;
+	}
+	$self->cursorLog($x, $y + $d);
 }
 
 sub cursor_up
 {
-	return if $_[0]-> {cursorYl} == 0;
-	my $d = $_[1] || 1;
-	my ( $x, $y) = $_[0]-> logical_to_visual( $_[0]-> {cursorXl}, $_[0]-> {cursorYl} - $d);
-	$y = 0 if $y < 0;
-	$_[0]-> cursor( $x, $y);
+	my ( $self, $d ) = @_;
+	$d ||= 1;
+	my (undef, $y1) = $self-> logical_to_visual( undef, $self-> {cursorYl});
+	my ($x, $y2)    = $self-> logical_to_visual( $self-> {cursorXl}, $self-> {cursorYl} - $d);
+	return if $y1 == $y2;
+
+	if ( $self-> textDirection ) {
+		my $n1 = $self-> get_chunk_cluster_length($y1);
+		my $n2 = $self-> get_chunk_cluster_length($y2);
+		my $x1 = $n1 - $x;
+		$x = $n2 - $x1;
+	}
+
+	$self->cursor($x, $y2);
 }
 
 sub cursor_left
@@ -2154,13 +2188,8 @@ sub set_line
 		if ( $oldDim == $newDim) {
 			( $_from, $_to) = ( $ry, $ry + $oldDim);
 		} else {
-			$self-> vScroll( $self-> {maxChunk} >= $self-> {rows})
-				if $self-> {autoVScroll};
 			$self-> topLine(0) if $self-> {maxChunk} < $self-> {rows};
-			$self-> {vScrollBar}-> set(
-				max   => $self-> {maxChunk} - $self-> {rows} + 1,
-				whole => $self-> {maxChunk} + 1,
-			) if $self-> {vScroll};
+			$self-> reset_scrolls;
 		}
 	} else {
 		my ( $oldL, $newL) = ( length( $self-> {lines}-> [$y]), length( $line));
@@ -2185,20 +2214,7 @@ sub set_line
 				}
 				$self-> reset if $needReset;
 			}
-			my $lw = $self-> {maxLineWidth};
-			if ( $self-> {autoHScroll}) {
-				my $hs = ( $lw > $sz[0] ) ? 1 : 0;
-				if ( $hs != $self-> {hScroll}) {
-					$self-> hScroll( $hs);
-					@a = $self-> get_active_area;
-					@sz = ( $a[2] - $a[0], $a[3] - $a[1]);
-				}
-			}
-			$self-> {hScrollBar}-> set(
-				max      => $lw - $sz[0],
-				whole    => $lw,
-				partial  => $sz[0],
-			) if $self-> {hScroll};
+			$self-> reset_scrolls;
 		}
 		$_from = $_to = $y;
 	}
@@ -2321,12 +2337,7 @@ sub insert_empty_line
 		$self-> scroll( 0, -$fh * $len,
 			confineRect => [ @a[0..2], $a[3] - $fh * ( $y - $tl)]);
 	}
-	$self-> vScroll( $self-> {maxChunk} >= $self-> {rows}) if $self-> {autoVScroll};
-	$self-> {vScrollBar}-> set(
-		max      => $self-> {maxChunk} - $self-> {rows} + 1,
-		whole    => $self-> {maxChunk} + 1,
-		partial  => $self-> {rows},
-	) if $self-> {vScroll};
+	$self->reset_scrolls;
 	return $ly;
 }
 
@@ -2409,41 +2420,18 @@ sub delete_line
 		$self-> cancel_block unless $self-> has_selection;
 	}
 
-	$self-> vScroll( $self-> {maxChunk} >= $self-> {rows}) if $self-> {autoVScroll};
 	$self-> topLine(0) if $self-> {maxChunk} < $self-> {rows};
-	$self-> {vScrollBar}-> set(
-		max   => $self-> {maxChunk} - $self-> {rows} + 1,
-		whole => $self-> {maxChunk} + 1,
-	) if $self-> {vScroll};
-
 	unless ( $self-> {wordWrap}) {
 		my $mlv       = $self-> {maxLineLength};
 		for ( @removed) {
 			$self-> {maxLineCount}-- if length($_) == $mlv;
 			if ( $self-> {maxLineCount} <= 0) {
 				$self-> reset;
-				my $lw = $self-> {maxLineWidth};
-				my $w  = $self-> width -
-					$self-> {indents}-> [0] -
-					$self-> {indents}-> [2];
-				if ( $self-> {autoHScroll}) {
-					my $hs = ( $lw > $w) ? 1 : 0;
-					if ( $hs != $self-> {hScroll}) {
-						$self-> hScroll( $hs);
-						$w = $self-> width -
-							$self-> {indents}-> [0] -
-							$self-> {indents}-> [2];
-					}
-				}
-				$self-> {hScrollBar}-> set(
-					max      => $lw - $w,
-					whole    => $lw,
-					partial  => $w,
-				) if $self-> {hScroll};
 				last;
 			}
 		}
 	}
+	$self-> reset_scrolls;
 	$self-> cursor( $self-> cursor);
 	$self-> end_undo_group;
 	$self-> repaint;
