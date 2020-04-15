@@ -512,7 +512,7 @@ sub handle_bidi_input
 			my ($pos, $len, $rtl) = $opt{glyphs}-> cluster2range( $opt{at} - $shift );
 			$pos += $len - 1 if $rtl;
 			substr( $opt{text}, $pos, 1) = $opt{input};
-			$curpos = $pos + 1;
+			$curpos = $pos + ($rtl ? 0 : 1);
 		}
 		@ret = ( $opt{text}, $curpos );
 	} else {
