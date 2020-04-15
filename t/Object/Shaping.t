@@ -236,11 +236,12 @@ sub find_glyphs
 {
 	my ($font, $glyphs) = @_;
 	$w->font($font);
-	my $null = $w->font->defaultChar;
+	my $null = $w->text_shape(chr($w->font->defaultChar));
+	$null = $null ? $null->glyphs->[0] : 0;
 
 	my $z = $w->text_shape($glyphs);
 	return 0 unless $z;
-	return !grep { $_ == $null } @{$z->glyphs};
+	return !grep { $_ == $null || $_ == 0 } @{$z->glyphs};
 }
 
 # a font may have glyphs but won't know how to ligate them, i.e. glyph found but script not found

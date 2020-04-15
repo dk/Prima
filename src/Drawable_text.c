@@ -1609,7 +1609,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 				if ( !(labc = query_abc_range_glyphs( self, t, base = uv / 256)))
 					return ret;
 				if ( t-> advances )
-					precalc_advances_buffer(abc, width, abc);
+					precalc_advances_buffer(labc, width, abc);
 				else
 					precalc_abc_buffer(labc, width, abc);
 			}
@@ -1619,7 +1619,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 				reassign_w = 0;
 			}
 			winc += width[ uv & 0xff];
-			if ( t-> advances ) 
+			if ( t-> advances )
 				winc += t->advances[v + j] + t->positions[(v + j) * 2];
 			if ( j == ng - 1 ) inc = abc[ uv & 0xff]. c;
 		}
