@@ -747,11 +747,10 @@ sub point2xy
 	$ry = $self-> {maxChunk} if $ry > $self-> {maxChunk};
 	$rx = 0;
 
+	my $s = $self-> get_shaped_chunk($ry);
+	$x -= $self->rtl_offset - $s-> get_width($self) if $self->{textDirection};
 	my $ofsx = $ofs + $x;
 	$ofsx = $self-> {maxLineWidth} if $ofsx > $self-> {maxLineWidth};
-	my $s = $self-> get_shaped_chunk($ry);
-	my $sw = $s-> get_width($self);
-	$ofsx = $self->rtl_offset - $ofsx if $self-> textDirection;
 	$rx = $s->x2cluster($self, $ofsx);
 	return $self-> logical_to_visual( $rx, $ry), $inBounds;
 }
