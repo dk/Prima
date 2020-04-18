@@ -140,9 +140,9 @@ sub set_pointer
 
 sub update_box
 {
-	my ( $self, $x, $y, $angle, $t, $box) = @_;
+	my ( $self, $x, $y, $angle, $glyphs, $ofs, $len, $box) = @_;
 	$self-> font-> direction( $angle) if defined $angle;
-	@$box = @{$self-> get_text_box( $$t)};
+	@$box = @{$self-> get_text_box( $glyphs, $ofs, $len )};
 	for ( my $j = 0; $j < 10; $j += 2) {
 		$box-> [$j]   += $x;
 		$box-> [$j+1] += $y;
@@ -260,29 +260,35 @@ sub curved_text_out
 	@box[8,9] = ( $p->{x}, $p->{y});
 	push @all_boxes, \@translated_box if $collisions == 1;
 
-	$text = Prima::Bidi::visual($text) if $Prima::Bidi::enabled;
+	$text = $self->text_shape($text, rtl => $options{textDirection} // $::application->textDirection);
 
-	while ( not $p-> {end} and length ($text) ) {
+	my ( $gofs, $glen ) = (0, scalar( @{ $text->glyphs} ));
+	my ($lastofs, $lastlen) = ( $gofs, 0 );
+
+	while ( not $p-> {end} and $glen > 0 ) {
 		# Try to fit next glyphs in the string. We don't know whether more than 1 glyph
 		# fits, but if yes, text_wrap() will speed up things a lot. Otherwise, fit each
 		# character individually
-		my ( $t);
 		my ( $x, $y) = @$p{qw(x y)};
 #print "* point $x $y\n";
 		# obtain next position
 		if ( $try_text_wrap) {
 			my $chunk = $self-> text_wrap(
 				$text, $p-> {lleft},
-				tw::BreakSingle|tw::ReturnFirstLineLength
+				tw::BreakSingle|tw::ReturnFirstLineLength,
+				1, $gofs, $glen
 			);
-			$t = substr( $text, 0, $chunk, '');
+			$lastofs  = $gofs;
+			$lastlen = $chunk;
+			$gofs += $chunk;
+			$glen -= $chunk;
 			unless ( $collisions) {
 #print "'$t' text_wrap plot at $x,$y,$p->{a}\n" if $chunk;
-				push @chunks, [ $t, $p->{a}, $x, $y]
+				push @chunks, [ $lastofs, $chunk, $p->{a}, $x, $y]
 					if $chunk;
 				unless ( $bevel) {
 					# simple case
-					update_box( $self, $x, $y, $angle = $p->{a}, \$t, \@box);
+					update_box( $self, $x, $y, $angle = $p->{a}, $text, $lastofs, $lastlen, \@box);
 					set_pointer( $p, @box[8,9]);
 					next_segment($p);
 					next;
@@ -292,25 +298,24 @@ sub curved_text_out
 				$try_text_wrap = 0;
 				goto SINGLE_GLYPH;
 			}
-			update_box( $self, $x, $y, $angle = $p->{a}, \$t, \@box);
+			update_box( $self, $x, $y, $angle = $p->{a}, $text, $lastofs, $lastlen, \@box);
 			set_pointer( $p, @box[8,9]);
 #print "text_wrap '$t' move to $p->{x},$p->{y}\n";
 		} else {
 		SINGLE_GLYPH:
-			$t = substr( $text, 0, 1, '');
-			my ( $a, $b, $c) = @{ $self-> get_font_abc(
-				ord($t), ord($t),
-				utf8::is_utf8($t)
-			)};
-			my $w  = $a + $b + $c;
+			my $w = $text->advances->[$gofs];
 			$angle = move_pointer( $p, $w);
-			update_box( $self, $x, $y, $angle, \$t, \@box);
+			update_box( $self, $x, $y, $angle, $text, $lastofs, $lastlen, \@box);
+			$lastofs = $gofs;
+			$lastlen = 1;
 #print "'$t' single, move to $p->{x},$p->{y}\n";
 			unless ( $collisions) {
-				push @chunks, [ $t, $angle, $x, $y ];
+				push @chunks, [ $gofs, 1, $angle, $x, $y ];
 				$try_text_wrap = 1;
 #print "'$t' bevel plot at $x,$y,".(defined($angle)?$angle:"undef")."\n";
 			}
+			$gofs++;
+			$glen--;
 		}
 		next unless $collisions;
 
@@ -319,7 +324,7 @@ sub curved_text_out
 			%start = %$p;
 			precalc_box( $angle, \@box, \@translated_box);
 			push @all_boxes, [@translated_box] if $collisions > 1;
-			push @chunks, [ $t, $angle, $x, $y ];
+			push @chunks, [ $lastofs, $lastlen, $angle, $x, $y ];
 #print "plot '$t' at $x,$y,$angle init non-overlap\n";
 			next;
 		}
@@ -347,7 +352,8 @@ sub curved_text_out
 			move_pointer( \%start, $fitting_direction);
 			%$p = %start;
 #print "retry direction=$start_direction from $start{x} $start{y}\n";
-			$text = $t . $text;
+			$gofs -= $lastlen;
+			$glen += $lastlen;
 		} else {
 			# done
 			if ( $start_direction > 0) {
@@ -357,26 +363,26 @@ sub curved_text_out
 			$try_text_wrap = 1;
 			%start = %$p;
 #print "plot '$t' at $x,$y,$angle non-overlap\n";
-			push @chunks, [ $t, $angle, $x, $y];
+			push @chunks, [ $lastofs, $lastlen, $angle, $x, $y];
 			precalc_box( $angle, \@box, \@translated_box);
 			push @all_boxes, [@translated_box] if $collisions > 1;
 			%start = %$p;
 		}
 	}
-	if ( length $text and not $options{skiptail}) {
+	if ( $glen > 0 and not $options{skiptail}) {
 		$angle = $p-> {a} unless $bevel;
 #print "'$text' at @box[8,9] ".(defined($angle)?$angle:"undef")." tail\n";
-		push @chunks, [ $text, $angle, @box[8,9]];
+		push @chunks, [ $gofs, $glen, $angle, @box[8,9]];
 	}
 
-	$options{callback}->( $self, $p, \@chunks)
+	$options{callback}->( $self, $p, $text, \@chunks)
 		if $options{callback};
 
 	unless ( $options{nodraw}) {
 		for ( @chunks) {
-			my ( $text, $angle, $x, $y) = @$_;
+			my ( $ofs, $len, $angle, $x, $y) = @$_;
 			$self-> font-> direction($angle) if defined $angle;
-			last unless $retval = $self-> text_out( $text, $x, $y);
+			last unless $retval = $self-> text_out( $text, $x, $y, $ofs, $len);
 		}
 	}
 	$self-> font-> direction($fa);
@@ -404,7 +410,7 @@ collide with the path boundaries and each other.
 =head1 SYNOPSIS
 
   use Prima qw(Application Drawable::CurvedText);
-  $spline = [qw(100 100 150 150 200 100)];
+  my $spline = [qw(100 100 150 150 200 100)];
   $::application-> begin_paint;
   $::application-> spline($spline);
   $::application-> curved_text_out( 'Hello, world!', $::application-> render_spline( $spline ));
