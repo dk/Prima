@@ -215,7 +215,6 @@ pod/Prima/Window.pod
 pod/Prima/X11.pod
 Prima/Application.pm
 Prima/Buttons.pm
-Prima/Bidi.pm
 Prima/Calendar.pm
 Prima/Classes.pm
 Prima/ColorDialog.pm

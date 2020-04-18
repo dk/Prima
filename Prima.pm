@@ -405,6 +405,8 @@ L<Prima::StdDlg> - wrapper module to the toolkit standard dialogs
 
 L<Prima::Drawable::CurvedText> - fit text to path
 
+L<Prima::Drawable::Glyphs> - bi-directional text input and complex scripts output
+
 L<Prima::Drawable::Gradient> - gradient fills for primitives
 
 L<Prima::Drawable::Markup> - Allow markup in widgets
@@ -446,8 +448,6 @@ L<prima-gencls>     - C<prima-gencls>, a class compiler tool.
 =item Miscellaneous
 
 L<Prima::faq> - frequently asked questions 
-
-L<Prima::Bidi> - bi-directional text input and output
 
 L<Prima::Const> - predefined toolkit constants 
 

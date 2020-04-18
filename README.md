@@ -13,7 +13,8 @@ Debian/Ubuntu
 
 For easy setup, run this:
 
-apt-get install libgtk2.0-dev libtext-bidi-perl libgif-dev libjpeg-dev libtiff-dev libxpm-dev libwebp-dev 
+  apt-get install libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev \
+      libwebp-dev libfribidi-dev libharfbuzz-dev
 
 Graphic libraries
 -----------------
@@ -49,16 +50,15 @@ WebP libraries are unavailable for strawberry, get them here:
 
  http://prima.eu.org/download/webp-win.zip
 
-Fribidi
--------
+Bidirectional input and complex scripts
+---------------------------------------
 
-To support bi-directional text input and output you'll need Text::Bidi
-module from CPAN. The module is not a prerequisite; it'll need the
-external fribidi library to build. On windows the library is not installed by
-default, you can grab it here:
+To support bi-directional unicode text input and output you'll need the fribidi
+library.  Additionally for unix builds you'll need harfbuzz library for output
+of complex scripts and font ligature support.
 
- - http://prima.eu.org/download/fribidi-win32.zip
- - http://prima.eu.org/download/fribidi-win64.zip
+Prima can compile and work fine without these, but the support of these
+features will be rather primitive.
 
 SOURCE DISTRIBUTION INSTALLATION
 ================================
