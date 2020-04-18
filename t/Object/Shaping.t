@@ -432,7 +432,7 @@ sub test_glyphs_wrap
 	is_deeply( $r->[0]->glyphs, [ $z->glyphs->[0] ], "glyphs 1");
 	is_deeply( $r->[1]->glyphs, [ $z->glyphs->[1] ], "glyphs 2");
 	is_deeply( $r->[0]->indexes, [ $z->indexes->[0], length('1') ], "indexes 1");
-	is_deeply( $r->[1]->indexes, [ $z->indexes->[1], length('2') ], "indexes 2");
+	is_deeply( $r->[1]->indexes, [ $z->indexes->[1], length('12') ], "indexes 2");
 	if ( $z-> advances ) {
 		is( $r->[0]->advances->[0], $z->advances->[0], "advances 1");
 		is( $r->[1]->advances->[0], $z->advances->[1], "advances 2");
@@ -449,14 +449,14 @@ sub test_glyphs_wrap
 		glyphs "|/%";
 		skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
 		# that is tested already, rely on that: t2('/|', '%', [r(0)], 'arabic ligation');
-		$z = $w-> text_shape(xtr('/||'));
+		$z = $w-> text_shape(xtr('|/|')); # 2 glyphs, | and /|, visually /| is on the left
 		$r = $w-> text_wrap($z, 0, tw::ReturnChunks);
-		is_deeply($r, [0,2 , 2,1], "ligature wrap, chunks");
+		is_deeply($r, [0,1 , 1,1], "ligature wrap, chunks");
 		$r = $w-> text_wrap($z, 0, 0);
 		is_deeply($r->[0]->glyphs, [$glyphs{xtr '%'}], 'ligature wrap, left glyphs');
-		is_deeply($r->[0]->indexes, [r(0),length('/|')], 'ligature wrap, left indexes');
+		is_deeply($r->[0]->indexes, [r(1),length('|/|')], 'ligature wrap, left indexes');
 		is_deeply($r->[1]->glyphs, [$glyphs{xtr '|'}], 'ligature wrap, right glyphs');
-		is_deeply($r->[1]->indexes, [r(2),length('|')], 'ligature wrap, right indexes');
+		is_deeply($r->[1]->indexes, [r(0),length('|')], 'ligature wrap, right indexes');
 
 		$z = $w-> text_wrap_shape(xtr('/|') . "\n" . xtr('/|') . "~p",
 			undef,

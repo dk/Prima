@@ -205,7 +205,7 @@ sub offset2cluster
 
 sub get_sub
 {
-	my ( $self, $canvas, $from, $length) = @_;
+	my ( $self, $from, $length) = @_;
 	($from, $length) = $self-> cluster2glyph($from, $length);
 	my $glyphs = $self->[GLYPHS];
 	return if $length <= 0;
@@ -258,9 +258,49 @@ sub sub_text_out
 sub sub_text_wrap
 {
 	my ( $self, $canvas, $from, $length, $width, $opt, $tabs) = @_;
+	($from, $length) = $self-> cluster2glyph($from, $length);
+	return if $length <= 0;
 	$opt //= tw::Default;
 	$tabs //= 8;
-	return $canvas-> text_wrap($self, $width, $opt, $tabs, $from, $length);
+	my $wrap = $canvas-> text_wrap($self, $width, $opt, $tabs, $from, $length);
+	return $wrap unless $opt & tw::ReturnChunks;
+	return $wrap unless defined $wrap;
+
+	my $indexes = $self->[INDEXES];
+	unless ( ref $wrap) {
+		# n glyphs to n clusters
+		my $last = -1;
+		my $n_clusters = 0;
+		for ( my $ix = 0; $ix < $wrap; $ix++) {
+			my $c = $indexes->[$ix] & ~to::RTL;
+			if ( $last != $c ) {
+				$n_clusters++;
+				$last = $c;
+			}
+		}
+		return $n_clusters;
+	}
+
+	# convert glyph chunks to cluster chunks
+	my @new_wrap;
+	my $step = 0;
+	for ( my $i = 0; $i < @$wrap; $i += 2 ) {
+		my ( $ofs, $size ) = @{$wrap}[$i,$i+1];
+
+		my $last = -1;
+		my $n_clusters = 0;
+		for ( my $ix = $ofs; $ix < $ofs + $size; $ix++) {
+			my $c = $indexes->[$ix] & ~to::RTL;
+			if ( $last != $c ) {
+				$n_clusters++;
+				$last = $c;
+			}
+		}
+		push @new_wrap, $step, $n_clusters;
+		$step += $n_clusters;
+	}
+
+	return \@new_wrap;
 }
 
 sub x2cluster
@@ -309,7 +349,7 @@ sub reverse
 		
 		push @svs, Prima::array->new('s');
 		my $positions = $self->[POSITIONS];
-		for ( my $i = $nglyphs - 1; $i >= 0; $i -= 2 ) {
+		for ( my $i = $nglyphs * 2 - 2; $i >= 0; $i -= 2 ) {
 			push @{ $svs[-1] }, @{$positions}[$i,$i+1];
 		}
 	}
@@ -361,18 +401,33 @@ sub clusters
 	return \@arr;
 }
 
-sub selection_chunks
+sub selection2range
+{
+	my ( $self, $glyph_start, $glyph_end ) = @_;
+
+	($glyph_start, $glyph_end) = ($glyph_end, $glyph_start) if $glyph_end < $glyph_start;
+	my ($s, $sl) = $self->cluster2range($glyph_start);
+	my ($e, $el) = $self->cluster2range($glyph_end);
+	($s,$sl,$e,$el) = ($e,$el,$s,$sl) if $s > $e;
+	my $text_start = $s;
+	my $text_end   = $e + $el - 1;
+	($text_start, $text_end) = ($text_end, $text_start) if $text_start > $text_end;
+	return ($text_start, $text_end);
+}
+
+sub selection_map
 {
 	my ( $self, $text_start, $text_end ) = @_;
 
-	my $clusters = $self->clusters;
-	($text_start, $text_end) = ($text_end, $text_start) if $text_start > $text_end;
 	my @selection_map;
+	my $clusters = $self->clusters;
 	for ( my $i = 0; $i < @$clusters; $i++) {
 		push @selection_map, ($clusters->[$i] >= $text_start && $clusters->[$i] <= $text_end) ? 1 : 0;
 	}
-	return _map2chunks( \@selection_map );
+	return \@selection_map;
 }
+
+sub selection_chunks { _map2chunks( selection_map( @_ )) }
 
 sub selection_diff
 {
