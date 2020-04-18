@@ -168,7 +168,6 @@ setup_X11() if $unix;
 setup_xlibs() if $unix;
 setup_macosx() if $cmd_options{WITH_COCOA};
 setup_codecs();
-setup_modules();
 create_codecs_c();
 create_config_h();
 create_config_pm();
@@ -1883,32 +1882,6 @@ Please follow the instructions in README file.
 NOCODECS
 	}
 	push @ACTIVE_CODECS, @builtin_codecs;
-}
-
-sub setup_modules
-{
-	printlog "Checking for Text::Bidi...";
-	eval "use Text::Bidi;";
-	if ( $@ ) {
-		printlog "no\n";
-		goto BAD_VERSION;
-	}
-	my $v;
-	eval { $v = $Text::Bidi::VERSION };
-	if ( ($v // 0) < 2.1 ) {
-		printlog "yes, but too old\n";
-		goto BAD_VERSION;
-	}
-	printlog "$Text::Bidi::VERSION\n";
-	return;
-BAD_VERSION:
-	$END .= <<BIDI;
-
-** Warning: Text::Bidi v2.10 is needed for working with bidirectional text.
-
-Note that Prima will work fine, except with Hebrew and Arabic text.
-
-BIDI
 }
 
 sub create_codecs_c

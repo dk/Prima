@@ -522,3 +522,129 @@ sub log2vis
 
 1;
 
+=pod
+
+=head1 NAME
+
+Prima::Drawable::Glyphs - helper routines for bi-directional text input and complex scripts output
+
+=head1 SYNOPSIS
+
+=encoding utf-8
+
+=for latex-makedoc header
+\usepackage{amsmath,amssymb}
+\DeclareFontFamily{U}{rcjhbltx}{}
+\DeclareFontShape{U}{rcjhbltx}{m}{n}{<->rcjhbltx}{}
+\DeclareSymbolFont{hebrewletters}{U}{rcjhbltx}{m}{n}
+\DeclareMathSymbol{\alef}{\mathord}{hebrewletters}{39}
+\DeclareMathSymbol{\pe}{\mathord}{hebrewletters}{112}
+\DeclareMathSymbol{\samekh}{\mathord}{hebrewletters}{115}
+
+=begin latex-makedoc
+
+=begin latex
+
+\begin{tt}
+~ ~\\
+\hspace*{1.5em}use Prima;\\
+\hspace*{1.5em}\$::application->begin\_paint;\\
+\hspace*{1.5em}\$application->text\_out('$\alef\pe\samekh123$',100,100);\\
+ \\
+\hspace*{1.5em}123$\samekh\pe\alef$\\
+\end{tt}
+
+=end latex
+
+=end latex-makedoc
+
+=for latex-makedoc cut
+
+   use Prima;
+   $::application-> begin_paint;
+   $::application-> text_out('אפס123', 100, 100);
+
+   123ספא
+
+=for latex-makedoc cut
+
+=head1 API
+
+=over
+
+=item selection_chunks $START, $END
+
+Calculates a set of chunks of texts, that, given a text selection from
+positions C<$START> to C<$END>, represent each either a set of selected and non-selected
+visual characters.
+
+Returns array of integers, RLE-encoding the chunks, where the first integer
+signifies number of non-selected clusters to display, the second - number
+of selected clusters, the third the non-selected again, etc. If the first
+character belongs to the selected chunk, the first integer in the result is set
+to 0.
+
+Example: consider embedded number in a bidi text. For the sake of clarity I'll use
+latin characters here. For example, we have a text scalar containing these characters:
+
+   ABC123
+
+where I<ABC> is right-to-left text, and which, when rendered on screen, should be
+displayed as
+
+   123CBA
+
+(and visual mapping will be (3,4,5,2,1,0) ).
+
+Next, the user clicks the mouse between A and B (in text offset 1), drags the
+mouse then to the left, and finally stops between characters 2 and 3 (text
+offset 4). The resulting selection then should not be, as one might naively expect,
+this:
+
+   123CBA
+   __^^^_
+
+but this instead:
+
+   123CBA
+   ^^_^^_
+
+because the next character after C is 1, and the I<range> of the selected sub-text is from
+characters 1 to 4.
+
+In this case, the result of call to C<selection_chunks(1, 4 )> will be C<0,2,1,2,1> .
+
+=item selection_diff $OLD, $NEW
+
+Given set of two chunk lists, in format as returned by C<selection_chunks>, calculates
+the list of chunks affected by the selection change. Can be used for efficient repaints when
+the user interactively changes text selection, to redraw only the changed regions.
+
+=item selection_map $START, $END
+
+Same as C<selection_chunks>, but instead of RLE chunks returns full array for each
+cluster, where each entry is a boolean value corresponding to whether that cluster is
+to be displayed as selected, or not.
+
+=item selection_walk $CHUNKS, $FROM, $TO = length, $SUB
+
+Walks the selection chunks array, returned by C<selection_chunks>, between
+C<$FROM> and C<$TO> visual positions, and for each chunk calls the provided
+C<< $SUB->($offset, $length, $selected) >>, where each call contains 2 integers to
+chunk offset and length, and a boolean flag whether the chunk is selected or
+not.
+
+Can be also used on a result of C<selection_diff>, in which case
+C<$selected> flag is irrelevant.
+
+=back
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+F<examples/bidi.pl>
+
+=cut
