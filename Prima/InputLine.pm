@@ -824,6 +824,20 @@ sub set_border_width
 	$self-> repaint;
 }
 
+# see how many clusters can be displayed
+# so that $last is the last one
+sub fit_clusters_back
+{
+	my ( $self, $last ) = @_;
+	$last //= $self->{n_clusters} - 1;
+	$last = $self->{n_clusters} - 1 if $last > $self->{n_clusters} - 1;
+	return 0 if $last <= 0;
+
+	my $w   = $self-> width - ( $self->borderWidth + 1) * 2;
+	my $sub = $self->{glyphs}->get_sub( 0, $last + 1)->reverse;
+	return $sub-> sub_text_wrap( $self, 0, undef, $w, tw::ReturnFirstLineLength);
+}
+
 sub set_char_offset
 {
 	my ( $self, $offset) = @_;
@@ -845,12 +859,9 @@ sub set_char_offset
 		$self-> firstChar($offset);
 	} else {
 		my $len = $offset - $fc;
-		my $glyphs = $self->{glyphs};
-		my $gapWidth = ($len > 0) ? $glyphs-> get_sub_width($self, $fc, $len) : 0;
-		if ( $gapWidth > $w && ( my $sub = $glyphs-> get_sub( $self, $fc, $len ))) {
-			$sub = $sub->reverse;
-			my $wrap = $self-> text_wrap( $sub, $w, tw::ReturnChunks);
-			$self-> firstChar(((@$wrap < 5) ? $fc : $wrap->[-4]) + $wrap->[-1] + 1);
+		my $gap = ($len > 0) ? $self->{glyphs}-> get_sub_width($self, $fc, $len) : 0;
+		if ( $gap > $w ) {
+			$self-> firstChar($offset - $self-> fit_clusters_back($offset));
 		} else {
 			$self-> reset_cursor;
 		}
@@ -879,6 +890,10 @@ sub set_first_char
 		( $self-> {alignment} != ta::Left) &&
 		( $self-> {glyphs}-> get_width($self) <= $self-> width - $self-> {borderWidth} * 2 - 2);
 	my $ofc = $self-> {firstChar};
+	if ( $pos > 0 && $self-> textDirection ) {
+		my $back = $self-> fit_clusters_back;
+		$pos = $self->{n_clusters} - $back if $back + $pos > $self->{n_clusters};
+	}
 	return if $self-> {firstChar} == $pos;
 	$self-> push_undo_action( 'firstChar', $pos);
 	$self-> {firstChar} = $pos;
@@ -944,12 +959,10 @@ sub set_selection
 			$self->{selTextStart} = 0;
 			$self->{selTextEnd}   = length($self->text);
 		} else {
-			my ( $s, $sl) = $self->{glyphs}->cluster2range($start);
-			my ( $e, $el) = $self->{glyphs}->cluster2range($end - 1);
-			($s,$sl,$e,$el) = ($e,$el,$s,$sl) if $s > $e;
+			my ( $s, $e ) = $self-> {glyphs}-> selection2range($start, $end - 1);
 			$self->{selTextStart} = $s;
-			$self->{selTextEnd}   = $e + $el;
-			$self->{selChunks} = $self->{glyphs}->selection_chunks($s,$e + $el - 1);
+			$self->{selTextEnd}   = $e + 1;
+			$self->{selChunks} = $self->{glyphs}->selection_chunks($s,$e);
 		}
 		$new_chunks = $self->{selChunks};
 	} else {

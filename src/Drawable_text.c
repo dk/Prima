@@ -1467,10 +1467,6 @@ typedef struct {
 	int        options;  /* twXXX constants */
 	int        count;    /* count of lines returned */
 	PList    * cache;
-
-	Byte     * glyphs_in_cluster;
-	Byte     * chars_in_cluster;
-	int      * l2v;
 } GlyphWrapRec;
 
 static Bool
@@ -1514,7 +1510,6 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 	return abc;
 }
 
-/* returns character (not glyph!) mappings */
 static unsigned int *
 Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 {
@@ -1524,8 +1519,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	FontABC abc[256];
 	unsigned int base = 0x10000000;
 
-	unsigned int start, i, j;
-	uint16_t max_index, min_index, text_length;
+	unsigned int start, i;
 	float w = 0.0, inc = 0, initial_overhang = 0;
 	Bool reassign_w = 1;
 	Bool doWidthBreak = t-> width >= 0;
@@ -1541,69 +1535,25 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	t-> count = 0;
 	if (!( ret = allocn( unsigned int, size))) return NULL;
 
-	text_length = t->text_len;
 #ifdef _DEBUG
-		printf("rest(%d %d)\n", text_length, t->n_glyphs);
-#endif
-	min_index = max_index = t->indexes[0] & ~toRTL;
-	for ( i = 0; i < t->n_glyphs; i++) {
-		uint16_t c = t->indexes[i] & ~toRTL;
-		if ( max_index < c ) max_index = c;
-		if ( min_index > c ) min_index = c;
-	}
-
-	for ( i = min_index; i <= max_index; i++) {
-		t->l2v[i] = -1;
-		t->glyphs_in_cluster[i] = 0;
-		t->chars_in_cluster[i] = 0;
-	}
-	for ( i = 0; i < t->n_glyphs; i++) {
-		uint16_t c = t->indexes[i] & ~toRTL;
-		if ( t->l2v[c] < 0 ) t->l2v[c] = i;
-	}
-
-	for ( i = j = min_index; i < max_index; i++) {
-		if ( t->l2v[i] >= 0 ) j = i;
-		t->chars_in_cluster[j]++;
-	}
-	t->chars_in_cluster[max_index] = text_length - max_index;
-
-#ifdef _DEBUG
-	printf("indexes:");
-	for ( i = 0; i < t->n_glyphs; i++) {
-		uint16_t c = t->indexes[i] & ~toRTL;
-		printf(" %d", c);
-	}
-	printf("\n");
-	printf("l2v(%d-%d):", min_index, max_index);
-	for ( i = min_index; i <= max_index; i++) 
-		printf(" %d", t->l2v[i]);
-	printf("\n");
-	printf("chars/index:");
-	for ( i = min_index; i <= max_index; i++) 
-		printf(" %d", t->chars_in_cluster[i]);
-	printf("\n");
+		printf("rest(%d)\n", t->n_glyphs);
 #endif
 
 	/* process glyphs */
-	for ( i = start = min_index; i <= max_index; ) {
+	for ( i = start = 0; i < t-> n_glyphs; ) {
 		uint16_t index;
 		float winc;
 		int j, ng, p, v;
 
-		v = t->l2v[i];
-
 		/* ng: glyphs in the cluster */
-		for ( ng = 0, index = t->indexes[v]; v < t->n_glyphs; v++) {
+		for ( ng = 0, v = i, index = t->indexes[v]; v < t->n_glyphs; v++) {
 			if ( t->indexes[v] != index ) break;
 			ng++;
 		}
-		t->glyphs_in_cluster[i] = ng;
-		v -= ng;
 
 		winc = 0;
 		for ( j = 0; j < ng; j++) {
-			uint16_t uv = t->glyphs[v + j];
+			uint16_t uv = t->glyphs[i + j];
 			if ( uv / 256 != base) {
 				PFontABC labc;
 				if ( !(labc = query_abc_range_glyphs( self, t, base = uv / 256)))
@@ -1620,16 +1570,16 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 			}
 			winc += width[ uv & 0xff];
 			if ( t-> advances )
-				winc += t->advances[v + j] + t->positions[(v + j) * 2];
+				winc += t->advances[i + j] + t->positions[(i + j) * 2];
 			if ( j == ng - 1 ) inc = abc[ uv & 0xff]. c;
 		}
 
 
 #ifdef _DEBUG
-		printf("l:%d v:%d: ng:%d nc:%d index:%d w:%f\n", i, v, ng, t->chars_in_cluster[i], index & ~toRTL, w);
+		printf("i:%d ng:%d w:%f\n", i, ng, w);
 #endif
 		p = i;
-		i += t->chars_in_cluster[i];
+		i += ng;
 
 		if ( !doWidthBreak || (w + winc + inc <= t-> width)) {
 			w += winc;
@@ -1655,8 +1605,8 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	}
 
 	/* adding or skipping last line */
-	if ( text_length - start > 0 || t-> count == 0)
-		ADD(text_length);
+	if ( t->n_glyphs - start > 0 || t-> count == 0)
+		ADD(t->n_glyphs);
 
 	return ret;
 }
@@ -1671,9 +1621,6 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 	int i;
 	unsigned int * c;
 	GlyphsOutRec g;
-	int l2v[MAX_CHARACTERS];
-	Byte glyphs_in_cluster[MAX_CHARACTERS];
-	Byte chars_in_cluster[MAX_CHARACTERS];
 
 	if (!read_glyphs(&g, text, 1, "Drawable::text_wrap"))
 		return nilSV;
@@ -1708,9 +1655,6 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 	t.text_len  = g.text_len;
 	t.options   = options;
 	t.cache     = &var-> font_abc_glyphs;
-	t.l2v       = l2v;
-	t.glyphs_in_cluster = glyphs_in_cluster;
-	t.chars_in_cluster  = chars_in_cluster;
 
 	gpENTER(
 		(( t. options & twReturnFirstLineLength) == twReturnFirstLineLength) ?
@@ -1736,43 +1680,36 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 		for ( i = 0; i < t.count; i++)
 			av_push( av, newSViv( c[i]));
 	} else {
-		int j, k,
+		int j,
 			mul[4] = { 1, 1, 1, 2 },
 			extras[4] = {0, 1, 0, 0};
 		uint16_t *payload[4] = { g.glyphs, g.indexes, g.advances, (uint16_t*)g.positions };
 		for ( i = 0; i < t.count; i += 2) {
 			SV *sv_payload[4];
-			unsigned int
-				glyph_size,
-				char_offset = c[i], char_size = c[i + 1];
-			if ( char_size == 0 ) {
-				av_push( av, nilSV);
-				continue;
-			}
-
-			glyph_size = 0;
-			for ( k = char_offset, glyph_size = 0; k < char_offset + char_size; k++)
-				glyph_size += glyphs_in_cluster[k];
-
+			int offset = c[i], size = c[i + 1];
 			for ( j = 0; j < 4; j++) {
 				SV * sv;
-				uint16_t *dst;
+				uint16_t *dst, *src, l;
 				if ( payload[j] == NULL ) {
 					sv_payload[j] = nilSV;
 					continue;
 				}
 
-				sv  = prima_array_new(sizeof(uint16_t) * (glyph_size * mul[j] + extras[j]));
+				sv  = prima_array_new(sizeof(uint16_t) * (size * mul[j] + extras[j]));
 				dst = (uint16_t*)prima_array_get_storage(sv);
-				for ( k = char_offset; k < char_offset + char_size; k++) {
-					if ( l2v[k] >= 0 ) {
-						int l = glyphs_in_cluster[k] * mul[j];
-						uint16_t * src = payload[j] + l2v[k] * mul[j];
-						while (l-- > 0) *(dst++) = *(src++);
+				l = size * mul[j];
+				src = payload[j] + offset * mul[j];
+				while (l-- > 0) *(dst++) = *(src++);
+				if (j == 1) {/* add fake sub-text length */
+					int i, diff = g.indexes[g.len], 
+						char_offset = g.indexes[offset + size - 1] & ~toRTL;
+					for ( i = 0; i < g.len; i++) {
+						int co = g.indexes[i] & ~toRTL;
+						if ( co > char_offset && diff > co - char_offset  ) 
+							diff = co - char_offset;
 					}
+					*dst = diff;
 				}
-				if (j == 1) /* add fake sub-text length */
-					*dst = char_size;
 				sv_payload[j] = prima_array_tie( sv, sizeof(uint16_t), "S");
 			}
 			av_push( av, newSVsv(
