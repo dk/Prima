@@ -501,19 +501,10 @@ sub stretch_image {
 	) if $_[5]
 }
 
-sub text_out_bidi
-{
-	if ( $Prima::Bidi::enabled && is_bidi $_[1] ) {
-		return shift->text_out( Prima::Bidi::visual(shift), @_);
-	} else {
-		return shift->text_out(@_);
-	}
-}
-
 sub text_shape_out
 {
-	my ( $self, $text, $x, $y) = @_;
-	if ( my $glyphs = $self->text_shape($text, skip_if_simple => 1)) {
+	my ( $self, $text, $x, $y, $rtl) = @_;
+	if ( my $glyphs = $self->text_shape($text, skip_if_simple => 1, rtl => $rtl )) {
 		$text = $glyphs;
 	}
 	return $self->text_out( $text, $x, $y);
@@ -522,7 +513,7 @@ sub text_shape_out
 sub get_text_shape_width
 {
 	my ( $self, $text, $flags) = @_;
-	if ( my $glyphs = $self->text_shape($text, skip_if_simple => 1)) {
+	if ( my $glyphs = $self->text_shape($text, skip_if_simple => 1, rtl => $flags & to::RTL)) {
 		$text = $glyphs;
 	}
 	return $self->get_text_width( $text, $flags // 0);

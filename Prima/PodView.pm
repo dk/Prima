@@ -110,7 +110,7 @@ sub profile_default
 		],
 		pageName      => '',
 		topicView     => 0,
-		textDirection  => $Prima::Bidi::default_direction_rtl,
+		textDirection  => $::application->textDirection,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -124,7 +124,6 @@ sub init
 	$self-> {links} = [];
 	$self-> {styles} = [];
 	$self-> {pageName} = '';
-	$self-> {textDirection} = $Prima::Bidi::default_direction_rtl;
 	$self-> {manpath}  = '';
 	$self-> {modelRange} = [0,0,0];
 	$self-> {postBlocks} = {};

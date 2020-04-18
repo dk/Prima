@@ -403,11 +403,12 @@ sub clusters
 
 sub selection2range
 {
-	my ( $self, $glyph_start, $glyph_end ) = @_;
+	my ( $self, $cluster_start, $cluster_end ) = @_;
 
-	($glyph_start, $glyph_end) = ($glyph_end, $glyph_start) if $glyph_end < $glyph_start;
-	my ($s, $sl) = $self->cluster2range($glyph_start);
-	my ($e, $el) = $self->cluster2range($glyph_end);
+	($cluster_start, $cluster_end) = ($cluster_end, $cluster_start)
+		if $cluster_end < $cluster_start;
+	my ($s, $sl) = $self->cluster2range($cluster_start);
+	my ($e, $el) = $self->cluster2range($cluster_end);
 	($s,$sl,$e,$el) = ($e,$el,$s,$sl) if $s > $e;
 	my $text_start = $s;
 	my $text_end   = $e + $el - 1;

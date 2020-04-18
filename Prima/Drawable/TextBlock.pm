@@ -1,7 +1,6 @@
 package Prima::Drawable::TextBlock;
 use strict;
 use warnings;
-use Prima::Bidi;
 
 package
     tb;
@@ -17,8 +16,7 @@ use constant OP_CODE               =>  (4 | (3 << 16)); # code pointer and param
 # formatting opcodes
 use constant OP_WRAP               =>  (5 | (2 << 16)); # WRAP_XXX
 use constant OP_MARK               =>  (6 | (4 << 16)); # id, x, y
-use constant OP_BIDIMAP            =>  (7 | (3 << 16)); # visual, $map
-$lastop = 7;
+$lastop = 6;
 
 %opnames = (
 	text      => OP_TEXT,
@@ -28,7 +26,6 @@ $lastop = 7;
 	code      => OP_CODE,
 	wrap      => OP_WRAP,
 	mark      => OP_MARK,
-	bidimap   => OP_BIDIMAP,
 );
 
 
@@ -70,10 +67,6 @@ use constant MARK_ID                 => 1;
 use constant MARK_X                  => 2;
 use constant MARK_Y                  => 3;
 
-# OP_BIDIMAP
-use constant BIDI_VISUAL             => 1;
-use constant BIDI_MAP                => 2;
-
 # block header indices
 use constant  BLK_FLAGS            => 0;
 use constant  BLK_WIDTH            => 1;
@@ -101,7 +94,6 @@ use constant  F_HEIGHT=> 1000000;
 # BLK_FLAGS constants
 use constant T_SIZE      => 0x1;
 use constant T_WRAPABLE  => 0x2;
-use constant T_IS_BIDI   => 0x4;
 
 # realize_state mode
 
@@ -166,7 +158,6 @@ sub extend         { return OP_TRANSPOSE, $_[0], $_[1], ($_[2] || 0) | X_EXTEND 
 sub code           { return OP_CODE, $_[0], $_[1] }
 sub wrap           { return OP_WRAP, $_[0] }
 sub mark           { return OP_MARK, $_[0], 0, 0 }
-sub bidimap        { return OP_BIDIMAP, $_[0], $_[1] }
 
 sub realize_fonts
 {
@@ -280,11 +271,6 @@ sub _debug_block
 		} elsif ( $cmd == OP_CODE ) {
 			my $code = $$b[ $i + 1 ];
 			print STDERR ": OP_CODE $code\n";
-		} elsif ( $cmd == OP_BIDIMAP ) {
-			my $visual = $$b[ $i + BIDI_VISUAL ];
-			my $map    = $$b[ $i + BIDI_MAP ];
-			$visual =~ s/([^\x{32}-\x{128}])/sprintf("\\x{%x}", ord($1))/ge;
-			print STDERR ": OP_BIDIMAP: $visual / @$map\n";
 		} elsif ( $cmd == OP_WRAP ) {
 			my $wrap = $$b[ $i + 1 ];
 			$wrap = ( $wrap == WRAP_MODE_OFF ) ? 'OFF' : (
@@ -436,9 +422,6 @@ sub walk
 				$realize->($state, REALIZE_COLORS);
 				$c_taint = 1;
 			}
-		} elsif (($cmd == OP_BIDIMAP) && ( $trace & TRACE_TEXT )) {
-			$text = \ $$block[$i + BIDI_VISUAL];
-			$text_offset = 0;
 		} elsif (( $cmd == OP_MARK) & ( $trace & TRACE_UPDATE_MARK)) {
 			$$block[ $i + MARK_X] = $$position[0];
 			$$block[ $i + MARK_Y] = $$position[1];
@@ -464,144 +447,12 @@ sub walk
 	return $ret;
 }
 
-# convert block with bidicharacters to its visual representation
-sub bidi_visualize
-{
-	my ( $b, %opt ) = @_;
-	my %subopt = map { $_ => $opt{$_}} qw(fontmap baseFontSize baseFontStyle resolution);
-
-	my ($p, $visual) = Prima::Bidi::paragraph($opt{text});
-	my $map     = $p->map;
-	my $revmap  = Prima::Bidi::revmap($map);
-	my @new     = ( @$b[0..BLK_DATA_END], bidimap( $visual, $map ) );
-	$new[BLK_FLAGS] |= T_IS_BIDI;
-	my ($x, $y, $i, $lim) = (0,0,BLK_START, scalar @$b);
-
-	# step 1 - record how each character is drawn with font/color, and also
-	# where other ops are positioned
-	my @default_fc        = @$b[ 0 .. BLK_DATA_END ]; # fc == fonts and colors
-	my %id_hash           = ( join(".", @default_fc[BLK_DATA_START .. BLK_DATA_END]) => 0 );
-	my @fonts_and_colors  = ( \@default_fc ); # this is the number #0, default char state
-	my @current_fc        = @default_fc;
-	my $current_state     = 0;
-
-	my @char_states       = (-1) x length($visual); # not all chars are displayed
-	my $char_offset       = 0;
-	my %other_ops_after;
-
-	my $font_and_color = sub {
-		my $key = join(".", @current_fc[ BLK_DATA_START .. BLK_DATA_END ]);
-		my $state;
-		if (defined ($state = $id_hash{$key}) ) {
-			$current_state = $state;
-		} else {
-			push @fonts_and_colors, [ @current_fc ];
-			$id_hash{$key} = $current_state = $#fonts_and_colors;
-		}
-	};
-
-	walk( $b, %subopt,
-		trace => TRACE_PENS,
-		state => \@current_fc,
-		text => sub {
-			my ( $ofs, $len ) = @_;
-			for ( my $k = 0; $k < $len; $k++) {
-				$char_states[ $revmap->[ $ofs + $k ]] = $current_state;
-			}
-			$char_offset = $revmap->[$ofs + $len - 1];
-		},
-		font  => $font_and_color,
-		color => $font_and_color,
-		other  => sub { push @{$other_ops_after{ $char_offset }}, @_ }
-	);
-
-	# step 2 - produce RLEs for text and stuff font/colors/other ops in between
-	my $last_char_state = 0;
-	my $current_text_offset = 0;
-
-	# find first character displayed
-	for ( my $i = 0; $i < @char_states; $i++) {
-		next if $char_states[$i] < 0;
-		$current_text_offset = $i;
-		last;
-	}
-
-	my @initialized;
-	@initialized = ((1) x BLK_START) unless $opt{optimize};
-
-	push @char_states, -1;
-	for ( my $i = 0; $i < @char_states; $i++) {
-		my $char_state = $char_states[$i];
-		if ( $char_state != $last_char_state ) {
-			# push accumulated text
-			my $ofs = $current_text_offset;
-			my $len = $i - $ofs;
-			$current_text_offset = ($char_state < 0) ? $i + 1 : $i;
-			if ( $len > 0 ) {
-				push @new, OP_TEXT, $ofs, $len,
-					($opt{canvas} ? substr( $visual, $ofs, $len) : 0); # putting a string there for later width calc
-			}
-
-			# change to the new font/color
-			if ( $char_state >= 0 ) {
-				my $old_state = $fonts_and_colors[ $last_char_state ];
-				my $new_state = $fonts_and_colors[ $char_state ];
-				if ( $$old_state[ BLK_COLOR ] != $$new_state[ BLK_COLOR ] ) {
-					if ( $initialized[ BLK_COLOR ]++ ) {
-						push @new, OP_COLOR, $$new_state[ BLK_COLOR ];
-					} else {
-						$new[ BLK_COLOR ] = $$new_state[ BLK_COLOR ];
-					}
-				}
-				if ( $$old_state[ BLK_BACKCOLOR ] != $$new_state[ BLK_BACKCOLOR ] ) {
-					if ( $initialized[ BLK_BACKCOLOR ]++ ) {
-						push @new, OP_COLOR, $$new_state[ BLK_BACKCOLOR ] | BACKCOLOR_FLAG;
-					} else {
-						$new[ BLK_BACKCOLOR ] = $$new_state[ BLK_BACKCOLOR ];
-					}
-				}
-				for ( my $font_mode = BLK_FONT_ID; $font_mode <= BLK_FONT_STYLE; $font_mode++) {
-					next if $$old_state[ $font_mode ] == $$new_state[ $font_mode ];
-					if ( $initialized[ $font_mode ]++ ) {
-						push @new, OP_FONT, $font_mode, $$new_state[ $font_mode ];
-					} else {
-						$new[ $font_mode ] = $$new_state[ $font_mode ];
-					}
-				}
-				$last_char_state = $char_state;
-			}
-		}
-
-		# push other ops
-		if ( my $ops = $other_ops_after{ $i } ) {
-			push @new, @$ops;
-		}
-	}
-
-	# recalculate widths
-	if ( $opt{canvas} ) {
-		my @xy    = (0,0);
-		my $ptr;
-
-		$new[ BLK_WIDTH] = 0;
-		walk( \@new, %subopt,
-			canvas   => $opt{canvas},
-			trace    => TRACE_REALIZE_FONTS | TRACE_UPDATE_MARK | TRACE_POSITION,
-			position => \@xy,
-			pointer  => \$ptr,
-			text     => sub { $new[ $ptr + T_WID ] = $opt{canvas}->get_text_width( $_[2], 1 ) },
-		);
-		$new[ BLK_WIDTH] = $xy[0] if $new[ BLK_WIDTH ] < $xy[0];
-	}
-
-	return \@new;
-}
-
 sub block_wrap
 {
 	my ( $b, %opt) = @_;
 	my ($t, $canvas, $state, $width) = @opt{qw(textPtr canvas state width)};
 	my %subopt = map { $_ => $opt{$_}} qw(fontmap baseFontSize baseFontStyle resolution);
+	my $flags = $opt{textDirection} ? to::RTL : 0;
 
 	$width = 0 if $width < 0;
 
@@ -644,7 +495,6 @@ sub block_wrap
 	$$z[BLK_TEXT_OFFSET] = $$b[BLK_TEXT_OFFSET];
 
 	my %state_hash;
-	my $has_bidi;
 
 	# first state - wrap the block
 	walk( $b, %subopt,
@@ -662,7 +512,7 @@ sub block_wrap
 			$lastTextOffset = $ofs + $tlen unless $can_wrap;
 
 		REWRAP:
-			my $tw  = $canvas-> get_text_width(substr( $$t, $o + $ofs, $tlen), 1);
+			my $tw  = $canvas-> get_text_shape_width(substr( $$t, $o + $ofs, $tlen), 1, $flags);
 			my $apx = $state_hash{$state_key}-> {width};
 			if ( $x + $tw + $apx <= $width) {
 				push @$z, OP_TEXT, $ofs, $tlen, $tw;
@@ -682,14 +532,16 @@ sub block_wrap
 					if ( $has_text) {
 						push @$z, OP_TEXT,
 							$ofs, $l + length $leadingSpaces,
-							$tw = $canvas-> get_text_width(
-								$leadingSpaces . substr( $str, 0, $l), 1
+							$tw = $canvas-> get_text_shape_width(
+								$leadingSpaces . substr( $str, 0, $l), 1,
+								$flags
 							);
 					} else {
 						push @$z, OP_TEXT,
 							$ofs + length $leadingSpaces, $l,
-							$tw = $canvas-> get_text_width(
-								substr( $str, 0, $l), 1
+							$tw = $canvas-> get_text_shape_width(
+								substr( $str, 0, $l), 1,
+								$flags
 							);
 						$has_text = 1;
 					}
@@ -701,7 +553,7 @@ sub block_wrap
 					if ( $str =~ /^(\s+)/) {
 						$ofs  += length $1;
 						$tlen -= length $1;
-						$x    += $canvas-> get_text_width( $1, 1);
+						$x    += $canvas-> get_text_shape_width( $1, 1, $flags);
 						$str =~ s/^\s+//;
 					}
 					goto REWRAP if length $str;
@@ -715,7 +567,7 @@ sub block_wrap
 					# but may be some words can be stripped?
 						goto REWRAP if $ox > 0;
 						if ( $word_break && ($str =~ m/^(\S+)(\s*)/)) {
-							$tw = $canvas-> get_text_width( $1, 1);
+							$tw = $canvas-> get_text_shape_width( $1, 1, $flags);
 							push @$z, OP_TEXT, $ofs, length $1, $tw;
 							$has_text = 1;
 							$x += $tw;
@@ -725,7 +577,7 @@ sub block_wrap
 						}
 					}
 					push @$z, OP_TEXT, $ofs, length($str),
-						$x += $canvas-> get_text_width( $str, 1);
+						$x += $canvas-> get_text_shape_width( $str, 1, $flags);
 					$has_text = 1;
 				}
 			} elsif ( $haswrapinfo) { # unwrappable, and cannot be fit - retrace
@@ -842,22 +694,6 @@ sub block_wrap
 		$$state[$_] = $$b[$_] for BLK_X, BLK_Y, BLK_HEIGHT, BLK_WIDTH;
 	}
 
-	return @ret unless $opt{bidi};
-
-	# third stage - map bidi characters to visual representation, and update widths and positions etc
-	my @text_offsets = (( map { $$_[  BLK_TEXT_OFFSET ] } @ret ), $lastTextOffset);
-	for ( my $j = 0; $j < @ret; $j++) {
-		my $substr  = substr( $$t, $text_offsets[$j], $text_offsets[$j+1] - $text_offsets[$j]);
-		next unless Prima::Bidi::is_bidi($substr);
-
-		my $new = bidi_visualize($ret[$j], %subopt,
-			text          => $substr,
-			canvas        => $canvas,
-			optimize      => 1,
-		);
-		splice(@ret, $j, 1, $new);
-	}
-
 	return @ret;
 }
 
@@ -874,6 +710,7 @@ sub new
 		fontmap       => [],
 		colormap      => [],
 		text          => '',
+		textDirection => 0,
 		block         => undef,
 		resolution    => [72,72],
 		fontSignature => '',
@@ -884,7 +721,7 @@ sub new
 
 eval "sub $_ { \$#_ ? \$_[0]->{$_} = \$_[1] : \$_[0]->{$_}}" for qw(
 	fontmap colormap block text resolution direction
-	baseFontSize baseFontStyle restoreCanvas
+	baseFontSize baseFontStyle restoreCanvas textDirection
 );
 
 sub acquire {}
@@ -906,7 +743,10 @@ sub calculate_dimensions
 		trace    => tb::TRACE_REALIZE_FONTS|tb::TRACE_POSITION|tb::TRACE_PAINT_STATE|tb::TRACE_TEXT,
 		text     => sub {
 			my ( undef, undef, undef, $text ) = @_;
-			$b-> [ $ptr + tb::T_WID ] = $canvas->get_text_width( $text );
+			$b-> [ $ptr + tb::T_WID ] = $canvas->get_text_shape_width(
+				$text,
+				$self->{textDirection} ? to::RTL : 0
+			);
 
 			my $f = $canvas->get_font;
 			$max[1] = $f->{ascent}  if $max[1] < $f->{ascent};
@@ -979,7 +819,7 @@ sub text_out
 				int($ofs[0] + ($xy[0]-$ofs[0]) * $cos - ($xy[1]-$ofs[1]) * $sin + .5),
 				int($ofs[1] + ($xy[0]-$ofs[0]) * $sin + ($xy[1]-$ofs[1]) * $cos + .5)
 			) : @xy;
-			$semaphore++ unless $canvas-> text_out($tex, @coord);
+			$semaphore++ unless $canvas-> text_shape_out($tex, @coord, $self->{textDirection});
 		},
 		code      => sub {
 			my ( $code, $data ) = @_;
@@ -1107,7 +947,6 @@ sub text_wrap
 		width     => $width,
 		canvas    => $canvas,
 		optimize  => 0,
-		bidi      => 0,
 		wordBreak => $opt & tw::WordBreak,
 		ignoreImmediateWrap => !($opt & tw::NewLineBreak),
 	);
