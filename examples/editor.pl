@@ -14,7 +14,7 @@ and, in lesser extent, of standard find/replace dialogs.
 use strict;
 use warnings;
 
-use Prima qw(Edit Bidi Application MsgBox StdDlg);
+use Prima qw(Edit Application MsgBox StdDlg);
 
 package Indicator;
 use vars qw(@ISA);
