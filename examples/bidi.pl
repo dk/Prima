@@ -2,7 +2,6 @@ use strict;
 use warnings;
 use utf8;
 use Prima qw(Label InputLine Buttons Application PodView Edit FontDialog);
-use Prima::Bidi qw(:require);
 
 my $w;
 my $pod;
@@ -11,7 +10,6 @@ my $editor;
 my $pod_text;
 my $font_dialog;
 
-Prima::Bidi::language('ar_AR');
 $::application->textDirection(1);
 
 $w = Prima::MainWindow-> create(

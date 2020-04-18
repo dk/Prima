@@ -2,7 +2,7 @@ package Prima::Drawable::Markup;
 
 use strict;
 use warnings;
-use Prima qw(Bidi Drawable::TextBlock);
+use Prima qw(Drawable::TextBlock);
 use base qw(Prima::Drawable::TextBlock);
 
 =head1 NAME
@@ -74,19 +74,11 @@ sub new
 	%opt = ( %opt,
 		fontmap       => [{}],
 		colormap      => [0,0],
-		bidi          => $Prima::Bidi::enabled,
 	);
 	my $self = $class->SUPER::new(%opt);
 	$self-> $_( $opt{$_} || [] ) for qw(fontPalette colorPalette picturePalette);
 	$self-> markup( $opt{markup} || '');
 	return $self;
-}
-
-sub bidi {
-	return $_[0]->{bidi} unless $#_;
-	my ( $self, $bidi ) = @_;
-	$bidi = 0 unless $Prima::Bidi::enabled;
-	$self->{bidi} = $bidi;
 }
 
 sub parse_color
@@ -376,13 +368,6 @@ sub markup
 	my ( $self, $markup ) = @_;
 	my ( $text, $block ) = $self-> parse( $markup );
 
-	if ( $self->{bidi} && Prima::Bidi::is_bidi($text) ) {
-		$self-> {nonbidiblock} = $block;
-		$block = tb::bidi_visualize( $block, text => $text );
-	} else {
-		$self-> {nonbidiblock} = undef;
-	}
-
 	$self-> {markup} = $markup;
 	$self-> text( $text );
 	$self-> {block} = $block;
@@ -444,8 +429,6 @@ sub text_wrap
 {
 	my ( $self, $canvas, $width, $opt, $indent) = @_;
 
-	local $self->{block} = $self->{nonbidiblock} if $self->{nonbidiblock};
-
 	my @ret = @{ $self-> SUPER::text_wrap( $canvas, $width, $opt, $indent ) };
 
 	my ( @blocks, @other);
@@ -460,32 +443,6 @@ sub text_wrap
 		}
 	}
 	return @other unless @blocks;
-
-	# Feed less text to bidi_visualize because it can take things into account
-	# that were wrapped away for a sub-block. F.ex:
-	# wrap("bidi . nonbidi") results in ("bidi n", "onbidi"). While the 1st
-	# scalar is okay when bidified, noone knows whether the 2nd will look
-	# the same when in the big string context and when torn away after the wrap.
-	if ( $self->{bidi} && Prima::Bidi::is_bidi($self->{text})) {
-		my $text_offset = $blocks[-1]->{block}->[tb::BLK_TEXT_OFFSET];
-		my $last_offset = 0;
-		tb::walk( $blocks[-1]->{block}, text => sub {
-			my ( $ofs, $len ) = @_;
-			$last_offset = $ofs + $len;
-		});
-		my @text_offsets = (
-			( map { $_->{block}->[ tb::BLK_TEXT_OFFSET ] } @blocks ),
-			$text_offset + $last_offset);
-
-		my $t = $self->{text};
-		for ( my $j = 0; $j < @blocks; $j++) {
-			my $substr  = substr( $t, $text_offsets[$j], $text_offsets[$j+1] - $text_offsets[$j]);
-			next unless Prima::Bidi::is_bidi($substr);
-			$blocks[$j]->{block} = tb::bidi_visualize(
-				$blocks[$j]->{block}, text => $substr,
-			);
-		}
-	}
 
 	# initials will be overwritten by acquire(), force copy them
 	for my $block ( @blocks ) {
@@ -522,11 +479,6 @@ Each element of the array should be a hashref suitable for setting a font.
 
 Gets or sets the picture palette to be used for C<P> sequences within this widget.
 Each element of the array should be a C<Prima::Image> descendant.
-
-=item bidi BOOLEAN = 1
-
-If 0, bidirection text processing if off. If 1, set to 1 iff C<Prima::Bidi> is
-loaded and enabled.
 
 =back
 

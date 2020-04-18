@@ -565,16 +565,13 @@ sub paint_selection
 	($sx1, $sx2) = ($sx2, $sx1) if $sx2 < $sx1;
 
 	my $glyphs = $self-> get_shaped_chunk($index);
-	my ($s, $sl) = $glyphs->cluster2range($sx1);
-	my ($e, $el) = $glyphs->cluster2range($sx2);
-	($s,$sl,$e,$el) = ($e,$el,$s,$sl) if $s > $e;
-	my $chunks = $glyphs->selection_chunks($s, $e + $el - 1);
+	my $chunks = $glyphs->selection_chunks($glyphs-> selection2range($sx1, $sx2));
 
 	my @cr = @$clipRect;
 	my $rx = $x;
 	$glyphs->selection_walk( $chunks, 0, undef, sub {
 		my ( $offset, $length, $selected ) = @_;
-		
+
 		$cr[0] = $rx;
 		$rx += $glyphs->get_sub_width($canvas, $offset, $length);
 		$cr[2] = $rx - 1;
