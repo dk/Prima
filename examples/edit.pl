@@ -14,7 +14,6 @@ use strict;
 use warnings;
 
 use Prima 'InputLine', 'Application';
-use Prima::Bidi;
 
 my $w = Prima::MainWindow->create( size => [ 700, 300]);
 

@@ -1302,6 +1302,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, L<Prima::Bidi>, F<examples/edit.pl>.
+L<Prima>, L<Prima::Widget>, F<examples/edit.pl>.
 
 =cut

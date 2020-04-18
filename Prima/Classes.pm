@@ -422,7 +422,6 @@ sub image  { shift->bitmap_or_image( 'Prima::Image',        type => im::BW,     
 package Prima::Drawable;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
-use Prima::Bidi qw(is_bidi);
 use Prima::Drawable::Basic;
 
 sub profile_default
