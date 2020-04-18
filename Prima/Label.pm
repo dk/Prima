@@ -62,6 +62,7 @@ sub init
 {
 	my $self = shift;
 	$self->{lock} = 1;
+	$self->{textLines} = 0;
 	my %profile = $self-> SUPER::init(@_);
 	$self-> {$_} = $profile{$_} for qw(
 		textDirection alignment valignment autoHeight autoWidth

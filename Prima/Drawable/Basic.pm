@@ -307,6 +307,25 @@ sub fill_primitive
 	return $ok;
 }
 
+sub text_shape_out
+{
+	my ( $self, $text, $x, $y, $rtl) = @_;
+	if ( my $glyphs = $self->text_shape($text, skip_if_simple => 1, rtl => $rtl )) {
+		$text = $glyphs;
+	}
+	return $self->text_out( $text, $x, $y);
+}
+
+sub get_text_shape_width
+{
+	my ( $self, $text, $flags) = @_;
+	if ( my $glyphs = $self->text_shape($text, skip_if_simple => 1, rtl => $flags & to::RTL)) {
+		$text = $glyphs;
+	}
+	return $self->get_text_width( $text, $flags // 0);
+}
+
+
 sub text_wrap_shape
 {
 	my ( $self, $text, $width, %opt) = @_;
@@ -324,7 +343,10 @@ sub text_wrap_shape
 	my @shaped;
 	for my $chunk ( @$wrapped ) {
 		my $shaped = $self-> text_shape( $chunk, %opt );
-		return unless defined $shaped;
+		unless (defined $shaped) {
+			push @$wrapped, $tilde if $tilde;
+			return $wrapped;
+		}
 		$shaped = $chunk unless $shaped;
 		push @shaped, $shaped;
 	}

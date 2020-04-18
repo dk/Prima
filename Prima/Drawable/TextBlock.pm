@@ -982,6 +982,8 @@ sub text_wrap
 	return \@ret;
 }
 
+sub text_shape { undef }
+
 sub height
 {
 	my ( $self, $canvas ) = @_;
