@@ -1421,6 +1421,15 @@ Setting this options to C<true> will force fill advance and positioning tables.
 These tables can be manipulated laters, and are respected by C<text_out> and
 C<get_text_width>.
 
+=item bidi_only BOOLEAN = false
+
+Performs quick null shaping without mapping to the font glyphs, but only
+running bidirectional algorithm on the text. On the return, C<glyphs>, as well
+as eventual C<advances> and C<positions>, are filled with zeros, but C<indexes>
+are filled with the proper character offsets, effectively making it a visual to
+logical map since number of glyphs will always be equal to number of characters
+in TEXT.
+
 =item language STRING = undef
 
 When set, shaping process can take in the account the language of the text.

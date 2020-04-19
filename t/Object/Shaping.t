@@ -275,6 +275,9 @@ sub check_noshape_nofribidi
 	t('12', '12', 'ltr');
 	t('12ABC', '12CBA', 'rtl in ltr');
 	t('>AB', 'BA', 'bidi');
+
+	$glyphs{"\0"} = 0;
+	t2('12ABC', "\0"x5, [0,1,R(2..4),5], 'null shaping', bidi_only => 1);
 }
 
 # very minimal support for bidi and X11 core fonts only

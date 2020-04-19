@@ -1175,8 +1175,10 @@ sub get_chunk_cluster_length
 {
 	my ($self, $index) = @_;
 	if ( $self->{wordWrap}) {
-		return $self->{chunkMap}->[$index * CM_SIZE + CM_CLUSTER_LEN] //= 
-			$self->get_shaped_chunk($index)-> n_clusters;
+		my $cm = $self->{chunkMap};
+		my $ix = $index * CM_SIZE + CM_CLUSTER_LEN;
+		return 0 if $ix >= @$cm;
+		return $$cm[$ix] //= $self->get_shaped_chunk($index)-> n_clusters;
 	} else {
 		$self->reset_shaping_caches if ($self->{shapedIndex} // -1) != $index;
 		return $self->{shapedClusters} if defined $self->{shapedClusters};

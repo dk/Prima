@@ -549,7 +549,7 @@ text_shaper_core_text( Handle self, PTextShapeRec r)
 			i++
 		)
 			*(advances++) = xchar_struct(&s, *(glyphs++))-> width;
-		bzero(r->positions, r->len * sizeof(int16_t));
+		bzero(r->positions, r->len * 2 * sizeof(int16_t));
 	}
 
 	return true;
