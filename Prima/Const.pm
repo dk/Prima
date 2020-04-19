@@ -1075,6 +1075,8 @@ See also L<Prima::Application/get_system_value>
 	sv::LayeredWidgets   - 1 if system supports layering
 	sv::DWM              - 1 if system supports DWM API
 	sv::FixedPointerSize - 0 if system doesn't support arbitrary sized pointers and will resize custom icons to the system size
+	sv::MenuCheckSize    - width and height of default menu check icon
+	sv::FriBidi          - 1 if Prima is compiled with libfribidi and full bidi unicode support is available
 
 =head2 ta::  - alignment constants
 
@@ -1087,6 +1089,24 @@ Used in: L<Prima::InputLine>, L<Prima::ImageViewer>, L<Prima::Label>.
 	ta::Top
 	ta::Bottom
 	ta::Middle
+
+=head2 to::  - text output constants
+
+These constants are used in various text and glyph related functions, 
+and form a somewhat vague group of bit values that may or may not be used together
+depending on the function
+
+	to::Plain         - default value, 0
+	to::AddOverhangs  - used in C<get_text_width> and C<get_text_shape_width>
+	                    to request text overhangs to be included in the returned
+			    text width
+	to::Glyphs        - used in C<get_font_abc> and C<get_font_def> to select extension of
+	                    glyph indexes rather than text codepoints
+	to::Unicode       - used in C<get_font_abc> and C<get_font_def> to select extension of
+	                    unicode rather than ascii text codepoints
+	to::RTL           - used in C<get_text_shape_width> to request RTL bidi direction.
+	                    Also used in C<Prima::Drawable::Glyphs::indexes> values to mark
+			    RTL characters.
 
 =head2 tw::  - text wrapping constants
 

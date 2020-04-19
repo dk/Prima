@@ -954,7 +954,7 @@ sub on_keydown
 			q(overtype)
 		));
 		$self-> cursor(
-			$self->get_shaped_chunk($cs[1])->offset2cluster($new_offset, 1),
+			$self->get_shaped_chunk($cs[1])->index2cluster($new_offset, 1),
 			$cs[1]
 		);
 		$self-> end_undo_group;
@@ -1786,7 +1786,7 @@ sub physical_to_visual
 	my ( $lx, $ly ) = $self->{wordWrap} ?
 		$self-> physical_to_logical($x,$y) :
 		($x, $y);
-	return $x - $lx + $self-> get_shaped_chunk($ly)-> offset2cluster($lx);
+	return $x - $lx + $self-> get_shaped_chunk($ly)-> index2cluster($lx);
 }
 
 sub visual_to_logical
@@ -1838,7 +1838,7 @@ sub physical_to_logical
 	($x, $y) = $self->visual_to_logical($x, $y);
 	return undef, $y unless defined $x;
 
-	$x = $self-> get_shaped_chunk($y)-> offset2cluster($x);
+	$x = $self-> get_shaped_chunk($y)-> index2cluster($x);
 	return $x, $y;
 }
 
@@ -2529,7 +2529,7 @@ sub delete_char
 		if ( defined $new_text ) {
 			$self-> set_line( $cs[1], $new_text, q(delete), $cs[0], 1);
 			$self-> cursor(
-				$self->get_shaped_chunk($cs[1])->offset2cluster($new_offset),
+				$self->get_shaped_chunk($cs[1])->index2cluster($new_offset),
 				$cs[1]
 			);
 		}
@@ -2558,7 +2558,7 @@ sub back_char
 		if ( defined $new_text ) {
 			$self-> set_line( $cs[1], $new_text, q(delete), $cs[0], 1);
 			$self-> cursor(
-				$self->get_shaped_chunk($cs[1])->offset2cluster($new_offset),
+				$self->get_shaped_chunk($cs[1])->index2cluster($new_offset),
 				$cs[1]
 			);
 		} elsif ( $cs[1] > 0 ) {
@@ -2959,15 +2959,15 @@ these mappings. To do so, consult L<Prima::Menu/Prima::AccelTable>.
 =head2 Coordinates
 
 The class addresses the text space by (X,Y)-coordinates, where X is visual
-character offset and Y is line number. The addressing can be 'visual' and
-'logical', - in logical case Y is number of line of text.  The difference can
+cluster offset and Y is line number. The addressing can be 'visual' and
+'logical', - in logical case Y is number of line of text. The difference can
 be observed if L<wordWrap> property is set to 1, when a single text string can
 be shown as several sub-strings, called I<chunks>.
 
-Cluster shaping and word wrapping can play a role here. Consider f.ex.  text
+Cluster shaping and word wrapping can play a role here. Consider f.ex. text
 "offset is zero", that for the sake of the example can wrapped by width and
-displayed as two lines, "offset" and "is zero". Also, the font substitutes "ff"
-text for a single ligature glyph. Here, for example, coord("f") will be (0,1)
+displayed as two lines, "offset" and "is zero". Here, the font substitutes "ff"
+text with a single ligature glyph. Here, for example, coord("f") will be (0,1)
 in all coordinates, but coord("z") is different:
 
 =over
@@ -2975,15 +2975,15 @@ in all coordinates, but coord("z") is different:
 =item Physical
 
 X coordinate is a character offset from character line number Y.  These
-coordinates are idential with and without C<wordWrap> flag.  This coordinate is
+coordinates are identical with and without C<wordWrap> flag.  This coordinate is
 used for direct text manipulation.
 
 Example: coord("z") is (0,10);
 
 =item Visual
 
-X coordinate is a glyph cluster offset from character line number Y.  These
-coordinates are idential with and without C<wordWrap> flag.  This coordinate is
+X coordinate is a glyph cluster offset from character line number Y. These
+coordinates are identical with and without C<wordWrap> flag. This coordinate is
 used for cursor and selection API.
 
 Example: coord("z") is (0,9);
@@ -3224,6 +3224,10 @@ Provides access to all the text data. The lines are separated by
 the new line ( \n ) character.
 
 See also: L<textRef>.
+
+=item textDirection BOOLEAN
+
+If set, indicates RTL text input.
 
 =item textRef TEXT_PTR
 
@@ -3499,11 +3503,10 @@ Returns empty string if chunk is nonexistent.
 
 =item get_chunk_width TEXT, FROM, LENGTH, [ RETURN_TEXT_PTR ]
 
-Returns the width in pixels of C<substr( TEXT, FROM, LENGTH)>.
-If FROM is larger than length of TEXT, TEXT is
-padded with space characters. Tab character in TEXT replaced to L<tabIndent> times
-space character. If RETURN_TEXT_PTR pointer is specified, the
-converted TEXT is stored there.
+Returns the width in pixels of C<substr( TEXT, FROM, LENGTH)>.  If FROM is
+larger than length of TEXT, TEXT is padded with space characters. Tab character
+in TEXT replaced to L<tabIndent> times space character. If RETURN_TEXT_PTR
+pointer is specified, the converted TEXT is stored there.
 
 =item get_line INDEX
 
@@ -3560,14 +3563,14 @@ Returns same values when L<wordWrap> is 0.
 Maps visual X,Y coordinates to the physical text offset relative to the Y line
 
 Returns same X when the line does not contain any right-to-left characters or
-bi-directional input/output is disabled.
+complex glyphs.
 
 =item physical_to_visual X, Y
 
 Maps test offset X from line Y to the visual X coordinate.
 
 Returns same X when the line does not contain any right-to-left characters or
-bi-directional input/output is disabled.
+complex glyphs.
 
 =item mark_horizontal
 
@@ -3604,7 +3607,7 @@ The deferred operations are those performed by L<offset> and L<topLine>.
 Changes line at LINE_ID to new TEXT. Hint scalars OPERATION, FROM and LENGTH
 used to maintain selection and marking data. OPERATION is an arbitrary string,
 the ones that are recognized are C<'overtype'>, C<'add'>, and C<'delete'>.
-FROM and LENGTH define the range of the change; FROM is a character offset and
+FROM and LENGTH define the range of the change; FROM is a cluster offset and
 LENGTH is a length of changed text.
 
 =item split_line

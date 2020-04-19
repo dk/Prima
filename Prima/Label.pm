@@ -487,7 +487,7 @@ lines are drawn.
 
 Default value: 1
 
-=item textDirection BOOLEAN.
+=item textDirection BOOLEAN
 
 If set, indicates RTL text direction.
 

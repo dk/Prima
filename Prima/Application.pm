@@ -258,6 +258,13 @@ An alias to font property for the hint label widget.
 Selects the timeout in milliseconds before the hint label is shown
 when the mouse pointer hovers over a widget.
 
+=item language STRING
+
+By default contains user interface language, deduced either from C<$ENV{LANG}>
+or GUI default. When changed, updates C<textDirection> propertly.
+
+See also: C<get_system_info>.
+
 =item modalHorizon BOOLEAN
 
 A read-only property. Used as a landmark for
@@ -304,6 +311,16 @@ display of the hint is forbidden. In addition to functionality of C<::showHint>
 property in Prima::Widget, Prima::Application::showHint is another layer of
 hint visibility control - if it is 0, all hint actions are disabled,
 disregarding C<::showHint> value in widgets.
+
+=item textDirection BOOLEAN
+
+Contains preferred text direction, initially calculated from the preferred
+interface language.  If 0 ( default ), the preferred text direction is
+left-to-right (LTR), otherwise right-to-left (RTL), f.ex. for arabic and hebrew
+languages.
+
+The value is used as a default when shaping text and setting widget input
+direction.
 
 =item uiScaling FLOAT
 
@@ -580,8 +597,11 @@ user interface used in the system:
 
 =item guiDescription
 
-Description of graphic user interface,
-returned as an arbitrary string.
+Description of graphic user interface, returned as an arbitrary string.
+
+=item guiLanguage
+
+Preferred language of the interface, returned as an ISO 639 code.
 
 =item system
 
@@ -654,6 +674,8 @@ of C<sv::XXX> constants. The constants are:
 	sv::LayeredWidgets   - 1 if system supports layering
 	sv::DWM              - 1 if system supports DWM API
 	sv::FixedPointerSize - 0 if system doesn't support arbitrary sized pointers and will resize custom icons to the system size
+	sv::MenuCheckSize    - width and height of default menu check icon
+	sv::FriBidi          - 1 if Prima is compiled with libfribidi and full bidi unicode support is available
 
 The method can be called with a class string instead of an object instance.
 

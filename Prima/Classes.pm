@@ -1898,9 +1898,7 @@ sub profile_default
 		autoClose      => 0,
 		pointerType    => cr::Arrow,
 		pointerVisible => 1,
-		language       => (
-			(($ENV{LANG} // '') =~ /^([-a-z]+)/) ? $1 : 
-			Prima::Application->get_system_info->{guiLanguage}),
+		language       => Prima::Application->get_system_info->{guiLanguage},
 		icon           => undef,
 		owner          => undef,
 		scaleChildren  => 0,
