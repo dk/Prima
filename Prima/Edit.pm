@@ -109,7 +109,6 @@ sub profile_default
 			[ Undo            => 0, 0, km::Alt|kb::Backspace, q(undo)],
 			[ Redo            => 0, 0, '^R', q(redo)],
 		],
-		alignment         => $rtl ? ta::Right : ta::Left,
 		autoIndent        => 1,
 		autoHScroll       => 1,
 		autoVScroll       => 1,
@@ -191,8 +190,6 @@ sub profile_check_in
 	$p-> { text} = '' if exists( $p-> { textRef});
 	$p-> {autoHScroll} = 0 if exists $p-> {hScroll};
 	$p-> {autoVScroll} = 0 if exists $p-> {vScroll};
-	$p-> {alignment} = ( $p->{textDirection} // $default->{textDirection} ) ?
-		ta::Right : ta::Left unless exists $p->{alignment};
 }
 
 sub init
@@ -781,6 +778,7 @@ sub on_mousedown
 		)
 	) {
 		$self-> {drag_transaction} = 1;
+		my $want_triple_click = $self->{doubleclickTimer} ? 1 : 0;
 		my $act = $self-> begin_drag(
 			text       => $self->get_selected_text,
 			actions    => dnd::Copy|( $self->{readOnly} ? 0 : dnd::Move),
@@ -788,6 +786,10 @@ sub on_mousedown
 		);
 		$self-> {drag_transaction} = 0;
 		$self-> delete_block if !$self->{readOnly} && $act == dnd::Move;
+		if ($act < 0 && !$want_triple_click) {
+			$self-> cancel_block unless $self->persistentBlock;
+			$self-> cursor( @xy);
+		}
 		return;
 	}
 
@@ -1079,9 +1081,13 @@ sub textDirection
 {
 	return $_[0]-> {textDirection} unless $#_;
 	my ( $self, $td ) = @_;
+	return if $self->{textDirection} == $td;
 	$self-> {textDirection} = $td;
 	$self-> reset_shaping_caches;
-	$self->repaint;
+	$self-> reset_syntax;
+	$self-> reset_scrolls;
+	$self-> reset;
+	$self-> repaint;
 }
 
 sub get_text_ref
@@ -2211,6 +2217,7 @@ sub set_line
 				$self-> reset if $needReset;
 			}
 			$self-> reset_scrolls;
+			$self-> repaint if $needReset;
 		}
 		$_from = $_to = $y;
 	}
@@ -2588,6 +2595,10 @@ sub delete_to_end
 		$cs[1], substr($c, 0, $px), 
 		q(delete), $cs[0], $self->get_chunk_cluster_length($cs[1]) - $cs[0]
 	);
+	my $s      = $self->get_shaped_chunk($cs[1]);
+	my $last   = $s->index2cluster($s->text_length);
+	my $is_rtl = $s->cluster2index($last) & to::RTL;
+	$self-> cursor( $last - ($is_rtl ? 1 : 0), $cs[1] );
 }
 
 sub delete_word
@@ -2872,17 +2883,6 @@ sub delete_marker
 }
 
 sub select_all { $_[0]-> selection(0,0,-1,-1); }
-
-sub alignment
-{
-	my ( $self, $align) = @_;
-
-	$align = ta::Left if
-		$align != ta::Left &&
-		$align != ta::Right;
-	$self-> {alignment} = $align;
-	$self-> repaint;
-}
 
 sub autoIndent      {($#_)?($_[0]-> {autoIndent}    = $_[1])                :return $_[0]-> {autoIndent }  }
 sub blockType       {($#_)?($_[0]-> set_block_type  ( $_[1]))               :return $_[0]-> {blockType}    }
