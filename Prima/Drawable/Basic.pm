@@ -310,7 +310,9 @@ sub fill_primitive
 sub text_shape_out
 {
 	my ( $self, $text, $x, $y, $rtl) = @_;
-	if ( my $glyphs = $self->text_shape($text, skip_if_simple => 1, rtl => $rtl )) {
+	my %flags = (skip_if_simple => 1);
+	$flags{rtl} = $rtl if defined $rtl;
+	if ( my $glyphs = $self->text_shape($text, %flags)) {
 		$text = $glyphs;
 	}
 	return $self->text_out( $text, $x, $y);
@@ -319,12 +321,13 @@ sub text_shape_out
 sub get_text_shape_width
 {
 	my ( $self, $text, $flags) = @_;
-	if ( my $glyphs = $self->text_shape($text, skip_if_simple => 1, rtl => $flags & to::RTL)) {
+	my %flags = (skip_if_simple => 1);
+	$flags{rtl} = $flags & to::RTL if defined $flags;
+	if ( my $glyphs = $self->text_shape($text, %flags)) {
 		$text = $glyphs;
 	}
 	return $self->get_text_width( $text, $flags // 0);
 }
-
 
 sub text_wrap_shape
 {

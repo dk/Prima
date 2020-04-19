@@ -490,7 +490,7 @@ sub on_keydown
 		if ( $p_start != $p_end) {
 			substr( $cap, $p_start, $p_end - $p_start) = $chr;
 			$self-> edit_text( $cap);
-			$self-> charOffset($self->{glyphs}->offset2cluster($p_start));
+			$self-> charOffset($self->{glyphs}->index2cluster($p_start));
 		} else {
 			$self-> handle_input($chr);
 		}
@@ -569,7 +569,7 @@ sub paste
 	substr( $cap, $p_start, $p_end - $p_start) = $s;
 	$self-> selection(0,0);
 	$self-> text( $cap);
-	$self-> charOffset( $self->{glyphs}-> offset2cluster($p_start + length( $s)));
+	$self-> charOffset( $self->{glyphs}-> index2cluster($p_start + length( $s)));
 }
 
 sub delete
@@ -971,7 +971,7 @@ sub set_selection
 	}
 
 	my $ooffset = $self-> charOffset;
-	$self-> charOffset($self->{glyphs}->offset2cluster($end))
+	$self-> charOffset($self->{glyphs}->index2cluster($end))
 		if ( $start != $end) && !defined $self-> {autoAdjustDisabled};
 	return if ( $start == $ostart && $end == $oend);
 
@@ -1177,12 +1177,12 @@ Default value: 2
 
 =item charOffset INTEGER
 
-Selects the position of the cursor in characters starting from
+Selects the position of the cursor in clusters starting from
 the beginning of visual text.
 
 =item firstChar
 
-Selects the first visible character of text
+Selects the first visible cluster of text
 
 =item insertMode BOOLEAN
 
@@ -1212,8 +1212,8 @@ Default value: 0
 
 =item selection START, END
 
-Two integers, specifying the beginning and the end of the selected text.
-A case with no selection is when START equals END.
+Two integers, specifying the beginning and the end of the selected text, in
+clusters. A case with no selection is when START equals END.
 
 =item selStart INTEGER
 
@@ -1223,7 +1223,7 @@ Selects the start of text selection.
 
 Selects the end of text selection.
 
-=item textDirection BOOLEAN.
+=item textDirection BOOLEAN
 
 If set, indicates RTL text input.
 
@@ -1278,11 +1278,12 @@ Selects all text
 
 =head2 Bi-directional input and output
 
-When bidi is enabled, methods C<firstChar>, C<charOffset>, C<selection> etc
-change their meaning, so that these cannot be used to calculate text offsets
-f.ex. via C<substr>.  Also, selection ranges of bidi text are not
-straighforward.  Use the following methods whenever text manipulations are
-needed:
+When working on bidirectional texts, or text represented by complex script
+shaping, methods C<firstChar>, C<charOffset>, C<selection> etc cannot be used
+to calculate text offsets f.ex. via C<substr>. Note that these values are in
+clusters, not in characters (see L<Prima::Drawable::Glyphs> for the
+description>. Also, selection ranges of bidi text become not straighforward.
+Use the following methods whenever text manipulations are needed:
 
 =over
 

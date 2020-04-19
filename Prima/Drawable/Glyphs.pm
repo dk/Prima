@@ -24,6 +24,43 @@ sub new_empty
 	push @{$self[1]}, 0;
 	return bless \@self, $class;
 }
+sub reverse
+{
+	my $self = shift;
+	my @svs;
+
+	my $nglyphs = @{ $self->[GLYPHS] };
+
+	push @svs, Prima::array->new('S');
+	push @{ $svs[-1] }, reverse @{ $self->[GLYPHS] };
+	
+	push @svs, Prima::array->new('S');
+	push @{ $svs[-1] }, reverse @{ $self->[INDEXES] }[0 .. $nglyphs-1];
+	push @{ $svs[-1] }, $self->[INDEXES]->[-1];
+
+	if ( my $advances = $self->[ADVANCES] ) {
+		push @svs, Prima::array->new('S');
+		push @{ $svs[-1] }, reverse @{ $self->[ADVANCES] };
+		
+		push @svs, Prima::array->new('s');
+		my $positions = $self->[POSITIONS];
+		for ( my $i = $nglyphs * 2 - 2; $i >= 0; $i -= 2 ) {
+			push @{ $svs[-1] }, @{$positions}[$i,$i+1];
+		}
+	}
+
+	return __PACKAGE__->new(@svs);
+}
+
+sub log2vis
+{
+	my $map  = shift->indexes;
+	my @newmap = (undef) x $map->[-1];
+	my $last;
+	$newmap[ $map->[$_] & ~to::RTL ] = $_ for 0 .. $#$map - 1;
+	defined($_) ? ($last = $_) : ($_ = $last) for @newmap;
+	return \@newmap;
+}
 
 sub overhangs
 {
@@ -70,6 +107,37 @@ sub get_box
 	my ( $self, $canvas ) = @_;
 	return $canvas-> get_text_box($self);
 }
+
+sub n_clusters
+{
+	my $last = -1;
+	my $indexes = $_[0]->indexes;
+	my $n_clusters = 0;
+	for ( my $ix = 0; $ix < $#$indexes; $ix++) {
+		my $c = $indexes->[$ix] & ~to::RTL;
+		if ( $last != $c ) {
+			$n_clusters++;
+			$last = $c;
+		}
+	}
+	return $n_clusters;
+}
+
+sub clusters
+{
+	my $last = -1;
+	my $indexes = $_[0]->indexes;
+	my @arr;
+	for ( my $ix = 0; $ix < $#$indexes; $ix++) {
+		my $c = $indexes->[$ix] & ~to::RTL;
+		if ( $last != $c ) {
+			push @arr, $c;
+			$last = $c;
+		}
+	}
+	return \@arr;
+}
+
 
 sub cluster2glyph
 {
@@ -149,7 +217,30 @@ sub cluster2range
 	return $first, $last - $first, $rtl;
 }
 
-sub offset2cluster
+sub glyph2cluster
+{
+	my ( $self, $glyph ) = @_;
+
+	return 0 if $glyph < 0;
+
+	my $indexes  = $self->indexes;
+	return 0 unless $#$indexes;
+
+	my $curr_cluster = -1;
+	my $last_index = -1;
+	for ( my $ix = 0; $ix < $#$indexes; $ix++) {
+		my $c = $indexes->[$ix] & ~to::RTL;
+		if ( $last_index != $c ) {
+			$curr_cluster++;
+			$last_index = $c;
+		}
+		return $curr_cluster if $ix == $glyph;
+	}
+
+	return $curr_cluster + 1;
+}
+
+sub index2cluster
 {
 	my ( $self, $index, $rtl_advance ) = @_;
 
@@ -303,60 +394,6 @@ sub sub_text_wrap
 	return \@new_wrap;
 }
 
-sub x2cluster
-{
-	my ( $self, $canvas, $width, $from, $length ) = @_;
-	$from //= 0;
-	$length //= -1;
-	return $canvas-> text_wrap($self, $width, 
-		tw::ReturnFirstLineLength | tw::BreakSingle, 8, 
-		$from, $length
-	);
-}
-
-sub n_clusters
-{
-	my $last = -1;
-	my $indexes = $_[0]->indexes;
-	my $n_clusters = 0;
-	for ( my $ix = 0; $ix < $#$indexes; $ix++) {
-		my $c = $indexes->[$ix] & ~to::RTL;
-		if ( $last != $c ) {
-			$n_clusters++;
-			$last = $c;
-		}
-	}
-	return $n_clusters;
-}
-
-sub reverse
-{
-	my $self = shift;
-	my @svs;
-
-	my $nglyphs = @{ $self->[GLYPHS] };
-
-	push @svs, Prima::array->new('S');
-	push @{ $svs[-1] }, reverse @{ $self->[GLYPHS] };
-	
-	push @svs, Prima::array->new('S');
-	push @{ $svs[-1] }, reverse @{ $self->[INDEXES] }[0 .. $nglyphs-1];
-	push @{ $svs[-1] }, $self->[INDEXES]->[-1];
-
-	if ( my $advances = $self->[ADVANCES] ) {
-		push @svs, Prima::array->new('S');
-		push @{ $svs[-1] }, reverse @{ $self->[ADVANCES] };
-		
-		push @svs, Prima::array->new('s');
-		my $positions = $self->[POSITIONS];
-		for ( my $i = $nglyphs * 2 - 2; $i >= 0; $i -= 2 ) {
-			push @{ $svs[-1] }, @{$positions}[$i,$i+1];
-		}
-	}
-
-	return __PACKAGE__->new(@svs);
-}
-
 sub _map2chunks
 {
 	my $selection_map = shift;
@@ -384,21 +421,6 @@ sub _chunks2map
 		push @map, ($selected) x $length;
 	});
 	return \@map;
-}
-
-sub clusters
-{
-	my $last = -1;
-	my $indexes = $_[0]->indexes;
-	my @arr;
-	for ( my $ix = 0; $ix < $#$indexes; $ix++) {
-		my $c = $indexes->[$ix] & ~to::RTL;
-		if ( $last != $c ) {
-			push @arr, $c;
-			$last = $c;
-		}
-	}
-	return \@arr;
 }
 
 sub selection2range
@@ -471,6 +493,18 @@ sub is_explicit($) { $_[-1] =~ m/^[\p{bc=LRE}\p{bc=LRO}\p{bc=RLE}\p{bc=RLO}\p{bc
 sub is_rtl($)      { $_[-1] =~ m/^[\p{bc=R}\p{bc=AL}\p{bc=RLE}\p{bc=RLO}\p{bc=RLI}]$/ }
 sub is_ltr($)      { $_[-1] =~ m/^[\p{bc=L}\p{bc=LRE}\p{bc=LRO}\p{bc=LRI}]$/ }
 
+sub x2cluster
+{
+	my ( $self, $canvas, $width, $from, $length ) = @_;
+	$from //= 0;
+	$length //= -1;
+	my $glyph = $canvas-> text_wrap($self, $width, 
+		tw::ReturnFirstLineLength | tw::BreakSingle, 8, 
+		$from, $length
+	);
+	return $self-> glyph2cluster($glyph);
+}
+
 sub cursor2offset
 {
 	my ( $self, $at_cluster, $preferred_rtl ) = @_;
@@ -508,16 +542,6 @@ sub cursor2offset
 	# cursor at the start or at the end
 	return $rtl_right ? $limit : 0 unless defined $pos_left;
 	return $rtl_left ? 0 : $limit;
-}
-
-sub log2vis
-{
-	my $map  = shift->indexes;
-	my @newmap = (undef) x $map->[-1];
-	my $last;
-	$newmap[ $map->[$_] & ~to::RTL ] = $_ for 0 .. $#$map - 1;
-	defined($_) ? ($last = $_) : ($_ = $last) for @newmap;
-	return \@newmap;
 }
 
 1;
@@ -562,30 +586,141 @@ Prima::Drawable::Glyphs - helper routines for bi-directional text input and comp
 
    use Prima;
    $::application-> begin_paint;
-   $::application-> text_out('אפס123', 100, 100);
+   $::application-> text_shape_out('אפס123', 0,0);
 
    123ספא
 
 =for latex-makedoc cut
 
-=head1 API
+=head1 DESCRIPTION
+
+The class implements an abstraction over a set of glyphs that can be rendered
+to represent text strings. Objects of the class are created and returned from
+C<Prima::Drawable::text_shape> calls, see more in
+L<Prima::Drawable/text_shape>. An object is a blessed array reference that can
+contain either two or four packed arrays with 16-bit integers, representing,
+correspondingly, a set of glyph indexes, a set of character indexes, a set of
+glyph advances, and a set of glyph position offsets per glyph. Additionally,
+the class implements several sets of helper routines that aim to address common
+tasks when displaying glyph-based strings.
+
+=head2 Structure
+
+Each array is an instance of C<Prima::array>, an effective plain memory
+structure that provides standard perl interface over a string scalar filled
+with fixed-width integers. 
+
+The following methods provide read-only access to these arrays:
 
 =over
 
-=item selection_chunks $START, $END
+=item glyphs
 
-Calculates a set of chunks of texts, that, given a text selection from
-positions C<$START> to C<$END>, represent each either a set of selected and non-selected
-visual characters.
+Contains set of unsigned 16-bit integers where each is a glyph number
+corresponding to the font that was used when shaping the text. These glyph
+numbers are only applicable to that font. Zero is usually treated as a default
+glyph in vector fonts, when shaping cannot map a character; in bitmap fonts
+this number it is usually a C<defaultChar>.
 
-Returns array of integers, RLE-encoding the chunks, where the first integer
-signifies number of non-selected clusters to display, the second - number
-of selected clusters, the third the non-selected again, etc. If the first
-character belongs to the selected chunk, the first integer in the result is set
-to 0.
+This array is recognized as a special case when is set to C<text_out> or
+C<get_text_width>, that can process it without other arrays. In this case, no
+special advances and glyph positions are taken into the account though.
 
-Example: consider embedded number in a bidi text. For the sake of clarity I'll use
-latin characters here. For example, we have a text scalar containing these characters:
+Each glyph is not necessarily mapped to a character, and quite often it is not,
+even in english left-to-right texts. F ex character combinations like C<"ff">,
+C<"fi">, C<"fl"> can be mapped as single ligature glyphs. When right-to-left, I<RTL>,
+text direction is taken into the account, the glyph positions may change, too.
+See C<indexes> below that addresses mapping of glyph to characters.
+
+=item indexes
+
+Contains set of unsigned 16-bit integers where each is an offset corresponding to 
+the text was used in shaping. Each glyph position thus points to a first character
+in the text that maps to the glyph.
+
+There can be more than one characters per glyphs, such as the above example
+with a C<"ff"> ligature. There can also be cases with more than one characher
+per more than one glyph, such is the case in indic scripts. In these cases it
+is easier to operate neither by character offsets nor glyph offsets, but rather
+by I<clusters>, where each is an individual syntax unit that contains one or
+more characters perl one or more glyphs.
+
+In addition to the text offset, each index value can be flagged with a
+C<to::RTL> bit, signifying that the character in question has RTL direction.
+This is not necessarily semitic characters from RTL languages that only have
+that attributes set; spaces in these languages are normally attributed the RTL
+bit too, sometimes also numbers. Use of explicit direction control characters
+from U+20XX block can result in any character being assigned or not assigned
+the RTL bit.
+
+The array has an extra item added to its end, the length of the text that was
+used in the snaping. This helps for easy calculation of cluster length in
+characters, especially of the last one, where difference between indexes is,
+basically, the cluster length.
+
+The array is not used for text drawing or calculation, but only for conversion
+between character, glyph, and cluster coordinates (see C<Coordinates> below).
+
+=item advances
+
+Contains set of unsigned 16-bit integers where each is a pixel distance of how
+much space the glyph occupies. Where the advances array is not present, or
+filled by C<advances> options in C<text_shape>, it is basically a sum of a, b,
+and c widths of a glyph. However there are cases when depending on shaping
+input, these values can differ.
+
+One of those cases is combining graphemes, where text consisting of two
+characters, C<"A"> and combining grave accent U+300 should be drawn as a single
+"E<Agrave>" symbol, but font doesn't have that single glyph but rather two
+individual glyphs C<"A"> and <"`">. There, where grave glyph has its own
+advance for standalone usage, in this case it should be ignored though, and
+that is achieved by setting the advance of the C<"`"> to zero.
+
+The array content is respected by C<text_out> and C<get_text_width>, and its
+content can be changed at will to produce gaps in the text quite easily. F ex
+C<Prima::Edit> uses that to display tab characters as spaces with 8x advance.
+
+=item positions
+
+Contains set of pairs of signed 16-bit integers where each is a X and Y pixel
+offset for each glyph. Like in the previous example with the "E<Agrave>"
+symbol, the grave glyph C<"`"> may be positioned differently on the vertical f
+ex on "E<Agrave>" and "E<agrave>" graphemes.
+
+The array is respected by C<text_out> (but not by C<get_text_width>).
+
+=back
+
+=head2 Coordinates
+
+In addition to natural character coordinates, where each index is an
+offset that can be directly used in C<substr> perl function, this class offers
+two additional coordinate systems that help abstract the object data for
+display and navigation.
+
+The glyph coordinate is a rather straighforward copy of the character
+coordinates, where each number is an offset in the C<glyphs> array. Similarly,
+these offsets can be used to address individual glyphs, indexes, advances, and
+positions. However these are not easy to use when one needs, for example, to
+select a grapheme with a mouse, or break set of glyphs in such a way so that a
+grapheme is not broken. These can be managed easier in the cluster coordinate system.
+
+The cluster coordinates are virtually superimposed set of offset where each
+correspond to a set of one or more characters displayed by a one or more
+glyphs. Most useful functions below operate in this system.
+
+=head2 Selection
+
+Practically, most useful coordinates that can be used for implementing selection
+is either character or cluster, but not glyphs. The charater-based selections makes
+trivial extraction or replacement of the selected text, while the cluster-based makes
+it easier to manipulate (f ex with Shift- arrow keys) the selection itself.
+
+The class supports both, by operatin on I<selection maps> or I<selection
+chunks>, where each represent same information but in different ways.
+For example, consider embedded number in a bidi text. For the sake of clarity
+I'll use latin characters here. Let's have a text scalar containing
+these characters:
 
    ABC123
 
@@ -594,12 +729,12 @@ displayed as
 
    123CBA
 
-(and visual mapping will be (3,4,5,2,1,0) ).
+(and index array is (3,4,5,2,1,0) ).
 
 Next, the user clicks the mouse between A and B (in text offset 1), drags the
 mouse then to the left, and finally stops between characters 2 and 3 (text
-offset 4). The resulting selection then should not be, as one might naively expect,
-this:
+offset 4). The resulting selection then should not be, as one might naively
+expect, this:
 
    123CBA
    __^^^_
@@ -609,16 +744,185 @@ but this instead:
    123CBA
    ^^_^^_
 
-because the next character after C is 1, and the I<range> of the selected sub-text is from
-characters 1 to 4.
+because the next character after C is 1, and the I<range> of the selected
+sub-text is from characters 1 to 4.
 
-In this case, the result of call to C<selection_chunks(1, 4 )> will be C<0,2,1,2,1> .
+The class offers to encode such information in a I<map>, i.e. array of integers
+C<1,1,0,1,1,0>, where each entry is either 0 or 1 depending on whether the
+cluster is or is not selected.  Alternatively, the same information can be
+encoded in I<chunks>, or RLE sets, as array C<0,2,1,2,1>, where the first
+integer signifies number of non-selected clusters to display, the second -
+number of selected clusters, the third the non-selected again, etc. If the
+first character belongs to the selected chunk, the first integer in the result
+is set to 0.
+
+=head2 Bidi input
+
+When sending input to a widget in order to type in text, the otherwise trivial
+case of figuring out at which positing the text should be inserted (or removed,
+for that matter), becomes interesting when there are characters with mixed
+direction.
+
+F ex it is indeed trivial, when the latin text is C<AB>, and the cursor is
+positioned between C<A> and C<B>, to figure out that whenever the user types
+C<C>, the result should become C<ACB>. Likewise, when the text is LTR and both
+text and input is arabic, the result is the same. However when f.ex. the text
+is C<A1>, that is displayed as C<1A> because of RTL shaping, and the cursor is
+positioned between C<1> (LTR) and C<A> (RTL), it is not clear whether that
+means the new input should be appended after C<1> and become C<A1C>, or after
+C<A>, and become, correspondingly, C<AC1>. 
+
+There is no easy solution for this problem, and different programs approach
+this differently, and some go as far as to provide two cursors for both
+directions. The class offers its own solution that uses some primitive
+heuristics to detect whether cursor belongs to the left or to the right glyph.
+This is the area that can be enhanced, and any help from native users of RTL
+languages can be greatly appreciated.
+
+=head1 API
+
+=over
+
+=item abc $CANVAS, $INDEX
+
+Returns a, b, c metrics from the glyph C<$INDEX>
+
+=item advances
+
+Read-only accessor to advances array, see L<Structure> above.
+
+=item clone
+
+Clones the object
+
+=item cluster2glyph $FROM, $LENGTH
+
+Maps a range of clusters starting with C<$FROM> with size C<$LENGTH> into the
+corresponding range of glyphs. Undefined C<$LENGTH> calculates the range from
+C<$FROM> till the object end.
+
+=item cluster2index $CLUSTER
+
+Returns character offset of the first character in cluster C<$CLUSTER>.
+
+Note: result may contain C<to::RTL> flag.
+
+=item cluster2range $CLUSTER
+
+Returns character offset of the first character in cluster C<$CLUSTER>
+and how many characters are there in the cluster.
+
+=item clusters
+
+Returns array of integers where each is a first character offsets per cluster.
+
+=item cursor2offset $AT_CLUSTER, $PREFERRED_RTL
+
+Given a cursor positioned next to the cluster C<$AT_CLUSTER>, runs simple heuristics
+to see what character offset it corresponds to. C<$PREFERRED_RTL> is used when object
+data are not enough.
+
+See L<Bidi input> above.
+
+=item def $CANVAS, $INDEX
+
+Returns d, e, f metrics from the glyph C<$INDEX>
+
+=item get_box $CANVAS
+
+Return box metrics of the glyph object.
+
+See L<Prima::Drawable/get_text_box>.
+
+=item get_sub $FROM, $LENGTH
+
+Extracts and clones a new object that constains data from cluster offset
+C<$FROM>, with cluster length C<$LENGTH>.
+
+=item get_sub_box $CANVAS, $FROM, $LENGTH
+
+Calculate box metrics of a glyph string from the cluster C<$FROM> with size C<$LENGTH>.
+
+=item get_sub_width $CANVAS, $FROM, $LENGTH
+
+Calculate pixel width of a glyph string from the cluster C<$FROM> with size C<$LENGTH>.
+
+=item get_width $CANVAS, $WITH_OVERHANGS
+
+Return width of the glyph objects, with overhangs if requested.
+
+=item glyph2cluster $GLYPH
+
+Return the cluster that contains C<$GLYPH>.
+
+=item glyphs
+
+Read-only accessor to glyph indexes, see L<Structure> above.
+
+=item index2cluster $INDEX
+
+Returns the cluster that contains the character offset C<$INDEX>.
+
+=item indexes
+
+Read-only accessor to indexes, see L<Structure> above.
+
+=item left_overhang
+
+First integer from the C<overhangs> result.
+
+=item log2vis
+
+Returns a map of integers where each character position corresponds to a glyph
+position. The name is a rudiment from pure fribidi shaping, where C<log2vis>
+and C<vis2log> were mapper functions with the same functionality.
+
+=item n_clusters
+
+Calculates how many clusters the object contains.
+
+=item new @ARRAYS
+
+Create new object. Not used directly, but rather from inside C<text_shape> calls.
+
+=item new_empty
+
+Create new empty object.
+
+=item overhangs
+
+Calculates two pixel widths for overhangs in the beginning and in the end of the glyph string.
+This is used in emulation of a C<get_text_width> call with the C<to::AddOverhangs> flag.
+
+=item positions
+
+Read-only accessor to positions array, see L<Structure> above.
+
+=item reverse
+
+Creates a new object that has all arrays reversed. User for calculation
+of pixel offset from the right end of a glyph string.
+
+=item right_overhang
+
+Second integer from the C<overhangs> result.
+
+=item selection2range $CLUSTER_START $CLUSTER_END
+
+Converts cluster selection range into text selection range
+
+=item selection_chunks $START, $END
+
+Calculates a set of chunks of texts, that, given a text selection from
+positions C<$START> to C<$END>, represent each either a set of selected and
+non-selected clusters.
 
 =item selection_diff $OLD, $NEW
 
-Given set of two chunk lists, in format as returned by C<selection_chunks>, calculates
-the list of chunks affected by the selection change. Can be used for efficient repaints when
-the user interactively changes text selection, to redraw only the changed regions.
+Given set of two chunk lists, in format as returned by C<selection_chunks>,
+calculates the list of chunks affected by the selection change. Can be used for
+efficient repaints when the user interactively changes text selection, to
+redraw only the changed regions.
 
 =item selection_map $START, $END
 
@@ -629,13 +933,31 @@ to be displayed as selected, or not.
 =item selection_walk $CHUNKS, $FROM, $TO = length, $SUB
 
 Walks the selection chunks array, returned by C<selection_chunks>, between
-C<$FROM> and C<$TO> visual positions, and for each chunk calls the provided
-C<< $SUB->($offset, $length, $selected) >>, where each call contains 2 integers to
+C<$FROM> and C<$TO> clusters, and for each chunk calls the provided C<<
+$SUB->($offset, $length, $selected) >>, where each call contains 2 integers to
 chunk offset and length, and a boolean flag whether the chunk is selected or
 not.
 
 Can be also used on a result of C<selection_diff>, in which case
 C<$selected> flag is irrelevant.
+
+=item sub_text_out $CANVAS, $FROM, $LENGTH, $X, $Y
+
+Optimized version of C<< $CANVAS->text_out( $self->get_sub($FROM, $LENGTH), $X, $Y ) >>.
+
+=item sub_text_wrap $CANVAS, $FROM, $LENGTH, $WIDTH, $OPT, $TABS
+
+Optimized version of C<< $CANVAS->text_wrap( $self->get_sub($FROM, $LENGTH), $WIDTH, $OPT, $TABS ) >>.
+The result is also converted to chunks.
+
+=item text_length
+
+Returns the length of the text that was shaped and that produced the object.
+
+=item x2cluster $CANVAS, $X, $FROM, $LENGTH
+
+Given sub-cluster from C<$FROM> with size C<$LENGTH>, calculates how many
+clusters would fit in width C<$X>.
 
 =back
 

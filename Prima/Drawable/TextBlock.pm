@@ -1054,7 +1054,7 @@ in pixels. Such the two-part offset scheme is made for simplification of an imag
 that would alter ( insert to, or delete part of ) the big text chunk; the updating procedure
 would not need to traverse all commands, but just the block headers.
 
-Relative to: C<tb::BLK_TEXT_OFFSET> when not preceded by L<OP_BIDIMAP>.
+Relative to: C<tb::BLK_TEXT_OFFSET>
 
 =item OP_COLOR - COLOR
 
@@ -1159,14 +1159,6 @@ L<block_wrap> only sets (!) X and Y to the current coordinates when the command 
 Thus, C<OP_MARK> can be used for arbitrary reasons, easy marking the geometrical positions
 that undergo the block wrapping.
 
-=item OP_BIDIMAP VISUAL, BIDIMAP
-
-C<OP_BIDIMAP> is used when the text to be displayed is RTL (right-to-left) and requires
-special handling. This opcode is automatically created by C<block_wrap>. It must be
-present before any C<OP_TEXT> opcode, because when in effect, the C<OP_TEXT> offset calculation
-is different - instead of reading characters from C<< $self->{text} >>, it reads them from
-C<VISUAL>, and C<BLK_TEXT_OFFSET> in the block header is not used.
-
 =back
 
 As can be noticed, these opcodes are far not enough for the full-weight rich text
@@ -1177,21 +1169,22 @@ the opcode length and returns the new opcode value.
 
 =over
 
-=item block_wrap
+=item block_wrap %OPTIONS
 
-C<block_wrap> is the function, that is used to wrap a block into a given width.
-It returns one or more text blocks with fully assigned headers. The returned blocks
-are located one below another, providing an illusion that the text itself is wrapped.
-It does not only traverses the opcodes and sees if the command fit or not in the given width;
-it also splits the text strings if these do not fit.
+C<block_wrap> wraps a block into a given width. It returns one or more text
+blocks with fully assigned headers. The returned blocks are located one below
+another, providing an illusion that the text itself is wrapped.  It does not
+only traverses the opcodes and sees if the command fit or not in the given
+width; it also splits the text strings if these do not fit.
 
-By default the wrapping can occur either on a command boundary or by the spaces or tab characters
-in the text strings. The unsolicited wrapping can be prevented by using C<OP_WRAP>
-command brackets. The commands inside these brackets are not wrapped; C<OP_WRAP> commands
-are removed from the output blocks.
+By default the wrapping can occur either on a command boundary or by the spaces
+or tab characters in the text strings. The unsolicited wrapping can be
+prevented by using C<OP_WRAP> command brackets. The commands inside these
+brackets are not wrapped; C<OP_WRAP> commands are removed from the output
+blocks.
 
-In general, C<block_wrap> copies all commands and their parameters as is, ( as it is supposed
-to do ), but some commands are treated especially:
+In general, C<block_wrap> copies all commands and their parameters as is, ( as
+it is supposed to do ), but some commands are treated specially:
 
 - C<OP_TEXT>'s third parameter, C<TEXT_WIDTH>, is disregarded, and is recalculated for every
 C<OP_TEXT> met.
@@ -1203,9 +1196,6 @@ cleared in the output block.
 - C<OP_MARK>'s second and third parameters assigned to the current (X,Y) coordinates.
 
 - C<OP_WRAP> removed from the output.
-
-- C<OP_BIDIMAP> added to the output, if the text to be displayed in the block
-contains right-to-left characters.
 
 =item walk BLOCK, %OPTIONS
 
