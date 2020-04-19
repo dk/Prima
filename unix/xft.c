@@ -1157,6 +1157,7 @@ prima_xft_fonts( PFont array, const char *facename, const char * encoding, int *
 				}
 			}
 			/* if no encodings found, assume fontspecific, otherwise always provide iso10646 */
+			fcpattern2font( *ppat, f);
 			strcpy( f-> encoding, (f == tmpl) ? fontspecific : utf8_encoding);
 			f++;
 		} else if ( !facename && !encoding) {
