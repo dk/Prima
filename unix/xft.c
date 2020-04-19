@@ -2359,7 +2359,7 @@ prima_xft_text_shaper_ident( Handle self, PTextShapeRec r)
 			XftGlyphExtents( DISP, xft, &ft_index, 1, &glyph);
 			*advances = glyph.xOff;
 		}
-		bzero(r->positions, r->len * sizeof(int16_t));
+		bzero(r->positions, r->len * 2 * sizeof(int16_t));
 	}
 
         return true;

@@ -439,7 +439,6 @@ bidi_reorder(PTextShapeRec t, Bool arabic_shaping)
 	bracket_types = (FriBidiBracketType*) (ptr += mlen * sizeof(FriBidiStrIndex));
 #endif
 	fribidi_get_bidi_types(t->text, t->len, types);
-	/* XXX FRIBIDI_PAR_ON ? */
 	base_dir = ( t->flags & toRTL ) ? FRIBIDI_PAR_RTL : FRIBIDI_PAR_LTR;
 
 #if FRIBIDI_INTERFACE_VERSION > 3
@@ -478,7 +477,7 @@ FAIL:
 #endif
 
 static Bool
-shape(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_only)
+shape(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_only, Bool fribidi_arabic_shaping)
 {
 	Bool ok, reorder_swaps_rtl;
 	Byte analysis[MAX_CHARACTERS], *save_analysis;
@@ -495,7 +494,7 @@ shape(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_onl
 #ifdef WITH_FRIBIDI
 	if ( use_fribidi ) {
 		reorder_swaps_rtl = true;
-		ok = bidi_reorder(t, glyph_mapper_only);
+		ok = bidi_reorder(t, fribidi_arabic_shaping);
 	}
 	else
 #endif
@@ -579,6 +578,18 @@ shape(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_onl
 	return ok;
 }
 
+static Bool
+bidi_only_shaper( Handle self, PTextShapeRec r)
+{
+        r-> n_glyphs = r->len;
+	bzero(r->glyphs, sizeof(uint16_t) * r->len);
+	if ( r-> advances ) {
+		bzero(r->advances, r->len * sizeof(uint16_t));
+		bzero(r->positions, r->len * 2 * sizeof(int16_t));
+	}
+	return true;
+}
+
 SV*
 Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 {
@@ -593,7 +604,8 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	PTextShapeFunc system_shaper;
 	TextShapeRec t;
 	int shaper_type;
-	Bool skip_if_simple = false, return_zero = false, force_advances = false;
+	Bool skip_if_simple = false, return_zero = false, force_advances = false, bidi_only = false;
+	Bool gp_enter;
 
 	/* forward, if any */
 	if ( SvROK(text_sv)) {
@@ -624,14 +636,23 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		skip_if_simple = pget_B(skip_if_simple);
 	if ( pexist(advances))
 		force_advances = pget_B(advances);
+	if ( pexist(bidi_only))
+		bidi_only = pget_B(bidi_only);
 	hv_clear(profile); /* old gencls bork */
 
-	gpENTER(nilSV);
-
 	/* font supports shaping? */
-	if (!( system_shaper = apc_gp_get_text_shaper(self, &shaper_type))) {
-		return_zero = true;
-		goto EXIT;
+	if ( bidi_only ) {
+		shaper_type    = SHAPING_EMULATION;
+		force_advances = false;
+		gp_enter       = false;
+		system_shaper  = bidi_only_shaper;
+	} else {
+		gp_enter       = true;
+		gpENTER(nilSV);
+		if (!( system_shaper = apc_gp_get_text_shaper(self, &shaper_type))) {
+			return_zero = true;
+			goto EXIT;
+		}
 	}
 
 	if ( skip_if_simple && (shaper_type == SHAPING_EMULATION)) {
@@ -679,7 +700,10 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	}
 #undef ALLOC
 
-	if ( !shape(self, &t, system_shaper, shaper_type < SHAPING_FULL) ) goto EXIT;
+	if ( !shape(self, &t,
+		system_shaper, shaper_type < SHAPING_FULL,
+		bidi_only ? false : (shaper_type < SHAPING_FULL))
+	) goto EXIT;
 
 	if ( skip_if_simple ) {
 		Bool is_simple = true;
@@ -727,7 +751,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	));
 
 EXIT:
-	gpLEAVE;
+	if (gp_enter) gpLEAVE;
 	if ( t.text     ) free(t.text     );
 	if ( t.v2l      ) free(t.v2l      );
 	if ( t.analysis ) free(t.analysis );

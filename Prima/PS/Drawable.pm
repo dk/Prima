@@ -914,8 +914,11 @@ SECTOR
 
 sub text_out
 {
-	my ( $self, $text, $x, $y) = @_;
-	return $text->text_out($self, $x, $y) if ref $text;
+	my ( $self, $text, $x, $y, $from, $len) = @_;
+	$from //= 0;
+	$len  //= length $text;
+	$text = substr($text, $from, $len);
+
 	return 0 unless $self-> {canDraw} and length $text;
 	$y += $self-> {font}-> {descent} if !$self-> textOutBaseline;
 	( $x, $y) = $self-> pixel2point( $x, $y);
@@ -1049,6 +1052,8 @@ sub text_out
 	$self-> emit(";");
 	return 1;
 }
+
+sub text_wrap { [] }
 
 sub bar
 {
@@ -1645,11 +1650,13 @@ sub get_font_languages {}
 
 sub get_text_width
 {
-	my ( $self, $text, $addOverhang) = @_;
+	my ( $self, $text, $addOverhang, $from, $len) = @_;
 	return $text->get_text_width($self, $addOverhang) if ref $text;
+	$from //= 0;
+	$len  //= length $text;
+	$text = substr($text, $from, $len);
 
 	my $i;
-	my $len = length $text;
 	return 0 unless $len;
 	my ( $rmap, $nd) = $self-> get_rmap;
 	my $cd;
@@ -1671,10 +1678,12 @@ sub get_text_width
 
 sub get_text_box
 {
-	my ( $self, $text) = @_;
+	my ( $self, $text, $from, $len) = @_;
 	return $text->get_text_box($self) if ref $text;
+	$from //= 0;
+	$len  //= length $text;
+	$text = substr($text, $from, $len);
 	my ( $rmap, $nd) = $self-> get_rmap;
-	my $len = length $text;
 	return [ (0) x 10 ] unless $len;
 	my $cd;
 	my $wmul = $self-> {font}-> {width} / $self-> {fontWidthDivisor};
@@ -1707,6 +1716,18 @@ sub get_text_box
 	return \@ret;
 }
 
+sub text_shape
+{
+	my ( $self, $text, %opt ) = @_;
+	my $shaped = $self->SUPER::text_shape($text, %opt, bidi_only => 1);
+	return $shaped unless $shaped;
+
+	my ($i, $x) = (0, $shaped->indexes);
+	my @text = split $text;
+	my @ret;
+	$ret[$_] = $text[ $x->[$_] & ~to::RTL ] for 0..$#text;
+	return join '', grep { defined } @ret;
+}
 
 1;
 
