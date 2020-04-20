@@ -590,6 +590,23 @@ bidi_only_shaper( Handle self, PTextShapeRec r)
 	return true;
 }
 
+Bool
+lang_is_rtl(void)
+{
+	static int cached = -1;
+	SV * app, *sub, *ret;
+
+	if ( cached >= 0 ) return cached;
+	app = newSVpv("Prima::Application", 0);
+	if ( !( sub = (SV*) sv_query_method( app, "lang_is_rtl", 0))) {
+		sv_free(app);
+		return cached = false;
+	}
+	ret = cv_call_perl( app, sub, "<");
+	sv_free(app);
+	return cached = (ret && SvOK(ret)) ? SvBOOL(ret) : 0;
+}
+
 SV*
 Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 {
@@ -628,7 +645,10 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	}
 #endif
 
-	if ( pexist(rtl) ? pget_B(rtl) : PApplication(application)->textDirection )
+	if ( pexist(rtl) ?
+		pget_B(rtl) :
+		(application ? PApplication(application)->textDirection : lang_is_rtl()
+	))
 		t.flags |= toRTL;
 	if ( pexist(language))
 		t.language = pget_c(language);

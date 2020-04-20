@@ -560,7 +560,7 @@ apc_gp_get_text_shaper( Handle self, int * type)
 {
 	*type = SHAPING_EMULATION;
 #ifdef USE_XFT
-	if ( ( X(self)-> font-> xft) ) {
+	if ( X(self)-> font && X(self)-> font-> xft) {
 		*type = SHAPING_GLYPH_MAPPING;
 #ifdef WITH_HARFBUZZ
 		if ( guts. use_harfbuzz ) {

@@ -2009,7 +2009,8 @@ sub helpClass     {($#_)?$_[0]-> {HelpClass}  = $_[1] : return $_[0]-> {HelpClas
 
 sub lang_is_rtl
 {
-	$_[0] =~ /^(
+	my $lang = $_[1] // $_[0]->get_system_info->{guiLanguage};
+	$lang =~ /^(
 		ar| # arabic
 		dv| # divehi
 		fa| # persian (farsi)
@@ -2028,7 +2029,7 @@ sub language
 	return $_[0]->{language} unless $#_;
 	my ( $self, $lang ) = @_;
 	$self->{language} = $lang;
-	$self->textDirection( lang_is_rtl($lang));
+	$self->textDirection( $_[0]-> lang_is_rtl($lang));
 }
 
 sub help_init
