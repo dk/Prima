@@ -1929,7 +1929,7 @@ sub profile_default
 sub profile_check_in
 {
 	my ( $self, $p, $default) = @_;
-	$p->{textDirection} //= lang_is_rtl($p->{language} // $default->{language});
+	$p->{textDirection} //= $self->lang_is_rtl($p->{language} // $default->{language});
 	$self-> SUPER::profile_check_in( $p, $default);
 	delete $p-> { printerModule};
 	delete $p-> { owner};
