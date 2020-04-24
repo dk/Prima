@@ -3,7 +3,7 @@
   family          => 'Symbol',
   height          => 1303,
   weight          => fw::Medium,
-  style           => fs::Italic,
+  style           => fs::Normal,
   pitch           => fp::Variable,
   vector          => 1,
   ascent          => 1010,

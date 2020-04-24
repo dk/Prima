@@ -3,7 +3,7 @@
   family          => 'Helvetica Narrow',
   height          => 1190,
   weight          => fw::Bold,
-  style           => fs::Bold,
+  style           => fs::Bold|fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,
   ascent          => 962,

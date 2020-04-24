@@ -13,7 +13,7 @@ for my $afm (<*.afm>) {
 		m/^FamilyName\s+(.*)$/    and $fm{family}       = $1;
 		m/^IsFixedPitch\s+(.*)$/  and $fm{pitch}        = ($1 eq 'false') ? 'fp::Variable' : 'fp::Fixed';
 		m/^Weight\s+(.*)$/        and $fm{weight}       = $1;
-		m/^ItalicAngle\s+(.*)$/   and $fm{italic}       = ($1 eq '0');
+		m/^ItalicAngle\s+(.*)$/   and $fm{italic}       = ($1 ne '0');
 		m/^EncodingScheme\s+(.*)$/ and $fm{encoding}    = ($1 eq 'FontSpecific') ? 'Specific' : 'Latin1';
 		m/^FontBBox\s+(\-?\d+)\s+(\-?\d+)\s+(\-?\d+)\s+(\-?\d+)\s+$/ and $fm{bbox} = [$1,$2,$3,$4];
 		m/C\s+(\-?\d+)\s+;\s+WX\s+(\d+)\s+;\s+N\s+(\S+)\s+;\s+B\s+(\-?\d+)\s+(\-?\d+)\s+(\-?\d+)\s+(\-?\d+)\s+;/ and push @c, [$1, $2, $3, $4, $5, $6, $7];
