@@ -3,7 +3,7 @@
   family          => 'Helvetica Narrow',
   height          => 1156,
   weight          => fw::Medium,
-  style           => fs::Normal,
+  style           => fs::Italic,
   pitch           => fp::Variable,
   vector          => 1,
   ascent          => 931,

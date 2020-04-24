@@ -1,9 +1,9 @@
 ('ZapfDingbats' => {
   name            => 'ZapfDingbats',
-  family          => 'Zapf Dingbats',
+  family          => 'ITC Zapf Dingbats',
   height          => 963,
   weight          => fw::Medium,
-  style           => fs::Italic,
+  style           => fs::Normal,
   pitch           => fp::Variable,
   vector          => 1,
   ascent          => 820,
