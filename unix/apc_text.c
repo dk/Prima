@@ -558,20 +558,19 @@ text_shaper_core_text( Handle self, PTextShapeRec r)
 PTextShapeFunc
 apc_gp_get_text_shaper( Handle self, int * type)
 {
-	*type = SHAPING_EMULATION;
 #ifdef USE_XFT
 	if ( X(self)-> font && X(self)-> font-> xft) {
-		*type = SHAPING_GLYPH_MAPPING;
 #ifdef WITH_HARFBUZZ
-		if ( guts. use_harfbuzz ) {
-			*type = SHAPING_FULL;
+		if ( guts. use_harfbuzz && *type == tsFull )
 			return prima_xft_text_shaper_harfbuzz;
-		} else
 #endif
-			return prima_xft_text_shaper_ident;
+		*type = tsGlyphs;
+		return ( *type == tsBytes ) ?
+			prima_xft_text_shaper_bytes :
+			prima_xft_text_shaper_ident;
 	}
 #endif
-
+	*type = tsNone;
 	return text_shaper_core_text;
 }
 

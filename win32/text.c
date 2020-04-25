@@ -417,7 +417,7 @@ convert_indexes( Bool rtl, unsigned int char_pos, unsigned int itemlen, unsigned
 }
 
 static Bool
-win32_shaper( Handle self, PTextShapeRec t)
+win32_unicode_shaper( Handle self, PTextShapeRec t)
 {
 	Bool ok = false;
 	HRESULT hr;
@@ -588,13 +588,54 @@ EXIT:
 	return ok;
 }
 
+static Bool
+win32_byte_shaper( Handle self, PTextShapeRec t)
+{
+	int i, len = t->len;
+	uint32_t *src = t-> text;
+	uint16_t *glyphs = t->glyphs;
+	INT buf[8192];
+	DWORD ret;
+	char *dst = (char*) buf;
+
+	if ( len > 8192 ) len = 8192;
+	for ( i = 0; i < t->len; i++)
+		*(dst++) = *(src++);
+
+	ret = GetGlyphIndicesA( sys ps, (LPCSTR)buf, t->len, t->glyphs, GGI_MARK_NONEXISTING_GLYPHS);
+	if ( ret == GDI_ERROR)
+		apiErrRet;
+	t-> n_glyphs = ret;
+	for ( i = 0; i < t->n_glyphs; i++, glyphs++)
+		if (*glyphs == 0xffff) *glyphs = 0;
+	
+	if ( t->advances ) {
+		INT *widths = buf;
+		uint16_t *advances = t->advances;
+		bzero(t->positions, t->n_glyphs * sizeof(int16_t) * 2);
+		if ( GetCharWidthI(sys ps, 0, t->n_glyphs, t->glyphs, buf) == 0)
+			apiErrRet;
+		for ( i = 0; i < t->n_glyphs; i++, width++)
+			*(advances++) = (*widths >= 0) ? *widths : 0;
+	}
+
+	return true;
+}
+
 PTextShapeFunc
 apc_gp_get_text_shaper( Handle self, int * type)
 {
-	*type = (sys tmPitchAndFamily & TMPF_TRUETYPE) ?
-		SHAPING_FULL :
-		SHAPING_EMULATION;
-	return win32_shaper;
+	if ( *type == tsBytes ) {
+		*type = (sys tmPitchAndFamily & TMPF_TRUETYPE) ?
+			tsGlyphs :
+			tsNone;
+		return win32_byte_shaper;
+	} else {
+		*type = (sys tmPitchAndFamily & TMPF_TRUETYPE) ?
+			tsFull :
+			tsNone;
+		return win32_unicode_shaper;
+	}
 }
 
 #define TM(field) to->field = from->field

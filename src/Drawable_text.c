@@ -209,7 +209,7 @@ warn_malloc(ssize_t size)
 }
 
 static uint32_t*
-sv2unicode( SV * text, int * size, int * flags)
+sv2uint32( SV * text, int * size, int * flags)
 {
 	STRLEN dlen;
 	register char * src;
@@ -477,7 +477,7 @@ FAIL:
 #endif
 
 static Bool
-shape(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_only, Bool fribidi_arabic_shaping)
+shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_only, Bool fribidi_arabic_shaping)
 {
 	Bool ok, reorder_swaps_rtl;
 	Byte analysis[MAX_CHARACTERS], *save_analysis;
@@ -620,8 +620,8 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		*sv_advances = nilSV;
 	PTextShapeFunc system_shaper;
 	TextShapeRec t;
-	int shaper_type;
-	Bool skip_if_simple = false, return_zero = false, force_advances = false, bidi_only = false;
+	int shaper_type, level = tsDefault;
+	Bool skip_if_simple = false, return_zero = false, force_advances = false;
 	Bool gp_enter;
 
 	/* forward, if any */
@@ -656,17 +656,20 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		skip_if_simple = pget_B(skip_if_simple);
 	if ( pexist(advances))
 		force_advances = pget_B(advances);
-	if ( pexist(bidi_only))
-		bidi_only = pget_B(bidi_only);
+	if ( pexist(level)) {
+		level = pget_i(level);
+		if ( level < tsNone || level > tsBytes ) level = tsFull;
+	}
 	hv_clear(profile); /* old gencls bork */
 
 	/* font supports shaping? */
-	if ( bidi_only ) {
-		shaper_type    = SHAPING_EMULATION;
+	if ( level == tsNone ) {
+		shaper_type    = tsNone;
 		force_advances = false;
 		gp_enter       = false;
 		system_shaper  = bidi_only_shaper;
 	} else {
+		shaper_type    = level;
 		gp_enter       = true;
 		gpENTER(nilSV);
 		if (!( system_shaper = apc_gp_get_text_shaper(self, &shaper_type))) {
@@ -675,16 +678,22 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		}
 	}
 
-	if ( skip_if_simple && (shaper_type == SHAPING_EMULATION)) {
+	if ( skip_if_simple && (shaper_type == tsNone)) {
 		return_zero = true;
 		goto EXIT;
 	}
-	if ( shaper_type == SHAPING_FULL )
+	if ( shaper_type == tsFull )
 		force_advances = false;
 
 	/* allocate buffers */
-	if (!(t.text = sv2unicode(text_sv, &t.len, &t.flags)))
+	if (!(t.text = sv2uint32(text_sv, &t.len, &t.flags)))
 		goto EXIT;
+	if ( level == tsBytes ) {
+		int i;
+		uint32_t *c = t.text;
+		for ( i = 0; i < t.len; i++, c++)
+			if ( *c > 255 ) *c = 255;
+	}
 
 	if ( t.len == 0 ) {
 		return_zero = true;
@@ -696,10 +705,12 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		t.len = MAX_CHARACTERS;
 	}
 
-	if (!(t.analysis = warn_malloc(t.len)))
-		goto EXIT;
-	if (!(t.v2l = warn_malloc(sizeof(uint16_t) * t.len)))
-		goto EXIT;
+	if ( level != tsBytes ) {
+		if (!(t.analysis = warn_malloc(t.len)))
+			goto EXIT;
+		if (!(t.v2l = warn_malloc(sizeof(uint16_t) * t.len)))
+			goto EXIT;
+	}
 
 	/* MSDN, on ScriptShape: A reasonable value is (1.5 * cChars + 16) */
 	t.n_glyphs_max = t.len * 2 + 16;
@@ -710,7 +721,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 
 	ALLOC(glyphs,1,uint16_t);
 	ALLOC(indexes,1,uint16_t);
-	if ( shaper_type == SHAPING_FULL || force_advances) {
+	if ( shaper_type == tsFull || force_advances) {
 		ALLOC(positions,2,int16_t);
 		ALLOC(advances,1,uint16_t);
 	} else {
@@ -720,10 +731,19 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	}
 #undef ALLOC
 
-	if ( !shape(self, &t,
-		system_shaper, shaper_type < SHAPING_FULL,
-		bidi_only ? false : (shaper_type < SHAPING_FULL))
-	) goto EXIT;
+	if ( level == tsBytes ) {
+		int i;
+		uint16_t * indexes;
+		if ( !system_shaper(self, &t))
+			goto EXIT;
+		for ( i = 0, indexes = t.indexes; i < t.n_glyphs; i++)
+			*(indexes++) = i;
+	} else {
+		if ( !shape_unicode(self, &t,
+			system_shaper, shaper_type < tsFull,
+			(level == tsNone) ? false : (shaper_type < tsFull))
+		) goto EXIT;
+	}
 
 	if ( skip_if_simple ) {
 		Bool is_simple = true;
@@ -742,9 +762,11 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	gpLEAVE;
 
 	/* encode direction */
-	for ( i = 0; i < t.n_glyphs; i++) {
-		if ( t.analysis[ t.indexes[i] ] & 1 )
-			t.indexes[i] |= toRTL;
+	if ( level != tsBytes ) {
+		for ( i = 0; i < t.n_glyphs; i++) {
+			if ( t.analysis[ t.indexes[i] ] & 1 )
+				t.indexes[i] |= toRTL;
+		}
 	}
 	/* add an extra index as text length */
 	t.indexes[t.n_glyphs] = t.len;

@@ -1444,6 +1444,9 @@ prima_xft_load_font( char * fontName );
 extern Bool
 prima_xft_text_shaper_ident( Handle self, PTextShapeRec r);
 
+extern Bool
+prima_xft_text_shaper_bytes( Handle self, PTextShapeRec r);
+
 #ifdef WITH_HARFBUZZ
 extern Bool
 prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r);
