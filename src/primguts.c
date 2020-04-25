@@ -1298,6 +1298,7 @@ register_constants( void)
 	register_fv_constants();
 	register_dnd_constants();
 	register_to_constants();
+	register_ts_constants();
 }
 
 XS( Object_alive_FROMPERL);

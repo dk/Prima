@@ -277,7 +277,7 @@ sub check_noshape_nofribidi
 	t('>AB', 'BA', 'bidi');
 
 	$glyphs{"\0"} = 0;
-	t2('12ABC', "\0"x5, [0,1,R(2..4),5], 'null shaping', bidi_only => 1);
+	t2('12ABC', "\0"x5, [0,1,R(2..4),5], 'null shaping', level => ts::None);
 }
 
 # very minimal support for bidi and X11 core fonts only
@@ -355,8 +355,17 @@ sub test_shaping
 		check_noshape_nofribidi();
 
 		my $z = $w->text_shape('12');
-		ok((4 == grep { m/^\d+$/ } @{$z->positions // []}), "positions are okay");
-		ok((2 == grep { m/^\d+$/ } @{$z->advances  // []}), "advances are okay");
+		ok((4 == @{$z->positions // []}), "positions are okay");
+		ok((2 == @{$z->advances  // []}), "advances are okay");
+
+		$z = $w->text_shape('12', level => ts::Glyphs); 
+		is_deeply($z->indexes, [0,1,2], "glyph mapper indexes are okay");
+		ok((0 == @{$z->positions // []}), "glyph mapper positions are okay");
+		ok((0 == @{$z->advances  // []}), "glyph mapper advances are okay");
+		
+		$z = $w->text_shape('12', level => ts::Glyphs, advances => 1); 
+		ok((4 == @{$z->positions // []}), "glyph mapper positions w/advances are okay");
+		ok((2 == @{$z->advances  // []}), "glyph mapper advances a w/advances are okay");
 
 		if ( $opt{fribidi} ) {
 			t('12ABC', 'CBA12', 'rtl in rtl', rtl => 1);
@@ -385,6 +394,15 @@ sub test_shaping
 			ok( $z && scalar(grep {$_} @{$z->glyphs}), 'khmer shaping');
 		}
 	}
+}
+
+sub test_bytes
+{
+	ok(1, "high unicode");
+
+	my $k = $w-> text_shape("A\x{fe}", level => ts::Bytes);
+	is( 2, scalar(@{$k->glyphs}), "two bytes mapped to two glyphs");
+	is_deeply( $k->indexes, [0,1,2], "two bytes index array");
 }
 
 sub test_high_unicode
@@ -564,6 +582,7 @@ sub run_test
 		$opt{shaping} = 1;
 		test_shaping($found, $opt{fribidi});
 	}
+	test_bytes;
 	test_high_unicode;
 	test_drawing;
 	test_glyphs_wrap;

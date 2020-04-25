@@ -176,6 +176,8 @@ sub keymod
 
 package
     to; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text-out constants
+package
+    ts; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text-shape constants
 
 1;
 

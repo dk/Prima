@@ -2336,15 +2336,18 @@ prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 }
 
 Bool
-prima_xft_text_shaper_ident( Handle self, PTextShapeRec r)
+prima_xft_text_shaper( Handle self, PTextShapeRec r, uint32_t * map8)
 {
         int i;
 	uint16_t *glyphs;
 	uint32_t *text;
 	XftFont *xft = X(self)->font->xft;
 
-        for ( i = 0, glyphs = r->glyphs, text = r->text; i < r->len; i++) 
-                *(glyphs++) = XftCharIndex(DISP, xft, *(text++));
+        for ( i = 0, glyphs = r->glyphs, text = r->text; i < r->len; i++) {
+		uint32_t c = *(text++);
+		if ( map8 && c > 128 ) c = map8[c];
+                *(glyphs++) = XftCharIndex(DISP, xft, c);
+	}
         r-> n_glyphs = r->len;
 
 	if ( r-> advances ) {
@@ -2363,6 +2366,18 @@ prima_xft_text_shaper_ident( Handle self, PTextShapeRec r)
 	}
 
         return true;
+}
+
+Bool
+prima_xft_text_shaper_bytes( Handle self, PTextShapeRec r)
+{
+	return prima_xft_text_shaper( self, r, X(self)-> xft_map8);
+}
+
+Bool
+prima_xft_text_shaper_ident( Handle self, PTextShapeRec r)
+{
+	return prima_xft_text_shaper( self, r, NULL);
 }
 
 #ifdef WITH_HARFBUZZ
