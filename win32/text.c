@@ -589,37 +589,56 @@ EXIT:
 }
 
 static Bool
-win32_byte_shaper( Handle self, PTextShapeRec t)
+win32_mapper( Handle self, PTextShapeRec t, Bool unicode)
 {
 	int i, len = t->len;
 	uint32_t *src = t-> text;
 	uint16_t *glyphs = t->glyphs;
 	INT buf[8192];
 	DWORD ret;
-	char *dst = (char*) buf;
 
 	if ( len > 8192 ) len = 8192;
-	for ( i = 0; i < t->len; i++)
-		*(dst++) = *(src++);
 
-	ret = GetGlyphIndicesA( sys ps, (LPCSTR)buf, t->len, t->glyphs, GGI_MARK_NONEXISTING_GLYPHS);
+	if ( unicode ) {
+		char *dst = (char*) buf;
+		for ( i = 0; i < t->len; i++)
+			*(dst++) = *(src++);
+		ret = GetGlyphIndicesA( sys ps, (LPCSTR)buf, t->len, t->glyphs, GGI_MARK_NONEXISTING_GLYPHS);
+	} else {
+		WCHAR *dst = (WCHAR*) buf;
+		for ( i = 0; i < t->len; i++)
+			*(dst++) = *(src++);
+		ret = GetGlyphIndicesW( sys ps, (LPCWSTR)buf, t->len, t->glyphs, GGI_MARK_NONEXISTING_GLYPHS);
+	}
 	if ( ret == GDI_ERROR)
 		apiErrRet;
 	t-> n_glyphs = ret;
 	for ( i = 0; i < t->n_glyphs; i++, glyphs++)
 		if (*glyphs == 0xffff) *glyphs = 0;
-	
+
 	if ( t->advances ) {
 		INT *widths = buf;
 		uint16_t *advances = t->advances;
 		bzero(t->positions, t->n_glyphs * sizeof(int16_t) * 2);
 		if ( GetCharWidthI(sys ps, 0, t->n_glyphs, t->glyphs, buf) == 0)
 			apiErrRet;
-		for ( i = 0; i < t->n_glyphs; i++, width++)
+		for ( i = 0; i < t->n_glyphs; i++, widths++)
 			*(advances++) = (*widths >= 0) ? *widths : 0;
 	}
 
 	return true;
+}
+
+static Bool
+win32_byte_mapper( Handle self, PTextShapeRec t)
+{
+	return win32_mapper(self, t, false);
+}
+
+static Bool
+win32_unicode_mapper( Handle self, PTextShapeRec t)
+{
+	return win32_mapper(self, t, true);
 }
 
 PTextShapeFunc
@@ -629,7 +648,12 @@ apc_gp_get_text_shaper( Handle self, int * type)
 		*type = (sys tmPitchAndFamily & TMPF_TRUETYPE) ?
 			tsGlyphs :
 			tsNone;
-		return win32_byte_shaper;
+		return win32_byte_mapper;
+	} else if ( *type == tsGlyphs ) {
+		*type = (sys tmPitchAndFamily & TMPF_TRUETYPE) ?
+			tsGlyphs :
+			tsNone;
+		return win32_unicode_mapper;
 	} else {
 		*type = (sys tmPitchAndFamily & TMPF_TRUETYPE) ?
 			tsFull :

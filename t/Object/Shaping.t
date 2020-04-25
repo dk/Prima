@@ -362,7 +362,7 @@ sub test_shaping
 		is_deeply($z->indexes, [0,1,2], "glyph mapper indexes are okay");
 		ok((0 == @{$z->positions // []}), "glyph mapper positions are okay");
 		ok((0 == @{$z->advances  // []}), "glyph mapper advances are okay");
-		
+
 		$z = $w->text_shape('12', level => ts::Glyphs, advances => 1); 
 		ok((4 == @{$z->positions // []}), "glyph mapper positions w/advances are okay");
 		ok((2 == @{$z->advances  // []}), "glyph mapper advances a w/advances are okay");
