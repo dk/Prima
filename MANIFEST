@@ -308,6 +308,7 @@ Prima/PS/fonts/Times-Roman
 Prima/PS/fonts/ZapfChancery-MediumItalic
 Prima/PS/fonts/ZapfDingbats
 Prima/PS/Fonts.pm
+Prima/PS/Glyphs.pm
 Prima/PS/locale/ascii
 Prima/PS/locale/ibm-cp437
 Prima/PS/locale/ibm-cp850
@@ -328,6 +329,7 @@ Prima/PS/locale/win-cp1252
 Prima/PS/Printer.pm
 Prima/PS/setup.fm
 Prima/PS/Setup.pm
+Prima/PS/TempFile.pm
 Prima/RubberBand.pm
 Prima/ScrollBar.pm
 Prima/ScrollWidget.pm

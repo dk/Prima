@@ -130,7 +130,9 @@ sub enum_fonts
 sub enum_family
 {
 	my $family = $_[0];
-	return $enum_families{$family} ? grep { $_ eq $family } sort keys %files : ();
+	return $enum_families{$family} ?
+		grep { m/^\Q$family\E\b/ } sort keys %files : 
+		();
 }
 
 

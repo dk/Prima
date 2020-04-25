@@ -24,11 +24,13 @@ Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
 
 	my $x;
 	if ( $preview) {
-		$x = Prima::PS::Pipe-> create( command => 'gv -');
+		$x = Prima::PS::Pipe-> new( command => 'gv -');
 	} elsif ( $print_in_file) {
-		$x = Prima::PS::File-> create( file => 'out.ps');
+		$x = Prima::PS::File-> new( file => 'out.ps');
+	} elsif ( $print_on_device) {
+		$x = Prima::PS::LPR-> new( args => '-d colorprinter');
 	} else {
-		$x = Prima::PS::LPR-> create( args => '-d colorprinter');
+		$x = Prima::PS::FileHandle-> new( handle => \*STDOUT );
 	}
 	$x-> begin_doc;
 	$x-> font-> size( 300);
@@ -53,6 +55,7 @@ $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix;
 use constant lpr  => 0;
 use constant file => 1;
 use constant cmd  => 2;
+use constant fh   => 3;
 
 
 sub profile_default
@@ -349,7 +352,11 @@ sub begin_doc
 	my ( $self, $docName) = @_;
 	return 0 if $self-> get_paint_state;
 
-	$self-> {spoolHandle} = undef;
+	if ($self-> {data}-> {spoolerType} != fh) {
+		$self-> {spoolHandle} = undef;
+	} else {
+		return 0 unless $self->{spoolHandle};
+	}
 
 	if ( $self-> {data}-> {spoolerType} == file) {
 		if ( $self-> {gui}) {
@@ -411,11 +418,11 @@ my ( $sigpipe);
 sub __end
 {
 	my $self = $_[0];
-	close( $self-> {spoolHandle}) if $self-> {spoolHandle};
+	close( $self-> {spoolHandle}) if $self-> {spoolHandle} && $self-> {data}-> {spoolerType} != fh;
 	if ( $self-> {data}-> {spoolerType} != file) {
 		defined($sigpipe) ? $SIG{PIPE} = $sigpipe : delete($SIG{PIPE});
 	}
-	$self-> {spoolHandle} = undef;
+	$self-> {spoolHandle} = undef if $self->{data}->{spoolerType} != fh;
 	$sigpipe = undef;
 }
 
@@ -557,6 +564,35 @@ sub file
 {
 	return $_[0]-> {data}-> {spoolerData} unless $#_;
 	$_[0]-> {data}-> {spoolerData} = $_[1];
+}
+
+package Prima::PS::FileHandle;
+use vars qw(@ISA);
+@ISA=q(Prima::PS::Printer);
+
+sub profile_default
+{
+	my $def = $_[ 0]-> SUPER::profile_default;
+	my %prf = (
+		handle => undef,
+		gui    => 0,
+	);
+	@$def{keys %prf} = values %prf;
+	return $def;
+}
+
+sub init
+{
+	my $self = shift;
+	my %profile = $self-> SUPER::init(@_);
+	$self-> {data}-> {spoolerType} = Prima::PS::Printer::fh;
+	$self-> {spoolHandle} = $profile{handle};
+}
+
+sub handle
+{
+	return $_[0]-> {spoolHandle} unless $#_;
+	$_[0]-> {spoolHandle} = $_[1];
 }
 
 package Prima::PS::LPR;
