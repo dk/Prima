@@ -322,7 +322,7 @@ sub handle_input
 		$self-> edit_text( $new_text)
 	}
 	$self-> charOffset(
-		$opt{glyphs}->index2cluster(
+		$self->{glyphs}->index2cluster(
 			$new_offset,
 			$opt{action} =~ /^(insert|overtype)$/
 		)
