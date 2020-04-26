@@ -1373,6 +1373,7 @@ apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 	MAT2 matrix;
 	UINT format;
 
+	*buffer = NULL;
 	memset(&matrix, 0, sizeof(matrix));
 	matrix.eM11.value = matrix.eM22.value = 1;
 
@@ -1385,12 +1386,12 @@ apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 		GetGlyphOutlineA(sys ps, index, format, &gm, 0, NULL, &matrix);
 	if ( gdi_size <= 0 ) {
 		if ( gdi_size < 0 ) apiErr;
-		return 0;
+		return gdi_size;
 	}
 
 	if (( gdi_buf = malloc(gdi_size)) == NULL ) {
 		warn("Not enough memory");
-		return 0;
+		return -1;
 	}
 
 	if (
@@ -1401,7 +1402,7 @@ apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 	) {
 		apiErr;
 		free(gdi_buf);
-		return 0;
+		return -1;
 	}
 
 	offset = 0;
@@ -1420,7 +1421,7 @@ apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 	if (( r_buf = malloc(r_size * sizeof(int))) == NULL ) {
 		warn("Not enough memory");
 		free(gdi_buf);
-		return 0;
+		return -1;
 	}
 	r_ptr = r_buf;
 

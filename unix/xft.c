@@ -2319,7 +2319,7 @@ prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 	OutlineStorage storage = { 0, 0, -1, NULL };
 
 	if ( !( face = XftLockFace( XX->font->xft)))
-		return 0;
+		return -1;
 
 	c = ((flags & ggoUnicode) || index <= 128) ? index : XX-> xft_map8[index - 128];
 	ft_index = (flags & ggoGlyphIndex) ? c : XftCharIndex( DISP, XX->font->xft, c);

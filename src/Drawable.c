@@ -541,10 +541,10 @@ Drawable_render_glyph( Handle self, int index, HV * profile)
 	hv_clear(profile); /* old gencls bork */
 	gpLEAVE;
 
-	if ( count == 0 ) return nilSV;
+	if ( count < 0 ) return nilSV;
 	ret = prima_array_new(sizeof(int) * count);
 	memcpy( prima_array_get_storage(ret), buffer, sizeof(int) * count);
-	free( buffer );
+	if ( buffer ) free( buffer );
 	return prima_array_tie( ret, sizeof(int), "i");
 }
 
