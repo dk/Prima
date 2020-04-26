@@ -9,7 +9,6 @@ sub new
 {
 	return bless {
 		fonts     => {},
-		encodings => {}, # to map CHR(128-255) into (CHR - 128) + ENCODING_NUMBER * 128
 	}, shift;
 }
 
@@ -23,10 +22,10 @@ sub _create_font_entry
 	$h{ItalicAngle}  = ($font->{style} & fs::Italic) ? '-10'       : '0';
 
 	return {
-		glyphs => '',
-		header => \%h,
-		bbox   => [ undef, undef, undef, undef ],
-		scale  => ($font->{height} - $font->{internalLeading}) / $font->{size},
+		glyphs   => '',
+		header   => \%h,
+		bbox     => [ undef, undef, undef, undef ],
+		scale    => ($font->{height} - $font->{internalLeading}) / $font->{size},
 	};
 }
 
@@ -38,15 +37,8 @@ sub get_font
 	$key .= '-Bold'   if $font->{style} & fs::Bold;
 	$key .= '-Italic' if $font->{style} & fs::Italic;
 	$key =~ s/\s+/-/g;
-
-	my $nenc = $self->{encodings}->{ $font-> {encoding} };
-	unless ( defined $nenc ) {
-		$nenc = scalar keys %{ $self->{encodings} };
-		$self->{encoding}->{ $font->{encoding} } = $nenc;
-	}
-
 	$self->{fonts}->{$key} //= _create_font_entry($key, $font);
-	return $key, $nenc;
+	return $key;
 }
 
 my $C1       = 52845;
@@ -229,21 +221,21 @@ sub hmoveto { num(@_) . "\x{16}" }
 
 sub use_char
 {
-	my ( $self, $canvas, $key, $nenc, $charid) = @_;
+	my ( $self, $canvas, $key, $charid) = @_;
 	my $f = $self->{fonts}->{$key} // return;
-	my $xcharid = $charid;
-	$xcharid += $nenc * 128 if $xcharid > 128 and defined $nenc;
-	my $glyphid = sprintf("c%x",$xcharid);
-	return $glyphid if vec($f->{glyphs}, $xcharid, 1);
 
-	vec($f->{glyphs}, $xcharid, 1) = 1;
+	my $glyphid = sprintf("g%x", $charid);
+	return $glyphid if vec($f->{glyphs}, $charid, 1);
+
+	my $outline = $canvas->render_glyph($charid, glyph => 1) or return;
+
+	vec($f->{glyphs}, $charid, 1) = 1;
 	$f->{tmpfile} //= Prima::PS::TempFile->new;
 
-	my @abc  = map { $_ / $f->{scale} } @{$canvas-> get_font_abc(($charid) x 2, !defined $nenc)};
+	my @abc  = map { $_ / $f->{scale} } @{$canvas-> get_font_abc(($charid) x 2, to::Glyphs)};
 	my @hsbw = ($abc[0], $abc[0] + $abc[1] + $abc[2]);
 	my $bbox = $f->{bbox};
 
-	my $outline = $canvas->render_glyph($charid, unicode => !defined $nenc);
 	my $size = scalar(@$outline);
 	my $first_move;
 

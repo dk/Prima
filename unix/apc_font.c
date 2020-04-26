@@ -1877,7 +1877,7 @@ apc_gp_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 	if ( guts.use_xft && X(self)-> font-> xft)
 		return prima_xft_get_glyph_outline( self, index, flags, buffer);
 #endif
-	return 0;
+	return -1;
 }
 
 

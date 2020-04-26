@@ -34,6 +34,27 @@ use Prima::Utils;
 	'1252'       => 'PS/locale/win-cp1252',
 );
 
+my %languages = (
+	'ascii'         => [qw(en)],
+	'ps-standart'   => [qw(en)],
+	'ps-iso-latin1' => [qw(en)],
+	'iso8859-1'     => [qw(af br eu en co fo is ga id it ku ast lb ms gv no oc pt gd sco sma es sw sv tl wa)],
+	'iso8859-2'     => [qw(sq bs hr cs de hu pl sr sk sl dsb hsb tk)],
+	'iso8859-3'     => [qw(tr mt eo)],
+	'iso8859-4'     => [qw(et lv lt kl se sma)],
+	'iso8859-7'     => [qw(el)],
+	'iso8859-9'     => [qw(af br eu en co fo is ga id it ku ast lb ms gv no oc pt gd sco sma es sw sv tl wa)],
+	'iso8859-10'    => [qw(et lv lt kl se sma da nn nb no sv)],
+	'iso8859-11'    => [qw(th)],
+	'iso8859-13'    => [qw(et lv lt kl se sma pl)],
+	'iso8859-14'    => [qw(ga gv gd cy kw br)],
+	'iso8859-15'    => [qw(af br en ga it ku la lb ms no nn nb oc pt gd sco sma es sw sv tl wa sq ca da dl dut et fo fi fr de is)],
+	'ibm-cp437'     => [qw(en de sv)],
+	'ibm-cp850'     => [qw(af br eu en co fo is ga id it ku ast lb ms gv no oc pt gd sco sma es sw sv tl wa)],
+	'win-cp1250'    => [qw(la pl cs sl sk hu bs hr sr ro sq de)],
+	'win-cp1252'    => [qw(af br eu en co fo is ga id it ku ast lb ms gv no oc pt gd sco sma es sw sv tl wa)],
+);
+
 %fontspecific = (
 	'Specific' => 1,
 );
@@ -90,6 +111,12 @@ sub load
 	splice( @f, 256) if 256 < @f;
 	push( @f, '.notdef') while 256 > @f;
 	return $cache{$fx} = \@f;
+}
+
+sub get_languages
+{
+	my $enc = shift;
+	return $languages{$enc} // [];
 }
 
 __END__
