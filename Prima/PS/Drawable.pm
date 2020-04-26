@@ -542,6 +542,7 @@ sub new_page
 	}
 	$self-> change_transform(1);
 	$self-> emit( $self-> {page_prefix});
+	$self-> {changed}->{font} = 1;
 	return 1;
 }
 
@@ -957,13 +958,16 @@ sub text_out_ps
 	my $adv = 0;
 	my ( $rm, $nd) = $self-> get_rmap;
 	my $resolution = 72.27 / $self->{resolution}->[0];
+	my $emit = '';
 	for my $j (map { ord } split //, $text ) {
 		my $adv2 = int( $adv * 100 + 0.5) / 100;
 		my $gid  = $le->[$j];
 		my $xr   = ($gid eq '.notdef') ? $nd : $rm-> [$j];
 		$adv    += ( $$xr[1] + $$xr[2] + $$xr[3] ) * $resolution;
-		$self-> emit("$adv2 0 M /$gid Y");
+		$emit .= "$adv2 0 M " if $adv2 != 0;
+		$emit .= "/$gid Y\n";
 	}
+	$self-> emit($emit);
 }
 
 sub text_out_outline
@@ -989,6 +993,7 @@ sub glyph_out_outline
 	my $div        = $self->{font}->{height} / $canvas->{pixel_scale};
 
 	$len += $from;
+	my $emit = '';
 	for ( my $i = $from; $i < $len; $i++) {
 		my $advance;
 		my $glyph     = $glyphs->[$i];
@@ -1005,8 +1010,10 @@ sub glyph_out_outline
 		$adv += $advance;
 
 		($x2, $y2) = map { int( $_ * 100 + 0.5) / 100 } $self->pixel2point($x2, $y2);
-		$self-> emit( "$x2 $y2 M /$gid Y");
+		$emit .= "$x2 $y2 M " if $x2 != 0 || $y2 != 0;
+		$emit .= "/$gid Y\n";
 	}
+	$self-> emit($emit);
 }
 
 sub text_out_bitmaps
@@ -1101,9 +1108,11 @@ sub text_out
 	$y += $self-> {font}-> {descent} if !$self-> textOutBaseline;
 	( $x, $y) = $self-> pixel2point( $x, $y);
 
-	if (( $is_ps_font || $is_vector_font) && $self-> {changed}-> {font}) {
-		my $fn = $is_ps_font ? $self-> {font}-> {docname} : $self->{glyph_font};
-		$self-> emit( "/$fn FF $self->{font}->{size} XF SF");
+	if ( $self-> {changed}-> {font}) {
+		if ( $is_ps_font || $is_vector_font) {
+			my $fn = $is_ps_font ? $self-> {font}-> {docname} : $self->{glyph_font};
+			$self-> emit( "/$fn FF $self->{font}->{size} XF SF");
+		}
 		$self-> {changed}-> {font} = 0;
 	}
 
@@ -1163,8 +1172,6 @@ sub text_out
 	$self-> emit(";");
 	return 1;
 }
-
-sub text_wrap { [] }
 
 sub bar
 {
@@ -1295,7 +1302,6 @@ sub put_image_indirect
 	my $touch;
 	$touch = 1, $image = $image-> image if $image-> isa('Prima::DeviceBitmap');
 
-
 	unless ( $xFrom == 0 && $yFrom == 0 && $xLen == $image-> width && $yLen == $image-> height) {
 		$image = $image-> extract( $xFrom, $yFrom, $xLen, $yLen);
 		$touch = 1;
@@ -1309,14 +1315,26 @@ sub put_image_indirect
 		} else {
 			$image-> type( im::RGB);
 		}
+		$touch = 1;
 	} elsif ( $self-> {grayscale} || $image-> type & im::GrayScale) {
 		$image = $image-> dup unless $touch;
 		$image-> type( im::Byte);
+		$touch = 1;
 	}
 
 	$ib = $image-> get_bpp;
-	$image-> type( im::RGB) if $ib != 8 && $ib != 24;
+	if ($ib != 8 && $ib != 24) {
+		$image = $image-> dup unless $touch;
+		$image-> type( im::RGB);
+		$touch = 1;
+	}
 
+	if ( $image-> type == im::RGB ) {
+		# invert BGR -> RGB
+		$image = $image-> dup unless $touch;
+		$image-> set(data => $image->data, type => im::fmtBGR | im::RGB);
+		$touch = 1;
+	}
 
 	my @is = $image-> size;
 	($x, $y, $xDestLen, $yDestLen) = $self-> pixel2point( $x, $y, $xDestLen, $yDestLen);
@@ -1324,7 +1342,6 @@ sub put_image_indirect
 		$is[0] / $xLen * $xDestLen,
 		$is[1] / $yLen * $yDestLen,
 	);
-
 
 	my $g  = $image-> data;
 	my $bt = ( $image-> type & im::BPP) * $is[0] / 8;
@@ -1338,10 +1355,7 @@ sub put_image_indirect
 	$self-> emit(( $image-> type & im::GrayScale) ? "image" : "false 3 colorimage");
 
 	for ( $i = 0; $i < $is[1]; $i++) {
-		my $w  = substr( $g, $ls * $i, $bt);
-		$w =~ s/(.)(.)(.)/$3$2$1/gs if $ib == 24;
-		$w =~ s/(.)/sprintf("%02x",ord($1))/egs;
-		$self-> emit( $w);
+		$self-> emit(unpack('H*', substr( $g, $ls * $i, $bt)));
 	}
 	$self-> emit(';');
 	return 1;
@@ -1446,7 +1460,12 @@ sub set_font
 	my $gui_font;
 	$n = $self-> {useDeviceFonts} ? $Prima::PS::Fonts::defaultFontName : 'Default'
 		unless defined $n;
-
+	my ($curr_font, $new_font) = ('', '');
+	if (( $self-> {type_name} // 2) != 2) {
+		my $fn = ($self->{type_name} == 1) ? $self-> {font}-> {docname} : $self->{glyph_font};
+		$curr_font = $self->{font}->{size} . '.' . $fn;
+	}
+	
 AGAIN:
 	if ( $self-> {useDeviceFontsOnly} || !$::application ||
 			( $self-> {useDeviceFonts} &&
@@ -1494,6 +1513,7 @@ AGAIN:
 		}
 		eval { Encode::encode( $self->{font}->{encoding}, ''); };
 		$self->{encoding_to_downgrade_utf} = $@ ? undef : $self->{font}->{encoding};
+		$new_font = $self->{font}->{size} . '.' . $self->{font}->{docname};
 	} else {
 		my $wscale = $font-> {width};
 		delete $font-> {width};
@@ -1518,6 +1538,7 @@ AGAIN:
 			$self->{glyph_keeper} //= Prima::PS::Glyphs->new;
 			$self-> {glyph_font} = $self-> {glyph_keeper}->get_font($self->{font});
 			$self-> set_encoding( $self-> {font}-> {encoding});
+			$new_font = $self->{glyph_font} . '.' . $self->{font}->{docname};
 		} else {
 		BITMAP:
 			$self-> {font_type} = 2;
@@ -1531,8 +1552,8 @@ AGAIN:
 		$self-> {font_char_height} = $self-> {font}-> {height};
 		$self-> {encoding_to_downgrade_utf} = undef;
 	}
-	$self-> {changed}-> {font} = 1;
 	$self-> {plate}-> destroy, $self-> {plate} = undef if $self-> {plate};
+	$self-> {changed}-> {font} = 1 if $curr_font ne $new_font;
 }
 
 my %fontmap =
@@ -1710,8 +1731,8 @@ sub get_rmap
 		$nd = [0,0,0,0];
 	}
 
-	for ( my $i = 0; $i < 255; $i++) {
-		if (defined($le->[$i]) && ( $le-> [$i] ne '.notdef') && $c-> { $le-> [ $i]}) {
+	for ( my $i = 0; $i < 256; $i++) {
+		if (defined($le->[$i]) && ($le-> [$i] ne '.notdef') && $c-> { $le-> [ $i]}) {
 			$rmap[$i] = [ $i, map { $_ * $fs } @{$c-> { $le-> [ $i]}}[1..3]];
 		}
 	}
