@@ -677,6 +677,7 @@ LRESULT CALLBACK generic_view_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM m
 		}
 		break;
 	case WM_CLOSE:
+		if ( guts. focSysDialog) return 0;
 		if ( sys className != WC_FRAME)
 			return 0;
 		break;
@@ -1315,6 +1316,7 @@ LRESULT CALLBACK generic_frame_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM 
 		hiStage = true;
 		break;
 	case WM_CLOSE:
+		if ( guts. focSysDialog) return 0;
 		ev. cmd = cmClose;
 		break;
 	case WM_COMMAND:
