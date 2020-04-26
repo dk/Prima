@@ -1535,6 +1535,7 @@ sub print
 		@blocks = $self-> block_wrap( $canvas, $g, $state, $formatWidth - $indent);
 
 		# paint
+		$self-> reset_state;
 		for ( @blocks) {
 			my $b = $_;
 			if ( $y < $$b[ tb::BLK_HEIGHT]) {

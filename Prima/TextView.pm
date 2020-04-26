@@ -322,18 +322,20 @@ sub create_state
 sub begin_paint_info
 {
 	my $self = shift;
-	delete $self->{currentFont};
+	$self-> reset_state;
 	return $self->SUPER::begin_paint_info;
 }
 
 sub end_paint_info
 {
 	my $self = shift;
-	delete $self->{currentFont};
+	$self-> reset_state;
 	return $self->SUPER::end_paint_info;
 }
 
 sub _hash { my $k = shift; join("\0", map { ($_, $k->{$_}) } sort keys %$k) }
+
+sub reset_state { delete $_[0]->{currentFont} }
 
 sub realize_state
 {
@@ -484,7 +486,7 @@ sub paint_selection
 sub on_paint
 {
 	my ( $self, $canvas) = @_;
-	delete $self->{currentFont};
+	$self-> reset_state;
 	my @size = $canvas-> size;
 	unless ( $self-> enabled) {
 		$self-> color( $self-> disabledColor);
