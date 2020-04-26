@@ -29,7 +29,7 @@ sub query_metrics
 		unless ( defined $family) {
 		# pick up family
 			for ( sort keys %enum_families) {
-				$family = $_, last if $f =~ m[^$_];
+				$family = $_, last if index($f, $_) == 0;
 			}
 		}
 		$family = $defaultFontName unless defined $family;
@@ -131,7 +131,7 @@ sub enum_family
 {
 	my $family = $_[0];
 	return $enum_families{$family} ?
-		grep { m/^\Q$family\E\b/ } sort keys %files : 
+		grep { index($_, $family) == 0 } sort keys %files : 
 		();
 }
 
