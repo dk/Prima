@@ -975,7 +975,8 @@ sub text_out_outline
 {
 	my ( $self, $text ) = @_;
 	my $is_bytes = !Encode::is_utf8($text) && $text =~ /[^\x{0}-\x{7f}]/;
-	my $shaped   = $self->text_shape($text, level => $is_bytes ? ts::Glyphs : ts::Bytes ) or return;
+	my $shaped   = $self->text_shape($text, levelo => $is_bytes ? ts::Glyphs : ts::Bytes ) or return;
+	local $self->{shaping_text} = $text;
 	$self-> glyph_out_outline($shaped, 0, scalar @{$shaped->glyphs});
 }
 
@@ -984,6 +985,7 @@ sub glyph_out_outline
 	my ( $self, $text, $from, $len ) = @_;
 
 	my $glyphs     = $text-> glyphs;
+	my $indexes    = $text-> indexes;
 	my $advances   = $text-> advances;
 	my $positions  = $text-> positions;
 	my $adv        = 0;
@@ -999,7 +1001,11 @@ sub glyph_out_outline
 		my $advance;
 		my $glyph     = $glyphs->[$i];
 		my ($x2, $y2) = ($adv, 0);
-		my $gid       = $keeper-> use_char($canvas, $font, $glyph);
+		my $gid = $keeper-> use_char($canvas, $font, $glyph,
+			defined($self->{shaping_text}) ?
+				substr( $self->{shaping_text}, $indexes->[$i] & ~to::RTL, 1) :
+				undef
+		);
 		if ( $advances) {
 			$advance = $advances->[$i];
 			$x2 += $positions->[$i*2];
@@ -1971,6 +1977,13 @@ sub text_shape
 	my @ret;
 	$ret[$_] = $text[ $x->[$_] & ~to::RTL ] for 0..$#text;
 	return join '', grep { defined } @ret;
+}
+
+sub text_shape_out
+{
+	my ( $self, $text, $x, $y, $rtl) = @_;
+	local $self->{shaping_text} = $text;
+	return $self->SUPER::text_shape_out($text, $x, $y, $rtl);
 }
 
 1;

@@ -79,6 +79,24 @@ sub unique
 	return @ret;
 }
 
+sub load_unicode
+{
+	unless (defined $cache{unicode}) {
+		my $f = Prima::Utils::find_image('PS/locale/unicode');
+		unless ( $f) {
+			warn("Prima::PS::Encodings: cannot find encoding file for 'unicode'\n");
+			return $cache{unicode} = {};
+		};
+		my $table = eval { do $f; };
+		if ($@) {
+			warn("Prima::PS::Encodings: cannot load encoding file for 'unicode':$@\n");
+			return $cache{unicode} = {};
+		}
+		return $cache{unicode} = $table;
+	}
+	return $cache{unicode};
+}
+
 sub load
 {
 	my $cp = defined( $_[0]) ? $_[0] : 'default';

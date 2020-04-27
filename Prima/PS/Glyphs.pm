@@ -2,6 +2,7 @@ package Prima::PS::Glyphs;
 
 use strict;
 use warnings;
+use Prima::PS::Encodings;
 use Prima::PS::TempFile;
 use Prima::Utils;
 
@@ -24,6 +25,7 @@ sub _create_font_entry
 	return {
 		glyphs   => '',
 		header   => \%h,
+		names    => {},
 		bbox     => [ undef, undef, undef, undef ],
 		scale    => ($font->{height} - $font->{internalLeading}) / $font->{size},
 	};
@@ -219,12 +221,31 @@ sub rmoveto { num(@_) . "\x{15}" }
 sub rlineto { num(@_) . "\x{05}" }
 sub hmoveto { num(@_) . "\x{16}" }
 
+my $unicode_glyph_names;
+
 sub use_char
 {
-	my ( $self, $canvas, $key, $charid) = @_;
+	my ( $self, $canvas, $key, $charid, $suggested_gid) = @_;
 	my $f = $self->{fonts}->{$key} // return;
 
-	my $glyphid = sprintf("g%x", $charid);
+	my $glyphid;
+	if (
+		defined($suggested_gid) &&
+		length($suggested_gid) == 1
+	) {
+		my $ord = ord $suggested_gid;
+		if ( exists $f->{$suggested_gid} ) {
+			goto STD if $f->{$suggested_gid} != $charid;
+		} else {
+			$unicode_glyph_names //= Prima::PS::Encodings::load_unicode;
+			goto STD unless exists $unicode_glyph_names->{ $ord };
+			$f->{$suggested_gid} = $charid;
+		}
+		$glyphid = $unicode_glyph_names->{ $ord };
+	} else {
+	STD:
+		$glyphid = sprintf("g%x", $charid);
+	}
 	return $glyphid if vec($f->{glyphs}, $charid, 1);
 
 	my $outline = $canvas->render_glyph($charid, glyph => 1) or return;
