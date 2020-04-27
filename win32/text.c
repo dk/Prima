@@ -560,7 +560,7 @@ win32_unicode_shaper( Handle self, PTextShapeRec t)
 				i_a = advances,
 				i_g = goffsets,
 				o_a = t->advances  + t-> n_glyphs,
-				o_g = t->positions + t-> n_glyphs;
+				o_g = t->positions + t-> n_glyphs * 2;
 				i < nglyphs;
 				i++
 			) {
