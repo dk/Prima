@@ -324,6 +324,7 @@ Prima/PS/locale/iso8859-7
 Prima/PS/locale/iso8859-9
 Prima/PS/locale/ps-iso-latin1
 Prima/PS/locale/ps-standart
+Prima/PS/locale/unicode
 Prima/PS/locale/win-cp1250
 Prima/PS/locale/win-cp1252
 Prima/PS/Printer.pm
