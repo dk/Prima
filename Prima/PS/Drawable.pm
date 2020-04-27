@@ -952,6 +952,7 @@ sub text_out_ps
 			$new_text .= '?';
 			substr( $text, 0, 1, '');
 		}
+		$text = $new_text;
 	}
 
 	my $le  = $self-> {encoding_names};
@@ -990,7 +991,7 @@ sub glyph_out_outline
 	my $resolution = 72.27 / $self->{resolution}->[0];
 	my $keeper     = $self->{glyph_keeper};
 	my $font       = $self->{glyph_font};
-	my $div        = $self->{font}->{height} / $canvas->{pixel_scale};
+	my $div        = $self->{font_char_height} / $canvas->{pixel_scale};
 
 	$len += $from;
 	my $emit = '';
@@ -1021,23 +1022,17 @@ sub text_out_bitmaps
 	my ( $self, $text ) = @_;
 
 	my $adv        = 0;
-	my $resolution = 72.27 / $self->{resolution}->[0];
 	for my $j ( split //, $text) {
 		my ( $pg, $a, $b, $c) = $self-> place_glyph($j);
 		my $advance;
 		if ( length $pg) {
-			my $adv2 = $adv + $a;
-			$adv2 = int( $adv * 100 + 0.5) / 100;
-			$self-> emit( "$adv2 $self->{plate}->{yd} M : CP T");
+			my ( $x, $y ) = map { int( $_ * 100 + 0.5) / 100 }
+				$self->pixel2point($adv + $a, $self->{plate}->{descent});
+			$self-> emit( "$x $y M : CP T");
 			$self-> emit( $pg);
 			$self-> emit(";");
-			$advance = $a + $b + $c;
-		} elsif ( defined $a ) {
-			$advance = $a + $b + $c;
-		} else {
-			$advance = 0;
 		}
-		$adv += $advance;
+		$adv += $a + $b + $c;
 	}
 }
 
@@ -1045,40 +1040,23 @@ sub glyph_out_bitmaps
 {
 	my ( $self, $text, $from, $len ) = @_;
 
-	$len  = $text-> glyph2cluster($from + $len - 1);
-	$from = $text-> glyph2cluster($from);
-
-	my $indexes    = $text-> indexes;
+	my $advances   = $text-> advances;
+	my $positions  = $text-> positions;
 	my $adv        = 0;
-	my $resolution = 72.27 / $self->{resolution}->[0];
-	my $last_index = $indexes->[0];
-	my $glyph_len  = 1;
-	my $glyph_from = 0;
-	for ( my $i = $from; $i <= $len; $i++) {
-		my $index = $indexes->[$i];
-		if ( $last_index == $index ) {
-			$glyph_len++;
-			next;
-		}
-
-		my ( $pg, $a, $b, $c) = $self-> place_glyph($text, $glyph_from, $glyph_len);
-		my $advance;
+	for ( my $i = $from; $i < $from + $len; $i++) {
+		my ( $pg, $a, $b, $c) = $self-> place_glyph($text, $i);
 		if ( length $pg) {
-			my $adv2 = $adv + $a * $resolution;
-			$adv2 = int( $adv * 100 + 0.5) / 100;
-			$self-> emit( "$adv2 $self->{plate}->{yd} M : CP T");
+			my ( $x2, $y2 ) = ($adv + $a, $self->{plate}->{descent});
+			if ( $positions ) {
+				$x2 += $positions->[$i * 2];
+				$y2 += $positions->[$i * 2 + 1];
+			}
+			( $x2, $y2 ) = map { int( $_ * 100 + 0.5) / 100 } $self->pixel2point($x2, $y2);
+			$self-> emit( "$x2 $y2 M : CP T");
 			$self-> emit( $pg);
 			$self-> emit(";");
-			$advance = $a + $b + $c;
-		} elsif ( defined $a ) {
-			$advance = $a + $b + $c;
-		} else {
-			$advance = 0;
 		}
-		$adv += $advance * $resolution;
-
-		$glyph_from = $i;
-		$glyph_len  = 1;
+		$adv += $advances ? $advances->[$i] : ($a + $b + $c);
 	}
 }
 
@@ -1159,7 +1137,7 @@ sub text_out
 
 
 	if ( $self-> {font}-> {style} & (fs::Underlined|fs::StruckOut)) {
-		my $lw = int($self-> {font}-> {size} / 30 + .5); # XXX empiric
+		my $lw = int($self-> {font}-> {size} / 40 + .5); # XXX empiric
 		$self-> emit("[] 0 SD 0 SL $lw SW");
 		if ( $self-> {font}-> {style} & fs::Underlined) {
 			$self-> emit("N @rb[0,3] M $rb[4] 0 L O");
@@ -1517,6 +1495,7 @@ AGAIN:
 	} else {
 		my $wscale = $font-> {width};
 		delete $font-> {width};
+		my $by_height = defined($font->{height});
 		$gui_font = Prima::Drawable-> font_match( $font, $self-> {font});
 		if ( $gui_font-> {name} ne $n && $self-> {useDeviceFonts}) {
 			# back up
@@ -1538,18 +1517,27 @@ AGAIN:
 			$self->{glyph_keeper} //= Prima::PS::Glyphs->new;
 			$self-> {glyph_font} = $self-> {glyph_keeper}->get_font($self->{font});
 			$self-> set_encoding( $self-> {font}-> {encoding});
-			$new_font = $self->{glyph_font} . '.' . $self->{font}->{docname};
+			$new_font = $self->{font}->{size} . '.' . $self->{glyph_font};
 		} else {
 		BITMAP:
 			$self-> {font_type} = 2;
 			undef $self-> {glyph_font};
-			$self-> {font}-> {size} = # adapt bitmap to PS
-				int(( $self-> {font}-> {height} - $self->{font}->{internalLeading}) * 72.27 / $self-> {resolution}-> [1] + 0.5);
+		}
+		my $div = 72.27 / $self-> {resolution}-> [1];
+		my $f  = $self->{font};
+		$self-> {font_char_height} = $f->{height};
+		if ( $by_height ) {
+			$f-> {size} = int(( $f-> {height} - $f->{internalLeading}) * $div + 0.5);
+		} else {
+			my $new_h = $f->{size} / $div + $f->{internalLeading};
+			my $ratio = $f->{height} / $new_h;
+			$f->{height}  = $new_h;
+			$f->{ascent}  = int( $f->{ascent} / $ratio + .5 );
+			$f->{descent} = $new_h - $f->{ascent};
 		}
 		$self-> glyph_canvas-> {for_vector} = -1; # force update
-		$self-> {font_width_divisor} = $self-> {font}-> {width};
-		$self-> {font}-> {width} = $wscale if $wscale;
-		$self-> {font_char_height} = $self-> {font}-> {height};
+		$self-> {font_width_divisor} = $f-> {width};
+		$f-> {width}                        = $wscale if $wscale;
 		$self-> {encoding_to_downgrade_utf} = undef;
 	}
 	$self-> {plate}-> destroy, $self-> {plate} = undef if $self-> {plate};
@@ -1578,13 +1566,25 @@ sub get_gui_font
 	return \%f;
 }
 
+my $x11_bug;
+
 sub plate
 {
 	my ($self) = @_;
 	return $self-> {plate} if $self-> {plate};
 
+	unless ( defined $x11_bug ) {
+		my $test = Prima::DeviceBitmap->new(
+			type => dbt::Bitmap,
+			size => [16, 16],
+		);
+		$test->clear;
+		$test->text_out(3,3,3);
+		$x11_bug = ($test->image->sum == 0) ? 1 : 0;
+	}
+
 	my $g = $self-> {plate} = Prima::Image-> create(
-		type            => im::BW,
+		type            => $x11_bug ? im::RGB : im::BW,
 		width           => $self-> {font}-> {maximalWidth} * 4, # for clusters
 		height          => $self-> {font}-> {height},
 		font            => $self-> get_gui_font(0),
@@ -1607,8 +1607,9 @@ sub glyph_canvas
 	my $update;
 	unless ($self->{glyph_canvas}) {
 		my $g = $self->{glyph_canvas} = Prima::DeviceBitmap->create(
-			width  => 1,
-			height => 1,
+			width           => 1,
+			height          => 1,
+			textOutBaseline => 1,
 		);
 		$g->{for_vector} = $for_vector;
 		$update = 1;
@@ -1632,7 +1633,7 @@ sub glyph_canvas
 
 sub place_glyph
 {
-	my ( $self, $char, $glyph_offset, $glyph_len ) = @_;
+	my ( $self, $char, $glyph_offset ) = @_;
 	my $z   = $self-> plate;
 	my ( $dimx, $dimy) = $z-> size;
 	my $x   = defined($glyph_offset) ? $char->glyphs->[$glyph_offset] : ord $char;
@@ -1647,17 +1648,17 @@ sub place_glyph
 			to::Glyphs : 
 			(Encode::is_utf8($char) ? to::Unicode : 0)
 	) };
-	return '' if $b <= 0;
+	return '', $a, $b, $c if $b <= 0;
 
 	$z-> begin_paint;
 	$z-> clear;
 	if ( defined($glyph_offset)) {
-		$z-> text_out( $char, ($a < 0) ? -$a : 0, $d, $glyph_offset, $glyph_len );
+		$z-> text_out( $char, ($a < 0) ? -$a : 0, $d, $glyph_offset, 1 );
 	} else {
 		$z-> text_out( $char, ($a < 0) ? -$a : 0, $d);
 	}
 	$z-> end_paint;
-	my $dd = $z-> data;
+	my $dd = $x11_bug ? $z->clone(type => im::BW)-> data : $z-> data;
 	my ($j, $k);
 	my @emmap = (0) x $dimy;
 	my @bbox = ( $a, 0, $b - $a, $dimy - 1);
@@ -1684,6 +1685,8 @@ sub place_glyph
 			$b,
 			$bbox[3] - $bbox[1] + 1,
 		);
+		$zd->type(im::BW) if $x11_bug;
+#		$zd->color(cl::White);$zd->rectangle(0,0,$zd->width-1,$zd->height-1);
 #		$z-> save("a.gif");
 
 		my $bby = $bbox[3] - $bbox[1] + 1;
@@ -1700,14 +1703,10 @@ sub place_glyph
 			$cdz .= sprintf("%02x", ord substr( $cd, $j, 1));
 		}
 
-
-		$z-> {yd} = $bbox[1] * 72.27 / $self-> {resolution}-> [1];
-	#	my @scale = ($b, $bby);
-	#	my $scalex = 72.27 * $b   / $_[0]-> {resolution}-> [0];
-	#	my $scaley = 72.27 * $bby / $_[0]-> {resolution}-> [1];
-	#	@scale = ($b,$bby);
+		$z-> {descent} = $bbox[1];
+		my @scale = $self->pixel2point($b, $bby);
 		return
-			"$b $bby scale $b $bby true [$b 0 0 -$bby 0 $bby] <$cdz> imagemask",
+			"@scale scale $b $bby true [$b 0 0 -$bby 0 $bby] <$cdz> imagemask",
 			$a, $b, $c;
 	}
 	return '', $a, $b, $c;
@@ -1755,12 +1754,10 @@ sub get_font_abc
 		}
 	} elsif ( $self->is_vector_font ) {
 		my $canvas = $self-> glyph_canvas(1);
-		my $scale  = $self->{font}->{height} / $canvas->{pixel_scale};
+		my $scale  = $self->{font_char_height} / $canvas->{pixel_scale};
 		@ret = map { $_ * $scale } @{ $canvas->get_font_abc($first, $last, $flags) };
 	} else {
-		@ret = map { $_ * $self->{resolution}->[0] / 72.27 } @{
-			$self-> glyph_canvas(0)-> get_font_abc($first, $last, $flags)
-		};
+		@ret = @{ $self-> glyph_canvas(0)-> get_font_abc($first, $last, $flags) };
 	}
 
 	my $wmul = $self-> {font}-> {width} / $self-> {font_width_divisor};
@@ -1773,21 +1770,20 @@ sub get_font_def
 	my ( $self, $first, $last, $flags) = @_;
 	$first = 0     if !defined ($first) || $first < 0;
 	$last = $first if !defined ($last) || $last < $first;
-	my $i;
 	my @ret;
-	my $fs = $self-> {font}-> {height} / $self-> {font_char_height};
-	my $c  = $self-> {font}-> {chardata};
-	my $le = $self-> {encoding_names};
-	my $nd = $c-> {'.notdef'};
-	if ( defined $nd) {
-		$nd = [ map { $_ * $fs } @$nd[4..6] ];
-	} else {
-		$nd = [0,0,0];
-	}
 
 	my $def;
 	if ( $self-> is_ps_font ) {
-		for ( $i = $first; $i <= $last; $i++) {
+		my $fs = $self-> {font}-> {height} / $self-> {font_char_height};
+		my $c  = $self-> {font}-> {chardata};
+		my $le = $self-> {encoding_names};
+		my $nd = $c-> {'.notdef'};
+		if ( defined $nd) {
+			$nd = [ map { $_ * $fs } @$nd[4..6] ];
+		} else {
+			$nd = [0,0,0];
+		}
+		for ( my $i = $first; $i <= $last; $i++) {
 			my @rmap;
 			if (defined($le->[$i]) && ( $le-> [$i] ne '.notdef') && $c-> { $le-> [ $i]}) {
 				push @ret, map { $_ * $fs } @{$c-> { $le-> [ $i]}}[4..6];
@@ -1798,12 +1794,10 @@ sub get_font_def
 		return \@ret;
 	} elsif ( $self->is_vector_font ) {
 		my $canvas = $self-> glyph_canvas(1);
-		my $scale  = $self->{font}->{height} / $canvas->{pixel_scale};
+		my $scale  = $self->{font_char_height} / $canvas->{pixel_scale};
 		return [ map { $_ * $scale } @{ $canvas->get_font_def($first, $last, $flags) } ];
 	} else {
-		@ret = map { $_ * $self->{resolution}->[1] / 72.27 } @{
-			$self-> glyph_canvas(0)-> get_font_def($first, $last, $flags)
-		};
+		@ret = @{ $self-> glyph_canvas(0)-> get_font_def($first, $last, $flags) };
 	}
 }
 
@@ -1865,10 +1859,8 @@ sub get_text_width
 		my $canvas = $self-> glyph_canvas($is_vector_font);
 		$w = $canvas-> get_text_width( $text, $flags, $from, $len);
 		if ( $is_vector_font ) {
-			$w *= $self->{font}->{height} / $canvas->{pixel_scale} 
+			$w *= $self->{font_char_height} / $canvas->{pixel_scale} 
 				unless $glyphs && $text->advances;
-		} else {
-			($w) = $self->point2pixel($w);
 		}
 	}
 
@@ -1938,11 +1930,9 @@ sub get_text_box
 		@ret = @{ $canvas-> get_text_box( $text, $from, $len) };
 		if ( $is_vector_font ) {
 			unless ($glyphs && $text->advances) {
-				my $div = $self->{font}->{height} / $canvas->{pixel_scale};
+				my $div = $self->{font_char_height} / $canvas->{pixel_scale};
 				$_ *= $div for @ret;
 			}
-		} else {
-			@ret = $self->point2pixel(@ret);
 		}
 		if ( $wmul != 0 ) {
 			_rotate(-$dir, \@ret) if $dir != 0;
@@ -1963,7 +1953,7 @@ sub text_shape
 			my $canvas = $self-> glyph_canvas;
 			my $shaped = $canvas->text_shape($text, %opt);
 			return $shaped unless $shaped && $shaped->advances;
-			my $scale  = $self->{font}->{height} / $canvas->{pixel_scale};
+			my $scale  = $self->{font_char_height} / $canvas->{pixel_scale};
 			$_ *= $scale for @{ $shaped->advances  };
 			$_ *= $scale for @{ $shaped->positions };
 			return $shaped;
