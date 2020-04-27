@@ -24,6 +24,7 @@ sub _create_font_entry
 
 	return {
 		glyphs   => '',
+		chars    => '',
 		header   => \%h,
 		names    => {},
 		bbox     => [ undef, undef, undef, undef ],
@@ -229,6 +230,7 @@ sub use_char
 	my $f = $self->{fonts}->{$key} // return;
 
 	my $glyphid;
+	my $vector = 'glyphs';
 	if (
 		defined($suggested_gid) &&
 		length($suggested_gid) == 1
@@ -242,15 +244,16 @@ sub use_char
 			$f->{$suggested_gid} = $charid;
 		}
 		$glyphid = $unicode_glyph_names->{ $ord };
+		$vector = 'chars';
 	} else {
 	STD:
 		$glyphid = sprintf("g%x", $charid);
 	}
-	return $glyphid if vec($f->{glyphs}, $charid, 1);
+	return $glyphid if vec($f->{$vector}, $charid, 1);
 
 	my $outline = $canvas->render_glyph($charid, glyph => 1) or return;
 
-	vec($f->{glyphs}, $charid, 1) = 1;
+	vec($f->{$vector}, $charid, 1) = 1;
 	$f->{tmpfile} //= Prima::PS::TempFile->new;
 
 	my @abc  = map { $_ / $f->{scale} } @{$canvas-> get_font_abc(($charid) x 2, to::Glyphs)};
