@@ -1982,6 +1982,8 @@ sub text_shape
 	return join '', grep { defined } @ret;
 }
 
+sub render_glyph {}
+
 1;
 
 __END__
