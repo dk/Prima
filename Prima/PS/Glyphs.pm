@@ -243,7 +243,7 @@ sub use_char
 		$vector = 'chars';
 	} else {
 	STD:
-		$glyphid = sprintf("uni%x", $charid);
+		$glyphid = sprintf("g%x", $charid);
 	}
 	return $glyphid if vec($f->{$vector}, $charid, 1);
 
