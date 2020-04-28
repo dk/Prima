@@ -9,6 +9,7 @@ use constant GLYPHS    => 0;
 use constant INDEXES   => 1;
 use constant ADVANCES  => 2;
 use constant POSITIONS => 3;
+use constant CUSTOM    => 4;
 
 sub new         { bless [grep { defined } @_[1..4]], $_[0] }
 sub glyphs      { $_[0]->[GLYPHS] }
@@ -60,6 +61,39 @@ sub log2vis
 	$newmap[ $map->[$_] & ~to::RTL ] = $_ for 0 .. $#$map - 1;
 	defined($_) ? ($last = $_) : ($_ = $last) for @newmap;
 	return \@newmap;
+}
+
+sub glyph_lengths
+{
+	my $map  = shift->indexes;
+	my $curr = $map->[0];
+	my $len  = 1;
+	my @ret;
+	for ( my $i = 1; $i < @$map; $i++) {
+		if ( $curr == $$map[$i]) {
+			$len++;
+		} else {
+			push @ret, ($len) x $len;
+			$curr = $$map[$i];
+			$len = 1;
+		}
+	}
+	return @ret;
+}
+
+sub index_lengths
+{
+	my @map = map { $_ & ~to::RTL } @{ shift->indexes };
+	my @sorted = sort { $a <=> $b } @map;
+	my @lengths;
+	for ( my $i = 0; $i < $#sorted; $i++) {
+		$lengths[$sorted[$i]] = $sorted[$i + 1] - $sorted[$i];
+	}
+	my @ret;
+	for ( my $i = 0; $i < $#map; $i++) {
+		push @ret, $lengths[$map[$i]]; 
+	}
+	return @ret;
 }
 
 sub overhangs
@@ -859,6 +893,11 @@ Return the cluster that contains C<$GLYPH>.
 
 Read-only accessor to glyph indexes, see L<Structure> above.
 
+=item glyph_lengths
+
+Returns array where each glyph position is set to a number showing how many glyphs the
+cluster occupies at this position
+
 =item index2cluster $INDEX
 
 Returns the cluster that contains the character offset C<$INDEX>.
@@ -866,6 +905,11 @@ Returns the cluster that contains the character offset C<$INDEX>.
 =item indexes
 
 Read-only accessor to indexes, see L<Structure> above.
+
+=item index_lengths
+
+Returns array where each glyph position is set to a number showing how many characters the
+cluster occupies at this position
 
 =item left_overhang
 

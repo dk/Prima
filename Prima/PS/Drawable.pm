@@ -976,7 +976,6 @@ sub text_out_outline
 	my ( $self, $text ) = @_;
 	my $is_bytes = !Encode::is_utf8($text) && $text =~ /[^\x{0}-\x{7f}]/;
 	my $shaped   = $self->text_shape($text, levelo => $is_bytes ? ts::Glyphs : ts::Bytes ) or return;
-	local $self->{shaping_text} = $text;
 	$self-> glyph_out_outline($shaped, 0, scalar @{$shaped->glyphs});
 }
 
@@ -988,6 +987,8 @@ sub glyph_out_outline
 	my $indexes    = $text-> indexes;
 	my $advances   = $text-> advances;
 	my $positions  = $text-> positions;
+	my $plaintext  = $text-> [Prima::Drawable::Glyphs::CUSTOM()];
+	my @ix_lengths = defined($plaintext) ? $text-> index_lengths : ();
 	my $adv        = 0;
 	my $canvas     = $self->glyph_canvas;
 	my $resolution = 72.27 / $self->{resolution}->[0];
@@ -997,15 +998,25 @@ sub glyph_out_outline
 
 	$len += $from;
 	my $emit = '';
+	my $last_ix_length = -1;
+	my $ix_shift = 0;
 	for ( my $i = $from; $i < $len; $i++) {
+		my $suggested_gid;
+		if ( defined $plaintext ) {
+			my $ix_length = $ix_lengths[$i];
+			if ( $ix_length != $last_ix_length ) {
+				$ix_shift = 1;
+			} else {
+				$ix_shift++;
+			}
+			$suggested_gid = substr( $plaintext, $indexes->[$i] & ~to::RTL, $ix_length);
+			$suggested_gid .= $ix_shift if $ix_length > 1;
+		}
+
 		my $advance;
 		my $glyph     = $glyphs->[$i];
 		my ($x2, $y2) = ($adv, 0);
-		my $gid = $keeper-> use_char($canvas, $font, $glyph,
-			defined($self->{shaping_text}) ?
-				substr( $self->{shaping_text}, $indexes->[$i] & ~to::RTL, 1) :
-				undef
-		);
+		my $gid = $keeper-> use_char($canvas, $font, $glyph, $suggested_gid);
 		if ( $advances) {
 			$advance = $advances->[$i];
 			$x2 += $positions->[$i*2];
@@ -1020,6 +1031,7 @@ sub glyph_out_outline
 		$emit .= "$x2 $y2 M " if $x2 != 0 || $y2 != 0;
 		$emit .= "/$gid Y\n";
 	}
+
 	$self-> emit($emit);
 }
 
@@ -1958,6 +1970,7 @@ sub text_shape
 		if ( $self->is_vector_font ) {
 			my $canvas = $self-> glyph_canvas;
 			my $shaped = $canvas->text_shape($text, %opt);
+			$shaped->[Prima::Drawable::Glyphs::CUSTOM()] = $text;
 			return $shaped unless $shaped && $shaped->advances;
 			my $scale  = $self->{font_char_height} / $canvas->{pixel_scale};
 			$_ *= $scale for @{ $shaped->advances  };
@@ -1977,13 +1990,6 @@ sub text_shape
 	my @ret;
 	$ret[$_] = $text[ $x->[$_] & ~to::RTL ] for 0..$#text;
 	return join '', grep { defined } @ret;
-}
-
-sub text_shape_out
-{
-	my ( $self, $text, $x, $y, $rtl) = @_;
-	local $self->{shaping_text} = $text;
-	return $self->SUPER::text_shape_out($text, $x, $y, $rtl);
 }
 
 1;
