@@ -998,25 +998,15 @@ sub glyph_out_outline
 
 	$len += $from;
 	my $emit = '';
-	my $last_ix_length = -1;
-	my $ix_shift = 0;
 	for ( my $i = $from; $i < $len; $i++) {
-		my $suggested_gid;
-		if ( defined $plaintext ) {
-			my $ix_length = $ix_lengths[$i];
-			if ( $ix_length != $last_ix_length ) {
-				$ix_shift = 1;
-			} else {
-				$ix_shift++;
-			}
-			$suggested_gid = substr( $plaintext, $indexes->[$i] & ~to::RTL, $ix_length);
-			$suggested_gid .= $ix_shift if $ix_length > 1;
-		}
-
 		my $advance;
 		my $glyph     = $glyphs->[$i];
 		my ($x2, $y2) = ($adv, 0);
-		my $gid = $keeper-> use_char($canvas, $font, $glyph, $suggested_gid);
+		my $gid = $keeper-> use_char($canvas, $font, $glyph,
+			defined($plaintext) ?
+				substr( $plaintext, $indexes->[$i] & ~to::RTL, $ix_lengths[$i]) :
+				undef
+		);
 		if ( $advances) {
 			$advance = $advances->[$i];
 			$x2 += $positions->[$i*2];

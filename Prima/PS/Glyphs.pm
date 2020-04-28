@@ -231,23 +231,19 @@ sub use_char
 
 	my $glyphid;
 	my $vector = 'glyphs';
-	if (
-		defined($suggested_gid) &&
-		length($suggested_gid) == 1
-	) {
-		my $ord = ord $suggested_gid;
+	if ( defined($suggested_gid)) {
 		if ( exists $f->{$suggested_gid} ) {
 			goto STD if $f->{$suggested_gid} != $charid;
 		} else {
 			$unicode_glyph_names //= Prima::PS::Encodings::load_unicode;
-			goto STD unless exists $unicode_glyph_names->{ $ord };
+			goto STD unless exists $unicode_glyph_names->{ $suggested_gid };
 			$f->{$suggested_gid} = $charid;
 		}
-		$glyphid = $unicode_glyph_names->{ $ord };
+		$glyphid = $unicode_glyph_names->{ $suggested_gid };
 		$vector = 'chars';
 	} else {
 	STD:
-		$glyphid = sprintf("g%x", $charid);
+		$glyphid = sprintf("uni%x", $charid);
 	}
 	return $glyphid if vec($f->{$vector}, $charid, 1);
 
