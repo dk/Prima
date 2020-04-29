@@ -25,6 +25,31 @@ sub new_empty
 	push @{$self[1]}, 0;
 	return bless \@self, $class;
 }
+
+sub _debug
+{
+	my $self = shift;
+	my $g = $self->glyphs;
+	print STDERR scalar(@$g), " glyphs: @$g\n";
+	$g = $self->indexes;
+	print STDERR "indexes: ";
+	for ( my $i = 0; $i < $#$g; $i++) {
+		my $ix = $g->[$i];
+		print STDERR ( $ix & to::RTL ) ? '-' : '', $ix & ~to::RTL, " ";
+	}
+	print STDERR ": $g->[1]\n";
+	if ( $g = $self->advances ) {
+		print STDERR "advances: @$g\n";
+		$g = $self->positions;
+		print STDERR "positions: ";
+		for ( my $i = 0; $i < @$g; $i += 2 ) {
+			my ($x, $y) = @{$g}[$i,$i+1];
+			print STDERR "($x,$y) ";
+		}
+		print STDERR "\n";
+	}
+}
+
 sub reverse
 {
 	my $self = shift;
@@ -34,7 +59,7 @@ sub reverse
 
 	push @svs, Prima::array->new('S');
 	push @{ $svs[-1] }, reverse @{ $self->[GLYPHS] };
-	
+
 	push @svs, Prima::array->new('S');
 	push @{ $svs[-1] }, reverse @{ $self->[INDEXES] }[0 .. $nglyphs-1];
 	push @{ $svs[-1] }, $self->[INDEXES]->[-1];
@@ -42,7 +67,7 @@ sub reverse
 	if ( my $advances = $self->[ADVANCES] ) {
 		push @svs, Prima::array->new('S');
 		push @{ $svs[-1] }, reverse @{ $self->[ADVANCES] };
-		
+
 		push @svs, Prima::array->new('s');
 		my $positions = $self->[POSITIONS];
 		for ( my $i = $nglyphs * 2 - 2; $i >= 0; $i -= 2 ) {
