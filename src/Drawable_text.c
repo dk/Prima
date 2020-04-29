@@ -1087,12 +1087,11 @@ precalc_abc_buffer( PFontABC src, float * width, PFontABC dest)
 }
 
 static Bool
-precalc_advances_buffer( PFontABC src, float * width, PFontABC dest)
+precalc_ac_buffer( PFontABC src, PFontABC dest)
 {
 	int i;
 	if ( !dest) return false;
 	for ( i = 0; i < 256; i++) {
-		width[i] = src[i]. a + src[i]. c;
 		dest[i]. a = ( src[i]. a < 0) ? - src[i]. a : 0;
 		dest[i]. c = ( src[i]. c < 0) ? - src[i]. c : 0;
 	}
@@ -1586,7 +1585,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	unsigned int base = 0x10000000;
 
 	unsigned int start, i;
-	float w = 0.0, inc = 0, initial_overhang = 0;
+	float w = 0.0, initial_overhang = 0;
 	Bool reassign_w = 1;
 	Bool doWidthBreak = t-> width >= 0;
 
@@ -1608,7 +1607,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	/* process glyphs */
 	for ( i = start = 0; i < t-> n_glyphs; ) {
 		uint16_t index;
-		float winc;
+		float winc, inc = 0;
 		int j, ng, p, v;
 
 		/* ng: glyphs in the cluster */
@@ -1624,8 +1623,8 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 				PFontABC labc;
 				if ( !(labc = query_abc_range_glyphs( self, t, base = uv / 256)))
 					return ret;
-				if ( t-> advances )
-					precalc_advances_buffer(labc, width, abc);
+				if ( !t-> advances )
+					precalc_ac_buffer(labc, abc);
 				else
 					precalc_abc_buffer(labc, width, abc);
 			}
@@ -1634,15 +1633,21 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 				w = initial_overhang = abc[ uv & 0xff]. a;
 				reassign_w = 0;
 			}
-			winc += width[ uv & 0xff];
-			if ( t-> advances )
-				winc += t->advances[i + j] + t->positions[(i + j) * 2];
-			if ( j == ng - 1 ) inc = abc[ uv & 0xff]. c;
+			if ( t-> advances ) {
+				winc += t->advances[i + j];
+			} else {
+				winc += width[ uv & 0xff];
+			}
+			if ( j == ng - 1 ) {
+				inc = abc[ uv & 0xff]. c;
+				if ( t-> advances ) 
+					inc += t->positions[(i + j) * 2];
+			}
 		}
 
 
 #ifdef _DEBUG
-		printf("i:%d ng:%d w:%f\n", i, ng, w);
+		printf("i:%d ng:%d inc:%f w:%f winc:%f\n", i, ng, inc, w, winc);
 #endif
 		p = i;
 		i += ng;
