@@ -1623,7 +1623,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 				PFontABC labc;
 				if ( !(labc = query_abc_range_glyphs( self, t, base = uv / 256)))
 					return ret;
-				if ( !t-> advances )
+				if ( t-> advances )
 					precalc_ac_buffer(labc, abc);
 				else
 					precalc_abc_buffer(labc, width, abc);
