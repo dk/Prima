@@ -330,3 +330,16 @@ sub use_char
 }
 
 1;
+
+=pod
+
+=head1 NAME
+
+Prima::PS::Glyphs - glyphs as Type1 embedded font
+
+=head1 DESCRIPTION
+
+This module contains helper procedures to query vector font outlines and
+storing them in postscript as embedded Type1 fonts.
+
+=cut
