@@ -52,3 +52,16 @@ sub evacuate
 }
 
 1;
+
+=pod
+
+=head1 NAME
+
+Prima::PS::TempFile - store parts of PS output in files
+
+=head1 DESCRIPTION
+
+Temp files are allocated, then are written to, accumulating PS code.
+Then the code is read back and is sent to main PS file.
+
+=cut
