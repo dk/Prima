@@ -18,10 +18,10 @@ my $scaling = $::application->uiScaling;
 
 my $w = Prima::MainWindow-> create(
 	text => "Periodic table of elements",
-	size => [ map { $scaling * $_ } 50 * 14 + 25, 50 * 13 + 25],
+	size => [ map { $scaling * $_ } 45 * 14 + 5, 45 * 14 + 5],
 );
 
-my @layers = ( 2, 8, 8, 10, 9, 10, 9, 10, 9, 10, 0, 14, 14);
+my @layers = ( 2, 8, 8, 10, 9, 10, 9, 10, 9, 10, 10, 0, 14, 14);
 my %colors = (
 	2 => {
 		0 => cl::Blue,
@@ -53,9 +53,10 @@ my %sides = (
 	'7:4' => 8, '8:4' => 8, '9:4' => 12,
 	'7:6' => 8, '8:6' => 8, '9:6' => 12,
 	'7:8' => 8, '8:8' => 8, '9:8' => 12,
-	'10:3' => 8, '10:5' => 8, '10:7' => 8, '10:9' => 8,
-	'0:10' => 8, '1:10' => 8, '2:10' => 8, '3:10' => 8, '4:10' => 8,
-	'5:10' => 8, '6:10' => 8, '7:10' => 8, '8:10' => 8, '9:10' => 8,
+	'7:10' => 8, '8:10' => 8, '9:10' => 12,
+	'10:3' => 8, '10:5' => 8, '10:7' => 8, '10:9' => 8, '10:11' => 8,
+	'0:11' => 8, '1:11' => 8, '2:11' => 8, '3:11' => 8, '4:11' => 8,
+	'5:11' => 8, '6:11' => 8, 
 	#  '11:4' => 8, '12:4' => 8, '13:4' => 12,
 	#  '10:5' => 12, '13:5' => 4, '13:6' => 4,
 	#  '11:7' => 8, '12:7' => 8, '13:7' => 8,
@@ -155,6 +156,14 @@ my %elem_info = (
 	Hs => { atomic_number => 108, name => "Hassium", weight => "[269.1341]", },
 	Mt => { atomic_number => 109, name => "Meitnerium", weight => "[268.1388]", },
 	Ds => { atomic_number => 110, name => "Darmstadtium", weight => "[272.1463]", },
+	Rg => { atomic_number => 111, name => "Roentgenium", weight => "[282]", },
+	Cn => { atomic_number => 112, name => "Copenicium", weight => "[285]", },
+	Nh => { atomic_number => 113, name => "Nihonium", weight => "[286]", },
+	Fl => { atomic_number => 114, name => "Flerovium", weight => "[289]", },
+	Mc => { atomic_number => 115, name => "Moscovium", weight => "[290]", },
+	Lv => { atomic_number => 116, name => "Livermorium", weight => "[293]", },
+	Ts => { atomic_number => 117, name => "Tennessine", weight => "[294]", },
+	Og => { atomic_number => 118, name => "Oganesson", weight => "[294]", },
 
 	Ce => { atomic_number => 58, name => "Cerium", weight => "140.116(1)", },
 	Pr => { atomic_number => 59, name => "Praseodymium", weight => "140.90765(2)", },
@@ -187,13 +196,95 @@ my %elem_info = (
 	Lr => { atomic_number => 103, name => "Lawrencium", weight => "[262.110]", },
 );
 
+sub on_keydown
+{
+	my $self = shift;
+	local $self->{inside_keydown} = 1;
+	$self->SUPER::on_keydown(@_);
+}
+
 sub focusedCell
 {
 	return $_[0]-> SUPER::focusedCell unless $#_;
 	my ($self,$x,$y) = @_;
 	($x, $y) = @$x if !defined $y && ref($x) eq 'ARRAY';
-	return unless $y >= 0 && $x >= 0 && $self-> {cells}-> [$y] &&
-		$self-> {cells}-> [$y]-> [$x] && length $self-> {cells}-> [$y]-> [$x];
+
+	my (@last, @dir);
+	if ( $self-> {inside_keydown}) {
+		@last = $self->SUPER::focusedCell;
+		@dir = ($x - $last[0], $y - $last[1]);
+		@dir = () unless
+			(abs($dir[0]) == 1 && $dir[1] == 0) ||
+			(abs($dir[1]) == 1 && $dir[0] == 0);
+	}
+
+	if ( @dir ) {
+		my $text = $self-> {cells}-> [$last[1]]-> [$last[0]];
+		if ( $dir[0] == 1 ) {
+			if ($text eq 'La' ) { 
+				($x, $y) = (0, 12);
+			} elsif ( $text eq 'Ac') {
+				($x, $y) = (0, 13);
+			} elsif ( $text eq 'Lu') {
+				($x, $y) = (3, 7);
+			} elsif ( $text eq 'Lr') {
+				($x, $y) = (3, 9);
+			}
+		} elsif ( $dir[0] == -1 ) {
+			if ($text eq 'Hf' ) { 
+				($x, $y) = (13, 12);
+			} elsif ( $text eq 'Rf') {
+				($x, $y) = (13, 13);
+			} elsif ( $text eq 'Ce') {
+				($x, $y) = (2, 7);
+			} elsif ( $text eq 'Th') {
+				($x, $y) = (2, 9);
+			}
+		}
+	}
+
+
+	unless ($y >= 0 && $x >= 0 && $self-> {cells}-> [$y] &&
+		$self-> {cells}-> [$y]-> [$x] && length $self-> {cells}-> [$y]-> [$x]
+	) {
+		return unless @dir;
+		my $n = 9;
+		my @p = ($x, $y);
+		my $c = $self->{cells};
+		while ($n-- > 0) {
+			$p[$_] += $dir[$_] for 0,1;
+			last if $p[0] < 0 || $p[1] < 0 || $p[1] >= @$c || $p[0] >= @{$c->[$p[1]]};
+			my $item = $c-> [$p[1]]-> [$p[0]];
+			next unless defined($item) and defined ($elem_info{$item}-> {name});
+			($x,$y) = @p;
+			goto SETFOC;
+		}
+
+		if ( $dir[0] == 1 && $y < $#$c ) {
+			my $item = $c-> [$y + 1]-> [0];
+			if ( defined($item) and defined ($elem_info{$item}-> {name})) {
+				$x = 0;
+				$y++;
+				goto SETFOC;
+			}
+		} elsif ( $dir[0] == -1 && $y > 0 ) {
+			my $n = 5;
+			my $nx = @{$c->[$y - 1]} - 1;
+			while ( $n-- > 0 ) {
+				my $item = $c-> [$y - 1]-> [$nx];
+				if ( defined($item) and defined ($elem_info{$item}-> {name})) {
+					$x = $nx;
+					$y--;
+					goto SETFOC;
+				}
+				$nx--;
+			}
+		}
+
+		return;
+	}
+		
+SETFOC:
 	$self-> SUPER::focusedCell( $x, $y);
 }
 
@@ -214,14 +305,15 @@ my $g = $w-> insert( Periodic =>
 		[qw(Cs Ba La Hf Ta W  Re Os Ir Pt),       ('')x4],
 		[qw(Au Hg Tl Pb Bi Po At), ('')x3,'Rn',   ('')x3],
 		[qw(Fr Ra Ac Rf Db Sg Bh Hs Mt Ds),       ('')x4],
+		[qw(Rg Cn Nh Fl Mc Lv Ts), ('')x3,'Og',   ('')x3],
 		[('') x 14],
 		[qw(Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu)],
 		[qw(Th Pa U  Np Pu Am Cm Bk Cf Es Fm Md No Lr)],
 	],
 	drawHGrid => 0,
 	drawVGrid => 0,
-	constantCellWidth => int( 50 * $scaling + .5),
-	constantCellHeight => int( 50 * $scaling + .5),
+	constantCellWidth => int( 45 * $scaling + .5),
+	constantCellHeight => int( 45 * $scaling + .5),
 	multiSelect => 0,
 	onDrawCell => sub {
 		my ( $self, $canvas,
@@ -269,15 +361,15 @@ my $g = $w-> insert( Periodic =>
 		}
 	},
 	onClick => sub {
-			my ($self) = @_;
-			my @foc = $self-> focusedCell;
-			my $text = $self-> {cells}-> [$foc[1]]-> [$foc[0]];
-			return unless $text;
-			if ($text eq "La") {
-				$self-> focusedCell(0, 11);
-			} elsif ($text eq "Ac") {
-				$self-> focusedCell(0, 12);
-			}
+		my ($self) = @_;
+		my @foc = $self-> focusedCell;
+		my $text = $self-> {cells}-> [$foc[1]]-> [$foc[0]];
+		return unless $text;
+		if ($text eq "La") {
+			$self-> focusedCell(0, 11);
+		} elsif ($text eq "Ac") {
+			$self-> focusedCell(0, 12);
+		}
 	},
 	onSelectCell => sub {
 		my ( $self, $col, $row) = @_;
