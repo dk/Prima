@@ -175,7 +175,10 @@ sub on_paint
 	$canvas-> color( $c3d[1]);
 	$canvas-> line( 0, $maxy, $maxx, $maxy);
 	$canvas-> line( 0, 0, 0, $maxy);
-	{
+
+	my $collapsed = ($v ? $maxy : $maxx) < $self->{minThumbSize};
+
+	unless ( $collapsed ) {
 		$self-> draw_pad( $canvas, b1 => $clr[1]);
 		$canvas-> color( $self-> {b1}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b1}-> { pressed} ? 1 : 0;
@@ -192,7 +195,8 @@ sub on_paint
 		$canvas-> fillpoly( [ @spot])
 			if $maxx > 10 && $maxy > 10;
 	}
-	{
+
+	unless ( $collapsed ) {
 		$self-> draw_pad( $canvas, b2 => $clr[1]);
 		$canvas-> color( $self-> {b2}-> { enabled} ? $clr[ 0] : $self-> disabledColor);
 		my $a = $self-> { b2}-> { pressed} ? 1 : 0;
@@ -210,6 +214,7 @@ sub on_paint
 			if $maxx > 10 && $maxy > 10;
 		$canvas-> color( $clr[ 1]);
 	}
+
 	if ( $self-> { tab}-> { enabled})
 	{
 		my @rect = @{$self-> { tab}-> { rect}};
@@ -270,7 +275,9 @@ sub on_paint
 			}
 		}
 	} else {
-		my @r = @{$self-> {groove}-> {rect}};
+		my @r = $collapsed ? 
+			( 0, 0, $maxx, $maxy ) :
+			@{$self-> {groove}-> {rect}};
 		$canvas-> color( $c3d[1]);
 		$v ?
 			( $canvas-> line( $r[0]-1, $r[1], $r[0]-1, $r[3])):
@@ -291,6 +298,7 @@ sub on_paint
 sub translate_point
 {
 	my ( $self, $x, $y) = @_;
+	return undef if ($self->vertical ? $self->height : $self->width) < $self->{minThumbSize};
 	for( qw(b1 b2 tab left right groove))
 	{
 		next unless defined $self-> {$_}-> {rect};

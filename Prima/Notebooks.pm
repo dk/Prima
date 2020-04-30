@@ -129,18 +129,18 @@ sub x2pos
 {
 	my ( $self, $x ) = @_;
 
-	my ( $a, $ww, $ft, $lt) = (
+	my ( $ar, $ww, $ft, $lt) = (
 		$self-> {arrows}, $self-> {widths}, $self-> {firstTab}, $self-> {lastTab}
 	);
 
 	my $s = $::application-> uiScaling;
-	return -1 if ( $a & 1) and ( $x < $s * (DefLeftX + DefGapX * 2 + DefArrowX));
+	return -1 if ( $ar & 1) and ( $x < $s * (DefLeftX + DefGapX * 2 + DefArrowX));
 
 	my @size = $self-> size;
-	return -2 if ( $a & 2) and ( $x >= $size[0] - $s * ( DefLeftX + DefGapX * 2 + DefArrowX ));
+	return -2 if ( $ar & 2) and ( $x >= $size[0] - $s * ( DefLeftX + DefGapX * 2 + DefArrowX ));
 
 	my $w = DefLeftX;
-	$w += DefGapX + DefArrowX if $a & 1;
+	$w += DefGapX + DefArrowX if $ar & 1;
 	$w *= $s;
 	my $i;
 	my $found = undef;
@@ -282,7 +282,7 @@ sub on_paint
 
 	$canvas-> color( $clr[1]);
 	$canvas-> bar( 0, 0, @size);
-	my ( $ft, $lt, $a, $ti, $ww, $tm) =
+	my ( $ft, $lt, $ar, $ti, $ww, $tm) =
 		( $self-> {firstTab}, $self-> {lastTab}, $self-> {arrows}, $self-> {tabIndex},
 		$self-> {widths}, $self-> {topMost}
 	);
@@ -294,7 +294,7 @@ sub on_paint
 
 	my $s = $::application-> uiScaling;
 	my $atX = DefLeftX;
-	$atX += DefArrowX + DefGapX if $a & 1;
+	$atX += DefArrowX + DefGapX if $ar & 1;
 	$atX *= $s;
 	my $atXti = undef;
 	for ( $i = $ft; $i <= $lt; $i++) {
@@ -302,7 +302,7 @@ sub on_paint
 	}
 	my @colorSet = ( @clr, @c3d);
 
-	$canvas-> clipRect( 0, 0, $size[0] - $s * (DefArrowX + DefGapX + DefLeftX), $size[1]) if $a & 2;
+	$canvas-> clipRect( 0, 0, $size[0] - $s * (DefArrowX + DefGapX + DefLeftX), $size[1]) if $ar & 2;
 
 	for ( $i = $lt; $i >= $ft; $i--) {
 		$atX -= $$ww[$i] + $s * DefGapX;
@@ -317,12 +317,12 @@ sub on_paint
 		$notifier-> ( @notifyParms, $canvas, $i, \@colorSet, \@poly);
 	}
 
-	my $swapDraw = ( $ti == $lt) && ( $a & 2);
+	my $swapDraw = ( $ti == $lt) && ( $ar & 2);
 
 	goto PaintSelTabBefore if $swapDraw;
 PaintEarsThen:
-	$canvas-> clipRect( 0, 0, @size) if $a & 2;
-	if ( $a & 1) {
+	$canvas-> clipRect( 0, 0, @size) if $ar & 2;
+	if ( $ar & 1) {
 		my $x = $s * DefLeftX;
 		my @poly = (
 			$x, $s * DefGapY,
@@ -333,7 +333,7 @@ PaintEarsThen:
 		@poly[1,3,5,7] = @poly[3,1,7,5] unless $tm;
 		$notifier-> ( @notifyParms, $canvas, -1, \@colorSet, \@poly);
 	}
-	if ( $a & 2) {
+	if ( $ar & 2) {
 		my $x = $size[0] - $s * (DefLeftX + DefArrowX + DefGapX * 2);
 		my @poly = (
 			$x, $s * DefGapY,
@@ -387,7 +387,7 @@ PaintSelTabBefore:
 		$canvas-> clipRect(
 			0, 0,
 			$size[0] - $s * (DefArrowX + DefGapX + DefLeftX), $size[1]
-		) if $a & 2;
+		) if $ar & 2;
 		$notifier-> (
 			@notifyParms, $canvas, $ti, \@colorSet, \@poly,
 			$swapDraw ? undef : \@poly2
@@ -1132,23 +1132,23 @@ sub on_paint
 		my $x = $size[0] - $s * DefBorderX - $s * DefBookmarkX;
 		return if $y < $s * DefBorderX * 2 + $s * DefBookmarkX;
 
-		my $a  = 0;
+		my $ar  = 0;
 		my ($pi, $mpi) = (
 			$self-> {notebook}-> pageIndex,
 			$self-> {notebook}-> pageCount - 1
 		);
-		$a |= 1 if $pi > 0;
-		$a |= 2 if $pi < $mpi;
+		$ar |= 1 if $pi > 0;
+		$ar |= 2 if $pi < $mpi;
 
 		if ( my $p = $self->{prelight}) {
 			$canvas-> color( $self-> prelight_color($c3d[1]));
-			if ( $p < 0 && $a & 1) {
+			if ( $p < 0 && $ar & 1) {
 				$canvas->fillpoly([
 					$x - 2, $y - 2,
 					$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX,
 					$x - 2, $y - $s * DefBookmarkX,
 				]);
-			} elsif ( $p > 0 && $a & 2 ) {
+			} elsif ( $p > 0 && $ar & 2 ) {
 				$canvas->fillpoly([
 					$x - 2, $y - 2,
 					$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX,
@@ -1156,57 +1156,59 @@ sub on_paint
 				]);
 			}
 		}
-
-		$canvas-> color( $c3d[0]);
-		$canvas-> line(
-			$s * DefBorderX + 2,  $y - 2,
-			$x - 2,          $y - 2
-		);
-		$canvas-> line(
-			$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 1,
-			$x + $s * DefBookmarkX - 4, $on_top ?
-						($s * DefBorderX + 2) :
-						($self-> {notebook}-> bottom + 1)
-		);
-
 		my $fh = $canvas-> font-> height + 8;
-		$canvas-> line(
-			$s * DefBorderX + 4, $y - $fh * 1.6,
-			$x - 6, $y - $fh * 1.6
-		);
-		$canvas-> polyline([
-			$x - 2, $y - 2,
-			$x - 2, $y - $s * DefBookmarkX,
-			$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX
-		]);
-		$canvas-> line( $x - 1, $y - 3, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX + 1);
-		$canvas-> line( $x - 1, $y - 4, $x + $s * DefBookmarkX - 6, $y - $s * DefBookmarkX + 1);
-		$canvas-> line( $x - 0, $y - 2, $x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 2);
-		$canvas-> line( $x + 5, $y - $s * DefBookmarkX - 2, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX - 2);
 
-		$canvas-> polyline([
-			$x + $s * 4, $y - $s * DefBookmarkX + $s * 6,
-			$x + $s * 10, $y - $s * DefBookmarkX + $s * 6,
-			$x + $s * 10, $y - $s * DefBookmarkX + $s * 8]) if $a & 1;
+		if ( $size[0] - $s * 2 * DefBorderX - $s * DefBookmarkX - 10 > 0 ) {
+			$canvas-> color( $c3d[0]);
+			$canvas-> line(
+				$s * DefBorderX + 2,  $y - 2,
+				$x - 2,          $y - 2
+			);
+			$canvas-> line(
+				$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 1,
+				$x + $s * DefBookmarkX - 4, $on_top ?
+							($s * DefBorderX + 2) :
+							($self-> {notebook}-> bottom + 1)
+			);
 
-		my $dx = $s * DefBookmarkX / 2;
-		my ( $x1, $y1) = ( $x + $dx, $y - $dx);
-		$canvas-> line( $x1 + $s * 1, $y1 + $s * 4, $x1 + $s * 3, $y1 + $s * 4) if $a & 2;
-		$canvas-> line( $x1 + $s * 5, $y1 + $s * 6, $x1 + $s * 5, $y1 + $s * 8) if $a & 2;
-		$canvas-> polyline([ $x1 + $s * 3, $y1 + $s * 2, $x1 + $s * 5, $y1 + $s * 2,
-			$x1 + $s * 5, $y1 + $s * 4, $x1 + $s * 7, $y1 + $s * 4, $x1 + $s * 7, $y1 + $s * 6]) if $a & 2;
-		$canvas-> color( $c3d[1]);
-		$canvas-> line( $x - 1, $y - 7, $x + $s * DefBookmarkX - 9, $y - $s * DefBookmarkX + 1);
-		$canvas-> line( $s * DefBorderX + 4, $y - $fh * 1.6 - 1, $x - $s * 6, $y - $fh * 1.6 - 1);
-		$canvas-> polyline([ $x + $s * 4, $y1 - $s * 9, $x + $s * 4, $y1 - $s * 8, $x + $s * 10, $y1 - $s * 8]) if $a & 1;
-		$canvas-> line( $x1 + $s * 3, $y1 + $s * 2, $x1 + $s * 3, $y1 + $s * 3) if $a & 2;
-		$canvas-> line( $x1 + $s * 6, $y1 + $s * 6, $x1 + $s * 7, $y1 + $s * 6) if $a & 2;
-		$canvas-> polyline([ $x1 + $s * 1, $y1 + $s * 4, $x1 + $s * 1, $y1 + $s * 6,
-			$x1 + $s * 3, $y1 + $s * 6, $x1 + $s * 3, $y1 + $s * 8, $x1 + $s * 5, $y1 + $s * 8]) if $a & 2;
-		$canvas-> color( cl::Black);
-		$canvas-> line( $x - 1, $y - 2, $x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 1);
-		$canvas-> line( $x + 5, $y - $s * DefBookmarkX - 1, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX - 1);
-		$canvas-> color( $clr[0]);
+			$canvas-> line(
+				$s * DefBorderX + 4, $y - $fh * 1.6,
+				$x - 6, $y - $fh * 1.6
+			);
+			$canvas-> polyline([
+				$x - 2, $y - 2,
+				$x - 2, $y - $s * DefBookmarkX,
+				$x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX
+			]);
+			$canvas-> line( $x - 1, $y - 3, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX + 1);
+			$canvas-> line( $x - 1, $y - 4, $x + $s * DefBookmarkX - 6, $y - $s * DefBookmarkX + 1);
+			$canvas-> line( $x - 0, $y - 2, $x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 2);
+			$canvas-> line( $x + 5, $y - $s * DefBookmarkX - 2, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX - 2);
+
+			$canvas-> polyline([
+				$x + $s * 4, $y - $s * DefBookmarkX + $s * 6,
+				$x + $s * 10, $y - $s * DefBookmarkX + $s * 6,
+				$x + $s * 10, $y - $s * DefBookmarkX + $s * 8]) if $ar & 1;
+
+			my $dx = $s * DefBookmarkX / 2;
+			my ( $x1, $y1) = ( $x + $dx, $y - $dx);
+			$canvas-> line( $x1 + $s * 1, $y1 + $s * 4, $x1 + $s * 3, $y1 + $s * 4) if $ar & 2;
+			$canvas-> line( $x1 + $s * 5, $y1 + $s * 6, $x1 + $s * 5, $y1 + $s * 8) if $ar & 2;
+			$canvas-> polyline([ $x1 + $s * 3, $y1 + $s * 2, $x1 + $s * 5, $y1 + $s * 2,
+				$x1 + $s * 5, $y1 + $s * 4, $x1 + $s * 7, $y1 + $s * 4, $x1 + $s * 7, $y1 + $s * 6]) if $ar & 2;
+			$canvas-> color( $c3d[1]);
+			$canvas-> line( $x - 1, $y - 7, $x + $s * DefBookmarkX - 9, $y - $s * DefBookmarkX + 1);
+			$canvas-> line( $s * DefBorderX + 4, $y - $fh * 1.6 - 1, $x - $s * 6, $y - $fh * 1.6 - 1);
+			$canvas-> polyline([ $x + $s * 4, $y1 - $s * 9, $x + $s * 4, $y1 - $s * 8, $x + $s * 10, $y1 - $s * 8]) if $ar & 1;
+			$canvas-> line( $x1 + $s * 3, $y1 + $s * 2, $x1 + $s * 3, $y1 + $s * 3) if $ar & 2;
+			$canvas-> line( $x1 + $s * 6, $y1 + $s * 6, $x1 + $s * 7, $y1 + $s * 6) if $ar & 2;
+			$canvas-> polyline([ $x1 + $s * 1, $y1 + $s * 4, $x1 + $s * 1, $y1 + $s * 6,
+				$x1 + $s * 3, $y1 + $s * 6, $x1 + $s * 3, $y1 + $s * 8, $x1 + $s * 5, $y1 + $s * 8]) if $ar & 2;
+			$canvas-> color( cl::Black);
+			$canvas-> line( $x - 1, $y - 2, $x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 1);
+			$canvas-> line( $x + 5, $y - $s * DefBookmarkX - 1, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX - 1);
+			$canvas-> color( $clr[0]);
+		}
 
 		my $t = $self-> {tabs};
 		if ( scalar @{$t}) {
@@ -1235,6 +1237,8 @@ sub event_in_page_flipper
 
 	my @size = $self-> size;
 	my $s = $::application->uiScaling;
+	return if $size[0] - $s * 2 * DefBorderX - $s * DefBookmarkX - 10 <= 0;
+
 	my $th = ($self-> {orientation} == tno::Top) ? $self-> {tabSet}-> height : 5;
 	$x -= $size[0] - $s * DefBorderX - $s * DefBookmarkX - 1;
 	$y -= $size[1] - $s * DefBorderX - $th - $s * DefBookmarkX + 4;
@@ -1384,9 +1388,9 @@ sub set_page_index
 
 	my @size = $self-> size;
 	my $th = ($self-> {orientation} == tno::Top) ? $self-> {tabSet}-> height : 5;
-	my $a  = 0;
-	$a |= 1 if $pix > 0;
-	$a |= 2 if $pix < $mpi;
+	my $ar  = 0;
+	$ar |= 1 if $pix > 0;
+	$ar |= 2 if $pix < $mpi;
 	my $newA = 0;
 	$pi = $self-> {notebook}-> pageIndex;
 	$newA |= 1 if $pi > 0;
@@ -1395,7 +1399,7 @@ sub set_page_index
 	my $s = $::application->uiScaling;
 	$self-> invalidate_rect(
 		$s * DefBorderX + 1, $size[1] - $s * DefBorderX - $th - $s * DefBookmarkX - 1,
-		$size[0] - $s * DefBorderX - (( $a == $newA) ? $s * DefBookmarkX + 2 : 0),
+		$size[0] - $s * DefBorderX - (( $ar == $newA) ? $s * DefBookmarkX + 2 : 0),
 		$size[1] - $s * DefBorderX - $th + 3
 	);
 	$self-> notify(q(Change), $pix, $pi);
