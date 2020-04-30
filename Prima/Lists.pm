@@ -1412,7 +1412,7 @@ sub std_draw_text_items
 	my @clipRect = $canvas-> clipRect;
 	my $i;
 	my $drawVeilFoc = -1;
-	my $atY    = ( $self-> {itemHeight} - $canvas-> font-> height) / 2;
+	my $atY    = int(( $self-> {itemHeight} - $canvas-> font-> height) / 2 + .5);
 	my $ih     = $self-> {itemHeight};
 	my $offset = $self-> {offset};
 	my $step   = ( $self-> {multiColumn} and !$self-> {vertical}) ?
@@ -2131,9 +2131,12 @@ See L<DrawItem> for parameters description.
 
 Called by C<std_draw_text_items> to draw sequence of text items with
 indices from FIRST to LAST, by STEP, on CANVAS, starting at point X, Y, and
-incrementing the horizontal position with OFFSET. CLIP_RECT is a reference
+incrementing the vertical position with OFFSET. CLIP_RECT is a reference
 to array of four integers with inclusive-inclusive coordinates of the active
 clipping rectangle.
+
+Note that OFFSET must be an integer, otherwise bad effects will be observed
+when text is drawn below Y=0
 
 =item get_item_text INDEX
 
