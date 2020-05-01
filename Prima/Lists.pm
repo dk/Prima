@@ -486,7 +486,7 @@ sub point2item
 				( $l < $self->{count} -1 ) ? 1 : 0
 				if $y >= $r && $x >= 0 && $x < $c;
 			return $t + $r - 1            if $x < 0 && $y >= $r;
-			return $x * $r + $y + $t;
+			return $x * $self->{rows} + $y + $t;
 		} else {
 			if ( $y >= $r) {
 				$x = 0 if $x < 0;
@@ -962,9 +962,9 @@ sub set_focused_item
 	my $topSet = undef;
 	if ( $foc >= 0) {
 		my $mc   = $self-> {multiColumn};
-		my $rows = $self-> {whole_rows} || 1;
-		my $cols = $self-> {whole_columns} || 1;
-		( $cols, $rows) = ( $rows, $cols) if $mc and not $self->{vertical};
+		my ( $rows, $cols) = ($mc and not $self->{vertical}) ?
+			($self-> {columns} || 1, $self-> {whole_rows} || 1) :
+			($self-> {rows}    || 1, $self-> {whole_columns} || 1);
 		if ( $foc < $self-> {topItem}) {
 			$topSet = $mc ?
 				$foc - $foc % $rows :
@@ -977,7 +977,15 @@ sub set_focused_item
 	}
 	$oldFoc = 0 if $oldFoc < 0;
 	$self-> redraw_items( $foc, $oldFoc);
-	$self-> topItem( $topSet) if defined $topSet;
+	if (
+		!$self-> {multiSelect} && !$self-> {extendedSelect} &&
+		defined($topSet) &&
+		($self->{topItem} - $topSet) == ($oldFoc - $foc)
+	) {
+		$self-> set_top_item($topSet, $oldFoc - $foc);
+	} else {
+		$self-> topItem( $topSet) if defined $topSet;
+	}
 }
 
 sub colorIndex
@@ -1224,7 +1232,7 @@ sub add_selection
 
 sub set_top_item
 {
-	my ( $self, $topItem) = @_;
+	my ( $self, $topItem, $with_focus_shift) = @_;
 	$topItem = 0 if $topItem < 0;   # first validation
 	$topItem = $self-> {count} - 1 if $topItem >= $self-> {count};
 	$topItem = 0 if $topItem < 0;   # count = 0 case
@@ -1251,7 +1259,23 @@ sub set_top_item
 	if ( $self-> { multiColumn}) {
 		$iw += $self-> {drawGrid};
 		if ( $self-> {vertical}) {
-			$a[1] += $self-> {yedge};
+			return $self-> repaint if $dt % $self->{columns};
+
+			if ($self->{integralWidth}) {
+				$a[2] -= $self->{xedge};
+			} else {
+				$self-> invalidate_rect($a[2] - $self->{xedge}, $a[1], $a[2], $a[3])
+			}
+			if ( defined $with_focus_shift ) {
+				if ( $with_focus_shift < 0 ) {
+					my $dx = $iw + ($self->{integralWidth} ? 0 : $self->{xedge});
+					$self-> invalidate_rect($a[2] - $dx, $a[1], $a[2], $a[3]);
+					$a[2] -= $dx;
+				} else {
+					$self-> invalidate_rect($a[0], $a[1], $a[0] + $iw, $a[3]);
+					$a[0] += $iw;
+				}
+			}
 			if (( $self-> {rows} != 0) && ( $dt % $self-> {rows} == 0)) {
 				$self-> scroll(
 					-( $dt / $self-> {rows}) * $iw, 0,
@@ -1261,7 +1285,23 @@ sub set_top_item
 				$self-> scroll( 0, $ih * $dt, clipRect => \@a);
 			}
 		} else {
-			$a[2] = $a[0] + int(( $a[2] - $a[0] ) / $iw) * $iw;
+			return $self-> repaint if $dt % $self->{columns};
+
+			if ($self->{integralHeight}) {
+				$a[1] += $self->{yedge};
+			} else {
+				$self-> invalidate_rect($a[0], $a[1], $a[2], $a[1] + $self->{yedge})
+			}
+			if ( defined $with_focus_shift ) {
+				if ( $with_focus_shift < 0 ) {
+					my $dy = $ih + ($self->{integralHeight} ? 0 : $self->{yedge});
+					$self-> invalidate_rect($a[0], $a[1], $a[2], $a[1] + $dy);
+					$a[1] += $dy;
+				} else {
+					$a[3] -= $ih;
+					$self-> invalidate_rect($a[0], $a[3], $a[2], $a[3] + $ih);
+				}
+			}
 			if (( $self-> {whole_columns} != 0) && ( $dt % $self-> {whole_columns} == 0)) {
 				$self-> scroll(
 					0, ( $dt / $self-> {whole_columns}) * $ih,
@@ -1274,6 +1314,14 @@ sub set_top_item
 	} else {
 		$a[1] += $self-> {yedge}
 			if $self-> {integralHeight} and $self-> {whole_rows} > 0;
+		if ( defined $with_focus_shift ) {
+			if ( $with_focus_shift < 0 ) {
+				$a[1] += $ih;
+				$a[1] += $self->{yedge} unless $self->{integralHeight};
+			} else {
+				$a[3] -= $ih;
+			}
+		}
 		$self-> scroll( 0, $dt * $ih, clipRect => \@a);
 	}
 	$self-> update_view;
@@ -2089,7 +2137,7 @@ ARRAY is an array of integer indices of selected items.
 
 =item vertical BOOLEAN
 
-Sets seneral direction of items in multi-column mode. If 1, items increase
+Sets general direction of items in multi-column mode. If 1, items increase
 down-to-right. Otherwise, right-to-down.
 
 Doesn't have any effect in single-column mode.
