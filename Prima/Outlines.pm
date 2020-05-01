@@ -1073,12 +1073,12 @@ sub set_focused_item
 			$topSet = $foc - $rows + 1;
 		}
 	}
-	$self-> topItem( $topSet) if defined $topSet;
 	( $oldFoc, $foc) = ( $foc, $oldFoc) if $foc > $oldFoc;
 	my @a  = $self-> get_active_area;
 	my $ih = $self-> {itemHeight};
 	my $lastItem = $self-> {topItem} + $self-> {rows};
-	$self->redraw_items($oldFoc, $foc);
+	$self-> redraw_items($oldFoc, $foc);
+	$self-> topItem( $topSet) if defined $topSet;
 }
 
 sub set_indent
