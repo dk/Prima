@@ -1754,11 +1754,10 @@ sub reset
 	my $tx2 = $self->get_text_width( $self-> max, 1 );
 	$tx1 = $tx2 if $tx1 < $tx2;
 	$tx1 = $fh if $tx1 < $fh;
-	$tx1 += 4;
-	$tx1 = 50 if $tx1 < 50;
 	$tx1 /= 2;
+	$tx1 += 4 + 10;
 	my $min_viable_rad = $tx1;
-	my $rad = $self-> {radius} = ($tx1 < ($br * 0.25)) ? $tx1 : ($br * 0.25);
+	my $rad = $self-> {radius} = ($tx1 < ($br * 0.5)) ? $tx1 : ($br * 0.5);
 
 	# circle center
 	$self-> {br}        = $br;
@@ -1802,6 +1801,8 @@ sub reset
 		$size[1] - $self->{circY} - $ext[3],
 	);
 	$self-> {show_scale} = ! grep { $_ < 0 } @d;
+
+GROW_CIRCLE:
 	@ext = (0,0,0,0) unless $self->{show_scale};
 
 	# can grow the circle?
@@ -1869,12 +1870,18 @@ sub reset
 			$self->{show_text} = 0;
 		}
 	}
+
+	$self->{show_dial} = $self->{radius} >= $min_viable_rad;
+	if ( !$self->{show_dial} && $self->{show_scale} ) {
+		# try to grow the circle again
+		$self->{show_scale} = 0;
+		goto GROW_CIRCLE;
+	}
+
 	$self->end_paint_info;
 
 	# hints
-	$self->{show_dial} = $self->{radius} >= $min_viable_rad;
-	$self->{show_scale} = 0 unless $self->{show_dial};
-	if ( 
+	if (
 		$self->{show_text} && 
 		!$self->{show_scale} && 
 		$self->{show_dial} &&
