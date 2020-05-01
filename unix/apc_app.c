@@ -1015,7 +1015,7 @@ apc_application_get_monitor_rects( Handle self, int * nrects)
 	}
 
 	XCHECKPOINT;
-	sr = XRRGetScreenResources(DISP,guts.root);
+	sr = XRRGetScreenResourcesCurrent(DISP,guts.root);
 	if ( sr ) {
 		int i;
 		ret = malloc(sizeof(Box) * sr->ncrtc);
