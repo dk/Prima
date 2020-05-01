@@ -72,7 +72,7 @@ gmake, or nmake for Win32):
     make install
 
 If 'perl Makefile.PL' fails, the compilation history along with errors can be
-found in makefile.log. 
+found in makefile.log.
 
 If make fails with message
 
@@ -100,7 +100,7 @@ BINARY DISTRIBUTION INSTALLATION
 Available only for MSWin32. Please use installation from source for
 the other platforms.
 
-To install the toolkit from the binary distribution run 
+To install the toolkit from the binary distribution run
 
     perl ms_install.pl
 
@@ -121,10 +121,10 @@ Typical code starts with
     use Prima qw(Application);
 
 and ends with
-   
+
     run Prima;
 
-which is an event loop call. Start from the following code:
+, the event loop. Start from the following code:
 
     use Prima qw(Application Buttons);
 
@@ -136,10 +136,10 @@ which is an event loop call. Start from the following code:
        text     => 'Hello world!',
        onClick  => sub { $::application-> close },
     );
-    
+ 
     run Prima;
 
-Or, alternatively, start the VB program, which is the toolkit visual builder. 
+Or, alternatively, start the VB program, the toolkit visual builder.
 
 MORE INFORMATION
 ================
