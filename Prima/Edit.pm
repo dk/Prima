@@ -653,7 +653,7 @@ sub on_paint
 			# paint simple selection over many lines
 			if (
 				$sel[1] != $sel[3] &&
-				$sel[3] -1 > $sel[1] &&
+				$sel[3] - 1 > $sel[1] &&
 				( $sel[1] + 1 < $lim || $sel[ 3] - 1 >= $tl)
 			) {
 				$canvas-> color( $sclr[ 1]);
@@ -1480,7 +1480,7 @@ sub set_selection
 		$sx  = $ex  = $osx;
 		$sy  = $ey  = $osy;
 	}
-	my ($fcl, $lcl) = map { $self-> get_chunk_cluster_length($_) } ($sy, $ey);
+	my ($fcl, $lcl) = map { length $self-> get_line($_) } ($sy, $ey);
 	my $bt = $self-> {blockType};
 	$sx = $fcl if ( $bt != bt::Vertical && $sx > $fcl) || ( $sx < 0);
 	$ex = $lcl if ( $bt != bt::Vertical && $ex > $lcl) || ( $ex < 0);
@@ -1924,7 +1924,6 @@ sub cursor_up
 	$d ||= 1;
 	my (undef, $y1) = $self-> logical_to_visual( undef, $self-> {cursorYl});
 	my ($x, $y2)    = $self-> logical_to_visual( $self-> {cursorXl}, $self-> {cursorYl} - $d);
-	return if $y1 == $y2;
 
 	if ( $self-> textDirection ) {
 		my $n1 = $self-> get_chunk_cluster_length($y1);
@@ -3194,11 +3193,11 @@ Default value: 0
 
 =item readOnly BOOLEAN
 
-If 1, no user input is accepted. Manipulation with text are allowed though.
+If 1, no user input is accepted. Manipulations with text are allowed though.
 
 =item selection X1, Y1, X2, Y2
 
-Accepts two pair of coordinates, ( X1,Y1) the beginning and ( X2,Y2) the end
+Accepts two pair of visual coordinates, (X1,Y1) the beginning and (X2,Y2) the end
 of new selection, and sets the block according to L<blockType> property.
 
 The selection is null if X1 equals to X2 and Y1 equals to Y2.
