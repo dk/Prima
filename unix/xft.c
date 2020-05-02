@@ -2017,6 +2017,7 @@ prima_xft_get_font_ranges( Handle self, int * count)
 char *
 prima_xft_get_font_languages( Handle self)
 {
+#if FC_VERSION >= 21100
 	FcPattern *pat;
 	FcLangSet *ls;
 	FcStrSet  *ss;
@@ -2024,7 +2025,7 @@ prima_xft_get_font_languages( Handle self)
 	FcChar8  *s;
 	char *ret, *p;
 	int size;
-	
+
 	if ( !(pat = X(self)-> font-> xft-> pattern))
 		return NULL;
 	FcPatternGetLangSet(pat, FC_LANG, 0, &ls);
@@ -2060,6 +2061,7 @@ prima_xft_get_font_languages( Handle self)
 FAIL:
 	FcStrListDone(l);
 	free(ret);
+#endif
 	return NULL;
 }
 
