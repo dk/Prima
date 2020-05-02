@@ -334,7 +334,7 @@ build_wtext( PTextShapeRec t,
 			*(dst++) = 0xdc00 + (c >> 10);
 			if ( !*surrogate_map ) {
 				*first_surrogate_pair = i;
-				*surrogate_map = malloc(sizeof(unsigned int*) * (t-> len - i));
+				*surrogate_map = malloc(sizeof(unsigned int*) * (t-> len - i) * 2);
 				if ( !*surrogate_map ) return false;
 				curr = *surrogate_map;
 			}
