@@ -1,5 +1,16 @@
 Revision history for Perl module Prima
 
+1.59 2020-XX-XX
+ - Added support for unicode bidirectional algorithm and text shaping:
+     -- All standard widgets are moved to new shaped text implementation:
+        formerly char-based position properties, such as firstChar and selection,
+        are now cluster-based.
+     -- Unicode bidirectional algorithms uses fribidi on all platforms
+     -- Text shaping uses harfbuzz on unix
+     -- Text::Bidi is no loger used
+     -- Text input direction is deduced from new Application.language
+ - PostScript backend can generate embedded Type1 fonts
+
 1.58 2020-03-15
  - Added drag and drop support. Dragging from/to edit widgets works.
  - Added more mouse pointers (drag pointers, crosshair, hand, question, up arrow)
