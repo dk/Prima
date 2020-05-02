@@ -891,6 +891,7 @@ apc_gp_get_font_ranges( Handle self, int * count)
 		return NULL;
 	if (!( gs = malloc(size)))
 		apiErrRet;
+	bzero(gs, size);
 	gs-> cbThis = size;
 	if ( GetFontUnicodeRanges( sys ps, gs ) == 0) {
 		free(gs);

@@ -925,7 +925,11 @@ apc_gp_get_line_pattern( Handle self, unsigned char * buffer)
 {
 	objCheck 0;
 	if ( !sys ps) {
-		strcpy(( char *) buffer, (char*)(( sys linePatternLen > 3) ? sys linePattern : (Byte*)(&sys linePattern)));
+		memcpy(
+			( char *) buffer,
+			(char*)(( sys linePatternLen > sizeof(sys linePattern)) ? sys linePattern : (Byte*)(&sys linePattern)),
+			sys linePatternLen
+		);
 		return sys linePatternLen;
 	}
 
@@ -1342,9 +1346,9 @@ apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len)
 {
 	objCheck false;
 	if ( !sys ps) {
-		if ( sys linePatternLen > 3)
+		if ( sys linePatternLen > sizeof(sys linePattern))
 			free( sys linePattern);
-		if ( len > 3) {
+		if ( len > sizeof(sys linePattern)) {
 			sys linePattern = ( unsigned char *) malloc( len);
 			if ( !sys linePattern) {
 				sys linePatternLen = 0;
