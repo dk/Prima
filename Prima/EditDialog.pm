@@ -1,3 +1,4 @@
+package Prima::EditDialog;
 #  contains:
 #      FindDialog
 #      ReplaceDialog
@@ -251,8 +252,7 @@ sub profile_default
 
 =head1 NAME
 
-Prima::FindDialog, Prima::ReplaceDialog - standard interface dialogs
-to find and replace options selection.
+Prima::EditDialog - wrapper module for Prima::FindDialog and Prima::ReplaceDialog to find and replace text.
 
 =head1 SYNOPSIS
 

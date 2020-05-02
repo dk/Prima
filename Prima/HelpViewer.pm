@@ -821,7 +821,7 @@ sub print
 
 	$self-> fastfind_close;
 
-	$prndlg = Prima::PrintSetupDialog-> create unless $prndlg;
+	$prndlg = Prima::PrintDialog-> create unless $prndlg;
 	return unless $prndlg-> execute;
 
 	my $p = $::application-> get_printer;
