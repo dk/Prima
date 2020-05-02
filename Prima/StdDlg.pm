@@ -10,7 +10,7 @@
 #   Prima::FontDialog       => Prima/FontDialog.pm
 #   Prima::FindDialog       => Prima/EditDialog.pm
 #   Prima::ReplaceDialog    => Prima/EditDialog.pm
-#   Prima::PrintSetupDialog => Prima/PrintDialog.pm
+#   Prima::PrintDialog      => Prima/PrintDialog.pm
 #   Prima::ColorDialog      => Prima/ColorDialog.pm
 #   Prima::ImageOpenDialog  => Prima/ImageDialog.pm
 #   Prima::ImageSaveDialog  => Prima/ImageDialog.pm
@@ -138,12 +138,12 @@ sub AUTOLOAD
 	shift-> $method(@_);
 }
 
-package Prima::PrintSetupDialog;
+package Prima::PrintDialog;
 
 sub AUTOLOAD
 {
-	my ($method) = $Prima::PrintSetupDialog::AUTOLOAD =~ /::([^:]+)$/;
-	delete ${Prima::PrintSetupDialog::}{AUTOLOAD};
+	my ($method) = $Prima::PrintDialog::AUTOLOAD =~ /::([^:]+)$/;
+	delete ${Prima::PrintDialog::}{AUTOLOAD};
 	eval "use Prima::PrintDialog"; die "$@\n" if $@;
 	shift-> $method(@_);
 }
@@ -246,7 +246,7 @@ Generic 'find and replace text' dialog.
 
 See L<Prima::EditDialog>.
 
-=item Prima::PrintSetupDialog
+=item Prima::PrintDialog
 
 Printer selection and setup dialog.
 

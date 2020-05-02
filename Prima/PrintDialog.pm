@@ -1,3 +1,4 @@
+package Prima::PrintDialog;
 use strict;
 use warnings;
 use Carp;
@@ -6,7 +7,6 @@ use Prima::Buttons;
 use Prima::Label;
 use Prima::ComboBox;
 
-package Prima::PrintSetupDialog;
 use vars qw(@ISA);
 @ISA = qw(Prima::Dialog);
 
@@ -160,7 +160,7 @@ selection process.
 
 	use Prima qw(PrintDialog Application);
 
-	my $dlg = Prima::PrintSetupDialog-> new;
+	my $dlg = Prima::PrintDialog-> new;
 	if ( $dlg-> execute) {
 		my $p = $::application-> get_printer;
 		if ( $p-> begin_doc ) {
