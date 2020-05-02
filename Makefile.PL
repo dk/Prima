@@ -381,7 +381,10 @@ sub setup_environment
 		$OPTIMIZE     = '-g' if $cmd_options{DEBUG};
 		$OPENMP       = '-fopenmp';
 		$OPTIMIZE    .= ' -Wall' if gcc;
-		$passthru_options{LDDLFLAGS} .= ' -g' if $cmd_options{DEBUG};
+		if ($cmd_options{DEBUG}) {
+			$passthru_options{LDDLFLAGS} .= ' -g';
+			$passthru_options{LDDLFLAGS} =~ s/(^| )\-s//;
+		}
 	}
 
 	$DEFFILE    = 'Prima.def';
