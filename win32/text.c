@@ -297,7 +297,7 @@ static WORD
 langid(const char *lang)
 {
 #define LANGBUF 5
-	static char last_lang[LANGBUF] = "";
+	static char last_lang[LANGBUF + 1] = "";
 	static WORD last_langid = MAKELANGID (LANG_NEUTRAL, SUBLANG_NEUTRAL);
 
 	if ( strncmp( lang, last_lang, LANGBUF) == 0) return last_langid;

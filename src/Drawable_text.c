@@ -1419,8 +1419,9 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * t)
 	}
 
 	/* adding or skipping last line */
-	if ( t-> textLen - start > 0 || t-> count == 0)
+	if ( t-> textLen - start > 0 || t-> count == 0) {
 		ADD(t-> textLen, t-> utf8_textLen);
+	}
 
 	/* remove ~ and fill its location */
 	t-> t_start = t-> t_end = C_NUMERIC_UNDEF;
@@ -1676,8 +1677,9 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	}
 
 	/* adding or skipping last line */
-	if ( t->n_glyphs - start > 0 || t-> count == 0)
+	if ( t->n_glyphs - start > 0 || t-> count == 0) {
 		ADD(t->n_glyphs);
+	}
 
 	return ret;
 }
