@@ -398,7 +398,7 @@ sub test_shaping
 
 sub test_bytes
 {
-	ok(1, "high unicode");
+	ok(1, "bytes");
 
 	my $k = $w-> text_shape("A\x{fe}", level => ts::Bytes);
 	is( 2, scalar(@{$k->glyphs}), "two bytes mapped to two glyphs");
@@ -500,7 +500,7 @@ sub test_combining { SKIP: {
 	ok( $z->[0] != 0, "'A' has non-zero advance");
 	ok( $z->[1] == 0, "joined 'acute' has zero advance");
 
-	# ff may be a ligatiure, but that's not essential -
+	# ff may be a ligature, but that's not essential -
 	# the main interest here to see that ZWNJ is indeed ZW
 	$z = $w-> text_shape( "f\x{200c}f" )->advances;
 	ok( $z->[0] != 0, "'f' has non-zero advance");
