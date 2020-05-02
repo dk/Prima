@@ -183,9 +183,10 @@ extern void  apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanli
 if ( fi-> eventMask & IMG_EVENTS_HEADER_READY) \
 	apc_img_notify_header_ready((fi))
 
-#define EVENT_SCANLINES_RESET(fi) \
+#define EVENT_SCANLINES_RESET(fi) {\
 (fi)-> lastEventScanline = (fi)-> lastCachedScanline = 0; \
-gettimeofday( &(fi)-> lastEventTime, nil)
+gettimeofday( &(fi)-> lastEventTime, nil);\
+}
 
 #define EVENT_SCANLINES_READY(fi,scanlines,dir) \
 if ( (fi)-> eventMask & IMG_EVENTS_DATA_READY) \
