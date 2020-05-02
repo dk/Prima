@@ -91,10 +91,10 @@ gp_get_text_overhangs( Handle self, const char *text, int len, int flags)
 	Point ret;
 	if ( len > 0) {
 		XCharStruct * cs;
-		cs = prima_char_struct( XX-> font-> fs, (void*) text, flags);
+		cs = prima_char_struct( XX-> font-> fs, (void*) text, flags & (toUTF8 | toGlyphs));
 		ret. x = ( cs-> lbearing < 0) ? - cs-> lbearing : 0;
 		text += (len - 1) * ((flags & (toUTF8 | toGlyphs)) ? 2 : 1);
-		cs = prima_char_struct( XX-> font-> fs, (void*) text, flags);
+		cs = prima_char_struct( XX-> font-> fs, (void*) text, flags & (toUTF8 | toGlyphs));
 		ret. y = (( cs-> width - cs-> rbearing) < 0) ? cs-> rbearing - cs-> width : 0;
 	} else
 		ret. x = ret. y = 0;
