@@ -491,8 +491,11 @@ sub on_keydown
 			substr( $cap, $p_start, $p_end - $p_start) = '';
 			$self-> charOffset($self->{glyphs}->index2cluster($p_start));
 			$self-> edit_text( $cap);
+			local $self->{insertMode} = 1;
+			$self-> handle_input($chr);
+		} else {
+			$self-> handle_input($chr);
 		}
-		$self-> handle_input($chr);
 		$self-> selection(0,0);
 		$self-> clear_event;
 		$self-> end_undo_group;
