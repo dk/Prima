@@ -14,7 +14,7 @@ and, in lesser extent, of standard find/replace dialogs.
 use strict;
 use warnings;
 
-use Prima qw(Edit Application MsgBox StdDlg);
+use Prima qw(Edit Application MsgBox Dialog::FileDialog Dialog::FindDialog Dialog::FontDialog);
 
 package Indicator;
 use vars qw(@ISA);
@@ -301,9 +301,9 @@ sub save_as
 		next SAVE unless open FILE, '>'.($self-> {utf8} ? 'utf8' : ''), $fn;
 		my $cap = $self-> {editor}-> text;
 		Encode::_utf8_off($cap) if !$self-> {utf8};
-		my $swr = syswrite(FILE,$cap,length($cap));
+		my $swr = print FILE $cap;
 		close FILE;
-		unless (defined $swr && $swr==length($cap)) {
+		unless ($swr) {
 			undef $cap;
 			unlink $fn;
 			next SAVE;
@@ -342,7 +342,7 @@ sub find_dialog
 	my @props = qw(findText options scope);
 	push( @props, q(replaceText)) unless $findStyle;
 	if ( $fd) { for( @props) { $prf{$_} = $fd-> {$_}}}
-	$findDialog = Prima::FindDialog-> create unless $findDialog;
+	$findDialog = Prima::Dialog::FindDialog-> create unless $findDialog;
 	$findDialog-> set( %prf, findStyle => $findStyle);
 	$findDialog-> Find-> items($fd-> {findItems});
 	$findDialog-> Replace-> items($fd-> {replaceItems}) unless $findStyle;
@@ -425,7 +425,7 @@ my $fontDialog;
 sub setfont
 {
 	my $self = $_[0];
-	$fontDialog = Prima::FontDialog-> create() unless $fontDialog;
+	$fontDialog = Prima::Dialog::FontDialog-> create() unless $fontDialog;
 	$fontDialog-> logFont( $self-> font);
 	return unless $fontDialog-> execute;
 	$self-> font( $fontDialog-> logFont);

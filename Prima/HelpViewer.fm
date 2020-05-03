@@ -5,7 +5,7 @@ sub
 	return (
 	'LinkColor' => {
 		class   => 'Prima::ColorComboBox',
-		module  => 'Prima::ColorDialog',
+		module  => 'Prima::Dialog::ColorDialog',
 		profile => {
 			origin => [ 5, 57],
 			name => 'LinkColor',
@@ -31,7 +31,7 @@ sub
 	}},
 	'CodeColor' => {
 		class   => 'Prima::ColorComboBox',
-		module  => 'Prima::ColorDialog',
+		module  => 'Prima::Dialog::ColorDialog',
 		profile => {
 			origin => [ 6, 12],
 			name => 'CodeColor',

@@ -470,7 +470,7 @@ See L<Prima::Utils/query_drive_type>
 
 =head2 fdo:: - find / replace dialog options
 
-See L<Prima::EditDialog>
+See L<Prima::FindDialog>
 
 	fdo::MatchCase
 	fdo::WordsOnly
@@ -480,7 +480,7 @@ See L<Prima::EditDialog>
 
 =head2 fds:: - find / replace dialog scope type
 
-See L<Prima::EditDialog>
+See L<Prima::FindDialog>
 
 	fds::Cursor
 	fds::Top
@@ -888,6 +888,7 @@ See also L<Prima::Window/modalResult>, L<Prima::Button/modalResult>.
 	mb::OKCancel, mb::OkCancel
 	mb::YesNo
 	mb::YesNoCancel
+	mb::ChangeAll
 
 =item Message box icon and bell constants
 

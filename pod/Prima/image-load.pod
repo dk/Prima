@@ -342,7 +342,7 @@ default. 'autoConvert' can be present in image 'extras' structures.
 With autoConvert set it is guaranteed that image will be saved, but original image
 information may be lost. With autoConvert unset, no information will be lost,
 but Prima may signal an error. Therefore general-purpose save routines should
-be planned carefully. As an example the Prima::ImageDialog::SaveImageDialog
+be planned carefully. As an example the C<Prima::Dialog::ImageDialog::SaveImageDialog>
 code might be useful.
 
 When the conversion takes place, Image property 'conversion' is used
@@ -412,7 +412,7 @@ Specify a perl module, usually inside Prima/Image directory into Prima distribut
 and a package inside the module. The package contains some specific functions
 for work with codec-specific parameters. Current implementation defines
 only ::save_dialog() function, that returns a dialog that allows to change
-these parameters. See Prima::ImageDialog::SaveImageDialog for details.
+these parameters. See C<Prima::Dialog::ImageDialog::SaveImageDialog> for details.
 Strings, undefined if empty.
 
 =item canLoad

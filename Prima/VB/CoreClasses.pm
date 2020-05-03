@@ -36,7 +36,7 @@ sub classes
 			icon   => 'VB::classes.gif:16',
 		},
 		'Prima::DirectoryListBox' => {
-			RTModule => 'Prima::FileDialog',
+			RTModule => 'Prima::Dialog::FileDialog',
 			class  => 'Prima::VB::DirectoryListBox',
 			page   => 'Additional',
 			icon   => 'VB::classes.gif:6',
@@ -78,13 +78,13 @@ sub classes
 			icon     => 'VB::classes.gif:3',
 		},
 		'Prima::DriveComboBox' => {
-			RTModule => 'Prima::FileDialog',
+			RTModule => 'Prima::Dialog::FileDialog',
 			class  => 'Prima::VB::DriveComboBox',
 			page   => 'Additional',
 			icon   => 'VB::classes.gif:5',
 		},
 		'Prima::ColorComboBox' => {
-			RTModule => 'Prima::ColorDialog',
+			RTModule => 'Prima::Dialog::ColorDialog',
 			class  => 'Prima::VB::ColorComboBox',
 			page   => 'Additional',
 			icon   => 'VB::classes.gif:1',

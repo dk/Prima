@@ -234,6 +234,12 @@ Prima/Drawable/Markup.pm
 Prima/Drawable/Path.pm
 Prima/Drawable/Subcanvas.pm
 Prima/Drawable/TextBlock.pm
+Prima/Dialog/ColorDialog.pm
+Prima/Dialog/FileDialog.pm
+Prima/Dialog/FindDialog.pm
+Prima/Dialog/FontDialog.pm
+Prima/Dialog/ImageDialog.pm
+Prima/Dialog/PrintDialog.pm
 Prima/Edit.pm
 Prima/EditDialog.pm
 Prima/EventHook.pm

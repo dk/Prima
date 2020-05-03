@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use subs qw(reset);
-use Prima qw(Application ColorDialog Label Buttons Sliders);
+use Prima qw(Application Dialog::ColorDialog Label Buttons Sliders);
 
 my $w = Prima::MainWindow->new(
 	size => [ 400, 300 ],

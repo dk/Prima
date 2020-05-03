@@ -354,6 +354,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima::ImageDialog>.
+L<Prima::Dialog::ImageDialog>.
 
 =cut

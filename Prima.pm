@@ -383,23 +383,21 @@ L<Prima::Themes> - widget themes manager
 
 =item Standard dialogs
 
-L<Prima::ColorDialog> - color selection facilities
+L<Prima::Dialog::ColorDialog> - color selection facilities
 
-L<Prima::EditDialog> - find and replace dialogs
+L<Prima::Dialog::FindDialog> - find and replace dialogs
 
-L<Prima::FileDialog> - file system related widgets and dialogs
+L<Prima::Dialog::FileDialog> - file system related widgets and dialogs
 
-L<Prima::FontDialog> - font dialog
+L<Prima::Dialog::FontDialog> - font dialog
 
-L<Prima::ImageDialog> - image file open and save dialogs
+L<Prima::Dialog::ImageDialog> - image file open and save dialogs
 
 L<Prima::Image::TransparencyControl> - transparent color index selection
 
 L<Prima::MsgBox> - message and input dialog boxes
 
-L<Prima::PrintDialog> - standard printer setup dialog
-
-L<Prima::StdDlg> - wrapper module to the toolkit standard dialogs
+L<Prima::Dialog::PrintDialog> - standard printer setup dialog
 
 =item Drawing helpers
 

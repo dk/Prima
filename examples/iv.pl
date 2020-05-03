@@ -38,7 +38,7 @@ Note the mouse wheel interaction.
 
 use strict;
 use warnings;
-use Prima qw(ImageViewer StdDlg MsgBox);
+use Prima qw(ImageViewer Dialog::ImageDialog MsgBox);
 use Prima::Application name => "IV";
 
 my $ico = Prima::Icon-> create;
@@ -151,7 +151,7 @@ my $imgdlg;
 sub create_image_dialog
 {
 	return $imgdlg if $imgdlg;
-	$imgdlg  = Prima::ImageOpenDialog-> create();
+	$imgdlg  = Prima::Dialog::ImageOpenDialog-> create();
 }
 
 sub fdopen
@@ -252,7 +252,7 @@ sub fsave
 sub fsaveas
 {
 	my $iv = $_[0]-> IV;
-	my $dlg  = Prima::ImageSaveDialog-> create( image => $iv-> image);
+	my $dlg  = Prima::Dialog::ImageSaveDialog-> create( image => $iv-> image);
 	$iv-> {fileName} = $dlg-> fileName if $dlg-> save( $iv-> image);
 	$dlg-> destroy;
 }

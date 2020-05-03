@@ -92,7 +92,7 @@ sub classes
 		icon     => 'VB::classes.gif:6',
 		page     => 'Additional',
 		class    => 'Prima::VB::DirectoryListBox',
-		RTModule => 'Prima::FileDialog',
+		RTModule => 'Prima::Dialog::FileDialog',
 		module   => 'Prima::VB::CoreClasses',
 	},
 	'Prima::ComboBox' => {
@@ -155,7 +155,7 @@ sub classes
 		icon     => 'VB::classes.gif:1',
 		page     => 'Additional',
 		class    => 'Prima::VB::ColorComboBox',
-		RTModule => 'Prima::ColorDialog',
+		RTModule => 'Prima::Dialog::ColorDialog',
 		module   => 'Prima::VB::CoreClasses',
 	},
 	'Prima::Slider' => {
@@ -232,7 +232,7 @@ sub classes
 		icon     => 'VB::classes.gif:5',
 		page     => 'Additional',
 		class    => 'Prima::VB::DriveComboBox',
-		RTModule => 'Prima::FileDialog',
+		RTModule => 'Prima::Dialog::FileDialog',
 		module   => 'Prima::VB::CoreClasses',
 	},
 	'Prima::SpinButton' => {

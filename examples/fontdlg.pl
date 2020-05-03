@@ -28,7 +28,7 @@ use warnings;
 use Carp;
 use Prima;
 use Prima::Application name => "Font Dialog";
-use Prima qw(Lists Sliders Buttons FileDialog);
+use Prima qw(Lists Sliders Buttons Dialog::FileDialog);
 use Encode;
 
 # try to use perl5.8 glyph names
@@ -758,7 +758,7 @@ $w-> insert( Button =>
 	name   => 'Load',
 	font   => { height => 20 * $scaling },
 	onClick   => sub {
-		my $d = Prima::FileDialog-> new;
+		my $d = Prima::Dialog::FileDialog-> new;
 		my $f = $d->execute;
 		return unless defined $f;
 		my $error = '';

@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use utf8;
-use Prima qw(Label InputLine Buttons Application PodView Edit FontDialog);
+use Prima qw(Label InputLine Buttons Application PodView Edit Dialog::FontDialog);
 
 my $w;
 my $pod;
@@ -27,7 +27,7 @@ $w = Prima::MainWindow-> create(
 				$pod->format(1);
 			} ],
 			[ "~Set font" => sub {
-				$font_dialog //= Prima::FontDialog-> create(logFont => $w->font);
+				$font_dialog //= Prima::Dialog::FontDialog-> create(logFont => $w->font);
 				$w->font($font_dialog-> logFont) if $font_dialog-> execute == mb::OK;
 			} ],
 		]],

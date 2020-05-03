@@ -1716,7 +1716,7 @@ sub on_layoutchanged
 
 package main;
 
-use Prima qw(Application StdBitmap ColorDialog FontDialog Buttons);
+use Prima qw(Application StdBitmap Dialog::ColorDialog Dialog::FontDialog Buttons);
 
 my ( $colordialog, $logo, $bitmap, $fontdialog);
 
@@ -1892,7 +1892,7 @@ sub set_color
 	my ( $self, $property) = @_;
 	my $obj;
 	return unless $obj = $self-> Canvas-> focused_object;
-	$colordialog = Prima::ColorDialog-> create unless $colordialog;
+	$colordialog = Prima::Dialog::ColorDialog-> create unless $colordialog;
 	$colordialog-> value( $obj-> $property());
 	$obj-> $property( $colordialog-> value) if $colordialog-> execute != mb::Cancel;
 }
@@ -1902,7 +1902,7 @@ sub set_font
 	my ( $self, $property) = @_;
 	my $obj;
 	return unless $obj = $self-> Canvas-> focused_object;
-	$fontdialog = Prima::FontDialog-> create unless $fontdialog;
+	$fontdialog = Prima::Dialog::FontDialog-> create unless $fontdialog;
 	$fontdialog-> logFont( $obj-> font);
 	$obj-> font( $fontdialog-> logFont) if $fontdialog-> execute != mb::Cancel;
 }

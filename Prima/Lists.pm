@@ -1996,7 +1996,7 @@ stores an array of text scalars in a widget. More elaborated storage
 and representation types are not realized, and the programmer is urged
 to use the more abstract classes to derive own mechanisms.
 For example, for a list of items that contain text strings and icons
-see L<Prima::FileDialog/"Prima::DirectoryListBox">.
+see L<Prima::Dialog::FileDialog/"Prima::DirectoryListBox">.
 To organize an item storage, different from C<Prima::ListBox>, it is
 usually enough to overload either the C<Stringify>, C<MeasureItem>,
 and C<DrawItem> events, or their method counterparts: C<get_item_text>,
@@ -2448,6 +2448,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, L<Prima::ComboBox>, L<Prima::FileDialog>, F<examples/editor.pl>
+L<Prima>, L<Prima::Widget>, L<Prima::ComboBox>, L<Prima::Dialog::FileDialog>, F<examples/editor.pl>
 
 =cut

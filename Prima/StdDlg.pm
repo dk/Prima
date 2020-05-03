@@ -1,3 +1,5 @@
+warn("Warning: Prima::StdDlg is deprecated. Use Prima::Dialog:: modules instead\n");
+
 #  Created by:
 #     Anton Berezin  <tobez@tobez.org>
 #     Dmitry Karasik <dk@plab.ku.dk>
@@ -65,40 +67,6 @@ sub AUTOLOAD
 	shift-> $method(@_);
 }
 
-package Prima;
-
-my ($openFileDlg, $saveFileDlg);
-
-my @fileDlgProps = qw( defaultExt fileName filter filterIndex
-directory createPrompt multiSelect noReadOnly noTestFileCreate overwritePrompt
-pathMustExist fileMustExist sorted showDotFiles);
-
-sub open_file
-{
-	my %profile = @_;
-	$openFileDlg = Prima::OpenDialog-> create(
-		system => exists($profile{system}) ? $profile{system} : 1,
-		onDestroy => sub { undef $openFileDlg},
-	) unless $openFileDlg;
-	delete $profile{system};
-	my %a = %{$openFileDlg-> profile_default};
-	$openFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
-	return $openFileDlg-> execute;
-}
-
-sub save_file
-{
-	my %profile = @_;
-	$saveFileDlg = Prima::SaveDialog-> create(
-		system => exists($profile{system}) ? $profile{system} : 1,
-		onDestroy => sub { undef $saveFileDlg},
-	) unless $saveFileDlg;
-	delete $profile{system};
-	my %a = %{$saveFileDlg-> profile_default};
-	$saveFileDlg-> set(( map { $_ => $a{$_}} @fileDlgProps), %profile);
-	return $saveFileDlg-> execute;
-}
-
 package Prima::ChDirDialog;
 
 sub AUTOLOAD
@@ -110,11 +78,6 @@ sub AUTOLOAD
 	eval "use Prima::FileDialog"; die "$@\n" if $@;
 	shift-> $method(@_);
 }
-
-package
-    mb;
-
-use constant ChangeAll => 0xCA11;
 
 package Prima::FindDialog;
 
@@ -176,9 +139,12 @@ sub AUTOLOAD
 
 =head1 NAME
 
-Prima::StdDlg - wrapper module to the toolkit standard dialogs
+Prima::StdDlg - [DEPRECATED] wrapper module to the toolkit standard dialogs
 
 =head1 DESCRIPTION
+
+This module is deprecated and is on the way out. Use standard dialogs by using
+individual modules in C<Prima::Dialog::> namespace.
 
 Provides a unified access to the toolkit dialogs, so there is
 no need to C<use> the corresponding module explicitly.

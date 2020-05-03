@@ -12,7 +12,7 @@ Demonstration and test of mouse_event() function usage.
 
 use strict;
 use warnings;
-use Prima qw(Buttons MsgBox StdDlg Application);
+use Prima qw(Buttons MsgBox Dialog::FileDialog Application);
 
 my $state = 'empty';
 my $wtx   = 'Macros';

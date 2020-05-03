@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Prima::Classes;
 use Prima::Lists;
+use Prima::Dialog::FindDialog;
 
 package Prima::VB::Divider;
 use strict;
@@ -423,7 +424,7 @@ sub find_dialog
 	my @props = qw(findText options scope);
 	push( @props, q(replaceText)) unless $findStyle;
 	if ( $fd) { for( @props) { $prf{$_} = $fd-> {$_}}}
-	$findDialog = Prima::FindDialog-> create unless $findDialog;
+	$findDialog = Prima::Dialog::FindDialog-> create unless $findDialog;
 	$findDialog-> set( %prf, findStyle => $findStyle, text => ($findStyle ? 'Find' : 'Replace'));
 	$findDialog-> Find-> items($fd-> {findItems});
 	$findDialog-> Replace-> items($fd-> {replaceItems}) unless $findStyle;

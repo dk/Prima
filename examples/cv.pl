@@ -14,9 +14,9 @@ compbinations of Shift,Alt,and Control.
 
 use strict;
 use warnings;
-use Prima 'StdDlg', 'Application';
+use Prima 'Dialog::ColorDialog', 'Application';
 
-my $p = Prima::ColorDialog-> create(
+my $p = Prima::Dialog::ColorDialog-> create(
 	value => 0x3030F0,
 	visible => 1,
 	quality => 1,

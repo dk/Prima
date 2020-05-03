@@ -18,7 +18,7 @@ use warnings;
 
 use Prima;
 use Prima::Classes;
-use Prima::StdDlg;
+use Prima::Dialog::FileDialog;
 
 my $dlg;
 my $closeAction = 0;
@@ -26,7 +26,7 @@ my $myApp;
 
 package MyOpenDialog;
 use vars qw( @ISA);
-@ISA = qw( Prima::OpenDialog);
+@ISA = qw( Prima::Dialog::OpenDialog);
 
 sub ok
 {
