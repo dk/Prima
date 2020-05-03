@@ -699,17 +699,16 @@ UpdateLayeredWindow(
 #endif
 
 #ifndef MUI_LANGUAGE_NAME
-
 #define MUI_LANGUAGE_NAME 0x8
 #define MUI_COMPLEX_SCRIPT_FILTER 0x200
+#endif
 
-WINBASEAPI WINBOOL WINAPI
-GetUserPreferredUILanguages(
+BOOL
+my_GetUserPreferredUILanguages(
 	DWORD dwFlags, PULONG pulNumLanguages,
 	PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer
 );
 
-#endif
 
 #ifdef __cplusplus
 }
