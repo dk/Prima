@@ -98,6 +98,18 @@ static HRESULT (__stdcall *SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS)  = NUL
 static HRESULT (__stdcall *GetDpiForMonitor)(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*) = NULL;
 static HRESULT (__stdcall *DwmEnableBlurBehindWindow)(HWND hWnd, const DWM_BLURBEHIND *pBlurBehind) = NULL;
 static HRESULT (__stdcall *DwmIsCompositionEnabled)(BOOL *pfEnabled) = NULL;
+static BOOL    (__stdcall *GetUserPreferredUILanguages)(DWORD dwFlags, PULONG pulNumLanguages, PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer) = NULL;
+
+BOOL
+my_GetUserPreferredUILanguages(
+	DWORD dwFlags, PULONG pulNumLanguages,
+	PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer
+) {
+	if ( GetUserPreferredUILanguages == NULL) 
+		return false;
+	return GetUserPreferredUILanguages(dwFlags, pulNumLanguages, pwszLanguagesBuffer, pcchLanguagesBuffer);
+}
+
 
 void
 dpi_change(void)
@@ -273,10 +285,14 @@ window_subsystem_init( char * error_buf)
 	/* Win7 DWM */
 #define LOAD_FUNC(m,f) load_function(m, (void**) &f, #f)
 	if ( os.dwMajorVersion >= 5) {
-		HMODULE dwm = LoadLibrary("DWMAPI.DLL");
-		if ( dwm ) {
-			LOAD_FUNC(dwm, DwmEnableBlurBehindWindow);
-			LOAD_FUNC(dwm, DwmIsCompositionEnabled);
+		HMODULE mod = LoadLibrary("DWMAPI.DLL");
+		if ( mod ) {
+			LOAD_FUNC(mod, DwmEnableBlurBehindWindow);
+			LOAD_FUNC(mod, DwmIsCompositionEnabled);
+		}
+		mod = LoadLibrary("KERNEL32.DLL");
+		if ( mod ) {
+			LOAD_FUNC(mod, GetUserPreferredUILanguages);
 		}
 	}
 

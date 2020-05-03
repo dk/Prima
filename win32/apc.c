@@ -140,7 +140,7 @@ apc_application_get_gui_info( char * description, int len1, char * language, int
 	if ( language ) {
 		ULONG n_lang, n_words = 128;
 		WORD buffer[128];
-		if ( GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &n_lang, buffer, &n_words)) {
+		if ( my_GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &n_lang, buffer, &n_words)) {
 			if ( len2 < n_words ) n_words = len2;
 			wchar2char( language, buffer, n_words );
 		} else
