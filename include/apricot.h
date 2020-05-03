@@ -886,6 +886,8 @@ MB(Information)
 MB(Question)
 #define mbNoSound       0x1000
 MB(NoSound)
+#define mbChangeAll     0xCA11
+MB(ChangeAll)
 END_TABLE(mb,UV)
 #undef MB
 #undef MB2

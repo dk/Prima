@@ -14,7 +14,7 @@ is idle under *nix )
 use strict;
 use warnings;
 use Prima::ComboBox;
-use Prima::FileDialog;
+use Prima::Dialog::FileDialog;
 
 package UserInit;
 $::application = Prima::Application-> create( name => "DriveCombo");

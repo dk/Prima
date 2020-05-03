@@ -11,7 +11,7 @@ color selection, and, mainly, non-standart L<Prima::ImageViewer>
 usage.
 
 Using L<Prima::Classes>, L<Prima::ScrollWidget>, L<Prima::Application>,
-L<Prima::ColorDialog>, L<Prima::ImageViewer>.
+L<Prima::Dialog::ColorDialog>, L<Prima::ImageViewer>.
 
 =cut
 
@@ -22,7 +22,7 @@ use Prima;
 use Prima::Classes;
 use Prima::ScrollWidget;
 use Prima::Application;
-use Prima::ColorDialog;
+use Prima::Dialog::ColorDialog;
 use Prima::ImageViewer;
 
 package ImageEdit::Painter;
@@ -172,7 +172,7 @@ sub on_mouseclick
 	$index += int(( $x - 1) / $cdx);
 	my $d = $self-> {colorDlg} ?
 		$self-> {colorDlg} :
-		Prima::ColorDialog-> create(
+		Prima::Dialog::ColorDialog-> create(
 			centered => 1,
 			visible  => 0,
 			name     => 'Edit color',

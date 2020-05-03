@@ -918,7 +918,7 @@ C<Prima::Image>-specific events occur only from inside L<load> call, to report
 image loading progress. Not all codecs (currently JPEG,PNG,TIFF only) are able
 to report the progress to the caller. See L<Prima::image-load/"Loading with
 progress indicator"> for details, L<Prima::ImageViewer/watch_load_progress> and
-L<Prima::ImageDialog/load> for suggested use.
+L<Prima::Dialog::ImageDialog/load> for suggested use.
 
 =over
 

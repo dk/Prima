@@ -303,8 +303,8 @@ Prima::sys::gtk::FileDialog - GTK file system dialogs.
 
 =head1 DESCRIPTION
 
-The module mimics Prima file dialog classes C<Prima::OpenDialog> and
-C<Prima::SaveDialog>, defined in L<Prima::FileDialog>. The class names
+The module mimics Prima file dialog classes C<Prima::Dialog::OpenDialog> and
+C<Prima::Dialog::SaveDialog>, defined in L<Prima::Dialog::FileDialog>. The class names
 registered in the module are the same, but in C<Prima::sys::gtk> namespace.
 
 =head1 AUTHOR
@@ -313,7 +313,7 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima::FileDialog>
+L<Prima::Dialog::FileDialog>
 
 =cut
 

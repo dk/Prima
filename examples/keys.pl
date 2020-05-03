@@ -24,7 +24,7 @@ use warnings;
 use Prima;
 use Prima::Buttons;
 use Prima::Label;
-use Prima::FontDialog;
+use Prima::Dialog::FontDialog;
 use Prima::Application;
 
 my $propagate = 1;
@@ -43,7 +43,7 @@ my $w = Prima::MainWindow-> create(
 		],
 		[],
 		["Set ~font..." => "Ctrl+F" => '^F' => sub {
-			my $d =  $fontDialog ? $fontDialog : Prima::FontDialog-> create(
+			my $d =  $fontDialog ? $fontDialog : Prima::Dialog::FontDialog-> create(
 				logFont => $_[0]-> Label1-> font,
 			);
 			$fontDialog = $d;

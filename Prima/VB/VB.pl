@@ -1,6 +1,8 @@
 use strict;
 use warnings;
-use Prima qw(StdDlg Notebooks MsgBox ComboBox FontDialog ColorDialog IniFile Utils RubberBand KeySelector);
+use Prima qw(Notebooks MsgBox ComboBox
+Dialog::FontDialog Dialog::ColorDialog Dialog::FileDialog Dialog::ImageDialog
+IniFile Utils RubberBand KeySelector);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;
@@ -53,7 +55,7 @@ my $fontDlg;
 sub open_dialog
 {
 	my %profile = @_;
-	$openFileDlg = Prima::OpenDialog-> create(
+	$openFileDlg = Prima::Dialog::OpenDialog-> create(
 		icon => $VB::ico,
 		directory => $VB::main-> {ini}-> {OpenPath},
 		system => 1,
@@ -65,7 +67,7 @@ sub open_dialog
 sub save_dialog
 {
 	my %profile = @_;
-	$saveFileDlg = Prima::SaveDialog-> create(
+	$saveFileDlg = Prima::Dialog::SaveDialog-> create(
 		icon => $VB::ico,
 		directory => $VB::main-> {ini}-> {SavePath},
 		system => 1,
@@ -77,7 +79,7 @@ sub save_dialog
 sub image_open_dialog
 {
 	my %profile = @_;
-	$openImageDlg = Prima::ImageOpenDialog-> create(
+	$openImageDlg = Prima::Dialog::ImageOpenDialog-> create(
 		icon => $VB::ico,
 		directory => $VB::main-> {ini}-> {OpenPath},
 	) unless $openImageDlg;
@@ -88,7 +90,7 @@ sub image_open_dialog
 sub image_save_dialog
 {
 	my %profile = @_;
-	$saveImageDlg = Prima::ImageSaveDialog-> create(
+	$saveImageDlg = Prima::Dialog::ImageSaveDialog-> create(
 		icon => $VB::ico,
 		directory => $VB::main-> {ini}-> {SavePath},
 	) unless $saveImageDlg;
@@ -99,7 +101,7 @@ sub image_save_dialog
 sub font_dialog
 {
 	my %profile = @_;
-	$fontDlg = Prima::FontDialog-> create(
+	$fontDlg = Prima::Dialog::FontDialog-> create(
 		icon => $VB::ico,
 		name => 'Select font',
 	) unless $fontDlg;
@@ -2427,7 +2429,7 @@ sub bring_font_dialog
 	if ( $VB::font_dialog) {
 		$VB::font_dialog-> restore if $VB::font_dialog-> windowState == ws::Minimized;
 	} else {
-		$VB::font_dialog = Prima::FontDialog-> new(
+		$VB::font_dialog = Prima::Dialog::FontDialog-> new(
 			borderIcons => bi::All & ~bi::Maximize,
 			taskListed  => 1,
 			onDestroy   => sub { $VB::font_dialog = undef },
@@ -2453,7 +2455,7 @@ sub bring_color_dialog
 	if ( $VB::color_dialog) {
 		$VB::color_dialog-> restore if $VB::color_dialog-> windowState == ws::Minimized;
 	} else {
-		$VB::color_dialog = Prima::ColorDialog-> new(
+		$VB::color_dialog = Prima::Dialog::ColorDialog-> new(
 			borderIcons => bi::All & ~bi::Maximize,
 			taskListed  => 1,
 			onDestroy => sub { $VB::color_dialog = undef },

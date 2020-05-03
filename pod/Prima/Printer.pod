@@ -77,7 +77,7 @@ Typical code that prints the document looks like
       print "failed:$@\n";
    }
 
-In addition, a standard package I<Prima::PrintDialog> can be recommended
+In addition, a standard package I<Prima::Dialog::PrintDialog> can be recommended
 so the user can select a printer device and adjust its setup interactively.
 
 =head1 API

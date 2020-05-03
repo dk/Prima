@@ -49,6 +49,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima::FileDialog>
+L<Prima::Dialog::FileDialog>
 
 =cut

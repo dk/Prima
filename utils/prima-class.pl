@@ -313,7 +313,7 @@ while ( my ( $class, $inh) = each %ascendants) {
 $class_priority{'Prima::Object'} = 2;
 $class_priority{'Prima::Widget'} = 1;
 $pods{'Prima::AbstractMenu'} = $pods{'Prima::Menu'};
-$pods{'Prima::ReplaceDialog'} = $pods{'Prima::FindDialog'};
+$pods{'Prima::Dialog::ReplaceDialog'} = $pods{'Prima::Dialog::FindDialog'};
 
 my $prio = 3;
 my %processed_classes;

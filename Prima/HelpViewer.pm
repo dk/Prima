@@ -4,9 +4,10 @@ use Prima;
 use Prima::PodView;
 use Prima::Buttons;
 use Prima::InputLine;
-use Prima::StdDlg;
 use Prima::IniFile;
 use Prima::Utils;
+use Prima::Dialog::FileDialog;
+use Prima::Dialog::PrintDialog;
 
 package Prima::HelpViewer;
 use vars qw(@helpWindows $windowClass);
@@ -607,7 +608,7 @@ sub find_dialog
 	my $fd = $self-> {findData};
 	my @props = qw(findText options scope);
 	if ( $fd) { for( @props) { $prf{$_} = $fd-> {$_}}}
-	$finddlg = Prima::FindDialog-> create( text => 'Find text') unless $finddlg;
+	$finddlg = Prima::Dialog::FindDialog-> create( text => 'Find text') unless $finddlg;
 	$finddlg-> set( %prf);
 	$finddlg-> Find-> items($fd-> {findItems});
 	my $ret = 0;
@@ -821,7 +822,7 @@ sub print
 
 	$self-> fastfind_close;
 
-	$prndlg = Prima::PrintDialog-> create unless $prndlg;
+	$prndlg = Prima::Dialog::PrintDialog-> create unless $prndlg;
 	return unless $prndlg-> execute;
 
 	my $p = $::application-> get_printer;

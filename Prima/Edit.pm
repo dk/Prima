@@ -3467,7 +3467,7 @@ Stops the block selection session.
 Tries to find ( and, if REPLACE_LINE is defined, to replace with it )
 SEARCH_STRING from (X,Y) visual coordinates. OPTIONS is an integer
 that consists of the C<fdo::> constants; the same constants are used
-in L<Prima::EditDialog>, which provides graphic interface to the find and replace
+in L<Prima::Dialog::FindDialog>, which provides graphic interface to the find and replace
 facilities of L<Prima::Edit>.
 
 Returns X1, Y, X2, NEW_STRING where X1.Y-X2.Y are visual coordinates of
@@ -3493,7 +3493,7 @@ If set, the search direction is backwards.
 
 =item fdo::ReplacePrompt
 
-Not used in the class, however, used in L<Prima::EditDialog>.
+Not used in the class, however, used in L<Prima::Dialog::FindDialog>.
 
 =back
 
@@ -3647,6 +3647,6 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::Widget>, L<Prima::EditDialog>, L<Prima::IntUtils>, F<examples/editor.pl>
+L<Prima>, L<Prima::Widget>, L<Prima::Dialog::FindDialog>, L<Prima::IntUtils>, F<examples/editor.pl>
 
 =cut

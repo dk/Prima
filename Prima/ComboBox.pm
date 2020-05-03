@@ -872,7 +872,7 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>, L<Prima::InputLine>, L<Prima::Lists>, L<Prima::ColorDialog>, L<Prima::FileDialog>,
+L<Prima>, L<Prima::InputLine>, L<Prima::Lists>, L<Prima::Dialog::ColorDialog>, L<Prima::Dialog::FileDialog>,
 F<examples/listbox.pl>.
 
 =cut

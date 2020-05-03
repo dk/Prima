@@ -320,7 +320,7 @@ The class is applicable to any widget.
 
 =head2 Prima::Tie::value
 
-The class is applicable to C<Prima::GroupBox>, C<Prima::ColorDialog>,
+The class is applicable to C<Prima::GroupBox>, C<Prima::Dialog::ColorDialog>,
 C<Prima::SpinEdit>, C<Prima::Gauge>, C<Prima::Slider>, C<Prima::CircularSlider>,
 and C<Prima::ScrollBar>.
 
