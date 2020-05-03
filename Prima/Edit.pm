@@ -929,10 +929,15 @@ sub on_keydown
 		(( $mod  & (km::Alt | km::Ctrl)) == 0) &&
 		(( $key == kb::NoKey) || ( $key == kb::Space) || ( $key == kb::Tab))
 	) {
+		$self-> begin_undo_group;
+
+		my $block = $self-> has_selection;
+		$self-> delete_block if $block;
+
 		my @cs = $self-> cursor;
 		my $c  = $self-> get_line( $cs[1]);
 		my $l = 0;
-		$self-> begin_undo_group;
+
 		my $chr = chr $code;
 		my ($curpos, $advance);
 		utf8::upgrade($chr) if $mod & km::Unicode;
@@ -943,7 +948,7 @@ sub on_keydown
 		}
 		my $s = $self->get_shaped_chunk($cs[1]);
 		my ($new_text, $new_offset) = $self->handle_bidi_input(
-			action     => ($self->insertMode ? q(insert) : q(overtype)),
+			action     => (($block || $self->insertMode) ? q(insert) : q(overtype)),
 			at         => $cs[0],
 			input      => $chr x $repeat,
 			text       => $c,
@@ -951,7 +956,7 @@ sub on_keydown
 			glyphs     => $s,
 			n_clusters => $ll,
 		);
-		$self-> set_line( $cs[1], $new_text, ($self->insertMode ?
+		$self-> set_line( $cs[1], $new_text, (($block || $self->insertMode) ?
 			(q(add), $cs[0], $l + $repeat) : 
 			q(overtype)
 		));
