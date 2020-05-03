@@ -6,7 +6,7 @@ use Prima qw(Image::Animate);
 
 sub animation_to_frames
 {
-	my $a = Prima::Image::Animate::APNG->new(images => \@_);
+	my $a = Prima::Image::Animate::PNG->new(images => \@_);
 	my @ret;
 	for ( @_ ) {
 		$a->next;
