@@ -488,12 +488,11 @@ sub on_keydown
 		utf8::upgrade($chr) if $is_unicode;
 		my ($curpos, $advance);
 		if ( $p_start != $p_end) {
-			substr( $cap, $p_start, $p_end - $p_start) = $chr;
-			$self-> edit_text( $cap);
+			substr( $cap, $p_start, $p_end - $p_start) = '';
 			$self-> charOffset($self->{glyphs}->index2cluster($p_start));
-		} else {
-			$self-> handle_input($chr);
+			$self-> edit_text( $cap);
 		}
+		$self-> handle_input($chr);
 		$self-> selection(0,0);
 		$self-> clear_event;
 		$self-> end_undo_group;
