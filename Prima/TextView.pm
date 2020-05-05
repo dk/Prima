@@ -457,6 +457,7 @@ sub paint_selection
 			my ($vis_start, $vis_end) = (0,0);
 			my $x = $xy[0];
 			my $glyphs = $self-> text_shape($text);
+			$length = @{ $glyphs-> glyphs };
 			my $selection_map = $glyphs-> selection_map( $sx1, $sx2);
 			for ( my $i = 0; $i < $length; $i++) {
 				if ( $selection_map->[$i] != $self->{selectionPaintMode} ) {
@@ -692,9 +693,9 @@ sub xy2info
 					tw::ReturnFirstLineLength | tw::BreakSingle
 				);
 				my $indexes = $glyphs->indexes;
-				$ofs = $offset + ( $goffs >= $#$indexes ) ? 
-						($length - 1) : # shouldn't happen
-						($indexes->[$goffs] & ~to::RTL);
+				$ofs = $offset + (( $goffs >= $#$indexes ) ? 
+						($indexes-> [-1]) : # shouldn't happen
+						($indexes->[$goffs] & ~to::RTL));
 				$self-> block_walk_abort;
 			} else {
 				$ofs = $offset + $length - 1;
