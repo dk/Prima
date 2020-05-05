@@ -964,7 +964,7 @@ sub set_selection
 			my ( $s, $e ) = $self-> {glyphs}-> selection2range($start, $end - 1);
 			$self->{selTextStart} = $s;
 			$self->{selTextEnd}   = $e + 1;
-			$self->{selChunks} = $self->{glyphs}->selection_chunks($s,$e);
+			$self->{selChunks} = $self->{glyphs}->selection_chunks_clusters($s,$e);
 		}
 		$new_chunks = $self->{selChunks};
 	} else {

@@ -497,7 +497,20 @@ sub selection2range
 	return ($text_start, $text_end);
 }
 
-sub selection_map
+sub selection_map_glyphs
+{
+	my ( $self, $text_start, $text_end ) = @_;
+
+	my @selection_map;
+	my $indexes = $self->indexes;
+	for ( my $i = 0; $i < @$indexes; $i++) {
+		my $ix = $indexes->[$i] & ~to::RTL;
+		push @selection_map, ($ix >= $text_start && $ix <= $text_end) ? 1 : 0;
+	}
+	return \@selection_map;
+}
+
+sub selection_map_clusters
 {
 	my ( $self, $text_start, $text_end ) = @_;
 
@@ -509,7 +522,8 @@ sub selection_map
 	return \@selection_map;
 }
 
-sub selection_chunks { _map2chunks( selection_map( @_ )) }
+sub selection_chunks_clusters { _map2chunks( selection_map_clusters( @_ )) }
+sub selection_chunks_glyphs   { _map2chunks( selection_map_glyphs  ( @_ )) }
 
 sub selection_diff
 {
@@ -980,29 +994,30 @@ Second integer from the C<overhangs> result.
 
 Converts cluster selection range into text selection range
 
-=item selection_chunks $START, $END
+=item selection_chunks_clusters, selection_chunks_glyphs $START, $END
 
 Calculates a set of chunks of texts, that, given a text selection from
 positions C<$START> to C<$END>, represent each either a set of selected and
-non-selected clusters.
+non-selected clusters/glyphs.
 
 =item selection_diff $OLD, $NEW
 
-Given set of two chunk lists, in format as returned by C<selection_chunks>,
-calculates the list of chunks affected by the selection change. Can be used for
-efficient repaints when the user interactively changes text selection, to
-redraw only the changed regions.
+Given set of two chunk lists, in format as returned by
+C<selection_chunks_clusters> or C<selection_chunks_glyphs>, calculates the list
+of chunks affected by the selection change. Can be used for efficient repaints
+when the user interactively changes text selection, to redraw only the changed
+regions.
 
-=item selection_map $START, $END
+=item selection_map_clusters, selection_map_glyphs $START, $END
 
-Same as C<selection_chunks>, but instead of RLE chunks returns full array for each
-cluster, where each entry is a boolean value corresponding to whether that cluster is
+Same as C<selection_chunks_XXX>, but instead of RLE chunks returns full array for each
+cluster/glyph, where each entry is a boolean value corresponding to whether that cluster/glyph is
 to be displayed as selected, or not.
 
 =item selection_walk $CHUNKS, $FROM, $TO = length, $SUB
 
 Walks the selection chunks array, returned by C<selection_chunks>, between
-C<$FROM> and C<$TO> clusters, and for each chunk calls the provided C<<
+C<$FROM> and C<$TO> clusters/glyphs, and for each chunk calls the provided C<<
 $SUB->($offset, $length, $selected) >>, where each call contains 2 integers to
 chunk offset and length, and a boolean flag whether the chunk is selected or
 not.

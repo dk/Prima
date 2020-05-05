@@ -562,7 +562,7 @@ sub paint_selection
 	($sx1, $sx2) = ($sx2, $sx1) if $sx2 < $sx1;
 
 	my $glyphs = $self-> get_shaped_chunk($index);
-	my $chunks = $glyphs->selection_chunks($glyphs-> selection2range($sx1, $sx2));
+	my $chunks = $glyphs->selection_chunks_clusters($glyphs-> selection2range($sx1, $sx2));
 
 	my @cr = @$clipRect;
 	my $rx = $x;
