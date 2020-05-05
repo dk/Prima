@@ -353,7 +353,7 @@ build_wtext( PTextShapeRec t,
 	return true;
 }
 
-static void
+static unsigned int
 fill_null_glyphs( 
 	PTextShapeRec t, 
 	unsigned int char_pos, unsigned int itemlen, 
@@ -369,6 +369,9 @@ fill_null_glyphs(
 		nglyphs = p2 - p1 + 1;
 	} else
 		nglyphs = itemlen;
+#ifdef _DEBUG
+	printf("%d null glyphs, indexes: %x\n", nglyphs, t->indexes + t->n_glyphs);
+#endif
 	bzero( t->glyphs + t->n_glyphs, sizeof(uint16_t) * nglyphs);
 	for ( i = 0; i < nglyphs; i++)
 		t->indexes[ t->n_glyphs + i ] = i;
@@ -378,6 +381,7 @@ fill_null_glyphs(
 		bzero( t->positions + t->n_glyphs * 2, sizeof(uint16_t) * nglyphs * 2);
 	}
 	t-> n_glyphs += nglyphs;
+	return nglyphs;
 }
 
 static void
@@ -395,7 +399,7 @@ convert_indexes( Bool rtl, unsigned int char_pos, unsigned int itemlen, unsigned
 				else
 					break;
 			}
-			for ( ; last_glyph >= curr_glyph; last_glyph--) 
+			for ( ; last_glyph >= curr_glyph; last_glyph--)
 				out_indexes[last_glyph] = j + char_pos;
 			j += rlen - 1;
 		}
@@ -412,7 +416,7 @@ convert_indexes( Bool rtl, unsigned int char_pos, unsigned int itemlen, unsigned
 				else
 					break;
 			}
-			for ( ; last_glyph <= curr_glyph; last_glyph++) 
+			for ( ; last_glyph <= curr_glyph; last_glyph++)
 				out_indexes[last_glyph] = j + char_pos;
 			j += rlen - 1;
 		}
@@ -510,12 +514,13 @@ win32_unicode_shaper( Handle self, PTextShapeRec t)
 					if ( default_advance <= 0 )
 						default_advance = 1;
 				}
-				fill_null_glyphs(t, items[item].iCharPos, itemlen, surrogate_map, first_surrogate_pair, default_advance);
+				out_indexes += fill_null_glyphs(t, items[item].iCharPos, itemlen, surrogate_map, first_surrogate_pair, default_advance);
 				continue;
 			}
 			apiHErr(hr);
 			goto EXIT;
 		}
+		convert_indexes( items[item].a.fRTL, items[item].iCharPos, itemlen, nglyphs, indexes, out_indexes);
 #ifdef _DEBUG
 		{
 			int i;
@@ -536,8 +541,6 @@ win32_unicode_shaper( Handle self, PTextShapeRec t)
 			printf("\n");
 		}
 #endif
-
-		convert_indexes( items[item].a.fRTL, items[item].iCharPos, itemlen, nglyphs, indexes, out_indexes);
 
 		/* map from utf16 */
 		if ( surrogate_map ) {
