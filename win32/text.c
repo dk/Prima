@@ -354,8 +354,12 @@ build_wtext( PTextShapeRec t,
 }
 
 static void
-fill_null_glyphs( PTextShapeRec t, unsigned int char_pos, unsigned int itemlen, unsigned int * surrogate_map, unsigned int first_surrogate_pair)
-{
+fill_null_glyphs( 
+	PTextShapeRec t, 
+	unsigned int char_pos, unsigned int itemlen, 
+	unsigned int * surrogate_map, unsigned int first_surrogate_pair,
+	uint16_t advance
+) {
 	int i, nglyphs;
 	if ( surrogate_map ) {
 		int p1 = char_pos;
@@ -368,11 +372,12 @@ fill_null_glyphs( PTextShapeRec t, unsigned int char_pos, unsigned int itemlen, 
 	bzero( t->glyphs + t->n_glyphs, sizeof(uint16_t) * nglyphs);
 	for ( i = 0; i < nglyphs; i++)
 		t->indexes[ t->n_glyphs + i ] = i;
-	t-> n_glyphs += nglyphs;
 	if ( t->advances ) {
-		bzero( t->advances + t->n_glyphs, sizeof(uint16_t) * nglyphs);
-		bzero( t->positions + t->n_glyphs, sizeof(uint16_t) * nglyphs * 2);
+		for ( i = 0; i < nglyphs; i++)
+			t->advances[t-> n_glyphs + i] = advance;
+		bzero( t->positions + t->n_glyphs * 2, sizeof(uint16_t) * nglyphs * 2);
 	}
+	t-> n_glyphs += nglyphs;
 }
 
 static void
@@ -422,7 +427,7 @@ win32_unicode_shaper( Handle self, PTextShapeRec t)
 	Bool ok = false;
 	HRESULT hr;
 	WCHAR * wtext = NULL;
-	uint16_t * out_indexes;
+	uint16_t * out_indexes, default_advance = 0;
 	int i, item, item_step, nitems;
 	SCRIPT_CONTROL control;
 	SCRIPT_ITEM *items = NULL;
@@ -498,7 +503,14 @@ win32_unicode_shaper( Handle self, PTextShapeRec t)
 #ifdef _DEBUG
 				printf("USP_E_SCRIPT_NOT_IN_FONT\n");
 #endif
-				fill_null_glyphs(t, items[item].iCharPos, itemlen, surrogate_map, first_surrogate_pair);
+				if ( default_advance == 0 ) {
+					ABC abc;
+					if ( GetCharABCWidthsI( sys ps, 0, 1, NULL, &abc)) 
+						default_advance = abc.abcA + abc.abcB + abc.abcC;
+					if ( default_advance <= 0 )
+						default_advance = 1;
+				}
+				fill_null_glyphs(t, items[item].iCharPos, itemlen, surrogate_map, first_surrogate_pair, default_advance);
 				continue;
 			}
 			apiHErr(hr);
