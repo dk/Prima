@@ -645,9 +645,9 @@ Prima::Drawable::Glyphs - helper routines for bi-directional text input and comp
 
    use Prima;
    $::application-> begin_paint;
-   $::application-> text_shape_out('אפס123', 0,0);
+   ‭$::application-> text_shape_out('אפס123', 0,0);
 
-   123ספא
+   ‭123ספא
 
 =for latex-makedoc cut
 
