@@ -374,7 +374,7 @@ fill_null_glyphs(
 #endif
 	bzero( t->glyphs + t->n_glyphs, sizeof(uint16_t) * nglyphs);
 	for ( i = 0; i < nglyphs; i++)
-		t->indexes[ t->n_glyphs + i ] = i;
+		t->indexes[ t->n_glyphs + i ] = i + char_pos;
 	if ( t->advances ) {
 		for ( i = 0; i < nglyphs; i++)
 			t->advances[t-> n_glyphs + i] = advance;
