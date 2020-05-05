@@ -458,13 +458,13 @@ sub paint_selection
 			my $x = $xy[0];
 			my $glyphs = $self-> text_shape($text);
 			$length = @{ $glyphs-> glyphs };
-			my $selection_map = $glyphs-> selection_map( $sx1, $sx2);
+			my $selection_map = $glyphs-> selection_map( map { $_ - $offset } ($sx1, $sx2));
 			for ( my $i = 0; $i < $length; $i++) {
 				if ( $selection_map->[$i] != $self->{selectionPaintMode} ) {
 					$x += $draw_text->( $glyphs, $x, $vis_start, $vis_end )
 						if $vis_end > $vis_start;
 					$vis_start = $vis_end;
-					$self->{selectionPaintMode} = $selection_map->[$offset + $i];
+					$self->{selectionPaintMode} = $selection_map->[$i];
 				}
 				$vis_end++;
 			}
