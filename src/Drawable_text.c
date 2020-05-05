@@ -682,8 +682,10 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		return_zero = true;
 		goto EXIT;
 	}
-	if ( shaper_type == tsFull )
+	if ( shaper_type == tsFull ) {
 		force_advances = false;
+		skip_if_simple = false; /* kerning may affect advances */ 
+	}
 
 	/* allocate buffers */
 	if (!(t.text = sv2uint32(text_sv, &t.len, &t.flags)))
