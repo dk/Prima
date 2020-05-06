@@ -192,7 +192,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 
 	if ( t-> advances ) {
 		#define SZ 1024
-		INT dx[SZ], n, *pdx, *pdx2;
+		INT dx[SZ], i, n, *pdx;
 		int16_t *goffsets = t->positions;
 		uint16_t *advances = t->advances;
 
@@ -202,12 +202,22 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 				pdx = dx;
 		} else
 			pdx = dx;
-		pdx2 = pdx;
-		n /= 2;
-		while ( n-- > 0 ) {
-			*(pdx2++) = *(goffsets++) + *(advances++);
-			*(pdx2++) = *(goffsets++);
+		for ( i = 0; i < n; i += 2) {
+			int gx     = *(goffsets++);
+			int gy     = *(goffsets++);
+			pdx[i]     = *(advances++);
+			pdx[i + 1] = 0;
+			if ( i == 0 ) {
+				x += gx;
+				y += gy;
+			} else {
+				pdx[i - 2] += gx;
+				pdx[i - 1] += gy;
+			}
+			pdx[i]     -= gx;
+			pdx[i + 1] -= gy;
 		}
+
 		ok = ExtTextOutW(ps, x, sys lastSize. y - y, ETO_GLYPH_INDEX | ETO_PDY, NULL, (LPCWSTR) t->glyphs, t->len, pdx);
 		if ( pdx != dx ) free(pdx);
 		#undef SZ
@@ -580,8 +590,8 @@ win32_unicode_shaper( Handle self, PTextShapeRec t)
 				i++
 			) {
 				*(o_a++) = *(i_a++);
-				*(o_g++) = i_g->dv;
 				*(o_g++) = i_g->du;
+				*(o_g++) = i_g->dv;
 				i_g++;
 			}
 		}
