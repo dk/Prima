@@ -456,6 +456,7 @@ sub block_substitute_fonts
 		text    => sub {
 			my ( $ofs, $len, undef, $text ) = @_;
 			my @layout = $mapper->text2layout($text, $fp->[ $fid ]->{name} // 'Default');
+			my $curr_fid = $fid;
 			for ( my $i = 0; $i < @layout; $i+=2) {
 				my ( $font, $ntext ) = @layout[$i,$i+1];
 				my $nfid;
@@ -465,11 +466,15 @@ sub block_substitute_fonts
 				} else {
 					$nfid = $fm->{$font};
 				}
-				push @new_blk, tb::fontId($nfid) if $nfid != $fid;
+				if ($nfid != $curr_fid) {
+					push @new_blk, tb::fontId($nfid);
+					$curr_fid = $nfid;
+				}
 				my $nlen = length $ntext;
 				push @new_blk, tb::text( $ofs, $nlen );
 				$ofs += $nlen;
 			}
+			push @new_blk, tb::fontId($fid) if $curr_fid != $fid;
 		},
 		other   => sub {
 			$fid = $_[tb::F_DATA] if $_[0] == tb::OP_FONT && $_[ tb::F_MODE ] == tb::F_ID;

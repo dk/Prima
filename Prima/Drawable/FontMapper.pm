@@ -28,8 +28,12 @@ sub enum_fonts
 	my $self = shift;
 	my $p = $self->{passive_fonts};
 	for my $f ( @{ $::application-> fonts } ) {
-		$p->{$f->{name}} = {};
+		$p->{$f->{name}} = {
+			vector => $f->{vector},
+			pitch  => $f->{pitch},
+		};
 	}
+	$self->{all_fonts} = [ sort keys %$p ];
 }
 
 sub fill_bidi_marks
@@ -65,7 +69,7 @@ sub update_font_ranges
 	my %bases;
 	for ( my $i = 0; $i < @$r; $i += 2) {
 		my ( $from, $to ) = @$r[$i,$i+1];
-		for ( my $j = $from; $j < $to; $j++) {
+		for ( my $j = $from; $j <= $to; $j++) {
 			my $base = $j >> RANGE_VECTOR_BASE;
 			$fa->[$base] //= '';
 			$bases{$base} = 1;
@@ -100,12 +104,21 @@ sub find_font
 		return $self->{default_font} if defined($fa->[$rb]) && vec($fa->[$rb], $rm, 1);
 	}
 
-	reset %$pf;
-	while ( my ( $k, $v) = each %$pf ) {
+	for my $k ( @{ $self->{all_fonts} } ) {
+		my $v = $pf->{$k};
+		next if exists $v->{range} || !$v->{vector};
+		my $fa = $self-> update_font_ranges($k);
+		return $k if defined($fa->[$rb]) && vec($fa->[$rb], $rm, 1);
+	}
+	
+	for my $k ( @{ $self->{all_fonts} } ) {
+		my $v = $pf->{$k};
 		next if exists $v->{range};
 		my $fa = $self-> update_font_ranges($k);
 		return $k if defined($fa->[$rb]) && vec($fa->[$rb], $rm, 1);
 	}
+
+	return undef;
 }
 
 sub text2layout
@@ -119,7 +132,13 @@ sub text2layout
 
 	for my $c ( split //, $text ) {
 		my ($rb,$rm) = (ord($c) >> RANGE_VECTOR_BASE, ord($c) & RANGE_VECTOR_MASK);
-		if (
+		if ( defined($last_found_fa) && defined($last_found_fa->[$rb]) && vec($last_found_fa->[$rb], $rm, 1)) {
+			if ( @ret && $ret[-2] eq $last_found_font ) {
+				$ret[-1] .= $c;
+			} else {
+				push @ret, $last_found_font, $c;
+			}
+		} elsif (
 			(defined( $fa_base->[$rb] ) && vec( $fa_base->[$rb], $rm, 1 )) ||
 			(defined( $fa_bidi->[$rb] ) && vec( $fa_bidi->[$rb], $rm, 1 ))
 		) {
@@ -127,12 +146,6 @@ sub text2layout
 				$ret[-1] .= $c;
 			} else {
 				push @ret, $base_font, $c;
-			}
-		} elsif ( defined($last_found_fa) && defined($last_found_fa->[$rb]) && vec($last_found_fa->[$rb], $rm, 1)) {
-			if ( @ret && $ret[-2] eq $last_found_font ) {
-				$ret[-1] .= $c;
-			} else {
-				push @ret, $last_found_font, $c;
 			}
 		} elsif ( my $f = $self-> find_font(ord($c))) {
 			$last_found_font = $f;
