@@ -138,6 +138,7 @@ sub init
 	my %font = %{$self-> fontPalette-> [0]};
 	$font{pitch} = fp::Fixed;
 	$self-> {fontPalette}-> [1] = \%font;
+	$self-> {fontPaletteSize} = 2;
 
 	$self-> $_($profile{$_}) for qw( styles images pageName topicView);
 
@@ -1298,16 +1299,28 @@ sub format
 
 	$self-> {blocks} = [];
 	$self-> {contents}-> [0]-> rectangles( []);
+	$self-> truncate_auto_fonts;
 
 	$self-> begin_paint_info;
 
 	# cache indents
 	my @indents;
 	my $state = $self-> create_state;
+	$self->{fonts_contain_basic_latin} = 1;
 	for ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
 		$$state[ tb::BLK_FONT_ID] = $_;
 		$self-> realize_state( $self, $state, tb::REALIZE_FONTS);
 		$indents[$_] = $self-> font-> width;
+		next if $_ > 1;
+
+		my $r = $self->get_font_ranges;
+		my $n = 0;
+		for ( my $i = 0; $i < @$r; $i += 2 ) {
+			my ( $from, $to ) = @$r[$i,$i+1];
+			next if $from > 0x7f or $to < 0x20;
+			$n += $to - $from + 1;
+		}
+		$self->{fonts_contain_basic_latin} = 0 if $n < 0x7f - 0x20;
 	}
 	$$state[ tb::BLK_FONT_ID] = 0;
 
@@ -1341,8 +1354,10 @@ sub format
 
 	while ( 1) {
 		$self-> format_chunks;
-		last unless $self-> {formatData} && $self-> {blocks}-> [-1] &&
-						$self-> {blocks}-> [-1]-> [tb::BLK_Y] < $ph;
+		last unless 
+			$self-> {formatData} && 
+			$self-> {blocks}-> [-1] &&
+			$self-> {blocks}-> [-1]-> [tb::BLK_Y] < $ph;
 	}
 }
 
@@ -1379,6 +1394,12 @@ sub format_chunks
 		push @$g, @$m[ M_START .. $#$m ];
 
 		# format the paragraph
+
+		my $next_text_offs = ( $mid == $#{$self->{model}} ) ? length( ${$self->{text}} ) : $self->{model}->[$mid + 1]->[M_TEXT_OFFSET];
+		my $block_text     = substr( ${$self->{text}}, $$m[M_TEXT_OFFSET], $next_text_offs - $$m[M_TEXT_OFFSET]);
+		if ( !$self->{fonts_contain_basic_latin} || $block_text =~ /[^\x{00}-\x{7F}]/) {
+			$g = $self-> block_substitute_fonts($g);
+		}
 		my $indent = $$m[M_INDENT] * $$indents[ $$m[M_FONT_ID]];
 		@blocks = $self-> block_wrap( $self, $g, $state, $formatWidth - $indent);
 

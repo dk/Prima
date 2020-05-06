@@ -13,6 +13,7 @@ use Prima;
 use Prima::IntUtils;
 use Prima::ScrollBar;
 use Prima::Drawable::TextBlock;
+use Prima::Drawable::FontMapper;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
 
@@ -81,6 +82,7 @@ sub init
 	$self-> {paneSize} = [0,0];
 	$self-> {colorMap} = [];
 	$self-> {fontPalette} = [];
+	$self-> {fontPaletteSize} = 0;
 	$self-> {blocks} = [];
 	$self-> {resolution} = [];
 	$self-> {defaultFontSize} = $self-> font-> size;
@@ -306,7 +308,16 @@ sub fontPalette
 		encoding => '',
 		pitch    => fp::Default,
 	} if scalar @$fm < 1;
+	$self-> {fontPaletteSize} = @$fm;
+	delete $self->{fontPaletteMap};
 	$self-> repaint;
+}
+
+sub truncate_auto_fonts
+{
+	my $self = shift;
+	splice( @{$self->{fontPalette}}, $self->{fontPaletteSize} );
+	delete $self->{fontPaletteMap};
 }
 
 sub create_state
@@ -412,6 +423,66 @@ sub block_wrap
 		wordBreak     => 1,
 		textDirection => $self->{textDirection}, 
 	);
+}
+
+sub font_mapper
+{
+	my $self = shift;
+	return $self->{font_mapper} //= Prima::Drawable::FontMapper->new;
+}
+
+sub font_palette_map
+{
+	my $self = shift;
+	if ( ! defined $self->{fontPaletteMap}) {
+		my %fm;
+		my $fp = $self->{fontPalette};
+		for ( my $i = 0; $i < @$fp; $i++) {
+			$fm{ $fp->[$i]->{name} // 'Default' } = $i;
+		}
+		$self->{fontPaletteMap} = \%fm;
+	}
+	return $self->{fontPaletteMap};
+}
+
+sub block_substitute_fonts
+{
+	my ( $self, $block ) = @_;
+
+	my $mapper  = $self-> font_mapper;
+	my @new_blk = @$block[ 0 .. tb::BLK_DATA_END ];
+
+	my $fp  = $self->{fontPalette};
+	my $fm  = $self->font_palette_map;
+	my $fid = $block->[tb::BLK_FONT_ID];
+
+	tb::walk( $block,
+		textPtr => $self->{text},
+		trace   => tb::TRACE_TEXT,
+		text    => sub {
+			my ( $ofs, $len, undef, $text ) = @_;
+			my @layout = $mapper->text2layout($text, $fp->[ $fid ]->{name} // 'Default');
+			for ( my $i = 0; $i < @layout; $i+=2) {
+				my ( $font, $ntext ) = @layout[$i,$i+1];
+				my $nfid;
+				if ( !exists $fm->{$font}) {
+					push @$fp, { name => $font }; # XXX pitch
+					$nfid = $fm->{$font} = $#$fp;
+				} else {
+					$nfid = $fm->{$font};
+				}
+				push @new_blk, tb::fontId($nfid) if $nfid != $fid;
+				my $nlen = length $ntext;
+				push @new_blk, tb::text( $ofs, $nlen );
+				$ofs += $nlen;
+			}
+		},
+		other   => sub {
+			$fid = $_[tb::F_DATA] if $_[0] == tb::OP_FONT && $_[ tb::F_MODE ] == tb::F_ID;
+			push @new_blk, @_;
+		},
+	);
+	return \@new_blk;
 }
 
 sub selection_state
