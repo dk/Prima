@@ -425,12 +425,6 @@ sub block_wrap
 	);
 }
 
-sub font_mapper
-{
-	my $self = shift;
-	return $self->{font_mapper} //= Prima::Drawable::FontMapper->new;
-}
-
 sub font_palette_map
 {
 	my $self = shift;
@@ -449,7 +443,7 @@ sub block_substitute_fonts
 {
 	my ( $self, $block ) = @_;
 
-	my $mapper  = $self-> font_mapper;
+	my $mapper  = $::application-> font_mapper;
 	my @new_blk = @$block[ 0 .. tb::BLK_DATA_END ];
 
 	my $fp  = $self->{fontPalette};
