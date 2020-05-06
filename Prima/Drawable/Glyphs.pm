@@ -745,7 +745,7 @@ input, these values can differ.
 One of those cases is combining graphemes, where text consisting of two
 characters, C<"A"> and combining grave accent U+300 should be drawn as a single
 "E<Agrave>" symbol, but font doesn't have that single glyph but rather two
-individual glyphs C<"A"> and <"`">. There, where grave glyph has its own
+individual glyphs C<"A"> and C<"`">. There, where grave glyph has its own
 advance for standalone usage, in this case it should be ignored though, and
 that is achieved by setting the advance of the C<"`"> to zero.
 

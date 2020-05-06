@@ -286,6 +286,7 @@ sub _debug_block
 			my $oplen = $cmd >> 16;
 			my @o = ($oplen > 1) ? @$b[ $i + 1 .. $i + $oplen - 1] : ();
 			print STDERR ": OP($cmd) @o\n";
+			last unless $$b[$i] >> 16;
 		}
 	}
 }
