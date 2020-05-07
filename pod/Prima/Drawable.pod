@@ -1421,20 +1421,61 @@ Setting this options to C<true> will force fill advance and positioning tables.
 These tables can be manipulated laters, and are respected by C<text_out> and
 C<get_text_width>.
 
-=item bidi_only BOOLEAN = false
+=item language STRING = undef
+
+When set, shaping process can take in the account the language of the text.
+F.ex. text C<"ae"> will be shaped as a single glyph I<E<aelig>> for the Latin
+language, but not for the English.
+
+=item level INTEGER = ts:XXX
+
+Select the shaping (i.e. text to glyph conversion) level, how the system should treat the input text
+and how deep the shaping should go. One of the following C<ts::XXX> options:
+
+=over
+
+=item ts::Bytes
+
+Treats input text as non-unicode locale-specific codepoints, characters higher
+than 255 are treated as chr(255).  Reordering never happens, kerning and
+ligation never happens, returns glyph indexes in a 1:1 mapping to each
+codepoint.
+
+=item ts::None
 
 Performs quick null shaping without mapping to the font glyphs, but only
 running bidirectional algorithm on the text. On the return, C<glyphs>, as well
 as eventual C<advances> and C<positions>, are filled with zeros, but C<indexes>
 are filled with the proper character offsets, effectively making it a visual to
 logical map since number of glyphs will always be equal to number of characters
-in TEXT.
+in TEXT, because ligation never happens here (except when text contains unicode
+directional characters such as isolates etc).
 
-=item language STRING = undef
+By default, advances and positions are not filled, but if C<advances> option is set,
+fills them with zeros.
 
-When set, shaping process can take in the account the language of the text.
-F.ex. text C<"ae"> will be shaped as a single glyph I<E<aelig>> for the Latin
-language, but not for the English.
+=item ts::Glyphs
+
+Applies the unicode bidi algoritm and maps the result onto font glyphs.  Ligation
+and kerning doesn't happen here, it's basically same as C<ts::None> but with
+the glyph mapping part. 
+
+By default, advances and positions are not filled, but if C<advances> option is set,
+fills the advances array with character glyph advances and the positions array with zeros.
+
+=item ts::Full
+
+Applies the unicode bidi algorithm, and runs the full shaping on the result.
+Ligation and kerning may occur. Always fills the advances and positions array;
+the C<advances> option is ignored.
+
+If the system or the selected font does not support shaping, tries to ligate
+known arabic shapes using the I<fribidi> library, when compiled with. Also in
+this case does not return the advances and positions by default, but if
+C<advances> option is set, fills the advances array with character glyph
+advances and the positions array with zeros.
+
+=back
 
 =item reorder BOOLEAN = true
 
@@ -1448,7 +1489,7 @@ still may occur internally, since system shapers may reverse placement of RTL
 characters, so that reordering is needed to cancel this.
 
 A similar effect can be reached by prepending the text with U+202D
-(LEFT-TO-RIGHT OVERRIDE) and U+202E (RIGHT-TO-LEFT OVERRIDE) characters.
+(LEFT-TO-RIGHT OVERRIDE).
 
 =item rtl BOOLEAN
 
