@@ -259,6 +259,7 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 	if ( dest-> undef. vector || dest-> vector < fvBitmap || dest-> vector > fvDefault)
 		dest-> vector = fvDefault;
 	memset(&dest->undef, 0, sizeof(dest->undef));
+	warn("USES %d %d\n", useSize, useHeight);
 
 	return useSize && !useHeight;
 }

@@ -1,11 +1,5 @@
 use strict;
 use warnings;
-# XXX TODO:
-# script
-# FRIBIDI_PAR_ON
-# text-out
-# text-wrap
-
 use Test::More;
 use Prima::Test;
 use Prima::Application;

@@ -1979,6 +1979,9 @@ apc_application_get_os_info( char *system, int slen,
 
 extern Point
 apc_application_get_size( Handle self);
+		
+extern int
+apc_application_get_mapper_font( Handle self, int index, Font * font);
 
 extern Box *
 apc_application_get_monitor_rects( Handle self, int * nrects);
@@ -1989,6 +1992,9 @@ apc_application_go( Handle self);
 extern Bool
 apc_application_lock( Handle self);
 
+extern int
+apc_application_set_mapper_font( Handle self, int index, Font * font);
+
 extern Bool
 apc_application_sync( void);
 
@@ -1997,6 +2003,12 @@ apc_application_unlock( Handle self);
 
 extern Bool
 apc_application_yield( Bool wait_for_event );
+
+extern void
+apc_font_mapper_destroy_handle( Handle handle );
+
+extern unsigned long *
+apc_font_mapper_query_ranges(PFont font, int * count, Handle * handle);
 
 /* Component */
 extern Bool
@@ -3609,6 +3621,7 @@ TO(Glyphs)
 TO(Unicode)
 #define toRTL            0x8000
 TO(RTL)
+#define toPitch          8
 END_TABLE(to,UV)
 #undef TO
 
@@ -3622,6 +3635,7 @@ typedef struct {
 	unsigned int n_glyphs, n_glyphs_max;
 	uint16_t *glyphs, *indexes, *advances;
 	int16_t *positions;
+	uint16_t *fonts;
 } TextShapeRec, *PTextShapeRec;
 
 typedef Bool TextShapeFunc( Handle self, PTextShapeRec rec);
@@ -3630,7 +3644,8 @@ typedef TextShapeFunc *PTextShapeFunc;
 typedef struct {
 	int len, flags, text_len;
 	uint16_t *glyphs, *indexes, *advances;
-	int16_t *positions;
+	int16_t  *positions;
+	uint16_t *fonts;
 } GlyphsOutRec, *PGlyphsOutRec;
 
 extern Bool
