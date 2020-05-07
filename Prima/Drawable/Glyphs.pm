@@ -9,13 +9,15 @@ use constant GLYPHS    => 0;
 use constant INDEXES   => 1;
 use constant ADVANCES  => 2;
 use constant POSITIONS => 3;
-use constant CUSTOM    => 4;
+use constant FONTS     => 4;
+use constant CUSTOM    => 5;
 
-sub new         { bless [grep { defined } @_[1..4]], $_[0] }
-sub glyphs      { $_[0]->[GLYPHS] }
-sub indexes     { $_[0]->[INDEXES] }
-sub advances    { $_[0]->[ADVANCES] }
+sub new         { bless [@_[1..5]], $_[0] }
+sub glyphs      { $_[0]->[GLYPHS]    }
+sub indexes     { $_[0]->[INDEXES]   }
+sub advances    { $_[0]->[ADVANCES]  }
 sub positions   { $_[0]->[POSITIONS] }
+sub fonts       { $_[0]->[FONTS]     }
 sub text_length { $_[0]->[INDEXES]->[-1] }
 
 sub new_empty
@@ -46,6 +48,16 @@ sub _debug
 			my ($x, $y) = @{$g}[$i,$i+1];
 			print STDERR "($x,$y) ";
 		}
+		print STDERR "\n";
+	}
+	if ( $g = $self->fonts ) {
+		print STDERR "fonts: @$g\n";
+	#	my %f = map { $_ => 1 } @$g;
+	#	delete $f{0};
+	#	for my $fid ( sort keys %f ) {
+	#		my $f = $::application->fontPalette($fid);
+	#		print STDERR "  #$fid: $f->{name}\n";
+	#	}
 		print STDERR "\n";
 	}
 }

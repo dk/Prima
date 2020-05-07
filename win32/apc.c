@@ -1196,6 +1196,19 @@ apc_system_action( const char * params)
 	return 0;
 }
 
+int
+apc_application_get_mapper_font( Handle self, int index, Font * font)
+{
+	return 0;
+}
+
+int
+apc_application_set_mapper_font( Handle self, int index, Font * font)
+{
+	return 0;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

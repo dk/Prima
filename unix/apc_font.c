@@ -686,7 +686,7 @@ prima_init_font_subsystem( char * error_buf)
 		free( do_menu_font);
 		do_menu_font = nil;
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "menu_font",
-									nilHandle, frFont, &guts. default_menu_font)) {
+		nilHandle, frFont, &guts. default_menu_font)) {
 		memcpy( &guts. default_menu_font, &guts. default_font, sizeof( Font));
 	}
 	Fdebug("menu font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_menu_font));
@@ -697,7 +697,7 @@ prima_init_font_subsystem( char * error_buf)
 		free( do_widget_font);
 		do_widget_font = nil;
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "widget_font",
-									nilHandle, frFont, &guts. default_widget_font)) {
+		nilHandle, frFont, &guts. default_widget_font)) {
 		memcpy( &guts. default_widget_font, &guts. default_font, sizeof( Font));
 	}
 	Fdebug("widget font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_widget_font));
@@ -708,7 +708,7 @@ prima_init_font_subsystem( char * error_buf)
 		free( do_msg_font);
 		do_msg_font = nil;
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "message_font",
-									nilHandle, frFont, &guts. default_msg_font)) {
+		nilHandle, frFont, &guts. default_msg_font)) {
 		memcpy( &guts. default_msg_font, &guts. default_font, sizeof( Font));
 	}
 	Fdebug("msg font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_msg_font));
@@ -719,7 +719,7 @@ prima_init_font_subsystem( char * error_buf)
 		free( do_caption_font);
 		do_caption_font = nil;
 	} else if ( !apc_fetch_resource( "Prima", "", "Font", "caption_font",
-												nilHandle, frFont, &guts. default_caption_font)) {
+		nilHandle, frFont, &guts. default_caption_font)) {
 		memcpy( &guts. default_caption_font, &guts. default_font, sizeof( Font));
 	}
 	Fdebug("caption font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_caption_font));
@@ -2170,4 +2170,42 @@ prima_font_debug_style(int style)
 	*p++ = 0;
 
 	return buf;
+}
+
+int
+apc_application_get_mapper_font( Handle self, int index, Font * font)
+{
+#ifdef USE_XFT
+	if ( do_xft ) return prima_xft_get_mapper_font(self, index, font);
+#endif
+	return 0;
+}
+
+int
+apc_application_set_mapper_font( Handle self, int index, Font * font)
+{
+#ifdef USE_XFT
+	if ( do_xft ) return prima_xft_set_mapper_font(self, index, font);
+#endif
+	return 0;
+}
+
+void
+apc_font_mapper_destroy_handle( Handle handle )
+{
+#ifdef USE_XFT
+	if ( do_xft ) prima_xft_mapper_destroy_handle(handle);
+#endif
+}
+
+unsigned long *
+apc_font_mapper_query_ranges(PFont font, int * count, Handle * handle)
+{
+#ifdef USE_XFT
+	if ( do_xft )
+		return prima_xft_mapper_query_ranges(font, count, handle);
+#endif
+	*count = 0;
+	*handle = nilHandle;
+	return NULL;
 }

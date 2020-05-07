@@ -15,6 +15,7 @@ object Prima::Application( Prima::Widget)
 	property  Color  colorIndex( int index);
 	property  Bool   enabled;
 	property  Bool   focused;
+	property  SV *   fontPalette( int index );
 	property  Handle icon;
 	property  Bool   insertMode;
 	property  int    growMode;

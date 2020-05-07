@@ -663,6 +663,7 @@ XS(Prima_init)
 	}
 
 	if ( prima_init_ok == 2) {
+		prima_init_font_mapper();
 		if ( !window_subsystem_init( error_buf))
 			croak( "%s", error_buf);
 		prima_init_ok++;
@@ -1229,7 +1230,10 @@ XS( prima_cleanup)
 	hash_destroy( primaObjects, false);
 	primaObjects = nil;
 	if ( prima_init_ok > 1) prima_cleanup_image_subsystem();
-	if ( prima_init_ok > 2) window_subsystem_cleanup();
+	if ( prima_init_ok > 2) {
+		window_subsystem_cleanup();
+		prima_cleanup_font_mapper();
+	}
 	hash_destroy( vmtHash, false);
 	vmtHash = nil;
 	list_delete_all( &staticObjects, true);
