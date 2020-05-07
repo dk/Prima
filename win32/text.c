@@ -625,15 +625,15 @@ win32_mapper( Handle self, PTextShapeRec t, Bool unicode)
 	if ( len > 8192 ) len = 8192;
 
 	if ( unicode ) {
-		char *dst = (char*) buf;
-		for ( i = 0; i < t->len; i++)
-			*(dst++) = *(src++);
-		ret = GetGlyphIndicesA( sys ps, (LPCSTR)buf, t->len, t->glyphs, GGI_MARK_NONEXISTING_GLYPHS);
-	} else {
 		WCHAR *dst = (WCHAR*) buf;
 		for ( i = 0; i < t->len; i++)
 			*(dst++) = *(src++);
 		ret = GetGlyphIndicesW( sys ps, (LPCWSTR)buf, t->len, t->glyphs, GGI_MARK_NONEXISTING_GLYPHS);
+	} else {
+		char *dst = (char*) buf;
+		for ( i = 0; i < t->len; i++)
+			*(dst++) = *(src++);
+		ret = GetGlyphIndicesA( sys ps, (LPCSTR)buf, t->len, t->glyphs, GGI_MARK_NONEXISTING_GLYPHS);
 	}
 	if ( ret == GDI_ERROR)
 		apiErrRet;

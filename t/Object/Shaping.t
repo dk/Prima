@@ -280,6 +280,14 @@ sub check_noshape_nofribidi
 	t2('12ABC', "\0"x5, [0,1,R(2..4),5], 'null shaping', level => ts::None);
 }
 
+sub check_noreorder
+{
+	t2('12ABC', '12CBA', [0,1,R(2..4),5], 'reorder glyphs',   level => ts::Glyphs, reorder => 1);
+	t2('12ABC', '12ABC', [0,1,r(2..4),5], 'noreorder glyphs', level => ts::Glyphs, reorder => 0);
+	t2('12ABC', '12CBA', [0,1,R(2..4),5], 'reorder full',     level => ts::Full,   reorder => 1);
+	t2('12ABC', '12ABC', [0,1,r(2..4),5], 'noreorder full',   level => ts::Full,   reorder => 0);
+}
+
 # very minimal support for bidi and X11 core fonts only
 sub test_minimal
 {
@@ -297,6 +305,7 @@ sub test_glyph_mapping
                 glyphs "12ABC";
 		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
 		check_noshape_nofribidi();
+		check_noreorder();
         }
 }
 
@@ -334,6 +343,7 @@ sub test_fribidi
 		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
 
 		check_noshape_nofribidi();
+		check_noreorder();
 		t('12ABC', 'CBA12', 'rtl in rtl', rtl => 1);
 		t2('/|', '%0', [R(0,1),2], 'arabic ligation with ZW nobreaker');
 		t('|/', '/|', 'no arabic ligation');
@@ -353,6 +363,7 @@ sub test_shaping
                	glyphs "12ABC";
 		skip("text shaping is not available", 1) unless glyphs_fully_resolved;
 		check_noshape_nofribidi();
+		check_noreorder();
 
 		my $z = $w->text_shape('12');
 		ok((4 == @{$z->positions // []}), "positions are okay");

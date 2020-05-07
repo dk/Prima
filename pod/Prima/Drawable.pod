@@ -1436,6 +1436,20 @@ When set, shaping process can take in the account the language of the text.
 F.ex. text C<"ae"> will be shaped as a single glyph I<E<aelig>> for the Latin
 language, but not for the English.
 
+=item reorder BOOLEAN = true
+
+When set, unicode bidi algorithm is used to reorder codepoints, and
+additionally RTL codepoints are reversed (depending on direction context).
+
+When unset, no such reordering occurs, to emulate as much as possible a
+behavior that each text grapheme is being mapped to a glyph cluster exactly as
+it occurs in the input text, from left to right. Note that bidi reordering
+still may occur internally, since system shapers may reverse placement of RTL
+characters, so that reordering is needed to cancel this.
+
+A similar effect can be reached by prepending the text with U+202D
+(LEFT-TO-RIGHT OVERRIDE) and U+202E (RIGHT-TO-LEFT OVERRIDE) characters.
+
 =item rtl BOOLEAN
 
 If set to 1, default text direction is assumed as RTL, and as LTR if set to 0.

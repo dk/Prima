@@ -477,7 +477,9 @@ FAIL:
 #endif
 
 static Bool
-shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_mapper_only, Bool fribidi_arabic_shaping)
+shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
+	Bool glyph_mapper_only, Bool fribidi_arabic_shaping, Bool reorder
+)
 {
 	Bool ok, reorder_swaps_rtl;
 	Byte analysis[MAX_CHARACTERS], *save_analysis;
@@ -503,6 +505,9 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper, Bool glyph_ma
 		ok = fallback_reorder(t);
 	}
 	if (!ok) return false;
+
+	if ( !reorder )
+		reorder_swaps_rtl = !reorder_swaps_rtl;
 
 #ifdef _DEBUG
 	printf("%s output: ", (t->flags & toRTL) ? "rtl" : "ltr");
@@ -621,7 +626,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	PTextShapeFunc system_shaper;
 	TextShapeRec t;
 	int shaper_type, level = tsDefault;
-	Bool skip_if_simple = false, return_zero = false, force_advances = false;
+	Bool skip_if_simple = false, return_zero = false, force_advances = false, reorder = true;
 	Bool gp_enter;
 
 	/* forward, if any */
@@ -656,6 +661,8 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		skip_if_simple = pget_B(skip_if_simple);
 	if ( pexist(advances))
 		force_advances = pget_B(advances);
+	if ( pexist(reorder))
+		reorder = pget_B(reorder);
 	if ( pexist(level)) {
 		level = pget_i(level);
 		if ( level < tsNone || level > tsBytes ) level = tsFull;
@@ -743,7 +750,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	} else {
 		if ( !shape_unicode(self, &t,
 			system_shaper, shaper_type < tsFull,
-			(level == tsNone) ? false : (shaper_type < tsFull))
+			(level == tsNone) ? false : (shaper_type < tsFull), reorder)
 		) goto EXIT;
 	}
 
