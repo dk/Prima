@@ -750,7 +750,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	} else {
 		if ( !shape_unicode(self, &t,
 			system_shaper, shaper_type < tsFull,
-			(level == tsNone) ? false : (shaper_type < tsFull), reorder)
+			(level < tsFull) ? false : (shaper_type < tsFull), reorder)
 		) goto EXIT;
 	}
 
