@@ -14,7 +14,7 @@ object Prima::Drawable ( Prima::Component)
 	property     int           fillMode;
 	property     SV *          fillPattern;
 	property     Point         fillPatternOffset;
-	property     SV *          fontPalette( int index );
+	property     SV *          fontMapperPalette( int index );
 	property     int           height;
 	property     int           lineEnd;
 	property     int           lineJoin;

@@ -55,7 +55,7 @@ sub _debug
 		my %f = map { $_ => 1 } @$g;
 		delete $f{0};
 		for my $fid ( sort keys %f ) {
-			my $f = $::application->fontPalette($fid);
+			my $f = $::application->fontMapperPalette($fid);
 			print STDERR "  #$fid: $f->{name}\n";
 		}
 		print STDERR "\n";

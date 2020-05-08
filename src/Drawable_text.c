@@ -31,12 +31,6 @@ used in font substitution. Each contains a Font record and a set of bit
 vectors, split by FONTMAPPER_VECTOR_MASK (PassiveFontEntry). Bit vectors are
 built on demand.
 
-font_map_indexes is a plain array of integers, each is a font_passive_entries index.
-The array grows either internally when font mapper needs it, or explicitly by
-Application.fontPalette. text_shape().fonts uses indexes of font_map_indexes,
-and text_out(glyph) where glyph has fonts, uses font_map_indexes to get to 
-font_passive_entries.font and select the actual fonts.
-
 font_active_entries is a sparse list that contains either NULLs or PList
 entries.  Each index is a block for (INDEX >> FONTMAPPER_VECTOR_BASE), and
 contains set of FONT IDs, each is font_passive_entries index. It is added to
@@ -48,8 +42,6 @@ or filling them by querying ranges
 #define FONTMAPPER_VECTOR_BASE 9 /* 512 chars or 64 bytes per vector */
 #define FONTMAPPER_VECTOR_MASK ((1 << FONTMAPPER_VECTOR_BASE) - 1)
 
-
-static List  font_map_indexes;
 static List  font_active_entries;
 static List  font_passive_entries;
 static PHash font_substitutions;
@@ -74,7 +66,6 @@ prima_font_mapper_get_font(unsigned int fid)
 void
 prima_init_font_mapper(void)
 {
-	list_create(&font_map_indexes,     16,  16);
 	list_create(&font_passive_entries, 256, 256);
 	list_create(&font_active_entries,  16,  16);
 	font_mapper_default_id = -1;
@@ -105,8 +96,6 @@ kill_passive_entry( PPassiveFontEntry entry, void * dummy)
 void
 prima_cleanup_font_mapper(void)
 {
-	list_destroy( &font_map_indexes);
-
 	list_first_that( &font_active_entries, (void*)kill_active_entry, NULL);
 	list_destroy( &font_active_entries);
 
@@ -282,7 +271,7 @@ find_font(uint32_t c, int pitch, uint16_t preferred_font)
 }
 
 SV *
-Drawable_fontPalette( Handle self, Bool set, int index, SV * sv)
+Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
 {
 	if ( var->  stage > csFrozen) return nilSV;
 	if ( set) {
