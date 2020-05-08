@@ -16,7 +16,7 @@ SKIP: {
 	ok( 1, "got polyfont");
 	my %f = map { $_ => 1 } @{$z->fonts};
 	delete $f{0};
-	skip("lucky font contains all glyphs", 1) unless keys %f;
+	skip("no such font", 1) unless keys %f;
 }
 
 done_testing;
