@@ -39,7 +39,7 @@ sub _debug
 		my $ix = $g->[$i];
 		print STDERR ( $ix & to::RTL ) ? '-' : '', $ix & ~to::RTL, " ";
 	}
-	print STDERR ": $g->[1]\n";
+	print STDERR ": $g->[-1]\n";
 	if ( $g = $self->advances ) {
 		print STDERR "advances: @$g\n";
 		$g = $self->positions;
@@ -52,12 +52,12 @@ sub _debug
 	}
 	if ( $g = $self->fonts ) {
 		print STDERR "fonts: @$g\n";
-	#	my %f = map { $_ => 1 } @$g;
-	#	delete $f{0};
-	#	for my $fid ( sort keys %f ) {
-	#		my $f = $::application->fontPalette($fid);
-	#		print STDERR "  #$fid: $f->{name}\n";
-	#	}
+		my %f = map { $_ => 1 } @$g;
+		delete $f{0};
+		for my $fid ( sort keys %f ) {
+			my $f = $::application->fontPalette($fid);
+			print STDERR "  #$fid: $f->{name}\n";
+		}
 		print STDERR "\n";
 	}
 }
