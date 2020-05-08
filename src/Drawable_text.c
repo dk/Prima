@@ -59,6 +59,7 @@ typedef struct {
 	Font   font;
 	List   vectors;
 	Bool   ranges_queried;
+	Bool   is_active;
 } PassiveFontEntry, *PPassiveFontEntry;
 
 #define PASSIVE_FONT(fid) ((PPassiveFontEntry) font_passive_entries.items[(unsigned int)(fid)])
@@ -181,6 +182,44 @@ query_ranges(PPassiveFontEntry pfe)
 	}
 }
 
+static void
+add_active_font(int fid)
+{
+	int page;
+	PPassiveFontEntry pfe = PASSIVE_FONT(fid);
+
+	if ( pfe-> is_active ) return;
+	pfe-> is_active = true;
+
+	for ( page = 0; page < pfe->vectors.count; page++) {
+		if ( !pfe->vectors.items[page] ) continue;
+
+		if ( font_active_entries.count <= page ) {
+			while (font_active_entries.count <= page )
+				list_add(&font_active_entries, (Handle)NULL);
+		}
+		if ( font_active_entries.items[page] == nilHandle )
+			font_active_entries.items[page] = (Handle) plist_create(4, 4);
+		list_add((PList) font_active_entries.items[page], fid);
+	}
+}
+
+static void
+remove_active_font(int fid)
+{
+	int page;
+	PPassiveFontEntry pfe = PASSIVE_FONT(fid);
+
+	if ( !pfe-> is_active ) return;
+
+	for ( page = 0; page < pfe->vectors.count; page++) {
+		if ( !pfe->vectors.items[page] ) continue;
+		if ( font_active_entries.items[page] == nilHandle ) continue;
+		list_delete((PList) font_active_entries.items[page], fid);
+	
+	}
+}
+
 static Bool
 can_substitute(uint32_t c, int pitch, int fid)
 {
@@ -200,16 +239,8 @@ can_substitute(uint32_t c, int pitch, int fid)
 	if ( !fa ) return false;
 
 	if (( fa[bit >> 3] & (bit & 7)) == 0) return false;
+	if ( !pfe-> is_active ) add_active_font(fid);
 
-	if ( font_active_entries.count <= page ) {
-		while (font_active_entries.count <= page )
-			list_add(&font_active_entries, (Handle)NULL);
-	}
-	if ( font_active_entries.items[page] == nilHandle ) {
-		font_active_entries.items[page] = (Handle) plist_create(4, 4);
-	}
-	list_add((PList) font_active_entries.items[page], fid);
-	
 	return true;
 }
 
@@ -255,7 +286,30 @@ Drawable_fontPalette( Handle self, Bool set, int index, SV * sv)
 {
 	if ( var->  stage > csFrozen) return nilSV;
 	if ( set) {
-		croak("Attempt to write read-only property %s", "Drawable::fontPalette");
+		uint16_t fid;
+		Font font;
+		PPassiveFontEntry pfe;
+
+		SvHV_Font(sv, &font, "Drawable::fontPalette");
+		fid = PTR2IV(hash_fetch(font_substitutions, font.name, strlen(font.name)));
+		if ( fid == 0 ) return nilSV;
+		pfe = PASSIVE_FONT(fid);
+
+		switch ( index ) {
+		case 0: 
+			/* delete */
+			if ( !pfe-> is_active ) return nilSV;
+			remove_active_font(fid);
+			return newSViv(1);
+		case 1:
+			/* add */
+			if ( pfe-> is_active ) return nilSV;
+			add_active_font(fid);
+			return newSViv(1);
+		default:
+			warn("Drawable::fontPalette(%d) operation is not defined", index);
+			return nilSV;
+		}
 	} else if ( index < 0 ) {
 		return newSViv( font_passive_entries.count );
 	} else {
