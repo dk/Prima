@@ -1,4 +1,5 @@
 #include "apricot.h"
+#include "guts.h"
 #include "Drawable.h"
 #include "Application.h"
 
@@ -20,6 +21,251 @@ extern "C" {
 #define gpARGS            Bool inPaint = opt_InPaint
 #define gpENTER(fail)     if ( !inPaint) if ( !my-> begin_paint_info( self)) return (fail)
 #define gpLEAVE           if ( !inPaint) my-> end_paint_info( self)
+
+/*
+
+SECTION 1: FONT MAPPER
+
+font_passive_entries is queried at start and is filled with fonts that can be
+used in font substitution. Each contains a Font record and a set of bit
+vectors, split by FONTMAPPER_VECTOR_MASK (PassiveFontEntry). Bit vectors are
+built on demand.
+
+font_map_indexes is a plain array of integers, each is a font_passive_entries index.
+The array grows either internally when font mapper needs it, or explicitly by
+Application.fontPalette. text_shape().fonts uses indexes of font_map_indexes,
+and text_out(glyph) where glyph has fonts, uses font_map_indexes to get to 
+font_passive_entries.font and select the actual fonts.
+
+font_active_entries is a sparse list that contains either NULLs or PList
+entries.  Each index is a block for (INDEX >> FONTMAPPER_VECTOR_BASE), and
+contains set of FONT IDs, each is font_passive_entries index. It is added to
+whenever text_shape needs another font, selecting entries from font_passive_entries,
+or filling them by querying ranges
+
+*/
+
+#define FONTMAPPER_VECTOR_BASE 9 /* 512 chars or 64 bytes per vector */
+#define FONTMAPPER_VECTOR_MASK ((1 << FONTMAPPER_VECTOR_BASE) - 1)
+
+
+static List  font_map_indexes;
+static List  font_active_entries;
+static List  font_passive_entries;
+static PHash font_substitutions;
+static int   font_mapper_default_id;
+
+typedef struct {
+	Font   font;
+	List   vectors;
+	Bool   ranges_queried;
+} PassiveFontEntry, *PPassiveFontEntry;
+
+#define PASSIVE_FONT(fid) ((PPassiveFontEntry) font_passive_entries.items[(unsigned int)(fid)])
+
+PFont 
+prima_font_mapper_get_font(unsigned int fid)
+{
+	if ( fid >= font_passive_entries.count ) return NULL;
+	return &PASSIVE_FONT(fid)->font;
+}
+
+void
+prima_init_font_mapper(void)
+{
+	list_create(&font_map_indexes,     16,  16);
+	list_create(&font_passive_entries, 256, 256);
+	list_create(&font_active_entries,  16,  16);
+	font_mapper_default_id = -1;
+	font_substitutions = prima_hash_create();
+
+	prima_font_mapper_save_font(NULL); /* occupy zero index */
+}
+
+static Bool
+kill_active_entry( PList fontlist, void * dummy)
+{
+	if (fontlist) 
+		plist_destroy(fontlist);
+	return false;
+}
+
+static Bool
+kill_passive_entry( PPassiveFontEntry entry, void * dummy)
+{
+	if ( entry-> ranges_queried ) {
+		list_delete_all( &entry->vectors, true );
+		list_destroy( &entry-> vectors);
+	}
+	free(entry);
+	return false;
+}
+
+void
+prima_cleanup_font_mapper(void)
+{
+	list_destroy( &font_map_indexes);
+
+	list_first_that( &font_active_entries, (void*)kill_active_entry, NULL);
+	list_destroy( &font_active_entries);
+
+	list_first_that( &font_passive_entries, (void*)kill_passive_entry, NULL);
+	list_destroy( &font_passive_entries);
+
+	hash_destroy( font_substitutions, false);
+}
+
+PFont
+prima_font_mapper_save_font(const char * name)
+{
+	PPassiveFontEntry p;
+	PFont f;
+	if ( !( p = malloc(sizeof(PassiveFontEntry)))) {
+		warn("not enough memory\n");
+		return NULL;
+	}
+	bzero(p, sizeof(PassiveFontEntry));
+	f = &p->font;
+	memset( &f->undef, 0xff, sizeof(f->undef));
+
+	if ( name ) hash_store(
+		font_substitutions, 
+		name, strlen(name), 
+		INT2PTR(void*, font_passive_entries.count)
+	);
+
+	list_add(&font_passive_entries, (Handle)f);
+
+	return f;
+}
+
+static void
+query_ranges(PPassiveFontEntry pfe)
+{
+	Font f;
+	unsigned long * ranges;
+	int i, count = 0, last;
+
+	f = pfe->font;
+	f.undef.pitch = 1;
+	f.pitch = fpDefault;
+
+	pfe-> ranges_queried = true;
+	ranges = apc_gp_get_mapper_ranges(&f, &count);
+	if ( count <= 0 ) {
+		list_create( &pfe->vectors, 0, 1);
+		return;
+	}
+
+	last = (ranges[count - 1] >> FONTMAPPER_VECTOR_BASE) + 1;
+	list_create( &pfe->vectors, last, 1);
+	bzero( pfe->vectors.items, last * sizeof(Handle));
+
+	for ( i = 0; i < count; i += 2 ) {
+		int j;
+		int from = ranges[i];
+		int to   = ranges[i+1];
+		for (j = from; j <= to; j++) {
+			Byte * map;
+			unsigned int page = j >> FONTMAPPER_VECTOR_BASE, bit = j & FONTMAPPER_VECTOR_MASK;
+			if (( map = (Byte*) pfe->vectors.items[page]) == NULL ) {
+				if (!( map = malloc(1 << (FONTMAPPER_VECTOR_BASE - 3)))) {
+					warn("Not enough memory");
+					return;
+				}
+				bzero(map, 1 << (FONTMAPPER_VECTOR_BASE - 3));
+				pfe->vectors.items[page] = (Handle) map;
+			}
+			map[ bit >> 3 ] |= 1 << (bit & 7);
+		}
+	}
+}
+
+static Bool
+can_substitute(uint32_t c, int pitch, int fid)
+{
+	Byte * fa;
+	unsigned int page, bit;
+	PPassiveFontEntry pfe = PASSIVE_FONT(fid);
+
+	if ( !pfe-> ranges_queried )
+		query_ranges(pfe);
+
+	if ( pitch != fpDefault && (( pfe->font.undef.pitch || pfe->font.pitch != pitch )))
+		return false;
+
+	page = c >> FONTMAPPER_VECTOR_BASE;
+	bit  = c & FONTMAPPER_VECTOR_MASK;
+	fa = (Byte *) pfe-> vectors.items[ page ];
+	if ( !fa ) return false;
+
+	if (( fa[bit >> 3] & (bit & 7)) == 0) return false;
+
+	if ( font_active_entries.count <= page ) {
+		while (font_active_entries.count <= page )
+			list_add(&font_active_entries, (Handle)NULL);
+	}
+	if ( font_active_entries.items[page] == nilHandle ) {
+		font_active_entries.items[page] = (Handle) plist_create(4, 4);
+	}
+	list_add((PList) font_active_entries.items[page], fid);
+	
+	return true;
+}
+
+static unsigned int
+find_font(uint32_t c, int pitch, uint16_t preferred_font)
+{
+	unsigned int i;
+	unsigned int page = c >> FONTMAPPER_VECTOR_BASE;
+
+	if ( preferred_font > 0 && can_substitute(c, pitch, preferred_font))
+		return preferred_font;
+
+	if ( font_active_entries.count > page && font_active_entries.items[page] ) {
+		PList fonts = (PList) font_active_entries.items[page];
+		for (i = 0; i < fonts->count; i++)
+			if ( can_substitute(c, pitch, i))
+				return i;
+	}
+
+	if ( font_mapper_default_id == -1 ) {
+		Font font;
+		apc_font_default( &font);
+		font_mapper_default_id = -2;
+		for ( i = 1; i < font_passive_entries.count; i++) {
+			PPassiveFontEntry pfe = PASSIVE_FONT(i);
+			if ( strcmp( font.name, pfe->font.name ) != 0 ) continue;
+			font_mapper_default_id = i;
+			break;
+		}
+	}
+	if ( font_mapper_default_id >= 0 && can_substitute(c, pitch, font_mapper_default_id))
+		return font_mapper_default_id;
+
+	for ( i = 1; i < font_passive_entries.count; i++)
+		if ( can_substitute(c, pitch, i))
+			return i;
+
+	return 0;
+}
+
+SV *
+Drawable_fontPalette( Handle self, Bool set, int index, SV * sv)
+{
+	if ( var->  stage > csFrozen) return nilSV;
+	if ( set) {
+		croak("Attempt to write read-only property %s", "Drawable::fontPalette");
+	} else if ( index < 0 ) {
+		return newSViv( font_passive_entries.count );
+	} else {
+		PFont f = prima_font_mapper_get_font(index);
+		if (!f) return nilSV;
+		return sv_Font2HV( f );
+	}
+}
+
+/* SECTION 2: GET TEXT WIDTH / TEXT OUT */
 
 static void*
 read_subarray( AV * av, int index, 
@@ -209,6 +455,176 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 	return ok;
 }
 
+static PFontABC
+call_get_font_abc( Handle self, unsigned int from, unsigned int to, int flags);
+
+static int
+get_glyphs_width( Handle self, PGlyphsOutRec t, Bool add_overhangs)
+{
+	int i, ret;
+	uint16_t * advances = t->advances;
+
+	for ( i = ret = 0; i < t-> len; i++)
+		ret += *(advances++);
+
+	if ( add_overhangs ) {
+		PFontABC abc;
+		uint16_t glyph1 = t->glyphs[0], glyph2 = t->glyphs[t->len - 1];
+
+		abc = call_get_font_abc( self, glyph1, glyph1, toGlyphs);
+		if ( !abc ) return ret;
+		ret += ( abc->a < 0 ) ? (-abc->a + .5) : 0;
+
+		if ( glyph1 != glyph2 ) {
+			free(abc);
+			abc = call_get_font_abc( self, glyph2, glyph2, toGlyphs);
+			if ( !abc ) return ret;
+		}
+		ret += ( abc->c < 0 ) ? (-abc->c + .5) : 0;
+	}
+
+	return ret;
+}
+
+
+int
+Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
+{
+	gpARGS;
+	int res;
+
+	if ( !SvROK( text )) {
+		STRLEN dlen;
+		char * c_text = SvPV( text, dlen);
+		if ( prima_is_utf8_sv( text)) {
+			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
+			flags |= toUTF8;
+		} else
+			flags &= ~toUTF8;
+		if (( len = check_length(from,len,dlen)) == 0)
+			return 0;
+		c_text = hop_text(c_text, flags & toUTF8, from);
+		gpENTER(0);
+		res = apc_gp_get_text_width( self, c_text, len, flags);
+		gpLEAVE;
+	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
+		GlyphsOutRec t;
+		if (!read_glyphs(&t, text, 0, "Drawable::get_text_width"))
+			return false;
+		if (t.len == 0)
+			return true;
+		if (( len = check_length(from,len,t.len)) == 0)
+			return 0;
+		hop_glyphs(&t, from, len);
+		if (t.advances)
+			return get_glyphs_width(self, &t, flags & toAddOverhangs);
+		gpENTER(0);
+		res = apc_gp_get_glyphs_width( self, &t);
+		gpLEAVE;
+	} else {
+		SV * ret;
+		gpENTER(0);
+		ret = sv_call_perl(text, "get_text_width", "<Hiii", self, flags, from, len);
+		gpLEAVE;
+		res = (ret && SvOK(ret)) ? SvIV(ret) : 0;
+	}
+
+	return res;
+}
+
+static void
+get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
+{
+	Bool text_out_baseline;
+
+	t-> flags = 0;
+
+	pt[0].y = pt[2]. y = var-> font. ascent - 1;
+	pt[1].y = pt[3]. y = - var-> font. descent;
+	pt[4].y = pt[0]. x = pt[1].x = 0;
+	pt[3].x = pt[2]. x = pt[4].x = get_glyphs_width(self, t, false);
+
+	text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
+		apc_gp_get_text_out_baseline(self) :
+		my-> get_textOutBaseline(self);
+	if ( !text_out_baseline ) {
+		int i = 4, d = var->font. descent;
+		while ( i--) pt[i]. y += d;
+	}
+
+	if ( var-> font. direction != 0) {
+		int i;
+#define GRAD 57.29577951
+		float s = sin( var-> font. direction / GRAD);
+		float c = cos( var-> font. direction / GRAD);
+#undef GRAD
+		for ( i = 0; i < 5; i++) {
+			float x = pt[i]. x * c - pt[i]. y * s;
+			float y = pt[i]. x * s + pt[i]. y * c;
+			pt[i]. x = x + (( x > 0) ? 0.5 : -0.5);
+			pt[i]. y = y + (( y > 0) ? 0.5 : -0.5);
+		}
+	}
+}
+
+SV *
+Drawable_get_text_box( Handle self, SV * text, int from, int len )
+{
+	gpARGS;
+	Point * p;
+	AV * av;
+	int i, flags = 0;
+	if ( !SvROK( text )) {
+		STRLEN dlen;
+		char * c_text = SvPV( text, dlen);
+
+		if ( prima_is_utf8_sv( text)) {
+			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
+			flags |= toUTF8;
+		}
+		if ((len = check_length(from,len,dlen)) == 0)
+			return newRV_noinc(( SV *) newAV());
+		c_text = hop_text(c_text, flags & toUTF8, from);
+		gpENTER( newRV_noinc(( SV *) newAV()));
+		p = apc_gp_get_text_box( self, c_text, len, flags);
+		gpLEAVE;
+	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
+		GlyphsOutRec t;
+		if (!read_glyphs(&t, text, 0, "Drawable::get_text_box"))
+			return false;
+		if (( len = check_length(from,len,t.len)) == 0)
+			return newRV_noinc(( SV *) newAV());
+		hop_glyphs(&t, from, len);
+		if (t.advances) {
+			if (!( p = malloc( sizeof(Point) * 5 )))
+				return newRV_noinc(( SV *) newAV());
+			get_glyphs_box(self, &t, p);
+		} else {
+			gpENTER( newRV_noinc(( SV *) newAV()));
+			p = apc_gp_get_glyphs_box( self, &t);
+			gpLEAVE;
+		}
+	} else {
+		SV * ret;
+		gpENTER( newRV_noinc(( SV *) newAV()));
+		ret = newSVsv(sv_call_perl(text, "get_text_box", "<Hii", self, from, len ));
+		gpLEAVE;
+		return ret;
+	}
+
+	av = newAV();
+	if ( p) {
+		for ( i = 0; i < 5; i++) {
+			av_push( av, newSViv( p[ i]. x));
+			av_push( av, newSViv( p[ i]. y));
+		};
+		free( p);
+	}
+	return newRV_noinc(( SV *) av);
+}
+
+/* SECTION 3: SHAPING */
+
 static void*
 warn_malloc(ssize_t size)
 {
@@ -269,7 +685,6 @@ which might ligate.
 
 typedef struct {
 	int start, i, vis_len;
-	Byte rtl;
 	uint16_t index;
 } BidiRunRec, *PBidiRunRec;
 
@@ -283,19 +698,19 @@ run_init(PBidiRunRec r, int visual_length)
 static int
 run_next(PTextShapeRec t, PBidiRunRec r)
 {
-	int n, rtl, start = r->i;
+	int n, rtl, font, start = r->i;
 
 	if ( r->i >= r->vis_len ) return 0;
 
-	rtl = t->analysis[r->i];
+	rtl  = t->analysis[r->i];
+	if ( t-> fonts ) font = t->fonts[r->i];
 	for ( n = 0; r->i < r->vis_len + 1; r->i++, n++) {
 		if (
 			r->i >= r->vis_len ||          /* eol */
-			(t-> analysis[r->i] != rtl)    /* rtl != ltr */
-		) {
-			r->rtl = rtl;
+			(t-> analysis[r->i] != rtl) || /* rtl != ltr */
+			(t->fonts && font != t->fonts[r->i])
+		)
 			return r->i - start;
-		}
 	}
 
 	return 0;
@@ -319,6 +734,8 @@ run_alloc( PTextShapeRec t, int visual_start, int visual_len, Bool invert_rtl, P
 
 	run-> text         = t->text + visual_start;
 	run-> v2l          = t->v2l + visual_start;
+	if ( t-> fonts )
+		run-> fonts  = t->fonts + visual_start;
 	for ( i = 0; i < visual_len; i++) {
 		register uint32_t c = run->text[i];
 		if ( 
@@ -347,8 +764,6 @@ run_alloc( PTextShapeRec t, int visual_start, int visual_len, Bool invert_rtl, P
 		run-> positions = t->positions + t-> n_glyphs * 2;
 	if ( t-> advances )
 		run-> advances  = t->advances + t-> n_glyphs;
-	if ( t-> fonts )
-		run-> fonts     = t->fonts + t-> n_glyphs;
 }
 
 
@@ -490,13 +905,30 @@ FAIL:
 
 #endif
 
+static void
+analyze_fonts( Handle self, PTextShapeRec t, uint16_t * fonts)
+{
+	int i;
+	uint32_t *text = t-> text;
+	int pitch      = (t->flags >> toPitch) & fpMask;
+	uint16_t fid   = PTR2IV(hash_fetch(font_substitutions, var->font.name, strlen(var->font.name)));
+
+	bzero(fonts, t->len * sizeof(uint16_t));
+	if ( fid == 0 ) return;
+
+	for ( i = 0; i < t->len; i++) {
+		unsigned int nfid = find_font(*(text++), pitch, fid);
+		if ( nfid != fid ) fonts[i] = nfid;
+	}
+}
+
 static Bool
 shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	Bool glyph_mapper_only, Bool fribidi_arabic_shaping, Bool reorder
-)
-{
-	Bool ok, reorder_swaps_rtl;
+) {
+	Bool ok, reorder_swaps_rtl, font_changed = false;
 	Byte analysis[MAX_CHARACTERS], *save_analysis;
+	uint16_t fonts[MAX_CHARACTERS], *save_fonts;
 	uint16_t i, l2v[MAX_CHARACTERS], run_offs, run_len;
 	BidiRunRec brr;
 
@@ -535,6 +967,9 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 		l2v[t->v2l[i]] = i;
 	for ( i = 0; i < t->len; i++)
 		analysis[i] = t->analysis[l2v[i]];
+	if ( t-> fonts )
+		analyze_fonts(self, t, fonts);
+
 #ifdef _DEBUG
 	printf("v2l: ");
 	for (i = 0; i < t->len; i++)
@@ -544,12 +979,20 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	for (i = 0; i < t->len; i++)
 		printf("%d(%d) ", l2v[i], analysis[i]);
 	printf("\n");
+	if ( t-> fonts ) {
+		printf("fonts: ");
+		for (i = 0; i < t->len; i++)
+			printf("%d ", fonts[i]);
+		printf("\n");
+	}
 #endif
 	
 	run_offs = 0;
 	run_init(&brr, t->len);
 	save_analysis = t->analysis;
 	t-> analysis = analysis;
+	save_fonts = t->fonts;
+	if ( t->fonts ) t-> fonts = fonts;
 	while (( run_len = run_next(t, &brr)) > 0) {
 		TextShapeRec run;
 		run_alloc(t, run_offs, run_len, glyph_mapper_only ^ reorder_swaps_rtl, &run);
@@ -565,6 +1008,17 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 		printf("\n");
 	}
 #endif
+		if ( t-> fonts && ( run.fonts[0] != 0 || font_changed )) {
+			Font src, dst;
+			src = PASSIVE_FONT(run.fonts[0])->font;
+			dst = var->font;
+			apc_font_pick( self, &src, &dst);
+			apc_gp_set_font( self, &dst);
+#ifdef _DEBUG
+			printf("%d: set font #%d: %s\n", run_offs, run.fonts[0], dst.name);
+#endif
+			font_changed = true;
+		}
 		ok = shaper( self, &run );
 #ifdef _DEBUG
 	{
@@ -579,12 +1033,14 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 		for (i = t->n_glyphs; i < t->n_glyphs + run.n_glyphs; i++) {
 			int x = glyph_mapper_only ? i - t->n_glyphs : t->indexes[i];
 			t->indexes[i] = t->v2l[x + run_offs];
+			if ( t-> fonts ) save_fonts[i] = run.fonts[0];
 		}
 		run_offs += run_len;
 #ifdef _DEBUG
 	{
 		int i;
 		printf("indexes copied back: ");
+		if ( t-> fonts) printf("(font=%d) ", save_fonts[t->n_glyphs]);
 		for (i = t->n_glyphs; i < t->n_glyphs + run.n_glyphs; i++)
 			printf("%d ", t->indexes[i]);
 		printf("\n");
@@ -593,6 +1049,10 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 		t-> n_glyphs += run.n_glyphs;
 	}
 	t-> analysis = save_analysis;
+	t-> fonts = save_fonts;
+
+	if ( font_changed )
+		apc_gp_set_font( self, &var->font);
 
 	return ok;
 }
@@ -862,172 +1322,7 @@ EXIT:
 	return return_zero ? newSViv(0) : nilSV;
 }
 
-static PFontABC
-call_get_font_abc( Handle self, unsigned int from, unsigned int to, int flags);
-
-static int
-get_glyphs_width( Handle self, PGlyphsOutRec t, Bool add_overhangs)
-{
-	int i, ret;
-	uint16_t * advances = t->advances;
-
-	for ( i = ret = 0; i < t-> len; i++)
-		ret += *(advances++);
-
-	if ( add_overhangs ) {
-		PFontABC abc;
-		uint16_t glyph1 = t->glyphs[0], glyph2 = t->glyphs[t->len - 1];
-
-		abc = call_get_font_abc( self, glyph1, glyph1, toGlyphs);
-		if ( !abc ) return ret;
-		ret += ( abc->a < 0 ) ? (-abc->a + .5) : 0;
-
-		if ( glyph1 != glyph2 ) {
-			free(abc);
-			abc = call_get_font_abc( self, glyph2, glyph2, toGlyphs);
-			if ( !abc ) return ret;
-		}
-		ret += ( abc->c < 0 ) ? (-abc->c + .5) : 0;
-	}
-
-	return ret;
-}
-
-int
-Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
-{
-	gpARGS;
-	int res;
-
-	if ( !SvROK( text )) {
-		STRLEN dlen;
-		char * c_text = SvPV( text, dlen);
-		if ( prima_is_utf8_sv( text)) {
-			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
-			flags |= toUTF8;
-		} else
-			flags &= ~toUTF8;
-		if (( len = check_length(from,len,dlen)) == 0)
-			return 0;
-		c_text = hop_text(c_text, flags & toUTF8, from);
-		gpENTER(0);
-		res = apc_gp_get_text_width( self, c_text, len, flags);
-		gpLEAVE;
-	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
-		GlyphsOutRec t;
-		if (!read_glyphs(&t, text, 0, "Drawable::get_text_width"))
-			return false;
-		if (t.len == 0)
-			return true;
-		if (( len = check_length(from,len,t.len)) == 0)
-			return 0;
-		hop_glyphs(&t, from, len);
-		if (t.advances)
-			return get_glyphs_width(self, &t, flags & toAddOverhangs);
-		gpENTER(0);
-		res = apc_gp_get_glyphs_width( self, &t);
-		gpLEAVE;
-	} else {
-		SV * ret;
-		gpENTER(0);
-		ret = sv_call_perl(text, "get_text_width", "<Hiii", self, flags, from, len);
-		gpLEAVE;
-		res = (ret && SvOK(ret)) ? SvIV(ret) : 0;
-	}
-
-	return res;
-}
-
-static void
-get_glyphs_box( Handle self, PGlyphsOutRec t, Point * pt)
-{
-	Bool text_out_baseline;
-
-	t-> flags = 0;
-
-	pt[0].y = pt[2]. y = var-> font. ascent - 1;
-	pt[1].y = pt[3]. y = - var-> font. descent;
-	pt[4].y = pt[0]. x = pt[1].x = 0;
-	pt[3].x = pt[2]. x = pt[4].x = get_glyphs_width(self, t, false);
-
-	text_out_baseline = ( my-> textOutBaseline == Drawable_textOutBaseline) ?
-		apc_gp_get_text_out_baseline(self) :
-		my-> get_textOutBaseline(self);
-	if ( !text_out_baseline ) {
-		int i = 4, d = var->font. descent;
-		while ( i--) pt[i]. y += d;
-	}
-
-	if ( var-> font. direction != 0) {
-		int i;
-#define GRAD 57.29577951
-		float s = sin( var-> font. direction / GRAD);
-		float c = cos( var-> font. direction / GRAD);
-#undef GRAD
-		for ( i = 0; i < 5; i++) {
-			float x = pt[i]. x * c - pt[i]. y * s;
-			float y = pt[i]. x * s + pt[i]. y * c;
-			pt[i]. x = x + (( x > 0) ? 0.5 : -0.5);
-			pt[i]. y = y + (( y > 0) ? 0.5 : -0.5);
-		}
-	}
-}
-
-SV *
-Drawable_get_text_box( Handle self, SV * text, int from, int len )
-{
-	gpARGS;
-	Point * p;
-	AV * av;
-	int i, flags = 0;
-	if ( !SvROK( text )) {
-		STRLEN dlen;
-		char * c_text = SvPV( text, dlen);
-
-		if ( prima_is_utf8_sv( text)) {
-			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
-			flags |= toUTF8;
-		}
-		if ((len = check_length(from,len,dlen)) == 0)
-			return newRV_noinc(( SV *) newAV());
-		c_text = hop_text(c_text, flags & toUTF8, from);
-		gpENTER( newRV_noinc(( SV *) newAV()));
-		p = apc_gp_get_text_box( self, c_text, len, flags);
-		gpLEAVE;
-	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
-		GlyphsOutRec t;
-		if (!read_glyphs(&t, text, 0, "Drawable::get_text_box"))
-			return false;
-		if (( len = check_length(from,len,t.len)) == 0)
-			return newRV_noinc(( SV *) newAV());
-		hop_glyphs(&t, from, len);
-		if (t.advances) {
-			if (!( p = malloc( sizeof(Point) * 5 )))
-				return newRV_noinc(( SV *) newAV());
-			get_glyphs_box(self, &t, p);
-		} else {
-			gpENTER( newRV_noinc(( SV *) newAV()));
-			p = apc_gp_get_glyphs_box( self, &t);
-			gpLEAVE;
-		}
-	} else {
-		SV * ret;
-		gpENTER( newRV_noinc(( SV *) newAV()));
-		ret = newSVsv(sv_call_perl(text, "get_text_box", "<Hii", self, from, len ));
-		gpLEAVE;
-		return ret;
-	}
-
-	av = newAV();
-	if ( p) {
-		for ( i = 0; i < 5; i++) {
-			av_push( av, newSViv( p[ i]. x));
-			av_push( av, newSViv( p[ i]. y));
-		};
-		free( p);
-	}
-	return newRV_noinc(( SV *) av);
-}
+/* SECTION 4: TEXT WRAP */
 
 static PFontABC
 find_abc_in_list_cache( PList p, int base )

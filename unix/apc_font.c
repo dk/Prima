@@ -2172,40 +2172,14 @@ prima_font_debug_style(int style)
 	return buf;
 }
 
-int
-apc_application_get_mapper_font( Handle self, int index, Font * font)
-{
-#ifdef USE_XFT
-	if ( do_xft ) return prima_xft_get_mapper_font(self, index, font);
-#endif
-	return 0;
-}
-
-int
-apc_application_set_mapper_font( Handle self, int index, Font * font)
-{
-#ifdef USE_XFT
-	if ( do_xft ) return prima_xft_set_mapper_font(self, index, font);
-#endif
-	return 0;
-}
-
-void
-apc_font_mapper_destroy_handle( Handle handle )
-{
-#ifdef USE_XFT
-	if ( do_xft ) prima_xft_mapper_destroy_handle(handle);
-#endif
-}
-
 unsigned long *
-apc_font_mapper_query_ranges(PFont font, int * count, Handle * handle)
+apc_gp_get_mapper_ranges(PFont font, int * count)
 {
 #ifdef USE_XFT
 	if ( do_xft )
-		return prima_xft_mapper_query_ranges(font, count, handle);
+		return prima_xft_mapper_query_ranges(font, count);
 #endif
 	*count = 0;
-	*handle = nilHandle;
 	return NULL;
 }
+

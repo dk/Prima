@@ -1979,9 +1979,6 @@ apc_application_get_os_info( char *system, int slen,
 
 extern Point
 apc_application_get_size( Handle self);
-		
-extern int
-apc_application_get_mapper_font( Handle self, int index, Font * font);
 
 extern Box *
 apc_application_get_monitor_rects( Handle self, int * nrects);
@@ -1992,9 +1989,6 @@ apc_application_go( Handle self);
 extern Bool
 apc_application_lock( Handle self);
 
-extern int
-apc_application_set_mapper_font( Handle self, int index, Font * font);
-
 extern Bool
 apc_application_sync( void);
 
@@ -2003,12 +1997,6 @@ apc_application_unlock( Handle self);
 
 extern Bool
 apc_application_yield( Bool wait_for_event );
-
-extern void
-apc_font_mapper_destroy_handle( Handle handle );
-
-extern unsigned long *
-apc_font_mapper_query_ranges(PFont font, int * count, Handle * handle);
 
 /* Component */
 extern Bool
@@ -3675,6 +3663,9 @@ apc_gp_get_font_def( Handle self, int firstChar, int lastChar, int flags);
 
 extern unsigned long *
 apc_gp_get_font_ranges( Handle self, int * count);
+
+extern unsigned long *
+apc_gp_get_mapper_ranges(PFont font, int * count);
 
 extern char *
 apc_gp_get_font_languages( Handle self);

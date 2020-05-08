@@ -592,25 +592,6 @@ Application_colorIndex( Handle self, Bool set, int index, Color color)
 	return clInvalid;
 }
 
-SV *
-Application_fontPalette( Handle self, Bool set, int index, SV * sv)
-{
-	if ( var->  stage > csFrozen) return nilSV;
-	if ( set) {
-		Font f;
-		SvHV_Font( sv, &f, "Application::fontPalette");
-		apc_application_set_mapper_font( self, index, &f);
-		return nilSV;
-	} else if ( index < 0 ) {
-		return newSViv( apc_application_get_mapper_font( self, -1, NULL ));
-	} else {
-		Font f;
-		if ( apc_application_get_mapper_font( self, index, &f ) == 0)
-			return nilSV;
-		return sv_Font2HV( &f );
-	}
-}
-
 void
 Application_set_font( Handle self, Font font)
 {
@@ -618,7 +599,6 @@ Application_set_font( Handle self, Font font)
 	apc_font_pick( self, &font, & var-> font);
 	if ( opt_InPaint) apc_gp_set_font ( self, &var-> font);
 }
-
 
 Bool
 Application_close( Handle self)
