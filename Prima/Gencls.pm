@@ -32,6 +32,7 @@ use constant TYPES => 0;
 use constant IDS   => 1;
 use constant PROPS => 2;
 use constant DEFS  => 3;
+use constant UTF8  => 4;
 
 my ( $warnings,
 	$clsMethod,
@@ -454,6 +455,7 @@ sub parse_struc
 		order => $nextStructure++,
 	);
 	$tok = gettok;
+	my %utf8_map;
 	if ( $tok eq '=')
 	{
 		# determining typecasting
@@ -464,7 +466,7 @@ sub parse_struc
 		if ( $arrays{$nid}) {
 			$arrays{ $id} = [ $arrays{$nid}[0], $arrays{$nid}[1], {%added}];
 		} else {
-			$structs{$id} = [[@{$structs{$nid}[0]}], [@{$structs{$nid}[1]}], {%added}, [@{$structs{$nid}[3]}]];
+			$structs{$id} = [[@{$structs{$nid}[0]}], [@{$structs{$nid}[1]}], {%added}, [@{$structs{$nid}[3]}], {%{$structs{$nid}[4]}}];
 		}
 		return;
 	} else {
@@ -482,7 +484,14 @@ sub parse_struc
 			expect(';');
 			$arrays{ $id} = [ $dim, $type, {%added}];
 			return;
-		} else { check('{'); }
+		} else {
+			if ( $tok eq 'with') {
+				$utf8_map{container} = 'utf8_flags';
+				expect('utf8');
+				$tok = gettok;
+			}
+			check('{');
+		}
 	}
 
 	# cycling entries
@@ -520,7 +529,7 @@ sub parse_struc
 		push ( @ids, $tok);
 		if ( $strucId eq "%")
 		{
-			my $def;
+			my ($def,$name);
 			if
 			( $type eq 'Handle') { $def = '( Handle) C_POINTER_UNDEF'; } elsif
 			( $type eq 'SV*')    { $def = '( SV*) C_POINTER_UNDEF'; } elsif
@@ -531,9 +540,20 @@ sub parse_struc
 			( $type eq 'string') { $def = 'C_STRING_UNDEF'; };
 			$tok = gettok;
 			if ( $tok eq 'with' ) {
-				expect('undef');
-				expect(';');
-				$def = "undef:$def";
+				while (1) {
+					my $nt = gettok;
+					if ( $nt eq 'undef') {
+						$def = "undef:$def";
+					} elsif ( $nt eq 'utf8') {
+						error "Type for $ids[-1] with utf8 must be 'string', not '$type'"
+							if $type ne 'string';
+						expect('(');
+						$utf8_map{fields}->{$ids[-1]} = gettok;
+						expect(')');
+					} elsif ( $nt eq ';') {
+						last;
+					}
+				}
 			} elsif ( $tok eq '=') {
 				$def = gettok;
 				expect(';');
@@ -561,7 +581,7 @@ sub parse_struc
 		$ln = $lineStart;
 		$added{genh} = ${$structs{$id}[2]}{genh};
 	}
-	$structs{ $id} = [[@types], [@ids], {%added}, [@defs]];
+	$structs{ $id} = [[@types], [@ids], {%added}, [@defs], {%utf8_map}];
 }
 
 sub parse_typedef
@@ -1111,7 +1131,7 @@ sub load_structures
 			if (( $tok eq '@') || ( $tok eq '%')) {
 				parse_struc( $tok, $global);
 				next;
-			} elsif ( $tok eq '$') {   # dont be stupid, cperl! '
+			} elsif ( $tok eq '$') {
 				parse_typedef( $global);
 				next;
 			} elsif ( $tok eq 'define') {
@@ -1986,6 +2006,7 @@ for ( sort { $structs{$a}-> [PROPS]-> {order} <=> $structs{$b}-> [PROPS]-> {orde
 		my @types = @{$structs{$_}-> [TYPES]};
 		my @ids   = @{$structs{$_}-> [IDS]};
 		my @def   = @{$structs{$_}-> [DEFS]};
+		my $utfs  = $structs{$_}->[UTF8];
 		print HEADER "typedef struct _$_ {\n";
 		my ($maxw_undefs, @undefs) = (0);
 		for ( my $j = 0; $j < @types; $j++) {
@@ -2001,6 +2022,9 @@ for ( sort { $structs{$a}-> [PROPS]-> {order} <=> $structs{$b}-> [PROPS]-> {orde
 				push @undefs, $ids[$j];
 				$maxw_undefs = length $ids[$j] if length($ids[$j]) > $maxw_undefs;
 			}
+		}
+		if ( defined $utfs->{container}) {
+			print HEADER "\tU8 $utfs->{container};\n";
 		}
 		if ( @undefs ) {
 			print HEADER "\tstruct {\n";
@@ -2177,19 +2201,25 @@ SD
 	# generating SvHV_hash & sv_hash2HV, if any
 	for ( sort { $structs{$a}-> [PROPS]-> {order} <=> $structs{$b}-> [PROPS]-> {order}} keys %structs)
 	{
-		if ( ${$structs{$_}[2]}{genh} && ${$structs{$_}[2]}{hash})
+		my $S = $_;
+		my $s = $structs{$S};
+		if ( $s->[PROPS]->{genh} && $s->[PROPS]->{hash})
 		{
-			print HEADER "$_ * SvHV_$_( SV * hashRef, $_ * strucRef, const char * errorAt)\n{\n";
-			print HEADER "\tconst char * err = errorAt ? errorAt : \"$_\";\n";
+			print HEADER "$S * SvHV_$S( SV * hashRef, $S * strucRef, const char * errorAt)\n{\n";
+			print HEADER "\tconst char * err = errorAt ? errorAt : \"$S\";\n";
 			print HEADER "\tHV * $incHV = ( HV*)\n\t".
 				"(( SvROK( hashRef) && ( SvTYPE( SvRV( hashRef)) == SVt_PVHV)) ? SvRV( hashRef)\n\t\t".
 				": ( croak( \"Illegal hash reference passed to %s\", err), nil));\n";
 			print HEADER "\tSV ** $incSV;\n\n\t(void)$incSV;\n\n";
-			for ( my $j = 0; $j < scalar @{$structs{$_}[0]}; $j++)
+			my $utfs  = $s->[UTF8];
+			if ( exists $utfs->{container}) {
+				print HEADER "\tstrucRef->$utfs->{container} = 0;\n\n";
+			}
+			for ( my $j = 0; $j < scalar @{$s->[TYPES]}; $j++)
 			{
-				my $lType = @{ $structs{$_}[ TYPES]}[$j];
-				my $lName = @{ $structs{$_}[ IDS]}[$j];
-				my $def   = @{ $structs{$_}[ DEFS]}[$j];
+				my $lType = @{ $s->[TYPES]}[$j];
+				my $lName = @{ $s->[IDS]}[$j];
+				my $def   = @{ $s->[DEFS]}[$j];
 				my $inter;
 				my $lNameLen = length $lName;
 
@@ -2213,6 +2243,9 @@ CONTAINED_STRUCTURE
 						print HEADER "\tstrucRef-> undef.$lName = ($incSV == NULL);\n";
 						$def = $1;
 					}
+					if ( exists $utfs->{fields}->{$lName}) {
+						print HEADER "\tif ($incSV && prima_is_utf8_sv(*$incSV)) strucRef->$utfs->{container} |= $utfs->{fields}->{$lName};\n";
+					}
 					$inter = "$incSV ? " . sv2type( $lType, "*$incSV") . " : $def";
 					print HEADER "\t", cwrite( $lType, $inter, "strucRef-> $lName"), "\n\n";
 				}
@@ -2222,15 +2255,18 @@ CONTAINED_STRUCTURE
 
 			print HEADER "SV * sv_${_}2HV( $_ * strucRef)\n{\t\n";
 			print HEADER "\tHV * $incHV = newHV();\n";
-			for ( my $k = 0; $k < @{ $structs{$_}[TYPES]}; $k++)
+			for ( my $k = 0; $k < @{ $s->[TYPES]}; $k++)
 			{
-				my $lName = @{$structs{$_}[IDS]}[$k];
+				my $lName = @{$s->[IDS]}[$k];
 				my $lNameLen = length $lName;
-				my $lType = @{$structs{$_}[TYPES]}[$k];
-				my $inter = type2sv( $lType, "strucRef-> $lName");
+				my $lType = @{$s->[TYPES]}[$k];
+				my $inter =
+					exists $utfs->{fields}->{$lName} ?
+					"prima_svpv_utf8(strucRef->$lName, strucRef->$utfs->{container} & $utfs->{fields}->{$lName})" :
+					type2sv( $lType, "strucRef->$lName");
 				my $prefix =
-					($structs{$_}->[DEFS]->[$k] =~ /^undef:/) ?
-						"if (!strucRef-> undef.$lName)" :
+					($s->[DEFS]->[$k] =~ /^undef:/) ?
+						"if (!strucRef->undef.$lName)" :
 						"(void)";
 				print HEADER "\t$prefix hv_store( $incHV, \"$lName\", $lNameLen, $inter, 0);\n";
 			}

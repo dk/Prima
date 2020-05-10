@@ -272,9 +272,9 @@ gp_get_polyfont_widths( Handle self, const PGlyphsOutRec t, int flags, ABC * ext
 	FontContext fc;
 
 	objCheck;
-	memset(extents, 0, sizeof(ABC));	
-	if ( len == 0) return;
-	
+	memset(extents, 0, sizeof(ABC));
+	if ( t->len == 0) return;
+
 	font_context_init(&fc, self, t);
 
 	if ( t->advances ) {
@@ -1030,7 +1030,7 @@ gp_get_font_def_bitmap( Handle self, int first, int last, int flags, PFontABC ab
 	HBITMAP bm, oldBM;
 	BITMAPINFO bi;
 	HDC dc;
-	LOGFONT logfont;
+	LOGFONTW logfont;
 	HFONT hfont, oldFont;
 	Byte * glyph, * empty;
 
@@ -1068,7 +1068,7 @@ gp_get_font_def_bitmap( Handle self, int first, int last, int flags, PFontABC ab
 	font = var font;
 	font. direction = 0;
 	font_font2logfont( &font, &logfont);
-	hfont = CreateFontIndirect( &logfont);
+	hfont = CreateFontIndirectW( &logfont);
 	oldFont = SelectObject( dc, hfont );
 
 	memset( abc, 0, sizeof(FontABC) * (last - first + 1));
@@ -1213,7 +1213,7 @@ apc_gp_get_mapper_ranges(PFont font, int * count)
 	HDC dc;
 	unsigned long * ret;
 	char name[256];
-	LOGFONT logfont;
+	LOGFONTW logfont;
 	HFONT hfont, hstock;
 
 	*count = 0;
@@ -1224,7 +1224,7 @@ apc_gp_get_mapper_ranges(PFont font, int * count)
 		return NULL;
 
 	font_font2logfont( font, &logfont);
-	if ( !( hfont = CreateFontIndirect( &logfont))) {
+	if ( !( hfont = CreateFontIndirectW( &logfont))) {
 		apiErr;
 		return NULL;
 	}

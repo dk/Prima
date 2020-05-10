@@ -797,7 +797,7 @@ sub on_fontchanged
 	$self-> {font_width} = $font-> width;
 
 	$self-> check_auto_size;
-	$self-> reset;
+	$self-> text($self-> text);
 }
 
 sub set_alignment

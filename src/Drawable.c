@@ -225,7 +225,13 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 		if ( usePitch ) dest-> pitch     = source-> pitch;
 		if ( useSize  ) dest-> size      = source-> size;
 		if ( useVec   ) dest-> vector    = source-> vector;
-		if ( useName  ) strcpy( dest-> name, source-> name);
+		if ( useName  ) {
+			strcpy( dest-> name, source-> name);
+			if ( source->utf8_flags & FONT_UTF8_NAME )
+				dest->utf8_flags |= FONT_UTF8_NAME;
+			else
+				dest->utf8_flags &= ~FONT_UTF8_NAME;
+		}
 		if ( useEnc   ) strcpy( dest-> encoding, source-> encoding);
 	}
 
@@ -1144,7 +1150,6 @@ Drawable_set_font( Handle self, Font font)
 	apc_font_pick( self, &font, &var-> font);
 	apc_gp_set_font( self, &var-> font);
 }
-
 
 #ifdef __cplusplus
 }

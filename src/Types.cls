@@ -18,18 +18,18 @@ global @Box
 	int height;
 }
 
-global %Font {
+global %Font with utf8 {
 	int         height            with undef;
 	int         width             with undef;
 	int         style             with undef;
 	int         pitch             with undef;
 	double      direction         with undef;
 	int         vector            with undef;
-	string      name              with undef;
+	string      name              with undef with utf8(FONT_UTF8_NAME);
 	int         size              with undef;
 	string      encoding          with undef;
 	long        resolution        ;
-	string      family            ;
+	string      family            with utf8(FONT_UTF8_FAMILY);
 	int         ascent            ;
 	int         descent           ;
 	int         weight            ;
@@ -42,7 +42,6 @@ global %Font {
 	int         lastChar          ;
 	int         breakChar         ;
 	int         defaultChar       ;
-	U8          utf8_flags        ;
 }
 
 global @FillPattern U8[8];

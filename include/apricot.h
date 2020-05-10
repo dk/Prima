@@ -1507,6 +1507,9 @@ prima_utf8_length( const char * utf8, unsigned int length);
 extern Bool
 prima_is_utf8_sv( SV * sv);
 
+extern SV*
+prima_svpv_utf8( const char *text, int is_utf8);
+
 #if PERL_PATCHLEVEL >= 16
 #define prima_utf8_uvchr(_text, _textlen, _charlen) \
 	utf8_to_uvchr_buf(( U8*)(_text), (U8*)(_text) + (_textlen), _charlen)
