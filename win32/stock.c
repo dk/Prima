@@ -726,9 +726,6 @@ fep_register_mapper_fonts( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD
 		return 1;
 
 	f-> utf8_flags = flags;
-	strncpy(f->name, name, 255);
-	f->name[255] = 0;
-	f->undef.name = 0;
 
 	f-> pitch =
 		((( e-> elfLogFont.lfPitchAndFamily & 3) == DEFAULT_PITCH ) ? fpDefault :
@@ -748,6 +745,10 @@ register_mapper_fonts(void)
 {
 	HDC dc;
 	LOGFONTW elf;
+
+	/* MS Shell Dlg is a virtual font, not reported by enum */
+	prima_font_mapper_save_font(guts.windowFont.name);
+
 	if ( !( dc = dc_alloc()))
 		return;
 	memset( &elf, 0, sizeof( elf));

@@ -122,6 +122,11 @@ prima_font_mapper_save_font(const char * name)
 	f = &p->font;
 	memset( &f->undef, 0xff, sizeof(f->undef));
 	f->undef.encoding = 0; /* needs enforcing */
+	if (name) {
+		f->undef.name = 0;
+		strncpy(f->name, name, 256);
+		f->name[255] = 0;
+	}
 
 	if ( name ) hash_store(
 		font_substitutions,

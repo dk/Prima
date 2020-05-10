@@ -288,7 +288,7 @@ gp_get_polyfont_widths( Handle self, const PGlyphsOutRec t, int flags, ABC * ext
 			font_context_rewind(&fc, t->len - 1);
 			font_context_next(&fc);
 		}
-		GetCharABCWidthsI( sys ps, t->glyphs[len-1], 1, NULL, &abc);
+		GetCharABCWidthsI( sys ps, t->glyphs[t->len-1], 1, NULL, &abc);
 		extents->abcC = abc.abcC;
 		font_context_done(&fc);
 		return;
