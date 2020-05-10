@@ -1328,6 +1328,13 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 				break;
 			}
 		}
+		if ( is_simple && !(t.flags & toUTF8))
+			for ( i = 0; i < t.len; i++) {
+				if (t.text[i] > 0x7f) {
+					is_simple = false;
+					break;
+				}
+			}
 		if ( is_simple ) {
 			return_zero = true;
 			goto EXIT;
