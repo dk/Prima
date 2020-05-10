@@ -245,7 +245,6 @@ can_substitute(uint32_t c, int pitch, int fid)
 #ifdef _DEBUG
 		printf("add polyfont %s for chr(%x)", pfe->font.name, c);
 #endif
-
 		add_active_font(fid);
 	}
 
@@ -736,7 +735,7 @@ sv2uint32( SV * text, int * size, int * flags)
 	} else {
 		register int i = *size;
 		register uint32_t *dst = ret;
-		while (i-- > 0) *(dst++) = *(src++);
+		while (i-- > 0) *(dst++) = *((unsigned char*) src++);
 	}
 
 	return ret;

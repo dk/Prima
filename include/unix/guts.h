@@ -1373,6 +1373,9 @@ extern void
 prima_xft_init( void);
 
 extern void
+prima_xft_init_font_substitution( void);
+
+extern void
 prima_xft_done( void);
 
 extern void
