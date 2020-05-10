@@ -239,7 +239,7 @@ can_substitute(uint32_t c, int pitch, int fid)
 	if ( !fa ) return false;
 
 	bit  = c & FONTMAPPER_VECTOR_MASK;
-	if (( fa[bit >> 3] & (bit & 7)) == 0) return false;
+	if (( fa[bit >> 3] & (1 << (bit & 7))) == 0) return false;
 
 	if ( !pfe-> is_active ) {
 #ifdef _DEBUG
@@ -263,9 +263,11 @@ find_font(uint32_t c, int pitch, uint16_t preferred_font)
 
 	if ( font_active_entries.count > page && font_active_entries.items[page] ) {
 		PList fonts = (PList) font_active_entries.items[page];
-		for (i = 0; i < fonts->count; i++)
-			if ( can_substitute(c, pitch, i))
-				return i;
+		for (i = 0; i < fonts->count; i++) {
+			int fid = (int) fonts->items[i];
+			if ( can_substitute(c, pitch, fid))
+				return fid;
+		}
 	}
 
 	if ( font_mapper_default_id == -1 ) {
