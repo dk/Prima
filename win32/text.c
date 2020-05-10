@@ -455,7 +455,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 {objCheck false;{
 	Bool ok = true;
 	HDC ps = sys ps;
-	int xx, yy;
+	int xx, yy, savelen;
 	int bk  = GetBkMode( ps);
 	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
 	Bool use_path;
@@ -473,6 +473,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 
 	xx = x;
 	yy = sys lastSize. y - y;
+	savelen = t->len;
 	font_context_init(&fc, self, t);
 	while (( t-> len = font_context_next(&fc)) > 0 ) {
 		int advance = 0;
@@ -488,6 +489,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		}
 	}
 	font_context_done(&fc);
+	t->len = savelen;
 
 	if ( var font. style & (fsUnderlined | fsStruckOut))
 		underscore_font( self, x, yy, gp_get_glyphs_width( self, t, 0));
