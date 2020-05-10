@@ -307,10 +307,12 @@ sub fill_primitive
 	return $ok;
 }
 
+my $_experimental_polyfont = 1;
+
 sub text_shape_out
 {
 	my ( $self, $text, $x, $y, $rtl) = @_;
-	my %flags = (skip_if_simple => 1);
+	my %flags = (skip_if_simple => 1, polyfont => $_experimental_polyfont);
 	$flags{rtl} = $rtl if defined $rtl;
 	if ( my $glyphs = $self->text_shape($text, %flags)) {
 		$text = $glyphs;
@@ -321,7 +323,7 @@ sub text_shape_out
 sub get_text_shape_width
 {
 	my ( $self, $text, $flags) = @_;
-	my %flags = (skip_if_simple => 1);
+	my %flags = (skip_if_simple => 1, polyfont => $_experimental_polyfont);
 	$flags{rtl} = $flags & to::RTL if defined $flags;
 	if ( my $glyphs = $self->text_shape($text, %flags)) {
 		$text = $glyphs;
@@ -336,6 +338,7 @@ sub text_wrap_shape
 	$width = 1_000_000 unless defined $width;
 
 	my $opt = delete($opt{options}) // tw::Default;
+	$opt{polyfont} //= $_experimental_polyfont;
 
 	my $wrapped = $self-> text_wrap( $text, $width, $opt, delete($opt{tabs}) // 8);
 	return $wrapped if $opt & tw::ReturnChunks;
