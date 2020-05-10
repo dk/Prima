@@ -541,7 +541,7 @@ font_alloc( Font * data)
 	PDCFont ret = ( PDCFont) hash_fetch( fontMan, key, keyLen);
 
 	if ( ret == nil) {
-		LOGFONT logfont;
+		LOGFONTW logfont;
 		PFont   f;
 
 		if ( hash_count( fontMan) > 128)
@@ -553,11 +553,11 @@ font_alloc( Font * data)
 		memcpy( f = &ret-> font, data, sizeof( Font));
 		ret-> refcnt = 0;
 		font_font2logfont( f, &logfont);
-		if ( !( ret-> hfont  = CreateFontIndirect( &logfont))) {
-			LOGFONT lf;
+		if ( !( ret-> hfont  = CreateFontIndirectW( &logfont))) {
+			LOGFONTW lf;
 			apiErr;
 			memset( &lf, 0, sizeof( lf));
-			ret-> hfont = CreateFontIndirect( &lf);
+			ret-> hfont = CreateFontIndirectW( &lf);
 		}
 		keyLen = build_dcfont_key( &ret-> font, (unsigned char*)key);
 		hash_store( fontMan, key, keyLen, ret);
@@ -698,30 +698,48 @@ font_encoding2charset( const char * encoding)
 	return DEFAULT_CHARSET;
 }
 
+static unsigned short
+utf8_flag_strncpy( char * dst, const WCHAR * src, unsigned int maxlen, unsigned short is_utf8_flag)
+{
+	int i, is_utf8 = 0;
+	for ( i = 0; i < maxlen && src[i] > 0; i++) {
+		if ( src[i] > 0x7f ) {
+			is_utf8 = 1;
+			break;
+		}
+	}
+	WideCharToMultiByte(CP_UTF8, 0, src, -1, (LPSTR)dst, 256, NULL, false);
+	return is_utf8 ? is_utf8_flag : 0;
+}
+
 int CALLBACK
 fep_register_mapper_fonts( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _es)
 {
 	PFont f;
 	char name[LF_FACESIZE + 1];
+	int flags;
 	if (type & RASTER_FONTTYPE) return 1;
 
-	wchar2char( name, e-> elfLogFont.lfFaceName, LF_FACESIZE);
-	if (name[0] == '@') return 1; /* vertical font */
+	if (e-> elfLogFont.lfFaceName[0] == '@') return 1; /* vertical font */
+	flags = utf8_flag_strncpy( name, e-> elfLogFont.lfFaceName, LF_FACESIZE, FONT_UTF8_NAME);
 	if ((f = prima_font_mapper_save_font(name)) == NULL)
 		return 1;
+
+	f-> utf8_flags = flags;
+	strncpy(f->name, name, 255);
+	f->name[255] = 0;
+	f->undef.name = 0;
+
 	f-> pitch =
 		((( e-> elfLogFont.lfPitchAndFamily & 3) == DEFAULT_PITCH ) ? fpDefault :
 		((( e-> elfLogFont.lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
 	f->undef.pitch = 0;
 
-	strncpy(f->name, name, 255);
-	f->name[255] = 0;
-	f->undef.name = 0;
 
 	f->undef.vector = 0;
 	f->vector = fvOutline;
 
-	wchar2char( f-> family, e-> elfFullName, LF_FULLFACESIZE);
+	f->utf8_flags |= utf8_flag_strncpy( f-> family, e-> elfFullName, LF_FULLFACESIZE, FONT_UTF8_FAMILY);
 	return 1;
 }
 
@@ -748,22 +766,22 @@ reset_system_fonts(void)
 	apc_font_pick( nilHandle, &guts. windowFont, &guts. windowFont);
 
 	guts. ncmData. cbSize = sizeof( NONCLIENTMETRICS);
-	SystemParametersInfo( SPI_GETNONCLIENTMETRICS, sizeof( NONCLIENTMETRICS),
+	SystemParametersInfoW( SPI_GETNONCLIENTMETRICS, sizeof( NONCLIENTMETRICS),
 		( PVOID) &guts. ncmData, 0);
-	font_logfont2font( &guts. ncmData. lfMenuFont, &guts. menuFont, &guts. displayResolution);
-	font_logfont2font( &guts. ncmData. lfMessageFont, &guts. msgFont, &guts. displayResolution);
-	font_logfont2font( &guts. ncmData. lfCaptionFont, &guts. capFont, &guts. displayResolution);
+	font_logfont2font( &guts.ncmData.lfMenuFont,    &guts.menuFont, &guts.displayResolution);
+	font_logfont2font( &guts.ncmData.lfMessageFont, &guts.msgFont,  &guts.displayResolution);
+	font_logfont2font( &guts.ncmData.lfCaptionFont, &guts.capFont,  &guts.displayResolution);
 }
 
 void
-font_logfont2font( LOGFONT * lf, Font * f, Point * res)
+font_logfont2font( LOGFONTW * lf, Font * f, Point * res)
 {
 	TEXTMETRICW tm;
 	HDC dc = dc_alloc();
 	HFONT hf;
 
 	if ( !dc) return;
-	hf = SelectObject( dc, CreateFontIndirect( lf));
+	hf = SelectObject( dc, CreateFontIndirectW( lf));
 
 	GetTextMetricsW( dc, &tm);
 	DeleteObject( SelectObject( dc, hf));
@@ -782,13 +800,12 @@ font_logfont2font( LOGFONT * lf, Font * f, Point * res)
 	(( lf-> lfWeight >= 700) ? fsBold   : 0);
 	f-> pitch               = ((( lf-> lfPitchAndFamily & 3) == DEFAULT_PITCH) ? fpDefault :
 		((( lf-> lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
-	strncpy( f-> name, lf-> lfFaceName, LF_FACESIZE);
-	f-> name[ LF_FACESIZE] = 0;
 	strcpy( f-> encoding, font_charset2encoding( lf-> lfCharSet));
+	MultiByteToWideChar(CP_UTF8, 0, f->name, -1, lf->lfFaceName, LF_FACESIZE);
 }
 
 void
-font_font2logfont( Font * f, LOGFONT * lf)
+font_font2logfont( Font * f, LOGFONTW * lf)
 {
 	lf-> lfHeight           = f-> height;
 	lf-> lfWidth            = f-> width;
@@ -802,9 +819,8 @@ font_font2logfont( Font * f, LOGFONT * lf)
 	lf-> lfClipPrecision    = CLIP_DEFAULT_PRECIS;
 	lf-> lfQuality          = PROOF_QUALITY;
 	lf-> lfPitchAndFamily   = FF_DONTCARE;
-	strncpy( lf-> lfFaceName, f-> name, LF_FACESIZE);
-	lf->lfFaceName[LF_FACESIZE - 1] = 0;
 	lf-> lfCharSet          = font_encoding2charset( f-> encoding);
+	MultiByteToWideChar(CP_UTF8, 0, f->name, -1, lf->lfFaceName, LF_FACESIZE);
 }
 
 void
@@ -906,10 +922,11 @@ typedef struct _FEnumStruc
 	Bool          matchILead;
 	PFont         font;
 	TEXTMETRICW   tm;
-	LOGFONT       lf;
+	LOGFONTW      lf;
 	Point         res;
 	char          name[ LF_FACESIZE];
 	char          family[ LF_FULLFACESIZE];
+	int           utf8_flags;
 } FEnumStruc, *PFEnumStruc;
 
 int CALLBACK
@@ -993,10 +1010,10 @@ EXIT:
 		es-> count++;
 		es-> fType = type;
 		memcpy( &es-> tm, &t-> ntmTm, sizeof( TEXTMETRICW));
-		wchar2char( es-> family, e-> elfFullName, LF_FULLFACESIZE);
+		es->utf8_flags |= utf8_flag_strncpy( es-> family, e-> elfFullName, LF_FULLFACESIZE, FONT_UTF8_FAMILY);
 		memcpy( &es-> lf, &e-> elfLogFont, sizeof( LOGFONT));
-		wchar2char( es-> lf. lfFaceName, e-> elfLogFont. lfFaceName, LF_FACESIZE);
-		wchar2char( es-> name,   e-> elfLogFont. lfFaceName, LF_FACESIZE);
+		es->utf8_flags |= utf8_flag_strncpy( es-> name, e-> elfLogFont.lfFaceName, LF_FACESIZE, FONT_UTF8_NAME);
+		wcsncpy( es-> lf.lfFaceName, e-> elfLogFont.lfFaceName, LF_FACESIZE);
 	}
 
 	return ret;
@@ -1006,9 +1023,9 @@ static int
 font_font2gp( PFont font, Point res, Bool forceSize, HDC dc);
 
 static void
-font_logfont2textmetric( HDC dc, LOGFONT * lf, TEXTMETRICW * tm)
+font_logfont2textmetric( HDC dc, LOGFONTW * lf, TEXTMETRICW * tm)
 {
-	HFONT hf = SelectObject( dc, CreateFontIndirect( lf));
+	HFONT hf = SelectObject( dc, CreateFontIndirectW( lf));
 	GetTextMetricsW( dc, tm);
 	DeleteObject( SelectObject( dc, hf));
 }
@@ -1039,7 +1056,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 	if ( font-> height < 0) font-> height *= -1;
 	if ( font-> size   < 0) font-> size   *= -1;
 
-	char2wchar( elf. lfFaceName, font-> name, LF_FACESIZE);
+	MultiByteToWideChar(CP_UTF8, 0, font->name, -1, elf.lfFaceName, LF_FACESIZE);
 	elf. lfPitchAndFamily = 0;
 	elf. lfCharSet = font_encoding2charset( font-> encoding);
 	EnumFontFamiliesExW( dc, &elf, (FONTENUMPROCW) fep, ( LPARAM) &es, 0);
@@ -1074,7 +1091,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 				xf. style = 0; // any style could affect tmOverhang
 				r = font_font2gp( &xf, res, forceSize, dc);
 				if (( r == fvBitmap) && ( xf. width < font-> width)) {
-					LOGFONT lpf;
+					LOGFONTW lpf;
 					TEXTMETRICW tm;
 					font_font2logfont( &xf, &lpf);
 					lpf. lfWeight = 700;
@@ -1101,7 +1118,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 			// if synthesized embolding added, we have to reflect that...
 			// ( 'cos it increments B-extent of a char cell).
 			if ( font-> style & fsBold) {
-				LOGFONT lpf = es. lf;
+				LOGFONTW lpf = es. lf;
 				TEXTMETRICW tm;
 				lpf. lfWeight = 700; // ignore italics, it changes tmOverhang also
 				font_logfont2textmetric( dc, &lpf, &tm);
@@ -1111,6 +1128,10 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 			font_textmetric2font( &es. tm, font, true);
 			font-> direction = 0;
 			strncpy( font-> family, es. family, LF_FULLFACESIZE);
+			if ( es. utf8_flags & FONT_UTF8_FAMILY )
+				font->utf8_flags |= FONT_UTF8_FAMILY;
+			else
+				font->utf8_flags &= ~FONT_UTF8_FAMILY;
 			font-> size     = ( es. tm. tmHeight - es. tm. tmInternalLeading) * 72.0 / res.y + 0.5;
 			font-> width    = es. lf. lfWidth;
 			out( fvBitmap);
@@ -1119,7 +1140,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 		// or vector font - for any purpose?
 		// if so, it could guaranteed that font-> height == tmHeight
 		if ( es. vecId) {
-			LOGFONT lpf = es. lf;
+			LOGFONTW lpf = es. lf;
 			TEXTMETRICW tm;
 
 			// since proportional computation of small items as InternalLeading
@@ -1143,6 +1164,10 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 
 			font_textmetric2font( &tm, font, true);
 			strncpy( font-> family, es. family, LF_FULLFACESIZE);
+			if ( es. utf8_flags & FONT_UTF8_FAMILY )
+				font->utf8_flags |= FONT_UTF8_FAMILY;
+			else
+				font->utf8_flags &= ~FONT_UTF8_FAMILY;
 			out( fvOutline);
 		}
 	}
@@ -1254,13 +1279,13 @@ int CALLBACK
 fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _f)
 {
 	PFont fm;
-	char wname[256], *name = nil;
+	char name[256];
 	Fep2 *f = (Fep2*) _f;
+	int utf8_flags;
 
-	wchar2char( wname, e-> elfLogFont. lfFaceName, LF_FACESIZE);
-	name = wname;
+	if ( e-> elfLogFont.lfFaceName[0] == '@') return 1; /* skip vertical fonts */
 
-	if ( name[0] == '@') return 1; /* skip vertical fonts */
+	utf8_flags = utf8_flag_strncpy( name, e-> elfLogFont.lfFaceName, LF_FACESIZE, FONT_UTF8_NAME);
 
 	if ( f-> hash) { /* gross-family enumeration */
 		fm = hash_fetch( f-> hash, name, strlen( name));
@@ -1285,9 +1310,9 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _f)
 		hash_store( f-> hash, name, strlen( name), fm);
 	}
 	fm-> direction = fm-> resolution = 0;
-	fm-> utf8_flags = 0;
+	fm-> utf8_flags = utf8_flags;
 	strcpy( fm-> name, name);
-	wchar2char( fm-> family, e-> elfFullName, LF_FULLFACESIZE);
+	fm->utf8_flags |= utf8_flag_strncpy( fm-> family, e-> elfFullName, LF_FULLFACESIZE, FONT_UTF8_FAMILY);
 	list_add( &f-> lst, ( Handle) fm);
 	return 1;
 }
@@ -1322,7 +1347,7 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
 			return nil;
 	list_create( &f. lst, 256, 256);
 	memset( &elf, 0, sizeof( elf));
-	char2wchar( elf. lfFaceName, (char*)(facename ? facename : ""), LF_FACESIZE);
+	MultiByteToWideChar(CP_UTF8, 0, facename ? facename : "", -1, elf.lfFaceName, LF_FACESIZE);
 	elf. lfCharSet = font_encoding2charset( encoding);
 	EnumFontFamiliesExW( dc, &elf, (FONTENUMPROCW) fep2, ( LPARAM) &f, 0);
 	if ( f. hash) {

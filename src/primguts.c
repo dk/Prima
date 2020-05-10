@@ -1891,6 +1891,14 @@ prima_is_utf8_sv( SV * sv)
 	}
 }
 
+SV*
+prima_svpv_utf8( const char *text, int is_utf8)
+{
+	SV *sv = newSVpv(text, 0);
+	if ( is_utf8 ) SvUTF8_on(sv);
+	return sv;
+}
+
 #ifdef HAVE_OPENMP
 #include <omp.h>
 #endif

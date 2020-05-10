@@ -204,7 +204,7 @@ typedef struct _WinGuts
 	BYTE           emptyKeyState[ 256];// just zeros
 	BYTE          *currentKeyState;    // current virtual key buffer state
 	HKL            keyLayout;          // key layout, most likely latin for Ctrl+Key mapping
-	NONCLIENTMETRICS ncmData;          // windows system data
+	NONCLIENTMETRICSW ncmData;         // windows system data
 	List           transp;             // transparent controls list
 	int            topWindows;         // count of top-level windows in app
 	Bool           focSysDisabled;     // focus system disabled
@@ -659,9 +659,9 @@ extern char *       err_msg_gplus( GpStatus errId, char * buffer);
 extern PDCFont      font_alloc( Font * data);
 extern void         font_change( Handle self, Font * font);
 extern void         font_clean( void);
-extern void         font_font2logfont( Font * font, LOGFONT * lf);
+extern void         font_font2logfont( Font * font, LOGFONTW * lf);
 extern void         font_free( PDCFont res, Bool permanent);
-extern void         font_logfont2font( LOGFONT * lf, Font * font, Point * resolution);
+extern void         font_logfont2font( LOGFONTW * lf, Font * font, Point * resolution);
 extern void         font_pp2font( char * presParam, Font * font);
 extern void         font_textmetric2font( TEXTMETRICW * tm, Font * fm, Bool readOnly);
 extern Bool         get_font_from_hash( PFont font, Bool bySize);
