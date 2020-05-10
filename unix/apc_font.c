@@ -723,6 +723,9 @@ prima_init_font_subsystem( char * error_buf)
 		memcpy( &guts. default_caption_font, &guts. default_font, sizeof( Font));
 	}
 	Fdebug("caption font: %d.[w=%d,s=%d].%s.%s\n", DEBUG_FONT(guts.default_caption_font));
+#ifdef USE_XFT
+	if ( do_xft) prima_xft_init_font_substitution();
+#endif
 
 	return true;
 }

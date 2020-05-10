@@ -208,8 +208,6 @@ xft_debug( const char *format, ...)
 	va_end( args);
 }
 
-static void fill_fontmapper(void);
-
 void
 prima_xft_init(void)
 {
@@ -320,8 +318,6 @@ prima_xft_init(void)
 	locale = hash_fetch( encodings, guts. locale, strlen( guts.locale));
 	if ( !locale) locale = std_charsets;
 	FcCharSetDestroy( fcs_ascii);
-
-	fill_fontmapper();
 }
 
 static Bool
@@ -2538,12 +2534,35 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 #endif
 
 void
-fill_fontmapper(void)
+prima_xft_init_font_substitution(void)
 {
 	int i;
 	FcFontSet * s;
 	FcPattern   *pat, **ppat;
 	FcObjectSet *os;
+
+	if ( guts.default_font_ok) {
+		pat = FcPatternCreate();
+		FcPatternAddBool( pat, FC_SCALABLE, 1);
+		FcPatternAddString( pat, FC_FAMILY, (FcChar8*) guts.default_font.name);
+		os = FcObjectSetBuild( FC_FAMILY, (void*) 0);
+		s = FcFontList( 0, pat, os);
+		if ( s && s->nfont ) {
+			PFont f;
+			if (( f = prima_font_mapper_save_font(guts.default_font.name)) != NULL ) {
+				f->utf8_flags = guts.default_font.utf8_flags;
+				f->undef.name = 0;
+				strncpy(f->family, guts.default_font.family,256);
+				f->undef.vector = 0;
+				f->vector = guts.default_font.vector;
+				f->undef.pitch = 0;
+				f->pitch  = guts.default_font.pitch;
+			}
+		}
+		FcObjectSetDestroy( os);
+		FcPatternDestroy( pat);
+		FcFontSetDestroy(s);
+	}
 
 	pat = FcPatternCreate();
 	FcPatternAddBool( pat, FC_SCALABLE, 1);
@@ -2551,6 +2570,7 @@ fill_fontmapper(void)
 	s = FcFontList( 0, pat, os);
 	FcObjectSetDestroy( os);
 	FcPatternDestroy( pat);
+
 	if ( !s) return;
 
 	ppat = s-> fonts;
@@ -2562,7 +2582,7 @@ fill_fontmapper(void)
 		if ( FcPatternGetString(*ppat, FC_FAMILY, 0, &s) != FcResultMatch)
 			continue;
 		if ( !( f = prima_font_mapper_save_font((const char*) s)))
-			return;
+			continue;
 
 		f-> utf8_flags |= utf8_flag_strncpy( f->name, (char*)s, 255, FONT_UTF8_NAME);
 		f-> undef.name = 0;
