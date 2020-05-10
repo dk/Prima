@@ -29,7 +29,7 @@ sub glyphs($)
         my $str = xtr(shift);
         my %g;
         for my $c ( split //, $str ) {
-	        my $k = $w-> text_shape($c);
+	        my $k = $w-> text_shape($c, polyfont => 0);
                 return unless $k;
                 $g{$c} = $k->glyphs->[0];
         }
@@ -106,7 +106,7 @@ sub t2
 		[\x{202B}\x{202a}\x{202c}]
 		;
 
-	$z = $w-> text_shape($text, %opt);
+	$z = $w-> text_shape($text, %opt, polyfont => 0);
 	return ok(0, "$name (undefined)") unless defined $z;
 	return ok(0, "$name (unnecessary, retval=0)") unless $z;
 	comp($z->glyphs, gmap $glyphs, "$name (glyphs)", 1, $orig_text);
@@ -230,10 +230,10 @@ sub find_glyphs
 {
 	my ($font, $glyphs) = @_;
 	$w->font($font);
-	my $null = $w->text_shape(chr($w->font->defaultChar));
+	my $null = $w->text_shape(chr($w->font->defaultChar), polyfont => 0);
 	$null = $null ? $null->glyphs->[0] : 0;
 
-	my $z = $w->text_shape($glyphs);
+	my $z = $w->text_shape($glyphs, polyfont => 0);
 	return 0 unless $z;
 	return !grep { $_ == $null || $_ == 0 } @{$z->glyphs};
 }
@@ -359,16 +359,16 @@ sub test_shaping
 		check_noshape_nofribidi();
 		check_noreorder();
 
-		my $z = $w->text_shape('12');
+		my $z = $w->text_shape('12', polyfont => 0);
 		ok((4 == @{$z->positions // []}), "positions are okay");
 		ok((2 == @{$z->advances  // []}), "advances are okay");
 
-		$z = $w->text_shape('12', level => ts::Glyphs); 
+		$z = $w->text_shape('12', level => ts::Glyphs, polyfont => 0); 
 		is_deeply($z->indexes, [0,1,2], "glyph mapper indexes are okay");
 		ok((0 == @{$z->positions // []}), "glyph mapper positions are okay");
 		ok((0 == @{$z->advances  // []}), "glyph mapper advances are okay");
 
-		$z = $w->text_shape('12', level => ts::Glyphs, advances => 1); 
+		$z = $w->text_shape('12', level => ts::Glyphs, advances => 1, polyfont => 0); 
 		ok((4 == @{$z->positions // []}), "glyph mapper positions w/advances are okay");
 		ok((2 == @{$z->advances  // []}), "glyph mapper advances a w/advances are okay");
 
@@ -389,13 +389,13 @@ sub test_shaping
 
 		SKIP: {
 			skip("no devanagari font", 1) unless find_vector_font("\x{924}");
-			my $z = $w-> text_shape("\x{924}\x{94d}\x{928}");
+			my $z = $w-> text_shape("\x{924}\x{94d}\x{928}", polyfont => 0);
 			ok( $z && scalar(grep {$_} @{$z->glyphs}), 'devanagari shaping');
 		}
 
 		SKIP: {
  			skip("no khmer font", 1) unless find_vector_font("\x{179f}");
-			my $z = $w-> text_shape("\x{179f}\x{17b9}\x{1784}\x{17d2}");
+			my $z = $w-> text_shape("\x{179f}\x{17b9}\x{1784}\x{17d2}", polyfont => 0);
 			ok( $z && scalar(grep {$_} @{$z->glyphs}), 'khmer shaping');
 		}
 	}
@@ -405,7 +405,7 @@ sub test_bytes
 {
 	ok(1, "bytes");
 
-	my $k = $w-> text_shape("A\x{fe}", level => ts::Bytes);
+	my $k = $w-> text_shape("A\x{fe}", level => ts::Bytes, polyfont => 0);
 	is( 2, scalar(@{$k->glyphs}), "two bytes mapped to two glyphs");
 	is_deeply( $k->indexes, [0,1,2], "two bytes index array");
 }
@@ -414,7 +414,7 @@ sub test_high_unicode
 {
 	ok(1, "high unicode");
 
-	my $k = $w-> text_shape("\x{10FF00}" x 2);
+	my $k = $w-> text_shape("\x{10FF00}" x 2, polyfont => 0);
 	is_deeply( $k->glyphs, [0,0], "unresolvable glyphs");
 
 	SKIP: {
@@ -425,7 +425,7 @@ sub test_high_unicode
 		my $char;
 		%glyphs = ();
         	for my $c (@$chars) {
-		        my $k = $w-> text_shape(chr($c));
+		        my $k = $w-> text_shape(chr($c), polyfont => 0);
         	        next unless $k && $k->glyphs->[0];
 			$high_unicode_char = chr($char = $c); # as ^
         	        $glyphs{$high_unicode_char} = $k->glyphs->[0];
@@ -439,7 +439,7 @@ sub test_high_unicode
 sub test_glyphs_wrap
 {
 	$w->font->size(12);
-	my $z = $w-> text_shape('12', positions => 1);
+	my $z = $w-> text_shape('12', positions => 1, polyfont => 0);
 	is( 2, scalar( @{ $z->glyphs // [] }), "text '12' resolved to 2 glyphs");
 
 	my ($tw) = @{ $z->advances // [ $w->get_text_width('1') ] };
@@ -475,7 +475,7 @@ sub test_glyphs_wrap
 		glyphs "|/%";
 		skip("arabic shaping is not available", 1) unless glyphs_fully_resolved;
 		# that is tested already, rely on that: t2('/|', '%', [r(0)], 'arabic ligation');
-		$z = $w-> text_shape(xtr('|/|')); # 2 glyphs, | and /|, visually /| is on the left
+		$z = $w-> text_shape(xtr('|/|'), polyfont => 0); # 2 glyphs, | and /|, visually /| is on the left
 		$r = $w-> text_wrap($z, 0, tw::ReturnChunks);
 		is_deeply($r, [0,1 , 1,1], "ligature wrap, chunks");
 		$r = $w-> text_wrap($z, 0, 0);
@@ -501,13 +501,13 @@ sub test_combining { SKIP: {
 	# A with a dash on top combined with an acute
 	# acute must be combined with no advance
 	$w->font->size(12);
-	my $z = $w-> text_shape( "\x{100}\x{300}" )->advances;
+	my $z = $w-> text_shape( "\x{100}\x{300}", polyfont => 0 )->advances;
 	ok( $z->[0] != 0, "'A' has non-zero advance");
 	ok( $z->[1] == 0, "joined 'acute' has zero advance");
 
 	# ff may be a ligature, but that's not essential -
 	# the main interest here to see that ZWNJ is indeed ZW
-	$z = $w-> text_shape( "f\x{200c}f" )->advances;
+	$z = $w-> text_shape( "f\x{200c}f", polyfont => 0 )->advances;
 	ok( $z->[0] != 0, "'f' has non-zero advance");
 	ok( $z->[1] == 0, "ZWNJ has zero advance");
 }}
@@ -527,7 +527,7 @@ sub test_drawing
 	my $sum1 = $i->sum;
 	skip("text drawing on bitmap is not available", 1) unless $sum1;
 
-	my $z = $w-> text_shape('12');
+	my $z = $w-> text_shape('12', polyfont => 0);
 	skip("shaping is not available", 1) unless $z;
 
 	$w-> clear;
@@ -551,7 +551,7 @@ sub test_drawing
 	$i->type(im::Byte);
 	$sum1 = $i->sum;
 
-	$z = $w-> text_shape('12');
+	$z = $w-> text_shape('12', polyfont => 0);
 	$w-> clear;
 	$w-> text_out( $z, 5, 5 );
 	$i = $w->image;
@@ -567,7 +567,7 @@ sub run_test
 	$w = Prima::DeviceBitmap-> create( type => dbt::Pixmap, width => 32, height => 32);
 	my $found = find_vector_font(xtr('A'));
 
-	my $z = $w-> text_shape( "1" );
+	my $z = $w-> text_shape( "1", polyfont => 0 );
 	plan skip_all => "Shaping is not available" if defined $z && $z eq '0';
 
 	$opt{fribidi} = 1 if Prima::Application->get_system_value(sv::FriBidi);
