@@ -34,59 +34,6 @@ $w = Prima::MainWindow-> create(
 	],
 );
 
-sub can_rtl
-{
-	$::application->font(shift);
-	my @r = @{ $::application->get_font_ranges };
-	my $hebrew = ord('א');
-	my $arabic = ord('ر');
-	my $found_hebrew;
-	my $found_arabic;
-	for ( my $i = 0; $i < @r; $i += 2 ) {
-		my ( $l, $r ) = @r[$i, $i+1];
-		$found_hebrew = 1 if $l <= $hebrew && $r >= $hebrew;
-		$found_arabic = 1 if $l <= $arabic && $r >= $arabic;
-	}
-	return $found_hebrew && $found_arabic;
-}
-
-# try to find font with arabic and hebrew letters
-$::application->begin_paint_info;
-unless (can_rtl($w->font)) {
-	my $found;
-	my @f = @{$::application->fonts};
-
-	# fontconfig fonts
-	for my $f ( @f ) {
-		next unless $f->{vector};
-		next unless $f->{name} =~ /^[A-Z]/;
-		next unless can_rtl($f);
-		$found = $f;
-		goto FOUND;
-	}
-
-	# x11/core vector fonts
-	for my $f ( @f ) {
-		next unless $f->{vector};
-		next if $f->{name} =~ /^[A-Z]/;
-		next unless can_rtl($f);
-		$found = $f;
-		goto FOUND;
-	}
-
-	# bitmap fonts
-	for my $f ( @f ) {
-		next if $f->{vector};
-		next unless can_rtl($f);
-		$found = $f;
-		goto FOUND;
-	}
-FOUND:
-	$w->font->name($found->{name}) if $found;
-
-}
-$::application->end_paint_info;
-
 $w->insert( InputLine =>
 	name => 'Hebrew',
 	origin => [ 10, 10],
