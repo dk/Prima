@@ -49,6 +49,13 @@ font_context_done( FontContext * fc )
 		SelectObject(fc->dc, fc->saved);
 }
 
+static void
+font_context_rewind( FontContext * fc, int index )
+{
+	fc-> i = index;
+	fc-> stop = fc-> i >= fc-> len;
+}
+
 static int
 font_context_next( FontContext * fc )
 {
@@ -204,8 +211,139 @@ underscore_font( Handle self, int x, int y, int width)
 	SelectObject( dc, old );
 }
 
+static void
+gp_get_text_widths( Handle self, const char* text, int len, int flags, ABC * extents)
+{
+	SIZE  sz;
+	int   div, offset = 0, ret = 0;
+
+	objCheck;
+	memset(extents, 0, sizeof(ABC));
+	if ( len == 0) return;
+
+	/* width more that 32K returned incorrectly by Win32 core */
+	if (( div = 32768L / ( var font. maximalWidth ? var font. maximalWidth : 1)) == 0)
+		div = 1;
+
+	while ( offset < len) {
+		int chunk_len = ( offset + div > len) ? ( len - offset) : div;
+		if ( flags & toGlyphs) {
+			if ( !GetTextExtentPointI( sys ps, ( WCHAR*) text + offset, chunk_len, &sz)) apiErr;
+		} else if ( flags & toUnicode) {
+			if ( !GetTextExtentPoint32W( sys ps, ( WCHAR*) text + offset, chunk_len, &sz)) apiErr;
+		} else {
+			if ( !GetTextExtentPoint32( sys ps, text + offset, chunk_len, &sz)) apiErr;
+		}
+		ret += sz. cx;
+		offset += div;
+	}
+	extents->abcB = ret;
+
+	if ( flags & toAddOverhangs) {
+		if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
+			ABC abc[2];
+			if ( flags & toGlyphs) {
+				WCHAR * t = (WCHAR*) text;
+				GetCharABCWidthsI( sys ps, *t, 1, NULL, &abc[0]);
+				GetCharABCWidthsI( sys ps, t[len-1], 1, NULL, &abc[1]);
+			} else if ( flags & toUnicode) {
+				WCHAR * t = (WCHAR*) text;
+				if ( guts. utf8_prepend_0x202D ) {
+					/* the 1st character is 0x202D, skip it */
+					t++;
+					len--;
+				}
+				GetCharABCWidthsW( sys ps, *t, *t, &abc[0]);
+				GetCharABCWidthsW( sys ps, t[len-1], t[len-1], &abc[1]);
+			} else {
+				GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
+				GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
+			}
+			extents->abcA = abc[0].abcA;
+			extents->abcC = abc[1].abcC;
+		}
+	}
+}
+
+static void
+gp_get_polyfont_widths( Handle self, const PGlyphsOutRec t, int flags, ABC * extents)
+{
+	int div, len, offset = 0;
+	FontContext fc;
+
+	objCheck;
+	memset(extents, 0, sizeof(ABC));	
+	if ( len == 0) return;
+	
+	font_context_init(&fc, self, t);
+
+	if ( t->advances ) {
+		int i;
+		ABC abc;
+		for ( i = 0; i < t->len; i++)
+			extents->abcB += t->advances[i];
+		GetCharABCWidthsI( sys ps, t->glyphs[0], 1, NULL, &abc);
+		extents->abcA = abc.abcA;
+		if ( t->fonts[0] != t->fonts[t->len - 1] ) {
+			font_context_rewind(&fc, t->len - 1);
+			font_context_next(&fc);
+		}
+		GetCharABCWidthsI( sys ps, t->glyphs[len-1], 1, NULL, &abc);
+		extents->abcC = abc.abcC;
+		font_context_done(&fc);
+		return;
+	}
+
+	/* width more that 32K returned incorrectly by Win32 core */
+	if (( div = 32768L / ( var font. maximalWidth ? var font. maximalWidth : 1)) == 0)
+		div = 1;
+
+	while (( len = font_context_next(&fc)) > 0 ) {
+		ABC abc;
+		SIZE sz;
+		int local_offset = offset;
+		while ( local_offset < len) {
+			int chunk_len = ( local_offset + div > len) ? ( len - local_offset) : div;
+			if ( !GetTextExtentPointI( sys ps, ( WCHAR*) t->glyphs + local_offset, chunk_len, &sz)) apiErr;
+			local_offset += div;
+			extents-> abcB += sz.cx;
+		}
+		if ( offset == 0 ) {
+			GetCharABCWidthsI( sys ps, t->glyphs[0], 1, NULL, &abc);
+			extents->abcA = abc.abcA;
+		} else if ( fc.stop ) {
+			GetCharABCWidthsI( sys ps, t->glyphs[len-1], 1, NULL, &abc);
+			extents->abcC = abc.abcC;
+		}
+		offset += len;
+	}
+	font_context_done(&fc);
+}
+
 static int
-gp_get_text_width( Handle self, const char* text, int len, int flags);
+gp_get_text_width( Handle self, const char* text, int len, int flags)
+{
+	ABC abc;
+	gp_get_text_widths(self,text,len,flags,&abc);
+	if ( flags & toAddOverhangs ) {
+		if ( abc.abcA < 0) abc.abcB -= abc.abcA;
+		if ( abc.abcC < 0) abc.abcB -= abc.abcC;
+	}
+	return abc.abcB;
+}
+
+static int
+gp_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags)
+{
+	ABC abc;
+	if ( t-> fonts )
+		gp_get_polyfont_widths(self,t,flags,&abc);
+	else
+		gp_get_text_widths( self, (const char*)t->glyphs, t->len, t->flags | toGlyphs, &abc);
+	if ( abc.abcA < 0) abc.abcB -= abc.abcA;
+	if ( abc.abcC < 0) abc.abcB -= abc.abcC;
+	return abc.abcB;
+}
 
 Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags )
@@ -351,13 +489,8 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	}
 	font_context_done(&fc);
 
-	if ( var font. style & (fsUnderlined | fsStruckOut)) {
-		int w;
-		GlyphsOutRec tt = *t;
-		tt.flags = toGlyphs;
-		w = apc_gp_get_glyphs_width( self, &tt);
-		underscore_font( self, x, yy, w);
-	}
+	if ( var font. style & (fsUnderlined | fsStruckOut))
+		underscore_font( self, x, yy, gp_get_glyphs_width( self, t, 0));
 
 	if ( use_path ) {
 		EndPath(ps);
@@ -1395,60 +1528,6 @@ apc_gp_get_font_languages( Handle self)
 	return ret;
 }}
 
-static int
-gp_get_text_width( Handle self, const char* text, int len, int flags)
-{
-	SIZE  sz;
-	int   div, offset = 0, ret = 0;
-
-	objCheck 0;
-	if ( len == 0) return 0;
-
-	/* width more that 32K returned incorrectly by Win32 core */
-	if (( div = 32768L / ( var font. maximalWidth ? var font. maximalWidth : 1)) == 0)
-		div = 1;
-
-	while ( offset < len) {
-		int chunk_len = ( offset + div > len) ? ( len - offset) : div;
-		if ( flags & toGlyphs) {
-			if ( !GetTextExtentPointI( sys ps, ( WCHAR*) text + offset, chunk_len, &sz)) apiErr;
-		} else if ( flags & toUnicode) {
-			if ( !GetTextExtentPoint32W( sys ps, ( WCHAR*) text + offset, chunk_len, &sz)) apiErr;
-		} else {
-			if ( !GetTextExtentPoint32( sys ps, text + offset, chunk_len, &sz)) apiErr;
-		}
-		ret += sz. cx;
-		offset += div;
-	}
-
-	if ( flags & toAddOverhangs) {
-		if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
-			ABC abc[2];
-			if ( flags & toGlyphs) {
-				WCHAR * t = (WCHAR*) text;
-				GetCharABCWidthsI( sys ps, *t, 1, NULL, &abc[0]);
-				GetCharABCWidthsI( sys ps, t[len-1], 1, NULL, &abc[1]);
-			} else if ( flags & toUnicode) {
-				WCHAR * t = (WCHAR*) text;
-				if ( guts. utf8_prepend_0x202D ) {
-					/* the 1st character is 0x202D, skip it */
-					t++;
-					len--;
-				}
-				GetCharABCWidthsW( sys ps, *t, *t, &abc[0]);
-				GetCharABCWidthsW( sys ps, t[len-1], t[len-1], &abc[1]);
-			} else {
-				GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
-				GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
-			}
-			if ( abc[0]. abcA < 0) ret -= abc[0]. abcA;
-			if ( abc[1]. abcC < 0) ret -= abc[1]. abcC;
-		}
-	}
-
-	return ret;
-}
-
 int
 apc_gp_get_text_width( Handle self, const char* text, int len, int flags)
 {
@@ -1468,49 +1547,29 @@ apc_gp_get_text_width( Handle self, const char* text, int len, int flags)
 int
 apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 {
-	return gp_get_text_width( self, (const char*)t->glyphs, t->len, t->flags | toGlyphs);
+	return gp_get_glyphs_width( self, t, t->flags);
 }
 
 static void
-gp_get_text_box( Handle self, const char * text, int len, int flags, Point * pt)
+gp_get_text_box( Handle self, ABC * abc, Point * pt)
 {
 	pt[0].y = pt[2]. y = var font. ascent - 1;
 	pt[1].y = pt[3]. y = - var font. descent;
 	pt[4].y = pt[0]. x = pt[1].x = 0;
-	pt[3].x = pt[2]. x = pt[4].x = gp_get_text_width( self, text, len, flags );
+	pt[3].x = pt[2]. x = pt[4].x = abc->abcB;
 
 	if ( !is_apt( aptTextOutBaseline)) {
 		int i = 4, d = var font. descent;
 		while ( i--) pt[ i]. y += d;
 	}
 
-	if ( sys tmPitchAndFamily & TMPF_TRUETYPE) {
-		ABC abc[2];
-		if ( flags & toGlyphs ) {
-			WCHAR * t = (WCHAR*) text;
-			GetCharABCWidthsI( sys ps, *t, 1, NULL, &abc[0]);
-			GetCharABCWidthsI( sys ps, t[len-1], 1, NULL, &abc[1]);
-		} else if ( flags & toUTF8 ) {
-			WCHAR * t = (WCHAR*) text;
-			if ( guts. utf8_prepend_0x202D ) {
-				/* the 1st character is 0x202D, skip it */
-				t++;
-				len--;
-			}
-			GetCharABCWidthsW( sys ps, *t, *t, &abc[0]);
-			GetCharABCWidthsW( sys ps, t[len-1], t[len-1], &abc[1]);
-		} else {
-			GetCharABCWidths( sys ps, text[ 0    ], text[ 0    ], &abc[0]);
-			GetCharABCWidths( sys ps, text[ len-1], text[ len-1], &abc[1]);
-		}
-		if ( abc[0]. abcA < 0) {
-			pt[0].x += abc[0]. abcA;
-			pt[1].x += abc[0]. abcA;
-		}
-		if ( abc[1]. abcC < 0) {
-			pt[2].x -= abc[1]. abcC;
-			pt[3].x -= abc[1]. abcC;
-		}
+	if ( abc->abcA < 0) {
+		pt[0].x += abc->abcA;
+		pt[1].x += abc->abcA;
+	}
+	if ( abc->abcC < 0) {
+		pt[2].x -= abc->abcC;
+		pt[3].x -= abc->abcC;
 	}
 
 	if ( var font. direction != 0) {
@@ -1534,6 +1593,7 @@ gp_get_text_box( Handle self, const char * text, int len, int flags, Point * pt)
 Point *
 apc_gp_get_text_box( Handle self, const char* text, int len, int flags)
 {objCheck nil;{
+	ABC abc;
 	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
 	if ( !pt) return nil;
 
@@ -1548,7 +1608,8 @@ apc_gp_get_text_box( Handle self, const char* text, int len, int flags)
 		}
 		len = mb_len;
 	}
-	gp_get_text_box(self, text, len, flags, pt);
+	gp_get_text_widths(self, text, len, flags | toAddOverhangs, &abc);
+	gp_get_text_box(self, &abc, pt);
 	if ( flags & toUTF8 ) free(( char*) text);
 	return pt;
 }}
@@ -1556,11 +1617,17 @@ apc_gp_get_text_box( Handle self, const char* text, int len, int flags)
 Point *
 apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
 {objCheck nil;{
+	ABC abc;
 	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
 	if ( !pt) return nil;
 
 	memset( pt, 0, sizeof( Point) * 5);
-	gp_get_text_box(self, (const char*)t->glyphs, t->len, toGlyphs, pt);
+	if ( t-> fonts )
+		gp_get_polyfont_widths(self,t,toAddOverhangs,&abc);
+	else
+		gp_get_text_widths( self, (const char*)t->glyphs, t->len, t->flags | toGlyphs | toAddOverhangs, &abc);
+	gp_get_text_box(self, &abc, pt);
+
 	return pt;
 }}
 

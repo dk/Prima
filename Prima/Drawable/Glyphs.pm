@@ -23,7 +23,7 @@ sub text_length { $_[0]->[INDEXES]->[-1] }
 sub new_empty
 {
 	my $class = shift;
-	my @self = ( Prima::array->new('S'), Prima::array->new('S'));
+	my @self = ( Prima::array->new('S'), Prima::array->new('S'), undef,undef,undef);
 	push @{$self[1]}, 0;
 	return bless \@self, $class;
 }
@@ -85,6 +85,15 @@ sub reverse
 		for ( my $i = $nglyphs * 2 - 2; $i >= 0; $i -= 2 ) {
 			push @{ $svs[-1] }, @{$positions}[$i,$i+1];
 		}
+	} else {
+		push @svs, undef, undef;
+	}
+
+	if ( my $advances = $self->[FONTS] ) {
+		push @svs, Prima::array->new('S');
+		push @{ $svs[-1] }, reverse @{ $self->[FONTS] };
+	} else {
+		push @svs, undef;
 	}
 
 	return __PACKAGE__->new(@svs);
@@ -390,6 +399,15 @@ sub get_sub
 	if ( $self-> [ADVANCES] ) {
 		$sub[ADVANCES]  = Prima::array::substr($self->[ADVANCES], $from, $length);
 		$sub[POSITIONS] = Prima::array::substr($self->[POSITIONS], $from * 2, $length * 2);
+	} else {
+		$sub[ADVANCES]  = undef;
+		$sub[POSITIONS] = undef;
+	}
+
+	if ( $self->[FONTS]) {
+		$sub[FONTS] = Prima::array::substr($self->[FONTS], $from, $length);
+	} else {
+		$sub[FONTS]  = undef;
 	}
 
 	return __PACKAGE__->new( @sub );
