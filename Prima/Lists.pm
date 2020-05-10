@@ -962,17 +962,21 @@ sub set_focused_item
 	my $topSet = undef;
 	if ( $foc >= 0) {
 		my $mc   = $self-> {multiColumn};
-		my ( $rows, $cols) = ($mc and not $self->{vertical}) ?
-			($self-> {columns} || 1, $self-> {whole_rows} || 1) :
-			($self-> {rows}    || 1, $self-> {whole_columns} || 1);
-		if ( $foc < $self-> {topItem}) {
-			$topSet = $mc ?
-				$foc - $foc % $rows :
-				$foc;
-		} elsif ( $foc >= $self-> {topItem} + $rows * $cols) {
-			$topSet = $mc ?
-				$foc - $foc % $rows - $rows * ( $cols - 1) :
-				$foc - $rows + 1;
+		if ( $mc ) {
+			my ( $rows, $cols) = ($mc and not $self->{vertical}) ?
+				($self-> {columns} || 1, $self-> {whole_rows} || 1) :
+				($self-> {rows}    || 1, $self-> {whole_columns} || 1);
+			if ( $foc < $self-> {topItem}) {
+				$topSet = $foc - $foc % $rows;
+			} elsif ( $foc >= $self-> {topItem} + $rows * $cols - 1) {
+				$topSet = $foc - $foc % $rows - $rows * ( $cols - 1);
+			}
+		} else {
+			if ( $foc < $self-> {topItem}) {
+				$topSet = $foc;
+			} elsif ( $foc >= $self-> {topItem} + $self->{whole_rows}) {
+				$topSet = $foc - $self->{whole_rows} + 1;
+			}
 		}
 	}
 	$oldFoc = 0 if $oldFoc < 0;
