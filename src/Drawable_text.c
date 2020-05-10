@@ -1176,7 +1176,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	TextShapeRec t;
 	int shaper_type, level = tsDefault;
 	Bool skip_if_simple = false, return_zero = false, force_advances = false, 
-		reorder = true, polyfont = false;
+		reorder = true, polyfont = true;
 	Bool gp_enter;
 
 	/* forward, if any */

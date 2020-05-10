@@ -504,7 +504,7 @@ sub create_info_window
 				my $em = $p->get_text_width('m');
 				$l->origin( 2 + $em * 22, $sd );
 				$l->font( $p-> font );
-				$l->size( $em * 10, $fh);
+				$l->size( $em * 30, $fh);
 				$l->show;
 			}
 			$p-> text_out( 'languages           : ', 2, $sd); $sd -= $fh;
