@@ -636,6 +636,7 @@ sub create_info_window
 	);
 	$l-> count( $count);
 	$ww-> select;
+	return $ww;
 }
 
 $displayRes = ($w-> resolution)[1];
@@ -968,6 +969,8 @@ $w-> insert( Widget =>
 
 &$re_size(1);
 &$re_sample;
+#$w->NameList->focusedItem($#fontItems);
+#create_info_window($w)->size(800, 800);
 }
 
 run;
