@@ -14,7 +14,7 @@ package Prima;
 
 my ($openFileDlg, $saveFileDlg);
 
-my @fileDlgProps = qw( defaultExt fileName filter filterIndex
+my @fileDlgProps = qw( defaultExt fileName filter filterIndex text
 directory createPrompt multiSelect noReadOnly noTestFileCreate overwritePrompt
 pathMustExist fileMustExist sorted showDotFiles);
 
