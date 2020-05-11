@@ -1075,22 +1075,26 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 	}
 #endif
 		if ( t-> fonts && ( run.fonts[0] != 0 || font_changed )) {
-			Font src, dst;
-			src = PASSIVE_FONT(run.fonts[0])->font;
-			dst = var->font;
-			apc_font_pick( self, &src, &dst);
-			if ( strcmp(dst.name, src.name) == 0 ) {
-				apc_gp_set_font( self, &dst);
+			if ( run.fonts[0] == 0 ) {
+				apc_gp_set_font( self, &var->font);
+			} else {
+				Font src, dst;
+				src = PASSIVE_FONT(run.fonts[0])->font;
+				dst = var->font;
+				apc_font_pick( self, &src, &dst);
+				if ( strcmp(dst.name, src.name) == 0 ) {
+					apc_gp_set_font( self, &dst);
 #ifdef _DEBUG
-				printf("%d: set font #%d: %s\n", run_offs, run.fonts[0], dst.name);
+					printf("%d: set font #%d: %s\n", run_offs, run.fonts[0], dst.name);
 #endif
-				font_changed = true;
-			}
+					font_changed = true;
+				}
 #ifdef _DEBUG
-			else {
-				printf("%d: failed to set font #%d: %s (got %s)\n", run_offs, run.fonts[0], src.name, dst.name);
-			}
+				else {
+					printf("%d: failed to set font #%d: %s (got %s)\n", run_offs, run.fonts[0], src.name, dst.name);
+				}
 #endif
+			}
 		}
 		ok = shaper( self, &run );
 #ifdef _DEBUG
