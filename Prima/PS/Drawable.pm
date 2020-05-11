@@ -987,6 +987,7 @@ sub glyph_out_outline
 	my $indexes    = $text-> indexes;
 	my $advances   = $text-> advances;
 	my $positions  = $text-> positions;
+	my $fonts      = $text-> fonts;
 	my $plaintext  = $text-> [Prima::Drawable::Glyphs::CUSTOM()];
 	my @ix_lengths = defined($plaintext) ? $text-> index_lengths : ();
 	my $adv        = 0;
@@ -995,13 +996,38 @@ sub glyph_out_outline
 	my $keeper     = $self->{glyph_keeper};
 	my $font       = $self->{glyph_font};
 	my $div        = $self->{font_char_height} / $canvas->{pixel_scale};
+	my $restore_font;
 
 	$len += $from;
 	my $emit = '';
+	my $fid  = 0;
 	for ( my $i = $from; $i < $len; $i++) {
 		my $advance;
 		my $glyph     = $glyphs->[$i];
 		my ($x2, $y2) = ($adv, 0);
+		my $nfid = $fonts ? $fonts->[$i] : 0;
+		if ( $nfid != $fid ) {
+			my $newfont;
+			if ( $nfid == 0 ) {
+				$newfont = $self->{font};
+				$restore_font = 0;
+			} else {
+				my $src  = $self-> fontMapperPalette($nfid);
+				my $dst  = \%{$self->{font}};
+				$newfont = Prima::Drawable->font_match( $src, $dst );
+				$restore_font = 1;
+			}
+			my %f = %$newfont;
+			delete $f{height};
+			delete $f{width};
+			delete $f{direction};
+			$f{size} = 1000;
+			$canvas->font(\%f);
+
+			$font = $nfid ? $keeper->get_font($canvas->font) : $self->{glyph_font};
+			$emit .= "/$font FF $self->{font}->{size} XF SF\n";
+			$fid = $nfid;
+		}
 		my $gid = $keeper-> use_char($canvas, $font, $glyph,
 			defined($plaintext) ?
 				substr( $plaintext, $indexes->[$i] & ~to::RTL, $ix_lengths[$i]) :
@@ -1022,6 +1048,7 @@ sub glyph_out_outline
 		$emit .= "/$gid Y\n";
 	}
 
+	$emit .= "/$self->{glyph_font} FF $self->{font}->{size} XF SF\n" if $restore_font;
 	$self-> emit($emit);
 }
 
@@ -1544,7 +1571,7 @@ AGAIN:
 			$f->{descent} = $new_h - $f->{ascent};
 		}
 		$self-> glyph_canvas-> {for_vector} = -1; # force update
-		$self-> {font_width_divisor} = $f-> {width};
+		$self-> {font_width_divisor}        = $f-> {width};
 		$f-> {width}                        = $wscale if $wscale;
 		$self-> {encoding_to_downgrade_utf} = undef;
 	}
