@@ -227,12 +227,12 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 		if ( useVec   ) dest-> vector    = source-> vector;
 		if ( useName  ) {
 			strcpy( dest-> name, source-> name);
-			if ( source->utf8_flags & FONT_UTF8_NAME )
-				dest->utf8_flags |= FONT_UTF8_NAME;
-			else
-				dest->utf8_flags &= ~FONT_UTF8_NAME;
+			source->is_utf8.name = dest->is_utf8.name;
 		}
-		if ( useEnc   ) strcpy( dest-> encoding, source-> encoding);
+		if ( useEnc   ) {
+			strcpy( dest-> encoding, source-> encoding);
+			source->is_utf8.encoding = dest->is_utf8.encoding;
+		}
 	}
 
 	/* nulling dependencies */

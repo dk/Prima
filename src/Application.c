@@ -304,17 +304,17 @@ Application_fonts( Handle self, char * name, char * encoding)
 	for ( i = 0; i < count; i++) {
 		SV * sv      = sv_Font2HV( &fmtx[ i]);
 		HV * profile = ( HV*) SvRV( sv);
-		if ( fmtx[i]. utf8_flags & FONT_UTF8_NAME) {
+		if ( fmtx[i].is_utf8.name ) {
 			SV ** entry = hv_fetch(( HV*) SvRV( sv), "name", 4, 0);
 			if ( entry && SvOK( *entry))
 				SvUTF8_on( *entry);
 		}
-		if ( fmtx[i]. utf8_flags & FONT_UTF8_FAMILY) {
+		if ( fmtx[i].is_utf8.family ) {
 			SV ** entry = hv_fetch(( HV*) SvRV( sv), "family", 6, 0);
 			if ( name && SvOK( *entry))
 				SvUTF8_on( *entry);
 		}
-		if ( fmtx[i]. utf8_flags & FONT_UTF8_ENCODING) {
+		if ( fmtx[i].is_utf8.encoding ) {
 			SV ** entry = hv_fetch(( HV*) SvRV( sv), "encoding", 8, 0);
 			if ( name && SvOK( *entry))
 				SvUTF8_on( *entry);

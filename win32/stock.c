@@ -571,18 +571,19 @@ font_encoding2charset( const char * encoding)
 	return DEFAULT_CHARSET;
 }
 
-static unsigned short
-utf8_flag_strncpy( char * dst, const WCHAR * src, unsigned int maxlen, unsigned short is_utf8_flag)
+static Bool
+utf8_flag_strncpy( char * dst, const WCHAR * src, unsigned int maxlen)
 {
-	int i, is_utf8 = 0;
+	int i;
+	Bool is_utf8 = false;
 	for ( i = 0; i < maxlen && src[i] > 0; i++) {
 		if ( src[i] > 0x7f ) {
-			is_utf8 = 1;
+			is_utf8 = true;
 			break;
 		}
 	}
 	WideCharToMultiByte(CP_UTF8, 0, src, -1, (LPSTR)dst, 256, NULL, false);
-	return is_utf8 ? is_utf8_flag : 0;
+	return is_utf8;
 }
 
 int CALLBACK
@@ -590,26 +591,25 @@ fep_register_mapper_fonts( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD
 {
 	PFont f;
 	char name[LF_FACESIZE + 1];
-	int flags;
+	Bool name_is_utf8;
 	if (type & RASTER_FONTTYPE) return 1;
 
 	if (e-> elfLogFont.lfFaceName[0] == '@') return 1; /* vertical font */
-	flags = utf8_flag_strncpy( name, e-> elfLogFont.lfFaceName, LF_FACESIZE, FONT_UTF8_NAME);
+	name_is_utf8 = utf8_flag_strncpy( name, e-> elfLogFont.lfFaceName, LF_FACESIZE);
 	if ((f = prima_font_mapper_save_font(name)) == NULL)
 		return 1;
 
-	f-> utf8_flags = flags;
+	f-> is_utf8.name = name_is_utf8;
 
 	f-> pitch =
 		((( e-> elfLogFont.lfPitchAndFamily & 3) == DEFAULT_PITCH ) ? fpDefault :
 		((( e-> elfLogFont.lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
 	f->undef.pitch = 0;
 
-
 	f->undef.vector = 0;
 	f->vector = fvOutline;
 
-	f->utf8_flags |= utf8_flag_strncpy( f-> family, e-> elfFullName, LF_FULLFACESIZE, FONT_UTF8_FAMILY);
+	f->is_utf8.family = utf8_flag_strncpy( f-> family, e-> elfFullName, LF_FULLFACESIZE);
 	return 1;
 }
 
@@ -800,7 +800,8 @@ typedef struct _FEnumStruc
 	Point         res;
 	char          name[ LF_FACESIZE];
 	char          family[ LF_FULLFACESIZE];
-	int           utf8_flags;
+	Bool          is_utf8_name;
+	Bool          is_utf8_family;
 } FEnumStruc, *PFEnumStruc;
 
 int CALLBACK
@@ -884,9 +885,9 @@ EXIT:
 		es-> count++;
 		es-> fType = type;
 		memcpy( &es-> tm, &t-> ntmTm, sizeof( TEXTMETRICW));
-		es->utf8_flags |= utf8_flag_strncpy( es-> family, e-> elfFullName, LF_FULLFACESIZE, FONT_UTF8_FAMILY);
+		es->is_utf8_name   = utf8_flag_strncpy( es-> family, e-> elfFullName, LF_FULLFACESIZE);
 		memcpy( &es-> lf, &e-> elfLogFont, sizeof( LOGFONT));
-		es->utf8_flags |= utf8_flag_strncpy( es-> name, e-> elfLogFont.lfFaceName, LF_FACESIZE, FONT_UTF8_NAME);
+		es->is_utf8_family = utf8_flag_strncpy( es-> name, e-> elfLogFont.lfFaceName, LF_FACESIZE);
 		wcsncpy( es-> lf.lfFaceName, e-> elfLogFont.lfFaceName, LF_FACESIZE);
 	}
 
@@ -1002,10 +1003,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 			font_textmetric2font( &es. tm, font, true);
 			font-> direction = 0;
 			strncpy( font-> family, es. family, LF_FULLFACESIZE);
-			if ( es. utf8_flags & FONT_UTF8_FAMILY )
-				font->utf8_flags |= FONT_UTF8_FAMILY;
-			else
-				font->utf8_flags &= ~FONT_UTF8_FAMILY;
+			font-> is_utf8.family = es.is_utf8_family;
 			font-> size     = ( es. tm. tmHeight - es. tm. tmInternalLeading) * 72.0 / res.y + 0.5;
 			font-> width    = es. lf. lfWidth;
 			out( fvBitmap);
@@ -1038,10 +1036,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 
 			font_textmetric2font( &tm, font, true);
 			strncpy( font-> family, es. family, LF_FULLFACESIZE);
-			if ( es. utf8_flags & FONT_UTF8_FAMILY )
-				font->utf8_flags |= FONT_UTF8_FAMILY;
-			else
-				font->utf8_flags &= ~FONT_UTF8_FAMILY;
+			font-> is_utf8.family = es.is_utf8_family;
 			out( fvOutline);
 		}
 	}
@@ -1155,11 +1150,11 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _f)
 	PFont fm;
 	char name[256];
 	Fep2 *f = (Fep2*) _f;
-	int utf8_flags;
+	Bool name_is_utf8;
 
 	if ( e-> elfLogFont.lfFaceName[0] == '@') return 1; /* skip vertical fonts */
 
-	utf8_flags = utf8_flag_strncpy( name, e-> elfLogFont.lfFaceName, LF_FACESIZE, FONT_UTF8_NAME);
+	name_is_utf8 = utf8_flag_strncpy( name, e-> elfLogFont.lfFaceName, LF_FACESIZE);
 
 	if ( f-> hash) { /* gross-family enumeration */
 		fm = hash_fetch( f-> hash, name, strlen( name));
@@ -1184,9 +1179,9 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _f)
 		hash_store( f-> hash, name, strlen( name), fm);
 	}
 	fm-> direction = fm-> resolution = 0;
-	fm-> utf8_flags = utf8_flags;
+	fm-> is_utf8.name = name_is_utf8;
 	strcpy( fm-> name, name);
-	fm->utf8_flags |= utf8_flag_strncpy( fm-> family, e-> elfFullName, LF_FULLFACESIZE, FONT_UTF8_FAMILY);
+	fm-> is_utf8.family = utf8_flag_strncpy( fm-> family, e-> elfFullName, LF_FULLFACESIZE);
 	list_add( &f-> lst, ( Handle) fm);
 	return 1;
 }
