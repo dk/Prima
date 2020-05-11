@@ -227,11 +227,11 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 		if ( useVec   ) dest-> vector    = source-> vector;
 		if ( useName  ) {
 			strcpy( dest-> name, source-> name);
-			source->is_utf8.name = dest->is_utf8.name;
+			dest->is_utf8.name = source->is_utf8.name;
 		}
 		if ( useEnc   ) {
 			strcpy( dest-> encoding, source-> encoding);
-			source->is_utf8.encoding = dest->is_utf8.encoding;
+			dest->is_utf8.encoding = source->is_utf8.encoding;
 		}
 	}
 
@@ -254,8 +254,10 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 		else if ( dest-> width  > 16383 ) dest-> width  = 16383;
 	if ( dest-> size   <= 0) dest-> size   = 1;
 		else if ( dest-> size   > 16383 ) dest-> size   = 16383;
-	if ( dest-> name[0] == 0)
+	if ( dest-> name[0] == 0) {
 		strcpy( dest-> name, "Default");
+		dest->is_utf8.name = false;
+	}
 	if ( dest-> undef.pitch || dest-> pitch < fpDefault || dest-> pitch > fpFixed)
 		dest-> pitch = fpDefault;
 	if ( dest-> undef. direction )
