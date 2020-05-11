@@ -1531,9 +1531,12 @@ sub print
 	my $pageno = 1;
 	my $pagenum  = sub {
 		$canvas->translate( 0, 0 );
+		my %save = %{$canvas->font};
 		$canvas->font->set( name => $self->fontPalette->[0]->{name} || 'Default', size => 6, style => 0, pitch => fp::Default );
 		$canvas->set( color => cl::Black );
 		$canvas->text_out( $pageno, ( $formatWidth - $canvas->get_text_width($pageno) ) / 2, ($vmargin - $canvas->font->height ) / 2 );
+		delete $save{height}; # XXX fix this
+		$canvas->font(\%save);
 		$pageno++;
 	};
 	my $new_page = sub {
