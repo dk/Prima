@@ -360,29 +360,11 @@ sub begin_doc
 
 	if ( $self-> {data}-> {spoolerType} == file) {
 		if ( $self-> {gui}) {
-			eval "use Prima::MsgBox"; die "$@\n" if $@;
-			my $f = Prima::MsgBox::input_box( 'Print to file', 'Output file name:', '', mb::OKCancel, buttons => {
-				mb::OK, {
-				modalResult => undef,
-				onClick => sub {
-					$_[0]-> clear_event;
-					my $f = $_[0]-> owner-> InputLine1-> text;
-					if ( -f $f) {
-						return 0 if Prima::MsgBox::message(
-							"File $f already exists. Overwrite?",
-							mb::Warning|mb::OKCancel) != mb::OK;
-					} else {
-						unless ( open F, "> $f") {
-							Prima::MsgBox::message(
-							"Error opening $f:$!", mb::Error|mb::OK);
-							return 0;
-						}
-						close F;
-						unlink $f;
-					}
-					$_[0]-> owner-> modalResult( mb::OK);
-					$_[0]-> owner-> end_modal;
-			}}});
+			require Prima::Dialog::FileDialog;	
+			my $f = Prima::save_file(
+				defaultExt => 'ps',
+				text       => 'Print to file',
+			);
 			return 0 unless defined $f;
 			my $h = IO::Handle-> new;
 			unless ( open $h, "> $f") {
