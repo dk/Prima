@@ -32,7 +32,6 @@ use constant TYPES => 0;
 use constant IDS   => 1;
 use constant PROPS => 2;
 use constant DEFS  => 3;
-use constant UTF8  => 4;
 
 my ( $warnings,
 	$clsMethod,
@@ -434,11 +433,11 @@ sub parse_struc
 	my $lineStart = $ln;
 	my $incl = $fileName;
 	$incl =~ s/([^.]*)\..*$/$1/;
-	my $redef = exists $structs{$id} && defined ${$structs{$id}[2]}{hash};
+	my $redef = exists $structs{$id} && defined ${$structs{$id}[PROPS]}{hash};
 	checkid($id) unless
 	exists $structs{$id} &&
 		(
-			(${$structs{$id}[2]}{incl} eq $incl)  # already included in circular
+			(${$structs{$id}[PROPS]}{incl} eq $incl)  # already included in circular
 			||
 			$redef  # hash default values redefine
 		);
@@ -455,7 +454,6 @@ sub parse_struc
 		order => $nextStructure++,
 	);
 	$tok = gettok;
-	my %utf8_map;
 	if ( $tok eq '=')
 	{
 		# determining typecasting
@@ -466,7 +464,7 @@ sub parse_struc
 		if ( $arrays{$nid}) {
 			$arrays{ $id} = [ $arrays{$nid}[0], $arrays{$nid}[1], {%added}];
 		} else {
-			$structs{$id} = [[@{$structs{$nid}[0]}], [@{$structs{$nid}[1]}], {%added}, [@{$structs{$nid}[3]}], {%{$structs{$nid}[4]}}];
+			$structs{$id} = [[@{$structs{$nid}[0]}], [@{$structs{$nid}[1]}], {%added}, [@{$structs{$nid}[3]}]];
 		}
 		return;
 	} else {
@@ -485,11 +483,6 @@ sub parse_struc
 			$arrays{ $id} = [ $dim, $type, {%added}];
 			return;
 		} else {
-			if ( $tok eq 'with') {
-				$utf8_map{container} = 'utf8_flags';
-				expect('utf8');
-				$tok = gettok;
-			}
 			check('{');
 		}
 	}
@@ -544,12 +537,6 @@ sub parse_struc
 					my $nt = gettok;
 					if ( $nt eq 'undef') {
 						$def = "undef:$def";
-					} elsif ( $nt eq 'utf8') {
-						error "Type for $ids[-1] with utf8 must be 'string', not '$type'"
-							if $type ne 'string';
-						expect('(');
-						$utf8_map{fields}->{$ids[-1]} = gettok;
-						expect(')');
 					} elsif ( $nt eq ';') {
 						last;
 					}
@@ -581,7 +568,7 @@ sub parse_struc
 		$ln = $lineStart;
 		$added{genh} = ${$structs{$id}[2]}{genh};
 	}
-	$structs{ $id} = [[@types], [@ids], {%added}, [@defs], {%utf8_map}];
+	$structs{ $id} = [[@types], [@ids], {%added}, [@defs]];
 }
 
 sub parse_typedef
@@ -1191,6 +1178,10 @@ sub type2sv
 		return "sv_$type->[PROPS]->{name}2HV(&($name))";
 	} elsif ( $type eq 'Handle') {
 		return "( $name ? (( $incInst)$name)-> $hMate : &PL_sv_undef)";
+	} elsif ( $type eq 'string') {
+		my $fname = $name;
+		$fname =~ s/(.*)\b(\w+)$/${1}is_utf8.$2/;
+		return "prima_svpv_utf8($name, $fname)";
 	} elsif ( $type eq 'SV*') {
 		return $name;
 	} else {
@@ -1967,7 +1958,7 @@ print HEADER "#include \"$baseFile.h\"\n" if $baseClass;
 	for ( sort {
 		$structs{$a}-> [PROPS]-> {order} <=> $structs{$b}-> [PROPS]-> {order}
 	} keys %structs) {
-		my $f = ${$structs{$_}[2]}{incl};
+		my $f = ${$structs{$_}[PROPS]}{incl};
 		$toInclude{$f}=1 if $f;
 	}
 
@@ -2001,19 +1992,22 @@ SD
 # generating inplaced structures
 for ( sort { $structs{$a}-> [PROPS]-> {order} <=> $structs{$b}-> [PROPS]-> {order}} keys %structs)
 {
-	if ( ${$structs{$_}[PROPS]}{genh})
+	my $s = $structs{$_};
+	if ( $$s[PROPS]{genh})
 	{
-		my @types = @{$structs{$_}-> [TYPES]};
-		my @ids   = @{$structs{$_}-> [IDS]};
-		my @def   = @{$structs{$_}-> [DEFS]};
-		my $utfs  = $structs{$_}->[UTF8];
+		my @types = @{$$s[TYPES]};
+		my @ids   = @{$$s[IDS]};
+		my @def   = @{$$s[DEFS]};
 		print HEADER "typedef struct _$_ {\n";
 		my ($maxw_undefs, @undefs) = (0);
+		my ($maxw_utfs, @utfs) = (0);
 		for ( my $j = 0; $j < @types; $j++) {
 			if ( ref $types[$j]) {
 				print HEADER "\t$types[$j]->[PROPS]->{name} $ids[$j];\n";
 			} elsif ( $types[$j] eq "string") {
 				print HEADER "\tchar $ids[$j]\[256\];\n";
+				push @utfs, $ids[$j];
+				$maxw_utfs = length $ids[$j] if length($ids[$j]) > $maxw_utfs;
 			} else {
 				print HEADER "\t$types[$j] $ids[$j];\n";
 			}
@@ -2023,16 +2017,20 @@ for ( sort { $structs{$a}-> [PROPS]-> {order} <=> $structs{$b}-> [PROPS]-> {orde
 				$maxw_undefs = length $ids[$j] if length($ids[$j]) > $maxw_undefs;
 			}
 		}
-		if ( defined $utfs->{container}) {
-			print HEADER "\tU8 $utfs->{container};\n";
-		}
+		my $wtab = $maxw_undefs // 0;
+		$wtab = $maxw_utfs if ($maxw_utfs // 0) > $wtab;
 		if ( @undefs ) {
 			print HEADER "\tstruct {\n";
-			printf HEADER "\t\tunsigned %\-${maxw_undefs}s : 1;\n", $_ for @undefs;
+			printf HEADER "\t\tunsigned %\-${wtab}s : 1;\n", $_ for @undefs;
 			print HEADER "\t} undef;\n";
 		}
+		if ( @utfs ) {
+			print HEADER "\tstruct {\n";
+			printf HEADER "\t\tunsigned %\-${wtab}s : 1;\n", $_ for @utfs;
+			print HEADER "\t} is_utf8;\n";
+		}
 		print HEADER "} $_, *P$_;\n\n";
-		if ( ${$structs{$_}[PROPS]}{hash})
+		if ( $$s[PROPS]{hash})
 		{
 			print HEADER "extern $_ * SvHV_$_( SV * hashRef, $_ * strucRef, const char * errorAt);\n";
 			print HEADER "extern SV * sv_${_}2HV( $_ * strucRef);\n";
@@ -2211,10 +2209,6 @@ SD
 				"(( SvROK( hashRef) && ( SvTYPE( SvRV( hashRef)) == SVt_PVHV)) ? SvRV( hashRef)\n\t\t".
 				": ( croak( \"Illegal hash reference passed to %s\", err), nil));\n";
 			print HEADER "\tSV ** $incSV;\n\n\t(void)$incSV;\n\n";
-			my $utfs  = $s->[UTF8];
-			if ( exists $utfs->{container}) {
-				print HEADER "\tstrucRef->$utfs->{container} = 0;\n\n";
-			}
 			for ( my $j = 0; $j < scalar @{$s->[TYPES]}; $j++)
 			{
 				my $lType = @{ $s->[TYPES]}[$j];
@@ -2243,8 +2237,8 @@ CONTAINED_STRUCTURE
 						print HEADER "\tstrucRef-> undef.$lName = ($incSV == NULL);\n";
 						$def = $1;
 					}
-					if ( exists $utfs->{fields}->{$lName}) {
-						print HEADER "\tif ($incSV && prima_is_utf8_sv(*$incSV)) strucRef->$utfs->{container} |= $utfs->{fields}->{$lName};\n";
+					if ( $lType eq 'string') {
+						print HEADER "\tstrucRef->is_utf8.$lName = ($incSV && prima_is_utf8_sv(*$incSV)) ? 1 : 0;\n";
 					}
 					$inter = "$incSV ? " . sv2type( $lType, "*$incSV") . " : $def";
 					print HEADER "\t", cwrite( $lType, $inter, "strucRef-> $lName"), "\n\n";
@@ -2260,10 +2254,7 @@ CONTAINED_STRUCTURE
 				my $lName = @{$s->[IDS]}[$k];
 				my $lNameLen = length $lName;
 				my $lType = @{$s->[TYPES]}[$k];
-				my $inter =
-					exists $utfs->{fields}->{$lName} ?
-					"prima_svpv_utf8(strucRef->$lName, strucRef->$utfs->{container} & $utfs->{fields}->{$lName})" :
-					type2sv( $lType, "strucRef->$lName");
+				my $inter = type2sv( $lType, "strucRef->$lName");
 				my $prefix =
 					($s->[DEFS]->[$k] =~ /^undef:/) ?
 						"if (!strucRef->undef.$lName)" :

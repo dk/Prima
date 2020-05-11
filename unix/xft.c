@@ -348,17 +348,17 @@ prima_xft_done(void)
 
 }
 
-static unsigned short
-utf8_flag_strncpy( char * dst, const char * src, unsigned int maxlen, unsigned short is_utf8_flag)
+static Bool
+utf8_flag_strncpy( char * dst, const char * src, unsigned int maxlen)
 {
-	int is_utf8 = 0;
+	Bool is_utf8 = false;
 	while ( maxlen-- && *src) {
 		if ( *((unsigned char*)src) > 0x7f)
-			is_utf8 = 1;
+			is_utf8 = true;
 		*(dst++) = *(src++);
 	}
 	*dst = 0;
-	return is_utf8 ? is_utf8_flag : 0;
+	return is_utf8;
 }
 
 static void
@@ -367,9 +367,9 @@ fcpattern2fontnames( FcPattern * pattern, Font * font)
 	FcChar8 * s;
 
 	if ( FcPatternGetString( pattern, FC_FAMILY, 0, &s) == FcResultMatch)
-		font-> utf8_flags |= utf8_flag_strncpy( font-> name, (char*)s, 255, FONT_UTF8_NAME);
+		font-> is_utf8.name = utf8_flag_strncpy( font-> name, (char*)s, 255);
 	if ( FcPatternGetString( pattern, FC_FOUNDRY, 0, &s) == FcResultMatch)
-		font-> utf8_flags |= utf8_flag_strncpy( font-> family, (char*)s, 255, FONT_UTF8_FAMILY);
+		font-> is_utf8.family = utf8_flag_strncpy( font-> family, (char*)s, 255);
 
 	/* fake family */
 	if (
@@ -1523,7 +1523,9 @@ xft_draw_glyphs( PDrawableSysData selfxx,
 	int16_t  * positions = t ? t->positions : NULL;
 	Bool straight = IS_ZERO(XX-> font-> font. direction);
 
-	font_context_init(&fc, &XX->font->font, t->fonts, XX->font->xft, advances ? NULL : XX->font->xft_base);
+	font_context_init(&fc, &XX->font->font, 
+		t ? t->fonts : NULL, 
+		XX->font->xft, advances ? NULL : XX->font->xft_base);
 
 	ox = x;
 	oy = y;
@@ -2550,7 +2552,7 @@ prima_xft_init_font_substitution(void)
 		if ( s && s->nfont ) {
 			PFont f;
 			if (( f = prima_font_mapper_save_font(guts.default_font.name)) != NULL ) {
-				f->utf8_flags = guts.default_font.utf8_flags;
+				f->is_utf8 = guts.default_font.is_utf8;
 				f->undef.name = 0;
 				strncpy(f->family, guts.default_font.family,256);
 				f->undef.vector = 0;
@@ -2584,11 +2586,11 @@ prima_xft_init_font_substitution(void)
 		if ( !( f = prima_font_mapper_save_font((const char*) s)))
 			continue;
 
-		f-> utf8_flags |= utf8_flag_strncpy( f->name, (char*)s, 255, FONT_UTF8_NAME);
+		f-> is_utf8.name = utf8_flag_strncpy( f->name, (char*)s, 255);
 		f-> undef.name = 0;
 
 		if ( FcPatternGetString(*ppat, FC_FOUNDRY, 0, &s) == FcResultMatch) {
-			f->utf8_flags |= utf8_flag_strncpy( f->family, (char*)s, 255, FONT_UTF8_FAMILY);
+			f->is_utf8.family = utf8_flag_strncpy( f->family, (char*)s, 255);
 		}
 		if ( FcPatternGetInteger(*ppat, FC_SPACING, 0, &j) == FcResultMatch) {
 			f->pitch = (( i == FC_PROPORTIONAL) ? fpVariable : fpFixed);

@@ -1297,7 +1297,7 @@ AGAIN:
 		f-> font.  externalLeading =
 						abs( s-> max_bounds. ascent  - s-> ascent) +
 						abs( s-> max_bounds. descent - s-> descent);
-		f-> font.  utf8_flags      = 0;
+		bzero(&f->font.is_utf8, sizeof(f->font.is_utf8));
 
 		/* detailing width */
 		if ( f-> font. width == 0 || !f-> flags. width) {

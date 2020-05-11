@@ -2995,10 +2995,6 @@ FW(UltraBold)
 END_TABLE(fw,UV)
 #undef FW
 
-#define FONT_UTF8_NAME           0x001
-#define FONT_UTF8_FAMILY         0x002
-#define FONT_UTF8_ENCODING       0x004
-
 #define IM(const_name) CONSTANT(im,const_name)
 START_TABLE(im,UV)
 #define    imNone                0
