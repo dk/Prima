@@ -998,6 +998,15 @@ sub glyph_out_outline
 	my $div        = $self->{font_char_height} / $canvas->{pixel_scale};
 	my $restore_font;
 
+	my $set_font = sub {
+		my %f = %{$_[0]};
+		delete $f{height};
+		delete $f{width};
+		delete $f{direction};
+		$f{size} = 1000;
+		$canvas->font(\%f);
+	};
+
 	$len += $from;
 	my $emit = '';
 	my $fid  = 0;
@@ -1017,13 +1026,7 @@ sub glyph_out_outline
 				$newfont = Prima::Drawable->font_match( $src, $dst );
 				$restore_font = 1;
 			}
-			my %f = %$newfont;
-			delete $f{height};
-			delete $f{width};
-			delete $f{direction};
-			$f{size} = 1000;
-			$canvas->font(\%f);
-
+			$set_font->($newfont);
 			$font = $nfid ? $keeper->get_font($canvas->font) : $self->{glyph_font};
 			$emit .= "/$font FF $self->{font}->{size} XF SF\n";
 			$fid = $nfid;
@@ -1048,7 +1051,10 @@ sub glyph_out_outline
 		$emit .= "/$gid Y\n";
 	}
 
-	$emit .= "/$self->{glyph_font} FF $self->{font}->{size} XF SF\n" if $restore_font;
+	if ($restore_font) {
+		$emit .= "/$self->{glyph_font} FF $self->{font}->{size} XF SF\n";
+		$set_font->($self->{font});
+	}
 	$self-> emit($emit);
 }
 
@@ -1964,8 +1970,10 @@ sub get_text_box
 		my $canvas = $self-> glyph_canvas($is_vector_font);
 		@ret = @{ $canvas-> get_text_box( $text, $from, $len) };
 		if ( $is_vector_font ) {
-			unless ($glyphs && $text->advances) {
-				my $div = $self->{font_char_height} / $canvas->{pixel_scale};
+			my $div = $self->{font_char_height} / $canvas->{pixel_scale};
+			if ($glyphs && $text->advances) {
+				$_ *= $div for @ret[1,3,5,7,9];
+			} else {
 				$_ *= $div for @ret;
 			}
 		}
@@ -1985,7 +1993,7 @@ sub text_shape
 
 	unless ($self-> is_ps_font) {
 		if ( $self->is_vector_font ) {
-			my $canvas = $self-> glyph_canvas;
+			my $canvas = $self-> glyph_canvas(1);
 			my $shaped = $canvas->text_shape($text, %opt);
 			$shaped->[Prima::Drawable::Glyphs::CUSTOM()] = $text;
 			return $shaped unless $shaped && $shaped->advances;
