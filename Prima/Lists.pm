@@ -1263,12 +1263,17 @@ sub set_top_item
 	if ( $self-> { multiColumn}) {
 		$iw += $self-> {drawGrid};
 		if ( $self-> {vertical}) {
-			return $self-> repaint if $dt % $self->{columns};
+			if ($self->{rows} != 0 && abs($dt) % $self->{rows}) {
+				$a[1] += $self->{yedge} if $self->{integralHeight};
+				$self-> scroll( 0, $ih * $dt, clipRect => \@a);
+				return;
+			}
 
 			if ($self->{integralWidth}) {
 				$a[2] -= $self->{xedge};
-			} else {
-				$self-> invalidate_rect($a[2] - $self->{xedge}, $a[1], $a[2], $a[3])
+			} elsif ( !defined $with_focus_shift || $with_focus_shift < 0 ) {
+				# invalid xedge on the right and exposed stripe on the left make clipRect too large
+				$self-> invalidate_rect($a[2] - $self->{xedge}, $a[1], $a[2], $a[3]);
 			}
 			if ( defined $with_focus_shift ) {
 				if ( $with_focus_shift < 0 ) {
@@ -1280,20 +1285,20 @@ sub set_top_item
 					$a[0] += $iw;
 				}
 			}
-			if (( $self-> {rows} != 0) && ( $dt % $self-> {rows} == 0)) {
-				$self-> scroll(
-					-( $dt / $self-> {rows}) * $iw, 0,
-					clipRect => \@a
-				);
-			} else {
-				$self-> scroll( 0, $ih * $dt, clipRect => \@a);
-			}
+			$self-> scroll(
+				-( $dt / $self-> {rows}) * $iw, 0,
+				clipRect => \@a
+			);
 		} else {
-			return $self-> repaint if $dt % $self->{columns};
+			if ($self->{columns} > 0 && abs($dt) % $self->{columns}) {
+				$a[2] -= $self->{xedge} if $self->{integralWidth};
+				$self-> scroll(- $iw * $dt, 0, clipRect => \@a);
+				return;
+			}
 
 			if ($self->{integralHeight}) {
 				$a[1] += $self->{yedge};
-			} else {
+			} elsif ( !defined $with_focus_shift || $with_focus_shift < 0 ) {
 				$self-> invalidate_rect($a[0], $a[1], $a[2], $a[1] + $self->{yedge})
 			}
 			if ( defined $with_focus_shift ) {
@@ -1306,14 +1311,10 @@ sub set_top_item
 					$self-> invalidate_rect($a[0], $a[3], $a[2], $a[3] + $ih);
 				}
 			}
-			if (( $self-> {whole_columns} != 0) && ( $dt % $self-> {whole_columns} == 0)) {
-				$self-> scroll(
-					0, ( $dt / $self-> {whole_columns}) * $ih,
-					clipRect => \@a
-				);
-			} else {
-				$self-> scroll(- $iw * $dt, 0, clipRect => \@a);
-			}
+			$self-> scroll(
+				0, ( $dt / $self-> {columns}) * $ih,
+				clipRect => \@a
+			);
 		}
 	} else {
 		$a[1] += $self-> {yedge}
