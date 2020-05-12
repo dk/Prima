@@ -934,25 +934,84 @@ N 0 0 M 0 0 $rx 0 $end a 0 0 l $F ;
 SECTOR
 }
 
+sub utf8_text_to_chunks
+{
+	my ( $self, $text ) = @_;
+
+	my $enc = $self->{encoding_to_downgrade_utf} // 'latin1';
+	my $new_text = '';
+	my @text;
+	while ( 1) {
+		my $conv = Encode::encode(
+			$enc, $text,
+			Encode::FB_QUIET|Encode::LEAVE_SRC
+		);
+		if ( !length $conv ) {
+			#
+		} elsif ( !@text || $text[-1][0] == 0 ) {
+			push @text, [ 1, $conv ];
+		} else {
+			$text[-1][1] .= $conv;
+		}
+		substr( $text, 0, length($conv), '');
+		last unless length $text;
+		my $c = substr( $text, 0, 1, '');
+		if ( !@text || $text[-1][0] == 1 ) {
+			push @text, [ 0, $c ];
+		} else {
+			$text[-1][1] .= $c;
+		}
+	}
+	return \@text;
+}
+
+sub text_out_ps_polyfont
+{
+	my ( $self, $chunks ) = @_;
+	my %f = %{$self->{font}};
+	my $font_changed;
+	my $ps_font = $self->{font}->{docname};
+	$self->emit(":");
+	for (@$chunks) {
+		my ( $plain, $text ) = @$_;
+		my $dw;
+		if ( $plain ) {
+			Encode::_utf8_off($text);
+			if ($font_changed) {
+				$self->set_font(\%f);
+				$self-> emit( "/$ps_font FF $f{size} XF SF");
+			}
+			$self->text_out_ps($text);
+		} else {
+			local $self->{useDeviceFonts} = 0;
+			my %dst = ( %f, name => 'Default' );
+			delete $f{height};
+			delete $f{width};
+			$self->set_font(\%f);
+			$text = $self->text_shape($text, reorder => 0);
+			$self-> glyph_out_outline($text, 0, scalar @{$text->glyphs})
+				if $text;
+			$font_changed = 1;
+		}
+		($dw) = $self->pixel2point($self->get_text_width($text));
+		$self->emit("$dw 0 T 0 0 M");
+	}
+	$self->set_font(\%f) if $font_changed;
+	$self->emit(";");
+}
+
 sub text_out_ps
 {
 	my ( $self, $text) = @_;
 
 	if (Encode::is_utf8($text)) {
-		my $enc = $self->{encoding_to_downgrade_utf} // 'latin1';
-		my $new_text = '';
-		while ( 1) {
-			my $conv = Encode::encode(
-				$enc, $text,
-				Encode::FB_QUIET
-			);
-			$new_text .= $conv;
-			substr( $text, 0, length($conv), '');
-			last unless length $text;
-			$new_text .= '?';
-			substr( $text, 0, 1, '');
+		my $chunks = $self->utf8_text_to_chunks($text);
+		if ( $self->{useDeviceFontsOnly}) {
+			$text = '';
+			$text .= $$_[0] ? $$_[1] : ('?' x length($$_[1])) for @$chunks;
+		} else {
+			return $self->text_out_ps_polyfont($chunks);
 		}
-		$text = $new_text;
 	}
 
 	my $le  = $self-> {encoding_names};
@@ -961,6 +1020,7 @@ sub text_out_ps
 	my $resolution = 72.27 / $self->{resolution}->[0];
 	my $emit = '';
 	for my $j (map { ord } split //, $text ) {
+		
 		my $adv2 = int( $adv * 100 + 0.5) / 100;
 		my $gid  = $le->[$j];
 		my $xr   = ($gid eq '.notdef') ? $nd : $rm-> [$j];
@@ -975,7 +1035,7 @@ sub text_out_outline
 {
 	my ( $self, $text ) = @_;
 	my $is_bytes = !Encode::is_utf8($text) && $text =~ /[^\x{0}-\x{7f}]/;
-	my $shaped   = $self->text_shape($text, levelo => $is_bytes ? ts::Glyphs : ts::Bytes ) or return;
+	my $shaped   = $self->text_shape($text, level => $is_bytes ? ts::Bytes : ts::Glyphs ) or return;
 	$self-> glyph_out_outline($shaped, 0, scalar @{$shaped->glyphs});
 }
 
@@ -1545,7 +1605,12 @@ AGAIN:
 			$n = $font-> {name} = ( $pitch == fp::Variable) ?
 				$Prima::PS::Fonts::variablePitchName :
 				$Prima::PS::Fonts::fixedPitchName;
-			$font-> {width} = $wscale if defined $wscale;
+			$font-> {width}    = $wscale if defined $wscale;
+			if ( defined $font->{encoding}) {
+				delete $font-> {encoding} unless
+					exists $Prima::PS::Encodings::fontspecific{$font-> {encoding}} ||
+					exists $Prima::PS::Encodings::files{$font-> {encoding}};
+			}
 			goto AGAIN;
 		}
 
@@ -2012,9 +2077,8 @@ sub text_shape
 
 	my ($i, $x) = (0, $shaped->indexes);
 	my @text = split '', $text;
-	my @ret;
-	$ret[$_] = $text[ $x->[$_] & ~to::RTL ] for 0..$#text;
-	return join '', grep { defined } @ret;
+	my $ret = join('', map { $text[ $_ & ~to::RTL ] } @$x[0..$#$x-1]);
+	return $ret;
 }
 
 sub render_glyph {}

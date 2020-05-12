@@ -1248,10 +1248,6 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		}
 	}
 
-	if ( skip_if_simple && (shaper_type == tsNone)) {
-		return_zero = true;
-		goto EXIT;
-	}
 	if ( shaper_type == tsFull ) {
 		force_advances = false;
 		skip_if_simple = false; /* kerning may affect advances */ 
