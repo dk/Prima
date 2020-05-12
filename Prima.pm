@@ -403,8 +403,6 @@ L<Prima::Dialog::PrintDialog> - standard printer setup dialog
 
 L<Prima::Drawable::CurvedText> - fit text to path
 
-L<Prima::Drawable::FontMapper> - substitute glyphs with necessary fonts
-
 L<Prima::Drawable::Glyphs> - bi-directional text input and complex scripts output
 
 L<Prima::Drawable::Gradient> - gradient fills for primitives

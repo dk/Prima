@@ -13,7 +13,6 @@ use Prima;
 use Prima::IntUtils;
 use Prima::ScrollBar;
 use Prima::Drawable::TextBlock;
-use Prima::Drawable::FontMapper;
 use vars qw(@ISA);
 @ISA = qw(Prima::Widget Prima::MouseScroller Prima::GroupScroller);
 
@@ -437,51 +436,6 @@ sub font_palette_map
 		$self->{fontPaletteMap} = \%fm;
 	}
 	return $self->{fontPaletteMap};
-}
-
-sub block_substitute_fonts
-{
-	my ( $self, $block ) = @_;
-
-	my $mapper  = $::application-> font_mapper;
-	my @new_blk = @$block[ 0 .. tb::BLK_DATA_END ];
-
-	my $fp  = $self->{fontPalette};
-	my $fm  = $self->font_palette_map;
-	my $fid = $block->[tb::BLK_FONT_ID];
-
-	tb::walk( $block,
-		textPtr => $self->{text},
-		trace   => tb::TRACE_TEXT,
-		text    => sub {
-			my ( $ofs, $len, undef, $text ) = @_;
-			my @layout = $mapper->text2layout($text, $fp->[ $fid ]->{name} // 'Default');
-			my $curr_fid = $fid;
-			for ( my $i = 0; $i < @layout; $i+=2) {
-				my ( $font, $ntext ) = @layout[$i,$i+1];
-				my $nfid;
-				if ( !exists $fm->{$font}) {
-					push @$fp, { name => $font }; # XXX pitch
-					$nfid = $fm->{$font} = $#$fp;
-				} else {
-					$nfid = $fm->{$font};
-				}
-				if ($nfid != $curr_fid) {
-					push @new_blk, tb::fontId($nfid);
-					$curr_fid = $nfid;
-				}
-				my $nlen = length $ntext;
-				push @new_blk, tb::text( $ofs, $nlen );
-				$ofs += $nlen;
-			}
-			push @new_blk, tb::fontId($fid) if $curr_fid != $fid;
-		},
-		other   => sub {
-			$fid = $_[tb::F_DATA] if $_[0] == tb::OP_FONT && $_[ tb::F_MODE ] == tb::F_ID;
-			push @new_blk, @_;
-		},
-	);
-	return \@new_blk;
 }
 
 sub selection_state

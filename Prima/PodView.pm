@@ -1306,7 +1306,6 @@ sub format
 	# cache indents
 	my @indents;
 	my $state = $self-> create_state;
-	$self->{fonts_contain_basic_latin} = 1;
 	for ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
 		$$state[ tb::BLK_FONT_ID] = $_;
 		$self-> realize_state( $self, $state, tb::REALIZE_FONTS);
@@ -1396,10 +1395,6 @@ sub format_chunks
 		# format the paragraph
 
 		my $next_text_offs = ( $mid == $#{$self->{model}} ) ? length( ${$self->{text}} ) : $self->{model}->[$mid + 1]->[M_TEXT_OFFSET];
-		my $block_text     = substr( ${$self->{text}}, $$m[M_TEXT_OFFSET], $next_text_offs - $$m[M_TEXT_OFFSET]);
-		if ( !$self->{fonts_contain_basic_latin} || $block_text =~ /[^\x{00}-\x{7F}]/) {
-			$g = $self-> block_substitute_fonts($g);
-		}
 		my $indent = $$m[M_INDENT] * $$indents[ $$m[M_FONT_ID]];
 		@blocks = $self-> block_wrap( $self, $g, $state, $formatWidth - $indent);
 

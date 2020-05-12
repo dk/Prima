@@ -228,7 +228,6 @@ Prima/DockManager.pm
 Prima/Docks.pm
 Prima/Drawable/Basic.pm
 Prima/Drawable/CurvedText.pm
-Prima/Drawable/FontMapper.pm
 Prima/Drawable/Glyphs.pm
 Prima/Drawable/Gradient.pm
 Prima/Drawable/Markup.pm

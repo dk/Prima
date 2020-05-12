@@ -1980,13 +1980,6 @@ sub setup
 	}
 }
 
-sub font_mapper
-{
-	my $self = shift;
-	require Prima::Drawable::FontMapper;
-	return $self->{font_mapper} //= Prima::Drawable::FontMapper->new;
-}
-
 sub get_fullscreen_image
 {
 	my $self = shift;
