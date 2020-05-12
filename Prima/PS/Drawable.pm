@@ -1006,7 +1006,11 @@ sub text_out_ps
 
 	if (Encode::is_utf8($text)) {
 		my $chunks = $self->utf8_text_to_chunks($text);
-		if ( $self->{useDeviceFontsOnly}) {
+		unless ( @$chunks ) {
+			return;
+		} elsif ( 1 == @$chunks && $chunks->[0][0] ) {
+			$text = $chunks->[0][1];
+		} elsif ( $self->{useDeviceFontsOnly}) {
 			$text = '';
 			$text .= $$_[0] ? $$_[1] : ('?' x length($$_[1])) for @$chunks;
 		} else {
