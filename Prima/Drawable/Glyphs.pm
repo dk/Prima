@@ -1075,6 +1075,57 @@ clusters would fit in width C<$X>.
 
 =back
 
+=head1 EXAMPLES
+
+This section is only there to test proper rendering
+
+=over
+
+=item Latin
+
+B<Lorem ipsum> dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+   Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+=item Latin combining
+
+D̍üi̔s͙ a̸u̵t͏eͬ ịr͡u̍r͜e̥ d͎ǒl̋o̻rͫ i̮n̓ r͐e̔p͊rͨe̾h̍e͐n̔ḋe͠r̕i̾t̅ ịn̷ vͅo̖lͦuͦpͧt̪ątͅe̪ 
+
+   v̰e̷l̳i̯t̽ e̵s̼s̈e̮ ċi̵l͟l͙u͆m͂ d̿o̙lͭo͕r̀e̯ ḛu̅ fͩuͧg̦iͩa̓ť n̜u̼lͩl͠a̒ p̏a̽r̗i͆a͆t̳űr̀
+
+=item Cyrillic
+
+B<Lorem Ipsum> используют потому, что тот обеспечивает более или менее стандартное заполнение шаблона.
+
+а также реальное распределение букв и пробелов в абзацах
+
+=item Hebrew
+
+זוהי עובדה מבוססת שדעתו של הקורא תהיה מוסחת על ידי טקטס קריא כאשר הוא יביט בפריסתו.
+
+  המטרה בשימוש ב-Lorem Ipsum הוא שיש לו פחות או יותר תפוצה של אותיות, בניגוד למלל
+
+=item Arabic
+
+العديد من برامح النشر المكتبي وبرامح تحرير صفحات الويب تستخدم لوريم إيبسوم بشكل إفتراضي 
+
+  كنموذج عن النص، وإذا قمت بإدخال "lorem ipsum" في أي محرك بحث ستظهر العديد من
+
+
+=item Indic
+
+Lorem Ipsum के अंश कई रूप में उपलब्ध हैं, लेकिन बहुमत को किसी अन्य रूप में परिवर्तन का सामना करना पड़ा है, हास्य डालना या क्रमरहित शब्द , 
+
+  जो तनिक भी विश्वसनीय नहीं लग रहे हो. यदि आप Lorem Ipsum के एक अनुच्छेद का उपयोग करने जा रहे हैं, तो आप को यकीन दिला दें कि पाठ के मध्य में वहाँ कुछ भी शर्मनाक छिपा हुआ नहीं है.
+
+=item Chinese
+
+无可否认，当读者在浏览一个页面的排版时，难免会被可阅读的内容所分散注意力。
+
+  Lorem Ipsum的目的就是为了保持字母多多少少标准及平
+
+=back
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
