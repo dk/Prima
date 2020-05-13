@@ -2486,6 +2486,7 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 	hb_font_t *font;
 	hb_glyph_info_t *glyph_info;
 	hb_glyph_position_t *glyph_pos;
+	PFont f = &(PWidget(self)->font);
 
 	if ( !( face = XftLockFace( XX->font->xft))) /*XXX*/
 		return -1;
