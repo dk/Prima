@@ -363,7 +363,7 @@ Drawable_get_font_abcdef( Handle self, int first, int last, int flags, PFontABC 
 
 	if ( flags & toGlyphs )
 		flags &= ~toUTF8;
-	if ( !(flags & toUTF8)) {
+	else if ( !(flags & toUTF8)) {
 		if ( first > 255) first = 255;
 		if ( last  > 255) last  = 255;
 	}
