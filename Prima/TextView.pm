@@ -308,15 +308,7 @@ sub fontPalette
 		pitch    => fp::Default,
 	} if scalar @$fm < 1;
 	$self-> {fontPaletteSize} = @$fm;
-	delete $self->{fontPaletteMap};
 	$self-> repaint;
-}
-
-sub truncate_auto_fonts
-{
-	my $self = shift;
-	splice( @{$self->{fontPalette}}, $self->{fontPaletteSize} );
-	delete $self->{fontPaletteMap};
 }
 
 sub create_state
@@ -422,20 +414,6 @@ sub block_wrap
 		wordBreak     => 1,
 		textDirection => $self->{textDirection}, 
 	);
-}
-
-sub font_palette_map
-{
-	my $self = shift;
-	if ( ! defined $self->{fontPaletteMap}) {
-		my %fm;
-		my $fp = $self->{fontPalette};
-		for ( my $i = 0; $i < @$fp; $i++) {
-			$fm{ $fp->[$i]->{name} // 'Default' } = $i;
-		}
-		$self->{fontPaletteMap} = \%fm;
-	}
-	return $self->{fontPaletteMap};
 }
 
 sub selection_state
