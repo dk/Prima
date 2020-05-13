@@ -358,8 +358,8 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		GIF_CALL DGifGetRecordType( l-> gft, &l-> grt);
 		if ( GIF_CALL_FAILED ) {
 			/* handle premature EOF gracefully */
-				if ( fi-> frameCount < 0 && l-> passed < fi-> frame)
-					fi-> frameCount = l-> passed;
+			if ( fi-> frameCount < 0 && l-> passed < fi-> frame)
+				fi-> frameCount = l-> passed;
 			out;
 		}
 
@@ -429,8 +429,11 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				if ( !data) outcm( ls * i-> h);
 				GIF_CALL DGifGetLine( l-> gft, data, i-> w * i-> h);
 				if ( GIF_CALL_FAILED ) {
-					free( data);
-					out;
+					if ( fi-> noIncomplete ) {
+						free( data);
+						out;
+					}
+					loop = false;
 				}
 
 				/* copying & converting data */
