@@ -1081,6 +1081,8 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 				Font src, dst;
 				src = PASSIVE_FONT(run.fonts[0])->font;
 				dst = var->font;
+				src.size = dst.size;
+				src.undef.size = 0;
 				apc_font_pick( self, &src, &dst);
 				if ( strcmp(dst.name, src.name) == 0 ) {
 					apc_gp_set_font( self, &dst);

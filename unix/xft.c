@@ -163,7 +163,7 @@ font_context_init( FontContext * fc, Font * font, uint16_t * fonts, XftFont * or
 static void
 font_context_next( FontContext * fc )
 {
-	Font *src, dst;
+	Font *_src, src, dst;
 	uint16_t nfid;
 
 	if ( !fc-> fonts ) return;
@@ -178,11 +178,15 @@ font_context_next( FontContext * fc )
 		return;
 	}
 
-	if ( !( src = prima_font_mapper_get_font(nfid)))
+	if ( !( _src = prima_font_mapper_get_font(nfid)))
 		return;
 
+	src = *_src;
 	dst = fc->font;
-	prima_xft_font_pick( nilHandle, src, &dst, NULL, &fc->xft_font);
+	src.size = dst.size;
+	src.undef.size = 0;
+
+	prima_xft_font_pick( nilHandle, &src, &dst, NULL, &fc->xft_font);
 	if ( !fc->orig_base )
 		return;
 	
