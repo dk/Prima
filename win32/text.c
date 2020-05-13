@@ -59,7 +59,7 @@ font_context_rewind( FontContext * fc, int index )
 static int
 font_context_next( FontContext * fc )
 {
-	Font *src, dst;
+	Font *_src, src, dst;
 	uint16_t nfid;
 	int start, len;
 	HFONT hfont, selected;
@@ -92,11 +92,14 @@ font_context_next( FontContext * fc )
 		hfont = fc->orig;
 	} else if ( nfid == fc->nondefault_fid ) {
 		hfont = fc->nondefault_font->hfont;
-	} else if ( !( src = prima_font_mapper_get_font(nfid))) {
+	} else if ( !( _src = prima_font_mapper_get_font(nfid))) {
 		hfont = fc->orig;
 	} else {
+		src = *_src;
+		src.size = dst.size;
+		src.undef.size = 0;
 		dst = (( PWidget) fc->self)-> font;
-		apc_font_pick(fc->self, src, &dst);
+		apc_font_pick(fc->self, &src, &dst);
 		if ( strcmp(src->name, dst.name) == 0) {
 			if ( fc-> nondefault_font )
 				font_free(fc-> nondefault_font, false);
