@@ -1299,27 +1299,17 @@ sub format
 
 	$self-> {blocks} = [];
 	$self-> {contents}-> [0]-> rectangles( []);
-	$self-> truncate_auto_fonts;
 
 	$self-> begin_paint_info;
 
 	# cache indents
 	my @indents;
 	my $state = $self-> create_state;
-	for ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
-		$$state[ tb::BLK_FONT_ID] = $_;
-		$self-> realize_state( $self, $state, tb::REALIZE_FONTS);
-		$indents[$_] = $self-> font-> width;
-		next if $_ > 1;
 
-		my $r = $self->get_font_ranges;
-		my $n = 0;
-		for ( my $i = 0; $i < @$r; $i += 2 ) {
-			my ( $from, $to ) = @$r[$i,$i+1];
-			next if $from > 0x7f or $to < 0x20;
-			$n += $to - $from + 1;
-		}
-		$self->{fonts_contain_basic_latin} = 0 if $n < 0x7f - 0x20;
+	for my $fid ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
+		$$state[ tb::BLK_FONT_ID] = $fid;
+		$self-> realize_state( $self, $state, tb::REALIZE_FONTS);
+		$indents[$fid] = $self-> font-> width;
 	}
 	$$state[ tb::BLK_FONT_ID] = 0;
 
@@ -1506,6 +1496,7 @@ sub print
 	# cache indents
 	my @indents;
 	my $state = $self-> create_state;
+		use Data::Dumper; print STDERR Dumper(	$self->fontPalette );
 	for ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
 		$$state[ tb::BLK_FONT_ID] = $_;
 		$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);

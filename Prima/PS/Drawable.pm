@@ -984,7 +984,7 @@ sub text_out_ps_polyfont
 			$self->text_out_ps($text);
 		} else {
 			local $self->{useDeviceFonts} = 0;
-			my %dst = ( %f, name => 'Default' );
+			my %dst = ( %f, name => $::application-> get_default_font->{name} );
 			delete $f{height};
 			delete $f{width};
 			$self->set_font(\%f);
@@ -1010,7 +1010,7 @@ sub text_out_ps
 			return;
 		} elsif ( 1 == @$chunks && $chunks->[0][0] ) {
 			$text = $chunks->[0][1];
-		} elsif ( $self->{useDeviceFontsOnly}) {
+		} elsif ( $self->{useDeviceFontsOnly} || !$::application ) {
 			$text = '';
 			$text .= $$_[0] ? $$_[1] : ('?' x length($$_[1])) for @$chunks;
 		} else {
@@ -1548,7 +1548,7 @@ sub set_font
 		my $fn = ($self->{type_name} == 1) ? $self-> {font}-> {docname} : $self->{glyph_font};
 		$curr_font = $self->{font}->{size} . '.' . $fn;
 	}
-	
+
 AGAIN:
 	if ( $self-> {useDeviceFontsOnly} || !$::application ||
 			( $self-> {useDeviceFonts} &&
