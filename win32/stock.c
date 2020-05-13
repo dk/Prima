@@ -766,9 +766,9 @@ reset_system_fonts(void)
 	guts. windowFont. undef. width = guts. windowFont. undef. height = guts. windowFont. undef. vector = 1;
 	apc_font_pick( nilHandle, &guts. windowFont, &guts. windowFont);
 
-	guts. ncmData. cbSize = sizeof( NONCLIENTMETRICS);
-	SystemParametersInfoW( SPI_GETNONCLIENTMETRICS, sizeof( NONCLIENTMETRICS),
-		( PVOID) &guts. ncmData, 0);
+	guts. ncmData. cbSize = sizeof( NONCLIENTMETRICSW);
+	if ( !SystemParametersInfoW( SPI_GETNONCLIENTMETRICS, sizeof( NONCLIENTMETRICSW),
+		( PVOID) &guts. ncmData, 0)) apiErr;
 	font_logfont2font( &guts.ncmData.lfMenuFont,    &guts.menuFont, &guts.displayResolution);
 	font_logfont2font( &guts.ncmData.lfMessageFont, &guts.msgFont,  &guts.displayResolution);
 	font_logfont2font( &guts.ncmData.lfCaptionFont, &guts.capFont,  &guts.displayResolution);

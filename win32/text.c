@@ -100,7 +100,7 @@ font_context_next( FontContext * fc )
 		src.undef.size = 0;
 		dst = (( PWidget) fc->self)-> font;
 		apc_font_pick(fc->self, &src, &dst);
-		if ( strcmp(src->name, dst.name) == 0) {
+		if ( strcmp(src.name, dst.name) == 0) {
 			if ( fc-> nondefault_font )
 				font_free(fc-> nondefault_font, false);
 			fc->nondefault_font = font_alloc(&dst);
