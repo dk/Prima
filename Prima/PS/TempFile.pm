@@ -5,6 +5,7 @@ use warnings;
 
 sub new
 {
+	my ( $class, %opt ) = @_;
 	my $tmpdir = $ENV{TMPDIR} // $ENV{TEMPDIR} // (($^O =~ /win/i) ? ($ENV{TEMP} // "$ENV{SystemDrive}\\TEMP") : "/tmp");
 	my $id = unpack('H*', pack('f', rand(10 ** rand(37))));
 
@@ -13,13 +14,15 @@ sub new
 	if ( open( my $f, '+>', $self{filename})) {
 		$self{fh} = $f;
 	} else {
-		warn "cannot create temp file $self{filename}: $!\n";
+		warn "cannot create temp file $self{filename}: $!\n" if $opt{warn} // 1;
 		return undef;
 	}
-	unlink $self{filename};
+	unlink $self{filename} if $opt{unlink} // 1;
 
-	return bless \%self, shift;
+	return bless \%self, $class;
 }
+
+sub remove { unlink shift->{filename} }
 
 sub write
 {

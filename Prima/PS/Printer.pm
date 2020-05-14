@@ -24,7 +24,7 @@ Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
 
 	my $x;
 	if ( $preview) {
-		$x = Prima::PS::Pipe-> new( command => 'gv -');
+		$x = Prima::PS::Pipe-> new( command => 'gv $');
 	} elsif ( $print_in_file) {
 		$x = Prima::PS::File-> new( file => 'out.ps');
 	} elsif ( $print_on_device) {
@@ -45,6 +45,7 @@ use Prima;
 use Prima::Utils;
 use IO::Handle;
 use Prima::PS::Drawable;
+use Prima::PS::TempFile;
 
 package Prima::PS::Printer;
 use vars qw(@ISA %pageSizes $unix);
@@ -123,7 +124,7 @@ sub init
 			$self-> import_printers( 'printers', '/etc/printcap');
 			$self-> {printers}-> {GhostView} = deepcopy( $self-> {defaultData});
 			$self-> {printers}-> {GhostView}-> {spoolerType} = cmd;
-			$self-> {printers}-> {GhostView}-> {spoolerData} = 'gv -';
+			$self-> {printers}-> {GhostView}-> {spoolerData} = 'gv $';
 		}
 		$self-> {printers}-> {File} = deepcopy( $self-> {defaultData});
 		$self-> {printers}-> {File}-> {spoolerType} = file;
@@ -377,7 +378,7 @@ sub begin_doc
 		} else { # no gui
 			my $h = IO::Handle-> new;
 			my $f = $self-> {data}-> {spoolerData};
-			unless ( open $h, "> $f") {
+			unless ( open $h, ">", $f) {
 				undef $h;
 				return 0;
 			}
@@ -390,6 +391,15 @@ sub begin_doc
 			return 0;
 		}
 		return 1;
+	} elsif ( $self-> {data}-> {spoolerType} == cmd && $self->{data}->{spoolerData} =~ /\$/) {
+		my $f = Prima::PS::TempFile->new(unlink => 0, warn => !$self->{gui});
+		unless ( defined $f ) {
+			Prima::message("Error creating temporary file: $!") if $self-> {gui};
+			return 0;
+		}
+		$self-> {spoolTmpFile} = $f;
+		$self-> {spoolHandle}  = $f->{fh};
+		$self-> {spoolName}    = $f->{filename};
 	}
 
 	return $self-> SUPER::begin_doc( $docName);
@@ -405,6 +415,17 @@ sub __end
 		defined($sigpipe) ? $SIG{PIPE} = $sigpipe : delete($SIG{PIPE});
 	}
 	$self-> {spoolHandle} = undef if $self->{data}->{spoolerType} != fh;
+
+	if ( $self->{data}->{spoolerType} == cmd && $self->{data}->{spoolerData} =~ /\$/) {
+		my $cmd = $self->{data}->{spoolerData};
+		my $tmp = $self->{spoolName};
+		$cmd =~ s/\$/$tmp/g;
+		if ( system $cmd ) {
+			Prima::message("Error running '$cmd'") if $self-> {gui};
+		}
+		$self->{spoolTmpFile}->remove;
+		undef $self->{spoolTmpFile};
+	}
 	$sigpipe = undef;
 }
 
@@ -428,6 +449,7 @@ sub spool
 	my ( $self, $data) = @_;
 
 	my $piped = 0;
+	
 	if ( $self-> {data}-> {spoolerType} != file && !$self-> {spoolHandle}) {
 		my @cmds;
 		if ( $self-> {data}-> {spoolerType} == lpr) {
