@@ -40,8 +40,12 @@ sub new_array
 
 sub new_empty
 {
-	my $class = shift;
-	my @self = ( Prima::array->new('S'), Prima::array->new('S'), undef,undef,undef);
+	my ($class) = @_;
+	my @self = ( 
+		Prima::array->new('S'), 
+		Prima::array->new('S'),
+		undef,undef,undef
+	);
 	push @{$self[1]}, 0;
 	return bless \@self, $class;
 }
@@ -236,6 +240,18 @@ sub clusters
 	return \@arr;
 }
 
+sub reorder_text
+{
+	my $map = shift->indexes;
+	my $src = shift;
+	my @newmap = (undef) x $map->[-1];
+	$newmap[$_] = $map->[$_] & ~to::RTL for 0 .. $#$map - 1;
+	my $last;
+	return join('', map {
+		$last = $newmap[$_] // ($last + 1);
+		substr($src, $last, 1)
+	} 0..$#newmap);
+}
 
 sub cluster2glyph
 {
