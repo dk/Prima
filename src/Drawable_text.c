@@ -1219,8 +1219,11 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		skip_if_simple = pget_B(skip_if_simple);
 	if ( pexist(advances))
 		force_advances = pget_B(advances);
-	if ( pexist(reorder))
+	if ( pexist(reorder)) {
 		reorder = pget_B(reorder);
+	}
+	if ( !reorder )
+		t.flags &= ~toRTL;
 	if ( pexist(level)) {
 		level = pget_i(level);
 		if ( level < tsNone || level > tsBytes ) level = tsFull;
