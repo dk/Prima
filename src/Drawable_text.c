@@ -323,6 +323,9 @@ Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
 		}
 	} else if ( index < 0 ) {
 		return newSViv( font_passive_entries.count );
+	} else if ( index == 0 ) {
+		index = PTR2IV(hash_fetch(font_substitutions, var->font.name, strlen(var->font.name)));
+		return newSViv(index);
 	} else {
 		PFont f = prima_font_mapper_get_font(index);
 		if (!f) return nilSV;
