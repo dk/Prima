@@ -20,6 +20,24 @@ sub positions   { $_[0]->[POSITIONS] }
 sub fonts       { $_[0]->[FONTS]     }
 sub text_length { $_[0]->[INDEXES]->[-1] }
 
+sub new_array
+{
+	my ( $self, $storage ) = @_;
+	my ( $letter, $n, $size );
+	$storage //= 'glyphs';
+	$size = scalar @{ $self->[GLYPHS] };
+	if ( $storage =~ /^(glyphs|advances|fonts)$/) {
+		($letter, $n) = ('S', $size);
+	} elsif ( $storage eq 'indexes') {
+		($letter, $n) = ('S', $size + 1);
+	} elsif ( $storage eq 'positions') {
+		($letter, $n) = ('s', $size * 2);
+	} else {
+		return undef;
+	}
+	return Prima::array->new($letter, pack($letter.'*', (0) x $size));
+}
+
 sub new_empty
 {
 	my $class = shift;
