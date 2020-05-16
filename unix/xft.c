@@ -410,6 +410,7 @@ fcpattern2font( FcPattern * pattern, PFont font)
 			font-> style |= fsThin;
 		else if ( i >= FC_WEIGHT_BOLD)
 			font-> style |= fsBold;
+		font-> weight = i * fwUltraBold / FC_WEIGHT_ULTRABOLD;
 	}
 
 	font-> xDeviceRes = guts. resolution. x;
@@ -812,8 +813,8 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 
 	FcPatternAddInteger( request, FC_SLANT, ( requested_font. style & fsItalic) ? FC_SLANT_ITALIC : FC_SLANT_ROMAN);
 	FcPatternAddInteger( request, FC_WEIGHT,
-				( requested_font. style & fsBold) ? FC_WEIGHT_BOLD :
-				( requested_font. style & fsThin) ? FC_WEIGHT_THIN : FC_WEIGHT_NORMAL);
+		( requested_font. style & fsBold) ? FC_WEIGHT_BOLD :
+		( requested_font. style & fsThin) ? FC_WEIGHT_THIN : FC_WEIGHT_NORMAL);
 	FcPatternAddBool( request, FC_SCALABLE, requested_font. vector > fvBitmap );
 	if ( !IS_ZERO(requested_font. direction) || requested_font. width != 0) {
 		FcMatrix mat;
