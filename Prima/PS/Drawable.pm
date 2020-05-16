@@ -876,6 +876,7 @@ sub glyph_out_outline
 	$len += $from;
 	my $emit = '';
 	my $fid  = 0;
+	my $ff = $canvas->font;
 	for ( my $i = $from; $i < $len; $i++) {
 		my $advance;
 		my $glyph     = $glyphs->[$i];
@@ -1250,49 +1251,42 @@ sub get_font {+{%{$_[0]-> {font}}}}
 sub set_font
 {
 	my ( $self, $font) = @_;
-	$font = { %$font };
-	my $n = exists($font-> {name}) ? $font-> {name} : $self-> {font}-> {name};
-	$n //= 'Default';
 
+	my $canvas = $self-> glyph_canvas;
 	my ($curr_font, $new_font) = ('', '');
 	$curr_font = ($self->{font}->{size} // '-1'). '.' . ($self->{glyph_font} // '');
 
-	my $wscale = $font-> {width};
+	$font = { %$font };
+	my $wscale     = $font-> {width};
 	delete $font-> {width};
-	my $by_height = defined($font->{height});
-	$self-> {font} = Prima::Drawable-> font_match( $font, $self-> {font});
 
-	my $canvas = $self->glyph_canvas;
+	my $div        = 72.27 / $self-> {resolution}-> [1];
+	my $by_height  = defined($font->{height});
+	$font->{size} /= $div unless $by_height;
+	$font = Prima::Drawable-> font_match( $font, $self-> {font});
+	delete $font->{$by_height ? 'size' : 'height'};
+	$canvas->set_font( $font );
+
+	$font = $self-> {font} = { %{ $canvas->get_font } };
 	$self-> {glyph_keeper} //= Prima::PS::Glyphs->new;
-	$self-> {glyph_font} = $self-> {glyph_keeper}->get_font($self->{font});
-	$new_font = $self->{font}->{size} . '.' . $self->{glyph_font};
+	$self-> {glyph_font} = $self-> {glyph_keeper}->get_font($font);
+	$font->{size} *= $div;
+	$font->{size} = int( $font->{size} * 100 + .5) / 100;
 
-	my $div = 72.27 / $self-> {resolution}-> [1];
-	my $f   = $self->{font};
-	my $font_char_height = $f->{height};
-	if ( $by_height ) {
-		$f-> {size} = int(( $f-> {height} - $f->{internalLeading}) * $div + 0.5);
-	} else {
-		my $new_h = $f->{size} / $div + $f->{internalLeading};
-		my $ratio = $f->{height} / $new_h;
-		$f->{height}  = $new_h;
-		$f->{ascent}  = int( $f->{ascent} / $ratio + .5 );
-		$f->{descent} = $new_h - $f->{ascent};
-	}
-	my $font_width_divisor  = $f-> {width};
-	$f-> {width}            = $wscale if $wscale;
-	$self-> {font_x_scale}  = $f->{width} / $font_width_divisor;
+	my $font_width_divisor  = $font->{width};
+	$font-> {width} = $wscale if $wscale;
+	$self-> {font_x_scale}  = $font->{width} / $font_width_divisor;
 
-	$self-> {changed}-> {font} = 1 if $curr_font ne $new_font;
+	$new_font = $font->{size} . '.' . $self->{glyph_font};
 
-	$self-> glyph_canvas_set_font(%{ $self->{font} });
-	$f = $self->glyph_canvas->font;
+	$self-> {changed}->{font} = 1 if $curr_font ne $new_font;
+
+	$self-> glyph_canvas_set_font(%$font);
+	my $f = $self->glyph_canvas->font;
 	$self->{glyph_font}  = ($f->{pitch} == fp::Fixed) ? 'Courier' : 'Helvetica'
 		if $f->{vector} != fv::Outline;
-	my $point_scale = ($f->height * ($f->height - $f->internalLeading) / $f->size);
-	my ($pixel_scale) = $self->pixel2point($point_scale);
-
-	$self->{font_scale} = $font_char_height / $pixel_scale;
+	my $point_scale     = ($f->height * ($f->height - $f->internalLeading) / $f->size);
+	$self->{font_scale} = $font->{height} / $point_scale;
 }
 
 sub get_font_abc
@@ -1300,7 +1294,7 @@ sub get_font_abc
 	my ( $self, $first, $last, $flags) = @_;
 	$first = 0     if !defined ($first) || $first < 0;
 	$last = $first if !defined ($last) || $last < $first;
-	my $canvas = $self-> glyph_canvas(1);
+	my $canvas = $self-> glyph_canvas;
 	my $scale  = $self->{font_scale} * $self->{font_x_scale};
 	return [ map { $_ * $scale } @{ $canvas->get_font_abc($first, $last, $flags) } ];
 }
@@ -1310,9 +1304,9 @@ sub get_font_def
 	my ( $self, $first, $last, $flags) = @_;
 	$first = 0     if !defined ($first) || $first < 0;
 	$last = $first if !defined ($last) || $last < $first;
-	my $canvas = $self-> glyph_canvas(1);
+	my $canvas = $self-> glyph_canvas;
 	my $scale  = $self->{font_scale};
-	return [ map { $_ * $scale } @{ $canvas->get_font_abc($first, $last, $flags) } ];
+	return [ map { $_ * $scale } @{ $canvas->get_font_def($first, $last, $flags) } ];
 }
 
 sub get_font_ranges    { shift->glyph_canvas->get_font_ranges    }
@@ -1395,7 +1389,7 @@ sub text_shape
 {
 	my ( $self, $text, %opt ) = @_;
 
-	my $canvas = $self-> glyph_canvas(1);
+	my $canvas = $self-> glyph_canvas;
 	my $shaped = $canvas->text_shape($text, %opt);
 	return $shaped unless $shaped;
 	$shaped->[Prima::Drawable::Glyphs::CUSTOM()] = $text;
