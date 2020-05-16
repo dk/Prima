@@ -430,20 +430,12 @@ palette => [ 0,0,0,0,0,128,0,128,0,0,128,128,128,0,0,128,0,128,128,128,0,128,128
 			dragable => 0,
 			growMode => gm::GrowLoY | gm::GrowHiX,
 			headers => ['Item', 'Setting', ],
-			items => [['UseDeviceFonts', ' ', '1', '1', ],['UseDeviceFontsOnly', ' ', '1', '0', ],['IsEPS', ' ', '1', '0', ],['MediaType', ' ', '0', ' ', ],['MediaColor', ' ', '0', ' ', ],['MediaWeight', ' ', '0', ' ', ],['MediaClass', ' ', '0', ' ', ],['InsertSheet', ' ', '1', '0', ],['LeadingEdge', ' ', '2', '0', ],['ManualFeed', ' ', '1', '0', ],['TraySwitch', ' ', '1', '0', ],['MediaPosition', ' ', '0', ' ', ],['DeferredMediaSelection', ' ', '1', '0', ],['MatchAll', ' ', '1', '0', ],],
+			items => [['IsEPS', ' ', '1', '0', ],['MediaType', ' ', '0', ' ', ],['MediaColor', ' ', '0', ' ', ],['MediaWeight', ' ', '0', ' ', ],['MediaClass', ' ', '0', ' ', ],['InsertSheet', ' ', '1', '0', ],['LeadingEdge', ' ', '2', '0', ],['ManualFeed', ' ', '1', '0', ],['TraySwitch', ' ', '1', '0', ],['MediaPosition', ' ', '0', ' ', ],['DeferredMediaSelection', ' ', '1', '0', ],['MatchAll', ' ', '1', '0', ],],
 			name => 'VList',
 			onCreate => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 $self-> widths([($self->width / 2 ) x 2]);
 
 $self-> {helpData} = {
-   UseDeviceFonts => <<A,
-Use limited set of device fonts in addition to exported bitmap fonts.
-Always "Yes" if UseDeviceFontsOnly is set.
-A
-   UseDeviceFontsOnly => <<A,
-Use limited set of device fonts instead of exported bitmap fonts.
-Its usage may lead to that some document fonts will be mismatched
-A
    IsEPS => <<A,
 Generate encapsulated postscript document
 A
@@ -518,7 +510,7 @@ grams per square meter.
 A
   MatchAll => <<A,
 A flag specifying whether input media request should match to all
-non-null values - MediaColor, MediaWeight etc. except UseDeviceFonts.
+non-null values - MediaColor, MediaWeight etc.
 A
 
 };

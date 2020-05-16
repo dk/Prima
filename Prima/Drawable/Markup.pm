@@ -7,7 +7,7 @@ use base qw(Prima::Drawable::TextBlock);
 
 =head1 NAME
 
-Prima::Markup - allow markup in widgets
+Prima::Drawable::Markup - allow markup in widgets
 
 =head1 SYNOPSIS
 
@@ -24,7 +24,7 @@ Prima::Markup - allow markup in widgets
 
 =head1 DESCRIPTION
 
-C<Prima::Markup> adds the ability to recognize POD-like markup to Prima
+C<Prima::Drawable::Markup> adds the ability to recognize POD-like markup to Prima
 widgets. Supported markup sequences are C<B> (bold text), C<I> (italic text),
 C<U> (underlined text), C<F> (change font), C<S> (change font size), C<C>
 (change foreground color), C<Q> (change background color), C<M> (move pointer),
@@ -60,7 +60,7 @@ The text inside C<W> sequence will not be wrapped during C<text_wrap> calls.
 The C<P> sequence is used as follows:C<< PE<lt>nE<gt> >>, where C<n> is a
 0-based index into the C<picturePalette>.
 
-The methods C<text_out> and C<get_text_width> are affected by C<Prima::Markup>.
+The methods C<text_out> and C<get_text_width> are affected by C<Prima::Drawable::Markup>.
 C<text_out> will write formatted text to the canvas, and C<get_text_width> will
 return the width of the formatted text.  B<NOTE>: These methods do not save state
 between calls, so your markup cannot span lines (since each line is drawn or

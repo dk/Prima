@@ -2,8 +2,8 @@ package Prima::PS::Glyphs;
 
 use strict;
 use warnings;
-use Prima::PS::Encodings;
 use Prima::PS::TempFile;
+use Prima::PS::Unicode;
 use Prima::Utils;
 
 sub new
@@ -222,8 +222,6 @@ sub rmoveto { num(@_) . "\x{15}" }
 sub rlineto { num(@_) . "\x{05}" }
 sub hmoveto { num(@_) . "\x{16}" }
 
-my $unicode_glyph_names;
-
 sub use_char
 {
 	my ( $self, $canvas, $key, $charid, $suggested_gid) = @_;
@@ -235,11 +233,10 @@ sub use_char
 		if ( exists $f->{$suggested_gid} ) {
 			goto STD if $f->{$suggested_gid} != $charid;
 		} else {
-			$unicode_glyph_names //= Prima::PS::Encodings::load_unicode;
-			goto STD unless exists $unicode_glyph_names->{ $suggested_gid };
+			goto STD unless exists $Prima::PS::Unicode->{ $suggested_gid };
 			$f->{$suggested_gid} = $charid;
 		}
-		$glyphid = $unicode_glyph_names->{ $suggested_gid };
+		$glyphid = $Prima::PS::Unicode->{ $suggested_gid };
 		$vector = 'chars';
 	} else {
 	STD:

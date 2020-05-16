@@ -20,9 +20,6 @@ sub sdlg_export
 	$p-> {copies}     = $d-> CopyCount-> text;
 	$p-> {page}       = $d-> PaperSize-> text;
 	$p-> {devParms}   = { map { my $j = $i-> [ $hk{ $_}]; @$j[0,3] } keys %{$self-> {data}-> {devParms}}};
-	$p-> {useDeviceFontsOnly} = $i-> [ $hk{UseDeviceFontsOnly}]-> [3];
-	$p-> {useDeviceFonts} = $i-> [ $hk{UseDeviceFonts}]-> [3];
-	$p-> {useDeviceFonts} = 1 if $p-> {useDeviceFontsOnly};
 	$p-> {isEPS} = $i-> [ $hk{IsEPS}]-> [3];
 	$p-> {spoolerType} = $d-> Spool-> index;
 	$p-> {spoolerData} = $d-> Spool-> bring(( $p-> {spoolerType} == lpr) ? 'LParams' : 'CmdLine')-> text;
@@ -48,9 +45,6 @@ sub sdlg_import
 		$j-> [3] = $p-> {devParms}-> {$_};
 	}
 
-	$i-> [ $hk{UseDeviceFontsOnly}]-> [3] = $p-> {useDeviceFontsOnly};
-	$i-> [ $hk{UseDeviceFonts}]-> [3] = $p-> {useDeviceFonts};
-	$i-> [ $hk{UseDeviceFonts}]-> [3] = 1 if $p-> {useDeviceFontsOnly};
 	$i-> [ $hk{IsEPS}]-> [3] = $p-> {isEPS};
 
 	for ( @$i) {

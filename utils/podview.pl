@@ -1,7 +1,6 @@
 use strict;
 use warnings;
 use Getopt::Long;
-use Prima::noARGV;
 use Prima;
 use Prima::HelpViewer;
 use Prima::Application;
