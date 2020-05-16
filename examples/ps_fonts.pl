@@ -99,8 +99,9 @@ sub page
 	$p-> linePattern(lp::Dot);
 	my $ddx = 0;
 	for my $C ( split //, $xtext ) {
-		my ( $a, $b, $c ) = @{ $p->get_font_abc( ord($C), ord($C), utf8::is_utf8($C)) };
-		my ( $d, $e, $f ) = @{ $p->get_font_def( ord($C), ord($C), utf8::is_utf8($C)) };
+		my $flags = utf8::is_utf8($C) ? to::Unicode : 0;
+		my ( $a, $b, $c ) = @{ $p->get_font_abc( ord($C), ord($C), $flags) };
+		my ( $d, $e, $f ) = @{ $p->get_font_def( ord($C), ord($C), $flags) };
 
 		my $w = (( $a < 0 ) ? 0 : $a) + $b + (( $c < 0 ) ? 0 : $c);
 		my $h = (( $d < 0 ) ? 0 : $d) + $e + (( $f < 0 ) ? 0 : $f);
@@ -133,11 +134,16 @@ sub page
 my $p = Prima::PS::File->new( file => 'out.ps');
 $p->begin_doc;
 my $ff = $p->font;
-for my $f ( @{$p-> fonts} ) {
+my @fonts = @{$p-> fonts};
+my $i;
+$|++;
+for my $f ( @fonts ) {
+	$i++;
+	printf "[%d/%d] %s              \r", $i, scalar(@fonts), $f->{name};
 	$p->font($ff);
 	page( $p, $f->{name} );
 	$p->new_page;
 }
 
 $p->end_doc;
-print "out.ps generated ok\n";
+print "\nout.ps generated ok\n";
