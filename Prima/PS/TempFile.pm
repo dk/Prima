@@ -17,9 +17,20 @@ sub new
 		warn "cannot create temp file $self{filename}: $!\n" if $opt{warn} // 1;
 		return undef;
 	}
-	unlink $self{filename} if $opt{unlink} // 1;
+	if ($opt{unlink} // 1) {
+		my $ok = unlink $self{filename};
+		unless ($ok) {
+			# win32 doesn't let it?
+			$self{force_unlink} = 1;
+		}
+	}
 
 	return bless \%self, $class;
+}
+
+sub DESTROY
+{
+	unlink $_[0]->{filename} if $_[0]->{force_unlink};
 }
 
 sub remove { unlink shift->{filename} }
@@ -39,6 +50,7 @@ sub evacuate
 {
 	my ($self, $cb, $blocksize) = @_;
 	$blocksize //= 10240;
+	my $ok = 0;
 
 	seek( $self->{fh}, 0, 0);
 	while (1) {
@@ -46,12 +58,16 @@ sub evacuate
 		my $n = sysread( $self->{fh}, $buf, $blocksize);
 		if ( !defined $n) {
 			warn "cannot read back from temp file $self->{filename}: $!\n";
-			return 0;
+			goto EXIT;
 		}
 		last unless $n;
-		return 0 unless $cb->($buf);
+		goto EXIT unless $cb->($buf);
 	}
-	return 1;
+
+	$ok = 1;
+EXIT:
+	close $self->{fh};
+	return $ok;
 }
 
 1;
