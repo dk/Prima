@@ -493,8 +493,8 @@ sub new_page
 		local $self->{delay} = 1;
 		$self-> $_( @{$self-> {save_state}-> {$_}}) for qw( translate clipRect);
 	}
-	$self-> change_transform(1);
 	$self-> emit( $self-> {page_prefix});
+	$self-> change_transform(1);
 	$self-> {changed}->{font} = 1;
 	return 1;
 }
