@@ -112,7 +112,7 @@ my %paths = (
 	'Prima/PS/*.pm' => {
 		type     => 'pm',
 		classes  => 'user',
-		exclude  => qr/(Setup|Fonts|Encodings)\.pm$/,
+		exclude  => qr/(Setup|Glyphs|Unicode)\.pm$/,
 	},
 );
 

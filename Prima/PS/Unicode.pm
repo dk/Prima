@@ -1,4 +1,7 @@
-{ 
+package Prima::PS::Unicode;
+use strict;
+use warnings;
+$Prima::PS::Unicode = { 
 # -----------------------------------------------------------
 # Copyright 2002-2019 Adobe (http://www.adobe.com/).
 #
@@ -3722,4 +3725,6 @@ St => 'longst',
 "\x{644}\x{623}" => 'lamalefhamzaaboveisolatedarabic',
 "\x{644}\x{625}" => 'lamalefhamzabelowisolatedarabic',
 "\x{644}\x{627}" => 'lamalefisolatedarabic',
-}; 
+};
+
+1;

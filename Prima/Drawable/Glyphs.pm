@@ -1109,6 +1109,8 @@ clusters would fit in width C<$X>.
 
 =back
 
+=for latex-makedoc cut
+
 =head1 EXAMPLES
 
 This section is only there to test proper rendering
@@ -1159,6 +1161,8 @@ Lorem Ipsum के अंश कई रूप में उपलब्ध ह�
   Lorem Ipsum的目的就是为了保持字母多多少少标准及平
 
 =back
+
+=for latex-makedoc cut
 
 =head1 AUTHOR
 

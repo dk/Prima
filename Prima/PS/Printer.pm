@@ -74,8 +74,6 @@ sub profile_default
 			isEPS          => 0,
 			scaling        => 1,
 			portrait       => 1,
-			useDeviceFonts => 1,
-			useDeviceFontsOnly => 0,
 			spoolerType    => $unix ? lpr : file,
 			spoolerData    => '',
 			devParms       => {
@@ -255,10 +253,6 @@ sub data
 		@{exists($pageSizes{$p-> {page}}) ?
 			$pageSizes{$p-> {page}} : $pageSizes{A4}}
 	) if exists $dd-> {page};
-	if ( exists $dd-> {page}) {
-		$self-> useDeviceFonts( $p-> {useDeviceFonts});
-		$self-> useDeviceFontsOnly( $p-> {useDeviceFontsOnly});
-	}
 	if ( defined $dv) {
 		my %dp = %{$p-> {devParms}};
 		for ( keys %dp) {
@@ -493,8 +487,7 @@ sub options
 
 	if ( 0 == @_) {
 		return qw(
-			Color Resolution PaperSize Copies Scaling Orientation
-			UseDeviceFonts UseDeviceFontsOnly EPS
+			Color Resolution PaperSize Copies Scaling Orientation EPS
 		), keys %{$self->{data}->{devParms}};
 	} elsif ( 1 == @_) {
 		# get value
@@ -689,15 +682,6 @@ US Common #10 Envelope>.
 =item Orientation
 
 One of : C<Portrait>, C<Landscape>.
-
-=item UseDeviceFonts BOOLEAN
-
-If 1, use limited set of device fonts in addition to exported bitmap fonts.
-
-=item UseDeviceFontsOnly BOOLEAN
-
-If 1, use limited set of device fonts instead of exported bitmap fonts.
-Its usage may lead to that some document fonts will be mismatched.
 
 =item MediaType STRING
 

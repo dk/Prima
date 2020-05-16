@@ -1496,7 +1496,6 @@ sub print
 	# cache indents
 	my @indents;
 	my $state = $self-> create_state;
-		use Data::Dumper; print STDERR Dumper(	$self->fontPalette );
 	for ( 0 .. ( scalar @{$self-> fontPalette} - 1)) {
 		$$state[ tb::BLK_FONT_ID] = $_;
 		$self-> realize_state( $canvas, $state, tb::REALIZE_FONTS);
