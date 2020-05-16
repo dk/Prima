@@ -9,9 +9,11 @@ Revision history for Perl module Prima
      -- Text shaping uses harfbuzz on unix
      -- Text::Bidi is no loger used
      -- Text input direction is deduced from new Application.language
- - PostScript backend can generate embedded Type1 fonts
+ - Switch PostScript backend to generate embedded Type1 fonts only
+     -- Remove bitmap font generation and remove support for native PS fonts
+     -- Remove support for encodings, leave only Unicode
  - Move Prima::*Dialog.pm files into Prima::Dialog::* namespace.
-   The old packages will be alive for a while, but will print a deprecation message
+     -- The old packages will be alive for a while, but will print a deprecation message
 
 1.58 2020-03-15
  - Added drag and drop support. Dragging from/to edit widgets works.
