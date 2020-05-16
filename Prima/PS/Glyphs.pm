@@ -36,10 +36,12 @@ sub get_font
 {
 	my ( $self, $font ) = @_;
 
-	my $key = 'PS-' . $font->{name};
+	my $key = $font->{name};
+	$key =~ s/\s+/-/g;
+	$key =~ s/([^-a-z0-9])/sprintf("x%x", ord($1))/gei;
+	$key = 'PS-' . $key;
 	$key .= '-Bold'   if $font->{style} & fs::Bold;
 	$key .= '-Italic' if $font->{style} & fs::Italic;
-	$key =~ s/\s+/-/g;
 	$self->{fonts}->{$key} //= _create_font_entry($key, $font);
 	return $key;
 }
