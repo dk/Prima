@@ -102,7 +102,7 @@ $tt-> width( $tt-> get_text_width( $string));
 $tt-> end_paint_info;
 
 my $i = Prima::Image-> create( width => $tt-> width, height => $tt-> height,
-type => im::BW, conversion => ict::None);
+type => im::RGB, conversion => ict::None);
 $i-> begin_paint;
 $i-> color( cl::Black);
 $i-> bar(0,0,$i-> size);
