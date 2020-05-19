@@ -1078,8 +1078,11 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 				XGlyphInfo glyph;
 				if ( !( ft_index = XftCharIndex( DISP, x, c))) continue;
 				XftGlyphExtents( DISP, x, &ft_index, 1, &glyph);
-				sum += glyph. xOff;
-				num++;
+				if ( glyph. xOff > 0 && glyph. xOff < xf->max_advance_width) {
+					sum += glyph. xOff;
+					num++;
+				} else
+					XFTdebug( "!! font %s returns bad XftGlyphExtents", loaded_font.name);
 			}
 			loaded_font. width = ( num > 10) ? ((float) sum / num + 0.5) : loaded_font. maximalWidth;
 		} else
