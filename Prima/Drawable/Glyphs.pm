@@ -1160,6 +1160,12 @@ Lorem Ipsum के अंश कई रूप में उपलब्ध ह�
 
   Lorem Ipsum的目的就是为了保持字母多多少少标准及平
 
+=item Largest well-known grapheme cluster in Unicode
+
+ཧྐྵྨླྺྼྻྂ
+
+L<http://archives.miloush.net/michkap/archive/2010/04/28/10002896.html>.
+
 =back
 
 =for latex-makedoc cut
