@@ -1262,31 +1262,54 @@ sub set_font
 
 	my $div        = 72.27 / $self-> {resolution}-> [1];
 	my $by_height  = defined($font->{height});
-	$font->{size} /= $div unless $by_height;
 	$font = Prima::Drawable-> font_match( $font, $self-> {font});
 	delete $font->{$by_height ? 'size' : 'height'};
 	$canvas->set_font( $font );
-
 	$font = $self-> {font} = { %{ $canvas->get_font } };
-	$self-> {glyph_keeper} //= Prima::PS::Glyphs->new;
-	$self-> {glyph_font} = $self-> {glyph_keeper}->get_font($font);
-	$font->{size} *= $div;
-	$font->{size} = int( $font->{size} * 100 + .5) / 100;
 
+	# convert Prima size definition to PS size definition
+	#
+	# PS doesn't account for internal leading, and thus there are two possibilities:
+	# 1) enforce Prima model, but that results in $font->size(100) printed
+	# will not exactly be 100 points by mm.
+	#
+	# 2) hack font structure on the fly, so that caller setting $font->size(100) 
+	# will get $font->height slightly less (by internal leading) in pixels.
+	#
+	# Here #2 is implemented
+	if ( $by_height ) {
+		$font->{size} = int($font->{height} * $div + .5);
+	} else {
+		my $new_h        = $font->{size} / $div;
+		my $ratio        = $font->{height} / $new_h;
+		$font->{height}  = int( $new_h + .5);
+		$font->{ascent}  = int( $font->{ascent} / $ratio + .5 );
+		$font->{descent} = $font->{height} - $font->{ascent};
+	}
+
+	# we emulate wider fonts by PS scaling, but this factor is needed
+	# when reporting horizontal glyph and text extension
 	my $font_width_divisor  = $font->{width};
 	$font-> {width} = $wscale if $wscale;
 	$self-> {font_x_scale}  = $font->{width} / $font_width_divisor;
 
-	$new_font = $font->{size} . '.' . $self->{glyph_font};
-
-	$self-> {changed}->{font} = 1 if $curr_font ne $new_font;
-
 	$self-> glyph_canvas_set_font(%$font);
-	my $f = $self->glyph_canvas->font;
-	$self->{glyph_font}  = ($f->{pitch} == fp::Fixed) ? 'Courier' : 'Helvetica'
-		if $f->{vector} != fv::Outline;
-	my $point_scale     = ($f->height * ($f->height - $f->internalLeading) / $f->size);
-	$self->{font_scale} = $font->{height} / $point_scale;
+	my $f1000 = $self->glyph_canvas->font;
+	if ($f1000->{vector} == fv::Outline) {
+		$self-> {glyph_keeper} //= Prima::PS::Glyphs->new;
+		$self-> {glyph_font} = $self-> {glyph_keeper}->get_font($f1000); # it wants size=1000
+	} else {
+		$self-> {glyph_font}  = ($f1000->{pitch} == fp::Fixed) ? 'Courier' : 'Helvetica'
+	}
+
+	# When querying glyph extensions, remember to scale to the
+	# difference between PS and Prima models. 
+	my $y_scale = 1.0 + $f1000->internalLeading / $f1000->height;
+	# Also, note that querying is on the canvas that has size=1000.
+	$self->{font_scale} = $font->{height} / $f1000->height * $y_scale;
+
+	$new_font = $font->{size} . '.' . $self->{glyph_font};
+	$self-> {changed}->{font} = 1 if $curr_font ne $new_font;
 }
 
 sub get_font_abc
