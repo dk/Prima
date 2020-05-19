@@ -1067,20 +1067,23 @@ prima_xft_font_pick( Handle self, Font * source, Font * dest, double * size, Xft
 			XFTdebug("set height: %d", loaded_font.height);
 		}
 
-		loaded_font.maximalWidth = loaded_font.width = xf-> max_advance_width;
+		loaded_font. maximalWidth = xf-> max_advance_width;
 		/* calculate average font width */
 		if ( loaded_font. pitch != fpFixed) {
+			FcChar32 c;
 			XftFont *x = kf_base ? kf_base-> xft : xf;
-			FT_UInt ft_index;
-			XGlyphInfo glyph;
-			if (( ft_index = XftCharIndex( DISP, x, 'm'))) {
+			int num = 0, sum = 0;
+			for ( c = 63; c < 126; c+=4) {
+				FT_UInt ft_index;
+				XGlyphInfo glyph;
+				if ( !( ft_index = XftCharIndex( DISP, x, c))) continue;
 				XftGlyphExtents( DISP, x, &ft_index, 1, &glyph);
-				if ( glyph. xOff > 0 && glyph. xOff < xf->max_advance_width)
-					loaded_font.width = glyph. xOff;
-				else
-					XFTdebug( "!! font %s returns bad XftGlyphExtents", loaded_font.name);
+				sum += glyph. xOff;
+				num++;
 			}
-		} 
+			loaded_font. width = ( num > 10) ? ((float) sum / num + 0.5) : loaded_font. maximalWidth;
+		} else
+			loaded_font. width = loaded_font. maximalWidth;
 	}
 
 	{
