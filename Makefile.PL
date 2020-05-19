@@ -474,7 +474,11 @@ sub _find_file
 	$pathname = "$dir/$fname";
 	return $pathname if $pathname !~ /\.\./ && -e $pathname;
 	opendir D, $dir or die "Cannot open dir $dir: $!";
-	my @entries = map { "$dir/$_"} grep { /^[^.]/ && -d "$dir/$_"} readdir D;
+	my @entries =
+		map { "$dir/$_"}
+		grep { !/^blib/ }
+		grep { /^[^.]/ && -d "$dir/$_"}
+		readdir D;
 	closedir D;
 	foreach my $entry ( @entries) {
 		$pathname = _find_file( $fname, $entry);
