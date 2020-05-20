@@ -989,6 +989,35 @@ analyze_fonts( Handle self, PTextShapeRec t, uint16_t * fonts)
 		unsigned int nfid = find_font(*(text++), pitch, fid);
 		if ( nfid != fid ) fonts[i] = nfid;
 	}
+
+	/* make sure that all combiners are same font as base glyph */
+	text = t->text;
+	for ( i = 0; i < t->len; ) {
+		int j, base, non_base_font = 0, need_align = 0;
+		if ( text[i] >= 0x300 && text[i] <= 0x36f ) {
+			i++;
+			continue;
+		}
+
+		base = i++;
+		for ( ; i < t->len; ) {
+			if ( text[i] < 0x300 || text[i] > 0x36f )
+				break;
+			if ( fonts[i] != fonts[base] ) {
+				need_align = 1;
+				non_base_font = fonts[i];
+				break;
+			}
+			i++;
+		}
+		if (!need_align) continue;
+
+		/* don't test all combiners for all fonts, such as f.ex. base glyph is Arial, ` is Courier, and ~ is Times.
+		   Wild guess is that if ` is supported, others should be too */
+		for ( j = base; j <= i; j++)
+			fonts[j] = non_base_font;
+
+	}
 }
 
 static Bool

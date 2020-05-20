@@ -76,9 +76,11 @@ sub _debug
 		print STDERR "fonts: @$g\n";
 		my %f = map { $_ => 1 } @$g;
 		delete $f{0};
-		for my $fid ( sort keys %f ) {
-			my $f = $::application->fontMapperPalette($fid);
-			print STDERR "  #$fid: $f->{name}\n";
+		if ( $::application ) {
+			for my $fid ( sort keys %f ) {
+				my $f = $::application->fontMapperPalette($fid);
+				print STDERR "  #$fid: $f->{name}\n";
+			}
 		}
 		print STDERR "\n";
 	}

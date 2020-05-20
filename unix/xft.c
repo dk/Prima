@@ -2591,6 +2591,10 @@ prima_xft_init_font_substitution(void)
 
 		if ( FcPatternGetString(*ppat, FC_FAMILY, 0, &s) != FcResultMatch)
 			continue;
+		/* XXX has a rather short GPOS table. Far from an ideal solution (i.e. hack)
+		but Courier is found on many systems */
+		if ( strcmp((char*) s, "Courier New") == 0)
+			continue;
 		if ( !( f = prima_font_mapper_save_font((const char*) s)))
 			continue;
 
