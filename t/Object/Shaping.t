@@ -512,6 +512,21 @@ sub test_combining { SKIP: {
 	ok( $z->[1] == 0, "ZWNJ has zero advance");
 }}
 
+sub dump_bitmap
+{
+	my ( $text, $i ) = @_;
+	diag("Bitmap dump $text " . $i->width . "x" . $i->height);
+	my ($x,$y) = $i->size;
+	for my $Y ( 1..$y) {
+		my $str = '';
+		for my $X ( 1..$x) {
+			my $px = $i->pixel($X-1, $y-$Y);
+			$str .= ($px ? '*' : ' ');
+		}
+		diag($str);
+	}
+}
+
 sub test_drawing
 { SKIP: {
 	glyphs "12";
@@ -550,14 +565,19 @@ sub test_drawing
 	$i = $w->image;
 	$i->type(im::Byte);
 	$sum1 = $i->sum;
+	my $data1 = $i;
 
-	$z = $w-> text_shape('12', polyfont => 0);
+	$z = $w-> text_shape('12', polyfont => 0, level => ts::Glyphs);
 	$w-> clear;
 	$w-> text_out( $z, 5, 5 );
 	$i = $w->image;
 	$i->type(im::Byte);
 	$sum2 = $i->sum;
 	is($sum2, $sum1, "glyphs plotting 45 degrees");
+	if ( $sum2 ne $sum1 ) {
+		dump_bitmap('1', $data1);
+		dump_bitmap('2', $i);
+	}
 }}
 
 sub run_test
