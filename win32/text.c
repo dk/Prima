@@ -1213,7 +1213,7 @@ apc_gp_get_font_ranges( Handle self, int * count)
 }
 
 unsigned long *
-apc_gp_get_mapper_ranges(PFont font, int * count)
+apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 {
 	HDC dc;
 	unsigned long * ret;
@@ -1222,6 +1222,7 @@ apc_gp_get_mapper_ranges(PFont font, int * count)
 	HFONT hfont, hstock;
 
 	*count = 0;
+	*flags = MAPPER_FLAGS_COMBINING_SUPPORTED;
 
 	strncpy(name, font->name, 256);
 	apc_font_pick( nilHandle, font, font);

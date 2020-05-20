@@ -3663,8 +3663,10 @@ apc_gp_get_font_def( Handle self, int firstChar, int lastChar, int flags);
 extern unsigned long *
 apc_gp_get_font_ranges( Handle self, int * count);
 
+#define MAPPER_FLAGS_COMBINING_SUPPORTED 0x01
+
 extern unsigned long *
-apc_gp_get_mapper_ranges(PFont font, int * count);
+apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags);
 
 extern char *
 apc_gp_get_font_languages( Handle self);

@@ -52,6 +52,7 @@ typedef struct {
 	List   vectors;
 	Bool   ranges_queried;
 	Bool   is_active;
+	unsigned int flags;
 } PassiveFontEntry, *PPassiveFontEntry;
 
 #define PASSIVE_FONT(fid) ((PPassiveFontEntry) font_passive_entries.items[(unsigned int)(fid)])
@@ -151,7 +152,7 @@ query_ranges(PPassiveFontEntry pfe)
 	f.pitch = fpDefault;
 
 	pfe-> ranges_queried = true;
-	ranges = apc_gp_get_mapper_ranges(&f, &count);
+	ranges = apc_gp_get_mapper_ranges(&f, &count, &pfe->flags);
 	if ( count <= 0 ) {
 		list_create( &pfe->vectors, 0, 1);
 		return;
@@ -169,6 +170,12 @@ query_ranges(PPassiveFontEntry pfe)
 		for (j = from; j <= to; j++) {
 			Byte * map;
 			unsigned int page = j >> FONTMAPPER_VECTOR_BASE, bit = j & FONTMAPPER_VECTOR_MASK;
+
+			if ( !(pfe->flags & MAPPER_FLAGS_COMBINING_SUPPORTED)) {
+				if ( j >= 0x300 && j <= 0x36f )
+					continue;
+			} 
+
 			if (( map = (Byte*) pfe->vectors.items[page]) == NULL ) {
 				if (!( map = malloc(1 << (FONTMAPPER_VECTOR_BASE - 3)))) {
 					warn("Not enough memory");
