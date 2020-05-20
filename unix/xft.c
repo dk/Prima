@@ -2416,17 +2416,49 @@ prima_xft_get_glyph_outline( Handle self, int index, int flags, int ** buffer)
 }
 
 unsigned long *
-prima_xft_mapper_query_ranges(PFont font, int * count)
+prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags)
 {
 	char name[256];
 	XftFont * xft = NULL;
+	unsigned long * ranges;
 	strncpy(name, font->name, 256);
 	prima_xft_font_pick( nilHandle, font, font, NULL, &xft);
+	*flags = 0;
 	if ( !xft || strcmp( font->name, name ) != 0 ) {
 		*count = 0;
 		return NULL;
 	}
-	return get_font_ranges( xft->charset, count);
+	ranges = get_font_ranges( xft->charset, count);
+#ifdef WITH_HARFBUZZ
+{
+	FT_Face face;
+	hb_buffer_t *buf;
+	hb_font_t *font;
+	hb_glyph_position_t *glyph_pos;
+	unsigned int l = 0;
+	uint32_t x_acute[2] = {'x', 0x300};
+
+	if ( !( face = XftLockFace( xft)))
+		return ranges;
+
+	buf = hb_buffer_create();
+	hb_buffer_add_utf32(buf, x_acute, 2, 0, -1);
+	hb_buffer_guess_segment_properties (buf);
+	font = hb_ft_font_create(face, NULL);
+	hb_shape(font, buf, NULL, 0);
+	glyph_pos  = hb_buffer_get_glyph_positions(buf, &l);
+
+	if ( l == 2 && glyph_pos[1].x_advance == 0 ) {
+		*flags |= MAPPER_FLAGS_COMBINING_SUPPORTED;
+	}
+
+	hb_buffer_destroy(buf);
+	hb_font_destroy(font);
+	XftUnlockFace(xft);
+
+}
+#endif
+	return ranges;
 }
 
 Bool
@@ -2590,10 +2622,6 @@ prima_xft_init_font_substitution(void)
 		FcChar8 * s;
 
 		if ( FcPatternGetString(*ppat, FC_FAMILY, 0, &s) != FcResultMatch)
-			continue;
-		/* XXX has a rather short GPOS table. Far from an ideal solution (i.e. hack)
-		but Courier is found on many systems */
-		if ( strcmp((char*) s, "Courier New") == 0)
 			continue;
 		if ( !( f = prima_font_mapper_save_font((const char*) s)))
 			continue;

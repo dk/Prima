@@ -596,11 +596,6 @@ fep_register_mapper_fonts( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD
 
 	if (e-> elfLogFont.lfFaceName[0] == '@') return 1; /* vertical font */
 
-	/* XXX has a rather short GPOS table. Far from an ideal solution (i.e. hack)
-	but Courier is found on many systems */
-	if ( strcmp(e-> elfLogFont.lfFaceName[0], "Courier New") == 0)
-		continue;
-
 	name_is_utf8 = utf8_flag_strncpy( name, e-> elfLogFont.lfFaceName, LF_FACESIZE);
 	if ((f = prima_font_mapper_save_font(name)) == NULL)
 		return 1;

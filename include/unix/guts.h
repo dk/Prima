@@ -1456,7 +1456,7 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r);
 #endif
 
 extern unsigned long *
-prima_xft_mapper_query_ranges(PFont font, int * count);
+prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags);
 
 #endif
 

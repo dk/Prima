@@ -2176,13 +2176,14 @@ prima_font_debug_style(int style)
 }
 
 unsigned long *
-apc_gp_get_mapper_ranges(PFont font, int * count)
+apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 {
 #ifdef USE_XFT
 	if ( do_xft )
-		return prima_xft_mapper_query_ranges(font, count);
+		return prima_xft_mapper_query_ranges(font, count, flags);
 #endif
 	*count = 0;
+	*flags = 0;
 	return NULL;
 }
 
