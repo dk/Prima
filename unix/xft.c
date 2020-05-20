@@ -1365,7 +1365,7 @@ prima_xft_get_glyphs_width( PCachedFont self, PGlyphsOutRec t, Point * overhangs
 	int i, ret = 0;
 	FontContext fc;
 
-	font_context_init(&fc, &self->font, t->fonts, self->xft, NULL);
+	font_context_init(&fc, &self->font, t->fonts, self->xft_base, NULL);
 	if ( overhangs) overhangs-> x = overhangs-> y = 0;
 
 	t->len = check_width(self, t->len);
@@ -1745,11 +1745,12 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 
 	if ( ovx->x < 0 ) ovx->x = 0;
 	if ( ovx->y < 0 ) ovx->y = 0;
+	advance += ovx->y;
+
 	if ( PDrawable( self)-> font. style & fsUnderlined) {
 		ay = d;
 		x1 = x - ovx->x * c - ay * s + 0.5;
 		y1 = y - ovx->x * s + ay * c + 0.5;
-		advance += ovx->y;
 		x2 = x + advance * c - ay * s + 0.5;
 		y2 = y + advance * s + ay * c + 0.5;
 		XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
@@ -1759,7 +1760,6 @@ overstrike( Handle self, int x, int y, Point *ovx, int advance)
 		ay = (XX-> font-> font.ascent - XX-> font-> font.internalLeading)/2;
 		x1 = x - ovx->x * c - ay * s + 0.5;
 		y1 = y - ovx->x * s + ay * c + 0.5;
-		advance += ovx->y;
 		x2 = x + advance * c - ay * s + 0.5;
 		y2 = y + advance * s + ay * c + 0.5;
 		XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
@@ -2467,7 +2467,7 @@ prima_xft_text_shaper( Handle self, PTextShapeRec r, uint32_t * map8)
         int i;
 	uint16_t *glyphs;
 	uint32_t *text;
-	XftFont *font = X(self)->font->xft;
+	XftFont *font = X(self)->font->xft_base;
 
         for ( 
 		i = 0, glyphs = r->glyphs, text = r->text;
