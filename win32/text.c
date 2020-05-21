@@ -469,7 +469,7 @@ gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance)
 
 			if ( i == 0 ) {
 				x += gx;
-				y += gy;
+				y -= gy;
 			} else {
 				pdx[i - 2] += gx;
 				pdx[i - 1] += gy;
@@ -477,6 +477,7 @@ gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance)
 			pdx[i]     -= gx;
 			pdx[i + 1] -= gy;
 		}
+
 		if ( !(sys tmPitchAndFamily & TMPF_FIXED_PITCH ))
 			fix_combiners_pdx(self, t, pdx);
 		ok = ExtTextOutW(sys ps, x, y, ETO_GLYPH_INDEX | ETO_PDY, NULL, (LPCWSTR) t->glyphs, t->len, pdx);
