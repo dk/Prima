@@ -2423,7 +2423,7 @@ prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags)
 	unsigned long * ranges;
 	strncpy(name, font->name, 256);
 	prima_xft_font_pick( nilHandle, font, font, NULL, &xft);
-	*flags = 0;
+	*flags = 0 | MAPPER_FLAGS_SYNTHETIC_PITCH;
 	if ( !xft || strcmp( font->name, name ) != 0 ) {
 		*count = 0;
 		return NULL;
@@ -2436,13 +2436,13 @@ prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags)
 	hb_font_t *font;
 	hb_glyph_position_t *glyph_pos;
 	unsigned int l = 0;
-	uint32_t x_acute[2] = {'x', 0x300};
+	uint32_t x_tilde[2] = {'x', 0x330};
 
 	if ( !( face = XftLockFace( xft)))
 		return ranges;
 
 	buf = hb_buffer_create();
-	hb_buffer_add_utf32(buf, x_acute, 2, 0, -1);
+	hb_buffer_add_utf32(buf, x_tilde, 2, 0, -1);
 	hb_buffer_guess_segment_properties (buf);
 	font = hb_ft_font_create(face, NULL);
 	hb_shape(font, buf, NULL, 0);

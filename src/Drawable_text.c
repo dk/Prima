@@ -236,7 +236,11 @@ can_substitute(uint32_t c, int pitch, int fid)
 	if ( !pfe-> ranges_queried )
 		query_ranges(pfe);
 
-	if ( pitch != fpDefault && (( pfe->font.undef.pitch || pfe->font.pitch != pitch )))
+	if ( 
+		pitch != fpDefault && 
+		(( pfe->font.undef.pitch || pfe->font.pitch != pitch )) &&
+		!( pfe-> flags & MAPPER_FLAGS_SYNTHETIC_PITCH)
+	)
 		return false;
 
 	page = c >> FONTMAPPER_VECTOR_BASE;

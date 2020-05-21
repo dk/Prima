@@ -3664,6 +3664,7 @@ extern unsigned long *
 apc_gp_get_font_ranges( Handle self, int * count);
 
 #define MAPPER_FLAGS_COMBINING_SUPPORTED 0x01
+#define MAPPER_FLAGS_SYNTHETIC_PITCH     0x02
 
 extern unsigned long *
 apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags);
