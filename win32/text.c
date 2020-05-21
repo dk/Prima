@@ -95,10 +95,10 @@ font_context_next( FontContext * fc )
 	} else if ( !( _src = prima_font_mapper_get_font(nfid))) {
 		hfont = fc->orig;
 	} else {
+		dst = (( PWidget) fc->self)-> font;
 		src = *_src;
 		src.size = dst.size;
 		src.undef.size = 0;
-		dst = (( PWidget) fc->self)-> font;
 		apc_font_pick(fc->self, &src, &dst);
 		if ( strcmp(src.name, dst.name) == 0) {
 			if ( fc-> nondefault_font )
@@ -400,8 +400,47 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	return ok;
 }}
 
+/*
+
+It seems that Windows decidecly doesn't shape combining characters, and
+possibly doesn't kerning/ligatures in general for fixed width fonts. The two
+functions, fix_combiners_pdx and fix_combiners_advances try to fix for this.
+
+It isn't clear whether this is Windows, or mono fonts in general, because
+Courier New doesn't do that under x11/fontconfig, either, hinting at a very
+special GSUB/GPOS setup there. This causes the addition of
+MAPPER_FLAGS_COMBINING_SUPPORTED flag so that polyfont handler doesn't try to
+run combiners on these fonts
+
+*/
+static void
+fix_combiners_pdx( Handle self, PGlyphsOutRec t, INT *pdx)
+{
+	int i;
+	for ( i = 0; i < t->len; ) {
+		int j, cluster_length, cluster_start;
+		int first_glyph_width;
+
+		cluster_start = i++;
+		for ( cluster_length = 1; i < t->len; ) {
+			if ( t->advances[i] > 0 )
+				break;
+			cluster_length++;
+			i++;
+		}
+
+		if ( cluster_length == 1 )
+			continue;
+
+		first_glyph_width = t->advances[cluster_start];
+		for ( j = 1; j < cluster_length; j++)
+			pdx[(cluster_start + j - 1) * 2] -= first_glyph_width * j;
+		pdx[(cluster_start + j - 1) * 2] += first_glyph_width * (j - 1);
+	}
+}
+
 static Bool
-gp_glyphs_out( HDC ps, PGlyphsOutRec t, int x, int y, int * text_advance)
+gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance)
 {
 	Bool ok;
 	if ( t-> advances ) {
@@ -438,14 +477,16 @@ gp_glyphs_out( HDC ps, PGlyphsOutRec t, int x, int y, int * text_advance)
 			pdx[i]     -= gx;
 			pdx[i + 1] -= gy;
 		}
-		ok = ExtTextOutW(ps, x, y, ETO_GLYPH_INDEX | ETO_PDY, NULL, (LPCWSTR) t->glyphs, t->len, pdx);
+		if ( !(sys tmPitchAndFamily & TMPF_FIXED_PITCH ))
+			fix_combiners_pdx(self, t, pdx);
+		ok = ExtTextOutW(sys ps, x, y, ETO_GLYPH_INDEX | ETO_PDY, NULL, (LPCWSTR) t->glyphs, t->len, pdx);
 		if ( pdx != dx ) free(pdx);
 		#undef SZ
 	} else {
-		ok = ExtTextOutW(ps, x, y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->glyphs, t->len, NULL);
+		ok = ExtTextOutW(sys ps, x, y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->glyphs, t->len, NULL);
 		if ( text_advance ) {
 			SIZE sz;
-			if ( !GetTextExtentPointI( ps, (WCHAR*) t->glyphs, t->len, &sz)) apiErr;
+			if ( !GetTextExtentPointI( sys ps, (WCHAR*) t->glyphs, t->len, &sz)) apiErr;
 			*text_advance += sz.cx;
 		}
 	}
@@ -480,7 +521,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	font_context_init(&fc, self, t);
 	while (( t-> len = font_context_next(&fc)) > 0 ) {
 		int advance = 0;
-		if ( !( ok = gp_glyphs_out(sys ps, t, xx, yy, fc.stop ? NULL : &advance)))
+		if ( !( ok = gp_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance)))
 			break;
 		if ( !fc.stop ) {
 			xx += advance;
@@ -669,38 +710,67 @@ convert_indexes( Bool rtl, unsigned int char_pos, unsigned int itemlen, unsigned
 	int j, last_glyph, last_char;
 	if (rtl) {
 		for ( j = last_char = 0, last_glyph = nglyphs - 1; j < itemlen; j++) {
-			int k, rlen = 1;
+			int k, textlen = 1, glyphlen = last_glyph + 1;
 			WORD curr_glyph = indexes[j];
 			last_char = j;
 			for ( k = j + 1; k < itemlen; k++) {
 				if ( indexes[k] == curr_glyph )
-					rlen++;
-				else
+					textlen++;
+				else {
+					glyphlen = curr_glyph - indexes[k];
 					break;
+				}
 			}
-			for ( ; last_glyph >= curr_glyph; last_glyph--)
-				out_indexes[last_glyph] = j + char_pos;
-			j += rlen - 1;
+			for ( k = 0; k < glyphlen; k++)
+				out_indexes[last_glyph--] = j + char_pos;
+			j += textlen - 1;
 		}
-		for ( ; last_glyph >= 0; last_glyph--)
-			out_indexes[last_glyph] = last_char + char_pos;
 	} else {
 		for ( j = last_char = last_glyph = 0; j < itemlen; j++) {
-			int k, rlen = 1;
+			int k, textlen = 1, glyphlen = nglyphs - last_glyph;
 			WORD curr_glyph = indexes[j];
 			last_char = j;
 			for ( k = j + 1; k < itemlen; k++) {
 				if ( indexes[k] == curr_glyph )
-					rlen++;
-				else
+					textlen++;
+				else {
+					glyphlen = indexes[k] - curr_glyph;
 					break;
+				}
 			}
-			for ( ; last_glyph <= curr_glyph; last_glyph++)
-				out_indexes[last_glyph] = j + char_pos;
-			j += rlen - 1;
+			for (k = 0; k < glyphlen; k++)
+				out_indexes[last_glyph++] = j + char_pos;
+			j += textlen - 1;
 		}
-		for ( ; last_glyph < nglyphs; last_glyph++)
-			out_indexes[last_glyph] = last_char + char_pos;
+	}
+}
+
+/* see explanation in fix_combiners_pdx */
+static void
+fix_combiners_advances( Handle self, PTextShapeRec t, int nglyphs)
+{
+	int i;
+	for ( i = 0; i < nglyphs; ) {
+		int j, cluster_length, cluster_glyph_start;
+		int cluster_text_start = t->indexes[t->n_glyphs + i];
+
+		cluster_glyph_start = i++;
+		for ( cluster_length = 1; i < nglyphs; ) {
+			if ( t->indexes[t->n_glyphs + i] != cluster_text_start )
+				break;
+			cluster_length++;
+			i++;
+		}
+
+		if ( cluster_length == 1 )
+			continue;
+
+		for ( j = 1; j < cluster_length; j++) {
+			uint32_t c = t->text[t->n_glyphs + cluster_text_start + j];
+			if ( c < 0x300 || c > 0x36f )
+				continue;
+			t->advances[t->n_glyphs + cluster_glyph_start + j] = 0;
+		}
 	}
 }
 
@@ -863,6 +933,8 @@ win32_unicode_shaper( Handle self, PTextShapeRec t)
 				*(o_g++) = i_g->dv;
 				i_g++;
 			}
+			if ( !(sys tmPitchAndFamily & TMPF_FIXED_PITCH ))
+				fix_combiners_advances(self, t, nglyphs);
 		}
 
 		t-> n_glyphs += nglyphs;
@@ -1222,7 +1294,6 @@ apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 	HFONT hfont, hstock;
 
 	*count = 0;
-	*flags = MAPPER_FLAGS_COMBINING_SUPPORTED;
 
 	strncpy(name, font->name, 256);
 	apc_font_pick( nilHandle, font, font);
@@ -1230,6 +1301,8 @@ apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 		return NULL;
 
 	font_font2logfont( font, &logfont);
+	logfont.lfHeight = 0;
+	logfont.lfWidth  = 0;
 	if ( !( hfont = CreateFontIndirectW( &logfont))) {
 		apiErr;
 		return NULL;
@@ -1242,6 +1315,9 @@ apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 
 	hstock = SelectObject(dc, hfont);
 	ret = get_font_ranges(dc, count);
+
+	*flags = MAPPER_FLAGS_COMBINING_SUPPORTED;
+
 	SelectObject(dc, hstock);
 	dc_free();
 	DeleteObject(hfont);
