@@ -1272,7 +1272,9 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		int pitch = pget_i(pitch);
 		if ( pitch == fpVariable || pitch == fpFixed )
 			t.flags |= pitch << toPitch;
-	}
+	} else if ( var-> font. pitch == fpFixed )
+		t.flags |= fpFixed << toPitch;
+		
 
 	hv_clear(profile); /* old gencls bork */
 
