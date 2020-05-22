@@ -244,7 +244,7 @@ apply_shear( Point * points, float func, int w, int h, int index, Point * out_mi
 {
 	int i, min_i;
 	Point * p, min_p;
-	float max_shift, min, max, center, tmp[4];
+	float max_shift, min = 0, max = 0, center, tmp[4];
 
 	max_shift = (func >= 0) ? 0 : func * ((index ? w : h) - 1);
 
