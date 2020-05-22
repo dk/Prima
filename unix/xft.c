@@ -2575,6 +2575,13 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 }
 #endif
 
+static Bool
+kill_lists( void * f, int keyLen, void * key, void * dummy)
+{
+	plist_destroy((PList) f);
+	return false;
+}
+
 void
 prima_xft_init_font_substitution(void)
 {
@@ -2582,6 +2589,19 @@ prima_xft_init_font_substitution(void)
 	FcFontSet * s;
 	FcPattern   *pat, **ppat;
 	FcObjectSet *os;
+	PHash core_fonts = hash_create();
+	PFontInfo info;
+
+	for ( i = 0, info = guts. font_info; i < guts. n_fonts; i++, info++) {
+		PList list;
+		int len = strlen(info->font.name);
+		list = (PList) hash_fetch( core_fonts, info-> font.name, len);
+		if ( !list ) {
+			list = plist_create(32, 32);
+			hash_store( core_fonts, info-> font.name, len, (void*) list);
+		}
+		list_add( list, (Handle) i);
+	}
 
 	if ( guts.default_font_ok) {
 		pat = FcPatternCreate();
@@ -2620,9 +2640,24 @@ prima_xft_init_font_substitution(void)
 		PFont f;
 		int j;
 		FcChar8 * s;
+		PList list;
+		char lower[512], *llower = lower, *lupper;
 
 		if ( FcPatternGetString(*ppat, FC_FAMILY, 0, &s) != FcResultMatch)
 			continue;
+
+		/* disable the corresponding core font */
+		lupper = (char*) s;
+		while ( *lupper && (lupper - (char*)s) < 512 )
+			*(llower++) = tolower((int)*(lupper++));
+		*llower = 0;
+		if (( list = (PList) hash_fetch(core_fonts, lower, strlen(lower))) != NULL) {
+			for (j = 0; j < list->count; j++) {
+				PFontInfo info = guts.font_info + (int) list->items[j];
+				info->flags.disabled = 1;
+			}
+		}
+
 		if ( !( f = prima_font_mapper_save_font((const char*) s)))
 			continue;
 
@@ -2642,6 +2677,9 @@ prima_xft_init_font_substitution(void)
 	}
 
 	FcFontSetDestroy(s);
+
+	hash_first_that( core_fonts, (void*)kill_lists, NULL, NULL, NULL);
+	hash_destroy( core_fonts, false);
 }
 
 #else
