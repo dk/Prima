@@ -611,7 +611,7 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 			int flag = ( e->key.key == kbShiftL || e->key.key == kbShiftR) ?
 				UNICODE_HEX_SHIFT : UNICODE_HEX_CTRL;
 			if ( e-> key.cmd == cmKeyDown ) {
-				if (( guts.unicode_hex_input_flags & UNICODE_HEX_METHOD_WANTED) == UNICODE_HEX_ENTER_WANTED)
+				if (( guts.unicode_hex_input_flags & UNICODE_HEX_WANT_MASK) == UNICODE_HEX_ENTER_WANTED)
 					goto _default;
 				guts.unicode_hex_input_flags |= flag;
 			} else if ( guts.unicode_hex_input_flags ) {

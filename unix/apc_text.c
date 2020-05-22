@@ -804,7 +804,7 @@ gp_get_text_box( Handle self, const char * text, int len, int flags)
 }
 
 Point *
-apc_gp_get_text_box( Handle self, const char * text, int len, Bool utf8)
+apc_gp_get_text_box( Handle self, const char * text, int len, int flags)
 {
 	Point * ret;
 
@@ -812,12 +812,12 @@ apc_gp_get_text_box( Handle self, const char * text, int len, Bool utf8)
 
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
-		return prima_xft_get_text_box( self, text, len, utf8);
+		return prima_xft_get_text_box( self, text, len, flags);
 #endif
-	if ( utf8)
+	if ( flags & toUTF8)
 		if ( !( text = ( char *) prima_alloc_utf8_to_wchar( text, len))) return 0;
-	ret = gp_get_text_box( self, text, len, utf8);
-	if ( utf8)
+	ret = gp_get_text_box( self, text, len, flags);
+	if ( flags & toUTF8)
 		free(( char*) text);
 	return ret;
 }
