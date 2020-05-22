@@ -828,6 +828,18 @@ ex on "E<Agrave>" and "E<agrave>" graphemes.
 
 The array is respected by C<text_out> (but not by C<get_text_width>).
 
+=item fonts
+
+Contains set of unsigned 16-bit integers where each is an index in the font
+substitution list (see L<Prima::Drawable/fontMapperPalette>). Zero means the
+current font.
+
+The font substitution is applied by C<text_shape> when C<polyfont> options is
+set (it is by default), and when the shaper cannot match all fonts. If the
+current font contains all needed glyphs, this entry is not present at all.
+
+The array is respected by C<text_out> and C<get_text_width>.
+
 =back
 
 =head2 Coordinates
@@ -898,18 +910,18 @@ is set to 0.
 =head2 Bidi input
 
 When sending input to a widget in order to type in text, the otherwise trivial
-case of figuring out at which positing the text should be inserted (or removed,
+case of figuring out at which position the text should be inserted (or removed,
 for that matter), becomes interesting when there are characters with mixed
 direction.
 
 F ex it is indeed trivial, when the latin text is C<AB>, and the cursor is
 positioned between C<A> and C<B>, to figure out that whenever the user types
-C<C>, the result should become C<ACB>. Likewise, when the text is LTR and both
+C<C>, the result should become C<ACB>. Likewise, when the text is RTL and both
 text and input is arabic, the result is the same. However when f.ex. the text
 is C<A1>, that is displayed as C<1A> because of RTL shaping, and the cursor is
 positioned between C<1> (LTR) and C<A> (RTL), it is not clear whether that
 means the new input should be appended after C<1> and become C<A1C>, or after
-C<A>, and become, correspondingly, C<AC1>. 
+C<A>, and become, correspondingly, C<AC1>.
 
 There is no easy solution for this problem, and different programs approach
 this differently, and some go as far as to provide two cursors for both
@@ -928,7 +940,7 @@ Returns a, b, c metrics from the glyph C<$INDEX>
 
 =item advances
 
-Read-only accessor to advances array, see L<Structure> above.
+Read-only accessor to the advances array, see L<Structure> above.
 
 =item clone
 
@@ -967,6 +979,10 @@ See L<Bidi input> above.
 
 Returns d, e, f metrics from the glyph C<$INDEX>
 
+=item fonts
+
+Read-only accessor to the font indexes, see L<Structure> above.
+
 =item get_box $CANVAS
 
 Return box metrics of the glyph object.
@@ -996,7 +1012,7 @@ Return the cluster that contains C<$GLYPH>.
 
 =item glyphs
 
-Read-only accessor to glyph indexes, see L<Structure> above.
+Read-only accessor to the glyph indexes, see L<Structure> above.
 
 =item glyph_lengths
 
@@ -1009,7 +1025,7 @@ Returns the cluster that contains the character offset C<$INDEX>.
 
 =item indexes
 
-Read-only accessor to indexes, see L<Structure> above.
+Read-only accessor to the indexes, see L<Structure> above.
 
 =item index_lengths
 
@@ -1034,9 +1050,20 @@ Calculates how many clusters the object contains.
 
 Create new object. Not used directly, but rather from inside C<text_shape> calls.
 
+=item new_array NAME
+
+Creates an array suitable for the object for direct insertion, if manual
+construction of the object is needed. F ex one may set missing C<fonts> array
+like this:
+
+   $obj->[ Prima::Drawable::Glyphs::FONTS() ] = $obj->new_array('fonts');
+   $obj->fonts->[0] = 1;
+
+The newly created array is filled with zeros.
+
 =item new_empty
 
-Create new empty object.
+Creates a new empty object.
 
 =item overhangs
 
@@ -1045,7 +1072,12 @@ This is used in emulation of a C<get_text_width> call with the C<to::AddOverhang
 
 =item positions
 
-Read-only accessor to positions array, see L<Structure> above.
+Read-only accessor to the positions array, see L<Structure> above.
+
+=item reorder_text TEXT
+
+Returns a visual representation of C<TEXT> assuming it was the input of the
+C<text_shape> call that created the object.
 
 =item reverse
 
