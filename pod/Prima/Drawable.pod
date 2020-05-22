@@ -836,6 +836,41 @@ See L<"Fonts"> for the detailed descriptions.
 
 Applies to text_out(), get_text_width(), get_text_box(), get_font_abc(), get_font_def().
 
+=item fontMapperPalette INDEX, [\%FONT | COMMAND]
+
+A pseudo-property that manages access to a set of fonts used for substitution
+in polyfont shaping (see L</text_shape>). INDEX is the same font index used in
+C<fonts> array returned from C<text_shape>, if polyfont was used (where 0 is
+the current font).
+
+There are two font lists used in the substituion mechanism, I<passive> and
+I<active>. The passive font list is initiated during the toolkit start and is
+not changed. Each font there is addressed by C<INDEX>. When the actual search
+for a glyph is initiated, these fonts are queried in the loop and are checked
+whether they do contain required glyphs. These queries are cached, so that next
+time lookups run much quicker. That way, an C<active> font list is built, and
+next substitutions use it before trying to look into the passive list. Since
+font order is system based, and is rather random, some fonts may not be a good
+or aesthetic substition. Therefore C<fontMapperPallette> can assist in adding
+or removing particular fonts to the active list, potentially allowing an
+application to store and load a user-driven selection of substitution fonts.
+
+C<fontMapperPallette> is a pseudo-property, such that it is not symmetric as
+real properties are; its call formats are several and not orthogonal to each
+other neither in syntax nor functionality. Therefore these may change in
+future.
+
+As a getter, the property returns the following depending on INDEX: If it is
+-1, returns how many fonts are in the passive list. If 0, which means the current font
+return either the non-index of the current font if the same font is found in
+the palette, and 0 otherwise. If greater than zero, returns the substitution
+FONT record from the passive list.
+
+As a setter, manages the active list, and uses COMMAND integer as a second argument.
+If COMMAND is 0, removes the INDEXth font from the active list, and if 1, marks it
+for immediate scanning and adding to the active list. The font is added in the end
+of the list, after the existing active entries.
+
 =item lineEnd VALUE
 
 Selects a line ending cap for plotting primitives. VALUE
@@ -1477,6 +1512,27 @@ advances and the positions array with zeros.
 
 =back
 
+=item pitch INTEGER
+
+When polyfont is active and font substitution is desired, filters only fonts
+that match C<pitch>, either C<fp::Variable> or C<fp::Fixed>. By default will be
+set to C<fp::Fixed> if the current for is monospaced, but to C<fp::Default>
+matching all fonts, otherwise.
+
+=item polyfont BOOLEAN = true
+
+If set, scans if the currently selected font supports all unicode points, and
+if not, selects a substituions from a pre-populated list, taking into account
+the font pitch (see C<pitch> above). In cases where the current font has not
+enough glyphs to shape all the requested unicode points, font substitution is
+made, and the result contains an extra array C<fonts> (see
+L<Prima::Drawable/fonts>). When the current font has all needed glyphs, the
+fonts array is not created.
+
+The font list access is available through L</fontMapperPallette>.
+
+Valid only with shaping levels C<ts::Glyphs> and C<ts::Full>.
+
 =item reorder BOOLEAN = true
 
 When set, unicode bidi algorithm is used to reorder codepoints, and
@@ -1486,7 +1542,10 @@ When unset, no such reordering occurs, to emulate as much as possible a
 behavior that each text grapheme is being mapped to a glyph cluster exactly as
 it occurs in the input text, from left to right. Note that bidi reordering
 still may occur internally, since system shapers may reverse placement of RTL
-characters, so that reordering is needed to cancel this.
+characters, so that reordering is needed to cancel this. In theory the caller
+shouldn't see the difference as these should cancel each other, but if Prima
+miscalculates the expected way the system shaper does the bidi processing it
+might.
 
 A similar effect can be reached by prepending the text with U+202D
 (LEFT-TO-RIGHT OVERRIDE).
