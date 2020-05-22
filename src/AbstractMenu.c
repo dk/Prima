@@ -44,10 +44,10 @@ key_normalize( const char * key)
 	}
 	if (!*key) return kbNoKey;  /* #, ^, @ alone are not allowed */
 	if (!key[1]) {
-		return (r&kmCtrl) && isalpha(*key) ? r | (toupper(*key)-'@') : r | tolower(*key);
+		return (r&kmCtrl) && isalpha((int)*key) ? r | (toupper((int)*key)-'@') : r | tolower((int)*key);
 	} else {
 		char *e;
-		if (isdigit(*key)) {
+		if (isdigit((int)*key)) {
 			if (r) return kbNoKey;
 			r = strtol( key, &e, 10);
 			if (*e) return kbNoKey;
@@ -1291,7 +1291,7 @@ AbstractMenu_translate_accel( Handle self, char * accel)
 			case 0:
 				return 0;
 			default:
-				return isalnum( *accel) ? *accel : tolower( *accel);
+				return isalnum((int)*accel) ? *accel : tolower((int)*accel);
 			}
 		}
 	}

@@ -859,7 +859,7 @@ apc_application_get_gui_info( char * description, int len1, char * language, int
 	if ( language ) {
 		char * lang = getenv("LANG");
 		if ( lang ) {
-			while (len2 > 1 && (*lang == '-' || islower(*lang))) {
+			while (len2 > 1 && (*lang == '-' || islower((int)*lang))) {
 				*(language++) = *(lang++);
 			}
 			*language = 0;
