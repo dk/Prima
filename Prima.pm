@@ -490,7 +490,7 @@ viewer C<podview> ( see File/Run/prima-class ).
 Copyright 1997-2003 The Protein Laboratory, University of Copenhagen. All
 rights reserved.
 
-Copyright 2004-2012 Dmitry Karasik. All rights reserved. 
+Copyright 2004-2020 Dmitry Karasik. All rights reserved. 
 
 This program is distributed under the BSD License.
 
