@@ -1502,7 +1502,7 @@ list_index_of( PList self, Handle item);
 
 /* utf8 */
 extern int
-prima_utf8_length( const char * utf8, unsigned int length);
+prima_utf8_length( const char * utf8, int length);
 
 extern Bool
 prima_is_utf8_sv( SV * sv);
