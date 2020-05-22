@@ -497,13 +497,26 @@ sub test_glyphs_wrap
 sub test_combining { SKIP: {
 	skip("no combining without shaping", 1) unless $opt{shaping};
 	skip("no extended latin font", 1) unless find_shaping_font( "f\x{100}\x{300}");
+	my $xp;
+	if ( $^O =~ /win32/i) {
+		my $info = $::application->get_system_info;
+		$xp = 1 if $info->{release} < 6;
+	}
 
 	# A with a dash on top combined with an acute
 	# acute must be combined with no advance
 	$w->font->size(12);
 	my $z = $w-> text_shape( "\x{100}\x{300}", polyfont => 0 )->advances;
 	ok( $z->[0] != 0, "'A' has non-zero advance");
-	ok( $z->[1] == 0, "joined 'acute' has zero advance");
+	if ( $xp ) {
+		if ($z->[1] == 0 ) {
+			ok( 1, "joined 'acute' has zero advance");
+		} else {
+			skip("This XP is bad at combining, skip ", 1);
+		}
+	} else {
+		ok( $z->[1] == 0, "joined 'acute' has zero advance");
+	}
 
 	# ff may be a ligature, but that's not essential -
 	# the main interest here to see that ZWNJ is indeed ZW
