@@ -886,7 +886,7 @@ EOF
 		}
 	}
 	printlog "none found\n";
-	$DEFINES{__INLINE__} = 'static'; # nasty hack, but better than #pragma inline
+	$DEFINES{__INLINE__} = '';
 }
 
 sub setup_compiler
