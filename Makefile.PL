@@ -89,6 +89,8 @@ use vars qw(
 	$cygwin_fake_Slib
 	$force_cccdl
 	$use_pkgconfig
+	$macos_broken_setup
+	$macos_x11_path
 );
 
 sub printlog($)
@@ -166,8 +168,8 @@ setup_pkgconfig();
 setup_fribidi() if $cmd_options{WITH_FRIBIDI};
 setup_X11() if $unix;
 setup_xlibs() if $unix;
-setup_macosx() if $cmd_options{WITH_COCOA};
 setup_codecs();
+setup_macosx() if $cmd_options{WITH_COCOA} || $macos_x11_path;
 create_codecs_c();
 create_config_h();
 create_config_pm();
@@ -1185,7 +1187,10 @@ MIXED
 			$add_path = 1 unless system "pkg-config --exists x11";
 		}
 		restore_output;
-		$ENV{PKG_CONFIG_PATH} = $xquartz_pkgconfig_path if $add_path;
+		if ($add_path) {
+			$ENV{PKG_CONFIG_PATH} = "/usr/local/lib/pkgconfig:$xquartz_pkgconfig_path";
+			$macos_broken_setup = 1;
+		}
 	}
 
 	$use_pkgconfig = 1;
@@ -1198,6 +1203,7 @@ sub pkgconfig
 
 	printlog "Checking for $package using pkg-config...";
 	null_output;
+
 	if ( system "pkg-config --exists $package" ) {
 		restore_output;
 		printlog "no\n";
@@ -1254,6 +1260,7 @@ sub pkgconfig
 sub setup_X11
 {
 	if ($use_pkgconfig) {
+		my $n_libpath = @LIBPATH;
 		unless (pkgconfig('x11')) {
 			warn
 				"Prima needs package with x11 development file for compilation! ".
@@ -1261,6 +1268,13 @@ sub setup_X11
 			exit(0);
 		}
 		pkgconfig('xext');
+		if ( $macos_broken_setup ) {
+			# stuff /opt/X11 or whatever comes with XQuartz at the end of the list
+			# to use libs that come with homebrew instead. If we won't do that,
+			# strange coredumps ensue
+			$macos_x11_path = [ @LIBPATH[$n_libpath .. $#LIBPATH] ]
+				if $n_libpath < @LIBPATH;
+		}
 		return;
 	}
 
@@ -1626,6 +1640,13 @@ sub setup_xlibs
 
 sub setup_macosx
 {
+	if ( $macos_x11_path ) {
+		my %remove = map { $_ => 1 } @{ $macos_x11_path // [] };
+		@LIBPATH = grep { !exists $remove{$_} } @LIBPATH;
+		push @LIBPATH, @{ $macos_x11_path // [] };
+	}
+	
+	return unless $cmd_options{WITH_COCOA};
 	printlog "Can compile with Cocoa...";
 	my $old_ldflags = $LDFLAGS;
 
