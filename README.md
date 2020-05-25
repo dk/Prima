@@ -50,6 +50,27 @@ WebP libraries are unavailable for strawberry, get them here:
 
  http://prima.eu.org/download/webp-win.zip
 
+MacOSX
+------
+
+You'll need homebrew, XQuartz, and a set of extra libraries.
+
+- install homebrew:
+
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+
+- install XQuartz:
+
+  brew cask install xquartz
+
+- install support libraries:
+
+  brew install fribidi fontconfig freetype giflib gtk+ harfbuzz jpeg libpng libtiff
+
+- install custom built libxft (may fail, but Prima will continue without harfbuzz then):
+
+  brew install dk/x11/xorg-macros dk/x11/libxft
+
 Bidirectional input and complex scripts
 ---------------------------------------
 
