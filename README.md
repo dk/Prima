@@ -16,6 +16,27 @@ For easy setup, run this:
   apt-get install libgtk2.0-dev libgif-dev libjpeg-dev libtiff-dev libxpm-dev \
       libwebp-dev libfribidi-dev libharfbuzz-dev
 
+OpenSUSE
+--------
+
+  zypper install gtk2-devel giflib-devel libXpm-devel libjpeg-devel libtiff-devel \
+      libXpm-devel libXrandr-devel libXcomposite-devel libXcursor-devel \
+      libfribidi-devel libwebp-devel
+
+Cygwin
+------
+
+- install apt-cyg:
+
+   wget https://raw.githubusercontent.com/transcode-open/apt-cyg/master/apt-cyg -O /usr/bin/apt-cyg
+   chmod +x /usr/bin/apt-cyg
+
+- install prerequisites:
+
+   apt-cyg install libgtk2.0-devel libfribidi-devel libgif-devel libjpeg-devel libtiff-devel \
+       libXpm-devel libwebp-devel
+
+
 Graphic libraries
 -----------------
 
@@ -65,7 +86,7 @@ You'll need homebrew, XQuartz, and a set of extra libraries.
 
 - install support libraries:
 
-  brew install fribidi fontconfig freetype giflib gtk+ harfbuzz jpeg libpng libtiff
+  brew install fribidi fontconfig freetype giflib gtk+ harfbuzz jpeg libpng libtiff webp
 
 - install custom built libxft (may fail, but Prima will continue without harfbuzz then):
 
