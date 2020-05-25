@@ -1358,8 +1358,10 @@ sub setup_xft
 	my @pre_xft_incpath = @INCPATH;
 
 	if ( $use_pkgconfig ) {
-		my @packages = map { pkgconfig($_) ? 1 : () } (qw(freetype2 fontconfig xrender xft));
-		if ( @packages != $NEED_XFT ) {
+		my $has_xft = pkgconfig('xft') ? 1 : 0;
+		my @post_xft_libpath = @LIBPATH;
+		my @packages = map { pkgconfig($_) ? 1 : () } (qw(freetype2 fontconfig xrender));
+		if ((@packages + $has_xft) != $NEED_XFT ) {
 			$cmd_options{WITH_XFT} = 0;
 			@LIBS    = @pre_xft_libs;
 			@LIBPATH = @pre_xft_libpath;
@@ -1371,6 +1373,27 @@ sub setup_xft
 				HAVE_X11_EXTENSIONS_XRENDER_H
 				HAVE_X11_XFT_XFT_H
 			);
+			if (
+				$macos_broken_setup &&
+				$macos_x11_path &&
+				$cmd_options{WITH_HARFBUZZ} &&
+				@pre_xft_libpath == @post_xft_libpath
+			) {
+				$cmd_options{WITH_HARFBUZZ} = 0;
+				$END .= <<BROKEN_PATH_SETUP;
+
+** Warning: harfbuzz have been disabled.
+
+This happened because broken setup was detected where both harfbuzz and libXft
+depend on freetype2, but one on /opt/X11 and another in /usr/local.
+This _WILL_ result in coredumps.
+
+To resolve the issue install libXft that uses the recent freetype2, with
+
+    brew install dk/x11/libxft
+
+BROKEN_PATH_SETUP
+			}
 		}
 		return;
 	}
