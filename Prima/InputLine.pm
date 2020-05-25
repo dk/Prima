@@ -43,6 +43,7 @@ sub profile_default
 			[undo        => '~Undo', 'Ctrl+Z', '^Z', 'undo'],
 			[redo        => 'R~edo', 'Ctrl+Y', '^Y', 'redo'],
 			['@rtl'      => '~RTL input', 'Ctrl+Shift+D', '^#D', 'toggle_rtl'],
+			['@ligation' => '~Ligation', 'Ctrl+Shift+L', '^#L', 'toggle_ligation'],
 		],
 		readOnly       => 0,
 		selection      => [0, 0],
@@ -50,6 +51,7 @@ sub profile_default
 		selEnd         => 0,
 		selectable     => 1,
 		textDirection  => $rtl,
+		textLigation   => 1,
 		undoLimit      => 10,
 		widgetClass    => wc::InputLine,
 		width          => 96,
@@ -75,7 +77,7 @@ sub init
 
 	for ( qw(
 		borderWidth passwordChar maxLen alignment autoTab autoSelect
-		firstChar charOffset readOnly))
+		firstChar charOffset readOnly textLigation))
 		{ $self-> {$_} = 1; }
 	for ( qw( selStart selEnd atDrawX autoHeight undoLimit n_clusters))
 		{ $self-> {$_} = 0;}
@@ -89,7 +91,7 @@ sub init
 	$self->init_undo(\%profile);
 
 	for ( qw(
-		textDirection
+		textDirection textLigation
 		writeOnly borderWidth passwordChar maxLen alignment
 		autoTab autoSelect readOnly selEnd selStart charOffset
 		firstChar wordDelimiters ))
@@ -243,7 +245,10 @@ sub text
 
 	$cap = $self-> {passwordChar} x length $cap if $self-> {writeOnly};
 	if ( length($cap)) {
-		$self->{glyphs}     = $self-> text_shape( $cap, rtl => $self->textDirection );
+		$self->{glyphs}     = $self-> text_shape( $cap, 
+			rtl   => $self->textDirection,
+			level => ( $self->textLigation ? ts::Full : ts::Glyphs ),
+		);
 		$self->{n_clusters} = $self->{glyphs}->n_clusters;
 	} else {
 		$self->{glyphs}     = Prima::Drawable::Glyphs->new_empty;
@@ -523,6 +528,7 @@ sub on_popup
 	$p-> enabled( 'undo',         $self->can_undo );
 	$p-> enabled( 'redo',         $self->can_redo );
 	$p-> checked( 'rtl',          $self-> textDirection );
+	$p-> checked( 'ligation',     $self-> textLigation );
 }
 
 sub default_geom_height
@@ -553,6 +559,12 @@ sub toggle_rtl
 {	
 	my ( $self, $menu, $value ) = @_;
 	$self-> textDirection($value);
+}
+
+sub toggle_ligation
+{	
+	my ( $self, $menu, $value ) = @_;
+	$self-> textLigation($value);
 }
 
 sub paste
@@ -1054,6 +1066,14 @@ sub autoHeight
 	$_[0]-> check_auto_size;
 }
 
+sub textLigation
+{
+	return $_[0]-> {textLigation} unless $#_;
+	my ( $self, $textLigation ) = @_;
+	$self-> {textLigation} = $textLigation;
+	$self-> text( $self-> text );
+}
+
 sub textDirection
 {
 	return $_[0]-> {textDirection} unless $#_;
@@ -1228,6 +1248,16 @@ Selects the end of text selection.
 =item textDirection BOOLEAN
 
 If set, indicates RTL text input.
+
+=item textLigation BOOLEAN
+
+If set, text may be rendered at better quality with ligation and kerning,
+however that comes with a price that some ligatures may be indivisible and form
+clusters (f.ex. I<ff> or I<ffi> ligatures). Cursor cannot go inside of such
+clusters, and thus one can only select them, delete as whole, or press
+Del/Backspace on the cluster's edge.
+
+Toggle during runtime with Ctrl+Shift+L.
 
 =item wordDelimiters STRING
 
