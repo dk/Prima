@@ -160,6 +160,7 @@ sub profile_default
 				),
 				[ '@'.($::application->textDirection ? '*' : '').'rtl' => 
 					'~Right-to-left' => sub{ $_[0]-> {editor}-> textDirection( $_[2] )}],
+				[ '@*ligation' => '~Ligatures' => sub{ $_[0]-> {editor}-> textLigation( $_[2] )}],
 				[ 'Set ~font' => q(setfont)],
 			]]
 		],

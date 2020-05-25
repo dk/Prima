@@ -166,6 +166,7 @@ utime values vec wait waitpid wantarray warn while write y
 		tabIndent         => 8,
 		textRef           => undef,
 		textDirection     => $rtl,
+		textLigation      => 1,
 		topLine           => 0,
 		vScroll           => 0,
 		undoLimit         => 1000,
@@ -202,7 +203,7 @@ sub init
 		scrollTransaction maxLine maxChunk capLen cursorY cursorX cursorWrap
 		cursorXl cursorYl syntaxHilite hiliteNumbers hiliteQStrings hiliteQQStrings
 		notifyChangeLock modified borderWidth autoHScroll autoVScroll blockShiftMark
-		textDirection
+		textDirection textLigation
 	))
 		{ $self-> {$_} = 0;}
 	$self-> { insertMode}   = $::application-> insertMode;
@@ -218,7 +219,7 @@ sub init
 		autoHScroll autoVScroll
 		textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth
 		topLine  tabIndent readOnly offset wordDelimiters wantTabs wantReturns
-		wordWrap cursorWrap markers textDirection))
+		wordWrap cursorWrap markers textDirection textLigation))
 		{ $self-> $_( $profile{ $_}); }
 	delete $self-> {resetDisabled};
 	$self-> {uChange} = 0;
@@ -1095,6 +1096,19 @@ sub textDirection
 	$self-> repaint;
 }
 
+sub textLigation
+{
+	return $_[0]-> {textLigation} unless $#_;
+	my ( $self, $td ) = @_;
+	return if $self->{textLigation} == $td;
+	$self-> {textLigation} = $td;
+	$self-> reset_shaping_caches;
+	$self-> reset_syntax;
+	$self-> reset_scrolls;
+	$self-> reset;
+	$self-> repaint;
+}
+
 sub get_text_ref
 {
 	my $self = $_[0];
@@ -1141,7 +1155,10 @@ sub get_shaped_chunk
 		unless length $chunk;
 
 	my $untabbed_chunk = $chunk;
-	my %opt = ( rtl => $self->textDirection );
+	my %opt = ( 
+		rtl   => $self->textDirection, 
+		level => ( $self-> textLigation ? ts::Full : ts::Glyphs ),
+	);
 	if ($chunk =~ /\t/) {
 		$opt{advances} = 1;
 		$untabbed_chunk =~ s/\t/ /g;
@@ -3234,6 +3251,14 @@ See also: L<textRef>.
 =item textDirection BOOLEAN
 
 If set, indicates RTL text input.
+
+=item textLigation BOOLEAN
+
+If set, text may be rendered at better quality with ligation and kerning,
+however that comes with a price that some ligatures may be indivisible and form
+clusters (f.ex. I<ff> or I<ffi> ligatures). Cursor cannot go inside of such
+clusters, and thus one can only select them, delete as whole, or press
+Del/Backspace on the cluster's edge.
 
 =item textRef TEXT_PTR
 
