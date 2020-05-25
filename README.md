@@ -88,9 +88,14 @@ You'll need homebrew, XQuartz, and a set of extra libraries.
 
   brew install fribidi fontconfig freetype giflib gtk+ harfbuzz jpeg libpng libtiff webp
 
-- install custom built libxft (may fail, but Prima will continue without harfbuzz then):
+- install custom built xorg libraries, either very minimal
 
   brew install dk/x11/xorg-macros dk/x11/libxft
+
+or linux-homebrew's (not tested)
+
+  brew tap linuxbrew/xorg
+  brew install linuxbrew/xorg/libxft
 
 Bidirectional input and complex scripts
 ---------------------------------------
