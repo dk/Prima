@@ -95,6 +95,7 @@ You'll need homebrew, XQuartz, and a set of extra libraries.
 or linux-homebrew's (not tested)
 
   brew tap linuxbrew/xorg
+
   brew install linuxbrew/xorg/libxft
 
 Bidirectional input and complex scripts
