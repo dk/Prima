@@ -246,8 +246,9 @@ sub text
 	$cap = $self-> {passwordChar} x length $cap if $self-> {writeOnly};
 	if ( length($cap)) {
 		$self->{glyphs}     = $self-> text_shape( $cap, 
-			rtl   => $self->textDirection,
-			level => ( $self->textLigation ? ts::Full : ts::Glyphs ),
+			rtl      => $self->textDirection,
+			level    => ( $self->textLigation ? ts::Full : ts::Glyphs ),
+			advances => 1,
 		);
 		$self->{n_clusters} = $self->{glyphs}->n_clusters;
 	} else {

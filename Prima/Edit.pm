@@ -1155,9 +1155,10 @@ sub get_shaped_chunk
 		unless length $chunk;
 
 	my $untabbed_chunk = $chunk;
-	my %opt = ( 
-		rtl   => $self->textDirection, 
-		level => ( $self-> textLigation ? ts::Full : ts::Glyphs ),
+	my %opt = (
+		rtl      => $self->textDirection,
+		level    => ( $self-> textLigation ? ts::Full : ts::Glyphs ),
+		advances => 1,
 	);
 	if ($chunk =~ /\t/) {
 		$opt{advances} = 1;
