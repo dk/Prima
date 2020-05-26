@@ -90,5 +90,7 @@ object Prima::Drawable ( Prima::Component)
 	PFontABC font_abc_ascii;
 	PList    font_abc_unicode;
 	PList    font_abc_glyphs;
+	unsigned long * font_abc_glyphs_ranges;
+	int             font_abc_glyphs_n_ranges;
 
 }

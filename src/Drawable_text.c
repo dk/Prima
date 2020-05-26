@@ -39,7 +39,7 @@ or filling them by querying ranges
 
 */
 
-#define FONTMAPPER_VECTOR_BASE 9 /* 512 chars or 64 bytes per vector */
+#define FONTMAPPER_VECTOR_BASE 9 /* 512 chars or 64 bytes per vector - make sure it's greater than 256, text_wrap/abc depends on that */
 #define FONTMAPPER_VECTOR_MASK ((1 << FONTMAPPER_VECTOR_BASE) - 1)
 
 static List  font_active_entries;
@@ -500,6 +500,21 @@ hop_glyphs(GlyphsOutRec * t, int from, int len)
 
 	if ( t-> fonts )
 		t-> fonts    += from;
+}
+
+static Bool
+switch_font( Handle self, uint16_t fid)
+{
+	Font src, dst;
+	src = PASSIVE_FONT(fid)->font;
+	dst = var->font;
+	src.size = dst.size;
+	src.undef.size = 0;
+	apc_font_pick( self, &src, &dst);
+	if ( strcmp(dst.name, src.name) != 0 )
+		return false;
+	apc_gp_set_font( self, &dst);
+	return true;
 }
 
 Bool
@@ -1121,14 +1136,7 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 			if ( run.fonts[0] == 0 ) {
 				apc_gp_set_font( self, &var->font);
 			} else {
-				Font src, dst;
-				src = PASSIVE_FONT(run.fonts[0])->font;
-				dst = var->font;
-				src.size = dst.size;
-				src.undef.size = 0;
-				apc_font_pick( self, &src, &dst);
-				if ( strcmp(dst.name, src.name) == 0 ) {
-					apc_gp_set_font( self, &dst);
+				if ( switch_font(self, run.fonts[0])) {
 #ifdef _DEBUG
 					printf("%d: set font #%d: %s\n", run_offs, run.fonts[0], dst.name);
 #endif
@@ -2050,6 +2058,92 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 
 	if ( !( abc = call_get_font_abc_base(self, base, toGlyphs)))
 		return NULL;
+	if (
+		!self ||
+		my-> get_font_abc != Drawable_get_font_abc ||
+		t->fonts
+	) {
+		/* different fonts case */
+		Byte * fa;
+		PassiveFontEntry *pfe;
+		int i, font_changed = 0;
+		uint32_t from, to;
+		unsigned int page;
+		Byte used_fonts[MAX_CHARACTERS / 8], filled_entries[256 / 8];
+
+		from = base * 256;
+		to   = from + 255;
+		page = from >> FONTMAPPER_VECTOR_BASE;
+		bzero(used_fonts, sizeof(used_fonts));
+		bzero(filled_entries, sizeof(filled_entries));
+		used_fonts[0] = 0x01; /* fid = 0 */
+		i = PTR2IV(hash_fetch(font_substitutions, var->font.name, strlen(var->font.name)));
+		if ( i > 0 ) {
+			/* copy ranges from subst table */
+			pfe = PASSIVE_FONT(i);
+			if ( !pfe-> ranges_queried )
+				query_ranges(pfe);
+			if ( pfe-> vectors.count <= page ) goto NO_FONT_ABC; /* should be there, or some error */
+			/* page covers the 256 range in whole */
+			fa = (Byte *) pfe-> vectors.items[ page ];
+			if ( fa ) {
+				i = from & FONTMAPPER_VECTOR_MASK;
+				memcpy( filled_entries, fa + i, 256 / 8);
+			}
+		} else {
+			/* query the range and fill the cache */
+			unsigned long * ranges;
+			if ( !var-> font_abc_glyphs_ranges ) {
+				if ( !( var-> font_abc_glyphs_ranges = apc_gp_get_font_ranges(self, &var->font_abc_glyphs_n_ranges)))
+					goto NO_FONT_ABC;
+			}
+			ranges = var-> font_abc_glyphs_ranges;
+			for ( i = 0; i < var->font_abc_glyphs_n_ranges; i += 2, ranges += 2 ) {
+				int j;
+				if ( ranges[0] > to || ranges[1] < from )
+					continue;
+				for ( j = ranges[0]; j <= ranges[1]; j++) {
+					if ( j >= from && j <= to )
+						filled_entries[(j - from) >> 3] |= 1 << ((j - from) & 7);
+				}
+			}
+		}
+
+		for ( i = 0; i < t->n_glyphs; i++) {
+			PFontABC abc2;
+			uint16_t fid = t->fonts[i];
+			uint32_t uv;
+			if ( used_fonts[fid >> 3] & ( 1 << (fid & 7)))
+				continue;
+			used_fonts[fid >> 3] |= 1 << (fid & 7);
+
+			pfe = PASSIVE_FONT(fid);
+			if ( !switch_font(self, fid))
+				continue;
+			font_changed = 1;
+
+			if ( !pfe-> ranges_queried )
+				query_ranges(pfe);
+			if ( pfe-> vectors.count <= page )
+				continue;
+
+			if ( !( abc2 = apc_gp_get_font_abc( self, from, to, toGlyphs)))
+				continue;
+
+			fa = (Byte *) pfe-> vectors.items[ page ];
+			if ( !fa ) continue;
+			for ( uv = from; uv <= to; uv++) {
+				unsigned int bit = uv & FONTMAPPER_VECTOR_MASK;
+				if (( fa[bit >> 3] & (1 << (bit & 7))) == 0) continue;
+				if ((filled_entries[(uv - from) >> 3] & (1 << ((uv - from) & 7))) != 0) continue;
+				filled_entries[(uv - from) >> 3] |= 1 << ((uv - from) & 7);
+				abc[uv - from] = abc2[uv - from];
+			}
+		}
+		if ( font_changed )
+			apc_gp_set_font( self, &var->font);
+	}
+NO_FONT_ABC:
 
 	if ( !fill_abc_list_cache(t->cache, base, abc)) {
 		free( abc);
