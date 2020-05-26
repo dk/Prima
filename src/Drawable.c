@@ -95,6 +95,11 @@ clear_font_abc_caches( Handle self)
 		free( var-> font_abc_ascii);
 		var-> font_abc_ascii = NULL;
 	}
+	if ( var-> font_abc_glyphs_ranges ) {
+		free(var-> font_abc_glyphs_ranges);
+		var-> font_abc_glyphs_ranges = NULL;
+		var-> font_abc_glyphs_n_ranges = 0;
+	}
 }
 
 void
