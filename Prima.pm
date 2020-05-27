@@ -9,7 +9,7 @@ require DynaLoader;
 use vars qw($VERSION @ISA $__import @preload $pid);
 @ISA = qw(DynaLoader);
 sub dl_load_flags { 0x00 }
-$VERSION = '1.58';
+$VERSION = '1.59';
 $pid = $$;
 bootstrap Prima $VERSION;
 unless ( UNIVERSAL::can('Prima', 'init')) {

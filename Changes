@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.59 2020-XX-XX
+1.59 2020-05-27
  - Added support for unicode bidirectional algorithm and text shaping:
      -- All standard widgets are moved to new shaped text implementation:
         formerly char-based position properties, such as firstChar and selection,
