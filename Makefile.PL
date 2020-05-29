@@ -1527,6 +1527,9 @@ WARN:
 	$END .= <<BIDI;
 
 ** Warning: fribidi is needed for bidirectional text.
+Prima compiled without fribidi will not be able
+to handle right-to-left text, f.ex. Arabic or Hebrew.
+Consider fixing your installation.
 
 BIDI
 }
@@ -1633,7 +1636,13 @@ sub setup_xlibs
 
 	setup_xft() if $cmd_options{WITH_XFT};
 	setup_harfbuzz() if $cmd_options{WITH_HARFBUZZ};
+	$END .= <<NO_HARFBUZZ unless $DEFINES{WITH_HARFBUZZ};
 
+** Warning: Prima compiled without harfbuzz will not be able
+to render proper ligatured text, f.ex. Arabic, Hindi, Tibetan etc etc.
+Consider fixing your installation.
+
+NO_HARFBUZZ
 	$cmd_options{WITH_ICONV} = 0 unless $cmd_options{WITH_XFT}; # iconv is used for xft only
 	setup_iconv() if $cmd_options{WITH_ICONV};
 	setup_gtk() if $cmd_options{WITH_GTK2} || $cmd_options{WITH_GTK3};
