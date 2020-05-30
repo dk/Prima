@@ -117,6 +117,7 @@ create_cursor(CustomPointer* cp, Handle icon, Point hot_spot)
 	if ( c-> type != imRGB || c-> maskType != imbpp8 ) {
 		icon = CIcon(icon)->dup(icon);
 		kill = true;
+		PIcon(icon)-> autoMasking = amNone;
 		CIcon(icon)-> set_type( icon, imRGB );
 		CIcon(icon)-> set_maskType( icon, imbpp8 );
 	} else
