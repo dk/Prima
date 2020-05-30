@@ -1380,7 +1380,7 @@ sub begin_drag
 		my $fh    = $self->font->height;
 		my @sz = ( 0, 10 + $fh * @lines );
 		for my $text ( @lines ) {
-			my $tw = $self->get_text_width($text, 1);
+			my $tw = $self->get_text_shape_width($text, 1);
 			$sz[0] = $tw if $sz[0] < $tw;
 		}
 		$sz[0] += 10;
@@ -1399,7 +1399,7 @@ sub begin_drag
 		$i->clear;
 		my $y = $i->height - $fh - 5;
 		for my $text ( @lines ) {
-			$i->text_out( $text, 5, $y);
+			$i->text_shape_out( $text, 5, $y);
 			$y -= $fh;
 		}
 		$i->end_paint;
