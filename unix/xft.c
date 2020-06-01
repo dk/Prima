@@ -2529,8 +2529,10 @@ prima_xft_text_shaper_harfbuzz( Handle self, PTextShapeRec r)
 	buf = hb_buffer_create();
 	hb_buffer_add_utf32(buf, r->text, r->len, 0, -1);
 
+#if HB_VERSION_MAJOR >= 1
 #if HB_VERSION_ATLEAST(1,0,3)
 	hb_buffer_set_cluster_level(buf, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
+#endif
 #endif
 	hb_buffer_set_direction(buf, (r->flags & toRTL) ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
 /*
