@@ -1444,7 +1444,7 @@ Shaping process may or may not fill integer array of advances and positions for
 each glyphs, depending on the implementation. The advances are needed to
 represent f.ex.  combining graphemes, when TEXT consisting of two characters,
 C<"A"> and combining grave accent U+300 should be drawn as a single E<Agrave>
-cluster but are represented by a two glyphs C<"A"> and <"`">. The grave glyph
+cluster but are represented by a two glyphs C<"A"> and C<"`">. The grave glyph
 has its own advance for standalone usage, but in this case it should be
 ignored, and that is achieved by filling advance table where the C<"A"> advance
 is the normal glyph advance, whereas the advance of the C<"`"> is zero.  Also,
@@ -1453,18 +1453,18 @@ when that is needed (f.ex. it might be positioned differently by vertical on
 C<"a"> and C<"A">).
 
 Setting this options to C<true> will force fill advance and positioning tables.
-These tables can be manipulated laters, and are respected by C<text_out> and
+These tables can be manipulated later, and are respected by C<text_out> and
 C<get_text_width>.
 
 =item language STRING = undef
 
 When set, shaping process can take in the account the language of the text.
-F.ex. text C<"ae"> will be shaped as a single glyph I<E<aelig>> for the Latin
-language, but not for the English.
+F.ex. text C<"ae"> might be shaped as a single glyph I<E<aelig>> for the Latin
+language, but never for the English.
 
 =item level INTEGER = ts:XXX
 
-Select the shaping (i.e. text to glyph conversion) level, how the system should treat the input text
+Selects the shaping (i.e. text to glyph conversion) level, how the system should treat the input text
 and how deep the shaping should go. One of the following C<ts::XXX> options:
 
 =over
@@ -1473,7 +1473,7 @@ and how deep the shaping should go. One of the following C<ts::XXX> options:
 
 Treats input text as non-unicode locale-specific codepoints, characters higher
 than 255 are treated as chr(255).  Reordering never happens, kerning and
-ligation never happens, returns glyph indexes in a 1:1 mapping to each
+ligation never happens, returns glyph indexes in a 1:1 mapping for each
 codepoint.
 
 =item ts::None
@@ -1481,12 +1481,12 @@ codepoint.
 Performs quick null shaping without mapping to the font glyphs, but only
 running bidirectional algorithm on the text. On the return, C<glyphs>, as well
 as eventual C<advances> and C<positions>, are filled with zeros, but C<indexes>
-are filled with the proper character offsets, effectively making it a visual to
-logical map since number of glyphs will always be equal to number of characters
-in TEXT, because ligation never happens here (except when text contains unicode
-directional characters such as isolates etc).
+are filled with the proper character offsets, effectively making it a visual-to-logical
+map since the number of glyphs will always be equal to the number of characters
+in TEXT, because ligation never happens here (except when TEXT contains unicode
+directional characters such as isolates etc - those are removed from the output).
 
-By default, advances and positions are not filled, but if C<advances> option is set,
+By default, advances and positions are not filled, but if the C<advances> option is set,
 fills them with zeros.
 
 =item ts::Glyphs
@@ -1497,6 +1497,8 @@ the glyph mapping part.
 
 By default, advances and positions are not filled, but if C<advances> option is set,
 fills the advances array with character glyph advances and the positions array with zeros.
+
+May fill the C<fonts> array if the C<polyfont> option is set.
 
 =item ts::Full
 
@@ -1510,11 +1512,13 @@ this case does not return the advances and positions by default, but if
 C<advances> option is set, fills the advances array with character glyph
 advances and the positions array with zeros.
 
+May fill the C<fonts> array if the C<polyfont> option is set.
+
 =back
 
 =item pitch INTEGER
 
-When polyfont is active and font substitution is desired, filters only fonts
+When the C<polyfont> is set (default) and font substitution is desired, filters only fonts
 that match C<pitch>, either C<fp::Variable> or C<fp::Fixed>. By default will be
 set to C<fp::Fixed> if the current for is monospaced, but to C<fp::Default>
 matching all fonts, otherwise.
@@ -1536,13 +1540,13 @@ Valid only with shaping levels C<ts::Glyphs> and C<ts::Full>.
 =item reorder BOOLEAN = true
 
 When set, unicode bidi algorithm is used to reorder codepoints, and
-additionally RTL codepoints are reversed (depending on direction context).
+additionally RTL codepoints may be reversed (depending on direction context).
 
 When unset, no such reordering occurs, to emulate as much as possible a
 behavior that each text grapheme is being mapped to a glyph cluster exactly as
 it occurs in the input text, from left to right. Note that bidi reordering
 still may occur internally, since system shapers may reverse placement of RTL
-characters, so that reordering is needed to cancel this. In theory the caller
+characters, so that the Prima reordering is needed to cancel this. In theory the caller
 shouldn't see the difference as these should cancel each other, but if Prima
 miscalculates the expected way the system shaper does the bidi processing it
 might.
@@ -1553,11 +1557,11 @@ A similar effect can be reached by prepending the text with U+202D
 =item rtl BOOLEAN
 
 If set to 1, default text direction is assumed as RTL, and as LTR if set to 0.
-If unset, the text direction is taken from C<Prima::Application::textDirection>.
+If unset, the text direction is taken from L<Prima::Application/textDirection>.
 
 =item skip_if_simple BOOLEAN = false
 
-When set, checks whether shaping result is identical to the input, in a sense
+When set, checks whether the shaping result is identical to the input, in a sense
 that a call to C<text_out(TEXT)> and a call to C<text_shape_out(TEXT)> produce
 identical results.  Majority of english text will fall into that category, and
 when that indeed happens, returns integer value C<0> instead of a glyph object.
@@ -1568,7 +1572,7 @@ See also C<text_shape_out>, C<get_text_shape_width>, C<text_wrap_shape>.
 
 =item text_shape_out TEXT, X, Y[, RTL]
 
-Runs shaping on TEXT character string with the RTL flag or C<< $::application->textDirection >>.
+Runs shaping on TEXT character string with the RTL flag (or C<< $::application->textDirection >>.
 Draws the resulting glyph string at (X,Y). 
 
 Returns success flag; if failed, C<$@> contains the error.
