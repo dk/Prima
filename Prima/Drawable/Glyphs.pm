@@ -808,9 +808,9 @@ filled by C<advances> options in C<text_shape>, it is basically a sum of a, b,
 and c widths of a glyph. However there are cases when depending on shaping
 input, these values can differ.
 
-One of those cases is combining graphemes, where text consisting of two
+One of those cases is combining graphemes, where the text consisting of two
 characters, C<"A"> and combining grave accent U+300 should be drawn as a single
-"E<Agrave>" symbol, but font doesn't have that single glyph but rather two
+"E<Agrave>" symbol, but the font doesn't have that single glyph but rather two
 individual glyphs C<"A"> and C<"`">. There, where grave glyph has its own
 advance for standalone usage, in this case it should be ignored though, and
 that is achieved by setting the advance of the C<"`"> to zero.
