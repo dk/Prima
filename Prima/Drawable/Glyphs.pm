@@ -782,7 +782,7 @@ with a C<"ff"> ligature. There can also be cases with more than one characher
 per more than one glyph, such is the case in indic scripts. In these cases it
 is easier to operate neither by character offsets nor glyph offsets, but rather
 by I<clusters>, where each is an individual syntax unit that contains one or
-more characters perl one or more glyphs.
+more characters per one or more glyphs.
 
 In addition to the text offset, each index value can be flagged with a
 C<to::RTL> bit, signifying that the character in question has RTL direction.
