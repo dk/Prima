@@ -1029,33 +1029,6 @@ apc_gp_get_text_shaper( Handle self, int * type)
 	}
 }
 
-#define TM(field) to->field = from->field
-void
-textmetric_c2w( LPTEXTMETRICA from, LPTEXTMETRICW to)
-{
-	TM(tmHeight);
-	TM(tmAscent);
-	TM(tmDescent);
-	TM(tmInternalLeading);
-	TM(tmExternalLeading);
-	TM(tmAveCharWidth);
-	TM(tmMaxCharWidth);
-	TM(tmWeight);
-	TM(tmOverhang);
-	TM(tmDigitizedAspectX);
-	TM(tmDigitizedAspectY);
-	TM(tmFirstChar);
-	TM(tmLastChar);
-	TM(tmDefaultChar);
-	TM(tmBreakChar);
-	TM(tmItalic);
-	TM(tmUnderlined);
-	TM(tmStruckOut);
-	TM(tmPitchAndFamily);
-	TM(tmCharSet);
-}
-#undef TM
-
 PFontABC
 apc_gp_get_font_abc( Handle self, int first, int last, int flags)
 {objCheck NULL;{
