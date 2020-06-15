@@ -1393,13 +1393,10 @@ sub on_paint
 		$$_[4] = $a[3] if $$_[4] > $a[3];
 	}
 
-	# draw cells
-	$self-> draw_cells( $canvas, \@colsDraw, \@rowsDraw, \@a);
-
-	# draw grid
 	$canvas-> color( $self-> {gridColor});
-	$canvas-> clipRect( @a);
 	$canvas-> lines( \@grid) if @grid;
+
+	$self-> draw_cells( $canvas, \@colsDraw, \@rowsDraw, \@a);
 }
 
 #sub on_stringify
