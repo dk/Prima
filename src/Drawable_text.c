@@ -297,6 +297,14 @@ find_font(uint32_t c, int pitch, uint16_t preferred_font)
 	for ( i = 1; i < font_passive_entries.count; i++)
 		if ( can_substitute(c, pitch, i))
 			return i;
+
+	if ( pitch == fpFixed ) {
+		if ( font_mapper_default_id >= 0 && can_substitute(c, pitch, font_mapper_default_id))
+			return font_mapper_default_id;
+		for ( i = 1; i < font_passive_entries.count; i++)
+			if ( can_substitute(c, fpDefault, i))
+				return i;
+	}
 #ifdef _DEBUG
 	printf("cannot map chr(%x)\n", c);
 #endif
