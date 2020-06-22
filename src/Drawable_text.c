@@ -2169,9 +2169,10 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	float width[256];
 	FontABC abc[256];
 	unsigned int base = 0x10000000;
+	uint16_t uv = 0, last_uv = 0;
 
-	unsigned int start, i;
-	float w = 0.0, initial_overhang = 0;
+	unsigned int start, i, last_p, p = 0;
+	float w = 0.0, last_winc = 0.0, initial_overhang = 0;
 	Bool reassign_w = 1;
 	Bool doWidthBreak = t-> width >= 0;
 
@@ -2194,7 +2195,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	for ( i = start = 0; i < t-> n_glyphs; ) {
 		uint16_t index;
 		float winc, inc = 0;
-		int j, ng, p, v;
+		unsigned int j, ng, v;
 
 		/* ng: glyphs in the cluster */
 		for ( ng = 0, v = i, index = t->indexes[v]; v < t->n_glyphs; v++) {
@@ -2204,8 +2205,12 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 
 		winc = 0;
 		for ( j = 0; j < ng; j++) {
-			uint16_t uv = t->glyphs[i + j];
-			if ( uv / 256 != base) {
+			last_uv = uv;
+			uv = t->glyphs[i + j];
+			if (
+				(uv / 256 != base) &&
+				(!t-> advances || reassign_w ) /* do not query ABC unnecessarily if advances are there */
+			) {
 				PFontABC labc;
 				if ( !(labc = query_abc_range_glyphs( self, t, base = uv / 256)))
 					return ret;
@@ -2225,7 +2230,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 				winc += width[ uv & 0xff];
 			}
 			if ( j == ng - 1 ) {
-				inc = abc[ uv & 0xff]. c;
+				inc = t-> advances ? 0 : abc[ uv & 0xff]. c;
 				if ( t-> advances ) 
 					inc += t->positions[(i + j) * 2];
 			}
@@ -2235,12 +2240,47 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 #ifdef _DEBUG
 		printf("i:%d ng:%d inc:%f w:%f winc:%f\n", i, ng, inc, w, winc);
 #endif
+		last_p = p;
 		p = i;
 		i += ng;
 
 		if ( !doWidthBreak || (w + winc + inc <= t-> width)) {
 			w += winc;
+			last_winc = winc;
 			continue;
+		}
+
+		if ( t-> advances && p > start ) {
+			/* this glyph is clearly out of bounds, but it could be that the previous was too.
+
+			The reason behind this complication is that fetching every glyphs A/C metrics under libXft,
+			on probably under win32, requires the whole glyph to be fetched. This hiccups if the string
+			or font size are so unfortunate that glyphs are being discarded often. But since C is used only
+			to check whether the last glyph hangs over the limit or not, we don't query C until necessary.
+			The complication is that we need to step back if the previous glyph's C was big enough to make it
+			not fit either.
+
+			The effect can be seen when selecting with mouse chinese text in podview in Prima/Drawable/Glyphs -
+			when each glyph is queried, it might take several seconds for each redraw.
+			*/
+			float xw;
+			if (
+				last_uv / 256 != base
+			) {
+				PFontABC labc;
+				if ( !(labc = query_abc_range_glyphs( self, t, base = last_uv / 256)))
+					return ret;
+				if ( t-> advances )
+					precalc_ac_buffer(labc, abc);
+				else
+					precalc_abc_buffer(labc, width, abc);
+			}
+			xw = w - winc + last_winc + abc[last_uv & 0xff].c;
+			if ( xw > t->width ) { /* ... and it is */
+				last_winc = 0.0;
+				i = p;
+				p = last_p;
+			}
 		}
 
 		if ( p == start ) {
