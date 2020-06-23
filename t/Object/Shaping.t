@@ -437,9 +437,10 @@ sub test_high_unicode
 }
 
 sub test_glyphs_wrap
-{
+{ SKIP: {
+	skip("no font at all", 1) unless find_shaping_font( "12");
 	$w->font->size(12);
-	my $z = $w-> text_shape('12', positions => 1, polyfont => 0);
+	my $z = $w-> text_shape('12', advances => 1, polyfont => 0);
 	is( 2, scalar( @{ $z->glyphs // [] }), "text '12' resolved to 2 glyphs");
 
 	my ($tw) = @{ $z->advances // [ $w->get_text_width('1') ] };
@@ -492,7 +493,7 @@ sub test_glyphs_wrap
 		is( $z->[-1]->{tildeLine}, 1, "tilde is at line 1");
 		is( $z->[-1]->{tildePos}, 2, "'p' is at position 2");
 	}}
-}
+}}
 
 sub test_combining { SKIP: {
 	skip("no combining without shaping", 1) unless $opt{shaping};
