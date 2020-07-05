@@ -736,16 +736,17 @@ Prima::Drawable::Glyphs - helper routines for bi-directional text input and comp
 The class implements an abstraction over a set of glyphs that can be rendered
 to represent text strings. Objects of the class are created and returned from
 C<Prima::Drawable::text_shape> calls, see more in
-L<Prima::Drawable/text_shape>. An object is a blessed array reference that can
-contain either two or four packed arrays with 16-bit integers, representing,
-correspondingly, a set of glyph indexes, a set of character indexes, a set of
-glyph advances, and a set of glyph position offsets per glyph. Additionally,
-the class implements several sets of helper routines that aim to address common
-tasks when displaying glyph-based strings.
+L<Prima::Drawable/text_shape>. A C<Prima::Drawable::Glyphs> object is a blessed
+array reference that can contain either two, four, or five packed arrays with
+16-bit integers, representing, correspondingly, a set of glyph indexes, a set
+of character indexes, a set of glyph advances, a set of glyph position offsets
+per glyph, and a font index. Additionally, the class implements several sets of
+helper routines that aim to address common tasks when displaying glyph-based
+strings.
 
 =head2 Structure
 
-Each array is an instance of C<Prima::array>, an effective plain memory
+Each sub-array is an instance of C<Prima::array>, an effective plain memory
 structure that provides standard perl interface over a string scalar filled
 with fixed-width integers. 
 
@@ -755,46 +756,46 @@ The following methods provide read-only access to these arrays:
 
 =item glyphs
 
-Contains set of unsigned 16-bit integers where each is a glyph number
-corresponding to the font that was used when shaping the text. These glyph
+Contains a set of unsigned 16-bit integers where each is a glyph number
+corresponding to the font that was used for shaping the text. These glyph
 numbers are only applicable to that font. Zero is usually treated as a default
 glyph in vector fonts, when shaping cannot map a character; in bitmap fonts
-this number it is usually a C<defaultChar>.
+this number is usually same as C<defaultChar>.
 
-This array is recognized as a special case when is set to C<text_out> or
+This array is recognized as a special case when is sent to C<text_out> or
 C<get_text_width>, that can process it without other arrays. In this case, no
 special advances and glyph positions are taken into the account though.
 
-Each glyph is not necessarily mapped to a character, and quite often it is not,
+Each glyph is not necessarily mapped to a character, and quite often is not,
 even in english left-to-right texts. F ex character combinations like C<"ff">,
-C<"fi">, C<"fl"> can be mapped as single ligature glyphs. When right-to-left, I<RTL>,
+C<"fi">, C<"fl"> may be mapped to single ligature glyphs. When right-to-left, I<RTL>,
 text direction is taken into the account, the glyph positions may change, too.
-See C<indexes> below that addresses mapping of glyph to characters.
+See C<indexes> below that addresses mapping of glyphs to characters.
 
 =item indexes
 
-Contains set of unsigned 16-bit integers where each is an offset corresponding to 
+Contains a set of unsigned 16-bit integers where each is a text offset corresponding to 
 the text was used in shaping. Each glyph position thus points to a first character
 in the text that maps to the glyph.
 
-There can be more than one characters per glyphs, such as the above example
-with a C<"ff"> ligature. There can also be cases with more than one characher
-per more than one glyph, such is the case in indic scripts. In these cases it
-is easier to operate neither by character offsets nor glyph offsets, but rather
-by I<clusters>, where each is an individual syntax unit that contains one or
+There can be more than one character per glyph, such as the above example
+with a C<"ff"> ligature. There can also be cases with more than one character
+per more than one glyph, f ex in indic scripts. In these cases it
+is easier to operate neither by character offsets nor by glyph offsets, but rather
+by I<clusters>, where each cluster is an individual syntax unit that contains one or
 more characters per one or more glyphs.
 
 In addition to the text offset, each index value can be flagged with a
 C<to::RTL> bit, signifying that the character in question has RTL direction.
 This is not necessarily semitic characters from RTL languages that only have
-that attributes set; spaces in these languages are normally attributed the RTL
+that attribute set; spaces in these languages are normally attributed the RTL
 bit too, sometimes also numbers. Use of explicit direction control characters
 from U+20XX block can result in any character being assigned or not assigned
 the RTL bit.
 
 The array has an extra item added to its end, the length of the text that was
-used in the snaping. This helps for easy calculation of cluster length in
-characters, especially of the last one, where difference between indexes is,
+used for the shaping. This helps for easy calculation of cluster length in
+characters, especially of the last one, where the difference between indexes is,
 basically, the cluster length.
 
 The array is not used for text drawing or calculation, but only for conversion
@@ -802,18 +803,19 @@ between character, glyph, and cluster coordinates (see C<Coordinates> below).
 
 =item advances
 
-Contains set of unsigned 16-bit integers where each is a pixel distance of how
-much space the glyph occupies. Where the advances array is not present, or
-filled by C<advances> options in C<text_shape>, it is basically a sum of a, b,
-and c widths of a glyph. However there are cases when depending on shaping
-input, these values can differ.
+Contains a set of unsigned 16-bit integers where each is a pixel distance of
+how much space the corresponding glyph occupies. Where the advances array is
+not present, or was force-filled by C<advances> options in C<text_shape>, a
+glyph advance value is basically a sum of a, b, and c widths of the corresponding glyph.
+However there are cases when depending on shaping input, these values can
+differ.
 
-One of those cases is combining graphemes, where the text consisting of two
+One of those cases is the combining graphemes, where the text consisting of two
 characters, C<"A"> and combining grave accent U+300 should be drawn as a single
-"E<Agrave>" symbol, but the font doesn't have that single glyph but rather two
-individual glyphs C<"A"> and C<"`">. There, where grave glyph has its own
+"E<Agrave>" symbol, and where the font doesn't have that single glyph but rather two
+individual glyphs C<"A"> and C<"`">. There, where the grave glyph has its own
 advance for standalone usage, in this case it should be ignored though, and
-that is achieved by setting the advance of the C<"`"> to zero.
+that is achieved by the shaper setting the advance of the C<"`"> to zero.
 
 The array content is respected by C<text_out> and C<get_text_width>, and its
 content can be changed at will to produce gaps in the text quite easily. F ex
@@ -821,16 +823,16 @@ C<Prima::Edit> uses that to display tab characters as spaces with 8x advance.
 
 =item positions
 
-Contains set of pairs of signed 16-bit integers where each is a X and Y pixel
+Contains a set of pairs of signed 16-bit integers where each is a X and Y pixel
 offset for each glyph. Like in the previous example with the "E<Agrave>"
-symbol, the grave glyph C<"`"> may be positioned differently on the vertical f
-ex on "E<Agrave>" and "E<agrave>" graphemes.
+symbol, the grave glyph C<"`"> may be positioned differently on the vertical axis in
+"E<Agrave>" and "E<agrave>" graphemes, for example.
 
 The array is respected by C<text_out> (but not by C<get_text_width>).
 
 =item fonts
 
-Contains set of unsigned 16-bit integers where each is an index in the font
+Contains a set of unsigned 16-bit integers where each is an index in the font
 substitution list (see L<Prima::Drawable/fontMapperPalette>). Zero means the
 current font.
 
@@ -844,20 +846,20 @@ The array is respected by C<text_out> and C<get_text_width>.
 
 =head2 Coordinates
 
-In addition to natural character coordinates, where each index is an
-offset that can be directly used in C<substr> perl function, this class offers
-two additional coordinate systems that help abstract the object data for
-display and navigation.
+In addition to the natural character coordinates, where each index is a text
+offset that can be directly used in C<substr> perl function, the
+C<Prima::Drawable::Glyphs> class offers two additional coordinate systems that
+help abstract the object data for display and navigation.
 
-The glyph coordinate is a rather straighforward copy of the character
-coordinates, where each number is an offset in the C<glyphs> array. Similarly,
+The glyph coordinate system is a rather straighforward copy of the character
+coordinate system, where each number is an offset in the C<glyphs> array. Similarly,
 these offsets can be used to address individual glyphs, indexes, advances, and
 positions. However these are not easy to use when one needs, for example, to
 select a grapheme with a mouse, or break set of glyphs in such a way so that a
 grapheme is not broken. These can be managed easier in the cluster coordinate system.
 
-The cluster coordinates are virtually superimposed set of offset where each
-correspond to a set of one or more characters displayed by a one or more
+The cluster coordinates represent a virtually superimposed set of offsets where each
+corresponds to a set of one or more characters displayed by a one or more
 glyphs. Most useful functions below operate in this system.
 
 =head2 Selection
