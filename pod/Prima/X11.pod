@@ -235,12 +235,12 @@ fonts to the non-scalable fonts only.
 
 =head2 Xft fonts
 
-Recently, Prima was made to compile with Xft library, which contrary to core X
-font API, can make use of client-side fonts. Plus, Xft offers appealing
-features as font antialiasing, unicode, and arguably a better font syntax. The
-Xft font syntax is inherited from C<fontconfig> library and to be consulted
-from C<man fonts-conf>, but currently ( November 2003 ) basic font descriptions
-can be composed as follows:
+Prima can compile with Xft library, which contrary to core X font API, can make
+use of client-side fonts. Plus, Xft offers appealing features as font
+antialiasing, unicode, and arguably a better font syntax. The Xft font syntax
+is inherited from C<fontconfig> library and to be consulted from C<man
+fonts-conf>, but currently ( November 2003 ) basic font descriptions can be
+composed as follows:
 
    Palatino-12
 
@@ -252,6 +252,13 @@ A font with name C<Arial>, size 10, bold, italic. The C<fontconfig> syntax
 allows more than that, for example, arbitrary matrix transformations, but
 Prima can make use only of font name, size, and style flags.
 
+The XFT library does internal memory management that is not necessary optimal
+for text with large amount of glyphs, f.ex. chinese. If display of these text is slow,
+try to increase memory for glyph caching by setting 
+
+  Xft.maxglyphmemory: 10485760
+
+(f.ex. for 10M per program cache) to the input for your xrdb.
 
 =over
 
