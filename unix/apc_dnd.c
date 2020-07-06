@@ -106,8 +106,10 @@ xdnd_read_ask_actions(void)
 	list_data = malloc(0);
 	rps = prima_read_property( guts.xdndr_source, XdndActionList, &type, &format,
 		&list_size, &list_data, 0);
-	if ( rps != RPS_OK || type != XA_ATOM || format != CF_32)
+	if ( rps != RPS_OK || type != XA_ATOM || format != CF_32) {
+		free(list_data);
 		return guts. xdndr_action_list_cache = dndCopy;
+	}
 	n_list = list_size / sizeof(Atom);
 
 	for ( i = 0; i < n_list; i++) {
@@ -707,12 +709,8 @@ void
 prima_update_dnd_aware( Handle self )
 {
 	DEFXX;
-	Bool has_drop_target;
 	Bool has_property    = XX->flags. drop_target;
-
-	has_drop_target = XX->flags.dnd_aware ?
-		true :
-		(CWidget(self)->first_that(self, find_dnd_aware, NULL) != nilHandle);
+	Bool has_drop_target = find_dnd_aware(self, self, NULL);
 
 	if ( has_drop_target == has_property ) return;
 	XX->flags. drop_target = has_drop_target;
