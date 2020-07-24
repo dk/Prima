@@ -36,6 +36,28 @@ long Utils_floor( double x)
 	return floor( x);
 }
 
+static Bool
+is_valid_utf8( unsigned char * str )
+{
+	int len = 0, hi8 = 0;
+	unsigned char * c = str;
+	while (*c) {
+		len++;
+		if ( *c > 0x7f ) hi8 = 1;
+		c++;
+	}
+	if ( !hi8 ) return false;
+#if PERL_PATCHLEVEL >= 22
+	while ( str < c ) {
+		unsigned char * end = utf8_hop( str, 1 );
+		if ( end > c ) return false;
+		if ( !isUTF8_CHAR(str, end)) return false;
+		str = end;
+	}
+#endif
+	return true;
+}
+
 XS(Utils_getdir_FROMPERL) {
 	dXSARGS;
 	Bool wantarray = ( GIMME_V == G_ARRAY);
@@ -54,7 +76,11 @@ XS(Utils_getdir_FROMPERL) {
 		if ( dirlist) {
 			EXTEND( sp, dirlist-> count);
 			for ( i = 0; i < dirlist-> count; i++) {
-				PUSHs( sv_2mortal(newSVpv(( char *)dirlist-> items[i], 0)));
+				char * entry = ( char *)dirlist-> items[i];
+				SV * sv      = newSVpv(entry, 0);
+				if (is_valid_utf8((unsigned char*) entry))
+					SvUTF8_on(sv);
+				PUSHs( sv_2mortal(sv));
 				free(( char *)dirlist-> items[i]);
 			}
 			plist_destroy( dirlist);
