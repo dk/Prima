@@ -185,9 +185,13 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 	{
 		case CF_DIB: {
 			PIcon i;
-			XBITMAPINFO * bi = (XBITMAPINFO *) p1;
-			if ( bi-> bmiHeader. biCompression != BI_RGB )
+			XBITMAPINFO * bi;
+			if ( !( bi = ( XBITMAPINFO*) GlobalLock( p1)))
+				apiErrRet;
+			if ( bi-> bmiHeader. biCompression != BI_RGB ) {
+				GlobalUnlock( p1);
 				return false;
+			}
 			if ( bi-> bmiHeader. biBitCount == 32 ) {
 				i = (PIcon) create_object("Prima::Icon",
 					"iiiii",
@@ -197,7 +201,10 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 					"type",        imRGB,
 					"autoMasking", amNone
 				);
-				if ( !i) return false;
+				if ( !i) {
+					GlobalUnlock( p1);
+					return false;
+				}
 				image_argb_query_bits((Handle) i);
 			} else if (
 				bi-> bmiHeader. biBitCount == 1 ||
@@ -213,7 +220,10 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 					"height",      bi-> bmiHeader. biHeight,
 					"type",        bi-> bmiHeader. biBitCount
 				);
-				if ( !i) return false;
+				if ( !i) {
+					GlobalUnlock( p1);
+					return false;
+				}
 				if ( colors > 256 ) colors = 256;
 				i->palSize = colors;
 				for ( j = 0; j < colors; j++) {
@@ -225,9 +235,12 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 				data = (Byte*)bi;
 				data += sizeof(BITMAPINFOHEADER) + bi-> bmiHeader.biClrUsed * sizeof(RGBQUAD);
 				memcpy( i->data, data, i->dataSize );
-			} else
+			} else {
+				GlobalUnlock( p1);
 				return false;
+			}
 			c->image = (Handle) i;
+			GlobalUnlock( p1);
 			return true;
 		}
 		case CF_BITMAP: {
