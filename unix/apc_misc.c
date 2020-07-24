@@ -1387,7 +1387,7 @@ apc_dl_export(char *path)
 }
 
 PList
-apc_getdir( const char *dirname)
+apc_getdir( const char *dirname, Bool is_utf8)
 {
 	DIR *dh;
 	struct dirent *de;

@@ -3965,7 +3965,7 @@ extern char*
 apc_get_user_name( void);
 
 extern PList
-apc_getdir( const char *dirname);
+apc_getdir( const char *dirname, Bool is_utf8);
 
 extern Bool
 apc_dl_export(char *path);

@@ -69,7 +69,7 @@ XS(Utils_getdir_FROMPERL) {
 		croak( "invalid usage of Prima::Utils::getdir");
 	}
 	dirname = SvPV_nolen( ST( 0));
-	dirlist = apc_getdir( dirname);
+	dirlist = apc_getdir( dirname, prima_is_utf8_sv(ST(0)));
 	SPAGAIN;
 	SP -= items;
 	if ( wantarray) {
