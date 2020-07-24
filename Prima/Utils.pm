@@ -202,6 +202,9 @@ The file type is a string, one of the following:
 This function was implemented for faster directory reading,
 to avoid successive call of C<stat> for every file.
 
+Also, getdir is consistently inclined to treat filenames in utf8,
+disregarding both perl unicode settings and the locale.
+
 =item last_error
 
 Returns last system error, if any
