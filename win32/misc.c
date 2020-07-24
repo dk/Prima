@@ -112,7 +112,7 @@ apc_get_user_name()
 }
 
 PList
-apc_getdir( const char *dirname)
+apc_getdir( const char *dirname, Bool is_utf8)
 {
 #ifdef __CYGWIN__
 	DIR *dh;
@@ -152,14 +152,15 @@ apc_getdir( const char *dirname)
 	}
 	return dirlist;
 #else
-	long		len;
-	char		scanname[MAX_PATH+3];
-	WIN32_FIND_DATA	FindData;
-	HANDLE		fh;
+	long		 len;
+	WCHAR		 scanname[MAX_PATH+3];
+	WIN32_FIND_DATAW FindData;
+	HANDLE		 fh;
+	WCHAR *          dirname_w;
 
-	DWORD               fattrs;
-	PList               ret;
-	Bool                wasDot = false, wasDotDot = false;
+	DWORD            fattrs;
+	PList            ret;
+	Bool             wasDot = false, wasDotDot = false;
 
 #define add_entry(file,info)  {                         \
 	list_add( ret, ( Handle) duplicate_string(file));   \
@@ -167,11 +168,15 @@ apc_getdir( const char *dirname)
 }
 
 #define add_fentry  {                                                         \
-	add_entry( FindData.cFileName,                                            \
+	WideCharToMultiByte(CP_UTF8, 0, \
+		FindData.cFileName, -1, \
+		(LPSTR)scanname, sizeof(scanname), \
+		NULL, false); \
+	add_entry((char*) scanname, \
 		( FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? DIR : FILE); \
-	if ( strcmp( ".", FindData.cFileName) == 0)                               \
+	if ( wcscmp( L".", FindData.cFileName) == 0)                               \
 		wasDot = true;                                                         \
-	else if ( strcmp( "..", FindData.cFileName) == 0)                         \
+	else if ( wcscmp( L"..", FindData.cFileName) == 0)                         \
 		wasDotDot = true;                                                      \
 }
 
@@ -179,24 +184,33 @@ apc_getdir( const char *dirname)
 #define DIR  "dir"
 #define FILE "reg"
 
-	len = strlen(dirname);
-	if (len > MAX_PATH)
-		return NULL;
+	dirname_w = is_utf8 ?
+		alloc_utf8_to_wchar( dirname, -1, NULL) :
+		alloc_ascii_to_wchar( dirname, -1);
 
-	/* check to see if filename is a directory */
-	fattrs = GetFileAttributes( dirname);
-	if ( fattrs == 0xFFFFFFFF || ( fattrs & FILE_ATTRIBUTE_DIRECTORY) == 0)
+	len = wcslen(dirname_w);
+	if (len > MAX_PATH) {
+		free(dirname_w);
 		return NULL;
+	}
+		
+	/* check to see if filename is a directory */
+	fattrs = GetFileAttributesW( dirname_w);
+	if ( fattrs == 0xFFFFFFFF || ( fattrs & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+		free(dirname_w);
+		return NULL;
+	}
 
 	/* Create the search pattern */
-	strcpy(scanname, dirname);
+	wcscpy(scanname, dirname_w);
 	if (scanname[len-1] != '/' && scanname[len-1] != '\\')
 		scanname[len++] = '/';
 	scanname[len++] = '*';
 	scanname[len] = '\0';
+	free(dirname_w);
 
 	/* do the FindFirstFile call */
-	fh = FindFirstFile(scanname, &FindData);
+	fh = FindFirstFileW(scanname, &FindData);
 	if (fh == INVALID_HANDLE_VALUE) {
 		/* FindFirstFile() fails on empty drives! */
 		if (GetLastError() != ERROR_FILE_NOT_FOUND)
@@ -209,7 +223,7 @@ apc_getdir( const char *dirname)
 
 	ret = plist_create( 16, 16);
 	add_fentry;
-	while ( FindNextFile(fh, &FindData))
+	while ( FindNextFileW(fh, &FindData))
 		add_fentry;
 	FindClose(fh);
 
