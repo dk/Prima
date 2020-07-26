@@ -1034,6 +1034,14 @@ See also L<Prima::StdBitmap>.
 	sbmp::SFolderClosed
 	sbmp::Last
 
+=head2 scr:: - scroll exposure results
+
+C<Widget::scroll> returns one of these.
+	
+	scr::Error           - failure
+	scr::NoExpose        - call resulted in no new exposed areas
+	scr::Expose          - call resulted in new exposed areas, expect a repaint
+
 =head2 sv::  - system value indices
 
 See also L<Prima::Application/get_system_value>

@@ -2493,6 +2493,12 @@ change their positions to DELTA_X and DELTA_Y as well.
 
 =back
 
+Returns one of the following constants:
+
+	scr::Error           - failure
+	scr::NoExpose        - call resulted in no new exposed areas
+	scr::Expose          - call resulted in new exposed areas, expect a repaint
+
 Cannot be used inside paint state.
 
 See also: C<Paint>, C<get_invalid_rect>
