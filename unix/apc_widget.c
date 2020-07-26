@@ -1033,6 +1033,8 @@ apc_widget_scroll( Handle self, int horiz, int vert,
 		CWidget(self)-> first_that( self, (void*)scroll, &delta);
 	}
 
+	process_transparents( self);
+
 	return scrExpose;
 }
 
