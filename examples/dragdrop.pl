@@ -122,6 +122,10 @@ sub drops
 		$self->{modmap} = $modmap;
 		$ref->{action} = best_dnd_mode($modmap, $self->{dnd_mode} & $action);
 		$ref->{pad} = [ 0, 0, $self-> size ]; # don't send it anymore
+		print "\nDragOver is offered the following formats:\n";
+		for ( sort $clipboard->get_formats(1)) {
+			print "* $_\n";
+		}
 	},
 	onDragEnd => sub {
 		my ( $self, $clipboard, $action, $modmap, $x, $y, $counterpart, $ref) = @_;
