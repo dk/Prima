@@ -1794,6 +1794,7 @@ apc_widget_scroll( Handle self, int horiz, int vert, Rect * r, Rect *cr, Bool sc
 
 	objCheck scrError;
 	if ( is_apt( aptSyncPaint) && !apcUpdateWindow(( HWND) var handle)) apiErr;
+	process_transparents( self);
 	ShowCaret(( HWND) var handle);
 
 	return ret;
