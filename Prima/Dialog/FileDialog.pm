@@ -9,6 +9,7 @@ package Prima::Dialog::FileDialog;
 use strict;
 use warnings;
 use Prima qw(Buttons Lists Label InputLine ComboBox MsgBox);
+use Encode;
 
 package Prima;
 
@@ -316,8 +317,11 @@ sub safe_abs_path
 	local $SIG{__WARN__} = sub {
 		$warn = "@_";
 	};
+	my $was_utf8 = Encode::is_utf8($p);
 	$p = eval { Cwd::abs_path($p) };
 	$@ .= $warn if defined $warn;
+	eval { $p = Encode::decode('utf-8', $p) } if !$@ && $was_utf8;
+
 	return $p;
 }
 
