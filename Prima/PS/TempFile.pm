@@ -49,7 +49,7 @@ sub write
 sub evacuate
 {
 	my ($self, $cb, $blocksize) = @_;
-	$blocksize //= 10240;
+	$blocksize //= 16384;
 	my $ok = 0;
 
 	seek( $self->{fh}, 0, 0);
