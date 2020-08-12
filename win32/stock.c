@@ -663,6 +663,7 @@ font_logfont2font( LOGFONTW * lf, Font * f, Point * res)
 	dc_free();
 
 	if ( !res) res = &guts. displayResolution;
+	bzero( f, sizeof(Font));
 	f-> height              = tm. tmHeight;
 	f-> size                = ( f-> height - tm. tmInternalLeading) * 72.0 / res-> y + 0.5;
 	f-> width               = lf-> lfWidth;
@@ -676,7 +677,7 @@ font_logfont2font( LOGFONTW * lf, Font * f, Point * res)
 	f-> pitch               = ((( lf-> lfPitchAndFamily & 3) == DEFAULT_PITCH) ? fpDefault :
 		((( lf-> lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
 	strcpy( f-> encoding, font_charset2encoding( lf-> lfCharSet));
-	MultiByteToWideChar(CP_UTF8, 0, f->name, -1, lf->lfFaceName, LF_FACESIZE);
+	f-> is_utf8.name = utf8_flag_strncpy( f->name, lf->lfFaceName, LF_FACESIZE);
 }
 
 void
