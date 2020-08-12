@@ -126,6 +126,7 @@ dpi_change(void)
 Bool
 set_dwm_blur( HWND win, int enable, HRGN mask, int transition_on_maximized)
 {
+	HRESULT hr;
 	DWM_BLURBEHIND b;
 
 	if ( !win )
@@ -147,8 +148,11 @@ set_dwm_blur( HWND win, int enable, HRGN mask, int transition_on_maximized)
 		b. fTransitionOnMaximized = transition_on_maximized;
 	}
 
-	if ( DwmEnableBlurBehindWindow(win, &b) != S_OK ) {
-		apiErr;
+	if ( b. dwFlags == 0 )
+		return true;
+
+	if (( hr = DwmEnableBlurBehindWindow(win, &b)) != S_OK ) {
+		apiHErr(hr);
 		apcErrClear;
 		return false;
 	}
