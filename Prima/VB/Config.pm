@@ -18,6 +18,13 @@ sub classes
 		RTModule => 'Prima::Sliders',
 		module   => 'Prima::VB::CoreClasses',
 	},
+	'Prima::ProgressBar' => {
+		icon     => 'VB::classes.gif:34',
+		page     => 'Sliders',
+		RTModule => 'Prima::Sliders',
+		class    => 'Prima::VB::ProgressBar',
+		module   => 'Prima::VB::CoreClasses',
+	},
 	'Prima::StringOutline' => {
 		icon     => 'VB::classes.gif:17',
 		page     => 'General',
