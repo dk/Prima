@@ -143,8 +143,10 @@ include/unix/guts.h
 include/unix/queue.h
 include/win32/win32guts.h
 pod/prima-gencls.pod
+pod/Prima/altspinbutton.gif
 pod/Prima/buttons.gif
 pod/Prima/calendar.gif
+pod/Prima/circularslider.gif
 pod/Prima/Clipboard.pod
 pod/Prima/codecs.pod
 pod/Prima/colordlg.png
@@ -163,6 +165,7 @@ pod/Prima/filedlg.gif
 pod/Prima/fills.gif
 pod/Prima/fontabc.gif
 pod/Prima/fontdlg.gif
+pod/Prima/gauge.gif
 pod/Prima/gettextbox.gif
 pod/Prima/gp-problems.pod
 pod/Prima/gradient.gif
@@ -190,12 +193,16 @@ pod/Prima/outline.gif
 pod/Prima/path.gif
 pod/Prima/podview.gif
 pod/Prima/printdialog.gif
+pod/Prima/progressbar.png
 pod/Prima/Printer.pod
 pod/Prima/Region.pod
 pod/Prima/rop1.gif
 pod/Prima/rop2.gif
 pod/Prima/rop3.png
 pod/Prima/scalings.gif
+pod/Prima/slider.gif
+pod/Prima/spinbutton.gif
+pod/Prima/spinedit.gif
 pod/Prima/spinner.gif
 pod/Prima/textview.gif
 pod/Prima/Timer.pod
