@@ -2282,11 +2282,12 @@ sub repaint_circle
 {
 	my $self = shift;
 	$self-> {singlePaint} = 1;
+	my $radius = $self->{radius} // 0;
 	my @clip = (
-		int( $self-> {circX} - $self-> {radius}),
-		int( $self-> {circY} - $self-> {radius}),
-		int( $self-> {circX} + $self-> {radius}),
-		int( $self-> {circY} + $self-> {radius}),
+		int( $self-> {circX} - $radius),
+		int( $self-> {circY} - $radius),
+		int( $self-> {circX} + $radius),
+		int( $self-> {circY} + $radius),
 	);
 	$self-> {expectedClip} = \@clip;
 	$self-> invalidate_rect( @clip[0..1], $clip[2]+1, $clip[3]+1);
@@ -2611,6 +2612,10 @@ Called when the user finished the mouse transaction.
 
 =head1 Prima::SpinButton
 
+=for podview <img src="spinbutton.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/spinbutton.gif">
+
 A rectangular spin button, consists of three parts, divided horizontally.
 The upper and the lower parts are push-buttons associated with singular
 increment and decrement commands. The middle part, when dragged by mouse,
@@ -2619,11 +2624,19 @@ of the mouse pointer.
 
 =head1 Prima::AltSpinButton
 
+=for podview <img src="altspinbutton.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/altspinbutton.gif">
+
 A rectangular spin button, consists of two push-buttons, associated
 with singular increment and decrement command. Comparing to C<Prima::SpinButton>,
 the class is less functional but has more stylish look.
 
 =head1 Prima::SpinEdit
+
+=for podview <img src="altspinedit.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/altspinedit.gif">
 
 The class is a numerical input line, paired with a spin button.
 The input line value can be change three ways - either as a direct
@@ -2742,6 +2755,10 @@ Called when C<value> is changed.
 
 =head1 Prima::Gauge
 
+=for podview <img src="gauge.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/gauge.gif">
+
 An output-only widget class, displays a progress bar and an eventual percentage string.
 Useful as a progress indicator.
 
@@ -2825,6 +2842,10 @@ Default stringifying conversion is identical to C<sprintf("%2d%%")> one.
 =back
 
 =head1 Prima::ProgressBar
+
+=for podview <img src="progressbar.png" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/progressbar.png">
 
 Displays a progress bar
 
@@ -2987,6 +3008,10 @@ this notification is a substitute to C<Change>.
 
 =head1 Prima::Slider
 
+=for podview <img src="slider.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/slider.gif">
+
 Presents a linear sliding bar, movable along a linear shaft.
 
 =head2 Properties
@@ -3067,6 +3092,10 @@ Offset in pixels along the shaft axis.
 =back
 
 =head1 Prima::CircularSlider
+
+=for podview <img src="circularslider.gif" cut=1>
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/circularslider.gif">
 
 Presents a slider widget with the dial and two increment / decrement buttons.
 The tick marks are drawn around the perimeter of the dial; current value
