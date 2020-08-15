@@ -1494,7 +1494,7 @@ write_tRNS(PImgSaveFileInstance fi)
 	int trns_n = 0;
 	Color color = (Color) 0;
 	int   index = 0;
-	Bool has_color, has_index;
+	Bool has_color = false, has_index = false;
 	int color_weight = 0, index_weight = 0;
 	SaveRec * s = ( SaveRec *) fi-> instance;
 	PIcon i = ( PIcon) fi-> object;
