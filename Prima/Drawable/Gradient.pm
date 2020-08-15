@@ -7,7 +7,8 @@ sub new
 {
 	my ( $class, $canvas, %opt) = @_;
 	bless {
-		canvas => $canvas,
+		canvas  => $canvas,
+		palette => [ cl::White, cl::Black ],
 		%opt
 	}, $class;
 }
