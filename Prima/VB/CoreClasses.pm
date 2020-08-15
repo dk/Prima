@@ -131,6 +131,12 @@ sub classes
 			page   => 'Sliders',
 			icon   => 'VB::classes.gif:9',
 		},
+		'Prima::ProgressBar' => {
+			RTModule => 'Prima::Sliders',
+			class  => 'Prima::VB::ProgressBar',
+			page   => 'Sliders',
+			icon   => 'VB::classes.gif:34',
+		},
 		'Prima::Slider' => {
 			RTModule => 'Prima::Sliders',
 			class  => 'Prima::VB::Slider',
@@ -1349,6 +1355,42 @@ sub prf_value         { $_[0]-> repaint; }
 sub prf_indent        { $_[0]-> repaint; }
 sub prf_relief        { $_[0]-> repaint; }
 sub prf_vertical      { $_[0]-> repaint; }
+
+package Prima::VB::ProgressBar;
+use strict;
+use vars qw(@ISA);
+@ISA = qw(Prima::VB::CommonControl);
+
+sub prf_types
+{
+	my $pt = $_[ 0]-> SUPER::prf_types;
+	my %de = (
+		uiv          => [qw(min max value )],
+	);
+	$_[0]-> prf_types_add( $pt, \%de);
+	return $pt;
+}
+
+sub on_paint
+{
+	my ($self,$canvas) = @_;
+	my ($x, $y) = $canvas-> size;
+	my ($val, $min, $max) =
+		$self-> prf(qw(value min max));
+	my $complete = $x;
+	my $ediv = $max - $min;
+	$ediv = 1 unless $ediv;
+	$complete = int($complete * $val / $ediv + 0.5);
+	$canvas-> color( $self-> prf('color') );
+	$canvas-> bar ( 0, 0, $complete, $y-1);
+	$canvas-> color( cl::Gray );
+	$canvas-> bar ( $complete+1, 0, $x-1, $y-1);
+	$self-> common_paint( $canvas);
+}
+
+sub prf_min           { $_[0]-> repaint; }
+sub prf_max           { $_[0]-> repaint; }
+sub prf_value         { $_[0]-> repaint; }
 
 package Prima::VB::AbstractSlider;
 use strict;
