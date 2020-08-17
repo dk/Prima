@@ -345,8 +345,6 @@ L<Prima::Header> - a multi-tabbed header widget
 
 L<Prima::HelpViewer> - the built-in POD file browser
 
-L<Prima::Image::TransparencyControl> - standard dialog for transparent color index selection
-
 L<Prima::ImageViewer> - bitmap viewer
 
 L<Prima::InputLine> - input line widget
@@ -355,7 +353,7 @@ L<Prima::KeySelector> - key combination widget and routines
 
 L<Prima::Menus> - menu widgets
 
-L<Prima::Label> - static text widget 
+L<Prima::Label> - static text widget
 
 L<Prima::Lists> - user-selectable item list widgets
 
@@ -375,11 +373,9 @@ L<Prima::Sliders> - sliding bars, spin buttons and input lines, dial widget etc.
 
 L<Prima::Spinner> - spinner animation
 
-L<Prima::StartupWindow> - a simplistic startup banner window
-
 L<Prima::TextView> - rich text browser widget
 
-L<Prima::Themes> - widget themes manager
+L<Prima::Widgets> - miscellaneous widget classes
 
 =item Standard dialogs
 
@@ -453,15 +449,17 @@ L<Prima::IniFile> - support of Windows-like initialization files
 
 L<Prima::IntUtils> - internal functions
 
+L<Prima::StartupWindow> - a simplistic startup banner window
+
 L<Prima::StdBitmap> - shared access to the standard toolkit bitmaps
 
 L<Prima::Stress> - stress test module
 
+L<Prima::Themes> - widget themes manager
+
 L<Prima::Tie> - tie widget properties to scalars or arrays
 
 L<Prima::Utils> - miscellaneous routines
-
-L<Prima::Widgets> - miscellaneous widget classes
 
 =item System-specific modules and documentation
 
