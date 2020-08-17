@@ -182,6 +182,9 @@ find_blt_proc( int rop )
 static Bool
 img_put_alpha( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region);
 
+static Bool
+resample_colors( Handle dest, int bpp, PImgPaintContext ctx);
+
 typedef struct {
 	int srcX;
 	int srcY;
@@ -209,8 +212,13 @@ img_put_single( int x, int y, int w, int h, ImgPutCallbackRec * ptr)
 }
 
 Bool
-img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int dstW, int dstH, int srcW, int srcH, int rop, PBoxRegionRec region)
-{
+img_put(
+	Handle dest, Handle src,
+	int dstX, int dstY, int srcX, int srcY,
+	int dstW, int dstH, int srcW, int srcH,
+	int rop,
+	PBoxRegionRec region, Byte * color
+) {
 	Point srcSz, dstSz;
 	int asrcW, asrcH;
 	Bool newObject = false;
@@ -219,42 +227,15 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 	if ( rop == ropNoOper) return false;
 
 	if ( kind_of( src, CIcon)) {
-		/* since src is always treated as read-only,
-			employ a nasty hack here, re-assigning
-			all mask values to data */
-		Byte * data  = PImage( src)-> data;
-		int dataSize = PImage( src)-> dataSize;
-		int lineSize = PImage( src)-> lineSize;
-		int palSize  = PImage( src)-> palSize;
-		int type     = PImage( src)-> type;
-		void *self   = PImage( src)-> self;
-		RGBColor palette[2];
-
-		if ( PIcon(src)-> maskType != imbpp1) {
-			if ( PIcon(src)-> maskType != imbpp8) croak("panic: bad icon mask type");
+		Image dummy;
+		PIcon s = PIcon(src);
+		if ( s-> maskType != imbpp1) {
+			if ( s-> maskType != imbpp8) croak("panic: bad icon mask type");
 			return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region);
 		}
-
-		PImage( src)-> self     =  CImage;
-		PIcon( src)-> data = PIcon( src)-> mask;
-		PImage( src)-> lineSize =  PIcon( src)-> maskLine;
-		PImage( src)-> dataSize =  PIcon( src)-> maskSize;
-		memcpy( palette, PImage( src)-> palette, 6);
-		memcpy( PImage( src)-> palette, stdmono_palette, 6);
-
-
-		PImage( src)-> type     =  imBW;
-		PImage( src)-> palSize  = 2;
-		img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut, region);
+		img_fill_dummy( &dummy, s-> w, s-> h, imBW, s-> mask, stdmono_palette);
+		img_put( dest, (Handle) &dummy, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropAndPut, region, color);
 		rop = ropXorPut;
-		memcpy( PImage( src)-> palette, palette, 6);
-
-		PImage( src)-> self     = self;
-		PImage( src)-> type     = type;
-		PImage( src)-> data     = data;
-		PImage( src)-> lineSize = lineSize;
-		PImage( src)-> dataSize = dataSize;
-		PImage( src)-> palSize  = palSize;
 	} else if ( rop == ropAlphaCopy ) {
 		Bool ok;
 		Image dummy;
@@ -263,13 +244,13 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 		if ( PImage(src)-> type != imByte ) {
 			Handle dup = CImage(src)->dup(src);
 			CImage(dup)->set_type(src, imByte);
-			ok = img_put( dest, dup, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region);
+			ok = img_put( dest, dup, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region, color);
 			Object_destroy(dup);
 			return ok;
 		}
 		if ( PIcon(dest)-> maskType != imbpp8) {
 			CIcon(dest)-> set_maskType(dest, imbpp8);
-			ok = img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region);
+			ok = img_put( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region, color);
 			if ( PIcon(dest)-> options. optPreserveType )
 				CIcon(dest)-> set_maskType(dest, imbpp1);
 			return ok;
@@ -277,7 +258,54 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 
 		i = (PIcon) dest;
 		img_fill_dummy( &dummy, i-> w, i-> h, imByte, i-> mask, NULL);
-		return img_put((Handle)&dummy, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut, region);
+		return img_put((Handle)&dummy, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, ropCopyPut, region, color);
+	} else if ( color != NULL ) {
+		Bool ok;
+		Icon dummy;
+		PImage s = PImage(src);
+		Byte * bits;
+		ImgPaintContext ctx;
+		if ( s-> type != imByte ) {
+			Handle dup = CImage(src)->dup(src);
+			CImage(dup)->set_type(src, imByte);
+			ok = img_put( dest, dup, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region, color);
+			Object_destroy(dup);
+			return ok;
+		}
+		bzero( &ctx, sizeof(ctx));
+		memcpy( ctx.color, color, MAX_SIZEOF_PIXEL);
+		if ( PImage(dest)-> type & imGrayScale ) {
+			unsigned size = LINE_SIZE(s->w, imByte) * s->h;
+			if ( !( bits = malloc( size )))
+				return false;
+			resample_colors(dest, imbpp8, &ctx);
+			memset(bits, ctx.color[0], size );
+			img_fill_dummy((PImage) &dummy, s-> w, s-> h, imByte, bits, std256gray_palette);
+		} else {
+			Byte * line;
+			int w, linesize = LINE_SIZE(s-> w, imRGB);
+			if ( !( bits = malloc( linesize * s->h )))
+				return false;
+			line = bits;
+			resample_colors(dest, imbpp24, &ctx);
+			for ( w = 0; w < s-> w; w++ ) {
+				*(line++) = ctx.color[0];
+				*(line++) = ctx.color[1];
+				*(line++) = ctx.color[2];
+			}
+			for ( w = 1, line = bits + linesize; w < s-> h; w++, line += linesize)
+				memcpy( line, bits, linesize);
+			img_fill_dummy((PImage) &dummy, s-> w, s-> h, imRGB, bits, NULL);
+		}
+		dummy. self     = CIcon;
+		dummy. mask     = s-> data;
+		dummy. maskLine = s-> lineSize;
+		dummy. maskSize = s-> dataSize;
+		dummy. maskType = imbpp8;
+		rop &= ~(ropAlphaCopy | ropConstantColor);
+		ok = img_put(dest, (Handle)&dummy, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region, NULL);
+		free(bits);
+		return ok;
 	} else if ( rop & ropConstantAlpha )
 		return img_put_alpha( dest, src, dstX, dstY, srcX, srcY, dstW, dstH, srcW, srcH, rop, region);
 
@@ -364,7 +392,7 @@ img_put( Handle dest, Handle src, int dstX, int dstY, int srcX, int srcY, int ds
 
 			if ( srcX < 0) dsx = asrcW - dsw;
 			if ( srcY < 0) dsy = asrcH - dsh;
-			img_put( dx, x, dsx, dsy, 0, 0, dsw, dsh, dsw, dsh, ropCopyPut, region);
+			img_put( dx, x, dsx, dsy, 0, 0, dsw, dsh, dsw, dsh, ropCopyPut, region, color);
 			Object_destroy( x);
 			x = dx;
 		}
@@ -415,7 +443,7 @@ NOSCALE:
 				if ( *dj == mask) *dj = 0xff;
 				dj++;
 			}
-			img_put( b8, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region);
+			img_put( b8, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
 			for ( sz = 0; sz < 256; sz++) colorref[sz] = ( sz > mask) ? mask : sz;
 			dj = j-> data;
 			di = i-> data;
@@ -431,7 +459,7 @@ NOSCALE:
 			int conv = i-> conversion;
 			i-> conversion = PImage( src)-> conversion;
 			i-> self-> reset( dest, imbpp8, nil, 0);
-			img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region);
+			img_put( dest, src, dstX, dstY, 0, 0, dstW, dstH, PImage(src)-> w, PImage(src)-> h, rop, region, color);
 			i-> self-> reset( dest, type, nil, 0);
 			i-> conversion = conv;
 		}

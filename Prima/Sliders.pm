@@ -2403,14 +2403,15 @@ sub create_tab
 	my $tabend_mask = Prima::Image->new(
 		size => [ $y * 2, 1 ],
 		type => im::Byte,
+		color => cl::Black,
 	);
 	$tabend_mask->new_gradient(
 		palette => [cl::Black, cl::White, cl::Black],
 	)->bar(0, 0, $y * 2, 1, 1);
 	my $tabend = mask2icon( $tabend_mask, cl::Black );
 
-	$tab_mask-> put_image_indirect( $tabend, 0, 0, $y, 0, $y, 1, $y, 1, rop::SrcOver);
-	$tab_mask-> put_image_indirect( $tabend, $tab_mask-> width - $y, 0, 0, 0, $y, 1, $y, 1, rop::SrcOver);
+	$tab_mask-> put_image_indirect( $tabend_mask, 0, 0, $y, 0, $y, 1, $y, 1, rop::SrcOver | rop::ConstantColor | rop::Premultiply);
+	$tab_mask-> put_image_indirect( $tabend_mask, $tab_mask-> width - $y, 0, 0, 0, $y, 1, $y, 1, rop::SrcOver | rop::ConstantColor | rop::Premultiply);
 
 	$self->{cache}->{tab}  = mask2icon( $tab_mask, cl::White );
 	$self->{cache}->{tabx} = $tab_mask-> width;
