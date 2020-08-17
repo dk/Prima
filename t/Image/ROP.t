@@ -220,6 +220,17 @@ SKIP: {
 	is_bits( $dst->mask, "5008", "alpha(x) in paint");
 }
 
+$dst = Prima::Image->new(
+	width  => 4,
+	height => 1,
+	type   => im::Byte,
+	backColor => 0x808080,
+	color     => 0x202020,
+);
+$dst->clear;
+$dst->put_image( 0,0,$dst->dup, rop::ConstantColor | rop::SrcOver | rop::Premultiply );
+is_bits( $dst->data, "PPPP", "rop::ConstantColor ( 0x80 + 0x20 ) / 2 = 0x50");
+
 # test porter-duff
 sub pd_color
 {

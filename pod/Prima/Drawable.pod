@@ -649,7 +649,7 @@ operators and some selected Photoshop blend operators:
 
 =item Transparency control
 
-There is defined a set of constants to apply a constant source and destination alpha to whe
+There is defined a set of constants to apply a constant source and destination alpha to when
 there is no alpha channel available:
 
    rop::SrcAlpha
@@ -680,6 +680,18 @@ multiplied with these values.
 =item rop::Premultiply
 
 When this bit is set, source pixels will be multiplied with alpha before blending
+
+=item rop::ConstantColor
+
+This bit is used when the alpha is defined but the main bits aren't. In this case,
+the main bits are filled from the destination's image color, and the source image treated
+as alpha channel. The following code applies a solid green shade with a mask loaded from file.
+
+    $src->load('8-bit gray mask.png');
+    $dst->color(cl::LightGreen);
+    $dst->put_image( 0,0,$src,rop::SrcOver | rop::ConstantColor | rop::Premultiply);
+
+Also, remember C<rop::Premultiply> for proper results.
 
 =back
 

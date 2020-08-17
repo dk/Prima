@@ -1279,7 +1279,7 @@ Image_dup( Handle self)
 	memcpy( i-> stats, var->stats, sizeof( var->stats));
 	i-> statsCache = var->statsCache;
 
-	if ( hv_exists(( HV*)SvRV( var-> mate), "extras", 6)) {
+	if ( var->mate && hv_exists(( HV*)SvRV( var-> mate), "extras", 6)) {
 		SV ** sv = hv_fetch(( HV*)SvRV( var-> mate), "extras", 6, 0);
 		if ( sv && SvOK( *sv) && SvROK( *sv) && SvTYPE( SvRV( *sv)) == SVt_PVHV)
 			(void) hv_store(( HV*)SvRV( i-> mate), "extras", 6, newSVsv( *sv), 0);
@@ -1551,17 +1551,29 @@ Image_codecs( SV * dummy, int codecID)
 	}
 }
 
+static void
+color2pixel( Handle self, Color color, Byte * pixel);
+
 Bool
 Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
 	Bool ret;
+	Byte * color = NULL, colorbuf[ MAX_SIZEOF_PIXEL ];
+
 	if ( is_opt( optInDrawInfo)) return false;
 	if ( image == nilHandle) return false;
 	if ( is_opt( optInDraw))
 		return inherited put_image_indirect( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
 	if ( !kind_of( image, CImage)) return false;
+
+	if ( rop & ropConstantColor ) {
+		bzero( colorbuf, MAX_SIZEOF_PIXEL );
+		color2pixel( self, my->get_color(self), colorbuf );
+		color = colorbuf;
+	}
+
 	ret = img_put( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop,
-		var->regionData ? &var->regionData-> data. box : NULL);
+		var->regionData ? &var->regionData-> data. box : NULL, color);
 	my-> update_change( self);
 	return ret;
 }
