@@ -508,6 +508,14 @@ sub test_combining { SKIP: {
 	# acute must be combined with no advance
 	$w->font->size(12);
 	my $z = $w-> text_shape( "\x{100}\x{300}", polyfont => 0 )->advances;
+	if ( !$z && $w->font->name ne $::application->get_default_font->{name} ) {
+		$w->font->set( %{ $::application-> get_default_font}, size => 12 );
+		$z = $w-> text_shape( "\x{100}\x{300}", polyfont => 0 )->advances;
+		goto NO_ADVANCE unless $z;
+	} else {
+	NO_ADVANCE:
+		skip($w->font->name . " does not create advances table", 1) 
+	}
 	ok( $z->[0] != 0, "'A' has non-zero advance");
 	if ( $xp ) {
 		if ($z->[1] == 0 ) {

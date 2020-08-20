@@ -1146,13 +1146,13 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 			} else {
 				if ( switch_font(self, run.fonts[0])) {
 #ifdef _DEBUG
-					printf("%d: set font #%d: %s\n", run_offs, run.fonts[0], dst.name);
+					printf("%d: set font #%d\n", run_offs, run.fonts[0]);
 #endif
 					font_changed = true;
 				}
 #ifdef _DEBUG
 				else {
-					printf("%d: failed to set font #%d: %s (got %s)\n", run_offs, run.fonts[0], src.name, dst.name);
+					printf("%d: failed to set font #%d\n", run_offs, run.fonts[0]);
 				}
 #endif
 			}
