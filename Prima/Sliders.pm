@@ -1211,14 +1211,44 @@ sub on_paint
 	}
 	$sb = ( $v ? $size[0] : $size[1]) / 6 unless $sb;
 	$sb = 2 unless $sb;
+
+	my ($br, $bh, $mw, $bw);
+	if ( $v ) {
+		$bh = $canvas-> font-> height;
+		$br = $size[1] - 2 * $bh - 2;
+	} else {
+		$mw = $canvas-> font-> width;
+		$bw = $mw + $self-> {borderWidth};
+		$br  = $size[0] - 2 * $bw - 2;
+	}
+
+	# do we have to remove small dashes?
+	my $remove_dashes_shorter_than = 0;
+	my $check_dashes = sub {
+		my ( $height, $set_threshold ) = @_;
+		my $lastval = -1_000_000;
+		for ( my $i = 1; $i < scalar @{$tval} - 1; $i++) {
+			next if $$tlen[$i] > $height || $$tlen[$i] < $remove_dashes_shorter_than;
+			my $val = int( abs( $$tval[$i] - $min) * ( $br - 3) / $range + .5);
+			$remove_dashes_shorter_than = $set_threshold, last if abs($val - $lastval) < 4;
+			$lastval = $val;
+		}
+	};
+	if ( $self->{scheme} == ss::Thermometer || $self->{scheme} == ss::Axis ) {
+		$check_dashes->(5, 5);
+		$check_dashes->(12, 12);
+	} elsif ( $self->{scheme} == ss::Axis ) {
+		$check_dashes->(3, 3);
+	} else {
+		$check_dashes->(12, 12);
+	}
+
 	if ( $v) {
-		my $bh = $canvas-> font-> height;
 		my $bw  = ( $size[0] - $sb) / 2;
 		return if $size[1] <= $kb * ($self-> {readOnly} ? 1 : 0) + 2 * $bh + 2;
 
 		$canvas-> translate((( $ta == 1) ? 1 : -1) * ( $bw - $sb - $kb), 0)
 			if $ta < 3;
-		my $br  = $size[1] - 2 * $bh - 2;
 		$canvas-> rect3d(
 			$bw, $bh, $bw + $sb - 1, $bh + $br - 1, 1,
 			@c3d, $cht[1]
@@ -1247,6 +1277,10 @@ sub on_paint
 			for ( $i = 0; $i < scalar @{$tval}; $i++) {
 				my $val = $bh + 1 + abs( $$tval[$i] - $min) * ( $br - 3) / $range;
 				if ( $$tlen[ $i]) {
+					next if
+						defined($remove_dashes_shorter_than) &&
+						$remove_dashes_shorter_than > $$tlen[$i] &&
+						$i != 0 && $i != $#$tval;
 					$canvas-> line(
 						$bw + $sb + 3, $val,
 						$bw + $sb + $$tlen[ $i] + 3, $val
@@ -1282,15 +1316,12 @@ sub on_paint
 			$canvas-> line($bw - 3, $jp[7]-1, $jp[6]-1, $jp[7]-1);
 		}
 	} else {
-		my $mw = $canvas-> font-> width;
-		my $bw = $mw + $self-> {borderWidth};
 		my $bh  = ( $size[1] - $sb) / 2;
 		my $fh = $canvas-> font-> height;
 		return if $size[0] <= $kb * ($self-> {readOnly} ? 1 : 0) + 2 * $bw + 2;
 
 		$canvas-> translate( 0, (( $ta == 1) ? -1 : 1) * ( $bh - $sb - $kb))
 			if $ta < 3;
-		my $br  = $size[0] - 2 * $bw - 2;
 		$canvas-> rect3d( $bw, $bh, $bw + $br - 1, $bh + $sb - 1, 1, @c3d, $cht[1]), return
 			unless $range;
 		my $val = $bw + 1 + abs( $self-> {value} - $min) * ( $br - 3) / $range;
@@ -1317,6 +1348,10 @@ sub on_paint
 			for ( $i = 0; $i < scalar @{$tval}; $i++) {
 				my $val = int( 1 + $bw + abs( $$tval[$i] - $min) * ( $br - 3) / $range + .5);
 				if ( $$tlen[ $i]) {
+					next if
+						defined($remove_dashes_shorter_than) &&
+						$remove_dashes_shorter_than > $$tlen[$i] &&
+						$i != 0 && $i != $#$tval;
 					$canvas-> line( $val, $bh + $sb + 3, $val, $bh + $sb + $$tlen[ $i] + 3)
 						if $ta & 1;
 					$canvas-> line( $val, $bh - 4, $val, $bh - 4 - $$tlen[ $i])
