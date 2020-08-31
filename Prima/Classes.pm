@@ -1964,8 +1964,8 @@ sub setup
 	# setup image cliboard transfer routines specific to gtk
 	if ( $unix ) {
 		my %weights = (
-			bmp  => 4,  # bmp is independent on codecs
-			png  => 3,  # png is lossless
+			png  => 4,  # png is lossless
+			bmp  => 3,  # bmp is independent on codecs but huge
 			tiff => 2,  # tiff is usually lossless
 		);
 		my %codecs  = map { lc($_-> {fileShortType})  => $_ } @{Prima::Image-> codecs};
