@@ -148,6 +148,11 @@ static TagRec pixeltype [] = {
 { SAMPLEFORMAT_COMPLEXIEEEFP  , "complex floating point"},
 };
 
+static char * mime[] = {
+	"image/tiff",
+	NULL
+};
+
 #ifndef TIFF_VERSION
 #define TIFF_VERSION TIFF_VERSION_CLASSIC
 #endif
@@ -165,7 +170,8 @@ static ImgCodecInfo codec_info = {
 	IMG_LOAD_FROM_FILE | IMG_LOAD_MULTIFRAME | IMG_LOAD_FROM_STREAM |
 	IMG_SAVE_TO_FILE | IMG_SAVE_MULTIFRAME | IMG_SAVE_TO_STREAM,
 	tiffbpp, /* save types */
-	loadOutput
+	loadOutput,
+	mime
 };
 
 #define outcm(dd) snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", (int)dd)

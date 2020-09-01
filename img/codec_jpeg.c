@@ -46,6 +46,11 @@ static char * loadOutput[] = {
 	nil
 };
 
+static char * mime[] = {
+	"image/jpeg",
+	NULL
+};
+
 static ImgCodecInfo codec_info = {
 	"JPEG",
 	"Independent JPEG Group",
@@ -58,7 +63,8 @@ static ImgCodecInfo codec_info = {
 	"Prima::Image::jpeg",  /* package */
 	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM,
 	jpgbpp, /* save types */
-	loadOutput
+	loadOutput,
+	mime
 };
 
 static void *

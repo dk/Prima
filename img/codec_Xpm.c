@@ -44,6 +44,13 @@ static char * loadOutput[] = {
 	nil
 };
 
+static char * mime[] = {
+	"image/xpm",
+	"image/x-xpm",
+	"image/x-pixmap",
+	NULL
+};
+
 static ImgCodecInfo codec_info = {
 	"X Pixmap",
 	"GROUPE BULL",
@@ -56,7 +63,8 @@ static ImgCodecInfo codec_info = {
 	"",     /* package */
 	IMG_LOAD_FROM_FILE | IMG_SAVE_TO_FILE,
 	xpmbpp, /* save types */
-	loadOutput
+	loadOutput,
+	mime
 };
 
 static void *

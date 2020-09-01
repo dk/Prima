@@ -1330,6 +1330,9 @@ apc_img_info2hash( PImgCodec codec)
 	} else
 		hv = newHV();
 	pset_sv_noinc( saveInput, newRV_noinc(( SV *) hv));
+
+	fill_plist( "mime", c-> mime, profile);
+
 	return profile;
 }
 

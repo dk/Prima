@@ -121,6 +121,7 @@ typedef struct _ImgCodecInfo {
 	unsigned int IOFlags;      /* IMG_XXX */
 	int   * saveTypes;         /* imMono, imBW ... 0 */
 	char ** loadOutput;        /* hash keys reported by load  */
+	char ** mime;              /* image/duf, x-image/duff */
 } ImgCodecInfo, *PImgCodecInfo;
 
 struct ImgCodec;
