@@ -466,6 +466,11 @@ in 'extras' hash.
 Hash, where keys are those that are accepted by Prima::Image-> save,
 and values are default values for these keys.
 
+=item mime
+
+array of strings, with file extensions that are typical to a codec.
+example: ['image/xbm', 'image/x-bitmap']
+
 =back
 
 =head1 API

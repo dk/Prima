@@ -59,6 +59,13 @@ static char * loadOutput[] = {
 	nil
 };
 
+static char * mime[] = {
+	"image/xbm",
+	"image/x-xbm",
+	"image/x-bitmap",
+	NULL
+};
+
 static ImgCodecInfo codec_info = {
 	"X11 Bitmap",
 	"X Consortium",
@@ -71,7 +78,8 @@ static ImgCodecInfo codec_info = {
 	"",     /* package */
 	IMG_LOAD_FROM_FILE | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM,
 	xbmbpp, /* save types */
-	loadOutput
+	loadOutput,
+	mime
 };
 
 

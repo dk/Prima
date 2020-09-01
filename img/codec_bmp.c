@@ -49,6 +49,14 @@ static char * loadOutput[] = {
 	NULL
 };
 
+static char * mime[] = {
+	"image/bmp",
+	"image/x-bmp",
+	"image/x-MS-bmp",
+	"image/x-win-bitmap",
+	NULL
+};
+
 static ImgCodecInfo codec_info = {
 	"Windows Bitmap",
 	"GBM by Andy Key",
@@ -62,7 +70,8 @@ static ImgCodecInfo codec_info = {
 	IMG_LOAD_FROM_FILE | IMG_LOAD_MULTIFRAME | IMG_LOAD_FROM_STREAM |
 	IMG_SAVE_TO_FILE   | IMG_SAVE_TO_STREAM,
 	bmpbpp,		      /* save types */
-	loadOutput
+	loadOutput,
+	mime
 };
 
 static void *

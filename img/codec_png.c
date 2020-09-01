@@ -105,6 +105,11 @@ static char * features[] = {
 	nil
 };
 
+static char * mime[] = {
+	"image/png",
+	NULL
+};
+
 static char * loadOutput[] = {
 	"background",
 	"gamma",
@@ -182,7 +187,8 @@ static ImgCodecInfo codec_info = {
 #endif
 	,
 	pngbpp, /* save types */
-	loadOutput
+	loadOutput,
+	mime
 };
 
 static double default_screen_gamma = 2.2;

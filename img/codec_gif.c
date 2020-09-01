@@ -35,6 +35,11 @@ static char * loadOutput[] = {
 	nil
 };
 
+static char * mime[] = {
+	"image/gif",
+	NULL
+};
+
 static ImgCodecInfo codec_info = {
 	"GIFLIB",
 	"ftp://prtr-13.ucsc.edu/pub/libungif/",
@@ -48,7 +53,8 @@ static ImgCodecInfo codec_info = {
 	IMG_LOAD_FROM_FILE | IMG_LOAD_MULTIFRAME | IMG_LOAD_FROM_STREAM |
 	IMG_SAVE_TO_FILE | IMG_SAVE_MULTIFRAME | IMG_SAVE_TO_STREAM,
 	gifbpp, /* save types */
-	loadOutput
+	loadOutput,
+	mime
 };
 
 static int img_gif_error_code = 0;

@@ -36,6 +36,11 @@ static char * loadOutput[] = {
 	NULL
 };
 
+static char * mime[] = {
+	"image/webp",
+	NULL
+};
+
 static ImgCodecInfo codec_info = {
 	"WebP",
 	"Google",
@@ -49,7 +54,8 @@ static ImgCodecInfo codec_info = {
 	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_LOAD_MULTIFRAME |
 	IMG_SAVE_TO_FILE   | IMG_SAVE_TO_STREAM   | IMG_SAVE_MULTIFRAME,
 	webpbpp,         /* save types */
-	loadOutput
+	loadOutput,
+	mime
 };
 
 static void
