@@ -1099,7 +1099,8 @@ AGAIN:
 
 		if (
 			( var self->get_locked(self) > 0) || /* or WM_PAINT bashing occurs */
-			is_apt( aptLayered )
+			is_apt( aptLayered ) ||
+			( opt_InPaint && !is_apt(aptWM_PAINT) )
 		) {
 			PAINTSTRUCT ps;
 			BeginPaint(win, &ps);
