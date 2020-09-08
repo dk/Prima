@@ -161,16 +161,27 @@ etc. To avoid further complications in the implementations, C<PasteImage>
 action was introduced to handle these cases, together with a symmetrical
 C<CopyImage>.
 
-The default action of C<PasteImage> is to query first if C<'Image'> format is
-available, and if so, return the Image object. This by default reads data from
-raw image buffer, but if fails, on unix the logic proceeds by checking data in
-formats 'image/bmp', 'image/png' etc.  C<BMP> is checked first because the
-corresponding codec is always compiled in Prima, it doesn't depend on external
-libraries. Next is checked C<PNG> format, because it is lossless, then C<TIFF>,
-then all others.
+The default action of C<PasteImage> is to check whether lossless encoded image data
+is present, and if so, load a new image from this data, before falling back to
+OS-dependent image storage.
 
 When storing the image on the clipboard, only the default format, raw pixel data
 is used.
+
+=item Exact and meta formats
+
+Prima registers two special I<meta formats>, C<Image> and C<Text>, that
+interoperate with the system clipboard, storing data in the format that matches
+best with system convention when copying and pasting images and text,
+correspondinly. It is recommended to use meta-format calls (has_format, text,
+image, copy, paste) rather than exact format calls (format_exists, store,
+fetch) when possible.
+
+Where the exact format method operate on a single format data storage, meta
+format calls may operate on several exact formats. F.ex. C<text> can check
+whether there exists a UTF-8 text storage, before resorting to 8-bit text.
+C<image> on X11 is even more complicated, and may use image codecs to transfer
+encoded PNG streams, for example.
 
 =head1 API
 
@@ -178,16 +189,17 @@ is used.
 
 =over
 
-=item image OBJECT
+=item image OBJECT, [KEEP]
 
-Provides access to an image, stored in the system clipboard.
-In get-mode call, return C<undef> if no image is stored.
+Provides access to an image, stored in the system clipboard.  In get-mode call,
+return C<undef> if no image is stored.  In set-mode clears the clipboard unless
+KEEP is set.
 
-=item text STRING
+=item text STRING, [KEEP]
 
-Provides access to text stored in the system clipboard.
-In get-mode call, return C<undef> if no text information is
-present.
+Provides access to text stored in the system clipboard.  In get-mode call,
+return C<undef> if no text information is present.  In set-mode clears the
+clipboard unless KEEP is set.
 
 =back
 
@@ -205,6 +217,10 @@ Closes the open/close brackets. open() and close() can
 be called recursively; only the last close() removes the
 actual clipboard locking, so other processes can use it as well.
 
+=item copy FORMAT, DATA, KEEP
+
+Sets DATA in FORMAT. Clears the clipboard before unless KEEP is set.
+
 =item deregister_format FORMAT_STRING
 
 De-registers a previously registered data format.
@@ -213,16 +229,20 @@ before a clipboard object is destroyed.
 
 =item fetch FORMAT_STRING
 
-Returns the data of FORMAT_STRING data format,
-if present in the clipboard. Depending on FORMAT_STRING,
-data is either text string for C<'Text'> format,
-Prima::Image object for C<'Image'> format and a binary scalar
-value for all custom formats.
+Returns the data of exact FORMAT_STRING data format, if present in the clipboard.
+Depending on FORMAT_STRING, data is either text string for C<'Text'> format,
+Prima::Image object for C<'Image'> format and a binary scalar value for all
+custom formats.
 
 =item format_exists FORMAT_STRING
 
 Returns a boolean flag, showing whether FORMAT_STRING
-format data is present in the clipboard or not.
+exact format data is present in the clipboard or not.
+
+=item has_format FORMAT_STRING
+
+Returns a boolean flag, showing whether FORMAT_STRING
+meta format data is present in the clipboard or not.
 
 =item get_handle
 
@@ -269,6 +289,10 @@ calls are possible, and always return 1. Each C<open()>
 must correspond to C<close()>, otherwise the clipboard
 will stay locked until the blocking process is finished.
 
+=item paste FORMAT_STRING
+
+Returns data of meta format FORMAT_STRING if found in the clipboard, or undef otherwise.
+
 =item register_format FORMAT_STRING
 
 Registers a data format under FORMAT_STRING string ID,
@@ -280,7 +304,7 @@ finished.
 =item store FORMAT_STRING, SCALAR
 
 Stores SCALAR value into the clipboard in FORMAT_STRING
-data format. Depending of FORMAT_STRING, SCALAR is treated as follows:
+exact data format. Depending of FORMAT_STRING, SCALAR is treated as follows:
 
    FORMAT_STRING     SCALAR
    ------------------------------------

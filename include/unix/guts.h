@@ -997,7 +997,9 @@ typedef struct _menu_sys_data
 typedef struct {
 	IV size;
 	unsigned char * data;
+	Handle image;
 	Atom name;
+	Bool immediate;
 } ClipboardDataItem, *PClipboardDataItem;
 
 typedef struct _clipboard_sys_data
