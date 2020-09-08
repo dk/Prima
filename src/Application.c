@@ -208,7 +208,6 @@ void Application_handle_event( Handle self, PEvent event)
 		case cmIdle:
 			my-> notify( self, "<s", "Idle");
 			return;
-
 	}
 	inherited handle_event ( self, event);
 }

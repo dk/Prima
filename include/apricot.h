@@ -771,6 +771,8 @@ CM(Idle)
 CM(MenuItemMeasure)
 #define cmMenuItemPaint  0x0000002E                /* menu item custom paint */
 CM(MenuItemPaint)
+#define cmClipboard      0x0000002F                /* called on X11 to precise type of data to be pasted */
+CM(Clipboard)
 
 #define cmMenuCmd        0x00000050                /* interactive menu command */
 CM(MenuCmd)
@@ -2424,7 +2426,7 @@ apc_kbd_get_state( Handle self);
 typedef struct {
 	Handle image;
 	Byte * data;
-	STRLEN length;
+	IV length;
 } ClipboardDataRec, *PClipboardDataRec;
 
 extern PList

@@ -75,6 +75,23 @@ Clipboard_done( Handle self)
 	inherited done( self);
 }
 
+void Clipboard_handle_event( Handle self, PEvent event)
+{
+	switch ( event-> cmd)
+	{
+		case cmClipboard: {
+			var-> openCount++;
+			CApplication(application)-> push_event( application);
+			CApplication(application)-> notify( application, "<sHss", "Clipboard", self, "copy", (char*)event->gen.p);
+			CApplication(application)-> pop_event( application);
+			var-> openCount--;
+			return;
+		}
+
+	}
+	inherited handle_event ( self, event);
+}
+
 Bool
 Clipboard_validate_owner( Handle self, Handle * owner, HV * profile)
 {
@@ -387,7 +404,9 @@ text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 			instance = formats + cfUTF8;
 			return instance-> server( self, instance, cefStore, data);
 		} else {
-			c. data = ( Byte*) SvPV( data, c. length);
+			STRLEN l;
+			c. data   = ( Byte*) SvPV( data, l);
+			c. length = l;
 			instance-> success = apc_clipboard_set_data( self, cfText, &c);
 			instance-> written = true;
 		}
@@ -400,6 +419,7 @@ static SV *
 utf8_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 {
 	ClipboardDataRec c;
+	STRLEN l;
 
 	switch( function) {
 	case cefInit:
@@ -415,7 +435,8 @@ utf8_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 		break;
 
 	case cefStore:
-		c. data = ( Byte*) SvPV( data, c. length);
+		c. data   = ( Byte*) SvPV( data, l);
+		c. length = l;
 		instance-> success = apc_clipboard_set_data( self, cfUTF8, &c);
 		instance-> written = true;
 		break;
@@ -466,7 +487,14 @@ binary_server( Handle self, PClipboardFormatReg instance, int function, SV * dat
 		}
 		break;
 	case cefStore:
-		c. data = (Byte*) SvPV( data, c. length);
+		if ( SvTYPE(data) == SVt_NULL ) {
+			c. data = NULL;
+			c. length = -1;
+		} else {
+			STRLEN l;
+			c. data   = ( Byte*) SvPV( data, l);
+			c. length = l;
+		}
 		instance-> success = apc_clipboard_set_data( self, instance-> sysId, &c);
 		instance-> written = true;
 		break;

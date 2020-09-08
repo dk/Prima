@@ -358,9 +358,9 @@ sub has_format
 
 sub copy
 {
-	my ( $self, $format, $data ) = @_;
+	my ( $self, $format, $data, $keep ) = @_;
 	$self-> open;
-	$self-> clear;
+	$self-> clear unless $keep;
 	$::application-> notify( 'Copy', $format, $self, $data );
 	$self-> close;
 }
@@ -373,8 +373,8 @@ sub paste
 	return $data;
 }
 
-sub text  { $#_ ? $_[0]->copy('Text',  $_[1]) : $_[0]->paste('Text') }
-sub image { $#_ ? $_[0]->copy('Image', $_[1]) : $_[0]->paste('Image') }
+sub text  { $#_ ? shift->copy('Text',  @_) : $_[0]->paste('Text') }
+sub image { $#_ ? shift->copy('Image', @_) : $_[0]->paste('Image') }
 
 package Prima::Region;
 use vars qw(@ISA);
@@ -1881,6 +1881,7 @@ use vars qw(@ISA @startupNotifications);
 my %RNT = (
 	%{Prima::Widget-> notification_types()},
 	FormatExists => nt::Action,
+	Clipboard    => nt::Action,
 	Copy         => nt::Action,
 	Paste        => nt::Action,
 	Idle         => nt::Default,
@@ -1973,6 +1974,7 @@ sub setup
 		my @codecs = map { {
 			mime => "image/$_",
 			id   => $codecs{$_}->{codecID},
+			w    => $codecs{$_}->{weight},
 		} } sort { $codecs{$b}->{weight} <=> $codecs{$a}->{weight} } keys %codecs;
 		my $clipboard = $self-> Clipboard;
 		$clipboard-> register_format($_->{mime}) for @codecs;
@@ -2054,24 +2056,34 @@ sub open_help
 	return $self-> {HelpClass}-> open($link);
 }
 
+sub on_clipboard
+{
+	my ( $self, $clipboard, $action, $target ) = @_;
+	if ($clipboard->format_exists('Image')) {
+		if ( my ( $codec ) = grep { $target eq $_->{mime} } @{ $self-> {GTKImageClipboardFormats} // [] }) {
+			my ($bits, $handle) = ('');
+			my $i = $clipboard->fetch('Image') or return;
+			if (open( $handle, '>', \$bits) and $i->save($handle, codecID => $codec->{id})) {
+				$clipboard->store($codec->{mime}, $bits);
+			}
+		}
+	}
+}
+
 sub on_copy
 {
 	my ( $self, $format, $clipboard, $data ) = @_;
 	$clipboard-> store( $format, $data);
 	if ( $format eq 'Image') {
-		if ( my $formats = $self-> {GTKImageClipboardFormats} ) {
-			my ($bmp, $bits, $handle) = ($formats->[0], '');
-			if (open( $handle, '>', \$bits) and $data->save($handle, codecID => $bmp->{id})) {
-				$clipboard->store($bmp->{mime}, $bits);
-			}
-		}
+		# store(undef) is a special flag for x11 when data can be provided on demand for this format
+		$clipboard->store($_, undef) for map { $_->{mime} } @{ $self-> {GTKImageClipboardFormats} // [] };
 	}
 }
 
 sub on_formatexists
 {
 	my ( $self, $format, $clipboard, $ref) = @_;
-	
+
 	if ( $format eq 'Text') {
 		if ( $self-> wantUnicodeInput) {
 			return $$ref = 'UTF8' if $clipboard-> format_exists( 'UTF8');
@@ -2085,7 +2097,7 @@ sub on_formatexists
 		my @codecs  = grep { $formats{$_->{mime}} } @$codecs or return;
 		$$ref = $codecs[0]->{mime} if $clipboard-> format_exists($codecs[0]->{mime});
 	} else {
-		$$ref = $clipboard-> format_exists( $format ) ? $format : undef;
+       		$$ref = $clipboard-> format_exists( $format ) ? $format : undef;
 	}
 	undef;
 }
@@ -2093,24 +2105,17 @@ sub on_formatexists
 sub on_paste
 {
 	my ( $self, $format, $clipboard, $ref) = @_;
-	
+
 	if ( $format eq 'Text') {
 		if ( $self-> wantUnicodeInput) {
 			return if defined ( $$ref = $clipboard-> fetch( 'UTF8'));
 		}
 		$$ref = $clipboard-> fetch( 'Text');
 	} elsif ( $format eq 'Image') {
-		$$ref = $clipboard-> fetch( 'Image');
-		return if defined $$ref;
-
-		my $codecs = $self-> {GTKImageClipboardFormats};
-		return unless $codecs;
-
-		my %formats = map { $_ => 1 } $clipboard-> get_formats;
-		my @codecs  = grep { $formats{$_->{mime}} } @$codecs;
-		return unless @codecs;
-
-		my $data = $clipboard-> fetch($codecs[0]->{mime});
+		my $codecs  = $self-> {GTKImageClipboardFormats} or goto DEFAULT;
+		my %formats = map  { $_ => 1 } $clipboard-> get_formats;
+		my @codecs  = grep { $formats{$_->{mime}} && $_->{w} > 1 } @$codecs or goto DEFAULT;
+		my $data    = $clipboard-> fetch($codecs[0]->{mime});
 		return unless defined $data;
 
 		my $handle;
@@ -2119,7 +2124,8 @@ sub on_paste
 		local $@;
 		$$ref = Prima::Image-> load($handle, loadExtras => 1 );
 	} else {
-		$$ref = $clipboard-> fetch( $format);
+	DEFAULT:
+       		$$ref = $clipboard-> fetch( $format);
 	}
 	undef;
 }

@@ -347,6 +347,8 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 Bool
 apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 {
+	if ( c-> length < 0 ) return false;
+
 	id = cf2CF( id);
 	if (self == guts.clipboards[CLIPBOARD_DND])
 		return dnd_clipboard_set_data(id, c);
