@@ -299,9 +299,15 @@ init_x11( char * error_buf )
 	guts. randr_extension = false;
 #ifdef HAVE_X11_EXTENSIONS_XRANDR_H
 	{
-		int dummy;
-		if ( XRRQueryExtension( DISP, &dummy, &dummy))
-			guts. randr_extension = true;
+		int dummy, major, minor;
+		if ( XRRQueryExtension( DISP, &dummy, &dummy)) {
+			if ( XRRQueryVersion( DISP, &major, &minor)) {
+				if ( major > 1 || (major == 1 && minor > 2 )) {
+					/* XRRGetScreenResourcesCurrent appeared in 1.3 */
+					guts. randr_extension = true;
+				}
+			}
+		}
 	}
 #endif
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
