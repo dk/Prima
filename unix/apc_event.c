@@ -1848,7 +1848,7 @@ prima_wm_sync( Handle self, int eventType)
 {
 	int r;
 	long diff, delay, evx;
-	fd_set zero, read;
+	fd_set zero_r, zero_w, read;
 	struct timeval start_time, timeout;
 	PList events;
 	WMSyncData wmsd;
@@ -1893,10 +1893,11 @@ prima_wm_sync( Handle self, int eventType)
 		timeout. tv_sec  = ( delay - diff) / 1000;
 		timeout. tv_usec = (( delay - diff) % 1000) * 1000;
 		Edebug("event: want timeout:%g\n", (double)( delay - diff) / 1000);
-		FD_ZERO( &zero);
+		FD_ZERO( &zero_r);
+		FD_ZERO( &zero_w);
 		FD_ZERO( &read);
 		FD_SET( guts.connection, &read);
-		r = select( guts.connection+1, &read, &zero, &zero, &timeout);
+		r = select( guts.connection+1, &read, &zero_r, &zero_w, &timeout);
 		if ( r < 0) {
 			warn("server connection error");
 			return;
