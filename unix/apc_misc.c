@@ -211,7 +211,7 @@ apc_lookup_color( const char * colorName)
 
 #define xcmp( name, stlen, retval)  if (( len == stlen) && ( strcmp( name, buf) == 0)) return retval
 
-	strncpy( buf, colorName, 256);
+	strncpy( buf, colorName, 255);
 	len = strlen( buf);
 	for ( b = buf; *b; b++) *b = tolower(*b);
 
