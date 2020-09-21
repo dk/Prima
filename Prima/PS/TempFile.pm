@@ -24,6 +24,7 @@ sub new
 			$self{force_unlink} = 1;
 		}
 	}
+	$self{size} = 0;
 
 	return bless \%self, $class;
 }
@@ -43,6 +44,7 @@ sub write
 		warn "cannot write to temp file $self->{filename}: $!\n";
 		return 0;
 	}
+	$self->{size} += length $_[0];
 	return 1;
 }
 
