@@ -168,7 +168,7 @@ OS-dependent image storage.
 When storing the image on the clipboard, only the default format, raw pixel data
 is used.
 
-=item Exact and meta formats
+=head2 Exact and meta formats
 
 Prima registers two special I<meta formats>, C<Image> and C<Text>, that
 interoperate with the system clipboard, storing data in the format that matches
