@@ -800,7 +800,7 @@ sub print
 	$prndlg = Prima::Dialog::PrintDialog-> create unless $prndlg;
 	return unless $prndlg-> execute;
 
-	my $p = $::application-> get_printer;
+	my $p = $prndlg-> printer;
 	return unless $p-> begin_doc( $self-> {text}-> pageName);
 
 	my $pc = 1;

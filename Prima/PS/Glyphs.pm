@@ -2,9 +2,9 @@ package Prima::PS::Glyphs;
 
 use strict;
 use warnings;
-use Prima::PS::TempFile;
-use Prima::PS::Unicode;
 use Prima::Utils;
+use base qw(Exporter);
+our @EXPORT = qw(num int32);
 
 sub new
 {
@@ -13,24 +13,7 @@ sub new
 	}, shift;
 }
 
-sub _create_font_entry
-{
-	my ( $key, $font ) = @_;
-
-	my %h;
-	$h{isFixedPitch} = ($font->{pitch} == fp::Fixed) ? 'true'      : 'false';
-	$h{Weight}       = ($font->{style} & fs::Bold)   ? '(Regular)' : '(Bold)';
-	$h{ItalicAngle}  = ($font->{style} & fs::Italic) ? '-10'       : '0';
-
-	return {
-		glyphs   => '',
-		chars    => '',
-		header   => \%h,
-		names    => {},
-		bbox     => [ undef, undef, undef, undef ],
-		scale    => ($font->{height} - $font->{internalLeading}) / $font->{size},
-	};
-}
+sub create_font_entry { Carp::confess }
 
 sub get_font
 {
@@ -42,55 +25,8 @@ sub get_font
 	$key = 'PS-' . $key;
 	$key .= '-Bold'   if $font->{style} & fs::Bold;
 	$key .= '-Italic' if $font->{style} & fs::Italic;
-	$self->{fonts}->{$key} //= _create_font_entry($key, $font);
+	$self->{fonts}->{$key} //= $self->create_font_entry($key, $font);
 	return $key;
-}
-
-my $C1       = 52845;
-my $C2       = 22719;
-my $ENCRYPT1 = 55665;
-my $ENCRYPT2 =  4330;
-my @HEX      = ('0'..'9','a'..'f');
-
-sub encrypt1
-{
-	my ( $R, $str ) = @_;
-	my $ret = '';
-	my $n = 0;
-	for ( map { ord } split //, $str ) {
-		$n++;
-		my $c = $_ ^ ( $$R >> 8 );
-		$$R = (($c + $$R) * $C1 + $C2) & 0xffff;
-		$ret .= $HEX[$c >> 4];
-		$ret .= $HEX[$c & 0xf];
-		$ret .= "\n" unless $n % 32;
-	}
-	return $ret . "\n";
-}
-
-sub encrypt2
-{
-	my $str = shift;
-	my $R   = $ENCRYPT2;
-	my $ret = '';
-	for ( 0,0,0,0, map { ord } split //, $str ) {
-		my $c = $_ ^ ( $R >> 8 );
-		$R = (($c + $R) * $C1 + $C2) & 0xffff;
-		$ret .= chr($c);
-	}
-	return $ret;
-}
-
-sub embed($)
-{
-	my $code = shift;
-	return (4 + length($code)) . ' -| ' . encrypt2($code) . " |\n";
-}
-
-sub embed2($)
-{
-	my $code = shift;
-	return (4 + length($code)) . ' -| ' . encrypt2($code) . " |-\n";
 }
 
 sub int32($)
@@ -104,95 +40,17 @@ sub int32($)
 	} elsif (-1131 <= $n && $n <= -108) {
 		$n = -$n - 108;
 		return chr(($n >> 8) + 251).chr($n & 0xff);
+	} elsif (-32768 <= $n && $n < 32767) {
+		return chr(28).chr(($n >> 8) & 0xff).chr($n & 0xff);
 	} else {
-		return chr(255).chr(($n >> 24) & 0xff).chr(($n >> 16) & 0xff).chr(($n >> 8) & 0xff).chr($n & 0xff);
+		return chr(29).chr(($n >> 24) & 0xff).chr(($n >> 16) & 0xff).chr(($n >> 8) & 0xff).chr($n & 0xff);
 	}
+
 }
 
 sub num { join '', map { int32 $_ } @_ }
 
-use constant closepath       => "\x{9}";
 use constant endchar         => "\x{e}";
-use constant xpop            => "\x{c}\x{11}";
-use constant xreturn         => "\x{b}";
-use constant setcurrentpoint => "\x{c}\x{21}";
-use constant callothersubr   => "\x{c}\x{10}";
-use constant callsubr        => "\x{a}";
-
-sub evacuate
-{
-	my ( $self, $emit ) = @_;
-	for my $fn ( sort keys %{ $self->{fonts} }) {
-		my $v = $self->{fonts}->{$fn};
-		next unless $v->{tmpfile};
-
-		my $h = $v->{header};
-
-		$emit->(<<FONT_HDR);
-%%BeginResource: font $fn
-12 dict dup begin
-/FontType 1 def
-/FontName /$fn def
-/FullName ($fn) def
-/FontInfo 13 dict dup begin
-/UnderlinePosition -100 def
-/UnderlineThickness 50 def
-FONT_HDR
-		$emit->("/$_ $h->{$_} def\n") for sort keys %$h;
-		my @bbox = map { Prima::Utils::floor(($_ // 0) + .5) } @{ $v->{bbox} };
-		$emit->(<<FONT_HDR2);
-end def
-/FontBBox {@bbox} def
-/PaintType 0 def
-/FontMatrix [0.001 0 0 0.001 0 0] def
-/Encoding StandardEncoding def
-end
-currentfile eexec
-FONT_HDR2
-
-		my $R = $ENCRYPT1;
-		$emit->(encrypt1(\$R, <<GLYPHS_HDR));
-\0\0\0\0 dup /Private
-13 dict dup begin
-/-| {string currentfile exch readstring pop} def
-/|- {def} def
-/| {put} def
-/BlueValues [$bbox[1] 0] def
-/password 5839 def
-/MinFeature {16 16} def
-/OtherSubrs[{}{}{}{systemdict/internaldict known not{pop 3}{1183615869
-systemdict/internaldict get exec dup/startlock known{/startlock get exec}{dup
-/strtlck known{/strtlck get exec}{pop 3}ifelse}ifelse}ifelse}executeonly]def
-/Subrs 5 array
-GLYPHS_HDR
-		my $subrs =
-			"dup 0 " . embed(num(3,0) . callothersubr . xpop . xpop . setcurrentpoint . xreturn ) .
-			"dup 1 " . embed(num(0,1) . callothersubr . xreturn ) .
-			"dup 2 " . embed(num(0,2) . callothersubr . xreturn ) .
-			"dup 3 " . embed( xreturn ) .
-			"dup 4 " . embed(num(3,1,3) . callothersubr . xpop . callsubr . xreturn ) .
-			"def put dup /CharStrings 257 dict dup begin" .
-			"/.notdef " . embed2( hsbw(0,0) . endchar )
-			;
-		$emit->(encrypt1(\$R, $subrs));
-		return 0 unless $v->{tmpfile}->evacuate(sub { $emit->(encrypt1(\$R, $_[0])) });
-		$emit->(encrypt1(\$R, <<GLYPHS_FOOTER));
-end put
-end
-dup /FontName get exch definefont pop
-mark
-currentfile closefile
-GLYPHS_FOOTER
-		$emit->(("0" x 64) . "\n") for 1..8;
-		$emit->(<<RESOURCE_END) or return 0;
-cleartomark
-%%EndResource
-
-RESOURCE_END
-	}
-
-	return 1;
-}
 
 sub conic2curve
 {
@@ -224,48 +82,34 @@ sub rmoveto { num(@_) . "\x{15}" }
 sub rlineto { num(@_) . "\x{05}" }
 sub hmoveto { num(@_) . "\x{16}" }
 
-sub use_char
+sub get_outline
 {
-	my ( $self, $canvas, $key, $charid, $suggested_gid) = @_;
-	my $f = $self->{fonts}->{$key} // return;
+	my ( $self, $canvas, $key, $charid, $with_hsbw) = @_;
 
-	my $glyphid;
-	my $vector = 'glyphs';
-	if ( defined($suggested_gid)) {
-		if ( exists $f->{$suggested_gid} ) {
-			goto STD if $f->{$suggested_gid} != $charid;
-		} else {
-			goto STD unless exists $Prima::PS::Unicode->{ $suggested_gid };
-			$f->{$suggested_gid} = $charid;
-		}
-		$glyphid = $Prima::PS::Unicode->{ $suggested_gid };
-		$vector = 'chars';
-	} else {
-	STD:
-		$glyphid = sprintf("g%x", $charid);
-	}
-	return $glyphid if vec($f->{$vector}, $charid, 1);
+	my $f = $self->{fonts}->{$key} // return;
 
 	my $outline = $canvas->render_glyph($charid, glyph => 1) or return;
 
-	vec($f->{$vector}, $charid, 1) = 1;
-	$f->{tmpfile} //= Prima::PS::TempFile->new;
-
 	my @abc  = map { $_ / $f->{scale} } @{$canvas-> get_font_abc(($charid) x 2, to::Glyphs)};
-	my @hsbw = ($abc[0], $abc[0] + $abc[1] + $abc[2]);
 	my $bbox = $f->{bbox};
 
 	my $size = scalar(@$outline);
-	my $first_move;
 
-	my $code = hsbw(@hsbw);
-	if ( $size && $outline->[0] != ggo::Move ) {
-		$code .= hmoveto($hsbw[0]);
+	my $code = '';
+
+	my $first_move;
+	if ($with_hsbw) {
+		my @hsbw = ($abc[0], $abc[0] + $abc[1] + $abc[2]);
+		$code = hsbw(@hsbw);
+		if ( $size && $outline->[0] != ggo::Move ) {
+			$code .= hmoveto($hsbw[0]);
+		} else {
+			$first_move = $hsbw[0];
+		}
 	} else {
-		$first_move = $hsbw[0];
+		$first_move = 0;
 	}
 
-	my $closed;
 	my @p = (0,0);
 	my $scale = $f->{scale} * 64;
 	for ( my $i = 0; $i < $size; ) {
@@ -288,7 +132,6 @@ sub use_char
 		}
 
 		if ( $cmd == ggo::Move ) {
-			$code .= closepath if $closed++;
 			my @r = ($pts[0] - $p[0], $pts[1] - $p[1]);
 			if ( defined $first_move ) {
 				$r[0] -= $first_move;
@@ -322,10 +165,9 @@ sub use_char
 		}
 		@p = @pts[-2,-1];
 	}
-	$code .= closepath . endchar;
+	$code .= endchar;
 
-	$f->{tmpfile}->write("/$glyphid " .embed2($code));
-	return $glyphid;
+	return $code, \@abc;
 }
 
 1;
@@ -334,11 +176,11 @@ sub use_char
 
 =head1 NAME
 
-Prima::PS::Glyphs - glyphs as Type1 embedded font
+Prima::PS::Glyphs - glyph outlines as adobe charstrings
 
 =head1 DESCRIPTION
 
-This module contains helper procedures to query vector font outlines and
-storing them in postscript as embedded Type1 fonts.
+This module contains helper procedures to query vector font outlines for
+storing them in Type1 fonts.
 
 =cut

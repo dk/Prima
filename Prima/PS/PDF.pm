@@ -1,14 +1,21 @@
-package Prima::PS::Drawable;
-use vars qw(@ISA);
-@ISA = qw(Prima::Drawable);
+# XXX todo
+# text
+# regions
+# alpha
+# 8 bit icon masks
+# porter-duff rops
+# paths
+package Prima::PS::PDF;
 
 use strict;
 use warnings;
-use Prima;
-use Prima::PS::Type1;
-use Prima::PS::TempFile;
-use File::Temp;
 use Encode;
+use Prima;
+use Prima::PS::TempFile;
+use Prima::PS::CFF;
+use vars qw(@ISA);
+@ISA = qw(Prima::Drawable);
+
 
 {
 my %RNT = (
@@ -24,16 +31,13 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
-		copies           => 1,
 		grayscale        => 0,
-		pageDevice       => undef,
 		pageSize         => [ 598, 845],
 		pageMargins      => [ 12, 12, 12, 12],
 		resolution       => [ 300, 300],
 		reversed         => 0,
 		rotate           => 0,
-		scale            => [ 1, 1],
-		isEPS            => 0,
+		scale            => [1, 1],
 		textOutBaseline  => 0,
 	);
 	@$def{keys %prf} = values %prf;
@@ -48,18 +52,13 @@ sub init
 	$self-> {pageMargins} = [0,0,0,0];
 	$self-> {resolution}  = [72,72];
 	$self-> {scale}       = [ 1, 1];
-	$self-> {isEPS}       = 0;
-	$self-> {copies}      = 1;
 	$self-> {rotate}      = 1;
 	$self-> {font}        = {};
 	my %profile = $self-> SUPER::init(@_);
-	$self-> $_( $profile{$_}) for qw( grayscale copies pageDevice
-		rotate reversed isEPS);
+	$self-> $_( $profile{$_}) for qw( grayscale reversed rotate);
 	$self-> $_( @{$profile{$_}}) for qw( pageSize pageMargins resolution scale );
 	return %profile;
 }
-
-# internal routines
 
 sub cmd_rgb
 {
@@ -68,48 +67,36 @@ sub cmd_rgb
 		int((($_[1] & 0xff00) >> 8) * 100 / 256 + 0.5) / 100,
 		int(($_[1] & 0xff)*100/256 + 0.5) / 100);
 	unless ( $_[0]-> {grayscale}) {
-		return "$r $g $b A";
+		return "$r $g $b RG";
 	} else {
 		my $i = int( 100 * ( 0.31 * $r + 0.5 * $g + 0.18 * $b) + 0.5) / 100;
 		return "$i G";
 	}
 }
 
-sub defer_emission
+sub emit
 {
-	my ($self, $defer) = @_;
-	if ( $defer ) {
-		return if defined $self->{deferred};
-		if ( length($self-> {ps_data})) {
-			my $d = $self->{ps_data};
-			$self-> {ps_data} = '';
-			return $self-> abort_doc unless $self-> spool($d);
-		}
+	my ($self, $data, $raw) = @_;
+	return 0 unless $self-> {can_draw};
+	my $eol = $raw ? '' : "\n";
+	$self-> {ps_data} .= $data . $eol;
+	$self-> {content_size} += length($data . $eol);
 
-		$self->abort_doc unless $self->{deferred} = Prima::PS::TempFile->new;
-	} else {
-		return unless defined $self->{deferred};
-		$self-> abort_doc unless delete($self->{deferred})->evacuate( sub { $self-> spool($_[0]) } );
+	if ( length($self-> {ps_data}) > 10240) {
+		$self-> abort_doc unless $self-> spool( $self-> {ps_data});
+		$self-> {ps_data} = '';
 	}
+
+	return 1;
 }
 
-sub emit
+sub emit_content
 {
 	my $self = $_[0];
 	return 0 unless $self-> {can_draw};
-	if ( defined $self->{deferred} ) {
-		unless ($self->{deferred}->write($_[1] . "\n")) {
-			$self->abort_doc;
-			return 0;
-		}
-	} else {
-		$self-> {ps_data} .= $_[1] . "\n";
-		if ( length($self-> {ps_data}) > 10240) {
-			$self-> abort_doc unless $self-> spool( $self-> {ps_data});
-			$self-> {ps_data} = '';
-		}
-	}
-	return 1;
+
+	my $obj = $self->{objects}->[$self->{page_content}] or return 0;
+	return $obj->write($_[1] . "\n");
 }
 
 sub save_state
@@ -173,6 +160,7 @@ sub change_transform
 	my @cr = $self-> clipRect;
 	my @sc = $self-> scale;
 	my $ro = $self-> rotate;
+
 	$cr[2] -= $cr[0];
 	$cr[3] -= $cr[1];
 	my $doClip = grep { $_ != 0 } @cr;
@@ -180,7 +168,7 @@ sub change_transform
 	my $doSC   = grep { $_ != 0 } @sc;
 
 	if ( !$doClip && !$doTR && !$doSC && !$ro) {
-		$self-> emit(':') if $gsave;
+		$self-> emit_content('q') if $gsave;
 		return;
 	}
 
@@ -188,14 +176,17 @@ sub change_transform
 	@tp = $self-> pixel2point( @tp);
 	my $mcr3 = -$cr[3];
 
-	$self-> emit(';') unless $gsave;
-	$self-> emit(':');
-	$self-> emit(<<CLIP) if $doClip;
-N $cr[0] $cr[1] M 0 $cr[3] L $cr[2] 0 L 0 $mcr3 L X C
-CLIP
-	$self-> emit("@tp T") if $doTR;
-	$self-> emit("@sc Z") if $doSC;
-	$self-> emit("$ro R") if $ro != 0;
+	$self-> emit_content('Q') unless $gsave;
+	$self-> emit_content('q');
+	$self-> emit_content("@cr W") if $doClip;
+	$self-> emit_content("1 0 0 1 @tp cm") if $doTR;
+	$self-> emit_content("$sc[0] 0 0 $sc[1] 0 0 cm") if $doSC;
+	if ($ro != 0) {
+		my $sin1 = sin($ro);
+		my $cos  = cos($ro);
+		my $sin2 = -$sin1;
+		$self-> emit_content("$cos $sin1 $sin2 $cos 0 0 cm");
+	}
 	$self-> {changed}-> {$_} = 1 for qw(fill linePattern lineWidth lineJoin lineEnd miterLimit font);
 }
 
@@ -213,8 +204,8 @@ sub fill
 			( $r2 == rop::Whiteness) ? 0xffffff : $self-> backColor;
 
 		$self-> {changed}-> {fill} = 1;
-		$self-> emit( $self-> cmd_rgb( $bk));
-		$self-> emit( $code);
+		$self-> emit_content( lc $self-> cmd_rgb( $bk));
+		$self-> emit_content( $code);
 	}
 	if ( $r1 != rop::NoOper && $self-> {fpType} ne 'B') {
 		my $c =
@@ -222,28 +213,24 @@ sub fill
 			( $r1 == rop::Whiteness) ? 0xffffff : $self-> color;
 		if ($self-> {changed}-> {fill}) {
 			if ( $self-> {fpType} eq 'F') {
-				$self-> emit( $self-> cmd_rgb( $c));
+				$self-> emit_content( lc $self-> cmd_rgb( $c));
 			} else {
 				my ( $r, $g, $b) = (
 					int((($c & 0xff0000) >> 16) * 100 / 256 + 0.5) / 100,
 					int((($c & 0xff00) >> 8) * 100 / 256 + 0.5) / 100,
 					int(($c & 0xff)*100/256 + 0.5) / 100);
+				my $color;
 				if ( $self-> {grayscale}) {
 					my $i = int( 100 * ( 0.31 * $r + 0.5 * $g + 0.18 * $b) + 0.5) / 100;
-					$self-> emit(<<GRAYPAT);
-[\/Pattern \/DeviceGray] SS
-$i Pat_$self->{fpType} SC
-GRAYPAT
+					$color = $i;
 				} else {
-					$self-> emit(<<RGBPAT);
-[\/Pattern \/DeviceRGB] SS
-$r $g $b Pat_$self->{fpType} SC
-RGBPAT
+					$color = "$r $g $b";
 				}
+				$self-> emit_content("/CS cs $color /P$self->{fpType} scn");
 			}
 			$self-> {changed}-> {fill} = 0;
 		}
-		$self-> emit( $code);
+		$self-> emit_content( $code);
 	}
 }
 
@@ -259,27 +246,27 @@ sub stroke
 
 	if ( $self-> {changed}-> {lineWidth}) {
 		my ($lw) = $self-> pixel2point($self-> lineWidth);
-		$self-> emit( $lw . ' SW');
+		$self-> emit_content( $lw . ' w');
 		$self-> {changed}-> {lineWidth} = 0;
 	}
 
 	if ( $self-> {changed}-> {lineEnd}) {
 		my $le = $self-> lineEnd;
 		my $id = ( $le == le::Round) ? 1 : (( $le == le::Square) ? 2 : 0);
-		$self-> emit( "$id SL");
+		$self-> emit_content( "$id J");
 		$self-> {changed}-> {lineEnd} = 0;
 	}
 
 	if ( $self-> {changed}-> {lineJoin}) {
 		my $lj = $self-> lineJoin;
 		my $id = ( $lj == lj::Round) ? 1 : (( $lj == lj::Bevel) ? 2 : 0);
-		$self-> emit( "$id SJ");
+		$self-> emit_content( "$id j");
 		$self-> {changed}-> {lineJoin} = 0;
 	}
-	
+
 	if ( $self-> {changed}-> {miterLimit}) {
 		my $ml = $self-> miterLimit;
-		$self-> emit( "$ml ML");
+		$self-> emit_content( "$ml M");
 		$self-> {changed}-> {miterLimit} = 0;
 	}
 
@@ -290,9 +277,9 @@ sub stroke
 
 		$self-> {changed}-> {linePattern} = 1;
 		$self-> {changed}-> {fill}        = 1;
-		$self-> emit('[] 0 SD');
-		$self-> emit( $self-> cmd_rgb( $bk));
-		$self-> emit( $code);
+		$self-> emit_content('[] 0 d');
+		$self-> emit_content( uc $self-> cmd_rgb( $bk));
+		$self-> emit_content( $code);
 	}
 
 	if ( $r1 != rop::NoOper && length( $lp)) {
@@ -302,35 +289,119 @@ sub stroke
 
 		if ( $self-> {changed}-> {linePattern}) {
 			if ( length( $lp) == 1) {
-				$self-> emit('[] 0 SD');
+				$self-> emit_content('[] 0 d');
 			} else {
 				my @x = split('', $lp);
 				push( @x, 0) if scalar(@x) % 1;
 				@x = map { ord($_) } @x;
-				$self-> emit("[@x] 0 SD");
+				$self-> emit_content("[@x] 0 d");
 			}
 			$self-> {changed}-> {linePattern} = 0;
 		}
 
 		if ( $self-> {changed}-> {fill}) {
-			$self-> emit( $self-> cmd_rgb( $fk));
+			$self-> emit_content( uc $self-> cmd_rgb( $fk));
 			$self-> {changed}-> {fill} = 0;
 		}
-		$self-> emit( $code);
+
+		$self-> emit_content( $code);
 	}
 }
 
-# Prima::Printer interface
+sub new_dummy_obj
+{
+	my $self = shift;
+	my $xid = @{ $self->{objects} };
+	push @{ $self->{objects} }, undef;
+	return $xid;
+}
+
+sub new_file_obj
+{
+	my ($self, %opt) = @_;
+	my $obj = Prima::PS::TempFile->new(%opt) or return;
+	my $xid = @{ $self->{objects} };
+	push @{ $self->{objects} }, $obj;
+	$obj->{__xid} = $xid;
+	return wantarray ? ( $xid, $obj) : $xid;
+}
+
+sub new_stream_obj
+{
+	my $self = shift;
+	my $xid = $self->new_dummy_obj;
+	return $xid, { content => '', xid => $xid };
+}
+
+sub emit_to_stream
+{
+	my ( $self, $obj, $text ) = @_;
+	$obj->{content} .= $text;
+}
+
+sub emit_stream_obj
+{
+	my ( $self, $obj, $text ) = @_;
+	$self-> add_xref($obj->{xid});
+	$self-> emit("$obj->{xid} 0 obj\n<<\n/Length ".length $obj->{content});
+	$self-> emit( $text ) if defined $text;
+	$self-> emit(">>\nstream");
+	$self-> emit($obj->{content}, 1);
+	$self-> emit("endstream\nendobj");
+}
+
+sub emit_new_stream_object
+{
+	my ( $self, $stream, $text ) = @_;
+	my $xid = $self->new_dummy_obj;
+	$self-> add_xref($xid);
+	my $length = length($stream);
+	$self-> emit("$xid 0 obj\n<<\n/Length ".length($stream));
+	$self-> emit( $text ) if defined $text;
+	$self-> emit(">>\nstream");
+	$self-> emit($stream, 1);
+	$self-> emit("endstream\nendobj");
+	return $xid;
+}
+
+sub emit_file_obj
+{
+	my ( $self, $obj, $text ) = @_;
+	$self-> add_xref($obj->{__xid});
+	$self-> emit("$obj->{__xid} 0 obj\n<<\n/Length ".$obj->{size});
+	$self-> emit( $text ) if defined $text;
+	$self-> emit(">>\nstream");
+	$obj->  evacuate( sub { $self->emit( $_[0], 1 ) } );
+	$self-> emit("endstream\nendobj");
+}
+
+sub add_xref
+{
+	my ($self, $xid) = @_;
+	$self->{xref}->[ $xid ] = $self->{content_size};
+}
+
+sub emit_new_object
+{
+	my ($self, $xid, $emit) = @_;
+	$self-> add_xref($xid);
+	$self-> emit("$xid 0 obj");
+	$self-> emit($emit) if defined $emit;
+}
 
 sub begin_doc
 {
 	my ( $self, $docName) = @_;
 	return 0 if $self-> get_paint_state;
+
 	$self-> {ps_data}  = '';
 	$self-> {can_draw} = 1;
+	$self-> {content_size} = 0;
 
-	$docName = $::application ? $::application-> name : "Prima::PS::Drawable"
+	$docName = $::application ? $::application-> name : "Prima::PS::PDF"
 		unless defined $docName;
+	$docName = Encode::encode('UTF-16', $docName)
+		if Encode::is_utf8($docName);
 	my $data = scalar localtime;
 	my @b2 = (
 		int($self-> {pageSize}-> [0] - $self-> {pageMargins}-> [2] + .5),
@@ -338,7 +409,7 @@ sub begin_doc
 	);
 
 	$self-> {fp_hash}  = {};
-	$self-> {pages}   = 1;
+	$self-> {xref} = [];
 
 	my ($x,$y) = (
 		$self-> {pageSize}-> [0] - $self-> {pageMargins}-> [0] - $self-> {pageMargins}-> [2],
@@ -347,64 +418,43 @@ sub begin_doc
 
 	my $extras = '';
 	my $setup = '';
-	my %pd = defined( $self-> {pageDevice}) ? %{$self-> {pageDevice}} : ();
 
-	if ( $self-> {copies} > 1) {
-		$pd{NumCopies} = $self-> {copies};
-		$extras .= "\%\%Requirements: numcopies($self->{copies})\n";
+	my ($sec,$min,$hour,$mday,$mon,$year) = localtime;
+	my $date = sprintf("%04d%02d%02d%02d%02d%02d", $year + 1900, $mon, $mday, $hour, $min, $sec);
+	my $four = pack('C*', 0xde, 0xad, 0xbe, 0xef);
+	$self-> emit( <<PDFHEADER);
+%PDF-1.4
+%$four
+PDFHEADER
+
+	$self-> emit_new_object(1, <<PDFINFO);
+<<
+/CreationDate (D:$date+00'00)
+/Creator (Prima::PS::PDF)
+/Title ($docName)
+>>
+endobj
+PDFINFO
+	$self-> emit_new_object(2, <<ROOT);
+<<
+/Type /Catalog
+/Pages 3 0 R
+>>
+endobj
+ROOT
+
+	$self-> {objects} = [(undef) x 4];
+	$self-> {page_object}   = $self->new_dummy_obj;
+	$self-> {pages}         = [$self->{page_object} ];
+	$self-> {page_refs}     = [];
+	$self-> {page_patterns} = {};
+	$self-> {page_images}   = [];
+	$self-> {page_fonts}    = {};
+	$self-> {all_fonts}     = {};
+	unless ($self-> {page_content} = $self->new_file_obj) {
+		$self-> abort_doc;
+		return 0;
 	}
-
-	if ( scalar keys %pd) {
-		my $jd = join( "\n", map { "/$_ $pd{$_}"} keys %pd);
-		$setup .= <<NUMPAGES;
-%%BeginFeature
-<< $jd >> SPD
-%%EndFeature
-NUMPAGES
-	}
-
-	my $header = "%!PS-Adobe-2.0";
-	$header .= " EPSF-2.0" if $self->isEPS;
-
-	$self-> emit( <<PSHEADER);
-$header
-%%Title: $docName
-%%Creator: Prima::PS::Drawable
-%%CreationDate: $data
-%%Pages: (atend)
-%%BoundingBox: @{$self->{pageMargins}}[0,1] @b2
-$extras
-%%LanguageLevel: 2
-%%DocumentNeededFonts: (atend)
-%%DocumentSuppliedFonts: (atend)
-%%EndComments
-
-/d/def load def/,/load load d/~/exch , d/S/show , d/:/gsave , d/;/grestore ,
-d/N/newpath , d/M/moveto , d/L/rlineto , d/X/closepath , d/C/clip ,
-d/T/translate , d/R/rotate , d/Y/glyphshow , d/P/showpage , d/Z/scale , d/I/imagemask ,
-d/@/dup , d/G/setgray , d/A/setrgbcolor , d/l/lineto , d/F/fill ,
-d/FF/findfont , d/XF/scalefont , d/SF/setfont ,
-d/O/stroke , d/SD/setdash , d/SL/setlinecap , d/SW/setlinewidth ,
-d/SJ/setlinejoin , d/E/eofill , d/ML/setmiterlimit ,
-d/SS/setcolorspace , d/SC/setcolor , d/SM/setmatrix , d/SPD/setpagedevice ,
-d/SP/setpattern , d/CP/currentpoint , d/MX/matrix , d/MP/makepattern ,
-d/b/begin , d/e/end , d/t/true , d/f/false , d/?/ifelse , d/a/arc ,
-d/dummy/_dummy
-
-%%BeginSetup
-$setup
-%%EndSetup
-
-PSHEADER
-	$self->defer_emission(1);
-	$self->emit("%%Page: 1 1\n");
-
-	$self-> {page_prefix} = <<PREFIX;
-@{$self->{pageMargins}}[0,1] T
-N 0 0 M 0 $y L $x 0 L 0 -$y L X C
-PREFIX
-
-	$self-> {page_prefix} .= "0 0 M 90 R 0 -$x T\n" if $self-> {reversed};
 
 	$self-> {changed} = { map { $_ => 0 } qw(
 		fill lineEnd linePattern lineWidth lineJoin miterLimit font)};
@@ -416,11 +466,65 @@ PREFIX
 	$self-> restore_state;
 	$self-> {delay} = 0;
 
-	$self-> emit( $self-> {page_prefix});
 	$self-> change_transform( 1);
 	$self-> {changed}-> {linePattern} = 0;
 
 	return 1;
+}
+
+sub end_page
+{
+	my $self = shift;
+
+	$self-> emit_content('Q');
+
+	$self-> emit_new_object($self->{page_object}, <<PAGE);
+<<
+/Type /Page
+/Parent 3 0 R
+/MediaBox [ 0 0 @{$self->{pageSize}} ]
+/StructParents 0
+/Contents $self->{page_content} 0 R
+/ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+/Resources <<
+/ColorSpace <<
+/CS [ /Pattern /Device${ \( $self->{grayscale} ? 'Gray' : 'RGB' ) } ]
+>>
+PAGE
+	if ( keys %{ $self->{page_patterns} } ) {
+		$self-> emit("/Pattern <<");
+		for my $xid ( keys %{ $self->{page_patterns} } ) {
+			$self-> emit("/P$xid $xid 0 R");
+		}
+		$self-> emit(">>");
+	}
+	if ( @{$self->{page_images} } ) {
+		$self-> emit("/XObject <<");
+		for my $xid ( @{ $self->{page_images} } ) {
+			$self-> emit("/I$xid $xid 0 R");
+		}
+		$self-> emit(">>");
+	}
+	if ( keys %{ $self->{page_fonts} } ) {
+		$self-> emit("/Font <<");
+		for my $xid ( keys %{ $self->{page_fonts} } ) {
+			$self-> emit("/F$xid $xid 0 R");
+		}
+		$self-> emit(">>");
+	}
+	$self-> emit(">>"); # % Resources
+
+	if ( @{ $self->{page_refs} } ) {
+		$self-> emit("/XObject <<");
+		for my $xid ( @{ $self->{page_refs} } ) {
+			$self-> emit("/X$xid $xid 0 R");
+		}
+		$self-> emit(">>");
+	}
+	$self-> emit(">>\nendobj");
+
+	$self-> emit_file_obj($self->{objects}->[$self->{page_content}]);
+	undef $self->{objects}->[$self->{page_content}];
 }
 
 sub abort_doc
@@ -431,33 +535,164 @@ sub abort_doc
 	$self-> SUPER::end_paint;
 	$self-> restore_state;
 	delete $self-> {$_} for
-		qw (save_state ps_data changed page_prefix);
+		qw (save_state ps_data changed );
 }
 
 sub end_doc
 {
 	my $self = $_[0];
 	return 0 unless $self-> {can_draw};
-	$self-> {can_draw} = 0;
+	$self-> end_page;
 
-	$self->{glyph_keeper}-> evacuate( sub { $self->spool( $_[0] ) } )
-		if $self-> {glyph_keeper};
-	$self-> defer_emission(0);
-	my $ret = $self-> spool($self->{ps_data} . <<PSFOOTER);
-; P
+	my $pages = scalar @{ $self->{pages} };
+	my @kids = map { "$_ 0 R" } @{ $self->{pages} };
 
-%%Trailer
-%%DocumentNeededFonts:
-%%DocumentSuppliedFonts:
-%%Pages: $_[0]->{pages}
+	$self-> emit_new_object(3, <<ENDS);
+<<
+/Type /Pages
+/Count $pages
+/Kids [@kids]
+>>
+endobj
+ENDS
+
+	my $encoding = $self-> new_dummy_obj;
+	$self-> emit_new_object($encoding, <<ENCODING);
+<<
+/Type /Encoding
+/Differences [ 0
+ENCODING
+	for my $x (0..15) {
+		my $n = $x * 16;
+		$self-> emit( join(' ', map { "/a" . ($n + $_) } 0..15));
+	}
+	$self-> emit( <<END );
+]
+>>
+endobj
+END
+
+	while ( my ( $font, $v ) = each %{ $self->{all_fonts} }) {
+		next if $v->{native};
+
+		$self-> {glyph_keeper}-> begin_evacuate( $font );
+
+		for my $xid ( @{ $v->{xids} } ) {
+			my ( $frec, $charset, $unicode, $width, $content) = $self-> {glyph_keeper}-> evacuate_next_subfont( $font );
+
+			my $font_file = $self-> emit_new_stream_object( $content, "/Subtype /Type1C");
+
+			my $font_desc = $self-> new_dummy_obj;
+			my $charset_str = join('', map { "/$_" } @$charset);
+			my @bbox = map { Prima::Utils::floor(($_ // 0) + .5) } @{ $frec->{bbox} };
+
+			$self-> emit_new_object($font_desc, <<FONT);
+<<
+/Type /FontDescriptor
+/CharSet ($charset_str)
+/FontBBox [ @bbox ]
+/FontFile3 $font_file 0 R
+/FontName /$font
+/Flags 4
+/ItalicAngle $frec->{italic}
+>>
+endobj
+
+FONT
+
+			my ($unicode_xid, $unicode_stream) = $self-> new_stream_obj;
+			my $n_cps = 0;
+			my $maps = '';
+			$self-> emit_to_stream( $unicode_stream, <<UNICODE);
+/CIDInit /ProcSet findresource begin
+12 dict begin
+begincmap
+/CMapType 2 def
+1 begincodespacerange
+<00><ff>
+endcodespacerange
+UNICODE
+			my @codes;
+			while ( my ( $i, $u ) = each @$unicode ) {
+				$u += 0;
+				if ( $u >= 0x10000 && $u <= 0x10FFFF ) {
+					$u -= 0x10000;
+					push @codes, sprintf("<%02x><%04x%04x>", $i,
+						0xd800 + ($u & 0x3ff),
+						0xdc00 + ($u >> 10)
+					);
+				} elsif (( $u >= 0xD800 && $u <= 0xDFFF ) || ( $u > 0x10FFFF ) || ( $u == 0 )) {
+					next;
+				} else {
+					push @codes, sprintf("<%02x><%04x>", $i, $u);
+				}
+			}
+			while ( @codes ) {
+				my @section = splice( @codes, 0, 99 ); # spec says max 100
+				$self-> emit_to_stream( $unicode_stream, scalar(@section). " beginbfchar\n");
+				$self-> emit_to_stream( $unicode_stream, join("\n", @section ));
+				$self-> emit_to_stream( $unicode_stream, "\nendbfchar\n");
+			}
+			$self-> emit_to_stream( $unicode_stream, <<UNICODE);
+endcmap
+CMapName currentdict /CMap defineresource pop
+end end
+UNICODE
+			$self-> emit_stream_obj( $unicode_stream);
+
+			my $lastchar = $#$charset;
+			$self-> emit_new_object($xid, <<FONT);
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /$font
+/Encoding $encoding 0 R
+/ToUnicode $unicode_xid 0 R
+/FontDescriptor $font_desc 0 R
+/FirstChar 0
+/LastChar $lastchar
+/Widths [
+FONT
+			$self-> emit( join(' ', splice( @$width, 0, 16 )) )
+				while @$width;
+			$self-> emit( <<END );
+]
+>>
+endobj
+END
+		}
+	}
+
+
+	my $xref_offset = $self->{content_size};
+	$self->emit("xref");
+	my @xrefs = grep { defined } @{ $self->{xref} };
+	my $xrefs = 1 + @xrefs;
+	$self->emit("0 $xrefs");
+	$self->emit(sprintf("%010d %05d f ", 0, 65535));
+	for my $xref ( @xrefs ) {
+		$self->emit(sprintf("%010d %05d n ", $xref, 0));
+	}
+	$self->emit(<<TRAILER);
+trailer
+<<
+/Info 1 0 R
+/Root 2 0 R
+/Size $xrefs
+>>
+startxref
+$xref_offset
 %%EOF
-PSFOOTER
+TRAILER
+
+	my $ret = $self->spool( $self-> {ps_data} );
+	$self->{ps_data} = '';
 
 	$self-> {can_draw} = 0;
 	$self-> SUPER::end_paint;
 	$self-> restore_state;
 	delete $self-> {$_} for
-		qw (save_state changed ps_data page_prefix glyph_keeper glyph_font);
+		qw (save_state changed ps_data glyph_keeper glyph_font);
 	return $ret;
 }
 
@@ -487,19 +722,29 @@ sub new_page
 {
 	return 0 unless $_[0]-> {can_draw};
 	my $self = $_[0];
-	$self-> {pages}++;
-	$self-> emit("; P\n%%Page: $self->{pages} $self->{pages}\n");
+
+	$self-> end_page;
+	$self-> {page_object}  = $self->new_dummy_obj;
+	push @{$self-> {pages}}, $self->{page_object};
+	$self-> {page_refs}      = [];
+	$self-> {page_patterns}  = {};
+	$self-> {page_images}    = [];
+	$self-> {page_fonts}     = {};
+	unless ($self-> {page_content} = $self->new_file_obj) {
+		$self-> abort_doc;
+		return 0;
+	}
+
 	{
 		local $self->{delay} = 1;
 		$self-> $_( @{$self-> {save_state}-> {$_}}) for qw( translate clipRect);
 	}
-	$self-> emit( $self-> {page_prefix});
 	$self-> change_transform(1);
 	$self-> {changed}->{font} = 1;
 	return 1;
 }
 
-sub pages { $_[0]-> {pages} }
+sub pages { scalar @{ $_[0]-> {pages} } }
 
 sub spool
 {
@@ -529,34 +774,48 @@ sub fillPattern
 	my $solidFore = ! grep { $_ != 0xff } @fp;
 	my $fpid;
 	my @scaleto = $self-> pixel2point( 8, 8);
+	my $xid;
 	if ( !$solidBack && !$solidFore) {
 		$fpid = join( '', map { sprintf("%02x", $_)} @fp);
 		unless ( exists $self-> {fp_hash}-> {$fpid}) {
-			$self-> emit( <<PATTERNDEF);
+			$xid  = $self-> new_dummy_obj;
+			my $bits = pack('C*', @fp);
+			my $patdef = <<PAT;
+q
+BI
+/IM true
+/W 8
+/H 8
+/BPC 1
+ID $bits
+EI Q
+PAT
+			$self-> emit_new_object( $xid, <<PATTERNDEF);
 <<
-\/PatternType 1 \% Tiling pattern
-\/PaintType 2 \% Uncolored
-\/TilingType 1
-\/BBox [ 0 0 @scaleto]
-\/XStep $scaleto[0]
-\/YStep $scaleto[1]
-\/PaintProc { b
-:
-@scaleto Z
-8 8 t
-[8 0 0 8 0 0]
-< $fpid > I
-;
-e
-} bind
->> MX MP
-\/Pat_$fpid ~ d
-
+/Type /Pattern
+/BBox [0 0 1 1]
+/Length ${ \length $patdef }
+/PaintType 2 % Uncolored
+/PatternType 1 % Tiling pattern
+/Resources <<
+/ProcSet [ /PDF /ImageB ]
+>>
+/TilingType 1
+/XStep 1
+/YStep 1
+>>
+stream
+$patdef
+endstream
+endobj
 PATTERNDEF
-			$self-> {fp_hash}-> {$fpid} = 1;
+			$self-> {fp_hash}-> {$fpid} = $xid;
+		} else {
+			$xid = $self-> {fp_hash}-> {$fpid};
 		}
+		$self->{page_patterns}->{$xid}++;
 	}
-	$self-> {fpType} = $solidBack ? 'B' : ( $solidFore ? 'F' : $fpid);
+	$self-> {fpType} = $solidBack ? 'B' : ( $solidFore ? 'F' : $xid);
 	$self-> {changed}-> {fill} = 1;
 }
 
@@ -567,6 +826,7 @@ sub fillPatternOffset
 	return unless $_[0]-> {can_draw};
 	$_[0]-> {changed}-> {fillPatternOffset} = 1;
 }
+
 
 sub lineEnd
 {
@@ -662,8 +922,6 @@ sub scale
 	$self-> change_transform;
 }
 
-sub isEPS { $#_ ? $_[0]-> {isEPS} = $_[1] : $_[0]-> {isEPS} }
-
 sub reversed
 {
 	return $_[0]-> {reversed} unless $#_;
@@ -688,18 +946,6 @@ sub resolution
 	return if $x <= 0 || $y <= 0;
 	$_[0]-> {resolution} = [$x, $y];
 	$_[0]-> calc_page;
-}
-
-sub copies
-{
-	return $_[0]-> {copies} unless $#_;
-	$_[0]-> {copies} = $_[1] unless $_[0]-> get_paint_state;
-}
-
-sub pageDevice
-{
-	return $_[0]-> {pageDevice} unless $#_;
-	$_[0]-> {pageDevice} = $_[1] unless $_[0]-> get_paint_state;
 }
 
 sub grayscale
@@ -753,97 +999,140 @@ sub size
 	$_[0]-> raise_ro("size");
 }
 
-# primitives
+our $PI = 3.14159265358979323846264338327950288419716939937510;
+our $RAD = 180.0 / $PI;
+
+# L.Maisonobe 2003
+# http://www.spaceroots.org/documents/ellipse/elliptical-arc.pdf
+sub arc2cubics
+{
+	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
+
+	my ($reverse, @out);
+	($start, $end, $reverse) = ( $end, $start, 1 ) if $start > $end;
+
+	push @out, $start;
+	# see defects appearing after 45 degrees:
+	# https://pomax.github.io/bezierinfo/#circles_cubic
+	while (1) {
+		if ( $end - $start > 45 ) {
+			push @out, $start += 45;
+			$start += 45;
+		} else {
+			push @out, $end;
+			last;
+		}
+	}
+	@out = map { $_ / $RAD } @out;
+
+	my $rx = $dx / 2;
+	my $ry = $dy / 2;
+
+	my @cubics;
+	for ( my $i = 0; $i < $#out; $i++) {
+		my ( $a1, $a2 ) = @out[$i,$i+1];
+		my $b           = $a2 - $a1;
+		my ( $sin1, $cos1, $sin2, $cos2) = ( sin($a1), cos($a1), sin($a2), cos($a2) );
+		my @d1  = ( -$rx * $sin1, -$ry * $cos1 );
+		my @d2  = ( -$rx * $sin2, -$ry * $cos2 );
+		my $tan = sin( $b / 2 ) / cos( $b / 2 );
+		my $a   = sin( $b ) * (sqrt( 4 + 3 * $tan * $tan) - 1) / 3;
+		my @p1  = ( $rx * $cos1, $ry * $sin1 );
+		my @p2  = ( $rx * $cos2, $ry * $sin2 );
+		my @points = (
+			@p1,
+			$p1[0] + $a * $d1[0],
+			$p1[1] - $a * $d1[1],
+			$p2[0] - $a * $d2[0],
+			$p2[1] + $a * $d2[1],
+			@p2
+		);
+		$points[$_] += $x for 0,2,4,6;
+		$points[$_] += $y for 1,3,5,7;
+		@points[0,1,2,3,4,5,6,7] = @points[6,7,4,5,2,3,0,1] if $reverse;
+		push @cubics, \@points;
+	}
+	return \@cubics;
+}
 
 sub arc
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
-	my $try = $dy / $dx;
+
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
-	my $rx = $dx / 2;
-	$end -= $start;
-	$self-> stroke( <<ARC );
-$x $y M : $x $y T 1 $try Z $start R
-N $rx 0 M 0 0 $rx 0 $end a O ;
-ARC
+
+	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
+	my $content = "@{ $cubics->[0] }[0,1] m\n";
+	$content   .= "@{$_}[2..7] c\n" for @$cubics;
+	$self-> stroke( $content . " S");
 }
 
 sub chord
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
-	my $try = $dy / $dx;
+
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
-	my $rx = $dx / 2;
-	$end -= $start;
-	$self-> stroke(<<CHORD);
-$x $y M : $x $y T 1 $try Z $start R
-N $rx 0 M 0 0 $rx 0 $end a X O ;
-CHORD
+
+	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
+	my $content = "@{ $cubics->[0] }[0,1] m\n";
+	$content   .= "@{$_}[2..7] c\n" for @$cubics;
+	$self-> stroke( $content . " h S");
 }
 
 sub ellipse
 {
 	my ( $self, $x, $y, $dx, $dy) = @_;
-	my $try = $dy / $dx;
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
-	my $rx = $dx / 2;
-	$self-> stroke(<<ELLIPSE);
-$x $y M : $x $y T 1 $try Z
-N $rx 0 M 0 0 $rx 0 360 a O ;
-ELLIPSE
+
+	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, 0, 360);
+	my $content = "@{ $cubics->[0] }[0,1] m\n";
+	$content   .= "@{$_}[2..7] c\n" for @$cubics;
+	$self-> stroke( $content . " h S");
 }
 
 sub fill_chord
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
-	my $try = $dy / $dx;
+
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
-	my $rx = $dx / 2;
-	$end -= $start;
-	my $F = (($self-> fillMode & fm::Winding) == fm::Alternate) ? 'E' : 'F';
-	$self-> fill( <<CHORD );
-$x $y M : $x $y T 1 $try Z
-N $rx 0 M 0 0 $rx 0 $end a X $F ;
-CHORD
+
+	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
+	my $content = "@{ $cubics->[0] }[0,1] m\n";
+	$content   .= "@{$_}[2..7] c\n" for @$cubics;
+	my $F = (($self-> fillMode & fm::Winding) == fm::Alternate) ? 'f*' : 'f';
+	$self-> fill( $content . " h $F");
 }
 
 sub fill_ellipse
 {
 	my ( $self, $x, $y, $dx, $dy) = @_;
-	my $try = $dy / $dx;
-	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
-	my $rx = $dx / 2;
-	$self-> fill(<<ELLIPSE);
-$x $y M : $x $y T 1 $try Z
-N $rx 0 M 0 0 $rx 0 360 a F ;
-ELLIPSE
+	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, 0, 360);
+	my $content = "@{ $cubics->[0] }[0,1] m\n";
+	$content   .= "@{$_}[2..7] c\n" for @$cubics;
+	$self-> stroke( $content . " h f");
 }
 
 sub sector
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
-	my $try = $dy / $dx;
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
-	my $rx = $dx / 2;
-	$end -= $start;
-	$self-> stroke(<<SECTOR);
-$x $y M : $x $y T 1 $try Z $start R
-N 0 0 M 0 0 $rx 0 $end a 0 0 l O ;
-SECTOR
+
+	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
+	my $content = "$x $y m @{ $cubics->[0] }[0,1] l\n";
+	$content   .= "@{$_}[2..7] c\n" for @$cubics;
+	$self-> stroke( $content . " h S");
 }
 
 sub fill_sector
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
-	my $try = $dy / $dx;
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
-	my $rx = $dx / 2;
-	$end -= $start;
-	my $F = (($self-> fillMode & fm::Winding) == fm::Alternate) ? 'E' : 'F';
-	$self-> fill(<<SECTOR);
-$x $y M : $x $y T 1 $try Z $start R
-N 0 0 M 0 0 $rx 0 $end a 0 0 l $F ;
-SECTOR
+
+	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
+	my $content = "$x $y m @{ $cubics->[0] }[0,1] l\n";
+	$content   .= "@{$_}[2..7] c" for @$cubics;
+	my $F = (($self-> fillMode & fm::Winding) == fm::Alternate) ? 'f*' : 'f';
+	$self-> fill( $content . " h $F");
 }
 
 sub text_out_outline
@@ -877,6 +1166,8 @@ sub glyph_out_outline
 	my $emit = '';
 	my $fid  = 0;
 	my $ff = $canvas->font;
+	my $curr_subfont = -1;
+	my ($x, $y) = (0,0);
 	for ( my $i = $from; $i < $len; $i++) {
 		my $advance;
 		my $glyph     = $glyphs->[$i];
@@ -895,13 +1186,19 @@ sub glyph_out_outline
 			}
 			$self-> glyph_canvas_set_font( %$newfont );
 			$font = $nfid ? $keeper->get_font($canvas->font) : $self->{glyph_font};
-			$emit .= "/$font FF $self->{font}->{size} XF SF\n";
 			$fid = $nfid;
+			$curr_subfont = -1;
 		}
 		my $char = defined($plaintext) ?
 			substr( $plaintext, $indexes->[$i] & ~to::RTL, $ix_lengths[$i]) :
 			undef;
-		my $gid = $keeper-> use_char($canvas, $font, $glyph, $char);
+		my ($subfont, $gid) = $keeper-> use_char($canvas, $font, $glyph, $char);
+		if ( defined($gid) && $subfont != $curr_subfont ) {
+			$curr_subfont = $subfont;
+			my $xid = $self-> {all_fonts}-> {$font}-> {xids}-> [ $subfont ] //= $self->new_dummy_obj;
+			$self->{page_fonts}->{$xid} //= 1;
+			$emit .= "/F$xid $self->{font}->{size} Tf\n";
+		}
 		if ( $advances) {
 			$advance = $advances->[$i];
 			$x2 += $positions->[$i*2];
@@ -911,21 +1208,21 @@ sub glyph_out_outline
 			$advance = ($$xr[0] + $$xr[1] + $$xr[2]) * $div;
 		}
 		$adv += $advance;
-		if ( defined $gid ) {
-			($x2, $y2) = map { int( $_ * 100 + 0.5) / 100 } $self->pixel2point($x2, $y2);
-			$emit .= "$x2 $y2 M " if $x2 != 0 || $y2 != 0;
-		} else {
-			# not a single vector font found
-			$gid //= $Prima::PS::Unicode->{$char} // 'question';
+		($x2, $y2) = map { int( $_ * 100 + 0.5) / 100 } $self->pixel2point($x2, $y2);
+		my $dx = $x2 - $x;
+		my $dy = $y2 - $y;
+		if  ($dx != 0 || $dy != 0) {
+			($dx, $dy) = map { int( $_ * 100 + 0.5) / 100 } ($dx, $dy);
+			$emit .= "$dx $dy Td ";
 		}
-		$emit .= "/$gid Y\n";
+		($x, $y) = ($x2, $y2);
+		$emit .= sprintf "<%02x> Tj\n", $gid if defined $gid;
 	}
 
 	if ($restore_font) {
-		$emit .= "/$self->{glyph_font} FF $self->{font}->{size} XF SF\n";
 		$self-> glyph_canvas_set_font( %{ $self->{font} });
 	}
-	$self-> emit($emit);
+	$self-> emit_content($emit);
 }
 
 sub text_out
@@ -951,19 +1248,17 @@ sub text_out
 	$y += $self-> {font}-> {descent} if !$self-> textOutBaseline;
 	( $x, $y) = $self-> pixel2point( $x, $y);
 
-	if ( $self-> {changed}-> {font}) {
-		my $fn = $self->{glyph_font};
-		$self-> emit( "/$fn FF $self->{font}->{size} XF SF");
-		$self-> {changed}-> {font} = 0;
-	}
-
+	$self-> emit_content("q");
 	my $wmul = $self-> {font_x_scale};
-	$self-> emit(": $x $y T");
-	$self-> emit("$wmul 1 Z") if $wmul != 1;
-	$self-> emit("0 0 M");
 	if ( $self-> {font}-> {direction} != 0) {
 		my $r = $self-> {font}-> {direction};
-		$self-> emit("$r R");
+		my $sin1 = sin($r);
+		my $cos  = cos($r);
+		my $wcos = cos($r) * $wmul;
+		my $sin2 = -$sin1;
+		$self-> emit_content("$wcos $sin1 $sin2 $cos $x $y cm");
+	} else {
+		$self-> emit_content("$wmul 0 0 1 $x $y cm");
 	}
 
 	my @rb;
@@ -976,39 +1271,53 @@ sub text_out
 		$self-> textOutBaseline($bs) unless $bs;
 	}
 	if ( $self-> textOpaque) {
-		$self-> emit( $self-> cmd_rgb( $self-> backColor));
-		$self-> emit( ": N @rb[0,1] M @rb[2,3] l @rb[6,7] l @rb[4,5] l X F ;");
+		$self-> emit_content( uc $self-> cmd_rgb( $self-> backColor));
+		$self-> emit_content( "h @rb[0,1] m @rb[2,3] l @rb[6,7] l @rb[4,5] l f");
 	}
 
-	$self-> emit( $self-> cmd_rgb( $self-> color));
+	$self-> emit_content( lc $self-> cmd_rgb( $self-> color));
 
+	$self-> emit_content( "BT");
 	if ( $glyphs ) {
 		$self->glyph_out_outline($text, $from, $len);
 	} else {
 		$self->text_out_outline($text);
 	}
+	$self-> emit_content( "ET");
 
 	if ( $self-> {font}-> {style} & (fs::Underlined|fs::StruckOut)) {
+		$self-> emit_content( uc $self-> cmd_rgb( $self-> color));
 		my $lw = int($self-> {font}-> {size} / 40 + .5); # XXX empiric
 		$lw ||= 1;
-		$self-> emit("[] 0 SD 0 SL $lw SW");
+		$self-> emit_content("[] 0 d 0 J $lw w");
 		if ( $self-> {font}-> {style} & fs::Underlined) {
-			$self-> emit("N @rb[0,3] M $rb[4] 0 L O");
+			$self-> emit_content("h @rb[0,3] m @rb[4,3] l S");
 		}
 		if ( $self-> {font}-> {style} & fs::StruckOut) {
 			$rb[3] += $rb[1]/2;
-			$self-> emit("N @rb[0,3] M $rb[4] 0 L O");
+			$self-> emit_content("h @rb[0,3] m @rb[4,3] l S");
 		}
 	}
-	$self-> emit(";");
+	$self-> emit_content("Q");
 	return 1;
+}
+
+sub rectangle
+{
+	my ( $self, $x1, $y1, $x2, $y2) = @_;
+	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
+	$x2 -= $x1;
+	$y2 -= $y1;
+	$self-> stroke( "h $x1 $y1 $x2 $y2 re S");
 }
 
 sub bar
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
 	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
-	$self-> fill( "N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X F");
+	$x2 -= $x1;
+	$y2 -= $y1;
+	$self-> fill( "h $x1 $y1 $x2 $y2 re f");
 }
 
 sub bars
@@ -1020,16 +1329,9 @@ sub bars
 	$c = int( $c / 4) * 4;
 	my $z = '';
 	for ( $i = 0; $i < $c; $i += 4) {
-		$z .= "N @a[$i,$i+1] M @a[$i,$i+3] l @a[$i+2,$i+3] l @a[$i+2,$i+1] l X F ";
+		$z .= "h @a[$i,$i+1] " . ($a[$i+2] - $a[$i]) . ' ' . ($a[$i+3] - $a[$i+1]) . " re f\n";
 	}
 	$self-> stroke( $z);
-}
-
-sub rectangle
-{
-	my ( $self, $x1, $y1, $x2, $y2) = @_;
-	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
-	$self-> stroke( "N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X O");
 }
 
 sub alpha {}
@@ -1044,10 +1346,12 @@ sub clear
 		}
 	}
 	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
-	my $c = $self-> cmd_rgb( $self-> backColor);
-	$self-> emit(<<CLEAR);
+	$x2 -= $x1;
+	$y2 -= $y1;
+	my $c = lc $self-> cmd_rgb( $self-> backColor);
+	$self-> emit_content(<<CLEAR);
 $c
-N $x1 $y1 M $x1 $y2 l $x2 $y2 l $x2 $y1 l X F
+h $x1 $y1 $x2 $y2 re f
 CLEAR
 	$self-> {changed}-> {fill} = 1;
 }
@@ -1056,7 +1360,7 @@ sub line
 {
 	my ( $self, $x1, $y1, $x2, $y2) = @_;
 	( $x1, $y1, $x2, $y2) = $self-> pixel2point( $x1, $y1, $x2, $y2);
-	$self-> stroke("N $x1 $y1 M $x2 $y2 l O");
+	$self-> stroke("h $x1 $y1 m $x2 $y2 l S");
 }
 
 sub lines
@@ -1068,7 +1372,7 @@ sub lines
 	$c = int( $c / 4) * 4;
 	my $z = '';
 	for ( $i = 0; $i < $c; $i += 4) {
-		$z .= "N @a[$i,$i+1] M @a[$i+2,$i+3] l O ";
+		$z .= "h @a[$i,$i+1] m @a[$i+2,$i+3] l S\n";
 	}
 	$self-> stroke( $z);
 }
@@ -1081,12 +1385,11 @@ sub polyline
 	my @a = $self-> pixel2point( @$array);
 	$c = int( $c / 2) * 2;
 	return if $c < 2;
-	my $z = "N @a[0,1] M ";
+	my $z = "@a[0,1] m\n";
 	for ( $i = 2; $i < $c; $i += 2) {
-		$z .= "@a[$i,$i+1] l ";
+		$z .= "@a[$i,$i+1] l\n";
 	}
-	$z .= "O";
-	$self-> stroke( $z);
+	$self-> stroke($z . 'S');
 }
 
 sub fillpoly
@@ -1094,15 +1397,17 @@ sub fillpoly
 	my ( $self, $array) = @_;
 	my $i;
 	my $c = scalar @$array;
+	my @a = $self-> pixel2point( @$array);
 	$c = int( $c / 2) * 2;
 	return if $c < 2;
-	my @a = $self-> pixel2point( @$array);
-	my $x = "N @a[0,1] M ";
+
+	my $z = "@a[0,1] m\n";
 	for ( $i = 2; $i < $c; $i += 2) {
-		$x .= "@a[$i,$i+1] l ";
+		$z .= "@a[$i,$i+1] l\n";
 	}
-	$x .= 'X ' . ((($self-> fillMode & fm::Winding) == fm::Alternate) ? 'E' : 'F');
-	$self-> fill( $x);
+	$self-> fill($z . 
+		((($self-> fillMode & fm::Winding) == fm::Alternate) ? 'f*' : 'f')
+	);
 }
 
 sub flood_fill { return 0; }
@@ -1111,13 +1416,14 @@ sub pixel
 {
 	my ( $self, $x, $y, $pix) = @_;
 	return cl::Invalid unless defined $pix;
-	my $c = $self-> cmd_rgb( $pix);
-	($x, $y) = $self-> pixel2point( $x, $y);
-	$self-> emit(<<PIXEL);
-:
+	my $c = lc $self-> cmd_rgb( $pix);
+	my $w;
+	($x, $y, $w) = $self-> pixel2point( $x, $y, 1);
+	$self-> emit_content(<<PIXEL);
+q
 $c
-N $x $y M 0 0 L F
-;
+$x $y $w $w re f
+Q
 PIXEL
 	$self-> {changed}-> {fill} = 1;
 }
@@ -1173,21 +1479,68 @@ sub put_image_indirect
 		$is[1] / $yLen * $yDestLen,
 	);
 
+	my $xid2;
+	if ( $image-> isa('Prima::Icon')) {
+		if ( $image-> maskType != 1 ) {
+			$image = $image-> dup unless $touch;
+			$image-> set(maskType => 1);
+			$touch = 1;
+		}
+		my $obj;
+		($xid2, $obj) = $self-> new_file_obj( compress => 1 );
+		my $bt = int($is[0] / 8) + (($is[0] & 7) ? 1 : 0);
+		my $xs = $bt * $is[1];
+		my $g  = $image-> mask;
+		my $ls = $image-> maskLineSize;
+		for ( my $i = 0; $i < $is[1]; $i++) {
+			$obj-> write( substr($g, ($is[1] - $i - 1) * $ls, $bt) );
+		}
+		undef $g;
+		my $filter = $obj-> is_deflated ? "/Filter /FlateDecode" : '';
+
+		$self-> emit_file_obj($obj, <<OBJ);
+/Type /XObject
+/Subtype /Image
+/Width $is[0]
+/Height $is[1]
+/BitsPerComponent 1
+/ImageMask true
+$filter
+OBJ
+	}
+
+	my ($xid, $obj) = $self-> new_file_obj( compress => 1 );
+	push @{ $self-> {page_images}}, $xid;
+
 	my $g  = $image-> data;
 	my $bt = ( $image-> type & im::BPP) * $is[0] / 8;
-	my $ls = $image->lineSize;
-	my ( $i, $j);
-
-	$self-> emit(": $x $y T @fullScale Z");
-	$self-> emit("/scanline $bt string d");
-	$self-> emit("@is 8 [$is[0] 0 0 $is[1] 0 0]");
-	$self-> emit('{currentfile scanline readhexstring pop}');
-	$self-> emit(( $image-> type & im::GrayScale) ? "image" : "false 3 colorimage");
-
-	for ( $i = 0; $i < $is[1]; $i++) {
-		$self-> emit(unpack('H*', substr( $g, $ls * $i, $bt)));
+	my $ls = $image-> lineSize;
+	for ( my $i = 0; $i < $is[1]; $i++) {
+		$obj-> write( substr($g, ($is[1] - $i - 1) * $ls, $bt) );
 	}
-	$self-> emit(';');
+	undef $g;
+
+	my $cs = (($image->type & im::GrayScale) ? 'Gray' : 'RGB');
+	my $mask = $xid2 ? "/Mask $xid2 0 R" : '';
+	my $filter = $obj-> is_deflated ? "/Filter /FlateDecode" : '';
+
+	$self-> emit_file_obj($obj, <<OBJ);
+/Type /XObject
+/Subtype /Image
+/Width $is[0]
+/Height $is[1]
+/ColorSpace /Device$cs
+/BitsPerComponent 8
+$mask
+$filter
+OBJ
+
+	$self-> emit_content(<<PUT);
+q
+$fullScale[0] 0 0 $fullScale[1] $x $y cm
+/I$xid Do
+Q
+PUT
 	return 1;
 }
 
@@ -1195,6 +1548,7 @@ sub get_bpp              { return $_[0]-> {grayscale} ? 8 : 24 }
 sub get_nearest_color    { return $_[1] }
 sub get_physical_palette { return $_[0]-> {grayscale} ? [map { $_, $_, $_ } 0..255] : 0 }
 sub get_handle           { return 0 }
+
 
 # fonts
 sub fonts
@@ -1297,10 +1651,12 @@ sub set_font
 	$self-> glyph_canvas_set_font(%$font);
 	my $f1000 = $self->glyph_canvas->font;
 	if ($f1000->{vector} == fv::Outline) {
-		$self-> {glyph_keeper} //= Prima::PS::Type1->new;
+		$self-> {glyph_keeper} //= Prima::PS::CFF->new;
 		$self-> {glyph_font} = $self-> {glyph_keeper}->get_font($f1000); # it wants size=1000
+		$self-> {all_fonts}->{ $self->{glyph_font} }->{native} //= 0;
 	} else {
-		$self-> {glyph_font}  = ($f1000->{pitch} == fp::Fixed) ? 'Courier' : 'Helvetica'
+		$self-> {glyph_font}  = ($f1000->{pitch} == fp::Fixed) ? 'Courier' : 'Helvetica';
+		$self-> {all_fonts}->{ $self->{glyph_font} }->{native} //= 1;
 	}
 
 	# When querying glyph extensions, remember to scale to the
@@ -1429,21 +1785,20 @@ sub render_glyph {}
 
 1;
 
-__END__
-
 =pod
 
 =head1 NAME
 
-Prima::PS::Drawable -  PostScript interface to Prima::Drawable
+Prima::PS::PDF -  PDF interface to Prima::Drawable
 
 =head1 SYNOPSIS
 
 	use Prima;
-	use Prima::PS::Drawable;
+	use Prima::PS::PDF;
 
-	my $x = Prima::PS::Drawable-> create( onSpool => sub {
-		open F, ">> ./test.ps";
+	my $x = Prima::PS::PDF-> create( onSpool => sub {
+		open F, ">> ./test.pdf";
+		binmode F;
 		print F $_[1];
 		close F;
 	});
@@ -1455,7 +1810,7 @@ Prima::PS::Drawable -  PostScript interface to Prima::Drawable
 
 =head1 DESCRIPTION
 
-Realizes the Prima library interface to PostScript level 2 document language.
+Realizes the Prima library interface to PDF v1.4.
 The module is designed to be compliant with Prima::Drawable interface.
 All properties' behavior is as same as Prima::Drawable's, except those
 described below.
@@ -1479,10 +1834,6 @@ and vice versa calculations
 =head2 Specific properties
 
 =over
-
-=item ::copies
-
-amount of copies that PS interpreter should print
 
 =item ::grayscale
 
@@ -1515,21 +1866,9 @@ etc.
 
 =over
 
-=item emit
-
-Can be called for direct PostScript code injection. Example:
-
-	$x-> emit('0.314159 setgray');
-	$x-> bar( 10, 10, 20, 20);
-
 =item pixel2point and point2pixel
 
 Helpers for translation from pixel to points and vice versa.
-
-=item fill & stroke
-
-Wrappers for PS outline that is expected to be filled or stroked.
-Apply colors, line and fill styles if necessary.
 
 =item spool
 
@@ -1546,4 +1885,3 @@ That effectively allows only unicode output.
 =back
 
 =cut
-
