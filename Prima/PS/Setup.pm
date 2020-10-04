@@ -1,28 +1,33 @@
 #  Setup dialog management
 
+package Prima::PS::Printer::Common;
+
 use strict;
 use warnings;
+use File::Path;
 use Prima::PS::Printer;
-package Prima::PS::Printer;
-
+use Prima::VB::VBLoader;
+use Prima::MsgBox;
 
 sub sdlg_export
 {
 	my ( $self, $p) = @_;
 	my $d = $self-> {setupDlg}-> TabbedNotebook1-> Notebook;
-	my $i  = $d-> VList-> items;
-	my $a = 0;
-	my %hk = map { $$_[0] => $a++ } @$i;
 	$p-> {color}      = $d-> Color-> index ? 1 : 0;
 	$p-> {portrait}   = $d-> Orientation-> index ? 0 : 1;
 	$p-> {scaling}    = $d-> Scaling-> value / 100;
 	$p-> {resolution} = $d-> Resolution-> value;
-	$p-> {copies}     = $d-> CopyCount-> text;
 	$p-> {page}       = $d-> PaperSize-> text;
+	return if $self->{is_pdf};
+
+	$p-> {copies}     = $d-> CopyCount-> text;
+	my $i  = $d-> VList-> items;
+	my $z = 0;
+	my %hk = map { $$_[0] => $z++ } @$i;
 	$p-> {devParms}   = { map { my $j = $i-> [ $hk{ $_}]; @$j[0,3] } keys %{$self-> {data}-> {devParms}}};
 	$p-> {isEPS} = $i-> [ $hk{IsEPS}]-> [3];
-	$p-> {spoolerType} = $d-> Spool-> index;
-	$p-> {spoolerData} = $d-> Spool-> bring(( $p-> {spoolerType} == lpr) ? 'LParams' : 'CmdLine')-> text;
+	$p-> {spoolerType} = $Prima::PS::Printer::Common::spooler_types[$d-> Spool-> index];
+	$p-> {spoolerData} = $d-> Spool-> bring(( $p-> {spoolerType} eq 'lpr') ? 'LParams' : 'CmdLine')-> text;
 }
 
 sub sdlg_import
@@ -34,12 +39,15 @@ sub sdlg_import
 	$d-> Orientation-> index( $p-> {portrait} ? 0 : 1);
 	$d-> Scaling->     value( int( $p-> {scaling} * 100));
 	$d-> Resolution->  value( int( $p-> {resolution}));
-	$d-> CopyCount->   value( int( $p-> {copies}));
 	$d-> PaperSize->   text( $p-> {page});
 
+	return if $self->{is_pdf};
+
+	$d-> CopyCount->   value( int( $p-> {copies}));
+
 	my $i  = $d-> VList-> items;
-	my $a = 0;
-	my %hk = map { $$_[0] => $a++ } @$i;
+	my $z = 0;
+	my %hk = map { $$_[0] => $z++ } @$i;
 	for ( keys %{$p-> {devParms}}) {
 		my $j = $i-> [ $hk{$_}];
 		$j-> [3] = $p-> {devParms}-> {$_};
@@ -58,27 +66,32 @@ sub sdlg_import
 		}
 	}
 
-	$p-> {spoolerType} = file if $p-> {spoolerType} == lpr && !$unix;
+	$p-> {spoolerType} = 'file' if $p-> {spoolerType} eq 'lpr' && !$Prima::PS::Printer::Common::unix;
 	my $sp = $d-> Spool;
-	$sp-> index( $p-> {spoolerType});
+	$i = 0;
+	my %ix = map { $_ => $i++ } @Prima::PS::Printer::Common::spooler_types;
+	$sp-> index( $ix{$p-> {spoolerType}});
 	$sp-> CmdLine-> text( '');
 	$sp-> LParams-> text( '');
-	$sp-> bring( ($p-> {spoolerType} == lpr) ? 'LParams' : 'CmdLine')-> text( $p-> {spoolerData});
+	$sp-> bring( ($p-> {spoolerType} eq 'lpr') ? 'LParams' : 'CmdLine')-> text( $p-> {spoolerData});
 }
 
 
 sub sdlg_exec
 {
-	my $self = $_[0];
+	my ($self, $pdf) = @_;
 
 	unless ( defined $self-> {setupDlg}) {
-		eval "use Prima::VB::VBLoader"; die "$@\n" if $@;
-		eval "use Prima::MsgBox"; die "$@\n" if $@;
 		$self-> {setupDlg} = Prima::VBLoad( 'Prima::PS::setup.fm',
 		'Form1'     => { visible => 0, centered => 1, designScale => [ 7, 16 ]},
-		'PaperSize' => { items => [ sort keys %pageSizes ], },
+		'PaperSize' => { items => [ sort keys %Prima::PS::Printer::Common::pageSizes ], },
 		'OK'        => {
 			onClick => sub {
+				if ($self->{is_pdf}) {
+					$self-> sdlg_export( $self->{data} );
+					return $_[0]->owner->ok;
+				}
+
 				my $t = $_[0]-> owner-> TabbedNotebook1-> Notebook;
 				my $x = $t-> Profiles;
 				my $i = $x-> get_items( $x-> focusedItem);
@@ -189,7 +202,6 @@ sub sdlg_exec
 				my $x = $n;
 				$x =~ s/[\\\/]?[^\\\/]+$//;
 				unless ( -d $x) {
-					eval "use File::Path"; die "$@\n" if $@;
 					File::Path::mkpath( $x);
 				}
 			}
@@ -246,6 +258,15 @@ sub sdlg_exec
 		Prima::message("$@"), return unless $self-> {setupDlg};
 		unless ( $self-> {setupDlg}) { Prima::message( $@ ); return }
 		$self-> {setupDlg}-> TabbedNotebook1-> Notebook-> VList-> focusedItem( 0);
+
+		if ( $pdf ) {
+			$self->{setupDlg}->text('PDF Settings');
+			my $n = $self->{setupDlg}->TabbedNotebook1;
+			$n->delete_page($_) for 3,2,1;
+			$n->Notebook->Label2->destroy;
+			$n->Notebook->CopyCount->destroy;
+			$self->{is_pdf} = 1;
+		}
 	}
 
 	my $d = $self-> {setupDlg}-> TabbedNotebook1-> Notebook;
@@ -253,17 +274,19 @@ sub sdlg_exec
 
 	$self-> {bigChange} = 0;
 
-	$d-> Profiles-> focusedItem( -1);
-	$d-> Profiles-> items( [ keys %{$self-> {printers}}]);
-	$self-> {vprinters} = { map { $_ => deepcopy($self-> {printers}-> {$_}) }
-		keys %{$self-> {printers}}};
-	my $index = 0;
-	for ( keys %{$self-> {printers}}) {
-		last if $_ eq $self-> {current};
-		$index++;
+	unless ( $pdf ) {
+		$d-> Profiles-> focusedItem( -1);
+		$d-> Profiles-> items( [ keys %{$self-> {printers}}]);
+		$self-> {vprinters} = { map { $_ => deepcopy($self-> {printers}-> {$_}) }
+			keys %{$self-> {printers}}};
+		my $index = 0;
+		for ( keys %{$self-> {printers}}) {
+			last if $_ eq $self-> {current};
+			$index++;
+		}
+		$self-> {lastFocItem} = undef;
+		$d-> Profiles-> focusedItem( $index);
 	}
-	$self-> {lastFocItem} = undef;
-	$d-> Profiles-> focusedItem( $index);
 
 	$self-> sdlg_import( $p);
 	return if $self-> {setupDlg}-> execute != mb::OK;

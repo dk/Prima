@@ -1,6 +1,8 @@
 use strict;
 use warnings;
 use Prima::PS::Printer;
+use Prima::PS::PDF;
+use Prima::PS::Drawable;
 use Encode;
 
 sub page
@@ -131,7 +133,15 @@ sub page
 	}
 }
 
-my $p = Prima::PS::File->new( file => 'out.ps');
+if (!@ARGV || $ARGV[0] !~ /^\-(ps|pdf)$/) {
+	print "Please run with either -ps or -pdf\n";
+	exit(1);
+}
+
+my $p = ($ARGV[0] eq '-ps') ?
+	Prima::PS::File->new( file => 'out.ps') :
+	Prima::PS::PDF::File->new( file => 'out.pdf');
+
 $p->begin_doc;
 my $ff = $p->font;
 my @fonts = @{$p-> fonts};
@@ -146,4 +156,4 @@ for my $f ( @fonts ) {
 }
 
 $p->end_doc;
-print "\nout.ps generated ok\n";
+print "\n", $p->file, " generated ok\n";

@@ -290,7 +290,7 @@ sub AUTOLOAD
 		if scalar(@_) or not ref $self;
 	my ($componentName) = $expectedMethod =~ /::([^:]+)$/;
 	my $component = $self-> bring( $componentName);
-	Carp::croak("Unknown widget or method \"$expectedMethod\"")
+	Carp::confess("Unknown widget or method \"$expectedMethod\"")
 		unless $component && ref($component);
 	return $component;
 }
@@ -656,6 +656,8 @@ sub profile_check_in
 	}
 	$self-> SUPER::profile_check_in( $p, $default);
 }
+
+sub maskLineSize { int(( $_[0]->width * $_[0]->maskType + 31 ) / 32 ) * 4 }
 
 sub mirror
 {
@@ -2000,7 +2002,7 @@ sub get_printer
 			eval 'use ' . $_[0]-> {PrinterModule} . ';';
 			die "$@" if $@;
 		}
-		$_[0]-> {Printer} = $_[0]-> {PrinterClass}-> create( owner => $_[0]);
+		$_[0]-> {Printer} = $_[0]-> {PrinterClass}-> create( owner => $_[0], system => 1);
 	}
 	return $_[0]-> {Printer};
 }

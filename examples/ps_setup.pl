@@ -23,23 +23,22 @@ use Prima::PS::Printer;
 use Prima::Application;
 use Prima::StdBitmap;
 
+if (!@ARGV || $ARGV[0] !~ /^\-(ps|pdf)$/) {
+	print "Please run with either -ps or -pdf\n";
+	exit(1);
+} 
+
 $::application-> icon( Prima::StdBitmap::icon(0));
 
-my $x = Prima::PS::Printer-> create;
-my %z = %{$x-> {data}};
-my %p = %{$x-> {data}-> {devParms}};
+my $class = ($ARGV[0] eq '-ps') ?
+	'Prima::PS::Printer' :
+	'Prima::PS::PDF::Printer';
+
+my $x = $class-> new;
 $x-> setup_dialog;
 
-for ( keys %z) {
-	next if $_ eq 'devParms';
-#	print "$_:$z{$_} => $x->{data}->{$_}\n";
-}
-for ( keys %p) {
-#	print "$_:$p{$_} => $x->{data}->{devParms}->{$_}\n";
-}
-
-# uncomment this to print document with the applied changes
 $x-> begin_doc;
+$x-> color(cl::Green);
 $x-> text_out( "hello!", 100, 100);
 $x-> end_doc;
 

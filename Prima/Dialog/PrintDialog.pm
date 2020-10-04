@@ -75,12 +75,14 @@ sub on_execute
 	my $self = $_[0];
 	my $oldp = $self-> Printers-> text;
 	my @prs = @{$::application-> get_printer-> printers};
-	unless ( scalar @prs) {
-		$self-> cancel;
-		Prima::message("No printers found");
-		return;
-	}
-	$self-> {list} = [ @prs];
+	my $pdf = ({
+		name   => 'Save as PDF',
+		device => 'file',
+		pdf    => 1,
+		object => undef,
+	});
+	push @prs, $pdf;
+	$self-> {list} = [@prs];
 	my $p = $self-> Printers;
 	my @newprs = @prs;
 	@newprs = map {$_ = $_-> {name}} @newprs;
@@ -103,7 +105,10 @@ sub on_execute
 sub Printers_Change
 {
 	my ( $self, $combic) = @_;
-	$::application-> get_printer-> printer( $combic-> text);
+
+	if ( $combic-> focusedItem < $combic-> List->count - 1 ) {
+		$::application-> get_printer-> printer( $combic-> text);
+	}
 	$self-> Device-> text( 'Device: ' .
 		$self-> {list}-> [ $combic-> List-> focusedItem]-> {device}
 	);
@@ -112,7 +117,14 @@ sub Printers_Change
 
 sub Properties_Click
 {
-	$::application-> get_printer-> setup_dialog;
+	my $self = shift;
+	my $combic = $self-> Printers;
+	if ( $combic-> focusedItem < $combic-> List->count - 1 ) {
+		$::application-> get_printer-> setup_dialog;
+	} else {
+		my $p = $self-> create_pdf_printer;
+		$p-> setup_dialog if $p;
+	}
 }
 
 sub OK_Click
@@ -129,6 +141,31 @@ sub Cancel_Click
 sub execute
 {
 	return $_[0]-> SUPER::execute == mb::OK;
+}
+
+sub create_pdf_printer
+{
+	my $self = shift;
+	unless ( $self->{list}->[1]->{object}) {
+		eval 'use Prima::PS::Printer;';
+		if ($@) {
+			Prima::message($@);
+			return undef;
+		}
+		$self->{list}->[1]->{object} = Prima::PS::PDF::Printer-> new;
+	}
+	return $self->{list}->[1]->{object};
+}
+
+sub printer
+{
+	my $self = shift;
+	my $combic = $self-> Printers;
+	if ( $combic-> focusedItem < $combic-> List->count - 1 ) {
+		return $::application-> get_printer;
+	} else {
+		return $self-> create_pdf_printer;
+	}
 }
 
 1;
@@ -159,7 +196,7 @@ selection process.
 
 	my $dlg = Prima::Dialog::PrintDialog-> new;
 	if ( $dlg-> execute) {
-		my $p = $::application-> get_printer;
+		my $p = $dlg-> printer;
 		if ( $p-> begin_doc ) {
 			$p-> text_out( 'Hello world', 10, 10);
 			$p-> end_doc;

@@ -15,29 +15,43 @@ Prima::PS modules set usage.
 
 use strict;
 use warnings;
-use Prima qw(Lists Label MsgBox PS::Printer);
+use Prima qw(Lists Label MsgBox PS::Printer PS::PDF);
 
 $::application = Prima::Application-> create( name => "Generic.pm");
 my $p = $::application-> get_printer;
 my $curr;
 my @printers;
 my $ps_printer = ($::application->{PrinterClass} =~ /PS/) ? undef : Prima::PS::Printer->new;
+my $pdf_printer = Prima::PS::PDF::Printer->new;
 
 my $l;
 my $w;
 my $display = "DISPLAY";
 my $wDisplay;
 
-my $i = Prima::Image-> create;
-$i-> load( 'Hand.gif' );
+my $i = Prima::Image-> new;
 $i-> size( 600, 600);
+$i-> clear;
+$i-> line(0,0,600,600);
+$i-> line(0,600,600,0);
 
 sub paint
 {
 	my $p = $_[0];
 	my @size = $p-> size;
 
+	for my $y ( 0 .. 31 ) {
+		for my $x ( 0 .. 31 ) {
+			my $chr = $y * 32 + $x;
+#			$p-> text_out(chr($chr), $x * 16, $y * 16);
+		}
+	}
+
+	$p-> color( cl::Yellow);
+	$p-> fill_ellipse( $size[0], $size[1], 300, 300);
+	$p-> rop2(rop::NoOper);
 	$p-> color( cl::LightGray);
+	$p-> fillPattern(fp::Critters);
 	$p-> fill_ellipse( $size[0], $size[1], 300, 300);
 
 	$p-> color( cl::Black);
@@ -126,6 +140,7 @@ sub refresh
 	push @printers, @ps_printers;
 
 	push( @printers, { name => $display});
+	push( @printers, { name => 'Save As PDF'});
 	$l-> items([ map {$_ = $_-> {name}} @{[@printers]}]),
 	$l-> focusedItem( scalar grep {
 		my $isnt = !$_-> {defaultPrinter}; ($wasnt &&= $isnt) && $isnt
@@ -196,6 +211,8 @@ $l = $w-> insert( ListBox =>
 		if ( $name =~ /^PostScript: (.*)/) {
 			$ps_printer-> printer( $1);
 			$curr = $ps_printer;
+		} elsif ( $name eq 'Save As PDF') {
+			$curr = $pdf_printer;
 		} else {
 			$p-> printer( $name);
 			$curr = $p;

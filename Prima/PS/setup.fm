@@ -89,7 +89,7 @@ $self-> {imgConvProc} = sub {
 			onExecute => Prima::VB::VBLoader::GO_SUB('my $self = $_[0];
 my $x = $self-> TabbedNotebook1-> Notebook;
 $x-> HelpBtn-> notify(\'Click\') if
-   $x-> ValueBox-> ValueBook-> pageIndex == 3;
+   $x->bring("ValueBox") && $x-> ValueBox-> ValueBook-> pageIndex == 3;
 ','Form1', 'onExecute'),
 			origin => [ 795, 325],
 			originDontCare => 0,
@@ -153,8 +153,8 @@ $x-> HelpBtn-> notify(\'Click\') if
 		siblings => [qw(focusLink)],
 		profile => {
 			growMode => gm::GrowHiX,
+			origin => [ 9, 215],
 			name => 'Label4',
-			origin => [ 9, 163],
 			owner => 'TabbedNotebook1',
 			size => [ 100, 20],
 			text => '~Resolution:',
@@ -166,7 +166,7 @@ $x-> HelpBtn-> notify(\'Click\') if
 		profile => {
 			growMode => gm::GrowHiX,
 			name => 'Label2',
-			origin => [ 9, 215],
+			origin => [ 9, 163],
 			owner => 'TabbedNotebook1',
 			size => [ 100, 20],
 			text => '~Copy count:',
@@ -179,8 +179,8 @@ $x-> HelpBtn-> notify(\'Click\') if
 			max => 32000,
 			min => 25,
 			name => 'Resolution',
-			origin => [ 114, 164],
 			owner => 'TabbedNotebook1',
+			origin => [ 114, 215],
 			size => [ 178, 20],
 			step => 100,
 			value => 300,
@@ -204,7 +204,7 @@ $x-> HelpBtn-> notify(\'Click\') if
 			max => 1000,
 			min => 1,
 			name => 'CopyCount',
-			origin => [ 114, 215],
+			origin => [ 114, 164],
 			owner => 'TabbedNotebook1',
 			size => [ 178, 20],
 			value => 1,
