@@ -1138,8 +1138,7 @@ sub fill_sector
 sub text_out_outline
 {
 	my ( $self, $text ) = @_;
-	my $is_bytes = !Encode::is_utf8($text);
-	my $shaped   = $self->text_shape($text, level => $is_bytes ? ts::Bytes : ts::Glyphs ) or return;
+	my $shaped   = $self->text_shape($text, level => ts::Glyphs ) or return;
 	$self-> glyph_out_outline($shaped, 0, scalar @{$shaped->glyphs});
 }
 
