@@ -171,14 +171,20 @@ sub evacuate_next_subfont
 sub use_char
 {
 	my ( $self, $canvas, $key, $charid, $unicode) = @_;
-	my $f = $self->{fonts}->{$key} // return 0, 0;
+	my $f = $self->{fonts}->{$key} // return;
 
-	return $f->{subfonts}->{$charid} >> 8, $f->{subfonts}->{$charid} & 0xff
-		if exists $f->{subfonts}->{$charid};
+	if (exists $f->{subfonts}->{$charid}) {
+		my $n = $f->{subfonts}->{$charid};
+		return unless defined $n;
+		return $n >> 8, $n & 0xff
+	}
 
 	$f->{tmpfile} //= Prima::PS::TempFile->new;
 	my ($code, $abc) = $self->get_outline( $canvas, $key, $charid, 0 );
-	return undef unless defined $code;
+	unless (defined($code) || length($code) == 0) {
+		$f->{subfonts}->{$charid} = undef;
+		return;
+	}
 
 	my $n = $f->{subfonts}->{$charid} = $f->{n_glyphs}++;
 

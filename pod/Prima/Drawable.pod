@@ -1484,9 +1484,9 @@ and how deep the shaping should go. One of the following C<ts::XXX> options:
 =item ts::Bytes
 
 Treats input text as non-unicode locale-specific codepoints, characters higher
-than 255 are treated as chr(255).  Reordering never happens, kerning and
-ligation never happens, returns glyph indexes in a 1:1 mapping for each
-codepoint.
+than 255 are treated as chr(255).  Reordering never happens, font substition
+never happens, kerning and ligation never happens; returns glyph indexes in a
+1:1 mapping for each codepoint.
 
 =item ts::None
 

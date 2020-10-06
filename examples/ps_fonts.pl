@@ -15,6 +15,22 @@ sub page
 
 	my $m = $p-> get_font;
 	my $xtext = Encode::decode('latin1', "\x{c5}Mg");
+
+	my $glyphs = $p-> text_shape( $xtext, level => ts::Glyphs, polyfont => 0 );
+	if ( grep { $_ == 0 } @{ $glyphs->glyphs }) {
+		# bad glyphs find some others (best if not ascii)
+		my @g;
+		$xtext = '';
+		my $r = $p-> get_font_ranges;
+		GLYPHS: for ( my $i = @$r - 2; $i >= 0; $i -= 2) {
+			my ( $from, $to ) = @{$r}[$i,$i+1];
+			for ( my $j = $from; $j <= $to; $j++) {
+				$xtext .= chr($j);
+				last GLYPHS if length($xtext) > 2;
+			}
+		}
+	}
+
 	my $s = $size[1] - $m-> {height} - $m-> {externalLeading} - 220;
 	my $w = $p-> get_text_width($xtext) + 66;
 	$p-> textOutBaseline(1);
