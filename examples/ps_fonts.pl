@@ -17,7 +17,7 @@ sub page
 	my $xtext = Encode::decode('latin1', "\x{c5}Mg");
 
 	my $glyphs = $p-> text_shape( $xtext, level => ts::Glyphs, polyfont => 0 );
-	if ( grep { $_ == 0 } @{ $glyphs->glyphs }) {
+	if ( $glyphs && grep { $_ == 0 } @{ $glyphs->glyphs }) {
 		# bad glyphs find some others (best if not ascii)
 		my @g;
 		$xtext = '';
@@ -163,7 +163,7 @@ my $ff = $p->font;
 my @fonts = @{$p-> fonts};
 my $i;
 $|++;
-for my $f ( @fonts ) {
+for my $f ( sort { $a->{name} cmp $b->{name} } @fonts ) {
 	$i++;
 	printf "[%d/%d] %s              \r", $i, scalar(@fonts), $f->{name};
 	$p->font($ff);

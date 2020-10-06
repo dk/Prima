@@ -181,7 +181,7 @@ sub use_char
 
 	$f->{tmpfile} //= Prima::PS::TempFile->new;
 	my ($code, $abc) = $self->get_outline( $canvas, $key, $charid, 0 );
-	unless (defined($code) || length($code) == 0) {
+	unless (defined($code) && length($code)) {
 		$f->{subfonts}->{$charid} = undef;
 		return;
 	}
