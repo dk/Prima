@@ -37,7 +37,10 @@ sub new
 
 sub DESTROY
 {
-	unlink $_[0]->{filename} if $_[0]->{force_unlink};
+	if ($_[0]->{force_unlink}) {
+		close $_[0]->{fh};
+		unlink $_[0]->{filename};
+	}
 }
 
 sub remove { unlink shift->{filename} }

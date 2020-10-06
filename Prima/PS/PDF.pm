@@ -319,7 +319,7 @@ sub new_dummy_obj
 sub new_file_obj
 {
 	my ($self, %opt) = @_;
-	my $obj = Prima::PS::TempFile->new(%opt) or return;
+	my $obj = Prima::PS::TempFile->new(compress => 1, %opt) or return;
 	my $xid = @{ $self->{objects} };
 	push @{ $self->{objects} }, $obj;
 	$obj->{__xid} = $xid;
@@ -346,7 +346,7 @@ sub emit_stream_obj
 	$self-> emit("$obj->{xid} 0 obj\n<<\n/Length ".length $obj->{content});
 	$self-> emit( $text ) if defined $text;
 	$self-> emit(">>\nstream");
-	$self-> emit($obj->{content}, 1);
+	$self-> emit($obj->{content});
 	$self-> emit("endstream\nendobj");
 }
 
@@ -359,7 +359,7 @@ sub emit_new_stream_object
 	$self-> emit("$xid 0 obj\n<<\n/Length ".length($stream));
 	$self-> emit( $text ) if defined $text;
 	$self-> emit(">>\nstream");
-	$self-> emit($stream, 1);
+	$self-> emit($stream);
 	$self-> emit("endstream\nendobj");
 	return $xid;
 }
@@ -368,11 +368,14 @@ sub emit_file_obj
 {
 	my ( $self, $obj, $text ) = @_;
 	$self-> add_xref($obj->{__xid});
+	my $compress = $obj-> is_deflated;
+	$obj-> reset;
 	$self-> emit("$obj->{__xid} 0 obj\n<<\n/Length ".$obj->{size});
+	$self-> emit("/Filter /FlateDecode") if $compress;
 	$self-> emit( $text ) if defined $text;
 	$self-> emit(">>\nstream");
 	$obj->  evacuate( sub { $self->emit( $_[0], 1 ) } );
-	$self-> emit("endstream\nendobj");
+	$self-> emit("\nendstream\nendobj");
 }
 
 sub add_xref
@@ -1486,7 +1489,7 @@ sub put_image_indirect
 			$touch = 1;
 		}
 		my $obj;
-		($xid2, $obj) = $self-> new_file_obj( compress => 1 );
+		($xid2, $obj) = $self-> new_file_obj;
 		my $bt = int($is[0] / 8) + (($is[0] & 7) ? 1 : 0);
 		my $xs = $bt * $is[1];
 		my $g  = $image-> mask;
@@ -1508,7 +1511,7 @@ $filter
 OBJ
 	}
 
-	my ($xid, $obj) = $self-> new_file_obj( compress => 1 );
+	my ($xid, $obj) = $self-> new_file_obj;
 	push @{ $self-> {page_images}}, $xid;
 
 	my $g  = $image-> data;
