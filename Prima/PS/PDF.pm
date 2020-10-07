@@ -2,7 +2,6 @@
 # text
 # regions
 # alpha
-# 8 bit icon masks
 # porter-duff rops
 # paths
 package Prima::PS::PDF;
@@ -39,6 +38,7 @@ sub profile_default
 		rotate           => 0,
 		scale            => [1, 1],
 		textOutBaseline  => 0,
+		compress         => 1,
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
@@ -53,9 +53,10 @@ sub init
 	$self-> {resolution}  = [72,72];
 	$self-> {scale}       = [ 1, 1];
 	$self-> {rotate}      = 1;
+	$self-> {compress}    = 1;
 	$self-> {font}        = {};
 	my %profile = $self-> SUPER::init(@_);
-	$self-> $_( $profile{$_}) for qw( grayscale reversed rotate);
+	$self-> $_( $profile{$_}) for qw( grayscale reversed rotate compress);
 	$self-> $_( @{$profile{$_}}) for qw( pageSize pageMargins resolution scale );
 	return %profile;
 }
@@ -319,7 +320,7 @@ sub new_dummy_obj
 sub new_file_obj
 {
 	my ($self, %opt) = @_;
-	my $obj = Prima::PS::TempFile->new(compress => 1, %opt) or return;
+	my $obj = Prima::PS::TempFile->new(compress => $self->{compress}, %opt) or return;
 	my $xid = @{ $self->{objects} };
 	push @{ $self->{objects} }, $obj;
 	$obj->{__xid} = $xid;
@@ -347,7 +348,7 @@ sub emit_stream_obj
 	$self-> emit( $text ) if defined $text;
 	$self-> emit(">>\nstream");
 	$self-> emit($obj->{content});
-	$self-> emit("endstream\nendobj");
+	$self-> emit("endstream\nendobj\n");
 }
 
 sub emit_new_stream_object
@@ -360,7 +361,7 @@ sub emit_new_stream_object
 	$self-> emit( $text ) if defined $text;
 	$self-> emit(">>\nstream");
 	$self-> emit($stream);
-	$self-> emit("endstream\nendobj");
+	$self-> emit("endstream\nendobj\n");
 	return $xid;
 }
 
@@ -375,7 +376,7 @@ sub emit_file_obj
 	$self-> emit( $text ) if defined $text;
 	$self-> emit(">>\nstream");
 	$obj->  evacuate( sub { $self->emit( $_[0], 1 ) } );
-	$self-> emit("\nendstream\nendobj");
+	$self-> emit("\nendstream\nendobj\n");
 }
 
 sub add_xref
@@ -390,6 +391,17 @@ sub emit_new_object
 	$self-> add_xref($xid);
 	$self-> emit("$xid 0 obj");
 	$self-> emit($emit) if defined $emit;
+}
+
+sub emit_new_dummy_object
+{
+	my ($self, $emit) = @_;
+	my $xid = $self-> new_dummy_obj;
+	$self-> add_xref($xid);
+	$self-> emit("$xid 0 obj\n<<");
+	$self-> emit($emit) if defined $emit;
+	$self-> emit(">>\nendobj\n");
+	return $xid;
 }
 
 sub begin_doc
@@ -453,6 +465,8 @@ ROOT
 	$self-> {page_patterns} = {};
 	$self-> {page_images}   = [];
 	$self-> {page_fonts}    = {};
+	$self-> {page_rops}     = {};
+	$self-> {all_rops}     = {};
 	$self-> {all_fonts}     = {};
 	unless ($self-> {page_content} = $self->new_file_obj) {
 		$self-> abort_doc;
@@ -517,6 +531,14 @@ PAGE
 	}
 	$self-> emit(">>"); # % Resources
 
+	if ( keys %{ $self->{page_rops} } ) {
+		$self-> emit("/ExtGState <<");
+		while ( my ( $name, $xid ) = each %{ $self->{page_rops} } ) {
+			$self-> emit("/GS$name $xid 0 R");
+		}
+		$self-> emit(">>");
+	}
+
 	if ( @{ $self->{page_refs} } ) {
 		$self-> emit("/XObject <<");
 		for my $xid ( @{ $self->{page_refs} } ) {
@@ -524,7 +546,7 @@ PAGE
 		}
 		$self-> emit(">>");
 	}
-	$self-> emit(">>\nendobj");
+	$self-> emit(">>\nendobj\n");
 
 	$self-> emit_file_obj($self->{objects}->[$self->{page_content}]);
 	undef $self->{objects}->[$self->{page_content}];
@@ -733,6 +755,7 @@ sub new_page
 	$self-> {page_patterns}  = {};
 	$self-> {page_images}    = [];
 	$self-> {page_fonts}     = {};
+	$self-> {page_rops}      = {};
 	unless ($self-> {page_content} = $self->new_file_obj) {
 		$self-> abort_doc;
 		return 0;
@@ -939,6 +962,13 @@ sub rotate
 	my $self = $_[0];
 	$self-> {rotate} = $_[1];
 	$self-> change_transform;
+}
+
+sub compress
+{
+	return $_[0]-> {compress} unless $#_;
+	my $self = $_[0];
+	$self-> {compress} = $_[1];
 }
 
 sub resolution
@@ -1431,11 +1461,17 @@ PIXEL
 }
 
 # methods
+our @rops;
+$rops[ &{$rop::{$_}}() ] = $_ for qw(
+	Multiply Screen Overlay Darken Lighten ColorDodge
+	ColorBurn HardLight SoftLight Difference Exclusion
+);
 
 sub put_image_indirect
 {
 	return 0 unless $_[0]-> {can_draw};
-	my ( $self, $image, $x, $y, $xFrom, $yFrom, $xDestLen, $yDestLen, $xLen, $yLen) = @_;
+	my ( $self, $image, $x, $y, $xFrom, $yFrom, $xDestLen, $yDestLen, $xLen, $yLen, $rop) = @_;
+	return 1 if $rop == rop::NoOper;
 
 	my $touch;
 	$touch = 1, $image = $image-> image if $image-> isa('Prima::DeviceBitmap');
@@ -1482,33 +1518,42 @@ sub put_image_indirect
 	);
 
 	my $xid2;
+	my $mask = '';
 	if ( $image-> isa('Prima::Icon')) {
-		if ( $image-> maskType != 1 ) {
+		if ( $image-> maskType != 1 && $image-> maskType != 8) {
 			$image = $image-> dup unless $touch;
 			$image-> set(maskType => 1);
 			$touch = 1;
 		}
 		my $obj;
 		($xid2, $obj) = $self-> new_file_obj;
-		my $bt = int($is[0] / 8) + (($is[0] & 7) ? 1 : 0);
-		my $xs = $bt * $is[1];
 		my $g  = $image-> mask;
 		my $ls = $image-> maskLineSize;
+		my $bt = ( $image-> maskType == 1 ) ? int($is[0] / 8) + (($is[0] & 7) ? 1 : 0) : $is[0];
+		my $xs = $bt * $is[1];
 		for ( my $i = 0; $i < $is[1]; $i++) {
 			$obj-> write( substr($g, ($is[1] - $i - 1) * $ls, $bt) );
 		}
-		undef $g;
-		my $filter = $obj-> is_deflated ? "/Filter /FlateDecode" : '';
-
-		$self-> emit_file_obj($obj, <<OBJ);
+		my $prefix = <<IMAGE;
 /Type /XObject
 /Subtype /Image
 /Width $is[0]
 /Height $is[1]
+IMAGE
+		if ( $image-> maskType == 1 ) {
+			$mask = "/Mask $xid2 0 R";
+			$self-> emit_file_obj($obj, $prefix . <<OBJ);
 /BitsPerComponent 1
 /ImageMask true
-$filter
 OBJ
+		} else {
+			$mask = "/SMask $xid2 0 R";
+			$self-> emit_file_obj($obj, $prefix . <<OBJ);
+/BitsPerComponent 8
+/ColorSpace /DeviceGray
+OBJ
+		}
+		undef $g;
 	}
 
 	my ($xid, $obj) = $self-> new_file_obj;
@@ -1523,9 +1568,6 @@ OBJ
 	undef $g;
 
 	my $cs = (($image->type & im::GrayScale) ? 'Gray' : 'RGB');
-	my $mask = $xid2 ? "/Mask $xid2 0 R" : '';
-	my $filter = $obj-> is_deflated ? "/Filter /FlateDecode" : '';
-
 	$self-> emit_file_obj($obj, <<OBJ);
 /Type /XObject
 /Subtype /Image
@@ -1534,10 +1576,21 @@ OBJ
 /ColorSpace /Device$cs
 /BitsPerComponent 8
 $mask
-$filter
 OBJ
 
+	my $gs = '';
+	if ( $rop != rop::CopyPut && $rop >= rop::Multiply && $rop <= rop::Exclusion) {
+		my $text = $rops[$rop];
+		$self-> {all_rops}->{ $text } //= {
+			xid => $self-> emit_new_dummy_object("/Type /ExtGState /BM /$text /AIS false"),
+			id  => "GS$text",
+		};
+		$self-> {page_rops}-> {$text} = $self->{all_rops}->{$text}->{xid};
+		$gs = "/$self->{all_rops}->{$text}->{id} gs";
+	}
+
 	$self-> emit_content(<<PUT);
+$gs
 q
 $fullScale[0] 0 0 $fullScale[1] $x $y cm
 /I$xid Do
