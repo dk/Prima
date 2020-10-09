@@ -1134,6 +1134,7 @@ sub profile_default
 		knobBreadth    => 12,
 		tickAlign      => tka::Normal,
 		vertical       => 0,
+		scheme         => ss::Gauge,
 	}
 }
 
