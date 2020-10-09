@@ -1,8 +1,5 @@
 # XXX todo
-# text
 # regions
-# alpha
-# porter-duff rops
 # paths
 package Prima::PS::PDF;
 
@@ -1340,9 +1337,25 @@ sub entries
 	return $self-> {entries};
 }
 
-sub _open      { push @{shift->{entries}}, 'h' }
-sub _close     { push @{shift->{entries}}, 'h' }
+sub emit { push @{shift->{entries}}, join(' ', @_) }
+
 sub last_point { @{$_[0]->{last_point} // [0,0]} }
+
+sub set_current_point
+{
+	my ( $self, $x, $y ) = @_;
+	$self-> emit($x, $y, $self->{move_is_line} ? 'l' : 'm');
+	$self-> {move_is_line} = 1;
+}
+
+sub _open
+{
+	my $self = shift;
+	$self-> {move_is_line} = 0;
+	$self->emit('')
+}
+
+sub _close     { shift->emit('h') }
 
 sub  _moveto
 {
@@ -1353,7 +1366,7 @@ sub  _moveto
 	$lx += $mx;
 	$ly += $my;
 	@{$self-> {last_point}} = ($lx, $ly);
-	push @{$self->{entries}}, "$lx $ly m";
+	$self-> emit($lx, $ly, 'm');
 }
 
 sub _line
@@ -1361,16 +1374,70 @@ sub _line
 	my ( $self, $line ) = @_;
 	my @line = $self-> canvas-> pixel2point( @$line );
 	@line = @{ $self-> matrix_apply( \@line ) };
+	$self-> set_current_point( shift @line, shift @line );
 	@{$self-> {last_point}} = @line[-2,-1];
 	for ( my $i = 0; $i < @line; $i += 2 ) {
-		push @{ $self->{entries} }, "@line[$i,$i+1] l";
+		$self->emit(@line[$i,$i+1], 'l');
 	}
+}
+
+sub conic2curve
+{
+	my ($x0, $y0, $x1, $y1, $x2, $y2) = @_;
+	my (@cp1, @cp2);
+	$cp1[0] = $x0 + 2 / 3 * ($x1 - $x0);
+	$cp1[1] = $y0 + 2 / 3 * ($y1 - $y0);
+	$cp2[0] = $x2 + 2 / 3 * ($x1 - $x2);
+	$cp2[1] = $y2 + 2 / 3 * ($y1 - $y2);
+	return @cp1, @cp2, $x2, $y2;
+}
+
+sub _spline
+{
+	my ( $self, $points, $options ) = @_;
+	my @p = $self-> canvas-> pixel2point( @$points );
+	@p = @{ $self-> matrix_apply( \@p ) };
+
+	$options->{degree} //= 2;
+	return if $options->{degree} > 3;
+	my @p0 = @p[0,1];
+	$self-> set_current_point( @p0 );
+	if ( $options->{degree} == 2 ) {
+		for ( my $i = 2; $i < @p; $i += 4 ) {
+			my @pp = conic2curve( @p0, @p[$i .. $i + 3] );
+			$self->emit(@pp, 'c');
+			@p0 = @pp[-2,-1];
+		}
+	} else {
+		for ( my $i = 2; $i < @p; $i += 4 ) {
+			my @pp = @p[$i .. $i + 5];
+			$self->emit(@pp, 'c');
+		}
+	}
+}
+
+sub _arc
+{
+	my ( $self, $from, $to, $rel ) = @_;
+	my $cubics = $self->canvas->arc2cubics( 0, 0, 1, 1, $from, $to);
+
+	if ( $rel ) {
+		my ($lx,$ly) = $self->last_point;
+		my $pts = $cubics->[0];
+		my $m = $self->{curr}->{matrix};
+		my @s = $self->matrix_apply( $pts->[0], $pts->[1]);
+		$m->[4] += $lx - $s[0];
+		$m->[5] += $ly - $s[1];
+	}
+	my @p = map { $self-> matrix_apply( $_ ) } @$cubics;
+	$self-> set_current_point( @{$p[0]}[0,1] );
+	$self-> emit( @{$_}[2..7], 'c') for @p;
 }
 
 sub stroke
 {
 	my $self = shift;
-	$self-> canvas-> emit_content( $_ ) for @{ $self->entries }, 'S';
+	$self-> canvas-> stroke( join("\n", @{ $self->entries }, 'S' ));
 }
 
 sub fill
@@ -1378,7 +1445,7 @@ sub fill
 	my ( $self, $fillMode ) = @_;
 	$fillMode //= $self->canvas->fillMode;
 	$fillMode = ((($fillMode & fm::Winding) == fm::Alternate) ? 'f*' : 'f');
-	$self-> canvas-> emit_content( $_ ) for @{ $self->entries }, $fillMode;
+	$self-> canvas-> fill( join("\n", @{ $self->entries }, $fillMode ));
 }
 
 1;
