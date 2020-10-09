@@ -423,7 +423,7 @@ L<Prima::VB::CfgMaint> - maintains visual builder widget palette configuration
 
 =item PostScript printer interface
 
-L<Prima::PS::Drawable> - PostScript interface to C<Prima::Drawable>
+L<Prima::PS::PostScript> - PostScript interface to C<Prima::Drawable>
 
 L<Prima::PS::PDF> - PDF interface to C<Prima::Drawable>
 

@@ -12,9 +12,9 @@ use Prima::PS::Printer;
 =head1 DESCRIPTION
 
 Realizes the Prima printer interface to PostScript level 2 document language
-through Prima::PS::Drawable module. Allows different user profiles to be
-created and managed with GUI setup dialog. The module is designed to be
-compliant with Prima::Printer interface.
+through Prima::PS::PostScript module and PDF v1.4 through the Prima::PS::PDF
+module. Allows different user profiles to be created and managed with GUI setup
+dialog. The module is designed to be compliant with Prima::Printer interface.
 
 Also contains convenience classes (File, LPR, Pipe) for non-GUI use.
 
@@ -46,7 +46,7 @@ use warnings;
 use Prima;
 use Prima::Utils;
 use IO::Handle;
-use Prima::PS::Drawable;
+use Prima::PS::PDF;
 use Prima::PS::TempFile;
 use Prima::PS::Setup;
 
@@ -114,7 +114,7 @@ sub defaultData
 	}
 }
 
-sub begin_doc
+sub _begin_doc
 {
 	my ( $self, $docName) = @_;
 	return 0 if $self-> get_paint_state;
@@ -202,7 +202,7 @@ sub __end
 	$sigpipe = undef;
 }
 
-sub end_doc
+sub _end_doc
 {
 	my $self = $_[0];
 	my $backend = $self->{backend};
@@ -210,7 +210,7 @@ sub end_doc
 	$self-> __end;
 }
 
-sub abort_doc
+sub _abort_doc
 {
 	my $self = $_[0];
 	my $backend = $self->{backend};
@@ -219,7 +219,7 @@ sub abort_doc
 	unlink $self-> {spoolName} if $self-> {data}-> {spoolerType} eq 'file';
 }
 
-sub spool
+sub _spool
 {
 	my ( $self, $data) = @_;
 
@@ -270,7 +270,7 @@ sub install_api
 	no strict 'refs';
 	no warnings 'redefine';
 	for my $sym ( qw(begin_doc end_doc abort_doc spool)) {
-		*{$pkg . '::' . $sym} = UNIVERSAL::can(__PACKAGE__, $sym);
+		*{$pkg . '::' . $sym} = UNIVERSAL::can(__PACKAGE__, '_' . $sym);
 	}
 }
 
@@ -323,7 +323,7 @@ sub options
 }
 
 package Prima::PS::Printer;
-use base qw(Prima::PS::Drawable Prima::PS::Printer::Common);
+use base qw(Prima::PS::PostScript Prima::PS::Printer::Common);
 
 Prima::PS::Printer::Common::install_api(__PACKAGE__);
 
@@ -370,7 +370,7 @@ sub init
 {
 	my $self = shift;
 	my %profile = $self-> SUPER::init(@_);
-	$self-> {backend} = 'Prima::PS::Drawable';
+	$self-> {backend} = 'Prima::PS::PostScript';
 	$self-> {defaultData} = {};
 	$self-> {data} = {};
 	$self-> $_($profile{$_}) for qw(defaultData resFile);
@@ -768,8 +768,6 @@ sub init
 	$self-> data( $profile{data} );
 	return %profile 
 }
-
-sub spool { Prima::PS::Printer::Common::spool(@_) }
 
 sub resolution
 {
