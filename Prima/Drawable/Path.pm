@@ -1033,8 +1033,9 @@ to be used for drawing or clipping shapes.
 	# draws elliptic spiral
 	my ( $d1, $dx ) = ( 0.8, 0.05 );
 	$canvas-> new_path->
-		scale(200, 100)->
 		rotate(45)->
+		translate(200, 100)->
+		scale(200, 100)->
 		arc( 0, 0, $d1 + $dx * 0, $d1 + $dx * 1, 0, 90)->
 		arc( 0, 0, $d1 + $dx * 2, $d1 + $dx * 1, 90, 180)->
 		arc( 0, 0, $d1 + $dx * 2, $d1 + $dx * 3, 180, 270)->
