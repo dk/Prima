@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Prima::PS::Printer;
 use Prima::PS::PDF;
-use Prima::PS::Drawable;
+use Prima::PS::PostScript;
 use Encode;
 
 sub page
