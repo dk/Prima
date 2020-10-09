@@ -10,8 +10,8 @@ use strict;
 use warnings;
 use Encode;
 use Prima;
-use Prima::PS::TempFile;
 use Prima::PS::CFF;
+use Prima::PS::TempFile;
 use base qw(Prima::PS::Drawable);
 
 sub profile_default
@@ -1312,6 +1312,73 @@ sub apply_canvas_font
 		$self-> {glyph_font}  = ($f1000->{pitch} == fp::Fixed) ? 'Courier' : 'Helvetica';
 		$self-> {all_fonts}->{ $self->{glyph_font} }->{native} //= 1;
 	}
+}
+
+sub new_path
+{
+	return Prima::PS::PDF::Path->new(@_);
+}
+
+package Prima::PS::PDF::Path;
+use base qw(Prima::Drawable::Path);
+
+sub entries
+{
+	my $self = shift;
+	unless ( $self->{entries} ) {
+		local $self->{stack} = [];
+		local $self->{curr}  = { matrix => [ $self-> identity ] };
+		my $c = $self->{commands};
+		$self-> {entries} = [];
+		for ( my $i = 0; $i < @$c; ) {
+			my ($cmd,$len) = @$c[$i,$i+1];
+			$self-> can("_$cmd")-> ( $self, @$c[$i+2..$i+$len+1] );
+			$i += $len + 2;
+		}
+		$self->{last_matrix} = $self->{curr}->{matrix};
+	}
+	return $self-> {entries};
+}
+
+sub _open      { push @{shift->{entries}}, 'h' }
+sub _close     { push @{shift->{entries}}, 'h' }
+sub last_point { @{$_[0]->{last_point} // [0,0]} }
+
+sub  _moveto
+{
+	my ( $self, $mx, $my, $rel) = @_;
+	($mx, $my) = $self-> canvas-> pixel2point( $mx, $my );
+	($mx, $my) = $self->matrix_apply($mx, $my);
+	my ($lx, $ly) = $rel ? $self->last_point : (0,0);
+	$lx += $mx;
+	$ly += $my;
+	@{$self-> {last_point}} = ($lx, $ly);
+	push @{$self->{entries}}, "$lx $ly m";
+}
+
+sub _line
+{
+	my ( $self, $line ) = @_;
+	my @line = $self-> canvas-> pixel2point( @$line );
+	@line = @{ $self-> matrix_apply( \@line ) };
+	@{$self-> {last_point}} = @line[-2,-1];
+	for ( my $i = 0; $i < @line; $i += 2 ) {
+		push @{ $self->{entries} }, "@line[$i,$i+1] l";
+	}
+}
+
+sub stroke
+{
+	my $self = shift;
+	$self-> canvas-> emit_content( $_ ) for @{ $self->entries }, 'S';
+}
+
+sub fill
+{
+	my ( $self, $fillMode ) = @_;
+	$fillMode //= $self->canvas->fillMode;
+	$fillMode = ((($fillMode & fm::Winding) == fm::Alternate) ? 'f*' : 'f');
+	$self-> canvas-> emit_content( $_ ) for @{ $self->entries }, $fillMode;
 }
 
 1;
