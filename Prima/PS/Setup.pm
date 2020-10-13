@@ -150,7 +150,7 @@ sub sdlg_exec
 				$n++;
 			}
 			$n = "New <$n>";
-			$vp-> {$n} = deepcopy( $self-> {defaultData});
+			$vp-> {$n} = Prima::PS::Printer::deepcopy( $self-> {defaultData});
 			$x-> add_items( $n);
 			$self-> {bigChange} = 1;
 		}},
@@ -234,7 +234,7 @@ sub sdlg_exec
 			}
 			print F "}\n";
 			close F;
-			$self-> {printers} = { map { $_ => deepcopy($self-> {vprinters}-> {$_}) }
+			$self-> {printers} = { map { $_ => Prima::PS::Printer::deepcopy($self-> {vprinters}-> {$_}) }
 				keys %{$self-> {vprinters}}};
 			$self-> {bigChange} = 0;
 		}},
@@ -277,7 +277,7 @@ sub sdlg_exec
 	unless ( $pdf ) {
 		$d-> Profiles-> focusedItem( -1);
 		$d-> Profiles-> items( [ keys %{$self-> {printers}}]);
-		$self-> {vprinters} = { map { $_ => deepcopy($self-> {printers}-> {$_}) }
+		$self-> {vprinters} = { map { $_ => Prima::PS::Printer::deepcopy($self-> {printers}-> {$_}) }
 			keys %{$self-> {printers}}};
 		my $index = 0;
 		for ( keys %{$self-> {printers}}) {

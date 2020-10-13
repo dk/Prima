@@ -46,6 +46,7 @@ use warnings;
 use Prima;
 use Prima::Utils;
 use IO::Handle;
+use Prima::PS::PostScript;
 use Prima::PS::PDF;
 use Prima::PS::TempFile;
 use Prima::PS::Setup;
