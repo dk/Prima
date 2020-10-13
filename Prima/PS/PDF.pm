@@ -1288,8 +1288,8 @@ OBJ
 	}
 
 	$self-> emit_content(<<PUT);
-$gs
 q
+$gs
 $fullScale[0] 0 0 $fullScale[1] $x $y cm
 /I$xid Do
 Q
