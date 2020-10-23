@@ -424,9 +424,7 @@ converted to a 1-bit image, the following results occur:
 
 Values of these constants are made from L<Prima::Const/ictp::> and L<Prima::Const/ictd::> constansts.
 
-=for podview <img src="conversions.gif">
-
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/conversions.gif">
+=for image src:conversions.gif
 
 =item data SCALAR
 
@@ -510,9 +508,7 @@ Can be one of C<ist:::XXX> constants:
   ist::Cubic     - 3rd order (cubic) B-Spline approximation of Gaussian
   ist::Gaussian  - Gaussian transform with gamma=0.5
 
-=for podview <img src="scalings.gif">
-
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/scalings.gif">
+=for image src:scalings.gif
 
 Note: Resampling scaling algorithms (those greater than C<ist::Box>), when applied to Icons with 1-bit
 icon mask, will silently convert the mask in 8-bit and apply the same scaling algorithm to it. This

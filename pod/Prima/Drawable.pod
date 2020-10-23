@@ -6,9 +6,9 @@ Prima::Drawable - 2-D graphic interface
 
    if ( $object-> isa('Prima::Drawable')) {
         $object-> begin_paint;
-	$object-> color( cl::Black);
-	$object-> line( 100, 100, 200, 200);
-	$object-> ellipse( 100, 100, 200, 200);
+        $object-> color( cl::Black);
+        $object-> line( 100, 100, 200, 200);
+        $object-> ellipse( 100, 100, 200, 200);
         $object-> end_paint;
    }
 
@@ -441,10 +441,12 @@ Negative if the ascent line is below the internal leading line.
 Number of pixels between ascent and external leading lines.
 Negative if the ascent line is above the external leading line.
 
+=begin image-text
 
-=for podview <img src="leadings.gif" cut=1>
+src: leadings.gif
+title: Font horizontal measurements
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/leadings.gif"><!--
+=end image-text
 
           ------------- external leading line
 
@@ -464,9 +466,7 @@ Negative if the ascent line is above the external leading line.
                  $
              $$$$  ---- descent line
 
-=for html -->
-
-=for podview </cut>
+=for image-cut
 
 =item weight
 
@@ -523,9 +523,12 @@ Besides these characteristics, every font glyph has an ABC-metric,
 the three integer values that describe horizontal extents of a
 glyph's black part relative to the glyph extent:
 
-=for podview <img src="fontabc.gif" cut=1 >
+=begin image-text
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/fontabc.gif"><!--
+src: fontabc.gif
+title: Font ABC metrics
+
+=end image-text
 
     .  .     .  .      .  .        .  .
     .  .     $$$.      .  .        .  .
@@ -546,9 +549,7 @@ glyph's black part relative to the glyph extent:
       B = 13                B = 10
       C = -3                C = 3
 
-=for html -->
-
-=for podview </cut>
+=for image-cut
 
 A and C are negative, if a glyphs 'hangs' over it neighbors,
 as shown in picture on the left. A and C values are positive, if a glyph contains
@@ -570,9 +571,12 @@ with the foreground color drawing, and C<::rop2> with the background.
 
 The toolkit defines the following operations:
 
-=for podview <img src="rop1.gif" cut=1 >
+=begin image-text
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop1.gif"><!--
+src: rop1.gif
+title: Binary raster operations
+
+=end image-text
 
    rop::Blackness      #   = 0
    rop::NotOr          #   = !(src | dest)
@@ -593,9 +597,7 @@ The toolkit defines the following operations:
    rop::OrPut          #  |= src
    rop::Whiteness      #   = 1
 
-=for html -->
-
-=for podview </cut>
+=for image-cut
 
 Usually, however, graphic devices support only a small part
 of the above set, limiting C<::rop> to the most important operations:
@@ -619,31 +621,49 @@ Prima implements extra features for compositing on images outside the
 begin_paint/end_paint brackets. It supports the following 12 Porter-Duff
 operators and some selected Photoshop blend operators:
 
-=for podview 
- <img src="rop2.gif" cut=1>
- <img src="rop3.png" cut=1>
+=begin image-text
 
-=for html <p>
-<img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop2.gif">
-<img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop3.png">
-<!--
+src: rop2.gif
+title: Porter-Duff operators
 
-   rop::Clear            rop::Add
-   rop::Xor              rop::Multiply
-   rop::SrcOver          rop::Screen
-   rop::DstOver          rop::Overlay
-   rop::SrcCopy          rop::Darken
-   rop::DstCopy          rop::Lighten
-   rop::SrcIn            rop::ColorDodge
-   rop::DstIn            rop::ColorBurn
-   rop::SrcOut           rop::HardLight
-   rop::DstOut           rop::SoftLight
-   rop::SrcAtop          rop::Difference
-   rop::DstAtop          rop::Exclusion
+=end image-text
 
-=for html -->
+  rop::Clear
+  rop::Xor
+  rop::SrcOver
+  rop::DstOver
+  rop::SrcCopy
+  rop::DstCopy
+  rop::SrcIn
+  rop::DstIn
+  rop::SrcOut
+  rop::DstOut
+  rop::SrcAtop
+  rop::DstAtop
 
-=for podview </cut>
+=for image-cut
+
+=begin image-text
+
+src: rop3.png
+title: Photoshop operators
+
+=end image-text
+
+  rop::Add
+  rop::Multiply
+  rop::Screen
+  rop::Overlay
+  rop::Darken
+  rop::Lighten
+  rop::ColorDodge
+  rop::ColorBurn
+  rop::HardLight
+  rop::SoftLight
+  rop::Difference
+  rop::Exclusion
+
+=for image-cut
 
 =over
 
@@ -764,9 +784,8 @@ when one wants to follow polygon vertices, but is not desirable when a shape has
 holes in it connected in a way that the polygon overlay may leave connection edges
 over them.
 
-=for podview <img src="windings.gif">
-
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/windings.gif">
+=for image src: windings.gif
+title: Fill modes
 
 Default value: C<fm::Winding|fm::Overlay>
 
@@ -781,9 +800,12 @@ is the topmost pattern line, and the bit 0x80 is the leftmost pixel in the line.
 
 There are some predefined patterns, that can be referred via C<fp::> constants:
 
-=for podview <img src="fills.gif" cut=1>
+=begin image-text
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/fills.gif"><!--
+src: fills.gif
+title: Predefined fill patterns
+
+=end image-text
 
   fp::Empty
   fp::Solid
@@ -801,9 +823,7 @@ There are some predefined patterns, that can be referred via C<fp::> constants:
   fp::Borland
   fp::Parquet
 
-=for html -->
-
-=for podview </cut>
+=for image-cut
 
 ( the actual patterns are hardcoded in primguts.c )
 The default pattern is fp::Solid.
@@ -888,17 +908,24 @@ of the list, after the existing active entries.
 Selects a line ending cap for plotting primitives. VALUE
 can be one of
 
-=for podview <img src="lineends.gif" cut=1>
+=begin image-text
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/lineends.gif"><!--
+src: lineends.gif
+title: Line ending types
 
-  le::Flat
-  le::Square
-  le::Round
+=end image-text
 
-=for html -->
+=over
 
-=for podview </cut>
+=item le::Flat
+
+=item le::Square
+
+=item le::Round
+
+=back
+
+=for image-cut
 
 constants. le::Round is the default value.
 
@@ -907,17 +934,24 @@ constants. le::Round is the default value.
 Selects a line joining style for polygons. VALUE
 can be one of
 
-=for podview <img src="linejoins.gif" cut=1>
+=begin image-text
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/linejoins.gif"><!--
+src: linejoins.gif
+title: Line join types
 
-  lj::Round
-  lj::Bevel
-  lj::Miter
+=end image-text
 
-=for html -->
+=over
 
-=for podview </cut>
+=item lj::Round
+
+=item lj::Bevel
+
+=item lj::Miter
+
+=back
+
+=for image-cut
 
 constants. lj::Round is the default value.
 
@@ -930,9 +964,12 @@ and each odd byte is a length of a gap.
 
 The predefined constants are:
 
-=for podview <img src="linepats.gif" cut=1>
+=begin image-text
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/linepats.gif"><!--
+src: linepats.gif
+title: Predefined line patterns
+
+=end image-text
 
     lp::Null           #    ""              /*              */
     lp::Solid          #    "\1"            /* ___________  */
@@ -944,9 +981,7 @@ The predefined constants are:
     lp::DashDot        #    "\x9\6\1\3"     /* _._._._._._  */
     lp::DashDotDot     #    "\x9\3\1\3\1\3" /* _.._.._.._.. */
 
-=for podview </cut>
-
-=for html -->
+=for image-cut
 
 Not all systems are capable of accepting user-defined line patterns,
 and in such situation the C<lp::> constants are mapped to the system-defined
@@ -986,18 +1021,19 @@ Default value is 10.0.
 
 Asssuming line join is C<lj::Miter> and line angle is 30 degrees:
 
-=for podview <img src="miterlimit.gif" cut=1>
+=begin image-text
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/miterlimit.gif"><!--
+src: miterlimit.gif
+title: Miter limit
+
+=end image-text
 
    miter limit = 1.0: \__/
 
    miter limit = 9.0: \  /
                        \/
 
-=for podview </cut>
-
-=for html -->
+=for image-cut
 
 Note: does not work under X11.
 
@@ -1484,9 +1520,9 @@ and how deep the shaping should go. One of the following C<ts::XXX> options:
 =item ts::Bytes
 
 Treats input text as non-unicode locale-specific codepoints, characters higher
-than 255 are treated as chr(255).  Reordering never happens, kerning and
-ligation never happens, returns glyph indexes in a 1:1 mapping for each
-codepoint.
+than 255 are treated as chr(255).  Reordering never happens, font substition
+never happens, kerning and ligation never happens; returns glyph indexes in a
+1:1 mapping for each codepoint.
 
 =item ts::None
 
@@ -1793,10 +1829,12 @@ concatenation point is located either on the baseline or on the descent line.
 
 Context used: font, textOutBaseline
 
+=begin image-text
 
-=for podview <img src="gettextbox.gif" cut=1>
+src: gettextbox.gif
+title: get_text_box() result
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/gettextbox.gif"><!--
+=end image-text
 
       1      3         3         4
          **               ****
@@ -1806,9 +1844,7 @@ Context used: font, textOutBaseline
          ****               **
       2       4         1        2
 
-=for podview </cut>
-
-=for html -->
+=for image-cut
 
 =item render_glyph INDEX, %OPTIONS
 
