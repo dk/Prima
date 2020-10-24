@@ -492,7 +492,10 @@ sub load_file
 	my $pageName = $manpage;
 	my $path = '';
 
-	unless ( -f $manpage) {
+	if ( -f $manpage) {
+		$path = $manpage;
+		$path =~ s/[\\\/]?[^\\\/]*$//;
+	} else {
 		my ( $fn, $mpath);
 		my @ext =  ( '.pod', '.pm', '.pl' );
 		push @ext, ( '.bat' ) if $^O =~ /win32/i;
@@ -620,6 +623,18 @@ sub load_image
 	return;
 }
 
+sub load_image2
+{
+	my ( $self, $src ) = @_;
+	if ( $src =~ /^\\/) {
+		return $self->load_image($src);
+	} elsif ( length($self->{manpath})) {
+		$src = $self->{manpath} . "/$src";
+	}
+	return unless -f $src;
+	return Prima::Icon->load($src, index => 0, iconUnmask => 1);
+}
+
 sub add_image
 {
 	my ( $self, $src, $w, $h, $cut ) = @_;
@@ -688,7 +703,31 @@ sub add_formatted
 				}
 			}
 		}
+	} elsif ( $format =~ /^image(?:-(text|title))?$/) {
+		$self->{clumper} .= $text;
+	} elsif ( $format eq 'image-cut' ) {
+		$self-> {readState}-> {pod_cutting} = 1;
 	}
+}
+
+sub end_add_formatted
+{
+	my ( $self, $target ) = @_;
+
+	return unless $target =~ /^image(?:-(text|title))?$/;
+	my $text = $self->{clumper};
+	$self->{clumper} = '';
+
+	my $cut = ($1 // '') eq 'text';
+	require Pod::Simple::YAML;
+	next if $@;
+
+	$self-> {readState}-> {pod_cutting} = 0 if $cut;
+	my $yaml = Pod::Simple::YAML->new;
+	$text = $yaml->parse( $text ) or return;
+	return unless defined $text->{src};
+	my $img = $self->load_image2($text->{src});
+	$self->add_image($img) if $img;
 }
 
 sub _imgpaint
@@ -734,12 +773,16 @@ sub read_paragraph
 
 		if ($r-> {begun}) {
 			my $begun = $r-> {begun};
-			if (/^=end\s+$begun/ || /^=cut/) {
-					$r-> {begun} = '';
-					$self-> add_new_line; # end paragraph
-					$r-> {cutting} = 1 if /^=cut/;
+			if (/^=end\s+\Q$begun\E/ || /^=cut/) {
+				$r-> {begun} = '';
+				$self-> add_new_line; # end paragraph
+				$r-> {cutting} = 1 if /^=cut/;
+				if ( $self->{track_target} ) {
+					$self-> end_add_formatted($self->{track_target});
+					undef $self->{track_target};
+				}
 			} else {
-					$self-> add_formatted( $r-> {begun}, $_);
+				$self-> add_formatted( $r-> {begun}, $_);
 			}
 			next;
 		}
@@ -758,10 +801,14 @@ sub read_paragraph
 		}
 
 		if (/^=for\s+(\S+)\s*(.*)/s) {
-			$self-> add_formatted( $1, $2) if defined $2;
+			if (defined $2) {
+				$self-> add_formatted( $1, $2);
+				$self->{track_target} = $1;
+			}
 			next;
 		} elsif (/^=begin\s+(\S+)\s*(.*)/s) {
 			$r-> {begun} = $1;
+			$self->{track_target} = $1;
 			$self-> add_formatted( $1, $2) if defined $2;
 			next;
 		}
@@ -803,8 +850,13 @@ sub read_paragraph
 			}
 		}
 		else {
-			s/\n/ /g;
-			$self-> add($_, STYLE_TEXT, $r-> {indent});
+			my $line = $_;
+			if ( $self->{track_target} ) {
+				$self-> end_add_formatted($self->{track_target});
+				undef $self->{track_target};
+			}
+			$line =~ s/\n/ /g;
+			$self-> add($line, STYLE_TEXT, $r-> {indent});
 		}
 
 		$self-> add_new_line unless $r->{bulletMode};
@@ -830,10 +882,24 @@ sub read
 		$_ = $r->{encoding}->decode($_, Encode::FB_HTMLCREF) if $r->{encoding};
 
 		if (defined $r-> {paragraph_buffer}) {
-			if ( /^\s*$/) {
+			if ( /^\s*$/ && !$self->{paragraph_clumping}) {
 				my $pb = $r-> {paragraph_buffer};
 				undef $r-> {paragraph_buffer};
 				$self-> read_paragraph($pb);
+			} elsif ( /^=begin/ ) {
+				my $l = $_;
+				$self-> {paragraph_clumping} = 1;
+				my $pb = $r-> {paragraph_buffer};
+				undef $r-> {paragraph_buffer};
+				$self-> read_paragraph($pb);
+				$self-> read_paragraph($l);
+			} elsif ( /^=end/ && $self->{paragraph_clumping} ) {
+				my $l = $_;
+				$self-> {paragraph_clumping} = 0;
+				my $pb = $r-> {paragraph_buffer};
+				undef $r-> {paragraph_buffer};
+				$self-> read_paragraph($pb);
+				$self-> read_paragraph($l);
 			} else {
 				$r-> {paragraph_buffer} .= "\n$_";
 				next;
