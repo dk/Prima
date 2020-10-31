@@ -436,8 +436,8 @@ read_bmp_header( PImgLoadFileInstance fi)
 		((cbFix & 3) == 0 || cbFix == 42 || cbFix == 46)
 	) {
 		/* OS/2 and Windows 3 */
-		word cPlanes, cBitCount, usUnits, usReserved, usRecording, usRendering;
-		dword ulWidth, ulHeight, ulCompression;
+		word cPlanes = 0, cBitCount = 0, usUnits = 0, usReserved, usRecording, usRendering = 0;
+		dword ulWidth = 0, ulHeight = 0, ulCompression = 0;
 		dword ulSizeImage, ulXPelsPerMeter = 0, ulYPelsPerMeter = 0;
 		dword cclrUsed = 0, cclrImportant = 0, cSize1, cSize2, ulColorEncoding, ulIdentifier;
 		Bool ok;
