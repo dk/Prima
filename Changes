@@ -1,5 +1,20 @@
 Revision history for Perl module Prima
 
+1.60 2020-10-31
+ - Added ProgressBar with 3d look
+ - Added PDF generation
+   -- PrintDialog has extra "Save As PDF" target now
+ - Clipboard enhancements
+   -- cmClipboard added for X11 to select type of data to be pasted
+   -- Image codecs return MIME as part of codec data
+   -- Special formats Text and Image are documented
+   -- Added Clipboard.[text/image/copy] KEEP parameter
+ - Image.put_image supports new rop::ConstantColor
+ - Optimizations for cache misses in Drawable.text_wrap
+ - Fixes for unicode handling in FileDialog and Utils::get_dir
+ - Fixes for XRandr extension
+ - Fixes for scrolling with synthetic transparency in win32
+
 1.59 2020-05-27
  - Added support for unicode bidirectional algorithm and text shaping:
      -- All standard widgets are moved to new shaped text implementation:
