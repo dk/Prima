@@ -2099,7 +2099,7 @@ sub on_formatexists
 		my @codecs  = grep { $formats{$_->{mime}} } @$codecs or return;
 		$$ref = $codecs[0]->{mime} if $clipboard-> format_exists($codecs[0]->{mime});
 	} else {
-       		$$ref = $clipboard-> format_exists( $format ) ? $format : undef;
+		$$ref = $clipboard-> format_exists( $format ) ? $format : undef;
 	}
 	undef;
 }
