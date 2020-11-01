@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use 5.010;
+use 5.012;
 
 package MY::orderedhash;
 require Tie::Hash;
@@ -453,13 +453,7 @@ sub setup_environment
 	$DISTNAME = "Prima-$ver1.$ver2-$flavor-$REVISION.$PATCHLEVEL.$SUBVERSION";
 	printlog "Build: $DISTNAME\n";
 
-	if ( $cygwin and $] > 5.010 ) {
-		# 5.10 was shipped with a hack in ExtUtils/Liblist/Kid.pm where having auto/Prima.dll was ok
-		# 5.14 is not patched that way, do it ourselves
-		$cygwin_fake_Slib = 'SlibPrima' . ( $Config{lib_ext} || '.a' );
-	} else {
-		$cygwin_fake_Slib = '';
-	}
+	$cygwin_fake_Slib = 'SlibPrima' . ( $Config{lib_ext} || '.a' );
 	$PKGCONFIG = 'pkg-config';
 }
 
@@ -2311,11 +2305,9 @@ sub command_bindist
 	}
 	if ($^O eq 'cygwin') {
 		system "strip $DISTNAME/auto/Prima/Prima.$Config{dlext}" ; # it's 27 MB!
-		if ( $] > 5.010 ) {
-			$cygwin_fake_Slib = 'SlibPrima' . ( $Config{lib_ext} || '.a' );
-			open F, '>', "$DISTNAME/auto/Prima/$cygwin_fake_Slib";
-			close F;
-		}
+		$cygwin_fake_Slib = 'SlibPrima' . ( $Config{lib_ext} || '.a' );
+		open F, '>', "$DISTNAME/auto/Prima/$cygwin_fake_Slib";
+		close F;
 	}
 
 	my $zipname = "$DISTNAME.zip";
@@ -2579,6 +2571,6 @@ WriteMakefile(
 	},
         test => {TESTS => 't/*/*.t'},
 	clean             => { FILES => "@target_clean" },
-	MIN_PERL_VERSION  => 5.010,
+	MIN_PERL_VERSION  => 5.012,
 );
 
