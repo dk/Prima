@@ -155,36 +155,6 @@ RESOURCE_END
 	return 1;
 }
 
-sub conic2curve
-{
-	my ($x0, $y0, $x1, $y1, $x2, $y2) = @_;
-	my (@cp1, @cp2);
-	$cp1[0] = $x0 + 2 / 3 * ($x1 - $x0);
-	$cp1[1] = $y0 + 2 / 3 * ($y1 - $y0);
-	$cp2[0] = $x2 + 2 / 3 * ($x1 - $x2);
-	$cp2[1] = $y2 + 2 / 3 * ($y1 - $y2);
-	return $x0, $y0, @cp1, @cp2, $x2, $y2;
-}
-
-sub rrcurveto
-{
-	my ($x0, $y0, @rest) = @_;
-	my @out;
-	for ( my $i = 0; $i < @rest; $i += 2 ) {
-		my @p = @rest[$i,$i+1];
-		$rest[$i]   -= $x0;
-		$rest[$i+1] -= $y0;
-		push @out, @rest[$i,$i+1];
-		($x0, $y0) = @p;
-	}
-	return num(@out) . "\x{8}";
-}
-
-sub hsbw    { num(@_) . "\x{0d}" }
-sub rmoveto { num(@_) . "\x{15}" }
-sub rlineto { num(@_) . "\x{05}" }
-sub hmoveto { num(@_) . "\x{16}" }
-
 sub use_char
 {
 	my ( $self, $canvas, $key, $charid, $suggested_gid) = @_;

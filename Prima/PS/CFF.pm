@@ -139,7 +139,7 @@ sub evacuate_next_subfont
 
 	# the offsets are affected by the encoded header length, but
 	# the header itself contains references to the offsets, that
-	# in turn may change the header length. So make several shoots at it
+	# in turn may change the header length. So make several shots at it
 	$offsets{charstrings} = 100;
 	$offsets{charset}     = 500;
 	$offsets{private}     = 2500;
