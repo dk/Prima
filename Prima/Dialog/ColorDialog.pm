@@ -949,7 +949,7 @@ Prima::Dialog::ColorDialog - standard color selection facilities
 	);
 	printf "color: %06x", $p-> value if $p-> execute == mb::OK;
 
-=for podview <img src="colordlg.png" cut=1>
+=for podview <img src="colordlg.png">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/colordlg.png">
 

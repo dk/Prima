@@ -1688,7 +1688,7 @@ these two into a ready-to-use multipage control with interactive navigation.
 	$nb-> Notebook-> backColor( cl::Green );
 	run Prima;
 
-=for podview <img src="notebook.gif" cut=1>
+=for podview <img src="notebook.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/notebook.gif">
 

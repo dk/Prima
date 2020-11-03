@@ -514,7 +514,7 @@ information.
 	return unless $img;
 	print "$_:$img->{extras}->{$_}\n" for sort keys %{$img-> {extras}};
 
-=for podview <img src="imagedlg.gif" cut=1>
+=for podview <img src="imagedlg.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/imagedlg.gif">
 

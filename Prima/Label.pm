@@ -415,7 +415,7 @@ is useful for dialog design.
 	);
 	run Prima;
 
-=for podview <img src="label.gif" cut=1>
+=for podview <img src="label.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/label.gif">
 

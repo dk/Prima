@@ -487,7 +487,7 @@ Prima::Calendar - standard calendar widget
 	$cal-> month( 5);
 	run Prima;
 
-=for podview <img src="calendar.gif" cut=1>
+=for podview <img src="calendar.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/calendar.gif">
 

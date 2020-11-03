@@ -1132,7 +1132,7 @@ Prima::InputLine - standard input line widget
 	Prima::InputLine-> new( text => 'Hello world!');
 	run Prima;
 
-=for podview <img src="inputline.gif" cut=1>
+=for podview <img src="inputline.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/inputline.gif">
 

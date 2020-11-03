@@ -461,7 +461,7 @@ Prima::Dialog::FontDialog - standard font dialog
 	$f = $f-> logFont;
 	print "$_:$f->{$_}\n" for sort keys %$f;
 
-=for podview <img src="fontdlg.gif" cut=1>
+=for podview <img src="fontdlg.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/fontdlg.gif">
 

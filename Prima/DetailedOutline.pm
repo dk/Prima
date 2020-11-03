@@ -353,7 +353,7 @@ header widget.
   $l-> sort(1);
   run Prima;
 
-=for podview <img src="detailedoutline.gif" cut=1>
+=for podview <img src="detailedoutline.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/detailedoutline.gif">
 

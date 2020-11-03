@@ -2367,7 +2367,7 @@ Prima::Grids - grid widgets
 	);
 	run Prima;
 
-=for podview <img src="grid.gif" cut=1>
+=for podview <img src="grid.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/grid.gif">
 

@@ -2957,7 +2957,7 @@ Prima::Edit - standard text editing widget
 	);
 	run Prima;
 
-=for podview <img src="edit.gif" cut=1>
+=for podview <img src="edit.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/edit.gif">
 

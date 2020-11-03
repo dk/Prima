@@ -659,7 +659,7 @@ Prima::ComboBox - standard combo box widget
 
 	run Prima;
 
-=for podview <img src="combo.gif" cut=1>
+=for podview <img src="combo.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/combo.gif">
 
