@@ -1286,7 +1286,7 @@ Prima::TextView - rich text browser widget
 
  run Prima;
 
-=for podview <img src="textview.gif" cut=1>
+=for podview <img src="textview.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/textview.gif">
 

@@ -268,7 +268,7 @@ dialog boxes.
 	$text = '(none)' unless defined $text;
 	Prima::MsgBox::message( "You have entered: '$text'", mb::Ok);
 
-=for podview <img src="msgbox.gif" cut=1>
+=for podview <img src="msgbox.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/msgbox.gif">
 

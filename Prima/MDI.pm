@@ -1341,7 +1341,7 @@ window class ( see L<Prima::DockManager>.
 
 	run Prima;
 
-=for podview <img src="mdi.gif" cut=1>
+=for podview <img src="mdi.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/mdi.gif">
 

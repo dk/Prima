@@ -2649,7 +2649,7 @@ Called when the user finished the mouse transaction.
 
 =head1 Prima::SpinButton
 
-=for podview <img src="spinbutton.gif" cut=1>
+=for podview <img src="spinbutton.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/spinbutton.gif">
 
@@ -2661,7 +2661,7 @@ of the mouse pointer.
 
 =head1 Prima::AltSpinButton
 
-=for podview <img src="altspinbutton.gif" cut=1>
+=for podview <img src="altspinbutton.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/altspinbutton.gif">
 
@@ -2671,7 +2671,7 @@ the class is less functional but has more stylish look.
 
 =head1 Prima::SpinEdit
 
-=for podview <img src="altspinedit.gif" cut=1>
+=for podview <img src="altspinedit.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/altspinedit.gif">
 
@@ -2792,7 +2792,7 @@ Called when C<value> is changed.
 
 =head1 Prima::Gauge
 
-=for podview <img src="gauge.gif" cut=1>
+=for podview <img src="gauge.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/gauge.gif">
 
@@ -2880,7 +2880,7 @@ Default stringifying conversion is identical to C<sprintf("%2d%%")> one.
 
 =head1 Prima::ProgressBar
 
-=for podview <img src="progressbar.png" cut=1>
+=for podview <img src="progressbar.png">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/progressbar.png">
 
@@ -3045,7 +3045,7 @@ this notification is a substitute to C<Change>.
 
 =head1 Prima::Slider
 
-=for podview <img src="slider.gif" cut=1>
+=for podview <img src="slider.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/slider.gif">
 
@@ -3130,7 +3130,7 @@ Offset in pixels along the shaft axis.
 
 =head1 Prima::CircularSlider
 
-=for podview <img src="circularslider.gif" cut=1>
+=for podview <img src="circularslider.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/circularslider.gif">
 

@@ -485,7 +485,7 @@ use Prima::DetailedList;
 	$l-> sort(1);
 	run Prima;
 
-=for podview <img src="detailedlist.gif" cut=1>
+=for podview <img src="detailedlist.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/detailedlist.gif">
 

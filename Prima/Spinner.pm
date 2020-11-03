@@ -261,7 +261,7 @@ Prima::Spinner - Show a spinner animation
 
   run Prima;
 
-=for podview <img src="spinner.gif" cut=1>
+=for podview <img src="spinner.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/spinner.gif">
 

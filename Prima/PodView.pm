@@ -1711,7 +1711,7 @@ Prima::PodView - POD browser widget
 
 	run Prima;
 
-=for podview <img src="podview.gif" cut=1>
+=for podview <img src="podview.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/podview.gif">
 

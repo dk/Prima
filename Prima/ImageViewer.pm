@@ -533,7 +533,7 @@ Prima::ImageViewer - standard image, icon, and bitmap viewer class.
 	);
 	run Prima;
 
-=for podview <img src="imageviewer.gif" cut=1>
+=for podview <img src="imageviewer.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/imageviewer.gif">
 

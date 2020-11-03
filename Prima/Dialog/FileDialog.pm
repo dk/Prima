@@ -1702,7 +1702,7 @@ Prima::Dialog::FileDialog - File system related widgets and dialogs.
 	$open-> multiSelect(1);
 	print $open-> fileName, " are to be opened\n" if $open-> execute;
 
-=for podview <img src="filedlg.gif" cut=1>
+=for podview <img src="filedlg.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/filedlg.gif">
 

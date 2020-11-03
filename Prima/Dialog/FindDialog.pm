@@ -258,7 +258,7 @@ Prima::Dialog::ReplaceDialog to find and replace text.
 			" is to be replaced by ", $dlg-> replaceText;
 	}
 
-=for podview <img src="editdlg.gif" cut=1>
+=for podview <img src="editdlg.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/editdlg.gif">
 

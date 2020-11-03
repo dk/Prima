@@ -181,7 +181,7 @@ Prima::ExtLists - extended functionality for list boxes
 	);
 	run Prima;
 
-=for podview <img src="extlist.gif" cut=1>
+=for podview <img src="extlist.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/extlist.gif">
 

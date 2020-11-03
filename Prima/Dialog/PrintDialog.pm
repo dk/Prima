@@ -204,7 +204,7 @@ selection process.
 	}
 	$dlg-> destroy;
 
-=for podview <img src="printdialog.gif" cut=1>
+=for podview <img src="printdialog.gif">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/printdialog.gif">
 
