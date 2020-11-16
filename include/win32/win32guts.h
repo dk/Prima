@@ -588,7 +588,6 @@ LRESULT CALLBACK    generic_view_handler     ( HWND win, UINT  msg, WPARAM mp1, 
 
 extern int          arc_completion( double * angleStart, double * angleEnd, int * needFigure);
 extern Bool         add_font_to_hash( const PFont key, const PFont font, Bool addSizeEntry);
-extern void         adjust_line_end( int  x1, int  y1, int * x2, int * y2, Bool forth);
 extern void         cm_squeeze_palette( PRGBColor source, int srcColors, PRGBColor dest, int destColors);
 extern Bool         create_font_hash( void);
 extern Bool         cursor_update( Handle self);
