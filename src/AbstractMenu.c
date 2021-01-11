@@ -920,7 +920,7 @@ AbstractMenu_checked( Handle self, Bool set, char * varName, Bool checked)
 	if ( !set)
 		return m ? m-> flags. checked : false;
 	if ( m-> flags. divider || m-> down) return false;
-	if ( m-> id > 0 && !m->flags.checked ) {
+	if ( m-> id > 0 ) {
 		set_check(self, varName, m, checked);
 		if ( checked && m-> group != 0 )
 			my-> first_that( self, (void*)update_group, m, true);
