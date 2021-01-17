@@ -907,7 +907,8 @@ sub new_path
 	return Prima::PS::PostScript::Path->new(@_);
 }
 
-package Prima::PS::PostScript::Path;
+package
+	Prima::PS::PostScript::Path;
 use base qw(Prima::PS::Drawable::Path);
 
 my %dict = (
