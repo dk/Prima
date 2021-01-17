@@ -297,7 +297,7 @@ $extras
 %%EndComments
 
 /d/def load def/,/load load d/~/exch , d/S/show , d/:/gsave , d/;/grestore ,
-d/N/newpath , d/M/moveto , d/L/rlineto , d/X/closepath , d/C/clip ,
+d/N/newpath , d/M/moveto , d/L/rlineto , d/X/closepath , d/C/clip , d/U/curveto ,
 d/T/translate , d/R/rotate , d/Y/glyphshow , d/P/showpage , d/Z/scale , d/I/imagemask ,
 d/@/dup , d/G/setgray , d/A/setrgbcolor , d/l/lineto , d/F/fill ,
 d/FF/findfont , d/XF/scalefont , d/SF/setfont ,
@@ -900,6 +900,34 @@ sub apply_canvas_font
 	} else {
 		$self-> {glyph_font}  = ($f1000->{pitch} == fp::Fixed) ? 'Courier' : 'Helvetica'
 	}
+}
+
+sub new_path
+{
+	return Prima::PS::PostScript::Path->new(@_);
+}
+
+package Prima::PS::PostScript::Path;
+use base qw(Prima::PS::Drawable::Path);
+
+my %dict = (
+	lineto    => 'l',
+	moveto    => 'M',
+	curveto   => 'U',
+	stroke    => 'O',
+	closepath => 'X',
+	fill_alt  => 'E',
+	fill_wind => 'F',
+);
+
+sub dict { \%dict }
+
+sub set_current_point
+{
+	my ( $self, $x, $y ) = @_;
+	$self-> emit('N') unless $self->{move_is_line};
+	$self-> emit($x, $y, $self->{move_is_line} ? 'l' : 'M');
+	$self-> {move_is_line} = 1;
 }
 
 1;
