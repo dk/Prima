@@ -611,7 +611,8 @@ sub text_shape
 
 sub render_glyph {}
 
-package Prima::PS::Drawable::Path;
+package
+	Prima::PS::Drawable::Path;
 use base qw(Prima::Drawable::Path);
 
 sub entries

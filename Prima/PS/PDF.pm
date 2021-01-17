@@ -1259,7 +1259,8 @@ sub new_path
 	return Prima::PS::PDF::Path->new(@_);
 }
 
-package Prima::PS::PDF::Path;
+package
+	Prima::PS::PDF::Path;
 use base qw(Prima::PS::Drawable::Path);
 
 my %dict = (
