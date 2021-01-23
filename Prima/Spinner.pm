@@ -147,24 +147,25 @@ sub on_paint
 		$fill_spline->(1, _h_flip \@petal2);
 		$fill_spline->(0, \@petal1 );
 	} elsif ( $self->{style} eq 'spiral') {
-		my $d1	 = 0.8;
-		my $d2	 = 0.2;
-		my $dx	 = $d2 / 4;
+		my $r = sqrt(2) - 1;
+		my @s = ( 1, 0,    1-.00225, $r,      $r, 0.95+.00225, 0, .95);
+		my @z = ( 0, 1.05, $r+.018, 1.05-.02, 1+.005, $r+.018, 1, 0);
 
 		$canvas->translate($x, $y);
-		$canvas-> new_path->
-			scale($scale_factor * 22)->
-			rotate(-$self->{start_angle})->
-			arc( 0, 0, $d1 + $dx * 0, $d1 + $dx * 1, 0, 90)->
-			arc( 0, 0, $d1 + $dx * 2, $d1 + $dx * 1, 90, 180)->
-			arc( 0, 0, $d1 + $dx * 2, $d1 + $dx * 3, 180, 270)->
-			arc( 0, 0, $d1 + $dx * 4, $d1 + $dx * 3, 270, 360)->
-			arc( $d1/2, 0, $d2, $d2, 0, 180)->
-			arc( 0, 0, $d1 - $dx * 4, $d1 - $dx * 3, 360, 270)->
-			arc( 0, 0, $d1 - $dx * 2, $d1 - $dx * 3, 270, 180)->
-			arc( 0, 0, $d1 - $dx * 2, $d1 - $dx * 1, 180, 90)->
-			arc( 0, 0, $d1 - $dx * 0, $d1 - $dx * 1, 90, 0)->
-		fill;
+		my $p = $canvas-> new_path->
+			scale($scale_factor * 9)->
+			rotate(-$self->{start_angle});
+		$p->spline(\@s);
+		$p->save;
+			$p->rotate(90)->scale(0.95)->spline(\@s) for 1..3;
+		$p->restore;
+		$p->arc(1.05 ** 4 - 1.20 + 1, 0, .4, .4, 180, 0);
+		$p->save;
+			$p->scale(1.05 ** 4);
+			$p->rotate(-90)->scale(1 / 1.05)->spline(\@z) for 1..3;
+		$p->restore;
+		$p->spline(\@z);
+		$p->fill;
 	}
 }
 
