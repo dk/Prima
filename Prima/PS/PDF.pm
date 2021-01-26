@@ -77,6 +77,7 @@ sub change_transform
 	my @cr = $self-> clipRect;
 	my @sc = $self-> scale;
 	my $ro = $self-> rotate;
+	my $rg = $self-> region;
 
 	$cr[2] -= $cr[0];
 	$cr[3] -= $cr[1];
@@ -84,7 +85,7 @@ sub change_transform
 	my $doTR   = grep { $_ != 0 } @tp;
 	my $doSC   = grep { $_ != 0 } @sc;
 
-	if ( !$doClip && !$doTR && !$doSC && !$ro) {
+	if ( !$doClip && !$doTR && !$doSC && !$ro && !$rg) {
 		$self-> emit_content('q') if $gsave;
 		return;
 	}
@@ -95,8 +96,9 @@ sub change_transform
 
 	$self-> emit_content('Q') unless $gsave;
 	$self-> emit_content('q');
-	$self-> emit_content("@cr W") if $doClip;
+	$self-> emit_content("@cr W n") if $doClip;
 	$self-> emit_content("1 0 0 1 @tp cm") if $doTR;
+	$self-> emit_content($rg-> apply_offset . " n") if $rg && !$doClip;
 	$self-> emit_content("$sc[0] 0 0 $sc[1] 0 0 cm") if $doSC;
 	if ($ro != 0) {
 		my $sin1 = sin($ro);
@@ -1259,6 +1261,19 @@ sub new_path
 	return Prima::PS::PDF::Path->new(@_);
 }
 
+sub region
+{
+	return $_[0]->{region} unless $#_;
+	my ( $self, $region ) = @_;
+	if ( $region && !UNIVERSAL::isa($region, "Prima::PS::PDF::Region")) {
+		warn "Region is not a Prima::PS::PDF::Region";
+		return undef;
+	}
+	$self->{clipRect} = [0,0,0,0];
+	$self->{region} = $region;
+	$self-> change_transform;
+}
+
 package
 	Prima::PS::PDF::Path;
 use base qw(Prima::PS::Drawable::Path);
@@ -1281,6 +1296,38 @@ sub set_current_point
 	$self-> emit($x, $y, $self->{move_is_line} ? 'l' : 'm');
 	$self-> {move_is_line} = 1;
 }
+
+sub region
+{
+	my ($self, $mode) = @_;
+	my $path = join "\n", @{$self-> entries};
+	$path .= ' h' unless $path =~ /h$/;
+	$path .= ' W';
+	$path .= '*' if ($mode // fm::Winding) & fm::Alternate;
+	return Prima::PS::PDF::Region->new( $path );
+}
+
+package
+	Prima::PS::PDF::Region;
+use base qw(Prima::PS::Drawable::Region);
+
+sub other { UNIVERSAL::isa($_[0], "Prima::PS::PDF::Region") ? $_[0] : () }
+
+sub equals
+{
+	my $self = shift;
+	my $other = other(shift) or return;
+	return $self->{path} eq $other->{path};
+}
+
+sub combine
+{
+	my $self = shift;
+	my $other = other(shift) or return;
+	$self->{path} .= "\n" . $other->apply_offset;
+}
+
+sub is_empty { shift->{path} !~ /[Sf]/ }
 
 1;
 
