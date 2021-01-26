@@ -353,6 +353,19 @@ Default value: 1
 
 =over
 
+=item Clipboard $CLIPBOARD, $ACTION, $TARGET
+
+With (the only implemented) C<$ACTION> I<copy>, is called whenever another
+application requests clipboard data in format C<$TARGET>. This notification is
+handled internally to optimize image pasting through the cliboard. Since the
+clipboard pasting semantics in Prima is such that data must be supplied to the
+clipboard in advance, before another application can request it, there is a
+problem which format to use. In order to not encode an image or other complex
+data in all possible formats but do that on demand and in the format the other
+application wants, this notification can be used.
+
+Only implemented for X11.
+
 =item CopyImage $CLIPBOARD, $IMAGE
 
 The notification stores C<$IMAGE> in clipboard.
