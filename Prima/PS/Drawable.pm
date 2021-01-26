@@ -286,6 +286,7 @@ sub clipRect
 {
 	return @{$_[0]-> {clipRect}} unless $#_;
 	$_[0]-> {clipRect} = [@_[1..4]];
+	$_[0]-> {region} = undef;
 	$_[0]-> change_transform;
 }
 
@@ -729,6 +730,59 @@ sub fill
 	$self-> canvas-> fill( join("\n", @{ $self->entries }, $self-> dict->{"fill_$fillMode"} ));
 }
 
+package
+	Prima::PS::Drawable::Region;
+
+sub new
+{
+	my ($class, $entries) = @_;
+	bless {
+		path   => $entries,
+		offset => [0,0],
+	}, $class;
+}
+
+sub get_handle { "$_[0]" }
+sub get_boxes    { [] }
+sub point_inside { 0 }
+sub rect_inside  { 0 }
+sub box          { 0,0,0,0 }
+
+sub offset
+{
+	my ( $self, $dx, $dy ) = @_;
+	$self->{offset}->[0] += $dx;
+	$self->{offset}->[1] += $dy;
+}
+
+sub apply_offset
+{
+	my $self = shift;
+	my $path = $self->{path};
+	my @offset = @{ $self->{offset} };
+	return $path if 0 == grep { $_ != 0 } @offset;
+
+	my $n = '';
+	my $ix = 0;
+	while ( 1 ) {
+		$path =~ m/\G(\d+(?:\.\d+)?)/gcs and do {
+			$n .= $1 + $offset[$ix];
+			$ix = $ix ? 0 : 1;
+			redo;
+		};
+		$path =~ m/\G(\s+)/gcs and do {
+			$n .= $1;
+			redo;
+		};
+		$path =~ m/\G(\D+)/gcs and do {
+			$n .= $1;
+			$ix = 0;
+			redo;
+		};
+		$path =~ m/\G$/gcs and last;
+	}
+	$path = $n;
+}
 
 1;
 
