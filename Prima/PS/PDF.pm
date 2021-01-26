@@ -1008,7 +1008,7 @@ sub bars
 	for ( $i = 0; $i < $c; $i += 4) {
 		$z .= "h @a[$i,$i+1] " . ($a[$i+2] - $a[$i]) . ' ' . ($a[$i+3] - $a[$i+1]) . " re f\n";
 	}
-	$self-> stroke( $z);
+	$self-> fill( $z);
 }
 
 sub clear
