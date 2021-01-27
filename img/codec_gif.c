@@ -435,6 +435,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				if ( !data) outcm( ls * i-> h);
 				GIF_CALL DGifGetLine( l-> gft, data, i-> w * i-> h);
 				if ( GIF_CALL_FAILED ) {
+					fi-> wasTruncated = 1;
 					if ( fi-> noIncomplete ) {
 						free( data);
 						out;
