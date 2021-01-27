@@ -1474,6 +1474,7 @@ VALID_COMBINATION:
 	free( tifftile);
 
 	if ( read_failure) {
+		fi-> wasTruncated = true;
 		if ( fi-> noIncomplete) return false;
 
 		/* it's not incomplete, it's a real libtiff error camouflaged inside */

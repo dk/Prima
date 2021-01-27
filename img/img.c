@@ -221,7 +221,7 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 	if ( !ret) out("Not enough memory")
 
 	fi. errbuf = error ? error : dummy_error_buf;
-	strcpy( fi.errbuf, "Internal error");
+	fi. errbuf[0] = 0;
 
 	/* open file */
 	if ( ioreq == NULL) {
@@ -612,6 +612,8 @@ apc_img_load( Handle self, char * fileName, PImgIORequest ioreq,  HV * profile, 
 	}
 
 EXIT_NOW:;
+	if ( err && fi.errbuf[0] == 0)
+		strcpy(fi.errbuf, fi.wasTruncated ? "Truncated file" : "Internal error");
 	if ( fi. frameCount < 0 && pexist( wantFrames) && pget_i( wantFrames)) {
 		if ( ioreq != NULL)
 			req_seek( ioreq, 0, SEEK_SET);
