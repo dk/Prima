@@ -120,12 +120,12 @@ sub on_fontchanged
 	$self-> SUPER::on_fontchanged(@_);
 }
 
-sub on_click
+sub item2path
 {
-	my $self = $_[0];
+	my $self  = shift;
 	my $items = $self-> {items};
 	my $foc = $self-> focusedItem;
-	return if $foc < 0;
+	return undef if $foc < 0;
 	my $newP = '';
 	my $ind = $items-> [$foc]-> {indent};
 	for ( @{$items} ) {
@@ -133,8 +133,32 @@ sub on_click
 	}
 	$newP .= $items-> [$foc]-> {text};
 	$newP .= '/' unless $newP =~ m/[\/\\]$/;
-	$self-> path( $newP);
+	return $newP;
 }
+
+sub on_click
+{
+	my $self = $_[0];
+	return if $self-> focusedItem < 0;
+	$self-> path( $self-> item2path );
+}
+
+sub on_keydown
+{
+	my ( $self, $code, $key, $mod) = @_;
+	return if $mod & km::DeadKey;
+
+	# propagate kb::Enter if unused
+	return if
+		( $mod & ( km::Shift|km::Ctrl|km::Alt)) == 0 &&
+		$key == kb::Enter &&
+		$self-> focusedItem >= 0 &&
+		$self-> item2path eq $self->path
+		;
+
+	$self->SUPER::on_keydown($code, $key, $mod);
+}
+
 
 sub on_drawitem
 {
@@ -207,7 +231,6 @@ sub on_drawitem
 	}
 	# $canvas-> color($clrSave);
 }
-
 
 sub recalc_icons
 {
