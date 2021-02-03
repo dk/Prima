@@ -7,6 +7,7 @@ use Prima::InputLine;
 use Prima::IniFile;
 use Prima::Utils;
 use Prima::Dialog::FileDialog;
+use Prima::Dialog::FindDialog;
 use Prima::Dialog::PrintDialog;
 
 package Prima::HelpViewer;
