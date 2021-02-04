@@ -2212,8 +2212,8 @@ sub on_mousedown
 	my ( $val, $inCircle) = $self-> xy2val( $x, $y);
 	return unless $inCircle;
 	$self-> {mouseTransaction} = 3;
-	$self-> value( $val);
 	$self-> capture(1);
+	$self-> value( $val);
 	$self-> clear_event;
 }
 
