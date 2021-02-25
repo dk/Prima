@@ -1407,7 +1407,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		}
 	}
 
-	gpLEAVE;
+	if (gp_enter) gpLEAVE;
 
 	/* encode direction */
 	if ( level != tsBytes ) {
