@@ -6,14 +6,18 @@ use warnings;
 eval "use Compress::Raw::Zlib;";
 my $use_zlib = !$@;
 
+sub new_filename
+{
+	my $tmpdir = $ENV{TMPDIR} // $ENV{TEMPDIR} // (($^O =~ /win/i) ? ($ENV{TEMP} // "$ENV{SystemDrive}\\TEMP") : "/tmp");
+	my $id = unpack('H*', pack('f', rand(10 ** rand(37))));
+	return "$tmpdir/p-$id-$$.ps";
+}
+
 sub new
 {
 	my ( $class, %opt ) = @_;
-	my $tmpdir = $ENV{TMPDIR} // $ENV{TEMPDIR} // (($^O =~ /win/i) ? ($ENV{TEMP} // "$ENV{SystemDrive}\\TEMP") : "/tmp");
-	my $id = unpack('H*', pack('f', rand(10 ** rand(37))));
 
-	my %self;
-	$self{filename} = "$tmpdir/p-$id-$$.ps";
+	my %self = ( filename => new_filename );
 	if ( open( my $f, '+>', $self{filename})) {
 		$self{fh} = $f;
 		binmode $self{fh};
