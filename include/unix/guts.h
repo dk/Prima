@@ -196,6 +196,7 @@ typedef struct _FontFlags {
 	unsigned disabled         : 1;
 	unsigned funky            : 1;
 	unsigned heights_cache    : 1;
+	unsigned known            : 1;
 } FontFlags;
 
 typedef struct _FontInfo {

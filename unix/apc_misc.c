@@ -868,6 +868,7 @@ apc_show_message( const char * message, Bool utf8)
 		int max;
 
 		apc_sys_get_msg_font( &f);
+		f. pitch = fpDefault;
 		prima_core_font_pick( nilHandle, &f, &f);
 		cf = prima_find_known_font( &f, false, false);
 		if ( !cf || !cf-> id) {
