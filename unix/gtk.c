@@ -315,8 +315,13 @@ gtk_openfile( Bool open)
 	char *result = NULL;
 	struct MsgDlg message_dlg, **storage;
 	int stage = 0;
+	XErrorEvent xr;
 
 	if ( gtk_dialog) return NULL; /* we're not reentrant */
+
+	XFlush(DISP);
+	XCHECKPOINT;
+	prima_save_xerror_event(&xr);
 
 	gtk_dialog = gtk_file_chooser_dialog_new (
 		gtk_dialog_title_ptr ?
@@ -469,6 +474,10 @@ gtk_openfile( Bool open)
 	gtk_dialog = NULL;
 
 	while ( gtk_events_pending()) gtk_main_iteration();
+
+	XSync(DISP, false);
+	XCHECKPOINT;
+	prima_restore_xerror_event(NULL);
 
 	return result;
 }
