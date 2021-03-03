@@ -25,6 +25,7 @@ Note the left-mouse drag effect from a font screen widget.
 
 use strict;
 use warnings;
+use utf8;
 use Carp;
 use Prima;
 use Prima::Application name => "Font Dialog";
