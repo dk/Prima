@@ -133,7 +133,7 @@ GLYPHS_HDR
 			"dup 3 " . embed( xreturn ) .
 			"dup 4 " . embed(num(3,1,3) . callothersubr . xpop . callsubr . xreturn ) .
 			"def put dup /CharStrings 257 dict dup begin" .
-			"/.notdef " . embed2( hsbw(0,0) . endchar )
+			"/.notdef " . embed2( Prima::PS::Glyphs::hsbw(0,0) . endchar )
 			;
 		$emit->(encrypt1(\$R, $subrs));
 		return 0 unless $v->{tmpfile}->evacuate(sub { $emit->(encrypt1(\$R, $_[0])) });
