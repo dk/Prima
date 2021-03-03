@@ -244,6 +244,12 @@ xlfd_parse_font( char * xlfd_name, PFontInfo info, Bool do_vector_fonts)
 				if ( noname)   strcpy( info-> font. name,   xf. name);
 				if ( nofamily) strcpy( info-> font. family, xf. family);
 			}
+			if (
+				( strcmp( info->font.name, "clean") == 0) ||
+				( strcmp( info->font.name, "fixed") == 0) ||
+				( strcmp( info->font.name, "bitstream charter") == 0) 
+			)
+				info-> flags. known = 1;
 		}
 
 		if ( *c == '-') {
@@ -1397,7 +1403,7 @@ static double
 query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 {
 	double diff = 0.0;
-	int enc_match = 0;
+	int enc_match = 0, name_match = 0;
 
 	if ( fi-> flags. encoding && f-> encoding[0]) {
 		if ( strcmp( f-> encoding, fi-> font. encoding) != 0)
@@ -1425,6 +1431,7 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 
 	if ( fi-> flags. name && stricmp( lcname, fi-> font. name) == 0) {
 		diff += 0.0;
+		name_match = 1;
 	} else if ( fi-> flags. family && stricmp( lcname, fi-> font. family) == 0) {
 		diff += 1000.0;
 	} else if ( fi-> flags. family && strcasestr( fi-> font. family, lcname)) {
@@ -1437,6 +1444,8 @@ query_diff( PFontInfo fi, PFont f, char * lcname, int selector)
 		diff += 10000.0;
 		if ( fi-> flags. funky && !enc_match) diff += 10000.0;
 	}
+
+	if ( !name_match && !fi-> flags. known ) diff += 2.0;
 
 	if ( fi-> font. vector > fvBitmap) {
 		if ( fi-> flags. bad_vector) {
