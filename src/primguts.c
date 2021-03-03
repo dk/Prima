@@ -1873,8 +1873,15 @@ exception_check_raise(void)
 int
 prima_utf8_length( const char * utf8, int maxlen)
 {
+	int ulen = 0;
 	if ( maxlen < 0 ) maxlen = INT16_MAX;
-	return utf8_length((U8*)utf8, ((U8*)utf8) + maxlen);
+	while ( maxlen > 0 && *utf8 ) {
+		const char *u = (char*) utf8_hop(( U8*) utf8, 1);
+		ulen++;
+		maxlen -= u - utf8;
+		utf8 = u;
+	}
+	return ulen;
 }
 
 Bool
