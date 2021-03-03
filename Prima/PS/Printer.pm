@@ -120,6 +120,8 @@ sub _begin_doc
 	my ( $self, $docName) = @_;
 	return 0 if $self-> get_paint_state;
 
+	$self-> {spoolingFailed} = undef;
+	$self-> {spoolSTDERR} = undef;
 	if ($self-> {data}-> {spoolerType} ne 'fh') {
 		$self-> {spoolHandle} = undef;
 	} else {
@@ -189,17 +191,24 @@ sub __end
 		defined($sigpipe) ? $SIG{PIPE} = $sigpipe : delete($SIG{PIPE});
 	}
 	$self-> {spoolHandle} = undef if $self->{data}->{spoolerType} ne 'fh';
+	$self-> {spoolingFailed} = undef;
 
 	if ( $self->{data}->{spoolerType} eq 'cmd' && $self->{data}->{spoolerData} =~ /\$/) {
 		my $cmd = $self->{data}->{spoolerData};
 		my $tmp = $self->{spoolName};
 		$cmd =~ s/\$/$tmp/g;
-		if ( system $cmd ) {
-			Prima::message("Error running '$cmd'") if $self-> {gui};
+		if ( $self->{gui} && $cmd !~ />2/) {
+			$self->{spoolSTDERR} = Prima::PS::TempFile->new_filename;
+			$cmd .= " 2>$self->{spoolSTDERR}";
 		}
+		$self-> show_msg("Error running '$cmd'") if system $cmd;
 		$self->{spoolTmpFile}->remove;
 		undef $self->{spoolTmpFile};
 	}
+
+	unlink $self->{spoolSTDERR} if defined $self->{spoolSTDERR};
+	$self-> {spoolSTDERR} = undef;
+
 	$sigpipe = undef;
 }
 
@@ -220,11 +229,38 @@ sub _abort_doc
 	unlink $self-> {spoolName} if $self-> {data}-> {spoolerType} eq 'file';
 }
 
+sub show_msg
+{
+	my ( $self, $msg ) = @_;
+	return unless $self->{gui};
+
+	my $tmpf = $self->{spoolSTDERR};
+	my @msg;
+	if ( defined($tmpf) && (open my $f, "<", $tmpf )) {
+		while ( my $c = <$f> ) {
+			chomp $c;
+			push @msg, $c;
+			if (@msg > 5) {
+				push @msg, "...";
+				last;
+			}
+		}
+		close $f;
+	}
+	if ( @msg ) {
+		unshift @msg, '' if length($msg[0]) + length($msg) > 60;
+		$msg .= ": ". join("\n", @msg);
+	}
+	Prima::message($msg);
+}
+
 sub _spool
 {
 	my ( $self, $data) = @_;
 
 	my $piped = 0;
+
+	return 0 if $self->{spoolingFailed};
 
 	if ( $self-> {data}-> {spoolerType} ne 'file' && !$self-> {spoolHandle}) {
 		my @cmds;
@@ -237,10 +273,13 @@ sub _spool
 		my $ok = 0;
 		$sigpipe = $SIG{PIPE};
 		$SIG{PIPE} = 'IGNORE';
+		$self->{spoolSTDERR} = $self->{gui} ? Prima::PS::TempFile->new_filename : undef;
 		CMDS: for ( @cmds) {
 			$piped = 0;
 			my $f = IO::Handle-> new;
-			next unless open $f, "|$_";
+			my $cmd = "|$_";
+			$cmd .= " 2>$self->{spoolSTDERR}" if $self->{gui};
+			next unless open $f, $cmd;
 			binmode $f;
 			$f-> autoflush(1);
 			$piped = 1 unless print $f $data;
@@ -250,14 +289,16 @@ sub _spool
 			$self-> {spoolName}   = $_;
 			last;
 		}
-		Prima::message("Error printing to '$cmds[0]'") if !$ok && $self-> {gui};
+		$self-> show_msg("Error printing to '$cmds[0]'") if !$ok;
+		$self-> {spoolingFailed} = 1 if !$ok;
 		return $ok;
 	}
 
 	if ( !(print {$self-> {spoolHandle}} $data) ||
 			( $piped && $self-> {data}-> {spoolerType} ne 'file' )
 		) {
-		Prima::message( "Error printing to '$self->{spoolName}'") if $self-> {gui};
+		$self-> show_msg("Error printing to '$self->{spoolName}'");
+		$self-> {spoolingFailed} = 1;
 		return 0;
 	}
 
