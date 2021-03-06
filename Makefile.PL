@@ -1781,7 +1781,7 @@ sub setup_codecs
 	my @codec_libpath = $Config{installsitearch};
 	my @warn_codecs;
 	my $webp_version;
-	for my $cx ( @codecs) {
+	CODEC: for my $cx ( @codecs) {
 		my @inc;
 		my $foundlib;
 		$cx =~ m/codec_(.*)\.c$/i;
@@ -1845,15 +1845,20 @@ sub setup_codecs
 
 			printlog "yes";
 			if ($codec eq 'webp') {
+				my @addlib;
 				for my $lib2 ('webpdemux', 'webmux') {
 					if ( defined find_lib($lib2,join('', @inc), '', @codec_libpath)) {
-						unshift( @LIBS, $lib2) unless $libs{$lib2};
+						push @addlib, $lib2 unless $libs{$lib2};
 					} else {
 						printlog ", but $lib2 not found, skipping\n";
+						@addlib = ();
 						pop @ACTIVE_CODECS;
-						next;
+						$PASSIVE_CODECS{$fn} = 1;
+						pop @LIBPATH if defined $foundlib and length $foundlib;
+						next CODEC;
 					}
 				}
+				unshift( @LIBS, @addlib );
 			}
 			# In gcc, order of libs matters. libXpm requires libgdi32, and
 			# has to be mentioned _after_ it to work.
