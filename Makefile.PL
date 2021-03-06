@@ -1850,6 +1850,7 @@ sub setup_codecs
 						unshift( @LIBS, $lib2) unless $libs{$lib2};
 					} else {
 						printlog ", but $lib2 not found, skipping\n";
+						pop @ACTIVE_CODECS;
 						next;
 					}
 				}
