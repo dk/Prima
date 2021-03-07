@@ -1414,23 +1414,23 @@ apc_getdir( const char *dirname, Bool is_utf8)
 #endif
 			default:
 #endif
-								snprintf( path, 2047, "%s/%s", dirname, de-> d_name);
-								type = nil;
-								if ( stat( path, &s) == 0) {
-									switch ( s. st_mode & S_IFMT) {
-									case S_IFIFO:        type = "fifo";  break;
-									case S_IFCHR:        type = "chr";   break;
-									case S_IFDIR:        type = "dir";   break;
-									case S_IFBLK:        type = "blk";   break;
-									case S_IFREG:        type = "reg";   break;
-									case S_IFLNK:        type = "lnk";   break;
-									case S_IFSOCK:       type = "sock";  break;
+				snprintf( path, 2047, "%s/%s", dirname, de-> d_name);
+				type = nil;
+				if ( stat( path, &s) == 0) {
+					switch ( s. st_mode & S_IFMT) {
+					case S_IFIFO:        type = "fifo";  break;
+					case S_IFCHR:        type = "chr";   break;
+					case S_IFDIR:        type = "dir";   break;
+					case S_IFBLK:        type = "blk";   break;
+					case S_IFREG:        type = "reg";   break;
+					case S_IFLNK:        type = "lnk";   break;
+					case S_IFSOCK:       type = "sock";  break;
 #ifdef S_IFWHT
-									case S_IFWHT:        type = "wht";   break;
+					case S_IFWHT:        type = "wht";   break;
 #endif
-									}
-								}
-								if ( !type)     type = "unknown";
+					}
+				}
+				if ( !type)     type = "unknown";
 #if defined(DT_REG) && defined(DT_DIR)
 			}
 #endif
@@ -1586,8 +1586,8 @@ int
 apc_fs_access(const char *name, Bool is_utf8, int mode, Bool effective)
 {
 	return effective ?
-		eaccess(path, mode) :
-		access(path, mode);
+		eaccess(name, mode) :
+		access(name, mode);
 }
 
 Bool
@@ -1603,29 +1603,26 @@ apc_fs_chmod( const char *path, Bool is_utf8, int mode)
 }
 
 char *
-apc_fs_from_local(const char * text, Bool *is_utf8, unsigned int * len)
+apc_fs_from_local(const char * text, int * len)
 {
-	*is_utf8 = false;
-	return text;
+	return (char*) text;
 }
 
 char*
-apc_fs_getcwd(Bool * is_utf8)
+apc_fs_getcwd()
 {
-	*is_utf8 = false;
 	return get_current_dir_name();
 }
 
 char *
-apc_fs_to_local(const char * text, Bool fail_if_cannot, unsigned int * len)
+apc_fs_to_local(const char * text, Bool fail_if_cannot, int * len)
 {
-	return text;
+	return (char*)text;
 }
 
 char*
-apc_fs_getenv(const char * varname, Bool * is_utf8, Bool * do_free)
+apc_fs_getenv(const char * varname, Bool is_utf8, Bool * do_free)
 {
-	*is_utf8 = false;
 	*do_free = false;
 	return getenv(varname);
 }
@@ -1643,7 +1640,7 @@ apc_fs_mkdir( const char* path, Bool is_utf8, int mode)
 }
 
 int
-apc_fs_open_file( const char* path, Bool is_utf8, int mode)
+apc_fs_open_file( const char* path, Bool is_utf8, int flags, int mode)
 {
 	return open(path, flags, mode);
 }
@@ -1688,7 +1685,7 @@ apc_fs_stat(const char *name, Bool is_utf8, Bool link, PStatRec statrec)
 	statrec-> blksize = statbuf. st_blksize;
 	statrec-> blocks  = statbuf. st_blocks;
 	statrec-> atim    = (float) statbuf.st_atim.tv_sec + (float) statbuf.st_atim.tv_nsec / 1000000000.0;
-	statrec-> ntim    = (float) statbuf.st_ntim.tv_sec + (float) statbuf.st_ntim.tv_nsec / 1000000000.0;
+	statrec-> mtim    = (float) statbuf.st_mtim.tv_sec + (float) statbuf.st_mtim.tv_nsec / 1000000000.0;
 	statrec-> ctim    = (float) statbuf.st_ctim.tv_sec + (float) statbuf.st_ctim.tv_nsec / 1000000000.0;
 	return 1;
 }
@@ -1708,6 +1705,6 @@ apc_fs_utime( double atime, double mtime, const char* path, Bool is_utf8 )
 	tv[1].tv_sec  = (long) mtime;
 	tv[1].tv_usec = (mtime - (float) tv[1].tv_sec) * 1000000;
 
-	return utimes(path, &tv) == 0;
+	return utimes(path, tv) == 0;
 }
 
