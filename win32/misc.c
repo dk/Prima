@@ -713,7 +713,7 @@ apc_fs_access(const char *name, Bool is_utf8, int mode, Bool effective)
 	return ret;
 }
 
-extern Bool
+Bool
 apc_fs_chdir(const char *path, Bool is_utf8 )
 {
 	WCHAR *buf;
@@ -733,7 +733,7 @@ apc_fs_chdir(const char *path, Bool is_utf8 )
 	return ok;
 }
 
-extern Bool
+Bool
 apc_fs_chmod( const char *path, Bool is_utf8, int mode)
 {
 	WCHAR *buf;
@@ -809,12 +809,11 @@ wstr2ascii( WCHAR * src, int * len, Bool fail_if_cannot )
 	return ret;
 }
 
-extern char *
-apc_fs_from_local(const char * text, Bool *is_utf8, int * len)
+char *
+apc_fs_from_local(const char * text, int * len)
 {
 	char * ret;
 	WCHAR * buf;
-	*is_utf8 = true;
 	if ( !( buf = alloc_ascii_to_wchar( text, *len)))
 		return NULL;
 	ret = alloc_wchar_to_utf8( buf, len );
@@ -823,7 +822,7 @@ apc_fs_from_local(const char * text, Bool *is_utf8, int * len)
 }
 
 
-extern char *
+char *
 apc_fs_to_local(const char * text, Bool fail_if_cannot, int * len)
 {
 	WCHAR *buf;
@@ -837,13 +836,12 @@ apc_fs_to_local(const char * text, Bool fail_if_cannot, int * len)
 	return ret;
 }
 
-extern char*
-apc_fs_getcwd(Bool * is_utf8)
+char*
+apc_fs_getcwd(void)
 {
 	int i;
 	WCHAR fn[MAX_PATH+1];
 
-	*is_utf8 = true;
 	if ( !GetCurrentDirectoryW(MAX_PATH+1, fn)) {
 		errno = EACCES;
 		return NULL;
@@ -855,23 +853,22 @@ apc_fs_getcwd(Bool * is_utf8)
 	return alloc_wchar_to_utf8(fn, NULL);
 }
 
-extern char*
-apc_fs_getenv(const char * varname, Bool * is_utf8, Bool * do_free)
+char*
+apc_fs_getenv(const char * varname, Bool is_utf8, Bool * do_free)
 {
 	WCHAR * e, * buf;
 
-	if ( !( buf = path2wchar(varname, *is_utf8, NULL)))
+	if ( !( buf = path2wchar(varname, is_utf8, NULL)))
 		return NULL;
 	e = _wgetenv(buf);
 	free(buf);
 	if ( !e ) return NULL;
 
-	*is_utf8 = true;
 	*do_free = true;
 	return alloc_wchar_to_utf8(e, NULL);
 }
 
-extern Bool
+Bool
 apc_fs_link( const char* oldname, Bool is_old_utf8, const char * newname, Bool is_new_utf8 )
 {
 	WCHAR *buf1, *buf2;
@@ -891,7 +888,7 @@ apc_fs_link( const char* oldname, Bool is_old_utf8, const char * newname, Bool i
 	return ok;
 }
 
-extern Bool
+Bool
 apc_fs_mkdir( const char* path, Bool is_utf8, int mode)
 {
 	WCHAR *buf;
@@ -906,7 +903,7 @@ apc_fs_mkdir( const char* path, Bool is_utf8, int mode)
 	return ok;
 }
 
-extern int
+int
 apc_fs_open_file( const char* path, Bool is_utf8, int flags, int mode)
 {
 	WCHAR *buf;
@@ -923,7 +920,7 @@ apc_fs_open_file( const char* path, Bool is_utf8, int flags, int mode)
 	return f;
 }
 
-extern Bool
+Bool
 apc_fs_rename( const char* oldname, Bool is_old_utf8, const char * newname, Bool is_new_utf8 )
 {
 	Bool ok;
@@ -940,7 +937,7 @@ apc_fs_rename( const char* oldname, Bool is_old_utf8, const char * newname, Bool
 	return ok;
 }
 
-extern Bool
+Bool
 apc_fs_rmdir( const char* path, Bool is_utf8 )
 {
 	WCHAR *buf;
@@ -1012,7 +1009,7 @@ apc_fs_stat(const char *name, Bool is_utf8, Bool link, PStatRec statrec)
 	return 1;
 }
 
-extern Bool
+Bool
 apc_fs_unlink( const char* path, Bool is_utf8 )
 {
 	WCHAR *buf;
@@ -1055,7 +1052,7 @@ filetime_from_time(PFILETIME pFileTime, float Time)
 	       LocalFileTimeToFileTime(&LocalTime, pFileTime);
 }
 
-extern Bool
+Bool
 apc_fs_setenv(const char * varname, Bool is_name_utf8, const char * value, Bool is_value_utf8)
 {
 	WCHAR *buf1, *buf2;
@@ -1117,7 +1114,7 @@ EXIT:
 }
 
 
-extern Bool
+Bool
 apc_fs_utime( double atime, double mtime, const char* path, Bool is_utf8 )
 {
 	WCHAR *buf;
