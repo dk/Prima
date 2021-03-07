@@ -1914,8 +1914,9 @@ prima_open_file( const char *text, Bool is_utf8, const char * mode)
 	int fd, o, m;
 	const char * omode = mode;
 	char *cwd = NULL;
-	Bool is_cwd_utf8;
 	FILE * ret;
+
+	(void)cwd;
 
 	switch ( *mode++ ) {
 	case 'r':
@@ -1943,20 +1944,27 @@ prima_open_file( const char *text, Bool is_utf8, const char * mode)
 	}
 	if ( *mode == '+' ) m = O_RDWR;
 
-	if ( *text != '/') {
-		cwd = apc_fs_getcwd(&is_cwd_utf8);
+#if defined(PERL_IMPLICIT_SYS)
+	if (
+		(*text != '/') &&
+		!(isalpha(text[0]) && text[1] == ':')
+	) {
+		cwd = apc_fs_getcwd();
 		apc_fs_chdir(PerlEnv_get_childdir(), false);
 	}
+#endif
 
 	if (( fd = apc_fs_open_file( text, is_utf8, m | o, 0666)) < 0) {
 		free(cwd);
 		return NULL;
 	}
 
+#if defined(PERL_IMPLICIT_SYS)
 	if (cwd) {
-		apc_fs_chdir(cwd, is_cwd_utf8);
+		apc_fs_chdir(cwd, true);
 		free(cwd);
 	}
+#endif
 
 	if (!( ret = fdopen( fd, omode ))) {
 		close(fd);

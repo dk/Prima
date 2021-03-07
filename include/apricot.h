@@ -3999,13 +3999,13 @@ extern Bool
 apc_fs_chmod( const char *path, Bool is_utf8, int mode);
 
 extern char *
-apc_fs_from_local(const char * text, Bool *is_utf8, int * len);
+apc_fs_from_local(const char * text, int * len);
 
 extern char*
-apc_fs_getcwd(Bool * is_utf8);
+apc_fs_getcwd(void);
 
 extern char*
-apc_fs_getenv(const char * varname, Bool * is_utf8, Bool * do_free);
+apc_fs_getenv(const char * varname, Bool is_utf8, Bool * do_free);
 
 extern Bool
 apc_fs_link( const char* oldname, Bool is_old_utf8, const char * newname, Bool is_new_utf8 );

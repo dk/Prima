@@ -88,7 +88,6 @@ sub check
 		my $test = "$dn\0$dn";
 		my $loc  = Prima::Utils::sv2local($test);
 		is( length($loc), length($dn_local) * 2 + 1, "$id: sv2local");
-		is( length($loc), length($test), "$id: charlen maintaned");
 		is(Prima::Utils::local2sv($loc), $test, "$id: local2sv");
 	}
 

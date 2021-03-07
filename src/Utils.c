@@ -51,7 +51,8 @@ is_valid_utf8( unsigned char * str )
 	while ( str < c ) {
 		unsigned char * end = utf8_hop( str, 1 );
 		if ( end > c ) return false;
-		if ( !isUTF8_CHAR(str, end)) return false;
+		if ( !isUTF8_CHAR(str, end))
+			return false;
 		str = end;
 	}
 #endif
@@ -124,12 +125,11 @@ Utils_getcwd()
 {
 	SV * ret;
 	char *cwd;
-	Bool is_utf8 = false;
 
-	if (( cwd = apc_fs_getcwd(&is_utf8)) == NULL )
+	if (( cwd = apc_fs_getcwd()) == NULL )
 		return nilSV;
 	ret = newSVpv( cwd, 0 );
-	if ( is_utf8 && is_valid_utf8((unsigned char*) cwd))
+	if ( is_valid_utf8((unsigned char*) cwd))
 		SvUTF8_on(ret);
 	free(cwd);
 	return ret;
@@ -143,10 +143,10 @@ Utils_getenv(SV * varname)
 	Bool is_utf8, do_free = false;
 
 	is_utf8 = prima_is_utf8_sv(varname);
-	if (( val = apc_fs_getenv(SvPV_nolen(varname), &is_utf8, &do_free)) == NULL )
+	if (( val = apc_fs_getenv(SvPV_nolen(varname), is_utf8, &do_free)) == NULL )
 		return nilSV;
 	ret = newSVpv( val, 0 );
-	if ( is_utf8 && is_valid_utf8((unsigned char*) val))
+	if ( is_valid_utf8((unsigned char*) val))
 		SvUTF8_on(ret);
 	if ( do_free ) free(val);
 	return ret;
@@ -178,20 +178,23 @@ Utils_local2sv(SV * text)
 {
 	SV * ret;
 	char * buf, *src;
-	Bool is_utf8 = false;
 	STRLEN xlen;
 	int len;
 	if ( prima_is_utf8_sv(text) )
 		return newSVsv( text );
 	src = SvPV(text, xlen);
 	len = xlen;
-	if ( !( buf = apc_fs_from_local(src, &is_utf8, &len)))
+	if ( !( buf = apc_fs_from_local(src, &len)))
 		return nilSV;
-	if ( buf == src )
-		return newSVsv( text );
+	if ( buf == src ) {
+		ret = newSVsv( text );
+		if ( is_valid_utf8((unsigned char*) src))
+			SvUTF8_on(ret);
+		return ret;
+	}
 
 	ret = newSVpv( buf, len );
-	if ( is_utf8 && is_valid_utf8((unsigned char*) buf))
+	if ( is_valid_utf8((unsigned char*) buf))
 		SvUTF8_on(ret);
 	free(buf);
 
@@ -299,8 +302,11 @@ Utils_sv2local(SV * text, Bool fail_if_cannot)
 	len = utf8len( src, xlen );
 	if ( !( buf = apc_fs_to_local(src, fail_if_cannot, &len)))
 		return nilSV;
-	if ( buf == src )
-		return newSVsv( text );
+	if ( buf == src ) {
+		ret = newSVsv( text );
+		SvUTF8_off(ret);
+		return ret;
+	}
 	ret = newSVpv( buf, len );
 	free(buf);
 

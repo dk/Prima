@@ -9,6 +9,7 @@ use vars qw(@ISA);
 use Prima;
 use Prima::MsgBox;
 use Cwd;
+use Encode;
 use strict;
 use warnings;
 
@@ -225,6 +226,14 @@ sub execute
 		$self-> {directory}  .= '/' unless $self-> {directory} =~ /\/$/;
 		$self-> {fileName}    = $ret;
 		$self-> {filterIndex} = Prima::Application-> sys_action( 'gtk.OpenFile.filterindex');
+
+		for (qw(directory fileName)) {
+			local $SIG{__DIE__};
+			my $p;
+			eval { $p = Encode::decode('UTF-8', $self->{$_}, Encode::FB_CROAK ) };
+			next if $@;
+			$self->{$_} = $p;
+		}
 
 		# emulate some flags now
 		if ( $self-> {pathMustExist}) {

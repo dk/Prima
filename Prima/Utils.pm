@@ -260,10 +260,11 @@ The following fine points need to be understood prior to using these functions t
 
 =item *
 
-Prima makes a distinction whether scalars have their utf8 bit set or not throughout the whole
-toolking. For example, text output in both unix and windows is different depending on the bit,
-treating non-utf8-bit text as locale-specific, and utf8-bit text as unicode. The same model is
-applied for the file systems.
+Prima makes a distinction whether scalars have their utf8 bit set or not
+throughout the whole toolking. For example, text output in both unix and
+windows is different depending on the bit, treating non-utf8-bit text as
+locale-specific, and utf8-bit text as unicode. The same model is applied for
+the file systems.
 
 =item *
 
@@ -274,6 +275,15 @@ C<CORE::chdir> assume that value, even if the path is convertable to ANSI. Keep
 that in mind when mixing Prima and core functions.  (To add more confusion,
 under the unix these two chdirs are identical when the path is fully
 convertable).
+
+=item *
+
+Under unix, reading entries from environment or file system is opportunistic:
+if is a valid utf8, then it is a utf8 string. Mostly because .UTF-8 locale are
+default and standard everywhere. Prima ignores C< $ENV{LANG} > here. This is a
+bit problematic on Perls under 5.22 as these don't provide means to check for
+utf8 string validity, so everything will be slapped a utf8 bit on here --
+beware.
 
 =back
 
