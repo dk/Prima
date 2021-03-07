@@ -282,6 +282,7 @@ package Prima::VB::CodeEditor;
 use strict;
 use vars qw(@ISA @editors);
 @ISA = qw(Prima::Window);
+use Prima::sys::FS;
 
 sub profile_default
 {
@@ -358,7 +359,7 @@ sub load_code
 	}
 	my $d = VB::open_dialog( filter => [[ 'All files' => '*']]);
 	return unless $d-> execute;
-	unless ( open F, "< " . $d-> fileName) {
+	unless ( open F, "<", $d-> fileName) {
 		Prima::MsgBox::message("Cannot open " . $d-> fileName . ":$!");
 		return;
 	}
@@ -371,7 +372,7 @@ sub save_code
 {
 	my $d = VB::save_dialog( filter => [[ 'All files' => '*']]);
 	return unless $d-> execute;
-	unless ( open F, "> " . $d-> fileName) {
+	unless ( open F, ">", $d-> fileName) {
 		Prima::MsgBox::message("Cannot open " . $d-> fileName . ":$!");
 		return;
 	}

@@ -110,6 +110,7 @@ sub pop_mark
 package EditorWindow;
 use vars qw(@ISA);
 @ISA = qw(Prima::Window);
+use Prima::sys::FS;
 
 sub profile_default
 {
@@ -178,7 +179,7 @@ sub init
 	$self-> menu-> utf-> check if $self-> {utf8} = $profile{utf8};
 	if ( defined $fn) {
 		if ( open FILE, '<'.($profile{utf8} ? ':encoding(utf-8)' : ''), $fn) {
-			if ( ! defined read( FILE, $cap, -s $fn)) {
+			if ( ! defined read( FILE, $cap, _s $fn)) {
 				Prima::MsgBox::message("Cannot read file $fn:$!");
 				$fn = undef;
 			}

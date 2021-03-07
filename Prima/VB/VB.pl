@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Prima qw(Notebooks MsgBox ComboBox
 Dialog::FontDialog Dialog::ColorDialog Dialog::FileDialog Dialog::ImageDialog
-IniFile Utils RubberBand KeySelector);
+IniFile Utils RubberBand KeySelector Utils);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;
@@ -1710,7 +1710,7 @@ sub inspect_load_data
 
 	my $fn = ( $asFile ? $data : "input data");
 	if ( $asFile) {
-		unless (CORE::open( F, "< $data")) {
+		unless (Prima::Utils::open( F, "<", $data)) {
 			Prima::MsgBox::message( "Error loading " . $data);
 			return;
 		}
@@ -2212,7 +2212,7 @@ sub save
 
 	return $self-> saveas unless defined $self-> {fmName};
 
-	if ( CORE::open( F, ">".$self-> {fmName})) {
+	if ( Prima::Utils::open( F, ">", $self-> {fmName})) {
 		local $/;
 		$VB::main-> wait;
 		my $c = $asPL ? $self-> write_PL : $self-> write_form;

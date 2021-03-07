@@ -5,6 +5,8 @@ use warnings;
 package Prima::sys::win32::FileDialog;
 use vars qw(@ISA);
 @ISA = qw(Prima::Component);
+use Prima::Utils;
+use Encode;
 
 return 1 if Prima::Application-> get_system_info->{apc} != apc::Win32;
 
@@ -188,30 +190,48 @@ sub showDotFiles { 1 }
 sub ok {}
 sub cancel {}
 
+sub _set
+{
+	my @cmd = @_;
+	for my $c ( @cmd ) {
+		unless ( Encode::is_utf8($c)) {
+			my $v = Prima::Utils::local2sv($c);
+			$c = $v if defined $v;
+		}
+		$c = Encode::encode('utf-8', $c);
+	}
+	my $cmd = shift @cmd;
+	Prima::Application-> sys_action( "win32.OpenFile.$cmd=".join('', @cmd));
+}
+
+sub _get
+{
+	my $cmd = shift;
+	$cmd = Prima::Application-> sys_action( "win32.OpenFile.$cmd");
+	return Encode::decode('utf-8', $cmd);
+}
+
 sub execute
 {
 	my $self = $_[0];
 
-	Prima::Application-> sys_action( 'win32.OpenFile.flags='.
-		join(',', grep { $self->{flags}->{$_}} keys %{$self->{flags}}));
-	Prima::Application-> sys_action( 'win32.OpenFile.filters=' .
-		join("\0", map { "$$_[0] ($$_[1])\0$$_[1]" } @{$self->{filter}}) . "\0");
-	Prima::Application-> sys_action( 'win32.OpenFile.filterindex=' .
-		($self->{filterIndex}+1));
+	_set( flags       => join(',', grep { $self->{flags}->{$_}} keys %{$self->{flags}}));
+	_set( filters     => join("\0", map { "$$_[0] ($$_[1])\0$$_[1]" } @{$self->{filter}}) . "\0");
+	_set( filterindex => ($self->{filterIndex}+1));
 	my $dir = $self->{directory};
 	$dir =~ s/\//\\/g;
-	Prima::Application-> sys_action( 'win32.OpenFile.directory=' . $dir);
-	Prima::Application-> sys_action( 'win32.OpenFile.defext=' .
-		$self->{defaultExt});
-	Prima::Application-> sys_action( 'win32.OpenFile.title=' .
-		(defined $self->{text} ? $self->{text} : 'NULL'));
-	my $ret = Prima::Application-> sys_action( 'win32.OpenFile.'.
-		($self->{openMode}?'open':'save'));
+
+	$dir = "c:/1/1/\x{76ee}/\x{5f55}";
+
+	_set( directory   => $dir);
+	_set( defext      => $self->{defaultExt});
+	_set( title       => $self->{text} // 'NULL');
+	my $ret = _get($self->{openMode} ? 'open' : 'save');
 	if ( !defined $ret) {
 		$self-> cancel;
 		return wantarray ? () : undef;
 	}
-	$self-> {directory} = Prima::Application-> sys_action( 'win32.OpenFile.directory');
+	$self-> {directory} = _get('directory');
 	$self-> {directory} =~ s/\\/\//g;
 	$self-> {directory} =~ s/\s+$//;
 	$self-> {directory} .= '/' unless $self-> {directory} =~ /\/$/;
@@ -226,7 +246,7 @@ sub execute
 	} else {
 		$self-> {fileName} =~ s/\\/\//g;
 	}
-	$self-> {filterIndex} = Prima::Application-> sys_action( 'win32.OpenFile.filterindex')-1;
+	$self-> {filterIndex} = _get('filterindex')-1;
 	$self-> ok;
 	return $self-> fileName;
 }

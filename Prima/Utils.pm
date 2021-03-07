@@ -12,12 +12,15 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
 @EXPORT = ();
 @EXPORT_OK = qw(
 	query_drives_map query_drive_type
-	getdir get_os get_gui
+	get_os get_gui
 	beep sound
 	username
 	xcolor
 	find_image path
 	alarm post last_error
+
+	chdir chmod getcwd link mkdir open_file rename rmdir unlink utime
+	getenv setenv stat access getdir sv2local local2sv
 );
 
 sub xcolor {
@@ -182,29 +185,6 @@ Obsolete function.
 
 Returns stdlib's floor() of DOUBLE
 
-=item getdir PATH
-
-Reads content of PATH directory and
-returns array of string pairs, where the first item is a file
-name, and the second is a file type.
-
-The file type is a string, one of the following:
-
-	"fifo" - named pipe
-	"chr"  - character special file
-	"dir"  - directory
-	"blk"  - block special file
-	"reg"  - regular file
-	"lnk"  - symbolic link
-	"sock" - socket
-	"wht"  - whiteout
-
-This function was implemented for faster directory reading,
-to avoid successive call of C<stat> for every file.
-
-Also, getdir is consistently inclined to treat filenames in utf8,
-disregarding both perl unicode settings and the locale.
-
 =item last_error
 
 Returns last system error, if any
@@ -267,11 +247,137 @@ and returns 24-bit RGB integer value.
 
 =back
 
+=head1 Unicode-aware filesystem functions
+
+Since perl win32 unicode support for files is unexistent, Prima has its own
+parallel set of functions mimicking native functions, ie open, chdir etc. This
+means that files with names that cannot be converted to ANSI (ie user-preferred
+) codepage are not visible in perl, but the functions below mitigate that problem. 
+
+The following fine points need to be understood prior to using these functions though:
+
+=over
+
+=item *
+
+Prima makes a distinction whether scalars have their utf8 bit set or not throughout the whole
+toolking. For example, text output in both unix and windows is different depending on the bit,
+treating non-utf8-bit text as locale-specific, and utf8-bit text as unicode. The same model is
+applied for the file systems.
+
+=item *
+
+Perl implementation for native Win32 creates virtual environments for each
+thread, keeping current directory, environment variables, etc. This means that
+under Win32 calling C<Prima::Utils::chdir> will NOT automatically make
+C<CORE::chdir> assume that value, even if the path is convertable to ANSI. Keep
+that in mind when mixing Prima and core functions.  (To add more confusion,
+under the unix these two chdirs are identical when the path is fully
+convertable).
+
+=back
+
+=over
+
+=item access PATH, MODE
+
+Same as C<POSIX::access>.
+
+=item chdir DIR
+
+Same as C<CORE::chdir> but disregards thread local environment on Win32.
+
+=item chmod PATH, MODE
+
+Same as C<CORE::chmod>
+
+=item getcwd
+
+Same as C<Cwd::getcwd>
+
+=item getdir PATH
+
+Reads content of PATH directory and
+returns array of string pairs, where the first item is a file
+name, and the second is a file type.
+
+The file type is a string, one of the following:
+
+	"fifo" - named pipe
+	"chr"  - character special file
+	"dir"  - directory
+	"blk"  - block special file
+	"reg"  - regular file
+	"lnk"  - symbolic link
+	"sock" - socket
+	"wht"  - whiteout
+
+This function was implemented for faster directory reading,
+to avoid successive call of C<stat> for every file.
+
+Also, getdir is consistently inclined to treat filenames in utf8,
+disregarding both perl unicode settings and the locale.
+
+=item getenv NAME
+
+Same as reading from C< $ENV{$NAME} > but disregards thread local environment on Win32.
+
+=item link OLDNAME, NEWNAME
+
+Same as C<CORE::link>.
+
+=item local2sv TEXT
+
+Converts 8-bit text into either 8-bit non-utf8-bit or unicode utf8-bit string.
+May return undef on memory allocation failure.
+
+=item mkdir DIR, [ MODE = 0666 ] 
+
+Same as C<CORE::mkdir>.
+
+=item open_file PATH, FLAGS
+
+Same as C<POSIX::open>
+
+=item rename OLDNAME, NEWNAME
+
+Same as C<CORE::rename>
+
+=item rmdir PATH
+
+Same as C<CORE::rmdir>
+
+=item setenv NAME, VAL
+
+Same as setting C< $ENV{$NAME} = $VAL > but disregards thread local environment on Win32.
+
+=item stat PATH
+
+Same as C<CORE::stat>, except where there is sub-second time resolution provided,
+returns atime/mtime/ctime entries as floats, same as C<Time::HiRes::stat>.
+
+=item sv2local TEXT, FAIL_IF_CANNOT = 1
+
+Converts either 8-bit non-utf8-bit or unicode utf8-bit string into a local encoding.
+May return undef on memory allocation failure, or if TEXT contains unconvertible
+characters when FAIL_IF_CANNOT = 1
+
+=item unlink PATH
+
+Same as C<CORE::unlink>.
+
+=item utime ATIME, MTIME, PATH
+
+Same as C<CORE::utime>, except where there is sub-second time resolution provided,
+returns atime/mtime/ctime entries as floats, same as C<Time::HiRes::utime>.
+
+=back
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima>
+L<Prima>, L<Prima::sys::FS>.
 

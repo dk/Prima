@@ -1211,6 +1211,7 @@ Bool appDead = false;
 #endif
 
 XS(Utils_getdir_FROMPERL);
+XS(Utils_stat_FROMPERL);
 
 static Bool
 kill_hashes( PHash hash, void * dummy)
@@ -1369,6 +1370,7 @@ if (sizeof(s1) != (s2)) { \
 	newXS( "Prima::init", Prima_init, "Prima");
 	newXS( "Prima::options", Prima_options, "Prima");
 	newXS( "Prima::Utils::getdir", Utils_getdir_FROMPERL, "Prima::Utils");
+	newXS( "Prima::Utils::stat", Utils_stat_FROMPERL, "Prima::Utils");
 	/* register built-in classes */
 	newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
 	newXS( "Prima::Object::destroy", destroy_from_Perl, "Prima::Object");
@@ -1904,6 +1906,69 @@ prima_svpv_utf8( const char *text, int is_utf8)
 	SV *sv = newSVpv(text, 0);
 	if ( is_utf8 ) SvUTF8_on(sv);
 	return sv;
+}
+
+FILE*
+prima_open_file( const char *text, Bool is_utf8, const char * mode)
+{
+	int fd, o, m;
+	const char * omode = mode;
+	char *cwd = NULL;
+	Bool is_cwd_utf8;
+	FILE * ret;
+
+	switch ( *mode++ ) {
+	case 'r':
+		m = O_RDONLY;
+		o = 0;
+		break;
+	case 'w':
+		m = O_WRONLY;
+		o = O_CREAT | O_TRUNC;
+		break;
+	case 'a':
+		m = O_WRONLY;
+		o = O_CREAT | O_APPEND;
+		break;
+	default:
+		errno = EINVAL;
+		return NULL;
+	}
+
+	if ( *mode == 'b' ) {
+		mode++;
+#ifdef O_BINARY
+		o |= O_BINARY;
+#endif
+	}
+	if ( *mode == '+' ) m = O_RDWR;
+
+	if ( *text != '/') {
+		cwd = apc_fs_getcwd(&is_cwd_utf8);
+		apc_fs_chdir(PerlEnv_get_childdir(), false);
+	}
+
+	if (( fd = apc_fs_open_file( text, is_utf8, m | o, 0666)) < 0) {
+		free(cwd);
+		return NULL;
+	}
+
+	if (cwd) {
+		apc_fs_chdir(cwd, is_cwd_utf8);
+		free(cwd);
+	}
+
+	if (!( ret = fdopen( fd, omode ))) {
+		close(fd);
+		return NULL;
+	}
+
+	if ( o & O_APPEND )
+		fseek( ret, 0, SEEK_END);
+	else
+		fseek( ret, 0, SEEK_SET);
+
+	return ret;
 }
 
 #ifdef HAVE_OPENMP

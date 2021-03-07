@@ -900,45 +900,54 @@ apc_message( Handle self, PEvent ev, Bool post)
 	return true;
 }
 
-/* convert explorer-string format (asciiz,asciiz,...,0) into
-	backslash-escaped string. spaces and backslashes are escaped */
+/* Convert explorer-string format (asciiz,asciiz,...,0) into
+backslash-escaped string. 
+Spaces and backslashes are escaped */
 static char *
-duplicate_zz_string( const char * c)
+duplicate_zz_string( const WCHAR * c)
 {
 	int sz = 1;
-	char * d = ( char *) c, * ret;
+	WCHAR * d = ( WCHAR *) c;
+	WCHAR buf[20480];
+
 	while ( d[0] || d[1]) {
-		if ( *d == ' ' || *d == '\\') sz++;
+		if ( *d == L' ' || *d == L'\\') sz++;
 		sz++;
 		d++;
 	}
-	if ( !( ret = d = malloc( sz))) return nil;
+
+	d = buf;
 	while ( c[0] || c[1]) {
 		if ( !*c) {
-			*d++ = ' ';
+			*d++ = L' ';
 			c++;
 			continue;
 		}
-		if ( *c == ' ' || *c == '\\')
-			*d++ = '\\';
+		if ( *c == L' ' || *c == L'\\')
+			*d++ = L'\\';
 		*d++ = *c++;
 	}
 	*d++ = 0;
-	return ret;
+
+	return alloc_wchar_to_utf8(buf, &sz);
 }
 
 /* performs non-standard windows open file function */
 static char *
 win32_openfile( const char * params)
 {
-	static OPENFILENAME o;
+	static OPENFILENAMEW o;
 	static Bool initialized = false;
-	static char filter[2048] = "";
-	static char defext[32] = "";
-	static char directory[2048] = "";
-	static char title[256] = "";
-	static char filters[20480];
+	static WCHAR filter[2048]    = L"";
+	static WCHAR defext[32]      = L"";
+	static WCHAR directory[2048] = L"";
+	static WCHAR title[256]      = L"";
+	static WCHAR filters[20480];
 
+#define UTF8COPY(dst) {\
+	MultiByteToWideChar(CP_UTF8, 0, params, -1, dst, sizeof(dst)/sizeof(WCHAR));\
+	dst[sizeof(dst)/sizeof(WCHAR) - 1] = 0;\
+}
 	if ( !initialized) {
 		memset( &o, 0, sizeof(o));
 		o. lStructSize = sizeof(o);
@@ -953,11 +962,11 @@ win32_openfile( const char * params)
 			o. lpstrFilter = NULL;
 		} else {
 			/* copy \0\0-terminated string */
-			char * fb = filters;
-			int fbsz = 20477;
-			while (( params[0] || params[1]) && fbsz--)
-				*fb++ = *params++;
-			*fb = *params;
+			const char *p = params;
+			int paramsz = 2, fsz = sizeof(filters)/sizeof(WCHAR);
+			while ( p[0] || p[1]) p++, paramsz++;
+			MultiByteToWideChar(CP_UTF8, 0, params, paramsz, filters, fsz);
+			filters[fsz - 1] = filters[fsz - 2] = 0;
 			o. lpstrFilter = filters;
 		}
 	} else if ( strncmp( params, "directory", 9) == 0) {
@@ -967,18 +976,18 @@ win32_openfile( const char * params)
 			if ( strcmp( params, "NULL") == 0) {
 				o. lpstrInitialDir = NULL;
 			} else {
-				strncpy( directory, params, 2047);
+				UTF8COPY(directory);
 				o. lpstrInitialDir = directory;
 			}
 		} else {
-			return duplicate_string( directory);
+			return alloc_wchar_to_utf8( directory, NULL);
 		}
 	} else if ( strncmp( params, "title=", 6) == 0) {
 		params += 6;
 		if ( strcmp( params, "NULL") == 0) {
 			o. lpstrTitle = NULL;
 		} else {
-			strncpy( title, params, 255);
+			UTF8COPY(title);
 			o. lpstrTitle = title;
 		}
 	} else if ( strncmp( params, "defext=", 7) == 0) {
@@ -986,7 +995,7 @@ win32_openfile( const char * params)
 		if ( strcmp( params, "NULL") == 0) {
 			o. lpstrDefExt = NULL;
 		} else {
-			strncpy( defext, params, 31);
+			UTF8COPY(defext);
 			o. lpstrDefExt = defext;
 		}
 	} else if ( strncmp( params, "filter=", 7) == 0) {
@@ -996,7 +1005,7 @@ win32_openfile( const char * params)
 		} else if ( strcmp( params, "DEFAULT") == 0) {
 			o. lpstrCustomFilter = filter;
 		} else {
-			strncpy( filter, params, 2047);
+			UTF8COPY(filter);
 			o. lpstrCustomFilter = filter;
 		}
 	} else if ( strncmp( params, "filterindex", 11) == 0) {
@@ -1046,16 +1055,18 @@ win32_openfile( const char * params)
 			params = cp + 1;
 			if ( !pp) break;
 		}
-	} else if (( strncmp( params, "open", 4) == 0) ||
-				( strncmp( params, "save", 4) == 0)) {
+	} else if (
+		( strncmp( params, "open", 4) == 0) ||
+		( strncmp( params, "save", 4) == 0)
+	) {
 		Bool ret;
-		char filename[20480] = "";
+		WCHAR filename[20480] = L"";
 
 		guts. focSysDialog = 1;
 		o. lpstrFile = filename;
 		ret = (strncmp( params, "open", 4) == 0) ?
-			GetOpenFileName( &o) :
-			GetSaveFileName( &o);
+			GetOpenFileNameW( &o) :
+			GetSaveFileNameW( &o);
 		if ( ret == 0) {
 			DWORD error;
 			error = CommDlgExtendedError();
@@ -1069,14 +1080,14 @@ win32_openfile( const char * params)
 		}
 		guts. focSysDialog = 0;
 		if ( !ret) return 0;
-		strncpy( directory, o. lpstrFile, o. nFileOffset);
+		wcsncpy( directory, o. lpstrFile, o. nFileOffset);
 		if ( o. Flags & OFN_ALLOWMULTISELECT) {
 			if ( o. Flags & OFN_EXPLORER)
 				return duplicate_zz_string( o. lpstrFile + o. nFileOffset );
 			else
-				return duplicate_string( o. lpstrFile + o. nFileOffset );
+				return alloc_wchar_to_utf8( o. lpstrFile + o. nFileOffset, NULL );
 		}
-		return duplicate_string( o. lpstrFile);
+		return alloc_wchar_to_utf8( o. lpstrFile, NULL);
 	} else {
 		warn("win32.OpenFile: Unknown function %s", params);
 	}

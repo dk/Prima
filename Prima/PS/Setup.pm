@@ -206,7 +206,7 @@ sub sdlg_exec
 				}
 			}
 		SAVE:
-			unless ( open F, "> $n") {
+			unless ( open F, ">", $n) {
 				goto SAVE if Prima::MsgBox::message_box( $self-> {setupDlg}-> text,
 				"Error writing to '$n':$!", mb::Retry|mb::Cancel) == mb::Retry;
 				return;

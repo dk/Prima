@@ -1545,6 +1545,7 @@ package Prima::VB::Types::text;
 use strict;
 use vars qw(@ISA);
 @ISA = qw(Prima::VB::Types::textee);
+use Prima::Utils;
 
 sub open
 {
@@ -1573,7 +1574,7 @@ sub open
 			my $d = VB::open_dialog();
 			if ( $d-> execute) {
 				my $f = $d-> fileName;
-				if ( open F, $f) {
+				if ( Prima::Utils::open( \*F, '<', $f)) {
 					local $/;
 					$f = <F>;
 					$self-> {A}-> text( $f);
@@ -1599,7 +1600,7 @@ sub open
 			]);
 			if ( $dlg-> execute) {
 				my $f = $dlg-> fileName;
-				if ( open F, ">$f") {
+				if ( Prima::Utils::open(\*F, ">", $f)) {
 					local $/;
 					$f = $self-> {A}-> text;
 					print F $f;

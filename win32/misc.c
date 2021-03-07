@@ -153,7 +153,7 @@ apc_getdir( const char *dirname, Bool is_utf8)
 	return dirlist;
 #else
 	long		 len;
-	WCHAR		 scanname[MAX_PATH+3];
+	WCHAR		 scanname[(MAX_PATH+3)*2];
 	WIN32_FIND_DATAW FindData;
 	HANDLE		 fh;
 	WCHAR *          dirname_w;
@@ -636,6 +636,499 @@ alloc_ascii_to_wchar( const char * text, int length)
 	if ( !( ret = malloc( length * sizeof( WCHAR)))) return nil;
 	MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, text, length, ret, length * 2);
 	return ret;
+}
+
+static WCHAR*
+path2wchar(const char *name, Bool is_utf8, int * size)
+{
+	WCHAR * text;
+	int xlen = -1;
+	if ( size == NULL ) size = &xlen;
+	if ( is_utf8 ) {
+		text = alloc_utf8_to_wchar( name, *size, size);
+	} else {
+		*size = strlen( name) + 1;
+		text = alloc_ascii_to_wchar( name, *size);
+	}
+	if ( !text ) errno = ENOMEM;
+	return text;
+}
+
+void
+win32_set_errno(void)
+{
+	/*
+	This isn't perfect, eg. Win32 returns ERROR_ACCESS_DENIED for
+	both permissions errors and if the source is a directory, while
+	POSIX wants EACCES and EPERM respectively.
+
+	Determined by experimentation on Windows 7 x64 SP1, since MS
+	don't document what error codes are returned.
+	*/
+	switch (GetLastError()) {
+	case ERROR_BAD_NET_NAME:
+	case ERROR_BAD_NETPATH:
+	case ERROR_BAD_PATHNAME:
+	case ERROR_FILE_NOT_FOUND:
+	case ERROR_FILENAME_EXCED_RANGE:
+	case ERROR_INVALID_DRIVE:
+	case ERROR_PATH_NOT_FOUND:
+		errno = ENOENT;
+		break;
+	case ERROR_ALREADY_EXISTS:
+		errno = EEXIST;
+		break;
+	case ERROR_ACCESS_DENIED:
+		errno = EACCES;
+		break;
+	case ERROR_NOT_SAME_DEVICE:
+		errno = EXDEV;
+		break;
+	case ERROR_DISK_FULL:
+		errno = ENOSPC;
+		break;
+	case ERROR_NOT_ENOUGH_QUOTA:
+		errno = EDQUOT;
+		break;
+	default: /* ERROR_INVALID_FUNCTION - eg. on a FAT volume */
+		errno = EINVAL;
+		break;
+	}
+}
+
+int
+apc_fs_access(const char *name, Bool is_utf8, int mode, Bool effective)
+{
+	WCHAR *buf;
+	int ret;
+
+	if ( is_utf8 ) {
+		if ( !( buf = path2wchar(name, is_utf8, NULL)))
+			return false;
+		ret = _waccess(buf, mode);
+		free(buf);
+	} else
+		ret = access(name, mode);
+
+	return ret;
+}
+
+extern Bool
+apc_fs_chdir(const char *path, Bool is_utf8 )
+{
+	WCHAR *buf;
+	Bool ok;
+
+	if ( is_utf8 ) {
+		if ( !( buf = path2wchar(path, is_utf8, NULL)))
+			return false;
+		if ( !( ok = SetCurrentDirectoryW(buf)))
+			win32_set_errno();
+		free(buf);
+	} else {
+		if ( !( ok = SetCurrentDirectoryA(path)))
+			win32_set_errno();
+	}
+
+	return ok;
+}
+
+extern Bool
+apc_fs_chmod( const char *path, Bool is_utf8, int mode)
+{
+	WCHAR *buf;
+	Bool ok;
+
+	if ( is_utf8 ) {
+		if ( !( buf = path2wchar(path, is_utf8, NULL)))
+			return false;
+		ok = (_wchmod(buf, mode) == 0);
+		free(buf);
+	} else
+		ok = (chmod(path, mode) == 0);
+
+	return ok;
+}
+
+char *
+alloc_wchar_to_utf8( WCHAR * src, int * len )
+{
+	int xlen = -1, srclen;
+	char * ret;
+
+	if ( !len ) len = &xlen;
+	srclen = *len;
+
+	if (( *len = WideCharToMultiByte(CP_UTF8, 0, src, srclen, NULL, 0, NULL, false)) == 0 ) {
+		errno = EINVAL;
+		return NULL;
+	}
+	if ( !( ret = malloc( *len ))) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	if ( WideCharToMultiByte(CP_UTF8, 0, src, srclen, ret, *len, NULL, false) == 0) {
+		free(ret);
+		errno = EINVAL;
+		return NULL;
+	}
+	return ret;
+}
+
+static char *
+wstr2ascii( WCHAR * src, int * len, Bool fail_if_cannot )
+{
+	char * ret;
+	int srclen = *len;
+	DWORD flags = 0;
+#ifdef WC_ERR_INVALID_CHARS
+	if ( fail_if_cannot ) flags |= WC_ERR_INVALID_CHARS;
+#endif
+	if (( *len = WideCharToMultiByte(CP_ACP, flags, src, srclen, NULL, 0, NULL, false)) == 0 )
+		return NULL;
+	if ( !( ret = malloc( *len )))
+		return NULL;
+	if ( WideCharToMultiByte(CP_ACP, flags, src, srclen, ret, *len, NULL, false) == 0) {
+		free(ret);
+		return NULL;
+	}
+#ifndef WC_ERR_INVALID_CHARS
+	if ( fail_if_cannot ) {
+		int nq1 = 0, nq2 = 0, xlen;
+		char * ret2 = ret;
+		xlen = srclen;
+		while (xlen--) if ( *(src++) == L'?' ) nq1++;
+		xlen = srclen;
+		while (xlen--) if ( *(ret2++) == '?' ) nq2++;
+		if ( nq2 > nq1 ) {
+			free(ret);
+			return NULL;
+		}
+	}
+#endif
+	return ret;
+}
+
+extern char *
+apc_fs_from_local(const char * text, Bool *is_utf8, int * len)
+{
+	char * ret;
+	WCHAR * buf;
+	*is_utf8 = true;
+	if ( !( buf = alloc_ascii_to_wchar( text, *len)))
+		return NULL;
+	ret = alloc_wchar_to_utf8( buf, len );
+	free( buf );
+	return ret;
+}
+
+
+extern char *
+apc_fs_to_local(const char * text, Bool fail_if_cannot, int * len)
+{
+	WCHAR *buf;
+	char * ret;
+
+	if ( !( buf = path2wchar(text, true, len)))
+		return NULL;
+	ret = wstr2ascii( buf, len, fail_if_cannot );
+	free(buf);
+
+	return ret;
+}
+
+extern char*
+apc_fs_getcwd(Bool * is_utf8)
+{
+	int i;
+	WCHAR fn[MAX_PATH+1];
+
+	*is_utf8 = true;
+	if ( !GetCurrentDirectoryW(MAX_PATH+1, fn)) {
+		errno = EACCES;
+		return NULL;
+	}
+	for ( i = 0; i < MAX_PATH; i++) {
+		if ( fn[i] == 0 ) break;
+		if ( fn[i] == L'\\' ) fn[i] = L'/';
+	}
+	return alloc_wchar_to_utf8(fn, NULL);
+}
+
+extern char*
+apc_fs_getenv(const char * varname, Bool * is_utf8, Bool * do_free)
+{
+	WCHAR * e, * buf;
+
+	if ( !( buf = path2wchar(varname, *is_utf8, NULL)))
+		return NULL;
+	e = _wgetenv(buf);
+	free(buf);
+	if ( !e ) return NULL;
+
+	*is_utf8 = true;
+	*do_free = true;
+	return alloc_wchar_to_utf8(e, NULL);
+}
+
+extern Bool
+apc_fs_link( const char* oldname, Bool is_old_utf8, const char * newname, Bool is_new_utf8 )
+{
+	WCHAR *buf1, *buf2;
+	Bool ok;
+
+	if ( !( buf1 = path2wchar(oldname, is_old_utf8, NULL)))
+		return false;
+	if ( !( buf2 = path2wchar(newname, is_new_utf8, NULL))) {
+		free(buf1);
+		return false;
+	}
+	if ( !( ok = ( CreateHardLinkW(buf2, buf1, NULL) == 0)))
+		win32_set_errno();
+	free(buf2);
+	free(buf1);
+
+	return ok;
+}
+
+extern Bool
+apc_fs_mkdir( const char* path, Bool is_utf8, int mode)
+{
+	WCHAR *buf;
+	Bool ok;
+
+	if ( !( buf = path2wchar(path, is_utf8, NULL)))
+		return false;
+	ok = (_wmkdir(buf) == 0);
+	if ( ok ) _wchmod(buf, mode);
+	free(buf);
+
+	return ok;
+}
+
+extern int
+apc_fs_open_file( const char* path, Bool is_utf8, int flags, int mode)
+{
+	WCHAR *buf;
+	int f;
+
+	if ( is_utf8 ) {
+		if ( !( buf = path2wchar(path, is_utf8, NULL)))
+			return false;
+		f = _wopen(buf, flags, mode);
+		free(buf);
+	} else
+		f = open(path, flags, mode);
+
+	return f;
+}
+
+extern Bool
+apc_fs_rename( const char* oldname, Bool is_old_utf8, const char * newname, Bool is_new_utf8 )
+{
+	Bool ok;
+	WCHAR *buf1, *buf2;
+	if ( !( buf1 = path2wchar(oldname, is_old_utf8, NULL)))
+		return false;
+	if ( !( buf2 = path2wchar(newname, is_new_utf8, NULL))) {
+		free(buf1);
+		return false;
+	}
+	ok = ( _wrename(buf1, buf2) == 0);
+	free(buf2);
+	free(buf1);
+	return ok;
+}
+
+extern Bool
+apc_fs_rmdir( const char* path, Bool is_utf8 )
+{
+	WCHAR *buf;
+	Bool ok;
+
+	if ( is_utf8 ) {
+		if ( !( buf = path2wchar(path, is_utf8, NULL)))
+			return false;
+		ok = (_wrmdir(buf) == 0);
+		free(buf);
+	} else 
+		ok = (rmdir(path) == 0);
+
+	return ok;
+}
+
+Bool
+apc_fs_stat(const char *name, Bool is_utf8, Bool link, PStatRec statrec)
+{
+	WCHAR *buf;
+	struct _stat statbuf;
+	int sz = -1, osz;
+
+	if ( !( buf = path2wchar(name, is_utf8, &sz)))
+		return false;
+	osz = sz;
+
+	/* from win32_stat:
+	stat() is buggy with a trailing slashes, except for the root directory of a drive:
+	remove additional trailing slashes */
+	while ( sz > 2 && ( buf[sz - 2] == L'\\' || buf[sz - 2] == L'/') ) {
+		buf[sz - 2] = 0;
+		sz--;
+	}
+	/* add back slash if we otherwise end up with just a drive letter */
+	if ( sz == 3 && isALPHA(buf[0]) && buf[1] == L':' ) {
+		if ( osz == sz ) {
+			WCHAR * buf2;
+			buf2 = realloc(buf, sz * 2 + 2);
+			if ( !buf2 ) {
+				free(buf);
+				errno = ENOMEM;
+				return false;
+			}
+			buf = buf2;
+		}
+		buf[sz++ - 1] = L'\\';
+		buf[sz   - 1]   = 0;
+	}
+	if ( _wstat(buf, &statbuf) < 0 ) {
+		free(buf);
+		return 0;
+	}
+	free(buf);
+
+	statrec-> dev     = statbuf. st_dev;
+	statrec-> ino     = statbuf. st_ino;
+	statrec-> mode    = statbuf. st_mode;
+	statrec-> nlink   = statbuf. st_nlink;
+	statrec-> uid     = statbuf. st_uid;
+	statrec-> gid     = statbuf. st_gid;
+	statrec-> rdev    = statbuf. st_rdev;
+	statrec-> size    = statbuf. st_size;
+	statrec-> blksize = -1;
+	statrec-> blocks  = -1;
+	statrec-> atim    = (float) statbuf.st_atime;
+	statrec-> mtim    = (float) statbuf.st_mtime;
+	statrec-> ctim    = (float) statbuf.st_ctime;
+	return 1;
+}
+
+extern Bool
+apc_fs_unlink( const char* path, Bool is_utf8 )
+{
+	WCHAR *buf;
+	Bool ok;
+
+	if ( is_utf8 ) {
+		if ( !( buf = path2wchar(path, is_utf8, NULL)))
+			return false;
+		ok = (_wunlink(buf) == 0);
+		free(buf);
+	} else
+		ok = (unlink(path) == 0);
+
+	return ok;
+}
+
+/* from win32/win32.c */
+
+/* fix utime() so it works on directories in NT */
+static Bool
+filetime_from_time(PFILETIME pFileTime, float Time)
+{
+	time_t sec = (time_t) Time;
+	struct tm *pTM = localtime(&sec);
+	SYSTEMTIME SystemTime;
+	FILETIME LocalTime;
+
+	if (pTM == NULL)
+		return false;
+
+	SystemTime.wYear   = pTM->tm_year + 1900;
+	SystemTime.wMonth  = pTM->tm_mon + 1;
+	SystemTime.wDay    = pTM->tm_mday;
+	SystemTime.wHour   = pTM->tm_hour;
+	SystemTime.wMinute = pTM->tm_min;
+	SystemTime.wSecond = pTM->tm_sec;
+	SystemTime.wMilliseconds = ( Time - (int) Time ) * 1000;
+
+	return SystemTimeToFileTime(&SystemTime, &LocalTime) &&
+	       LocalFileTimeToFileTime(&LocalTime, pFileTime);
+}
+
+extern Bool
+apc_fs_setenv(const char * varname, Bool is_name_utf8, const char * value, Bool is_value_utf8)
+{
+	WCHAR *buf1, *buf2;
+	Bool ok = false;
+
+	if ( !( buf1 = path2wchar(varname, is_name_utf8, NULL)))
+		return false;
+	if ( !( buf2 = path2wchar(value,   is_value_utf8, NULL))) {
+		free(buf1);
+		return false;
+	}
+
+	ok = (_wputenv_s(buf1, buf2) == 0);
+
+	free(buf2);
+	free(buf1);
+
+	return ok;
+}
+
+static Bool
+win32_utimes(float atime, float mtime, WCHAR * filename)
+{
+	Bool ok = false;
+	HANDLE handle;
+	FILETIME ftCreate;
+	FILETIME ftAccess;
+	FILETIME ftWrite;
+
+	/* This will (and should) still fail on readonly files */
+	handle = CreateFileW(filename, GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_DELETE, NULL,
+		OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+	if (handle == INVALID_HANDLE_VALUE) {
+		errno = EINVAL;
+		return false;
+	}
+
+	if (!GetFileTime(handle, &ftCreate, &ftAccess, &ftWrite)) {
+		win32_set_errno();
+		goto EXIT;
+	}
+	if (
+		!filetime_from_time(&ftAccess, atime) ||
+		!filetime_from_time(&ftWrite, mtime)
+	) {
+		errno = EINVAL;
+		goto EXIT;
+	}
+	if ( !SetFileTime(handle, &ftCreate, &ftAccess, &ftWrite)) {
+		win32_set_errno();
+		goto EXIT;
+	}
+
+	CloseHandle(handle);
+	ok = true;
+EXIT:
+	return ok;
+}
+
+
+extern Bool
+apc_fs_utime( double atime, double mtime, const char* path, Bool is_utf8 )
+{
+	WCHAR *buf;
+	Bool ok;
+
+	if ( !( buf = path2wchar(path, is_utf8, NULL)))
+		return false;
+	ok = win32_utimes(atime, mtime, buf);
+	free(buf);
+
+	return ok;
 }
 
 #ifdef __cplusplus

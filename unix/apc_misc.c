@@ -1538,11 +1538,6 @@ prima_char2wchar( XChar2b * dest, char * src, int lim)
 	}
 }
 
-char *
-apc_last_error( void )
-{
-	return NULL;
-}
 /* printer stubs */
 
 Bool   apc_prn_create( Handle self) { return false; }
@@ -1579,5 +1574,140 @@ apc_prn_enumerate( Handle self, int * count)
 {
 	*count = 0;
 	return nil;
+}
+
+char *
+apc_last_error( void )
+{
+	return NULL;
+}
+
+int
+apc_fs_access(const char *name, Bool is_utf8, int mode, Bool effective)
+{
+	return effective ?
+		eaccess(path, mode) :
+		access(path, mode);
+}
+
+Bool
+apc_fs_chdir(const char *path, Bool is_utf8 )
+{
+	return chdir(path) == 0;
+}
+
+Bool
+apc_fs_chmod( const char *path, Bool is_utf8, int mode)
+{
+	return chmod(path, mode) == 0;
+}
+
+char *
+apc_fs_from_local(const char * text, Bool *is_utf8, unsigned int * len)
+{
+	*is_utf8 = false;
+	return text;
+}
+
+char*
+apc_fs_getcwd(Bool * is_utf8)
+{
+	*is_utf8 = false;
+	return get_current_dir_name();
+}
+
+char *
+apc_fs_to_local(const char * text, Bool fail_if_cannot, unsigned int * len)
+{
+	return text;
+}
+
+char*
+apc_fs_getenv(const char * varname, Bool * is_utf8, Bool * do_free)
+{
+	*is_utf8 = false;
+	*do_free = false;
+	return getenv(varname);
+}
+
+Bool
+apc_fs_link( const char* oldname, Bool is_old_utf8, const char * newname, Bool is_new_utf8 )
+{
+	return link(oldname, newname) == 0;
+}
+
+Bool
+apc_fs_mkdir( const char* path, Bool is_utf8, int mode)
+{
+	return mkdir(path, mode) == 0;
+}
+
+int
+apc_fs_open_file( const char* path, Bool is_utf8, int mode)
+{
+	return open(path, flags, mode);
+}
+
+Bool
+apc_fs_rename( const char* oldname, Bool is_old_utf8, const char * newname, Bool is_new_utf8 )
+{
+	return rename(oldname, newname) == 0;
+}
+
+Bool
+apc_fs_rmdir( const char* path, Bool is_utf8 )
+{
+	return rmdir(path) == 0;
+}
+
+int
+apc_fs_setenv(const char * varname, Bool is_name_utf8, const char * value, Bool is_value_utf8)
+{
+	return setenv(varname, value, true) == 0;
+}
+
+Bool
+apc_fs_stat(const char *name, Bool is_utf8, Bool link, PStatRec statrec)
+{
+	struct stat statbuf;
+	if ( link ) {
+		if ( lstat(name, &statbuf) < 0 )
+			return 0;
+	} else {
+		if ( stat(name, &statbuf) < 0 )
+			return 0;
+	}
+	statrec-> dev     = statbuf. st_dev;
+	statrec-> ino     = statbuf. st_ino;
+	statrec-> mode    = statbuf. st_mode;
+	statrec-> nlink   = statbuf. st_nlink;
+	statrec-> uid     = statbuf. st_uid;
+	statrec-> gid     = statbuf. st_gid;
+	statrec-> rdev    = statbuf. st_rdev;
+	statrec-> size    = statbuf. st_size;
+	statrec-> blksize = statbuf. st_blksize;
+	statrec-> blocks  = statbuf. st_blocks;
+	statrec-> atim    = (float) statbuf.st_atim.tv_sec + (float) statbuf.st_atim.tv_nsec / 1000000000.0;
+	statrec-> ntim    = (float) statbuf.st_ntim.tv_sec + (float) statbuf.st_ntim.tv_nsec / 1000000000.0;
+	statrec-> ctim    = (float) statbuf.st_ctim.tv_sec + (float) statbuf.st_ctim.tv_nsec / 1000000000.0;
+	return 1;
+}
+
+Bool
+apc_fs_unlink( const char* path, Bool is_utf8 )
+{
+	return unlink(path) == 0;
+}
+
+Bool
+apc_fs_utime( double atime, double mtime, const char* path, Bool is_utf8 )
+{
+	struct timeval tv[2];
+	tv[0].tv_sec  = (long) atime;
+	tv[0].tv_usec = (atime - (float) tv[0].tv_sec) * 1000000;
+	tv[1].tv_sec  = (long) mtime;
+	tv[1].tv_usec = (mtime - (float) tv[1].tv_sec) * 1000000;
+
+	return utimes(path, &tv) == 0;
 }
 

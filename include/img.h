@@ -34,6 +34,7 @@ typedef struct _ImgIORequest {
 typedef struct _ImgLoadFileInstance {
 	/* instance data, filled by core */
 	char          * fileName;
+	Bool            is_utf8;
 	PImgIORequest   req;
 	Bool            req_is_stdio;
 	int             eventMask;      /* IMG_EVENTS_XXX / if set, Image:: events are issued */
@@ -79,6 +80,7 @@ typedef struct _ImgLoadFileInstance {
 typedef struct _ImgSaveFileInstance {
 	/* instance data, filled by core */
 	char          * fileName;
+	Bool            is_utf8;
 	PImgIORequest   req;
 	Bool            req_is_stdio;
 	Bool            append;         /* true if append, false if rewrite */
@@ -162,9 +164,9 @@ extern void  apc_img_init(void);
 extern void  apc_img_done(void);
 extern Bool  apc_img_register( PImgCodecVMT codec, void * initParam);
 
-extern int   apc_img_frame_count( char * fileName, PImgIORequest ioreq);
-extern PList apc_img_load( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, char * error);
-extern int   apc_img_save( Handle self, char * fileName, PImgIORequest ioreq, HV * profile, char * error);
+extern int   apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq);
+extern PList apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, HV * profile, char * error);
+extern int   apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, HV * profile, char * error);
 
 extern void  apc_img_codecs( PList result);
 extern HV *  apc_img_info2hash( PImgCodec c);
