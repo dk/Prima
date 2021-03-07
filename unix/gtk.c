@@ -646,7 +646,7 @@ prima_gtk_application_get_bitmap( Handle self, Handle image, int x, int y, int x
 	}
 
 	/* load */
-	codecs = apc_img_load( image, filename, NULL, NULL, NULL);
+	codecs = apc_img_load( image, filename, false, NULL, NULL, NULL);
 	unlink( filename );
 	if ( !codecs ) {
 		Mdebug("error loading png back\n");

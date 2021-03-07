@@ -52,6 +52,7 @@ use Prima::PS::TempFile;
 use Prima::PS::Setup;
 
 package Prima::PS::Printer::Common;
+use Prima::sys::FS;
 
 our $unix = Prima::Application-> get_system_info-> {apc} == apc::Unix;
 
@@ -143,7 +144,7 @@ sub _begin_doc
 			);
 			return 0 unless defined $f;
 			my $h = IO::Handle-> new;
-			unless ( open $h, "> $f") {
+			unless ( open $h, ">", $f) {
 				undef $h;
 				Prima::message("Error opening $f:$!");
 				goto AGAIN;

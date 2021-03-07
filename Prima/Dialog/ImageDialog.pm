@@ -25,6 +25,7 @@ sub filtered_codecs2all
 package Prima::Dialog::ImageOpenDialog;
 use vars qw( @ISA);
 @ISA = qw(Prima::Dialog::OpenDialog);
+use Prima::sys::FS;
 
 {
 my %RNT = (
@@ -130,7 +131,7 @@ sub update_preview
 	return unless defined $x;
 
 	$x = $self-> directory . $x;
-	return unless -f $x;
+	return unless _f $x;
 
 	$x = Prima::Icon-> load( $x,
 		loadExtras => 1,

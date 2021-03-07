@@ -63,7 +63,7 @@ object Prima::Image( Prima::Drawable)
 	method void   init( HV * profile);
 	method Bool   line(int x1, int y1, int x2, int y2);
 	method Bool   lines( SV * points);
-	weird  PList  load( SV * className, char *filename, HV * profile);
+	weird  PList  load( SV * className, SV *filename, HV * profile);
 	c_only void   make_empty();
 	method void   map( Color color);
 	method void   mirror( Bool vertically );
@@ -76,7 +76,7 @@ object Prima::Image( Prima::Drawable)
 	method Bool   rotate( double degrees );
 	method Bool   rectangle(int x1, int y1, int x2, int y2);
 	method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
-	weird  int    save( SV *className, char *filename, HV * profile);
+	weird  int    save( SV *className, SV *filename, HV * profile);
 	method Bool   sector( int x, int y, int dX, int dY, double startAngle, double endAngle);
 	method void   set( HV * profile);
 	c_only void   reset( int type, RGBColor * palette, int palSize);

@@ -1771,7 +1771,7 @@ sub setup_codecs
 	my @codecs;
 	my @builtin_codecs;
 	while ( <img/codec_*.c>) {
-		if ( m/codec_(bmp)/) {
+		if ( m/codec_(bmp|X11)/) {
 			push @builtin_codecs, $1;
 		} else {
 			push @codecs, $_;
@@ -1791,10 +1791,7 @@ sub setup_codecs
 		# graphic libs have .pc files. But if it can, it helps greatly with dll hell.
 		if ( $use_pkgconfig ) {
 			my $found;
-			if ( $codec eq 'X11') {
-				$DEFINES{EMULATE_X11_CODEC} = 1 unless pkgconfig('x11');
-				$found = 1;
-			} elsif ( $codec eq 'webp') {
+			if ( $codec eq 'webp') {
 				if (pkgconfig('libwebp') && pkgconfig('libwebpdemux') && pkgconfig('libwebpmux')) {
 					$found = 1;
 					$webp_version = $1 * 0x10000 + $2 * 0x100 + $3

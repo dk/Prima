@@ -298,6 +298,7 @@ Prima/Spinner.pm
 Prima/StartupWindow.pm
 Prima/StdBitmap.pm
 Prima/Stress.pm
+Prima/sys/FS.pm
 Prima/sys/gtk/FileDialog.pm
 Prima/sys/win32/FileDialog.pm
 Prima/sys/win32/sysimage.gif

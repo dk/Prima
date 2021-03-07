@@ -628,7 +628,7 @@ XS( Image_load_FROMPERL)
 	HV *profile;
 	char *fn;
 	PList ret;
-	Bool err = false;
+	Bool err = false, is_utf8;
 	FileStream f = NULL;
 	ImgIORequest ioreq, *pioreq;
 	char error[256];
@@ -652,8 +652,10 @@ XS( Image_load_FROMPERL)
 		ioreq. flush  = img_perlio_flush;
 		ioreq. error  = img_perlio_error;
 		fn            = NULL;
+		is_utf8       = false;
 	} else {
 		fn            = ( char *) SvPV_nolen( ST( 1));
+		is_utf8       = prima_is_utf8_sv(ST(1));
 		pioreq        = NULL;
 	}
 
@@ -661,7 +663,7 @@ XS( Image_load_FROMPERL)
 	if ( !pexist( className))
 		pset_c( className, self ? my-> className : ( char*) SvPV_nolen( ST( 0)));
 	pset_i( eventMask, self ? var-> eventMask2 : 0);
-	ret = apc_img_load( self, fn, pioreq, profile, error);
+	ret = apc_img_load( self, fn, is_utf8, pioreq, profile, error);
 	sv_free(( SV *) profile);
 	SPAGAIN;
 	SP -= items;
@@ -705,20 +707,20 @@ Image_lineSize( Handle self, Bool set, int dummy)
 }
 
 PList
-Image_load_REDEFINED( SV * who, char *filename, HV * profile)
+Image_load_REDEFINED( SV * who, SV *filename, HV * profile)
 {
 	return nil;
 }
 
 PList
-Image_load( SV * who, char *filename, HV * profile)
+Image_load( SV * who, SV *filename, HV * profile)
 {
 	PList ret;
 	Handle self = gimme_the_mate( who);
 	char error[ 256];
 	if ( !pexist( className))
 		pset_c( className, self ? my-> className : ( char*) SvPV_nolen( who));
-	ret = apc_img_load( self, filename, NULL, profile, error);
+	ret = apc_img_load( self, SvPV_nolen(filename), prima_is_utf8_sv(filename), NULL, profile, error);
 	return ret;
 }
 
@@ -733,6 +735,7 @@ XS( Image_save_FROMPERL)
 	char error[256];
 	FileStream f = NULL;
 	SV * sv;
+	Bool is_utf8;
 	ImgIORequest ioreq, *pioreq;
 
 	if (( items < 2) || (( items % 2) != 0))
@@ -754,13 +757,15 @@ XS( Image_save_FROMPERL)
 		ioreq. flush  = img_perlio_flush;
 		ioreq. error  = img_perlio_error;
 		fn            = NULL;
+		is_utf8       = false;
 	} else {
 		fn            = ( char *) SvPV_nolen( ST( 1));
+		is_utf8       = prima_is_utf8_sv( ST(1) );
 		pioreq        = NULL;
 	}
 
 	profile = parse_hv( ax, sp, items, mark, 2, "Image::save");
-	ret = apc_img_save( self, fn, pioreq, profile, error);
+	ret = apc_img_save( self, fn, is_utf8, pioreq, profile, error);
 	sv_free(( SV *) profile);
 	SPAGAIN;
 	SP -= items;
@@ -777,19 +782,19 @@ XS( Image_save_FROMPERL)
 }
 
 int
-Image_save_REDEFINED( SV * who, char *filename, HV * profile)
+Image_save_REDEFINED( SV * who, SV *filename, HV * profile)
 {
 	return 0;
 }
 
 int
-Image_save( SV * who, char *filename, HV * profile)
+Image_save( SV * who, SV *filename, HV * profile)
 {
 	Handle self = gimme_the_mate( who);
 	char error[ 256];
 	if ( !pexist( className))
 		pset_c( className, self ? my-> className : ( char*) SvPV_nolen( who));
-	return apc_img_save( self, filename, NULL, profile, error);
+	return apc_img_save( self, SvPV_nolen(filename), prima_is_utf8_sv(filename), NULL, profile, error);
 }
 
 int

@@ -1,38 +1,24 @@
 #include "img.h"
 
-#ifndef EMULATE_X11_CODEC
-#	define Drawable        XDrawable
-#	define Font            XFont
-#	define Window          XWindow
-#	include <X11/Xlib.h>
-#	include <X11/Xutil.h>
-#	undef Font
-#	undef Drawable
-#	undef Bool
-#	undef Window
-#	define ComplexShape 0
-#	define XBool int
-#	undef Complex
-#	undef FUNC
-#else
-#	include <stdio.h>
-#	include <ctype.h>
-#	define X_PROTOCOL              11
-#	define _Xconst
-#	define False                    0
-#	define True                     1
-#	define BitmapSuccess		0
-#	define BitmapOpenFailed 	1
-#	define BitmapFileInvalid 	2
-#	define BitmapNoMemory		3
-#	undef  RETURN
-#	undef __UNIXOS2__
-#	define Xmalloc                 malloc
-#	define Xfree                   free
+#include <stdio.h>
+#include <ctype.h>
+#define X_PROTOCOL              11
+#define _Xconst
+#define False                    0
+#define True                     1
+#define BitmapSuccess		0
+#define BitmapOpenFailed 	1
+#define BitmapFileInvalid 	2
+#define BitmapNoMemory		3
+#undef  RETURN
+#undef __UNIXOS2__
+#define Xmalloc                 malloc
+#define Xfree                   free
 
-int
+static int
 XReadBitmapFileData (
 	_Xconst char *filename,
+	int is_utf8,
 	unsigned int *width,                /* RETURNED */
 	unsigned int *height,               /* RETURNED */
 	unsigned char **data,               /* RETURNED */
@@ -40,9 +26,7 @@ XReadBitmapFileData (
 	int *y_hot)                         /* RETURNED */
 	;
 
-int XFree(void* ptr);
-
-#endif
+static int XFree(void* ptr);
 
 #include "Image.h"
 
@@ -138,7 +122,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	int yh, yw;
 	Byte * data;
 
-	if( XReadBitmapFileData( fi-> fileName, &w, &h, &data, &yw, &yh) != BitmapSuccess)
+	if( XReadBitmapFileData( fi-> fileName, fi-> is_utf8, &w, &h, &data, &yw, &yh) != BitmapSuccess)
 		return nil;
 
 	fi-> stop = true;
@@ -325,8 +309,6 @@ apc_img_codec_X11( void )
 	apc_img_register( &vmt, nil);
 }
 
-#ifdef EMULATE_X11_CODEC
-
 /* $Xorg: RdBitF.c,v 1.5 2001/02/09 02:03:35 xorgcvs Exp $ */
 /*
 
@@ -449,6 +431,7 @@ NextInt (
 int
 XReadBitmapFileData (
 	_Xconst char *filename,
+	int is_utf8,
 	unsigned int *width,                /* RETURNED */
 	unsigned int *height,               /* RETURNED */
 	unsigned char **data,               /* RETURNED */
@@ -473,10 +456,7 @@ XReadBitmapFileData (
 	/* first time initialization */
 	if (initialized == False) initHexTable();
 
-#ifdef __UNIXOS2__
-	filename = __XOS2RedirRoot(filename);
-#endif
-	if (!(fstream = fopen(filename, "r")))
+	if (!(fstream = prima_open_file(filename, is_utf8, "r")))
 		return BitmapOpenFailed;
 
 	/* error cleanup and return macro	*/
@@ -580,8 +560,6 @@ int XFree(void* ptr)
 		free(ptr);
 		return 0;
 }
-
-#endif
 
 #ifdef __cplusplus
 }

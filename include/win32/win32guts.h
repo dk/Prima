@@ -646,6 +646,7 @@ extern HRGN         region_create( Handle mask);
 extern WCHAR *      alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len);
 extern WCHAR *      alloc_utf8_to_wchar_visual( const char * utf8, int length, int * mb_len);
 extern WCHAR *      alloc_ascii_to_wchar( const char * text, int length);
+extern char *       alloc_wchar_to_utf8( WCHAR * src, int * len );
 extern void         wchar2char( char * dest, WCHAR * src, int lim);
 extern void         char2wchar( WCHAR * dest, char * src, int lim);
 extern int          apcUpdateWindow( HWND wnd );

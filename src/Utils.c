@@ -100,6 +100,226 @@ XS(Utils_getdir_FROMPERL) {
 	return;
 }
 
+int
+Utils_access( SV* path, int mode, Bool effective )
+{
+	return apc_fs_access( SvPV_nolen(path), prima_is_utf8_sv(path), mode, effective);
+}
+
+Bool
+Utils_chdir( SV* path )
+{
+	return apc_fs_chdir( SvPV_nolen(path), prima_is_utf8_sv(path));
+}
+
+Bool
+Utils_chmod( SV* path, int mode)
+{
+	return apc_fs_chmod( SvPV_nolen(path), prima_is_utf8_sv(path), mode);
+}
+
+
+SV*
+Utils_getcwd()
+{
+	SV * ret;
+	char *cwd;
+	Bool is_utf8 = false;
+
+	if (( cwd = apc_fs_getcwd(&is_utf8)) == NULL )
+		return nilSV;
+	ret = newSVpv( cwd, 0 );
+	if ( is_utf8 && is_valid_utf8((unsigned char*) cwd))
+		SvUTF8_on(ret);
+	free(cwd);
+	return ret;
+}
+
+SV*
+Utils_getenv(SV * varname)
+{
+	SV * ret;
+	char *val;
+	Bool is_utf8, do_free = false;
+
+	is_utf8 = prima_is_utf8_sv(varname);
+	if (( val = apc_fs_getenv(SvPV_nolen(varname), &is_utf8, &do_free)) == NULL )
+		return nilSV;
+	ret = newSVpv( val, 0 );
+	if ( is_utf8 && is_valid_utf8((unsigned char*) val))
+		SvUTF8_on(ret);
+	if ( do_free ) free(val);
+	return ret;
+}
+
+SV *
+Utils_last_error()
+{
+	SV * ret = nilSV;
+	char * p = apc_last_error();
+	if ( p ) {
+		ret = newSVpv( p, 0);
+		free(p);
+	}
+	return ret;
+}
+
+Bool
+Utils_link( SV* oldname, SV * newname )
+{
+	return apc_fs_link(
+		SvPV_nolen(oldname), prima_is_utf8_sv(oldname),
+		SvPV_nolen(newname), prima_is_utf8_sv(newname)
+	);
+}
+
+SV *
+Utils_local2sv(SV * text)
+{
+	SV * ret;
+	char * buf, *src;
+	Bool is_utf8 = false;
+	STRLEN xlen;
+	int len;
+	if ( prima_is_utf8_sv(text) )
+		return newSVsv( text );
+	src = SvPV(text, xlen);
+	len = xlen;
+	if ( !( buf = apc_fs_from_local(src, &is_utf8, &len)))
+		return nilSV;
+	if ( buf == src )
+		return newSVsv( text );
+
+	ret = newSVpv( buf, len );
+	if ( is_utf8 && is_valid_utf8((unsigned char*) buf))
+		SvUTF8_on(ret);
+	free(buf);
+
+	return ret;
+}
+
+
+Bool
+Utils_mkdir( SV* path, int mode)
+{
+	return apc_fs_mkdir( SvPV_nolen(path), prima_is_utf8_sv(path), mode);
+}
+
+int
+Utils_open_file( SV* path, int mode, int perms)
+{
+	return apc_fs_open_file( SvPV_nolen(path), prima_is_utf8_sv(path), mode, perms);
+}
+
+Bool
+Utils_rename( SV* oldpath, SV * newpath )
+{
+	return apc_fs_rename(
+		SvPV_nolen(oldpath), prima_is_utf8_sv(oldpath),
+		SvPV_nolen(newpath), prima_is_utf8_sv(newpath)
+	);
+}
+
+Bool
+Utils_rmdir( SV* path )
+{
+	return apc_fs_rmdir( SvPV_nolen(path), prima_is_utf8_sv(path));
+}
+
+Bool
+Utils_setenv(SV * varname, SV * value)
+{
+	return apc_fs_setenv(
+		SvPV_nolen(varname), prima_is_utf8_sv(varname),
+		SvPV_nolen(value), prima_is_utf8_sv(value)
+	);
+}
+
+XS(Utils_stat_FROMPERL) {
+	dXSARGS;
+	char *name;
+	StatRec stats;
+	int ok;
+	Bool link = false;
+
+	if ( items > 2)
+		croak( "invalid usage of Prima::Utils::stat");
+	if ( items > 1 )
+		link = SvBOOL(ST(1));
+
+	name = SvPV_nolen( ST( 0));
+	ok = apc_fs_stat( name, prima_is_utf8_sv(ST(0)), link, &stats);
+	SPAGAIN;
+	SP -= items;
+	if ( ok) {
+		EXTEND( sp, 11 );
+		PUSHs( sv_2mortal(newSVuv( stats. dev    )));
+		PUSHs( sv_2mortal(newSVuv( stats. ino    )));
+		PUSHs( sv_2mortal(newSVuv( stats. mode   )));
+		PUSHs( sv_2mortal(newSVuv( stats. nlink  )));
+		PUSHs( sv_2mortal(newSVuv( stats. uid    )));
+		PUSHs( sv_2mortal(newSVuv( stats. gid    )));
+		PUSHs( sv_2mortal(newSVuv( stats. rdev   )));
+		PUSHs( sv_2mortal(newSVuv( stats. size   )));
+		PUSHs( sv_2mortal(newSVnv( stats. atim   )));
+		PUSHs( sv_2mortal(newSVnv( stats. mtim   )));
+		PUSHs( sv_2mortal(newSVnv( stats. ctim   )));
+		if (stats. blksize >= 0 )
+			XPUSHs( sv_2mortal(newSVuv( stats. blksize)));
+		if (stats. blocks  >= 0 )
+			XPUSHs( sv_2mortal(newSVuv( stats. blocks )));
+	}
+	PUTBACK;
+	return;
+}
+
+static int
+utf8len( const char * utf8, int maxlen)
+{
+	int ulen = 0;
+	while ( maxlen > 0 ) {
+		const char *u = (char*) utf8_hop(( U8*) utf8, 1);
+		ulen++;
+		maxlen -= u - utf8;
+		utf8 = u;
+	}
+	return ulen;
+}
+
+SV *
+Utils_sv2local(SV * text, Bool fail_if_cannot)
+{
+	SV * ret;
+	char * buf, * src;
+	STRLEN xlen;
+	int len;
+	if ( !prima_is_utf8_sv(text) )
+		return newSVsv( text );
+	src = SvPV(text, xlen);
+	len = utf8len( src, xlen );
+	if ( !( buf = apc_fs_to_local(src, fail_if_cannot, &len)))
+		return nilSV;
+	if ( buf == src )
+		return newSVsv( text );
+	ret = newSVpv( buf, len );
+	free(buf);
+
+	return ret;
+}
+
+
+Bool
+Utils_unlink( SV* path )
+{
+	return apc_fs_unlink( SvPV_nolen(path), prima_is_utf8_sv(path));
+}
+
+Bool
+Utils_utime( double atime, double mtime, SV* path )
+{
+	return apc_fs_utime( atime, mtime, SvPV_nolen(path), prima_is_utf8_sv(path));
+}
+
 #ifdef __cplusplus
 }
 #endif

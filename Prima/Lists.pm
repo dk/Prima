@@ -18,7 +18,6 @@ use Prima::ScrollBar;
 use Prima::StdBitmap;
 use Prima::IntUtils;
 use Prima::Utils;
-use Cwd;
 
 package
     ci;
