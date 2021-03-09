@@ -25,7 +25,7 @@ sub open(*;$*)
 {
 	my ( $handle, @p ) = @_;
 	goto NATIVE unless @p;
-	@p = m/^([\<\>\|\-\+\=\&]*])(.*)/ if 1 == @p;
+	$p[0] =~ m/^([\<\>\|\-\+\=\&]*])(.*)/ if 1 == @p;
 	my ( $mode, $what, @rest) = @p;
 	goto NATIVE if !defined($what) || ref($what);
 	goto NATIVE if $what =~ /[\-\|\=\&]/;
@@ -76,6 +76,7 @@ sub open(*;$*)
 	return $ok;
 
 NATIVE:
+	no strict 'refs';
 	if ( 0 == @p ) {
 		return CORE::open($handle);
 	} elsif ( 1 == @p ) {
@@ -214,15 +215,32 @@ the core functions. Read more in L<Prima::Utils/"Unicode-aware filesystem functi
 
 =head1 API
 
-The module exports by default the following functions:
+The module exports by default three groups of functions:
+
+These are described in L<Prima::Utils/API>:
 
   chdir chmod getcwd link mkdir open rename rmdir unlink utime
-  getenv setenv abs_path stat lstat access getdir
-  _r _w _x _o _R _W _X _O _e _z _s _f _d _l _p _S _b _c _t _u _g _k _M _A _C
+  getenv setenv stat access getdir
 
 The underscore-prefixed functions are same as the ones in L<perlfunc/-X> (all are present except -T and -B ).
 
-The others are described in L<Prima::Utils/API>.
+  _r _w _x _o _R _W _X _O _e _z _s _f _d _l _p _S _b _c _t _u _g _k _M _A _C
+
+The functions that are implemented in the module itself:
+
+=over
+
+=item abs_path
+
+Same as C<Cwd::abs_path>.
+
+=item lstat PATH
+
+Same as C<CORE::lstat>
+
+=back
+
+=back
 
 =head1 AUTHOR
 
