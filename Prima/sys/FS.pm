@@ -182,3 +182,53 @@ sub abs_path
 }
 
 1;
+
+=pod
+
+=head1 NAME
+
+Prima::sys::FS - unicode-aware core file functions
+
+=head1 DESCRIPTION
+
+Since perl win32 unicode support for files is unexistent, Prima has its own
+parallel set of functions mimicking native functions, ie open, chdir etc. This
+means that files with names that cannot be converted to ANSI (ie
+user-preferred) codepage are not visible in perl, but the functions below
+mitigate that problem.
+
+This module exports the unicode-aware functions from C<Prima::Utils> to override
+the core functions. Read more in L<Prima::Utils/"Unicode-aware filesystem functions">.
+
+=head2 SYNOPSIS
+
+  use Prima::sys::FS;
+
+  my $fn = "\x{dead}\x{beef};
+  if ( _f $fn ) {
+     open F, ">", $fn or die $!;
+     close F;
+  }
+  print "ls: ", getdir, "\n";
+  print "pwd: ", getcwd, "\n";
+
+=head1 API
+
+The module exports by default the following functions:
+
+  chdir chmod getcwd link mkdir open rename rmdir unlink utime
+  getenv setenv abs_path stat lstat access getdir
+  _r _w _x _o _R _W _X _O _e _z _s _f _d _l _p _S _b _c _t _u _g _k _M _A _C
+
+The underscore-prefixed functions are same as the ones in L<perlfunc/-X> (all are present except -T and -B ).
+
+The others are described in L<Prima::Utils/API>.
+
+=head1 AUTHOR
+
+Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Prima::Utils>, L<Win32::Unicode>.
+
