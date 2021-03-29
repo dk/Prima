@@ -81,22 +81,8 @@ typedef enum _MONITOR_DPI_TYPE {
 #define MONITOR_DEFAULTTONEAREST         2
 #endif
 
-typedef struct _DWM_BLURBEHIND {
-	DWORD dwFlags;
-	BOOL  fEnable;
-	HRGN  hRgnBlur;
-	BOOL  fTransitionOnMaximized;
-} DWM_BLURBEHIND;
-
-#ifndef DWM_BB_ENABLE
-#define DWM_BB_ENABLE 0x00000001
-#define DWM_BB_BLURREGION 0x00000002
-#define DWM_BB_TRANSITIONONMAXIMIZED 0x00000004
-#endif
-
 static HRESULT (__stdcall *SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS)  = NULL;
 static HRESULT (__stdcall *GetDpiForMonitor)(HMONITOR,MONITOR_DPI_TYPE,UINT*,UINT*) = NULL;
-static HRESULT (__stdcall *DwmEnableBlurBehindWindow)(HWND hWnd, const DWM_BLURBEHIND *pBlurBehind) = NULL;
 static HRESULT (__stdcall *DwmIsCompositionEnabled)(BOOL *pfEnabled) = NULL;
 static BOOL    (__stdcall *GetUserPreferredUILanguages)(DWORD dwFlags, PULONG pulNumLanguages, PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer) = NULL;
 
@@ -121,43 +107,6 @@ dpi_change(void)
 		guts. displayResolution. x = dx;
 		guts. displayResolution. y = dy;
 	}
-}
-
-Bool
-set_dwm_blur( HWND win, int enable, HRGN mask, int transition_on_maximized)
-{
-	HRESULT hr;
-	DWM_BLURBEHIND b;
-
-	if ( !win )
-		return DwmEnableBlurBehindWindow != NULL;
-
-	if ( !DwmEnableBlurBehindWindow ) return false;
-
-	b. dwFlags = 0;
-	if ( enable >= 0 ) {
-		b. dwFlags |= DWM_BB_ENABLE;
-		b. fEnable = enable;
-	}
-	if (( HRGN) mask != (HRGN)-1) {
-		b. dwFlags |= DWM_BB_BLURREGION;
-		b. hRgnBlur = mask;
-	}
-	if ( transition_on_maximized >= 0 ) {
-		b. dwFlags |= DWM_BB_TRANSITIONONMAXIMIZED;
-		b. fTransitionOnMaximized = transition_on_maximized;
-	}
-
-	if ( b. dwFlags == 0 )
-		return true;
-
-	if (( hr = DwmEnableBlurBehindWindow(win, &b)) != S_OK ) {
-		apiHErr(hr);
-		apcErrClear;
-		return false;
-	}
-
-	return true;
 }
 
 Bool
@@ -291,7 +240,6 @@ window_subsystem_init( char * error_buf)
 	if ( os.dwMajorVersion >= 5) {
 		HMODULE mod = LoadLibrary("DWMAPI.DLL");
 		if ( mod ) {
-			LOAD_FUNC(mod, DwmEnableBlurBehindWindow);
 			LOAD_FUNC(mod, DwmIsCompositionEnabled);
 		}
 		mod = LoadLibrary("KERNEL32.DLL");

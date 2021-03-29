@@ -1916,8 +1916,6 @@ SV(CanUTF8_Output)
 SV(CompositeDisplay)
 #define   svLayeredWidgets  33
 SV(LayeredWidgets)
-#define   svDWM             34
-SV(DWM)
 #define   svFixedPointerSize 35
 SV(FixedPointerSize)
 #define   svMenuCheckSize   36

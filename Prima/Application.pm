@@ -685,7 +685,6 @@ of C<sv::XXX> constants. The constants are:
 	sv::CompositeDisplay - 1 if system uses double-buffering and alpha composition for the desktop,
 	                       0 if it doesn't, -1 if unknown
 	sv::LayeredWidgets   - 1 if system supports layering
-	sv::DWM              - 1 if system supports DWM API
 	sv::FixedPointerSize - 0 if system doesn't support arbitrary sized pointers and will resize custom icons to the system size
 	sv::MenuCheckSize    - width and height of default menu check icon
 	sv::FriBidi          - 1 if Prima is compiled with libfribidi and full bidi unicode support is available
