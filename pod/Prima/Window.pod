@@ -272,20 +272,8 @@ Example:
        },
    });
 
-Currently, the following effects are implemented:
-
-=over
-
-=item dwm_blur enable => $BOOL, transition_on_maximized => $BOOL, mask => $Prima::Region
-
-This effect is implemented only on Win32 version 7 or later, using Win32 API call
-L<DwmEnableBlurBehindWindow|http://msdn.microsoft.com/en-us/library/windows/desktop/aa969508>.
-See the MS reference for details.
-
-To determine whether this effect is available or not, use C<< $::application->get_system_value(sv::DWM) >>
-call. See F<examples/dwm_blur.pl> for example of use.
-
-=back
+Previously this was the mechanism for setting the DWM blur on Windows 7 and 8, but as Windows 10 removed it,
+this capability was also removed, so as for now this is basically an empty call.
 
 =item frameHeight HEIGHT
 

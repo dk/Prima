@@ -432,7 +432,6 @@ apc_window_create( Handle self, Handle owner, Bool syncPaint, int borderIcons,
 	if ( saved_caption ) free( saved_caption );
 	HWND_lock( false);
 	if ( reset ) {
-		apc_window_set_effects( self, sys s. window. effects );
 		notify_sys_handle( self );
 		if ( layered ) hwnd_repaint_layered(self, false);
 	}
@@ -775,32 +774,7 @@ apc_window_set_menu( Handle self, Handle menu)
 Bool
 apc_window_set_effects( Handle self, HV * effects )
 {
-	dPROFILE;
-	HV * profile = effects;
-	SV * sv;
-	int enable = -1, transition_on_maximized = -1;
-	HRGN mask = (HRGN) -1;
-	Bool ok;
-
-	if ( effects && pexist(dwm_blur) && (sv = pget_sv(dwm_blur)) != NULL && SvROK(sv) && SvTYPE(SvRV(sv)) == SVt_PVHV) {
-		profile = (HV*) SvRV(sv);
-		if ( pexist(enable) )                  enable                  = pget_B(enable);
-		if ( pexist(transition_on_maximized) ) transition_on_maximized = pget_B(transition_on_maximized);
-		if ( pexist(mask) ) {
-			Handle region = pget_H(mask);
-			if ( region && kind_of(region, CRegion)){
-				mask = CreateRectRgn(0,0,0,0);
-				CombineRgn( mask, GET_REGION(region)->region, NULL, RGN_COPY);
-				OffsetRgn( mask, 0, sys lastSize.y - GET_REGION(region)->aperture );
-			}
-		}
-	}
-	sys s. window. effects = effects;
-
-	ok = set_dwm_blur( HANDLE, enable, mask, transition_on_maximized);
-	if ( mask != (HRGN) -1 )
-		DeleteObject(mask);
-	return ok;
+	return false;
 }
 
 Bool

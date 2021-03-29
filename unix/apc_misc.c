@@ -1162,7 +1162,6 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 	case svCanUTF8_Output:       return 1;
 	case svCompositeDisplay:     return is_composite_display();
 	case svLayeredWidgets:       return guts. argb_visual. visual != NULL;
-	case svDWM:                  return 0;
 	case svFixedPointerSize:     return
 #ifdef HAVE_X11_XCURSOR_XCURSOR_H
 		0

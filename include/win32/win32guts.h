@@ -653,7 +653,6 @@ extern int          apcUpdateWindow( HWND wnd );
 extern void         reset_system_fonts(void);
 extern void         register_mapper_fonts(void);
 extern void         dpi_change(void);
-extern Bool         set_dwm_blur( HWND win, int enable, HRGN mask, int transition_on_maximized);
 extern Bool         is_dwm_enabled(void);
 extern Bool         dnd_clipboard_create(void);
 extern void         dnd_clipboard_destroy(void);
