@@ -1610,7 +1610,8 @@ apc_fs_from_local(const char * text, int * len)
 char*
 apc_fs_getcwd()
 {
-	return get_current_dir_name();
+	char pwd[PATH_MAX];
+	return getcwd(pwd, sizeof(pwd)) == NULL ? NULL : duplicate_string(pwd);
 }
 
 char *
