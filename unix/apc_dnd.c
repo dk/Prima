@@ -541,7 +541,7 @@ static Bool
 handle_xdnd_drop( Handle self, XEvent* xev)
 {
 	Event ev;
-	Atom action;
+	Atom action = None;
 	XEvent xr;
 	XWindow last_source;
 
