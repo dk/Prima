@@ -1011,7 +1011,7 @@ apc_application_get_size( Handle self)
 Box *
 apc_application_get_monitor_rects( Handle self, int * nrects)
 {
-#ifdef HAVE_X11_EXTENSIONS_XRANDR_H
+#if defined(HAVE_X11_EXTENSIONS_XRANDR_H) && (RANDR_MAJOR > 1 || (RANDR_MAJOR == 1 && RANDR_MINOR > 3))
 	XRRScreenResources * sr;
 	Box * ret = nil;
 
