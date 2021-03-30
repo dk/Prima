@@ -887,6 +887,26 @@ EOF
 	$DEFINES{__INLINE__} = '';
 }
 
+sub find_glibc
+{
+	printlog "Checking for glibc... ";
+	my $rc = compile_and_run( <<'GLIBC');
+#include <stdio.h>
+int
+main()
+{
+#ifdef __GLIBC__
+	printf("1\n");
+#else
+	printf("0\n");
+#endif
+	return 0;
+}
+GLIBC
+	printlog ($rc ? "yes\n" : "no\n");
+	$DEFINES{HAS_GLIBC} = 1 if $rc;
+}
+
 sub setup_compiler
 {
 	printlog "Compiler: $compiler_type\n";
@@ -1042,6 +1062,7 @@ sub setup_defines
 		have_type( "BOOLEAN", "windows.h");
 	}
 	find_inline();
+	find_glibc;
 }
 
 sub setup_dl_loadflags
