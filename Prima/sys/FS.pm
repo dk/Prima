@@ -240,8 +240,6 @@ Same as C<CORE::lstat>
 
 =back
 
-=back
-
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
