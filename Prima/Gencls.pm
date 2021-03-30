@@ -2258,8 +2258,8 @@ CONTAINED_STRUCTURE
 				my $prefix =
 					($s->[DEFS]->[$k] =~ /^undef:/) ?
 						"if (!strucRef->undef.$lName)" :
-						"(void)";
-				print HEADER "\t$prefix hv_store( $incHV, \"$lName\", $lNameLen, $inter, 0);\n";
+						"";
+				print HEADER "\t$prefix (void) hv_store( $incHV, \"$lName\", $lNameLen, $inter, 0);\n";
 			}
 			print HEADER "\treturn newRV_noinc(( SV*) $incHV);\n";
 			print HEADER "}\n\n";

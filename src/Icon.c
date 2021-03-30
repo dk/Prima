@@ -567,7 +567,7 @@ Icon_split( Handle self)
 
 	var-> self-> className = inherited className;
 	ret. xorMask	     = inherited dup( self);
-	hv_delete(( HV*)SvRV( PImage(ret. xorMask)-> mate), "extras", 6, G_DISCARD);
+	(void) hv_delete(( HV*)SvRV( PImage(ret. xorMask)-> mate), "extras", 6, G_DISCARD);
 	var-> self-> className = className;
 
 	--SvREFCNT( SvRV( i-> mate));

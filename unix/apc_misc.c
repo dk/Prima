@@ -1657,7 +1657,7 @@ apc_fs_rmdir( const char* path, Bool is_utf8 )
 	return rmdir(path) == 0;
 }
 
-int
+Bool
 apc_fs_setenv(const char * varname, Bool is_name_utf8, const char * value, Bool is_value_utf8)
 {
 	return setenv(varname, value, true) == 0;
