@@ -107,6 +107,9 @@
 #define Button7Mask     (1<<14)
 #endif
 
+#if defined(__GLIBC__) && !defined(_GNU_SOURCE)
+#	define _GNU_SOURCE
+#endif
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
