@@ -560,12 +560,13 @@ apc_gp_get_text_shaper( Handle self, int * type)
 {
 #ifdef USE_XFT
 	if ( X(self)-> font && X(self)-> font-> xft) {
+		int t = *type;
 #ifdef WITH_HARFBUZZ
 		if ( guts. use_harfbuzz && *type == tsFull )
 			return prima_xft_text_shaper_harfbuzz;
 #endif
 		*type = tsGlyphs;
-		return ( *type == tsBytes ) ?
+		return ( t == tsBytes ) ?
 			prima_xft_text_shaper_bytes :
 			prima_xft_text_shaper_ident;
 	}
