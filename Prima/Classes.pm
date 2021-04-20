@@ -321,7 +321,6 @@ my %RNT = (
 sub notification_types { return \%RNT; }
 }
 
-
 sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
@@ -333,6 +332,12 @@ sub profile_default
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
+}
+
+sub profile_check_in
+{
+	my ( $self, $p, $default) = @_;
+	$p->{fd} = fileno($p->{file}) if exists $p->{file} && ! exists $p->{fd};
 }
 
 package Prima::Clipboard;

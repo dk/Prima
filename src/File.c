@@ -24,6 +24,8 @@ static void File_reset_notifications( Handle self);
 void
 File_init( Handle self, HV * profile)
 {
+	SV *file;
+	int fd;
 	dPROFILE;
 	var-> fd = -1;
 	inherited-> init( self, profile);
@@ -33,8 +35,15 @@ File_init( Handle self, HV * profile)
 		( query_method( self, "on_write",   0) ? feWrite     : 0) |
 		( query_method( self, "on_exception", 0) ? feException : 0);
 	File_reset_notifications( self);
-	my-> set_fd( self, pget_i( fd));
-	my-> set_file( self, pget_sv( file));
+
+	fd = pget_i(fd);
+	if ( fd >= 0 )
+		my-> set_fd( self, pget_i( fd));
+
+	file = pget_sv(file);
+	if ( file && ( SvTYPE( file) != SVt_NULL))
+		my-> set_file( self, pget_sv( file));
+
 	CORE_INIT_TRANSIENT(File);
 }
 
