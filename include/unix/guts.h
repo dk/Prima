@@ -765,6 +765,8 @@ typedef struct _UnixGuts
 
 	int                          unicode_hex_input_flags;
 	char                         unicode_hex_input_buffer[MAX_UNICODE_HEX_LENGTH + 1];
+
+	Bool                         application_stop_signal;
 } UnixGuts;
 
 extern UnixGuts  guts;

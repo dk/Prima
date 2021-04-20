@@ -708,8 +708,8 @@ The main event loop. Called by
 
 run Prima;
 
-standard code. Returns when the program is about to terminate, or if the
-exception was signaled. In the latter case, the loop can be safely re-started.
+standard code. Returns when the program is about to terminate, if C<stop> was called, or if the
+exception was signaled. In the latter two cases, the loop can be safely re-started.
 
 =item lock
 
@@ -735,6 +735,10 @@ Opens the help viewer window with TOPIC string in
 link POD format ( see L<perlpod> ) - the string is treated
 as "manpage/section", where 'manpage' is the file with POD
 content and 'section' is the topic inside the manpage.
+
+=item stop
+
+Breaks the event loop. The loop can be started again by C<go> thereafter.
 
 =item sync
 

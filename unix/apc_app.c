@@ -817,6 +817,7 @@ apc_application_destroy( Handle self)
 		XCHECKPOINT;
 		hash_delete( guts.windows, (void*)&X_WINDOW, sizeof(X_WINDOW), false);
 	}
+	application = nilHandle;
 	return true;
 }
 
@@ -1053,12 +1054,10 @@ apc_application_go( Handle self)
 
 	XNoOp( DISP);
 	XFlush( DISP);
+	guts. application_stop_signal = false;
 
-	while ( prima_one_loop_round( WAIT_ALWAYS, true))
+	while ( !guts. application_stop_signal && prima_one_loop_round( WAIT_ALWAYS, true))
 		;
-
-	if ( application) Object_destroy( application);
-	application = nilHandle;
 	return true;
 }
 
@@ -1073,6 +1072,14 @@ Bool
 apc_application_unlock( Handle self)
 {
 	if ( guts. appLock > 0) guts. appLock--;
+	return true;
+}
+
+Bool
+apc_application_stop( Handle self)
+{
+	if ( application == nilHandle ) return false;
+	guts. application_stop_signal = true;
 	return true;
 }
 

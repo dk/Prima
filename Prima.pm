@@ -69,6 +69,7 @@ sub run
 {
 	die "Prima was not properly initialized\n" unless $::application;
 	$::application-> go if $::application-> alive;
+	$::application-> destroy if $::application && $::application-> alive;
 	$::application = undef if $::application and not $::application->alive;
 }
 

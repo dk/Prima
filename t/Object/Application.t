@@ -5,7 +5,7 @@ use Test::More;
 use Prima::Test;
 use Prima::Application;
 
-plan tests => 12;
+plan tests => 14;
 
 my $a = $::application;
 
@@ -112,8 +112,23 @@ while ( 1) {
 ok( get_flag, "yield without events sleeps, but still is alive");
 ok( $p == 3, "idle event");
 
+alarm(10);
+$::application->insert( Timer => 
+       timeout => 100,
+       onTick  => sub { $::application->stop; shift->stop },
+)->start;
+$::application->go;
+ok( $::application->alive, "stop #1 works" );
+$::application->insert( Timer => 
+       timeout => 100,
+       onTick  => sub { $::application->stop; shift->stop },
+)->start;
+$::application->go;
+ok( $::application->alive, "stop #2 works" );
+
 $SIG{ALRM} = 'DEFAULT';
 alarm(10);
 $::application->close;
 $e = $::application->yield(1);
 ok(!$e, "yield returns 0 on application.close");
+

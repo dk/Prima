@@ -52,7 +52,6 @@ apc_application_begin_paint_info( Handle self)
 	return ok;
 }
 
-
 Bool
 apc_application_create( Handle self)
 {
@@ -105,6 +104,7 @@ apc_application_destroy( Handle self)
 	}
 	PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
 	PostQuitMessage(0);
+	application = nilHandle;
 	return true;
 }
 
@@ -528,9 +528,8 @@ apc_application_go( Handle self)
 	MSG msg;
 	objCheck false;
 
-	while ( GetMessage( &msg, NULL, 0, 0) && process_msg( &msg));
-
-	if ( application) Object_destroy( application);
+	guts. application_stop_signal = false;
+	while ( !guts. application_stop_signal && GetMessage( &msg, NULL, 0, 0) && process_msg( &msg));
 	return true;
 }
 
@@ -558,6 +557,14 @@ Bool
 apc_application_unlock( Handle self)
 {
 	return HWND_lock( false);
+}
+
+Bool
+apc_application_stop( Handle self)
+{
+	if ( application == nilHandle ) return false;
+	guts. application_stop_signal = true;
+	return true;
 }
 
 Bool
