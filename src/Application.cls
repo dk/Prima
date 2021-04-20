@@ -88,6 +88,7 @@ object Prima::Application( Prima::Widget)
 	import void   setup();
 	c_only void   set_hint_action( Handle widget, Bool show, Bool mouseEvent);
 	method void   show();
+	method Bool   stop( void)   => apc_application_stop;
 	static void   sync( char *dummy = "");
 	static SV*    sys_action( char * dymmy = "", char * params = "");
 	method Bool   unlock()                      => apc_application_unlock;

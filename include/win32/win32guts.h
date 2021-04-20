@@ -240,6 +240,7 @@ typedef struct _WinGuts
 	Handle         dragTarget;         // last successful drop
 	WORD           language_id;        // default shaping language
 	char           language_descr[32];
+	Bool           application_stop_signal;
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
