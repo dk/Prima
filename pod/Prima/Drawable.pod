@@ -1429,7 +1429,7 @@ error.
 
 When Prima is compiled with C<libfribidi>, the method runs unicode bidirectional algorithm on TEXT
 that properly positions embedded directional text (f.ex. a latin quote inside
-an arabic text), see L<http://unicode.org/reports/tr9/tr9-22.html>.  Without
+an arabic text), see L<Unicode Standard Annex #9 | http://unicode.org/reports/tr9/tr9-22.html> for the details.  Without
 the library only does minimal RTL alignment.
 
 Glyphs returned are positioned according to RTL directions given in TEXT using
@@ -1449,14 +1449,14 @@ Options recognized:
 
 Shaping process may or may not fill integer array of advances and positions for
 each glyphs, depending on the implementation. The advances are needed to
-represent f.ex.  combining graphemes, when TEXT consisting of two characters,
+represent f.ex. combining graphemes, when TEXT consisting of two characters,
 C<"A"> and combining grave accent U+300 should be drawn as a single E<Agrave>
-cluster but are represented by a two glyphs C<"A"> and C<"`">. The grave glyph
+cluster but are represented by two glyphs C<"A"> and C<"`">. The grave glyph
 has its own advance for standalone usage, but in this case it should be
 ignored, and that is achieved by filling advance table where the C<"A"> advance
 is the normal glyph advance, whereas the advance of the C<"`"> is zero.  Also,
 the position table additionaly shifts glyph position by X and Y coordinates,
-when that is needed (f.ex. it might be positioned differently by vertical on
+when that is needed (f.ex. it might be positioned differently by the vertical axis on
 C<"a"> and C<"A">).
 
 Setting this options to C<true> will force fill advance and positioning tables.
@@ -1525,7 +1525,7 @@ May fill the C<fonts> array if the C<polyfont> option is set.
 
 =item pitch INTEGER
 
-When the C<polyfont> is set (default) and font substitution is desired, filters only fonts
+When the C<polyfont> is set (default) and thus font substitution is desired, filters only fonts
 that match C<pitch>, either C<fp::Variable> or C<fp::Fixed>. By default will be
 set to C<fp::Fixed> if the current for is monospaced, but to C<fp::Default>
 matching all fonts, otherwise.
@@ -1534,10 +1534,10 @@ matching all fonts, otherwise.
 
 If set, scans if the currently selected font supports all unicode points, and
 if not, selects a substituions from a pre-populated list, taking into account
-the font pitch (see C<pitch> above). In cases where the current font has no
+the font pitch (see C<pitch> above). In cases where the current font has not
 enough glyphs to shape all the requested unicode points, font substitution is
 performed, and the result contains an extra array C<fonts> (see
-L<Prima::Drawable/fonts>). When the current font has all needed glyphs, the
+L<Prima::Drawable::Glyphs/fonts>). When the current font has all needed glyphs, the
 fonts array is not created.
 
 The font list access is available through L</fontMapperPallette>.
@@ -1555,7 +1555,7 @@ it occurs in the input text, from left to right. Note that bidi reordering
 still may occur internally, since system shapers may reverse placement of RTL
 characters, so that the Prima reordering is needed to cancel this. In theory the caller
 shouldn't see the difference as these should cancel each other, but if Prima
-miscalculates the expected way the system shaper does the bidi processing it
+miscalculates the expected way the system shaper does the bidi processing, it
 might.
 
 A similar effect can be reached by prepending the text with U+202D
