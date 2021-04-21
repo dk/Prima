@@ -1055,9 +1055,9 @@ apc_application_go( Handle self)
 	XNoOp( DISP);
 	XFlush( DISP);
 	guts. application_stop_signal = false;
-
 	while ( !guts. application_stop_signal && prima_one_loop_round( WAIT_ALWAYS, true))
 		;
+	guts. application_stop_signal = false;
 	return true;
 }
 
@@ -1096,6 +1096,7 @@ apc_application_yield( Bool wait_for_event)
 	if (!application) return false;
 	guts. application_stop_signal = false;
 	prima_one_loop_round(wait_for_event ? WAIT_IF_NONE : WAIT_NEVER, true);
+	guts. application_stop_signal = false;
 	XSync( DISP, false);
 	return application != nilHandle && !guts. applicationClose;
 }
