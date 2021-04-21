@@ -476,6 +476,8 @@ L<Prima::sys::win32::FileDialog> - Windows file system dialogs
 
 L<Prima::sys::XQuartz> - MacOSX/XQuartz facilities
 
+L<Prima::sys::FS> - unicode-aware core file functions
+
 =item Class information
 
 The Prima manual pages often provide information for more than one Prima class.
