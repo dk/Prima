@@ -530,6 +530,7 @@ apc_application_go( Handle self)
 
 	guts. application_stop_signal = false;
 	while ( !guts. application_stop_signal && GetMessage( &msg, NULL, 0, 0) && process_msg( &msg));
+	guts. application_stop_signal = false;
 	return true;
 }
 
@@ -578,14 +579,15 @@ apc_application_yield(Bool wait_for_event)
 {
 	MSG msg;
 	Bool got_events = false;
-	while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE)) {
+	guts. application_stop_signal = false;
+	while ( !guts. application_stop_signal && PeekMessage( &msg, NULL, 0, 0, PM_REMOVE)) {
 		got_events = true;
 		if ( !process_msg( &msg)) {
 			PostThreadMessage( guts. mainThreadId, appDead ? WM_QUIT : WM_TERMINATE, 0, 0);
 			return false;
 		}
 	}
-	if ( application && wait_for_event && !got_events ) {
+	if ( application && wait_for_event && !got_events && !guts. application_stop_signal) {
 		Event ev;
 		ev. cmd = cmIdle;
 		CComponent( application)-> message( application, &ev);
@@ -594,6 +596,7 @@ apc_application_yield(Bool wait_for_event)
 			process_msg( &msg);
 		}
 	}
+	guts. application_stop_signal = false;
 	return application != nilHandle;
 }
 
