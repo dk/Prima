@@ -1,5 +1,14 @@
 Revision history for Perl module Prima
 
+1.61 2021-04-21
+ - DWM API Removed (not useful on Windows 10)
+ - Support regions and paths for the PS backend
+ - Prima::XXXDialog classes finally moved to Prima::XXX::Dialog
+ - Support unicode-aware filesystem functions
+   -- Prima::Utils extended and Prima::sys::FS added
+   -- Do not use libX11.XReadBitmapFileData as it is not unicode-aware
+ - Add Application.stop to break from a running event loop
+
 1.60 2020-10-31
  - Added ProgressBar with 3d look
  - Added PDF generation
