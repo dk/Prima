@@ -869,7 +869,7 @@ is either character or cluster, but not glyphs. The charater-based selections ma
 trivial extraction or replacement of the selected text, while the cluster-based makes
 it easier to manipulate (f ex with Shift- arrow keys) the selection itself.
 
-The class supports both, by operatin on I<selection maps> or I<selection
+The class supports both, by operating on I<selection maps> or I<selection
 chunks>, where each represent same information but in different ways.
 For example, consider embedded number in a bidi text. For the sake of clarity
 I'll use latin characters here. Let's have a text scalar containing
