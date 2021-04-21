@@ -1094,6 +1094,7 @@ Bool
 apc_application_yield( Bool wait_for_event)
 {
 	if (!application) return false;
+	guts. application_stop_signal = false;
 	prima_one_loop_round(wait_for_event ? WAIT_IF_NONE : WAIT_NEVER, true);
 	XSync( DISP, false);
 	return application != nilHandle && !guts. applicationClose;
