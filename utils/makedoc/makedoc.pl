@@ -132,8 +132,17 @@ if ( $build) {
 						$eps =~ s/\.\.\///g;
 						$eps =~ s/\//_/g;
 						$eps =~ s/\.[^\.]+$/.eps/;
+						my @epspath;
+						push @epspath, "$path/pod/Prima/$1" if $xfn =~ /Prima::(\w+)::/;
+						s/::/\//g for @epspath;
 						unless ( -f $eps) {
-							for ( "$path/Prima", "$path/Prima/pod", "$path/pod/Prima", "$path/pod") {
+							for (
+								"$path/Prima",
+								"$path/Prima/pod",
+								"$path/pod/Prima",
+								@epspath,
+								"$path/pod"
+							) {
 								next unless -f "$_/$gif";
 								$gif = "$_/$gif";
 								goto FOUND;

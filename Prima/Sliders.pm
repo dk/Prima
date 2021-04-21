@@ -2671,9 +2671,9 @@ the class is less functional but has more stylish look.
 
 =head1 Prima::SpinEdit
 
-=for podview <img src="altspinedit.gif">
+=for podview <img src="spinedit.gif">
 
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/altspinedit.gif">
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/spinedit.gif">
 
 The class is a numerical input line, paired with a spin button.
 The input line value can be change three ways - either as a direct
