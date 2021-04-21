@@ -2175,6 +2175,12 @@ x_flush(void)
 static struct timeval *
 select_timeout(struct timeval * timeout)
 {
+	if ( guts. application_stop_signal ) {
+		timeout-> tv_sec = 0;
+		timeout-> tv_usec = 0;
+		return timeout;
+	}
+
 	if ( !guts. oldest) return NULL;
 
 	gettimeofday( timeout, NULL);
