@@ -2,6 +2,9 @@
 #define _UNIX_GUTS_H_
 
 #include "generic/config.h"
+#if defined(HAS_GLIBC) && !defined(_GNU_SOURCE)
+#	define _GNU_SOURCE
+#endif
 #define Drawable        XDrawable
 #define Font            XFont
 #define Window          XWindow
@@ -107,9 +110,6 @@
 #define Button7Mask     (1<<14)
 #endif
 
-#if defined(HAS_GLIBC) && !defined(_GNU_SOURCE)
-#	define _GNU_SOURCE
-#endif
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>

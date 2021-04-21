@@ -14,6 +14,9 @@
 			(long int)apc_get_core_version(), (long int)PRIMA_CORE_VERSION )
 
 #include "generic/config.h"
+#if defined(HAS_GLIBC) && !defined(_GNU_SOURCE)
+#	define _GNU_SOURCE
+#endif
 
 #ifdef _MSC_VER
 	#define BROKEN_COMPILER       1
