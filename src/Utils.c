@@ -329,10 +329,6 @@ Utils_seekdir( SV * dh, long position )
 	PDirHandleRec d;
 	if (( d = get_dh(dh)) == NULL )
 		return false;
-	if ( position < 0 ) {
-		errno = EINVAL;
-		return false;
-	}
 	return apc_fs_seekdir(d, position);
 }
 
