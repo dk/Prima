@@ -21,7 +21,7 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
 	chdir chmod getcwd link mkdir open opendir readdir closedir 
 	rename rmdir unlink utime
 	getenv setenv abs_path stat lstat access getdir
-	seekdir telldir rewinddir
+	seekdir telldir rewinddir glob
 	_r _w _x _o _R _W _X _O _e _z _s _f _d _l _p _S _b _c _t _u _g _k _M _A _C
 );
 @EXPORT = @EXPORT_OK;
@@ -116,6 +116,64 @@ sub readdir($)
 	} else {
 		return read_dir($dh);
 	}
+}
+
+sub glob
+{
+	my $pat = shift;
+	my @pats;
+	while ( 1 ) {
+		$pat =~ m/\G"([^"]*)"/gcs and push @pats, $1 and next;
+		$pat =~ m/\G'([^']*)'/gcs and push @pats, $1 and next;
+		$pat =~ m/\G(\S+)/gcs and push @pats, $1 and next;
+		$pat =~ m/\G\s+/gcs and next;
+		$pat =~ m/\G$/gcs and last;
+	}
+	my @matches = @pats;
+	@pats = ();
+	while ( my $q = shift @matches ) {
+		if ( $q =~ m/^(.*)\{([^}]*)\}(.*)$/ ) {
+			my ( $pre, $subpat, $post ) = ( $1, $2, $3 );
+			push @matches, map { "$pre$_$post" } split /,/, $subpat;
+		} elsif ( $q =~ m/^(.*)\[([^\]]*)\](.*)$/ ) {
+			my ( $pre, $subpat, $post ) = ( $1, $2, $3 );
+			push @matches, map { "$pre$_$post" } split //, $subpat;
+		} else {
+			push @pats, $q;
+		}
+	}
+	my $win32 = $^O =~ /win32/i;
+	for $pat ( @pats ) {
+		next unless $pat =~ m/^~(\w*)(.*)/;
+		my @pwent;
+		unless ( length $1 ) {
+			$pat = ($ENV{HOME} // ($win32 ? $ENV{USERPROFILE} : undef) // '/' ) . $2;
+		} elsif ($win32 && (@pwent = getpwnam($1)) && defined($pwent[7])) {
+			$pat = $pwent[7] .  $2;
+		}
+	}
+	my (@ret, @pwent);
+	for my $q ( @pats ) {
+		my ( $dir, $mask ) = ( $q =~ m/^(.*\/)([^\/]*)/ ) ? ($1, $2) : ('.', $q);
+		if ( $mask eq '' ) {
+			next unless _e($dir);
+			push @ret, $dir;
+			next;
+		}
+		next unless Prima::sys::FS::opendir( my $dh, $dir );
+		my $cspl = sub { my $x = shift; $x =~ s/,/|/g; $x };
+		$mask =~ s/\./\\./g;
+		$mask =~ s/\*/.*/g;
+		$mask =~ s/\{([^}]*)\}/'(?:'.$cspl->($1).')'/ge;
+		$mask = qr/$mask/;
+		for my $e ( Prima::sys::FS::readdir $dh ) {
+			next unless $e =~ /^$mask$/;
+			push @ret, $e;
+		}
+		Prima::Utils::closedir $dh;
+	}
+
+	return @ret;
 }
 
 sub lstat { Prima::Utils::stat($_[0], 1) }
@@ -250,6 +308,7 @@ These are described in L<Prima::Utils/API>:
 
   chdir chmod getcwd link mkdir open rename rmdir unlink utime
   getenv setenv stat access getdir
+  opendir closedir rewinddir seekdir readdir telldir
 
 The underscore-prefixed functions are same as the ones in L<perlfunc/-X> (all are present except -T and -B ).
 
@@ -262,6 +321,10 @@ The functions that are implemented in the module itself:
 =item abs_path
 
 Same as C<Cwd::abs_path>.
+
+=item glob PATTERN
+
+More or less same as C<CORE::glob> or C<File::Glob::glob>.
 
 =item lstat PATH
 
