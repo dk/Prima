@@ -1604,7 +1604,7 @@ apc_fs_chmod( const char *path, Bool is_utf8, int mode)
 Bool
 apc_fs_closedir( PDirHandleRec dh)
 {
-	return closedir(d->handle) == 0;
+	return closedir(dh->handle) == 0;
 }
 
 char *
@@ -1658,6 +1658,16 @@ apc_fs_open_file( const char* path, Bool is_utf8, int flags, int mode)
 }
 
 Bool
+apc_fs_readdir( PDirHandleRec dh, char * entry)
+{
+	struct dirent *de;
+	if ( !( de = readdir(dh->handle)))
+		return false;
+	strncpy( entry, de->d_name, PATH_MAX_UTF8);
+	return true;
+}
+
+Bool
 apc_fs_rename( const char* oldname, Bool is_old_utf8, const char * newname, Bool is_new_utf8 )
 {
 	return rename(oldname, newname) == 0;
@@ -1680,6 +1690,7 @@ Bool
 apc_fs_seekdir( PDirHandleRec dh, long position )
 {
 	seekdir(dh->handle, position);
+	return true;
 }
 
 Bool
