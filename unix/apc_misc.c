@@ -1601,6 +1601,12 @@ apc_fs_chmod( const char *path, Bool is_utf8, int mode)
 	return chmod(path, mode) == 0;
 }
 
+Bool
+apc_fs_closedir( PDirHandleRec dh)
+{
+	return closedir(d->handle) == 0;
+}
+
 char *
 apc_fs_from_local(const char * text, int * len)
 {
@@ -1639,6 +1645,12 @@ apc_fs_mkdir( const char* path, Bool is_utf8, int mode)
 	return mkdir(path, mode) == 0;
 }
 
+Bool
+apc_fs_opendir( const char* path, PDirHandleRec dh)
+{
+	return (dh->handle = opendir(path)) != NULL;
+}
+
 int
 apc_fs_open_file( const char* path, Bool is_utf8, int flags, int mode)
 {
@@ -1652,9 +1664,22 @@ apc_fs_rename( const char* oldname, Bool is_old_utf8, const char * newname, Bool
 }
 
 Bool
+apc_fs_rewinddir( PDirHandleRec dh )
+{
+	rewinddir(dh->handle);
+	return true;
+}
+
+Bool
 apc_fs_rmdir( const char* path, Bool is_utf8 )
 {
 	return rmdir(path) == 0;
+}
+
+Bool
+apc_fs_seekdir( PDirHandleRec dh, long position )
+{
+	seekdir(dh->handle, position);
 }
 
 Bool
@@ -1688,6 +1713,12 @@ apc_fs_stat(const char *name, Bool is_utf8, Bool link, PStatRec statrec)
 	statrec-> mtim    = (float) statbuf.st_mtim.tv_sec + (float) statbuf.st_mtim.tv_nsec / 1000000000.0;
 	statrec-> ctim    = (float) statbuf.st_ctim.tv_sec + (float) statbuf.st_ctim.tv_nsec / 1000000000.0;
 	return 1;
+}
+
+long
+apc_fs_telldir( PDirHandleRec dh )
+{
+	return telldir(dh-> handle);
 }
 
 Bool

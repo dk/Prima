@@ -55,6 +55,38 @@ sub check
 	ok( $found_file eq 'reg', "$id: getdir file");
 	ok( $found_dir  eq 'dir', "$id: getdir dir");
 
+	my $d;
+	ok( opendir($d, '.'), "opendir");
+	@l = readdir($d);
+	($found_file, $found_dir) = (0,0);
+	for (my $i = 0; $i < @l; $i++ ) {
+		$found_file = 1 if $l[$i] eq $fn;
+		$found_dir  = 1 if $l[$i] eq $dn;
+	}
+	ok( $found_file, "$id: readdir file");
+	ok( $found_dir , "$id: readdir dir");
+	my $pos = telldir($d);
+	rewinddir($d);
+	@l = readdir($d);
+	($found_file, $found_dir) = (0,0);
+	for (my $i = 0; $i < @l; $i++ ) {
+		$found_file = 1 if $l[$i] eq $fn;
+		$found_dir  = 1 if $l[$i] eq $dn;
+	}
+	ok( $found_file, "$id: rewind/readdir file");
+	ok( $found_dir , "$id: rewind/readdir dir");
+	seekdir($d, $pos);
+	@l = readdir($d);
+	($found_file, $found_dir) = (0,0);
+	for (my $i = 0; $i < @l; $i++ ) {
+		$found_file = 1 if $l[$i] eq $fn;
+		$found_dir  = 1 if $l[$i] eq $dn;
+	}
+	ok( !$found_file, "$id: seekdir/readdir file");
+	ok( !$found_dir , "$id: seekdir/readdir dir");
+
+	ok( closedir($d), "closedir");
+
 	is( _f $fn, 1, "$id: _f file = 1");
  	is( _d $dn, 1, "$id: _d dir  = 1");
 	is( _d $fn, 0, "$id: _d file = 0");

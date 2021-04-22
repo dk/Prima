@@ -19,7 +19,9 @@ use vars qw(@ISA @EXPORT @EXPORT_OK);
 	find_image path
 	alarm post last_error
 
-	chdir chmod getcwd link mkdir open_file rename rmdir unlink utime
+	chdir chmod closedir getcwd link mkdir open_file open_dir
+	read_dir rename rmdir unlink utime
+	seekdir telldir rewinddir
 	getenv setenv stat access getdir sv2local local2sv
 );
 
@@ -301,6 +303,10 @@ Same as C<CORE::chdir> but disregards thread local environment on Win32.
 
 Same as C<CORE::chmod>
 
+=item closedir, readdir, rewinddir, seekdir, telldir DIRHANDLE
+
+Mimic homonymous perl functions
+
 =item getcwd
 
 Same as C<Cwd::getcwd>
@@ -348,6 +354,10 @@ Same as C<CORE::mkdir>.
 =item open_file PATH, FLAGS
 
 Same as C<POSIX::open>
+
+=item open_dir PATH
+
+Returns directory handle to be used on C<readdir>, C<closedir>, C<rewinddir>, C<telldir>, C<seekdir>.
 
 =item rename OLDNAME, NEWNAME
 

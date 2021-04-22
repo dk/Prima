@@ -119,6 +119,36 @@ Utils_chmod( SV* path, int mode)
 	return apc_fs_chmod( SvPV_nolen(path), prima_is_utf8_sv(path), mode);
 }
 
+static PDirHandleRec
+get_dh(SV * sv)
+{
+	PDirHandleRec d;
+	if ( !SvROK(sv) || SvTYPE( SvRV( sv)) != SVt_PVMG)
+		goto WARN;
+	if ( !sv_isa( sv, "Prima::Utils::DIRHANDLE" ))
+		goto WARN;
+	d = (PDirHandleRec) prima_array_get_storage(SvRV(sv));
+	if (!d-> is_active) {
+		errno = EBADF;
+		return false;
+	}
+	return d;
+
+WARN:
+	warn("Prima::Utils::closedir: invalid dirhandle");
+	errno = EBADF;
+	return false;
+}
+
+Bool
+Utils_closedir(SV * dh)
+{
+	PDirHandleRec d;
+	if (( d = get_dh(dh)) == NULL )
+		return false;
+	d-> is_active = false;
+	return apc_fs_closedir(d);
+}
 
 SV*
 Utils_getcwd()
@@ -208,10 +238,65 @@ Utils_mkdir( SV* path, int mode)
 	return apc_fs_mkdir( SvPV_nolen(path), prima_is_utf8_sv(path), mode);
 }
 
+SV *
+Utils_open_dir(SV * path)
+{
+	SV * ret = nilSV;
+	PDirHandleRec dh;
+	SV * dhsv;
+
+	if (( dhsv = prima_array_new(sizeof(DirHandleRec))) == NULL) {
+		errno = ENOMEM;
+		return nilSV;
+	}
+	if (( dh = (PDirHandleRec) prima_array_get_storage(dhsv)) == NULL) {
+		errno = ENOMEM;
+		return nilSV;
+	}
+	bzero(dh, sizeof(DirHandleRec));
+	dh-> is_utf8 = prima_is_utf8_sv(path);
+	if ( !apc_fs_opendir( SvPV_nolen(path), dh)) {
+		sv_free(dhsv);
+		return nilSV;
+	}
+	dh-> is_active = true;
+
+	ret = newRV_noinc(dhsv);
+	sv_bless(ret, gv_stashpv("Prima::Utils::DIRHANDLE", GV_ADD));
+
+
+	return ret;
+}
+
 int
 Utils_open_file( SV* path, int mode, int perms)
 {
 	return apc_fs_open_file( SvPV_nolen(path), prima_is_utf8_sv(path), mode, perms);
+}
+
+SV*
+Utils_read_dir(SV * dh)
+{
+	PDirHandleRec d;
+	char buf[PATH_MAX_UTF8];
+	SV * ret;
+	if (( d = get_dh(dh)) == NULL ) {
+		errno = EBADF;
+		warn("Prima::Utils::read_dir: invalid dirhandle");
+		return nilSV;
+	}
+	if (!d-> is_active) {
+		errno = EBADF;
+		return nilSV;
+	}
+
+	if ( !apc_fs_readdir(d, buf)) return nilSV;
+
+	ret = newSVpv(buf, 0);
+	if (is_valid_utf8((unsigned char*) buf))
+		SvUTF8_on(ret);
+
+	return ret;
 }
 
 Bool
@@ -224,9 +309,31 @@ Utils_rename( SV* oldpath, SV * newpath )
 }
 
 Bool
+Utils_rewinddir( SV * dh )
+{
+	PDirHandleRec d;
+	if (( d = get_dh(dh)) == NULL )
+		return false;
+	return apc_fs_rewinddir(d);
+}
+
+Bool
 Utils_rmdir( SV* path )
 {
 	return apc_fs_rmdir( SvPV_nolen(path), prima_is_utf8_sv(path));
+}
+
+Bool
+Utils_seekdir( SV * dh, long position )
+{
+	PDirHandleRec d;
+	if (( d = get_dh(dh)) == NULL )
+		return false;
+	if ( position < 0 ) {
+		errno = EINVAL;
+		return false;
+	}
+	return apc_fs_seekdir(d, position);
 }
 
 Bool
@@ -287,6 +394,15 @@ utf8len( const char * utf8, int maxlen)
 		utf8 = u;
 	}
 	return ulen;
+}
+
+long
+Utils_telldir( SV * dh )
+{
+	PDirHandleRec d;
+	if (( d = get_dh(dh)) == NULL )
+		return false;
+	return apc_fs_telldir(d);
 }
 
 SV *

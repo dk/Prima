@@ -3,20 +3,25 @@ package Prima::sys::FS;
 use strict;
 use warnings;
 require Exporter;
-use Symbol;
+use Symbol ();
+use Scalar::Util qw(readonly);
 use Encode;
 use Fcntl qw(O_RDONLY O_WRONLY O_RDWR O_CREAT O_TRUNC O_APPEND);
 use Prima;
 use Prima::Utils qw(
-	chdir chmod getcwd link mkdir open_file rename rmdir unlink utime
+	chdir chmod closedir getcwd link mkdir open_dir open_file
+	read_dir rename rmdir unlink utime
 	getenv setenv stat access getdir
+	seekdir telldir rewinddir
 );
 
 use vars qw(@ISA @EXPORT @EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(
-	chdir chmod getcwd link mkdir open rename rmdir unlink utime
+	chdir chmod getcwd link mkdir open opendir readdir closedir 
+	rename rmdir unlink utime
 	getenv setenv abs_path stat lstat access getdir
+	seekdir telldir rewinddir
 	_r _w _x _o _R _W _X _O _e _z _s _f _d _l _p _S _b _c _t _u _g _k _M _A _C
 );
 @EXPORT = @EXPORT_OK;
@@ -66,7 +71,6 @@ sub open(*;$*)
 	my $fd = open_file( $what, $flags );
 	return if $fd < 0;
 
-	use Symbol ();
         $_[0] = Symbol::geniosym unless defined $_[0];
         $handle = Symbol::qualify_to_ref($_[0], scalar caller);
 
@@ -86,6 +90,31 @@ NATIVE:
 	} else {
 		my ( $x, $y ) = (shift @p, shift @p);
 		return CORE::open($handle, $x, $y, @p);
+	}
+}
+
+sub opendir(*$)
+{
+	if ( readonly($_[0])) {
+		warn "Prima::sys::FS::opendir: cannot be use on filehandles, variables only\n";
+		return;
+	}
+	$_[0] = open_dir( $_[1] );
+	return 1;
+}
+
+sub readdir($)
+{
+	my $dh = shift;
+
+	if ( wantarray ) {
+		my @ret;
+		while ( defined( my $f = read_dir($dh)) ) {
+			push @ret, $f;
+		}
+		return @ret;
+	} else {
+		return read_dir($dh);
 	}
 }
 
