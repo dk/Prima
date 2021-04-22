@@ -65,7 +65,6 @@ sub check
 	}
 	ok( $found_file, "$id: readdir file");
 	ok( $found_dir , "$id: readdir dir");
-	my $pos = telldir($d);
 	rewinddir($d);
 	@l = readdir($d);
 	($found_file, $found_dir) = (0,0);
@@ -75,15 +74,14 @@ sub check
 	}
 	ok( $found_file, "$id: rewind/readdir file");
 	ok( $found_dir , "$id: rewind/readdir dir");
-	seekdir($d, $pos);
-	@l = readdir($d);
-	($found_file, $found_dir) = (0,0);
-	for (my $i = 0; $i < @l; $i++ ) {
-		$found_file = 1 if $l[$i] eq $fn;
-		$found_dir  = 1 if $l[$i] eq $dn;
-	}
-	ok( !$found_file, "$id: seekdir/readdir file");
-	ok( !$found_dir , "$id: seekdir/readdir dir");
+	rewinddir($d);
+	scalar readdir($d);
+	my $pos = telldir $d;
+	rewinddir($d);
+	seekdir $d, $pos;
+	is($pos, telldir $d, "telldir");
+	my @r = readdir $d;
+	ok( @r < @l, "seekdir/telldir");
 
 	ok( closedir($d), "closedir");
 
