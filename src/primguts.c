@@ -512,6 +512,21 @@ sv_query_method( SV *sv, char *methodName, Bool cacheIt)
 }
 
 static void
+cv_set_prototype(char * package, char * method, char * prototype)
+{
+	HV * stash;
+	GV * gv;
+	CV * cv;
+	if (!(stash = gv_stashpvn(package, strlen(package), 0)))
+		return;
+	if ( !( gv = gv_fetchmeth( stash, method, strlen( method), 0)))
+		return;
+	if (!( cv = GvCV(gv)))
+		return;
+	sv_setpv((SV *)cv, prototype);
+}
+
+static void
 register_notifications( PVMT vmt)
 {
 	SV *package;
@@ -1212,6 +1227,7 @@ Bool appDead = false;
 
 XS(Utils_getdir_FROMPERL);
 XS(Utils_stat_FROMPERL);
+XS(Utils_closedir_FROMPERL);
 
 static Bool
 kill_hashes( PHash hash, void * dummy)
@@ -1371,6 +1387,7 @@ if (sizeof(s1) != (s2)) { \
 	newXS( "Prima::options", Prima_options, "Prima");
 	newXS( "Prima::Utils::getdir", Utils_getdir_FROMPERL, "Prima::Utils");
 	newXS( "Prima::Utils::stat", Utils_stat_FROMPERL, "Prima::Utils");
+	newXS( "Prima::Utils::DIRHANDLE::DESTROY", Utils_closedir_FROMPERL, "Prima::Utils");
 	/* register built-in classes */
 	newXS( "Prima::Object::create",  create_from_Perl, "Prima::Object");
 	newXS( "Prima::Object::destroy", destroy_from_Perl, "Prima::Object");
@@ -1381,6 +1398,10 @@ if (sizeof(s1) != (s2)) { \
 	register_constants();
 	register_Object_Class();
 	register_Utils_Package();
+	cv_set_prototype("Prima::Utils", "closedir", "$");
+	cv_set_prototype("Prima::Utils", "rewinddir", "$");
+	cv_set_prototype("Prima::Utils", "seekdir", "$$");
+	cv_set_prototype("Prima::Utils", "telldir", "$");
 	register_Component_Class();
 	register_File_Class();
 	register_Clipboard_Class();

@@ -115,7 +115,7 @@ END:;
 					msg = err_msg( err, socketErrBuf);
 #else
 					strncpy( msg = socketErrBuf, strerror(err), 255);
-	       socketErrBuf[255] = 0;
+					socketErrBuf[255] = 0;
 #endif
 					PostThreadMessage( guts. mainThreadId, WM_CROAK, 0, (LPARAM) msg);
 				}

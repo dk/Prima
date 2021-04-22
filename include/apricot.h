@@ -3993,6 +3993,11 @@ typedef struct {
 	float    ctim;
 } StatRec, *PStatRec;
 
+typedef struct {
+	Bool      is_utf8, is_active;
+	void *    handle;
+} DirHandleRec, *PDirHandleRec;
+
 extern int
 apc_fs_access(const char *name, Bool is_utf8, int mode, Bool effective);
 
@@ -4001,6 +4006,9 @@ apc_fs_chdir(const char *path, Bool is_utf8 );
 
 extern Bool
 apc_fs_chmod( const char *path, Bool is_utf8, int mode);
+
+extern Bool
+apc_fs_closedir( PDirHandleRec dh);
 
 extern char *
 apc_fs_from_local(const char * text, int * len);
@@ -4017,14 +4025,27 @@ apc_fs_link( const char* oldname, Bool is_old_utf8, const char * newname, Bool i
 extern Bool
 apc_fs_mkdir( const char* path, Bool is_utf8, int mode);
 
+extern Bool
+apc_fs_opendir( const char *path, PDirHandleRec dh);
+
 extern int
 apc_fs_open_file( const char* path, Bool is_utf8, int flags, int mode);
+
+#define PATH_MAX_UTF8 (PATH_MAX*6)
+extern Bool
+apc_fs_readdir( PDirHandleRec dh, char * entry);
 
 extern Bool
 apc_fs_rename( const char* oldname, Bool is_old_utf8, const char * newname, Bool is_new_utf8 );
 
 extern Bool
+apc_fs_rewinddir( PDirHandleRec dh );
+
+extern Bool
 apc_fs_rmdir( const char* path, Bool is_utf8 );
+
+extern Bool
+apc_fs_seekdir( PDirHandleRec dh, long position );
 
 extern Bool
 apc_fs_setenv(const char * varname, Bool is_name_utf8, const char * value, Bool is_value_utf8);
@@ -4034,6 +4055,9 @@ apc_fs_stat(const char *name, Bool is_utf8, Bool link, PStatRec statrec);
 
 extern char *
 apc_fs_to_local(const char * text, Bool fail_if_cannot, int * len);
+
+extern long
+apc_fs_telldir( PDirHandleRec dh );
 
 extern Bool
 apc_fs_unlink( const char* path, Bool is_utf8 );

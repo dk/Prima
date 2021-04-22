@@ -695,6 +695,14 @@ win32_set_errno(void)
 	}
 }
 
+typedef struct {
+	long             position;
+	HANDLE           handle;
+	WIN32_FIND_DATAW fd;
+	Bool             error;
+	WCHAR            path[MAX_PATH+3];
+} Win32_Dirhandle;
+
 int
 apc_fs_access(const char *name, Bool is_utf8, int mode, Bool effective)
 {
@@ -835,6 +843,16 @@ apc_fs_to_local(const char * text, Bool fail_if_cannot, int * len)
 	return ret;
 }
 
+Bool
+apc_fs_closedir( PDirHandleRec dh)
+{
+	Bool ok;
+	Win32_Dirhandle *d = (Win32_Dirhandle*) dh-> handle;
+	ok = FindClose(d->handle);
+	free(d);
+	return ok;
+}
+
 char*
 apc_fs_getcwd(void)
 {
@@ -902,6 +920,62 @@ apc_fs_mkdir( const char* path, Bool is_utf8, int mode)
 	return ok;
 }
 
+Bool
+apc_fs_opendir( const char* path, PDirHandleRec dh)
+{
+	WCHAR * buf;
+	DWORD fattrs;
+	int len;
+	Win32_Dirhandle * d;
+
+	if ( !( buf = path2wchar( path, dh-> is_utf8, NULL ))) {
+		errno = ENOMEM;
+		return false;
+	}
+
+	len = wcslen(buf);
+	if (len > MAX_PATH) {
+		free(buf);
+		errno = ENOMEM;
+		return false;
+	}
+	fattrs = GetFileAttributesW( buf);
+	if ( fattrs == 0xFFFFFFFF ) {
+		free(buf);
+		errno = ENOENT;
+		return false;
+	}
+	if (( fattrs & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+		free(buf);
+		errno = ENOTDIR;
+		return false;
+	}
+
+	if ( !( dh-> handle = malloc(sizeof(Win32_Dirhandle)))) {
+		free(buf);
+		errno = ENOMEM;
+		return false;
+	}
+	d = ( Win32_Dirhandle*) dh->handle;
+	bzero( d, sizeof( Win32_Dirhandle ));
+
+	wcscpy(d->path, buf);
+	if (d->path[len-1] != '/' && d->path[len-1] != '\\')
+		d->path[len++] = '/';
+	d->path[len++] = '*';
+	d->path[len] = '\0';
+	free(buf);
+
+	d->handle = FindFirstFileW( d->path, &d->fd);
+	if ( d->handle == INVALID_HANDLE_VALUE ) {
+		d-> error = true;
+		win32_set_errno();
+		return false;
+	}
+	d-> position = 0;
+	return true;
+}
+
 int
 apc_fs_open_file( const char* path, Bool is_utf8, int flags, int mode)
 {
@@ -917,6 +991,23 @@ apc_fs_open_file( const char* path, Bool is_utf8, int flags, int mode)
 		f = open(path, flags, mode);
 
 	return f;
+}
+
+Bool
+apc_fs_readdir( PDirHandleRec dh, char * entry)
+{
+	Win32_Dirhandle *d = (Win32_Dirhandle*) dh-> handle;
+	if ( d-> error )
+		return false;
+	if ( d-> position > 0 ) {
+		if ( !FindNextFileW(d->handle, &d->fd)) {
+			d-> error = true;
+			return false;
+		}
+	}
+	d-> position++;
+	WideCharToMultiByte(CP_UTF8, 0, d->fd.cFileName, -1, entry, MAX_PATH, NULL, false);
+	return true;
 }
 
 Bool
@@ -937,6 +1028,23 @@ apc_fs_rename( const char* oldname, Bool is_old_utf8, const char * newname, Bool
 }
 
 Bool
+apc_fs_rewinddir( PDirHandleRec dh )
+{
+	Win32_Dirhandle *d = (Win32_Dirhandle*) dh-> handle;
+
+	d-> error = false;
+	FindClose(d-> handle);
+	d->handle = FindFirstFileW( d->path, &d->fd);
+	if ( d->handle == INVALID_HANDLE_VALUE ) {
+		d-> error = true;
+		win32_set_errno();
+		return false;
+	}
+	d-> position = 0;
+	return true;
+}
+
+Bool
 apc_fs_rmdir( const char* path, Bool is_utf8 )
 {
 	WCHAR *buf;
@@ -951,6 +1059,26 @@ apc_fs_rmdir( const char* path, Bool is_utf8 )
 		ok = (rmdir(path) == 0);
 
 	return ok;
+}
+
+Bool
+apc_fs_seekdir( PDirHandleRec dh, long position )
+{
+	Win32_Dirhandle *d = (Win32_Dirhandle*) dh-> handle;
+
+	if ( position == d->position ) return true;
+	if ( position < d->position || d->error ) {
+		if ( !apc_fs_rewinddir(dh))
+			return false;
+	}
+
+	while ( position != d->position ) {
+		char buf[PATH_MAX_UTF8];
+		if ( !apc_fs_readdir(dh, buf))
+			return false;
+	}
+
+	return true;
 }
 
 Bool
@@ -1006,6 +1134,13 @@ apc_fs_stat(const char *name, Bool is_utf8, Bool link, PStatRec statrec)
 	statrec-> mtim    = (float) statbuf.st_mtime;
 	statrec-> ctim    = (float) statbuf.st_ctime;
 	return 1;
+}
+
+long
+apc_fs_telldir( PDirHandleRec dh )
+{
+	Win32_Dirhandle *d = (Win32_Dirhandle*) dh-> handle;
+	return d->position;
 }
 
 Bool
