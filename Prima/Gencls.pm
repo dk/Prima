@@ -191,8 +191,8 @@ sub init_variables
 
 
 	%mapTypes = (
-		( long => 'int', U8 => 'int', char => 'int' ),
-		map {( $_, $_ )} qw(int Bool Handle UV Color double SV HV),
+		( U8 => 'int', char => 'int' ),
+		map {( $_, $_ )} qw(int Bool Handle UV Color double SV HV long),
 	);
 
 	%typedefs = ();
@@ -209,6 +209,7 @@ sub init_variables
 		'Handle'  => ['Handle', $incGetMate, '',          '',      '',         '',    '0/0',     '',     ''     ],
 		'SV*'     => ['SV *',   '',          '',          '',      '',         '',    '0/0',     '',     ''     ],
 		'Bool'    => ['Bool',   'SvBOOL',    'sv_setiv',  '0/0',   '0/0',      '',    'SvBOOL( POPs)', 'SViv', ''     ],
+		'long'    => ['long',   'SvIV',      'sv_setiv',  '',      '(IV)',     '',    'POPi',    'SViv', ''     ],
 	);
 
 	%mapPointers = ( "char" => "char*", "SV" => "SV*", "HV"=> "HV*");
@@ -527,6 +528,7 @@ sub parse_struc
 			( $type eq 'Handle') { $def = '( Handle) C_POINTER_UNDEF'; } elsif
 			( $type eq 'SV*')    { $def = '( SV*) C_POINTER_UNDEF'; } elsif
 			( $type eq 'int')    { $def = 'C_NUMERIC_UNDEF'; } elsif
+			( $type eq 'long')   { $def = 'C_NUMERIC_UNDEF'; } elsif
 			( $type eq 'Bool')   { $def = 'C_NUMERIC_UNDEF'; } elsif  # hack
 			( $type eq 'double') { $def = 'C_NUMERIC_UNDEF'; } elsif
 			( $type eq 'char*')  { $def = 'C_STRING_UNDEF'; } elsif
