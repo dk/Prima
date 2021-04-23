@@ -108,12 +108,10 @@ drawing surface and as a drawing tool:
     $::application-> end_paint;
 
 It must be noted, that C<put_image>, C<stretch_image> and C<put_image_indirect>
-are only painting methods that allow drawing on an image that is in its
-paint-disabled state. Moreover, in such context they only allow C<Prima::Image>
-descendants to be passed as a source image object. This functionality does not
-imply that the image is internally switched to the paint-enabled state and
-back; the painting is performed without switching and without interference with
-the system's graphical layer.
+only allow C<Prima::Image> descendants to be passed as a source image object.
+This functionality does not imply that the image is internally switched to the
+paint-enabled state and back; on the contrary, the painting is performed without switching and
+using only Prima's own code, without using the system's graphical layer.
 
 Another special case is a 1-bit ( monochrome ) DeviceBitmap. When it is drawn
 upon a drawable with bit depth greater than 1, the drawable's color and
@@ -211,10 +209,11 @@ Instead of C<palette> property, C<colormap> can also be used.
 =head2 Data access
 
 The pixel values can be accessed in I<Prima::Drawable> style, via C<::pixel>
-property. However, I<Prima::Image> introduces several helper functions,
-for different aims. The C<::data> property is used to set or retrieve
-a scalar representation of bitmap data. The data are expected to be lined
-up to a 'line size' margin ( 4-byte boundary ), which is calculated as
+property. However, I<Prima::Image> introduces several helper functions on its own.
+
+The C<::data> property is used to set or retrieve a scalar representation of
+bitmap data. The data are expected to be lined up to a 'line size' margin (
+4-byte boundary ), which is calculated as
 
   $lineSize = int(( $image->width * ( $image-> type & im::BPP) + 31) / 32) * 4;
 
@@ -292,8 +291,8 @@ and how they differ from system-dependent implementation.
 =head2 Prima::Icon
 
 I<Prima::Icon> inherits all properties of I<Prima::Image>, and it also provides
-a 1-bit depth transparency mask.  This mask can also be loaded and saved into
-image files, if the format supports a transparency information.
+a transparency mask of either 1 or 8 bits.  This mask can also be loaded
+and saved into image files, if the format supports transparency information.
 
 Similar to I<Prima::Image::data> property, I<Prima::Icon::mask> property
 provides access to the binary mask data.  The mask can be updated
@@ -318,8 +317,8 @@ functionality. The call to C<< $::application->get_system_value(sv::LayeredWidge
 can check whether this functionality is available; if not, the property is ignored.
 By default, widgets can not use layering.
 
-A layered drawable uses an extra alpha channel to designate the transparency of
-the widget. Drawing on widgets will also look different - for example, drawing
+A layered drawable uses an extra alpha channel to designate the transparency.
+Drawing on widgets will also look different - for example, drawing
 with black color will make the black pixels fully transparent, while other
 colors will blend with the underlying background, but never in full. Prima
 provides no functions to draw with alpha effects, and scarce image functions to
@@ -366,9 +365,10 @@ Putting of argb source surfaces can be only used with two rops, C<rop::SrcOver>
 latter copies alpha bits over to the destination surface. Prima internal
 implementation of C<put_image> and C<stretch_image> functions extends the
 allowed set of rops when operating on images outside the begin_paint/end_paint
-brackets. These rops support 12 Porter-Duff operators and flags to specify
-constant alpha values to override the existing alpha channel, if any.  See more
-in L<Prima::Drawable/Raster operations>.
+brackets. These rops support 12 Porter-Duff operators, some more "photoshop"
+operators, and special flags to specify constant alpha values to override the
+existing alpha channel, if any.
+See more in L<Prima::Drawable/Raster operations>.
 
 Caveats: In Windows, mouse events will not be delivered to the layered widget
 if the pixel under the mouse pointer is fully transparent.
