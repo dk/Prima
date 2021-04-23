@@ -30,10 +30,10 @@ Prima::Image - Bitmap routines
    $::application-> begin_paint;
 
    # an image is drawn as specified by its palette
-   $::application-> set( color => cl::Red, backColor => cl::Green);
    $::application-> put_image( 100, 100, $i);
 
    # a bitmap is drawn as specified by destination device colors
+   $::application-> set( color => cl::Red, backColor => cl::Green);
    $::application-> put_image( 200, 100, $i-> bitmap);
 
 
