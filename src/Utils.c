@@ -120,7 +120,7 @@ Utils_chmod( SV* path, int mode)
 }
 
 static PDirHandleRec
-get_dh(SV * sv)
+get_dh(const char * method, SV * sv)
 {
 	PDirHandleRec d;
 	if ( !SvROK(sv) || SvTYPE( SvRV( sv)) != SVt_PVMG)
@@ -135,7 +135,7 @@ get_dh(SV * sv)
 	return d;
 
 WARN:
-	warn("Prima::Utils::closedir: invalid dirhandle");
+	warn("Prima::Utils::%s: invalid dirhandle", method);
 	errno = EBADF;
 	return false;
 }
@@ -144,7 +144,7 @@ Bool
 Utils_closedir(SV * dh)
 {
 	PDirHandleRec d;
-	if (( d = get_dh(dh)) == NULL )
+	if (( d = get_dh("closedir", dh)) == NULL )
 		return false;
 	d-> is_active = false;
 	return apc_fs_closedir(d);
@@ -280,7 +280,7 @@ Utils_read_dir(SV * dh)
 	PDirHandleRec d;
 	char buf[PATH_MAX_UTF8];
 	SV * ret;
-	if (( d = get_dh(dh)) == NULL ) {
+	if (( d = get_dh("read_dir", dh)) == NULL ) {
 		errno = EBADF;
 		warn("Prima::Utils::read_dir: invalid dirhandle");
 		return nilSV;
@@ -312,7 +312,7 @@ Bool
 Utils_rewinddir( SV * dh )
 {
 	PDirHandleRec d;
-	if (( d = get_dh(dh)) == NULL )
+	if (( d = get_dh("rewinddir", dh)) == NULL )
 		return false;
 	return apc_fs_rewinddir(d);
 }
@@ -327,7 +327,7 @@ Bool
 Utils_seekdir( SV * dh, long position )
 {
 	PDirHandleRec d;
-	if (( d = get_dh(dh)) == NULL )
+	if (( d = get_dh("seekdir", dh)) == NULL )
 		return false;
 	return apc_fs_seekdir(d, position);
 }
@@ -396,7 +396,7 @@ long
 Utils_telldir( SV * dh )
 {
 	PDirHandleRec d;
-	if (( d = get_dh(dh)) == NULL )
+	if (( d = get_dh("telldir", dh)) == NULL )
 		return false;
 	return apc_fs_telldir(d);
 }

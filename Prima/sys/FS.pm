@@ -100,7 +100,7 @@ sub opendir(*$)
 		return;
 	}
 	$_[0] = open_dir( $_[1] );
-	return 1;
+	return defined $_[0];
 }
 
 sub readdir($)
@@ -123,57 +123,56 @@ sub glob
 	my $pat = shift;
 	my @pats;
 	while ( 1 ) {
-		$pat =~ m/\G"([^"]*)"/gcs and push @pats, $1 and next;
-		$pat =~ m/\G'([^']*)'/gcs and push @pats, $1 and next;
-		$pat =~ m/\G(\S+)/gcs and push @pats, $1 and next;
+		$pat =~ m/\G"((?:[^"]|\\")*)(?<!\\)"/gcs and push @pats, $1 and next;
+		$pat =~ m/\G'((?:[^']|\\')*)(?<!\\)'/gcs and push @pats, $1 and next;
+		$pat =~ m/\G((?:\S|\\\s)+)/gcs and push @pats, $1 and next;
 		$pat =~ m/\G\s+/gcs and next;
 		$pat =~ m/\G$/gcs and last;
 	}
 	my @matches = @pats;
 	@pats = ();
-	while ( my $q = shift @matches ) {
+	my $win32 = $^O =~ /win32/i;
+	MATCH: while ( my $q = shift @matches ) {
 		if ( $q =~ m/^(.*)\{([^}]*)\}(.*)$/ ) {
 			my ( $pre, $subpat, $post ) = ( $1, $2, $3 );
 			push @matches, map { "$pre$_$post" } split /,/, $subpat;
 		} elsif ( $q =~ m/^(.*)\[([^\]]*)\](.*)$/ ) {
 			my ( $pre, $subpat, $post ) = ( $1, $2, $3 );
 			push @matches, map { "$pre$_$post" } split //, $subpat;
-		} else {
+		} elsif ( $q =~ m/^~(\w*)(.*)/ ) {
+			my @pwent;
+			unless ( length $1 ) {
+				push @matches, ($ENV{HOME} // ($win32 ? $ENV{USERPROFILE} : undef) // '/' ) . $2;
+			} elsif (!$win32 && (@pwent = getpwnam($1)) && defined($pwent[7])) {
+				push @matches, $pwent[7] .  $2;
+			}
+		} elsif ( $q =~ m/(?<!\\)\*|\?/ ) {
+			my @paths = ('');
+			my $expanded;
+			for my $subpath ( split m{(/)}, $q ) {
+				if ( !$expanded && $subpath =~ m/(?<!\\)\*|\?/ ) {
+					$subpath =~ s/(?<!\\)\*/.*/g;
+					$subpath =~ s/(?<!\\)\?/./g;
+					$subpath = qr/$subpath/;
+					next MATCH unless Prima::sys::FS::opendir( my $dh, length($paths[0]) ? $paths[0] : '.' );
+					my $opath = pop @paths;
+					for my $e ( Prima::sys::FS::readdir $dh ) {
+						next unless $e =~ /^$subpath$/;
+						push @paths, $opath . $e;
+					}
+					Prima::Utils::closedir $dh;
+					$expanded++;
+				} else {
+					$_ .= $subpath for @paths;
+				}
+			}
+			push @matches, @paths;
+		} elsif (_e($q)) {
 			push @pats, $q;
 		}
 	}
-	my $win32 = $^O =~ /win32/i;
-	for $pat ( @pats ) {
-		next unless $pat =~ m/^~(\w*)(.*)/;
-		my @pwent;
-		unless ( length $1 ) {
-			$pat = ($ENV{HOME} // ($win32 ? $ENV{USERPROFILE} : undef) // '/' ) . $2;
-		} elsif ($win32 && (@pwent = getpwnam($1)) && defined($pwent[7])) {
-			$pat = $pwent[7] .  $2;
-		}
-	}
-	my (@ret, @pwent);
-	for my $q ( @pats ) {
-		my ( $dir, $mask ) = ( $q =~ m/^(.*\/)([^\/]*)/ ) ? ($1, $2) : ('.', $q);
-		if ( $mask eq '' ) {
-			next unless _e($dir);
-			push @ret, $dir;
-			next;
-		}
-		next unless Prima::sys::FS::opendir( my $dh, $dir );
-		my $cspl = sub { my $x = shift; $x =~ s/,/|/g; $x };
-		$mask =~ s/\./\\./g;
-		$mask =~ s/\*/.*/g;
-		$mask =~ s/\{([^}]*)\}/'(?:'.$cspl->($1).')'/ge;
-		$mask = qr/$mask/;
-		for my $e ( Prima::sys::FS::readdir $dh ) {
-			next unless $e =~ /^$mask$/;
-			push @ret, $e;
-		}
-		Prima::Utils::closedir $dh;
-	}
 
-	return @ret;
+	return @pats;
 }
 
 sub lstat { Prima::Utils::stat($_[0], 1) }
