@@ -82,8 +82,6 @@ sub check
 	seekdir $d, $pos;
 	is($pos, telldir $d, "telldir");
 	my @r = readdir $d;
-	use Data::Dumper;
-	print scalar(@l), ' ', scalar(@r), "\n";
 	ok( @r < @l, "seekdir/telldir");
 
 	ok( closedir($d), "closedir");
