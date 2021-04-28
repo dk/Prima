@@ -57,6 +57,7 @@ sub check
 
 	my $d;
 	ok( opendir($d, '.'), "opendir");
+	my $start = telldir($d);
 	@l = readdir($d);
 	($found_file, $found_dir) = (0,0);
 	for (my $i = 0; $i < @l; $i++ ) {
@@ -65,7 +66,7 @@ sub check
 	}
 	ok( $found_file, "$id: readdir file");
 	ok( $found_dir , "$id: readdir dir");
-	rewinddir($d);
+	seekdir($d, $start);
 	@l = readdir($d);
 	($found_file, $found_dir) = (0,0);
 	for (my $i = 0; $i < @l; $i++ ) {
@@ -74,13 +75,15 @@ sub check
 	}
 	ok( $found_file, "$id: rewind/readdir file");
 	ok( $found_dir , "$id: rewind/readdir dir");
-	rewinddir($d);
+	seekdir($d, $start);
 	scalar readdir($d);
 	my $pos = telldir $d;
-	rewinddir($d);
+	seekdir($d, $start);
 	seekdir $d, $pos;
 	is($pos, telldir $d, "telldir");
 	my @r = readdir $d;
+	use Data::Dumper;
+	print scalar(@l), ' ', scalar(@r), "\n";
 	ok( @r < @l, "seekdir/telldir");
 
 	ok( closedir($d), "closedir");
