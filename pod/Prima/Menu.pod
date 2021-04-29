@@ -430,7 +430,7 @@ C<::menuItems> is an alias for C<::items> menu class property.
 Prima::Window's properties C<::menuFont> and C<::menuColorIndex>
 are used as visualization hints.
 
-Prima::Menu provide no new methods or properties.
+Prima::Menu provides no new methods or properties.
 
 =head2 Prima::Popup
 
@@ -535,12 +535,11 @@ not use this property internally.
 
 =item enabled NAME, BOOLEAN / Prima::MenuItem::enabled BOOLEAN
 
-Manages 'enabled' state of a menu item. If 'enabled' is C<me::Grayed>, a menu
-item visualized with grayed or otherwise dimmed color palette. If
-C<me::Passive>, then the item is still disabled, but not grayed.  If a sub-menu
+Manages 'enabled' state of a menu item. If 'enabled' is set, a menu
+item visualized with grayed or otherwise dimmed color palette. If a sub-menu
 item is disabled, whole sub-menu is inaccessible.
 
-Default: C<me::Enabled>
+Default: true
 
 NAME is name of the menu item.
 
@@ -637,12 +636,12 @@ Sets menu item in checked state.
 
 =item disable NAME / Prima::MenuItem::disable
 
-Alias for C<enabled(me::Grayed)>.
+Alias for C<enabled(0)>.
 Sets menu item in disabled state.
 
 =item enabled NAME / Prima::MenuItem::enabled
 
-Alias for C<enabled(me::Enabled)>.
+Alias for C<enabled(1)>.
 Sets menu item in enabled state.
 
 =item execute NAME
