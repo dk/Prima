@@ -1,5 +1,3 @@
-# XXX todo
-# regions
 package Prima::PS::PDF;
 
 use strict;
