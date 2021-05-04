@@ -45,6 +45,7 @@ sub init
 	my %profile = $self-> SUPER::init(@_);
 	$self-> $_( $profile{$_}) for qw( grayscale rotate reversed );
 	$self-> $_( @{$profile{$_}}) for qw( pageSize pageMargins resolution scale );
+	$self->{fpType} = 'F';
 	return %profile;
 }
 
@@ -57,6 +58,7 @@ sub save_state
 		color backColor fillPattern lineEnd linePattern lineWidth miterLimit
 		rop rop2 textOpaque textOutBaseline font lineJoin fillMode
 	);
+	$self->{save_state}->{fpType} = $self->{fpType};
 	$self-> {save_state}-> {$_} = [$self-> $_()] for qw(
 		translate clipRect
 	);
@@ -69,6 +71,7 @@ sub restore_state
 			rop rop2 textOpaque textOutBaseline font lineJoin fillMode)) {
 		$self-> $_( $self-> {save_state}-> {$_});
 	}
+	$self->{fpType} = $self->{save_state}->{fpType};
 	for ( qw( translate clipRect)) {
 		$self-> $_( @{$self-> {save_state}-> {$_}});
 	}
