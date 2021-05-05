@@ -221,8 +221,6 @@ sub execute
 	my $dir = $self->{directory};
 	$dir =~ s/\//\\/g;
 
-	$dir = "c:/1/1/\x{76ee}/\x{5f55}";
-
 	_set( directory   => $dir);
 	_set( defext      => $self->{defaultExt});
 	_set( title       => $self->{text} // 'NULL');
