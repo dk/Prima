@@ -230,7 +230,8 @@ prima_gtk_init(void)
 
 		if ( !f) continue;
 		bzero(f, sizeof(Font));
-		strncpy( f->name, pango_font_description_get_family(t->font_desc), 256);
+		strncpy( f->name, pango_font_description_get_family(t->font_desc), 255);
+		f->name[255]=0;
 		/* does gnome ignore X resolution? */
 		f-> size = pango_font_description_get_size(t->font_desc) / PANGO_SCALE * (96.0 / guts. resolution. y) + .5;
 		weight = pango_font_description_get_weight(t->font_desc);
