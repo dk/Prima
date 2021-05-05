@@ -732,6 +732,12 @@ apc_clipboard_get_formats( Handle self)
 	return list;
 }
 
+static Bool
+fill_target( Handle self, Atom target );
+
+static Bool
+fill_bitmap( Handle self );
+
 Bool
 apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 {
@@ -761,7 +767,24 @@ apc_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c)
 		data = XX-> external[id]. data;
 		imm  = true;
 	}
-	if (( size == 0 || data == nil) && imm) return false;
+	if ( size == 0 || data == nil) {
+		Bool ret;
+		if ( imm ) return false;
+		if ( id == cfBitmap ) {
+			ret = fill_bitmap(self);
+		} else {
+			Atom name, type;
+			int index = 0;
+			while (( name = get_typename( id, index++, &type)) != None) {
+				ret = fill_target(self, name);
+				if ( ret ) break;
+			}
+		}
+
+		if ( !ret ) return false;
+		size = XX-> internal[id]. size;
+		data = XX-> internal[id]. data;
+	}
 
 	switch ( id) {
 	case cfBitmap:
