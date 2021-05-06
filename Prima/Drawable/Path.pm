@@ -28,6 +28,7 @@ sub new
 		canvas          => $canvas,
 		commands        => [],
 		precision       => undef,
+		antialias       => 0,
 		%opt
 	}, $class;
 }
@@ -73,6 +74,7 @@ sub moveto           { shift->cmd('moveto', shift, shift, 0) }
 sub rmoveto          { shift->cmd('moveto', shift, shift, 1) }
 sub restore          { shift->cmd('restore') } # no checks for underflow here, to allow append paths
 sub precision        { shift->cmd(set => precision => shift) }
+sub antialias        { $#_ ? $_[0]->{antialias} = $_[1] : $_[0]->{antialias} }
 
 sub matrix_multiply
 {
@@ -537,7 +539,11 @@ sub _arc
 sub stroke {
 	return 0 unless $_[0]->{canvas};
 	for ( map { @$_ } @{ $_[0]->points }) {
-		return 0 unless $_[0]->{canvas}->polyline($_);
+		if ( $_[0]->{antialias} ) {
+			return 0 unless $_[0]->{canvas}->new_aa_surface->polyline($_);
+		} else {
+			return 0 unless $_[0]->{canvas}->polyline($_);
+		}
 	}
 	return 1;
 }
@@ -553,7 +559,11 @@ sub fill {
 		$c->fillMode($fillMode);
 	}
 	for ( @p ) {
-		last unless $ok &= $c->fillpoly($_);
+		if ( $self->{antialias} ) {
+			last unless $ok &= $c->new_aa_surface->fillpoly($_);
+		} else {
+			last unless $ok &= $c->fillpoly($_);
+		}
 	}
 	$c->fillMode($save) if defined $save;
 	return $ok;
@@ -1173,6 +1183,12 @@ and when applied to 2D coordinates, is calculated as
 =item precision INTEGER
 
 Selects current precision for splines and arcs. See L<Prima::Drawable/spline>, C<precision> entry.
+
+=item antialias BOOLEAN
+
+Turns on and off slow but more visually pleasant antialiased drawing mode.
+
+Default: false
 
 =item restore
 

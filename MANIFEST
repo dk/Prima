@@ -51,6 +51,7 @@ src/Window.c
 src/Window.cls
 examples/amba.pl
 examples/animate.pl
+examples/antialias.pl
 examples/async.pl
 examples/buttons.pl
 examples/bidi.pl
@@ -142,6 +143,7 @@ include/unix/guts.h
 include/unix/queue.h
 include/win32/win32guts.h
 pod/prima-gencls.pod
+pod/Prima/aa.gif
 pod/Prima/altspinbutton.gif
 pod/Prima/buttons.gif
 pod/Prima/calendar.gif
@@ -232,6 +234,7 @@ Prima/DetailedList.pm
 Prima/DetailedOutline.pm
 Prima/DockManager.pm
 Prima/Docks.pm
+Prima/Drawable/Antialias.pm
 Prima/Drawable/Basic.pm
 Prima/Drawable/CurvedText.pm
 Prima/Drawable/Glyphs.pm

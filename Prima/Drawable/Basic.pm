@@ -221,6 +221,11 @@ sub new_gradient
 	return Prima::Drawable::Gradient->new(@_);
 }
 
+sub new_aa_surface
+{
+	require Prima::Drawable::Antialias;
+	return Prima::Drawable::Antialias->new(@_);
+}
 
 sub new_glyph_obj
 {

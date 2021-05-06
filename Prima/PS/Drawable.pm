@@ -389,6 +389,7 @@ sub get_nearest_color    { return $_[1] }
 sub get_physical_palette { return $_[0]-> {grayscale} ? [map { $_, $_, $_ } 0..255] : 0 }
 sub get_handle           { return 0 }
 sub alpha                { 0 }
+sub can_draw_alpha       { 0 }
 
 sub fonts
 {
