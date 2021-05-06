@@ -207,7 +207,7 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
 =head1 SEE ALSO
 
-L<Prima::Drawable>
+L<Prima::Drawable>, F<examples/antialias.pl> 
 
 
 =cut
