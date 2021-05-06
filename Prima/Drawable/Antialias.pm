@@ -56,7 +56,7 @@ sub alloc_surface
 		type      => im::Byte,
 		size      => [ map { $_ * RES } @sz ],
 		color     => cl::Black,
-		scaling   => ist::Gaussian,
+		scaling   => ist::Triangle,
 	) or return;
 	$surface->bar(0,0,$surface->size);
 	$surface->color(cl::White);
