@@ -603,7 +603,7 @@ img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 		offset = x * ptr->count;
 	}
 
-	blt_step = (blt_bytes > ptr->step) ? ptr->step : blt_bytes;
+	blt_step = ptr->step;
 	if (!ptr->solid && (( ptr-> pat_x_offset % FILL_PATTERN_SIZE ) != (x % FILL_PATTERN_SIZE))) {
 		int dx = (x % FILL_PATTERN_SIZE) - ( ptr-> pat_x_offset % FILL_PATTERN_SIZE );
 		if ( dx < 0 ) dx += FILL_PATTERN_SIZE;
@@ -615,20 +615,24 @@ img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
 		case 4:
 			if ( dx > 1 ) {
 				pat_ptr = ptr->buf + dx / 2;
-				if ( blt_step + FILL_PATTERN_SIZE / 2 > BLT_BUFSIZE )
+				if ( dx > 0 || blt_step + FILL_PATTERN_SIZE / 2 > BLT_BUFSIZE )
 					blt_step -= FILL_PATTERN_SIZE / 2;
 			} else
 				pat_ptr = ptr->buf;
 			break;
 		default:
 			pat_ptr = ptr->buf + dx * ptr->bpp / 8;
-			if ( blt_step + FILL_PATTERN_SIZE * ptr->count > BLT_BUFSIZE )
+			if ( dx > 0 || blt_step + FILL_PATTERN_SIZE * ptr->count > BLT_BUFSIZE )
 				blt_step -= FILL_PATTERN_SIZE * ptr->count;
 		}
-	} else
+	} else {
 		pat_ptr = ptr->buf;
+	}
+
+	if (blt_bytes < blt_step) blt_step = blt_bytes;
 
 	data = ptr->data + ptr->ls * y + offset;
+
 	for ( j = 0; j < h; j++) {
 		int bytes = blt_bytes;
 		Byte lsave = *data, rsave = data[blt_bytes - 1], *p = data;
