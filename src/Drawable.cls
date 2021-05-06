@@ -48,6 +48,7 @@ object Prima::Drawable ( Prima::Component)
 	method void  set( HV * profile);
 	method void  set_font( Font font);
 
+	method Bool  can_draw_alpha() => apc_gp_can_draw_alpha;
 	method int   get_bpp();
 	method Font  get_font();
 	method SV *  get_font_abc( int first = -1, int last = -1, int flags = 0);

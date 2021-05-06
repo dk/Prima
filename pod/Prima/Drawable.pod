@@ -741,7 +741,7 @@ Set-call discards the previous C<::region> value.
 
 Note: C<::clipRect> can not be used while the object is in the paint-disabled state,
 its context is neither recorded nor used as a template
-( see L<"Graphic context and canvas">).
+( see L<"Graphic context and canvas">) -- except on images.
 
 =item fillMode INTEGER
 
@@ -1265,6 +1265,10 @@ Context used: color, backColor, linePattern, lineWidth, rop, rop2
 
 Returns success flag; if failed, C<$@> contains the error.
 
+=item new_aa_surface
+
+Returns a new antialiasing surface object. See L<Prima::Drawable::Antialias> for usage and details.
+
 =item new_gradient
 
 Returns a new gradient object. See L<Prima::Drawable::Gradient> for usage and details.
@@ -1610,6 +1614,17 @@ except painting and drawing methods do not change the object canvas.
 
 See also: C<end_paint_info>, C<begin_paint>, L<"Graphic context and canvas">
 
+=item can_draw_alpha
+
+Returns whether using alpha bits operation on the drawable will have any effect
+or not.  Note that the drawable might not necessarily have an alpha channel,
+for example a normal RGB image is capable to be painted on wil alpha while not
+having any alpha on its own.  On unix, all non-1 bit drawables return true if
+Prima was compiled with XRender support and if that extension is present on the
+X server.  On windows, all non-1 bit drawables return true unconditionally.
+
+See also: C<has_alpha_layer>
+
 =item end_paint
 
 Exits the enabled state and returns the object to a disabled state.
@@ -1803,6 +1818,15 @@ Context used: font, textOutBaseline
 =for podview </cut>
 
 =for html -->
+
+=item has_alpha_layer
+
+Returns true if the drawable has an alpha channel. If the drawable is treated as a source,
+it means its alpha content will be respected when drawing on another surface. If the drawable is
+treated as a destination, it means that its alpha content will be updated if drawing on it uses
+alpha bits.
+
+See also: C<can_draw_alpha>.
 
 =item render_glyph INDEX, %OPTIONS
 

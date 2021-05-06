@@ -649,6 +649,24 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 }
 
 Bool
+apc_gp_can_draw_alpha( Handle self)
+{
+	Bool xrender =
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+			true
+#else
+			false
+#endif
+		;
+	if ( is_apt(aptDeviceBitmap))
+		return (((PDeviceBitmap)self)->type == dbtBitmap) ? false : xrender;
+	else if ( is_apt( aptImage ))
+		return (((PImage)self)-> type == imBW ) ? false : xrender;
+	else
+		return xrender;
+}
+
+Bool
 apc_gp_clear( Handle self, int x1, int y1, int x2, int y2)
 {
 	DEFXX;

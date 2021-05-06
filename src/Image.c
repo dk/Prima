@@ -380,6 +380,18 @@ Image_size( Handle self, Bool set, Point size)
 	return size;
 }
 
+
+Bool
+Image_can_draw_alpha( Handle self)
+{
+	if ( is_opt( optInDrawInfo) )
+		return false;
+	else if ( is_opt( optInDraw))
+		return apc_gp_can_draw_alpha(self);
+	else
+		return var->type == imByte || var->type == imRGB;
+}
+
 SV *
 Image_get_handle( Handle self)
 {
@@ -2034,7 +2046,9 @@ Image_clipRect( Handle self, Bool set, Rect r)
 		r.right   = box.x + box.width  - 1;
 		r.top     = box.y + box.height - 1;
 	} else {
-		bzero(&r, sizeof(Rect));
+		r.left    = r.bottom  = 0;
+		r.right   = var-> w - 1;
+		r.top     = var-> h - 1;
 	}
 
 	return r;
