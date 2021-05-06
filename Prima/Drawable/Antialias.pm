@@ -201,6 +201,8 @@ Plots an antialiased polyline. The following properties from C<$CANVAS> are resp
 color, linePattern, lineWidth, lineEnd, lineJoin, miterLimit. Does not plot opaque
 patterned lines.
 
+=back
+
 =head1 AUTHOR
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
