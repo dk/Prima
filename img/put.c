@@ -570,7 +570,7 @@ typedef struct {
 } ImgBarCallbackRec;
 
 #define FILL_PATTERN_SIZE 8
-#define BLT_BUFSIZE ((MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE * (FILL_PATTERN_SIZE / 8) * 2 * 4))
+#define BLT_BUFSIZE ((MAX_SIZEOF_PIXEL * FILL_PATTERN_SIZE * FILL_PATTERN_SIZE) * 2)
 
 static Bool
 img_bar_single( int x, int y, int w, int h, ImgBarCallbackRec * ptr)
