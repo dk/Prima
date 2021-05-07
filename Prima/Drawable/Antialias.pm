@@ -24,18 +24,11 @@ sub calc_poly_extents
 	my @cr = $self->{canvas}->clipRect;
 	return if 4 == grep { $_ == 0 } @cr;
 
-	my @rc = @$poly[0,1,0,1];
-	for ( my $i = 2; $i < @$poly; $i += 2 ) {
-		my @p = @$poly[$i,$i+1];
-		for my $ix ( 0, 1 ) {
-			$rc[$ix]   = $p[$ix] if $rc[$ix]   > $p[$ix];
-			$rc[$ix+2] = $p[$ix] if $rc[$ix+2] < $p[$ix];
-		}
-	}
-
+	my @rc = @{ Prima::Drawable-> render_polyline( $poly, box => 1, integer => 1 ) || return };
 	my @tr = $self->{canvas}->translate;
-	$rc[$_] += $tr[0] for 0,2;
-	$rc[$_] += $tr[1] for 1,3;
+	$rc[$_] += $tr[$_] for 0,1;
+	$rc[2] += $rc[0] - 1;
+	$rc[3] += $rc[1] - 1;
 
 	$rc[0] = $cr[0] if $rc[0] < $cr[0];
 	$rc[1] = $cr[1] if $rc[1] < $cr[1];
@@ -114,7 +107,8 @@ sub polyline
 		$bitmap->bar( 0, 0, $bitmap->size);
 	} else {
 		$bitmap->translate(map { -RES * $_ } $x, $y);
-		$bitmap->polyline([map { RES * $_} @$poly]);
+		$poly = Prima::Drawable->render_polyline( $poly, matrix => [RES,0,0,RES,0,0], integer => 1);
+		$bitmap->polyline($poly);
 	}
 	return $self->apply_surface($x, $y, $bitmap);
 
@@ -131,10 +125,14 @@ sub fillpoly
 
 	my $canvas = $self->{canvas};
 	$mode //= $self->{canvas}->fillMode;
-	$mode &= ~fm::Overlay;
+	$mode &= ~fm::Overlay; # very slow otherwise due to manual region patch
+	$poly = Prima::Drawable->render_polyline( $poly,
+		matrix => [RES,0,0,RES,0,0],
+		integer => 1
+	);
 	my $rgn = Prima::Region->new(
-		mode    => $mode,
-		polygon => [map { RES * $_} @$poly],
+		fillMode => $mode,
+		polygon  => $poly,
 	);
 	$rgn->offset( map { -RES * $_ } $x, $y );
 

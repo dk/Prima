@@ -360,16 +360,8 @@ sub matrix_apply
 {
 	my $self   = shift;
 	my ($ref, $points) = $#_ ? (0, [@_]) : (1, $_[0]);
-	my $m  = $self->{curr}->{matrix};
-	my @ret;
-	for ( my $i = 0; $i < @$points; $i += 2 ) {
-		my ( $x, $y ) = @{$points}[$i,$i+1];
-		push @ret,
-			$$m[A] * $x + $$m[C] * $y + $$m[X],
-			$$m[B] * $x + $$m[D] * $y + $$m[Y]
-			;
-	}
-	return $ref ? \@ret : @ret;
+	my $ret = Prima::Drawable->render_polyline( $points, matrix => $self->{curr}->{matrix} );
+	return $ref ? $ret : @$ret;
 }
 
 sub _save

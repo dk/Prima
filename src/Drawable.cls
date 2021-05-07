@@ -62,6 +62,7 @@ object Prima::Drawable ( Prima::Component)
 	method int   get_text_width( SV * text, int flags = 0, int from = 0, int len = -1);
 	method SV *  get_text_box( SV * text, int from = 0, int len = -1);
 	method SV *  render_glyph( int index, HV * profile);
+	static SV *  render_polyline( SV * obj, SV * points, HV * profile);
 	static SV *  render_spline( SV * obj, SV * points, HV * profile);
 
 	# operators
