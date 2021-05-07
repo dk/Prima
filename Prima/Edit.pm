@@ -1564,6 +1564,33 @@ sub set_selection
 	return if $end < $tl || $start >= $tl + $r + $yT;
 
 	my @a = $self-> get_active_area( 0);
+	if ( $start == $end && $bt != bt::Horizontal) {
+		$self-> begin_paint_info;
+		my $glyphs = $self-> get_shaped_chunk($start);
+		my $old  = ($osx == $oex) ? [] : $glyphs->selection_chunks_clusters($glyphs-> selection2range($osx, $oex - 1));
+		my $new  = ($sx  == $ex)  ? [] : $glyphs->selection_chunks_clusters($glyphs-> selection2range($sx,  $ex - 1));
+		my $diff = $glyphs->selection_diff($old, $new);
+
+		my @cr;
+		my $x = -$self->offset;
+		$x += $self->rtl_offset - $glyphs->get_width($self) if $self-> {textDirection};
+		$glyphs->selection_walk( $diff, 0, undef, sub {
+			my ( $offset, $length, $selected ) = @_;
+			my $dx = $glyphs->get_sub_width($self, $offset, $length);
+			if ( $selected ) {
+				$cr[0] //= $x;
+				$cr[1] = $x + $dx;
+			}
+			$x += $dx;
+		});
+		$self-> end_paint_info;
+		if ( @cr ) {
+			$cr[1]++;
+			$a[0] = $cr[0] if $a[0] < $cr[0];
+			$a[2] = $cr[1] if $a[2] > $cr[1];
+		}
+	}
+
 	$self-> invalidate_rect(
 		$a[0], $a[3] - $fh * ( $end - $tl + 1),
 		$a[2], $a[3] - $fh * ( $start - $tl),
