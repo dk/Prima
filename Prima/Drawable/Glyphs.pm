@@ -524,6 +524,7 @@ sub _map2chunks
 	my $selection_map = shift;
 
 	my @chunks;
+	return [] unless @$selection_map;
 	push @chunks, 0 if $selection_map->[0];
 	my $last_selected = -1;
 	for my $selected ( @$selection_map ) {
@@ -600,6 +601,7 @@ sub selection_diff
 	for ( my $i = 0; $i < $max; $i++) {
 		$diff[$i] = (($old->[$i] // 0) == ($new->[$i] // 0) ) ? 0 : 1 ;
 	}
+	pop @diff while @diff and !$diff[-1];
 	return _map2chunks( \@diff );
 }
 

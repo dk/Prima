@@ -2172,7 +2172,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 	uint16_t uv = 0, last_uv = 0;
 
 	unsigned int start, i, last_p, p = 0;
-	float w = 0.0, last_winc = 0.0, initial_overhang = 0;
+	float w = 0.0;
 	Bool reassign_w = 1;
 	Bool doWidthBreak = t-> width >= 0;
 
@@ -2221,7 +2221,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 			}
 
 			if ( reassign_w) {
-				w = initial_overhang = abc[ uv & 0xff]. a;
+				w = abc[ uv & 0xff]. a;
 				reassign_w = 0;
 			}
 			if ( t-> advances ) {
@@ -2231,8 +2231,6 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 			}
 			if ( j == ng - 1 ) {
 				inc = t-> advances ? 0 : abc[ uv & 0xff]. c;
-				if ( t-> advances ) 
-					inc += t->positions[(i + j) * 2];
 			}
 		}
 
@@ -2246,7 +2244,6 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 
 		if ( !doWidthBreak || (w + winc + inc <= t-> width)) {
 			w += winc;
-			last_winc = winc;
 			continue;
 		}
 
@@ -2263,7 +2260,6 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 			The effect can be seen when selecting with mouse chinese text in podview in Prima/Drawable/Glyphs -
 			when each glyph is queried, it might take several seconds for each redraw.
 			*/
-			float xw;
 			if (
 				last_uv / 256 != base
 			) {
@@ -2275,9 +2271,7 @@ Drawable_do_glyphs_wrap( Handle self, GlyphWrapRec * t)
 				else
 					precalc_abc_buffer(labc, width, abc);
 			}
-			xw = w - winc + last_winc + abc[last_uv & 0xff].c;
-			if ( xw > t->width ) { /* ... and it is */
-				last_winc = 0.0;
+			if ( w + abc[last_uv & 0xff].c > t->width ) { /* ... and it is */
 				i = p;
 				p = last_p;
 			}
