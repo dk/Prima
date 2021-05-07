@@ -2140,6 +2140,25 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 	return result;
 }
 
+#define xmovi(src_t,dst_t) {           \
+	int i;                         \
+	src_t* src = (src_t*)ref;      \
+	dst_t* dst = (dst_t*)p;        \
+	for ( i = 0; i < count; i++)   \
+		*(dst++) = *(src++);   \
+	}                              \
+	break                          \
+
+#define xmovd(src_t,dst_t) {           \
+	int i;                         \
+	src_t* src = (src_t*)ref;      \
+	dst_t* dst = (dst_t*)p;        \
+	for ( i = 0; i < count; i++)   \
+		*(dst++) = *(src++)+.5;\
+	}                              \
+	break                          \
+
+
 void *
 prima_read_array( SV * points, char * procName, char type, int div, int min, int max, int * n_points, Bool * do_free)
 {
@@ -2183,16 +2202,40 @@ prima_read_array( SV * points, char * procName, char type, int div, int min, int
 	{
 		void * ref;
 		char * pack;
-		if ( prima_array_parse( points, &ref, NULL, &pack ) && *pack == type) {
-			if ( do_free ) {
+		if ( prima_array_parse( points, &ref, NULL, &pack )) {
+			if (*pack == type && do_free) {
 				*do_free = false;
 				return ref;
 			}
+
 			if (!( p = malloc( psize * count))) {
 				warn("not enough memory");
 				return false;
 			}
-			memcpy( p, ref, psize * count);
+			if (do_free) *do_free = true;
+
+			if ( *pack == type )
+				memcpy( p, ref, psize * count);
+			else switch ( *pack ) {
+			case 'i':
+				switch (type) {
+				case 'd': xmovi(int,double);
+				case 's': xmovi(int,uint16_t);
+				}
+				break;
+			case 's':
+				switch (type) {
+				case 'd': xmovi(uint16_t,double);
+				case 'i': xmovi(uint16_t,int);
+				}
+				break;
+			case 'd':
+				switch (type) {
+				case 'i': xmovd(double,int);
+				case 's': xmovd(double,uint16_t);
+				}
+				break;
+			}
 			return p;
 		}
 	}
