@@ -1861,6 +1861,35 @@ The C<ggo::> commands are:
 	ggo::Conic - plot 2-degree spline
 	ggo::Cubic - plot 3-degree spline
 
+=item render_polyline \@POLYLINE, %OPTIONS
+
+Performs calculations on POLYLINE, defined by OPTIONS. The following options are recognized:
+
+=over
+
+=item matrix A,B,C,D,U,V
+
+If supplied, performs matrix transformation on each polyline vertex:
+
+	X' = AX + CY + U
+	Y' = BX + DY + V
+
+and returns the new polyline
+
+=item box BOOLEAN
+
+If set, instead of polyline vertices, calculates the box extents of the polyline
+(either original or after the matrix transform, depending on whether C<matrix> option was supplied or not),
+and returns 4 numerics for left,bottom,width,and height of the box enclosure.
+
+=item integer BOOLEAN
+
+By default the result is returned as a set of floating point numerics, however
+if integer results are needed, the results are transformed as to integers using
+the I<int = float + ((float < 0) ? -0.5 : 0.5)> formula.
+
+=back
+
 =item render_spline \@VERTICES, %OPTIONS
 
 Renders B-spline curve from set of VERTICES to a polyline with given options.

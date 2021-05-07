@@ -426,6 +426,7 @@ Drawable_get_font_languages( Handle self)
 	}
 	return newRV_noinc(( SV *) av);
 }
+
 SV *
 Drawable_get_font_ranges( Handle self)
 {
@@ -884,6 +885,100 @@ EXIT:
 		if (ret)  sv_free(ret);
 		return newRV_noinc(( SV *) newAV());
 	}
+}
+
+SV *
+Drawable_render_polyline( SV * obj, SV * points, HV * profile)
+{
+	dPROFILE;
+	int count;
+	Bool free_input = false, free_buffer = false, as_integer = false;
+	double *input = NULL, *buffer = NULL, box[4];
+	SV * ret;
+	void * storage;
+
+	if (( input = (double*) prima_read_array( points, "render_polyline", 'd', 2, 1, -1, &count, &free_input)) == NULL)
+		goto FAIL;
+
+	if ( pexist(matrix) ) {
+		int i;
+		double *src, *dst, *cmatrix;
+		if (( cmatrix = (double*) prima_read_array(
+			pget_sv(matrix),
+			"render_polyline.matrix", 'd', 1, 6, 6, NULL, NULL)
+		) == NULL) 
+			goto FAIL;
+		if ( !( buffer = malloc(sizeof(double) * 2 * count))) {
+			free(cmatrix);
+			warn("Not enough memory");
+			goto FAIL;
+		}
+		free_buffer = true;
+
+		for ( i = 0, src = input, dst = buffer; i < count; i++) {
+			double x,y;
+			x = *(src++);
+			y = *(src++);
+			*(dst++) = cmatrix[0] * x + cmatrix[2] * y + cmatrix[4];
+			*(dst++) = cmatrix[1] * x + cmatrix[3] * y + cmatrix[5];
+		}
+		free(cmatrix);
+	} else {
+		buffer = input;
+		free_buffer = false;
+	}
+
+	if ( pexist(box) && pget_B(box)) {
+		int i;
+		double *src;
+		box[0] = box[2] = buffer[0];
+		box[1] = box[3] = buffer[1];
+		for ( i = 1, src = buffer + 2; i < count; i++) {
+			double x,y;
+			x = *(src++);
+			y = *(src++);
+			if ( box[0] > x ) box[0] = x;
+			if ( box[1] > y ) box[1] = y;
+			if ( box[2] < x ) box[2] = x;
+			if ( box[3] < y ) box[3] = y;
+		}
+		box[2] -= box[0] + 1;
+		box[3] -= box[1] + 1;
+		if ( free_buffer ) free(buffer);
+		free_buffer = false;
+		buffer = box;
+		count  = 2;
+	}
+
+	if ( pexist(integer)) as_integer = pget_B(integer);
+	ret = prima_array_new(count * 2 * (as_integer ? sizeof(int) : sizeof(double)));
+	storage = prima_array_get_storage(ret);
+	if ( as_integer ) {
+		int i, *dst;
+		double *src;
+		for ( i = 0, src = buffer, dst = (int*)storage; i < count; i++) {
+			register double x;
+			x = *(src++);
+			*(dst++) = x + ((x < 0) ? -.5 : +.5);
+			x = *(src++);
+			*(dst++) = x + ((x < 0) ? -.5 : +.5);
+		}
+	} else
+		memcpy(storage, buffer, count * 2 * sizeof(double));
+
+	if ( free_buffer ) free( buffer );
+	if ( free_input ) free(input);
+	hv_clear(profile); /* old gencls bork */
+
+	return prima_array_tie( ret,
+		as_integer ? sizeof(int) : sizeof(double),
+		as_integer ? "i" : "d");
+
+FAIL:
+	if ( free_buffer ) free( buffer );
+	if ( free_input ) free(input);
+	hv_clear(profile); /* old gencls bork */
+	return nilSV;
 }
 
 PRGBColor

@@ -2140,23 +2140,24 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 	return result;
 }
 
-#define xmovi(src_t,dst_t) {           \
-	int i;                         \
-	src_t* src = (src_t*)ref;      \
-	dst_t* dst = (dst_t*)p;        \
-	for ( i = 0; i < count; i++)   \
-		*(dst++) = *(src++);   \
-	}                              \
-	break                          \
+#define xmovi(src_t,dst_t) {                          \
+	int i;                                        \
+	src_t* src = (src_t*)ref;                     \
+	dst_t* dst = (dst_t*)p;                       \
+	for ( i = 0; i < count; i++)                  \
+		*(dst++) = *(src++);                  \
+	}                                             \
+	break                                         \
 
-#define xmovd(src_t,dst_t) {           \
-	int i;                         \
-	src_t* src = (src_t*)ref;      \
-	dst_t* dst = (dst_t*)p;        \
-	for ( i = 0; i < count; i++)   \
-		*(dst++) = *(src++)+.5;\
-	}                              \
-	break                          \
+#define xmovd(src_t,dst_t) {                          \
+	int i;                                        \
+	src_t* src = (src_t*)ref;                     \
+	dst_t* dst = (dst_t*)p;                       \
+	for ( i = 0; i < count; i++) {                \
+		register src_t x = *(src++);          \
+		*(dst++) = x + ((x < 0) ? -.5 : +.5); \
+	}}                                            \
+	break                                         \
 
 
 void *
