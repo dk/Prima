@@ -942,8 +942,8 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 			if ( box[2] < x ) box[2] = x;
 			if ( box[3] < y ) box[3] = y;
 		}
-		box[2] -= box[0] + 1;
-		box[3] -= box[1] + 1;
+		box[2] -= box[0] - 1;
+		box[3] -= box[1] - 1;
 		if ( free_buffer ) free(buffer);
 		free_buffer = false;
 		buffer = box;
