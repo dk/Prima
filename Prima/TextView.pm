@@ -465,8 +465,8 @@ sub paint_selection
 			for ( my $i = 0; $i < $length; $i++) {
 				if ( $selection_map->[$i] != $self->{selectionPaintMode} ) {
 					if ($vis_end > $vis_start) {
-						my $curr_index = $indexes->[$i];
-						$i++, $vis_end++ while $curr_index == $indexes->[$i + 1];
+						my $curr_index = $indexes->[$i-1];
+						$i++, $vis_end++ while $curr_index == $indexes->[$i];
 						$x += $draw_text->( $glyphs, $x, $vis_start, $vis_end );
 					}
 					$vis_start = $vis_end;
@@ -1089,7 +1089,7 @@ sub selection
 		$y2 = $osy2;
 		if ( $y1 == $y2) {
 			@old = ( $osx1, $osx2 - 1 );
-			@new = (1,0);
+			@new = ();
 		}
 	} else {
 		( $sy1, $sy2, $sx1, $sx2) = ( $sy2, $sy1, $sx2, $sx1) if $sy2 < $sy1;
@@ -1101,7 +1101,7 @@ sub selection
 			$y2 = $sy2;
 			if ( $y1 == $y2) {
 				@new = ( $sx1, $sx2 - 1 );
-				@old = (1,0);
+				@old = ();
 			}
 		} else {
 			if ( $sy1 == $osy1 && $sx1 == $osx1) {
@@ -1109,15 +1109,15 @@ sub selection
 				$y1 = $sy2;
 				$y2 = $osy2;
 				if ( $sy2 == $osy2) {
-					@old = ( 0, $osx2 - 1 );
-					@new = ( 0, $sx2  - 1 );
+					@old = ( $sx1, $osx2 - 1 );
+					@new = ( $sx1, $sx2  - 1 );
 				}
 			} elsif ( $sy2 == $osy2 && $sx2 == $osx2) {
 				$y1 = $sy1;
 				$y2 = $osy1;
 				if ( $sy1 == $osy1) {
-					@old = ( $osx1, -1 );
-					@new = ( $sx1,  -1 );
+					@old = ( $osx1, $sx2 );
+					@new = ( $sx1,  $sx2 );
 				}
 			} else {
 				$y1 = ( $sy1 < $osy1) ? $sy1 : $osy1;
@@ -1155,6 +1155,39 @@ sub selection
 			if $clipRect[$_] > $clipRect[$_+2];
 		$clipRect[$_] = $aa[$_] if $clipRect[$_] < $aa[$_];
 		$clipRect[$_+2] = $aa[$_+2] if $clipRect[$_+2] > $aa[$_+2];
+	}
+
+	if ( $y1 == $y2 ) {
+		my @xy = ( $aa[0] - $self->{offset} + $$b[ tb::BLK_X], 0 );
+		my @cr;
+		my $calc = sub {
+			my ( $offset, $glyphs ) = @_;
+			return $offset ? $self->get_text_width($glyphs, 0, 0, $offset) : 0;
+		};
+		$self-> begin_paint_info;
+
+		$self-> block_walk( $b,
+			trace    => tb::TRACE_GEOMETRY | tb::TRACE_REALIZE_PENS | tb::TRACE_TEXT,
+			canvas   => $self,
+			position => \@xy,
+			text     => sub {
+				my ($offset, $length, undef, $text) = @_;
+				my $glyphs  = $self-> text_shape($text);
+				my $oldmap = @old ? $glyphs-> selection_chunks_glyphs( map { $_ - $offset } @old) : [];
+				my $newmap = @new ? $glyphs-> selection_chunks_glyphs( map { $_ - $offset } @new) : [];
+				my $diff   = $glyphs->selection_diff($oldmap, $newmap);
+				return unless @$diff;
+				$cr[0] //= $xy[0] + $calc->($diff->[0], $glyphs);
+				my $end = 0; $end += $_ for @$diff;
+				$cr[1] = $xy[0] + $calc->($end, $glyphs);
+			},
+		);
+		$self-> end_paint_info;
+		if ( @cr && $cr[0] != $cr[1] ) {
+			$cr[1]++;
+			$clipRect[0] = $cr[0] if $clipRect[0] < $cr[0];
+			$clipRect[2] = $cr[1] if $clipRect[2] > $cr[1];
+		}
 	}
 
 	push @invalid_rects, \@clipRect;
