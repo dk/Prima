@@ -1070,6 +1070,7 @@ sub selection
 {
 	return @{$_[0]-> {selection}} unless $#_;
 	my ( $self, $sx1, $sy1, $sx2, $sy2) = @_;
+	($sx1, $sy1, $sx2, $sy2) = ( $sx2, $sy2, $sx1, $sy1 ) if $sy1 > $sy2;
 
 	$sy1 = 0 if $sy1 < 0;
 	$sy2 = 0 if $sy2 < 0;
@@ -1109,15 +1110,15 @@ sub selection
 				$y1 = $sy2;
 				$y2 = $osy2;
 				if ( $sy2 == $osy2) {
-					@old = ( $sx1, $osx2 - 1 );
-					@new = ( $sx1, $sx2  - 1 );
+					@old = ( 0, $osx2 - 1 );
+					@new = ( 0, $sx2  - 1 );
 				}
 			} elsif ( $sy2 == $osy2 && $sx2 == $osx2) {
 				$y1 = $sy1;
 				$y2 = $osy1;
 				if ( $sy1 == $osy1) {
-					@old = ( $osx1, $sx2 );
-					@new = ( $sx1,  $sx2 );
+					@old = ( $osx1, -1);
+					@new = ( $sx1,  -1);
 				}
 			} else {
 				$y1 = ( $sy1 < $osy1) ? $sy1 : $osy1;
@@ -1158,6 +1159,15 @@ sub selection
 	}
 
 	if ( $y1 == $y2 ) {
+		if ( grep { $_ == -1 } @old, @new ) {
+			my $bx   = $self->{blocks};
+			my $last = (( $y1 < (@{$bx} - 1)) ?
+				$$bx[$y1 + 1]-> [ tb::BLK_TEXT_OFFSET] :
+				length( ${$self-> {text}})
+			) - $$b[ tb::BLK_TEXT_OFFSET];
+			$old[1] = $last if @old && $old[1] == -1;
+			$new[1] = $last if @new && $new[1] == -1;
+		}
 		my @xy = ( $aa[0] - $self->{offset} + $$b[ tb::BLK_X], 0 );
 		my @cr;
 		my $calc = sub {
