@@ -35,7 +35,7 @@ sub new_array
 	} else {
 		return undef;
 	}
-	return Prima::array->new($letter, pack($letter.'*', (0) x $size));
+	return Prima::array->new($letter, pack($letter.'*', (0) x $n));
 }
 
 sub new_empty
@@ -53,36 +53,43 @@ sub new_empty
 sub _debug
 {
 	my $self = shift;
+	my $noprint = shift;
 	my $g = $self->glyphs;
-	print STDERR scalar(@$g), " glyphs: @$g\n";
+
+	my $out = scalar(@$g) . " glyphs: @$g\n";
 	$g = $self->indexes;
-	print STDERR "indexes: ";
+	$out .= "indexes: ";
 	for ( my $i = 0; $i < $#$g; $i++) {
 		my $ix = $g->[$i];
-		print STDERR ( $ix & to::RTL ) ? '-' : '', $ix & ~to::RTL, " ";
+		$out .= (( $ix & to::RTL ) ? '-' : '') . ( $ix & ~to::RTL ) . " ";
 	}
-	print STDERR ": $g->[-1]\n";
+	$out .= ": $g->[-1]\n";
 	if ( $g = $self->advances ) {
-		print STDERR "advances: @$g\n";
+		$out .= "advances: @$g\n";
 		$g = $self->positions;
-		print STDERR "positions: ";
+		$out .= "positions: ";
 		for ( my $i = 0; $i < @$g; $i += 2 ) {
 			my ($x, $y) = @{$g}[$i,$i+1];
-			print STDERR "($x,$y) ";
+			$out .= "($x,$y) ";
 		}
-		print STDERR "\n";
+		$out .= "\n";
 	}
 	if ( $g = $self->fonts ) {
-		print STDERR "fonts: @$g\n";
+		$out .= "fonts: @$g\n";
 		my %f = map { $_ => 1 } @$g;
 		delete $f{0};
 		if ( $::application ) {
 			for my $fid ( sort keys %f ) {
 				my $f = $::application->fontMapperPalette($fid);
-				print STDERR "  #$fid: $f->{name}\n";
+				$out .= "  #$fid: $f->{name}\n";
 			}
 		}
-		print STDERR "\n";
+		$out .= "\n";
+	}
+	if ( $noprint ) {
+		return $out;
+	} else {
+		print STDERR $out;
 	}
 }
 
