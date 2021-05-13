@@ -386,7 +386,7 @@ sub setup_environment
 		$OPTIMIZE    .= ' -Wall' if gcc;
 		if ($cmd_options{DEBUG}) {
 			$passthru_options{LDDLFLAGS} .= ' -g';
-			$passthru_options{LDDLFLAGS} =~ s/(^| )\-s//;
+			$passthru_options{LDDLFLAGS} =~ s/(^| )\-s\b//;
 		}
 	}
 
