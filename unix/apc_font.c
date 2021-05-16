@@ -1194,7 +1194,7 @@ AGAIN:
 			of-> flags. disabled = true;
 
 			Fdebug( "font: kill %s\n", name);
-			if ( font) apc_font_pick( nilHandle, font, font);
+			if ( font) prima_font_pp2font( "fixed", font);
 			of-> flags. disabled = false;
 			return;
 		} else {
