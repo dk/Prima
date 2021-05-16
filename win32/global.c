@@ -1115,7 +1115,8 @@ AGAIN:
 		ev. cmd = cmSetup;
 		break;
 	case WM_REPAINT_LAYERED:
-		hwnd_repaint_layered( self, true );
+		if ( var stage == csNormal )
+			hwnd_repaint_layered( self, true );
 		break;
 	case WM_SETFOCUS:
 		if ( guts. focSysDialog) return 1;
