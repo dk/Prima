@@ -527,8 +527,10 @@ sub block_wrap
 					$leadingSpaces = $1;
 					$str =~ s/^\s+//;
 				}
+				my $shaped = $canvas-> text_shape($str, rtl => $flags);
 				my $l = $canvas-> text_wrap( $str, $width - $apx - $x,
-					tw::ReturnFirstLineLength | tw::BreakSingle | $wrap_opts );
+					tw::ReturnFirstLineLength | tw::BreakSingle | $wrap_opts,
+					8, 0, -1, $shaped);
 				if ( $l > 0) {
 					if ( $has_text) {
 						push @$z, OP_TEXT,

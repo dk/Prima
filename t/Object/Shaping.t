@@ -458,7 +458,7 @@ sub test_glyphs_wrap
 	is( scalar(@$r), 2, "wrap: split to 2 pieces");
 	is_deeply( $r->[0]->glyphs, [ $z->glyphs->[0] ], "glyphs 1");
 	is_deeply( $r->[1]->glyphs, [ $z->glyphs->[1] ], "glyphs 2");
-	is_deeply( $r->[0]->indexes, [ $z->indexes->[0], length('1') ], "indexes 1");
+	is_deeply( $r->[0]->indexes, [ $z->indexes->[0], length('12') ], "indexes 1");
 	is_deeply( $r->[1]->indexes, [ $z->indexes->[1], length('12') ], "indexes 2");
 	if ( $z-> advances ) {
 		is( $r->[0]->advances->[0], $z->advances->[0], "advances 1");
@@ -483,7 +483,7 @@ sub test_glyphs_wrap
 		is_deeply($r->[0]->glyphs, [$glyphs{xtr '%'}], 'ligature wrap, left glyphs');
 		is_deeply($r->[0]->indexes, [r(1),length('|/|')], 'ligature wrap, left indexes');
 		is_deeply($r->[1]->glyphs, [$glyphs{xtr '|'}], 'ligature wrap, right glyphs');
-		is_deeply($r->[1]->indexes, [r(0),length('|')], 'ligature wrap, right indexes');
+		is_deeply($r->[1]->indexes, [r(0),length('|/|')], 'ligature wrap, right indexes');
 
 		$z = $w-> text_wrap_shape(xtr('/|') . "\n" . xtr('/|') . "~p",
 			undef,
@@ -511,10 +511,7 @@ sub test_combining { SKIP: {
 	if ( !$z && $w->font->name ne $::application->get_default_font->{name} ) {
 		$w->font->set( %{ $::application-> get_default_font}, size => 12 );
 		$z = $w-> text_shape( "\x{100}\x{300}", polyfont => 0 )->advances;
-		goto NO_ADVANCE unless $z;
-	} else {
-	NO_ADVANCE:
-		skip($w->font->name . " does not create advances table", 1) 
+		skip($w->font->name . " does not create advances table", 1) unless $z; 
 	}
 	ok( $z->[0] != 0, "'A' has non-zero advance");
 	if ( $xp ) {

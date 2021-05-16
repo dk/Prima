@@ -1344,6 +1344,7 @@ struct MsgDlg {
 	Point   btnSz;
 	Bool    wide;
 	char ** wrapped;
+	int     count;
 	int     wrappedCount;
 	int    *widths, *lengths;
 	int     OKwidth;

@@ -1473,10 +1473,12 @@ When set, shaping process can take in the account the language of the text.
 F.ex. text C<"ae"> might be shaped as a single glyph I<E<aelig>> for the Latin
 language, but never for the English.
 
-=item level INTEGER = ts:XXX
+=item level INTEGER = ts::Full
 
 Selects the shaping (i.e. text to glyph conversion) level, how the system should treat the input text
-and how deep the shaping should go. One of the following C<ts::XXX> options:
+and how deep the shaping should go. 
+
+One of the following C<ts::XXX> options:
 
 =over
 
@@ -1897,12 +1899,13 @@ Renders B-spline curve from set of VERTICES to a polyline with given options.
 The method is internally used by C<spline> and C<fill_spline>, and is provided
 for cases when these are insufficient. See description of options in L<spline>.
 
-=item text_wrap TEXT, WIDTH, OPTIONS, TAB_INDENT = 8
+=item text_wrap TEXT, WIDTH, OPTIONS, [TAB_INDENT = 8, FROM = 0, LENGTH = -1, GLYPHS]
 
 Breaks TEXT string in chunks that must fit into WIDTH pixels wide box. TEXT
 is either character string, or a C<Prima::Drawable::Glyphs> object returned
 from C<text_shape>, or C<< Prima::Drawable::Glyphs->glyphs >> strings of
 glyphs. In the glyph cases, some wrapping options are not applicable.
+It is possible to send both text as TEXT and its shaped representation as GLYPHS.
 
 The break algorithm and its result are governed by OPTIONS integer value
 which is a combination of C<tw::> constants:
@@ -1970,11 +1973,16 @@ where each is a text offset within TEXT and its length.
 
 If unset, the resulting array consists of text chunks.
 
+=item tw::ReturnGlyphs
+
+If GLYPHS are set (only together with TEXT), this option becomes available
+to get the resulting chunks as sub-sets of GLYPHS.
+
 =item tw::ReturnLines
 
 Equals to 0, is a mnemonic to an unset tw::ReturnChunks.
 
-Not applicable in glyph wrapping.
+In glyph wrapping means C<tw::ReturnGlyphs>.
 
 =item tw::WordBreak
 
