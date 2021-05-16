@@ -1611,7 +1611,6 @@ sub set_tab_indent
 sub set_syntax_hilite
 {
 	my ( $self, $sh) = @_;
-	$sh = 0 if $self-> {wordWrap};
 	return if $sh == $self-> {syntaxHilite};
 	$self-> {syntaxHilite} = $sh;
 	$self-> reset_syntaxer if $sh;
