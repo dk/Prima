@@ -429,15 +429,7 @@ sub get_sub
 	my @sub;
 	$sub[GLYPHS]    = Prima::array::substr($glyphs, $from, $length);
 	$sub[INDEXES]   = Prima::array::substr($self->[INDEXES], $from, $length);
-	my $max_index   = 0;
-	my $next_index  = $self->[INDEXES]->[-1]; # next index (or text length) after 
-	for my $ix ( map { $_ & ~to::RTL } @{ $sub[INDEXES] } ) {
-		$max_index = $ix if $max_index < $ix;
-	}
-	for my $ix ( map { $_ & ~to::RTL } @{ $self->[INDEXES] } ) {
-		$next_index = $ix if $ix > $max_index && $ix < $next_index;
-	}
-	push @{$sub[INDEXES]}, $next_index;
+	push @{$sub[INDEXES]}, $self->[INDEXES]->[-1];
 
 	if ( $self-> [ADVANCES] ) {
 		$sub[ADVANCES]  = Prima::array::substr($self->[ADVANCES], $from, $length);
@@ -646,8 +638,8 @@ sub x2cluster
 	my ( $self, $canvas, $width, $from, $length ) = @_;
 	$from //= 0;
 	$length //= -1;
-	my $glyph = $canvas-> text_wrap($self, $width, 
-		tw::ReturnFirstLineLength | tw::BreakSingle, 8, 
+	my $glyph = $canvas-> text_wrap($self, $width,
+		tw::ReturnFirstLineLength | tw::BreakSingle, 8,
 		$from, $length
 	);
 	return $self-> glyph2cluster($glyph);

@@ -354,8 +354,8 @@ t/Object/Object.t
 t/Object/Polyfont.t
 t/Object/Region.t
 t/Object/Shaping.t
+t/Object/TextWrap.t
 t/Object/Timer.t
-t/Object/Unicode.t
 t/Widget/Basic.t
 t/Widget/Desktop.t
 t/Widget/Key.t
