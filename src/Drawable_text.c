@@ -1780,6 +1780,11 @@ text_init_wrap_rec( Handle self, SV * text, int width, int options, int tabInden
 	t-> ascii     = &var-> font_abc_ascii;
 	t-> unicode   = &var-> font_abc_unicode;
 	t-> t_char    = NULL;
+	t-> t_start   = C_NUMERIC_UNDEF;
+	t-> t_end     = C_NUMERIC_UNDEF;
+	t-> t_line    = C_NUMERIC_UNDEF;
+	t-> t_pos     = C_NUMERIC_UNDEF;
+	t-> t_bytepos = C_NUMERIC_UNDEF;
 	t-> count     = 0;
 }
 
@@ -2431,11 +2436,8 @@ Drawable_do_text_wrap( Handle self, TextWrapRec * tw, GlyphWrapRec * gw, uint16_
 	}
 
 	/* fill ~ location */
-	if ( tw ) {
-		tw-> t_start = tw-> t_end = C_NUMERIC_UNDEF;
-		if ( wr.tilde_index >= 0 && !(wr.options & twReturnChunks))
-			fill_tilde_properties(self, tw, wr.tilde_index, wr.tilde_pos, wr.tilde_char_pos, wr.tilde_offset);
-	}
+	if (tw && wr.tilde_index >= 0 && !(wr.options & twReturnChunks))
+		fill_tilde_properties(self, tw, wr.tilde_index, wr.tilde_pos, wr.tilde_char_pos, wr.tilde_offset);
 
 	return wr.storage;
 }
