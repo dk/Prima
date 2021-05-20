@@ -277,6 +277,7 @@ sub on_mouseup
 sub on_mousemove
 {
 	my ( $self, $mod, $x, $y) = @_;
+	return if $self->{no_mouse_move};
 	unless ( $self-> {transaction}) {
 		if ( $self-> enabled ) {
 			my $p = $self-> point2area( $x, $y);
@@ -338,6 +339,7 @@ sub on_mousemove
 		$self-> {tabId} = $p;
 		$self-> repaint;
 		$self-> notify(q(MoveItem), $o, $p);
+		local $self->{no_mouse_move} = 1;
 		$self-> pointerPos( @ppos) if $newpos;
 	} else {
 		my @sz = $self-> size;
