@@ -1115,12 +1115,15 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 
 	if ( useRPDraw) {
 		HDC dc;
-		HGDIOBJ o_pen, o_brush, o_font, o_pal, o_extpen;
 		Handle owner = var owner;
 		Point tr = dsys(owner)transform2;
 		Point ed = apc_widget_get_pos( self);
 		Point sz = apc_widget_get_size( self);
 		Point so = CWidget(owner)-> get_size( owner);
+		Bool flag;
+		int saved_dc_state;
+		POINT brushorg;
+		FLOAT miter;
 
 		CWidget( owner)-> begin_paint( owner);
 		dc = dsys( owner) ps;
@@ -1130,19 +1133,26 @@ apc_widget_begin_paint( Handle self, Bool insideOnPaint)
 		apc_gp_set_transform( owner, 0, 0);
 		apc_gp_set_text_out_baseline( owner, dsys(owner) options. aptTextOutBaseline);
 
-		SelectObject( sys ps, o_pen    = GetCurrentObject( dc, OBJ_PEN));
-		SelectObject( sys ps, o_brush  = GetCurrentObject( dc, OBJ_BRUSH));
-		SelectObject( sys ps, o_font   = GetCurrentObject( dc, OBJ_FONT));
-		SelectObject( sys ps, o_pal    = GetCurrentObject( dc, OBJ_PAL));
-		SelectObject( sys ps, o_extpen = GetCurrentObject( dc, OBJ_EXTPEN));
+		saved_dc_state = SaveDC( sys ps );
+		SelectObject( sys ps, GetCurrentObject( dc, OBJ_PEN));
+		SelectObject( sys ps, GetCurrentObject( dc, OBJ_BRUSH));
+		SelectObject( sys ps, GetCurrentObject( dc, OBJ_FONT));
+		SelectObject( sys ps, GetCurrentObject( dc, OBJ_PAL));
+		SelectObject( sys ps, GetCurrentObject( dc, OBJ_EXTPEN));
+		SetTextAlign( sys ps, GetTextAlign( dc ));
+		GetBrushOrgEx( dc, &brushorg);
+		SetBrushOrgEx( sys ps, brushorg.x, brushorg.y, NULL);
+		GetMiterLimit( dc, &miter);
+		SetMiterLimit( sys ps, miter, NULL);
+		SetBkMode( sys ps, GetBkMode( dc ));
+		SetROP2( sys ps, GetROP2( dc ));
+		SetStretchBltMode( sys ps, GetStretchBltMode( dc ));
 
+		flag = exception_block(true);
 		CWidget( owner)-> notify( owner, "sH", "Paint", owner);
+		exception_block(flag);
 
-		SelectObject( sys ps, o_pen);
-		SelectObject( sys ps, o_brush);
-		SelectObject( sys ps, o_font);
-		SelectObject( sys ps, o_pal);
-		SelectObject( sys ps, o_extpen);
+		RestoreDC( sys ps, saved_dc_state);
 
 		dsys(owner)transform2 = tr;
 		apc_gp_set_transform( owner, 0, 0);
