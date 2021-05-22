@@ -1887,8 +1887,8 @@ and returns 4 numerics for left,bottom,width,and height of the box enclosure.
 =item integer BOOLEAN
 
 By default the result is returned as a set of floating point numerics, however
-if integer results are needed, the results are transformed as to integers using
-the I<int = float + ((float < 0) ? -0.5 : 0.5)> formula.
+if integer results are needed, the results are transformed to integers using
+the I<< int = float + ((float < 0) ? -0.5 : 0.5) >> formula.
 
 =back
 

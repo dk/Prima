@@ -384,9 +384,9 @@ See L<Prima::Widget/pointerType>
 	cr::SizeSW                  down-right move action pointer
 	cr::Invalid                 invalid action pointer
 	cr::DragNone                pointer for an invalid dragging target
-	cr::DragCopy                pointer to show that a dnd::Copy action can be accepted
-	cr::DragMove                pointer to show that a dnd::Move action can be accepted
-	cr::DragLink                pointer to show that a dnd::Link action can be accepted
+	cr::DragCopy                pointer to indicate that a dnd::Copy action can be accepted
+	cr::DragMove                pointer to indicate that a dnd::Move action can be accepted
+	cr::DragLink                pointer to indicate that a dnd::Link action can be accepted
 	cr::User                    user-defined icon
 
 =head2 dbt::  - device bitmap types
