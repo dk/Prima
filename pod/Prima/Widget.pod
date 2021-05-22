@@ -1648,6 +1648,10 @@ TYPE can accept one constant of C<cr::XXX> set:
    cr::SizeNE                  up-left move action pointer
    cr::SizeSW                  down-right move action pointer
    cr::Invalid                 invalid action pointer
+   cr::DragNone                pointer for an invalid dragging target
+   cr::DragCopy                pointer to indicate that a dnd::Copy action can be accepted
+   cr::DragMove                pointer to indicate that a dnd::Move action can be accepted
+   cr::DragLink                pointer to indicate that a dnd::Link action can be accepted
    cr::User                    user-defined icon
 
 All constants except C<cr::User> and C<cr::Default> present a system-defined
