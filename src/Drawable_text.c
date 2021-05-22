@@ -2538,6 +2538,10 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 	void *subglyphs = NULL;
 	uint16_t *log2vis = NULL;
 
+	if ( !SvROK(glyphs) || SvTYPE( SvRV(glyphs)) != SVt_PVAV ) {
+		warn("Drawable::text_wrap: not a glyph array passed");
+		return nilSV;
+	}
 	if (!read_glyphs(&g, glyphs, 1, "Drawable::text_wrap"))
 		return nilSV;
 	text_init_wrap_rec( self, text, width, options, tabIndent, 0, -1, &tw);
