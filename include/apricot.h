@@ -3179,17 +3179,21 @@ IST(BoxX)
 IST(BoxY)
 #define    istBox                (istBoxX|istBoxY)
 IST(Box)
-#define    istTriangle           4
+#define    istAND                4
+IST(AND)
+#define    istOR                 5
+IST(OR)
+#define    istTriangle           6
 IST(Triangle)
-#define    istQuadratic          5
+#define    istQuadratic          7
 IST(Quadratic)
-#define    istSinc               6
+#define    istSinc               8
 IST(Sinc)
-#define    istHermite            7
+#define    istHermite            9
 IST(Hermite)
-#define    istCubic              8
+#define    istCubic              10
 IST(Cubic)
-#define    istGaussian           9
+#define    istGaussian           11
 IST(Gaussian)
 END_TABLE(ist,UV)
 #define istMax istGaussian
