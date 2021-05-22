@@ -7,47 +7,60 @@ extern "C" {
 #define var (( PImage) self)
 #define my  ((( PImage) self)-> self)
 
-#define BS_BYTEIMPACT( type)                                                        \
-void bs_##type##_in( type * srcData, type * dstData, int w, int x, int absx, long step)  \
-{                                                                                   \
-	Fixed count = {0};                                                               \
-	int   last = 0;                                                                  \
-	int   i;                                                                         \
-	int   j    = ( x == absx) ? 0 : ( absx - 1);                                     \
-	int   inc  = ( x == absx) ? 1 : -1;                                              \
-	dstData[j] = srcData[0];                                                         \
-	j += inc;                                                                        \
-	for ( i = 0; i < w; i++)                                                         \
-	{                                                                                \
-		if ( count.i.i > last)                                                        \
-		{                                                                             \
-			dstData[j] = srcData[i];                                                   \
-			j += inc;                                                                  \
-			last = count. i. i;                                                        \
-		}                                                                             \
-		count. l += step;                                                             \
-	}                                                                                \
+#define BS_BYTEIMPACT_ROP(type,op,expr)               \
+void bs_##type##_##op(                                \
+	type * srcData, type * dstData,               \
+	int w, int x, int absx, long step             \
+){                                                    \
+	Fixed count = {0};                            \
+	int   last = 0;                               \
+	int   i, k;                                   \
+	int   j    = ( x == absx) ? 0 : ( absx - 1);  \
+	int   inc  = ( x == absx) ? 1 : -1;           \
+	dstData[k=j] = srcData[0];                    \
+	j += inc;                                     \
+	for ( i = 0; i < w; i++)                      \
+	{                                             \
+		if ( count.i.i > last)                \
+		{                                     \
+			dstData[k=j] = srcData[i];    \
+			j += inc;                     \
+			last = count. i. i;           \
+		}                                     \
+		count. l += step;                     \
+		expr;                                 \
+	}                                             \
 }
 
-#define BS_BYTEEXPAND( type)                                                        \
-void bs_##type##_out( type * srcData, type * dstData, int w, int x, int absx, long step) \
-{                                                                                   \
-	Fixed count = {0};                                                               \
-	int   i;                                                                         \
-	int   j    = ( x == absx) ? 0 : ( absx - 1);                                     \
-	int   inc  = ( x == absx) ? 1 : -1;                                              \
-	int   last = 0;                                                                  \
-	for ( i = 0; i < absx; i++)                                                      \
-	{                                                                                \
-		if ( count. i. i > last)                                                      \
-		{                                                                             \
-			last = count. i. i;                                                        \
-			srcData++;                                                                 \
-		}                                                                             \
-		count. l += step;                                                             \
-		dstData[j] = *srcData;                                                        \
-		j += inc;                                                                     \
-	}                                                                                \
+#define BS_BYTEIMPACT(type)                           \
+	BS_BYTEIMPACT_ROP(type,in,)
+
+#define BS_BYTEIMPACT_INT(type)                       \
+	BS_BYTEIMPACT_ROP(type,in,)                   \
+	BS_BYTEIMPACT_ROP(type,and,dstData[k]&=srcData[i]) \
+	BS_BYTEIMPACT_ROP(type,or,dstData[k]|=srcData[i])
+
+#define BS_BYTEEXPAND( type)                          \
+void bs_##type##_out(                                 \
+	type * srcData, type * dstData,               \
+	int w, int x, int absx, long step             \
+){                                                    \
+	Fixed count = {0};                            \
+	int   i;                                      \
+	int   j    = ( x == absx) ? 0 : ( absx - 1);  \
+	int   inc  = ( x == absx) ? 1 : -1;           \
+	int   last = 0;                               \
+	for ( i = 0; i < absx; i++)                   \
+	{                                             \
+		if ( count. i. i > last)              \
+		{                                     \
+			last = count. i. i;           \
+			srcData++;                    \
+		}                                     \
+		count. l += step;                     \
+		dstData[j] = *srcData;                \
+		j += inc;                             \
+	}                                             \
 }
 
 BS_BYTEEXPAND( uint8_t)
@@ -59,10 +72,12 @@ BS_BYTEEXPAND( double)
 BS_BYTEEXPAND( Complex)
 BS_BYTEEXPAND( DComplex)
 
-BS_BYTEIMPACT( uint8_t)
-BS_BYTEIMPACT( int16_t)
+BS_BYTEIMPACT_INT( uint8_t)
+BS_BYTEIMPACT_INT( int16_t)
+BS_BYTEIMPACT_INT( int32_t)
 BS_BYTEIMPACT( RGBColor)
-BS_BYTEIMPACT( int32_t)
+BS_BYTEIMPACT_ROP(RGBColor,and,dstData[k].r&=srcData[i].r;dstData[k].g&=srcData[i].g;dstData[k].b&=srcData[i].b)
+BS_BYTEIMPACT_ROP(RGBColor,or, dstData[k].r|=srcData[i].r;dstData[k].g|=srcData[i].g;dstData[k].b|=srcData[i].b)
 BS_BYTEIMPACT( float)
 BS_BYTEIMPACT( double)
 BS_BYTEIMPACT( Complex)
@@ -115,6 +130,60 @@ bs_mono_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long s
 			count. l += step;
 		}
 		dstData[( j + 1) >> 3] = xd;
+	}
+}
+
+void
+bs_mono_and( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
+{
+	Fixed count = {0};
+	int   last = 0;
+	int   i, k;
+	int   j    = ( x == absx) ? 0 : ( absx - 1);
+	int   inc  = ( x == absx) ? 1 : -1;
+	k = j;
+	dstData[j >> 3] = srcData[0] & 0x80;
+	j += inc;
+	for ( i = 0; i < w; i++)
+	{
+		if ( count.i.i > last) {
+			k = j;
+			if ( srcData[i >> 3] & ( 1 << (7 - (i & 7)) ))
+				dstData[j >> 3] |= 1 << (7 - (j & 7));
+			else
+				dstData[j >> 3] &= ~(1 << (7 - (j & 7)));
+			j += inc;
+			last = count. i. i;
+		} else if (( srcData[i >> 3] & ( 1 << (7 - (i & 7)) )) == 0)
+			dstData[k >> 3] &= ~(1 << (7 - (k & 7)));
+		count. l += step;
+	}
+}
+
+void
+bs_mono_or( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
+{
+	Fixed count = {0};
+	int   last = 0;
+	int   i, k;
+	int   j    = ( x == absx) ? 0 : ( absx - 1);
+	int   inc  = ( x == absx) ? 1 : -1;
+	k = j;
+	dstData[j >> 3] = srcData[0] & 0x80;
+	j += inc;
+	for ( i = 0; i < w; i++)
+	{
+		if ( count.i.i > last) {
+			k = j;
+			if ( srcData[i >> 3] & ( 1 << (7 - (i & 7)) ))
+				dstData[j >> 3] |= 1 << (7 - (j & 7));
+			else
+				dstData[j >> 3] &= ~(1 << (7 - (j & 7)));
+			j += inc;
+			last = count. i. i;
+		} else if ( srcData[i >> 3] & ( 1 << (7 - (i & 7))))
+			dstData[k >> 3] |= 1 << (7 - (k & 7));
+		count. l += step;
 	}
 }
 
@@ -193,6 +262,68 @@ void bs_nibble_in( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx,
 	}
 }
 
+void bs_nibble_and( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
+{
+	Fixed count = {0};
+	int   last = 0;
+	int   i, k;
+	int   j    = ( x == absx) ? 0 : ( absx - 1);
+	int   inc  = ( x == absx) ? 1 : -1;
+	k = j;
+	dstData[ j >> 1] |= ( j & 1) ? ( srcData[ 0] >> 4) : ( srcData[ 0] & 0xF0);
+	j += inc;
+	for ( i = 0; i < w; i++)
+	{
+		if ( count.i.i > last)
+		{
+			k = j;
+			if ( i & 1)
+				dstData[ j >> 1] |= ( j & 1) ? ( srcData[ i >> 1] & 0x0F) : ( srcData[ i >> 1] << 4);
+			else
+				dstData[ j >> 1] |= ( j & 1) ? ( srcData[ i >> 1] >> 4) : ( srcData[ i >> 1] & 0xF0);
+			j += inc;
+			last = count. i. i;
+		} else {
+			if ( i & 1)
+				dstData[ k >> 1] &= ( k & 1) ? ((srcData[ i >> 1] & 0x0F) | 0xF0) : ((srcData[ i >> 1] << 4) | 0x0F);
+			else
+				dstData[ k >> 1] &= ( k & 1) ? ((srcData[ i >> 1] >> 4) | 0xF0) : (( srcData[ i >> 1] & 0xF0) | 0x0F);
+		}
+		count. l += step;
+	}
+}
+
+void bs_nibble_or( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
+{
+	Fixed count = {0};
+	int   last = 0;
+	int   i, k;
+	int   j    = ( x == absx) ? 0 : ( absx - 1);
+	int   inc  = ( x == absx) ? 1 : -1;
+	k = j;
+	dstData[ j >> 1] |= ( j & 1) ? ( srcData[ 0] >> 4) : ( srcData[ 0] & 0xF0);
+	j += inc;
+	for ( i = 0; i < w; i++)
+	{
+		if ( count.i.i > last)
+		{
+			k = j;
+			if ( i & 1)
+				dstData[ j >> 1] |= ( j & 1) ? ( srcData[ i >> 1] & 0x0F) : ( srcData[ i >> 1] << 4);
+			else
+				dstData[ j >> 1] |= ( j & 1) ? ( srcData[ i >> 1] >> 4) : ( srcData[ i >> 1] & 0xF0);
+			j += inc;
+			last = count. i. i;
+		} else {
+			if ( i & 1)
+				dstData[ k >> 1] |= ( k & 1) ? ( srcData[ i >> 1] & 0x0F) : ( srcData[ i >> 1] << 4);
+			else
+				dstData[ k >> 1] |= ( k & 1) ? ( srcData[ i >> 1] >> 4) : ( srcData[ i >> 1] & 0xF0);
+		}
+		count. l += step;
+	}
+}
+
 void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx, long step)
 {
 	Fixed count = {0};
@@ -219,8 +350,53 @@ void bs_nibble_out( uint8_t * srcData, uint8_t * dstData, int w, int x, int absx
 
 #define STEP(x) ((double)x * (double)(UINT16_PRECISION))
 
-void
-ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch)
+typedef struct {
+	int type;
+	PStretchProc in, and, or, out;
+} stretch_t;
+
+static stretch_t stretch_procs[] = {
+#define SDECL(a,b) ((PStretchProc)bs_##a##_##b)
+#define STRETCH_STD(type) SDECL(type,in),SDECL(type,in), SDECL(type,in),SDECL(type,out)
+#define STRETCH_INT(type) SDECL(type,in),SDECL(type,and),SDECL(type,or),SDECL(type,out)
+	{imMono,               STRETCH_INT(mono)     },
+	{imBW,                 STRETCH_INT(mono)     },
+	{imNibble,             STRETCH_INT(nibble)   },
+	{imNibble|imGrayScale, STRETCH_INT(nibble)   },
+	{imByte,               STRETCH_INT(uint8_t)  },
+	{im256,                STRETCH_INT(uint8_t)  },
+	{imRGB,                STRETCH_INT(RGBColor) },
+	{imRGB|imGrayScale,    STRETCH_INT(RGBColor) },
+	{imShort,              STRETCH_INT(int16_t)  },
+	{imLong,               STRETCH_INT(int32_t)  },
+	{imFloat,              STRETCH_STD(float)    },
+	{imDouble,             STRETCH_STD(double)   },
+	{imComplex,            STRETCH_STD(Complex)  },
+	{imDComplex,           STRETCH_STD(DComplex) },
+	{imTrigComplex,        STRETCH_STD(Complex)  },
+	{imTrigDComplex,       STRETCH_STD(DComplex) }
+#undef STRETCH_STD
+#undef STRETCH_INT
+#undef SDECL
+};
+
+typedef void BitBltProc( Byte * src, Byte * dst, int count);
+typedef BitBltProc *PBitBltProc;
+
+static void
+bitblt_or( Byte * src, Byte * dst, int count)
+{
+	while ( count--) *(dst++) |= *(src++);
+}
+
+static void
+bitblt_and( Byte * src, Byte * dst, int count)
+{
+	while ( count--) *(dst++) &= *(src++);
+}
+
+Bool
+ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, Bool xStretch, Bool yStretch, int impl)
 {
 	int  absh = h < 0 ? -h : h;
 	int  absw = w < 0 ? -w : w;
@@ -231,8 +407,10 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 	int last = 0;
 	int i;
 	int yMin = ( srcH > absh) ? absh : srcH;
-	PStretchProc proc = ( PStretchProc) nil;
-	Byte *srcLast = nil;
+	PStretchProc xproc = NULL;
+	PBitBltProc yproc = NULL;
+	Byte *srcLast = NULL, impl_buf[1024];
+	semistatic_t pimpl_buf;
 
 	if ( w == srcW) xStretch = false;
 	if ( h == srcH) yStretch = false;
@@ -241,8 +419,8 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 	{
 		int y;
 		int xMin = (( type & imBPP) < 8) ?
-						( srcLine > dstLine) ? dstLine : srcLine :
-						(((( srcW > absw) ? absw : srcW) * ( type & imBPP)) / 8);
+			( srcLine > dstLine) ? dstLine : srcLine :
+			(((( srcW > absw) ? absw : srcW) * ( type & imBPP)) / 8);
 		if ( srcW < w || srcH < absh) memset( dstData, 0, dstLine * absh);
 		if ( h < 0)
 		{
@@ -251,8 +429,29 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 		}
 		for ( y = 0; y < yMin; y++, srcData += srcLine, dstData += dstLine)
 			memcpy( dstData, srcData, xMin);
-		return;
+		return true;
 	}
+
+/* define processors */
+	if ( yStretch && absh < srcH && impl != 0)
+		yproc = (impl == istAND) ? bitblt_and : bitblt_or;
+	for ( i = 0; i < sizeof(stretch_procs)/sizeof(stretch_t); i++) {
+		if ( stretch_procs[i].type != type ) continue;
+		if ( srcW > absw) {
+			if ( impl == istAND )
+				xproc = stretch_procs[i].and;
+			else if ( impl == istOR )
+				xproc = stretch_procs[i].or;
+			else
+				xproc = stretch_procs[i].in;
+			if ( xproc == stretch_procs[i].in )
+				yproc = NULL;
+		} else
+			xproc = stretch_procs[i].out;
+		break;
+	}
+	if ( xproc == NULL ) return false;
+
 
 /* y-only stretch case */
 	if ( !xStretch && yStretch && ( w > 0))
@@ -260,6 +459,7 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 		int xMin = (( type & imBPP) < 8) ?
 			( srcLine > dstLine) ? dstLine : srcLine :
 			(((( srcW > absw) ? absw : srcW) * ( type & imBPP)) / 8);
+		Byte *lastDstData;
 		count. l = 0;
 		if ( srcW < w) memset( dstData, 0, dstLine * absh);
 		if ( h < 0)
@@ -270,16 +470,17 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 		if ( absh < srcH)
 		{
 			ystep. l = STEP( absh / srcH );
-			memcpy( dstData, srcData, xMin);
+			memcpy( lastDstData = dstData, srcData, xMin);
 			dstData += dstLine;
 			for ( i = 0; i < srcH; i++)
 			{
 				if ( count. i.i > last)
 				{
-					memcpy( dstData, srcData, xMin);
+					memcpy( lastDstData = dstData, srcData, xMin);
 					dstData += dstLine;
 					last = count.i.i;
-				}
+				} else if ( yproc && i > 0 )
+					yproc( srcData, lastDstData, xMin );
 				count. l += ystep. l;
 				srcData += srcLine;
 			}
@@ -297,7 +498,7 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 				dstData  += dstLine;
 			}
 		}
-		return;
+		return true;
 	}
 
 /* general actions for x-scaling */
@@ -308,31 +509,6 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 		xstep. l = STEP( absw / srcW);
 	else
 		xstep. l = STEP( srcW / absw);
-	switch( type)
-	{
-		case imMono:     case imBW:
-			proc = ( PStretchProc)(( srcW > absw) ? bs_mono_in : bs_mono_out);  break;
-		case imNibble:   case imNibble|imGrayScale:
-			proc = ( PStretchProc)(( srcW > absw) ? bs_nibble_in : bs_nibble_out);     break;
-		case imByte:     case im256:
-			proc = ( PStretchProc)(( srcW > absw) ? bs_uint8_t_in : bs_uint8_t_out);   break;
-		case imRGB:      case imRGB|imGrayScale:
-			proc = ( PStretchProc)(( srcW > absw) ? bs_RGBColor_in : bs_RGBColor_out); break;
-		case imShort:
-			proc = ( PStretchProc)(( srcW > absw) ? bs_int16_t_in : bs_int16_t_out);   break;
-		case imLong:
-			proc = ( PStretchProc)(( srcW > absw) ? bs_int32_t_in : bs_int32_t_out);   break;
-		case imFloat:
-			proc = ( PStretchProc)(( srcW > absw) ? bs_float_in : bs_float_out);       break;
-		case imDouble:
-			proc = ( PStretchProc)(( srcW > absw) ? bs_double_in : bs_double_out);     break;
-		case imComplex:  case imTrigComplex:
-			proc = ( PStretchProc)(( srcW > absw) ? bs_Complex_in : bs_Complex_out);   break;
-		case imDComplex: case imTrigDComplex:
-			proc = ( PStretchProc)(( srcW > absw) ? bs_DComplex_in : bs_DComplex_out); break;
-		default:
-			return;
-	}
 
 /* no vertical stretch case */
 	if ( !yStretch || ( srcH == -h))
@@ -343,11 +519,19 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 			dstLine = -dstLine;
 		}
 		for ( i = 0; i < yMin; i++, srcData += srcLine, dstData += dstLine)
-			proc( srcData, dstData, srcW, w, absw, xstep.l);
-		return;
+			xproc( srcData, dstData, srcW, w, absw, xstep.l);
+		return true;
 	}
 
 /* general case */
+	if ( yproc ) {
+		semistatic_init(&pimpl_buf, &impl_buf, 1, 1024);
+		if ( !semistatic_expand(&pimpl_buf, dstLine)) {
+			warn("Not enough memory");
+			return false;
+		}
+	}
+
 	if ( h < 0)
 	{
 		dstData += dstLine * ( absh - 1);
@@ -356,18 +540,23 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 	if ( absh < srcH)
 	{
 		int j = 0;
+		Byte * lastDstData;
 		ystep. l = STEP( absh / srcH);
-		proc( srcData, dstData, srcW, w, absw, xstep.l);
+		xproc( srcData, lastDstData = dstData, srcW, w, absw, xstep.l);
 		dstData += dstLine;
 		j++;
 		for ( i = 0; i < srcH; i++)
 		{
 			if ( count. i.i > last)
 			{
-				proc( srcData, dstData, srcW, w, absw, xstep.l);
+				xproc( srcData, lastDstData = dstData, srcW, w, absw, xstep.l);
 				dstData += dstLine;
 				last = count.i.i;
 				j++;
+			} else if ( yproc && i > 0 ) {
+				bzero(pimpl_buf.heap, dstLine);
+				xproc( srcData , pimpl_buf.heap, srcW, w, absw, xstep.l);
+				yproc( pimpl_buf.heap, lastDstData, dstLine);
 			}
 			count. l += ystep. l;
 			srcData += srcLine;
@@ -385,12 +574,17 @@ ic_stretch_box( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, in
 			if ( srcLast == srcData) {
 				memcpy( dstData, dstData - dstLine, dstLine < 0 ? -dstLine : dstLine);
 			} else {
-				proc( srcData, dstData, srcW, w, absw, xstep.l);
+				xproc( srcData, dstData, srcW, w, absw, xstep.l);
 				srcLast = srcData;
 			}
 			dstData += dstLine;
 		}
 	}
+
+	if ( yproc )
+		semistatic_done(&pimpl_buf);
+
+	return true;
 }
 
 /* Resizing with filters - stolen from ImageMagick MagickCore/resize.c */
@@ -910,7 +1104,8 @@ ic_stretch_filtered( int type, Byte * oldData, int oldW, int oldH, Byte * newDat
 int
 ic_stretch_suggest_type( int type, int scaling )
 {
-	if ( scaling <= istBox ) return type;
+	if ( scaling <= istOR )
+		return type;
 
 	switch (type) {
 	case imMono:
@@ -932,8 +1127,9 @@ Bool
 ic_stretch( int type, Byte * srcData, int srcW, int srcH, Byte * dstData, int w, int h, int scaling, char * error)
 {
 	if ( scaling <= istBox ) {
-		ic_stretch_box( type, srcData, srcW, srcH, dstData, w, h, scaling & istBoxX, scaling & istBoxY);
-		return true;
+		return ic_stretch_box( type, srcData, srcW, srcH, dstData, w, h, scaling & istBoxX, scaling & istBoxY, 0);
+	} else if ( scaling <= istOR ) {
+		return ic_stretch_box( type, srcData, srcW, srcH, dstData, w, h, 1, 1, scaling);
 	} else {
 		return ic_stretch_filtered( type, srcData, srcW, srcH, dstData, w, h, scaling, error );
 	}

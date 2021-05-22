@@ -503,6 +503,12 @@ Can be one of C<ist:::XXX> constants:
                    rows will behave same as in ist::Box
   ist::BoxY      - rows will behave same as in ist::None,
                    columns will behave same as in ist::Box
+  ist::AND       - when row or columns is to be shrunk, leftover pixels
+                   will be AND-end together (for black on white)
+		   ( does not work for floating poing pixels )
+  ist::OR        - when row or columns is to be shrunk, leftover pixels
+                   will be OR-end together (for white on black)
+		   ( does not work for floating poing pixels )
   ist::Triangle  - bilinear interpolation
   ist::Quadratic - 2rd order (quadratic) B-Spline approximation of Gaussian
   ist::Sinc      - sine function
