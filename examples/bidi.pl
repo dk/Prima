@@ -81,6 +81,13 @@ $arabic = $panel->insert( Label =>
 	showPartial => 0,
 );
 
+{
+	# dirty hack -- only to demonstrate kashida justification
+	no strict 'refs';
+	my $p = Prima::Label->can('text_wrap_shape');
+	*{'Prima::Label::text_wrap_shape'} = sub {$p->(@_, with_kashida => 1)};
+}
+
 $pod = $panel-> insert( PodView =>
 	packInfo => { fill => 'both', expand => 1, pad => 10 , side => 'left'},
 	geometry => gt::Pack,
