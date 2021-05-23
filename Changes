@@ -1,5 +1,14 @@
 Revision history for Perl module Prima
 
+1.62 202X-XX-XX
+ - Add Prima::sys::FS to operate on unicode filenames
+ - Add Prima::Drawable::Antialias for drawing aliased graphic primitives
+ - Interactive selection change in Edit and PodView does not flicker now
+ - Drawable::text_wrap can operate on text together with glyph objects,
+      allowing for proper wrapping of shaped text
+ - Added ist::OR and ist::AND image stretch types
+ - Implemented arabic kashida text justification
+
 1.61 2021-04-21
  - DWM API Removed (not useful on Windows 10)
  - Support regions and paths for the PS backend
