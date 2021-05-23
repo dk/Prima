@@ -1,7 +1,7 @@
 Revision history for Perl module Prima
 
 1.62 202X-XX-XX
- - Add Prima::sys::FS to operate on unicode filenames
+ - Add opendir/closedir/*dir for unicode operations
  - Add Prima::Drawable::Antialias for drawing aliased graphic primitives
  - Interactive selection change in Edit and PodView does not flicker now
  - Drawable::text_wrap can operate on text together with glyph objects,
