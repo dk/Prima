@@ -719,7 +719,7 @@ sub arabic_justify
 	return unless defined $cp;
 
 	# calculate how many tatweels to insert
-	my $curr_width = $canvas-> get_text_width( $self );
+	my $curr_width = $canvas-> get_text_width( $self, to::AddOverhangs );
 	my $expansion  = $width - $curr_width;
 	my $min_width  = delete $opt{min_kashida} // 0;
 	$min_width = 0 if $min_width < 0;
@@ -782,6 +782,57 @@ sub arabic_justify
 	}
 
 	return $new;
+}
+
+sub interspace_justify
+{
+	my ($self, $canvas, $text, $width, %opt) = @_;
+	my $interletter = $opt{letter} // 1;
+	my $interword   = $opt{word}   // 1;
+	return 0 unless $interletter || $interword;
+
+	my $curr_width  = $canvas->get_text_width($self, to::AddOverhangs);
+	return 0 if $curr_width > $width || $curr_width == 0;
+	my $advances = $self->[ADVANCES] or return 0;
+
+	my @spaces;
+	reset $text;
+	while ( 1 ) {
+		$text =~ m/\G\S+/gcs and next;
+		$text =~ m/\G\s+/gcs and do { push @spaces, pos($text); next };
+		$text =~ m/\G$/gcs and last;
+	}
+
+	# (Bringhurst 2008) suggests about 3% expansion or contraction of
+	# intercharacter spacing and about 2% expansion or contraction of
+	# glyphs as the largest permissible deviations -- Wikipedia
+	my $n_glyphs = scalar @{$self->[GLYPHS]};
+	my $indexes = $self->[INDEXES];
+	if ( $interletter) {
+		my $diff  = 1.0 + ($width - $curr_width) / $curr_width;
+		my $dw    = ( $diff > 1.05 ) ? 1.05 : $diff;
+		for ( my $i = 0; $i < $n_glyphs; $i++) {
+			my $xa = $advances->[$i];
+			$curr_width -= $xa;
+			$curr_width += $advances->[$i] = int($xa * $dw);
+		}
+	}
+
+	# the rest goes between words
+	if ( $interword && $width > $curr_width && @spaces) {
+		my $avg_space_incr   = ($width - $curr_width) / @spaces;
+		my $accumulated_incr = 0.0;
+		for ( my $i = 0; $i < $n_glyphs; $i++) {
+			my $ix = $indexes->[$i] & ~to::RTL;
+			next unless substr($text, $ix, 1) =~ /\s/;
+
+			my $dx = int( $avg_space_incr + $accumulated_incr );
+			$advances->[$i]   += $dx;
+			$accumulated_incr += $avg_space_incr - $dx;
+		}
+	}
+
+	return 1;
 }
 
 1;
@@ -1156,6 +1207,14 @@ Read-only accessor to the indexes, see L<Structure> above.
 
 Returns array where each glyph position is set to a number showing how many characters the
 cluster occupies at this position
+
+=item interspace_justify CANVAS, TEXT, WIDTH, %OPTIONS
+
+Performs inplace inter-letter (C<$OPTIONS{letter}>) and/or inter-word
+(C<$OPTIONS{word}>) justifications of non-arabic TEXT to the given WIDTH.
+Returns a boolean flag whether there were any change made.
+
+By default performs both word and letter justifications.
 
 =item left_overhang
 

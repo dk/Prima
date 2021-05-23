@@ -33,6 +33,7 @@ MSG
 	left  => $p-> {wheel}-> width * 0.125,
 	top => 0,
 	width => $p-> {wheel}-> width * 0.75,
+	textJustify => 1,
 );
 
 $p-> insert( Timer =>

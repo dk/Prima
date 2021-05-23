@@ -13,7 +13,7 @@ my $font_dialog;
 $::application->textDirection(1);
 
 $w = Prima::MainWindow-> create(
-	size => [ 430, 200],
+	size => [ 530, 250],
 	designScale => [7, 16],
 	text => "Bidirectional texts",
 	menuItems => [
@@ -52,7 +52,7 @@ $w-> insert( Button =>
 
 my $panel = $w->insert( Widget =>
 	origin => [ 10, 50 ],
-	size   => [ 410, 140 ],
+	size   => [ 510, 190 ],
 	growMode  => gm::Client,
 );
 
@@ -79,14 +79,8 @@ $arabic = $panel->insert( Label =>
 	text     => $arabic_text,
 	wordWrap => 1,
 	showPartial => 0,
+	textJustify => { kashida => 1 },
 );
-
-{
-	# dirty hack -- only to demonstrate kashida justification
-	no strict 'refs';
-	my $p = Prima::Label->can('text_wrap_shape');
-	*{'Prima::Label::text_wrap_shape'} = sub {$p->(@_, with_kashida => 1)};
-}
 
 $pod = $panel-> insert( PodView =>
 	packInfo => { fill => 'both', expand => 1, pad => 10 , side => 'left'},

@@ -31,17 +31,17 @@ my $b1 = $w->insert( Button => left => 20 => bottom => 0);
 $w->insert( Label =>
 # font => { height => 24},
 	origin => [ 20, 50],
-	text => "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+	text => "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et ".
+"dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo ".
+"consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. ".
+"Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
 	focusLink => $b1,
 	wordWrap => 1,
 	height => 80,
-	width => 112,
-	alignment => ta::Center,
+	width => 212,
 	growMode => gm::Client,
 	showPartial => 0,
+	textJustify => 1,
 );
 
 my $b2 = $w->insert( Button =>
@@ -57,6 +57,7 @@ $w->insert(
 	autoHeight => 1,
 	enabled    => 0,
 	growMode   => gm::GrowLoX,
+	textJustify => 1,
 );
 
 
