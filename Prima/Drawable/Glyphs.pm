@@ -678,10 +678,110 @@ sub cursor2offset
 			$len_right + $pos_right :
 			$len_left  + $pos_left;
 	}
-	
+
 	# cursor at the start or at the end
 	return $rtl_right ? $limit : 0 unless defined $pos_left;
 	return $rtl_left ? 0 : $limit;
+}
+
+# poor man's kashida justifier, doesn't use the JSTF table from the font
+sub arabic_justify
+{
+	my ($self, $canvas, $text, $width, %opt) = @_;
+
+	my $glyphs = $self->[GLYPHS];
+	my $length = @$glyphs;
+	return if @$glyphs < 2;
+
+	# find suitable codepoints
+	my $indexes = $self->[INDEXES];
+	my @lengths = $self->index_lengths;
+	my ($cp, $at_glyph);
+	for ( my $i = 0; $i < $length - 1; $i++) {
+		my ( $ix0, $ix1 ) = @$indexes[$i,$i+1];
+
+		# don't justify LTR arabic
+		next unless $ix0 & to::RTL;
+		$ix0 &= ~to::RTL;
+		$i++, next unless $ix1 & to::RTL;
+		$ix1 &= ~to::RTL;
+
+		my $chr = substr($text, $ix0, $lengths[$i]);
+		# all cps marked as LETTER from https://www.unicode.org/charts/PDF/U0600.pdf
+		next if $chr !~ /^[\x{620}-\x{64A}\x{674}-\x{6D3}\x{6D5}\x{6EE}\x{6EF}\x{6FA}-\x{6FC}\x{6FF}]+$/;
+
+		$chr = substr($text, $ix1, $lengths[$i]);
+		$i++, next if $chr !~ /^[\x{620}-\x{64A}\x{674}-\x{6D3}\x{6D5}\x{6EE}\x{6EF}\x{6FA}-\x{6FC}\x{6FF}]+$/;
+		$cp = $ix0;
+		$at_glyph = $i + 1;
+		last;
+	}
+	return unless defined $cp;
+
+	# calculate how many tatweels to insert
+	my $curr_width = $canvas-> get_text_width( $self );
+	my $expansion  = $width - $curr_width;
+	my $min_width  = delete $opt{min_kashida} // 0;
+	$min_width = 0 if $min_width < 0;
+	$expansion = $min_width if $expansion < $min_width;
+	return if $expansion == 0;
+
+	my $ins = $canvas-> text_shape( "\x{640}",
+		advances => 1,
+		reorder  => 0,
+		rtl      => 0,
+		level    => ts::Glyphs,
+	) or return 0;
+	my $k_width    = $ins->[ADVANCES]->[0];
+	return unless $k_width;
+
+	my $n_tatweels = int($expansion / $k_width);
+	$n_tatweels++ if $min_width > 0 && $k_width * $n_tatweels < $min_width;
+	substr($text, $cp, 0, "\x{640}" x $n_tatweels);
+
+	return $text if $opt{as_text};
+
+	my $new = $canvas->text_shape($text, %opt);
+	return unless $new;
+
+	$indexes      = $new->[INDEXES];
+	my $advances  = $new->[ADVANCES]  or return;
+	my $positions = $new->[POSITIONS] or return;
+
+	$length    = @$glyphs;
+	# are tatweels rendered as monotonically increased indexes?
+	for (
+		my ($i,$cmp) = ($at_glyph, $indexes->[$at_glyph] & ~to::RTL);
+		$i < $at_glyph + $n_tatweels;
+		$i++, $cmp--
+	) {
+		my $ix = $indexes->[$i];
+		return unless $ix & to::RTL;
+		$ix &= ~to::RTL;
+		return unless $ix == $cmp;
+	}
+
+	# fix clusters
+	my $left_cluster = $indexes->[$at_glyph - 1];
+	my $right_cluster = $indexes->[$at_glyph + $n_tatweels - 1] & ~to::RTL;
+	for ( my $i = $at_glyph; $i < $at_glyph + $n_tatweels; $i++) {
+		$indexes->[$i] = $left_cluster;
+		$advances->[$at_glyph - 1] += $advances->[$i];
+		$positions->[$i * 2] -= $advances->[$i] * $i;
+		$advances->[$i] = 0;
+	}
+
+	# fix text references
+	$length = @$indexes;
+	for ( my $i = 0; $i < $length; $i++) {
+		my $ix = $indexes->[$i];
+		my $fl = $ix & to::RTL;
+		$ix &= ~to::RTL;
+		next if $ix < $right_cluster;
+		$indexes->[$i] = ($ix - $n_tatweels) | $fl;
+	}
+
+	return $new;
 }
 
 1;
@@ -944,6 +1044,28 @@ Returns a, b, c metrics from the glyph C<$INDEX>
 =item advances
 
 Read-only accessor to the advances array, see L<Structure> above.
+
+=item arabic_justify CANVAS, TEXT, WIDTH, %OPTIONS
+
+Performs justifications of arabic TEXT with kashida to the given WIDTH,
+returns either new glyph object, or new text with explicit I<tatweel>
+characters inserted. If returning new object, eventual ligatures with inserted
+tatweels are resolved via a call to C<text_shape(%OPTIONS)>.
+
+If C<$OPTIONS{min_kashida}> is set, specifies minimal width of tatweels to be
+inserted.
+
+   my $text = "\x{6a9}\x{634}\x{6cc}\x{62f}\x{647}";
+   my $g = $canvas->text_shape($text) or return;
+   $canvas->text_out($g, 10, 50);
+   $g = $g->arabic_justify($canvas, $text, 200) or return;
+   $canvas->text_out($g, 10, 10);
+
+=for podview <img src="Prima/kashida.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/kashida.gif">
+
+Note: Does not use JSTF font table, on Windows results may be different from native rendering.
 
 =item clone
 

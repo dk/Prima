@@ -338,9 +338,27 @@ sub text_wrap_shape
 {
 	my ( $self, $text, $width, %opt) = @_;
 
-	my $shaped = $self-> text_shape( $text, %opt );
+	my $shaped = $self-> text_shape( $text, %opt ) or return;
 	my $opt    = delete($opt{options}) // tw::Default;
-	return $self-> text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8, 0, -1, $shaped);
+	my $ret    = $self-> text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8, 0, -1, $shaped);
+
+	if (
+		$opt{with_kashida} &&
+		$ret && @$ret && !($opt & tw::ReturnChunks) &&
+		$text =~ /[\x{600}-\x{6ff}]/
+	) {
+		my $tx;
+		my $ix = ($opt & (tw::CalcMnemonic | tw::CollapseTilde)) ? -2 : -1;
+		if ( $opt & tw::ReturnGlyphs ) {
+			$tx = $$ret[$ix]->arabic_justify($self, $text, $width, %opt);
+		} elsif ( my $sx = $self->text_shape( $$ret[$ix], %opt)) {
+			my @r = map { length } @$ret;
+			$tx = $sx->arabic_justify($self, $$ret[$ix], $width, %opt, as_text => 1);
+		}
+		$$ret[$ix] = $tx if defined $tx;
+	}
+
+	return $ret;
 }
 
 1;
