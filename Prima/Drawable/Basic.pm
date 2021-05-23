@@ -342,20 +342,30 @@ sub text_wrap_shape
 	my $opt    = delete($opt{options}) // tw::Default;
 	my $ret    = $self-> text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8, 0, -1, $shaped);
 
-	if (
-		$opt{with_kashida} &&
-		$ret && @$ret && !($opt & tw::ReturnChunks) &&
-		$text =~ /[\x{600}-\x{6ff}]/
-	) {
-		my $tx;
-		my $ix = ($opt & (tw::CalcMnemonic | tw::CollapseTilde)) ? -2 : -1;
-		if ( $opt & tw::ReturnGlyphs ) {
-			$tx = $$ret[$ix]->arabic_justify($self, $text, $width, %opt);
-		} elsif ( my $sx = $self->text_shape( $$ret[$ix], %opt)) {
-			my @r = map { length } @$ret;
-			$tx = $sx->arabic_justify($self, $$ret[$ix], $width, %opt, as_text => 1);
+	if (( my $justify = delete $opt{justify} ) && $ret && @$ret ) {
+		if (
+			$justify->{kashida} &&
+			!($opt & tw::ReturnChunks) &&
+			$text =~ /[\x{600}-\x{6ff}]/
+		) {
+			my $tx;
+			my $ix = ($opt & (tw::CalcMnemonic | tw::CollapseTilde)) ? -2 : -1;
+			if ( $opt & tw::ReturnGlyphs ) {
+				$tx = $$ret[$ix]->arabic_justify($self, $text, $width, %opt, %$justify);
+			} elsif ( my $sx = $self->text_shape( $$ret[$ix], %opt)) {
+				my @r = map { length } @$ret;
+				$tx = $sx->arabic_justify($self, $$ret[$ix], $width, %opt, %$justify, as_text => 1);
+			}
+			$$ret[$ix] = $tx if defined $tx;
 		}
-		$$ret[$ix] = $tx if defined $tx;
+
+		if ( ($justify->{letter} || $justify->{word}) && ($opt & tw::ReturnGlyphs)) {
+			# do not justify last (or the only) line
+			my $last = @$ret - ($opt & (tw::CalcMnemonic | tw::CollapseTilde)) ? -3 : -2;
+			for ( my $i = 0; $i < $last; $i++) {
+				$$ret[$i]->interspace_justify( $self, $text, $width, %$justify );
+			}
+		}
 	}
 
 	return $ret;

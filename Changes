@@ -7,7 +7,7 @@ Revision history for Perl module Prima
  - Drawable::text_wrap can operate on text together with glyph objects,
       allowing for proper wrapping of shaped text
  - Added ist::OR and ist::AND image stretch types
- - Implemented arabic kashida text justification
+ - Implemented arabic kashida and interspace justifications for glyphs
 
 1.61 2021-04-21
  - DWM API Removed (not useful on Windows 10)

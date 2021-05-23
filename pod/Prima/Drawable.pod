@@ -2042,9 +2042,12 @@ return glyphs objects or their positions instead.
 When called with C<tw::CalcMnemonic> options, recalculates the tilde position
 so it adapts to the glyph positions returned.
 
-If C<%OPTIONS{with_kashida}> is set, performs kashida justification on the last
+If C<$OPTIONS{kashida}> is set, performs kashida justification on the last
 wrapped line, using optional C<$OPTIONS{min_kashida}> value ( see
 L<Prima::Drawable::Glyphs/arabic_justify> ).
+
+If C<$OPTIONS{letter}> or C<$OPTIONS{word}> is set, performs interspace
+justfication on all but the last wrapped line.
 
 =back
 
