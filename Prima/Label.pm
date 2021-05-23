@@ -405,7 +405,7 @@ sub textJustify
 		my $tj = shift;
 		my %tj = ref($tj) ? %$tj : map { ($_, !!$tj) } qw(letter word kashida);
 		$tj{$_} //= 0 for qw(letter word kashida min_kashida);
-		$self->{textJustify} = \%$tj;
+		$self->{textJustify} = \%tj;
 	} else {
 		my %h = @_;
 		$self->{textJustify}->{$_} = $h{$_} for keys %h;
