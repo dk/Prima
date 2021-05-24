@@ -348,12 +348,14 @@ sub text_wrap_shape
 			!($opt & tw::ReturnChunks) &&
 			$text =~ /[\x{600}-\x{6ff}]/
 		) {
-			my $ix = ($opt & (tw::CalcMnemonic | tw::CollapseTilde)) ? -2 : -1;
-			if ( $opt & tw::ReturnGlyphs ) {
-				$$ret[$ix]->justify_arabic($self, $text, $width, %opt, %$justify);
-			} elsif ( my $tx = $self->text_shape( $$ret[$ix], %opt)) {
-				my $text = $tx->justify_arabic($self, $$ret[$ix], $width, %opt, %$justify, as_text => 1);
-				$$ret[$ix] = $text if defined $text;
+			my $last = @$ret - ($opt & (tw::CalcMnemonic | tw::CollapseTilde)) ? -2 : -1;
+			for ( my $i = 0; $i < $last; $i++) {
+				if ( $opt & tw::ReturnGlyphs ) {
+					$$ret[$i]->justify_arabic($self, $text, $width, %opt, %$justify);
+				} elsif ( my $tx = $self->text_shape( $$ret[$i], %opt)) {
+					my $text = $tx->justify_arabic($self, $$ret[$i], $width, %opt, %$justify, as_text => 1);
+					$$ret[$i] = $text if defined $text;
+				}
 			}
 		}
 
@@ -361,7 +363,12 @@ sub text_wrap_shape
 			# do not justify last (or the only) line
 			my $last = @$ret - ($opt & (tw::CalcMnemonic | tw::CollapseTilde)) ? -3 : -2;
 			for ( my $i = 0; $i < $last; $i++) {
-				$$ret[$i]->justify_interspace( $self, $text, $width, %$justify );
+				if ( $opt & tw::ReturnGlyphs ) {
+					$$ret[$i]->justify_interspace($self, $text, $width, %opt, %$justify);
+				} elsif ( my $tx = $self->text_shape( $$ret[$i], %opt)) {
+					my $text = $tx->justify_interspace($self, $$ret[$i], $width, %opt, %$justify, as_text => 1);
+					$$ret[$i] = $text if defined $text;
+				}
 			}
 		}
 	}
