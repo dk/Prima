@@ -688,6 +688,7 @@ sub cursor2offset
 sub justify_arabic
 {
 	my ($self, $canvas, $text, $width, %opt) = @_;
+	return unless $text =~ /[\x{600}-\x{6ff}]/s;
 
 	my $glyphs = $self->[GLYPHS];
 	my $length = @$glyphs;
@@ -696,27 +697,44 @@ sub justify_arabic
 	# find suitable codepoints
 	my $indexes = $self->[INDEXES];
 	my @lengths = $self->index_lengths;
-	my ($cp, $at_glyph);
-	for ( my $i = 0; $i < $length - 1; $i++) {
-		my ( $ix0, $ix1 ) = @$indexes[$i,$i+1];
+	my @kashidas;
+	my $l2v     = $self->log2vis;
 
-		# don't justify LTR arabic
-		next unless $ix0 & to::RTL;
-		$ix0 &= ~to::RTL;
-		$i++, next unless $ix1 & to::RTL;
-		$ix1 &= ~to::RTL;
+	reset $text;
+	while ( 1 ) {
+		$text =~ m/\G\s+/gcs and next;
+		$text =~ m/\G$/gcs and last;
+		$text =~ m/\G(\S+)/gcs or return;
+		my $m = $1;
+		next unless $m =~ /[\x{600}-\x{6ff}]/;
+		my ($from, $to) = @$l2v[(pos($text) - length($m), pos($text) - 1)];
+		($to, $from) = ($from, $to) if $from > $to;
 
-		my $chr = substr($text, $ix0, $lengths[$i]);
-		# all cps marked as LETTER from https://www.unicode.org/charts/PDF/U0600.pdf
-		next if $chr !~ /^[\x{620}-\x{64A}\x{674}-\x{6D3}\x{6D5}\x{6EE}\x{6EF}\x{6FA}-\x{6FC}\x{6FF}]+$/;
+		for ( my $i = $from; $i < $to; $i++) {
+			my ( $ix0, $ix1 ) = @$indexes[$i,$i+1];
 
-		$chr = substr($text, $ix1, $lengths[$i]);
-		$i++, next if $chr !~ /^[\x{620}-\x{64A}\x{674}-\x{6D3}\x{6D5}\x{6EE}\x{6EF}\x{6FA}-\x{6FC}\x{6FF}]+$/;
-		$cp = $ix0;
-		$at_glyph = $i + 1;
-		last;
+			# don't justify LTR arabic
+			next unless $ix0 & to::RTL;
+			$ix0 &= ~to::RTL;
+			$i++, next unless $ix1 & to::RTL;
+			$ix1 &= ~to::RTL;
+
+			my $chr = substr($text, $ix0, $lengths[$i]);
+			# all cps marked as LETTER from https://www.unicode.org/charts/PDF/U0600.pdf
+			next if $chr !~ /^[\x{620}-\x{64A}\x{674}-\x{6D3}\x{6D5}\x{6EE}\x{6EF}\x{6FA}-\x{6FC}\x{6FF}]+$/;
+
+			$chr = substr($text, $ix1, $lengths[$i]);
+			$i++, next if $chr !~ /^[\x{620}-\x{64A}\x{674}-\x{6D3}\x{6D5}\x{6EE}\x{6EF}\x{6FA}-\x{6FC}\x{6FF}]+$/;
+			push @kashidas, [
+				scalar(@kashidas), # original index to retain when sorting
+				$ix0,              # codepoint index
+				$i + 1,            # glyph index
+				0                  # number of tatweels inserted
+			];
+			last;
+		}
 	}
-	return unless defined $cp;
+	return unless @kashidas;
 
 	# calculate how many tatweels to insert
 	my $curr_width = $canvas-> get_text_width( $self, to::AddOverhangs );
@@ -726,64 +744,91 @@ sub justify_arabic
 	$expansion = $min_width if $expansion < $min_width;
 	return if $expansion == 0;
 
-	my $ins = $canvas-> text_shape( "\x{640}",
-		advances => 1,
-		reorder  => 0,
-		rtl      => 0,
-		level    => ts::Glyphs,
-	) or return 0;
-	my $k_width    = $ins->[ADVANCES]->[0];
+	my $k_width;
+	if ( defined $opt{kashida_width}) {
+		$k_width = $opt{kashida_width};
+	} else {
+		my $ins = $canvas-> text_shape( "\x{640}",
+			advances => 1,
+			reorder  => 0,
+			rtl      => 0,
+			level    => ts::Glyphs,
+		) or return 0;
+		$k_width    = $ins->[ADVANCES]->[0];
+	}
 	return unless $k_width;
 
 	my $n_tatweels = int($expansion / $k_width);
-	$n_tatweels++ if $min_width > 0 && $k_width * $n_tatweels < $min_width;
-	substr($text, $cp, 0, "\x{640}" x $n_tatweels);
+	$n_tatweels += @kashidas if $min_width > 0 && $k_width * $n_tatweels < $min_width;
+	my @ins_points = sort { $b->[1] <=> $a->[1] } @kashidas;
+	my @tatweel_lengths;
+	my $avg_tatweel = $n_tatweels / @kashidas;
+	my $diff = 0;
+	for ( my $i = 0; $i < @ins_points; $i++) {
+		my $n_tats = int($avg_tatweel + $diff);
+		substr($text, $ins_points[$i]->[1], 0, "\x{640}" x $n_tats) if $n_tats > 0;
+		$diff += $avg_tatweel - $n_tats;
+		$kashidas[ $ins_points[$i]->[0] ]->[3] = $n_tats;
+	}
 
-	return $text if $opt{as_text};
+	return wantarray ? ($text, $kashida_width) : $text if $opt{as_text};
 
 	my $new = $canvas->text_shape($text, %opt);
 	return unless $new;
-
-	$indexes      = $new->[INDEXES];
-	my $advances  = $new->[ADVANCES]  or return;
-	my $positions = $new->[POSITIONS] or return;
-
-	$length    = @$glyphs;
-	# are tatweels rendered as monotonically increased indexes?
-	for (
-		my ($i,$cmp) = ($at_glyph, $indexes->[$at_glyph] & ~to::RTL);
-		$i < $at_glyph + $n_tatweels;
-		$i++, $cmp--
-	) {
-		my $ix = $indexes->[$i];
-		return unless $ix & to::RTL;
-		$ix &= ~to::RTL;
-		return unless $ix == $cmp;
-	}
-
-	# fix clusters
-	my $left_cluster = $indexes->[$at_glyph - 1];
-	my $right_cluster = $indexes->[$at_glyph + $n_tatweels - 1] & ~to::RTL;
-	for ( my $i = $at_glyph; $i < $at_glyph + $n_tatweels; $i++) {
-		$indexes->[$i] = $left_cluster;
-		$advances->[$at_glyph - 1] += $advances->[$i];
-		$positions->[$i * 2] -= $advances->[$i] * $i;
-		$advances->[$i] = 0;
-	}
-
-	# fix text references
-	$length = @$indexes;
-	for ( my $i = 0; $i < $length; $i++) {
-		my $ix = $indexes->[$i];
-		my $fl = $ix & to::RTL;
-		$ix &= ~to::RTL;
-		next if $ix < $right_cluster;
-		$indexes->[$i] = ($ix - $n_tatweels) | $fl;
-	}
-
 	@$self = @$new;
 
-	return 1;
+	return wantarray ? (1, $kashida_width) : 1 unless $opt{update_references};
+
+	$indexes      = $new->[INDEXES];
+	my $advances  = $new->[ADVANCES]  or return 1;
+	my $positions = $new->[POSITIONS] or return 1;
+
+	# move glyph references after new tatweels
+	my $dg = 0;
+	for my $k (sort { $a->[2] <=> $b->[2] } @kashidas) {
+		$k->[2] += $dg;
+		$dg += $k->[3];
+	}
+
+	$length       = @$glyphs;
+	KASHIDA: for my $k ( @kashidas ) {
+		my (undef, undef, $at_glyph, $n_tatweels) = @$k;
+		warn "$at_glyph $n_tatweels\n";
+
+		# are tatweels rendered as monotonically increased indexes?
+		for (
+			my ($i,$cmp) = ($at_glyph, $indexes->[$at_glyph] & ~to::RTL);
+			$i < $at_glyph + $n_tatweels;
+			$i++, $cmp--
+		) {
+			my $ix = $indexes->[$i];
+			next KASHIDA unless $ix & to::RTL;
+			$ix &= ~to::RTL;
+			next KASHIDA unless $ix == $cmp;
+		}
+
+		# fix clusters
+		my $left_cluster = $indexes->[$at_glyph - 1];
+		my $right_cluster = $indexes->[$at_glyph + $n_tatweels - 1] & ~to::RTL;
+		for ( my $i = $at_glyph; $i < $at_glyph + $n_tatweels; $i++) {
+			$indexes->[$i] = $left_cluster;
+			$advances->[$at_glyph - 1] += $advances->[$i];
+			$positions->[$i * 2] -= $advances->[$i] * ($i - $at_glyph);
+			$advances->[$i] = 0;
+		}
+
+		# fix text references
+		$length = @$indexes;
+		for ( my $i = 0; $i < $length; $i++) {
+			my $ix = $indexes->[$i];
+			my $fl = $ix & to::RTL;
+			$ix &= ~to::RTL;
+			next if $ix < $right_cluster;
+			$indexes->[$i] = ($ix - $n_tatweels) | $fl;
+		}
+	}
+
+	return wantarray ? (1, $kashida_width) : 1;
 }
 
 sub justify_interspace
@@ -796,12 +841,40 @@ sub justify_interspace
 	my $curr_width  = $canvas->get_text_width($self, to::AddOverhangs);
 	return if $curr_width > $width || $curr_width == 0;
 	my $advances = $self->[ADVANCES] or return 0;
+	my $indexes = $self->[INDEXES];
+	my $n_glyphs = scalar @{$self->[GLYPHS]};
+
+	if ( $opt{as_text} ) {
+		return unless $interword && $width > $curr_width;
+		my $spaces = scalar @{[$text =~ m/\s+/g]} or return;
+		my $space_width;
+		for ( my $i = 0; $i < $n_glyphs; $i++) {
+			my $ix = $indexes->[$i] & ~to::RTL;
+			next unless substr($text, $ix, 1) =~ /\s/;
+			$space_width = $advances->[$i];
+			last;
+		}
+		my $avg_space_incr   = ($width - $curr_width) / ($spaces * $space_width);
+		my $accumulated_incr = 0.0;
+		reset $text;
+		my @insertions;
+		while ( 1 ) {
+			$text =~ m/\G\S+/gcs and next;
+			$text =~ m/\G$/gcs and last;
+			$text =~ m/\G(\s+)/gcs or return;
+			my $dx = int( $avg_space_incr + $accumulated_incr );
+			unshift @insertions, pos($text), $dx;
+			$accumulated_incr += $avg_space_incr - $dx;
+		}
+		for ( my $i = 0; $i < @insertions; $i += 2 ) {
+			substr($text, $insertions[$i], 0, ' ' x $insertions[$i+1]);
+		}
+		return wantarray ? ($text, $space_width) : $text;
+	}
 
 	# (Bringhurst 2008) suggests about 3% expansion or contraction of
 	# intercharacter spacing and about 2% expansion or contraction of
 	# glyphs as the largest permissible deviations -- Wikipedia
-	my $n_glyphs = scalar @{$self->[GLYPHS]};
-	my $indexes = $self->[INDEXES];
 	if ( $interletter) {
 		my $diff  = 1.0 + ($width - $curr_width) / $curr_width;
 		my $max   = $opt{max_interletter} // 1.05;
@@ -831,14 +904,53 @@ sub justify_interspace
 	return 1;
 }
 
+sub justify_tabs
+{
+	my ($self, $canvas, $text, %opt) = @_;
+	return unless $text =~ /\t/s;
+	my $glyphs   = $self->[GLYPHS]   or return;
+	my $indexes  = $self->[INDEXES]  or return;
+	my $advances = $self->[ADVANCES] or return;
+	my $fonts    = $self->[FONTS];
+	my $length   = @$advances;
+	my $ntabs    = $opt{tabs} // 8;
+	my ($space, $width);
+	if ( exists $opt{glyph}) {
+		$space = $opt{glyph};
+		$width = $opt{width};
+	} elsif ( my $s = $canvas->text_shape("\x{20}",
+			advances => 1,
+			reorder  => 0,
+			rtl      => 0,
+			level    => ts::Glyphs,
+		)
+	) {
+		$space = $s->[GLYPHS]->[0];
+		$width = $s->[ADVANCES]->[0];
+	} else {
+		return;
+	}
+	$width *= $ntabs;
+	for ( my $i = 0; $i < $length; $i++) {
+		my $ix = $indexes->[$i] & ~to::RTL;
+		next unless substr($text, $ix, 1) eq "\t";
+		$glyphs->[$i]    = $space;
+		$advances->[$i]  = $width;
+		$fonts->[$i]     = 0 if $fonts;
+	}
+	return wantarray ? ( 1, $space, $width ) : 1;
+}
+
 sub justify
 {
 	my ($self, $canvas, $text, $width, %opt) = @_;
 	my $ok = 0;
-	$ok |= $self->justify_arabic($canvas, $text, $width, %opt) if
-		$opt{kashida} && $text =~ /[\x{600}-\x{6ff}]/;
-	$ok |= $self->justify_interspace($canvas, $text, $width, %opt) if
+	$ok |= ($self->justify_arabic($canvas, $text, $width, %opt) || 0) if
+		$opt{kashida};
+	$ok |= ($self->justify_interspace($canvas, $text, $width, %opt) || 0) if
 		$opt{letter} || $opt{word};
+	$ok |= ($self->justify_tabs($canvas, $text, %opt) || 0) if
+		exists $opt{tabs};
 	return $ok;
 }
 
@@ -1196,27 +1308,16 @@ cluster occupies at this position
 =item justify CANVAS, TEXT, WIDTH, %OPTIONS
 
 Umbrella call for C<justify_interspace> if C<$OPTIONS{letter}> or
-C<$OPTIONS{word}> if set, and for C<justify_arabic> if C<$OPTIONS{kashida}> is
-set.
+C<$OPTIONS{word}> if set; for C<justify_arabic> if C<$OPTIONS{kashida}> is
+set; and for C<justify_tabs> if C<$OPTIONS{tabs}> is set.
 
 Returns a boolean flag whether the glyph object was changed or not.
 
 =item justify_arabic CANVAS, TEXT, WIDTH, %OPTIONS
 
 Performs justifications of arabic TEXT with kashida to the given WIDTH, returns
-either success flag, or new text with explicit I<tatweel> characters inserted.
-If justification is found to be needed, eventual ligatures with newly inserted
-tatweel glyphs are resolved via a call to C<text_shape(%OPTIONS)> - so any
-needed shaping options, such as C<language>, may be passed there.
-
-Inserts tatweels only between arabic letters that did not form any ligatures in
-the glyph object. Does not do the justification if the letters are rendered as
-LTR due to embedding or explcit shaping options; only does justification on RTL
-letters. If for some reason newly inserted tatweels do not form a monotonically
-increasing series after shaping, does not do the justifications either.
-
-If C<$OPTIONS{min_kashida}> is set, specifies minimal width of tatweels to be
-inserted.
+either success flag, or new text with explicit I<tatweel> characters inserted,
+depending on C<$OPTIONS{as_text}> value.
 
    my $text = "\x{6a9}\x{634}\x{6cc}\x{62f}\x{647}";
    my $g = $canvas->text_shape($text) or return;
@@ -1228,20 +1329,56 @@ inserted.
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/kashida.gif">
 
+Inserts tatweels only between arabic letters that did not form any ligatures in
+the glyph object, max one tatweel set per word (if any). Does not apply the
+justification if the letters in the word are rendered as LTR due to embedding
+or explcit shaping options; only does justification on RTL letters. If for some
+reason newly inserted tatweels do not form a monotonically increasing series
+after shaping, skips the justifications in that word.
+
+If C<$OPTIONS{min_kashida}> is set, specifies minimal width of tatweels to be
+inserted.
+
+During the calculation a width of a tatweel glyph is needed - unless supplied
+by C<$OPTIONS{kashida_width}>, it is calculated dynamically. Also, when called
+in list context, and succeeded, returns C< 1, kashida_width > that can be
+reused in subsequent calls.
+
+If justification is found to be needed, eventual ligatures with newly inserted
+tatweel glyphs are resolved via a call to C<text_shape(%OPTIONS)> - so any
+needed shaping options, such as C<language>, may be passed there.
+
 Note: Does not use JSTF font table, on Windows results may be different from native rendering.
 
 =item justify_interspace CANVAS, TEXT, WIDTH, %OPTIONS
 
 Performs inplace inter-letter (C<$OPTIONS{letter}>) and/or inter-word
-(C<$OPTIONS{word}>) justifications of non-arabic TEXT to the given WIDTH.
-Returns a boolean flag whether there were any change made.
+(C<$OPTIONS{word}>) justifications of TEXT to the given WIDTH. Returns either
+a boolean flag whether there were any change made, or, new text with
+explicit space characters inserted, depending on C<$OPTIONS{as_text}> value.
 
 Inter-letter spacing is applied first, if any, and can take max
 C<$OPTIONS{max_interletter} * glyph_width> space (default: 1.05). Inter-word
 spacing does not have such limit, and in worst case, can produce two words
-moved to the left and to the right extremes.
+moved to the left and to the right edges of the enclosing 0 - WIDTH-1 rectangle.
+
+C<as_text> mode: during the calculation the width of space glyph may be needed
+- unless supplied by C<$OPTIONS{space_width}>, it is calculated dynamically.
+Also, when called in list context, and succeeded, returns C< 1, space_width >
+that can be reused in subsequent calls.
 
 By default performs both word and letter justifications.
+
+=item justify_tabs CANVAS, TEXT, %OPTIONS
+
+Expands tabs as C<$OPTIONS{tabs}> (default:8) spaces.
+
+Needs glyph and the advance of the space glyph to replace the tab glyph.
+If no C<$OPTIONS{glyph}> and C<$OPTIONS{width}> are specified, calculates them.
+
+Returns a boolean flag whether there were any change made. On success, if
+called in the list context, returns also space glyph ID and space glyph width
+for eventual use on the later calls.
 
 =item left_overhang
 

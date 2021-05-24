@@ -121,9 +121,7 @@ sub on_paint
 		$s->justify(
 			$canvas, $ws->[$i], $size[0],
 			%justify,
-			($i == $#$ws) ?
-				(letter => 0, word => 0) :
-				(kashida => 0)
+			($i == $#$ws) ? (letter => 0, word => 0) : ()
 		);
 		push @wx, $canvas->get_text_width($s);
 		push @wss, $s;
