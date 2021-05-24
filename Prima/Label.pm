@@ -118,14 +118,13 @@ sub on_paint
 	my %justify = ( %{$self->textJustify}, rtl => $self->textDirection);
 	for ( my $i = 0; $i < @$ws; $i++) {
 		my $s = $canvas->text_shape($ws->[$i], %justify );
-		if ($i == $#$ws) {
-			if ($justify{kashida} && $ws->[$i] =~ /[\x{600}-\x{6ff}]/) {
-				my $nn = $s->arabic_justify( $canvas, $ws->[$i], $size[0], %justify );
-				$s = $nn if $nn;
-			}
-		} elsif ($justify{letter} || $justify{word}) {
-			$s->interspace_justify($canvas, $ws->[$i], $size[0], %justify);
-		}
+		$s->justify(
+			$canvas, $ws->[$i], $size[0],
+			%justify,
+			($i == $#$ws) ?
+				(letter => 0, word => 0) :
+				(kashida => 0)
+		);
 		push @wx, $canvas->get_text_width($s);
 		push @wss, $s;
 	}
