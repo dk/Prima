@@ -771,13 +771,13 @@ sub justify_arabic
 		$kashidas[ $ins_points[$i]->[0] ]->[3] = $n_tats;
 	}
 
-	return wantarray ? ($text, $kashida_width) : $text if $opt{as_text};
+	return wantarray ? ($text, $k_width) : $text if $opt{as_text};
 
 	my $new = $canvas->text_shape($text, %opt);
 	return unless $new;
 	@$self = @$new;
 
-	return wantarray ? (1, $kashida_width) : 1 unless $opt{update_references};
+	return wantarray ? (1, $k_width) : 1 unless $opt{update_references};
 
 	$indexes      = $new->[INDEXES];
 	my $advances  = $new->[ADVANCES]  or return 1;
@@ -828,7 +828,7 @@ sub justify_arabic
 		}
 	}
 
-	return wantarray ? (1, $kashida_width) : 1;
+	return wantarray ? (1, $k_width) : 1;
 }
 
 sub justify_interspace
