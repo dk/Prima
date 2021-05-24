@@ -349,13 +349,11 @@ sub text_wrap_shape
 			$text =~ /[\x{600}-\x{6ff}]/
 		) {
 			my $last = @$ret - ($opt & (tw::CalcMnemonic | tw::CollapseTilde)) ? -2 : -1;
-			my %xopt;
-			$xopt{update_references} = 1 if $justify->{letter} || $justify->{word};
 			for ( my $i = 0; $i < $last; $i++) {
 				if ( $opt & tw::ReturnGlyphs ) {
-					$$ret[$i]->justify_arabic($self, $text, $width, %opt, %$justify, %xopt);
+					$$ret[$i]->justify_arabic($self, $text, $width, %opt, %$justify);
 				} elsif ( my $tx = $self->text_shape( $$ret[$i], %opt)) {
-					my $text = $tx->justify_arabic($self, $$ret[$i], $width, %opt, %$justify, %xopt, as_text => 1);
+					my $text = $tx->justify_arabic($self, $$ret[$i], $width, %opt, %$justify, as_text => 1);
 					$$ret[$i] = $text if defined $text;
 				}
 			}
