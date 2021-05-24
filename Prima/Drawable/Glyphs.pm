@@ -786,10 +786,9 @@ sub justify_arabic
 		$dg += $k->[3];
 	}
 
-	$length       = @$glyphs;
+	$length = @$glyphs;
 	for my $k ( @kashidas ) {
 		my (undef, undef, $at_glyph, $n_tatweels) = @$k;
-		warn "$at_glyph $n_tatweels\n";
 
 		# are tatweels rendered as monotonically increased indexes?
 		for (
@@ -809,7 +808,7 @@ sub justify_arabic
 		for ( my $i = $at_glyph; $i < $at_glyph + $n_tatweels; $i++) {
 			$indexes->[$i] = $left_cluster;
 			$advances->[$at_glyph - 1] += $advances->[$i];
-			$positions->[$i * 2] -= $advances->[$i] * ($i - $at_glyph);
+			$positions->[$i * 2] -= $advances->[$i] * ($n_tatweels + $at_glyph - $i);
 			$advances->[$i] = 0;
 		}
 
