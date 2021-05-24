@@ -79,7 +79,7 @@ $arabic = $panel->insert( Label =>
 	text     => $arabic_text,
 	wordWrap => 1,
 	showPartial => 0,
-	textJustify => { kashida => 1 },
+	textJustify => { kashida => 1, min_kashida => 20 },
 );
 
 $pod = $panel-> insert( PodView =>

@@ -741,8 +741,7 @@ sub justify_arabic
 	my $expansion  = $width - $curr_width;
 	my $min_width  = delete $opt{min_kashida} // 0;
 	$min_width = 0 if $min_width < 0;
-	$expansion = $min_width if $expansion < $min_width;
-	return if $expansion == 0;
+	return if $expansion <= 0;
 
 	my $k_width;
 	if ( defined $opt{kashida_width}) {
@@ -759,13 +758,13 @@ sub justify_arabic
 	return unless $k_width;
 
 	my $n_tatweels = int($expansion / $k_width);
-	$n_tatweels += @kashidas if $min_width > 0 && $k_width * $n_tatweels < $min_width;
 	my @ins_points = sort { $b->[1] <=> $a->[1] } @kashidas;
 	my @tatweel_lengths;
 	my $avg_tatweel = $n_tatweels / @kashidas;
 	my $diff = 0;
 	for ( my $i = 0; $i < @ins_points; $i++) {
 		my $n_tats = int($avg_tatweel + $diff);
+		$n_tats = 0 if $min_width > 0 && $n_tats * $k_width < $min_width;
 		substr($text, $ins_points[$i]->[1], 0, "\x{640}" x $n_tats) if $n_tats > 0;
 		$diff += $avg_tatweel - $n_tats;
 		$kashidas[ $ins_points[$i]->[0] ]->[3] = $n_tats;
@@ -775,13 +774,12 @@ sub justify_arabic
 
 	my $new = $canvas->text_shape($text, %opt);
 	return unless $new;
-	@$self = @$new;
 
-	return wantarray ? (1, $k_width) : 1 unless $opt{update_references};
+	goto SUCCESS unless $opt{update_references};
 
 	$indexes      = $new->[INDEXES];
-	my $advances  = $new->[ADVANCES]  or return 1;
-	my $positions = $new->[POSITIONS] or return 1;
+	my $advances  = $new->[ADVANCES]  or goto SUCCESS;
+	my $positions = $new->[POSITIONS] or goto SUCCESS;
 
 	# move glyph references after new tatweels
 	my $dg = 0;
@@ -791,7 +789,7 @@ sub justify_arabic
 	}
 
 	$length       = @$glyphs;
-	KASHIDA: for my $k ( @kashidas ) {
+	for my $k ( @kashidas ) {
 		my (undef, undef, $at_glyph, $n_tatweels) = @$k;
 		warn "$at_glyph $n_tatweels\n";
 
@@ -802,9 +800,9 @@ sub justify_arabic
 			$i++, $cmp--
 		) {
 			my $ix = $indexes->[$i];
-			next KASHIDA unless $ix & to::RTL;
+			return unless $ix & to::RTL;
 			$ix &= ~to::RTL;
-			next KASHIDA unless $ix == $cmp;
+			return unless $ix == $cmp;
 		}
 
 		# fix clusters
@@ -828,6 +826,8 @@ sub justify_arabic
 		}
 	}
 
+SUCCESS:
+	@$self = @$new;
 	return wantarray ? (1, $k_width) : 1;
 }
 
@@ -1316,8 +1316,7 @@ Returns a boolean flag whether the glyph object was changed or not.
 =item justify_arabic CANVAS, TEXT, WIDTH, %OPTIONS
 
 Performs justifications of arabic TEXT with kashida to the given WIDTH, returns
-either success flag, or new text with explicit I<tatweel> characters inserted,
-depending on C<$OPTIONS{as_text}> value.
+either success flag, or new text with explicit I<tatweel> characters inserted.
 
    my $text = "\x{6a9}\x{634}\x{6cc}\x{62f}\x{647}";
    my $g = $canvas->text_shape($text) or return;
@@ -1336,38 +1335,90 @@ or explcit shaping options; only does justification on RTL letters. If for some
 reason newly inserted tatweels do not form a monotonically increasing series
 after shaping, skips the justifications in that word.
 
-If C<$OPTIONS{min_kashida}> is set, specifies minimal width of tatweels to be
-inserted.
+Note: Does not use JSTF font table, on Windows results may be different from native rendering.
 
-During the calculation a width of a tatweel glyph is needed - unless supplied
-by C<$OPTIONS{kashida_width}>, it is calculated dynamically. Also, when called
-in list context, and succeeded, returns C< 1, kashida_width > that can be
-reused in subsequent calls.
+Options:
 
 If justification is found to be needed, eventual ligatures with newly inserted
 tatweel glyphs are resolved via a call to C<text_shape(%OPTIONS)> - so any
 needed shaping options, such as C<language>, may be passed there.
 
-Note: Does not use JSTF font table, on Windows results may be different from native rendering.
+=over
+
+=item as_text BOOL = 0
+
+If set, returns new text with inserted tatweels, or undef if no justification
+is possible.
+
+If unset, runs inplace justification on the caller glyph object,
+and returns the boolean success flag.
+
+=item min_kashida INTEGER = 0
+
+Specifies minimal width of a kashida strike to be inserted.
+
+=item kashida_width INTEGER
+
+During the calculation a width of a tatweel glyph is needed - unless supplied
+by this option, it is calculated dynamically. Also, when called in list
+context, and succeeded, returns C< 1, kashida_width > that can be reused in
+subsequent calls.
+
+=item update_references BOOL = 0
+
+If set, does extra calculation to update the glyph object, so that newly
+inserted tatweels form proper ligatures with nearby characters. This is not
+needed if the glyph object is used for drawing only, but will be needed if the
+object will be used for further justifications or other calculations.
+
+If set, performs some extra rigorous checks, and thus may fail - even though an
+identical call with C<update_references = 0> will not.
+
+=back
 
 =item justify_interspace CANVAS, TEXT, WIDTH, %OPTIONS
 
-Performs inplace inter-letter (C<$OPTIONS{letter}>) and/or inter-word
-(C<$OPTIONS{word}>) justifications of TEXT to the given WIDTH. Returns either
-a boolean flag whether there were any change made, or, new text with
-explicit space characters inserted, depending on C<$OPTIONS{as_text}> value.
+Performs inplace inter-letter and/or inter-word justifications of TEXT to the
+given WIDTH. Returns either a boolean flag whether there were any change made,
+or, new text with explicit space characters inserted.
 
-Inter-letter spacing is applied first, if any, and can take max
-C<$OPTIONS{max_interletter} * glyph_width> space (default: 1.05). Inter-word
-spacing does not have such limit, and in worst case, can produce two words
-moved to the left and to the right edges of the enclosing 0 - WIDTH-1 rectangle.
+Options:
+
+=over
+
+=item as_text BOOL = 0
+
+If set, returns new text with inserted spaces, or undef if no justification is
+possible.
+
+If unset, runs inplace justification on the caller glyph object, and returns
+the boolean success flag.
+
+=item letter BOOL = 1
+
+If set, runs an inter-letter spacing on all glyphs.
+
+=item max_interletter FLOAT = 1.05
+
+When the inter-letter spacing is applied, it is applied first, and can take up
+to C<$OPTIONS{max_interletter} * glyph_width> space.
+
+Inter-word spacing does not have such limit, and in worst case, can produce two
+words moved to the left and to the right edges of the enclosing 0 - WIDTH-1
+rectangle.
+
+=item space_width INTEGER
 
 C<as_text> mode: during the calculation the width of space glyph may be needed
 - unless supplied by C<$OPTIONS{space_width}>, it is calculated dynamically.
 Also, when called in list context, and succeeded, returns C< 1, space_width >
 that can be reused in subsequent calls.
 
-By default performs both word and letter justifications.
+=item word BOOL = 1
+
+If set, runs an inter-word spacing by extending advances on all space glyphs.
+
+=back
 
 =item justify_tabs CANVAS, TEXT, %OPTIONS
 
