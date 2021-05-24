@@ -685,7 +685,7 @@ sub cursor2offset
 }
 
 # poor man's kashida justifier, doesn't use the JSTF table from the font
-sub arabic_justify
+sub justify_arabic
 {
 	my ($self, $canvas, $text, $width, %opt) = @_;
 
@@ -781,27 +781,21 @@ sub arabic_justify
 		$indexes->[$i] = ($ix - $n_tatweels) | $fl;
 	}
 
-	return $new;
+	@$self = @$new;
+
+	return 1;
 }
 
-sub interspace_justify
+sub justify_interspace
 {
 	my ($self, $canvas, $text, $width, %opt) = @_;
 	my $interletter = $opt{letter} // 1;
 	my $interword   = $opt{word}   // 1;
-	return 0 unless $interletter || $interword;
+	return unless $interletter || $interword;
 
 	my $curr_width  = $canvas->get_text_width($self, to::AddOverhangs);
-	return 0 if $curr_width > $width || $curr_width == 0;
+	return if $curr_width > $width || $curr_width == 0;
 	my $advances = $self->[ADVANCES] or return 0;
-
-	my @spaces;
-	reset $text;
-	while ( 1 ) {
-		$text =~ m/\G\S+/gcs and next;
-		$text =~ m/\G\s+/gcs and do { push @spaces, pos($text); next };
-		$text =~ m/\G$/gcs and last;
-	}
 
 	# (Bringhurst 2008) suggests about 3% expansion or contraction of
 	# intercharacter spacing and about 2% expansion or contraction of
@@ -810,7 +804,8 @@ sub interspace_justify
 	my $indexes = $self->[INDEXES];
 	if ( $interletter) {
 		my $diff  = 1.0 + ($width - $curr_width) / $curr_width;
-		my $dw    = ( $diff > 1.05 ) ? 1.05 : $diff;
+		my $max   = $opt{max_interletter} // 1.05;
+		my $dw    = ( $diff > $max ) ? $max : $diff;
 		for ( my $i = 0; $i < $n_glyphs; $i++) {
 			my $xa = $advances->[$i];
 			$curr_width -= $xa;
@@ -819,8 +814,9 @@ sub interspace_justify
 	}
 
 	# the rest goes between words
-	if ( $interword && $width > $curr_width && @spaces) {
-		my $avg_space_incr   = ($width - $curr_width) / @spaces;
+	my $spaces = scalar @{[$text =~ m/\s+/g]};
+	if ( $interword && $width > $curr_width && $spaces) {
+		my $avg_space_incr   = ($width - $curr_width) / $spaces;
 		my $accumulated_incr = 0.0;
 		for ( my $i = 0; $i < $n_glyphs; $i++) {
 			my $ix = $indexes->[$i] & ~to::RTL;
@@ -833,6 +829,17 @@ sub interspace_justify
 	}
 
 	return 1;
+}
+
+sub justify
+{
+	my ($self, $canvas, $text, $width, %opt) = @_;
+	my $ok = 0;
+	$ok |= $self->justify_arabic($canvas, $text, $width, %opt) if
+		$opt{kashida} && $text =~ /[\x{600}-\x{6ff}]/;
+	$ok |= $self->justify_interspace($canvas, $text, $width, %opt) if
+		$opt{letter} || $opt{word};
+	return $ok;
 }
 
 1;
@@ -1096,28 +1103,6 @@ Returns a, b, c metrics from the glyph C<$INDEX>
 
 Read-only accessor to the advances array, see L<Structure> above.
 
-=item arabic_justify CANVAS, TEXT, WIDTH, %OPTIONS
-
-Performs justifications of arabic TEXT with kashida to the given WIDTH,
-returns either new glyph object, or new text with explicit I<tatweel>
-characters inserted. If returning new object, eventual ligatures with inserted
-tatweels are resolved via a call to C<text_shape(%OPTIONS)>.
-
-If C<$OPTIONS{min_kashida}> is set, specifies minimal width of tatweels to be
-inserted.
-
-   my $text = "\x{6a9}\x{634}\x{6cc}\x{62f}\x{647}";
-   my $g = $canvas->text_shape($text) or return;
-   $canvas->text_out($g, 10, 50);
-   $g = $g->arabic_justify($canvas, $text, 200) or return;
-   $canvas->text_out($g, 10, 10);
-
-=for podview <img src="Prima/kashida.gif">
-
-=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/kashida.gif">
-
-Note: Does not use JSTF font table, on Windows results may be different from native rendering.
-
 =item clone
 
 Clones the object
@@ -1208,11 +1193,53 @@ Read-only accessor to the indexes, see L<Structure> above.
 Returns array where each glyph position is set to a number showing how many characters the
 cluster occupies at this position
 
-=item interspace_justify CANVAS, TEXT, WIDTH, %OPTIONS
+=item justify CANVAS, TEXT, WIDTH, %OPTIONS
+
+Umbrella call for C<justify_interspace> if C<$OPTIONS{letter}> or
+C<$OPTIONS{word}> if set, and for C<justify_arabic> if C<$OPTIONS{kashida}> is
+set.
+
+Returns a boolean flag whether the glyph object was changed or not.
+
+=item justify_arabic CANVAS, TEXT, WIDTH, %OPTIONS
+
+Performs justifications of arabic TEXT with kashida to the given WIDTH, returns
+either success flag, or new text with explicit I<tatweel> characters inserted.
+If justification is found to be needed, eventual ligatures with newly inserted
+tatweel glyphs are resolved via a call to C<text_shape(%OPTIONS)> - so any
+needed shaping options, such as C<language>, may be passed there.
+
+Inserts tatweels only between arabic letters that did not form any ligatures in
+the glyph object. Does not do the justification if the letters are rendered as
+LTR due to embedding or explcit shaping options; only does justification on RTL
+letters. If for some reason newly inserted tatweels do not form a monotonically
+increasing series after shaping, does not do the justifications either.
+
+If C<$OPTIONS{min_kashida}> is set, specifies minimal width of tatweels to be
+inserted.
+
+   my $text = "\x{6a9}\x{634}\x{6cc}\x{62f}\x{647}";
+   my $g = $canvas->text_shape($text) or return;
+   $canvas->text_out($g, 10, 50);
+   $g->justify_arabic($canvas, $text, 200) or return;
+   $canvas->text_out($g, 10, 10);
+
+=for podview <img src="Prima/kashida.gif">
+
+=for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/kashida.gif">
+
+Note: Does not use JSTF font table, on Windows results may be different from native rendering.
+
+=item justify_interspace CANVAS, TEXT, WIDTH, %OPTIONS
 
 Performs inplace inter-letter (C<$OPTIONS{letter}>) and/or inter-word
 (C<$OPTIONS{word}>) justifications of non-arabic TEXT to the given WIDTH.
 Returns a boolean flag whether there were any change made.
+
+Inter-letter spacing is applied first, if any, and can take max
+C<$OPTIONS{max_interletter} * glyph_width> space (default: 1.05). Inter-word
+spacing does not have such limit, and in worst case, can produce two words
+moved to the left and to the right extremes.
 
 By default performs both word and letter justifications.
 
@@ -1324,6 +1351,10 @@ Returns the length of the text that was shaped and that produced the object.
 
 Given sub-cluster from C<$FROM> with size C<$LENGTH>, calculates how many
 clusters would fit in width C<$X>.
+
+=item _debug
+
+Dumps glyph object content in a readable format.
 
 =back
 
