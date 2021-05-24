@@ -359,7 +359,10 @@ sub text_wrap_shape
 			}
 		}
 
-		if ( $justify->{letter} || $justify->{word}) {
+		if (
+			($justify->{letter} || $justify->{word}) &&
+			!($opt & tw::ReturnChunks)
+		) {
 			# do not justify last (or the only) line
 			my $last = @$ret - ($opt & (tw::CalcMnemonic | tw::CollapseTilde)) ? -3 : -2;
 			for ( my $i = 0; $i < $last; $i++) {
