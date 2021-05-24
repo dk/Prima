@@ -775,8 +775,6 @@ sub justify_arabic
 	my $new = $canvas->text_shape($text, %opt);
 	return unless $new;
 
-	goto SUCCESS unless $opt{update_references};
-
 	$indexes      = $new->[INDEXES];
 	my $advances  = $new->[ADVANCES]  or goto SUCCESS;
 	my $positions = $new->[POSITIONS] or goto SUCCESS;
@@ -1363,16 +1361,6 @@ During the calculation a width of a tatweel glyph is needed - unless supplied
 by this option, it is calculated dynamically. Also, when called in list
 context, and succeeded, returns C< 1, kashida_width > that can be reused in
 subsequent calls.
-
-=item update_references BOOL = 0
-
-If set, does extra calculation to update the glyph object, so that newly
-inserted tatweels form proper ligatures with nearby characters. This is not
-needed if the glyph object is used for drawing only, but will be needed if the
-object will be used for further justifications or other calculations.
-
-If set, performs some extra rigorous checks, and thus may fail - even though an
-identical call with C<update_references = 0> will not.
 
 =back
 
