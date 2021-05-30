@@ -149,11 +149,13 @@ sub on_paint
 
 	my ( $x, $y) = ( $self-> {atDrawX}, $self-> {atDrawY});
 	if ( $useSel && @{ $self->{selChunks} // [] }) {
-		$self->{glyphs}->selection_walk(
+		my $g = $self->{glyphs};
+		$g->selection_walk(
 			$self->{selChunks}, $self->{firstChar}, $self->{n_clusters}, sub {
 			my ( $offset, $length, $selected ) = @_;
-			my $text = substr( $cap, $offset, $length );
-			my $dx = $self->{glyphs}->get_sub_width( $self, $self->{firstChar} + $offset, $length);
+			($offset, $length) = $g->cluster2glyph($self->{firstChar} + $offset, $length);
+
+			my $dx = $canvas->get_text_width( $g, 0, $offset, $length);
 			if ( $selected ) {
 				$canvas-> color( $self-> hiliteBackColor);
 				$canvas-> bar( $x, 0, $x + $dx - 1, $size[1] - 1);
@@ -161,7 +163,7 @@ sub on_paint
 			} else {
 				$canvas-> color( $clr[0]);
 			}
-			$canvas->text_out($self->{glyphs}, $x, $y, $self->{firstChar} + $offset, $length );
+			$canvas->text_out($g, $x, $y, $offset, $length);
 			$x += $dx;
 		});
 	} else {
