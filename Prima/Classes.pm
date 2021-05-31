@@ -18,17 +18,26 @@ sub new
 	my ($class, $letter, $buf) = @_;
 	die "bad array type" if $letter !~ /^[idSs]$/;
 	my @tie;
+	my @push;
 	my $size = length pack $letter, 0;
 	if ( defined $buf ) {
-		croak "Bad length ". length($buf). ", must be mod $size" if length($buf) % $size;
+		if ( ref $buf ) {
+			croak "$buf is not an array" unless ref $buf eq 'ARRAY';
+			@push = @$buf;
+			$buf = '';
+		} else {
+			croak "Bad length ". length($buf). ", must be mod $size" if length($buf) % $size;
+		}
 	} else {
 		$buf = '';
 	}
 	tie @tie, $class, $buf, $size, $letter;
+	push @tie, @push if @push;
 	return \@tie;
 }
 
-sub new_short  { shift->new('S', @_) }
+sub new_short  { shift->new('s', @_) }
+sub new_ushort { shift->new('S', @_) }
 sub new_int    { shift->new('i', @_) }
 sub new_double { shift->new('d', @_) }
 
