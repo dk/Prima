@@ -924,6 +924,7 @@ sub text_wrap
 {
 	my ( $self, $canvas, $width, $opt, $indent) = @_;
 	$opt //= tw::Default;
+	$width //= 2_000_000;
 
 	# Ignored options: ExpandTabs, CalcTabs .
 
@@ -986,6 +987,12 @@ sub text_wrap
 }
 
 sub text_shape { undef }
+
+sub text_wrap_shape
+{
+	my ( $self, $canvas, $width, %opt) = @_;
+	return $self->text_wrap($canvas, $width, $opt{options} // 0, $opt{tabs} // 8);
+}
 
 sub height
 {

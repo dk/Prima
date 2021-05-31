@@ -1248,7 +1248,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	if ( SvROK(text_sv)) {
 		SV * ref = newRV((SV*) profile);
 		gpENTER(nilSV);
-		ret = sv_call_perl(text_sv, "text_shape", "<HSS", self, text_sv, ref);
+		ret = sv_call_perl(text_sv, "text_shape", "<HS", self, ref);
 		gpLEAVE;
 		hv_clear(profile); /* old gencls bork */
 		sv_free(ref);
