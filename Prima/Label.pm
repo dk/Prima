@@ -122,9 +122,9 @@ sub on_paint
 			$canvas, $ws->[$i], $size[0],
 			%justify,
 			($i == $#$ws) ? (letter => 0, word => 0) : ()
-		);
-		push @wx, $canvas->get_text_width($s);
-		push @wss, $s;
+		) if $s;
+		push @wss, $s // $ws->[$i];
+		push @wx, $canvas->get_text_width($wss[-1]);
 	}
 
 	unless ( $self-> enabled) {
