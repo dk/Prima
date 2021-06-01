@@ -55,6 +55,7 @@ Application_init( Handle self, HV * profile)
 		pdelete( designScale);
 	}
 	var->  text = newSVpv("", 0);
+	var->  hint = newSVpv("", 0);
 	opt_set( optModalHorizon);
 
 	/* store extra info */
@@ -1036,7 +1037,8 @@ Bool   Application_ownerPalette( Handle self, Bool set, Bool ownerPalette) { ret
 Bool   Application_clipChildren( Handle self, Bool set, Bool clip)   { return true; }
 Bool   Application_clipOwner( Handle self, Bool set, Bool clip_by_children)   { return false; }
 int    Application_tabOrder( Handle self, Bool set, int tabOrder)      { return 0; }
-SV   * Application_text    ( Handle self, Bool set, SV * text)       { return nilSV; }
+SV   * Application_get_text    ( Handle self)                          { return nilSV; }
+void   Application_set_text    ( Handle self, SV * text)               { }
 Bool   Application_transparent( Handle self, Bool set, Bool transparent) { return false; }
 Bool   Application_validate_owner( Handle self, Handle * owner, HV * profile) { *owner = nilHandle; return true; }
 

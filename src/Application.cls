@@ -40,7 +40,6 @@ object Prima::Application( Prima::Widget)
 	property  int    tabOrder;
 	property  Bool   tabStop;
 	property  Bool   transparent;
-	property  SV *   text;
 	property  Bool   textDirection;
 	property  double uiScaling;
 	property  Bool   visible;
@@ -100,6 +99,7 @@ object Prima::Application( Prima::Widget)
 	method Font   get_hint_font();
 	method Handle get_image( int x, int y, int xLen, int yLen);
 	method Handle get_parent();
+	method SV   * get_text();
 	method Handle get_widget_from_point( Point p) => apc_application_get_widget_from_point;
 
 	method void   set( HV * profile);
@@ -107,6 +107,7 @@ object Prima::Application( Prima::Widget)
 	method void   set_centered( Bool x, Bool y);
 	method void   set_font( Font font);
 	method void   set_hint_font( Font hintFont);
+	method void   set_text( SV * text);
 
 	int     hintActive;
 	Bool    hintVisible;

@@ -8,6 +8,8 @@ Revision history for Perl module Prima
       allowing for proper wrapping of shaped text
  - Added ist::OR and ist::AND image stretch types
  - Implemented arabic kashida and interspace justifications for glyphs
+ - Markup is a first class citizen with $w->text(\"B<bold>") syntax
+   (note: Q was renamed to G and will be used for quoting instead).
 
 1.61 2021-04-21
  - DWM API Removed (not useful on Windows 10)

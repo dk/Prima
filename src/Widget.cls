@@ -74,7 +74,6 @@ object Prima::Widget( Prima::Drawable)
 	property  Bool   firstClick;
 	property  Bool   focused;
 	property  SV *   helpContext;
-	property  SV *   hint;
 	property  int    hintVisible;
 	property  int    left;
 	property  Bool   layered;
@@ -111,7 +110,6 @@ object Prima::Widget( Prima::Drawable)
 	property  Bool   syncPaint;
 	property  int    tabOrder;
 	property  Bool   tabStop;
-	property  SV *   text;
 	property  int    top;
 	property  Bool   transparent;
 	property  Bool   visible;
@@ -181,6 +179,7 @@ object Prima::Widget( Prima::Drawable)
 	static   Font     get_default_popup_font( char * dummy = "");
 	method   Rect     get_invalid_rect()              => apc_widget_get_invalid_rect;
 	method   SV   *   get_handle();
+	method   SV   *   get_hint();
 	method   Bool     get_locked();
 	method   int      get_mouse_state()               => apc_pointer_get_state;
 	public   void     get_pack_slaves();
@@ -193,12 +192,15 @@ object Prima::Widget( Prima::Drawable)
 	method   int      get_shift_state()               => apc_kbd_get_state;
 	method   Point    get_virtual_size();
 	public   void     get_widgets();
+	method   SV   *   get_text();
 
 #	properties write methods
 	method   Bool     set_capture( Bool capture, Handle confineTo = nilHandle);
 	method   void     set_centered( Bool x, Bool y);
 	method   void     set_font( Font font);
+	method   void     set_hint( SV * hint);
 	method   void     set_popup_font( Font font);
+	method   void     set_text( SV * text);
 
 #	other
 	method   void     on_paint( SV * canvas);

@@ -975,6 +975,35 @@ strictly bound to the widget concept, are gathered in this
 section. The section includes overview of pointer, cursor,
 hint, menu objects and user-specified resources.
 
+=head2 Markup text
+
+C<Prima::Drawable::Markup> provides text-like objects that can include font and
+color change, and has a primitive image support. Since text methods of
+C<Prima::Drawable> such as C<text_out>, C<get_text_width> etc can detect if a
+text passed is actually a blessed object, and make a corresponding call on it,
+the markup objects can be used transparently when rich text is needed, simply by
+passing them to C<text> and C<hint> properties.
+
+There are two ways to construct a markup object: either directly:
+
+   Prima::Drawable::Markup->new( ... )
+
+or using an imported method C<M>,
+
+   use Prima::Drawable::Markup q(M);
+   M '...';
+
+where results of both can be directly set to almost any textual property
+throughout the whole toolkit, provided that the classes are not peeking inside
+the object but only calling drawing methods on them.
+
+In addition to that, C<Prima::Widget> and its descendants recognize a third syntax
+
+  Widget->new( text => \ 'markup' )
+
+treating a scalar reference to a text string as a sign that this is actually
+the text to be compiled into a markup object.
+
 =head2 Pointer
 
 The mouse pointer is the shared resource, that can change its
@@ -1889,9 +1918,14 @@ See also: C<tabOrder>, C<next_tab>, C<selectable>, C<selected>, C<focused>
 
 =item text TEXT
 
-A text string for generic purpose. Many Prima::Widget
-descendants use this property heavily - buttons, labels,
-input lines etc, but Prima::Widget itself does not.
+A text string for generic purpose. Many Prima::Widget descendants use this
+property heavily - buttons, labels, input lines etc, but Prima::Widget itself
+does not.
+
+If C<TEXT> is a reference to a string, it is translated as a markup string,
+and is compiled into a C<Prima::Drawable::Markup> object internally.
+
+See L<Prima::Drawable::Markup>, F<examples/markup.pl>
 
 =item top INTEGER
 

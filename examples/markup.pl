@@ -1,23 +1,21 @@
 # XXX textoutbaseline=0 rotated
 # XXX document that block is expected to run text on textOutBaseline(1)
 # XXX document that block_wrap can workbreak only
-# XXX tb:: export
-# XXX backport tb's to TextView
 use strict;
 use warnings;
-use Prima qw(Application Buttons Edit Notebooks Label DetailedList Outlines Drawable::Markup MsgBox);
+use Prima qw(Application Buttons Edit Notebooks Label DetailedList Outlines MsgBox);
 use FindBin qw($Bin);
+use Prima::Drawable::Markup q(M);
 
-my $fp = [
+@Prima::Drawable::Markup::FONTS = (
 	{ name   => 'Times New Roman' },
 	{ name   => 'Courier New'     },
 	{ direction => 4 },
-];
-my $img = [
-    Prima::Icon->load("$Bin/Hand.gif")
-];
+);
 
-sub M($) { Prima::Drawable::Markup->new(markup => $_[0], fontPalette => $fp, picturePalette => $img ) }
+@Prima::Drawable::Markup::IMAGES = (
+    Prima::Icon->load("$Bin/Hand.gif")
+);
 
 my $Main = Prima::MainWindow->create(
 	name   => 'Main',
@@ -28,11 +26,11 @@ my $Main = Prima::MainWindow->create(
 
 my $tn = $Main->insert('TabbedNotebook',
 	pack   => { expand => 1, fill => 'both' },
-	tabs   => [ M 'Q<White|Basic> Controls', M 'F<0|I<Detailed List>>', M 'U<Outline>', M 'F<2|Rotated> & Bidi>'],
+	tabs   => [ M 'G<White|Basic> Controls', M 'F<0|I<Detailed List>>', M 'U<Outline>', M 'F<2|Rotated> & Bidi>'],
 );
 
 $tn->insert_to_page(0,'Label',
-	text   => M "\x{5e9} Some F<1|U<m>onospace text> in a label",
+	text   => \ "\x{5e9} Some F<1|U<m>onospace text> in a label",
 	autoHeight => 1,
 	hotKey => 'm',
 	backColor => cl::Yellow,
@@ -42,27 +40,27 @@ $tn->insert_to_page(0,'Label',
 );
 
 $tn->insert_to_page(0,'Button',
-	text   => M 'Some B<C<LightRed|U<r>ed text>> in a button',
+	text   => \ 'Some B<C<LightRed|U<r>ed text>> in a button',
 	pack   => { side => 'top', anchor => 'w' },
 	hotKey => 'r',
-	onClick => sub { message(M "Hello! This is the B<msgbox> speaking!") },
-	hint    => M "Hints can I<also> be markupified",
+	onClick => sub { message(\ "Hello! This is the B<msgbox> speaking!") },
+	hint    => \ "Hints can I<also> be markupified",
 );
 
 $tn->insert_to_page(0,'Radio',
-	text   => M 'P<0>Some S<+2|U<b>ig text> in a radio button',
+	text   => \ 'P<0>Some S<+2|U<b>ig text> in a radio button',
 	pack   => { side => 'top' , anchor => 'w'},
 	hotKey => 'b',
 );
 
 $tn->insert_to_page(0,'CheckBox',
-	text   => M 'P<0>Some S<-2|U<s>mall text> in a checkbox',
+	text   => \ 'P<0>Some S<-2|U<s>mall text> in a checkbox',
 	pack   => { side => 'top' , anchor => 'w'},
 	hotKey => 's',
 );
 
 $tn->insert_to_page(0,'GroupBox',
-	text   => M 'Some B<mixed> I<text> in a groupbox',
+	text   => \ 'Some B<mixed> I<text> in a groupbox',
 	pack   => { side => 'top', fill => 'x' },
 );
 
@@ -80,12 +78,11 @@ $tn->insert_to_page(0,'ListBox',
 
 $tn->insert_to_page(0,'Label',
 	wordWrap => 1,
-	text   => M "Wrappable text: B<bold
+	pack   => { side => 'top', fill => 'both', expand => 1 },
+)-> text( \ "Wrappable text: B<bold
 W<non-wrappable bold C<Green|and green>>,
 but still bold> text
-",
-	pack   => { side => 'top', fill => 'both', expand => 1 },
-);
+");
 
 $tn->insert_to_page(1,'DetailedList',
 	items  => [
@@ -115,7 +112,7 @@ $tn->insert_to_page(2,'StringOutline',
 $tn->insert_to_page(3,'Widget',
 	font => { size => 16, direction => 30, name => 'Arial' },
 	pack   => { expand => 1, fill => 'both' },
-	text   => M "Q<Yellow|B<I<\x{5E9}\x{5DC}\x{5D5}\x{5DD}> C<Green|world>>!>",
+	text   => \ "G<Yellow|B<I<\x{5E9}\x{5DC}\x{5D5}\x{5DD}> C<Green|world>>!>",
 	onPaint => sub {
 		my ($self, $canvas) = @_;
 		$canvas->clear;

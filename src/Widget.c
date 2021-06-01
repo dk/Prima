@@ -11,7 +11,8 @@
 extern "C" {
 #endif
 
-
+#undef  set_text
+#undef  get_text
 #undef  my
 #define inherited CDrawable
 #define enter_method PWidget_vmt selfvmt = ((( PWidget) self)-> self)
@@ -2573,28 +2574,29 @@ Widget_helpContext( Handle self, Bool set, SV *helpContext)
 }
 
 SV *
-Widget_hint( Handle self, Bool set, SV *hint)
+Widget_get_hint( Handle self)
+{
+	return newSVsv(var->hint);
+}
+
+void
+Widget_set_hint( Handle self, SV *hint)
 {
 	enter_method;
-	if ( set) {
-		if ( var-> stage > csFrozen) return nilSV;
-		my-> first_that( self, (void*)hint_notify, (void*)hint);
-		if ( var-> hint ) sv_free( var-> hint );
-		var-> hint = newSVsv( hint);
-		if ( application && (( PApplication) application)-> hintVisible &&
-			(( PApplication) application)-> hintUnder == self)
-		{
-			Handle hintWidget = (( PApplication) application)-> hintWidget;
-			if ( SvLEN( var-> hint) == 0)
-				my-> set_hintVisible( self, 0);
-			if ( hintWidget)
-				CWidget(hintWidget)-> set_text( hintWidget, my-> get_hint( self));
-		}
-		opt_clear( optOwnerHint);
-	} else {
-		return newSVsv(var->hint);
+	if ( var-> stage > csFrozen) return;
+	my-> first_that( self, (void*)hint_notify, (void*)hint);
+	if ( var-> hint ) sv_free( var-> hint );
+	var-> hint = newSVsv( hint);
+	if ( application && (( PApplication) application)-> hintVisible &&
+		(( PApplication) application)-> hintUnder == self)
+	{
+		Handle hintWidget = (( PApplication) application)-> hintWidget;
+		if ( SvLEN( var-> hint) == 0)
+			my-> set_hintVisible( self, 0);
+		if ( hintWidget)
+			CWidget(hintWidget)-> set_text( hintWidget, my-> get_hint( self));
 	}
-	return nilSV;
+	opt_clear( optOwnerHint);
 }
 
 Bool
@@ -3185,16 +3187,17 @@ Widget_transparent( Handle self, Bool set, Bool transparent)
 }
 
 SV *
-Widget_text( Handle self, Bool set, SV *text)
+Widget_get_text( Handle self)
 {
-	if ( set) {
-		if ( var-> stage > csFrozen) return nilSV;
-		if ( var-> text ) sv_free( var-> text );
-		var-> text = newSVsv(text);
-		return nilSV;
-	} else {
-		return newSVsv(var->text);
-	}
+	return newSVsv(var->text);
+}
+
+void
+Widget_set_text( Handle self, SV *text)
+{
+	if ( var-> stage > csFrozen) return;
+	if ( var-> text ) sv_free( var-> text );
+	var-> text = newSVsv(text);
 }
 
 int
