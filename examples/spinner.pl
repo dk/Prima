@@ -26,7 +26,8 @@ my $spinner3 = $mw->insert('Spinner',
 
 $mw->insert(
 	'Button',
-	text => '~Start/Stop',
+	text => \ 'C<Green|U<S>tart>/C<Red|Stop>',
+	hotKey => 's',
 	checkable => 1,
 	checked => 0,
 	origin => [0,0],
