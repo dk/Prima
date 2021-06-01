@@ -3,7 +3,8 @@ package Prima::Drawable::Markup;
 use strict;
 use warnings;
 use Prima qw(Drawable::TextBlock);
-use base qw(Prima::Drawable::TextBlock);
+use base qw(Prima::Drawable::TextBlock Exporter);
+our @EXPORT_OK = 'M';
 
 =head1 NAME
 
@@ -11,11 +12,17 @@ Prima::Drawable::Markup - allow markup in widgets
 
 =head1 SYNOPSIS
 
-    use Prima qw(Application Buttons Drawable::Markup);
-    Prima::Button->new(
+    use Prima qw(Application Buttons);
+    use Prima::Drawable::Markup q(M);
+    my $m = Prima::MainWindow->new;
+    $m-> insert( Button =>
 	text   => Prima::Drawable::Markup->new(markup => "B<Bold> bU<u>tton"),
 	hotKey => 'u',
+	pack   => {},
     );
+    $m->insert( Button => pack => {}, text => M "I<Italic> button" );
+    $m->insert( Button => pack => {}, text => \ "Not an Q<I<italic>> button" );
+
     run Prima;
 
 =for podview <img src="Prima/markup.gif">
@@ -27,7 +34,7 @@ Prima::Drawable::Markup - allow markup in widgets
 C<Prima::Drawable::Markup> adds the ability to recognize POD-like markup to Prima
 widgets. Supported markup sequences are C<B> (bold text), C<I> (italic text),
 C<U> (underlined text), C<F> (change font), C<S> (change font size), C<C>
-(change foreground color), C<Q> (change background color), C<M> (move pointer),
+(change foreground color), C<G> (change background color), C<M> (move pointer),
 C<W> (disable wrapping), and C<P> (picture).
 
 The C<F> sequence is used as follows: C<FE<lt>n|textE<gt>>, where C<n> is a
@@ -37,13 +44,13 @@ The C<S> sequence is used as follows: C<SE<lt>n|textE<gt>>, where C<n> is the
 number of points relative to the current font size. The font size may
 optionally be preceded by C<+> or C<->.
 
-The C<C> and C<Q> sequences are used as follows: C<CE<lt>c|textE<gt>>, where
+The C<C> and C<G> sequences are used as follows: C<CE<lt>c|textE<gt>>, where
 C<c> is either: a color in any form accepted by Prima, including the C<cl>
 constants (C<Black> C<Blue> C<Green> C<Cyan> C<Red> C<Magenta> C<Brown>
 C<LightGray> C<DarkGray> C<LightBlue> C<LightGreen> C<LightCyan> C<LightRed>
 C<LightMagenta> C<Yellow> C<White> C<Gray>).  Or, a 0-based index into the
 C<colorPalette>. Also, C<default> can be used to set the color that the canvas
-originaly had. For C<Q> a special value C<off> can be used to turn off background
+originaly had. For C<G> a special value C<off> can be used to turn off background
 color and set it as transparent.
 
 The C<M> command has three parameters, comma-separated: X, Y, and flags.  X and
@@ -57,6 +64,8 @@ each is:
 
 The text inside C<W> sequence will not be wrapped during C<text_wrap> calls.
 
+The text inside C<Q> sequence will not be treated as markup.
+
 The C<P> sequence is used as follows:C<< PE<lt>nE<gt> >>, where C<n> is a
 0-based index into the C<picturePalette>.
 
@@ -66,7 +75,21 @@ return the width of the formatted text.  B<NOTE>: These methods do not save stat
 between calls, so your markup cannot span lines (since each line is drawn or
 measured with a separate call).
 
+The module can export a single method C<M> that is a shortcut over creation of a new markup
+object with default color, font, and image palettes. These can be accessed directly as
+C<@COLORS, @FONTS, @IMAGES> correspondingly.
+
 =cut
+
+our (@FONTS, @COLORS, @IMAGES);
+sub M($) {
+	return Prima::Drawable::Markup->new(
+		markup         => $_[0],
+		fontPalette    => \@FONTS,
+		picturePalette => \@IMAGES,
+		colorPalette   => \@COLORS,
+	) 
+}
 
 sub new
 {
@@ -100,15 +123,15 @@ sub parse_color
 			$c += 2;
 			$c |= tb::COLOR_INDEX;
 		} elsif ( lc($c) eq 'default' ) {
-			$c = $block->[($command eq 'Q') ? tb::BLK_BACKCOLOR : tb::BLK_COLOR];
-		} elsif ( $command eq 'Q' && lc($c) eq 'off' ) {
+			$c = $block->[($command eq 'G') ? tb::BLK_BACKCOLOR : tb::BLK_COLOR];
+		} elsif ( $command eq 'G' && lc($c) eq 'off' ) {
 			$c = tb::BACKCOLOR_OFF;
 		} else {
 			warn "Bad color: $c";
 			return;
 		}
 		push @{$stacks->{$key}}, $state->{$key};
-		$state->{$key} = $c | (( $command eq 'Q') ? tb::BACKCOLOR_FLAG : 0);
+		$state->{$key} = $c | (( $command eq 'G') ? tb::BACKCOLOR_FLAG : 0);
 	} else {
 		$state->{$key} = pop @{$stacks->{$key}};
 	}
@@ -241,12 +264,19 @@ sub parse_picture
 		;
 }
 
+sub parse_quote
+{
+	my ( $self, $mode, $command, $stacks, $state, $block ) = @_;
+	$state->{quote} = $mode;
+	return 1;
+}
+
 sub commands
 {
 	return (
 		# has params, has text, callback
 		C => [ 1, 1, \&parse_color ],
-		Q => [ 1, 1, \&parse_color ],
+		G => [ 1, 1, \&parse_color ],
 		F => [ 1, 1, \&parse_font_id ],
 		S => [ 1, 1, \&parse_font_size ],
 		I => [ 0, 1, \&parse_font_style ],
@@ -255,6 +285,7 @@ sub commands
 		M => [ 1, 0, \&parse_transpose ],
 		W => [ 0, 1, \&parse_wrap ],
 		P => [ 1, 0, \&parse_picture ],
+		Q => [ 0, 1, \&parse_quote ],
 	);
 }
 
@@ -267,6 +298,7 @@ sub init_state
 		fontSize  => 0,
 		fontStyle => 0,
 		wrap      => tb::WRAP_MODE_ON,
+		quote     => 0,
 	};
 }
 
@@ -288,7 +320,7 @@ sub parse
 		# Look for the beginning of a sequence
 		if ( $token =~ /^[\n\r]+$/) {
 			push @$block, tb::wrap( tb::WRAP_IMMEDIATE );
-		} elsif ( $token =~ /^([A-Z])(<(?:<+\s+)?)$/s ) {
+		} elsif ( $token =~ /^([A-Z])(<(?:<+\s+)?)$/s && ! $state->{quote} ) {
 			# Push a new sequence onto the stack of those "in-progress"
 			my ($cmd, $ldelim) = ($1, $2);
 			$ldelim =~ s/\s+$//, (my $rdelim = $ldelim) =~ tr/</>/;
@@ -337,6 +369,7 @@ sub parse
 				)
 			) {
 				my $t = $1;
+				pop @delim_stack;
 				push @$block, tb::text( length($plaintext), length($t) );
 				$plaintext .= $t;
 
@@ -344,7 +377,12 @@ sub parse
 				length($rest) and unshift @tokens, $rest;
 
 				my $cmd = pop(@cmd_stack) // '';
-				next unless exists $commands{$cmd};
+				if( $self->{quote} && $cmd ne 'Q') {
+					push @cmd_stack, $cmd;
+					next;
+				} else {
+					next unless exists $commands{$cmd};
+				}
 
 				my ( $has_params, $has_text, $callback ) = @{ $commands{$cmd} };
 				$callback->($self, 0, $cmd, \%stacks, $state, $block) if $has_text;
@@ -484,7 +522,7 @@ Each element of the array should be a C<Prima::Image> descendant.
 
 =head1 SEE ALSO
 
-L<Prima::Drawable::TextBlock>
+L<Prima::Drawable::TextBlock>, F<examples/markup.pl>
 
 =head1 COPYRIGHT
 

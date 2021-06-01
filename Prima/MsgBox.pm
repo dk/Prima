@@ -81,6 +81,11 @@ sub message_box
 {
 	my ( $title, $text, $options, @extras) = @_;
 
+	if ( (ref($text) // '') eq 'SCALAR') {
+		require Prima::Drawable::Markup;
+		$text = Prima::Drawable::Markup::M( $$text );
+	}
+
 	my $extras =
 		( 1 == @extras and (ref($extras[0])||'') eq 'HASH') ?
 	   	$extras[0] : # old style
@@ -260,13 +265,11 @@ dialog boxes.
 
 =head1 SYNOPSIS
 
-	use Prima;
-	use Prima::Application;
-	use Prima::MsgBox;
+	use Prima qw(Application);
+	use Prima::MsgBox qq(input_box message);
 
-	my $text = Prima::MsgBox::input_box( 'Sample input box', 'Enter text:', '');
-	$text = '(none)' unless defined $text;
-	Prima::MsgBox::message( "You have entered: '$text'", mb::Ok);
+	my $text = input_box( 'Sample input box', 'Enter text:', '') // '(none)';
+	message( \ "You have entered: 'B<Q<< $text >>>'", mb::Ok);
 
 =for podview <img src="msgbox.gif">
 

@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 
+#undef  set_text
 #undef  my
 #define inherited CWidget->
 #define my  ((( PWindow) self)-> self)
@@ -813,18 +814,14 @@ Window_taskListed( Handle self, Bool set, Bool taskListed)
 	return false;
 }
 
-
-SV *
-Window_text( Handle self, Bool set, SV * text)
+void
+Window_set_text( Handle self, SV * text)
 {
-	SV *ret = inherited text( self, set, text);
-	if (set) {
-		if ( var-> text )
-			apc_window_set_caption( self, SvPV_nolen( var-> text ), prima_is_utf8_sv( var-> text ));
-		else
-			apc_window_set_caption( self, "", 0);
-	}
-	return ret;
+	inherited set_text( self, text);
+	if ( var-> text )
+		apc_window_set_caption( self, SvPV_nolen( var-> text ), prima_is_utf8_sv( var-> text ));
+	else
+		apc_window_set_caption( self, "", 0);
 }
 
 Bool
