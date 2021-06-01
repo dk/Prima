@@ -1901,11 +1901,12 @@ for cases when these are insufficient. See description of options in L<spline>.
 
 =item text_wrap TEXT, WIDTH, OPTIONS, [TAB_INDENT = 8, FROM = 0, LENGTH = -1, GLYPHS]
 
-Breaks TEXT string in chunks that must fit into WIDTH pixels wide box. TEXT
-is either character string, or a C<Prima::Drawable::Glyphs> object returned
-from C<text_shape>, or C<< Prima::Drawable::Glyphs->glyphs >> strings of
-glyphs. In the glyph cases, some wrapping options are not applicable.
-It is possible to send both text as TEXT and its shaped representation as GLYPHS.
+Breaks TEXT string in chunks that must fit into WIDTH pixels wide box ( for
+WIDTH >= 0 ). TEXT is either character string, or a C<Prima::Drawable::Glyphs>
+object returned from C<text_shape>, or C<< Prima::Drawable::Glyphs->glyphs >>
+strings of glyphs. In the glyph cases, some wrapping options are not
+applicable.  It is possible to send both text as TEXT and its shaped
+representation as GLYPHS.
 
 The break algorithm and its result are governed by OPTIONS integer value
 which is a combination of C<tw::> constants:
@@ -2032,7 +2033,7 @@ The escaped character.
 
 Context used: font
 
-=item text_wrap_shape TEXT, WIDTH, %OPTIONS
+=item text_wrap_shape TEXT, WIDTH = -1, %OPTIONS
 
 Runs C<text_shape> over results from C<text_wrap> call, with C<TEXT>, C<WIDTH>,
 C<$OPTIONS{options}> and C<$OPTIONS{tabs}>. Other C<%OPTIONS> are used in

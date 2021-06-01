@@ -2606,6 +2606,7 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 SV*
 Drawable_text_wrap( Handle self, SV * text, int width, int options, int tabIndent, int from, int len, SV * glyphs)
 {
+	if ( width < 0 ) width = INT_MAX;
 	if ( SvTYPE(glyphs) != SVt_NULL ) {
 		return string_glyphs_wrap(self, text, width, options, tabIndent, from, len, glyphs);
 	} else if ( !SvROK( text )) {
