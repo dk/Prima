@@ -338,10 +338,9 @@ sub text_wrap_shape
 {
 	my ( $self, $text, $width, %opt) = @_;
 
-	return $text->text_wrap_shape($self, $width, %opt) if ref($text) && UNIVERSAL::can($text, 'text_wrap_shape');
-
-	my $shaped = $self-> text_shape( $text, %opt ) or return;
 	my $opt    = delete($opt{options}) // tw::Default;
+	my $shaped = $self-> text_shape( $text, %opt );
+	return $self->text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8) unless $shaped;
 	my $ret    = $self-> text_wrap( $text, $width // -1, $opt, delete($opt{tabs}) // 8, 0, -1, $shaped);
 
 	if (( my $justify = delete $opt{justify} ) && $ret && @$ret ) {
