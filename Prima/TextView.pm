@@ -93,7 +93,7 @@ sub init
 	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	for ( qw( autoHScroll autoVScroll colorMap fontPalette
 				hScroll vScroll borderWidth paneWidth paneHeight
-				offset topLine textDirection textRef))
+				offset topLine textDirection text textRef))
 		{ $self-> $_( $profile{ $_}); }
 	return %profile;
 }
