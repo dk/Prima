@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Prima qw(Notebooks MsgBox ComboBox
 Dialog::FontDialog Dialog::ColorDialog Dialog::FileDialog Dialog::ImageDialog
-IniFile Utils RubberBand KeySelector Utils);
+IniFile Utils RubberBand KeySelector Utils sys::FS);
 use Prima::VB::VBLoader;
 use Prima::VB::VBControls;
 use Prima::VB::CfgMaint;
@@ -112,7 +112,7 @@ sub font_dialog
 sub accelItems
 {
 	return [
-		['openitem' => '~Open' => 'Ctrl+O' => '^O' => sub { $VB::main-> open;}],
+		['openitem' => '~Open' => 'Ctrl+O' => '^O' => sub { $VB::main-> open_file;}],
 		['-saveitem1' => '~Save' => 'Ctrl+S' => '^S' => sub {$VB::main-> save;}],
 		['Exit' => 'Ctrl+Q' => '^Q' => sub{ $VB::main-> close;}],
 		['Object Inspector' => 'F11' => 'F11' => sub { $VB::main-> bring_inspector; }],
@@ -1272,7 +1272,7 @@ sub profile_default
 		menuItems      => [
 			['~File' => [
 				['newitem' => '~New' => 'Ctrl+N' => '^N' =>     sub {$_[0]-> new;}],
-				['openitem' => '~Open' => 'Ctrl+O' => '^O' =>   sub {$_[0]-> open;}],
+				['openitem' => '~Open' => 'Ctrl+O' => '^O' =>   sub {$_[0]-> open_file;}],
 				['-saveitem1' => '~Save' => 'Ctrl+S' => '^S' => sub {$_[0]-> save;}],
 				['-saveitem2' =>'Save ~as...' =>                sub {$_[0]-> saveas;}],
 				['closeitem' =>'~Close' => 'Ctrl+W' => '^W' =>  sub { $VB::form-> close if $VB::form}],
@@ -1710,7 +1710,7 @@ sub inspect_load_data
 
 	my $fn = ( $asFile ? $data : "input data");
 	if ( $asFile) {
-		unless (Prima::Utils::open( F, "<", $data)) {
+		unless (open( F, "<", $data)) {
 			Prima::MsgBox::message( "Error loading " . $data);
 			return;
 		}
@@ -1913,7 +1913,7 @@ sub load_file
 	$_-> notify(q(Load)) for $VB::form-> widgets;
 }
 
-sub open
+sub open_file
 {
 	my $self = $_[0];
 
@@ -2212,7 +2212,7 @@ sub save
 
 	return $self-> saveas unless defined $self-> {fmName};
 
-	if ( Prima::Utils::open( F, ">", $self-> {fmName})) {
+	if ( open( F, ">", $self-> {fmName})) {
 		local $/;
 		$VB::main-> wait;
 		my $c = $asPL ? $self-> write_PL : $self-> write_form;
