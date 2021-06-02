@@ -216,10 +216,10 @@ sub init
 	$profile{selection} = [@{$profile{selStart}}, @{$profile{selEnd}}];
 	$self->{$_} = $profile{$_} for qw(scrollBarClass hScrollBarProfile vScrollBarProfile);
 	for ( qw( hiliteNumbers hiliteQStrings hiliteQQStrings hiliteIDs hiliteChars hiliteREs
-		autoHScroll autoVScroll
+		autoHScroll autoVScroll text
 		textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth
 		topLine  tabIndent readOnly offset wordDelimiters wantTabs wantReturns
-		wordWrap cursorWrap markers textDirection textLigation text))
+		wordWrap cursorWrap markers textDirection textLigation ))
 		{ $self-> $_( $profile{ $_}); }
 	delete $self-> {resetDisabled};
 	$self-> {uChange} = 0;
