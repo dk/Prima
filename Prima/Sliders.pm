@@ -316,11 +316,19 @@ sub on_mouseleave
 sub fix_triangle
 {
 	my @spot = map { int($_ + .5) } @_;
-	my $d = $spot[4] - $spot[0];
-	if ($d % 2) {
-		$spot[2] = $spot[0] + ($d - 1) / 2;
+	my $dx = $spot[4] - $spot[0];
+	my $dy = $spot[3] - $spot[1];
+	if ($dx % 2) {
+		$spot[2] = $spot[0] + ($dx - 1) / 2;
 		$spot[4]--;
+		$dx--;
 	}
+	if ( $dx == 2 ) {
+		$spot[4]++;
+		$spot[0]--;
+		$dx += 2;
+	}
+	$spot[3] -= ($dy > 0) ? 1 : -1 if abs($dy) > $dx / 2;
 	return \@spot;
 }
 
@@ -350,11 +358,10 @@ sub on_paint
 			$size[0] - 3, $size[1] - 3,
 		]);
 	}
-	$canvas-> color( $p == 1 ? $c3d[1] : $c3d[ 0]);
-	$canvas-> line( 0, 0, 0, $size[1] - 1);
-	$canvas-> line( 1, 1, 1, $size[1] - 2);
-	$canvas-> line( 2, $size[1] - 2, $size[0] - 3, $size[1] - 2);
-	$canvas-> line( 1, $size[1] - 1, $size[0] - 2, $size[1] - 1);
+	$canvas-> color( $p == 1 ? 0x404040 : $c3d[1]);
+	$canvas-> polyline( [0, 0, 0, $size[1] - 1, $size[0] - 2, $size[1] - 1]);
+	$canvas-> color( $p == 1 ? $c3d[1]  : $c3d[0]);
+	$canvas-> polyline( [1, 1, 1, $size[1] - 2, $size[0] - 3, $size[1] - 2]);
 
 	if ( $prelightPart == 2 && $size[1] > 4 && $size[0] > 4 ) {
 		$canvas->color( $prelightColor );
@@ -364,14 +371,14 @@ sub on_paint
 			$size[0] - 3, 2,
 		]);
 	}
-	$canvas-> color( $p == 2 ? $c3d[0] : $c3d[ 1]);
-	$canvas-> line( 1, 0, $size[0] - 1, 0);
-	$canvas-> line( 2, 1, $size[0] - 1, 1);
-	$canvas-> line( $size[0] - 2, 1, $size[0] - 2, $size[1] - 2);
-	$canvas-> line( $size[0] - 1, 1, $size[0] - 1, $size[1] - 1);
+	$canvas-> color( $p == 2 ? $c3d[0] : $c3d[1]);
+	$canvas-> polyline([2, 1, $size[0] - 2, 1, $size[0] - 2, $size[1] - 2]);
+	$canvas-> color( $p == 2 ? $c3d[1] : 0x404040);
+	$canvas-> polyline([1, 0, $size[0] - 1, 0, $size[0] - 1, $size[1] - 1]);
 
 	$canvas-> color( $p == 1 ? $c3d[ 0] : $c3d[ 1]);
 	$canvas-> line( -1, 0, $size[0] - 2, $size[1] - 1);
+	$canvas-> color( 0x404040);
 	$canvas-> line( 0, 0, $size[0] - 1, $size[1] - 1);
 	$canvas-> color( $p == 2 ? $c3d[ 1] : $c3d[ 0]);
 	$canvas-> line( 1, 0, $size[0], $size[1] - 1);
