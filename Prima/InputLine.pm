@@ -235,15 +235,14 @@ sub reset
 	$self-> cursorPos( $x, $border + 1);
 }
 
-sub text
+sub set_text
 {
-	return $_[0]-> SUPER::text unless $#_;
 	my ( $self, $cap) = @_;
 	$cap = '' unless defined $cap;
 	$cap = substr( $cap, 0, $self-> {maxLen})
 		if $self-> {maxLen} >= 0 and length($cap) > $self-> {maxLen};
 
-	$self-> SUPER::text($cap);
+	$self-> SUPER::set_text($cap);
 
 	$cap = $self-> {passwordChar} x length $cap if $self-> {writeOnly};
 	if ( length($cap)) {

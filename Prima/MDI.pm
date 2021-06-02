@@ -1066,10 +1066,9 @@ sub on_mousemove
 sub on_enable { $_[0]-> repaint; }
 sub on_disable { $_[0]-> repaint; }
 
-sub text
+sub set_text
 {
-	return $_[0]-> SUPER::text unless $#_;
-	$_[0]-> SUPER::text( $_[1]);
+	$_[0]-> SUPER::set_text( $_[1]);
 	$_[0]-> repaint_title(q(title));
 }
 
