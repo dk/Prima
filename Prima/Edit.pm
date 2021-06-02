@@ -219,7 +219,7 @@ sub init
 		autoHScroll autoVScroll
 		textRef syntaxHilite autoIndent persistentBlock blockType hScroll vScroll borderWidth
 		topLine  tabIndent readOnly offset wordDelimiters wantTabs wantReturns
-		wordWrap cursorWrap markers textDirection textLigation))
+		wordWrap cursorWrap markers textDirection textLigation text))
 		{ $self-> $_( $profile{ $_}); }
 	delete $self-> {resetDisabled};
 	$self-> {uChange} = 0;

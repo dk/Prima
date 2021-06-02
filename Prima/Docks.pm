@@ -1558,10 +1558,9 @@ sub redock
 	$self-> dock_back;
 }
 
-sub text
+sub set_text
 {
-	return $_[0]-> SUPER::text unless $#_;
-	$_[0]-> SUPER::text( $_[1]);
+	$_[0]-> SUPER::set_text( $_[1]);
 	$_[0]-> {externalDocker}-> text($_[1]) if $_[0]-> {externalDocker};
 }
 

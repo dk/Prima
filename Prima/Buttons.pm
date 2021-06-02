@@ -313,17 +313,14 @@ sub pressed
 	$_[0]-> repaint;
 }
 
-
-sub text
+sub set_text
 {
-	return $_[0]-> SUPER::text unless $#_;
 	my ( $self, $caption) = @_;
-	$self-> SUPER::text( $caption );
+	$self-> SUPER::set_text( $caption );
 	$self-> {accel} = lc($1) if $caption =~ /~([a-z0-9])/i;
 	$self-> check_auto_size;
 	$self-> repaint;
 }
-
 
 sub on_enable  { $_[0]-> repaint; }
 sub on_disable { $_[0]-> cancel_transaction; $_[0]-> repaint; }
