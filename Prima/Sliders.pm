@@ -1278,6 +1278,7 @@ sub on_paint
 		}
 		my $i;
 		my @tr = $self->translate;
+		my @texts;
 		for my $glyph_delta ( @glyph_deltas ) {
 			my ( $color, $delta_x, $delta_y ) = @$glyph_delta;
 			$canvas-> color( $color );
@@ -1298,30 +1299,60 @@ sub on_paint
 						$bw - 4 - $$tlen[ $i], $val
 					) if $ta & 1;
 				}
-				$canvas-> text_shape_out( $$ttxt[ $i],
+				push @texts, [
+					$$ttxt[ $i],
 					( $ta == 2) ?
 						$bw + $sb + $$tlen[ $i] + 5 :
 						$bw - $$tlen[ $i] - 5 - $canvas-> get_text_width( $$ttxt[ $i]),
 					$val - $bh / 2
-				) if defined $$ttxt[ $i];
+				] if defined $$ttxt[ $i];
 			}
+			my $size = $size[1] - $bh - 2;
+			my $fh   = $bh + 1;
+			if ($size < $fh) {
+				@texts = ();
+			} elsif ( $size < $fh * 2 || @texts == 1) {
+				@texts = ($texts[0]);
+			} elsif ( $size < $fh * 3 || @texts == 2) {
+				@texts = @texts[0,-1];
+			} else {
+				my @t = ($texts[0]);
+				$size -= $fh * 1.5;
+				my $y = $texts[0][2] + $fh;
+				for my $t ( @texts[1 .. $#texts - 1] ) {
+					next if $t->[2] < $y;
+					last if $t->[2] > $size;
+					push @t, $t;
+					$y = $t->[2] + $fh;
+				}
+				@texts = (@t, $texts[-1]);
+			}
+			$canvas->text_shape_out(@$_) for @texts;
 		}
 		unless ( $self-> {readOnly}) {
-			my @jp = (
+			my @jp = map { int( $_ + .5 ) } (
 				$bw - 4,       $val - $kb / 2,
 				$bw - 4,       $val + $kb / 2,
 				$bw + $sb + 1, $val + $kb / 2,
-				$bw + $sb * 2 + 2, $val,
+				$bw + $sb + 1 + $kb/2, $val,
 				$bw + $sb + 1, $val - $kb / 2,
 			);
-			$canvas-> color( $self->{prelight} ? $prelight : $clr[1]);
-			$canvas-> fillpoly( \@jp);
-			$canvas-> color( $c3d[0]);
-			$canvas-> polyline([@jp[6..9, 0, 1]]);
-			$canvas-> line($bw - 3, $jp[7]+1, $jp[6]-1, $jp[7]+1);
+			my $rgn = Prima::Region->new( polygon => \@jp);
+			$rgn->offset( $canvas->translate );
+			$canvas-> region( $rgn );
+			$canvas-> new_gradient(
+				palette  => [ $c3d[0], ($self->{prelight} ? $prelight : $clr[1]) ],
+				poly     => [0,0,0.3,0.7,1,1],
+				vertical => 0,
+			)-> bar( $jp[0]+2,$jp[1]+2,$jp[6]-2,$jp[3]-2);
+			$canvas-> color( 0x404040);
+			$canvas-> polyline([@jp[6..9,0,1]]);
 			$canvas-> color( $c3d[1]);
-			$canvas-> polyline([@jp[0..7]]);
-			$canvas-> line($bw - 3, $jp[7]-1, $jp[6]-1, $jp[7]-1);
+			$canvas-> polyline([$jp[0]+1,$jp[1]+1,$jp[2]+1,$jp[3]-1,$jp[4],$jp[5]-1,$jp[6]-1,$jp[7]]);
+			$canvas-> line($bw - 2, $jp[7]-1, $jp[6]-2, $jp[7]-1);
+			$canvas-> color( $c3d[0]);
+			$canvas-> polyline([$jp[6]-1,@jp[7,8],$jp[9]+1,$jp[0],$jp[1]+1,@jp[2..7]]);
+			$canvas-> line($bw - 2, $jp[7]+1, $jp[6]-1, $jp[7]+1);
 		}
 	} else {
 		my $bh  = ( $size[1] - $sb) / 2;
@@ -1417,21 +1448,32 @@ sub on_paint
 		}
 
 		unless ( $self-> {readOnly}) {
-			my @jp = (
+			my @jp = map { int($_ + .5) } (
 				$val - $kb / 2, $bh - 2,
 				$val - $kb / 2, $bh + $sb + 3,
 				$val + $kb / 2, $bh + $sb + 3,
 				$val + $kb / 2, $bh - 2,
-				$val,           $bh - $sb - 1,
+				$val,           $bh - $kb / 2 - 2,
 			);
-			$canvas-> color( $self->{prelight} ? $prelight : $clr[1]);
-			$canvas-> fillpoly( \@jp);
-			$canvas-> color( $c3d[0]);
+			my $rgn = Prima::Region->new( polygon => \@jp);
+			$rgn->offset( $canvas->translate );
+			$canvas-> region( $rgn );
+			$canvas-> new_gradient(
+				palette  => [ ($self->{prelight} ? $prelight : $clr[1]), $c3d[0] ],
+				poly     => [0,0,0.7,0.3,1,1],
+				vertical => 1,
+			)-> bar( $jp[0]+2,$jp[9],$jp[4]-2,$jp[3]);
+			$canvas-> color( 0x404040 );
 			$canvas-> polyline([@jp[4..9]]);
-			$canvas-> line($val-1,$jp[3]-1,$val-1,$jp[9]+1);
+			$canvas-> color( $c3d[0]);
+			$canvas-> polyline([
+				@jp[8,9,0..3],$jp[4]-1,$jp[5],
+				$jp[6]-1,$jp[7],$jp[8],$jp[9]+1
+			]);
+			$canvas-> line($val,$jp[3]-2,$val,$jp[9]) if $kb > 10;
 			$canvas-> color( $c3d[1]);
-			$canvas-> polyline([@jp[8,9,0..5]]);
-			$canvas-> line($val+1,$jp[3]-1,$val+1,$jp[9]+1);
+			$canvas-> polyline([$jp[8],$jp[9]+1,$jp[0]+1,$jp[1],$jp[2]+1,$jp[3]-1,$jp[4]-2,$jp[5]-1]);
+			$canvas-> line($val+2,$jp[3]-2,$val+2,$jp[9]) if $kb > 10;
 		}
 	}
 }
@@ -1670,12 +1712,14 @@ sub value
 			my $v2  = $bh + 1 + abs( $old - $self-> {min}) *
 				( $size[1] - 2 * $bh - 5) / (abs($self-> {max} - $self-> {min})||1);
 			( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
-			$v1 -= $self->knobBreadth / 2;
-			$v2 += $self->knobBreadth / 2 + 1;
+			my $kb = $self-> knobBreadth / 2;
 			my $xd = 0;
 			$xd = (( $self-> {tickAlign} == tka::Normal) ? 1 : -1) *
 			( $bw - $sb - $self->knobBreadth) if $self-> {tickAlign} != tka::Dual;
-			$self-> invalidate_rect( $bw - 4 + $xd, $v1, $bw + $sb * 2 + 3 + $xd, $v2);
+			$self-> invalidate_rect(
+				map { int($_ + .5) }
+				$bw - 4 + $xd, $v1 - $kb, $bw + $sb * 2 + 3 + $xd, $v2 + $kb + 1
+			);
 		} else {
 			$sb = $size[1] / 6 unless $sb;
 			$sb = 2 unless $sb;
@@ -1686,12 +1730,15 @@ sub value
 			my $v2  = $bw + 1 + abs( $old - $self-> {min}) *
 				( $size[0] - 2 * $bw - 5) / (abs($self-> {max} - $self-> {min})||1);
 			( $v2, $v1) = ( $v1, $v2) if $v1 > $v2;
-			$v1 -= $self->knobBreadth / 2;
-			$v2 += $self->knobBreadth / 2 + 1;
+			my $kb = $self-> knobBreadth / 2;
 			my $yd = 0;
 			$yd = (( $self-> {tickAlign} == tka::Normal) ? -1 : 1) *
 			( $bh - $sb - $self->knobBreadth) if $self-> {tickAlign} != tka::Dual;
-			$self-> invalidate_rect( $v1, $bh - 3 - $sb + $yd, $v2, $bh + $sb + 4 + $yd);
+			$self-> invalidate_rect(
+				map { int($_ + .5) }
+				$v1 - $kb, $bh - $kb - 2 + $yd,
+				$v2 + $kb + 1, $bh + $sb + 5 + $yd
+			);
 		}
 		$self-> notify(q(Change)) unless $self-> {suppressNotify};
 	} else {
@@ -1707,7 +1754,8 @@ sub knobBreadth
 {
 	return $_[0]->{knobBreadth} unless $#_;
 	my ( $self, $kb) = @_;
-	$kb = 1 if $kb < 1;
+	$kb = 4 if $kb < 4;
+	$kb &= ~1; # must divide by 2
 	return if $kb == $self-> {knobBreadth};
 	$self-> {knobBreadth} = $kb;
 	$self-> update_geom_sizes;
