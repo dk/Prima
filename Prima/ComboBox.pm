@@ -330,7 +330,11 @@ sub Button_Paint
 	my $lv = $owner-> listVisible;
 	my ( $rc, $lc) = ( $self-> light3DColor, $self-> dark3DColor);
 	( $rc, $lc) = ( $lc, $rc) if $lv;
-	$canvas-> rect3d( 0, 0, $w-1, $h-1, 1, $rc, $lc, $clr[1]);
+	$self-> rect_bevel( $canvas, 0, 0, $w-1, $h-1, fill => $self-> new_gradient(
+		palette  => [ $self-> dark3DColor, $clr[1], $self-> light3DColor ],
+		spline   => [0,0.5,1,0.5],
+		vertical => 0,
+	));
 	if ( $ena) {
 		$canvas-> color( $rc);
 		$canvas-> fillpoly([ 5, $h * 0.6 - 1, $w - 4, $h * 0.6 - 1, $w/2 + 1, $h * 0.4 - 1]);
