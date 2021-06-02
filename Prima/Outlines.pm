@@ -56,7 +56,7 @@ sub profile_default
 		dragable       => 1,
 		hScroll        => 0,
 		focusedItem    => -1,
-		indent         => 12,
+		indent         => int( 12 * $::application->uiScaling + .5),
 		itemHeight     => $def-> {font}-> {height},
 		items          => [],
 		multiSelect    => 0,
@@ -73,6 +73,32 @@ sub profile_default
 	);
 	@$def{keys %prf} = values %prf;
 	return $def;
+}
+
+sub init_images
+{
+	return if @images;
+
+	my $i = 0;
+	my $uis = $::application->uiScaling;
+	@imageSize = map { $uis * $_ } (11,11);
+	my $xd = int(2 * $uis + .5);
+	my $lw = int( $uis + .5);
+	my @c = map { $_ / 2 } @imageSize;
+	for my $i (0,1) {
+		$images[$i] = Prima::DeviceBitmap->new(
+			size      => \@imageSize,
+			backColor => cl::White,
+			color     => cl::Gray,
+		);
+		$images[$i]->clear;
+		$images[$i]->lineWidth($lw);
+		$images[$i]->lineEnd(le::Square);
+		$images[$i]->rectangle(0,0,$imageSize[0]-$lw%2,$imageSize[1]-$lw%2);
+		$images[$i]->color(cl::Black);
+		$images[$i]->line( $xd, $c[1], $imageSize[0]-$xd-1, $c[1] );
+	}
+	$images[1]->line( $c[0], $xd, $c[0], $imageSize[1]-$xd-1);
 }
 
 sub profile_check_in
@@ -95,31 +121,7 @@ use constant STACK_FRAME => 64;
 sub init
 {
 	my $self = shift;
-	unless ( @images) {
-		my $i = 0;
-		for ( sbmp::OutlineCollapse, sbmp::OutlineExpand) {
-			$images[ $i++] = Prima::StdBitmap::image($_);
-		}
-		if ( $images[0]) {
-			@imageSize = $images[0]-> size;
-		} else {
-			# if compiled without gif support
-			@imageSize = map { $::application->uiScaling * $_ } (11,11);
-			for my $i (0,1) {
-				$images[$i] = Prima::DeviceBitmap->new(
-					width     => $imageSize[0],
-					height    => $imageSize[1],
-					backColor => cl::White,
-					color     => cl::Gray,
-				);
-				$images[$i]->clear;
-				$images[$i]->rectangle(0,0,10,10);
-				$images[$i]->color(cl::Black);
-				$images[$i]->line( 2, 5, 8, 5 );
-			}
-			$images[1]->line( 5, 2, 5, 8);
-		}
-	}
+	init_images;
 	for ( qw( topItem focusedItem))
 		{ $self-> {$_} = -1; }
 	for ( qw( autoHScroll autoVScroll scrollTransaction dx dy hScroll vScroll
