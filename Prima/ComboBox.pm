@@ -318,6 +318,25 @@ sub Button_MouseLeave
 
 sub Button_MouseUp { $_[1]-> capture(0); }
 
+sub fix_triangle
+{
+	my @spot = map { int($_ + .5) } @_;
+	my $dx = $spot[4] - $spot[0];
+	my $dy = $spot[1] - $spot[3];
+	if ($dx % 2) {
+		$spot[2] = $spot[0] + ($dx - 1) / 2;
+		$spot[4]--;
+		$dx--;
+	}
+	if ( $dx == 2 ) {
+		$spot[4]++;
+		$spot[0]--;
+		$dx += 2;
+	}
+	$spot[3]-- if $dy < $dx / 2;
+	return @spot;
+}
+
 sub Button_Paint
 {
 	my ( $owner, $self, $canvas) = @_;
@@ -330,17 +349,24 @@ sub Button_Paint
 	my $lv = $owner-> listVisible;
 	my ( $rc, $lc) = ( $self-> light3DColor, $self-> dark3DColor);
 	( $rc, $lc) = ( $lc, $rc) if $lv;
-	$self-> rect_bevel( $canvas, 0, 0, $w-1, $h-1, fill => $self-> new_gradient(
-		palette  => [ $self-> dark3DColor, $clr[1], $self-> light3DColor ],
-		spline   => [0,0.5,1,0.5],
-		vertical => 0,
-	));
+	$self-> rect_bevel(
+		$canvas, 0, 0, $w-1, $h-1,
+		fill => $self-> new_gradient(
+			palette  => [ $self-> dark3DColor, $clr[1], $self-> light3DColor ],
+			spline   => [0,0.5,1,0.5],
+			vertical => 0,
+		),
+		width => 1
+	);
+	my @triangle = fix_triangle( 4, $h * 0.6, $w/2, $h * 0.4, $w - 4, $h * 0.6 );
 	if ( $ena) {
 		$canvas-> color( $rc);
-		$canvas-> fillpoly([ 5, $h * 0.6 - 1, $w - 4, $h * 0.6 - 1, $w/2 + 1, $h * 0.4 - 1]);
+		$canvas-> translate(1,-1);
+		$canvas-> fillpoly(\@triangle);
+		$canvas-> translate(0,0);
 	}
 	$canvas-> color( $clr[0]);
-	$canvas-> fillpoly([ 4, $h * 0.6, $w - 5, $h * 0.6, $w/2, $h * 0.4]);
+	$canvas-> fillpoly(\@triangle);
 }
 
 sub Button_Enable  { $_[1]-> repaint }
