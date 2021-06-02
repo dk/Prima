@@ -1349,10 +1349,10 @@ sub on_paint
 			$canvas-> polyline([@jp[6..9,0,1]]);
 			$canvas-> color( $c3d[1]);
 			$canvas-> polyline([$jp[0]+1,$jp[1]+1,$jp[2]+1,$jp[3]-1,$jp[4],$jp[5]-1,$jp[6]-1,$jp[7]]);
-			$canvas-> line($bw - 2, $jp[7]-1, $jp[6]-2, $jp[7]-1);
+			$canvas-> line($jp[0]+2, $jp[7]-1, $jp[6]-2, $jp[7]-1);
 			$canvas-> color( $c3d[0]);
 			$canvas-> polyline([$jp[6]-1,@jp[7,8],$jp[9]+1,$jp[0],$jp[1]+1,@jp[2..7]]);
-			$canvas-> line($bw - 2, $jp[7]+1, $jp[6]-1, $jp[7]+1);
+			$canvas-> line($jp[0]+2, $jp[7]+1, $jp[6]-1, $jp[7]+1);
 		}
 	} else {
 		my $bh  = ( $size[1] - $sb) / 2;
@@ -1470,10 +1470,10 @@ sub on_paint
 				@jp[8,9,0..3],$jp[4]-1,$jp[5],
 				$jp[6]-1,$jp[7],$jp[8],$jp[9]+1
 			]);
-			$canvas-> line($val,$jp[3]-2,$val,$jp[9]) if $kb > 10;
+			$canvas-> line($jp[8]-1,$jp[3]-2,$jp[8]-1,$jp[9]) if $kb > 10;
 			$canvas-> color( $c3d[1]);
 			$canvas-> polyline([$jp[8],$jp[9]+1,$jp[0]+1,$jp[1],$jp[2]+1,$jp[3]-1,$jp[4]-2,$jp[5]-1]);
-			$canvas-> line($val+2,$jp[3]-2,$val+2,$jp[9]) if $kb > 10;
+			$canvas-> line($jp[8]+1,$jp[3]-2,$jp[8]+1,$jp[9]) if $kb > 10;
 		}
 	}
 }
