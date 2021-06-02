@@ -1908,11 +1908,10 @@ sub on_paint
 	}
 }
 
-sub text
+sub set_text
 {
-	return $_[0]-> SUPER::text unless $#_;
 	my $self = $_[0];
-	$self-> SUPER::text( $_[1]);
+	$self-> SUPER::set_text( $_[1]);
 	$self-> notify( 'Change');
 	$self-> repaint;
 }
