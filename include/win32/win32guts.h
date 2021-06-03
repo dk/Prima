@@ -34,8 +34,8 @@ typedef HANDLE SOCKETHANDLE;
 #endif
 
 #define DEFAULT_SYSTEM_FONT              "System"
-#define DEFAULT_WIDGET_FONT              "MS Shell Dlg"
-#define DEFAULT_WIDGET_FONT_SIZE         8
+#define DEFAULT_WIDGET_FONT              (((DWORD)(LOBYTE(LOWORD(guts.version)))>5)?"Segoe UI":"MS Shell Dlg")
+#define DEFAULT_WIDGET_FONT_SIZE         (((DWORD)(LOBYTE(LOWORD(guts.version)))>5)?9:8)
 #define COLOR_TOLERANCE                  4
 #define HASMATE_MAGIC                    0xDEAF0CE1
 #define MENU_ID_AUTOSTART                100
