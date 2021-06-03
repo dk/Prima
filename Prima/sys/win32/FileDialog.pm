@@ -229,7 +229,8 @@ sub execute
 		$self-> cancel;
 		return wantarray ? () : undef;
 	}
-	$self-> {directory} = _get('directory');
+	$self-> {directory} = $ret;
+	$self-> {directory} =~ s/(\\|\/)[^\\\/]+$//;
 	$self-> {directory} =~ s/\\/\//g;
 	$self-> {directory} =~ s/\s+$//;
 	$self-> {directory} .= '/' unless $self-> {directory} =~ /\/$/;
