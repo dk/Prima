@@ -1379,7 +1379,7 @@ sub init
 		hint      => 'Open',
 		image     => $images[1],
 		glyphs    => 2,
-		onClick   => sub { $VB::main-> open; } ,
+		onClick   => sub { $VB::main-> open_file; } ,
 	);
 
 	$self-> {savebutton} = $self-> insert( SpeedButton =>
