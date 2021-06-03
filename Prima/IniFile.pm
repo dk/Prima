@@ -6,7 +6,6 @@ use warnings;
 use Carp;
 use Cwd;
 
-
 sub new { shift-> create(@_); }     # a shortcut
 
 sub create
@@ -62,11 +61,11 @@ sub read
 	$self-> {fileName} = canonicalize_fname($fname);
 	eval
 	{
-		open FILE, "$fname" or do
+		open FILE, "<:encoding(UTF-8)", $fname or do
 		{
-			open FILE, ">$fname" or die "Cannot create $fname: $!\n";
+			open FILE, ">", $fname or die "Cannot create $fname: $!\n";
 			close FILE;
-			open FILE, "$fname" or die "Cannot open $fname: $!\n";
+			open FILE, "<:encoding(UTF-8)", $fname or die "Cannot open $fname: $!\n";
 		};
 		my @chunks;
 		my %sectionChunks = ('' => [0]);
@@ -498,11 +497,11 @@ sub write
 	return unless defined($self-> {fileName}) && $self-> {changed};
 	my $fname = $self-> {fileName};
 	eval {
-		open FILE, ">$fname" or die "Cannot write to the $fname: $!\n";
+		open FILE, ">:encoding(UTF-8)", $fname or die "Cannot write to the $fname: $!\n";
 		pop @{$self-> {chunks}-> [-1]} if scalar(@{$self-> {chunks}-> [-1]}) && $self-> {chunks}-> [-1]-> [-1] =~ /^\s*$/;
 		for ( @{$self-> {chunks}})
 		{
-			for (@$_) { print FILE "$_\n"; }
+			for (@$_) { print FILE "$_\n" }
 		}
 		push( @{$self-> {chunks}-> [-1]}, '') if scalar(@{$self-> {chunks}-> [-1]}) && $self-> {chunks}-> [-1]-> [-1] !~ /^\s*$/;
 		close FILE;
