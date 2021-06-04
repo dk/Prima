@@ -18,6 +18,12 @@ extern "C" {
 #define gpENTER(fail)     if ( !inPaint) if ( !my-> begin_paint_info( self)) return (fail)
 #define gpLEAVE           if ( !inPaint) my-> end_paint_info( self)
 
+#define CHECK_GP(ret) \
+	if ( !is_opt(optSystemDrawable)) { \
+		warn("This method is not available on this class because it is not a system Drawable object. You need to implement your own (ref:%d)", __LINE__);\
+		return ret; \
+	}
+
 void
 Drawable_init( Handle self, HV * profile)
 {
@@ -295,6 +301,7 @@ Drawable_get_bpp( Handle self)
 {
 	gpARGS;
 	int ret;
+	CHECK_GP(0);
 	gpENTER(0);
 	ret = apc_gp_get_bpp( self);
 	gpLEAVE;
@@ -321,6 +328,7 @@ Color
 Drawable_get_nearest_color( Handle self, Color color)
 {
 	gpARGS;
+	CHECK_GP(0);
 	gpENTER(clInvalid);
 	color = apc_gp_get_nearest_color( self, color);
 	gpLEAVE;
@@ -330,6 +338,7 @@ Drawable_get_nearest_color( Handle self, Color color)
 Point
 Drawable_resolution( Handle self, Bool set, Point resolution)
 {
+	CHECK_GP(resolution);
 	if ( set)
 		croak("Attempt to write read-only property %s", "Drawable::resolution");
 	return apc_gp_get_resolution( self);
@@ -343,6 +352,7 @@ Drawable_get_physical_palette( Handle self)
 	AV * av = newAV();
 	PRGBColor r;
 
+	CHECK_GP(nilSV);
 	gpENTER(newRV_noinc(( SV *) av));
 	r = apc_gp_get_physical_palette( self, &nCol);
 	gpLEAVE;
@@ -397,12 +407,14 @@ Drawable_get_font_abcdef( Handle self, int first, int last, int flags, PFontABC 
 SV *
 Drawable_get_font_abc( Handle self, int first, int last, int flags)
 {
+	CHECK_GP(nilSV);
 	return Drawable_get_font_abcdef( self, first, last, flags, apc_gp_get_font_abc);
 }
 
 SV *
 Drawable_get_font_def( Handle self, int first, int last, int flags)
 {
+	CHECK_GP(nilSV);
 	return Drawable_get_font_abcdef( self, first, last, flags, apc_gp_get_font_def);
 }
 
@@ -413,6 +425,7 @@ Drawable_get_font_languages( Handle self)
 	AV * av = newAV();
 	gpARGS;
 
+	CHECK_GP(nilSV);
 	gpENTER( newRV_noinc(( SV *) av));
 	p = buf = apc_gp_get_font_languages( self);
 	gpLEAVE;
@@ -435,6 +448,7 @@ Drawable_get_font_ranges( Handle self)
 	AV * av = newAV();
 	gpARGS;
 
+	CHECK_GP(nilSV);
 	gpENTER( newRV_noinc(( SV *) av));
 	ret = apc_gp_get_font_ranges( self, &count);
 	gpLEAVE;
@@ -452,6 +466,7 @@ SV *
 Drawable_get_handle( Handle self)
 {
 	char buf[ 256];
+	CHECK_GP(nilSV);
 	snprintf( buf, 256, PR_HANDLE_FMT, apc_gp_get_handle( self));
 	return newSVpv( buf, 0);
 }
@@ -492,7 +507,12 @@ Bool
 Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop)
 {
 	Bool ok;
+	CHECK_GP(false);
 	if ( image == nilHandle) return false;
+	if ( !(PObject(image)-> options.optSystemDrawable)) {
+		warn("This method is not available on this class because it is not a system Drawable object. You need to implement your own");
+		return false;
+	}
 	if ( xLen == xDestLen && yLen == yDestLen)
 		ok = apc_gp_put_image( self, image, x, y, xFrom, yFrom, xLen, yLen, rop);
 	else
@@ -519,6 +539,7 @@ read_polypoints( Handle self, SV * points, char * procName, int min, Bool (*proc
 #define DEF_LINE_PROCESSOR(name,func) Bool \
 Drawable_##name( Handle self, SV * points)\
 {\
+	CHECK_GP(false);\
 	return read_polypoints( self, points, "Drawable::" #name, 2, func);\
 }
 
@@ -532,6 +553,7 @@ Drawable_bars( Handle self, SV * rects)
 	int count;
 	Rect * p;
 	Bool ret = false, do_free;
+	CHECK_GP(false);
 	if (( p = prima_read_array( rects, "Drawable::bars", 'i', 4, 0, -1, &count, &do_free)) != NULL) {
 		ret = apc_gp_bars( self, count, p);
 		if ( !ret) perl_error();
@@ -547,6 +569,7 @@ Drawable_render_glyph( Handle self, int index, HV * profile)
 	SV * ret;
 	dPROFILE;
 	gpARGS;
+	CHECK_GP(nilSV);
 	gpENTER(nilSV);
 
 	flags = ggoUseHints;
@@ -1101,6 +1124,7 @@ Drawable_palette( Handle self, Bool set, SV * palette)
 SV *
 Drawable_pixel( Handle self, Bool set, int x, int y, SV * color)
 {
+	CHECK_GP(0);
 	if (!set)
 		return newSViv( apc_gp_get_pixel( self, x, y));
 	apc_gp_set_pixel( self, x, y, SvIV( color));
@@ -1111,6 +1135,8 @@ Handle
 Drawable_region( Handle self, Bool set, Handle mask)
 {
 	if ( var-> stage > csFrozen) return nilHandle;
+	if ( !is_opt(optSystemDrawable))
+		return nilHandle;
 
 	if ( set) {
 		if ( mask && kind_of( mask, CRegion)) {

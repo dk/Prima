@@ -52,6 +52,7 @@ Widget_init( Handle self, HV * profile)
 	SV * sv;
 	int geometry;
 
+	opt_set(optSystemDrawable);
 	inherited-> init( self, profile);
 
 	list_create( &var-> widgets, 0, 8);

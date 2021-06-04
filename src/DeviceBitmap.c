@@ -16,6 +16,7 @@ void
 DeviceBitmap_init( Handle self, HV * profile)
 {
 	dPROFILE;
+	opt_set(optSystemDrawable);
 	inherited init( self, profile);
 	var-> w = pget_i( width);
 	var-> h = pget_i( height);

@@ -22,6 +22,12 @@ extern "C" {
 #define gpENTER(fail)     if ( !inPaint) if ( !my-> begin_paint_info( self)) return (fail)
 #define gpLEAVE           if ( !inPaint) my-> end_paint_info( self)
 
+#define CHECK_GP(ret) \
+	if ( !is_opt(optSystemDrawable)) { \
+		warn("This method is not available on this class because it is not a system Drawable object. You need to implement your own (ref:%d)", __LINE__);\
+		return ret; \
+	}
+
 /*
 
 SECTION 1: FONT MAPPER
@@ -515,13 +521,20 @@ switch_font( Handle self, uint16_t fid)
 {
 	Font src, dst;
 	src = PASSIVE_FONT(fid)->font;
-	dst = var->font;
-	src.size = dst.size;
-	src.undef.size = 0;
-	apc_font_pick( self, &src, &dst);
-	if ( strcmp(dst.name, src.name) != 0 )
-		return false;
-	apc_gp_set_font( self, &dst);
+	if ( is_opt(optSystemDrawable) ) {
+		dst = var->font;
+		src.size = dst.size;
+		src.undef.size = 0;
+		apc_font_pick( self, &src, &dst);
+		if ( strcmp(dst.name, src.name) != 0 )
+			return false;
+		apc_gp_set_font( self, &dst);
+	} else {
+		dst = my->get_font(self);
+		src.size = dst.size;
+		src.undef.size = 0;
+		my->set_font(self, src);
+	}
 	return true;
 }
 
@@ -533,6 +546,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
 		Bool   utf8 = prima_is_utf8_sv( text);
+		CHECK_GP(false);
 		if ( utf8) dlen = prima_utf8_length(c_text, dlen);
 		if ((len = check_length(from,len,dlen)) == 0)
 			return true;
@@ -541,6 +555,7 @@ Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 		if ( !ok) perl_error();
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
+		CHECK_GP(false);
 		if (!read_glyphs(&t, text, 0, "Drawable::text_out"))
 			return false;
 		if (t.len == 0)
@@ -599,6 +614,7 @@ Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
 	if ( !SvROK( text )) {
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
+		CHECK_GP(0);
 		if ( prima_is_utf8_sv( text)) {
 			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
 			flags |= toUTF8;
@@ -612,6 +628,7 @@ Drawable_get_text_width( Handle self, SV * text, int flags, int from, int len)
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
+		CHECK_GP(0);
 		if (!read_glyphs(&t, text, 0, "Drawable::get_text_width"))
 			return false;
 		if (t.len == 0)
@@ -680,6 +697,7 @@ Drawable_get_text_box( Handle self, SV * text, int from, int len )
 	if ( !SvROK( text )) {
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
+		CHECK_GP(nilSV);
 
 		if ( prima_is_utf8_sv( text)) {
 			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
@@ -693,6 +711,7 @@ Drawable_get_text_box( Handle self, SV * text, int from, int len )
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
+		CHECK_GP(nilSV);
 		if (!read_glyphs(&t, text, 0, "Drawable::get_text_box"))
 			return false;
 		if (( len = check_length(from,len,t.len)) == 0)
@@ -1254,7 +1273,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		sv_free(ref);
 		return newSVsv(ret);
 	}
-
+	CHECK_GP(nilSV);
 	bzero(&t, sizeof(t));
 
 	/* asserts */
@@ -1504,6 +1523,7 @@ call_get_font_abc( Handle self, unsigned int from, unsigned int to, int flags)
 		if ( !abc) return NULL;
 	} else if ( my-> get_font_abc == Drawable_get_font_abc) {
 		gpARGS;
+		CHECK_GP(NULL);
 		gpENTER(NULL);
 		abc = apc_gp_get_font_abc( self, from, to, flags);
 		gpLEAVE;
@@ -1596,6 +1616,42 @@ precalc_ac_buffer( PFontABC src, PFontABC dest)
 	return true;
 }
 
+static Bool
+fill_font_ranges( Handle self )
+{
+	if ( Drawable_get_font_ranges == my->get_font_ranges ) {
+		CHECK_GP(false);
+		if ( !var-> font_abc_glyphs_ranges ) {
+			if ( !( var-> font_abc_glyphs_ranges = apc_gp_get_font_ranges(self, &var->font_abc_glyphs_n_ranges)))
+				return false;
+		}
+	} else {
+		SV * sv;
+		void * array;
+		Bool do_free;
+		sv = my-> get_font_ranges( self);
+		array = prima_read_array( sv, "get_font_ranges", 'i', 1, -1, -1, &var->font_abc_glyphs_n_ranges, &do_free);
+		if ( !array ) {
+			sv_free(sv);
+			return false;
+		}
+		if ( do_free ) {
+			var-> font_abc_glyphs_ranges = array;
+		} else {
+			int size = var->font_abc_glyphs_n_ranges * sizeof(int);
+			if ( !( var-> font_abc_glyphs_ranges = malloc(size))) {
+				warn("Not enough memory");
+				sv_free(sv);
+				return false;
+			}
+			memcpy( var-> font_abc_glyphs_ranges, array, size );
+			free(array);
+		}
+		sv_free(sv);
+	}
+	return true;
+}
+
 static PFontABC
 query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 {
@@ -1640,10 +1696,8 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 		} else {
 			/* query the range and fill the cache */
 			unsigned long * ranges;
-			if ( !var-> font_abc_glyphs_ranges ) {
-				if ( !( var-> font_abc_glyphs_ranges = apc_gp_get_font_ranges(self, &var->font_abc_glyphs_n_ranges)))
-					goto NO_FONT_ABC;
-			}
+			if ( !fill_font_ranges(self))
+				goto NO_FONT_ABC;
 			ranges = var-> font_abc_glyphs_ranges;
 			for ( i = 0; i < var->font_abc_glyphs_n_ranges; i += 2, ranges += 2 ) {
 				int j;
@@ -1674,7 +1728,7 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 			if ( pfe-> vectors.count <= page )
 				continue;
 
-			if ( !( abc2 = apc_gp_get_font_abc( self, from, to, toGlyphs)))
+			if ( !( abc2 = call_get_font_abc( self, from, to, toGlyphs)))
 				continue;
 
 			fa = (Byte *) pfe-> vectors.items[ page ];
@@ -1687,8 +1741,12 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 				abc[uv - from] = abc2[uv - from];
 			}
 		}
-		if ( font_changed )
-			apc_gp_set_font( self, &var->font);
+		if ( font_changed ) {
+			if ( Drawable_set_font == my->set_font && is_opt(optSystemDrawable))
+				apc_gp_set_font( self, &var->font);
+			else
+				my->set_font(self, var->font);
+		}
 	}
 NO_FONT_ABC:
 

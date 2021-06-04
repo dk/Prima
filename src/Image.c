@@ -37,6 +37,7 @@ Image_init( Handle self, HV * profile)
 {
 	dPROFILE;
 	var-> updateLock = 0;
+	opt_set(optSystemDrawable);
 	inherited init( self, profile);
 	var-> eventMask1 =
 	( query_method( self, "on_headerready", 0) ? IMG_EVENTS_HEADER_READY : 0) |

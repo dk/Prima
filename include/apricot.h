@@ -1660,6 +1660,7 @@ typedef struct _ObjectOptions_ {
 	unsigned optInDraw              : 1;   /* Drawable */
 	unsigned optInDrawInfo          : 1;
 	unsigned optTextOutBaseLine     : 1;
+	unsigned optSystemDrawable      : 1;
 	unsigned optAutoEnableChildren  : 1;   /* Widget */
 	unsigned optBriefKeys           : 1;
 	unsigned optBuffered            : 1;

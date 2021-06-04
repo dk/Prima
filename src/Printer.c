@@ -20,6 +20,7 @@ Printer_init( Handle self, HV * profile)
 	inherited init( self, profile);
 	if ( !apc_prn_create( self))
 		croak("Cannot create printer");
+	opt_set(optSystemDrawable);
 	prn = pget_c( printer);
 	if ( strlen( prn) == 0) prn = my-> get_default_printer( self);
 	my-> set_printer( self, prn);

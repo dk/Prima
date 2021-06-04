@@ -29,6 +29,7 @@ Application_init( Handle self, HV * profile)
 	if ( application != nilHandle)
 		croak( "Attempt to create more than one application instance");
 
+	opt_set(optSystemDrawable);
 	CDrawable-> init( self, profile);
 	list_create( &var->  widgets, 16, 16);
 	list_create( &var->  modalHorizons, 0, 8);
