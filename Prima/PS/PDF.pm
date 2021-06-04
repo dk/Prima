@@ -96,7 +96,7 @@ sub change_transform
 	$self-> emit_content('q');
 
 	my ($ps, $pm) = @{ $self }{ qw(pageSize pageMargins) };
-	my @pm = $self-> pixel2point(
+	my @pm = (
 		@$pm[0,1],
 		$ps->[0] - $pm->[2] - $pm->[0],
 		$ps->[1] - $pm->[3] - $pm->[1]
@@ -406,7 +406,7 @@ sub end_page
 
 	$self-> emit_content('Q');
 
-	my @ps = $self-> pixel2point( @{ $self->{pageSize} });
+	my @ps = @{ $self->{pageSize} };
 	$self-> emit_new_object($self->{page_object}, <<PAGE);
 <<
 /Type /Page
