@@ -1609,11 +1609,7 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 
 	if ( !( abc = call_get_font_abc_base(self, base, toGlyphs)))
 		return NULL;
-	if (
-		!self ||
-		my-> get_font_abc != Drawable_get_font_abc ||
-		t->fonts
-	) {
+	if ( t->fonts) {
 		/* different fonts case */
 		Byte * fa;
 		PassiveFontEntry *pfe;
