@@ -598,6 +598,12 @@ sub get_text_box
 	return \@ret;
 }
 
+sub text_wrap
+{
+	my ( $self, $text, $width, @rest ) = @_;
+	return $self->glyph_canvas->text_wrap($text, $width / $self->{font_scale}, @rest);
+}
+
 sub text_shape
 {
 	my ( $self, $text, %opt ) = @_;
