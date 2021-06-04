@@ -61,12 +61,14 @@ sub read
 	$self-> {fileName} = canonicalize_fname($fname);
 	eval
 	{
-		open FILE, "<:encoding(UTF-8)", $fname or do
+		my $f;
+		open $f, "<", $fname or do
 		{
-			open FILE, ">", $fname or die "Cannot create $fname: $!\n";
-			close FILE;
-			open FILE, "<:encoding(UTF-8)", $fname or die "Cannot open $fname: $!\n";
+			open $f, ">", $fname or die "Cannot create $fname: $!\n";
+			close $f;
+			open $f, "<", $fname or die "Cannot open $fname: $!\n";
 		};
+		binmode $f, ":utf8";
 		my @chunks;
 		my %sectionChunks = ('' => [0]);
 		my %sectionItems = ('' => []);
@@ -76,7 +78,7 @@ sub read
 		my $line = 0;
 		push @chunks, $currentChunk;
 		push @{$sectionItems{''}}, $items;
-		while (<FILE>)
+		while (<$f>)
 		{
 			chomp;
 			if ( /^\s*\[(.*?)\]/)         # new section?
@@ -119,7 +121,7 @@ sub read
 			push( @$currentChunk, $_);
 			$line++;
 		}
-		close FILE;
+		close $f;
 		push( @{$chunks[-1]}, '') if scalar(@{$chunks[-1]}) && $chunks[-1]-> [-1] !~ /^\s*$/;
 		$self-> {chunks} = [@chunks];
 		$self-> {sectionChunks} = {%sectionChunks};
@@ -497,14 +499,16 @@ sub write
 	return unless defined($self-> {fileName}) && $self-> {changed};
 	my $fname = $self-> {fileName};
 	eval {
-		open FILE, ">:encoding(UTF-8)", $fname or die "Cannot write to the $fname: $!\n";
+		my $f;
+		open $f, ">", $fname or die "Cannot write to the $fname: $!\n";
+		binmode $f, ":utf8";
 		pop @{$self-> {chunks}-> [-1]} if scalar(@{$self-> {chunks}-> [-1]}) && $self-> {chunks}-> [-1]-> [-1] =~ /^\s*$/;
 		for ( @{$self-> {chunks}})
 		{
-			for (@$_) { print FILE "$_\n" }
+			for (@$_) { print $f "$_\n" }
 		}
 		push( @{$self-> {chunks}-> [-1]}, '') if scalar(@{$self-> {chunks}-> [-1]}) && $self-> {chunks}-> [-1]-> [-1] !~ /^\s*$/;
-		close FILE;
+		close $f;
 	};
 	$self-> {changed} = undef if $@;
 	warn($@) if $@;
