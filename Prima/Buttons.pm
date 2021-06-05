@@ -519,6 +519,10 @@ sub on_paint
 		}
 
 		my $image = $self->{image};
+		if ( $self->{metafile} ) {
+			$self->{image}->execute($canvas, $imAtX, $imAtY);
+			goto CAPTION;
+		}
 		if ( $self-> {smoothScaling} && $is != 1.0 ) {
 			my $c = $self->{smooth_cache} //= {
 				zoom  => -1,
@@ -545,6 +549,7 @@ sub on_paint
 			$pw, $ph,
 			rop::CopyPut
 		);
+	CAPTION:
 		$self-> draw_veil( $canvas, $imAtX, $imAtY, $imAtX + $sw, $imAtY + $sh)
 			if $useVeil;
 	} else {
@@ -691,6 +696,7 @@ sub image
 	return $_[0]-> {image} unless $#_;
 	my ( $self, $image) = @_;
 	$self-> {image} = $image;
+	$self->{metafile} = $image && UNIVERSAL::isa($image, 'Prima::Drawable::Metafile');
 	delete $self-> {smooth_cache};
 	$self-> check_auto_size;
 	$self-> repaint;
@@ -1485,6 +1491,9 @@ If set, the image object is drawn next with the button text, over or left to it
 ( see L<vertical> property ). If OBJECT contains several sub-images, then the
 corresponding sub-image is drawn for each button state. See L<glyphs> property.
 
+Can also be a C<Prima::Drawable::Metafile> object, however, C<imageScale> factor
+wouldn't work on it.
+
 Default value: undef
 
 =item imageFile FILENAME
@@ -1708,6 +1717,7 @@ Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 =head1 SEE ALSO
 
 L<Prima>, L<Prima::Widget>, L<Prima::Window>, L<Prima::IntUtils>,
+L<Prima::Drawable::Metafile>,
 L<Prima::StdBitmap>, F<examples/buttons.pl>, F<examples/buttons2.pl>.
 
 =cut
