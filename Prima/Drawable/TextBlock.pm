@@ -265,7 +265,7 @@ sub _debug_block
 			print STDERR ": OP_COLOR $bk$color\n";
 		} elsif ( $cmd == OP_TRANSPOSE) {
 			my $x = $$b[ $i + X_X ];
-			my $y = $$b[ $i + X_X ];
+			my $y = $$b[ $i + X_Y ];
 			my $f = $$b[ $i + X_FLAGS ] ? 'EXTEND' : 'TRANSPOSE';
 			print STDERR ": OP_TRANSPOSE $x $y $f\n";
 		} elsif ( $cmd == OP_CODE ) {
