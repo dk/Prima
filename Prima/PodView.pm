@@ -236,6 +236,7 @@ sub make_bookmark
 	} elsif ( $where =~ /up|next|prev/ ) { # up
 		if ( $self-> {topicView} ) {
 			my $topic = $self-> {modelRange}-> [0];
+			return undef if $where =~ /up|prev/ && $topic == 0; # contents
 			my $tid = -1;
 			my $t;
 			for ( @{$self-> {topics}}) {
@@ -248,21 +249,15 @@ sub make_bookmark
 			if ( $where =~ /next|prev/) {
 				return undef unless defined $t;
 				my $index = scalar @{$self-> {topics}} - 1;
-				$tid = -1 if $tid == $index;
 				$tid += ( $where =~ /next/) ? 1 : -1;
-				if ( $tid == -1) { # simulate index to be the first topic
-					$t = $self-> {topics}-> [-1]-> [T_MODEL_START];
-					return "$self->{pageName}|$t|0";
-				}
-				return undef if $tid < 0 || $tid >= $index;
+				return undef if $tid < 0 || $tid > $index;
 				$t = $self-> {topics}-> [$tid]-> [T_MODEL_START];
 				return "$self->{pageName}|$t|0";
 			}
 
 			return "$self->{pageName}|0|0" unless defined $t;
-			return undef if $tid + 1 >= scalar @{$self-> {topics}}; # already on top
 			if ( $$t[ T_STYLE] >= STYLE_HEAD_1 && $$t[ T_STYLE] <= STYLE_HEAD_4) {
-				$t = $self-> {topics}-> [-1];
+				$t = $self-> {topics}-> [0];
 				return "$self->{pageName}|$$t[T_MODEL_START]|0"
 			}
 			my $state = $$t[ T_STYLE] - STYLE_HEAD_1 + $$t[ T_ITEM_DEPTH];
@@ -942,6 +937,7 @@ sub close_read
 	## and then uses black magic to put it in the front.
 
 	# remember the current end state
+	$self-> _close_topic( STYLE_HEAD_1);
 	my @text_ends_at = (
 		$r-> {bigofs},
 		scalar @{$self->{model}},
@@ -960,10 +956,12 @@ sub close_read
 		$text_ends_at[2]++;
 		$msecid++;
 	}
+	my $start = scalar @{ $self->{model} };
 	$self-> add_new_line;
 	$self-> add_verbatim_mark(1);
 	$self-> add( "Contents",  STYLE_HEAD_1, DEF_FIRST_INDENT);
 	$self-> {hasIndex} = 1;
+	$self-> {topics}->[-1]->[T_MODEL_START] = $start;
 	for my $k ( @{$self-> {topics}}) {
 		last if $secid == $msecid; # do not add 'Index' entry
 		my ( $ofs, $end, $text, $style, $depth, $linkStart) = @$k;
