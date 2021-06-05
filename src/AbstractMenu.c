@@ -1461,6 +1461,7 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 			PDrawable(drawable)-> w = event->gen.P.x;
 			PDrawable(drawable)-> h = event->gen.P.y;
 			protect_object(drawable);
+			PObject(drawable)-> options. optSystemDrawable = 1;
 
 			event-> gen.H = drawable;
 			if ( apc_menu_item_begin_paint(self, event)) {

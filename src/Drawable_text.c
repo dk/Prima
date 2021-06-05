@@ -24,7 +24,7 @@ extern "C" {
 
 #define CHECK_GP(ret) \
 	if ( !is_opt(optSystemDrawable)) { \
-		warn("This method is not available on this class because it is not a system Drawable object. You need to implement your own (ref:%d)", __LINE__);\
+		warn("This method is not available because %s is not a system Drawable object. You need to implement your own (ref:%d)", my->className, __LINE__);\
 		return ret; \
 	}
 
