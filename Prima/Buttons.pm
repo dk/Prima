@@ -477,25 +477,44 @@ sub on_paint
 		my $sh = $ph * $is;
 		my $imgNo = $self-> {defaultGlyph};
 		my $useVeil = 0;
+		my $image = $self->{image};
 		if ( $self-> {hilite}) {
-			$imgNo = $self-> {hiliteGlyph}
-				if $self-> {glyphs} > $self-> {hiliteGlyph} &&
-					$self-> {hiliteGlyph} >= 0;
+			if ( $self->{glyphs} > 1 ) {
+				$imgNo = $self-> {hiliteGlyph}
+					if $self-> {glyphs} > $self-> {hiliteGlyph} &&
+						$self-> {hiliteGlyph} >= 0;
+			} elsif ( ref($self-> {hiliteGlyph})) {
+				$image = $self->{hiliteGlyph};
+			}
 		}
 		if ( $self-> {checked}) {
-			$imgNo = $self-> {holdGlyph} if
-				$self-> {glyphs} > $self-> {holdGlyph} &&
-					$self-> {holdGlyph} >= 0;
+			if ( $self->{glyphs} > 1 ) {
+				$imgNo = $self-> {holdGlyph} if
+					$self-> {glyphs} > $self-> {holdGlyph} &&
+						$self-> {holdGlyph} >= 0;
+			} elsif ( ref($self->{holdGlyph})) {
+				$image = $self->{holdGlyph};
+			}
 		}
 		if ( $self-> {pressed}) {
-			$imgNo = $self-> {pressedGlyph} if
-				$self-> {glyphs} > $self-> {pressedGlyph} &&
-					$self-> {pressedGlyph} >= 0;
+			if ( $self->{glyphs} > 1 ) {
+				$imgNo = $self-> {pressedGlyph} if
+					$self-> {glyphs} > $self-> {pressedGlyph} &&
+						$self-> {pressedGlyph} >= 0;
+			} elsif ( ref($self->{pressedGlyph}) ) {
+				$image = $self->{pressedGlyph};
+			}
 		}
 		if ( !$self-> enabled) {
-			( $self-> {glyphs} > $self-> {disabledGlyph} && $self-> {disabledGlyph} >= 0) ?
-				$imgNo = $self-> {disabledGlyph} :
-					$useVeil = 1;
+			if ( $self->{glyphs} > 1 ) {
+				( $self-> {glyphs} > $self-> {disabledGlyph} && $self-> {disabledGlyph} >= 0) ?
+					$imgNo = $self-> {disabledGlyph} :
+						$useVeil = 1;
+			} elsif (ref($self->{disabledGlyph})) {
+				$image = $self->{disabledGlyph};
+			} else {
+				$useVeil = 1;
+			}
 		}
 
 		my ( $imAtX, $imAtY);
@@ -518,15 +537,14 @@ sub on_paint
 			$imAtY = ( $size[1] - $sh) / 2 - $shift;
 		}
 
-		my $image = $self->{image};
-		if ( $self->{metafile} ) {
-			if ( $self->{enabled} ) {
-				$self->{image}->execute($canvas, $imAtX, $imAtY);
+		if ( $image && UNIVERSAL::isa($image, 'Prima::Drawable::Metafile')) {
+			if ( $self->{enabled} || !$useVeil ) {
+				$image->execute($canvas, $imAtX, $imAtY);
 			} else {
 				$canvas->color(cl::White);
-				$self->{image}->execute($canvas, $imAtX+1, $imAtY-1);
+				$image->execute($canvas, $imAtX+1, $imAtY-1);
 				$canvas->color($clr[0]);
-				$self->{image}->execute($canvas, $imAtX, $imAtY);
+				$image->execute($canvas, $imAtX, $imAtY);
 			}
 			goto CAPTION;
 		}
@@ -703,7 +721,6 @@ sub image
 	return $_[0]-> {image} unless $#_;
 	my ( $self, $image) = @_;
 	$self-> {image} = $image;
-	$self->{metafile} = ($image && UNIVERSAL::isa($image, 'Prima::Drawable::Metafile')) ? 1 : 0;
 	delete $self-> {smooth_cache};
 	$self-> check_auto_size;
 	$self-> repaint;
@@ -1439,13 +1456,13 @@ the 'default' action. Useful for OK-buttons in dialogs.
 
 Default value: 0
 
-=item defaultGlyph INTEGER
+=item defaultGlyph INTEGER | IMAGE | METAFILE
 
 Selects index of the default sub-image.
 
 Default value: 0
 
-=item disabledGlyph INTEGER
+=item disabledGlyph INTEGER | IMAGE | METAFILE
 
 Selects index of the sub-image for the disabled button state.
 If C<image> does not contain such sub-image, the C<defaultGlyph>
@@ -1476,7 +1493,7 @@ L<hiliteGlyph>, L<disabledGlyph>, L<pressedGlyph>, L<holdGlyph>.
 
 Default value: 1
 
-=item hiliteGlyph INTEGER
+=item hiliteGlyph INTEGE | IMAGE | METAFILER
 
 Selects index of the sub-image for the state when the mouse pointer is
 over the button. This image is used only when L<flat> property is set.
@@ -1484,7 +1501,7 @@ If C<image> does not contain such sub-image, the C<defaultGlyph> sub-image is dr
 
 Default value: 0
 
-=item holdGlyph INTEGER
+=item holdGlyph INTEGE | IMAGE | METAFILER
 
 Selects index of the sub-image for the state when the button is L<checked>.
 This image is used only when L<checkable> property is set.
@@ -1559,7 +1576,7 @@ Default value: true
 
 See also: L<Prima::Image/ui_scale> .
 
-=item pressedGlyph INTEGER
+=item pressedGlyph INTEGER | IMAGE | METAFILE
 
 Selects index of the sub-image for the pressed state of the button.
 If C<image> does not contain such sub-image, the C<defaultGlyph> sub-image is drawn.

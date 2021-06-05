@@ -111,6 +111,12 @@ sub height { $_[0]->{size}->[1] }
 sub execute
 {
 	my ( $self, $canvas, $x, $y ) = @_;
+
+	if ( UNIVERSAL::isa($canvas, 'Prima::Drawable::Metafile')) {
+		push @{ $canvas->{code} }, [ 'translate', $x, $y ], @{ $self->{code} };
+		return;
+	}
+
 	my %save = map { $_, $canvas->$_() } @props;
 	my @clip = $canvas-> clipRect;
 	my $rgn  = $canvas-> region;
