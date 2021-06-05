@@ -732,7 +732,6 @@ sub compress
 sub arc
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
-
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
 	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
@@ -744,7 +743,6 @@ sub arc
 sub chord
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
-
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
 	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
@@ -767,7 +765,6 @@ sub ellipse
 sub fill_chord
 {
 	my ( $self, $x, $y, $dx, $dy, $start, $end) = @_;
-
 	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
 
 	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, $start, $end);
@@ -780,6 +777,8 @@ sub fill_chord
 sub fill_ellipse
 {
 	my ( $self, $x, $y, $dx, $dy) = @_;
+	( $x, $y, $dx, $dy) = $self-> pixel2point( $x, $y, $dx, $dy);
+
 	my $cubics  = $self-> arc2cubics($x, $y, $dx, $dy, 0, 360);
 	my $content = "@{ $cubics->[0] }[0,1] m\n";
 	$content   .= "@{$_}[2..7] c\n" for @$cubics;
@@ -944,7 +943,7 @@ sub text_out
 		$self-> textOutBaseline($bs) unless $bs;
 	}
 	if ( $self-> textOpaque) {
-		$self-> emit_content( uc $self-> cmd_rgb( $self-> backColor));
+		$self-> emit_content( lc $self-> cmd_rgb( $self-> backColor));
 		$self-> emit_content( "h @rb[0,1] m @rb[2,3] l @rb[6,7] l @rb[4,5] l f");
 	}
 
