@@ -24,14 +24,41 @@ sub on_mousedown
 sub on_mousemove
 {
 	my ( $self, $owner, $mod, $x, $y) = @_;
-	my $r = ( $self-> contains( $x, $y) >= 0) ? 0 : 1;
+	my $r = $self-> contains( $x, $y);
 	if ( $r != $owner-> {lastLinkPointer}) {
-		$owner-> pointer( $r ? cr::Text : cr::Hand);
+		my $was_hand = ($owner->{lastLinkPointer} >= 0) ? 1 : 0;
+		my $is_hand  = ($r >= 0) ? 1 : 0;
+		if ( $is_hand != $was_hand) {
+			$owner-> pointer( $is_hand ? cr::Hand : cr::Text );
+		}
+		my $rr = $self->rectangles;
+		my ($dx, $dy) = $owner->point2screen(0,0);
+		my $or = $owner->{lastLinkPointer};
 		$owner-> {lastLinkPointer} = $r;
+		if ( $was_hand ) {
+			$or = $rr->[$or];
+			$owner-> invalidate_rect($or->[0] - $dx, $dy - $or->[1], $or->[2] - $dx, $dy - $or->[3]);
+		}
+		if ( $is_hand ) {
+			$or = $rr->[$r];
+			$owner-> invalidate_rect($or->[0] - $dx, $dy - $or->[1], $or->[2] - $dx, $dy - $or->[3]);
+		}
 	}
 }
 
+sub on_paint
+{
+	my ( $self, $owner, $canvas, $ci ) = @_;
+	my ($dx, $dy) = $owner->point2screen(0,0);
+	my $r  = $self->rectangles->[ $owner->{lastLinkPointer} ];
+	my $c  = $canvas-> color;
+	$canvas-> color( $owner-> {colorMap}->[ $ci ]);
+	$canvas-> line( $r->[0] - $dx, $dy - $r->[3], $r->[2] - $dx, $dy - $r->[3]);
+	$canvas-> color( $c);
+}
+
 package Prima::PodView;
+
 use vars qw(@ISA %HTML_Escapes $OP_LINK);
 @ISA = qw(Prima::TextView);
 
@@ -166,6 +193,14 @@ sub init
 	$self-> $_($profile{$_}) for qw( styles images pageName topicView);
 
 	return %profile;
+}
+
+sub on_paint
+{
+	my ( $self, $canvas ) = @_;
+	$self-> SUPER::on_paint($canvas);
+	$self-> {contents}-> [0]-> on_paint( $self, $canvas, COLOR_LINK_FOREGROUND & ~tb::COLOR_INDEX )
+		if $self->{lastLinkPointer} >= 0
 }
 
 sub on_size
@@ -1463,6 +1498,7 @@ sub format_chunks
 	my $linkRects = $f-> {linkRects};
 	my $start = scalar @{$self-> {blocks}};
 	my $formatWidth = $f-> {formatWidth};
+	my $fw = $self->font->width;
 
 	for ( ; $mid <= $max; $mid++) {
 		my $g = tb::block_create();
@@ -1522,7 +1558,7 @@ sub format_chunks
 							$rect[0] = $pos[0];
 							$rect[1] = $$b[ tb::BLK_Y];
 						} else {
-							$rect[2] = $pos[0];
+							$rect[2] = $pos[0] + $fw;
 							$rect[3] = $$b[ tb::BLK_Y] + $$b[ tb::BLK_HEIGHT];
 							push @$linkRects, [ @rect, $f-> {linkId} ++ ];
 						}
