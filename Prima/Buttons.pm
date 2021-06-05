@@ -538,14 +538,12 @@ sub on_paint
 		}
 
 		if ( $image && UNIVERSAL::isa($image, 'Prima::Drawable::Metafile')) {
-			if ( $self->{enabled} || !$useVeil ) {
-				$image->execute($canvas, $imAtX, $imAtY);
-			} else {
+			if ( !$self->enabled && $useVeil ) {
 				$canvas->color(cl::White);
 				$image->execute($canvas, $imAtX+1, $imAtY-1);
-				$canvas->color($clr[0]);
-				$image->execute($canvas, $imAtX, $imAtY);
 			}
+			$canvas->color($clr[0]);
+			$image->execute($canvas, $imAtX, $imAtY);
 			goto CAPTION;
 		}
 		if ( $self-> {smoothScaling} && $is != 1.0 ) {
