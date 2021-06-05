@@ -35,7 +35,8 @@ package Prima::PodView;
 use vars qw(@ISA %HTML_Escapes $OP_LINK);
 @ISA = qw(Prima::TextView);
 
-use constant DEF_INDENT => 4;
+use constant DEF_INDENT       => 4;
+use constant DEF_FIRST_INDENT => 1;
 
 use constant COLOR_LINK_FOREGROUND => 2 | tb::COLOR_INDEX;
 use constant COLOR_LINK_BACKGROUND => 3 | tb::COLOR_INDEX;
@@ -50,13 +51,20 @@ use constant STYLE_HEAD_3 => 4;
 use constant STYLE_HEAD_4 => 5;
 use constant STYLE_ITEM   => 6;
 use constant STYLE_LINK   => 7;
-use constant STYLE_MAX_ID => 7;
+use constant STYLE_VERBATIM => 8;
+use constant STYLE_MAX_ID => 8;
 
 # model layout indices
-use constant M_INDENT      => 0; # pod-content driven indent
-use constant M_TEXT_OFFSET => 1; # contains same info as BLK_TEXT_OFFSET
-use constant M_FONT_ID     => 2; # 0 or 1 ( i.e., variable or fixed )
-use constant M_START       => 3; # start of data, same purpose as BLK_START
+use constant M_TYPE        => 0; # T_XXXX
+use constant M_INDENT      => 1; # pod-content driven indent
+use constant M_TEXT_OFFSET => 2; # contains same info as BLK_TEXT_OFFSET
+use constant M_FONT_ID     => 3; # 0 or 1 ( i.e., variable or fixed )
+use constant M_START       => 4; # start of data, same purpose as BLK_START
+
+# model entries
+use constant T_NORMAL       => 0;
+use constant T_VERBATIM_ON  => 1;
+use constant T_VERBATIM_OFF => 2;
 
 # topic layout indices
 use constant T_MODEL_START => 0; # beginning of topic
@@ -71,6 +79,17 @@ use constant FORMAT_LINES    => 100;
 use constant FORMAT_TIMEOUT  => 300;
 
 $OP_LINK = tb::opcode(1, 'link');
+
+sub model_create
+{
+	my %opt = @_;
+	return (
+		$opt{type}   // T_NORMAL,
+		$opt{indent} // 0,
+		$opt{offset} // 0,
+		$opt{font}   // 0
+	);
+}
 
 {
 my %RNT = (
@@ -90,23 +109,27 @@ sub profile_default
 		colorMap => [
 			$def-> {color},
 			$def-> {backColor},
-			cl::Green,              # link foreground
+			0x337ab7,               # link foreground
 			$def-> {backColor},     # link background
 			cl::Blue,               # code foreground
-			$def-> {backColor},     # code background
+			0xf5f5f5,               # code background
 		],
 		images => [],
 		styles => [
 			{ fontId    => 1,                         # STYLE_CODE
-			color     => COLOR_CODE_FOREGROUND },
+			color     => COLOR_CODE_FOREGROUND, 
+			backColor => COLOR_CODE_BACKGROUND
+			},
 			{ },                                      # STYLE_TEXT
 			{ fontSize => 4, fontStyle => fs::Bold }, # STYLE_HEAD_1
 			{ fontSize => 2, fontStyle => fs::Bold }, # STYLE_HEAD_2
 			{ fontSize => 1, fontStyle => fs::Bold }, # STYLE_HEAD_3
 			{ fontSize => 1, fontStyle => fs::Bold }, # STYLE_HEAD_4
 			{ fontStyle => fs::Bold },                # STYLE_ITEM
-			{ color     => COLOR_LINK_FOREGROUND,     # STYLE_LINK
-			fontStyle => fs::Underlined   },
+			{ color     => COLOR_LINK_FOREGROUND},    # STYLE_LINK
+			{ fontId    => 1,                         # STYLE_VERBATIM
+			color     => COLOR_CODE_FOREGROUND,
+			},
 		],
 		pageName      => '',
 		topicView     => 0,
@@ -597,6 +620,7 @@ sub open_read
 		encoding      => undef,
 		bom           => undef,
 		utf8          => undef,
+		verbatim      => undef,
 
 		@opt,
 	};
@@ -645,8 +669,10 @@ sub add_image
 		push @{$self-> {model}-> [-1]}, @imgop;
 	} else {
 		push @{$self-> {model}}, [
-			$self-> {readState}-> {indent},
-			$self-> {readState}-> {bigofs}, 0,
+			model_create(
+				indent => $self-> {readState}-> {indent},
+				offset => $self-> {readState}-> {bigofs}
+			),
 			@imgop
 		];
 	}
@@ -735,11 +761,11 @@ sub read_paragraph
 		if ($r-> {begun}) {
 			my $begun = $r-> {begun};
 			if (/^=end\s+$begun/ || /^=cut/) {
-					$r-> {begun} = '';
-					$self-> add_new_line; # end paragraph
-					$r-> {cutting} = 1 if /^=cut/;
+				$r-> {begun} = '';
+				$self-> add_new_line; # end paragraph
+				$r-> {cutting} = 1 if /^=cut/;
 			} else {
-					$self-> add_formatted( $r-> {begun}, $_);
+				$self-> add_formatted( $r-> {begun}, $_);
 			}
 			next;
 		}
@@ -752,10 +778,12 @@ sub read_paragraph
 
 		# Translate verbatim paragraph
 		if (/^\s/) {
-			$self-> add($_,STYLE_CODE,$r-> {indent}) for split "\n", $_;
+			$self-> add_verbatim_mark(1) unless defined $r->{verbatim};
+			$self-> add($_,STYLE_VERBATIM,$r-> {indent}) for split "\n", $_;
 			$self-> add_new_line;
 			next;
 		}
+		$self-> add_verbatim_mark(0);
 
 		if (/^=for\s+(\S+)\s*(.*)/s) {
 			$self-> add_formatted( $1, $2) if defined $2;
@@ -776,7 +804,7 @@ sub read_paragraph
 				$r-> {cutting} = 0;
 			}
 			elsif ($Cmd eq 'head1') {
-				$self-> add( $args, STYLE_HEAD_1, 0);
+				$self-> add( $args, STYLE_HEAD_1, DEF_FIRST_INDENT);
 			}
 			elsif ($Cmd eq 'head2') {
 				$self-> add( $args, STYLE_HEAD_2, 0);
@@ -859,6 +887,7 @@ sub close_read
 
 	$topicView = $self-> {topicView} unless defined $topicView;
 	$self-> add_new_line; # end
+	$self-> add_verbatim_mark(0);
 	$self-> {contents}-> [0]-> references( $self-> {links});
 
 	goto NO_INDEX unless $self-> {readState}-> {createIndex};
@@ -896,8 +925,9 @@ sub close_read
 		$text_ends_at[2]++;
 		$msecid++;
 	}
-	$self-> add( "Index",  STYLE_HEAD_1, 0);
 	$self-> add_new_line;
+	$self-> add_verbatim_mark(1);
+	$self-> add( "Contents",  STYLE_HEAD_1, DEF_FIRST_INDENT);
 	$self-> {hasIndex} = 1;
 	for my $k ( @{$self-> {topics}}) {
 		last if $secid == $msecid; # do not add 'Index' entry
@@ -906,6 +936,8 @@ sub close_read
 		$self-> add("L<$text|topic://$secid>", STYLE_TEXT, $indent);
 		$secid++;
 	}
+	$self-> add_new_line;
+	$self-> add_verbatim_mark(0);
 
 	$self-> _close_topic( STYLE_HEAD_1);
 
@@ -1010,31 +1042,31 @@ sub add
 	return unless $r;
 
 	$p =~ s/\n//g;
-	my $g = [ $indent, $r-> {bigofs}, 0];
+	my $g = [ model_create( indent => $indent, offset => $r-> {bigofs}) ];
 	my $styles = $self-> {styles};
 	my $no_push_block;
 	my $itemid = scalar @{$self-> {model}};
 
 	if ( $r-> {bulletMode}) {
-		if ( $style == STYLE_TEXT || $style == STYLE_CODE) {
+		if ( $style == STYLE_TEXT || $style == STYLE_CODE || $style == STYLE_VERBATIM) {
 			return unless length $p;
 			$g = $self-> {model}-> [-1];
-			$$g[1] = $r-> {bigofs};
+			$$g[M_TEXT_OFFSET] = $r-> {bigofs};
 			$no_push_block = 1;
 			$itemid--;
 		}
 		$r-> {bulletMode} = 0;
 	}
 
-	if ( $style == STYLE_CODE) {
-		$$g[ M_FONT_ID] = $styles-> [ STYLE_CODE]-> {fontId} || 1; # fixed font
+	if ( $style == STYLE_CODE || $style == STYLE_VERBATIM) {
+		$$g[ M_FONT_ID] = $styles-> [$style]-> {fontId} || 1; # fixed font
 		push @$g, tb::wrap(tb::WRAP_MODE_OFF);
 	}
 
 	push @$g, @{$self-> {styleInfo}-> [$style * 2]};
 	$cstyle = $styles-> [$style]-> {fontStyle} || 0;
 
-	if ( $style == STYLE_CODE) {
+	if ( $style == STYLE_CODE || $style == STYLE_VERBATIM) {
 		push @$g, tb::text( 0, length $p),
 	} elsif (( $style == STYLE_ITEM) && ( $p =~ /^\*\s*$/ || $p =~ /^\d+\.?$/)) {
 		push @$g,
@@ -1255,8 +1287,28 @@ sub add_new_line
 	return unless $r;
 	my $p = " \n";
 	${$self-> {text}} .= $p;
-	push @{$self-> {model}}, [ 0, $r->{bigofs}, 0, tb::text(0, 1) ];
+	push @{$self-> {model}}, [ model_create( offset => $r->{bigofs} ), tb::text(0, 1) ];
 	$r-> {bigofs} += length $p;
+}
+
+sub add_verbatim_mark
+{
+	my ($self, $on) = @_;
+	my $r = $self-> {readState};
+	return unless $r;
+
+	my $mark;
+	if ( $on ) {
+		return if defined $r->{verbatim};
+		$mark = T_VERBATIM_ON;
+		$r->{verbatim} = 1;
+	} else {
+		return unless defined $r->{verbatim};
+		$mark = T_VERBATIM_OFF;
+		undef $r->{verbatim};
+	}
+
+	push @{$self-> {model}}, [ model_create(type => $mark) ];
 }
 
 sub stop_format
@@ -1329,6 +1381,7 @@ sub format
 		step          => FORMAT_LINES,
 		position      => undef,
 		positionSet   => 0,
+		verbatim      => undef,
 	};
 
 	$self-> {formatTimer} = $self-> insert( Timer =>
@@ -1355,6 +1408,43 @@ sub FormatTimer_Tick
 	$_[0]-> format_chunks
 }
 
+sub paint_code_div
+{
+	my ( $self, $canvas, $block, $state, $x, $y, $coord) = @_;
+	my $f  = $canvas->font;
+	my $w = $coord->[0];
+	my $h = $coord->[1];
+	my @x = ( $canvas-> backColor, $canvas-> color );
+	$canvas->set(backColor => $self->{colorMap}->[5], color => 0xcccccc);
+	$canvas->new_path->round_rect($x, $y, $x + $w, $y + $h, 20)->fill_stroke;
+	$canvas-> set( backColor => $x[0], color => $x[1] );
+}
+
+sub add_code_div
+{
+	my ($self, $from, $to) = @_;
+
+	my ($w,$y1,$y2) = (0,($self->{blocks}->[$from]->[tb::BLK_Y]) x 2);
+	for my $b ( @{ $self->{blocks} } [$from .. $to] ) {
+		$w = $$b[tb::BLK_X] + $$b[tb::BLK_WIDTH]  if $w < $$b[tb::BLK_X] + $$b[tb::BLK_WIDTH];
+		$y1 = $$b[tb::BLK_Y] if $y1 > $$b[tb::BLK_Y];
+		$y2 = $$b[tb::BLK_Y] + $$b[tb::BLK_HEIGHT] if $y2 < $$b[tb::BLK_Y] + $$b[tb::BLK_HEIGHT];
+	}
+	my ($fh, $fw) = ( $self->font->height, $self->font->width );
+	my $h = $y2 - $y1;
+	my $b = tb::block_create();
+	$$b[tb::BLK_X] = $self->{blocks}->[$from]->[tb::BLK_X];
+	$$b[tb::BLK_Y] = $y1 - $fh / 2;
+	$w += 2 * $fw;
+	$$b[tb::BLK_WIDTH]  = $w;
+	$$b[tb::BLK_HEIGHT] = $h;
+	$$b[tb::BLK_TEXT_OFFSET] = -1;
+	push @$b,
+		tb::code( \&paint_code_div, [$w, $h]),
+		tb::extend($w, $h);
+	return $b;
+}
+
 sub format_chunks
 {
 	my $self = $_[0];
@@ -1377,6 +1467,18 @@ sub format_chunks
 	for ( ; $mid <= $max; $mid++) {
 		my $g = tb::block_create();
 		my $m = $self-> {model}-> [$mid];
+
+		if ( $m->[M_TYPE] == T_VERBATIM_ON ) {
+			$f->{verbatim} = scalar @{ $self->{blocks} };
+			next;
+		} elsif ( $m->[M_TYPE] == T_VERBATIM_OFF ) {
+			splice @{ $self->{blocks} },
+				$f->{verbatim}, 0,
+				$self-> add_code_div( $f->{verbatim}, $#{$self->{blocks}} );
+			undef $f->{verbatim};
+			next;
+		}
+
 		my @blocks;
 		$$g[ tb::BLK_TEXT_OFFSET] = $$m[M_TEXT_OFFSET];
 		$$g[ tb::BLK_Y] = undef;
@@ -1534,6 +1636,8 @@ sub print
 	for ( ; $mid <= $max; $mid++) {
 		my $g = tb::block_create();
 		my $m = $self-> {model}-> [$mid];
+		next if $$m[M_TYPE] != T_NORMAL; # don't print div background
+
 		my @blocks;
 		$$g[ tb::BLK_TEXT_OFFSET] = $$m[M_TEXT_OFFSET];
 		$$g[ tb::BLK_Y] = undef;
@@ -1866,21 +1970,22 @@ constants:
 C<::styles> property provides access to the styles, applied to different pod
 text parts. These styles are:
 
-	STYLE_CODE   - style for pre-formatted text and C<>
-	STYLE_TEXT   - normal text
-	STYLE_HEAD_1 - =head1
-	STYLE_HEAD_2 - =head2
-	STYLE_HEAD_3 - =head3
-	STYLE_HEAD_4 - =head4
-	STYLE_ITEM   - =item
-	STYLE_LINK   - style for L<> text
+	STYLE_CODE     - style for C<>
+	STYLE_TEXT     - normal text
+	STYLE_HEAD_1   - =head1
+	STYLE_HEAD_2   - =head2
+	STYLE_HEAD_3   - =head3
+	STYLE_HEAD_4   - =head4
+	STYLE_ITEM     - =item
+	STYLE_LINK     - style for L<> text
+	STYLE_VERBATIM - style for pre-formatted text
 
 Each style is a hash with the following keys: C<fontId>, C<fontSize>, C<fontStyle>,
 C<color>, C<backColor>, fully analogous to the tb::BLK_DATA_XXX options.
 This functionality provides another layer of accessibility to the pod formatter.
 
 In addition to styles, Prima::PodView defined C<colormap> entries for
-C<STYLE_LINK> and C<STYLE_CODE>:
+C<STYLE_LINK> , C<STYLE_CODE>, and C<STYLE_VERBATIM>:
 
 	COLOR_LINK_FOREGROUND
 	COLOR_LINK_BACKGROUND
