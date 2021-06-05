@@ -406,7 +406,9 @@ L<Prima::Drawable::Glyphs> - bi-directional text input and complex scripts outpu
 
 L<Prima::Drawable::Gradient> - gradient fills for primitives
 
-L<Prima::Drawable::Markup> - Allow markup in widgets
+L<Prima::Drawable::Markup> - allow markup in widgets
+
+L<Prima::Drawable::Metafile> - graphic primitive recorder
 
 L<Prima::Drawable::Path> - stroke and fill complex paths
 

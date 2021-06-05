@@ -10,7 +10,8 @@ Revision history for Perl module Prima
  - Implemented arabic kashida and interspace justifications for glyphs
  - Markup is a first class citizen with $w->text(\"B<bold>") syntax
    (note: Q was renamed to G and will be used for quoting instead).
- - Minor UI facelift - sliders, buttons, etc
+ - Minor UI facelift - sliders, buttons, podview, etc
+ - Added Prima::Drawable::Metafile
 
 1.61 2021-04-21
  - DWM API Removed (not useful on Windows 10)
