@@ -301,6 +301,7 @@ find_node( const PFont font, Bool bySize)
 			if (( memcmp( &(font-> width), &(node-> key. width), sz) == 0) &&
 				( strcmp( font-> name, node-> key. name) == 0 ) &&
 				( strcmp( font-> encoding, node-> key. encoding) == 0 ) &&
+				(font-> resolution == node-> key. resolution) &&
 				(font-> size == node-> key. size))
 				return node;
 			node = node-> next2;
@@ -311,6 +312,7 @@ find_node( const PFont font, Bool bySize)
 		{
 			if (( memcmp( font, &(node-> key), sz) == 0) &&
 				( strcmp( font-> name, node-> key. name) == 0 )&&
+				(font-> resolution == node-> key. resolution) &&
 				( strcmp( font-> encoding, node-> key. encoding) == 0 ))
 				return node;
 			node = node-> next;
