@@ -109,6 +109,7 @@ $w->insert( "Button",
 my $l = $w->insert( "UserButton" , origin => [ 250,180], autoRepeat => 1);
 
 $w->insert( "Radio"      , origin => [  50,140]);
+
 my $metafile = Prima::Drawable::Metafile->new( size => [25, 25] );
 $metafile->begin_paint;
 $metafile->lineJoin(lj::Miter);
@@ -126,13 +127,22 @@ my @pts = map { 25 * ($_ + .5)  } (
 );
 $metafile->polyline(\@pts);
 $metafile->end_paint;
-$w->insert( 
-	"Button"     , 
-	origin => [ 50,50], 
+
+my $metafile2 = Prima::Drawable::Metafile->new( size => [25, 25] );
+$metafile2->begin_paint;
+$metafile2->color(cl::Green);
+$metafile2->fillWinding(fm::Winding);
+$metafile2->fillpoly(\@pts);
+$metafile2->end_paint;
+
+$w->insert(
+	"Button"     ,
+	origin => [ 50,50],
 	size => [80,80],
-	image => $metafile, 
-	text => '', 
+	image => $metafile,
+	text => '',
 	name => 'Meta',
+	hiliteGlyph => $metafile2,
 );
 
 run Prima;
