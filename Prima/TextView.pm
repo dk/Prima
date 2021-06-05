@@ -522,9 +522,11 @@ sub on_paint
 
 	my ( $sx1, $sy1, $sx2, $sy2) = @{$self-> {selection}};
 
+	my @visited;
 	for my $ymap_i ( int( $cy[0] / YMAX) .. int( $cy[1] / YMAX)) {
 		next unless $self-> {ymap}-> [$ymap_i];
 		for my $j ( @{$self-> {ymap}-> [$ymap_i]}) {
+			next if $visited[$j]++;
 			$b = $$bx[$j];
 			my ( $x, $y) = (
 				$aa[0] - $offset + $$b[ tb::BLK_X],
@@ -607,7 +609,11 @@ sub xy2info
 		my ( $minxdist, $bdist, $bdistid) = ( $self-> {paneWidth} * 2, undef, undef);
 		for ( @{$self-> {ymap}-> [ $ymapix]}) {
 			my $z = $$bx[$_];
-			if ( $y >= $$z[ tb::BLK_Y] && $y < $$z[ tb::BLK_Y] + $$z[ tb::BLK_HEIGHT]) {
+			if (
+				$y >= $$z[ tb::BLK_Y] &&
+				$y < $$z[ tb::BLK_Y] + $$z[ tb::BLK_HEIGHT] &&
+				$$z[tb::BLK_TEXT_OFFSET] >= 0
+			) {
 				if (
 					$x >= $$z[ tb::BLK_X] &&
 					$x < $$z[ tb::BLK_X] + $$z[ tb::BLK_WIDTH]
@@ -1446,6 +1452,9 @@ Also, C<get_selected_text> returns the text within the selection
 (or undef with no selection ), and C<copy> copies automatically
 the selected text into the clipboard. The latter action is bound to
 C<Ctrl+Insert> key combination.
+
+A block with TEXT_OFFSET set to -1 will be treated as not containing any text,
+and therefore will not be able to get selected.
 
 =head2 Event rectangles
 
