@@ -329,9 +329,9 @@ sub round_rect
 		$x, $y,
 		$x1, $y1,
 	);
-	$self-> line( @r[0,7,2,7]) if $r[0] < $r[2];
+	$self-> line( @r[2,7,0,7]) if $r[0] < $r[2];
 	$self-> arc( @r[0,3], $d, $d, 90, 180);
-	$self-> line( @r[4,1,4,3]) if $r[1] < $r[3];
+	$self-> line( @r[4,3,4,1]) if $r[1] < $r[3];
 	$self-> arc( @r[0,1], $d, $d, 180, 270);
 	$self-> line( @r[0,5,2,5]) if $r[0] < $r[2];
 	$self-> arc( @r[2,1], $d, $d, 270, 360);
