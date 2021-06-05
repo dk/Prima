@@ -1415,6 +1415,7 @@ sub format
 		position      => undef,
 		positionSet   => 0,
 		verbatim      => undef,
+		last_ymap     => 0,
 	};
 
 	$self-> {formatTimer} = $self-> insert( Timer =>
@@ -1494,7 +1495,6 @@ sub format_chunks
 	my $indents   = $f-> {indents};
 	my $state     = $f-> {state};
 	my $linkRects = $f-> {linkRects};
-	my $start = scalar @{$self-> {blocks}};
 	my $formatWidth = $f-> {formatWidth};
 	my $fw = $self->font->width;
 
@@ -1595,9 +1595,18 @@ sub format_chunks
 	}
 
 	$f-> {current} = $mid;
-
-	$self-> recalc_ymap( $start);
 	$self-> end_paint_info;
+
+	if ( ! defined $f->{verbatim} ){
+		$self-> recalc_ymap( $f->{last_ymap} );
+		$f->{last_ymap} = scalar @{ $self->{blocks} };
+		if ( $f->{suppressed_ymap} ) {
+			$f->{suppressed_ymap} = 0;
+			$self->repaint;
+		}
+	} else {
+		$f->{suppressed_ymap} = 1;
+	}
 
 	my $ps = $self-> {paneWidth};
 	if ( $ps != $f-> {paneWidth}) {
