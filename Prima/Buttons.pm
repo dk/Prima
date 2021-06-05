@@ -520,7 +520,14 @@ sub on_paint
 
 		my $image = $self->{image};
 		if ( $self->{metafile} ) {
-			$self->{image}->execute($canvas, $imAtX, $imAtY);
+			if ( $self->{enabled} ) {
+				$self->{image}->execute($canvas, $imAtX, $imAtY);
+			} else {
+				$canvas->color(cl::White);
+				$self->{image}->execute($canvas, $imAtX+1, $imAtY-1);
+				$canvas->color($clr[0]);
+				$self->{image}->execute($canvas, $imAtX, $imAtY);
+			}
 			goto CAPTION;
 		}
 		if ( $self-> {smoothScaling} && $is != 1.0 ) {
@@ -549,13 +556,13 @@ sub on_paint
 			$pw, $ph,
 			rop::CopyPut
 		);
-	CAPTION:
 		$self-> draw_veil( $canvas, $imAtX, $imAtY, $imAtX + $sw, $imAtY + $sh)
 			if $useVeil;
 	} else {
 		$textAtX = ( $size[0] - $fw) / 2 + $shift;
 		$textAtY = ( $size[1] - $fh) / 2 - $shift;
 	}
+CAPTION:
 	$canvas-> color( $clr[0]);
 	$self-> draw_caption( $canvas, $textAtX, $textAtY) if $capOk;
 	$canvas-> rect_focus( 4, 4, $size[0] - 5, $size[1] - 5 ) if !$capOk && $self-> focused;
@@ -696,7 +703,7 @@ sub image
 	return $_[0]-> {image} unless $#_;
 	my ( $self, $image) = @_;
 	$self-> {image} = $image;
-	$self->{metafile} = $image && UNIVERSAL::isa($image, 'Prima::Drawable::Metafile');
+	$self->{metafile} = ($image && UNIVERSAL::isa($image, 'Prima::Drawable::Metafile')) ? 1 : 0;
 	delete $self-> {smooth_cache};
 	$self-> check_auto_size;
 	$self-> repaint;

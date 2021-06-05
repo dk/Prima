@@ -99,8 +99,15 @@ my $w = Prima::MainWindow-> create(
 	width     => 400,
 	designScale => [7, 16],
 );
-$w->insert( "Button"     , origin => [  50,180], pressed => 1);
+$w->insert( "Button",
+	origin => [  50,180], 
+	pressed => 1, 
+	onClick => sub {
+		$w->Meta->enabled(!$w->Meta->enabled);
+	}
+);
 my $l = $w->insert( "UserButton" , origin => [ 250,180], autoRepeat => 1);
+
 $w->insert( "Radio"      , origin => [  50,140]);
 my $metafile = Prima::Drawable::Metafile->new( size => [25, 25] );
 $metafile->begin_paint;
@@ -119,6 +126,13 @@ my @pts = map { 25 * ($_ + .5)  } (
 );
 $metafile->polyline(\@pts);
 $metafile->end_paint;
-$w->insert( "Button"     , origin => [ 50,50], size => [80,80],image => $metafile, text => '' );
+$w->insert( 
+	"Button"     , 
+	origin => [ 50,50], 
+	size => [80,80],
+	image => $metafile, 
+	text => '', 
+	name => 'Meta',
+);
 
 run Prima;
