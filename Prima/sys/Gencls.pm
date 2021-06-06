@@ -3,7 +3,7 @@
 #     Dmitry Karasik <dk@plab.ku.dk>
 #     Vadim Belman   <voland@plab.ku.dk>
 
-package Prima::Gencls;
+package Prima::sys::Gencls;
 use strict;
 use warnings;
 use Exporter;
