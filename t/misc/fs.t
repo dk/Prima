@@ -3,7 +3,7 @@ use warnings;
 
 use Test::More;
 use Cwd ();
-use Prima::Test qw(noX11);
+use Prima::sys::Test qw(noX11);
 use Prima::Utils;
 use Prima::sys::FS;
 use Fcntl qw(:DEFAULT S_IFREG S_IFDIR);

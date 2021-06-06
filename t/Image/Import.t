@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More tests => 10;
-use Prima::Test qw(noX11);
+use Prima::sys::Test qw(noX11);
 
 # noX11 test
 

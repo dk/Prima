@@ -1,4 +1,4 @@
-package Prima::Test;
+package Prima::sys::Test;
 
 use strict;
 use warnings;
@@ -57,7 +57,7 @@ sub wait_flag  { get_flag || &__wait }
 
 =head1 NAME
 
-Prima::Test - GUI test tools
+Prima::sys::Test - GUI test tools
 
 =head1 DESCRIPTION
 

@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use Prima::Test;
+use Prima::sys::Test;
 use Prima::Application;
 
 plan tests => 12;

@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use Prima::Test qw(noX11);
+use Prima::sys::Test qw(noX11);
 
 sub is_pict
 {

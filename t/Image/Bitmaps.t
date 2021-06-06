@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use Prima::Test;
+use Prima::sys::Test;
 use Prima qw(Application);
 
 plan tests => 1835;
