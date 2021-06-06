@@ -17,7 +17,7 @@ use lib '.';
 use Cwd;
 use Config;
 use DynaLoader;
-use Prima::Gencls;
+use Prima::sys::Gencls;
 use ExtUtils::MakeMaker;
 use File::Find;
 use File::Path;
