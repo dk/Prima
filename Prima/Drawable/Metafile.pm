@@ -12,6 +12,7 @@ sub profile_default
 	return {
 		%def,
 		size => [1,1],
+		type => dbt::Pixmap,
 	};
 }
 
@@ -19,8 +20,11 @@ sub init
 {
 	my ($self, %profile) = @_;
 	%profile = $self->SUPER::init(%profile);
-	$self->{size} = $profile{size};
 	$self->{code} = [];
+	$self->{explicit_cliprect} = 0;
+	$self->{clipRect} = [ 0, 0, 1, 1  ];
+	$self->{type} = $profile{type};
+	$self-> size( @{ $profile{size} });
 	return %profile;
 }
 
@@ -57,7 +61,7 @@ for my $prop_name (qw(
 }
 
 for my $prop_name (qw(
-	translate clipRect
+	translate 
 )) {
 	no strict 'refs';
 	*{$prop_name} = sub {
@@ -68,6 +72,29 @@ for my $prop_name (qw(
 		my $prop = 'SUPER::' . $prop_name;
 		return $self->$prop(@_);
 	};
+}
+
+sub size
+{
+	return @{ $_[0]->{size} } unless $#_;
+	my ( $self, $x, $y ) = @_;
+	$x = 1 if $x < 1;
+	$y = 1 if $y < 1;
+	$self->{size} = [ $x, $y ];
+	$self->{clipRect} = [ 0, 0, $x - 1, $y - 1 ] unless $self->{explicit_cliprect};
+}
+
+sub clipRect
+{
+	return @{ $_[0]-> {clipRect} } unless $#_;
+	my ( $self, $x1, $y1, $x2, $y2 ) = @_;
+	$self->{explicit_cliprect} = 1;
+	$x1 = 0 if $x1 < 0;
+	$y1 = 0 if $y1 < 0;
+	$x2 = $self->{size}->[0] - 1 if $x2 > $self->{size}->[0] - 1;
+	$y2 = $self->{size}->[1] - 1 if $y2 > $self->{size}->[0] - 1;
+	$self-> {clipRect} = [ $x1, $y1, $x2, $y2 ];
+	push @{ $self->{code} }, [ 'clipRect', $x1, $y1, $x2, $y2 ];
 }
 
 sub clear
@@ -96,17 +123,13 @@ sub region
 	return $self->SUPER::region(@_);
 }
 
-sub size
-{
-	return @{ $_[0]->{size} } unless $#_;
-	my ( $self, $x, $y ) = @_;
-	$x = 1 if $x < 1;
-	$y = 1 if $y < 1;
-	$self->{size} = [$x, $y];
-}
-
 sub width  { $_[0]->{size}->[0] }
 sub height { $_[0]->{size}->[1] }
+
+sub type            { $_[0]->{type} }
+sub can_draw_alpha  { shift->type != dbt::Bitmap  }
+sub has_alpha_layer { shift->type == dbt::Layered }
+sub get_bpp         { shift->type == dbt::Bitmap ? 1 : 24 }
 
 sub execute
 {
@@ -134,8 +157,7 @@ sub execute
 			my ($method, @args) = @cmd;
 			$canvas->$method(@args);
 		} elsif ( $cmd eq 'translate' ) {
-			$cmd[$_] += $tx[$_] for 0,1;
-			$canvas->translate(@cmd);
+			$canvas->translate($cmd[0] + $tx[0] + $x, $cmd[1] + $tx[1] + $y);
 		} elsif ( $cmd eq 'clipRect' ) {
 			if ( 4 == grep { $_ == -1 } @cmd ) {
 				$actual_rgn = $rgn;
