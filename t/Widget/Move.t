@@ -2,12 +2,12 @@ use strict;
 use warnings;
 
 use Test::More;
-use Prima::Test;
+use Prima::sys::Test;
 use Prima::Application;
 
 plan tests => 10;
 
-$Prima::Test::timeout *= 4;
+$Prima::sys::Test::timeout *= 4;
 
 my $dong1 = 0;
 my $dong2 = 0;

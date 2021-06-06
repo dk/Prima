@@ -40,7 +40,7 @@ package main;
 use strict;
 use warnings;
 
-use Prima::Test qw(noX11);
+use Prima::sys::Test qw(noX11);
 use Test::More tests => 8;
 
 reset_flag();

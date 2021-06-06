@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use Prima::Test qw(noX11);
+use Prima::sys::Test qw(noX11);
 
 sub bits  { join ':', map { sprintf "%08b", ord } split '', shift }
 sub bytes { unpack('H*', shift ) }

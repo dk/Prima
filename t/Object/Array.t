@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use Prima::Test;
+use Prima::sys::Test;
 use Prima::Application;
 
 my $db = Prima::DeviceBitmap->new(width => 1, height => 1);

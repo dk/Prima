@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use Prima::Test;
+use Prima::sys::Test;
 use Prima::Application;
 
 plan tests => 16;
@@ -19,7 +19,7 @@ my $xw = create_window(
 );
 
 # window managers are heavy today
-local $Prima::Test::timeout = 5000;
+local $Prima::sys::Test::timeout = 5000;
 
 # make sure the other window is focused
 my $window = create_window( onActivate => sub {

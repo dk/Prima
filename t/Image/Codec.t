@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Prima::Test qw(noX11);
+use Prima::sys::Test qw(noX11);
 use Test::More;
 
 my $codecs = Prima::Image-> codecs;

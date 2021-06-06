@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use Prima::Test;
+use Prima::sys::Test;
 
 my $a = Prima::Drawable-> create( width => 1, height => 1, type => im::RGB);
 
