@@ -245,7 +245,6 @@ sub profile_default
 	return $def;
 }
 
-
 sub metafile
 {
 	my ($t, $p) = @_;
@@ -255,6 +254,7 @@ sub metafile
 	$p = $m1->render_polyline($p, matrix => [$t, 0, 0, $t, -$d, -$d], integer => 1);
 	push @$p, @$p[0,1];
 	$m1->begin_paint;
+	$m1->color(cl::Black);
 	$m1->polyline($p) ;
 	$m1->end_paint;
 	my $m2 = Prima::Drawable::Metafile->new( size => [$t, $t] );
@@ -262,8 +262,19 @@ sub metafile
 	$m2->color(wc::Menu|cl::Hilite);
 	$m2->fillWinding(fm::Winding|fm::Overlay);
 	$m2->fillpoly($p);
+	$m2->color(cl::Black);
+	$m2->polyline($p) ;
 	$m2->end_paint;
-	return [$m1, $m2];
+	my $m3 = Prima::Drawable::Metafile->new( size => [$t, $t], type => dbt::Bitmap);
+	$m3->begin_paint;
+	$m3->color(cl::White);
+	$m3->translate(1,-1);
+	$m3->polyline($p);
+	$m3->color(wc::Button|cl::DisabledText);
+	$m3->translate(0,0);
+	$m3->polyline($p) ;
+	$m3->end_paint;
+	return [$m1, $m2, $m3];
 }
 
 sub create_images
@@ -303,6 +314,7 @@ sub init
 		my $b = $self-> insert( SpeedButton =>
 			image => $mf{$_}->[0],
 			hiliteGlyph => $mf{$_}->[1],
+			disabledGlyph => $mf{$_}->[2],
 			name => $_,
 			hint => $_,
 			flat => 1,

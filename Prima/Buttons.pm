@@ -538,9 +538,10 @@ sub on_paint
 		}
 
 		if ( $image && UNIVERSAL::isa($image, 'Prima::Drawable::Metafile')) {
-			if ( !$self->enabled && $useVeil ) {
+			if ( !$self->enabled && $useVeil && $image->type == dbt::Bitmap) {
 				$canvas->color(cl::White);
 				$image->execute($canvas, $imAtX+1, $imAtY-1);
+				$useVeil = 0;
 			}
 			$canvas->color($clr[0]);
 			$image->execute($canvas, $imAtX, $imAtY);
@@ -572,13 +573,13 @@ sub on_paint
 			$pw, $ph,
 			rop::CopyPut
 		);
+CAPTION:
 		$self-> draw_veil( $canvas, $imAtX, $imAtY, $imAtX + $sw, $imAtY + $sh)
 			if $useVeil;
 	} else {
 		$textAtX = ( $size[0] - $fw) / 2 + $shift;
 		$textAtY = ( $size[1] - $fh) / 2 - $shift;
 	}
-CAPTION:
 	$canvas-> color( $clr[0]);
 	$self-> draw_caption( $canvas, $textAtX, $textAtY) if $capOk;
 	$canvas-> rect_focus( 4, 4, $size[0] - 5, $size[1] - 5 ) if !$capOk && $self-> focused;
