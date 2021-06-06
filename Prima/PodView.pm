@@ -962,9 +962,15 @@ sub close_read
 	$self-> add( "Contents",  STYLE_HEAD_1, DEF_FIRST_INDENT);
 	$self-> {hasIndex} = 1;
 	$self-> {topics}->[-1]->[T_MODEL_START] = $start;
+	my $last_style = STYLE_HEAD_1;
 	for my $k ( @{$self-> {topics}}) {
 		last if $secid == $msecid; # do not add 'Index' entry
 		my ( $ofs, $end, $text, $style, $depth, $linkStart) = @$k;
+		if ( $style == STYLE_ITEM ) {
+			$style = $last_style;
+		} else {
+			$last_style = $style;
+		}
 		my $indent = DEF_INDENT + ( $style - STYLE_HEAD_1 + $depth ) * 2;
 		$self-> add("L<$text|topic://$secid>", STYLE_TEXT, $indent);
 		$secid++;
