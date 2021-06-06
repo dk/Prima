@@ -86,8 +86,4 @@ safely used. If, on the contrary, it is not defined, initiate it as this:
 
 Dmitry Karasik, E<lt>dmitry@karasik.eu.orgE<gt>.
 
-=head1 SEE ALSO
-
-L<Prima::X11>
-
 =cut
