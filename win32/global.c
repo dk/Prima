@@ -863,6 +863,9 @@ AGAIN:
 	case WM_MBUTTONDOWN:
 		ev. pos. button = mbMiddle;
 		goto MB_DOWN;
+	case WM_XBUTTONDOWN:
+		ev. pos. button = (HIWORD(mp1) == XBUTTON1) ? mb4 : mb5;
+		goto MB_DOWN;
 	case WM_LBUTTONUP:
 		ev. pos. button = mbLeft;
 		goto MB_UP;
@@ -871,6 +874,9 @@ AGAIN:
 		goto MB_UP;
 	case WM_MBUTTONUP:
 		ev. pos. button = mbMiddle;
+		goto MB_UP;
+	case WM_XBUTTONUP:
+		ev. pos. button = (HIWORD(mp1) == XBUTTON1) ? mb4 : mb5;
 		goto MB_UP;
 	case WM_LBUTTONDBLCLK:
 		ev. pos. button = mbLeft;
@@ -881,6 +887,9 @@ AGAIN:
 	case WM_MBUTTONDBLCLK:
 		ev. pos. button = mbMiddle;
 		goto MB_DBLCLK;
+	case WM_XBUTTONDBLCLK:
+		ev. pos. button = (HIWORD(mp1) == XBUTTON1) ? mb4 : mb5;
+		goto MB_DBLCLK;
 	case WM_LMOUSECLICK:
 		ev. pos. button = mbLeft;
 		goto MB_CLICK;
@@ -889,6 +898,9 @@ AGAIN:
 		goto MB_CLICK;
 	case WM_MMOUSECLICK:
 		ev. pos. button = mbMiddle;
+		goto MB_CLICK;
+	case WM_XMOUSECLICK:
+		ev. pos. button = (HIWORD(mp1) == XBUTTON1) ? mb4 : mb5;
 		goto MB_CLICK;
 	case WM_MOUSEWHEEL:
 		{
