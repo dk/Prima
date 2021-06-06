@@ -432,6 +432,7 @@ process_msg( MSG * msg)
 	case WM_LBUTTONDOWN:  musClk. emsg = WM_LBUTTONUP; goto MUS1;
 	case WM_MBUTTONDOWN:  musClk. emsg = WM_MBUTTONUP; goto MUS1;
 	case WM_RBUTTONDOWN:  musClk. emsg = WM_RBUTTONUP; goto MUS1;
+	case WM_XBUTTONDOWN:  musClk. emsg = WM_XBUTTONUP; goto MUS1;
 	MUS1:
 		musClk. pending = 1;
 		musClk. msg     = *msg;
@@ -440,6 +441,7 @@ process_msg( MSG * msg)
 	case WM_LBUTTONUP:   musClk. msg. message = WM_LMOUSECLICK; goto MUS2;
 	case WM_MBUTTONUP:   musClk. msg. message = WM_MMOUSECLICK; goto MUS2;
 	case WM_RBUTTONUP:   musClk. msg. message = WM_RMOUSECLICK; goto MUS2;
+	case WM_XBUTTONUP:   musClk. msg. message = WM_XMOUSECLICK; goto MUS2;
 	MUS2:
 		if ( musClk. pending &&
 			( musClk. emsg         == msg-> message) &&
@@ -760,12 +762,20 @@ apc_message( Handle self, PEvent ev, Bool post)
 	case cmMouseUp:
 		if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONUP; else
 		if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONUP; else
-		msg = WM_LBUTTONUP;
+		if ( ev-> pos. button & mbLeft)   msg = WM_XBUTTONUP; else
+		{
+			msg  = WM_XBUTTONUP;
+			mp1s = MAKEWPARAM(0, (ev-> pos. button & mb4) ? XBUTTON1 : XBUTTON2);
+		}
 		goto general;
 	case cmMouseDown:
 		if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONDOWN; else
 		if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONDOWN; else
-		msg = WM_LBUTTONDOWN;
+		if ( ev-> pos. button & mbLeft)   msg = WM_LBUTTONDOWN; else
+		{
+			msg = WM_XBUTTONDOWN;
+			mp1s = MAKEWPARAM(0, (ev-> pos. button & mb4) ? XBUTTON1 : XBUTTON2);
+		}
 		goto general;
 	case cmMouseWheel:
 		msg  = WM_MOUSEWHEEL;
@@ -775,12 +785,20 @@ apc_message( Handle self, PEvent ev, Bool post)
 		if ( ev-> pos. dblclk) {
 			if ( ev-> pos. button & mbMiddle) msg = WM_MBUTTONDBLCLK; else
 			if ( ev-> pos. button & mbRight)  msg = WM_RBUTTONDBLCLK; else
-			msg = WM_LBUTTONDBLCLK;
+			if ( ev-> pos. button & mbLeft)   msg = WM_LBUTTONDBLCLK; else
+			{
+				msg = WM_XBUTTONDBLCLK;
+				mp1s = MAKEWPARAM(0, (ev-> pos. button & mb4) ? XBUTTON1 : XBUTTON2);
+			}
 		} else {
 			Event newEvent = *ev;
 			if ( ev-> pos. button & mbMiddle) msg = WM_MMOUSECLICK; else
 			if ( ev-> pos. button & mbRight)  msg = WM_RMOUSECLICK; else
-			msg = WM_LMOUSECLICK;
+			if ( ev-> pos. button & mbLeft)   msg = WM_LMOUSECLICK; else
+			{
+				msg = WM_XMOUSECLICK;
+				mp1s = MAKEWPARAM(0, (ev-> pos. button & mb4) ? XBUTTON1 : XBUTTON2);
+			}
 			newEvent. cmd = cmMouseDown;
 			apc_message( self, &newEvent, post);
 			newEvent. cmd = cmMouseUp;

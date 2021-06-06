@@ -163,6 +163,23 @@ sub on_keydown
 	$self-> SUPER::on_keydown( $code, $key, $mod, $r);
 }
 
+sub on_mouseclick
+{
+	my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
+	if ( !$dbl ) {
+		if ( $btn == mb::b4 ) {
+			$self->clear_event;
+			$self->owner->back;
+			return;
+		} elsif ( $btn == mb::b5 ) {
+			$self->clear_event;
+			$self->owner->forward;
+			return;
+		}
+	}
+	$self->SUPER::on_mouseclick($btn, $mod, $x, $y, $dbl);
+}
+
 package Prima::PodViewWindow;
 use vars qw(@ISA $finddlg $prndlg $setupdlg $inifile
 $defaultVariableFont $defaultFixedFont);
