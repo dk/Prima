@@ -959,7 +959,7 @@ sub close_read
 	my $start = scalar @{ $self->{model} };
 	$self-> add_new_line;
 	$self-> add_verbatim_mark(1);
-	$self-> add( "Contents",  STYLE_HEAD_1, DEF_FIRST_INDENT);
+	$self-> add( " Contents",  STYLE_HEAD_1, DEF_FIRST_INDENT);
 	$self-> {hasIndex} = 1;
 	$self-> {topics}->[-1]->[T_MODEL_START] = $start;
 	my $last_style = STYLE_HEAD_1;
