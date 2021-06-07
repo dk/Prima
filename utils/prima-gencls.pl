@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 use strict;
 use warnings;
-use Prima::Gencls;
+use Prima::sys::Gencls;
 
 # Main
 unless ( $ARGV[ 0]) {
