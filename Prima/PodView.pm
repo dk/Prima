@@ -837,13 +837,13 @@ sub read_paragraph
 				$self-> add( $args, STYLE_HEAD_1, DEF_FIRST_INDENT);
 			}
 			elsif ($Cmd eq 'head2') {
-				$self-> add( $args, STYLE_HEAD_2, 0);
+				$self-> add( $args, STYLE_HEAD_2, DEF_FIRST_INDENT);
 			}
 			elsif ($Cmd eq 'head3') {
-				$self-> add( $args, STYLE_HEAD_3, 0);
+				$self-> add( $args, STYLE_HEAD_3, DEF_FIRST_INDENT);
 			}
 			elsif ($Cmd eq 'head4') {
-				$self-> add( $args, STYLE_HEAD_4, 0);
+				$self-> add( $args, STYLE_HEAD_4, DEF_FIRST_INDENT);
 			}
 			elsif ($Cmd eq 'over') {
 				push(@{$r-> {indentStack}}, $r-> {indent});
