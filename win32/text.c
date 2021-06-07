@@ -651,8 +651,8 @@ build_wtext( PTextShapeRec t,
 		uint32_t c = *src++;
 		if ( c >= 0x10000 && c <= 0x10FFFF ) {
 			c -= 0x10000;
-			*(dst++) = 0xd800 + (c & 0x3ff);
-			*(dst++) = 0xdc00 + (c >> 10);
+			*(dst++) = 0xd800 + (c >> 10);
+			*(dst++) = 0xdc00 + (c & 0x3ff);
 			if ( !*surrogate_map ) {
 				*first_surrogate_pair = i;
 				*surrogate_map = malloc(sizeof(unsigned int*) * (t-> len - i) * 2);
