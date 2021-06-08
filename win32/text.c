@@ -1218,6 +1218,131 @@ apc_gp_get_font_def( Handle self, int first, int last, int flags)
 	return f1;
 }}
 
+/*
+ get_opentype_cmap1213_font_ranges is based on the following:
+
+ wine:  dlls/dwrite/opentype.c
+ 	Copyright 2014 Aric Stewart for CodeWeavers
+
+ pango: pangowin32.c (
+ 	Copyright (C) 1999 Red Hat Software
+ 	Copyright (C) 2000 Tor Lillqvist
+ 	Copyright (C) 2001 Alexander Larsson
+
+ Thank you!
+*/
+
+#define MAKE_TT_TABLE_NAME(c1, c2, c3, c4) \
+   (((DWORD)c4) << 24 | ((DWORD)c3) << 16 | ((DWORD)c2) << 8 | ((DWORD)c1))
+#define CMAP (MAKE_TT_TABLE_NAME('c','m','a','p'))
+#define CMAP_HEADER_SIZE 4
+#define ENCODING_TABLE_SIZE 8
+#define BE16(x) (((x&0xff00)>>8)|((x&0xff)<<8))
+#define BE32(x) (((x&0xff000000)>>24)|((x&0xff0000)>>8)|((x&0xff00)<<8)|((x&0xff)<<24))
+
+#pragma pack(1)
+struct cmap_encoding_subtable
+{
+	WORD platform_id;
+	WORD encoding_id;
+	DWORD offset;
+};
+#pragma pack()
+
+unsigned long *
+get_opentype_cmap1213_font_ranges( HDC ps, int * count)
+{
+	static const uint16_t encodings[][2] = {
+		{ 3, 0 }, /* MS Symbol encoding is preferred. */
+		{ 3, 10 },
+		{ 0, 6 },
+		{ 0, 4 },
+		{ 3, 1 },
+		{ 0, 3 },
+		{ 0, 2 },
+		{ 0, 1 },
+		{ 0, 0 },
+	};
+
+	uint16_t i, j, n_tables, format;
+	uint32_t cmap_size, offset, n_groups, *groups;
+	unsigned long * ret = NULL;
+	struct cmap_encoding_subtable *table, *found_record;
+	uint8_t *cmap = NULL;
+
+	if ((cmap_size = GetFontData(ps, CMAP, 0, NULL, 0)) == 0)
+		goto FAIL;
+	if ( !( cmap = malloc(cmap_size))) {
+		warn("Not enough memory");
+		goto FAIL;
+	}
+	if (GetFontData(ps, CMAP, 0, cmap, cmap_size) != cmap_size)
+		goto FAIL;
+#define READ16(v,offset) \
+	if (offset + 2 < cmap_size) \
+		v = BE16( *((uint16_t*)(cmap + offset)) ); \
+		else goto FAIL
+#define READ32(v,offset) \
+	if (offset + 4 < cmap_size) \
+		v = BE32( *((uint32_t*)(cmap + offset)) ); \
+		else goto FAIL
+#define READPTR(v,offset,size) \
+	if (offset + size < cmap_size) \
+		v = (void*)(cmap + offset); \
+		else goto FAIL
+
+	READ16(n_tables, 2);
+	READPTR(table, CMAP_HEADER_SIZE, ENCODING_TABLE_SIZE * n_tables);
+	for (i = 0, found_record = NULL; i < sizeof(encodings)/sizeof(uint16_t)/2; i++) {
+		struct cmap_encoding_subtable *t;
+		uint16_t *enc = (uint16_t*)( encodings + i );
+		for ( j = 0, t = table; j < n_tables; j++, t++)
+			if ( enc[0] == BE16(t->platform_id) && enc[1] == BE16(t->encoding_id)) {
+				found_record = t;
+				goto STOP;
+			}
+	}
+	goto FAIL;
+STOP:
+
+	offset = BE32(found_record->offset);
+	READ16(format, offset);
+	/* don't implement logic for BMP planes as GetFontUnicodeRanges can retrieve it just fine */
+	if ( format != 12 && format != 13 )
+		return NULL;
+
+	READ32(n_groups, offset + 12);
+	READPTR(groups, offset + 16, n_groups * 3 * 4);
+
+	if ( !( ret = malloc(n_groups * sizeof(unsigned long) * 1024))) {
+		warn("Not enough memory");
+		goto FAIL;
+	}
+	for ( i = 0; i < n_groups; i++) {
+		ret[(*count)++] = BE32(groups[i * 3]);
+		ret[(*count)++] = BE32(groups[i * 3 + 1]);
+	}
+
+	free(cmap);
+	return ret;
+
+FAIL:
+	if ( cmap ) free(cmap);
+	if ( ret ) free(ret);
+	*count = 0;
+	return NULL;
+}
+
+#undef READPTR
+#undef READ16
+#undef READ32
+#undef BE16
+#undef BE32
+#undef CMAP
+#undef CMAP_HEADER_SIZE
+#undef ENCODING_TABLE_SIZE
+#undef MAKE_TT_TABLE_NAME
+
 unsigned long *
 get_font_ranges( HDC ps, int * count)
 {
@@ -1227,7 +1352,10 @@ get_font_ranges( HDC ps, int * count)
 	WCRANGE *src;
 
 	*count = 0;
-	if (( size = GetFontUnicodeRanges( ps, NULL )) == 0) 
+	ret = get_opentype_cmap1213_font_ranges( ps, count );
+	if ( ret != NULL ) return ret;
+
+	if (( size = GetFontUnicodeRanges( ps, NULL )) == 0)
 		return NULL;
 	if (!( gs = malloc(size)))
 		apiErrRet;

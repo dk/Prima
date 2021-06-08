@@ -26,7 +26,7 @@ my $w = Prima::MainWindow->new(
 		$canvas-> color( $self-> backColor);
 		$canvas-> bar( 0, 0, $canvas-> size);
 		$canvas-> color( $color);
-		$canvas-> text_out( $self-> text, 10, 10);
+		$canvas-> text_shape_out( $self-> text, 10, 10);
 	},
 );
 
