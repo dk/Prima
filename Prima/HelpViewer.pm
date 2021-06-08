@@ -180,6 +180,13 @@ sub on_mouseclick
 	$self->SUPER::on_mouseclick($btn, $mod, $x, $y, $dbl);
 }
 
+sub on_mousewheel
+{
+	my ( $self, $mod, $x, $y, $z) = @_;
+	return unless $mod & km::Ctrl;
+	$self-> owner-> increase_font_size(($z > 0) ? 1 : -1);
+}
+
 package Prima::PodViewWindow;
 use vars qw(@ISA $finddlg $prndlg $setupdlg $inifile
 $defaultVariableFont $defaultFixedFont);
@@ -211,8 +218,8 @@ sub profile_default
 			['~Close window' => 'Ctrl-W' => '^W' => sub { $_[0]-> close }],
 			['E~xit' => 'Ctrl+Q' => '^Q' => sub { Prima::HelpViewer-> close }],
 		]], [ '~View' => [
-			[ '~Increase font' => 'Ctrl +' => '^+' => sub { $_[0]-> increase_font_size(2)  }],
-			[ '~Decrease font' => 'Ctrl -' => '^-' => sub { $_[0]-> increase_font_size(-2) }],
+			[ '~Increase font' => 'Ctrl +' => '^+' => sub { $_[0]-> increase_font_size(1)  }],
+			[ '~Decrease font' => 'Ctrl -' => '^-' => sub { $_[0]-> increase_font_size(-1) }],
 			[],
 			[ 'fullView' => 'Full text ~view' => 'Ctrl+V' => '^V' => sub {
 				$_[0]-> {text}-> topicView( ! $_[0]-> menu-> toggle( $_[1]));
