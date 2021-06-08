@@ -13,6 +13,7 @@ Revision history for Perl module Prima
  - Minor UI facelift - sliders, buttons, podview, etc
  - Added Prima::Drawable::Metafile
  - Recognize mouse buttons 4 and 5 on win32
+ - win32: support unicode supplementary planes
 
 1.61 2021-04-21
  - DWM API Removed (not useful on Windows 10)
