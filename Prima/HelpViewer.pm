@@ -340,6 +340,8 @@ sub init
 			selectable => 0,
 			enabled => 0,
 			growMode => gm::GrowLoY,
+			backColor => cl::Back | wc::Window,
+			disabledBackColor => cl::Back | wc::Window,
 			onClick => sub { $self-> $lc(); }
 
 		);
