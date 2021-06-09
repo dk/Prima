@@ -1186,7 +1186,7 @@ apc_img_codec_bmp( void )
 	vmt. open_save	   = open_save;
 	vmt. save	   = save;
 	vmt. close_save    = close_save;
-	apc_img_register( &vmt, nil);
+	apc_img_register( &vmt, NULL);
 }
 
 #ifdef __cplusplus

@@ -51,7 +51,7 @@ ibc_repad( Byte * source, Byte * dest, int srcLineSize, int dstLineSize, int src
 	int dh  = dstDataSize / dstLineSize;
 	int  h  = sh > dh ? dh : sh;
 
-	if ( convProc == nil) {
+	if ( convProc == NULL) {
 		convProc = (void*)memcpy_bitconvproc;
 		srcBpp = dstBpp = 1;
 		sb = srcLineSize;

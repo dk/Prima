@@ -41,7 +41,7 @@ static SV * binary_server( Handle self, PClipboardFormatReg, int, SV *);
 static int clipboards = 0;
 static int formatCount = 0;
 static Bool protect_formats = false;
-static PClipboardFormatReg formats = nil;
+static PClipboardFormatReg formats = NULL;
 
 void *
 Clipboard_register_format_proc( Handle self, char * format, void * serverProc);
@@ -96,7 +96,7 @@ Bool
 Clipboard_validate_owner( Handle self, Handle * owner, HV * profile)
 {
 	dPROFILE;
-	if ( pget_H( owner) != application || application == nilHandle) return false;
+	if ( pget_H( owner) != application || application == NULL_HANDLE) return false;
 	*owner = application;
 	return true;
 }
@@ -109,12 +109,12 @@ first_that( Handle self, void * actionProc, void * params)
 {
 	int i;
 	PClipboardFormatReg list = formats;
-	if ( actionProc == nil) return nil;
+	if ( actionProc == NULL) return NULL;
 	for ( i = 0; i < formatCount; i++) {
 		if ((( PActionProc) actionProc)( self, list+i, params))
 			return list+i;
 	}
-	return nil;
+	return NULL;
 }
 
 static Bool
@@ -138,8 +138,8 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
 		my-> deregister_format( self, format);
 	}
 	if (!( list = allocn( ClipboardFormatReg, formatCount + 1)))
-		return nil;
-	if ( formats != nil) {
+		return NULL;
+	if ( formats != NULL) {
 		memcpy( list, formats, sizeof( ClipboardFormatReg) * formatCount);
 		free( formats);
 	}
@@ -147,7 +147,7 @@ Clipboard_register_format_proc( Handle self, char * format, void * serverProc)
 	list += formatCount++;
 	list-> id     = duplicate_string( format);
 	list-> server = ( ClipboardExchangeFunc *) serverProc;
-	list-> sysId  = ( Handle) list-> server( self, list, cefInit, nilSV);
+	list-> sysId  = ( Handle) list-> server( self, list, cefInit, NULL_SV);
 	return list;
 }
 
@@ -164,9 +164,9 @@ Clipboard_deregister_format( Handle self, char * format)
 		return;
 
 	fr = first_that( self, (void*)find_format, format);
-	if ( fr == nil) return;
+	if ( fr == NULL) return;
 	list = formats;
-	fr-> server( self, fr, cefDone, nilSV);
+	fr-> server( self, fr, cefDone, NULL_SV);
 	free( fr-> id);
 	formatCount--;
 	memmove( fr, fr + 1, sizeof( ClipboardFormatReg) * ( formatCount - ( fr - list)));
@@ -174,7 +174,7 @@ Clipboard_deregister_format( Handle self, char * format)
 		if (( fr = allocn( ClipboardFormatReg, formatCount)))
 			memcpy( fr, list, sizeof( ClipboardFormatReg) * formatCount);
 	} else
-		fr = nil;
+		fr = NULL;
 	free( formats);
 	formats = fr;
 }
@@ -185,7 +185,7 @@ Clipboard_open( Handle self)
 	var-> openCount++;
 	if ( var-> openCount > 1) return true;
 
-	first_that( self, (void*) reset_written, nil);
+	first_that( self, (void*) reset_written, NULL);
 	return apc_clipboard_open( self);
 }
 
@@ -205,7 +205,7 @@ Clipboard_close( Handle self)
 	/* automatically downgrade UTF8 to TEXT */
 	if ( utf8-> written && !text-> written) {
 		SV *utf8_sv, *text_sv;
-		if (( utf8_sv = utf8-> server( self, utf8, cefFetch, nilSV))) {
+		if (( utf8_sv = utf8-> server( self, utf8, cefFetch, NULL_SV))) {
 			STRLEN bytelen, charlen;
 			U8 * src;
 			src = ( U8 *) SvPV( utf8_sv, bytelen);
@@ -244,9 +244,9 @@ Clipboard_fetch( Handle self, char * format)
 	PClipboardFormatReg fr = first_that( self, (void*)find_format, format);
 	my-> open( self);
 	if ( !fr || !my-> format_exists( self, format))
-		ret = newSVsv( nilSV);
+		ret = newSVsv( NULL_SV);
 	else
-		ret = fr-> server( self, fr, cefFetch, nilSV);
+		ret = fr-> server( self, fr, cefFetch, NULL_SV);
 	my-> close( self);
 	return ret;
 }
@@ -259,7 +259,7 @@ Clipboard_store( Handle self, char * format, SV * data)
 	if ( !fr) return false;
 	if ( !my-> open( self)) return false;
 	if ( var->  openCount == 1) {
-		first_that( self, (void*) reset_written, nil);
+		first_that( self, (void*) reset_written, NULL);
 		apc_clipboard_clear( self);
 	}
 	fr-> server( self, fr, cefStore, data);
@@ -271,7 +271,7 @@ void
 Clipboard_clear( Handle self)
 {
 	my-> open( self);
-	first_that( self, (void*) reset_written, nil);
+	first_that( self, (void*) reset_written, NULL);
 	apc_clipboard_clear( self);
 	my-> close( self);
 }
@@ -295,7 +295,7 @@ Clipboard_register_format( Handle self, char * format)
 		( strcmp( format, "Image") == 0))
 		return false;
 	proc = Clipboard_register_format_proc( self, format, (void*)binary_server);
-	return proc != nil;
+	return proc != NULL;
 }
 
 
@@ -310,7 +310,7 @@ XS( Clipboard_get_formats_FROMPERL)
 		croak ("Invalid usage of Clipboard.get_formats");
 	SP -= items;
 	self = gimme_the_mate( ST( 0));
-	if ( self == nilHandle)
+	if ( self == NULL_HANDLE)
 		croak( "Illegal object reference passed to Clipboard.get_formats");
 	include_unregistered = (items > 1) ? SvBOOL(ST(1)) : false;
 	my-> open( self);
@@ -343,7 +343,7 @@ XS( Clipboard_get_registered_formats_FROMPERL)
 		croak ("Invalid usage of Clipboard.get_registered_formats");
 	SP -= items;
 	self = gimme_the_mate( ST( 0));
-	if ( self == nilHandle)
+	if ( self == NULL_HANDLE)
 		croak( "Illegal object reference passed to Clipboard.get_registered_formats");
 	list = formats;
 	EXTEND( sp, formatCount);
@@ -412,7 +412,7 @@ text_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 		}
 		break;
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 static SV *
@@ -441,7 +441,7 @@ utf8_server( Handle self, PClipboardFormatReg instance, int function, SV * data)
 		instance-> written = true;
 		break;
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 static SV *
@@ -460,13 +460,13 @@ image_server( Handle self, PClipboardFormatReg instance, int function, SV * data
 
 		if ( !kind_of( c. image, CImage)) {
 			warn("Not an image passed to clipboard");
-			return nilSV;
+			return NULL_SV;
 		}
 		instance-> success = apc_clipboard_set_data( self, cfBitmap, &c);
 		instance-> written = true;
 		break;
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 static SV *
@@ -499,7 +499,7 @@ binary_server( Handle self, PClipboardFormatReg instance, int function, SV * dat
 		instance-> written = true;
 		break;
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 #ifdef __cplusplus

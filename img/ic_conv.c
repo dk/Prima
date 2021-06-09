@@ -146,7 +146,7 @@ BC( mono, mono, Optimized)
 	dEDIFF_ARGS;
 	BCWARN;
 
-	FILL_PALETTE( stdmono_palette, 2, 2, nil);
+	FILL_PALETTE( stdmono_palette, 2, 2, NULL);
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
 	EDIFF_INIT;
 	if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
@@ -283,7 +283,7 @@ BC( nibble, mono, Optimized)
 	dEDIFF_ARGS;
 	BCWARN;
 
-	FILL_PALETTE( stdmono_palette, 2, 2, nil);
+	FILL_PALETTE( stdmono_palette, 2, 2, NULL);
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
 	EDIFF_INIT;
 	if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {
@@ -514,7 +514,7 @@ BC( byte, mono, Optimized)
 	dEDIFF_ARGS;
 	BCWARN;
 
-	FILL_PALETTE( stdmono_palette, 2, 2, nil);
+	FILL_PALETTE( stdmono_palette, 2, 2, NULL);
 	if ( !( buf = malloc( width * OMP_MAX_THREADS))) goto FAIL;
 	EDIFF_INIT;
 	if (!( tree = cm_study_palette( dstPal, *dstPalSize))) {

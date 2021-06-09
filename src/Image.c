@@ -55,7 +55,7 @@ Image_init( Handle self, HV * profile)
 		var-> scaling = istNone;
 	}
 	if ( !itype_supported( var-> type = pget_i( type)))
-		if ( !itype_importable( var-> type, &var-> type, nil, nil)) {
+		if ( !itype_importable( var-> type, &var-> type, NULL, NULL)) {
 			warn( "Image::init: cannot set type %08x", var-> type);
 			var-> type = imBW;
 		}
@@ -65,16 +65,16 @@ Image_init( Handle self, HV * profile)
 	if ( var-> dataSize > 0) {
 		var->data = allocb( var->dataSize);
 		memset( var-> data, 0, var-> dataSize);
-		if ( var-> data == nil) {
+		if ( var-> data == NULL) {
 			my-> make_empty( self);
 			croak("Image::init: cannot allocate %d bytes", var-> dataSize);
 		}
 	} else
-		var-> data = nil;
+		var-> data = NULL;
 	var->palette = allocn( RGBColor, 256);
-	if ( var-> palette == nil) {
+	if ( var-> palette == NULL) {
 		free( var-> data);
-		var-> data = nil;
+		var-> data = NULL;
 		croak("Image::init: cannot allocate %d bytes", 768);
 	}
 	if ( !Image_set_extended_data( self, profile))
@@ -134,7 +134,7 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 {
 	Bool want_palette;
 	RGBColor new_palette[256];
-	Byte * new_data = nil;
+	Byte * new_data = NULL;
 	int new_pal_size = 0, new_line_size, new_data_size, want_only_palette_colors = 0;
 
 	if ( var->stage > csFrozen) return;
@@ -147,7 +147,7 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 			new_pal_size = 1 << ( new_type & imBPP);
 		if ( new_pal_size > 256)
 			new_pal_size = 256;
-		if ( palette != nil)
+		if ( palette != NULL)
 			memcpy( new_palette, palette, new_pal_size * 3);
 		else
 			want_only_palette_colors = 1;
@@ -193,7 +193,7 @@ Image_reset( Handle self, int new_type, RGBColor * palette, int palSize)
 void
 Image_stretch( Handle self, int width, int height)
 {
-	Byte * newData = nil;
+	Byte * newData = NULL;
 	int lineSize, oldType, newType;
 	if ( var->stage > csFrozen) return;
 	if ( width  >  65535) width  =  65535;
@@ -244,13 +244,13 @@ Image_reset_sv( Handle self, int new_type, SV * palette, Bool triplets)
 {
 	int colors;
 	RGBColor pal_buf[256], *pal_ptr;
-	if ( !palette || palette == nilSV) {
-		pal_ptr = nil;
+	if ( !palette || palette == NULL_SV) {
+		pal_ptr = NULL;
 		colors  = 0;
 	} else if ( SvROK( palette) && ( SvTYPE( SvRV( palette)) == SVt_PVAV)) {
 		colors = apc_img_read_palette( pal_ptr = pal_buf, palette, triplets);
 	} else {
-		pal_ptr = nil;
+		pal_ptr = NULL;
 		colors  = SvIV( palette);
 	}
 	my-> reset( self, new_type, pal_ptr, colors);
@@ -290,7 +290,7 @@ Image_set( Handle self, HV * profile)
 					palette  = pget_sv(colormap);
 					triplets = false;
 				} else {
-					palette = nilSV;
+					palette = NULL_SV;
 					triplets = false;
 				}
 				Image_reset_sv( self, newType, palette, triplets);
@@ -343,8 +343,8 @@ Image_make_empty( Handle self)
 	var->palSize  = 0;
 	var->lineSize = 0;
 	var->dataSize = 0;
-	var->data     = nil;
-	var->palette  = nil;
+	var->data     = NULL;
+	var->palette  = NULL;
 	my->update_change( self);
 }
 
@@ -440,7 +440,7 @@ Image_data( Handle self, Bool set, SV * svdata)
 	void *data;
 	STRLEN dataSize;
 
-	if ( var->stage > csFrozen) return nilSV;
+	if ( var->stage > csFrozen) return NULL_SV;
 
 	if ( !set) {
 		SV * sv = newSV_type(SVt_PV);
@@ -453,11 +453,11 @@ Image_data( Handle self, Bool set, SV * svdata)
 	}
 
 	data = SvPV( svdata, dataSize);
-	if ( is_opt( optInDraw) || dataSize <= 0) return nilSV;
+	if ( is_opt( optInDraw) || dataSize <= 0) return NULL_SV;
 
 	memcpy( var->data, data, (dataSize > (STRLEN)var->dataSize) ? (STRLEN)var->dataSize : dataSize);
 	my-> update_change( self);
-	return nilSV;
+	return NULL_SV;
 }
 
 /*
@@ -509,7 +509,7 @@ Image_set_extended_data( Handle self, HV * profile)
 			goto GOOD_RETURN;
 		}
 		if ( !pexistType) { /* plain repadding */
-			ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 1, 1, nil, reverse);
+			ibc_repad(( Byte*) data, var-> data, lineSize, var-> lineSize, dataSize, var-> dataSize, 1, 1, NULL, reverse);
 			my-> update_change( self);
 			goto GOOD_RETURN;
 		}
@@ -524,8 +524,8 @@ Image_set_extended_data( Handle self, HV * profile)
 	/* getting closest type */
 	if (( supp = itype_supported( newType))) {
 		fixType = newType;
-		proc    = nil;
-	} else if ( !itype_importable( newType, &fixType, &proc, nil)) {
+		proc    = NULL;
+	} else if ( !itype_importable( newType, &fixType, &proc, NULL)) {
 		warn( "Image::set_data: invalid image type %08x", newType);
 		goto GOOD_RETURN;
 	}
@@ -542,7 +542,7 @@ Image_set_extended_data( Handle self, HV * profile)
 			palette = pget_sv( colormap);
 			triplets = false;
 		} else {
-			palette = nilSV;
+			palette = NULL_SV;
 			triplets = false;
 		}
 		Image_reset_sv( self, fixType, palette, triplets);
@@ -684,7 +684,7 @@ XS( Image_load_FROMPERL)
 		int i;
 		for ( i = 0; i < ret-> count; i++) {
 			PAnyObject o = ( PAnyObject) ret-> items[i];
-			if ( o && o-> mate && o-> mate != nilSV) {
+			if ( o && o-> mate && o-> mate != NULL_SV) {
 				XPUSHs( sv_mortalcopy( o-> mate));
 				if (( Handle) o != self)
 				--SvREFCNT( SvRV( o-> mate));
@@ -704,7 +704,7 @@ XS( Image_load_FROMPERL)
 	if ( err)
 		sv_setpv( GvSV( PL_errgv), error);
 	else
-		sv_setsv( GvSV( PL_errgv), nilSV);
+		sv_setsv( GvSV( PL_errgv), NULL_SV);
 
 	PUTBACK;
 	return;
@@ -722,7 +722,7 @@ Image_lineSize( Handle self, Bool set, int dummy)
 PList
 Image_load_REDEFINED( SV * who, SV *filename, HV * profile)
 {
-	return nil;
+	return NULL;
 }
 
 PList
@@ -789,7 +789,7 @@ XS( Image_save_FROMPERL)
 	if ( ret <= 0)
 		sv_setpv( GvSV( PL_errgv), error);
 	else
-		sv_setsv( GvSV( PL_errgv), nilSV);
+		sv_setsv( GvSV( PL_errgv), NULL_SV);
 	PUTBACK;
 	return;
 }
@@ -820,7 +820,7 @@ Image_type( Handle self, Bool set, int type)
 	pset_i( type, type);
 	my-> set( self, profile);
 	sv_free(( SV *) profile);
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 int
@@ -874,7 +874,7 @@ Image_end_paint( Handle self)
 	apc_image_end_paint( self);
 	inherited end_paint( self);
 	if ( is_opt( optPreserveType) && var->type != oldType) {
-		my->reset( self, oldType, nil, 0);
+		my->reset( self, oldType, NULL, 0);
 	} else {
 		switch( var->type)
 		{
@@ -988,11 +988,11 @@ Image_resample( Handle self, double srcLo, double srcHi, double dstLo, double ds
 SV *
 Image_palette( Handle self, Bool set, SV * palette)
 {
-	if ( var->stage > csFrozen) return nilSV;
+	if ( var->stage > csFrozen) return NULL_SV;
 	if ( set) {
 		int ps;
-		if ( var->type & imGrayScale) return nilSV;
-		if ( !var->palette)           return nilSV;
+		if ( var->type & imGrayScale) return NULL_SV;
+		if ( !var->palette)           return NULL_SV;
 		ps = apc_img_read_palette( var->palette, palette, true);
 
 		if ( ps)
@@ -1010,7 +1010,7 @@ Image_palette( Handle self, Bool set, SV * palette)
 		for ( i = 0; i < colors*3; i++) av_push( av, newSViv( pal[ i]));
 		return newRV_noinc(( SV *) av);
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 int
@@ -1037,14 +1037,14 @@ Image_create_empty( Handle self, int width, int height, int type)
 	if ( var->dataSize > 0)
 	{
 		var->data = allocb( var->dataSize);
-		if ( var-> data == nil) {
+		if ( var-> data == NULL) {
 			int sz = var-> dataSize;
 			my-> make_empty( self);
 			croak("Image::create_empty: cannot allocate %d bytes", sz);
 		}
 		memset( var->data, 0, var->dataSize);
 	} else
-		var->data = nil;
+		var->data = NULL;
 	if ( var->type & imGrayScale) switch ( var->type & imBPP)
 	{
 	case imbpp1:
@@ -1105,7 +1105,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			case imDouble:
 				return newSVnv(*(double*)(var->data + (var->lineSize*y+x*sizeof(double))));
 			default:
-				return nilSV;
+				return NULL_SV;
 		}} else
 			switch (var->type & imBPP) {
 			case imbpp1: {
@@ -1143,7 +1143,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			return inherited pixel(self,true,x,y,pixel);
 
 		if ((x>=var->w) || (x<0) || (y>=var->h) || (y<0))
-			return nilSV;
+			return NULL_SV;
 
 		if ( var-> type & (imComplexNumber|imTrigComplexNumber)) {
 			if ( !SvROK( pixel) || ( SvTYPE( SvRV( pixel)) != SVt_PVAV)) {
@@ -1157,7 +1157,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 					*(double*)(var->data+(var->lineSize*y+x*2*sizeof(double)))=SvNV(pixel);
 					break;
 				default:
-					return nilSV;
+					return NULL_SV;
 				}
 			} else {
 				AV * av = (AV *) SvRV( pixel);
@@ -1177,7 +1177,7 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 					if ( sv[1]) *(double*)(var->data+(var->lineSize*y+(x*2+1)*sizeof(double)))=SvNV(*(sv[1]));
 					break;
 				default:
-					return nilSV;
+					return NULL_SV;
 				}
 			}
 		} else if ( var-> type & imRealNumber) {
@@ -1189,10 +1189,10 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 				*(double*)(var->data+(var->lineSize*y+x*sizeof(double)))=SvNV(pixel);
 				break;
 			default:
-				return nilSV;
+				return NULL_SV;
 			}
 			my->update_change( self);
-			return nilSV;
+			return NULL_SV;
 		}
 
 		color = SvIV( pixel);
@@ -1241,11 +1241,11 @@ Image_pixel( Handle self, Bool set, int x, int y, SV * pixel)
 			*(Long*)(var->data+(var->lineSize*y+(x<<2)))=color;
 			break;
 		default:
-			return nilSV;
+			return NULL_SV;
 		}
 		my->update_change( self);
 #undef LONGtoBGR
-		return nilSV;
+		return NULL_SV;
 	}
 }
 
@@ -1398,7 +1398,7 @@ Image_map( Handle self, Color color)
 	RGBColor r[2];
 	int bc = 0;
 
-	if ( var-> data == nil) return;
+	if ( var-> data == NULL) return;
 
 	rop[0] = my-> get_rop( self);
 	rop[1] = my-> get_rop2( self);
@@ -1579,7 +1579,7 @@ Image_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom, in
 	Byte * color = NULL, colorbuf[ MAX_SIZEOF_PIXEL ];
 
 	if ( is_opt( optInDrawInfo)) return false;
-	if ( image == nilHandle) return false;
+	if ( image == NULL_HANDLE) return false;
 	if ( is_opt( optInDraw))
 		return inherited put_image_indirect( self, image, x, y, xFrom, yFrom, xDestLen, yDestLen, xLen, yLen, rop);
 	if ( !kind_of( image, CImage)) return false;
@@ -1619,13 +1619,13 @@ Image_reset_notifications( Handle self)
 	void * ret[ 2];
 	int    cmd[ 2] = { IMG_EVENTS_HEADER_READY, IMG_EVENTS_DATA_READY };
 	var-> eventMask2 = var-> eventMask1;
-	if ( var-> eventIDs == nil) return;
+	if ( var-> eventIDs == NULL) return;
 
 	ret[0] = hash_fetch( var-> eventIDs, "HeaderReady", 11);
 	ret[1] = hash_fetch( var-> eventIDs, "DataReady",   9);
 
 	for ( i = 0; i < 2; i++) {
-		if ( ret[i] == nil) continue;
+		if ( ret[i] == NULL) continue;
 		list = var-> events + PTR2IV( ret[i]) - 1;
 		if ( list-> count > 0) var-> eventMask2 |= cmd[ i];
 	}
@@ -1998,7 +1998,7 @@ Image_premultiply_alpha( Handle self, SV * alpha)
 	}
 
 	if ( SvROK( alpha )) {
-		Handle a = gimme_the_mate( alpha), dup = nilHandle;
+		Handle a = gimme_the_mate( alpha), dup = NULL_HANDLE;
 		if ( !a || !kind_of( a, CImage) || PImage(a)-> w != var-> w || PImage(a)-> h != var-> h )
 			croak( "Illegal object reference passed to Prima::Image::%s", "premultiply_alpha");
 		if ( PImage(a)->type != imByte)
@@ -2061,7 +2061,7 @@ Image_region( Handle self, Bool set, Handle mask)
 	if ( is_opt(optInDraw) || is_opt(optInDrawInfo))
 		return inherited region(self,set,mask);
 
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 
 	if ( set) {
 		if ( var-> regionData ) {
@@ -2071,12 +2071,12 @@ Image_region( Handle self, Bool set, Handle mask)
 
 		if ( mask && kind_of( mask, CRegion)) {
 			var->regionData = CRegion(mask)->update_change(mask, true);
-			return nilHandle;
+			return NULL_HANDLE;
 		}
 
 		if ( mask && !kind_of( mask, CImage)) {
 			warn("Illegal object reference passed to Image::region");
-			return nilHandle;
+			return NULL_HANDLE;
 		}
 
 		if ( mask ) {
@@ -2090,9 +2090,9 @@ Image_region( Handle self, Bool set, Handle mask)
 		}
 
 	} else if ( var-> regionData )
-		return Region_create_from_data( nilHandle, var->regionData);
+		return Region_create_from_data( NULL_HANDLE, var->regionData);
 
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 int

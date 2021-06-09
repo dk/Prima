@@ -211,7 +211,7 @@ add_active_font(int fid)
 			while (font_active_entries.count <= page )
 				list_add(&font_active_entries, (Handle)NULL);
 		}
-		if ( font_active_entries.items[page] == nilHandle )
+		if ( font_active_entries.items[page] == NULL_HANDLE )
 			font_active_entries.items[page] = (Handle) plist_create(4, 4);
 		list_add((PList) font_active_entries.items[page], fid);
 	}
@@ -227,7 +227,7 @@ remove_active_font(int fid)
 
 	for ( page = 0; page < pfe->vectors.count; page++) {
 		if ( !pfe->vectors.items[page] ) continue;
-		if ( font_active_entries.items[page] == nilHandle ) continue;
+		if ( font_active_entries.items[page] == NULL_HANDLE ) continue;
 		list_delete((PList) font_active_entries.items[page], fid);
 	}
 }
@@ -320,7 +320,7 @@ find_font(uint32_t c, int pitch, uint16_t preferred_font)
 SV *
 Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
 {
-	if ( var->  stage > csFrozen) return nilSV;
+	if ( var->  stage > csFrozen) return NULL_SV;
 	if ( set) {
 		uint16_t fid;
 		Font font;
@@ -328,23 +328,23 @@ Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
 
 		SvHV_Font(sv, &font, "Drawable::fontMapperPalette");
 		fid = PTR2IV(hash_fetch(font_substitutions, font.name, strlen(font.name)));
-		if ( fid == 0 ) return nilSV;
+		if ( fid == 0 ) return NULL_SV;
 		pfe = PASSIVE_FONT(fid);
 
 		switch ( index ) {
 		case 0: 
 			/* delete */
-			if ( !pfe-> is_active ) return nilSV;
+			if ( !pfe-> is_active ) return NULL_SV;
 			remove_active_font(fid);
 			return newSViv(1);
 		case 1:
 			/* add */
-			if ( pfe-> is_active ) return nilSV;
+			if ( pfe-> is_active ) return NULL_SV;
 			add_active_font(fid);
 			return newSViv(1);
 		default:
 			warn("Drawable::fontPalette(%d) operation is not defined", index);
-			return nilSV;
+			return NULL_SV;
 		}
 	} else if ( index < 0 ) {
 		return newSViv( font_passive_entries.count );
@@ -353,7 +353,7 @@ Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
 		return newSViv(index);
 	} else {
 		PFont f = prima_font_mapper_get_font(index);
-		if (!f) return nilSV;
+		if (!f) return NULL_SV;
 		return sv_Font2HV( f );
 	}
 }
@@ -697,7 +697,7 @@ Drawable_get_text_box( Handle self, SV * text, int from, int len )
 	if ( !SvROK( text )) {
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
-		CHECK_GP(nilSV);
+		CHECK_GP(NULL_SV);
 
 		if ( prima_is_utf8_sv( text)) {
 			dlen = utf8_length(( U8*) c_text, ( U8*) c_text + dlen);
@@ -711,7 +711,7 @@ Drawable_get_text_box( Handle self, SV * text, int from, int len )
 		gpLEAVE;
 	} else if ( SvTYPE( SvRV( text)) == SVt_PVAV) {
 		GlyphsOutRec t;
-		CHECK_GP(nilSV);
+		CHECK_GP(NULL_SV);
 		if (!read_glyphs(&t, text, 0, "Drawable::get_text_box"))
 			return false;
 		if (( len = check_length(from,len,t.len)) == 0)
@@ -1250,12 +1250,12 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	dPROFILE;
 	gpARGS;
 	int i;
-	SV * ret = nilSV, 
-		*sv_glyphs = nilSV,
-		*sv_indexes = nilSV,
-		*sv_positions = nilSV,
-		*sv_advances = nilSV,
-		*sv_fonts = nilSV;
+	SV * ret = NULL_SV, 
+		*sv_glyphs = NULL_SV,
+		*sv_indexes = NULL_SV,
+		*sv_positions = NULL_SV,
+		*sv_advances = NULL_SV,
+		*sv_fonts = NULL_SV;
 	PTextShapeFunc system_shaper;
 	TextShapeRec t;
 	int shaper_type, level = tsDefault;
@@ -1266,14 +1266,14 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	/* forward, if any */
 	if ( SvROK(text_sv)) {
 		SV * ref = newRV((SV*) profile);
-		gpENTER(nilSV);
+		gpENTER(NULL_SV);
 		ret = sv_call_perl(text_sv, "text_shape", "<HS", self, ref);
 		gpLEAVE;
 		hv_clear(profile); /* old gencls bork */
 		sv_free(ref);
 		return newSVsv(ret);
 	}
-	CHECK_GP(nilSV);
+	CHECK_GP(NULL_SV);
 	bzero(&t, sizeof(t));
 
 	/* asserts */
@@ -1326,7 +1326,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	} else {
 		shaper_type    = level;
 		gp_enter       = true;
-		gpENTER(nilSV);
+		gpENTER(NULL_SV);
 		if (!( system_shaper = apc_gp_get_text_shaper(self, &shaper_type))) {
 			return_zero = true;
 			goto EXIT;
@@ -1378,7 +1378,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		ALLOC(positions,2,int16_t);
 		ALLOC(advances,1,uint16_t);
 	} else {
-		sv_positions = sv_advances = nilSV;
+		sv_positions = sv_advances = NULL_SV;
 		t.positions = NULL;
 		t.advances = NULL;
 	}
@@ -1386,7 +1386,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		ALLOC(fonts,1,uint16_t);
 		bzero(t.fonts, sizeof(uint16_t) * t.n_glyphs_max);
 	} else {
-		sv_fonts = nilSV;
+		sv_fonts = NULL_SV;
 		t.fonts = NULL;
 	}
 #undef ALLOC
@@ -1445,7 +1445,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 	t.analysis = NULL;
 	t.text = NULL;
 
-	if (sv_fonts != nilSV) {
+	if (sv_fonts != NULL_SV) {
 		int i, non_zero = 0;
 		for ( i = 0; i < t.n_glyphs; i++) {
 			if ( t.fonts[i] != 0 ) {
@@ -1455,7 +1455,7 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 		}
 		if (!non_zero) {
 			sv_free(sv_fonts);
-			sv_fonts = nilSV;
+			sv_fonts = NULL_SV;
 		}
 	}
 
@@ -1465,9 +1465,9 @@ Drawable_text_shape( Handle self, SV * text_sv, HV * profile)
 }
 	BIND(sv_glyphs, 1, 0, "S");
 	BIND(sv_indexes, 1, 1, "S");
-	if ( sv_positions != nilSV ) BIND(sv_positions, 2, 0, "s");
-	if ( sv_advances  != nilSV ) BIND(sv_advances,  1, 0, "S");
-	if ( sv_fonts     != nilSV ) BIND(sv_fonts,     1, 0, "S");
+	if ( sv_positions != NULL_SV ) BIND(sv_positions, 2, 0, "s");
+	if ( sv_advances  != NULL_SV ) BIND(sv_advances,  1, 0, "S");
+	if ( sv_fonts     != NULL_SV ) BIND(sv_fonts,     1, 0, "S");
 #undef BIND
 
 	return newSVsv(call_perl(self, "new_glyph_obj", "<SSSSS",
@@ -1484,7 +1484,7 @@ EXIT:
 	if ( t.positions) sv_free(sv_positions);
 	if ( t.advances ) sv_free(sv_advances );
 
-	return return_zero ? newSViv(0) : nilSV;
+	return return_zero ? newSViv(0) : NULL_SV;
 }
 
 /* SECTION 4: TEXT WRAP */
@@ -1905,7 +1905,7 @@ textout2sv(Handle self, int * c, TextWrapRec * t)
 			if ( !semistatic_expand(&pbuf, sz)) {
 				warn("Not enough memory");
 				sv_free((SV*) av);
-				return nilSV;
+				return NULL_SV;
 			}
 			for ( j = 0, src = t->text + c[i], dst = (char*)pbuf.heap; j < len; j++, src++ ) {
 				if ( *src == '\t') {
@@ -2185,7 +2185,7 @@ glyphout2sv(Handle self, int * c, GlyphsOutRec *g, TextWrapRec *tw, GlyphWrapRec
 			SV * sv;
 			uint16_t *dst, k;
 			if ( payload[j] == NULL ) {
-				sv_payload[j] = nilSV;
+				sv_payload[j] = NULL_SV;
 				continue;
 			}
 			sv  = prima_array_new(sizeof(uint16_t) * (sbuf.count * mul[j] + extras[j]));
@@ -2230,7 +2230,7 @@ glyphout2sv(Handle self, int * c, GlyphsOutRec *g, TextWrapRec *tw, GlyphWrapRec
 FAIL:
 	semistatic_done(&sbuf);
 	sv_free((SV*)av);
-	return nilSV;
+	return NULL_SV;
 }
 
 static uint16_t *
@@ -2513,7 +2513,7 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent, int f
 	}
 
 	text_init_wrap_rec( self, text, width, options, tabIndent, from, len, &t);
-	gpENTER(nilSV);
+	gpENTER(NULL_SV);
 	c = my->do_text_wrap( self, &t, NULL, NULL);
 	gpLEAVE;
 	t.t_pos += from;
@@ -2521,13 +2521,13 @@ string_wrap( Handle self,SV * text, int width, int options, int tabIndent, int f
 	if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength)
 		ret = first_line2sv(c, t.count);
 	else if ( !c)
-		return nilSV;
+		return NULL_SV;
 	else if ( options & twReturnChunks ) {
 		SV * sv = chunks2sv(self, from, c, t.count);
-		ret = ( sv == nilSV ) ? nilSV : newRV_noinc(sv);
+		ret = ( sv == NULL_SV ) ? NULL_SV : newRV_noinc(sv);
 	} else {
 		SV * av = textout2sv(self, c, &t);
-		if ( av != nilSV ) {
+		if ( av != NULL_SV ) {
 			if  (t.options & ( twCalcMnemonic | twCollapseTilde))
 				av_push((AV*) av, mnemonic2sv(&t));
 			ret = newRV_noinc(av);
@@ -2550,7 +2550,7 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 	SV *qt, *ret;
 
 	if (!read_glyphs(&g, text, 1, "Drawable::text_wrap"))
-		return nilSV;
+		return NULL_SV;
 	if ((len = check_length(from, len, g.len)) == 0)
 		from = 0;
 	hop_glyphs(&g, from, len);
@@ -2560,20 +2560,20 @@ glyphs_wrap( Handle self, SV * text, int width, int options, int from, int len)
 	if (options & (twExpandTabs|twCollapseTilde|twCalcMnemonic|twCalcTabs|twWordBreak))
 		warn("Drawable::text_wrap(glyphs) does not accept tw::ExpandTabs,tw::CollapseTilde,tw::CalcMnemonic,tw::CalcTabs,tw::WordBreak");
 
-	gpENTER(nilSV);
+	gpENTER(NULL_SV);
 	c = my->do_text_wrap( self, NULL, &t, NULL);
 	gpLEAVE;
 
 	if (( t. options & twReturnFirstLineLength) == twReturnFirstLineLength)
 		ret = first_line2sv(c, t.count);
 	else if ( !c)
-		return nilSV;
+		return NULL_SV;
 	else if ( options & twReturnChunks ) {
 		SV * sv = chunks2sv(self, from, c, t.count);
-		ret = (sv == nilSV) ? nilSV : newRV_noinc(sv);
+		ret = (sv == NULL_SV) ? NULL_SV : newRV_noinc(sv);
 	} else {
 		SV * sv = glyphout2sv(self, c, &g, NULL, &t, NULL);
-		ret = (sv == nilSV) ? nilSV : newRV_noinc(sv);
+		ret = (sv == NULL_SV) ? NULL_SV : newRV_noinc(sv);
 	}
 	free( c);
 
@@ -2594,14 +2594,14 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 
 	if ( !SvROK(glyphs) || SvTYPE( SvRV(glyphs)) != SVt_PVAV ) {
 		warn("Drawable::text_wrap: not a glyph array passed");
-		return nilSV;
+		return NULL_SV;
 	}
 	if (!read_glyphs(&g, glyphs, 1, "Drawable::text_wrap"))
-		return nilSV;
+		return NULL_SV;
 	text_init_wrap_rec( self, text, width, options, tabIndent, 0, -1, &tw);
 	if ( g.text_len != tw.utf8_textLen) {
 		warn("Drawable::text_wrap: text and glyphstr don't match");
-		return nilSV;
+		return NULL_SV;
 	}
 	if ( from != 0 || len != -1 )
 		text_init_wrap_rec( self, text, width, options, tabIndent, from, len, &tw);
@@ -2619,11 +2619,11 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 		/* log2vis needs to address the whole string */
 		if ( !( log2vis = fill_log2vis(&g, from))) {
 			warn("not enough memory");
-			return nilSV;
+			return NULL_SV;
 		}
 	}
 
-	gpENTER(nilSV);
+	gpENTER(NULL_SV);
 	c = my->do_text_wrap( self, &tw, &gw, log2vis + from);
 	gpLEAVE;
 	tw.t_pos += from;
@@ -2631,16 +2631,16 @@ string_glyphs_wrap( Handle self, SV * text, int width, int options, int tabInden
 	if (( options & twReturnFirstLineLength) == twReturnFirstLineLength) {
 		ret = first_line2sv(c, gw.count);
 	} else if ( !c ) {
-		ret = nilSV;
+		ret = NULL_SV;
 	} else if ( options & twReturnGlyphs ) {
 		av = glyphout2sv(self, c, &g, &tw, &gw, log2vis + from );
-		ret = ( av == nilSV ) ? nilSV : newRV_noinc(av);
+		ret = ( av == NULL_SV ) ? NULL_SV : newRV_noinc(av);
 	} else if ( options & twReturnChunks ) {
 		SV * sv = chunks2sv(self, from, c, gw.count);
-		ret = ( sv == nilSV ) ? nilSV : newRV_noinc(sv);
+		ret = ( sv == NULL_SV ) ? NULL_SV : newRV_noinc(sv);
 	} else {
 		av = textout2sv(self, c, &tw);
-		ret = ( av == nilSV ) ? nilSV : newRV_noinc(av);
+		ret = ( av == NULL_SV ) ? NULL_SV : newRV_noinc(av);
 	}
 
 	if  (

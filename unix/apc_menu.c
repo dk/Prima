@@ -38,7 +38,7 @@ get_window( Handle self, PMenuItemReg m)
 	PMenuWindow w, wx;
 	XSetWindowAttributes attrs;
 
-	if ( !( w = malloc( sizeof( MenuWindow)))) return nil;
+	if ( !( w = malloc( sizeof( MenuWindow)))) return NULL;
 	bzero(w, sizeof( MenuWindow));
 	w-> self = self;
 	w-> m = m;
@@ -74,7 +74,7 @@ get_window( Handle self, PMenuItemReg m)
 				, &attrs);
 	if (!w->w) {
 		free(w);
-		return nil;
+		return NULL;
 	}
 	XCHECKPOINT;
 	XSetTransientForHint( DISP, w->w, None);
@@ -133,7 +133,7 @@ free_unix_items( PMenuWindow w)
 			}
 			free( w-> um);
 		}
-		w-> um = nil;
+		w-> um = NULL;
 	}
 	w-> num = 0;
 }
@@ -165,7 +165,7 @@ menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
 		free( w);
 		w = xw;
 	}
-	wx-> next = nil;
+	wx-> next = NULL;
 	XX-> focused = wx;
 	XFlush(DISP);
 }
@@ -177,7 +177,7 @@ get_text_width( PCachedFont font, const char * text, int byte_length, Bool utf8,
 	int char_len = utf8 ? utf8_length(( U8*) text, ( U8*) text + byte_length) : byte_length;
 #ifdef USE_XFT
 	if ( font-> xft)
-		return prima_xft_get_text_width( font, text, char_len, utf8 ? toUTF8 : 0, xft_map8, nil);
+		return prima_xft_get_text_width( font, text, char_len, utf8 ? toUTF8 : 0, xft_map8, NULL);
 #endif
 	if ( utf8) {
 		XChar2b * xc = prima_alloc_utf8_to_wchar( text, char_len);
@@ -428,7 +428,7 @@ update_menu_window( PMenuSysData XX, PMenuWindow w)
 	PUnixMenuItem ix;
 	int lastIncOk = 1;
 	PCachedFont kf = XX-> font;
-	uint32_t *xft_map8 = nil;
+	uint32_t *xft_map8 = NULL;
 	PWindow owner = ( PWindow)(PComponent( w-> self)-> owner);
 
 #ifdef USE_XFT
@@ -1494,7 +1494,7 @@ handle_menu_motion( XEvent *ev, XWindow win, Handle self)
 	if ( guts. currentMenu != self) return;
 
 	w = get_menu_window( self, win);
-	px = menu_point2item( XX, w, ev-> xmotion.x, ev-> xmotion.y, nil);
+	px = menu_point2item( XX, w, ev-> xmotion.x, ev-> xmotion.y, NULL);
 	menu_select_item( XX, w, px);
 	m = w-> m;
 	if ( px >= 0) {
@@ -1518,7 +1518,7 @@ handle_menu_button( XEvent *ev, XWindow win, Handle self)
 	DEFMM;
 	int px, first = 0;
 	PMenuWindow w;
-	XWindow focus = nilHandle;
+	XWindow focus = NULL_HANDLE;
 	if ( prima_no_input( X(PComponent(self)->owner), false, true)) return;
 	if ( ev-> xbutton. button != Button1) return;
 
@@ -1535,7 +1535,7 @@ handle_menu_button( XEvent *ev, XWindow win, Handle self)
 		prima_end_menu();
 		return;
 	}
-	px = menu_point2item( XX, w, ev-> xbutton. x, ev-> xbutton.y, nil);
+	px = menu_point2item( XX, w, ev-> xbutton. x, ev-> xbutton.y, NULL);
 	if ( px < 0) {
 		if ( XX-> wstatic. w == win)
 			prima_end_menu();
@@ -1565,7 +1565,7 @@ handle_menu_button( XEvent *ev, XWindow win, Handle self)
 	}
 	XSetInputFocus( DISP, XX-> w-> w, RevertToNone, CurrentTime);
 	guts. currentMenu = self;
-	if ( first && ( ev-> type == ButtonPress) && ( !send_cmMenu( self, nil)))
+	if ( first && ( ev-> type == ButtonPress) && ( !send_cmMenu( self, NULL)))
 		return;
 	if ( !first && ( ev-> type == ButtonPress)) return;
 	apc_timer_stop( MENU_TIMER);
@@ -1624,7 +1624,7 @@ handle_menu_focus_in( XEvent *ev, XWindow win, Handle self)
 			return;
 		}
 		apc_timer_stop( MENU_UNFOCUS_TIMER);
-		guts. unfocusedMenu = nilHandle;
+		guts. unfocusedMenu = NULL_HANDLE;
 	}
 }
 
@@ -1638,7 +1638,7 @@ handle_menu_key( XEvent *ev, XWindow win, Handle self)
 	PMenuWindow w;
 	PMenuItemReg m;
 
-	str_len = XLookupString( &ev-> xkey, str_buf, 256, &keysym, nil);
+	str_len = XLookupString( &ev-> xkey, str_buf, 256, &keysym, NULL);
 	if ( prima_handle_menu_shortcuts( PComponent(self)-> owner, ev, keysym) != 0)
 		return;
 
@@ -1889,7 +1889,7 @@ prima_handle_menu_shortcuts( Handle self, XEvent * ev, KeySym keysym)
 		self = ps;
 
 		if ( XT_IS_WINDOW(X(self)) && PWindow(self)-> menu &&
-				1 == XLookupString( &ev-> xkey, str_buf, 256, &keysym, nil)) {
+				1 == XLookupString( &ev-> xkey, str_buf, 256, &keysym, NULL)) {
 			int i;
 			PMenuSysData selfxx = M(PWindow(self)-> menu);
 			char c = tolower( str_buf[0]);
@@ -1937,7 +1937,7 @@ prima_end_menu(void)
 	PMenuWindow w;
 	apc_timer_stop( MENU_TIMER);
 	apc_timer_stop( MENU_UNFOCUS_TIMER);
-	guts. unfocusedMenu = nilHandle;
+	guts. unfocusedMenu = NULL_HANDLE;
 	if ( !guts. currentMenu) return;
 	XX = M(guts. currentMenu);
 	{
@@ -1958,19 +1958,19 @@ prima_end_menu(void)
 	if ( XX-> focus)
 		XSetInputFocus( DISP, XX-> focus, RevertToNone, CurrentTime);
 	menu_window_delete_downlinks( XX, XX-> w);
-	XX-> focus = nilHandle;
-	XX-> focused = nil;
+	XX-> focus = NULL_HANDLE;
+	XX-> focused = NULL;
 	if ( XX-> w != &XX-> wstatic) {
 		hash_delete( guts. menu_windows, &w-> w, sizeof( w-> w), false);
 		XDestroyWindow( DISP, w-> w);
 		free_unix_items( w);
 		free( w);
-		XX-> w = nil;
+		XX-> w = NULL;
 	} else {
-		XX-> w-> next = nil;
+		XX-> w-> next = NULL;
 		menu_select_item( XX, XX-> w, -100);
 	}
-	guts. currentMenu = nilHandle;
+	guts. currentMenu = NULL_HANDLE;
 	XFlush(DISP);
 }
 
@@ -2005,14 +2005,14 @@ apc_menu_create( Handle self, Handle owner)
 	XX-> w-> sz.y  = 0;
 	for ( i = 0; i <= ciMaxId; i++)
 		XX-> c[i] = prima_allocate_color(
-			nilHandle,
-			prima_map_color( PWindow(owner)-> menuColor[i], nil),
-			nil);
+			NULL_HANDLE,
+			prima_map_color( PWindow(owner)-> menuColor[i], NULL),
+			NULL);
 	XX-> layered = X(owner)->flags. layered;
 	if ( XX-> layered ) {
 		for ( i = 0; i <= ciMaxId; i++)
 			XX-> argb_c[i] = argb_color(
-				prima_map_color( PWindow(owner)-> menuColor[i], nil)
+				prima_map_color( PWindow(owner)-> menuColor[i], NULL)
 			);
 	}
 	apc_menu_set_font( self, &PWindow(owner)-> menuFont);
@@ -2062,7 +2062,7 @@ apc_menu_set_color( Handle self, Color color, int i)
 {
 	DEFMM;
 	if ( i < 0 || i > ciMaxId) return false;
-	XX-> rgb[i] = prima_map_color( color, nil);
+	XX-> rgb[i] = prima_map_color( color, NULL);
 	if ( !XX-> type.popup) {
 		if ( X(PWidget(self)-> owner)-> menuColorImmunity) {
 			X(PWidget(self)-> owner)-> menuColorImmunity--;
@@ -2076,9 +2076,9 @@ apc_menu_set_color( Handle self, Color color, int i)
 			}
 		}
 	} else {
-		XX-> c[i] = prima_allocate_color( nilHandle, XX-> rgb[i], nil);
+		XX-> c[i] = prima_allocate_color( NULL_HANDLE, XX-> rgb[i], NULL);
 		if ( XX-> layered )
-			XX-> argb_c[i] = argb_color( prima_map_color( XX->rgb[i], nil));
+			XX-> argb_c[i] = argb_color( prima_map_color( XX->rgb[i], NULL));
 	}
 	return true;
 }
@@ -2089,14 +2089,14 @@ void
 menu_touch( Handle self, PMenuItemReg who, Bool kill)
 {
 	DEFMM;
-	PMenuWindow w, lw = nil;
+	PMenuWindow w, lw = NULL;
 
 	if ( guts. currentMenu != self) return;
 
 	w = XX-> w;
 	while ( w) {
 		if ( w-> m == who) {
-			if ( kill || lw == nil)
+			if ( kill || lw == NULL)
 				prima_end_menu();
 			else
 				menu_window_delete_downlinks( M(self), lw);
@@ -2264,7 +2264,7 @@ apc_menu_item_set_text( Handle self, PMenuItemReg m)
 ApiHandle
 apc_menu_get_handle( Handle self)
 {
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Bool
@@ -2297,7 +2297,7 @@ apc_popup( Handle self, int x, int y, Rect *anchor)
 	prima_end_menu();
 	if (!(m=TREE)) return false;
 	guts. currentMenu = self;
-	if ( !send_cmMenu( self, nil)) return false;
+	if ( !send_cmMenu( self, NULL)) return false;
 	if (!(w = get_window(self,m))) return false;
 	update_menu_window(XX, w);
 	if ( anchor-> left == 0 && anchor-> right == 0 && anchor-> top == 0 && anchor-> bottom == 0) {
@@ -2365,9 +2365,9 @@ apc_window_set_menu( Handle self, Handle menu)
 #endif
 		XDestroyWindow( DISP, w-> w);
 		free_unix_items( w);
-		m-> handle = nilHandle;
+		m-> handle = NULL_HANDLE;
 		M(m)-> paint_pending = false;
-		M(m)-> focused = nil;
+		M(m)-> focused = NULL;
 		y = 0;
 		repal = true;
 	}
@@ -2400,7 +2400,7 @@ apc_window_set_menu( Handle self, Handle menu)
 		XResizeWindow( DISP, m-> handle, XX-> size.x, y);
 		XMapRaised( DISP, m-> handle);
 		M(m)-> paint_pending = true;
-		M(m)-> focused = nil;
+		M(m)-> focused = NULL;
 		update_menu_window(M(m), M(m)-> w);
 		menu_reconfigure( menu);
 		repal = true;
@@ -2415,19 +2415,19 @@ apc_window_set_menu( Handle self, Handle menu)
 		XX->flags.layered = false; /* we need non-layered colors for popup menus */
 		for ( i = 0; i <= ciMaxId; i++) {
 			M(menu)-> c[i] = prima_allocate_color( self,
-				prima_map_color( PWindow(self)-> menuColor[i], nil), nil);
+				prima_map_color( PWindow(self)-> menuColor[i], NULL), NULL);
 		}
 		i = MENU_PALETTE_SIZE - 1;
-		M(menu)-> c[i] = prima_allocate_color( self, 0x404040, nil);
+		M(menu)-> c[i] = prima_allocate_color( self, 0x404040, NULL);
 		XX->flags.layered = layered;
 		M(menu)-> layered = XX->flags. layered;
 		if ( M(menu)-> layered ) {
 			for ( i = 0; i <= ciMaxId; i++) 
 				M(menu)-> argb_c[i] = argb_color(
-					prima_map_color( PWindow(self)-> menuColor[i], nil)
+					prima_map_color( PWindow(self)-> menuColor[i], NULL)
 				);
 			i = MENU_PALETTE_SIZE - 1;
-			M(menu)-> argb_c[i] = prima_allocate_color( self, 0x404040, nil);
+			M(menu)-> argb_c[i] = prima_allocate_color( self, 0x404040, NULL);
 		}
 	}
 	return true;

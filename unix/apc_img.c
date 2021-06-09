@@ -113,7 +113,7 @@ prima_prepare_ximage( int width, int height, int format)
 	i = malloc( sizeof( PrimaXImage));
 	if (!i) {
 		warn("Not enough memory");
-		return nil;
+		return NULL;
 	}
 	bzero( i, sizeof( PrimaXImage));
 
@@ -121,7 +121,7 @@ prima_prepare_ximage( int width, int height, int format)
 	if ( guts. shared_image_extension && format != CACHE_BITMAP) {
 		i-> image = XShmCreateImage(
 			DISP, visual, depth, pformat,
-			nil, &i->xmem, width, height
+			NULL, &i->xmem, width, height
 		);
 		XCHECKPOINT;
 		if ( !i-> image) goto normal_way;
@@ -136,8 +136,8 @@ prima_prepare_ximage( int width, int height, int format)
 			goto normal_way;
 		}
 		i-> xmem. shmaddr = i-> image-> data = shmat( i-> xmem. shmid, 0, 0);
-		if ( i-> xmem. shmaddr == (void*)-1 || i-> xmem. shmaddr == nil) {
-			i-> image-> data = nil;
+		if ( i-> xmem. shmaddr == (void*)-1 || i-> xmem. shmaddr == NULL) {
+			i-> image-> data = NULL;
 			XDestroyImage( i-> image);
 			shmctl( i-> xmem. shmid, IPC_RMID, NULL);
 			goto normal_way;
@@ -149,7 +149,7 @@ prima_prepare_ximage( int width, int height, int format)
 			XCHECKPOINT;
 bad_xshm_attach:
 			XSetErrorHandler(guts.main_error_handler);
-			i-> image-> data = nil;
+			i-> image-> data = NULL;
 			XDestroyImage( i-> image);
 			shmdt( i-> xmem. shmaddr);
 			shmctl( i-> xmem. shmid, IPC_RMID, NULL);
@@ -171,7 +171,7 @@ normal_way:
 	if (!i-> data_alias) {
 		warn("Not enough memory");
 		free(i);
-		return nil;
+		return NULL;
 	}
 	i-> image = XCreateImage(
 		DISP, visual, depth, pformat,
@@ -183,7 +183,7 @@ normal_way:
 		warn("XCreateImage(%d,%d,visual=%x,depth=%d/%d) error", width, height, (int)visual->visualid,depth,idepth);
 		free( i-> data_alias);
 		free( i);
-		return nil;
+		return NULL;
 	}
 	return i;
 }
@@ -194,7 +194,7 @@ prima_XDestroyImage( XImage * i)
 	if ( i) {
 		if ( i-> data) {
 			free( i-> data);
-			i-> data = nil;
+			i-> data = NULL;
 		}
 		((*((i)->f.destroy_image))((i)));
 	}
@@ -207,7 +207,7 @@ prima_free_ximage( PrimaXImage *i)
 #ifdef USE_MITSHM
 	if ( i-> shm) {
 		XShmDetach( DISP, &i-> xmem);
-		i-> image-> data = nil;
+		i-> image-> data = NULL;
 		XDestroyImage( i-> image);
 		shmdt( i-> xmem. shmaddr);
 		free(i);
@@ -241,7 +241,7 @@ void
 prima_gc_ximages( void )
 {
 	if ( !guts.ximages) return;
-	hash_first_that( guts.ximages, (void*)destroy_one_ximage, nil, nil, nil);
+	hash_first_that( guts.ximages, (void*)destroy_one_ximage, NULL, NULL, NULL);
 }
 
 void
@@ -330,8 +330,8 @@ clear_caches( Handle self)
 	prima_palette_free( self, false);
 	destroy_ximage( XX-> image_cache. icon);
 	destroy_ximage( XX-> image_cache. image);
-	XX-> image_cache. icon      = nil;
-	XX-> image_cache. image     = nil;
+	XX-> image_cache. icon      = NULL;
+	XX-> image_cache. image     = NULL;
 }
 
 Bool
@@ -398,7 +398,7 @@ apc_image_update_change( Handle self)
 	XX-> type.bitmap = !!XX-> type.pixmap;
 	if ( XX-> cached_region) {
 		XDestroyRegion( XX-> cached_region);
-		XX-> cached_region = nil;
+		XX-> cached_region = NULL;
 	}
 	return true;
 }
@@ -1217,14 +1217,14 @@ create_image_cache( PImage img, int type)
 	int target_bpp;
 	ImageCache *cache    = &X((Handle)img)-> image_cache;
 	Bool ret;
-	Handle dup = nilHandle;
+	Handle dup = NULL_HANDLE;
 	PImage pass = img;
 
 	/* common validity checks */
-	if ( img-> w == 0 || img-> h == 0) return nil;
-	if ( img-> palette == nil) {
+	if ( img-> w == 0 || img-> h == 0) return NULL;
+	if ( img-> palette == NULL) {
 		warn( "UAI_014: image has no palette");
-		return nil;
+		return NULL;
 	}
 
 	/* test if types are applicable */
@@ -1234,7 +1234,7 @@ create_image_cache( PImage img, int type)
 	case CACHE_LAYERED_ALPHA:
 		if ( !guts. argb_visual. visual ) {
 			warn("panic: no argb visual");
-			return nil;
+			return NULL;
 		}
 		break;
 	case CACHE_PIXMAP:
@@ -1262,20 +1262,20 @@ create_image_cache( PImage img, int type)
 
 	/* create icon cache, if any */
 	if ( XT_IS_ICON(IMG) && type != CACHE_LAYERED_ALPHA) {
-		if ( cache-> icon == nil) {
+		if ( cache-> icon == NULL) {
 			Bool ok;
 			ok = ( PIcon(img)-> maskType == imbpp8 ) ?
 				create_icon_cache8_1(( PIcon) img, cache) :
 				create_cache1_1( img, cache, true);
-			if ( !ok ) return nil;
+			if ( !ok ) return NULL;
 		}
 	} else
-		cache-> icon = nil;
+		cache-> icon = NULL;
 
-	if ( cache-> image != nil) {
+	if ( cache-> image != NULL) {
 		if ( cache-> type == type) return cache;
 		destroy_ximage( cache-> image);
-		cache-> image = nil;
+		cache-> image = NULL;
 	}
 
 	/* convert from funky image types */
@@ -1283,7 +1283,7 @@ create_image_cache( PImage img, int type)
 		( img-> type == imLong || img-> type == imShort)) {
 		if ( !dup) {
 			if (!(dup = img-> self-> dup(( Handle) img)))
-				return nil;
+				return NULL;
 		}
 		pass = ( PImage) dup;
 		pass-> self->resample(( Handle) pass,
@@ -1301,14 +1301,14 @@ create_image_cache( PImage img, int type)
 		if ( i->type != imRGB ) {
 			if ( !dup)
 				if (!(dup = img-> self-> dup(( Handle) i)))
-					return nil;
+					return NULL;
 			i = (PIcon) dup;
 			i-> self-> set_type(dup, imRGB);
 		}
 		if ( XT_IS_ICON(IMG) && type == CACHE_LAYERED_ALPHA && i->maskType != imbpp8 ) {
 			if ( !dup)
 				if (!(dup = i-> self-> dup((Handle) i)))
-					return nil;
+					return NULL;
 			i = (PIcon) dup;
 			i-> self-> set_maskType(dup, imbpp8);
 		}
@@ -1316,7 +1316,7 @@ create_image_cache( PImage img, int type)
 			(XT_IS_ICON(IMG) && type == CACHE_LAYERED_ALPHA) ? CACHE_LAYERED_ALPHA : CACHE_LAYERED
 		);
 		if ( dup) Object_destroy(dup);
-		if ( !ok ) return nil;
+		if ( !ok ) return NULL;
 
 		cache-> type = type;
 		return cache;
@@ -1328,13 +1328,13 @@ create_image_cache( PImage img, int type)
 		if ( i->type != imByte ) {
 			if ( !dup)
 				if (!(dup = img-> self-> dup(( Handle) i)))
-					return nil;
+					return NULL;
 			i = (PImage) dup;
 			i-> self-> set_type(dup, imByte);
 		}
 		ok = create_argb_cache((PIcon) i, cache, CACHE_A8);
 		if ( dup) Object_destroy(dup);
-		if ( !ok ) return nil;
+		if ( !ok ) return NULL;
 
 		cache-> type = type;
 		return cache;
@@ -1348,10 +1348,10 @@ create_image_cache( PImage img, int type)
 	*/
 	if ( target_bpp <= 8 && img-> type != imBW) {
 		int bpp, colors = 0;
-		RGBColor palbuf[256], *palptr = nil;
+		RGBColor palbuf[256], *palptr = NULL;
 		if ( !dup) {
 			if (!(dup = img-> self-> dup(( Handle) img)))
-				return nil;
+				return NULL;
 		}
 		pass = ( PImage) dup;
 		if ( target_bpp <= 1) bpp = imbpp1; else
@@ -1381,11 +1381,11 @@ create_image_cache( PImage img, int type)
 	case 24:  ret = create_cache24(pass, cache, target_bpp); break;
 	default:
 		warn( "UAI_015: unsupported image type");
-		return nil;
+		return NULL;
 	}
 	if ( !ret) {
 		if ( dup) Object_destroy(dup);
-		return nil;
+		return NULL;
 	}
 
 	/* on paletted displays, acquire actual color indexes, and
@@ -1398,12 +1398,12 @@ create_image_cache( PImage img, int type)
 			maxRank = RANK_LOCKED;
 
 		for ( i = 0; i < pass-> palSize; i++) {
-			int j = guts. mappingPlace[i] = prima_color_find( nilHandle,
+			int j = guts. mappingPlace[i] = prima_color_find( NULL_HANDLE,
 				RGB_COMPOSITE(
 				pass-> palette[i].r,
 				pass-> palette[i].g,
 				pass-> palette[i].b
-				), -1, nil, maxRank);
+				), -1, NULL, maxRank);
 
 			if ( p && ( prima_lpal_get( p, j) == RANK_FREE))
 				prima_color_add_ref(( Handle) img, j, RANK_LOCKED);
@@ -1623,7 +1623,7 @@ img_get_image( Pixmap pixmap, PutImageRequest * req)
 	XCHECKPOINT;
 	if ( !( i = XGetImage( DISP, pixmap,
 		req->src_x, req->src_y, req->w, req->h, AllPlanes, ZPixmap)))
-		return nilHandle;
+		return NULL_HANDLE;
 
 	obj = ( Handle) create_object("Prima::Image", "");
 	CImage( obj)-> create_empty( obj, req->w, req->h, guts. qdepth);
@@ -1631,7 +1631,7 @@ img_get_image( Pixmap pixmap, PutImageRequest * req)
 	XDestroyImage( i);
 	if ( !ok ) {
 		Object_destroy( obj );
-		return nilHandle;
+		return NULL_HANDLE;
 	}
 	return obj;
 }
@@ -1805,11 +1805,11 @@ img_put_image_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	if (( img->type & imBPP ) == 1) {
 		RGBColor * p = img->palette;
 		if ( !XX->flags. brush_fore) {
-			XSetBackground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[0].r, p[0].g, p[0].b), nil));
+			XSetBackground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[0].r, p[0].g, p[0].b), NULL));
 			XX->flags.brush_fore = 0;
 		}
 		if ( !XX->flags. brush_back) {
-			XSetForeground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[1].r, p[1].g, p[1].b), nil));
+			XSetForeground( DISP, XX-> gc, prima_allocate_color( self, ARGB(p[1].r, p[1].g, p[1].b), NULL));
 			XX->flags.brush_back = 0;
 		}
 	}
@@ -1861,10 +1861,10 @@ img_put_image_on_widget( Handle self, Handle image, PutImageRequest * req)
 		if ( guts. palSize > 0) {
 			fore = prima_color_find( self,
 				RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
-				-1, nil, RANK_NORMAL);
+				-1, NULL, RANK_NORMAL);
 			back = prima_color_find( self,
 				RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
-				-1, nil, RANK_NORMAL);
+				-1, NULL, RANK_NORMAL);
 		} else {
 			fore =
 				(((img-> palette[1].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |
@@ -2657,21 +2657,21 @@ prima_std_pixmap( Handle self, int type)
 	unsigned long fore, back;
 
 	ImageCache * xi = prima_image_cache(( PImage) self, type);
-	if ( !xi) return nilHandle;
+	if ( !xi) return NULL_HANDLE;
 
 	px = XCreatePixmap( DISP, guts. root, img-> w, img-> h,
 		( type == CACHE_BITMAP) ? 1 : guts. depth);
-	if ( !px) return nilHandle;
+	if ( !px) return NULL_HANDLE;
 
 	gcv. graphics_exposures = false;
 	gc = XCreateGC( DISP, guts. root, GCGraphicsExposures, &gcv);
 	if ( guts. palSize > 0) {
 		fore = prima_color_find( self,
 			RGB_COMPOSITE( img-> palette[1].r, img-> palette[1].g, img-> palette[1].b),
-			-1, nil, RANK_NORMAL);
+			-1, NULL, RANK_NORMAL);
 		back = prima_color_find( self,
 			RGB_COMPOSITE( img-> palette[0].r, img-> palette[0].g, img-> palette[0].b),
-			-1, nil, RANK_NORMAL);
+			-1, NULL, RANK_NORMAL);
 	} else {
 		fore =
 			(((img-> palette[1].r << guts. screen_bits. red_range  ) >> 8) << guts. screen_bits.   red_shift) |

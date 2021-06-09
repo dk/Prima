@@ -235,7 +235,7 @@ cm_study_palette( RGBColor * palette, int pal_size)
 	int sz = CELL_SIZE * pal2size;
 
 	U16 * p = malloc( sz * sizeof( U16));
-	if ( !p) return nil;
+	if ( !p) return NULL;
 	for ( i = 0; i < sz; i++) p[i] = PAL_FREE;
 
 	/* Scan for all palette entries. If the cell is empty, assign the color index to it;
@@ -273,7 +273,7 @@ cm_study_palette( RGBColor * palette, int pal_size)
 					newsz = ( pal2size += 64 ) * CELL_SIZE;
 					if ( !(n = malloc( newsz * sizeof( U16)))) {
 						free( p);
-						return nil;
+						return NULL;
 					}
 					memcpy( n, p, sizeof(U16) * sz);
 					for ( j = sz; j < newsz; j++) n[j] = PAL_FREE;

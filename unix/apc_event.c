@@ -434,7 +434,7 @@ handle_key_event( Handle self, XKeyEvent *ev, Event *e, KeySym * sym, Bool relea
 	U32 keycode;
 	int str_len;
 
-	str_len = XLookupString( ev, str_buf, 256, &keysym, nil);
+	str_len = XLookupString( ev, str_buf, 256, &keysym, NULL);
 	*sym = keysym;
 	Edebug( "event: keysym: %08lx/%08lx 0: %08lx, 1: %08lx, 2: %08lx, 3: %08lx\n", keysym,
 		KeySymToUcs4( keysym),
@@ -1111,7 +1111,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	case DestroyNotify:
 		if ( guts. clipboard_xfers &&
 			hash_fetch( guts. clipboard_xfers, &ev-> xdestroywindow. window, sizeof( XWindow))) {
-			prima_handle_selection_event( ev, ev-> xproperty. window, nilHandle);
+			prima_handle_selection_event( ev, ev-> xproperty. window, NULL_HANDLE);
 			return;
 		}
 		goto DEFAULT;
@@ -1163,7 +1163,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	if ( ev-> type > 0)
 		Edebug("event: %d:%s of %s\n", ev-> type,
 				((ev-> type >= LASTEvent) ? "?" : xevdefs[ev-> type]),
-				self ? PWidget(self)-> name : "(nil)");
+				self ? PWidget(self)-> name : "(NULL)");
 
 	if (!self)
 		return;
@@ -1182,7 +1182,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		if (guts.xdnds_widget) {
 			char str_buf[ 256];
 			KeySym keysym = 0;
-			XLookupString( &ev-> xkey, str_buf, 256, &keysym, nil);
+			XLookupString( &ev-> xkey, str_buf, 256, &keysym, NULL);
 			if ( keysym == XK_Escape ) {
 				guts. xdnds_escape_key = true;
 				return;
@@ -1205,7 +1205,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		guts. last_time = ev-> xbutton. time;
 		if ( guts. currentMenu) prima_end_menu();
 		if (prima_no_input(XX, false, true)) return;
-		if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
+		if ( guts. grab_widget != NULL_HANDLE && self != guts. grab_widget) {
 			XWindow rx;
 			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle,
 				ev-> xbutton.x, ev-> xbutton.y,
@@ -1366,7 +1366,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	case ButtonRelease: {
 		guts. last_time = ev-> xbutton. time;
 		if (prima_no_input(XX, false, false)) return;
-		if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
+		if ( guts. grab_widget != NULL_HANDLE && self != guts. grab_widget) {
 			XWindow rx;
 			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle,
 				ev-> xbutton.x, ev-> xbutton.y,
@@ -1380,7 +1380,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	}
 	case MotionNotify: {
 		guts. last_time = ev-> xmotion. time;
-		if ( guts. grab_widget != nilHandle && self != guts. grab_widget) {
+		if ( guts. grab_widget != NULL_HANDLE && self != guts. grab_widget) {
 			XWindow rx;
 			XTranslateCoordinates( DISP, XX-> client, PWidget(guts. grab_widget)-> handle,
 				ev-> xmotion.x, ev-> xmotion.y,
@@ -1495,7 +1495,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 		}
 
 		if ( guts. focused) prima_no_cursor( guts. focused);
-		if ( self == guts. focused) guts. focused = nilHandle;
+		if ( self == guts. focused) guts. focused = NULL_HANDLE;
 		e. cmd = cmReleaseFocus;
 		break;
 	}
@@ -1567,7 +1567,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 	case ReparentNotify: {
 			XWindow p = ev-> xreparent. parent;
 			if ( !XX-> type. window) return;
-			XX-> real_parent = ( p == guts. root) ? nilHandle : p;
+			XX-> real_parent = ( p == guts. root) ? NULL_HANDLE : p;
 			if ( XX-> real_parent) {
 				XWindow dummy;
 				XTranslateCoordinates( DISP, X_WINDOW, XX-> real_parent,
@@ -1659,7 +1659,7 @@ prima_handle_event( XEvent *ev, XEvent *next_event)
 					}
 
 					if ( !match) {
-						while ( n1 != nil) {
+						while ( n1 != NULL) {
 							n2 = TAILQ_NEXT(n1, link);
 							free( n1);
 							n1 = n2;
@@ -1795,7 +1795,7 @@ copy_events( Handle self, PList events, WMSyncData * w, int eventType)
 		case ReparentNotify:
 			if ( X(self)-> type. window && ( x-> xreparent. window == PWidget(self)-> handle)) {
 				X(self)-> real_parent = ( x-> xreparent. parent == guts. root) ?
-					nilHandle : x-> xreparent. parent;
+					NULL_HANDLE : x-> xreparent. parent;
 				x-> type = DEAD_BEEF;
 				if ( X(self)-> real_parent) {
 					XWindow dummy;
@@ -1856,7 +1856,7 @@ prima_wm_sync( Handle self, int eventType)
 	open_wm_sync_data( self, &wmsd);
 
 	Edebug("event: enter syncer for %d. current size: %d %d\n", eventType, X(self)-> size.x, X(self)-> size.y);
-	gettimeofday( &start_time, nil);
+	gettimeofday( &start_time, NULL);
 
 	/* browse & copy queued events */
 	evx = XEventsQueued( DISP, QueuedAlready);
@@ -1868,7 +1868,7 @@ prima_wm_sync( Handle self, int eventType)
 
 	/* measuring round-trip time */
 	XSync( DISP, false);
-	gettimeofday( &timeout, nil);
+	gettimeofday( &timeout, NULL);
 	delay = 2 * (( timeout. tv_sec - start_time. tv_sec) * 1000 +
 					( timeout. tv_usec - start_time. tv_usec) / 1000) + guts. wm_event_timeout;
 	Edebug("event: sync took %ld.%03ld sec\n", timeout. tv_sec - start_time. tv_sec, (timeout. tv_usec - start_time. tv_usec) / 1000);
@@ -1885,7 +1885,7 @@ prima_wm_sync( Handle self, int eventType)
 	Edebug("event: enter cycle, size: %d %d\n", wmsd.size.x, wmsd.size.y);
 	start_time = timeout;
 	while ( 1) {
-		gettimeofday( &timeout, nil);
+		gettimeofday( &timeout, NULL);
 		diff = ( timeout. tv_sec - start_time. tv_sec) * 1000 +
 				( timeout. tv_usec - start_time. tv_usec) / 1000;
 		if ( delay <= diff)
@@ -1954,7 +1954,7 @@ perform_pending_paints( void)
 	if ( !application ) return 0;
 
 	list_create(&list, 256, 1024);
-	for ( XX = TAILQ_FIRST( &guts.paintq); XX != nil; ) {
+	for ( XX = TAILQ_FIRST( &guts.paintq); XX != NULL; ) {
 		PDrawableSysData next = TAILQ_NEXT( XX, paintq_link);
 		if ( XX-> flags. paint_pending && (guts. appLock == 0) &&
 			(PWidget( XX->self)-> stage == csNormal)) {
@@ -1987,7 +1987,7 @@ perform_pending_paints( void)
 		/* handle the case where this widget is locked */
 		if (XX->invalid_region) {
 			XDestroyRegion(XX->invalid_region);
-			XX->invalid_region = nil;
+			XX->invalid_region = NULL;
 		}
 
 	NEXT:
@@ -2006,7 +2006,7 @@ send_pending_events( void)
 
 	if ( !application ) return 0;
 
-	for ( pe = TAILQ_FIRST( &guts.peventq); pe != nil; ) {
+	for ( pe = TAILQ_FIRST( &guts.peventq); pe != NULL; ) {
 		next = TAILQ_NEXT( pe, peventq_link);
 		if (( stage = PComponent( pe->recipient)-> stage) != csConstructing) {
 			TAILQ_REMOVE( &guts.peventq, pe, peventq_link);
@@ -2048,7 +2048,7 @@ send_queued_x_events(int careOfApplication)
 		memcpy( &ev, &next_event, sizeof( XEvent));
 	}
 	if (!application && careOfApplication) return events;
-	prima_handle_event( &ev, nil);
+	prima_handle_event( &ev, NULL);
 	events++;
 	return events;
 }
@@ -2060,7 +2060,7 @@ process_timers(void)
 	struct timeval t;
 	PTimerSysData timer;
 
-	gettimeofday( &t, nil);
+	gettimeofday( &t, NULL);
 	while (1) {
 		if ( !guts. oldest) return 0;
 
@@ -2114,7 +2114,7 @@ process_file_events(Bool * x_events_pending, struct timeval * t)
 	r = select( guts.max_fd+1, &read_set, &write_set, &excpt_set, t);
 	if ( r == 0 ) return 0;
 	if ( r < 0 ) {
-		list_first_that( guts.files, (void*)purge_invalid_watchers, nil);
+		list_first_that( guts.files, (void*)purge_invalid_watchers, NULL);
 		return 0;
 	}
 
@@ -2254,7 +2254,7 @@ prima_one_loop_round( int wait, Bool careOfApplication)
 		x_flush();
 	handle_queued_events(careOfApplication);
 
-	return application != nilHandle;
+	return application != NULL_HANDLE;
 }
 
 Bool

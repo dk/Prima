@@ -26,7 +26,7 @@ Application_init( Handle self, HV * profile)
 	SV * hintFont = pget_sv( hintFont);
 	SV * sv;
 	char * hintClass      = pget_c( hintClass);
-	if ( application != nilHandle)
+	if ( application != NULL_HANDLE)
 		croak( "Attempt to create more than one application instance");
 
 	opt_set(optSystemDrawable);
@@ -118,12 +118,12 @@ Application_done( Handle self)
 	if ( var-> text ) SvREFCNT_dec( var-> text);
 	if ( var-> hint ) SvREFCNT_dec( var-> hint);
 	free( var-> helpContext);
-	var-> accelTable = var-> hintWidget = var-> hintTimer = nilHandle;
+	var-> accelTable = var-> hintWidget = var-> hintTimer = NULL_HANDLE;
 	var-> helpContext = NULL;
 	var-> hint = var-> text = NULL;
 	apc_application_destroy( self);
 	CDrawable-> done( self);
-	application = nilHandle;
+	application = NULL_HANDLE;
 }
 
 void
@@ -136,7 +136,7 @@ Application_cleanup( Handle self)
 
 	if ( var-> icon)
 		my-> detach( self, var-> icon, true);
-	var-> icon = nilHandle;
+	var-> icon = NULL_HANDLE;
 
 	my-> first_that_component( self, (void*)prima_kill_all_objects, NULL);
 
@@ -501,14 +501,14 @@ icon_notify ( Handle self, Handle child, Handle icon)
 Handle
 Application_icon( Handle self, Bool set, Handle icon)
 {
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 
 	if ( !set)
 		return var-> icon;
 
 	if ( icon && !kind_of( icon, CImage)) {
 		warn("Illegal object reference passed to Application::icon");
-		return nilHandle;
+		return NULL_HANDLE;
 	}
 	if ( icon) {
 		icon = ((( PImage) icon)-> self)-> dup( icon);
@@ -520,7 +520,7 @@ Application_icon( Handle self, Bool set, Handle icon)
 	var-> icon = icon;
 	if ( icon && ( list_index_of( var-> components, icon) < 0))
 		my-> attach( self, icon);
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Handle
@@ -547,7 +547,7 @@ SV *
 Application_sys_action( char * dummy, char * params)
 {
 	char * i = apc_system_action( params);
-	SV * ret = i ? newSVpv( i, 0) : nilSV;
+	SV * ret = i ? newSVpv( i, 0) : NULL_SV;
 	free( i);
 	return ret;
 }
@@ -625,7 +625,7 @@ Application_get_modal_window( Handle self, int modalFlag, Bool topMost)
 	} else if ( modalFlag == mtShared) {
 		return topMost ? var-> topSharedModal : var-> sharedModal;
 	}
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 SV *
@@ -662,7 +662,7 @@ Application_get_monitor_rects( Handle self)
 Handle
 Application_get_parent( Handle self)
 {
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Point
@@ -859,23 +859,23 @@ Application_get_image( Handle self, int x, int y, int xLen, int yLen)
 	Handle i;
 	Bool ret;
 	Point sz;
-	if ( var->  stage > csFrozen) return nilHandle;
-	if ( x < 0 || y < 0 || xLen <= 0 || yLen <= 0) return nilHandle;
+	if ( var->  stage > csFrozen) return NULL_HANDLE;
+	if ( x < 0 || y < 0 || xLen <= 0 || yLen <= 0) return NULL_HANDLE;
 	sz = apc_application_get_size( self);
 	if ( x + xLen > sz. x) xLen = sz. x - x;
 	if ( y + yLen > sz. y) yLen = sz. y - y;
-	if ( x >= sz. x || y >= sz. y || xLen <= 0 || yLen <= 0) return nilHandle;
+	if ( x >= sz. x || y >= sz. y || xLen <= 0 || yLen <= 0) return NULL_HANDLE;
 
 	profile = newHV();
 	i = Object_create( "Prima::Image", profile);
 	sv_free(( SV *) profile);
 	ret = apc_application_get_bitmap( self, i, x, y, xLen, yLen);
 	--SvREFCNT( SvRV((( PAnyObject) i)-> mate));
-	return ret ? i : nilHandle;
+	return ret ? i : NULL_HANDLE;
 }
 
 /*
-* Cannot return nilHandle.
+* Cannot return NULL_HANDLE.
 */
 Handle
 Application_map_focus( Handle self, Handle from)
@@ -936,7 +936,7 @@ Application_popup_modal( Handle self)
 		}
 	} else {
 		if ( !var->  topSharedModal && var->  modalHorizons. count == 0)
-			return nilHandle; /* return from if no shared modals active */
+			return NULL_HANDLE; /* return from if no shared modals active */
 		/* checking shared modal chains */
 		if ( ha) {
 			xTop = ( PWindow(ha)->modal == 0) ? CWindow(ha)->get_horizon(ha) : ha;
@@ -954,7 +954,7 @@ Application_popup_modal( Handle self)
 		}
 	}
 
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Bool
@@ -1022,14 +1022,14 @@ void   Application_set_centered( Handle self, Bool x, Bool y) {}
 
 Bool   Application_tabStop( Handle self, Bool set, Bool tabStop)       { return false; }
 Bool   Application_selectable( Handle self, Bool set, Bool selectable) { return false; }
-Handle Application_shape( Handle self, Bool set, Handle mask)          { return nilHandle; }
+Handle Application_shape( Handle self, Bool set, Handle mask)          { return NULL_HANDLE; }
 Bool   Application_syncPaint( Handle self, Bool set, Bool syncPaint)   { return false; }
 Bool   Application_visible( Handle self, Bool set, Bool visible)       { return true; }
 Bool   Application_buffered( Handle self, Bool set, Bool buffered)     { return false; }
 Bool   Application_enabled( Handle self, Bool set, Bool enable)        { return true;}
 int    Application_growMode( Handle self, Bool set, int flags)         { return 0; }
 Bool   Application_hintVisible( Handle self, Bool set, Bool visible)   { return false; }
-Handle Application_owner( Handle self, Bool set, Handle owner)         { return nilHandle; }
+Handle Application_owner( Handle self, Bool set, Handle owner)         { return NULL_HANDLE; }
 Bool   Application_ownerColor( Handle self, Bool set, Bool ownerColor) { return false; }
 Bool   Application_ownerBackColor( Handle self, Bool set, Bool ownerBackColor) { return false; }
 Bool   Application_ownerFont( Handle self, Bool set, Bool ownerFont)   { return false; }
@@ -1038,10 +1038,10 @@ Bool   Application_ownerPalette( Handle self, Bool set, Bool ownerPalette) { ret
 Bool   Application_clipChildren( Handle self, Bool set, Bool clip)   { return true; }
 Bool   Application_clipOwner( Handle self, Bool set, Bool clip_by_children)   { return false; }
 int    Application_tabOrder( Handle self, Bool set, int tabOrder)      { return 0; }
-SV   * Application_get_text    ( Handle self)                          { return nilSV; }
+SV   * Application_get_text    ( Handle self)                          { return NULL_SV; }
 void   Application_set_text    ( Handle self, SV * text)               { }
 Bool   Application_transparent( Handle self, Bool set, Bool transparent) { return false; }
-Bool   Application_validate_owner( Handle self, Handle * owner, HV * profile) { *owner = nilHandle; return true; }
+Bool   Application_validate_owner( Handle self, Handle * owner, HV * profile) { *owner = NULL_HANDLE; return true; }
 
 #ifdef __cplusplus
 }

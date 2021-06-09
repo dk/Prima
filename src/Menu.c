@@ -20,7 +20,7 @@ Menu_update_sys_handle( Handle self, HV * profile)
 	Handle xOwner = pexist( owner) ? pget_H( owner) : var-> owner;
 	var-> system = true;
 	if ( var-> owner && ( xOwner != var-> owner))
-		((( PWindow) var-> owner)-> self)-> set_menu( var-> owner, nilHandle);
+		((( PWindow) var-> owner)-> self)-> set_menu( var-> owner, NULL_HANDLE);
 	if ( !pexist( owner)) return;
 	if ( !apc_menu_create( self, xOwner))
 		croak("Cannot create menu");
@@ -36,7 +36,7 @@ Menu_selected( Handle self, Bool set, Bool selected)
 	if ( selected)
 		CWindow( var-> owner)-> set_menu( var-> owner, self);
 	else if ( my-> get_selected( self))
-		CWindow( var-> owner)-> set_menu( var-> owner, nilHandle);
+		CWindow( var-> owner)-> set_menu( var-> owner, NULL_HANDLE);
 	return false;
 }
 

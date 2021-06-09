@@ -98,9 +98,9 @@ Widget_init( Handle self, HV * profile)
 		Point hotSpot;
 		Handle icon = pget_H( pointerIcon);
 		prima_read_point( pget_sv( pointerHotSpot), (int*)&hotSpot, 2, "Array panic on 'pointerHotSpot'");
-		if ( icon != nilHandle && !kind_of( icon, CIcon)) {
+		if ( icon != NULL_HANDLE && !kind_of( icon, CIcon)) {
 			warn("Illegal object reference passed to Widget::pointerIcon");
-			icon = nilHandle;
+			icon = NULL_HANDLE;
 		}
 		apc_pointer_set_user( self, icon, hotSpot);
 	}
@@ -192,7 +192,7 @@ Widget_init( Handle self, HV * profile)
 
 	my-> set_shape       ( self, pget_H(  shape));
 	my-> set_visible     ( self, pget_B( visible));
-	if ( pget_B( capture)) my-> set_capture( self, 1, nilHandle);
+	if ( pget_B( capture)) my-> set_capture( self, 1, NULL_HANDLE);
 	if ( pget_B( current)) my-> set_current( self, 1);
 	CORE_INIT_TRANSIENT(Widget);
 
@@ -261,12 +261,12 @@ Widget_done( Handle self)
 		var-> dndAware = NULL;
 	}
 	if ( var-> text ) sv_free( var->text);
-	var-> text = nil;
+	var-> text = NULL;
 	apc_widget_destroy( self);
 	if ( var-> hint ) sv_free( var->hint);
-	var-> hint = nil;
+	var-> hint = NULL;
 	free( var-> helpContext);
-	var-> helpContext = nil;
+	var-> helpContext = NULL;
 
 	if ( var-> owner) {
 		Handle * enum_lists = PWidget( var-> owner)-> enum_lists;
@@ -275,7 +275,7 @@ Widget_done( Handle self)
 			count = (unsigned int) enum_lists[1];
 			for ( i = 2; i < count + 2; i++) {
 				if ( self == enum_lists[i])
-					enum_lists[i] = nilHandle;
+					enum_lists[i] = NULL_HANDLE;
 			}
 			enum_lists = ( Handle*) enum_lists[0];
 		}
@@ -289,7 +289,7 @@ Widget_done( Handle self)
 void
 Widget_attach( Handle self, Handle objectHandle)
 {
-	if ( objectHandle == nilHandle) return;
+	if ( objectHandle == NULL_HANDLE) return;
 	if ( var-> stage > csNormal) return;
 	if ( kind_of( objectHandle, CWidget)) {
 		if ( list_index_of( &var-> widgets, objectHandle) >= 0) {
@@ -334,7 +334,7 @@ void
 Widget_bring_to_front( Handle self)
 {
 	if ( opt_InPaint) return;
-	apc_widget_set_z_order( self, nilHandle, true);
+	apc_widget_set_z_order( self, NULL_HANDLE, true);
 }
 
 /*::c */
@@ -364,13 +364,13 @@ Widget_cleanup( Handle self)
 		PWidget( ptr)-> geometry = gtDefault;
 		ptr = PWidget( ptr)-> geomInfo. next;
 	}
-	var-> packSlaves = nilHandle;
+	var-> packSlaves = NULL_HANDLE;
 	ptr = var-> placeSlaves;
 	while ( ptr) {
 		PWidget( ptr)-> geometry = gtDefault;
 		ptr = PWidget( ptr)-> geomInfo. next;
 	}
-	var-> placeSlaves = nilHandle;
+	var-> placeSlaves = NULL_HANDLE;
 
 	my-> set_geometry( self, gtDefault);
 
@@ -386,13 +386,13 @@ Widget_cleanup( Handle self)
 	if ( var-> accelTable) {
 		unprotect_object(var-> accelTable);
 		//my-> detach( self, var-> accelTable, true);
-		var-> accelTable = nilHandle;
+		var-> accelTable = NULL_HANDLE;
 	}
 
 	if ( var-> popupMenu ) {
 		unprotect_object(var-> popupMenu);
 		//my-> detach( self, var-> popupMenu, true);
-		var-> popupMenu = nilHandle;
+		var-> popupMenu = NULL_HANDLE;
 	}
 
 	inherited-> cleanup( self);
@@ -418,9 +418,9 @@ Widget_custom_paint( Handle self)
 	void * ret;
 	enter_method;
 	if ( my-> on_paint != Widget_on_paint) return true;
-	if ( var-> eventIDs == nil) return false;
+	if ( var-> eventIDs == NULL) return false;
 	ret = hash_fetch( var-> eventIDs, "Paint", 5);
-	if ( ret == nil) return false;
+	if ( ret == NULL) return false;
 	list = var-> events + PTR2UV( ret) - 1;
 	return list-> count > 0;
 }
@@ -432,8 +432,8 @@ Widget_detach( Handle self, Handle objectHandle, Bool kill)
 	enter_method;
 	if ( kind_of( objectHandle, CWidget)) {
 		list_delete( &var-> widgets, objectHandle);
-		if ( var-> currentWidget == objectHandle && objectHandle != nilHandle)
-			my-> set_currentWidget( self, nilHandle);
+		if ( var-> currentWidget == objectHandle && objectHandle != NULL_HANDLE)
+			my-> set_currentWidget( self, NULL_HANDLE);
 	}
 	inherited-> detach( self, objectHandle, kill);
 }
@@ -469,11 +469,11 @@ Widget_end_paint_info( Handle self)
 SV*
 Widget_fetch_resource( char *className, char *name, char *classRes, char *res, Handle owner, int resType)
 {
-	char *str = nil;
+	char *str = NULL;
 	Color clr;
 	void *parm;
 	Font font;
-	SV * ret = nilSV;
+	SV * ret = NULL_SV;
 	char *r_className, *r_name, *r_classRes, *r_res;
 
 	switch ( resType) {
@@ -509,7 +509,7 @@ Widget_fetch_resource( char *className, char *name, char *classRes, char *res, H
 		ret = sv_Font2HV( &font);
 		break;
 	default:
-		ret = str ? newSVpv( str, 0) : nilSV;
+		ret = str ? newSVpv( str, 0) : NULL_SV;
 		free( str);
 	}
 
@@ -531,11 +531,11 @@ Widget_first( Handle self)
 Handle
 Widget_first_that( Handle self, void * actionProc, void * params)
 {
-	Handle child  = nilHandle;
+	Handle child  = NULL_HANDLE;
 	int i, count  = var-> widgets. count;
 	Handle * list;
-	if ( actionProc == nil || count == 0) return nilHandle;
-	if (!(list = allocn( Handle, count + 2))) return nilHandle;
+	if ( actionProc == NULL || count == 0) return NULL_HANDLE;
+	if (!(list = allocn( Handle, count + 2))) return NULL_HANDLE;
 
 	list[0] = (Handle)( var-> enum_lists);
 	list[1] = (Handle)( count);
@@ -662,7 +662,7 @@ handle_drag_end( Handle self, PEvent event)
 	pset_i(allow, 1);
 	pset_i(action, event->dnd.action);
 	my-> notify( self, "<sHiiPHS", "DragEnd", 
-		event-> dnd. allow ? event-> dnd.clipboard : nilHandle, 
+		event-> dnd. allow ? event-> dnd.clipboard : NULL_HANDLE, 
 		event-> dnd. action,
 		event-> dnd. modmap,
 		event-> dnd. where,
@@ -696,7 +696,7 @@ handle_key_down( Handle self, PEvent event)
 	enter_method;
 	int i;
 	int rep = event-> key. repeat;
-	Handle next = nilHandle;
+	Handle next = NULL_HANDLE;
 	if ( is_opt( optBriefKeys))
 		rep = 1;
 	else
@@ -817,11 +817,11 @@ handle_move( Handle self, PEvent event)
 	enter_method;
 	Bool doNotify = false;
 	Point oldP;
-	if ( var-> stage == csNormal && var-> evQueue == nil) {
+	if ( var-> stage == csNormal && var-> evQueue == NULL) {
 		doNotify = true;
 	} else if ( var-> stage > csNormal) {
 		return;
-	} else if ( var-> evQueue != nil) {
+	} else if ( var-> evQueue != NULL) {
 		int i = list_first_that( var-> evQueue, (void*)find_dup_msg, &event-> cmd);
 		PEvent n;
 		if ( i < 0) {
@@ -878,11 +878,11 @@ handle_size( Handle self, PEvent event)
 	enter_method;
 	/* expecting new size in P, old & new size in R. */
 	Bool doNotify = false;
-	if ( var-> stage == csNormal && var-> evQueue == nil) {
+	if ( var-> stage == csNormal && var-> evQueue == NULL) {
 		doNotify = true;
 	} else if ( var-> stage > csNormal) {
 		return;
-	} else if ( var-> evQueue != nil) {
+	} else if ( var-> evQueue != NULL) {
 		int i = list_first_that( var-> evQueue, (void*)find_dup_msg, &event-> cmd);
 		PEvent n;
 		if ( i < 0) {
@@ -975,7 +975,7 @@ void Widget_handle_event( Handle self, PEvent event)
 			my-> notify( self, "<si", "Hint", event-> gen. B);
 			break;
 		case cmClose        :
-			if ( my-> first_that( self, (void*)pquery, nil)) {
+			if ( my-> first_that( self, (void*)pquery, NULL)) {
 				my-> clear_event( self);
 				return;
 			}
@@ -1061,7 +1061,7 @@ void Widget_handle_event( Handle self, PEvent event)
 			break;
 		case cmTranslateAccel:
 		{
-			int key = CAbstractMenu-> translate_key( nilHandle, event-> key. code, event-> key. key, event-> key. mod);
+			int key = CAbstractMenu-> translate_key( NULL_HANDLE, event-> key. code, event-> key. key, event-> key. mod);
 			if ( my-> first_that_component( self, (void*)prima_find_accel, &key)) {
 				my-> clear_event( self);
 				return;
@@ -1245,7 +1245,7 @@ Widget_next_positional( Handle self, int dx, int dy)
 	Handle horizon = self;
 
 	int i, maxDiff = INT_MAX;
-	Handle max = nilHandle;
+	Handle max = NULL_HANDLE;
 	List candidates;
 	Point p[2];
 
@@ -1274,7 +1274,7 @@ Widget_next_positional( Handle self, int dx, int dy)
 	}
 
 	if ( !CWidget( horizon)-> get_visible( horizon) ||
-		!CWidget( horizon)-> get_enabled( horizon)) return nilHandle;
+		!CWidget( horizon)-> get_enabled( horizon)) return NULL_HANDLE;
 
 	list_create( &candidates, 64, 64);
 	fill_tab_candidates( &candidates, horizon);
@@ -1388,7 +1388,7 @@ do_taborder_candidates( Handle level, Handle who,
 		x = ordered[j];
 		if ( CWidget( x)-> get_visible( x) && CWidget( x)-> get_enabled( x)) {
 			if ( CWidget( x)-> get_selectable( x) && CWidget( x)-> get_tabStop( x)) {
-				if ( *result == nilHandle) *result = x;
+				if ( *result == NULL_HANDLE) *result = x;
 				switch( *stage) {
 				case 0: /* nothing found yet */
 					if ( x == who) *stage = 1;
@@ -1413,7 +1413,7 @@ do_taborder_candidates( Handle level, Handle who,
 Handle
 Widget_next_tab( Handle self, Bool forward)
 {
-	Handle horizon = self, result = nilHandle;
+	Handle horizon = self, result = NULL_HANDLE;
 	int stage = 0;
 
 	while ( PWidget( horizon)-> owner) {
@@ -1425,12 +1425,12 @@ Widget_next_tab( Handle self, Bool forward)
 	}
 
 	if ( !CWidget( horizon)-> get_visible( horizon) ||
-		!CWidget( horizon)-> get_enabled( horizon)) return nilHandle;
+		!CWidget( horizon)-> get_enabled( horizon)) return NULL_HANDLE;
 
 	do_taborder_candidates( horizon, self,
 		forward ? compare_taborders_forward : compare_taborders_backward,
 		&stage, &result);
-	if ( result == self) result = nilHandle;
+	if ( result == self) result = NULL_HANDLE;
 	return result;
 }
 
@@ -1448,7 +1448,7 @@ Widget_post_message( Handle self, SV * info1, SV * info2)
 	p-> info1  = newSVsv( info1);
 	p-> info2  = newSVsv( info2);
 	p-> h = self;
-	if ( var-> postList == nil)
+	if ( var-> postList == NULL)
 		var-> postList = plist_create( 8, 8);
 	list_add( var-> postList, ( Handle) p);
 	ev. gen. p = p;
@@ -1478,7 +1478,7 @@ Widget_repaint( Handle self)
 {
 	enter_method;
 	if ( !opt_InPaint && ( var-> stage == csNormal) && !my-> get_locked( self))
-		apc_widget_invalidate_rect( self, nil);
+		apc_widget_invalidate_rect( self, NULL);
 }
 
 /*::s */
@@ -1504,8 +1504,8 @@ XS( Widget_scroll_FROMPERL)
 	dXSARGS;
 	Handle self;
 	int dx, dy, ret;
-	Rect *confine = nil;
-	Rect *clip = nil;
+	Rect *confine = NULL;
+	Rect *clip = NULL;
 	Rect confine_rect, clip_rect;
 	Bool withChildren = false;
 	HV *profile;
@@ -1547,7 +1547,7 @@ invalid_usage:
 void
 Widget_send_to_back( Handle self)
 {
-	apc_widget_set_z_order( self, nilHandle, false);
+	apc_widget_set_z_order( self, NULL_HANDLE, false);
 }
 
 void
@@ -1555,8 +1555,8 @@ Widget_set( Handle self, HV * profile)
 {
 	dPROFILE;
 	enter_method;
-	Handle postOwner = nilHandle;
-	AV *order = nil;
+	Handle postOwner = NULL_HANDLE;
+	AV *order = NULL;
 	int geometry = gtDefault;
 
 	if ( pexist(__ORDER__)) order = (AV*)SvRV(pget_sv( __ORDER__));
@@ -1739,12 +1739,12 @@ Widget_set( Handle self, HV * profile)
 		Point hotSpot;
 		Handle icon = pget_H( pointerIcon);
 		prima_read_point( pget_sv( pointerHotSpot), (int*)&hotSpot, 2, "Array panic on 'pointerHotSpot'");
-		if ( icon != nilHandle && !kind_of( icon, CIcon)) {
+		if ( icon != NULL_HANDLE && !kind_of( icon, CIcon)) {
 			warn("Illegal object reference passed to Widget.set_pointer_icon");
-			icon = nilHandle;
+			icon = NULL_HANDLE;
 		}
 		apc_pointer_set_user( self, icon, hotSpot);
-		if ( var-> pointerType == crUser) my-> first_that( self, (void*)sptr, nil);
+		if ( var-> pointerType == crUser) my-> first_that( self, (void*)sptr, NULL);
 		pdelete( pointerIcon);
 		pdelete( pointerHotSpot);
 	}
@@ -1838,7 +1838,7 @@ repaint_all( Handle owner, Handle self, void * dummy)
 {
 	enter_method;
 	my-> repaint( self);
-	my-> first_that( self, (void*)repaint_all, nil);
+	my-> first_that( self, (void*)repaint_all, NULL);
 	return false;
 }
 
@@ -1847,7 +1847,7 @@ Widget_unlock( Handle self)
 {
 	if ( --var-> lockCount <= 0) {
 		var-> lockCount = 0;
-		repaint_all( var-> owner, self, nil);
+		repaint_all( var-> owner, self, NULL);
 	}
 	return true;
 }
@@ -1972,7 +1972,7 @@ Widget_get_parent( Handle self)
 Point
 Widget_get_pointer_size( char*dummy)
 {
-	return apc_pointer_get_size( nilHandle);
+	return apc_pointer_get_size( NULL_HANDLE);
 }
 
 Font
@@ -1984,7 +1984,7 @@ Widget_get_popup_font( Handle self)
 Handle
 Widget_get_selectee( Handle self)
 {
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 	if ( is_opt( optSelectable))
 		return self;
 	else if ( var-> currentWidget) {
@@ -2028,10 +2028,10 @@ Widget_set_centered( Handle self, Bool x, Bool y)
 
 	if ( parent == application ) {
 		int i, nrects = 0;
-		Box *best = nil, *rects = apc_application_get_monitor_rects( application, &nrects);
+		Box *best = NULL, *rects = apc_application_get_monitor_rects( application, &nrects);
 		for ( i = 0; i < nrects; i++) {
 			Box * curr = rects + i;
-			if ( best == nil || best-> x > curr->x || best->y > curr->y)
+			if ( best == NULL || best-> x > curr->x || best->y > curr->y)
 				best = curr;
 		}
 		if ( best ) {
@@ -2052,7 +2052,7 @@ Widget_set_font( Handle self, Font font)
 	enter_method;
 	if ( var-> stage > csFrozen) return;
 	if ( !opt_InPaint) my-> first_that( self, (void*)prima_font_notify, &font);
-	if ( var-> handle == nilHandle) return; /* aware of call from Drawable::init */
+	if ( var-> handle == NULL_HANDLE) return; /* aware of call from Drawable::init */
 	if ( opt_InPaint) {
 		inherited->set_font(self, font);
 	}
@@ -2175,7 +2175,7 @@ find_tabfoc( Handle self)
 	for ( i = 0; i < var-> widgets. count; i++)
 		if (( toRet = find_tabfoc( var-> widgets. items[ i])))
 			return toRet;
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 
@@ -2265,11 +2265,11 @@ Widget_accelItems( Handle self, Bool set, SV * accelItems)
 {
 	dPROFILE;
 	enter_method;
-	if ( var-> stage > csFrozen) return nilSV;
+	if ( var-> stage > csFrozen) return NULL_SV;
 	if ( !set)
 		return var-> accelTable ?
-			CAbstractMenu( var-> accelTable)-> get_items( var-> accelTable, "", true) : nilSV;
-	if ( var-> accelTable == nilHandle) {
+			CAbstractMenu( var-> accelTable)-> get_items( var-> accelTable, "", true) : NULL_SV;
+	if ( var-> accelTable == NULL_HANDLE) {
 		HV * profile = newHV();
 		if ( SvTYPE( accelItems)) pset_sv( items, accelItems);
 		pset_H ( owner, self);
@@ -2277,20 +2277,20 @@ Widget_accelItems( Handle self, Bool set, SV * accelItems)
 		sv_free(( SV *) profile);
 	} else
 		CAbstractMenu( var-> accelTable)-> set_items( var-> accelTable, accelItems);
-	return nilSV;
+	return NULL_SV;
 }
 
 Handle
 Widget_accelTable( Handle self, Bool set, Handle accelTable)
 {
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 	if ( !set)
 		return var-> accelTable;
-	if ( accelTable && !kind_of( accelTable, CAbstractMenu)) return nilHandle;
+	if ( accelTable && !kind_of( accelTable, CAbstractMenu)) return NULL_HANDLE;
 	if ( var->accelTable ) unprotect_object(var-> accelTable);
 	var-> accelTable = accelTable;
 	if ( var->accelTable ) protect_object(var-> accelTable);
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Color
@@ -2395,7 +2395,7 @@ Widget_colorIndex( Handle self, Bool set, int index, Color color)
 		if (( index < 0) || ( index > ciMaxId)) return clInvalid;
 		if ( !opt_InPaint) my-> first_that( self, (void*)prima_single_color_notify, &s);
 
-		if ( var-> handle == nilHandle) return clInvalid; /* aware of call from Drawable::init */
+		if ( var-> handle == NULL_HANDLE) return clInvalid; /* aware of call from Drawable::init */
 		if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0))
 			color |= var-> widgetClass;
 		if ( opt_InPaint) {
@@ -2433,12 +2433,12 @@ Widget_current( Handle self, Bool set, Bool current)
 	if ( !set)
 		return var-> owner && ( PWidget( var-> owner)-> currentWidget == self);
 	o = ( PWidget) var-> owner;
-	if ( o == nil) return false;
+	if ( o == NULL) return false;
 	if ( current)
 		o-> self-> set_currentWidget( var-> owner, self);
 	else
 		if ( o-> currentWidget == self)
-			o-> self-> set_currentWidget( var-> owner, nilHandle);
+			o-> self-> set_currentWidget( var-> owner, NULL_HANDLE);
 	return current;
 }
 
@@ -2446,21 +2446,21 @@ Handle
 Widget_currentWidget( Handle self, Bool set, Handle widget)
 {
 	enter_method;
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 	if ( !set)
 		return var-> currentWidget;
 	if ( widget) {
 		if ( !widget || ( PWidget( widget)-> stage > csFrozen) ||
 			( PWidget( widget)-> owner != self)
-		) return nilHandle;
+		) return NULL_HANDLE;
 		var-> currentWidget = widget;
 	} else
-		var-> currentWidget = nilHandle;
+		var-> currentWidget = NULL_HANDLE;
 
 	/* adjust selection if we're in currently selected chain */
 	if ( my-> get_selected( self))
 		my-> set_selectedWidget( self, widget);
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Point
@@ -2548,12 +2548,12 @@ Widget_focused( Handle self, Bool set, Bool focused)
 			current = ( Handle) x;
 			x = ( PWidget) x-> owner;
 		}
-		var-> currentWidget = nilHandle;
+		var-> currentWidget = NULL_HANDLE;
 		if ( var-> stage == csNormal)
 			apc_widget_set_focused( self);
 	} else
 		if ( var-> stage == csNormal && my-> get_selected( self))
-			apc_widget_set_focused( nilHandle);
+			apc_widget_set_focused( NULL_HANDLE);
 	return focused;
 }
 
@@ -2561,9 +2561,9 @@ SV *
 Widget_helpContext( Handle self, Bool set, SV *helpContext)
 {
 	if ( set) {
-		if ( var-> stage > csFrozen) return nilSV;
+		if ( var-> stage > csFrozen) return NULL_SV;
 		free( var-> helpContext);
-		var-> helpContext = nil;
+		var-> helpContext = NULL;
 		var-> helpContext = duplicate_string( SvPV_nolen( helpContext));
 		opt_assign( optUTF8_helpContext, prima_is_utf8_sv(helpContext));
 	} else {
@@ -2571,7 +2571,7 @@ Widget_helpContext( Handle self, Bool set, SV *helpContext)
 		if ( is_opt( optUTF8_helpContext)) SvUTF8_on( helpContext);
 		return helpContext;
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 SV *
@@ -2704,7 +2704,7 @@ Widget_ownerPalette( Handle self, Bool set, Bool ownerPalette)
 	enter_method;
 	if ( !set)
 		return is_opt( optOwnerPalette);
-	if ( ownerPalette) my-> set_palette( self, nilSV);
+	if ( ownerPalette) my-> set_palette( self, NULL_SV);
 	opt_assign( optOwnerPalette, ownerPalette);
 	return false;
 }
@@ -2731,20 +2731,20 @@ Widget_palette( Handle self, Bool set, SV * palette)
 	if ( !set)
 		return inherited-> palette( self, set, palette);
 
-	if ( var-> stage > csFrozen) return nilSV;
-	if ( var-> handle == nilHandle) return nilSV; /* aware of call from Drawable::init */
+	if ( var-> stage > csFrozen) return NULL_SV;
+	if ( var-> handle == NULL_HANDLE) return NULL_SV; /* aware of call from Drawable::init */
 
 	colors = var-> palSize;
 	free( var-> palette);
 	var-> palette = prima_read_palette( &var-> palSize, palette);
 	opt_clear( optOwnerPalette);
 	if ( colors == 0 && var-> palSize == 0)
-		return nilSV; /* do not bother apc */
+		return NULL_SV; /* do not bother apc */
 	if ( opt_InPaint)
 		apc_gp_set_palette( self);
 	else
 		apc_widget_set_palette( self);
-	return nilSV;
+	return NULL_SV;
 }
 
 Handle
@@ -2753,7 +2753,7 @@ Widget_pointerIcon( Handle self, Bool set, Handle icon)
 	enter_method;
 	Point hotSpot;
 
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 
 	if ( !set) {
 		HV * profile = newHV();
@@ -2764,14 +2764,14 @@ Widget_pointerIcon( Handle self, Bool set, Handle icon)
 		return icon;
 	}
 
-	if ( icon != nilHandle && !kind_of( icon, CIcon)) {
+	if ( icon != NULL_HANDLE && !kind_of( icon, CIcon)) {
 		warn("Illegal object reference passed to Widget::pointerIcon");
-		return nilHandle;
+		return NULL_HANDLE;
 	}
 	hotSpot = my-> get_pointerHotSpot( self);
 	apc_pointer_set_user( self, icon, hotSpot);
-	if ( var-> pointerType == crUser) my-> first_that( self, (void*)sptr, nil);
-	return nilHandle;
+	if ( var-> pointerType == crUser) my-> first_that( self, (void*)sptr, NULL);
+	return NULL_HANDLE;
 }
 
 Point
@@ -2784,7 +2784,7 @@ Widget_pointerHotSpot( Handle self, Bool set, Point hotSpot)
 	if ( var-> stage > csFrozen) return hotSpot;
 	icon = my-> get_pointerIcon( self);
 	apc_pointer_set_user( self, icon, hotSpot);
-	if ( var-> pointerType == crUser) my-> first_that( self, (void*)sptr, nil);
+	if ( var-> pointerType == crUser) my-> first_that( self, (void*)sptr, NULL);
 	return hotSpot;
 }
 
@@ -2797,7 +2797,7 @@ Widget_pointerType( Handle self, Bool set, int type)
 		return var-> pointerType;
 	var-> pointerType = type;
 	apc_pointer_set_shape( self, type);
-	my-> first_that( self, (void*)sptr, nil);
+	my-> first_that( self, (void*)sptr, NULL);
 	return type;
 }
 
@@ -2817,15 +2817,15 @@ Widget_pointerPos( Handle self, Bool set, Point p)
 Handle
 Widget_popup( Handle self, Bool set, Handle popup)
 {
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 	if ( !set)
 		return var-> popupMenu;
 
-	if ( popup && !kind_of( popup, CPopup)) return nilHandle;
+	if ( popup && !kind_of( popup, CPopup)) return NULL_HANDLE;
 	if ( var->popupMenu ) unprotect_object(var-> popupMenu);
 	var-> popupMenu = popup;
 	if ( var->popupMenu ) protect_object(var-> popupMenu);
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Color
@@ -2844,12 +2844,12 @@ Widget_popupItems( Handle self, Bool set, SV * popupItems)
 {
 	dPROFILE;
 	enter_method;
-	if ( var-> stage > csFrozen) return nilSV;
+	if ( var-> stage > csFrozen) return NULL_SV;
 	if ( !set)
 		return var-> popupMenu ?
-			CAbstractMenu( var-> popupMenu)-> get_items( var-> popupMenu, "", true) : nilSV;
+			CAbstractMenu( var-> popupMenu)-> get_items( var-> popupMenu, "", true) : NULL_SV;
 
-	if ( var-> popupMenu == nilHandle) {
+	if ( var-> popupMenu == NULL_HANDLE) {
 		if ( SvTYPE( popupItems)) {
 			HV * profile = newHV();
 			pset_sv( items, popupItems);
@@ -2917,7 +2917,7 @@ Widget_selected( Handle self, Bool set, Bool selected)
 {
 	enter_method;
 	if ( !set)
-		return my-> get_selectedWidget( self) != nilHandle;
+		return my-> get_selectedWidget( self) != NULL_HANDLE;
 
 	if ( var-> stage > csFrozen) return selected;
 	if ( selected) {
@@ -2974,7 +2974,7 @@ Widget_selected( Handle self, Bool set, Bool selected)
 Handle
 Widget_selectedWidget( Handle self, Bool set, Handle widget)
 {
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 
 	if ( !set) {
 		if ( var-> stage <= csNormal) {
@@ -2985,7 +2985,7 @@ Widget_selectedWidget( Handle self, Bool set, Handle widget)
 				f = ( PWidget) f-> owner;
 			}
 		}
-		return nilHandle;
+		return NULL_HANDLE;
 
 		/* classic solution should be recursive and inheritant call */
 		/* of get_selected() here, when Widget would return state of */
@@ -3008,7 +3008,7 @@ Widget_selectedWidget( Handle self, Bool set, Handle widget)
 			s = PWidget( s)-> owner;
 		}
 	}
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 int
@@ -3022,10 +3022,10 @@ Widget_selectingButtons( Handle self, Bool set, int sb)
 Handle
 Widget_shape( Handle self, Bool set, Handle mask)
 {
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 
 	if ( !set) {
-		if ( apc_widget_get_shape( self, nilHandle)) {
+		if ( apc_widget_get_shape( self, NULL_HANDLE)) {
 			HV * profile = newHV();
 			Handle i = Object_create( "Prima::Region", profile);
 			sv_free(( SV *) profile);
@@ -3033,17 +3033,17 @@ Widget_shape( Handle self, Bool set, Handle mask)
 			--SvREFCNT( SvRV((( PAnyObject) i)-> mate));
 			return i;
 		} else
-			return nilHandle;
+			return NULL_HANDLE;
 	}
 
 	if ( mask && kind_of( mask, CRegion)) {
 		apc_widget_set_shape( self, mask);
-		return nilHandle;
+		return NULL_HANDLE;
 	}
 
 	if ( mask && !kind_of( mask, CImage)) {
 		warn("Illegal object reference passed to Drawable::region");
-		return nilHandle;
+		return NULL_HANDLE;
 	}
 
 	if ( mask ) {
@@ -3057,9 +3057,9 @@ Widget_shape( Handle self, Bool set, Handle mask)
 		apc_widget_set_shape( self, region);
 		Object_destroy(region);
 	} else
-		apc_widget_set_shape( self, nilHandle);
+		apc_widget_set_shape( self, NULL_HANDLE);
 
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Bool
@@ -3246,7 +3246,7 @@ XS( Widget_client_to_screen_FROMPERL)
 		croak ("Invalid usage of Widget::client_to_screen");
 	SP -= items;
 	self = gimme_the_mate( ST( 0));
-	if ( self == nilHandle)
+	if ( self == NULL_HANDLE)
 		croak( "Illegal object reference passed to Widget::client_to_screen");
 	count  = ( items - 1) / 2;
 	if ( !( points = allocn( Point, count))) {
@@ -3279,7 +3279,7 @@ XS( Widget_screen_to_client_FROMPERL)
 		croak ("Invalid usage of Widget::screen_to_client");
 	SP -= items;
 	self = gimme_the_mate( ST( 0));
-	if ( self == nilHandle)
+	if ( self == NULL_HANDLE)
 		croak( "Illegal object reference passed to Widget::screen_to_client");
 	count  = ( items - 1) / 2;
 	if ( !( points = allocn( Point, count))) {
@@ -3313,7 +3313,7 @@ XS( Widget_get_widgets_FROMPERL)
 		croak ("Invalid usage of Widget.get_widgets");
 	SP -= items;
 	self = gimme_the_mate( ST( 0));
-	if ( self == nilHandle)
+	if ( self == NULL_HANDLE)
 		croak( "Illegal object reference passed to Widget.get_widgets");
 	count = var-> widgets. count;
 	list  = var-> widgets. items;

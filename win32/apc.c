@@ -66,17 +66,17 @@ apc_application_create( Handle self)
 	while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE));
 
 	if ( !( h = CreateWindowExW( 0, L"GenericApp", &wnull, 0, 0, 0, 0, 0,
-			nil, nil, guts. instance, nil))) apiErrRet;
+			NULL, NULL, guts. instance, NULL))) apiErrRet;
 	sys handle = h;
 	sys parent = sys owner = HWND_DESKTOP;
 	SetWindowLongPtr( sys handle, GWLP_USERDATA, self);
 	PostMessage( sys handle, WM_PRIMA_CREATE, 0, 0);
 	sys className = WC_APPLICATION;
-	// if ( !SetTimer( h, TID_USERMAX, 100, nil)) apiErr;
+	// if ( !SetTimer( h, TID_USERMAX, 100, NULL)) apiErr;
 	GetClientRect( h, &r);
 	if ( !( var handle = ( Handle) CreateWindowExW( 0,  L"Generic", &wnull, WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN,
-		0, 0, r. right - r. left, r. bottom - r. top, h, nil,
-		guts. instance, nil))) apiErrRet;
+		0, 0, r. right - r. left, r. bottom - r. top, h, NULL,
+		guts. instance, NULL))) apiErrRet;
 	SetWindowLongPtr(( HWND) var handle, GWLP_USERDATA, self);
 	apt_set( aptEnabled);
 	sys lastSize = apc_application_get_size( self);
@@ -104,7 +104,7 @@ apc_application_destroy( Handle self)
 	}
 	PostThreadMessage( guts. mainThreadId, WM_TERMINATE, 0, 0);
 	PostQuitMessage(0);
-	application = nilHandle;
+	application = NULL_HANDLE;
 	return true;
 }
 
@@ -118,8 +118,8 @@ apc_application_end_paint( Handle self)
 	dc_free();
 	apt_clear( aptWinPS);
 	apt_clear( aptCompatiblePS);
-	sys pal = nil;
-	sys ps = nil;
+	sys pal = NULL;
+	sys ps = NULL;
 	return true;
 }
 
@@ -156,7 +156,7 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 	HDC dc, dc2;
 	XLOGPALETTE lpg;
 	HPALETTE hp, hp2, hp3;
-	if ( image == nilHandle) apcErrRet( errInvParams);
+	if ( image == NULL_HANDLE) apcErrRet( errInvParams);
 	dobjCheck( image) false;
 
 
@@ -211,11 +211,11 @@ hwnd_to_view( HWND win)
 	Handle h;
 	LONG_PTR ll;
 	if (( !win) || ( !IsWindow( win)))
-		return nilHandle;
-	if ( GetWindowThreadProcessId( win, nil) != guts. mainThreadId)
-		return nilHandle;
+		return NULL_HANDLE;
+	if ( GetWindowThreadProcessId( win, NULL) != guts. mainThreadId)
+		return NULL_HANDLE;
 	h = GetWindowLongPtr( win, GWLP_USERDATA);
-	if ( !h) return nilHandle;
+	if ( !h) return NULL_HANDLE;
 	ll = GetWindowLongPtr( win, GWLP_WNDPROC);
 	if (
 		( ll == ( LONG_PTR) generic_view_handler) ||
@@ -225,7 +225,7 @@ hwnd_to_view( HWND win)
 
 	if ( SendMessage( win, WM_HASMATE, 0, ( LPARAM) &h) == (LRESULT) HASMATE_MAGIC)
 		return h;
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 
@@ -484,7 +484,7 @@ process_msg( MSG * msg)
 
 			if ( guts. files. count == 0) return true;
 
-			list_first_that( &guts. files, files_rehash, nil);
+			list_first_that( &guts. files, files_rehash, NULL);
 			for ( i = 0; i < guts. files. count; i++) {
 				Handle self = guts. files. items[i];
 				if ( PFile( self)-> eventMask & feRead)
@@ -495,7 +495,7 @@ process_msg( MSG * msg)
 			PostMessage( NULL, WM_FILE, 0, 0);
 		} else {
 			int i;
-			Handle self = nilHandle;
+			Handle self = NULL_HANDLE;
 			for ( i = 0; i < guts. files. count; i++)
 				if (( guts. files. items[i] == ( Handle) msg-> lParam) &&
 					( PFile(guts. files. items[i])-> eventMask & msg-> wParam)) {
@@ -545,7 +545,7 @@ HWND_lock( Bool lock)
 	}
 	else
 	{
-		if ( --guts. appLock == 0) return LockWindowUpdate( nil);
+		if ( --guts. appLock == 0) return LockWindowUpdate( NULL);
 	}
 	return true;
 }
@@ -565,7 +565,7 @@ apc_application_unlock( Handle self)
 Bool
 apc_application_stop( Handle self)
 {
-	if ( application == nilHandle ) return false;
+	if ( application == NULL_HANDLE ) return false;
 	guts. application_stop_signal = true;
 	return true;
 }
@@ -599,7 +599,7 @@ apc_application_yield(Bool wait_for_event)
 		}
 	}
 	guts. application_stop_signal = false;
-	return application != nilHandle;
+	return application != NULL_HANDLE;
 }
 
 Handle
@@ -609,7 +609,7 @@ apc_application_get_widget_from_point( Handle self, Point point)
 	POINT pt;
 	HWND  p;
 
-	objCheck nilHandle;
+	objCheck NULL_HANDLE;
 	pt.x = point. x;
 	pt.y = sys lastSize. y - point. y - 1;
 	p    =  WindowFromPoint( pt);
@@ -621,9 +621,9 @@ apc_application_get_widget_from_point( Handle self, Point point)
 	} else
 		p = ChildWindowFromPointEx( HWND_DESKTOP, pt, CWP_SKIPINVISIBLE);
 
-	if ( !p) return nilHandle;
+	if ( !p) return NULL_HANDLE;
 	if ( !( tid = GetWindowThreadProcessId( p, &pid))) apiErr;
-	if ( tid != guts. mainThreadId) return nilHandle;
+	if ( tid != guts. mainThreadId) return NULL_HANDLE;
 	return ( Handle) GetWindowLongPtr( p, GWLP_USERDATA);
 }
 
@@ -650,10 +650,10 @@ apc_component_destroy( Handle self)
 	PComponent    c = ( PComponent) self;
 	PDrawableData d = ( PDrawableData) c-> sysData;
 	objCheck false;
-	var handle = nilHandle;
-	if ( d == nil) return false;
+	var handle = NULL_HANDLE;
+	if ( d == NULL) return false;
 	free( d);
-	c-> sysData = nil;
+	c-> sysData = NULL;
 	return true;
 }
 
@@ -821,7 +821,7 @@ apc_message( Handle self, PEvent ev, Bool post)
 				PostMessage( 0, WM_KEYPACKET, 0, ( LPARAM) kp);
 			}
 		} else {
-			BYTE * mod = nil;
+			BYTE * mod = NULL;
 			Bool wui = PApplication(application)-> wantUnicodeInput;
 			if (( GetKeyState( VK_MENU) < 0) ^ (( ev-> pos. mod & kmAlt) != 0))
 				mod = mod_select( ev-> pos. mod);
@@ -1148,9 +1148,9 @@ apc_system_action( const char * params)
 			DWORD valSize = MAX_PATH, valType = REG_SZ, res;
 			char buf[ MAX_PATH] = "";
 			RegOpenKeyEx( HKEY_CLASSES_ROOT, "http\\shell\\open\\command", 0, KEY_READ, &k);
-			res = RegQueryValueEx( k, nil, nil, &valType, ( LPBYTE)buf, &valSize);
+			res = RegQueryValueEx( k, NULL, NULL, &valType, ( LPBYTE)buf, &valSize);
 			RegCloseKey( k);
-			if ( res != ERROR_SUCCESS) return nil;
+			if ( res != ERROR_SUCCESS) return NULL;
 			return duplicate_string( buf);
 		}
 		break;

@@ -1065,7 +1065,7 @@ typedef union _unix_sys_data
 #define DRIN		pguts-> display, pguts-> screen_number
 #define X_WINDOW	(PComponent(self)-> handle)
 #define X(obj)		((PDrawableSysData)(PComponent((obj))-> sysData))
-#define DEFXX		PDrawableSysData selfxx = (self == nilHandle ? nil : X(self))
+#define DEFXX		PDrawableSysData selfxx = (self == NULL_HANDLE ? NULL : X(self))
 #define M(obj)		((PMenuSysData)(PComponent((obj))-> sysData))
 #define DEFMM           PMenuSysData selfxx = ((PMenuSysData)(PComponent((self))-> sysData))
 #define C(obj)		((PClipboardSysData)(PComponent((obj))-> sysData))

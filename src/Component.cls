@@ -9,7 +9,7 @@ object Prima::Component( Prima::Object)
 	property SV *      name;
 	property Handle    owner;
 
-	method   UV        add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
+	method   UV        add_notification( char * name, SV * subroutine, Handle referer = NULL_HANDLE, int index = -1);
 	method   void      attach( Handle objectHandle);
 	method   Handle    bring( char * componentName);
 	method   Bool      can_event();

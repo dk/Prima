@@ -44,17 +44,17 @@ XSLockManager g_XSLock;
 CPerlObj* pPerl;
 #endif
 
-static PHash vmtHash = nil;
+static PHash vmtHash = NULL;
 static List  staticObjects;
 static List  staticHashes;
 static int   prima_init_ok = 0;
 
-Handle application = nilHandle;
+Handle application = NULL_HANDLE;
 long   apcError = 0;
 List   postDestroys;
 int    recursiveCall = 0;
-PHash  primaObjects = nil;
-SV *   eventHook = nil;
+PHash  primaObjects = NULL;
+SV *   eventHook = NULL;
 Bool   use_fribidi =
 #ifdef WITH_FRIBIDI
 		true
@@ -69,7 +69,7 @@ duplicate_string( const char *s)
 	int l;
 	char *d;
 
-	if (!s) return nil;
+	if (!s) return NULL;
 	l = strlen( s) + 1;
 	d = ( char*)malloc( l);
 	if ( d) memcpy( d, s, l);
@@ -289,7 +289,7 @@ Handle
 create_mate( SV *perlObject)
 {
 	PAnyObject object;
-	Handle self = nilHandle;
+	Handle self = NULL_HANDLE;
 	char *className;
 	PVMT vmt;
 
@@ -299,7 +299,7 @@ create_mate( SV *perlObject)
 
 	/* allocating an instance */
 	object = ( PAnyObject) malloc( vmt-> instanceSize);
-	if ( !object) return nilHandle;
+	if ( !object) return NULL_HANDLE;
 
 	memset( object, 0, vmt-> instanceSize);
 	object-> self = ( PVMT) vmt;
@@ -320,11 +320,11 @@ gimme_the_real_mate( SV *perlObject)
 {
 	HV *obj;
 	SV **mate;
-	if ( !SvROK( perlObject)) return nilHandle;
+	if ( !SvROK( perlObject)) return NULL_HANDLE;
 	obj = (HV*)SvRV( perlObject);
-	if ( SvTYPE((SV*)obj) != SVt_PVHV) return nilHandle;
+	if ( SvTYPE((SV*)obj) != SVt_PVHV) return NULL_HANDLE;
 	mate = hv_fetch( obj, "__CMATE__", 9, 0);
-	if ( mate == nil) return nilHandle;
+	if ( mate == NULL) return NULL_HANDLE;
 	return SvIV( *mate);
 }
 
@@ -333,7 +333,7 @@ gimme_the_mate( SV *perlObject)
 {
 	Handle cMate;
 	cMate = gimme_the_real_mate( perlObject);
-	return (( cMate == nilHandle) || ((( PObject) cMate)-> stage == csDead)) ? nilHandle : cMate;
+	return (( cMate == NULL_HANDLE) || ((( PObject) cMate)-> stage == csDead)) ? NULL_HANDLE : cMate;
 }
 
 
@@ -353,7 +353,7 @@ XS( create_from_Perl)
 		);
 		SPAGAIN;
 		SP -= items;
-		if ( _c_apricot_res_ && (( PAnyObject) _c_apricot_res_)-> mate && (( PAnyObject) _c_apricot_res_)-> mate != nilSV)
+		if ( _c_apricot_res_ && (( PAnyObject) _c_apricot_res_)-> mate && (( PAnyObject) _c_apricot_res_)-> mate != NULL_SV)
 		{
 			XPUSHs( sv_mortalcopy((( PAnyObject) _c_apricot_res_)-> mate));
 			--SvREFCNT( SvRV((( PAnyObject) _c_apricot_res_)-> mate));
@@ -373,7 +373,7 @@ XS( destroy_from_Perl)
 	if ( items != 1)
 		croak ("Invalid usage of Prima::Object::destroy");
 	self = gimme_the_real_mate( ST( 0));
-	if ( self == nilHandle)
+	if ( self == NULL_HANDLE)
 		croak( "Illegal object reference passed to Prima::Object::destroy");
 	{
 		Object_destroy( self);
@@ -381,13 +381,13 @@ XS( destroy_from_Perl)
 	XSRETURN_EMPTY;
 }
 
-static PAnyObject killChain = nil;
-static PObject ghostChain = nil;
+static PAnyObject killChain = NULL;
+static PObject ghostChain = NULL;
 
 void
 prima_kill_zombies( void)
 {
-	while ( killChain != nil)
+	while ( killChain != NULL)
 	{
 		PAnyObject killee = killChain;
 		killChain = killee-> killPtr;
@@ -424,20 +424,20 @@ unprotect_object( Handle obj)
 		return;
 	o-> protectCount--;
 	if (o-> protectCount>0) return;
-	if (o-> stage == csDead || o-> mate == nil || o-> mate == nilSV)
+	if (o-> stage == csDead || o-> mate == NULL || o-> mate == NULL_SV)
 	{
 		PObject ghost, lg;
 
-		lg = nil;
+		lg = NULL;
 		ghost = ghostChain;
-		while ( ghost != nil && ghost != o)
+		while ( ghost != NULL && ghost != o)
 		{
 		lg    = ghost;
 		ghost = (PObject)(ghost-> killPtr);
 		}
 		if ( ghost == o)
 		{
-			if ( lg == nil)
+			if ( lg == NULL)
 				ghostChain = (PObject)(o-> killPtr);
 			else
 				lg-> killPtr = o-> killPtr;
@@ -456,7 +456,7 @@ XS( destroy_mate)
 		croak ("Invalid usage of ::destroy_mate");
 	self = gimme_the_real_mate( ST( 0));
 
-	if ( self == nilHandle)
+	if ( self == NULL_HANDLE)
 		croak( "Illegal object reference passed to ::destroy_mate");
 	{
 		Object_destroy( self);
@@ -476,24 +476,24 @@ XS( destroy_mate)
 Bool
 kind_of( Handle object, void *cls)
 {
-	PVMT vmt = object ? (( PAnyObject) object)-> self : nil;
-	while (( vmt != nil) && ( vmt != cls))
+	PVMT vmt = object ? (( PAnyObject) object)-> self : NULL;
+	while (( vmt != NULL) && ( vmt != cls))
 		vmt = vmt-> base;
-	return vmt != nil;
+	return vmt != NULL;
 }
 
 CV *
 query_method( Handle object, char *methodName, Bool cacheIt)
 {
-	if ( object == nilHandle)
-		return nil;
+	if ( object == NULL_HANDLE)
+		return NULL;
 	return sv_query_method((( PObject) object)-> mate, methodName, cacheIt);
 }
 
 CV *
 sv_query_method( SV *sv, char *methodName, Bool cacheIt)
 {
-	HV *stash = nil;
+	HV *stash = NULL;
 
 	if ( SvROK( sv)) {
 		sv = (SV*)SvRV( sv);
@@ -508,7 +508,7 @@ sv_query_method( SV *sv, char *methodName, Bool cacheIt)
 		if ( gv && isGV( gv))
 			return GvCV(gv);
 	}
-	return nil;
+	return NULL;
 }
 
 static void
@@ -537,7 +537,7 @@ register_notifications( PVMT vmt)
 	HE *he;
 	char buf[ 1024];
 
-	while (( v != nil) && ( v != (PVMT) CComponent)) v = v-> base;
+	while (( v != NULL) && ( v != (PVMT) CComponent)) v = v-> base;
 	if (!v) return;
 	package = newSVpv( vmt-> className, 0);
 	if ( !package) croak( "GUTS016: Not enough memory");
@@ -549,7 +549,7 @@ register_notifications( PVMT vmt)
 	nt = (HV*)SvRV(nt_ref);
 
 	hv_iterinit( nt);
-	while (( he = hv_iternext( nt)) != nil) {
+	while (( he = hv_iternext( nt)) != NULL) {
 		snprintf( buf, 1024, "on%s", HeKEY( he));
 		if (sv_query_method( package, buf, 0)) continue;
 		snprintf( buf, 1024, "%s::on%s", vmt-> className, HeKEY( he));
@@ -601,7 +601,7 @@ common_set_option( char * option, char * value)
 XS(Prima_options)
 {
 	dXSARGS;
-	char * option, * value = nil;
+	char * option, * value = NULL;
 	(void)items;
 
 	switch ( items) {
@@ -621,7 +621,7 @@ XS(Prima_options)
 		}
 		break;
 	case 2:
-		value  = (SvOK( ST(1)) ? ( char*) SvPV_nolen( ST(1)) : nil);
+		value  = (SvOK( ST(1)) ? ( char*) SvPV_nolen( ST(1)) : NULL);
 	case 1:
 		option = ( char*) SvPV_nolen( ST(0));
 		if ( !common_set_option( option, value))
@@ -715,7 +715,7 @@ build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
 	int i, n;
 	void **to, **from;
 
-	if ( ancestorVmt == nil)
+	if ( ancestorVmt == NULL)
 	{
 		warn( "GUTS001: Cannot locate base class \"%s\" of class \"%s\"\n", ancestorName, vmt-> className);
 		return false;
@@ -730,7 +730,7 @@ build_dynamic_vmt( void *vvmmtt, const char *ancestorName, int ancestorVmtSize)
 	n = (ancestorVmtSize - sizeof(VMT)) / sizeof( void *);
 	from = (void **)((char *)ancestorVmt + sizeof(VMT));
 	to = (void **)((char *)vmt + sizeof(VMT));
-	for ( i = 0; i < n; i++) if ( to[i] == nil) to[i] = from[i];
+	for ( i = 0; i < n; i++) if ( to[i] == NULL) to[i] = from[i];
 	build_static_vmt( vmt);
 	register_notifications( vmt);
 	return true;
@@ -747,7 +747,7 @@ PVMT
 gimme_the_vmt( const char *className)
 {
 	PVMT vmt;
-	PVMT originalVmt = nil;
+	PVMT originalVmt = NULL;
 	int vmtSize;
 	HV *stash;
 	SV **proc;
@@ -762,33 +762,33 @@ gimme_the_vmt( const char *className)
 
 	/* Check whether this class has been already built... */
 	vmtAddr = ( SV **) hash_fetch( vmtHash, (char *)className, strlen( className));
-	if ( vmtAddr != nil) return ( PVMT) vmtAddr;
+	if ( vmtAddr != NULL) return ( PVMT) vmtAddr;
 
 	/* No;  try to find inherited VMT... */
 	stash = gv_stashpv( (char *)className, false);
-	if ( stash == nil)
+	if ( stash == NULL)
 	{
 		croak( "GUTS003: Cannot locate package %s\n", className);
-		return nil;     /* Definitely wrong! */
+		return NULL;     /* Definitely wrong! */
 	}
 
 	isaGlob = hv_fetch( stash, "ISA", 3, 0);
-	if (! (( isaGlob == nil) ||
-		( *isaGlob == nil) ||
+	if (! (( isaGlob == NULL) ||
+		( *isaGlob == NULL) ||
 		( !GvAV(( GV *) *isaGlob)) ||
 		( av_len( GvAV(( GV *) *isaGlob)) < 0)
 	))
 	{
 		/* ISA found! */
 		inheritedName = av_fetch( GvAV(( GV *) *isaGlob), 0, 0);
-		if ( inheritedName != nil)
+		if ( inheritedName != NULL)
 			originalVmt = gimme_the_vmt( SvPV_nolen( *inheritedName));
 		else
-			return nil; /* The error message will be printed by the previous incarnation */
+			return NULL; /* The error message will be printed by the previous incarnation */
 	}
 	if ( !originalVmt) {
 		croak( "GUTS005: Error finding ancestor's VMT for %s\n", className);
-		return nil;
+		return NULL;
 	}
 	/* Do we really need to do this? */
 	if ( strEQ( className, originalVmt-> className))
@@ -796,7 +796,7 @@ gimme_the_vmt( const char *className)
 
 	vmtSize = originalVmt-> vmtSize;
 	vmt = ( PVMT) malloc( vmtSize);
-	if ( !vmt) return nil;
+	if ( !vmt) return NULL;
 
 	memcpy( vmt, originalVmt, vmtSize);
 	newClassName = duplicate_string( className);
@@ -805,7 +805,7 @@ gimme_the_vmt( const char *className)
 
 	/* Not particularly effective now... */
 	patchWhom = originalVmt;
-	while ( patchWhom != nil)
+	while ( patchWhom != NULL)
 	{
 		if ( patchWhom-> base == patchWhom-> super)
 		{
@@ -814,7 +814,7 @@ gimme_the_vmt( const char *className)
 			for ( i = 0; i < patchLength; i++)
 			{
 				proc = hv_fetch( stash, patch[ i]. name, strlen( patch[ i]. name), 0);
-				if (! (( proc == nil) || ( *proc == nil) || ( !GvCV(( GV *) *proc))))
+				if (! (( proc == NULL) || ( *proc == NULL) || ( !GvCV(( GV *) *proc))))
 				{
 					addr = ( void **)((( char *)vmt) + ((( char *)( patch[ i]. vmtAddr)) - (( char *)patchWhom)));
 					*addr = patch[ i]. procAddr;
@@ -896,7 +896,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
 	Rect _Rect;
 	SV * _SV;
 	Bool returns = false;
-	SV *toReturn = nil;
+	SV *toReturn = NULL;
 	int retCount;
 	int stackExtend = 1;
 
@@ -987,7 +987,7 @@ call_perl_indirect( Handle self, char *subName, const char *format, Bool c_decl,
 				break;
 			case 'H':
 				_Handle = va_arg( params, Handle);
-				PUSHs( _Handle ? (( PAnyObject) _Handle)-> mate : nilSV);
+				PUSHs( _Handle ? (( PAnyObject) _Handle)-> mate : NULL_SV);
 				break;
 			case 'R':
 				_Rect = va_arg( params, Rect);
@@ -1087,19 +1087,19 @@ push_hv( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv)
 	}
 
 	rorder = hv_fetch( hv, "__ORDER__", 9, 0);
-	if ( rorder != nil && *rorder != nil && SvROK( *rorder) && SvTYPE(SvRV(*rorder)) == SVt_PVAV) {
+	if ( rorder != NULL && *rorder != NULL && SvROK( *rorder) && SvTYPE(SvRV(*rorder)) == SVt_PVAV) {
 		int i, l;
 		AV *order = (AV*)SvRV(*rorder);
 		SV **key;
 
-		n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != nil) n++;
+		n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != NULL) n++;
 		n--; EXTEND( sp, n*2);
 
 		/* push everything in proper order */
 		l = av_len(order);
 		for ( i = 0; i <= l; i++) {
 			key = av_fetch(order, i, 0);
-			if (key == nil || *key == nil) croak( "GUTS008:  Illegal key in order array in push_hv()");
+			if (key == NULL || *key == NULL) croak( "GUTS008:  Illegal key in order array in push_hv()");
 			if ( !hv_exists_ent( hv, *key, 0)) continue;
 			PUSHs( sv_2mortal( newSVsv( *key)));
 			PUSHs( sv_2mortal( newSVsv( HeVAL(hv_fetch_ent(hv, *key, 0, 0)))));
@@ -1111,12 +1111,12 @@ push_hv( I32 ax, SV **sp, I32 items, SV **mark, int callerReturns, HV *hv)
 	}
 
 	/* Calculate the length of our hv */
-	n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != nil) n++;
+	n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != NULL) n++;
 	EXTEND( sp, n*2);
 
 	/* push everything */
 	hv_iterinit( hv);
-	while (( he = hv_iternext( hv)) != nil)
+	while (( he = hv_iternext( hv)) != NULL)
 	{
 		PUSHs( sv_2mortal( newSVsv( hv_iterkeysv( he))));
 		PUSHs( sv_2mortal( newSVsv( HeVAL( he))));
@@ -1135,19 +1135,19 @@ push_hv_for_REDEFINED( SV **sp, HV *hv)
 	SV **rorder;
 
 	rorder = hv_fetch( hv, "__ORDER__", 9, 0);
-	if ( rorder != nil && *rorder != nil && SvROK( *rorder) && SvTYPE(SvRV(*rorder)) == SVt_PVAV) {
+	if ( rorder != NULL && *rorder != NULL && SvROK( *rorder) && SvTYPE(SvRV(*rorder)) == SVt_PVAV) {
 		int i, l;
 		AV *order = (AV*)SvRV(*rorder);
 		SV **key;
 
-		n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != nil) n++;
+		n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != NULL) n++;
 		n--; EXTEND( sp, n*2);
 
 		/* push everything in proper order */
 		l = av_len(order);
 		for ( i = 0; i <= l; i++) {
 			key = av_fetch(order, i, 0);
-			if (key == nil || *key == nil) croak( "GUTS008:  Illegal key in order array in push_hv_for_REDEFINED()");
+			if (key == NULL || *key == NULL) croak( "GUTS008:  Illegal key in order array in push_hv_for_REDEFINED()");
 			if ( !hv_exists_ent( hv, *key, 0)) continue;
 			PUSHs( sv_2mortal( newSVsv( *key)));
 			PUSHs( sv_2mortal( newSVsv( HeVAL( hv_fetch_ent(hv, *key, 0, 0)))));
@@ -1157,12 +1157,12 @@ push_hv_for_REDEFINED( SV **sp, HV *hv)
 	}
 
 	/* Calculate the length of our hv */
-	n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != nil) n++;
+	n = 0; hv_iterinit( hv); while ( hv_iternext( hv) != NULL) n++;
 	EXTEND( sp, n*2);
 
 	/* push everything */
 	hv_iterinit( hv);
-	while (( he = hv_iternext( hv)) != nil)
+	while (( he = hv_iternext( hv)) != NULL)
 	{
 		PUSHs( sv_2mortal( newSVsv( hv_iterkeysv( he))));
 		PUSHs( sv_2mortal( newSVsv( HeVAL( he))));
@@ -1243,22 +1243,22 @@ XS( prima_cleanup)
 
 	if ( application) Object_destroy( application);
 	appDead = true;
-	hash_first_that( primaObjects, (void*)kill_objects, nil, nil, nil);
+	hash_first_that( primaObjects, (void*)kill_objects, NULL, NULL, NULL);
 	hash_destroy( primaObjects, false);
-	primaObjects = nil;
+	primaObjects = NULL;
 	if ( prima_init_ok > 1) prima_cleanup_image_subsystem();
 	if ( prima_init_ok > 2) {
 		window_subsystem_cleanup();
 		prima_cleanup_font_mapper();
 	}
 	hash_destroy( vmtHash, false);
-	vmtHash = nil;
+	vmtHash = NULL;
 	list_delete_all( &staticObjects, true);
 	list_destroy( &staticObjects);
 	list_destroy( &postDestroys);
 	prima_kill_zombies();
 	if ( prima_init_ok > 2) window_subsystem_done();
-	list_first_that( &staticHashes, (void*)kill_hashes, nil);
+	list_first_that( &staticHashes, (void*)kill_hashes, NULL);
 	list_destroy( &staticHashes);
 	prima_init_ok = 0;
 
@@ -1448,7 +1448,7 @@ ctx_remap_def( Handle value, Handle *table, Bool direct, Handle default_value)
 	register PRemapHash hash;
 	register PRemapHashNode node;
 
-	if ( table == nil) return default_value;
+	if ( table == NULL) return default_value;
 	if ( table[0] != endCtx) {
 		/* Hash was not built before;  building */
 		Handle *tbl;
@@ -1478,13 +1478,13 @@ ctx_remap_def( Handle value, Handle *table, Bool direct, Handle default_value)
 					node->next = next++;
 					node->next-> key = tbl[0];
 					node->next-> val = tbl[1];
-					node->next-> next = nil;
+					node->next-> next = NULL;
 				} else {
 					/* hash->table[key] = malloc( sizeof( RemapHashNode)); */
 					hash->table[key] = next++;
 					hash->table[key]-> key = tbl[0];
 					hash->table[key]-> val = tbl[1];
-					hash->table[key]-> next = nil;
+					hash->table[key]-> next = NULL;
 				}
 				tbl += 2;
 		}
@@ -1509,13 +1509,13 @@ ctx_remap_def( Handle value, Handle *table, Bool direct, Handle default_value)
 					node->next = next++;
 					node->next-> key = tbl[1];
 					node->next-> val = tbl[0];
-					node->next-> next = nil;
+					node->next-> next = NULL;
 				} else {
 					/* hash->table[key] = malloc( sizeof( RemapHashNode)); */
 					hash->table[key] = next++;
 					hash->table[key]-> key = tbl[1];
 					hash->table[key]-> val = tbl[0];
-					hash->table[key]-> next = nil;
+					hash->table[key]-> next = NULL;
 				}
 				tbl += 2;
 		}
@@ -1615,14 +1615,14 @@ list_create( PList slf, int size, int delta)
 		if ( !( slf-> items = allocn( Handle, size)))
 			slf-> size = 0;
 	} else
-		slf-> items = nil;
+		slf-> items = NULL;
 }
 
 PList
 plist_create( int size, int delta)
 {
 	PList new_list = alloc1( List);
-	if ( new_list != nil) {
+	if ( new_list != NULL) {
 		list_create( new_list, size, delta);
 	}
 	return new_list;
@@ -1644,7 +1644,7 @@ list_destroy( PList slf)
 {
 	if ( !slf) return;
 	free( slf-> items);
-	slf-> items = nil;
+	slf-> items = NULL;
 	slf-> count = 0;
 	slf-> size  = 0;
 }
@@ -1720,7 +1720,7 @@ list_delete_at( PList slf, int index)
 Handle
 list_at( PList slf, int index)
 {
-	return (( index < 0 || !slf) || index >= slf-> count) ? nilHandle : slf-> items[ index];
+	return (( index < 0 || !slf) || index >= slf-> count) ? NULL_HANDLE : slf-> items[ index];
 }
 
 int
@@ -1768,14 +1768,14 @@ hash_destroy( PHash h, Bool killAll)
 	HE *he;
 	list_delete( &staticHashes, ( Handle) h);
 	hv_iterinit( h);
-	while (( he = hv_iternext( h)) != nil) {
+	while (( he = hv_iternext( h)) != NULL) {
 		if ( killAll) free( HeVAL( he));
 		HeVAL( he) = &PL_sv_undef;
 	}
 	sv_free(( SV *) h);
 }
 
-static SV *ksv = nil;
+static SV *ksv = NULL;
 
 #define ksv_check  if ( !ksv) {                                      \
 			ksv = newSV( keyLen);                          \
@@ -1790,7 +1790,7 @@ hash_fetch( PHash h, const void *key, int keyLen)
 {
 	HE *he;
 	ksv_check;
-	if ( !he) return nil;
+	if ( !he) return NULL;
 	return HeVAL( he);
 }
 
@@ -1800,13 +1800,13 @@ hash_delete( PHash h, const void *key, int keyLen, Bool kill)
 	HE *he;
 	void *val;
 	ksv_check;
-	if ( !he) return nil;
+	if ( !he) return NULL;
 	val = HeVAL( he);
 	HeVAL( he) = &PL_sv_undef;
 	(void) hv_delete_ent( h, ksv, G_DISCARD, 0);
 	if ( kill) {
 		free( val);
-		return nil;
+		return NULL;
 	}
 	return val;
 }
@@ -1830,14 +1830,14 @@ hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** p
 {
 	HE *he;
 
-	if ( action == nil || h == nil) return nil;
+	if ( action == NULL || h == NULL) return NULL;
 	hv_iterinit(( HV*) h);
 	for (;;)
 	{
 		void *value, *key;
 		int  keyLen;
-		if (( he = hv_iternext( h)) == nil)
-			return nil;
+		if (( he = hv_iternext( h)) == NULL)
+			return NULL;
 		value  = HeVAL( he);
 		key    = HeKEY( he);
 		keyLen = HeKLEN( he);
@@ -1847,7 +1847,7 @@ hash_first_that( PHash h, void * action, void * params, int * pKeyLen, void ** p
 			return value;
 		}
 	}
-	return nil;
+	return NULL;
 }
 
 static char* exception_text = NULL;

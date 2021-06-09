@@ -90,18 +90,18 @@ static int
 prn_query( Handle self, const char * printer, LPPRINTER_INFO_2 info)
 {
 	DWORD returned, needed;
-	LPPRINTER_INFO_2 ppi, useThis = nil;
+	LPPRINTER_INFO_2 ppi, useThis = NULL;
 	int i;
-	Bool useDefault = ( printer == nil || strlen( printer) == 0);
+	Bool useDefault = ( printer == NULL || strlen( printer) == 0);
 	char * device;
 
-	EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil,
-			2, nil, 0, &needed, &returned);
+	EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, NULL,
+			2, NULL, 0, &needed, &returned);
 
 	ppi = ( LPPRINTER_INFO_2) malloc( needed + 4);
 	if ( !ppi) return 0;
 
-	if ( !EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil,
+	if ( !EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, NULL,
 			2, ( LPBYTE) ppi, needed, &needed, &returned)) {
 		apiErr;
 		free( ppi);
@@ -129,7 +129,7 @@ prn_query( Handle self, const char * printer, LPPRINTER_INFO_2 info)
 			break;
 		}
 	}
-	if ( useDefault && useThis == nil) useThis = ppi;
+	if ( useDefault && useThis == NULL) useThis = ppi;
 	if ( useThis) ppi_create( info, useThis);
 	if ( !useThis) apcErr( errInvPrinter);
 	free( ppi);
@@ -147,25 +147,25 @@ apc_prn_enumerate( Handle self, int * count)
 	int i;
 
 	*count = 0;
-	objCheck nil;
+	objCheck NULL;
 
-	EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil, 2,
-			nil, 0, &needed, &returned);
+	EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, NULL, 2,
+			NULL, 0, &needed, &returned);
 
 	ppi = ( LPPRINTER_INFO_2) malloc( needed + 4);
-	if ( !ppi) return nil;
+	if ( !ppi) return NULL;
 
-	if ( !EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, nil, 2,
+	if ( !EnumPrinters( PRINTER_ENUM_FAVORITE | PRINTER_ENUM_LOCAL, NULL, 2,
 			( LPBYTE) ppi, needed, &needed, &returned)) {
 		apiErr;
 		free( ppi);
-		return nil;
+		return NULL;
 	}
 
 	if ( returned == 0) {
 		apcErr( errNoPrinters);
 		free( ppi);
-		return nil;
+		return NULL;
 	}
 
 	printer = apc_prn_get_default( self);
@@ -173,14 +173,14 @@ apc_prn_enumerate( Handle self, int * count)
 	list = ( PPrinterInfo) malloc( returned * sizeof( PrinterInfo));
 	if ( !list) {
 		free( ppi);
-		return nil;
+		return NULL;
 	}
 
 	for ( i = 0; i < returned; i++)
 	{
 		strncpy( list[ i]. name,   ppi[ i]. pPrinterName, 255);   list[ i]. name[ 255]   = 0;
 		strncpy( list[ i]. device, ppi[ i]. pPortName, 255);      list[ i]. device[ 255] = 0;
-		list[ i]. defaultPrinter = (( printer != nil) && ( strcmp( printer, list[ i]. name) == 0));
+		list[ i]. defaultPrinter = (( printer != NULL) && ( strcmp( printer, list[ i]. name) == 0));
 	}
 	*count = returned;
 	free( ppi);
@@ -257,7 +257,7 @@ apc_prn_get_default( Handle self)
 					(const char *) ", "))) {
 
 	} else
-		sys s. prn. device = sys s. prn. driver = sys s. prn. port = nil;
+		sys s. prn. device = sys s. prn. driver = sys s. prn. port = NULL;
 
 	return sys s. prn. device;
 }
@@ -272,9 +272,9 @@ apc_prn_setup( Handle self)
 	HDC dc;
 
 	objCheck false;
-	if ( !OpenPrinter( sys s. prn. ppi. pPrinterName, &lph, nil))
+	if ( !OpenPrinter( sys s. prn. ppi. pPrinterName, &lph, NULL))
 		apiErrRet;
-	sz = DocumentProperties( nil, lph, sys s. prn. ppi. pPrinterName, nil, nil, 0);
+	sz = DocumentProperties( NULL, lph, sys s. prn. ppi. pPrinterName, NULL, NULL, 0);
 	if ( sz <= 0) {
 		apiErr;
 		ClosePrinter( lph);
@@ -287,7 +287,7 @@ apc_prn_setup( Handle self)
 	}
 
 	sys s. prn. ppi. pDevMode-> dmFields = -1;
-	ret = DocumentProperties( hwnd_to_view( who) ? who : nil, lph, sys s. prn. ppi. pPrinterName,
+	ret = DocumentProperties( hwnd_to_view( who) ? who : NULL, lph, sys s. prn. ppi. pPrinterName,
 		dm, sys s. prn. ppi. pDevMode, DM_IN_BUFFER|DM_IN_PROMPT|DM_OUT_BUFFER);
 	ClosePrinter( lph);
 	if ( ret != IDOK) {
@@ -465,7 +465,7 @@ ctx_prn_find_string( PrnKey * table, int table_size, long value)
 		if ( table-> value == value)
 			return table-> name;
 	}
-	return nil;
+	return NULL;
 }
 
 #define BADVAL -16384
@@ -578,10 +578,10 @@ Bool
 apc_prn_get_option( Handle self, char * option, char ** value)
 {
 	long v;
-	char * c = nil, buf[256];
+	char * c = NULL, buf[256];
 	LPDEVMODE dev = sys s. prn. ppi. pDevMode;
 
-	*value = nil;
+	*value = NULL;
 
 	objCheck false;
 	if ( !dev) return false;
@@ -593,7 +593,7 @@ apc_prn_get_option( Handle self, char * option, char ** value)
 	/* is a defined string? */ \
 	if (( c = ctx_prn_find_string( \
 		table, sizeof(table)/sizeof(PrnKey), value) \
-	) == nil) { \
+	) == NULL) { \
 		/* return just a number */ \
 		sprintf( c = buf, "%d", value); \
 	}
@@ -695,8 +695,8 @@ apc_prn_begin_doc( Handle self, const char* docName)
 	DOCINFO doc;
 	doc. cbSize = sizeof( DOCINFO);
 	doc. lpszDocName = docName;
-	doc. lpszOutput = nil;
-	doc. lpszDatatype = nil;
+	doc. lpszOutput = NULL;
+	doc. lpszDatatype = NULL;
 	doc. fwType = 0;
 
 	objCheck false;
@@ -706,13 +706,13 @@ apc_prn_begin_doc( Handle self, const char* docName)
 	if ( StartDoc( sys ps, &doc) <= 0) {
 		apiPrnErr;
 		DeleteDC( sys ps);
-		sys ps = nil;
+		sys ps = NULL;
 		return false;
 	}
 	if ( StartPage( sys ps) <= 0) {
 		apiPrnErr;
 		DeleteDC( sys ps);
-		sys ps = nil;
+		sys ps = NULL;
 		return false;
 	}
 
@@ -751,8 +751,8 @@ apc_prn_end_doc( Handle self)
 	hwnd_leave_paint( self);
 	if ( sys pal) DeleteObject( sys pal);
 	DeleteDC( sys ps);
-	sys pal = nil;
-	sys ps = nil;
+	sys pal = NULL;
+	sys ps = NULL;
 	return apcError == errOk;
 }
 
@@ -763,7 +763,7 @@ apc_prn_end_paint_info( Handle self)
 	objCheck false;
 	hwnd_leave_paint( self);
 	DeleteDC( sys ps);
-	sys ps = nil;
+	sys ps = NULL;
 	return apcError == errOk;
 }
 
@@ -785,8 +785,8 @@ apc_prn_abort_doc( Handle self)
 	hwnd_leave_paint( self);
 	if ( sys pal) DeleteObject( sys pal);
 	DeleteDC( sys ps);
-	sys pal = nil;
-	sys ps = nil;
+	sys pal = NULL;
+	sys ps = NULL;
 	return apcError == errOk;
 }
 

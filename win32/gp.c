@@ -49,13 +49,13 @@ apc_gp_done( Handle self)
 	if ( sys linePatternLen  > sizeof(sys linePattern)) free( sys linePattern);
 	font_free( sys fontResource, false);
 	if ( sys p256) free( sys p256);
-	sys bm = nil;
-	sys pal = nil;
-	sys ps = nil;
-	sys bm = nil;
-	sys p256 = nil;
-	sys fontResource = nil;
-	sys linePattern = nil;
+	sys bm = NULL;
+	sys pal = NULL;
+	sys ps = NULL;
+	sys bm = NULL;
+	sys p256 = NULL;
+	sys fontResource = NULL;
+	sys linePattern = NULL;
 	return true;
 }
 
@@ -101,7 +101,7 @@ gp_Arc(
 
 		old = SelectObject( sys ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
 		adjust_line_end_int( nXRadial1, nYRadial1, &nXRadial2, &nYRadial2);
-		MoveToEx( sys ps, nXRadial1, nYRadial1, nil);
+		MoveToEx( sys ps, nXRadial1, nYRadial1, NULL);
 		ret = LineTo( sys ps, nXRadial2, nYRadial2);
 		DeleteObject(SelectObject( sys ps, old) );
 		return ret;
@@ -136,7 +136,7 @@ gp_Chord(
 
 		old = SelectObject( sys ps, CreatePen( PS_SOLID, 1, sys stylus. brush. lb. lbColor));
 		adjust_line_end_int( nXRadial1, nYRadial1, &nXRadial2, &nYRadial2);
-		MoveToEx( sys ps, nXRadial1, nYRadial1, nil);
+		MoveToEx( sys ps, nXRadial1, nYRadial1, NULL);
 		ret = LineTo( sys ps, nXRadial2, nYRadial2);
 		DeleteObject(SelectObject( sys ps, old) );
 		return ret;
@@ -169,7 +169,7 @@ gp_Pie(
 			if ( nXRadial2 > cx ) nXRadial1 = nXRadial2;
 			if ( nYRadial2 > cy ) nYRadial1 = nYRadial2;
 		}
-		MoveToEx( sys ps, cx, cy, nil);
+		MoveToEx( sys ps, cx, cy, NULL);
 		ret = LineTo( sys ps, nXRadial1, nYRadial1);
 		DeleteObject(SelectObject( sys ps, old) );
 		return ret;
@@ -400,7 +400,7 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
   POINT *p;
   Bool ok;
 
-	if ((p = malloc( sizeof(POINT) * numPts)) == nil)
+	if ((p = malloc( sizeof(POINT) * numPts)) == NULL)
 		return false;
 
 	for ( i = 0; i < numPts; i++)  {
@@ -565,7 +565,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 	int i,  dy = sys lastSize. y;
   POINT *p;
 
-  if ((p = malloc( sizeof(POINT) * numPts)) == nil)
+  if ((p = malloc( sizeof(POINT) * numPts)) == NULL)
 		return false;
 
 	for ( i = 0; i < numPts; i++)  {
@@ -632,7 +632,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 			dc_free();
 			ps = sys ps;
 		}
-		if ( !( bmMask = CreateBitmap( bound. x, bound. y, 1, 1, nil))) {
+		if ( !( bmMask = CreateBitmap( bound. x, bound. y, 1, 1, NULL))) {
 			apiErr;
 			dc_compat_free();
       free(p);
@@ -745,14 +745,14 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 
 	if (EMULATE_OPAQUE_LINE) {
 		STYLUS_USE_OPAQUE_LINE;
-		MoveToEx( ps, x1, y1, nil);
+		MoveToEx( ps, x1, y1, NULL);
 		LineTo( ps, x2, y2);
 		STYLUS_RESTORE_OPAQUE_LINE;
 	}
 
 	STYLUS_USE_PEN( ps);
 
-	MoveToEx( ps, x1, y1, nil);
+	MoveToEx( ps, x1, y1, NULL);
 	if ( !LineTo( ps, x2, y2)) apiErrRet;
 
 	return true;
@@ -1010,14 +1010,14 @@ apc_gp_get_physical_palette( Handle self, int * color)
 	PRGBColor r;
 
 	*color = 0;
-	objCheck nil;
+	objCheck NULL;
 
 	if (( GetDeviceCaps( sys ps, RASTERCAPS) & RC_PALETTE) == 0)
-		return nil;
+		return NULL;
 
 	nCol = GetDeviceCaps( sys ps, NUMCOLORS);
 	if ( nCol <= 0 || nCol > 256)
-		return nil;
+		return NULL;
 
 
 	if ( sys pal && ( nCol > 16)) {
@@ -1069,7 +1069,7 @@ apc_gp_get_physical_palette( Handle self, int * color)
 	}
 
 	r = ( PRGBColor) malloc( sizeof( RGBColor) * *color);
-	if ( !r) return nil;
+	if ( !r) return NULL;
 
 	for ( i = 0; i < *color; i++) {
 		r[i].r = lpGlob. palPalEntry[i]. peRed;
@@ -1156,7 +1156,7 @@ apc_gp_set_back_color( Handle self, Color color)
 			sys stylusFlags &=~ stbPen;
 			SelectObject( sys ps, sys stockPen);
 			DeleteObject( sys opaquePen );
-			sys opaquePen = nil;
+			sys opaquePen = NULL;
 		}
 	}
 	sys lbs[1] = clr;
@@ -1271,7 +1271,7 @@ apc_gp_set_font( Handle self, PFont font)
 FillPattern *
 apc_gp_get_fill_pattern( Handle self)
 {
-	objCheck nil;
+	objCheck NULL;
 	return sys ps ? &sys fillPattern : &sys fillPattern2;
 }
 
@@ -1388,7 +1388,7 @@ apc_gp_set_palette( Handle self)
 	objCheck false;
 	if ( sys p256) {
 		free( sys p256);
-		sys p256 = nil;
+		sys p256 = NULL;
 	}
 
 	pal = palette_create( self);
@@ -1434,7 +1434,7 @@ apc_gp_set_transform( Handle self, int x, int y)
 		sys transform. y = y;
 		return true;
 	}
-	if ( !SetViewportOrgEx( sys ps, x - sys transform2. x, - ( y + sys transform2. y), nil)) apiErr;
+	if ( !SetViewportOrgEx( sys ps, x - sys transform2. x, - ( y + sys transform2. y), NULL)) apiErr;
 	return true;
 }
 

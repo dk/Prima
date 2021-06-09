@@ -9,8 +9,8 @@
 extern "C" {
 #endif
 
-static char * gifext[] = { "gif", nil };
-static char * gifver[] = { "gif87a", "gif89a", nil };
+static char * gifext[] = { "gif", NULL };
+static char * gifver[] = { "gif87a", "gif89a", NULL };
 static int    gifbpp[] = {
 	imbpp1, imbpp1 | imGrayScale,
 	imbpp4,
@@ -32,7 +32,7 @@ static char * loadOutput[] = {
 	"top",
 	"interlaced",
 	"loopCount",
-	nil
+	NULL
 };
 
 static char * mime[] = {
@@ -175,7 +175,7 @@ copy_palette( PImage i, ColorMapObject * pal)
 static void
 format_error( int errorID, char * errbuf, int line)
 {
-	char * msg = nil;
+	char * msg = NULL;
 	switch ( errorID) {
 		case D_GIF_ERR_OPEN_FAILED:
 		case E_GIF_ERR_OPEN_FAILED:
@@ -236,13 +236,13 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	LoadRec * l = malloc( sizeof( LoadRec));
 	HV * profile = fi-> fileProperties;
 
-	if ( !l) return nil;
+	if ( !l) return NULL;
 	memset( l, 0, sizeof( LoadRec));
 
 	GIF_CALL 0;
 	if ( !( l-> gft = DGifOpen( fi-> req, my_gif_read GIF_ERROR_ARG))) {
 		free( l);
-		return nil;
+		return NULL;
 	}
 	fi-> stop = true;
 
@@ -383,7 +383,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 			if ( ++l-> passed != fi-> frame) { /* skip image block */
 				int sz;
-				Byte * block = nil;
+				Byte * block = NULL;
 				if ((GIF_CALL DGifGetCode( l-> gft, &sz, &block)) != GIF_OK) out;
 				while ( block) {
 					if (( GIF_CALL DGifGetCodeNext( l-> gft, &block)) != GIF_OK) out;
@@ -399,7 +399,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 				i-> self-> create_empty(( Handle) i, 1, 1, type);
 			}
 
-			if ( l-> gft-> Image.ColorMap != nil)
+			if ( l-> gft-> Image.ColorMap != NULL)
 				copy_palette( i, l-> gft-> Image. ColorMap);
 			else if ( l-> gft-> SColorMap) {
 				copy_palette( i, l-> gft-> SColorMap);
@@ -415,7 +415,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 
 			if ( fi-> noImageData) {
 				int sz;
-				Byte * block = nil;
+				Byte * block = NULL;
 
 				pset_i( width,      l-> gft-> Image. Width);
 				pset_i( height,     l-> gft-> Image. Height);
@@ -490,7 +490,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 		case EXTENSION_RECORD_TYPE:
 			{
 				int code = -1;
-				Byte * data = nil;
+				Byte * data = NULL;
 				if (( GIF_CALL DGifGetExtension( l-> gft, &code, &data)) != GIF_OK) out;
 				if ( data) {
 					if ( 1 + l-> passed != fi-> frame) /* skip this extension block */
@@ -560,7 +560,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 
 	GIF_CALL 0;
 	if ( !( g = EGifOpen( fi-> req, my_gif_write GIF_ERROR_ARG)))
-		return nil;
+		return NULL;
 
 	return g;
 }
@@ -580,8 +580,8 @@ make_colormap( PRGBColor r, int sz)
 	if ( sz <= 64) psz = 64; else
 	if ( sz <= 128) psz = 128; else
 		psz = 256;
-	ret = MakeMapObject( psz, nil);
-	if ( !ret) return nil;
+	ret = MakeMapObject( psz, NULL);
+	if ( !ret) return NULL;
 	c = ret-> Colors;
 	for ( j = 0; j < sz; j++) {
 		c-> Red   = r-> r;
@@ -754,7 +754,7 @@ apc_img_codec_gif( void )
 	vmt. open_save     = open_save;
 	vmt. save          = save;
 	vmt. close_save    = close_save;
-	apc_img_register( &vmt, nil);
+	apc_img_register( &vmt, NULL);
 }
 
 #undef out

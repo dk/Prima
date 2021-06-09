@@ -41,7 +41,7 @@ AccelTable_selected( Handle self, Bool set, Bool selected)
 	if ( selected)
 		CWidget( owner)-> set_accelTable( owner, self);
 	else if ( my-> get_selected( self))
-		CWidget( owner)-> set_accelTable( owner, nilHandle);
+		CWidget( owner)-> set_accelTable( owner, NULL_HANDLE);
 	return false;
 }
 

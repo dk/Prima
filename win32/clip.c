@@ -23,7 +23,7 @@ PList
 apc_get_standard_clipboards( void)
 {
 	PList l = plist_create( 1, 1);
-	if (!l) return nil;
+	if (!l) return NULL;
 	list_add( l, (Handle)duplicate_string( "Clipboard"));
 	list_add( l, (Handle)duplicate_string( "DragDrop"));
 	return l;
@@ -53,7 +53,7 @@ apc_clipboard_destroy( Handle self)
 		dnd_clipboard_destroy();
 	for ( i = 0; i < 2; i++)
 		if ( guts.clipboards[i] == self )
-			guts.clipboards[i] = nilHandle;
+			guts.clipboards[i] = NULL_HANDLE;
 	return true;
 }
 
@@ -63,7 +63,7 @@ apc_clipboard_open( Handle self)
 	if (self == guts.clipboards[CLIPBOARD_DND])
 		return dnd_clipboard_open();
 
-	if ( !OpenClipboard( nil)) apiErrRet;
+	if ( !OpenClipboard( NULL)) apiErrRet;
 	return true;
 }
 
@@ -246,7 +246,7 @@ clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2)
 		case CF_BITMAP: {
 			Handle self;
 			HBITMAP b = (HBITMAP) p1;
-			HPALETTE op = nil, p = (HPALETTE) p2;
+			HPALETTE op = NULL, p = (HPALETTE) p2;
 			HBITMAP obm;
 			HDC dc, ops;
 
@@ -360,7 +360,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 				HPALETTE p = palette_create( c-> image);
 				HBITMAP b  = image_create_bitmap_by_type( c-> image, p, NULL, BM_AUTO);
 
-				if ( b == nil) {
+				if ( b == NULL) {
 					if ( p) DeleteObject( p);
 					apiErrRet;
 				}
@@ -372,7 +372,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 		case CF_UNICODETEXT:
 			{
 				int ulen = MultiByteToWideChar(CP_UTF8, 0, (char*) c-> data, c-> length, NULL, 0) + 1;
-				void *ptr = nil;
+				void *ptr = NULL;
 				HGLOBAL glob;
 
 				if (( glob = GlobalAlloc( GMEM_DDESHARE, ( ulen + 0) * sizeof( WCHAR)))) {
@@ -391,7 +391,7 @@ apc_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c)
 			{
 				int ulen = c-> length;
 				int i, cr = 0;
-				void *ptr = nil, *oemptr = nil;
+				void *ptr = NULL, *oemptr = NULL;
 				char *dst;
 				HGLOBAL glob, oemglob;
 
@@ -468,7 +468,7 @@ apc_clipboard_deregister_format( Handle self, Handle id)
 ApiHandle
 apc_clipboard_get_handle( Handle self)
 {
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Bool

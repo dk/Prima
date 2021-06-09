@@ -34,7 +34,7 @@ object Prima::Image( Prima::Drawable)
 	property int    type;
 
 	# methods
-	method UV     add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
+	method UV     add_notification( char * name, SV * subroutine, Handle referer = NULL_HANDLE, int index = -1);
 	method Bool   arc( int x, int y, int dX, int dY, double startAngle, double endAngle);
 	method Bool   bar(int x1, int y1, int x2, int y2);
 	method Bool   bars(SV * rects);

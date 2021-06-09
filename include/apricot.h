@@ -399,8 +399,10 @@ typedef struct { double r,  ph; } TrigDComplex;
 #else
 #define nil       Null(void*)
 #endif
-#define nilHandle Null(Handle)
-#define nilSV     &PL_sv_undef
+#define NULL_HANDLE Null(Handle)
+#define NULL_SV     &PL_sv_undef
+#define NULL_HANDLE Null(Handle)
+#define NULL_SV     &PL_sv_undef
 
 #ifndef true
 #define true TRUE
@@ -1244,7 +1246,7 @@ extern FillPattern fillPatterns[];
 
 #define C_NUMERIC_UNDEF   -90909090
 #define C_STRING_UNDEF    "__C_CHAR_UNDEF__"
-#define C_POINTER_UNDEF   nilSV
+#define C_POINTER_UNDEF   NULL_SV
 
 /* run-time class information functions */
 
@@ -1400,7 +1402,7 @@ SvBOOL( SV *sv)
 #define pset_f( key, value)  pset_sv_noinc( key, newSVnv( value))
 #define pset_c( key, value)  pset_sv_noinc( key, newSVpv( value, 0))
 #define pset_b( key, value, len)  pset_sv_noinc( key, newSVpv( value, ( len)))
-#define pset_H( key, value)  pset_sv_noinc( key, (value) ? newSVsv((( PAnyObject) (value))-> mate) : nilSV)
+#define pset_H( key, value)  pset_sv_noinc( key, (value) ? newSVsv((( PAnyObject) (value))-> mate) : NULL_SV)
 
 #define create_instance( obj)  (                                   \
 	temporary_prf_Sv = ( SV **) Object_create( obj, profile),       \

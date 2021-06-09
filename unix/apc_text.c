@@ -145,7 +145,7 @@ gp_text_out_rotated(
 		}
 
 		/* querying character */
-		if ( r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] == nil)
+		if ( r-> map[(index. byte1 - r-> first1) * r-> width + index. byte2 - r-> first2] == NULL)
 			continue;
 		cs = XX-> font-> fs-> per_char ?
 			XX-> font-> fs-> per_char +
@@ -622,7 +622,7 @@ prima_xfont2def( Handle self, int first, int last)
 	XImage *xi;
 
 	if ( !( ret = malloc( sizeof(FontABC) * ( last - first + 1 ) )))
-		return nil;
+		return NULL;
 	bzero( ret, sizeof(FontABC) * ( last - first + 1 ));
 
 	max = &XX-> font-> fs-> max_bounds;
@@ -646,7 +646,7 @@ prima_xfont2def( Handle self, int first, int last)
 
 		if (!(xi = XGetImage( DISP, pixmap, 0, 0, w, h, 1, XYPixmap))) {
 			free( ret );
-			ret = nil;
+			ret = NULL;
 			break;
 		}
 		/*
@@ -733,7 +733,7 @@ apc_gp_get_text_width( Handle self, const char * text, int len, int flags)
 #ifdef USE_XFT
 	if ( X(self)-> font-> xft)
 		return prima_xft_get_text_width( X(self)-> font, text, len, flags,
-			X(self)-> xft_map8, nil);
+			X(self)-> xft_map8, NULL);
 #endif
 
 	if ( flags & toUTF8 )
@@ -769,7 +769,7 @@ gp_get_text_box( Handle self, const char * text, int len, int flags)
 	int x;
 	Point ovx;
 
-	if ( !pt) return nil;
+	if ( !pt) return NULL;
 	if ( flags & toGlyphs ) flags &= ~toUTF8;
 
 	x = (flags & toUTF8) ?

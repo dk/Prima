@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 
-static char * tiffext[] = { "tif", "tiff", nil };
+static char * tiffext[] = { "tif", "tiff", NULL };
 static int    tiffbpp[] = { imbpp24,
 			imbpp8, imByte,
 			imShort,
@@ -61,7 +61,7 @@ static char * loadOutput[] = {
 	"YPosition",
 	"XResolution",
 	"YResolution",
-	nil
+	NULL
 };
 
 static char * tifffeatures[] = {
@@ -105,7 +105,7 @@ static char * tifffeatures[] = {
 #ifdef  JPEG_SUPPORT
 	"Compression-JPEG",
 #endif
-	nil
+	NULL
 };
 
 typedef struct {
@@ -177,7 +177,7 @@ static ImgCodecInfo codec_info = {
 #define outcm(dd) snprintf( fi-> errbuf, 256, "Not enough memory (%d bytes)", (int)dd)
 #define outc(x)   strncpy( fi-> errbuf, x, 256)
 
-static char * errbuf = nil;
+static char * errbuf = NULL;
 static Bool err_signal = 0;
 
 static HV *
@@ -253,7 +253,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 		my_tiff_seek, my_tiff_close, my_tiff_size,
 		my_tiff_map, my_tiff_unmap))) {
 		req_seek( fi-> req, 0, SEEK_SET);
-		return nil;
+		return NULL;
 	}
 	fi-> frameCount = TIFFNumberOfDirectories( tiff);
 	fi-> stop = true;
@@ -887,7 +887,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	TIFF * tiff = ( TIFF *) fi-> instance;
 	HV * profile = fi-> frameProperties;
 	PIcon i = ( PIcon) fi-> object;
-	char * photometric_descr = nil;
+	char * photometric_descr = NULL;
 	unsigned short photometric, comp_method;
 	int x, y, w, h, icon, tiled, rgba_striped = 0, cmyk = 0,
 		InvertMinIsWhite = INVERT_MINISWHITE, faxpect = 0, full_image = 0, full_rgba_image = 0,
@@ -895,7 +895,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	int source_bits, source_format, source_samples, mid_bytes, mid_format, target_type, target_samples;
 	Bool source_is_planar, build_gray_palette = 0;
 	float xres, yres;
-	Byte *tiffstrip, *tiffline, *tifftile, *primaline, *primamask = nil;
+	Byte *tiffstrip, *tiffline, *tifftile, *primaline, *primamask = NULL;
 	size_t stripsz, linesz, tilesz = 0L;
 	uint32 tile_width, tile_height, num_tilesX = 0L, rowsperstrip;
 	Byte bw_colorref[256];
@@ -1169,7 +1169,7 @@ VALID_COMBINATION:
 	if ( icon) i-> autoMasking = amNone;
 
 	/* allocate space for one line (or row of tiles) of TIFF image */
-	tiffline = tifftile = tiffstrip = nil;
+	tiffline = tifftile = tiffstrip = NULL;
 	linesz = TIFFScanlineSize(tiff);
 
 	if (tiled) {
@@ -1492,7 +1492,7 @@ close_load( PImgCodec instance, PImgLoadFileInstance fi)
 	errbuf = fi-> errbuf;
 	err_signal = 0;
 	TIFFClose(( TIFF*) fi-> instance);
-	errbuf = nil;
+	errbuf = NULL;
 }
 
 static HV *
@@ -1531,7 +1531,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 		my_tiff_read, my_tiff_write,
 		my_tiff_seek, my_tiff_close, my_tiff_size,
 		my_tiff_map, my_tiff_unmap)))
-		return nil;
+		return NULL;
 	return tiff;
 }
 
@@ -1705,7 +1705,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 			return false;
 		}
 		conv2 = conv1 + i-> lineSize + i-> w;
-		CImage( dup)-> reset( dup, imRGB, nil, 0);
+		CImage( dup)-> reset( dup, imRGB, NULL, 0);
 		lineSize = PImage( dup)-> lineSize;
 		r = PImage( dup)-> data + ( i-> h - 1 ) * lineSize;
 		TIFFSetField(tiff, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
@@ -1740,7 +1740,7 @@ close_save( PImgCodec instance, PImgSaveFileInstance fi)
 	errbuf = fi-> errbuf;
 	err_signal = 0;
 	TIFFClose(( TIFF*) fi-> instance);
-	errbuf = nil;
+	errbuf = NULL;
 }
 
 static TIFFErrorHandler old_error_handler, old_warning_handler;
@@ -1758,7 +1758,7 @@ init( PImgCodecInfo * info, void * param)
 	*info = &codec_info;
 	codec_info. vendor  = ( char *) TIFFGetVersion();
 	old_error_handler   = TIFFSetErrorHandler(( TIFFErrorHandler) error_handler);
-	old_warning_handler = TIFFSetWarningHandler(( TIFFErrorHandler) nil);
+	old_warning_handler = TIFFSetWarningHandler(( TIFFErrorHandler) NULL);
 	return (void*)1;
 }
 
@@ -1784,7 +1784,7 @@ apc_img_codec_tiff( void )
 	vmt. open_save     = open_save;
 	vmt. save          = save;
 	vmt. close_save    = close_save;
-	apc_img_register( &vmt, nil);
+	apc_img_register( &vmt, NULL);
 }
 
 #ifdef __cplusplus

@@ -162,7 +162,7 @@ handle_xdnd_leave( Handle self)
 
 	if ( guts.xdndr_receiver != self )
 		self = guts.xdndr_receiver;
-	guts.xdndr_receiver = nilHandle;
+	guts.xdndr_receiver = NULL_HANDLE;
 	guts.xdndr_source   = None;
 
 	if ( guts.xdnd_clipboard )
@@ -172,7 +172,7 @@ handle_xdnd_leave( Handle self)
 		XWindow dummy;
 		Event ev = { cmDragEnd };
 		ev.dnd.allow = 0;
-		ev.dnd.clipboard = nilHandle;
+		ev.dnd.clipboard = NULL_HANDLE;
 		ev.dnd.modmap  = query_pointer(NULL,&ev.dnd.where);
 		ev.dnd.action  = dndNone;
 		ev.dnd.counterpart = guts. xdnds_widget;
@@ -183,7 +183,7 @@ handle_xdnd_leave( Handle self)
 		guts.xdnd_disabled = true;
 		CComponent(guts.xdndr_widget)-> message(guts.xdndr_widget, &ev);
 		guts.xdnd_disabled = false;
-		guts.xdndr_widget = nilHandle;
+		guts.xdndr_widget = NULL_HANDLE;
 	}
 
 	return true;
@@ -280,9 +280,9 @@ handle_xdnd_enter( Handle self, XEvent* xev)
 	if (guts.xdnd_disabled || !guts. xdnd_clipboard) return false;
 
 	/* consistency */
-	if ( guts.xdndr_receiver != nilHandle ) {
+	if ( guts.xdndr_receiver != NULL_HANDLE ) {
 		handle_xdnd_leave(guts. xdndr_receiver);
-		guts. xdndr_receiver = nilHandle;
+		guts. xdndr_receiver = NULL_HANDLE;
 	}
 	CC = C(guts. xdnd_clipboard);
 	CC-> xdnd_receiving = true;
@@ -355,7 +355,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	Bool ret = false;
 	int x, y, dx, dy, action, modmap;
 	XWindow from, to, child = None;
-	Handle h = nilHandle;
+	Handle h = NULL_HANDLE;
 	XEvent xr;
 
 	bzero(&xr, sizeof(xr));
@@ -394,7 +394,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 			break;
 	}
 	if ( h == application || !X(h)->flags.enabled)
-		h = nilHandle;
+		h = NULL_HANDLE;
 	if ( !h )
 		goto FAIL;
 
@@ -410,10 +410,10 @@ handle_xdnd_position( Handle self, XEvent* xev)
 	/* Cdebug("xdnd:final position %d %d for %08x/%08x\n",x,y,h); */
 
 	/* send enter/leave messages */
-	if ( guts. xdndr_widget != h && guts. xdndr_widget != nilHandle ) {
+	if ( guts. xdndr_widget != h && guts. xdndr_widget != NULL_HANDLE ) {
 		Event ev = { cmDragEnd };
 		ev.dnd.allow = 0;
-		ev.dnd.clipboard = nilHandle;
+		ev.dnd.clipboard = NULL_HANDLE;
 		ev.dnd.modmap  = modmap;
 		ev.dnd.where.x = x;
 		ev.dnd.where.y = y;
@@ -422,7 +422,7 @@ handle_xdnd_position( Handle self, XEvent* xev)
 			protect_object(h);
 		guts.xdnd_disabled = true;
 		CComponent(guts.xdndr_widget)-> message(guts.xdndr_widget, &ev);
-		guts.xdndr_widget = nilHandle;
+		guts.xdndr_widget = NULL_HANDLE;
 		guts.xdnd_disabled = false;
 		if ( h ) {
 			int h_stage = PObject(h)-> stage;
@@ -549,7 +549,7 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 
 	if (
 		guts.xdndr_receiver != self ||
-		guts.xdndr_widget == nilHandle
+		guts.xdndr_widget == NULL_HANDLE
 	) {
 		handle_xdnd_leave(guts. xdndr_receiver);
 		return false;
@@ -568,7 +568,7 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 		guts.xdndr_timestamp = (guts.xdndr_version >= 1) ? xev-> xclient.data.l[2] : CurrentTime;
 		ev.dnd.action = guts.xdndr_last_action;
 		ev.dnd.allow = guts.xdndr_last_action != dndNone;
-		ev.dnd.clipboard = ev.dnd.allow ? guts.xdnd_clipboard : nilHandle;
+		ev.dnd.clipboard = ev.dnd.allow ? guts.xdnd_clipboard : NULL_HANDLE;
 		ev.dnd.counterpart = guts.xdnds_widget;
 		guts.xdnd_disabled = true;
 		CComponent(guts.xdndr_widget)-> message(guts.xdndr_widget, &ev);
@@ -580,10 +580,10 @@ handle_xdnd_drop( Handle self, XEvent* xev)
 	}
 
 	/* cleanup */
-	guts.xdndr_widget   = nilHandle;
+	guts.xdndr_widget   = NULL_HANDLE;
 	last_source = guts.xdndr_source;
 	guts.xdndr_source   = None;
-	guts.xdndr_receiver = nilHandle;
+	guts.xdndr_receiver = NULL_HANDLE;
 	if ( guts. xdnd_clipboard )
 		C(guts.xdnd_clipboard)->xdnd_receiving = false;
 
@@ -702,7 +702,7 @@ static Bool
 find_dnd_aware( Handle self, Handle widget, void * cmd)
 {
 	if ( X(widget)->flags. dnd_aware) return true;
-	return CWidget(widget)->first_that(widget, find_dnd_aware, NULL) != nilHandle;
+	return CWidget(widget)->first_that(widget, find_dnd_aware, NULL) != NULL_HANDLE;
 }
 
 void
@@ -801,8 +801,8 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 		return -1;
 	}
 
-	if ( counterpart ) *counterpart = nilHandle;
-	guts.xdndr_last_target = nilHandle;
+	if ( counterpart ) *counterpart = NULL_HANDLE;
+	guts.xdndr_last_target = NULL_HANDLE;
 
 	ac_ptr = actions_descriptions;
 	for ( i = 0x1; i <= dndLink; i <<= 1) {
@@ -850,7 +850,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 
 	old_pointer = apc_pointer_get_shape(self);
 	apc_pointer_set_shape(self, crDragNone);
-	apc_widget_set_capture(self, true, nilHandle);
+	apc_widget_set_capture(self, true, NULL_HANDLE);
 
 	if ( !default_pointers && !X(self)->flags. dnd_aware) {
 		if ( !send_drag_response(self, false, dndNone)) goto EXIT;
@@ -980,12 +980,12 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 				) {
 					last_xdndr_source = guts.xdndr_source;
 					xdnd_send_drop_message();
-					guts.xdnds_widget = nilHandle;
+					guts.xdnds_widget = NULL_HANDLE;
 					ret = guts.xdnds_last_action_response;
 					Cdebug("dnd:drop\n");
 				} else {
 					xdnd_send_leave_message();
-					guts.xdnds_widget = nilHandle;
+					guts.xdnds_widget = NULL_HANDLE;
 					got_session = false;
 					Cdebug("dnd:leave\n");
 				}
@@ -1020,7 +1020,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 			XSync( DISP, false);
 		}
 		Cdebug("dnd:finalize by %s\n", guts.xdnds_escape_key ? "escape" : "event");
-		guts.xdnds_widget = nilHandle;
+		guts.xdnds_widget = NULL_HANDLE;
 		guts.xdnds_escape_key = false;
 	}
 
@@ -1032,11 +1032,11 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 
 EXIT:
 	if ( PObject(self)->stage == csNormal ) {
-		apc_widget_set_capture(self, 0, nilHandle);
+		apc_widget_set_capture(self, 0, NULL_HANDLE);
 		apc_pointer_set_shape(self, old_pointer);
 	}
 	unprotect_object(self);
-	guts.xdnds_widget = nilHandle;
+	guts.xdnds_widget = NULL_HANDLE;
 	guts.xdnds_target = None;
 	if ( counterpart ) *counterpart = guts.xdndr_last_target;
 	Cdebug("dnd:stop\n");

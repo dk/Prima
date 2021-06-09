@@ -163,7 +163,7 @@ create_cursor(CustomPointer* cp, Handle icon, Point hot_spot)
 	if ( noSZ || noBPP) {
 		cursor = CIcon(icon)->dup(icon);
 		c = PIcon(cursor);
-		if ( cursor == nilHandle) {
+		if ( cursor == NULL_HANDLE) {
 			warn( "Error duping user cursor");
 			return false;
 		}
@@ -471,7 +471,7 @@ create_xdnd_pointer(int id, CustomPointer* cp)
 	}
 
 	self = (Handle) create_object("Prima::Icon", "");
-	xlib_cursor_load(nilHandle, crArrow, self);
+	xlib_cursor_load(NULL_HANDLE, crArrow, self);
 	if ( PImage(self)->w < 16 || PImage(self)->h < 16 ) {
 		/* too small */
 		cp-> status = -1;
@@ -599,7 +599,7 @@ Point
 apc_pointer_get_hot_spot( Handle self)
 {
 	Point hot_spot;
-	int id = get_cursor(self, nil, nil, &hot_spot, nil);
+	int id = get_cursor(self, NULL, NULL, &hot_spot, NULL);
 	return (id == crUser || is_drag_cursor_available(id) != NULL)
 		? hot_spot : get_predefined_hot_spot(id);
 }
@@ -638,7 +638,7 @@ apc_pointer_get_size( Handle self)
 Bool
 apc_pointer_get_bitmap( Handle self, Handle icon)
 {
-	int id = get_cursor( self, nil, nil, nil, nil);
+	int id = get_cursor( self, NULL, NULL, NULL, NULL);
 	if ( id < crDefault || id > crUser)  return false;
 
 #ifdef HAVE_X11_XCURSOR_XCURSOR_H
@@ -664,7 +664,7 @@ apc_pointer_set_pos( Handle self, int x, int y)
 	XCHECKPOINT;
 	XSync( DISP, false);
 	while ( XCheckMaskEvent( DISP, PointerMotionMask|EnterWindowMask|LeaveWindowMask, &ev))
-		prima_handle_event( &ev, nil);
+		prima_handle_event( &ev, NULL);
 	return true;
 }
 
@@ -676,7 +676,7 @@ apc_pointer_set_shape( Handle self, int id)
 
 	if ( id < crDefault || id > crUser)  return false;
 	XX-> pointer_id = id;
-	id = get_cursor( self, nil, nil, nil, &uc);
+	id = get_cursor( self, NULL, NULL, NULL, &uc);
 	if ( id == crUser || is_drag_cursor_available(id)) {
 		if ( uc != None ) {
 			if ( self != application) {
@@ -742,7 +742,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hot_spot)
 		XX-> user_pointer.xcursor = NULL;
 	}
 #endif
-	if ( icon != nilHandle) {
+	if ( icon != NULL_HANDLE) {
 		Bool ok;
 		ok = create_cursor(&XX->user_pointer, icon, hot_spot);
 		if ( !ok ) return false;
@@ -798,21 +798,21 @@ apc_pointer_set_visible( Handle self, Bool visible)
 Cursor
 prima_null_pointer( void)
 {
-	if ( guts. null_pointer == nilHandle) {
-		Handle nullc = ( Handle) create_object( "Prima::Icon", "", nil);
+	if ( guts. null_pointer == NULL_HANDLE) {
+		Handle nullc = ( Handle) create_object( "Prima::Icon", "", NULL);
 		PIcon  n = ( PIcon) nullc;
 		Pixmap xor, and;
 		XColor xc;
-		if ( nullc == nilHandle) {
+		if ( nullc == NULL_HANDLE) {
 			warn("Error creating icon object");
-			return nilHandle;
+			return NULL_HANDLE;
 		}
 		n-> self-> create_empty( nullc, 16, 16, imBW);
 		memset( n-> mask, 0xFF, n-> maskSize);
 		if ( !prima_create_icon_pixmaps( nullc, &xor, &and)) {
 			warn( "Error creating null cursor pixmaps");
 			Object_destroy( nullc);
-			return nilHandle;
+			return NULL_HANDLE;
 		}
 		Object_destroy( nullc);
 		xc. red = xc. green = xc. blue = 0;
@@ -824,7 +824,7 @@ prima_null_pointer( void)
 		XFreePixmap( DISP, and);
 		if ( !guts. null_pointer) {
 			warn( "Error creating null cursor from pixmaps");
-			return nilHandle;
+			return NULL_HANDLE;
 		}
 	}
 	return guts. null_pointer;
