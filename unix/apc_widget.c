@@ -1533,6 +1533,7 @@ apc_widget_update( Handle self)
 			XX-> flags. paint_pending = false;
 		}
 		prima_simple_message( self, cmPaint, false);
+		XSync(DISP, false);
 	}
 	return true;
 }
