@@ -990,6 +990,7 @@ sub prf_adjust_default
 		current
 		currentWidget
 		delegations
+		effects
 		focused
 		popup
 		selected
@@ -1014,6 +1015,7 @@ sub prf_adjust_default
 		fillPattern
 		fillPatternOffset
 		fillMode
+		miterLimit
 		region
 		rop
 		rop2
