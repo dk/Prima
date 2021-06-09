@@ -2209,7 +2209,7 @@ glyphout2sv(Handle self, int * c, GlyphsOutRec *g, TextWrapRec *tw, GlyphWrapRec
 					if ( semistatic_at(tbuf, uint32_t, indexes[k] & ~toRTL) == '\t' )
 						advances[ k ] *= tw-> tabIndent;
 			}
-			sv_payload[j] = sv_2mortal(prima_array_tie( sv, sizeof(uint16_t), "S"));
+			sv_payload[j] = sv_2mortal(prima_array_tie( sv, sizeof(uint16_t), (j == 3) ? "s" : "S"));
 		}
 
 		av_push( av, newSVsv(
