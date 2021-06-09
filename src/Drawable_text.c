@@ -1799,7 +1799,7 @@ fill_tilde_properties(Handle self, TextWrapRec * t, int tildeIndex, int tildePos
 
 	abcc = query_abc_range( self, t, base = uv / 256) + (uv & 0xff);
 	start = tildeOffset;
-	end   = start + abcc-> b - 1.0;
+	end   = start + ((abcc->a < 0) ? 0 : abcc->a) + abcc-> b + ((abcc->c < 0) ? 0 : abcc->c) - 1.0;
 	if ( abcc-> a < 0.0 ) {
 		start += abcc->a;
 		end += abcc->a;
