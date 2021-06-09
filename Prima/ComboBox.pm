@@ -356,7 +356,7 @@ sub Button_Paint
 			spline   => [0,0.5,1,0.5],
 			vertical => 0,
 		),
-		width => 1
+		width => 2
 	);
 	my @triangle = fix_triangle( 4, $h * 0.6, $w/2, $h * 0.4, $w - 4, $h * 0.6 );
 	if ( $ena) {
