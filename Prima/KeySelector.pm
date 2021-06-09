@@ -390,7 +390,7 @@ sub menu_to_items
 	while ( 1) {
 		for ( ; $i < @$ptr; $i++) {
 			my ( $id, $text, $accel, $vkey, $ref_or_sub) = @{ $ptr->[$i] };
-			$id =~ s/^[\*\-]*//;
+			$id =~ s/^[\*\-\@\(\)\?]*//;
 			if ( ref($ref_or_sub // '') eq 'ARRAY') {
 				push @stack, [ $i + 1, $ptr, $tree ];
 				$ptr = $ref_or_sub;
@@ -586,7 +586,7 @@ sub _parse_menu_items
 	while ( 1) {
 		for ( ; $i < @$ptr; $i++) {
 			my ( $id, $text, $accel, $vkey, $ref_or_sub) = @{ $ptr->[$i] };
-			$id =~ s/^[\*\-]*//;
+			$id =~ s/^[\*\-\@\(\)\?]*//;
 			if ( ref($ref_or_sub // '') eq 'ARRAY') {
 				push @stack, [ $i + 1, $ptr ];
 				$ptr = $ref_or_sub;
