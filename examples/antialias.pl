@@ -11,11 +11,21 @@ use warnings;
 use Prima qw(Application Utils);
 use Prima::Application name => 'Generic';
 
+my $w;
 my @pos = (0,0);
 use constant SZ  => 16;
 use constant MUL => 10;
 
-my $w = Prima::MainWindow->new(
+
+sub redraw
+{
+	Prima::Utils::alarm( 500, sub {
+		$w->IV->{image} = $::application->get_image( $w->client_to_screen(map { $_ + 1 } @pos), (SZ - 2) x 2);
+		$w->IV->repaint;
+	});
+}
+
+$w = Prima::MainWindow->new(
 	color    => cl::LightRed,
 	text     => 'Antialias',
 	sizeMin  => [100,100],
@@ -48,8 +58,7 @@ my $w = Prima::MainWindow->new(
 		$pos[1] = $sz[1] if $pos[1] > $sz[1];
 		$self->repaint;
 		$self->update_view;
-		$self->IV->{image} = $::application->get_image( $self->client_to_screen(map { $_ + 1 } @pos), (SZ - 2) x 2);
-		$self->IV->repaint;
+		redraw;
 	},
 );
 
@@ -72,9 +81,6 @@ $w->insert( Widget =>
 	},
 );
 
-Prima::Utils::alarm( 500, sub {
-	$w->IV->{image} = $::application->get_image( $w->client_to_screen(map { $_ + 1 } @pos), (SZ - 2) x 2);
-	$w->IV->repaint;
-});
+redraw;
 
 run Prima;
