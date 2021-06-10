@@ -448,6 +448,7 @@ sub date
 		@p = $self->day2xy($day);
 		$widget->invalidate_rect( @p ) if @p;
 	} else {
+		delete $widget->{prelight};
 		$widget->invalidate_rect( 2, 2, $widget-> width - 3, $widget-> height - $widget-> {Y} - 3);
 	}
 	$self-> notify(q(Change));
