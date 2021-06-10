@@ -284,6 +284,21 @@ sub xy2day
 	return ($day <= 0 || $day > $v) ? undef : $day;
 }
 
+sub day2xy
+{
+	my ($self, $day) = @_;
+	my (undef, $month, $year) = @{$self-> {date}};
+	my $v = $days_in_months[ $month] + (((( $year % 4) == 0) && ( $month == 1)) ? 1 : 0);
+	return if $day <= 0 || $day > $v;
+	my $widget = $self->Day;
+	my @zs = ( $widget-> {X}, $widget-> {Y});
+	my @sz = $widget-> size;
+
+	$day = $day - 1 + $self->day_of_week(1, $month, $year);
+	my ($x, $y) =  ($zs[0] * ($day % 7) + 2, $sz[1] - 2 - $zs[1] * (2 + int($day / 7)) - 1);
+	return $x, $y, $x + $zs[0] + 1, $y + $zs[1];
+}
+
 sub Day_MouseDown
 {
 	my ( $owner, $self, $btn, $mod, $x, $y) = @_;
@@ -293,6 +308,7 @@ sub Day_MouseDown
 	$self-> clear_event;
 	return unless defined $day;
 	$self-> {mouseTransaction} = 1;
+	delete $self->{prelight};
 	$owner-> date( $day, $month, $year);
 }
 
@@ -303,8 +319,16 @@ sub Day_MouseMove
 	my $day = $owner->xy2day($x,$y);
 	unless ($self-> {mouseTransaction}) {
 		if (( $self->{prelight} // -1 ) != ( $day // -1 )) {
+			my $p = $self->{prelight};
 			$self->{prelight} = $day;
-			$self-> invalidate_rect( 2, 2, $self-> width - 3, $self-> height - $self-> {Y} - 3);
+			if ( defined $p ) {
+				my @p = $owner->day2xy($p);
+				$self->invalidate_rect( @p ) if @p;
+			}
+			if ( defined $day ) {
+				my @p = $owner->day2xy($day);
+				$self->invalidate_rect( @p ) if @p;
+			}
 		}
 		return;
 	}
@@ -322,8 +346,10 @@ sub Day_MouseUp
 
 sub Day_MouseLeave
 {
-	my $self = $_[1];
-	$self->repaint if delete $self->{prelight};
+	my ($owner,$self) = @_;
+	my $p = delete $self->{prelight} or return;
+	my @p = $owner-> day2xy($p) or return;
+	$self-> invalidate_rect(@p);
 }
 
 sub Day_MouseWheel
@@ -415,8 +441,15 @@ sub date
 	$self-> {date} = [ $day, $month, $year ];
 	$self-> Year-> value( $year + 1900);
 	$self-> Month-> focusedItem( $month);
-	$day = $self-> Day;
-	$day-> invalidate_rect( 2, 2, $day-> width - 3, $day-> height - $day-> {Y} - 3);
+	my $widget = $self->Day;
+	if ( $month == $od[1] && $year == $od[2] ) {
+		my @p = $self->day2xy($od[0]);
+		$widget->invalidate_rect( @p ) if @p;
+		@p = $self->day2xy($day);
+		$widget->invalidate_rect( @p ) if @p;
+	} else {
+		$widget->invalidate_rect( 2, 2, $widget-> width - 3, $widget-> height - $widget-> {Y} - 3);
+	}
 	$self-> notify(q(Change));
 }
 
