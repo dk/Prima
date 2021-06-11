@@ -211,11 +211,14 @@ sub Day_Paint
 	$canvas-> bar( 2, $sz[1] - $zs[1] - 3, $sz[0] - 3, $sz[1] - 3);
 	$canvas-> color($c);
 	$canvas-> clipRect( 2, 2, $sz[0] - 3, $sz[1] - 3);
+	my $fdo = $owner-> firstDayOfWeek ? 6 : 0;
 	for ( $i = 0; $i < 7; $i++) {
 		my $tw = $canvas->get_text_width( $owner-> {days}-> [$i] );
+		$canvas-> color( 0xc00000 ) if $i == $fdo;
 		$canvas-> text_shape_out( $owner-> {days}-> [$i],
 			$i * $zs[0] + ($self->{X} - $tw)/2, $sz[1]-$zs[1]+$zs[3],
 		);
+		$canvas-> color( $c ) if $i == $fdo;
 	}
 
 	my ( $d, $m, $y) = @{$owner-> {date}};
@@ -234,6 +237,7 @@ sub Day_Paint
 				( 1 + $dow) * $zs[0] - 1, $y - $zs[3] + $zs[1] - 1
 			);
 			$canvas-> color(( $d == $i) ? cl::HiliteText : cl::Fore);
+			$canvas-> color( 0xc00000 ) if $d != $i && $dow == $fdo;
 			$canvas-> text_shape_out( $i + 1, $dow * $zs[0] + $zs[2], $y);
 			$canvas-> rect_focus(
 				$dow * $zs[0] + 2, $y - $zs[3],
@@ -241,7 +245,9 @@ sub Day_Paint
 			) if $d == $i && $self-> focused;
 			$canvas-> color( $c);
 		} else {
+			$canvas-> color( 0xc00000 ) if $dow == $fdo;
 			$canvas-> text_shape_out( $i + 1, $dow * $zs[0] + $zs[2], $y);
+			$canvas-> color( $c ) if $dow == $fdo;
 		}
 		$zs[2] = $self-> {CX2} if $i == 8;
 		next unless $dow++ == 6;
