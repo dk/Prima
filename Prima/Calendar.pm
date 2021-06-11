@@ -201,7 +201,7 @@ sub Day_Paint
 	my @sz = $self-> size;
 	$canvas-> set( color => $self-> disabledColor, backColor => $self-> disabledBackColor)
 		unless $self-> enabled;
-	$canvas-> rect3d( 0, 0, $sz[0]-1, $sz[1]-1, 2,
+	$canvas-> rect3d( Prima::rect->new(@sz)->inclusive, 2,
 		$self-> dark3DColor, $self-> light3DColor, $self-> backColor);
 
 	my @zs = ( $self-> {X}, $self-> {Y}, $self-> {CX1}, $self-> {CY});
@@ -210,7 +210,7 @@ sub Day_Paint
 	$canvas-> color( $self-> prelight_color($canvas-> backColor));
 	$canvas-> bar( 2, $sz[1] - $zs[1] - 3, $sz[0] - 3, $sz[1] - 3);
 	$canvas-> color($c);
-	$canvas-> clipRect( 2, 2, $sz[0] - 3, $sz[1] - 3);
+	$canvas-> clipRect( Prima::rect->new(@sz)->shrink(2)->inclusive );
 	my $fdo = $owner-> firstDayOfWeek ? 6 : 0;
 	for ( $i = 0; $i < 7; $i++) {
 		my $tw = $canvas->get_text_width( $owner-> {days}-> [$i] );
@@ -327,14 +327,9 @@ sub Day_MouseMove
 		if (( $self->{prelight} // -1 ) != ( $day // -1 )) {
 			my $p = $self->{prelight};
 			$self->{prelight} = $day;
-			if ( defined $p ) {
-				my @p = $owner->day2xy($p);
-				$self->invalidate_rect( @p ) if @p;
-			}
-			if ( defined $day ) {
-				my @p = $owner->day2xy($day);
-				$self->invalidate_rect( @p ) if @p;
-			}
+			my $r = Prima::rect->new( defined($p) ? $owner->day2xy($p) : ());
+			$r = $r->union( Prima::rect->new( $owner->day2xy($day) )) if defined $day;
+			$self->invalidate_rect( @$r ) unless $r->is_empty;
 		}
 		return;
 	}
@@ -449,10 +444,9 @@ sub date
 	$self-> Month-> focusedItem( $month);
 	my $widget = $self->Day;
 	if ( $month == $od[1] && $year == $od[2] ) {
-		my @p = $self->day2xy($od[0]);
-		$widget->invalidate_rect( @p ) if @p;
-		@p = $self->day2xy($day);
-		$widget->invalidate_rect( @p ) if @p;
+		my $r = Prima::rect->new( $self->day2xy($od[0]) );
+		$r = $r->union( Prima::rect->new(  $self->day2xy($day) ));
+		$widget->invalidate_rect( @$r ) unless $r->is_empty;
 	} else {
 		delete $widget->{prelight};
 		$widget->invalidate_rect( 2, 2, $widget-> width - 3, $widget-> height - $widget-> {Y} - 3);
