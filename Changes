@@ -10,7 +10,7 @@ Revision history for Perl module Prima
  - Implemented arabic kashida and interspace justifications for glyphs
  - Markup is a first class citizen with $w->text(\"B<bold>") syntax
    (note: Q was renamed to G and will be used for quoting instead).
- - Minor UI facelift - sliders, buttons, podview, etc
+ - Minor UI facelift - sliders, buttons, inputline, podview, etc
  - Added Prima::Drawable::Metafile
  - Recognize mouse buttons 4 and 5 on win32
  - win32: support unicode supplementary planes
