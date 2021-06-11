@@ -113,7 +113,7 @@ sub profile_default
 		autoHScroll       => 1,
 		autoVScroll       => 1,
 		blockType         => bt::CUA,
-		borderWidth       => 1,
+		borderWidth       => 2,
 		cursorSize        => [ $::application-> get_default_cursor_width, $font-> { height}],
 		cursorVisible     => 1,
 		cursorX           => 0,
