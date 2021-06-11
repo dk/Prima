@@ -62,20 +62,13 @@ sub on_paint
 {
 	my ( $self, $canvas) = @_;
 	my @size   = $self-> size;
-	my $bw     = $self-> {borderWidth};
 
-	unless ( $self-> {image}) {
-		$canvas-> rect3d(
-			0, 0, $size[0]-1, $size[1]-1, $bw,
-			$self-> dark3DColor, $self-> light3DColor, $self-> backColor
-		);
-		return 1;
-	}
-
-	$canvas-> rect3d(
-		0, 0, $size[0]-1, $size[1]-1, $bw,
-		$self-> dark3DColor, $self-> light3DColor
-	) if $bw;
+	$self-> rect_bevel( $canvas, Prima::rect->new(@size)->inclusive,
+		width  => $self-> {borderWidth},
+		panel  => 1,
+		fill   => $self-> {image} ? undef : $self->backColor,
+	);
+	return 1 unless $self->{image};
 
 	my @r = $self-> get_active_area( 0, @size);
 	$canvas-> clipRect( @r);

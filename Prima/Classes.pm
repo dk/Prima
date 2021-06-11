@@ -1412,7 +1412,6 @@ sub rect_bevel
 
 	return $canvas-> rect3d( $x, $y, $x1, $y1, $width, @c3d, $fill)
 		if $width < 2;
-	my $back  = (defined($fill) && !ref($fill)) ? $fill : $self-> backColor;
 
 	# 0 - upper left under 2 -- inner square
 	# 1 - lower right over 3
