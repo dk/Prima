@@ -97,6 +97,79 @@ sub STORESIZE {
 }
 sub DELETE    { warn "This array does not implement delete functionality" }
 
+package Prima::rect;
+
+sub new       { bless [$#_ ? (($#_ == 4) ? @_[1..$#_] : (0,0,@_[1,2])) : (0,0,0,0)], $_[0] }
+sub new_box   { bless [@_[1,2], $_[1] + $_[3] + 1, $_[2] + $_[4] + 1], $_[0] }
+sub clone     { bless [@{$_[0]}], ref $_[0] }
+sub is_empty  { $_[0]->[0] == $_[0]->[2] && $_[0]->[1] == $_[0]->[3] }
+sub origin    { $_[0]->[0], $_[0]->[1] }
+sub size      { $_[0]->[2] - $_[0]->[0] - 1, $_[0]->[3] - $_[0]->[1] - 1 }
+sub box       { $_[0]->[0], $_[0]->[1], $_[0]->[2] - $_[0]->[0] - 1, $_[0]->[3] - $_[0]->[1] - 1 }
+sub inclusive { $_[0]->[0], $_[0]->[1], $_[0]->[2] - 1, $_[0]->[3] - 1 }
+
+sub is_equal
+{
+	my ( $x, $y ) = @_;
+	if ( $x-> is_empty ) {
+		return $y->is_empty;
+	} elsif ( $y-> is_empty ) {
+		return 0;
+	} else {
+		return
+			$x->[0] == $y->[0] &&
+			$x->[1] == $y->[1] &&
+			$x->[2] == $y->[2] &&
+			$x->[3] == $y->[3];
+	}
+}
+
+sub union
+{
+	my ( $x, $y ) = @_;
+	return $y->clone if $x->is_empty;
+	return $x->clone if $y->is_empty;
+
+	$x = $x->clone;
+	$x->[0] = $y->[0] if $x->[0] > $y->[0];
+	$x->[1] = $y->[1] if $x->[1] > $y->[1];
+	$x->[2] = $y->[2] if $x->[2] < $y->[2];
+	$x->[3] = $y->[3] if $x->[3] < $y->[3];
+	return $x;
+}
+
+sub intersect
+{
+	my ( $x, $y ) = @_;
+	return ref($x)->new if
+		$x->is_empty or
+		$y->is_empty or
+		$x->[0] > $y->[2] or
+		$x->[2] < $y->[0] or
+		$x->[1] > $y->[3] or
+		$x->[3] < $y->[1]
+		;
+
+	$x = $x->clone;
+	$x->[0] = $y->[0] if $x->[0] > $y->[0];
+	$x->[1] = $y->[1] if $x->[1] > $y->[1];
+	$x->[2] = $y->[2] if $x->[2] < $y->[2];
+	$x->[3] = $y->[3] if $x->[3] < $y->[3];
+	return $x;
+}
+
+sub enlarge
+{
+	my ( $x, $d ) = @_;
+	return ref($x)->new if $x->is_empty;
+	$x = $x->clone;
+	$x->[$_] -= $d     for 0,1;
+	$x->[$_] += 2 * $d for 2,3;
+	return $x;
+}
+
+sub shrink { $_[0]->enlarge( -$_[1] ) }
+
 # class Object; base class of all Prima classes
 package Prima::Object;
 use vars qw(@hooks);
