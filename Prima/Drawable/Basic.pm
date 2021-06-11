@@ -190,10 +190,10 @@ sub prelight_color
 		$coeff = 1/$coeff;
 	}
 	$coeff = ($coeff - 1) * 256;
-	my @channels = map { $_ & 0xff } cl::to_rgb($color);
+	my @channels = cl::to_rgb($color);
 	for (@channels) {
 		my $amp = ( 256 - $_ ) / 8;
-		$amp -= $amp if $coeff < 0;
+		$amp = -$amp if $coeff < 0;
 		$_ += $coeff + $amp;
 		$_ = 255 if $_ > 255;
 		$_ = 0   if $_ < 0;
