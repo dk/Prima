@@ -20,7 +20,7 @@ use Prima::Calendar;
 my $cal;
 my $w = Prima::MainWindow->new(
 	text => "Calendar example",
-	size => [ 200, 200],
+	size => [ 500, 500],
 	designScale => [6,16],
 	menuItems => [[ "~Options" => [
 		[ '@locale', 'Use ~locale', 'Ctrl+L', '^L', sub {
