@@ -39,7 +39,8 @@ $x-> setup_dialog;
 
 $x-> begin_doc;
 $x-> color(cl::Green);
-$x-> text_out( "hello!", 100, 100);
+$x-> font-> size(100);
+$x-> text_out( "Hello world!", 100, 100);
 $x-> end_doc;
 
 1;
