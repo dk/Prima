@@ -582,6 +582,7 @@ extern PItemRegRec  timeDefs;
 extern PHash        menuBitmapMan;
 extern HBITMAP      uncheckedBitmap;
 extern PHash        scriptCacheMan;
+extern HCURSOR      arrowCursor;
 
 LRESULT CALLBACK    generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
