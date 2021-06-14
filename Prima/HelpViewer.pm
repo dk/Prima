@@ -183,8 +183,11 @@ sub on_mouseclick
 sub on_mousewheel
 {
 	my ( $self, $mod, $x, $y, $z) = @_;
-	return unless $mod & km::Ctrl;
-	$self-> owner-> increase_font_size(($z > 0) ? 1 : -1);
+	if ($mod & km::Ctrl) {
+		$self-> owner-> increase_font_size(($z > 0) ? 1 : -1);
+	} else {
+		$self->SUPER::on_mousewheel($mod, $x, $y, $z);
+	}
 }
 
 package Prima::PodViewWindow;
