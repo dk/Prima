@@ -149,7 +149,7 @@ sub typeset
 		$$tb[ tb::BLK_APERTURE_Y] = $fd;
 		$$tb[ tb::BLK_X] = $old_x + ( $from - $old_from) * $$tb[tb::BLK_WIDTH] / $width;
 		$$tb[ tb::BLK_COLOR]     = cl::Fore;
-		$$tb[ tb::BLK_BACKCOLOR] = cl::Back;
+		$$tb[ tb::BLK_BACKCOLOR] = tb::BACKCOLOR_DEFAULT;
 		$$tb[ tb::BLK_FONT_SIZE]  = int($fs) + tb::F_HEIGHT;
 
 		if ( $tale[$i] =~ /^you\.\-\-/) {
