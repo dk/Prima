@@ -33,6 +33,7 @@ PHash   menuBitmapMan  = NULL; // HBITMAP manager for SetMenuItemBitmaps
 PHash   scriptCacheMan = NULL; // SCRIPT_CACHE entries per font/script
 HPEN    hPenHollow;
 HBRUSH  hBrushHollow;
+HCURSOR arrowCursor;
 PatResource hPatHollow;
 DIBMONOBRUSH bmiHatch = {
 	{ sizeof( BITMAPINFOHEADER), 8, 8, 1, 1, BI_RGB, 0, 0, 0, 2, 2},
@@ -161,6 +162,7 @@ window_subsystem_init( char * error_buf)
 	guts. mainThreadId = GetCurrentThreadId();
 	guts. errorMode = SetErrorMode( SEM_FAILCRITICALERRORS);
 	guts. desktopWindow = GetDesktopWindow();
+	arrowCursor    = LoadCursor( NULL, IDC_ARROW);
 
 	memset( &wc, 0, sizeof( wc));
 	wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -181,7 +183,7 @@ window_subsystem_init( char * error_buf)
 	wc.cbWndExtra    = 0;
 	wc.hInstance     = guts. instance;
 	wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
-	wc.hCursor       = LoadCursor( NULL, IDC_ARROW);
+	wc.hCursor       = arrowCursor;
 	wc.hbrBackground = (HBRUSH)NULL;
 	wc.lpszClassName = L"GenericFrame";
 	RegisterClassW( &wc);
@@ -193,7 +195,7 @@ window_subsystem_init( char * error_buf)
 	wc.cbWndExtra    = 0;
 	wc.hInstance     = guts. instance;
 	wc.hIcon         = LoadIcon( guts. instance, IDI_APPLICATION);
-	wc.hCursor       = LoadCursor( NULL, IDC_ARROW);
+	wc.hCursor       = arrowCursor;
 	wc.hbrBackground = (HBRUSH)NULL;
 	wc.lpszClassName = L"LayeredFrame";
 	RegisterClassW( &wc);
@@ -1239,7 +1241,7 @@ AGAIN:
 		break;
 	}
 	case WM_MOUSEMOVE:
-		if ( is_apt( aptEnabled)) SetCursor( sys pointer);
+		SetCursor( is_apt( aptEnabled) ? sys pointer : arrowCursor);
 		break;
 	case WM_MOUSEWHEEL:
 		return ( LRESULT)1;
