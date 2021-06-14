@@ -109,3 +109,5 @@ L<Prima::HelpViewer> - menu commands explained
 =head1 AUTHORS
 
 Dmitry Karasik E<lt>dmitry@karasik.eu.orgE<gt>
+
+=cut
