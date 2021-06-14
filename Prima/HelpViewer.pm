@@ -92,7 +92,7 @@ sub load_link
 {
 	my ( $self, $link) = @_;
 
-	if ( $link =~ /^(http|ftp):\//) {
+	if ( $link =~ /^(https?|ftp):\//) {
 		$self-> owner-> status("Starting browser for $link...");
 		if ( Prima::Application-> get_system_info-> {apc} == apc::Win32) {
 			open UNIQUE_FILE_HANDLE_NEVER_TO_BE_CLOSED, "|start $link";
