@@ -240,7 +240,7 @@ Prima/Drawable/Basic.pm
 Prima/Drawable/CurvedText.pm
 Prima/Drawable/Glyphs.pm
 Prima/Drawable/Gradient.pm
-Prima/Drawable/Manifest.pm
+Prima/Drawable/Metafile.pm
 Prima/Drawable/Markup.pm
 Prima/Drawable/Path.pm
 Prima/Drawable/Subcanvas.pm
