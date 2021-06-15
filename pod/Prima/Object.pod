@@ -38,7 +38,7 @@ hierarchy. All the other objects are derived from the Component class, which in
 turn is the only descendant of Object class. Both of these classes are never
 used for spawning their instances, although this is possible using
 
-   Prima::Component-> create( .. parameters ... );
+   Prima::Component-> new( .. parameters ... );
 
 call. This document describes the basic concepts of the OO programming with
 Prima toolkit. Although Component has wider functionality than Object, all
@@ -54,22 +54,22 @@ whereas this document is wholly about perl programming.
 
 Object creation has fixed syntax:
 
-   $new_object = Class-> create(
+   $new_object = Class-> new(
      parameter => value,
      parameter => value,
      ...
    );
 
-Parameters and values form a hash, which is passed to the create() method.
+Parameters and values form a hash, which is passed to the new() method.
 This hash is applied to a default parameter-value hash ( a I<profile> ),
 specific to every Prima class. The object creation is performed in several
 stages.
 
 =over 4
 
-=item create
+=item new
 
-create() calls profile_default() method that returns ( as its name states ) the
+new() calls profile_default() method that returns ( as its name states ) the
 default profile, a hash with the appropriate default values assigned to its
 keys.  The Component class defaults are ( see Classes.pm ):
 
@@ -80,18 +80,20 @@ keys.  The Component class defaults are ( see Classes.pm ):
 While the exact meaning of these parameters is described later, in
 L<"Properties">, the idea is that a newly created object will have 'owner'
 parameter set to '$::application' and 'delegations' to undef etc etc - unless
-these parameters are explicitly passed to create(). Example:
+these parameters are explicitly passed to new(). Example:
 
-     $a1 = Prima::Component-> create();
+     $a1 = Prima::Component-> new();
 
 $a1's owner will be $::application
 
-     $a2 = Prima::Component-> create( owner => $a1);
+     $a2 = Prima::Component-> new( owner => $a1);
 
 $a2's owner will be $a1.
 The actual merging of the default and the parameter hashes
 is performed on the next stage, in profile_check_in() method
 which is called inside profile_add() method.
+
+Note: the older syntax used create() instead of new(), which is still valid but is not preferred
 
 =item profile_check_in
 
@@ -100,14 +102,14 @@ default all specified parameters have the ultimate precedence over the default
 ones, but in case the specification is incomplete or ambiguous, the
 profile_check_in()'s task is to determine actual parameter values. In case of
 Component, this method maintains a simple automatic naming of the newly created
-objects. If the object name was not specified with create(), it is assigned to
+objects. If the object name was not specified with new(), it is assigned to
 a concatenated class name with an integer - Component1, Component2 etc.
 
 Another example can be taken from Prima::Widget::profile_check_in().
 Prima::Widget horizontal position can be specified by using basic C<left> and
 C<width> parameters, and as well by auxiliary C<right>, C<size> and C<rect>.
 The default of both C<left> and C<width> is 100. But if only C<right>
-parameter, for example, was passed to create() it is profile_check_in() job to
+parameter, for example, was passed to new() it is profile_check_in() job to
 determine C<left> value, given that C<width> is still 100.
 
 After profiles gets merged, the resulting hash is passed to the third stage,
@@ -125,7 +127,7 @@ Note: usually init() attaches the object to its owner in order to keep the
 newly-created object instance from being deleted by garbage-collection
 mechanisms. More on that later ( see L<"Links between objects">).
 
-After init() finishes, create() calls setup() method
+After init() finishes, new() calls setup() method
 
 =item setup
 
@@ -136,11 +138,11 @@ convenient to overload than setup().
 
 =back
 
-As can be noticed from the code pieces above, a successful create() call
+As can be noticed from the code pieces above, a successful new() call
 returns a newly created object. If an error condition occurred, undef is
 returned. It must be noted, that only errors that were generated via die()
 during init() stage result in undef. Other errors raise an exception instead.
-It is not recommended to frame create() calls in an C<eval{}> block, because
+It is not recommended to frame new() calls in an C<eval{}> block, because
 the error conditions can only occur in two situations. The first is a system
 error, either inside perl or Prima guts, and not much can be done here, since
 that error can very probably lead to an unstable program and almost always
@@ -148,14 +150,14 @@ signals an implementation bug. The second reason is a caller's error, when an
 unexistent parameter key or invalid value is passed; such conditions are not
 subject to a runtime error handling as are not the syntax errors.
 
-After create(), the object is subject to the event flow.  As C<onCreate> event
+After new(), the object is subject to the event flow.  As C<onCreate> event
 is the first event the object receives, only after that stage other events can
 be circulated.
 
 =head2 Destruction
 
 Object destruction can be caused by many conditions, but all execution flow is
-finally passed through destroy() method.  destroy(), as well as create()
+finally passed through destroy() method.  destroy(), as well as new()
 performs several finalizing steps:
 
 =over 4
@@ -163,7 +165,7 @@ performs several finalizing steps:
 =item cleanup
 
 The first method called inside destroy() is cleanup().  cleanup() is the pair
-to setup(), as destroy() is the pair to create(). cleanup() generates
+to setup(), as destroy() is the pair to new(). cleanup() generates
 C<onDestroy> event, which can be overridden more easily than cleanup() itself.
 
 C<onDestroy> is the last event the object sees. After cleanup() no events are
@@ -230,7 +232,7 @@ The properties can be set-called not only by name like
   $object-> name( "new name");
 
 but also with set() method. The set() method accepts a hash,
-that is much like to create(), and assigns the values to
+that is much like to new(), and assigns the values to
 the corresponding properties. For example, the code
 
   $object-> name( "new name");
@@ -313,11 +315,11 @@ as GUI's parent-to-child.  The parent is the widget for the children widgets
 located in and clipped by its inferior. The owner widget is more than that, its
 children can be located outside its owner boundaries.
 
-The special convenience variety of create(), the insert() method is used
+The special convenience variety of new(), the insert() method is used
 to explicitly select owner of the newly created object. insert() can
 be considered a 'constructor' in OO-terms. It makes the construct
 
-   $obj = Class-> create( owner => $owner, name => 'name);
+   $obj = Class-> new( owner => $owner, name => 'name);
 
 more readable by introducing
 
@@ -435,9 +437,9 @@ OO inheritance, the anonymous subs are allowed to be multiple by the design.
 There are three syntaxes for setting such a event hook; the example below
 sets a hook on $obj using each syntax for a different situation:
 
-- during create():
+- during new():
 
-   $obj = Class-> create(
+   $obj = Class-> new(
     ...
     onPostMessage => sub {
        my ( $self, $data1, $data2) = @_;
@@ -445,13 +447,13 @@ sets a hook on $obj using each syntax for a different situation:
     ...
     );
 
-- after create using set()
+- after new using set()
 
    $obj-> set( onPostMessage => sub {
        my ( $self, $data1, $data2) = @_;
    });
 
-- after create using event name:
+- after new using event name:
 
    $obj-> onPostMessage( sub {
        my ( $self, $data1, $data2) = @_;
@@ -615,15 +617,7 @@ event. Is never called directly.
 
 =item create CLASS, %PARAMETERS
 
-Creates a new object instance of a given CLASS
-and sets its properties corresponding to the passed parameter hash. Examples:
-
-   $obj = Class-> create( PARAMETERS);
-   $obj = Prima::Object::create( "class" , PARAMETERS);
-
-Is never called in an object context.
-
-Alias: new()
+Same as L<new>.
 
 =item destroy
 
@@ -648,21 +642,21 @@ the corresponding object properties.
 =item init %PARAMETERS
 
 The most important stage of object creation process.  %PARAMETERS is the
-modified hash that was passed to create().  The modification consists of
+modified hash that was passed to new().  The modification consists of
 merging with the result of profile_default() class method inside
 profile_check_in() method. init() is responsible for applying the relevant data
 into PARAMETERS to the object properties. Is never called directly.
 
 =item insert CLASS, %PARAMETERS
 
-A convenience wrapper for create(), that explicitly sets
+A convenience wrapper for new(), that explicitly sets
 the owner property for a newly created object.
 
    $obj = $owner-> insert( 'Class', name => 'name');
 
 is adequate to
 
-   $obj = Class-> create( owner => $owner, name => 'name);
+   $obj = Class-> new( owner => $owner, name => 'name);
 
 code. insert() has another syntax that allows simultaneous
 creation of several objects:
@@ -678,19 +672,28 @@ set to their 'owner' properties.
 
 =item new CLASS, %PARAMETERS
 
-Same as L<create>.
+Creates a new object instance of a given CLASS
+and sets its properties corresponding to the passed parameter hash. Examples:
+
+   $obj = Class-> new( PARAMETERS);
+   $obj = Prima::Object::new( "class" , PARAMETERS);
+
+Is never called in an object context.
+
+Alias: create()
+
 
 =item profile_add PROFILE
 
 The first stage of object creation process.  PROFILE is a reference to a
-PARAMETERS hash, passed to create().  It is merged with profile_default() after
+PARAMETERS hash, passed to new().  It is merged with profile_default() after
 passing both to profile_check_in(). The merge result is stored back in PROFILE.
 Is never called directly.
 
 =item profile_check_in CUSTOM_PROFILE, DEFAULT_PROFILE
 
 The second stage of object creation process.  Resolves eventual ambiguities in
-CUSTOM_PROFILE, which is the reference to PARAMETERS passed to create(), by
+CUSTOM_PROFILE, which is the reference to PARAMETERS passed to new(), by
 comparing to and using default values from DEFAULT_PROFILE, which is the result
 of profile_default() method. Is never called directly.
 
@@ -835,7 +838,7 @@ See also: C<bring>
 
 Returns array of the child objects.
 
-See: C<create>, L<"Links between objects">.
+See: C<new>, L<"Links between objects">.
 
 =item get_handle
 
