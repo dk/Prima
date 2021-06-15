@@ -167,11 +167,11 @@ sub on_mouseclick
 {
 	my ( $self, $btn, $mod, $x, $y, $dbl) = @_;
 	if ( !$dbl ) {
-		if ( $btn == mb::b4 ) {
+		if ( $btn == mb::b4 || $btn == mb::b8) {
 			$self->clear_event;
 			$self->owner->back;
 			return;
-		} elsif ( $btn == mb::b5 ) {
+		} elsif ( $btn == mb::b5 || $btn == mb::b9 ) {
 			$self->clear_event;
 			$self->owner->forward;
 			return;
