@@ -790,8 +790,8 @@ sub _imgpaint
 	$dy *= $res[1] / 72;
 	$canvas-> stretch_image( $x, $y, $dx, $dy, $img);
 	if ( $self-> {selectionPaintMode}) {
-		my @save = ( fillPattern => $canvas-> fillPattern, rop => $canvas-> rop);
-		$canvas-> set( fillPattern => fp::Borland, rop => rop::AndPut);
+		my @save = ( fillPattern => $canvas-> fillPattern, rop => $canvas-> rop, fillPatternOffset => [$canvas->fillPatternOffset]);
+		$canvas-> set( fillPattern => fp::Borland, rop => rop::AndPut, fillPatternOffset => [$x, $y]);
 		$canvas-> bar( $x, $y, $x + $dx - 1, $y + $dy - 1);
 		$canvas-> set( @save);
 	}
