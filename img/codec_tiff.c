@@ -897,7 +897,7 @@ load( PImgCodec instance, PImgLoadFileInstance fi)
 	float xres, yres;
 	Byte *tiffstrip, *tiffline, *tifftile, *primaline, *primamask = NULL;
 	size_t stripsz, linesz, tilesz = 0L;
-	uint32 tile_width, tile_height, num_tilesX = 0L, rowsperstrip;
+	uint32_t tile_width, tile_height, num_tilesX = 0L, rowsperstrip;
 	Byte bw_colorref[256];
 
 	errbuf = fi-> errbuf;
@@ -1341,7 +1341,7 @@ VALID_COMBINATION:
 		} else if ( full_rgba_image) {
 			/* read whole file */
 			if ( y == 0) {
-				if ( !TIFFReadRGBAImageOriented(tiff, w, h, (uint32*) tiffline, 0, ORIENTATION_BOTLEFT)) {
+				if ( !TIFFReadRGBAImageOriented(tiff, w, h, (uint32_t*) tiffline, 0, ORIENTATION_BOTLEFT)) {
 					if ( !( errbuf && errbuf[0]))
 					sprintf( fi-> errbuf, "Error reading image");
 					read_failure = 1;
