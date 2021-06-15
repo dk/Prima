@@ -433,7 +433,7 @@ Negative if the ascent line is below the internal leading line.
 Number of pixels between ascent and external leading lines.
 Negative if the ascent line is above the external leading line.
 
-=for podview <img src="leadings.gif" cut=1>
+=for podview <img src="leadings.gif" cut=1 title="Horizontal font measurements">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/leadings.gif"><!--
 
@@ -514,7 +514,7 @@ Besides these characteristics, every font glyph has an ABC-metric,
 the three integer values that describe horizontal extents of a
 glyph's black part relative to the glyph extent:
 
-=for podview <img src="fontabc.gif" cut=1 >
+=for podview <img src="fontabc.gif" cut=1 title="Vertical glyph measurements">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/fontabc.gif"><!--
 
@@ -561,7 +561,7 @@ with the foreground color drawing, and C<::rop2> with the background.
 
 The toolkit defines the following operations:
 
-=for podview <img src="rop1.gif" cut=1 >
+=for podview <img src="rop1.gif" cut=1 title="Classic raster operations">
 
 =for html <p><img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop1.gif"><!--
 
@@ -611,8 +611,8 @@ begin_paint/end_paint brackets. It supports the following 12 Porter-Duff
 operators and some selected Photoshop blend operators:
 
 =for podview 
- <img src="rop2.gif" cut=1>
- <img src="rop3.png" cut=1>
+ <img src="rop2.gif" cut=1 title="Porter-Duff operators">
+ <img src="rop3.png" cut=1 title="Photoshop operators">
 
 =for html <p>
 <img src="https://raw.githubusercontent.com/dk/Prima/master/pod/Prima/rop2.gif">
