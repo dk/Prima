@@ -83,15 +83,22 @@ use constant STYLE_MAX_ID => 8;
 
 # model layout indices
 use constant M_TYPE        => 0; # T_XXXX
-use constant M_INDENT      => 1; # pod-content driven indent
-use constant M_TEXT_OFFSET => 2; # contains same info as BLK_TEXT_OFFSET
+                                 # T_NORMAL
+use constant M_TEXT_OFFSET => 1; # contains same info as BLK_TEXT_OFFSET
+use constant M_INDENT      => 2; # pod-content driven indent
 use constant M_FONT_ID     => 3; # 0 or 1 ( i.e., variable or fixed )
 use constant M_START       => 4; # start of data, same purpose as BLK_START
+                                 # T_DIV
+use constant MDIV_TAG      => 2;
+use constant MDIV_STYLE    => 3;
 
 # model entries
-use constant T_NORMAL       => 0;
-use constant T_VERBATIM_ON  => 1;
-use constant T_VERBATIM_OFF => 2;
+use constant T_NORMAL          => 0;
+use constant T_DIV             => 1;
+use constant TDIVTAG_OPEN      => 0;
+use constant TDIVTAG_CLOSE     => 1;
+use constant TDIVSTYLE_SOLID   => 0;
+use constant TDIVSTYLE_OUTLINE => 1;
 
 # topic layout indices
 use constant T_MODEL_START => 0; # beginning of topic
@@ -112,9 +119,20 @@ sub model_create
 	my %opt = @_;
 	return (
 		$opt{type}   // T_NORMAL,
-		$opt{indent} // 0,
 		$opt{offset} // 0,
+		$opt{indent} // 0,
 		$opt{font}   // 0
+	);
+}
+
+sub div_create
+{
+	my %opt = @_;
+	return (
+		T_DIV,
+		$opt{offset} // 0,
+		$opt{open}  ? TDIVTAG_OPEN : TDIVTAG_CLOSE,
+		$opt{style} // TDIVSTYLE_SOLID,
 	);
 }
 
@@ -659,53 +677,73 @@ sub open_read
 sub load_image
 {
 	my ( $self, $src, $frame ) = @_;
-	my $index = 0;
-	unless ( -f $src) {
-		$src =~ s!::!/!g;
-		for my $path (
-			map {( "$_", "$_/pod")}
-			grep { defined && length && -d }
-			( length($self-> {manpath}) ? $self-> {manpath} : (), @INC)
-		) {
-			return Prima::Icon-> load( "$path/$src", index => $frame, iconUnmask => 1)
-				if -f "$path/$src" && -r _;
-		}
+	return Prima::Icon-> load( $src, index => $frame, iconUnmask => 1)
+		if -f $src;
+
+	$src =~ s!::!/!g;
+	for my $path (
+		map {( "$_", "$_/pod")}
+		grep { defined && length && -d }
+		( length($self-> {manpath}) ? $self-> {manpath} : (), @INC)
+	) {
+		return Prima::Icon-> load( "$path/$src", index => $frame, iconUnmask => 1)
+			if -f "$path/$src" && -r _;
 	}
 	return;
 }
 
 sub add_image
 {
-	my ( $self, $src, $w, $h, $cut ) = @_;
+	my ( $self, $src, %opt ) = @_;
 
-	$w = $src-> width unless $w;
-	$h = $src-> height unless $h;
+	my $w = $opt{width} // $src-> width;
+	my $h = $opt{height} // $src-> height;
 	my @resolution = $self-> resolution;
 	$w *= 72 / $resolution[0];
 	$h *= 72 / $resolution[1];
 	$src-> {stretch} = [$w, $h];
-	$self-> {readState}-> {pod_cutting} = $cut ? 0 : 1
-		if defined $cut;
+	$self-> {readState}-> {pod_cutting} = $opt{cut} ? 0 : 1
+		if defined $opt{cut};
 
 	my @imgop = (
 		tb::wrap(tb::WRAP_MODE_OFF),
+		tb::moveto( 2, 0, tb::X_DIMENSION_FONT_HEIGHT),
 		tb::extend( $w, $h, tb::X_DIMENSION_POINT),
 		tb::code( \&_imgpaint, $src),
 		tb::moveto( $w, 0, tb::X_DIMENSION_POINT),
 		tb::wrap(tb::WRAP_MODE_ON)
 	);
 
-	if ( @{$self-> {model}}) {
-		push @{$self-> {model}-> [-1]}, @imgop;
-	} else {
-		push @{$self-> {model}}, [
-			model_create(
-				indent => $self-> {readState}-> {indent},
-				offset => $self-> {readState}-> {bigofs}
-			),
-			@imgop
-		];
+	push @{$self-> {model}},
+		$opt{title} ? [div_create(open => 1, style => TDIVSTYLE_OUTLINE)] : (),
+		[model_create(
+			indent => $self-> {readState}-> {indent},
+			offset => $self-> {readState}-> {bigofs}
+		),
+		@imgop],
+		;
+	if ( $opt{title}) {
+		my $r = $self-> {readState};
+
+		my @g = model_create( offset => $r-> {bigofs} );
+		push @g,
+			tb::moveto( 2 + $r->{indent}/2, 0, tb::X_DIMENSION_FONT_HEIGHT),
+			tb::fontStyle(fs::Italic),
+			tb::text(0, length $opt{title}),
+			tb::fontStyle(fs::Normal),
+			;
+		$opt{title} .= "\n";
+		${$self->{text}} .= $opt{title};
+		$r->{bigofs} += length $opt{title};
+
+		push @{$self-> {model}}, 
+			[model_create, tb::moveto(0, 1, tb::X_DIMENSION_FONT_HEIGHT)],
+			\@g, 
+			[model_create, tb::moveto(0, 1, tb::X_DIMENSION_FONT_HEIGHT)],
+			[div_create(open => 0, style => TDIVSTYLE_OUTLINE) ]
+			;
 	}
+	push @{$self-> {model}}, [model_create, tb::moveto(0, 1, tb::X_DIMENSION_FONT_HEIGHT)];
 }
 
 sub add_formatted
@@ -726,21 +764,17 @@ sub add_formatted
 				$self-> {readState}-> {pod_cutting} = 1;
 			} elsif ( $cmd =~ /^img\s*(.*)$/i) {
 				$cmd = $1;
-				my ( $w, $h, $src, $frame, $cut);
-				$frame = 0;
+				my %opt;
 				while ( $cmd =~ m/\s*([a-z]*)\s*\=\s*(?:(?:'([^']*)')|(?:"([^"]*)")|(\S*))\s*/igcs) {
 					my ( $option, $value) = ( lc $1, defined($2)?$2:(defined $3?$3:$4));
-					if ( $option eq 'width' && $value =~ /^\d+$/) { $w = $value }
-					elsif ( $option eq 'height' && $value =~ /^\d+$/) { $h = $value }
-					elsif ( $option eq 'frame' && $value =~ /^\d+$/) { $frame = $value }
-					elsif ( $option eq 'src') { $src = $value }
-					elsif ( $option eq 'cut' ) { $cut = $value }
+					if ( $option =~ /^(width|height|frame)$/ && $value =~ /^\d+$/) { $opt{$option} = $value }
+					elsif ( $option =~ /^(src|cut|title)$/) { $opt{$option} = $value }
 				}
-				if ( defined $src) {
-					my $img = $self->load_image($src, $frame);
-					$self->add_image($img, $w, $h, $cut) if $img;
-				} elsif ( defined $frame && defined $self->{images}->[$frame]) {
-					$self->add_image($self->{images}->[$frame], $w, $h, $cut);
+				if ( defined $opt{src}) {
+					my $img = $self->load_image($opt{src}, $opt{frame} // 0);
+					$self->add_image($img, %opt) if $img;
+				} elsif ( defined $opt{frame} && defined $self->{images}->[$opt{frame}]) {
+					$self->add_image($self->{images}->[$opt{frame}], %opt);
 				}
 			}
 		}
@@ -1336,18 +1370,18 @@ sub add_verbatim_mark
 	my $r = $self-> {readState};
 	return unless $r;
 
-	my $mark;
+	my $open;
 	if ( $on ) {
 		return if defined $r->{verbatim};
-		$mark = T_VERBATIM_ON;
+		$open = 1;
 		$r->{verbatim} = 1;
 	} else {
 		return unless defined $r->{verbatim};
-		$mark = T_VERBATIM_OFF;
+		$open = 0;
 		undef $r->{verbatim};
 	}
 
-	push @{$self-> {model}}, [ model_create(type => $mark) ];
+	push @{$self-> {model}}, [ div_create(open => $open, style => TDIVSTYLE_SOLID) ];
 }
 
 sub stop_format
@@ -1452,17 +1486,23 @@ sub paint_code_div
 {
 	my ( $self, $canvas, $block, $state, $x, $y, $coord) = @_;
 	my $f  = $canvas->font;
-	my $w = $coord->[0];
-	my $h = $coord->[1];
+	my ($style, $w, $h) = @$coord;
 	my @x = ( $canvas-> backColor, $canvas-> color );
-	$canvas->set(backColor => $self->{colorMap}->[5], color => 0xcccccc);
-	$canvas->new_path->round_rect($x, $y, $x + $w, $y + $h, 20)->fill_stroke;
-	$canvas-> set( backColor => $x[0], color => $x[1] );
+	my $path = $canvas->new_path->round_rect($x, $y, $x + $w, $y + $h, 20);
+	if ( $style == TDIVSTYLE_SOLID ) {
+		$canvas->set(backColor => $self->{colorMap}->[5], color => 0xcccccc);
+		$path->fill_stroke;
+		$canvas-> set( backColor => $x[0], color => $x[1] );
+	} else {
+		$canvas->set(color => 0x808080);
+		$path-> stroke;
+		$canvas-> set( color => $x[1] );
+	}
 }
 
 sub add_code_div
 {
-	my ($self, $from, $to) = @_;
+	my ($self, $style, $from, $to) = @_;
 
 	my ($w,$y1,$y2) = (0,($self->{blocks}->[$from]->[tb::BLK_Y]) x 2);
 	for my $b ( @{ $self->{blocks} } [$from .. $to] ) {
@@ -1480,7 +1520,7 @@ sub add_code_div
 	$$b[tb::BLK_HEIGHT] = $h;
 	$$b[tb::BLK_TEXT_OFFSET] = -1;
 	push @$b,
-		tb::code( \&paint_code_div, [$w, $h]),
+		tb::code( \&paint_code_div, [$style, $w, $h]),
 		tb::extend($w, $h);
 	return $b;
 }
@@ -1508,14 +1548,15 @@ sub format_chunks
 		my $g = tb::block_create();
 		my $m = $self-> {model}-> [$mid];
 
-		if ( $m->[M_TYPE] == T_VERBATIM_ON ) {
-			$f->{verbatim} = scalar @{ $self->{blocks} };
-			next;
-		} elsif ( $m->[M_TYPE] == T_VERBATIM_OFF ) {
-			splice @{ $self->{blocks} },
-				$f->{verbatim}, 0,
-				$self-> add_code_div( $f->{verbatim}, $#{$self->{blocks}} );
-			undef $f->{verbatim};
+		if ( $m->[M_TYPE] == T_DIV ) {
+			if ( $m->[MDIV_TAG] == TDIVTAG_OPEN) {
+				$f->{verbatim} = scalar @{ $self->{blocks} };
+			} else {
+				splice @{ $self->{blocks} },
+					$f->{verbatim}, 0,
+					$self-> add_code_div( $m->[MDIV_STYLE], $f->{verbatim}, $#{$self->{blocks}} );
+				undef $f->{verbatim};
+			}
 			next;
 		}
 
