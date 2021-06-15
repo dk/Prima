@@ -94,7 +94,7 @@ podview - graphical pod viewer
 
 =head2 DESCRIPTION
 
-The small GUI browser for POD format. Given the argument either
+A small GUI browser for POD format. Given the argument either
 as a file path, or perl module name (f.ex. I<File::Copy>), displays
 the documentation found.
 
