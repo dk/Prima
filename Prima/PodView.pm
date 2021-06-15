@@ -37,11 +37,11 @@ sub on_mousemove
 		$owner-> {lastLinkPointer} = $r;
 		if ( $was_hand ) {
 			$or = $rr->[$or];
-			$owner-> invalidate_rect($or->[0] - $dx, $dy - $or->[1], $or->[2] - $dx, $dy - $or->[3]);
+			$owner-> invalidate_rect($or->[0] + $dx, $dy - $or->[1], $or->[2] + $dx, $dy - $or->[3]);
 		}
 		if ( $is_hand ) {
 			$or = $rr->[$r];
-			$owner-> invalidate_rect($or->[0] - $dx, $dy - $or->[1], $or->[2] - $dx, $dy - $or->[3]);
+			$owner-> invalidate_rect($or->[0] + $dx, $dy - $or->[1], $or->[2] + $dx, $dy - $or->[3]);
 		}
 	}
 }
@@ -53,7 +53,8 @@ sub on_paint
 	my $r  = $self->rectangles->[ $owner->{lastLinkPointer} ];
 	my $c  = $canvas-> color;
 	$canvas-> color( $owner-> {colorMap}->[ $ci ]);
-	$canvas-> line( $r->[0] - $dx, $dy - $r->[3], $r->[2] - $dx, $dy - $r->[3]);
+	$canvas-> translate(0,0);
+	$canvas-> line( $r->[0] + $dx, $dy - $r->[3], $r->[2] + $dx, $dy - $r->[3]);
 	$canvas-> color( $c);
 }
 
