@@ -1544,7 +1544,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	Bool icon = kind_of( fi-> object, CIcon);
 	int x, y;
 	HV * profile = fi-> objectExtras;
-	uint16 u16;
+	uint16_t u16;
 
 	errbuf = fi-> errbuf;
 	err_signal = 0;
@@ -1615,7 +1615,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		TIFFSetField( tiff, TIFFTAG_YRESOLUTION, pget_f( YResolution));
 	{
 		Bool r1 = pexist( PageNumber), r2 = pexist( PageNumber2);
-		uint16 u2;
+		uint16_t u2;
 		if (( r1 && !r2) || ( !r1 && r2)) {
 			outc( "Fields PageNumber and PageNumber2 must be present simultaneously");
 			return false;
@@ -1634,7 +1634,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	if ( !icon && i-> type != imRGB) {
 		PRGBColor p = i-> palette;
 		Byte * r = i-> data + ( i-> h - 1 ) * i-> lineSize;
-		uint16 photometric = PHOTOMETRIC_MINISBLACK;
+		uint16_t photometric = PHOTOMETRIC_MINISBLACK;
 		switch ( i-> type) {
 		case imbpp1:
 			if ( p[0].r == 0 && p[0].g == 0 && p[0].b == 0 &&
@@ -1661,7 +1661,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 
 		if ( photometric == PHOTOMETRIC_PALETTE) {
 			int x, lim = (i-> palSize > 256) ? 256 : i-> palSize;
-			uint16 red[256], green[256], blue[256];
+			uint16_t red[256], green[256], blue[256];
 			for ( x = 0; x < lim; x++, p++) {
 				red  [x] = p-> r << 8;
 				green[x] = p-> g << 8;
