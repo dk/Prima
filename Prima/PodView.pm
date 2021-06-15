@@ -706,8 +706,8 @@ sub add_image
 		if defined $opt{cut};
 
 	my @imgop = (
-		tb::wrap(tb::WRAP_MODE_OFF),
 		tb::moveto( 2, 0, tb::X_DIMENSION_FONT_HEIGHT),
+		tb::wrap(tb::WRAP_MODE_OFF),
 		tb::extend( $w, $h, tb::X_DIMENSION_POINT),
 		tb::code( \&_imgpaint, $src),
 		tb::moveto( $w, 0, tb::X_DIMENSION_POINT),
@@ -725,9 +725,12 @@ sub add_image
 	if ( $opt{title}) {
 		my $r = $self-> {readState};
 
-		my @g = model_create( offset => $r-> {bigofs} );
+		my @g = model_create(
+			indent => $self-> {readState}-> {indent},
+			offset => $r-> {bigofs}
+		);
 		push @g,
-			tb::moveto( 2 + $r->{indent}/2, 0, tb::X_DIMENSION_FONT_HEIGHT),
+			tb::moveto( 2, 0, tb::X_DIMENSION_FONT_HEIGHT),
 			tb::fontStyle(fs::Italic),
 			tb::text(0, length $opt{title}),
 			tb::fontStyle(fs::Normal),
@@ -736,9 +739,9 @@ sub add_image
 		${$self->{text}} .= $opt{title};
 		$r->{bigofs} += length $opt{title};
 
-		push @{$self-> {model}}, 
+		push @{$self-> {model}},
 			[model_create, tb::moveto(0, 1, tb::X_DIMENSION_FONT_HEIGHT)],
-			\@g, 
+			\@g,
 			[model_create, tb::moveto(0, 1, tb::X_DIMENSION_FONT_HEIGHT)],
 			[div_create(open => 0, style => TDIVSTYLE_OUTLINE) ]
 			;
