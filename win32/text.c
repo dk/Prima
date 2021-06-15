@@ -1314,7 +1314,7 @@ STOP:
 	READ32(n_groups, offset + 12);
 	READPTR(groups, offset + 16, n_groups * 3 * 4);
 
-	if ( !( ret = malloc(n_groups * sizeof(unsigned long) * 1024))) {
+	if ( !( ret = malloc(n_groups * sizeof(unsigned long) * 2))) {
 		warn("Not enough memory");
 		goto FAIL;
 	}
