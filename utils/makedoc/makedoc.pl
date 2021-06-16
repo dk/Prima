@@ -127,8 +127,13 @@ if ( $build) {
 				}
 
 				while (1) {
-					if ( $spec =~ m/\G<\s*img\s*src=\"?([^\"\s]+)\"?\s*(cut\s*=\s*1)?\s*>/gcs) {
-						my ( $gif, $eps, $do_cut) = ( $1, $1, $2);
+					if ( $spec =~ m/\G<\s*img\s*src=\"?([^\"\s]+)\"?\s*(cut\s*=\s*1)?([^>]*)>/gcs) {
+						my ( $gif, $eps, $do_cut, $rest) = ( $1, $1, $2, $3);
+						my $fig_title;
+						if ($rest =~ /title=['"](.*?)['"]/) {
+							$fig_title = $1;
+						}
+
 						$eps =~ s/\.\.\///g;
 						$eps =~ s/\//_/g;
 						$eps =~ s/\.[^\.]+$/.eps/;
@@ -158,7 +163,11 @@ if ( $build) {
 						if ( -f $eps) {
 							$cow = 1;
 							$cut = 1 if $do_cut;
+							push @ctx, "=for latex \n\\begin{figure}[h] \\centering\n\n"
+								if defined $fig_title;
 							push @ctx, "=for latex \n\\includegraphics[scale=0.5]{$eps}\n\n";
+							push @ctx, "=for latex \n\\caption{$fig_title} \\end{figure}\n\n",
+								if defined $fig_title;
 						} else {
 							warn "** error creating $eps\n";
 						}
