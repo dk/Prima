@@ -1,6 +1,6 @@
 Revision history for Perl module Prima
 
-1.62 202X-XX-XX
+1.62 2021-06-16
  - Add opendir/closedir/*dir for unicode operations
  - Add Prima::Drawable::Antialias for drawing aliased graphic primitives
  - Interactive selection change in Edit and PodView does not flicker now
