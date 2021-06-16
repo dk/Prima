@@ -67,10 +67,6 @@ for this purpose:
 it should work for all MSVC and GCC compilers and for native,
 cygwin, and mingw/strawberry perl runtimes.
 
-WebP libraries are unavailable for strawberry, get them here:
-
- http://prima.eu.org/download/webp-win.zip
-
 MacOSX
 ------
 
