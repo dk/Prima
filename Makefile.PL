@@ -1058,7 +1058,7 @@ sub setup_defines
 	have_funcs_in( 'stdlib.h', 'reallocf');
 	have_funcs_in( 'strings.h', 'bzero');
 	have_funcs_in( 'string.h', 'memmem');
-	have_funcs_in( 'stdio.h', 'eaccess');
+	have_funcs_in( 'unistd.h', 'eaccess');
 	if ( $Win32) {
 		have_type( "BOOLEAN", "windows.h");
 	}
