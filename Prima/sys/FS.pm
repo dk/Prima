@@ -80,7 +80,6 @@ sub open(*;$*)
 	return $ok;
 
 NATIVE:
-	no strict 'refs';
 	if ( 0 == @p ) {
 		return CORE::open($handle);
 	} elsif ( 1 == @p ) {
