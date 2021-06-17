@@ -106,7 +106,7 @@ sub polyline
 		);
 		$bitmap->bar( 0, 0, $bitmap->size);
 	} else {
-		$bitmap->translate(map { -RES * $_ } $x, $y);
+		$bitmap->translate(map { -1 * RES * $_ } $x, $y);
 		$poly = Prima::Drawable->render_polyline( $poly, matrix => [RES,0,0,RES,0,0], integer => 1);
 		$bitmap->polyline($poly);
 	}
@@ -134,7 +134,7 @@ sub fillpoly
 		fillMode => $mode,
 		polygon  => $poly,
 	);
-	$rgn->offset( map { -RES * $_ } $x, $y );
+	$rgn->offset( map { -1 * RES * $_ } $x, $y );
 
 	my $bitmap = $self->alloc_surface($w, $h) or goto FALLBACK;
 	$bitmap->region( $rgn );
