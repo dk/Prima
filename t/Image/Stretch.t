@@ -91,9 +91,10 @@ for ( @inttypes ) {
 		height => 8,
 		type => $type,
 		color => 0x0,
-		backColor => 0xffffff,
+		backColor => (($type == im::Short) ? 0x7fff : 0xffffff),
 		rop2 => rop::CopyPut,
 	);
+	my $j = $i->dup;
 	$i->fillPattern([(0x11,0x11,0x44,0x44)x2]);
 	$i->bar(0,0,7,7);
 	$i->scaling(ist::AND);
@@ -106,7 +107,12 @@ for ( @inttypes ) {
 		"\x00\xff\x00\xff",
 		"$typename ist::AND");
 
-	$i->size(8,8);
+	$i = $j;
+	$i->set(
+		color => 0x0,
+		backColor => (($type == im::Short) ? 0x7fff : 0xffffff),
+		rop2 => rop::CopyPut,
+	);
 	$i->fillPattern([(0xee,0xee,0xbb,0xbb)x2]);
 	$i->bar(0,0,7,7);
 	$i->scaling(ist::OR);
