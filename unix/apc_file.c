@@ -131,8 +131,10 @@ apc_getdir( const char *dirname, Bool is_utf8)
 int
 apc_fs_access(const char *name, Bool is_utf8, int mode, Bool effective)
 {
-	return effective ?
-		eaccess(name, mode) :
+	return 
+#ifdef HAVE_EACCESS
+		effective ?  eaccess(name, mode) :
+#endif
 		access(name, mode);
 }
 
