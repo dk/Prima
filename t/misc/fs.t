@@ -80,7 +80,7 @@ sub check
 	my $pos = telldir $d;
 	seekdir($d, $start);
 	seekdir $d, $pos;
-	is($pos, telldir $d, "telldir");
+	is($pos, telldir $d, "telldir") if $^O !~ /freebsd/ || `uname -r` !~ /^([02-9]|10)/;
 	my @r = readdir $d;
 	ok( @r < @l, "seekdir/telldir");
 
