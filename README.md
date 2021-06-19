@@ -23,6 +23,11 @@ OpenSUSE
       libXpm-devel libXrandr-devel libXcomposite-devel libXcursor-devel
       libfribidi-devel libwebp-devel libharfbuzz-devel
 
+Solaris
+-------
+
+Download and install Oracle Developer Studio as perl there is compiled with cc, not gcc.
+
 Cygwin
 ------
 
