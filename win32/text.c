@@ -1287,7 +1287,7 @@ get_opentype_cmap1213_font_ranges( HDC ps, int * count)
 		v = BE32( *((uint32_t*)(cmap + offset)) ); \
 		else goto FAIL
 #define READPTR(v,offset,size) \
-	if (offset + size < cmap_size) \
+	if (offset + size <= cmap_size) \
 		v = (void*)(cmap + offset); \
 		else goto FAIL
 
