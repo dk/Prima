@@ -1704,7 +1704,7 @@ sub setup_macosx
 	printlog "Can compile with Cocoa...";
 	my $old_ldflags = $LDFLAGS;
 
-	$LDFLAGS .= ' -framework Foundation /System/Library/Frameworks/Cocoa.framework/Cocoa';
+	$LDFLAGS .= ' -framework Cocoa';
 	my $ok = compile(<<TEXT);
 #import <ApplicationServices/ApplicationServices.h>
 int main() {

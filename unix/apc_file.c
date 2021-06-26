@@ -269,9 +269,15 @@ apc_fs_stat(const char *name, Bool is_utf8, Bool link, PStatRec statrec)
 	statrec-> size    = statbuf. st_size;
 	statrec-> blksize = statbuf. st_blksize;
 	statrec-> blocks  = statbuf. st_blocks;
-	statrec-> atim    = (float) statbuf.st_atim.tv_sec + (float) statbuf.st_atim.tv_nsec / 1000000000.0;
-	statrec-> mtim    = (float) statbuf.st_mtim.tv_sec + (float) statbuf.st_mtim.tv_nsec / 1000000000.0;
-	statrec-> ctim    = (float) statbuf.st_ctim.tv_sec + (float) statbuf.st_ctim.tv_nsec / 1000000000.0;
+#ifdef __APPLE__
+#define ST_F(a) st_##a##timespec
+#else
+#define ST_F(a) st_##a##tim
+#endif
+	statrec-> atim    = (float) statbuf.ST_F(a).tv_sec + (float) statbuf.ST_F(a).tv_nsec / 1000000000.0;
+	statrec-> mtim    = (float) statbuf.ST_F(m).tv_sec + (float) statbuf.ST_F(m).tv_nsec / 1000000000.0;
+	statrec-> ctim    = (float) statbuf.ST_F(c).tv_sec + (float) statbuf.ST_F(c).tv_nsec / 1000000000.0;
+#undef ST_F
 	return 1;
 }
 
