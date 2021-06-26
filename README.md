@@ -79,17 +79,17 @@ You'll need homebrew, XQuartz, and a set of extra libraries.
 
 - install homebrew:
 
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 - install XQuartz:
 
-  brew cask install xquartz
+  brew install --cask xquartz
 
 - install support libraries:
 
-  brew install fribidi fontconfig freetype giflib gtk+ harfbuzz jpeg libpng libtiff webp
+  brew install libiconv libxft fribidi fontconfig freetype giflib gtk+ harfbuzz jpeg libpng libtiff webp libxpm
 
-- install custom built xorg libraries, either very minimal
+Note: if Prima crashes in libxft, do this: remove libxft and install custom built xorg libraries, either very minimal
 
   brew install dk/x11/xorg-macros dk/x11/libxft
 
