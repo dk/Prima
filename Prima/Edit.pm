@@ -546,11 +546,17 @@ sub paint_selection
 	my ( $self, $canvas, $index, $x, $y, $width, $height, $sx1, $sx2, $color, $clipRect ) = @_;
 
 	my $restore_clip;
+	my $line_end;
 
 	$sx1 = 0 if $sx1 eq 'start';
-	$sx2 = $self->get_chunk_cluster_length($index) - 1 if $sx2 eq 'end';
+	$line_end = 1, $sx2 = $self->get_chunk_cluster_length($index) - 1 if $sx2 eq 'end';
 
-	if ( $sx2 < 0 ) {
+	if ( $sx2 < 0 || ($line_end && $sx1 > $sx2) ) {
+		if ( $line_end && $sx1 > $sx2 ) {
+			my $glyphs = $self-> get_shaped_chunk($index);
+			$canvas-> color( $self->hiliteBackColor );
+			$canvas-> bar($x + $glyphs->get_width($canvas), $y, $width, $y + $height);
+		}
 		if ( $self->{syntaxHilite}) {
 			$self-> draw_colorchunk( $canvas, $index, $x, $y, $color);
 		} else {
@@ -564,6 +570,7 @@ sub paint_selection
 
 	my $glyphs = $self-> get_shaped_chunk($index);
 	my $chunks = $glyphs->selection_chunks_clusters($glyphs-> selection2range($sx1, $sx2));
+	my @r =$glyphs-> selection2range($sx1, $sx2);
 
 	my @cr = @$clipRect;
 	my $rx = $x;
@@ -572,7 +579,7 @@ sub paint_selection
 
 		$cr[0] = $rx;
 		$rx += $glyphs->get_sub_width($canvas, $offset, $length);
-		$cr[2] = $rx - 1;
+		$cr[2] = ($line_end && $selected && $offset + $length >= $sx2) ? $width : ($rx - 1);
 
 		$self->clipRect(@cr);
 		$restore_clip = 1;
@@ -1537,8 +1544,10 @@ sub set_selection
 			if ( $ey == $oey) {
 				if ( $sx == $osx) {
 					$start = $end = $ey;
+					$sx = $osx = length $self->get_chunk($start) if $ey != $sy;
 				} elsif ( $ex == $oex) {
 					$start = $end = $sy;
+					$ex = $oex = length $self->get_chunk($start) if $ey != $sy;
 				} else {
 					($start, $end) = ( $sy, $ey);
 				}
@@ -1571,7 +1580,7 @@ sub set_selection
 		my $diff = $glyphs->selection_diff($old, $new);
 
 		my @cr;
-		my $x = -$self->offset;
+		my $x = $a[0] - $self->offset;
 		$x += $self->rtl_offset - $glyphs->get_width($self) if $self-> {textDirection};
 		$glyphs->selection_walk( $diff, 0, undef, sub {
 			my ( $offset, $length, $selected ) = @_;
