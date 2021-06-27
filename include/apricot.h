@@ -2879,7 +2879,7 @@ LP(ShortDash)
 LP(Dot)
 #define    lpDotDot         (unsigned char*) "\1\1"          /* ............ */
 LP(DotDot)
-#define    lpDashDot        (unsigned char*) "\x9\6\1\3"     /* _._._._._._  */
+#define    lpDashDot        (unsigned char*) "\x9\3\1\3"     /* _._._._._._  */
 LP(DashDot)
 #define    lpDashDotDot     (unsigned char*) "\x9\3\1\3\1\3" /* _.._.._.._.. */
 LP(DashDotDot)
