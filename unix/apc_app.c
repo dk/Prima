@@ -434,7 +434,8 @@ init_x11( char * error_buf )
 	guts. use_gtk = do_no_gtk ? false : ( prima_gtk_init() != NULL );
 #endif
 #ifdef WITH_COCOA
-	guts. use_quartz = !do_no_quartz;
+	if ( prima_cocoa_is_x11_local())
+		guts. use_quartz = !do_no_quartz;
 #endif
 	bzero( &guts. cursor_gcv, sizeof( guts. cursor_gcv));
 	guts. cursor_gcv. cap_style = CapButt;
