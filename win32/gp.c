@@ -405,7 +405,7 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
 		p[i]. x = points[i]. x;
 		p[i]. y = dy - points[i]. y - 1;
 	}
-	if ( p[0]. x != p[numPts - 1].x || p[0]. y != p[numPts - 1].y)
+	if ( p[0]. x != p[numPts - 1].x || p[0]. y != p[numPts - 1].y || numPts == 2)
 		adjust_line_end_LONG( p[numPts - 2].x, p[numPts - 2].y, &p[numPts - 1].x, &p[numPts - 1].y);
 
 	if (EMULATE_OPAQUE_LINE) {
@@ -417,7 +417,7 @@ apc_gp_draw_poly( Handle self, int numPts, Point * points)
 	STYLUS_USE_PEN( sys ps);
 	if ( !(ok = Polyline( sys ps, p, numPts))) apiErr;
 
-  free(p);
+	free(p);
 
 	return ok;
 }}
@@ -565,10 +565,13 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 	if ((p = malloc( sizeof(POINT) * numPts)) == NULL)
 		return false;
 
+
 	for ( i = 0; i < numPts; i++)  {
 		p[i]. x = points[i]. x;
 		p[i]. y = dy - points[i]. y - 1;
 	}
+	if ( numPts == 2 )
+		adjust_line_end_LONG( p[0].x, p[0].y, &p[1].x, &p[1].y);
 
 	if (( sys psFillMode & fmOverlay) == 0) {
 		HGDIOBJ old = SelectObject( ps, hPenHollow);
