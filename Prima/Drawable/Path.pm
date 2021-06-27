@@ -786,6 +786,7 @@ sub poly2patterns
 			}
 			($draw, $black) = ( $advance > 0 ) ? ($advance, 0) : ($strokelen, $strokecolor);
 #			print "draw:$advance/$strokelen pixlen:$pixlen plotted:$plotted black:$black\n";
+			my $next_seg_advance = $black ? $lw - 1 : 1;
 			if ( $draw < $pixlen ) {
 				$plotted += $draw;
 				@b1 = ($draw == 1) ? @a1 : (
@@ -795,19 +796,19 @@ sub poly2patterns
 #				print "pix($black): @a1 -> @b1\n";
 				push @$segment, @a1, @b1 if $black;
 				$pixlen -= $draw;
-				$advance += ($advance > 0) ? -$draw : ($lw-1);
+				$advance += ($advance > 0) ? -$draw : $next_seg_advance;
 				@a1 = ( $b1[0] + $r[0], $b1[1] + $r[1]);
 #				print "new adv to @a1? =$advance\n";
 				($new_point, $new_stroke) = (0,1);
 			} elsif ( $draw == $pixlen ) {
 				push @$segment, @a1, @b if $black;
 				$new_stroke = $new_point = 1;
-				$advance += ($advance > 0) ? -$draw : ($lw-1);
+				$advance += ($advance > 0) ? -$draw : $next_seg_advance;
 #				print "=: pix($black): @a1 -> @b\n";
 				$joiner = $black;
 			} elsif ( $black && $draw == 1 && $pixlen <= 0 )  {
 				$new_point = $new_stroke = 1;
-				$advance = $lw-1;
+				$advance = $next_seg_advance;
 #				print "skip tail\n";
 			} else {
 #				print ">: pix($black): @a1 -> @b\n";
