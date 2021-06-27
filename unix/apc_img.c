@@ -2861,7 +2861,7 @@ apc_application_get_bitmap( Handle self, Handle image, int x, int y, int xLen, i
 	if ( xLen <= 0 || yLen <= 0) return false;
 
 #ifdef WITH_COCOA
-	if ( guts. use_quartz) {
+	if ( guts. use_quartz && prima_cocoa_is_x11_local()) {
 		uint32_t *pixels;
 		if ( PImage(image)->type != imRGB)
 			CImage( image)-> create_empty( image, xLen, yLen, imRGB);
