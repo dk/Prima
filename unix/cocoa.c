@@ -4,6 +4,8 @@
 /*                               */
 /*********************************/
 
+#include <sys/param.h>
+#include <sys/stat.h>
 #include "generic/config.h"
 
 #ifdef WITH_COCOA
@@ -103,6 +105,13 @@ prima_cocoa_system_action( char * params)
 			fprintf(stderr, "bad grab_mode\n");
 		}
 		return NULL;
+	} else if ( strncmp( params, "local_display", strlen("local_display")) == 0) {
+		struct stat s;
+		char * display_str = getenv("DISPLAY");
+		if ( !display_str ) return NULL;
+		if ((stat( display_str, &s) < 0) || !S_ISSOCK(s.st_mode))  /* not a socket */
+			return NULL;
+		return duplicate_string("1");
 	} else {
 		return NULL;
 	}
