@@ -119,7 +119,7 @@ $mw = Prima::MainWindow->new(
 		$canvas->color(cl::LightRed);
 		$canvas->rop(rop::OrPut) if $cmp;
 		$canvas->fillMode(fm::Winding|fm::Overlay);
-		$p->fill;
+		$opt{lw} ? $p->fill : $p->stroke;
 		$canvas->rop(rop::CopyPut);
 
 		if ( $cmp = $self-> menu->checked('hairline')) {
