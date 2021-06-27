@@ -99,6 +99,8 @@ my $w = Prima::MainWindow->new(
 	}
 );
 
+die "Cannot create a layered window, exiting\n" unless $w->is_surface_layered;
+
 my $btn = $w-> insert( Button =>
 	origin  => [10,10],
 	shape   => $i,
