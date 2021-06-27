@@ -1489,6 +1489,9 @@ prima_cocoa_application_get_bitmap( int x, int y, int xLen, int yLen, int yMax);
 
 extern char *
 prima_cocoa_system_action( char * params);
+
+extern int
+prima_cocoa_is_x11_local(void);
 #endif
 
 typedef struct _ViewProfile {

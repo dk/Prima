@@ -652,17 +652,22 @@ Bool
 apc_gp_can_draw_alpha( Handle self)
 {
 	DEFXX;
-	Bool xrender =
+	if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
+		return false;
+	else
+		return
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+
+#ifdef WITH_COCOA
+			!prima_cocoa_is_x11_local()
+#else
 			true
+#endif
+
 #else
 			false
 #endif
 		;
-	if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
-		return false;
-	else
-		return xrender;
 }
 
 Bool
