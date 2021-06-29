@@ -2506,7 +2506,7 @@ sub create_tab
 	$tab_mask-> put_image_indirect( $tabend_mask, 0, 0, $y, 0, $y, 1, $y, 1, rop::SrcOver | rop::ConstantColor | rop::Premultiply);
 	$tab_mask-> put_image_indirect( $tabend_mask, $tab_mask-> width - $y, 0, 0, 0, $y, 1, $y, 1, rop::SrcOver | rop::ConstantColor | rop::Premultiply);
 
-	$self->{cache}->{tab}  = mask2icon( $tab_mask, cl::White );
+	$self->{cache}->{tab}  = mask2icon( $tab_mask, cl::White )-> bitmap;
 	$self->{cache}->{tabx} = $tab_mask-> width;
 }
 
