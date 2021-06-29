@@ -320,10 +320,9 @@ use base qw(Prima::Menu::Item::Simple);
 sub entry_size
 {
 	my ( $self, $canvas ) = @_;
-	my $text = $self-> text;
-	my $line = $canvas-> text_wrap( $text, -1,
-		tw::ReturnFirstLineLength | tw::CalcMnemonic | tw::CollapseTilde, 1);
-	return $canvas->get_text_width(substr($text, 0, $line-1), 1), $canvas->font->height;
+	my @lines = @{$canvas-> text_wrap( $self->text,
+		1000000, tw::ReturnLines | tw::CalcMnemonic | tw::CollapseTilde, 1)};
+	return $canvas->get_text_width($lines[0], 1), $canvas->font->height;
 }
 
 sub draw_entry
