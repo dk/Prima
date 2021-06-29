@@ -656,16 +656,9 @@ apc_gp_can_draw_alpha( Handle self)
 		return false;
 	else
 		return
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-
+			guts.render_extension
 #ifdef WITH_COCOA
-			!prima_cocoa_is_x11_local()
-#else
-			true
-#endif
-
-#else
-			false
+			&& !prima_cocoa_is_x11_local()
 #endif
 		;
 }
