@@ -108,7 +108,7 @@ Region_create_from_data( Handle self, PRegionRec data)
 	--SvREFCNT( SvRV(var-> mate));
 	if (!ok) {
  		warn("Cannot create region");
-		return nilHandle;
+		return NULL_HANDLE;
 	}
 	return self;
 }
@@ -165,9 +165,9 @@ Region_get_boxes( Handle self)
 	PRegionRec data;
 
 	if (( data = my->update_change(self, false)) == NULL)
-		return nilSV;
+		return NULL_SV;
 	if (( ret = prima_array_new(data-> data. box. n_boxes * sizeof(Box))) == NULL)
-		return nilSV;
+		return NULL_SV;
 	memcpy( prima_array_get_storage(ret), data->data.box.boxes, data-> data. box. n_boxes * sizeof(Box));
 	return prima_array_tie( ret, sizeof(int), "i");
 }

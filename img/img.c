@@ -56,7 +56,7 @@ apc_img_register( PImgCodecVMT codec, void * initParam)
 static void *
 init( PImgCodecInfo * info, void * param)
 {
-	return nil;
+	return NULL;
 }
 
 static void
@@ -78,7 +78,7 @@ check_in(  PImgCodec instance, HV * system, HV * user)
 static void *
 open_load(  PImgCodec instance, PImgLoadFileInstance fi)
 {
-	return nil;
+	return NULL;
 }
 
 static Bool
@@ -96,7 +96,7 @@ close_load( PImgCodec instance, PImgLoadFileInstance fi)
 static void *
 open_save( PImgCodec instance, PImgSaveFileInstance fi)
 {
-	return nil;
+	return NULL;
 }
 
 static Bool
@@ -139,7 +139,7 @@ apc_img_profile_add( HV * to, HV * from, HV * keys)
 		char *key;
 		int  keyLen;
 		SV ** holder;
-		if (( he = hv_iternext( keys)) == nil)
+		if (( he = hv_iternext( keys)) == NULL)
 			return;
 		key    = (char*) HeKEY( he);
 		keyLen = HeKLEN( he);
@@ -191,10 +191,10 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 	dPROFILE;
 	int i, profiles_len = 0, lastFrame = -2, codecID = -1;
 	PList ret;
-	PImgCodec c = nil;
+	PImgCodec c = NULL;
 	ImgLoadFileInstance fi;
-	AV * profiles = nil;
-	HV * def = nil, * firstObjectExtras = nil, * commonHV = nil;
+	AV * profiles = NULL;
+	HV * def = NULL, * firstObjectExtras = NULL, * commonHV = NULL;
 	Bool err = false;
 	Bool loadExtras = false, noImageData = false;
 	Bool incrementalLoad = false;
@@ -339,7 +339,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 				continue;
 			}
 		}
-		c = nil;
+		c = NULL;
 
 		/* finding by extension first */
 		if ( fileName) {
@@ -361,7 +361,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 					loadmap[ i] = true;
 
 					if ( !( c-> info-> IOFlags & load_mask)) {
-						c = nil;
+						c = NULL;
 						continue;
 					}
 					if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL) {
@@ -375,17 +375,17 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 						goto EXIT_NOW;
 					}
 				}
-				c = nil;
+				c = NULL;
 			}
 		}
 
 		/* use first suitable codec */
-		if ( c == nil) {
+		if ( c == NULL) {
 			for ( i = 0; i < imgCodecs. count; i++) {
 				if ( loadmap[ i]) continue;
 				c = ( PImgCodec ) ( imgCodecs. items[ i]);
 				if ( !( c-> info-> IOFlags & load_mask)) {
-						c = nil;
+						c = NULL;
 						continue;
 				}
 				if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL) {
@@ -397,7 +397,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 					free( loadmap);
 					goto EXIT_NOW;
 				}
-				c = nil;
+				c = NULL;
 			}
 		}
 		free( loadmap);
@@ -501,7 +501,7 @@ apc_img_load( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq,  
 		}
 
 		/* create storage */
-		if (( i > 0) || ( self == nilHandle)) {
+		if (( i > 0) || ( self == NULL_HANDLE)) {
 			HV * profile = newHV();
 			fi. object = Object_create( className, profile);
 			sv_free(( SV *) profile);
@@ -623,7 +623,7 @@ EXIT_NOW:;
 	if ( firstObjectExtras)
 		(void) hv_store( firstObjectExtras, "frames", 6, newSViv( fi. frameCount), 0);
 	if ( err && ret)
-		list_add( ret, nilHandle); /* indicate the error */
+		list_add( ret, NULL_HANDLE); /* indicate the error */
 	if ( def)
 		sv_free(( SV *) def);
 	if ( commonHV)
@@ -641,7 +641,7 @@ EXIT_NOW:;
 int
 apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 {
-	PImgCodec c = nil;
+	PImgCodec c = NULL;
 	ImgLoadFileInstance fi;
 	int i, frameMap, ret = 0;
 	char error[256];
@@ -697,7 +697,7 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 			}
 		}
 
-		c = nil;
+		c = NULL;
 
 		/* finding by extension first */
 		if ( fileName) {
@@ -719,7 +719,7 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 					loadmap[ i] = true;
 
 					if ( !( c-> info-> IOFlags & load_mask)) {
-						c = nil;
+						c = NULL;
 						continue;
 					}
 					if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL)
@@ -730,16 +730,16 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 						goto EXIT_NOW;
 					}
 				}
-				c = nil;
+				c = NULL;
 			}
 		}
 
-		if ( c == nil) {
+		if ( c == NULL) {
 			for ( i = 0; i < imgCodecs. count; i++) {
 				if ( loadmap[ i]) continue;
 				c = ( PImgCodec ) ( imgCodecs. items[ i]);
 				if ( !( c-> info-> IOFlags & load_mask)) {
-						c = nil;
+						c = NULL;
 						continue;
 				}
 				if (( fi. instance = c-> vmt-> open_load( c, &fi)) != NULL)
@@ -748,7 +748,7 @@ apc_img_frame_count( char * fileName, Bool is_utf8, PImgIORequest ioreq )
 					free( loadmap);
 					goto EXIT_NOW;
 				}
-				c = nil;
+				c = NULL;
 			}
 		}
 		free( loadmap);
@@ -828,10 +828,10 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 {
 	dPROFILE;
 	int i;
-	PImgCodec c = nil;
+	PImgCodec c = NULL;
 	ImgSaveFileInstance fi;
-	AV * images = nil;
-	HV * def = nil, * commonHV = nil;
+	AV * images = NULL;
+	HV * def = NULL, * commonHV = NULL;
 	Bool err = false;
 	int codecID = -1;
 	int xself = self ? 1 : 0;
@@ -902,7 +902,7 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 	memset( fi. frameMap, 0, sizeof( Handle) * fi. frameMapSize);
 
 	for ( i = 0; i < fi. frameMapSize; i++) {
-		Handle obj = nilHandle;
+		Handle obj = NULL_HANDLE;
 
 		/* query profile */
 		if ( self && (i == 0)) {
@@ -950,7 +950,7 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 
 		/* checking 'codecID', if available */
 		{
-			SV * c = nil;
+			SV * c = NULL;
 			if ( pexist( codecID))
 				c = pget_sv( codecID);
 			else if ( self &&
@@ -970,7 +970,7 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 		}
 
 		/* find codec */
-		c = nil;
+		c = NULL;
 		if ( codecID >= 0) {
 			if ( codecID >= imgCodecs. count)
 				out("Codec index out of range");
@@ -1028,18 +1028,18 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 				if ( found) {
 					savemap[ i] = true;
 					if ( !( c-> info-> IOFlags & save_mask)) {
-						c = nil;
+						c = NULL;
 						continue;
 					}
 
 					if ( fi. frameMapSize > 1
 						&& !( c-> info-> IOFlags & IMG_SAVE_MULTIFRAME)) {
-						c = nil;
+						c = NULL;
 						continue;
 					}
 					if ( fi. append
 						&& !( c-> info-> IOFlags & IMG_SAVE_APPEND)) {
-						c = nil;
+						c = NULL;
 						continue;
 					}
 
@@ -1056,7 +1056,7 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 							}
 						}
 						if ( !ok) {
-							c = nil;
+							c = NULL;
 							continue;
 						}
 					}
@@ -1064,7 +1064,7 @@ apc_img_save( Handle self, char * fileName, Bool is_utf8, PImgIORequest ioreq, H
 					if (( fi. instance = c-> vmt-> open_save( c, &fi)) != NULL)
 						break;
 				}
-				c = nil;
+				c = NULL;
 			}
 		}
 
@@ -1212,7 +1212,7 @@ apc_img_read_palette( PRGBColor palBuf, SV * palette, Bool triplets)
 		for ( i = 0; i < count; i++)
 		{
 			SV **itemHolder = av_fetch( av, i, 0);
-			if ( itemHolder == nil) return 0;
+			if ( itemHolder == NULL) return 0;
 			buf[ i] = SvIV( *itemHolder);
 		}
 		memcpy( palBuf, buf, count);
@@ -1225,7 +1225,7 @@ apc_img_read_palette( PRGBColor palBuf, SV * palette, Bool triplets)
 		{
 			Color c;
 			SV **itemHolder = av_fetch( av, i, 0);
-			if ( itemHolder == nil) return 0;
+			if ( itemHolder == NULL) return 0;
 			c = (Color)(SvIV( *itemHolder));
 			buf[j++] = c & 0xFF;
 			buf[j++] = (c >> 8) & 0xFF;
@@ -1302,7 +1302,7 @@ apc_img_info2hash( PImgCodec codec)
 		hv = codec-> vmt-> load_defaults( codec);
 		if ( c-> IOFlags & IMG_LOAD_MULTIFRAME) {
 			(void) hv_store( hv, "index",        5, newSViv(0),     0);
-			(void) hv_store( hv, "map",          3, newSVsv(nilSV), 0);
+			(void) hv_store( hv, "map",          3, newSVsv(NULL_SV), 0);
 			(void) hv_store( hv, "loadAll",      7, newSViv(0),     0);
 			(void) hv_store( hv, "wantFrames",  10, newSViv(0),     0);
 		}
@@ -1331,7 +1331,7 @@ apc_img_info2hash( PImgCodec codec)
 		if ( c-> IOFlags & IMG_SAVE_MULTIFRAME)
 			(void) hv_store( hv, "append",       6, newSViv(0), 0);
 		(void) hv_store( hv, "autoConvert", 11, newSViv(1), 0);
-		(void) hv_store( hv, "codecID",     7,  newSVsv( nilSV), 0);
+		(void) hv_store( hv, "codecID",     7,  newSVsv( NULL_SV), 0);
 	} else
 		hv = newHV();
 	pset_sv_noinc( saveInput, newRV_noinc(( SV *) hv));
@@ -1341,7 +1341,7 @@ apc_img_info2hash( PImgCodec codec)
 	return profile;
 }
 
-char * imgPVEmptySet[] = { nil };
+char * imgPVEmptySet[] = { NULL };
 int    imgIVEmptySet[] = { 0 };
 
 void
@@ -1361,7 +1361,7 @@ apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines, int dire
 	struct timeval t;
 
 	fi-> lastCachedScanline += scanlines;
-	gettimeofday( &t, nil);
+	gettimeofday( &t, NULL);
 	dt =
 		t.tv_sec * 1000 + t.tv_usec / 1000 -
 		fi-> lastEventTime.tv_sec * 1000 - fi-> lastEventTime.tv_usec / 1000;
@@ -1401,7 +1401,7 @@ apc_img_notify_scanlines_ready( PImgLoadFileInstance fi, int scanlines, int dire
 	}
 	CImage( fi-> object)-> message( fi-> object, &e);
 
-	gettimeofday( &fi-> lastEventTime, nil);
+	gettimeofday( &fi-> lastEventTime, NULL);
 	fi-> lastEventScanline = fi-> lastCachedScanline;
 }
 #ifdef __cplusplus

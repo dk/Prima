@@ -186,7 +186,7 @@ font_context_next( FontContext * fc )
 	src.size = dst.size;
 	src.undef.size = 0;
 
-	prima_xft_font_pick( nilHandle, &src, &dst, NULL, &fc->xft_font);
+	prima_xft_font_pick( NULL_HANDLE, &src, &dst, NULL, &fc->xft_font);
 	if ( !fc->orig_base )
 		return;
 	
@@ -194,7 +194,7 @@ font_context_next( FontContext * fc )
 		fc-> xft_base_font = fc->xft_font;
 	else {
 		dst.direction = 0;
-		prima_xft_font_pick( nilHandle, &dst, &dst, NULL, &fc->xft_base_font);
+		prima_xft_font_pick( NULL_HANDLE, &dst, &dst, NULL, &fc->xft_base_font);
 	}
 }
 
@@ -235,7 +235,7 @@ prima_xft_init(void)
 #endif
 
 	if ( !apc_fetch_resource( "Prima", "", "UseXFT", "usexft",
-				nilHandle, frUnix_int, &guts. use_xft))
+				NULL_HANDLE, frUnix_int, &guts. use_xft))
 		guts. use_xft = 1;
 	if ( guts. use_xft) {
 		if ( !XftInit(0)) guts. use_xft = 0;
@@ -2235,7 +2235,7 @@ prima_xft_parse( char * ppFontNameSize, Font * font)
 		}
 	}
 	FcPatternDestroy( p);
-	if ( !prima_xft_font_pick( nilHandle, &f, &def, NULL, NULL)) return false;
+	if ( !prima_xft_font_pick( NULL_HANDLE, &f, &def, NULL, NULL)) return false;
 	*font = def;
 	XFTdebug( "parsed ok: %d.%s", def.size, def.name);
 	return true;
@@ -2422,7 +2422,7 @@ prima_xft_mapper_query_ranges(PFont font, int * count, unsigned int * flags)
 	XftFont * xft = NULL;
 	unsigned long * ranges;
 	strncpy(name, font->name, 256);
-	prima_xft_font_pick( nilHandle, font, font, NULL, &xft);
+	prima_xft_font_pick( NULL_HANDLE, font, font, NULL, &xft);
 	*flags = 0 | MAPPER_FLAGS_SYNTHETIC_PITCH;
 	if ( !xft || strcmp( font->name, name ) != 0 ) {
 		*count = 0;

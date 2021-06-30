@@ -24,7 +24,7 @@ static char * xpmext[] = { "xpm",
 #if PRIMA_PLATFORM == apcUnix
 	"xpm.gz", "xpm.Z", /* libXpm claims that it can run gzip */
 #endif
-	nil };
+	NULL };
 
 static int    xpmbpp[] = {
 	imbpp8,
@@ -41,7 +41,7 @@ static char * loadOutput[] = {
 	"pixelsComment",
 	"transparentColors",
 	"extensions",
-	nil
+	NULL
 };
 
 static char * mime[] = {
@@ -58,7 +58,7 @@ static ImgCodecInfo codec_info = {
 	xpmext,    /* extension */
 	"X Pixmap File",     /* file type */
 	"XPM", /* short type */
-	nil,    /* features  */
+	NULL,    /* features  */
 	"",     /* module */
 	"",     /* package */
 	IMG_LOAD_FROM_FILE | IMG_SAVE_TO_FILE,
@@ -100,11 +100,11 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 		break;
 	case XpmNoMemory:
 		fi-> stop = true;
-		return nil;
+		return NULL;
 	case XpmFileInvalid:
 	case XpmOpenFailed:
 	default:
-		return nil;
+		return NULL;
 	}
 
 	fi-> frameCount = 1;
@@ -115,7 +115,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 		XpmFreeXpmImage( &image);
 		XpmFreeXpmInfo( &info);
 		outcm( sizeof( LoadRec) + ( sizeof( RGBColor) + 1) * image. ncolors);
-		return nil;
+		return NULL;
 	}
 
 	memset( l, 0, sizeof( LoadRec) + ( sizeof( RGBColor) + 1) * image. ncolors);
@@ -402,7 +402,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 	HV * profile = fi-> objectExtras;
 	PIcon i = ( PIcon) fi-> object;
 	int ret = XpmOpenFailed;
-	char * extholder = nil;
+	char * extholder = NULL;
 	Bool icon = kind_of( fi-> object, CIcon);
 
 	memset( &info, 0, sizeof(info));
@@ -425,7 +425,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		int x, y, transcolor = -1;
 		unsigned int *dest = image. data;
 		Byte * p = i-> data + ( i-> h - 1) * i-> lineSize;
-		Byte * mask = icon ? i-> mask + ( i-> h - 1) * i-> maskLine : nil;
+		Byte * mask = icon ? i-> mask + ( i-> h - 1) * i-> maskLine : NULL;
 
 		for ( y = 0; y < i-> h; y++) {
 			RGBColor * pp = ( RGBColor *) p;
@@ -461,14 +461,14 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		memset( image. colorTable, 0, image. ncolors * ( sizeof( XpmColor) + 13));
 		cd. delta = image. ncolors * sizeof( XpmColor);
 		cd. image = &image;
-		hash_first_that( hash, (void*)prepare_xpm_color, &cd, nil, nil);
+		hash_first_that( hash, (void*)prepare_xpm_color, &cd, NULL, NULL);
 		hash_destroy( hash, false);
 	} else {
 		CalcData cd;
 		int x, y, type = i-> type & imBPP, val = 0, transcolor = -1, ncolors = image. ncolors;
 		unsigned int *dest = image. data;
 		Byte * p = i-> data + ( i-> h - 1) * i-> lineSize;
-		Byte * mask = icon ? i-> mask + ( i-> h - 1) * i-> maskLine : nil;
+		Byte * mask = icon ? i-> mask + ( i-> h - 1) * i-> maskLine : NULL;
 
 		if ( mask) transcolor = image. ncolors++;
 
@@ -559,7 +559,7 @@ save( PImgCodec instance, PImgSaveFileInstance fi)
 		for (;;) {
 			char * c;
 			STRLEN vlen;
-			if (( he = hv_iternext( hv)) == nil) break;
+			if (( he = hv_iternext( hv)) == NULL) break;
 			info. extensions[i]. name  = (char*) HeKEY( he);
 			c = (char*) SvPV( HeVAL( he), vlen);
 			info. extensions[i]. lines = (char**)c;
@@ -634,7 +634,7 @@ apc_img_codec_Xpm( void )
 	vmt. open_save     = open_save;
 	vmt. save          = save;
 	vmt. close_save    = close_save;
-	apc_img_register( &vmt, nil);
+	apc_img_register( &vmt, NULL);
 }
 
 #ifdef __cplusplus

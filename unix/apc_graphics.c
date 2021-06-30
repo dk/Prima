@@ -87,15 +87,15 @@ prima_release_gc( PDrawableSysData selfxx)
 	struct gc_head *gc_pool;
 
 	if ( XX-> gc) {
-		if ( XX-> gcl == nil)
+		if ( XX-> gcl == NULL)
 			warn( "UAG_011: internal error");
 		bitmap = XT_IS_BITMAP(XX) ? true : false;
 		layered = XF_LAYERED(XX) ? true : false;
 		gc_pool = bitmap ? &guts.bitmap_gc_pool : ( layered ? &guts.argb_gc_pool : &guts.screen_gc_pool );
 		if ( XX-> gcl)
 			TAILQ_INSERT_HEAD(gc_pool, XX->gcl, gc_link);
-		XX->gcl = nil;
-		XX->gc = nil;
+		XX->gcl = NULL;
+		XX->gc = NULL;
 	} else {
 		if ( XX-> gcl) {
 			warn( "UAG_012: internal error");
@@ -222,7 +222,7 @@ Unbuffered:
 			XX-> flags. kill_current_region = 0;
 		}
 		XX-> paint_region = XX-> invalid_region;
-		XX-> invalid_region = nil;
+		XX-> invalid_region = NULL;
 	}
 	XX-> clip_mask_extent. x = XX-> clip_mask_extent. y = 0;
 	XX-> flags. xft_clip = 0;
@@ -292,14 +292,14 @@ prima_cleanup_drawable_after_painting( Handle self)
 	}
 	if ( XX-> paint_dashes) {
 		free(XX->paint_dashes);
-		XX-> paint_dashes = nil;
+		XX-> paint_dashes = NULL;
 	}
 	XX-> paint_ndashes = 0;
 	XF_IN_PAINT(XX) = false;
 	PDrawable( self)-> font = XX-> saved_font;
 	if ( XX-> paint_region) {
 		XDestroyRegion( XX-> paint_region);
-		XX-> paint_region = nil;
+		XX-> paint_region = NULL;
 	}
 	XFlush(DISP);
 }
@@ -444,7 +444,7 @@ apc_gp_done( Handle self)
 	if (!XX) return false;
 	if ( XX-> dashes) {
 		free(XX-> dashes);
-		XX-> dashes = nil;
+		XX-> dashes = NULL;
 	}
 	XX-> ndashes = 0;
 	if ( guts. dynamicColors) {
@@ -596,7 +596,7 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
-	if ((r = malloc( sizeof( XRectangle)*nr)) == nil) return false;
+	if ((r = malloc( sizeof( XRectangle)*nr)) == NULL) return false;
 
 	for ( i = 0, rp = r; i < nr; i++, rr++, rp++) {
 		SHIFT( rr->left,rr-> bottom); SHIFT( rr->right, rr->top);
@@ -749,7 +749,7 @@ apc_gp_draw_poly( Handle self, int n, Point *pp)
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
 
-	if ((p = malloc( sizeof( XPoint)*n)) == nil)
+	if ((p = malloc( sizeof( XPoint)*n)) == NULL)
 		return false;
 
 	for ( i = 0; i < n; i++) {
@@ -779,7 +779,7 @@ apc_gp_draw_poly2( Handle self, int np, Point *pp)
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
 
-	if ((s = malloc( sizeof( XSegment)*n)) == nil) return false;
+	if ((s = malloc( sizeof( XSegment)*n)) == NULL) return false;
 
 	for ( i = 0; i < n; i++) {
 		s[i].x1 = pp[i*2].x + x;
@@ -980,7 +980,7 @@ color_to_pixel( Handle self, Color color, int depth)
 	if ( depth == 1) {
 		pv = color ? 1 : 0;
 	} else if ( guts.palSize > 0 ) {
-		pv = prima_color_find( self, color, -1, nil, RANK_FREE);
+		pv = prima_color_find( self, color, -1, NULL, RANK_FREE);
 	} else {
 		PRGBABitDescription bd = GET_RGBA_DESCRIPTION;
 		switch ( depth) {
@@ -1104,12 +1104,12 @@ hline( FillSession * fs, int x1, int y, int x2)
 
 	if ( y == fs-> y && fs-> i) {
 		XDestroyImage( fs-> i);
-		fs-> i = nil;
+		fs-> i = NULL;
 	}
 
 	y -= fs-> first;
 
-	if ( fs-> lists[y] == nil)
+	if ( fs-> lists[y] == NULL)
 		fs-> lists[y] = plist_create( 32, 128);
 	list_add( fs-> lists[y], ( Handle) x1);
 	list_add( fs-> lists[y], ( Handle) x2);
@@ -1176,7 +1176,7 @@ apc_gp_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 	s. clip. right  = cr. x + cr. width  - 1;
 	s. clip. bottom = cr. y + cr. height - 1;
 	if ( cr. width <= 0 || cr. height <= 0) return false;
-	s. i = nil;
+	s. i = NULL;
 	s. depth = XT_IS_BITMAP(X(self)) ? 1 : guts. idepth;
 	s. depth = get_pixel_depth( s. depth);
 	s. color = hint ?
@@ -1306,7 +1306,7 @@ Color
 apc_gp_get_nearest_color( Handle self, Color color)
 {
 	if ( guts. palSize > 0)
-		return guts. palette[ prima_color_find( self, color, -1, nil, RANK_FREE)]. composite;
+		return guts. palette[ prima_color_find( self, color, -1, NULL, RANK_FREE)]. composite;
 	if ( guts. visualClass == TrueColor || guts. visualClass == DirectColor) {
 		XColor xc;
 		xc. red   = COLOR_R16(color);
@@ -1332,12 +1332,12 @@ apc_gp_get_physical_palette( Handle self, int * colors)
 
 	*colors = 0;
 
-	if ( guts. palSize == 0) return nil;
+	if ( guts. palSize == 0) return NULL;
 	if ( !( p = malloc( guts. palSize * sizeof( RGBColor))))
-		return nil;
+		return NULL;
 	if ( !( xc = malloc( guts. palSize * sizeof( XColor)))) {
 		free( p);
-		return nil;
+		return NULL;
 	}
 	for ( i = 0; i < guts. palSize; i++) xc[i]. pixel = i;
 	XQueryColors( DISP, guts. defaultColormap, xc, guts. palSize);
@@ -1452,7 +1452,7 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 	if ( !XF_IN_PAINT(XX)) return false;
 
 	SHIFT( x, y);
-	XSetForeground( DISP, XX-> gc, prima_allocate_color( self, color, nil));
+	XSetForeground( DISP, XX-> gc, prima_allocate_color( self, color, NULL));
 	XDrawPoint( DISP, XX-> gdrawable, XX-> gc, x, REVERT( y));
 	XX-> flags. brush_fore = 0;
 	XFLUSH;
@@ -1464,7 +1464,7 @@ Color
 apc_gp_get_back_color( Handle self)
 {
 	DEFXX;
-	return ( XF_IN_PAINT(XX)) ? XX-> back. color : prima_map_color( XX-> saved_back, nil);
+	return ( XF_IN_PAINT(XX)) ? XX-> back. color : prima_map_color( XX-> saved_back, NULL);
 }
 
 int
@@ -1480,14 +1480,14 @@ Color
 apc_gp_get_color( Handle self)
 {
 	DEFXX;
-	return ( XF_IN_PAINT(XX)) ? XX-> fore. color : prima_map_color(XX-> saved_fore, nil);
+	return ( XF_IN_PAINT(XX)) ? XX-> fore. color : prima_map_color(XX-> saved_fore, NULL);
 }
 
 unsigned long *
 apc_gp_get_font_ranges( Handle self, int * count)
 {
 	DEFXX;
-	unsigned long * ret = nil;
+	unsigned long * ret = NULL;
 	XFontStruct * fs;
 #ifdef USE_XFT
 	if ( XX-> font-> xft)
@@ -1866,11 +1866,11 @@ apc_gp_set_line_pattern( Handle self, unsigned char *pattern, int len)
 	} else {
 		free( XX-> dashes);
 		if ( len == 0) {					/* lpNull */
-			XX-> dashes = nil;
+			XX-> dashes = NULL;
 			XX-> ndashes = -1;
 			XX-> gcv. line_style = LineSolid;
 		} else if ( len == 1 && pattern[0] == 1) {	/* lpSolid */
-			XX-> dashes = nil;
+			XX-> dashes = NULL;
 			XX-> ndashes = 0;
 			XX-> gcv. line_style = LineSolid;
 		} else {						/* the rest */

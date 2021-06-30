@@ -207,9 +207,9 @@ Font *
 Drawable_font_match( char * dummy, Font * source, Font * dest, Bool pick)
 {
 	if ( pick)
-		apc_font_pick( nilHandle, source, dest);
+		apc_font_pick( NULL_HANDLE, source, dest);
 	else
-		Drawable_font_add( nilHandle, source, dest);
+		Drawable_font_add( NULL_HANDLE, source, dest);
 	return dest;
 }
 
@@ -321,7 +321,7 @@ Drawable_linePattern( Handle self, Bool set, SV * pattern)
 		int len = apc_gp_get_line_pattern( self, ret);
 		return newSVpvn((char*) ret, len);
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 Color
@@ -352,7 +352,7 @@ Drawable_get_physical_palette( Handle self)
 	AV * av = newAV();
 	PRGBColor r;
 
-	CHECK_GP(nilSV);
+	CHECK_GP(NULL_SV);
 	gpENTER(newRV_noinc(( SV *) av));
 	r = apc_gp_get_physical_palette( self, &nCol);
 	gpLEAVE;
@@ -407,14 +407,14 @@ Drawable_get_font_abcdef( Handle self, int first, int last, int flags, PFontABC 
 SV *
 Drawable_get_font_abc( Handle self, int first, int last, int flags)
 {
-	CHECK_GP(nilSV);
+	CHECK_GP(NULL_SV);
 	return Drawable_get_font_abcdef( self, first, last, flags, apc_gp_get_font_abc);
 }
 
 SV *
 Drawable_get_font_def( Handle self, int first, int last, int flags)
 {
-	CHECK_GP(nilSV);
+	CHECK_GP(NULL_SV);
 	return Drawable_get_font_abcdef( self, first, last, flags, apc_gp_get_font_def);
 }
 
@@ -425,7 +425,7 @@ Drawable_get_font_languages( Handle self)
 	AV * av = newAV();
 	gpARGS;
 
-	CHECK_GP(nilSV);
+	CHECK_GP(NULL_SV);
 	gpENTER( newRV_noinc(( SV *) av));
 	p = buf = apc_gp_get_font_languages( self);
 	gpLEAVE;
@@ -448,7 +448,7 @@ Drawable_get_font_ranges( Handle self)
 	AV * av = newAV();
 	gpARGS;
 
-	CHECK_GP(nilSV);
+	CHECK_GP(NULL_SV);
 	gpENTER( newRV_noinc(( SV *) av));
 	ret = apc_gp_get_font_ranges( self, &count);
 	gpLEAVE;
@@ -466,7 +466,7 @@ SV *
 Drawable_get_handle( Handle self)
 {
 	char buf[ 256];
-	CHECK_GP(nilSV);
+	CHECK_GP(NULL_SV);
 	snprintf( buf, 256, PR_HANDLE_FMT, apc_gp_get_handle( self));
 	return newSVpv( buf, 0);
 }
@@ -508,7 +508,7 @@ Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom,
 {
 	Bool ok;
 	CHECK_GP(false);
-	if ( image == nilHandle) return false;
+	if ( image == NULL_HANDLE) return false;
 	if ( !(PObject(image)-> options.optSystemDrawable)) {
 		warn("This method is not available on this class because it is not a system Drawable object. You need to implement your own");
 		return false;
@@ -569,8 +569,8 @@ Drawable_render_glyph( Handle self, int index, HV * profile)
 	SV * ret;
 	dPROFILE;
 	gpARGS;
-	CHECK_GP(nilSV);
-	gpENTER(nilSV);
+	CHECK_GP(NULL_SV);
+	gpENTER(NULL_SV);
 
 	flags = ggoUseHints;
 	if ( pexist(glyph)   && pget_B(glyph))   flags |= ggoGlyphIndex;
@@ -580,7 +580,7 @@ Drawable_render_glyph( Handle self, int index, HV * profile)
 	hv_clear(profile); /* old gencls bork */
 	gpLEAVE;
 
-	if ( count < 0 ) return nilSV;
+	if ( count < 0 ) return NULL_SV;
 	ret = prima_array_new(sizeof(int) * count);
 	memcpy( prima_array_get_storage(ret), buffer, sizeof(int) * count);
 	if ( buffer ) free( buffer );
@@ -1001,7 +1001,7 @@ FAIL:
 	if ( free_buffer ) free( buffer );
 	if ( free_input ) free(input);
 	hv_clear(profile); /* old gencls bork */
-	return nilSV;
+	return NULL_SV;
 }
 
 PRGBColor
@@ -1104,12 +1104,12 @@ SV *
 Drawable_palette( Handle self, Bool set, SV * palette)
 {
 	int colors;
-	if ( var-> stage > csFrozen) return nilSV;
+	if ( var-> stage > csFrozen) return NULL_SV;
 	colors = var-> palSize;
 	if ( set) {
 		free( var-> palette);
 		var-> palette = prima_read_palette( &var-> palSize, palette);
-		if ( colors == 0 && var-> palSize == 0) return nilSV; /* do not bother apc */
+		if ( colors == 0 && var-> palSize == 0) return NULL_SV; /* do not bother apc */
 		apc_gp_set_palette( self);
 	} else {
 		AV * av = newAV();
@@ -1118,7 +1118,7 @@ Drawable_palette( Handle self, Bool set, SV * palette)
 		for ( i = 0; i < colors * 3; i++) av_push( av, newSViv( pal[ i]));
 		return newRV_noinc(( SV *) av);
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 SV *
@@ -1128,25 +1128,25 @@ Drawable_pixel( Handle self, Bool set, int x, int y, SV * color)
 	if (!set)
 		return newSViv( apc_gp_get_pixel( self, x, y));
 	apc_gp_set_pixel( self, x, y, SvIV( color));
-	return nilSV;
+	return NULL_SV;
 }
 
 Handle
 Drawable_region( Handle self, Bool set, Handle mask)
 {
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 	if ( !is_opt(optSystemDrawable))
-		return nilHandle;
+		return NULL_HANDLE;
 
 	if ( set) {
 		if ( mask && kind_of( mask, CRegion)) {
 			apc_gp_set_region( self, mask);
-			return nilHandle;
+			return NULL_HANDLE;
 		}
 
 		if ( mask && !kind_of( mask, CImage)) {
 			warn("Illegal object reference passed to Drawable::region");
-			return nilHandle;
+			return NULL_HANDLE;
 		}
 
 		if ( mask ) {
@@ -1161,9 +1161,9 @@ Drawable_region( Handle self, Bool set, Handle mask)
 			Object_destroy(region);
 
 		} else
-			apc_gp_set_region(self, nilHandle);
+			apc_gp_set_region(self, NULL_HANDLE);
 
-	} else if ( apc_gp_get_region( self, nilHandle)) {
+	} else if ( apc_gp_get_region( self, NULL_HANDLE)) {
 		HV * profile = newHV();
 		Handle i = Object_create( "Prima::Region", profile);
 		sv_free(( SV *) profile);
@@ -1172,7 +1172,7 @@ Drawable_region( Handle self, Bool set, Handle mask)
 		return i;
 	}
 
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 int
@@ -1222,7 +1222,7 @@ Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
 	if ( !set) {
 		AV * av;
 		FillPattern * fp = apc_gp_get_fill_pattern( self);
-		if ( !fp) return nilSV;
+		if ( !fp) return NULL_SV;
 		av = newAV();
 		for ( i = 0; i < 8; i++) av_push( av, newSViv(( int) (*fp)[i]));
 		return newRV_noinc(( SV *) av);
@@ -1232,13 +1232,13 @@ Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
 			AV * av = ( AV *) SvRV( svpattern);
 			if ( av_len( av) != 7) {
 				warn("Illegal fillPattern passed to Drawable::fillPattern");
-				return nilSV;
+				return NULL_SV;
 			}
 			for ( i = 0; i < 8; i++) {
 				SV ** holder = av_fetch( av, i, 0);
 				if ( !holder) {
 					warn("Array panic on Drawable::fillPattern");
-					return nilSV;
+					return NULL_SV;
 				}
 				fp[ i] = SvIV( *holder);
 			}
@@ -1247,12 +1247,12 @@ Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
 			int id = SvIV( svpattern);
 			if (( id < 0) || ( id > fpMaxId)) {
 				warn("fillPattern index out of range passed to Drawable::fillPattern");
-				return nilSV;
+				return NULL_SV;
 			}
 			apc_gp_set_fill_pattern( self, fillPatterns[ id]);
 		}
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 Point

@@ -79,7 +79,7 @@ apc_getdir( const char *dirname, Bool is_utf8)
 {
 	DIR *dh;
 	struct dirent *de;
-	PList dirlist = nil;
+	PList dirlist = NULL;
 	char *type;
 	char path[ 2048];
 	struct stat s;
@@ -102,7 +102,7 @@ apc_getdir( const char *dirname, Bool is_utf8)
 			default:
 #endif
 				snprintf( path, 2047, "%s/%s", dirname, de-> d_name);
-				type = nil;
+				type = NULL;
 				if ( stat( path, &s) == 0) {
 					switch ( s. st_mode & S_IFMT) {
 					case S_IFIFO:        type = "fifo";  break;

@@ -229,7 +229,7 @@ image_create_bitmap_by_type( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo
 	HBITMAP bm;
 	XBITMAPINFO xbi;
 	BITMAPINFO * bi;
-	HPALETTE old = nil, xpal = pal;
+	HPALETTE old = NULL, xpal = pal;
 	HDC dc;
 	PIcon i = (PIcon) self;
 
@@ -247,7 +247,7 @@ image_create_bitmap_by_type( Handle self, HPALETTE pal, XBITMAPINFO * bitmapinfo
 	if ( bi-> bmiHeader. biClrUsed > 0)
 		bi-> bmiHeader. biClrUsed = bi-> bmiHeader. biClrImportant = i-> palSize;
 
-	if ( xpal == nil)
+	if ( xpal == NULL)
 		xpal = image_create_palette( self);
 
 	if ( xpal) {
@@ -328,7 +328,7 @@ image_convert_for_gdi( Handle image )
 	PImage img = (PImage) image;
 
 	if ( !( img-> type & ( imSignedInt | imRealNumber | imComplexNumber | imTrigComplexNumber)))
-		return nilHandle;
+		return NULL_HANDLE;
 
 	dup = CImage(image)->dup(image);
 	img = (PImage) dup;
@@ -349,7 +349,7 @@ image_convert_to_type( Handle image, int type, Bool inplace )
 	Handle dup;
 
 	if (((PImage)image)->type == type)
-		return nilHandle;
+		return NULL_HANDLE;
 
 	dup = inplace ? image : CImage(image)->dup(image);
 	CImage(dup)->set_type(dup, type);
@@ -367,13 +367,13 @@ image_convert_rgb_for_screen( Handle image, Bool inplace )
 	PImage img = (PImage) image;
 
 	if ( img-> type != imRGB)
-		return nilHandle;
+		return NULL_HANDLE;
 
 	/* use Prima downsampling methods from RGB to 8,4,1 */
 	bpp = guts. displayBMInfo. bmiHeader. biBitCount *
 			guts. displayBMInfo. bmiHeader. biPlanes;
 	if ( bpp == 0 || bpp > 8)
-		return nilHandle;
+		return NULL_HANDLE;
 	if ( bpp < 4) bpp = 1;
 	else if ( bpp < 8) bpp = 4;
 	return image_convert_to_type( image, bpp, inplace );
@@ -386,7 +386,7 @@ image_convert_rgb_for_paletted( Handle image, Handle screen, Bool inplace )
 	PImage img = (PImage) image;
 
 	if ( img-> type != imRGB)
-		return nilHandle;
+		return NULL_HANDLE;
 
 	if ( dsys( screen) bpp == 0) {
 		if ( !dsys(screen) ps)
@@ -395,7 +395,7 @@ image_convert_rgb_for_paletted( Handle image, Handle screen, Bool inplace )
 	}
 
 	if ( dsys( screen) bpp > 8)
-		return nilHandle;
+		return NULL_HANDLE;
 
 	bpp = dsys( screen) bpp;
 	if ( bpp < 4) bpp = 1;
@@ -420,7 +420,7 @@ image_fill_bitmap_cache( Handle self, int bm_type, Handle optimize_for_surface)
 
 	/* create new image, if any */
 	copy = image_convert_for_gdi( self );
-	if ( copy == nilHandle )
+	if ( copy == NULL_HANDLE )
 		copy = self;
 
 	switch (bm_type) {
@@ -448,7 +448,7 @@ image_fill_bitmap_cache( Handle self, int bm_type, Handle optimize_for_surface)
 		Object_destroy(copy);
 		return;
 	}
-	if ( copy == nilHandle )
+	if ( copy == NULL_HANDLE )
 		copy = self;
 
 	/* try to create HBITMAP */
@@ -547,7 +547,7 @@ image_query_bits( Handle self, Bool forceNewImage)
 	XBITMAPINFO xbi;
 	BITMAPINFO * bi;
 	int  newBits;
-	HDC  ops = nil;
+	HDC  ops = NULL;
 	BITMAP bitmap;
 
 	if ( forceNewImage) {
@@ -1343,7 +1343,7 @@ apc_image_begin_paint( Handle self)
 {
 	apcErrClear;
 	objCheck false;
-	image_fill_bitmap_cache( self, BM_AUTO, nilHandle);
+	image_fill_bitmap_cache( self, BM_AUTO, NULL_HANDLE);
 	if ( sys bm == NULL ) {
 		image_destroy_cache( self );
 		return false;
@@ -1398,8 +1398,8 @@ apc_image_end_paint( Handle self)
 	if ( sys stockBM)
 		SelectObject( sys ps, sys stockBM);
 	DeleteDC( sys ps);
-	sys stockBM = nil;
-	sys ps = nil;
+	sys stockBM = NULL;
+	sys ps = NULL;
 	return apcError == errOk;
 }
 
@@ -1410,7 +1410,7 @@ apc_image_end_paint_info( Handle self)
 	apcErrClear;
 	hwnd_leave_paint( self);
 	DeleteDC( sys ps);
-	sys ps = nil;
+	sys ps = NULL;
 	return apcError == errOk;
 }
 
@@ -1471,7 +1471,7 @@ apc_dbm_create( Handle self, int type)
 	switch ( type ) {
 	case dbtBitmap:
 		dc = NULL;
-		sys bm = CreateBitmap( var w, var h, 1, 1, nil);
+		sys bm = CreateBitmap( var w, var h, 1, 1, NULL);
 		break;
 	case dbtPixmap:
 		if (!( dc = dc_alloc())) {
@@ -1506,7 +1506,7 @@ apc_dbm_create( Handle self, int type)
 		if ( palc) {
 			SelectPalette( sys ps, sys stockPalette, 1);
 			DeleteObject( sys stockPalette);
-			sys stockPalette = nil;
+			sys stockPalette = NULL;
 		}
 		DeleteDC( sys ps);
 		return false;
@@ -1534,7 +1534,7 @@ dbm_recreate( Handle self)
 {
 	HBITMAP bm, stock;
 	HDC dc, dca;
-	HPALETTE p = nil;
+	HPALETTE p = NULL;
 	Event ev = {cmSysHandle};
 
 	if ((( PDeviceBitmap) self)-> type != dbtPixmap ) return;
@@ -1598,10 +1598,10 @@ apc_dbm_destroy( Handle self)
 	SelectObject( sys ps, sys stockBM);
 	DeleteObject( sys bm);
 	DeleteDC( sys ps);
-	sys pal = nil;
-	sys stockBM = nil;
-	sys ps = nil;
-	sys bm = nil;
+	sys pal = NULL;
+	sys stockBM = NULL;
+	sys ps = NULL;
+	sys bm = NULL;
 	return true;
 }
 

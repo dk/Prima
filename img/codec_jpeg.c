@@ -37,13 +37,13 @@ and _setjmp is not equivaluent to setjmp anymore
 extern "C" {
 #endif
 
-static char * jpgext[] = { "jpg", "jpe", "jpeg", nil };
+static char * jpgext[] = { "jpg", "jpe", "jpeg", NULL };
 static int    jpgbpp[] = { imbpp8 | imGrayScale, imbpp24, 0 };
 
 static char * loadOutput[] = {
 	"comment",
 	"appdata",
-	nil
+	NULL
 };
 
 static char * mime[] = {
@@ -58,7 +58,7 @@ static ImgCodecInfo codec_info = {
 	jpgext,    /* extension */
 	"JPEG File Interchange Format",     /* file type */
 	"JPEG", /* short type */
-	nil,    /* features  */
+	NULL,    /* features  */
 	"Prima::Image::jpeg",  /* module */
 	"Prima::Image::jpeg",  /* package */
 	IMG_LOAD_FROM_FILE | IMG_LOAD_FROM_STREAM | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM,
@@ -328,7 +328,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	fi-> frameCount = 1;
 
 	l = malloc( sizeof( LoadRec));
-	if ( !l) return nil;
+	if ( !l) return NULL;
 	memset( l, 0, sizeof( LoadRec));
 	l-> d. client_data = ( void*) fi;
 	l-> d. err = jpeg_std_error( &l-> e);
@@ -337,7 +337,7 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	l-> init = true;
 	fi-> instance = l;
 	if ( setjmp( j) != 0) {
-		fi-> instance = nil;
+		fi-> instance = NULL;
 		jpeg_destroy_decompress(&l-> d);
 		free( l);
 		return false;
@@ -842,7 +842,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 	jmp_buf j;
 
 	l = malloc( sizeof( SaveRec));
-	if ( !l) return nil;
+	if ( !l) return NULL;
 
 	memset( l, 0, sizeof( SaveRec));
 	l-> c. client_data = ( void*) fi;
@@ -853,7 +853,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 	fi-> instance = l;
 
 	if ( setjmp( j) != 0) {
-		fi-> instance = nil;
+		fi-> instance = NULL;
 		jpeg_destroy_compress(&l-> c);
 		free( l);
 		return false;
@@ -996,7 +996,7 @@ apc_img_codec_jpeg( void )
 	vmt. open_save     = open_save;
 	vmt. save          = save;
 	vmt. close_save    = close_save;
-	apc_img_register( &vmt, nil);
+	apc_img_register( &vmt, NULL);
 }
 
 #ifdef __cplusplus

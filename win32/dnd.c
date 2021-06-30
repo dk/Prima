@@ -138,7 +138,7 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 	Event ev = { cmDragBegin };
 
 	if (
-		((ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND]) == nilHandle) ||
+		((ev.dnd.clipboard = guts.clipboards[CLIPBOARD_DND]) == NULL_HANDLE) ||
 		!dsys(self->widget)options.aptEnabled
 	) {
 		*effect = DROPEFFECT_NONE;
@@ -168,7 +168,7 @@ DropTarget__DragEnter(PDropTarget self, IDataObject *data, DWORD modmap, POINTL 
 	stage = PObject(w)-> stage;
 	unprotect_object(w);
 	if ( stage == csDead ) {
-		self->widget = nilHandle;
+		self->widget = NULL_HANDLE;
 		guts. dndDataReceiver = NULL;
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
@@ -185,8 +185,8 @@ DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
 	Event ev = { cmDragOver };
 
 	if (
-		self->widget == nilHandle ||
-		guts.clipboards[CLIPBOARD_DND] == nilHandle ||
+		self->widget == NULL_HANDLE ||
+		guts.clipboards[CLIPBOARD_DND] == NULL_HANDLE ||
 		!dsys(self->widget)options.aptEnabled
 	) {
 		*effect = DROPEFFECT_NONE;
@@ -224,7 +224,7 @@ DropTarget__DragOver(PDropTarget self, DWORD modmap, POINTL pt, DWORD *effect)
 	stage = PObject(w)-> stage;
 	unprotect_object(w);
 	if ( stage == csDead ) {
-		self->widget = nilHandle;
+		self->widget = NULL_HANDLE;
 		guts. dndDataReceiver = NULL;
 		*effect = DROPEFFECT_NONE;
 		return S_OK;
@@ -245,15 +245,15 @@ DropTarget__DragLeave(PDropTarget self)
 
 	guts. dndDataReceiver = NULL;
 	if (
-		self->widget == nilHandle ||
-		guts.clipboards[CLIPBOARD_DND] == nilHandle || 
+		self->widget == NULL_HANDLE ||
+		guts.clipboards[CLIPBOARD_DND] == NULL_HANDLE || 
 		!dsys(self->widget)options.aptEnabled
 	)
 		return S_OK;
 
 	w = self->widget;
 	ev.dnd.allow = 0;
-	ev.dnd.clipboard = nilHandle;
+	ev.dnd.clipboard = NULL_HANDLE;
 	ev.dnd.modmap    = apc_kbd_get_state(self->widget) | apc_pointer_get_state(self->widget);
 	ev.dnd.where     = apc_pointer_get_pos(self->widget);
 	ev.dnd.action    = dndNone;
@@ -271,8 +271,8 @@ DropTarget__Drop(PDropTarget self, IDataObject *data, DWORD modmap, POINTL pt, D
 	Event ev = { cmDragEnd };
 
 	if (
-		self->widget == nilHandle ||
-		guts.clipboards[CLIPBOARD_DND] == nilHandle || 
+		self->widget == NULL_HANDLE ||
+		guts.clipboards[CLIPBOARD_DND] == NULL_HANDLE || 
 		!dsys(self->widget)options.aptEnabled
 	) {
 		*effect = DROPEFFECT_NONE;
@@ -519,7 +519,7 @@ dataobject_convert( PDataObjectEntry entry, int format, LPSTGMEDIUM medium)
 	}
 	case CF_TEXT: {
 		int i, cr = 0;
-		void *ptr = nil;
+		void *ptr = NULL;
 		char *src = (char*)entry->data, *dst;
 
 		for ( i = 0; i < entry-> size; i++)
@@ -903,7 +903,7 @@ dnd_clipboard_set_data( Handle id, PClipboardDataRec c)
 
 	if ((index = dataobject_find_entry((PDataObject)data, id, &entry)) >= 0) {
 		dataobject_free_entry(entry);
-		data->list.items[index] = nilHandle;
+		data->list.items[index] = NULL_HANDLE;
 	}
 
 	entry = ( id == CF_BITMAP ) ?
@@ -976,8 +976,8 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 	if (!(guts.dragSource = CreateObject(DropSource)))
 		return -1;
 	guts.dragSourceWidget = self;
-	if ( counterpart ) *counterpart = nilHandle;
-	guts.dragTarget = nilHandle;
+	if ( counterpart ) *counterpart = NULL_HANDLE;
+	guts.dragTarget = NULL_HANDLE;
 	guts.dndDefaultCursors = default_pointers;
 	((PDropSource)guts.dragSource)->widget       = self;
 	((PDropSource)guts.dragSource)->first_modmap =
@@ -1012,7 +1012,7 @@ apc_dnd_start( Handle self, int actions, Bool default_pointers, Handle * counter
 
 	free(guts.dragSource);
 	guts.dragSource    = NULL;
-	guts.dragSourceWidget = nilHandle;
+	guts.dragSourceWidget = NULL_HANDLE;
 	if ( counterpart ) *counterpart = guts.dragTarget;
 
 	return ret;

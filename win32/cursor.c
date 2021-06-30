@@ -135,7 +135,7 @@ cursor_update( Handle self)
 		return true;
 	DestroyCaret();
 	if ( is_apt( aptCursorVis)) {
-		if ( !CreateCaret(( HWND) var handle, nil, sys cursorSize. x, sys cursorSize. y)) apiErrRet;
+		if ( !CreateCaret(( HWND) var handle, NULL, sys cursorSize. x, sys cursorSize. y)) apiErrRet;
 		if ( !SetCaretPos( sys cursorPos. x, sys lastSize. y - sys cursorPos. y - sys cursorSize. y)) apiErrRet;
 		if ( !ShowCaret(( HWND) var handle)) apiErrRet;
 	}
@@ -257,7 +257,7 @@ apc_pointer_get_bitmap( Handle self, Handle icon)
 	bi. bmiHeader. biWidth = guts. pointerSize. x;
 	bi. bmiHeader. biHeight = guts. pointerSize. y;
 
-	if ( icon == nilHandle)
+	if ( icon == NULL_HANDLE)
 		apcErrRet( errInvParams);
 	objCheck false;
 	dobjCheck( icon) false;
@@ -398,7 +398,7 @@ apc_pointer_set_user( Handle self, Handle icon, Point hotSpot)
 		cursor = image_make_icon_handle( icon, sz, &hotSpot);
 		if ( apcError) return false;
 	} else
-		cursor = nil;
+		cursor = NULL;
 
 	if ( sys pointer2) {
 		if ( direct) SetCursor( NULL);

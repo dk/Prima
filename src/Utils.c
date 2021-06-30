@@ -157,7 +157,7 @@ Utils_getcwd()
 	char *cwd;
 
 	if (( cwd = apc_fs_getcwd()) == NULL )
-		return nilSV;
+		return NULL_SV;
 	ret = newSVpv( cwd, 0 );
 	if ( is_valid_utf8((unsigned char*) cwd))
 		SvUTF8_on(ret);
@@ -174,7 +174,7 @@ Utils_getenv(SV * varname)
 
 	is_utf8 = prima_is_utf8_sv(varname);
 	if (( val = apc_fs_getenv(SvPV_nolen(varname), is_utf8, &do_free)) == NULL )
-		return nilSV;
+		return NULL_SV;
 	ret = newSVpv( val, 0 );
 	if ( is_valid_utf8((unsigned char*) val))
 		SvUTF8_on(ret);
@@ -185,7 +185,7 @@ Utils_getenv(SV * varname)
 SV *
 Utils_last_error()
 {
-	SV * ret = nilSV;
+	SV * ret = NULL_SV;
 	char * p = apc_last_error();
 	if ( p ) {
 		ret = newSVpv( p, 0);
@@ -215,7 +215,7 @@ Utils_local2sv(SV * text)
 	src = SvPV(text, xlen);
 	len = xlen;
 	if ( !( buf = apc_fs_from_local(src, &len)))
-		return nilSV;
+		return NULL_SV;
 	if ( buf == src ) {
 		ret = newSVsv( text );
 		if ( is_valid_utf8((unsigned char*) src))
@@ -241,23 +241,23 @@ Utils_mkdir( SV* path, int mode)
 SV *
 Utils_open_dir(SV * path)
 {
-	SV * ret = nilSV;
+	SV * ret = NULL_SV;
 	PDirHandleRec dh;
 	SV * dhsv;
 
 	if (( dhsv = prima_array_new(sizeof(DirHandleRec))) == NULL) {
 		errno = ENOMEM;
-		return nilSV;
+		return NULL_SV;
 	}
 	if (( dh = (PDirHandleRec) prima_array_get_storage(dhsv)) == NULL) {
 		errno = ENOMEM;
-		return nilSV;
+		return NULL_SV;
 	}
 	bzero(dh, sizeof(DirHandleRec));
 	dh-> is_utf8 = prima_is_utf8_sv(path);
 	if ( !apc_fs_opendir( SvPV_nolen(path), dh)) {
 		sv_free(dhsv);
-		return nilSV;
+		return NULL_SV;
 	}
 	dh-> is_active = true;
 
@@ -283,14 +283,14 @@ Utils_read_dir(SV * dh)
 	if (( d = get_dh("read_dir", dh)) == NULL ) {
 		errno = EBADF;
 		warn("Prima::Utils::read_dir: invalid dirhandle");
-		return nilSV;
+		return NULL_SV;
 	}
 	if (!d-> is_active) {
 		errno = EBADF;
-		return nilSV;
+		return NULL_SV;
 	}
 
-	if ( !apc_fs_readdir(d, buf)) return nilSV;
+	if ( !apc_fs_readdir(d, buf)) return NULL_SV;
 
 	ret = newSVpv(buf, 0);
 	if (is_valid_utf8((unsigned char*) buf))
@@ -413,7 +413,7 @@ Utils_sv2local(SV * text, Bool fail_if_cannot)
 	src = SvPV(text, xlen);
 	len = utf8len( src, xlen );
 	if ( !( buf = apc_fs_to_local(src, fail_if_cannot, &len)))
-		return nilSV;
+		return NULL_SV;
 	if ( buf == src ) {
 		ret = newSVsv( text );
 		SvUTF8_off(ret);

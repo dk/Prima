@@ -50,7 +50,7 @@ File_init( Handle self, HV * profile)
 void
 File_cleanup( Handle self)
 {
-	my-> set_file( self, nilSV);
+	my-> set_file( self, NULL_SV);
 	inherited-> cleanup( self);
 }
 
@@ -61,7 +61,7 @@ File_is_active( Handle self, Bool autoDetach)
 		return false;
 	if (var->file && !IoIFP( sv_2io( var-> file))) {
 		if ( autoDetach)
-			my-> set_file( self, nilSV);
+			my-> set_file( self, NULL_SV);
 		return false;
 	}
 	return true;
@@ -74,13 +74,13 @@ File_handle_event( Handle self, PEvent event)
 	if ( var-> stage > csNormal) return;
 	switch ( event-> cmd) {
 	case cmFileRead:
-		my-> notify( self, "<sS", "Read", var-> file ? var-> file : nilSV);
+		my-> notify( self, "<sS", "Read", var-> file ? var-> file : NULL_SV);
 		break;
 	case cmFileWrite:
-		my-> notify( self, "<sS", "Write", var-> file ? var-> file : nilSV);
+		my-> notify( self, "<sS", "Write", var-> file ? var-> file : NULL_SV);
 		break;
 	case cmFileException:
-		my-> notify( self, "<sS", "Exception", var-> file ? var-> file : nilSV);
+		my-> notify( self, "<sS", "Exception", var-> file ? var-> file : NULL_SV);
 		break;
 	}
 }
@@ -89,12 +89,12 @@ SV *
 File_file( Handle self, Bool set, SV * file)
 {
 	if ( !set)
-		return var-> file ? newSVsv( var-> file) : nilSV;
+		return var-> file ? newSVsv( var-> file) : NULL_SV;
 	if ( var-> fd >= 0) {
 		apc_file_detach( self);
 		if ( var-> file ) sv_free( var-> file);
 	}
-	var-> file = nil;
+	var-> file = NULL;
 	var-> fd = -1;
 	if ( file && ( SvTYPE( file) != SVt_NULL)) {
 		FileStream f = IoIFP(sv_2io(file));
@@ -105,12 +105,12 @@ File_file( Handle self, Bool set, SV * file)
 			var-> fd = PerlIO_fileno( f);
 			if ( !apc_file_attach( self)) {
 				sv_free( var-> file);
-				var-> file = nil;
+				var-> file = NULL;
 				var-> fd   = -1;
 			}
 		}
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 int
@@ -122,7 +122,7 @@ File_fd( Handle self, Bool set, int fd)
 		apc_file_detach( self);
 		if ( var-> file ) sv_free( var-> file);
 	}
-	var-> file = nil;
+	var-> file = NULL;
 	var-> fd = -1;
 	if ( fd >= 0 ) {
 		var-> fd = fd;
@@ -174,7 +174,7 @@ File_reset_notifications( Handle self)
 	void * ret[ 3];
 	int    cmd[ 3] = { feRead, feWrite, feException};
 
-	if ( var-> eventIDs == nil) {
+	if ( var-> eventIDs == NULL) {
 		var-> eventMask = var-> eventMask2 & var-> userMask;
 		return;
 	}
@@ -184,7 +184,7 @@ File_reset_notifications( Handle self)
 	ret[2] = hash_fetch( var-> eventIDs, "Exception", 9);
 
 	for ( i = 0; i < 3; i++) {
-		if ( ret[i] == nil) continue;
+		if ( ret[i] == NULL) continue;
 		list = var-> events + PTR2IV( ret[i]) - 1;
 		if ( list-> count > 0) mask |= cmd[ i];
 	}

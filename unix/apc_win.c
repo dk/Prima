@@ -273,11 +273,11 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 		if ( XX-> recreateData) {
 			memcpy( &vprf, XX-> recreateData, sizeof( vprf));
 			free( XX-> recreateData);
-			XX-> recreateData = nil;
+			XX-> recreateData = NULL;
 		} else
 			prima_get_view_ex( self, &vprf);
 		if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
-		apc_window_set_menu( self, nilHandle);
+		apc_window_set_menu( self, NULL_HANDLE);
 		CWidget( self)-> end_paint_info( self);
 		CWidget( self)-> end_paint( self);
 		if ( XX-> flags. paint_pending) {
@@ -461,7 +461,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	XSetWMProtocols( DISP, X_WINDOW, atoms, 2);
 	XCHECKPOINT;
 
-	if (( class_hint = XAllocClassHint()) != nil) {
+	if (( class_hint = XAllocClassHint()) != NULL) {
 		class_hint-> res_class  = PComponent(application)-> name;
 		class_hint-> res_name = CObject( self)-> className;
 		XSetClassHint( DISP, X_WINDOW, class_hint);
@@ -481,7 +481,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 
 	real_owner = application;
 	XX-> parent = guts. root;
-	XX-> real_parent = nilHandle;
+	XX-> real_parent = NULL_HANDLE;
 	XX-> udrawable = XX-> gdrawable = XX-> client;
 
 	XX-> flags. clip_owner = false;
@@ -489,7 +489,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	XX-> flags. task_listed = 1;
 	XX-> flags. layered = XX-> flags. layered_requested = layered;
 
-	XX-> above = nilHandle;
+	XX-> above = NULL_HANDLE;
 	XX-> owner = real_owner;
 
 	if ( on_top > 0) NETWM_SET_ON_TOP( X_WINDOW, 1);
@@ -526,7 +526,7 @@ apc_window_create( Handle self, Handle owner, Bool sync_paint, int border_icons,
 	{
 		int nrects;
 		Box * monitors;
-		monitors = apc_application_get_monitor_rects( nilHandle, &nrects);
+		monitors = apc_application_get_monitor_rects( NULL_HANDLE, &nrects);
 		if ( nrects > 0 ) {
 			int i, min_x = monitors[0].x, min_y = monitors[0].y;
 			XX-> size.x = monitors[0].width;
@@ -609,7 +609,7 @@ apc_window_activate( Handle self)
 
 	XSync( DISP, false);
 	while ( XCheckMaskEvent( DISP, FocusChangeMask|ExposureMask, &ev))
-		prima_handle_event( &ev, nil);
+		prima_handle_event( &ev, NULL);
 	return true;
 }
 
@@ -680,7 +680,7 @@ apc_window_get_icon( Handle self, Handle icon)
 
 	if ( !( hints = XGetWMHints( DISP, X_WINDOW))) return false;
 	if ( !icon || !hints-> icon_pixmap) {
-		Bool ret = hints-> icon_pixmap != nilHandle;
+		Bool ret = hints-> icon_pixmap != NULL_HANDLE;
 		XFree( hints);
 		return ret;
 	}
@@ -804,7 +804,7 @@ prima_get_frame_info( Handle self, PRect r)
 
 	bzero( r, sizeof( Rect));
 	p = prima_find_frame_window( X_WINDOW);
-	if ( p == nilHandle) {
+	if ( p == NULL_HANDLE) {
 		r-> left = XX-> decorationSize. x;
 		r-> top  = XX-> decorationSize. y;
 	} else if ( p != X_WINDOW)
@@ -1106,7 +1106,7 @@ apc_window_set_icon( Handle self, Handle icon)
 {
 	DEFXX;
 	PIcon i = ( PIcon) icon;
-	XIconSize * sz = nil;
+	XIconSize * sz = NULL;
 	Pixmap xor, and;
 	XWMHints wmhints;
 	int n;
@@ -1294,12 +1294,12 @@ window_start_modal( Handle self, Bool shared, Handle insert_before)
 Handle
 prima_find_toplevel_window(Handle self)
 {
-	Handle toplevel = nilHandle;
+	Handle toplevel = NULL_HANDLE;
 
-	if (!application) return nilHandle;
+	if (!application) return NULL_HANDLE;
 
 	toplevel = CApplication(application)-> get_modal_window(application, mtExclusive, true);
-	if ( toplevel == nilHandle && self != nilHandle) {
+	if ( toplevel == NULL_HANDLE && self != NULL_HANDLE) {
 		if (
 			PWindow(self)-> owner &&
 			PWindow(self)-> owner != application
@@ -1308,7 +1308,7 @@ prima_find_toplevel_window(Handle self)
 	}
 
 	/* find main window */
-	if ( toplevel == nilHandle) {
+	if ( toplevel == NULL_HANDLE) {
 		int i;
 		PList l = & PWidget(application)-> widgets;
 		for ( i = 0; i < l-> count; i++) {

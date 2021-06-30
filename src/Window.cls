@@ -35,8 +35,8 @@ object Prima::Window( Prima::Widget)
 	method   void     cleanup();
 	method   void     done();
 	method   void     end_modal();
-	method   int      execute( Handle insertBefore = nilHandle);
-	method   Bool     execute_shared( Handle insertBefore = nilHandle);
+	method   int      execute( Handle insertBefore = NULL_HANDLE);
+	method   Bool     execute_shared( Handle insertBefore = NULL_HANDLE);
 	method   SV   *   get_client_handle();
 	static   Font     get_default_menu_font( char * dummy = "");
 	method   Handle   get_horizon();

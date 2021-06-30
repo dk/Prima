@@ -28,7 +28,7 @@ Popup_update_sys_handle( Handle self, HV * profile)
 	dPROFILE;
 	Handle xOwner = pexist( owner) ? pget_H( owner) : var-> owner;
 	if ( var-> owner && ( xOwner != var-> owner))
-		((( PWidget) var-> owner)-> self)-> set_popup( var-> owner, nilHandle);
+		((( PWidget) var-> owner)-> self)-> set_popup( var-> owner, NULL_HANDLE);
 	if ( !pexist( owner)) return;
 	if ( !apc_popup_create( self, xOwner))
 		croak("Cannot create popup");
@@ -54,7 +54,7 @@ Popup_selected( Handle self, Bool set, Bool selected)
 	if ( selected)
 		CWidget( var-> owner)-> set_popup( var-> owner, self);
 	else if ( my-> get_selected( self))
-		CWidget( var-> owner)-> set_popup( var-> owner, nilHandle);
+		CWidget( var-> owner)-> set_popup( var-> owner, NULL_HANDLE);
 	return false;
 }
 

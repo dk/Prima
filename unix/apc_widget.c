@@ -57,7 +57,7 @@ apc_widget_get_z_order( Handle self, int zOrderId)
 	XWindow root, parent, *children;
 	unsigned int count;
 	int i, inc;
-	Handle ret = nilHandle;
+	Handle ret = NULL_HANDLE;
 
 	if ( !( PComponent(self)-> owner))
 		return self;
@@ -80,12 +80,12 @@ apc_widget_get_z_order( Handle self, int zOrderId)
 		inc = 1;
 		break;
 	default:
-		return nilHandle;
+		return NULL_HANDLE;
 	}
 
 	if ( XQueryTree( DISP, X(PComponent(self)-> owner)-> client,
 		&root, &parent, &children, &count) == 0)
-			return nilHandle;
+			return NULL_HANDLE;
 
 	if ( count == 0) goto EXIT;
 
@@ -135,7 +135,7 @@ process_transparents( Handle self)
 			if ( pos. x >= sz.x || pos.y >= sz.y ||
 				pos. x + X(x)-> size.x <= 0 ||
 				pos. y + X(x)-> size.y <= 0) continue;
-			apc_widget_invalidate_rect( x, nil);
+			apc_widget_invalidate_rect( x, NULL);
 		}
 	}
 }
@@ -218,7 +218,7 @@ prima_set_view_ex( Handle self, PViewProfile p)
 	}
 
 	if ( p-> focused) apc_widget_set_focused( self);
-	if ( p-> capture) apc_widget_set_capture( self, 1, nilHandle);
+	if ( p-> capture) apc_widget_set_capture( self, 1, NULL_HANDLE);
 
 #ifdef HAVE_X11_EXTENSIONS_SHAPE_H
 	if ( p-> shape_count > 0 ) {
@@ -259,11 +259,11 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 	XX-> visual   = layered ? &guts. argb_visual : &guts. visual;
 	XX-> colormap = layered ? guts. argbColormap : guts. defaultColormap;
 
-	reparent = ( old != nilHandle) && (
+	reparent = ( old != NULL_HANDLE) && (
 		( clip_owner != XX-> flags. clip_owner) ||
 		( parentHandle != XX-> parent)
 	);
-	recreate = ( old != nilHandle) && (
+	recreate = ( old != NULL_HANDLE) && (
 		( layered != XX-> flags. layered )
 	);
 	if ( recreate ) {
@@ -283,7 +283,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		if ( XX-> recreateData) {
 			memcpy( &vprf, XX-> recreateData, sizeof( vprf));
 			free( XX-> recreateData);
-			XX-> recreateData = nil;
+			XX-> recreateData = NULL;
 		} else
 			prima_get_view_ex( self, &vprf);
 		if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self) prima_end_menu();
@@ -300,7 +300,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		XCHECKPOINT;
 	}
 
-	old_parent = ( old != nilHandle ) ? XX->parent : nilHandle;
+	old_parent = ( old != NULL_HANDLE ) ? XX->parent : NULL_HANDLE;
 
 	XX-> flags. transparent = !!transparent;
 	XX-> type.drawable = true;
@@ -317,7 +317,7 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 		parent = parentHandle;
 	XX-> parentHandle = parentHandle;
 	XX-> real_parent = XX-> parent = parent;
-	XX-> above = nilHandle;
+	XX-> above = NULL_HANDLE;
 	XX-> owner = real_owner;
 
 	XX-> flags. clip_owner = !!clip_owner;
@@ -453,11 +453,11 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 				XUnmapWindow( DISP, X_WINDOW);
 				XSync( DISP, false);
 				while ( XCheckMaskEvent( DISP, ExposureMask, &ev))
-					prima_handle_event( &ev, nil);
+					prima_handle_event( &ev, NULL);
 				XMapWindow( DISP, X_WINDOW);
 				XSync( DISP, false);
 				while ( XCheckMaskEvent( DISP, ExposureMask, &ev))
-					prima_handle_event( &ev, nil);
+					prima_handle_event( &ev, NULL);
 				if ( XX-> flags. paint_pending) {
 					TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
 					XX-> flags. paint_pending = false;
@@ -493,7 +493,7 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 		X(owner)-> btransform. y = so. y - sz. y - po. y;
 		if ( X(owner)-> paint_region) {
 			XDestroyRegion( X(owner)-> paint_region);
-			X(owner)-> paint_region = nil;
+			X(owner)-> paint_region = NULL;
 		}
 		region = XCreateRegion();
 		XUnionRectWithRegion( &xr, region, region);
@@ -530,12 +530,12 @@ apc_widget_destroy( Handle self)
 	ConfigureEventPair *n1, *n2;
 
 	if ( guts.xdndr_last_target == self )
-		guts.xdndr_last_target = nilHandle;
+		guts.xdndr_last_target = NULL_HANDLE;
 
 	if ( XX-> recreateData) free( XX-> recreateData);
 
 	n1 = TAILQ_FIRST( &XX-> configure_pairs);
-	while (n1 != nil) {
+	while (n1 != NULL) {
 		n2 = TAILQ_NEXT(n1, link);
 		free(n1);
 		n1 = n2;
@@ -562,7 +562,7 @@ apc_widget_destroy( Handle self)
 	if ( guts. currentMenu && PComponent( guts. currentMenu)-> owner == self)
 		prima_end_menu();
 	if ( guts. focused == self)
-		guts. focused = nilHandle;
+		guts. focused = NULL_HANDLE;
 	XX-> flags.modal = false;
 	if ( XX-> flags. paint_pending) {
 		TAILQ_REMOVE( &guts.paintq, XX, paintq_link);
@@ -570,33 +570,33 @@ apc_widget_destroy( Handle self)
 	}
 	if ( XX-> invalid_region) {
 		XDestroyRegion( XX-> invalid_region);
-		XX-> invalid_region = nil;
+		XX-> invalid_region = NULL;
 	}
 
 	if ( XX-> flags. dnd_aware )
 		apc_dnd_set_aware( self, false );
 	if ( guts. xdndr_widget == self )
-		guts. xdndr_widget = nilHandle;
+		guts. xdndr_widget = NULL_HANDLE;
 	if ( guts. xdndr_receiver == self )
-		guts. xdndr_receiver = nilHandle;
+		guts. xdndr_receiver = NULL_HANDLE;
 
 	if ( X_WINDOW) {
 		if ( guts. grab_redirect == XX-> client || guts. grab_redirect == X_WINDOW)
-			guts. grab_redirect = nilHandle;
+			guts. grab_redirect = NULL_HANDLE;
 		if ( guts. grab_widget == self || XX-> flags. grab) {
 			XUngrabPointer( DISP, CurrentTime);
-			guts. grab_widget = nilHandle;
+			guts. grab_widget = NULL_HANDLE;
 		}
 		XCHECKPOINT;
 		if ( XX-> client != X_WINDOW) {
 			XDestroyWindow( DISP, XX-> client);
 			hash_delete( guts.windows, (void*)&XX-> client, sizeof(X_WINDOW), false);
 		}
-		XX-> client = nilHandle;
+		XX-> client = NULL_HANDLE;
 		XDestroyWindow( DISP, X_WINDOW);
 		XCHECKPOINT;
 		hash_delete( guts.windows, (void*)&X_WINDOW, sizeof(X_WINDOW), false);
-		X_WINDOW = nilHandle;
+		X_WINDOW = NULL_HANDLE;
 	}
 	XFlush( DISP);
 	return true;
@@ -733,7 +733,7 @@ apc_widget_get_pos( Handle self)
 		return p;
 	}
 
-	if ( XX-> parentHandle == nilHandle)
+	if ( XX-> parentHandle == NULL_HANDLE)
 		return XX-> origin;
 
 	XGetGeometry( DISP, X_WINDOW, &r, &x, &y, &w, &h, &b, &d);
@@ -1074,7 +1074,7 @@ AGAIN:
 				t = CurrentTime;
 				goto AGAIN;
 			}
-			guts. grab_redirect = nilHandle;
+			guts. grab_redirect = NULL_HANDLE;
 			return false;
 		} else {
 			XX-> flags. grab   = true;
@@ -1082,11 +1082,11 @@ AGAIN:
 			guts. grab_confine = confineTo;
 		}
 	} else if ( XX-> flags. grab) {
-		guts. grab_redirect = nilHandle;
+		guts. grab_redirect = NULL_HANDLE;
 		XUngrabPointer( DISP, CurrentTime);
 		XCHECKPOINT;
 		XX-> flags. grab = false;
-		guts. grab_widget = nilHandle;
+		guts. grab_widget = NULL_HANDLE;
 	}
 	XFlush( DISP);
 	return true;
@@ -1178,7 +1178,7 @@ apc_widget_set_focused( Handle self)
 
 	XSync( DISP, false);
 	while ( XCheckMaskEvent( DISP, FocusChangeMask|ExposureMask, &ev))
-		prima_handle_event( &ev, nil);
+		prima_handle_event( &ev, NULL);
 	while ( XCheckIfEvent( DISP, &ev, (XIfEventProcType)flush_refocus, (XPointer)0));
 	return true;
 }
@@ -1208,7 +1208,7 @@ apc_widget_set_pos( Handle self, int x, int y)
 		return apc_window_set_client_pos( self, x + rc. left, y + rc. bottom);
 	}
 
-	if ( XX-> parentHandle == nilHandle && x == XX-> origin.x && y == XX-> origin. y)
+	if ( XX-> parentHandle == NULL_HANDLE && x == XX-> origin.x && y == XX-> origin. y)
 		return true;
 	if ( XX-> client == guts. grab_redirect) {
 		XWindow rx;
@@ -1230,7 +1230,7 @@ apc_widget_set_pos( Handle self, int x, int y)
 	apc_message( self, &e, false);
 	if ( PObject( self)-> stage == csDead) return false;
 	if ( XX-> flags. transparent)
-		apc_widget_invalidate_rect( self, nil);
+		apc_widget_invalidate_rect( self, NULL);
 	return true;
 }
 
@@ -1352,7 +1352,7 @@ apc_widget_set_size( Handle self, int width, int height)
 				: widg-> sizeMax. y)
 			: widg-> sizeMin. y;
 
-	if ( XX-> parentHandle == nilHandle && XX-> size. x == width && XX-> size. y == height)
+	if ( XX-> parentHandle == NULL_HANDLE && XX-> size. x == width && XX-> size. y == height)
 		return true;
 
 	XX-> size. x = width;
@@ -1414,7 +1414,7 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
 				: widg-> sizeMax. y)
 			: widg-> sizeMin. y;
 
-	if ( XX-> parentHandle == nilHandle &&
+	if ( XX-> parentHandle == NULL_HANDLE &&
 		XX-> size. x == width && XX-> size. y == height &&
 		x == XX-> origin.x && y == XX-> origin. y)
 		return true;
@@ -1458,7 +1458,7 @@ apc_widget_set_rect( Handle self, int x, int y, int width, int height)
 	prima_send_cmSize( self, sz);
 	if ( PObject( self)-> stage == csDead) return false;
 	if ( XX-> flags. transparent)
-		apc_widget_invalidate_rect( self, nil);
+		apc_widget_invalidate_rect( self, NULL);
 	return true;
 }
 
@@ -1501,7 +1501,7 @@ apc_widget_set_z_order( Handle self, Handle behind, Bool top)
 {
 	XWindow windoze[2];
 
-	/* top does not matter if behind is non-nil */
+	/* top does not matter if behind is non-NULL */
 	if (behind) {
 		windoze[0] = PComponent(behind)->handle;
 		windoze[1] = X_WINDOW;
@@ -1569,7 +1569,7 @@ apc_widget_validate_rect( Handle self, Rect rect)
 			XX-> flags. paint_pending = false;
 		}
 		XDestroyRegion( XX-> invalid_region);
-		XX-> invalid_region = nil;
+		XX-> invalid_region = NULL;
 	}
 	return true;
 }

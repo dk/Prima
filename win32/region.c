@@ -26,7 +26,7 @@ region_create( Handle mask)
 	LONG w, h, x, y, size = 256;
 	HRGN    rgn = NULL;
 	Byte    * idata;
-	RGNDATA * rdata = nil;
+	RGNDATA * rdata = NULL;
 	RECT    * current;
 	Bool      set = 0;
 
@@ -39,7 +39,7 @@ region_create( Handle mask)
 	h = PImage( mask)-> h;
 	if ( dsys( mask) s. image. imgCachedRegion) {
 		rgn = CreateRectRgn(0,0,0,0);
-		CombineRgn( rgn, dsys( mask) s. image. imgCachedRegion, nil, RGN_COPY);
+		CombineRgn( rgn, dsys( mask) s. image. imgCachedRegion, NULL, RGN_COPY);
 		return rgn;
 	}
 
@@ -104,7 +104,7 @@ region_create( Handle mask)
 		}
 
 		dsys( mask) s. image. imgCachedRegion = CreateRectRgn(0,0,0,0);
-		CombineRgn( dsys( mask) s. image. imgCachedRegion, rgn, nil, RGN_COPY);
+		CombineRgn( dsys( mask) s. image. imgCachedRegion, rgn, NULL, RGN_COPY);
 	} else {
 		dsys( mask) s. image. imgCachedRegion = rgn = CreateRectRgn(0,0,0,0);
 	}
@@ -510,13 +510,13 @@ apc_gp_get_region( Handle self, Handle mask)
 Bool
 apc_gp_set_region( Handle self, Handle region)
 {
-	HRGN rgn = nil;
+	HRGN rgn = NULL;
 	objCheck false;
 
 	if ( !is_opt( optInDraw) || !sys ps) return true;
 
 	if ( !region) {
-		SelectClipRgn( sys ps, nil);
+		SelectClipRgn( sys ps, NULL);
 		return true;
 	}
 	rgn = CreateRectRgn(0,0,0,0);

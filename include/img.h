@@ -188,7 +188,7 @@ if ( fi-> eventMask & IMG_EVENTS_HEADER_READY) \
 
 #define EVENT_SCANLINES_RESET(fi) {\
 (fi)-> lastEventScanline = (fi)-> lastCachedScanline = 0; \
-gettimeofday( &(fi)-> lastEventTime, nil);\
+gettimeofday( &(fi)-> lastEventTime, NULL);\
 }
 
 #define EVENT_SCANLINES_READY(fi,scanlines,dir) \

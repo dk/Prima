@@ -509,7 +509,7 @@ apc_gp_set_region( Handle self, Handle rgn)
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
 
-	if (rgn == nilHandle) {
+	if (rgn == NULL_HANDLE) {
 		Rect r;
 		r. left   = 0;
 		r. bottom = 0;

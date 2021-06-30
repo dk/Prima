@@ -212,7 +212,7 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 	PMenuWndData mwd;
 	PMenuItemReg first;
 
-	if ( i == nil) return nil;
+	if ( i == NULL) return NULL;
 
 	if ( menuType)
 		m = CreateMenu();
@@ -221,18 +221,18 @@ add_item( Bool menuType, Handle menu, PMenuItemReg i)
 
 	if ( !m) {
 		apiErr;
-		return nil;
+		return NULL;
 	}
 	mwd = ( PMenuWndData) malloc( sizeof( MenuWndData));
 	if ( !mwd) {
 		DestroyMenu( m);
-		return nil;
+		return NULL;
 	}
 	mwd-> menu = menu;
 	first      = i;
 	hash_store( menuMan, &m, sizeof(HMENU), mwd);
 
-	while ( i != nil)
+	while ( i != NULL)
 	{
 		bzero( &mii, sizeof(mii));
 		mii.cbSize   = sizeof(mii);
@@ -312,8 +312,8 @@ apc_menu_destroy( Handle self)
 {
 	if ( var handle) {
 		objCheck false;
-		hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
-		hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) var handle, nil, nil);
+		hash_first_that( menuMan, clear_menus, ( void *) self, NULL, NULL);
+		hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) var handle, NULL, NULL);
 		if ( IsMenu(( HMENU) var handle) && !DestroyMenu(( HMENU) var handle)) apiErrRet;
 		return true;
 	}
@@ -381,7 +381,7 @@ free_submenus(HMENU menu)
 Bool
 apc_menu_item_delete( Handle self, PMenuItemReg m)
 {
-	PWindow owner = nil;
+	PWindow owner = NULL;
 	Point size;
 	Bool resize;
 	BitmapKey key;
@@ -577,21 +577,21 @@ apc_menu_update( Handle self, PMenuItemReg oldBranch, PMenuItemReg newBranch)
 		PWindow owner = ( PWindow) var owner;
 		Point size = owner-> self-> get_size( var owner);
 		if ( h) {
-			hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) h, nil, nil);
+			hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) h, NULL, NULL);
 			DestroyMenu( h);
 		}
-		hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
+		hash_first_that( menuMan, clear_menus, ( void *) self, NULL, NULL);
 		var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
-		SetMenu( DHANDLE( var owner), self ? ( HMENU) var handle : nil);
+		SetMenu( DHANDLE( var owner), self ? ( HMENU) var handle : NULL);
 		DrawMenuBar( DHANDLE( var owner));
 		if ( apc_window_get_window_state( var owner) == wsNormal)
 			owner-> self-> set_size( var owner, size);
 	} else {
 		if ( var handle) {
-			hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) var handle, nil, nil);
+			hash_first_that( menuBitmapMan, clear_bitmaps, ( void *) var handle, NULL, NULL);
 			DestroyMenu(( HMENU) var handle);
 		}
-		hash_first_that( menuMan, clear_menus, ( void *) self, nil, nil);
+		hash_first_that( menuMan, clear_menus, ( void *) self, NULL, NULL);
 		var handle = ( Handle) add_item( kind_of( self, CMenu), self, (( PMenu) self)-> tree);
 	}
 	return true;
@@ -629,7 +629,7 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
 		POINT pt;
 		pt. x = x;
 		pt. y = y;
-		if ( !MapWindowPoints( owner, nil, &pt, 1)) apiErr;
+		if ( !MapWindowPoints( owner, NULL, &pt, 1)) apiErr;
 		x = pt.x;
 		y = pt.y;
 	}
@@ -647,9 +647,9 @@ apc_popup( Handle self, int x, int y, Rect * anchor)
 		tpm. rcExclude. right  = anchor-> right;
 		tpm. rcExclude. top    = r. bottom - r. top - anchor-> top;
 		tpm. rcExclude. bottom = r. bottom - r. top - anchor-> bottom;
-		if ( !MapWindowPoints( owner, nil, ( PPOINT) &tpm. rcExclude, 2)) apiErr;
+		if ( !MapWindowPoints( owner, NULL, ( PPOINT) &tpm. rcExclude, 2)) apiErr;
 	} else
-		anchor = nil;
+		anchor = NULL;
 
 	guts. popupActive = 1;
 	ret = TrackPopupMenuEx(
@@ -683,7 +683,7 @@ apc_menu_item_end_paint( Handle self, PEvent event)
 	self = event->gen.H;
 	hwnd_leave_paint( self);
 	RestoreDC(sys ps, sys s.menuitem.saved_dc);
-	sys ps = nil;
+	sys ps = NULL;
 	apt_clear( aptCompatiblePS);
 	return true;
 }

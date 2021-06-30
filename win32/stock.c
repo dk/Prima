@@ -31,7 +31,7 @@ stylus_alloc( PStylus data)
 {
 	Bool extPen = data-> extPen. actual;
 	PDCStylus ret = ( PDCStylus) hash_fetch( stylusMan, data, sizeof( Stylus) - ( extPen ? 0 : sizeof( EXTPEN)));
-	if ( ret == nil) {
+	if ( ret == NULL) {
 		LOGPEN p;
 		LOGBRUSH * b;
 		LOGBRUSH   xbrush;
@@ -40,7 +40,7 @@ stylus_alloc( PStylus data)
 			stylus_clean();
 
 		ret = ( PDCStylus) malloc( sizeof( DCStylus));
-		if ( !ret) return nil;
+		if ( !ret) return NULL;
 
 		memcpy( &ret-> s, data, sizeof( Stylus));
 		ret-> refcnt = 0;
@@ -110,8 +110,8 @@ stylus_free( PDCStylus res, Bool permanent)
 	}
 	if ( res-> hpen)   DeleteObject( res-> hpen);
 	if ( res-> hbrush) DeleteObject( res-> hbrush);
-	res-> hbrush = nil;
-	res-> hpen = nil;
+	res-> hbrush = NULL;
+	res-> hpen = NULL;
 	hash_delete( stylusMan, &res-> s, sizeof( Stylus) - ( res-> s. extPen. actual ? 0 : sizeof( EXTPEN)), true);
 }
 
@@ -138,7 +138,7 @@ static Bool _st_cleaner( PDCStylus s, int keyLen, void * key, void * dummy) {
 void
 stylus_clean()
 {
-	hash_first_that( stylusMan, _st_cleaner, nil, nil, nil);
+	hash_first_that( stylusMan, _st_cleaner, NULL, NULL, NULL);
 }
 
 Bool
@@ -414,7 +414,7 @@ find_node( const PFont font, Bool bySize)
 	PFontHashNode node;
 	int sz;
 
-	if ( font == nil) return nil;
+	if ( font == NULL) return NULL;
 
 	i = elf( font, bySize);
 	if (bySize)
@@ -423,7 +423,7 @@ find_node( const PFont font, Bool bySize)
 		node = fontHash. buckets[ i];
 	if ( bySize) {
 		sz = (char *)(&(font-> name)) - (char *)&(font-> width);
-		while ( node != nil)
+		while ( node != NULL)
 		{
 			if (( memcmp( &(font-> width), &(node-> key. width), sz) == 0) &&
 				( strcmp( font-> name, node-> key. name) == 0 ) &&
@@ -435,7 +435,7 @@ find_node( const PFont font, Bool bySize)
 		}
 	} else {
 		sz = (char *)(&(font-> name)) - (char *)&(font-> height);
-		while ( node != nil)
+		while ( node != NULL)
 		{
 			if (( memcmp( font, &(node-> key), sz) == 0) &&
 				( strcmp( font-> name, node-> key. name) == 0 )&&
@@ -445,7 +445,7 @@ find_node( const PFont font, Bool bySize)
 			node = node-> next;
 		}
 	}
-	return nil;
+	return NULL;
 }
 
 Bool
@@ -455,7 +455,7 @@ add_font_to_hash( const PFont key, const PFont font, Bool addSizeEntry)
 	unsigned long i;
 
 	node = ( PFontHashNode) malloc( sizeof( FontHashNode));
-	if ( node == nil) return false;
+	if ( node == NULL) return false;
 	memcpy( &(node-> key), key, sizeof( Font));
 	memcpy( &(node-> value), font, sizeof( Font));
 	i = elf(key, 0);
@@ -473,7 +473,7 @@ Bool
 get_font_from_hash( PFont font, Bool bySize)
 {
 	PFontHashNode node = find_node( font, bySize);
-	if ( node == nil) return false;
+	if ( node == NULL) return false;
 	*font = node-> value;
 	return true;
 }
@@ -542,7 +542,7 @@ font_alloc( Font * data)
 	int keyLen = build_dcfont_key( data, (unsigned char*)key);
 	PDCFont ret = ( PDCFont) hash_fetch( fontMan, key, keyLen);
 
-	if ( ret == nil) {
+	if ( ret == NULL) {
 		LOGFONTW logfont;
 		PFont   f;
 
@@ -550,7 +550,7 @@ font_alloc( Font * data)
 			font_clean();
 
 		ret = ( PDCFont) malloc( sizeof( DCFont));
-		if ( !ret) return nil;
+		if ( !ret) return NULL;
 
 		memcpy( f = &ret-> font, data, sizeof( Font));
 		ret-> refcnt = 0;
@@ -581,7 +581,7 @@ font_free( PDCFont res, Bool permanent)
 	}
 	if ( res-> hfont) {
 		DeleteObject( res-> hfont);
-		res-> hfont = nil;
+		res-> hfont = NULL;
 	}
 	keyLen = build_dcfont_key( &res-> font, (unsigned char*)key);
 	hash_delete( fontMan, key, keyLen, true);
@@ -603,7 +603,7 @@ font_change( Handle self, Font * font)
 void
 font_clean()
 {
-	hash_first_that( fontMan, _ft_cleaner, nil, nil, nil);
+	hash_first_that( fontMan, _ft_cleaner, NULL, NULL, NULL);
 }
 
 static char* encodings[] = {
@@ -626,7 +626,7 @@ static char* encodings[] = {
 	"Cyrillic",
 	"Mac",
 	"Baltic",
-	nil
+	NULL
 };
 
 static Handle ctx_CHARSET2index[] = {
@@ -767,7 +767,7 @@ reset_system_fonts(void)
 	strcpy( guts. windowFont. name, DEFAULT_WIDGET_FONT);
 	guts. windowFont. size  = DEFAULT_WIDGET_FONT_SIZE;
 	guts. windowFont. undef. width = guts. windowFont. undef. height = guts. windowFont. undef. vector = 1;
-	apc_font_pick( nilHandle, &guts. windowFont, &guts. windowFont);
+	apc_font_pick( NULL_HANDLE, &guts. windowFont, &guts. windowFont);
 
 	guts. ncmData. cbSize = sizeof( NONCLIENTMETRICSW);
 	if ( !SystemParametersInfoW( SPI_GETNONCLIENTMETRICS, sizeof( NONCLIENTMETRICSW),
@@ -1320,7 +1320,7 @@ fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _f)
 PFont
 apc_fonts( Handle self, const char* facename, const char *encoding, int * retCount)
 {
-	PFont fmtx = nil;
+	PFont fmtx = NULL;
 	int  i;
 	HDC  dc;
 	Fep2 f;
@@ -1329,8 +1329,8 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
 	apcErrClear;
 
 	*retCount = 0;
-	if ( self == nilHandle || self == application) {
-		if ( !( dc = dc_alloc())) return nil;
+	if ( self == NULL_HANDLE || self == application) {
+		if ( !( dc = dc_alloc())) return NULL;
 	}
 	else if ( kind_of( self, CPrinter)) {
 		if ( !is_opt( optInDraw) && !is_opt( optInDrawInfo)) {
@@ -1339,12 +1339,12 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
 		}
 		dc = sys ps;
 	} else
-		return nil;
+		return NULL;
 
-	f. hash = nil;
+	f. hash = NULL;
 	if ( !facename && !encoding)
 		if ( !( f. hash = hash_create()))
-			return nil;
+			return NULL;
 	list_create( &f. lst, 256, 256);
 	memset( &elf, 0, sizeof( elf));
 	MultiByteToWideChar(CP_UTF8, 0, facename ? facename : "", -1, elf.lfFaceName, LF_FACESIZE);
@@ -1352,17 +1352,17 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
 	EnumFontFamiliesExW( dc, &elf, (FONTENUMPROCW) fep2, ( LPARAM) &f, 0);
 	if ( f. hash) {
 		hash_destroy( f. hash, false);
-		f. hash = nil;
+		f. hash = NULL;
 	}
 
-	if ( self == nilHandle || self == application)
+	if ( self == NULL_HANDLE || self == application)
 		dc_free();
 	else if ( hasdc)
 		CPrinter( self)-> end_paint_info( self);
 
 	if ( f. lst. count == 0) goto Nothing;
 	fmtx = ( PFont) malloc( f. lst. count * sizeof( Font));
-	if ( !fmtx) return nil;
+	if ( !fmtx) return NULL;
 
 	*retCount = f. lst. count;
 	for ( i = 0; i < f. lst. count; i++)
@@ -1392,8 +1392,8 @@ apc_font_encodings( Handle self )
 	LOGFONTW elf;
 	apcErrClear;
 
-	if ( self == nilHandle || self == application) {
-		if ( !( dc = dc_alloc())) return nil;
+	if ( self == NULL_HANDLE || self == application) {
+		if ( !( dc = dc_alloc())) return NULL;
 	}
 	else if ( kind_of( self, CPrinter)) {
 		if ( !is_opt( optInDraw) && !is_opt( optInDrawInfo)) {
@@ -1402,14 +1402,14 @@ apc_font_encodings( Handle self )
 		}
 		dc = sys ps;
 	} else
-		return nil;
+		return NULL;
 
 	lst = hash_create();
 	memset( &elf, 0, sizeof( elf));
 	elf. lfCharSet = DEFAULT_CHARSET;
 	EnumFontFamiliesExW( dc, &elf, (FONTENUMPROCW) fep3, ( LPARAM) lst, 0);
 
-	if ( self == nilHandle || self == application)
+	if ( self == NULL_HANDLE || self == application)
 		dc_free();
 	else if ( hasdc)
 		CPrinter( self)-> end_paint_info( self);
@@ -1649,9 +1649,9 @@ apc_lookup_color( const char * colorName)
 // Colors end
 // Miscellaneous
 
-static HDC cachedScreenDC = nil;
+static HDC cachedScreenDC = NULL;
 static int cachedScreenRC = 0;
-static HDC cachedCompatDC = nil;
+static HDC cachedCompatDC = NULL;
 static int cachedCompatRC = 0;
 
 
@@ -1701,9 +1701,14 @@ hwnd_enter_paint( Handle self)
 	if ( !sys stockPalette)
 		sys stockPalette = GetCurrentObject( sys ps, OBJ_PAL);
 	font_free( sys fontResource, false);
+<<<<<<< HEAD
 	sys stylusResource = nil;
 	sys stylusGPResource = nil;
 	sys fontResource   = nil;
+=======
+	sys stylusResource = NULL;
+	sys fontResource   = NULL;
+>>>>>>> f6568b70 (finally replace nil constants with NULLs)
 	sys stylusFlags    = 0;
 	sys stylus. extPen. actual = false;
 	apt_set( aptDCChangeLock);
@@ -1716,8 +1721,8 @@ hwnd_enter_paint( Handle self)
 		apc_gp_set_back_color( self, remap_color(sys lbs[1],false));
 	}
 
-	if ( sys psd == nil) sys psd = ( PPaintSaveData) malloc( sizeof( PaintSaveData));
-	if ( sys psd == nil) return;
+	if ( sys psd == NULL) sys psd = ( PPaintSaveData) malloc( sizeof( PaintSaveData));
+	if ( sys psd == NULL) return;
 
 	apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
 	apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
@@ -1763,16 +1768,16 @@ hwnd_leave_paint( Handle self)
 	SelectObject( sys ps,  sys stockBrush);
 	SelectObject( sys ps,  sys stockFont);
 	SelectPalette( sys ps, sys stockPalette, 0);
-	sys stockPen = nil;
-	sys stockBrush = nil;
-	sys stockFont = nil;
-	sys stockPalette = nil;
+	sys stockPen = NULL;
+	sys stockBrush = NULL;
+	sys stockFont = NULL;
+	sys stockPalette = NULL;
 	stylus_free( sys stylusResource, false);
 	if ( sys opaquePen ) {
 		DeleteObject( sys opaquePen );
-		sys opaquePen = nil;
+		sys opaquePen = NULL;
 	}
-	if ( sys psd != nil) {
+	if ( sys psd != NULL) {
 		var font           = sys psd-> font;
 		sys fillMode       = sys psd-> fillMode;
 		sys fillPatternOffset  = sys psd-> fillPatternOffset;
@@ -1787,7 +1792,7 @@ hwnd_leave_paint( Handle self)
 		apt_assign( aptTextOpaque, sys psd-> textOpaque);
 		apt_assign( aptTextOutBaseline, sys psd-> textOutB);
 		free( sys psd);
-		sys psd = nil;
+		sys psd = NULL;
 	}
 	sys bpp = 0;
 }
@@ -1826,7 +1831,7 @@ hwnd_top_level( Handle self)
 		if ( sys className == WC_FRAME) return self;
 		self = var owner;
 	}
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Handle
@@ -1837,7 +1842,7 @@ hwnd_frame_top_level( Handle self)
 			( !is_apt( aptClipOwner) && ( var owner != application))) return self;
 		self = var owner;
 	}
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Handle
@@ -1848,7 +1853,7 @@ hwnd_layered_top_level( Handle self)
 			(!is_apt( aptClipOwner) || (var owner == application))) return self;
 		self = var owner;
 	}
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 typedef struct _ModData
@@ -1865,7 +1870,7 @@ mod_select( int mod)
 	ModData * ks;
 
 	ks = ( ModData*) malloc( sizeof( ModData));
-	if ( !ks) return nil;
+	if ( !ks) return NULL;
 
 	GetKeyboardState( ks-> ks);
 	ks-> kss[ 0]   = ks-> ks[ VK_MENU];
@@ -1930,10 +1935,10 @@ repaint_all( Handle owner, Handle self, void * dummy)
 	if ( !is_apt( aptClipOwner))
 		return false;
 	if ( !is_apt( aptTransparent)) {
-		if ( !InvalidateRect(( HWND) var handle, nil, false)) apiErr;
+		if ( !InvalidateRect(( HWND) var handle, NULL, false)) apiErr;
 		if ( is_apt( aptSyncPaint) && !apcUpdateWindow(( HWND) var handle)) apiErr;
 		objCheck false;
-		var self-> first_that( self, repaint_all, nil);
+		var self-> first_that( self, repaint_all, NULL);
 	}
 	process_transparents( self);
 	return false;
@@ -1946,7 +1951,7 @@ hwnd_repaint( Handle self)
 	if ( !InvalidateRect (( HWND) var handle, NULL, false)) apiErr;
 	if ( is_apt( aptSyncPaint) && !apcUpdateWindow(( HWND) var handle)) apiErr;
 	objCheck;
-	var self-> first_that( self, repaint_all, nil);
+	var self-> first_that( self, repaint_all, NULL);
 	process_transparents( self);
 }
 
@@ -1969,7 +1974,7 @@ palette_change( Handle self)
 		return false;
 
 	self = hwnd_frame_top_level( self);
-	if ( self == nilHandle) return false;
+	if ( self == NULL_HANDLE) return false;
 
 	list_create( &l.l, 32, 32);
 	l. sz = 0;

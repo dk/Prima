@@ -176,17 +176,17 @@ apc_sys_get_value( int sysValue)
 		return GetSystemMetrics( SM_CMOUSEBUTTONS);
 	case svSubmenuDelay   :
 		RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Desktop", 0, KEY_READ, &hKey);
-		RegQueryValueEx( hKey, "MenuShowDelay", nil, &valType, ( LPBYTE) buf, &valSize);
+		RegQueryValueEx( hKey, "MenuShowDelay", NULL, &valType, ( LPBYTE) buf, &valSize);
 		RegCloseKey( hKey);
 		return atol( buf);
 	case svFullDrag       :
 		RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Desktop", 0, KEY_READ, &hKey);
-		RegQueryValueEx( hKey, "DragFullWindows", nil, &valType, ( LPBYTE)buf, &valSize);
+		RegQueryValueEx( hKey, "DragFullWindows", NULL, &valType, ( LPBYTE)buf, &valSize);
 		RegCloseKey( hKey);
 		return atol( buf);
 	case svDblClickDelay   :
 		RegOpenKeyEx( HKEY_CURRENT_USER, "Control Panel\\Mouse", 0, KEY_READ, &hKey);
-		RegQueryValueEx( hKey, "DoubleClickSpeed", nil, &valType, ( LPBYTE)buf, &valSize);
+		RegQueryValueEx( hKey, "DoubleClickSpeed", NULL, &valType, ( LPBYTE)buf, &valSize);
 		RegCloseKey( hKey);
 		return atol( buf);
 	case svWheelPresent    : return GetSystemMetrics( SM_MOUSEWHEELPRESENT);
@@ -296,7 +296,7 @@ prf_find( HKEY hk, char * path, List * ids, int firstName, char * result)
 
 	while ( j--) {
 		snprintf( buf, MAXREGLEN, "%s\\%s", path, ( char*) ids[j].items[ firstName]);
-		if ( prf_exists( hk, buf, nil)) {
+		if ( prf_exists( hk, buf, NULL)) {
 			if ( ids[j].count > firstName + 1) {
 				if ( prf_find( hk, buf, ids, firstName + 1, result))
 					return true;
@@ -434,9 +434,9 @@ alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len)
 	size = MultiByteToWideChar(CP_UTF8, 0, utf8, length, NULL, 0);
 	if ( size < 0) {
 		if ( mb_len ) *mb_len = 0;
-		return nil;
+		return NULL;
 	}
-	if ( !( ret = malloc( size * sizeof( WCHAR)))) return nil;
+	if ( !( ret = malloc( size * sizeof( WCHAR)))) return NULL;
 	MultiByteToWideChar(CP_UTF8, 0, utf8, length, ret, size);
 	if ( mb_len ) *mb_len = size;
 	return ret;
@@ -455,9 +455,9 @@ alloc_utf8_to_wchar_visual( const char * utf8, int length, int * mb_len)
 	size = MultiByteToWideChar(CP_UTF8, 0, utf8, length, NULL, 0);
 	if ( size < 0) {
 		if ( mb_len ) *mb_len = 0;
-		return nil;
+		return NULL;
 	}
-	if ( !( ret = malloc((size + 1) * sizeof( WCHAR)))) return nil;
+	if ( !( ret = malloc((size + 1) * sizeof( WCHAR)))) return NULL;
 /*
 U+202A (LRE)	LEFT-TO-RIGHT EMBEDDING	Treats the following text as embedded left-to-right.
 U+202B (RLE)	RIGHT-TO-LEFT EMBEDDING	Treats the following text as embedded right to left.
@@ -505,7 +505,7 @@ alloc_ascii_to_wchar( const char * text, int length)
 	WCHAR * ret;
 	if ( text == NULL ) text = "";
 	if ( length < 0) length = strlen( text) + 1;
-	if ( !( ret = malloc( length * sizeof( WCHAR)))) return nil;
+	if ( !( ret = malloc( length * sizeof( WCHAR)))) return NULL;
 	MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, text, length, ret, length * 2);
 	return ret;
 }

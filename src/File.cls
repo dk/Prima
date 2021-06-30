@@ -10,7 +10,7 @@ object Prima::File( Prima::Component)
 	property int       fd;
 	property int       mask;
 
-	method   UV        add_notification( char * name, SV * subroutine, Handle referer = nilHandle, int index = -1);
+	method   UV        add_notification( char * name, SV * subroutine, Handle referer = NULL_HANDLE, int index = -1);
 	method   void      init( HV * profile);
 	method   void      cleanup();
 	method   SV      * get_handle();

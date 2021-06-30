@@ -172,7 +172,7 @@ underscore_font( Handle self, int x, int y, int width)
 		dcs = stylus_alloc(&ss);
 		old = SelectObject( dc, dcs-> hpen );
 
-		MoveToEx( dc, x + pt[0].x, y - pt[0].y, nil);
+		MoveToEx( dc, x + pt[0].x, y - pt[0].y, NULL);
 		LineTo( dc, x + pt[1].x, y - pt[1].y);
 	}
 
@@ -207,7 +207,7 @@ underscore_font( Handle self, int x, int y, int width)
 			}
 		}
 
-		MoveToEx( dc, x + pt[0].x, y - pt[0].y, nil);
+		MoveToEx( dc, x + pt[0].x, y - pt[0].y, NULL);
 		LineTo( dc, x + pt[1].x, y - pt[1].y);
 	}
 
@@ -1184,7 +1184,7 @@ gp_get_font_def_bitmap( Handle self, int first, int last, int flags, PFontABC ab
 
 PFontABC
 apc_gp_get_font_def( Handle self, int first, int last, int flags)
-{objCheck nil;{
+{objCheck NULL;{
 	int i;
 	DWORD ret;
 	PFontABC f1;
@@ -1192,7 +1192,7 @@ apc_gp_get_font_def( Handle self, int first, int last, int flags)
 	GLYPHMETRICS g;
 
 	f1 = ( PFontABC) malloc(( last - first + 1) * sizeof( FontABC));
-	if ( !f1) return nil;
+	if ( !f1) return NULL;
 
 	for ( i = 0; i <= last - first; i++) {
 		memset(&g, 0, sizeof(g));
@@ -1206,7 +1206,7 @@ apc_gp_get_font_def( Handle self, int first, int last, int flags)
 		if ( ret == GDI_ERROR ) {
 			if ( !gp_get_font_def_bitmap( self, first, last, flags, f1 )) {
 				free( f1 );
-				return nil;
+				return NULL;
 			}
 			return f1;
 		}
@@ -1398,7 +1398,7 @@ apc_gp_get_mapper_ranges(PFont font, int * count, unsigned int * flags)
 	*count = 0;
 
 	strncpy(name, font->name, 256);
-	apc_font_pick( nilHandle, font, font);
+	apc_font_pick( NULL_HANDLE, font, font);
 	if ( strcmp( font->name, name ) != 0 ) 
 		return NULL;
 
@@ -1645,7 +1645,7 @@ static LangId languages[] = {
 
 char *
 apc_gp_get_font_languages( Handle self)
-{objCheck nil;{
+{objCheck NULL;{
 	int i, size;
 	char * ret, * p;
 	FONTSIGNATURE f;
@@ -1776,10 +1776,10 @@ gp_get_text_box( Handle self, ABC * abc, Point * pt)
 
 Point *
 apc_gp_get_text_box( Handle self, const char* text, int len, int flags)
-{objCheck nil;{
+{objCheck NULL;{
 	ABC abc;
 	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
-	if ( !pt) return nil;
+	if ( !pt) return NULL;
 
 	memset( pt, 0, sizeof( Point) * 5);
 
@@ -1788,7 +1788,7 @@ apc_gp_get_text_box( Handle self, const char* text, int len, int flags)
 		int mb_len;
 		if ( !( text = ( char *) guts.alloc_utf8_to_wchar_visual( text, len, &mb_len))) {
 			free( pt);
-			return nil;
+			return NULL;
 		}
 		len = mb_len;
 	}
@@ -1800,10 +1800,10 @@ apc_gp_get_text_box( Handle self, const char* text, int len, int flags)
 
 Point *
 apc_gp_get_glyphs_box( Handle self, PGlyphsOutRec t)
-{objCheck nil;{
+{objCheck NULL;{
 	ABC abc;
 	Point * pt = ( Point *) malloc( sizeof( Point) * 5);
-	if ( !pt) return nil;
+	if ( !pt) return NULL;
 
 	memset( pt, 0, sizeof( Point) * 5);
 	if ( t-> fonts )

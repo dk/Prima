@@ -1627,7 +1627,7 @@ LABEL
 		{
 print HEADER <<LABEL;
 	$incSelf = $incGetMate( ST( 0));
-	if ( $incSelf == nilHandle)
+	if ( $incSelf == NULL_HANDLE)
 		croak( "Illegal object reference passed to $croakId);
 LABEL
 
@@ -1871,7 +1871,7 @@ LABEL
 		# scalars
 			$pphv = 1;
 			if ($resSub eq "Handle") {
-				print HEADER "\t\tif ( $incRes && (( $incInst) $incRes)-> $hMate && ((( $incInst) $incRes)-> $hMate != nilSV))\n";
+				print HEADER "\t\tif ( $incRes && (( $incInst) $incRes)-> $hMate && ((( $incInst) $incRes)-> $hMate != NULL_SV))\n";
 				print HEADER "\t\t{\n";
 				print HEADER "\t\t\tXPUSHs( sv_mortalcopy((( $incInst) $incRes)-> $hMate));\n";
 				print HEADER "\t\t} else XPUSHs( &PL_sv_undef);\n";
@@ -2209,7 +2209,7 @@ SD
 			print HEADER "\tconst char * err = errorAt ? errorAt : \"$S\";\n";
 			print HEADER "\tHV * $incHV = ( HV*)\n\t".
 				"(( SvROK( hashRef) && ( SvTYPE( SvRV( hashRef)) == SVt_PVHV)) ? SvRV( hashRef)\n\t\t".
-				": ( croak( \"Illegal hash reference passed to %s\", err), nil));\n";
+				": ( croak( \"Illegal hash reference passed to %s\", err), NULL));\n";
 			print HEADER "\tSV ** $incSV;\n\n\t(void)$incSV;\n\n";
 			for ( my $j = 0; $j < scalar @{$s->[TYPES]}; $j++)
 			{
@@ -2222,7 +2222,7 @@ SD
 				if ( ref $lType) {
 					print HEADER <<CONTAINED_STRUCTURE;
 	{
-		SV *sv = nil;
+		SV *sv = NULL;
 		SV **svp = hv_fetch( $incHV, "$lName", $lNameLen, 0);
 		if ( !svp) {
 			sv = newRV_noinc(( SV*) newHV());
@@ -2287,7 +2287,7 @@ CONTAINED_STRUCTURE
 			if ( $j) { print HEADER ','} ;
 			print HEADER "\n\t{ &(${ownCType}Vmt. $id), (void*)${ownCType}_${id}_REDEFINED, \"$id\"}";
 		}
-		print HEADER "\n\t{nil,nil,nil} /* M\$C empty struct error */" unless scalar @newMethods;
+		print HEADER "\n\t{NULL,NULL,NULL} /* M\$C empty struct error */" unless scalar @newMethods;
 		print HEADER "\n};\n\n";
 
 		my $lpCount = $#newMethods + 1;
@@ -2296,8 +2296,8 @@ CONTAINED_STRUCTURE
 /* Class virtual methods table */
 ${ownCType}_vmt ${ownCType}Vmt = {
 	\"${ownOClass}\",
-	${\($baseClass && !$genDyna ? "\&${baseCType}Vmt" : "nil")},
-	${\($baseClass && !$genDyna ? "\&${baseCType}Vmt" : "nil")},
+	${\($baseClass && !$genDyna ? "\&${baseCType}Vmt" : "NULL")},
+	${\($baseClass && !$genDyna ? "\&${baseCType}Vmt" : "NULL")},
 	sizeof( $ownCType ),
 	${ownCType}VmtPatch,
 	$lpCount,
@@ -2308,7 +2308,7 @@ LABEL
 			print HEADER ",\n\t";
 			my $pt = ( exists $pipeMethods{ $id}) ? $pipeMethods{ $id} :
 				"${\(do{my $c = $allMethodsHosts{$id}; $c =~ s[^Prima::][]; $c =~ s[::][__]g;  $c })}_$id";
-			$pt = 'nil' if $genDyna && ( $allMethodsHosts{$id} ne $ownOClass);
+			$pt = 'NULL' if $genDyna && ( $allMethodsHosts{$id} ne $ownOClass);
 			print HEADER $pt;
 		}
 		print HEADER "\n};\n\n";

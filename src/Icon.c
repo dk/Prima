@@ -261,7 +261,7 @@ Icon_mask( Handle self, Bool set, SV * svmask)
 	STRLEN maskSize;
 	void * mask;
 	int am = var-> autoMasking;
-	if ( var-> stage > csFrozen) return nilSV;
+	if ( var-> stage > csFrozen) return NULL_SV;
 	if ( !set) {
 		SV * sv = newSV_type(SVt_PV);
 		SvREADONLY_on(sv);
@@ -272,12 +272,12 @@ Icon_mask( Handle self, Bool set, SV * svmask)
 		return sv;
 	}
 	mask = SvPV( svmask, maskSize);
-	if ( is_opt( optInDraw) || maskSize <= 0) return nilSV;
+	if ( is_opt( optInDraw) || maskSize <= 0) return NULL_SV;
 	memcpy( var-> mask, mask, (maskSize > (STRLEN)var-> maskSize) ? (STRLEN)var-> maskSize : maskSize);
 	var-> autoMasking = amNone;
 	my-> update_change( self);
 	var-> autoMasking = am;
-	return nilSV;
+	return NULL_SV;
 }
 
 int
@@ -434,13 +434,13 @@ Icon_update_change( Handle self)
 			my-> set_maskType( self, oldtype);
 	}
 	else
-		var-> mask = nil;
+		var-> mask = NULL;
 }
 
 void
 Icon_stretch( Handle self, int width, int height)
 {
-	Byte * newMask = nil;
+	Byte * newMask = NULL;
 	int lineSize, oldW = var-> w, oldH = var-> h, am = var-> autoMasking;
 	if ( var->stage > csFrozen) return;
 	if ( width  >  65535) width  =	65535;
@@ -462,7 +462,7 @@ Icon_stretch( Handle self, int width, int height)
 
 	lineSize = LINE_SIZE( abs( width), var-> maskType );
 	newMask  = allocb( lineSize * abs( height));
-	if ( newMask == nil && lineSize > 0) {
+	if ( newMask == NULL && lineSize > 0) {
 		my-> make_empty( self);
 		croak("Icon::stretch: cannot allocate %d bytes", lineSize * abs( height));
 	}
@@ -510,7 +510,7 @@ Icon_create_empty_icon( Handle self, int width, int height, int type, int maskTy
 		memset( var-> mask, 0, var-> maskSize);
 	}
 	else {
-		var-> mask = nil;
+		var-> mask = NULL;
 		var-> maskLine = 0;
 		var-> maskSize = 0;
 	}
@@ -527,7 +527,7 @@ Icon_dup( Handle self)
 		if ( !(p = realloc( i-> mask, var-> maskSize ))) {
 			warn("Icon::dup: cannot allocate %d bytes", var->maskSize);
 			Object_destroy(h);
-			return nilHandle;
+			return NULL_HANDLE;
 		}
 		i-> mask = p;
 	}
@@ -625,7 +625,7 @@ Icon_set( Handle self, HV * profile)
 	if ( pexist( maskType) && pexist( mask ))
 	{
 		free( var-> mask );
-		var-> mask = nil;
+		var-> mask = NULL;
 		my-> set_maskType( self, pget_i( maskType));
 		my-> set_mask( self, pget_sv( mask));
 		pdelete( maskType);
@@ -680,7 +680,7 @@ Icon_make_empty( Handle self)
 {
 	inherited make_empty(self);
 	free( var->mask);
-	var->mask = nil;
+	var->mask = NULL;
 }
 
 Handle

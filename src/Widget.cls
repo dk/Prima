@@ -195,7 +195,7 @@ object Prima::Widget( Prima::Drawable)
 	method   SV   *   get_text();
 
 #	properties write methods
-	method   Bool     set_capture( Bool capture, Handle confineTo = nilHandle);
+	method   Bool     set_capture( Bool capture, Handle confineTo = NULL_HANDLE);
 	method   void     set_centered( Bool x, Bool y);
 	method   void     set_font( Font font);
 	method   void     set_hint( SV * hint);

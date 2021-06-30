@@ -34,13 +34,13 @@ static int XFree(void* ptr);
 extern "C" {
 #endif
 
-static char * xbmext[] = { "xbm", nil };
+static char * xbmext[] = { "xbm", NULL };
 static int    xbmbpp[] = { imbpp1 | imGrayScale, 0 };
 
 static char * loadOutput[] = {
 	"hotSpotX",
 	"hotSpotY",
-	nil
+	NULL
 };
 
 static char * mime[] = {
@@ -57,7 +57,7 @@ static ImgCodecInfo codec_info = {
 	xbmext,    /* extension */
 	"X11 Bitmap File",     /* file type */
 	"XBM", /* short type */
-	nil,    /* features  */
+	NULL,    /* features  */
 	"",     /* module */
 	"",     /* package */
 	IMG_LOAD_FROM_FILE | IMG_SAVE_TO_FILE | IMG_SAVE_TO_STREAM,
@@ -123,13 +123,13 @@ open_load( PImgCodec instance, PImgLoadFileInstance fi)
 	Byte * data;
 
 	if( XReadBitmapFileData( fi-> fileName, fi-> is_utf8, &w, &h, &data, &yw, &yh) != BitmapSuccess)
-		return nil;
+		return NULL;
 
 	fi-> stop = true;
 	fi-> frameCount = 1;
 
 	l = malloc( sizeof( LoadRec));
-	if ( !l) return nil;
+	if ( !l) return NULL;
 
 	l-> w  = w;
 	l-> h  = h;
@@ -306,7 +306,7 @@ apc_img_codec_X11( void )
 	vmt. open_save     = open_save;
 	vmt. save          = save;
 	vmt. close_save    = close_save;
-	apc_img_register( &vmt, nil);
+	apc_img_register( &vmt, NULL);
 }
 
 /* $Xorg: RdBitF.c,v 1.5 2001/02/09 02:03:35 xorgcvs Exp $ */

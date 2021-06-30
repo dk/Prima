@@ -66,7 +66,7 @@ static Color standard_window_colors[]      = { COLORSET_GRAY     };
 static Color standard_application_colors[] = { COLORSET_GRAY     };
 
 static Color* standard_colors[] = {
-	nil,
+	NULL,
 	standard_button_colors,		/* Prima.Button.* */
 	standard_checkbox_colors,		/* Prima.Checkbox.* */
 	standard_combo_colors,		/* Prima.Combo.* */
@@ -119,7 +119,7 @@ Color
 apc_widget_map_color( Handle self, Color color)
 {
 	if ((( color & clSysFlag) != 0) && (( color & wcMask) == 0)) color |= PWidget(self)-> widgetClass;
-	return prima_map_color( color, nil);
+	return prima_map_color( color, NULL);
 }
 
 static PHash  hatches;
@@ -450,7 +450,7 @@ create_std_palettes( XColor * xc, int count)
 		return false;
 	if ( !( guts. systemColorMap = malloc( sizeof( int) * count))) {
 		free( guts. palette);
-		guts. palette = nil;
+		guts. palette = NULL;
 		return false;
 	}
 	bzero( guts. palette, sizeof( MainColorEntry) * guts. palSize);
@@ -490,8 +490,8 @@ fill_cubic( XColor * xc, int d)
 	}
 }
 
-static char * do_visual = nil;
-static PList color_options = nil;
+static char * do_visual = NULL;
+static PList color_options = NULL;
 
 static void
 set_color_class( int class, char * option, char * value)
@@ -551,7 +551,7 @@ Bool
 prima_init_color_subsystem(char * error_buf)
 {
 	int id, count, mask = VisualScreenMask|VisualDepthMask|VisualIDMask;
-	XVisualInfo template, *list = nil;
+	XVisualInfo template, *list = NULL;
 
 	/* check if non-default depth is selected */
 	id = -1;
@@ -559,7 +559,7 @@ prima_init_color_subsystem(char * error_buf)
 		char * c, * end;
 		if (( c = do_visual) ||
 			apc_fetch_resource( "Prima", "", "Visual", "visual",
-										nilHandle, frString, &c)) {
+										NULL_HANDLE, frString, &c)) {
 			id = strtol( c, &end, 0);
 			if ( *end) id = -1;
 			if ( c != do_visual) free( c);
@@ -573,7 +573,7 @@ prima_init_color_subsystem(char * error_buf)
 		}
 	}
 	free( do_visual);
-	do_visual = nil;
+	do_visual = NULL;
 
 FALLBACK_TO_DEFAULT_VISUAL:
 	if ( id < 0) {
@@ -651,8 +651,8 @@ class;
 	guts. dynamicColors    = false;
 	guts. grayScale        = false;
 	guts. palSize          = 1 << guts. depth;
-	guts. palette          = nil;
-	guts. systemColorMap   = nil;
+	guts. palette          = NULL;
+	guts. systemColorMap   = NULL;
 	guts. systemColorMapSize = 0;
 	guts. colorCubeRib     = 0;
 
@@ -838,21 +838,21 @@ BLACK_WHITE_ALLOCATED:
 	/* get XRDB colors */
 	{
 		Color c;
-		if ( apc_fetch_resource( "Prima", "", "Color", "color", nilHandle, frColor, &c))
+		if ( apc_fetch_resource( "Prima", "", "Color", "color", NULL_HANDLE, frColor, &c))
 			apply_color_class( ciFore, c);
-		if ( apc_fetch_resource( "Prima", "", "Back", "backColor", nilHandle, frColor, &c))
+		if ( apc_fetch_resource( "Prima", "", "Back", "backColor", NULL_HANDLE, frColor, &c))
 			apply_color_class( ciBack, c);
-		if ( apc_fetch_resource( "Prima", "", "HiliteColor", "hiliteColor", nilHandle, frColor, &c))
+		if ( apc_fetch_resource( "Prima", "", "HiliteColor", "hiliteColor", NULL_HANDLE, frColor, &c))
 			apply_color_class( ciHiliteText, c);
-		if ( apc_fetch_resource( "Prima", "", "HiliteBackColor", "hiliteBackColor", nilHandle, frColor, &c))
+		if ( apc_fetch_resource( "Prima", "", "HiliteBackColor", "hiliteBackColor", NULL_HANDLE, frColor, &c))
 			apply_color_class( ciHilite, c);
-		if ( apc_fetch_resource( "Prima", "", "DisabledColor", "disabledColor", nilHandle, frColor, &c))
+		if ( apc_fetch_resource( "Prima", "", "DisabledColor", "disabledColor", NULL_HANDLE, frColor, &c))
 			apply_color_class( ciDisabledText, c);
-		if ( apc_fetch_resource( "Prima", "", "DisabledBackColor", "disabledBackColor", nilHandle, frColor, &c))
+		if ( apc_fetch_resource( "Prima", "", "DisabledBackColor", "disabledBackColor", NULL_HANDLE, frColor, &c))
 			apply_color_class( ciDisabled, c);
-		if ( apc_fetch_resource( "Prima", "", "Light3DColor", "light3DColor", nilHandle, frColor, &c))
+		if ( apc_fetch_resource( "Prima", "", "Light3DColor", "light3DColor", NULL_HANDLE, frColor, &c))
 			apply_color_class( ciLight3DColor, c);
-		if ( apc_fetch_resource( "Prima", "", "Dark3DColor", "dark3DColor", nilHandle, frColor, &c))
+		if ( apc_fetch_resource( "Prima", "", "Dark3DColor", "dark3DColor", NULL_HANDLE, frColor, &c))
 			apply_color_class( ciDark3DColor, c);
 	}
 
@@ -922,7 +922,7 @@ prima_done_color_subsystem( void)
 	FreeColorsStruct fc;
 
 	if ( DISP) {
-		hash_first_that( hatches, (void*)kill_hatches, nil, nil, nil);
+		hash_first_that( hatches, (void*)kill_hatches, NULL, NULL, NULL);
 		fc. count = 0;
 
 		for ( i = 0; i < guts. palSize; i++) {
@@ -949,9 +949,9 @@ prima_done_color_subsystem( void)
 	free( guts. ditherPatterns);
 	free( guts. palette);
 	free( guts. systemColorMap);
-	guts. palette = nil;
-	guts. systemColorMap = nil;
-	guts. ditherPatterns = nil;
+	guts. palette = NULL;
+	guts. systemColorMap = NULL;
+	guts. ditherPatterns = NULL;
 }
 
 /*
@@ -959,7 +959,7 @@ prima_done_color_subsystem( void)
 	Colors can be selectively filtered using maxRank
 	parameter - if it is greater that RANK_FREE, the colors
 	with rank lower that maxRank are not matched. Ranking can
-	make sense when self != nil and self != application, and
+	make sense when self != NULL and self != application, and
 	of course when color cell manipulation is possible. In other
 	words, local palette is never used if maxRank > RANK_FREE.
 	maxDiff tells the maximal difference for a color. If
@@ -1393,7 +1393,7 @@ SUCCESS:
 
 	for ( i = 0; i < widgets. count; i++)
 		if ( PWidget( widgets. items[i])-> stage < csDead)
-			apc_widget_invalidate_rect( widgets. items[i], nil);
+			apc_widget_invalidate_rect( widgets. items[i], NULL);
 
 	Pdebug("color replace: exit\n");
 	list_destroy( &widgets);
@@ -1455,7 +1455,7 @@ prima_get_hatch( FillPattern * fp)
 	FillPattern fprev;
 	Byte *mirrored_bits;
 	if ( memcmp( fp, fillPatterns[fpSolid], sizeof( FillPattern)) == 0)
-		return nilHandle;
+		return NULL_HANDLE;
 	if (( p = ( Pixmap) hash_fetch( hatches, fp, sizeof( FillPattern))))
 		return p;
 
@@ -1465,11 +1465,11 @@ prima_get_hatch( FillPattern * fp)
 		if ( guts.bit_order != MSBFirst) fprev[i] = mirrored_bits[fprev[i]];
 	}
 	if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fprev, 8, 8)) == None) {
-		hash_first_that( hatches, (void*)kill_hatches, nil, nil, nil);
+		hash_first_that( hatches, (void*)kill_hatches, NULL, NULL, NULL);
 		hash_destroy( hatches, false);
 		hatches = hash_create();
 		if (( p = XCreateBitmapFromData( DISP, guts. root, (char*)fprev, 8, 8)) == None)
-			return nilHandle;
+			return NULL_HANDLE;
 	}
 	hash_store( hatches, fp, sizeof( FillPattern), ( void*) p);
 	return p;

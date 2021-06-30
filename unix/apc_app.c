@@ -258,11 +258,11 @@ init_x11( char * error_buf )
 		snprintf( error_buf, 256, "Error: Can't open display '%s'",
 					do_display ? do_display : (disp ? disp : ""));
 		free( do_display);
-		do_display = nil;
+		do_display = NULL;
 		return false;
 	}
 	free( do_display);
-	do_display = nil;
+	do_display = NULL;
 	XSetErrorHandler( x_error_handler);
 	guts.main_error_handler = x_error_handler;
 	(void)x_io_error_handler;
@@ -413,7 +413,7 @@ init_x11( char * error_buf )
 
 	XInternAtoms( DISP, atom_names, AI_count, 0, guts. atoms);
 
-	guts. null_pointer = nilHandle;
+	guts. null_pointer = NULL_HANDLE;
 	guts. pointer_invisible_count = 0;
 	guts. files = plist_create( 16, 16);
 	prima_rebuild_watchers();
@@ -468,7 +468,7 @@ window_subsystem_init( char * error_buf)
 		Bool ret = init_x11( error_buf );
 		if ( !ret && DISP) {
 			XCloseDisplay(DISP);
-			DISP = nil;
+			DISP = NULL;
 		}
 		return ret;
 	}
@@ -639,7 +639,7 @@ free_gc_pool( struct gc_head *head)
 	GCList *n1, *n2;
 
 	n1 = TAILQ_FIRST(head);
-	while (n1 != nil) {
+	while (n1 != NULL) {
 		n2 = TAILQ_NEXT(n1, gc_link);
 		XFreeGC( DISP, n1-> gc);
 		/* XXX */ free(n1);
@@ -666,7 +666,7 @@ window_subsystem_done( void)
 
 	if ( guts. hostname. value) {
 		XFree( guts. hostname. value);
-		guts. hostname. value = nil;
+		guts. hostname. value = NULL;
 	}
 
 	prima_end_menu();
@@ -681,13 +681,13 @@ window_subsystem_done( void)
 	prima_gc_ximages();          /* verrry dangerous, very quiet please */
 	if ( guts.pointer_font) {
 		XFreeFont( DISP, guts.pointer_font);
-		guts.pointer_font = nil;
+		guts.pointer_font = NULL;
 	}
 	XCloseDisplay( DISP);
-	DISP = nil;
+	DISP = NULL;
 
 	plist_destroy( guts. files);
-	guts. files = nil;
+	guts. files = NULL;
 
 	XrmDestroyDatabase( guts.db);
 	if (guts.ximages)            hash_destroy( guts.ximages, false);
@@ -781,7 +781,7 @@ apc_application_create( Handle self)
 	XX-> origin. x = 0;
 	XX-> origin. y = 0;
 	XX-> ackSize = XX-> size = apc_application_get_size( self);
-	XX-> owner = nilHandle;
+	XX-> owner = NULL_HANDLE;
 	XX-> visual = &guts. visual;
 
 	XX-> flags. clip_owner = 1;
@@ -817,7 +817,7 @@ apc_application_destroy( Handle self)
 		XCHECKPOINT;
 		hash_delete( guts.windows, (void*)&X_WINDOW, sizeof(X_WINDOW), false);
 	}
-	application = nilHandle;
+	application = NULL_HANDLE;
 	return true;
 }
 
@@ -892,10 +892,10 @@ apc_application_get_widget_from_point( Handle self, Point p)
 			Handle h;
 			if ( to == from) to = X_WINDOW;
 			h = (Handle)hash_fetch( guts.windows, (void*)&to, sizeof(to));
-			return ( h == application) ? nilHandle : h;
+			return ( h == application) ? NULL_HANDLE : h;
 		}
 	}
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Handle
@@ -1014,11 +1014,11 @@ apc_application_get_monitor_rects( Handle self, int * nrects)
 {
 #if defined(HAVE_X11_EXTENSIONS_XRANDR_H) && (RANDR_MAJOR > 1 || (RANDR_MAJOR == 1 && RANDR_MINOR > 3))
 	XRRScreenResources * sr;
-	Box * ret = nil;
+	Box * ret = NULL;
 
 	if ( !guts. randr_extension) {
 		*nrects = 0;
-		return nil;
+		return NULL;
 	}
 
 	XCHECKPOINT;
@@ -1043,7 +1043,7 @@ apc_application_get_monitor_rects( Handle self, int * nrects)
 	return ret;
 #else
 	*nrects = 0;
-	return nil;
+	return NULL;
 #endif
 }
 
@@ -1078,7 +1078,7 @@ apc_application_unlock( Handle self)
 Bool
 apc_application_stop( Handle self)
 {
-	if ( application == nilHandle ) return false;
+	if ( application == NULL_HANDLE ) return false;
 	guts. application_stop_signal = true;
 	return true;
 }
@@ -1098,5 +1098,5 @@ apc_application_yield( Bool wait_for_event)
 	prima_one_loop_round(wait_for_event ? WAIT_IF_NONE : WAIT_NEVER, true);
 	guts. application_stop_signal = false;
 	XSync( DISP, false);
-	return application != nilHandle && !guts. applicationClose;
+	return application != NULL_HANDLE && !guts. applicationClose;
 }

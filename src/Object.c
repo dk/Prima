@@ -20,8 +20,8 @@ Object_create( char *className, HV * profile)
 	SV *xmate;
 	SV *profRef;
 
-	if ( primaObjects == nil)
-		return nilHandle;
+	if ( primaObjects == NULL)
+		return NULL_HANDLE;
 
 	ENTER;
 	SAVETMPS;
@@ -68,9 +68,9 @@ Object_create( char *className, HV * profile)
 		hash_store( primaObjects, &self, sizeof( self), (void*)1);
 	SvREFCNT_dec( profRef);
 	if ( var-> stage > csConstructing) {
-		if ( var-> mate && ( var-> mate != nilSV) && SvRV( var-> mate))
+		if ( var-> mate && ( var-> mate != NULL_SV) && SvRV( var-> mate))
 			--SvREFCNT( SvRV( var-> mate));
-		return nilHandle;
+		return NULL_HANDLE;
 	}
 	var-> stage = csNormal;
 	my-> setup( self);
@@ -91,7 +91,7 @@ protect_chain( Handle self, int direction)
 void
 Object_destroy( Handle self)
 {
-	SV *mate, *object = nil;
+	SV *mate, *object = NULL;
 	int enter_stage = var-> stage;
 
 	if ( var-> stage == csDeadInInit) {
@@ -104,7 +104,7 @@ Object_destroy( Handle self)
 			hash_delete( primaObjects, &self, sizeof( self), false);
 		mate = var-> mate;
 		var-> stage = csDead;
-		var-> mate = nilSV;
+		var-> mate = NULL_SV;
 		if ( mate && object) sv_free( mate);
 		return;
 	}
@@ -122,7 +122,7 @@ Object_destroy( Handle self)
 
 	if ( var-> stage == csHalfDead) {
 		Handle owner;
-		if ( !var-> mate || ( var-> mate == nilSV))
+		if ( !var-> mate || ( var-> mate == NULL_SV))
 			return;
 		object = SvRV( var-> mate);
 		if ( !object)
@@ -144,7 +144,7 @@ Object_destroy( Handle self)
 	}
 	var-> stage = csDestroying;
 	mate = var-> mate;
-	if ( mate && ( mate != nilSV)) {
+	if ( mate && ( mate != NULL_SV)) {
 		object = SvRV( mate);
 		if ( object) ++SvREFCNT( object);
 	}
@@ -174,7 +174,7 @@ Object_destroy( Handle self)
 		recursiveCall--;
 	}
 	var-> stage = csDead;
-	var-> mate = nilSV;
+	var-> mate = NULL_SV;
 	if ( mate && object) sv_free( mate);
 
 	while (( recursiveCall == 0) && ( postDestroys. count > 0)) {
@@ -204,7 +204,7 @@ XS( Object_alive_FROMPERL)
 	_c_apricot_self_ = gimme_the_real_mate( ST( 0));
 	SPAGAIN;
 	SP -= items;
-	if ( _c_apricot_self_ != nilHandle) {
+	if ( _c_apricot_self_ != NULL_HANDLE) {
 		switch ((( PObject) _c_apricot_self_)-> stage) {
 		case csDeadInInit:
 		case csConstructing:

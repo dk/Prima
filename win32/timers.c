@@ -22,7 +22,7 @@ add_timer( Handle timerObject)
 {
 	PItemRegRec pTime;
 	int i;
-	if ( timerObject == nilHandle) {
+	if ( timerObject == NULL_HANDLE) {
 		apcErr( errInvObject);
 		return 0;
 	}
@@ -30,7 +30,7 @@ add_timer( Handle timerObject)
 		return 0;
 
 	if ( timeDefs) for ( i = 0; i < timeDefsCount; i++)
-	if ( timeDefs[ i]. item == nil)
+	if ( timeDefs[ i]. item == NULL)
 	{
 		timeDefs[ i]. item = ( void*) timerObject;
 		return i + 1;
@@ -58,7 +58,7 @@ remove_timer( Handle timerObject)
 	{
 		if (( Handle)( list-> item) == timerObject)
 		{
-			list-> item = nil;
+			list-> item = NULL;
 			break;
 		}
 		list++;
@@ -98,7 +98,7 @@ apc_timer_set_timeout( Handle self, int timeout)
 	objCheck false;
 	if ( !application ) return false;
 	if ( is_opt( optActive)) {
-		if ( !SetTimer( OWNER, var handle, timeout, nil)) {
+		if ( !SetTimer( OWNER, var handle, timeout, NULL)) {
 			opt_clear( optActive);
 			apiErr;
 			return false;
@@ -113,7 +113,7 @@ apc_timer_start( Handle self)
 {
 	objCheck false;
 	if ( !application ) return false;
-	if ( !SetTimer( OWNER, var handle, sys s. timer. timeout, nil))
+	if ( !SetTimer( OWNER, var handle, sys s. timer. timeout, NULL))
 		apiErrRet;
 	return true;
 }

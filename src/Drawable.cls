@@ -86,7 +86,7 @@ object Prima::Drawable ( Prima::Component)
 	method Bool  sector( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_sector;
 	method Bool  text_out( SV * text, int x, int y, int from = 0, int len = -1);
 	method SV*   text_shape( SV * text, HV * profile);
-	method SV*   text_wrap( SV * text, int width, int options = twDefault, int tabIndent = 8, int from = 0, int len = -1, SV * glyphs = nilSV);
+	method SV*   text_wrap( SV * text, int width, int options = twDefault, int tabIndent = 8, int from = 0, int len = -1, SV * glyphs = NULL_SV);
 
 	# font_abc caches
 	PFontABC font_abc_ascii;

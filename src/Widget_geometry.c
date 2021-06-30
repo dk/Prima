@@ -37,7 +37,7 @@ pack Handle fields:
 	order, in  - available always, but is guaranteedly valid when geometry == gtPack only
 
 	in and order cause croaks when submitted via packInfo(), but are silently
-	converted to nil when geometry changes and the references are not valid anymore
+	converted to NULL when geometry changes and the references are not valid anymore
 
 */
 
@@ -172,7 +172,7 @@ Widget_check_in( Handle self, Handle in, Bool barf)
 		if ( barf)
 			croak("%s: invalid 'in': not a widget", "Prima::Widget::pack");
 		else
-			return nilHandle;
+			return NULL_HANDLE;
 	}
 
 	/* check direct inheritance */
@@ -181,7 +181,7 @@ Widget_check_in( Handle self, Handle in, Bool barf)
 			if ( barf)
 				croak("%s: invalid 'in': is already a child", "Prima::Widget::pack");
 			else
-				return nilHandle;
+				return NULL_HANDLE;
 		}
 		h = PWidget( h)-> owner;
 	}
@@ -193,7 +193,7 @@ Widget_check_in( Handle self, Handle in, Bool barf)
 			if ( barf)
 				croak("%s: invalid 'in': already a pack slave", "Prima::Widget::pack");
 			else
-				return nilHandle;
+				return NULL_HANDLE;
 		}
 		h = PWidget( h)-> geomInfo. next;
 	}
@@ -204,7 +204,7 @@ Widget_check_in( Handle self, Handle in, Bool barf)
 			if ( barf)
 				croak("%s: invalid 'in': already a place slave", "Prima::Widget::pack");
 			else
-				return nilHandle;
+				return NULL_HANDLE;
 		}
 		h = PWidget( h)-> geomInfo. next;
 	}
@@ -683,14 +683,14 @@ Widget_pack_enter( Handle self)
 	/* see if leftover object references are alive */
 	if ( var-> geomInfo. order &&
 		!hash_fetch( primaObjects, &var-> geomInfo. order, sizeof(Handle))) {
-		var-> geomInfo. order = nilHandle;
+		var-> geomInfo. order = NULL_HANDLE;
 		var-> geomInfo. after = 0;
 	}
 	if ( var-> geomInfo. in) {
 		if ( hash_fetch( primaObjects, &var-> geomInfo. in, sizeof(Handle)))
 			var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, false);
 		else
-			var-> geomInfo. in = nilHandle;
+			var-> geomInfo. in = NULL_HANDLE;
 	}
 
 	/* store into slaves list */
@@ -757,7 +757,7 @@ Widget_pack_leave( Handle self)
 		}
 	}
 
-	var-> geomInfo. next = nilHandle;
+	var-> geomInfo. next = NULL_HANDLE;
 }
 
 SV *
@@ -800,8 +800,8 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 			break;
 		}
 
-		pset_H( after,  ( p-> order && p-> after)  ? p-> order : nilHandle);
-		pset_H( before, ( p-> order && !p-> after) ? p-> order : nilHandle);
+		pset_H( after,  ( p-> order && p-> after)  ? p-> order : NULL_HANDLE);
+		pset_H( before, ( p-> order && !p-> after) ? p-> order : NULL_HANDLE);
 		pset_H( in, var-> geomInfo. in);
 
 		pset_i( ipadx, p-> ipad. x);
@@ -814,9 +814,9 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 		dPROFILE;
 		HV * profile;
 		Bool reset_zorder = false, set_in = false;
-		Handle in = nilHandle;
+		Handle in = NULL_HANDLE;
 
-		if ( SvTYPE(packInfo) == SVt_NULL) return nilSV;
+		if ( SvTYPE(packInfo) == SVt_NULL) return NULL_SV;
 
 		if ( !SvOK(packInfo) || !SvROK(packInfo) || SvTYPE(SvRV(packInfo)) != SVt_PVHV)
 			croak("Widget::packInfo: parameter is not a hash");
@@ -905,7 +905,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 						croak("%s: 'after' and 'before' cannot be present simultaneously", "Prima::Widget::pack");
 				}
 			} else {
-				var-> geomInfo. order = nilHandle;
+				var-> geomInfo. order = NULL_HANDLE;
 				var-> geomInfo. after = 0;
 			}
 			reset_zorder = true;
@@ -915,14 +915,14 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 				if ( !( var-> geomInfo. order = gimme_the_mate( sv)))
 					croak("%s: invalid 'before'", "Prima::Widget::pack");
 			} else
-				var-> geomInfo. order = nilHandle;
+				var-> geomInfo. order = NULL_HANDLE;
 			var-> geomInfo. after = 0;
 			reset_zorder = true;
 		}
 
 		if ( pexist( in)) {
 			SV * sv = pget_sv( in);
-			in = nilHandle;
+			in = NULL_HANDLE;
 			if ( SvTYPE( sv) != SVt_NULL)
 				in = Widget_check_in( self, gimme_the_mate( sv), true);
 			set_in = reset_zorder = true;
@@ -939,7 +939,7 @@ Widget_packInfo( Handle self, Bool set, SV * packInfo)
 			geometry_reset( MASTER, gtPack);
 		}
 	}
-	return nilSV;
+	return NULL_SV;
 }
 
 XS( Widget_get_pack_slaves_FROMPERL)
@@ -951,7 +951,7 @@ XS( Widget_get_pack_slaves_FROMPERL)
 		croak ("Invalid usage of Widget.get_pack_slaves");
 	SP -= items;
 	self = gimme_the_mate( ST( 0));
-	if ( self == nilHandle)
+	if ( self == NULL_HANDLE)
 		croak( "Illegal object reference passed to Widget.get_pack_slaves");
 	self = var-> packSlaves;
 	while ( self) {
@@ -981,7 +981,7 @@ Widget_place_enter( Handle self)
 		if ( hash_fetch( primaObjects, &var-> geomInfo. in, sizeof(Handle)))
 			var-> geomInfo. in = Widget_check_in( self, var-> geomInfo. in, false);
 		else
-			var-> geomInfo. in = nilHandle;
+			var-> geomInfo. in = NULL_HANDLE;
 	}
 
 	/* store into slaves list */
@@ -1027,7 +1027,7 @@ Widget_place_leave( Handle self)
 		}
 	}
 
-	var-> geomInfo. next = nilHandle;
+	var-> geomInfo. next = NULL_HANDLE;
 }
 
 void
@@ -1185,10 +1185,10 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 	} else {
 		dPROFILE;
 		HV * profile;
-		Handle in = nilHandle;
+		Handle in = NULL_HANDLE;
 		Bool set_in = false;
 
-		if ( SvTYPE(placeInfo) == SVt_NULL) return nilSV;
+		if ( SvTYPE(placeInfo) == SVt_NULL) return NULL_SV;
 
 		if ( !SvOK(placeInfo) || !SvROK(placeInfo) || SvTYPE(SvRV(placeInfo)) != SVt_PVHV)
 			croak("Widget::placeInfo: parameter is not a hash");
@@ -1271,7 +1271,7 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 
 		if ( pexist( in)) {
 			SV * sv = pget_sv( in);
-			in = nilHandle;
+			in = NULL_HANDLE;
 			if ( SvTYPE( sv) != SVt_NULL)
 				in = Widget_check_in( self, gimme_the_mate( sv), true);
 			set_in = true;
@@ -1289,7 +1289,7 @@ Widget_placeInfo( Handle self, Bool set, SV * placeInfo)
 		}
 	}
 
-	return nilSV;
+	return NULL_SV;
 }
 
 XS( Widget_get_place_slaves_FROMPERL)
@@ -1302,7 +1302,7 @@ XS( Widget_get_place_slaves_FROMPERL)
 		croak ("Invalid usage of Widget.get_pack_slaves");
 	SP -= items;
 	self = gimme_the_mate( ST( 0));
-	if ( self == nilHandle)
+	if ( self == NULL_HANDLE)
 		croak( "Illegal object reference passed to Widget.get_pack_slaves");
 	for ( i = 0; i < var-> widgets. count; i++) {
 		if ( PWidget( var-> widgets. items[i])-> geometry == gtPlace)

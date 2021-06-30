@@ -12,15 +12,15 @@ inactivate_timer( PTimerSysData sys)
 		if ( sys-> younger)
 			sys-> younger-> older = sys-> older;
 	}
-	sys-> older = nil;
-	sys-> younger = nil;
+	sys-> older = NULL;
+	sys-> younger = NULL;
 }
 
 static void
 fetch_sys_timer( Handle self, PTimerSysData *s, Bool *real_timer)
 {
 	if ( self == 0) {
-		*s = nil;
+		*s = NULL;
 		*real_timer = false;
 	} else if ( self >= FIRST_SYS_TIMER && self <= LAST_SYS_TIMER) {
 		*s = &guts. sys_timers[ self - FIRST_SYS_TIMER];
@@ -76,7 +76,7 @@ apc_timer_set_timeout( Handle self, int timeout)
 	sys-> timeout = timeout;
 	if ( !real || is_opt( optActive))
 		apc_timer_start( self);
-	return real ? (application != nilHandle) : true;
+	return real ? (application != NULL_HANDLE) : true;
 }
 
 Bool
@@ -88,7 +88,7 @@ apc_timer_start( Handle self)
 	inactivate_timer( sys);
 	if ( real && !application ) return false;
 
-	gettimeofday( &sys-> when, nil);
+	gettimeofday( &sys-> when, NULL);
 	sys-> when. tv_sec += sys-> timeout / 1000;
 	sys-> when. tv_usec += (sys-> timeout % 1000) * 1000;
 
@@ -100,7 +100,7 @@ apc_timer_start( Handle self)
 			if ( !before-> younger) {
 				before-> younger = sys;
 				sys-> older = before;
-				before = nil;
+				before = NULL;
 				break;
 			}
 			before = before-> younger;

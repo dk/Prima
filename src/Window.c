@@ -71,9 +71,9 @@ Window_cleanup( Handle self)
 {
 	if ( var-> modal) my-> cancel( self);
 	if ( var->menu ) {
-		apc_window_set_menu(self, nilHandle);
+		apc_window_set_menu(self, NULL_HANDLE);
 		unprotect_object(var-> menu);
-		var->menu = nilHandle;
+		var->menu = NULL_HANDLE;
 	}
 	inherited cleanup( self);
 }
@@ -220,7 +220,7 @@ Window_get_modal_window( Handle self, int modalFlag, Bool next)
 	} else if ( modalFlag == mtShared) {
 		return next ? var-> nextSharedModal : var-> prevSharedModal;
 	}
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Handle
@@ -331,7 +331,7 @@ Window_exec_leave_proc( Handle self)
 				list_delete( &PApplication(application)-> modalHorizons, mh);
 		}
 
-		var-> prevSharedModal = var-> nextSharedModal = nilHandle;
+		var-> prevSharedModal = var-> nextSharedModal = NULL_HANDLE;
 	} /* end of shared exec */
 	else
 	/* start of exclusive exec */
@@ -353,7 +353,7 @@ Window_exec_leave_proc( Handle self)
 			if ( app-> topExclModal == self)
 				app-> topExclModal = var-> prevExclModal;
 		}
-		var-> prevExclModal = var-> nextExclModal = nilHandle;
+		var-> prevExclModal = var-> nextExclModal = NULL_HANDLE;
 	}
 	var-> modal = mtNone;
 }
@@ -396,7 +396,7 @@ Window_execute( Handle self, Handle insertBefore)
 		&& ( insertBefore == self
 			|| !kind_of( insertBefore, CWindow)
 			|| PWindow( insertBefore)-> modal != mtExclusive))
-		insertBefore = nilHandle;
+		insertBefore = NULL_HANDLE;
 	if ( !apc_window_execute( self, insertBefore))
 		var-> modalResult = mbCancel;
 
@@ -413,7 +413,7 @@ Window_execute_shared( Handle self, Handle insertBefore)
 		( !kind_of( insertBefore, CWindow)) ||
 		( PWindow( insertBefore)-> modal != mtShared) ||
 		( CWindow( insertBefore)-> get_horizon( insertBefore) != my-> get_horizon( self))))
-			insertBefore = nilHandle;
+			insertBefore = NULL_HANDLE;
 	return apc_window_execute_shared( self, insertBefore);
 }
 
@@ -444,7 +444,7 @@ activate( Handle self, Bool ok)
 			apc_window_activate( self);
 		else
 			if ( apc_window_is_active( self))
-				apc_window_activate( nilHandle);
+				apc_window_activate( NULL_HANDLE);
 	}
 }
 
@@ -523,10 +523,10 @@ icon_notify ( Handle self, Handle child, Handle icon)
 Handle
 Window_icon( Handle self, Bool set, Handle icon)
 {
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 
 	if ( !set) {
-		if ( apc_window_get_icon( self, nilHandle)) {
+		if ( apc_window_get_icon( self, NULL_HANDLE)) {
 			HV * profile = newHV();
 			Handle i = Object_create( "Prima::Icon", profile);
 			sv_free(( SV *) profile);
@@ -534,17 +534,17 @@ Window_icon( Handle self, Bool set, Handle icon)
 			--SvREFCNT( SvRV((( PAnyObject) i)-> mate));
 			return i;
 		} else
-			return nilHandle;
+			return NULL_HANDLE;
 	}
 
 	if ( icon && !kind_of( icon, CImage)) {
 		warn("Illegal object reference passed to Window::icon");
-		return nilHandle;
+		return NULL_HANDLE;
 	}
 	my-> first_that( self, (void*)icon_notify, (void*)icon);
 	apc_window_set_icon( self, icon);
 	opt_clear( optOwnerIcon);
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 Bool
@@ -559,10 +559,10 @@ Window_mainWindow( Handle self, Bool set, Bool mainWindow)
 Handle
 Window_menu( Handle self, Bool set, Handle menu)
 {
-	if ( var-> stage > csFrozen) return nilHandle;
+	if ( var-> stage > csFrozen) return NULL_HANDLE;
 	if ( !set)
 		return var-> menu;
-	if ( menu && !kind_of( menu, CMenu)) return nilHandle;
+	if ( menu && !kind_of( menu, CMenu)) return NULL_HANDLE;
 
 	if ( var->menu )
 		unprotect_object(var-> menu);
@@ -570,26 +570,26 @@ Window_menu( Handle self, Bool set, Handle menu)
 	var-> menu = menu;
 	if ( var->menu )
 		protect_object(var-> menu);
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 SV *
 Window_menuItems( Handle self, Bool set, SV * menuItems)
 {
 	dPROFILE;
-	if ( var-> stage > csFrozen) return nilSV;
+	if ( var-> stage > csFrozen) return NULL_SV;
 
 	if ( !set)
-		return var-> menu ? CMenu( var-> menu)-> get_items( var-> menu, "", true) : nilSV;
+		return var-> menu ? CMenu( var-> menu)-> get_items( var-> menu, "", true) : NULL_SV;
 
-	if ( var-> menu == nilHandle) {
+	if ( var-> menu == NULL_HANDLE) {
 		if ( SvTYPE( menuItems)) {
 			Handle menu;
 			HV * profile = newHV();
 			pset_sv( items, menuItems);
 			pset_H ( owner, self);
 			pset_i ( selected, false);
-			if (( menu = create_instance( "Prima::Menu")) != nilHandle) {
+			if (( menu = create_instance( "Prima::Menu")) != NULL_HANDLE) {
 				int i;
 				ColorSet color;
 				my-> set_menu( self, menu );
@@ -675,7 +675,7 @@ Window_process_accel( Handle self, int key)
 		var-> modal ?
 			my-> first_that_component( self, (void*)prima_find_accel, &key)
 			: inherited process_accel( self, key)
-		) != nilHandle;
+		) != NULL_HANDLE;
 }
 
 void  Window_on_execute( Handle self) {}
@@ -700,7 +700,7 @@ Window_borderIcons( Handle self, Bool set, int borderIcons)
 	pset_i( borderIcons, borderIcons);
 	my-> set( self, profile);
 	sv_free(( SV *) profile);
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 int
@@ -713,14 +713,14 @@ Window_borderStyle( Handle self, Bool set, int borderStyle)
 	pset_i( borderStyle, borderStyle);
 	my-> set( self, profile);
 	sv_free(( SV *) profile);
-	return nilHandle;
+	return NULL_HANDLE;
 }
 
 void
 Window_done( Handle self)
 {
 	if ( var-> effects ) sv_free( var->effects);
-	var-> effects = nil;
+	var-> effects = NULL;
 	inherited done( self);
 }
 
@@ -743,7 +743,7 @@ Window_effects( Handle self, Bool set, SV * effects)
 		}
 	}
 
-	return nilSV;
+	return NULL_SV;
 }
 
 Point

@@ -59,7 +59,7 @@ and _setjmp is not equivaluent to setjmp anymore
 extern "C" {
 #endif
 
-static char * pngext[] = { "png", nil };
+static char * pngext[] = { "png", NULL };
 static int    pngbpp[] = {
 	imRGB,
 	imbpp8 | imGrayScale, imbpp8,
@@ -102,7 +102,7 @@ static char * features[] = {
 #ifdef APNG
 	"acTL", "fdAT", "fcTL",
 #endif
-	nil
+	NULL
 };
 
 static char * mime[] = {
@@ -158,7 +158,7 @@ static char * loadOutput[] = {
 	"screenHeight",
 	"top",
 #endif
-	nil
+	NULL
 };
 
 static ImgCodecInfo codec_info = {
@@ -243,7 +243,7 @@ init( PImgCodecInfo * info, void * param)
 	if ( default_screen_gamma < PNG_GAMMA_THRESHOLD || default_screen_gamma > PNG_MAX_GAMMA)
 		default_screen_gamma = 2.2;
 	if ( default_screen_gamma < PNG_GAMMA_THRESHOLD || default_screen_gamma > PNG_MAX_GAMMA)
-		return nil;
+		return NULL;
 
 	return (void*)1;
 }
@@ -1397,7 +1397,7 @@ open_save( PImgCodec instance, PImgSaveFileInstance fi)
 	SaveRec * s;
 
 	s = malloc( sizeof( SaveRec));
-	if ( !s) return nil;
+	if ( !s) return NULL;
 
 	memset( s, 0, sizeof( SaveRec));
 
@@ -1667,7 +1667,7 @@ write_iCCP(PImgSaveFileInstance fi)
 	SaveRec * s = ( SaveRec *) fi-> instance;
 	HV * profile = fi-> extras;
 	if ( pexist( iccp_name) || pexist( iccp_profile)) {
-		char * prf = nil;
+		char * prf = NULL;
 		STRLEN plen = 0;
 		char * name = pexist( iccp_name) ? pget_c( iccp_name) : "unspecified";
 		if ( pexist( iccp_profile)) prf = SvPV( pget_sv( iccp_profile), plen);
@@ -1724,7 +1724,7 @@ write_TEXT(PImgSaveFileInstance fi)
 		hv_iterinit( hv);
 		for (;;) {
 			STRLEN vlen;
-			if (( he = hv_iternext( hv)) == nil) break;
+			if (( he = hv_iternext( hv)) == NULL) break;
 			txt[i]. compression =
 #ifdef PNG_zTXt_SUPPORTED
 				PNG_TEXT_COMPRESSION_zTXt;
@@ -2217,7 +2217,7 @@ apc_img_codec_png( void )
 	vmt. save          = save;
 	vmt. close_save    = close_save;
 
-	apc_img_register( &vmt, nil);
+	apc_img_register( &vmt, NULL);
 }
 
 

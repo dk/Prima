@@ -271,7 +271,7 @@ prima_gtk_done(void)
 static void
 set_transient_for(void)
 {
-	Handle toplevel = prima_find_toplevel_window(nilHandle);
+	Handle toplevel = prima_find_toplevel_window(NULL_HANDLE);
 	if ( toplevel ) {
 		GdkWindow * g = NULL;
 
