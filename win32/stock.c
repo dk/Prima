@@ -1663,7 +1663,7 @@ hwnd_enter_paint( Handle self)
 	apc_gp_set_line_end( self, sys lineEnd);
 	apc_gp_set_line_join( self, sys lineJoin);
 	apc_gp_set_line_pattern( self,
-		( Byte*)(( sys linePatternLen > 3) ? sys linePattern : ( Byte*)&sys linePattern),
+		( Byte*)(( sys linePatternLen > sizeof(sys linePattern)) ? sys linePattern : ( Byte*)&sys linePattern),
 		sys linePatternLen);
 	apc_gp_set_miter_limit( self, sys miterLimit);
 	apc_gp_set_rop( self, sys rop);
