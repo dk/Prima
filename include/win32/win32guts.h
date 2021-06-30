@@ -615,6 +615,7 @@ extern PHash        regnodeMan;
 extern Handle       lastMouseOver;
 extern int          timeDefsCount;
 extern PItemRegRec  timeDefs;
+extern PHash        menuBitmapMan;
 
 
 LRESULT CALLBACK    generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);

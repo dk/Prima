@@ -29,6 +29,7 @@ PHash   menuMan      = nil; // HMENU manager
 PHash   imageMan     = nil; // HBITMAP manager
 PHash   regnodeMan   = nil; // cache for apc_widget_user_profile
 PHash   myfontMan    = nil; // hash of calls to apc_font_load
+PHash   menuBitmapMan= nil; // HBITMAP manager for SetMenuItemBitmaps 
 HPEN    hPenHollow;
 HBRUSH  hBrushHollow;
 PatResource hPatHollow;
@@ -250,6 +251,7 @@ window_subsystem_init( char * error_buf)
 	imageMan   = hash_create();
 	regnodeMan = hash_create();
 	myfontMan  = hash_create();
+	menuBitmapMan = hash_create();
 	create_font_hash();
 	{
 		LOGBRUSH b = { BS_HOLLOW, 0, 0};
@@ -415,8 +417,17 @@ window_subsystem_set_option( char * option, char * value)
 	return false;
 }
 
-static Bool myfont_cleaner( void * value, int keyLen, void * key, void * dummy) {
+static Bool
+myfont_cleaner( void * value, int keyLen, void * key, void * dummy)
+{
 	RemoveFontResource((LPCTSTR)key);
+	return false;
+}
+
+static Bool
+menu_bitmap_cleaner( void * value, int keyLen, void * key, void * dummy)
+{
+	DeleteObject((HBITMAP) value);
 	return false;
 }
 
@@ -443,6 +454,7 @@ window_subsystem_done()
 	font_clean();
 	stylus_clean();
 	stylus_gp_clean();
+	hash_destroy( menuBitmapMan, false);
 	hash_destroy( imageMan,   false);
 	hash_destroy( menuMan,    false);
 	hash_destroy( patMan,     true);
@@ -450,6 +462,9 @@ window_subsystem_done()
 	hash_destroy( stylusGpMan,true);
 	hash_destroy( stylusMan,  true);
 	hash_destroy( regnodeMan, false);
+
+	hash_first_that( menuBitmapMan, menu_bitmap_cleaner, nil, nil, nil);
+	hash_destroy( menuBitmapMan,  false);
 
 	hash_first_that( myfontMan, myfont_cleaner, nil, nil, nil);
 	hash_destroy( myfontMan,  false);

@@ -1085,6 +1085,14 @@ void Widget_handle_event( Handle self, PEvent event)
 		case cmDragResponse     :
 			my-> notify( self, "<sii", "DragResponse", event->dnd.allow, event->dnd.action);
 			break;
+		case cmMenuItemSize     :
+		case cmMenuItemPaint    :
+			{
+				Handle menu = event->gen.H;
+				event->gen.H = self;
+				PComponent(menu)->self->handle_event(menu, event);
+				break;
+			}
 	}
 }
 
