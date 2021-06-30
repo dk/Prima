@@ -2574,6 +2574,9 @@ fill_fontmapper(void)
 			f->pitch = (( i == FC_PROPORTIONAL) ? fpVariable : fpFixed);
 			f->undef.pitch = 0;
 		}
+
+		f->undef.vector = 0;
+		f->vector = fvOutline;
 	}
 
 	FcFontSetDestroy(s);

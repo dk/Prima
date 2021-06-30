@@ -110,6 +110,10 @@ prima_font_mapper_save_font(const char * name)
 {
 	PPassiveFontEntry p;
 	PFont f;
+
+	if ( name && PTR2IV(hash_fetch(font_substitutions, name, strlen(name))) != 0)
+		return NULL;
+
 	if ( !( p = malloc(sizeof(PassiveFontEntry)))) {
 		warn("not enough memory\n");
 		return NULL;
@@ -117,10 +121,11 @@ prima_font_mapper_save_font(const char * name)
 	bzero(p, sizeof(PassiveFontEntry));
 	f = &p->font;
 	memset( &f->undef, 0xff, sizeof(f->undef));
+	f->undef.encoding = 0; /* needs enforcing */
 
 	if ( name ) hash_store(
-		font_substitutions, 
-		name, strlen(name), 
+		font_substitutions,
+		name, strlen(name),
 		INT2PTR(void*, font_passive_entries.count)
 	);
 
@@ -150,6 +155,7 @@ query_ranges(PPassiveFontEntry pfe)
 	last = (ranges[count - 1] >> FONTMAPPER_VECTOR_BASE) + 1;
 	list_create( &pfe->vectors, last, 1);
 	bzero( pfe->vectors.items, last * sizeof(Handle));
+	pfe->vectors.count = last;
 
 	for ( i = 0; i < count; i += 2 ) {
 		int j;
@@ -205,7 +211,6 @@ remove_active_font(int fid)
 		if ( !pfe->vectors.items[page] ) continue;
 		if ( font_active_entries.items[page] == nilHandle ) continue;
 		list_delete((PList) font_active_entries.items[page], fid);
-	
 	}
 }
 
@@ -223,12 +228,21 @@ can_substitute(uint32_t c, int pitch, int fid)
 		return false;
 
 	page = c >> FONTMAPPER_VECTOR_BASE;
-	bit  = c & FONTMAPPER_VECTOR_MASK;
+	if ( pfe-> vectors.count <= page ) return false;
+
 	fa = (Byte *) pfe-> vectors.items[ page ];
 	if ( !fa ) return false;
 
+	bit  = c & FONTMAPPER_VECTOR_MASK;
 	if (( fa[bit >> 3] & (bit & 7)) == 0) return false;
-	if ( !pfe-> is_active ) add_active_font(fid);
+
+	if ( !pfe-> is_active ) {
+#ifdef _DEBUG
+		printf("add polyfont %s for chr(%x)", pfe->font.name, c);
+#endif
+
+		add_active_font(fid);
+	}
 
 	return true;
 }
@@ -266,7 +280,9 @@ find_font(uint32_t c, int pitch, uint16_t preferred_font)
 	for ( i = 1; i < font_passive_entries.count; i++)
 		if ( can_substitute(c, pitch, i))
 			return i;
-
+#ifdef _DEBUG
+	printf("cannot map chr(%x)\n", c);
+#endif
 	return 0;
 }
 
@@ -279,7 +295,7 @@ Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
 		Font font;
 		PPassiveFontEntry pfe;
 
-		SvHV_Font(sv, &font, "Drawable::fontPalette");
+		SvHV_Font(sv, &font, "Drawable::fontMapperPalette");
 		fid = PTR2IV(hash_fetch(font_substitutions, font.name, strlen(font.name)));
 		if ( fid == 0 ) return nilSV;
 		pfe = PASSIVE_FONT(fid);
@@ -727,7 +743,7 @@ which might ligate.
 */
 
 typedef struct {
-	int start, i, vis_len;
+	int i, vis_len;
 	uint16_t index;
 } BidiRunRec, *PBidiRunRec;
 
@@ -741,19 +757,20 @@ run_init(PBidiRunRec r, int visual_length)
 static int
 run_next(PTextShapeRec t, PBidiRunRec r)
 {
-	int n, rtl, font, start = r->i;
+	int rtl, font, start = r->i;
 
 	if ( r->i >= r->vis_len ) return 0;
 
 	rtl  = t->analysis[r->i];
 	if ( t-> fonts ) font = t->fonts[r->i];
-	for ( n = 0; r->i < r->vis_len + 1; r->i++, n++) {
+	for ( ; r->i < r->vis_len + 1; r->i++) {
 		if (
 			r->i >= r->vis_len ||          /* eol */
 			(t-> analysis[r->i] != rtl) || /* rtl != ltr */
 			(t->fonts && font != t->fonts[r->i])
-		)
+		) {
 			return r->i - start;
+		}
 	}
 
 	return 0;
@@ -1029,7 +1046,7 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 		printf("\n");
 	}
 #endif
-	
+
 	run_offs = 0;
 	run_init(&brr, t->len);
 	save_analysis = t->analysis;
@@ -1056,11 +1073,18 @@ shape_unicode(Handle self, PTextShapeRec t, PTextShapeFunc shaper,
 			src = PASSIVE_FONT(run.fonts[0])->font;
 			dst = var->font;
 			apc_font_pick( self, &src, &dst);
-			apc_gp_set_font( self, &dst);
+			if ( strcmp(dst.name, src.name) == 0 ) {
+				apc_gp_set_font( self, &dst);
 #ifdef _DEBUG
-			printf("%d: set font #%d: %s\n", run_offs, run.fonts[0], dst.name);
+				printf("%d: set font #%d: %s\n", run_offs, run.fonts[0], dst.name);
 #endif
-			font_changed = true;
+				font_changed = true;
+			}
+#ifdef _DEBUG
+			else {
+				printf("%d: failed to set font #%d: %s (got %s)\n", run_offs, run.fonts[0], src.name, dst.name);
+			}
+#endif
 		}
 		ok = shaper( self, &run );
 #ifdef _DEBUG

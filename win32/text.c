@@ -19,6 +19,94 @@ extern "C" {
 
 #define GRAD 57.29577951
 
+typedef struct {
+	HDC dc;
+	int i, len, stop;
+	Handle self;
+	HFONT orig, saved;
+	PDCFont nondefault_font;
+	uint32_t nondefault_fid;
+	uint16_t *fonts;
+} FontContext;
+
+static void
+font_context_init( FontContext * fc, Handle self, PGlyphsOutRec t)
+{
+	bzero(fc, sizeof(FontContext));
+	fc->self  = self;
+	fc->orig  = sys fontResource->hfont;
+	fc->fonts = t->fonts;
+	fc->len   = t->len;
+	fc->dc    = sys ps;
+}
+
+static void
+font_context_done( FontContext * fc )
+{
+	if ( fc-> nondefault_font )
+		font_free(fc-> nondefault_font, false);
+	if ( fc-> saved )
+		SelectObject(fc->dc, fc->saved);
+}
+
+static int
+font_context_next( FontContext * fc )
+{
+	Font *src, dst;
+	uint16_t nfid;
+	int start, len;
+	HFONT hfont, selected;
+
+	if ( fc-> stop ) return 0;
+
+	if ( !fc-> fonts ) {
+		start = fc-> i;
+		fc-> i = fc-> len;
+		fc-> stop = true;
+		return fc-> i - start;
+	}
+
+	for (
+		len = 0, start = fc->i, nfid = fc->fonts[fc->i];
+		fc->i <= fc->len;
+		fc->i++
+	) {
+		if (
+			fc->i >= fc->len || fc->fonts[fc->i] != nfid
+		) {
+			len = fc->i - start;
+			break;
+		}
+	}
+	fc-> stop = fc-> i >= fc-> len;
+	if ( len == 0 ) return 0;
+
+	if ( nfid == 0 ) {
+		hfont = fc->orig;
+	} else if ( nfid == fc->nondefault_fid ) {
+		hfont = fc->nondefault_font->hfont;
+	} else if ( !( src = prima_font_mapper_get_font(nfid))) {
+		hfont = fc->orig;
+	} else {
+		dst = (( PWidget) fc->self)-> font;
+		apc_font_pick(fc->self, src, &dst);
+		if ( strcmp(src->name, dst.name) == 0) {
+			if ( fc-> nondefault_font )
+				font_free(fc-> nondefault_font, false);
+			fc->nondefault_font = font_alloc(&dst);
+			fc->nondefault_fid  = nfid;
+			hfont = fc->nondefault_font->hfont;
+		} else {
+			hfont = fc->orig;
+		}
+	}
+
+	selected = SelectObject(fc->dc, hfont);
+	if ( !fc->saved ) fc->saved = selected;
+
+	return len;
+}
+
 /* emulate underscore and strikeout because ExtTextOutW with ETO_PDY underlines each glyph separately */
 static void
 underscore_font( Handle self, int x, int y, int width)
@@ -171,14 +259,69 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	return ok;
 }}
 
+static Bool
+gp_glyphs_out( HDC ps, PGlyphsOutRec t, int x, int y, int * text_advance)
+{
+	Bool ok;
+	if ( t-> advances ) {
+		#define SZ 1024
+		INT dx[SZ], i, n, *pdx;
+		int16_t *goffsets = t->positions;
+		uint16_t *advances = t->advances;
+
+		if ( text_advance ) *text_advance = 0;
+
+		n = t-> len * 2;
+		if ( n > SZ) {
+			if ( !( pdx = malloc(sizeof(INT) * n)))
+				pdx = dx;
+		} else
+			pdx = dx;
+
+		for ( i = 0; i < n; i += 2) {
+			int gx     = *(goffsets++);
+			int gy     = *(goffsets++);
+			int adv    = *(advances++);
+			pdx[i]     = adv;
+			pdx[i + 1] = 0;
+			if ( text_advance )
+				*text_advance += adv;
+
+			if ( i == 0 ) {
+				x += gx;
+				y += gy;
+			} else {
+				pdx[i - 2] += gx;
+				pdx[i - 1] += gy;
+			}
+			pdx[i]     -= gx;
+			pdx[i + 1] -= gy;
+		}
+		ok = ExtTextOutW(ps, x, y, ETO_GLYPH_INDEX | ETO_PDY, NULL, (LPCWSTR) t->glyphs, t->len, pdx);
+		if ( pdx != dx ) free(pdx);
+		#undef SZ
+	} else {
+		ok = ExtTextOutW(ps, x, y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->glyphs, t->len, NULL);
+		if ( text_advance ) {
+			SIZE sz;
+			if ( !GetTextExtentPointI( ps, (WCHAR*) t->glyphs, t->len, &sz)) apiErr;
+			*text_advance += sz.cx;
+		}
+	}
+	if ( !ok ) apiErr;
+	return ok;
+}
+
 Bool
 apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 {objCheck false;{
 	Bool ok = true;
 	HDC ps = sys ps;
+	int xx, yy;
 	int bk  = GetBkMode( ps);
 	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
 	Bool use_path;
+	FontContext fc;
 
 	if ( t->len > 8192 ) t->len = 8192;
 	use_path = GetROP2( sys ps) != R2_COPYPEN;
@@ -190,43 +333,31 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
 
-	if ( t-> advances ) {
-		#define SZ 1024
-		INT dx[SZ], i, n, *pdx;
-		int16_t *goffsets = t->positions;
-		uint16_t *advances = t->advances;
-
-		n = t-> len * 2;
-		if ( n > SZ) {
-			if ( !( pdx = malloc(sizeof(INT) * n)))
-				pdx = dx;
-		} else
-			pdx = dx;
-		for ( i = 0; i < n; i += 2) {
-			int gx     = *(goffsets++);
-			int gy     = *(goffsets++);
-			pdx[i]     = *(advances++);
-			pdx[i + 1] = 0;
-			if ( i == 0 ) {
-				x += gx;
-				y += gy;
-			} else {
-				pdx[i - 2] += gx;
-				pdx[i - 1] += gy;
+	xx = x;
+	yy = sys lastSize. y - y;
+	font_context_init(&fc, self, t);
+	while (( t-> len = font_context_next(&fc)) > 0 ) {
+		int advance = 0;
+		if ( !( ok = gp_glyphs_out(sys ps, t, xx, yy, fc.stop ? NULL : &advance)))
+			break;
+		if ( !fc.stop ) {
+			xx += advance;
+			t->glyphs    += t->len;
+			if ( t-> advances ) {
+				t->advances  += t->len;
+				t->positions += t->len * 2;
 			}
-			pdx[i]     -= gx;
-			pdx[i + 1] -= gy;
 		}
+	}
+	font_context_done(&fc);
 
-		ok = ExtTextOutW(ps, x, sys lastSize. y - y, ETO_GLYPH_INDEX | ETO_PDY, NULL, (LPCWSTR) t->glyphs, t->len, pdx);
-		if ( pdx != dx ) free(pdx);
-		#undef SZ
-	} else
-		ok = ExtTextOutW(ps, x, sys lastSize. y - y, ETO_GLYPH_INDEX, NULL, (LPCWSTR) t->glyphs, t->len, NULL);
-	if ( !ok ) apiErr;
-
-	if ( var font. style & (fsUnderlined | fsStruckOut))
-		underscore_font( self, x, sys lastSize. y - y, gp_get_text_width( self, (const char*)t->glyphs, t->len, toGlyphs));
+	if ( var font. style & (fsUnderlined | fsStruckOut)) {
+		int w;
+		GlyphsOutRec tt = *t;
+		tt.flags = toGlyphs;
+		w = apc_gp_get_glyphs_width( self, &tt);
+		underscore_font( self, x, yy, w);
+	}
 
 	if ( use_path ) {
 		EndPath(ps);
@@ -904,21 +1035,21 @@ apc_gp_get_font_def( Handle self, int first, int last, int flags)
 }}
 
 unsigned long *
-apc_gp_get_font_ranges( Handle self, int * count)
-{objCheck nil;{
+get_font_ranges( HDC ps, int * count)
+{
 	DWORD i, j, size;
 	GLYPHSET * gs;
 	unsigned long * ret;
 	WCRANGE *src;
 
 	*count = 0;
-	if (( size = GetFontUnicodeRanges( sys ps, NULL )) == 0) 
+	if (( size = GetFontUnicodeRanges( ps, NULL )) == 0) 
 		return NULL;
 	if (!( gs = malloc(size)))
 		apiErrRet;
 	bzero(gs, size);
 	gs-> cbThis = size;
-	if ( GetFontUnicodeRanges( sys ps, gs ) == 0) {
+	if ( GetFontUnicodeRanges( ps, gs ) == 0) {
 		free(gs);
 		apiErrRet;
 	}
@@ -934,7 +1065,50 @@ apc_gp_get_font_ranges( Handle self, int * count)
 
 	free(gs);
 	return ret;
-}}
+}
+
+unsigned long *
+apc_gp_get_font_ranges( Handle self, int * count)
+{
+	objCheck NULL;
+	return get_font_ranges(sys ps, count);
+}
+
+unsigned long *
+apc_gp_get_mapper_ranges(PFont font, int * count)
+{
+	HDC dc;
+	unsigned long * ret;
+	char name[256];
+	LOGFONT logfont;
+	HFONT hfont, hstock;
+
+	*count = 0;
+
+	strncpy(name, font->name, 256);
+	apc_font_pick( nilHandle, font, font);
+	if ( strcmp( font->name, name ) != 0 ) 
+		return NULL;
+
+	font_font2logfont( font, &logfont);
+	if ( !( hfont = CreateFontIndirect( &logfont))) {
+		apiErr;
+		return NULL;
+	}
+
+	if ( !( dc = dc_alloc())) {
+		DeleteObject(hfont);
+		return NULL;
+	}
+
+	hstock = SelectObject(dc, hfont);
+	ret = get_font_ranges(dc, count);
+	SelectObject(dc, hstock);
+	dc_free();
+	DeleteObject(hfont);
+
+	return ret;
+}
 
 static char *
 single_lang(const char * lang1)
@@ -1524,6 +1698,8 @@ apc_gp_set_text_out_baseline( Handle self, Bool baseline)
 	if ( sys ps) SetTextAlign( sys ps, baseline ? TA_BASELINE : TA_BOTTOM);
 	return true;
 }
+
+
 
 #ifdef __cplusplus
 }

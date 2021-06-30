@@ -533,9 +533,8 @@ build_dcfont_key( Font * src, unsigned char * key)
 	return sz;
 }
 
-
 PDCFont
-font_alloc( Font * data, Point * resolution)
+font_alloc( Font * data)
 {
 	char key[sizeof(Font)];
 	int keyLen = build_dcfont_key( data, (unsigned char*)key);
@@ -591,11 +590,9 @@ font_change( Handle self, Font * font)
 {
 	PDCFont p;
 	PDCFont newP;
-	Point res;
 	if ( is_apt( aptDCChangeLock)) return;
 	p    = sys fontResource;
-	res = apc_gp_get_resolution( self );
-	newP = ( sys fontResource = font_alloc( font, &res));
+	newP = ( sys fontResource = font_alloc( font));
 	font_free( p, false);
 	if ( sys ps)
 		SelectObject( sys ps, newP-> hfont);
@@ -699,6 +696,46 @@ font_encoding2charset( const char * encoding)
 		return i;
 	}
 	return DEFAULT_CHARSET;
+}
+
+int CALLBACK
+fep_register_mapper_fonts( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _es)
+{
+	PFont f;
+	char name[LF_FACESIZE + 1];
+	if (type & RASTER_FONTTYPE) return 1;
+
+	wchar2char( name, e-> elfLogFont.lfFaceName, LF_FACESIZE);
+	if (name[0] == '@') return 1; /* vertical font */
+	if ((f = prima_font_mapper_save_font(name)) == NULL)
+		return 1;
+	f-> pitch =
+		((( e-> elfLogFont.lfPitchAndFamily & 3) == DEFAULT_PITCH ) ? fpDefault :
+		((( e-> elfLogFont.lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
+	f->undef.pitch = 0;
+
+	strncpy(f->name, name, 255);
+	f->name[255] = 0;
+	f->undef.name = 0;
+
+	f->undef.vector = 0;
+	f->vector = fvOutline;
+
+	wchar2char( f-> family, e-> elfFullName, LF_FULLFACESIZE);
+	return 1;
+}
+
+void
+register_mapper_fonts(void)
+{
+	HDC dc;
+	LOGFONTW elf;
+	if ( !( dc = dc_alloc()))
+		return;
+	memset( &elf, 0, sizeof( elf));
+	elf. lfCharSet = DEFAULT_CHARSET;
+	EnumFontFamiliesExW( dc, &elf, (FONTENUMPROCW) fep_register_mapper_fonts, 0, 0);
+	dc_free();
 }
 
 void
@@ -876,11 +913,12 @@ typedef struct _FEnumStruc
 } FEnumStruc, *PFEnumStruc;
 
 int CALLBACK
-fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, PFEnumStruc es)
+fep( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _es)
 {
-	Font * font = es-> font;
 	int ret = 1, copy = 0;
 	long hei, res;
+	PFEnumStruc es = (PFEnumStruc) _es;
+	Font * font = es-> font;
 
 	es-> passedCount++;
 
@@ -1004,7 +1042,7 @@ font_font2gp_internal( PFont font, Point res, Bool forceSize, HDC theDC)
 	char2wchar( elf. lfFaceName, font-> name, LF_FACESIZE);
 	elf. lfPitchAndFamily = 0;
 	elf. lfCharSet = font_encoding2charset( font-> encoding);
-	EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep, ( LPARAM) &es, 0);
+	EnumFontFamiliesExW( dc, &elf, (FONTENUMPROCW) fep, ( LPARAM) &es, 0);
 
 	// check encoding match
 	if (( es. passedCount == 0) && ( elf. lfCharSet != DEFAULT_CHARSET) && ( recursiveFFEncoding == 0)) {
@@ -1181,7 +1219,6 @@ font_font2gp( PFont font, Point res, Bool forceSize, HDC dc)
 {
 	Font key;
 	Bool addSizeEntry;
-
 	font-> resolution = res. y * 0x10000 + res. x;
 	if ( get_font_from_hash( font, forceSize))
 		return font->vector;
@@ -1214,10 +1251,11 @@ typedef struct {
 } Fep2;
 
 int CALLBACK
-fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, int type, Fep2 * f)
+fep2( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _f)
 {
 	PFont fm;
 	char wname[256], *name = nil;
+	Fep2 *f = (Fep2*) _f;
 
 	wchar2char( wname, e-> elfLogFont. lfFaceName, LF_FACESIZE);
 	name = wname;
@@ -1286,7 +1324,7 @@ apc_fonts( Handle self, const char* facename, const char *encoding, int * retCou
 	memset( &elf, 0, sizeof( elf));
 	char2wchar( elf. lfFaceName, (char*)(facename ? facename : ""), LF_FACESIZE);
 	elf. lfCharSet = font_encoding2charset( encoding);
-	EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep2, ( LPARAM) &f, 0);
+	EnumFontFamiliesExW( dc, &elf, (FONTENUMPROCW) fep2, ( LPARAM) &f, 0);
 	if ( f. hash) {
 		hash_destroy( f. hash, false);
 		f. hash = nil;
@@ -1312,8 +1350,9 @@ Nothing:
 
 
 int CALLBACK
-fep3( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICW FAR *t, int type, PHash lst)
+fep3( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICW FAR *t, DWORD type, LPARAM _lst)
 {
+	PHash lst = (PHash) _lst;
 	char * str = font_charset2encoding( e-> elfLogFont. lfCharSet);
 	hash_store( lst, str, strlen( str), (void*)1);
 	return 1;
@@ -1343,7 +1382,7 @@ apc_font_encodings( Handle self )
 	lst = hash_create();
 	memset( &elf, 0, sizeof( elf));
 	elf. lfCharSet = DEFAULT_CHARSET;
-	EnumFontFamiliesExW( dc, &elf, ( FONTENUMPROCW) fep3, ( LPARAM) lst, 0);
+	EnumFontFamiliesExW( dc, &elf, (FONTENUMPROCW) fep3, ( LPARAM) lst, 0);
 
 	if ( self == nilHandle || self == application)
 		dc_free();

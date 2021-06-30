@@ -339,6 +339,7 @@ window_subsystem_init( char * error_buf)
 
 		// getting system font presets
 		reset_system_fonts();
+		register_mapper_fonts();
 	}
 
 	memset( &guts. displayBMInfo, 0, sizeof( guts. displayBMInfo));
