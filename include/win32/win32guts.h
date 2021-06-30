@@ -2,6 +2,7 @@
 #define _WIN32_H_
 #include <windows.h>
 #include <winspool.h>
+#include <wtypes.h>
 #define Rect xxRect
 #define Color xxColor
 #define Point xxPoint

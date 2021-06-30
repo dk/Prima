@@ -1701,14 +1701,9 @@ hwnd_enter_paint( Handle self)
 	if ( !sys stockPalette)
 		sys stockPalette = GetCurrentObject( sys ps, OBJ_PAL);
 	font_free( sys fontResource, false);
-<<<<<<< HEAD
-	sys stylusResource = nil;
-	sys stylusGPResource = nil;
-	sys fontResource   = nil;
-=======
 	sys stylusResource = NULL;
+	sys stylusGPResource = NULL;
 	sys fontResource   = NULL;
->>>>>>> f6568b70 (finally replace nil constants with NULLs)
 	sys stylusFlags    = 0;
 	sys stylus. extPen. actual = false;
 	apt_set( aptDCChangeLock);
