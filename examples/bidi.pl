@@ -2,9 +2,7 @@ use strict;
 use warnings;
 use utf8;
 use Prima qw(Label InputLine Buttons Application PodView Edit FontDialog);
-use Prima::Bidi qw(:require :rtl);
-
-$::application-> wantUnicodeInput(1);
+use Prima::Bidi qw(:require);
 
 my $w;
 my $pod;
@@ -13,6 +11,8 @@ my $editor;
 my $pod_text;
 my $font_dialog;
 
+Prima::Bidi::language('ar_AR');
+
 $w = Prima::MainWindow-> create(
 	size => [ 430, 200],
 	designScale => [7, 16],
@@ -20,9 +20,9 @@ $w = Prima::MainWindow-> create(
 	menuItems => [
 		[ "~Options" => [
 			[ "~Toggle direction" => sub {
-				$arabic-> alignment( $arabic-> alignment == ta::Left ? ta::Right : ta::Left );
 				my $td = !$w-> Hebrew-> textDirection;
 				$w-> Hebrew-> textDirection($td);
+				$arabic-> textDirection( $td);
 				$pod->textDirection($td);
 				$pod->format(1);
 			} ],
@@ -122,6 +122,7 @@ $editor = $panel-> insert( Edit =>
 	name => 'Editor',
 	text     => $arabic_text,
 );
+
 
 $arabic = $panel->insert( Label =>
 	packInfo => { fill => 'both', expand => 1, pad => 10, side => 'left' },

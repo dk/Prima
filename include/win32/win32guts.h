@@ -119,7 +119,6 @@ typedef HANDLE SOCKETHANDLE;
 	apcWarn;                \
 }
 #define apiErrRet         { apiErr;               return false; }
-#define apiErrCheckRet    { apiErrCheck; if ( rc) return false; }
 #define apcErrRet(err)    { apcErr(err);          return false; }
 #define apcErrClear       { apcError = errOk;                   }
 
@@ -131,6 +130,13 @@ typedef HANDLE SOCKETHANDLE;
 }
 #define apiGPErrCheck if (rc) apiGPErr;
 #define apiGPErrCheckRet(f) if (rc) { apiGPErr; return f; }
+#define apiHErr(hr) {           \
+	apcError = errApcError; \
+	rc = hr;                \
+	apcWarn;                \
+}
+
+#define apiHErrRet(hr)     { apiHErr(hr);           return false; }
 
 #define objCheck          if ( var stage == csDead) return
 #define dobjCheck(handle) if ((( PObject)handle)-> stage == csDead) return
@@ -232,6 +238,8 @@ typedef struct _WinGuts
 	void*          dragSource;         // not null if dragging
 	Handle         dragSourceWidget;   //
 	Handle         dragTarget;         // last successful drop
+	WORD           language_id;        // default shaping language
+	char           language_descr[32];
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
@@ -625,6 +633,7 @@ extern int          timeDefsCount;
 extern PItemRegRec  timeDefs;
 extern PHash        menuBitmapMan;
 extern HBITMAP      uncheckedBitmap;
+extern PHash        scriptCacheMan;
 
 LRESULT CALLBACK    generic_app_handler      ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
 LRESULT CALLBACK    generic_frame_handler    ( HWND win, UINT  msg, WPARAM mp1, LPARAM mp2);
@@ -746,6 +755,19 @@ UpdateLayeredWindow(
     __in COLORREF crKey,
     __in_opt BLENDFUNCTION* pblend,
     __in DWORD dwFlags);
+#endif
+
+#ifndef MUI_LANGUAGE_NAME
+
+#define MUI_LANGUAGE_NAME 0x8
+#define MUI_COMPLEX_SCRIPT_FILTER 0x200
+
+WINBASEAPI WINBOOL WINAPI
+GetUserPreferredUILanguages(
+	DWORD dwFlags, PULONG pulNumLanguages,
+	PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer
+);
+
 #endif
 
 #ifdef __cplusplus

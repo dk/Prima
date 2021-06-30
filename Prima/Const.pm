@@ -174,6 +174,9 @@ sub keymod
 	return 0;
 }
 
+package
+    to; *AUTOLOAD =  \&Prima::Const::AUTOLOAD;	# text-out constants
+
 1;
 
 =pod

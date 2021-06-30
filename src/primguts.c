@@ -1282,6 +1282,7 @@ register_constants( void)
 	register_ggo_constants();
 	register_fv_constants();
 	register_dnd_constants();
+	register_to_constants();
 }
 
 XS( Object_alive_FROMPERL);
@@ -2015,13 +2016,18 @@ prima_read_point( SV *rv_av, int * pt, int number, char * error)
 }
 
 void *
-prima_read_array( SV * points, char * procName, Bool integer, int div, int min, int max, int * n_points )
+prima_read_array( SV * points, char * procName, char type, int div, int min, int max, int * n_points, Bool * do_free)
 {
 	AV * av;
 	int i, count, psize;
 	void * p;
 
-	psize = integer ? sizeof(int) : sizeof(double);
+	switch(type) {
+	case 's': psize = sizeof(uint16_t); break;
+	case 'i': psize = sizeof(int);      break;
+	case 'd': psize = sizeof(double);   break;
+	default: croak("Bad type %c", type);
+	}
 	if ( !SvROK( points) || ( SvTYPE( SvRV( points)) != SVt_PVAV)) {
 		warn("Invalid array reference passed to %s", procName);
 		return NULL;
@@ -2051,8 +2057,12 @@ prima_read_array( SV * points, char * procName, Bool integer, int div, int min, 
 
 	{
 		void * ref;
-		char * pack, req = integer ? 'i' : 'd';
-		if ( prima_array_parse( points, &ref, NULL, &pack ) && *pack == req) {
+		char * pack;
+		if ( prima_array_parse( points, &ref, NULL, &pack ) && *pack == type) {
+			if ( do_free ) {
+				*do_free = false;
+				return ref;
+			}
 			if (!( p = malloc( psize * count))) {
 				warn("not enough memory");
 				return false;
@@ -2076,11 +2086,21 @@ prima_read_array( SV * points, char * procName, Bool integer, int div, int min, 
 			warn("Array panic on item %d on %s", i, procName);
 			return NULL;
 		}
-		if ( integer )
+		switch (type) {
+		case 'i':
 			*(((int*)p) + i) = SvIV( *psv);
-		else
+			break;
+		case 'd':
 			*(((double*)p) + i) = SvNV( *psv);
+			break;
+		case 's':
+			*(((uint16_t*)p) + i) = SvIV( *psv);
+			break;
+		}
 	}
+
+	if ( do_free )
+		*do_free = true;
 
 	return p;
 }

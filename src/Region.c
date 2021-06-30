@@ -40,9 +40,9 @@ Region_init( Handle self, HV * profile)
 	case rgnRectangle: {
 		SV ** box_entry = hv_fetch( profile, t, (I32) strlen(t), 0);
 		if (( r. data. box. boxes = (Box*) prima_read_array(
-			*box_entry, "Region::new", true,
+			*box_entry, "Region::new", 'i',
 			4, 1, -1,
-			&r. data. box. n_boxes
+			&r. data. box. n_boxes, NULL
 		)) == NULL) {
 			r. type = rgnEmpty;
 			break;
@@ -59,9 +59,9 @@ Region_init( Handle self, HV * profile)
 	}
 	case rgnPolygon:
 		if (( r. data. polygon. points = (Point*) prima_read_array(
-			pget_sv(polygon), "Region::polygon", true,
+			pget_sv(polygon), "Region::polygon", 'i',
 			2, 2, -1,
-			&r. data. polygon. n_points)
+			&r. data. polygon. n_points, NULL)
 		) == NULL) {
 			r. type = rgnEmpty;
 			break;

@@ -1731,12 +1731,12 @@ Image_bars( Handle self, SV * rects)
 	Point t;
 	ImgPaintContext ctx;
 	int i, count;
-	Bool ok = true;
+	Bool ok = true, do_free;
 	Rect * p, * r;
 	if (opt_InPaint)
 		return inherited bars( self, rects);
 
-	if (( p = prima_read_array( rects, "Image::bars", true, 4, 0, -1, &count)) == NULL)
+	if (( p = prima_read_array( rects, "Image::bars", 'i', 4, 0, -1, &count, &do_free)) == NULL)
 		return false;
 	t = my->get_translate(self);
 	prepare_fill_context(self, t, &ctx);
@@ -1749,7 +1749,7 @@ Image_bars( Handle self, SV * rects)
 			r->top - r->bottom + 1,
 			&ctx2))) break;
 	}
-	free( p);
+	if ( do_free ) free( p);
 	my-> update_change(self);
 	return ok;
 }
@@ -2143,17 +2143,17 @@ Image_lines( Handle self, SV * points)
 	} else if ( my->get_lineWidth(self) == 0) {
 		Point * lines, *p;
 		int i, count;
-		Bool ok = true;
+		Bool ok = true, do_free;
 		ImgPaintContext ctx, ctx2;
 		unsigned char lp[256];
-		if (( lines = prima_read_array( points, "Image::lines", true, 4, 0, -1, &count)) == NULL)
+		if (( lines = prima_read_array( points, "Image::lines", 'i', 4, 0, -1, &count, &do_free)) == NULL)
 			return false;
 		prepare_line_context( self, lp, &ctx);
 		for (i = 0, p = lines; i < count; i++, p+=2) {
 			ctx2 = ctx;
 			if ( !( ok &= img_polyline(self, 2, p, &ctx2))) break;
 		}
-		free(lines);
+		if (do_free) free(lines);
 		return ok;
 	} else {
 		return primitive( self, 0, "sS", "lines", points );
@@ -2168,14 +2168,14 @@ Image_polyline( Handle self, SV * points)
 	} else if ( my->get_lineWidth(self) == 0) {
 		Point * lines;
 		int count;
-		Bool ok;
+		Bool ok, do_free;
 		ImgPaintContext ctx;
 		unsigned char lp[256];
-		if (( lines = prima_read_array( points, "Image::polyline", true, 2, 2, -1, &count)) == NULL)
+		if (( lines = prima_read_array( points, "Image::polyline", 'i', 2, 2, -1, &count, &do_free)) == NULL)
 			return false;
 		prepare_line_context( self, lp, &ctx);
 		ok = img_polyline(self, count, lines, &ctx);
-		free(lines);
+		if ( do_free ) free(lines);
 		return ok;
 	} else {
 		return primitive( self, 0, "sS", "line", points );

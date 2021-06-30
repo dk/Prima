@@ -3,12 +3,18 @@ package Prima::Bidi;
 use strict;
 use warnings;
 use base 'Exporter';
+use Prima;
 our $available;
 our $enabled = 0;
 our $failure_text;
-our $default_direction_rtl = 0;
+our $language;
+our $default_direction_rtl;
+
+language($ENV{LANG} // Prima::Application->get_system_info->{guiLanguage});
 
 our @methods = qw(
+	language
+
 	paragraph
 	map
 	revmap
@@ -23,7 +29,7 @@ our @methods = qw(
 );
 
 our @EXPORT_OK = ( qw(
-	is_bidi
+	is_bidi is_complex
 ), map { "bidi_$_" } @methods);
 { local $_; eval "sub bidi_$_ { shift; goto &$_ }" for @methods; }
 
@@ -37,27 +43,8 @@ sub import
 		if ( $p eq ':require' ) {
 			my $error = enabled(1);
 			die $error if $error;
-		} elsif ( $p eq ':rtl') {
-			$default_direction_rtl = 1;
-		} elsif ( $p eq ':ltr') {
-			$default_direction_rtl = 0;
-		} elsif ( $p eq ':locale') {
-			# http://stackoverflow.com/questions/18996183/identifyng-rtl-language-in-android
-			$default_direction_rtl = ( $ENV{LANG} =~ /^(
-				ar| # arabic
-				dv| # divehi
-				fa| # persian (farsi)
-				ha| # hausa
-				he| # hebrew
-				iw| # hebrew (old code)
-				ji| # yiddish (old code)
-				ps| # pashto, pushto
-				ur| # urdu
-				yi  # yiddish
-			)/x ? 1 : 0)
-				if defined $ENV{LANG};
 		} elsif ( $p eq ':methods') {
-			$package->export_to_level(1, __PACKAGE__, qw(is_bidi), map { "bidi_$_" } @methods);
+			$package->export_to_level(1, __PACKAGE__, qw(is_bidi is_complex), map { "bidi_$_" } @methods);
 		} else {
 			push @other, $p;
 		}
@@ -82,6 +69,25 @@ sub enabled
 		$available = 1;
 	}
 	return ( $enabled = $available ) ? undef : $failure_text;
+}
+
+sub language
+{
+	return $language unless @_;
+	$language = shift;
+
+	$default_direction_rtl = ( $language =~ /^(
+		ar| # arabic
+		dv| # divehi
+		fa| # persian (farsi)
+		ha| # hausa
+		he| # hebrew
+		iw| # hebrew (old code)
+		ji| # yiddish (old code)
+		ps| # pashto, pushto
+		ur| # urdu
+		yi  # yiddish
+	)/x ? 1 : 0);
 }
 
 sub visual { scalar paragraph(@_) }
@@ -236,12 +242,56 @@ sub selection_walk
 	}
 }
 
-sub is_bidi      { $enabled && $_[-1] =~ /[\p{bc=R}\p{bc=AL}\p{bc=AN}\p{bc=RLE}\p{bc=RLO}]/ }
+sub is_bidi        { $_[-1] =~ m/[\p{bc=R}\p{bc=AL}\p{bc=AN}\p{bc=RLE}\p{bc=RLO}]/ }
 
-sub is_strong($) { $_[0] & $Text::Bidi::Mask::STRONG }
-sub is_weak($)   { !($_[0] & $Text::Bidi::Mask::STRONG) }
-sub is_rtl($)    { $_[0] & $Text::Bidi::Mask::RTL    }
-sub is_ltr($)    { !($_[0] & $Text::Bidi::Mask::RTL) }
+eval 'sub is_complex { $_[-1] =~ m/[' .
+	join('', map { sprintf q(\\x{%04x}-\\x{%04x}), @$_ } (
+		[0x0300,0x036f], # Diacritical
+		[0x0590,0x05ff], # Hebrew
+		[0x0600,0x06ef], # Arabic
+		[0x06f0,0x06f9], # Persian
+		[0x06fa,0x06ff], # Arabic
+		[0x0700,0x074f], # Syriac
+		[0x0750,0x077f], # Arabic
+		[0x0780,0x07bf], # Thaana
+		[0x0900,0x097f], # Devanagari
+		[0x0980,0x09ff], # Bengali
+		[0x0a00,0x0a7f], # Gurmukhi
+		[0x0a80,0x0aff], # Gujarati
+		[0x0b00,0x0b7f], # Oriya
+		[0x0b80,0x0bff], # Tamil
+		[0x0c00,0x0c7f], # Telugu
+		[0x0c80,0x0cff], # Kannada
+		[0x0d00,0x0d7f], # Malayalam
+		[0x0d80,0x0dff], # Sinhala
+		[0x0e00,0x0e7f], # Thai
+		[0x0e80,0x0eff], # Lao
+		[0x0f00,0x0fff], # Tibetan
+		[0x1100,0x11ff], # Hangul
+		[0x1800,0x18af], # Mongolian
+		[0x1cd0,0x1cff], # Devanagari
+		[0x1dc0,0x1dff], # Diacritical
+		[0x2800,0x28ff], # Braille
+		[0x3130,0x318f], # Hangul
+		[0x3200,0x321f], # Hangul
+		[0x3260,0x327f], # Hangul
+		[0xa840,0xa87f], # Phags_pa
+		[0xa8e0,0xa8ff], # Devanagari
+		[0xa960,0xa97f], # Hangul
+		[0xac00,0xd7a3], # Hangul
+		[0xd7b0,0xd7ff], # Hangul
+		[0xfb1d,0xfb4f], # Hebrew
+		[0xfb50,0xfdff], # Arabic
+		[0xfe70,0xfeff], # Arabic
+		[0xffa0,0xffdf], # Hangul
+	)) . ']/x};';
+
+sub is_strong($)   { $_[-1] =~ m/^[\p{bc=L}\p{bc=R}\p{bc=AL}]$/ }
+sub is_weak($)     { $_[-1] =~ m/^[\p{bc=EN}\p{bc=ES}\p{bc=ET}\p{bc=AN}\p{bc=CS}\p{bc=NSM}\p{bc=BN}]$/ }
+sub is_neutral($)  { $_[-1] =~ m/^[\p{bc=B}\p{bc=S}\p{bc=WS}\p{bc=ON}]$/ }
+sub is_explicit($) { $_[-1] =~ m/^[\p{bc=LRE}\p{bc=LRO}\p{bc=RLE}\p{bc=RLO}\p{bc=PDF}\p{bc=LRI}\p{bc=RLI}\p{bc=FSI}\p{bc=PDI}]$/ }
+sub is_rtl($)      { $_[-1] =~ m/^[\p{bc=R}\p{bc=AL}\p{bc=RLE}\p{bc=RLO}\p{bc=RLI}]$/ }
+sub is_ltr($)      { $_[-1] =~ m/^[\p{bc=L}\p{bc=LRE}\p{bc=LRO}\p{bc=LRI}]$/ }
 
 sub edit_insert
 {
@@ -273,8 +323,8 @@ sub edit_insert
 
 	# Cursor between two strongs
 	if ( defined($tl) && defined($tr) && is_strong $tl && is_strong $tr ) {
-		if ( is_ltr $tl ) {
-			if ( is_ltr $tr ) {
+		if ( !is_rtl $tl ) {
+			if ( !is_rtl $tr ) {
 				# normal LTR
 				return $pl + 1, 1;
 			} else {
@@ -298,14 +348,14 @@ sub edit_insert
 
 	# Cursor next to a strong
 	if ( defined($tl) && is_strong $tl) {
-		return (is_ltr $tl) ?
+		return (!is_rtl $tl) ?
 			# LTR append
 			( $pl + 1, 1 ) :
 			# RTL prepend
 			( $pl, 0 );
 	}
 	if ( defined($tr) && is_strong $tr) {
-		return (is_ltr $tr) ?
+		return (!is_rtl $tr) ?
 			# LTR prepend
 			( $pr, 0 ) :
 			# RTL append
@@ -315,20 +365,20 @@ sub edit_insert
 	# find out dominant directions by scanning to the first strong at each direction, if any
 	if ( defined $tl ) {
 		my $vp = $visual_pos - 1;
-		$vp-- while $vp >= 0 && is_weak($tl = $t->[$map->[$vp]]);
+		$vp-- while $vp >= 0 && !is_strong($tl = $t->[$map->[$vp]]);
 		# right to a weak, adjacent to a strong LTR further right
-		return $pl + 1, 1 if is_strong $tl && is_ltr $tl;
+		return $pl + 1, 1 if is_strong $tl && !is_rtl $tl;
 	}
 	if ( defined $tr ) {
 		my $vp = $visual_pos;
-		$vp++ while $vp < $limit && is_weak($tr = $t->[$map->[$vp]]);
+		$vp++ while $vp < $limit && !is_strong($tr = $t->[$map->[$vp]]);
 		# left to a weak, adjacent to a strong LTR further left
-		return $pr, 0     if is_strong $tr && is_ltr $tr;
+		return $pr, 0     if is_strong $tr && !is_rtl $tr;
 	}
 
 	# cursor at the end
-	return is_ltr $tr ? (0, 0) : ($limit + 1, 0) unless defined $tl;
-	return is_ltr $tl ? ($limit + 1, 1) : (0, 0) unless defined $tr;
+	return !is_rtl $tr ? (0, 0) : ($limit + 1, 0) unless defined $tl;
+	return !is_rtl $tl ? ($limit + 1, 1) : (0, 0) unless defined $tr;
 
 	# XXX this is too complex, give up
 	return $visual_pos, is_bidi($new_str) ? 0 : length($new_str);
@@ -355,11 +405,11 @@ sub edit_delete
 
 	if ( $visual_pos > 0 ) {
 		$il = $t->[$map->[$pl = $visual_pos - 1]];
-		$pl-- while is_weak($l = $t->[$map->[$pl]]) && $pl > 0;
+		$pl-- while !is_strong($l = $t->[$map->[$pl]]) && $pl > 0;
 	}
 	if ( $visual_pos <= $limit ) {
 		$ir = $t->[$map->[$pr = $visual_pos]];
-		$pr++ while is_weak($r = $t->[$map->[$pr]]) && $pr < $limit;
+		$pr++ while !is_strong($r = $t->[$map->[$pr]]) && $pr < $limit;
 	}
 
 	#warn "il: ", (is_strong($il) ? 'strong' : 'weak'), ' ', (is_rtl($il) ? 'rtl' : 'ltr'), " at ", $visual_pos - 1, "\n";
@@ -370,30 +420,30 @@ sub edit_delete
 
 	if ( $backspace ) {
 		# strong ltr immediately left, kill immediately left
-		return 1, $map->[$visual_pos - 1], -1 if $visual_pos > 0       && is_strong $il && is_ltr $il;
+		return 1, $map->[$visual_pos - 1], -1 if $visual_pos > 0       && is_strong $il && !is_rtl $il;
 		# strong rtl immediately right, kill immediately right
 		return 1, $map->[$visual_pos], 0      if $visual_pos <= $limit && is_strong $ir && is_rtl $ir;
 		# any ltr immediately left, kill immediately left
-		return 1, $map->[$visual_pos - 1], -1 if $visual_pos > 0 && is_ltr $il;
+		return 1, $map->[$visual_pos - 1], -1 if $visual_pos > 0 && !is_rtl $il;
 		# any rtl on right, kill immediately right
 		return 1, $map->[$visual_pos], 0      if $visual_pos <= $limit && is_rtl $r;
 		# any rtl on left, kill greedy leftmost
 		if ($visual_pos > 0 && is_rtl $l) {
 			my $L = $l;
-			$pl-- while !(is_strong($L = $t->[$map->[$pl]]) && is_ltr $L) && $pl > 0;
+			$pl-- while !(is_strong($L = $t->[$map->[$pl]]) && !is_rtl $L) && $pl > 0;
 			return 1, $map->[$pl], $pl - $visual_pos
 		}
 	} else {
 		# strong ltr immediately right, kill immediately right
-		return 1, $map->[$visual_pos], 0      if $visual_pos <= $limit && is_strong $il && is_ltr $il;
+		return 1, $map->[$visual_pos], 0      if $visual_pos <= $limit && is_strong $il && !is_rtl $il;
 		# strong rtl immediately left, kill immediately left
 		return 1, $map->[$visual_pos - 1], 0  if $visual_pos > 0       && is_strong $ir && is_rtl $ir;
 		# any ltr immediately right, kill immediately right
-		return 1, $map->[$visual_pos], 0      if $visual_pos <= $limit && is_ltr $ir;
+		return 1, $map->[$visual_pos], 0      if $visual_pos <= $limit && !is_rtl $ir;
 		# any rtl on left, kill immediately left
 		return 1, $map->[$visual_pos - 1], -1 if $visual_pos > 0 && is_rtl $l;
 		# any ltr on right, kill greedy rightmost
-		if ($visual_pos <= $limit && is_ltr $r) {
+		if ($visual_pos <= $limit && !is_rtl $r) {
 			my $R = $r;
 			$pr-- while !(is_strong($R = $t->[$map->[$pr]]) && is_rtl $R) && $pr > 0;
 			return 1, $map->[$pr], $pr - $visual_pos
