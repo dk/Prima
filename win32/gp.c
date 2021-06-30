@@ -38,8 +38,7 @@ apc_gp_done( Handle self)
 		GdipDeleteGraphics(sys graphics);
 		sys graphics = NULL;
 	}
-	if ( sys ps)
-	{
+	if ( sys ps) {
 		if ( is_apt( aptWinPS) && is_apt( aptWM_PAINT)) {
 			if ( !EndPaint(( HWND) var handle, &sys paintStruc)) apiErr;
 		} else if ( is_apt( aptWinPS)) {
@@ -68,41 +67,40 @@ apc_gp_done( Handle self)
 	return true;
 }
 
-#define ADJUST_LINE_END_DEF(typ)                 \
-void                                             \
-adjust_line_end_##typ                            \
-( typ x1, typ y1, typ *x2, typ *y2)              \
-{                                                \
-	if ( x1 == *x2)                                \
-		( y1 < *y2) ? ( *y2)++ : ( *y2)--;           \
-	else if ( y1 == *y2)                           \
-		( x1 < *x2) ? ( *x2)++ : ( *x2)--;           \
-	else                                           \
-	{                                              \
-		long tan = ( *y2 - y1) * 1000L / ( *x2 - x1);\
-		if ( tan < 1000 && tan > -1000) {            \
+#define ADJUST_LINE_END_DEF(typ)                                   \
+void                                                               \
+adjust_line_end_##typ                                              \
+( typ x1, typ y1, typ *x2, typ *y2)                                \
+{                                                                  \
+	if ( x1 == *x2)                                            \
+		( y1 < *y2) ? ( *y2)++ : ( *y2)--;                 \
+	else if ( y1 == *y2)                                       \
+		( x1 < *x2) ? ( *x2)++ : ( *x2)--;                 \
+	else {                                                     \
+		long tan = ( *y2 - y1) * 1000L / ( *x2 - x1);      \
+		if ( tan < 1000 && tan > -1000) {                  \
 			typ dx = *x2 - x1;                         \
 			( dx > 0) ? dx++ : dx--;                   \
 			*x2 = x1 + dx;                             \
 			*y2 = (typ)( y1 + dx * tan / 1000L);       \
-		} else {                                     \
+		} else {                                           \
 			typ dy = *y2 - y1;                         \
 			( dy > 0) ? dy++ : dy--;                   \
 			*x2 = (typ)( x1 + dy * 1000L / tan);       \
 			*y2 = y1 + dy;                             \
-		}                                            \
-	}                                              \
-}                                                \
+		}                                                  \
+	}                                                          \
+}                                                                  \
 
 ADJUST_LINE_END_DEF(int);
 ADJUST_LINE_END_DEF(LONG);
 
 static Bool
 gp_Arc(
-  Handle self,
-  int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
-  int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
-  double angleStart, double angleEnd
+	Handle self,
+	int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
+	int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
+	double angleStart, double angleEnd
 ) {
 	if ( nXRadial1 == nXRadial2 && nYRadial1 == nYRadial2 && fabs(angleStart - angleEnd) < 360 ) {
 		Bool ret;
@@ -160,10 +158,10 @@ gp_Chord(
 
 static Bool
 gp_Pie(
-  Handle self,
-  int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
-  int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
-  double angleStart, double angleEnd, Bool filled
+	Handle self,
+	int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
+	int nXRadial1, int nYRadial1, int nXRadial2, int nYRadial2,
+	double angleStart, double angleEnd, Bool filled
 ) {
 	if ( nXRadial1 == nXRadial2 && nYRadial1 == nYRadial2 && fabs(angleStart - angleEnd) < 360 ) {
 		int cx, cy;
@@ -217,7 +215,7 @@ Bool
 apc_gp_arc( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 { objCheck false; {
 	int compl, needf;
-	HDC     ps = sys ps;
+	HDC ps = sys ps;
 
 	y = sys lastSize. y - y - 1;
 	compl = arc_completion( &angleStart, &angleEnd, &needf);
@@ -275,7 +273,7 @@ apc_gp_bars( Handle self, int nr, Rect *rr)
 	int i, y = sys lastSize. y;
 	STYLUS_USE_BRUSH( ps);
 	for ( i = 0; i < nr; i++, rr++) {
-    Rect xr = *rr;
+		Rect xr = *rr;
 		check_swap( xr.left, xr.right);
 		check_swap( xr.bottom, xr.top);
 		if ( !( ok = Rectangle( ps, xr.left, y - xr.top - 1, xr.left + 2, y - xr.bottom + 1))) {
@@ -297,9 +295,9 @@ apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 	Byte *dst;
 
 	if ( !(
-	(is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtLayered) ||
-	is_apt(aptLayered) ||
-	( apc_widget_get_layered_request(self) && apc_widget_surface_is_layered(self))
+		(is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtLayered) ||
+		is_apt(aptLayered) ||
+		( apc_widget_get_layered_request(self) && apc_widget_surface_is_layered(self))
 	))
 	return false;
 
@@ -419,16 +417,16 @@ Bool
 apc_gp_draw_poly( Handle self, int numPts, Point * points)
 {objCheck false;{
 	int i, dy = sys lastSize. y;
-  POINT *p;
-  Bool ok;
+	POINT *p;
+	Bool ok;
 
 	if ((p = malloc( sizeof(POINT) * numPts)) == NULL)
 		return false;
 
 	for ( i = 0; i < numPts; i++)  {
-    p[i]. x = points[i]. x;
-    p[i]. y = dy - points[i]. y - 1;
-  }
+		p[i]. x = points[i]. x;
+		p[i]. y = dy - points[i]. y - 1;
+	}
 	if ( p[0]. x != p[numPts - 1].x || p[0]. y != p[numPts - 1].y)
 		adjust_line_end_LONG( p[numPts - 2].x, p[numPts - 2].y, &p[numPts - 1].x, &p[numPts - 1].y);
 
@@ -452,15 +450,15 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 	Bool ok = true;
 	int i, dy = sys lastSize. y;
 	DWORD * pts;
-  POINT * p;
+	POINT * p;
 
-  pts = ( DWORD *) malloc( sizeof( DWORD) * numPts);
+	pts = ( DWORD *) malloc( sizeof( DWORD) * numPts);
 	if ( !pts) return false;
 	p = malloc( sizeof(POINT) * numPts);
-  if ( !p ) {
-    free(pts);
-    return false;
-  }
+	if ( !p ) {
+		free(pts);
+		return false;
+	}
 
 	for ( i = 0; i < numPts; i++)  {
 		p[i]. x = points[i]. x;
@@ -482,7 +480,6 @@ apc_gp_draw_poly2( Handle self, int numPts, Point * points)
 	free( p);
 	return ok;
 }}
-
 
 Bool
 apc_gp_ellipse( Handle self, int x, int y, int dX, int dY)
@@ -585,15 +582,15 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 {Bool ok = true; objCheck false;{
 	HDC     ps = sys ps;
 	int i,  dy = sys lastSize. y;
-  POINT *p;
+	POINT *p;
 
-  if ((p = malloc( sizeof(POINT) * numPts)) == NULL)
+	if ((p = malloc( sizeof(POINT) * numPts)) == NULL)
 		return false;
 
 	for ( i = 0; i < numPts; i++)  {
-    p[i]. x = points[i]. x;
-    p[i]. y = dy - points[i]. y - 1;
-  }
+		p[i]. x = points[i]. x;
+		p[i]. y = dy - points[i]. y - 1;
+	}
 
 	if (( sys psFillMode & fmOverlay) == 0) {
 		HGDIOBJ old = SelectObject( ps, hPenHollow);
@@ -623,9 +620,9 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 			if ( p[ i] .y < trans. y) trans. y = p[ i]. y;
 		}
 		if (( trans. x == dx) || ( trans. y == dy)) {
-      free(p);
-      return false;
-    }
+			free(p);
+			return false;
+		}
 		if ( bound. x > dx) bound. x = dx;
 		if ( bound. y > dy) bound. y = dy;
 		for ( i = 0; i < numPts; i++)  {
@@ -639,7 +636,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 		if ( db) {
 			if ( !( ps = dc_alloc())) { // fact that if dest ps is memory dc, CCB will result mono-bitmap
 				dc_compat_free();
-        free(p);
+				free(p);
 				return false;
 			}
 		}
@@ -647,7 +644,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 			apiErr;
 			if ( db) dc_free();
 			dc_compat_free();
-      free(p);
+			free(p);
 			return false;
 		}
 		if ( db) {
@@ -657,7 +654,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 		if ( !( bmMask = CreateBitmap( bound. x, bound. y, 1, 1, NULL))) {
 			apiErr;
 			dc_compat_free();
-      free(p);
+			free(p);
 			return false;
 		}
 		bmJ = SelectObject( dc, bmSrc);
@@ -679,7 +676,7 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 		DeleteObject( bmMask);
 		DeleteObject( bmSrc);
 	}
-  free(p);
+	free(p);
 }return ok;}
 
 
