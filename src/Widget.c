@@ -549,7 +549,7 @@ handle_drag_over( Handle self, PEvent event)
 	enter_method;
 	HV * profile = newHV();
 	SV * ref = newRV_noinc((SV*) profile);
-		
+
 	pset_i(allow,1);
 	pset_i(action,dndCopy);
 	my-> notify( self, "<sHiiPS", "DragOver", 

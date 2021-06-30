@@ -101,7 +101,7 @@ typedef HANDLE SOCKETHANDLE;
 
 #define apcWarn \
 	if (debug) \
-		warn( "win32 error %d: '%s' at line %d in %s\n", (int)rc, \
+		warn( "win32 error 0x%x: '%s' at line %d in %s\n", (unsigned int)rc, \
 			err_msg( rc, nil), __LINE__, __FILE__);   \
 	else \
 		err_msg( rc, nil)
@@ -169,6 +169,9 @@ typedef struct _HandleOptions_ {
 	unsigned aptIgnoreSizeMessages   : 1;       // during window recreation
 } HandleOptions;
 
+#define CLIPBOARD_MAIN 0
+#define CLIPBOARD_DND  1
+
 typedef struct _WinGuts
 {
 	HINSTANCE      instance;           // application instance
@@ -219,6 +222,12 @@ typedef struct _WinGuts
 	int            utf8_prepend_0x202D;// newer windows do automatic bidi conversion, this is to cancel it
 	WCHAR *      (*alloc_utf8_to_wchar_visual)(const char*,int,int*);
 	ULONG_PTR      gdiplusToken;       // GDI+ handle
+	Handle         clipboards[2];
+	Bool           ole_initialized;
+	void*          dndDataSender;      // IDropTarget.DragEnter.DataObject dnd storage object
+	void*          dndDataReceiver;    // CLIPBOARD_DND storage object
+	Bool           dndInsideEvent;     // to distinguish whether the clipboard is read-only or not
+	void*          dragSource;         // not null if dragging
 } WinGuts, *PWinGuts;
 
 typedef struct _WindowData
@@ -470,6 +479,9 @@ typedef struct _DrawableData
 	Point          extraPos;                // used in region calculations
 	Point          layeredPos;              // delayed layered window positioning
 
+	/* Widget DND stuff */
+	void*          dropTarget;
+
 	/* Layered subpaint */
 	Point          layeredPaintOffset;
 	HDC            layeredPaintSurface;
@@ -680,6 +692,16 @@ extern void         reset_system_fonts(void);
 extern void         dpi_change(void);
 extern Bool         set_dwm_blur( HWND win, int enable, HRGN mask, int transition_on_maximized);
 extern Bool         is_dwm_enabled(void);
+extern Bool         dnd_clipboard_open( Handle self);
+extern Bool         dnd_clipboard_close( Handle self);
+extern Bool         dnd_clipboard_clear( Handle self);
+extern PList        dnd_clipboard_get_formats( Handle self);
+extern Bool         dnd_clipboard_get_data( Handle self, Handle id, PClipboardDataRec c);
+extern Bool         dnd_clipboard_has_format( Handle self, Handle id);
+extern Bool         dnd_clipboard_set_data( Handle self, Handle id, PClipboardDataRec c);
+extern PList        dnd_clipboard_get_formats( Handle self);
+extern char *       cf2name( UINT cf );
+extern Bool         clipboard_get_data(int cfid, PClipboardDataRec c, void * p1, void * p2);
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA

@@ -979,7 +979,7 @@ MSCVER
 		'include/generic',
 	);
 
-	push @LIBS, qw(gdi32 gdiplus mpr winspool comdlg32 msimg32) if $Win32; # add more when appropriate
+	push @LIBS, qw(gdi32 gdiplus mpr winspool comdlg32 msimg32 old32 uuid) if $Win32; # add more when appropriate
 	push @LIBPATH, '/usr/lib/w32api' if $cygwin;
 	if ($^O eq 'solaris') {
 		push @LIBPATH, '/opt/csw/lib';
