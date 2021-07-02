@@ -428,7 +428,6 @@ window_subsystem_done()
 	font_clean();
 	stylus_clean();
 	stylus_gp_clean();
-	hash_destroy( menuBitmapMan, false);
 	hash_destroy( imageMan,   false);
 	hash_destroy( menuMan,    false);
 	hash_destroy( patMan,     true);
