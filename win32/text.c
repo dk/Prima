@@ -97,8 +97,14 @@ font_context_next( FontContext * fc )
 	} else {
 		dst = (( PWidget) fc->self)-> font;
 		src = *_src;
-		src.size = dst.size;
-		src.undef.size = 0;
+#define CP(x) src.x = dst.x; src.undef.x = 0;
+		CP(size)
+		CP(style)
+		CP(pitch)
+		CP(direction)
+		CP(vector)
+#undef CP
+		src.direction = dst.direction;
 		apc_font_pick(fc->self, &src, &dst);
 		if ( strcmp(src.name, dst.name) == 0) {
 			if ( fc-> nondefault_font )
@@ -505,6 +511,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
 	Bool use_path;
 	FontContext fc;
+	float s, c, fxx, fyy;
 
 	if ( t->len > 8192 ) t->len = 8192;
 	use_path = GetROP2( sys ps) != R2_COPYPEN;
@@ -516,8 +523,20 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
 
-	xx = x;
-	yy = sys lastSize. y - y;
+	if ( var font. direction != 0) {
+		if ( sys font_sin == sys font_cos && sys font_sin == 0.0 ) {
+			sys font_sin = sin( var font. direction / GRAD);
+			sys font_cos = cos( var font. direction / GRAD);
+		}
+		s = sys font_sin;
+		c = sys font_cos;
+	} else {
+		c = 1.0;
+		s = 0.0;
+	}
+
+	fxx = xx = x;
+	fyy = yy = sys lastSize. y - y;
 	savelen = t->len;
 	font_context_init(&fc, self, t);
 	while (( t-> len = font_context_next(&fc)) > 0 ) {
@@ -525,7 +544,11 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		if ( !( ok = gp_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance)))
 			break;
 		if ( !fc.stop ) {
-			xx += advance;
+			fxx += (float)advance * c;
+			fyy -= (float)advance * s;
+			xx = fxx + ((fxx < 0) ? -.5 : +.5);
+			yy = fyy + ((fyy < 0) ? -.5 : +.5);
+
 			t->glyphs    += t->len;
 			if ( t-> advances ) {
 				t->advances  += t->len;
