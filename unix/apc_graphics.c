@@ -949,7 +949,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	p[numPts].y = REVERT(points[0]. y + XX-> gtransform. y + XX-> btransform. y);
 	RANGE2(p[numPts].x, p[numPts].y);
 
-	pen = XCreatePixmap( DISP, guts.root, 1, 1, 32);
+	pen = XCreatePixmap( DISP, guts.root, 1, 1, 24);
 	gcv. graphics_exposures = false;
 	gc = XCreateGC( DISP, pen, GCGraphicsExposures, &gcv);
 	XSetForeground( DISP, gc, XX-> fore. primary | 0xFF000000);
@@ -957,7 +957,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 
 	attr.repeat    = RepeatNormal;
 	attr.poly_edge = PolyEdgeSmooth;
-	source         = XRenderCreatePicture( DISP, pen, guts. xrender_argb_pic_format, CPRepeat | CPPolyEdge, &attr);
+	source         = XRenderCreatePicture( DISP, pen, guts. xrender_argb_compat_format, CPRepeat | CPPolyEdge, &attr);
 
 	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
 	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
@@ -965,7 +965,8 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 
 	XRenderCompositeDoublePoly(
 		DISP, PictOpOver, source, target,
-		guts. xrender_argb_compat_format, 0, 0, 0, 0, p, numPts,
+		XRenderFindStandardFormat(DISP, PictStandardA8),
+		0, 0, 0, 0, p, numPts,
 		((XX->fill_mode & fmWinding) == fmAlternate) ? EvenOddRule : WindingRule
 	);
 
