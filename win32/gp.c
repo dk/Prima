@@ -587,7 +587,6 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 	if ((p = malloc( sizeof(POINT) * numPts)) == NULL)
 		return false;
 
-
 	for ( i = 0; i < numPts; i++)  {
 		p[i]. x = points[i]. x;
 		p[i]. y = dy - points[i]. y - 1;
