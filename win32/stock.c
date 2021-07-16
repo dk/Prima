@@ -1719,6 +1719,7 @@ hwnd_enter_paint( Handle self)
 	if ( sys psd == NULL) sys psd = ( PPaintSaveData) malloc( sizeof( PaintSaveData));
 	if ( sys psd == NULL) return;
 
+	apc_gp_set_antialias( self, is_apt( aptGDIPlus));
 	apc_gp_set_text_opaque( self, is_apt( aptTextOpaque));
 	apc_gp_set_text_out_baseline( self, is_apt( aptTextOutBaseline));
 	apc_gp_set_fill_mode( self, sys fillMode);
@@ -1734,6 +1735,7 @@ hwnd_enter_paint( Handle self)
 	apc_gp_set_rop2( self, sys rop2);
 	apc_gp_set_transform( self, sys transform. x, sys transform. y);
 	apc_gp_set_fill_pattern( self, sys fillPattern2);
+	sys psd-> antialias      = is_apt( aptGDIPlus);
 	sys psd-> font           = var font;
 	sys psd-> fillMode       = sys fillMode;
 	sys psd-> fillPatternOffset = sys fillPatternOffset;
@@ -1784,8 +1786,9 @@ hwnd_leave_paint( Handle self)
 		sys rop            = sys psd-> rop;
 		sys rop2           = sys psd-> rop2;
 		sys transform      = sys psd-> transform;
-		apt_assign( aptTextOpaque, sys psd-> textOpaque);
+		apt_assign( aptTextOpaque,      sys psd-> textOpaque);
 		apt_assign( aptTextOutBaseline, sys psd-> textOutB);
+		apt_assign( aptGDIPlus,         sys psd-> antialias);
 		free( sys psd);
 		sys psd = NULL;
 	}

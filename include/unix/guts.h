@@ -854,6 +854,8 @@ typedef struct _drawable_sys_data
 	void * recreateData;
 	XWindow client;
 	struct {
+		unsigned antialias                : 1;
+		unsigned saved_antialias          : 1;
 		unsigned base_line                : 1;
 		unsigned brush_fore               : 1;
 		unsigned brush_back               : 1;

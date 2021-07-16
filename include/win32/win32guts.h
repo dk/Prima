@@ -176,6 +176,7 @@ typedef struct _HandleOptions_ {
 	unsigned aptLayeredRequested     : 1;       // Prima wants layered
 	unsigned aptClipByChildren       : 1;       // cached clipping by children
 	unsigned aptIgnoreSizeMessages   : 1;       // during window recreation
+	unsigned aptGDIPlus              : 1;       // uses GDI+
 } HandleOptions;
 
 #define CLIPBOARD_MAIN 0
@@ -324,6 +325,7 @@ typedef struct _PrinterData
 
 typedef struct _PaintSaveData
 {
+	Bool        antialias;
 	Color       lbs[2];
 	Bool        fillMode;
 	int         lineWidth;

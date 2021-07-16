@@ -8,6 +8,7 @@ object Prima::Drawable ( Prima::Component)
 	PRGBColor    palette;       	       # logical palette
 	int          palSize;               # logical palette size
 
+	property     Bool          antialias;
 	property     Color         backColor;
 	property     Color         color;
 	property     Rect          clipRect;

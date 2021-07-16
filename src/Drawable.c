@@ -31,6 +31,7 @@ Drawable_init( Handle self, HV * profile)
 	inherited init( self, profile);
 	apc_gp_init( self);
 	var-> w = var-> h = 0;
+	my-> set_antialias    ( self, pget_B ( antialias));
 	my-> set_color        ( self, pget_i ( color));
 	my-> set_backColor    ( self, pget_i ( backColor));
 	my-> set_fillMode     ( self, pget_i ( fillMode));
@@ -545,7 +546,32 @@ Drawable_##name( Handle self, SV * points)\
 
 DEF_LINE_PROCESSOR(polyline, apc_gp_draw_poly)
 DEF_LINE_PROCESSOR(lines, apc_gp_draw_poly2)
-DEF_LINE_PROCESSOR(fillpoly, apc_gp_fill_poly)
+
+Bool
+Drawable_fillpoly(Handle self, SV * points)
+{
+	int count;
+	void *p;
+	Bool ret = false;
+	Bool do_free, aa;
+	CHECK_GP(false);
+
+	aa = apc_gp_get_antialias(self);
+	if (( p = prima_read_array(
+		points, "fillpoly",
+		aa ? 'd' : 'i',
+		2, 2, -1, &count, &do_free
+	)) == NULL)
+		return false;
+
+	ret = aa ?
+		apc_gp_aa_fill_poly( self, count, (NPoint*) p) :
+		apc_gp_fill_poly( self, count, (Point*) p);
+	if ( !ret) perl_error();
+	if ( do_free ) free(p);
+
+	return ret;
+}
 
 Bool
 Drawable_bars( Handle self, SV * rects)
@@ -1032,6 +1058,13 @@ prima_read_palette( int * palSize, SV * palette)
 	}
 
 	return ( PRGBColor) buf;
+}
+
+Bool
+Drawable_antialias( Handle self, Bool set, Bool aa)
+{
+	if (set) apc_gp_set_antialias( self, aa );
+	return apc_gp_get_antialias( self );
 }
 
 Color

@@ -227,6 +227,7 @@ Unbuffered:
 	XX-> clip_mask_extent. x = XX-> clip_mask_extent. y = 0;
 	XX-> flags. xft_clip = 0;
 
+	apc_gp_set_antialias( self, XX-> flags.saved_antialias);
 	apc_gp_set_color( self, XX-> saved_fore);
 	apc_gp_set_back_color( self, XX-> saved_back);
 	memcpy( XX-> saved_fill_pattern, XX-> fill_pattern, sizeof( FillPattern));
@@ -922,6 +923,66 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 }
 
 Bool
+apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
+{
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	Picture   source, target;
+	Pixmap    pen;
+	XGCValues gcv;
+	GC        gc;
+	XRenderPictureAttributes attr;
+	XPointDouble *p;
+	int i;
+	DEFXX;
+
+	if ( PObject( self)-> options. optInDrawInfo) return false;
+	if ( !XF_IN_PAINT(XX)) return false;
+
+	if ( !( p = malloc(( numPts + 1) * sizeof( XPointDouble)))) return false;
+
+	for ( i = 0; i < numPts; i++) {
+		p[i].x = points[i]. x + XX-> gtransform. x + XX-> btransform. x;
+		p[i].y = REVERT(points[i]. y + XX-> gtransform. y + XX-> btransform. y);
+		RANGE2(p[i].x, p[i].y);
+	}
+	p[numPts].x = points[0]. x + XX-> gtransform. x + XX-> btransform. x;
+	p[numPts].y = REVERT(points[0]. y + XX-> gtransform. y + XX-> btransform. y);
+	RANGE2(p[numPts].x, p[numPts].y);
+
+	pen = XCreatePixmap( DISP, guts.root, 1, 1, 32);
+	gcv. graphics_exposures = false;
+	gc = XCreateGC( DISP, pen, GCGraphicsExposures, &gcv);
+	XSetForeground( DISP, gc, XX-> fore. primary | 0xFF000000);
+	XDrawPoint( DISP, pen, gc, 0,0);
+
+	attr.repeat    = RepeatNormal;
+	attr.poly_edge = PolyEdgeSmooth;
+	source         = XRenderCreatePicture( DISP, pen, guts. xrender_argb_pic_format, CPRepeat | CPPolyEdge, &attr);
+
+	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
+	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
+		XRenderSetPictureClipRegion(DISP, target, XX->current_region);
+
+	XRenderCompositeDoublePoly(
+		DISP, PictOpOver, source, target,
+		guts. xrender_argb_compat_format, 0, 0, 0, 0, p, numPts,
+		((XX->fill_mode & fmWinding) == fmAlternate) ? EvenOddRule : WindingRule
+	);
+
+	XRenderFreePicture( DISP, source);
+	XRenderFreePicture( DISP, target);
+	XFreePixmap( DISP, pen );
+	XFreeGC( DISP, gc);
+	XSync(DISP, false);
+	XCHECKPOINT;
+	free( p);
+	return true;
+#else
+	return false;
+#endif
+}
+
+Bool
 apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {
 	DEFXX;
@@ -1458,6 +1519,13 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 }
 
 /* gpi settings */
+Bool
+apc_gp_get_antialias( Handle self)
+{
+	DEFXX;
+	return XF_IN_PAINT(XX) ? XX-> flags.antialias : XX->flags.saved_antialias;
+}
+
 Color
 apc_gp_get_back_color( Handle self)
 {
@@ -1687,6 +1755,24 @@ apc_gp_get_text_out_baseline( Handle self)
 	} else {
 		return XX-> flags. base_line ? true : false;
 	}
+}
+
+Bool
+apc_gp_set_antialias( Handle self, Bool antialias )
+{
+	DEFXX;
+	if ( antialias ) {
+		if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
+			return false;
+		if ( !guts.render_extension)
+			return false;
+	}
+	if ( XF_IN_PAINT(XX) ) {
+		XX-> flags.antialias = antialias;
+	} else {
+		XX-> flags.saved_antialias = antialias;
+	}
+	return true;
 }
 
 Bool

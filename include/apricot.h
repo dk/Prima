@@ -3544,6 +3544,9 @@ extern Bool
 apc_gp_done( Handle self);
 
 extern Bool
+apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points);
+
+extern Bool
 apc_gp_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2);
 
 extern Bool
@@ -3680,6 +3683,9 @@ extern Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags);
 
 /* gpi settings */
+extern Bool
+apc_gp_get_antialias( Handle self);
+
 extern Color
 apc_gp_get_back_color( Handle self);
 
@@ -3793,6 +3799,9 @@ apc_gp_get_text_out_baseline( Handle self);
 
 extern Point
 apc_gp_get_transform( Handle self);
+
+extern Bool
+apc_gp_set_antialias( Handle self, Bool aa);
 
 extern Bool
 apc_gp_set_back_color( Handle self, Color color);

@@ -681,6 +681,15 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 	free(p);
 }return ok;}
 
+Bool
+apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
+{
+	Bool ok = true;
+	HDC ps = sys ps;
+
+	objCheck false;
+	return false;
+}
 
 Bool
 apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
@@ -881,6 +890,12 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 }
 
 // gpi settings
+Bool
+apc_gp_get_antialias( Handle self)
+{
+	return is_apt(aptGDIPlus);
+}
+
 Color
 apc_gp_get_back_color( Handle self)
 {
@@ -1173,6 +1188,21 @@ apc_gp_get_transform( Handle self)
 }
 
 #define pal_ok ((sys bpp <= 8) && ( sys pal))
+
+Bool
+apc_gp_set_antialias( Handle self, Bool aa)
+{
+	if ( aa ) {
+		if (
+			( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap) ||
+			( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
+		)
+			return false;
+		apt_set(aptGDIPlus);
+	} else
+		apt_clear(aptGDIPlus);
+	return true;
+}
 
 Bool
 apc_gp_set_back_color( Handle self, Color color)

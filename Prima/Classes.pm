@@ -516,6 +516,7 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
+		antialias       => 0,
 		color           => cl::Black,
 		backColor       => cl::White,
 		fillMode        => fm::Overlay|fm::Alternate,
