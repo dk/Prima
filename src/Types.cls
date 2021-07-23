@@ -51,6 +51,13 @@ global @NPoint {
 	double y;
 }
 
+global @NRect {
+	double left;
+	double bottom;
+	double right;
+	double top;
+}
+
 global %PrinterInfo {
 	string name;
 	string device;

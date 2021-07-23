@@ -1737,20 +1737,26 @@ prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 }
 
 Bool
-Image_bar( Handle self, int x1, int y1, int x2, int y2)
+Image_bar( Handle self, double x1, double y1, double x2, double y2)
 {
 	Point t;
 	Bool ok;
+	int _x1, _y1, _x2, _y2;
 	ImgPaintContext ctx;
 	if (opt_InPaint)
-		return apc_gp_bar( self, x1, y1, x2, y2);
+		return inherited bar( self, x1, y1, x2, y2);
+
+	_x1 = round(x1);
+	_x2 = round(x2);
+	_y1 = round(y1);
+	_y2 = round(y2);
 
 	t = my->get_translate(self);
-	x1 += t.x;
-	y1 += t.y;
+	_x1 += t.x;
+	_y1 += t.y;
 
 	prepare_fill_context(self, t, &ctx);
-	ok = img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
+	ok = img_bar( self, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1, &ctx);
 	my-> update_change(self);
 	return ok;
 }
@@ -1785,22 +1791,27 @@ Image_bars( Handle self, SV * rects)
 }
 
 Bool
-Image_clear(Handle self, int x1, int y1, int x2, int y2)
+Image_clear(Handle self, double x1, double y1, double x2, double y2)
 {
 	Point t;
 	Bool ok;
 	ImgPaintContext ctx;
+	int _x1, _y1, _x2, _y2;
 	if (opt_InPaint)
 		return inherited clear( self, x1, y1, x2, y2);
-	if ( x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0) {
-		x1 = 0;
-		y1 = 0;
-		x2 = var-> w - 1;
-		y2 = var-> h - 1;
+	_x1 = round(x1);
+	_x2 = round(x2);
+	_y1 = round(y1);
+	_y2 = round(y2);
+	if ( _x1 < 0 && _y1 < 0 && _x2 < 0 && _y2 < 0) {
+		_x1 = 0;
+		_y1 = 0;
+		_x2 = var-> w - 1;
+		_y2 = var-> h - 1;
 	}
 	t = my->get_translate(self);
-	x1 += t.x;
-	y1 += t.y;
+	_x1 += t.x;
+	_y1 += t.y;
 	color2pixel( self, my->get_backColor(self), ctx.color);
 	ctx.rop = my->get_rop(self);
 	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
@@ -1809,7 +1820,7 @@ Image_clear(Handle self, int x1, int y1, int x2, int y2)
 	ctx.patternOffset.x -= t.x;
 	ctx.patternOffset.y -= t.y;
 	ctx.transparent = false;
-	ok = img_bar( self, x1, y1, x2 - x1 + 1, y2 - y1 + 1, &ctx);
+	ok = img_bar( self, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1, &ctx);
 	my-> update_change(self);
 	return ok;
 }

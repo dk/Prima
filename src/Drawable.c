@@ -574,18 +574,73 @@ Drawable_fillpoly(Handle self, SV * points)
 }
 
 Bool
+Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
+{
+	CHECK_GP(false);
+
+	if (apc_gp_get_antialias(self)) {
+		NPoint r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
+		return apc_gp_aa_fill_poly( self, 5, r);
+	} else return apc_gp_bar(self,
+		round(x1), round(y1), round(x2), round(y2)
+	);
+}
+
+Bool
 Drawable_bars( Handle self, SV * rects)
 {
 	int count;
 	Rect * p;
-	Bool ret = false, do_free;
+	Bool ret = false, do_free, aa;
 	CHECK_GP(false);
-	if (( p = prima_read_array( rects, "Drawable::bars", 'i', 4, 0, -1, &count, &do_free)) != NULL) {
+	aa = apc_gp_get_antialias(self);
+	if (( p = prima_read_array( rects, "Drawable::bars",
+		aa ? 'd' : 'i',
+		4, 0, -1, &count, &do_free)) == NULL)
+		return false;
+
+	if ( aa ) {
+		int i;
+		NRect *r;
+		for ( i = 0, r = (NRect*)p; i < count; i++, r++) {
+			NPoint xr[5] = {
+				{r->left,r->bottom},
+				{r->left,r->top},
+				{r->right,r->top},
+				{r->right,r->bottom},
+				{r->left,r->bottom}
+			};
+			if ( !( ret = apc_gp_aa_fill_poly( self, 5, xr)))
+				break;
+		}
+	} else
 		ret = apc_gp_bars( self, count, p);
-		if ( !ret) perl_error();
-		if ( do_free ) free( p);
-	}
+	if ( !ret) perl_error();
+	if ( do_free ) free( p);
 	return ret;
+}
+
+Bool
+Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
+{
+	CHECK_GP(false);
+
+	if (apc_gp_get_antialias(self)) {
+		Bool ok;
+		Color color;
+		FillPattern fp;
+		NPoint r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
+		color = apc_gp_get_color(self);
+		memcpy(&fp, apc_gp_get_fill_pattern(self), sizeof(FillPattern));
+		apc_gp_set_color(self, apc_gp_get_back_color(self));
+		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
+		ok = apc_gp_aa_fill_poly( self, 5, r);
+		apc_gp_set_fill_pattern(self, fp);
+		apc_gp_set_color(self, color);
+		return ok;
+	} else return apc_gp_clear(self,
+		round(x1), round(y1), round(x2), round(y2)
+	);
 }
 
 SV *

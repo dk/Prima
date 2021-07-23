@@ -36,7 +36,7 @@ object Prima::Image( Prima::Drawable)
 	# methods
 	method UV     add_notification( char * name, SV * subroutine, Handle referer = NULL_HANDLE, int index = -1);
 	method Bool   arc( int x, int y, int dX, int dY, double startAngle, double endAngle);
-	method Bool   bar(int x1, int y1, int x2, int y2);
+	method Bool   bar(double x1, double y1, double x2, double y2);
 	method Bool   bars(SV * rects);
 	method Handle bitmap();
 	method Bool   begin_paint();
@@ -44,7 +44,7 @@ object Prima::Image( Prima::Drawable)
 	method Bool   can_draw_alpha();
 	method Bool   chord( int x, int y, int dX, int dY, double startAngle, double endAngle);
 	static SV   * codecs( SV * dummy, int codecID = -1);
-	method Bool   clear(int x1=-1, int y1=-1, int x2=-1, int y2=-1);
+	method Bool   clear(double x1=-1, double y1=-1, double x2=-1, double y2=-1);
 	c_only void   create_empty( int width, int height, int type);
 	method void   done();
 	method Handle dup();
