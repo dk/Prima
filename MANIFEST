@@ -388,6 +388,7 @@ unix/apc_menu.c
 unix/apc_misc.c
 unix/apc_pointer.c
 unix/apc_region.c
+unix/apc_render.c
 unix/apc_text.c
 unix/apc_timer.c
 unix/apc_widget.c

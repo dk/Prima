@@ -427,9 +427,10 @@ init_x11( char * error_buf )
 	apc_timer_set_timeout( MENU_TIMER,  guts. menu_timeout);
 	apc_timer_create( MENU_UNFOCUS_TIMER);
 	apc_timer_set_timeout( MENU_UNFOCUS_TIMER, 50);
-	if ( !prima_init_clipboard_subsystem( error_buf)) return false;
-	if ( !prima_init_color_subsystem( error_buf)) return false;
-	if ( !prima_init_font_subsystem( error_buf)) return false;
+	if ( !prima_init_clipboard_subsystem (error_buf)) return false;
+	if ( !prima_init_color_subsystem     (error_buf)) return false;
+	if ( !prima_init_xrender_subsystem   (error_buf)) return false;
+	if ( !prima_init_font_subsystem      (error_buf)) return false;
 #ifdef WITH_GTK
 	guts. use_gtk = do_no_gtk ? false : ( prima_gtk_init() != NULL );
 #endif
@@ -676,6 +677,7 @@ window_subsystem_done( void)
 	free_gc_pool(&guts.screen_gc_pool);
 	free_gc_pool(&guts.argb_gc_pool);
 	prima_done_color_subsystem();
+	prima_done_xrender_subsystem();
 	free( guts. clipboard_formats);
 
 	XFreeGC( DISP, guts. menugc);

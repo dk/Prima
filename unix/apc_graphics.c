@@ -923,67 +923,6 @@ apc_gp_fill_poly( Handle self, int numPts, Point *points)
 }
 
 Bool
-apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
-{
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	Picture   source, target;
-	Pixmap    pen;
-	XGCValues gcv;
-	GC        gc;
-	XRenderPictureAttributes attr;
-	XPointDouble *p;
-	int i;
-	DEFXX;
-
-	if ( PObject( self)-> options. optInDrawInfo) return false;
-	if ( !XF_IN_PAINT(XX)) return false;
-
-	if ( !( p = malloc(( numPts + 1) * sizeof( XPointDouble)))) return false;
-
-	for ( i = 0; i < numPts; i++) {
-		p[i].x = points[i]. x + XX-> gtransform. x + XX-> btransform. x;
-		p[i].y = REVERT(points[i]. y + XX-> gtransform. y + XX-> btransform. y);
-		RANGE2(p[i].x, p[i].y);
-	}
-	p[numPts].x = points[0]. x + XX-> gtransform. x + XX-> btransform. x;
-	p[numPts].y = REVERT(points[0]. y + XX-> gtransform. y + XX-> btransform. y);
-	RANGE2(p[numPts].x, p[numPts].y);
-
-	pen = XCreatePixmap( DISP, guts.root, 1, 1, 24);
-	gcv. graphics_exposures = false;
-	gc = XCreateGC( DISP, pen, GCGraphicsExposures, &gcv);
-	XSetForeground( DISP, gc, XX-> fore. primary | 0xFF000000);
-	XDrawPoint( DISP, pen, gc, 0,0);
-
-	attr.repeat    = RepeatNormal;
-	attr.poly_edge = PolyEdgeSmooth;
-	source         = XRenderCreatePicture( DISP, pen, guts. xrender_argb_compat_format, CPRepeat | CPPolyEdge, &attr);
-
-	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
-	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
-		XRenderSetPictureClipRegion(DISP, target, XX->current_region);
-
-	XRenderCompositeDoublePoly(
-		DISP, PictOpOver, source, target,
-		XRenderFindStandardFormat(DISP, PictStandardA8),
-		0, 0, 0, 0, p, numPts,
-		((XX->fill_mode & fmWinding) == fmAlternate) ? EvenOddRule : WindingRule
-	);
-
-	XRenderFreePicture( DISP, source);
-	XRenderFreePicture( DISP, target);
-	XFreePixmap( DISP, pen );
-	XFreeGC( DISP, gc);
-	XSync(DISP, false);
-	XCHECKPOINT;
-	free( p);
-	return true;
-#else
-	return false;
-#endif
-}
-
-Bool
 apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {
 	DEFXX;
@@ -1783,6 +1722,8 @@ apc_gp_set_back_color( Handle self, Color color)
 	if ( XF_IN_PAINT(XX)) {
 		prima_allocate_color( self, color, &XX-> back);
 		XX-> flags. brush_back = 0;
+		if ( !XX-> flags. brush_null_hatch)
+			guts.xrender_pen_dirty = true;
 	} else
 		XX-> saved_back = color;
 	return true;
@@ -1795,6 +1736,7 @@ apc_gp_set_color( Handle self, Color color)
 	if ( XF_IN_PAINT(XX)) {
 		prima_allocate_color( self, color, &XX-> fore);
 		XX-> flags. brush_fore = 0;
+		guts.xrender_pen_dirty = true;
 	} else
 		XX-> saved_fore = color;
 	return true;
@@ -1829,6 +1771,8 @@ apc_gp_set_fill_pattern( Handle self, FillPattern pattern)
 	XX-> flags. brush_null_hatch =
 	( memcmp( pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);
 	memcpy( XX-> fill_pattern, pattern, sizeof( FillPattern));
+	if ( XF_IN_PAINT(XX))
+		guts.xrender_pen_dirty = true;
 	return true;
 }
 
@@ -1846,6 +1790,8 @@ apc_gp_set_fill_pattern_offset( Handle self, Point fpo)
 		gcv. ts_y_origin = fpo. y;
 		XChangeGC( DISP, XX-> gc, GCTileStipXOrigin | GCTileStipYOrigin, &gcv);
 		XCHECKPOINT;
+		if ( !XX-> flags. brush_null_hatch)
+			guts.xrender_pen_dirty = true;
 	} else {
 		XX-> gcv. ts_x_origin = fpo. x;
 		XX-> gcv. ts_y_origin = fpo. y;
@@ -1993,6 +1939,7 @@ apc_gp_set_rop( Handle self, int rop)
 			rop = ropNoOper;
 		XX-> paint_rop = rop;
 		XSetFunction( DISP, XX-> gc, function);
+		guts.xrender_pen_dirty = true;
 		XCHECKPOINT;
 	} else {
 		XX-> gcv. function = function;
@@ -2013,6 +1960,7 @@ apc_gp_set_rop2( Handle self, int rop)
 			gcv. line_style = ( rop == ropCopyPut) ? LineDoubleDash : LineOnOffDash;
 			XChangeGC( DISP, XX-> gc, GCLineStyle, &gcv);
 		}
+		guts.xrender_pen_dirty = true;
 	} else {
 		XX-> rop2 = rop;
 		if ( XX-> gcv. line_style != LineSolid)

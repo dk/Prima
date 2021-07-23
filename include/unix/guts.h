@@ -706,7 +706,9 @@ typedef struct _UnixGuts
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	XRenderPictFormat *          xrender_argb_pic_format;
 	XRenderPictFormat *          xrender_argb_compat_format;
+	XRenderPictFormat *          xrender_a8_format;
 #endif
+	Bool                         xrender_pen_dirty;
 	MainColorEntry *             palette;
 	int                          mappingPlace[256];
 	unsigned long                monochromeMap[2];
@@ -1122,10 +1124,19 @@ extern Bool
 prima_init_color_subsystem( char * error_buf);
 
 extern Bool
+prima_init_xrender_subsystem( char * error_buf);
+
+extern Bool
+prima_find_color_mask_range( unsigned long mask, unsigned int * shift, unsigned int * range);
+
+extern Bool
 prima_color_subsystem_set_option( char *, char *);
 
 extern void
 prima_done_color_subsystem( void);
+
+extern void
+prima_done_xrender_subsystem( void);
 
 extern int
 prima_color_find( Handle self, long color, int maxDiff, int * diff, int maxRank);

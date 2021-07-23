@@ -516,8 +516,8 @@ apply_color_class( int c_class, Color value)
 }
 
 /* find color bounds and test if they are contiguous */
-static Bool
-find_color_mask_range( unsigned long mask, unsigned int * shift, unsigned int * range)
+Bool
+prima_find_color_mask_range( unsigned long mask, unsigned int * shift, unsigned int * range)
 {
 	int i, from = 0, to = 0, stage = 0;
 	for ( i = 0; i < 32; i++) {
@@ -607,45 +607,6 @@ class;
 		return false;
 	}
 
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	/* get ARGB visual */
-	if ( guts. render_extension ) {
-		int i;
-		XRenderPictFormat *f;
-		template. depth = 32; /* XXX should try non-32 bit alpha'ed visuals */
-		list = XGetVisualInfo( DISP, VisualDepthMask, &template, &count);
-		for ( i = 0; i < count; i++) {
-			if (!(f = XRenderFindVisualFormat(DISP, list[i].visual))) continue;
-			if (f->direct.alphaMask == 0) continue;
-			guts. argb_visual = list[i];
-			guts. argb_bits. red_mask   = f->direct. redMask   << f->direct. red;
-			guts. argb_bits. green_mask = f->direct. greenMask << f->direct. green;
-			guts. argb_bits. blue_mask  = f->direct. blueMask  << f->direct. blue;
-			guts. argb_bits. alpha_mask = f->direct. alphaMask << f->direct. alpha;
-			find_color_mask_range( guts. argb_bits. red_mask,   &guts. argb_bits. red_shift,   &guts. argb_bits. red_range);
-			find_color_mask_range( guts. argb_bits. green_mask, &guts. argb_bits. green_shift, &guts. argb_bits. green_range);
-			find_color_mask_range( guts. argb_bits. blue_mask,  &guts. argb_bits. blue_shift,  &guts. argb_bits. blue_range);
-			find_color_mask_range( guts. argb_bits. alpha_mask, &guts. argb_bits. alpha_shift, &guts. argb_bits. alpha_range);
-			guts. xrender_argb_pic_format = f;
-			guts. argb_depth = f-> depth;
-			Pdebug("selected visual 0x%x for ARGB operations\n", list[i].visualid);
-			break;
-		}
-		if ( list) XFree( list);
-
-		/* find compat format for putting regular pixmaps */
-		if (!(guts. xrender_argb_compat_format = XRenderFindVisualFormat(DISP, guts.visual.visual))) {
-			guts. xrender_argb_pic_format = NULL;
-			guts. argb_visual. visual = NULL;
-			guts. argb_depth = 0;
-		}
-
-		if ( guts. argb_visual. visual ) {
-			guts. argbColormap = XCreateColormap( DISP, guts. root, guts. argb_visual. visual, AllocNone);
-		}
-	}
-#endif
-	if ( !guts. argb_visual. visual ) Pdebug("no ARGB visual found\n");
 
 	guts. useDithering     = true;
 	guts. dynamicColors    = false;
@@ -825,9 +786,9 @@ BLACK_WHITE_ALLOCATED:
 		return false;
 	}
 	if ( guts. palSize == 0) {
-		find_color_mask_range( guts. visual. red_mask,   &guts. screen_bits. red_shift,   &guts. screen_bits. red_range);
-		find_color_mask_range( guts. visual. green_mask, &guts. screen_bits. green_shift, &guts. screen_bits. green_range);
-		find_color_mask_range( guts. visual. blue_mask,  &guts. screen_bits. blue_shift,  &guts. screen_bits. blue_range);
+		prima_find_color_mask_range( guts. visual. red_mask,   &guts. screen_bits. red_shift,   &guts. screen_bits. red_range);
+		prima_find_color_mask_range( guts. visual. green_mask, &guts. screen_bits. green_shift, &guts. screen_bits. green_range);
+		prima_find_color_mask_range( guts. visual. blue_mask,  &guts. screen_bits. blue_shift,  &guts. screen_bits. blue_range);
 		guts. screen_bits. red_mask   = guts. visual. red_mask;
 		guts. screen_bits. green_mask = guts. visual. green_mask;
 		guts. screen_bits. blue_mask  = guts. visual. blue_mask;
@@ -941,7 +902,6 @@ prima_done_color_subsystem( void)
 		if ( fc. count > 0)
 			XFreeColors( DISP, guts. defaultColormap, fc. free, fc. count, 0);
 		XFreeColormap( DISP, guts. defaultColormap);
-		if ( guts. argbColormap ) XFreeColormap( DISP, guts. argbColormap );
 	}
 
 	hash_destroy( hatches, false);
