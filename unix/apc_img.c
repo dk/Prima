@@ -446,8 +446,9 @@ apc_dbm_create( Handle self, int type)
 	prima_prepare_drawable_for_painting( self, false);
 
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XF_LAYERED(XX) )
-		XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_pic_format, 0, NULL);
+	XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, 
+		XF_LAYERED(XX) ? guts.xrender_argb_pic_format : guts.xrender_argb_compat_format,
+		0, NULL);
 #endif
 
 	return true;
@@ -458,7 +459,7 @@ apc_dbm_destroy( Handle self)
 {
 	DEFXX;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XF_LAYERED(XX) && XX->argb_picture ) {
+	if ( XX->argb_picture ) {
 		XRenderFreePicture( DISP, XX->argb_picture);
 		XX->argb_picture = 0;
 	}
@@ -1823,17 +1824,12 @@ img_put_layered_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	DEFXX;
 	PDrawableSysData YY = X(image);
-	Picture target;
 
-	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
-	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
-		XRenderSetPictureClipRegion(DISP, target, XX->current_region);
 	XRenderComposite(
-		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, YY-> argb_picture, 0, target,
+		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, YY-> argb_picture, 0, XX-> argb_picture,
 		req->src_x, req->src_y, 0, 0,
 		req->dst_x, req->dst_y, req->w, req->h
 	);
-	XRenderFreePicture( DISP, target);
 	XSync(DISP, false);
 	return true;
 #else
@@ -1909,7 +1905,6 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	DEFXX;
 	PDrawableSysData YY = X(image);
-	Picture picture;
 	int render_rop = PictOpMinimum - 1;
 
 	switch ( req-> rop ) {
@@ -1920,15 +1915,11 @@ img_put_pixmap_on_layered( Handle self, Handle image, PutImageRequest * req)
 
 	if ( render_rop >= PictOpMinimum ) {
 		/* cheap on-server blit */
-		picture = XRenderCreatePicture( DISP, YY->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
-		if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
-			XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
 		XRenderComposite(
-			DISP, render_rop, picture, 0, XX-> argb_picture,
+			DISP, render_rop, YY->argb_picture, 0, XX-> argb_picture,
 			req->src_x, req->src_y, 0, 0,
 			req->dst_x, req->dst_y, req->w, req->h
 		);
-		XRenderFreePicture( DISP, picture);
 		XSync(DISP, false);
 		return true;
 	} else {
@@ -1957,7 +1948,7 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
 	GC gc;
 	XGCValues gcv;
 	Bool ret = false;
-	Picture picture, target;
+	Picture picture;
 
 	if ( !guts. argb_visual. visual)
 		return fallback( self, image, req);
@@ -1977,15 +1968,11 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
 	))) goto FAIL;
 
 	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb_pic_format, 0, NULL);
-	target  = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
-	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
-		XRenderSetPictureClipRegion(DISP, target, XX->current_region);
 	XRenderComposite(
-		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, target,
+		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, XX->argb_picture,
 		0, 0, 0, 0,
 		req->dst_x, req->dst_y, req->w, req->h
 	);
-	XRenderFreePicture( DISP, target);
 	XRenderFreePicture( DISP, picture);
 	XSync(DISP, false);
 	ret = true;
@@ -2260,6 +2247,8 @@ apc_image_begin_paint( Handle self)
 		XX-> argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_pic_format, 0, NULL);
 		XX-> visual      = &guts. argb_visual;
 		XX-> colormap    = guts. argbColormap;
+	} else {
+		XX-> argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
 	}
 #endif
 	XCHECKPOINT;
@@ -2695,7 +2684,7 @@ apc_image_end_paint( Handle self)
 {
 	DEFXX;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XF_LAYERED(XX) && XX->argb_picture ) {
+	if ( XX->argb_picture ) {
 		XRenderFreePicture( DISP, XX->argb_picture);
 		XX->argb_picture = 0;
 	}

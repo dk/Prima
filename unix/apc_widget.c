@@ -472,8 +472,9 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 	prima_no_cursor( self);
 	prima_prepare_drawable_for_painting( self, inside_on_paint);
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XF_LAYERED(XX) )
-		XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_pic_format, 0, NULL);
+	XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable,
+		XF_LAYERED(XX) ? guts.xrender_argb_pic_format : guts.xrender_argb_compat_format,
+		0, NULL);
 #endif
 	if ( useRPDraw) {
 		Handle owner = PWidget(self)->owner;
@@ -631,7 +632,7 @@ apc_widget_end_paint( Handle self)
 	}
 
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XF_LAYERED(XX) && XX->argb_picture ) {
+	if ( XX->argb_picture ) {
 		XRenderFreePicture( DISP, XX->argb_picture);
 		XX->argb_picture = 0;
 	}

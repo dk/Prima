@@ -91,6 +91,11 @@ get_window( Handle self, PMenuItemReg m)
 		wx-> next = w;
 	} else
 		XX-> w = w;
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	w->argb_picture = XRenderCreatePicture( DISP, w->w,
+		X(self)->flags.layered ? guts.xrender_argb_pic_format : guts.xrender_argb_compat_format,
+		0, NULL);
+#endif
 	return w;
 }
 
@@ -1110,10 +1115,10 @@ DECL_DRAW(image)
 	dummy_s.drawable.current_region = rgn;
 	if ( draw->layered ) {
 		dummy_s.drawable.flags.layered = 1;
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-		dummy_s.drawable.argb_picture = w-> argb_picture;
-#endif
 	}
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	dummy_s.drawable.argb_picture = w-> argb_picture;
+#endif
 
 	if ( bm-> is_mono ) {
 		if ( m-> flags. disabled ) {
@@ -2393,8 +2398,9 @@ apc_window_set_menu( Handle self, Handle menu)
 			0, 0, 1, 1, 0, CopyFromParent,
 			InputOutput, CopyFromParent, valuemask, &attrs);
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-		if ( XF_LAYERED(XX) )
-			M(m)->w->argb_picture = XRenderCreatePicture( DISP, M(m)->w->w, guts. xrender_argb_pic_format, 0, NULL);
+		M(m)->w->argb_picture = XRenderCreatePicture( DISP, M(m)->w->w,
+			XF_LAYERED(XX) ? guts.xrender_argb_pic_format : guts.xrender_argb_compat_format,
+			0, NULL);
 #endif
 		hash_store( guts. menu_windows, &m-> handle, sizeof( m-> handle), m);
 		XResizeWindow( DISP, m-> handle, XX-> size.x, y);
@@ -2444,8 +2450,7 @@ apc_menu_item_begin_paint( Handle self, PEvent event)
 	YY-> flags.paint   = 1;
 	YY-> flags.layered = pe->layered;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( pe-> layered )
-		YY-> argb_picture = M(pe->self)->w->argb_picture;
+	YY-> argb_picture  = M(pe->self)->w->argb_picture;
 #endif
 	YY-> gdrawable     = pe->win;
 	YY-> size          = event-> gen.P;
