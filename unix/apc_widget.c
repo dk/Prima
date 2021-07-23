@@ -473,7 +473,7 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 	prima_prepare_drawable_for_painting( self, inside_on_paint);
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable,
-		XF_LAYERED(XX) ? guts.xrender_argb_pic_format : guts.xrender_argb_compat_format,
+		XF_LAYERED(XX) ? guts.xrender_argb32_format : guts.xrender_display_format,
 		0, NULL);
 #endif
 	if ( useRPDraw) {
@@ -631,12 +631,7 @@ apc_widget_end_paint( Handle self)
 		XChangeGC( DISP, XX->gc, GCPlaneMask, &gcv);
 	}
 
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XX->argb_picture ) {
-		XRenderFreePicture( DISP, XX->argb_picture);
-		XX->argb_picture = 0;
-	}
-#endif
+	DELETE_ARGB_PICTURE(XX->argb_picture);
 	prima_cleanup_drawable_after_painting( self);
 	prima_update_cursor( self);
 	return true;

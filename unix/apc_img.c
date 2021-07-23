@@ -408,6 +408,7 @@ apc_dbm_create( Handle self, int type)
 {
 	int depth;
 	DEFXX;
+
 	if ( !DISP) return false;
 	if ( guts. idepth == 1) type = dbtBitmap;
 
@@ -446,9 +447,16 @@ apc_dbm_create( Handle self, int type)
 	prima_prepare_drawable_for_painting( self, false);
 
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, 
-		XF_LAYERED(XX) ? guts.xrender_argb_pic_format : guts.xrender_argb_compat_format,
-		0, NULL);
+	{
+		XRenderPictFormat *xf;
+		if ( XX-> type. bitmap )
+			xf = guts.xrender_a1_format;
+		else if ( XX-> flags. layered )
+			xf = guts.xrender_argb32_format;
+		else
+			xf = guts.xrender_display_format;
+		XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, xf, 0, NULL);
+	}
 #endif
 
 	return true;
@@ -1967,7 +1975,7 @@ img_put_argb_on_pixmap_or_widget( Handle self, Handle image, PutImageRequest * r
 		req->w, req->h
 	))) goto FAIL;
 
-	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb_pic_format, 0, NULL);
+	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb32_format, 0, NULL);
 	XRenderComposite(
 		DISP, (req-> rop == ropSrcCopy) ? PictOpSrc : PictOpOver, picture, 0, XX->argb_picture,
 		0, 0, 0, 0,
@@ -2058,7 +2066,7 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 		req->w, req->h
 	))) goto FAIL;
 
-	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb_pic_format, 0, NULL);
+	picture = XRenderCreatePicture( DISP, pixmap, guts. xrender_argb32_format, 0, NULL);
 	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
 		XRenderSetPictureClipRegion(DISP, picture, XX->current_region);
 	XRenderComposite(
@@ -2243,12 +2251,17 @@ apc_image_begin_paint( Handle self)
 	XX-> visual      = &guts. visual;
 	XX-> colormap    = guts. defaultColormap;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XF_LAYERED(XX) ) {
-		XX-> argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_pic_format, 0, NULL);
-		XX-> visual      = &guts. argb_visual;
-		XX-> colormap    = guts. argbColormap;
-	} else {
-		XX-> argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, guts. xrender_argb_compat_format, 0, NULL);
+	{
+		XRenderPictFormat *xf;
+		if ( XF_LAYERED(XX)) {
+			XX-> visual      = &guts. argb_visual;
+			XX-> colormap    = guts. argbColormap;
+			xf = guts. xrender_argb32_format;
+		} else if (bitmap)
+			xf = guts.xrender_a1_format;
+		else
+			xf = guts.xrender_display_format;
+		XX-> argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, xf, 0, NULL);
 	}
 #endif
 	XCHECKPOINT;

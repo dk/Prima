@@ -93,7 +93,7 @@ get_window( Handle self, PMenuItemReg m)
 		XX-> w = w;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 	w->argb_picture = XRenderCreatePicture( DISP, w->w,
-		X(self)->flags.layered ? guts.xrender_argb_pic_format : guts.xrender_argb_compat_format,
+		X(self)->flags.layered ? guts.xrender_argb32_format : guts.xrender_display_format,
 		0, NULL);
 #endif
 	return w;
@@ -164,6 +164,7 @@ menu_window_delete_downlinks( PMenuSysData XX, PMenuWindow wx)
 		PMenuWindow xw = w-> next;
 		hash_delete( guts. menu_windows, &w-> w, sizeof( w-> w), false);
 		XFillRectangle( DISP, w-> w, guts. menugc, 0, 0, w-> sz. x, w-> sz. y);
+		DELETE_ARGB_PICTURE(w->argb_picture);
 		XDestroyWindow( DISP, w-> w);
 		XFlush( DISP);
 		free_unix_items( w);
@@ -1967,6 +1968,7 @@ prima_end_menu(void)
 	XX-> focused = NULL;
 	if ( XX-> w != &XX-> wstatic) {
 		hash_delete( guts. menu_windows, &w-> w, sizeof( w-> w), false);
+		DELETE_ARGB_PICTURE(w->argb_picture);
 		XDestroyWindow( DISP, w-> w);
 		free_unix_items( w);
 		free( w);
@@ -2362,12 +2364,7 @@ apc_window_set_menu( Handle self, Handle menu)
 		PMenuWindow w = M(m)-> w;
 		if ( m-> handle == guts. currentMenu) prima_end_menu();
 		hash_delete( guts. menu_windows, &w-> w, sizeof( w-> w), false);
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-		if ( w->argb_picture ) {
-			XRenderFreePicture( DISP, w->argb_picture);
-			w->argb_picture = 0;
-		}
-#endif
+		DELETE_ARGB_PICTURE(w->argb_picture);
 		XDestroyWindow( DISP, w-> w);
 		free_unix_items( w);
 		m-> handle = NULL_HANDLE;
@@ -2399,7 +2396,7 @@ apc_window_set_menu( Handle self, Handle menu)
 			InputOutput, CopyFromParent, valuemask, &attrs);
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
 		M(m)->w->argb_picture = XRenderCreatePicture( DISP, M(m)->w->w,
-			XF_LAYERED(XX) ? guts.xrender_argb_pic_format : guts.xrender_argb_compat_format,
+			guts.xrender_display_format,
 			0, NULL);
 #endif
 		hash_store( guts. menu_windows, &m-> handle, sizeof( m-> handle), m);

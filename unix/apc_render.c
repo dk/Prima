@@ -50,7 +50,7 @@ prima_init_xrender_subsystem(char * error_buf)
 		prima_find_color_mask_range( guts. argb_bits. green_mask, &guts. argb_bits. green_shift, &guts. argb_bits. green_range);
 		prima_find_color_mask_range( guts. argb_bits. blue_mask,  &guts. argb_bits. blue_shift,  &guts. argb_bits. blue_range);
 		prima_find_color_mask_range( guts. argb_bits. alpha_mask, &guts. argb_bits. alpha_shift, &guts. argb_bits. alpha_range);
-		guts. xrender_argb_pic_format = f;
+		guts. xrender_argb32_format = f;
 		guts. argb_depth = f-> depth;
 		Pdebug("selected visual 0x%x for ARGB operations\n", list[i].visualid);
 		break;
@@ -58,8 +58,8 @@ prima_init_xrender_subsystem(char * error_buf)
 	if ( list) XFree( list);
 
 	/* find compat format for putting regular pixmaps */
-	if (!(guts. xrender_argb_compat_format = XRenderFindVisualFormat(DISP, guts.visual.visual))) {
-		guts. xrender_argb_pic_format = NULL;
+	if (!(guts. xrender_display_format = XRenderFindVisualFormat(DISP, guts.visual.visual))) {
+		guts. xrender_argb32_format = NULL;
 		guts. argb_visual. visual = NULL;
 		guts. argb_depth = 0;
 	}
@@ -70,12 +70,13 @@ prima_init_xrender_subsystem(char * error_buf)
 		Pdebug("no ARGB visual found\n");
 
 	guts. xrender_a8_format = XRenderFindStandardFormat(DISP, PictStandardA8);
+	guts. xrender_a1_format = XRenderFindStandardFormat(DISP, PictStandardA1);
 
 	pen.pixmap      = XCreatePixmap( DISP, guts.root, 8, 8, 32);
 	pen.gcv.graphics_exposures = false;
 	pen.gc          = XCreateGC( DISP, pen.pixmap, GCGraphicsExposures, &pen.gcv);
 	xrp_attr.repeat = RepeatNormal;
-	pen.picture     = XRenderCreatePicture( DISP, pen.pixmap, guts.xrender_argb_pic_format, CPRepeat, &xrp_attr);
+	pen.picture     = XRenderCreatePicture( DISP, pen.pixmap, guts.xrender_argb32_format, CPRepeat, &xrp_attr);
 	guts.xrender_pen_dirty = true;
 
 	return true;
@@ -174,7 +175,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	RANGE2(p[numPts].x, p[numPts].y);
 
 	target  = XRenderCreatePicture( DISP, XX->gdrawable, 
-		XF_LAYERED(XX) ? guts.xrender_argb_pic_format : guts.xrender_argb_compat_format,
+		XF_LAYERED(XX) ? guts.xrender_argb32_format : guts.xrender_display_format,
 		0, NULL);
 	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
 		XRenderSetPictureClipRegion(DISP, target, XX->current_region);

@@ -704,9 +704,10 @@ typedef struct _UnixGuts
 	int                          visualClass;
 	XVisualInfo                  argb_visual;
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	XRenderPictFormat *          xrender_argb_pic_format;
-	XRenderPictFormat *          xrender_argb_compat_format;
+	XRenderPictFormat *          xrender_display_format;
+	XRenderPictFormat *          xrender_argb32_format;
 	XRenderPictFormat *          xrender_a8_format;
+	XRenderPictFormat *          xrender_a1_format;
 #endif
 	Bool                         xrender_pen_dirty;
 	MainColorEntry *             palette;
@@ -1197,6 +1198,15 @@ prima_std_query_image( Handle self, Pixmap px);
 
 extern Pixmap
 prima_std_pixmap( Handle self, int type);
+
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+#define DELETE_ARGB_PICTURE(x) if ((x)) { \
+	XRenderFreePicture( DISP, x);     \
+	x = 0;                            \
+}
+#else
+#define DELETE_ARGB_PICTURE(x)
+#endif
 
 extern void
 prima_cleanup_drawable_after_painting( Handle self);
