@@ -684,11 +684,25 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 Bool
 apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 {
-	Bool ok = true;
-	HDC ps = sys ps;
-
+	int i;
+	double dy = sys lastSize. y;
+	GpPointF *p;
 	objCheck false;
-	return false;
+
+	if ((p = malloc( sizeof(GpPointF) * numPts)) == NULL)
+		return false;
+
+	for ( i = 0; i < numPts; i++)  {
+		p[i].X = points[i].x;
+		p[i].Y = dy - points[i].y - 1.0;
+	}
+
+	STYLUS_USE_GP_BRUSH;
+	GPCALL GdipFillPolygon( sys graphics, sys stylusGPResource-> brush, p, numPts,
+		((sys psFillMode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
+	apiGPErrCheckRet(false);
+
+	return true;
 }
 
 Bool
@@ -1199,8 +1213,13 @@ apc_gp_set_antialias( Handle self, Bool aa)
 		)
 			return false;
 		apt_set(aptGDIPlus);
-	} else
+		GdipSetSmoothingMode(sys graphics, SmoothingModeAntiAlias);
+		GdipSetPixelOffsetMode(sys graphics, PixelOffsetModeHalf);
+	} else {
 		apt_clear(aptGDIPlus);
+		GdipSetSmoothingMode(sys graphics, SmoothingModeNone);
+		GdipSetPixelOffsetMode(sys graphics, PixelOffsetModeNone);
+	}
 	return true;
 }
 

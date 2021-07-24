@@ -1749,6 +1749,7 @@ hwnd_enter_paint( Handle self)
 	sys psd-> transform      = sys transform;
 	sys psd-> textOpaque     = is_apt( aptTextOpaque);
 	sys psd-> textOutB       = is_apt( aptTextOutBaseline);
+	sys psd-> antialias      = is_apt( aptGDIPlus);
 
 	apt_clear( aptDCChangeLock);
 	stylus_change( self);
