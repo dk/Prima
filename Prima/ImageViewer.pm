@@ -617,37 +617,37 @@ Default value: 1
 Zoom precision of C<zoom> property. Minimal acceptable value is 10, where zoom
 will be rounded to 0.2, 0.4, 0.5, 0.6, 0.8 and 1.0 .
 
-The reason behind this arithmetics is that when image of arbitrary zoom factor
-is requested to be displayed, the image sometimes must begin to be drawn from
-partial pixel - for example, 10x zoomed image shifted 3 pixels left, must be
+The reason behind this arithmetics is that when an image of an arbitrary zoom factor
+is requested to be displayed, the image sometimes must be drawn from
+a fraction image pixel - for example, 10x zoomed image shifted 3 pixels left, must be
 displayed so the first image pixel from the left occupies 7 screen pixels, and
 the next ones - 10 screen pixels.  That means, that the correct image display
 routine must ask the system to draw the image at offset -3 screen pixels, where
-the first pixel column would correspond to that pixel.
+the first image pixel column would correspond to that offset.
 
-When zoom factor is fractional, the picture is getting more complex. For
-example, with zoom factor 12.345, and zero screen offset, first image pixel
-begins at 12th screen pixel, the next - 25th ( because of the roundoff ), then
-37th etc etc. Also, for example the image is 2000x2000 pixels wide, and is
-asked to be drawn so that the image appears shifted 499 screen image pixels
-left, beginning to be drawn from ~ 499/12.3456=40.42122 image pixel. Is might
-seem that indeed it would be enough to ask system to begin drawing from image
+When the zoom factor is fractional, the picture is getting more complex. For
+example, with zoom factor 12.345, and zero screen offset, the first image pixel
+begins at the 12th screen pixel, the next one - at the 25th ( because of the
+roundoff ), then the 37th etc etc. If the image is 2000x2000 pixels wide, and
+is asked to be drawn so that it appears shifted 499 screen image pixels left,
+it needs to be drawn from the 499/12.345=40.42122th image pixel. Is might seem
+that indeed it would be enough to ask the system to begin drawing from image
 pixel 40, and offset int(0.42122*12.345)=5 screen pixels to the left, however,
 that procedure will not account for the correct fixed point roundoff that
 accumulates as system scales the image. For zoom factor 12.345 this roundoff
-sequence is, as we seen before, (12,25,37,49,62,74,86,99,111,123) for first 10
-pixels displayed, that occupy (12,13,12,12,13,12,12,13,12,12) screen pixels.
-For pixels starting at 499, this sequence is
+sequence is, as we seen before, (12,25,37,49,62,74,86,99,111,123) for the first
+10 pixels displayed, that occupy (12,13,12,12,13,12,12,13,12,12) screen pixels
+correspondingly.  For the pixels starting at 499, the sequence is
 (506,519,531,543,556,568,580,593,605,617) offsets or
 (13,12,12,13,13,12,12,13,12,12) widths -- note the two subsequent 13s there.
 This sequence begins to repeat itself after 200 iterations
 (12.345*200=2469.000), which means that in order to achieve correct display
-results, the image must be asked to be displayed from image pixel 0 if image's
-first pixel on the screen is between 0 and 199 ( or for screen pixels 0-2468),
-from image pixel 200 for offsets 200-399, ( screen pixels 2469-4937), and so
-on.
+results, the image must be asked to be displayed from as far as image pixel 0
+if image's first pixel on the screen is between 0 and 199 ( or for screen
+pixels 0-2468), then from image pixel 200 for offsets 200-399, ( screen pixels
+2469-4937), and so on.
 
-Since system internally allocate memory for image scaling, that means that up
+Since the system internally allocates memory for image scaling, that means that up
 to 2*200*min(window_width,image_width)*bytes_per_pixel unneccessary bytes will
 be allocated for each image drawing call (2 because the calculations are valid
 for both the vertical and horizontal strips), and this can lead to slowdown or
