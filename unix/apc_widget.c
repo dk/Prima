@@ -390,9 +390,10 @@ apc_widget_create( Handle self, Handle owner, Bool sync_paint,
 	}
 
 	XX-> client = X_WINDOW = XCreateWindow( DISP, parent,
-									0, 0, 1, 1, 0, XX-> visual-> depth,
-									InputOutput, XX-> visual-> visual,
-									valuemask, &attrs);
+		0, 0, 1, 1, 0, XX-> visual-> depth,
+		InputOutput, XX-> visual-> visual,
+		valuemask, &attrs
+	);
 	XCHECKPOINT;
 	if (!X_WINDOW) {
 		warn("error creating window");
