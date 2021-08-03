@@ -2249,17 +2249,17 @@ Image_sector( Handle self, int x, int y, int dX, int dY, double startAngle, doub
 }
 
 Bool
-Image_fill_chord( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
+Image_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited fill_chord(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 1, "siiiinn", "chord", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 1, "snnnnnn", "chord", x, y, dX-1, dY-1, startAngle, endAngle);
 }
 
 Bool
-Image_fill_ellipse( Handle self, int x, int y,  int dX, int dY)
+Image_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	if ( opt_InPaint) return inherited fill_ellipse(self, x, y, dX, dY);
-	return primitive( self, 1, "siiii", "ellipse", x, y, dX-1, dY-1);
+	return primitive( self, 1, "snnnn", "ellipse", x, y, dX-1, dY-1);
 }
 
 Bool
@@ -2270,10 +2270,10 @@ Image_fillpoly( Handle self, SV * points)
 }
 
 Bool
-Image_fill_sector( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
+Image_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited fill_sector(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 1, "siiiinn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 1, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
 }
 
 Bool

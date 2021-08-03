@@ -74,10 +74,10 @@ object Prima::Drawable ( Prima::Component)
 	method Bool  chord( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_chord;
 	method Bool  clear(double x1=-1, double y1=-1, double x2=-1, double y2=-1);
 	method Bool  ellipse(int x, int y, int dX, int dY)      => apc_gp_ellipse;
-	method Bool  fill_chord( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_fill_chord;
-	method Bool  fill_ellipse(int x, int y, int dX, int dY) => apc_gp_fill_ellipse;
+	method Bool  fill_chord( double x, double y, double dX, double dY, double startAngle, double endAngle);
+	method Bool  fill_ellipse(double x, double y, double dX, double dY);
 	method Bool  fillpoly( SV * points);
-	method Bool  fill_sector( int x, int y, int dX, int dY, double startAngle, double endAngle) => apc_gp_fill_sector;
+	method Bool  fill_sector( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool  flood_fill( int x, int y, Color color, Bool singleBorder = 1) => apc_gp_flood_fill;
 	method Bool  line(int x1, int y1, int x2, int y2)       => apc_gp_line;
 	method Bool  lines( SV * points);

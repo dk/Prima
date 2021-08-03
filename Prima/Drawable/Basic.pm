@@ -312,6 +312,30 @@ sub fill_primitive
 	return $ok;
 }
 
+sub stroke_aa_primitive
+{
+	my ( $self, $request ) = (shift, shift);
+	return 0;
+}
+
+sub fill_aa_primitive
+{
+	my ( $self, $request ) = (shift, shift);
+	my $path = $self->new_path;
+	$path->$request(@_);
+	my $save = $self-> fillMode;
+	if ( $save & fm::Winding) {
+		undef $save;
+	} else {
+		$self-> fillMode(fm::Winding);
+	}
+	for ($path->points(1)) {
+		return unless $self->fillpoly($_);
+	}
+	$self-> fillMode($save) if defined $save;
+	return 1;
+}
+
 sub text_shape_out
 {
 	my ( $self, $text, $x, $y, $rtl) = @_;

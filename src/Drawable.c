@@ -623,9 +623,11 @@ Drawable_bars( Handle self, SV * rects)
 Bool
 Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 {
+	Bool full;
 	CHECK_GP(false);
 
-	if (apc_gp_get_antialias(self)) {
+	full = x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0;
+	if ( !full && apc_gp_get_antialias(self)) {
 		Bool ok;
 		Color color;
 		FillPattern fp;
@@ -640,6 +642,58 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 		return ok;
 	} else return apc_gp_clear(self,
 		round(x1), round(y1), round(x2), round(y2)
+	);
+}
+
+static Bool
+primitive( Handle self, Bool fill, char * method, ...)
+{
+	Bool r;
+	SV * ret;
+	char format[256];
+	va_list args;
+	va_start( args, method);
+	ENTER;
+	SAVETMPS;
+	strcpy(format, "<");
+	strncat(format, method, 255);
+	ret = call_perl_indirect( self, fill ? "fill_aa_primitive" : "stroke_aa_primitive", format, true, false, args);
+	va_end( args);
+	r = ret ? SvTRUE( ret) : false;
+	FREETMPS;
+	LEAVE;
+	return r;
+}
+
+Bool
+Drawable_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
+{
+	CHECK_GP(false);
+	if (apc_gp_get_antialias(self)) {
+		return primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
+	} else return apc_gp_fill_chord(self,
+		round(x), round(y), round(dX), round(dY), startAngle, endAngle
+	);
+}
+
+Bool
+Drawable_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
+{
+	if (apc_gp_get_antialias(self)) {
+		return primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
+	} else return apc_gp_fill_ellipse(self,
+		round(x), round(y), round(dX), round(dY)
+	);
+}
+
+Bool
+Drawable_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
+{
+	CHECK_GP(false);
+	if (apc_gp_get_antialias(self)) {
+		return primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
+	} else return apc_gp_fill_sector(self,
+		round(x), round(y), round(dX), round(dY), startAngle, endAngle
 	);
 }
 
