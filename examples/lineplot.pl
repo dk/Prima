@@ -48,9 +48,10 @@ $mw = Prima::MainWindow->new(
 	designScale => [ 7, 16 ],
 	menuItems => [
 		['~Options' => [ 
-			[ '@closed'    => '~Closed'   => sub{shift->repaint} ],
-			[ '@compare'   => '~Compare'  => sub{shift->repaint} ],
-			[ '@*hairline' => '~Hairline' => sub{shift->repaint} ],
+			[ '@closed'    => '~Closed'    => sub{shift->repaint} ],
+			[ '@compare'   => '~Compare'   => sub{shift->repaint} ],
+			[ '@*hairline' => '~Hairline'  => sub{shift->repaint} ],
+			[ '@aa'        => '~Antialias' => sub{shift->repaint} ],
 			[],
 			[ 'E~xit' => sub { $_[0]->destroy } ],
 		]],
@@ -107,19 +108,28 @@ $mw = Prima::MainWindow->new(
 			$canvas->linePattern(lp::Solid);
 		}
 
-		my $p = $canvas->new_path;
-		$p->line(\@xpoints);
-		$p = $p->widen( 
-			lineWidth   => $opt{lw},
-			lineEnd     => $opt{le},
-			lineJoin    => $opt{lj},
-			linePattern => $opt{lp},
-			miterLimit  => $opt{ml},
-		);
+
 		$canvas->color(cl::LightRed);
 		$canvas->rop(rop::OrPut) if $cmp;
-		$canvas->fillMode(fm::Winding|fm::Overlay);
-		$opt{lw} ? $p->fill : $p->stroke;
+		unless ( $self->menu->checked('aa')) {
+			my $p = $canvas->new_path;
+			$p->line(\@xpoints);
+			$p = $p->widen( 
+				lineWidth   => $opt{lw},
+				lineEnd     => $opt{le},
+				lineJoin    => $opt{lj},
+				linePattern => $opt{lp},
+				miterLimit  => $opt{ml},
+			);
+			$canvas->fillMode(fm::Winding|fm::Overlay);
+			$opt{lw} ? $p->fill : $p->stroke;
+		} else {
+			$canvas->lineWidth($opt{lw});
+			$canvas->linePattern($opt{lp});
+			$canvas->antialias(1);
+			$canvas->polyline(\@xpoints);
+		}
+
 		$canvas->rop(rop::CopyPut);
 
 		if ( $cmp = $self-> menu->checked('hairline')) {

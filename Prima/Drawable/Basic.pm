@@ -245,7 +245,7 @@ sub stroke_primitive
 	$path->translate(@offset);
 	$path->$request(@_);
 	my $ok = 1;
-	if ( $self->lineWidth == 0 ) {
+	if ( int($self->lineWidth + .5) == 0 ) {
 		# paths produce floating point coordinates and line end arcs,
 		# here we need internal pixel-wise plotting
 		for my $pp ( map { @$_ } @{ $path->points } ) {
@@ -315,7 +315,25 @@ sub fill_primitive
 sub stroke_aa_primitive
 {
 	my ( $self, $request ) = (shift, shift);
-	return 0;
+	return 1 if $self->rop == rop::NoOper;
+	my $lp = $self->linePattern;
+	return 1 if $lp eq lp::Null && $self->rop2 == rop::NoOper;
+
+	my $path = $self->new_path( subpixel => 1 );
+	$path->$request(@_);
+	$path = $path->widen(
+		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
+	);
+	my %save;
+	$save{fillPattern} = $self->fillPattern;
+	$self->fillPattern(fp::Solid);
+	if ( $lp eq lp::Null ) {
+		$save{color} = $self->color;
+		$self->color($self->backColor);
+	}
+	my $ok = $path->fill;
+	$self->$_($save{$_}) for keys %save;
+	return $ok;
 }
 
 sub fill_aa_primitive

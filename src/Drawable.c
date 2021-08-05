@@ -506,29 +506,69 @@ Drawable_put_image_indirect( Handle self, Handle image, int x, int y, int xFrom,
 }
 
 static Bool
-read_polypoints( Handle self, SV * points, char * procName, int min, Bool (*procPtr)(Handle,int,Point*))
+primitive( Handle self, Bool fill, char * method, ...)
 {
-	int count;
-	Point * p;
-	Bool ret = false;
-	Bool do_free;
-	if (( p = (Point*) prima_read_array( points, procName, 'i', 2, min, -1, &count, &do_free)) != NULL) {
-		ret = procPtr( self, count, p);
-		if ( !ret) perl_error();
-		if ( do_free ) free(p);
-	}
-	return ret;
+	Bool r;
+	SV * ret;
+	char format[256];
+	va_list args;
+	va_start( args, method);
+	ENTER;
+	SAVETMPS;
+	strcpy(format, "<");
+	strncat(format, method, 255);
+	ret = call_perl_indirect( self, fill ? "fill_aa_primitive" : "stroke_aa_primitive", format, true, false, args);
+	va_end( args);
+	r = ret ? SvTRUE( ret) : false;
+	FREETMPS;
+	LEAVE;
+	return r;
 }
 
-#define DEF_LINE_PROCESSOR(name,func) Bool \
-Drawable_##name( Handle self, SV * points)\
-{\
-	CHECK_GP(false);\
-	return read_polypoints( self, points, "Drawable::" #name, 2, func);\
+Bool
+Drawable_arc( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
+{
+	CHECK_GP(false);
+	return apc_gp_get_antialias(self) ?
+		primitive( self, 0, "snnnnnn", "arc", x, y, dX-1, dY-1, startAngle, endAngle) :
+		apc_gp_arc(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
 }
 
-DEF_LINE_PROCESSOR(polyline, apc_gp_draw_poly)
-DEF_LINE_PROCESSOR(lines, apc_gp_draw_poly2)
+Bool
+Drawable_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
+{
+	CHECK_GP(false);
+	return apc_gp_get_antialias(self) ?
+		primitive( self, 0, "snnnnnn", "chord", x, y, dX-1, dY-1, startAngle, endAngle) :
+		apc_gp_chord(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
+}
+
+Bool
+Drawable_ellipse( Handle self, double x, double y,  double dX, double dY)
+{
+	CHECK_GP(false);
+	return apc_gp_get_antialias(self) ?
+		primitive( self, 0, "snnnn", "ellipse", x, y, dX-1, dY-1) :
+		apc_gp_ellipse(self, round(x), round(y), round(dX), round(dY));
+}
+
+Bool
+Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
+{
+	CHECK_GP(false);
+	return apc_gp_get_antialias(self) ?
+		primitive( self, 0, "snnnn", "rectangle", x1,y1,x2,y2) :
+		apc_gp_rectangle(self, round(x1), round(y1), round(x2), round(y2));
+}
+
+Bool
+Drawable_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
+{
+	CHECK_GP(false);
+	return apc_gp_get_antialias(self) ?
+		primitive( self, 0, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle) :
+		apc_gp_sector(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
+}
 
 Bool
 Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
@@ -602,26 +642,6 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 	);
 }
 
-static Bool
-primitive( Handle self, Bool fill, char * method, ...)
-{
-	Bool r;
-	SV * ret;
-	char format[256];
-	va_list args;
-	va_start( args, method);
-	ENTER;
-	SAVETMPS;
-	strcpy(format, "<");
-	strncat(format, method, 255);
-	ret = call_perl_indirect( self, fill ? "fill_aa_primitive" : "stroke_aa_primitive", format, true, false, args);
-	va_end( args);
-	r = ret ? SvTRUE( ret) : false;
-	FREETMPS;
-	LEAVE;
-	return r;
-}
-
 Bool
 Drawable_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
@@ -678,6 +698,54 @@ Drawable_fillpoly(Handle self, SV * points)
 	if ( do_free ) free(p);
 
 	return ret;
+}
+
+Bool
+Drawable_line(Handle self, double x1, double y1, double x2, double y2)
+{
+	CHECK_GP(false);
+	if (apc_gp_get_antialias(self))
+		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
+	else return apc_gp_line(self,
+		round(x1), round(y1), round(x2), round(y2)
+	);
+}
+
+static Bool
+read_polypoints( Handle self, SV * points, char * procName, int min, Bool (*procPtr)(Handle,int,Point*))
+{
+	int count;
+	Point * p;
+	Bool ret = false;
+	Bool do_free;
+	if (( p = (Point*) prima_read_array( points, procName, 'i', 2, min, -1, &count, &do_free)) != NULL) {
+		ret = procPtr( self, count, p);
+		if ( !ret) perl_error();
+		if ( do_free ) free(p);
+	}
+	return ret;
+}
+
+Bool
+Drawable_lines(Handle self, SV * lines)
+{
+	CHECK_GP(false);
+
+	if (apc_gp_get_antialias(self))
+		return primitive( self, 0, "sS", "lines", lines);
+	else
+		return read_polypoints( self, lines, "Drawable::lines", 2, apc_gp_draw_poly2);
+}
+
+Bool
+Drawable_polyline(Handle self, SV * lines)
+{
+	CHECK_GP(false);
+
+	if (apc_gp_get_antialias(self))
+		return primitive( self, 0, "sS", "line", lines);
+	else
+		return read_polypoints( self, lines, "Drawable::polyline", 2, apc_gp_draw_poly);
 }
 
 SV *
@@ -748,7 +816,7 @@ static Bool
 render_point(
 	double t,
 	int degree, int n_points, int dimensions, double * v,
-	double * knots, int * last_found_knot, Point * result
+	double * knots, int * last_found_knot, Point * result, NPoint * nresult
 ) {
 	double lo, hi;
 	int l, i, n_knots = n_points + degree + 1, s, found = false;
@@ -794,12 +862,21 @@ render_point(
 	if ( dimensions == 3 ) {
 		double f;
 		f = v[s] / v[s+2];
-		result-> x = ( f < 0 ) ? (f - .5) : (f + .5);
+		if ( result )
+			result-> x = ( f < 0 ) ? (f - .5) : (f + .5);
+		else
+			nresult-> x = f;
 		f = v[s+1] / v[s+2];
-		result-> y = ( f < 0 ) ? (f - .5) : (f + .5);
-	} else {
+		if ( result )
+			result-> y = ( f < 0 ) ? (f - .5) : (f + .5);
+		else
+			nresult-> y = f;
+	} else if ( result ) {
 		result-> x = (v[s] < 0) ? (v[s] - .5) : (v[s] + .5);
 		result-> y = (v[s+1] < 0) ? (v[s+1] - .5) : (v[s+1] + .5);
+	} else {
+		nresult-> x = v[s];
+		nresult-> y = v[s+1];
 	}
 
 	return true;
@@ -883,8 +960,9 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	dPROFILE;
 	NPoint *p, *pp;
 	Point *rendered, *storage;
+	NPoint *nrendered, *nstorage;
 	SV *ret;
-	Bool ok, closed;
+	Bool ok, closed, as_integer;
 	int i, j, degree, precision, n_points, final_size, k, dim, n_add_points, temp_size,
 		tangent, last_tangent;
 	double *knots, *weights, t, dt, *weighted, *temp;
@@ -912,6 +990,8 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 		}
 	} else
 		precision = 24;
+
+	as_integer = pexist(integer) ? pget_B( integer ) : true;
 
 	p = (NPoint*) prima_read_array( points, "Drawable::render_spline", 'd', 2, degree + 1, -1, &n_points, NULL);
 	if ( !p) goto EXIT;
@@ -948,7 +1028,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 
 	/* allocate result storage */
 	precision *= n_points - n_add_points;
-	ret = prima_array_new(( precision + 1) * sizeof(Point) );
+	ret = prima_array_new(( precision + 1) * (as_integer ? sizeof(Point) : sizeof(NPoint)) );
 
 	temp_size = sizeof(double) * 3 * n_points;
 	if ( !(weighted = malloc( 2 * temp_size ))) {
@@ -968,14 +1048,20 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 
 	/* render */
 	final_size = 0;
-	rendered = storage = (Point*) prima_array_get_storage(ret);
+	if ( as_integer ) {
+		nrendered = nstorage = NULL;
+		rendered  = storage  = (Point*) prima_array_get_storage(ret);
+	} else {
+		rendered  = storage  = NULL;
+		nrendered = nstorage = (NPoint*) prima_array_get_storage(ret);
+	}
 	k = -1;
 	last_tangent = -1;
 	for ( i = 0, t = 0.0, dt = 1.0 / precision; i < precision - 1; i++, t += dt) {
 		memcpy( temp, weighted, temp_size);
-		if (!render_point(t, degree, n_points, dim, temp, knots, &k, rendered))
+		if (!render_point(t, degree, n_points, dim, temp, knots, &k, rendered, nrendered))
 			goto EXIT;
-		if ( i > 0 ) {
+		if ( as_integer && i > 0 ) {
 			/* primitive line detection */
 			tangent = tangent_detect( rendered-1, rendered);
 			if ( tangent == 0 ) continue;
@@ -993,10 +1079,13 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 				last_tangent = tangent;
 		}
 		final_size++;
-		rendered++;
+		if ( as_integer )
+			rendered++;
+		else
+			nrendered++;
 	}
 	memcpy( temp, weighted, temp_size);
-	if ( !render_point(1.0, degree, n_points, dim, temp, knots, &k, rendered))
+	if ( !render_point(1.0, degree, n_points, dim, temp, knots, &k, rendered, nrendered))
 		goto EXIT;
 	final_size++;
 	rendered++;
@@ -1005,14 +1094,22 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 	ok = true;
 	if ( closed ) {
 		final_size++;
-		*rendered = storage[0];
-		rendered++;
+		if ( as_integer ) {
+			*rendered = storage[0];
+			rendered++;
+		} else {
+			*nrendered = nstorage[0];
+			nrendered++;
+		}
 	}
 	if ( final_size == 1 ) {
 		final_size = 2;
-		storage[1] = storage[0];
+		if ( as_integer )
+			storage[1] = storage[0];
+		else
+			nstorage[1] = nstorage[0];
 	}
-	prima_array_truncate( ret, final_size * sizeof( Point) );
+	prima_array_truncate( ret, final_size * (as_integer ? sizeof( Point) : sizeof(NPoint)) );
 
 EXIT:
 	hv_clear(profile); /* old gencls bork */
@@ -1021,7 +1118,7 @@ EXIT:
 	if (knots)    free(knots);
 	if (weights)  free(weights);
 	if ( ok ) {
-		return prima_array_tie( ret, sizeof(int), "i");
+		return prima_array_tie( ret, sizeof(int), as_integer ? "i" : "d");
 	} else {
 		if (ret)  sv_free(ret);
 		return newRV_noinc(( SV *) newAV());

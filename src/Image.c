@@ -2138,28 +2138,28 @@ primitive( Handle self, Bool fill, char * method, ...)
 }
 
 Bool
-Image_arc( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
+Image_arc( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited arc(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 0, "siiiinn", "arc", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 0, "snnnnnn", "arc", x, y, dX-1, dY-1, startAngle, endAngle);
 }
 
 Bool
-Image_chord( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
+Image_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited chord(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 0, "siiiinn", "chord", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 0, "snnnnnn", "chord", x, y, dX-1, dY-1, startAngle, endAngle);
 }
 
 Bool
-Image_ellipse( Handle self, int x, int y,  int dX, int dY)
+Image_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	if ( opt_InPaint) return inherited ellipse(self, x, y, dX, dY);
-	return primitive( self, 0, "siiii", "ellipse", x, y, dX-1, dY-1);
+	return primitive( self, 0, "snnnn", "ellipse", x, y, dX-1, dY-1);
 }
 
 Bool
-Image_line(Handle self, int x1, int y1, int x2, int y2)
+Image_line(Handle self, double x1, double y1, double x2, double y2)
 {
 	if ( opt_InPaint) {
 		return inherited line(self, x1, y1, x2, y2);
@@ -2168,13 +2168,13 @@ Image_line(Handle self, int x1, int y1, int x2, int y2)
 		unsigned char lp[256];
 		Point poly[2];
 		prepare_line_context( self, lp, &ctx);
-		poly[0].x = x1;
-		poly[0].y = y1;
-		poly[1].x = x2;
-		poly[1].y = y2;
+		poly[0].x = round(x1);
+		poly[0].y = round(y1);
+		poly[1].x = round(x2);
+		poly[1].y = round(y2);
 		return img_polyline(self, 2, poly, &ctx);
 	} else {
-		return primitive( self, 0, "siiii", "line", x1, y1, x2, y2);
+		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
 	}
 }
 
@@ -2226,7 +2226,7 @@ Image_polyline( Handle self, SV * points)
 }
 
 Bool
-Image_rectangle(Handle self, int x1, int y1, int x2, int y2)
+Image_rectangle(Handle self, double x1, double y1, double x2, double y2)
 {
 	if ( opt_InPaint) {
 		return inherited rectangle(self, x1, y1, x2, y2);
@@ -2237,15 +2237,15 @@ Image_rectangle(Handle self, int x1, int y1, int x2, int y2)
 		prepare_line_context( self, lp, &ctx);
 		return img_polyline(self, 5, r, &ctx);
 	} else {
-		return primitive( self, 0, "siiii", "rectangle", x1, y1, x2, y2);
+		return primitive( self, 0, "snnnn", "rectangle", x1, y1, x2, y2);
 	}
 }
 
 Bool
-Image_sector( Handle self, int x, int y, int dX, int dY, double startAngle, double endAngle)
+Image_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited sector(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 0, "siiiinn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
+	return primitive( self, 0, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
 }
 
 Bool

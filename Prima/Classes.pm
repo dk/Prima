@@ -73,7 +73,7 @@ sub append
 {
 	croak "bad array" if grep { !is_array($_) } @_;
 	my ( $a1, $a2 ) = map { tied @$_ } @_;
-	croak "bad array" if $a1->[PACK] ne $a2->[PACK];
+	croak "bad array type='$a2->[PACK]', expected '$a1->[PACK]'" if $a1->[PACK] ne $a2->[PACK];
 	$a1->[REF] .= $a2->[REF];
 }
 

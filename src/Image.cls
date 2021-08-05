@@ -35,20 +35,20 @@ object Prima::Image( Prima::Drawable)
 
 	# methods
 	method UV     add_notification( char * name, SV * subroutine, Handle referer = NULL_HANDLE, int index = -1);
-	method Bool   arc( int x, int y, int dX, int dY, double startAngle, double endAngle);
+	method Bool   arc( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool   bar(double x1, double y1, double x2, double y2);
 	method Bool   bars(SV * rects);
 	method Handle bitmap();
 	method Bool   begin_paint();
 	method Bool   begin_paint_info();
 	method Bool   can_draw_alpha();
-	method Bool   chord( int x, int y, int dX, int dY, double startAngle, double endAngle);
+	method Bool   chord( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	static SV   * codecs( SV * dummy, int codecID = -1);
 	method Bool   clear(double x1=-1, double y1=-1, double x2=-1, double y2=-1);
 	c_only void   create_empty( int width, int height, int type);
 	method void   done();
 	method Handle dup();
-	method Bool   ellipse(int x, int y, int dX, int dY);
+	method Bool   ellipse(double x, double y, double dX, double dY);
 	method void   end_paint();
 	method void   end_paint_info();
 	method Handle extract( int x, int y, int width, int height);
@@ -62,7 +62,7 @@ object Prima::Image( Prima::Drawable)
 	method Color  get_nearest_color( Color color);
 	c_only void   handle_event( PEvent event);
 	method void   init( HV * profile);
-	method Bool   line(int x1, int y1, int x2, int y2);
+	method Bool   line(double x1, double y1, double x2, double y2);
 	method Bool   lines( SV * points);
 	weird  PList  load( SV * className, SV *filename, HV * profile);
 	c_only void   make_empty();
@@ -75,10 +75,10 @@ object Prima::Image( Prima::Drawable)
 	method Bool   put_image_indirect( Handle image, int x, int y, int xFrom, int yFrom, int xDestLen, int yDestLen, int xLen, int yLen, int rop);
 	method void   remove_notification( UV id);
 	method Bool   rotate( double degrees );
-	method Bool   rectangle(int x1, int y1, int x2, int y2);
+	method Bool   rectangle(double x1, double y1, double x2, double y2);
 	method void   resample( double srcLo, double srcHi, double dstLo, double dstHi);
 	weird  int    save( SV *className, SV *filename, HV * profile);
-	method Bool   sector( int x, int y, int dX, int dY, double startAngle, double endAngle);
+	method Bool   sector( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method void   set( HV * profile);
 	c_only void   reset( int type, RGBColor * palette, int palSize);
 	c_only void   stretch( int width, int height);
