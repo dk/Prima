@@ -29,7 +29,7 @@ sub new
 		commands        => [],
 		precision       => undef,
 		subpixel        => 0,
-		antialias       => ($canvas ? $canvas->antialias : 0),
+		antialias       => 0,
 		%opt
 	}, $class;
 }
