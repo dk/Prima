@@ -285,18 +285,6 @@ Drawable_font_add( Handle self, Font * source, Font * dest)
 	return useSize && !useHeight;
 }
 
-
-int
-Drawable_get_paint_state( Handle self)
-{
-	if ( is_opt( optInDraw))
-		return psEnabled;
-	else if ( is_opt( optInDrawInfo))
-		return psInformation;
-	else
-		return psDisabled;
-}
-
 int
 Drawable_get_bpp( Handle self)
 {
@@ -309,20 +297,15 @@ Drawable_get_bpp( Handle self)
 	return ret;
 }
 
-SV *
-Drawable_linePattern( Handle self, Bool set, SV * pattern)
+int
+Drawable_get_paint_state( Handle self)
 {
-	if ( set) {
-		STRLEN len;
-		unsigned char *pat = ( unsigned char *) SvPV( pattern, len);
-		if ( len > 255) len = 255;
-		apc_gp_set_line_pattern( self, pat, len);
-	} else {
-		unsigned char ret[ 256];
-		int len = apc_gp_get_line_pattern( self, ret);
-		return newSVpvn((char*) ret, len);
-	}
-	return NULL_SV;
+	if ( is_opt( optInDraw))
+		return psEnabled;
+	else if ( is_opt( optInDrawInfo))
+		return psInformation;
+	else
+		return psDisabled;
 }
 
 Color
@@ -334,15 +317,6 @@ Drawable_get_nearest_color( Handle self, Color color)
 	color = apc_gp_get_nearest_color( self, color);
 	gpLEAVE;
 	return color;
-}
-
-Point
-Drawable_resolution( Handle self, Bool set, Point resolution)
-{
-	CHECK_GP(resolution);
-	if ( set)
-		croak("Attempt to write read-only property %s", "Drawable::resolution");
-	return apc_gp_get_resolution( self);
 }
 
 SV *
@@ -484,6 +458,15 @@ Drawable_height( Handle self, Bool set, int height)
 }
 
 Point
+Drawable_resolution( Handle self, Bool set, Point resolution)
+{
+	CHECK_GP(resolution);
+	if ( set)
+		croak("Attempt to write read-only property %s", "Drawable::resolution");
+	return apc_gp_get_resolution( self);
+}
+
+Point
 Drawable_size ( Handle self, Bool set, Point size)
 {
 	if ( set)
@@ -546,32 +529,6 @@ Drawable_##name( Handle self, SV * points)\
 
 DEF_LINE_PROCESSOR(polyline, apc_gp_draw_poly)
 DEF_LINE_PROCESSOR(lines, apc_gp_draw_poly2)
-
-Bool
-Drawable_fillpoly(Handle self, SV * points)
-{
-	int count;
-	void *p;
-	Bool ret = false;
-	Bool do_free, aa;
-	CHECK_GP(false);
-
-	aa = apc_gp_get_antialias(self);
-	if (( p = prima_read_array(
-		points, "fillpoly",
-		aa ? 'd' : 'i',
-		2, 2, -1, &count, &do_free
-	)) == NULL)
-		return false;
-
-	ret = aa ?
-		apc_gp_aa_fill_poly( self, count, (NPoint*) p) :
-		apc_gp_fill_poly( self, count, (Point*) p);
-	if ( !ret) perl_error();
-	if ( do_free ) free(p);
-
-	return ret;
-}
 
 Bool
 Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
@@ -696,6 +653,33 @@ Drawable_fill_sector( Handle self, double x, double y, double dX, double dY, dou
 		round(x), round(y), round(dX), round(dY), startAngle, endAngle
 	);
 }
+
+Bool
+Drawable_fillpoly(Handle self, SV * points)
+{
+	int count;
+	void *p;
+	Bool ret = false;
+	Bool do_free, aa;
+	CHECK_GP(false);
+
+	aa = apc_gp_get_antialias(self);
+	if (( p = prima_read_array(
+		points, "fillpoly",
+		aa ? 'd' : 'i',
+		2, 2, -1, &count, &do_free
+	)) == NULL)
+		return false;
+
+	ret = aa ?
+		apc_gp_aa_fill_poly( self, count, (NPoint*) p) :
+		apc_gp_fill_poly( self, count, (Point*) p);
+	if ( !ret) perl_error();
+	if ( do_free ) free(p);
+
+	return ret;
+}
+
 
 SV *
 Drawable_render_glyph( Handle self, int index, HV * profile)
@@ -1209,6 +1193,71 @@ Drawable_fillMode( Handle self, Bool set, int fillMode)
 	return fillMode;
 }
 
+SV *
+Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
+{
+	int i;
+	if ( !set) {
+		AV * av;
+		FillPattern * fp = apc_gp_get_fill_pattern( self);
+		if ( !fp) return NULL_SV;
+		av = newAV();
+		for ( i = 0; i < 8; i++) av_push( av, newSViv(( int) (*fp)[i]));
+		return newRV_noinc(( SV *) av);
+	} else {
+		if ( SvROK( svpattern) && ( SvTYPE( SvRV( svpattern)) == SVt_PVAV)) {
+			FillPattern fp;
+			AV * av = ( AV *) SvRV( svpattern);
+			if ( av_len( av) != 7) {
+				warn("Illegal fillPattern passed to Drawable::fillPattern");
+				return NULL_SV;
+			}
+			for ( i = 0; i < 8; i++) {
+				SV ** holder = av_fetch( av, i, 0);
+				if ( !holder) {
+					warn("Array panic on Drawable::fillPattern");
+					return NULL_SV;
+				}
+				fp[ i] = SvIV( *holder);
+			}
+			apc_gp_set_fill_pattern( self, fp);
+		} else {
+			int id = SvIV( svpattern);
+			if (( id < 0) || ( id > fpMaxId)) {
+				warn("fillPattern index out of range passed to Drawable::fillPattern");
+				return NULL_SV;
+			}
+			apc_gp_set_fill_pattern( self, fillPatterns[ id]);
+		}
+	}
+	return NULL_SV;
+}
+
+Point
+Drawable_fillPatternOffset( Handle self, Bool set, Point fpo)
+{
+	if (!set) return apc_gp_get_fill_pattern_offset( self);
+	fpo. x %= 8;
+	fpo. y %= 8;
+	apc_gp_set_fill_pattern_offset( self, fpo);
+	return fpo;
+}
+
+Font
+Drawable_get_font( Handle self)
+{
+	return var-> font;
+}
+
+void
+Drawable_set_font( Handle self, Font font)
+{
+	clear_font_abc_caches( self);
+	apc_font_pick( self, &font, &var-> font);
+	apc_gp_set_font( self, &var-> font);
+}
+
+
 int
 Drawable_lineEnd( Handle self, Bool set, int lineEnd)
 {
@@ -1224,6 +1273,23 @@ Drawable_lineJoin( Handle self, Bool set, int lineJoin)
 	apc_gp_set_line_join( self, lineJoin);
 	return lineJoin;
 }
+
+SV *
+Drawable_linePattern( Handle self, Bool set, SV * pattern)
+{
+	if ( set) {
+		STRLEN len;
+		unsigned char *pat = ( unsigned char *) SvPV( pattern, len);
+		if ( len > 255) len = 255;
+		apc_gp_set_line_pattern( self, pat, len);
+	} else {
+		unsigned char ret[ 256];
+		int len = apc_gp_get_line_pattern( self, ret);
+		return newSVpvn((char*) ret, len);
+	}
+	return NULL_SV;
+}
+
 
 int
 Drawable_lineWidth( Handle self, Bool set, int lineWidth)
@@ -1355,70 +1421,6 @@ Drawable_translate( Handle self, Bool set, Point translate)
 	if (!set) return apc_gp_get_transform( self);
 	apc_gp_set_transform( self, translate. x, translate. y);
 	return translate;
-}
-
-SV *
-Drawable_fillPattern( Handle self, Bool set, SV * svpattern)
-{
-	int i;
-	if ( !set) {
-		AV * av;
-		FillPattern * fp = apc_gp_get_fill_pattern( self);
-		if ( !fp) return NULL_SV;
-		av = newAV();
-		for ( i = 0; i < 8; i++) av_push( av, newSViv(( int) (*fp)[i]));
-		return newRV_noinc(( SV *) av);
-	} else {
-		if ( SvROK( svpattern) && ( SvTYPE( SvRV( svpattern)) == SVt_PVAV)) {
-			FillPattern fp;
-			AV * av = ( AV *) SvRV( svpattern);
-			if ( av_len( av) != 7) {
-				warn("Illegal fillPattern passed to Drawable::fillPattern");
-				return NULL_SV;
-			}
-			for ( i = 0; i < 8; i++) {
-				SV ** holder = av_fetch( av, i, 0);
-				if ( !holder) {
-					warn("Array panic on Drawable::fillPattern");
-					return NULL_SV;
-				}
-				fp[ i] = SvIV( *holder);
-			}
-			apc_gp_set_fill_pattern( self, fp);
-		} else {
-			int id = SvIV( svpattern);
-			if (( id < 0) || ( id > fpMaxId)) {
-				warn("fillPattern index out of range passed to Drawable::fillPattern");
-				return NULL_SV;
-			}
-			apc_gp_set_fill_pattern( self, fillPatterns[ id]);
-		}
-	}
-	return NULL_SV;
-}
-
-Point
-Drawable_fillPatternOffset( Handle self, Bool set, Point fpo)
-{
-	if (!set) return apc_gp_get_fill_pattern_offset( self);
-	fpo. x %= 8;
-	fpo. y %= 8;
-	apc_gp_set_fill_pattern_offset( self, fpo);
-	return fpo;
-}
-
-Font
-Drawable_get_font( Handle self)
-{
-	return var-> font;
-}
-
-void
-Drawable_set_font( Handle self, Font font)
-{
-	clear_font_abc_caches( self);
-	apc_font_pick( self, &font, &var-> font);
-	apc_gp_set_font( self, &var-> font);
 }
 
 #ifdef __cplusplus
