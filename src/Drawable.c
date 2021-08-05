@@ -39,7 +39,7 @@ Drawable_init( Handle self, HV * profile)
 	my-> set_lineEnd      ( self, pget_i ( lineEnd));
 	my-> set_lineJoin     ( self, pget_i ( lineJoin));
 	my-> set_linePattern  ( self, pget_sv( linePattern));
-	my-> set_lineWidth    ( self, pget_i ( lineWidth));
+	my-> set_lineWidth    ( self, pget_f ( lineWidth));
 	my-> set_miterLimit   ( self, pget_i ( miterLimit));
 	my-> set_region       ( self, pget_H ( region));
 	my-> set_rop          ( self, pget_i ( rop));
@@ -680,7 +680,6 @@ Drawable_fillpoly(Handle self, SV * points)
 	return ret;
 }
 
-
 SV *
 Drawable_render_glyph( Handle self, int index, HV * profile)
 {
@@ -1291,11 +1290,11 @@ Drawable_linePattern( Handle self, Bool set, SV * pattern)
 }
 
 
-int
-Drawable_lineWidth( Handle self, Bool set, int lineWidth)
+double
+Drawable_lineWidth( Handle self, Bool set, double lineWidth)
 {
 	if (!set) return apc_gp_get_line_width( self);
-	if ( lineWidth < 0 ) lineWidth = 0;
+	if ( lineWidth < 0.0 ) lineWidth = 0.0;
 	apc_gp_set_line_width( self, lineWidth);
 	return lineWidth;
 }

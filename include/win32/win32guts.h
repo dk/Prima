@@ -328,7 +328,7 @@ typedef struct _PaintSaveData
 	Bool        antialias;
 	Color       lbs[2];
 	Bool        fillMode;
-	int         lineWidth;
+	float       lineWidth;
 	int         lineEnd;
 	int         lineJoin;
 	unsigned char * linePattern;
@@ -357,6 +357,7 @@ typedef struct _EXTPEN
 	DWORD           style;
 	DWORD           lineEnd;
 	DWORD           lineJoin;
+	float           lineWidth;
 	PatResource  *  patResource;
 } EXTPEN, *PEXTPEN;
 
@@ -455,7 +456,7 @@ typedef struct _DrawableData
 	/* HDC attributes storage outside paint mode */
 	Color          lbs[2];
 	int            fillMode, psFillMode;
-	int            lineWidth;
+	float          lineWidth;
 	int            lineEnd;
 	int            lineJoin;
 	unsigned char *linePattern;

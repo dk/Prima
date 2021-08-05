@@ -2163,7 +2163,7 @@ Image_line(Handle self, int x1, int y1, int x2, int y2)
 {
 	if ( opt_InPaint) {
 		return inherited line(self, x1, y1, x2, y2);
-	} else if ( my->get_lineWidth(self) == 0) {
+	} else if ( (int)(my->get_lineWidth(self) + .5) == 0) {
 		ImgPaintContext ctx;
 		unsigned char lp[256];
 		Point poly[2];
@@ -2183,7 +2183,7 @@ Image_lines( Handle self, SV * points)
 {
 	if ( opt_InPaint) {
 		return inherited lines(self, points);
-	} else if ( my->get_lineWidth(self) == 0) {
+	} else if ( (int)(my->get_lineWidth(self) + .5) == 0) {
 		Point * lines, *p;
 		int i, count;
 		Bool ok = true, do_free;
@@ -2208,7 +2208,7 @@ Image_polyline( Handle self, SV * points)
 {
 	if ( opt_InPaint) {
 		return inherited polyline(self, points);
-	} else if ( my->get_lineWidth(self) == 0) {
+	} else if ( (int)(my->get_lineWidth(self) + .5) == 0) {
 		Point * lines;
 		int count;
 		Bool ok, do_free;
@@ -2230,7 +2230,7 @@ Image_rectangle(Handle self, int x1, int y1, int x2, int y2)
 {
 	if ( opt_InPaint) {
 		return inherited rectangle(self, x1, y1, x2, y2);
-	} else if ( my->get_lineWidth(self) == 0) {
+	} else if ( (int)(my->get_lineWidth(self) + .5) == 0) {
 		ImgPaintContext ctx;
 		unsigned char lp[256];
 		Point r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };

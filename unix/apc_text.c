@@ -332,7 +332,7 @@ static void
 draw_text_underline(Handle self, const char * text, int x, int y, int len, int flags)
 {
 	DEFXX;
-	int lw = apc_gp_get_line_width( self);
+	int lw = apc_gp_get_line_width( self) + .5;
 	int tw = gp_get_text_width( self, text, len, flags | toAddOverhangs);
 	int d  = XX-> font-> underlinePos;
 	Point ovx = gp_get_text_overhangs( self, text, len, flags);

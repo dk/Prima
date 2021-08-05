@@ -20,7 +20,7 @@ object Prima::Drawable ( Prima::Component)
 	property     int           lineEnd;
 	property     int           lineJoin;
 	property     SV *          linePattern;
-	property     int           lineWidth;
+	property     double        lineWidth;
 	property     double        miterLimit;
 	property     SV *          palette;
 	property     SV *          pixel( int x, int y);

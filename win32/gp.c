@@ -22,7 +22,7 @@ Bool
 apc_gp_init( Handle self)
 {
 	objCheck false;
-	sys lineWidth = 1;
+	sys lineWidth = 1.0;
 	return true;
 }
 
@@ -968,12 +968,11 @@ apc_gp_get_line_join( Handle self)
 	return ctx_remap_def( sys stylus. extPen. lineJoin, ctx_lj2PS_JOIN, false, ljRound);
 }
 
-int
+float
 apc_gp_get_line_width( Handle self)
 {
 	objCheck 0;
-	if ( !sys ps) return sys lineWidth;
-	return sys stylus. pen. lopnWidth. x;
+	return sys ps ? sys stylus.extPen.lineWidth : sys lineWidth;
 }
 
 int
@@ -1375,7 +1374,9 @@ Bool
 apc_gp_set_line_end( Handle self, int lineEnd)
 {
 	objCheck false;
-	if ( !sys ps) sys lineEnd = lineEnd; else {
+	if ( !sys ps) {
+		sys lineEnd = lineEnd;
+	} else {
 		PStylus s         = &sys stylus;
 		PEXTPEN ep        = &s-> extPen;
 		ep-> lineEnd      = ctx_remap_def( lineEnd, ctx_le2PS_ENDCAP, true, PS_ENDCAP_ROUND);
@@ -1390,7 +1391,9 @@ Bool
 apc_gp_set_line_join( Handle self, int lineJoin)
 {
 	objCheck false;
-	if ( !sys ps) sys lineJoin = lineJoin; else {
+	if ( !sys ps) {
+		sys lineJoin = lineJoin;
+	} else {
 		PStylus s         = &sys stylus;
 		PEXTPEN ep        = &s-> extPen;
 		ep-> lineJoin     = ctx_remap_def( lineJoin, ctx_lj2PS_JOIN, true, PS_JOIN_ROUND);
@@ -1402,14 +1405,17 @@ apc_gp_set_line_join( Handle self, int lineJoin)
 }
 
 Bool
-apc_gp_set_line_width( Handle self, int lineWidth)
+apc_gp_set_line_width( Handle self, float lineWidth)
 {
 	objCheck false;
-	if ( !sys ps) sys lineWidth = lineWidth; else {
+	if ( !sys ps) {
+		sys lineWidth = lineWidth;
+	} else {
 		PStylus s = &sys stylus;
 		PEXTPEN ep        = &s-> extPen;
-		if ( lineWidth < 0 || lineWidth > 8192) lineWidth = 0;
-		s-> pen. lopnWidth. x = lineWidth;
+		if ( lineWidth < 0.0 || lineWidth > 8192.0) lineWidth = 0.0;
+		s-> pen. lopnWidth. x = lineWidth + .5;
+		ep-> lineWidth = lineWidth;
 		if (( ep-> actual = stylus_extpenned( s)))
 			ep-> style = stylus_get_extpen_style( s);
 		stylus_change( self);

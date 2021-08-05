@@ -3740,7 +3740,7 @@ apc_gp_get_line_end( Handle self);
 extern int
 apc_gp_get_line_join( Handle self);
 
-extern int
+extern float
 apc_gp_get_line_width( Handle self);
 
 extern int
@@ -3831,7 +3831,7 @@ extern Bool
 apc_gp_set_line_join( Handle self, int lineJoin);
 
 extern Bool
-apc_gp_set_line_width( Handle self, int lineWidth);
+apc_gp_set_line_width( Handle self, float lineWidth);
 
 extern Bool
 apc_gp_set_line_pattern( Handle self, unsigned char * pattern, int len);

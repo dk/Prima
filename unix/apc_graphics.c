@@ -110,7 +110,7 @@ prima_release_gc( PDrawableSysData selfxx)
 */
 #define MAX_DASH_LEN 2048
 #define dDASH_FIX(line_width,source,length) \
-	int df_i, df_lw = line_width, df_len = length; \
+	int df_i, df_lw = line_width + .5, df_len = length; \
 	char df_list[MAX_DASH_LEN], *df_src = (char*)source, *df_dst = df_list
 #define DASH_FIX \
 	if ( df_lw > 1) {\
@@ -166,10 +166,10 @@ Unbuffered:
 
 	XX-> paint_rop = XX-> rop;
 	XX-> paint_rop2 = XX-> rop2;
+	XX-> paint_line_width = XX-> line_width;
 	XX-> flags. paint_base_line = XX-> flags. base_line;
 	XX-> flags. paint_opaque    = XX-> flags. opaque;
 	XX-> saved_font = PDrawable( self)-> font;
-	XX-> line_width = XX-> gcv. line_width;
 	XX-> gcv. clip_mask = None;
 	XX-> gtransform = XX-> transform;
 	XX-> fill_mode = XX->saved_fill_mode;
@@ -181,7 +181,7 @@ Unbuffered:
 	XCHECKPOINT;
 
 	if ( XX-> dashes) {
-		dDASH_FIX( XX-> line_width, XX-> dashes, XX-> ndashes);
+		dDASH_FIX( XX-> paint_line_width, XX-> dashes, XX-> ndashes);
 		DASH_FIX;
 		XSetDashes( DISP, XX-> gc, 0, DASHES);
 		XX-> paint_ndashes = XX-> ndashes;
@@ -540,7 +540,7 @@ XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
 }
 #define FILL_ANTIDEFECT_CLOSE {\
 XGCValues gcv;\
-gcv. line_width = XX-> line_width;\
+gcv. line_width = XX-> paint_line_width + .5;\
 XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);\
 }
 
@@ -1362,13 +1362,13 @@ apc_gp_line( Handle self, int x1, int y1, int x2, int y2)
 	SHIFT( x1, y1); SHIFT( x2, y2);
 	RANGE4(x1, y1, x2, y2); /* not really correct */
 	PURE_FOREGROUND;
-	if (( XX-> line_width == 0) && (x1 == x2 || y1 == y2)) {
+	if (((int)(XX-> paint_line_width + .5) == 0) && (x1 == x2 || y1 == y2)) {
 		XGCValues gcv;
 		gcv. line_width = 1;
 		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
 	}
 	XDrawLine( DISP, XX-> gdrawable, XX-> gc, x1, REVERT( y1), x2, REVERT( y2));
-	if (( XX-> line_width == 0) && (x1 == x2 || y1 == y2)) {
+	if (((int)(XX-> paint_line_width + .5) == 0) && (x1 == x2 || y1 == y2)) {
 		XGCValues gcv;
 		gcv. line_width = 0;
 		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
@@ -1381,6 +1381,7 @@ Bool
 apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 {
 	DEFXX;
+	int lw = XX-> paint_line_width + .5;
 
 	if ( PObject( self)-> options. optInDrawInfo) return false;
 	if ( !XF_IN_PAINT(XX)) return false;
@@ -1389,8 +1390,7 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 	SORT( x1, x2); SORT( y1, y2);
 	RANGE4(x1, y1, x2, y2);
 	PURE_FOREGROUND;
-	if ( XX-> line_width > 0 &&
-		(XX-> line_width % 2) == 0) {
+	if ( lw > 0 && (lw % 2) == 0) {
 		y2--;
 		y1--;
 	}
@@ -1595,11 +1595,11 @@ apc_gp_get_line_join( Handle self)
 	return ljRound;
 }
 
-int
+float
 apc_gp_get_line_width( Handle self)
 {
 	DEFXX;
-	return XF_IN_PAINT(XX) ? XX-> line_width : XX-> gcv. line_width;
+	return XF_IN_PAINT(XX) ? XX-> paint_line_width : XX-> line_width;
 }
 
 int
@@ -1853,13 +1853,14 @@ apc_gp_set_line_join( Handle self, int lineJoin)
 }
 
 Bool
-apc_gp_set_line_width( Handle self, int line_width)
+apc_gp_set_line_width( Handle self, float line_width)
 {
 	DEFXX;
 	XGCValues gcv;
 
 	if ( XF_IN_PAINT(XX)) {
-		XX-> line_width = gcv. line_width = line_width;
+		XX-> paint_line_width = line_width;
+		gcv. line_width = line_width +.5;
 		if ( !( XX-> paint_ndashes == 0 || (XX-> paint_ndashes == 1 && XX-> paint_dashes[0] == 1))) {
 			dDASH_FIX( line_width, XX-> paint_dashes, XX-> paint_ndashes);
 			DASH_FIX;
@@ -1867,8 +1868,10 @@ apc_gp_set_line_width( Handle self, int line_width)
 		}
 		XChangeGC( DISP, XX-> gc, GCLineWidth, &gcv);
 		XCHECKPOINT;
-	} else
-		XX-> gcv. line_width = line_width;
+	} else {
+		XX-> gcv. line_width = line_width + .5;
+		XX-> line_width = line_width;
+	}
 	return true;
 }
 

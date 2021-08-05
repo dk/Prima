@@ -1008,6 +1008,7 @@ sub prf_adjust_default
 		height
 		rect
 
+		antialias
 		lineEnd
 		lineJoin
 		linePattern
