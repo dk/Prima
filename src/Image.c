@@ -844,6 +844,8 @@ Image_begin_paint( Handle self)
 		inherited end_paint( self);
 		perl_error();
 	}
+	if (ok)
+		apc_gp_set_antialias( self, var->antialias );
 	return ok;
 }
 
@@ -862,6 +864,8 @@ Image_begin_paint_info( Handle self)
 		inherited end_paint_info( self);
 		perl_error();
 	}
+	if (ok)
+		apc_gp_set_antialias( self, var->antialias );
 	return ok;
 }
 
@@ -1736,95 +1740,6 @@ prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 	ctx->linePattern = lp;
 }
 
-Bool
-Image_bar( Handle self, double x1, double y1, double x2, double y2)
-{
-	Point t;
-	Bool ok;
-	int _x1, _y1, _x2, _y2;
-	ImgPaintContext ctx;
-	if (opt_InPaint)
-		return inherited bar( self, x1, y1, x2, y2);
-
-	_x1 = round(x1);
-	_x2 = round(x2);
-	_y1 = round(y1);
-	_y2 = round(y2);
-
-	t = my->get_translate(self);
-	_x1 += t.x;
-	_y1 += t.y;
-
-	prepare_fill_context(self, t, &ctx);
-	ok = img_bar( self, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1, &ctx);
-	my-> update_change(self);
-	return ok;
-}
-
-Bool
-Image_bars( Handle self, SV * rects)
-{
-	Point t;
-	ImgPaintContext ctx;
-	int i, count;
-	Bool ok = true, do_free;
-	Rect * p, * r;
-	if (opt_InPaint)
-		return inherited bars( self, rects);
-
-	if (( p = prima_read_array( rects, "Image::bars", 'i', 4, 0, -1, &count, &do_free)) == NULL)
-		return false;
-	t = my->get_translate(self);
-	prepare_fill_context(self, t, &ctx);
-	for ( i = 0, r = p; i < count; i++, r++) {
-		ImgPaintContext ctx2 = ctx;
-		if ( !( ok &= img_bar( self,
-			r->left,
-			r->bottom,
-			r->right - r->left + 1,
-			r->top - r->bottom + 1,
-			&ctx2))) break;
-	}
-	if ( do_free ) free( p);
-	my-> update_change(self);
-	return ok;
-}
-
-Bool
-Image_clear(Handle self, double x1, double y1, double x2, double y2)
-{
-	Point t;
-	Bool ok;
-	ImgPaintContext ctx;
-	int _x1, _y1, _x2, _y2;
-	if (opt_InPaint)
-		return inherited clear( self, x1, y1, x2, y2);
-	_x1 = round(x1);
-	_x2 = round(x2);
-	_y1 = round(y1);
-	_y2 = round(y2);
-	if ( _x1 < 0 && _y1 < 0 && _x2 < 0 && _y2 < 0) {
-		_x1 = 0;
-		_y1 = 0;
-		_x2 = var-> w - 1;
-		_y2 = var-> h - 1;
-	}
-	t = my->get_translate(self);
-	_x1 += t.x;
-	_y1 += t.y;
-	color2pixel( self, my->get_backColor(self), ctx.color);
-	ctx.rop = my->get_rop(self);
-	ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
-	memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
-	ctx.patternOffset.x = ctx.patternOffset.y = 0;
-	ctx.patternOffset.x -= t.x;
-	ctx.patternOffset.y -= t.y;
-	ctx.transparent = false;
-	ok = img_bar( self, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1, &ctx);
-	my-> update_change(self);
-	return ok;
-}
-
 static Bool
 integral_rotate( Handle self, int degrees)
 {
@@ -2024,7 +1939,21 @@ Image_premultiply_alpha( Handle self, SV * alpha)
 		my-> set_type( self, oldType );
 	else
 		my-> update_change( self );
-} 
+}
+
+Bool
+Image_antialias( Handle self, Bool set, Bool aa)
+{
+	if ( is_opt(optInDraw) || is_opt(optInDrawInfo))
+		return inherited antialias(self,set,aa);
+
+	if (set) {
+		if ( aa && !my->can_draw_alpha(self))
+			aa = false;
+		var-> antialias = aa;
+	}
+	return var->antialias;
+}
 
 Rect
 Image_clipRect( Handle self, Bool set, Rect r)
@@ -2129,7 +2058,11 @@ primitive( Handle self, Bool fill, char * method, ...)
 	SAVETMPS;
 	strcpy(format, "<");
 	strncat(format, method, 255);
-	ret = call_perl_indirect( self, fill ? "fill_primitive" : "stroke_primitive", format, true, false, args);
+	ret = call_perl_indirect( self, 
+		var->antialias ?
+			(fill ? "fill_imgaa_primitive" : "stroke_imgaa_primitive") :
+			(fill ? "fill_img_primitive"   : "stroke_img_primitive"),
+		format, true, false, args);
 	va_end( args);
 	r = ret ? SvTRUE( ret) : false;
 	FREETMPS;
@@ -2145,6 +2078,80 @@ Image_arc( Handle self, double x, double y, double dX, double dY, double startAn
 }
 
 Bool
+Image_bar( Handle self, double x1, double y1, double x2, double y2)
+{
+	Point t;
+	Bool ok;
+	int _x1, _y1, _x2, _y2;
+	ImgPaintContext ctx;
+	if (opt_InPaint)
+		return inherited bar( self, x1, y1, x2, y2);
+	else if ( var-> antialias ) {
+		ok = primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
+		my-> update_change(self);
+		return ok;
+	}
+
+	_x1 = round(x1);
+	_x2 = round(x2);
+	_y1 = round(y1);
+	_y2 = round(y2);
+
+	t = my->get_translate(self);
+	_x1 += t.x;
+	_y1 += t.y;
+
+	prepare_fill_context(self, t, &ctx);
+	ok = img_bar( self, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1, &ctx);
+	my-> update_change(self);
+	return ok;
+}
+
+Bool
+Image_bars( Handle self, SV * rects)
+{
+	Point t;
+	ImgPaintContext ctx;
+	int i, count;
+	Bool ok = true, do_free;
+	Rect *p, *r;
+	if (opt_InPaint)
+		return inherited bars( self, rects);
+	else if ( var-> antialias ) {
+		NRect *p, *r;
+		if (( p = prima_read_array( rects, "Image::bars", 'd', 4, 0, -1, &count, &do_free)) == NULL)
+			return false;
+		for ( i = 0, r = p; i < count; i++, r++) {
+			ok = primitive( self, 1, "snnnn", "rectangle",
+				r->left,
+				r->bottom,
+				r->right - r->left,
+				r->top - r->bottom
+			);
+			if ( !ok ) break;
+		}
+		if ( do_free ) free( p);
+	} else {
+		if (( p = prima_read_array( rects, "Image::bars", 'i', 4, 0, -1, &count, &do_free)) == NULL)
+			return false;
+		t = my->get_translate(self);
+		prepare_fill_context(self, t, &ctx);
+		for ( i = 0, r = p; i < count; i++, r++) {
+			ImgPaintContext ctx2 = ctx;
+			if ( !( ok &= img_bar( self,
+				r->left,
+				r->bottom,
+				r->right - r->left + 1,
+				r->top - r->bottom + 1,
+				&ctx2))) break;
+		}
+		if ( do_free ) free( p);
+	}
+	my-> update_change(self);
+	return ok;
+}
+
+Bool
 Image_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited chord(self, x, y, dX, dY, startAngle, endAngle);
@@ -2152,100 +2159,62 @@ Image_chord( Handle self, double x, double y, double dX, double dY, double start
 }
 
 Bool
+Image_clear(Handle self, double x1, double y1, double x2, double y2)
+{
+	Point t;
+	Bool ok;
+	ImgPaintContext ctx;
+	int _x1, _y1, _x2, _y2;
+	Bool full;
+
+	full = x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0;
+	if (opt_InPaint)
+		return inherited clear( self, x1, y1, x2, y2);
+	else if ( !full && var->antialias ) {
+		Bool ok;
+		Color color;
+		FillPattern fp;
+		color = apc_gp_get_color(self);
+		memcpy(&fp, apc_gp_get_fill_pattern(self), sizeof(FillPattern));
+		apc_gp_set_color(self, apc_gp_get_back_color(self));
+		apc_gp_set_fill_pattern(self, fillPatterns[fpSolid]);
+		ok = primitive( self, 1, "snnnn", "rectangle", x1, y1, x2, y2);
+		apc_gp_set_fill_pattern(self, fp);
+		apc_gp_set_color(self, color);
+		return ok;
+	} else {
+		_x1 = round(x1);
+		_x2 = round(x2);
+		_y1 = round(y1);
+		_y2 = round(y2);
+		if ( _x1 < 0 && _y1 < 0 && _x2 < 0 && _y2 < 0) {
+			_x1 = 0;
+			_y1 = 0;
+			_x2 = var-> w - 1;
+			_y2 = var-> h - 1;
+		}
+		t = my->get_translate(self);
+		_x1 += t.x;
+		_y1 += t.y;
+		color2pixel( self, my->get_backColor(self), ctx.color);
+		ctx.rop = my->get_rop(self);
+		ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
+		memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
+		ctx.patternOffset.x = ctx.patternOffset.y = 0;
+		ctx.patternOffset.x -= t.x;
+		ctx.patternOffset.y -= t.y;
+		ctx.transparent = false;
+		ok = img_bar( self, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1, &ctx);
+	}
+	my-> update_change(self);
+	return ok;
+}
+
+Bool
 Image_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	if ( opt_InPaint) return inherited ellipse(self, x, y, dX, dY);
 	return primitive( self, 0, "snnnn", "ellipse", x, y, dX-1, dY-1);
-}
-
-Bool
-Image_line(Handle self, double x1, double y1, double x2, double y2)
-{
-	if ( opt_InPaint) {
-		return inherited line(self, x1, y1, x2, y2);
-	} else if ( (int)(my->get_lineWidth(self) + .5) == 0) {
-		ImgPaintContext ctx;
-		unsigned char lp[256];
-		Point poly[2];
-		prepare_line_context( self, lp, &ctx);
-		poly[0].x = round(x1);
-		poly[0].y = round(y1);
-		poly[1].x = round(x2);
-		poly[1].y = round(y2);
-		return img_polyline(self, 2, poly, &ctx);
-	} else {
-		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
-	}
-}
-
-Bool
-Image_lines( Handle self, SV * points)
-{
-	if ( opt_InPaint) {
-		return inherited lines(self, points);
-	} else if ( (int)(my->get_lineWidth(self) + .5) == 0) {
-		Point * lines, *p;
-		int i, count;
-		Bool ok = true, do_free;
-		ImgPaintContext ctx, ctx2;
-		unsigned char lp[256];
-		if (( lines = prima_read_array( points, "Image::lines", 'i', 4, 0, -1, &count, &do_free)) == NULL)
-			return false;
-		prepare_line_context( self, lp, &ctx);
-		for (i = 0, p = lines; i < count; i++, p+=2) {
-			ctx2 = ctx;
-			if ( !( ok &= img_polyline(self, 2, p, &ctx2))) break;
-		}
-		if (do_free) free(lines);
-		return ok;
-	} else {
-		return primitive( self, 0, "sS", "lines", points );
-	}
-}
-
-Bool
-Image_polyline( Handle self, SV * points)
-{
-	if ( opt_InPaint) {
-		return inherited polyline(self, points);
-	} else if ( (int)(my->get_lineWidth(self) + .5) == 0) {
-		Point * lines;
-		int count;
-		Bool ok, do_free;
-		ImgPaintContext ctx;
-		unsigned char lp[256];
-		if (( lines = prima_read_array( points, "Image::polyline", 'i', 2, 2, -1, &count, &do_free)) == NULL)
-			return false;
-		prepare_line_context( self, lp, &ctx);
-		ok = img_polyline(self, count, lines, &ctx);
-		if ( do_free ) free(lines);
-		return ok;
-	} else {
-		return primitive( self, 0, "sS", "line", points );
-	}
-}
-
-Bool
-Image_rectangle(Handle self, double x1, double y1, double x2, double y2)
-{
-	if ( opt_InPaint) {
-		return inherited rectangle(self, x1, y1, x2, y2);
-	} else if ( (int)(my->get_lineWidth(self) + .5) == 0) {
-		ImgPaintContext ctx;
-		unsigned char lp[256];
-		Point r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
-		prepare_line_context( self, lp, &ctx);
-		return img_polyline(self, 5, r, &ctx);
-	} else {
-		return primitive( self, 0, "snnnn", "rectangle", x1, y1, x2, y2);
-	}
-}
-
-Bool
-Image_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	if ( opt_InPaint) return inherited sector(self, x, y, dX, dY, startAngle, endAngle);
-	return primitive( self, 0, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
 }
 
 Bool
@@ -2297,6 +2266,95 @@ Image_flood_fill( Handle self, int x, int y, Color color, Bool singleBorder)
 	return ok;
 }
 
+Bool
+Image_line(Handle self, double x1, double y1, double x2, double y2)
+{
+	if ( opt_InPaint) {
+		return inherited line(self, x1, y1, x2, y2);
+	} else if ( !var->antialias && (int)(my->get_lineWidth(self) + .5) == 0) {
+		ImgPaintContext ctx;
+		unsigned char lp[256];
+		Point poly[2];
+		prepare_line_context( self, lp, &ctx);
+		poly[0].x = round(x1);
+		poly[0].y = round(y1);
+		poly[1].x = round(x2);
+		poly[1].y = round(y2);
+		return img_polyline(self, 2, poly, &ctx);
+	} else {
+		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
+	}
+}
+
+Bool
+Image_lines( Handle self, SV * points)
+{
+	if ( opt_InPaint) {
+		return inherited lines(self, points);
+	} else if ( !var->antialias && (int)(my->get_lineWidth(self) + .5) == 0) {
+		Point * lines, *p;
+		int i, count;
+		Bool ok = true, do_free;
+		ImgPaintContext ctx, ctx2;
+		unsigned char lp[256];
+		if (( lines = prima_read_array( points, "Image::lines", 'i', 4, 0, -1, &count, &do_free)) == NULL)
+			return false;
+		prepare_line_context( self, lp, &ctx);
+		for (i = 0, p = lines; i < count; i++, p+=2) {
+			ctx2 = ctx;
+			if ( !( ok &= img_polyline(self, 2, p, &ctx2))) break;
+		}
+		if (do_free) free(lines);
+		return ok;
+	} else {
+		return primitive( self, 0, "sS", "lines", points );
+	}
+}
+
+Bool
+Image_polyline( Handle self, SV * points)
+{
+	if ( opt_InPaint) {
+		return inherited polyline(self, points);
+	} else if ( !var->antialias && (int)(my->get_lineWidth(self) + .5) == 0) {
+		Point * lines;
+		int count;
+		Bool ok, do_free;
+		ImgPaintContext ctx;
+		unsigned char lp[256];
+		if (( lines = prima_read_array( points, "Image::polyline", 'i', 2, 2, -1, &count, &do_free)) == NULL)
+			return false;
+		prepare_line_context( self, lp, &ctx);
+		ok = img_polyline(self, count, lines, &ctx);
+		if ( do_free ) free(lines);
+		return ok;
+	} else {
+		return primitive( self, 0, "sS", "line", points );
+	}
+}
+
+Bool
+Image_rectangle(Handle self, double x1, double y1, double x2, double y2)
+{
+	if ( opt_InPaint) {
+		return inherited rectangle(self, x1, y1, x2, y2);
+	} else if ( !var->antialias && (int)(my->get_lineWidth(self) + .5) == 0) {
+		ImgPaintContext ctx;
+		unsigned char lp[256];
+		Point r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
+		prepare_line_context( self, lp, &ctx);
+		return img_polyline(self, 5, r, &ctx);
+	} else {
+		return primitive( self, 0, "snnnn", "rectangle", x1, y1, x2, y2);
+	}
+}
+
+Bool
+Image_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
+{
+	if ( opt_InPaint) return inherited sector(self, x, y, dX, dY, startAngle, endAngle);
+	return primitive( self, 0, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle);
+}
 
 #ifdef __cplusplus
 }

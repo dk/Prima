@@ -553,24 +553,6 @@ Drawable_ellipse( Handle self, double x, double y,  double dX, double dY)
 }
 
 Bool
-Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
-{
-	CHECK_GP(false);
-	return apc_gp_get_antialias(self) ?
-		primitive( self, 0, "snnnn", "rectangle", x1,y1,x2,y2) :
-		apc_gp_rectangle(self, round(x1), round(y1), round(x2), round(y2));
-}
-
-Bool
-Drawable_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
-{
-	CHECK_GP(false);
-	return apc_gp_get_antialias(self) ?
-		primitive( self, 0, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle) :
-		apc_gp_sector(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
-}
-
-Bool
 Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
 {
 	CHECK_GP(false);
@@ -746,6 +728,15 @@ Drawable_polyline(Handle self, SV * lines)
 		return primitive( self, 0, "sS", "line", lines);
 	else
 		return read_polypoints( self, lines, "Drawable::polyline", 2, apc_gp_draw_poly);
+}
+
+Bool
+Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
+{
+	CHECK_GP(false);
+	return apc_gp_get_antialias(self) ?
+		primitive( self, 0, "snnnn", "rectangle", x1,y1,x2,y2) :
+		apc_gp_rectangle(self, round(x1), round(y1), round(x2), round(y2));
 }
 
 SV *
@@ -1248,6 +1239,18 @@ prima_read_palette( int * palSize, SV * palette)
 
 	return ( PRGBColor) buf;
 }
+
+Bool
+Drawable_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
+{
+	CHECK_GP(false);
+	return apc_gp_get_antialias(self) ?
+		primitive( self, 0, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle) :
+		apc_gp_sector(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
+}
+
+/* Properties */
+
 
 Bool
 Drawable_antialias( Handle self, Bool set, Bool aa)

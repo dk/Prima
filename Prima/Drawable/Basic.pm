@@ -234,7 +234,7 @@ sub new_glyph_obj
 	return Prima::Drawable::Glyphs->new(@_);
 }
 
-sub stroke_primitive
+sub stroke_img_primitive
 {
 	my ( $self, $request ) = (shift, shift);
 	return 1 if $self->rop == rop::NoOper;
@@ -292,7 +292,7 @@ sub stroke_primitive
 	return $ok;
 }
 
-sub fill_primitive
+sub fill_img_primitive
 {
 	my ( $self, $request ) = (shift, shift);
 	my $path = $self->new_path;
@@ -312,6 +312,52 @@ sub fill_primitive
 	return $ok;
 }
 
+sub stroke_imgaa_primitive
+{
+	my ( $self, $request ) = (shift, shift);
+	return 1 if $self->rop == rop::NoOper;
+	my $lp = $self->linePattern;
+	return 1 if $lp eq lp::Null && $self->rop2 == rop::NoOper;
+
+	my $aa = $self->new_aa_surface;
+	return 0 unless $aa->can_aa;
+
+	my $path = $self->new_path( subpixel => 1 );
+	$path->$request(@_);
+	$path = $path->widen(
+		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
+	);
+	my %save;
+	$save{fillPattern} = $self->fillPattern;
+	$save{fillMode}    = $self->fillMode;
+	$self->fillPattern(fp::Solid);
+	$self->fillMode(fm::Winding);
+	if ( $lp eq lp::Null ) {
+		$save{color} = $self->color;
+		$self->color($self->backColor);
+	}
+	my $ok = 1;
+	for ($path->points(1)) {
+		$ok &= $aa->fillpoly($_);
+		last unless $ok;
+	}
+	$self->$_($save{$_}) for keys %save;
+	return $ok;
+}
+
+sub fill_imgaa_primitive
+{
+	my ( $self, $request ) = (shift, shift);
+	my $path = $self->new_path( subpixel => 1 );
+	$path->$request(@_);
+	my $aa = $self->new_aa_surface;
+	return 0 unless $aa->can_aa;
+	for ($path->points(1)) {
+		return 0 unless $aa->fillpoly($_);
+	}
+	return 1;
+}
+
 sub stroke_aa_primitive
 {
 	my ( $self, $request ) = (shift, shift);
@@ -326,7 +372,9 @@ sub stroke_aa_primitive
 	);
 	my %save;
 	$save{fillPattern} = $self->fillPattern;
+	$save{fillMode}    = $self->fillMode;
 	$self->fillPattern(fp::Solid);
+	$self->fillMode(fm::Winding);
 	if ( $lp eq lp::Null ) {
 		$save{color} = $self->color;
 		$self->color($self->backColor);
@@ -341,16 +389,9 @@ sub fill_aa_primitive
 	my ( $self, $request ) = (shift, shift);
 	my $path = $self->new_path;
 	$path->$request(@_);
-	my $save = $self-> fillMode;
-	if ( $save & fm::Winding) {
-		undef $save;
-	} else {
-		$self-> fillMode(fm::Winding);
-	}
 	for ($path->points(1)) {
-		return unless $self->fillpoly($_);
+		return 0 unless $self->fillpoly($_);
 	}
-	$self-> fillMode($save) if defined $save;
 	return 1;
 }
 
