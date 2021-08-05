@@ -29,7 +29,7 @@ sub new
 		commands        => [],
 		precision       => undef,
 		subpixel        => 0,
-		antialias       => 0,
+		antialias       => $canvas->antialias,
 		%opt
 	}, $class;
 }
@@ -577,7 +577,7 @@ sub _arc
 sub stroke {
 	return 0 unless $_[0]->{canvas};
 	for ( map { @$_ } @{ $_[0]->points }) {
-		if ( $_[0]->{antialias} ) {
+		if ( $_[0]->{antialias} && !$_[0]->{canvas}->antialias) {
 			return 0 unless $_[0]->{canvas}->new_aa_surface->polyline($_);
 		} else {
 			return 0 unless $_[0]->{canvas}->polyline($_);
@@ -597,7 +597,7 @@ sub fill {
 		$c->fillMode($fillMode);
 	}
 	for ( @p ) {
-		if ( $self->{antialias} ) {
+		if ( $self->{antialias} && !$_[0]->{canvas}->antialias) {
 			last unless $ok &= $c->new_aa_surface->fillpoly($_);
 		} else {
 			last unless $ok &= $c->fillpoly($_);
