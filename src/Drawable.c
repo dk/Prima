@@ -1129,6 +1129,8 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 	if (( input = (double*) prima_read_array( points, "render_polyline", 'd', 2, 1, -1, &count, &free_input)) == NULL)
 		goto FAIL;
 
+	if ( pexist(integer)) as_integer = pget_B(integer);
+
 	if ( pexist(matrix) ) {
 		int i;
 		double *src, *dst, *cmatrix;
@@ -1173,13 +1175,16 @@ Drawable_render_polyline( SV * obj, SV * points, HV * profile)
 		}
 		box[2] -= box[0] - 1;
 		box[3] -= box[1] - 1;
+		if ( as_integer ) {
+			box[0] = floor(box[0]);
+			box[1] = floor(box[1]);
+		}
 		if ( free_buffer ) free(buffer);
 		free_buffer = false;
 		buffer = box;
 		count  = 2;
 	}
 
-	if ( pexist(integer)) as_integer = pget_B(integer);
 	ret = prima_array_new(count * 2 * (as_integer ? sizeof(int) : sizeof(double)));
 	storage = prima_array_get_storage(ret);
 	if ( as_integer ) {
