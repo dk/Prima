@@ -400,7 +400,7 @@ XRenderComputeTrapezoids (Edge		*edges,
 		intersect = XRenderComputeIntersect (&e->edge, &e->next->edge);
 		/* make sure this point is below the actual intersection */
 		intersect = intersect + 1;
-		if (intersect < next_y)
+		if (intersect < next_y && intersect > y)
 		    next_y = intersect;
 	    }
 	}
@@ -408,14 +408,16 @@ XRenderComputeTrapezoids (Edge		*edges,
 	if (inactive < nedges && edges[inactive].edge.p1.y < next_y)
 	    next_y = edges[inactive].edge.p1.y;
 
+	if ( y == next_y ) {
+	        /* emergency brake #1 */
+		ok = 0;
+		maxtraps = 0;
+		break;
+	}
+
 	/* walk the list generating trapezoids */
 	for (e = active; e && (en = e->next); e = en->next)
 	{
-	    if ( y == next_y ) {
-	        /* here it goes wrong, no understanding why, just an emergency brake */
-	        maxtraps = 0;
-		break;
-	    }
 	    traps->top = y;
 	    traps->bottom = next_y;
 	    traps->left = e->edge;
@@ -423,6 +425,7 @@ XRenderComputeTrapezoids (Edge		*edges,
 	    traps++;
 	    (*ntraps)++;
 	    if ( --maxtraps <= 0 ) {
+	        /* emergency brake #2 */
 	        ok = 0;
 	    	break;
 	    }
