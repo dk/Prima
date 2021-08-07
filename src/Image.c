@@ -2074,6 +2074,7 @@ Bool
 Image_arc( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	if ( opt_InPaint) return inherited arc(self, x, y, dX, dY, startAngle, endAngle);
+	while ( startAngle > endAngle ) endAngle += 360.0;
 	return primitive( self, 0, "snnnnnn", "arc", x, y, dX-1, dY-1, startAngle, endAngle);
 }
 

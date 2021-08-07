@@ -529,6 +529,7 @@ Bool
 Drawable_arc( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
+	while ( startAngle > endAngle ) endAngle += 360.0;
 	return apc_gp_get_antialias(self) ?
 		primitive( self, 0, "snnnnnn", "arc", x, y, dX-1, dY-1, startAngle, endAngle) :
 		apc_gp_arc(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
