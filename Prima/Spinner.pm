@@ -11,6 +11,7 @@ sub profile_default
 		%{$self-> SUPER::profile_default},
 		style	    => 'drops',
 		active	    => 1,
+		antialias   => 1,
 		buffered    => 1,
 		value	    => 50,
 		showPercent => 1,
@@ -130,7 +131,6 @@ sub on_paint
 		);
 
 		$canvas->translate($x, $y);
-		$canvas->antialias(1);
 
 		my @colors = $canvas->new_gradient( palette => [ $self->color, $self->backColor ] )->colors(8+1);
 		my $fill_spline = sub {
@@ -153,8 +153,7 @@ sub on_paint
 		my @z = ( 0, 1.05, $r+.018, 1.05-.02, 1+.005, $r+.018, 1, 0);
 
 		$canvas->translate($x, $y);
-		$canvas->antialias(1);
-		my $p = $canvas-> new_path(subpixel => 1)->
+		my $p = $canvas-> new_path(subpixel => $canvas->antialias)->
 			scale($scale_factor * 9)->
 			rotate(-$self->{start_angle});
 		$p->spline(\@s);
