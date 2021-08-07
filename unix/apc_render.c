@@ -319,7 +319,7 @@ XRenderComputeTrapezoids (Edge		*edges,
     y = edges[0].edge.p1.y;
     active = NULL;
     inactive = 0;
-    while (maxtraps > 0 && (active || inactive < nedges))
+    while (ok && (active || inactive < nedges))
     {
 	/* insert new active edges into list */
 	while (inactive < nedges)
@@ -335,6 +335,7 @@ XRenderComputeTrapezoids (Edge		*edges,
 		active->prev = e;
 	    active = e;
 	}
+
 	/* compute x coordinates along this group */
 	for (e = active; e; e = e->next)
 	    e->current_x = XRenderComputeX (&e->edge, y);
@@ -409,10 +410,9 @@ XRenderComputeTrapezoids (Edge		*edges,
 	    next_y = edges[inactive].edge.p1.y;
 
 	if ( y == next_y ) {
-	        /* emergency brake #1 */
-		ok = 0;
-		maxtraps = 0;
-		break;
+	    /* emergency brake #1 */
+	    ok = 0;
+	    break;
 	}
 
 	/* walk the list generating trapezoids */
@@ -421,6 +421,18 @@ XRenderComputeTrapezoids (Edge		*edges,
 	    traps->top = y;
 	    traps->bottom = next_y;
 	    traps->left = e->edge;
+	    if ( winding == WindingRule ) {
+	       int cw = (e->clockWise ? 1 : -1) + (en->clockWise ? 1 : -1);
+	       while (en && cw != 0) {
+                   en = en->next;
+	           cw += en->clockWise ? 1 : -1;
+	       }
+	       traps->right = en->edge;
+	       if ( !en ) {
+	          ok = 0;
+		  break;
+	       }
+	    }
 	    traps->right = en->edge;
 	    traps++;
 	    (*ntraps)++;
@@ -525,6 +537,7 @@ my_XRenderCompositeDoublePoly (Display		    *dpy,
 	prevx = x;
 	prevy = y;
     }
+
     ok = XRenderComputeTrapezoids (edges, nedges, winding, traps, npoints * npoints + 1, &ntraps);
     /* XXX adjust xSrc/xDst */
     if ( ok )
