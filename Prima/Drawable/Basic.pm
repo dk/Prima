@@ -337,7 +337,7 @@ sub stroke_imgaa_primitive
 		$self->color($self->backColor);
 	}
 	my $ok = 1;
-	for ($path->points(1)) {
+	for ($path->points(fill => 1)) {
 		$ok &= $aa->fillpoly($_);
 		last unless $ok;
 	}
@@ -352,7 +352,7 @@ sub fill_imgaa_primitive
 	$path->$request(@_);
 	my $aa = $self->new_aa_surface;
 	return 0 unless $aa->can_aa;
-	for ($path->points(1)) {
+	for ($path->points(fill => 1)) {
 		return 0 unless $aa->fillpoly($_);
 	}
 	return 1;
@@ -389,7 +389,7 @@ sub fill_aa_primitive
 	my ( $self, $request ) = (shift, shift);
 	my $path = $self->new_path;
 	$path->$request(@_);
-	for ($path->points(1)) {
+	for ($path->points(fill => 1)) {
 		return 0 unless $self->fillpoly($_);
 	}
 	return 1;
