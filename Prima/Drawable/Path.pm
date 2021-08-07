@@ -1081,7 +1081,7 @@ sub region
 	$mode //= fm::Winding | fm::Overlay;
 	$rgnop //= rgnop::Union;
 	$reg ? $reg->combine($_, $rgnop) : ($reg = $_)
-		for map { Prima::Region->new( polygon => $_, fillMode => $mode) } $self->points(1);
+		for map { Prima::Region->new( polygon => $_, fillMode => $mode) } $self->points(fill => 1);
 	return $reg;
 }
 
