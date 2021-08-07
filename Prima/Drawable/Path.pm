@@ -346,7 +346,7 @@ sub new_array { shift->{subpixel} ? Prima::array->new_double : Prima::array->new
 
 sub points
 {
-	my ($self, $for_fill) = @_;
+	my ($self, %opt) = @_;
 	unless ( $self->{points} ) {
 		local $self->{stack} = [];
 		local $self->{curr}  = {
@@ -366,7 +366,7 @@ sub points
 		$self->{last_matrix} = $self->{curr}->{matrix};
 	}
 
-	if ( $for_fill ) {
+	if ( $opt{fill} ) {
 		my @ret;
 		for my $ppp ( @{ $self->points } ) {
 			my $arr = $self->new_array;
@@ -589,7 +589,7 @@ sub stroke {
 sub fill {
 	my ( $self, $fillMode ) = @_;
 	return 0 unless my $c = $self->{canvas};
-	my @p = $self->points(1);
+	my @p = $self->points(fill => 1);
 	my $ok = 1;
 	my $save;
 	if ( defined $fillMode ) {
@@ -955,13 +955,14 @@ sub widen
 					($prev, $next) = ($i - 2, 0);
 				}
 				my ($xo,$yo,$xa,$ya,$xb,$yb) = @$p[$i,$i+1,$prev,$prev+1,$next,$next+1];
-				my $theta = atan2( $yo - $ya, $xo - $xa );
-        	        	my $alpha = atan2( $yb - $yo, $xb - $xo ) - $theta;
+				my $dya = $yo - $ya;
+				my $dxa = $xo - $xa;
+				my $dyb = $yb - $yo;
+				my $dxb = $xb - $xo;
+				my $theta = atan2( $dya, $dxa );
+        	        	my $alpha = atan2( $dyb, $dxb ) - $theta;
 				$alpha += $PI * (($alpha > 0) ? -1 : 1);
 				# next if $alpha == 0.0; # XXX
-				my $_lj = $lj;
-				$_lj = lj::Bevel if
-					$_lj == lj::Miter && ($alpha == 0 || $ml < abs( 1 / sin($alpha/2)));
 				my $sign = ( $alpha > 0) ? -1 : 1;
 				my ( $in, $out) = ($alpha > 0) ? (\@u,\@d) : (\@d,\@u);
 				my ( $dx1, $dy1, $dx2, $dy2) = map { $sign * $lw2 * $_ } (
@@ -970,10 +971,18 @@ sub widen
 					cos($theta + $alpha + $PI_2),
 					sin($theta + $alpha + $PI_2)
 				);
+				my $_lj = $lj;
+				my $dmin = 3;
+				$_lj = lj::Miter if $_lj != lj::Miter &&
+					abs($dya) < $dmin && abs($dxa) < $dmin && abs($dyb) < $dmin && abs($dxb) < $dmin;
+				$_lj = lj::Bevel if
+					$_lj == lj::Miter && ($alpha == 0 || $ml < abs( 1 / sin($alpha/2)));
 				if ($i == 0) {
 					@$firstin = ( $xo + $dx1, $yo + $dy1);
 					$firstsign = $sign;
 				}
+				next if $dxa == 0 && $dya == 0;
+				next if $dxb == 0 && $dyb == 0;
 				push @$in, [ line => [ $xo + $dx1, $yo + $dy1 ]];
 				push @$in, [ line => [ $xo - $dx2, $yo - $dy2 ]];
 				if ( $_lj == lj::Miter) {
@@ -1061,7 +1070,7 @@ sub clip
 	$p->clear;
 	$p->set(%opt) if scalar keys %opt;
 	$p->translate($tx, $ty);
-	$p->fillpoly($_) for $self->points(1);
+	$p->fillpoly($_) for $self->points(fill => 1);
 	return $p->image;
 }
 
