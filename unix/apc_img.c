@@ -446,18 +446,9 @@ apc_dbm_create( Handle self, int type)
 	XCHECKPOINT;
 	prima_prepare_drawable_for_painting( self, false);
 
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	{
-		XRenderPictFormat *xf;
-		if ( XX-> type. bitmap )
-			xf = guts.xrender_a1_format;
-		else if ( XX-> flags. layered )
-			xf = guts.xrender_argb32_format;
-		else
-			xf = guts.xrender_display_format;
-		XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, xf, 0, NULL);
-	}
-#endif
+	CREATE_ARGB_PICTURE(XX->gdrawable,
+		XX->type.bitmap ? 1 : (XF_LAYERED(XX) ? 32 : 0),
+		XX->argb_picture);
 
 	return true;
 }
@@ -466,12 +457,6 @@ Bool
 apc_dbm_destroy( Handle self)
 {
 	DEFXX;
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XX->argb_picture ) {
-		XRenderFreePicture( DISP, XX->argb_picture);
-		XX->argb_picture = 0;
-	}
-#endif
 	if ( XX->gdrawable) {
 		prima_cleanup_drawable_after_painting( self);
 		XFreePixmap( DISP, XX->gdrawable);
@@ -2250,20 +2235,13 @@ apc_image_begin_paint( Handle self)
 	XX-> flags.layered = layered;
 	XX-> visual      = &guts. visual;
 	XX-> colormap    = guts. defaultColormap;
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	{
-		XRenderPictFormat *xf;
-		if ( XF_LAYERED(XX)) {
-			XX-> visual      = &guts. argb_visual;
-			XX-> colormap    = guts. argbColormap;
-			xf = guts. xrender_argb32_format;
-		} else if (bitmap)
-			xf = guts.xrender_a1_format;
-		else
-			xf = guts.xrender_display_format;
-		XX-> argb_picture = XRenderCreatePicture( DISP, XX->gdrawable, xf, 0, NULL);
+	if ( XF_LAYERED(XX)) {
+		XX-> visual    = &guts. argb_visual;
+		XX-> colormap  = guts. argbColormap;
 	}
-#endif
+	CREATE_ARGB_PICTURE(XX->gdrawable,
+		bitmap ? 1 : (XF_LAYERED(XX) ? 32 : 0),
+		XX->argb_picture);
 	XCHECKPOINT;
 	XX-> type. icon = 0;
 	prima_prepare_drawable_for_painting( self, false);
@@ -2696,12 +2674,6 @@ Bool
 apc_image_end_paint( Handle self)
 {
 	DEFXX;
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XX->argb_picture ) {
-		XRenderFreePicture( DISP, XX->argb_picture);
-		XX->argb_picture = 0;
-	}
-#endif
 	if ( XF_LAYERED(XX))
 		prima_query_argb_image( self, XX-> gdrawable);
 	else

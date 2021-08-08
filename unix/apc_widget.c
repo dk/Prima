@@ -472,11 +472,7 @@ apc_widget_begin_paint( Handle self, Bool inside_on_paint)
 	if ( guts. dynamicColors && inside_on_paint) prima_palette_free( self, false);
 	prima_no_cursor( self);
 	prima_prepare_drawable_for_painting( self, inside_on_paint);
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	XX->argb_picture = XRenderCreatePicture( DISP, XX->gdrawable,
-		XF_LAYERED(XX) ? guts.xrender_argb32_format : guts.xrender_display_format,
-		0, NULL);
-#endif
+	CREATE_ARGB_PICTURE(XX->gdrawable, XF_LAYERED(XX) ? 32 : 0, XX->argb_picture);
 	if ( useRPDraw) {
 		Handle owner = PWidget(self)->owner;
 		Point po = apc_widget_get_pos( self);

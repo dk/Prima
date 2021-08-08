@@ -91,11 +91,7 @@ get_window( Handle self, PMenuItemReg m)
 		wx-> next = w;
 	} else
 		XX-> w = w;
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	w->argb_picture = XRenderCreatePicture( DISP, w->w,
-		X(self)->flags.layered ? guts.xrender_argb32_format : guts.xrender_display_format,
-		0, NULL);
-#endif
+	CREATE_ARGB_PICTURE(w->w, X(self)->flags.layered ? 32 : 0, w->argb_picture);
 	return w;
 }
 
@@ -1307,10 +1303,8 @@ handle_menu_expose( XEvent *ev, XWindow win, Handle self)
 	XSetRegion( DISP, draw.gc, rgn);
 #ifdef USE_XFT
 	if ( draw. xft_drawable) XftDrawSetClip(( XftDraw*) draw.xft_drawable, rgn);
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( w-> argb_picture ) XRenderSetPictureClipRegion(DISP, w->argb_picture, rgn);
 #endif
-#endif
+	CLIP_ARGB_PICTURE(w->argb_picture, rgn);
 
 #ifdef USE_XFT
 	if ( !kf-> xft)
@@ -2394,11 +2388,7 @@ apc_window_set_menu( Handle self, Handle menu)
 		M(m)-> w-> w = m-> handle = XCreateWindow( DISP, X_WINDOW,
 			0, 0, 1, 1, 0, CopyFromParent,
 			InputOutput, CopyFromParent, valuemask, &attrs);
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-		M(m)->w->argb_picture = XRenderCreatePicture( DISP, M(m)->w->w,
-			guts.xrender_display_format,
-			0, NULL);
-#endif
+		CREATE_ARGB_PICTURE(M(m)->w->w, 0, M(m)->w->argb_picture);
 		hash_store( guts. menu_windows, &m-> handle, sizeof( m-> handle), m);
 		XResizeWindow( DISP, m-> handle, XX-> size.x, y);
 		XMapRaised( DISP, m-> handle);

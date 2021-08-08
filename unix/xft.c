@@ -128,19 +128,6 @@ static char  fontspecific[] = "fontspecific";
 static char  utf8_encoding[] = "iso10646-1";
 static CharSetInfo * locale = NULL;
 
-#ifdef NEED_X11_EXTENSIONS_XRENDER_H
-/* piece of Xrender guts */
-typedef struct _XExtDisplayInfo {
-	struct _XExtDisplayInfo *next;
-	Display *display;
-	XExtCodes *codes;
-	XPointer data;
-} XExtDisplayInfo;
-
-extern XExtDisplayInfo *
-XRenderFindDisplay (Display *dpy);
-#endif
-
 typedef struct {
 	Font font;
 	XftFont *orig, *xft_font;
@@ -224,14 +211,6 @@ prima_xft_init(void)
 	size_t ibl, obl;
 	uint32_t *optr;
 	int j;
-#endif
-
-#ifdef NEED_X11_EXTENSIONS_XRENDER_H
-	{ /* snatch error code from xrender guts */
-		XExtDisplayInfo *info = XRenderFindDisplay( DISP);
-		if ( info && info-> codes)
-			guts. xft_xrender_major_opcode = info-> codes-> major_opcode;
-	}
 #endif
 
 	if ( !apc_fetch_resource( "Prima", "", "UseXFT", "usexft",

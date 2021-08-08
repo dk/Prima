@@ -493,9 +493,7 @@ apc_gp_set_clip_rect( Handle self, Rect clipRect)
 #ifdef USE_XFT
 	if ( XX-> xft_drawable) prima_xft_update_region( self);
 #endif
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XX-> argb_picture ) XRenderSetPictureClipRegion(DISP, XX->argb_picture, region);
-#endif
+	CLIP_ARGB_PICTURE(XX->argb_picture, region);
 	return true;
 }
 
@@ -552,9 +550,7 @@ apc_gp_set_region( Handle self, Handle rgn)
 #ifdef USE_XFT
 	if ( XX-> xft_drawable) prima_xft_update_region( self);
 #endif
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	if ( XX-> argb_picture ) XRenderSetPictureClipRegion(DISP, XX->argb_picture, region);
-#endif
+	CLIP_ARGB_PICTURE(XX->argb_picture, region);
 	return true;
 }
 

@@ -310,13 +310,6 @@ init_x11( char * error_buf )
 		}
 	}
 #endif
-#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
-	{
-		int dummy;
-		if ( XRenderQueryExtension( DISP, &dummy, &dummy))
-			guts. render_extension = true;
-	}
-#endif
 #ifdef HAVE_X11_EXTENSIONS_XCOMPOSITE_H
 	{
 		int dummy;

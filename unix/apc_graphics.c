@@ -249,6 +249,7 @@ void
 prima_cleanup_drawable_after_painting( Handle self)
 {
 	DEFXX;
+	DELETE_ARGB_PICTURE(XX->argb_picture);
 #ifdef USE_XFT
 	prima_xft_gp_destroy( self );
 #endif

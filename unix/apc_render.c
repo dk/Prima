@@ -47,6 +47,20 @@ typedef struct {
 
 static Pen pen;
 
+#ifdef NEED_X11_EXTENSIONS_XRENDER_H
+/* piece of Xrender guts */
+typedef struct _XExtDisplayInfo {
+	struct _XExtDisplayInfo *next;
+	Display *display;
+	XExtCodes *codes;
+	XPointer data;
+} XExtDisplayInfo;
+
+extern XExtDisplayInfo *
+XRenderFindDisplay (Display *dpy);
+#endif
+
+
 Bool
 prima_init_xrender_subsystem(char * error_buf)
 {
@@ -55,7 +69,22 @@ prima_init_xrender_subsystem(char * error_buf)
 	XVisualInfo template, *list;
 	XRenderPictureAttributes xrp_attr;
 
+	{
+		int dummy;
+		if ( XRenderQueryExtension( DISP, &dummy, &dummy))
+			guts. render_extension = true;
+	}
+
 	if ( !guts. render_extension ) return true;
+
+#ifdef NEED_X11_EXTENSIONS_XRENDER_H
+	{ /* snatch error code from xrender guts */
+		XExtDisplayInfo *info = XRenderFindDisplay( DISP);
+		if ( info && info-> codes)
+			guts. xft_xrender_major_opcode = info-> codes-> major_opcode;
+	}
+#endif
+
 
 	template. depth = 32; /* XXX should try non-32 bit alpha'ed visuals */
 	list = XGetVisualInfo( DISP, VisualDepthMask, &template, &count);
@@ -114,6 +143,23 @@ prima_done_xrender_subsystem()
 	XFreePixmap( DISP, pen.pixmap );
 	XFreeGC( DISP, pen.gc);
 	XCHECKPOINT;
+}
+
+Picture
+prima_render_create_picture(XDrawable drawable, int depth)
+{
+	XRenderPictFormat *xf;
+	switch (depth) {
+	case 1:
+		xf = guts.xrender_a1_format;
+		break;
+	case 32:
+		xf = guts.xrender_argb32_format;
+		break;
+	default:
+		xf = guts.xrender_display_format;
+	}
+	return XRenderCreatePicture( DISP, drawable, xf, 0, NULL);
 }
 
 static void
@@ -176,7 +222,6 @@ pen_update(Handle self)
 Bool
 apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 {
-	Picture   target;
 	XPointDouble *p;
 	int i, ok;
 	DEFXX;
@@ -195,24 +240,16 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	p[numPts].y = REVERT(points[0]. y + XX-> gtransform. y + XX-> btransform. y);
 	RANGE2(p[numPts].x, p[numPts].y);
 
-	target  = XRenderCreatePicture( DISP, XX->gdrawable, 
-		XF_LAYERED(XX) ? guts.xrender_argb32_format : guts.xrender_display_format,
-		0, NULL);
-	if ( XX-> clip_mask_extent. x != 0 && XX-> clip_mask_extent. y != 0)
-		XRenderSetPictureClipRegion(DISP, target, XX->current_region);
-	XCHECKPOINT;
-
 	if ( guts.xrender_pen_dirty ) pen_update(self);
 	ok = my_XRenderCompositeDoublePoly(
-		DISP, PictOpOver, pen.picture, target,
+		DISP, PictOpOver, pen.picture, XX->argb_picture,
 		guts.xrender_a8_format,
 		0, 0, 0, 0, p, numPts,
 		((XX->fill_mode & fmWinding) == fmAlternate) ? EvenOddRule : WindingRule
 	);
-
-	XRenderFreePicture( DISP, target);
-	XSync(DISP, false);
 	free( p);
+
+	XSync(DISP, false);
 	XCHECKPOINT;
 	return ok;
 }

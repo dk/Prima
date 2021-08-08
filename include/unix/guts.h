@@ -1200,12 +1200,27 @@ extern Pixmap
 prima_std_pixmap( Handle self, int type);
 
 #ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+
 #define DELETE_ARGB_PICTURE(x) if ((x)) { \
 	XRenderFreePicture( DISP, x);     \
 	x = 0;                            \
 }
+
+#define CLIP_ARGB_PICTURE(x,region) if ((x)) \
+	XRenderSetPictureClipRegion(DISP, x, region);
+
+#define CREATE_ARGB_PICTURE(drawable, depth, target) \
+	target = prima_render_create_picture(drawable, depth)
+
+extern Picture
+prima_render_create_picture(XDrawable drawable, int depth);
+
 #else
+
+#define CREATE_ARGB_PICTURE(drawable, depth, target)
 #define DELETE_ARGB_PICTURE(x)
+#define CLIP_ARGB_PICTURE(x,region)
+
 #endif
 
 extern void
