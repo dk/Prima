@@ -728,7 +728,7 @@ Icon_premultiply_alpha( Handle self, SV * alpha)
 }
 
 Bool
-Icon_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
+Icon_bar_alpha( Handle self, int alpha, int x1, int y1, int x2, int y2)
 {
 	Point t;
 	Image dummy;

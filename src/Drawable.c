@@ -31,6 +31,7 @@ Drawable_init( Handle self, HV * profile)
 	inherited init( self, profile);
 	apc_gp_init( self);
 	var-> w = var-> h = 0;
+	my-> set_alpha        ( self, pget_i ( alpha));
 	my-> set_antialias    ( self, pget_B ( antialias));
 	my-> set_color        ( self, pget_i ( color));
 	my-> set_backColor    ( self, pget_i ( backColor));
@@ -1257,6 +1258,15 @@ Drawable_sector( Handle self, double x, double y, double dX, double dY, double s
 
 /* Properties */
 
+int
+Drawable_alpha( Handle self, Bool set, int alpha)
+{
+	if (!set) return apc_gp_get_alpha( self);
+	if ( alpha < 0 ) alpha = 0;
+	if ( alpha > 255 ) alpha = 255;
+	apc_gp_set_alpha( self, alpha);
+	return alpha;
+}
 
 Bool
 Drawable_antialias( Handle self, Bool set, Bool aa)

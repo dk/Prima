@@ -166,6 +166,7 @@ Unbuffered:
 
 	XX-> paint_rop = XX-> rop;
 	XX-> paint_rop2 = XX-> rop2;
+	XX-> paint_alpha = XX-> alpha;
 	XX-> paint_line_width = XX-> line_width;
 	XX-> flags. paint_base_line = XX-> flags. base_line;
 	XX-> flags. paint_opaque    = XX-> flags. opaque;
@@ -1460,6 +1461,17 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 }
 
 /* gpi settings */
+int
+apc_gp_get_alpha( Handle self)
+{
+	DEFXX;
+	if ( XF_IN_PAINT(XX)) {
+		return XX-> paint_alpha;
+	} else {
+		return XX-> alpha;
+	}
+}
+
 Bool
 apc_gp_get_antialias( Handle self)
 {
@@ -1696,6 +1708,19 @@ apc_gp_get_text_out_baseline( Handle self)
 	} else {
 		return XX-> flags. base_line ? true : false;
 	}
+}
+
+Bool
+apc_gp_set_alpha( Handle self, int alpha)
+{
+	DEFXX;
+	if ( XF_IN_PAINT(XX)) {
+		XX-> paint_alpha = alpha;
+		guts.xrender_pen_dirty = true;
+	} else {
+		XX-> alpha = alpha;
+	}
+	return true;
 }
 
 Bool

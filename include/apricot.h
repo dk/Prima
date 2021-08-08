@@ -3683,6 +3683,9 @@ extern Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags);
 
 /* gpi settings */
+extern int
+apc_gp_get_alpha( Handle self);
+
 extern Bool
 apc_gp_get_antialias( Handle self);
 
@@ -3799,6 +3802,9 @@ apc_gp_get_text_out_baseline( Handle self);
 
 extern Point
 apc_gp_get_transform( Handle self);
+
+extern Bool
+apc_gp_set_alpha( Handle self, int alpha);
 
 extern Bool
 apc_gp_set_antialias( Handle self, Bool aa);

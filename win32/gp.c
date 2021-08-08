@@ -246,15 +246,6 @@ apc_gp_bar( Handle self, int x1, int y1, int x2, int y2)
 
 	check_swap( x1, x2);
 	check_swap( y1, y2);
-	if ( sys alpha >= 0 && sys stylus.brush.lb.lbStyle == BS_SOLID) {
-		STYLUS_USE_GP_BRUSH;
-		GPCALL GdipFillRectangleI(
-			sys graphics, sys stylusGPResource->brush,
-			x1, sys lastSize. y - y2 - 1, x2 - x1 + 1, y2 - y1 + 1
-		);
-		apiGPErrCheckRet(false);
-		return true;
-	}
 
 	ok = true;
 	old = SelectObject( ps, hPenHollow);
@@ -818,16 +809,6 @@ apc_gp_rectangle( Handle self, int x1, int y1, int x2, int y2)
 	check_swap( x1, x2);
 	check_swap( y1, y2);
 
-	if ( sys alpha >= 0) {
-		STYLUS_USE_GP_PEN;
-		GPCALL GdipDrawRectangleI(
-			sys graphics, sys stylusGPResource->pen,
-			x1, sys lastSize. y - y2 - 1, x2 - x1, y2 - y1
-		);
-		apiGPErrCheckRet(false);
-		return true;
-	}
-
 	old = SelectObject( ps, hBrushHollow);
 	if ( sys stylus. pen. lopnWidth. x > 1 &&
 		(sys stylus. pen. lopnWidth. x % 2) == 0
@@ -904,6 +885,12 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 }
 
 // gpi settings
+int
+apc_gp_get_alpha( Handle self)
+{
+	return sys alpha;
+}
+
 Bool
 apc_gp_get_antialias( Handle self)
 {
@@ -1175,8 +1162,7 @@ apc_gp_get_rop( Handle self)
 {
 	objCheck 0;
 	if ( !sys ps) return sys rop;
-	return ctx_remap_def( GetROP2( sys ps), ctx_rop2R2, false, ropCopyPut) |
-		(( sys alpha >= 0) ? ( ropSrcAlpha | (sys alpha << ropSrcAlphaShift)) : 0);
+	return ctx_remap_def( GetROP2( sys ps), ctx_rop2R2, false, ropCopyPut);
 }
 
 int
@@ -1201,6 +1187,13 @@ apc_gp_get_transform( Handle self)
 }
 
 #define pal_ok ((sys bpp <= 8) && ( sys pal))
+
+Bool
+apc_gp_set_alpha( Handle self, int alpha)
+{
+	sys alpha = alpha;
+	return true;
+}
 
 Bool
 apc_gp_set_antialias( Handle self, Bool aa)
@@ -1497,11 +1490,6 @@ apc_gp_set_rop( Handle self, int rop)
 {
 	objCheck false;
 	if ( !sys ps) { sys rop = rop; return true; }
-	if ( rop & ropSrcAlpha ) {
-		sys alpha = (rop >> ropSrcAlphaShift) & 0xff;
-		rop &= 0xF;
-	} else
-		sys alpha = -1;
 	sys currentROP = ctx_remap_def( rop, ctx_rop2R2, true, R2_COPYPEN);
 	if ( !SetROP2( sys ps, sys currentROP)) apiErr;
 	return true;

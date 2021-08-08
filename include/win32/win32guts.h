@@ -326,6 +326,7 @@ typedef struct _PrinterData
 typedef struct _PaintSaveData
 {
 	Bool        antialias;
+	int         alpha;
 	Color       lbs[2];
 	Bool        fillMode;
 	float       lineWidth;

@@ -516,6 +516,7 @@ sub profile_default
 {
 	my $def = $_[ 0]-> SUPER::profile_default;
 	my %prf = (
+		alpha           => 0xff,
 		antialias       => 0,
 		color           => cl::Black,
 		backColor       => cl::White,
@@ -1520,7 +1521,7 @@ sub begin_drag
 			$y -= $fh;
 		}
 		$i->end_paint;
-		$i->alpha(160, 0, 0, $i->size);
+		$i->bar_alpha(160, 0, 0, $i->size);
 		$opt{preview} = $i;
 	}
 
@@ -1570,7 +1571,7 @@ sub begin_drag
 				if $p->isa('Prima::Icon');
 			$n->put_image( 0, $p->height, $i, rop::SrcCopy);
 			$n->put_image( $i->width, 0, $p, rop::SrcCopy);
-			$n->alpha(0xff, $i->width, 0, $i->width + $p->width - 1, $p->height - 1)
+			$n->bar_alpha(0xff, $i->width, 0, $i->width + $p->width - 1, $p->height - 1)
 				if !$p->isa('Prima::Icon');
 			$n->{__pointerHotSpot} = \@hs;
 			$pointers{$action} = $n;

@@ -8,6 +8,7 @@ object Prima::Drawable ( Prima::Component)
 	PRGBColor    palette;       	       # logical palette
 	int          palSize;               # logical palette size
 
+	property     int           alpha;
 	property     Bool          antialias;
 	property     Color         backColor;
 	property     Color         color;
@@ -67,9 +68,9 @@ object Prima::Drawable ( Prima::Component)
 	static SV *  render_spline( SV * obj, SV * points, HV * profile);
 
 	# operators
-	method Bool  alpha(int alpha, int x1=-1, int y1=-1, int x2=-1, int y2=-1)        => apc_gp_alpha;
 	method Bool  arc( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool  bar(double x1, double y1, double x2, double y2);
+	method Bool  bar_alpha(int alpha, int x1=-1, int y1=-1, int x2=-1, int y2=-1)        => apc_gp_alpha;
 	method Bool  bars(SV * rects);
 	method Bool  chord( double x, double y, double dX, double dY, double startAngle, double endAngle);
 	method Bool  clear(double x1=-1, double y1=-1, double x2=-1, double y2=-1);

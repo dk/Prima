@@ -170,7 +170,7 @@ pen_update(Handle self)
 		GCTileStipXOrigin | GCTileStipYOrigin |
 		GCForeground      | GCFillStyle       |
 		0;
-	int alpha = 0xff000000;
+	int alpha = XX->paint_alpha;
 
 	switch ( XX-> paint_rop) {
 	case ropNotPut:
@@ -195,6 +195,7 @@ pen_update(Handle self)
 		pen.gcv.background = XX-> back.primary;
 	}
 
+	alpha = ((alpha << guts.argb_bits.alpha_range) >> 8) << guts.argb_bits.alpha_shift;
 	pen.gcv.foreground &= 0xffffff;
 	pen.gcv.background &= 0xffffff;
 	pen.gcv.foreground |= alpha;
