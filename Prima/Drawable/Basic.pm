@@ -322,7 +322,7 @@ sub stroke_imgaa_primitive
 	my $aa = $self->new_aa_surface;
 	return 0 unless $aa->can_aa;
 
-	my $path = $self->new_path( subpixel => 1 );
+	my $path = $self->new_path;
 	$path->$request(@_);
 	$path = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
@@ -348,7 +348,7 @@ sub stroke_imgaa_primitive
 sub fill_imgaa_primitive
 {
 	my ( $self, $request ) = (shift, shift);
-	my $path = $self->new_path( subpixel => 1 );
+	my $path = $self->new_path;
 	$path->$request(@_);
 	my $aa = $self->new_aa_surface;
 	return 0 unless $aa->can_aa;
@@ -365,7 +365,7 @@ sub stroke_aa_primitive
 	my $lp = $self->linePattern;
 	return 1 if $lp eq lp::Null && $self->rop2 == rop::NoOper;
 
-	my $path = $self->new_path( subpixel => 1 );
+	my $path = $self->new_path;
 	$path->$request(@_);
 	$path = $path->widen(
 		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp

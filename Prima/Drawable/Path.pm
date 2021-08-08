@@ -28,7 +28,7 @@ sub new
 		canvas          => $canvas,
 		commands        => [],
 		precision       => undef,
-		subpixel        => 0,
+		subpixel        => $canvas ? $canvas->antialias : 0,
 		antialias       => 0,
 		%opt
 	}, $class;
@@ -1279,7 +1279,7 @@ Adds scaling to the current matrix
 
 Turns on and off slow but more precise floating-point calculation mode
 
-Default: false
+Default: depends on canvas antialiasing mode
 
 =item translate X, Y = X
 

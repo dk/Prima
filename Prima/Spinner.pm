@@ -153,7 +153,7 @@ sub on_paint
 		my @z = ( 0, 1.05, $r+.018, 1.05-.02, 1+.005, $r+.018, 1, 0);
 
 		$canvas->translate($x, $y);
-		my $p = $canvas-> new_path(subpixel => $canvas->antialias)->
+		my $p = $canvas-> new_path->
 			scale($scale_factor * 9)->
 			rotate(-$self->{start_angle});
 		$p->spline(\@s);
