@@ -1928,6 +1928,8 @@ SV(FixedPointerSize)
 SV(MenuCheckSize)
 #define   svFriBidi         37
 SV(FriBidi)
+#define   svAntialias       38
+SV(Antialias)
 END_TABLE(sv,UV)
 #undef SV
 

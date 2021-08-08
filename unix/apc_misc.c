@@ -1098,6 +1098,7 @@ apc_sys_get_value( int v)  /* XXX one big XXX */
 ;
 	case svMenuCheckSize   : return MENU_CHECK_XOFFSET;
 	case svFriBidi         : return use_fribidi;
+	case svAntialias       : return guts. argb_visual. visual != NULL;
 	default:
 		return -1;
 	}

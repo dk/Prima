@@ -219,6 +219,7 @@ apc_sys_get_value( int sysValue)
 	case svFixedPointerSize: return 0;
 	case svMenuCheckSize   : return GetSystemMetrics( SM_CXMENUCHECK );
 	case svFriBidi         : return use_fribidi;
+	case svAntialias       : return 1;
 	default:
 		return -1;
 	}
