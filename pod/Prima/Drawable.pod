@@ -224,7 +224,7 @@ being renderes with half-tones.
 
 =item *
 
-C<alpha()> property will be used. All the primitives above would use it
+C<alpha()> property will be used. All the primitives above would use it.
 
 =item *
 
@@ -763,6 +763,9 @@ is in the disabled state.
 
 When antialiasing mode is on, sets alpha component of the brush, where 0 is fully transparent
 and 255 is fully opaque.
+
+Note that premultiplication of C<color> and C<backColor> is not necessary as it
+is done internally.
 
 Default: 255
 

@@ -1657,9 +1657,15 @@ get_no_aa_font( PDrawableSysData selfxx, XftFont * font)
 static void
 setup_alpha(PDrawableSysData selfxx, XftColor * xftcolor, XftFont ** font)
 {
-	if ( XX-> flags. layered) {
-		xftcolor->color.alpha = 0xffff;
-	} else if ( XX-> type. bitmap) {
+	if ( XX-> flags. layered || !XX->type.bitmap) {
+		if ( selfxx->flags.antialias ) {
+			float div = 65535.0 / (float)(xftcolor->color.alpha = (selfxx->paint_alpha << 8));
+			xftcolor->color.red   = (float) xftcolor->color.red   / div;
+			xftcolor->color.green = (float) xftcolor->color.green / div;
+			xftcolor->color.blue  = (float) xftcolor->color.blue  / div;
+		} else
+			xftcolor->color.alpha = 0xffff;
+	} else {
 		xftcolor->color.alpha = (
 			(
 				xftcolor->color.red/3 + 
@@ -1672,8 +1678,6 @@ setup_alpha(PDrawableSysData selfxx, XftColor * xftcolor, XftFont ** font)
 			;
 		if ( !guts. xft_no_antialias && !XX-> font-> xft_no_aa)
 			*font = get_no_aa_font(XX, *font);
-	} else {
-		xftcolor->color.alpha = 0xffff;
 	}
 }
 
