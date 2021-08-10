@@ -475,6 +475,10 @@ apc_gp_set_clip_rect( Handle self, Rect c)
 	if ( is_apt(aptLayeredPaint) && sys layeredParentRegion )
 		CombineRgn( rgn, rgn, sys layeredParentRegion, RGN_AND);
 	if ( !SelectClipRgn( sys ps, rgn)) apiErr;
+	if ( sys graphics ) {
+		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
+		apiGPErrCheck;
+	}
 	if ( !DeleteObject( rgn)) apiErr;
 	return true;
 }
