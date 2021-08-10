@@ -677,6 +677,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 {
 	int i;
 	double dy = sys lastSize. y;
+	Point t = sys gp_transform;
 	GpPointF *p;
 	objCheck false;
 
@@ -684,8 +685,8 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 		return false;
 
 	for ( i = 0; i < numPts; i++)  {
-		p[i].X = points[i].x;
-		p[i].Y = dy - points[i].y - 1.0;
+		p[i].X = t.x + points[i].x;
+		p[i].Y = t.y + dy - points[i].y - 1.0;
 	}
 
 	STYLUS_USE_GP_BRUSH;
@@ -1524,7 +1525,9 @@ apc_gp_set_transform( Handle self, int x, int y)
 		sys transform. y = y;
 		return true;
 	}
-	if ( !SetViewportOrgEx( sys ps, x - sys transform2. x, - ( y + sys transform2. y), NULL)) apiErr;
+	sys gp_transform.x = x - sys transform2.x;
+	sys gp_transform.y = - ( y + sys transform2.y );
+	if ( !SetViewportOrgEx( sys ps, sys gp_transform.x, sys gp_transform.y, NULL)) apiErr;
 	return true;
 }
 

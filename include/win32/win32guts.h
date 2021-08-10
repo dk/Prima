@@ -471,6 +471,7 @@ typedef struct _DrawableData
 	int            rop2;
 	float          miterLimit;
 	Point          transform;
+	Point          gp_transform;
 	PPaintSaveData psd;                     // Their values during paint saved in sys psd
 
 	/* Basic widget fields */
