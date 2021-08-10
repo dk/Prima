@@ -49,7 +49,7 @@ apc_gp_done( Handle self)
 			}
 		}
 	}
-	if ( sys linePatternLen  > 3) free( sys linePattern);
+	if ( sys linePatternLen  > sizeof(sys linePattern)) free( sys linePattern);
 	stylus_free( sys stylusResource, false); /* XXX check this */
 	stylus_gp_free( sys stylusGPResource, false);
 	if ( sys linePatternLen  > sizeof(sys linePattern)) free( sys linePattern);
