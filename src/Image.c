@@ -2198,6 +2198,7 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 		_x1 += t.x;
 		_y1 += t.y;
 		color2pixel( self, my->get_backColor(self), ctx.color);
+		*ctx.backColor = *ctx.color;
 		ctx.rop = my->get_rop(self);
 		ctx.region = var->regionData ? &var->regionData-> data. box : NULL;
 		memset( ctx.pattern, 0xff, sizeof(ctx.pattern));
