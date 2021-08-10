@@ -127,7 +127,9 @@ typedef HANDLE SOCKETHANDLE;
 #define GPCALL rc = (DWORD)
 #define apiGPErr { \
 	apcError = errApcError; \
-	if ( debug ) err_msg_gplus(rc, NULL);\
+	if ( debug ) \
+		warn( "win32 error 0x%x: '%s' at line %d in %s\n", (unsigned int)rc, \
+			err_msg_gplus( rc, NULL), __LINE__, __FILE__);   \
 	rc |= 0x40000;    \
 }
 #define apiGPErrCheck if (rc) apiGPErr;

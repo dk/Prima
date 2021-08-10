@@ -211,11 +211,6 @@ stylus_gp_prealloc(Handle self)
 		sys stylusGPResource = NULL;
 	}
 
-	if ( sys graphics == NULL ) {
-		GPCALL GdipCreateFromHDC(sys ps, &sys graphics);
-		apiGPErrCheckRet(false);
-	}
-
 	return true;
 }
 
@@ -1764,6 +1759,10 @@ hwnd_enter_paint( Handle self)
 void
 hwnd_leave_paint( Handle self)
 {
+	if ( sys graphics) {
+		GdipDeleteGraphics(sys graphics);
+		sys graphics = NULL;
+	}
 	SelectObject( sys ps,  sys stockPen);
 	SelectObject( sys ps,  sys stockBrush);
 	SelectObject( sys ps,  sys stockFont);

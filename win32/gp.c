@@ -1204,6 +1204,10 @@ apc_gp_set_antialias( Handle self, Bool aa)
 			( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
 		)
 			return false;
+		if ( sys ps && sys graphics == NULL ) {
+			GPCALL GdipCreateFromHDC(sys ps, &sys graphics);
+			apiGPErrCheckRet(false);
+		}
 		apt_set(aptGDIPlus);
 		GdipSetSmoothingMode(sys graphics, SmoothingModeAntiAlias);
 		GdipSetPixelOffsetMode(sys graphics, PixelOffsetModeHalf);
