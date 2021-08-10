@@ -484,7 +484,6 @@ apc_gp_set_clip_rect( Handle self, Rect c)
 	return true;
 }
 
-
 Bool
 apc_gp_get_region( Handle self, Handle mask)
 {

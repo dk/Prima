@@ -91,8 +91,7 @@ typedef HANDLE SOCKETHANDLE;
 #define stbText         0x04
 #define stbBacking      0x08
 #define stbGDIMask      0x0F
-#define stbGPPen        0x10
-#define stbGPBrush      0x20
+#define stbGPBrush      0x10
 
 #define SOCKETS_NONE         ( guts. socket_version == -1)
 #define SOCKETS_AS_HANDLES   ( guts. socket_version == 1)
@@ -403,7 +402,7 @@ typedef struct _DCFont
 
 typedef struct _GPStylus
 {
-	int type, opaque;
+	int opaque;
 	uint32_t fg, bg;
 	FillPattern fill;
 } GPStylus, *PGPStylus;
@@ -413,10 +412,8 @@ typedef struct _DCGPStylus
 	GPStylus s;
 	int refcnt;
 	int line_width;
-	GpPen * pen;
 	GpBrush * brush;
 } DCGPStylus, *PDCGPStylus;
-
 
 typedef struct _DrawableData
 {
@@ -578,19 +575,10 @@ typedef struct _MusClkRec {
 		sys stylusFlags |= stbBacking;                       \
 	}
 
-#define STYLUS_USE_GP_PEN                          \
-	if ( !( sys stylusFlags & stbGPPen)) {                \
-		if ( stylus_gp_alloc_pen(self) == NULL ) return false; \
-		sys stylusFlags |= stbGPPen;                      \
-		if ( sys stylus.pen.lopnWidth.x != sys stylusGPResource->line_width ) {\
-			 GPCALL GdipSetPenWidth(sys stylusGPResource->pen, sys stylusGPResource->line_width = sys stylus.pen.lopnWidth.x);\
-			 apiGPErrCheck; \
-		}\
-	}
 
 #define STYLUS_USE_GP_BRUSH                          \
 	if ( !( sys stylusFlags & stbGPBrush)) {                \
-		if ( stylus_gp_alloc_brush(self) == NULL ) return false; \
+		if ( stylus_gp_alloc(self) == NULL ) return false; \
 		sys stylusFlags |= stbGPBrush;                      \
 	}
 
@@ -711,8 +699,7 @@ extern Bool         stylus_complex( PStylus stylus, HDC dc);
 extern Bool         stylus_extpenned( PStylus stylus);
 extern void         stylus_free( PDCStylus res, Bool permanent);
 extern DWORD        stylus_get_extpen_style( PStylus s);
-extern GpPen*       stylus_gp_alloc_pen(Handle self);
-extern GpBrush*     stylus_gp_alloc_brush(Handle self);
+extern GpBrush*     stylus_gp_alloc(Handle self);
 extern void         stylus_gp_clean( void);
 extern void         stylus_gp_free( PDCGPStylus res, Bool permanent);
 extern HRGN         region_create( Handle mask);

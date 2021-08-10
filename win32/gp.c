@@ -1198,6 +1198,9 @@ Bool
 apc_gp_set_alpha( Handle self, int alpha)
 {
 	sys alpha = alpha;
+
+	if ( sys ps && sys graphics )
+		stylus_change( self);
 	return true;
 }
 

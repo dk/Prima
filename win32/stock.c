@@ -115,21 +115,6 @@ stylus_free( PDCStylus res, Bool permanent)
 	hash_delete( stylusMan, &res-> s, sizeof( Stylus) - ( res-> s. extPen. actual ? 0 : sizeof( EXTPEN)), true);
 }
 
-void
-stylus_change( Handle self)
-{
-	PDCStylus p;
-	PDCStylus newP;
-	if ( is_apt( aptDCChangeLock)) return;
-	p    = sys stylusResource;
-	newP = stylus_alloc( &sys stylus);
-	if ( p != newP) {
-		sys stylusResource = newP;
-		sys stylusFlags = 0; /* GDI plus too */
-	}
-	stylus_free( p, false);
-}
-
 static Bool _st_cleaner( PDCStylus s, int keyLen, void * key, void * dummy) {
 	if ( s-> refcnt <= 0) stylus_free( s, true);
 	return false;
@@ -185,10 +170,8 @@ stylus_gp_free( PDCGPStylus res, Bool permanent)
 		res-> refcnt = 0;
 		return;
 	}
-	if ( res-> pen)   GdipDeletePen( res-> pen);
 	if ( res-> brush) GdipDeleteBrush( res-> brush);
 	res-> brush = NULL;
-	res-> pen = NULL;
 	hash_delete( stylusGpMan, &res-> s, sizeof( GPStylus), true);
 }
 
@@ -201,17 +184,6 @@ void
 stylus_gp_clean()
 {
 	hash_first_that( stylusGpMan, _gp_cleaner, nil, nil, nil);
-}
-
-static Bool
-stylus_gp_prealloc(Handle self)
-{
-	if ( sys stylusGPResource != NULL ) {
-		stylus_gp_free( sys stylusGPResource, false);
-		sys stylusGPResource = NULL;
-	}
-
-	return true;
 }
 
 static PDCGPStylus
@@ -236,53 +208,33 @@ stylus_gp_fetch( GPStylus * key)
 	return cached;
 }
 
-
-GpPen*
-stylus_gp_alloc_pen(Handle self)
+GpBrush*
+stylus_gp_alloc(Handle self)
 {
 	GPStylus key;
 	DCGPStylus *cached;
+	int r,g,b;
+	float a;
 
-	if ( !stylus_gp_prealloc(self)) return NULL;
-
-	memset(&key, 0, sizeof(key));
-	key.type = stbPen;
-	key.fg =
-		 (sys stylus.brush.lb.lbColor >> 16) |
-		 (sys stylus.brush.lb.lbColor & 0xff00) |
-		((sys stylus.brush.lb.lbColor & 0xff) << 16) |
-		 (sys alpha << 24);
-
-	if ((cached = stylus_gp_fetch(&key)) == NULL)
-		return NULL;
-
-	if ( cached->pen == NULL ) {
-		GpPen *p;
-		GPCALL GdipCreatePen1((ARGB)key.fg, 0, UnitPixel, &p);
-		apiGPErrCheckRet(NULL);
-		cached->pen = (GpPen*)p;
+	if ( sys stylusGPResource) {
+		stylus_gp_free( sys stylusGPResource, 0);
+		sys stylusGPResource = NULL;
 	}
 
-	cached-> refcnt++;
-	sys stylusGPResource = cached;
-	return cached;
-}
-
-GpBrush*
-stylus_gp_alloc_brush(Handle self)
-{
-	GPStylus key;
-	DCGPStylus *cached;
-
-	if ( !stylus_gp_prealloc(self)) return NULL;
-
 	memset(&key, 0, sizeof(key));
-	key.type = stbBrush;
-	key.fg =
-		 (sys stylus.brush.lb.lbColor >> 16) |
-		 (sys stylus.brush.lb.lbColor & 0xff00) |
-		((sys stylus.brush.lb.lbColor & 0xff) << 16) |
-		 (sys alpha << 24);
+
+#define COMP(c) \
+	c = ((float) c) * a + .5; \
+	c &= 0xff
+
+	a = (float) sys alpha / 255.0;
+	b = (sys stylus.pen.lopnColor >> 16) & 0xff;
+	g = (sys stylus.pen.lopnColor & 0xff00) >> 8;
+	r = sys stylus.pen.lopnColor & 0xff;
+	COMP(r);
+	COMP(g);
+	COMP(b);
+	key.fg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
 
 	if ((cached = stylus_gp_fetch(&key)) == NULL)
 		return NULL;
@@ -297,6 +249,24 @@ stylus_gp_alloc_brush(Handle self)
 	cached-> refcnt++;
 	sys stylusGPResource = cached;
 	return cached;
+}
+
+void
+stylus_change( Handle self)
+{
+	PDCStylus p;
+	PDCStylus newP;
+
+	if ( is_apt( aptDCChangeLock)) return;
+	sys stylusFlags &= ~stbGPBrush;
+
+	p    = sys stylusResource;
+	newP = stylus_alloc( &sys stylus);
+	if ( p != newP) {
+		sys stylusResource = newP;
+		sys stylusFlags &= stbGPBrush;
+	}
+	stylus_free( p, false);
 }
 
 PPatResource
@@ -1779,7 +1749,7 @@ hwnd_leave_paint( Handle self)
 	}
 	if ( sys psd != NULL) {
 		var font           = sys psd-> font;
-		sys alpha          = sys alpha;
+		sys alpha          = sys psd-> alpha;
 		sys fillMode       = sys psd-> fillMode;
 		sys fillPatternOffset  = sys psd-> fillPatternOffset;
 		sys lineWidth      = sys psd-> lineWidth;
