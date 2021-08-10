@@ -408,7 +408,6 @@ menu_bitmap_cleaner( void * value, int keyLen, void * key, void * dummy)
 void
 window_subsystem_done()
 {
-	GdiplusShutdown(guts.gdiplusToken);
 	if (guts. ole_initialized)
 		OleUninitialize();
 	free( timeDefs);
@@ -427,7 +426,10 @@ window_subsystem_done()
 
 	font_clean();
 	stylus_clean();
+
 	stylus_gp_clean();
+	GdiplusShutdown(guts.gdiplusToken);
+
 	hash_destroy( imageMan,   false);
 	hash_destroy( menuMan,    false);
 	hash_destroy( patMan,     true);
@@ -1686,6 +1688,7 @@ LRESULT CALLBACK generic_app_handler( HWND win, UINT  msg, WPARAM mp1, LPARAM mp
 		}
 		case WM_COMPACTING:
 			stylus_clean();
+			stylus_gp_clean();
 			font_clean();
 			destroy_font_hash();
 			hash_first_that( imageMan, kill_img_cache, NULL, NULL, NULL);

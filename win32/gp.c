@@ -689,8 +689,13 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	}
 
 	STYLUS_USE_GP_BRUSH;
-	GPCALL GdipFillPolygon( sys graphics, sys stylusGPResource-> brush, p, numPts,
-		((sys psFillMode & fmWinding) == fmAlternate) ? ALTERNATE : WINDING);
+	GPCALL GdipFillPolygon(
+		sys graphics,
+		sys stylusGPResource-> brush,
+		p, numPts,
+		((sys psFillMode & fmWinding) == fmAlternate) ?
+			FillModeAlternate : FillModeWinding
+	);
 	apiGPErrCheckRet(false);
 
 	return true;

@@ -200,7 +200,7 @@ static Bool _gp_cleaner( PDCGPStylus s, int keyLen, void * key, void * dummy) {
 void
 stylus_gp_clean()
 {
-	hash_first_that( stylusMan, _gp_cleaner, nil, nil, nil);
+	hash_first_that( stylusGpMan, _gp_cleaner, nil, nil, nil);
 }
 
 static Bool
