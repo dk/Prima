@@ -179,6 +179,7 @@ typedef struct _HandleOptions_ {
 	unsigned aptClipByChildren       : 1;       // cached clipping by children
 	unsigned aptIgnoreSizeMessages   : 1;       // during window recreation
 	unsigned aptGDIPlus              : 1;       // uses GDI+
+	unsigned aptRegionIsEmpty        : 1;       // no calls to region/cliprect are made yet
 } HandleOptions;
 
 #define CLIPBOARD_MAIN 0

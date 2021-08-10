@@ -479,6 +479,7 @@ apc_gp_set_clip_rect( Handle self, Rect c)
 		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
 		apiGPErrCheck;
 	}
+	apt_clear( aptRegionIsEmpty);
 	if ( !DeleteObject( rgn)) apiErr;
 	return true;
 }
@@ -530,6 +531,11 @@ apc_gp_set_region( Handle self, Handle region)
 	if ( is_apt(aptLayeredPaint) && sys layeredParentRegion )
 		CombineRgn( rgn, rgn, sys layeredParentRegion, RGN_AND);
 	SelectClipRgn( sys ps, rgn);
+	if ( sys graphics ) {
+		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
+		apiGPErrCheck;
+	}
+	apt_clear( aptRegionIsEmpty);
 	DeleteObject( rgn);
 	return true;
 }

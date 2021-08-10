@@ -1211,15 +1211,17 @@ apc_gp_set_antialias( Handle self, Bool aa)
 		)
 			return false;
 		if ( sys ps && sys graphics == NULL ) {
-			HRGN rgn;
 			GPCALL GdipCreateFromHDC(sys ps, &sys graphics);
 			apiGPErrCheckRet(false);
 
-			rgn = CreateRectRgn(0,0,0,0);
-			GetClipRgn( sys ps, rgn );
-			GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
-			apiGPErrCheck;
-			DeleteObject(rgn);
+			if ( !is_apt(aptRegionIsEmpty)) {
+				HRGN rgn;
+				rgn = CreateRectRgn(0,0,0,0);
+				GetClipRgn( sys ps, rgn );
+				GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
+				apiGPErrCheck;
+				DeleteObject( rgn);
+			}
 		}
 		apt_set(aptGDIPlus);
 		GdipSetSmoothingMode(sys graphics, SmoothingModeAntiAlias);
