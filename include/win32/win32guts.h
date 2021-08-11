@@ -400,9 +400,12 @@ typedef struct _DCFont
 	HFONT         hfont;
 } DCFont, *PDCFont;
 
+#define GP_BRUSH_SOLID       0
+#define GP_BRUSH_FILLPATTERN 1
+
 typedef struct _GPStylus
 {
-	int opaque;
+	int type, opaque;
 	uint32_t fg, bg;
 	FillPattern fill;
 } GPStylus, *PGPStylus;
@@ -581,6 +584,8 @@ typedef struct _MusClkRec {
 		if ( stylus_gp_alloc(self) == NULL ) return false; \
 		sys stylusFlags |= stbGPBrush;                      \
 	}
+
+#define STYLUS_FREE_GP_BRUSH sys stylusFlags &= ~stbGPBrush
 
 #define psDot         "\3\3"
 #define psDash        "\x16\6"

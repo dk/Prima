@@ -215,6 +215,7 @@ stylus_gp_alloc(Handle self)
 	DCGPStylus *cached;
 	int r,g,b;
 	float a;
+	PStylus s = & sys stylus;
 
 	if ( sys stylusGPResource) {
 		stylus_gp_free( sys stylusGPResource, 0);
@@ -228,27 +229,68 @@ stylus_gp_alloc(Handle self)
 	c &= 0xff
 
 	a = (float) sys alpha / 255.0;
-	b = (sys stylus.pen.lopnColor >> 16) & 0xff;
-	g = (sys stylus.pen.lopnColor & 0xff00) >> 8;
-	r = sys stylus.pen.lopnColor & 0xff;
+	b = (s->pen.lopnColor >> 16) & 0xff;
+	g = (s->pen.lopnColor & 0xff00) >> 8;
+	r = s->pen.lopnColor & 0xff;
 	COMP(r);
 	COMP(g);
 	COMP(b);
 	key.fg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
+	if ( s-> brush. lb. lbStyle != BS_SOLID ) {
+		key.opaque = (sys currentROP2 == ropCopyPut) ? 1 : 0;
+		b = (s->brush.backColor >> 16) & 0xff;
+		g = (s->brush.backColor & 0xff00) >> 8;
+		r = s->brush.backColor & 0xff;
+		COMP(r);
+		COMP(g);
+		COMP(b);
+		key.bg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
+		*key.fill = *sys fillPattern;
+	}
+#undef COMP
 
 	if ((cached = stylus_gp_fetch(&key)) == NULL)
 		return NULL;
 
 	if ( cached->brush == NULL ) {
-		GpSolidFill *f;
-		GPCALL GdipCreateSolidFill((ARGB)key.fg, &f);
-		apiGPErrCheckRet(NULL);
-		cached->brush = (GpBrush*)f;
+		if ( s-> brush. lb. lbStyle == BS_SOLID ) {
+			GpSolidFill *f;
+			GPCALL GdipCreateSolidFill((ARGB)key.fg, &f);
+			if ( rc ) goto FAIL;
+
+			cached->brush = (GpBrush*)f;
+		} else {
+			GpBitmap * b;
+			GpTexture * t;
+			uint32_t x, y, fp[64], *fpp, bg;
+
+			bg = key.opaque ? key.bg : 0x00000000;
+			for ( y = 0, fpp = fp; y < 8; y++) {
+				Byte src = sys fillPattern[y];
+				for ( x = 0; x < 8; x++)
+					*(fpp++) = (src & ( 1 << x )) ? key.fg : bg;
+			}
+
+			GPCALL GdipCreateBitmapFromScan0( 8, 8, 32, PixelFormat32bppARGB, (BYTE*)fp, &b);
+			apiGPErrCheck;
+			if ( rc ) goto FAIL;
+
+			GPCALL GdipCreateTexture((GpImage*) b, WrapModeTile, &t);
+			apiGPErrCheck;
+			GdipDisposeImage((GpImage*) b);
+			if ( rc ) goto FAIL;
+
+			cached->brush = (GpBrush*) t;
+		}
 	}
 
 	cached-> refcnt++;
 	sys stylusGPResource = cached;
 	return cached;
+
+FAIL:
+	hash_delete( stylusGpMan, &key, sizeof(key), true);
+	return NULL;
 }
 
 void

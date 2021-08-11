@@ -1525,6 +1525,7 @@ apc_gp_set_rop2( Handle self, int rop)
 	if ( rop != ropCopyPut) rop = ropNoOper;
 	sys currentROP2 = rop;
 	if ( !SetBkMode( sys ps, ( rop == ropCopyPut) ? OPAQUE : TRANSPARENT)) apiErr;
+	STYLUS_FREE_GP_BRUSH;
 	return true;
 }
 
