@@ -208,7 +208,7 @@ employs this scheme.
 =head2 Antialiasing and alpha
 
 If the system has capability for antialiased drawing and alpha rendering, Prima
-can use it.  It can be turned on by calling
+can use it. The antialiasing can be turned on by calling
 
    $drawable->antialias(1)
 
@@ -218,13 +218,9 @@ which turns on the following effects:
 
 =item *
 
-All primitives except images, C<pixel>, and C<bar_alpha> are plotted with
+All primitives except images, text, C<pixel>, and C<bar_alpha> are plotted with
 antialiased edges. Arcs, lines, paths, all of them manifest adjacent pixels
 being renderes with half-tones.
-
-=item *
-
-C<alpha()> property will be used. All the primitives above would use it.
 
 =item *
 
@@ -761,7 +757,7 @@ is in the disabled state.
 
 =item alpha INTEGER
 
-When antialiasing mode is on, sets alpha component of the brush, where 0 is fully transparent
+Sets alpha component of the brush, where 0 is fully transparent
 and 255 is fully opaque.
 
 Note that premultiplication of C<color> and C<backColor> is not necessary as it
@@ -777,7 +773,7 @@ image, C<pixel>, and C<bar_alpha> calls.
 It will not be possible to turn the property on if the system does not
 support it. Also, monochrome images won't support it as well.
 
-See L<Antialiasing and alpha>.
+See L<Antialiasing>.
 
 =item backColor COLOR
 

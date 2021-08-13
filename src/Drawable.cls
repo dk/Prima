@@ -96,5 +96,7 @@ object Prima::Drawable ( Prima::Component)
 	PList    font_abc_glyphs;
 	unsigned long * font_abc_glyphs_ranges;
 	int             font_abc_glyphs_n_ranges;
+	Bool     antialias;
+	int      alpha;
 	c_only int*  do_text_wrap( TextWrapRec * tw, GlyphWrapRec * gw, uint16_t * log2vis);
 }

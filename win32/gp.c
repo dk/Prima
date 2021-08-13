@@ -1194,10 +1194,41 @@ apc_gp_get_transform( Handle self)
 
 #define pal_ok ((sys bpp <= 8) && ( sys pal))
 
+static Bool
+create_gdip_surface(Handle self)
+{
+	GPCALL GdipCreateFromHDC(sys ps, &sys graphics);
+	apiGPErrCheckRet(false);
+
+	if ( !is_apt(aptRegionIsEmpty)) {
+		HRGN rgn;
+		rgn = CreateRectRgn(0,0,0,0);
+		GetClipRgn( sys ps, rgn );
+		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
+		apiGPErrCheck;
+		DeleteObject( rgn);
+	}
+
+	return true;
+}
+
+#define CREATE_GDIP_SURFACE (( sys ps && sys graphics == NULL ) ? create_gdip_surface(self) : true)
+
 Bool
 apc_gp_set_alpha( Handle self, int alpha)
 {
+	if (
+		( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap) ||
+		( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
+	)
+		alpha = 255;
+
 	sys alpha = alpha;
+
+	if ( alpha < 255 ) {
+		if ( !CREATE_GDIP_SURFACE)
+			return false;
+	}
 
 	if ( sys ps && sys graphics )
 		stylus_change( self);
@@ -1213,19 +1244,8 @@ apc_gp_set_antialias( Handle self, Bool aa)
 			( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
 		)
 			return false;
-		if ( sys ps && sys graphics == NULL ) {
-			GPCALL GdipCreateFromHDC(sys ps, &sys graphics);
-			apiGPErrCheckRet(false);
-
-			if ( !is_apt(aptRegionIsEmpty)) {
-				HRGN rgn;
-				rgn = CreateRectRgn(0,0,0,0);
-				GetClipRgn( sys ps, rgn );
-				GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
-				apiGPErrCheck;
-				DeleteObject( rgn);
-			}
-		}
+		if ( !CREATE_GDIP_SURFACE)
+			return false;
 		apt_set(aptGDIPlus);
 		GdipSetSmoothingMode(sys graphics, SmoothingModeAntiAlias);
 		GdipSetPixelOffsetMode(sys graphics, PixelOffsetModeHalf);

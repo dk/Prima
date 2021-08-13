@@ -526,12 +526,18 @@ primitive( Handle self, Bool fill, char * method, ...)
 	return r;
 }
 
+#define IS_AA (var->antialias || (var->alpha < 255))
+#define ROUND(x) x=round(x)
+#define ROUND2(x,y) {ROUND(x);ROUND(y);}
+#define ROUND4(x,y,z,t) {ROUND(x);ROUND(y);ROUND(z);ROUND(t);}
+
+
 Bool
 Drawable_arc( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
 	while ( startAngle > endAngle ) endAngle += 360.0;
-	return apc_gp_get_antialias(self) ?
+	return IS_AA ?
 		primitive( self, 0, "snnnnnn", "arc", x, y, dX-1, dY-1, startAngle, endAngle) :
 		apc_gp_arc(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
 }
@@ -540,7 +546,7 @@ Bool
 Drawable_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
-	return apc_gp_get_antialias(self) ?
+	return IS_AA ?
 		primitive( self, 0, "snnnnnn", "chord", x, y, dX-1, dY-1, startAngle, endAngle) :
 		apc_gp_chord(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
 }
@@ -549,7 +555,7 @@ Bool
 Drawable_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
 	CHECK_GP(false);
-	return apc_gp_get_antialias(self) ?
+	return IS_AA ?
 		primitive( self, 0, "snnnn", "ellipse", x, y, dX-1, dY-1) :
 		apc_gp_ellipse(self, round(x), round(y), round(dX), round(dY));
 }
@@ -559,12 +565,13 @@ Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
 {
 	CHECK_GP(false);
 
-	if (apc_gp_get_antialias(self)) {
+	if ( !var->antialias ) ROUND4(x1,y1,x2,y2);
+
+	if (IS_AA) {
 		NPoint r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
 		return apc_gp_aa_fill_poly( self, 5, r);
-	} else return apc_gp_bar(self,
-		round(x1), round(y1), round(x2), round(y2)
-	);
+	} else
+		return apc_gp_bar(self, x1, y1, x2, y2);
 }
 
 Bool
@@ -572,15 +579,14 @@ Drawable_bars( Handle self, SV * rects)
 {
 	int count;
 	Rect * p;
-	Bool ret = false, do_free, aa;
+	Bool ret = false, do_free;
 	CHECK_GP(false);
-	aa = apc_gp_get_antialias(self);
 	if (( p = prima_read_array( rects, "Drawable::bars",
-		aa ? 'd' : 'i',
+		IS_AA ? 'd' : 'i',
 		4, 0, -1, &count, &do_free)) == NULL)
 		return false;
 
-	if ( aa ) {
+	if ( IS_AA ) {
 		int i;
 		NRect *r;
 		for ( i = 0, r = (NRect*)p; i < count; i++, r++) {
@@ -591,6 +597,11 @@ Drawable_bars( Handle self, SV * rects)
 				{r->right,r->bottom},
 				{r->left,r->bottom}
 			};
+			if ( !var->antialias) {
+				int j;
+				for ( j = 0; j < 5; j++)
+					ROUND2(xr[j].x,xr[j].y);
+			}
 			if ( !( ret = apc_gp_aa_fill_poly( self, 5, xr)))
 				break;
 		}
@@ -608,7 +619,8 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 	CHECK_GP(false);
 
 	full = x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0;
-	if ( !full && apc_gp_get_antialias(self)) {
+	if ( !var->antialias ) ROUND4(x1,y1,x2,y2);
+	if ( !full && IS_AA) {
 		Bool ok;
 		Color color;
 		FillPattern fp;
@@ -622,7 +634,7 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 		apc_gp_set_color(self, color);
 		return ok;
 	} else return apc_gp_clear(self,
-		round(x1), round(y1), round(x2), round(y2)
+		x1,y1,x2,y2
 	);
 }
 
@@ -630,7 +642,7 @@ Bool
 Drawable_fill_chord( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
-	if (apc_gp_get_antialias(self)) {
+	if (IS_AA) {
 		return primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
 	} else return apc_gp_fill_chord(self,
 		round(x), round(y), round(dX), round(dY), startAngle, endAngle
@@ -640,7 +652,7 @@ Drawable_fill_chord( Handle self, double x, double y, double dX, double dY, doub
 Bool
 Drawable_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
 {
-	if (apc_gp_get_antialias(self)) {
+	if (IS_AA) {
 		return primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
 	} else return apc_gp_fill_ellipse(self,
 		round(x), round(y), round(dX), round(dY)
@@ -651,7 +663,7 @@ Bool
 Drawable_fill_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
-	if (apc_gp_get_antialias(self)) {
+	if (IS_AA) {
 		return primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 	} else return apc_gp_fill_sector(self,
 		round(x), round(y), round(dX), round(dY), startAngle, endAngle
@@ -664,18 +676,24 @@ Drawable_fillpoly(Handle self, SV * points)
 	int count;
 	void *p;
 	Bool ret = false;
-	Bool do_free, aa;
+	Bool do_free = true;
 	CHECK_GP(false);
 
-	aa = apc_gp_get_antialias(self);
 	if (( p = prima_read_array(
 		points, "fillpoly",
-		aa ? 'd' : 'i',
-		2, 2, -1, &count, &do_free
+		IS_AA ? 'd' : 'i',
+		2, 2, -1, &count, 
+		(var->alpha < 255 && !var->antialias) ? NULL : &do_free
 	)) == NULL)
 		return false;
 
-	ret = aa ?
+	if ( var->alpha < 255 && !var->antialias ) {
+		int i;
+		NPoint *pp = (NPoint*)p;
+		for ( i = 0; i < count; i++, pp++) ROUND2(pp->x,pp->y);
+	}
+
+	ret = IS_AA ?
 		apc_gp_aa_fill_poly( self, count, (NPoint*) p) :
 		apc_gp_fill_poly( self, count, (Point*) p);
 	if ( !ret) perl_error();
@@ -688,7 +706,7 @@ Bool
 Drawable_line(Handle self, double x1, double y1, double x2, double y2)
 {
 	CHECK_GP(false);
-	if (apc_gp_get_antialias(self))
+	if (IS_AA)
 		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
 	else return apc_gp_line(self,
 		round(x1), round(y1), round(x2), round(y2)
@@ -715,7 +733,7 @@ Drawable_lines(Handle self, SV * lines)
 {
 	CHECK_GP(false);
 
-	if (apc_gp_get_antialias(self))
+	if (IS_AA)
 		return primitive( self, 0, "sS", "lines", lines);
 	else
 		return read_polypoints( self, lines, "Drawable::lines", 2, apc_gp_draw_poly2);
@@ -726,7 +744,7 @@ Drawable_polyline(Handle self, SV * lines)
 {
 	CHECK_GP(false);
 
-	if (apc_gp_get_antialias(self))
+	if (IS_AA)
 		return primitive( self, 0, "sS", "line", lines);
 	else
 		return read_polypoints( self, lines, "Drawable::polyline", 2, apc_gp_draw_poly);
@@ -736,7 +754,7 @@ Bool
 Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
 {
 	CHECK_GP(false);
-	return apc_gp_get_antialias(self) ?
+	return IS_AA ?
 		primitive( self, 0, "snnnn", "rectangle", x1,y1,x2,y2) :
 		apc_gp_rectangle(self, round(x1), round(y1), round(x2), round(y2));
 }
@@ -1251,7 +1269,7 @@ Bool
 Drawable_sector( Handle self, double x, double y, double dX, double dY, double startAngle, double endAngle)
 {
 	CHECK_GP(false);
-	return apc_gp_get_antialias(self) ?
+	return IS_AA ?
 		primitive( self, 0, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle) :
 		apc_gp_sector(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
 }
@@ -1265,14 +1283,14 @@ Drawable_alpha( Handle self, Bool set, int alpha)
 	if ( alpha < 0 ) alpha = 0;
 	if ( alpha > 255 ) alpha = 255;
 	apc_gp_set_alpha( self, alpha);
-	return alpha;
+	return var->alpha = apc_gp_get_alpha(self);
 }
 
 Bool
 Drawable_antialias( Handle self, Bool set, Bool aa)
 {
 	if (set) apc_gp_set_antialias( self, aa );
-	return apc_gp_get_antialias( self );
+	return var->antialias = apc_gp_get_antialias( self );
 }
 
 Color

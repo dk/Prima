@@ -1714,7 +1714,15 @@ Bool
 apc_gp_set_alpha( Handle self, int alpha)
 {
 	DEFXX;
+
+	if (XT_IS_BITMAP(XX) || (( XT_IS_PIXMAP(XX) || XT_IS_APPLICATION(XX)) && guts.depth==1))
+		alpha = 255;
+	if ( !guts.render_extension)
+		alpha = 255;
+
 	if ( XF_IN_PAINT(XX)) {
+		if ( XX-> paint_alpha == alpha)
+			return true;
 		XX-> paint_alpha = alpha;
 		guts.xrender_pen_dirty = true;
 	} else {

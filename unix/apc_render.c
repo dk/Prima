@@ -258,7 +258,7 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	if ( guts.xrender_pen_dirty ) pen_update(self);
 	ok = my_XRenderCompositeDoublePoly(
 		DISP, PictOpOver, pen.picture, XX->argb_picture,
-		guts.xrender_a8_format,
+		XX->flags.antialias ? guts.xrender_a8_format : guts.xrender_a1_format,
 		0, 0, 0, 0, p, numPts,
 		((XX->fill_mode & fmWinding) == fmAlternate) ? EvenOddRule : WindingRule
 	);
