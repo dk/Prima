@@ -542,6 +542,8 @@ Bool
 Drawable_text_out( Handle self, SV * text, int x, int y, int from, int len)
 {
 	Bool ok;
+	if ( !opt_InPaint) return false;
+
 	if ( !SvROK( text )) {
 		STRLEN dlen;
 		char * c_text = SvPV( text, dlen);
