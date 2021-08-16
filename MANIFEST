@@ -411,6 +411,7 @@ win32/cursor.c
 win32/dev.c
 win32/dnd.c
 win32/files.c
+win32/gdiplus.c
 win32/global.c
 win32/gp.c
 win32/image.c

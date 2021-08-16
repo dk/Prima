@@ -30,6 +30,7 @@ Bool
 apc_gp_done( Handle self)
 {
 	objCheck false;
+	aa_free_arena(self, 0);
 	if ( sys bm)
 		if ( !DeleteObject( sys bm)) apiErr;
 	if ( sys pal)
@@ -673,36 +674,6 @@ apc_gp_fill_poly( Handle self, int numPts, Point * points)
 }return ok;}
 
 Bool
-apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
-{
-	int i;
-	double dy = sys lastSize. y;
-	Point t = sys gp_transform;
-	GpPointF *p;
-	objCheck false;
-
-	if ((p = malloc( sizeof(GpPointF) * numPts)) == NULL)
-		return false;
-
-	for ( i = 0; i < numPts; i++)  {
-		p[i].X = t.x + points[i].x;
-		p[i].Y = t.y + dy - points[i].y - 1.0;
-	}
-
-	STYLUS_USE_GP_BRUSH;
-	GPCALL GdipFillPolygon(
-		sys graphics,
-		sys stylusGPResource-> brush,
-		p, numPts,
-		((sys psFillMode & fmWinding) == fmAlternate) ?
-			FillModeAlternate : FillModeWinding
-	);
-	apiGPErrCheckRet(false);
-
-	return true;
-}
-
-Bool
 apc_gp_fill_sector( Handle self, int x, int y, int dX, int dY, double angleStart, double angleEnd)
 {objCheck false;{
 	Bool ok = true;
@@ -891,18 +862,6 @@ apc_gp_set_pixel( Handle self, int x, int y, Color color)
 }
 
 // gpi settings
-int
-apc_gp_get_alpha( Handle self)
-{
-	return sys alpha;
-}
-
-Bool
-apc_gp_get_antialias( Handle self)
-{
-	return is_apt(aptGDIPlus);
-}
-
 Color
 apc_gp_get_back_color( Handle self)
 {
@@ -1193,69 +1152,6 @@ apc_gp_get_transform( Handle self)
 }
 
 #define pal_ok ((sys bpp <= 8) && ( sys pal))
-
-static Bool
-create_gdip_surface(Handle self)
-{
-	GPCALL GdipCreateFromHDC(sys ps, &sys graphics);
-	apiGPErrCheckRet(false);
-
-	if ( !is_apt(aptRegionIsEmpty)) {
-		HRGN rgn;
-		rgn = CreateRectRgn(0,0,0,0);
-		GetClipRgn( sys ps, rgn );
-		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
-		apiGPErrCheck;
-		DeleteObject( rgn);
-	}
-
-	return true;
-}
-
-#define CREATE_GDIP_SURFACE (( sys ps && sys graphics == NULL ) ? create_gdip_surface(self) : true)
-
-Bool
-apc_gp_set_alpha( Handle self, int alpha)
-{
-	if (
-		( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap) ||
-		( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
-	)
-		alpha = 255;
-
-	sys alpha = alpha;
-
-	if ( alpha < 255 ) {
-		if ( !CREATE_GDIP_SURFACE)
-			return false;
-	}
-
-	if ( sys ps && sys graphics )
-		stylus_change( self);
-	return true;
-}
-
-Bool
-apc_gp_set_antialias( Handle self, Bool aa)
-{
-	if ( aa ) {
-		if (
-			( is_apt(aptDeviceBitmap) && ((PDeviceBitmap)self)->type == dbtBitmap) ||
-			( is_apt(aptImage)        && ((PImage)self)-> type == imBW )
-		)
-			return false;
-		if ( !CREATE_GDIP_SURFACE)
-			return false;
-		apt_set(aptGDIPlus);
-		GdipSetSmoothingMode(sys graphics, SmoothingModeAntiAlias);
-		GdipSetPixelOffsetMode(sys graphics, PixelOffsetModeHalf);
-	} else {
-		apt_clear(aptGDIPlus);
-		GdipSetSmoothingMode(sys graphics, SmoothingModeNone);
-		GdipSetPixelOffsetMode(sys graphics, PixelOffsetModeNone);
-	}
-	return true;
-}
 
 Bool
 apc_gp_set_back_color( Handle self, Color color)

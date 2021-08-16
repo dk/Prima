@@ -361,7 +361,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	HDC ps = sys ps;
 	int bk  = GetBkMode( ps);
 	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
-	Bool use_path;
+	Bool use_path, use_alpha;
 
 	int div = 32768L / (var font. maximalWidth ? var font. maximalWidth : 1);
 	if ( div <= 0) div = 1;
@@ -378,19 +378,24 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 		len = mb_len;
 	}
 
-	use_path = GetROP2( sys ps) != R2_COPYPEN;
+	use_alpha = sys alpha < 255;
+	use_path = (GetROP2( sys ps) != R2_COPYPEN) && !use_alpha;
 	if ( use_path ) {
 		STYLUS_USE_BRUSH( ps);
 		BeginPath(ps);
-	} else {
+	} else if ( !use_alpha ) {
 		STYLUS_USE_TEXT( ps);
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
 
-	ok = ( flags & toUTF8 ) ?
-		TextOutW( ps, x, sys lastSize. y - y, ( U16*)text, len) :
-		TextOutA( ps, x, sys lastSize. y - y, text, len);
-	if ( !ok ) apiErr;
+	if ( use_alpha ) {
+		ok = aa_text_out( self, x, sys lastSize. y - y, (void*)text, len, flags & toUTF8);
+	} else {
+		ok = ( flags & toUTF8 ) ?
+			TextOutW( ps, x, sys lastSize. y - y, ( U16*)text, len) :
+			TextOutA( ps, x, sys lastSize. y - y, text, len);
+		if ( !ok ) apiErr;
+	}
 
 	if ( var font. style & (fsUnderlined | fsStruckOut))
 		underscore_font( self, x, sys lastSize. y - y, gp_get_text_width( self, text, len, flags));
@@ -398,7 +403,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	if ( use_path ) {
 		EndPath(ps);
 		FillPath(ps);
-	} else {
+	} else if ( !use_alpha ) {
 		if ( opa != bk) SetBkMode( ps, bk);
 	}
 
@@ -509,16 +514,17 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	int xx, yy, savelen;
 	int bk  = GetBkMode( ps);
 	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
-	Bool use_path;
+	Bool use_path, use_alpha;
 	FontContext fc;
 	float s, c, fxx, fyy;
 
 	if ( t->len > 8192 ) t->len = 8192;
 	use_path = GetROP2( sys ps) != R2_COPYPEN;
+	use_alpha = sys alpha < 255;
 	if ( use_path ) {
 		STYLUS_USE_BRUSH( ps);
 		BeginPath(ps);
-	} else {
+	} else if ( !use_alpha ) {
 		STYLUS_USE_TEXT( ps);
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
@@ -541,7 +547,10 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	font_context_init(&fc, self, t);
 	while (( t-> len = font_context_next(&fc)) > 0 ) {
 		int advance = 0;
-		if ( !( ok = gp_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance)))
+		if ( !( ok = use_alpha ?
+				aa_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance) :
+				gp_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance)
+			))
 			break;
 		if ( !fc.stop ) {
 			fxx += (float)advance * c;
@@ -565,7 +574,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	if ( use_path ) {
 		EndPath(ps);
 		FillPath(ps);
-	} else {
+	} else if ( !use_alpha ) {
 		if ( opa != bk) SetBkMode( ps, bk);
 	}
 
@@ -1972,8 +1981,6 @@ apc_gp_set_text_out_baseline( Handle self, Bool baseline)
 	if ( sys ps) SetTextAlign( sys ps, baseline ? TA_BASELINE : TA_BOTTOM);
 	return true;
 }
-
-
 
 #ifdef __cplusplus
 }

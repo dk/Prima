@@ -517,6 +517,15 @@ typedef struct _DrawableData
 	HDC            layeredPaintSurface;
 	HRGN           layeredParentRegion;
 
+	/* alpha text amulation */
+	HDC            alphaArenaDC;
+	HBITMAP        alphaArenaBitmap;
+	uint32_t*      alphaArenaPtr;
+	Point          alphaArenaSize;
+	Bool           alphaArenaFontChanged;
+	HFONT          alphaArenaStockFont;
+	HBITMAP        alphaArenaStockBitmap;
+
 	/* Other class-specific data */
 	union {
 		TimerData     timer;
@@ -734,6 +743,9 @@ extern Bool         clipboard_get_data(int cfid, PClipboardDataRec c, void * p1,
 extern void *       image_create_dib(Handle image, Bool global_alloc);
 extern Bool         HWND_lock( Bool lock);
 extern Bool         process_msg( MSG * msg);
+extern Bool         aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide);
+extern Bool         aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance);
+extern void         aa_free_arena(Handle self, Bool for_reuse);
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA

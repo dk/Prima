@@ -600,8 +600,14 @@ font_change( Handle self, Font * font)
 	PDCFont p;
 	PDCFont newP;
 	if ( is_apt( aptDCChangeLock)) return;
+
+	sys alphaArenaFontChanged = true;
 	p    = sys fontResource;
 	newP = ( sys fontResource = font_alloc( font));
+	if ( sys alphaArenaStockFont ) {
+		SelectObject( sys alphaArenaDC, sys alphaArenaStockFont );
+		sys alphaArenaFontChanged = true;
+	}
 	font_free( p, false);
 	if ( sys ps)
 		SelectObject( sys ps, newP-> hfont);
