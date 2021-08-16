@@ -1186,8 +1186,13 @@ apc_gp_set_color( Handle self, Color color)
 		PStylus s = & sys stylus;
 		if ( pal_ok) clr = palette_match( self, clr);
 		s-> pen. lopnColor = ( COLORREF) clr;
-		if ( s-> brush. lb. lbStyle != BS_DIBPATTERNPT) s-> brush. lb. lbColor = ( COLORREF) clr;
+		if ( s-> brush. lb. lbStyle != BS_DIBPATTERNPT)
+			s-> brush. lb. lbColor = ( COLORREF) clr;
 		stylus_change( self);
+		if ( sys alphaArenaPalette ) {
+			free(sys alphaArenaPalette);
+			sys alphaArenaPalette = NULL;
+		}
 	}
 	return true;
 }

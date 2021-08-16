@@ -59,6 +59,11 @@ apc_gp_set_alpha( Handle self, int alpha)
 	if ( sys ps && sys graphics )
 		stylus_change( self);
 
+	if ( sys alphaArenaPalette ) {
+		free(sys alphaArenaPalette);
+		sys alphaArenaPalette = NULL;
+	}
+
 	return true;
 }
 
@@ -127,11 +132,18 @@ apc_gp_aa_fill_poly( Handle self, int numPts, NPoint * points)
 	return true;
 }
 
+/* emulate alpha text */
+
 #define GRAD 57.29577951
 
 void
 aa_free_arena(Handle self, Bool for_reuse)
 {
+	if ( !for_reuse && sys alphaArenaPalette ) {
+		free(sys alphaArenaPalette);
+		sys alphaArenaPalette = NULL;
+	}
+
 	if ( !sys alphaArenaDC)
 		return;
 
@@ -203,22 +215,18 @@ aa_make_arena(Handle self)
 	return true;
 }
 
-typedef struct {
-	uint32_t full;
-	int a,r,g,b;
-} AAColor;
-
 static Bool
-aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance, int dx, int dy, AAColor * color)
+aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance, int dx, int dy)
 {
 	BLENDFUNCTION bf;
 	float xx, yy, shift;
-	register uint32_t * p;
+	register uint32_t * p, * palette;
 	int i, j, miny, maxy, maxx, minx;
 	Point sz;
 
 	/* replace white to our color + alpha, calculate minimal affected box */
 	p = sys alphaArenaPtr;
+	palette = sys alphaArenaPalette;
 	for (
 		i = maxy = maxx = 0,
 			minx = sys alphaArenaSize.x - 1,
@@ -226,26 +234,19 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 		i < sys alphaArenaSize.y;
 		i++
 	) {
+		Bool match = false;
 		for ( j = 0; j < sys alphaArenaSize.x; j++, p++) {
-			if (*p != 0) {
-				Byte *argb = (Byte*)p;
-				int alpha = argb[0] + argb[1] + argb[2];
-				if ( alpha == 255 * 3 ) {
-					*p = color->full;
-				} else {
-					register int ma = alpha * color->a / (255 * 3);
-					*p =
-						(ma << 24) |
-						((color->r * ma / 255 ) << 16) |
-						((color->g * ma / 255 ) << 8) |
-						( color->b * ma / 255 )
-						;
-				}
-				if ( miny > i ) miny = i;
-				if ( maxy < i ) maxy = i;
+			if (1 || *p != 0) {
+				register Byte *argb = (Byte*) p;
+				*p = palette[argb[0] + argb[1] + argb[2]];
 				if ( minx > j ) minx = j;
 				if ( maxx < j ) maxx = j;
+				match = true;
 			}
+		}
+		if ( match ) {
+			if ( miny > i ) miny = i;
+			if ( maxy < i ) maxy = i;
 		}
 	}
 	if ( maxy < miny ) return true;
@@ -309,26 +310,72 @@ aa_render( Handle self, int x, int y, NPoint* delta, ABCFLOAT * abc, int advance
 		bf);
 }
 
-void
-aa_color(Handle self, AAColor * color)
+/* precalculate alpha map */
+Bool
+aa_fill_palette(Handle self)
 {
-	int r,g,b;
-	float a;
+	int i,j,r,g,b;
 	PStylus s = & sys stylus;
 
-#define COMP(c) \
-	c = ((float) c) * a + .5; \
-	c &= 0xff
+	if ( !sys alphaArenaPalette ) {
+		if ( !( sys alphaArenaPalette = malloc(4 * 256 * 3)))
+			return false;
+	}
 
-	a = (float) sys alpha / 255.0;
-	color-> b = b = (s->pen.lopnColor >> 16) & 0xff;
-	color-> g = g = (s->pen.lopnColor & 0xff00) >> 8;
-	color-> r = r = s->pen.lopnColor & 0xff;
-	COMP(r);
-	COMP(g);
-	COMP(b);
-	color-> a    = sys alpha;
-	color-> full = (sys alpha << 24) | (r << 16) | (g << 8) | b;
+
+	b = (s->pen.lopnColor >> 16) & 0xff;
+	g = (s->pen.lopnColor & 0xff00) >> 8;
+	r = s->pen.lopnColor & 0xff;
+
+	for ( i = j = 0; i < 256; i++) {
+		uint32_t a = sys alpha * i / 255;
+		a =
+			(a << 24)              |
+			((r * a / 255 ) << 16) |
+			((g * a / 255 ) << 8)  |
+			( b * a / 255 )
+			;
+		sys alphaArenaPalette[j++] = a;
+		sys alphaArenaPalette[j++] = a;
+		sys alphaArenaPalette[j++] = a;
+	}
+
+	return true;
+}
+
+static void
+paint_text_background( Handle self, const char * text, int x, int y, int len, int flags)
+{
+	int i, rop, color;
+	Point p[5];
+	FillPattern fp;
+	ABC abc;
+	uint32_t *palette;
+
+	palette = sys alphaArenaPalette;
+	sys alphaArenaPalette = NULL;
+	memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
+	gp_get_text_widths(self, text, len, flags | toAddOverhangs, &abc);
+	gp_get_text_box(self, &abc, p);
+	rop = apc_gp_get_rop( self);
+	color = apc_gp_get_color(self);
+
+	apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
+	apc_gp_set_color( self, apc_gp_get_back_color(self));
+	apc_gp_set_rop( self, ropCopyPut);
+	y = sys lastSize.y - y;
+	for ( i = 0; i < 4; i++) {
+		p[i].x += x;
+		p[i].y += y;
+	}
+	i = p[2].x; p[2].x = p[3].x; p[3].x = i;
+	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
+
+	apc_gp_fill_poly( self, 4, p);
+	apc_gp_set_rop( self, rop);
+	apc_gp_set_color( self, color);
+	apc_gp_set_fill_pattern( self, fp);
+	sys alphaArenaPalette = palette;
 }
 
 Bool
@@ -336,11 +383,13 @@ aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide)
 {
 	int i;
 	NPoint delta = { 0, 0 };
-	AAColor color;
 
-	aa_color(self, &color);
-	if ( !aa_make_arena(self))
+	if ( !(aa_fill_palette(self) && aa_make_arena(self)))
 		return false;
+
+	if ( is_apt( aptTextOpaque))
+		paint_text_background(self, (char*)text, x, y, len, wide ? toUnicode : 0);
+
 	for ( i = 0; i < len; i++) {
 		ABCFLOAT abc;
 		memset(sys alphaArenaPtr, 0, sys alphaArenaSize.x * sys alphaArenaSize.y * 4);
@@ -354,7 +403,7 @@ aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide)
 		} else {
 			if (!TextOutA( sys alphaArenaDC, sys alphaArenaSize.x/2, sys alphaArenaSize.y/2, ((char *)text) + i, 1)) apiErrRet;
 		}
-		if ( !aa_render(self, x, y, &delta, &abc, -1, 0, 0, &color))
+		if ( !aa_render(self, x, y, &delta, &abc, -1, 0, 0))
 			return false;
 	}
 	return true;

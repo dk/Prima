@@ -172,6 +172,8 @@ stylus_gp_free( PDCGPStylus res, Bool permanent)
 	}
 	if ( res-> brush) GdipDeleteBrush( res-> brush);
 	res-> brush = NULL;
+	if ( res-> pen ) GdipDeletePen(res-> pen);
+	res-> pen = NULL;
 	hash_delete( stylusGpMan, &res-> s, sizeof( GPStylus), true);
 }
 
@@ -214,7 +216,6 @@ stylus_gp_alloc(Handle self)
 	GPStylus key;
 	DCGPStylus *cached;
 	int r,g,b;
-	float a;
 	PStylus s = & sys stylus;
 
 	if ( sys stylusGPResource) {
@@ -224,30 +225,18 @@ stylus_gp_alloc(Handle self)
 
 	memset(&key, 0, sizeof(key));
 
-#define COMP(c) \
-	c = ((float) c) * a + .5; \
-	c &= 0xff
-
-	a = (float) sys alpha / 255.0;
 	b = (s->pen.lopnColor >> 16) & 0xff;
 	g = (s->pen.lopnColor & 0xff00) >> 8;
 	r = s->pen.lopnColor & 0xff;
-	COMP(r);
-	COMP(g);
-	COMP(b);
 	key.fg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
 	if ( s-> brush. lb. lbStyle != BS_SOLID ) {
 		key.opaque = (sys currentROP2 == ropCopyPut) ? 1 : 0;
 		b = (s->brush.backColor >> 16) & 0xff;
 		g = (s->brush.backColor & 0xff00) >> 8;
 		r = s->brush.backColor & 0xff;
-		COMP(r);
-		COMP(g);
-		COMP(b);
 		key.bg = (sys alpha << 24) | (r << 16) | (g << 8) | b;
 		*key.fill = *sys fillPattern;
 	}
-#undef COMP
 
 	if ((cached = stylus_gp_fetch(&key)) == NULL)
 		return NULL;
@@ -309,6 +298,32 @@ stylus_change( Handle self)
 		sys stylusFlags &= stbGPBrush;
 	}
 	stylus_free( p, false);
+}
+
+GpPen*
+stylus_gp_get_pen(int lineWidth, uint32_t color)
+{
+	GPStylus key;
+	PDCGPStylus cached;
+
+	memset( &key, 0, sizeof(key));
+	key.type   = GP_SOLID_PEN;
+	key.fg     = color;
+	key.opaque = lineWidth;
+	if (( cached = stylus_gp_fetch(&key)) == NULL)
+		return NULL;
+
+	if ( cached->pen == NULL ) {
+		GPCALL GdipCreatePen1(color, lineWidth, UnitPixel, &cached->pen);
+		apiGPErrCheck;
+		if ( rc ) goto FAIL;
+	}
+
+	return cached->pen;
+
+FAIL:
+	hash_delete( stylusGpMan, &key, sizeof(key), true);
+	return NULL;
 }
 
 PPatResource

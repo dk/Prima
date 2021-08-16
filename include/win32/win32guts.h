@@ -402,6 +402,7 @@ typedef struct _DCFont
 
 #define GP_BRUSH_SOLID       0
 #define GP_BRUSH_FILLPATTERN 1
+#define GP_SOLID_PEN         2
 
 typedef struct _GPStylus
 {
@@ -414,8 +415,8 @@ typedef struct _DCGPStylus
 {
 	GPStylus s;
 	int refcnt;
-	int line_width;
 	GpBrush * brush;
+	GpPen   * pen;
 } DCGPStylus, *PDCGPStylus;
 
 typedef struct _DrawableData
@@ -525,6 +526,7 @@ typedef struct _DrawableData
 	Bool           alphaArenaFontChanged;
 	HFONT          alphaArenaStockFont;
 	HBITMAP        alphaArenaStockBitmap;
+	uint32_t*      alphaArenaPalette;
 
 	/* Other class-specific data */
 	union {
@@ -716,6 +718,7 @@ extern DWORD        stylus_get_extpen_style( PStylus s);
 extern GpBrush*     stylus_gp_alloc(Handle self);
 extern void         stylus_gp_clean( void);
 extern void         stylus_gp_free( PDCGPStylus res, Bool permanent);
+extern GpPen*       stylus_gp_get_pen(int lineWidth, uint32_t color);
 extern HRGN         region_create( Handle mask);
 extern WCHAR *      alloc_utf8_to_wchar( const char * utf8, int length, int * mb_len);
 extern WCHAR *      alloc_utf8_to_wchar_visual( const char * utf8, int length, int * mb_len);
@@ -746,6 +749,8 @@ extern Bool         process_msg( MSG * msg);
 extern Bool         aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide);
 extern Bool         aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance);
 extern void         aa_free_arena(Handle self, Bool for_reuse);
+extern void         gp_get_text_widths( Handle self, const char* text, int len, int flags, ABC * extents);
+extern void         gp_get_text_box( Handle self, ABC * abc, Point * pt);
 
 /* compatibility to MSVC 6 */
 #ifndef GWLP_USERDATA

@@ -125,13 +125,14 @@ font_context_next( FontContext * fc )
 
 /* emulate underscore and strikeout because ExtTextOutW with ETO_PDY underlines each glyph separately */
 static void
-underscore_font( Handle self, int x, int y, int width)
+underscore_font( Handle self, int x, int y, int width, Bool use_alpha)
 {
 	Stylus ss;
 	HPEN old = NULL;
 	HDC dc = sys ps;
 	PDCStylus dcs;
 	float c, s;
+	GpPen * gppen = NULL;
 
 	bzero(&ss, sizeof(ss));
 	ss.pen.lopnStyle   = PS_SOLID;
@@ -175,11 +176,21 @@ underscore_font( Handle self, int x, int y, int width)
 			}
 		}
 
-		dcs = stylus_alloc(&ss);
-		old = SelectObject( dc, dcs-> hpen );
+		if ( use_alpha ) {
+			gppen = stylus_gp_get_pen(ss.pen.lopnWidth.x,
+				( sys alpha << 24) | 
+				(ss.pen.lopnColor >> 16) |
+				(ss.pen.lopnColor & 0xff00) |
+				((ss.pen.lopnColor & 0xff) << 16)
+			);
+			GdipDrawLineI(sys graphics, gppen, x + pt[0].x, y - pt[0].y, x + pt[1].x, y - pt[1].y);
+		} else {
+			dcs = stylus_alloc(&ss);
+			old = SelectObject( dc, dcs-> hpen );
 
-		MoveToEx( dc, x + pt[0].x, y - pt[0].y, NULL);
-		LineTo( dc, x + pt[1].x, y - pt[1].y);
+			MoveToEx( dc, x + pt[0].x, y - pt[0].y, NULL);
+			LineTo( dc, x + pt[1].x, y - pt[1].y);
+		}
 	}
 
 	if ( var font. style & fsStruckOut ) {
@@ -190,12 +201,21 @@ underscore_font( Handle self, int x, int y, int width)
 			Y -= var font. descent;
 		if (sys otmsStrikeoutSize > 0) {
 			Y -= sys otmsStrikeoutPosition;
-			if ( old == NULL || ss.pen.lopnWidth.x != sys otmsStrikeoutSize ) {
-				HPEN curr;
-				ss.pen.lopnWidth.x = sys otmsStrikeoutSize;
-				dcs = stylus_alloc(&ss);
-				curr = SelectObject( dc, dcs-> hpen );
-				if ( old == NULL ) old = curr;
+			if ( ss.pen.lopnWidth.x != sys otmsStrikeoutSize ) {
+				if ( use_alpha && gppen == NULL ) {
+					gppen = stylus_gp_get_pen(ss.pen.lopnWidth.x,
+						( sys alpha << 24) | 
+						(ss.pen.lopnColor >> 16) |
+						(ss.pen.lopnColor & 0xff00) |
+						((ss.pen.lopnColor & 0xff) << 16)
+					);
+				} else if ( !use_alpha && old == NULL ) {
+					HPEN curr;
+					ss.pen.lopnWidth.x = sys otmsStrikeoutSize;
+					dcs = stylus_alloc(&ss);
+					curr = SelectObject( dc, dcs-> hpen );
+					if ( old == NULL ) old = curr;
+				}
 			}
 		} else
 			Y -= var font. ascent / 2;
@@ -213,14 +233,19 @@ underscore_font( Handle self, int x, int y, int width)
 			}
 		}
 
-		MoveToEx( dc, x + pt[0].x, y - pt[0].y, NULL);
-		LineTo( dc, x + pt[1].x, y - pt[1].y);
+		if ( use_alpha ) {
+			GdipDrawLineI(sys graphics, gppen, x + pt[0].x, y - pt[0].y, x + pt[1].x, y - pt[1].y);
+		} else {
+			MoveToEx( dc, x + pt[0].x, y - pt[0].y, NULL);
+			LineTo( dc, x + pt[1].x, y - pt[1].y);
+		}
 	}
 
-	SelectObject( dc, old );
+	if ( !use_alpha )
+		SelectObject( dc, old );
 }
 
-static void
+void
 gp_get_text_widths( Handle self, const char* text, int len, int flags, ABC * extents)
 {
 	SIZE  sz;
@@ -398,7 +423,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	}
 
 	if ( var font. style & (fsUnderlined | fsStruckOut))
-		underscore_font( self, x, sys lastSize. y - y, gp_get_text_width( self, text, len, flags));
+		underscore_font( self, x, sys lastSize. y - y, gp_get_text_width( self, text, len, flags), use_alpha);
 
 	if ( use_path ) {
 		EndPath(ps);
@@ -569,7 +594,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	t->len = savelen;
 
 	if ( var font. style & (fsUnderlined | fsStruckOut))
-		underscore_font( self, x, yy, gp_get_glyphs_width( self, t, 0));
+		underscore_font( self, x, yy, gp_get_glyphs_width( self, t, 0), use_alpha);
 
 	if ( use_path ) {
 		EndPath(ps);
@@ -1766,7 +1791,7 @@ apc_gp_get_glyphs_width( Handle self, PGlyphsOutRec t)
 	return gp_get_glyphs_width( self, t, t->flags);
 }
 
-static void
+void
 gp_get_text_box( Handle self, ABC * abc, Point * pt)
 {
 	pt[0].y = pt[2]. y = var font. ascent - 1;
