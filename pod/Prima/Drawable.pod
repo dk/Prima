@@ -218,9 +218,9 @@ which turns on the following effects:
 
 =item *
 
-All primitives except images, text, C<pixel>, and C<bar_alpha> are plotted with
-antialiased edges. Arcs, lines, paths, all of them manifest adjacent pixels
-being renderes with half-tones.
+All primitives except images, C<pixel>, and C<bar_alpha> are plotted with
+antialiased edges (text is always antialiased when possible). Arcs, lines,
+paths, all of them manifest adjacent pixels being renderes with half-tones.
 
 =item *
 
@@ -229,7 +229,7 @@ means that f ex a call
 
    $drawable->rectangle(5.3, 5.3, 10, 10)
 
-that had its coordinates automatically rounded to (5,5,10,10), now will rended
+that had its coordinates automatically rounded to (5,5,10,10), now will render
 the primitive with subpixel precision, where its two edges will be divided
 between pixels 5 and 6, by using half-tones.
 
