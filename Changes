@@ -1,5 +1,18 @@
 Revision history for Perl module Prima
 
+1.63 2021-XX-XX
+ - Fixes for macOS Catalina
+ - Drawable changes:
+   -- .alpha renamed to .bar_alpha
+   -- .alpha and .antialias properties added
+      (used GDI+/win32 and XRender/x11 for the implementation)
+   -- .lineWidth changed to floating point
+   -- the primitives accept floating point coordinates in
+      the antialiasing mode
+ - Path can produce subpixel quality polygons
+ - Image respects .antialias by using Prima::Drawable::Antialias
+ - Spinner uses .anitalias (smooth, but slower)
+
 1.62 2021-06-16
  - Add opendir/closedir/*dir for unicode operations
  - Add Prima::Drawable::Antialias for drawing aliased graphic primitives
