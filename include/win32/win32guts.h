@@ -747,7 +747,7 @@ extern void *       image_create_dib(Handle image, Bool global_alloc);
 extern Bool         HWND_lock( Bool lock);
 extern Bool         process_msg( MSG * msg);
 extern Bool         aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide);
-extern Bool         aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance);
+extern Bool         aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, HFONT font);
 extern void         aa_free_arena(Handle self, Bool for_reuse);
 extern void         gp_get_text_widths( Handle self, const char* text, int len, int flags, ABC * extents);
 extern void         gp_get_text_box( Handle self, ABC * abc, Point * pt);

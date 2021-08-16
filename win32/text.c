@@ -23,7 +23,7 @@ typedef struct {
 	HDC dc;
 	int i, len, stop;
 	Handle self;
-	HFONT orig, saved;
+	HFONT orig, saved, curr;
 	PDCFont nondefault_font;
 	uint32_t nondefault_fid;
 	uint16_t *fonts;
@@ -117,7 +117,8 @@ font_context_next( FontContext * fc )
 		}
 	}
 
-	selected = SelectObject(fc->dc, hfont);
+	fc->curr = hfont;
+	selected = SelectObject(fc->dc, fc->curr);
 	if ( !fc->saved ) fc->saved = selected;
 
 	return len;
@@ -379,6 +380,49 @@ gp_get_glyphs_width( Handle self, PGlyphsOutRec t, int flags)
 	return abc.abcB;
 }
 
+static void
+paint_text_background( Handle self, const char * text, int x, int y, int len, int flags)
+{
+	int i, rop, color;
+	Point p[5];
+	FillPattern fp;
+	ABC abc;
+	uint32_t *palette;
+
+	palette = sys alphaArenaPalette;
+	sys alphaArenaPalette = NULL;
+	memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
+	if ( flags & toGlyphs) {
+		PGlyphsOutRec t = (PGlyphsOutRec) text;
+		if ( t-> fonts )
+			gp_get_polyfont_widths(self,t,toAddOverhangs,&abc);
+		else
+			gp_get_text_widths( self, (const char*)t->glyphs, t->len, t->flags | toGlyphs | toAddOverhangs, &abc);
+	} else {
+		gp_get_text_widths(self, text, len, flags | toAddOverhangs, &abc);
+	}
+	gp_get_text_box(self, &abc, p);
+	rop = apc_gp_get_rop( self);
+	color = apc_gp_get_color(self);
+
+	apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
+	apc_gp_set_color( self, apc_gp_get_back_color(self));
+	apc_gp_set_rop( self, ropCopyPut);
+	for ( i = 0; i < 4; i++) {
+		p[i].x += x;
+		p[i].y += y;
+	}
+	i = p[2].x; p[2].x = p[3].x; p[3].x = i;
+	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
+
+	apc_gp_fill_poly( self, 4, p);
+	apc_gp_set_rop( self, rop);
+	apc_gp_set_color( self, color);
+	apc_gp_set_fill_pattern( self, fp);
+	sys alphaArenaPalette = palette;
+}
+
+
 Bool
 apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flags )
 {objCheck false;{
@@ -414,6 +458,8 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 	}
 
 	if ( use_alpha ) {
+		if ( is_apt( aptTextOpaque))
+			paint_text_background(self, (char*)text, x, y, len, flags & toUTF8);
 		ok = aa_text_out( self, x, sys lastSize. y - y, (void*)text, len, flags & toUTF8);
 	} else {
 		ok = ( flags & toUTF8 ) ?
@@ -549,7 +595,10 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	if ( use_path ) {
 		STYLUS_USE_BRUSH( ps);
 		BeginPath(ps);
-	} else if ( !use_alpha ) {
+	} else if ( use_alpha ) {
+		if ( is_apt( aptTextOpaque))
+			paint_text_background(self, (char*) t, x, y, 0, toGlyphs);
+	} else {
 		STYLUS_USE_TEXT( ps);
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
@@ -573,7 +622,7 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 	while (( t-> len = font_context_next(&fc)) > 0 ) {
 		int advance = 0;
 		if ( !( ok = use_alpha ?
-				aa_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance) :
+				aa_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance, fc.curr) :
 				gp_glyphs_out(self, t, xx, yy, fc.stop ? NULL : &advance)
 			))
 			break;

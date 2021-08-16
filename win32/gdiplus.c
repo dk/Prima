@@ -343,41 +343,6 @@ aa_fill_palette(Handle self)
 	return true;
 }
 
-static void
-paint_text_background( Handle self, const char * text, int x, int y, int len, int flags)
-{
-	int i, rop, color;
-	Point p[5];
-	FillPattern fp;
-	ABC abc;
-	uint32_t *palette;
-
-	palette = sys alphaArenaPalette;
-	sys alphaArenaPalette = NULL;
-	memcpy( &fp, apc_gp_get_fill_pattern( self), sizeof( FillPattern));
-	gp_get_text_widths(self, text, len, flags | toAddOverhangs, &abc);
-	gp_get_text_box(self, &abc, p);
-	rop = apc_gp_get_rop( self);
-	color = apc_gp_get_color(self);
-
-	apc_gp_set_fill_pattern( self, fillPatterns[fpSolid]);
-	apc_gp_set_color( self, apc_gp_get_back_color(self));
-	apc_gp_set_rop( self, ropCopyPut);
-	y = sys lastSize.y - y;
-	for ( i = 0; i < 4; i++) {
-		p[i].x += x;
-		p[i].y += y;
-	}
-	i = p[2].x; p[2].x = p[3].x; p[3].x = i;
-	i = p[2].y; p[2].y = p[3].y; p[3].y = i;
-
-	apc_gp_fill_poly( self, 4, p);
-	apc_gp_set_rop( self, rop);
-	apc_gp_set_color( self, color);
-	apc_gp_set_fill_pattern( self, fp);
-	sys alphaArenaPalette = palette;
-}
-
 Bool
 aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide)
 {
@@ -386,9 +351,6 @@ aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide)
 
 	if ( !(aa_fill_palette(self) && aa_make_arena(self)))
 		return false;
-
-	if ( is_apt( aptTextOpaque))
-		paint_text_background(self, (char*)text, x, y, len, wide ? toUnicode : 0);
 
 	for ( i = 0; i < len; i++) {
 		ABCFLOAT abc;
@@ -410,8 +372,59 @@ aa_text_out( Handle self, int x, int y, void * text, int len, Bool wide)
 }
 
 Bool
-aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance)
+aa_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y, int * text_advance, HFONT font)
 {
+	int i;
+	NPoint delta = { 0, 0 };
+	uint16_t *advances = t->advances;
+	int16_t *positions = t->positions;
+	HFONT f;
+
+	if ( !(aa_fill_palette(self) && aa_make_arena(self)))
+		return false;
+
+	if ( text_advance )
+		*text_advance = 0;
+
+	f = SelectObject( sys alphaArenaDC, font );
+	if ( !sys alphaArenaStockFont )
+		sys alphaArenaStockFont = f;
+	sys alphaArenaFontChanged = false;
+
+	for ( i = 0; i < t->len; i++) {
+		ABCFLOAT abc, *pabc;
+		int adv, dx, dy;
+		memset(sys alphaArenaPtr, 0, sys alphaArenaSize.x * sys alphaArenaSize.y * 4);
+		if ( !ExtTextOutW(sys alphaArenaDC,
+			sys alphaArenaSize.x/2, sys alphaArenaSize.y/2,
+			ETO_GLYPH_INDEX, NULL, (LPCWSTR)(t->glyphs) + i, 1, 
+			NULL
+		))
+			apiErrRet;
+
+		if ( advances ) {
+			adv = *(advances++);
+			if ( text_advance )
+				*text_advance += *advances;
+			pabc = NULL;
+			dx = *(positions++);
+			dy = *(positions++);
+		} else {
+			ABC abci;
+			adv = -1;
+			pabc = &abc;
+			dx = dy = 0;
+			if (!GetCharABCWidthsI( sys ps, ((WCHAR*)(t->glyphs))[i], 1, NULL, &abci)) apiErr;
+			if ( text_advance )
+				*text_advance += abci.abcA + abci.abcB + abci.abcC;
+			abc.abcfA = abci.abcA;
+			abc.abcfB = abci.abcB;
+			abc.abcfC = abci.abcC;
+		}
+
+		if ( !aa_render(self, x, y, &delta, pabc, adv, dx, dy))
+			return false;
+	}
 	return false;
 }
 
