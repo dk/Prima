@@ -126,12 +126,7 @@ sub delete_object
 sub insert_object
 {
 	my ( $self, $class) = ( shift, shift);
-	my $obj;
-	$self-> attach_object( $obj = $class-> new(
-		@_,
-		owner => $self,
-	));
-	$obj;
+	return $class-> new( @_, owner => $self );
 }
 
 sub attach_object
@@ -514,8 +509,10 @@ use vars qw(%defaults @uses %list_properties);
 
 {
 	@uses = qw( backColor color fillPattern font lineEnd linePattern
-					lineWidth region rop rop2 textOpaque
-					textOutBaseline lineJoin fillMode);
+		lineWidth region rop rop2 textOpaque
+		textOutBaseline lineJoin fillMode
+		antialias alpha
+	);
 	my $pd = Prima::Drawable-> profile_default();
 	%defaults = map { $_ => $pd-> {$_} } @uses;
 	%list_properties = map { $_ => 1 } qw(origin size rect resolution);
@@ -912,6 +909,20 @@ sub visible
 		if $_[0]-> {owner};
 }
 
+sub alpha
+{
+	return $_[0]-> {alpha} unless $#_;
+	$_[0]-> {alpha} = $_[1];
+	$_[0]-> repaint;
+}
+
+sub antialias
+{
+	return $_[0]-> {antialias} unless $#_;
+	$_[0]-> {antialias} = $_[1];
+	$_[0]-> repaint;
+}
+
 sub color
 {
 	return $_[0]-> {color} unless $#_;
@@ -1010,13 +1021,13 @@ package Prima::Canvas::Outlined;
 use vars qw(@ISA);
 @ISA = qw(Prima::CanvasObject);
 
-sub uses { return qw( rop rop2 backColor color lineWidth linePattern lineEnd); }
+sub uses { return qw( rop rop2 backColor color lineWidth linePattern lineEnd antialias alpha ); }
 
 package Prima::Canvas::Filled;
 use vars qw(@ISA);
 @ISA = qw(Prima::CanvasObject);
 
-sub uses { return qw( rop rop2 color backColor fillPattern lineEnd); }
+sub uses { return qw( rop rop2 color backColor fillPattern lineEnd antialias alpha ); }
 
 package Prima::Canvas::FilledOutlined;
 use vars qw(@ISA);
@@ -1033,7 +1044,7 @@ sub profile_default
 
 sub uses {
 	my $self = $_[0];
-	my @ret = qw(rop rop2 color backColor);
+	my @ret = qw(rop rop2 color backColor antialias alpha);
 	push @ret, qw(lineWidth linePattern lineEnd) if $self-> {outline};
 	push @ret, qw(fillPattern) if $self-> {fill};
 	@ret;
@@ -1574,7 +1585,7 @@ sub profile_default
 sub uses
 {
 	my $self = $_[0];
-	my @ret = qw(font color rop);
+	my @ret = qw(font color rop alpha);
 	push @ret, qw(backColor textOpaque) if $self-> {textOpaque};
 	@ret;
 }
@@ -1737,6 +1748,7 @@ menuItems => [
 	['~Edit' => [
 		['color' => '~Foreground color' => \&set_color],
 		['backColor' => '~Background color' => \&set_color],
+		['alpha' => '~Alpha' => [ map { [ $_, $_, \&set_alpha ] } 0, 32, 64, 96, 128, 164, 192, 224, 255]],
 		[],
 		['~Line width' => [ map { [ "lw$_", $_, \&set_line_width ] } 0..7, 10, 15 ]],
 		['Line ~pattern' => [ map { [ "lp:linePattern=$_", $_, \&set_constant ] }
@@ -1754,6 +1766,7 @@ menuItems => [
 		['Fill r~ule' => [ map { [ "fm:fillMode=$_", $_, \&set_constant ] }
 				sort grep { !m/AUTOLOAD|constant|BEGIN|END/ } keys %fm:: ]],
 		[],
+		['antialias' => 'Antialia~s' => \&toggle],
 		['fill' => 'Toggle ~fill' => \&toggle],
 		['outline' => 'Toggle ~outline' => \&toggle],
 		[],
@@ -1885,6 +1898,14 @@ sub delete
 	my $obj;
 	return unless $obj = $_[0]-> Canvas-> focused_object;
 	$_[0]-> Canvas-> delete_object( $obj);
+}
+
+sub set_alpha
+{
+	my ( $self, $alpha) = @_;
+	my $obj;
+	return unless $obj = $self-> Canvas-> focused_object;
+	$obj-> alpha( $alpha);
 }
 
 sub set_color
@@ -2051,7 +2072,7 @@ sub set_text_flags
 
 insert( $c, 'Button', origin => [ 0, 0]);
 insert( $c, 'Rectangle', linePattern => lp::DotDot, lineWidth => 10, origin => [ 50, 50]);
-insert( $c, 'Line', origin => [ 200, 200]);
+insert( $c, 'Line', origin => [ 200, 200], antialias => 1);
 insert( $c, 'Polygon', origin => [ 150, 150]);
 insert( $c, 'Bitmap', origin => [ 350, 350], backColor => cl::LightGreen, color => cl::Green);
 
