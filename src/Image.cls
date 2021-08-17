@@ -18,6 +18,7 @@ object Prima::Image( Prima::Drawable)
 	int            updateLock;
 	int            extraROP;
 
+	property int    alpha;
 	property Bool   antialias;
 	property Rect   clipRect;
 	property int    conversion;

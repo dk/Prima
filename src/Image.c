@@ -1941,6 +1941,22 @@ Image_premultiply_alpha( Handle self, SV * alpha)
 		my-> update_change( self );
 }
 
+int
+Image_alpha( Handle self, Bool set, int alpha)
+{
+	if ( is_opt(optInDraw) || is_opt(optInDrawInfo))
+		return inherited alpha(self,set,alpha);
+
+	if (set) {
+		if ( alpha < 0 ) alpha = 0;
+		if ( alpha > 255 ) alpha = 255;
+		if (( alpha < 255 ) && !my->can_draw_alpha(self))
+			alpha = 255;
+		var-> alpha = alpha;
+	}
+	return var->alpha;
+}
+
 Bool
 Image_antialias( Handle self, Bool set, Bool aa)
 {

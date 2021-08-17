@@ -11,6 +11,7 @@ sub new
 		%opt,
 		canvas => $canvas,
 		can_aa => $canvas->can_draw_alpha,
+		alpha  => $canvas->alpha,
 	);
 	return bless \%self, $class;
 }
@@ -52,7 +53,7 @@ sub alloc_surface
 		scaling   => ist::Triangle,
 	) or return;
 	$surface->bar(0,0,$surface->size);
-	$surface->color(cl::White);
+	$surface->color($self->{alpha} * 0x10101);
 	return $surface;
 }
 
