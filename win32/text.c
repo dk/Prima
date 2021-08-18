@@ -99,10 +99,7 @@ font_context_next( FontContext * fc )
 		src = *_src;
 #define CP(x) src.x = dst.x; src.undef.x = 0;
 		CP(size)
-		CP(style)
-		CP(pitch)
 		CP(direction)
-		CP(vector)
 #undef CP
 		src.direction = dst.direction;
 		apc_font_pick(fc->self, &src, &dst);
