@@ -1462,6 +1462,7 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 			PDrawable(drawable)-> h = event->gen.P.y;
 			protect_object(drawable);
 			PObject(drawable)-> options. optSystemDrawable = 1;
+			PObject(drawable)-> options. optInDraw = 1;
 
 			event-> gen.H = drawable;
 			if ( apc_menu_item_begin_paint(self, event)) {
@@ -1469,6 +1470,8 @@ AbstractMenu_handle_event( Handle self, PEvent event)
 					context, m->flags.utf8_variable, event->gen.H, event->gen.B, event->gen.R);
 				apc_menu_item_end_paint(self, event);
 			}
+
+			PObject(drawable)-> options. optInDraw = 0;
 
 			--SvREFCNT( SvRV((( PAnyObject) drawable)-> mate));
 			unprotect_object(drawable);

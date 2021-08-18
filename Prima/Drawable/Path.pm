@@ -28,7 +28,7 @@ sub new
 		canvas          => $canvas,
 		commands        => [],
 		precision       => undef,
-		subpixel        => $canvas ? $canvas->antialias : 0,
+		subpixel        => ($canvas && ref($canvas)) ? $canvas->antialias : 0,
 		antialias       => 0,
 		%opt
 	}, $class;

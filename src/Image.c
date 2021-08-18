@@ -1961,7 +1961,7 @@ Image_alpha( Handle self, Bool set, int alpha)
 		if ( alpha > 255 ) alpha = 255;
 		if (( alpha < 255 ) && !my->can_draw_alpha(self))
 			alpha = 255;
-		var-> alpha = alpha;
+		inherited alpha(self,set,alpha);
 	}
 	return var->alpha;
 }
