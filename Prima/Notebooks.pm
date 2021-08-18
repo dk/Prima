@@ -1190,20 +1190,25 @@ sub on_paint
 				$x + $s * 10, $y - $s * DefBookmarkX + $s * 6,
 				$x + $s * 10, $y - $s * DefBookmarkX + $s * 8]) if $ar & 1;
 
+			my $S = int($s);
 			my $dx = $s * DefBookmarkX / 2;
 			my ( $x1, $y1) = ( $x + $dx, $y - $dx);
-			$canvas-> line( $x1 + $s * 1, $y1 + $s * 4, $x1 + $s * 3, $y1 + $s * 4) if $ar & 2;
-			$canvas-> line( $x1 + $s * 5, $y1 + $s * 6, $x1 + $s * 5, $y1 + $s * 8) if $ar & 2;
-			$canvas-> polyline([ $x1 + $s * 3, $y1 + $s * 2, $x1 + $s * 5, $y1 + $s * 2,
-				$x1 + $s * 5, $y1 + $s * 4, $x1 + $s * 7, $y1 + $s * 4, $x1 + $s * 7, $y1 + $s * 6]) if $ar & 2;
+			if ( $ar & 2 ) {
+				$canvas-> line( $x1 + $S * 1, $y1 + $S * 4, $x1 + $S * 3, $y1 + $S * 4);
+				$canvas-> line( $x1 + $S * 5, $y1 + $S * 6, $x1 + $S * 5, $y1 + $S * 8);
+				$canvas-> polyline([ $x1 + $S * 3, $y1 + $S * 2, $x1 + $S * 5, $y1 + $S * 2,
+					$x1 + $S * 5, $y1 + $S * 4, $x1 + $S * 7, $y1 + $S * 4, $x1 + $S * 7, $y1 + $S * 6]);
+			}
 			$canvas-> color( $c3d[1]);
 			$canvas-> line( $x - 1, $y - 7, $x + $s * DefBookmarkX - 9, $y - $s * DefBookmarkX + 1);
 			$canvas-> line( $s * DefBorderX + 4, $y - $fh * 1.6 - 1, $x - $s * 6, $y - $fh * 1.6 - 1);
 			$canvas-> polyline([ $x + $s * 4, $y1 - $s * 9, $x + $s * 4, $y1 - $s * 8, $x + $s * 10, $y1 - $s * 8]) if $ar & 1;
-			$canvas-> line( $x1 + $s * 3, $y1 + $s * 2, $x1 + $s * 3, $y1 + $s * 3) if $ar & 2;
-			$canvas-> line( $x1 + $s * 6, $y1 + $s * 6, $x1 + $s * 7, $y1 + $s * 6) if $ar & 2;
-			$canvas-> polyline([ $x1 + $s * 1, $y1 + $s * 4, $x1 + $s * 1, $y1 + $s * 6,
-				$x1 + $s * 3, $y1 + $s * 6, $x1 + $s * 3, $y1 + $s * 8, $x1 + $s * 5, $y1 + $s * 8]) if $ar & 2;
+			if ( $ar & 2 ) {
+				$canvas-> line( $x1 + $S * 3, $y1 + $S * 2, $x1 + $S * 3, $y1 + $S * 3);
+				$canvas-> line( $x1 + $S * 6, $y1 + $S * 6, $x1 + $S * 7, $y1 + $S * 6);
+				$canvas-> polyline([ $x1 + $S * 1, $y1 + $S * 4, $x1 + $S * 1, $y1 + $S * 6,
+					$x1 + $S * 3, $y1 + $S * 6, $x1 + $S * 3, $y1 + $S * 8, $x1 + $S * 5, $y1 + $S * 8]);
+			}
 			$canvas-> color( cl::Black);
 			$canvas-> line( $x - 1, $y - 2, $x + $s * DefBookmarkX - 4, $y - $s * DefBookmarkX + 1);
 			$canvas-> line( $x + 5, $y - $s * DefBookmarkX - 1, $x + $s * DefBookmarkX - 5, $y - $s * DefBookmarkX - 1);
