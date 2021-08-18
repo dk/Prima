@@ -1100,6 +1100,7 @@ Drawable_render_spline( SV * obj, SV * points, HV * profile)
 		goto EXIT;
 	final_size++;
 	rendered++;
+	nrendered++;
 
 	/* looks good */
 	ok = true;
@@ -1129,7 +1130,10 @@ EXIT:
 	if (knots)    free(knots);
 	if (weights)  free(weights);
 	if ( ok ) {
-		return prima_array_tie( ret, sizeof(int), as_integer ? "i" : "d");
+		return prima_array_tie( ret,
+			as_integer ? sizeof(int) : sizeof(double),
+			as_integer ? "i" : "d"
+		);
 	} else {
 		if (ret)  sv_free(ret);
 		return newRV_noinc(( SV *) newAV());
