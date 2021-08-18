@@ -1276,7 +1276,6 @@ subpaint_layered_widgets( HWND self, HDC ps, HDC alpha_dc, POINT screen_offset, 
 
 		if ( !dsys(h) options. aptLayeredRequested) {
 			/* assigning opaque alpha over the child rect so Windows passes mouse events in */
-			SetViewportOrgEx( ps, 0, 0, NULL);
 			StretchBlt( ps, r.left, r.top, size.x, size.y, alpha_dc, 0, 0, 1, 1, SRCPAINT);
 		}
 		dsys(h) options. aptLayeredPaint = 0;
@@ -1350,7 +1349,6 @@ apc_widget_end_paint( Handle self)
 	} else if ( is_opt( optBuffered)) {
 		apt_clear( aptBitmap);
 		if ( sys bm != NULL) {
-			if ( !SetViewportOrgEx( sys ps, 0, 0, NULL)) apiErr;
 			if ( !BitBlt( sys ps2, sys transform2. x, sys transform2. y, var w, var h, sys ps, 0, 0, SRCCOPY)) apiErr;
 			if ( sys stockBM)
 				SelectObject( sys ps, sys stockBM);

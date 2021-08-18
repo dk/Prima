@@ -452,6 +452,11 @@ apc_gp_get_clip_rect( Handle self)
 	rr. top    += p.y;
 	rr. bottom += p.y;
 
+	rr. left   += sys transform2. x;
+	rr. right  += sys transform2. x;
+	rr. top    -= sys transform2. y;
+	rr. bottom -= sys transform2. y;
+
 	return rr;
 }
 
@@ -479,7 +484,6 @@ apc_gp_set_clip_rect( Handle self, Rect c)
 		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
 		apiGPErrCheck;
 	}
-	apt_clear( aptRegionIsEmpty);
 	if ( !DeleteObject( rgn)) apiErr;
 	return true;
 }
@@ -534,7 +538,6 @@ apc_gp_set_region( Handle self, Handle region)
 		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
 		apiGPErrCheck;
 	}
-	apt_clear( aptRegionIsEmpty);
 	DeleteObject( rgn);
 	return true;
 }

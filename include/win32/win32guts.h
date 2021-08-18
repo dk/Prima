@@ -144,6 +144,10 @@ typedef HANDLE SOCKETHANDLE;
 #define objCheck          if ( var stage == csDead) return
 #define dobjCheck(handle) if ((( PObject)handle)-> stage == csDead) return
 
+#define SHIFT_X(X)    X + sys gp_transform.x
+#define SHIFT_Y(Y)    sys lastSize.y - (Y) - 1 + sys gp_transform.y
+#define SHIFT_XY(X,Y) X += sys gp_transform.x,Y = sys lastSize.y - (Y) - 1 + sys gp_transform.y
+
 typedef struct _HandleOptions_ {
 	unsigned aptWM_PAINT             : 1;       // true if inside WM_PAINT
 	unsigned aptWinPS                : 1;       // window PS was passed to paint
@@ -178,7 +182,6 @@ typedef struct _HandleOptions_ {
 	unsigned aptClipByChildren       : 1;       // cached clipping by children
 	unsigned aptIgnoreSizeMessages   : 1;       // during window recreation
 	unsigned aptGDIPlus              : 1;       // uses GDI+
-	unsigned aptRegionIsEmpty        : 1;       // no calls to region/cliprect are made yet
 } HandleOptions;
 
 #define CLIPBOARD_MAIN 0

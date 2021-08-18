@@ -48,6 +48,7 @@ my $aperture = 6 * $::application-> uiScaling;
 
 my $w = Prima::MainWindow-> create(
 	text => 'Spline demo',
+	antialias => (( $ARGV[0] // '' ) eq 'aa'),
 	backColor => cl::Black,
 	buffered => 1,
 	onPaint => sub {

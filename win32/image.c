@@ -773,17 +773,6 @@ img_put_stretch_blt( HDC dst, HDC src, PutImageRequest * req)
 }
 
 static Bool
-img_put_stretch_blt_viewport( HDC dst, HDC src, PutImageRequest * req)
-{
-	Bool ok;
-	POINT tr = {0, 0};
-	SetViewportOrgEx( src, 0, 0, &tr);
-	ok = img_put_stretch_blt( dst, src, req);
-	SetViewportOrgEx( src, tr.x, tr.y, NULL);
-	return ok;
-}
-
-static Bool
 img_put_stretch_bits( HDC dst, Handle self, PutImageRequest * req)
 {
 	int rop;
@@ -911,13 +900,13 @@ img_put_bitmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 	STYLUS_USE_BRUSH( sys ps);
 	if ( dsys( image) options. aptDeviceBitmap )
 		req-> rop = rop_reduce(GetTextColor( sys ps), GetBkColor( sys ps), req-> rop);
-	return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
+	return img_put_stretch_blt( sys ps, dsys(image)ps, req);
 }
 
 static Bool
 img_put_pixmap_on_bitmap( Handle self, Handle image, PutImageRequest * req)
 {
-	return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
+	return img_put_stretch_blt( sys ps, dsys(image)ps, req);
 }
 
 static Bool
@@ -983,7 +972,7 @@ img_put_monodc_on_pixmap( HDC dst, HDC src, PutImageRequest * req)
 	COLORREF oBack  = GetBkColor( dst);
 	SetTextColor( dst, 0x00000000);
 	SetBkColor  ( dst, 0x00FFFFFF);
-	ok = img_put_stretch_blt_viewport( dst, src, req);
+	ok = img_put_stretch_blt( dst, src, req);
 	SetTextColor( dst, oFore);
 	SetBkColor  ( dst, oBack);
 	return ok;
@@ -995,7 +984,7 @@ img_put_bitmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 	if ( dsys( image) options. aptDeviceBitmap ) {
 		STYLUS_USE_TEXT( sys ps);
 		STYLUS_USE_BRUSH( sys ps);
-		return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
+		return img_put_stretch_blt( sys ps, dsys(image)ps, req);
 	} else
 		return img_put_monodc_on_pixmap( sys ps, dsys(image)ps, req);
 }
@@ -1018,7 +1007,7 @@ img_put_pixmap_on_pixmap( Handle self, Handle image, PutImageRequest * req)
 		Object_destroy( img);
 		return ok;
 	} else
-		return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
+		return img_put_stretch_blt( sys ps, dsys(image)ps, req);
 }
 
 static Bool
@@ -1085,7 +1074,7 @@ img_put_argb_on_layered( Handle self, Handle image, PutImageRequest * req)
 	if ( req-> rop == ropSrcCopy ) {
 		req-> rop = ropCopyPut;
 		img_draw_black_rect( self, req );
-		ok = img_put_stretch_blt_viewport( sys ps, src, req);
+		ok = img_put_stretch_blt( sys ps, src, req);
 	} else
 		ok = img_put_alpha_blend( sys ps, src, req);
 	SelectObject(src, old);
@@ -1155,7 +1144,7 @@ img_put_layered_on_layered( Handle self, Handle image, PutImageRequest * req)
 	if ( req-> rop == ropSrcCopy ) {
 		req-> rop = ropCopyPut;
 		img_draw_black_rect( self, req );
-		return img_put_stretch_blt_viewport( sys ps, dsys(image)ps, req);
+		return img_put_stretch_blt( sys ps, dsys(image)ps, req);
 	} else
 		return img_put_alpha_blend( sys ps, dsys(image)ps, req);
 }
@@ -1239,8 +1228,8 @@ apc_gp_stretch_image( Handle self, Handle image,
 	req. src_y = img->h - src_y - src_h;
 	req. src_w = src_w;
 	req. src_h = src_h;
-	req. dst_x = dst_x;
-	req. dst_y = sys lastSize. y - dst_y - dst_h;
+	req. dst_x = sys gp_transform.x + dst_x;
+	req. dst_y = sys gp_transform.y + sys lastSize. y - dst_y - dst_h;
 	req. dst_w = dst_w;
 	req. dst_h = dst_h;
 	req. rop   = rop;

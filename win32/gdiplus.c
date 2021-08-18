@@ -22,6 +22,8 @@ static Bool
 create_gdip_surface(Handle self)
 {
 	HRGN rgn;
+
+	/* force null region as it lingers in GDI+ space somehow */
 	rgn = CreateRectRgn(0,0,0,0);
 	if ( GetClipRgn( sys ps, rgn ) > 0 )
 		SelectClipRgn( sys ps, NULL);

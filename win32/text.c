@@ -428,7 +428,7 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 {objCheck false;{
 	Bool ok = true;
 	HDC ps = sys ps;
-	int bk  = GetBkMode( ps);
+	int bk  = GetBkMode( ps), X = x, Y = y;
 	int opa = is_apt( aptTextOpaque) ? OPAQUE : TRANSPARENT;
 	Bool use_path, use_alpha;
 
@@ -456,20 +456,21 @@ apc_gp_text_out( Handle self, const char * text, int x, int y, int len, int flag
 		STYLUS_USE_TEXT( ps);
 		if ( opa != bk) SetBkMode( ps, opa);
 	}
+	SHIFT_XY(X,Y);
 
 	if ( use_alpha ) {
 		if ( is_apt( aptTextOpaque))
 			paint_text_background(self, (char*)text, x, y, len, flags & toUTF8);
-		ok = aa_text_out( self, x, sys lastSize. y - y, (void*)text, len, flags & toUTF8);
+		ok = aa_text_out( self, X, Y, (void*)text, len, flags & toUTF8);
 	} else {
 		ok = ( flags & toUTF8 ) ?
-			TextOutW( ps, x, sys lastSize. y - y, ( U16*)text, len) :
-			TextOutA( ps, x, sys lastSize. y - y, text, len);
+			TextOutW( ps, X, Y, ( U16*)text, len) :
+			TextOutA( ps, X, Y, text, len);
 		if ( !ok ) apiErr;
 	}
 
 	if ( var font. style & (fsUnderlined | fsStruckOut))
-		underscore_font( self, x, sys lastSize. y - y, gp_get_text_width( self, text, len, flags), use_alpha);
+		underscore_font( self, X, Y, gp_get_text_width( self, text, len, flags), use_alpha);
 
 	if ( use_path ) {
 		EndPath(ps);
@@ -615,8 +616,9 @@ apc_gp_glyphs_out( Handle self, PGlyphsOutRec t, int x, int y)
 		s = 0.0;
 	}
 
+	SHIFT_XY(x,y);
 	fxx = xx = x;
-	fyy = yy = sys lastSize. y - y;
+	fyy = yy = y;
 	savelen = t->len;
 	font_context_init(&fc, self, t);
 	while (( t-> len = font_context_next(&fc)) > 0 ) {
