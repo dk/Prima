@@ -1211,7 +1211,7 @@ prima_std_pixmap( Handle self, int type);
 	XRenderSetPictureClipRegion(DISP, x, region);
 
 #define CREATE_ARGB_PICTURE(drawable, depth, target) \
-	target = prima_render_create_picture(drawable, depth)
+	if ( guts.render_extension) target = prima_render_create_picture(drawable, depth)
 
 extern Picture
 prima_render_create_picture(XDrawable drawable, int depth);

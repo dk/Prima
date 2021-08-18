@@ -167,6 +167,7 @@ static Bool  do_icccm_only = false;
 static Bool  do_no_shmem   = false;
 static Bool  do_no_gtk     = false;
 static Bool  do_no_quartz  = false;
+static Bool  do_no_xrender = false;
 
 static Bool
 init_x11( char * error_buf )
@@ -422,7 +423,8 @@ init_x11( char * error_buf )
 	apc_timer_set_timeout( MENU_UNFOCUS_TIMER, 50);
 	if ( !prima_init_clipboard_subsystem (error_buf)) return false;
 	if ( !prima_init_color_subsystem     (error_buf)) return false;
-	if ( !prima_init_xrender_subsystem   (error_buf)) return false;
+	if ( !do_no_xrender)
+		if ( !prima_init_xrender_subsystem(error_buf)) return false;
 	if ( !prima_init_font_subsystem      (error_buf)) return false;
 #ifdef WITH_GTK
 	guts. use_gtk = do_no_gtk ? false : ( prima_gtk_init() != NULL );
@@ -518,6 +520,9 @@ window_subsystem_get_options( int * argc, char *** argv)
 #ifdef WITH_COCOA
 	"no-quartz",     "do not use Quartz",
 #endif
+#ifdef HAVE_X11_EXTENSIONS_XRENDER_H
+	"no-xrender",    "do not use XRender",
+#endif
 	"font",
 #ifdef USE_XFT
 				"default prima font in XLFD (-helv-misc-*-*-) or XFT(Helv-12) format",
@@ -574,6 +579,10 @@ window_subsystem_set_option( char * option, char * value)
 	} else if ( strcmp( option, "no-quartz") == 0) {
 		if ( value) warn("`--no-quartz' option has no parameters");
 		do_no_quartz = true;
+		return true;
+	} else if ( strcmp( option, "no-xrender") == 0) {
+		if ( value) warn("`--no-xrender' option has no parameters");
+		do_no_xrender = true;
 		return true;
 	} else if ( strcmp( option, "debug") == 0) {
 		if ( !value) {
