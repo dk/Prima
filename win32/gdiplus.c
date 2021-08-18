@@ -21,13 +21,18 @@ extern "C" {
 static Bool
 create_gdip_surface(Handle self)
 {
+	HRGN rgn;
+	rgn = CreateRectRgn(0,0,0,0);
+	if ( GetClipRgn( sys ps, rgn ) > 0 )
+		SelectClipRgn( sys ps, NULL);
+	else
+		rgn = NULL;
+
 	GPCALL GdipCreateFromHDC(sys ps, &sys graphics);
 	apiGPErrCheckRet(false);
 
-	if ( !is_apt(aptRegionIsEmpty)) {
-		HRGN rgn;
-		rgn = CreateRectRgn(0,0,0,0);
-		GetClipRgn( sys ps, rgn );
+	if ( rgn ) {
+		SelectClipRgn( sys ps, rgn);
 		GPCALL GdipSetClipHrgn(sys graphics, rgn, CombineModeReplace);
 		apiGPErrCheck;
 		DeleteObject( rgn);
