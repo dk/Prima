@@ -46,12 +46,14 @@ sub rect_focus
 	( $y, $y1) = ( $y1, $y) if $y > $y1;
 
 	$width = 1 if !defined $width || $width < 1;
-	my ( $cl, $cl2) = ( $canvas-> color, $canvas-> backColor);
+	my ( $cl, $cl2, $aa, $alpha) = ( $canvas-> color, $canvas-> backColor, $canvas-> antialias, $canvas-> alpha);
 	my $fp = $canvas-> fillPattern;
 	$canvas-> set(
 		fillPattern => fp::SimpleDots,
 		color       => cl::White,
 		backColor   => cl::Black,
+		antialias   => 0,
+		alpha       => 255,
 	);
 
 	if ( $width * 2 >= $x1 - $x or $width * 2 >= $y1 - $y) {
