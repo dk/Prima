@@ -128,6 +128,7 @@ $mw = Prima::MainWindow->new(
 			$canvas->linePattern($opt{lp});
 			$canvas->antialias(1);
 			$canvas->polyline(\@xpoints);
+			$canvas->antialias(0);
 		}
 
 		$canvas->rop(rop::CopyPut);

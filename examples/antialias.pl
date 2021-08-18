@@ -26,7 +26,7 @@ sub redraw
 }
 
 $w = Prima::MainWindow->new(
-	color    => cl::LightRed,
+	color    => 0xc00000,
 	text     => 'Antialias',
 	sizeMin  => [100,100],
 	onPaint  => sub {
@@ -35,8 +35,20 @@ $w = Prima::MainWindow->new(
 		$canvas-> color( $self-> backColor);
 		$canvas-> bar( 0, 0, $canvas-> size);
 		$canvas-> color( $color);
-		$canvas-> new_aa_surface-> polyline([ 0, 0, $canvas->size ]);
 		$canvas-> new_path(antialias => 1)-> ellipse(100,100,100)->fill;
+		$canvas-> color( cl::LightRed);
+		$canvas-> new_aa_surface(alpha => 192)-> polyline([ 0, 0, $canvas->size ]);
+
+		if ( $canvas->can_draw_alpha ) {
+			$canvas->color(cl::Green);
+			$canvas->antialias(1);
+			$canvas->alpha(192);
+			$canvas->fill_ellipse(100, 150, 100, 100);
+			$canvas->lineWidth(1);
+			$canvas->line( 0, 100, $canvas->width - 100, $canvas->height);
+			$canvas->antialias(0);
+			$canvas->alpha(255);
+		}
 
 		$canvas-> color(cl::Black);
 		$canvas-> rectangle( @pos, map { $_ + SZ } @pos);
