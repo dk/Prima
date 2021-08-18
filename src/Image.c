@@ -2118,10 +2118,10 @@ Image_bar( Handle self, double x1, double y1, double x2, double y2)
 		return ok;
 	}
 
-	_x1 = round(x1);
-	_x2 = round(x2);
-	_y1 = round(y1);
-	_y2 = round(y2);
+	_x1 = x1;
+	_x2 = x2;
+	_y1 = y1;
+	_y2 = y2;
 
 	t = my->get_translate(self);
 	_x1 += t.x;
@@ -2209,10 +2209,10 @@ Image_clear(Handle self, double x1, double y1, double x2, double y2)
 		apc_gp_set_color(self, color);
 		return ok;
 	} else {
-		_x1 = round(x1);
-		_x2 = round(x2);
-		_y1 = round(y1);
-		_y2 = round(y2);
+		_x1 = x1;
+		_x2 = x2;
+		_y1 = y1;
+		_y2 = y2;
 		if ( _x1 < 0 && _y1 < 0 && _x2 < 0 && _y2 < 0) {
 			_x1 = 0;
 			_y1 = 0;
@@ -2303,10 +2303,10 @@ Image_line(Handle self, double x1, double y1, double x2, double y2)
 		unsigned char lp[256];
 		Point poly[2];
 		prepare_line_context( self, lp, &ctx);
-		poly[0].x = round(x1);
-		poly[0].y = round(y1);
-		poly[1].x = round(x2);
-		poly[1].y = round(y2);
+		poly[0].x = x1;
+		poly[0].y = y1;
+		poly[1].x = x2;
+		poly[1].y = y2;
 		return img_polyline(self, 2, poly, &ctx);
 	} else {
 		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);

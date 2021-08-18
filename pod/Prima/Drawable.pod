@@ -233,6 +233,14 @@ that had its coordinates automatically rounded to (5,5,10,10), now will render
 the primitive with subpixel precision, where its two edges will be divided
 between pixels 5 and 6, by using half-tones.
 
+Another note on the rounding off coordinates: historically almost all Prima
+pixel coordinates were integers, and implicit rounding of the passed numbers
+were done usinc the C<int> function, i e int(0.7)=0 and int(-0.7)=0. This then
+changed for C<polyline> and C<fillpoly>, that could accept floating point
+arrays but round them with a more consistent C<round> function, where
+round(0.7)=1 and round(-0.7)=-1. It would be cood idea to change the rounding
+for the primitives too if not for the backward compatibility.
+
 =back
 
 For the cases where system does not support antialiasing, Prima provides
@@ -783,7 +791,7 @@ image, C<pixel>, and C<bar_alpha> calls.
 It will not be possible to turn the property on if the system does not
 support it. Also, monochrome images won't support it as well.
 
-See L<Antialiasing>.
+See L<Antialiasing and alpha>.
 
 =item backColor COLOR
 

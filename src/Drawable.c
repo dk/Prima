@@ -527,9 +527,9 @@ primitive( Handle self, Bool fill, char * method, ...)
 }
 
 #define IS_AA (var->antialias || (var->alpha < 255))
-#define ROUND(x) x=round(x)
-#define ROUND2(x,y) {ROUND(x);ROUND(y);}
-#define ROUND4(x,y,z,t) {ROUND(x);ROUND(y);ROUND(z);ROUND(t);}
+#define TRUNC(x) x=trunc(x)
+#define TRUNC2(x,y) {TRUNC(x);TRUNC(y);}
+#define TRUNC4(x,y,z,t) {TRUNC(x);TRUNC(y);TRUNC(z);TRUNC(t);}
 
 
 Bool
@@ -539,7 +539,7 @@ Drawable_arc( Handle self, double x, double y, double dX, double dY, double star
 	while ( startAngle > endAngle ) endAngle += 360.0;
 	return IS_AA ?
 		primitive( self, 0, "snnnnnn", "arc", x, y, dX-1, dY-1, startAngle, endAngle) :
-		apc_gp_arc(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
+		apc_gp_arc(self, x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -548,7 +548,7 @@ Drawable_chord( Handle self, double x, double y, double dX, double dY, double st
 	CHECK_GP(false);
 	return IS_AA ?
 		primitive( self, 0, "snnnnnn", "chord", x, y, dX-1, dY-1, startAngle, endAngle) :
-		apc_gp_chord(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
+		apc_gp_chord(self, x, y, dX, dY, startAngle, endAngle);
 }
 
 Bool
@@ -557,7 +557,7 @@ Drawable_ellipse( Handle self, double x, double y,  double dX, double dY)
 	CHECK_GP(false);
 	return IS_AA ?
 		primitive( self, 0, "snnnn", "ellipse", x, y, dX-1, dY-1) :
-		apc_gp_ellipse(self, round(x), round(y), round(dX), round(dY));
+		apc_gp_ellipse(self, x, y, dX, dY);
 }
 
 Bool
@@ -565,7 +565,7 @@ Drawable_bar( Handle self, double x1, double y1, double x2, double y2)
 {
 	CHECK_GP(false);
 
-	if ( !var->antialias ) ROUND4(x1,y1,x2,y2);
+	if ( !var->antialias ) TRUNC4(x1,y1,x2,y2);
 
 	if (IS_AA) {
 		NPoint r[5] = { {x1,y1}, {x2,y1}, {x2,y2}, {x1,y2}, {x1,y1} };
@@ -600,7 +600,7 @@ Drawable_bars( Handle self, SV * rects)
 			if ( !var->antialias) {
 				int j;
 				for ( j = 0; j < 5; j++)
-					ROUND2(xr[j].x,xr[j].y);
+					TRUNC2(xr[j].x,xr[j].y);
 			}
 			if ( !( ret = apc_gp_aa_fill_poly( self, 5, xr)))
 				break;
@@ -619,7 +619,7 @@ Drawable_clear( Handle self, double x1, double y1, double x2, double y2)
 	CHECK_GP(false);
 
 	full = x1 < 0 && y1 < 0 && x2 < 0 && y2 < 0;
-	if ( !var->antialias ) ROUND4(x1,y1,x2,y2);
+	if ( !var->antialias ) TRUNC4(x1,y1,x2,y2);
 	if ( !full && IS_AA) {
 		Bool ok;
 		Color color;
@@ -645,7 +645,7 @@ Drawable_fill_chord( Handle self, double x, double y, double dX, double dY, doub
 	if (IS_AA) {
 		return primitive( self, 1, "snnnnnn", "chord", x, y, dX, dY, startAngle, endAngle);
 	} else return apc_gp_fill_chord(self,
-		round(x), round(y), round(dX), round(dY), startAngle, endAngle
+		x, y, dX, dY, startAngle, endAngle
 	);
 }
 
@@ -655,7 +655,7 @@ Drawable_fill_ellipse( Handle self, double x, double y,  double dX, double dY)
 	if (IS_AA) {
 		return primitive( self, 1, "snnnn", "ellipse", x, y, dX, dY);
 	} else return apc_gp_fill_ellipse(self,
-		round(x), round(y), round(dX), round(dY)
+		x, y, dX, dY
 	);
 }
 
@@ -666,7 +666,7 @@ Drawable_fill_sector( Handle self, double x, double y, double dX, double dY, dou
 	if (IS_AA) {
 		return primitive( self, 1, "snnnnnn", "sector", x, y, dX, dY, startAngle, endAngle);
 	} else return apc_gp_fill_sector(self,
-		round(x), round(y), round(dX), round(dY), startAngle, endAngle
+		x, y, dX, dY, startAngle, endAngle
 	);
 }
 
@@ -690,7 +690,7 @@ Drawable_fillpoly(Handle self, SV * points)
 	if ( var->alpha < 255 && !var->antialias ) {
 		int i;
 		NPoint *pp = (NPoint*)p;
-		for ( i = 0; i < count; i++, pp++) ROUND2(pp->x,pp->y);
+		for ( i = 0; i < count; i++, pp++) TRUNC2(pp->x,pp->y);
 	}
 
 	ret = IS_AA ?
@@ -709,7 +709,7 @@ Drawable_line(Handle self, double x1, double y1, double x2, double y2)
 	if (IS_AA)
 		return primitive( self, 0, "snnnn", "line", x1, y1, x2, y2);
 	else return apc_gp_line(self,
-		round(x1), round(y1), round(x2), round(y2)
+		x1, y1, x2, y2
 	);
 }
 
@@ -756,7 +756,7 @@ Drawable_rectangle( Handle self, double x1, double y1, double x2, double y2)
 	CHECK_GP(false);
 	return IS_AA ?
 		primitive( self, 0, "snnnn", "rectangle", x1,y1,x2,y2) :
-		apc_gp_rectangle(self, round(x1), round(y1), round(x2), round(y2));
+		apc_gp_rectangle(self, x1, y1, x2, y2);
 }
 
 SV *
@@ -1271,7 +1271,7 @@ Drawable_sector( Handle self, double x, double y, double dX, double dY, double s
 	CHECK_GP(false);
 	return IS_AA ?
 		primitive( self, 0, "snnnnnn", "sector", x, y, dX-1, dY-1, startAngle, endAngle) :
-		apc_gp_sector(self, round(x), round(y), round(dX), round(dY), startAngle, endAngle);
+		apc_gp_sector(self, x, y, dX, dY, startAngle, endAngle);
 }
 
 /* Properties */
