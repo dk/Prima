@@ -1683,7 +1683,12 @@ prepare_fill_context(Handle self, Point translate, PImgPaintContext ctx)
 
 	color2pixel( self, my->get_color(self), ctx->color);
 	color2pixel( self, my->get_backColor(self), ctx->backColor);
-	ctx-> rop    = var->extraROP;
+
+	ctx-> rop = var-> extraROP |
+		(( var-> alpha < 255 ) ?
+			ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift ) :
+			0
+		);
 	ctx-> region = var->regionData ? &var->regionData-> data. box : NULL;
 	ctx-> patternOffset = my->get_fillPatternOffset(self);
 	ctx-> patternOffset.x -= translate.x;
@@ -1718,7 +1723,11 @@ prepare_line_context( Handle self, unsigned char * lp, ImgPaintContext * ctx)
 {
 	color2pixel( self, my->get_color(self), ctx->color);
 	color2pixel( self, my->get_backColor(self), ctx->backColor);
-	ctx->rop    = my->get_rop(self);
+	ctx-> rop = var-> extraROP |
+		(( var-> alpha < 255 ) ?
+			ropSrcAlpha | ( var-> alpha << ropSrcAlphaShift ) :
+			0
+		);
 	ctx->region = var->regionData ? &var->regionData-> data. box : NULL;
 	ctx->transparent = my->get_rop2(self) == ropNoOper;
 	ctx->translate = my->get_translate(self);

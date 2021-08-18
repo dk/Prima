@@ -679,6 +679,7 @@ img_bar( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 	while ( ctx->patternOffset.x < 0 ) ctx-> patternOffset.x += FILL_PATTERN_SIZE;
 	while ( ctx->patternOffset.y < 0 ) ctx-> patternOffset.y += FILL_PATTERN_SIZE;
 
+
 	if ( ctx-> rop & ropConstantAlpha )
 		return img_bar_alpha(dest, x, y, w, h, ctx);
 
@@ -1294,8 +1295,8 @@ hline_init( ImgHLineRec * rec, Handle dest, PImgPaintContext ctx, char * method)
 
 		/* premultiply colors */
 		for ( j = 0; j < bpp / 8; j++) {
-			ctx->color[j] = (float)(ctx->color[j] * 255.0) / rec->src_alpha + .5;
-			ctx->backColor[j] = (float)(ctx->backColor[j] * 255.0) / rec->src_alpha + .5;
+			ctx->color[j] = (float)(ctx->color[j] * rec->src_alpha) / 255.0 + .5;
+			ctx->backColor[j] = (float)(ctx->backColor[j] * rec->src_alpha) / 255.0 + .5;
 		}
 	} else {
 		rec->blend1 = rec->blend2 = NULL;
@@ -2096,8 +2097,8 @@ img_bar_alpha( Handle dest, int x, int y, int w, int h, PImgPaintContext ctx)
 
 	/* premultiply colors */
 	for ( j = 0; j < bpp; j++) {
-		ctx->color[j] = (float)(ctx->color[j] * 255.0) / src_alpha + .5;
-		ctx->backColor[j] = (float)(ctx->backColor[j] * 255.0) / src_alpha + .5;
+		ctx->color[j] = (float)(ctx->color[j] * src_alpha) / 255.0 + .5;
+		ctx->backColor[j] = (float)(ctx->backColor[j] * src_alpha) / 255.0 + .5;
 	}
 
 	solid = (memcmp( ctx->pattern, fillPatterns[fpSolid], sizeof(FillPattern)) == 0);

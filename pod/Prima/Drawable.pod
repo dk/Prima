@@ -693,7 +693,7 @@ Combine the rop constant using this formula:
       rop::SrcAlpha | ( $src_alpha << rop::SrcAlphaShift ) |
       rop::DstAlpha | ( $src_alpha << rop::DstAlphaShift )
 
-or C<rop::alpha($rop, [ $src_alpha, [ $dst_alpha ]])> call that does the same.
+or by calling C<rop::alpha($rop, [ $src_alpha, [ $dst_alpha ]])> that does the same.
 
 Also, the function C<rop::blend($alpha)> creates a rop constant for simple blending of two images
 by the following formula:
@@ -701,10 +701,19 @@ by the following formula:
    $dst = ( $src * $alpha + $dst * ( 255 - $alpha ) ) / 255
 
 C<rop::alpha> also can be used for drawing on
-image outside begin_paint/end_paint:
+images outside begin_paint/end_paint with all Porter-Duff and Photoshop raster operators:
 
    $image->rop( rop::alpha( rop::SrcOver, 128 ));
    $image->ellipse( 5, 5, 5, 5 );
+
+Note that when the raster operation is set to C<rop::SrcOver> (default), the
+fully identical effect can be achieved by
+
+   $image->alpha(128);
+   $image->ellipse( 5, 5, 5, 5 );
+
+as well. In both cases, the values of C<color> and C<backColor> are internally
+premultiplied with the alpha.
 
 When used with icons, their source and/or destination alpha channels are additionally
 multiplied with these values.
@@ -715,9 +724,10 @@ When this bit is set, source pixels will be multiplied with alpha before blendin
 
 =item rop::ConstantColor
 
-This bit is used when the alpha is defined but the main bits aren't. In this case,
-the main bits are filled from the destination's image color, and the source image treated
-as alpha channel. The following code applies a solid green shade with a mask loaded from file.
+This bit is used when the alpha is defined but the main bits aren't. In this
+case, the main bits are filled from the destination's image color, and the
+source image treated as the source alpha channel. The following code applies a
+solid green shade with a mask loaded from file.
 
     $src->load('8-bit gray mask.png');
     $dst->color(cl::LightGreen);

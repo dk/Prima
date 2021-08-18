@@ -281,9 +281,10 @@ so, invoke
 
 in the beginning of your program. See L<Prima::noX11> for more.
 
-Generally the standalone methods support all the OS-specific functions
-(i.e. color, region, etc), plus they support alpha blending
-using C<rop> property and C<rop::alpha($rop, $src_alpha[, $dst_alpha]))> value.
+Generally the standalone methods support all the OS-specific functions (i.e.
+color, region, etc), plus the primitives and C<put_image> methods support
+drawing using Porter-Duff operators from C<rop> property (i e rop::SrcOver and
+above).
 
 See individual methods and properties in L<API> that support standalone usage,
 and how they differ from system-dependent implementation.
@@ -321,10 +322,9 @@ A layered drawable uses an extra alpha channel to designate the transparency.
 Drawing on widgets will also look different - for example, drawing
 with black color will make the black pixels fully transparent, while other
 colors will blend with the underlying background, but never in full. Prima
-provides no functions to draw with alpha effects, and scarce image functions to
-address the alpha surfaces. Drawing lines, text, etc with blending is delegated
-to L<Prima::Cairo> which is a separate module. Prima only provides alpha
-surfaces and bitmaps with an additional alpha channel to draw upon. However,
+provides graphics primitives to draw using alpha effects, and some image functions to
+address the alpha surfaces.
+
 C<put_image> / C<stretch_image> functions can operate on surfaces with alpha as
 source and destination drawables. To address the alpha channel on a drawable with
 Prima, one has to send either an C<Prima::Icon> with C<maskType(im::bpp8)>, or
