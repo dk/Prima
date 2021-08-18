@@ -297,6 +297,7 @@ my $w = Prima::MainWindow->new(
 	text => 'Tiger',
 	backColor => cl::White,
 	color => cl::Black,
+	antialias => (($ARGV[0] // '') eq 'aa'),
 	onPaint => sub {
 		my ( $self, $canvas ) = @_;
 		$canvas->clear;
