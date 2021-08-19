@@ -21,36 +21,37 @@ sub redraw
 {
 	Prima::Utils::alarm( 500, sub {
 		$w->IV->{image} = $::application->get_image( $w->client_to_screen(map { $_ + 1 } @pos), (SZ - 2) x 2);
+		my $c = int(SZ / 2 + .5);
+		my $pix = $w->IV->{image}->pixel( $c, $c );
+		$w->text(sprintf("%06x", $pix));
 		$w->IV->repaint;
 	});
 }
 
 $w = Prima::MainWindow->new(
-	color    => 0xc00000,
+	color    => cl::Red,
 	text     => 'Antialias',
 	sizeMin  => [100,100],
 	onPaint  => sub {
 		my ( $self, $canvas) = @_;
-		my $color = $self-> color;
-		$canvas-> color( $self-> backColor);
-		$canvas-> bar( 0, 0, $canvas-> size);
-		$canvas-> color( $color);
+		$canvas-> clear;
 		$canvas-> new_path(antialias => 1)-> ellipse(100,100,100)->fill;
-		$canvas-> color( cl::LightRed);
-		$canvas-> new_aa_surface(alpha => 192)-> polyline([ 0, 0, $canvas->size ]);
+		$canvas->lineWidth(5);
+		$canvas-> new_aa_surface(alpha => 128)-> polyline([ 0, 0, $canvas->size ]);
 
 		if ( $canvas->can_draw_alpha ) {
 			$canvas->color(cl::Green);
 			$canvas->antialias(1);
 			$canvas->alpha(192);
 			$canvas->fill_ellipse(100, 150, 100, 100);
-			$canvas->lineWidth(1);
+			$canvas->lineWidth(5);
 			$canvas->line( 0, 100, $canvas->width - 100, $canvas->height);
 			$canvas->antialias(0);
 			$canvas->alpha(255);
 		}
 
 		$canvas-> color(cl::Black);
+		$canvas->lineWidth(1);
 		$canvas-> rectangle( @pos, map { $_ + SZ } @pos);
 	},
 	onSize => sub {
@@ -85,6 +86,8 @@ $w->insert( Widget =>
 		$canvas->rectangle(0, 0, map { $_ - 1 } $self->size);
 		if ( $self->{image} ) {
 			$canvas->stretch_image( 1, 1, (SZ * MUL) x 2, $self->{image});
+			my $c = int(SZ * MUL / 2 + .5);
+			$canvas->rectangle( $c, $c, $c + MUL, $c + MUL );
 		} else {
 			$canvas-> clear( 1, 1, (SZ * MUL) x 2);
 			$canvas-> line( 0, 0, $self-> size );

@@ -11,7 +11,8 @@ sub new
 		%opt,
 		canvas => $canvas,
 		can_aa => $canvas->can_draw_alpha,
-		alpha  => $canvas->alpha,
+		alpha  => $opt{alpha} // $canvas->alpha,
+		factor => $opt{factor} // 2,
 	);
 	return bless \%self, $class;
 }
@@ -41,14 +42,12 @@ sub calc_poly_extents
 	return @rc;
 }
 
-use constant RES => 2;
-
 sub alloc_surface
 {
 	my ( $self, @sz ) = @_;
 	my $surface = Prima::Image->new(
 		type      => im::Byte,
-		size      => [ map { $_ * RES } @sz ],
+		size      => [ map { $_ * $self->{factor} } @sz ],
 		color     => cl::Black,
 		scaling   => ist::Triangle,
 	) or return;
@@ -63,7 +62,7 @@ sub apply_surface
 
 	return 0 unless $self->{can_aa};
 
-	$alpha-> size( map { $_ / RES } $alpha-> size );
+	$alpha-> size( map { $_ / $self->{factor} } $alpha-> size );
 
 	my $canvas = $self->{canvas};
 	if ( $canvas->isa('Prima::Image') && ! $canvas->get_paint_state ) {
@@ -72,11 +71,11 @@ sub apply_surface
 		my $bits = Prima::Image->new(
 			size  => [ $alpha-> size ],
 			type  => im::RGB,
-			color => $canvas-> color,
+			color => cl::premultiply( $canvas-> color, $self->{alpha} ),
 		);
 		$bits-> bar(0, 0, $alpha->size);
 		my $icon = Prima::Icon-> create_combined( $bits, $alpha );
-		$icon->premultiply_alpha;
+
 		return $canvas-> put_image( $x, $y, $icon, rop::SrcOver );
 	}
 }
@@ -94,11 +93,11 @@ sub polyline
 	if ($canvas-> lineWidth > 1 ) {
 		$bitmap->region(
 			$bitmap->new_path->
-				scale(RES)->
+				scale($self->{factor})->
 				translate(-$x, -$y)->
 				line($poly)->
 				widen(
-					lineWidth   => RES * ($canvas-> lineWidth - 1),
+					lineWidth   => $self->{factor} * ($canvas-> lineWidth - 1),
 					map { $_ => $canvas->$_() } qw(
 						linePattern lineJoin lineEnd miterLimit
 					)
@@ -107,8 +106,8 @@ sub polyline
 		);
 		$bitmap->bar( 0, 0, $bitmap->size);
 	} else {
-		$bitmap->translate(map { -1 * RES * $_ } $x, $y);
-		$poly = Prima::Drawable->render_polyline( $poly, matrix => [RES,0,0,RES,0,0], integer => 1);
+		$bitmap->translate(map { -1 * $self->{factor} * $_ } $x, $y);
+		$poly = Prima::Drawable->render_polyline( $poly, matrix => [$self->{factor},0,0,$self->{factor},0,0], integer => 1);
 		$bitmap->polyline($poly);
 	}
 	return $self->apply_surface($x, $y, $bitmap);
@@ -128,14 +127,14 @@ sub fillpoly
 	$mode //= $self->{canvas}->fillMode;
 	$mode &= ~fm::Overlay; # very slow otherwise due to manual region patch
 	$poly = Prima::Drawable->render_polyline( $poly,
-		matrix => [RES,0,0,RES,0,0],
+		matrix => [$self->{factor},0,0,$self->{factor},0,0],
 		integer => 1
 	);
 	my $rgn = Prima::Region->new(
 		fillMode => $mode,
 		polygon  => $poly,
 	);
-	$rgn->offset( map { -1 * RES * $_ } $x, $y );
+	$rgn->offset( map { -1 * $self->{factor} * $_ } $x, $y );
 
 	my $bitmap = $self->alloc_surface($w, $h) or goto FALLBACK;
 	$bitmap->region( $rgn );
