@@ -71,11 +71,11 @@ sub apply_surface
 		my $bits = Prima::Image->new(
 			size  => [ $alpha-> size ],
 			type  => im::RGB,
-			color => cl::premultiply( $canvas-> color, $self->{alpha} ),
+			color => $canvas-> color,
 		);
 		$bits-> bar(0, 0, $alpha->size);
 		my $icon = Prima::Icon-> create_combined( $bits, $alpha );
-
+		$icon->premultiply_alpha;
 		return $canvas-> put_image( $x, $y, $icon, rop::SrcOver );
 	}
 }
