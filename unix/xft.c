@@ -172,7 +172,6 @@ font_context_next( FontContext * fc )
 	dst = fc->font;
 #define CP(x) src.x = dst.x; src.undef.x = 0;
 	CP(size)
-	CP(style)
 	CP(direction)
 #undef CP
 
