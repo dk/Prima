@@ -121,7 +121,7 @@ font_key( const char * name, unsigned int style)
 {
 	static char buf[2048];
 	if ( !name ) return NULL;
-	buf[0] = '0' + (style & (fsThin|fsBold|fsNormal));
+	buf[0] = '0' + (style & STYLE_MASK);
 	strncpy( buf + 1, name, 2046 );
 	return buf;
 }
@@ -292,8 +292,9 @@ find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 	unsigned int i, def_style;
 	unsigned int page = c >> FONTMAPPER_VECTOR_BASE;
 
-	if ( preferred_font > 0 && can_substitute(c, pitch, preferred_font))
+	if ( preferred_font > 0 && can_substitute(c, pitch, preferred_font)) {
 		return preferred_font;
+	}
 
 	if ( font_active_entries.count > page && font_active_entries.items[page] ) {
 		PList fonts = (PList) font_active_entries.items[page];
@@ -303,7 +304,7 @@ find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 				PPassiveFontEntry pfe = PASSIVE_FONT(fid);
 				if ( pfe-> font.style != style ) continue;
 			}
-			if ( can_substitute(c, pitch, fid))
+			if ( can_substitute(c, pitch, fid)) 
 				return fid;
 		}
 	}
@@ -311,23 +312,27 @@ find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 	def_style = (style >= 0) ? style : 0;
 	if ( font_mapper_default_id[def_style] == -1 ) {
 		Font font;
+		char *key;
+		uint16_t fid;
 		apc_font_default( &font);
 		font_mapper_default_id[def_style] = -2;
-		for ( i = 1; i < font_passive_entries.count; i++) {
-			PPassiveFontEntry pfe = PASSIVE_FONT(i);
-			if ( pfe->font.style != def_style ) continue;
-			if ( strcmp( font.name, pfe->font.name ) != 0 ) continue;
-			font_mapper_default_id[def_style] = i;
-			break;
-		}
+		key = font_key(font.name, def_style);
+		fid = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
+		if ( fid > 0 ) 
+			font_mapper_default_id[def_style] = fid;
 	}
 
-	if ( font_mapper_default_id[def_style] >= 0 && can_substitute(c, pitch, font_mapper_default_id[def_style]))
+	if ( font_mapper_default_id[def_style] >= 0 && can_substitute(c, pitch, font_mapper_default_id[def_style])) 
 		return font_mapper_default_id[def_style];
 
-	for ( i = 1; i < font_passive_entries.count; i++)
+	for ( i = 1; i < font_passive_entries.count; i++) {
+		if ( style >= 0 ) {
+			PPassiveFontEntry pfe = PASSIVE_FONT(i);
+			if ( pfe-> font.style != style ) continue;
+		}
 		if ( can_substitute(c, pitch, i))
 			return i;
+	}
 
 	if ( pitch == fpFixed ) {
 		if ( font_mapper_default_id[def_style] >= 0 && can_substitute(c, pitch, font_mapper_default_id[def_style]))

@@ -746,28 +746,35 @@ utf8_flag_strncpy( char * dst, const WCHAR * src, unsigned int maxlen)
 int CALLBACK
 fep_register_mapper_fonts( ENUMLOGFONTEXW FAR *e, NEWTEXTMETRICEXW FAR *t, DWORD type, LPARAM _es)
 {
-	PFont f;
 	char name[LF_FACESIZE + 1];
 	Bool name_is_utf8;
+	unsigned int i, styles[4], pitch;
 	if (type & RASTER_FONTTYPE) return 1;
 
 	if (e-> elfLogFont.lfFaceName[0] == '@') return 1; /* vertical font */
 
 	name_is_utf8 = utf8_flag_strncpy( name, e-> elfLogFont.lfFaceName, LF_FACESIZE);
-	if ((f = prima_font_mapper_save_font(name)) == NULL)
-		return 1;
-
-	f-> is_utf8.name = name_is_utf8;
-
-	f-> pitch =
+	pitch =
 		((( e-> elfLogFont.lfPitchAndFamily & 3) == DEFAULT_PITCH ) ? fpDefault :
 		((( e-> elfLogFont.lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
-	f->undef.pitch = 0;
 
-	f->undef.vector = 0;
-	f->vector = fvOutline;
+	styles[0] = fsNormal;
+	styles[1] = fsBold;
+	styles[2] = fsItalic;
+	styles[3] = fsBold | fsItalic;
+	for ( i = 0; i < 4; i++) {
+		PFont f;
 
-	f->is_utf8.family = utf8_flag_strncpy( f-> family, e-> elfFullName, LF_FULLFACESIZE);
+		if ((f = prima_font_mapper_save_font(name, styles[i])) == NULL)
+			continue;
+
+		f->undef.pitch    = 0;
+		f->pitch          = pitch;
+		f->undef.vector   = 0;
+		f->vector         = fvOutline;
+		f->is_utf8.name   = name_is_utf8;
+		f->is_utf8.family = utf8_flag_strncpy( f-> family, e-> elfFullName, LF_FULLFACESIZE);
+	}
 	return 1;
 }
 
@@ -778,7 +785,7 @@ register_mapper_fonts(void)
 	LOGFONTW elf;
 
 	/* MS Shell Dlg is a virtual font, not reported by enum */
-	prima_font_mapper_save_font(guts.windowFont.name);
+	prima_font_mapper_save_font(guts.windowFont.name, 0);
 
 	if ( !( dc = dc_alloc()))
 		return;
@@ -830,7 +837,7 @@ font_logfont2font( LOGFONTW * lf, Font * f, Point * res)
 		( lf-> lfItalic     ? fsItalic     : 0) |
 		( lf-> lfUnderline  ? fsUnderlined : 0) |
 		( lf-> lfStrikeOut  ? fsStruckOut  : 0) |
-	(( lf-> lfWeight >= 700) ? fsBold   : 0);
+		(( lf-> lfWeight >= 700) ? fsBold   : 0);
 	f-> pitch               = ((( lf-> lfPitchAndFamily & 3) == DEFAULT_PITCH) ? fpDefault :
 		((( lf-> lfPitchAndFamily & 3) == VARIABLE_PITCH) ? fpVariable : fpFixed));
 	strcpy( f-> encoding, font_charset2encoding( lf-> lfCharSet));
