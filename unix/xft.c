@@ -170,8 +170,11 @@ font_context_next( FontContext * fc )
 
 	src = *_src;
 	dst = fc->font;
-	src.size = dst.size;
-	src.undef.size = 0;
+#define CP(x) src.x = dst.x; src.undef.x = 0;
+	CP(size)
+	CP(style)
+	CP(direction)
+#undef CP
 
 	prima_xft_font_pick( NULL_HANDLE, &src, &dst, NULL, &fc->xft_font);
 	if ( !fc->orig_base )
