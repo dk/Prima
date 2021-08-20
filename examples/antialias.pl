@@ -21,7 +21,7 @@ sub redraw
 {
 	Prima::Utils::alarm( 500, sub {
 		$w->IV->{image} = $::application->get_image( $w->client_to_screen(map { $_ + 1 } @pos), (SZ - 2) x 2);
-		my $c = int(SZ / 2 + .5);
+		my $c = int(SZ / 2 + .5) - 1;
 		my $pix = $w->IV->{image}->pixel( $c, $c );
 		$w->text(sprintf("%06x", $pix));
 		$w->IV->repaint;
@@ -73,6 +73,24 @@ $w = Prima::MainWindow->new(
 		$self->update_view;
 		redraw;
 	},
+	onKeyDown => sub {
+		my ( $self, $code, $key, $mod ) = @_;
+		my @d = (0,0);
+		if    ( $key == kb::Left  ) { $d[0] = -1 }
+		elsif ( $key == kb::Right ) { $d[0] =  1 }
+		elsif ( $key == kb::Up    ) { $d[1] =  1 }
+		elsif ( $key == kb::Down  ) { $d[1] = -1 }
+		return if $d[0] == 0 and $d[1] == 0;
+		$pos[$_] += $d[$_] for 0,1;
+		$pos[0] = 0 if $pos[0] < 0;
+		$pos[1] = 0 if $pos[1] < 0;
+		my @sz = map { $_ - SZ } $self-> size;
+		$pos[0] = $sz[0] if $pos[0] > $sz[0];
+		$pos[1] = $sz[1] if $pos[1] > $sz[1];
+		$self->repaint;
+		$self->update_view;
+		redraw;
+	},
 );
 
 
@@ -86,8 +104,8 @@ $w->insert( Widget =>
 		$canvas->rectangle(0, 0, map { $_ - 1 } $self->size);
 		if ( $self->{image} ) {
 			$canvas->stretch_image( 1, 1, (SZ * MUL) x 2, $self->{image});
-			my $c = int(SZ * MUL / 2 + .5);
-			$canvas->rectangle( $c, $c, $c + MUL, $c + MUL );
+			my $c = int(SZ * MUL / 2 + .5) + 1;
+			$canvas->rectangle( $c, $c, $c + MUL + 1, $c + MUL + 1);
 		} else {
 			$canvas-> clear( 1, 1, (SZ * MUL) x 2);
 			$canvas-> line( 0, 0, $self-> size );
