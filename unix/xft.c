@@ -178,7 +178,7 @@ font_context_next( FontContext * fc )
 	prima_xft_font_pick( NULL_HANDLE, &src, &dst, NULL, &fc->xft_font);
 	if ( !fc->orig_base )
 		return;
-	
+
 	if ( IS_ZERO(fc->font.direction))
 		fc-> xft_base_font = fc->xft_font;
 	else {
@@ -2598,7 +2598,7 @@ prima_xft_init_font_substitution(void)
 		s = FcFontList( 0, pat, os);
 		if ( s && s->nfont ) {
 			PFont f;
-			if (( f = prima_font_mapper_save_font(guts.default_font.name)) != NULL ) {
+			if (( f = prima_font_mapper_save_font(guts.default_font.name, 0)) != NULL ) {
 				f->is_utf8 = guts.default_font.is_utf8;
 				f->undef.name = 0;
 				strncpy(f->family, guts.default_font.family,256);
@@ -2615,7 +2615,7 @@ prima_xft_init_font_substitution(void)
 
 	pat = FcPatternCreate();
 	FcPatternAddBool( pat, FC_SCALABLE, 1);
-	os = FcObjectSetBuild( FC_FAMILY, FC_FOUNDRY, FC_SCALABLE, FC_SPACING, (void*) 0);
+	os = FcObjectSetBuild( FC_FAMILY, FC_FOUNDRY, FC_SCALABLE, FC_SPACING, FC_WEIGHT, FC_SLANT, (void*) 0);
 	s = FcFontList( 0, pat, os);
 	FcObjectSetDestroy( os);
 	FcPatternDestroy( pat);
@@ -2625,7 +2625,8 @@ prima_xft_init_font_substitution(void)
 	ppat = s-> fonts;
 	for ( i = 0; i < s->nfont; i++, ppat++) {
 		PFont f;
-		int j;
+		int j, slant, weight;
+		unsigned int style = 0;
 		FcChar8 * s;
 		PList list;
 		char lower[512], *llower = lower, *lupper;
@@ -2645,7 +2646,18 @@ prima_xft_init_font_substitution(void)
 			}
 		}
 
-		if ( !( f = prima_font_mapper_save_font((const char*) s)))
+		if ( FcPatternGetInteger( *ppat, FC_SLANT, 0, &slant) == FcResultMatch) {
+			if ( slant == FC_SLANT_ITALIC || slant == FC_SLANT_OBLIQUE)
+				style |= fsItalic;
+		}
+		if ( FcPatternGetInteger( *ppat, FC_WEIGHT, 0, &weight) == FcResultMatch) {
+			if ( weight <= FC_WEIGHT_LIGHT )
+				style |= fsThin;
+			else if ( weight >= FC_WEIGHT_BOLD)
+				style |= fsBold;
+		}
+
+		if ( !( f = prima_font_mapper_save_font((const char*) s, style)))
 			continue;
 
 		f-> is_utf8.name = utf8_flag_strncpy( f->name, (char*)s, 255);

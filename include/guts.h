@@ -50,7 +50,7 @@ extern Bool prima_kill_all_objects( Handle self, Handle child, void * dummy);
 
 extern void  prima_init_font_mapper(void);
 extern void  prima_cleanup_font_mapper(void);
-extern PFont prima_font_mapper_save_font(const char * name);
+extern PFont prima_font_mapper_save_font(const char * name, unsigned int style);
 extern PFont prima_font_mapper_get_font(unsigned int fid );
 
 #ifdef __cplusplus

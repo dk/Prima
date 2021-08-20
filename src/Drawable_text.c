@@ -51,14 +51,17 @@ or filling them by querying ranges
 static List  font_active_entries;
 static List  font_passive_entries;
 static PHash font_substitutions;
-static int   font_mapper_default_id;
+
+#define STYLE_MASK (fsThin|fsItalic|fsBold)
+#define N_STYLES   (1 + STYLE_MASK)
+static int   font_mapper_default_id[N_STYLES];
 
 typedef struct {
 	Font   font;
 	List   vectors;
 	Bool   ranges_queried;
 	Bool   is_active;
-	unsigned int flags;
+	unsigned int flags, style;
 } PassiveFontEntry, *PPassiveFontEntry;
 
 #define PASSIVE_FONT(fid) ((PPassiveFontEntry) font_passive_entries.items[(unsigned int)(fid)])
@@ -73,12 +76,13 @@ prima_font_mapper_get_font(unsigned int fid)
 void
 prima_init_font_mapper(void)
 {
+	int i;
 	list_create(&font_passive_entries, 256, 256);
 	list_create(&font_active_entries,  16,  16);
-	font_mapper_default_id = -1;
+	for ( i = 0; i < N_STYLES; i++) font_mapper_default_id[i] = -1;
 	font_substitutions = prima_hash_create();
 
-	prima_font_mapper_save_font(NULL); /* occupy zero index */
+	prima_font_mapper_save_font(NULL, 0); /* occupy zero index */
 }
 
 static Bool
@@ -112,13 +116,25 @@ prima_cleanup_font_mapper(void)
 	hash_destroy( font_substitutions, false);
 }
 
+static char *
+font_key( const char * name, unsigned int style)
+{
+	static char buf[2048];
+	if ( !name ) return NULL;
+	buf[0] = '0' + (style & (fsThin|fsBold|fsNormal));
+	strncpy( buf + 1, name, 2046 );
+	return buf;
+}
+
 PFont
-prima_font_mapper_save_font(const char * name)
+prima_font_mapper_save_font(const char * name, unsigned int style)
 {
 	PPassiveFontEntry p;
 	PFont f;
+	char * key;
 
-	if ( name && PTR2IV(hash_fetch(font_substitutions, name, strlen(name))) != 0)
+	key = font_key(name, style);
+	if ( name && PTR2IV(hash_fetch(font_substitutions, key, strlen(key))) != 0)
 		return NULL;
 
 	if ( !( p = malloc(sizeof(PassiveFontEntry)))) {
@@ -133,11 +149,13 @@ prima_font_mapper_save_font(const char * name)
 		f->undef.name = 0;
 		strncpy(f->name, name, 256);
 		f->name[255] = 0;
+		f->undef.style = 0;
+		f->style = style;
 	}
 
 	if ( name ) hash_store(
 		font_substitutions,
-		name, strlen(name),
+		key, strlen(key),
 		INT2PTR(void*, font_passive_entries.count)
 	);
 
@@ -260,7 +278,7 @@ can_substitute(uint32_t c, int pitch, int fid)
 
 	if ( !pfe-> is_active ) {
 #ifdef _DEBUG
-		printf("add polyfont %s for chr(%x)", pfe->font.name, c);
+		printf("add polyfont %s for chr(%x)\n", pfe->font.name, c);
 #endif
 		add_active_font(fid);
 	}
@@ -269,9 +287,9 @@ can_substitute(uint32_t c, int pitch, int fid)
 }
 
 static unsigned int
-find_font(uint32_t c, int pitch, uint16_t preferred_font)
+find_font(uint32_t c, int pitch, int style, uint16_t preferred_font)
 {
-	unsigned int i;
+	unsigned int i, def_style;
 	unsigned int page = c >> FONTMAPPER_VECTOR_BASE;
 
 	if ( preferred_font > 0 && can_substitute(c, pitch, preferred_font))
@@ -281,36 +299,59 @@ find_font(uint32_t c, int pitch, uint16_t preferred_font)
 		PList fonts = (PList) font_active_entries.items[page];
 		for (i = 0; i < fonts->count; i++) {
 			int fid = (int) fonts->items[i];
+			if ( style >= 0 ) {
+				PPassiveFontEntry pfe = PASSIVE_FONT(fid);
+				if ( pfe-> font.style != style ) continue;
+			}
 			if ( can_substitute(c, pitch, fid))
 				return fid;
 		}
 	}
 
-	if ( font_mapper_default_id == -1 ) {
+	def_style = (style >= 0) ? style : 0;
+	if ( font_mapper_default_id[def_style] == -1 ) {
 		Font font;
 		apc_font_default( &font);
-		font_mapper_default_id = -2;
+		font_mapper_default_id[def_style] = -2;
 		for ( i = 1; i < font_passive_entries.count; i++) {
 			PPassiveFontEntry pfe = PASSIVE_FONT(i);
+			if ( pfe->font.style != def_style ) continue;
 			if ( strcmp( font.name, pfe->font.name ) != 0 ) continue;
-			font_mapper_default_id = i;
+			font_mapper_default_id[def_style] = i;
 			break;
 		}
 	}
-	if ( font_mapper_default_id >= 0 && can_substitute(c, pitch, font_mapper_default_id))
-		return font_mapper_default_id;
+
+	if ( font_mapper_default_id[def_style] >= 0 && can_substitute(c, pitch, font_mapper_default_id[def_style]))
+		return font_mapper_default_id[def_style];
 
 	for ( i = 1; i < font_passive_entries.count; i++)
 		if ( can_substitute(c, pitch, i))
 			return i;
 
 	if ( pitch == fpFixed ) {
-		if ( font_mapper_default_id >= 0 && can_substitute(c, pitch, font_mapper_default_id))
-			return font_mapper_default_id;
-		for ( i = 1; i < font_passive_entries.count; i++)
+		if ( font_mapper_default_id[def_style] >= 0 && can_substitute(c, pitch, font_mapper_default_id[def_style]))
+			return font_mapper_default_id[def_style];
+		for ( i = 1; i < font_passive_entries.count; i++) {
+			if ( style >= 0 ) {
+				PPassiveFontEntry pfe = PASSIVE_FONT(i);
+				if ( pfe->font.style != style ) continue;
+			}
 			if ( can_substitute(c, fpDefault, i))
 				return i;
+		}
 	}
+
+	if ( style >= 0 ) {
+		if ( style & fsThin )
+			return find_font(c, pitch, style & ~fsThin, preferred_font);
+		if ( style & fsBold )
+			return find_font(c, pitch, style & ~fsBold, preferred_font);
+		if ( style & fsItalic )
+			return find_font(c, pitch, style & ~fsItalic, preferred_font);
+		return find_font(c, pitch, -1, preferred_font);
+	}
+
 #ifdef _DEBUG
 	printf("cannot map chr(%x)\n", c);
 #endif
@@ -325,9 +366,11 @@ Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
 		uint16_t fid;
 		Font font;
 		PPassiveFontEntry pfe;
+		char * key;
 
 		SvHV_Font(sv, &font, "Drawable::fontMapperPalette");
-		fid = PTR2IV(hash_fetch(font_substitutions, font.name, strlen(font.name)));
+		key = font_key(font.name, font.style);
+		fid = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
 		if ( fid == 0 ) return NULL_SV;
 		pfe = PASSIVE_FONT(fid);
 
@@ -349,7 +392,8 @@ Drawable_fontMapperPalette( Handle self, Bool set, int index, SV * sv)
 	} else if ( index < 0 ) {
 		return newSViv( font_passive_entries.count );
 	} else if ( index == 0 ) {
-		index = PTR2IV(hash_fetch(font_substitutions, var->font.name, strlen(var->font.name)));
+		char * key = font_key(var->font.name, var->font.style);
+		index = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
 		return newSViv(index);
 	} else {
 		PFont f = prima_font_mapper_get_font(index);
@@ -1036,13 +1080,13 @@ analyze_fonts( Handle self, PTextShapeRec t, uint16_t * fonts)
 	int i;
 	uint32_t *text = t-> text;
 	int pitch      = (t->flags >> toPitch) & fpMask;
-	uint16_t fid   = PTR2IV(hash_fetch(font_substitutions, var->font.name, strlen(var->font.name)));
+	char * key     = font_key(var->font.name, var->font.style);
+	uint16_t fid   = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
 
 	bzero(fonts, t->len * sizeof(uint16_t));
-	if ( fid == 0 ) return;
 
 	for ( i = 0; i < t->len; i++) {
-		unsigned int nfid = find_font(*(text++), pitch, fid);
+		unsigned int nfid = find_font(*(text++), pitch, var->font.style, fid);
 		if ( nfid != fid ) fonts[i] = nfid;
 	}
 
@@ -1674,6 +1718,7 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 		int i, font_changed = 0;
 		uint32_t from, to;
 		unsigned int page;
+		char * key;
 		Byte used_fonts[MAX_CHARACTERS / 8], filled_entries[256 / 8];
 
 		from = base * 256;
@@ -1682,7 +1727,8 @@ query_abc_range_glyphs( Handle self, GlyphWrapRec * t, unsigned int base)
 		bzero(used_fonts, sizeof(used_fonts));
 		bzero(filled_entries, sizeof(filled_entries));
 		used_fonts[0] = 0x01; /* fid = 0 */
-		i = PTR2IV(hash_fetch(font_substitutions, var->font.name, strlen(var->font.name)));
+		key = font_key(var->font.name, var->font.style);
+		i = PTR2IV(hash_fetch(font_substitutions, key, strlen(key)));
 		if ( i > 0 ) {
 			/* copy ranges from subst table */
 			pfe = PASSIVE_FONT(i);
