@@ -670,13 +670,14 @@ apc_fs_getcwd(void)
 char*
 apc_fs_getenv(const char * varname, Bool is_utf8, Bool * do_free)
 {
-	WCHAR * e, * buf;
+	WCHAR * buf, e[32768];
+	Bool ok;
 
 	if ( !( buf = path2wchar(varname, is_utf8, NULL)))
 		return NULL;
-	e = _wgetenv(buf);
+	ok = (GetEnvironmentVariableW(buf, e, sizeof(e)) > 0);
 	free(buf);
-	if ( !e ) return NULL;
+	if ( !ok ) return NULL;
 
 	*do_free = true;
 	return alloc_wchar_to_utf8(e, NULL);
@@ -996,7 +997,7 @@ apc_fs_setenv(const char * varname, Bool is_name_utf8, const char * value, Bool 
 		return false;
 	}
 
-	ok = (_wputenv_s(buf1, buf2) == 0);
+	ok = (SetEnvironmentVariableW(buf1, buf2) != 0);
 
 	free(buf2);
 	free(buf1);
