@@ -116,8 +116,11 @@ prima_init_xrender_subsystem(char * error_buf)
 
 	if ( guts. argb_visual. visual )
 		guts. argbColormap = XCreateColormap( DISP, guts. root, guts. argb_visual. visual, AllocNone);
-	else
+	else {
 		Pdebug("no ARGB visual found\n");
+		guts. render_extension = false;
+		return true;
+	}
 
 	guts. xrender_a8_format = XRenderFindStandardFormat(DISP, PictStandardA8);
 	guts. xrender_a1_format = XRenderFindStandardFormat(DISP, PictStandardA1);
