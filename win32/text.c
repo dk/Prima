@@ -1375,7 +1375,8 @@ get_opentype_cmap1213_font_ranges( HDC ps, int * count)
 	struct cmap_encoding_subtable *table, *found_record;
 	uint8_t *cmap = NULL;
 
-	if ((cmap_size = GetFontData(ps, CMAP, 0, NULL, 0)) == 0)
+	cmap_size = GetFontData(ps, CMAP, 0, NULL, 0);
+	if ( cmap_size == 0 || cmap_size == GDI_ERROR)
 		goto FAIL;
 	if ( !( cmap = malloc(cmap_size))) {
 		warn("Not enough memory");
