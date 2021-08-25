@@ -32,9 +32,13 @@ sub calc_poly_extents
 	$rc[2] += $rc[0] - 1;
 	$rc[3] += $rc[1] - 1;
 
+	return if $rc[0] > $cr[2];
 	$rc[0] = $cr[0] if $rc[0] < $cr[0];
+	return if $rc[1] > $cr[3];
 	$rc[1] = $cr[1] if $rc[1] < $cr[1];
+	return if $rc[2] < $cr[0];
 	$rc[2] = $cr[2] if $rc[2] > $cr[2];
+	return if $rc[3] < $cr[1];
 	$rc[3] = $cr[3] if $rc[3] > $cr[3];
 
 	$rc[$_+2] -= $rc[$_] - 1 for 0,1;

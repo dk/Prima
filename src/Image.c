@@ -45,6 +45,8 @@ Image_init( Handle self, HV * profile)
 	Image_reset_notifications( self);
 	var->w = pget_i( width);
 	var->h = pget_i( height);
+	if ( var-> w < 0 ) var-> w = 0;
+	if ( var-> h < 0 ) var-> h = 0;
 	if ( !iconvtype_supported( var->conversion = pget_i( conversion) )) {
 		warn("Invalid conversion: %d\n", var->conversion);
 		var->conversion = ictNone;
