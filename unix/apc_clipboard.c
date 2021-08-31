@@ -88,6 +88,8 @@ apc_clipboard_create( Handle self)
 	bzero( XX-> internal, sizeof( ClipboardDataItem) * cfCOUNT);
 	bzero( XX-> external, sizeof( ClipboardDataItem) * cfCOUNT);
 
+	XX->internal[cfTargets].name = CF_NAME(cfTargets);
+
 	for ( i = 0; i < cfCOUNT; i++) 
 		XX->internal[i].immediate = XX->external[i].immediate = true;
 
@@ -1191,7 +1193,7 @@ SEND_EMPTY:
 	XSendEvent( xe.xselection.display, xe.xselection.requestor, false, 0, &xe);
 	XFlush( DISP);
 	Cdebug("clipboard:id %d, SelectionNotify to %08x , %s %s\n", id, xe.xselection.requestor,
-		XGetAtomName( DISP, xe. xselection. property),
+		xe. xselection. property ? XGetAtomName( DISP, xe. xselection. property) : "None",
 		XGetAtomName( DISP, xe. xselection. target));
 	exception_check_raise();
 }
