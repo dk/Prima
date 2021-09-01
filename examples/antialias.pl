@@ -44,6 +44,11 @@ $w = Prima::MainWindow->new(
 			$canvas->antialias(1);
 			$canvas->alpha(192);
 			$canvas->fill_ellipse(100, 150, 100, 100);
+			$canvas->font->set(size => 32);
+			$canvas->text_out("TEXT", 50, 50);
+			$canvas->font->set(size => 32, direction => 45);
+			$canvas->text_shape_out("GLYPHS", 50, 50);
+
 			$canvas->lineWidth(5);
 			$canvas->line( 0, 100, $canvas->width - 100, $canvas->height);
 			$canvas->antialias(0);
