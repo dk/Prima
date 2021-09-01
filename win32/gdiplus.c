@@ -324,11 +324,11 @@ aa_fill_palette(Handle self)
 	int i,j,r,g,b;
 	PStylus s = & sys stylus;
 
-	if ( !sys alphaArenaPalette ) {
-		if ( !( sys alphaArenaPalette = malloc(4 * 256 * 3)))
-			return false;
-	}
+	if ( sys alphaArenaPalette )
+		return true;
 
+	if ( !( sys alphaArenaPalette = malloc(4 * 256 * 3)))
+		return false;
 
 	b = (s->pen.lopnColor >> 16) & 0xff;
 	g = (s->pen.lopnColor & 0xff00) >> 8;
