@@ -866,6 +866,8 @@ sub widen
 		$opt;
 	} qw(lineWidth lineJoin lineEnd linePattern);
 
+	$lw = ($lw < 1) ? 0 : ($lw - 1) if $opt{stroke};
+
 	my $pp = [ map { @$_ } @{$self->points} ];
 	return $dst if $lp eq lp::Null;
 	$pp = poly2patterns($pp, $lp, $lw, !$self->{subpixel}) if $lp ne lp::Solid;
@@ -1354,8 +1356,9 @@ C<linePattern> are read from C<%OPTIONS>, or from the attached canvas when
 available. Supports C<miterLimit> option with values from 0 to 20.
 
 Note: if the intention is to immediately render lines, decrease lineWidth by 1
-(they are 1 pixel wider because paths are built around assumption that pixel size is 0,
-which makes them scalable).
+(they are 1 pixel wider because paths are built around assumption that pixel
+size is 0, which makes them scalable). This can also be achieved by setting
+C<$OPTIONS{stroke} = 1>.
 
 =back
 
