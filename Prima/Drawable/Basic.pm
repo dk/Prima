@@ -266,7 +266,7 @@ sub stroke_img_primitive
 	}
 
 	my $region2 = $self->region;
-	my $path2   = $path->widen(%widen, stroke => 1);
+	my $path2   = $path->widen(%widen);
 	my $region1 = $path2->region(fm::Winding | fm::Overlay);
 	my @box = $region1->box;
 	$box[$_+2] += $box[$_] for 0,1;
@@ -276,7 +276,7 @@ sub stroke_img_primitive
 	if ( $self-> rop2 == rop::CopyPut && $self->linePattern ne lp::Solid && $self->linePattern ne lp::Null ) {
 		my $color = $self->color;
 		$self->color($self->backColor);
-		my $path3 = $path->widen( linePattern => lp::Solid, stroke => 1 );
+		my $path3 = $path->widen( linePattern => lp::Solid );
 		my $region3 = $path3->region;
 		$region3->combine( $region1, rgnop::Diff);
 		$region3->combine($region2, rgnop::Intersect) if $region2;
@@ -327,8 +327,7 @@ sub stroke_imgaa_primitive
 	my $path = $self->new_path;
 	$path->$request(@_);
 	$path = $path->widen(
-		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp,
-		stroke      => 1,
+		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
 	);
 	my %save;
 	$save{fillPattern} = $self->fillPattern;
@@ -371,8 +370,7 @@ sub stroke_aa_primitive
 	my $path = $self->new_path;
 	$path->$request(@_);
 	$path = $path->widen(
-		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp,
-		stroke      => 1,
+		linePattern => ( $lp eq lp::Null) ? lp::Solid : $lp
 	);
 	my %save;
 	$save{fillPattern} = $self->fillPattern;
