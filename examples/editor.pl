@@ -147,7 +147,7 @@ sub profile_default
 				[ '@wwp' => '~Word wrap' => sub{ $_[0]-> {editor}-> wordWrap( $_[2] )}],
 				[ '@cwp' => '~Cursor wrap' => sub{ $_[0]-> {editor}-> cursorWrap( $_[2] )}],
 				[ '@tab' => 'Enter ~tabs in text' => sub{ $_[0]-> {editor}-> wantTabs( $_[2] )}],
-				[ '@psb' => '~Presistent blocks' => sub{ $_[0]-> {editor}-> persistentBlock( $_[2] )}],
+				[ '@psb' => '~Persistent blocks' => sub{ $_[0]-> {editor}-> persistentBlock( $_[2] )}],
 				[],
 				[ '@*hsc' => '~Horizontal scrollbar' => sub{ $_[0]-> {editor}-> hScroll( $_[2])}],
 				[ '@*vsc' => '~Vertical scrollbar'   => sub{ $_[0]-> {editor}-> vScroll( $_[2])}],
